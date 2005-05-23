@@ -1,7 +1,7 @@
 !------------------------------------------------------------------------
 
         subroutine timestep_wp23
-     .             (dt, L, taum, taut, Sc, a, Khm, wmt, wmm,
+     .             (dt, Lscale, taum, taut, Sc, a, Khm, wmt, wmm,
      .              um, upwp, vm, vpwp, wpthvp, wp2thvp,
      .              wp2, wp3, em, isValid)
 
@@ -16,7 +16,7 @@
 !       Input/Output
 
         real, intent(in)    :: dt
-        real, intent(in)    :: L(1:gr%nnzp)
+        real, intent(in)    :: Lscale(1:gr%nnzp)
         real, intent(in)    :: taum(1:gr%nnzp)
         real, intent(in)    :: taut(1:gr%nnzp)
         real, intent(in)    :: Sc(1:gr%nnzp)
@@ -61,7 +61,7 @@
 
 !       Define L on momentum levels
 
-        Lm = zt2zm( L )
+        Lm = zt2zm( Lscale )
         Lm(1) = Lm(2)
         Lm(gr%nnzp) = Lm(gr%nnzp-1)
 
@@ -201,7 +201,7 @@
 
 !       Solve semi-implicitly
 
-        call wp23_solve( dt, Sc, L, Lm, taum, tauw3t, 0.5*Khm,
+        call wp23_solve( dt, Sc, Lscale, Lm, taum, tauw3t, 0.5*Khm,
      .                   wmt, wmm, wpthvp, wp2thvp,
      .                   wp2t, wp3t, wp2, wp3, isValid )
         
@@ -229,7 +229,7 @@
 
 !------------------------------------------------------------------------
 
-        subroutine wp23_solve( dt, Sc, L, Lm, tau1m, tauw3t, Kh,
+        subroutine wp23_solve( dt, Sc, Lscale, Lm, tau1m, tauw3t, Kh,
      .                         wmt, wmm, wpthvp, wp2thvp,
      .                         wp2t, wp3t,
      .                         wp2, wp3, isValid)
@@ -246,7 +246,7 @@
 
         real, intent(in) :: dt
         real, intent(in) :: Sc(1:gr%nnzp)
-        real, intent(in) :: L(1:gr%nnzp)
+        real, intent(in) :: Lscale(1:gr%nnzp)
         real, intent(in) :: Lm(1:gr%nnzp)
         real, intent(in) :: tau1m(1:gr%nnzp)
         real, intent(in) :: tauw3t(1:gr%nnzp)

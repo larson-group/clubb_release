@@ -65,7 +65,7 @@ c       Indices for statistics in zt file
      .     ivg,
      .     icf,
      .     ip,
-     .     il,
+     .     iLscale,
      .     ithlm_forcing,
      .     irtm_forcing,
      .     iwp3,
@@ -378,7 +378,7 @@ c     -----------------------------------------------------------------
       ivg           = 0
       icf           = 0
       ip            = 0
-      il            = 0
+      iLscale       = 0
       ithlm_forcing = 0
       irtm_forcing  = 0
       iwp3          = 0
@@ -541,11 +541,11 @@ c     -----------------------------------------------------------------
           zt%f%var(ip)%description = "pressure (Pa)"
           k = k + 1
 
-        case ('l')
-          il = k
-          zt%f%var(il)%ptr => zt%x(:,k)
-          zt%f%var(il)%name = "L"
-          zt%f%var(il)%description = "mixing length"
+        case ('lscale')
+          iLscale = k
+          zt%f%var(iLscale)%ptr => zt%x(:,k)
+          zt%f%var(iLscale)%name = "Lscale"
+          zt%f%var(iLscale)%description = "mixing length"
           k = k + 1
 
         case ('thlm_forcing')
@@ -1951,9 +1951,9 @@ c     -----------------------------------------------------------------
           zt%x(:,ip) = zt%x(:,ip) + p
           zt%n(:,ip) = zt%n(:,ip) + 1
         endif
-        if ( il > 0 ) then
-          zt%x(:,il) = zt%x(:,il) + l
-          zt%n(:,il) = zt%n(:,il) + 1
+        if ( iLscale > 0 ) then
+          zt%x(:,iLscale) = zt%x(:,iLscale) + Lscale
+          zt%n(:,iLscale) = zt%n(:,iLscale) + 1
         endif
         if ( ithlm_forcing > 0 ) then
           zt%x(:,ithlm_forcing) = zt%x(:,ithlm_forcing) + thlm_forcing

@@ -99,7 +99,7 @@
         real, allocatable, target :: Kht(:)        ! eddy diffusivity: zt grid
         real, allocatable, target :: Khm(:)        ! eddy diffusivity: zm grid
 
-        real, allocatable, target :: L(:), lup(:), ldown(:)
+        real, allocatable, target :: Lscale(:), lup(:), ldown(:)
                                                    ! mixing lengths
         real, allocatable, target :: em(:)
         real, allocatable, target :: taut(:), taum(:)
@@ -275,7 +275,7 @@ c Diagnostic variables
         allocate( Khm(1:nzmax) )
 
         allocate( em(1:nzmax) )
-        allocate( L(1:nzmax) )
+        allocate( Lscale(1:nzmax) )
         allocate( lup(1:nzmax) )
         allocate( ldown(1:nzmax) )
         allocate( taut(1:nzmax) )
@@ -415,7 +415,7 @@ c Diagnostic variables
         deallocate( Khm )
 
         deallocate( em )
-        deallocate( L )
+        deallocate( Lscale )
         deallocate( lup )
         deallocate( ldown )
         deallocate( taut )
@@ -548,20 +548,20 @@ c Diagnostic variables
 
         ! Buoyancy related moments
 
-        wpthvp = 0.
-        rtpthvp = 0.
+        wpthvp   = 0.
+        rtpthvp  = 0.
         thlpthvp = 0.
-        wp2thvp = 0.
+        wp2thvp  = 0.
 
         Kht = 0.
         Khm = 0.
 
-        em = 0.
-        L = 0.
-        lup = 0.
-        ldown = 0.
-        taut = 0.
-        taum = 0.
+        em     = 0.
+        Lscale = 0.
+        lup    = 0.
+        ldown  = 0.
+        taut   = 0.
+        taum   = 0.
 
 ! Temporary array
 
@@ -573,15 +573,15 @@ c Diagnostic variables
         pdf_parms = 0.
 
 ! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
-        AKm_est = 0.   ! Kessler ac estimate
-        AKm = 0.       ! Exact Kessler ac
-        AKstd = 0.     ! St dev of exact Kessler ac
-        AKstd_cld = 0. ! St dev of exact w/in cloud Kessler ac
-        rlm_est = 0.   ! Monte Carlo rlm estimate
-        AKm_rlm = 0.   ! Kessler ac based on rlm
-        AKm_rlc = 0.   ! Kessler ac based on rlm/cf
+        AKm_est   = 0.   ! Kessler ac estimate
+        AKm       = 0.   ! Exact Kessler ac
+        AKstd     = 0.   ! St dev of exact Kessler ac
+        AKstd_cld = 0.   ! St dev of exact w/in cloud Kessler ac
+        rlm_est   = 0.   ! Monte Carlo rlm estimate
+        AKm_rlm   = 0.   ! Kessler ac based on rlm
+        AKm_rlc   = 0.   ! Kessler ac based on rlm/cf
         p_height_time = 0.  ! matrix of rand ints
-        p_matrix = 0.  ! rand matrix that's fed to closure
+        p_matrix = 0.    ! rand matrix that's fed to closure
 ! End of variables for Latin hypercube.
 
         return

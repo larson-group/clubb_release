@@ -5,7 +5,7 @@
 !
 
         subroutine length(thvm, thlm, rtm, rlm, em, p, exner,
-     .                    L, lup, ldown, mu)
+     .                    Lscale, lup, ldown, mu)
 
         use constants
         use grid_class
@@ -33,7 +33,7 @@
 
 ! Output
 
-        real, dimension(1:gr%nnzp), intent(out) :: L
+        real, dimension(1:gr%nnzp), intent(out) :: Lscale
         real, dimension(1:gr%nnzp), intent(out) :: lup
         real, dimension(1:gr%nnzp), intent(out) :: ldown
 
@@ -219,12 +219,12 @@
 
           lup(i)=max(lmin,lup(i))
           ldown(i)=max(lmin,ldown(i))
-          L(i) = sqrt(lup(i)*ldown(i))
+          Lscale(i) = sqrt(lup(i)*ldown(i))
 
         end do
 
-        L(1) = L(2)
-        L(gr%nnzp) = L(gr%nnzp-1)
+        Lscale(1) = Lscale(2)
+        Lscale(gr%nnzp) = Lscale(gr%nnzp-1)
 
         return
         end subroutine length
