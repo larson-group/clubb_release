@@ -142,7 +142,7 @@
 ! We prognose rt-thl-w,
 !    but we set means, covariance of N, qr to constants.
 
-      if ( sample_flag == .false. ) then  
+      if ( .not. sample_flag ) then  
 
 ! In this case, sample points could not be constructed.
 ! Set autoconversion to zero.

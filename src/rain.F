@@ -307,7 +307,7 @@
 ! 22 May 2005
 !           auto_rrm(k) = autoconv_rrm( rlm(k), conc_cloud(k), rhot(k),
 !     .                        local_kk, a, s1, s2, ss1, ss2, rl1, rl2 )
-           if ( LH_on == .true. ) then
+           if ( LH_on ) then
 
 !              auto_rrm(k) = AKm_est(k)
               auto_rrm(k) = AKm(k)
@@ -598,7 +598,7 @@
 
               ENDIF   
 
-           ELSEIF (local_kk == .false.) THEN
+           ELSEIF (.not. local_kk ) THEN
 
               ! Convert to number per unit mass
               Nrm_kg = Nrm/rhot
