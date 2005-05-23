@@ -1,0 +1,35 @@
+! Namelists for the hoc_standalone program
+! run_name determines the prefix for the grads files (e.g. bomex_zt.ctl)
+! stdout will determine if the model prints out its status over iterations
+! C4 and C10 Currently do nothing in the model - 3/18/05
+
+&model
+run_name = "fire"
+runfile  = "../tune/fire_hoc.in"
+stdout   = .true.
+
+/
+
+&initvars
+C1         = 2.1
+C2         = 1.2
+C4         = 5.2
+C5         = 0.3
+C6         = 9.3
+C7         = 0.48
+C8         = 2.3
+C10        = 3.3
+C11        = 0.7
+nu1        = 20.
+nu2        = 5.
+nu6        = 5.
+nu8        = 20.
+beta       = 1.5
+gamma_coef = 0.45
+c_K        = 0.548
+taumin     = 90.
+taumax     = 3600.
+lmin_coef  = 0.5
+mu         = 6.e-4
+
+/

@@ -1,0 +1,250 @@
+!------------------------------------------------------------------------
+! Subroutine to initialize model variables from namelist file
+!
+        subroutine read_sounding( thlm, rtm, um, vm, ugm, vgm, runfile, 
+     .                            runtype)
+
+        use grid_class
+
+        implicit none
+
+
+! External
+
+        real linint
+        external linint
+
+        character(30), intent(in) :: runfile
+ 
+        integer runtype
+
+! Parameter
+
+        integer, parameter :: nmaxsnd = 200
+
+! Output
+
+        real thlm(1:gr%nnzp)
+        real rtm(1:gr%nnzp)
+        real um(1:gr%nnzp)
+        real vm(1:gr%nnzp)
+        real ugm(1:gr%nnzp)
+        real vgm(1:gr%nnzp)
+
+! Input variables from namelist
+
+        integer nlevels
+        real z(nmaxsnd),theta(nmaxsnd),rt(nmaxsnd)
+        real u(nmaxsnd),v(nmaxsnd),ug(nmaxsnd),vg(nmaxsnd)
+
+        namelist /sounding/ nlevels, z, theta, rt, u, v, ug, vg
+    
+! Internal
+
+        integer i,k
+
+! Read sounding namelist
+
+        open(10, file = runfile, status = 'old' )
+        read(10, nml = sounding )
+        close(10)
+
+        if ( nlevels > nmaxsnd ) then
+           write(*,*) 'Error in sounding: nlevels > nmaxsnd'
+           write(*,*) 'nlevels = ',nlevels
+           write(*,*) 'nmaxsnd = ',nmaxsnd
+           stop 'STOP in sounding'
+        endif
+
+! Error check: if lowest themodynamic grid height is lower than the
+! lowest value from the input sounding, then the linear interpolation
+! scheme will fail
+
+        if ( gr%zt(2) < z(1) ) then
+           write(*,*) 'First level of input sounding must be',
+     +     ' below first thermodynamic level'
+           write(*,*) ' first sounding level z(1) = ',z(1)
+           write(*,*) ' first thermodynamic level gr%zt(2) = ',gr%zt(2)
+           stop 'STOP in sounding'
+        endif
+
+! First sounding level should be near ground value
+
+        if ( abs(z(1)) > 1.e-8 ) then
+           write(*,*) 'First level of input sounding must be z=0'
+           stop 'STOP in sounding'
+        else
+            um(1) = u(1)
+            vm(1) = v(1)
+            ugm(1) = ug(1)
+            vgm(1) = vg(1)
+            thlm(1) = theta(1)
+            rtm(1) = rt(1)
+        endif
+
+! Use linear interpolation from two nearest prescribed grid points
+! (one above and one below) to initialize mean quantities in the model
+
+        do i=2,gr%nnzp
+          k=1
+  40      if ( z(k) >= gr%zt(i) ) then
+
+            IF ( runtype /= 9 ) THEN  ! Regular situation w/ linear int.
+
+            um(i) = linint(gr%zt(i),z(k),z(k-1),u(k),u(k-1))
+            vm(i) = linint(gr%zt(i),z(k),z(k-1),v(k),v(k-1))
+            ugm(i) = linint(gr%zt(i),z(k),z(k-1),ug(k),ug(k-1))
+            vgm(i) = linint(gr%zt(i),z(k),z(k-1),vg(k),vg(k-1))
+            thlm(i) = linint(gr%zt(i),z(k),z(k-1),theta(k),theta(k-1))
+            rtm(i) = linint(gr%zt(i),z(k),z(k-1),rt(k),rt(k-1))
+
+            ELSE  ! DYCOMS II RF02 case
+
+               IF ( gr%zt(i) < 795.0 ) THEN
+                  um(i) =  6.5 + (2.0*gr%zt(i))/1000.0
+                  vm(i) = -8.5 + (5.0*gr%zt(i))/1000.0
+                  ugm(i) = um(i)
+                  vgm(i) = vm(i)
+                  thlm(i) = 288.3
+                  rtm(i) = (9.45)/1000.0
+               ELSE
+                  um(i) =  6.5 + (2.0*gr%zt(i))/1000.0
+                  vm(i) = -8.5 + (5.0*gr%zt(i))/1000.0
+                  ugm(i) = um(i)
+                  vgm(i) = vm(i)
+                  thlm(i) = 295.0 + ( (gr%zt(i) - 795.0)**(1.0/3.0) )
+                  rtm(i) = (  5.0 - 3.0 
+     .            * ( 1.0 - EXP( (795.0 - gr%zt(i))/500.0 ) )  )/1000.0
+               ENDIF
+
+            ENDIF
+
+          else
+            k=k+1
+              if ( k > nlevels ) then
+                write(*,*) 'STOP Not enough sounding data to ',
+     +                     'initialize grid:'
+                write(*,'(a,f7.1,/a,f7.1)') '  highest sounding level'
+     +          ,z(nlevels)
+     +          ,'  should be higher than highest thermodynamic point'
+     +          ,gr%zt(gr%nnzp)
+
+                stop 'STOP in sounding'
+              endif
+            goto 40
+          endif
+        enddo
+
+        return
+        end
+
+!------------------------------------------------------------------------
+! Function to linearly interpolate quantities to a height zmid
+! given the values vtop at a height ztop and vbot at a height
+! zbot
+!
+        real function linint(zmid, ztop, zbot, vtop, vbot)
+        implicit none
+
+! Input 
+
+        real zmid, ztop, zbot, vtop, vbot
+
+! Compute linear interpolation
+
+        linint = ((zmid-zbot)/(ztop-zbot)) * (vtop-vbot) + vbot
+
+        return
+        end
+
+!------------------------------------------------------------------------
+! Subroutine to initialize one generic model variable from file
+!
+        subroutine read_profile( fname, x )
+
+        use grid_class
+
+        implicit none
+
+! External
+
+        real linint
+        external linint
+
+! Parameter
+
+        integer, parameter :: nmaxsnd = 200
+
+! Input
+
+        character*(*) fname
+
+! Output
+
+        real x(1:gr%nnzp)
+
+! Input variables from namelist
+
+        integer nlevels
+        real z(nmaxsnd),var(nmaxsnd)
+
+        namelist /profile/ nlevels, z, var
+
+! Internal
+
+        integer i,k
+
+! Read sounding namelist
+
+        open(10, file = trim(fname), status = 'old' )
+        read(10, nml = profile )
+        close(10)
+
+        if ( nlevels > nmaxsnd ) then
+           write(*,*) 'Error in sounding: nlevels > nmaxsnd'
+           write(*,*) 'nlevels = ',nlevels
+           write(*,*) 'nmaxsnd = ',nmaxsnd
+           stop 'STOP in sounding'
+        endif
+
+! Error check: if lowest themodynamic grid height is lower than the
+! lowest value from the input sounding, then the linear interpolation
+! scheme will fail
+
+        if ( gr%zt(2) < z(1) ) then
+           write(*,*) 'First level of input sounding must be',
+     +     ' below first thermodynamic level'
+           write(*,*) ' first sounding level z(1) = ',z(1)
+           write(*,*) ' first thermodynamic level gr%zt(2) = ',gr%zt(2)
+           stop 'STOP in sounding'
+        endif
+
+! Use linear interpolation from two nearest prescribed grid points
+! (one above and one below) to initialize mean quantities in the model
+
+        do i=2,gr%nnzp
+          k=1
+  40      if ( z(k) >= gr%zt(i) ) then
+
+            x(i) = linint(gr%zt(i),z(k),z(k-1),var(k),var(k-1))
+
+          else
+            k=k+1
+              if ( k > nlevels ) then
+                write(*,*) 'STOP Not enough sounding data to ',
+     +                     'initialize grid:'
+                write(*,'(a,f7.1,/a,f7.1)') '  highest sounding level'
+     +          ,z(nlevels)
+     +          ,'  should be higher than highest thermodynamic point'
+     +          ,gr%zt(gr%nnzp)
+
+                write(*,*) ' filename: ',fname
+                stop 'STOP in read_profile'
+              endif
+            goto 40
+          endif
+        end do
+
+        return
+        end
+

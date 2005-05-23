@@ -1,0 +1,17 @@
+! Notes:
+!  If this an an les comparison, the second file must the les file
+!   The third file should be the reference data set known to be ok.
+
+!  t(1), t(2) ... are time intervals, in ordered pairs of the 
+!    first and last time step in the interval to be averaged.
+
+&compare_runs
+les_comparison = .true.
+file1 = "../standalone/Results_v100b/bomex_zt.ctl"
+file2 = "../tune/bomex_case.ctl"
+file3 = "../standalone/Results_v2.1_20041006/bomex_zt.ctl"
+t(1)  = 1
+t(2)  = 1
+t(3)  = 60
+t(4)  = 179
+/
