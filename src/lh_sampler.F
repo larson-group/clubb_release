@@ -205,35 +205,35 @@
 !    for Gaussians 1 and 2
 ! For now, assume no within-plume correlation of w,N,qr with
 !    any other variables.
-	  Sigma_rtthlw_1(1,1:d) = ( / 
+          Sigma_rtthlw_1(1,1:d) = ( / 
      .             dble(1.e6*srt1),
      .             rrtthl_reduced1, 
      .             0.d0, 
      .             0.d0, 
      .             0.d0 
      .                        / )
-	  Sigma_rtthlw_1(2,1:d) = ( /
+          Sigma_rtthlw_1(2,1:d) = ( /
      .             rrtthl_reduced1, 
      .             dble(sthl1),  
      .             0.d0, 
      .             0.d0, 
      .             0.d0 
      .                        / )     
-	  Sigma_rtthlw_1(3,1:d) = ( /
+          Sigma_rtthlw_1(3,1:d) = ( /
      .             0.d0,   
      .             0.d0,   
      .             dble(sw1),
      .             0.d0, 
      .             0.d0        
      .                        / ) 
-	  Sigma_rtthlw_1(4,1:d) = ( /
+          Sigma_rtthlw_1(4,1:d) = ( /
      .             0.d0,   
      .             0.d0,   
      .             0.d0,
      .             sN1, 
      .             0.d0        
      .                        / ) 
-	  Sigma_rtthlw_1(5,1:d) = ( /
+          Sigma_rtthlw_1(5,1:d) = ( /
      .             0.d0,   
      .             0.d0,   
      .             0.d0,
@@ -241,35 +241,35 @@
      .             srr1        
      .                        / ) 
 
-	  Sigma_rtthlw_2(1,1:d) = ( / 
+          Sigma_rtthlw_2(1,1:d) = ( / 
      .             dble(1.e6*srt2),
      .             rrtthl_reduced2, 
      .             0.d0, 
      .             0.d0, 
      .             0.d0 
      .                        / )
-	  Sigma_rtthlw_2(2,1:d) = ( /
+          Sigma_rtthlw_2(2,1:d) = ( /
      .             rrtthl_reduced2, 
      .             dble(sthl2),  
      .             0.d0, 
      .             0.d0, 
      .             0.d0 
      .                        / )     
-	  Sigma_rtthlw_2(3,1:d) = ( /
+          Sigma_rtthlw_2(3,1:d) = ( /
      .             0.d0,   
      .             0.d0,   
      .             dble(sw2),
      .             0.d0, 
      .             0.d0        
      .                        / ) 
-	  Sigma_rtthlw_2(4,1:d) = ( /
+          Sigma_rtthlw_2(4,1:d) = ( /
      .             0.d0,   
      .             0.d0,   
      .             0.d0,
      .             sN2, 
      .             0.d0        
      .                        / ) 
-	  Sigma_rtthlw_2(5,1:d) = ( /
+          Sigma_rtthlw_2(5,1:d) = ( /
      .             0.d0,   
      .             0.d0,   
      .             0.d0,
@@ -277,7 +277,7 @@
      .             srr2        
      .                        / ) 
 
-	  print*, 'New call to sample_points -----------------'
+!	  print*, 'New call to sample_points -----------------'
 
 ! Use units of [g/kg] to ameliorate numerical roundoff
         call sample_points(n, nt, d, p_matrix, dble(a),
@@ -288,10 +288,10 @@
      .                 dble(mu1), dble(mu2), 
      .                 Sigma_rtthlw_1, Sigma_rtthlw_2,
      .                 dble(R1), dble(R2),
-     .                 X_u, X_nl)	
+     .                 X_u, X_nl)
 
 ! End of overall if-then statement for Latin hypercube code
-	endif
+       endif
 
       return
-      end
+      end subroutine lh_sampler

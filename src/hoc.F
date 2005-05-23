@@ -598,7 +598,7 @@
      .                       AKm_rlm(k), AKm_rlc(k), rlm_est(k) )
 
 !                    print*, 'k, AKm_est=', k, AKm_est(k)
-                    print*, 'k, AKm=', k, AKm(k)
+!                    print*, 'k, AKm=', k, AKm(k)
 
                 endif ! End LH sampling part.
 
