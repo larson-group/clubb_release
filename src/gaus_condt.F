@@ -35,7 +35,8 @@
 
         integer v, j
         double precision mu_one(1:d,1), mu_two, mu_condt_const
-        double precision Sigma_oneone(1:d,1:d), Sigma_oneone_inv(1:d,1:d)
+        double precision Sigma_oneone(1:d,1:d), 
+     .                   Sigma_oneone_inv(1:d,1:d)
         double precision Sigma_onetwo(1:d,1), Sigma_twoone(1,1:d)
         double precision Sigma_twotwo, Sigma_condt
 ! Local intermediate quantities
@@ -109,4 +110,4 @@
         enddo
 
         return
-        end
+        end subroutine gaus_condt
