@@ -2337,7 +2337,9 @@ c     -----------------------------------------------------------------
 !       Cloud base
         if ( izb > 0 ) then
           k = 1
-          do while ( rcm(k) < 1.e-6 .and. k <= gr%nnzp )
+!         do while ( rcm(k) < 1.e-6 .and. k <= gr%nnzp ) ! array out of bounds
+!							  dschanen 24 May 2005
+          do while ( rcm(k) < 1.e-6 .and. k < gr%nnzp )
             k = k + 1
           end do
           if ( k < gr%nnzp) then
