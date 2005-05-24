@@ -9,14 +9,26 @@
 NCPUS=2
 #######################################################################
 # Select a run, comment out the rest
-  RUN_CASE=atex 
-# RUN_CASE=arm 
-# RUN_CASE=bomex 
-# RUN_CASE=dycoms2_rf01 
-# RUN_CASE=fire 
-# RUN_CASE=wangara  
-# RUN_CASE=dycoms2_rf02_d 
-# RUN_CASE=dycoms2_rf02_nd 
+#   Or alternatively, uncomment do loop to do all cases
+for (( x = 1; x <= 8; x++)); do
+  case $x in
+   1 )
+     RUN_CASE=atex ;;
+   2 )
+     RUN_CASE=arm ;;
+   3 )
+     RUN_CASE=bomex ;;
+   4 )
+     RUN_CASE=dycoms2_rf01 ;;
+   5 )
+     RUN_CASE=fire ;;
+   6 )
+     RUN_CASE=wangara ;; 
+   7 )
+     RUN_CASE=dycoms2_rf02_d ;;
+   8 )
+     RUN_CASE=dycoms2_rf02_nd ;;
+   esac
 #######################################################################
 # Check for necessary namelists.  If files exist, then
 # copy them over to the general input files.
