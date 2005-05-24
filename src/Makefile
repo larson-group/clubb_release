@@ -11,8 +11,8 @@ DEBUG = -g -C
 #SUNPRO_X86_OPTIMIZE = -fast -ftrap=%none
 PGF_P4_OPTIMIZE = -O3 -fastsse -Mconcur -tp p7
 
-FCFLAGS = $(PGF_P4_OPTIMIZE) -DSTATS 
-#FCFLAGS = $(DEBUG) -DSTATS
+#FCFLAGS = $(PGF_P4_OPTIMIZE) -DSTATS 
+FCFLAGS = $(DEBUG) -DSTATS
 
 # Linking Flags
 LDFLAGS = $(FCFLAGS)

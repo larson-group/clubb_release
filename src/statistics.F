@@ -97,8 +97,8 @@ c       Indices for statistics in zt file
      .     imean_vol_rad,  ! Brian
      .     irain_rate,     ! Brian
      .     iF_precip,       ! Brian
-     .     iAKm            ! analytic Kessler.  Vince Larson 22 May 2005 
-!     .     iAKm_est        ! LH Kessler.  Vince Larson  22 May 2005
+     .     iAKm,            ! analytic Kessler.  Vince Larson 22 May 2005 
+     .     iAKm_est        ! LH Kessler.  Vince Larson  22 May 2005
 
 
         integer
@@ -411,7 +411,7 @@ c     -----------------------------------------------------------------
       irain_rate    = 0  ! Brian
       iF_precip     = 0  ! Brian
       iAKm          = 0  ! analytic Kessler.  Vince Larson 22 Maay 2005
-!      iAKm_est      = 0  ! LH Kessler.  Vince Larson 22 May 2005
+      iAKm_est      = 0  ! LH Kessler.  Vince Larson 22 May 2005
 
       iwp3_bt       = 0
       iwp3_ma       = 0
@@ -785,12 +785,12 @@ c     -----------------------------------------------------------------
           zt%f%var(iAKm)%description = "Analytic Kessler ac [kg/kg]"
           k = k + 1
  
-!        case ('AKm_est')       ! Vince Larson 22 May 2005
-!          iAKm_est = k
-!          zt%f%var(iAKm_est)%ptr => zt%x(:,k)
-!          zt%f%var(iAKm_est)%name = "AKm_est"
-!          zt%f%var(iAKm_est)%description = "LH Kessler estimate [kg/kg]"
-!          k = k + 1
+        case ('AKm_est')       ! Vince Larson 22 May 2005
+          iAKm_est = k
+          zt%f%var(iAKm_est)%ptr => zt%x(:,k)
+          zt%f%var(iAKm_est)%name = "AKm_est"
+          zt%f%var(iAKm_est)%description = "LH Kessler estimate [kg/kg]"
+          k = k + 1
  
         case ('wp3_bt')
           iwp3_bt = k
@@ -2085,10 +2085,10 @@ c     -----------------------------------------------------------------
           zt%n(:,iAKm) = zt%n(:,iAKm) + 1
         endif
 
-!        if ( iAKm_est > 0 ) then           ! Vince Larson 22 May 2005
-!          zt%x(:,iAKm_est) = zt%x(:,iAKm_est) + AKm_est
-!          zt%n(:,iAKm_est) = zt%n(:,iAKm_est) + 1
-!        endif
+        if ( iAKm_est > 0 ) then           ! Vince Larson 22 May 2005
+          zt%x(:,iAKm_est) = zt%x(:,iAKm_est) + AKm_est
+          zt%n(:,iAKm_est) = zt%n(:,iAKm_est) + 1
+        endif
 
         if ( ia > 0 ) then
           zt%x(:,ia) = zt%x(:,ia) + pdf_parms(:,13)

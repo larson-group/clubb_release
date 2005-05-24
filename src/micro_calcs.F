@@ -170,8 +170,8 @@
         rlm_est_k = real(rlm_est_dp)
 
 ! Convert rlm_est back to (kg/kg) and AKm_est back to (kg/kg)/s.
-        rlm_est_k = 1.0-3*rlm_est_k
-        AKm_est_k = 1.0-3*AKm_est_k
+        rlm_est_k = 1.0e-3*rlm_est_k
+        AKm_est_k = 1.0e-3*AKm_est_k
 
 ! A test of the scheme:
 ! Compare exact (rlm) and Monte Carlo estimates (rlm_est) of 
@@ -225,8 +225,8 @@
 !	   print*, 's2=', s2
 !	   print*, 'ss1=', ss1
 !	   print*, 'ss2=', ss2
-!	   print*, 'AKm =', AKm
-!	   print*, 'AKm_est (estimate) =', AKm_est
+!	   print*, 'AKm_k =', AKm_k
+!	   print*, 'AKm_est_k (estimate) =', AKm_est_k
 !        print*, 'AK1=', AK1
 !        print*, 'AK2=', AK2
 !        print*, 'AK1var=', AK1var
