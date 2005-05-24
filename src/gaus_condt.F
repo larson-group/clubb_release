@@ -19,13 +19,13 @@
       implicit none
 
 ! Input
-	  
-	integer, intent(in) :: n, d
+  
+        integer, intent(in) :: n, d
 
-	double precision, intent(in) :: std_normal(1:d)
-	double precision, intent(in) :: mu(1:d,1)
-	double precision, intent(in) :: Sigma(1:d,1:d)
-	double precision, intent(in) :: s_pt
+        double precision, intent(in) :: std_normal(1:d)
+        double precision, intent(in) :: mu(1:d,1)
+        double precision, intent(in) :: Sigma(1:d,1:d)
+        double precision, intent(in) :: s_pt
 
 ! Output
 
@@ -33,14 +33,14 @@
 
 ! Local
 
-	integer v, j
-	double precision mu_one(1:d,1), mu_two, mu_condt_const
-	double precision Sigma_oneone(1:d,1:d), Sigma_oneone_inv(1:d,1:d)
-	double precision Sigma_onetwo(1:d,1), Sigma_twoone(1,1:d)
-	double precision Sigma_twotwo, Sigma_condt
+        integer v, j
+        double precision mu_one(1:d,1), mu_two, mu_condt_const
+        double precision Sigma_oneone(1:d,1:d), Sigma_oneone_inv(1:d,1:d)
+        double precision Sigma_onetwo(1:d,1), Sigma_twoone(1,1:d)
+        double precision Sigma_twotwo, Sigma_condt
 ! Local intermediate quantities
-	double precision Sigma_int(1,1:d)
-	double precision dum
+        double precision Sigma_int(1,1:d)
+        double precision dum
 
 ! First store value of s
       nonstd_normal(1) = s_pt
@@ -52,7 +52,7 @@
 !    Sigma_twotwo - Sigma_twoone*Inverse(Sigma_oneone)*Sigma_onetwo]
 ! Here 'one' refers to given variables, 'two' refers to values to find. 
 ! Loop over variables t, w, N, rr:
-	do v=2,d
+        do v=2,d
 
          ! Means     
          mu_one(1:(v-1),1) = mu(1:(v-1),1)
@@ -106,7 +106,7 @@
      .      + dum
 
       ! Loop to obtain new variable
-      enddo
+        enddo
 
-	return
-	end
+        return
+        end
