@@ -687,7 +687,7 @@
 !
 ! Based on GCSS ATEX intercomparison case
 !
-        subroutine cloud_rad( rhot, rlm, Frad, htrt )
+        subroutine cloud_rad( rhot, rcm, Frad, htrt )
 
         use grid_class
         use constants
@@ -697,7 +697,7 @@
 !       Input
 
         real, intent(in) :: rhot(gr%nnzp)       ! density (thermo point)
-        real, intent(in) :: rlm(gr%nnzp)        ! liquid water mixing ratio
+        real, intent(in) :: rcm(gr%nnzp)        ! liquid water mixing ratio
 
 !        Output
 
@@ -714,7 +714,7 @@
 
         Frad(gr%nnzp) = 0.
         do i=gr%nnzp-1,2,-1
-           Frad(i) = Frad(i+1) + rhot(i+1) * rlm(i+1) / gr%dzt(i+1)
+           Frad(i) = Frad(i+1) + rhot(i+1) * rcm(i+1) / gr%dzt(i+1)
         enddo
         Frad(1) = Frad(2)
 
@@ -736,7 +736,7 @@
 !----------------------------------------------------------------------
 ! Subroutine to set theta and water tendencies for DYCOMS case
 !
-        subroutine dycoms_tndcy( time, rhot, rhom, rtm, rlm,
+        subroutine dycoms_tndcy( time, rhot, rhom, rtm, rcm,
      .                           wmt, wmm, Frad, theta_tndcy, rt_tndcy,
      .                           isValid )
 
@@ -753,7 +753,7 @@
         real, intent(in) :: rhot(gr%nnzp)
         real, intent(in) :: rhom(gr%nnzp)
         real, intent(in) :: rtm(gr%nnzp)
-        real, intent(in) :: rlm(gr%nnzp)
+        real, intent(in) :: rcm(gr%nnzp)
 
 !       Output
         real, intent(out) :: wmt(gr%nnzp)
@@ -823,7 +823,7 @@
 
         lwp(gr%nnzp) = 0.0
         do i=gr%nnzp-1,2,-1
-           lwp(i) = lwp(i+1) + rhot(i+1) * rlm(i+1) / gr%dzt(i+1)
+           lwp(i) = lwp(i+1) + rhot(i+1) * rcm(i+1) / gr%dzt(i+1)
         enddo
         lwp(1) = lwp(2)
 !        x_sfc(1,ilwp) = lwp(2)
@@ -856,7 +856,7 @@
 
 !----------------------------------------------------------------------
 
-        SUBROUTINE dycoms2_tndcy( rhot, rhom, rtm, rlm, wmt, wmm,
+        SUBROUTINE dycoms2_tndcy( rhot, rhom, rtm, rcm, wmt, wmm,
      .                            theta_tndcy, rt_tndcy, isValid )
 
         USE grid_class
@@ -869,7 +869,7 @@
         REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rhot
         REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rhom
         REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rtm
-        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rlm
+        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rcm
 
         ! Output
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: wmt
@@ -913,7 +913,7 @@
 
         LWP(gr%nnzp) = 0.0
         DO k = gr%nnzp-1, 2, -1
-           LWP(k) = LWP(k+1) + rhot(k+1)*rlm(k+1)/gr%dzt(k+1)
+           LWP(k) = LWP(k+1) + rhot(k+1)*rcm(k+1)/gr%dzt(k+1)
         ENDDO
         LWP(1) = LWP(2)
 

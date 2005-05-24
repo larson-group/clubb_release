@@ -1,4 +1,4 @@
-      subroutine tau(thlm, thvm, rtm, rlm, cf, p, exner, taut)
+      subroutine tau(thlm, thvm, rtm, rcm, cf, p, exner, taut)
 
       use constants
       use grid_class
@@ -14,7 +14,7 @@
       real, dimension(1:gr%nnzp), intent(in) :: thlm
       real, dimension(1:gr%nnzp), intent(in) :: thvm
       real, dimension(1:gr%nnzp), intent(in) :: rtm
-      real, dimension(1:gr%nnzp), intent(in) :: rlm
+      real, dimension(1:gr%nnzp), intent(in) :: rcm
       real, dimension(1:gr%nnzp), intent(in) :: cf
       real, dimension(1:gr%nnzp), intent(in) :: p
       real, dimension(1:gr%nnzp), intent(in) :: exner
@@ -33,7 +33,7 @@
 
 ! Compute dry potential temparature
 
-      thm = thlm + Lv/(cp*exner) * rlm
+      thm = thlm + Lv/(cp*exner) * rcm
 
 ! Compute temperature
 
@@ -77,7 +77,7 @@
      .                - drt(k)
      .               )
 
-        if ( rlm(k) < 1.e-8 ) then
+        if ( rcm(k) < 1.e-8 ) then
           n2 = n2dry
         else
           n2 = n2moist

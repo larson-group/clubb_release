@@ -13,14 +13,14 @@
 !         AKm = exact grid box avg Kessler autoconversion [kg/kg]
 !         AKstd = exact standard deviation of gba Kessler [kg/kg]
 !         AKstd_cld = exact w/in cloud std of gba Kessler [kg/kg]
-!         AKm_rlm = exact local gba Kessler auto based on rlm [kg/kg]
-!         AKm_rlc = exact local gba Kessler based on w/in cloud rl [kg/kg]
-!         rlm_est = LH estimate of grid box avg liquid water [kg/kg]
+!         AKm_rcm = exact local gba Kessler auto based on rcm [kg/kg]
+!         AKm_rcc = exact local gba Kessler based on w/in cloud rc [kg/kg]
+!         rcm_est = LH estimate of grid box avg liquid water [kg/kg]
 
       subroutine micro_calcs(n,d,X_u,X_nl,sample_flag,
      .                         pdf_parms,
      .                         AKm_est_k,AKm_k,AKstd_k,AKstd_cld_k,
-     .                         AKm_rlm_k,AKm_rlc_k,rlm_est_k)
+     .                         AKm_rcm_k,AKm_rcc_k,rcm_est_k)
 
       use constants
 
@@ -58,14 +58,14 @@
 !      and exact within cloud standard deviation, AKstd_cld
       real, intent(out) :: AKstd_k, AKstd_cld_k
 
-! kth Kessler autoconversion, using grid box avg liquid, rlm, as input
-      real, intent(out) :: AKm_rlm_k
+! kth Kessler autoconversion, using grid box avg liquid, rcm, as input
+      real, intent(out) :: AKm_rcm_k
 
-! kth Kessler ac, using within cloud liquid, rlm/cf, as input
-      real, intent(out) :: AKm_rlc_k
+! kth Kessler ac, using within cloud liquid, rcm/cf, as input
+      real, intent(out) :: AKm_rcc_k
 
 ! For comparison, estimate kth liquid water using Monte Carlo
-      real, intent(out) :: rlm_est_k
+      real, intent(out) :: rcm_est_k
 
 ! Internal 
 
@@ -81,12 +81,12 @@
       real :: rl1, rl2
 
 ! Cloud fraction 0<cf<1, mean liquid water mix ratio [kg/kg]
-      real :: cf, rlm
+      real :: cf, rcm
 
 ! Double precision version of Monte Carlo Kessler ac
       double precision :: AKm_est_dp
 ! Double precision version of Monte Carlo avg liquid water
-      double precision :: rlm_est_dp
+      double precision :: rcm_est_dp
 
 ! Variables needed for exact Kessler autoconversion, AKm
       real q_crit, K_one
@@ -130,7 +130,7 @@
 !       compute mean cloud fraction and cloud water
 
       cf = a * R1 + (1-a) * R2
-      rlm = a * rl1 + (1-a) * rl2
+      rcm = a * rl1 + (1-a) * rl2
 
 ! Call Kessler autoconversion microphysics using Latin hypercube sample 
 ! This acts as an interface between the boundary layer scheme
@@ -148,9 +148,9 @@
 ! Set autoconversion to zero.
           AKm_est_k = 0.0
           AKm_k = 0.0
-          AKm_rlm_k = 0.0
-          AKm_rlc_k = 0.0
-          rlm_est_k = 0.0
+          AKm_rcm_k = 0.0
+          AKm_rcc_k = 0.0
+          rcm_est_k = 0.0
           AKstd_k = 0.0
           AKstd_cld_k = 0.0
 
@@ -165,19 +165,19 @@
 
 ! Compute Monte Carlo estimate of liquid for test purposes.
         call ql_estimate(n,d,dble(a),dble(R1),dble(R2),X_nl(1:n,1),
-     .         X_nl(1:n,3),X_nl(1:n,4),X_nl(1:n,5),X_u,rlm_est_dp)
+     .         X_nl(1:n,3),X_nl(1:n,4),X_nl(1:n,5),X_u,rcm_est_dp)
 ! Convert to real number
-        rlm_est_k = real(rlm_est_dp)
+        rcm_est_k = real(rcm_est_dp)
 
 ! Convert rlm_est back to (kg/kg) and AKm_est back to (kg/kg)/s.
-        rlm_est_k = 1.0e-3*rlm_est_k
+        rcm_est_k = 1.0e-3*rcm_est_k
         AKm_est_k = 1.0e-3*AKm_est_k
 
 ! A test of the scheme:
-! Compare exact (rlm) and Monte Carlo estimates (rlm_est) of 
-!    specific liq water content, rlm.  
-!	  print*, 'rlm=', rlm
-!	  print*, 'rlm_est=', rlm_est
+! Compare exact (rcm) and Monte Carlo estimates (rcm_est) of 
+!    specific liq water content, rcm.  
+!	  print*, 'rcm=', rcm
+!	  print*, 'rcm_est=', rcm_est
 
 ! Exact Kessler autoconversion in units of (kg/kg)/s
 !        q_crit = 0.3e-3
@@ -214,11 +214,11 @@
      .           - (AKm_k/cf)**2  )
      .                  )
 
-! Kessler autoconversion, using grid box avg liquid, rlm, as input
-        AKm_rlm_k = K_one * max( 0.0, rlm-q_crit )
+! Kessler autoconversion, using grid box avg liquid, rcm, as input
+        AKm_rcm_k = K_one * max( 0.0, rcm-q_crit )
 
-! Kessler ac, using within cloud liquid, rlm/cf, as input
-        AKm_rlc_k = cf * K_one * max( 0.0, rlm/cf-q_crit ) 
+! Kessler ac, using within cloud liquid, rcm/cf, as input
+        AKm_rcc_k = cf * K_one * max( 0.0, rcm/cf-q_crit ) 
 
 !        print*, 'a=', a
 !	   print*, 's1=', s1
@@ -233,8 +233,8 @@
 !	   print*, 'AK2var=', AK2var  
 !        print*, 'AKstd =', AKstd
 !        print*, 'AKstd_cld =', AKstd_cld
-!	   print*, 'AKm_rlc =', AKm_rlc
-!	   print*, 'AKm_rlm =', AKm_rlm
+!	   print*, 'AKm_rcc =', AKm_rcc
+!	   print*, 'AKm_rcm =', AKm_rcm
 
 !! Compute within-cloud vertical velocity, avg over full layer
 !! This call is a kludge: I feed w values into ql variable

@@ -4,7 +4,7 @@
 !     Khairoutdinov and Kogan (2000)
 
         SUBROUTINE rain( dt, thlm, p, exner, rhot, wmt, pdf_parms,
-     .                   rlm, rtm, rrm, Nrm, cond_rrm, auto_rrm,
+     .                   rcm, rtm, rrm, Nrm, cond_rrm, auto_rrm,
      .                   accr_rrm, cond_Nrm, auto_Nrm, sed_rrm, 
      .                   diff_rrm, subs_rrm, Vr, mean_vol_rad,
 ! LH Kessler autoconversion.  Vince Larson 22 May 2005:
@@ -30,7 +30,7 @@
         REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rhot   ! density
         REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: wmt    ! vertical velocity
         REAL, DIMENSION(1:gr%nnzp, 1:26), INTENT(IN):: pdf_parms
-        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rlm    ! cloud water mixing ratio
+        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rcm    ! cloud water mixing ratio
         REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rtm    ! total water mixing ratio
         INTEGER, INTENT(IN):: runtype
 
@@ -171,13 +171,13 @@
 
            ! Find the important conditions
 
-           rvm(k) = rtm(k) - rlm(k)   ! rvm is water vapor mixing ratio.
+           rvm(k) = rtm(k) - rcm(k)   ! rvm is water vapor mixing ratio.
 
            ! Find current vapor pressure.
            e = (p(k)*rvm(k))/(ep + rvm(k))
 
            ! Concentration of cloud drops at this altitude.
-           IF (rlm(k) > 0.0) THEN
+           IF (rcm(k) > 0.0) THEN
               IF ( runtype == 0 ) THEN
                  conc_cloud(k) = 50000000.0  ! Average maritime distribution.
 !                 conc_cloud(k) = 150000000.0 ! Average continental distribution.
@@ -194,7 +194,7 @@
            ENDIF
 
            ! Get theta from theta-l
-           thm = thlm(k) + (Lv/(Cp*exner(k)))*rlm(k)
+           thm = thlm(k) + (Lv/(Cp*exner(k)))*rcm(k)
 
 ! Vince Larson made rs into an array.  20 April 2005
 !           ! Saturation mixing ratio
@@ -305,7 +305,7 @@
 
 ! Vince Larson added option to call LH sampled Kessler autoconversion.
 ! 22 May 2005
-!           auto_rrm(k) = autoconv_rrm( rlm(k), conc_cloud(k), rhot(k),
+!           auto_rrm(k) = autoconv_rrm( rcm(k), conc_cloud(k), rhot(k),
 !     .                        local_kk, a, s1, s2, ss1, ss2, rl1, rl2 )
            if ( LH_on ) then
 
@@ -314,13 +314,13 @@
 
            else
 
-              auto_rrm(k) = autoconv_rrm( rlm(k), conc_cloud(k), 
+              auto_rrm(k) = autoconv_rrm( rcm(k), conc_cloud(k), 
      .               rhot(k), local_kk, a, s1, s2, ss1, ss2, rl1, rl2 )
 
            endif
 ! End Vince Larson's addition
 
-           accr_rrm(k) = accretion_rrm( rlm(k), rrm(k), local_kk, 
+           accr_rrm(k) = accretion_rrm( rcm(k), rrm(k), local_kk, 
      .                             a, s1, s2, ss1, ss2, rl1, rl2 )
 
            ! Enter the entire dd array, which is the RHS of the equation.
@@ -474,7 +474,7 @@
 
               ! rrp2_rrm2=1 agrees with COAMPS DYCOMS2 RF02 in and below cloud.  
               !     7 Apr 2005
-!              rrp2_rrm2 = 2 * rlp2 / MAX(rlm**2.0, 1.0E-10)
+!              rrp2_rrm2 = 2 * rcp2 / MAX(rcm**2.0, 1.0E-10)
               rrp2_rrm2 = 1.0
 
               Nrp2_Nrm2 = 0.75
@@ -604,7 +604,7 @@
               Nrm_kg = Nrm/rhot
 
               ! rrp2_rrm2=1.2 below cloud acc. to COAMPS DYCOMS2 RF02.
-!              rrp2_rrm2 = 2 * rlp2 / MAX(rlm**2.0, 1.0E-10)
+!              rrp2_rrm2 = 2 * rcp2 / MAX(rcm**2.0, 1.0E-10)
               rrp2_rrm2 = 1.2
 
               ! Nrp2_Nrm2=1.0 below cloud acc. to COAMPS DYCOMS2 RF02.
@@ -679,7 +679,7 @@
 
 !------------------------------------------------------------------------
 
-        FUNCTION NLL_PDF( thl_pl, press, rl_pl, s, ss,
+        FUNCTION NLL_PDF( thl_pl, press, rc_pl, s, ss,
      .                    alpha_exp, beta_exp, gamma_exp, 
      .                    u_rr_G, u_Nr_G, sig2_rr_G, sig2_Nr_G,
      .                    corr_rcrr_G, corr_rcNr_G, corr_rrNr_G )
@@ -693,7 +693,7 @@
         real rsat
         external rsat
 
-        REAL, INTENT(IN):: thl_pl, press, rl_pl, s, ss
+        REAL, INTENT(IN):: thl_pl, press, rc_pl, s, ss
         REAL, INTENT(IN):: alpha_exp, beta_exp, gamma_exp
         REAL, INTENT(IN):: u_rr_G, u_Nr_G, sig2_rr_G, sig2_Nr_G
         REAL, INTENT(IN):: corr_rcrr_G, corr_rcNr_G, corr_rrNr_G
@@ -722,7 +722,7 @@
 
         tmpl_pl =  thl_pl * ((press/p0)**kappa)
 
-        tmp_pl = tmpl_pl + (Lv/Cp)*rl_pl
+        tmp_pl = tmpl_pl + (Lv/Cp)*rc_pl
 
         rsl_pl = rsat(press, tmpl_pl)
 
@@ -910,13 +910,13 @@
 
 !------------------------------------------------------------------------
 
-        FUNCTION autoconv_rrm( rlm, conc_cloud, rhot, local_kk,
+        FUNCTION autoconv_rrm( rcm, conc_cloud, rhot, local_kk,
      .                           a, s1, s2, ss1, ss2, rl1, rl2 )
 
 
         IMPLICIT NONE
 
-        REAL, INTENT(IN):: rlm, conc_cloud, rhot
+        REAL, INTENT(IN):: rcm, conc_cloud, rhot
         LOGICAL, INTENT(IN):: local_kk
         REAL, INTENT(IN):: a, s1, s2, ss1, ss2, rl1, rl2
         REAL:: autoconv_rrm
@@ -935,14 +935,14 @@
 
         ! Change in rain water mixing ratio over time due to autoconversion.
 
-        IF (rlm > 0.0 .AND. conc_cloud > 0.0) THEN
+        IF (rcm > 0.0 .AND. conc_cloud > 0.0) THEN
 
            IF ( local_kk ) THEN
 
               ! Khairoutdinov and Kogan local formula
               ! cloud droplet concentration converted to num/cm^3.
 
-              autoconv_rrm = 1350.0*(rlm**2.47)
+              autoconv_rrm = 1350.0*(rcm**2.47)
      .                      *((conc_cloud/1000000.0)**(-1.79))
 
            ELSEIF ( .not. local_kk ) THEN
@@ -1007,13 +1007,13 @@
 
 !------------------------------------------------------------------------
 
-        FUNCTION accretion_rrm( rlm, rrm, local_kk, 
+        FUNCTION accretion_rrm( rcm, rrm, local_kk, 
      .                          a, s1, s2, ss1, ss2, rl1, rl2 )
 
 
         IMPLICIT NONE
 
-        REAL, INTENT(IN):: rlm, rrm
+        REAL, INTENT(IN):: rcm, rrm
         LOGICAL, INTENT(IN):: local_kk
         REAL, INTENT(IN):: a, s1, s2, ss1, ss2, rl1, rl2
 
@@ -1032,19 +1032,19 @@
 
         ! Change in rain water mixing ratio over time due to accretion.
 
-        IF (rlm > 0.0 .AND. rrm > 0.0) THEN
+        IF (rcm > 0.0 .AND. rrm > 0.0) THEN
 
            IF ( local_kk ) THEN
 
               ! Khairoutdinov and Kogan local formula
-              accretion_rrm = 67.0*((rlm*rrm)**1.15)
+              accretion_rrm = 67.0*((rcm*rrm)**1.15)
 
            ELSEIF ( .not. local_kk ) THEN
 
               ! Larson's formulation for subgrid variability.
 
               ! rrp2_rrm2=0.4 agrees with COAMPS DYCOMS2 RF02 in cloud.  
-!              rrp2_rrm2 = rlp2 / MAX(rlm**2.0, 1.0E-10)
+!              rrp2_rrm2 = rcp2 / MAX(rcm**2.0, 1.0E-10)
               rrp2_rrm2 = 0.4
 
               u_rr_G = LOG( rrm 
@@ -1075,14 +1075,14 @@
 !------------------------------------------------------------------------
 
         FUNCTION NL_PDF( s, ss, alpha_exp, u, sig2, 
-     .                   beta_exp, corr, rl_pl )
+     .                   beta_exp, corr, rc_pl )
 
         USE constants
 
         IMPLICIT NONE
 
         REAL, INTENT(IN):: s, ss, alpha_exp, u, sig2
-        REAL, INTENT(IN):: beta_exp, corr, rl_pl
+        REAL, INTENT(IN):: beta_exp, corr, rc_pl
         REAL:: NL_PDF
 
         DOUBLE PRECISION:: sc, gamma_in, gamma_out, Dv_order, test
@@ -1113,11 +1113,11 @@
         ! Therefore, we have a special equation for this condition.
         ! It is:
         !
-        ! ( rl_pl**alpha ) * EXP( beta*u + (1.0/2.0)*(beta**2.0)*sig2 )
+        ! ( rc_pl**alpha ) * EXP( beta*u + (1.0/2.0)*(beta**2.0)*sig2 )
         !
-        ! rl_pl is the liquid water mixing ratio for that specific plume.
-        ! s and rl_pl are the exact same parameter, except s can be negative
-        ! in order to represent a subsaturation.  In those cases, rl_pl is 0.
+        ! rc_pl is the liquid water mixing ratio for that specific plume.
+        ! s and rc_pl are the exact same parameter, except s can be negative
+        ! in order to represent a subsaturation.  In those cases, rc_pl is 0.
         !
         ! There is one more thing which further complicates this equation.
         ! When the ratio of s to ss is very large (low, but not quite 0 
@@ -1179,7 +1179,7 @@
 
            ELSEIF (sc > 0.0) THEN
 
-              NL_PDF = ( rl_pl**alpha_exp )
+              NL_PDF = ( rc_pl**alpha_exp )
      .                * EXP( beta_exp*u 
      .                      + (1.0/2.0)*(beta_exp**2.0)*sig2 )
 
@@ -1205,7 +1205,7 @@
 
         ELSEIF (s > 0.0) THEN 
 
-           NL_PDF = ( rl_pl**alpha_exp )
+           NL_PDF = ( rc_pl**alpha_exp )
      .             * EXP( beta_exp*u
      .                   + (1.0/2.0)*(beta_exp**2.0)*sig2 )
 

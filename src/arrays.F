@@ -46,7 +46,7 @@
 
         real, allocatable, target :: cf(:)        ! cloud fraction
         real, allocatable, target :: thvm(:)      ! virtual potential temp 
-        real, allocatable, target :: rlm(:)       ! liquid water mixing ratio
+        real, allocatable, target :: rcm(:)       ! liquid water mixing ratio
         real, allocatable, target :: rsm(:)       ! saturation mixing ratio  ! Brian
         real, allocatable, target :: rrm(:)       ! rain water mixing ratio  ! Brian
         real, allocatable, target :: Nrm(:)       ! rain droplet number conc.  ! Brian
@@ -157,9 +157,9 @@
         real, allocatable, target :: AKm(:)       ! Exact Kessler ac
         real, allocatable, target :: AKstd(:)     ! St dev of exact Kessler ac
         real, allocatable, target :: AKstd_cld(:) ! Stdev of exact w/in cloud ac
-        real, allocatable, target :: rlm_est(:)   ! Monte Carlo rlm estimate
-        real, allocatable, target :: AKm_rlm(:)   ! Kessler ac based on rlm
-        real, allocatable, target :: AKm_rlc(:)   ! Kessler ac based on rlm/cf
+        real, allocatable, target :: rcm_est(:)   ! Monte Carlo rcm estimate
+        real, allocatable, target :: AKm_rcm(:)   ! Kessler ac based on rcm
+        real, allocatable, target :: AKm_rcc(:)   ! Kessler ac based on rcm/cf
         ! nnzp x nt x d matrix of random integers
         integer, allocatable, target :: p_height_time(:,:,:)
         integer, allocatable, target :: p_matrix(:,:)
@@ -221,7 +221,7 @@ c Diagnostic variables
 
         allocate( cf(1:nzmax) )        ! cloud fraction
         allocate( thvm(1:nzmax) )      ! virtual potential temperature
-        allocate( rlm(1:nzmax) )       ! liquid water mixing ratio
+        allocate( rcm(1:nzmax) )       ! liquid water mixing ratio
         allocate( rsm(1:nzmax) )       ! saturation mixing ratio  ! Brian
         allocate( rrm(1:nzmax) )       ! rain water mixing ratio  ! Brian
         allocate( Nrm(1:nzmax) )       ! rain droplet number conc.  ! Brian
@@ -304,9 +304,9 @@ c Diagnostic variables
         allocate( AKm(1:nzmax) )        ! Exact Kessler ac
         allocate( AKstd(1:nzmax) )      ! St dev of exact Kessler ac
         allocate( AKstd_cld(1:nzmax) )  ! St dev of exact w/in cloud Kessler ac
-        allocate( rlm_est(1:nzmax) )      ! Monte Carlo rlm estimate
-        allocate( AKm_rlm(1:nzmax) )      ! Kessler ac based on rlm
-        allocate( AKm_rlc(1:nzmax) )      ! Kessler ac based on rlm/cf
+        allocate( rcm_est(1:nzmax) )      ! Monte Carlo rcm estimate
+        allocate( AKm_rcm(1:nzmax) )      ! Kessler ac based on rcm
+        allocate( AKm_rcc(1:nzmax) )      ! Kessler ac based on rcm/cf
         allocate( p_height_time(1:nzmax,1:nt,1:(d+1)) )  ! matrix of rand ints
         allocate( p_matrix(1:n,1:(d+1)) )  ! rand matrix that's fed to closure
 ! End of variables for Latin hypercube.
@@ -361,7 +361,7 @@ c Diagnostic variables
 
         deallocate( cf )        ! cloud fraction
         deallocate( thvm )      ! virtual potential temperature
-        deallocate( rlm )       ! liquid water mixing ratio
+        deallocate( rcm )       ! liquid water mixing ratio
         deallocate( rsm )       ! saturation mixing ratio  ! Brian
         deallocate( rrm )       ! rain water mixing ratio ! Brian
         deallocate( Nrm )       ! rain droplet number co ! Brian
@@ -444,9 +444,9 @@ c Diagnostic variables
         deallocate( AKm )       ! Exact Kessler ac
         deallocate( AKstd )     ! St dev of exact Kessler ac
         deallocate( AKstd_cld ) ! St dev of exact w/in cloud Kessler ac
-        deallocate( rlm_est )   ! Monte Carlo rlm estimate
-        deallocate( AKm_rlm )   ! Kessler ac based on rlm
-        deallocate( AKm_rlc )   ! Kessler ac based on rlm/cf
+        deallocate( rcm_est )   ! Monte Carlo rcm estimate
+        deallocate( AKm_rcm )   ! Kessler ac based on rcm
+        deallocate( AKm_rcc )   ! Kessler ac based on rcm/cf
         deallocate( p_height_time )  ! matrix of rand ints
         deallocate( p_matrix )  ! rand matrix that's fed to closure
 ! End of variables for Latin hypercube.
@@ -503,7 +503,7 @@ c Diagnostic variables
 
         cf = 0.        ! cloud fraction
         thvm = 0.      ! virtual potential temperature
-        rlm = 0.       ! liquid water mixing ratio
+        rcm = 0.       ! liquid water mixing ratio
         rsm = 0.       ! saturation mixing ratio  ! Brian
         rrm = 0.       ! rain water mixing ratio ! Brian
         Nrm = 0.       ! rain droplet number conc. ! Brian
@@ -577,9 +577,9 @@ c Diagnostic variables
         AKm       = 0.   ! Exact Kessler ac
         AKstd     = 0.   ! St dev of exact Kessler ac
         AKstd_cld = 0.   ! St dev of exact w/in cloud Kessler ac
-        rlm_est   = 0.   ! Monte Carlo rlm estimate
-        AKm_rlm   = 0.   ! Kessler ac based on rlm
-        AKm_rlc   = 0.   ! Kessler ac based on rlm/cf
+        rcm_est   = 0.   ! Monte Carlo rcm estimate
+        AKm_rcm   = 0.   ! Kessler ac based on rcm
+        AKm_rcc   = 0.   ! Kessler ac based on rcm/cf
         p_height_time = 0.  ! matrix of rand ints
         p_matrix = 0.    ! rand matrix that's fed to closure
 ! End of variables for Latin hypercube.

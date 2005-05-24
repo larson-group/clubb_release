@@ -57,7 +57,7 @@ c       Indices for statistics in zt file
      .     ithlm,
      .     ithvm,
      .     irtm,
-     .     irlm,
+     .     ircm,
      .     ium,
      .     ivm,
      .     iwmt,
@@ -370,7 +370,7 @@ c     -----------------------------------------------------------------
       ithlm         = 0
       ithvm         = 0
       irtm          = 0
-      irlm          = 0
+      ircm          = 0
       ium           = 0
       ivm           = 0
       iwmt          = 0
@@ -484,11 +484,11 @@ c     -----------------------------------------------------------------
      .    = "total water mixing ratio (kg/kg)"
           k = k + 1
 
-        case ('rlm')
-          irlm = k
-          zt%f%var(irlm)%ptr => zt%x(:,k)
-          zt%f%var(irlm)%name = "rlm"
-          zt%f%var(irlm)%description 
+        case ('rcm')
+          ircm = k
+          zt%f%var(ircm)%ptr => zt%x(:,k)
+          zt%f%var(ircm)%name = "rcm"
+          zt%f%var(ircm)%description 
      .    = "liquid water mixing ratio (kg/kg)"
           k = k + 1
 
@@ -1919,9 +1919,9 @@ c     -----------------------------------------------------------------
           zt%x(:,irtm) = zt%x(:,irtm) + rtm
           zt%n(:,irtm) = zt%n(:,irtm) + 1
         endif
-        if ( irlm > 0 ) then
-          zt%x(:,irlm) = zt%x(:,irlm) + rlm
-          zt%n(:,irlm) = zt%n(:,irlm) + 1
+        if ( ircm > 0 ) then
+          zt%x(:,ircm) = zt%x(:,ircm) + rcm
+          zt%n(:,ircm) = zt%n(:,ircm) + 1
         endif
         if ( ium > 0 ) then
           zt%x(:,ium) = zt%x(:,ium) + um
@@ -2337,7 +2337,7 @@ c     -----------------------------------------------------------------
 !       Cloud base
         if ( izb > 0 ) then
           k = 1
-          do while ( rlm(k) < 1.e-6 .and. k <= gr%nnzp )
+          do while ( rcm(k) < 1.e-6 .and. k <= gr%nnzp )
             k = k + 1
           end do
           if ( k < gr%nnzp) then
@@ -2352,7 +2352,7 @@ c     -----------------------------------------------------------------
         if ( ilwp > 0 ) then
           xtmp = 0.
           do i=gr%nnzp-1,2,-1
-           xtmp = xtmp + rhot(i+1) * rlm(i+1) / gr%dzt(i+1)
+           xtmp = xtmp + rhot(i+1) * rcm(i+1) / gr%dzt(i+1)
           enddo
           sfc%x(1,ilwp) = sfc%x(1,ilwp) + xtmp
           sfc%n(1,ilwp) = sfc%n(1,ilwp) + 1

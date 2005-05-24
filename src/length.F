@@ -4,7 +4,7 @@
 ! Larson's 5th moist, nonlocal length scale
 !
 
-        subroutine length(thvm, thlm, rtm, rlm, em, p, exner,
+        subroutine length(thvm, thlm, rtm, rcm, em, p, exner,
      .                    Lscale, lup, ldown, mu)
 
         use constants
@@ -21,7 +21,7 @@
         real, dimension(1:gr%nnzp), intent(in) :: thvm    ! themodynamic level
         real, dimension(1:gr%nnzp), intent(in) :: thlm    ! themodynamic level
         real, dimension(1:gr%nnzp), intent(in) :: rtm     ! themodynamic level
-        real, dimension(1:gr%nnzp), intent(in) :: rlm     ! themodynamic level
+        real, dimension(1:gr%nnzp), intent(in) :: rcm     ! themodynamic level
         real, dimension(1:gr%nnzp), intent(in) :: em      ! momentum level
         real, dimension(1:gr%nnzp), intent(in) :: exner
         real, dimension(1:gr%nnzp), intent(in) :: p
@@ -79,7 +79,7 @@
 
           thl_par_j_minus_1 = thlm(i)
           rt_par_j_minus_1 = rtm(i)
-          rl_par_j_minus_1 = rlm(i)
+          rl_par_j_minus_1 = rcm(i)
 
           do while ((tke_i.gt.0.).and.(j.lt.gr%nnzp))
 
@@ -151,7 +151,7 @@
 
           thl_par_j_plus_1 = thlm(i)
           rt_par_j_plus_1 = rtm(i)
-          rl_par_j_plus_1 = rlm(i)
+          rl_par_j_plus_1 = rcm(i)
 
           do while ((tke_i.gt.0.).and.(j.ge.2))
 

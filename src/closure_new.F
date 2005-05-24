@@ -17,7 +17,7 @@
      .                         wpthlp2,wp2thlp,
      .                         rtpthlp,
      .                         wprtpthlp,
-     .                         cf,rlm,
+     .                         cf,rcm,
      .                         wpthvp,wp2thvp,rtpthvp,thlpthvp,
      .                         wprlp,wp2rlp,rtprlp,thlprlp,
      .                         pdf_parms,
@@ -45,7 +45,7 @@
 
         real, intent(out) :: wp4
         real, intent(out) :: wprtp2, wp2rtp, wpthlp2, wp2thlp
-        real, intent(out) :: cf, rlm
+        real, intent(out) :: cf, rcm
         real, intent(out) :: wpthvp, wp2thvp, rtpthvp, thlpthvp
         real, intent(out) :: wprlp, wp2rlp, rtprlp, thlprlp
         real, intent(out) :: wprtpthlp
@@ -348,7 +348,7 @@
 !       compute mean cloud fraction and cloud water
 
         cf = a * R1 + (1-a) * R2
-        rlm = a * rl1 + (1-a) * rl2
+        rcm = a * rl1 + (1-a) * rl2
 
         ! Note: Brian added the following line to ensure that there
         ! are never any negative liquid water values.  According to
@@ -356,9 +356,9 @@
         ! negative results, but such computer-induced errors such as
         ! round-off error may produce such a value.  This has been
         ! corrected because Brian found a small negative value of
-        ! rlm in the first timestep of the FIRE case.
+        ! rcm in the first timestep of the FIRE case.
 
-        rlm = MAX(0.0, rlm)
+        rcm = MAX(0.0, rcm)
 
 !       save pdf parameters
 

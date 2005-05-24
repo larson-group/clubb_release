@@ -191,7 +191,7 @@
 ! from excess saturation
 
         do k=1,gr%nnzp
-           rlm(k) = max( rtm(k) - rsat(p(k),thlm(k)*exner(k)), 0. )
+           rcm(k) = max( rtm(k) - rsat(p(k),thlm(k)*exner(k)), 0. )
         end do
 
 ! Compute initial theta-l
@@ -201,14 +201,14 @@
              ! Do nothing
 
           case default
-            thlm = thlm - Lv/(Cp*exner) * rlm
+            thlm = thlm - Lv/(Cp*exner) * rcm
 
         end select
 
 ! Now, compute initial thetav
 
         thvm = thlm + ep1 * T0 * rtm 
-     .              + ( Lv/(Cp*exner) - ep2 * T0 ) * rlm
+     .              + ( Lv/(Cp*exner) - ep2 * T0 ) * rcm
 
 ! Recompute more accurate initial exner function and pressure using thvm
 
@@ -263,13 +263,13 @@
 
 !       compute mixing length
 
-        call length(thvm, thlm, rtm, rlm, 
-     .              em, p, exner, L, lup, ldown, mu_in)
+        call length(thvm, thlm, rtm, rcm, 
+     .              em, p, exner, Lscale, lup, ldown, mu_in)
 
 !       dissipation time
 
         tmp1 = sqrt( zm2zt( em ) )
-        taut = min( L / tmp1, taumax )
+        taut = min( Lscale / tmp1, taumax )
 
 !       modification to damp noise in stable region
 
@@ -284,7 +284,7 @@
 !       eddy diffusivity coefficient
 !       c_K_in is 0.548 usually (Duynkerke and Driedonks 1987)
 
-        Kht = c_K_in * L * tmp1
+        Kht = c_K_in * Lscale * tmp1
         Khm = zt2zm( Kht )
 
 !       surface values of second order moments
@@ -370,7 +370,7 @@
      .                          rtm_forcing)
                thlm_forcing = 0.
 
-               call cloud_rad( rhot, rlm, Frad, thlm_forcing )
+               call cloud_rad( rhot, rcm, Frad, thlm_forcing )
                kk_rain = .false.
 
              case ( 4 ) ! Wangara dry CBL
@@ -381,11 +381,11 @@
              case ( 6 ) ! ATEX case
                call atex_tndcy( time, rtm, wmt, wmm, thlm_forcing,
      .                          rtm_forcing, isValid )
-               call cloud_rad( rhot, rlm, Frad, thlm_forcing )
+               call cloud_rad( rhot, rcm, Frad, thlm_forcing )
                kk_rain = .false.
 
              case ( 7 ) ! DYCOMS2 RF01 case
-               call dycoms_tndcy( time, rhot, rhom, rtm, rlm,
+               call dycoms_tndcy( time, rhot, rhom, rtm, rcm,
      .                            wmt, wmm, Frad,
      .                            thlm_forcing, rtm_forcing, 
      .                            isValid )
@@ -397,12 +397,12 @@
                kk_rain = .true.
 
              case ( 9 ) ! DYCOMS RF02 case with drizzle
-               call dycoms2_tndcy( rhot, rhom, rtm, rlm, wmt, wmm,
+               call dycoms2_tndcy( rhot, rhom, rtm, rcm, wmt, wmm,
      .                             thlm_forcing, rtm_forcing, isValid ) 
                kk_rain = .true.
 
              case ( 10 ) ! DYCOMS RF02 case with no drizzle
-               call dycoms2_tndcy( rhot, rhom, rtm, rlm, wmt, wmm,
+               call dycoms2_tndcy( rhot, rhom, rtm, rcm, wmt, wmm,
      .                             thlm_forcing, rtm_forcing, isValid ) 
                kk_rain = .false.
 
@@ -416,13 +416,13 @@
 !           Added to FIRE case above -dschanen 4/08/2005
 !           if ( runtype == 3 ) then
 !             thlm_forcing = 0.
-!             call cloud_rad(rhot,rlm,Frad,thlm_forcing)
+!             call cloud_rad(rhot,rcm,Frad,thlm_forcing)
 !          end if
 
 ! Compute mixing length
 
-           call length(thvm, thlm, rtm, rlm, 
-     .                 em, p, exner, L, lup, ldown, mu_in)
+           call length(thvm, thlm, rtm, rcm, 
+     .                 em, p, exner, Lscale, lup, ldown, mu_in)
 
 ! Compute Sc with new formula from Vince
 
@@ -488,7 +488,7 @@
 !             Dissipation time
 
               tmp1 = sqrt( zm2zt( em ) )
-              taut = min( L / tmp1, taumax )
+              taut = min( Lscale / tmp1, taumax )
 
 !             Modification to damp noise in stable region
               do k=1,gr%nnzp
@@ -499,11 +499,11 @@
 !------------>For DYCOMS, we used this portion of experimental code below
 !             instead of a call to length
 
-!              call tau(thlm,thvm,rtm,rlm,cf,p,exner,taut)
+!              call tau(thlm,thvm,rtm,rcm,cf,p,exner,taut)
 !
-!              L = taut * tmp1
-!              L(1) = L(2)
-!              L(gr%nnzp) = L(gr%nnzp-1)
+!              Lscale = taut * tmp1
+!              Lscale(1) = Lscale(2)
+!              Lscale(gr%nnzp) = Lscale(gr%nnzp-1)
 
 !<------------end of DYCOMS code
 
@@ -512,13 +512,13 @@
 !             Eddy diffusivity coefficient
 !             c_K_in is 0.548 usually (Duynkerke and Driedonks 1987)
 
-              Kht = c_K_in * L * tmp1
+              Kht = c_K_in * Lscale * tmp1
               Khm = zt2zm( Kht )
 
 !             Advance wp2/wp3 one timestep
 
               call timestep_wp23
-     .        (dtclosure, L, taum, taut, Sct, pdf_parms(:,13), Khm, ! Brian
+     .        (dtclosure, Lscale, taum, taut, Sct, pdf_parms(:,13), Khm, ! Brian
      .         wmt, wmm,
      .         um, upwp, vm, vpwp, wpthvp, wp2thvp,
      .         wp2, wp3, em, isValid)
@@ -563,7 +563,7 @@
      .                  wpthlp2(k), wp2thlp(k),
      .                  zm2zt(rtpthlp,k),                     
      .                  wprtpthlp(k),
-     .                  cf(k), rlm(k),
+     .                  cf(k), rcm(k),
      .                  wpthvp(k), wp2thvp(k), 
      .                  rtpthvp(k), thlpthvp(k),
      .                  wprlp(k), wp2rlp(k),
@@ -595,7 +595,7 @@
                     call micro_calcs(n, d, X_u, X_nl, sample_flag,
      .                       pdf_parms(k,:),
      .                       AKm_est(k), AKm(k), AKstd(k), AKstd_cld(k),
-     .                       AKm_rlm(k), AKm_rlc(k), rlm_est(k) )
+     .                       AKm_rcm(k), AKm_rcc(k), rcm_est(k) )
 
 !                    print*, 'k, AKm_est=', k, AKm_est(k)
 !                    print*, 'k, AKm=', k, AKm(k)
@@ -634,7 +634,7 @@
      .               wpthlp2(1), wp2thlp(1),
      .               rtpthlp(1),
      .               wprtpthlp(1),
-     .               cf(1), rlm(1),
+     .               cf(1), rcm(1),
      .               wpthvp(1), wp2thvp(1), 
      .               rtpthvp(1), thlpthvp(1),
      .               wprlp(1), wp2rlp(1),
@@ -653,7 +653,7 @@
 
               if ( kk_rain ) then
                 call rain( dt, thlm, p, exner, rhot, wmt, pdf_parms,
-     .                     rlm, rtm, rrm, Nrm, cond_rrm, auto_rrm,
+     .                     rcm, rtm, rrm, Nrm, cond_rrm, auto_rrm,
      .                     accr_rrm, cond_Nrm, auto_Nrm, sed_rrm,
      .                     diff_rrm, subs_rrm, Vr, mean_vol_rad,
 ! LH Kessler autoconversion.  Vince Larson 22 May 2005:
@@ -730,7 +730,7 @@
 
 !             Compute thvm
               thvm            = thlm + ep1 * T0 * rtm 
-     .                          + ( Lv/(Cp*exner) - ep2 * T0 ) * rlm
+     .                          + ( Lv/(Cp*exner) - ep2 * T0 ) * rcm
 
 !             Advance rtm/wprtp and thlm/wpthlp one time step
               call timestep_mixing
@@ -810,7 +810,7 @@
            ! Store the saturation mixing ratio for output purposes.  Brian
            DO k = 1, gr%nnzp, 1
               rsm(k) =
-     .         rsat(p(k), (thlm(k)+(Lv/(Cp*exner(k)))*rlm(k))*exner(k))
+     .         rsat(p(k), (thlm(k)+(Lv/(Cp*exner(k)))*rcm(k))*exner(k))
            ENDDO
 
 ! Added to allow tuning without using the zm file
