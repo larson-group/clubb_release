@@ -1,0 +1,6 @@
+May 24, 2005
+* Change the variable names rlm, rlp2, etc. to rcm, rcp2, etc.
+* Change the hoc subroutine to be seperate components
+* Lower the amount of time spent in GAMMA( ) of rain.F or optimize the
+  subroutine.
+
