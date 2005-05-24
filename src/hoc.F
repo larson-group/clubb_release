@@ -385,7 +385,7 @@
                kk_rain = .false.
 
              case ( 7 ) ! DYCOMS2 RF01 case
-               call dycoms_tndcy( time, rhot, rhom, rtm, rcm,
+               call dycoms2_rf01_tndcy( time, rhot, rhom, rtm, rcm,
      .                            wmt, wmm, Frad,
      .                            thlm_forcing, rtm_forcing, 
      .                            isValid )
@@ -396,14 +396,16 @@
      .                           thlm_forcing, rtm_forcing )
                kk_rain = .true.
 
-             case ( 9 ) ! DYCOMS RF02 case with drizzle
-               call dycoms2_tndcy( rhot, rhom, rtm, rcm, wmt, wmm,
-     .                             thlm_forcing, rtm_forcing, isValid ) 
+             case ( 9 ) ! DYCOMS2 RF02 case with drizzle
+               call dycoms2_rf02_tndcy( rhot, rhom, rtm, rcm, wmt, wmm,
+     .                                  thlm_forcing, rtm_forcing, 
+     .                                  isValid ) 
                kk_rain = .true.
 
-             case ( 10 ) ! DYCOMS RF02 case with no drizzle
-               call dycoms2_tndcy( rhot, rhom, rtm, rcm, wmt, wmm,
-     .                             thlm_forcing, rtm_forcing, isValid ) 
+             case ( 10 ) ! DYCOMS2 RF02 case with no drizzle
+               call dycoms2_rf02_tndcy( rhot, rhom, rtm, rcm, wmt, wmm,
+     .                                   thlm_forcing, rtm_forcing, 
+     .                                   isValid ) 
                kk_rain = .false.
 
              case default
@@ -708,18 +710,20 @@
      .                              wpthlp(1), wprtp(1) )
 
                 case ( 7 ) 
-                  call dycoms_sfclyr( sfctype, Tsfc, psfc, exner(1),
-     .                                um(2), vm(2), thlm(2), rtm(2), 
-     .                                rhom(1), upwp(1), vpwp(1), 
-     .                                wpthlp(1), wprtp(1) )
+                  call dycoms2_rf01_sfclyr( sfctype, Tsfc, psfc, 
+     .                                      exner(1), um(2), vm(2), 
+     .                                      thlm(2), rtm(2), 
+     .                                      rhom(1), upwp(1), vpwp(1), 
+     .                                      wpthlp(1), wprtp(1) )
                 case ( 8 )
                   call astex_sfclyr( rhom(1), um(2), vm(2),
      .                               upwp(1), vpwp(1), wpthlp(1), 
      .                               wprtp(1) )
                 case ( 9, 10 )
-                  call dycoms2_sfclyr( um(2), vm(2), thlm(2), rtm(2),
-     .                                 psfc, upwp(1), vpwp(1), 
-     .                                 wpthlp(1), wprtp(1) )
+                  call dycoms2_rf02_sfclyr( um(2), vm(2), 
+     .                                      thlm(2), rtm(2),
+     .                                      psfc, upwp(1), vpwp(1), 
+     .                                      wpthlp(1), wprtp(1) )
 
                 case default
                  write(*,*) 'Invalid value of runtype = ', runtype

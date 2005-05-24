@@ -85,7 +85,7 @@ tridag.o      : tridag.F
 closure_new.o : closure_new.F constants.F
 diag_var.o    : diag_var.F
 gcss.o        : gcss.F constants.F
-hoc.o         : hoc.F constants.F rain.F
+hoc.o         : constants.F gcss.F rain.F hoc.F 
 hydrostatic.o : hydrostatic.F constants.F
 length.o      : length.F constants.F
 mixing.o      : mixing.F constants.F

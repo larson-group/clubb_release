@@ -734,11 +734,11 @@
         end subroutine cloud_rad
 
 !----------------------------------------------------------------------
-! Subroutine to set theta and water tendencies for DYCOMS case
+! Subroutine to set theta and water tendencies for DYCOMS RF01 case
 !
-        subroutine dycoms_tndcy( time, rhot, rhom, rtm, rcm,
-     .                           wmt, wmm, Frad, theta_tndcy, rt_tndcy,
-     .                           isValid )
+        subroutine dycoms2_rf01_tndcy( time, rhot, rhom, rtm, rcm,
+     .                                 wmt, wmm, Frad, theta_tndcy, 
+     .                                 rt_tndcy, isValid )
 
         use grid_class
         use constants
@@ -852,12 +852,12 @@
         theta_tndcy = theta_tndcy + htrt
         
         return
-        end subroutine dycoms_tndcy
+        end subroutine dycoms2_rf01_tndcy
 
 !----------------------------------------------------------------------
 
-        SUBROUTINE dycoms2_tndcy( rhot, rhom, rtm, rcm, wmt, wmm,
-     .                            theta_tndcy, rt_tndcy, isValid )
+        SUBROUTINE dycoms2_rf02_tndcy( rhot, rhom, rtm, rcm, wmt, wmm,
+     .                                 theta_tndcy, rt_tndcy, isValid )
 
         USE grid_class
         USE constants
@@ -987,15 +987,15 @@
         endif
 #endif
 
-        END SUBROUTINE dycoms2_tndcy
+        END SUBROUTINE dycoms2_rf02_tndcy
 
 !----------------------------------------------------------------------
 ! This subroutine computes surface fluxes of horizontal momentum,
 ! heat and moisture according to GCSS DYCOMS specifications
 !
-        subroutine dycoms_sfclyr( sfctype, Tsfc, psfc, exnersfc,
-     .                            up, vp, thp, rtp, rhop,
-     .                            uw, vw, wtp, wrp )
+        subroutine dycoms2_rf01_sfclyr( sfctype, Tsfc, psfc, exnersfc,
+     .                                  up, vp, thp, rtp, rhop,
+     .                                  uw, vw, wtp, wrp )
 
         use constants
 #ifdef STATS
@@ -1063,12 +1063,12 @@
 #endif STATS
 
         return
-        end subroutine dycoms_sfclyr
+        end subroutine dycoms2_rf01_sfclyr
 
 !----------------------------------------------------------------------
 
-        SUBROUTINE dycoms2_sfclyr( u_sfc, v_sfc, thl_sfc, rt_sfc,
-     .                             p_sfc, uw, vw, wtp, wrp )
+        SUBROUTINE dycoms2_rf02_sfclyr( u_sfc, v_sfc, thl_sfc, rt_sfc,
+     .                                  p_sfc, uw, vw, wtp, wrp )
 
         USE constants
 
@@ -1107,7 +1107,7 @@
         wtp = -Cd * wind_sfc * (thl_sfc - 292.0*(p0/p_sfc)**kappa)
         wrp = -Cd * wind_sfc * (rt_sfc - 0.013581)
 
-        END SUBROUTINE dycoms2_sfclyr
+        END SUBROUTINE dycoms2_rf02_sfclyr
 
 !----------------------------------------------------------------------
 ! Subroutine to set theta and water tendencies for ASTEX KK case
