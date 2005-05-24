@@ -410,7 +410,7 @@ c     -----------------------------------------------------------------
       imean_vol_rad = 0  ! Brian
       irain_rate    = 0  ! Brian
       iF_precip     = 0  ! Brian
-      iAKm          = 0  ! analytic Kessler.  Vince Larson 22 Maay 2005
+      iAKm          = 0  ! analytic Kessler.  Vince Larson 22 May 2005
       iAKm_est      = 0  ! LH Kessler.  Vince Larson 22 May 2005
 
       iwp3_bt       = 0
@@ -541,7 +541,7 @@ c     -----------------------------------------------------------------
           zt%f%var(ip)%description = "pressure (Pa)"
           k = k + 1
 
-        case ('lscale')
+        case ('Lscale')
           iLscale = k
           zt%f%var(iLscale)%ptr => zt%x(:,k)
           zt%f%var(iLscale)%name = "Lscale"
