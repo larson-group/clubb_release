@@ -42,5 +42,3 @@ NCPUS=2
 
 # remove the temporary error.in file
  rm -f 'standalone.in'
-
-done
