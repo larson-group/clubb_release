@@ -72,9 +72,9 @@
 
         ! Second order moments
 
-        real, target, allocatable :: wprlp(:)     ! w'rl'
-        real, target, allocatable :: thlprlp(:)   ! thl'rl'
-        real, target, allocatable :: rtprlp(:)    ! rt'rl'
+        real, target, allocatable :: wprcp(:)     ! w'rc'
+        real, target, allocatable :: thlprcp(:)   ! thl'rc'
+        real, target, allocatable :: rtprcp(:)    ! rt'rc'
 
         ! Third order moments
 
@@ -83,7 +83,7 @@
         real, target, allocatable :: wprtp2(:)    ! w'rt'^2
         real, target, allocatable :: wp2rtp(:)    ! w'^2rt'
         real, target, allocatable :: wprtpthlp(:) ! w'rt'thl'
-        real, target, allocatable :: wp2rlp(:)    ! w'^2rl'
+        real, target, allocatable :: wp2rcp(:)    ! w'^2rc'
 
         ! Fourth order moments
 
@@ -138,8 +138,8 @@
 !        pdf_parms(11) = sthl1
 !        pdf_parms(12) = sthl2
 !        pdf_parms(13) = a
-!        pdf_parms(14) = rl1
-!        pdf_parms(15) = rl2
+!        pdf_parms(14) = rc1
+!        pdf_parms(15) = rc2
 !        pdf_parms(16) = rsl1
 !        pdf_parms(17) = rsl2
 !        pdf_parms(18) = R1
@@ -247,9 +247,9 @@ c Diagnostic variables
 
         ! Second order moments
 
-        allocate( wprlp(1:nzmax) )     ! w'rl'
-        allocate( thlprlp(1:nzmax) )   ! thl'rl'
-        allocate( rtprlp(1:nzmax) )    ! rt'rl'
+        allocate( wprcp(1:nzmax) )     ! w'rc'
+        allocate( thlprcp(1:nzmax) )   ! thl'rc'
+        allocate( rtprcp(1:nzmax) )    ! rt'rc'
 
         ! Third order moments
 
@@ -258,7 +258,7 @@ c Diagnostic variables
         allocate( wprtp2(1:nzmax) )    ! w'rt'^2
         allocate( wp2rtp(1:nzmax) )    ! w'^2rt'
         allocate( wprtpthlp(1:nzmax) ) ! w'rt'thl'
-        allocate( wp2rlp(1:nzmax) )    ! w'^2rl'
+        allocate( wp2rcp(1:nzmax) )    ! w'^2rc'
 
         ! Fourth order moments
 
@@ -387,9 +387,9 @@ c Diagnostic variables
 
         ! Second order moments
 
-        deallocate( wprlp )     ! w'rl'
-        deallocate( thlprlp )   ! thl'rl'
-        deallocate( rtprlp )    ! rt'rl'
+        deallocate( wprcp )     ! w'rc'
+        deallocate( thlprcp )   ! thl'rc'
+        deallocate( rtprcp )    ! rt'rc'
 
         ! Third order moments
 
@@ -398,7 +398,7 @@ c Diagnostic variables
         deallocate( wprtp2 )    ! w'rt'^2
         deallocate( wp2rtp )    ! w'^2rt'
         deallocate( wprtpthlp ) ! w'rt'thl'
-        deallocate( wp2rlp )    ! w'^2rl'
+        deallocate( wp2rcp )    ! w'^2rc'
 
         ! Fourth order moments
 
@@ -529,9 +529,9 @@ c Diagnostic variables
 
         ! Second order moments
 
-        wprlp = 0.
-        thlprlp = 0.
-        rtprlp = 0.
+        wprcp   = 0.
+        thlprcp = 0.
+        rtprcp  = 0.
 
         ! Third order moments
 
@@ -539,7 +539,7 @@ c Diagnostic variables
         wp2thlp = 0.
         wprtp2 = 0.
         wp2rtp = 0.
-        wp2rlp = 0.
+        wp2rcp = 0.
         wprtpthlp = 0.
 
         ! Fourth order moments

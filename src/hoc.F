@@ -566,8 +566,8 @@
      .                  cf(k), rcm(k),
      .                  wpthvp(k), wp2thvp(k), 
      .                  rtpthvp(k), thlpthvp(k),
-     .                  wprlp(k), wp2rlp(k),
-     .                  rtprlp(k), thlprlp(k),
+     .                  wprcp(k), wp2rcp(k),
+     .                  rtprcp(k), thlprcp(k),
      .                  pdf_parms(k,:),
      .                  crt1, crt2, cthl1, cthl2
      .                )
@@ -615,9 +615,9 @@
               thlpthvp    = zt2zm( thlpthvp )
               thlpthvp(1) = thlp2( 1 ) 
               rtpthvp     = zt2zm( rtpthvp )   
-              wprlp       = zt2zm( wprlp )       
-              rtprlp      = zt2zm( rtprlp )     
-              thlprlp     = zt2zm( thlprlp )   
+              wprcp       = zt2zm( wprcp )       
+              rtprcp      = zt2zm( rtprcp )     
+              thlprcp     = zt2zm( thlprcp )   
 
  
 
@@ -637,8 +637,8 @@
      .               cf(1), rcm(1),
      .               wpthvp(1), wp2thvp(1), 
      .               rtpthvp(1), thlpthvp(1),
-     .               wprlp(1), wp2rlp(1),
-     .               rtprlp(1), thlprlp(1),
+     .               wprcp(1), wp2rcp(1),
+     .               rtprcp(1), thlprcp(1),
      .               pdf_parms(1,:),
      .               crt1, crt2, cthl1, cthl2
      .             )

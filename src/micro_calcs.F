@@ -78,7 +78,7 @@
       real :: crt1, crt2, cthl1, cthl2
       real :: ss1, ss2, s1, s2
       real :: R1, R2
-      real :: rl1, rl2
+      real :: rc1, rc2
 
 ! Cloud fraction 0<cf<1, mean liquid water mix ratio [kg/kg]
       real :: cf, rcm
@@ -118,8 +118,8 @@
       sthl1 = pdf_parms(11)
       sthl2 = pdf_parms(12)
       a = pdf_parms(13)
-      rl1 = pdf_parms(14) 
-      rl2 = pdf_parms(15) 
+      rc1 = pdf_parms(14) 
+      rc2 = pdf_parms(15) 
       R1 = pdf_parms(18)
       R2 = pdf_parms(19)
       s1 = pdf_parms(20)
@@ -130,7 +130,7 @@
 !       compute mean cloud fraction and cloud water
 
       cf = a * R1 + (1-a) * R2
-      rcm = a * rl1 + (1-a) * rl2
+      rcm = a * rc1 + (1-a) * rc2
 
 ! Call Kessler autoconversion microphysics using Latin hypercube sample 
 ! This acts as an interface between the boundary layer scheme
@@ -169,7 +169,7 @@
 ! Convert to real number
         rcm_est_k = real(rcm_est_dp)
 
-! Convert rlm_est back to (kg/kg) and AKm_est back to (kg/kg)/s.
+! Convert rcm_est back to (kg/kg) and AKm_est back to (kg/kg)/s.
         rcm_est_k = 1.0e-3*rcm_est_k
         AKm_est_k = 1.0e-3*AKm_est_k
 

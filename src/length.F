@@ -51,14 +51,14 @@
         real zincr
 
 !       parcel quantities at grid level j
-        real thl_par_j, rt_par_j, rl_par_j, thv_par_j
+        real thl_par_j, rt_par_j, rc_par_j, thv_par_j
 !       used in latent heating calculation
         real tl_par_j, rsl_par_j, beta_par_j
         real s_par_j, rsat_j
 !       parcel quantities at grid level j-1
-        real thl_par_j_minus_1, rt_par_j_minus_1, rl_par_j_minus_1 
+        real thl_par_j_minus_1, rt_par_j_minus_1, rc_par_j_minus_1 
 !       parcel quantities at grid level j+1
-        real thl_par_j_plus_1, rt_par_j_plus_1, rl_par_j_plus_1 
+        real thl_par_j_plus_1, rt_par_j_plus_1, rc_par_j_plus_1 
 
 !       variables to make L nonlocal
         real lup_max_alt, ldown_min_alt
@@ -79,7 +79,7 @@
 
           thl_par_j_minus_1 = thlm(i)
           rt_par_j_minus_1 = rtm(i)
-          rl_par_j_minus_1 = rcm(i)
+          rc_par_j_minus_1 = rcm(i)
 
           do while ((tke_i.gt.0.).and.(j.lt.gr%nnzp))
 
@@ -101,11 +101,11 @@
             beta_par_j = ep*(Lv/(R*tl_par_j))*(Lv/(cp*tl_par_j))
 !           s from Lewellen and Yoh 1993 (LY) eqn. 1
             s_par_j = (rt_par_j-rsl_par_j)/(1+beta_par_j*rsl_par_j)
-            rl_par_j = max(s_par_j,0.)
+            rc_par_j = max(s_par_j,0.)
 
 !           theta_v of entraining parcel
             thv_par_j = thl_par_j + ep1 * T0 * rt_par_j
-     .       + ( Lv / (exner(j)*cp) - ep2 * T0 ) * rl_par_j
+     .       + ( Lv / (exner(j)*cp) - ep2 * T0 ) * rc_par_j
 
             CAPE_incr = ( ( g/thvm(j) ) / gr%dzm(j-1) ) 
      .                  * ( thv_par_j - thvm(j) ) 
@@ -119,7 +119,7 @@
 
             thl_par_j_minus_1 = thl_par_j
             rt_par_j_minus_1 = rt_par_j
-            rl_par_j_minus_1 = rl_par_j
+            rc_par_j_minus_1 = rc_par_j
 
             tke_i = tke_i + CAPE_incr
             j = j + 1
@@ -151,7 +151,7 @@
 
           thl_par_j_plus_1 = thlm(i)
           rt_par_j_plus_1 = rtm(i)
-          rl_par_j_plus_1 = rcm(i)
+          rc_par_j_plus_1 = rcm(i)
 
           do while ((tke_i.gt.0.).and.(j.ge.2))
 
@@ -173,11 +173,11 @@
             beta_par_j = ep*(Lv/(R*tl_par_j))*(Lv/(cp*tl_par_j))
 !           s from Lewellen and Yoh 1993 (LY) eqn. 1
             s_par_j = (rt_par_j-rsl_par_j)/(1+beta_par_j*rsl_par_j)
-            rl_par_j = max(s_par_j,0.)
+            rc_par_j = max(s_par_j,0.)
 
 !           theta_v of entraining parcel
             thv_par_j = thl_par_j + ep1 * T0 * rt_par_j
-     .       + ( Lv / (exner(j)*cp) - ep2 * T0 ) * rl_par_j
+     .       + ( Lv / (exner(j)*cp) - ep2 * T0 ) * rc_par_j
 
 !           New code: CAPE_incr including moisture effects
 
@@ -200,7 +200,7 @@
 
             thl_par_j_plus_1 = thl_par_j
             rt_par_j_plus_1 = rt_par_j
-            rl_par_j_plus_1 = rl_par_j
+            rc_par_j_plus_1 = rc_par_j
 
             tke_i = tke_i + CAPE_incr
             j = j - 1

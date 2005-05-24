@@ -77,7 +77,7 @@
         REAL:: nu_r
 ! End Vince Larson's addition
 
-        REAL:: a, thl1, thl2, rl1, rl2, s1, s2, ss1, ss2
+        REAL:: a, thl1, thl2, rc1, rc2, s1, s2, ss1, ss2
 
         INTEGER:: k
         INTEGER:: km1, kp1
@@ -282,8 +282,8 @@
            a    = pdf_parms(k,13)
            thl1 = pdf_parms(k,9)
            thl2 = pdf_parms(k,10)
-           rl1  = pdf_parms(k,14)
-           rl2  = pdf_parms(k,15)
+           rc1  = pdf_parms(k,14)
+           rc2  = pdf_parms(k,15)
            s1   = pdf_parms(k,20)
            s2   = pdf_parms(k,21)
            ss1  = pdf_parms(k,22)
@@ -300,13 +300,13 @@
            ! equation, dd, for rain water mixing ratio, rrm.
 
            cond_rrm(k) = cond_evap_rrm( Temp(k), p(k), rhot(k),
-     .                     local_kk, a, thl1, thl2, rl1, rl2, s1, s2,
+     .                     local_kk, a, thl1, thl2, rc1, rc2, s1, s2,
      .                     ss1, ss2, es(k), Supsat(k), Nrm(k), rrm(k) )
 
 ! Vince Larson added option to call LH sampled Kessler autoconversion.
 ! 22 May 2005
 !           auto_rrm(k) = autoconv_rrm( rcm(k), conc_cloud(k), rhot(k),
-!     .                        local_kk, a, s1, s2, ss1, ss2, rl1, rl2 )
+!     .                        local_kk, a, s1, s2, ss1, ss2, rc1, rc2 )
            if ( LH_on ) then
 
 !              auto_rrm(k) = AKm_est(k)
@@ -315,13 +315,13 @@
            else
 
               auto_rrm(k) = autoconv_rrm( rcm(k), conc_cloud(k), 
-     .               rhot(k), local_kk, a, s1, s2, ss1, ss2, rl1, rl2 )
+     .               rhot(k), local_kk, a, s1, s2, ss1, ss2, rc1, rc2 )
 
            endif
 ! End Vince Larson's addition
 
            accr_rrm(k) = accretion_rrm( rcm(k), rrm(k), local_kk, 
-     .                             a, s1, s2, ss1, ss2, rl1, rl2 )
+     .                             a, s1, s2, ss1, ss2, rc1, rc2 )
 
            ! Enter the entire dd array, which is the RHS of the equation.
            dd(k) = (1.0/dt)*rrm(k)
@@ -541,7 +541,7 @@
 !------------------------------------------------------------------------
 
         FUNCTION cond_evap_rrm(Temp, press, rhot, local_kk, a, 
-     .                         thl1, thl2, rl1, rl2, s1, s2, ss1, ss2,
+     .                         thl1, thl2, rc1, rc2, s1, s2, ss1, ss2,
      .                         es, Supsat, Nrm, rrm)
 
         USE constants
@@ -549,7 +549,7 @@
         IMPLICIT NONE
 
         REAL, INTENT(IN):: Temp, press, rhot
-        REAL, INTENT(IN):: a, thl1, thl2, rl1, rl2, s1, s2, ss1, ss2
+        REAL, INTENT(IN):: a, thl1, thl2, rc1, rc2, s1, s2, ss1, ss2
         REAL, INTENT(IN):: es, Supsat, Nrm, rrm
         LOGICAL, INTENT(IN):: local_kk
         REAL:: cond_evap_rrm
@@ -635,12 +635,12 @@
      .                     / ( SQRT(sig2_rr_G)*SQRT(sig2_Nr_G) )
 
               cond_evap_rrm =    a    * NLL_PDF(
-     .                          thl1, press, rl1, s1, ss1,
+     .                          thl1, press, rc1, s1, ss1,
      .                          1.0, 1.0/3.0, 2.0/3.0, 
      .                          u_rr_G, u_Nr_G, sig2_rr_G, sig2_Nr_G,
      .                          corr_rcrr_G, corr_rcNr_G, corr_rrNr_G )
      .                      + (1.0-a) * NLL_PDF(
-     .                          thl2, press, rl2, s2, ss2,
+     .                          thl2, press, rc2, s2, ss2,
      .                          1.0, 1.0/3.0, 2.0/3.0, 
      .                          u_rr_G, u_Nr_G, sig2_rr_G, sig2_Nr_G,
      .                          corr_rcrr_G, corr_rcNr_G, corr_rrNr_G )
@@ -911,14 +911,14 @@
 !------------------------------------------------------------------------
 
         FUNCTION autoconv_rrm( rcm, conc_cloud, rhot, local_kk,
-     .                           a, s1, s2, ss1, ss2, rl1, rl2 )
+     .                           a, s1, s2, ss1, ss2, rc1, rc2 )
 
 
         IMPLICIT NONE
 
         REAL, INTENT(IN):: rcm, conc_cloud, rhot
         LOGICAL, INTENT(IN):: local_kk
-        REAL, INTENT(IN):: a, s1, s2, ss1, ss2, rl1, rl2
+        REAL, INTENT(IN):: a, s1, s2, ss1, ss2, rc1, rc2
         REAL:: autoconv_rrm
 
         ! Single Normal-Lognormal PDF Variables.
@@ -967,9 +967,9 @@
 
               autoconv_rrm = 7.419E13 * (
      .                       a    * NL_PDF(s1, ss1, 2.47, u_Nc_G, 
-     .                              sig2_Nc_G, -1.79, corr_rcNc_G, rl1)
+     .                              sig2_Nc_G, -1.79, corr_rcNc_G, rc1)
      .                  + (1.0-a) * NL_PDF(s2, ss2, 2.47, u_Nc_G, 
-     .                              sig2_Nc_G, -1.79, corr_rcNc_G, rl2)
+     .                              sig2_Nc_G, -1.79, corr_rcNc_G, rc2)
      .                                  )
 
            ENDIF
@@ -1008,14 +1008,14 @@
 !------------------------------------------------------------------------
 
         FUNCTION accretion_rrm( rcm, rrm, local_kk, 
-     .                          a, s1, s2, ss1, ss2, rl1, rl2 )
+     .                          a, s1, s2, ss1, ss2, rc1, rc2 )
 
 
         IMPLICIT NONE
 
         REAL, INTENT(IN):: rcm, rrm
         LOGICAL, INTENT(IN):: local_kk
-        REAL, INTENT(IN):: a, s1, s2, ss1, ss2, rl1, rl2
+        REAL, INTENT(IN):: a, s1, s2, ss1, ss2, rc1, rc2
 
         REAL:: accretion_rrm
 
@@ -1057,9 +1057,9 @@
 
               accretion_rrm = 67.0 * (
      .                       a    * NL_PDF(s1, ss1, 1.15, u_rr_G, 
-     .                              sig2_rr_G, 1.15, corr_rcrr_G, rl1)
+     .                              sig2_rr_G, 1.15, corr_rcrr_G, rc1)
      .                  + (1.0-a) * NL_PDF(s2, ss2, 1.15, u_rr_G, 
-     .                              sig2_rr_G, 1.15, corr_rcrr_G, rl2)
+     .                              sig2_rr_G, 1.15, corr_rcrr_G, rc2)
      .                               )
 
            ENDIF

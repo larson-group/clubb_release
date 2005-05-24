@@ -47,7 +47,7 @@
         open ( 10, file="compare_runs.in", status='old' )
         read ( 10, nml = compare_runs )
         
-        hoc_variables(1)  = "rlm"
+        hoc_variables(1)  = "rcm"
         hoc_variables(2)  = "rtm" 
         hoc_variables(3)  = "cf" 
         hoc_variables(4)  = "thlm"
@@ -55,7 +55,7 @@
         hoc_variables(6)  = "vm"
         hoc_variables(7)  = "wp3"
         hoc_variables(8)  = "wp2rtp"
-        hoc_variables(9)  = "wp2rlp"
+        hoc_variables(9)  = "wp2rcp"
 !        hoc_variables(10) = "wp2zt"
 !        hoc_variables(11) = "thlp2zt"
 !        hoc_variables(12) = "wpthlpzt"

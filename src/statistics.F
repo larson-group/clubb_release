@@ -78,7 +78,7 @@ c       Indices for statistics in zt file
      .     itaut,
      .     ikht,
      .     iwp2thvp,
-     .     iwp2rlp,
+     .     iwp2rcp,
      .     iwprtpthlp,
      .     isct,
      .     irhot,
@@ -127,8 +127,8 @@ c       Indices for statistics in zt file
      .     irt2,
      .     isrt1,
      .     isrt2,
-     .     irl1,
-     .     irl2,
+     .     irc1,
+     .     irc2,
      .     irsl1,
      .     irsl2,
      .     ir1,
@@ -161,9 +161,9 @@ c       Indices for statistics in zm file
      .     ithlpthvp,
      .     itaum,
      .     ikhm,
-     .     iwprlp,
-     .     ithlprlp,
-     .     irtprlp,
+     .     iwprcp,
+     .     ithlprcp,
+     .     irtprcp,
      .     iupwp,
      .     ivpwp,
      .     irhom,
@@ -391,7 +391,7 @@ c     -----------------------------------------------------------------
       itaut         = 0
       ikht          = 0
       iwp2thvp      = 0
-      iwp2rlp       = 0
+      iwp2rcp       = 0
       iwprtpthlp    = 0
       isct          = 0
       irhot         = 0
@@ -437,8 +437,8 @@ c     -----------------------------------------------------------------
       irt2          = 0
       isrt1         = 0
       isrt2         = 0
-      irl1          = 0
-      irl2          = 0
+      irc1          = 0
+      irc2          = 0
       irsl1         = 0
       irsl2         = 0
       ir1           = 0
@@ -632,11 +632,11 @@ c     -----------------------------------------------------------------
           zt%f%var(iwp2thvp)%description = "wp2thvp"
           k = k + 1
 
-        case ('wp2rlp')
-          iwp2rlp = k
-          zt%f%var(iwp2rlp)%ptr => zt%x(:,k)
-          zt%f%var(iwp2rlp)%name = "wp2rlp"
-          zt%f%var(iwp2rlp)%description = "wp2rlp"
+        case ('wp2rcp')
+          iwp2rcp = k
+          zt%f%var(iwp2rcp)%ptr => zt%x(:,k)
+          zt%f%var(iwp2rcp)%name = "wp2rcp"
+          zt%f%var(iwp2rcp)%description = "wp2rcp"
           k = k + 1
 
         case ('wprtpthlp')
@@ -953,18 +953,18 @@ c     -----------------------------------------------------------------
           zt%f%var(isrt2)%description = "pdf parameter srt2"
           k = k + 1
  
-        case ('rl1')
-          irl1 = k
-          zt%f%var(irl1)%ptr => zt%x(:,k)
-          zt%f%var(irl1)%name = "rl1"
-          zt%f%var(irl1)%description = "pdf parameter rl1"
+        case ('rc1')
+          irc1 = k
+          zt%f%var(irc1)%ptr => zt%x(:,k)
+          zt%f%var(irc1)%name = "rc1"
+          zt%f%var(irc1)%description = "pdf parameter rc1"
           k = k + 1
  
-        case ('rl2')
-          irl2 = k
-          zt%f%var(irl2)%ptr => zt%x(:,k)
-          zt%f%var(irl2)%name = "rl2"
-          zt%f%var(irl2)%description = "pdf parameter rl2"
+        case ('rc2')
+          irc2 = k
+          zt%f%var(irc2)%ptr => zt%x(:,k)
+          zt%f%var(irc2)%name = "rc2"
+          zt%f%var(irc2)%description = "pdf parameter rc2"
           k = k + 1
  
         case ('rsl1')
@@ -1139,9 +1139,9 @@ c     -----------------------------------------------------------------
       ithlpthvp = 0
       itaum     = 0
       ikhm      = 0
-      iwprlp    = 0
-      ithlprlp  = 0
-      irtprlp   = 0
+      iwprcp    = 0
+      ithlprcp  = 0
+      irtprcp   = 0
       iupwp     = 0
       ivpwp     = 0
       irhom     = 0
@@ -1275,25 +1275,25 @@ c     -----------------------------------------------------------------
           zm%f%var(ikhm)%description = "eddy diffusivity"
           k = k + 1
 
-        case ('wprlp')
-          iwprlp = k
-          zm%f%var(iwprlp)%ptr => zm%x(:,k)
-          zm%f%var(iwprlp)%name = "wprlp"
-          zm%f%var(iwprlp)%description = "wprlp"
+        case ('wprcp')
+          iwprcp = k
+          zm%f%var(iwprcp)%ptr => zm%x(:,k)
+          zm%f%var(iwprcp)%name = "wprcp"
+          zm%f%var(iwprcp)%description = "wprcp"
           k = k + 1
 
-        case ('thlprlp')
-          ithlprlp = k
-          zm%f%var(ithlprlp)%ptr => zm%x(:,k)
-          zm%f%var(ithlprlp)%name = "thlprlp"
-          zm%f%var(ithlprlp)%description = "thlprlp"
+        case ('thlprcp')
+          ithlprcp = k
+          zm%f%var(ithlprcp)%ptr => zm%x(:,k)
+          zm%f%var(ithlprcp)%name = "thlprcp"
+          zm%f%var(ithlprcp)%description = "thlprcp"
           k = k + 1
 
-        case ('rtprlp')
-          irtprlp = k
-          zm%f%var(irtprlp)%ptr => zm%x(:,k)
-          zm%f%var(irtprlp)%name = "rtprlp"
-          zm%f%var(irtprlp)%description = "rtprlp"
+        case ('rtprcp')
+          irtprcp = k
+          zm%f%var(irtprcp)%ptr => zm%x(:,k)
+          zm%f%var(irtprcp)%name = "rtprcp"
+          zm%f%var(irtprcp)%description = "rtprcp"
           k = k + 1
 
         case ('upwp')
@@ -2003,9 +2003,9 @@ c     -----------------------------------------------------------------
           zt%x(:,iwp2thvp) = zt%x(:,iwp2thvp) + wp2thvp
           zt%n(:,iwp2thvp) = zt%n(:,iwp2thvp) + 1
         endif
-        if ( iwp2rlp > 0 ) then
-          zt%x(:,iwp2rlp) = zt%x(:,iwp2rlp) + wp2rlp
-          zt%n(:,iwp2rlp) = zt%n(:,iwp2rlp) + 1
+        if ( iwp2rcp > 0 ) then
+          zt%x(:,iwp2rcp) = zt%x(:,iwp2rcp) + wp2rcp
+          zt%n(:,iwp2rcp) = zt%n(:,iwp2rcp) + 1
         endif
         if ( iwprtpthlp > 0 ) then
           zt%x(:,iwprtpthlp) = zt%x(:,iwprtpthlp) + wprtpthlp
@@ -2155,14 +2155,14 @@ c     -----------------------------------------------------------------
           zt%n(:,isrt2) = zt%n(:,isrt2) + 1
         endif
 
-        if ( irl1 > 0 ) then
-          zt%x(:,irl1) = zt%x(:,irl1) + pdf_parms(:,14)
-          zt%n(:,irl1) = zt%n(:,irl1) + 1
+        if ( irc1 > 0 ) then
+          zt%x(:,irc1) = zt%x(:,irc1) + pdf_parms(:,14)
+          zt%n(:,irc1) = zt%n(:,irc1) + 1
         endif
 
-        if ( irl2 > 0 ) then
-          zt%x(:,irl2) = zt%x(:,irl2) + pdf_parms(:,15)
-          zt%n(:,irl2) = zt%n(:,irl2) + 1
+        if ( irc2 > 0 ) then
+          zt%x(:,irc2) = zt%x(:,irc2) + pdf_parms(:,15)
+          zt%n(:,irc2) = zt%n(:,irc2) + 1
         endif
 
         if ( irsl1 > 0 ) then
@@ -2285,17 +2285,17 @@ c     -----------------------------------------------------------------
           zm%x(:,ikhm) = zm%x(:,ikhm) + khm
           zm%n(:,ikhm) = zm%n(:,ikhm) + 1
         endif
-        if ( iwprlp > 0 ) then
-          zm%x(:,iwprlp) = zm%x(:,iwprlp) + wprlp
-          zm%n(:,iwprlp) = zm%n(:,iwprlp) + 1
+        if ( iwprcp > 0 ) then
+          zm%x(:,iwprcp) = zm%x(:,iwprcp) + wprcp
+          zm%n(:,iwprcp) = zm%n(:,iwprcp) + 1
         endif
-        if ( ithlprlp > 0 ) then
-          zm%x(:,ithlprlp) = zm%x(:,ithlprlp) + thlprlp
-          zm%n(:,ithlprlp) = zm%n(:,ithlprlp) + 1
+        if ( ithlprcp > 0 ) then
+          zm%x(:,ithlprcp) = zm%x(:,ithlprcp) + thlprcp
+          zm%n(:,ithlprcp) = zm%n(:,ithlprcp) + 1
         endif
-        if ( irtprlp > 0 ) then
-          zm%x(:,irtprlp) = zm%x(:,irtprlp) + rtprlp
-          zm%n(:,irtprlp) = zm%n(:,irtprlp) + 1
+        if ( irtprcp > 0 ) then
+          zm%x(:,irtprcp) = zm%x(:,irtprcp) + rtprcp
+          zm%n(:,irtprcp) = zm%n(:,irtprcp) + 1
         endif
         if ( iupwp > 0 ) then
           zm%x(:,iupwp) = zm%x(:,iupwp) + upwp

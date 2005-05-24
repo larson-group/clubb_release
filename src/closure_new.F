@@ -19,7 +19,7 @@
      .                         wprtpthlp,
      .                         cf,rcm,
      .                         wpthvp,wp2thvp,rtpthvp,thlpthvp,
-     .                         wprlp,wp2rlp,rtprlp,thlprlp,
+     .                         wprcp,wp2rcp,rtprcp,thlprcp,
      .                         pdf_parms,
      .                         crt1,crt2,cthl1,cthl2)
 
@@ -47,7 +47,7 @@
         real, intent(out) :: wprtp2, wp2rtp, wpthlp2, wp2thlp
         real, intent(out) :: cf, rcm
         real, intent(out) :: wpthvp, wp2thvp, rtpthvp, thlpthvp
-        real, intent(out) :: wprlp, wp2rlp, rtprlp, thlprlp
+        real, intent(out) :: wprcp, wp2rcp, rtprcp, thlprcp
         real, intent(out) :: wprtpthlp
         real, intent(out) :: pdf_parms(26)
         real, intent(out) :: crt1, crt2, cthl1, cthl2
@@ -64,7 +64,7 @@
 
         real :: tl1, tl2, beta1, beta2, rsl1, rsl2, es1, es2
         real :: ss1, ss2, s1, s2, zeta1, zeta2
-        real :: rl1, rl2, R1, R2
+        real :: rc1, rc2, R1, R2
 
 !        sub-plume correlation coefficient between rt, thl
 !        varies between -1 < rrtthl < 1
@@ -296,59 +296,59 @@
         if ( ss1 > sstol ) then
            zeta1 = s1/ss1
            R1 = 0.5*(1+erf(zeta1/sqrt(2.0)))
-           rl1 =s1*R1+ss1*exp(-0.5*zeta1**2)/(sqrt(2*pi))
+           rc1 =s1*R1+ss1*exp(-0.5*zeta1**2)/(sqrt(2*pi))
         else
            if ( s1 < 0. ) then
               R1 = 0.
-              rl1 = 0.
+              rc1 = 0.
            else
               R1 = 1.
-              rl1 = s1
+              rc1 = s1
            end if
         end if
         if ( ss2 > sstol ) then
            zeta2 = s2/ss2
            R2 = 0.5*(1+erf(zeta2/sqrt(2.0)))
-           rl2 =s2*R2+ss2*exp(-0.5*zeta2**2)/(sqrt(2*pi))
+           rc2 =s2*R2+ss2*exp(-0.5*zeta2**2)/(sqrt(2*pi))
         else
            if ( s2 < 0. ) then
              R2 = 0.
-             rl2 = 0.
+             rc2 = 0.
            else
              R2 = 1.
-             rl2 = s2
+             rc2 = s2
            end if
         end if
 
 !       now compute moments that depend on theta_v
 
-        wp2rlp = a * ((w1-wm)**2 + sw1)*rl1
-     .                 + (1-a) * ((w2-wm)**2 + sw2)*rl2
-     .                 - wp2 * (a*rl1+(1-a)*rl2)
-        wp2thvp = wp2thlp + ep1*T0*wp2rtp + BD*wp2rlp
+        wp2rcp = a * ((w1-wm)**2 + sw1)*rc1
+     .                 + (1-a) * ((w2-wm)**2 + sw2)*rc2
+     .                 - wp2 * (a*rc1+(1-a)*rc2)
+        wp2thvp = wp2thlp + ep1*T0*wp2rtp + BD*wp2rcp
 
-        wprlp = a * (w1-wm)*rl1 + (1-a) * (w2-wm)*rl2
-        wpthvp = wpthlp + ep1*T0*wprtp + BD*wprlp
+        wprcp = a * (w1-wm)*rc1 + (1-a) * (w2-wm)*rc2
+        wpthvp = wpthlp + ep1*T0*wprtp + BD*wprcp
 
 !       account for subplume correlation in qt-thl
-        thlprlp = a * ( (thl1-thlm)*rl1 - (cthl1*sthl1)*R1 )
-     .            + (1-a) * ( (thl2-thlm)*rl2 - (cthl2*sthl2)*R2 )
+        thlprcp = a * ( (thl1-thlm)*rc1 - (cthl1*sthl1)*R1 )
+     .            + (1-a) * ( (thl2-thlm)*rc2 - (cthl2*sthl2)*R2 )
      .            + a*rrtthl*crt1*sqrt(srt1)*sqrt(sthl1)*R1
      .            + (1-a)*rrtthl*crt2*sqrt(srt2)*sqrt(sthl2)*R2
-        thlpthvp = thlp2 + ep1*T0*rtpthlp + BD*thlprlp
+        thlpthvp = thlp2 + ep1*T0*rtpthlp + BD*thlprcp
 
 !       account for subplume correlation in qt-thl
-        rtprlp = a * ( (rt1-rtm)*rl1 + (crt1*srt1)*R1 )
-     .                 + (1-a) * ( (rt2-rtm)*rl2 + (crt2*srt2)*R2 )
+        rtprcp = a * ( (rt1-rtm)*rc1 + (crt1*srt1)*R1 )
+     .                 + (1-a) * ( (rt2-rtm)*rc2 + (crt2*srt2)*R2 )
      .            - a*rrtthl*cthl1*sqrt(srt1)*sqrt(sthl1)*R1
      .            - (1-a)*rrtthl*cthl2*sqrt(srt2)*sqrt(sthl2)*R2
 
-        rtpthvp = rtpthlp + ep1*T0*rtp2 + BD*rtprlp
+        rtpthvp = rtpthlp + ep1*T0*rtp2 + BD*rtprcp
 
 !       compute mean cloud fraction and cloud water
 
         cf = a * R1 + (1-a) * R2
-        rcm = a * rl1 + (1-a) * rl2
+        rcm = a * rc1 + (1-a) * rc2
 
         ! Note: Brian added the following line to ensure that there
         ! are never any negative liquid water values.  According to
@@ -375,8 +375,8 @@
         pdf_parms(11) = sthl1
         pdf_parms(12) = sthl2
         pdf_parms(13) = a
-        pdf_parms(14) = rl1
-        pdf_parms(15) = rl2
+        pdf_parms(14) = rc1
+        pdf_parms(15) = rc2
         pdf_parms(16) = rsl1
         pdf_parms(17) = rsl2
         pdf_parms(18) = R1
