@@ -35,7 +35,7 @@ c Output variables
 
 c Local constants
 
-       real, parameter :: eps = 1.e-10
+!       real, parameter :: eps = 1.e-10  ! now in constants.F
 c Misc. Variables -D.S.
        logical, intent(inout) :: isValid
 

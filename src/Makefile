@@ -83,7 +83,7 @@ erf.o         : erf.F
 tridag.o      : tridag.F
 
 closure_new.o : closure_new.F constants.F
-diag_var.o    : diag_var.F
+diag_var.o    : diag_var.F constants.F
 gcss.o        : gcss.F constants.F
 hoc.o         : constants.F gcss.F rain.F hoc.F 
 hydrostatic.o : hydrostatic.F constants.F
