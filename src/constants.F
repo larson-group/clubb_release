@@ -19,9 +19,9 @@
         real, parameter :: kappa = R/Cp   ! kappa
 
 !       Changed g to grav to make it easier to find in the code 5/25/05
-!       9.81 or 9.80665 seems to make very little if any difference.
-        real, parameter :: grav  = 9.80665! Gravitational acceleration (m/s^2)
-        real, parameter :: p0    = 1.e5   ! Reference pressure
+!        real, parameter :: grav  = 9.80665 ! Gravitational acceleration (m/s^2)
+        real, parameter :: grav  = 9.81    ! Gravitational acceleration (m/s^2)
+        real, parameter :: p0    = 1.e5    ! Reference pressure
 
         real, parameter :: T0    = 300.     ! Reference temperature
         real, parameter :: alpha = 1. / T0  ! Buoyancy factor
