@@ -3,32 +3,37 @@
       module constants
 
 !       Physical constants
+        double precision, parameter 
+     .                  :: pi_dp = 3.14159265358979323846D0
+        real, parameter :: pi    = 3.141592654
+        real, parameter :: Cp    = 1004.67 ! Dry air specific heat at constant p
+        real, parameter :: Lv    = 2.5e6   ! Latent heat of vaporization
+        real, parameter :: R     = 287.04  ! Dry air gas constant
+        real, parameter :: Rv    = 461.5   ! Water vapor gas constant
 
-!        real, parameter :: pi = 3.141592654
-!       This is the accuracy used in math.h;  Not sure if it improves anything
-        real, parameter :: pi = 3.14159265358979323846
-        real, parameter :: Cp = 1004.67   ! Dry air specific heat at constant p
-        real, parameter :: Lv = 2.5e6     ! Latent heat of vaporization
-        real, parameter :: R  = 287.04    ! Dry air gas constant
-        real, parameter :: Rv = 461.5     ! Water vapor gas constant
-
-                                          ! Useful combinations of R and Rv
-        real, parameter :: ep  = R/Rv         ! ep = 0.622
-        real, parameter :: ep1 = (1.-ep)/ep   ! ep1 = 0.61
-        real, parameter :: ep2 = 1./ep        ! ep2 = 1.61
+                                           ! Useful combinations of R and Rv
+        real, parameter :: ep    = R/Rv         ! ep = 0.622
+        real, parameter :: ep1   = (1.-ep)/ep   ! ep1 = 0.61
+        real, parameter :: ep2   = 1./ep        ! ep2 = 1.61
 
         real, parameter :: kappa = R/Cp   ! kappa
 
-        real, parameter :: g     = 9.81   ! Gravitational acceleration (m/s^2)
+!       Changed g to grav to make it easier to find in the code 5/25/05
+!       9.81 or 9.80665 seems to make very little if any difference.
+        real, parameter :: grav  = 9.80665! Gravitational acceleration (m/s^2)
         real, parameter :: p0    = 1.e5   ! Reference pressure
 
         real, parameter :: T0    = 300.     ! Reference temperature
         real, parameter :: alpha = 1. / T0  ! Buoyancy factor
 
-        integer, parameter :: NLM  = 100
-        real, parameter    :: vonk = 0.4
+        integer, parameter :: NLM    = 100
 
-        real, parameter :: emin = 1.e-6
+        real, parameter      :: emin = 1.e-6
+        real, parameter      :: vonk =  0.4   ! von Karmans constant
+
+!       Logical flags
+        logical, parameter   :: LH_on    = .false.  ! latin hypercube calc
+        logical, parameter   :: local_kk = .false.  ! local drizzle in rain.F
 
 !       Model parameters and constraints
 
@@ -53,6 +58,14 @@
         real, parameter :: qttol   = 1.e-4
         real, parameter :: sstol   = 1.e-8
         real, parameter :: difftol = 0.4
+
+        real, parameter :: eps = 1e-10
+!
+!       Addition for machine independent epsilon
+!       It turns out we don't actually want this
+!        real             :: eps  ! smallest representable number, 
+!                                 ! calculated with the epsilon( ) intrinsic
+!        double precision :: eps_dp ! "  ", but for double precision
 
       end module constants
 
@@ -130,6 +143,9 @@
 
 !      taumin =   90.
 !      taumax = 3600.
+
+!      eps    = epsilon( eps )
+!      eps_dp = epsilon( eps_dp )
 
       return
       end subroutine setup_constants

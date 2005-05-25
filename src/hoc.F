@@ -116,7 +116,7 @@
         character(len=*), intent(in) :: run_name
 
 ! Local variables for Latin Hypercube sampling
-        logical, parameter ::  LH_on = .true.
+!        logical, parameter ::  LH_on = .true. ! moved to constants.F
 
         real crt1, crt2, cthl1, cthl2   ! coeffs of s from pdf_closure_new
 

@@ -29,7 +29,7 @@
 
         exner(1) = ( psfc/p0 ) ** kappa
         do k=2,gr%nnzp
-           exner(k) = exner(k-1) - g/( Cp * thvm(k) * gr%dzt(k) )
+           exner(k) = exner(k-1) - grav/( Cp * thvm(k) * gr%dzt(k) )
         end do
 
 ! Now interpolate Exner to the thermodynamic grid points

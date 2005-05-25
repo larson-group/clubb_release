@@ -68,10 +68,10 @@
       do k=2,gr%nnzp-1
 
 
-        n2dry = g/T0 * dthvm(k)
+        n2dry = grav/T0 * dthvm(k)
 
 
-        n2moist = g*(  ( 1.0 + (Lv*rs(k))/(R*tm(k)) )
+        n2moist = grav*(  ( 1.0 + (Lv*rs(k))/(R*tm(k)) )
      .                 /( 1.0 + (ep1*Lv*Lv*rs(k))/(cp*R*tm(k)*tm(k)) )
      .                 *( dthm(k)/thm(k) + Lv/(cp*tm(k))*drs(k) )
      .                - drt(k)

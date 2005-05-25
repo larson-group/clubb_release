@@ -107,7 +107,7 @@
             thv_par_j = thl_par_j + ep1 * T0 * rt_par_j
      .       + ( Lv / (exner(j)*cp) - ep2 * T0 ) * rc_par_j
 
-            CAPE_incr = ( ( g/thvm(j) ) / gr%dzm(j-1) ) 
+            CAPE_incr = ( ( grav/thvm(j) ) / gr%dzm(j-1) ) 
      .                  * ( thv_par_j - thvm(j) ) 
 
             if (tke_i+CAPE_incr.gt.0.) then
@@ -181,13 +181,13 @@
 
 !           New code: CAPE_incr including moisture effects
 
-           CAPE_incr = -( ( g/thvm(j) ) / gr%dzm(j) ) 
+           CAPE_incr = -( ( grav/thvm(j) ) / gr%dzm(j) ) 
      .          * ( thv_par_j - thvm(j) ) 
 
 
 !           Old code: CAPE_incr without including moisture effects
 
-!            CAPE_incr = - g/thvm(j) * (thvm(i)-thvm(j)) / gr%dzm(j)
+!            CAPE_incr = - grav/thvm(j) * (thvm(i)-thvm(j)) / gr%dzm(j)
 
             if (tke_i+CAPE_incr.gt.0.) then
               ldown(i) = ldown(i) + gr%zt(j+1) - gr%zt(j)

@@ -68,9 +68,9 @@
 !       RHSs
 
         wp2t = - wmm * ddzt( zm2zt( wp2 ) )
-     .         + 2.0*(1.0-C5) * g * alpha * wpthvp
+     .         + 2.0*(1.0-C5) * grav * alpha * wpthvp
      .         - 2.0*(1.0-C5) * wp2 * ddzt( wmt )
-     .         + C5 * 2./3. * g * alpha * wpthvp
+     .         + C5 * 2./3. * grav * alpha * wpthvp
      .         - C5 * 2./3. * upwp * ddzt( um )
      .         - C5 * 2./3. * vpwp * ddzt( vm )
 
@@ -91,21 +91,21 @@
 
          if ( iwp2_bp > 0 ) then
            zm%x(:,iwp2_bp) = zm%x(:,iwp2_bp) 
-     .     + 2.0* g * alpha * wpthvp
+     .     + 2.0* grav * alpha * wpthvp
            zm%n(:,iwp2_bp) = zm%n(:,iwp2_bp) + 1
          endif
 
          if ( iwp2_pr2 > 0 ) then
            zm%x(:,iwp2_pr2) = zm%x(:,iwp2_pr2) 
      .     - C5 * ( - 2.0 * wp2 * ddzt( wmt ) 
-     .              + 2.0 * g * alpha * wpthvp
+     .              + 2.0 * grav * alpha * wpthvp
      .            )
            zm%n(:,iwp2_pr2) = zm%n(:,iwp2_pr2) + 1
          endif
 
          if ( iwp2_pr3 > 0 ) then
            zm%x(:,iwp2_pr3) = zm%x(:,iwp2_pr3) 
-     .     + C5 * 2./3. * g * alpha * wpthvp
+     .     + C5 * 2./3. * grav * alpha * wpthvp
      .     - C5 * 2./3. * upwp * ddzt( um )
      .     - C5 * 2./3. * vpwp * ddzt( vm )
            zm%n(:,iwp2_pr3) = zm%n(:,iwp2_pr3) + 1
@@ -135,12 +135,12 @@
 ! Old version with C11 constant
         wp3t = - wmt * ddzm( zt2zm( wp3 ) )
      .         - 3.0*(1.0-C11) * wp3 * ddzm( wmm )
-     .         + 3.0*(1.0-C11) * g * alpha * wp2thvp
+     .         + 3.0*(1.0-C11) * grav * alpha * wp2thvp
 
 ! New version with C11 dependent on Skw
 !        wp3t = - wmt * ddzm( zt2zm( wp3 ) )
 !     .         - 3.0 * (1.0-C11_Skw_fnc) * wp3 * ddzm( wmm )
-!     .         + 3.0 * (1.0-C11_Skw_fnc) * g * alpha * wp2thvp
+!     .         + 3.0 * (1.0-C11_Skw_fnc) * grav * alpha * wp2thvp
 ! End Vince Larson's change.
 
 #ifdef STATS
@@ -160,14 +160,14 @@
 
          if ( iwp3_bp > 0 ) then
            zt%x(:,iwp3_bp) = zt%x(:,iwp3_bp) 
-     .     + 3.0 * g * alpha * wp2thvp
+     .     + 3.0 * grav * alpha * wp2thvp
            zt%n(:,iwp3_bp) = zt%n(:,iwp3_bp) + 1
          endif
 
          if ( iwp3_pr2 > 0 ) then
            zt%x(:,iwp3_pr2) = zt%x(:,iwp3_pr2) 
      .     - C11 * ( - 3.0 * wp3 * ddzm( wmm )
-     .               + 3.0 * g * alpha * wp2thvp
+     .               + 3.0 * grav * alpha * wp2thvp
      .             )
            zt%n(:,iwp3_pr2) = zt%n(:,iwp3_pr2) + 1
          endif
@@ -266,7 +266,7 @@
 
 !       Local constants
 
-        real, parameter    :: eps = 1.e-10
+!        real, parameter    :: eps = 1.e-10     ! in constants module
 
 !       Internal
 

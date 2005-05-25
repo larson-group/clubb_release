@@ -347,6 +347,8 @@
 !
         subroutine arm_sfclyr( time, z, dn0, thp, up, vp, uw, vw, 
      .                         wtp, wrp, ustar )
+
+        use constants, only: grav
         implicit none
 
 !       External
@@ -361,8 +363,8 @@
         real Cp, Lv
         parameter ( Cp = 1004.67 )
         parameter ( Lv = 2.5e6 )
-        real g
-        parameter ( g = 9.81 )
+!        real g
+!        parameter ( g = 9.81 )
 
 !       Input variables
 
@@ -398,7 +400,7 @@
         moisture_flx2 = moisture_flx / ( Lv * dn0 )! (m/s)
 
 !       Heat flux in units of (m2/s3) (needed by diag_ustar)
-        bflx = g/thp * heat_flx2
+        bflx = grav/thp * heat_flx2
 
 !       Sfc winds
         usfc = up
@@ -639,13 +641,17 @@
 !
       real function diag_ustar( z, bflx, wnd ) 
 
+      use constants, only: eps, grav, vonk
+
       implicit none
-      real, parameter      :: vonk =  0.4   ! von Karmans constant
-      real, parameter      :: g    = 9.81   ! gravitational acceleration
+
+!     Added to constants.F
+!      real, parameter      :: vonk =  0.4   ! von Karmans constant
+!      real, parameter      :: g    = 9.81   ! gravitational acceleration
+!      real, parameter      :: eps  = 1.e-10 ! non-zero, small number
       real, parameter      :: z0   = 0.035  ! momentum roughness height
       real, parameter      :: am   =  4.8   !   "          "         "
       real, parameter      :: bm   = 19.3   !   "          "         "
-      real, parameter      :: eps  = 1.e-10 ! non-zero, small number
 
       real, intent (in)    :: z             ! height where u locates
       real, intent (in)    :: bflx          ! surface buoyancy flux (m^2/s^3)

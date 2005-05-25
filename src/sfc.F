@@ -7,6 +7,8 @@
 
 ! Parameter
 
+!       This variable occurs in several parts of hoc, varying from .25 to 3.
+!       is it supposed to be constant?  -dschanen 5/25/05
         real, parameter :: ustar = 0.3
 
 ! Input
@@ -120,7 +122,7 @@
 ! Compute wstar following Andre et al., 1976
 
         if ( wpthlp_sfc > 0 ) then
-          wstar = ( alpha * g * wpthlp_sfc * z ) ** (1./3.)
+          wstar = ( alpha * grav * wpthlp_sfc * z ) ** (1./3.)
         else
           wstar = 0.
         end if

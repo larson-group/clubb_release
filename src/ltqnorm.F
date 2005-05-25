@@ -22,51 +22,54 @@
 !   E-mail:      pjacklam@online.no
 !   URL:         http://home.online.no/~pjacklam
 
-	function ltqnorm(p)
+        function ltqnorm(p)
 
-	implicit none
+        use constants, only: PI_DP
 
-	double precision a1,a2,a3,a4,a5,a6,b1,b2,b3,b4,b5,
+        implicit none
+
+        double precision a1,a2,a3,a4,a5,a6,b1,b2,b3,b4,b5,
      .                 c1,c2,c3,c4,c5,c6,d1,d2,d3,d4
-	double precision p,q,r,z,z1,plow,phigh,e,u,erf_dp
-	double precision ltqnorm
-	double precision, parameter :: pi=3.1415926d0
+        double precision p,q,r,z,z1,plow,phigh,e,u,erf_dp
+        double precision ltqnorm
+!        double precision, parameter :: pi=3.1415926d0
+
 ! Coefficients in rational approximations.
 ! equivalent: a(1)=a1, a(2)=a2, and etc, when a(1) is in Matlab. 
 ! Similarly for b, c, and d's
-	parameter (a1 = -3.969683028665376d+01, 
+        parameter (a1 = -3.969683028665376d+01, 
      .           a2 = 2.209460984245205d+02,
      .           a3 = -2.759285104469687d+02, 
      .           a4 = 1.383577518672690d+02,
      .           a5 = -3.066479806614716d+01, 
      .           a6 = 2.506628277459239d+00)
-	parameter (b1 = -5.447609879822406d+01, 
+        parameter (b1 = -5.447609879822406d+01, 
      .           b2 = 1.615858368580409d+02,
      .           b3 = -1.556989798598866d+02, 
      .           b4 = 6.680131188771972d+01,
      .           b5 = -1.328068155288572d+01)
-	parameter (c1 = -7.784894002430293d-03, 
+        parameter (c1 = -7.784894002430293d-03, 
      .           c2 = -3.223964580411365d-01,
      .           c3 = -2.400758277161838d+00, 
      .           c4 = -2.549732539343734d+00,
      .           c5 =  4.374664141464968d+00, 
      .           c6 =  2.938163982698783d+00)
-	parameter (d1 =  7.784695709041462d-03, 
+        parameter (d1 =  7.784695709041462d-03, 
      .           d2 =  3.224671290700398d-01,
      .           d3 =  2.445134137142996d+00, 
      .           d4 =  3.754408661907416d+00)
 
 
 !  Define break-points.
-	plow  = 0.02425d0
-	phigh = 1.d0 - plow
+        plow  = 0.02425d0
+        phigh = 1.d0 - plow
 
 !  Initialize output array. Don't need this in Fortran
 !   z = zeros(size(p));
 
 !  Rational approximation for lower region:
-	if (p.gt. 0.d0 .and. p.lt.plow) then 
-	   q  = sqrt(-2*log(p))
+        if (p.gt. 0.d0 .and. p.lt.plow) then 
+           q  = sqrt(-2*log(p))
          z = (((((c1*q+c2)*q+c3)*q+c4)*q+c5)*q+c6)/
      .               ((((d1*q+d2)*q+d3)*q+d4)*q+1.d0)
 !  Rational approximation for central region:
@@ -84,22 +87,22 @@
 
 !  Case when P = 0: z = -inf, to create inf z =-1./0., 
 !     to create NaN's inf*inf.
-	z1=0.d0
-	if (p.eq.0.d0) then
-	   z = -1.d0/z1
-	endif
+        z1=0.d0
+        if (p.eq.0.d0) then
+           z = -1.d0/z1
+        endif
 
 ! Case when P = 1:, z=inf
-	if(p.eq.1.d0)then
+        if(p.eq.1.d0)then
          z = 1.d0/z1
-	endif
+        endif
 
 !  Cases when output will be NaN:
 !   k = p < 0 | p > 1 | isnan(p);
 ! usually inf*inf --> NaN's. 
-	if (p.lt.0.d0 .or. p.gt.1d0) then
+        if (p.lt.0.d0 .or. p.gt.1d0) then
          z = (1.d0/z1)**2
-	endif
+        endif
 
 !  The relative error of the approximation has absolute value less
 !  than 1.15e-9.  One iteration of Halley's rational method (third
@@ -114,12 +117,12 @@
 !!   k = 0 < p & p < 1;
 !	if (p.gt.0 .and. p.lt.1)then
 !         e = 0.5*(1.0 - erf_dp(-z/sqrt(2.))) - p          ! error
-!         u = e * sqrt(2*pi) * exp(z**2/2)       ! f(z)/df(z)
+!         u = e * sqrt(2*pi_dp) * exp(z**2/2)       ! f(z)/df(z)
 !         z = z - u/( 1 + z*u/2 )               ! Halley's method
 !	endif
 
 ! return z as double precision:
-	ltqnorm=z
+        ltqnorm=z
 
-	return
-	end
+        return
+        end function ltqnorm

@@ -103,16 +103,16 @@
 
 !       Output variables
 
-        real, intent(out)    :: aa(1:2*gr%nnzp,1:5)
-        real, intent(out)    :: dd(1:2*gr%nnzp)
-        real, intent(out)    :: al(1:2*gr%nnzp,1:2)
-        integer, intent(out) :: indx(1:2*gr%nnzp)
+        real, intent(out)      :: aa(1:2*gr%nnzp,1:5)
+        real, intent(out)      :: dd(1:2*gr%nnzp)
+        real, intent(out)      :: al(1:2*gr%nnzp,1:2)
+        integer, intent(out)   :: indx(1:2*gr%nnzp)
         logical, intent(inout) :: isValid
 
 
 !       Local constants
 
-        real, parameter    :: eps = 1.e-10
+!        real, parameter    :: eps = 1.e-10   ! in module constants
 
 !       Internal
 
@@ -365,13 +365,13 @@
 
           if ( iwpxp_bp > 0 ) then
             zm%x(:,iwpxp_bp) = zm%x(:,iwpxp_bp)
-     .      + g/T0 * 1.0 * xpthvp(:)
+     .      + grav/T0 * 1.0 * xpthvp(:)
             zm%n(:,iwpxp_bp) = zm%n(:,iwpxp_bp) + 1
           endif
 
           if ( iwpxp_pr3 > 0 ) then
             zm%x(:,iwpxp_pr3) = zm%x(:,iwpxp_pr3)
-     .      - g/T0 * C7 * xpthvp(:)
+     .      - grav/T0 * C7 * xpthvp(:)
             zm%n(:,iwpxp_pr3) = zm%n(:,iwpxp_pr3) + 1
           endif
         endif
@@ -413,7 +413,7 @@
 !         wpxp: time tendency and buoyancy
 
           dd(k_wpxp)
-     .    = g/T0 * (1.0-C7) * xpthvp(k)
+     .    = grav/T0 * (1.0-C7) * xpthvp(k)
           if (liter) dd(k_wpxp) = dd(k_wpxp) + wpxp(k) / dt
 
         enddo
