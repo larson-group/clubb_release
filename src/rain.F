@@ -51,7 +51,7 @@
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: mean_vol_rad
 
         ! Parameter
-!        LOGICAL, PARAMETER:: local_kk = .false.  ! moved to constants.F
+!        LOGICAL, PARAMETER:: local_kk = .false.  ! in constants.F
 
         ! Local variables
         REAL, DIMENSION(1:gr%nnzp):: rvm          ! water vapor mixing ratio; kg/kg
@@ -736,7 +736,7 @@
         ! Vince Larson skipped IF to simplify subroutine.  3 May 2005.  
         ! Then only the final ELSEIF and below is called.
 !        IF (ss > 0.0) THEN
-        IF ( .true. ) THEN
+        IF (-1.0 > 0.0) THEN
 
            scc = (s/ss) + corr_rcrr_G*beta_exp*SQRT(sig2_rr_G)
      .                  + corr_rcNr_G*gamma_exp*SQRT(sig2_Nr_G)
@@ -1367,11 +1367,10 @@
 !       Output:  PD --- Dv(x)
 !       Routine called: GAMMA for computing âx)
 !       ===================================================
-        USE CONSTANTS, ONLY: PI_DP
+
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
         EPS=1.0D-15
-!        PI=3.141592653589793D0
-        PI=PI_DP
+        PI=3.141592653589793D0
         SQ2=DSQRT(2.0D0)
         EP=DEXP(-.25D0*X*X)
         VA0=0.5D0*(1.0D0-VA)
@@ -1420,10 +1419,9 @@
 !             (1) VVLA for computing Vv(x) for large |x|
 !             (2) GAMMA for computing âx)
 !       ====================================================
-        USE CONSTANTS, ONLY: PI_DP
+
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-!        PI=3.141592653589793D0
-        PI=PI_DP
+        PI=3.141592653589793D0
         EPS=1.0D-12
         EP=DEXP(-.25*X*X)
         A0=DABS(X)**VA*EP
@@ -1459,10 +1457,8 @@
 !             (2) GAMMA for computing âx)
 !       ===================================================
 
-        USE CONSTANTS, ONLY: PI_DP
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-!        PI=3.141592653589793D0
-        PI=PI_DP
+        PI=3.141592653589793D0
         EPS=1.0D-12
         QE=DEXP(0.25*X*X)
         A0=DABS(X)**(-VA-1.0D0)*DSQRT(2.0D0/PI)*QE
@@ -1494,11 +1490,10 @@
 !                       ( x is not equal to 0,-1,-2,úú
 !       Output:  GA --- âx)
 !       ==================================================
-        USE CONSTANTS, ONLY: PI_DP
+
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
         DIMENSION G(26)
-!        PI=3.141592653589793D0
-        PI=PI_DP
+        PI=3.141592653589793D0
         IF (X.EQ.INT(X)) THEN
            IF (X.GT.0.0D0) THEN
               GA=1.0D0
