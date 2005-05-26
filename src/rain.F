@@ -9,7 +9,7 @@
      .                   diff_rrm, subs_rrm, Vr, mean_vol_rad,
 ! LH Kessler autoconversion.  Vince Larson 22 May 2005:
      .                   AKm_est, AKm, 
-     .                   runtype )
+     .                   runtype, isValid )
 
 
         USE grid_class
@@ -97,6 +97,8 @@
         REAL, DIMENSION(1:gr%nnzp), INTENT(IN) :: AKm_est
 ! Analytic calculation of Kessler autoconversion       Vince Larson 22 May 2005
         REAL, DIMENSION(1:gr%nnzp), INTENT(IN) :: AKm
+! Whether this is valid
+        LOGICAL, INTENT(INOUT)                    :: isValid
 
 
 ! DESCRIPTION
@@ -365,10 +367,13 @@
 
 !       solve tridiagonal systems
 
-        call tridag(aa, bb, cc, dd, rrm, gr%nnzp)
+        call tridag(aa, bb, cc, dd, rrm, gr%nnzp, isValid)
 
-        call tridag(oo, pp, qq, rr, Nrm, gr%nnzp)
-
+        call tridag(oo, pp, qq, rr, Nrm, gr%nnzp, isValid)
+        if (.not. isValid ) then
+          print *, "rain: tridag failed"
+          return
+        endif
 
 !       boundary conditions on results
 
