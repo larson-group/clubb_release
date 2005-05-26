@@ -660,7 +660,7 @@
      .                     diff_rrm, subs_rrm, Vr, mean_vol_rad,
 ! LH Kessler autoconversion.  Vince Larson 22 May 2005:
      .                     AKm_est, AKm,
-     .                     runtype )
+     .                     runtype, isValid )
 
                 rain_rate = ( rrm * Vr ) * ( 86400.0 * 1000.0 )  ! rate: mm/day
 
