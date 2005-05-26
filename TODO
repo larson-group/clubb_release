@@ -1,5 +1,2 @@
 May 24, 2005
 * Change the hoc subroutine to be seperate components
-* Lower the amount of time spent in GAMMA( ) of rain.F or optimize the
-  subroutine.
-
