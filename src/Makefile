@@ -33,6 +33,8 @@ OBJS	= constants.o arrays.o endian.o outputgrads.o grid.o statistics.o \
 
 OBJS90	= nrtype.o nr.o nrutil.o ran_state.o ran1.o amebsa.o amoeba.o
 
+POLPAK  = polpak.o
+
 TARGETS = hoc_tuner.o hoc_standalone.o compare_runs.o
 
 # Target
@@ -44,33 +46,38 @@ $(OBJS):
 $(OBJS90):
 	$(FC) $(FCFLAGS) -c $*.f90 
 
+$(POLPAK):
+	$(FC) $(FCFLAGS) -c $*.f90
+
 $(TARGETS):
 	$(FC) $(FCFLAGS) -c $*.F
 
 
-hoc_tuner:	$(OBJS90) $(OBJS) $(TARGETS)
-		$(FC) $(LDFLAGS) -o hoc_tuner \
-		$(OBJS90) $(OBJS) $@.o
 
-hoc_standalone: $(OBJS) $(TARGETS)
+hoc_tuner:	$(POLPAK) $(OBJS90) $(OBJS) $(TARGETS)
+		$(FC) $(LDFLAGS) -o hoc_tuner \
+		$(POLPAK) $(OBJS90) $(OBJS) $@.o
+
+hoc_standalone: $(POLPAK) $(OBJS) $(TARGETS)
 	        $(FC) $(LDFLAGS) -o hoc_standalone \
-                $(OBJS) $@.o 
+                $(POLPAK) $(OBJS) $@.o 
 
 int2txt:	
 		$(FC) $(FCFLAGS) -c $@.f90
 		$(FC) $(LDFLAGS) $@.o -o int2txt
 
-compare_runs:	$(OBJS) $(TARGETS)
-		$(FC) $(OBJS) $(LDFLAGS) $@.o -o compare_runs
+compare_runs:	$(POLPAK) $(OBJS) $(TARGETS)
+		$(FC) $(POLPAK) $(OBJS) $(LDFLAGS) $@.o -o compare_runs
 
 clean: 
 	-rm -f *.o *.mod
 
 # Dependencies
 
+polpak.o      : polpak.f90
 endian.o      : endian.F
 constants.o   : constants.F
-rain.o        : rain.F 
+rain.o        : rain.F polpak.f90
 outputgrads.o : endian.F outputgrads.F
 arrays.o      : arrays.F constants.F
 inputgrads.o  : endian.F inputgrads.F
