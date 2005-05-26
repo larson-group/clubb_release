@@ -26,10 +26,11 @@
         real, parameter :: T0    = 300.     ! Reference temperature
         real, parameter :: alpha = 1. / T0  ! Buoyancy factor
 
-        integer, parameter :: NLM    = 100
+        integer, parameter   :: NLM    = 100
 
-        real, parameter      :: emin = 1.e-6
-        real, parameter      :: vonk =  0.4   ! von Karmans constant
+        real, parameter      :: emin   = 1.e-6
+        real, parameter      :: vonk   =  0.4   ! von Karmans constant
+        real, parameter      :: rho_lw = 1000. ! density of liquid water; kg/m^3
 
 !       Logical flags
         logical, parameter   :: LH_on    = .false.  ! latin hypercube calc

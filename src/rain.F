@@ -424,7 +424,8 @@
         LOGICAL, INTENT(IN):: local_kk
         REAL, INTENT(OUT):: Vr, VNr, mean_vol_rad
 
-        REAL, PARAMETER:: rho_lw = 1000.0 ! density of liquid water; kg/m^3
+!       Added to constants.F
+!        REAL, PARAMETER:: rho_lw = 1000.0 ! density of liquid water; kg/m^3
 
         ! Lognormal Distribution Variables.
         REAL:: Nrm_kg
@@ -559,8 +560,8 @@
         REAL:: u_rr_G, u_Nr_G
         REAL:: sig2_rr_G, sig2_Nr_G
         REAL:: corr_rcrr_G, corr_rcNr_G, corr_rrNr_G
-
-        REAL, PARAMETER:: rho_lw = 1000.0 ! density of liquid water; kg/m^3
+!       Now in constants.F
+!        REAL, PARAMETER:: rho_lw = 1000.0 ! density of liquid water; kg/m^3
         REAL, PARAMETER:: C_evap = 0.86*0.2 ! COAMPS value of
                                             ! ratio of drizzle drop mean 
                                             ! geometric radius to drizzle drop
@@ -703,7 +704,8 @@
 
         DOUBLE PRECISION:: scc, gamma_in, gamma_out, Dv_order, test
 
-        REAL, PARAMETER:: rho_lw = 1000.0 ! density of liquid water; kg/m^3
+!       Now in constants.F
+!        REAL, PARAMETER:: rho_lw = 1000.0 ! density of liquid water; kg/m^3
         REAL, PARAMETER:: C_evap = 0.86*0.2 ! COAMPS value of
                                             ! ratio of drizzle drop mean 
                                             ! geometric radius to drizzle drop
@@ -886,8 +888,8 @@
         REAL:: Ka, Dv
         REAL:: Fk, Fd
         REAL:: es, rs, Celsius
-
-        REAL, PARAMETER:: rho_lw = 1000.0 ! density of liquid water; kg/m^3
+!       Now in constants.F
+!        REAL, PARAMETER:: rho_lw = 1000.0 ! density of liquid water; kg/m^3
 
         Celsius = Temp - 273.16
 
@@ -994,7 +996,8 @@
         REAL, INTENT(IN):: auto_rrm, rhot
         REAL:: autoconv_Nrm
 
-        REAL, PARAMETER:: rho_lw = 1000.0 ! density of liquid water; kg/m^3
+!        now in constants.F
+!        REAL, PARAMETER:: rho_lw = 1000.0 ! density of liquid water; kg/m^3
 ! Vince Larson set r_0=28mum to agree with COAMPS-LES formula. 15 April 2005
 !        REAL, PARAMETER:: r_0 = 25.0e-6   ! Assumed radius of all new drops; m.
         REAL, PARAMETER:: r_0 = 28.0e-6   ! Assumed radius of all new drops; m.
