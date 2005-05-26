@@ -42,10 +42,10 @@
 
         logical                :: error           ! set, never used
 
-        namelist /compare_runs/ les_comparison, file1, file2, file3, t
+        namelist /compare/ les_comparison, file1, file2, file3, t
 
         open ( 10, file="compare_runs.in", status='old' )
-        read ( 10, nml = compare_runs )
+        read ( 10, nml = compare )
         
         hoc_variables(1)  = "rcm"
         hoc_variables(2)  = "rtm" 
