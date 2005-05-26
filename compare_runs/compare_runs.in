@@ -5,13 +5,13 @@
 !  t(1), t(2) ... are time intervals, in ordered pairs of the 
 !    first and last time step in the interval to be averaged.
 
-&compare_runs
-les_comparison = .true.
-file1 = "../standalone/Results_v100b/bomex_zt.ctl"
-file2 = "../tune/bomex_case.ctl"
-file3 = "../standalone/Results_v2.1_20041006/bomex_zt.ctl"
+&compare
+les_comparison = .false.
+file1 = "../standalone/dycoms2_rf02_d_zt.ctl"
+file2 = "../standalone/Results_05_26_05/dycoms2_rf02_d_zt.ctl"
+file3 = "../standalone/Results_2_1/dycoms2_rf02_d_zt.ctl"
 t(1)  = 1
 t(2)  = 1
 t(3)  = 60
-t(4)  = 179
+t(4)  = 360
 /
