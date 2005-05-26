@@ -8,7 +8,7 @@
      .                   accr_rrm, cond_Nrm, auto_Nrm, sed_rrm, 
      .                   diff_rrm, subs_rrm, Vr, mean_vol_rad,
 ! LH Kessler autoconversion.  Vince Larson 22 May 2005:
-     .                   LH_on, AKm_est, AKm, 
+     .                   AKm_est, AKm, 
      .                   runtype )
 
 
@@ -91,7 +91,8 @@
 
 ! Logical flag: LH_on = .true. if Latin hypercube sampling is on.
 ! Vince Larson 22 May 2005
-        LOGICAL, INTENT(IN) :: LH_on
+! Now occurs in constants.F
+!        LOGICAL, INTENT(IN) :: LH_on
 ! Latin hypercube estimate of Kessler autoconversion   Vince Larson 22 May 2005
         REAL, DIMENSION(1:gr%nnzp), INTENT(IN) :: AKm_est
 ! Analytic calculation of Kessler autoconversion       Vince Larson 22 May 2005
