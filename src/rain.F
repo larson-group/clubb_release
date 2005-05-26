@@ -214,7 +214,7 @@
            ! Supersaturation
 !           Supsat(k) = (e/es(k)) - 1.0
 
-           CALL sed_velocity( rhot(k), Nrm(k), rrm(k), local_kk,
+           CALL sed_velocity( rhot(k), Nrm(k), rrm(k),
      .                        Vr(k), VNr(k), mean_vol_rad(k) )
 
         ENDDO
@@ -301,13 +301,13 @@
            ! equation, dd, for rain water mixing ratio, rrm.
 
            cond_rrm(k) = cond_evap_rrm( Temp(k), p(k), rhot(k),
-     .                     local_kk, a, thl1, thl2, rc1, rc2, s1, s2,
+     .                     a, thl1, thl2, rc1, rc2, s1, s2,
      .                     ss1, ss2, es(k), Supsat(k), Nrm(k), rrm(k) )
 
 ! Vince Larson added option to call LH sampled Kessler autoconversion.
 ! 22 May 2005
 !           auto_rrm(k) = autoconv_rrm( rcm(k), conc_cloud(k), rhot(k),
-!     .                        local_kk, a, s1, s2, ss1, ss2, rc1, rc2 )
+!     .                        a, s1, s2, ss1, ss2, rc1, rc2 )
            if ( LH_on ) then
 
 !              auto_rrm(k) = AKm_est(k)
@@ -316,12 +316,12 @@
            else
 
               auto_rrm(k) = autoconv_rrm( rcm(k), conc_cloud(k), 
-     .               rhot(k), local_kk, a, s1, s2, ss1, ss2, rc1, rc2 )
+     .               rhot(k), a, s1, s2, ss1, ss2, rc1, rc2 )
 
            endif
 ! End Vince Larson's addition
 
-           accr_rrm(k) = accretion_rrm( rcm(k), rrm(k), local_kk, 
+           accr_rrm(k) = accretion_rrm( rcm(k), rrm(k),
      .                             a, s1, s2, ss1, ss2, rc1, rc2 )
 
            ! Enter the entire dd array, which is the RHS of the equation.
@@ -413,7 +413,7 @@
 
 !------------------------------------------------------------------------
 
-        SUBROUTINE sed_velocity( rhot, Nrm, rrm, local_kk,
+        SUBROUTINE sed_velocity( rhot, Nrm, rrm, 
      .                           Vr, VNr, mean_vol_rad )
 
         USE grid_class
@@ -422,7 +422,7 @@
         IMPLICIT NONE
 
         REAL, INTENT(IN):: rhot, Nrm, rrm
-        LOGICAL, INTENT(IN):: local_kk
+!        LOGICAL, INTENT(IN):: local_kk
         REAL, INTENT(OUT):: Vr, VNr, mean_vol_rad
 
 !       Added to constants.F
@@ -542,7 +542,7 @@
 
 !------------------------------------------------------------------------
 
-        FUNCTION cond_evap_rrm(Temp, press, rhot, local_kk, a, 
+        FUNCTION cond_evap_rrm(Temp, press, rhot, a, 
      .                         thl1, thl2, rc1, rc2, s1, s2, ss1, ss2,
      .                         es, Supsat, Nrm, rrm)
 
@@ -553,7 +553,7 @@
         REAL, INTENT(IN):: Temp, press, rhot
         REAL, INTENT(IN):: a, thl1, thl2, rc1, rc2, s1, s2, ss1, ss2
         REAL, INTENT(IN):: es, Supsat, Nrm, rrm
-        LOGICAL, INTENT(IN):: local_kk
+!        LOGICAL, INTENT(IN):: local_kk
         REAL:: cond_evap_rrm
 
         REAL:: Nrm_kg
@@ -913,14 +913,14 @@
 
 !------------------------------------------------------------------------
 
-        FUNCTION autoconv_rrm( rcm, conc_cloud, rhot, local_kk,
+        FUNCTION autoconv_rrm( rcm, conc_cloud, rhot,
      .                           a, s1, s2, ss1, ss2, rc1, rc2 )
-
+        USE constants
 
         IMPLICIT NONE
 
         REAL, INTENT(IN):: rcm, conc_cloud, rhot
-        LOGICAL, INTENT(IN):: local_kk
+!        LOGICAL, INTENT(IN):: local_kk
         REAL, INTENT(IN):: a, s1, s2, ss1, ss2, rc1, rc2
         REAL:: autoconv_rrm
 
@@ -1011,14 +1011,15 @@
 
 !------------------------------------------------------------------------
 
-        FUNCTION accretion_rrm( rcm, rrm, local_kk, 
+        FUNCTION accretion_rrm( rcm, rrm,
      .                          a, s1, s2, ss1, ss2, rc1, rc2 )
 
+        USE constants
 
         IMPLICIT NONE
 
         REAL, INTENT(IN):: rcm, rrm
-        LOGICAL, INTENT(IN):: local_kk
+!        LOGICAL, INTENT(IN):: local_kk
         REAL, INTENT(IN):: a, s1, s2, ss1, ss2, rc1, rc2
 
         REAL:: accretion_rrm
