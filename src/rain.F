@@ -693,7 +693,9 @@
         ! External functions
 
         real rsat
+        real(kind=8) gamma
         external rsat
+        external gamma
 
         REAL, INTENT(IN):: thl_pl, press, rc_pl, s, ss
         REAL, INTENT(IN):: alpha_exp, beta_exp, gamma_exp
@@ -756,8 +758,8 @@
            IF ( test >= 0.0d0 .AND. test < limit ) THEN
 
               gamma_in = alpha_exp + 1.0
-
-              CALL GAMMA( gamma_in, gamma_out )
+              gamma_out = GAMMA( gamma_in )
+!              CALL GAMMA( gamma_in, gamma_out )
 
               NLL_PDF = 
                  ! Factor 1
@@ -1086,6 +1088,9 @@
 
         IMPLICIT NONE
 
+!       New gamma function in polpak
+        real(kind=8) gamma
+        external gamma
         REAL, INTENT(IN):: s, ss, alpha_exp, u, sig2
         REAL, INTENT(IN):: beta_exp, corr, rc_pl
         REAL:: NL_PDF
@@ -1165,8 +1170,8 @@
            IF ( test >= 0.0d0 .AND. test < limit ) THEN
 
               gamma_in = alpha_exp + 1.0
-
-              CALL GAMMA( gamma_in, gamma_out )
+              gamma_out = GAMMA( gamma_in )
+!              CALL GAMMA( gamma_in, gamma_out )
 
               NL_PDF = ( (1.0/SQRT(2.0*pi))*(ss**alpha_exp) )
      .                * EXP( beta_exp*u
@@ -1374,6 +1379,9 @@
 !       ===================================================
 
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+!       New gamma function in polpak.f90
+        REAL(KIND=8) GAMMA
+        EXTERNAL GAMMA
         EPS=1.0D-15
         PI=3.141592653589793D0
         SQ2=DSQRT(2.0D0)
@@ -1386,19 +1394,23 @@
               IF (VA0.LE.0.0.AND.VA0.EQ.INT(VA0)) THEN
                  PD=0.0D0
               ELSE
-                 CALL GAMMA(VA0,GA0)
+!                 CALL GAMMA(VA0,GA0)
+                 GA0 = GAMMA( VA0 )
                  PD=DSQRT(PI)/(2.0D0**(-.5D0*VA)*GA0)
               ENDIF
            ELSE
-              CALL GAMMA(-VA,G1)
+!              CALL GAMMA(-VA,G1)
+              G1 = GAMMA( -VA )
               A0=2.0D0**(-0.5D0*VA-1.0D0)*EP/G1
               VT=-.5D0*VA
-              CALL GAMMA(VT,G0)
+!              CALL GAMMA(VT,G0)
+              G0 = GAMMA( VT ) 
               PD=G0
               R=1.0D0
               DO 10 M=1,250
                  VM=.5D0*(M-VA)
-                 CALL GAMMA(VM,GM)
+!                 CALL GAMMA(VM,GM)
+                 GM = GAMMA( VM )
                  R=-R*SQ2*X/M
                  R1=GM*R
                  PD=PD+R1
@@ -1426,6 +1438,9 @@
 !       ====================================================
 
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+!       New gamma function in polpak.f90
+        REAL(KIND=8) GAMMA
+        EXTERNAL GAMMA
         PI=3.141592653589793D0
         EPS=1.0D-12
         EP=DEXP(-.25*X*X)
@@ -1441,7 +1456,8 @@
         IF (X.LT.0.0D0) THEN
             X1=-X
             CALL VVLA(VA,X1,VL)
-            CALL GAMMA(-VA,GL)
+            GL = GAMMA( -VA )
+!            CALL GAMMA(-VA,GL)
             PD=PI*VL/GL+DCOS(PI*VA)*PD
         ENDIF
         RETURN
@@ -1463,6 +1479,9 @@
 !       ===================================================
 
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+!       New gamma function in polpak.f90
+        REAL(KIND=8) GAMMA
+        EXTERNAL GAMMA
         PI=3.141592653589793D0
         EPS=1.0D-12
         QE=DEXP(0.25*X*X)
@@ -1478,69 +1497,71 @@
         IF (X.LT.0.0D0) THEN
            X1=-X
            CALL DVLA(VA,X1,PDL)
-           CALL GAMMA(-VA,GL)
+           GL = GAMMA( -VA )
+!           CALL GAMMA(-VA,GL)
            DSL=DSIN(PI*VA)*DSIN(PI*VA)
            PV=DSL*GL/PI*PDL-DCOS(PI*VA)*PV
         ENDIF
         RETURN
         END
-
 !------------------------------------------------------------------------
-
-        SUBROUTINE GAMMA(X,GA)
-
+!       Now occurs as part of the function in polpak.f90
+!------------------------------------------------------------------------
+!
+!        SUBROUTINE GAMMA(X,GA)
+!
 !       ==================================================
 !       Purpose: Compute gamma function âx)
 !       Input :  x  --- Argument of âx)
 !                       ( x is not equal to 0,-1,-2,úú
 !       Output:  GA --- âx)
 !       ==================================================
-
-        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-        DIMENSION G(26)
-        PI=3.141592653589793D0
-        IF (X.EQ.INT(X)) THEN
-           IF (X.GT.0.0D0) THEN
-              GA=1.0D0
-              M1=X-1
-              DO 10 K=2,M1
-10               GA=GA*K
-           ELSE
-              GA=1.0D+300
-           ENDIF
-        ELSE
-           IF (DABS(X).GT.1.0D0) THEN
-              Z=DABS(X)
-              M=INT(Z)
-              R=1.0D0
-              DO 15 K=1,M
-15               R=R*(Z-K)
-              Z=Z-M
-           ELSE
-              Z=X
-           ENDIF
-           DATA G/1.0D0,0.5772156649015329D0,
-     .          -0.6558780715202538D0, -0.420026350340952D-1,
-     .          0.1665386113822915D0,-.421977345555443D-1,
-     .          -.96219715278770D-2, .72189432466630D-2,
-     .          -.11651675918591D-2, -.2152416741149D-3,
-     .          .1280502823882D-3, -.201348547807D-4,
-     .          -.12504934821D-5, .11330272320D-5,
-     .          -.2056338417D-6, .61160950D-8,
-     .          .50020075D-8, -.11812746D-8,
-     .          .1043427D-9, .77823D-11,
-     .          -.36968D-11, .51D-12,
-     .          -.206D-13, -.54D-14, .14D-14, .1D-15/
-           GR=G(26)
-           DO 20 K=25,1,-1
-20            GR=GR*Z+G(K)
-           GA=1.0D0/(GR*Z)
-           IF (DABS(X).GT.1.0D0) THEN
-              GA=GA*R
-              IF (X.LT.0.0D0) GA=-PI/(X*GA*DSIN(PI*X))
-           ENDIF
-        ENDIF
-        RETURN
-        END
-
+!
+!        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+!        DIMENSION G(26)
+!        PI=3.141592653589793D0
+!        IF (X.EQ.INT(X)) THEN
+!           IF (X.GT.0.0D0) THEN
+!              GA=1.0D0
+!              M1=X-1
+!              DO 10 K=2,M1
+!10               GA=GA*K
+!           ELSE
+!              GA=1.0D+300
+!           ENDIF
+!        ELSE
+!           IF (DABS(X).GT.1.0D0) THEN
+!              Z=DABS(X)
+!              M=INT(Z)
+!              R=1.0D0
+!              DO 15 K=1,M
+!15               R=R*(Z-K)
+!              Z=Z-M
+!           ELSE
+!              Z=X
+!           ENDIF
+!           DATA G/1.0D0,0.5772156649015329D0,
+!     .          -0.6558780715202538D0, -0.420026350340952D-1,
+!     .          0.1665386113822915D0,-.421977345555443D-1,
+!     .          -.96219715278770D-2, .72189432466630D-2,
+!     .          -.11651675918591D-2, -.2152416741149D-3,
+!     .          .1280502823882D-3, -.201348547807D-4,
+!     .          -.12504934821D-5, .11330272320D-5,
+!     .          -.2056338417D-6, .61160950D-8,
+!     .          .50020075D-8, -.11812746D-8,
+!     .          .1043427D-9, .77823D-11,
+!     .          -.36968D-11, .51D-12,
+!     .          -.206D-13, -.54D-14, .14D-14, .1D-15/
+!           GR=G(26)
+!           DO 20 K=25,1,-1
+!20            GR=GR*Z+G(K)
+!           GA=1.0D0/(GR*Z)
+!           IF (DABS(X).GT.1.0D0) THEN
+!              GA=GA*R
+!              IF (X.LT.0.0D0) GA=-PI/(X*GA*DSIN(PI*X))
+!           ENDIF
+!        ENDIF
+!        RETURN
+!        END
+!
 !------------------------------------------------------------------------
