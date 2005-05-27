@@ -37,9 +37,10 @@ POLPAK  = polpak.o
 
 TARGETS = hoc_tuner.o hoc_standalone.o compare_runs.o
 
-# Target
+# Targets
 all:	hoc_tuner hoc_standalone int2txt compare_runs
 
+# Rules
 $(OBJS):
 	$(FC) $(FCFLAGS) -c $*.F
 
@@ -51,8 +52,6 @@ $(POLPAK):
 
 $(TARGETS):
 	$(FC) $(FCFLAGS) -c $*.F
-
-
 
 hoc_tuner:	$(POLPAK) $(OBJS90) $(OBJS) $(TARGETS)
 		$(FC) $(LDFLAGS) -o hoc_tuner \
@@ -69,8 +68,14 @@ int2txt:
 compare_runs:	$(POLPAK) $(OBJS) $(TARGETS)
 		$(FC) $(POLPAK) $(OBJS) $(LDFLAGS) $@.o -o compare_runs
 
+install: 
+	-cp int2txt ../tune/ 
+	-cp hoc_tuner ../tune/
+	-cp hoc_standalone ../standalone/
+	-cp compare_runs ../compare_runs/
 clean: 
 	-rm -f *.o *.mod
+
 
 # Dependencies
 
