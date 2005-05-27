@@ -1,8 +1,11 @@
+!------------------------------------------------------------------------
 ! This module contains definitions of all prognostic and diagnostic
 ! arrays used in the single column model, as well as subroutine
 ! to allocate and deallocate them.
-!
+!------------------------------------------------------------------------
         module model_arrays
+
+        implicit none
 
 ! Prognostic variables
 
@@ -170,7 +173,7 @@
 
 !------------------------------------------------------------------------
 ! Subroutine to allocate variables defined in module global
-!
+!------------------------------------------------------------------------
 !        subroutine allocate_model_arrays( nzmax )
         subroutine allocate_model_arrays( nzmax, n, nt, d ) ! Add LH vars
 
@@ -456,7 +459,8 @@ c Diagnostic variables
 
 !------------------------------------------------------------------------
 ! Subroutine to initialize variables defined in module global
-!
+!------------------------------------------------------------------------
+
         subroutine initialize_model_arrays( )
 
         use constants
@@ -466,19 +470,19 @@ c Diagnostic variables
 
 c Prognostic variables
 
-        um = 0.                ! u wind
-        vm = 0.                ! v wind
+        um           = 0.      ! u wind
+        vm           = 0.      ! v wind
         thlm_forcing = 0.
-        rtm_forcing = 0.
-        thlm = 0.              ! liquid potential temperature
-        rtm = 0.               ! total water mixing ratio
-        wp2 = 2./3. * emin     ! w'^2
-        rtp2 = 0.              ! rt'^2
-        thlp2 = 0.             ! thl'^2
-        wprtp = 0.             ! w'rt'
-        wpthlp = 0.            ! w'thl'
-        rtpthlp = 0.           ! rt'thl'
-        wp3 = 0.               ! w'^3
+        rtm_forcing  = 0.
+        thlm         = 0.      ! liquid potential temperature
+        rtm          = 0.      ! total water mixing ratio
+        wp2          = 2./3. * emin  ! w'^2
+        rtp2         = 0.      ! rt'^2
+        thlp2        = 0.      ! thl'^2
+        wprtp        = 0.      ! w'rt'
+        wpthlp       = 0.      ! w'thl'
+        rtpthlp      = 0.      ! rt'thl'
+        wp3          = 0.      ! w'^3
 
 c Tendency arrays for prognostic variables
 
@@ -487,38 +491,38 @@ c Tendency arrays for prognostic variables
 
 c Diagnostic variables
 
-!        Sc = 0.        ! PDF width parameter
+!        Sc  = 0.        ! PDF width parameter
         Scm = 0.       ! PDF width parameter: m point
         Sct = 0.       ! PDF width parameter: t point
-        ug = 0.        ! u geostrophic wind
-        vg = 0.        ! v geostrophic wind
+        ug  = 0.        ! u geostrophic wind
+        vg  = 0.        ! v geostrophic wind
 
         wmt = 0.       ! imposed large scale w: t point
         wmm = 0.       ! imposed large scale w: m point
  
-        p = 0.         ! pressure
+        p     = 0.         ! pressure
         exner = 0.     ! exner
-        rhot = 0.
-        rhom = 0.
+        rhot  = 0.
+        rhom  = 0.
 
-        cf = 0.        ! cloud fraction
-        thvm = 0.      ! virtual potential temperature
-        rcm = 0.       ! liquid water mixing ratio
-        rsm = 0.       ! saturation mixing ratio  ! Brian
-        rrm = 0.       ! rain water mixing ratio ! Brian
-        Nrm = 0.       ! rain droplet number conc. ! Brian
-        cond_rrm = 0.  ! condensation factor in rrm ! Brian
-        auto_rrm = 0.  ! autoconversion factor in rrm ! Brian
-        accr_rrm = 0.  ! accretion factor in rrm ! Brian
-        cond_Nrm = 0.  ! condensation factor in Nrm ! Brian
-        auto_Nrm = 0.  ! autoconversion factor in Nrm ! Brian
-        sed_rrm = 0.   ! sedimentation output for rrm ! Brian
-        diff_rrm = 0.  ! diffusion output for rrm ! Brian
-        subs_rrm = 0.  ! subsidence output for rrm ! Brian
-        Vr = 0.        ! sedimentation velocity of rain ! Brian
-        mean_vol_rad = 0. ! rain drop mean volume radius ! Brian
-        rain_rate = 0. ! rainfall rate in mm/day ! Brian
-        F_precip = 0.  ! precipitation flux in W/m^2 ! Brian
+        cf           = 0.   ! cloud fraction
+        thvm         = 0.   ! virtual potential temperature
+        rcm          = 0.   ! liquid water mixing ratio
+        rsm          = 0.   ! saturation mixing ratio  ! Brian
+        rrm          = 0.   ! rain water mixing ratio ! Brian
+        Nrm          = 0.   ! rain droplet number conc. ! Brian
+        cond_rrm     = 0.   ! condensation factor in rrm ! Brian
+        auto_rrm     = 0.   ! autoconversion factor in rrm ! Brian
+        accr_rrm     = 0.   ! accretion factor in rrm ! Brian
+        cond_Nrm     = 0.   ! condensation factor in Nrm ! Brian
+        auto_Nrm     = 0.   ! autoconversion factor in Nrm ! Brian
+        sed_rrm      = 0.   ! sedimentation output for rrm ! Brian
+        diff_rrm     = 0.   ! diffusion output for rrm ! Brian
+        subs_rrm     = 0.   ! subsidence output for rrm ! Brian
+        Vr           = 0.   ! sedimentation velocity of rain ! Brian
+        mean_vol_rad = 0.   ! rain drop mean volume radius ! Brian
+        rain_rate    = 0.   ! rainfall rate in mm/day ! Brian
+        F_precip     = 0.   ! precipitation flux in W/m^2 ! Brian
 
         Frad = 0.
 
@@ -535,11 +539,11 @@ c Diagnostic variables
 
         ! Third order moments
 
-        wpthlp2 = 0.
-        wp2thlp = 0.
-        wprtp2 = 0.
-        wp2rtp = 0.
-        wp2rcp = 0.
+        wpthlp2   = 0.
+        wp2thlp   = 0.
+        wprtp2    = 0.
+        wp2rtp    = 0.
+        wp2rcp    = 0.
         wprtpthlp = 0.
 
         ! Fourth order moments
@@ -553,15 +557,15 @@ c Diagnostic variables
         thlpthvp = 0.
         wp2thvp  = 0.
 
-        Kht = 0.
-        Khm = 0.
+        Kht      = 0.
+        Khm      = 0.
 
-        em     = 0.
-        Lscale = 0.
-        lup    = 0.
-        ldown  = 0.
-        taut   = 0.
-        taum   = 0.
+        em       = 0.
+        Lscale   = 0.
+        lup      = 0.
+        ldown    = 0.
+        taut     = 0.
+        taum     = 0.
 
 ! Temporary array
 
@@ -573,15 +577,15 @@ c Diagnostic variables
         pdf_parms = 0.
 
 ! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
-        AKm_est   = 0.   ! Kessler ac estimate
-        AKm       = 0.   ! Exact Kessler ac
-        AKstd     = 0.   ! St dev of exact Kessler ac
-        AKstd_cld = 0.   ! St dev of exact w/in cloud Kessler ac
-        rcm_est   = 0.   ! Monte Carlo rcm estimate
-        AKm_rcm   = 0.   ! Kessler ac based on rcm
-        AKm_rcc   = 0.   ! Kessler ac based on rcm/cf
-        p_height_time = 0.  ! matrix of rand ints
-        p_matrix = 0.    ! rand matrix that's fed to closure
+        AKm_est       = 0.   ! Kessler ac estimate
+        AKm           = 0.   ! Exact Kessler ac
+        AKstd         = 0.   ! St dev of exact Kessler ac
+        AKstd_cld     = 0.   ! St dev of exact w/in cloud Kessler ac
+        rcm_est       = 0.   ! Monte Carlo rcm estimate
+        AKm_rcm       = 0.   ! Kessler ac based on rcm
+        AKm_rcc       = 0.   ! Kessler ac based on rcm/cf
+        p_height_time = 0.   ! matrix of rand ints
+        p_matrix      = 0.   ! rand matrix that's fed to closure
 ! End of variables for Latin hypercube.
 
         return

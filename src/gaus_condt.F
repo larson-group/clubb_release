@@ -1,20 +1,22 @@
-
+!----------------------------------------------------------------------
 ! Using Gaussian conditional distributions given s, 
 !     convert a standard, uncorrelated Gaussian to one with
 !     mean mu and covariance structure Sigma.  
 ! Follow M. E. Johnson, ``Multivariate Statistical Simulation," p50.
+
 ! Input: d = number of variates (normally=5) 
 !        std_normal = nxd matrix of n independent samples 
 !                     from d-variate standard normal distribution
 !        mu = d-dimensional column vector of means of Gaussian
 !        Sigma = dxd dimensional covariance matrix
 !        s_pt = value of Mellor's s
+
 ! Output: nonstd_normal = nxd matrix of n samples 
 !                         from d-variate normal distribution 
 !                         with mean mu and covariance structure Sigma
-
-      subroutine gaus_condt(n,d,std_normal,mu,Sigma,s_pt,
-     .                                nonstd_normal)
+!----------------------------------------------------------------------
+      subroutine gaus_condt( n, d, std_normal, mu, Sigma, s_pt,
+     .                       nonstd_normal )
       
       implicit none
 
@@ -53,11 +55,11 @@
 !    Sigma_twotwo - Sigma_twoone*Inverse(Sigma_oneone)*Sigma_onetwo]
 ! Here 'one' refers to given variables, 'two' refers to values to find. 
 ! Loop over variables t, w, N, rr:
-        do v=2,d
+        do v=2, d
 
          ! Means     
          mu_one(1:(v-1),1) = mu(1:(v-1),1)
-         mu_two = mu(v,1)
+         mu_two            = mu(v,1)
 
          ! Matrices used to compute variances  
          Sigma_twoone(1,1:(v-1)) = Sigma(v,1:(v-1))

@@ -319,7 +319,7 @@
           stop "Allocation of the random seed variable array failed"
         endif
 
-!------ ascii formatted, created by int2txt --------------------------
+!------ ascii formatted, created by int2txt ----------------------------
         open(unit=30, file='rand_seed.dat', action='read')
         do i=1, rand_size 
           read(30, *) rand_seed(i)
@@ -390,19 +390,19 @@
 
       real, intent(in), dimension(ndim) :: x_vector ! tuning vector
 
-!-------- les and hoc values over nz z-levels -------------------------
+!-------- les and hoc values over nz z-levels --------------------------
       real,dimension(:),allocatable     :: hoc_zl, les_zl
 
-!--------- largest value minus smallest value  of all zlvl ------------
+!--------- largest value minus smallest value  of all zlvl -------------
       real                              :: les_minmax
 
       logical                           :: error ! see if get_var failed
 
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 ! Output information every 10 iterations if stdout is enabled
 ! Amoeba's unusual calling convention makes this work less often than
 ! would be expected.
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       if (  results_stdout
      .    .and. modulo(iter, 10) .eq. 0 
      .    .and. .not. (iter .eq. 0) 
@@ -431,15 +431,15 @@
         write(*,*) "mu=          ", x_vector(20)
       endif
         
-!----Initialize the return value for funk ----------------------------
+!----Initialize the return value for funk -----------------------------
       err_sum = 0.
 
-!----Initialize the number of terms in the error sum------------------ 
+!----Initialize the number of terms in the error sum-------------------
       c_terms = 0
 
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !  Cycle through all the model cases specified for HOC
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       do c_run=1, c_total
  
       runfile = trim(run_name(c_run)) // "_hoc.in"
@@ -458,14 +458,14 @@
      .             x_vector(18), x_vector(19), x_vector(20),
      .             runfile, run_name(c_run), isValid, .false.)
 
-!-------------- Basic Sanity Check ------------------------------------
+!-------------- Basic Sanity Check -------------------------------------
 !      if (minval( x_vector ) .lt. 0. ) isValid = .FALSE.
 
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !  Checks if hoc has blown up, i.e. if hoc has set a variable to NaN, 
 !  or encountered a failure in subroutines tridag or bandec.  
 !  If it has, then return to amoeba with higher value than previously.
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       if ( .not. isValid ) then
         funk = 2 * maxval(err_array) - minval(err_array)
         if ( stdout_on_invalid ) then
@@ -476,22 +476,22 @@
         return
       endif
 
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !  Allocate the arrays for reading in the grads plot data
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       allocate( hoc_zl(hoc_nz(c_run)), les_zl(les_nz(c_run)), 
      .          stat = AllocateStatus)
       if ( AllocateStatus /= 0 ) then 
         stop "Allocation of z-level arrays in function funk failed"
       endif
 
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !  Start with first hoc & les variable, loop through and calculate the 
 !  mean squared difference for all the variables
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       do i=1, v_total
 
-!------Read in LES grads data for one variable, avgd over intervals ---
+!----- Read in LES grads data for one variable, avgd over intervals ----
       
         les_zl = grads_average_interval( les_stats_file(c_run), 
      .                                    hoc_nz(c_run),
@@ -499,20 +499,20 @@
      .                                    error )
         if ( error ) stop "oops, variable was invalid"
 
-!------Read in HOC grads data for one variable, avgd over intervals ---
+!----- Read in HOC grads data for one variable, avgd over intervals ----
         hoc_zl = grads_average_interval( hoc_stats_file,
      .                                   hoc_nz(c_run),
      .                                   time(c_run,:), hoc_v(i), 
      .                                   error )
         if ( error ) stop "oops, variable was invalid"
 
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !  Calculate the mean squared difference between hoc and LES variables.
 
 !  In order to deal with order of magnitude differences between
 !  variables, the err_sum equation has been modified to normalize the
 !  the values with respect to the maxval in les_zl.  dschanen 31 Jan 05
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 
         les_minmax = maxval(les_zl) - minval(les_zl)
 
@@ -520,12 +520,12 @@
 
         select case (hoc_nz(c_run))
           case (48, 75, 110, 147, 150)
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !  Due to hoc's lower starting point, we can only use
 !  (total number of z-levels) - 1 (a maximum of 74 for BOMEX).
 !  (Need to interpolate hoc to LES' levels.  Right now we just
 !   compare adjacent z levels.  Vince Larson 12 Jan 2005)
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
             do j = z_i(c_run), z_f(c_run)-1
               err_sum = err_sum + (  ( hoc_zl(j+1) - les_zl(j) ) 
      .                              / les_minmax  ) ** 2 
@@ -563,7 +563,7 @@
 
       end function funk
 
-!--------------------Output results to STDOUT -----------------------------
+!--------------------Output results to STDOUT --------------------------
       subroutine output_results_stdout
       
       implicit none
@@ -600,7 +600,7 @@
      .          ((init_err - min_err)/init_err * 100.), "%"
       end subroutine output_results_stdout
 
-!-------------------Output namelists to a formatted file ---------------------
+!----------------- Output namelists to a formatted file ----------------
       subroutine output_nml_tuner( results_f, x_vector )
 
       implicit none
@@ -612,14 +612,14 @@
       integer                   :: i       ! loop variable
       character                 :: i_c     ! loop variable character conversion
 
-!------- Open new file -------------------------------------------
+!------- Open new file -------------------------------------------------
       open(unit = 20, file=results_f, action="write",
      .     access="sequential")
       
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !  Write variables to results file 
 !  All this is based on the previous error.in, except the constants
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 
       write(20,*) "! Parameter file " // results_f
       write(20,*) "&stats"
@@ -710,12 +710,12 @@
       write(20,*) "mu_var = ", x_variance(20)
       write(20,*) "/"
 
-!------- Close new file -------------------------------------------
+!------- Close new file ------------------------------------------------
       close(20)
 
       end subroutine output_nml_tuner
 
-!-------------------Output namelists to a formatted file ---------------------
+!-------------------Output namelists to a formatted file ---------------
       subroutine output_nml_standalone ( results_f, x_vector )
 
       implicit none
@@ -727,14 +727,14 @@
       integer                   :: i       ! loop variable
       character                 :: i_c     ! loop variable character conversion
 
-!------- Open new file -------------------------------------------
+!------- Open new file -------------------------------------------------
       open(unit = 20, file=results_f, action="write",
      .     access="sequential")
       
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !  Write variables to namelist for standalone hoc. 
 !  All this is based on the previous error.in, except the constants
-!----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 
       write(20,*) "! Parameter file " // results_f
 
@@ -768,9 +768,10 @@
       write(20,*) "mu         = ",    x_vector(20)
       write(20,*) "/"
 
-!------- Close new file -------------------------------------------
+!------- Close new file ------------------------------------------------
       close(20)
 
       end subroutine output_nml_standalone
 
       end module error
+!-----------------------------------------------------------------------

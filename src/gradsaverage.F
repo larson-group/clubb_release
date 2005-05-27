@@ -2,7 +2,7 @@
 
       contains
 !----------------------------------------------------------------------
-!     Function GRADS_AVERAGE
+!     Function GRADS_AVERAGE( )
 !     Average a GRADS file variable over the interval t1 to t2
 !----------------------------------------------------------------------
       function grads_average( filename, nz, t1, t2, variable_name, 
@@ -74,10 +74,11 @@
 
       return
       end function grads_average
+
 !-------------------------------------------------------------------------
 !   Function GRADS_AVERAGE_INTERVAL
+!   Take several averages over an interval.
 !-------------------------------------------------------------------------
-
       function grads_average_interval( filename, nz, t, variable_name,
      .                                 error )
 
@@ -126,7 +127,7 @@
       end function grads_average_interval
 
 !-------------------------------------------------------------------------
-!   Function GRADS_ZLVL
+!   Function GRADS_ZLVL( )
 !   returns a scalar of the number of z-levels in a file
 !-------------------------------------------------------------------------
       integer function grads_zlvl( filename )
@@ -147,7 +148,7 @@
       call close_grads_read( fz )
 
       return
-      end function  grads_zlvl
+      end function grads_zlvl
 
 !-------------------------------------------------------------------------
       end module grads_common

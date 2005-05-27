@@ -1,8 +1,9 @@
 !------------------------------------------------------------------------
 ! This subroutine computes surface momentum fluxes using aerodynamic
 ! formulas.
-!
+!------------------------------------------------------------------------
         subroutine sfc_momentum_fluxes( u, v, upwp_sfc, vpwp_sfc )
+
         implicit none
 
 ! Parameter
@@ -37,7 +38,7 @@
 !------------------------------------------------------------------------
 ! This subroutine computes surface fluxes of heat and moisture using
 ! aerodynamic formulas.
-!
+!------------------------------------------------------------------------
         subroutine sfc_thermo_fluxes( u, v, Tsfc, psfc, thlair, rtair,
      +                                wpthlp_sfc, wprtp_sfc )
 
@@ -84,7 +85,7 @@
 !------------------------------------------------------------------------
 ! This subroutine computes estimate of the surface thermodynamic second
 ! order moments
-!
+!------------------------------------------------------------------------
         subroutine sfc_var( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc,
      +                      wp2_sfc, thlp2_sfc, rtp2_sfc, rtpthlp_sfc )
 

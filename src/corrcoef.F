@@ -1,88 +1,115 @@
-
+!-----------------------------------------------------------------------
 ! Various mathematical utilities
+!-----------------------------------------------------------------------
 
-	function corrcoef(vect1,vect2,n)
+!-----------------------------------------------------------------------
+!  function corrcoef( )
+
 ! Correlation coefficient of two vectors
+!-----------------------------------------------------------------------
+        function corrcoef( vect1, vect2, n )
 
-	implicit none
+        implicit none
 
-	integer n
-	double precision vect1(1:n), vect2(1:n)
+        ! External
+        double precision, external :: cov
 
-	double precision corrcoef
+        ! Input
+        integer, intent(in)          :: n
+        double precision, intent(in) :: vect1(1:n), vect2(1:n)
 
-	double precision cov
+        ! Return type
+        double precision corrcoef
 
-	corrcoef = cov(vect1,vect2,n) /
-     .         sqrt( cov(vect1,vect1,n) * cov(vect2,vect2,n) )
+        corrcoef = cov( vect1, vect2, n ) /
+     .         sqrt( cov( vect1, vect1, n ) * cov( vect2, vect2, n ) )
 
-	return
-	end	
+        return
+        end function corrcoef
 
-! -----------------------------------------------------------
+!-----------------------------------------------------------------------
+!  function std( )
+!-----------------------------------------------------------------------
+        function std( vector, n ) 
 
+        implicit none
 
-	function std(vector,n)
+        ! External
+        double precision, external :: cov
 
-	implicit none
+        ! Input
+        integer, intent(in)          :: n
+        double precision, intent(in) :: vector(1:n)
 
-	integer n
-	double precision std, vector(1:n)
+        ! Return type
+        double precision std
 
-	double precision cov
+        std = sqrt( cov( vector, vector, n )*( n/(n-1) ) )
 
-	std = sqrt( cov(vector,vector,n) * (n/(n-1)) )
+        return
+        end function std
 
-	return
-	end	
+!-----------------------------------------------------------------------
+!  function cov( )
 
-
-! ---------------------------------------------------------	
-
-
-	function cov(vect1,vect2,n)
 ! Covariance of two vectors
+!-----------------------------------------------------------------------
+        function cov( vect1, vect2, n )
 
-	implicit none
+        implicit none
 
-	integer n
-	double precision cov, vect1(1:n), vect2(1:n)
+!       External
+        double precision, external   :: mean
 
+!       Input
+        integer, intent(in)          :: n
+        double precision, intent(in) :: vect1(1:n), vect2(1:n)
 
-	double precision sum, avg1, avg2, mean
-	integer j
+!       Return type
+        double precision cov
 
-	avg1 = mean(vect1,n)
-	avg2 = mean(vect2,n)
-	
-	sum = 0.d0
-	do j=1,n
-	   sum = sum + (vect1(j) - avg1) * (vect2(j) - avg2)
-	enddo
+!       Internal
+        double precision sum, avg1, avg2 
+        integer j
 
-	cov = sum/n
+        avg1 = mean( vect1, n )
+        avg2 = mean( vect2, n )
+        
+        sum = 0.d0
+        do j = 1, n
+           sum = sum + (vect1(j) - avg1) * (vect2(j) - avg2)
+        enddo
 
-	return
-	end	
+        cov = sum / n
 
-! ---------------------------------------------------------	
+        return
+        end function cov
 
-	function mean(vector,n)
+!-----------------------------------------------------------------------
+!  function mean( )
+!-----------------------------------------------------------------------
+        function mean( vector, n )
+        
+        implicit none
 
-	implicit none
+!       Input 
+        integer, intent(in)          :: n
+        double precision, intent(in) :: vector(1:n)
 
-	integer n
-	double precision mean, vector(1:n)
+!       Internal
+        double precision sum
+        integer j
 
-	double precision sum
-	integer j
-	
-	sum = 0.d0
-	do j=1,n
-	   sum = sum + vector(j)
-	enddo
+!       Return type
+        double precision mean
+        
+        sum = 0.d0
+        do j=1, n
+           sum = sum + vector(j)
+        enddo
 
-	mean = sum/n
+        mean = sum/n
 
-	return
-	end
+        return
+        end function mean
+!-----------------------------------------------------------------------

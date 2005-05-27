@@ -1,22 +1,23 @@
 !------------------------------------------------------------------------
+! subroutine read_sounding( )
+
 ! Subroutine to initialize model variables from namelist file
-!
+!------------------------------------------------------------------------
         subroutine read_sounding( thlm, rtm, um, vm, ugm, vgm, runfile, 
-     .                            runtype)
+     .                            runtype )
 
         use grid_class
 
         implicit none
 
-
 ! External
 
-        real linint
-        external linint
+        real, external :: linint
+
+! Input
 
         character(30), intent(in) :: runfile
- 
-        integer runtype
+        integer, intent(in)       ::  runtype
 
 ! Parameter
 
@@ -74,76 +75,78 @@
            write(*,*) 'First level of input sounding must be z=0'
            stop 'STOP in sounding'
         else
-            um(1) = u(1)
-            vm(1) = v(1)
-            ugm(1) = ug(1)
-            vgm(1) = vg(1)
+            um(1)   = u(1)
+            vm(1)   = v(1)
+            ugm(1)  = ug(1)
+            vgm(1)  = vg(1)
             thlm(1) = theta(1)
-            rtm(1) = rt(1)
+            rtm(1)  = rt(1)
         endif
 
 ! Use linear interpolation from two nearest prescribed grid points
 ! (one above and one below) to initialize mean quantities in the model
+! Modified 27 May 2005 -dschanen: eliminated the goto in favor of a do while( )
 
-        do i=2,gr%nnzp
+        do i=2, gr%nnzp
           k=1
-  40      if ( z(k) >= gr%zt(i) ) then
+!  40      if ( z(k) >= gr%zt(i) ) then
+          do while ( z(k) < gr%zt(i) )
+            k=k+1
+            if ( k > nlevels ) then
+              write(*,*) 'STOP Not enough sounding data to ',
+     .                   'initialize grid:'
+              write(*,'(a,f7.1,/a,f7.1)') '  highest sounding level'
+     .        ,z(nlevels)
+     .        ,'  should be higher than highest thermodynamic point'
+     .        ,gr%zt(gr%nnzp)
 
+              stop 'STOP in sounding'
+            endif  ! k > nlevels
+          enddo
             IF ( runtype /= 9 ) THEN  ! Regular situation w/ linear int.
 
-            um(i) = linint(gr%zt(i),z(k),z(k-1),u(k),u(k-1))
-            vm(i) = linint(gr%zt(i),z(k),z(k-1),v(k),v(k-1))
-            ugm(i) = linint(gr%zt(i),z(k),z(k-1),ug(k),ug(k-1))
-            vgm(i) = linint(gr%zt(i),z(k),z(k-1),vg(k),vg(k-1))
-            thlm(i) = linint(gr%zt(i),z(k),z(k-1),theta(k),theta(k-1))
-            rtm(i) = linint(gr%zt(i),z(k),z(k-1),rt(k),rt(k-1))
+            um(i)   = linint( gr%zt(i), z(k), z(k-1), u(k), u(k-1) )
+            vm(i)   = linint( gr%zt(i), z(k), z(k-1), v(k), v(k-1) )
+            ugm(i)  = linint( gr%zt(i), z(k), z(k-1), ug(k), ug(k-1) )
+            vgm(i)  = linint( gr%zt(i), z(k), z(k-1), vg(k), vg(k-1) )
+            thlm(i) = linint( gr%zt(i), z(k), z(k-1), 
+     .                        theta(k), theta(k-1) )
+            rtm(i)  = linint( gr%zt(i), z(k), z(k-1), rt(k), rt(k-1) )
 
             ELSE  ! DYCOMS II RF02 case
 
                IF ( gr%zt(i) < 795.0 ) THEN
-                  um(i) =  6.5 + (2.0*gr%zt(i))/1000.0
-                  vm(i) = -8.5 + (5.0*gr%zt(i))/1000.0
-                  ugm(i) = um(i)
-                  vgm(i) = vm(i)
+                  um(i)   =  6.5 + (2.0*gr%zt(i))/1000.0
+                  vm(i)   = -8.5 + (5.0*gr%zt(i))/1000.0
+                  ugm(i)  = um(i)
+                  vgm(i)  = vm(i)
                   thlm(i) = 288.3
-                  rtm(i) = (9.45)/1000.0
+                  rtm(i)  = (9.45)/1000.0
                ELSE
-                  um(i) =  6.5 + (2.0*gr%zt(i))/1000.0
-                  vm(i) = -8.5 + (5.0*gr%zt(i))/1000.0
-                  ugm(i) = um(i)
-                  vgm(i) = vm(i)
+                  um(i)   =  6.5 + (2.0*gr%zt(i))/1000.0
+                  vm(i)   = -8.5 + (5.0*gr%zt(i))/1000.0
+                  ugm(i)  = um(i)
+                  vgm(i)  = vm(i)
                   thlm(i) = 295.0 + ( (gr%zt(i) - 795.0)**(1.0/3.0) )
-                  rtm(i) = (  5.0 - 3.0 
+                  rtm(i)  = (  5.0 - 3.0 
      .            * ( 1.0 - EXP( (795.0 - gr%zt(i))/500.0 ) )  )/1000.0
                ENDIF
 
-            ENDIF
-
-          else
-            k=k+1
-              if ( k > nlevels ) then
-                write(*,*) 'STOP Not enough sounding data to ',
-     +                     'initialize grid:'
-                write(*,'(a,f7.1,/a,f7.1)') '  highest sounding level'
-     +          ,z(nlevels)
-     +          ,'  should be higher than highest thermodynamic point'
-     +          ,gr%zt(gr%nnzp)
-
-                stop 'STOP in sounding'
-              endif
-            goto 40
-          endif
-        enddo
+            ENDIF ! runtype /= 9
+!          else
+!            goto 40
+!          endif      !  z(k) >= gr%zt(i) 
+        enddo        !  i=2, gr%nnzp
 
         return
-        end
+        end subroutine read_sounding
 
 !------------------------------------------------------------------------
 ! Function to linearly interpolate quantities to a height zmid
 ! given the values vtop at a height ztop and vbot at a height
 ! zbot
-!
-        real function linint(zmid, ztop, zbot, vtop, vbot)
+!------------------------------------------------------------------------
+        real function linint( zmid, ztop, zbot, vtop, vbot )
         implicit none
 
 ! Input 
@@ -152,14 +155,14 @@
 
 ! Compute linear interpolation
 
-        linint = ((zmid-zbot)/(ztop-zbot)) * (vtop-vbot) + vbot
+        linint = ( (zmid-zbot)/(ztop-zbot) ) * (vtop-vbot) + vbot
 
         return
-        end
+        end function linint
 
 !------------------------------------------------------------------------
 ! Subroutine to initialize one generic model variable from file
-!
+!------------------------------------------------------------------------
         subroutine read_profile( fname, x )
 
         use grid_class
@@ -221,30 +224,31 @@
 
 ! Use linear interpolation from two nearest prescribed grid points
 ! (one above and one below) to initialize mean quantities in the model
+! Modified 27 May 2005 -dschanen: eliminated the goto in favor of a do while( )
 
-        do i=2,gr%nnzp
-          k=1
-  40      if ( z(k) >= gr%zt(i) ) then
-
-            x(i) = linint(gr%zt(i),z(k),z(k-1),var(k),var(k-1))
-
-          else
-            k=k+1
+        do i = 2, gr%nnzp
+          k = 1
+!  40      if ( z(k) >= gr%zt(i) ) then
+          do while ( z(k) < gr%zt(i) )
+            k = k + 1
               if ( k > nlevels ) then
                 write(*,*) 'STOP Not enough sounding data to ',
-     +                     'initialize grid:'
+     .                     'initialize grid:'
                 write(*,'(a,f7.1,/a,f7.1)') '  highest sounding level'
-     +          ,z(nlevels)
-     +          ,'  should be higher than highest thermodynamic point'
-     +          ,gr%zt(gr%nnzp)
+     .          ,z(nlevels)
+     .          ,'  should be higher than highest thermodynamic point'
+     .          ,gr%zt(gr%nnzp)
 
                 write(*,*) ' filename: ',fname
                 stop 'STOP in read_profile'
               endif
-            goto 40
-          endif
-        end do
+            x(i) = linint( gr%zt(i), z(k), z(k-1), var(k), var(k-1) )
+          enddo ! while
+!          else
+!            goto 40
+!          endif
+        end do ! i=2, gr%nzzp
 
         return
-        end
+        end subroutine read_profile
 

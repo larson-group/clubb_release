@@ -1,13 +1,19 @@
-      SUBROUTINE gaussj(a_in,n,np,a)
-      INTEGER m,mp,n,np,NMAX
+      SUBROUTINE gaussj( a_in, n, np, a )
+
+      implicit none
+
+      integer m, mp, NMAX
+
+      integer, intent(in) :: n, np
 ! Output: a = Matrix inverse
-	double precision a(np,np)
+      double precision, intent(out) :: a(np,np)
 ! Input: a_in = Original matrix
-	double precision a_in(np,np)
-      PARAMETER (NMAX=50)
-      INTEGER i,icol,irow,j,k,l,ll,indxc(NMAX),indxr(NMAX),ipiv(NMAX)
-      double precision big,dum,pivinv
-	a = a_in
+      double precision, intent(in)  :: a_in(np,np)
+      parameter (NMAX=50)
+      integer :: i, icol, irow, j, k, l, ll
+      integer :: indxc(NMAX), indxr(NMAX), ipiv(NMAX)
+      double precision big, dum, pivinv
+      a = a_in
       do 11 j=1,n
         ipiv(j)=0
 11    continue
@@ -41,7 +47,7 @@
         endif
         indxr(i)=irow
         indxc(i)=icol
-        if (a(icol,icol).eq.0.) pause 'singular matrix in gaussj'
+        if (a(icol,icol).eq.0.) stop 'singular matrix in gaussj'
         pivinv=1./a(icol,icol)
         a(icol,icol)=1.
         do 16 l=1,n
@@ -72,5 +78,6 @@
 23        continue
         endif
 24    continue
+
       return
-      END
+      end subroutine gaussj

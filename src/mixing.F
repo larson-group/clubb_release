@@ -1,4 +1,7 @@
-!------------------------------------------------------------------------
+!-----------------------------------------------------------------------
+! subroutine timestep_mixing( )
+!
+!-----------------------------------------------------------------------
 
         subroutine timestep_mixing
      .             ( dt, taum, wmm, wmt, wp2, wp3, Sc, exner, ! exner by Brian
@@ -8,6 +11,7 @@
 
         use constants
         use grid_class
+
         implicit none
 
 !       Input/Output
@@ -238,29 +242,30 @@
 
 !       Boundary condition for the flux
 
-        k = 1
+        k      = 1
         k_xm   = 2*k - 1
         k_wpxp = 2*k
-        aa(k_xm,3-1) = 0.0
-        aa(k_xm,3)   = 1.0
-        aa(k_xm,3+1) = 0.0
+        aa(k_xm,3-1)   = 0.0
+        aa(k_xm,3)     = 1.0
+        aa(k_xm,3+1)   = 0.0
         aa(k_wpxp,3-2) = 0.0
         aa(k_wpxp,3)   = 1.0
         aa(k_wpxp,3+2) = 0.0
 
-        k = gr%nnzp
+        k      = gr%nnzp
         k_xm   = 2*k - 1
         k_wpxp = 2*k
-        aa(k_xm,3-1) = 0.0
-        aa(k_xm,3)   = 1.0
-        aa(k_xm,3+1) = 0.0
+        aa(k_xm,3-1)   = 0.0
+        aa(k_xm,3)     = 1.0
+        aa(k_xm,3+1)   = 0.0
         aa(k_wpxp,3-2) = 0.0
         aa(k_wpxp,3)   = 1.0
         aa(k_wpxp,3+2) = 0.0
 
 !       Perform LU decomposition
 
-        call bandec(aa,2*gr%nnzp,2,2,2*gr%nnzp,5,al,2,indx,d,isValid)
+        call bandec( aa, 2*gr%nnzp, 2, 2, 2*gr%nnzp, 5, al, 2, indx, d, 
+     .               isValid )
 
         return
         end subroutine mixing_lhs
@@ -420,13 +425,13 @@
 
 !       Boundary condition for the flux
 
-        k = 1
+        k      = 1
         k_xm   = 2*k - 1
         k_wpxp = 2*k
         dd(k_xm)   = xm(k)
         dd(k_wpxp) = wpxp(k)
 
-        k = gr%nnzp
+        k      = gr%nnzp
         k_xm   = 2*k - 1
         k_wpxp = 2*k
         dd(k_xm)   = xm(k)
@@ -434,7 +439,7 @@
 
 !       Solve system
 
-        call banbks(aa,2*gr%nnzp,2,2,2*gr%nnzp,5,al,2,indx,dd)
+        call banbks( aa, 2*gr%nnzp, 2, 2, 2*gr%nnzp, 5, al, 2, indx,dd )
 
 !       Copy result into output arrays
 
@@ -460,7 +465,7 @@
 
 !          Finalize implicit contributions for wpxp
 
-           do k=1,gr%nnzp
+           do k = 1, gr%nnzp
              km1 = max(k-1,1)
              kp1 = min(k+1,gr%nnzp)
 
@@ -591,4 +596,3 @@
 
         return
         end subroutine mixing_solve
-

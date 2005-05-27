@@ -5342,7 +5342,7 @@ function gamma ( x )
     0.1043427D-9, .77823D-11, &
     -.36968D-11, .51D-12, &
     -.206D-13, -.54D-14, .14D-14, .1D-15/)
-!--- end dschanen addition ---!
+!--- end negative x addition ---!
 
   if ( x >= 0. ) then
     gamma = exp ( gamma_log ( x ) ) 

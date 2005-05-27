@@ -57,7 +57,7 @@
 
 !-------------------------- Define Constants ---------------------------- 
 
-      call tuner_init(read_files=.TRUE.)
+      call tuner_init(read_files=.true.)
 
 !-------------- Calculate the error for the initial values --------------
 !     Notes: funk is written to deal with undefined and invalid values for
@@ -65,7 +65,7 @@
 !            on the initial vector being valid. 
 !------------------------------------------------------------------------
 
-      init_err =  funk( x_array(1,1:ndim) )
+      init_err =  funk( x_array(1, 1:ndim) )
       if ( .not. isValid ) then
          print *, "Initial variable values must be valid"
          stop
@@ -73,7 +73,7 @@
 
 !------------------ Attempt to find the optimal values -----------------
       do
-        if (tune_type .eq. 0) then 
+        if ( tune_type == 0 ) then 
           call amoeba_driver
         else
           call amebsa_driver
@@ -94,7 +94,7 @@
         write (*, '(A)', advance='no') "Enter new ftol=   "
         read *, ftol
 
-        call tuner_init(read_files=.FALSE.) 
+        call tuner_init(read_files=.false.) 
 
       enddo
 
@@ -138,10 +138,10 @@
 
       implicit none
      
-      call amoeba(x_array(1:mdim, 1:ndim), err_array(1:mdim), 
-     .            ftol, funk, iter)
+      call amoeba( x_array(1:mdim, 1:ndim), err_array(1:mdim), 
+     .             ftol, funk, iter)
 
-      min_err = minval(err_array)
+      min_err = minval( err_array )
 
       end subroutine amoeba_driver
 
@@ -173,18 +173,18 @@
       real    :: yb
       real    :: tmptr
 
-      ybb = 1.0e30_sp
-      yb = 1.0e30_sp
-      nit = 0
+      ybb   = 1.0e30_sp
+      yb    = 1.0e30_sp
+      nit   = 0
       iiter = 0
       tmptr = anneal_temp ! anneal_temp taken from /stat/ namelist
 
-      do jiter=1, anneal_iter ! anneal_iter taken from /stat/ namelist
-        iter= iiter
+      do jiter = 1, anneal_iter ! anneal_iter taken from /stat/ namelist
+        iter  = iiter
         tmptr = tmptr * 0.8_sp
-        call amebsa(x_array(1:mdim,1:ndim), err_array(1:mdim),
-     .                pb(1:ndim), yb, ftol, funk, iter, tmptr)
-        nit=nit+iiter-iter
+        call amebsa( x_array(1:mdim,1:ndim), err_array(1:mdim),
+     .               pb(1:ndim), yb, ftol, funk, iter, tmptr )
+        nit = nit + iiter - iter
         if (yb < ybb) then
           ybb = yb
         endif
@@ -195,3 +195,4 @@
       min_err = ybb
 
       end subroutine amebsa_driver
+!----------------------------------------------------------------------

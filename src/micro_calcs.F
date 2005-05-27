@@ -1,14 +1,16 @@
 !------------------------------------------------------------------------
-!
+! subroutine micro_calcs( )
+
 ! This subroutine computes microphysical grid box averages,
 !    given a Latin Hypercube sample.  
-!
+
 ! Input: n = number of calls to microphysics (normally=2)
 !        d = number of variates (normally=5) 
 !        X_u = nxd Latin hypercube sample from uniform dist 
 !        X_nl = Sample from normal-lognormal distribution 
 !        sample_flag = logical that tells whether PDF has non-zero micro
 !        pdf_parms = pdf parameters output by closure_new
+
 ! Output: AKm_est = LH estimate of grid box avg Kessler autoconv [kg/kg]
 !         AKm = exact grid box avg Kessler autoconversion [kg/kg]
 !         AKstd = exact standard deviation of gba Kessler [kg/kg]
@@ -16,11 +18,12 @@
 !         AKm_rcm = exact local gba Kessler auto based on rcm [kg/kg]
 !         AKm_rcc = exact local gba Kessler based on w/in cloud rc [kg/kg]
 !         rcm_est = LH estimate of grid box avg liquid water [kg/kg]
+!------------------------------------------------------------------------
 
-      subroutine micro_calcs(n,d,X_u,X_nl,sample_flag,
-     .                         pdf_parms,
-     .                         AKm_est_k,AKm_k,AKstd_k,AKstd_cld_k,
-     .                         AKm_rcm_k,AKm_rcc_k,rcm_est_k)
+      subroutine micro_calcs( n, d, X_u, X_nl, sample_flag,
+     .                        pdf_parms,
+     .                        AKm_est_k, AKm_k, AKstd_k, AKstd_cld_k,
+     .                        AKm_rcm_k, AKm_rcc_k, rcm_est_k )
 
       use constants
 
@@ -28,7 +31,7 @@
 
 ! External
 
-      real erf
+      real, external :: erf
 
 ! Input
 
@@ -44,7 +47,7 @@
       logical, intent(in) :: sample_flag
 
 ! PDF parameter array
-      real, intent(in) :: pdf_parms(26)
+      real, intent(in)    :: pdf_parms(26)
 
 ! Output
 
@@ -105,38 +108,40 @@
 
 !       save pdf parameters
 
-      w1 = pdf_parms(1)
-      w2 = pdf_parms(2)
-      sw1 = pdf_parms(3)
-      sw2 = pdf_parms(4)
-      rt1 = pdf_parms(5)
-      rt2 = pdf_parms(6)
-      srt1 = pdf_parms(7)
-      srt2 = pdf_parms(8)
-      thl1 = pdf_parms(9)
-      thl2 = pdf_parms(10)
+      w1    = pdf_parms(1)
+      w2    = pdf_parms(2)
+      sw1   = pdf_parms(3)
+      sw2   = pdf_parms(4)
+      rt1   = pdf_parms(5)
+      rt2   = pdf_parms(6)
+      srt1  = pdf_parms(7)
+      srt2  = pdf_parms(8)
+      thl1  = pdf_parms(9)
+      thl2  = pdf_parms(10)
       sthl1 = pdf_parms(11)
       sthl2 = pdf_parms(12)
-      a = pdf_parms(13)
-      rc1 = pdf_parms(14) 
-      rc2 = pdf_parms(15) 
-      R1 = pdf_parms(18)
-      R2 = pdf_parms(19)
-      s1 = pdf_parms(20)
-      s2 = pdf_parms(21)
-      ss1 = pdf_parms(22)
-      ss2 = pdf_parms(23)
+      a     = pdf_parms(13)
+      rc1   = pdf_parms(14) 
+      rc2   = pdf_parms(15) 
+      R1    = pdf_parms(18)
+      R2    = pdf_parms(19)
+      s1    = pdf_parms(20)
+      s2    = pdf_parms(21)
+      ss1   = pdf_parms(22)
+      ss2   = pdf_parms(23)
 
 !       compute mean cloud fraction and cloud water
 
-      cf = a * R1 + (1-a) * R2
-      rcm = a * rc1 + (1-a) * rc2
+      cf    = a * R1 + (1-a) * R2
+      rcm   = a * rc1 + (1-a) * rc2
 
+!------------------------------------------------------------------------
 ! Call Kessler autoconversion microphysics using Latin hypercube sample 
 ! This acts as an interface between the boundary layer scheme
 !   and the microphysics.  To add a call to a microphysics scheme,
 !   alter two lines in autoconversion_driver.f.
 ! Then we compute Kessler ac analytically.
+!------------------------------------------------------------------------
 
 ! Use units of [g/kg] to ameliorate numerical roundoff errors.
 ! We prognose rt-thl-w,
@@ -146,12 +151,12 @@
 
 ! In this case, sample points could not be constructed.
 ! Set autoconversion to zero.
-          AKm_est_k = 0.0
-          AKm_k = 0.0
-          AKm_rcm_k = 0.0
-          AKm_rcc_k = 0.0
-          rcm_est_k = 0.0
-          AKstd_k = 0.0
+          AKm_est_k   = 0.0
+          AKm_k       = 0.0
+          AKm_rcm_k   = 0.0
+          AKm_rcc_k   = 0.0
+          rcm_est_k   = 0.0
+          AKstd_k     = 0.0
           AKstd_cld_k = 0.0
 
       else
@@ -182,28 +187,28 @@
 ! Exact Kessler autoconversion in units of (kg/kg)/s
 !        q_crit = 0.3e-3
 !        q_crit = 0.7e-3
-        q_crit = 0.2e-3
-        K_one = 1.e-3
+        q_crit   = 0.2e-3
+        K_one    = 1.e-3
         sn1_crit = (s1-q_crit)/ss1
-        R1_crit = 0.5*(1+erf(sn1_crit/sqrt(2.0)))
-        AK1 = K_one * ( (s1-q_crit)*R1_crit 
+        R1_crit  = 0.5*(1+erf(sn1_crit/sqrt(2.0)))
+        AK1      = K_one * ( (s1-q_crit)*R1_crit 
      .            + ss1*exp(-0.5*sn1_crit**2)/(sqrt(2*pi)) )
         sn2_crit = (s2-q_crit)/ss2
-        R2_crit = 0.5*(1+erf(sn2_crit/sqrt(2.0)))
-        AK2 = K_one * ( (s2-q_crit)*R2_crit 
+        R2_crit  = 0.5*(1+erf(sn2_crit/sqrt(2.0)))
+        AK2      = K_one * ( (s2-q_crit)*R2_crit 
      .            + ss2*exp(-0.5*sn2_crit**2)/(sqrt(2*pi)) )
-        AKm_k = a * AK1 + (1-a) * AK2
+        AKm_k    = a * AK1 + (1-a) * AK2
 
 ! Exact Kessler standard deviation in units of (kg/kg)/s
 ! For some reason, sometimes AK1var, AK2var are negative
-        AK1var = max( 0.0, K_one * (s1-q_crit) * AK1 
+        AK1var   = max( 0.0, K_one * (s1-q_crit) * AK1 
      .           + K_one * K_one * (ss1**2) * R1_crit 
      .           - AK1**2  )
-        AK2var = max( 0.0, K_one * (s2-q_crit) * AK2 
+        AK2var   = max( 0.0, K_one * (s2-q_crit) * AK2 
      .           + K_one * K_one * (ss2**2) * R2_crit 
      .           - AK2**2  )  
 ! This formula is for a grid box average:
-        AKstd_k = sqrt(    a  * ( (AK1-AKm_k)**2 + AK1var )
+        AKstd_k  = sqrt(    a  * ( (AK1-AKm_k)**2 + AK1var )
      .              + (1-a) * ( (AK2-AKm_k)**2 + AK2var )
      .              )
 ! This formula is for a within-cloud average:
@@ -236,20 +241,22 @@
 !	   print*, 'AKm_rcc =', AKm_rcc
 !	   print*, 'AKm_rcm =', AKm_rcm
 
-!! Compute within-cloud vertical velocity, avg over full layer
-!! This call is a kludge: I feed w values into ql variable
-!! in autoconv_driver.
-!! Only works if coeff=expn=1 in autoconversion_driver.
+!------------------------------------------------------------------------
+! Compute within-cloud vertical velocity, avg over full layer
+! This call is a kludge: I feed w values into ql variable
+! in autoconv_driver.
+! Only works if coeff=expn=1 in autoconversion_driver.
+!------------------------------------------------------------------------
 !	 call autoconv_driver(n,d,a,R1,R2,X_nl(1:n,3),
 !     .         X_nl(1:n,3),X_nl(1:n,4),X_nl(1:n,5),X_u,AKm2)
 
-!! Another test:
-!! Compute within-cloud vertical velocity, avgd over full domain.
+! Another test:
+! Compute within-cloud vertical velocity, avgd over full domain.
 !        C_w_cld1 =  R1*w1
 !        C_w_cld2 =  R2*w2
 !        w_cld_avg = a * C_w_cld1 + (1-a) * C_w_cld2
 
-!! The following two values should match
+! The following two values should match
 !	   print*, 'w_cld_avg=', w_cld_avg
 !	   print*, 'ac_m2=', ac_m2
 
@@ -257,4 +264,4 @@
         endif
 
       return
-      end
+      end subroutine micro_calcs

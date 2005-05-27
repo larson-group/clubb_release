@@ -7,7 +7,10 @@
 !
 ! Chris Golaz, 9/12/2000
 
-! Minor modifications, dschanen 4/19/2005
+! Modifications:
+!  * Uses functions rather than subroutines to get endian type. 
+!  * Other cosmetic changes.  - dschanen 4/19/2005
+!-----------------------------------------------------------------------
 
         module inputfile_class
 

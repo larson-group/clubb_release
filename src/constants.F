@@ -2,6 +2,8 @@
 
       module constants
 
+        implicit none
+
 !       Physical constants
         double precision, parameter 
      .                  :: pi_dp = 3.14159265358979323846D0
@@ -103,25 +105,26 @@
 !      nu8 = 20.
 !-----------------------------------------------------------------------
 
-      C1 = C1_in
-      C2 = C2_in
-      C4 = C4_in
-      C5 = C5_in
-      C6 = C6_in
-      C7 = C7_in
-      C8 = C8_in
-      C10 = C10_in
-      C11 = C11_in
+      C1    = C1_in
+      C2    = C2_in
+      C4    = C4_in
+      C5    = C5_in
+      C6    = C6_in
+      C7    = C7_in
+      C8    = C8_in
+      C10   = C10_in
+      C11   = C11_in
 
-      nu1 = nu1_in 
-      nu2 = nu2_in 
-      nu6 = nu6_in 
-      nu8 = nu8_in 
-      beta = beta_in
+      nu1   = nu1_in 
+      nu2   = nu2_in 
+      nu6   = nu6_in 
+      nu8   = nu8_in 
+
+      beta  = beta_in
     
       taumin = taumin_in
       taumax = taumax_in
-      lmin = lmin_coef_in * deltaz
+      lmin   = lmin_coef_in * deltaz
 
 !     The nu's are chosen for deltaz <= 40 m. Looks like they must 
 !     be adjusted for larger grid spacings (Vince Larson)

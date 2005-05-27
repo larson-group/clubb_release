@@ -1,3 +1,6 @@
+!----------------------------------------------------------------------
+!    subroutine tau( )
+!----------------------------------------------------------------------
       subroutine tau(thlm, thvm, rtm, rcm, cf, p, exner, taut)
 
       use constants
@@ -67,9 +70,7 @@
 
       do k=2,gr%nnzp-1
 
-
-        n2dry = grav/T0 * dthvm(k)
-
+        n2dry   = grav/T0 * dthvm(k)
 
         n2moist = grav*(  ( 1.0 + (Lv*rs(k))/(R*tm(k)) )
      .                 /( 1.0 + (ep1*Lv*Lv*rs(k))/(cp*R*tm(k)*tm(k)) )
@@ -84,9 +85,9 @@
         endif
 !        n2 = cf(k)*n2moist + (1.0-cf(k))*n2dry
 
-        n2 = max( n2, 1.e-8 )
+        n2      = max( n2, 1.e-8 )
         n2moist = max( n2moist, 1.e-8 )
-        n2dry = max( n2dry, 1.e-8 )
+        n2dry   = max( n2dry, 1.e-8 )
         taut(k) = 2.0/( 1.0/300. + 1.0*sqrt(n2) )
 !        taut(k) = min( taut(k), taumax )
 

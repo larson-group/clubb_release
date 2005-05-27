@@ -1,6 +1,8 @@
 !------------------------------------------------------------------------
-! Subroutine to integrate hydrostatic equation
-!
+! subroutine hydrostatic( )
+
+! Subprogram to integrate hydrostatic equation
+!------------------------------------------------------------------------
         subroutine hydrostatic(thvm, psfc, p, exner, rhot, rhom)
 
         use constants
@@ -60,4 +62,4 @@
         rhom(gr%nnzp) = 1.5*rhot(gr%nnzp) - 0.5*rhot(gr%nnzp-1)
 
         return
-        end
+        end subroutine hydrostatic

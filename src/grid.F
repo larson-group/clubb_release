@@ -40,8 +40,10 @@
 ! modified 2/28/01 to get rid of UNDEFINED.
 ! Experience has shown that the 'UNDEFINED' idea was not shuch a good idea
 ! after all.
-!
+!-----------------------------------------------------------------------
         module grid_class
+
+           implicit none
 
            include 'grid.h'
 
@@ -73,7 +75,7 @@
 
            contains
 
-!          --------------------------------------------------------------
+!-----------------------------------------------------------------------
 !           Grid Constructor
 !
 !           This subroutine sets up a uniformly spaced vertical grid similar
@@ -83,8 +85,9 @@
 !
 !             integer nnzp        number of vertical levels in grid
 !             real deltaz        vertical grid spacing
-
+!-----------------------------------------------------------------------
            subroutine gridsetup( nnzp, deltaz, runtype )
+
            implicit none
 
 !           Input
@@ -350,10 +353,11 @@
            return
            end subroutine gridsetup
 
-!          --------------------------------------------------------------
+!-----------------------------------------------------------------------
 !           Function to interpolate a variable located on the 
 !          thermodynamic grid (azt) to a variable on the momentum 
 !          grid (azm)
+!-----------------------------------------------------------------------
 
            function interpolated_azm( azt )
            implicit none
@@ -381,10 +385,11 @@
            return
            end function interpolated_azm
 
-!          --------------------------------------------------------------
+!-----------------------------------------------------------------------
 !           Function to interpolate a variable located on the
 !           thermodynamic grid (azt) to a variable on the momentum
 !           grid (azm). The function interpolates only for level k
+!-----------------------------------------------------------------------
 
            function interpolated_azmk( azt, k )
            implicit none
@@ -410,10 +415,11 @@
            return
            end function interpolated_azmk
         
-!          --------------------------------------------------------------
+!-----------------------------------------------------------------------
 !           Function to interpolate a variable located on the 
 !          momentum grid (azm) to a variable on the thermodynamic
 !          grid (azt)
+!-----------------------------------------------------------------------
 
            function interpolated_azt( azm )
            implicit none
@@ -441,10 +447,11 @@
            return
            end function interpolated_azt
 
-!          --------------------------------------------------------------
+!-----------------------------------------------------------------------
 !           Function to interpolate a variable located on the 
 !          momentum grid (azm) to a variable on the thermodynamic
 !          grid (azt). This function interpolates only for level k.
+!-----------------------------------------------------------------------
 
            function interpolated_aztk( azm, k )
            implicit none
@@ -470,10 +477,11 @@
            return
            end function interpolated_aztk
 
-!          --------------------------------------------------------------
+!-----------------------------------------------------------------------
 !          Function to compute the vertical derivative of a variable (azm)
 !          located on the momentum grid. The results is returned in an 
 !          array defined on the thermodynamic grid.
+!-----------------------------------------------------------------------
 
            function gradzm( azm )
            implicit none
@@ -501,10 +509,11 @@
            return
            end function gradzm
 
-!          --------------------------------------------------------------
+!-----------------------------------------------------------------------
 !           Function to compute the vertical derivative of a variable (azt)
 !          located on the thermodynamic grid. The results is returned in
 !          an array defined on the momentum grid.
+!-----------------------------------------------------------------------
 
            function gradzt( azt )
            implicit none

@@ -1,5 +1,6 @@
 !------------------------------------------------------------------------
-
+! subroutine timestep_wp23( )
+!------------------------------------------------------------------------
         subroutine timestep_wp23
      .             (dt, Lscale, taum, taut, Sc, a, Khm, wmt, wmm,
      .              um, upwp, vm, vpwp, wpthvp, wp2thvp,
@@ -33,6 +34,7 @@
         real, intent(inout) :: wp2(1:gr%nnzp)
         real, intent(inout) :: wp3(1:gr%nnzp)
         real, intent(inout) :: em(1:gr%nnzp)
+
         logical, intent(inout):: isValid
 
 !       Internal
@@ -227,6 +229,8 @@
         return
         end subroutine timestep_wp23
 
+!------------------------------------------------------------------------
+!  subroutine wp23_solve( )
 !------------------------------------------------------------------------
 
         subroutine wp23_solve( dt, Sc, Lscale, Lm, tau1m, tauw3t, Kh,

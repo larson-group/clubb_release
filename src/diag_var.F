@@ -1,7 +1,8 @@
 !-----------------------------------------------------------------------
-!
-! Subroutine to diagnose variances by solving steady-state equations
-!
+! subroutine diag_var( )
+
+! Subprogram to diagnose variances by solving steady-state equations
+!-----------------------------------------------------------------------
         subroutine diag_var( tau, wmm, qtm, wpqtp, thlm, wpthlp, 
      .                       wp2, wp3, Sc,
      .                       qtp2, thlp2, qtpthlp,
@@ -60,8 +61,8 @@ c      prepare tridiagonal system
 
        do k=1,gr%nnzp
 
-         km1 = max(k-1,1)
-         kp1 = min(k+1,gr%nnzp)
+         km1   = max(k-1,1)
+         kp1   = min(k+1,gr%nnzp)
 
          aa(k) = - 0.5 * a1(k)
      .                 * (2./3.) * beta
@@ -103,12 +104,13 @@ c      prepare tridiagonal system
        
 c      solve tridiagonal system
 
-       call tridag(aa,bb,cc,dd,qtp2,gr%nnzp, isValid)
+       call tridag( aa, bb, cc, dd, qtp2, gr%nnzp, isValid )
 
        if ( .not. isValid ) then
           print *, "diag_var: tridag failed"
           return
        endif
+
 c      clip small and negative values
 
        do k=1,gr%nnzp
@@ -151,7 +153,7 @@ c      note: we can reuse the same aa, bb, cc arrays
        
 c      solve tridiagonal system
 c       print *, "diag_var line 147"
-       call tridag(aa,bb,cc,dd,thlp2,gr%nnzp,isValid)
+       call tridag( aa, bb, cc, dd, thlp2, gr%nnzp, isValid )
 
        if ( .not. isValid ) then
           print *, "diag_var: tridag failed"
@@ -208,3 +210,4 @@ c      solve tridiagonal system
 
        return
        end subroutine diag_var
+!-----------------------------------------------------------------------

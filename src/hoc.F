@@ -1,8 +1,27 @@
        module hoc
 
-       contains
-! Program to integrate the pde equations for pdf closure
+       implicit none
 
+       contains
+
+!-----------------------------------------------------------------------
+!  subroutine hoc_sub( )
+!  Subprogram to integrate the pde equations for pdf closure
+
+!  Input: Contants used in the model:
+!         C1_in, C2_in, C4_in, C5_in, C6_in, C7_in, C8_in, C10_in, C11_in
+!         nu1_in, nu2_in, nu6_in, nu8_in, 
+!         beta_in, gamma_coef_in, c_K_in
+!         lmin_coef_in, taumin_in, taumax_in, mu_in
+
+!         Other parameters:
+!         runfile:  Namelist filename on disk to read in.
+!         run_name: Name of the run, e.g. bomex.
+!         stdout:   Whether to print to stdout while running timesteps.
+
+!  Output: 
+!         isValid:  A false return value indicates something was unsound.
+!-----------------------------------------------------------------------
        subroutine hoc_sub (C1_in, C2_in, C4_in, C5_in, C6_in, C7_in, 
      .                     C8_in, C10_in, C11_in, 
      .                     nu1_in, nu2_in, nu6_in, nu8_in, beta_in,
@@ -24,8 +43,7 @@
 
 ! External functions
         
-        real rsat
-        external rsat
+        real, external :: rsat
 
 ! Model setting
         character(len=*), intent(in) ::  runfile       ! Name of the nml file
@@ -294,14 +312,15 @@
        
 ! Time integration
 
-        ifinal = ( time_final - time_initial )  / dtmain
+        ifinal  = ( time_final - time_initial )  / dtmain
         ioutput = dtoutput / dtmain
 
-        time = time_initial
-        spunup = .false.
+        time    = time_initial
+        spunup  = .false.
 
 ! Initialize run to valid
         isValid = .true.
+
 #ifdef STATS
 ! Initialize statistics output
         call stats_init(50, runfile, gr%nnzp, gr%zt, gr%zm,
@@ -332,8 +351,6 @@
 
           if ( .not. isValid ) then
              call deallocate_model_arrays( ) 
-!             deallocate( fzt%var, fzt%z, fzm%var, fzm%z, 
-!     .                   fpdf%var, fpdf%z, fsfc%var, fsfc%z )
              return
           endif
 
@@ -943,14 +960,23 @@
         end subroutine hoc_sub
 
 !------------------------------------------------------------------------
-! subroutine to check if a real is NaN, +inf or -inf
+! subroutine TestNaN( )
+
+! Checks if a given real is NaN, +inf or -inf
+
+! Input: tDim: dimension of tVar.
+!        tVar: the real type array to be tested.
+
+! Output: isNaN: true if a variable in tVar is of Not-a-Number type
+
+! Notes: 
 ! This would be better as a logical function, but I had 
 ! technical issues doing that. 
 ! Paremeter NaN does not seem to work w/ '.eq.'
 ! Got a tip from Andy Vaught to use transfer( ) for portability
 ! Ideally this would be done with intrinsic module ieee in fortran 2003
+!  or with the isnan( ) function provided by some (not pgf) compilers
 !------------------------------------------------------------------------
-
         subroutine TestNaN( tVar, isNaN, tDim )
 
         implicit none

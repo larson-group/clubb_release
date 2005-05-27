@@ -22,6 +22,9 @@
 
       implicit none
 
+!---- External ------------------------------------------------------
+      logical, external  :: internal_endian
+
 !---- Parameters ------------------------------------------------------
       integer, parameter :: ascii_0 = 48,
      .                      ascii_1 = 49,
@@ -30,14 +33,12 @@
 
 !---- Internal variables ----------------------------------------------
       integer(kind=4)    :: i
-      logical            :: internal_endian
 
       i = ascii_0 + ascii_1*256 + ascii_2*(256**2) + ascii_3*(256**3)
 
       big_endian = internal_endian( i )
 
       return
-
       end function big_endian
 
 !----------------------------------------------------------------------
@@ -50,6 +51,7 @@
 
       little_endian = .not. big_endian( )
 
+      return
       end function little_endian
 
 !-----------------------------------------------------------------------
@@ -159,6 +161,5 @@
       endif
  
       return
-
       end function internal_endian
 !----------------------------------------------------------------------

@@ -1,8 +1,8 @@
-        
+!----------------------------------------------------------------------        
 ! This subroutine advances drizzle (rrm and Nrm) one timestep.
 ! It uses implicit discretization and formulas by 
 !     Khairoutdinov and Kogan (2000)
-
+!----------------------------------------------------------------------        
         SUBROUTINE rain( dt, thlm, p, exner, rhot, wmt, pdf_parms,
      .                   rcm, rtm, rrm, Nrm, cond_rrm, auto_rrm,
      .                   accr_rrm, cond_Nrm, auto_Nrm, sed_rrm, 
@@ -345,30 +345,35 @@
 !       set up boundary conditions
 
         ! rrm
-        aa(1) = aa(2)
+        aa(1)       = aa(2)
         aa(gr%nnzp) = aa(gr%nnzp-1)
-        bb(1) = bb(2)
+        bb(1)       = bb(2)
         bb(gr%nnzp) = bb(gr%nnzp-1)
-        cc(1) = cc(2)
+        cc(1)       = cc(2)
         cc(gr%nnzp) = cc(gr%nnzp-1)
-        dd(1) = dd(2)
+        dd(1)       = dd(2)
         dd(gr%nnzp) = dd(gr%nnzp-1)
 
         ! Nrm
-        oo(1) = oo(2)
+        oo(1)       = oo(2)
         oo(gr%nnzp) = oo(gr%nnzp-1)
-        pp(1) = pp(2)
+        pp(1)       = pp(2)
         pp(gr%nnzp) = pp(gr%nnzp-1)
-        qq(1) = qq(2)
+        qq(1)       = qq(2)
         qq(gr%nnzp) = qq(gr%nnzp-1)
-        rr(1) = rr(2)
+        rr(1)       = rr(2)
         rr(gr%nnzp) = rr(gr%nnzp-1)
 
 
 !       solve tridiagonal systems
 
-        call tridag(aa, bb, cc, dd, rrm, gr%nnzp, isValid)
 
+        call tridag(oo, pp, qq, rr, Nrm, gr%nnzp, isValid)
+!        call tridag(oo, pp, qq, rr, Nrm, gr%nnzp)
+        if (.not. isValid ) then
+          print *, "rain: tridag failed"
+          return
+        endif
         call tridag(oo, pp, qq, rr, Nrm, gr%nnzp, isValid)
         if (.not. isValid ) then
           print *, "rain: tridag failed"
@@ -486,11 +491,11 @@
 
               Nrp2_Nrm2 = 0.75
 
-              u_rr_G = LOG( rrm 
+              u_rr_G    = LOG( rrm 
      .                     * ((1.0 + rrp2_rrm2)**(-1.0/2.0)) )
               sig2_rr_G = LOG(1.0 + rrp2_rrm2)
 
-              u_Nr_G = LOG( Nrm_kg 
+              u_Nr_G    = LOG( Nrm_kg 
      .                     * ((1.0 + Nrp2_Nrm2)**(-1.0/2.0)) )
               sig2_Nr_G = LOG(1.0 + Nrp2_Nrm2)
 
@@ -547,10 +552,9 @@
 
 !------------------------------------------------------------------------
 
-        FUNCTION cond_evap_rrm(Temp, press, rhot, a, 
-     .                         thl1, thl2, rc1, rc2, s1, s2, ss1, ss2,
-     .                         es, Supsat, Nrm, rrm)
-
+        FUNCTION cond_evap_rrm( Temp, press, rhot, a, 
+     .                          thl1, thl2, rc1, rc2, s1, s2, ss1, ss2,
+     .                          es, Supsat, Nrm, rrm )
         USE constants
 
         IMPLICIT NONE
@@ -665,7 +669,7 @@
 
 !------------------------------------------------------------------------
 
-        FUNCTION cond_evap_Nrm(cond_rrm, Nrm, rrm)
+        FUNCTION cond_evap_Nrm( cond_rrm, Nrm, rrm )
 
         IMPLICIT NONE
 
@@ -875,7 +879,7 @@
 
 !------------------------------------------------------------------------
 
-        FUNCTION G_t_p(Temp, press)
+        FUNCTION G_t_p( Temp, press )
 
         USE constants
 
@@ -887,12 +891,15 @@
 
         ! External functions
 
-        real rsat
-        external rsat
+        real, external :: rsat
 
+        ! Input      
         REAL, INTENT(IN):: Temp, press
+
+        ! Ouput
         REAL:: G_t_p
 
+        ! Internal
         REAL:: Ka, Dv
         REAL:: Fk, Fd
         REAL:: es, rs, Celsius
@@ -921,7 +928,7 @@
 !------------------------------------------------------------------------
 
         FUNCTION autoconv_rrm( rcm, conc_cloud, rhot,
-     .                           a, s1, s2, ss1, ss2, rc1, rc2 )
+     .                         a, s1, s2, ss1, ss2, rc1, rc2 )
         USE constants
 
         IMPLICIT NONE
@@ -998,7 +1005,6 @@
 
         USE constants
 
-
         IMPLICIT NONE
 
         REAL, INTENT(IN):: auto_rrm, rhot
@@ -1057,11 +1063,11 @@
 
               ! rrp2_rrm2=0.4 agrees with COAMPS DYCOMS2 RF02 in cloud.  
 !              rrp2_rrm2 = rcp2 / MAX(rcm**2.0, 1.0E-10)
-              rrp2_rrm2 = 0.4
+              rrp2_rrm2   = 0.4
 
-              u_rr_G = LOG( rrm 
+              u_rr_G      = LOG( rrm 
      .                     * ((1.0 + rrp2_rrm2)**(-1.0/2.0)) )
-              sig2_rr_G = LOG(1.0 + rrp2_rrm2)
+              sig2_rr_G   = LOG(1.0 + rrp2_rrm2)
 
               corr_rcrr_G = corr_rcrr_L
      .                     * ((EXP(sig2_rr_G) - 1.0)**(1.0/2.0)) 
@@ -1174,7 +1180,7 @@
 
            IF ( test >= 0.0d0 .AND. test < limit ) THEN
 
-              gamma_in = alpha_exp + 1.0
+              gamma_in  = alpha_exp + 1.0
               gamma_out = GAMMA( gamma_in )
 !              CALL GAMMA( gamma_in, gamma_out )
 
@@ -1568,5 +1574,4 @@
 !        ENDIF
 !        RETURN
 !        END
-!
 !------------------------------------------------------------------------

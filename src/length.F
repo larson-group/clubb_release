@@ -1,9 +1,8 @@
 !-----------------------------------------------------------------------------
-! Subroutine length
-!
-! Larson's 5th moist, nonlocal length scale
-!
+! subroutine length( )
 
+! Larson's 5th moist, nonlocal length scale
+!-----------------------------------------------------------------------------
         subroutine length(thvm, thlm, rtm, rcm, em, p, exner,
      .                    Lscale, lup, ldown, mu)
 

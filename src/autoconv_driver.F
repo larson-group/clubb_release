@@ -1,5 +1,8 @@
+!-----------------------------------------------------------------------
+! subroutine autoconv_driver( )
 
 ! Compute Kessler grid box avg autoconversion (g/kg)/s.
+
 ! Input: n = number of calls to microphysics (normally=2)
 !        d = number of variates (normally=5) 
 !        a = mixture fraction of Gaussians
@@ -10,13 +13,15 @@
 !        Nc  = n in-cloud values of droplet number (#/mg air)
 !        rr = n in-cloud values of specific rain content (g/kg) 
 !        X_u = nxd Latin hypercube sample from uniform dist 
+
 ! Output: ac_m = a scalar representing 
 !                      grid box average autoconversion;
 !                      has same units as ql/s;
 !                      divide by total cloud fraction to obtain 
 !                      within-cloud autoconversion
-
-      subroutine autoconv_driver(n,d,a,R1,R2,ql,w,Nc,rr,X_u,ac_m)
+!-----------------------------------------------------------------------
+      subroutine autoconv_driver( n, d, a, R1, R2, ql, w, 
+     .                            Nc, rr, X_u, ac_m )
       
       implicit none
 
@@ -70,10 +75,10 @@
 
 ! Autoconversion formula prefactor and exponent.
 ! These are for Kessler autoconversion in (g/kg)/s.
-        coeff = 1.d-3
-        expn = 1.d0
-!        q_crit = 0.3d0
-!	 q_crit = 0.7d0
+        coeff  = 1.d-3
+        expn   = 1.d0
+!       q_crit = 0.3d0
+!	q_crit = 0.7d0
         q_crit = 0.2d0
 
 ! Initialize autoconversion in each mixture component
@@ -85,7 +90,7 @@
         n1 = 0
         n2 = 0
 
-        do sample = 1,n
+        do sample = 1, n
 
 ! Choose which mixture fraction we are in.  
 ! Account for cloud fraction.
@@ -97,7 +102,7 @@
 !          if ( X_u(sample,d+1) .lt. fraction_1 ) then
 !	   print*, '-1+2*int((sample+1)/2)= ', -1+2*int((sample+1)/2)
 !	   print*, '-1+2*int((sample+1)/2)= ', int(sample)
-           if ( X_u(1,d+1) .lt. fraction_1 ) then
+           if ( X_u(1,d+1) < fraction_1 ) then
 ! End of V. Larson fix
 
 ! Use an idealized formula to compute autoconversion 
@@ -138,33 +143,32 @@
 ! If we have no sample points for a certain plume,
 !    then we estimate the plume liquid water by the
 !    other plume's value.
-      if (n1 .eq. 0 .and. n2 .eq. 0) then
-	   print*, 'Error: no sample points in autoconv_driver'
-	   stop
+      if (n1 == 0 .and. n2 == 0) then
+        print*, 'Error: no sample points in autoconv_driver'
+        stop
       endif
 
-	if ( .not. (n1 .eq. 0) ) then
-	   ac_m1 = ac_m1/n1
-	endif
+       if ( .not. (n1 == 0) ) then
+          ac_m1 = ac_m1/n1
+       endif
 
-	if ( .not. (n2 .eq. 0) ) then
-	   ac_m2 = ac_m2/n2
-	endif
+       if ( .not. (n2 == 0) ) then
+          ac_m2 = ac_m2/n2
+       endif
 
-	if (n1 .eq. 0) then
-	   ac_m1 = ac_m2
-	endif	
+       if (n1 == 0) then
+          ac_m1 = ac_m2
+       endif
 
-	if (n2 .eq. 0) then
-	   ac_m2 = ac_m1
-	endif	
+       if (n2 == 0) then
+          ac_m2 = ac_m1
+       endif
 
 ! Grid box average.
-	ac_m = a*R1*ac_m1 + (1-a)*R2*ac_m2
+       ac_m = a*R1*ac_m1 + (1-a)*R2*ac_m2
 
 !        print*, 'autoconv_driver.F: acm=', ac_m
 
       return
-      end
-
+      end subroutine autoconv_driver
 !---------------------------------------------------------------

@@ -1,27 +1,26 @@
 !------------------------------------------------------------------------
-!
 ! Subroutine that computes pdf parameters analytically.
-!
+
 ! Based of the original formulation, but with some tweaks
 ! to remove some of the less realistic assumptions and
 ! improve transport terms.
-!
+
 ! Corrected version that should remove inconsistency
-!
-        subroutine pdf_closure_new(p,exner,
-     .                         wm,wp2,wp3,Sc,
-     .                         rtm,rtp2,wprtp,
-     .                         thlm,thlp2,wpthlp,
-     .                         wp4,
-     .                         wprtp2,wp2rtp,
-     .                         wpthlp2,wp2thlp,
-     .                         rtpthlp,
-     .                         wprtpthlp,
-     .                         cf,rcm,
-     .                         wpthvp,wp2thvp,rtpthvp,thlpthvp,
-     .                         wprcp,wp2rcp,rtprcp,thlprcp,
-     .                         pdf_parms,
-     .                         crt1,crt2,cthl1,cthl2)
+!------------------------------------------------------------------------
+        subroutine pdf_closure_new( p, exner,
+     .                              wm, wp2, wp3, Sc,
+     .                              rtm, rtp2, wprtp,
+     .                              thlm, thlp2, wpthlp,
+     .                              wp4,
+     .                              wprtp2, wp2rtp,
+     .                              wpthlp2, wp2thlp,
+     .                              rtpthlp,
+     .                              wprtpthlp,
+     .                              cf, rcm,
+     .                              wpthvp, wp2thvp, rtpthvp, thlpthvp,
+     .                              wprcp, wp2rcp, rtprcp, thlprcp,
+     .                              pdf_parms,
+     .                              crt1, crt2, cthl1, cthl2 )
 
         use constants
 
@@ -29,9 +28,8 @@
 
 ! External
 
-        real erf
-        real rsat
-        external rsat
+        real, external :: erf
+        real, external :: rsat
 
 ! Input
 
@@ -102,19 +100,19 @@
 
         if ( wp2 <= wtol**2 )  then
 
-          a = 0.5
-          w1 = wm
-          w2 = wm
-          sw1 = 0.
-          sw2 = 0.
-          rt1 = rtm
-          rt2 = rtm
-          srt1 = 0.
-          srt2 = 0.
-          thl1 = thlm
-          thl2 = thlm
-          sthl1 = 0.
-          sthl2 = 0.
+          a      = 0.5
+          w1     = wm
+          w2     = wm
+          sw1    = 0.
+          sw2    = 0.
+          rt1    = rtm
+          rt2    = rtm
+          srt1   = 0.
+          srt2   = 0.
+          thl1   = thlm
+          thl2   = thlm
+          sthl1  = 0.
+          sthl2  = 0.
           rrtthl = 0.
 
         else
@@ -136,11 +134,11 @@
 
           w1_n = sqrt(((1-a)/a)*(1-Sc))
           w2_n = -sqrt((a/(1-a))*(1-Sc))
-          w1 = wm + sqrt(wp2)*w1_n
-          w2 = wm + sqrt(wp2)*w2_n
+          w1   = wm + sqrt(wp2)*w1_n
+          w2   = wm + sqrt(wp2)*w2_n
 
-          sw1 = Sc*wp2
-          sw2 = Sc*wp2
+          sw1  = Sc*wp2
+          sw2  = Sc*wp2
 
 !         Vince Larson added a factor so that width of plumes in 
 !         theta_l, rt can vary.  
@@ -152,16 +150,16 @@
           width_factor_2 = 2. - width_factor_1
 
           if ( thlp2 <= thltol**2 ) then
-            thl1 = thlm
-            thl2 = thlm
-            sthl1 = 0.
-            sthl2 = 0.
+            thl1      = thlm
+            thl2      = thlm
+            sthl1     = 0.
+            sthl2     = 0.
             alpha_thl = 0.5
           else
             thl1_n = - (wpthlp/(sqrt(wp2)*sqrt(thlp2)))/w2_n
             thl2_n = - (wpthlp/(sqrt(wp2)*sqrt(thlp2)))/w1_n
 
-            thl1 = thlm - (wpthlp/sqrt(wp2))/w2_n
+            thl1   = thlm - (wpthlp/sqrt(wp2))/w2_n
             thl2 = thlm - (wpthlp/sqrt(wp2))/w1_n
 
             alpha_thl
@@ -177,10 +175,10 @@
           end if
 
           if ( rtp2 <= rttol**2) then
-            rt1 = rtm
-            rt2 = rtm
-            srt1 = 0.
-            srt2 = 0.
+            rt1      = rtm
+            rt2      = rtm
+            srt1     = 0.
+            srt2     = 0.
             alpha_rt = 0.5
           else
             rt1_n = - (wprtp/(sqrt(wp2)*sqrt(rtp2)))/w2_n
@@ -223,20 +221,20 @@
 
 !       higher order moments
 
-        wp2rtp = a * ( (w1-wm)**2+sw1 ) * ( rt1-rtm )
-     .           + (1-a) * ( (w2-wm)**2+sw2 ) * ( rt2-rtm )
+        wp2rtp  = a * ( (w1-wm)**2+sw1 ) * ( rt1-rtm )
+     .          + (1-a) * ( (w2-wm)**2+sw2 ) * ( rt2-rtm )
 
         wp2thlp = a * ( (w1-wm)**2+sw1 ) * ( thl1-thlm )
-     .            + (1-a) * ( (w2-wm)**2+sw2 ) * ( thl2-thlm )
+     .          + (1-a) * ( (w2-wm)**2+sw2 ) * ( thl2-thlm )
 
-        wp4 = a * ( 3*sw1**2 + 6*((w1-wm)**2)*sw1 + (w1-wm)**4 )
-     .        + (1-a) * ( 3*sw2**2 + 6*((w2-wm)**2)*sw2 + (w2-wm)**4 )
+        wp4     = a * ( 3*sw1**2 + 6*((w1-wm)**2)*sw1 + (w1-wm)**4 )
+     .          + (1-a) * ( 3*sw2**2 + 6*((w2-wm)**2)*sw2 + (w2-wm)**4 )
 
-        wprtp2 = a * ( w1-wm )*( (rt1-rtm)**2 + srt1 ) 
-     .           + (1-a) * ( w2-wm )*( (rt2-rtm)**2 + srt2)
+        wprtp2  = a * ( w1-wm )*( (rt1-rtm)**2 + srt1 ) 
+     .          + (1-a) * ( w2-wm )*( (rt2-rtm)**2 + srt2)
 
         wpthlp2 = a * ( w1-wm )*( (thl1-thlm)**2 + sthl1 ) 
-     .            + (1-a) * ( w2-wm )*( (thl2-thlm)**2+sthl2 )
+     .          + (1-a) * ( w2-wm )*( (thl2-thlm)**2+sthl2 )
 
         wprtpthlp = a * ( w1-wm )*( (rt1-rtm)*(thl1-thlm) 
      .                + rrtthl*sqrt(srt1*sthl1) )
@@ -250,8 +248,8 @@
 !       "1" denotes first Gaussian; "2" denotes 2nd Gaussian
 !       liq water temp (Sommeria & Deardorff 1977 (SD), eqn. 3)
 
-        tl1 = thl1*exner
-        tl2 = thl2*exner
+        tl1  = thl1*exner
+        tl2  = thl2*exner
 
         rsl1 = rsat(p,tl1)
         rsl2 = rsat(p,tl2)
@@ -265,8 +263,8 @@
         s2 = (rt2-rsl2)/(1+beta2*rsl2)
 
 !       coefficient for s'
-        crt1 = 1/(1+beta1*rsl1)
-        crt2 = 1/(1+beta2*rsl2)
+        crt1  = 1/(1+beta1*rsl1)
+        crt2  = 1/(1+beta2*rsl2)
 
         cthl1 = ((1+beta1*rt1)/(1+beta1*rsl1)**2)*(cp/Lv)
      .        *beta1*rsl1*exner
@@ -299,55 +297,55 @@
            rc1 =s1*R1+ss1*exp(-0.5*zeta1**2)/(sqrt(2*pi))
         else
            if ( s1 < 0. ) then
-              R1 = 0.
+              R1  = 0.
               rc1 = 0.
            else
-              R1 = 1.
+              R1  = 1.
               rc1 = s1
            end if
         end if
         if ( ss2 > sstol ) then
            zeta2 = s2/ss2
-           R2 = 0.5*(1+erf(zeta2/sqrt(2.0)))
-           rc2 =s2*R2+ss2*exp(-0.5*zeta2**2)/(sqrt(2*pi))
+           R2    = 0.5*(1+erf(zeta2/sqrt(2.0)))
+           rc2   = s2*R2+ss2*exp(-0.5*zeta2**2)/(sqrt(2*pi))
         else
            if ( s2 < 0. ) then
-             R2 = 0.
+             R2  = 0.
              rc2 = 0.
            else
-             R2 = 1.
+             R2  = 1.
              rc2 = s2
            end if
         end if
 
 !       now compute moments that depend on theta_v
 
-        wp2rcp = a * ((w1-wm)**2 + sw1)*rc1
+        wp2rcp  = a * ((w1-wm)**2 + sw1)*rc1
      .                 + (1-a) * ((w2-wm)**2 + sw2)*rc2
      .                 - wp2 * (a*rc1+(1-a)*rc2)
         wp2thvp = wp2thlp + ep1*T0*wp2rtp + BD*wp2rcp
 
-        wprcp = a * (w1-wm)*rc1 + (1-a) * (w2-wm)*rc2
-        wpthvp = wpthlp + ep1*T0*wprtp + BD*wprcp
+        wprcp   = a * (w1-wm)*rc1 + (1-a) * (w2-wm)*rc2
+        wpthvp  = wpthlp + ep1*T0*wprtp + BD*wprcp
 
 !       account for subplume correlation in qt-thl
-        thlprcp = a * ( (thl1-thlm)*rc1 - (cthl1*sthl1)*R1 )
+        thlprcp  = a * ( (thl1-thlm)*rc1 - (cthl1*sthl1)*R1 )
      .            + (1-a) * ( (thl2-thlm)*rc2 - (cthl2*sthl2)*R2 )
      .            + a*rrtthl*crt1*sqrt(srt1)*sqrt(sthl1)*R1
      .            + (1-a)*rrtthl*crt2*sqrt(srt2)*sqrt(sthl2)*R2
         thlpthvp = thlp2 + ep1*T0*rtpthlp + BD*thlprcp
 
 !       account for subplume correlation in qt-thl
-        rtprcp = a * ( (rt1-rtm)*rc1 + (crt1*srt1)*R1 )
+        rtprcp   = a * ( (rt1-rtm)*rc1 + (crt1*srt1)*R1 )
      .                 + (1-a) * ( (rt2-rtm)*rc2 + (crt2*srt2)*R2 )
      .            - a*rrtthl*cthl1*sqrt(srt1)*sqrt(sthl1)*R1
      .            - (1-a)*rrtthl*cthl2*sqrt(srt2)*sqrt(sthl2)*R2
 
-        rtpthvp = rtpthlp + ep1*T0*rtp2 + BD*rtprcp
+        rtpthvp  = rtpthlp + ep1*T0*rtp2 + BD*rtprcp
 
 !       compute mean cloud fraction and cloud water
 
-        cf = a * R1 + (1-a) * R2
+        cf  = a * R1 + (1-a) * R2
         rcm = a * rc1 + (1-a) * rc2
 
         ! Note: Brian added the following line to ensure that there
@@ -362,15 +360,15 @@
 
 !       save pdf parameters
 
-        pdf_parms(1) = w1
-        pdf_parms(2) = w2
-        pdf_parms(3) = sw1
-        pdf_parms(4) = sw2
-        pdf_parms(5) = rt1
-        pdf_parms(6) = rt2
-        pdf_parms(7) = srt1
-        pdf_parms(8) = srt2
-        pdf_parms(9) = thl1
+        pdf_parms(1)  = w1
+        pdf_parms(2)  = w2
+        pdf_parms(3)  = sw1
+        pdf_parms(4)  = sw2
+        pdf_parms(5)  = rt1
+        pdf_parms(6)  = rt2
+        pdf_parms(7)  = srt1
+        pdf_parms(8)  = srt2
+        pdf_parms(9)  = thl1
         pdf_parms(10) = thl2
         pdf_parms(11) = sthl1
         pdf_parms(12) = sthl2

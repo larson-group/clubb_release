@@ -11,9 +11,6 @@
 
       implicit none
 
-!----- Program variables ----------------------------------------------
-      logical isValid 
-
 !----- Model constants ------------------------------------------------
 ! Notes:  C4 and C10 do not currently play a role in the model 3/18/05
 !
@@ -29,6 +26,9 @@
       character(len=30) :: run_name
 
       logical           :: stdout
+
+!----- Internal variables ----------------------------------------------
+      logical isValid 
 
 !----- Namelists ------------------------------------------------------
       namelist /initvars/ C1, C2, C4, C5, C6, C7, C8, C10, C11, 
@@ -48,10 +48,10 @@
       isValid = .true.
       
 !----- Run the model----------------------------------------------------
-      call hoc_sub (C1, C2, C4, C5, C6, C7, C8, C10, C11, 
+      call hoc_sub( C1, C2, C4, C5, C6, C7, C8, C10, C11, 
      .              nu1, nu2, nu6, nu8, beta,
      .              gamma_coef, c_K, lmin_coef, taumin, taumax, mu,
-     .              runfile, run_name, isValid, stdout)
+     .              runfile, run_name, isValid, stdout )
 
       if ( .not. isValid ) then 
         stop "Model wasn't valid, check your constants"

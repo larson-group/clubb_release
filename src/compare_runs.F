@@ -1,6 +1,7 @@
 !----------------------------------------------------------------------
-!  COMPARE_RUNS.F
-!    Tests GRaDS file variables for low variation
+!  program compare_runs.F
+
+!  Tests selected GRaDS file variables for low variation
 !----------------------------------------------------------------------
         program compare_runs 
 

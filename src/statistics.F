@@ -1,5 +1,9 @@
 #ifdef STATS
-
+!-----------------------------------------------------------------------
+!  module stats_type
+!  contains:
+!    derived data type 'stats'
+!-----------------------------------------------------------------------
       module stats_type
 
         use outputfile_class
@@ -33,6 +37,11 @@ c         Data for GrADS output
 
       end module stats_type
 
+!-----------------------------------------------------------------------
+!  module statistics
+
+!  holds pointers to variables to be written to GRaDS files
+!-----------------------------------------------------------------------
       module statistics
 
         use stats_type
@@ -244,8 +253,8 @@ c       Scratch space
       end module statistics
 
 c     -----------------------------------------------------------------
-      subroutine stats_init(iunit,fnamelist,nnzp,gzt,gzm,
-     .                      day,month,year,time,delt)
+      subroutine stats_init( iunit, fnamelist, nnzp, gzt, gzm,
+     .                       day, month, year, time, delt )
 
       use statistics
 
@@ -290,16 +299,16 @@ c     -----------------------------------------------------------------
       close(iunit)
 
       if ( .not. lstats ) then
-        lstats_samp = .false.
+        lstats_samp  = .false.
         lstats_first = .false.
-        lstats_last = .false.
+        lstats_last  = .false.
         return
       endif
 
 !     Check sampling and output frequencies
 
       if ( abs( stats_tsamp/delt - int(stats_tsamp/delt) ) 
-     .     .gt. 1.e-8 ) then
+     .     > 1.e-8 ) then
          lerror = .true.
          write(*,*) 'Error: stats_tsamp should be a multiple of delt'
          write(*,*) 'stats_tsamp = ',stats_tsamp
@@ -307,7 +316,7 @@ c     -----------------------------------------------------------------
       endif
 
       if ( abs( stats_tout/stats_tsamp - int(stats_tout/stats_tsamp) ) 
-     .     .gt. 1.e-8 ) then
+     .     > 1.e-8 ) then
          lerror = .true.
          write(*,*) 
      .      'Error: stats_tout should be a multiple of stats_tsamp'
@@ -324,7 +333,7 @@ c     -----------------------------------------------------------------
         i = i + 1
       end do
       ntot = i - 1
-      if ( ntot .eq. nvarmax )
+      if ( ntot == nvarmax )
      .  write(*,*) 'WARNING: check nvarmax in statistics.f'
 
       zt%nn = ntot
@@ -1082,7 +1091,7 @@ c     -----------------------------------------------------------------
         i = i + 1
       end do
       ntot = i - 1
-      if ( ntot .eq. nvarmax )
+      if ( ntot == nvarmax )
      .  write(*,*) 'WARNING: check nvarmax in statistics.f'
 
       zm%nn = ntot
@@ -1587,7 +1596,7 @@ c     -----------------------------------------------------------------
         i = i + 1
       end do
       ntot = i - 1
-      if ( ntot .eq. nvarmax )
+      if ( ntot == nvarmax )
      .  write(*,*) 'WARNING: check nvarmax in statistics.f'
 
       sfc%nn = ntot
@@ -1764,7 +1773,7 @@ c     -----------------------------------------------------------------
       do n=1,s%nn
         do k=1,s%kk
 
-          if ( s%n(k,n) .gt. 0 ) then
+          if ( s%n(k,n) > 0 ) then
             s%x(k,n) = s%x(k,n) / s%n(k,n)
           end if
 
@@ -1836,13 +1845,13 @@ c     -----------------------------------------------------------------
 
       do i=1,zt%nn
        do k=1,zt%kk
-!         if ( zt%n(k,i).ne.0 
-!     .        .and. zt%n(k,i).ne.stats_tout/stats_tsamp ) then
-!         if ( zt%n(k,i).ne.0 
-!     .        .and. zt%n(k,i).ne.1 ) then
-         if ( zt%n(k,i).ne.0
-     .        .and. zt%n(k,i).ne.1
-     .        .and. zt%n(k,i) .ne. int(delt/deltclose) ) then  ! Brian
+!         if ( zt%n(k,i) /= 0 
+!     .        .and. zt%n(k,i) /= stats_tout/stats_tsamp ) then
+!         if ( zt%n(k,i) /= 0 
+!     .        .and. zt%n(k,i) /= 1 ) then
+         if ( zt%n(k,i) /= 0
+     .        .and. zt%n(k,i) /= 1
+     .        .and. zt%n(k,i) /= int(delt/deltclose) ) then  ! Brian
            write(*,*) 'Possible sampling error for zt ',i,k,zt%n(k,i)
          endif
         enddo
@@ -1850,13 +1859,13 @@ c     -----------------------------------------------------------------
       
       do i=1,zm%nn
        do k=1,zm%kk
-!         if ( zm%n(k,i).ne.0 
-!     .        .and. zm%n(k,i).ne.stats_tout/stats_tsamp ) then
-!         if ( zm%n(k,i).ne.0 
-!     .        .and. zm%n(k,i).ne.1 ) then
-         if ( zm%n(k,i).ne.0
-     .        .and. zm%n(k,i).ne.1
-     .        .and. zm%n(k,i) .ne. int(delt/deltclose) ) then  ! Brian
+!         if ( zm%n(k,i) /= 0 
+!     .        .and. zm%n(k,i) /= stats_tout/stats_tsamp ) then
+!         if ( zm%n(k,i) /= 0 
+!     .        .and. zm%n(k,i) /= 1 ) then
+         if ( zm%n(k,i) /= 0
+     .        .and. zm%n(k,i) /= 1
+     .        .and. zm%n(k,i) /= int(delt/deltclose) ) then  ! Brian
            write(*,*) 'Possible sampling error for zm ',i,k,zm%n(k,i)
          endif
         enddo

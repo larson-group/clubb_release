@@ -1,4 +1,4 @@
-
+!----------------------------------------------------------------------
 ! Generates n random samples from a d-dim Gaussian-mixture PDF.
 ! Uses Latin hypercube method.
 ! To be called from closure of hoc.
@@ -19,6 +19,7 @@
 !          dxd dimensional covariance matrix for components 1 & 2
 !         C1, C2 = cloud fraction associated w/ 
 !                            1st, 2nd mixture component
+
 ! Output: X_u = Sample drawn from uniform distribution
 !         X_nl = Sample that is transformed ultimately to normal-lognormal 
 
@@ -31,13 +32,15 @@
 ! We take samples only from the cloudy part 
 !       of the grid box.
 ! We use units of g/kg.
+!----------------------------------------------------------------------
 
-      subroutine sample_points(n,nt,d,p_matrix,a,
-     .                 rt1,thl1,rt2,thl2,
-     .                 crt1,cthl1,crt2,cthl2,
-     .                 mu1,mu2,Sigma_rtthlw_1,Sigma_rtthlw_2,
-     .                 C1,C2,
-     .                 X_u,X_nl)
+      subroutine sample_points( n, nt, d, p_matrix, a,
+     .                          rt1, thl1, rt2, thl2,
+     .                          crt1, cthl1, crt2, cthl2,
+     .                          mu1, mu2, 
+     .                          Sigma_rtthlw_1, Sigma_rtthlw_2,
+     .                          C1, C2,
+     .                          X_u, X_nl )
 
       implicit none
 
@@ -46,22 +49,22 @@
       integer, intent(in) :: n, nt, d, p_matrix(1:n,1:(d+1))
 
 ! Weight of 1st Gaussian, 0 <= a <= 1
-	double precision, intent(in) :: a
-	
+      double precision, intent(in) :: a
+
 ! Thermodynamic constants for plumes 1 and 2, units of g/kg
       double precision, intent(in) :: rt1, thl1, rt2, thl2
-	double precision, intent(in) :: crt1, cthl1, crt2, cthl2
+      double precision, intent(in) :: crt1, cthl1, crt2, cthl2
 
 ! Latin hypercube variables, i.e. s, t, w, etc.
-	double precision, intent(in) :: mu1(1:d), mu2(1:d)
+      double precision, intent(in) :: mu1(1:d), mu2(1:d)
 
 ! Covariance matrices of rt, thl, w for each Gaussian
 !      Ordering of matrix is rt, thl, w
-	double precision, intent(in) :: Sigma_rtthlw_1(1:d,1:d)
-	double precision, intent(in) :: Sigma_rtthlw_2(1:d,1:d)
+      double precision, intent(in) :: Sigma_rtthlw_1(1:d,1:d)
+      double precision, intent(in) :: Sigma_rtthlw_2(1:d,1:d)
 
 ! Cloud fractions for components 1 and 2
-	double precision, intent(in) :: C1, C2
+      double precision, intent(in) :: C1, C2
 
 ! Output variables ---------------------------------------
 
@@ -69,34 +72,34 @@
       double precision, intent(out) :: X_u(1:n,1:(d+1)) 
 
 ! Sample that is transformed ultimately to normal-lognormal 
-	double precision, intent(out) :: X_nl(1:n,1:d)
+      double precision, intent(out) :: X_nl(1:n,1:d)
 
 
 ! Local variables  ---------------------------------------
 
-	integer col
+      integer col
 
 ! Covariance matrices for variables s, t, w for comps 1 & 2
-	double precision Sigma_stw_1(1:d,1:d), Sigma_stw_2(1:d,1:d)
+      double precision Sigma_stw_1(1:d,1:d), Sigma_stw_2(1:d,1:d)
 
 ! Sample of s points that is drawn only from normal distribution
-	double precision s_pts(1:n)
+      double precision s_pts(1:n)
 
 ! Total water, theta_l: mean plus perturbations
-	double precision rt(1:n), thl(1:n)
+      double precision rt(1:n), thl(1:n)
 
-	double precision mean, std, corrcoef
+      double precision mean, std, corrcoef
 
 
 ! Beginning of code -----------------------------------------
 
 ! Convert each Gaussian from rt-thl-w variables to s-t-w vars.
-	call rtpthlp_2_sptp(d,Sigma_rtthlw_1,crt1,cthl1,Sigma_stw_1)
-	call rtpthlp_2_sptp(d,Sigma_rtthlw_2,crt2,cthl2,Sigma_stw_2)
+      call rtpthlp_2_sptp( d, Sigma_rtthlw_1, crt1, cthl1, Sigma_stw_1 )
+      call rtpthlp_2_sptp( d, Sigma_rtthlw_2, crt2, cthl2, Sigma_stw_2 )
 
 ! Generate Latin hypercube sample, with one extra dimension 
 !    for mixture component.
-	call latin_hyper_sample(n,nt,d+1,p_matrix,X_u)
+      call latin_hyper_sample( n, nt, d+1, p_matrix, X_u )
 
 ! Standard sample for testing purposes when n=2
 !	X_u(1,1:(d+1)) = ( / 0.0001d0, 0.46711825945881d0, 
@@ -107,15 +110,16 @@
 
 ! Let s PDF (1st column) be a truncated Gaussian.
 ! Take sample solely from cloud points.
-	col = 1
-	call truncate_gaus_mixt(n,d,col,a,mu1,mu2,
-     .               Sigma_stw_1,Sigma_stw_2,C1,C2,X_u,
-     .               s_pts)
+      col = 1
+      call truncate_gaus_mixt( n, d, col, a, mu1, mu2,
+     .                         Sigma_stw_1, Sigma_stw_2, C1, C2, X_u,
+     .                         s_pts )
 
 ! Generate n samples of a d-variate Gaussian mixture
 ! by transforming Latin hypercube points, X_u.
-	call gaus_mixt_points(n,d,a,mu1,mu2,Sigma_stw_1,Sigma_stw_2,
-     .                                     C1,C2,X_u,s_pts,X_nl)
+      call gaus_mixt_points( n, d, a, mu1, mu2, 
+     .                       Sigma_stw_1, Sigma_stw_2,
+     .                       C1, C2, X_u, s_pts, X_nl )
 
 ! Transform s (column 1) and t (column 2) back to rt and thl
 ! This is only needed if you need rt, thl in your microphysics.
@@ -133,12 +137,12 @@
 !	print*, 'rtpthlp_coef_est=', corrcoef(rt,thl,n)
 
 ! Convert last two variates (columns) (usu N and rr) to lognormal
-	if (d .gt. 3) then
-	   X_nl(1:n,(d-1):d) = exp( X_nl(1:n,(d-1):d) )
-	else
+      if (d > 3) then
+         X_nl(1:n,(d-1):d) = exp( X_nl(1:n,(d-1):d) )
+      else
          print*, 'd<4 in sampling_driver: 
      .           will not convert last two variates to lognormal'
-	endif	
+      endif
 
 ! Test diagnostics
 !	print*, 'mean X_nl(:,2)=', mean(X_nl(1:n,2),n)
@@ -155,7 +159,6 @@
 !     .            corrcoef( X_nl(1:n,2), X_nl(1:n,3), n )
 
 
-	return
-      end
-
+      return
+      end subroutine sample_points
 !------------------------------------------------------------------------

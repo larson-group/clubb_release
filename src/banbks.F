@@ -28,5 +28,5 @@
         if(l.lt.mm) l=l+1
 14    continue
       return
-      END
+      END SUBROUTINE banbks
 C  (C) Copr. 1986-92 Numerical Recipes Software =v1.9"217..
