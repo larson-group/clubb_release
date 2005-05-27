@@ -367,14 +367,11 @@
 
 !       solve tridiagonal systems
 
+        call tridag(aa, bb, cc, dd, rrm, gr%nnzp, isValid)
+!        call tridag(aa, bb, cc, dd, rrm, gr%nnzp)
 
         call tridag(oo, pp, qq, rr, Nrm, gr%nnzp, isValid)
 !        call tridag(oo, pp, qq, rr, Nrm, gr%nnzp)
-        if (.not. isValid ) then
-          print *, "rain: tridag failed"
-          return
-        endif
-        call tridag(oo, pp, qq, rr, Nrm, gr%nnzp, isValid)
         if (.not. isValid ) then
           print *, "rain: tridag failed"
           return
