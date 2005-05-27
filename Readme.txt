@@ -1,6 +1,6 @@
 Using the HOC tuner
 -----------------------------------------------------------------------
-Last update May 18, 2005
+Last update May 27, 2005
 
 -----------------------------------------------------------------------
 -                                                                     -
@@ -8,9 +8,10 @@ Last update May 18, 2005
 -                                                                     -
 -----------------------------------------------------------------------
 
-$ cd ~/hoc_v2.1_tuner/src
+$ cd ~/hoc_v2.2_tuner/src
 edit Makefile for your compiler and optimization options.
 $ make
+$ make install
 
 -----------------------------------------------------------------------
 -                                                                     -
@@ -109,12 +110,9 @@ LES GrADS files:
   statistically steady-state; ARM varies over the course of a day.
 
 HOC GrADS files:
-  untuned-hoc_bomex, etc.
+  /standalone/Results_<DATE>/bomex_zt.ctl, etc.
   These are the 4 basic runs using the default constants. Not used in any
   way by the tuner, but useful for comparing runs results in grads.
-  untuned-hoc_bomex-zm, etc.
-  These are the zm counterparts to the above.  We only use them for 
-  comparing wp2 currently.
 
 Generated HOC GrADS files:
   bomex_zt.dat, fire_zt.dat, arm_zt.dat, atex_zt.dat, dycoms_zt.dat,
