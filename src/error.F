@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!       $Header: /cvsroot/hoc_v2.2_tuner/src/error.F,v 1.3 2005-05-31 14:57:16 dschanen Exp $
+! $Id: error.F,v 1.4 2005-05-31 15:48:09 dschanen Exp $
 
 !	Module ERROR
 !	
