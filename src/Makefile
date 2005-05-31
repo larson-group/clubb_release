@@ -1,3 +1,5 @@
+# $Id: Makefile,v 1.8 2005-05-31 15:55:06 dschanen Exp $
+
 # Compiler invocation
 
 FC=pgf90
@@ -18,7 +20,8 @@ FCFLAGS = $(PGF_P4_OPTIMIZE) $(DEBUG) -DSTATS
 LDFLAGS = $(FCFLAGS)
 
 # Object files
-OBJS	= constants.o arrays.o endian.o outputgrads.o grid.o statistics.o \
+OBJS	= polpak.o \
+	constants.o arrays.o endian.o outputgrads.o grid.o statistics.o \
 	banbks.o bandec.o erf.o tridag.o rain.o \
 	closure_new.o diag_var.o gcss.o hoc.o hydrostatic.o \
 	length.o mixing.o rsat.o sfc.o sounding.o update.o wp23.o tau.o \
@@ -29,44 +32,38 @@ OBJS	= constants.o arrays.o endian.o outputgrads.o grid.o statistics.o \
         matmult.o micro_calcs.o permute_height_time.o \
         ql_estimate.o ran2.o rand_permute.o \
         rtpthlp_2_sptp.o sample_points.o st_2_rtthl.o \
-        truncate_gaus_mixt.o
+        truncate_gaus_mixt.o \
+	nrtype.o nr.o nrutil.o ran_state.o ran1.o amebsa.o amoeba.o \
 
-OBJS90	= nrtype.o nr.o nrutil.o ran_state.o ran1.o amebsa.o amoeba.o
-
-POLPAK  = polpak.o
-
-TARGETS = hoc_tuner.o hoc_standalone.o compare_runs.o
+TARGETS = int2txt.o hoc_tuner.o hoc_standalone.o compare_runs.o
 
 # Targets
 all:	hoc_tuner hoc_standalone int2txt compare_runs
 
 # Rules
-$(OBJS):
-	$(FC) $(FCFLAGS) -c $*.F
+.SUFFIXES:	.o .f .F .f90
 
-$(OBJS90):
-	$(FC) $(FCFLAGS) -c $*.f90 
+.f.o:
+	$(FC) $(FCFLAGS) -c $<
+.f90.o:
+	$(FC) $(FCFLAGS) -c $<
+.F.o:
+	$(FC) $(FCFLAGS) -c $<
 
-$(POLPAK):
-	$(FC) $(FCFLAGS) -c $*.f90
-
-$(TARGETS):
-	$(FC) $(FCFLAGS) -c $*.F
-
-hoc_tuner:	$(POLPAK) $(OBJS90) $(OBJS) $(TARGETS)
+hoc_tuner:	$(OBJS) $(TARGETS)
 		$(FC) $(LDFLAGS) -o hoc_tuner \
-		$(POLPAK) $(OBJS90) $(OBJS) $@.o
+		$(OBJS) $@.o
 
-hoc_standalone: $(POLPAK) $(OBJS) $(TARGETS)
+hoc_standalone: $(OBJS) $(TARGETS)
 	        $(FC) $(LDFLAGS) -o hoc_standalone \
-                $(POLPAK) $(OBJS) $@.o 
+                $(OBJS) $@.o 
 
-int2txt:	
-		$(FC) $(FCFLAGS) -c $@.f90
+int2txt:	$(TARGETS)
 		$(FC) $(LDFLAGS) $@.o -o int2txt
 
-compare_runs:	$(POLPAK) $(OBJS) $(TARGETS)
-		$(FC) $(POLPAK) $(OBJS) $(LDFLAGS) $@.o -o compare_runs
+compare_runs:	$(OBJS) $(TARGETS)
+	        $(FC) $(LDFLAGS) -o compare_runs \
+                $(OBJS) $@.o 
 
 install: 
 	-cp int2txt ../tune/ 
@@ -74,11 +71,10 @@ install:
 	-cp hoc_standalone ../standalone/
 	-cp compare_runs ../compare_runs/
 clean: 
-	-rm -f *.o *.mod
+	-rm -f *.o *.mod core.*
 
 
 # Dependencies
-
 polpak.o      : polpak.f90
 endian.o      : endian.F
 constants.o   : constants.F
@@ -117,30 +113,29 @@ amebsa.o      : nr.f90 nrtype.f90 nrutil.f90 ran_state.f90 ran1.f90 amebsa.f90
 amoeba.o      : nr.f90 nrtype.f90 nrutil.f90 amoeba.f90
 gradsaverage.o: inputgrads.F gradsaverage.F 
 error.o       : nr.f90 nrtype.f90 gradsaverage.F error.F
-autoconv_driver.o : autoconv_driver.F
-corrcoef.o : corrcoef.F
-gaus_condt.o : gaus_condt.F
-gaus_mixt_points.o : gaus_mixt_points.F
-gaussj.o : gaussj.F
-generate_k_order.o : generate_k_order.F
-latin_hyper_sample.o : latin_hyper_sample.F
-lh_sampler.o : lh_sampler.F
-ltqnorm.o : ltqnorm.F
-matmult.o : matmult.F
-micro_calcs.o : micro_calcs.F
-permute_height_time.o : permute_height_time.F
-ql_estimate.o : ql_estimate.F
-ran2.o : ran2.F
-rand_permute.o : rand_permute.F
-rtpthlp_2_sptp.o : rtpthlp_2_sptp.F
-sample_points.o : sample_points.F
-st_2_rtthl.o : st_2_rtthl.F
-truncate_gaus_mixt.o : truncate_gaus_mixt.F
 
-hoc_tuner.o   : nr.f90 nrtype.f90 hoc.F error.F hoc_tuner.F
+autoconv_driver.o	: autoconv_driver.F
+corrcoef.o		: corrcoef.F
+gaus_condt.o		: gaus_condt.F
+gaus_mixt_points.o	: gaus_mixt_points.F
+gaussj.o		: gaussj.F
+generate_k_order.o	: generate_k_order.F
+latin_hyper_sample.o	: latin_hyper_sample.F
+lh_sampler.o		: lh_sampler.F
+ltqnorm.o		: ltqnorm.F
+matmult.o		: matmult.F
+micro_calcs.o		: micro_calcs.F constants.F
+permute_height_time.o	: permute_height_time.F
+ql_estimate.o		: ql_estimate.F
+ran2.o			: ran2.F
+rand_permute.o		: rand_permute.F
+rtpthlp_2_sptp.o	: rtpthlp_2_sptp.F
+sample_points.o		: sample_points.F
+st_2_rtthl.o		: st_2_rtthl.F
+truncate_gaus_mixt.o	: truncate_gaus_mixt.F
 
-hoc_standalone.o   : hoc.F hoc_standalone.F
-
-int2txt.o     : int2txt.f90
-
-compare_runs.o  : endian.F inputgrads.F gradsaverage.F compare_runs.F
+# Executables
+hoc_tuner.o	: nr.f90 nrtype.f90 hoc.F error.o hoc_tuner.F
+hoc_standalone.o: hoc.F hoc_standalone.F
+int2txt.o	: int2txt.f90
+compare_runs.o	: endian.F inputgrads.F gradsaverage.F compare_runs.F
