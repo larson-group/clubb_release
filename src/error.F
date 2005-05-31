@@ -1,4 +1,6 @@
 !-----------------------------------------------------------------------
+!       $Header: /cvsroot/hoc_v2.2_tuner/src/error.F,v 1.3 2005-05-31 14:57:16 dschanen Exp $
+
 !	Module ERROR
 !	
 !	Contains:
@@ -450,13 +452,13 @@
 
 !      print *, "Calling HOC with case " // runfile ! Debug
 
-      call hoc_sub(x_vector(1), x_vector(2), x_vector(3), x_vector(4), 
-     .             x_vector(5), x_vector(6), x_vector(7), x_vector(8), 
-     .             x_vector(9), x_vector(10), x_vector(11), 
-     .             x_vector(12), x_vector(13), x_vector(14),
-     .             x_vector(15), x_vector(16), x_vector(17), 
-     .             x_vector(18), x_vector(19), x_vector(20),
-     .             runfile, run_name(c_run), isValid, .false.)
+      call hoc_sub( x_vector(1), x_vector(2), x_vector(3), x_vector(4), 
+     .              x_vector(5), x_vector(6), x_vector(7), x_vector(8), 
+     .              x_vector(9), x_vector(10), x_vector(11), 
+     .              x_vector(12), x_vector(13), x_vector(14),
+     .              x_vector(15), x_vector(16), x_vector(17), 
+     .              x_vector(18), x_vector(19), x_vector(20),
+     .              runfile, run_name(c_run), isValid, stdout=.false. )
 
 !-------------- Basic Sanity Check -------------------------------------
 !      if (minval( x_vector ) .lt. 0. ) isValid = .FALSE.
@@ -653,9 +655,9 @@
       do i = 1, c_total
         i_c = achar( i + 48 )
         write(20,*) "les_stats_file_in("// i_c //") = ", 
-     .                           achar(34), les_stats_file(i), achar(34)
+     .              achar(34), trim( les_stats_file(i) ), achar(34)
         write(20,*) "run_name_in("// i_c //") = ", 
-     .                           achar(34), run_name(i), achar(34)
+     .              achar(34), trim( run_name(i) ), achar(34)
         write(20,*) "z_i_in("// i_c //")  = " , z_i(i)
         write(20,*) "z_f_in("// i_c //")  = " ,  z_f(i)
         write(20,*) "time_in("// i_c //")  = " , time(i,:)
@@ -665,49 +667,49 @@
       write(20,*) "/"
       
       write(20,*) "&initvars"
-      write(20,*) "C1 = ", x_vector(1)
-      write(20,*) "C2 = ", x_vector(2)
-      write(20,*) "C4 = ", x_vector(3)
-      write(20,*) "C5 = ", x_vector(4)
-      write(20,*) "C6 = ", x_vector(5)
-      write(20,*) "C7 = ", x_vector(6)
-      write(20,*) "C8 = ", x_vector(7)
-      write(20,*) "C10 = ", x_vector(8)
-      write(20,*) "C11 = ", x_vector(9)
-      write(20,*) "nu1 = ", x_vector(10)
-      write(20,*) "nu2 = ", x_vector(11)
-      write(20,*) "nu6 = ", x_vector(12)
-      write(20,*) "nu8 = ", x_vector(13)
-      write(20,*) "beta = ", x_vector(14)
+      write(20,*) "C1 =         ", x_vector(1)
+      write(20,*) "C2 =         ", x_vector(2)
+      write(20,*) "C4 =         ", x_vector(3)
+      write(20,*) "C5 =         ", x_vector(4)
+      write(20,*) "C6 =         ", x_vector(5)
+      write(20,*) "C7 =         ", x_vector(6)
+      write(20,*) "C8 =         ", x_vector(7)
+      write(20,*) "C10 =        ", x_vector(8)
+      write(20,*) "C11 =        ", x_vector(9)
+      write(20,*) "nu1 =        ", x_vector(10)
+      write(20,*) "nu2 =        ", x_vector(11)
+      write(20,*) "nu6 =        ", x_vector(12)
+      write(20,*) "nu8 =        ", x_vector(13)
+      write(20,*) "beta =       ", x_vector(14)
       write(20,*) "gamma_coef = ", x_vector(15)
-      write(20,*) "c_K = ", x_vector(16)
-      write(20,*) "lmin_coef = ", x_vector(17)
-      write(20,*) "taumin = ", x_vector(18)
-      write(20,*) "taumax = ", x_vector(19)
-      write(20,*) "mu = ",    x_vector(20)
+      write(20,*) "c_K =        ", x_vector(16)
+      write(20,*) "lmin_coef =  ", x_vector(17)
+      write(20,*) "taumin =     ", x_vector(18)
+      write(20,*) "taumax =     ", x_vector(19)
+      write(20,*) "mu =         ", x_vector(20)
       write(20,*) "/"
 
       write(20,*) "&variance"
-      write(20,*) "C1_var = ", x_variance(1)
-      write(20,*) "C2_var = ", x_variance(2)
-      write(20,*) "C4_var = ", x_variance(3)
-      write(20,*) "C5_var = ", x_variance(4)
-      write(20,*) "C6_var = ", x_variance(5)
-      write(20,*) "C7_var = ", x_variance(6)
-      write(20,*) "C8_var = ", x_variance(7)
-      write(20,*) "C10_var = ", x_variance(8)
-      write(20,*) "C11_var = ", x_variance(9)
-      write(20,*) "nu1_var = ", x_variance(10)
-      write(20,*) "nu2_var = ", x_variance(11)
-      write(20,*) "nu6_var = ", x_variance(12)
-      write(20,*) "nu8_var = ", x_variance(13)
-      write(20,*) "beta_var = ", x_variance(14)
+      write(20,*) "C1_var =         ", x_variance(1)
+      write(20,*) "C2_var =         ", x_variance(2)
+      write(20,*) "C4_var =         ", x_variance(3)
+      write(20,*) "C5_var =         ", x_variance(4)
+      write(20,*) "C6_var =         ", x_variance(5)
+      write(20,*) "C7_var =         ", x_variance(6)
+      write(20,*) "C8_var =         ", x_variance(7)
+      write(20,*) "C10_var =        ", x_variance(8)
+      write(20,*) "C11_var =        ", x_variance(9)
+      write(20,*) "nu1_var =        ", x_variance(10)
+      write(20,*) "nu2_var =        ", x_variance(11)
+      write(20,*) "nu6_var =        ", x_variance(12)
+      write(20,*) "nu8_var =        ", x_variance(13)
+      write(20,*) "beta_var =       ", x_variance(14)
       write(20,*) "gamma_coef_var = ", x_variance(15)
-      write(20,*) "c_K_var = ", x_variance(16)
-      write(20,*) "lmin_coef_var = ", x_variance(17)
-      write(20,*) "taumin_var = ", x_variance(18)
-      write(20,*) "taumax_var = ", x_variance(19)
-      write(20,*) "mu_var = ", x_variance(20)
+      write(20,*) "c_K_var =        ", x_variance(16)
+      write(20,*) "lmin_coef_var =  ", x_variance(17)
+      write(20,*) "taumin_var =     ", x_variance(18)
+      write(20,*) "taumax_var =     ", x_variance(19)
+      write(20,*) "mu_var =         ", x_variance(20)
       write(20,*) "/"
 
 !------- Close new file ------------------------------------------------
@@ -746,26 +748,26 @@
       write(20,*) "/"
       
       write(20,*) "&initvars"
-      write(20,*) "C1     = ", x_vector(1)
-      write(20,*) "C2     = ", x_vector(2)
-      write(20,*) "C4     = ", x_vector(3)
-      write(20,*) "C5     = ", x_vector(4)
-      write(20,*) "C6     = ", x_vector(5)
-      write(20,*) "C7     = ", x_vector(6)
-      write(20,*) "C8     = ", x_vector(7)
-      write(20,*) "C10    = ", x_vector(8)
-      write(20,*) "C11    = ", x_vector(9)
-      write(20,*) "nu1    = ", x_vector(10)
-      write(20,*) "nu2    = ", x_vector(11)
-      write(20,*) "nu6    = ", x_vector(12)
-      write(20,*) "nu8    = ", x_vector(13)
-      write(20,*) "beta   = ", x_vector(14)
+      write(20,*) "C1 =         ", x_vector(1)
+      write(20,*) "C2 =         ", x_vector(2)
+      write(20,*) "C4 =         ", x_vector(3)
+      write(20,*) "C5 =         ", x_vector(4)
+      write(20,*) "C6 =         ", x_vector(5)
+      write(20,*) "C7 =         ", x_vector(6)
+      write(20,*) "C8 =         ", x_vector(7)
+      write(20,*) "C10 =        ", x_vector(8)
+      write(20,*) "C11 =        ", x_vector(9)
+      write(20,*) "nu1 =        ", x_vector(10)
+      write(20,*) "nu2 =        ", x_vector(11)
+      write(20,*) "nu6 =        ", x_vector(12)
+      write(20,*) "nu8 =        ", x_vector(13)
+      write(20,*) "beta =       ", x_vector(14)
       write(20,*) "gamma_coef = ", x_vector(15)
-      write(20,*) "c_K        = ", x_vector(16)
-      write(20,*) "lmin_coef  = ", x_vector(17)
-      write(20,*) "taumin     = ", x_vector(18)
-      write(20,*) "taumax     = ", x_vector(19)
-      write(20,*) "mu         = ",    x_vector(20)
+      write(20,*) "c_K =        ", x_vector(16)
+      write(20,*) "lmin_coef =  ", x_vector(17)
+      write(20,*) "taumin =     ", x_vector(18)
+      write(20,*) "taumax =     ", x_vector(19)
+      write(20,*) "mu =         ", x_vector(20)
       write(20,*) "/"
 
 !------- Close new file ------------------------------------------------
