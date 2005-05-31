@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.4 2005-05-31 15:48:09 dschanen Exp $
+! $Id: error.F,v 1.5 2005-05-31 18:31:40 dschanen Exp $
 
 !	Module ERROR
 !	
@@ -442,9 +442,12 @@
 !-----------------------------------------------------------------------
 !  Cycle through all the model cases specified for HOC
 !-----------------------------------------------------------------------
+!$OMP PARALLEL
+!$OMP DO PRIVATE(hoc_zl, les_zl, les_minmax, runfile, hoc_stats_file) 
+!   . SHARED(c_terms, err_sum) 
       do c_run=1, c_total
  
-      runfile = trim(run_name(c_run)) // "_hoc.in"
+      runfile        = trim(run_name(c_run)) // "_hoc.in"
       hoc_stats_file = trim(run_name(c_run)) // "_zt.ctl"
 !      hoc_stats_file_zm = trim(run_name(c_run)) // "_zm.dat"
 
@@ -554,7 +557,7 @@
        deallocate (hoc_zl, les_zl)
 
       enddo     ! end of do c_run=1, c_total
-
+!$OMP END PARALLEL
 
 !----------------------------------------------------------------------
 ! funk returns error avgd over all cases, variables, and vertical levels

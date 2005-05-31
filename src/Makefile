@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.8 2005-05-31 15:55:06 dschanen Exp $
+# $Id: Makefile,v 1.9 2005-05-31 18:31:40 dschanen Exp $
 
 # Compiler invocation
 
@@ -11,7 +11,7 @@ DEBUG = -g -C
 
 #G95_P3_OPTIMIZE = -O3 -ffast-math -msse -march=pentium3
 #SUNPRO_X86_OPTIMIZE = -fast -ftrap=%none
-PGF_P4_OPTIMIZE = -O3 -fastsse -Mconcur -tp p7
+PGF_P4_OPTIMIZE = -O3 -fast -mp -Mconcur -Miomutex -tp p7
 
 #FCFLAGS = $(PGF_P4_OPTIMIZE) -DSTATS 
 FCFLAGS = $(PGF_P4_OPTIMIZE) $(DEBUG) -DSTATS
