@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.12 2005-06-02 15:58:51 dschanen Exp $
+# $Id: Makefile,v 1.13 2005-06-02 22:19:15 dschanen Exp $
 
 # Compiler invocation
 
@@ -7,7 +7,7 @@ FC=pgf90
 #FC=f95 
 
 # Compiler flags
-DEBUG = -g 
+DEBUG = -g -C 
 
 #G95_P3_OPTIMIZE = -O3 -ffast-math -msse -march=pentium3
 #SUNPRO_X86_OPTIMIZE = -fast -ftrap=%none
@@ -92,7 +92,7 @@ outputgrads.o : endian.F outputgrads.F
 arrays.o      : arrays.F constants.F
 inputgrads.o  : endian.F inputgrads.F
 grid.o        : grid.F grid.h
-statistics.o  : outputgrads.F statistics.F
+statistics.o  : arrays.F outputgrads.F statistics.F
 
 banbks.o      : banbks.F
 bandec.o      : bandec.F
