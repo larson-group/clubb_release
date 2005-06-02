@@ -40,9 +40,6 @@
 !----- Parameters ------------------------------------------------------
       integer, parameter :: nvar      = 13
       integer, parameter :: nconst    = 17
-!      real, parameter    :: lmin_coef = 0.5
-!      real, parameter    :: taumin    = 90.0
-!      real, parameter    :: taumax    = 3600.0
 
 !      character, parameter :: delta   = greek_'Δ'
       character, parameter :: delta   = 'D'
@@ -179,7 +176,6 @@
       call getvariables( var1 )
 
       do i = 1, ca1%entries
-!        print *, i
         tmp_constant       = ca1%const(i)%value
         ca1%const(i)%value = ca1%const(i)%value * delta_factor
 
@@ -218,13 +214,13 @@
         ca1%const(i)%value = tmp_constant
       enddo
 
-!---- Calculate impact matrix ----
+!---- Calculate impact matrix ------------------------------------------
       do j = 1, var2%entries
         impact_matrix(:,j) = jmatrix(:,j) *
      .                       ca1%const(:)%value * (delta_factor - 1.)
       enddo 
 
-!---- Output Results to terminal ----
+!---- Output Results to terminal ---------------------------------------
       do i = 1, ca1%entries
           do j = 1, var2%entries
             write(*,*) delta//var2%var(j)%name//" / "
@@ -236,8 +232,8 @@
           write(*,*) ""
       enddo
 
-!---- Output results to an ascii file ----
-      ! Jacobian Matrix
+!---- Output results to an ascii file ----------------------------------
+!     Jacobian Matrix
       open(20, file="jacobian_matrix.txt", action="write" )
      
       write(20,*) "% Tuning parameters vary according to columns"
@@ -249,7 +245,7 @@
       enddo
       close(20)
 
-      ! Impact Matrix
+!     Impact Matrix
       open(20, file="impact_matrix.txt", action="write" )
 
       write(20,*) "% Tuning parameters vary according to columns"
@@ -266,24 +262,23 @@
 !      returns a variable_arry structure over time intervals
 !-----------------------------------------------------------------------
       subroutine getvariables( varray ) 
-!      use grads_common
  
       implicit none
 
       logical error
-      integer i1
 
       type (variable_array), intent(inout) :: varray
     
-      do i1 = 1, varray%entries
-        varray%var(i1)%value(1:varray%nz) = 
+      do k = 1, varray%entries
+        varray%var(k)%value(1:varray%nz) = 
      .                            grads_average_interval( 
      .                            trim(run_name)//"_zt.ctl", varray%nz,
-     .                            times(:), varray%var(i1)%name, 
+     .                            times(:), varray%var(k)%name, 
      .                            error )
       enddo
 
       return
       end subroutine getvariables 
 
+!-----------------------------------------------------------------------
       end program jacobian
