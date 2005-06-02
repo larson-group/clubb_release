@@ -18,7 +18,7 @@
       type variable
         real, dimension(150) :: value ! this would better allocatable, but
                                       ! fortran is dumb
-        character(len=6)     :: name 
+        character(len=10)    :: name 
       end type variable
 !----------------------------------------------------------------------
       type constant
@@ -38,14 +38,15 @@
       end type variable_array
 
 !----- Parameters ------------------------------------------------------
-      integer, parameter :: nvar      = 9
+      integer, parameter :: nvar      = 13
       integer, parameter :: nconst    = 17
-      real, parameter    :: lmin_coef = 0.5
-      real, parameter    :: taumin    = 90.0
-      real, parameter    :: taumax    = 3600.0
+!      real, parameter    :: lmin_coef = 0.5
+!      real, parameter    :: taumin    = 90.0
+!      real, parameter    :: taumax    = 3600.0
 
 !      character, parameter :: delta   = greek_'Δ'
       character, parameter :: delta   = 'D'
+
 !----- Model constants -------------------------------------------------
 ! Notes:  C4 and C10 do not currently play a role in the model 5/31/05
 !-----------------------------------------------------------------------
@@ -55,22 +56,26 @@
       real       :: gamma_coef, c_K
       real       :: mu
 
-!----- Model constants multiplier --------------------------------------
-      real       :: delta_factor
+!     These aren't varied in matrix generation
+      real       :: lmin_coef  
+      real       :: taumin    
+      real       :: taumax
+
       real       :: tmp_constant 
 
+!----- Namelist Variables ----------------------------------------------
+      real                      :: delta_factor
       integer, dimension(10)    :: times
+      character(len=50)         :: run_name
+      logical                   :: use_standard_vars
+
       integer                   :: nz
       integer                   :: alloc_stat
 
-      character(len=50)         :: run_name
-      logical                   :: use_standard_vars
 !----------------------------------------------------------------------
-!
+!  Variable and constant data structures
 !----------------------------------------------------------------------
       type (constant_array)                :: ca1
-
-!      type (constant_array)                :: c_var
 
       type (variable_array)                :: var1
       type (variable_array)                :: var2
@@ -87,7 +92,7 @@
 
       namelist /initvars/ C1, C2, C4, C5, C6, C7, C8, C10, C11, 
      .                    nu1, nu2, nu6, nu8, beta, gamma_coef,
-     .                    c_K, mu
+     .                    c_K, lmin_coef, taumin, taumax, mu
 
       times      = 0
       isValid    = .true.
@@ -104,25 +109,11 @@
       if ( .not. use_standard_vars ) then
         read(10, nml = initvars)
       else
-!       Original values (hoc_v2, v2.1)
-        C1  = 1.7
-        C2  = 0.8 * 1.3
-        C4  = 4.5
-        C5  = 0.25
-        C6  = 4.85 * 2.0
-        C7  = 0.8
-        C8  = 0.7 * 0.6 * 6.5
-        C10 = 3. * C2
-        C11 = 0.2
+        open(20, name="../standalone/standalone_"
+     .                //trim(run_name)//".in", status="old")
 
-        nu1 = 20.
-        nu2 = 5.
-        nu6 = 5.
-        nu8 = 20.
-
-        gamma_coef = 0.45
-        c_K        = 0.548
-        mu         = 6.e-4
+        read(20, nml = initvars)
+        close(20)
       endif
       close(10)
       
@@ -131,11 +122,12 @@
      .                       nu1, nu2, nu6, nu8, beta, gamma_coef,
      .                       c_K, mu/)     
       ca1%const(1:nconst)%name =
-     .                    (/"C1         ", "C2", "C4", "C5", "C6", 
-     .                      "C7", "C8", "C10", "C11",
-     .                      "nu1", "nu2", "nu6", "nu8", "beta", 
-     .                      "gamma_coef",
-     .                      "c_K", "mu"/)
+     .  (/"C1         ", "C2        ", "C4        ", 
+     .    "C5         ", "C6        ", "C7        ", 
+     .    "C8         ", "C10       ", "C11       ",
+     .    "nu1        ", "nu2       ", "nu6       ", "nu8       ", 
+     .    "beta       ", "gamma_coef",
+     .    "c_K        ", "mu        "/)
 
       write(*, 'a12,a12,a12'), "constant", "initial", "varied"
       do i = 1, ca1%entries
@@ -176,9 +168,11 @@
 
 
       var1%var(1:nvar)%name = 
-     .                     (/"rcm   ", "rtm   ", "cf    ", "thlm  ",
-     .                       "um    ", "vm    ", "wp3   ", "wp2rtp", 
-     .                       "wp2rcp"/)
+     .                     (/"cf       ", "rcm       ", "rtm       ", 
+     .                       "thlm     ", "um        ", "vm        ",
+     .                       "wp3      ", "wp2zt     ", 
+     .                       "rtp2zt   ", "thlp2zt   ", "rtpthlpzt ",
+     .                       "wprtpzt  ", "wpthlpzt  "/)
 
       var2%var(1:nvar)%name = var1%var(1:nvar)%name 
 
@@ -189,11 +183,11 @@
         tmp_constant       = ca1%const(i)%value
         ca1%const(i)%value = ca1%const(i)%value * delta_factor
 
-        call hoc_sub( ca1%const(1)%value, ca1%const(2)%value, 
-     .                ca1%const(3)%value, ca1%const(4)%value, 
-     .                ca1%const(5)%value, ca1%const(6)%value, 
-     .                ca1%const(7)%value, ca1%const(8)%value, 
-     .                ca1%const(9)%value, ca1%const(10)%value, 
+        call hoc_sub( ca1%const(1)%value,  ca1%const(2)%value, 
+     .                ca1%const(3)%value,  ca1%const(4)%value, 
+     .                ca1%const(5)%value,  ca1%const(6)%value, 
+     .                ca1%const(7)%value,  ca1%const(8)%value, 
+     .                ca1%const(9)%value,  ca1%const(10)%value, 
      .                ca1%const(11)%value, ca1%const(12)%value, 
      .                ca1%const(13)%value, ca1%const(14)%value, 
      .                ca1%const(15)%value, ca1%const(16)%value, 
@@ -204,7 +198,7 @@
      .                isValid, .false. )
 
         if ( .not. isValid ) then
-          jmatrix(i, :) = transfer(Z"7F800000", 1.0)
+          jmatrix(i, :) = transfer(Z"7F800000", 1.0) ! Infinity bit pattern 
           ca1%const(i)%value = tmp_constant
           cycle
         endif
@@ -212,13 +206,13 @@
         call getvariables( var2 )
 
         do j = 1, nvar
-          jmatrix(i, j) =    sum( abs(   var1%var(j)%value(1:nz)   
-     .                                 - var2%var(j)%value(1:nz)  ) )
+          jmatrix(i, j) =    sum(   var1%var(j)%value(1:nz)   
+     .                            - var2%var(j)%value(1:nz)  )
         enddo
 
         do j = 1, nvar
           jmatrix(i, j) = jmatrix(i, j) / 
-     .                    abs( (ca1%const(i)%value - tmp_constant) )
+     .                       (tmp_constant - ca1%const(i)%value)
         enddo
 
         ca1%const(i)%value = tmp_constant
@@ -227,14 +221,14 @@
 !---- Calculate impact matrix ----
       do j = 1, var2%entries
         impact_matrix(:,j) = jmatrix(:,j) *
-     .                       ( ca1%const(:)%value * delta_factor )
+     .                       ca1%const(:)%value * (delta_factor - 1.)
       enddo 
 
 !---- Output Results to terminal ----
       do i = 1, ca1%entries
           do j = 1, var2%entries
             write(*,*) delta//var2%var(j)%name//" / "
-     .                 //delta//ca1%const(i)%name,
+     .                 //delta//ca1%const(i)%name//" =",
      .                 jmatrix(i, j),
      .                 "impact: ",
      .                 impact_matrix(i, j)
@@ -243,13 +237,25 @@
       enddo
 
 !---- Output results to an ascii file ----
-      open(20, file="results_jmatrix.txt", action="write" )
+      ! Jacobian Matrix
+      open(20, file="jacobian_matrix.txt", action="write" )
+     
+      write(20,*) "% Tuning parameters vary according to columns"
+      write(20,*) "% Output fields vary according to rows"
+      write(20,'(18A)') "% columns:", ca1%const(1:nconst)%name
+      write(20,'(13A)') "% rows:   ", var2%var(1:nvar)%name 
       do j =1, var2%entries
         write(20, '(17e)') jmatrix(:,j)
       enddo
       close(20)
 
-      open(20, file="results_imatrix.txt", action="write" )
+      ! Impact Matrix
+      open(20, file="impact_matrix.txt", action="write" )
+
+      write(20,*) "% Tuning parameters vary according to columns"
+      write(20,*) "% Output fields vary according to rows"
+      write(20,'(18A)') "% columns:", ca1%const(1:nconst)%name
+      write(20,'(13A)') "% rows:   ", var2%var(1:nvar)%name
       do j =1, var2%entries
         write(20, '(17e)') impact_matrix(:,j)
       enddo
@@ -257,22 +263,24 @@
       contains
 !-----------------------------------------------------------------------
 !      subroutine getvariables( ) 
-!      returns an array of variables over times
+!      returns a variable_arry structure over time intervals
 !-----------------------------------------------------------------------
       subroutine getvariables( varray ) 
-      use grads_common
+!      use grads_common
  
       implicit none
 
       logical error
+      integer i1
 
       type (variable_array), intent(inout) :: varray
     
-      do k = 1, varray%entries
-      varray%var(k)%value(:) =  grads_average_interval( 
-     .                          trim(run_name)//"_zt.ctl", varray%nz,
-     .                          times(:), varray%var(k)%name, 
-     .                          error )
+      do i1 = 1, varray%entries
+        varray%var(i1)%value(1:varray%nz) = 
+     .                            grads_average_interval( 
+     .                            trim(run_name)//"_zt.ctl", varray%nz,
+     .                            times(:), varray%var(i1)%name, 
+     .                            error )
       enddo
 
       return
