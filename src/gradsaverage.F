@@ -76,7 +76,7 @@
       end function grads_average
 
 !-------------------------------------------------------------------------
-!   Function GRADS_AVERAGE_INTERVAL
+!   Function GRADS_AVERAGE_INTERVAL( )
 !   Take several averages over an interval.
 !-------------------------------------------------------------------------
       function grads_average_interval( filename, nz, t, variable_name,
