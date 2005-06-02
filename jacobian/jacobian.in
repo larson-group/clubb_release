@@ -6,29 +6,33 @@
 !   than the contents of the /initvars/ namelist.
 !---------------------------------------------------------------------- 
 &model
-run_name          = "fire"
+run_name          = "bomex"
 times             = 120, 180
-delta_factor      = 1.025
+delta_factor      = 1.1
 use_standard_vars = .false.
 /
 
-! initvars note: C4 and C10 are currently not used in any calculations
+! initvars notes: C4 and C10 are currently not used in any calculations
+!  taumin, taumax and lmin_coef are not varied by delta_factor
 &initvars
-C1         = 1.7
-C2         = 1.04
-C4         = 4.5
-C5         = 0.25
-C6         = 9.7
-C7         = 0.8
-C8         = 2.73
-C10        = 3.12
-C11        = 0.2
+C1         = 2.1
+C2         = 1.2
+C4         = 5.2
+C5         = 0.3
+C6         = 9.3
+C7         = 0.48
+C8         = 2.3
+C10        = 3.3
+C11        = 0.5
 nu1        = 20.
 nu2        = 5.
 nu6        = 5.
 nu8        = 20.
 beta       = 1.5
 gamma_coef = 0.45
-c_K        = 0.548 
+c_K        = 0.548
+taumin     = 90.
+taumax     = 3600.
+lmin_coef  = 0.5
 mu         = 6.e-4
 /
