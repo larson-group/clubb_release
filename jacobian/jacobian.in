@@ -1,7 +1,15 @@
+!---------------------------------------------------------------------- 
+! jacobian parameters
+! times: an array from 1 to 10 elements used to average over intervals
+! delta_factor: multiplicative factor for constants
+! use_standard_var: option to use the standard constant values rather 
+!   than the contents of the /initvars/ namelist.
+!---------------------------------------------------------------------- 
 &model
-run_name          = "dycoms2_rf02_d"
-times             = 30, 90
-variance          = 1.1
+run_name          = "fire"
+times             = 120, 180
+delta_factor      = 1.025
+use_standard_vars = .false.
 /
 
 ! initvars note: C4 and C10 are currently not used in any calculations
