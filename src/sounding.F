@@ -16,8 +16,9 @@
 
 ! Input
 
-        character(30), intent(in) :: runfile
-        integer, intent(in)       ::  runtype
+!        character(30), intent(in) :: runfile
+        character(len=*), intent(in) :: runfile
+        integer, intent(in)          :: runtype
 
 ! Parameter
 
