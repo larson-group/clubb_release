@@ -1,2 +1,3 @@
-May 24, 2005
+May 31, 2005
 * Change the hoc subroutine to be seperate components
+* Rigorously test the Jacobian matrix program
