@@ -122,6 +122,7 @@
         real, target, allocatable :: wpthlpzt(:)   
         real, target, allocatable :: wprtpzt(:)
         real, target, allocatable :: rtp2zt(:)
+        real, target, allocatable :: rtpthlpzt(:)
 #endif STATS
 
 ! Variables needed for the pdf closure scheme
@@ -296,6 +297,7 @@ c Diagnostic variables
         allocate( wpthlpzt(1:nzmax) )
         allocate( wprtpzt(1:nzmax) )
         allocate( rtp2zt(1:nzmax) )
+        allocate( rtpthlpzt(1:nzmax) )
 #endif STATS
 
 ! Array fpr pdf closure scheme
@@ -431,6 +433,7 @@ c Diagnostic variables
         deallocate( wpthlpzt )   
         deallocate( wprtpzt ) 
         deallocate( rtp2zt ) 
+        deallocate( rtpthlpzt ) 
 #endif STATS
 
 ! Temporary array

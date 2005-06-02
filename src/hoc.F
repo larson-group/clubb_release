@@ -841,6 +841,7 @@
        wpthlpzt  = zm2zt( wpthlp )
        wprtpzt   = zm2zt( wprtp )
        rtp2zt    = zm2zt( rtp2 )
+       rtpthlpzt = zm2zt( rtpthlp )
 #endif STATS
 
 

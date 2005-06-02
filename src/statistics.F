@@ -153,7 +153,8 @@ c       Indices for statistics in zt file
      .     ithlp2zt,
      .     iwpthlpzt,
      .     iwprtpzt,
-     .     irtp2zt
+     .     irtp2zt,
+     .     irtpthlpzt
 
 c       Indices for statistics in zm file
 
@@ -463,6 +464,7 @@ c     -----------------------------------------------------------------
       iwpthlpzt  = 0
       iwprtpzt   = 0
       irtp2zt    = 0
+      irtpthlpzt = 0
 
 !     Assign pointers for statistics variables zt
 
@@ -1072,6 +1074,13 @@ c     -----------------------------------------------------------------
           zt%f%var(irtp2zt)%ptr => zt%x(:,k)
           zt%f%var(irtp2zt)%name = "rtp2zt"
           zt%f%var(irtp2zt)%description = "rtp2zt"
+          k = k + 1
+
+        case('rtpthlpzt')   
+          irtpthlpzt = k
+          zt%f%var(irtpthlpzt)%ptr => zt%x(:,k)
+          zt%f%var(irtpthlpzt)%name = "rtpthlpzt"
+          zt%f%var(irtpthlpzt)%description = "rtpthlpzt"
           k = k + 1
  
         case default
@@ -2242,6 +2251,11 @@ c     -----------------------------------------------------------------
         if ( irtp2zt > 0 ) then
           zt%x(:,irtp2zt) = zt%x(:,irtp2zt) + rtp2zt
           zt%n(:,irtp2zt) = zt%n(:,irtp2zt) + 1
+        endif
+
+        if ( irtpthlpzt > 0 ) then
+          zt%x(:,irtpthlpzt) = zt%x(:,irtpthlpzt) + rtpthlpzt
+          zt%n(:,irtpthlpzt) = zt%n(:,irtpthlpzt) + 1
         endif
 
 !       zm variables
