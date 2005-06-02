@@ -1,0 +1,26 @@
+&model
+run_name          = "dycoms2_rf02_d"
+times             = 30, 90
+variance          = 1.1
+/
+
+! initvars note: C4 and C10 are currently not used in any calculations
+&initvars
+C1         = 1.7
+C2         = 1.04
+C4         = 4.5
+C5         = 0.25
+C6         = 9.7
+C7         = 0.8
+C8         = 2.73
+C10        = 3.12
+C11        = 0.2
+nu1        = 20.
+nu2        = 5.
+nu6        = 5.
+nu8        = 20.
+beta       = 1.5
+gamma_coef = 0.45
+c_K        = 0.548 
+mu         = 6.e-4
+/
