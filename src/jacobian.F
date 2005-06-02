@@ -55,8 +55,8 @@
       real       :: gamma_coef, c_K
       real       :: mu
 
-!----- Model constant variability --------------------------------------
-      real       :: variance
+!----- Model constants multiplier --------------------------------------
+      real       :: delta_factor
       real       :: tmp_constant 
 
       integer, dimension(10)    :: times
@@ -64,11 +64,11 @@
       integer                   :: alloc_stat
 
       character(len=50)         :: run_name
+      logical                   :: use_standard_vars
 !----------------------------------------------------------------------
 !
 !----------------------------------------------------------------------
       type (constant_array)                :: ca1
-!      type (constant_array)                :: ca2
 
 !      type (constant_array)                :: c_var
 
@@ -76,12 +76,14 @@
       type (variable_array)                :: var2
 
       real, dimension(nconst, nvar)        :: jmatrix
+      real, dimension(nconst, nvar)        :: impact_matrix
 
       integer i, j, k        ! loop variables
       logical isValid
 
 !----- Namelists -------------------------------------------------------
-      namelist /model/    run_name, times, variance
+      namelist /model/    run_name, times, delta_factor, 
+     .                    use_standard_vars
 
       namelist /initvars/ C1, C2, C4, C5, C6, C7, C8, C10, C11, 
      .                    nu1, nu2, nu6, nu8, beta, gamma_coef,
@@ -99,7 +101,30 @@
 
       open(10, file = 'jacobian.in', status='old')
       read(10, nml = model)
-      read(10, nml = initvars)
+      if ( .not. use_standard_vars ) then
+        read(10, nml = initvars)
+      else
+!       Original values (hoc_v2, v2.1)
+        C1  = 1.7
+        C2  = 0.8 * 1.3
+        C4  = 4.5
+        C5  = 0.25
+        C6  = 4.85 * 2.0
+        C7  = 0.8
+        C8  = 0.7 * 0.6 * 6.5
+        C10 = 3. * C2
+        C11 = 0.2
+
+        nu1 = 20.
+        nu2 = 5.
+        nu6 = 5.
+        nu8 = 20.
+
+        gamma_coef = 0.45
+        c_K        = 0.548
+        mu         = 6.e-4
+      endif
+      close(10)
       
       ca1%const(1:nconst)%value =
      .                     (/C1, C2, C4, C5, C6, C7, C8, C10, C11,
@@ -115,7 +140,7 @@
       write(*, 'a12,a12,a12'), "constant", "initial", "varied"
       do i = 1, ca1%entries
         write(*,*) ca1%const(i)%name, ca1%const(i)%value, 
-     .             ca1%const(i)%value * variance
+     .             ca1%const(i)%value * delta_factor
       enddo
 
       call hoc_sub( ca1%const(1)%value, ca1%const(2)%value, 
@@ -162,7 +187,7 @@
       do i = 1, ca1%entries
 !        print *, i
         tmp_constant       = ca1%const(i)%value
-        ca1%const(i)%value = ca1%const(i)%value * variance
+        ca1%const(i)%value = ca1%const(i)%value * delta_factor
 
         call hoc_sub( ca1%const(1)%value, ca1%const(2)%value, 
      .                ca1%const(3)%value, ca1%const(4)%value, 
@@ -180,6 +205,7 @@
 
         if ( .not. isValid ) then
           jmatrix(i, :) = transfer(Z"7F800000", 1.0)
+          ca1%const(i)%value = tmp_constant
           cycle
         endif
 
@@ -192,19 +218,40 @@
 
         do j = 1, nvar
           jmatrix(i, j) = jmatrix(i, j) / 
-     .                         abs( (ca1%const(i)%value-tmp_constant) )
+     .                    abs( (ca1%const(i)%value - tmp_constant) )
         enddo
 
         ca1%const(i)%value = tmp_constant
       enddo
 
+!---- Calculate impact matrix ----
+      do j = 1, var2%entries
+        impact_matrix(:,j) = jmatrix(:,j) *
+     .                       ( ca1%const(:)%value * delta_factor )
+      enddo 
+
+!---- Output Results to terminal ----
       do i = 1, ca1%entries
           do j = 1, var2%entries
             write(*,*) delta//var2%var(j)%name//" / "
      .                 //delta//ca1%const(i)%name,
-     .                 jmatrix(i, j)
+     .                 jmatrix(i, j),
+     .                 "impact: ",
+     .                 impact_matrix(i, j)
           enddo
           write(*,*) ""
+      enddo
+
+!---- Output results to an ascii file ----
+      open(20, file="results_jmatrix.txt", action="write" )
+      do j =1, var2%entries
+        write(20, '(17e)') jmatrix(:,j)
+      enddo
+      close(20)
+
+      open(20, file="results_imatrix.txt", action="write" )
+      do j =1, var2%entries
+        write(20, '(17e)') impact_matrix(:,j)
       enddo
 
       contains
@@ -221,7 +268,7 @@
 
       type (variable_array), intent(inout) :: varray
     
-      do k = 1, varray%entries 
+      do k = 1, varray%entries
       varray%var(k)%value(:) =  grads_average_interval( 
      .                          trim(run_name)//"_zt.ctl", varray%nz,
      .                          times(:), varray%var(k)%name, 
