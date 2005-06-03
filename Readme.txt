@@ -1,10 +1,10 @@
 Using the HOC tuner
 -----------------------------------------------------------------------
-Last update May 27, 2005
+Last update June 3, 2005
 
 -----------------------------------------------------------------------
 -                                                                     -
--Building the source code:                                            -
+- Building the source code:                                            -
 -                                                                     -
 -----------------------------------------------------------------------
 
@@ -15,7 +15,7 @@ $ make install
 
 -----------------------------------------------------------------------
 -                                                                     -
--Executing a tuning run:                                              -
+- Executing a tuning run:                                              -
 -                                                                     -
 -----------------------------------------------------------------------
 
@@ -39,7 +39,7 @@ $ make install
 5.  ./run_tuner.bash 
 -----------------------------------------------------------------------
 -                                                                     -
--Executing a standalone run:
+- Executing a standalone run:
 -                                                                     -
 -----------------------------------------------------------------------
 Do steps (1) and (2) as outlined above.
@@ -52,18 +52,28 @@ Do steps (1) and (2) as outlined above.
 
 -----------------------------------------------------------------------
 -                                                                     -
--Executing a compare_runs analysis:
+- Executing a compare_runs analysis:
 -                                                                     -
 -----------------------------------------------------------------------
 
-1. cd ../compare_runs.  
+1. cd ../compare_runs  
 
 2. Edit compare_runs.in.  You need to choose three GrADS files on disk
       to compare.  You also need to choose the time intervals over which
       the files will be compared.
 
 3. ./compare_runs
+-----------------------------------------------------------------------
+-                                                                     -
+- Executing a jacobian analysis:
+-                                                                     -
+-----------------------------------------------------------------------
+1. cd ../jacobian
 
+2. Edit jacobian.in.  Choosing a high delta_factor may make the model
+   crash, which will result in no data (results for that term will come
+   back as infinite).  The model namelists come from ../tune.
+3. ./jacobian
 -----------------------------------------------------------------------
 -                                                                     -
 - Overview of the code                                                -
