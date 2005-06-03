@@ -1,4 +1,6 @@
 !-----------------------------------------------------------------------
+! $Id: jacobian.F,v 1.5 2005-06-03 18:18:10 dschanen Exp $
+
 ! Program Jacobian
 
 ! Generates a matrix based on variation between constants (C1,C2...etc)
@@ -236,8 +238,8 @@
 !     Jacobian Matrix
       open(20, file="jacobian_matrix.txt", action="write" )
      
-      write(20,*) "% Tuning parameters vary according to columns"
-      write(20,*) "% Output fields vary according to rows"
+      write(20,'(A)') "% Tuning parameters vary according to columns"
+      write(20,'(A)') "% Output fields vary according to rows"
       write(20,'(18A)') "% columns:", ca1%const(1:nconst)%name
       write(20,'(13A)') "% rows:   ", var2%var(1:nvar)%name 
       do j =1, var2%entries
@@ -248,8 +250,8 @@
 !     Impact Matrix
       open(20, file="impact_matrix.txt", action="write" )
 
-      write(20,*) "% Tuning parameters vary according to columns"
-      write(20,*) "% Output fields vary according to rows"
+      write(20,'(A)') "% Tuning parameters vary according to columns"
+      write(20,'(A)') "% Output fields vary according to rows"
       write(20,'(18A)') "% columns:", ca1%const(1:nconst)%name
       write(20,'(13A)') "% rows:   ", var2%var(1:nvar)%name
       do j =1, var2%entries
