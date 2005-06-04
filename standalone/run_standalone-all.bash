@@ -10,7 +10,7 @@ NCPUS=2
 #######################################################################
 # Select a run, comment out the rest
 #   Or alternatively, uncomment do loop to do all cases
-for (( x = 1; x <= 8; x++)); do
+for (( x = 1; x <= 9; x++)); do
   case $x in
    1 )
      RUN_CASE=atex ;;
@@ -28,6 +28,8 @@ for (( x = 1; x <= 8; x++)); do
      RUN_CASE=dycoms2_rf02_d ;;
    8 )
      RUN_CASE=dycoms2_rf02_nd ;;
+   9 )
+     RUN_CASE=nov11_altocu ;;
    esac
 #######################################################################
 # Check for necessary namelists.  If files exist, then

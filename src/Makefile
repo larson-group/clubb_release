@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.14 2005-06-04 14:21:12 griffinb Exp $
+# $Id: Makefile,v 1.15 2005-06-04 14:34:13 griffinb Exp $
 
 # Compiler invocation
 
@@ -29,14 +29,14 @@ OBJS	= polpak.o \
 	\
 	nrtype.o nr.o nrutil.o ran_state.o ran1.o amebsa.o amoeba.o
 
-#LH_OBJS	= autoconv_driver.o corrcoef.o gaus_condt.o \
-#	gaus_mixt_points.o gaussj.o generate_k_order.o \
-#	latin_hyper_sample.o lh_sampler.o ltqnorm.o \
-#	matmult.o micro_calcs.o permute_height_time.o \
-#	ql_estimate.o ran2.o rand_permute.o \
-#	rtpthlp_2_sptp.o sample_points.o st_2_rtthl.o \
-#	truncate_gaus_mixt.o
-#
+LH_OBJS	= autoconv_driver.o corrcoef.o gaus_condt.o \
+	gaus_mixt_points.o gaussj.o generate_k_order.o \
+	latin_hyper_sample.o lh_sampler.o ltqnorm.o \
+	matmult.o micro_calcs.o permute_height_time.o \
+	ql_estimate.o ran2.o rand_permute.o \
+	rtpthlp_2_sptp.o sample_points.o st_2_rtthl.o \
+	truncate_gaus_mixt.o
+
 TARGETS = int2txt.o hoc_tuner.o hoc_standalone.o compare_runs.o \
 	jacobian.o
 
@@ -55,21 +55,13 @@ all:	hoc_tuner hoc_standalone int2txt compare_runs jacobian
 $(LH_OBJS):
 	$(FC) $(FCFLAGS) -c $<
 
-#hoc_tuner:	$(OBJS) $(LH_OBJS) $(TARGETS)
-#		$(FC) $(LDFLAGS) -o hoc_tuner \
-#		$(OBJS) $(LH_OBJS) $@.o
-#
-#hoc_standalone: $(OBJS) $(LH_OBJS) $(TARGETS)
-#	        $(FC) $(LDFLAGS) -o hoc_standalone \
-#                $(OBJS) $(LH_OBJS) $@.o 
-#
-hoc_tuner:	$(OBJS) $(TARGETS)
+hoc_tuner:	$(OBJS) $(LH_OBJS) $(TARGETS)
 		$(FC) $(LDFLAGS) -o hoc_tuner \
-		$(OBJS) $@.o
+		$(OBJS) $(LH_OBJS) $@.o
 
-hoc_standalone: $(OBJS) $(TARGETS)
+hoc_standalone: $(OBJS) $(LH_OBJS) $(TARGETS)
 	        $(FC) $(LDFLAGS) -o hoc_standalone \
-                $(OBJS) $@.o 
+                $(OBJS) $(LH_OBJS) $@.o 
 
 int2txt:	$(TARGETS)
 		$(FC) $(LDFLAGS) $@.o -o int2txt
