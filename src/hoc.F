@@ -44,6 +44,7 @@
 ! External functions
         
         real, external :: rsat
+        real, external :: sat_rcm
 
 ! Model setting
         character(len=*), intent(in) ::  runfile       ! Name of the nml file
@@ -217,9 +218,15 @@
 
         select case (runtype)
           case (7, 8, 9, 10, 11 ) 
-             ! Do nothing
+            ! thlm profile that is initially saturated at points.
+            ! thlm profile remains the same as in the input sounding.
+            ! use iterative method to find initial rcm.  Brian
+            do k = 1, gr%nnzp, 1
+               rcm(k) = sat_rcm( thlm(k), rtm(k), p(k), exner(k) )
+            enddo
 
           case default
+            ! Initial profile is non-saturated thlm or any type of theta.
             thlm = thlm - Lv/(Cp*exner) * rcm
 
         end select

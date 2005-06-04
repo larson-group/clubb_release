@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.15 2005-06-04 14:34:13 griffinb Exp $
+# $Id: Makefile,v 1.16 2005-06-04 20:53:44 griffinb Exp $
 
 # Compiler invocation
 
@@ -24,7 +24,7 @@ OBJS	= polpak.o \
 	constants.o arrays.o endian.o outputgrads.o grid.o statistics.o \
 	banbks.o bandec.o erf.o tridag.o rain.o \
 	closure_new.o diag_var.o gcss.o hoc.o hydrostatic.o \
-	length.o mixing.o rsat.o sfc.o sounding.o update.o wp23.o tau.o \
+	length.o mixing.o rsat.o sat_rcm.o sfc.o sounding.o update.o wp23.o tau.o \
 	inputgrads.o gradsaverage.o error.o \
 	\
 	nrtype.o nr.o nrutil.o ran_state.o ran1.o amebsa.o amoeba.o
@@ -107,6 +107,7 @@ hydrostatic.o : hydrostatic.F constants.F
 length.o      : length.F constants.F
 mixing.o      : mixing.F constants.F
 rsat.o        : rsat.F constants.F
+sat_rcm.o     : sat_rcm.F constants.F
 sfc.o         : sfc.F constants.F
 sounding.o    : sounding.F
 update.o      : update.F
