@@ -54,6 +54,4 @@
 
         sat_rcm = MAX( rtm - rsat(p,theta*exner), 0.0 )
 
-        PRINT *, theta, thlm, rtm, sat_rcm
-
         END FUNCTION sat_rcm
