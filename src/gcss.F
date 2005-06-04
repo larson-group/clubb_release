@@ -1206,3 +1206,627 @@
         end subroutine astex_sfclyr
 
 !-----------------------------------------------------------------------
+
+        SUBROUTINE nov11_altocu_tndcy( time, time_initial, dt, thlm,
+     .                                 rcm, p, exner, rhot, wmt, wmm,
+     .                                 thl_tndcy, rt_tndcy, Frad,
+     .                                 Frad_lw, Frad_sw )
+
+        USE grid_class
+        USE constants
+
+        implicit none
+
+        ! Input variables
+        REAL, INTENT(IN):: time
+        REAL, INTENT(IN):: time_initial
+        REAL, INTENT(IN):: dt
+        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: thlm
+        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rcm
+        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: p
+        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: exner
+        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rhot
+
+        ! Output variables
+        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: wmt
+        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: wmm
+        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: thl_tndcy
+        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: rt_tndcy
+        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: Frad
+        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: Frad_lw
+        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: Frad_sw
+
+        ! Local variables
+        REAL, DIMENSION(1:gr%nnzp):: LWP
+        REAL, DIMENSION(1:gr%nnzp):: htrt
+        REAL, DIMENSION(1:gr%nnzp):: dqc_dt_icedfs
+
+        REAL, PARAMETER:: wmax = -3.0E-2
+        REAL, PARAMETER:: kap = 100.0 ! m^2/kg
+        REAL, PARAMETER:: F0 = 107.0  ! W/m^2
+        REAL, PARAMETER:: F1 = 61.0   ! W/m^2
+
+        INTEGER:: k
+
+
+        ! Apply subsidence based on height after 3600.0 seconds into
+        ! the model run.
+
+        DO k = 1, gr%nnzp, 1
+
+           IF (time >= time_initial + 3600.0) THEN
+              IF (gr%zt(k) >= 0.0 .AND. gr%zt(k) <= 100.0) THEN
+                 wmt(k) = 0.0
+              ELSEIF (gr%zt(k) > 100.0 .AND. gr%zt(k) <= 400.0) THEN
+                 wmt(k) = ( (wmax - 0.0)/(400.0 - 100.0) )
+     .                   * (gr%zt(k) - 100.0) + 0.0
+              ELSEIF (gr%zt(k) > 400.0 .AND. gr%zt(k) <= 1400.0) THEN
+                 wmt(k) = wmax
+              ELSEIF (gr%zt(k) > 1400.0 .AND. gr%zt(k) <= 1800.0) THEN
+                 wmt(k) = wmax
+              ELSEIF (gr%zt(k) > 1800.0 .AND. gr%zt(k) <= 2000.0) THEN
+                 wmt(k) = ( (0.0 - wmax)/(2000.0 - 1800.0) )
+     .                   * (gr%zt(k) - 1800.0) + wmax
+              ELSEIF (gr%zt(k) > 2000.0) THEN
+                 wmt(k) = 0.0
+              ENDIF
+           ELSE
+              wmt(k) = 0.0
+           ENDIF
+
+        ENDDO
+
+        wmm = zt2zm(wmt)
+
+
+        ! Long-wave Radiation
+
+!       Compute liquid water path from top of the model
+!       We define liquid water path on momentum levels
+
+        LWP(gr%nnzp) = 0.0
+        DO k = gr%nnzp-1, 1, -1
+           LWP(k) = LWP(k+1) + rhot(k+1)*rcm(k+1)/gr%dzt(k+1)
+        ENDDO
+
+!       Compute long-wave radiative flux profile (Frad_lw).
+!       Radiative flux is defined on momentum levels.
+
+        DO k = 1, gr%nnzp, 1
+
+           Frad_lw(k) =  F0 * EXP( -kap * LWP(k) )
+     .                 + F1 * EXP( -kap * (LWP(1) - LWP(k)) )
+
+        ENDDO
+
+
+        ! Short-wave Radiation
+        ! Radiative flux is defined on momentum levels.
+
+        CALL nov11_altocu_sw(rhot, rcm, Frad_sw)
+
+
+        ! Total Radiation
+        ! Radiative flux is defined on momentum levels.
+
+        DO k = 1, gr%nnzp, 1
+           Frad(k) = Frad_lw(k) + Frad_sw(k)
+        ENDDO
+
+
+        ! Compute the radiative heating rate.
+        ! The radiative heating rate is defined on thermodynamic levels.
+
+        DO k = 2, gr%nnzp, 1
+           htrt(k) = ( -1.0/(Cp*rhot(k)) )
+     .              * ( Frad(k) - Frad(k-1) ) * gr%dzt(k)
+        ENDDO
+        htrt(1) = htrt(2)
+
+
+        ! Compute the loss of total water due to diffusional growth of ice.
+        ! This is defined on thermodynamic levels.
+
+        IF (time >= time_initial + 3600.0) THEN
+
+           CALL nov11_altocu_icedf( dt, thlm, rcm, p, exner, rhot,
+     .                              dqc_dt_icedfs )
+
+        ELSE
+
+           DO k = 1, gr%nnzp, 1
+              dqc_dt_icedfs(k) = 0.0
+           ENDDO
+
+        ENDIF
+
+
+        ! Enter the final theta-l and rtm tendencies
+
+        DO k = 1, gr%nnzp, 1
+           thl_tndcy(k) = htrt(k)
+     .                   - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
+           rt_tndcy(k) = dqc_dt_icedfs(k)
+        ENDDO
+
+
+        END SUBROUTINE nov11_altocu_tndcy
+
+!-----------------------------------------------------------------------
+
+        ! This subroutine is based on a COAMPS subroutine (sunray_sw)
+        ! written by Michael Falk to calculate short-wave radiation
+        ! for the Nov. 11 altocumulus case.
+
+        SUBROUTINE nov11_altocu_sw(rhot, rcm, Frad_sw)
+
+        USE grid_class
+
+        implicit none
+
+        ! Input variables
+        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rhot
+        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rcm
+
+        ! Output variables
+        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: Frad_sw
+
+        ! Local variables
+        REAL, DIMENSION(1:gr%nnzp):: tau
+        REAL, DIMENSION(1:gr%nnzp):: taude
+        REAL, DIMENSION(1:gr%nnzp):: F_diff
+        REAL, DIMENSION(1:gr%nnzp):: F_dir
+
+        REAL:: taupath, tauc, t1, t2, t3, cc1, cc2, omegade,
+     .         x1, x2, x3, rk, rk2, xi_abs2, rp, alpha_2, beta_2, rtt,
+     .         exmu0, expk, exmk, xp23p, xm23p, ap23b, am23b, taucde
+
+        REAL:: ff, gcde
+
+        REAL, PARAMETER:: radius = 1.0e-5
+        REAL, PARAMETER:: AA     = 0.1
+        REAL, PARAMETER:: gc     = 0.86
+        REAL, PARAMETER:: omega  = .9965
+        REAL, PARAMETER:: xi_abs = .4329
+        REAL, PARAMETER:: Fs0    = 1212.75
+        REAL, PARAMETER:: rho_l  = 1000.0
+
+        INTEGER:: k
+
+
+        ff = gc*gc
+        gcde = gc/(1.0+gc)
+
+
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !                                                                     !
+        !  Computation of tau and omega variables                             !
+        !                                                                     !
+        !                                                                     !
+        ! tauc   : column total optical depth                   Unit: none    !
+        ! taupath: column total Delta-Eddington optical depth.  Unit: none    !
+        ! omega  : single-scattering albedo                     Unit: none    !
+        ! omegade: D-E omega-- from Duynkerke eqn.18.           Unit: none    !
+        ! taucde : D-E tauc -- from Duynkerke eqn.18.           Unit: none    !
+        ! taude  : D-E tau  -- from Duynkerke eqn.18.           Unit: none    !
+        !                                                                     !
+        ! Comments by Michael Falk, 26 January 2005                           !
+        !                                                                     !
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        ! tau is defined on momentum levels.  Brian
+
+        tauc = 0.0
+        tau(gr%nnzp) = 0.0      ! optical depth at top of atm. is 0.  Brian.
+        do k = gr%nnzp-1, 1, -1
+          tau(k) = 1.5 * (rcm(k+1)*rhot(k+1)/gr%dzt(k+1))
+     .           / radius / rho_l
+          tauc = tauc + tau(k)
+        enddo
+
+        omegade = (1.0-ff)*omega/(1.0-omega*ff)
+        taucde = (1.0-omega*ff)*tauc
+
+        do k = 1, gr%nnzp, 1
+          taude(k) = (1.0-omega*ff)*tau(k)
+        enddo
+
+
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !                                                                     !
+        !  Computation of constants for radiative transfer equations          !
+        !                                                                     !
+        !  These variables come from Duynkerke eqn.20, which, with slight     !
+        !  modifications, matches Shettle and Weinman between eqns.12b and 13.!
+        !  Duynkerke uses slightly different formulations than Shettle and    !
+        !  Weinman:                                                           !
+        !                                                                     !
+        ! F0(S&W)    = F0(Duynkerke)*pi.                                      !
+        ! alpha(S&W) = alpha(Duynkerke)*F0(S&W).                              !
+        ! beta(S&W)  = beta(Duynkerke)*F0(S&W).                               !
+        ! c1(S&W)    = c1(Duynkerke)*F0(S&W).                                 !
+        ! c2(S&W)    = c2(Duynkerke)*F0(S&W).                                 !
+        ! x3(S&W)    = x3(Duynkerke)*F0(S&W).                                 !
+        ! y3(S&W)    = y3(Duynkerke)*F0(S&W).                                 !
+        !                                                                     !
+        ! F0 is divided out of each term in several equations, and then       !
+        ! reintroduced when the actual radiative flux is computed.  The       !
+        ! computations here follow Lenderink's original sunray_sw code which  !
+        ! uses the Duynkerke formulations for these variables.                !
+        !                                                                     !
+        ! x1     : term 1 in k equation                         Unit: none    !
+        ! x2     : term 2 in k equation                         Unit: none    !
+        ! rk     : k equation                                   Unit: none    !
+        ! rk2    : k equation squared                           Unit: none    !
+        ! x3     : term in denominator of alpha and beta        Unit: none    !
+        ! rp     : p equation                                   Unit: none    !
+        ! alpha  : alpha equation                               Unit: none    !
+        ! beta   : beta equation                                Unit: none    !
+        !                                                                     !
+        ! The following variables are used by Lenderink to solve for          !
+        ! Duynkerke's parameters C1 and C2.  They are all dimensionless.      !
+        !                                                                     !
+        ! rtt    : 2/3.                                                       !
+        ! exmu0  : exponential term used in S&W eqn.14-- originally from      !
+        !          eqn 1 (also Salby 9.35) in the source function for SW      !
+        !          radiation                                                  !
+        ! expk   : one of the coefficients of C2 on the left side of Shettle  !
+        !          and Weinman eqn.14, originally from eqn.12a and eqn.12b    !
+        ! exmk   : reciprocal of expk, one of the coefficients of C1 on the   !
+        !          left side of Shettle and Weinman eqn.14, originally from   !
+        !          eqn.12a and eqn.12b                                        !
+        ! xp23p  : coefficient of C1 - left side of Shettle and Weinman eqn.13!
+        ! xm23p  : coefficient of C2 - left side of Shettle and Weinman eqn.13!
+        ! ap23b  : right side of Shettle and Weinman eqn.13                   !
+        ! t1     : the other coefficient of C1 on left side of Shettle and    !
+        !          Weinman eqn.14                                             !
+        ! t2     : the other coefficient of C2 on left side of Shettle and    !
+        !          Weinman eqn.14                                             !
+        ! t3     : the coefficient of exmu0 on the right side of Shettle and  !
+        !          Weinman eqn.14                                             !
+        !                                                                     !
+        ! Comments by Michael Falk, 26 January 2005                           !
+        !                                                                     !
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        x1 = 1.0-omegade*gcde
+        x2 = 1.0-omegade
+        rk = sqrt(3.0*x2*x1)
+        xi_abs2 = xi_abs*xi_abs
+        rk2 = rk*rk
+        x3 = 4.0*(1.0-rk2*xi_abs2)
+        rp = sqrt(3.0*x2/x1)
+        alpha_2 = 3.0*omegade*xi_abs2*(1.0+gcde*x2)/x3
+        beta_2 = 3.0*omegade*xi_abs*(1.0+3.0*gcde*xi_abs2*x2)/x3
+
+        rtt = 2.0/3.0
+        exmu0 = exp(-taucde/xi_abs)
+        expk = exp(rk*taucde)
+        exmk = 1.0/expk
+        xp23p = 1.0+rtt*rp
+        xm23p = 1.0-rtt*rp
+        ap23b = alpha_2+rtt*beta_2
+
+        t1 = 1.-AA-rtt*(1.0+AA)*rp
+        t2 = 1.-AA+rtt*(1.0+AA)*rp
+        t3 = (1.-AA)*alpha_2-rtt*(1.+AA)*beta_2+AA*xi_abs
+
+
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !                                                                     !
+        ! Shettle and Weinman 13 and 14, adapted into Duynkerke, give two     !
+        ! equations and two unknowns which can be solved by linear combination!
+        ! (CC2) and then substitution (CC1).                                    !
+        !                                                                     !
+        ! Comments by Michael Falk, 26 January 2005                           !
+        !                                                                     !
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        cc2 = (xp23p*t3*exmu0-t1*ap23b*exmk)
+     .     / (xp23p*t2*expk-xm23p*t1*exmk)
+        cc1 = (ap23b-cc2*xm23p)/xp23p
+
+
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !                                                                     !
+        !  Computation of diffuse and direct shortwave flux                   !
+        !                                                                     !
+        ! F_diff is the first term in Duynkerke eqn.19.  The F0 and pi        !
+        ! constants which are divided out in the Duynkerke formulation are    !
+        ! reintroduced here.                                                  !
+        !                                                                     !
+        ! Duynkerke eqn.19's F_diff term comes from Shettle and Weinman eqn.8,!
+        ! where F_diff = F(upward)-F(downward).  Then F_diff = (-4/3)*pi*I1,  !
+        ! where I1 is solved in Shettle and Weinman eqn.12b.  Capital P in    !
+        ! Shettle and Weinman eqn.12b should actually be a lowercase p.       !
+        !                                                                     !
+        ! F_dir is the second term in Duynkerke eqn.19.                       !
+        !                                                                     !
+        ! The negative sign for F_diff and F_dir is related to the definition !
+        ! of which direction is a positive flux.                              !
+        !                                                                     !
+        ! Comments by Michael Falk, 26 January 2005                           !
+        !                                                                     !
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        ! Since tau is on a momentum level, taude has to be on a momentum
+        ! level.  taupath is a running total of taude from the top of the model
+        ! on down.  It is also located on a momentum level.  Brian
+
+        taupath = 0.
+
+        DO k = gr%nnzp, 1, -1
+
+           taupath = taupath + taude(k)
+
+           F_diff(k) = (-4.0/3.0) * Fs0
+     .               * (
+     .                  rp *
+     .                      (
+     .                         cc1*exp(-rk*taupath)
+     .                       - cc2*exp(rk*taupath)
+     .                      )
+     .                  - beta_2*exp(-taupath/xi_abs)
+     .                 )
+
+           F_dir(k) = -Fs0*xi_abs*exp(-taupath/xi_abs)
+
+           Frad_sw(k) = F_diff(k) + F_dir(k)
+
+        ENDDO
+
+
+        END SUBROUTINE nov11_altocu_sw
+
+!-----------------------------------------------------------------------
+
+        ! This subroutine is based on a COAMPS subroutine (nov11_icedfs)
+        ! written by Adam Smith and Vince Larson to calculate the
+        ! diffusional growth of ice for the Nov. 11 altocumulus case.
+
+        !---------------Brian's comment--------------------------------------!
+        ! This code does not use actual microphysics.  Diffusional growth of !
+        ! ice is supposed to be the growth of ice due to diffusion of water  !
+        ! vapor.  Liquid water is not involved in diffusional growth.        !
+        ! However, in mixed phase clouds (both ice and liquid water), most   !
+        ! of the water vapor condenses onto the liquid droplets due to the   !
+        ! fact that they have so much more available surface area.  This     !
+        ! brings the amount of water vapor in the atmosphere to the          !
+        ! saturation level with respect to liquid water.  However, since the !
+        ! saturation vapor pressure with respect to ice is less than the     !
+        ! saturation vapor pressure with respect to liquid water, a          !
+        ! saturated atmosphere with respect to liquid water is still         !
+        ! supersaturated with respect to ice.  As a result, ice still grows  !
+        ! due to diffusion.  When this happens, the environmental vapor      !
+        ! pressure drops to the point of saturation with respect to ice.     !
+        ! This leaves the atmosphere subsaturated with respect to liquid     !
+        ! water.  As a result, some of the liquid water evaporates until     !
+        ! the atmosphere becomes saturated with respect to liquid water      !
+        ! again.  The process then repeats itself.  As a result, the ice     !
+        ! essentially grows at the expense of the liquid water.  This is     !
+        ! why the diffusional growth of ice is being deducted from liquid    !
+        ! water in this subroutine.
+        !--------------------------------------------------------------------!
+
+        SUBROUTINE nov11_altocu_icedf( dt, thlm, rcm, p, exner, rhot,
+     .                                 dqc_dt_icedfs )
+
+        USE grid_class
+        USE constants
+
+        implicit none
+
+        external rsat
+        real rsat
+
+        ! Input variables
+        REAL, INTENT(IN):: dt
+        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: thlm
+        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rcm
+        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: p
+        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: exner
+        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rhot
+
+        ! Output variables
+        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: dqc_dt_icedfs
+
+        ! Local variables
+        REAL, DIMENSION(1:gr%nnzp):: m
+        REAL, DIMENSION(1:gr%nnzp):: thm
+        REAL, DIMENSION(1:gr%nnzp):: TT
+        REAL, DIMENSION(1:gr%nnzp):: rs
+        REAL, DIMENSION(1:gr%nnzp):: es
+        REAL, DIMENSION(1:gr%nnzp):: ei
+        REAL, DIMENSION(1:gr%nnzp):: Si
+        REAL, DIMENSION(1:gr%nnzp):: Denom
+        REAL, DIMENSION(1:gr%nnzp):: dm
+        REAL, DIMENSION(1:gr%nnzp):: diam
+        REAL, DIMENSION(1:gr%nnzp):: u_T_cm
+
+        REAL:: a, b, k_u, q, n
+
+        ! For function call
+        REAL:: Diff_denom
+
+        REAL, PARAMETER:: Lf = 3.33e5
+        ! Vince Larson avgd legs 2 and 7 (Fleishauer et al)  21 Jan 2005
+        REAL, PARAMETER:: Ni = 2000
+
+        INTEGER:: k
+
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !                                                                     !
+        ! Coefficients for mass-diameter relationship, Mitchell (1996)        !
+        ! mass = a (diameter/(1 meter))^b,  [a] = kg, [b] = []                !
+        !                                                                     !
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        a = 2.05e-3
+        b = 1.8
+
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !                                                                     !
+        !  Coefficients for mass-diameter relationship, Kajikawa (1989)       !
+        !  mass = a (diam/(1m))^b,  [a] = kg, [b] = []                        !
+        !                                                                     !
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!       a = 2.50e-4
+!       b = 1.4
+
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !                                                                     !
+        !  Coefficients for fallspeed-diameter relationship, Mitchell (1996)  !
+        !  u_T = k_u rho^{-q} (diameter/(1 meter))^n,                         !
+        !       [k_u] = m/s, [q] = [], [n] = [], [rho] = kg m^{-3}            !
+        !                                                                     !
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        k_u = 55.
+        q = 0.17
+        n = 0.70
+
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !                                                                     !
+        !  Coefficients for fallspeed-diameter relationship, Kajikawa (1989)  !
+        !  u_T = k_u rho^{-q} (diam/(1m))^n,  [k_u] = m/s, [q] = [], [n] = [] !
+        !       [rho] = kg m^{-3}                                             !
+        !                                                                     !
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!       k_u = 0.438
+!       q = 0.0
+!       n = 0.0742
+
+
+
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !                                                                     !
+        !  Initialize ice particle mass                                       !
+        !                                                                     !
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        DO k = 1, gr%nnzp, 1
+           m(k) = 1.0e-11
+        ENDDO
+
+        DO k = gr%nnzp, 2, -1
+
+          !  Compute Temperature [K]
+          thm(k) = thlm(k) + ( Lv / (Cp*exner(k)) ) * rcm(k)
+          TT(k) = thm(k) * exner(k)
+
+          ! Check whether we're in cloud and below freezing
+          IF ( rcm(k) >= 0.0 .AND. TT(k) < 273.15 ) THEN
+
+             ! Find saturation mixing ratio over vapor [kg kg^{-1}]
+             rs(k) = rsat( p(k), TT(k) )
+
+             ! Saturation vapor pressure over liquid in Pa
+             es(k) = ( rs(k)*p(k) ) / ( ep + rs(k) )
+
+             ! Saturation vapor pressure over ice in Pa, Eq. 2.15 Rogers and Yau
+             ei(k) = es(k) / EXP( ( Lf/(Rv*273.16) )
+     .                           * ( 273.16/TT(k) - 1.0 ) )
+
+             ! Saturation ratio in a liquid-saturated cloud, p. 158 Rogers and Yau
+             !---------------Brian's comment--------------------------------------!
+             ! The actual formula is:  Si = e/ei = (e/es)*(es/ei) = S*(es/ei)     !
+             ! It is assumed that any supersaturation forms liquid water and that !
+             ! the atmosphere is then saturated with respect to liquid water.     !
+             ! Therefore, S = 1.0, allowing Si = es/ei.
+             !--------------------------------------------------------------------!
+             Si(k) = es(k)/ei(k)
+
+             ! Denominator of diffusional growth equation, 9.4 of Rogers and Yau
+             Denom(k) = Diff_denom( TT(k), p(k), ei(k) )
+
+             ! Change in mass of a single ice crystal, m,
+             ! as it falls a distance gr%dzt in meters
+
+             !---------------Brian's comment--------------------------------------!
+             ! dm/dt = 4*pi*C*(Si-1)/Denom; Rogers and Yau, Eq. 9.4.              !
+             ! For plate-type ice crystals, C = 2r/pi (Rogers and Yau, p. 159).   !
+             ! Since 2r = D, C = D/pi, and the equation becomes:                  !
+             ! dm/dt = 4*D*(Si-1)/Denom.                                          !
+             ! The mass-diameter relationship for an ice crystal is:              !
+             ! D = (m/a)^(1/b); Rogers and Yau, Eq. 9.7.  This means:             !
+             ! dm/dt = [(m/a)^(1/b)]*4*(Si-1)/Denom;                              !
+             ! Dividing by rho yields the change in mixing ratio over time        !
+             ! for an individual crystal.  Multiplying that by the ice crystal    !
+             ! concentration yields the overall change in mixing ratio over time. !
+             !--------------------------------------------------------------------!
+             dqc_dt_icedfs(k) = - (Ni/rhot(k))
+     .          * ( 4 * (Si(k) - 1) / Denom(k) )
+     .          * (m(k)/a)**(1/b)
+
+             ! Ensure that liquid is not over-depleted
+             IF ( rcm(k) + dqc_dt_icedfs(k)*dt < 0.0 ) THEN
+                dqc_dt_icedfs(k) = -rcm(k)/dt
+             ENDIF
+
+             !---------------Brian's comment--------------------------------------!
+             ! dm = (dm/dt)*(dt/dz)*dz                                            !
+             ! dm = (dm/dt)*(1/u_T)*dz                                            !
+             !--------------------------------------------------------------------!
+             dm(k) = ( 4 * (Si(k) - 1) / Denom(k) )
+     .          * (k_u**(-1.0)) * (rhot(k)**q)
+     .          * ( (m(k)/a)**((1.0-n)/b) )
+     .          * gr%dzt(k)
+             m(k-1) = m(k) + dm(k)
+
+             ! Diameter of ice crystal in meters.
+             diam(k) = (m(k)/a)**(1/b)
+
+             ! Fallspeed of ice crystal in cm/s.
+             u_T_cm(k) = 100. * k_u *
+     .                   ((m(k)/a)**(n/b)) * (rhot(k)**(-q))
+
+          ELSE   ! There's no liquid and/or ice present; assume no ice growth
+
+             m(k-1) = m(k)
+             dqc_dt_icedfs(k) = 0.0
+             diam(k) = 0.0    ! Set zero to remind that we don't grow ice
+             u_T_cm(k) = 0.0  ! Set zero to remind that we don't grow ice
+
+          ENDIF
+
+        ENDDO
+
+
+        END SUBROUTINE nov11_altocu_icedf
+
+!-----------------------------------------------------------------------
+
+        FUNCTION Diff_denom(Temp, press, ei)
+
+        USE constants
+
+        IMPLICIT NONE
+
+        REAL, INTENT(IN):: Temp, press, ei
+        REAL:: Diff_denom
+
+        REAL:: Ka, Dv
+        REAL:: Fk, Fd
+        REAL:: Celsius
+
+        REAL, PARAMETER:: Ls = 2.834e6
+
+        Celsius = Temp - 273.16
+
+        Ka = (5.69 + 0.017*Celsius)*0.00001  ! Ka in cal./(cm.*sec.*C)
+        Ka = 4.1868*100.0*Ka  ! Ka in J./(m.*sec.*K)
+
+        Dv = 0.221*((Temp/273.16)**1.94)*(101325.0/press)
+                                ! Dv in (cm.^2)/sec.  ! .221 is correct.
+        Dv = Dv/10000.0  ! Dv in (m.^2)/sec.
+
+        Fk = (Ls/(Rv*Temp) - 1.0) * Ls/(Ka*Temp)
+        Fd = (Rv*Temp)/(Dv*ei)
+
+        Diff_denom = Fk + Fd
+
+        END FUNCTION Diff_denom
+
+!------------------------------------------------------------------------

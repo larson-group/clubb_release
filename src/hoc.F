@@ -58,6 +58,7 @@
                                         ! = 8 GCSS ASTEX with K & K changes 
                                         ! = 9 GCSS DYCOMS II (RF02)
                                         ! = 10 GCSS DYCOMS II (RF02) no drizzle
+                                        ! = 11 Nov. 11 Altocumulus case.
 
         integer sfctype                 ! = 0  fixed sfc sensible and
                                         !      latent heat fluxes as
@@ -215,7 +216,7 @@
 ! Compute initial theta-l
 
         select case (runtype)
-          case (7, 8, 9, 10 ) 
+          case (7, 8, 9, 10, 11 ) 
              ! Do nothing
 
           case default
@@ -328,10 +329,25 @@
 
 #endif STATS
 
+#ifdef STATS
+
+! Write statistics for the initial timestep.  Brian
+
+           call stats_begin_timestep( time, dtmain )
+           if ( lstats_last .and. stdout ) then
+             write(*,'(a,f8.1)') 'initial timestep; time = ',time
+           endif
+
+           call stats_accumulate( time, dtmain )
+
+!           call stats_end_timestep( time, dtmain )
+           call stats_end_timestep( time, dtmain, dtclosure )   ! Brian
+
+#endif STATS
+
 !<<<<<<<<<<<<<<<<<<<<<<<<<< Main time stepping loop <<<<<<<<<<<<<<<<<<<<<<<<
 
-!        do i=1, ifinal
-        do i = 0, ifinal   ! Brian
+        do i=1, ifinal
 
           time = time_initial + i * dtmain
 
@@ -423,6 +439,13 @@
                call dycoms2_rf02_tndcy( rhot, rhom, rtm, rcm, wmt, wmm,
      .                                   thlm_forcing, rtm_forcing, 
      .                                   isValid ) 
+               kk_rain = .false.
+
+             case ( 11 ) ! Nov. 11 Altocumulus case.
+               call nov11_altocu_tndcy( time, time_initial, dt, thlm,
+     .                                  rcm, p, exner, rhot, wmt, wmm,
+     .                                  thlm_forcing, rtm_forcing,
+     .                                  Frad, Frad_LW, Frad_SW )
                kk_rain = .false.
 
              case default
@@ -741,6 +764,10 @@
      .                                      thlm(2), rtm(2),
      .                                      psfc, upwp(1), vpwp(1), 
      .                                      wpthlp(1), wprtp(1) )
+
+                case ( 11 )
+                  ! There are no surface momentum or heat fluxes
+                  ! for the Nov. 11 Altocumulus case.
 
                 case default
                  write(*,*) 'Invalid value of runtype = ', runtype

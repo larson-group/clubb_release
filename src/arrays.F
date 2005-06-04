@@ -66,7 +66,9 @@
         real, allocatable, target :: rain_rate(:) ! rainfall rate in mm/day ! Brian
         real, allocatable, target :: F_precip(:)  ! precipitation flux in W/m^2 ! Brian
 
-        real, allocatable, target :: Frad(:)      ! Radiativ flux (momentum point)
+        real, allocatable, target :: Frad(:)      ! Radiative flux (momentum point)
+        real, allocatable, target :: Frad_LW(:)   ! Long_wave radiative flux (momentum point)
+        real, allocatable, target :: Frad_SW(:)   ! Short-wave radiative flux (momentum point)
 
         real, allocatable, target :: upwp(:)      ! vertical u momentum flux
         real, allocatable, target :: vpwp(:)      ! vertical v momentum flux
@@ -243,6 +245,8 @@ c Diagnostic variables
         allocate( F_precip(1:nzmax) )  ! precipitation flux in W/m^2 ! Brian
 
         allocate( Frad(1:nzmax) )      ! radiative flux (momentum point)
+        allocate( Frad_LW(1:nzmax) )   ! Long_wave radiative flux (momentum point)
+        allocate( Frad_SW(1:nzmax) )   ! Short-wave radiative flux (momentum point)
 
         allocate( upwp(1:nzmax) )      ! vertical u momentum flux
         allocate( vpwp(1:nzmax) )      ! vertical v momentum flux
@@ -384,6 +388,8 @@ c Diagnostic variables
         deallocate( F_precip )  ! precipitation flux in W/m^2 ! Brian
 
         deallocate( Frad )      ! radiative flux (momentum point)
+        deallocate( Frad_LW )   ! Long_wave radiative flux (momentum point)
+        deallocate( Frad_SW )   ! Short-wave radiative flux (momentum point)
 
         deallocate( upwp )      ! vertical u momentum flux
         deallocate( vpwp )      ! vertical v momentum flux
@@ -528,6 +534,8 @@ c Diagnostic variables
         F_precip     = 0.   ! precipitation flux in W/m^2 ! Brian
 
         Frad = 0.
+        Frad_LW = 0.   ! Long_wave radiative flux (momentum point)
+        Frad_SW = 0.   ! Short-wave radiative flux (momentum point)
 
         upwp = 0.      ! vertical u momentum flux
         vpwp = 0.      ! vertical v momentum flux

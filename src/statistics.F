@@ -178,6 +178,8 @@ c       Indices for statistics in zm file
      .     ivpwp,
      .     irhom,
      .     ifrad,
+     .     ifrad_LW,  ! Brian
+     .     ifrad_SW,  ! Brian
      .     iscm,
      .     iem,
      .     ishear     ! Brian
@@ -1164,6 +1166,8 @@ c     -----------------------------------------------------------------
       ivpwp     = 0
       irhom     = 0
       ifrad     = 0
+      ifrad_LW  = 0    ! Brian
+      ifrad_SW  = 0    ! Brian
       iscm      = 0
       iem       = 0
       ishear    = 0    ! Brian
@@ -1340,6 +1344,20 @@ c     -----------------------------------------------------------------
           zm%f%var(ifrad)%ptr => zm%x(:,k)
           zm%f%var(ifrad)%name = "frad"
           zm%f%var(ifrad)%description = "radiative flux"
+          k = k + 1
+
+        case ('frad_LW')    ! Brian
+          ifrad_LW = k
+          zm%f%var(ifrad_LW)%ptr => zm%x(:,k)
+          zm%f%var(ifrad_LW)%name = "frad_LW"
+          zm%f%var(ifrad_LW)%description = "Long-wave radiative flux"
+          k = k + 1
+
+        case ('frad_SW')    ! Brian
+          ifrad_SW = k
+          zm%f%var(ifrad_SW)%ptr => zm%x(:,k)
+          zm%f%var(ifrad_SW)%name = "frad_SW"
+          zm%f%var(ifrad_SW)%description = "Short-wave radiative flux"
           k = k + 1
 
         case ('sc')
@@ -2335,6 +2353,14 @@ c     -----------------------------------------------------------------
         if ( ifrad > 0 ) then
           zm%x(:,ifrad) = zm%x(:,ifrad) + frad
           zm%n(:,ifrad) = zm%n(:,ifrad) + 1
+        endif
+       if ( ifrad_LW > 0 ) then  ! Brian
+          zm%x(:,ifrad_LW) = zm%x(:,ifrad_LW) + frad_LW
+          zm%n(:,ifrad_LW) = zm%n(:,ifrad_LW) + 1
+        endif
+        if ( ifrad_SW > 0 ) then  ! Brian
+          zm%x(:,ifrad_SW) = zm%x(:,ifrad_SW) + frad_SW
+          zm%n(:,ifrad_SW) = zm%n(:,ifrad_SW) + 1
         endif
         if ( iscm > 0 ) then
           zm%x(:,iscm) = zm%x(:,iscm) + scm
