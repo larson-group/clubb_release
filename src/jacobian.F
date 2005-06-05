@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.5 2005-06-03 18:18:10 dschanen Exp $
+! $Id: jacobian.F,v 1.6 2005-06-05 21:27:58 dschanen Exp $
 
 ! Program Jacobian
 
@@ -108,7 +108,7 @@
       if ( .not. use_standard_vars ) then
         read(10, nml = initvars)
       else
-        open(20, name="../standalone/standalone_"
+        open(20, file = "../standalone/standalone_"
      .                //trim(run_name)//".in", status="old")
 
         read(20, nml = initvars)
@@ -121,14 +121,15 @@
      .                       nu1, nu2, nu6, nu8, beta, gamma_coef,
      .                       c_K, mu/)     
       ca1%const(1:nconst)%name =
-     .  (/"C1         ", "C2        ", "C4        ", 
-     .    "C5         ", "C6        ", "C7        ", 
-     .    "C8         ", "C10       ", "C11       ",
-     .    "nu1        ", "nu2       ", "nu6       ", "nu8       ", 
-     .    "beta       ", "gamma_coef",
-     .    "c_K        ", "mu        "/)
+     .  (/"C1        ", "C2        ", "C4        ", 
+     .    "C5        ", "C6        ", "C7        ", 
+     .    "C8        ", "C10       ", "C11       ",
+     .    "nu1       ", "nu2       ", 
+     .    "nu6       ", "nu8       ", 
+     .    "beta      ", "gamma_coef",
+     .    "c_K       ", "mu        "/)
 
-      write(*, 'a12,a12,a12'), "constant", "initial", "varied"
+      write(*, '(a12,a12,a12)'), "constant", "initial", "varied"
       do i = 1, ca1%entries
         write(*,*) ca1%const(i)%name, ca1%const(i)%value, 
      .             ca1%const(i)%value * delta_factor
@@ -167,11 +168,11 @@
 
 
       var1%var(1:nvar)%name = 
-     .                     (/"cf       ", "rcm       ", "rtm       ", 
-     .                       "thlm     ", "um        ", "vm        ",
-     .                       "wp3      ", "wp2zt     ", 
-     .                       "rtp2zt   ", "thlp2zt   ", "rtpthlpzt ",
-     .                       "wprtpzt  ", "wpthlpzt  "/)
+     .                     (/"cf        ", "rcm       ", "rtm       ", 
+     .                       "thlm      ", "um        ", "vm        ",
+     .                       "wp3       ", "wp2zt     ", 
+     .                       "rtp2zt    ", "thlp2zt   ", "rtpthlpzt ",
+     .                       "wprtpzt   ", "wpthlpzt  "/)
 
       var2%var(1:nvar)%name = var1%var(1:nvar)%name 
 
