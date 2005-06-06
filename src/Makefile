@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.16 2005-06-04 20:53:44 griffinb Exp $
+# $Id: Makefile,v 1.17 2005-06-06 21:04:57 dschanen Exp $
 
 # Compiler invocation
 
@@ -9,9 +9,9 @@ FC=pgf90
 # Compiler flags
 DEBUG = -g -C 
 
-#G95_P3_OPTIMIZE = -O3 -ffast-math -msse -march=pentium3
+#G95_P3_OPTIMIZE = -O3 -msse -march=pentium3
 #SUNPRO_X86_OPTIMIZE = -fast -ftrap=%none
-PGF_P4_OPTIMIZE = -O3 -fast -mp -Mconcur -Miomutex -tp p7
+PGF_P4_OPTIMIZE = -O3 -fastsse -mp -Mconcur -Miomutex -tp p7
 
 #FCFLAGS = $(PGF_P4_OPTIMIZE) -DSTATS 
 FCFLAGS = $(PGF_P4_OPTIMIZE) $(DEBUG) -DSTATS
