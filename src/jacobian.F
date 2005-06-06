@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.6 2005-06-05 21:27:58 dschanen Exp $
+! $Id: jacobian.F,v 1.7 2005-06-06 21:06:24 dschanen Exp $
 
 ! Program Jacobian
 
@@ -239,10 +239,11 @@
 !     Jacobian Matrix
       open(20, file="jacobian_matrix.txt", action="write" )
      
-      write(20,'(A)') "% Tuning parameters vary according to columns"
-      write(20,'(A)') "% Output fields vary according to rows"
-      write(20,'(18A)') "% columns:", ca1%const(1:nconst)%name
-      write(20,'(13A)') "% rows:   ", var2%var(1:nvar)%name 
+!     Matlab cannot import with this included
+!      write(20,'(A)') "% Tuning parameters vary according to columns"
+!      write(20,'(A)') "% Output fields vary according to rows"
+!      write(20,'(18A)') "% columns:", ca1%const(1:nconst)%name
+!      write(20,'(14A)') "% rows:   ", var2%var(1:nvar)%name 
       do j =1, var2%entries
         write(20, '(17e)') jmatrix(:,j)
       enddo
@@ -251,10 +252,11 @@
 !     Impact Matrix
       open(20, file="impact_matrix.txt", action="write" )
 
-      write(20,'(A)') "% Tuning parameters vary according to columns"
-      write(20,'(A)') "% Output fields vary according to rows"
-      write(20,'(18A)') "% columns:", ca1%const(1:nconst)%name
-      write(20,'(13A)') "% rows:   ", var2%var(1:nvar)%name
+!     Matlab cannot import with this included
+!      write(20,'(A)') "% Tuning parameters vary according to columns"
+!      write(20,'(A)') "% Output fields vary according to rows"
+!      write(20,'(18A)') "% columns:", ca1%const(1:nconst)%name
+!      write(20,'(13A)') "% rows:   ", var2%var(1:nvar)%name
       do j =1, var2%entries
         write(20, '(17e)') impact_matrix(:,j)
       enddo
