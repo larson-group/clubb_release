@@ -91,13 +91,14 @@ atex) to match; the variables to match (cloud fraction, liquid water, third
 moment of vertical velocity, etc.); the altitude and times over which to match
 these variables; and the parameters to tune (C1, beta, etc.). 
 
-The code is written in Fortran 90 and executed by a bash runscript.  We use the
-Portland Group compiler (tested with versions 5.1 & 5.2).
-G95 appears to work well, as well as Sun Studio 10*.  gfortran does not.
+The code is written in Fortran 90/95 and executed by a bash runscript. On a
+win32 machine this could be done with a .bat file, but we have not written
+one or tested this.
 
-(*) For some reason the constants printed during iterations come out in
- reverse byte order.  This is a somewhat confusing, but apparently harmless
- bug in the f95 compiler.
+We use the Portland Group compiler, version 5.2.
+G95 currently only works for standalone, and with K&K rain microphysics off.
+The gfortran compiler does not work at all. Nag and Sun Studio will probably
+both work with floating point exceptions disabled, but neither has been tested.
 
 -----------------------------------------------------------------------
 -                                                                     -
