@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.7 2005-06-06 21:06:24 dschanen Exp $
+! $Id: jacobian.F,v 1.8 2005-06-08 22:32:31 dschanen Exp $
 
 ! Program Jacobian
 
@@ -30,13 +30,13 @@
 !----------------------------------------------------------------------
       type constant_array
         integer entries
-        type (constant), allocatable, dimension(:) :: const
+        type (constant), allocatable, dimension(:) :: element
       end type constant_array
 !----------------------------------------------------------------------
       type variable_array
         integer nz
         integer entries
-        type (variable), allocatable, dimension(:) :: var
+        type (variable), allocatable, dimension(:) :: element
       end type variable_array
 
 !----- Parameters ------------------------------------------------------
@@ -96,7 +96,7 @@
       times      = 0
       isValid    = .true.
 
-      allocate( ca1%const( nconst ), 
+      allocate( ca1%element( nconst ), 
      .          stat = alloc_stat )
       ca1%entries = nconst
 
@@ -116,11 +116,11 @@
       endif
       close(10)
       
-      ca1%const(1:nconst)%value =
+      ca1%element(1:nconst)%value =
      .                     (/C1, C2, C4, C5, C6, C7, C8, C10, C11,
      .                       nu1, nu2, nu6, nu8, beta, gamma_coef,
      .                       c_K, mu/)     
-      ca1%const(1:nconst)%name =
+      ca1%element(1:nconst)%name =
      .  (/"C1        ", "C2        ", "C4        ", 
      .    "C5        ", "C6        ", "C7        ", 
      .    "C8        ", "C10       ", "C11       ",
@@ -131,20 +131,20 @@
 
       write(*, '(a12,a12,a12)'), "constant", "initial", "varied"
       do i = 1, ca1%entries
-        write(*,*) ca1%const(i)%name, ca1%const(i)%value, 
-     .             ca1%const(i)%value * delta_factor
+        write(*,*) ca1%element(i)%name, ca1%element(i)%value, 
+     .             ca1%element(i)%value * delta_factor
       enddo
 
-      call hoc_sub( ca1%const(1)%value, ca1%const(2)%value, 
-     .              ca1%const(3)%value, ca1%const(4)%value, 
-     .              ca1%const(5)%value, ca1%const(6)%value, 
-     .              ca1%const(7)%value, ca1%const(8)%value, 
-     .              ca1%const(9)%value, ca1%const(10)%value, 
-     .              ca1%const(11)%value, ca1%const(12)%value, 
-     .              ca1%const(13)%value, ca1%const(14)%value, 
-     .              ca1%const(15)%value, ca1%const(16)%value, 
+      call hoc_sub( ca1%element(1)%value, ca1%element(2)%value, 
+     .              ca1%element(3)%value, ca1%element(4)%value, 
+     .              ca1%element(5)%value, ca1%element(6)%value, 
+     .              ca1%element(7)%value, ca1%element(8)%value, 
+     .              ca1%element(9)%value, ca1%element(10)%value, 
+     .              ca1%element(11)%value, ca1%element(12)%value, 
+     .              ca1%element(13)%value, ca1%element(14)%value, 
+     .              ca1%element(15)%value, ca1%element(16)%value, 
      .              lmin_coef, taumin,
-     .              taumax, ca1%const(17)%value,
+     .              taumax, ca1%element(17)%value,
      .                "../tune/"//trim(run_name)//"_hoc.in", 
      .              trim(run_name), 
      .              isValid, .false. )
@@ -154,8 +154,8 @@
 !-----------------------------------------------------------------------
       nz = grads_zlvl( trim(run_name)//"_zt.ctl" )
 
-      allocate( var1%var( nvar ),
-     .          var2%var( nvar ),
+      allocate( var1%element( nvar ),
+     .          var2%element( nvar ),
      .          stat = alloc_stat )
 
       if (alloc_stat /= 0 ) stop "allocate failed"
@@ -167,67 +167,70 @@
 
 
 
-      var1%var(1:nvar)%name = 
+      var1%element(1:nvar)%name = 
      .                     (/"cf        ", "rcm       ", "rtm       ", 
      .                       "thlm      ", "um        ", "vm        ",
      .                       "wp3       ", "wp2zt     ", 
      .                       "rtp2zt    ", "thlp2zt   ", "rtpthlpzt ",
      .                       "wprtpzt   ", "wpthlpzt  "/)
 
-      var2%var(1:nvar)%name = var1%var(1:nvar)%name 
+      var2%element(1:nvar)%name = var1%element(1:nvar)%name 
 
       call getvariables( var1 )
 
       do i = 1, ca1%entries
-        tmp_constant       = ca1%const(i)%value
-        ca1%const(i)%value = ca1%const(i)%value * delta_factor
+        tmp_constant       = ca1%element(i)%value
+        ca1%element(i)%value = ca1%element(i)%value * delta_factor
 
-        call hoc_sub( ca1%const(1)%value,  ca1%const(2)%value, 
-     .                ca1%const(3)%value,  ca1%const(4)%value, 
-     .                ca1%const(5)%value,  ca1%const(6)%value, 
-     .                ca1%const(7)%value,  ca1%const(8)%value, 
-     .                ca1%const(9)%value,  ca1%const(10)%value, 
-     .                ca1%const(11)%value, ca1%const(12)%value, 
-     .                ca1%const(13)%value, ca1%const(14)%value, 
-     .                ca1%const(15)%value, ca1%const(16)%value, 
+        call hoc_sub( ca1%element(1)%value,  ca1%element(2)%value, 
+     .                ca1%element(3)%value,  ca1%element(4)%value, 
+     .                ca1%element(5)%value,  ca1%element(6)%value, 
+     .                ca1%element(7)%value,  ca1%element(8)%value, 
+     .                ca1%element(9)%value,  ca1%element(10)%value, 
+     .                ca1%element(11)%value, ca1%element(12)%value, 
+     .                ca1%element(13)%value, ca1%element(14)%value, 
+     .                ca1%element(15)%value, ca1%element(16)%value, 
      .                lmin_coef, taumin,
-     .                taumax, ca1%const(17)%value,
+     .                taumax, ca1%element(17)%value,
      .                "../tune/"//trim(run_name)//"_hoc.in", 
      .                trim(run_name), 
      .                isValid, .false. )
 
         if ( .not. isValid ) then
           jmatrix(i, :) = transfer(Z"7F800000", 1.0) ! Infinity bit pattern 
-          ca1%const(i)%value = tmp_constant
+          ca1%element(i)%value = tmp_constant
           cycle
         endif
 
         call getvariables( var2 )
 
         do j = 1, nvar
-          jmatrix(i, j) =    sum(   var1%var(j)%value(1:nz)   
-     .                            - var2%var(j)%value(1:nz)  )
+          jmatrix(i, j) =    sum(   var1%element(j)%value(1:nz)   
+     .                            - var2%element(j)%value(1:nz)  )
         enddo
 
         do j = 1, nvar
           jmatrix(i, j) = jmatrix(i, j) / 
-     .                       (tmp_constant - ca1%const(i)%value)
+     .                       (tmp_constant - ca1%element(i)%value)
         enddo
 
-        ca1%const(i)%value = tmp_constant
+        ca1%element(i)%value = tmp_constant
       enddo
 
 !---- Calculate impact matrix ------------------------------------------
       do j = 1, var2%entries
         impact_matrix(:,j) = jmatrix(:,j) *
-     .                       ca1%const(:)%value * (delta_factor - 1.)
+!                             I don't know why this was set this way, but I'm
+!                             pretty sure it's wrong.
+!     .                       ca1%element(:)%value * (delta_factor - 1.)
+     .                       ca1%element(:)%value * delta_factor
       enddo 
 
 !---- Output Results to terminal ---------------------------------------
       do i = 1, ca1%entries
           do j = 1, var2%entries
-            write(*,*) delta//var2%var(j)%name//" / "
-     .                 //delta//ca1%const(i)%name//" =",
+            write(*,*) delta//var2%element(j)%name//" / "
+     .                 //delta//ca1%element(i)%name//" =",
      .                 jmatrix(i, j),
      .                 "impact: ",
      .                 impact_matrix(i, j)
@@ -242,7 +245,7 @@
 !     Matlab cannot import with this included
 !      write(20,'(A)') "% Tuning parameters vary according to columns"
 !      write(20,'(A)') "% Output fields vary according to rows"
-!      write(20,'(18A)') "% columns:", ca1%const(1:nconst)%name
+!      write(20,'(18A)') "% columns:", ca1%element(1:nconst)%name
 !      write(20,'(14A)') "% rows:   ", var2%var(1:nvar)%name 
       do j =1, var2%entries
         write(20, '(17e)') jmatrix(:,j)
@@ -255,8 +258,8 @@
 !     Matlab cannot import with this included
 !      write(20,'(A)') "% Tuning parameters vary according to columns"
 !      write(20,'(A)') "% Output fields vary according to rows"
-!      write(20,'(18A)') "% columns:", ca1%const(1:nconst)%name
-!      write(20,'(13A)') "% rows:   ", var2%var(1:nvar)%name
+!      write(20,'(18A)') "% columns:", ca1%element(1:nconst)%name
+!      write(20,'(13A)') "% rows:   ", var2%element(1:nvar)%name
       do j =1, var2%entries
         write(20, '(17e)') impact_matrix(:,j)
       enddo
@@ -275,10 +278,10 @@
       type (variable_array), intent(inout) :: varray
     
       do k = 1, varray%entries
-        varray%var(k)%value(1:varray%nz) = 
+        varray%element(k)%value(1:varray%nz) = 
      .                            grads_average_interval( 
      .                            trim(run_name)//"_zt.ctl", varray%nz,
-     .                            times(:), varray%var(k)%name, 
+     .                            times(:), varray%element(k)%name, 
      .                            error )
       enddo
 
