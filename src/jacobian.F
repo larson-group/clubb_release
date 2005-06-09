@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.9 2005-06-09 15:34:59 dschanen Exp $
+! $Id: jacobian.F,v 1.10 2005-06-09 15:46:54 dschanen Exp $
 
 ! Program Jacobian
 
@@ -205,8 +205,8 @@
         call getvariables( var2 )
 
         do j = 1, nvar
-          jmatrix(i, j) =    sum(   var1%element(j)%value(1:nz)   
-     .                            - var2%element(j)%value(1:nz)  )
+          jmatrix(i, j) =    sum(   var2%element(j)%value(1:nz)   
+     .                            - var1%element(j)%value(1:nz)  )
         enddo
 
         do j = 1, nvar
