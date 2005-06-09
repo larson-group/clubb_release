@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.8 2005-06-08 22:32:31 dschanen Exp $
+! $Id: jacobian.F,v 1.9 2005-06-09 15:34:59 dschanen Exp $
 
 ! Program Jacobian
 
@@ -220,10 +220,7 @@
 !---- Calculate impact matrix ------------------------------------------
       do j = 1, var2%entries
         impact_matrix(:,j) = jmatrix(:,j) *
-!                             I don't know why this was set this way, but I'm
-!                             pretty sure it's wrong.
-!     .                       ca1%element(:)%value * (delta_factor - 1.)
-     .                       ca1%element(:)%value * delta_factor
+     .                       ca1%element(:)%value * (delta_factor - 1.)
       enddo 
 
 !---- Output Results to terminal ---------------------------------------
