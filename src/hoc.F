@@ -709,9 +709,11 @@
      .                     AKm_est, AKm,
      .                     runtype, isValid )
 
-                rain_rate = ( rrm * Vr ) * ( 86400.0 * 1000.0 )  ! rate: mm/day
+                rain_rate = ( rrm * Vr ) * ( rhot / 1000.0 )     ! rain rate (m/s)
+     .                                   * ( 86400.0 * 1000.0 )  ! rate: mm/day
 
-                F_precip = ( rrm * Vr ) * rhot * Lv              ! Precip. flux (W/m^2)
+                F_precip = ( rrm * Vr ) * ( rhot / 1000.0 )
+     .                                  * 1000.0 * Lv            ! Precip. flux (W/m^2)
 
               endif
 
