@@ -9,7 +9,7 @@
 NCPUS=2
 #######################################################################
 # Select a run, comment out the rest
-# RUN_CASE=atex 
+  RUN_CASE=atex 
 # RUN_CASE=arm 
 # RUN_CASE=bomex 
 # RUN_CASE=dycoms2_rf01 
@@ -17,7 +17,7 @@ NCPUS=2
 # RUN_CASE=wangara  
 # RUN_CASE=dycoms2_rf02_d 
 # RUN_CASE=dycoms2_rf02_nd 
-  RUN_CASE=nov11_altocu
+# RUN_CASE=nov11_altocu
 #######################################################################
 # Check for necessary namelists.  If files exist, then
 # copy them over to the general input files.

@@ -419,8 +419,8 @@
                kk_rain = .false.
 
              case ( 6 ) ! ATEX case
-               call atex_tndcy( time, rtm, wmt, wmm, thlm_forcing,
-     .                          rtm_forcing, isValid )
+               call atex_tndcy( time, time_initial, rtm, wmt, wmm,
+     .                          thlm_forcing, rtm_forcing, isValid )
                call cloud_rad( rhot, rcm, Frad, thlm_forcing )
                kk_rain = .false.
 

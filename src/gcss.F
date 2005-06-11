@@ -239,8 +239,8 @@
 !----------------------------------------------------------------------
 ! Subroutine to set theta and water tendencies for ATEX case
 !
-        subroutine atex_tndcy(time, rtm, wmt, wmm, theta_tndcy, 
-     .                        rt_tndcy, isValid)
+        subroutine atex_tndcy(time, time_initial, rtm, wmt, wmm,
+     .                        theta_tndcy, rt_tndcy, isValid)
 
         use grid_class
 
@@ -248,6 +248,7 @@
 
 !       Input
         real, intent(in) :: time
+        real, intent(in) :: time_initial
         real, intent(in) :: rtm(gr%nnzp)
 
 !       Output
@@ -271,8 +272,7 @@
         theta_tndcy = 0.
         rt_tndcy    = 0.
 
-!        if ( time >= 5400. ) then
-        if ( time >= 48600. ) then   ! Brian
+        if ( time >= time_initial + 5400.0 ) then
 
 !          Identify height of 6.5 g/kg moisture level
 
