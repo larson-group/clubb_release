@@ -387,6 +387,8 @@
            endif
 !           print*, 'hoc.F: just after iteration printout'
 #endif STATS
+
+
 !-----------------------------------------------------------------------
 !  For GCSS-ARM, set large-scale forcing
 !-----------------------------------------------------------------------
@@ -468,36 +470,73 @@
 !             call cloud_rad(rhot,rcm,Frad,thlm_forcing)
 !          end if
 
-! Compute mixing length
 
-           call length(thvm, thlm, rtm, rcm, 
-     .                 em, p, exner, Lscale, lup, ldown, mu_in)
+!          Bc for the second order moments
 
-! Compute Sc with new formula from Vince
+           select case ( runtype )
+             case ( 0, 3)                           ! Normal and FIRE
+               call sfc_momentum_fluxes( um(2), vm(2),
+     .                                   upwp(1), vpwp(1) )
+               if ( sfctype == 0 ) then
+                 wpthlp(1) = SE
+                 wprtp(1) = LE
+               else if ( sfctype == 1 ) then
+                 call sfc_thermo_fluxes( um(2), vm(2),
+     .                                   Tsfc, psfc, 
+     .                                   thlm(2), rtm(2),
+     .                                   wpthlp(1), wprtp(1) )
+               else
+                  write(*,*) 'Invalid value of sfctype = ', sfctype
+                  stop
+               endif
 
-!  Linear formula
-!         Sc = 0.6 * ( 1.0 - 
-!     .    min (
-!     .    max ( abs(wpthlp/(sqrt(wp2)*sqrt(thlp2)+0.01*wtol*thltol)) , 
-!     .          abs(wprtp/(sqrt(wp2)*sqrt(rtp2)+0.01*wtol*rttol)) ) ,
-!     .    1.0      ) )
+!            For GCSS-ARM case
+             case ( 1 )
+               call arm_sfclyr( time, gr%zt(2), 1.1, 
+     .                          thlm(2), um(2), vm(2),
+     .                          upwp(1), vpwp(1), 
+     .                          wpthlp(1), wprtp(1), ustar )
 
-!  Quadratic formula
-!  note that gamma_coef_in is typically 0.45 
-!  Divide Sc into Scm and Sct.
-        Scm = gamma_coef_in * ( 1.0 - 
-     .    min (
-     .    max ( (wpthlp/(sqrt(wp2)*sqrt(thlp2)+0.01*wtol*thltol))**2 , 
-     .          (wprtp/(sqrt(wp2)*sqrt(rtp2)+0.01*wtol*rttol))**2 ),
-     .    1.0      ) )
+             case ( 2 ) 
+               call bomex_sfclyr( um(2), vm(2),
+     .                            upwp(1), vpwp(1),
+     .                            wpthlp(1), wprtp(1) )
 
-!        Scm = 0.45 * ( 1.0 - 
-!     .    min (
-!     .    max ( (wpthlp/(sqrt(wp2)*sqrt(thlp2)+0.01*wtol*thltol))**2 , 
-!     .          (wprtp/(sqrt(wp2)*sqrt(rtp2)+0.01*wtol*rttol))**2 ),
-!     .    1.0      ) )
+             case ( 4 )
+               call wangara_sfclyr( time, um(2), vm(2),
+     .                              upwp(1), vpwp(1),
+     .                              wpthlp(1), wprtp(1) )
 
-        Sct = zm2zt(Scm)
+             case ( 6 )
+               call atex_sfclyr( um(2), vm(2), thlm(2), rtm(2),
+     .                           upwp(1), vpwp(1),
+     .                           wpthlp(1), wprtp(1) )
+
+             case ( 7 ) 
+               call dycoms2_rf01_sfclyr( sfctype, Tsfc, psfc, 
+     .                                   exner(1), um(2), vm(2), 
+     .                                   thlm(2), rtm(2), 
+     .                                   rhom(1), upwp(1), vpwp(1), 
+     .                                   wpthlp(1), wprtp(1) )
+             case ( 8 )
+               call astex_sfclyr( rhom(1), um(2), vm(2),
+     .                            upwp(1), vpwp(1), wpthlp(1), 
+     .                            wprtp(1) )
+             case ( 9, 10 )
+               call dycoms2_rf02_sfclyr( um(2), vm(2), 
+     .                                   thlm(2), rtm(2),
+     .                                   psfc, upwp(1), vpwp(1), 
+     .                                   wpthlp(1), wprtp(1) )
+
+             case ( 11 )
+               ! There are no surface momentum or heat fluxes
+               ! for the Nov. 11 Altocumulus case.
+
+             case default
+              write(*,*) 'Invalid value of runtype = ', runtype
+              stop
+
+           end select
 
 
 ! Compute number of iterations for closure loop
@@ -515,24 +554,42 @@
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-           do i1=1, niterlong
-!             Diagnose variances
+           do i1 = 1, niterlong
 
-              call diag_var( taum, 
-     .                       wmm, rtm, wprtp, thlm, wpthlp,
-     .                       wp2, wp3, Scm, 
-     .                       rtp2, thlp2, rtpthlp,
-     .                       .false., dtclosure, isValid)
+!              Compute Sc with new formula from Vince
 
-!             Check for degeneratation 
-              if ( .not. isValid ) then
-                call deallocate_model_arrays( )
-!                deallocate( fzt%var, fzt%z, fzm%var, fzm%z, 
-!     .                      fpdf%var, fpdf%z, fsfc%var, fsfc%z )
-                return
-              endif
+!              Linear formula
+!              Sc = 0.6 * ( 1.0 - 
+!     .        min (
+!     .        max ( abs(wpthlp/(sqrt(wp2)*sqrt(thlp2)+0.01*wtol*thltol)) , 
+!     .              abs(wprtp/(sqrt(wp2)*sqrt(rtp2)+0.01*wtol*rttol)) ) ,
+!     .        1.0      ) )
 
-!              print*, 'hoc.F: got past deallocate_model_arrays'
+!             Quadratic formula
+!             note that gamma_coef_in is typically 0.45 
+!             Divide Sc into Scm and Sct.
+              Scm = gamma_coef_in * ( 1.0 - 
+     .        min(
+     .        max( (wpthlp/(sqrt(wp2)*sqrt(thlp2)+0.01*wtol*thltol))**2,
+     .             (wprtp/(sqrt(wp2)*sqrt(rtp2)+0.01*wtol*rttol))**2 ),
+     .          1.0      ) )
+
+!              Scm = 0.45 * ( 1.0 - 
+!     .        min(
+!     .        max( (wpthlp/(sqrt(wp2)*sqrt(thlp2)+0.01*wtol*thltol))**2,
+!     .              (wprtp/(sqrt(wp2)*sqrt(rtp2)+0.01*wtol*rttol))**2 ),
+!     .        1.0      ) )
+
+              Sct = zm2zt(Scm)
+
+!             Compute thvm
+              thvm            = thlm + ep1 * T0 * rtm 
+     .                          + ( Lv/(Cp*exner) - ep2 * T0 ) * rcm
+
+!             Compute mixing length
+
+              call length(thvm, thlm, rtm, rcm, 
+     .                    em, p, exner, Lscale, lup, ldown, mu_in)
 
 !             Dissipation time
 
@@ -564,13 +621,28 @@
               Kht = c_K_in * Lscale * tmp1
               Khm = zt2zm( Kht )
 
-!             Advance wp2/wp3 one timestep
+!             Diagnose variances
 
-              call timestep_wp23
-     .        (dtclosure, Lscale, taum, taut, Sct, pdf_parms(:,13), Khm, ! Brian
-     .         wmt, wmm,
-     .         um, upwp, vm, vpwp, wpthvp, wp2thvp,
-     .         wp2, wp3, em, isValid)
+              call diag_var( taum, 
+     .                       wmm, rtm, wprtp, thlm, wpthlp,
+     .                       wp2, wp3, Scm, 
+     .                       rtp2, thlp2, rtpthlp,
+     .                       .false., dtclosure, isValid)
+
+!             Check for degeneratation 
+              if ( .not. isValid ) then
+                call deallocate_model_arrays( )
+!                deallocate( fzt%var, fzt%z, fzm%var, fzm%z, 
+!     .                      fpdf%var, fpdf%z, fsfc%var, fsfc%z )
+                return
+              endif
+
+!              print*, 'hoc.F: got past deallocate_model_arrays'
+
+!             Call closure scheme and boundary conditions
+
+              call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1),
+     .                      wp2(1), thlp2(1), rtp2(1), rtpthlp(1) )
 
 ! Latin hypercube sample generation 
 ! Generate p_height_time, an nnzp x nt x d array of random integers
@@ -583,11 +655,6 @@
 ! End Latin hypercube generation
 
 !              print*, 'hoc.F: i_rmd=', i_rmd
-
-!             Call closure scheme and boundary conditions
-
-              call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1),
-     .                      wp2(1), thlp2(1), rtp2(1), rtpthlp(1) )
 
               wpthlp(gr%nnzp)  = 0.
               wprtp(gr%nnzp)   = 0.
@@ -717,77 +784,9 @@
 
               endif
 
-!             Bc for the second order moments
-
-              select case ( runtype )
-                case ( 0, 3)                           ! Normal and FIRE
-                  call sfc_momentum_fluxes( um(2), vm(2),
-     .                                      upwp(1), vpwp(1) )
-                  if ( sfctype == 0 ) then
-                    wpthlp(1) = SE
-                    wprtp(1) = LE
-                  else if ( sfctype == 1 ) then
-                    call sfc_thermo_fluxes( um(2), vm(2),
-     .                                      Tsfc, psfc, 
-     .                                      thlm(2), rtm(2),
-     .                                      wpthlp(1), wprtp(1) )
-                  else
-                     write(*,*) 'Invalid value of sfctype = ', sfctype
-                     stop
-                 endif
-
-!               For GCSS-ARM case
-                case ( 1 )
-                  call arm_sfclyr( time, gr%zt(2), 1.1, 
-     .                             thlm(2), um(2), vm(2),
-     .                             upwp(1), vpwp(1), 
-     .                             wpthlp(1), wprtp(1), ustar )
-
-                case ( 2 ) 
-                  call bomex_sfclyr( um(2), vm(2),
-     .                               upwp(1), vpwp(1),
-     .                               wpthlp(1), wprtp(1) )
-
-                case ( 4 )
-                  call wangara_sfclyr( time, um(2), vm(2),
-     .                                 upwp(1), vpwp(1),
-     .                                 wpthlp(1), wprtp(1) )
-
-                case ( 6 )
-                  call atex_sfclyr( um(2), vm(2), thlm(2), rtm(2),
-     .                              upwp(1), vpwp(1),
-     .                              wpthlp(1), wprtp(1) )
-
-                case ( 7 ) 
-                  call dycoms2_rf01_sfclyr( sfctype, Tsfc, psfc, 
-     .                                      exner(1), um(2), vm(2), 
-     .                                      thlm(2), rtm(2), 
-     .                                      rhom(1), upwp(1), vpwp(1), 
-     .                                      wpthlp(1), wprtp(1) )
-                case ( 8 )
-                  call astex_sfclyr( rhom(1), um(2), vm(2),
-     .                               upwp(1), vpwp(1), wpthlp(1), 
-     .                               wprtp(1) )
-                case ( 9, 10 )
-                  call dycoms2_rf02_sfclyr( um(2), vm(2), 
-     .                                      thlm(2), rtm(2),
-     .                                      psfc, upwp(1), vpwp(1), 
-     .                                      wpthlp(1), wprtp(1) )
-
-                case ( 11 )
-                  ! There are no surface momentum or heat fluxes
-                  ! for the Nov. 11 Altocumulus case.
-
-                case default
-                 write(*,*) 'Invalid value of runtype = ', runtype
-                 stop
-
-              end select
-
-
-!             Compute thvm
-              thvm            = thlm + ep1 * T0 * rtm 
-     .                          + ( Lv/(Cp*exner) - ep2 * T0 ) * rcm
+!#######################################################################
+!############## ADVANCE PROGNOSTIC VARIABLES ONE TIMESTEP ##############
+!#######################################################################
 
 !             Advance rtm/wprtp and thlm/wpthlp one time step
               call timestep_mixing
@@ -796,7 +795,62 @@
      .               cond_rrm, auto_rrm, accr_rrm,             
      .               thlm, wpthlp, thlpthvp, thlm_forcing, isValid )
 
+!             Advance wp2/wp3 one timestep
+
+              call timestep_wp23
+     .        (dtclosure, Lscale, taum, taut, Sct, pdf_parms(:,13), Khm, ! Brian
+     .         wmt, wmm,
+     .         um, upwp, vm, vpwp, wpthvp, wp2thvp,
+     .         wp2, wp3, em, isValid)
+
+!             Update winds
+
+              umt
+     .        = - wmt * ddzm( zt2zm( um ) )
+     .          + fcor * ( vm - vg )
+              call update_wind( um, umt, upwp(1), Khm, dtmain, upwp, 
+     .                          isValid)
+              um(1)       = 2. * um(2) - um(3)
+              um(gr%nnzp) = 2. * um(gr%nnzp-1) - um(gr%nnzp-2 )
+
+!             Check for a degenerate state
+              if ( .not. isValid ) then
+                 call deallocate_model_arrays( )
+!                 deallocate( fzt%var, fzt%z, fzm%var, fzm%z, 
+!     .                       fpdf%var, fpdf%z, fsfc%var, fsfc%z )
+                 return
+              endif
+
+              vmt 
+     .        = - wmt * ddzm( zt2zm( vm ) )
+     .          - fcor * ( um - ug )
+              call update_wind( vm, vmt, vpwp(1), Khm, dtmain, vpwp,
+     .                          isValid)
+              vm(1)       = 2. * vm(2) - vm(3)
+              vm(gr%nnzp) = 2. * vm(gr%nnzp-1) - vm(gr%nnzp-2 )
+           
+              if ( .not. isValid ) then
+                 call deallocate_model_arrays( )
+!                 deallocate( fzt%var, fzt%z, fzm%var, fzm%z, 
+!     .                       fpdf%var, fpdf%z, fsfc%var, fsfc%z )
+                 return
+              endif
+
+              ! Shear production.  Brian
+              do k = 1, gr%nnzp-1, 1
+                 shear(k) = -upwp(k) * ( um(k+1) - um(k) ) * gr%dzm(k)
+     .                     - vpwp(k) * ( vm(k+1) - vm(k) ) * gr%dzm(k)
+              enddo
+              shear(gr%nnzp) = 0.0
+
+              ! Store the saturation mixing ratio for output purposes.  Brian
+              do k = 1, gr%nnzp, 1
+                rsm(k) =
+     .          rsat(p(k), (thlm(k)+(Lv/(Cp*exner(k)))*rcm(k))*exner(k))
+              enddo
+
            enddo
+
 #ifdef STATS
 !           Store values of surface fluxes for statistics
             if (lstats_samp) then
@@ -824,51 +878,6 @@
 #endif STATS
 
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-!          Update winds
-
-           umt
-     .     = - wmt * ddzm( zt2zm( um ) )
-     .       + fcor * ( vm - vg )
-           call update_wind( um, umt, upwp(1), Khm, dtmain, upwp, 
-     .                       isValid)
-           um(1)       = 2. * um(2) - um(3)
-           um(gr%nnzp) = 2. * um(gr%nnzp-1) - um(gr%nnzp-2 )
-
-!          Check for a degenerate state
-           if ( .not. isValid ) then
-              call deallocate_model_arrays( )
-!              deallocate( fzt%var, fzt%z, fzm%var, fzm%z, 
-!     .                    fpdf%var, fpdf%z, fsfc%var, fsfc%z )
-              return
-           endif
-
-           vmt 
-     .     = - wmt * ddzm( zt2zm( vm ) )
-     .       - fcor * ( um - ug )
-           call update_wind( vm, vmt, vpwp(1), Khm,dtmain,vpwp,isValid)
-           vm(1)       = 2. * vm(2) - vm(3)
-           vm(gr%nnzp) = 2. * vm(gr%nnzp-1) - vm(gr%nnzp-2 )
-           
-           if ( .not. isValid ) then
-              call deallocate_model_arrays( )
-!              deallocate( fzt%var, fzt%z, fzm%var, fzm%z, 
-!     .                    fpdf%var, fpdf%z, fsfc%var, fsfc%z )
-              return
-           endif
-
-           ! Shear production.  Brian
-           DO k = 1, gr%nnzp-1, 1
-              shear(k) = -upwp(k) * ( um(k+1) - um(k) ) * gr%dzm(k)
-     .                  - vpwp(k) * ( vm(k+1) - vm(k) ) * gr%dzm(k)
-           ENDDO
-           shear(gr%nnzp) = 0.0
-
-           ! Store the saturation mixing ratio for output purposes.  Brian
-           DO k = 1, gr%nnzp, 1
-              rsm(k) =
-     .         rsat(p(k), (thlm(k)+(Lv/(Cp*exner(k)))*rcm(k))*exner(k))
-           ENDDO
 
 ! Added to allow tuning without using the zm file
 #ifdef STATS
