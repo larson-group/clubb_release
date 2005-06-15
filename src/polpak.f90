@@ -7294,7 +7294,7 @@ subroutine i_partition_distinct_count ( n, q )
 
   return
 end
-subroutine i_partition_distinct_count_values ( n_data, n, c )
+subroutine i_partition_distinct_count_vals( n_data, n, c )
 
 !*******************************************************************************
 !
