@@ -78,7 +78,7 @@
         coeff  = 1.d-3
         expn   = 1.d0
 !       q_crit = 0.3d0
-!	q_crit = 0.7d0
+!       q_crit = 0.7d0
         q_crit = 0.2d0
 
 ! Initialize autoconversion in each mixture component
@@ -96,12 +96,12 @@
 ! Account for cloud fraction.
 ! Follow M. E. Johnson (1987), p. 56.
            fraction_1 = a*R1/(a*R1+(1-a)*R2)
-!	   print*, 'fraction_1= ', fraction_1 
+!          print*, 'fraction_1= ', fraction_1 
 
 ! V. Larson change to try to fix sampling
 !          if ( X_u(sample,d+1) .lt. fraction_1 ) then
-!	   print*, '-1+2*int((sample+1)/2)= ', -1+2*int((sample+1)/2)
-!	   print*, '-1+2*int((sample+1)/2)= ', int(sample)
+!          print*, '-1+2*int((sample+1)/2)= ', -1+2*int((sample+1)/2)
+!          print*, '-1+2*int((sample+1)/2)= ', int(sample)
            if ( X_u(1,d+1) < fraction_1 ) then
 ! End of V. Larson fix
 
@@ -127,17 +127,17 @@
 
 !! Convert sums to averages.
 !! Old code that underestimates if a plume has no sample points
-!	if (n1 .eq. 0) then
-!	   ac_m1 = 0.d0
-!	else
-!	   ac_m1 = ac_m1/n1
-!	endif
+!       if (n1 .eq. 0) then
+!          ac_m1 = 0.d0
+!       else
+!          ac_m1 = ac_m1/n1
+!       endif
 
-!	if (n2 .eq. 0) then
+!       if (n2 .eq. 0) then
 !         ac_m2 = 0.d0
-!	else
-!	   ac_m2 = ac_m2/n2
-!	endif
+!       else
+!          ac_m2 = ac_m2/n2
+!       endif
 
 ! Convert sums to averages.
 ! If we have no sample points for a certain plume,

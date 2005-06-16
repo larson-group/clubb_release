@@ -116,11 +116,11 @@
 !   if I omit the following if-endif loop.
 ! End V. Larson comment
 !!   k = 0 < p & p < 1;
-!	if (p.gt.0 .and. p.lt.1)then
+!       if (p.gt.0 .and. p.lt.1)then
 !         e = 0.5*(1.0 - erf_dp(-z/sqrt(2.))) - p          ! error
 !         u = e * sqrt(2*pi_dp) * exp(z**2/2)       ! f(z)/df(z)
 !         z = z - u/( 1 + z*u/2 )               ! Halley's method
-!	endif
+!       endif
 
 ! return z as double precision:
         ltqnorm = z

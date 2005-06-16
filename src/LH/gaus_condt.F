@@ -72,7 +72,7 @@
 !         do j=1,(v-1)
 !            if ( Sigma_twoone(1,j) .ne. Sigma_onetwo(j,1) ) then
 !              print*,'Error: matrix Sigma not symmetric in gaus_condt.'
-!	        print*,'Sigma in gaus_condt=', Sigma
+!               print*,'Sigma in gaus_condt=', Sigma
 !            endif
 !         enddo
 

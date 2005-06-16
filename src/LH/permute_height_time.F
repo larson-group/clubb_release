@@ -41,9 +41,9 @@
       enddo
 
 ! Make elements of p_height_time in the range [1,nt] inclusive
-!	p_height_time = p_height_time + 1
+!       p_height_time = p_height_time + 1
 
-!	print*, 'p_height_time in permute_height_time=', p_height_time
+!       print*, 'p_height_time in permute_height_time=', p_height_time
 
       return
       end subroutine permute_height_time

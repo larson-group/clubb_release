@@ -36,13 +36,13 @@
 
 ! Continue the old string of random numbers by choosing seed>0
         seed = 1
-!	seed = 2
+!       seed = 2
 
 !  Compute random permutation row by row
 !       do j=1,dp1
 !       ! Generate a column vector of integers from 0 to n-1, 
-!	!    whose order is random.
-!	  call rand_permute( n, p_matrix(1:n,j) )
+!       !    whose order is random.
+!         call rand_permute( n, p_matrix(1:n,j) )
 !       enddo
 
 ! Choose values of sample 
@@ -53,9 +53,9 @@
           enddo
         enddo
 
-!	 print*, 'p_matrix(:,1)= ', p_matrix(:,1)
+!        print*, 'p_matrix(:,1)= ', p_matrix(:,1)
 !        print*, 'p_matrix(:,dp1)= ', p_matrix(:,dp1)
-!	 print*, 'X(:,1)= ', X(:,:)
+!        print*, 'X(:,1)= ', X(:,:)
 
         return
         end subroutine latin_hyper_sample

@@ -102,9 +102,9 @@
       call latin_hyper_sample( n, nt, d+1, p_matrix, X_u )
 
 ! Standard sample for testing purposes when n=2
-!	X_u(1,1:(d+1)) = ( / 0.0001d0, 0.46711825945881d0, 
+!     X_u(1,1:(d+1)) = ( / 0.0001d0, 0.46711825945881d0, 
 !     .       0.58015016959859d0, 0.61894015386778d0, 0.1d0, 0.1d0  / )
-!	X_u(2,1:(d+1)) = ( / 0.999d0, 0.63222458307464d0,     
+!     X_u(2,1:(d+1)) = ( / 0.999d0, 0.63222458307464d0,     
 !     .       0.43642762850981d0, 0.32291562498749d0, 0.1d0, 0.1d0  / )     
 
 
@@ -123,18 +123,18 @@
 
 ! Transform s (column 1) and t (column 2) back to rt and thl
 ! This is only needed if you need rt, thl in your microphysics.
-!	call sptp_2_rtpthlp(n,d,a,crt1,cthl1,crt2,cthl2,
+!     call sptp_2_rtpthlp(n,d,a,crt1,cthl1,crt2,cthl2,
 !     .                C1,C2,X_nl(1:n,1),X_nl(1:n,2),X_u,rtp,thlp)
-!	call st_2_rtthl(n,d,a,rt1,thl1,rt2,thl2,
+!     call st_2_rtthl(n,d,a,rt1,thl1,rt2,thl2,
 !     .                crt1,cthl1,crt2,cthl2,
 !     .                C1,C2,mu1(1),mu2(1),X_nl(1:n,1),X_nl(1:n,2),X_u,
 !     .                rt,thl)
 
 ! Compute some diagnostics
-!      print*, 'C=', a*C1 + (1-a)*C2
-!	print*, 'rtm_anl=', a*rt1+(1-a)*rt2, 'rtm_est=', mean(rt(1:n),n)
-!	print*, 'thl_anl=',a*thl1+(1-a)*thl2, 'thlm_est=',mean(thl(1:n),n)
-!	print*, 'rtpthlp_coef_est=', corrcoef(rt,thl,n)
+!       print*, 'C=', a*C1 + (1-a)*C2
+!       print*, 'rtm_anl=', a*rt1+(1-a)*rt2, 'rtm_est=', mean(rt(1:n),n)
+!       print*, 'thl_anl=',a*thl1+(1-a)*thl2, 'thlm_est=',mean(thl(1:n),n)
+!       print*, 'rtpthlp_coef_est=', corrcoef(rt,thl,n)
 
 ! Convert last two variates (columns) (usu N and rr) to lognormal
       if (d > 3) then
@@ -145,17 +145,17 @@
       endif
 
 ! Test diagnostics
-!	print*, 'mean X_nl(:,2)=', mean(X_nl(1:n,2),n)
-!	print*, 'mean X_nl(:,3)=', mean(X_nl(1:n,3),n)
-!	print*, 'mean X_nl(:,4)=', mean(X_nl(1:n,4),n)
-!	print*, 'mean X_nl(:,5)=', mean(X_nl(1:n,5),n)
+!       print*, 'mean X_nl(:,2)=', mean(X_nl(1:n,2),n)
+!       print*, 'mean X_nl(:,3)=', mean(X_nl(1:n,3),n)
+!       print*, 'mean X_nl(:,4)=', mean(X_nl(1:n,4),n)
+!       print*, 'mean X_nl(:,5)=', mean(X_nl(1:n,5),n)
 
-!	print*, 'std X_nl(:,2)=', std(X_nl(1:n,2),n)
-!	print*, 'std X_nl(:,3)=', std(X_nl(1:n,3),n)
-!	print*, 'std X_nl(:,4)=', std(X_nl(1:n,4),n)
-!	print*, 'std X_nl(:,5)=', std(X_nl(1:n,5),n)
+!       print*, 'std X_nl(:,2)=', std(X_nl(1:n,2),n)
+!       print*, 'std X_nl(:,3)=', std(X_nl(1:n,3),n)
+!       print*, 'std X_nl(:,4)=', std(X_nl(1:n,4),n)
+!       print*, 'std X_nl(:,5)=', std(X_nl(1:n,5),n)
 
-!	print*, 'corrcoef X_nl(:,2:3)=', 
+!       print*, 'corrcoef X_nl(:,2:3)=', 
 !     .            corrcoef( X_nl(1:n,2), X_nl(1:n,3), n )
 
 

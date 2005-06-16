@@ -181,8 +181,8 @@
 ! A test of the scheme:
 ! Compare exact (rcm) and Monte Carlo estimates (rcm_est) of 
 !    specific liq water content, rcm.  
-!	  print*, 'rcm=', rcm
-!	  print*, 'rcm_est=', rcm_est
+!      print*, 'rcm=', rcm
+!      print*, 'rcm_est=', rcm_est
 
 ! Exact Kessler autoconversion in units of (kg/kg)/s
 !        q_crit = 0.3e-3
@@ -225,21 +225,21 @@
 ! Kessler ac, using within cloud liquid, rcm/cf, as input
         AKm_rcc_k = cf * K_one * max( 0.0, rcm/cf-q_crit ) 
 
-!        print*, 'a=', a
-!	   print*, 's1=', s1
-!	   print*, 's2=', s2
-!	   print*, 'ss1=', ss1
-!	   print*, 'ss2=', ss2
-!	   print*, 'AKm_k =', AKm_k
-!	   print*, 'AKm_est_k (estimate) =', AKm_est_k
-!        print*, 'AK1=', AK1
-!        print*, 'AK2=', AK2
-!        print*, 'AK1var=', AK1var
-!	   print*, 'AK2var=', AK2var  
-!        print*, 'AKstd =', AKstd
-!        print*, 'AKstd_cld =', AKstd_cld
-!	   print*, 'AKm_rcc =', AKm_rcc
-!	   print*, 'AKm_rcm =', AKm_rcm
+!       print*, 'a=', a
+!       print*, 's1=', s1
+!       print*, 's2=', s2
+!       print*, 'ss1=', ss1
+!       print*, 'ss2=', ss2
+!       print*, 'AKm_k =', AKm_k
+!       print*, 'AKm_est_k (estimate) =', AKm_est_k
+!       print*, 'AK1=', AK1
+!       print*, 'AK2=', AK2
+!       print*, 'AK1var=', AK1var
+!       print*, 'AK2var=', AK2var  
+!       print*, 'AKstd =', AKstd
+!       print*, 'AKstd_cld =', AKstd_cld
+!       print*, 'AKm_rcc =', AKm_rcc
+!       print*, 'AKm_rcm =', AKm_rcm
 
 !------------------------------------------------------------------------
 ! Compute within-cloud vertical velocity, avg over full layer
@@ -247,8 +247,9 @@
 ! in autoconv_driver.
 ! Only works if coeff=expn=1 in autoconversion_driver.
 !------------------------------------------------------------------------
-!	 call autoconv_driver(n,d,a,R1,R2,X_nl(1:n,3),
-!     .         X_nl(1:n,3),X_nl(1:n,4),X_nl(1:n,5),X_u,AKm2)
+!     call autoconv_driver( n, d, a, R1, R2, X_nl( 1:n, 3 ),
+!     .                     X_nl( 1:n, 3 ), X_nl( 1:n, 4 ), 
+!     .                     X_nl(1:n, 5), X_u, AKm2 )
 
 ! Another test:
 ! Compute within-cloud vertical velocity, avgd over full domain.
@@ -257,8 +258,8 @@
 !        w_cld_avg = a * C_w_cld1 + (1-a) * C_w_cld2
 
 ! The following two values should match
-!	   print*, 'w_cld_avg=', w_cld_avg
-!	   print*, 'ac_m2=', ac_m2
+!       print*, 'w_cld_avg=', w_cld_avg
+!       print*, 'ac_m2=', ac_m2
 
 ! End of overall if-then statement for Latin hypercube code
         endif

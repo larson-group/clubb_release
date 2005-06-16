@@ -151,14 +151,14 @@
 ! In this case, Sigma_rtthlw matrix is ill-conditioned; 
 !     then matrix operations will fail.
 
-!	  print*,'srt1=', srt1
-!	  print*,'srt2=', srt2
-!	  print*,'sthl1=', sthl1
-!	  print*,'sthl2=', sthl2
-!	  print*,'sw1=', sw1
-!	  print*,'sw2=', sw2
+!         print*,'srt1=', srt1
+!         print*,'srt2=', srt2
+!         print*,'sthl1=', sthl1
+!         print*,'sthl2=', sthl2
+!         print*,'sw1=', sw1
+!         print*,'sw2=', sw2
 
-!	  print*, 'Covariance matrix of r-thl-w is ill-conditioned'
+!         print*, 'Covariance matrix of r-thl-w is ill-conditioned'
 
         X_u(:,:)    = 0.0
         X_nl(:,:)   = 0.0
@@ -279,7 +279,7 @@
      .                             /)
 
 
-!	  print*, 'New call to sample_points -----------------'
+!         print*, 'New call to sample_points -----------------'
 
 ! Use units of [g/kg] to ameliorate numerical roundoff
         call sample_points( n, nt, d, p_matrix, dble(a),

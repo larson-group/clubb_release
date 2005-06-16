@@ -24,7 +24,7 @@
         double precision, intent(in) :: 
      .                  A(rowsap,colsap), B(rowsbp,colsbp)
 
-! Output variables	
+! Output variables
         double precision, intent(out) :: C(rowsa,colsb) 
 
 ! Local variables

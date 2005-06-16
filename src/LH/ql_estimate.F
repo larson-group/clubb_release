@@ -105,17 +105,17 @@
 
 !! Convert sums to averages.
 !! Old code that underestimates if n1 or n2 = 0.
-!	if (n1 .eq. 0) then
-!	   ql_m1 = 0.d0
-!	else
-!	   ql_m1 = ql_m1/n1
-!	endif
+!       if (n1 .eq. 0) then
+!          ql_m1 = 0.d0
+!       else
+!          ql_m1 = ql_m1/n1
+!       endif
 
-!	if (n2 .eq. 0) then
+!       if (n2 .eq. 0) then
 !         ql_m2 = 0.d0
-!	else
-!	   ql_m2 = ql_m2/n2
-!	endif
+!       else
+!          ql_m2 = ql_m2/n2
+!       endif
 
 
 ! Convert sums to averages.
