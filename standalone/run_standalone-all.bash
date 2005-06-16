@@ -5,8 +5,8 @@
 # Edit to change run
 #
 #######################################################################
-# Useful on SMP machines with pgf90 
-NCPUS=2
+# Useful on multiprocessor machines with OpenMP capable fortran
+OMP_NUM_THREADS=2
 #######################################################################
 # Select a run, comment out the rest
 #   Or alternatively, uncomment do loop to do all cases
