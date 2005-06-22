@@ -283,6 +283,11 @@
             em = 1.0
             wp2 = (2.0/3.0) * em
 
+      ! Brian for Nov. 11 altocumulus case.
+          case ( 11 )
+            em = 1.0
+            wp2 = (2.0/3.0) * em
+
         end select
 
 ! End Initialize TKE and other fields as needed
@@ -802,6 +807,19 @@
      .         wmt, wmm,
      .         um, upwp, vm, vpwp, wpthvp, wp2thvp,
      .         wp2, wp3, em, isValid)
+
+              ! Set initial turbulence over first hour 
+              ! of Nov. 11 altocumulus case.  Brian.
+
+              select case ( runtype )
+
+                 case ( 11 )
+                    IF ( time < time_initial + 3600.0) THEN
+                       em = 1.0
+                       wp2 = (2.0/3.0) * em
+                    ENDIF
+
+              end select
 
 !             Update winds
 
