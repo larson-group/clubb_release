@@ -1,12 +1,10 @@
 !----------------------------------------------------------------------
-!	Program HOC_STANDALONE
+!  Program HOC_STANDALONE
 !
-!       This is essentially a minimalist frontend for the hoc subroutine
+!  This is essentially a minimalist frontend for the hoc subroutine
 !
 !----------------------------------------------------------------------
-
       program hoc_standalone
-
       use hoc
 
       implicit none
@@ -48,10 +46,10 @@
       isValid = .true.
       
 !----- Run the model----------------------------------------------------
-      call hoc_sub( C1, C2, C4, C5, C6, C7, C8, C10, C11, 
-     .              nu1, nu2, nu6, nu8, beta,
-     .              gamma_coef, c_K, lmin_coef, taumin, taumax, mu,
-     .              runfile, run_name, isValid, stdout )
+      call hoc_model( C1, C2, C4, C5, C6, C7, C8, C10, C11, 
+     .                nu1, nu2, nu6, nu8, beta,
+     .                gamma_coef, c_K, lmin_coef, taumin, taumax, mu,
+     .                runfile, isValid, stdout )
 
       if ( .not. isValid ) then 
         stop "Model wasn't valid, check your constants"

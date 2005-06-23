@@ -1,4 +1,5 @@
 !----------------------------------------------------------------------
+!  $Id: compare_runs.F,v 1.5 2005-06-23 20:07:53 dschanen Exp $
 !  program compare_runs.F
 
 !  Tests selected GRaDS file variables for low variation
@@ -11,7 +12,7 @@
         implicit none
  
 !        integer, parameter               :: nvar = 14
-        integer, parameter               :: nvar = 9
+        integer, parameter               :: nvar = 14
         integer, parameter               :: max_times = 10
 
 
@@ -33,7 +34,7 @@
 
         integer, dimension(max_times) :: t        ! times to analyze
 
-        integer                ::       nz, nz_file1,
+        integer                :: nz, nz_file1,
      .                            nz_file2, nz_file3    ! z-levels
         integer                :: n               ! loop
         integer                :: i               ! loop
@@ -57,11 +58,11 @@
         hoc_variables(7)  = "wp3"
         hoc_variables(8)  = "wp2rtp"
         hoc_variables(9)  = "wp2rcp"
-!        hoc_variables(10) = "wp2zt"
-!        hoc_variables(11) = "thlp2zt"
-!        hoc_variables(12) = "wpthlpzt"
-!        hoc_variables(13) = "wprtpzt"
-!        hoc_variables(14) = "rtp2zt"
+        hoc_variables(10) = "wp2zt"
+        hoc_variables(11) = "thlp2zt"
+        hoc_variables(12) = "wpthlpzt"
+        hoc_variables(13) = "wprtpzt"
+        hoc_variables(14) = "rtp2zt"
 
         if ( les_comparison ) then
           les_variables(1)  = "qcm"
@@ -73,11 +74,11 @@
           les_variables(7)  = "wp3"
           les_variables(8)  = "wp2qtp"
           les_variables(9)  = "wp2qlp"
-!          les_variables(10) = "wp2"
-!          les_variables(11) = "thlp2"
-!          les_variables(12) = "wpthlp"
-!          les_variables(13) = "wpqtp"
-!          les_variables(14) = "qtp2"
+          les_variables(10) = "wp2"
+          les_variables(11) = "thlp2"
+          les_variables(12) = "wpthlp"
+          les_variables(13) = "wpqtp"
+          les_variables(14) = "qtp2"
         else
           les_variables( 1:nvar ) = hoc_variables( 1:nvar )
         endif
@@ -87,6 +88,10 @@
         enddo
         tmax = i - 1
  
+        write(*,*) "file1: ", file1
+        write(*,*) "file2: ", file2
+        write(*,*) "file3: ", file3
+
         do i=1, tmax, 2
         write(*,*) "time: ", t(i), " to ", t(i+1)
         write(*,*) "Comparison","                (file1 - file2)^2",

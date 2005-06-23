@@ -8112,7 +8112,7 @@ subroutine laguerre_associated ( n, m, x, cx )
   end do
 
   return
-end
+end subroutine laguerre_associated 
 subroutine laguerre_general ( n, alpha, x, cx )
 
 !*******************************************************************************
@@ -8211,7 +8211,7 @@ subroutine laguerre_general ( n, alpha, x, cx )
   end do
 
   return
-end
+end subroutine laguerre_general 
 subroutine laguerre_poly ( n, x, cx )
 
 !*******************************************************************************
@@ -8308,7 +8308,7 @@ subroutine laguerre_poly ( n, x, cx )
   end do
 
   return
-end
+end subroutine laguerre_poly 
 subroutine laguerre_poly_coef ( n, c )
 
 !*******************************************************************************
@@ -8385,7 +8385,7 @@ subroutine laguerre_poly_coef ( n, c )
   end do
 
   return
-end
+end subroutine laguerre_poly_coef 
 subroutine laguerre_poly_values ( n_data, n, x, fx )
 
 !*******************************************************************************
@@ -8468,7 +8468,7 @@ subroutine laguerre_poly_values ( n_data, n, x, fx )
   end if
 
   return
-end
+end subroutine laguerre_poly_values 
 function lambert_w ( x )
 
 !*******************************************************************************
@@ -8560,7 +8560,7 @@ function lambert_w ( x )
   lambert_w = w
 
   return
-end
+end function lambert_w 
 function lambert_w_crude ( x )
 
 !*******************************************************************************
@@ -8640,7 +8640,7 @@ function lambert_w_crude ( x )
   lambert_w_crude = value
 
   return
-end
+end function lambert_w_crude 
 subroutine lambert_w_values ( n_data, x, fx )
 
 !*******************************************************************************
@@ -8770,7 +8770,7 @@ subroutine lambert_w_values ( n_data, x, fx )
   end if
 
   return
-end
+end subroutine lambert_w_values 
 subroutine legendre_associated ( n, m, x, cx )
 
 !*******************************************************************************
@@ -8937,7 +8937,7 @@ subroutine legendre_associated ( n, m, x, cx )
   end do
 
   return
-end
+end subroutine legendre_associated 
 subroutine legendre_associated_normalized ( n, m, x, cx )
 
 !*******************************************************************************
@@ -9066,7 +9066,7 @@ subroutine legendre_associated_normalized ( n, m, x, cx )
   end do
 
   return
-end
+end subroutine legendre_associated_normalized 
 subroutine legendre_associated_values ( n_data, n, m, x, fx )
 
 !*******************************************************************************
@@ -9158,7 +9158,7 @@ subroutine legendre_associated_values ( n_data, n, m, x, fx )
   end if
 
   return
-end
+end subroutine legendre_associated_values 
 subroutine legendre_function_q ( n, x, cx )
 
 !*******************************************************************************
@@ -9256,7 +9256,7 @@ subroutine legendre_function_q ( n, x, cx )
   end do 
  
   return
-end
+end subroutine legendre_function_q 
 subroutine legendre_function_q_values ( n_data, n, x, fx )
 
 !*******************************************************************************
@@ -9333,7 +9333,7 @@ subroutine legendre_function_q_values ( n_data, n, x, fx )
   end if
 
   return
-end
+end subroutine legendre_function_q_values 
 subroutine legendre_poly ( n, x, cx, cpx )
 
 !*******************************************************************************
@@ -9472,7 +9472,7 @@ subroutine legendre_poly ( n, x, cx, cpx )
   end do
  
   return
-end
+end subroutine legendre_poly 
 subroutine legendre_poly_coef ( n, c )
 
 !*******************************************************************************
@@ -9556,7 +9556,7 @@ subroutine legendre_poly_coef ( n, c )
   end do
  
   return
-end
+end subroutine legendre_poly_coef 
 subroutine legendre_poly_values ( n_data, n, x, fx )
 
 !*******************************************************************************
@@ -9636,7 +9636,7 @@ subroutine legendre_poly_values ( n_data, n, x, fx )
   end if
 
   return
-end
+end subroutine legendre_poly_values 
 subroutine legendre_symbol ( q, p, l )
 
 !*******************************************************************************
@@ -9888,7 +9888,7 @@ subroutine legendre_symbol ( q, p, l )
   end do
 
   return
-end
+end subroutine legendre_symbol 
 function lerch ( z, s, a )
 
 !*******************************************************************************
@@ -9976,7 +9976,7 @@ function lerch ( z, s, a )
   lerch = total
 
   return
-end
+end function lerch 
 subroutine lerch_values ( n_data, z, s, a, fx )
 
 !*******************************************************************************
@@ -10099,7 +10099,7 @@ subroutine lerch_values ( n_data, z, s, a, fx )
   end if
 
   return
-end
+end subroutine lerch_values 
 subroutine lock ( n, a )
 
 !*******************************************************************************
@@ -10201,7 +10201,7 @@ subroutine lock ( n, a )
   end do
 
   return
-end
+end subroutine lock 
 subroutine moebius ( n, mu )
 
 !*******************************************************************************
@@ -10313,7 +10313,7 @@ subroutine moebius ( n, mu )
   end do
 
   return
-end
+end subroutine moebius 
 subroutine moebius_values ( n_data, n, c )
 
 !*******************************************************************************
@@ -10376,7 +10376,7 @@ subroutine moebius_values ( n_data, n, c )
   end if
 
   return
-end
+end subroutine moebius_values 
 subroutine motzkin ( n, a )
 
 !*******************************************************************************
@@ -10452,7 +10452,7 @@ subroutine motzkin ( n, a )
   end do
 
   return
-end
+end subroutine motzkin 
 subroutine omega ( n, ndiv )
 
 !*******************************************************************************
@@ -10551,7 +10551,7 @@ subroutine omega ( n, ndiv )
   ndiv = nfactor
 
   return
-end
+end subroutine omega 
 subroutine omega_values ( n_data, n, c )
 
 !*******************************************************************************
@@ -10620,7 +10620,7 @@ subroutine omega_values ( n_data, n, c )
   end if
 
   return
-end
+end subroutine omega_values 
 subroutine pentagon_num ( n, p )
 
 !*******************************************************************************
@@ -10675,7 +10675,7 @@ subroutine pentagon_num ( n, p )
   p = ( n * ( 3 * n - 1 ) ) / 2
 
   return
-end
+end subroutine pentagon_num 
 subroutine phi ( n, phin )
 
 !*******************************************************************************
@@ -10782,7 +10782,7 @@ subroutine phi ( n, phin )
   end do
 
   return
-end
+end subroutine phi 
 subroutine phi_values ( n_data, n, c )
 
 !*******************************************************************************
@@ -10845,7 +10845,7 @@ subroutine phi_values ( n_data, n, c )
   end if
 
   return
-end
+end subroutine phi_values 
 function prime ( n )
 
 !*******************************************************************************
@@ -11110,7 +11110,7 @@ function prime ( n )
   end if
 
   return
-end
+end function prime 
 function pyramid_num ( n )
 
 !*******************************************************************************
@@ -11168,7 +11168,7 @@ function pyramid_num ( n )
   pyramid_num = ( ( n + 1 )**3 - ( n + 1 ) ) / 6
 
   return
-end
+end function pyramid_num 
 subroutine sct ( n, x, y )
 
 !*******************************************************************************
@@ -11245,7 +11245,7 @@ subroutine sct ( n, x, y )
     * sqrt ( real ( n, kind = 8 ) / real ( n - 1, kind = 8 ) )
 
   return
-end
+end subroutine sct 
 function sec_deg ( angle )
 
 !*******************************************************************************
@@ -11276,7 +11276,7 @@ function sec_deg ( angle )
   sec_deg = 1.0D+00 / sin ( degrees_to_radians * angle )
 
   return
-end
+end function sec_deg 
 subroutine sftb ( n, r, azero, a, b )
 
 !*******************************************************************************
@@ -11324,7 +11324,7 @@ subroutine sftb ( n, r, azero, a, b )
   end do
 
   return
-end
+end subroutine sftb 
 subroutine sftf ( n, r, azero, a, b )
 
 !*******************************************************************************
@@ -11383,7 +11383,7 @@ subroutine sftf ( n, r, azero, a, b )
   end do
 
   return
-end
+end subroutine sftf 
 subroutine sht ( n, a, b  )
 
 !*******************************************************************************
@@ -11452,7 +11452,7 @@ subroutine sht ( n, a, b  )
   b(0:n-1) = b(0:n-1) / sqrt ( real ( n, kind = 8 ) )
 
   return
-end
+end subroutine sht 
 function sin_deg ( angle )
 
 !*******************************************************************************
@@ -11483,7 +11483,7 @@ function sin_deg ( angle )
   sin_deg = sin ( degrees_to_radians * angle ) 
 
   return
-end
+end function sin_deg 
 subroutine sqctb ( n, x, y )
 
 !*******************************************************************************
@@ -11547,7 +11547,7 @@ subroutine sqctb ( n, x, y )
   end do
 
   return
-end
+end subroutine sqctb 
 subroutine sqctf ( n, x, y )
 
 !*******************************************************************************
@@ -11610,7 +11610,7 @@ subroutine sqctf ( n, x, y )
   y(0:n-1) = y(0:n-1) / real ( n, kind = 8 )
 
   return
-end
+end subroutine sqctf 
 subroutine sqstb ( n, x, y )
 
 !*******************************************************************************
@@ -11678,7 +11678,7 @@ subroutine sqstb ( n, x, y )
   end do
 
   return
-end
+end subroutine sqstb 
 subroutine sqstf ( n, x, y )
 
 !*******************************************************************************
@@ -11741,7 +11741,7 @@ subroutine sqstf ( n, x, y )
   y(1:n) = - y(1:n) / real ( n, kind = 8 )
 
   return
-end
+end subroutine sqstf 
 subroutine sst ( n, x, y )
 
 !*******************************************************************************
@@ -11797,7 +11797,7 @@ subroutine sst ( n, x, y )
   end do
 
   return
-end
+end subroutine sst 
 subroutine sigma ( n, sigma_n )
 
 !*******************************************************************************

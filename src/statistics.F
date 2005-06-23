@@ -1,9 +1,11 @@
-#ifdef STATS
 !-----------------------------------------------------------------------
+!  $Id: statistics.F,v 1.11 2005-06-23 20:07:53 dschanen Exp $
+
 !  module stats_type
 !  contains:
 !    derived data type 'stats'
 !-----------------------------------------------------------------------
+#ifdef STATS
       module stats_type
 
         use outputfile_class
@@ -155,6 +157,10 @@ c       Indices for statistics in zt file
      .     iwprtpzt,
      .     irtp2zt,
      .     irtpthlpzt
+
+!        integer
+!     .     isclrm,        ! New mixing scheme
+!     .     iwpsclrp       ! New mixing scheme
 
 c       Indices for statistics in zm file
 
@@ -467,6 +473,9 @@ c     -----------------------------------------------------------------
       iwprtpzt   = 0
       irtp2zt    = 0
       irtpthlpzt = 0
+
+!      isclrm   = 0
+!      iwpsclrp = 0
 
 !     Assign pointers for statistics variables zt
 
@@ -1085,6 +1094,22 @@ c     -----------------------------------------------------------------
           zt%f%var(irtpthlpzt)%description = "rtpthlpzt"
           k = k + 1
  
+!        case ('sclrm')
+!          isclrm = k
+!          zt%f%var(isclrm)%ptr => zt%x(:,k)
+!          zt%f%var(isclrm)%name = "sclrm"
+!          zt%f%var(isclrm)%description 
+!     .    = "mixing variable (currently rtm)"
+!          k = k + 1
+
+!        case ('wpsclrp')
+!          iwpsclrp = k
+!          zt%f%var(iwpsclrp)%ptr => zt%x(:,k)
+!          zt%f%var(iwpsclrp)%name = "wpsclrp"
+!          zt%f%var(iwpsclrp)%description 
+!     .    = "mixing variable (currently wprtp)"
+!          k = k + 1
+
         case default
           write(*,*) 'Error: unrecognized variable ',trim(vars_zt(i))
           lerror = .true.
@@ -1822,7 +1847,7 @@ c     -----------------------------------------------------------------
       real, intent(in) :: time, delt
 
 !     Set sample this time step flag
-      if ( mod( time, stats_tsamp ) .lt. 1.e-8 ) then
+      if ( mod( time, stats_tsamp ) < 1.e-8 ) then
          lstats_samp = .true.
       else
          lstats_samp = .false.
@@ -1830,7 +1855,7 @@ c     -----------------------------------------------------------------
 
 !     Set first time step flag
 
-      if ( mod( time-delt, stats_tout ) .lt. 1.e-8 ) then
+      if ( mod( time - delt, stats_tout ) < 1.e-8 ) then
          lstats_first = .true.
       else
          lstats_first = .false.
@@ -2276,6 +2301,16 @@ c     -----------------------------------------------------------------
           zt%n(:,irtpthlpzt) = zt%n(:,irtpthlpzt) + 1
         endif
 
+!        if ( isclrm > 0 ) then
+!          zt%x(:,isclrm) = zt%x(:,isclrm) + sclrm(1,:)
+!          zt%n(:,isclrm) = zt%n(:,isclrm) + 1
+!        endif
+
+!        if ( iwpsclrp > 0 ) then
+!          zt%x(:,iwpsclrp) = zt%x(:,iwpsclrp) + wpsclrp(1,:)
+!          zt%n(:,iwpsclrp) = zt%n(:,iwpsclrp) + 1
+!        endif
+
 !       zm variables
 
         if ( iwp2 > 0 ) then
@@ -2387,7 +2422,7 @@ c     -----------------------------------------------------------------
         if ( izb > 0 ) then
           k = 1
 !         do while ( rcm(k) < 1.e-6 .and. k <= gr%nnzp ) ! array out of bounds
-!							  dschanen 24 May 2005
+                                                         ! dschanen 24 May 2005
           do while ( rcm(k) < 1.e-6 .and. k < gr%nnzp )
             k = k + 1
           end do

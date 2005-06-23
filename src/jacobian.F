@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.10 2005-06-09 15:46:54 dschanen Exp $
+! $Id: jacobian.F,v 1.11 2005-06-23 20:07:53 dschanen Exp $
 
 ! Program Jacobian
 
@@ -17,11 +17,11 @@
 !-----------------------------------------------------------------------
 !  Variable structures
 !-----------------------------------------------------------------------
-      type variable
-        real, dimension(150) :: value ! this would better allocatable, but
+      type avariable
+        real, dimension(160) :: value ! this would better allocatable, but
                                       ! fortran is dumb
         character(len=10)    :: name 
-      end type variable
+      end type avariable
 !----------------------------------------------------------------------
       type constant
         real              :: value
@@ -36,7 +36,7 @@
       type variable_array
         integer nz
         integer entries
-        type (variable), allocatable, dimension(:) :: element
+        type (avariable), allocatable, dimension(:) :: element
       end type variable_array
 
 !----- Parameters ------------------------------------------------------
@@ -135,19 +135,18 @@
      .             ca1%element(i)%value * delta_factor
       enddo
 
-      call hoc_sub( ca1%element(1)%value, ca1%element(2)%value, 
-     .              ca1%element(3)%value, ca1%element(4)%value, 
-     .              ca1%element(5)%value, ca1%element(6)%value, 
-     .              ca1%element(7)%value, ca1%element(8)%value, 
-     .              ca1%element(9)%value, ca1%element(10)%value, 
-     .              ca1%element(11)%value, ca1%element(12)%value, 
-     .              ca1%element(13)%value, ca1%element(14)%value, 
-     .              ca1%element(15)%value, ca1%element(16)%value, 
-     .              lmin_coef, taumin,
-     .              taumax, ca1%element(17)%value,
+      call hoc_model( ca1%element(1)%value, ca1%element(2)%value, 
+     .                ca1%element(3)%value, ca1%element(4)%value, 
+     .                ca1%element(5)%value, ca1%element(6)%value, 
+     .                ca1%element(7)%value, ca1%element(8)%value, 
+     .                ca1%element(9)%value, ca1%element(10)%value, 
+     .                ca1%element(11)%value, ca1%element(12)%value, 
+     .                ca1%element(13)%value, ca1%element(14)%value, 
+     .                ca1%element(15)%value, ca1%element(16)%value, 
+     .                lmin_coef, taumin,
+     .                taumax, ca1%element(17)%value,
      .                "../tune/"//trim(run_name)//"_hoc.in", 
-     .              trim(run_name), 
-     .              isValid, .false. )
+     .                isValid, .false. )
 
       if ( .not. isValid ) stop "Initial run wasn't valid"
 
@@ -179,22 +178,21 @@
       call getvariables( var1 )
 
       do i = 1, ca1%entries
-        tmp_constant       = ca1%element(i)%value
+        tmp_constant         = ca1%element(i)%value
         ca1%element(i)%value = ca1%element(i)%value * delta_factor
 
-        call hoc_sub( ca1%element(1)%value,  ca1%element(2)%value, 
-     .                ca1%element(3)%value,  ca1%element(4)%value, 
-     .                ca1%element(5)%value,  ca1%element(6)%value, 
-     .                ca1%element(7)%value,  ca1%element(8)%value, 
-     .                ca1%element(9)%value,  ca1%element(10)%value, 
-     .                ca1%element(11)%value, ca1%element(12)%value, 
-     .                ca1%element(13)%value, ca1%element(14)%value, 
-     .                ca1%element(15)%value, ca1%element(16)%value, 
-     .                lmin_coef, taumin,
-     .                taumax, ca1%element(17)%value,
-     .                "../tune/"//trim(run_name)//"_hoc.in", 
-     .                trim(run_name), 
-     .                isValid, .false. )
+        call hoc_model( ca1%element(1)%value,  ca1%element(2)%value, 
+     .                  ca1%element(3)%value,  ca1%element(4)%value, 
+     .                  ca1%element(5)%value,  ca1%element(6)%value, 
+     .                  ca1%element(7)%value,  ca1%element(8)%value, 
+     .                  ca1%element(9)%value,  ca1%element(10)%value, 
+     .                  ca1%element(11)%value, ca1%element(12)%value, 
+     .                  ca1%element(13)%value, ca1%element(14)%value, 
+     .                  ca1%element(15)%value, ca1%element(16)%value, 
+     .                  lmin_coef, taumin,
+     .                  taumax, ca1%element(17)%value,
+     .                  "../tune/"//trim(run_name)//"_hoc.in", 
+     .                  isValid, .false. )
 
         if ( .not. isValid ) then
           jmatrix(i, :) = transfer(Z"7F800000", 1.0) ! Infinity bit pattern 

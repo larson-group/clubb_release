@@ -1,4 +1,8 @@
-! Subroutine to set-up constants
+!-----------------------------------------------------------------------
+! $Id: constants.F,v 1.6 2005-06-23 20:07:53 dschanen Exp $
+
+!  Contains frequently occuring model constants
+!-----------------------------------------------------------------------
 
       module constants
 
@@ -42,6 +46,7 @@
 
         real C1, C2, C4, C5, C6, C7, C8, C10, C11
         real nu1, nu2, nu6, nu8
+        real mu, c_K, gamma_coef
         real lmin
         real taumin, taumax
 
@@ -66,15 +71,22 @@
 !
 !       Addition for machine independent epsilon
 !       It turns out we don't actually want this
-!        real             :: eps  ! smallest representable number, 
+!        real             :: eps  ! smallest number which can be added to a fp
 !                                 ! calculated with the epsilon( ) intrinsic
 !        double precision :: eps_dp ! "  ", but for double precision
 
+!     Added for new mixing scheme
+        integer, parameter :: sclrm_dimension   = 1
+
       end module constants
 
+!-----------------------------------------------------------------------
+! Subroutine to set-up constants
+!-----------------------------------------------------------------------
       subroutine setup_constants( deltaz, C1_in, C2_in, C4_in, C5_in, 
      .                            C6_in, C7_in, C8_in, C10_in, C11_in, 
      .                            nu1_in, nu2_in, nu6_in, nu8_in, 
+     .                            gamma_coef_in, mu_in, c_K_in,
      .                            beta_in, lmin_coef_in, taumin_in, 
      .                            taumax_in ) 
 
@@ -87,6 +99,7 @@
      .                    C8_in, C10_in, C11_in
       real, intent(in) :: nu1_in, nu2_in, nu6_in, nu8_in, beta_in
       real, intent(in) :: lmin_coef_in, taumin_in, taumax_in
+      real, intent(in) :: gamma_coef_in, mu_in, c_K_in
 
 !----- These now occur in error.in ------------------------------------
 !      C1 = 1.7
@@ -122,9 +135,14 @@
 
       beta  = beta_in
     
+      gamma_coef = gamma_coef_in
+
       taumin = taumin_in
       taumax = taumax_in
       lmin   = lmin_coef_in * deltaz
+
+      mu  = mu_in
+      c_K = c_K_in
 
 !     The nu's are chosen for deltaz <= 40 m. Looks like they must 
 !     be adjusted for larger grid spacings (Vince Larson)

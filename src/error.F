@@ -1,18 +1,18 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.5 2005-05-31 18:31:40 dschanen Exp $
+! $Id: error.F,v 1.6 2005-06-23 20:07:53 dschanen Exp $
 
-!	Module ERROR
-!	
-!	Contains:
+!       Module ERROR
+!
+!       Contains:
 
-!	subroutine error_init:	reads in namelists /stats/, /cases/, 
+!       subroutine error_init: reads in namelists /stats/, /cases/, 
 !          /initvars/, & /variance/ from 'error.in' 
 !       It then uses them to setup the initial x_array of independent 
 !       variables, i.e. the hoc constants, and allocate the runtime arrays
 !       for each of the model runs and each of the variables
 
 !       function funk:  A driver for the hoc program/module.
-!       Calls hoc_sub, reads in les & hoc results from GRADS files, and 
+!       Calls hoc_model, reads in les & hoc results from GRADS files, and 
 !       calculates the average difference between the two over all z-levels.
 
 !       subroutine output_results_stdout : 
@@ -34,8 +34,8 @@
 
 !---------------- Dimensions of the array for amoeba -------------------
 
-      integer, parameter           :: ndim = 20
-      integer, parameter           :: mdim = ndim+1
+      integer, parameter, public  :: ndim = 20
+      integer, parameter, public  :: mdim = ndim + 1
 
       real, dimension(mdim, ndim)  :: x_array
       real, dimension(mdim)        :: x_variance
@@ -64,8 +64,8 @@
 !  c_total: Total number of cases to tune. Calculated from namelist.
 !----------------------------------------------------------------------- 
       
-      integer, parameter                :: max_run       = 8
-      integer, parameter                :: max_variables = 32
+      integer, parameter, private       :: max_run       = 12
+      integer, parameter, private       :: max_variables = 32
 
       real                              :: ftol 
       real                              :: anneal_temp
@@ -86,16 +86,15 @@
       real                       :: mu
 
 !---- Runtime arrays which vary according to cases and variables ------
-      character(len=10), dimension(:),allocatable :: hoc_v, les_v
+      character(len=10), dimension(:), allocatable :: hoc_v, les_v
 
-      integer, dimension(:),allocatable           :: hoc_nz, les_nz
-!      integer, dimension(:),allocatable           :: time_i, time_f
-      integer, dimension(:,:),allocatable         :: time
-      integer, dimension(:),allocatable           :: les_vmax
-      integer, dimension(:),allocatable           :: z_i, z_f
+      integer, dimension(:), allocatable           :: hoc_nz, les_nz
+      integer, dimension(:,:), allocatable         :: time
+      integer, dimension(:), allocatable           :: les_vmax
+      integer, dimension(:), allocatable           :: z_i, z_f
 
-      character(len=30), dimension(:),allocatable :: run_name
-      character(len=40), dimension(:),allocatable :: les_stats_file
+      character(len=30), dimension(:), allocatable :: run_name
+      character(len=40), dimension(:), allocatable :: les_stats_file
 
 !----- Various Variables for returning results ----------------------
       integer :: iter           ! Total number of iterations amoeba
@@ -116,6 +115,11 @@
 
       implicit none
 
+!     Input 
+      logical, intent(in)   :: read_files ! whether to read in  nml's and
+                                          ! allocate arrays
+
+!     Internal
       integer, parameter    :: max_times = 10 ! max number of timesteps 
                                               ! to compare
 
@@ -127,19 +131,16 @@
       integer               :: rand_size      ! for random seed
       integer, allocatable  :: rand_seed(:)
 
-      logical, intent(in)   :: read_files     ! whether to read in
-                                                   ! nml's, etc. 
 !----------------------------------------------------------------------- 
 !  Namelist vars for determining which variable to tune for:
 
-!  hoc_nz_in:     total number of z-levels in the hoc profile
-!  les_nz_in:     total number of z-levels in the LES profile
-!  time_i_in, time_f_in : initial/final time step to read in for avg
+!  hoc_nz_in: total number of z-levels in the hoc profile
+!  les_nz_in: total number of z-levels in the LES profile
+!  time_in:   Order pairs of time intervals to analyze
 !  z_i_in:    initial z-level to begin reading in for tuning
 !  z_f_in:    final z-level to end reading in for tuning
 
       integer, dimension(max_run)           :: hoc_nz_in, les_nz_in
-!      integer, dimension(max_run)           :: time_i_in, time_f_in 
       integer, dimension(max_run, max_times):: time_in 
       integer, dimension(max_run)           :: z_i_in, z_f_in
 
@@ -192,8 +193,6 @@
         time_in       = 0 
         z_i_in        = 0 
         z_f_in        = 0
-!        time_i_in     = 0 
-!        time_f_in     = 0 
 
 !----------------- Initialize variable names to spaces ---------------- 
         t_variables(1:max_variables)  = "          "
@@ -239,7 +238,6 @@
         allocate( hoc_nz(c_total), les_nz(c_total), 
      .            z_i(c_total), z_f(c_total), 
      .            time(c_total, max_times), 
-!     .            time_i(c_total), time_f(c_total),
      .            run_name(c_total), les_stats_file(c_total),
      .            stat=AllocateStatus )
 
@@ -255,15 +253,13 @@
 
 !------ Transfer the case information to run-time arrays --------------
        do i=1, c_total 
-         hoc_nz(i)           = hoc_nz_in(i)
-         les_nz(i)           = les_nz_in(i)
-         z_i(i)              = z_i_in(i)
-         z_f(i)              = z_f_in(i)
-         les_stats_file(i)   = les_stats_file_in(i)
-         run_name(i)         = run_name_in(i)
-         time(i, 1:max_times)= time_in(i,1:max_times)
-!         time_i(i)         = time_i_in(i)
-!         time_f(i)         = time_f_in(i)
+         hoc_nz(i)            = hoc_nz_in(i)
+         les_nz(i)            = les_nz_in(i)
+         z_i(i)               = z_i_in(i)
+         z_f(i)               = z_f_in(i)
+         les_stats_file(i)    = les_stats_file_in(i)
+         run_name(i)          = run_name_in(i)
+         time(i, 1:max_times) = time_in(i,1:max_times)
        enddo
 
 !--------------- Initialize the hoc constants -------------------------
@@ -315,8 +311,8 @@
 !  Attempt to generate a pseudo random seed using a file generated from
 !  /dev/random.  File is ascii text and can be edited manually.
 !-----------------------------------------------------------------------
-        call random_seed(SIZE=rand_size)
-        allocate(rand_seed( rand_size ), stat=AllocateStatus)
+        call random_seed( SIZE = rand_size )
+        allocate(rand_seed( rand_size ), stat = AllocateStatus)
         if ( AllocateStatus /= 0 ) then 
           stop "Allocation of the random seed variable array failed"
         endif
@@ -329,7 +325,7 @@
 
         close(30)
       
-        call random_seed(PUT=rand_seed)
+        call random_seed( PUT=rand_seed )
         deallocate(rand_seed)
 
       endif  ! read_files
@@ -359,7 +355,8 @@
         err_array(i) = funk(x_array(i,1:ndim))
       enddo 
 
-      print *, "err_array:",  err_array
+      write(*,*) "err_array:"
+      write(*,'(3e)')  err_array
 
       end subroutine tuner_init
 
@@ -375,6 +372,10 @@
 
       implicit none
 
+!     Input 
+      real, intent(in), dimension(ndim) :: x_vector ! tuning vector
+
+!     Internal
       integer                           :: i        ! looping variable
       integer                           :: j        ! looping variable
       integer                           :: c_run    ! looping variable
@@ -390,10 +391,8 @@
       real                              :: err_sum  ! scalar sum of all z-levels
       integer                           :: c_terms  ! num of terms in err_sum
 
-      real, intent(in), dimension(ndim) :: x_vector ! tuning vector
-
 !-------- les and hoc values over nz z-levels --------------------------
-      real,dimension(:),allocatable     :: hoc_zl, les_zl
+      real, dimension(:), allocatable   :: hoc_zl, les_zl
 
 !--------- largest value minus smallest value  of all zlvl -------------
       real                              :: les_minmax
@@ -441,6 +440,8 @@
 
 !-----------------------------------------------------------------------
 !  Cycle through all the model cases specified for HOC
+
+!  If the compiler supports OpenMP, it will try to run the model cases in parallel
 !-----------------------------------------------------------------------
 !$OMP PARALLEL
 !$OMP DO PRIVATE(hoc_zl, les_zl, les_minmax, runfile, hoc_stats_file) 
@@ -455,16 +456,17 @@
 
 !      print *, "Calling HOC with case " // runfile ! Debug
 
-      call hoc_sub( x_vector(1), x_vector(2), x_vector(3), x_vector(4), 
-     .              x_vector(5), x_vector(6), x_vector(7), x_vector(8), 
-     .              x_vector(9), x_vector(10), x_vector(11), 
-     .              x_vector(12), x_vector(13), x_vector(14),
-     .              x_vector(15), x_vector(16), x_vector(17), 
-     .              x_vector(18), x_vector(19), x_vector(20),
-     .              runfile, run_name(c_run), isValid, stdout=.false. )
+      call hoc_model( x_vector(1), x_vector(2), x_vector(3),
+     .                x_vector(4), x_vector(5), x_vector(6), 
+     .                x_vector(7), x_vector(8), 
+     .                x_vector(9), x_vector(10), x_vector(11), 
+     .                x_vector(12), x_vector(13), x_vector(14),
+     .                x_vector(15), x_vector(16), x_vector(17), 
+     .                x_vector(18), x_vector(19), x_vector(20),
+     .                runfile, isValid, stdout=.false. )
 
 !-------------- Basic Sanity Check -------------------------------------
-!      if (minval( x_vector ) .lt. 0. ) isValid = .FALSE.
+!      if (minval( x_vector ) < 0. ) isValid = .false.
 
 !-----------------------------------------------------------------------
 !  Checks if hoc has blown up, i.e. if hoc has set a variable to NaN, 
@@ -472,7 +474,7 @@
 !  If it has, then return to amoeba with higher value than previously.
 !-----------------------------------------------------------------------
       if ( .not. isValid ) then
-        funk = 2 * maxval(err_array) - minval(err_array)
+        funk = 2 * maxval( err_array ) - minval( err_array )
         if ( stdout_on_invalid ) then
           inv_count = modulo(inv_count, 3) + 1          ! 1,2,3,1,2,3...
           errorfile = "error_crash_" // achar( inv_count+48 )// ".in"
@@ -524,37 +526,37 @@
         if (les_minmax .eq. 0.) stop "An LES var = 0 over all z-levels"
 
         select case (hoc_nz(c_run))
-          case (48, 75, 110, 147, 150)
+        case (48, 75, 110, 147, 150, 160)
 !-----------------------------------------------------------------------
 !  Due to hoc's lower starting point, we can only use
 !  (total number of z-levels) - 1 (a maximum of 74 for BOMEX).
 !  (Need to interpolate hoc to LES' levels.  Right now we just
 !   compare adjacent z levels.  Vince Larson 12 Jan 2005)
 !-----------------------------------------------------------------------
-            do j = z_i(c_run), z_f(c_run)-1
-              err_sum = err_sum + (  ( hoc_zl(j+1) - les_zl(j) ) 
-     .                              / les_minmax  ) ** 2 
-              c_terms = c_terms + 1
-            enddo
-         case (132)  ! hoc_nz(c_run),  the dycoms II rf01 case
-            do j = z_i(c_run), z_f(c_run)
-              err_sum = err_sum + (  ( hoc_zl(j+2) - les_zl(j) ) 
-     .                              / les_minmax  ) ** 2 
-              c_terms = c_terms + 1
-            enddo
-         case (50)  ! hoc_nz(c_run),  the wangara case
-            do j = z_i(c_run), z_f(c_run)
-              err_sum = err_sum + (  ( hoc_zl(j) - les_zl(j) )
-     .                               / les_minmax  ) ** 2 
-              c_terms = c_terms + 1
-            enddo
-         case default ! hoc_nz(c_run)
+          do j = z_i(c_run), z_f(c_run)-1
+            err_sum = err_sum + (  ( hoc_zl(j+1) - les_zl(j) ) 
+     .                            / les_minmax  ) ** 2 
+            c_terms = c_terms + 1
+          enddo
+        case (132)  ! hoc_nz(c_run),  the dycoms II rf01 case
+          do j = z_i(c_run), z_f(c_run)
+            err_sum = err_sum + (  ( hoc_zl(j+2) - les_zl(j) ) 
+     .                            / les_minmax  ) ** 2 
+            c_terms = c_terms + 1
+          enddo
+        case (50)  ! hoc_nz(c_run),  the wangara case
+          do j = z_i(c_run), z_f(c_run)
+            err_sum = err_sum + (  ( hoc_zl(j) - les_zl(j) )
+     .                             / les_minmax  ) ** 2 
+            c_terms = c_terms + 1
+          enddo
+        case default ! hoc_nz(c_run)
            stop "Not able to handle specified number of HOC z-levels"
         end select
 
-       enddo     ! end of do i=1, v_total
+      enddo     ! end of do i=1, v_total
 
-       deallocate (hoc_zl, les_zl)
+      deallocate (hoc_zl, les_zl)
 
       enddo     ! end of do c_run=1, c_total
 !$OMP END PARALLEL
@@ -562,14 +564,14 @@
 !----------------------------------------------------------------------
 ! funk returns error avgd over all cases, variables, and vertical levels
 !----------------------------------------------------------------------
-      funk = err_sum / real(c_terms)
+      funk = err_sum / real( c_terms )
 
       return
 
       end function funk
 
 !--------------------Output results to STDOUT --------------------------
-      subroutine output_results_stdout
+      subroutine output_results_stdout( )
       
       implicit none
 
@@ -725,10 +727,12 @@
 
       implicit none
 
+!     Input
       character(len=*), intent(in) :: results_f ! Results file to write to
 
       real, intent(in), dimension(ndim) :: x_vector ! the current constants
-    
+
+!     Internal    
       integer                   :: i       ! loop variable
       character                 :: i_c     ! loop variable character conversion
 

@@ -1,13 +1,15 @@
 !-----------------------------------------------------------------------
-! subroutine timestep_mixing( )
+! $Id: mixing.F,v 1.4 2005-06-23 20:07:53 dschanen Exp $
+! Subroutine timestep_mixing( )
 !
 !-----------------------------------------------------------------------
-
         subroutine timestep_mixing
-     .             ( dt, taum, wmm, wmt, wp2, wp3, Sc, exner, ! exner by Brian
-     .               rtm, wprtp, rtpthvp, rtm_forcing,     
-     .               cond_rrm, auto_rrm, accr_rrm,           ! Brian
+     .             ( dt, taum, wmm, wmt, wp2, wp3, Sc, exner,
+     .               rtm, wprtp, 
+     .               rtpthvp, rtm_forcing,
+     .               cond_rrm, auto_rrm, accr_rrm,
      .               thlm, wpthlp, thlpthvp, thlm_forcing, isValid )
+!     .               sclrm, wpsclrp, sclrpthvp, sclrm_forcing )
 
         use constants
         use grid_class
@@ -37,9 +39,14 @@
         real, intent(inout) :: wpthlp(1:gr%nnzp)
         real, intent(in)    :: thlpthvp(1:gr%nnzp)
         real, intent(in)    :: thlm_forcing(1:gr%nnzp)
-
-        logical, intent(inout):: isValid
-        
+!       Model status 
+        logical, intent(inout) :: isValid
+!       Additions for new mixing scheme
+!        real, intent(inout), optional, 
+!     .     dimension(sclrm_dimension, gr%nnzp)   :: sclrm, sclrm_forcing
+!        real, intent(inout), optional, 
+!     .     dimension(sclrm_dimension, gr%nnzp)   :: wpsclrp, sclrpthvp
+!       End Additions for new mixing scheme
 
 !       Internal
 
@@ -47,7 +54,6 @@
         integer, allocatable :: indx(:)
 
 !       Allocate memory
-
         allocate( aa(1:2*gr%nnzp,1:5) )
         allocate( dd(1:2*gr%nnzp) )
         allocate( al(1:2*gr%nnzp,1:2) )
@@ -58,23 +64,32 @@
         call mixing_lhs( .true., dt, taum, wmm, wmt, wp2, wp3, Sc,
      .                   aa, dd, al, indx, isValid )
         if ( .not. isValid ) then
+           print *, "mixing_lhs failed"
            deallocate( aa, dd, al, indx )
            return
         endif
 
 !       Solve rtm / wprtp
-
-        call mixing_solve( 1, .true., dt, taum, exner,
+        call mixing_solve( "rtm", .true., dt, taum, exner,
      .                     rtm, wprtp, rtpthvp, rtm_forcing,
      .                     cond_rrm, auto_rrm, accr_rrm, ! Brian DYCOMS_2
      .                     aa, dd, al, indx )  
 
 !       Solve thlm / wpthlp
-
-        call mixing_solve( 2, .true., dt, taum, exner,
+        call mixing_solve( "thlm", .true., dt, taum, exner,
      .                     thlm, wpthlp, thlpthvp, thlm_forcing,
      .                     cond_rrm, auto_rrm, accr_rrm, ! Brian DYCOMS_2
      .                     aa, dd, al, indx )  
+
+!       Solve sclrp / wpsclrp
+!        if ( present( sclrm )     .and. present( wpsclrp ) .and.
+!     .       present( sclrpthvp ) .and. present( sclrm_forcing ) ) then
+!          call mixing_solve( "sclrm", .true., dt, taum, exner,
+!     .                       sclrm(1,:), wpsclrp(1,:),
+!     .                       sclrpthvp(1,:), sclrm_forcing(1,:),
+!     .                       cond_rrm, auto_rrm, accr_rrm,
+!     .                       aa, dd, al, indx )
+!        endif
 
 !       Free memory
 
@@ -99,6 +114,7 @@
 !       Input variables
 
         logical, intent(in) :: liter
+
         real, intent(in) :: dt
         real, intent(in) :: taum(1:gr%nnzp)
         real, intent(in) :: wmm(1:gr%nnzp), wmt(1:gr%nnzp) 
@@ -271,8 +287,8 @@
         end subroutine mixing_lhs
 
 !------------------------------------------------------------------------
-
-        subroutine mixing_solve( ivar, liter, dt, taum, exner, ! ex: Brian
+        
+        subroutine mixing_solve( solve_type, liter, dt, taum, exner, ! ex: Brian
      .                           xm, wpxp, xpthvp, xm_forcing,
      .                           cond_rrm, auto_rrm, accr_rrm, ! Brian
      .                           aa, dd, al, indx )
@@ -287,7 +303,8 @@
 
 !       Input/Output
 
-        integer, intent(in) :: ivar             ! = 1 qt; = 2 thl
+        character(len=*), intent(in) :: solve_type  ! For new mixing scheme
+
         logical, intent(in) :: liter
         real, intent(in)    :: dt
         real, intent(in)    :: taum(1:gr%nnzp)
@@ -322,8 +339,8 @@
      .     iwpxp_pr2,
      .     iwpxp_pr3,
      .     iwpxp_dp1
-
-        if ( ivar == 1 ) then
+        select case ( trim(solve_type) )
+        case ( "rtm" )
           iwpxp_bt  = iwpqtp_bt
           iwpxp_ma  = iwpqtp_ma
           iwpxp_ta  = iwpqtp_ta
@@ -334,7 +351,7 @@
           iwpxp_pr2 = iwpqtp_pr2
           iwpxp_pr3 = iwpqtp_pr3
           iwpxp_dp1 = iwpqtp_dp1
-        elseif ( ivar == 2 ) then
+        case ( "thlm" )
           iwpxp_bt  = iwpthlp_bt
           iwpxp_ma  = iwpthlp_ma
           iwpxp_ta  = iwpthlp_ta
@@ -345,7 +362,7 @@
           iwpxp_pr2 = iwpthlp_pr2
           iwpxp_pr3 = iwpthlp_pr3
           iwpxp_dp1 = iwpthlp_dp1
-        else
+        case default
           iwpxp_bt  = 0
           iwpxp_ma  = 0
           iwpxp_ta  = 0
@@ -356,7 +373,7 @@
           iwpxp_pr2 = 0
           iwpxp_pr3 = 0
           iwpxp_dp1 = 0
-        endif
+        end select
 #endif STATS
 
 #ifdef STATS
@@ -406,14 +423,17 @@
      .    + xm_forcing(k)
 
           ! Code addition by Brian for rain.
-
-          if ( ivar == 1 ) then
+          select case(trim( solve_type ))
+          case ( "rtm" ) 
             dd(k_xm) = dd(k_xm)
      .                 - cond_rrm(k) - auto_rrm(k) - accr_rrm(k)  ! rtm only; Brian
-          elseif ( ivar == 2 ) then
+          case ( "thlm" )
             dd(k_xm) = dd(k_xm) + ( Lv / (Cp*exner(k)) ) *
      .                 ( cond_rrm(k) + auto_rrm(k) + accr_rrm(k) )  ! thlm only; Brian
-          endif
+          case ( "sclrm" ) 
+            dd(k_xm) = dd(k_xm)
+     .                 - cond_rrm(k) - auto_rrm(k) - accr_rrm(k)  ! rtm for now
+          end select
 
 !         wpxp: time tendency and buoyancy
 
@@ -439,14 +459,15 @@
 
 !       Solve system
 
-        call banbks( aa, 2*gr%nnzp, 2, 2, 2*gr%nnzp, 5, al, 2, indx,dd )
+        call banbks( aa, 2 * gr%nnzp, 2, 2, 
+     .               2 * gr%nnzp, 5, al, 2, indx, dd )
 
 !       Copy result into output arrays
 
         do k=1,gr%nnzp
 
-          k_xm   = 2*k - 1
-          k_wpxp = 2*k
+          k_xm   = 2 * k - 1
+          k_wpxp = 2 * k
 
           xm(k)   = dd(k_xm)
           wpxp(k) = dd(k_wpxp)

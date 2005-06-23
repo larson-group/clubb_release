@@ -1,10 +1,11 @@
 !-----------------------------------------------------------------------------
+! $Id: length.F,v 1.7 2005-06-23 20:07:53 dschanen Exp $
 ! subroutine length( )
 
 ! Larson's 5th moist, nonlocal length scale
 !-----------------------------------------------------------------------------
-        subroutine length(thvm, thlm, rtm, rcm, em, p, exner,
-     .                    Lscale, lup, ldown, mu)
+        subroutine length( thvm, thlm, rtm, rcm, em, p, exner,
+     .                     Lscale, lup, ldown, mu)
 
         use constants
         use grid_class
@@ -43,9 +44,9 @@
 
 ! Internal
 
-        integer i,j
+        integer i, j
 
-        real tke_i,CAPE_incr,dthv
+        real tke_i, CAPE_incr, dthv
 
         real zincr
 
@@ -77,10 +78,10 @@
           j = i + 1
 
           thl_par_j_minus_1 = thlm(i)
-          rt_par_j_minus_1 = rtm(i)
-          rc_par_j_minus_1 = rcm(i)
+          rt_par_j_minus_1  = rtm(i)
+          rc_par_j_minus_1  = rcm(i)
 
-          do while ((tke_i.gt.0.).and.(j.lt.gr%nnzp))
+          do while ((tke_i > 0.) .and. (j < gr%nnzp))
 
 !           thl, rt of parcel are conserved except for entrainment
 
@@ -100,7 +101,7 @@
             beta_par_j = ep*(Lv/(R*tl_par_j))*(Lv/(cp*tl_par_j))
 !           s from Lewellen and Yoh 1993 (LY) eqn. 1
             s_par_j = (rt_par_j-rsl_par_j)/(1+beta_par_j*rsl_par_j)
-            rc_par_j = max(s_par_j,0.)
+            rc_par_j = max( s_par_j, 0. )
 
 !           theta_v of entraining parcel
             thv_par_j = thl_par_j + ep1 * T0 * rt_par_j
@@ -109,7 +110,7 @@
             CAPE_incr = ( ( grav/thvm(j) ) / gr%dzm(j-1) ) 
      .                  * ( thv_par_j - thvm(j) ) 
 
-            if (tke_i+CAPE_incr.gt.0.) then
+            if (tke_i+CAPE_incr > 0.) then
               lup(i) = lup(i) + gr%zt(j) - gr%zt(j-1)
             else
               lup(i) = lup(i) + ( gr%zt(j) - gr%zt(j-1) ) 
@@ -152,7 +153,7 @@
           rt_par_j_plus_1 = rtm(i)
           rc_par_j_plus_1 = rcm(i)
 
-          do while ((tke_i.gt.0.).and.(j.ge.2))
+          do while ((tke_i > 0.) .and. (j >= 2))
 
 !           thl, rt of parcel are conserved except for entrainment
 
@@ -188,7 +189,7 @@
 
 !            CAPE_incr = - grav/thvm(j) * (thvm(i)-thvm(j)) / gr%dzm(j)
 
-            if (tke_i+CAPE_incr.gt.0.) then
+            if (tke_i+CAPE_incr > 0.) then
               ldown(i) = ldown(i) + gr%zt(j+1) - gr%zt(j)
             else
               ldown(i) = ldown(i) + ( gr%zt(j+1) - gr%zt(j) ) 
@@ -198,8 +199,8 @@
 !           Bug fix from Brian 1/25/04: missing update
 
             thl_par_j_plus_1 = thl_par_j
-            rt_par_j_plus_1 = rt_par_j
-            rc_par_j_plus_1 = rc_par_j
+            rt_par_j_plus_1  = rt_par_j
+            rc_par_j_plus_1  = rc_par_j
 
             tke_i = tke_i + CAPE_incr
             j = j - 1
@@ -208,7 +209,7 @@
 
 !         make ldown nonlocal
           ldown_min_alt = max(ldown_min_alt,gr%zt(i)-ldown(i))
-          if ( (gr%zt(i)-ldown(i)).gt.ldown_min_alt ) then
+          if ( (gr%zt(i)-ldown(i)) > ldown_min_alt ) then
             ldown(i) = gr%zt(i) - ldown_min_alt
           end if
 
@@ -216,9 +217,9 @@
 
         do i=2,gr%nnzp
 
-          lup(i)=max(lmin,lup(i))
-          ldown(i)=max(lmin,ldown(i))
-          Lscale(i) = sqrt(lup(i)*ldown(i))
+          lup(i)    = max( lmin, lup(i) )
+          ldown(i)  = max( lmin, ldown(i) )
+          Lscale(i) = sqrt( lup(i)*ldown(i) )
 
         end do
 

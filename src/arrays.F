@@ -1,4 +1,6 @@
 !------------------------------------------------------------------------
+! $Id: arrays.F,v 1.8 2005-06-23 20:07:53 dschanen Exp $
+
 ! This module contains definitions of all prognostic and diagnostic
 ! arrays used in the single column model, as well as subroutine
 ! to allocate and deallocate them.
@@ -20,6 +22,18 @@
         real, target, allocatable :: wpthlp(:)  ! w'thl'
         real, target, allocatable :: rtpthlp(:) ! rt'thl'
         real, target, allocatable :: wp3(:)     ! w'^3
+
+! New mixing scheme variables
+!        real, target, allocatable :: sclrm(:,:)
+!        real, target, allocatable :: wpsclrp(:,:) 
+!        real, target, allocatable :: sclrm_forcing(:,:)
+!        real, target, allocatable :: sclrpthvp(:,:)
+
+!        real, target, allocatable :: sclrpthlp(:,:)
+!        real, target, allocatable :: sclrprtp(:,:)
+!        real, target, allocatable :: sclrprcp(:,:)
+!        real, target, allocatable :: wpsclrpthlp(:,:)
+!        real, target, allocatable :: wpsclrprtp(:,:)
 
 ! Tendency arrays for prognostic variables
 
@@ -167,8 +181,8 @@
         real, allocatable, target :: AKm_rcm(:)   ! Kessler ac based on rcm
         real, allocatable, target :: AKm_rcc(:)   ! Kessler ac based on rcm/cf
         ! nnzp x nt x d matrix of random integers
-        integer, allocatable, target :: p_height_time(:,:,:)
-        integer, allocatable, target :: p_matrix(:,:)
+        integer, allocatable     :: p_height_time(:,:,:)
+!        integer, allocatable      :: p_matrix(:,:)
 ! End Latin hypercube arrays        
 
 
@@ -180,6 +194,7 @@
 !        subroutine allocate_model_arrays( nzmax )
         subroutine allocate_model_arrays( nzmax, n, nt, d ) ! Add LH vars
 
+        use constants, only: sclrm_dimension
         use model_arrays
         implicit none
 
@@ -307,7 +322,6 @@ c Diagnostic variables
 ! Array fpr pdf closure scheme
 
         allocate( pdf_parms(1:nzmax,1:26) )
-
 ! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
         allocate( AKm_est(1:nzmax) )    ! Kessler ac estimate
         allocate( AKm(1:nzmax) )        ! Exact Kessler ac
@@ -317,8 +331,20 @@ c Diagnostic variables
         allocate( AKm_rcm(1:nzmax) )      ! Kessler ac based on rcm
         allocate( AKm_rcc(1:nzmax) )      ! Kessler ac based on rcm/cf
         allocate( p_height_time(1:nzmax,1:nt,1:(d+1)) )  ! matrix of rand ints
-        allocate( p_matrix(1:n,1:(d+1)) )  ! rand matrix that's fed to closure
+!        allocate( p_matrix(1:n,1:(d+1)) )  ! rand matrix that's fed to closure
 ! End of variables for Latin hypercube.
+
+! Variables for new mixing scheme
+!        allocate( sclrm(1:sclrm_dimension, 1:nzmax) )
+!        allocate( wpsclrp(1:sclrm_dimension, 1:nzmax) )
+!        allocate( sclrpthvp(1:sclrm_dimension, 1:nzmax) )
+!        allocate( sclrm_forcing(1:sclrm_dimension, 1:nzmax) )
+!        allocate( sclrpthlp(1:sclrm_dimension, 1:nzmax) )
+!        allocate( sclrprtp(1:sclrm_dimension, 1:nzmax) )
+!        allocate( sclrprcp(1:sclrm_dimension, 1:nzmax) )
+!        allocate( wpsclrpthlp(1:sclrm_dimension, 1:nzmax) )
+!        allocate( wpsclrprtp(1:sclrm_dimension, 1:nzmax) )
+! end new mixing scheme
 
         return
         end subroutine allocate_model_arrays
@@ -347,7 +373,7 @@ c Diagnostic variables
         deallocate( rtpthlp )   ! rt'thl'
         deallocate( wp3 )       ! w'^3
 
-c Tendency arrays for prognostic variables
+! Tendency arrays for prognostic variables
 
         deallocate( umt )       ! u wind
         deallocate( vmt )       ! v wind
@@ -460,8 +486,20 @@ c Diagnostic variables
         deallocate( AKm_rcm )   ! Kessler ac based on rcm
         deallocate( AKm_rcc )   ! Kessler ac based on rcm/cf
         deallocate( p_height_time )  ! matrix of rand ints
-        deallocate( p_matrix )  ! rand matrix that's fed to closure
+!        deallocate( p_matrix )  ! rand matrix that's fed to closure
 ! End of variables for Latin hypercube.
+
+! New mixing scheme structures
+!        deallocate( sclrm )
+!        deallocate( wpsclrp )
+!        deallocate( sclrpthvp )
+!        deallocate( sclrm_forcing )
+
+!        deallocate( sclrpthlp )
+!        deallocate( sclrprtp )
+!        deallocate( sclrprcp )
+!        deallocate( wpsclrpthlp )
+!        deallocate( wpsclrprtp )
 
         return
         end subroutine deallocate_model_arrays
@@ -477,7 +515,7 @@ c Diagnostic variables
 
         implicit none
 
-c Prognostic variables
+! Prognostic variables
 
         um           = 0.      ! u wind
         vm           = 0.      ! v wind
@@ -493,7 +531,19 @@ c Prognostic variables
         rtpthlp      = 0.      ! rt'thl'
         wp3          = 0.      ! w'^3
 
-c Tendency arrays for prognostic variables
+! New mixing scheme Variables
+!        sclrm(:,:)         = 0. 
+!        sclrm_forcing(:,:) = 0.
+!        wpsclrp(:,:)       = 0. 
+!        sclrpthvp(:,:)     = 0. 
+
+!        sclrpthlp(:,:)     = 0.
+!        sclrprtp(:,:)      = 0.
+!        sclrprcp(:,:)      = 0.
+!        wpsclrpthlp(:,:)   = 0.
+!        wpsclrprtp(:,:)    = 0.
+
+! Tendency arrays for prognostic variables
 
         umt = 0.               ! u wind
         vmt = 0.               ! v wind
@@ -533,7 +583,7 @@ c Diagnostic variables
         rain_rate    = 0.   ! rainfall rate in mm/day ! Brian
         F_precip     = 0.   ! precipitation flux in W/m^2 ! Brian
 
-        Frad = 0.
+        Frad    = 0.
         Frad_LW = 0.   ! Long_wave radiative flux (momentum point)
         Frad_SW = 0.   ! Short-wave radiative flux (momentum point)
 
@@ -595,11 +645,171 @@ c Diagnostic variables
         rcm_est       = 0.   ! Monte Carlo rcm estimate
         AKm_rcm       = 0.   ! Kessler ac based on rcm
         AKm_rcc       = 0.   ! Kessler ac based on rcm/cf
-        p_height_time = 0.   ! matrix of rand ints
-        p_matrix      = 0.   ! rand matrix that's fed to closure
+!        p_height_time = 0   ! matrix of rand ints
+!        p_matrix      = 0   ! rand matrix that's fed to closure
 ! End of variables for Latin hypercube.
 
         return
         end subroutine initialize_model_arrays
+!------------------------------------------------------------------------
 
+!------------------------------------------------------------------------
+! Function invalid_model_arrays()
+! Checks for invalid floating point values in select model arrays.
+!------------------------------------------------------------------------
+        logical function invalid_model_arrays(  ) 
+
+        use model_arrays
+
+        implicit none
+
+        invalid_model_arrays = .false.
+           
+!------------------------------------------------------------------------
+!       Check whether any variable array contains a NaN for
+!       um, vm, thlm, rtm, rtp2, thlp2, wprtp, wpthlp, rtpthlp, 
+!       wp2, & wp3.       
+!------------------------------------------------------------------------
+
+        invalid_model_arrays = isNaN( um )
+        if ( invalid_model_arrays ) then
+          print *, "NaN in um model array" 
+!         print *, "um= ", um
+          return
+        endif
+
+        invalid_model_arrays = isNaN( vm )
+        if ( invalid_model_arrays ) then
+          print *, "NaN in vm model array" 
+!         print *, "vm= ", vm
+          return
+        endif
+
+        invalid_model_arrays = isNaN( wp2 )
+        if ( invalid_model_arrays ) then
+          print *, "NaN in wp2 model array" 
+!         print *, "wp2= ", wp2
+          return
+        endif
+
+        invalid_model_arrays = isNaN( rtm )
+        if ( invalid_model_arrays ) then
+          print *, "NaN in rtm model array" 
+!         print *, "rtm= ", rtm
+          return
+        endif
+
+        invalid_model_arrays = isNaN( rtp2 )
+        if ( invalid_model_arrays ) then
+          print *, "NaN in rtp2 model array" 
+!         print *, "rtp2= ", rtp2
+          return
+        endif
+
+        invalid_model_arrays = isNaN( thlp2 )
+        if ( invalid_model_arrays ) then
+          print *, "NaN in thlp2 model array" 
+!         print *, "thlp2= ", thlp2
+          return
+        endif
+
+        invalid_model_arrays = isNaN( wprtp )
+        if ( invalid_model_arrays ) then
+          print *, "NaN in wprtp model array" 
+!         print *, "wprtp= ", wprtp
+          return
+        endif
+
+        invalid_model_arrays = isNaN( wpthlp )
+        if ( invalid_model_arrays ) then
+          print *, "NaN in wpthlp model array" 
+!         print *, "wpthlp= ", wpthlp
+          return
+        endif
+
+        invalid_model_arrays = isNaN( rtpthlp )
+        if ( invalid_model_arrays ) then
+          print *, "NaN in rtpthlp model array" 
+!         print *, "rtpthlp= ", rtpthlp
+          return
+        endif
+
+        invalid_model_arrays = isNaN( wp3 )
+        if ( invalid_model_arrays ) then
+          print *, "NaN in wp3 model array" 
+!         print *, "wp3= ", wp3
+          return
+        endif
+
+        invalid_model_arrays = isNaN( p )
+        if ( invalid_model_arrays ) then
+          print *, "NaN in p model array" 
+!         print *, "p= ", p
+          return
+        endif
+
+        invalid_model_arrays = isNaN( rrm )
+        if ( invalid_model_arrays ) then
+          print *, "NaN in rrm model array" 
+!         print *, "rrm= ", rrm
+          return
+        endif
+
+        return
+        contains
+!------------------------------------------------------------------------
+! function isNaN( )
+
+! Checks if a given real is NaN, +inf or -inf
+
+! Input: tVar: the real type array to be tested.
+
+! Output: isNaN: true if a variable in tVar is of Not-a-Number type
+
+! Notes: 
+! Got a tip from Andy Vaught to use transfer( ) for portability.
+! Ideally this would be done with intrinsic module ieee in fortran 2003
+!  or with the isnan( ) function provided by some ( not pgf ) compilers
+! Uses an assumed shape array, requiring it to be contained within
+!   invalid_model_arrays, use an interface, or be part of the module.
+!------------------------------------------------------------------------
+        logical function isNaN( tVar )
+        
+        implicit none
+      
+!----- Arguments ------------------------------------------------------
+        real, intent(in), dimension(:)       :: tVar
+
+!---- Internal Variables ----------------------------------------------
+        integer                           :: bits_pinf, bits_ninf 
+
+        real                              :: PosInf, NegInf
+
+        bits_pinf = Z"7F800000"
+        bits_ninf = Z"FF800000"
+
+        PosInf    = transfer(bits_pinf, 1.0)
+        NegInf    = transfer(bits_ninf, 1.0)
+
+        isNaN     = .false.
+ 
+        if ( any( (tVar /= tVar), dim=1) ) then
+          isNaN = .true. 
+          return
+        endif
+
+        if ( any( (tVar == PosInf), dim=1) ) then
+          isNaN = .true. 
+          return
+        endif
+
+        if ( any( (tVar == NegInf), dim=1) ) then
+          isNaN = .true. 
+          return
+        endif
+
+        return
+        end function isNaN
+
+        end function invalid_model_arrays
 !------------------------------------------------------------------------

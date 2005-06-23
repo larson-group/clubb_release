@@ -19,7 +19,7 @@
       integer, intent(in)          :: t1             ! beginning timestep to look at
       integer, intent(in)          :: t2             ! ending timestep to look at
       character(len=*), intent(in) :: variable_name  ! which variable to read
-      logical, intent(out)         :: error        ! error status from reading 
+      logical, intent(out)         :: error          ! error status from reading 
 
 !---- Internal Variables ----------------------------------------------
 
@@ -53,13 +53,13 @@
         do t = t1, t2
           call get_var( faverage, variable_name, t, 
      .                  grads_temp(1:nz), error ) 
-          grads_average(1:nz) = grads_average(1:nz) + grads_temp(1:nz) 
           if ( error ) then
              print *, "grads_average: get_var failed for " 
      .         // trim( variable_name ) // " in " // trim( filename )
      .         // " at time=", t
              return 
           endif
+          grads_average(1:nz) = grads_average(1:nz) + grads_temp(1:nz) 
         enddo
 
 !-----------------------------------------------------------------------

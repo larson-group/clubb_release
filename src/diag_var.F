@@ -6,7 +6,9 @@
         subroutine diag_var( tau, wmm, qtm, wpqtp, thlm, wpthlp, 
      .                       wp2, wp3, Sc,
      .                       qtp2, thlp2, qtpthlp,
-     .                       liter, dt, isValid )
+     .                       liter, dt, isValid,
+     .                       sclrm, wpsclrp,
+     .                       sclrpqtp, sclrpthlp )
 
        use constants
        use grid_class
@@ -28,11 +30,20 @@ c Input variables
        logical, intent(in) :: liter
        real, intent(in)    :: dt
 
+
 c Output variables
 
        real, intent(out) :: qtp2(1:gr%nnzp)
        real, intent(out) :: thlp2(1:gr%nnzp)
        real, intent(out) :: qtpthlp(1:gr%nnzp)
+
+! Input mixing scheme variables (optional)
+       real, optional, intent(in), 
+     . dimension(sclrm_dimension, gr%nnzp) :: sclrm, wpsclrp
+
+! Output mixing scheme variables (optional)
+       real, optional, intent(out), 
+     . dimension(sclrm_dimension, gr%nnzp) :: sclrpqtp, sclrpthlp 
 
 c Local constants
 
@@ -47,8 +58,8 @@ c Local arrays allocated dynamically on the stack
 
 c Loop indices
 
-       integer k
-       integer km1,kp1
+       integer i, k
+       integer km1, kp1
 
 c Define a1 and a2
 
@@ -103,7 +114,6 @@ c      prepare tridiagonal system
        enddo
        
 c      solve tridiagonal system
-
        call tridag( aa, bb, cc, dd, qtp2, gr%nnzp, isValid )
 
        if ( .not. isValid ) then
@@ -152,7 +162,6 @@ c      note: we can reuse the same aa, bb, cc arrays
        enddo
        
 c      solve tridiagonal system
-c       print *, "diag_var line 147"
        call tridag( aa, bb, cc, dd, thlp2, gr%nnzp, isValid )
 
        if ( .not. isValid ) then
@@ -208,6 +217,85 @@ c      solve tridiagonal system
           return
        endif
 
-       return
-       end subroutine diag_var
+c Solve for sclrpqtp
+      if (     present( sclrm )
+     .   .and. present( wpsclrp ) 
+     .   .and. present( sclrpqtp ) ) then
+
+c     prepare tridiagonal system
+      do i=1, sclrm_dimension
+        do k=1,gr%nnzp
+
+          km1 = max(k-1,1)
+          kp1 = min(k+1,gr%nnzp)
+
+          dd(k) = - wpqtp(k) * gr%dzm(k) * (qtm(kp1)-qtm(k))
+     .            - wpsclrp(i,k) * gr%dzm(k) * (sclrm(i,kp1)-sclrm(i,k))
+     .            - 0.5 * a2(k)
+     .                  * (2./3.) * ( 2 + (1-beta) )
+     .                  * gr%dzm(k)
+     .                  * (  wp3(kp1)
+     .                       * (wpsclrp(i,k)+wpsclrp(i,kp1))
+     .                       * (wpqtp(k)+wpqtp(kp1))
+     .                       / max(wp2(k)+wp2(kp1),2.0*eps)**2
+     .                     - wp3(k)
+     .                       * (wpsclrp(i,km1)+wpsclrp(i,k))
+     .                       * (wpqtp(km1)+wpqtp(k))
+     .                       / max(wp2(km1)+wp2(k),2.0*eps)**2
+     .                    )
+          if (liter) dd(k) = dd(k) + 1.0/dt*sclrpqtp(i,k)
+
+        enddo ! k=1, nz
+       
+c       solve tridiagonal system
+        call tridag( aa, bb, cc, dd, sclrpqtp(i,:), gr%nnzp, isValid )
+        if ( .not. isValid ) then
+          print *, "diag_var: tridag failed"
+          return
+        endif 
+      enddo ! i=1, sclrm_dimension
+
+      endif ! present (sclr variables)
+
+c Solve for sclrpthlp
+      if (     present( sclrm )
+     .   .and. present( wpsclrp ) 
+     .   .and. present( sclrpthlp ) ) then
+
+c     prepare tridiagonal system
+      do i=1, sclrm_dimension
+        do k=1,gr%nnzp
+          km1 = max(k-1,1)
+          kp1 = min(k+1,gr%nnzp)
+
+          dd(k) = - wpthlp(k) * gr%dzm(k) * (thlm(kp1)-thlm(k))
+     .            - wpsclrp(i,k) * gr%dzm(k) * (sclrm(i,kp1)-sclrm(i,k))
+     .            - 0.5 * a2(k)
+     .                  * (2./3.) * ( 2 + (1-beta) )
+     .                  * gr%dzm(k)
+     .                  * (  wp3(kp1)
+     .                       * (wpsclrp(i,k)+wpsclrp(i,kp1))
+     .                       * (wpthlp(k)+wpthlp(kp1))
+     .                       / max(wp2(k)+wp2(kp1),2.0*eps)**2
+     .                     - wp3(k)
+     .                       * (wpsclrp(i,km1)+wpsclrp(i,k))
+     .                       * (wpthlp(km1)+wpthlp(k))
+     .                       / max(wp2(km1)+wp2(k),2.0*eps)**2
+     .                    )
+          if (liter) dd(k) = dd(k) + 1.0/dt*sclrpthlp(i,k)
+
+        enddo ! k=1, nz
+       
+c       solve tridiagonal system
+        call tridag( aa, bb, cc, dd, sclrpthlp(i,:), gr%nnzp, isValid )
+        if ( .not. isValid ) then
+          print *, "diag_var: tridag failed"
+          return
+        endif 
+      enddo ! i=1, slcrm_dimension
+
+      endif ! present (sclr variables)
+
+      return
+      end subroutine diag_var
 !-----------------------------------------------------------------------

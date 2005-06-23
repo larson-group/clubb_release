@@ -1,8 +1,9 @@
-! $Id: amoeba.f90,v 1.2 2005-06-15 20:41:44 dschanen Exp $
+! $Id: amoeba.f90,v 1.3 2005-06-23 20:07:53 dschanen Exp $
 !   From _Numerical Recipes in Fortran 90_
 !   (C) 1988-1996 Numerical Recipes Software
 SUBROUTINE amoeba( p, y, ftol, func, iter )
-USE nrtype; USE nrutil, ONLY : assert_eq, imaxloc, iminloc, nrerror, swap
+USE nrtype
+USE nrutil, ONLY : assert_eq, imaxloc, iminloc, nrerror, swap
 
 IMPLICIT NONE
 
@@ -19,13 +20,15 @@ INTERFACE
   END FUNCTION func
 END INTERFACE
 
-INTEGER(I4B), PARAMETER :: ITMAX=5000
-REAL(SP), PARAMETER     :: TINY=1.0e-10
-INTEGER(I4B)            :: ihi,ndim
-REAL(SP), DIMENSION(size(p,2)) :: psum
+INTEGER(I4B), PARAMETER :: ITMAX = 5000
+REAL(SP), PARAMETER     :: TINY  = 1.0e-10
+INTEGER(I4B)            :: ihi, ndim
+
+REAL(SP), DIMENSION(size( p, 2 )) :: psum
+
 call amoeba_private
 
-return
+RETURN
 
 CONTAINS
 !BL
@@ -33,19 +36,21 @@ SUBROUTINE amoeba_private
 IMPLICIT NONE
 
 INTEGER(I4B) :: i,ilo,inhi
-REAL(SP) :: rtol,ysave,ytry,ytmp
+REAL(SP)     :: rtol,ysave,ytry,ytmp
 
-ndim=assert_eq(size(p,2),size(p,1)-1,size(y)-1,'amoeba')
-iter=0
-psum(:)=sum(p(:,:),dim=1)
+ndim    = assert_eq( size(p,2), size(p,1)-1, size(y)-1, 'amoeba' )
+iter    = 0
+psum(:) = sum( p(:,:), dim = 1 )
+
 do
-  ilo=iminloc(y(:))
-  ihi=imaxloc(y(:))
-  ytmp=y(ihi)
-  y(ihi)=y(ilo)
-  inhi=imaxloc(y(:))
-  y(ihi)=ytmp
-  rtol=2.0_sp*abs(y(ihi)-y(ilo))/(abs(y(ihi))+abs(y(ilo))+TINY)
+  ilo    = iminloc( y(:) )
+  ihi    = imaxloc( y(:) )
+  ytmp   = y(ihi)
+  y(ihi) = y(ilo)
+  inhi   = imaxloc( y(:) )
+  y(ihi) = ytmp
+  rtol   = 2.0_sp * abs( y(ihi) - y(ilo) ) /       &
+           ( abs( y(ihi) ) + abs( y(ilo) ) + TINY )
   if (rtol < ftol) then
     call swap( y(1), y(ilo) )
     call swap( p(1,:), p(ilo,:) )
@@ -55,29 +60,29 @@ do
 ! Make amoeba return the non-optimal result. -dschanen 6/14/2005
   if (iter >= ITMAX) then  
     print *, 'ITMAX exceeded in amoeba' 
-    return
+    RETURN
   endif
-    ytry = amotry(-1.0_sp)
-    iter = iter + 1
+  ytry = amotry( -1.0_sp )
+  iter = iter + 1
     if (ytry <= y(ilo)) then
       ytry = amotry( 2.0_sp )
       iter = iter + 1
     else if (ytry >= y(inhi)) then
-    ysave = y(ihi)
-    ytry  = amotry(0.5_sp)
-    iter  = iter+1
-    if (ytry >= ysave) then
-      p(:,:) = 0.5_sp *( p(:,:)+spread(p(ilo,:),1,size(p,1)) )
-      do i=1, ndim+1
-        if (i /= ilo) y(i) = func( p(i,:) )
-      end do
-      iter    = iter + ndim
-      psum(:) = sum( p(:,:), dim=1 )
+      ysave = y(ihi)
+      ytry  = amotry( 0.5_sp )
+      iter  = iter + 1
+      if (ytry >= ysave) then
+        p(:,:) = 0.5_sp * (p(:, :) + spread( p(ilo, :), 1, size(p, 1) ))
+        do i=1, ndim+1
+          if (i /= ilo) y(i) = func( p(i, :) )
+        end do
+        iter    = iter + ndim
+        psum(:) = sum( p(:, :), dim=1 )
       end if
     end if
 end do
 
-return
+RETURN
 END SUBROUTINE amoeba_private
 !BL
 FUNCTION amotry(fac)
@@ -102,7 +107,7 @@ end if
 
 amotry = ytry
 
-return
+RETURN
 END FUNCTION amotry
 
 END SUBROUTINE amoeba

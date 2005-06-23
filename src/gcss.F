@@ -1,5 +1,7 @@
 !----------------------------------------------------------------------
-! This file contains extra subroutine to simulate the GCSS ARM and
+! $Id: gcss.F,v 1.8 2005-06-23 20:07:53 dschanen Exp $ 
+
+! This file contains extra subroutines to simulate the GCSS ARM and
 ! GCSS BOMEX, GCSS ATEX, GCSS FIRE intercomparison cases as well 
 ! as Wangara day 33
 !----------------------------------------------------------------------
@@ -208,30 +210,37 @@
 ! Subroutine to set theta and water tendencies for Wangara case
 !
         subroutine wangara_tndcy( time, wmt, wmm, theta_tndcy, 
-     .                            rt_tndcy )
-
+     .                            rt_tndcy,
+     .                            sclr_tndcy )
         use grid_class
+        use constants, only: sclrm_dimension
 
         implicit none
 
 !       Input
-        real time
+        real, intent(in) :: time
 
 !       Output
-        real wmt(gr%nnzp)
-        real wmm(gr%nnzp)
-        real theta_tndcy(gr%nnzp)
-        real rt_tndcy(gr%nnzp)
+        real, dimension(gr%nnzp), intent(out) :: wmt
+        real, dimension(gr%nnzp), intent(out) :: wmm
+        real, dimension(gr%nnzp), intent(out) :: theta_tndcy
+        real, dimension(gr%nnzp), intent(out) :: rt_tndcy
+
+!       Optional Output
+        real, optional, dimension(sclrm_dimension, gr%nnzp), 
+     .        intent(out) :: sclr_tndcy
 
 !       No large-scale subsidence for now
-
         wmt = 0.
         wmm = 0.
 
-!       No large-scale water tendendy or cooling
+!       No large-scale water tendency or cooling
 
         rt_tndcy    = 0.
         theta_tndcy = 0.
+
+!       Scalar r forcing is just set to be rtm_forcing for now
+        if ( present(sclr_tndcy) ) sclr_tndcy = 0.
 
         return
         end subroutine wangara_tndcy
@@ -239,8 +248,8 @@
 !----------------------------------------------------------------------
 ! Subroutine to set theta and water tendencies for ATEX case
 !
-        subroutine atex_tndcy(time, time_initial, rtm, wmt, wmm,
-     .                        theta_tndcy, rt_tndcy, isValid)
+        subroutine atex_tndcy( time, time_initial, rtm, wmt, wmm,
+     .                         theta_tndcy, rt_tndcy, isValid )
 
         use grid_class
 
@@ -434,18 +443,16 @@
 
 !       Constant
 
-        real ubmin
-        parameter (ubmin = 0.25)
-        real ustar
-        parameter (ustar = 0.28)
+        real, parameter :: ubmin = 0.25
+        real, parameter :: ustar = 0.28
 
 !       Input variables
 
-        real up,vp
+        real, intent(in) :: up,vp
 
 !       Output variables
 
-        real uw,vw,wtp,wrp
+        real, intent(out) :: uw,vw,wtp,wrp
 
 !       Internal variables
 
@@ -514,25 +521,27 @@
 ! This subroutine computes surface fluxes of horizontal momentum,
 ! heat and moisture for Wangara day 33
 !
-        subroutine wangara_sfclyr( time, up, vp, uw, vw, wtp, wrp )
-
+        subroutine wangara_sfclyr( time, up, vp, uw, vw, wtp, wrp,
+     .                             wpsclrp_sfc )
+        use constants, only: sclrm_dimension
         implicit none
 
 !       Constants
 
-        real ubmin
-        parameter (ubmin = 0.25)
-        real ustar
-        parameter (ustar = 0.13)
+        real, parameter :: ubmin = 0.25
+        real, parameter :: ustar = 0.13
 
 !       Input variables
 
-        real time
-        real up,vp
+        real, intent(in) :: time
+        real, intent(in) :: up, vp
 
 !       Output variables
 
-        real uw,vw,wtp,wrp
+        real, intent(out) :: uw, vw, wtp, wrp
+        
+        real, optional, intent(out), dimension(sclrm_dimension) :: 
+     .        wpsclrp_sfc
 
 !       Internal variables
 
@@ -560,9 +569,12 @@
      .        * cos( (time_est-45000.)/36000. * 3.141592654 )
         wrp = 1.3e-4 * wtp
 
+! Compute new mixing variable as wrp
+        if ( present(wpsclrp_sfc) ) wpsclrp_sfc(1) = 1.3e-4 * wtp
+
 ! Compute momentum fluxes
 
-        ubar = max(ubmin,sqrt(up*up + vp*vp))
+        ubar = max(ubmin, sqrt(up*up + vp*vp))
 
         uw = -up * ustar*ustar / ubar
         vw = -vp * ustar*ustar / ubar
@@ -1358,7 +1370,7 @@
         ! written by Michael Falk to calculate short-wave radiation
         ! for the Nov. 11 altocumulus case.
 
-        SUBROUTINE nov11_altocu_sw(rhot, rcm, Frad_sw)
+        SUBROUTINE nov11_altocu_sw( rhot, rcm, Frad_sw )
 
         USE grid_class
 
@@ -1416,16 +1428,16 @@
 
         ! tau is defined on momentum levels.  Brian
 
-        tauc = 0.0
+        tauc         = 0.0
         tau(gr%nnzp) = 0.0      ! optical depth at top of atm. is 0.  Brian.
         do k = gr%nnzp-1, 1, -1
           tau(k) = 1.5 * (rcm(k+1)*rhot(k+1)/gr%dzt(k+1))
      .           / radius / rho_l
-          tauc = tauc + tau(k)
+          tauc   = tauc + tau(k)
         enddo
 
         omegade = (1.0-ff)*omega/(1.0-omega*ff)
-        taucde = (1.0-omega*ff)*tauc
+        taucde  = (1.0-omega*ff)*tauc
 
         do k = 1, gr%nnzp, 1
           taude(k) = (1.0-omega*ff)*tau(k)
@@ -1494,15 +1506,15 @@
         rk = sqrt(3.0*x2*x1)
         xi_abs2 = xi_abs*xi_abs
         rk2 = rk*rk
-        x3 = 4.0*(1.0-rk2*xi_abs2)
-        rp = sqrt(3.0*x2/x1)
+        x3  = 4.0*(1.0-rk2*xi_abs2)
+        rp  = sqrt(3.0*x2/x1)
         alpha_2 = 3.0*omegade*xi_abs2*(1.0+gcde*x2)/x3
-        beta_2 = 3.0*omegade*xi_abs*(1.0+3.0*gcde*xi_abs2*x2)/x3
+        beta_2  = 3.0*omegade*xi_abs*(1.0+3.0*gcde*xi_abs2*x2)/x3
 
-        rtt = 2.0/3.0
+        rtt   = 2.0/3.0
         exmu0 = exp(-taucde/xi_abs)
-        expk = exp(rk*taucde)
-        exmk = 1.0/expk
+        expk  = exp(rk*taucde)
+        exmk  = 1.0/expk
         xp23p = 1.0+rtt*rp
         xm23p = 1.0-rtt*rp
         ap23b = alpha_2+rtt*beta_2
@@ -1683,8 +1695,8 @@
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         k_u = 55.
-        q = 0.17
-        n = 0.70
+        q   = 0.17
+        n   = 0.70
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !                                                                     !
@@ -1786,8 +1798,8 @@
 
              m(k-1) = m(k)
              dqc_dt_icedfs(k) = 0.0
-             diam(k) = 0.0    ! Set zero to remind that we don't grow ice
-             u_T_cm(k) = 0.0  ! Set zero to remind that we don't grow ice
+             diam(k)          = 0.0  ! Set zero to remind that we don't grow ice
+             u_T_cm(k)        = 0.0  ! Set zero to remind that we don't grow ice
 
           ENDIF
 

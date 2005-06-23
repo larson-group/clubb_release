@@ -1,4 +1,6 @@
 !----------------------------------------------------------------------        
+! $Id: rain.F,v 1.14 2005-06-23 20:07:53 dschanen Exp $
+
 ! This subroutine advances drizzle (rrm and Nrm) one timestep.
 ! It uses implicit discretization and formulas by 
 !     Khairoutdinov and Kogan (2000)
@@ -7,9 +9,9 @@
      .                   rcm, rtm, rrm, Nrm, cond_rrm, auto_rrm,
      .                   accr_rrm, cond_Nrm, auto_Nrm, sed_rrm, 
      .                   diff_rrm, subs_rrm, Vr, mean_vol_rad,
+     .                   runtype, isValid,
 ! LH Kessler autoconversion.  Vince Larson 22 May 2005:
-     .                   AKm_est, AKm, 
-     .                   runtype, isValid )
+     .                   AKm_est, AKm )
 
 
         USE grid_class
@@ -89,16 +91,15 @@
         REAL:: cond_evap_rrm, autoconv_rrm, accretion_rrm
         REAL:: cond_evap_Nrm, autoconv_Nrm
 
-! Logical flag: LH_on = .true. if Latin hypercube sampling is on.
-! Vince Larson 22 May 2005
-! Now occurs in constants.F
-!        LOGICAL, INTENT(IN) :: LH_on
-! Latin hypercube estimate of Kessler autoconversion   Vince Larson 22 May 2005
-        REAL, DIMENSION(1:gr%nnzp), INTENT(IN) :: AKm_est
-! Analytic calculation of Kessler autoconversion       Vince Larson 22 May 2005
-        REAL, DIMENSION(1:gr%nnzp), INTENT(IN) :: AKm
 ! Whether this is valid
         LOGICAL, INTENT(INOUT)                    :: isValid
+
+! dschanen made these option on 6/22/05
+! Latin hypercube estimate of Kessler autoconversion   Vince Larson 22 May 2005
+        REAL, DIMENSION(1:gr%nnzp), OPTIONAL, INTENT(IN) :: AKm_est
+! Analytic calculation of Kessler autoconversion       Vince Larson 22 May 2005
+        REAL, DIMENSION(1:gr%nnzp), OPTIONAL, INTENT(IN) :: AKm
+
 
 
 ! DESCRIPTION
@@ -310,7 +311,7 @@
 ! 22 May 2005
 !           auto_rrm(k) = autoconv_rrm( rcm(k), conc_cloud(k), rhot(k),
 !     .                        a, s1, s2, ss1, ss2, rc1, rc2 )
-           if ( LH_on ) then
+           if ( LH_on .and. present( Akm ) ) then
 
 !              auto_rrm(k) = AKm_est(k)
               auto_rrm(k) = AKm(k)
@@ -1371,7 +1372,7 @@
         D_fnc=DV(NA-1)
 
         RETURN
-        END
+        END FUNCTION D_fnc
 
 !------------------------------------------------------------------------
 
@@ -1386,7 +1387,13 @@
 !       Routine called: GAMMA for computing âx)
 !       ===================================================
 
-        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        IMPLICIT NONE
+!        IMPLICIT DOUBLE PRECISION (A-H,O-Z)! Cleaned this up 6/22/05
+        DOUBLE PRECISION, INTENT(IN)  :: X, VA
+        DOUBLE PRECISION, INTENT(OUT) :: PD
+        DOUBLE PRECISION EPS, PI, SQ2, EP, VA0, GA0, G1, A0, VM, VT, G0
+        DOUBLE PRECISION R, R1, GM
+        INTEGER M
 !       New gamma function in polpak.f90
         REAL(KIND=8) GAMMA
         EXTERNAL GAMMA
@@ -1428,7 +1435,7 @@
            ENDIF
         ENDIF
         RETURN
-        END
+        END SUBROUTINE DVSA
 
 !------------------------------------------------------------------------
 
@@ -1445,7 +1452,12 @@
 !             (2) GAMMA for computing âx)
 !       ====================================================
 
-        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        IMPLICIT NONE
+!        IMPLICIT DOUBLE PRECISION (A-H,O-Z) ! Cleaned this up 6/22/05
+        DOUBLE PRECISION, INTENT(IN)  :: VA, X
+        DOUBLE PRECISION, INTENT(OUT) :: PD
+        DOUBLE PRECISION PI, EPS, EP, A0, R, X1, VL, GL
+        INTEGER K
 !       New gamma function in polpak.f90
         REAL(KIND=8) GAMMA
         EXTERNAL GAMMA
@@ -1469,7 +1481,7 @@
             PD=PI*VL/GL+DCOS(PI*VA)*PD
         ENDIF
         RETURN
-        END
+        END SUBROUTINE DVLA
 
 !------------------------------------------------------------------------
 
@@ -1486,7 +1498,12 @@
 !             (2) GAMMA for computing âx)
 !       ===================================================
 
-        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        IMPLICIT NONE
+!        IMPLICIT DOUBLE PRECISION (A-H,O-Z) ! Cleaned this up 6/22/05
+        DOUBLE PRECISION, INTENT(IN)  :: VA, X
+        DOUBLE PRECISION, INTENT(OUT) :: PV
+        DOUBLE PRECISION PI, EPS, QE, A0, R, X1, PDL, GL, DSL
+        INTEGER K
 !       New gamma function in polpak.f90
         REAL(KIND=8) GAMMA
         EXTERNAL GAMMA
@@ -1511,9 +1528,9 @@
            PV=DSL*GL/PI*PDL-DCOS(PI*VA)*PV
         ENDIF
         RETURN
-        END
+        END SUBROUTINE VVLA
 !------------------------------------------------------------------------
-!       Now occurs as part of the function in polpak.f90
+!       Now occurs as part of the function in polpak.f90 -dschanen
 !------------------------------------------------------------------------
 !
 !        SUBROUTINE GAMMA(X,GA)

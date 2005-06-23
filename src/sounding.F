@@ -1,12 +1,18 @@
 !------------------------------------------------------------------------
+! $Id: sounding.F,v 1.4 2005-06-23 20:07:53 dschanen Exp $
+
 ! subroutine read_sounding( )
 
 ! Subroutine to initialize model variables from namelist file
+! Notes: for whatever reason, this subroutine is very flakey, modify it
+!        with caution.
 !------------------------------------------------------------------------
         subroutine read_sounding( thlm, rtm, um, vm, ugm, vgm, runfile, 
      .                            runtype )
+!     .                            sclrm ) ! optional
 
         use grid_class
+        use constants, only: sclrm_dimension
 
         implicit none
 
@@ -16,7 +22,6 @@
 
 ! Input
 
-!        character(30), intent(in) :: runfile
         character(len=*), intent(in) :: runfile
         integer, intent(in)          :: runtype
 
@@ -26,31 +31,34 @@
 
 ! Output
 
-        real thlm(1:gr%nnzp)
-        real rtm(1:gr%nnzp)
-        real um(1:gr%nnzp)
-        real vm(1:gr%nnzp)
-        real ugm(1:gr%nnzp)
-        real vgm(1:gr%nnzp)
+        real, intent(out), dimension(gr%nnzp) :: thlm
+        real, intent(out), dimension(gr%nnzp) :: rtm
+        real, intent(out), dimension(gr%nnzp) :: um
+        real, intent(out), dimension(gr%nnzp) :: vm
+        real, intent(out), dimension(gr%nnzp) :: ugm
+        real, intent(out), dimension(gr%nnzp) :: vgm
+
+!        real, optional, intent(out), 
+!     .        dimension(sclrm_dimension, gr%nnzp) :: sclrm
 
 ! Input variables from namelist
 
         integer nlevels
         real z(nmaxsnd),theta(nmaxsnd),rt(nmaxsnd)
         real u(nmaxsnd),v(nmaxsnd),ug(nmaxsnd),vg(nmaxsnd)
+        real, dimension(nmaxsnd) :: sclr
 
         namelist /sounding/ nlevels, z, theta, rt, u, v, ug, vg
+        namelist /scalers/ sclr    ! unimplemented
     
 ! Internal
 
         integer i,k
 
 ! Read sounding namelist
-
         open(10, file = runfile, status = 'old' )
         read(10, nml = sounding )
         close(10)
-
         if ( nlevels > nmaxsnd ) then
            write(*,*) 'Error in sounding: nlevels > nmaxsnd'
            write(*,*) 'nlevels = ',nlevels
@@ -64,7 +72,7 @@
 
         if ( gr%zt(2) < z(1) ) then
            write(*,*) 'First level of input sounding must be',
-     +     ' below first thermodynamic level'
+     .     ' below first thermodynamic level'
            write(*,*) ' first sounding level z(1) = ',z(1)
            write(*,*) ' first thermodynamic level gr%zt(2) = ',gr%zt(2)
            stop 'STOP in sounding'
@@ -217,7 +225,7 @@
 
         if ( gr%zt(2) < z(1) ) then
            write(*,*) 'First level of input sounding must be',
-     +     ' below first thermodynamic level'
+     .     ' below first thermodynamic level'
            write(*,*) ' first sounding level z(1) = ',z(1)
            write(*,*) ' first thermodynamic level gr%zt(2) = ',gr%zt(2)
            stop 'STOP in sounding'
@@ -252,4 +260,3 @@
 
         return
         end subroutine read_profile
-

@@ -87,7 +87,8 @@
 ! order moments
 !------------------------------------------------------------------------
         subroutine sfc_var( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc,
-     +                      wp2_sfc, thlp2_sfc, rtp2_sfc, rtpthlp_sfc )
+     .                      wp2_sfc, thlp2_sfc, rtp2_sfc, rtpthlp_sfc, 
+     .                      sclrm_sfc, wpsclrp_sfc )
 
         use constants
 
@@ -99,6 +100,12 @@
         real, intent(IN) :: vpwp_sfc     ! surface v momentum flux ( m^2/s^2 )
         real, intent(IN) :: wpthlp_sfc   ! surface thetal flux ( K m/s )
         real, intent(IN) :: wprtp_sfc    ! surface moisture flux ( kg/kg m/s )
+
+! Input (Optional) 
+        real, optional, intent(IN),
+     .        dimension(sclrm_dimension)   :: sclrm_sfc
+        real, optional, intent(IN),
+     .        dimension(sclrm_dimension)   :: wpsclrp_sfc
 
 ! Output
 

@@ -1,4 +1,5 @@
-! 
+! $Id: tridag.F,v 1.2 2005-06-23 20:07:53 dschanen Exp $
+
 ! Solves for a vector u(1:n) of length n the tridiagonal linear set given
 ! by equation (2.4.1). a(1:n), b(1:n), c(1:n), and r(1:n) are input vectors
 ! and are not modified.
@@ -25,11 +26,11 @@
 
 !        Solve system
         if (b(1).eq.0.) then
-           do j=1,n
-              write(*,*) j,b(j)
-           end do
+!           do j=1,n
+!              write(*,*) j,b(j)
+!           end do
            isValid = .false.
-           print *, "tridag: rewrite equations"
+           print *, "tridag: rewrite equations" 
            deallocate( gam )
            return
 !           stop 'tridag: rewrite equations'
@@ -43,7 +44,7 @@
 !         Return and handle the exception
           if (bet.eq.0.) then
              isValid = .false.
-             print *, "tridag failed"
+!             print *, "tridag failed" ! Calling routines do this now
              deallocate( gam )
              return
           endif
