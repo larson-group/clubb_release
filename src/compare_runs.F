@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-!  $Id: compare_runs.F,v 1.5 2005-06-23 20:07:53 dschanen Exp $
+!  $Id: compare_runs.F,v 1.6 2005-06-25 12:43:58 griffinb Exp $
 !  program compare_runs.F
 
 !  Tests selected GRaDS file variables for low variation
@@ -153,7 +153,7 @@
         implicit none
 
         select case ( nz )
-          case (48, 75, 110, 147, 150)
+          case (48, 75, 110, 147, 150, 160)
 !----------------------------------------------------------------------
 !  Due to hoc's lower starting point, we can only use
 !  (total number of z-levels) - 1 (a maximum of 74 for BOMEX).
