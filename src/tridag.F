@@ -1,4 +1,4 @@
-! $Id: tridag.F,v 1.2 2005-06-23 20:07:53 dschanen Exp $
+! $Id: tridag.F,v 1.3 2005-07-01 16:14:54 dschanen Exp $
 
 ! Solves for a vector u(1:n) of length n the tridiagonal linear set given
 ! by equation (2.4.1). a(1:n), b(1:n), c(1:n), and r(1:n) are input vectors
@@ -9,11 +9,14 @@
 ! 2nd Edtion, William H. Press et al., 1992
 !
 
-        subroutine tridag(a,b,c,rr,u,n, isValid)
+        subroutine tridag( a, b, c, rr, u, n, isValid)
         implicit none
 
         integer n
         real a(n),b(n),c(n),rr(n),u(n)
+! Added to prevent unwanted side-effects
+        intent(in) a, b, c, rr, n
+        intent(out) u
 
         integer j
         real bet
@@ -37,7 +40,7 @@
         end if
         bet=b(1)
         u(1)=rr(1)/bet
-        do j=2,n
+        do j=2, n
           gam(j)=c(j-1)/bet
           bet=b(j)-a(j)*gam(j)
 !          if (bet.eq.0.) stop 'tridag failed'

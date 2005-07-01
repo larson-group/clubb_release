@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------        
-! $Id: rain.F,v 1.14 2005-06-23 20:07:53 dschanen Exp $
+! $Id: rain.F,v 1.15 2005-07-01 16:14:54 dschanen Exp $
 
 ! This subroutine advances drizzle (rrm and Nrm) one timestep.
 ! It uses implicit discretization and formulas by 
@@ -94,11 +94,10 @@
 ! Whether this is valid
         LOGICAL, INTENT(INOUT)                    :: isValid
 
-! dschanen made these option on 6/22/05
 ! Latin hypercube estimate of Kessler autoconversion   Vince Larson 22 May 2005
-        REAL, DIMENSION(1:gr%nnzp), OPTIONAL, INTENT(IN) :: AKm_est
+        REAL, DIMENSION(1:gr%nnzp), INTENT(IN) :: AKm_est
 ! Analytic calculation of Kessler autoconversion       Vince Larson 22 May 2005
-        REAL, DIMENSION(1:gr%nnzp), OPTIONAL, INTENT(IN) :: AKm
+        REAL, DIMENSION(1:gr%nnzp), INTENT(IN) :: AKm
 
 
 
@@ -171,6 +170,9 @@
 ! superdiagonal cc that deals with rr(n+1,k+1) terms, and
 ! dd, which is the right-hand side matrix with rr(n,k) terms.
 
+!       Set the boundary condition
+        VNr(gr%nnzp) = 0.
+
         DO k = 1, gr%nnzp-1, 1
 
            ! Find the important conditions
@@ -221,7 +223,6 @@
      .                        Vr(k), VNr(k), mean_vol_rad(k) )
 
         ENDDO
-
         ! This is not looped over the top level because the pdf
         ! parameters are not looped over the top level.
 
@@ -267,13 +268,31 @@
      .            - wmt(k) / (1.0/gr%dzm(k) + 1.0/gr%dzm(km1))   ! advection
      .            - nu_r*gr%dzt(k)*gr%dzm(km1)                    ! diffusion
 
-           ! Find main diagonal pp
+! %% Debug
+!           if ( kp1 == 147 ) then
+!           print*, 'kp1=', kp1
+!           print*, 'k=', k
+!           print*, 'VNr(kp1)=', VNr(kp1)
+!           endif
+!           print*, 'nu_r', nu_r
+!           print*, 'dt=', dt
+!           print*, 'gr%dzm(k)=', gr%dzm(k)
+!           print*, 'gr%dzm(km1)=', gr%dzm(km1)
+!           print*, 'gr%dzt(k)=', gr%dzt(k)
+! %% Debug
 
+           ! Find main diagonal pp
            pp(k) = 
      .              (1.0/dt)                                     ! time tendency
      .            + VNr(kp1)*gr%dzm(k)                           ! sedimentation
      .            + nu_r*gr%dzt(k)*(gr%dzm(k) + gr%dzm(km1))      ! diffusion
 
+! %% Debug
+!           if ( kp1 == 147 ) then
+!           print*, 'k=', k
+!           print*, 'pp=', pp(k)
+!           endif
+! %% Debug
            ! Find superdiagonal qq
 
            qq(k) = 
@@ -311,7 +330,7 @@
 ! 22 May 2005
 !           auto_rrm(k) = autoconv_rrm( rcm(k), conc_cloud(k), rhot(k),
 !     .                        a, s1, s2, ss1, ss2, rc1, rc2 )
-           if ( LH_on .and. present( Akm ) ) then
+           if ( LH_on ) then
 
 !              auto_rrm(k) = AKm_est(k)
               auto_rrm(k) = AKm(k)
@@ -370,11 +389,15 @@
 
         call tridag(aa, bb, cc, dd, rrm, gr%nnzp, isValid)
 !        call tridag(aa, bb, cc, dd, rrm, gr%nnzp)
+        if (.not. isValid ) then
+          print *, "rain: tridag failed for rrm"
+          return
+        endif
 
         call tridag(oo, pp, qq, rr, Nrm, gr%nnzp, isValid)
 !        call tridag(oo, pp, qq, rr, Nrm, gr%nnzp)
         if (.not. isValid ) then
-          print *, "rain: tridag failed"
+          print *, "rain: tridag failed for Nrm"
           return
         endif
 
@@ -417,6 +440,7 @@
 
         ENDDO
 
+        RETURN
         END SUBROUTINE rain
 
 !------------------------------------------------------------------------
@@ -507,7 +531,9 @@
               bivar_term = EXP(
      .                       (1.0/3.0)*u_rr_G + (-1.0/3.0)*u_Nr_G
      .                     + (1.0/2.0) * ((1.0/3.0)**2.0) * sig2_rr_G
-     .                     + (1.0/2.0) * ((-1.0/3.0)**2.0) * sig2_Nr_G
+!     .                     + (1.0/2.0) * ((-1.0/3.0)**2.0) * sig2_Nr_G
+!                                           ^causes problems on some compilers
+     .                     + (1.0/2.0) * ((1.0/3.0)**2.0) * sig2_Nr_G
      .                     + corr_rrNr_G
      .                     * (1.0/3.0) * SQRT(sig2_rr_G)
      .                     * (-1.0/3.0) * SQRT(sig2_Nr_G)        )
@@ -515,6 +541,13 @@
               ! The mean volume radius
               mean_vol_rad = ( ((4.0*pi*rho_lw)/3.0)**(-1.0/3.0) )
      .                      * bivar_term
+
+!              print*, 'u_rr_G=', u_rr_G
+!              print*, 'u_Nr_G=', u_Nr_G
+!              print*, 'sig2_rr_G=', sig2_rr_G
+!              print*, 'sig2_Nr_G=', sig2_Nr_G
+!              print*, 'corr_rrNr_G=', corr_rrNr_G
+!              print*, 'mean_vol_rad=', mean_vol_rad
 
            ENDIF
 
@@ -546,6 +579,7 @@
            VNr = 0.0
         ENDIF
 
+        RETURN
         END SUBROUTINE sed_velocity
 
 !------------------------------------------------------------------------
@@ -663,6 +697,7 @@
 
         ENDIF
 
+        RETURN
         END FUNCTION cond_evap_rrm
 
 !------------------------------------------------------------------------
@@ -684,6 +719,7 @@
 
         ENDIF
 
+        RETURN
         END FUNCTION cond_evap_Nrm
 
 !------------------------------------------------------------------------
@@ -873,6 +909,7 @@
 
         ENDIF
 
+        RETURN
         END FUNCTION NLL_PDF
 
 !------------------------------------------------------------------------
@@ -921,6 +958,7 @@
 
         G_t_p = 1.0/(Fk + Fd)
 
+        RETURN
         END FUNCTION G_t_p
 
 !------------------------------------------------------------------------
@@ -995,6 +1033,7 @@
 
         ENDIF
 
+        RETURN
         END FUNCTION autoconv_rrm
 
 !------------------------------------------------------------------------
@@ -1018,6 +1057,7 @@
         autoconv_Nrm = auto_rrm /
      .                 ( ((4.0*pi*rho_lw)/(3.0*rhot)) * (r_0**3.0) )
 
+        RETURN
         END FUNCTION autoconv_Nrm
 
 !------------------------------------------------------------------------
@@ -1086,6 +1126,7 @@
 
         ENDIF
 
+        RETURN
         END FUNCTION accretion_rrm
 
 !------------------------------------------------------------------------
@@ -1234,6 +1275,7 @@
 
         ENDIF
 
+        RETURN
         END FUNCTION NL_PDF
 
 !------------------------------------------------------------------------
@@ -1279,8 +1321,15 @@
 !             (2) DVLA for computing Dv(x) for large |x|
 !       ====================================================
 
-        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-        DIMENSION DV(0:100),DP(0:100)
+        IMPLICIT NONE
+!        IMPLICIT DOUBLE PRECISION (A-H,O-Z) ! Cleaned this up 6/27/05
+        DOUBLE PRECISION DV, DP
+        DIMENSION DV(0:100), DP(0:100)
+        DOUBLE PRECISION, INTENT(IN)    :: X
+        DOUBLE PRECISION, INTENT(INOUT) :: V
+        DOUBLE PRECISION XA, VH, NV, V0, V1, V2, EP
+        DOUBLE PRECISION PD, PD0, PD1, PDF, F, F0, F1, F2, S0
+        INTEGER L, JA, K, NA, NK, M
         XA=DABS(X)
         VH=V
         V=V+DSIGN(1.0D0,V)
@@ -1434,6 +1483,7 @@
 15            PD=A0*PD
            ENDIF
         ENDIF
+
         RETURN
         END SUBROUTINE DVSA
 
@@ -1480,6 +1530,7 @@
 !            CALL GAMMA(-VA,GL)
             PD=PI*VL/GL+DCOS(PI*VA)*PD
         ENDIF
+
         RETURN
         END SUBROUTINE DVLA
 
@@ -1527,6 +1578,7 @@
            DSL=DSIN(PI*VA)*DSIN(PI*VA)
            PV=DSL*GL/PI*PDL-DCOS(PI*VA)*PV
         ENDIF
+
         RETURN
         END SUBROUTINE VVLA
 !------------------------------------------------------------------------
@@ -1586,6 +1638,7 @@
 !              IF (X.LT.0.0D0) GA=-PI/(X*GA*DSIN(PI*X))
 !           ENDIF
 !        ENDIF
+!
 !        RETURN
-!        END
+!        END SUBROUTINE GAMMA
 !------------------------------------------------------------------------

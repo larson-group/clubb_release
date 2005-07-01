@@ -1,3 +1,10 @@
+      module pdf_closure
+
+      implicit none
+
+      public pdf_closure_new
+
+      contains 
 !------------------------------------------------------------------------
 ! Subroutine that computes pdf parameters analytically.
 
@@ -20,7 +27,10 @@
      .                              wpthvp, wp2thvp, rtpthvp, thlpthvp,
      .                              wprcp, wp2rcp, rtprcp, thlprcp,
      .                              pdf_parms,
-     .                              crt1, crt2, cthl1, cthl2 )
+     .                              crt1, crt2, cthl1, cthl2,
+     .                              sclrm, wpsclrp, wpsclrp2,    ! optional
+     .                              sclrp2, sclrpthlp,           !  "    "
+     .                              sclrpthvp, sclrprcp )        !  "    "
 
         use constants
 
@@ -39,6 +49,13 @@
         real, intent(in) :: thlm, thlp2, wpthlp
         real, intent(in) :: rtpthlp
 
+! Input (Optional mixing scheme variables)
+
+        real, optional, intent(in) :: sclrm
+        real, optional, intent(in) :: wpsclrp
+        real, optional, intent(in) :: sclrp2
+        real, optional, intent(in) :: sclrpthlp
+
 ! Output
 
         real, intent(out) :: wp4
@@ -50,6 +67,12 @@
         real, intent(out) :: pdf_parms(26)
         real, intent(out) :: crt1, crt2, cthl1, cthl2
 
+! Output (Optional mixing scheme variables)
+
+        real, optional, intent(out) :: sclrpthvp
+        real, optional, intent(out) :: sclrprcp
+        real, optional, intent(out) :: wpsclrp2
+
 ! Internal 
 
         real :: a
@@ -58,7 +81,15 @@
         real :: rt1, rt2, srt1, srt2
         real :: w1_n, w2_n, thl1_n, thl2_n, rt1_n, rt2_n
 
-!        quantities needed to predict higher order moments
+!       New mixing scheme internal variables
+
+        real :: sclr1, sclr2, ssclr1, ssclr2
+        real :: alpha_sclr, sclr1_n, sclr2_n
+        real :: rsclrthl, rsclrrt
+ 
+        logical scalar_calc
+
+!       Quantities needed to predict higher order moments
 
         real :: tl1, tl2, beta1, beta2, rsl1, rsl2, es1, es2
         real :: ss1, ss2, s1, s2, zeta1, zeta2
@@ -92,6 +123,20 @@
 
 
 ! Code begins -------------------------------------------
+
+!   Check whether the optional scalars are present.
+!   Rather than test this on an equation to variable basis
+!   as in mixing, this uses an all or nothing test.
+
+        if (      present( sclrm )     .and. present( wpsclrp )
+     .      .and. present( sclrp2 )    .and. present( sclrpthvp )
+     .      .and. present( sclrpthlp ) .and. present( sclrprcp )
+     .      .and. present( wpsclrp2 ) 
+     .     )then
+          scalar_calc = .true.
+        else
+          scalar_calc = .false.
+        endif
 
         BD = Lv / (exner*cp) - ep2 * T0
 
@@ -160,7 +205,7 @@
             thl2_n = - (wpthlp/(sqrt(wp2)*sqrt(thlp2)))/w1_n
 
             thl1   = thlm - (wpthlp/sqrt(wp2))/w2_n
-            thl2 = thlm - (wpthlp/sqrt(wp2))/w1_n
+            thl2   = thlm - (wpthlp/sqrt(wp2))/w1_n
 
             alpha_thl
      .      = 0.5
@@ -197,10 +242,35 @@
             srt1 = ( alpha_rt / a * rtp2 ) * width_factor_1
             srt2 = ( alpha_rt / (1.-a) * rtp2 ) * width_factor_2
 
-        end if
+          end if
+
+! Compute pdf parameters for passive scalars
+          if ( sclrp2 <= sclrtol**2 .and. scalar_calc ) then
+            sclr1      = sclrm
+            sclr2      = sclrm
+            ssclr1     = 0.
+            ssclr2     = 0.
+            alpha_sclr = 0.5
+          else
+            sclr1_n = - (wpsclrp/(sqrt(wp2)*sqrt(sclrp2)))/w2_n
+            sclr2_n = - (wpsclrp/(sqrt(wp2)*sqrt(sclrp2)))/w1_n
+
+            sclr1 = sclrm - (wpsclrp/sqrt(wp2))/w2_n
+            sclr2 = sclrm - (wpsclrp/sqrt(wp2))/w1_n
+
+            alpha_sclr
+     .      = 0.5
+     .        * ( 1.0 - wpsclrp*wpsclrp /((1.0-Sc)*wp2*sclrp2) )
+            alpha_sclr = max( min( alpha_sclr, 1.0 ), 0.0 )
+
+! Vince Larson multiplied original expressions by width_factor_1,2
+!    to generalize scalar skewnesses.  05 Nov 03
+            ssclr1 = ( alpha_sclr / a * sclrp2 ) * width_factor_1
+            ssclr2 = ( alpha_sclr / (1.-a) * sclrp2 ) * width_factor_2
+
+          end if
 
 !       We include sub-plume correlation with coeff rrtthl.
-!       We assume srt1=srt2, sthl1=sthl2, rrtthl is a fixed const.
 
           if ( srt1*sthl1 > 0 .and. srt2*sthl2 > 0) then
               rrtthl = ( rtpthlp 
@@ -215,6 +285,42 @@
                 endif
           else
                 rrtthl = 0.
+          end if
+
+!       Sub-plume correlation, rsclrthl, between passive scalar
+!              and theta_l.
+
+          if ( ssclr1*sthl1 > 0 .and. ssclr2*sthl2 > 0) then
+              rsclrthl = ( sclrpthlp 
+     .         - a * ( sclr1-sclrm ) * ( thl1-thlm )
+     .         - (1-a) * ( sclr2-sclrm ) * ( thl2-thlm ) )
+     .             / ( a*sqrt(ssclr1*sthl1) + (1-a)*sqrt(ssclr2*sthl2) )
+              if (rsclrthl < -1.) then
+                    rsclrthl = -1.
+              endif
+              if (rsclrthl > 1.) then
+                    rsclrthl = 1.
+              endif
+          else
+              rsclrthl = 0.
+          end if
+
+!       Sub-plume correlation, rsclrrt, between passive scalar
+!              and total water.
+
+          if ( ssclr1*srt1 > 0 .and. ssclr2*srt2 > 0) then
+              rsclrrt = ( sclrp2 
+     .         - a * ( sclr1-sclrm ) * ( rt1-rtm )
+     .         - (1-a) * ( sclr2-sclrm ) * ( rt2-rtm ) )
+     .             / ( a*sqrt(ssclr1*srt1) + (1-a)*sqrt(ssclr2*srt2) )
+              if (rsclrrt < -1.) then
+                    rsclrrt = -1.
+              endif
+              if (rsclrrt > 1.) then
+                    rsclrrt = 1.
+              endif
+          else
+              rsclrrt = 0.
           end if
 
         end if
@@ -241,6 +347,9 @@
      .            + ( 1-a ) * ( w2-wm )*( (rt2-rtm)*(thl2-thlm)
      .                + rrtthl*sqrt(srt2*sthl2) )
 
+!       Scalar Addition to higher order moments
+        wpsclrp2  = a * ( w1-wm )*( (sclr1-sclrm)**2 + ssclr1 ) 
+     .              + (1-a) * ( w2-wm )*( (sclr2-sclrm)**2 + ssclr2 )
 
 !       Compute higher order moments that include theta_v.
 
@@ -343,6 +452,24 @@
 
         rtpthvp  = rtpthlp + ep1*T0*rtp2 + BD*rtprcp
 
+!       account for subplume correlation between scalar, theta_v
+!       See Eqs. A13, A8 from Larson et al. (2002) ``Small-scale..."
+!          where the ``scalar" in this paper is w.
+        sclrprcp  = a * ( (sclr1-sclrm)*rc1 + (crt1*srt1)*R1)
+     .            + (1-a) * ( (sclr2-sclrm)*rc2 + (crt2*ssclr2)*R2 )
+     .            - a*rsclrthl*cthl1*sqrt(ssclr1)*sqrt(sthl1)*R1
+     .            - (1-a)*rsclrthl*cthl2*sqrt(ssclr2)*sqrt(sthl2)*R2
+! %% Debug
+!        print*, "sclrprcp - rtprcp",  sclrprcp - rtprcp 
+! %% Debug
+
+        sclrpthvp  = sclrpthlp + ep1*T0*sclrp2 + BD*sclrprcp
+
+! %% Debug
+!        print*, "sclrpthlp - rtpthlp",  sclrpthlp - rtpthlp 
+!        print*, "sclrpthvp from rtpthlp",
+!     .         sclrpthvp - ( rtpthlp + ep1*T0*sclrp2 + BD*rtprcp )
+! %% Debug
 !       compute mean cloud fraction and cloud water
 
         cf  = a * R1 + (1-a) * R2
@@ -389,3 +516,5 @@
 
         return
         end subroutine pdf_closure_new
+
+      end module pdf_closure

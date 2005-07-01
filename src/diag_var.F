@@ -1,26 +1,28 @@
+      module diagnose_variances
+        implicit none
+        contains
 !-----------------------------------------------------------------------
 ! subroutine diag_var( )
-
 ! Subprogram to diagnose variances by solving steady-state equations
 !-----------------------------------------------------------------------
-        subroutine diag_var( tau, wmm, qtm, wpqtp, thlm, wpthlp, 
+        subroutine diag_var( tau, wmm, rtm, wprtp, thlm, wpthlp, 
      .                       wp2, wp3, Sc,
-     .                       qtp2, thlp2, qtpthlp,
+     .                       rtp2, thlp2, rtpthlp,
      .                       liter, dt, isValid,
-     .                       sclrm, wpsclrp,
-     .                       sclrpqtp, sclrpthlp )
+     .                       sclrm, wpsclrp,              ! optional
+     .                       sclrp2, sclrpthlp )          ! optional
 
        use constants
        use grid_class
        
        implicit none
 
-c Input variables
+! Input variables
 
        real, intent(in) :: tau(1:gr%nnzp)
        real, intent(in) :: wmm(1:gr%nnzp)
-       real, intent(in) :: qtm(1:gr%nnzp)
-       real, intent(in) :: wpqtp(1:gr%nnzp)
+       real, intent(in) :: rtm(1:gr%nnzp)
+       real, intent(in) :: wprtp(1:gr%nnzp)
        real, intent(in) :: thlm(1:gr%nnzp)
        real, intent(in) :: wpthlp(1:gr%nnzp)
        real, intent(in) :: wp2(1:gr%nnzp)
@@ -31,19 +33,24 @@ c Input variables
        real, intent(in)    :: dt
 
 
-c Output variables
+! Output variables
+!  note: if liter=.true., then these would need to have an attrib. of type (inout)
 
-       real, intent(out) :: qtp2(1:gr%nnzp)
+       real, intent(out) :: rtp2(1:gr%nnzp)
        real, intent(out) :: thlp2(1:gr%nnzp)
-       real, intent(out) :: qtpthlp(1:gr%nnzp)
+       real, intent(out) :: rtpthlp(1:gr%nnzp)
 
 ! Input mixing scheme variables (optional)
+
        real, optional, intent(in), 
      . dimension(sclrm_dimension, gr%nnzp) :: sclrm, wpsclrp
 
 ! Output mixing scheme variables (optional)
+
        real, optional, intent(out), 
-     . dimension(sclrm_dimension, gr%nnzp) :: sclrpqtp, sclrpthlp 
+     . dimension(sclrm_dimension, gr%nnzp) :: sclrp2
+       real, optional, intent(out), 
+     . dimension(sclrm_dimension, gr%nnzp) :: sclrpthlp
 
 c Local constants
 
@@ -66,7 +73,7 @@ c Define a1 and a2
        a1 = 1.0 / (1.0-Sc)
        a2 = 1.0 / ( (1.0-Sc)*(1.0-Sc) )
 
-c Solve for qtp2
+c Solve for rtp2
 
 c      prepare tridiagonal system
 
@@ -98,26 +105,26 @@ c      prepare tridiagonal system
      .           - 0.5 * wmm(k) * gr%dzm(k)
      .           - nu2 * gr%dzm(k) * gr%dzt(kp1)
 
-         dd(k) = - 2.0 * wpqtp(k) * gr%dzm(k) * (qtm(kp1)-qtm(k))
+         dd(k) = - 2.0 * wprtp(k) * gr%dzm(k) * (rtm(kp1)-rtm(k))
      .           - 0.5 * a2(k)
      .                 * (2./3.) * ( 2 + (1-beta) )
      .                 * gr%dzm(k)
      .                 * (  wp3(kp1)
-     .                      * (wpqtp(k)+wpqtp(kp1))**2
+     .                      * (wprtp(k)+wprtp(kp1))**2
      .                      / max(wp2(k)+wp2(kp1),2.0*eps)**2
      .                    - wp3(k)
-     .                      * (wpqtp(km1)+wpqtp(k))**2
+     .                      * (wprtp(km1)+wprtp(k))**2
      .                      / max(wp2(km1)+wp2(k),2.0*eps)**2
      .                   )
-         if (liter) dd(k) = dd(k) + 1.0/dt*qtp2(k)
+         if (liter) dd(k) = dd(k) + 1.0/dt*rtp2(k)
 
        enddo
        
 c      solve tridiagonal system
-       call tridag( aa, bb, cc, dd, qtp2, gr%nnzp, isValid )
+       call tridag( aa, bb, cc, dd, rtp2, gr%nnzp, isValid )
 
        if ( .not. isValid ) then
-          print *, "diag_var: tridag failed"
+          print *, "diag_var: rtp2 tridag failed"
           return
        endif
 
@@ -126,12 +133,12 @@ c      clip small and negative values
        do k=1,gr%nnzp
 
          if ( wp2(k) >= wtol*wtol ) then
-           qtp2(k) 
-     .     = max( qtp2(k), 
-     .            wpqtp(k)*wpqtp(k)/((1.0-Sc(k))*wp2(k)) + eps,
-     .            qttol*qttol + eps )
+           rtp2(k) 
+     .     = max( rtp2(k), 
+     .            wprtp(k)*wprtp(k)/((1.0-Sc(k))*wp2(k)) + eps,
+     .            rttol*rttol + eps )
          else
-           qtp2(k) = max( qtp2(k), 0.0 )
+           rtp2(k) = max( rtp2(k), 0.0 )
          endif
 
        enddo
@@ -165,7 +172,7 @@ c      solve tridiagonal system
        call tridag( aa, bb, cc, dd, thlp2, gr%nnzp, isValid )
 
        if ( .not. isValid ) then
-          print *, "diag_var: tridag failed"
+          print *, "diag_var: thlp2 tridag failed"
           return
        endif
 c      clip small and negative values
@@ -183,7 +190,60 @@ c      clip small and negative values
 
        enddo
 
-c Solve for qtpthlp
+c Solve for sclrp2(1), the variance of a passive scalar
+
+c      prepare tridiagonal system
+c      note: we can reuse the same aa, bb, cc arrays
+
+      if (     present( sclrm )
+     .   .and. present( wpsclrp ) 
+     .   .and. present( sclrp2 ) ) then
+
+       do k=1,gr%nnzp
+
+         km1 = max(k-1,1)
+         kp1 = min(k+1,gr%nnzp)
+
+         dd(k) = - 2.0 * wpsclrp(1,k) * gr%dzm(k) 
+     .                 * ( sclrm(1,kp1)-sclrm(1,k) )
+     .           - 0.5 * a2(k)
+     .                 * (2./3.) * ( 2 + (1-beta) )
+     .                 * gr%dzm(k)
+     .                 * (  wp3(kp1)
+     .                      * (wpsclrp(1,k)+wpsclrp(1,kp1))**2
+     .                      / max( wp2(k)+wp2(kp1), 2.0*eps )**2
+     .                    - wp3(k)
+     .                      * (wpsclrp(1,km1)+wpsclrp(1,k))**2
+     .                      / max( wp2(km1)+wp2(k), 2.0*eps )**2
+     .                   )
+         if (liter) dd(k) = dd(k) + 1.0/dt*sclrp2(1,k)
+
+       enddo
+       
+c      solve tridiagonal system
+       call tridag( aa, bb, cc, dd, sclrp2(1,:), gr%nnzp, isValid )
+
+       if ( .not. isValid ) then
+          print *, "diag_var:  sclrp2 tridag failed"
+          return
+       endif
+
+c      clip small and negative values
+
+       do k=1, gr%nnzp
+
+         if ( wp2(k) >= wtol*wtol ) then
+           sclrp2(1,k) = max( sclrp2(1,k), 
+     .                        wpsclrp(1,k)*wpsclrp(1,k)/
+     .                        ( ( 1.0-Sc(k) )*wp2(k) ) + eps,
+     .                        sclrtol*sclrtol + eps )
+         else
+           sclrp2(1,k) = max( sclrp2(1,k), 0.0 )
+         endif
+       enddo ! k=1, nz
+      endif ! if present( sclrp2 )
+
+c Solve for rtpthlp
 
 c      prepare tridiagonal system
 
@@ -192,70 +252,30 @@ c      prepare tridiagonal system
          km1 = max(k-1,1)
          kp1 = min(k+1,gr%nnzp)
 
-         dd(k) = - wpthlp(k) * gr%dzm(k) * (qtm(kp1)-qtm(k))
-     .           - wpqtp(k)  * gr%dzm(k) * (thlm(kp1)-thlm(k))
+         dd(k) = - wpthlp(k) * gr%dzm(k) * (rtm(kp1)-rtm(k))
+     .           - wprtp(k)  * gr%dzm(k) * (thlm(kp1)-thlm(k))
      .           - 0.5 * a2(k)
      .                 * (2./3.) * ( 2 + (1-beta) )
      .                 * gr%dzm(k)
      .                 * (  wp3(kp1)
-     .                      * (wpqtp(k)+wpqtp(kp1))
+     .                      * (wprtp(k)+wprtp(kp1))
      .                      * (wpthlp(k)+wpthlp(kp1))
      .                      / max(wp2(k)+wp2(kp1),2.0*eps)**2
      .                    - wp3(k)
-     .                      * (wpqtp(km1)+wpqtp(k))
+     .                      * (wprtp(km1)+wprtp(k))
      .                      * (wpthlp(km1)+wpthlp(k))
      .                      / max(wp2(km1)+wp2(k),2.0*eps)**2
      .                   )
-         if (liter) dd(k) = dd(k) + 1.0/dt*qtpthlp(k)
+         if (liter) dd(k) = dd(k) + 1.0/dt*rtpthlp(k)
 
        enddo
        
 c      solve tridiagonal system
-       call tridag(aa,bb,cc,dd,qtpthlp,gr%nnzp, isValid)
+       call tridag( aa, bb, cc, dd, rtpthlp, gr%nnzp, isValid )
        if ( .not. isValid ) then
-          print *, "diag_var: tridag failed"
+          print *, "diag_var: rtpthlp tridag failed"
           return
        endif
-
-c Solve for sclrpqtp
-      if (     present( sclrm )
-     .   .and. present( wpsclrp ) 
-     .   .and. present( sclrpqtp ) ) then
-
-c     prepare tridiagonal system
-      do i=1, sclrm_dimension
-        do k=1,gr%nnzp
-
-          km1 = max(k-1,1)
-          kp1 = min(k+1,gr%nnzp)
-
-          dd(k) = - wpqtp(k) * gr%dzm(k) * (qtm(kp1)-qtm(k))
-     .            - wpsclrp(i,k) * gr%dzm(k) * (sclrm(i,kp1)-sclrm(i,k))
-     .            - 0.5 * a2(k)
-     .                  * (2./3.) * ( 2 + (1-beta) )
-     .                  * gr%dzm(k)
-     .                  * (  wp3(kp1)
-     .                       * (wpsclrp(i,k)+wpsclrp(i,kp1))
-     .                       * (wpqtp(k)+wpqtp(kp1))
-     .                       / max(wp2(k)+wp2(kp1),2.0*eps)**2
-     .                     - wp3(k)
-     .                       * (wpsclrp(i,km1)+wpsclrp(i,k))
-     .                       * (wpqtp(km1)+wpqtp(k))
-     .                       / max(wp2(km1)+wp2(k),2.0*eps)**2
-     .                    )
-          if (liter) dd(k) = dd(k) + 1.0/dt*sclrpqtp(i,k)
-
-        enddo ! k=1, nz
-       
-c       solve tridiagonal system
-        call tridag( aa, bb, cc, dd, sclrpqtp(i,:), gr%nnzp, isValid )
-        if ( .not. isValid ) then
-          print *, "diag_var: tridag failed"
-          return
-        endif 
-      enddo ! i=1, sclrm_dimension
-
-      endif ! present (sclr variables)
 
 c Solve for sclrpthlp
       if (     present( sclrm )
@@ -268,8 +288,8 @@ c     prepare tridiagonal system
           km1 = max(k-1,1)
           kp1 = min(k+1,gr%nnzp)
 
-          dd(k) = - wpthlp(k) * gr%dzm(k) * (thlm(kp1)-thlm(k))
-     .            - wpsclrp(i,k) * gr%dzm(k) * (sclrm(i,kp1)-sclrm(i,k))
+          dd(k) = - wpthlp(k) * gr%dzm(k) * (sclrm(i,kp1)-sclrm(i,k)) 
+     .            - wpsclrp(i,k) * gr%dzm(k) * (thlm(kp1)-thlm(k))
      .            - 0.5 * a2(k)
      .                  * (2./3.) * ( 2 + (1-beta) )
      .                  * gr%dzm(k)
@@ -289,7 +309,7 @@ c     prepare tridiagonal system
 c       solve tridiagonal system
         call tridag( aa, bb, cc, dd, sclrpthlp(i,:), gr%nnzp, isValid )
         if ( .not. isValid ) then
-          print *, "diag_var: tridag failed"
+          print *, "diag_var: sclrpthlp tridag failed"
           return
         endif 
       enddo ! i=1, slcrm_dimension
@@ -299,3 +319,4 @@ c       solve tridiagonal system
       return
       end subroutine diag_var
 !-----------------------------------------------------------------------
+      end module diagnose_variances

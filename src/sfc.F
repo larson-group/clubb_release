@@ -1,3 +1,7 @@
+! $Id: sfc.F,v 1.5 2005-07-01 16:14:54 dschanen Exp $
+      module surface
+      implicit none
+      contains
 !------------------------------------------------------------------------
 ! This subroutine computes surface momentum fluxes using aerodynamic
 ! formulas.
@@ -40,7 +44,7 @@
 ! aerodynamic formulas.
 !------------------------------------------------------------------------
         subroutine sfc_thermo_fluxes( u, v, Tsfc, psfc, thlair, rtair,
-     +                                wpthlp_sfc, wprtp_sfc )
+     .                                wpthlp_sfc, wprtp_sfc )
 
         use constants
 
@@ -88,7 +92,8 @@
 !------------------------------------------------------------------------
         subroutine sfc_var( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc,
      .                      wp2_sfc, thlp2_sfc, rtp2_sfc, rtpthlp_sfc, 
-     .                      sclrm_sfc, wpsclrp_sfc )
+     .                      wpsclrp_sfc,
+     .                      sclrp2_sfc, sclrpthlp_sfc )
 
         use constants
 
@@ -103,8 +108,6 @@
 
 ! Input (Optional) 
         real, optional, intent(IN),
-     .        dimension(sclrm_dimension)   :: sclrm_sfc
-        real, optional, intent(IN),
      .        dimension(sclrm_dimension)   :: wpsclrp_sfc
 
 ! Output
@@ -113,7 +116,14 @@
         real, intent(OUT) :: thlp2_sfc   ! thetal variance
         real, intent(OUT) :: rtp2_sfc    ! rt variance
         real, intent(OUT) :: rtpthlp_sfc ! thetal rt covariance
-        
+
+! Input (Optional) 
+        real, optional, intent(OUT),
+     .        dimension(sclrm_dimension)   :: sclrp2_sfc
+        real, optional, intent(OUT),
+     .        dimension(sclrm_dimension)   :: sclrpthlp_sfc
+
+       
 ! Internal
 
         real, parameter :: a = 1.8
@@ -142,10 +152,18 @@
 
 ! Compute estimate for surface second order moments
 
-        wp2_sfc =  a * uf**2
-        thlp2_sfc = 0.1 * a * ( wpthlp_sfc / uf )**2
-        rtp2_sfc = 0.4 * a * ( wprtp_sfc / uf )**2
+        wp2_sfc     =  a * uf**2
+        thlp2_sfc   = 0.1 * a * ( wpthlp_sfc / uf )**2
+        rtp2_sfc    = 0.4 * a * ( wprtp_sfc / uf )**2
         rtpthlp_sfc = a * ( wpthlp_sfc / uf ) * ( wprtp_sfc / uf )
+
+! Optional mixing scheme scalars
+        if (      present( wpsclrp_sfc ) .and. present( sclrp2_sfc ) 
+     .      .and. present( sclrpthlp_sfc ) ) then
+          sclrp2_sfc(1)    = 0.4 * a * ( wpsclrp_sfc(1) / uf )**2
+          sclrpthlp_sfc(1) = a * (wpthlp_sfc / uf)*(wpsclrp_sfc(1) / uf)
+        endif
 
         return
         end subroutine sfc_var
+      end module surface

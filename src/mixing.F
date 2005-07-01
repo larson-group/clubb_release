@@ -1,15 +1,24 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.4 2005-06-23 20:07:53 dschanen Exp $
+! $Id: mixing.F,v 1.5 2005-07-01 16:14:54 dschanen Exp $
+
+      module mixing
+      implicit none
+
+      public timestep_mixing
+      private mixing_solve
+      private mixing_lhs
+
+      contains
+!-----------------------------------------------------------------------
 ! Subroutine timestep_mixing( )
-!
 !-----------------------------------------------------------------------
         subroutine timestep_mixing
      .             ( dt, taum, wmm, wmt, wp2, wp3, Sc, exner,
      .               rtm, wprtp, 
      .               rtpthvp, rtm_forcing,
      .               cond_rrm, auto_rrm, accr_rrm,
-     .               thlm, wpthlp, thlpthvp, thlm_forcing, isValid )
-!     .               sclrm, wpsclrp, sclrpthvp, sclrm_forcing )
+     .               thlm, wpthlp, thlpthvp, thlm_forcing, isValid,
+     .               sclrm, wpsclrp, sclrpthvp, sclrm_forcing )
 
         use constants
         use grid_class
@@ -42,16 +51,18 @@
 !       Model status 
         logical, intent(inout) :: isValid
 !       Additions for new mixing scheme
-!        real, intent(inout), optional, 
-!     .     dimension(sclrm_dimension, gr%nnzp)   :: sclrm, sclrm_forcing
-!        real, intent(inout), optional, 
-!     .     dimension(sclrm_dimension, gr%nnzp)   :: wpsclrp, sclrpthvp
+        real, intent(inout), optional, 
+     .    dimension(:,:) :: sclrm, wpsclrp 
+        real, intent(in), optional, 
+     .    dimension(:,:) :: sclrpthvp, sclrm_forcing
 !       End Additions for new mixing scheme
 
 !       Internal
-
         real, allocatable    :: aa(:,:), dd(:), al(:,:)
         integer, allocatable :: indx(:)
+        integer i
+
+        real, dimension(gr%nnzp) :: tmp1, tmp2
 
 !       Allocate memory
         allocate( aa(1:2*gr%nnzp,1:5) )
@@ -68,6 +79,10 @@
            deallocate( aa, dd, al, indx )
            return
         endif
+!        print *, "before"
+!        print *, "rt=",  sum( sclrm )   - sum ( rtm ),
+!     .           "wp=",  sum( wprtp )   - sum ( wpsclrp ),
+!     .           "thvp=",sum( rtpthvp ) - sum ( sclrpthvp )
 
 !       Solve rtm / wprtp
         call mixing_solve( "rtm", .true., dt, taum, exner,
@@ -81,16 +96,23 @@
      .                     cond_rrm, auto_rrm, accr_rrm, ! Brian DYCOMS_2
      .                     aa, dd, al, indx )  
 
-!       Solve sclrp / wpsclrp
-!        if ( present( sclrm )     .and. present( wpsclrp ) .and.
-!     .       present( sclrpthvp ) .and. present( sclrm_forcing ) ) then
-!          call mixing_solve( "sclrm", .true., dt, taum, exner,
-!     .                       sclrm(1,:), wpsclrp(1,:),
-!     .                       sclrpthvp(1,:), sclrm_forcing(1,:),
-!     .                       cond_rrm, auto_rrm, accr_rrm,
-!     .                       aa, dd, al, indx )
-!        endif
+!       Solve sclrm / wpsclrp
+        if ( present( sclrm )     .and. present( wpsclrp ) .and.
+     .       present( sclrpthvp ) .and. present( sclrm_forcing ) ) then
+          do i=1, sclrm_dimension
+            call mixing_solve( "sclrm", .true., dt, taum, exner,
+     .                         sclrm(i,:), wpsclrp(i,:),
+     .                         sclrpthvp(i,:), sclrm_forcing(i,:),
+     .                         cond_rrm, auto_rrm, accr_rrm,
+     .                         aa, dd, al, indx )
+          enddo
+        endif
+!        print *, "after"
+!        print *, "rt=",  sum( sclrm )   - sum ( rtm ),
+!     .           "wp=",  sum( wprtp )   - sum ( wpsclrp ),
+!     .           "thvp=",sum( rtpthvp ) - sum ( sclrpthvp )
 
+ 
 !       Free memory
 
         deallocate( aa, dd, al, indx )
@@ -432,7 +454,7 @@
      .                 ( cond_rrm(k) + auto_rrm(k) + accr_rrm(k) )  ! thlm only; Brian
           case ( "sclrm" ) 
             dd(k_xm) = dd(k_xm)
-     .                 - cond_rrm(k) - auto_rrm(k) - accr_rrm(k)  ! rtm for now
+     .                 - cond_rrm(k) - auto_rrm(k) - accr_rrm(k)  ! sclrm = rtm for now
           end select
 
 !         wpxp: time tendency and buoyancy
@@ -617,3 +639,4 @@
 
         return
         end subroutine mixing_solve
+      end module mixing

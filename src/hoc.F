@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.17 2005-06-23 20:07:53 dschanen Exp $
+! $Id: hoc.F,v 1.18 2005-07-01 16:14:54 dschanen Exp $
 
 !      Module HOC
 !-----------------------------------------------------------------------
@@ -14,17 +14,16 @@
 
 !      Setup hoc_model() as the sole external interface for now
 
-       interface hoc_interface
-         module procedure hoc_model, hoc_initialize, 
-     .                    hoc_forcings_timestep, hoc_closure_timestep,
-     .                    latin_hypercube_sampling
-       end interface
-
-       private hoc_forcings_timestep
        private latin_hypercube_sampling
        private hoc_initialize
        private hoc_closure_timestep
+       private hoc_forcings_timestep
+       private hoc_model_standard, hoc_model_variable_input
        public hoc_model
+
+       interface hoc_model
+         module procedure hoc_model_variable_input, hoc_model_standard
+       end interface hoc_model
 
 !      Model settings
 
@@ -103,11 +102,177 @@
 !-------- End Latin hypercube section ----------------------------------
 
        contains
-
 !-----------------------------------------------------------------------
-!  subroutine hoc_model()
+!  subroutine hoc_model_variable_input()
 
 !  Subprogram to integrate the pde equations for pdf closure
+!  This version is modified to set fields from pre-calculated data
+
+!  Calls:  subroutine hoc_initialize (once)
+!          subroutine hoc_forcings_timestep (ifinal times)
+!          subroutine hoc_closure_timestep (ifinal*niterlong times)
+!          subroutine deallocate_model_arrays (once)
+!          function invalid_model_arrays
+!          subroutine optional_variables (passed as a parameter) 
+
+!  Input: Contants used in the model:
+!         C1_in, C2_in, C4_in, C5_in, C6_in, C7_in, C8_in, C10_in, C11_in
+!         nu1_in, nu2_in, nu6_in, nu8_in, 
+!         beta_in, gamma_coef_in, c_K_in
+!         lmin_coef_in, taumin_in, taumax_in, mu_in
+
+!         Other parameters:
+!         runfile:  Namelist filename on disk to read in.
+!         stdout:   Whether to print to stdout while running timesteps.
+
+!  Output: 
+!         isValid:  A false return value indicates something was unsound.
+!-----------------------------------------------------------------------
+
+       subroutine hoc_model_variable_input( 
+     .                       C1_in, C2_in, C4_in, C5_in, C6_in, C7_in, 
+     .                       C8_in, C10_in, C11_in, 
+     .                       nu1_in, nu2_in, nu6_in, nu8_in, beta_in,
+     .                       gamma_coef_in, c_K_in, 
+     .                       lmin_coef_in, taumin_in, taumax_in, mu_in,
+     .                       runfile, isValid, stdout, 
+     .                       optional_variables,
+     .                       um_in, vm_in, rtm_in,      ! optional
+     .                       thlm_in, wp2_in, wprtp_in, !  "   "
+     .                       wpthlp_in, wp3_in )        !  "   "
+
+       implicit none
+
+       interface
+         subroutine optional_variables 
+     .              ( um, vm, rtm, thlm, 
+     .                wp2, wprtp, wpthlp, wp3 )
+         implicit none
+
+         real, optional, dimension(:), intent(out) :: um
+         real, optional, dimension(:), intent(out) :: vm
+         real, optional, dimension(:), intent(out) :: rtm
+         real, optional, dimension(:), intent(out) :: thlm
+         real, optional, dimension(:), intent(out) :: wp2
+         real, optional, dimension(:), intent(out) :: wprtp
+         real, optional, dimension(:), intent(out) :: wpthlp
+         real, optional, dimension(:), intent(out) :: wp3
+         end subroutine optional_variables
+       end interface
+     
+!      External
+       logical, external :: invalid_model_arrays
+
+!      Subroutine Arguments (constants)
+       real, intent(in) :: C1_in, C2_in, C4_in, C5_in, C6_in, C7_in, 
+     .                     C8_in, C10_in, C11_in
+       real, intent(in) :: nu1_in, nu2_in, nu6_in, nu8_in
+       real, intent(in) :: beta_in
+       real, intent(in) :: gamma_coef_in
+       real, intent(in) :: c_K_in, taumin_in, taumax_in, lmin_coef_in
+       real, intent(in) :: mu_in
+
+!      Subroutine Arguments (Model Setting)
+       character(len=*), intent(in) :: runfile    ! Name of the nml file
+       logical, intent(in)          :: stdout     ! whether to print to the terminal
+       logical, intent(inout)       :: isValid    ! " " valid run ? (T/F)
+
+!      Optional Input Variable arguments
+       real, optional, dimension(:) :: um_in
+       real, optional, dimension(:) :: vm_in
+       real, optional, dimension(:) :: rtm_in
+       real, optional, dimension(:) :: thlm_in
+       real, optional, dimension(:) :: wp2_in
+       real, optional, dimension(:) :: wprtp_in
+       real, optional, dimension(:) :: wpthlp_in
+       real, optional, dimension(:) :: wp3_in
+
+!      Internal Timing Variables
+
+       integer ifinal
+       integer ioutput
+
+       integer niterlong
+       logical spunup                  ! Set but never used anywhere
+
+!      Internal Loop Variables
+       integer i, i1
+
+
+       print*, "In hoc variable input"
+
+! Initialize run to valid
+
+       isValid = .true.
+       
+!-------------------- Initialize the Model run --------------------------
+       call hoc_initialize( C1_in, C2_in, C4_in, C5_in, C6_in, C7_in, 
+     .                      C8_in, C10_in, C11_in, 
+     .                      nu1_in, nu2_in, nu6_in, nu8_in, beta_in,
+     .                      gamma_coef_in, c_K_in, 
+     .                      lmin_coef_in, taumin_in, taumax_in, mu_in,
+     .                      runfile, stdout ) 
+       
+!-------------------------- Time integration ---------------------------
+       ifinal  = ( time_final - time_initial )  / dtmain
+!       ioutput = dtoutput / dtmain
+
+       time    = time_initial
+       spunup  = .false.
+
+       call optional_variables( um_in, vm_in, rtm_in,      ! optional
+     .                          thlm_in, wp2_in, wprtp_in, !  "   "
+     .                          wpthlp_in, wp3_in )        !  "   "
+!<<<<<<<<<<<<<<<<<<<<<<<<<< Main time stepping loop <<<<<<<<<<<<<<<<<<<<<<<<
+       do i=1, ifinal
+         isValid = .not. invalid_model_arrays( ) ! Check for bad values 
+                                                 ! in the model arrays
+         call hoc_forcings_timestep( i, stdout, isValid )
+         if ( .not. isValid ) exit
+
+!      Compute number of iterations for closure loop
+         if ( time > time_spinup ) then
+            spunup    = .true.
+            niterlong = 1
+            dt        = dtmain
+         else
+            spunup    = .false.
+            niterlong = int( dtmain / dtclosure )
+            dt        = dtclosure
+         endif
+
+!<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+         do i1=1, niterlong
+#ifdef STATS
+           if ( mod( time, stats_tout ) == 0 ) then
+             call optional_variables( um_in, vm_in, rtm_in,      ! optional
+     .                                thlm_in, wp2_in, wprtp_in, !  "   "
+     .                                wpthlp_in, wp3_in )        !  "   "
+           endif
+#endif STATS
+
+           call hoc_closure_timestep( i1, isValid,
+     .                                um_in, vm_in, rtm_in,      ! optional
+     .                                thlm_in, wp2_in, wprtp_in, !  "   "
+     .                                wpthlp_in, wp3_in )        !  "   "
+           if ( .not. isValid ) exit
+         enddo
+!<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+          if ( .not. isValid ) exit
+       enddo
+!<<<<<<<<<<<<<<<<<<<<<<<<<< Main time stepping loop <<<<<<<<<<<<<<<<<<<<<<<<
+
+! Free memory
+
+        call deallocate_model_arrays( )
+
+        return
+        end subroutine hoc_model_variable_input
+!-----------------------------------------------------------------------
+!  subroutine hoc_model_standard()
+
+!  Subprogram to integrate the pde equations for pdf closure
+!    This is the standard call
 
 !  Calls:  subroutine hoc_initialize (once)
 !          subroutine hoc_forcings_timestep (ifinal times)
@@ -128,14 +293,13 @@
 !  Output: 
 !         isValid:  A false return value indicates something was unsound.
 !-----------------------------------------------------------------------
-       subroutine hoc_model( C1_in, C2_in, C4_in, C5_in, C6_in, C7_in, 
-     .                       C8_in, C10_in, C11_in, 
-     .                       nu1_in, nu2_in, nu6_in, nu8_in, beta_in,
-     .                       gamma_coef_in, c_K_in, 
-     .                       lmin_coef_in, taumin_in, taumax_in, mu_in,
-     .                       runfile, isValid, stdout,
-     .                       um_in, vm_in, rtm_in, thlm_in, 
-     .                       wp2_in, wprtp_in, wpthlp_in, wp3_in )
+       subroutine hoc_model_standard( C1_in, C2_in, C4_in, C5_in, C6_in,
+     .                                C7_in, C8_in, C10_in, C11_in, 
+     .                                nu1_in, nu2_in, nu6_in, nu8_in, 
+     .                                beta_in, gamma_coef_in, c_K_in, 
+     .                                lmin_coef_in, 
+     .                                taumin_in, taumax_in, mu_in,
+     .                                runfile, isValid, stdout )
 
        implicit none
 
@@ -156,16 +320,6 @@
        logical, intent(in)          :: stdout     ! whether to print to the terminal
        logical, intent(inout)       :: isValid    ! " " valid run ? (T/F)
 
-!      Optional Input Variable arguments
-       real, optional, dimension(:), intent(in) :: um_in
-       real, optional, dimension(:), intent(in) :: vm_in
-       real, optional, dimension(:), intent(in) :: rtm_in
-       real, optional, dimension(:), intent(in) :: thlm_in
-       real, optional, dimension(:), intent(in) :: wp2_in
-       real, optional, dimension(:), intent(in) :: wprtp_in
-       real, optional, dimension(:), intent(in) :: wpthlp_in
-       real, optional, dimension(:), intent(in) :: wp3_in
-
 !      Internal Timing Variables
 
        integer ifinal
@@ -177,12 +331,13 @@
 !      Internal Loop Variables
        integer i, i1
 
+       print*, "In hoc standard model"
+
 ! Initialize run to valid
 
        isValid = .true.
        
 !-------------------- Initialize the Model run --------------------------
-       !print*, "hoc_initialize"
        call hoc_initialize( C1_in, C2_in, C4_in, C5_in, C6_in, C7_in, 
      .                      C8_in, C10_in, C11_in, 
      .                      nu1_in, nu2_in, nu6_in, nu8_in, beta_in,
@@ -192,15 +347,15 @@
        
 !-------------------------- Time integration ---------------------------
        ifinal  = ( time_final - time_initial )  / dtmain
-       ioutput = dtoutput / dtmain
+!       ioutput = dtoutput / dtmain
 
        time    = time_initial
        spunup  = .false.
 
 !<<<<<<<<<<<<<<<<<<<<<<<<<< Main time stepping loop <<<<<<<<<<<<<<<<<<<<<<<<
        do i=1, ifinal
-         isValid = .not. invalid_model_arrays ! Check for bad values 
-                                              ! in the model arrays
+         isValid = .not. invalid_model_arrays( ) ! Check for bad values 
+                                                 ! in the model arrays
         ! print*, "hoc_forcings_timestep"
          call hoc_forcings_timestep( i, stdout, isValid )
          if ( .not. isValid ) exit
@@ -219,10 +374,7 @@
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
          do i1=1, niterlong
           ! print*, "hoc_closure_timestep"
-           call hoc_closure_timestep( i1, isValid,
-     .                                um_in, vm_in, rtm_in,      ! optional
-     .                                thlm_in, wp2_in, wprtp_in, !  "   "
-     .                                wpthlp_in, wp3_in )        !  "   "
+           call hoc_closure_timestep( i1, isValid )
            if ( .not. isValid ) exit
          enddo
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -235,7 +387,7 @@
         call deallocate_model_arrays( )
 
         return
-        end subroutine hoc_model
+        end subroutine hoc_model_standard
 
 !-----------------------------------------------------------------------
 !   Subroutine hoc_initialize
@@ -276,6 +428,8 @@
         use constants
         use grid_class
         use model_arrays
+        use sounding
+        use surface
 #ifdef STATS
         use statistics
 #endif STATS
@@ -333,16 +487,17 @@
         call initialize_model_arrays( )
 
 ! Set grid up
+
         call gridsetup( nzmax, deltaz, runtype )
 
 ! Read sounding information
-        ! print *, "read_sounding"
+
         call read_sounding( thlm, rtm, um, vm, ug, vg, 
-     .                      runfile, runtype )
-!     .                      sclrm ) ! optional
-! Debug
-!        sclrm(1, :) = rtm
-! End Debug
+     .                      runfile, runtype
+#ifdef SCALARS               
+     .                      ,sclrm   ! optional
+#endif SCALARS
+     .                    )
 
 ! At this point, thlm actually contains theta (except for DYCOMS). 
 ! We need to compute liquid water content, and initilialize thlm properly
@@ -443,7 +598,7 @@
 !       compute mixing length
 
         call length( thvm, thlm, rtm, rcm, 
-     .               em, p, exner, Lscale, lup, ldown, mu )
+     .               em, p, exner, Lscale, lup, ldown )
 
 !       dissipation time
 
@@ -469,9 +624,11 @@
 !       surface values of second order moments
 
         call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1),
-     .                wp2(1), thlp2(1), rtp2(1), rtpthlp(1) )
-!     .                sclrm(:,1), wpsclrp(:,1) )
-
+     .                wp2(1), thlp2(1), rtp2(1), rtpthlp(1) 
+#ifdef SCALARS
+     .                ,wpsclrp(:,1), sclrp2(:,1), sclrpthlp(:,1) ! Optional
+#endif SCALARS
+     .              )
 
 #ifdef STATS
 !       Initialize statistics output
@@ -488,8 +645,9 @@
 
        call stats_accumulate( time, dtmain )
        call stats_end_timestep( time, dtmain, dtclosure )
-
 #endif STATS
+
+       return
        end subroutine hoc_initialize
 !----------------------------------------------------------------------
 !    Subroutine hoc_forcings_timestep( )
@@ -512,8 +670,10 @@
         use constants
         use grid_class
         use model_arrays
+        use gcss
+        use surface
 #ifdef STATS
-        use statistics, only: lstats_last
+        use statistics
 #endif STATS
 
         implicit none
@@ -585,8 +745,11 @@
 
          case ( 4 ) ! Wangara dry CBL
            call wangara_tndcy( time, wmt, wmm, 
-     .                         thlm_forcing, rtm_forcing )
-!     .                         sclrm_forcing ) ! optional variable
+     .                         thlm_forcing, rtm_forcing
+#ifdef SCALARS
+     .                         ,sclrm_forcing   ! optional variable
+#endif SCALARS
+     .                        )
            kk_rain = .false.
 
          case ( 6 ) ! ATEX case
@@ -611,7 +774,11 @@
          case ( 9 ) ! DYCOMS2 RF02 case with drizzle
            call dycoms2_rf02_tndcy( rhot, rhom, rtm,
      .                              rcm, wmt, wmm, thlm_forcing, 
-     .                              rtm_forcing, isValid ) 
+     .                              rtm_forcing, isValid
+#ifdef SCALARS
+     .                              ,sclrm_forcing
+#endif SCALARS
+     .                             )
            kk_rain = .true.
 
          case ( 10 ) ! DYCOMS2 RF02 case with no drizzle
@@ -673,9 +840,12 @@
 
          case ( 4 )
            call wangara_sfclyr( time, um(2), vm(2),
-     .                            upwp(1), vpwp(1),
-     .                            wpthlp(1), wprtp(1) )
-!     .                            wpsclrp(:,1) )
+     .                           upwp(1), vpwp(1),
+     .                           wpthlp(1), wprtp(1)
+#ifdef SCALARS
+     .                           ,wpsclrp(:,1)
+#endif SCALARS
+     .                        )
 
          case ( 6 )
            call atex_sfclyr( um(2), vm(2), thlm(2), rtm(2),
@@ -696,7 +866,11 @@
            call dycoms2_rf02_sfclyr( um(2), vm(2), 
      .                               thlm(2), rtm(2),
      .                               psfc, upwp(1), vpwp(1), 
-     .                               wpthlp(1), wprtp(1) )
+     .                               wpthlp(1), wprtp(1)
+#ifdef SCALARS
+     .                               ,wpsclrp(:,1)
+#endif SCALARS
+     .                             )
 
          case ( 11 )
              ! There are no surface momentum or heat fluxes
@@ -708,6 +882,7 @@
 
          end select
 
+       return
        end subroutine hoc_forcings_timestep
 !-----------------------------------------------------------------------
 !    subroutine hoc_closure_timestep
@@ -746,6 +921,10 @@
        use constants
        use grid_class
        use model_arrays
+       use mixing
+       use diagnose_variances
+       use surface
+       use pdf_closure
 #ifdef STATS
        use statistics
 #endif STATS
@@ -754,6 +933,7 @@
 
 !      External
        real, external    :: rsat
+!       logical, external    :: invalid_model_arrays
 
 !      Input
        integer, intent(in)    :: iteration ! From i1 argument
@@ -770,9 +950,9 @@
        real, optional, dimension(:), intent(in) :: wp3_in
 
 !      Internal
-       integer k
+       integer j, k
 
-! Check the parameter list to see if any variables are being set manually
+!      Check the parameter list to see if any variables are being set manually
        if (present( um_in )) um         = um_in
        if (present( vm_in )) vm         = vm_in
        if (present( thlm_in )) thlm     = thlm_in
@@ -800,7 +980,7 @@
 !      Compute mixing length
 
        call length( thvm, thlm, rtm, rcm, 
-     .              em, p, exner, Lscale, lup, ldown, mu )
+     .              em, p, exner, Lscale, lup, ldown )
 
 !      Dissipation time
 
@@ -837,29 +1017,33 @@
        call diag_var( taum, wmm, rtm, wprtp, 
      .                thlm, wpthlp, wp2, wp3, Scm, 
      .                rtp2, thlp2, rtpthlp,
-     .                .false., dtclosure, isValid )
-!     .                 sclrm, wpsclrp,       ! optional vars
-!     .                 sclrprtp, sclrpthlp ) !   "       "
-
-!       print*, 'hoc.F: got past diag_var'
-
+     .                .false., dtclosure, isValid
+#ifdef SCALARS
+     .                ,sclrm, wpsclrp,          ! optional vars
+     .                sclrp2, sclrpthlp         !   "       "
+#endif SCALARS
+     .               )
        if ( .not. isValid ) return
 
 !      Call closure scheme and boundary conditions
 
        call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1),
-     .               wp2(1), thlp2(1), rtp2(1), rtpthlp(1) )
-!     .               wpsclrp(:,1) ) ! optional
+     .               wp2(1), thlp2(1), rtp2(1), rtpthlp(1)
+#ifdef SCALARS
+     .               ,wpsclrp(:,1),
+     .               sclrp2(:,1), sclrpthlp(:,1)
+#endif SCALARS
+     .             )
 
-! Latin hypercube sample generation 
-! Generate p_height_time, an nnzp x nt x d array of random integers
+!    Latin hypercube sample generation
+!    Generate p_height_time, an nnzp x nt x d array of random integers
        if ( LH_on ) then
          i_rmd = mod( iteration-1, sequence_length )
          if ( i_rmd == 0) then
            call permute_height_time( gr%nnzp, nt, d+1, p_height_time )
          endif
        endif
-! End Latin hypercube generation
+!    End Latin hypercube sample generation
 
 !       print*, 'hoc.F: i_rmd=', i_rmd
 
@@ -874,20 +1058,36 @@
        wp3(2)           = 0.
        wp3(gr%nnzp)     = 0.
 
+#ifdef SCALARS
+!     Optional passive scalars
+       wpsclrp(1, gr%nnzp)   = 0.
+       sclrp2(1, gr%nnzp)    = 0.
+       sclrpthlp(1, gr%nnzp) = 0.
+#endif SCALARS
+
        do k = 2, gr%nnzp - 1
-         call pdf_closure_new( p(k), exner(k), wmt(k), zm2zt(wp2, k), 
-     .                         wp3(k), Sct(k), rtm(k), zm2zt(rtp2, k), 
-     .                         zm2zt( wprtp, k ), thlm(k), 
-     .                         zm2zt(thlp2, k), zm2zt(wpthlp, k),
-     .                         wp4(k), wprtp2(k), wp2rtp(k),
-     .                         wpthlp2(k), wp2thlp(k), 
-     .                         zm2zt(rtpthlp, k), wprtpthlp(k),
-     .                         cf(k), rcm(k), wpthvp(k), wp2thvp(k), 
-     .                         rtpthvp(k), thlpthvp(k),
-     .                         wprcp(k), wp2rcp(k),
-     .                         rtprcp(k), thlprcp(k),
-     .                         pdf_parms(k, :),
-     .                         crt1, crt2, cthl1, cthl2 )
+           call pdf_closure_new( p(k), exner(k), wmt(k), zm2zt(wp2, k), 
+     .                           wp3(k), Sct(k), rtm(k), zm2zt(rtp2, k),
+     .                           zm2zt( wprtp, k ), thlm(k), 
+     .                           zm2zt( thlp2, k ), zm2zt( wpthlp, k ),
+     .                           wp4(k), wprtp2(k), wp2rtp(k),
+     .                           wpthlp2(k), wp2thlp(k), 
+     .                           zm2zt(rtpthlp, k), wprtpthlp(k),
+     .                           cf(k), rcm(k), wpthvp(k), wp2thvp(k), 
+     .                           rtpthvp(k), thlpthvp(k),
+     .                           wprcp(k), wp2rcp(k),
+     .                           rtprcp(k), thlprcp(k),
+     .                           pdf_parms(k, :),
+     .                           crt1, crt2, cthl1, cthl2
+#ifdef SCALARS
+     .                           ,sclrm(1,k), 
+     .                           zm2zt( wpsclrp(1,:), k),        ! optional
+     .                           wpsclrp2(1,k),                  !   " "
+     .                           zm2zt( sclrp2(1,:), k ),        !   " " 
+     .                           zm2zt( sclrpthlp(1,:), k ),     !   " "
+     .                           sclrpthvp(1,k), sclrprcp(1,k)   !   " "
+#endif SCALARS
+     .                          )
 
 !        Latin hypercube sampling.
          if ( LH_on ) call latin_hypercube_sampling( k )
@@ -896,28 +1096,31 @@
 !            print*, 'hoc.F: AKm=', AKm
 !            print*, 'hoc.F: AKm_est=', AKm_est
               
+#ifdef SCALARS
+!      Interpolate passive scalars back onto the m grid
+       sclrpthvp(1,:) = zt2zm( sclrpthvp(1,:) )                
+       sclrprcp(1,:)  = zt2zm( sclrprcp(1,:) )
+#endif SCALARS
 
 !      Interpolate variables back to m grid
        wp4         = zt2zm( wp4 )
        wpthvp      = zt2zm( wpthvp )
        wpthvp(1)   = wpthlp( 1 )
        thlpthvp    = zt2zm( thlpthvp )
-       thlpthvp(1) = thlp2( 1 ) 
-       rtpthvp     = zt2zm( rtpthvp )   
-       wprcp       = zt2zm( wprcp )       
-       rtprcp      = zt2zm( rtprcp )     
-       thlprcp     = zt2zm( thlprcp )   
-
- 
+       thlpthvp(1) = thlp2( 1 )
+       rtpthvp     = zt2zm( rtpthvp )
+       wprcp       = zt2zm( wprcp )
+       rtprcp      = zt2zm( rtprcp )
+       thlprcp     = zt2zm( thlprcp )
 
 !      Alternate approach for lower wp4 boundary condition:
 !      call pdf scheme at the 1st momentum level, zm(1)
 
-       call pdf_closure_new
+        call pdf_closure_new
      .      ( p(1), exner(1),
-     .        wmm(1), wp2(1), zt2zm( wp3, 1 ), Scm,
-     .        zt2zm( rtm, 1), rtp2(1), wprtp(1),
-     .        zt2zm(thlm,1), thlp2(1), wpthlp(1),
+     .        wmm(1), wp2(1), zt2zm( wp3, 1 ), Scm(1),
+     .        zt2zm( rtm, 1 ), rtp2(1), wprtp(1),
+     .        zt2zm( thlm, 1 ), thlp2(1), wpthlp(1),
      .        wp4(1),
      .        wprtp2(1), wp2rtp(1),
      .        wpthlp2(1), wp2thlp(1),
@@ -929,43 +1132,53 @@
      .        wprcp(1), wp2rcp(1),
      .        rtprcp(1), thlprcp(1),
      .        pdf_parms(1,:),
-     .        crt1, crt2, cthl1, cthl2 )
+     .        crt1, crt2, cthl1, cthl2 
+#ifdef SCALARS
+     .        ,zt2zm( sclrm(1,:), 1 ), wpsclrp(1,1),
+     .        wpsclrp2(1,1), sclrp2(1,1),
+     .        sclrpthlp(1,1), sclrpthvp(1,1),
+     .        sclrprcp(1,1)
+#endif SCALARS
+     .      )
 
        wp4(gr%nnzp)      = 0.
        wpthvp(gr%nnzp)   = 0.
        wp2thvp(gr%nnzp)  = 0.
        rtpthvp(gr%nnzp)  = 0.
-       thlpthvp(gr%nnzp) = 0.                        
+       thlpthvp(gr%nnzp) = 0.
+
+#ifdef SCALARS
+       sclrpthvp(1, gr%nnzp) = 0.
+#endif SCALARS
+
+       if (present( thlm_in )) thlm     = thlm_in
+       if (present( rtm_in )) rtm       = rtm_in
 
 !      call Khairoutdinov and Kogan (2000) scheme for rain microphysics.
 
        if ( kk_rain ) then
-         if ( LH_on ) then
-           call rain( dt, thlm, p, exner, rhot, wmt, pdf_parms,
-     .                rcm, rtm, rrm, Nrm, 
-     .                cond_rrm, auto_rrm,
-     .                accr_rrm, cond_Nrm, auto_Nrm, sed_rrm,
-     .                diff_rrm, subs_rrm, Vr, mean_vol_rad,
-     .                runtype, isValid, 
+         call rain( dt, thlm, p, exner, rhot, wmt, pdf_parms,
+     .              rcm, rtm, rrm, Nrm, 
+     .              cond_rrm, auto_rrm,
+     .              accr_rrm, cond_Nrm, auto_Nrm, sed_rrm,
+     .              diff_rrm, subs_rrm, Vr, mean_vol_rad,
+     .              runtype, isValid, 
 ! LH Kessler autoconversion.  Vince Larson 22 May 2005:
-     .                AKm_est, AKm )
-         else 
-           call rain( dt, thlm, p, exner, rhot, wmt, pdf_parms,
-     .                rcm, rtm, rrm, Nrm, 
-     .                cond_rrm, auto_rrm,
-     .                accr_rrm, cond_Nrm, auto_Nrm, sed_rrm,
-     .                diff_rrm, subs_rrm, Vr, mean_vol_rad,
-     .                runtype, isValid )
-
-         endif ! LH_on
+     .              AKm_est, AKm )
 
          rain_rate = ( rrm * Vr ) * ( rhot / 1000.0 )     ! rain rate (m/s)
      .                                 * ( 86400.0 * 1000.0 )  ! rate: mm/day
 
          F_precip = ( rrm * Vr ) * ( rhot / 1000.0 )
-     .                                * 1000.0 * Lv            ! Precip. flux (W/m^2)
-
+     .                                * 1000.0 * Lv       ! Precip. flux (W/m^2)
        endif ! kk_rain
+
+       if (present( thlm_in )) thlm     = thlm_in
+       if (present( wp2_in )) wp2       = wp2_in
+       if (present( wpthlp_in )) wpthlp = wpthlp_in
+       if (present( wp3_in )) wp3       = wp3_in
+       if (present( rtm_in )) rtm       = rtm_in
+       if (present( wprtp_in )) wprtp   = wprtp_in
 
 !#######################################################################
 !##############         SAVE OUTPUT TO DISK               ##############
@@ -1017,12 +1230,16 @@
 !#######################################################################
 
 !      Advance rtm/wprtp and thlm/wpthlp one time step
+
        call timestep_mixing
      .      ( dt, taum, wmm, wmt, wp2, wp3, Scm, exner, 
      .        rtm, wprtp, rtpthvp, rtm_forcing,
      .        cond_rrm, auto_rrm, accr_rrm,             
-     .        thlm, wpthlp, thlpthvp, thlm_forcing, isValid )
-!     .        sclrm, wpsclrp, sclrpthvp, sclrm_forcing ) ! optional
+     .        thlm, wpthlp, thlpthvp, thlm_forcing, isValid 
+#ifdef SCALARS
+     .        ,sclrm, wpsclrp, sclrpthvp, sclrm_forcing   ! optional
+#endif SCALARS
+     .      )
 
 !      Advance wp2/wp3 one timestep
 
@@ -1037,15 +1254,11 @@
        ! of Nov. 11 altocumulus case.  Brian.
        select case ( runtype )
        case ( 11 )
-         IF ( time < time_initial + 3600.0) THEN
+         if ( time < time_initial + 3600.0) then
            em = 1.0
            wp2 = (2.0/3.0) * em
-         ENDIF
+         endif
        end select
-
-       if (present( wp2_in )) wp2       = wp2_in
-       if (present( wpthlp_in )) wpthlp = wpthlp_in
-       if (present( wp3_in )) wp3       = wp3_in
 
 !      Update winds
 
@@ -1056,8 +1269,6 @@
        um(1)       = 2. * um(2) - um(3)
        um(gr%nnzp) = 2. * um(gr%nnzp-1) - um(gr%nnzp-2 )
 
-       if (present( um_in )) um       = um_in
-
        if ( .not. isValid ) return
 
        vmt 
@@ -1067,8 +1278,6 @@
        vm(1)       = 2. * vm(2) - vm(3)
        vm(gr%nnzp) = 2. * vm(gr%nnzp-1) - vm(gr%nnzp-2 )
            
-       if (present( vm_in )) vm       = vm_in
-
        if ( .not. isValid ) return
 
        ! Shear production.  Brian
@@ -1130,8 +1339,6 @@
 !       print*, 'k, AKm_est=', k, AKm_est(k)
 !       print*, 'k, AKm=', k, AKm(k)
 
+        return
         end subroutine latin_hypercube_sampling
-!-----------------------------------------------------------------------
-
-        end module hoc
-!------------------------------------------------------------------------
+      end module hoc

@@ -12875,7 +12875,7 @@ function tetrahedron_num ( n )
   tetrahedron_num = ( n * ( n + 1 ) * ( n + 2 ) ) / 6
 
   return
-end
+end function tetrahedron_num
 subroutine timestamp ( )
 
 !*******************************************************************************
@@ -12907,7 +12907,7 @@ subroutine timestamp ( )
   write ( *, '(a)' ) trim ( string )
 
   return
-end
+end subroutine timestamp
 subroutine timestring ( string )
 
 !*******************************************************************************
@@ -12986,7 +12986,7 @@ subroutine timestring ( string )
     trim ( month(m) ), d, y, h, ':', n, ':', s, '.', mm, trim ( ampm )
 
   return
-end
+end subroutine timestring
 function triangle_num ( n )
 
 !*******************************************************************************

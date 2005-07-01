@@ -266,9 +266,9 @@
 
           if ( itime < 1 .or. itime > f%ntimes ) then
              error = .true.
-!             write(*,*) 'get_var: itime < 1 .or. itime > f%ntimes'
-!             write(*,*) 'itime = ',itime
-!             write(*,*) 'f%ntimes = ',f%ntimes
+             write(*,*) 'get_var: itime < 1 .or. itime > f%ntimes'
+             write(*,*) 'itime = ',itime
+             write(*,*) 'f%ntimes = ',f%ntimes
              return
           end if
 

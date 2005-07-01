@@ -1,6 +1,8 @@
+! $Id: sounding.F,v 1.5 2005-07-01 16:14:54 dschanen Exp $
+      module sounding
+      implicit none
+      contains
 !------------------------------------------------------------------------
-! $Id: sounding.F,v 1.4 2005-06-23 20:07:53 dschanen Exp $
-
 ! subroutine read_sounding( )
 
 ! Subroutine to initialize model variables from namelist file
@@ -8,8 +10,8 @@
 !        with caution.
 !------------------------------------------------------------------------
         subroutine read_sounding( thlm, rtm, um, vm, ugm, vgm, runfile, 
-     .                            runtype )
-!     .                            sclrm ) ! optional
+     .                            runtype, 
+     .                            sclrm ) ! optional
 
         use grid_class
         use constants, only: sclrm_dimension
@@ -17,8 +19,7 @@
         implicit none
 
 ! External
-
-        real, external :: linint
+!        real, external :: linint
 
 ! Input
 
@@ -38,8 +39,9 @@
         real, intent(out), dimension(gr%nnzp) :: ugm
         real, intent(out), dimension(gr%nnzp) :: vgm
 
-!        real, optional, intent(out), 
-!     .        dimension(sclrm_dimension, gr%nnzp) :: sclrm
+! Optional Output for new mixing scheme
+        real, optional, intent(out), 
+     .        dimension(sclrm_dimension, gr%nnzp) :: sclrm
 
 ! Input variables from namelist
 
@@ -147,6 +149,9 @@
 !          endif      !  z(k) >= gr%zt(i) 
         enddo        !  i=2, gr%nnzp
 
+!       Temporary
+        if (present( sclrm )) sclrm(1,:) = rtm
+
         return
         end subroutine read_sounding
 
@@ -180,8 +185,8 @@
 
 ! External
 
-        real linint
-        external linint
+!        real linint
+!        external linint
 
 ! Parameter
 
@@ -260,3 +265,5 @@
 
         return
         end subroutine read_profile
+
+      end module sounding

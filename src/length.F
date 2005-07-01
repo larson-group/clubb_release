@@ -1,12 +1,12 @@
 !-----------------------------------------------------------------------------
-! $Id: length.F,v 1.7 2005-06-23 20:07:53 dschanen Exp $
+! $Id: length.F,v 1.8 2005-07-01 16:14:54 dschanen Exp $
 ! subroutine length( )
 
 ! Larson's 5th moist, nonlocal length scale
 !-----------------------------------------------------------------------------
         subroutine length( thvm, thlm, rtm, rcm, em, p, exner,
-     .                     Lscale, lup, ldown, mu)
-
+     .                     Lscale, lup, ldown ) 
+!mu) ! occurs in constants
         use constants
         use grid_class
 
@@ -29,7 +29,8 @@
 !       mu = (1/M)dM/dz > 0.  mu=0 for no entrainment.
 !       Siebesma recommends mu=2e-3, although most schemes use mu=1e-4
 !       When mu was fixed, we used the value mu = 6.e-4
-        real, intent(in) :: mu
+
+!        real, intent(in) :: mu ! constants.mod
 
 ! Output
 

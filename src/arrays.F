@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: arrays.F,v 1.8 2005-06-23 20:07:53 dschanen Exp $
+! $Id: arrays.F,v 1.9 2005-07-01 16:14:54 dschanen Exp $
 
 ! This module contains definitions of all prognostic and diagnostic
 ! arrays used in the single column model, as well as subroutine
@@ -23,24 +23,28 @@
         real, target, allocatable :: rtpthlp(:) ! rt'thl'
         real, target, allocatable :: wp3(:)     ! w'^3
 
+#ifdef SCALARS
 ! New mixing scheme variables
-!        real, target, allocatable :: sclrm(:,:)
-!        real, target, allocatable :: wpsclrp(:,:) 
-!        real, target, allocatable :: sclrm_forcing(:,:)
-!        real, target, allocatable :: sclrpthvp(:,:)
 
-!        real, target, allocatable :: sclrpthlp(:,:)
-!        real, target, allocatable :: sclrprtp(:,:)
-!        real, target, allocatable :: sclrprcp(:,:)
-!        real, target, allocatable :: wpsclrpthlp(:,:)
-!        real, target, allocatable :: wpsclrprtp(:,:)
+        real, target, allocatable :: sclrm(:,:)          ! passive scalars
+        real, target, allocatable :: sclrm_forcing(:,:)  ! scalars' forcing
+
+        real, target, allocatable :: sclrpthvp(:,:)      ! sclr'thv'
+        real, target, allocatable :: sclrp2(:,:)         ! sclr'^2
+        real, target, allocatable :: sclrpthlp(:,:)      ! sclr'thl'
+        real, target, allocatable :: sclrprcp(:,:)       ! sclr'rc'
+
+        real, target, allocatable :: wpsclrp(:,:)        ! w'sclr'
+        real, target, allocatable :: wpsclrp2(:,:)       ! w'sclr'^2
+        real, target, allocatable :: wpsclrpthlp(:,:)    ! w'sclr'thl'
+#endif SCALARS
 
 ! Tendency arrays for prognostic variables
 
         real, allocatable :: umt(:)             ! u wind
         real, allocatable :: vmt(:)             ! v wind
 
-! Diagnotic variables
+! Diagnostic variables
 
 !        real, target, allocatable :: Sc(:)        ! PDF width parameter
         real, target, allocatable :: Scm(:)       ! PDF width parameter: m point
@@ -334,17 +338,20 @@ c Diagnostic variables
 !        allocate( p_matrix(1:n,1:(d+1)) )  ! rand matrix that's fed to closure
 ! End of variables for Latin hypercube.
 
+#ifdef SCALARS
 ! Variables for new mixing scheme
-!        allocate( sclrm(1:sclrm_dimension, 1:nzmax) )
-!        allocate( wpsclrp(1:sclrm_dimension, 1:nzmax) )
-!        allocate( sclrpthvp(1:sclrm_dimension, 1:nzmax) )
-!        allocate( sclrm_forcing(1:sclrm_dimension, 1:nzmax) )
-!        allocate( sclrpthlp(1:sclrm_dimension, 1:nzmax) )
-!        allocate( sclrprtp(1:sclrm_dimension, 1:nzmax) )
-!        allocate( sclrprcp(1:sclrm_dimension, 1:nzmax) )
-!        allocate( wpsclrpthlp(1:sclrm_dimension, 1:nzmax) )
-!        allocate( wpsclrprtp(1:sclrm_dimension, 1:nzmax) )
-! end new mixing scheme
+        allocate( sclrm(1:sclrm_dimension, 1:nzmax) )
+        allocate( sclrm_forcing(1:sclrm_dimension, 1:nzmax) )
+
+        allocate( sclrp2(1:sclrm_dimension,1:nzmax) )
+        allocate( sclrpthvp(1:sclrm_dimension, 1:nzmax) )
+        allocate( sclrpthlp(1:sclrm_dimension, 1:nzmax) )
+        allocate( sclrprcp(1:sclrm_dimension, 1:nzmax) )
+
+        allocate( wpsclrp(1:sclrm_dimension, 1:nzmax) )
+        allocate( wpsclrp2(1:sclrm_dimension, 1:nzmax) )
+        allocate( wpsclrpthlp(1:sclrm_dimension, 1:nzmax) )
+#endif SCALARS
 
         return
         end subroutine allocate_model_arrays
@@ -489,17 +496,20 @@ c Diagnostic variables
 !        deallocate( p_matrix )  ! rand matrix that's fed to closure
 ! End of variables for Latin hypercube.
 
+#ifdef SCALARS
 ! New mixing scheme structures
-!        deallocate( sclrm )
-!        deallocate( wpsclrp )
-!        deallocate( sclrpthvp )
-!        deallocate( sclrm_forcing )
+        deallocate( sclrm )
+        deallocate( sclrm_forcing )
 
-!        deallocate( sclrpthlp )
-!        deallocate( sclrprtp )
-!        deallocate( sclrprcp )
-!        deallocate( wpsclrpthlp )
-!        deallocate( wpsclrprtp )
+        deallocate( sclrp2 )
+        deallocate( sclrpthvp )
+        deallocate( sclrpthlp )
+        deallocate( sclrprcp )
+
+        deallocate( wpsclrp )
+        deallocate( wpsclrp2 )
+        deallocate( wpsclrpthlp )
+#endif SCALARS
 
         return
         end subroutine deallocate_model_arrays
@@ -531,17 +541,20 @@ c Diagnostic variables
         rtpthlp      = 0.      ! rt'thl'
         wp3          = 0.      ! w'^3
 
+#ifdef SCALARS
 ! New mixing scheme Variables
-!        sclrm(:,:)         = 0. 
-!        sclrm_forcing(:,:) = 0.
-!        wpsclrp(:,:)       = 0. 
-!        sclrpthvp(:,:)     = 0. 
+        sclrm(:,:)         = 0. 
+        sclrm_forcing(:,:) = 0.
 
-!        sclrpthlp(:,:)     = 0.
-!        sclrprtp(:,:)      = 0.
-!        sclrprcp(:,:)      = 0.
-!        wpsclrpthlp(:,:)   = 0.
-!        wpsclrprtp(:,:)    = 0.
+        sclrp2(:,:)        = 0.
+        sclrpthvp(:,:)     = 0. 
+        sclrpthlp(:,:)     = 0.
+        sclrprcp(:,:)      = 0.
+
+        wpsclrp2(:,:)      = 0.
+        wpsclrpthlp(:,:)   = 0.
+        wpsclrp(:,:)       = 0. 
+#endif SCALARS
 
 ! Tendency arrays for prognostic variables
 
@@ -748,10 +761,24 @@ c Diagnostic variables
           return
         endif
 
-        invalid_model_arrays = isNaN( rrm )
+        invalid_model_arrays = isNaN( Nrm )
         if ( invalid_model_arrays ) then
-          print *, "NaN in rrm model array" 
-!         print *, "rrm= ", rrm
+          print *, "NaN in Nrm model array" 
+!         print *, "Nrm= ", Nrm
+          return
+        endif
+
+        invalid_model_arrays = isNaN( wmt )
+        if ( invalid_model_arrays ) then
+          print *, "NaN in wmt model array" 
+!         print *, "wmt= ", wmt
+          return
+        endif
+
+        invalid_model_arrays = isNaN( mean_vol_rad )
+        if ( invalid_model_arrays ) then
+          print *, "NaN in wmt model array" 
+!         print *, "mean_vol_rad = ", mean_vol_rad
           return
         endif
 

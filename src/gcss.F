@@ -1,11 +1,17 @@
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.8 2005-06-23 20:07:53 dschanen Exp $ 
+! $Id: gcss.F,v 1.9 2005-07-01 16:14:54 dschanen Exp $ 
 
 ! This file contains extra subroutines to simulate the GCSS ARM and
 ! GCSS BOMEX, GCSS ATEX, GCSS FIRE intercomparison cases as well 
 ! as Wangara day 33
 !----------------------------------------------------------------------
+      module gcss
 
+      implicit none
+
+      public
+
+      contains
 !----------------------------------------------------------------------
 ! Subroutine to set theta and water tendencies for ARM case
 !----------------------------------------------------------------------
@@ -48,7 +54,7 @@
         endif
 
         theta_tmp = ( 1. - a ) * ( atheta(i1) + rtheta(i1) )
-     +                + a * ( atheta(i2) + rtheta(i2) )
+     .                + a * ( atheta(i2) + rtheta(i2) )
 
         rt_tmp    = ( 1. - a ) * art(i1) + a * art(i2)
 
@@ -239,7 +245,7 @@
         rt_tndcy    = 0.
         theta_tndcy = 0.
 
-!       Scalar r forcing is just set to be rtm_forcing for now
+!       Scalar r forcing is just set to be = to rtm_forcing for now
         if ( present(sclr_tndcy) ) sclr_tndcy = 0.
 
         return
@@ -365,8 +371,8 @@
 
 !       External
 
-        real diag_ustar
-        external diag_ustar
+!        real diag_ustar
+!        external diag_ustar
 
 !       Constant
 
@@ -810,7 +816,7 @@
         end do
         if ( i == gr%nnzp+1 .or. i == 2 ) then
            write(*,*) 'Identification of 8.0 g/kg level failed'
-           write(*,*) 'Subroutine: dycoms_tndcy. File: gcss.f'
+           write(*,*) 'Subroutine: dycoms2_rf01_tndcy. File: gcss.f'
            write(*,*) 'i = ',i
            write(*,*) 'rtm(i) = ',rtm(i)
            isValid = .false.
@@ -878,7 +884,8 @@
 !----------------------------------------------------------------------
 
         SUBROUTINE dycoms2_rf02_tndcy( rhot, rhom, rtm, rcm, wmt, wmm,
-     .                                 theta_tndcy, rt_tndcy, isValid )
+     .                                 theta_tndcy, rt_tndcy, isValid,
+     .                                 sclr_tndcy )
 
         USE grid_class
         USE constants
@@ -897,6 +904,9 @@
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: wmm
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: theta_tndcy
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: rt_tndcy
+
+        ! Optional output
+        REAL, OPTIONAL, DIMENSION(gr%nnzp), INTENT(OUT):: sclr_tndcy
 
         ! Misc
         LOGICAL, INTENT(INOUT) :: isValid
@@ -946,7 +956,7 @@
         ENDDO
         IF ( k == gr%nnzp+1 .or. k == 2 ) THEN
            write(*,*) 'Identification of 8.0 g/kg level failed'
-           write(*,*) 'Subroutine: dycoms2_tndcy. File: gcss.f'
+           write(*,*) 'Subroutine: dycoms2_rf02_tndcy. File: gcss.f'
            write(*,*) 'k = ', k
            write(*,*) 'rtm(k) = ', rtm(k)
            isValid = .false.
@@ -1007,7 +1017,9 @@
           sfc%n(1,izi) = sfc%n(1,izi) + 1
         endif
 #endif
+        sclr_tndcy = rt_tndcy ! sclrm = rtm for now
 
+        RETURN
         END SUBROUTINE dycoms2_rf02_tndcy
 
 !----------------------------------------------------------------------
@@ -1090,21 +1102,28 @@
 !----------------------------------------------------------------------
 
         SUBROUTINE dycoms2_rf02_sfclyr( u_sfc, v_sfc, thl_sfc, rt_sfc,
-     .                                  p_sfc, uw, vw, wtp, wrp )
+     .                                  p_sfc, uw, vw, wtp, wrp,
+     .                                  wpsclr )
 
         USE constants
 
+! Input
         REAL, INTENT(IN):: u_sfc
         REAL, INTENT(IN):: v_sfc
         REAL, INTENT(IN):: thl_sfc
         REAL, INTENT(IN):: rt_sfc
         REAL, INTENT(IN):: p_sfc
 
+! Output
         REAL, INTENT(OUT):: uw
         REAL, INTENT(OUT):: vw
         REAL, INTENT(OUT):: wtp
         REAL, INTENT(OUT):: wrp
 
+! Output (optional)
+        REAL, OPTIONAL, INTENT(OUT):: wpsclr(:)
+
+! Internal
         REAL:: wind_sfc, Cd
 
         REAL, PARAMETER:: ustar = 0.28
@@ -1129,6 +1148,9 @@
         wtp = -Cd * wind_sfc * (thl_sfc - 292.0*(p0/p_sfc)**kappa)
         wrp = -Cd * wind_sfc * (rt_sfc - 0.013581)
 
+        if (present( wpsclr )) wpsclr(:) = wrp !  wpsclrp = wprtp for now
+
+        RETURN
         END SUBROUTINE dycoms2_rf02_sfclyr
 
 !----------------------------------------------------------------------
@@ -1658,7 +1680,7 @@
         REAL:: a, b, k_u, q, n
 
         ! For function call
-        REAL:: Diff_denom
+!        REAL:: Diff_denom
 
         REAL, PARAMETER:: Lf = 3.33e5
         ! Vince Larson avgd legs 2 and 7 (Fleishauer et al)  21 Jan 2005
@@ -1840,5 +1862,5 @@
         Diff_denom = Fk + Fd
 
         END FUNCTION Diff_denom
-
+      end module gcss
 !------------------------------------------------------------------------

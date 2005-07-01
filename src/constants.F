@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.6 2005-06-23 20:07:53 dschanen Exp $
+! $Id: constants.F,v 1.7 2005-07-01 16:14:54 dschanen Exp $
 
 !  Contains frequently occuring model constants
 !-----------------------------------------------------------------------
@@ -67,8 +67,10 @@
         real, parameter :: sstol   = 1.e-8
         real, parameter :: difftol = 0.4
 
+!       Tolerance for new mixing scheme
+        real, parameter :: sclrtol = 1.e-4
+
         real, parameter :: eps = 1e-10
-!
 !       Addition for machine independent epsilon
 !       It turns out we don't actually want this
 !        real             :: eps  ! smallest number which can be added to a fp

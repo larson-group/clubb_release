@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.11 2005-06-23 20:07:53 dschanen Exp $
+!  $Id: statistics.F,v 1.12 2005-07-01 16:14:54 dschanen Exp $
 
 !  module stats_type
 !  contains:
@@ -158,9 +158,11 @@ c       Indices for statistics in zt file
      .     irtp2zt,
      .     irtpthlpzt
 
-!        integer
-!     .     isclrm,        ! New mixing scheme
-!     .     iwpsclrp       ! New mixing scheme
+#ifdef SCALARS
+        integer
+     .     isclrm1,          ! New mixing scheme
+     .     isclrm_f1         ! New mixing scheme
+#endif SCALARS
 
 c       Indices for statistics in zm file
 
@@ -226,6 +228,13 @@ c       Indices for statistics in zm file
      .     iwpthlp_pr2,
      .     iwpthlp_pr3,
      .     iwpthlp_dp1
+
+#ifdef SCALARS
+        integer
+     .     iwpsclrp1,           ! New mixing scheme
+     .     iwpsclrpthlp1,       ! New mixing scheme
+     .     isclrpthvp1          ! New mixing scheme
+#endif SCALARS
 
 c       Indices for statistics in sfc file
 
@@ -474,8 +483,10 @@ c     -----------------------------------------------------------------
       irtp2zt    = 0
       irtpthlpzt = 0
 
-!      isclrm   = 0
-!      iwpsclrp = 0
+#ifdef SCALARS
+      isclrm1     = 0    ! new mixing scheme
+      isclrm_f1   = 0    !  "             "
+#endif SCALARS
 
 !     Assign pointers for statistics variables zt
 
@@ -1093,22 +1104,23 @@ c     -----------------------------------------------------------------
           zt%f%var(irtpthlpzt)%name = "rtpthlpzt"
           zt%f%var(irtpthlpzt)%description = "rtpthlpzt"
           k = k + 1
- 
-!        case ('sclrm')
-!          isclrm = k
-!          zt%f%var(isclrm)%ptr => zt%x(:,k)
-!          zt%f%var(isclrm)%name = "sclrm"
-!          zt%f%var(isclrm)%description 
-!     .    = "mixing variable (currently rtm)"
-!          k = k + 1
+#ifdef SCALARS 
+        case ('sclrm1')
+          isclrm1 = k
+          zt%f%var(isclrm1)%ptr => zt%x(:,k)
+          zt%f%var(isclrm1)%name = "sclrm1"
+          zt%f%var(isclrm1)%description 
+     .    = "mixing variable (currently rtm)"
+          k = k + 1
 
-!        case ('wpsclrp')
-!          iwpsclrp = k
-!          zt%f%var(iwpsclrp)%ptr => zt%x(:,k)
-!          zt%f%var(iwpsclrp)%name = "wpsclrp"
-!          zt%f%var(iwpsclrp)%description 
-!     .    = "mixing variable (currently wprtp)"
-!          k = k + 1
+        case ('sclrm_f1')
+          isclrm_f1 = k
+          zt%f%var(isclrm_f1)%ptr => zt%x(:,k)
+          zt%f%var(isclrm_f1)%name = "sclrm_f1"
+          zt%f%var(isclrm_f1)%description 
+     .    = "mixing variable forcing (currently rtm_forcing)"
+          k = k + 1
+#endif SCALARS
 
         case default
           write(*,*) 'Error: unrecognized variable ',trim(vars_zt(i))
@@ -1230,6 +1242,12 @@ c     -----------------------------------------------------------------
       iwpthlp_pr2 = 0
       iwpthlp_pr3 = 0
       iwpthlp_dp1 = 0
+
+#ifdef SCALARS
+      iwpsclrp1     = 0    ! New mixing scheme
+      iwpsclrpthlp1 = 0    ! New mixing scheme
+      isclrpthvp1   = 0    ! New mixing scheme
+#endif SCALARS
 
 !     Assign pointers for statistics variables zm
 
@@ -1631,8 +1649,34 @@ c     -----------------------------------------------------------------
      .    = "wpthlp dissipation term 1"
           k = k + 1
 
+#ifdef SCALARS
+        case ('wpsclrp1')
+          iwpsclrp1 = k
+          zm%f%var(iwpsclrp1)%ptr => zm%x(:,k)
+          zm%f%var(iwpsclrp1)%name = "wpsclrp1"
+          zm%f%var(iwpsclrp1)%description 
+     .    = "mixing variable (currently wprtp)"
+          k = k + 1
+
+        case ('wpsclrpthlp1')
+          iwpsclrpthlp1 = k
+          zm%f%var(iwpsclrpthlp1)%ptr => zm%x(:,k)
+          zm%f%var(iwpsclrpthlp1)%name = "wpsclrthlp1"
+          zm%f%var(iwpsclrpthlp1)%description 
+     .    = "wpsclrpthlp1"
+          k = k + 1
+
+        case ('sclrpthvp1')
+          isclrpthvp1 = k
+          zm%f%var(isclrpthvp1)%ptr => zm%x(:,k)
+          zm%f%var(isclrpthvp1)%name = "sclrpthvp1"
+          zm%f%var(isclrpthvp1)%description 
+     .    = "sclrpthvp1"
+          k = k + 1
+#endif SCALARS
+
         case default
-          write(*,*) 'Error: unrecognized variable ',trim(vars_zm(i))
+          write(*,*) 'Error: unrecognized variable ', trim(vars_zm(i))
           lerror = .true.
 
         end select
@@ -1863,7 +1907,7 @@ c     -----------------------------------------------------------------
 
 !     Set last time step flag
 
-      if ( mod( time, stats_tout ) .lt. 1.e-8 ) then
+      if ( mod( time, stats_tout ) < 1.e-8 ) then
          lstats_last = .true.
       else
          lstats_last = .false.
@@ -2300,16 +2344,17 @@ c     -----------------------------------------------------------------
           zt%x(:,irtpthlpzt) = zt%x(:,irtpthlpzt) + rtpthlpzt
           zt%n(:,irtpthlpzt) = zt%n(:,irtpthlpzt) + 1
         endif
+#ifdef SCALARS
+        if ( isclrm1 > 0 ) then
+          zt%x(:,isclrm1) = zt%x(:,isclrm1) + sclrm(1,:)
+          zt%n(:,isclrm1) = zt%n(:,isclrm1) + 1
+        endif
 
-!        if ( isclrm > 0 ) then
-!          zt%x(:,isclrm) = zt%x(:,isclrm) + sclrm(1,:)
-!          zt%n(:,isclrm) = zt%n(:,isclrm) + 1
-!        endif
-
-!        if ( iwpsclrp > 0 ) then
-!          zt%x(:,iwpsclrp) = zt%x(:,iwpsclrp) + wpsclrp(1,:)
-!          zt%n(:,iwpsclrp) = zt%n(:,iwpsclrp) + 1
-!        endif
+        if ( isclrm_f1 > 0 ) then
+          zt%x(:,isclrm_f1) = zt%x(:,isclrm_f1) + sclrm_forcing(1,:)
+          zt%n(:,isclrm_f1) = zt%n(:,isclrm_f1) + 1
+        endif
+#endif SCALARS
 
 !       zm variables
 
@@ -2409,6 +2454,22 @@ c     -----------------------------------------------------------------
           zm%x(:,ishear) = zm%x(:,ishear) + shear
           zm%n(:,ishear) = zm%n(:,ishear) + 1
         endif
+#ifdef SCALARS
+        if ( iwpsclrp1 > 0 ) then
+          zm%x(:,iwpsclrp1) = zm%x(:,iwpsclrp1) + wpsclrp(1,:)
+          zm%n(:,iwpsclrp1) = zm%n(:,iwpsclrp1) + 1
+        endif
+        if ( iwpsclrpthlp1 > 0 ) then
+          zm%x(:,iwpsclrpthlp1) = zm%x(:,iwpsclrpthlp1) 
+     .                            + wpsclrpthlp(1,:)
+          zm%n(:,iwpsclrpthlp1) = zm%n(:,iwpsclrpthlp1) + 1
+        endif
+        if ( isclrpthvp1 > 0 ) then
+          zm%x(:,isclrpthvp1) = zm%x(:,isclrpthvp1) 
+     .                            + sclrpthvp(1,:)
+          zm%n(:,isclrpthvp1) = zm%n(:,isclrpthvp1) + 1
+        endif
+#endif SCALARS
 
 ! sfc variables
 

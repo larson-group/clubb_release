@@ -1,33 +1,35 @@
-# $Id: Makefile,v 1.18 2005-06-23 20:07:53 dschanen Exp $
+# $Id: Makefile,v 1.19 2005-07-01 16:14:54 dschanen Exp $
 
 # Compiler invocation
 
- FC = pgf90
+FC = pgf90
 #FC = g95
 #FC = f95 
 
 # Compiler flags
-DEBUG = -g -C 
+
+DEBUG = -g -C -Minform=inform -Kieee #-Ktrap=inv
 
 #G95_P3_OPTIMIZE = -O3 -msse -march=pentium3
 #G95_P4_OPTIMIZE = -O3 -msse2 -march=pentium4
 #SUNPRO_X86_OPTIMIZE = -fast -ftrap=%none
-PGF_P4_OPTIMIZE = -O3 -fastsse -mp -Mconcur -Miomutex -tp p7
+#PGF_P4_OPTIMIZE = -O3 -fastsse -mp -Mconcur -Miomutex -tp p7 
+PGF_P4_OPTIMIZE = -O2 -tp p7 
 
-#FCFLAGS = $(G95_P4_OPTIMIZE) $(DEBUG) -DSTATS
-FCFLAGS = $(PGF_P4_OPTIMIZE) $(DEBUG) -DSTATS 
+#FCFLAGS = $(G95_P4_OPTIMIZE) $(DEBUG) -DSTATS -DSCALARS
+FCFLAGS = $(PGF_P4_OPTIMIZE) $(DEBUG) -DSTATS -DSCALARS
 
 # Linking Flags
-LDFLAGS = $(FCFLAGS)
+LDFLAGS = $(FCFLAGS) 
 
 # Object files
 OBJS	= polpak.o \
 	constants.o arrays.o endian.o outputgrads.o grid.o statistics.o \
 	banbks.o bandec.o erf.o tridag.o rain.o \
-	closure_new.o diag_var.o gcss.o hoc.o hydrostatic.o \
+	closure_new.o diag_var.o gcss.o hydrostatic.o \
 	length.o mixing.o rsat.o sat_rcm.o sfc.o \
 	sounding.o update.o wp23.o tau.o \
-	inputgrads.o gradsaverage.o error.o \
+	inputgrads.o gradsaverage.o hoc.o error.o \
 	\
 	nrtype.o nr.o nrutil.o ran_state.o ran1.o amebsa.o amoeba.o
 
@@ -89,7 +91,7 @@ clean:
 polpak.o	: polpak.f90
 endian.o	: endian.F
 constants.o	: constants.F
-rain.o		: rain.F polpak.f90
+rain.o		: constants.F polpak.f90 rain.F 
 outputgrads.o	: endian.F outputgrads.F
 arrays.o	: arrays.F constants.F
 inputgrads.o	: endian.F inputgrads.F
@@ -102,19 +104,21 @@ erf.o		: erf.F
 tridag.o	: tridag.F
 
 closure_new.o	: closure_new.F constants.F
-diag_var.o	: diag_var.F constants.F
-gcss.o		: gcss.F constants.F
-hoc.o		: constants.F gcss.F rain.F hoc.F 
-hydrostatic.o	: hydrostatic.F constants.F
+diag_var.o	: constants.F tridag.F diag_var.F 
+gcss.o		: constants.F gcss.F 
+mixing.o	: constants.F banbks.F bandec.F mixing.F 
+hoc.o		: constants.F gcss.F hydrostatic.F mixing.F rain.F \
+		  length.F statistics.F sounding.F diag_var.F rsat.F \
+		  grid.F sat_rcm.F update.F hoc.F
+hydrostatic.o	: constants.F hydrostatic.F 
 length.o	: constants.F length.F 
-mixing.o	: constants.F arrays.F mixing.F 
-rsat.o		: rsat.F constants.F
-sat_rcm.o	: sat_rcm.F constants.F
-sfc.o		: sfc.F constants.F
-sounding.o	: sounding.F
-update.o	: update.F
-wp23.o		: wp23.F constants.F
-tau.o		: tau.F constants.F
+rsat.o		: constants.F rsat.F 
+sat_rcm.o	: constants.F sat_rcm.F 
+sfc.o		: constants.F sfc.F 
+sounding.o	: constants.F sounding.F
+update.o	: tridag.F update.F
+wp23.o		: constants.F banbks.F bandec.F wp23.F 
+tau.o		: constants.F tau.F 
 
 nrtype.o	: nrtype.f90
 nr.o		: nr.f90 nrtype.f90

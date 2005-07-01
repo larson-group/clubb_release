@@ -1,4 +1,5 @@
 !----------------------------------------------------------------------
+! $Id: hoc_standalone.F,v 1.4 2005-07-01 16:14:54 dschanen Exp $
 !  Program HOC_STANDALONE
 !
 !  This is essentially a minimalist frontend for the hoc subroutine

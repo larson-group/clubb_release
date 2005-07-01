@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.6 2005-06-23 20:07:53 dschanen Exp $
+! $Id: error.F,v 1.7 2005-07-01 16:14:54 dschanen Exp $
 
 !       Module ERROR
 !
@@ -356,7 +356,7 @@
       enddo 
 
       write(*,*) "err_array:"
-      write(*,'(3e)')  err_array
+      write(*,'(3e5.5)')  err_array
 
       end subroutine tuner_init
 
@@ -463,7 +463,7 @@
      .                x_vector(12), x_vector(13), x_vector(14),
      .                x_vector(15), x_vector(16), x_vector(17), 
      .                x_vector(18), x_vector(19), x_vector(20),
-     .                runfile, isValid, stdout=.false. )
+     .                runfile, isValid, .false. )
 
 !-------------- Basic Sanity Check -------------------------------------
 !      if (minval( x_vector ) < 0. ) isValid = .false.
