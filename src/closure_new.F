@@ -446,30 +446,24 @@
 
 !       account for subplume correlation in qt-thl
         rtprcp   = a * ( (rt1-rtm)*rc1 + (crt1*srt1)*R1 )
-     .                 + (1-a) * ( (rt2-rtm)*rc2 + (crt2*srt2)*R2 )
+     .            + (1-a) * ( (rt2-rtm)*rc2 + (crt2*srt2)*R2 )
      .            - a*rrtthl*cthl1*sqrt(srt1)*sqrt(sthl1)*R1
      .            - (1-a)*rrtthl*cthl2*sqrt(srt2)*sqrt(sthl2)*R2
 
         rtpthvp  = rtpthlp + ep1*T0*rtp2 + BD*rtprcp
 
-!       account for subplume correlation between scalar, theta_v
+!       Account for subplume correlation between scalar, theta_v.
 !       See Eqs. A13, A8 from Larson et al. (2002) ``Small-scale..."
 !          where the ``scalar" in this paper is w.
-        sclrprcp  = a * ( (sclr1-sclrm)*rc1 + (crt1*srt1)*R1)
-     .            + (1-a) * ( (sclr2-sclrm)*rc2 + (crt2*ssclr2)*R2 )
+        sclrprcp  = a * ( (sclr1-sclrm)*rc1 )
+     .            + (1-a) * ( (sclr2-sclrm)*rc2 )
+     .            + a*rsclrrt*crt1*sqrt(ssclr1)*sqrt(srt1)*R1
+     .            + (1-a)*rsclrrt*crt2*sqrt(ssclr2)*sqrt(srt2)*R2
      .            - a*rsclrthl*cthl1*sqrt(ssclr1)*sqrt(sthl1)*R1
      .            - (1-a)*rsclrthl*cthl2*sqrt(ssclr2)*sqrt(sthl2)*R2
-! %% Debug
-!        print*, "sclrprcp - rtprcp",  sclrprcp - rtprcp 
-! %% Debug
 
         sclrpthvp  = sclrpthlp + ep1*T0*sclrp2 + BD*sclrprcp
 
-! %% Debug
-!        print*, "sclrpthlp - rtpthlp",  sclrpthlp - rtpthlp 
-!        print*, "sclrpthvp from rtpthlp",
-!     .         sclrpthvp - ( rtpthlp + ep1*T0*sclrp2 + BD*rtprcp )
-! %% Debug
 !       compute mean cloud fraction and cloud water
 
         cf  = a * R1 + (1-a) * R2
