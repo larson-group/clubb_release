@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.18 2005-07-01 16:14:54 dschanen Exp $
+! $Id: hoc.F,v 1.19 2005-07-01 23:31:21 griffinb Exp $
 
 !      Module HOC
 !-----------------------------------------------------------------------
@@ -1250,15 +1250,21 @@
      .       um, upwp, vm, vpwp, wpthvp, wp2thvp,
      .       wp2, wp3, em, isValid)
 
-       ! Set initial turbulence over first hour 
-       ! of Nov. 11 altocumulus case.  Brian.
-       select case ( runtype )
-       case ( 11 )
-         if ( time < time_initial + 3600.0) then
-           em = 1.0
-           wp2 = (2.0/3.0) * em
-         endif
-       end select
+       ! Set initial turbulence over first so many
+       ! minutes of the Nov. 11 altocumulus case.  Brian.
+       SELECT CASE ( runtype )
+       CASE ( 11 )
+         IF ( time < time_initial + 1800.0) THEN
+
+            DO k = 1, gr%nnzp, 1
+               IF ( thlm(k) <= 312.0 ) THEN
+                  em(k) = 1.0
+                  wp2(k) = (2.0/3.0) * em(k)
+               ENDIF
+            ENDDO
+
+         ENDIF
+       END SELECT
 
 !      Update winds
 
