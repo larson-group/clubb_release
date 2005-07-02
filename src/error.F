@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.7 2005-07-01 16:14:54 dschanen Exp $
+! $Id: error.F,v 1.8 2005-07-02 16:41:45 griffinb Exp $
 
 !       Module ERROR
 !
@@ -748,9 +748,11 @@
       write(20,*) "! Parameter file " // results_f
 
       write(20,*) "&model"
-      write(20,*) "run_name = ", trim( run_name(1) )
-      write(20,*) "runfile  = ", "../tune/" // trim( run_name(1) ) 
-     .             // "_hoc.in"
+      write(20,*) "run_name = ",
+     .             achar(34), trim( run_name(1) ), achar(34)
+      write(20,*) "runfile  = ",
+     .              achar(34), "../tune/" // trim( run_name(1) )
+     .             // "_hoc.in", achar(34)
       write(20,*) "stdout   = ", ".true."
       write(20,*) "/"
       
