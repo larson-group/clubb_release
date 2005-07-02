@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.20 2005-07-02 16:58:43 griffinb Exp $
+! $Id: hoc.F,v 1.21 2005-07-02 22:19:19 griffinb Exp $
 
 !      Module HOC
 !-----------------------------------------------------------------------
@@ -458,7 +458,6 @@
 
 !       Model settings
         integer day, month, year       ! day of start of simulation
-        integer time                   ! time start of simulation
 
 !       Internal
         integer k
