@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.19 2005-07-01 23:31:21 griffinb Exp $
+! $Id: hoc.F,v 1.20 2005-07-02 16:58:43 griffinb Exp $
 
 !      Module HOC
 !-----------------------------------------------------------------------
@@ -457,7 +457,8 @@
         real deltaz
 
 !       Model settings
-        integer day, month, year       ! day of start ot simulation
+        integer day, month, year       ! day of start of simulation
+        integer time                   ! time start of simulation
 
 !       Internal
         integer k
@@ -629,6 +630,8 @@
      .                ,wpsclrp(:,1), sclrp2(:,1), sclrpthlp(:,1) ! Optional
 #endif SCALARS
      .              )
+
+        time = time_initial
 
 #ifdef STATS
 !       Initialize statistics output
