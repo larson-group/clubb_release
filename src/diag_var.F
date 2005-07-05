@@ -287,26 +287,26 @@ c     prepare tridiagonal system
           km1 = max(k-1,1)
           kp1 = min(k+1,gr%nnzp)
 
-          dd(k) = - wpthlp(k) * gr%dzm(k) * (sclrm(i,kp1)-sclrm(i,k)) 
-     .            - wpsclrp(i,k) * gr%dzm(k) * (thlm(kp1)-thlm(k))
+          dd(k) = - wpthlp(k) * gr%dzm(k) * (sclrm(1,kp1)-sclrm(1,k)) 
+     .            - wpsclrp(1,k) * gr%dzm(k) * (thlm(kp1)-thlm(k))
      .            - 0.5 * a2(k)
      .                  * (2./3.) * ( 2 + (1-beta) )
      .                  * gr%dzm(k)
      .                  * (  wp3(kp1)
-     .                       * (wpsclrp(i,k)+wpsclrp(i,kp1))
+     .                       * (wpsclrp(1,k)+wpsclrp(1,kp1))
      .                       * (wpthlp(k)+wpthlp(kp1))
      .                       / max(wp2(k)+wp2(kp1),2.0*eps)**2
      .                     - wp3(k)
-     .                       * (wpsclrp(i,km1)+wpsclrp(i,k))
+     .                       * (wpsclrp(1,km1)+wpsclrp(1,k))
      .                       * (wpthlp(km1)+wpthlp(k))
      .                       / max(wp2(km1)+wp2(k),2.0*eps)**2
      .                    )
-          if (liter) dd(k) = dd(k) + 1.0/dt*sclrpthlp(i,k)
+          if (liter) dd(k) = dd(k) + 1.0/dt*sclrpthlp(1,k)
 
         enddo ! k=1, nz
        
 c       solve tridiagonal system
-        call tridag( aa, bb, cc, dd, sclrpthlp(i,:), gr%nnzp, isValid )
+        call tridag( aa, bb, cc, dd, sclrpthlp(1,:), gr%nnzp, isValid )
         if ( .not. isValid ) then
           print *, "diag_var: sclrpthlp tridag failed"
           return

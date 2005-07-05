@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.20 2005-07-05 16:30:11 dschanen Exp $
+# $Id: Makefile,v 1.21 2005-07-05 16:35:11 dschanen Exp $
 
 # Compiler invocation
 
@@ -8,7 +8,7 @@ FC = pgf90
 
 # Compiler flags
 
-DEBUG = -g -C #-Minform=inform -Kieee -Ktrap=inv
+DEBUG = -g -C -Minform=inform -Kieee -Ktrap=inv
 
 #G95_P3_OPTIMIZE = -O3 -msse -march=pentium3
 #G95_P4_OPTIMIZE = -O3 -msse2 -march=pentium4
