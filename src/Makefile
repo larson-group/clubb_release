@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.19 2005-07-01 16:14:54 dschanen Exp $
+# $Id: Makefile,v 1.20 2005-07-05 16:30:11 dschanen Exp $
 
 # Compiler invocation
 
@@ -8,13 +8,12 @@ FC = pgf90
 
 # Compiler flags
 
-DEBUG = -g -C -Minform=inform -Kieee #-Ktrap=inv
+DEBUG = -g -C #-Minform=inform -Kieee -Ktrap=inv
 
 #G95_P3_OPTIMIZE = -O3 -msse -march=pentium3
 #G95_P4_OPTIMIZE = -O3 -msse2 -march=pentium4
 #SUNPRO_X86_OPTIMIZE = -fast -ftrap=%none
-#PGF_P4_OPTIMIZE = -O3 -fastsse -mp -Mconcur -Miomutex -tp p7 
-PGF_P4_OPTIMIZE = -O2 -tp p7 
+PGF_P4_OPTIMIZE = -O2 -fastsse -tp p7
 
 #FCFLAGS = $(G95_P4_OPTIMIZE) $(DEBUG) -DSTATS -DSCALARS
 FCFLAGS = $(PGF_P4_OPTIMIZE) $(DEBUG) -DSTATS -DSCALARS

@@ -1,6 +1,8 @@
-! $Id: sfc.F,v 1.5 2005-07-01 16:14:54 dschanen Exp $
+! $Id: sfc.F,v 1.6 2005-07-05 16:30:11 dschanen Exp $
       module surface
+
       implicit none
+
       contains
 !------------------------------------------------------------------------
 ! This subroutine computes surface momentum fluxes using aerodynamic
@@ -44,7 +46,8 @@
 ! aerodynamic formulas.
 !------------------------------------------------------------------------
         subroutine sfc_thermo_fluxes( u, v, Tsfc, psfc, thlair, rtair,
-     .                                wpthlp_sfc, wprtp_sfc )
+     .                                wpthlp_sfc, wprtp_sfc,
+     .                                sclrair, wpsclrp_sfc )
 
         use constants
 
@@ -64,10 +67,20 @@
         real, intent(IN) :: thlair      ! thetal at first model layer (K)
         real, intent(IN) :: rtair       ! rt at first model layer (kg/kg)
 
+! Input (optional)
+
+        real, optional, intent(IN), 
+     .  dimension(sclrm_dimension) :: sclrair
+
 ! Output
 
         real, intent(OUT) :: wpthlp_sfc ! surface thetal flux ( K m/s )
         real, intent(OUT) :: wprtp_sfc  ! surface moisture flux ( kg/kg m/s )
+
+! Output (optional) 
+
+        real, optional, intent(OUT), 
+     .  dimension(sclrm_dimension) :: wpsclrp_sfc
 
 ! Parameter
 
@@ -82,6 +95,11 @@
         M = sqrt( u*u + v*v )
         wpthlp_sfc = -C * M * ( thlair - Tsfc * (psfc/p0)**kappa )
         wprtp_sfc  = -C * M * ( rtair - rsat(psfc,Tsfc) )
+
+! Compute passive scalar as == to wprtp for now
+        if ( present( wpsclrp_sfc ).and.present( sclrair ) ) then
+          wpsclrp_sfc(1) = -C * M * ( sclrair(1) - rsat(psfc, Tsfc) )
+        endif
 
         return
         end subroutine sfc_thermo_fluxes

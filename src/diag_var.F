@@ -283,7 +283,6 @@ c Solve for sclrpthlp
      .   .and. present( sclrpthlp ) ) then
 
 c     prepare tridiagonal system
-      do i=1, sclrm_dimension
         do k=1,gr%nnzp
           km1 = max(k-1,1)
           kp1 = min(k+1,gr%nnzp)
@@ -312,7 +311,6 @@ c       solve tridiagonal system
           print *, "diag_var: sclrpthlp tridag failed"
           return
         endif 
-      enddo ! i=1, slcrm_dimension
 
       endif ! present (sclr variables)
 

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.8 2005-07-02 16:41:45 griffinb Exp $
+! $Id: error.F,v 1.9 2005-07-05 16:30:11 dschanen Exp $
 
 !       Module ERROR
 !
@@ -441,7 +441,8 @@
 !-----------------------------------------------------------------------
 !  Cycle through all the model cases specified for HOC
 
-!  If the compiler supports OpenMP, it will try to run the model cases in parallel
+!  If the compiler supports OpenMP, it will try to run the model cases 
+!    in parallel.
 !-----------------------------------------------------------------------
 !$OMP PARALLEL
 !$OMP DO PRIVATE(hoc_zl, les_zl, les_minmax, runfile, hoc_stats_file) 

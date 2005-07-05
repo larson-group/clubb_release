@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.21 2005-07-02 22:19:19 griffinb Exp $
+! $Id: hoc.F,v 1.22 2005-07-05 16:30:11 dschanen Exp $
 
 !      Module HOC
 !-----------------------------------------------------------------------
@@ -356,7 +356,8 @@
        do i=1, ifinal
          isValid = .not. invalid_model_arrays( ) ! Check for bad values 
                                                  ! in the model arrays
-        ! print*, "hoc_forcings_timestep"
+         if ( .not. isValid ) exit
+
          call hoc_forcings_timestep( i, stdout, isValid )
          if ( .not. isValid ) exit
 
@@ -373,7 +374,6 @@
 
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
          do i1=1, niterlong
-          ! print*, "hoc_closure_timestep"
            call hoc_closure_timestep( i1, isValid )
            if ( .not. isValid ) exit
          enddo
@@ -729,17 +729,29 @@
            kk_rain = .false.
 
          case ( 1 ) ! ARM Cu case
-           call arm_tndcy( time, thlm_forcing, rtm_forcing )
+           call arm_tndcy( time, thlm_forcing, rtm_forcing
+#ifdef SCALARS
+     .                     ,sclrm_forcing 
+#endif SCALARS
+     .                   )
            kk_rain = .false.
 
          case ( 2 ) ! BOMEX Cu case
            call bomex_tndcy( time, wmt, wmm, 
-     .                       thlm_forcing, rtm_forcing )
+     .                       thlm_forcing, rtm_forcing
+#ifdef SCALARS
+     .                       ,sclrm_forcing 
+#endif SCALARS
+     .                     )
            kk_rain = .false.
 
          case ( 3 ) ! FIRE Sc case
            call fire_tndcy( time, wmt, wmm, thlm_forcing, 
-     .                      rtm_forcing)
+     .                      rtm_forcing
+#ifdef SCALARS
+     .                     ,sclrm_forcing 
+#endif SCALARS
+     . )
            thlm_forcing = 0.
 
            call cloud_rad( rhot, rcm, Frad, thlm_forcing )
@@ -749,7 +761,7 @@
            call wangara_tndcy( time, wmt, wmm, 
      .                         thlm_forcing, rtm_forcing
 #ifdef SCALARS
-     .                         ,sclrm_forcing   ! optional variable
+     .                        ,sclrm_forcing   ! optional variable
 #endif SCALARS
      .                        )
            kk_rain = .false.
@@ -757,7 +769,12 @@
          case ( 6 ) ! ATEX case
            call atex_tndcy( time, time_initial, rtm, 
      .                      wmt, wmm, thlm_forcing,
-     .                      rtm_forcing, isValid )
+     .                      rtm_forcing, isValid
+#ifdef SCALARS
+     .                     ,sclrm_forcing   ! optional variable
+#endif SCALARS
+     .                     )
+
            call cloud_rad( rhot, rcm, Frad, thlm_forcing )
            kk_rain = .false.
 
@@ -765,12 +782,20 @@
            call dycoms2_rf01_tndcy( time, rhot, rhom, rtm, 
      .                              rcm, wmt, wmm, Frad,
      .                              thlm_forcing, rtm_forcing, 
-     .                              isValid )
+     .                              isValid  
+#ifdef SCALARS
+     .                              ,sclrm, sclrm_forcing  ! optional variables
+#endif SCALARS
+     .                     )
            kk_rain = .false.
 
          case ( 8 ) ! ASTEX Sc case for K & K
            call astex_tndcy( time, wmt, wmm, 
-     .                       thlm_forcing, rtm_forcing )
+     .                       thlm_forcing, rtm_forcing
+#ifdef SCALARS
+     .                             ,sclrm_forcing   ! optional variable
+#endif SCALARS
+     .                     )
            kk_rain = .true.
 
          case ( 9 ) ! DYCOMS2 RF02 case with drizzle
@@ -787,14 +812,22 @@
            call dycoms2_rf02_tndcy( rhot, rhom, rtm, 
      .                              rcm, wmt, wmm,
      .                              thlm_forcing, rtm_forcing, 
-     .                              isValid ) 
+     .                              isValid 
+#ifdef SCALARS
+     .                             ,sclrm_forcing   ! optional variable
+#endif SCALARS
+     .                             )
            kk_rain = .false.
 
          case ( 11 ) ! Nov. 11 Altocumulus case.
            call nov11_altocu_tndcy( time, time_initial, dt, thlm,
      .                              rcm, p, exner, rhot, wmt, wmm,
      .                              thlm_forcing, rtm_forcing,
-     .                              Frad, Frad_LW, Frad_SW )
+     .                              Frad, Frad_LW, Frad_SW  
+#ifdef SCALARS
+     .                             ,sclrm_forcing   ! optional variable
+#endif SCALARS
+     .                             )
            kk_rain = .false.
 
          case default
@@ -818,11 +851,19 @@
            if ( sfctype == 0 ) then
              wpthlp(1)     = SE
              wprtp(1)      = LE
+#ifdef SCALARS
+             wpsclrp(1)    = LE
+#endif SCALARS
            else if ( sfctype == 1 ) then
              call sfc_thermo_fluxes( um(2), vm(2),
      .                               Tsfc, psfc, 
      .                               thlm(2), rtm(2),
-     .                               wpthlp(1), wprtp(1) )
+     .                               wpthlp(1), wprtp(1)
+#ifdef SCALARS
+     .                               ,sclrm(:,1), wpsclrp(:,1)
+#endif SCALARS
+     .                              )
+
            else
               write(*,*) 'Invalid value of sfctype = ', sfctype
               stop
@@ -833,12 +874,20 @@
            call arm_sfclyr( time, gr%zt(2), 1.1, 
      .                      thlm(2), um(2), vm(2),
      .                      upwp(1), vpwp(1), 
-     .                      wpthlp(1), wprtp(1), ustar )
+     .                      wpthlp(1), wprtp(1), ustar
+#ifdef SCALARS
+     .                      ,wpsclrp(:,1)
+#endif SCALARS
+     .                    )
 
          case ( 2 ) 
            call bomex_sfclyr( um(2), vm(2),
      .                        upwp(1), vpwp(1),
-     .                        wpthlp(1), wprtp(1) )
+     .                        wpthlp(1), wprtp(1)
+#ifdef SCALARS
+     .                      ,wpsclrp(:,1)
+#endif SCALARS
+     .                    )
 
          case ( 4 )
            call wangara_sfclyr( time, um(2), vm(2),
@@ -852,18 +901,30 @@
          case ( 6 )
            call atex_sfclyr( um(2), vm(2), thlm(2), rtm(2),
      .                       upwp(1), vpwp(1),
-     .                       wpthlp(1), wprtp(1) )
+     .                       wpthlp(1), wprtp(1)
+#ifdef SCALARS
+     .                      ,sclrm(:,1), wpsclrp(:,1)
+#endif SCALARS
+     .                    )
 
          case ( 7 ) 
            call dycoms2_rf01_sfclyr( sfctype, Tsfc, psfc, 
      .                               exner(1), um(2), vm(2), 
      .                               thlm(2), rtm(2), 
      .                               rhom(1), upwp(1), vpwp(1), 
-     .                               wpthlp(1), wprtp(1) )
+     .                               wpthlp(1), wprtp(1)
+#ifdef SCALARS
+     .                              ,sclrm(:,1), wpsclrp(:,1)
+#endif SCALARS
+     .                              )
          case ( 8 )
            call astex_sfclyr( rhom(1), um(2), vm(2),
      .                        upwp(1), vpwp(1), wpthlp(1), 
-     .                        wprtp(1) )
+     .                        wprtp(1)
+#ifdef SCALARS
+     .                      ,wpsclrp(:,1)
+#endif SCALARS
+     .                    )
          case ( 9, 10 )
            call dycoms2_rf02_sfclyr( um(2), vm(2), 
      .                               thlm(2), rtm(2),
