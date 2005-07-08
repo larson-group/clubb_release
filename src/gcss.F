@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.12 2005-07-08 14:12:25 griffinb Exp $ 
+! $Id: gcss.F,v 1.13 2005-07-08 14:14:50 griffinb Exp $ 
 
 ! This file contains extra subroutines to simulate the GCSS ARM and
 ! GCSS BOMEX, GCSS ATEX, GCSS FIRE intercomparison cases as well 
@@ -1854,11 +1854,11 @@
           thm(k) = thlm(k) + ( Lv / (Cp*exner(k)) ) * rcm(k)
           TT(k) = thm(k) * exner(k)
 
-          ! Check whether we're in cloud and below freezing
-          ! A value of 1.0E-5 is used as a threshold value for rcm
-          ! because the HOC model shows a small amount of liquid
-          ! water all the way to the model top, which messes with
-          ! the ice diffusion calculations.
+          ! Check whether we're in cloud and below freezing.
+          ! Note:  A value of 1.0E-5 kg/kg is used as a threshold value
+          ! for rcm because the HOC model shows a small amount of liquid
+          ! water all the way to the model top, which messes with the
+          ! ice diffusion calculations.
           IF ( rcm(k) >= 1.0E-5 .AND. TT(k) < 273.15 ) THEN
 
              ! Find saturation mixing ratio over vapor [kg kg^{-1}]
