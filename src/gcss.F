@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.10 2005-07-05 16:30:11 dschanen Exp $ 
+! $Id: gcss.F,v 1.11 2005-07-08 13:39:36 griffinb Exp $ 
 
 ! This file contains extra subroutines to simulate the GCSS ARM and
 ! GCSS BOMEX, GCSS ATEX, GCSS FIRE intercomparison cases as well 
@@ -1910,7 +1910,7 @@
              dm(k) = ( 4 * (Si(k) - 1) / Denom(k) )
      .          * (k_u**(-1.0)) * (rhot(k)**q)
      .          * ( (m(k)/a)**((1.0-n)/b) )
-     .          * gr%dzt(k)
+     .          * (1.0/gr%dzm(k-1))
              m(k-1) = m(k) + dm(k)
 
              ! Diameter of ice crystal in meters.
