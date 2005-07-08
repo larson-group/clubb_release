@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: arrays.F,v 1.10 2005-07-05 16:30:11 dschanen Exp $
+! $Id: arrays.F,v 1.11 2005-07-08 23:39:08 griffinb Exp $
 
 ! This module contains definitions of all prognostic and diagnostic
 ! arrays used in the single column model, as well as subroutine
@@ -772,13 +772,6 @@ c Diagnostic variables
         if ( invalid_model_arrays ) then
           print *, "NaN in wmt model array" 
 !         print *, "wmt= ", wmt
-          return
-        endif
-
-        invalid_model_arrays = isNaN( sclrm(1,:) )
-        if ( invalid_model_arrays ) then
-          print *, "NaN in sclrm1 model array" 
-          print *, "sclrm1 = ", sclrm(1,:)
           return
         endif
 
