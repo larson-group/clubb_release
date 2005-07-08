@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.22 2005-07-05 16:58:37 dschanen Exp $
+# $Id: Makefile,v 1.23 2005-07-08 16:08:13 dschanen Exp $
 
 # Compiler invocation
 
@@ -8,15 +8,17 @@ FC = pgf90
 
 # Compiler flags
 
-DEBUG = -g -C -Minform=inform #-Kieee -Ktrap=inv
+DEBUG = -g -C -Kieee #-Minform=inform -Ktrap=inv
 
-#G95_P3_OPTIMIZE = -O3 -msse -march=pentium3
-#G95_P4_OPTIMIZE = -O3 -msse2 -march=pentium4
+#G95_P3_OPTIMIZE = -O2 -msse -march=pentium3
+#G95_P4_OPTIMIZE = -O2 -msse2 -march=pentium4
 #SUNPRO_X86_OPTIMIZE = -fast -ftrap=%none
-PGF_P4_OPTIMIZE = -O2 -fastsse -tp p7
+#PGF_P4_OPTIMIZE = -O2 -fastsse -tp p7
+PGF_P4_OPTIMIZE = -O0 -tp p7
 
 #FCFLAGS = $(G95_P4_OPTIMIZE) $(DEBUG) -DSTATS -DSCALARS
-FCFLAGS = $(PGF_P4_OPTIMIZE) $(DEBUG) -DSTATS -DSCALARS
+#FCFLAGS = $(PGF_P4_OPTIMIZE) $(DEBUG) -DSTATS -DSCALARS
+FCFLAGS = $(PGF_P4_OPTIMIZE) $(DEBUG) -DSTATS
 
 # Linking Flags
 LDFLAGS = $(FCFLAGS) 
@@ -105,10 +107,10 @@ tridag.o	: tridag.F
 closure_new.o	: closure_new.F constants.F
 diag_var.o	: constants.F tridag.F diag_var.F 
 gcss.o		: constants.F gcss.F 
-mixing.o	: constants.F banbks.F bandec.F mixing.F 
+mixing.o	: constants.F statistics.F banbks.F bandec.F mixing.F 
 hoc.o		: constants.F gcss.F hydrostatic.F mixing.F rain.F \
 		  length.F statistics.F sounding.F diag_var.F rsat.F \
-		  grid.F sat_rcm.F update.F hoc.F
+		  grid.F sat_rcm.F update.F arrays.F hoc.F
 hydrostatic.o	: constants.F hydrostatic.F 
 length.o	: constants.F length.F 
 rsat.o		: constants.F rsat.F 
@@ -116,7 +118,7 @@ sat_rcm.o	: constants.F sat_rcm.F
 sfc.o		: constants.F sfc.F 
 sounding.o	: constants.F sounding.F
 update.o	: tridag.F update.F
-wp23.o		: constants.F banbks.F bandec.F wp23.F 
+wp23.o		: constants.F statistics.F banbks.F bandec.F wp23.F 
 tau.o		: constants.F tau.F 
 
 nrtype.o	: nrtype.f90
