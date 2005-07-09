@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.11 2005-06-23 20:07:53 dschanen Exp $
+! $Id: jacobian.F,v 1.12 2005-07-09 20:22:12 dschanen Exp $
 
 ! Program Jacobian
 
@@ -129,7 +129,7 @@
      .    "beta      ", "gamma_coef",
      .    "c_K       ", "mu        "/)
 
-      write(*, '(a12,a12,a12)'), "constant", "initial", "varied"
+      write(*, '(a12,a12,a12)') "constant", "initial", "varied"
       do i = 1, ca1%entries
         write(*,*) ca1%element(i)%name, ca1%element(i)%value, 
      .             ca1%element(i)%value * delta_factor
@@ -195,7 +195,8 @@
      .                  isValid, .false. )
 
         if ( .not. isValid ) then
-          jmatrix(i, :) = transfer(Z"7F800000", 1.0) ! Infinity bit pattern 
+          ! Infinity bit pattern 
+          jmatrix(i, :) = transfer( int( Z"7F800000" ), real( 1.0 ) )
           ca1%element(i)%value = tmp_constant
           cycle
         endif
