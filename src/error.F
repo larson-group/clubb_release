@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.9 2005-07-05 16:30:11 dschanen Exp $
+! $Id: error.F,v 1.10 2005-07-09 23:09:38 griffinb Exp $
 
 !       Module ERROR
 !
@@ -666,7 +666,7 @@
      .              achar(34), trim( run_name(i) ), achar(34)
         write(20,*) "z_i_in("// i_c //")  = " , z_i(i)
         write(20,*) "z_f_in("// i_c //")  = " ,  z_f(i)
-        write(20,*) "time_in("// i_c //")  = " , time(i,:)
+        write(20,*) "time_in("// i_c //",:)  = " , time(i,:)
         write(20,*) "hoc_nz_in("// i_c //")  = " ,  hoc_nz(i)
         write(20,*) "les_nz_in("// i_c //")  = " , les_nz(i)
       enddo
