@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.5 2005-07-01 16:14:54 dschanen Exp $
+! $Id: mixing.F,v 1.6 2005-07-09 17:50:52 griffinb Exp $
 
       module mixing
       implicit none
@@ -450,8 +450,8 @@
             dd(k_xm) = dd(k_xm)
      .                 - cond_rrm(k) - auto_rrm(k) - accr_rrm(k)  ! rtm only; Brian
           case ( "thlm" )
-            dd(k_xm) = dd(k_xm) + ( Lv / (Cp*exner(k)) ) *
-     .                 ( cond_rrm(k) + auto_rrm(k) + accr_rrm(k) )  ! thlm only; Brian
+            dd(k_xm) = dd(k_xm) - ( Lv / (Cp*exner(k)) ) *
+     .                 ( -cond_rrm(k) - auto_rrm(k) - accr_rrm(k) )  ! thlm only; Brian
           case ( "sclrm" ) 
             dd(k_xm) = dd(k_xm)
      .                 - cond_rrm(k) - auto_rrm(k) - accr_rrm(k)  ! sclrm = rtm for now
