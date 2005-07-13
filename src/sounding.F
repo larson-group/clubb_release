@@ -1,4 +1,4 @@
-! $Id: sounding.F,v 1.6 2005-07-13 20:59:43 dschanen Exp $
+! $Id: sounding.F,v 1.7 2005-07-13 21:15:53 dschanen Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
       module sounding
@@ -17,7 +17,7 @@
 !------------------------------------------------------------------------
         subroutine read_sounding( thlm, rtm, um, vm, ugm, vgm, runfile, 
      .                            runtype, 
-     .                            sclrm, sclr_sounding ) ! optional
+     .                            sclrm ) ! optional
 
         use grid_class
         use constants, only: sclrm_dimension
@@ -28,9 +28,6 @@
 
         character(len=*), intent(in) :: runfile
         integer, intent(in)          :: runtype
-
-! Input (Optional)
-        logical, optional, intent(in) :: sclr_sounding
 
 ! Parameter
 
@@ -63,8 +60,15 @@
 ! Internal
 
         integer i, j, k
+        logical  :: sclr_sounding
 
 ! Read sounding namelist
+        if present( sclrm ) then 
+          sclr_sounding = .true.
+        else
+          sclr_sounding = .false.
+        endif
+        
         open(10, file = runfile, status = 'old')
         read(10, nml = sounding)
 

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.23 2005-07-13 20:59:42 dschanen Exp $
+! $Id: hoc.F,v 1.24 2005-07-13 21:15:53 dschanen Exp $
 
 !      Module HOC
 !-----------------------------------------------------------------------
@@ -497,7 +497,7 @@
         call read_sounding( thlm, rtm, um, vm, ug, vg, 
      .                      runfile, runtype
 #ifdef SCALARS               
-     .                      ,sclrm, .true.   ! optional
+     .                      ,sclrm ! optional
 #endif SCALARS
      .                    )
 
