@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.7 2005-07-01 16:14:54 dschanen Exp $
+! $Id: constants.F,v 1.8 2005-07-13 20:59:42 dschanen Exp $
 
 !  Contains frequently occuring model constants
 !-----------------------------------------------------------------------
@@ -67,18 +67,19 @@
         real, parameter :: sstol   = 1.e-8
         real, parameter :: difftol = 0.4
 
-!       Tolerance for new mixing scheme
-        real, parameter :: sclrtol = 1.e-4
-
         real, parameter :: eps = 1e-10
-!       Addition for machine independent epsilon
-!       It turns out we don't actually want this
-!        real             :: eps  ! smallest number which can be added to a fp
-!                                 ! calculated with the epsilon( ) intrinsic
-!        double precision :: eps_dp ! "  ", but for double precision
 
-!     Added for new mixing scheme
-        integer, parameter :: sclrm_dimension   = 1
+!       Added for new mixing scheme.  
+!       Without this the intrinsic size() would have to be called often
+
+!       integer, parameter :: sclrm_dimension   = 1
+        integer, parameter :: sclrm_dimension   = 2
+
+!       Tolerance for new mixing scheme
+!       Currently it's elements are equal to rttol and thltol
+
+        real, dimension(sclrm_dimension), 
+     .        parameter :: sclrtol = (/thltol, rttol/)
 
       end module constants
 
@@ -158,18 +159,16 @@
 
 !     Constraints on mixing length
 !     Now in error.in, now 4.0 is the minimum
+
 !      lmin = 20.     ! Minimum value
 
 !     For DYCOMS
 !      lmin = 0.5 * deltaz
 
-!     Constraints on dissipation time
+!     Constraints on dissipation time (now in error.in)
 
 !      taumin =   90.
 !      taumax = 3600.
-
-!      eps    = epsilon( eps )
-!      eps_dp = epsilon( eps_dp )
 
       return
       end subroutine setup_constants

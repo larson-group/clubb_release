@@ -1,7 +1,13 @@
-! $Id: sfc.F,v 1.6 2005-07-05 16:30:11 dschanen Exp $
+! $Id: sfc.F,v 1.7 2005-07-13 20:59:43 dschanen Exp $
+#define SCLR_RT 2
+#define SCLR_THETA 1
       module surface
 
       implicit none
+
+      public sfc_momentum_fluxes
+      public sfc_thermo_fluxes
+      public sfc_var
 
       contains
 !------------------------------------------------------------------------
@@ -14,8 +20,6 @@
 
 ! Parameter
 
-!       This variable occurs in several parts of hoc, varying from .25 to 3.
-!       is it supposed to be constant?  -dschanen 5/25/05
         real, parameter :: ustar = 0.3
 
 ! Input
@@ -96,9 +100,12 @@
         wpthlp_sfc = -C * M * ( thlair - Tsfc * (psfc/p0)**kappa )
         wprtp_sfc  = -C * M * ( rtair - rsat(psfc,Tsfc) )
 
-! Compute passive scalar as == to wprtp for now
-        if ( present( wpsclrp_sfc ).and.present( sclrair ) ) then
-          wpsclrp_sfc(1) = -C * M * ( sclrair(1) - rsat(psfc, Tsfc) )
+! Compute passive scalar as == to wprtp & wpthlp for now
+        if ( present( wpsclrp_sfc ) .and. present( sclrair ) ) then
+          wpsclrp_sfc(SCLR_THETA) = -C * M *
+     .               ( sclrair(SCLR_THETA) - Tsfc*(psfc/p0)**kappa )
+          wpsclrp_sfc(SCLR_RT) = -C * M *
+     .               ( sclrair(SCLR_RT) - rsat(psfc, Tsfc) )
         endif
 
         return
@@ -110,8 +117,8 @@
 !------------------------------------------------------------------------
         subroutine sfc_var( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc,
      .                      wp2_sfc, thlp2_sfc, rtp2_sfc, rtpthlp_sfc, 
-     .                      wpsclrp_sfc,
-     .                      sclrp2_sfc, sclrpthlp_sfc )
+     .                      wpsclrp_sfc, sclrp2_sfc,
+     .                      sclrprtp_sfc, sclrpthlp_sfc )
 
         use constants
 
@@ -135,9 +142,11 @@
         real, intent(OUT) :: rtp2_sfc    ! rt variance
         real, intent(OUT) :: rtpthlp_sfc ! thetal rt covariance
 
-! Input (Optional) 
+! Output (Optional) 
         real, optional, intent(OUT),
      .        dimension(sclrm_dimension)   :: sclrp2_sfc
+        real, optional, intent(OUT),
+     .        dimension(sclrm_dimension)   :: sclrprtp_sfc
         real, optional, intent(OUT),
      .        dimension(sclrm_dimension)   :: sclrpthlp_sfc
 
@@ -147,9 +156,13 @@
         real, parameter :: a = 1.8
         real, parameter :: z = 1.
         real, parameter :: ufmin = 0.0001
+        real, parameter :: sclr_var_coef = 0.25  ! This value is made up!
+                                                 ! Vince Larson 12 Jul 2005
 
         real ustar2, wstar
         real uf
+
+        integer i
 
 ! Compute ustar^2
 
@@ -166,6 +179,7 @@
 ! Surface friction velocity following Andre et al. 1978
 
         uf = sqrt( ustar2 + 0.3 * wstar * wstar ) 
+!        uf = sqrt( ustar2 + 0.3 * wstar**2 )  !test
         uf = max( ufmin, uf )
 
 ! Compute estimate for surface second order moments
@@ -176,10 +190,26 @@
         rtpthlp_sfc = a * ( wpthlp_sfc / uf ) * ( wprtp_sfc / uf )
 
 ! Optional mixing scheme scalars
-        if (      present( wpsclrp_sfc ) .and. present( sclrp2_sfc ) 
+        if (      present( wpsclrp_sfc ) .and. present( sclrprtp_sfc ) 
      .      .and. present( sclrpthlp_sfc ) ) then
-          sclrp2_sfc(1)    = 0.4 * a * ( wpsclrp_sfc(1) / uf )**2
-          sclrpthlp_sfc(1) = a * (wpthlp_sfc / uf)*(wpsclrp_sfc(1) / uf)
+          do i=1, sclrm_dimension
+            sclrprtp_sfc(i)  = a * (wprtp_sfc / uf) 
+     .                           * (wpsclrp_sfc(i) / uf)
+            sclrpthlp_sfc(i) = a * (wpthlp_sfc / uf) 
+     .                           * (wpsclrp_sfc(i) / uf)
+            sclrp2_sfc(i)    = 
+     .                sclr_var_coef * a * ( wpsclrp_sfc(i) / uf )**2
+!       I have no idea why rtp2 and thlp2 have these coefficients
+!       -dschanen 7/6/05
+            select case( i ) 
+            case ( SCLR_RT )
+              sclrp2_sfc(i)   = 0.4 * a * ( wpsclrp_sfc(i) / uf )**2
+              sclrprtp_sfc(i) = 0.4 * a * ( wpsclrp_sfc(i) / uf )**2
+            case ( SCLR_THETA )
+              sclrp2_sfc(i)    =  0.1 * a * ( wpsclrp_sfc(i) / uf )**2
+              sclrpthlp_sfc(i) =  0.1 * a * ( wpsclrp_sfc(i) / uf )**2
+            end select
+          end do ! 1,...sclrm_dimension
         endif
 
         return

@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: arrays.F,v 1.11 2005-07-08 23:39:08 griffinb Exp $
+! $Id: arrays.F,v 1.12 2005-07-13 20:59:42 dschanen Exp $
 
 ! This module contains definitions of all prognostic and diagnostic
 ! arrays used in the single column model, as well as subroutine
@@ -29,13 +29,16 @@
         real, target, allocatable :: sclrm(:,:)          ! passive scalars
         real, target, allocatable :: sclrm_forcing(:,:)  ! scalars' forcing
 
-        real, target, allocatable :: sclrpthvp(:,:)      ! sclr'thv'
+        real, target, allocatable :: sclrpthvp(:,:)      ! sclr'th_v'
+        real, target, allocatable :: sclrprtp(:,:)       ! sclr'rt'
         real, target, allocatable :: sclrp2(:,:)         ! sclr'^2
-        real, target, allocatable :: sclrpthlp(:,:)      ! sclr'thl'
+        real, target, allocatable :: sclrpthlp(:,:)      ! sclr'th_l'
         real, target, allocatable :: sclrprcp(:,:)       ! sclr'rc'
 
         real, target, allocatable :: wpsclrp(:,:)        ! w'sclr'
+        real, target, allocatable :: wp2sclrp(:,:)       ! w'^2 sclr'
         real, target, allocatable :: wpsclrp2(:,:)       ! w'sclr'^2
+        real, target, allocatable :: wpsclrprtp(:,:)     ! w'sclr'rt'
         real, target, allocatable :: wpsclrpthlp(:,:)    ! w'sclr'thl'
 #endif SCALARS
 
@@ -340,17 +343,20 @@ c Diagnostic variables
 
 #ifdef SCALARS
 ! Variables for new mixing scheme
-        allocate( sclrm(1:sclrm_dimension, 1:nzmax) )
-        allocate( sclrm_forcing(1:sclrm_dimension, 1:nzmax) )
+        allocate( sclrm(1:nzmax, 1:sclrm_dimension) )
+        allocate( sclrm_forcing(1:nzmax, 1:sclrm_dimension) )
 
-        allocate( sclrp2(1:sclrm_dimension,1:nzmax) )
-        allocate( sclrpthvp(1:sclrm_dimension, 1:nzmax) )
-        allocate( sclrpthlp(1:sclrm_dimension, 1:nzmax) )
-        allocate( sclrprcp(1:sclrm_dimension, 1:nzmax) )
+        allocate( sclrprtp(1:nzmax, 1:sclrm_dimension) )
+        allocate( sclrp2(1:nzmax, 1:sclrm_dimension) )
+        allocate( sclrpthvp(1:nzmax, 1:sclrm_dimension) )
+        allocate( sclrpthlp(1:nzmax, 1:sclrm_dimension) )
+        allocate( sclrprcp(1:nzmax, 1:sclrm_dimension) )
 
-        allocate( wpsclrp(1:sclrm_dimension, 1:nzmax) )
-        allocate( wpsclrp2(1:sclrm_dimension, 1:nzmax) )
-        allocate( wpsclrpthlp(1:sclrm_dimension, 1:nzmax) )
+        allocate( wpsclrp(1:nzmax, 1:sclrm_dimension) )
+        allocate( wp2sclrp(1:nzmax, 1:sclrm_dimension) )
+        allocate( wpsclrp2(1:nzmax, 1:sclrm_dimension) )
+        allocate( wpsclrprtp(1:nzmax, 1:sclrm_dimension) )
+        allocate( wpsclrpthlp(1:nzmax, 1:sclrm_dimension) )
 #endif SCALARS
 
         return
@@ -501,13 +507,16 @@ c Diagnostic variables
         deallocate( sclrm )
         deallocate( sclrm_forcing )
 
+        deallocate( sclrprtp )
         deallocate( sclrp2 )
         deallocate( sclrpthvp )
         deallocate( sclrpthlp )
         deallocate( sclrprcp )
 
         deallocate( wpsclrp )
+        deallocate( wp2sclrp )
         deallocate( wpsclrp2 )
+        deallocate( wpsclrprtp )
         deallocate( wpsclrpthlp )
 #endif SCALARS
 
@@ -546,14 +555,17 @@ c Diagnostic variables
         sclrm(:,:)         = 0. 
         sclrm_forcing(:,:) = 0.
 
+        sclrprtp(:,:)      = 0.
         sclrp2(:,:)        = 0.
         sclrpthvp(:,:)     = 0. 
         sclrpthlp(:,:)     = 0.
         sclrprcp(:,:)      = 0.
 
-        wpsclrp2(:,:)      = 0.
-        wpsclrpthlp(:,:)   = 0.
         wpsclrp(:,:)       = 0. 
+        wp2sclrp(:,:)      = 0. 
+        wpsclrp2(:,:)      = 0. 
+        wpsclrprtp(:,:)    = 0.
+        wpsclrpthlp(:,:)   = 0.
 #endif SCALARS
 
 ! Tendency arrays for prognostic variables
@@ -701,7 +713,7 @@ c Diagnostic variables
         invalid_model_arrays = isNaN( wp2 )
         if ( invalid_model_arrays ) then
           print *, "NaN in wp2 model array" 
-!         print *, "wp2= ", wp2
+         print *, "wp2= ", wp2
           return
         endif
 
@@ -772,6 +784,13 @@ c Diagnostic variables
         if ( invalid_model_arrays ) then
           print *, "NaN in wmt model array" 
 !         print *, "wmt= ", wmt
+          return
+        endif
+
+        invalid_model_arrays = isNaN( wp2thvp )
+        if ( invalid_model_arrays ) then
+          print *, "NaN in wp2thvp model array" 
+!         print *, "wp2thvp = ", wp2thvp
           return
         endif
 

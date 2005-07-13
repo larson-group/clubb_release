@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------        
-! $Id: rain.F,v 1.15 2005-07-01 16:14:54 dschanen Exp $
+! $Id: rain.F,v 1.16 2005-07-13 20:59:43 dschanen Exp $
 
 ! This subroutine advances drizzle (rrm and Nrm) one timestep.
 ! It uses implicit discretization and formulas by 
@@ -171,7 +171,13 @@
 ! dd, which is the right-hand side matrix with rr(n,k) terms.
 
 !       Set the boundary condition
-        VNr(gr%nnzp) = 0.
+
+        Temp(gr%nnzp)   = 0.
+        es(gr%nnzp)     = 0.
+        rs(gr%nnzp)     = 0.
+        VNr(gr%nnzp)    = 0.
+        rvm(gr%nnzp)    = 0.
+        Supsat(gr%nnzp) = 0.
 
         DO k = 1, gr%nnzp-1, 1
 

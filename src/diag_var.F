@@ -9,8 +9,8 @@
      .                       wp2, wp3, Sc,
      .                       rtp2, thlp2, rtpthlp,
      .                       liter, dt, isValid,
-     .                       sclrm, wpsclrp,              ! optional
-     .                       sclrp2, sclrpthlp )          ! optional
+     .                       sclrm, wpsclrp, sclrp2,        ! optional
+     .                       sclrprtp, sclrpthlp )          ! optional
 
        use constants
        use grid_class
@@ -43,14 +43,12 @@
 ! Input mixing scheme variables (optional)
 
        real, optional, intent(in), 
-     . dimension(sclrm_dimension, gr%nnzp) :: sclrm, wpsclrp
+     . dimension(gr%nnzp, sclrm_dimension) :: sclrm, wpsclrp
 
 ! Output mixing scheme variables (optional)
 
        real, optional, intent(out), 
-     . dimension(sclrm_dimension, gr%nnzp) :: sclrp2
-       real, optional, intent(out), 
-     . dimension(sclrm_dimension, gr%nnzp) :: sclrpthlp
+     . dimension(gr%nnzp, sclrm_dimension):: sclrp2, sclrprtp, sclrpthlp
 
 c Local constants
 
@@ -182,15 +180,15 @@ c      clip small and negative values
          if ( wp2(k) >= wtol*wtol ) then
            thlp2(k) 
      .     = max( thlp2(k), 
-     .            wpthlp(k)*wpthlp(k)/((1.0-Sc(k))*wp2(k)) + 1.0e-8,
-     .            thltol*thltol + 1.0e-8 )
+     .            wpthlp(k)*wpthlp(k)/((1.0-Sc(k))*wp2(k)) + eps,
+     .            thltol*thltol + eps )
          else
            thlp2(k) = max( thlp2(k), 0.0 )
          endif
 
        enddo
 
-c Solve for sclrp2(1), the variance of a passive scalar
+c Solve for sclrp2
 
 c      prepare tridiagonal system
 c      note: we can reuse the same aa, bb, cc arrays
@@ -199,49 +197,54 @@ c      note: we can reuse the same aa, bb, cc arrays
      .   .and. present( wpsclrp ) 
      .   .and. present( sclrp2 ) ) then
 
-       do k=1,gr%nnzp
+       do i=1, sclrm_dimension
+       do k=1, gr%nnzp
 
          km1 = max(k-1,1)
          kp1 = min(k+1,gr%nnzp)
 
-         dd(k) = - 2.0 * wpsclrp(1,k) * gr%dzm(k) 
-     .                 * ( sclrm(1,kp1)-sclrm(1,k) )
+         dd(k) = - 2.0 * wpsclrp(k,i) * gr%dzm(k)
+     .                 * ( sclrm(kp1,i) - sclrm(k,i) )
      .           - 0.5 * a2(k)
      .                 * (2./3.) * ( 2 + (1-beta) )
      .                 * gr%dzm(k)
      .                 * (  wp3(kp1)
-     .                      * (wpsclrp(1,k)+wpsclrp(1,kp1))**2
-     .                      / max( wp2(k)+wp2(kp1), 2.0*eps )**2
+     .                      * (wpsclrp(k,i)+wpsclrp(kp1,i))**2
+     .                      / max(wp2(k)+wp2(kp1),2.0*eps)**2
      .                    - wp3(k)
-     .                      * (wpsclrp(1,km1)+wpsclrp(1,k))**2
-     .                      / max( wp2(km1)+wp2(k), 2.0*eps )**2
+     .                      * (wpsclrp(km1,i)+wpsclrp(k,i))**2
+     .                      / max(wp2(km1)+wp2(k),2.0*eps)**2
      .                   )
-         if (liter) dd(k) = dd(k) + 1.0/dt*sclrp2(1,k)
+         if (liter) dd(k) = dd(k) + 1.0/dt*sclrp2(k,i)
 
-       enddo
+       enddo ! k=1...nz
        
 c      solve tridiagonal system
-       call tridag( aa, bb, cc, dd, sclrp2(1,:), gr%nnzp, isValid )
+       call tridag( aa, bb, cc, dd, sclrp2(:,i), gr%nnzp, isValid )
 
        if ( .not. isValid ) then
-          print *, "diag_var:  sclrp2 tridag failed"
+          print *, "diag_var: sclrp2 tridag failed"
           return
        endif
-
 c      clip small and negative values
 
-       do k=1, gr%nnzp
+       do k=1,gr%nnzp
 
          if ( wp2(k) >= wtol*wtol ) then
-           sclrp2(1,k) = max( sclrp2(1,k), 
-     .                        wpsclrp(1,k)*wpsclrp(1,k)/
-     .                        ( ( 1.0-Sc(k) )*wp2(k) ) + eps,
-     .                        sclrtol*sclrtol + eps )
+           sclrp2(k,i) 
+     .     = max( sclrp2(k,i), 
+     .            wpsclrp(k,i)*wpsclrp(k,i)/((1.0-Sc(k))*wp2(k)) + eps,
+     .            sclrtol(i)*sclrtol(i) + eps )
          else
-           sclrp2(1,k) = max( sclrp2(1,k), 0.0 )
+           sclrp2(k,i) = max( sclrp2(k,i), 0.0 )
          endif
-       enddo ! k=1, nz
-      endif ! if present( sclrp2 )
+
+       enddo ! k
+       enddo ! i
+      endif
+! %% Debug
+!      sclrp2(:,2) = rtp2
+! %% Debug
 
 c Solve for rtpthlp
 
@@ -277,40 +280,109 @@ c      solve tridiagonal system
           return
        endif
 
+c Solve for sclrprtp
+      if (     present( sclrm )
+     .   .and. present( wpsclrp ) 
+     .   .and. present( sclrprtp ) ) then
+
+c     prepare tridiagonal system
+        do i=1, sclrm_dimension
+        do k=1, gr%nnzp
+          km1 = max(k-1,1)
+          kp1 = min(k+1,gr%nnzp)
+
+          dd(k) = - wprtp(k) * gr%dzm(k) * (sclrm(kp1,i)-sclrm(k,i)) 
+     .            - wpsclrp(k,i) * gr%dzm(k) * (rtm(kp1)-rtm(k))
+     .            - 0.5 * a2(k)
+     .                  * (2./3.) * ( 2 + (1-beta) )
+     .                  * gr%dzm(k)
+     .                  * (  wp3(kp1)
+     .                       * (wpsclrp(k,i)+wpsclrp(kp1,i))
+     .                       * (wprtp(k)+wprtp(kp1))
+     .                       / max(wp2(k)+wp2(kp1),2.0*eps)**2
+     .                     - wp3(k)
+     .                       * (wpsclrp(km1,i)+wpsclrp(k,i))
+     .                       * (wprtp(km1)+wprtp(k))
+     .                       / max(wp2(km1)+wp2(k),2.0*eps)**2
+     .                    )
+          if (liter) dd(k) = dd(k) + 1.0/dt*sclrprtp(k,i)
+
+        enddo ! k=1, nz
+       
+c       solve tridiagonal system
+        call tridag( aa, bb, cc, dd, sclrprtp(:,i), gr%nnzp, isValid )
+        if ( .not. isValid ) then
+          print *, "diag_var: sclrprtp tridag failed"
+          return
+        endif 
+       enddo ! i=1, slcrm_dimension
+
+c      clip small and negative values
+!        We don't want to do this generally, only to test that the scalars
+!        work with their 2nd element is rt
+!       do k=1, gr%nnzp
+!         if ( wp2(k) >= wtol*wtol ) then
+!           sclrprtp(k,2) 
+!     .     = max( sclrprtp(k,2), 
+!     .            wpsclrp(k,2)*wpsclrp(k,2)/((1.0-Sc(k))*wp2(k)) + eps,
+!     .            sclrtol(2)*sclrtol(2) + eps )
+!         else
+!           sclrprtp(k,2) = max( sclrprtp(k,2), 0.0 )
+!         endif
+!       enddo ! k
+!
+      endif ! present (sclr variables)
+
 c Solve for sclrpthlp
       if (     present( sclrm )
      .   .and. present( wpsclrp ) 
      .   .and. present( sclrpthlp ) ) then
 
 c     prepare tridiagonal system
-        do k=1,gr%nnzp
+        do i=1, sclrm_dimension
+        do k=1, gr%nnzp
           km1 = max(k-1,1)
           kp1 = min(k+1,gr%nnzp)
 
-          dd(k) = - wpthlp(k) * gr%dzm(k) * (sclrm(1,kp1)-sclrm(1,k)) 
-     .            - wpsclrp(1,k) * gr%dzm(k) * (thlm(kp1)-thlm(k))
+          dd(k) = - wpthlp(k) * gr%dzm(k) * (sclrm(kp1,i)-sclrm(k,i)) 
+     .            - wpsclrp(k,i) * gr%dzm(k) * (thlm(kp1)-thlm(k))
      .            - 0.5 * a2(k)
      .                  * (2./3.) * ( 2 + (1-beta) )
      .                  * gr%dzm(k)
      .                  * (  wp3(kp1)
-     .                       * (wpsclrp(1,k)+wpsclrp(1,kp1))
+     .                       * (wpsclrp(k,i)+wpsclrp(kp1,i))
      .                       * (wpthlp(k)+wpthlp(kp1))
      .                       / max(wp2(k)+wp2(kp1),2.0*eps)**2
      .                     - wp3(k)
-     .                       * (wpsclrp(1,km1)+wpsclrp(1,k))
+     .                       * (wpsclrp(km1,i)+wpsclrp(k,i))
      .                       * (wpthlp(km1)+wpthlp(k))
      .                       / max(wp2(km1)+wp2(k),2.0*eps)**2
      .                    )
-          if (liter) dd(k) = dd(k) + 1.0/dt*sclrpthlp(1,k)
+          if (liter) dd(k) = dd(k) + 1.0/dt*sclrpthlp(k,i)
 
         enddo ! k=1, nz
        
 c       solve tridiagonal system
-        call tridag( aa, bb, cc, dd, sclrpthlp(1,:), gr%nnzp, isValid )
+        call tridag( aa, bb, cc, dd, sclrpthlp(:,i), gr%nnzp, isValid )
         if ( .not. isValid ) then
           print *, "diag_var: sclrpthlp tridag failed"
           return
         endif 
+        enddo ! i=1, slcrm_dimension
+
+c      clip small and negative values
+!        We don't want to do this generally, only to test that the scalars
+!        work with their 1st element is thl
+!       do k=1, gr%nnzp
+!         if ( wp2(k) >= wtol*wtol ) then
+!           sclrpthlp(k,1) 
+!     .     = max( sclrpthlp(k,1), 
+!     .            wpsclrp(k,1)*wpsclrp(k,1)/((1.0-Sc(k))*wp2(k)) + eps,
+!     .            sclrtol(1)*sclrtol(1) + eps )
+!         else
+!           sclrpthlp(k,1) = max( sclrpthlp(k,1), 0.0 )
+!         endif
+!       enddo ! k
 
       endif ! present (sclr variables)
 

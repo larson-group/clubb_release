@@ -29,7 +29,8 @@ c         Structure to hold description of a variable
 
           type variable
             real, pointer :: ptr(:)               ! pointer to the array
-            character (len = 10) name             ! variable name
+!            character (len = 10) name             ! variable name
+            character (len = 15) name             ! variable name
             character (len = 50) description      ! variable decsription
           end type variable
 
@@ -399,7 +400,8 @@ c         Internal
 
           integer i,k
           integer ios
-          real*4 xtmp
+!          real*4 xtmp    
+          real(kind=4) xtmp    
           character(len=15) date
 
 c         Check number of variables and write nothing if less than 1

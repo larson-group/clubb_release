@@ -28,9 +28,11 @@
      .                              wprcp, wp2rcp, rtprcp, thlprcp,
      .                              pdf_parms,
      .                              crt1, crt2, cthl1, cthl2,
-     .                              sclrm, wpsclrp, wpsclrp2,    ! optional
-     .                              sclrp2, sclrpthlp,           !  "    "
-     .                              sclrpthvp, sclrprcp )        !  "    "
+     .                              sclrm, wpsclrp,                    !optional
+     .                              wpsclrprtp, wpsclrp2,              ! "    "
+     .                              sclrprtp, sclrp2, sclrpthlp,       ! "    "
+     .                              sclrpthvp , wpsclrpthlp, sclrprcp, ! "    "
+     .                              wp2sclrp )                         ! "    "
 
         use constants
 
@@ -51,10 +53,11 @@
 
 ! Input (Optional mixing scheme variables)
 
-        real, optional, intent(in) :: sclrm
-        real, optional, intent(in) :: wpsclrp
-        real, optional, intent(in) :: sclrp2
-        real, optional, intent(in) :: sclrpthlp
+        real, optional, intent(in) :: sclrm(:)
+        real, optional, intent(in) :: wpsclrp(:)
+        real, optional, intent(in) :: sclrp2(:)
+        real, optional, intent(in) :: sclrprtp(:)
+        real, optional, intent(in) :: sclrpthlp(:)
 
 ! Output
 
@@ -69,11 +72,15 @@
 
 ! Output (Optional mixing scheme variables)
 
-        real, optional, intent(out) :: sclrpthvp
-        real, optional, intent(out) :: sclrprcp
-        real, optional, intent(out) :: wpsclrp2
+        real, optional, intent(out) :: sclrpthvp(:)
+        real, optional, intent(out) :: sclrprcp(:)
+        real, optional, intent(out) :: wpsclrp2(:)
+        real, optional, intent(out) :: wpsclrprtp(:)
+        real, optional, intent(out) :: wpsclrpthlp(:)
+        real, optional, intent(out) :: wp2sclrp(:)
 
 ! Internal 
+        integer i   ! used to loop over sclr arrays
 
         real :: a
         real :: w1, w2, sw1, sw2
@@ -83,9 +90,9 @@
 
 !       New mixing scheme internal variables
 
-        real :: sclr1, sclr2, ssclr1, ssclr2
-        real :: alpha_sclr, sclr1_n, sclr2_n
-        real :: rsclrthl, rsclrrt
+        real, dimension(sclrm_dimension) :: sclr1, sclr2, ssclr1, ssclr2
+        real, dimension(sclrm_dimension) :: alpha_sclr, sclr1_n, sclr2_n
+        real, dimension(sclrm_dimension) :: rsclrthl, rsclrrt
  
         logical scalar_calc
 
@@ -129,10 +136,12 @@
 !   as in mixing, this uses an all or nothing test.
 
         if (      present( sclrm )     .and. present( wpsclrp )
-     .      .and. present( sclrp2 )    .and. present( sclrpthvp )
+     .      .and. present( sclrprtp )  .and. present( sclrpthvp )
      .      .and. present( sclrpthlp ) .and. present( sclrprcp )
-     .      .and. present( wpsclrp2 ) 
-     .     )then
+     .      .and. present( wpsclrprtp ).and. present( wpsclrp2 ) 
+     .      .and. present( sclrp2 )    .and. present( wpsclrpthlp )
+     .      .and. present( wp2sclrp )
+     .     ) then
           scalar_calc = .true.
         else
           scalar_calc = .false.
@@ -245,30 +254,38 @@
           end if
 
 ! Compute pdf parameters for passive scalars
-          if ( sclrp2 <= sclrtol**2 .and. scalar_calc ) then
-            sclr1      = sclrm
-            sclr2      = sclrm
-            ssclr1     = 0.
-            ssclr2     = 0.
-            alpha_sclr = 0.5
-          else
-            sclr1_n = - (wpsclrp/(sqrt(wp2)*sqrt(sclrp2)))/w2_n
-            sclr2_n = - (wpsclrp/(sqrt(wp2)*sqrt(sclrp2)))/w1_n
+          if ( scalar_calc ) then
+            do i = 1, sclrm_dimension
+              if ( sclrp2(i) <= sclrtol(i)**2 ) then
+                sclr1(i)      = sclrm(i)
+                sclr2(i)      = sclrm(i)
+                ssclr1(i)     = 0.
+                ssclr2(i)     = 0.
+                alpha_sclr(i) = 0.5
+              else
+                sclr1_n(i) = - ( wpsclrp(i) / (sqrt( wp2 ) 
+     .                           * sqrt( sclrp2(i) )) )/w2_n
+                sclr2_n(i) = - ( wpsclrp(i) / (sqrt( wp2 ) 
+     .                           * sqrt( sclrp2(i) )) )/w1_n
+  
+                sclr1(i) = sclrm(i) - (wpsclrp(i)/sqrt(wp2))/w2_n
+                sclr2(i) = sclrm(i) - (wpsclrp(i)/sqrt(wp2))/w1_n
 
-            sclr1 = sclrm - (wpsclrp/sqrt(wp2))/w2_n
-            sclr2 = sclrm - (wpsclrp/sqrt(wp2))/w1_n
-
-            alpha_sclr
-     .      = 0.5
-     .        * ( 1.0 - wpsclrp*wpsclrp /((1.0-Sc)*wp2*sclrp2) )
-            alpha_sclr = max( min( alpha_sclr, 1.0 ), 0.0 )
+                alpha_sclr(i) 
+     .          = 0.5
+     .            * ( 1.0 - wpsclrp(i)*wpsclrp(i) 
+     .                      / ((1.0-Sc)*wp2*sclrp2(i)) )
+                alpha_sclr(i) = max( min( alpha_sclr(i), 1.0 ), 0.0 )
 
 ! Vince Larson multiplied original expressions by width_factor_1,2
 !    to generalize scalar skewnesses.  05 Nov 03
-            ssclr1 = ( alpha_sclr / a * sclrp2 ) * width_factor_1
-            ssclr2 = ( alpha_sclr / (1.-a) * sclrp2 ) * width_factor_2
-
-          end if
+                ssclr1(i) = ( alpha_sclr(i) / a * sclrp2(i) ) 
+     .                        * width_factor_1
+                ssclr2(i) = ( alpha_sclr(i) / (1.-a) * sclrp2(i) ) 
+     .                        * width_factor_2
+              end if
+            enddo ! i=1, sclrm_dimension
+          endif ! scalar_calc
 
 !       We include sub-plume correlation with coeff rrtthl.
 
@@ -289,39 +306,44 @@
 
 !       Sub-plume correlation, rsclrthl, between passive scalar
 !              and theta_l.
-
-          if ( ssclr1*sthl1 > 0 .and. ssclr2*sthl2 > 0) then
-              rsclrthl = ( sclrpthlp 
-     .         - a * ( sclr1-sclrm ) * ( thl1-thlm )
-     .         - (1-a) * ( sclr2-sclrm ) * ( thl2-thlm ) )
-     .             / ( a*sqrt(ssclr1*sthl1) + (1-a)*sqrt(ssclr2*sthl2) )
-              if (rsclrthl < -1.) then
-                    rsclrthl = -1.
+          if ( scalar_calc ) then
+            do i=1, sclrm_dimension
+              if ( ssclr1(i)*sthl1 > 0 .and. ssclr2(i)*sthl2 > 0 ) then
+                  rsclrthl(i) = ( sclrpthlp(i) 
+     .             - a * ( sclr1(i)-sclrm(i) ) * ( thl1-thlm )
+     .             - (1-a) * ( sclr2(i)-sclrm(i) ) * ( thl2-thlm ) )
+     .                 / ( a*sqrt( ssclr1(i)*sthl1 ) 
+     .                         + (1-a)*sqrt( ssclr2(i)*sthl2 ) )
+                if (rsclrthl(i) < -1.) then
+                  rsclrthl(i) = -1.
+                endif
+                if (rsclrthl(i) > 1.) then
+                  rsclrthl(i) = 1.
+                endif
+              else
+                rsclrthl(i) = 0.
               endif
-              if (rsclrthl > 1.) then
-                    rsclrthl = 1.
-              endif
-          else
-              rsclrthl = 0.
-          end if
 
 !       Sub-plume correlation, rsclrrt, between passive scalar
 !              and total water.
 
-          if ( ssclr1*srt1 > 0 .and. ssclr2*srt2 > 0) then
-              rsclrrt = ( sclrp2 
-     .         - a * ( sclr1-sclrm ) * ( rt1-rtm )
-     .         - (1-a) * ( sclr2-sclrm ) * ( rt2-rtm ) )
-     .             / ( a*sqrt(ssclr1*srt1) + (1-a)*sqrt(ssclr2*srt2) )
-              if (rsclrrt < -1.) then
-                    rsclrrt = -1.
-              endif
-              if (rsclrrt > 1.) then
-                    rsclrrt = 1.
-              endif
-          else
-              rsclrrt = 0.
-          end if
+              if ( ssclr1(i)*srt1 > 0 .and. ssclr2(i)*srt2 > 0 ) then
+                rsclrrt(i) = ( sclrprtp(i) 
+     .           - a * ( sclr1(i)-sclrm(i) ) * ( rt1-rtm )
+     .           - (1-a) * ( sclr2(i)-sclrm(i) ) * ( rt2-rtm ) )
+     .               / ( a*sqrt(ssclr1(i)*srt1) 
+     .                   + (1-a)*sqrt(ssclr2(i)*srt2) )
+                if (rsclrrt(i) < -1.) then
+                  rsclrrt(i) = -1.
+                endif
+                if (rsclrrt(i) > 1.) then
+                  rsclrrt(i) = 1.
+                endif
+              else
+                rsclrrt(i) = 0.
+              end if
+            end do ! i=1, sclrm_dimension
+          end if ! scalar_calc 
 
         end if
 
@@ -348,8 +370,34 @@
      .                + rrtthl*sqrt(srt2*sthl2) )
 
 !       Scalar Addition to higher order moments
-        wpsclrp2  = a * ( w1-wm )*( (sclr1-sclrm)**2 + ssclr1 ) 
-     .              + (1-a) * ( w2-wm )*( (sclr2-sclrm)**2 + ssclr2 )
+        if ( scalar_calc ) then
+          do i=1, sclrm_dimension
+
+            wp2sclrp(i)  = a * ( (w1-wm)**2+sw1 )*( sclr1(i)-sclrm(i) )
+     .          + (1-a) * ( (w2-wm)**2+sw2 ) * ( sclr2(i)-sclrm(i) )
+
+            wpsclrp2(i) = a * ( w1-wm )*
+     .                    ( (sclr1(i)-sclrm(i))**2 + ssclr1(i) ) 
+     .                  + (1-a) * ( w2-wm )*
+     .                    ( (sclr2(i)-sclrm(i))**2 + ssclr2(i) )
+
+            wpsclrprtp(i) = a * ( w1-wm ) * 
+     .      ( ( rt1-rtm )*( sclr1(i)-sclrm(i) ) 
+     .         + rsclrrt(i)*sqrt( srt1*ssclr1(i) ) )
+     .      + ( 1-a )*( w2-wm )*
+     .      ( ( rt2-rtm )*( sclr2(i)-sclrm(i) )
+     .         + rsclrrt(i)*sqrt(srt2*ssclr2(i)) )
+
+            wpsclrpthlp(i) = a * ( w1-wm ) * 
+     .      ( ( sclr1(i)-sclrm(i) )*( thl1-thlm ) 
+     .         + rsclrthl(i)*sqrt(ssclr1(i)*sthl1) )
+     .      + ( 1-a ) * ( w2-wm ) *
+     .      ( ( sclr2(i)-sclrm(i) )*( thl2-thlm )
+     .         + rsclrthl(i)*sqrt(ssclr2(i)*sthl2) )
+
+
+          end do ! i=1, sclrm_dimension
+        end if ! scalar_calc
 
 !       Compute higher order moments that include theta_v.
 
@@ -453,16 +501,25 @@
         rtpthvp  = rtpthlp + ep1*T0*rtp2 + BD*rtprcp
 
 !       Account for subplume correlation between scalar, theta_v.
-!       See Eqs. A13, A8 from Larson et al. (2002) ``Small-scale..."
-!          where the ``scalar" in this paper is w.
-        sclrprcp  = a * ( (sclr1-sclrm)*rc1 )
-     .            + (1-a) * ( (sclr2-sclrm)*rc2 )
-     .            + a*rsclrrt*crt1*sqrt(ssclr1)*sqrt(srt1)*R1
-     .            + (1-a)*rsclrrt*crt2*sqrt(ssclr2)*sqrt(srt2)*R2
-     .            - a*rsclrthl*cthl1*sqrt(ssclr1)*sqrt(sthl1)*R1
-     .            - (1-a)*rsclrthl*cthl2*sqrt(ssclr2)*sqrt(sthl2)*R2
+!       See Eqs. A13, A8 from Larson et al. (2002) ``Small-scale...''
+!          where the ``scalar'' in this paper is w.
+        if ( scalar_calc ) then
+          do i=1, sclrm_dimension
+            sclrprcp(i) = a * ( ( sclr1(i)-sclrm(i) ) * rc1 )
+     .                  + (1-a) * ( ( sclr2(i)-sclrm(i) ) * rc2 )
+     .                  + a*rsclrrt(i) * crt1 
+     .                    * sqrt( ssclr1(i) ) * sqrt( srt1 ) * R1
+     .                  + (1-a) * rsclrrt(i) * crt2 
+     .                    * sqrt( ssclr2(i) ) * sqrt( srt2 ) * R2
+     .                  - a * rsclrthl(i) * cthl1 
+     .                    * sqrt( ssclr1(i) )* sqrt( sthl1 ) * R1
+     .                  - (1-a) * rsclrthl(i) * cthl2 
+     .                    * sqrt( ssclr2(i) ) * sqrt( sthl2 ) * R2
 
-        sclrpthvp  = sclrpthlp + ep1*T0*sclrp2 + BD*sclrprcp
+            sclrpthvp(i) = sclrpthlp(i) + ep1*T0*sclrprtp(i) 
+     .                      + BD*sclrprcp(i)
+          end do ! i=1, sclrm_dimension
+        end if
 
 !       compute mean cloud fraction and cloud water
 

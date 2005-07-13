@@ -1,10 +1,12 @@
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.13 2005-07-08 14:14:50 griffinb Exp $ 
+! $Id: gcss.F,v 1.14 2005-07-13 20:59:42 dschanen Exp $ 
 
 ! This file contains extra subroutines to simulate the GCSS ARM and
 ! GCSS BOMEX, GCSS ATEX, GCSS FIRE intercomparison cases as well 
 ! as Wangara day 33
 !----------------------------------------------------------------------
+#define SCLR_THETA 1
+#define SCLR_RT 2
       module gcss
 
       implicit none
@@ -32,7 +34,7 @@
 
 !       Output (optional)
         real, optional, intent(out), 
-     .  dimension(sclrm_dimension, gr%nnzp) :: sclr_tndcy
+     .  dimension(gr%nnzp,sclrm_dimension) :: sclr_tndcy
 
 !       Internal variables
         integer i, i1, i2
@@ -88,7 +90,8 @@
         enddo
 
 !       sclr_tndcy = rt_tndcy for now
-        if (present( sclr_tndcy )) sclr_tndcy(1,:) = rt_tndcy
+        if (present( sclr_tndcy )) sclr_tndcy(:,SCLR_THETA)=theta_tndcy
+        if (present( sclr_tndcy )) sclr_tndcy(:,SCLR_RT) = rt_tndcy
 
         return
         end subroutine arm_tndcy
@@ -114,7 +117,7 @@
         real, intent(out) :: rt_tndcy(gr%nnzp)
 
 !       Output (optional)
-        real, optional, intent(out), dimension(sclrm_dimension, gr%nnzp)
+        real, optional, intent(out), dimension(gr%nnzp,sclrm_dimension)
      .                    :: sclr_tndcy
 
 !       Internal variables
@@ -175,7 +178,8 @@
 
         enddo
 
-        if ( present( sclr_tndcy ) ) sclr_tndcy(1,:) = rt_tndcy
+        if (present( sclr_tndcy )) sclr_tndcy(:,SCLR_THETA)=theta_tndcy
+        if (present( sclr_tndcy )) sclr_tndcy(:,SCLR_RT) = rt_tndcy
 
         return
         end subroutine bomex_tndcy
@@ -201,7 +205,7 @@
         real, intent(out) :: rt_tndcy(gr%nnzp)
 
 !       Output (optional)
-        real, optional, intent(out), dimension(sclrm_dimension, gr%nnzp)
+        real, optional, intent(out), dimension(gr%nnzp,sclrm_dimension)
      .                    :: sclr_tndcy
 
 !       Internal variables
@@ -232,7 +236,9 @@
 
         rt_tndcy    = 0.
 
-        if ( present( sclr_tndcy ) ) sclr_tndcy(1,:) = rt_tndcy
+        if ( present( sclr_tndcy ) ) 
+     .    sclr_tndcy(:,SCLR_THETA)=theta_tndcy
+        if ( present( sclr_tndcy ) ) sclr_tndcy(:,SCLR_RT) = rt_tndcy
 
         return
         end subroutine fire_tndcy
@@ -258,7 +264,7 @@
         real, dimension(gr%nnzp), intent(out) :: rt_tndcy
 
 !       Optional Output
-        real, optional, dimension(sclrm_dimension, gr%nnzp), 
+        real, optional, dimension(gr%nnzp, sclrm_dimension), 
      .        intent(out) :: sclr_tndcy
 
 !       No large-scale subsidence for now
@@ -271,7 +277,9 @@
         theta_tndcy = 0.
 
 !       Scalar r forcing is just set to be = to rtm_forcing for now
-        if ( present( sclr_tndcy ) ) sclr_tndcy(1,:) = rt_tndcy
+        if ( present( sclr_tndcy ) ) 
+     .    sclr_tndcy(:,SCLR_THETA) = theta_tndcy
+        if ( present( sclr_tndcy ) ) sclr_tndcy(:,SCLR_RT) = rt_tndcy
 
         return
         end subroutine wangara_tndcy
@@ -300,7 +308,7 @@
         real, intent(out) :: rt_tndcy(gr%nnzp)
 
 !       Output (optional)
-        real, optional, intent(out), dimension(sclrm_dimension, gr%nnzp)
+        real, optional, intent(out), dimension(gr%nnzp, sclrm_dimension)
      .                    :: sclr_tndcy
 
 !       Misc
@@ -387,7 +395,9 @@
 
         end if
 
-        if ( present( sclr_tndcy ) ) sclr_tndcy(1,:) = rt_tndcy
+        if ( present( sclr_tndcy ) ) 
+     .    sclr_tndcy(:,SCLR_THETA) = theta_tndcy
+        if ( present( sclr_tndcy ) ) sclr_tndcy(:,SCLR_RT) = rt_tndcy
 
         return
         end subroutine atex_tndcy
@@ -473,7 +483,8 @@
         wtp = heat_flx2
         wrp = moisture_flx2
 
-        if (present( wpsclrp_sfc )) wpsclrp_sfc(1) = moisture_flx2
+        if (present( wpsclrp_sfc )) wpsclrp_sfc(SCLR_THETA) = wtp
+        if (present( wpsclrp_sfc )) wpsclrp_sfc(SCLR_RT) = wrp
 
         return
         end subroutine arm_sfclyr
@@ -514,12 +525,15 @@
 
         wtp = 8.e-3
         wrp = 5.2e-5
-
-        if ( present(wpsclrp_sfc) ) wpsclrp_sfc(1) = wrp
+        
+        if ( present(wpsclrp_sfc) ) then 
+          wpsclrp_sfc(SCLR_THETA) = 8.e-3
+          wpsclrp_sfc(SCLR_RT)    = 5.2e-5
+        endif
 
 ! Compute momentum fluxes
 
-        ubar = max(ubmin,sqrt(up*up + vp*vp))
+        ubar = max( ubmin, sqrt(up*up + vp*vp) )
 
         uw = -up * ustar*ustar / ubar
         vw = -vp * ustar*ustar / ubar
@@ -555,7 +569,7 @@
 
 !       Output variables
 
-        real, intent(out) :: uw,vw,wtp,wrp
+        real, intent(out) :: uw, vw, wtp, wrp
 
 !       Output variables (optional)
 
@@ -567,14 +581,18 @@
 
 ! Compute heat and moisture fluxes
 
-        ubar = max(ubmin,sqrt(up*up + vp*vp))
+        ubar = max(ubmin, sqrt(up*up + vp*vp))
 
         wtp  = -C_10 * ubar * ( thp - SST * (1000./1015.)**kappa )
         wrp  = -C_10 * ubar * ( rtp - 0.0198293 )
 
 ! Optional passive scalar
         if ( present( wpsclrp_sfc ) .and. present( sclrm_sfc ) ) then
-          wpsclrp_sfc(1) = -C_10 * ubar * ( sclrm_sfc(1) - 0.0198293 )
+          wpsclrp_sfc(SCLR_THETA) = -C_10 * ubar * 
+     .           ( sclrm_sfc(SCLR_THETA) - SST * (1000./1015.)**kappa )
+
+          wpsclrp_sfc(SCLR_RT) = -C_10 * ubar * 
+     .                     ( sclrm_sfc(SCLR_RT) - 0.0198293 )
         endif
 
 ! Compute momentum fluxes
@@ -637,8 +655,11 @@
      .        * cos( (time_est-45000.)/36000. * 3.141592654 )
         wrp = 1.3e-4 * wtp
 
-! Compute new mixing variable as wrp
-        if ( present(wpsclrp_sfc) ) wpsclrp_sfc(1) = 1.3e-4 * wtp
+! Compute new mixing variables
+        if ( present(wpsclrp_sfc) ) wpsclrp_sfc(SCLR_THETA) = 0.18
+     .        * cos( (time_est-45000.)/36000. * 3.141592654 )
+
+        if ( present(wpsclrp_sfc) ) wpsclrp_sfc(SCLR_RT) = 1.3e-4*wtp
 
 ! Compute momentum fluxes
 
@@ -775,8 +796,9 @@
 ! based on LWP
 !
 ! Based on GCSS ATEX intercomparison case
-!
-        subroutine cloud_rad( rhot, rcm, Frad, htrt )
+!----------------------------------------------------------------------
+
+        subroutine cloud_rad( rhot, rcm, Frad, htrt, sclr_rate )
 
         use grid_class
         use constants
@@ -793,10 +815,14 @@
         real, intent(out) :: Frad(gr%nnzp)        ! IR radiative flux
         real, intent(out) :: htrt(gr%nnzp)        ! Radiative heating rate
 
+!        Output (optional)
+
+        real, optional, intent(out) :: sclr_rate(gr%nnzp)   ! Radiative heating rate ( scalar(1) )
+
         real F0,k
         parameter (F0 = 74., k = 130.)
 
-        integer i,im1,ip1
+        integer i, im1, ip1
 
 !       Compute liquid water path from top of the model
 !       We define liquid water path on momentum levels
@@ -818,6 +844,8 @@
         htrt          = htrt - 1. / ( Cp * rhot ) * ddzm( Frad )
         htrt(1)       = 0.
         htrt(gr%nnzp) = 0.
+
+        if ( present( sclr_rate ) ) sclr_rate = htrt ! Just theta
 
         return
         end subroutine cloud_rad
@@ -845,7 +873,7 @@
         real, intent(in) :: rtm(gr%nnzp)
         real, intent(in) :: rcm(gr%nnzp)
 
-        real, optional, intent(in) :: sclr(sclrm_dimension, gr%nnzp)
+        real, optional, intent(in) :: sclr(gr%nnzp, sclrm_dimension)
 
 !       Output
         real, intent(out) :: wmt(gr%nnzp)
@@ -855,7 +883,7 @@
         real, intent(out) :: rt_tndcy(gr%nnzp)
 
         real, optional, 
-     .  intent(out) :: sclr_tndcy(sclrm_dimension, gr%nnzp)
+     .  intent(out) :: sclr_tndcy(gr%nnzp,sclrm_dimension)
 
 !       Misc
         logical, intent(inout) :: isValid
@@ -875,8 +903,6 @@
         wmm         = 0.
         theta_tndcy = 0.
         rt_tndcy    = 0.
-
-        if ( present(sclr_tndcy) ) sclr_tndcy(1,:) = 0.
 
 !       Identify height of 8.0 g/kg moisture level
 
@@ -948,6 +974,9 @@
 
         theta_tndcy = theta_tndcy + htrt
         
+        if ( present(sclr_tndcy) ) sclr_tndcy(:,SCLR_THETA)=theta_tndcy
+        if ( present(sclr_tndcy) ) sclr_tndcy(:,SCLR_RT) = rt_tndcy
+
         return
         end subroutine dycoms2_rf01_tndcy
 
@@ -976,7 +1005,8 @@
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: rt_tndcy
 
         ! Optional output
-        REAL, OPTIONAL, DIMENSION(gr%nnzp), INTENT(OUT):: sclr_tndcy
+        REAL, OPTIONAL, 
+     .  DIMENSION(gr%nnzp, sclrm_dimension), INTENT(OUT):: sclr_tndcy
 
         ! Misc
         LOGICAL, INTENT(INOUT) :: isValid
@@ -1087,8 +1117,9 @@
           sfc%n(1,izi) = sfc%n(1,izi) + 1
         endif
 #endif
-        ! sclrm = rtm for now
-        if ( present( sclr_tndcy ) ) sclr_tndcy  = rt_tndcy 
+        if ( present( sclr_tndcy ) ) 
+     .    sclr_tndcy(:,SCLR_THETA) = theta_tndcy 
+        if ( present( sclr_tndcy ) ) sclr_tndcy(:,SCLR_RT) = rt_tndcy 
 
         RETURN
         END SUBROUTINE dycoms2_rf02_tndcy
@@ -1152,7 +1183,8 @@
           wrp = 115.0 / ( rhop * lv )
 
           if ( present( sclrm_sfc ).and.present( wpsclrp_sfc ) ) then
-            wpsclrp_sfc(1) = wrp
+            wpsclrp_sfc(SCLR_THETA) = wtp
+            wpsclrp_sfc(SCLR_RT)    = wrp
           endif
         elseif ( sfctype == 1 ) then
 
@@ -1160,8 +1192,10 @@
           wrp = -Cd * ubar * ( rtp - rsat(psfc,Tsfc) )        
 
           if ( present( sclrm_sfc ).and.present( wpsclrp_sfc ) ) then
-            wpsclrp_sfc(1) = -Cd * ubar * ( sclrm_sfc(1) 
-     .                       - rsat(psfc, Tsfc) )
+            wpsclrp_sfc(SCLR_THETA) = -Cd * ubar * 
+     .                        ( sclrm_sfc(SCLR_THETA) - Tsfc/exnersfc )
+            wpsclrp_sfc(SCLR_RT)    = -Cd * ubar * 
+     .                        ( sclrm_sfc(SCLR_RT) - rsat(psfc, Tsfc) )
           endif
         else
 
@@ -1185,7 +1219,7 @@
 
         SUBROUTINE dycoms2_rf02_sfclyr( u_sfc, v_sfc, thl_sfc, rt_sfc,
      .                                  p_sfc, uw, vw, wtp, wrp,
-     .                                  wpsclr )
+     .                                  sclr_sfc, wpsclr_sfc )
 
         USE constants
 
@@ -1196,6 +1230,9 @@
         REAL, INTENT(IN):: rt_sfc
         REAL, INTENT(IN):: p_sfc
 
+! Input (optional)
+        REAL, OPTIONAL, INTENT(IN):: sclr_sfc(sclrm_dimension)
+
 ! Output
         REAL, INTENT(OUT):: uw
         REAL, INTENT(OUT):: vw
@@ -1203,7 +1240,7 @@
         REAL, INTENT(OUT):: wrp
 
 ! Output (optional)
-        REAL, OPTIONAL, INTENT(OUT):: wpsclr(:)
+        REAL, OPTIONAL, INTENT(OUT):: wpsclr_sfc(sclrm_dimension)
 
 ! Internal
         REAL:: wind_sfc, Cd
@@ -1230,7 +1267,14 @@
         wtp = -Cd * wind_sfc * (thl_sfc - 292.0*(p0/p_sfc)**kappa)
         wrp = -Cd * wind_sfc * (rt_sfc - 0.013581)
 
-        if (present( wpsclr )) wpsclr(:) = wrp !  wpsclrp = wprtp for now
+        if (present( wpsclr_sfc )) then
+          wpsclr_sfc(SCLR_THETA) = -Cd * wind_sfc*
+     .                             ( sclr_sfc(SCLR_THETA) - 
+     .                               292.0 * (p0 / p_sfc)**kappa )
+
+          wpsclr_sfc(SCLR_RT) = -Cd * wind_sfc*
+     .                          ( sclr_sfc(SCLR_RT) - 0.013581 )
+        endif
 
         RETURN
         END SUBROUTINE dycoms2_rf02_sfclyr
@@ -1256,7 +1300,7 @@
         real, intent(out) :: rt_tndcy(gr%nnzp)
 
         real, optional, 
-     .        intent(out) :: sclr_tndcy(sclrm_dimension, gr%nnzp)
+     .        intent(out) :: sclr_tndcy(gr%nnzp, sclrm_dimension)
 
 !       Internal variables
 
@@ -1330,7 +1374,9 @@
         uw = 0.09
         vw = 0.09
 
-        if (present( wpsclrp_sfc )) wpsclrp_sfc(1) = LF/(rho0*Lv)
+        if (present( wpsclrp_sfc )) 
+     .    wpsclrp_sfc(SCLR_THETA) = HF/(rho0*Cp)
+        if (present( wpsclrp_sfc )) wpsclrp_sfc(SCLR_RT) = LF/(rho0*Lv)
 
         return
         end subroutine astex_sfclyr
@@ -1368,7 +1414,7 @@
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: Frad_sw
 
         ! Output variables (optional)
-        REAL, OPTIONAL, DIMENSION(sclrm_dimension, 1:gr%nnzp), 
+        REAL, OPTIONAL, DIMENSION(gr%nnzp, sclrm_dimension), 
      .                  INTENT(OUT) :: sclr_tndcy
 
         ! Local variables
@@ -1377,9 +1423,9 @@
         REAL, DIMENSION(1:gr%nnzp):: dqc_dt_icedfs
 
         REAL, PARAMETER:: wmax = -3.0E-2
-        REAL, PARAMETER:: kap = 100.0 ! m^2/kg
-        REAL, PARAMETER:: F0 = 107.0  ! W/m^2
-        REAL, PARAMETER:: F1 = 61.0   ! W/m^2
+        REAL, PARAMETER:: kap  = 100.0 ! m^2/kg
+        REAL, PARAMETER:: F0   = 107.0  ! W/m^2
+        REAL, PARAMETER:: F1   = 61.0   ! W/m^2
 
         INTEGER:: k
 
@@ -1485,7 +1531,8 @@
         ENDDO
 
         IF ( present( sclr_tndcy ) ) THEN
-          sclr_tndcy(1,:) = rt_tndcy
+          sclr_tndcy(:,SCLR_THETA) = thl_tndcy
+          sclr_tndcy(:,SCLR_RT)    = rt_tndcy
         ENDIF
         END SUBROUTINE nov11_altocu_tndcy
 

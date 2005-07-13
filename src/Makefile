@@ -1,27 +1,33 @@
-# $Id: Makefile,v 1.23 2005-07-08 16:08:13 dschanen Exp $
+# $Id: Makefile,v 1.24 2005-07-13 20:59:42 dschanen Exp $
+# Uses GNU make.  BSD make doesn't like the LH/*.F syntax.
 
 # Compiler invocation
 
-FC = pgf90
-#FC = g95
-#FC = f95 
+FC = pgf90 # Portland Group PGF90
+#FC = g95 # G95
+#FC = f95 # Sun Studio / Forte
 
-# Compiler flags
 
-DEBUG = -g -C -Kieee #-Minform=inform -Ktrap=inv
+DEBUG = -g -C #-Ktrap=unf -Minform=inform 
 
-#G95_P3_OPTIMIZE = -O2 -msse -march=pentium3
-#G95_P4_OPTIMIZE = -O2 -msse2 -march=pentium4
-#SUNPRO_X86_OPTIMIZE = -fast -ftrap=%none
-#PGF_P4_OPTIMIZE = -O2 -fastsse -tp p7
-PGF_P4_OPTIMIZE = -O0 -tp p7
+# Optimization (assuming pentium4)
+# Sun fortran currently appears to crash if statistics.F is done with 
+#   optimization ( due to a bug in ube I think)
 
-#FCFLAGS = $(G95_P4_OPTIMIZE) $(DEBUG) -DSTATS -DSCALARS
-#FCFLAGS = $(PGF_P4_OPTIMIZE) $(DEBUG) -DSTATS -DSCALARS
-FCFLAGS = $(PGF_P4_OPTIMIZE) $(DEBUG) -DSTATS
+#OPTIMIZE = -O2 -msse2 -march=pentium4 # g95
+#OPTIMIZE = -xarch=sse2 -ftrap=%none # Sun Studio x86/Opteron
+OPTIMIZE = -O2 -Kieee -tp p7 # PGF90
 
 # Linking Flags
-LDFLAGS = $(FCFLAGS) 
+LDFLAGS = '' # use -s to strip
+
+# Compiler flags
+#   -DSTATS enables statistics
+#   -DSCALARS enables passive scalars
+
+FCFLAGS = $(OPTIMIZE) $(DEBUG) -DSTATS
+#FCFLAGS = $(OPTIMIZE) $(DEBUG) -DSTATS -DSCALARS
+
 
 # Object files
 OBJS	= polpak.o \
@@ -45,7 +51,7 @@ LH_OBJS	= autoconv_driver.o corrcoef.o gaus_condt.o \
 TARGETS	= int2txt.o hoc_tuner.o hoc_standalone.o compare_runs.o \
 	jacobian.o
 
-# Targets
+# Targets ( hoc_tuner and jacobian assume statistics )
 all:	hoc_tuner hoc_standalone int2txt compare_runs jacobian
 
 # Rules
@@ -61,22 +67,22 @@ $(LH_OBJS):
 	$(FC) $(FCFLAGS) -c $<
 
 hoc_tuner:	$(OBJS) $(LH_OBJS) $(TARGETS)
-		$(FC) $(LDFLAGS) -o hoc_tuner \
+		$(FC) $(FCFLAGS) $(LDFLAGS) -o hoc_tuner \
 		$(OBJS) $(LH_OBJS) $@.o
 
 hoc_standalone: $(OBJS) $(LH_OBJS) $(TARGETS)
-		$(FC) $(LDFLAGS) -o hoc_standalone \
+		$(FC) $(FCFLAGS) $(LDFLAGS) -o hoc_standalone \
 		$(OBJS) $(LH_OBJS) $@.o 
 
 int2txt:	$(TARGETS)
-		$(FC) $(LDFLAGS) $@.o -o int2txt
+		$(FC)$(FCFLAGS)  $(LDFLAGS) $@.o -o int2txt
 
 compare_runs:	$(OBJS) $(LH_OBJS) $(TARGETS)
-		$(FC) $(LDFLAGS) -o compare_runs \
+		$(FC) $(FCFLAGS) $(LDFLAGS) -o compare_runs \
 		$(OBJS) $(LH_OBJS) $@.o 
 
 jacobian:	$(OBJS) $(LH_OBJS) $(TARGETS)
-		$(FC) $(LDFLAGS) -o jacobian \
+		$(FC) $(FCFLAGS) $(LDFLAGS) -o jacobian \
 		$(OBJS) $(LH_OBJS) $@.o 
 
 install: 

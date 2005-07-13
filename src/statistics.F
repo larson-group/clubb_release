@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.12 2005-07-01 16:14:54 dschanen Exp $
+!  $Id: statistics.F,v 1.13 2005-07-13 20:59:43 dschanen Exp $
 
 !  module stats_type
 !  contains:
@@ -160,8 +160,10 @@ c       Indices for statistics in zt file
 
 #ifdef SCALARS
         integer
-     .     isclrm1,          ! New mixing scheme
-     .     isclrm_f1         ! New mixing scheme
+     .     isclram,          ! New mixing scheme ( mean rt )
+     .     isclrbm,          ! New mixing scheme ( mean th_l )
+     .     isclram_f,        ! New mixing scheme ( mean rt forcing)
+     .     isclrbm_f         ! New mixing scheme ( mean th_l forcing)
 #endif SCALARS
 
 c       Indices for statistics in zm file
@@ -230,10 +232,29 @@ c       Indices for statistics in zm file
      .     iwpthlp_dp1
 
 #ifdef SCALARS
+!       New mixing scheme.  Note that floating point roundoff may make 
+!       mathematically equivalent variables different.
         integer
-     .     iwpsclrp1,           ! New mixing scheme
-     .     iwpsclrpthlp1,       ! New mixing scheme
-     .     isclrpthvp1          ! New mixing scheme
+     .     isclraprtp,          ! sclr'(1)rt'     / rt'^2
+     .     isclrbprtp,          ! sclr'(2)rt'     / thl'rt'
+     .     isclrap2,            ! sclr'(1)^2      / rt'^2
+     .     isclrbp2,            ! sclr'(2)^2      / thl'^2
+     .     isclrapthvp,         ! sclr'(1)th_v'   / rt'th_v' 
+     .     isclrbpthvp,         ! sclr'(2)th_v'   / th_l' th_v'
+     .     isclrapthlp,         ! sclr'(1)th_l'   / rt'th_l' 
+     .     isclrbpthlp,         ! sclr'(2)th_l'   / th_l'^2
+     .     isclraprcp,          ! sclr'(1)rc'     / rt'rc'
+     .     isclrbprcp,          ! sclr'(2)rc'     / th_l'rc'
+     .     iwpsclrap,           ! w'slcr'(1)      / w'rt'
+     .     iwpsclrbp,           ! w'sclr'(2)      / w'th_l'
+     .     iwp2sclrap,          ! w'^2 sclr'(1)   / w'^2 rt'
+     .     iwp2sclrbp,          ! w'^2 sclr'(2)   / w'^2 th_l'
+     .     iwpsclrap2,          ! w'sclr'(1)^2    / w'rt'^2
+     .     iwpsclrbp2,          ! w'sclr'(2)^2    / w'th_l'^2
+     .     iwpsclraprtp,        ! w'sclr'(1)rt'   / w'rt'^2
+     .     iwpsclrbprtp,        ! w'sclr'(2)rt'   / w'thl'rt'
+     .     iwpsclrapthlp,       ! w'sclr'(1)th_l' / w'rt'th_l' 
+     .     iwpsclrbpthlp        ! w'sclr'(2)th_l' / w'th_l'^2
 #endif SCALARS
 
 c       Indices for statistics in sfc file
@@ -484,8 +505,10 @@ c     -----------------------------------------------------------------
       irtpthlpzt = 0
 
 #ifdef SCALARS
-      isclrm1     = 0    ! new mixing scheme
-      isclrm_f1   = 0    !  "             "
+      isclram     = 0    ! new mixing scheme
+      isclram_f   = 0    !  "             "
+      isclrbm     = 0    ! new mixing scheme
+      isclrbm_f   = 0    !  "             "
 #endif SCALARS
 
 !     Assign pointers for statistics variables zt
@@ -1105,20 +1128,36 @@ c     -----------------------------------------------------------------
           zt%f%var(irtpthlpzt)%description = "rtpthlpzt"
           k = k + 1
 #ifdef SCALARS 
-        case ('sclrm1')
-          isclrm1 = k
-          zt%f%var(isclrm1)%ptr => zt%x(:,k)
-          zt%f%var(isclrm1)%name = "sclrm1"
-          zt%f%var(isclrm1)%description 
-     .    = "mixing variable (currently rtm)"
+        case ('sclram')
+          isclram = k
+          zt%f%var(isclram)%ptr => zt%x(:,k)
+          zt%f%var(isclram)%name = "sclram"
+          zt%f%var(isclram)%description 
+     .    = "passive scalar (currently thlm)"
           k = k + 1
 
-        case ('sclrm_f1')
-          isclrm_f1 = k
-          zt%f%var(isclrm_f1)%ptr => zt%x(:,k)
-          zt%f%var(isclrm_f1)%name = "sclrm_f1"
-          zt%f%var(isclrm_f1)%description 
-     .    = "mixing variable forcing (currently rtm_forcing)"
+        case ('sclram_f')
+          isclram_f = k
+          zt%f%var(isclram_f)%ptr => zt%x(:,k)
+          zt%f%var(isclram_f)%name = "sclram_f"
+          zt%f%var(isclram_f)%description
+     .    = "passive scalar forcing (currently thlm_forcing)"
+          k = k + 1
+
+        case ('sclrbm')
+          isclrbm = k
+          zt%f%var(isclrbm)%ptr => zt%x(:,k)
+          zt%f%var(isclrbm)%name = "sclrbm"
+          zt%f%var(isclrbm)%description 
+     .    = "passive scalar (currently rtm)"
+          k = k + 1
+
+        case ('sclrbm_f')
+          isclrbm_f = k
+          zt%f%var(isclrbm_f)%ptr => zt%x(:,k)
+          zt%f%var(isclrbm_f)%name = "sclrbm_f"
+          zt%f%var(isclrbm_f)%description 
+     .    = "passive scalar forcing (currently rtm_forcing)"
           k = k + 1
 #endif SCALARS
 
@@ -1244,9 +1283,26 @@ c     -----------------------------------------------------------------
       iwpthlp_dp1 = 0
 
 #ifdef SCALARS
-      iwpsclrp1     = 0    ! New mixing scheme
-      iwpsclrpthlp1 = 0    ! New mixing scheme
-      isclrpthvp1   = 0    ! New mixing scheme
+      isclraprtp    = 0
+      isclrbprtp    = 0
+      isclrap2      = 0
+      isclrbp2      = 0
+      isclrapthvp   = 0
+      isclrbpthvp   = 0
+      isclrapthlp   = 0
+      isclrbpthlp   = 0
+      isclraprcp    = 0
+      isclrbprcp    = 0
+      iwpsclrap     = 0
+      iwpsclrbp     = 0
+      iwp2sclrap    = 0
+      iwp2sclrbp    = 0
+      iwpsclrap2    = 0
+      iwpsclrbp2    = 0
+      iwpsclraprtp  = 0
+      iwpsclrbprtp  = 0
+      iwpsclrapthlp = 0
+      iwpsclrbpthlp = 0
 #endif SCALARS
 
 !     Assign pointers for statistics variables zm
@@ -1650,29 +1706,147 @@ c     -----------------------------------------------------------------
           k = k + 1
 
 #ifdef SCALARS
-        case ('wpsclrp1')
-          iwpsclrp1 = k
-          zm%f%var(iwpsclrp1)%ptr => zm%x(:,k)
-          zm%f%var(iwpsclrp1)%name = "wpsclrp1"
-          zm%f%var(iwpsclrp1)%description 
-     .    = "mixing variable (currently wprtp)"
+        case ('sclraprtp')
+          isclraprtp = k
+          zm%f%var(isclraprtp)%ptr => zm%x(:,k)
+          zm%f%var(isclraprtp)%name = "sclraprtp"
+          zm%f%var(isclraprtp)%description 
+     .    = "scalar(2)'rt'"
+          k = k + 1
+        case ('sclrbprtp')
+          isclrbprtp = k
+          zm%f%var(isclrbprtp)%ptr => zm%x(:,k)
+          zm%f%var(isclrbprtp)%name = "sclrbprtp"
+          zm%f%var(isclrbprtp)%description
+     .    = "scalar(2)'rt'"
+          k = k + 1
+        case ('sclrap2')
+          isclrap2 = k
+          zm%f%var(isclrap2)%ptr => zm%x(:,k)
+          zm%f%var(isclrap2)%name = "sclrap2"
+          zm%f%var(isclrap2)%description 
+     .    = "scalar(1)'^2 "
+          k = k + 1
+        case ('sclrbp2')
+          isclrbp2 = k
+          zm%f%var(isclrbp2)%ptr => zm%x(:,k)
+          zm%f%var(isclrbp2)%name = "sclrbp2"
+          zm%f%var(isclrbp2)%description 
+     .    = "scalar(2)'^2"
+          k = k + 1
+        case ('sclrapthvp')
+          isclrapthvp = k
+          zm%f%var(isclrapthvp)%ptr => zm%x(:,k)
+          zm%f%var(isclrapthvp)%name = "sclrapthvp"
+          zm%f%var(isclrapthvp)%description
+     .    = "scalar(1)'th_v'"
+          k = k + 1
+        case ('sclrbpthvp')
+          isclrbpthvp = k
+          zm%f%var(isclrbpthvp)%ptr => zm%x(:,k)
+          zm%f%var(isclrbpthvp)%name = "sclrbpthvp"
+          zm%f%var(isclrbpthvp)%description
+     .    = "scalar(2)'th_v'"
+          k = k + 1
+        case ('sclrapthlp')
+          isclrapthlp = k
+          zm%f%var(isclrapthlp)%ptr => zm%x(:,k)
+          zm%f%var(isclrapthlp)%name = "sclrapthlp"
+          zm%f%var(isclrapthlp)%description
+     .    = "scalar(1)'th_l'"
+          k = k + 1
+        case ('sclrbpthlp')
+          isclrbpthlp = k
+          zm%f%var(isclrbpthlp)%ptr => zm%x(:,k)
+          zm%f%var(isclrbpthlp)%name = "sclrbpthlp"
+          zm%f%var(isclrbpthlp)%description
+     .    = "scalar(2)'th_l'"
+          k = k + 1
+        case ('sclraprcp')
+          isclraprcp = k
+          zm%f%var(isclraprcp)%ptr => zm%x(:,k)
+          zm%f%var(isclraprcp)%name = "sclraprcp"
+          zm%f%var(isclraprcp)%description 
+     .    = "scalar(1)'rc'"
+          k = k + 1
+        case ('sclrbprcp')
+          isclrbprcp = k
+          zm%f%var(isclrbprcp)%ptr => zm%x(:,k)
+          zm%f%var(isclrbprcp)%name = "sclrbprcp"
+          zm%f%var(isclrbprcp)%description
+     .    = "scalar(2)'rc'"
+          k = k + 1
+        case ('wpsclrap')
+          iwpsclrap = k
+          zm%f%var(iwpsclrap)%ptr => zm%x(:,k)
+          zm%f%var(iwpsclrap)%name = "wpsclrap"
+          zm%f%var(iwpsclrap)%description 
+     .    = "w'scalar(1)'"
+          k = k + 1
+        case ('wpsclrbp')
+          iwpsclrbp = k
+          zm%f%var(iwpsclrbp)%ptr => zm%x(:,k)
+          zm%f%var(iwpsclrbp)%name = "wpsclrbp"
+          zm%f%var(iwpsclrbp)%description 
+     .    = "w'scalar(2)'"
+          k = k + 1
+        case ('wpsclrap2')
+          iwpsclrap2 = k
+          zm%f%var(iwpsclrap2)%ptr => zm%x(:,k)
+          zm%f%var(iwpsclrap2)%name = "wpsclrap2"
+          zm%f%var(iwpsclrap2)%description 
+     .    = "w'scalar(1)'^2 "
+          k = k + 1
+        case ('wpsclrbp2')
+          iwpsclrbp2 = k
+          zm%f%var(iwpsclrbp2)%ptr => zm%x(:,k)
+          zm%f%var(iwpsclrbp2)%name = "wpsclrbp2"
+          zm%f%var(iwpsclrbp2)%description 
+     .    = "w'scalar(2)'^2 "
+          k = k + 1
+        case ('wp2sclrap')
+          iwp2sclrap = k
+          zm%f%var(iwp2sclrap)%ptr => zm%x(:,k)
+          zm%f%var(iwp2sclrap)%name = "wp2sclrap"
+          zm%f%var(iwp2sclrap)%description 
+     .    = "w'^2 scalar(1)'"
+          k = k + 1
+        case ('wp2sclrbp')
+          iwp2sclrbp = k
+          zm%f%var(iwp2sclrbp)%ptr => zm%x(:,k)
+          zm%f%var(iwp2sclrbp)%name = "wp2sclrbp"
+          zm%f%var(iwp2sclrbp)%description 
+     .    = "w'^2 scalar(2)'"
+          k = k + 1
+        case ('wpsclraprtp')
+          iwpsclraprtp = k
+          zm%f%var(iwpsclraprtp)%ptr => zm%x(:,k)
+          zm%f%var(iwpsclraprtp)%name = "wpsclraprtp"
+          zm%f%var(iwpsclraprtp)%description 
+     .    = "w'scalar(1)'rt'"
+          k = k + 1
+        case ('wpsclrbprtp')
+          iwpsclrbprtp = k
+          zm%f%var(iwpsclrbprtp)%ptr => zm%x(:,k)
+          zm%f%var(iwpsclrbprtp)%name = "wpsclrbprtp"
+          zm%f%var(iwpsclrbprtp)%description
+     .    = "w'scalar(2)'rt'"
+          k = k + 1
+        case ('wpsclrapthlp')
+          iwpsclrapthlp = k
+          zm%f%var(iwpsclrapthlp)%ptr => zm%x(:,k)
+          zm%f%var(iwpsclrapthlp)%name = "wpsclrapthlp"
+          zm%f%var(iwpsclrapthlp)%description 
+     .    = "w'scalar(1)'th_l'"
+          k = k + 1
+        case ('wpsclrbpthlp')
+          iwpsclrbpthlp = k
+          zm%f%var(iwpsclrbpthlp)%ptr => zm%x(:,k)
+          zm%f%var(iwpsclrbpthlp)%name = "wpsclrbpthlp"
+          zm%f%var(iwpsclrbpthlp)%description
+     .    = "w'scalar(2)'th_l'"
           k = k + 1
 
-        case ('wpsclrpthlp1')
-          iwpsclrpthlp1 = k
-          zm%f%var(iwpsclrpthlp1)%ptr => zm%x(:,k)
-          zm%f%var(iwpsclrpthlp1)%name = "wpsclrthlp1"
-          zm%f%var(iwpsclrpthlp1)%description 
-     .    = "wpsclrpthlp1"
-          k = k + 1
-
-        case ('sclrpthvp1')
-          isclrpthvp1 = k
-          zm%f%var(isclrpthvp1)%ptr => zm%x(:,k)
-          zm%f%var(isclrpthvp1)%name = "sclrpthvp1"
-          zm%f%var(isclrpthvp1)%description 
-     .    = "sclrpthvp1"
-          k = k + 1
 #endif SCALARS
 
         case default
@@ -2345,14 +2519,24 @@ c     -----------------------------------------------------------------
           zt%n(:,irtpthlpzt) = zt%n(:,irtpthlpzt) + 1
         endif
 #ifdef SCALARS
-        if ( isclrm1 > 0 ) then
-          zt%x(:,isclrm1) = zt%x(:,isclrm1) + sclrm(1,:)
-          zt%n(:,isclrm1) = zt%n(:,isclrm1) + 1
+        if ( isclram > 0 ) then
+          zt%x(:,isclram) = zt%x(:,isclram) + sclrm(:,1)
+          zt%n(:,isclram) = zt%n(:,isclram) + 1
         endif
 
-        if ( isclrm_f1 > 0 ) then
-          zt%x(:,isclrm_f1) = zt%x(:,isclrm_f1) + sclrm_forcing(1,:)
-          zt%n(:,isclrm_f1) = zt%n(:,isclrm_f1) + 1
+        if ( isclram_f > 0 ) then
+          zt%x(:,isclram_f) = zt%x(:,isclram_f) + sclrm_forcing(:,1)
+          zt%n(:,isclram_f) = zt%n(:,isclram_f) + 1
+        endif
+
+        if ( isclrbm > 0 ) then
+          zt%x(:,isclrbm) = zt%x(:,isclrbm) + sclrm(:,2)
+          zt%n(:,isclrbm) = zt%n(:,isclrbm) + 1
+        endif
+
+        if ( isclrbm_f > 0 ) then
+          zt%x(:,isclrbm_f) = zt%x(:,isclrbm_f) + sclrm_forcing(:,2)
+          zt%n(:,isclrbm_f) = zt%n(:,isclrbm_f) + 1
         endif
 #endif SCALARS
 
@@ -2362,78 +2546,97 @@ c     -----------------------------------------------------------------
           zm%x(:,iwp2) = zm%x(:,iwp2) + wp2
           zm%n(:,iwp2) = zm%n(:,iwp2) + 1
         endif
+
         if ( irtp2 > 0 ) then
           zm%x(:,irtp2) = zm%x(:,irtp2) + rtp2
           zm%n(:,irtp2) = zm%n(:,irtp2) + 1
         endif
+
         if ( ithlp2 > 0 ) then
           zm%x(:,ithlp2) = zm%x(:,ithlp2) + thlp2
           zm%n(:,ithlp2) = zm%n(:,ithlp2) + 1
         endif
+
         if ( irtpthlp > 0 ) then
           zm%x(:,irtpthlp) = zm%x(:,irtpthlp) + rtpthlp
           zm%n(:,irtpthlp) = zm%n(:,irtpthlp) + 1
         endif
+
         if ( iwprtp > 0 ) then
           zm%x(:,iwprtp) = zm%x(:,iwprtp) + wprtp
           zm%n(:,iwprtp) = zm%n(:,iwprtp) + 1
         endif
+
         if ( iwpthlp > 0 ) then
           zm%x(:,iwpthlp) = zm%x(:,iwpthlp) + wpthlp
           zm%n(:,iwpthlp) = zm%n(:,iwpthlp) + 1
         endif
+
         if ( iwp4 > 0 ) then
           zm%x(:,iwp4) = zm%x(:,iwp4) + wp4
           zm%n(:,iwp4) = zm%n(:,iwp4) + 1
         endif
+
         if ( iwpthvp > 0 ) then
           zm%x(:,iwpthvp) = zm%x(:,iwpthvp) + wpthvp
           zm%n(:,iwpthvp) = zm%n(:,iwpthvp) + 1
         endif
+
         if ( irtpthvp > 0 ) then
           zm%x(:,irtpthvp) = zm%x(:,irtpthvp) + rtpthvp
           zm%n(:,irtpthvp) = zm%n(:,irtpthvp) + 1
         endif
+
         if ( ithlpthvp > 0 ) then
           zm%x(:,ithlpthvp) = zm%x(:,ithlpthvp) + thlpthvp
           zm%n(:,ithlpthvp) = zm%n(:,ithlpthvp) + 1
         endif
+
         if ( itaum > 0 ) then
           zm%x(:,itaum) = zm%x(:,itaum) + taum
           zm%n(:,itaum) = zm%n(:,itaum) + 1
         endif
+
         if ( ikhm > 0 ) then
           zm%x(:,ikhm) = zm%x(:,ikhm) + khm
           zm%n(:,ikhm) = zm%n(:,ikhm) + 1
         endif
+
         if ( iwprcp > 0 ) then
           zm%x(:,iwprcp) = zm%x(:,iwprcp) + wprcp
           zm%n(:,iwprcp) = zm%n(:,iwprcp) + 1
         endif
+
         if ( ithlprcp > 0 ) then
           zm%x(:,ithlprcp) = zm%x(:,ithlprcp) + thlprcp
           zm%n(:,ithlprcp) = zm%n(:,ithlprcp) + 1
         endif
+
         if ( irtprcp > 0 ) then
           zm%x(:,irtprcp) = zm%x(:,irtprcp) + rtprcp
           zm%n(:,irtprcp) = zm%n(:,irtprcp) + 1
         endif
+
         if ( iupwp > 0 ) then
           zm%x(:,iupwp) = zm%x(:,iupwp) + upwp
           zm%n(:,iupwp) = zm%n(:,iupwp) + 1
         endif
+
         if ( ivpwp > 0 ) then
           zm%x(:,ivpwp) = zm%x(:,ivpwp) + vpwp
           zm%n(:,ivpwp) = zm%n(:,ivpwp) + 1
         endif
+
         if ( irhom > 0 ) then
           zm%x(:,irhom) = zm%x(:,irhom) + rhom
           zm%n(:,irhom) = zm%n(:,irhom) + 1
         endif
+
         if ( ifrad > 0 ) then
           zm%x(:,ifrad) = zm%x(:,ifrad) + frad
           zm%n(:,ifrad) = zm%n(:,ifrad) + 1
         endif
+
        if ( ifrad_LW > 0 ) then  ! Brian
           zm%x(:,ifrad_LW) = zm%x(:,ifrad_LW) + frad_LW
           zm%n(:,ifrad_LW) = zm%n(:,ifrad_LW) + 1
@@ -2454,20 +2657,93 @@ c     -----------------------------------------------------------------
           zm%x(:,ishear) = zm%x(:,ishear) + shear
           zm%n(:,ishear) = zm%n(:,ishear) + 1
         endif
+
 #ifdef SCALARS
-        if ( iwpsclrp1 > 0 ) then
-          zm%x(:,iwpsclrp1) = zm%x(:,iwpsclrp1) + wpsclrp(1,:)
-          zm%n(:,iwpsclrp1) = zm%n(:,iwpsclrp1) + 1
+        if ( isclraprtp > 0 ) then
+          zm%x(:,isclraprtp) = zm%x(:,isclraprtp) + sclrprtp(:,1)
+          zm%n(:,isclraprtp) = zm%n(:,isclraprtp) + 1
         endif
-        if ( iwpsclrpthlp1 > 0 ) then
-          zm%x(:,iwpsclrpthlp1) = zm%x(:,iwpsclrpthlp1) 
-     .                            + wpsclrpthlp(1,:)
-          zm%n(:,iwpsclrpthlp1) = zm%n(:,iwpsclrpthlp1) + 1
+        if ( isclrbprtp > 0 ) then
+          zm%x(:,isclrbprtp) = zm%x(:,isclrbprtp) + sclrprtp(:,2)
+          zm%n(:,isclrbprtp) = zm%n(:,isclrbprtp) + 1
         endif
-        if ( isclrpthvp1 > 0 ) then
-          zm%x(:,isclrpthvp1) = zm%x(:,isclrpthvp1) 
-     .                            + sclrpthvp(1,:)
-          zm%n(:,isclrpthvp1) = zm%n(:,isclrpthvp1) + 1
+        if ( isclrap2 > 0 ) then
+          zm%x(:,isclrap2) = zm%x(:,isclrap2) + sclrp2(:,1)
+          zm%n(:,isclrap2) = zm%n(:,isclrap2) + 1
+        endif
+        if ( isclrbp2 > 0 ) then
+          zm%x(:,isclrbp2) = zm%x(:,isclrbp2) + sclrp2(:,2)
+          zm%n(:,isclrbp2) = zm%n(:,isclrbp2) + 1
+        endif
+        if ( isclrapthvp > 0 ) then
+          zm%x(:,isclrapthvp) = zm%x(:,isclrapthvp) 
+     .                            + sclrpthvp(:,1)
+          zm%n(:,isclrapthvp) = zm%n(:,isclrapthvp) + 1
+        endif
+        if ( isclrbpthvp > 0 ) then
+          zm%x(:,isclrbpthvp) = zm%x(:,isclrbpthvp) 
+     .                            + sclrpthvp(:,2)
+          zm%n(:,isclrbpthvp) = zm%n(:,isclrbpthvp) + 1
+        endif
+        if ( isclrapthlp > 0 ) then
+          zm%x(:,isclrapthlp) = zm%x(:,isclrapthlp) 
+     .                            + sclrpthlp(:,1)
+          zm%n(:,isclrapthlp) = zm%n(:,isclrapthlp) + 1
+        endif
+        if ( isclrbpthlp > 0 ) then
+          zm%x(:,isclrbpthlp) = zm%x(:,isclrbpthlp) 
+     .                            + sclrpthlp(:,2)
+          zm%n(:,isclrbpthlp) = zm%n(:,isclrbpthlp) + 1
+        endif
+        if ( isclraprcp > 0 ) then
+          zm%x(:,isclraprcp) = zm%x(:,isclraprcp) + sclrprcp(:,1)
+          zm%n(:,isclraprcp) = zm%n(:,isclraprcp) + 1
+        endif
+        if ( isclrbprcp > 0 ) then
+          zm%x(:,isclrbprcp) = zm%x(:,isclrbprcp) + sclrprcp(:,2)
+          zm%n(:,isclrbprcp) = zm%n(:,isclrbprcp) + 1
+        endif
+        if ( iwpsclrap > 0 ) then
+          zm%x(:,iwpsclrap) = zm%x(:,iwpsclrap) + wpsclrp(:,1)
+          zm%n(:,iwpsclrap) = zm%n(:,iwpsclrap) + 1
+        endif
+        if ( iwpsclrbp > 0 ) then
+          zm%x(:,iwpsclrbp) = zm%x(:,iwpsclrbp) + wpsclrp(:,2)
+          zm%n(:,iwpsclrbp) = zm%n(:,iwpsclrbp) + 1
+        endif
+        if ( iwp2sclrap > 0 ) then
+          zm%x(:,iwp2sclrap) = zm%x(:,iwp2sclrap) + wp2sclrp(:,1)
+          zm%n(:,iwp2sclrap) = zm%n(:,iwp2sclrap) + 1
+        endif
+        if ( iwp2sclrbp > 0 ) then
+          zm%x(:,iwp2sclrbp) = zm%x(:,iwp2sclrbp) + wp2sclrp(:,2)
+          zm%n(:,iwp2sclrbp) = zm%n(:,iwp2sclrbp) + 1
+        endif
+        if ( iwpsclrap2 > 0 ) then
+          zm%x(:,iwpsclrap2) = zm%x(:,iwpsclrap2) + wpsclrp2(:,1)
+          zm%n(:,iwpsclrap2) = zm%n(:,iwpsclrap2) + 1
+        endif
+        if ( iwpsclrbp2 > 0 ) then
+          zm%x(:,iwpsclrbp2) = zm%x(:,iwpsclrbp2) + wpsclrp2(:,2)
+          zm%n(:,iwpsclrbp2) = zm%n(:,iwpsclrbp2) + 1
+        endif
+        if ( iwpsclraprtp > 0 ) then
+          zm%x(:,iwpsclraprtp) = zm%x(:,iwpsclraprtp) + wpsclrprtp(:,1)
+          zm%n(:,iwpsclraprtp) = zm%n(:,iwpsclraprtp) + 1
+        endif
+        if ( iwpsclrbprtp > 0 ) then
+          zm%x(:,iwpsclrbprtp) = zm%x(:,iwpsclrbprtp) + wpsclrprtp(:,2)
+          zm%n(:,iwpsclrbprtp) = zm%n(:,iwpsclrbprtp) + 1
+        endif
+        if ( iwpsclrapthlp > 0 ) then
+          zm%x(:,iwpsclrapthlp) = zm%x(:,iwpsclrapthlp) 
+     .                            + wpsclrpthlp(:,1)
+          zm%n(:,iwpsclrapthlp) = zm%n(:,iwpsclrapthlp) + 1
+        endif
+        if ( iwpsclrbpthlp > 0 ) then
+          zm%x(:,iwpsclrbpthlp) = zm%x(:,iwpsclrbpthlp) 
+     .                            + wpsclrpthlp(:,2)
+          zm%n(:,iwpsclrbpthlp) = zm%n(:,iwpsclrbpthlp) + 1
         endif
 #endif SCALARS
 
@@ -2487,10 +2763,11 @@ c     -----------------------------------------------------------------
           do while ( rcm(k) < 1.e-6 .and. k < gr%nnzp )
             k = k + 1
           end do
+
           if ( k < gr%nnzp) then
-           sfc%x(1,izb) = sfc%x(1,izb) + gr%zt(k)
+            sfc%x(1,izb) = sfc%x(1,izb) + gr%zt(k)
           else
-           sfc%x(1,izb) = sfc%x(1,izb) - 10
+            sfc%x(1,izb) = sfc%x(1,izb) - 10
           endif
           sfc%n(1,izb) = sfc%n(1,izb) + 1
         endif

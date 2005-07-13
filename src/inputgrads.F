@@ -22,7 +22,7 @@
 
           type variable
             integer index
-            character (len = 10) name             ! variable name
+            character (len = 15) name             ! variable name
           end type variable
 
 ! Structure to hold description of a GrADS input file

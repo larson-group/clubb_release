@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.22 2005-07-05 16:30:11 dschanen Exp $
+! $Id: hoc.F,v 1.23 2005-07-13 20:59:42 dschanen Exp $
 
 !      Module HOC
 !-----------------------------------------------------------------------
@@ -23,7 +23,14 @@
 
        interface hoc_model
          module procedure hoc_model_variable_input, hoc_model_standard
-       end interface hoc_model
+       end interface
+
+
+! Directives for scalars
+#ifdef SCALARS
+#define SCLR_THETA 1
+#define SCLR_RT 2
+#endif
 
 !      Model settings
 
@@ -198,9 +205,6 @@
 !      Internal Loop Variables
        integer i, i1
 
-
-       print*, "In hoc variable input"
-
 ! Initialize run to valid
 
        isValid = .true.
@@ -271,8 +275,8 @@
 !-----------------------------------------------------------------------
 !  subroutine hoc_model_standard()
 
-!  Subprogram to integrate the pde equations for pdf closure
-!    This is the standard call
+!  Subprogram to integrate the pde equations for pdf closure.
+!    This is the standard call.
 
 !  Calls:  subroutine hoc_initialize (once)
 !          subroutine hoc_forcings_timestep (ifinal times)
@@ -331,8 +335,6 @@
 !      Internal Loop Variables
        integer i, i1
 
-       print*, "In hoc standard model"
-
 ! Initialize run to valid
 
        isValid = .true.
@@ -347,7 +349,7 @@
        
 !-------------------------- Time integration ---------------------------
        ifinal  = ( time_final - time_initial )  / dtmain
-!       ioutput = dtoutput / dtmain
+!       ioutput = dtoutput / dtmain ! no longer needed with new statistics
 
        time    = time_initial
        spunup  = .false.
@@ -495,7 +497,7 @@
         call read_sounding( thlm, rtm, um, vm, ug, vg, 
      .                      runfile, runtype
 #ifdef SCALARS               
-     .                      ,sclrm   ! optional
+     .                      ,sclrm, .true.   ! optional
 #endif SCALARS
      .                    )
 
@@ -527,6 +529,9 @@
         case default
           ! Initial profile is non-saturated thlm or any type of theta.
           thlm = thlm - Lv/(Cp*exner) * rcm
+#ifdef SCALARS
+          sclrm(:,SCLR_THETA) = sclrm(:,SCLR_THETA) - Lv/(Cp*exner)*rcm
+#endif
         end select
 
 ! Now, compute initial thetav
@@ -626,7 +631,8 @@
         call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1),
      .                wp2(1), thlp2(1), rtp2(1), rtpthlp(1) 
 #ifdef SCALARS
-     .                ,wpsclrp(:,1), sclrp2(:,1), sclrpthlp(:,1) ! Optional
+     .                ,wpsclrp(1,:), sclrp2(1,:), 
+     .                sclrprtp(1,:), sclrpthlp(1,:) ! Optional
 #endif SCALARS
      .              )
 
@@ -753,8 +759,15 @@
 #endif SCALARS
      . )
            thlm_forcing = 0.
+#ifdef SCALARS
+           sclrm_forcing(:, SCLR_THETA) = 0.
+#endif SCALARS
 
-           call cloud_rad( rhot, rcm, Frad, thlm_forcing )
+           call cloud_rad( rhot, rcm, Frad, thlm_forcing
+#ifdef SCALARS
+     .                     ,sclrm_forcing(:,SCLR_THETA)
+#endif SCALARS
+     .                   )
            kk_rain = .false.
 
          case ( 4 ) ! Wangara dry CBL
@@ -775,7 +788,11 @@
 #endif SCALARS
      .                     )
 
-           call cloud_rad( rhot, rcm, Frad, thlm_forcing )
+           call cloud_rad( rhot, rcm, Frad, thlm_forcing
+#ifdef SCALARS
+     .                     ,sclrm_forcing(:, SCLR_THETA)
+#endif SCALARS
+     .                   )
            kk_rain = .false.
 
          case ( 7 ) ! DYCOMS2 RF01 case
@@ -807,7 +824,6 @@
 #endif SCALARS
      .                             )
            kk_rain = .true.
-
          case ( 10 ) ! DYCOMS2 RF02 case with no drizzle
            call dycoms2_rf02_tndcy( rhot, rhom, rtm, 
      .                              rcm, wmt, wmm,
@@ -835,9 +851,7 @@
 
          end select
 
-!       print*, 'hoc.F: got past runtype selection'
-
-!          Bc for the second order moments
+!        Bc for the second order moments
 
          select case ( runtype )
 
@@ -849,10 +863,11 @@
            ! sfctype = 1  bulk formula: uses given surface temperature 
            !                   and assumes over ocean
            if ( sfctype == 0 ) then
-             wpthlp(1)     = SE
-             wprtp(1)      = LE
+             wpthlp(1) = SE
+             wprtp(1)  = LE
 #ifdef SCALARS
-             wpsclrp(1)    = LE
+             wpsclrp(:,SCLR_THETA) = SE
+             wpsclrp(:,SCLR_RT)    = LE
 #endif SCALARS
            else if ( sfctype == 1 ) then
              call sfc_thermo_fluxes( um(2), vm(2),
@@ -860,7 +875,7 @@
      .                               thlm(2), rtm(2),
      .                               wpthlp(1), wprtp(1)
 #ifdef SCALARS
-     .                               ,sclrm(:,1), wpsclrp(:,1)
+     .                               ,sclrm(2,:), wpsclrp(1,:)
 #endif SCALARS
      .                              )
 
@@ -876,7 +891,7 @@
      .                      upwp(1), vpwp(1), 
      .                      wpthlp(1), wprtp(1), ustar
 #ifdef SCALARS
-     .                      ,wpsclrp(:,1)
+     .                      ,wpsclrp(1,:)
 #endif SCALARS
      .                    )
 
@@ -885,7 +900,7 @@
      .                        upwp(1), vpwp(1),
      .                        wpthlp(1), wprtp(1)
 #ifdef SCALARS
-     .                      ,wpsclrp(:,1)
+     .                        ,wpsclrp(1,:)
 #endif SCALARS
      .                    )
 
@@ -894,7 +909,7 @@
      .                           upwp(1), vpwp(1),
      .                           wpthlp(1), wprtp(1)
 #ifdef SCALARS
-     .                           ,wpsclrp(:,1)
+     .                           ,wpsclrp(1,:)
 #endif SCALARS
      .                        )
 
@@ -903,7 +918,7 @@
      .                       upwp(1), vpwp(1),
      .                       wpthlp(1), wprtp(1)
 #ifdef SCALARS
-     .                      ,sclrm(:,1), wpsclrp(:,1)
+     .                      ,sclrm(2,:), wpsclrp(1,:)
 #endif SCALARS
      .                    )
 
@@ -914,7 +929,7 @@
      .                               rhom(1), upwp(1), vpwp(1), 
      .                               wpthlp(1), wprtp(1)
 #ifdef SCALARS
-     .                              ,sclrm(:,1), wpsclrp(:,1)
+     .                              ,sclrm(2,:), wpsclrp(1,:)
 #endif SCALARS
      .                              )
          case ( 8 )
@@ -922,16 +937,16 @@
      .                        upwp(1), vpwp(1), wpthlp(1), 
      .                        wprtp(1)
 #ifdef SCALARS
-     .                      ,wpsclrp(:,1)
+     .                        ,wpsclrp(1,:)
 #endif SCALARS
-     .                    )
+     .                      )
          case ( 9, 10 )
            call dycoms2_rf02_sfclyr( um(2), vm(2), 
      .                               thlm(2), rtm(2),
      .                               psfc, upwp(1), vpwp(1), 
      .                               wpthlp(1), wprtp(1)
 #ifdef SCALARS
-     .                               ,wpsclrp(:,1)
+     .                               ,sclrm(2,:), wpsclrp(1,:)
 #endif SCALARS
      .                             )
 
@@ -976,9 +991,10 @@
 !    latin_hypercube_sampling (Internal to module hoc)
 !-----------------------------------------------------------------------
        subroutine hoc_closure_timestep( iteration, isValid,
-     .                                  um_in, vm_in, rtm_in, 
-     .                                  thlm_in, wp2_in, wprtp_in, 
+     .                                  um_in, vm_in, rtm_in,
+     .                                  thlm_in, wp2_in, wprtp_in,
      .                                  wpthlp_in, wp3_in )
+
 
 ! Modules to be included
        use constants
@@ -996,7 +1012,6 @@
 
 !      External
        real, external    :: rsat
-!       logical, external    :: invalid_model_arrays
 
 !      Input
        integer, intent(in)    :: iteration ! From i1 argument
@@ -1013,7 +1028,12 @@
        real, optional, dimension(:), intent(in) :: wp3_in
 
 !      Internal
-       integer j, k
+       integer i, j, k
+#ifdef SCALARS
+       real, 
+     . dimension(gr%nnzp, sclrm_dimension) :: sclr_tmp1, sclr_tmp2,
+     .                                        sclr_tmp3, sclr_tmp4
+#endif SCALARS
 
 !      Check the parameter list to see if any variables are being set manually
        if (present( um_in )) um         = um_in
@@ -1076,25 +1096,24 @@
        Khm = zt2zm( Kht )
 
 !      Diagnose variances
-
        call diag_var( taum, wmm, rtm, wprtp, 
      .                thlm, wpthlp, wp2, wp3, Scm, 
      .                rtp2, thlp2, rtpthlp,
      .                .false., dtclosure, isValid
 #ifdef SCALARS
-     .                ,sclrm, wpsclrp,          ! optional vars
-     .                sclrp2, sclrpthlp         !   "       "
+     .                ,sclrm, wpsclrp, sclrp2,    ! optional vars
+     .                sclrprtp, sclrpthlp         !   "       "
 #endif SCALARS
      .               )
        if ( .not. isValid ) return
 
-!      Call closure scheme and boundary conditions
+!      Call closure scheme
 
        call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1),
      .               wp2(1), thlp2(1), rtp2(1), rtpthlp(1)
 #ifdef SCALARS
-     .               ,wpsclrp(:,1),
-     .               sclrp2(:,1), sclrpthlp(:,1)
+     .               ,wpsclrp(1,:), sclrp2(1,:),
+     .               sclrprtp(1,:), sclrpthlp(1,:)
 #endif SCALARS
      .             )
 
@@ -1110,6 +1129,8 @@
 
 !       print*, 'hoc.F: i_rmd=', i_rmd
 
+!      Set Boundary Conditions
+
        wpthlp(gr%nnzp)  = 0.
        wprtp(gr%nnzp)   = 0.
        wp2(gr%nnzp)     = 0.
@@ -1122,10 +1143,19 @@
        wp3(gr%nnzp)     = 0.
 
 #ifdef SCALARS
-!     Optional passive scalars
-       wpsclrp(1, gr%nnzp)   = 0.
-       sclrp2(1, gr%nnzp)    = 0.
-       sclrpthlp(1, gr%nnzp) = 0.
+!      Set boundary conditions for optional passive scalars
+       do i = 1, sclrm_dimension
+         wpsclrp(gr%nnzp,i)   = 0.
+         sclrprtp(gr%nnzp,i)  = 0.
+         sclrp2(gr%nnzp,i)    = 0.
+         sclrpthlp(gr%nnzp,i) = 0.
+
+!        Put closure scheme input on the m grid
+         sclr_tmp1(:,i) = zm2zt( wpsclrp(:,i) ) 
+         sclr_tmp2(:,i) = zm2zt( sclrprtp(:,i) ) 
+         sclr_tmp3(:,i) = zm2zt( sclrp2(:,i) ) 
+         sclr_tmp4(:,i) = zm2zt( sclrpthlp(:,i) ) 
+       enddo ! i = 1, sclrm_dimension
 #endif SCALARS
 
        do k = 2, gr%nnzp - 1
@@ -1143,17 +1173,17 @@
      .                           pdf_parms(k, :),
      .                           crt1, crt2, cthl1, cthl2
 #ifdef SCALARS
-     .                           ,sclrm(1,k), 
-     .                           zm2zt( wpsclrp(1,:), k),        ! optional
-     .                           wpsclrp2(1,k),                  !   " "
-     .                           zm2zt( sclrp2(1,:), k ),        !   " " 
-     .                           zm2zt( sclrpthlp(1,:), k ),     !   " "
-     .                           sclrpthvp(1,k), sclrprcp(1,k)   !   " "
+     .                           ,sclrm(k,:), sclr_tmp1(k,:),      ! optional
+     .                           wpsclrprtp(k,:), wpsclrp2(k,:),   !   "  "
+     .                           sclr_tmp2(k,:), sclr_tmp3(k,:),   !   "  " 
+     .                           sclr_tmp4(k,:), sclrpthvp(k,:),   !   "  "
+     .                           wpsclrpthlp(k,:), sclrprcp(k,:),  !   "  "
+     .                           wp2sclrp(k,:)                     !   "  "
 #endif SCALARS
      .                          )
-
 !        Latin hypercube sampling.
          if ( LH_on ) call latin_hypercube_sampling( k )
+
        enddo ! k = 2, nz-1
 
 !            print*, 'hoc.F: AKm=', AKm
@@ -1161,8 +1191,12 @@
               
 #ifdef SCALARS
 !      Interpolate passive scalars back onto the m grid
-       sclrpthvp(1,:) = zt2zm( sclrpthvp(1,:) )                
-       sclrprcp(1,:)  = zt2zm( sclrprcp(1,:) )
+       do i = 1, sclrm_dimension
+         sclrpthvp(:,i) = zt2zm( sclrpthvp(:,i) )                
+         sclrprcp(:,i)  = zt2zm( sclrprcp(:,i) )
+       enddo ! i=1, sclrm_dimension
+
+       sclrpthvp(1,SCLR_THETA) = sclrpthlp(1,SCLR_THETA)
 #endif SCALARS
 
 !      Interpolate variables back to m grid
@@ -1178,6 +1212,12 @@
 
 !      Alternate approach for lower wp4 boundary condition:
 !      call pdf scheme at the 1st momentum level, zm(1)
+
+#ifdef SCALARS
+       do i = 1, sclrm_dimension
+         sclr_tmp1(:,i) = zt2zm( sclrm(:,i) )
+       enddo
+#endif SCALARS
 
         call pdf_closure_new
      .      ( p(1), exner(1),
@@ -1197,10 +1237,12 @@
      .        pdf_parms(1,:),
      .        crt1, crt2, cthl1, cthl2 
 #ifdef SCALARS
-     .        ,zt2zm( sclrm(1,:), 1 ), wpsclrp(1,1),
-     .        wpsclrp2(1,1), sclrp2(1,1),
-     .        sclrpthlp(1,1), sclrpthvp(1,1),
-     .        sclrprcp(1,1)
+     .        ,sclr_tmp1(1,:), wpsclrp(1,:),
+     .        wpsclrprtp(1,:), wpsclrp2(1,:),
+     .        sclrprtp(1,:), sclrp2(1,:),
+     .        sclrpthlp(1,:), sclrpthvp(1,:),
+     .        wpsclrpthlp(1,:), sclrprcp(1,:),
+     .        wp2sclrp(1,:)
 #endif SCALARS
      .      )
 
@@ -1211,11 +1253,11 @@
        thlpthvp(gr%nnzp) = 0.
 
 #ifdef SCALARS
-       sclrpthvp(1, gr%nnzp) = 0.
+       sclrpthvp(gr%nnzp,:) = 0.
 #endif SCALARS
 
-       if (present( thlm_in )) thlm     = thlm_in
-       if (present( rtm_in )) rtm       = rtm_in
+       if (present( thlm_in )) thlm = thlm_in
+       if (present( rtm_in )) rtm   = rtm_in
 
 !      call Khairoutdinov and Kogan (2000) scheme for rain microphysics.
 
@@ -1308,26 +1350,26 @@
 
        call timestep_wp23
      .     ( dtclosure, Lscale, taum, taut, Sct, 
-     .       pdf_parms(:,13), Khm, ! Brian
+     .       pdf_parms(:, 13), Khm,
      .       wmt, wmm,
      .       um, upwp, vm, vpwp, wpthvp, wp2thvp,
-     .       wp2, wp3, em, isValid)
+     .       wp2, wp3, em, isValid )
 
        ! Set initial turbulence over first so many
        ! minutes of the Nov. 11 altocumulus case.  Brian.
-       SELECT CASE ( runtype )
-       CASE ( 11 )
-         IF ( time < time_initial + 1800.0) THEN
+       select case( runtype )
+       case ( 11 )
+         if ( time < time_initial + 1800.0) then
 
-            DO k = 1, gr%nnzp, 1
-               IF ( thlm(k) <= 312.0 ) THEN
+            do k = 1, gr%nnzp, 1
+               if ( thlm(k) <= 312.0 ) then
                   em(k) = 1.0
                   wp2(k) = (2.0/3.0) * em(k)
-               ENDIF
-            ENDDO
+               endif
+            enddo
 
-         ENDIF
-       END SELECT
+         endif
+       end select
 
 !      Update winds
 

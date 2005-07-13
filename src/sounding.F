@@ -1,30 +1,36 @@
-! $Id: sounding.F,v 1.5 2005-07-01 16:14:54 dschanen Exp $
+! $Id: sounding.F,v 1.6 2005-07-13 20:59:43 dschanen Exp $
+#define SCLR_THETA 1
+#define SCLR_RT 2
       module sounding
+
       implicit none
+
+      public read_sounding
+      private linint
+      public read_profile ! not currently used at all
+
       contains
 !------------------------------------------------------------------------
 ! subroutine read_sounding( )
 
 ! Subroutine to initialize model variables from namelist file
-! Notes: for whatever reason, this subroutine is very flakey, modify it
-!        with caution.
 !------------------------------------------------------------------------
         subroutine read_sounding( thlm, rtm, um, vm, ugm, vgm, runfile, 
      .                            runtype, 
-     .                            sclrm ) ! optional
+     .                            sclrm, sclr_sounding ) ! optional
 
         use grid_class
         use constants, only: sclrm_dimension
 
         implicit none
 
-! External
-!        real, external :: linint
-
 ! Input
 
         character(len=*), intent(in) :: runfile
         integer, intent(in)          :: runtype
+
+! Input (Optional)
+        logical, optional, intent(in) :: sclr_sounding
 
 ! Parameter
 
@@ -39,28 +45,33 @@
         real, intent(out), dimension(gr%nnzp) :: ugm
         real, intent(out), dimension(gr%nnzp) :: vgm
 
-! Optional Output for new mixing scheme
+! Optional Output
         real, optional, intent(out), 
-     .        dimension(sclrm_dimension, gr%nnzp) :: sclrm
+     .        dimension(gr%nnzp, sclrm_dimension) :: sclrm
 
 ! Input variables from namelist
 
         integer nlevels
         real z(nmaxsnd),theta(nmaxsnd),rt(nmaxsnd)
         real u(nmaxsnd),v(nmaxsnd),ug(nmaxsnd),vg(nmaxsnd)
-        real, dimension(nmaxsnd) :: sclr
+
+        real, dimension(nmaxsnd, sclrm_dimension)  :: sclr
 
         namelist /sounding/ nlevels, z, theta, rt, u, v, ug, vg
-        namelist /scalers/ sclr    ! unimplemented
+        namelist /scalar_sounding/ sclr
     
 ! Internal
 
-        integer i,k
+        integer i, j, k
 
 ! Read sounding namelist
-        open(10, file = runfile, status = 'old' )
-        read(10, nml = sounding )
+        open(10, file = runfile, status = 'old')
+        read(10, nml = sounding)
+
+        if (sclr_sounding) read(10, nml = scalar_sounding)
+
         close(10)
+
         if ( nlevels > nmaxsnd ) then
            write(*,*) 'Error in sounding: nlevels > nmaxsnd'
            write(*,*) 'nlevels = ',nlevels
@@ -86,12 +97,13 @@
            write(*,*) 'First level of input sounding must be z=0'
            stop 'STOP in sounding'
         else
-            um(1)   = u(1)
-            vm(1)   = v(1)
-            ugm(1)  = ug(1)
-            vgm(1)  = vg(1)
-            thlm(1) = theta(1)
-            rtm(1)  = rt(1)
+          um(1)   = u(1)
+          vm(1)   = v(1)
+          ugm(1)  = ug(1)
+          vgm(1)  = vg(1)
+          thlm(1) = theta(1)
+          rtm(1)  = rt(1)
+          if ( sclr_sounding ) sclrm(1,:) = sclr(1,:)  
         endif
 
 ! Use linear interpolation from two nearest prescribed grid points
@@ -100,7 +112,6 @@
 
         do i=2, gr%nnzp
           k=1
-!  40      if ( z(k) >= gr%zt(i) ) then
           do while ( z(k) < gr%zt(i) )
             k=k+1
             if ( k > nlevels ) then
@@ -113,44 +124,53 @@
 
               stop 'STOP in sounding'
             endif  ! k > nlevels
-          enddo
-            IF ( runtype /= 9 ) THEN  ! Regular situation w/ linear int.
 
-            um(i)   = linint( gr%zt(i), z(k), z(k-1), u(k), u(k-1) )
-            vm(i)   = linint( gr%zt(i), z(k), z(k-1), v(k), v(k-1) )
-            ugm(i)  = linint( gr%zt(i), z(k), z(k-1), ug(k), ug(k-1) )
-            vgm(i)  = linint( gr%zt(i), z(k), z(k-1), vg(k), vg(k-1) )
-            thlm(i) = linint( gr%zt(i), z(k), z(k-1), 
-     .                        theta(k), theta(k-1) )
-            rtm(i)  = linint( gr%zt(i), z(k), z(k-1), rt(k), rt(k-1) )
-
+            IF ( runtype /= 9 .AND. runtype /= 10) THEN  ! Regular situation w/ linear int.
+              um(i)   = linint( gr%zt(i), z(k), z(k-1), u(k), u(k-1) )
+              vm(i)   = linint( gr%zt(i), z(k), z(k-1), v(k), v(k-1) )
+              ugm(i)  = linint( gr%zt(i), z(k), z(k-1), ug(k), ug(k-1) )
+              vgm(i)  = linint( gr%zt(i), z(k), z(k-1), vg(k), vg(k-1) )
+              thlm(i) = linint( gr%zt(i), z(k), z(k-1), 
+     .                      theta(k), theta(k-1) )
+              rtm(i)  = linint( gr%zt(i), z(k), z(k-1), rt(k), rt(k-1) )
+              if ( sclr_sounding ) then
+                do j = 1, sclrm_dimension 
+                  sclrm(i,j) = linint( gr%zt(i), z(k), z(k-1), 
+     .                                 sclr(k,j), sclr(k-1,j) )
+                enddo
+              endif
             ELSE  ! DYCOMS II RF02 case
 
-               IF ( gr%zt(i) < 795.0 ) THEN
-                  um(i)   =  6.5 + (2.0*gr%zt(i))/1000.0
-                  vm(i)   = -8.5 + (5.0*gr%zt(i))/1000.0
-                  ugm(i)  = um(i)
-                  vgm(i)  = vm(i)
-                  thlm(i) = 288.3
-                  rtm(i)  = (9.45)/1000.0
-               ELSE
-                  um(i)   =  6.5 + (2.0*gr%zt(i))/1000.0
-                  vm(i)   = -8.5 + (5.0*gr%zt(i))/1000.0
-                  ugm(i)  = um(i)
-                  vgm(i)  = vm(i)
-                  thlm(i) = 295.0 + ( (gr%zt(i) - 795.0)**(1.0/3.0) )
-                  rtm(i)  = (  5.0 - 3.0 
-     .            * ( 1.0 - EXP( (795.0 - gr%zt(i))/500.0 ) )  )/1000.0
-               ENDIF
+              IF ( gr%zt(i) < 795.0 ) THEN
+                um(i)   =  6.5 + (2.0*gr%zt(i))/1000.0
+                vm(i)   = -8.5 + (5.0*gr%zt(i))/1000.0
+                ugm(i)  = um(i)
+                vgm(i)  = vm(i)
+                thlm(i) = 288.3
+                rtm(i)  = (9.45)/1000.0
+!               Scalars; change if not equal to th and rt
+                if ( sclr_sounding ) then
+                  sclrm(i, SCLR_THETA) = thlm(i)
+                  sclrm(i, SCLR_RT)    = rtm(i)
+                endif
+              ELSE
+                um(i)   =  6.5 + (2.0*gr%zt(i))/1000.0
+                vm(i)   = -8.5 + (5.0*gr%zt(i))/1000.0
+                ugm(i)  = um(i)
+                vgm(i)  = vm(i)
+                thlm(i) = 295.0 + ( (gr%zt(i) - 795.0)**(1.0/3.0) )
+                rtm(i)  = (  5.0 - 3.0 
+     .          * ( 1.0 - EXP( (795.0 - gr%zt(i))/500.0 ) )  )/1000.0
+                ! Same as above
+                if ( sclr_sounding ) then
+                  sclrm(i, SCLR_THETA) = thlm(i)
+                  sclrm(i, SCLR_RT)    = rtm(i)
+                endif
+              ENDIF
 
-            ENDIF ! runtype /= 9
-!          else
-!            goto 40
-!          endif      !  z(k) >= gr%zt(i) 
-        enddo        !  i=2, gr%nnzp
-
-!       Temporary
-        if (present( sclrm )) sclrm(1,:) = rtm
+            ENDIF ! runtype /= 9 or 10
+          enddo ! do while 
+        enddo   ! i=2, gr%nnzp
 
         return
         end subroutine read_sounding
@@ -242,7 +262,6 @@
 
         do i = 2, gr%nnzp
           k = 1
-!  40      if ( z(k) >= gr%zt(i) ) then
           do while ( z(k) < gr%zt(i) )
             k = k + 1
               if ( k > nlevels ) then
@@ -258,12 +277,10 @@
               endif
             x(i) = linint( gr%zt(i), z(k), z(k-1), var(k), var(k-1) )
           enddo ! while
-!          else
-!            goto 40
-!          endif
         end do ! i=2, gr%nzzp
 
         return
         end subroutine read_profile
 
       end module sounding
+!-----------------------------------------------------------------------

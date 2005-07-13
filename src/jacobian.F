@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.12 2005-07-09 20:22:12 dschanen Exp $
+! $Id: jacobian.F,v 1.13 2005-07-13 20:59:43 dschanen Exp $
 
 ! Program Jacobian
 
@@ -129,7 +129,8 @@
      .    "beta      ", "gamma_coef",
      .    "c_K       ", "mu        "/)
 
-      write(*, '(a12,a12,a12)') "constant", "initial", "varied"
+      write(*, '(a12,a12,a12)') "constant   ", "initial    ", 
+     .                          "varied     "
       do i = 1, ca1%entries
         write(*,*) ca1%element(i)%name, ca1%element(i)%value, 
      .             ca1%element(i)%value * delta_factor
@@ -244,7 +245,7 @@
 !      write(20,'(18A)') "% columns:", ca1%element(1:nconst)%name
 !      write(20,'(14A)') "% rows:   ", var2%var(1:nvar)%name 
       do j =1, var2%entries
-        write(20, '(17e)') jmatrix(:,j)
+        write(20, '(17e18.10)') jmatrix(:,j)
       enddo
       close(20)
 
@@ -257,7 +258,7 @@
 !      write(20,'(18A)') "% columns:", ca1%element(1:nconst)%name
 !      write(20,'(13A)') "% rows:   ", var2%element(1:nvar)%name
       do j =1, var2%entries
-        write(20, '(17e)') impact_matrix(:,j)
+        write(20, '(17e18.10)') impact_matrix(:,j)
       enddo
 
       contains

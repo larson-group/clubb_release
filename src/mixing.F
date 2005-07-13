@@ -1,5 +1,11 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.6 2005-07-09 17:50:52 griffinb Exp $
+! $Id: mixing.F,v 1.7 2005-07-13 20:59:43 dschanen Exp $
+!
+! Module containing the hoc mixing scheme.  Allows for optional variables
+! and assumed shape arrays.
+!-----------------------------------------------------------------------
+#define SCLR_THETA 1
+#define SCLR_RT 2
 
       module mixing
       implicit none
@@ -99,19 +105,19 @@
 !       Solve sclrm / wpsclrp
         if ( present( sclrm )     .and. present( wpsclrp ) .and.
      .       present( sclrpthvp ) .and. present( sclrm_forcing ) ) then
-          do i=1, sclrm_dimension
-            call mixing_solve( "sclrm", .true., dt, taum, exner,
-     .                         sclrm(i,:), wpsclrp(i,:),
-     .                         sclrpthvp(i,:), sclrm_forcing(i,:),
-     .                         cond_rrm, auto_rrm, accr_rrm,
-     .                         aa, dd, al, indx )
-          enddo
+          call mixing_solve( "sclrm_rtm", .true., dt, taum, exner,
+     .                       sclrm(:,SCLR_RT), wpsclrp(:,SCLR_RT),
+     .                       sclrpthvp(:,SCLR_RT), 
+     .                       sclrm_forcing(:,SCLR_RT),
+     .                       cond_rrm, auto_rrm, accr_rrm,
+     .                       aa, dd, al, indx )
+          call mixing_solve( "sclrm_thlm", .true., dt, taum, exner,
+     .                       sclrm(:,SCLR_THETA), wpsclrp(:,SCLR_THETA),
+     .                       sclrpthvp(:,SCLR_THETA), 
+     .                       sclrm_forcing(:,SCLR_THETA),
+     .                       cond_rrm, auto_rrm, accr_rrm,
+     .                       aa, dd, al, indx )
         endif
-!        print *, "after"
-!        print *, "rt=",  sum( sclrm )   - sum ( rtm ),
-!     .           "wp=",  sum( wprtp )   - sum ( wpsclrp ),
-!     .           "thvp=",sum( rtpthvp ) - sum ( sclrpthvp )
-
  
 !       Free memory
 
@@ -384,7 +390,7 @@
           iwpxp_pr2 = iwpthlp_pr2
           iwpxp_pr3 = iwpthlp_pr3
           iwpxp_dp1 = iwpthlp_dp1
-        case default
+        case default  ! this includes the sclrm case
           iwpxp_bt  = 0
           iwpxp_ma  = 0
           iwpxp_ta  = 0
@@ -452,9 +458,13 @@
           case ( "thlm" )
             dd(k_xm) = dd(k_xm) - ( Lv / (Cp*exner(k)) ) *
      .                 ( -cond_rrm(k) - auto_rrm(k) - accr_rrm(k) )  ! thlm only; Brian
-          case ( "sclrm" ) 
-            dd(k_xm) = dd(k_xm)
-     .                 - cond_rrm(k) - auto_rrm(k) - accr_rrm(k)  ! sclrm = rtm for now
+          case ( "sclrm_rtm" ) 
+            dd(k_xm) = dd(k_xm) 
+     .                  - cond_rrm(k) - auto_rrm(k) - accr_rrm(k)   ! sclrm = rtm
+          case ( "sclrm_thlm" )
+            dd(k_xm) = dd(k_xm) + ( Lv / (Cp*exner(k)) ) *
+     .                 ( cond_rrm(k) + auto_rrm(k) + accr_rrm(k) )  ! sclrm = thlm
+
           end select
 
 !         wpxp: time tendency and buoyancy

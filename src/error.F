@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.10 2005-07-09 23:09:38 griffinb Exp $
+! $Id: error.F,v 1.11 2005-07-13 20:59:42 dschanen Exp $
 
 !       Module ERROR
 !
@@ -356,7 +356,7 @@
       enddo 
 
       write(*,*) "err_array:"
-      write(*,'(3e5.5)')  err_array
+      write(*,'(6e12.5)')  err_array
 
       end subroutine tuner_init
 
