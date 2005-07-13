@@ -1,4 +1,4 @@
-! $Id: sounding.F,v 1.7 2005-07-13 21:15:53 dschanen Exp $
+! $Id: sounding.F,v 1.8 2005-07-13 21:17:04 dschanen Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
       module sounding
@@ -63,7 +63,7 @@
         logical  :: sclr_sounding
 
 ! Read sounding namelist
-        if present( sclrm ) then 
+        if ( present( sclrm ) ) then 
           sclr_sounding = .true.
         else
           sclr_sounding = .false.
