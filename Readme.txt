@@ -1,6 +1,6 @@
 Using the HOC tuner
 -----------------------------------------------------------------------
-Last update July 8, 2005
+Last update July 12, 2005
 
 -----------------------------------------------------------------------
 -                                                                     -
@@ -95,10 +95,11 @@ The code is written in Fortran 90/95 and executed by a bash runscript. On a
 win32 machine this could be done with a .bat file, but we have not written
 one or tested this.
 
-We use the Portland Group compiler, version 5.2.
-G95 currently only works for standalone, and with K&K rain microphysics off.
-The gfortran compiler does not work at all. Nag and Sun Studio will probably
-both work with floating point exceptions disabled, but neither has been tested.
+We use the Portland Group compiler, version 5.2-4.
+G95 currently only works -ffast-math off, and hoc_standalone is the only
+program which works reliably.
+Sun's fortran 95  appears to work, but has not been tested rigorously.
+The gfortran ( gcc 4.0.x) compiler does not work at all.
 
 -----------------------------------------------------------------------
 -                                                                     -
@@ -174,8 +175,8 @@ this option, you must modify the Makefile in the src directory so that
 FCFLAGS includes "-DSCALARS" and do a make clean, make, and make install.
 
 Initially, the sclr arrays are configured to contain two vertical columns
-containing copies of thl and rt ( first and second elements, respectively).
-The code if sufficently general the an arbitrary number of scalars can be
+containing copies of thl and rt (the first and second elements, respectively).
+The code is sufficently general that an arbitrary number of scalars can be
 added with a small number of modifications.  The following files must be
 adjusted to customize the scalars:
 
@@ -190,8 +191,9 @@ find places where the code is not general for both cases.
 mixing.F:  When timestep_mixing calls mixing_solve, it needs an argument that
 indicates the correct equation to use.  This relies on a case statement within
 mixing_solve, and should be easy to add to as needed. Calling the "rtm" and 
-"thlm" cases more than once each will cause sampling errors with statistics and
-should probably be avoided if possible.
+"thlm" cases more than once each will cause sampling errors in some of the
+budget terms.  Currently budget terms are not setup for rtm/thlm or the
+sclr.
 
 statistics.F:  Currently it is only configured to generate data for 2 elements 
 for each of the sclr arrays.  Adding more will probably take some time.
@@ -205,7 +207,8 @@ lines that begin with the "if ( present ( sclrm )" statements.
 
 gcss.F: All the cases that you wish to run will require a modification to the
 tndcy and sfclyr subroutines, since they will be configured for thl and rt by
-default.
+default.  Searching for SCLR_RT and SCLR_THETA should come up with all of
+them.
 
 All the other source files should work as is.
 
