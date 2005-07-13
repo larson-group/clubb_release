@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.13 2005-07-13 20:59:43 dschanen Exp $
+!  $Id: statistics.F,v 1.14 2005-07-13 21:39:46 dschanen Exp $
 
 !  module stats_type
 !  contains:
@@ -2786,5 +2786,68 @@ c     -----------------------------------------------------------------
 
       return
       end subroutine stats_accumulate
+
+c     -----------------------------------------------------------------
+      subroutine stats_deallocate
+
+      use statistics
+
+      implicit none
+
+!     De-allocate all zt variables
+      deallocate( zt%z )
+
+      deallocate( zt%x )
+      deallocate( zt%n )
+
+      deallocate( zt%f%var )
+      deallocate( zt%f%z )
+
+      deallocate ( ztscr01 )
+      deallocate ( ztscr02 )
+      deallocate ( ztscr03 )
+      deallocate ( ztscr04 )
+      deallocate ( ztscr05 )
+      deallocate ( ztscr06 )
+      deallocate ( ztscr07 )
+      deallocate ( ztscr08 )
+      deallocate ( ztscr09 )
+      deallocate ( ztscr10 )
+      deallocate ( ztscr11 )
+
+!     De-allocate all zm variables
+      deallocate( zm%z )
+
+      deallocate( zm%x )
+      deallocate( zm%n )
+
+      deallocate( zm%f%var )
+      deallocate( zm%f%z )
+
+      deallocate ( zmscr01 )
+      deallocate ( zmscr02 )
+      deallocate ( zmscr03 )
+      deallocate ( zmscr04 )
+      deallocate ( zmscr05 )
+      deallocate ( zmscr06 )
+      deallocate ( zmscr07 )
+      deallocate ( zmscr08 )
+      deallocate ( zmscr09 )
+      deallocate ( zmscr10 )
+      deallocate ( zmscr11 )
+      deallocate ( zmscr12 )
+      deallocate ( zmscr13 )
+
+!     De-allocate all sfc variables
+      deallocate( sfc%z )
+
+      deallocate( sfc%x )
+      deallocate( sfc%n )
+
+      deallocate( sfc%f%var )
+      deallocate( sfc%f%z )
+
+      return
+      end subroutine stats_deallocate
 
 #endif STATS
