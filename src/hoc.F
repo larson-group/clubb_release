@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.24 2005-07-13 21:15:53 dschanen Exp $
+! $Id: hoc.F,v 1.25 2005-07-13 21:40:45 dschanen Exp $
 
 !      Module HOC
 !-----------------------------------------------------------------------
@@ -269,6 +269,7 @@
 ! Free memory
 
         call deallocate_model_arrays( )
+        call stats_deallocate( )
 
         return
         end subroutine hoc_model_variable_input
@@ -387,6 +388,7 @@
 ! Free memory
 
         call deallocate_model_arrays( )
+        call stats_deallocate( )
 
         return
         end subroutine hoc_model_standard
