@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.14 2005-07-13 20:59:42 dschanen Exp $ 
+! $Id: gcss.F,v 1.15 2005-07-16 22:31:23 griffinb Exp $ 
 
 ! This file contains extra subroutines to simulate the GCSS ARM and
 ! GCSS BOMEX, GCSS ATEX, GCSS FIRE intercomparison cases as well 
@@ -1217,8 +1217,7 @@
 
 !----------------------------------------------------------------------
 
-        SUBROUTINE dycoms2_rf02_sfclyr( u_sfc, v_sfc, thl_sfc, rt_sfc,
-     .                                  p_sfc, uw, vw, wtp, wrp,
+        SUBROUTINE dycoms2_rf02_sfclyr( u_sfc, v_sfc, uw, vw, wtp, wrp,
      .                                  sclr_sfc, wpsclr_sfc )
 
         USE constants
@@ -1226,9 +1225,6 @@
 ! Input
         REAL, INTENT(IN):: u_sfc
         REAL, INTENT(IN):: v_sfc
-        REAL, INTENT(IN):: thl_sfc
-        REAL, INTENT(IN):: rt_sfc
-        REAL, INTENT(IN):: p_sfc
 
 ! Input (optional)
         REAL, OPTIONAL, INTENT(IN):: sclr_sfc(sclrm_dimension)
@@ -1243,37 +1239,33 @@
         REAL, OPTIONAL, INTENT(OUT):: wpsclr_sfc(sclrm_dimension)
 
 ! Internal
-        REAL:: wind_sfc, Cd
+        REAL:: wind_sfc
 
-        REAL, PARAMETER:: ustar = 0.28
+        REAL, PARAMETER:: ustar = 0.25
+        REAL, PARAMETER:: SH = 16.0
+        REAL, PARAMETER:: LH = 93.0
 
         wind_sfc = SQRT( u_sfc**2.0 + v_sfc**2.0 )
 
         IF (wind_sfc > 0.0) THEN
 
-           ! Calculation of drag coefficient.
-           Cd = (ustar/wind_sfc)**2.0
+           uw = -u_sfc * (ustar**2.0) / wind_sfc
+           vw = -v_sfc * (ustar**2.0) / wind_sfc
 
         ELSE
 
-           ! If there is no wind, there is no drag coefficient.
-           Cd = 0.0
+           uw = 0.0
+           vw = 0.0
 
         ENDIF
 
-        uw = -Cd * wind_sfc * u_sfc
-        vw = -Cd * wind_sfc * v_sfc
-
-        wtp = -Cd * wind_sfc * (thl_sfc - 292.0*(p0/p_sfc)**kappa)
-        wrp = -Cd * wind_sfc * (rt_sfc - 0.013581)
+        wtp = SH / (1.21 * Cp)
+        wrp = LH / (1.21 * Lv)
 
         if (present( wpsclr_sfc )) then
-          wpsclr_sfc(SCLR_THETA) = -Cd * wind_sfc*
-     .                             ( sclr_sfc(SCLR_THETA) - 
-     .                               292.0 * (p0 / p_sfc)**kappa )
+          wpsclr_sfc(SCLR_THETA) = SH / (1.21 * Cp)
 
-          wpsclr_sfc(SCLR_RT) = -Cd * wind_sfc*
-     .                          ( sclr_sfc(SCLR_RT) - 0.013581 )
+          wpsclr_sfc(SCLR_RT) = LH / (1.21 * Lv)
         endif
 
         RETURN
