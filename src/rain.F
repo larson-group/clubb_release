@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------        
-! $Id: rain.F,v 1.16 2005-07-13 20:59:43 dschanen Exp $
+! $Id: rain.F,v 1.17 2005-07-16 22:42:58 griffinb Exp $
 
 ! This subroutine advances drizzle (rrm and Nrm) one timestep.
 ! It uses implicit discretization and formulas by 
@@ -196,7 +196,7 @@
               ELSEIF ( runtype == 8 ) THEN
                  conc_cloud(k) = 25000000.0  ! ASTEX A209 case (peak value).
               ELSEIF ( runtype == 9 ) THEN
-                 conc_cloud(k) = 65000000.0  ! DYCOMS RF02 case.
+                 conc_cloud(k) = 55000000.0  ! DYCOMS RF02 case.
               ELSE
                  conc_cloud(k) = 50000000.0  ! Average maritime distribution.
 !                 conc_cloud(k) = 150000000.0 ! Average continental distribution.
