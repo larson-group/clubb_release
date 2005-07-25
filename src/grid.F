@@ -94,7 +94,8 @@
 
            integer, intent(in) :: nnzp
            real, intent(in)    :: deltaz
-           integer, intent(in) :: runtype
+
+           character(*), intent(in) :: runtype
 
 !          Internal
 
