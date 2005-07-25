@@ -1,0 +1,46 @@
+&model
+runfile = "../tune/nov11_altocu_hoc.in"
+stdout  = .true.
+/
+
+&initvars
+C1         = 2.1
+C2         = 1.2
+C4         = 5.2
+C5         = 0.3
+C6         = 9.3
+C7         = 0.48
+C8         = 2.3
+C10        = 3.3
+C11        = 0.4
+nu1        = 20.
+nu2        = 5.
+nu6        = 5.
+nu8        = 20.
+beta       = 1.5
+gamma_coef = 0.45
+c_K        = 0.548
+taumin     = 90.
+taumax     = 3600.
+lmin_coef  = 0.5
+mu         = 6.e-4
+/
+
+&setfields
+datafile     = "../data/nov11_altocu"
+sample_ratio = 12.0
+input_type ="les"
+input_um      = .true.
+input_vm      = .true.
+input_rtm     = .true.
+input_thlm    = .true.
+input_wp2     = .true.
+input_wprtp   = .true.
+input_wpthlp  = .true.
+input_wp3     = .true.
+input_rtp2    = .true.
+input_thlp2   = .true.
+input_rtpthlp = .true.
+input_upwp    = .true.
+input_vpwp    = .true.
+/
