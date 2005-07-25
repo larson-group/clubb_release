@@ -4,7 +4,7 @@
         subroutine timestep_wp23
      .             (dt, Lscale, taum, taut, Sc, a, Khm, wmt, wmm,
      .              um, upwp, vm, vpwp, wpthvp, wp2thvp,
-     .              wp2, wp3, em, isValid)
+     .              wp2, wp3, isValid)
 
         use grid_class
         use constants
@@ -33,7 +33,7 @@
         real, intent(in)    :: wp2thvp(1:gr%nnzp)
         real, intent(inout) :: wp2(1:gr%nnzp)
         real, intent(inout) :: wp3(1:gr%nnzp)
-        real, intent(inout) :: em(1:gr%nnzp)
+!        real, intent(inout) :: em(1:gr%nnzp)
 
         logical, intent(inout):: isValid
 
@@ -215,7 +215,7 @@
 
 !       tke is assumed to be 3/2 of wp2
 
-        em = 1.5 * wp2
+!        em = 1.5 * wp2   ! moved to hoc_closure_timestep
 
 !       Free memory
 
