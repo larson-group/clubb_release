@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.13 2005-07-13 20:59:43 dschanen Exp $
+! $Id: jacobian.F,v 1.14 2005-07-25 22:29:08 dschanen Exp $
 
 ! Program Jacobian
 
@@ -264,7 +264,7 @@
       contains
 !-----------------------------------------------------------------------
 !      subroutine getvariables( ) 
-!      returns a variable_arry structure over time intervals
+!      returns a variable_array structure over time intervals
 !-----------------------------------------------------------------------
       subroutine getvariables( varray ) 
  
