@@ -1,14 +1,9 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.26 2005-07-16 22:31:23 griffinb Exp $
+! $Id: hoc.F,v 1.27 2005-07-25 22:31:48 dschanen Exp $
 
 !      Module HOC
 !-----------------------------------------------------------------------
        module hoc
-
-       use outputfile_class
-#ifdef STATS
-       use statistics
-#endif STATS
 
        implicit none
 
@@ -18,15 +13,16 @@
        private hoc_initialize
        private hoc_closure_timestep
        private hoc_forcings_timestep
-       private hoc_model_standard, hoc_model_variable_input
+       private hoc_model_standard, hoc_model_field_input
        public hoc_model
 
        interface hoc_model
-         module procedure hoc_model_variable_input, hoc_model_standard
+         module procedure hoc_model_field_input, hoc_model_standard
        end interface
 
 
-! Directives for scalars
+!      Directives for scalars;  Theta and rt are arbitrary and used to test the code.
+
 #ifdef SCALARS
 #define SCLR_THETA 1
 #define SCLR_RT 2
@@ -34,7 +30,7 @@
 
 !      Model settings
 
-       integer, private :: runtype     ! = 0 normal run
+!       integer, private :: runtype     ! = 0 normal run
                                        ! = 1 GCSS ARM
                                        ! = 2 GCSS BOMEX
                                        ! = 3 GCSS FIRE
@@ -45,6 +41,8 @@
                                        ! = 9 GCSS DYCOMS II (RF02)
                                        ! = 10 GCSS DYCOMS II (RF02) no drizzle
                                        ! = 11 Nov. 11 Altocumulus case.
+
+       character(len=50), private :: runtype
 
        integer, private :: sfctype     ! = 0  fixed sfc sensible and
                                        !      latent heat fluxes as
@@ -61,24 +59,20 @@
        real, private :: dtmain                    ! host model timestep (s)
        real, private :: dtclosure                 ! closure model timestep (s)
        real, private :: dt
-       real, private :: dtoutput                  ! interval of file output (s)
 
 
 !      Flag for Khairoutdinov and Kogan rain microphysics. - Brian
        logical                :: kk_rain
 
 !      Surface data
-
        real, private :: Tsfc                       ! surface temperature (K)
        real, private :: psfc                       ! surface pressure (Pa)
        real, private :: SE                         ! sensible heat flux (K/s)
        real, private :: LE                         ! latent heat flux (1/s)
        real, private :: ustar                      ! - Brian DYCOMS_2
 
-!     GrADS file variables
-
-       character(len=200), private :: fdir, fname
-       type (outputfile), private  :: fzt, fzm, fpdf, fsfc
+!     Coriolis parameter
+       real, private :: fcor 
 
 !------- Local variables for Latin Hypercube sampling ------------------
        real, private    :: crt1, crt2, cthl1, cthl2   ! coeffs of s from pdf_closure_new
@@ -110,7 +104,7 @@
 
        contains
 !-----------------------------------------------------------------------
-!  subroutine hoc_model_variable_input()
+!  subroutine hoc_model_field_input()
 
 !  Subprogram to integrate the pde equations for pdf closure
 !  This version is modified to set fields from pre-calculated data
@@ -120,7 +114,7 @@
 !          subroutine hoc_closure_timestep (ifinal*niterlong times)
 !          subroutine deallocate_model_arrays (once)
 !          function invalid_model_arrays
-!          subroutine optional_variables (passed as a parameter) 
+!          subroutine set_fields (passed as a parameter) 
 
 !  Input: Contants used in the model:
 !         C1_in, C2_in, C4_in, C5_in, C6_in, C7_in, C8_in, C10_in, C11_in
@@ -136,26 +130,33 @@
 !         isValid:  A false return value indicates something was unsound.
 !-----------------------------------------------------------------------
 
-       subroutine hoc_model_variable_input( 
+       subroutine hoc_model_field_input( 
      .                       C1_in, C2_in, C4_in, C5_in, C6_in, C7_in, 
      .                       C8_in, C10_in, C11_in, 
      .                       nu1_in, nu2_in, nu6_in, nu8_in, beta_in,
      .                       gamma_coef_in, c_K_in, 
      .                       lmin_coef_in, taumin_in, taumax_in, mu_in,
-     .                       runfile, isValid, stdout, 
-     .                       optional_variables,
-     .                       um_in, vm_in, rtm_in,      ! optional
-     .                       thlm_in, wp2_in, wprtp_in, !  "   "
-     .                       wpthlp_in, wp3_in )        !  "   "
+     .                       runfile, isValid, stdout,
+     .                       set_fields, sample_ratio )
+
+       use constants
+       use model_arrays
+       use grid_class
+#ifdef STATS
+       use statistics
+#endif
 
        implicit none
 
        interface
-         subroutine optional_variables 
-     .              ( um, vm, rtm, thlm, 
-     .                wp2, wprtp, wpthlp, wp3 )
+         subroutine set_fields( timestep,
+     .                          um, vm, rtm, thlm, 
+     .                          wp2, wprtp, wpthlp, wp3,
+     .                          rtp2, thlp2, rtpthlp,
+     .                          upwp, vpwp )
          implicit none
 
+         integer, intent(in)                       :: timestep
          real, optional, dimension(:), intent(out) :: um
          real, optional, dimension(:), intent(out) :: vm
          real, optional, dimension(:), intent(out) :: rtm
@@ -164,7 +165,12 @@
          real, optional, dimension(:), intent(out) :: wprtp
          real, optional, dimension(:), intent(out) :: wpthlp
          real, optional, dimension(:), intent(out) :: wp3
-         end subroutine optional_variables
+         real, optional, dimension(:), intent(out) :: rtp2
+         real, optional, dimension(:), intent(out) :: thlp2
+         real, optional, dimension(:), intent(out) :: rtpthlp
+         real, optional, dimension(:), intent(out) :: upwp
+         real, optional, dimension(:), intent(out) :: vpwp
+         end subroutine set_fields
        end interface
      
 !      External
@@ -180,19 +186,31 @@
        real, intent(in) :: mu_in
 
 !      Subroutine Arguments (Model Setting)
-       character(len=*), intent(in) :: runfile    ! Name of the nml file
-       logical, intent(in)          :: stdout     ! whether to print to the terminal
-       logical, intent(inout)       :: isValid    ! " " valid run ? (T/F)
+       character(len=*), intent(in) :: runfile ! Name of the nml file
+       logical, intent(in)          :: stdout  ! whether to print output
 
-!      Optional Input Variable arguments
-       real, optional, dimension(:) :: um_in
-       real, optional, dimension(:) :: vm_in
-       real, optional, dimension(:) :: rtm_in
-       real, optional, dimension(:) :: thlm_in
-       real, optional, dimension(:) :: wp2_in
-       real, optional, dimension(:) :: wprtp_in
-       real, optional, dimension(:) :: wpthlp_in
-       real, optional, dimension(:) :: wp3_in
+!      Subroutine Arguments (Output)
+       logical, intent(inout)         :: isValid    ! valid run? (T/F)
+
+!      sample_ratio is used to determine often to sample data from the GRaDS 
+!      input per iteration of the main time stepping loop.
+!      e.g. if dtmain is 20.0 seconds and the data was written every 60.0 sec, 
+!      then sample ratio should be equal to 3.0.
+       real, intent(in)             :: sample_ratio 
+
+!      Grid definition
+       integer nzmax
+       real deltaz
+
+!      Model settings
+       integer day, month, year       ! day of start of simulation
+
+!      Definition of namelists
+       namelist /model_setting/ runtype, nzmax, deltaz, 
+     .                          day, month, year, 
+     .                          time_initial, time_final, time_spinup,
+     .                          dtmain, dtclosure,
+     .                          sfctype, Tsfc, psfc, SE, LE, fcor
 
 !      Internal Timing Variables
 
@@ -202,35 +220,123 @@
        integer niterlong
        logical spunup                  ! Set but never used anywhere
 
+       integer sample_time
+
 !      Internal Loop Variables
+
        integer i, i1
 
-! Initialize run to valid
+!-------------------- Initialize the Model run --------------------------
+
+!      Initialize run to valid
 
        isValid = .true.
-       
-!-------------------- Initialize the Model run --------------------------
-       call hoc_initialize( C1_in, C2_in, C4_in, C5_in, C6_in, C7_in, 
-     .                      C8_in, C10_in, C11_in, 
-     .                      nu1_in, nu2_in, nu6_in, nu8_in, beta_in,
-     .                      gamma_coef_in, c_K_in, 
-     .                      lmin_coef_in, taumin_in, taumax_in, mu_in,
-     .                      runfile, stdout ) 
-       
-!-------------------------- Time integration ---------------------------
-       ifinal  = ( time_final - time_initial )  / dtmain
-!       ioutput = dtoutput / dtmain
 
-       time    = time_initial
+!      set sample_time = 1
+     
+       sample_time = 1
+
+!       Read namelist file
+        open(10, file = runfile, status = 'old')
+        read(10, nml = model_setting)
+        close(10)
+
+
+!      Define constants
+       call setup_constants( deltaz, C1_in, C2_in, C4_in, C5_in, C6_in, 
+     .                       C7_in, C8_in, C10_in, C11_in,  
+     .                       nu1_in, nu2_in, nu6_in, nu8_in, 
+     .                       gamma_coef_in, mu_in, c_K_in,
+     .                       beta_in, 
+     .                       lmin_coef_in, taumin_in, taumax_in )
+!      Model sanity Check
+       if (( beta < 0.0 ) .or. ( beta > 3.0 )) then
+         print *, 'beta < 0 OR beta > 3'
+         isValid = .false. 
+       endif 
+
+       if (lmin < 4.0) then
+         print *, 'lmin < 4.0'
+         isValid = .false.
+       endif
+       if ( .not. isValid ) return
+
+!      Allocate arrays
+
+       call allocate_model_arrays( nzmax )
+
+       call initialize_model_arrays( )
+
+!      Setup grid
+
+       call gridsetup( nzmax, deltaz, runtype )
+
+       time = time_initial
        spunup  = .false.
 
-       call optional_variables( um_in, vm_in, rtm_in,      ! optional
-     .                          thlm_in, wp2_in, wprtp_in, !  "   "
-     .                          wpthlp_in, wp3_in )        !  "   "
-!<<<<<<<<<<<<<<<<<<<<<<<<<< Main time stepping loop <<<<<<<<<<<<<<<<<<<<<<<<
+       call hoc_initialize( thlm, rtm, um, vm, ug, vg, wp2,
+     .                      rcm, wmt, wmm,
+     .                      em, exner, taut, taum, thvm,
+     .                      p, rhot, rhom, Lscale, lup,
+     .                      ldown, Kht, Khm, upwp, vpwp,
+     .                      wprtp, thlp2, rtp2, rtpthlp, wpthlp,
+     .                      runfile, stdout
+#ifdef SCALARS
+     .                      ,sclrm, wpsclrp, sclrp2,
+     .                      sclrpthlp, sclrprtp
+#endif SCALARS
+     .                     )
+
+#ifdef STATS
+!      Initialize statistics output
+       call stats_init( 50, runfile, gr%nnzp, gr%zt, gr%zm,
+     .                  day, month, year, time, dtmain )
+#endif STATS
+
+#ifdef STATS
+!      Write statistics for the initial timestep.
+       call stats_begin_timestep( time, dtmain )
+       if ( lstats_last .and. stdout ) then
+         write(*,'(a,f8.1)') 'initial timestep; time = ', time
+       endif
+
+       call stats_accumulate( time, dtmain )
+       call stats_end_timestep( time, dtmain, dtclosure )
+#endif STATS
+
+!-------------------------- Time integration ---------------------------
+!     Call hoc_closure_timestep once per each GrADS output time 
+       ifinal  = ( time_final - time_initial ) / dtmain
+
+!<<<<<<<<<<<<<<<<<<<<<<<< Main time stepping loop <<<<<<<<<<<<<<<<<<<<<<
        do i=1, ifinal
+!        Set time
+         time = time_initial + i * dtmain
+
+!        Output to file every so often if called for
+#ifdef STATS
+         call stats_begin_timestep( time, dtmain )
+         if ( lstats_last .and. stdout ) then
+           write(*,'(a,i7,a,f8.1)') 'iteration = ', 
+     .                              i, '; time = ', time
+         endif
+#endif STATS
+
+!        Sample from the data file
+         
+         if ( mod( real( i ), sample_ratio) == 0.0 ) then
+           sample_time = int( i / sample_ratio )
+         endif
+         call set_fields( sample_time,
+     .                    um, vm, rtm,           ! optional
+     .                    thlm, wp2, wprtp,      !  "   "
+     .                    wpthlp, wp3,           !  "   "
+     .                    rtp2, thlp2, rtpthlp,  !  "   "
+     .                    upwp, vpwp )           !  "   "
          isValid = .not. invalid_model_arrays( ) ! Check for bad values 
                                                  ! in the model arrays
+         if ( .not. isValid ) exit
+
          call hoc_forcings_timestep( i, stdout, isValid )
          if ( .not. isValid ) exit
 
@@ -247,32 +353,25 @@
 
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
          do i1=1, niterlong
-#ifdef STATS
-           if ( mod( time, stats_tout ) == 0 ) then
-             call optional_variables( um_in, vm_in, rtm_in,      ! optional
-     .                                thlm_in, wp2_in, wprtp_in, !  "   "
-     .                                wpthlp_in, wp3_in )        !  "   "
-           endif
-#endif STATS
-
-           call hoc_closure_timestep( i1, isValid,
-     .                                um_in, vm_in, rtm_in,      ! optional
-     .                                thlm_in, wp2_in, wprtp_in, !  "   "
-     .                                wpthlp_in, wp3_in )        !  "   "
+           call hoc_closure_timestep( i1, isValid )
            if ( .not. isValid ) exit
          enddo
+
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-          if ( .not. isValid ) exit
-       enddo
-!<<<<<<<<<<<<<<<<<<<<<<<<<< Main time stepping loop <<<<<<<<<<<<<<<<<<<<<<<<
+         if ( .not. isValid ) exit
+       enddo ! i=1, ifinal
+
+!<<<<<<<<<<<<<<<<<<<<<<<< Main time stepping loop <<<<<<<<<<<<<<<<<<<<<<
 
 ! Free memory
 
-        call deallocate_model_arrays( )
-        call stats_deallocate( )
+       call deallocate_model_arrays( )
+#ifdef STATS
+       call stats_deallocate( )
+#endif
 
-        return
-        end subroutine hoc_model_variable_input
+       return
+       end subroutine hoc_model_field_input
 !-----------------------------------------------------------------------
 !  subroutine hoc_model_standard()
 
@@ -305,6 +404,12 @@
      .                                lmin_coef_in, 
      .                                taumin_in, taumax_in, mu_in,
      .                                runfile, isValid, stdout )
+       use constants
+       use grid_class
+       use model_arrays
+#ifdef STATS
+       use statistics
+#endif
 
        implicit none
 
@@ -325,6 +430,25 @@
        logical, intent(in)          :: stdout     ! whether to print to the terminal
        logical, intent(inout)       :: isValid    ! " " valid run ? (T/F)
 
+!      Grid definition
+
+       integer nzmax
+       real deltaz
+
+!      Model settings
+       integer day, month, year       ! day of start of simulation
+
+!      Internal
+       integer k
+
+!       Definition of namelists
+        namelist /model_setting/ runtype, nzmax, deltaz, 
+     .                           day, month, year, 
+     .                           time_initial, time_final, time_spinup,
+     .                           dtmain, dtclosure,
+     .                           sfctype, Tsfc, psfc, SE, LE, fcor
+
+
 !      Internal Timing Variables
 
        integer ifinal
@@ -336,27 +460,101 @@
 !      Internal Loop Variables
        integer i, i1
 
-! Initialize run to valid
 
-       isValid = .true.
-       
 !-------------------- Initialize the Model run --------------------------
-       call hoc_initialize( C1_in, C2_in, C4_in, C5_in, C6_in, C7_in, 
-     .                      C8_in, C10_in, C11_in, 
-     .                      nu1_in, nu2_in, nu6_in, nu8_in, beta_in,
-     .                      gamma_coef_in, c_K_in, 
-     .                      lmin_coef_in, taumin_in, taumax_in, mu_in,
-     .                      runfile, stdout ) 
+
+!      Initialize run to valid
+       isValid = .true.
+
+!      Read namelist file
+       open(10, file = runfile, status = 'old')
+       read(10, nml = model_setting)
+       close(10)
+
+!      Define constants
+       call setup_constants( deltaz, C1_in, C2_in, C4_in, C5_in, C6_in, 
+     .                       C7_in, C8_in, C10_in, C11_in,  
+     .                       nu1_in, nu2_in, nu6_in, nu8_in, 
+     .                       gamma_coef_in, mu_in, c_K_in,
+     .                       beta_in, 
+     .                       lmin_coef_in, taumin_in, taumax_in )
+
+!      Model sanity Check
+       if (( beta < 0.0 ) .or. ( beta > 3.0 )) then
+         print *, 'beta < 0 OR beta > 3'
+         isValid = .false. 
+       endif 
+
+       if (lmin < 4.0) then
+         print *, 'lmin < 4.0'
+         isValid = .false.
+       endif
+       if ( .not. isValid ) return
+
+!      Allocate arrays
+       call allocate_model_arrays( nzmax ) 
+
+       call initialize_model_arrays( )
+
+!      Setup grid
+
+       call gridsetup( nzmax, deltaz, runtype )
+ 
+       call hoc_initialize( thlm, rtm, um, vm, ug, vg, wp2,
+     .                      rcm, wmt, wmm,
+     .                      em, exner, taut, taum, thvm,
+     .                      p, rhot, rhom, Lscale, lup,
+     .                      ldown, Kht, Khm, upwp, vpwp,
+     .                      wprtp, thlp2, rtp2, rtpthlp, wpthlp,
+     .                      runfile, stdout
+#ifdef SCALARS
+     .                      ,sclrm, wpsclrp, sclrp2,
+     .                      sclrpthlp, sclrprtp
+#endif SCALARS
+     .                    )
+
+       time = time_initial
+       spunup  = .false.
+
+#ifdef STATS
+!      Initialize statistics output
+       call stats_init( 50, runfile, gr%nnzp, gr%zt, gr%zm,
+     .                  day, month, year, time, dtmain )
+#endif STATS
+
+#ifdef STATS
+!      Write statistics for the initial timestep.
+       call stats_begin_timestep( time, dtmain )
+       if ( lstats_last .and. stdout ) then
+         write(*,'(a,f8.1)') 'initial timestep; time = ', time
+       endif
+
+       call stats_accumulate( time, dtmain )
+       call stats_end_timestep( time, dtmain, dtclosure )
+#endif STATS
+  
+
        
 !-------------------------- Time integration ---------------------------
        ifinal  = ( time_final - time_initial )  / dtmain
 !       ioutput = dtoutput / dtmain ! no longer needed with new statistics
 
-       time    = time_initial
-       spunup  = .false.
 
 !<<<<<<<<<<<<<<<<<<<<<<<<<< Main time stepping loop <<<<<<<<<<<<<<<<<<<<<<<<
        do i=1, ifinal
+
+!        Set time
+         time = time_initial + i * dtmain
+
+!        Output to file every so often if called for
+#ifdef STATS
+         call stats_begin_timestep( time, dtmain )
+         if ( lstats_last .and. stdout ) then
+           write(*,'(a,i7,a,f8.1)') 'iteration = ', 
+     .                               i, '; time = ', time
+         endif
+#endif STATS
+
          isValid = .not. invalid_model_arrays( ) ! Check for bad values 
                                                  ! in the model arrays
          if ( .not. isValid ) exit
@@ -388,7 +586,9 @@
 ! Free memory
 
         call deallocate_model_arrays( )
+#ifdef STATS
         call stats_deallocate( )
+#endif
 
         return
         end subroutine hoc_model_standard
@@ -400,9 +600,6 @@
 !   necessary steps for the initialization of the HOC model run. 
 
 !   Calls: (all these are external)
-!   subroutine setup_constants
-!   subroutine allocate_model_arrays / initialize_model_arrays
-!   subroutine gridsetup 
 !   subroutine read_sounding
 !   subroutine hydrostatic (twice)
 !   subroutine sfc_var
@@ -415,23 +612,20 @@
 !   Fortran intrinsic functions:
 !   sqrt, min, & max
 
-!   If compiled with STATS:
-!   subroutine stats_init
-!   subroutine stats_begin_timestep
-!   subroutine stats_end_timestep
-!   subroutine stats_accumulate
-
 !-----------------------------------------------------------------------
-        subroutine hoc_initialize( C1_in, C2_in, C4_in, C5_in, C6_in, 
-     .                             C7_in, C8_in, C10_in, C11_in, 
-     .                             nu1_in, nu2_in, nu6_in, nu8_in, 
-     .                             beta_in, gamma_coef_in, c_K_in, 
-     .                             lmin_coef_in, taumin_in, taumax_in, 
-     .                             mu_in, runfile, stdout ) 
+        subroutine hoc_initialize( thlm, rtm, um, vm, ug, vg, wp2,
+     .                             rcm, wmt, wmm,
+     .                             em, exner, taut, taum, thvm,
+     .                             p, rhot, rhom, Lscale, lup,
+     .                             ldown, Kht, Khm, upwp, vpwp,
+     .                             wprtp, thlp2, rtp2, rtpthlp, wpthlp,
+     .                             runfile, stdout,
+     .                             sclrm, wpsclrp, sclrp2,
+     .                             sclrpthlp, sclrprtp )
 
         use constants
         use grid_class
-        use model_arrays
+!        use model_arrays
         use sounding
         use surface
 #ifdef STATS
@@ -443,56 +637,35 @@
         real, external    :: rsat
         real, external    :: sat_rcm
 
-!       Subroutine Arguments (Constants)
-        real, intent(in) :: C1_in, C2_in, C4_in, C5_in, C6_in, C7_in, 
-     .                      C8_in, C10_in, C11_in
-        real, intent(in) :: nu1_in, nu2_in, nu6_in, nu8_in
-        real, intent(in) :: beta_in
-        real, intent(in) :: gamma_coef_in
-        real, intent(in) :: c_K_in, taumin_in, taumax_in, lmin_coef_in
-        real, intent(in) :: mu_in
+!       Output
+        real, dimension(:), intent(out) :: thlm, rtm
+        real, dimension(:), intent(out) :: um, vm 
+        real, dimension(:), intent(out) :: ug, vg 
+        real, dimension(:), intent(out) :: wp2
+        real, dimension(:), intent(out) :: rcm, wmt, wmm
+        real, dimension(:), intent(out) :: exner, em
+        real, dimension(:), intent(out) :: p, rhot, rhom
+        real, dimension(:), intent(out) :: Lscale, lup
+        real, dimension(:), intent(out) :: ldown, Kht, Khm, upwp, vpwp
+        real, dimension(:), intent(out) :: wprtp, thlp2, rtp2 
+        real, dimension(:), intent(out) :: rtpthlp, wpthlp
+        real, dimension(:), intent(out) :: taum, taut
+        real, dimension(:), intent(out) :: thvm
+
+!       Output (optional)
+        real, optional, dimension(:,:), intent(out) :: sclrm
+        real, optional, dimension(:,:), intent(out) :: wpsclrp, sclrp2
+        real, optional, dimension(:,:), intent(out) :: sclrpthlp
+        real, optional, dimension(:,:), intent(out) :: sclrprtp
+
 
 !       Subroutine Arguments (Model Setting)
         logical, intent(in)          :: stdout        ! whether to print to the terminal
         character(len=*), intent(in) :: runfile       ! Name of the nml file
 
-!       Grid definition
-        integer nzmax
-        real deltaz
-
-!       Model settings
-        integer day, month, year       ! day of start of simulation
-
 !       Internal
+        real, dimension(size( em )) :: tmp1
         integer k
-
-!       Definition of namelists
-        namelist /model_setting/ runtype, nzmax, deltaz, 
-     .                           day, month, year, 
-     .                           time_initial, time_final, time_spinup,
-     .                           dtmain, dtclosure, dtoutput, 
-     .                           sfctype, Tsfc, psfc, SE, LE, fcor
-
-! Read namelist file
-        open(10, file = runfile, status = 'old')
-        read(10, nml = model_setting)
-        close(10)
-
-! Define constants
-       call setup_constants( deltaz, C1_in, C2_in, C4_in, C5_in, C6_in, 
-     .                       C7_in, C8_in, C10_in, C11_in,  
-     .                       nu1_in, nu2_in, nu6_in, nu8_in, 
-     .                       gamma_coef_in, mu_in, c_K_in,
-     .                       beta_in, 
-     .                       lmin_coef_in, taumin_in, taumax_in )
-
-        call allocate_model_arrays( nzmax, n, nt, d ) 
-
-        call initialize_model_arrays( )
-
-! Set grid up
-
-        call gridsetup( nzmax, deltaz, runtype )
 
 ! Read sounding information
 
@@ -519,8 +692,9 @@
 
 ! Compute initial theta-l
 
-        select case (runtype)
-        case ( 7, 8, 9, 10, 11 ) 
+        select case ( trim( runtype ) )
+        case ( "dycoms2_rf01", "astex", "dycoms2_rf02_d",
+     .         "dycoms2_rf02_nd", "nov11_altocu" )
           ! thlm profile that is initially saturated at points.
           ! thlm profile remains the same as in the input sounding.
           ! use iterative method to find initial rcm.
@@ -553,10 +727,10 @@
         end do
 
 ! Initialize TKE and other fields as needed
-        select case ( runtype )
+        select case ( trim( runtype ) )
 
         ! GCSS FIRE Sc
-        case ( 3 ) 
+        case ( "fire" ) 
           do k=1,gr%nnzp
             if ( gr%zm(k) < 700. ) then
                em(k) = 1.
@@ -570,11 +744,11 @@
           wp2 = 2.0 / 3.0 * em
 
         ! GCSS ATEX
-        case ( 6 )
+        case ( "atex" )
           um = max( um, -8. )
 
         ! GCSS DYCOMS II RF01
-        case ( 7 ) 
+        case ( "dycoms2_rf01" ) 
           do k=1,gr%nnzp
             if ( gr%zm(k) < 800. ) then
               em(k) = 0.5
@@ -588,13 +762,13 @@
           wp2 = 2.0 / 3.0 * em
 
         ! GCSS DYCOMS II RF02
-        case ( 9, 10 ) 
+        case ( "dycoms2_rf02_d","dycoms2_rf02_nd" ) 
           em = 1.0
 
           wp2 = 2.0 / 3.0 * em
 
       ! Brian for Nov. 11 altocumulus case.
-          case ( 11 )
+          case ( "nov11_altocu" )
             em = 1.0
             wp2 = (2.0/3.0) * em
 
@@ -638,24 +812,6 @@
 #endif SCALARS
      .              )
 
-        time = time_initial
-
-#ifdef STATS
-!       Initialize statistics output
-        call stats_init( 50, runfile, gr%nnzp, gr%zt, gr%zm,
-     .                   day, month, year, time, dtmain )
-#endif STATS
-
-#ifdef STATS
-!      Write statistics for the initial timestep.
-       call stats_begin_timestep( time, dtmain )
-       if ( lstats_last .and. stdout ) then
-         write(*,'(a,f8.1)') 'initial timestep; time = ', time
-       endif
-
-       call stats_accumulate( time, dtmain )
-       call stats_end_timestep( time, dtmain, dtclosure )
-#endif STATS
 
        return
        end subroutine hoc_initialize
@@ -682,9 +838,6 @@
         use model_arrays
         use gcss
         use surface
-#ifdef STATS
-        use statistics
-#endif STATS
 
         implicit none
 
@@ -692,36 +845,6 @@
         integer, intent(in)        :: iteration
         logical, intent(in)        :: stdout
         logical, intent(inout)     :: isValid
-
-!       Internal 
-        integer k
-
-!       Set time
-        time = time_initial + iteration * dtmain
-
-!       Model sanity Check
-        if (( beta < 0.0 ) .or. ( beta > 3.0 )) then
-          print *, 'beta < 0 OR beta > 3'
-          isValid = .false. 
-        endif 
-
-        if (lmin < 4.0) then
-          print *, 'lmin < 4.0'
-          isValid = .false.
-        endif
-
-!          print*,'hoc.F: just before iteration printout'
-
-!          output to file every so often if called for
-#ifdef STATS
-        call stats_begin_timestep( time, dtmain )
-        if ( lstats_last .and. stdout ) then
-          write(*,'(a,i7,a,f8.1)') 'iteration = ', 
-     .                              iteration, '; time = ', time
-        endif
-!       print*, 'hoc.F: just after iteration printout'
-#endif STATS
-
 
 !#######################################################################
 !##############      FIND ALL DIAGNOSTIC VARIABLES        ##############
@@ -733,10 +856,10 @@
 !           print*, 'hoc.F: just before select runtype'
 
          select case ( runtype )
-         case ( 0 ) ! Normal run
+         case ( "normal" ) ! Normal run
            kk_rain = .false.
 
-         case ( 1 ) ! ARM Cu case
+         case ( "arm" ) ! ARM Cu case
            call arm_tndcy( time, thlm_forcing, rtm_forcing
 #ifdef SCALARS
      .                     ,sclrm_forcing 
@@ -744,7 +867,7 @@
      .                   )
            kk_rain = .false.
 
-         case ( 2 ) ! BOMEX Cu case
+         case ( "bomex" ) ! BOMEX Cu case
            call bomex_tndcy( time, wmt, wmm, 
      .                       thlm_forcing, rtm_forcing
 #ifdef SCALARS
@@ -753,7 +876,7 @@
      .                     )
            kk_rain = .false.
 
-         case ( 3 ) ! FIRE Sc case
+         case ( "fire" ) ! FIRE Sc case
            call fire_tndcy( time, wmt, wmm, thlm_forcing, 
      .                      rtm_forcing
 #ifdef SCALARS
@@ -772,7 +895,7 @@
      .                   )
            kk_rain = .false.
 
-         case ( 4 ) ! Wangara dry CBL
+         case ( "wangara" ) ! Wangara dry CBL
            call wangara_tndcy( time, wmt, wmm, 
      .                         thlm_forcing, rtm_forcing
 #ifdef SCALARS
@@ -781,7 +904,7 @@
      .                        )
            kk_rain = .false.
 
-         case ( 6 ) ! ATEX case
+         case ( "atex" ) ! ATEX case
            call atex_tndcy( time, time_initial, rtm, 
      .                      wmt, wmm, thlm_forcing,
      .                      rtm_forcing, isValid
@@ -797,7 +920,7 @@
      .                   )
            kk_rain = .false.
 
-         case ( 7 ) ! DYCOMS2 RF01 case
+         case ( "dycoms2_rf01" ) ! DYCOMS2 RF01 case
            call dycoms2_rf01_tndcy( time, rhot, rhom, rtm, 
      .                              rcm, wmt, wmm, Frad,
      .                              thlm_forcing, rtm_forcing, 
@@ -808,7 +931,7 @@
      .                     )
            kk_rain = .false.
 
-         case ( 8 ) ! ASTEX Sc case for K & K
+         case ( "astex" ) ! ASTEX Sc case for K & K
            call astex_tndcy( time, wmt, wmm, 
      .                       thlm_forcing, rtm_forcing
 #ifdef SCALARS
@@ -817,16 +940,16 @@
      .                     )
            kk_rain = .true.
 
-         case ( 9 ) ! DYCOMS2 RF02 case with drizzle
+         case ( "dycoms2_rf02_d" ) ! DYCOMS2 RF02 case with drizzle
            call dycoms2_rf02_tndcy( rhot, rhom, rtm,
      .                              rcm, wmt, wmm, thlm_forcing, 
      .                              rtm_forcing, isValid
 #ifdef SCALARS
-     .                              ,sclrm_forcing
+     .                              ,sclrm_forcing  ! optional variable
 #endif SCALARS
      .                             )
            kk_rain = .true.
-         case ( 10 ) ! DYCOMS2 RF02 case with no drizzle
+         case ( "dycoms2_rf02_nd" ) ! DYCOMS2 RF02 case with no drizzle
            call dycoms2_rf02_tndcy( rhot, rhom, rtm, 
      .                              rcm, wmt, wmm,
      .                              thlm_forcing, rtm_forcing, 
@@ -837,7 +960,7 @@
      .                             )
            kk_rain = .false.
 
-         case ( 11 ) ! Nov. 11 Altocumulus case.
+         case ( "nov11_altocu" ) ! Nov. 11 Altocumulus case.
            call nov11_altocu_tndcy( time, time_initial, dt, thlm,
      .                              rcm, p, exner, rhot, wmt, wmm,
      .                              thlm_forcing, rtm_forcing,
@@ -855,9 +978,9 @@
 
 !        Bc for the second order moments
 
-         select case ( runtype )
+         select case ( trim( runtype ) )
 
-         case ( 0, 3 )  ! Normal and FIRE
+         case ( "normal", "fire" )  ! Normal and FIRE
            call sfc_momentum_fluxes( um(2), vm(2),
      .                               upwp(1), vpwp(1) )
            ! sfctype = 0  fixed sfc sensible and latent heat fluxes 
@@ -887,7 +1010,7 @@
            endif
 
 !        For GCSS-ARM case
-         case ( 1 )
+         case ( "arm" )
            call arm_sfclyr( time, gr%zt(2), 1.1, 
      .                      thlm(2), um(2), vm(2),
      .                      upwp(1), vpwp(1), 
@@ -897,7 +1020,7 @@
 #endif SCALARS
      .                    )
 
-         case ( 2 ) 
+         case ( "bomex" ) 
            call bomex_sfclyr( um(2), vm(2),
      .                        upwp(1), vpwp(1),
      .                        wpthlp(1), wprtp(1)
@@ -906,7 +1029,7 @@
 #endif SCALARS
      .                    )
 
-         case ( 4 )
+         case ( "wangara" )
            call wangara_sfclyr( time, um(2), vm(2),
      .                           upwp(1), vpwp(1),
      .                           wpthlp(1), wprtp(1)
@@ -915,7 +1038,7 @@
 #endif SCALARS
      .                        )
 
-         case ( 6 )
+         case ( "atex" )
            call atex_sfclyr( um(2), vm(2), thlm(2), rtm(2),
      .                       upwp(1), vpwp(1),
      .                       wpthlp(1), wprtp(1)
@@ -924,7 +1047,7 @@
 #endif SCALARS
      .                    )
 
-         case ( 7 ) 
+         case ( "dycoms2_rf01" ) 
            call dycoms2_rf01_sfclyr( sfctype, Tsfc, psfc, 
      .                               exner(1), um(2), vm(2), 
      .                               thlm(2), rtm(2), 
@@ -934,7 +1057,7 @@
      .                              ,sclrm(2,:), wpsclrp(1,:)
 #endif SCALARS
      .                              )
-         case ( 8 )
+         case ( "astex" )
            call astex_sfclyr( rhom(1), um(2), vm(2),
      .                        upwp(1), vpwp(1), wpthlp(1), 
      .                        wprtp(1)
@@ -942,7 +1065,7 @@
      .                        ,wpsclrp(1,:)
 #endif SCALARS
      .                      )
-         case ( 9, 10 )
+         case ( "dycoms2_rf02_d", "dycoms2_rf02_nd" )
            call dycoms2_rf02_sfclyr( um(2), vm(2),
      .                               upwp(1), vpwp(1),
      .                               wpthlp(1), wprtp(1)
@@ -951,7 +1074,7 @@
 #endif SCALARS
      .                             )
 
-         case ( 11 )
+         case ( "nov11_altocu" )
              ! There are no surface momentum or heat fluxes
              ! for the Nov. 11 Altocumulus case.
 
@@ -991,13 +1114,9 @@
 !    permute_height_time (external)
 !    latin_hypercube_sampling (Internal to module hoc)
 !-----------------------------------------------------------------------
-       subroutine hoc_closure_timestep( iteration, isValid,
-     .                                  um_in, vm_in, rtm_in,
-     .                                  thlm_in, wp2_in, wprtp_in,
-     .                                  wpthlp_in, wp3_in )
+      subroutine hoc_closure_timestep( iteration, isValid )
 
-
-! Modules to be included
+!      Modules to be included
        use constants
        use grid_class
        use model_arrays
@@ -1012,39 +1131,26 @@
        implicit none
 
 !      External
-       real, external    :: rsat
+       real, external :: rsat
 
 !      Input
        integer, intent(in)    :: iteration ! From i1 argument
        logical, intent(inout) :: isValid
 
-!      Optional Input Variable arguments
-       real, optional, dimension(:), intent(in) :: um_in
-       real, optional, dimension(:), intent(in) :: vm_in
-       real, optional, dimension(:), intent(in) :: rtm_in
-       real, optional, dimension(:), intent(in) :: thlm_in
-       real, optional, dimension(:), intent(in) :: wp2_in
-       real, optional, dimension(:), intent(in) :: wprtp_in
-       real, optional, dimension(:), intent(in) :: wpthlp_in
-       real, optional, dimension(:), intent(in) :: wp3_in
-
 !      Internal
        integer i, j, k
+       real, dimension(size( em )) :: tmp1
+
+!      Internal for latin hypercubes
+       integer, dimension(1:gr%nnzp, 
+     .                    1:nt, 1:(d+1)) :: p_height_time ! matrix of rand ints
+
 #ifdef SCALARS
-       real, 
-     . dimension(gr%nnzp, sclrm_dimension) :: sclr_tmp1, sclr_tmp2,
-     .                                        sclr_tmp3, sclr_tmp4
+       real, dimension(1:gr%nnzp,
+     .                 1:sclrm_dimension) :: sclr_tmp1, sclr_tmp2,
+     .                                       sclr_tmp3, sclr_tmp4
 #endif SCALARS
 
-!      Check the parameter list to see if any variables are being set manually
-       if (present( um_in )) um         = um_in
-       if (present( vm_in )) vm         = vm_in
-       if (present( thlm_in )) thlm     = thlm_in
-       if (present( wp2_in )) wp2       = wp2_in
-       if (present( wpthlp_in )) wpthlp = wpthlp_in
-       if (present( wp3_in )) wp3       = wp3_in
-       if (present( rtm_in )) rtm       = rtm_in
-       if (present( wprtp_in )) wprtp   = wprtp_in
 
 !      Compute Sc with new formula from Vince
 
@@ -1057,56 +1163,6 @@
      .       1.0      ) )
 
        Sct = zm2zt(Scm)
-
-!      Compute thvm
-       thvm = thlm + ep1 * T0 * rtm + ( Lv/(Cp*exner) - ep2 * T0 ) * rcm
-
-!      Compute mixing length
-
-       call length( thvm, thlm, rtm, rcm, 
-     .              em, p, exner, Lscale, lup, ldown )
-
-!      Dissipation time
-
-       tmp1 = sqrt( zm2zt( em ) )
-       taut = min( Lscale / tmp1, taumax )
-
-!      Modification to damp noise in stable region
-       do k = 1, gr%nnzp
-         if ( wp2(k) <= 0.005 ) then
-           taut(k) = taumin
-         endif
-       enddo
-!------------>For DYCOMS, we used this portion of experimental code below
-!             instead of a call to length
-
-!              call tau(thlm,thvm,rtm,rcm,cf,p,exner,taut)
-!
-!              Lscale = taut * tmp1
-!              Lscale(1) = Lscale(2)
-!              Lscale(gr%nnzp) = Lscale(gr%nnzp-1)
-
-!<------------end of DYCOMS code
-
-       taum = zt2zm( taut )
-
-!      Eddy diffusivity coefficient
-!      c_K is 0.548 usually (Duynkerke and Driedonks 1987)
-
-       Kht = c_K * Lscale * tmp1
-       Khm = zt2zm( Kht )
-
-!      Diagnose variances
-       call diag_var( taum, wmm, rtm, wprtp, 
-     .                thlm, wpthlp, wp2, wp3, Scm, 
-     .                rtp2, thlp2, rtpthlp,
-     .                .false., dtclosure, isValid
-#ifdef SCALARS
-     .                ,sclrm, wpsclrp, sclrp2,    ! optional vars
-     .                sclrprtp, sclrpthlp         !   "       "
-#endif SCALARS
-     .               )
-       if ( .not. isValid ) return
 
 !      Call closure scheme
 
@@ -1183,7 +1239,7 @@
 #endif SCALARS
      .                          )
 !        Latin hypercube sampling.
-         if ( LH_on ) call latin_hypercube_sampling( k )
+         if ( LH_on ) call latin_hypercube_sampling( k, p_height_time )
 
        enddo ! k = 2, nz-1
 
@@ -1257,8 +1313,48 @@
        sclrpthvp(gr%nnzp,:) = 0.
 #endif SCALARS
 
-       if (present( thlm_in )) thlm = thlm_in
-       if (present( rtm_in )) rtm   = rtm_in
+!      Compute thvm
+
+       thvm = thlm + ep1 * T0 * rtm + ( Lv/(Cp*exner) - ep2 * T0 ) * rcm
+
+!      tke is assumed to be 3/2 of wp2
+
+       em = 1.5 * wp2
+
+!      Compute mixing length
+
+       call length( thvm, thlm, rtm, rcm, 
+     .              em, p, exner, Lscale, lup, ldown )
+
+!      Dissipation time
+
+       tmp1 = sqrt( zm2zt( em ) )
+       taut = min( Lscale / tmp1, taumax )
+
+!      Modification to damp noise in stable region
+       do k = 1, gr%nnzp
+         if ( wp2(k) <= 0.005 ) then
+           taut(k) = taumin
+         endif
+       enddo
+!------------>For DYCOMS, we used this portion of experimental code below
+!             instead of a call to length
+
+!              call tau(thlm,thvm,rtm,rcm,cf,p,exner,taut)
+!
+!              Lscale = taut * tmp1
+!              Lscale(1) = Lscale(2)
+!              Lscale(gr%nnzp) = Lscale(gr%nnzp-1)
+
+!<------------end of DYCOMS code
+
+       taum = zt2zm( taut )
+
+!      Eddy diffusivity coefficient
+!      c_K is 0.548 usually (Duynkerke and Driedonks 1987)
+
+       Kht = c_K * Lscale * tmp1
+       Khm = zt2zm( Kht )
 
 !      call Khairoutdinov and Kogan (2000) scheme for rain microphysics.
 
@@ -1269,7 +1365,7 @@
      .              accr_rrm, cond_Nrm, auto_Nrm, sed_rrm,
      .              diff_rrm, subs_rrm, Vr, mean_vol_rad,
      .              runtype, isValid, 
-! LH Kessler autoconversion.  Vince Larson 22 May 2005:
+!        LH Kessler autoconversion.  Vince Larson 22 May 2005:
      .              AKm_est, AKm )
 
          rain_rate = ( rrm * Vr ) * ( rhot / 1000.0 )     ! rain rate (m/s)
@@ -1278,13 +1374,13 @@
          F_precip = ( rrm * Vr ) * ( rhot / 1000.0 )
      .                                * 1000.0 * Lv       ! Precip. flux (W/m^2)
        endif ! kk_rain
+       if ( .not. isValid ) return
 
-       if (present( thlm_in )) thlm     = thlm_in
-       if (present( wp2_in )) wp2       = wp2_in
-       if (present( wpthlp_in )) wpthlp = wpthlp_in
-       if (present( wp3_in )) wp3       = wp3_in
-       if (present( rtm_in )) rtm       = rtm_in
-       if (present( wprtp_in )) wprtp   = wprtp_in
+!      Store the saturation mixing ratio for output purposes.  Brian
+       do k = 1, gr%nnzp, 1
+         rsm(k) =
+     .   rsat(p(k), (thlm(k)+(Lv/(Cp*exner(k)))*rcm(k))*exner(k))
+       enddo
 
 !#######################################################################
 !##############         SAVE OUTPUT TO DISK               ##############
@@ -1316,7 +1412,7 @@
        endif 
 #endif STATS
 
-! Added to allow tuning without using the zm file
+!      Added to allow tuning without using the zm file
 #ifdef STATS
        wp2zt     = zm2zt( wp2 )
        thlp2zt   = zm2zt( thlp2 )
@@ -1335,6 +1431,18 @@
 !############## ADVANCE PROGNOSTIC VARIABLES ONE TIMESTEP ##############
 !#######################################################################
 
+!      Diagnose variances
+       call diag_var( taum, wmm, rtm, wprtp, 
+     .                thlm, wpthlp, wp2, wp3, Scm, 
+     .                rtp2, thlp2, rtpthlp,
+     .                .false., dtclosure, isValid ! diag_var needs to be modified if liter=.true.
+#ifdef SCALARS
+     .                ,sclrm, wpsclrp, sclrp2,    ! optional vars
+     .                sclrprtp, sclrpthlp         !   "       "
+#endif SCALARS
+     .               )
+       if ( .not. isValid ) return
+
 !      Advance rtm/wprtp and thlm/wpthlp one time step
 
        call timestep_mixing
@@ -1346,6 +1454,7 @@
      .        ,sclrm, wpsclrp, sclrpthvp, sclrm_forcing   ! optional
 #endif SCALARS
      .      )
+       if ( .not. isValid ) return
 
 !      Advance wp2/wp3 one timestep
 
@@ -1354,12 +1463,13 @@
      .       pdf_parms(:, 13), Khm,
      .       wmt, wmm,
      .       um, upwp, vm, vpwp, wpthvp, wp2thvp,
-     .       wp2, wp3, em, isValid )
+     .       wp2, wp3, isValid )
+       if ( .not. isValid ) return
 
-       ! Set initial turbulence over first so many
-       ! minutes of the Nov. 11 altocumulus case.  Brian.
-       select case( runtype )
-       case ( 11 )
+!      Set initial turbulence over first so many
+!      minutes of the Nov. 11 altocumulus case.  Brian.
+       select case( trim( runtype ) )
+       case ( "nov11_altocu" )
          if ( time < time_initial + 1800.0) then
 
             do k = 1, gr%nnzp, 1
@@ -1371,6 +1481,7 @@
 
          endif
        end select
+
 
 !      Update winds
 
@@ -1392,18 +1503,12 @@
            
        if ( .not. isValid ) return
 
-       ! Shear production.  Brian
+!      Shear production.  Brian
        do k = 1, gr%nnzp-1, 1
          shear(k) = -upwp(k) * ( um(k+1) - um(k) ) * gr%dzm(k)
-     .              - vpwp(k) * ( vm(k+1) - vm(k) ) * gr%dzm(k)
+     .              -vpwp(k) * ( vm(k+1) - vm(k) ) * gr%dzm(k)
        enddo
        shear(gr%nnzp) = 0.0
-
-       ! Store the saturation mixing ratio for output purposes.  Brian
-       do k = 1, gr%nnzp, 1
-         rsm(k) =
-     .   rsat(p(k), (thlm(k)+(Lv/(Cp*exner(k)))*rcm(k))*exner(k))
-       enddo
 
        return
        end subroutine hoc_closure_timestep
@@ -1411,19 +1516,22 @@
 !       Subroutine latin_hypercube_sampling()
 
 !       Estimate using Latin Hypercubes.  This is usually disabled by default.
-!       The actual generation of a random matrix is done in via a call from 
+!       The actual generation of a random matrix is done in a call from the
 !       subroutine hoc_initialize to permute_height_time()
 
 !       Calls:
 !       subroutine lh_sampler
 !       subroutine micro_calcs
 !-----------------------------------------------------------------------
-        subroutine latin_hypercube_sampling( k )
+        subroutine latin_hypercube_sampling( k, p_height_time )
         use model_arrays
+
         implicit none  
 
 !       Input 
         integer, intent(in) :: k  ! index
+
+        integer, dimension(:,:,:), intent(in) :: p_height_time
 
 !       Internal
         integer             :: p_matrix(n, d+1)
