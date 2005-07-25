@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.25 2005-07-13 21:40:45 dschanen Exp $
+# $Id: Makefile,v 1.26 2005-07-25 17:58:47 dschanen Exp $
 # Uses GNU make.  BSD make doesn't like the LH/*.F syntax.
 
 # Compiler invocation
@@ -16,7 +16,7 @@ DEBUG = -g -C #-Ktrap=unf -Minform=inform
 
 #OPTIMIZE = -O2 -msse2 -march=pentium4 # g95
 #OPTIMIZE = -xarch=sse2 -ftrap=%none # Sun Studio x86/Opteron
-OPTIMIZE = -O2 -Kieee -tp p7 # PGF90
+ OPTIMIZE = -O2 -Kieee -tp p7 # PGF90
 
 # Linking Flags
 LDFLAGS = # use -s to strip
@@ -25,7 +25,7 @@ LDFLAGS = # use -s to strip
 #   -DSTATS enables statistics
 #   -DSCALARS enables passive scalars
 
-FCFLAGS = $(OPTIMIZE) $(DEBUG) -DSTATS
+ FCFLAGS = $(OPTIMIZE) $(DEBUG) -DSTATS
 #FCFLAGS = $(OPTIMIZE) $(DEBUG) -DSTATS -DSCALARS
 
 
@@ -36,7 +36,7 @@ OBJS	= polpak.o \
 	closure_new.o diag_var.o gcss.o hydrostatic.o \
 	length.o mixing.o rsat.o sat_rcm.o sfc.o \
 	sounding.o update.o wp23.o tau.o \
-	inputgrads.o gradsaverage.o hoc.o error.o \
+	inputgrads.o gradsaverage.o inputfields.o hoc.o error.o \
 	\
 	nrtype.o nr.o nrutil.o ran_state.o ran1.o amebsa.o amoeba.o
 
@@ -49,10 +49,10 @@ LH_OBJS	= autoconv_driver.o corrcoef.o gaus_condt.o \
 	truncate_gaus_mixt.o
 
 TARGETS	= int2txt.o hoc_tuner.o hoc_standalone.o compare_runs.o \
-	jacobian.o
+	jacobian.o hoc_inputfields.o
 
 # Targets ( hoc_tuner and jacobian assume statistics )
-all:	hoc_tuner hoc_standalone int2txt compare_runs jacobian
+all:	hoc_tuner hoc_standalone hoc_inputfields int2txt compare_runs jacobian 
 
 # Rules
 .SUFFIXES:	.o .f .F .f90
@@ -74,6 +74,10 @@ hoc_standalone: $(OBJS) $(LH_OBJS) $(TARGETS)
 		$(FC) $(FCFLAGS) $(LDFLAGS) -o hoc_standalone \
 		$(OBJS) $(LH_OBJS) $@.o 
 
+hoc_inputfields:$(OBJS) $(LH_OBJS) $(TARGETS)
+		$(FC) $(FCFLAGS) $(LDFLAGS) -o hoc_inputfields \
+		$(OBJS) $(LH_OBJS) $@.o
+
 int2txt:	$(TARGETS)
 		$(FC)$(FCFLAGS)  $(LDFLAGS) $@.o -o int2txt
 
@@ -88,6 +92,7 @@ jacobian:	$(OBJS) $(LH_OBJS) $(TARGETS)
 install: 
 	-cp int2txt ../tune/ 
 	-cp hoc_tuner ../tune/
+	-cp hoc_inputfields ../inputfields/
 	-cp hoc_standalone ../standalone/
 	-cp compare_runs ../compare_runs/
 	-cp jacobian ../jacobian/
@@ -126,6 +131,7 @@ sounding.o	: constants.F sounding.F
 update.o	: tridag.F update.F
 wp23.o		: constants.F statistics.F banbks.F bandec.F wp23.F 
 tau.o		: constants.F tau.F 
+inputfields.o	: grid.F inputgrads.F inputfields.F 
 
 nrtype.o	: nrtype.f90
 nr.o		: nr.f90 nrtype.f90
@@ -158,8 +164,9 @@ st_2_rtthl.o		: LH/st_2_rtthl.F
 truncate_gaus_mixt.o	: LH/truncate_gaus_mixt.F
 
 # Executables
-hoc_tuner.o	: nr.f90 nrtype.f90 hoc.F error.o hoc_tuner.F
-hoc_standalone.o: hoc.F hoc_standalone.F
-int2txt.o	: int2txt.f90
-compare_runs.o	: endian.F inputgrads.F gradsaverage.F compare_runs.F
-jacobian.o	: gradsaverage.F hoc.F jacobian.F
+hoc_tuner.o		: nr.f90 nrtype.f90 hoc.F error.o hoc_tuner.F
+hoc_standalone.o	: hoc.F hoc_standalone.F
+hoc_inputfields.o	: hoc.F inputfields.F hoc_inputfields.F
+int2txt.o		: int2txt.f90
+compare_runs.o		: endian.F inputgrads.F gradsaverage.F compare_runs.F
+jacobian.o		: gradsaverage.F hoc.F jacobian.F
