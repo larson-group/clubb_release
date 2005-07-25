@@ -1,4 +1,4 @@
-! $Id: sounding.F,v 1.8 2005-07-13 21:17:04 dschanen Exp $
+! $Id: sounding.F,v 1.9 2005-07-25 22:28:43 dschanen Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
       module sounding
@@ -27,7 +27,7 @@
 ! Input
 
         character(len=*), intent(in) :: runfile
-        integer, intent(in)          :: runtype
+        character(len=*), intent(in) :: runtype
 
 ! Parameter
 
@@ -129,7 +129,9 @@
               stop 'STOP in sounding'
             endif  ! k > nlevels
 
-            IF ( runtype /= 9 .AND. runtype /= 10) THEN  ! Regular situation w/ linear int.
+            ! Regular situation w/ linear int.
+            IF (      trim(runtype) /= "dycoms2_rf02_d" 
+     .          .AND. trim(runtype) /= "dycoms2_rf02_nd" ) THEN  
               um(i)   = linint( gr%zt(i), z(k), z(k-1), u(k), u(k-1) )
               vm(i)   = linint( gr%zt(i), z(k), z(k-1), v(k), v(k-1) )
               ugm(i)  = linint( gr%zt(i), z(k), z(k-1), ug(k), ug(k-1) )
@@ -172,7 +174,7 @@
                 endif
               ENDIF
 
-            ENDIF ! runtype /= 9 or 10
+            ENDIF ! runtype
           enddo ! do while 
         enddo   ! i=2, gr%nnzp
 
