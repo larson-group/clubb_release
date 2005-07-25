@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: arrays.F,v 1.12 2005-07-13 20:59:42 dschanen Exp $
+! $Id: arrays.F,v 1.13 2005-07-25 22:24:46 dschanen Exp $
 
 ! This module contains definitions of all prognostic and diagnostic
 ! arrays used in the single column model, as well as subroutine
@@ -130,13 +130,9 @@
         real, allocatable, target :: em(:)
         real, allocatable, target :: taut(:), taum(:)
 
-! Coriolis parameter
-
-        real fcor                       ! Coriolis (1/s)
-
 ! Temporary array
 
-        real, allocatable :: tmp1(:), tmp2(:)
+!        real, allocatable :: tmp1(:), tmp2(:)
 
 ! Variables for tuning
 #ifdef STATS
@@ -187,9 +183,6 @@
         real, allocatable, target :: rcm_est(:)   ! Monte Carlo rcm estimate
         real, allocatable, target :: AKm_rcm(:)   ! Kessler ac based on rcm
         real, allocatable, target :: AKm_rcc(:)   ! Kessler ac based on rcm/cf
-        ! nnzp x nt x d matrix of random integers
-        integer, allocatable     :: p_height_time(:,:,:)
-!        integer, allocatable      :: p_matrix(:,:)
 ! End Latin hypercube arrays        
 
 
@@ -198,17 +191,14 @@
 !------------------------------------------------------------------------
 ! Subroutine to allocate variables defined in module global
 !------------------------------------------------------------------------
-!        subroutine allocate_model_arrays( nzmax )
-        subroutine allocate_model_arrays( nzmax, n, nt, d ) ! Add LH vars
+        subroutine allocate_model_arrays( nzmax )
 
         use constants, only: sclrm_dimension
         use model_arrays
+
         implicit none
 
-        integer nzmax
-
-! Latin hypercube indices.  Vince Larson 22 May 2005
-        integer n, nt, d
+        integer, intent(in) :: nzmax
 
 ! Prognostic variables
 
@@ -313,8 +303,8 @@ c Diagnostic variables
 
 ! Temporary array
 
-        allocate( tmp1(1:nzmax) )
-        allocate( tmp2(1:nzmax) )
+!        allocate( tmp1(1:nzmax) )
+!        allocate( tmp2(1:nzmax) )
 
 ! Tuning Variables
 #ifdef STATS
@@ -337,8 +327,6 @@ c Diagnostic variables
         allocate( rcm_est(1:nzmax) )      ! Monte Carlo rcm estimate
         allocate( AKm_rcm(1:nzmax) )      ! Kessler ac based on rcm
         allocate( AKm_rcc(1:nzmax) )      ! Kessler ac based on rcm/cf
-        allocate( p_height_time(1:nzmax,1:nt,1:(d+1)) )  ! matrix of rand ints
-!        allocate( p_matrix(1:n,1:(d+1)) )  ! rand matrix that's fed to closure
 ! End of variables for Latin hypercube.
 
 #ifdef SCALARS
@@ -473,18 +461,18 @@ c Diagnostic variables
 
 ! Tuning Variables
 #ifdef STATS
-        deallocate( wp2zt )     ! w'^2
-        deallocate( thlp2zt )     
-        deallocate( wpthlpzt )   
-        deallocate( wprtpzt ) 
-        deallocate( rtp2zt ) 
-        deallocate( rtpthlpzt ) 
+        deallocate( wp2zt )     ! w'^2 in t
+        deallocate( thlp2zt )   ! th_l'^2 in t 
+        deallocate( wpthlpzt )  ! w'th_l' in t
+        deallocate( wprtpzt )   ! w'rt' in t
+        deallocate( rtp2zt )    ! rt'^2 in t
+        deallocate( rtpthlpzt ) ! rt'th_l' in t
 #endif STATS
 
 ! Temporary array
 
-        deallocate( tmp1 )
-        deallocate( tmp2 )
+!        deallocate( tmp1 )
+!        deallocate( tmp2 )
 
 ! Array for pdf closure scheme
 
@@ -498,8 +486,6 @@ c Diagnostic variables
         deallocate( rcm_est )   ! Monte Carlo rcm estimate
         deallocate( AKm_rcm )   ! Kessler ac based on rcm
         deallocate( AKm_rcc )   ! Kessler ac based on rcm/cf
-        deallocate( p_height_time )  ! matrix of rand ints
-!        deallocate( p_matrix )  ! rand matrix that's fed to closure
 ! End of variables for Latin hypercube.
 
 #ifdef SCALARS
@@ -655,8 +641,8 @@ c Diagnostic variables
 
 ! Temporary array
 
-        tmp1 = 0.
-        tmp2 = 0.
+!        tmp1 = 0.
+!        tmp2 = 0.
 
 ! Array fpr pdf closure scheme
 
@@ -670,8 +656,6 @@ c Diagnostic variables
         rcm_est       = 0.   ! Monte Carlo rcm estimate
         AKm_rcm       = 0.   ! Kessler ac based on rcm
         AKm_rcc       = 0.   ! Kessler ac based on rcm/cf
-!        p_height_time = 0   ! matrix of rand ints
-!        p_matrix      = 0   ! rand matrix that's fed to closure
 ! End of variables for Latin hypercube.
 
         return
@@ -713,7 +697,7 @@ c Diagnostic variables
         invalid_model_arrays = isNaN( wp2 )
         if ( invalid_model_arrays ) then
           print *, "NaN in wp2 model array" 
-         print *, "wp2= ", wp2
+!         print *, "wp2= ", wp2
           return
         endif
 
@@ -787,12 +771,12 @@ c Diagnostic variables
           return
         endif
 
-        invalid_model_arrays = isNaN( wp2thvp )
-        if ( invalid_model_arrays ) then
-          print *, "NaN in wp2thvp model array" 
+!        invalid_model_arrays = isNaN( wp2thvp )
+!        if ( invalid_model_arrays ) then
+!          print *, "NaN in wp2thvp model array" 
 !         print *, "wp2thvp = ", wp2thvp
-          return
-        endif
+!          return
+!        endif
 
         return
         contains
