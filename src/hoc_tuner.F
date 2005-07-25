@@ -88,7 +88,10 @@
      .        "Re-run with new parameters?(y/n) "
         read *, user_response
 
-        if ( (user_response /= "y") ) exit 
+        if ( trim(user_response) /= "y" .and.
+     .       trim(user_response) /= "Y"   ) then 
+          exit 
+        then
        
         write (*,*) "Current ftol= ", ftol 
         write (*, '(A)', advance='no') "Enter new ftol=   "
