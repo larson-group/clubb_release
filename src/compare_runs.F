@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-!  $Id: compare_runs.F,v 1.6 2005-06-25 12:43:58 griffinb Exp $
+!  $Id: compare_runs.F,v 1.7 2005-07-25 22:27:51 dschanen Exp $
 !  program compare_runs.F
 
 !  Tests selected GRaDS file variables for low variation
@@ -157,6 +157,8 @@
 !----------------------------------------------------------------------
 !  Due to hoc's lower starting point, we can only use
 !  (total number of z-levels) - 1 (a maximum of 74 for BOMEX).
+!  The code below assumes the LES data are on an evenly spaced grid.
+!  fvar1 = hoc profile; fvar2 = LES profile.
 !  (Need to interpolate hoc to LES' levels.  Right now we just
 !   compare adjacent z levels.  Vince Larson 12 Jan 2005)
 !----------------------------------------------------------------------
