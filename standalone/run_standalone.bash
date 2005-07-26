@@ -5,19 +5,20 @@
 # Edit to change run
 #
 #######################################################################
-# Useful on SMP machines with pgf90 
-  OMP_NUM_THREADS=2
+# Useful on compilers which have OpenMP
+# OMP_NUM_THREADS=2
 #######################################################################
 # Select a run, comment out the rest
 # RUN_CASE=atex 
-# RUN_CASE=arm 
+  RUN_CASE=arm 
 # RUN_CASE=bomex 
 # RUN_CASE=dycoms2_rf01 
-# RUN_CASE=fire 
-# RUN_CASE=wangara  
 # RUN_CASE=dycoms2_rf02_d 
 # RUN_CASE=dycoms2_rf02_nd 
-  RUN_CASE=nov11_altocu
+# RUN_CASE=fire 
+# RUN_CASE=nov11_altocu
+# RUN_CASE=wangara  
+# RUN_CASE=20050726_1137
 #######################################################################
 # Check for necessary namelists.  If files exist, then
 # copy them over to the general input files.

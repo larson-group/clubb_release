@@ -4,8 +4,7 @@
 ! C4 and C10 Currently do nothing in the model - 3/18/05
 
 &model
-run_name = "arm"
-runfile  = "../tune/arm_hoc.in"
+run_file  = "../tune/arm_hoc.in"
 stdout   = .true.
 
 /
@@ -19,7 +18,7 @@ C6         = 9.3
 C7         = 0.48
 C8         = 2.3
 C10        = 3.3
-C11        = 0.4
+C11        = 0.45
 nu1        = 20.
 nu2        = 5.
 nu6        = 5.

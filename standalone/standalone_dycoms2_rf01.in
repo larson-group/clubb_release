@@ -4,8 +4,7 @@
 ! C4 and C10 Currently do nothing in the model - 3/18/05
 
 &model
-run_name = "dycoms2_rf01"
-runfile  = "../tune/dycoms2_rf01_hoc.in"
+run_file  = "../tune/dycoms2_rf01_hoc.in"
 stdout   = .true.
 
 /

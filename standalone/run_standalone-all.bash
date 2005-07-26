@@ -52,7 +52,7 @@ for (( x = 1; x <= 9; x++)); do
 #######################################################################
 #
 # Run HOC
- ./hoc_standalone 
+ ./hoc_standalone
 
 # remove the temporary error.in file
  rm -f 'standalone.in'

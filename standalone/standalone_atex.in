@@ -4,8 +4,7 @@
 ! C4 and C10 Currently do nothing in the model - 3/18/05
 
 &model
-run_name = "atex"
-runfile  = "../tune/atex_hoc.in"
+run_file  = "../tune/atex_hoc.in"
 stdout   = .true.
 
 /
