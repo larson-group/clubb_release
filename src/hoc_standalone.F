@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: hoc_standalone.F,v 1.4 2005-07-01 16:14:54 dschanen Exp $
+! $Id: hoc_standalone.F,v 1.5 2005-07-26 18:12:24 dschanen Exp $
 !  Program HOC_STANDALONE
 !
 !  This is essentially a minimalist frontend for the hoc subroutine
@@ -21,8 +21,7 @@
       real       :: mu
 
 !----- Run information-------------------------------------------------
-      character(len=40) :: runfile
-      character(len=30) :: run_name
+      character(len=50) :: run_file
 
       logical           :: stdout
 
@@ -33,7 +32,7 @@
       namelist /initvars/ C1, C2, C4, C5, C6, C7, C8, C10, C11, 
      .                    nu1, nu2, nu6, nu8, beta, gamma_coef,
      .                    c_K, lmin_coef, taumin, taumax, mu
-      namelist /model/ runfile, run_name, stdout
+      namelist /model/ run_file, stdout
 
 !----- Read in our namelists ------------------------------------------
        open(10, file='standalone.in', status='old')
@@ -50,7 +49,7 @@
       call hoc_model( C1, C2, C4, C5, C6, C7, C8, C10, C11, 
      .                nu1, nu2, nu6, nu8, beta,
      .                gamma_coef, c_K, lmin_coef, taumin, taumax, mu,
-     .                runfile, isValid, stdout )
+     .                run_file, isValid, stdout )
 
       if ( .not. isValid ) then 
         stop "Model wasn't valid, check your constants"

@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.26 2005-07-25 17:58:47 dschanen Exp $
+# $Id: Makefile,v 1.27 2005-07-26 18:12:24 dschanen Exp $
 # Uses GNU make.  BSD make doesn't like the LH/*.F syntax.
 
 # Compiler invocation
@@ -16,7 +16,7 @@ DEBUG = -g -C #-Ktrap=unf -Minform=inform
 
 #OPTIMIZE = -O2 -msse2 -march=pentium4 # g95
 #OPTIMIZE = -xarch=sse2 -ftrap=%none # Sun Studio x86/Opteron
- OPTIMIZE = -O2 -Kieee -tp p7 # PGF90
+ OPTIMIZE = -O2 -fastsse -tp p7 # PGF90
 
 # Linking Flags
 LDFLAGS = # use -s to strip

@@ -26,9 +26,7 @@
       real       :: mu
 
 !----- Run information--------------------------------------------------
-!      character(len=40) :: datafile
-      character(len=40) :: runfile
-      character(len=30) :: run_name
+      character(len=50) :: run_file
 
       logical           :: stdout
       real              :: sample_ratio
@@ -41,7 +39,7 @@
       namelist /initvars/ C1, C2, C4, C5, C6, C7, C8, C10, C11, 
      .                    nu1, nu2, nu6, nu8, beta, gamma_coef,
      .                    c_K, lmin_coef, taumin, taumax, mu
-      namelist /model/ runfile, stdout
+      namelist /model/ run_file, stdout
       namelist /setfields/ datafile, sample_ratio, input_type,
      .                     input_um, input_vm, input_rtm, input_thlm,
      .                     input_wp2, input_wprtp, input_wpthlp, 
@@ -64,7 +62,7 @@
       call hoc_model( C1, C2, C4, C5, C6, C7, C8, C10, C11, 
      .                nu1, nu2, nu6, nu8, beta,
      .                gamma_coef, c_K, lmin_coef, taumin, taumax, mu,
-     .                runfile, isValid, stdout,
+     .                run_file, isValid, stdout,
      .                grads_fields_reader, sample_ratio )
 
       if ( .not. isValid ) then 

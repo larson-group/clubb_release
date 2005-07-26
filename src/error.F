@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.11 2005-07-13 20:59:42 dschanen Exp $
+! $Id: error.F,v 1.12 2005-07-26 18:12:24 dschanen Exp $
 
 !       Module ERROR
 !
@@ -88,13 +88,12 @@
 !---- Runtime arrays which vary according to cases and variables ------
       character(len=10), dimension(:), allocatable :: hoc_v, les_v
 
-      integer, dimension(:), allocatable           :: hoc_nz, les_nz
       integer, dimension(:,:), allocatable         :: time
-      integer, dimension(:), allocatable           :: les_vmax
       integer, dimension(:), allocatable           :: z_i, z_f
 
-      character(len=30), dimension(:), allocatable :: run_name
-      character(len=40), dimension(:), allocatable :: les_stats_file
+      character(len=50), dimension(:), allocatable :: run_file
+      character(len=50), dimension(:), allocatable :: hoc_stats_file
+      character(len=50), dimension(:), allocatable :: les_stats_file
 
 !----- Various Variables for returning results ----------------------
       integer :: iter           ! Total number of iterations amoeba
@@ -134,18 +133,16 @@
 !----------------------------------------------------------------------- 
 !  Namelist vars for determining which variable to tune for:
 
-!  hoc_nz_in: total number of z-levels in the hoc profile
-!  les_nz_in: total number of z-levels in the LES profile
-!  time_in:   Order pairs of time intervals to analyze
-!  z_i_in:    initial z-level to begin reading in for tuning
-!  z_f_in:    final z-level to end reading in for tuning
+!  time_nl:   Order pairs of time intervals to analyze
+!  z_i_nl:    initial z-level to begin reading in for tuning
+!  z_f_nl:    final z-level to end reading in for tuning
 
-      integer, dimension(max_run)           :: hoc_nz_in, les_nz_in
-      integer, dimension(max_run, max_times):: time_in 
-      integer, dimension(max_run)           :: z_i_in, z_f_in
+      integer, dimension(max_run, max_times):: time_nl 
+      integer, dimension(max_run)           :: z_i_nl, z_f_nl
 
-      character(len=30), dimension(max_run) :: run_name_in
-      character(len=40), dimension(max_run) :: les_stats_file_in
+      character(len=50), dimension(max_run) :: run_file_nl
+      character(len=50), dimension(max_run) :: hoc_stats_file_nl
+      character(len=50), dimension(max_run) :: les_stats_file_nl
 
       character(len=10), dimension(max_variables)     :: t_variables
 
@@ -164,9 +161,9 @@
      .                 results_stdout, results_file, stdout_on_invalid,
      .                 t_variables
 
-      namelist /cases/ les_stats_file_in, run_name_in,
-     .                 hoc_nz_in, les_nz_in,
-     .                 z_i_in, z_f_in, time_in
+      namelist /cases/ les_stats_file_nl, hoc_stats_file_nl, 
+     .                 run_file_nl,
+     .                 z_i_nl, z_f_nl, time_nl
 
       namelist /initvars/ C1, C2, C4, C5, C6, C7, C8, C10, C11, 
      .                    nu1, nu2, nu6, nu8, beta, gamma_coef,
@@ -188,11 +185,9 @@
       if ( read_files ) then
 
 !----------------- Initialize all compile time arrays to zero ----------
-        hoc_nz_in     = 0 
-        les_nz_in     = 0
-        time_in       = 0 
-        z_i_in        = 0 
-        z_f_in        = 0
+        time_nl       = 0 
+        z_i_nl        = 0 
+        z_f_nl        = 0
 
 !----------------- Initialize variable names to spaces ---------------- 
         t_variables(1:max_variables)  = "          "
@@ -218,7 +213,7 @@
 !----- Allocate the arrays for the tuning variables -------------------
 
         do i=1, max_variables, 2         ! 1, 3, 5, 7
-          if (t_variables(i) .eq. "          ") exit
+          if (t_variables(i) == "          ") exit
           v_total = (i + 1) / 2
         enddo 
 
@@ -231,14 +226,14 @@
 !----------- Allocate the arrays for the run cases --------------------
 
         do i=1, max_run  
-          if ( hoc_nz_in(i) .eq. 0 ) exit
+          if (z_f_nl(i) == 0 ) exit
           c_total = i
         enddo
 
-        allocate( hoc_nz(c_total), les_nz(c_total), 
-     .            z_i(c_total), z_f(c_total), 
+        allocate( z_i(c_total), z_f(c_total), 
      .            time(c_total, max_times), 
-     .            run_name(c_total), les_stats_file(c_total),
+     .            run_file(c_total), les_stats_file(c_total),
+     .            hoc_stats_file(c_total),
      .            stat=AllocateStatus )
 
         if ( AllocateStatus /= 0 ) then 
@@ -253,13 +248,12 @@
 
 !------ Transfer the case information to run-time arrays --------------
        do i=1, c_total 
-         hoc_nz(i)            = hoc_nz_in(i)
-         les_nz(i)            = les_nz_in(i)
-         z_i(i)               = z_i_in(i)
-         z_f(i)               = z_f_in(i)
-         les_stats_file(i)    = les_stats_file_in(i)
-         run_name(i)          = run_name_in(i)
-         time(i, 1:max_times) = time_in(i,1:max_times)
+         z_i(i)               = z_i_nl(i)
+         z_f(i)               = z_f_nl(i)
+         les_stats_file(i)    = les_stats_file_nl(i)
+         hoc_stats_file(i)    = hoc_stats_file_nl(i)
+         run_file(i)          = run_file_nl(i)
+         time(i, 1:max_times) = time_nl(i,1:max_times)
        enddo
 
 !--------------- Initialize the hoc constants -------------------------
@@ -333,7 +327,6 @@
 !-----------------------------------------------------------------------
 !    Fill in the remaining values of the array by varying the initial
 !    vector (i.e. the first column of the array) by a small multiple
-!    (Could also use mdim?  Vince Larson 12 Jan 2005)
 !-----------------------------------------------------------------------
       do j = 1, ndim
         do i = 2, mdim
@@ -376,13 +369,9 @@
       real, intent(in), dimension(ndim) :: x_vector ! tuning vector
 
 !     Internal
-      integer                           :: i        ! looping variable
-      integer                           :: j        ! looping variable
-      integer                           :: c_run    ! looping variable
+      integer                           :: i, j, c_run    ! looping variables
+      integer                           :: les_nz, hoc_nz ! read dynamically from GRaDS 
       
-      character(50)                     :: hoc_stats_file
-
-      character(50)                     :: runfile   ! hoc nml filename
       character(50)                     :: errorfile ! nml filename for 
                                                      ! invalid runs
 
@@ -404,32 +393,31 @@
 ! Amoeba's unusual calling convention makes this work less often than
 ! would be expected.
 !-----------------------------------------------------------------------
-      if (  results_stdout
-     .    .and. modulo(iter, 10) .eq. 0 
-     .    .and. .not. (iter .eq. 0) 
-     .    ) then
-        print *, "Iteration: ", iter
-        print *, "Constants: "
-        write(*,*) "C1=          ", x_vector(1)
-        write(*,*) "C2=          ", x_vector(2)
-        write(*,*) "C4=          ", x_vector(3)
-        write(*,*) "C5=          ", x_vector(4)
-        write(*,*) "C6=          ", x_vector(5)
-        write(*,*) "C7=          ", x_vector(6)
-        write(*,*) "C8=          ", x_vector(7)
-        write(*,*) "C10=         ", x_vector(8)
-        write(*,*) "C11=         ", x_vector(9)
-        write(*,*) "nu1=         ", x_vector(10)
-        write(*,*) "nu2=         ", x_vector(11)
-        write(*,*) "nu6=         ", x_vector(12)
-        write(*,*) "nu8=         ", x_vector(13)
-        write(*,*) "beta=        ", x_vector(14)
-        write(*,*) "gamma_coef=  ", x_vector(15)
-        write(*,*) "c_K=         ", x_vector(16)
-        write(*,*) "lmin_coef=   ", x_vector(17)
-        write(*,*) "taumin=      ", x_vector(18)
-        write(*,*) "taumax=      ", x_vector(19)
-        write(*,*) "mu=          ", x_vector(20)
+      if ( results_stdout
+     .     .and. modulo(iter, 10) == 0 
+     .     .and. iter /= 0  ) then
+        write(*,'(A12,I10)') "Iteration: ", iter
+        write(*,'(A12)') "Constants: "
+        write(*,'(A12,f12.5)') "C1 =", x_vector(1)
+        write(*,'(A12,f12.5)') "C2 =", x_vector(2)
+        write(*,'(A12,f12.5)') "C4 =", x_vector(3)
+        write(*,'(A12,f12.5)') "C5 =", x_vector(4)
+        write(*,'(A12,f12.5)') "C6 =", x_vector(5)
+        write(*,'(A12,f12.5)') "C7 =", x_vector(6)
+        write(*,'(A12,f12.5)') "C8 =", x_vector(7)
+        write(*,'(A12,f12.5)') "C10 =", x_vector(8)
+        write(*,'(A12,f12.5)') "C11 =", x_vector(9)
+        write(*,'(A12,f12.5)') "nu1 =", x_vector(10)
+        write(*,'(A12,f12.5)') "nu2 =", x_vector(11)
+        write(*,'(A12,f12.5)') "nu6 =", x_vector(12)
+        write(*,'(A12,f12.5)') "nu8 =", x_vector(13)
+        write(*,'(A12,f12.5)') "beta =", x_vector(14)
+        write(*,'(A12,f12.5)') "gamma_coef =", x_vector(15)
+        write(*,'(A12,f12.5)') "c_K =", x_vector(16)
+        write(*,'(A12,f12.5)') "lmin_coef =", x_vector(17)
+        write(*,'(A12,f12.5)') "taumin =", x_vector(18)
+        write(*,'(A12,f12.5)') "taumax =", x_vector(19)
+        write(*,'(A12,f12.5)') "mu =", x_vector(20)
       endif
         
 !----Initialize the return value for funk -----------------------------
@@ -445,74 +433,72 @@
 !    in parallel.
 !-----------------------------------------------------------------------
 !$OMP PARALLEL
-!$OMP DO PRIVATE(hoc_zl, les_zl, les_minmax, runfile, hoc_stats_file) 
-!   . SHARED(c_terms, err_sum) 
+!$OMP DO PRIVATE(hoc_zl, les_zl, les_minmax, run_file, hoc_stats_file) 
+!   . SHARED(c_terms, err_sum)
       do c_run=1, c_total
- 
-      runfile        = trim(run_name(c_run)) // "_hoc.in"
-      hoc_stats_file = trim(run_name(c_run)) // "_zt.ctl"
-!      hoc_stats_file_zm = trim(run_name(c_run)) // "_zm.dat"
 
 !-------------- Run the HOC model with x_vector as input ---------------
 
-!      print *, "Calling HOC with case " // runfile ! Debug
+!      print *, "Calling HOC with case " // run_file ! Debug
 
-      call hoc_model( x_vector(1), x_vector(2), x_vector(3),
-     .                x_vector(4), x_vector(5), x_vector(6), 
-     .                x_vector(7), x_vector(8), 
-     .                x_vector(9), x_vector(10), x_vector(11), 
-     .                x_vector(12), x_vector(13), x_vector(14),
-     .                x_vector(15), x_vector(16), x_vector(17), 
-     .                x_vector(18), x_vector(19), x_vector(20),
-     .                runfile, isValid, .false. )
+        call hoc_model( x_vector(1), x_vector(2), x_vector(3),
+     .                  x_vector(4), x_vector(5), x_vector(6), 
+     .                  x_vector(7), x_vector(8), 
+     .                  x_vector(9), x_vector(10), x_vector(11), 
+     .                  x_vector(12), x_vector(13), x_vector(14),
+     .                  x_vector(15), x_vector(16), x_vector(17), 
+     .                  x_vector(18), x_vector(19), x_vector(20),
+     .                  run_file(c_run), isValid, .false. )
 
-!-------------- Basic Sanity Check -------------------------------------
-!      if (minval( x_vector ) < 0. ) isValid = .false.
+!-------------- Basic Sanity Check for negative constants --------------
+!        if (minval( x_vector ) < 0. ) isValid = .false.
 
 !-----------------------------------------------------------------------
 !  Checks if hoc has blown up, i.e. if hoc has set a variable to NaN, 
 !  or encountered a failure in subroutines tridag or bandec.  
 !  If it has, then return to amoeba with higher value than previously.
 !-----------------------------------------------------------------------
-      if ( .not. isValid ) then
-        funk = 2 * maxval( err_array ) - minval( err_array )
-        if ( stdout_on_invalid ) then
-          inv_count = modulo(inv_count, 3) + 1          ! 1,2,3,1,2,3...
-          errorfile = "error_crash_" // achar( inv_count+48 )// ".in"
-          call output_nml_tuner( errorfile, x_vector(1:ndim) )
+        if ( .not. isValid ) then
+          funk = 2 * maxval( err_array ) - minval( err_array )
+          if ( stdout_on_invalid ) then
+            inv_count = modulo(inv_count, 3) + 1          ! 1,2,3,1,2,3...
+            errorfile = "error_crash_" // achar( inv_count+48 )// ".in"
+            call output_nml_tuner( errorfile, x_vector(1:ndim) )
+          endif
+          return
         endif
-        return
-      endif
 
 !-----------------------------------------------------------------------
 !  Allocate the arrays for reading in the grads plot data
 !-----------------------------------------------------------------------
-      allocate( hoc_zl(hoc_nz(c_run)), les_zl(les_nz(c_run)), 
-     .          stat = AllocateStatus)
-      if ( AllocateStatus /= 0 ) then 
-        stop "Allocation of z-level arrays in function funk failed"
-      endif
+        hoc_nz = grads_zlvl( hoc_stats_file )
+        les_nz = grads_zlvl( les_stats_file )
+        allocate( hoc_zl(hoc_nz), les_zl(les_nz), 
+     .            stat = AllocateStatus )
+        if ( AllocateStatus /= 0 ) then 
+          stop "Allocation of z-level arrays in function funk failed"
+        endif
 
 !-----------------------------------------------------------------------
 !  Start with first hoc & les variable, loop through and calculate the 
 !  mean squared difference for all the variables
 !-----------------------------------------------------------------------
-      do i=1, v_total
+        do i=1, v_total
 
 !----- Read in LES grads data for one variable, avgd over intervals ----
       
-        les_zl = grads_average_interval( les_stats_file(c_run), 
-     .                                    hoc_nz(c_run),
-     .                                    time(c_run,:), les_v(i),
-     .                                    error )
-        if ( error ) stop "oops, variable was invalid"
+          les_zl = grads_average_interval( les_stats_file(c_run), 
+     .                                     les_nz,
+     .                                     time(c_run,:), les_v(i),
+     .                                     error )
+          if ( error ) stop "oops, variable was invalid"
 
 !----- Read in HOC grads data for one variable, avgd over intervals ----
-        hoc_zl = grads_average_interval( hoc_stats_file,
-     .                                   hoc_nz(c_run),
-     .                                   time(c_run,:), hoc_v(i), 
-     .                                   error )
-        if ( error ) stop "oops, variable was invalid"
+          hoc_zl = grads_average_interval( hoc_stats_file(c_run),
+     .                                     hoc_nz,
+     .                                     time(c_run,:), hoc_v(i), 
+     .                                     error )
+          if ( error ) stop "oops, variable was invalid"
 
 !-----------------------------------------------------------------------
 !  Calculate the mean squared difference between hoc and LES variables.
@@ -522,12 +508,12 @@
 !  the values with respect to the maxval in les_zl.  dschanen 31 Jan 05
 !-----------------------------------------------------------------------
 
-        les_minmax = maxval(les_zl) - minval(les_zl)
+          les_minmax = maxval(les_zl) - minval(les_zl)
 
-        if (les_minmax .eq. 0.) stop "An LES var = 0 over all z-levels"
+          if (les_minmax == 0.) stop "An LES var = 0 over all z-levels"
 
-        select case (hoc_nz(c_run))
-        case (48, 75, 110, 147, 150, 160)
+          select case ( hoc_nz )
+          case (48, 75, 110, 147, 150, 160)
 !-----------------------------------------------------------------------
 !  Due to hoc's lower starting point, we can only use
 !  (total number of z-levels) - 1 (a maximum of 74 for BOMEX).
@@ -539,25 +525,25 @@
      .                            / les_minmax  ) ** 2 
             c_terms = c_terms + 1
           enddo
-        case (132)  ! hoc_nz(c_run),  the dycoms II rf01 case
+          case (132)  ! hoc_nz, the dycoms II rf01 case
           do j = z_i(c_run), z_f(c_run)
             err_sum = err_sum + (  ( hoc_zl(j+2) - les_zl(j) ) 
      .                            / les_minmax  ) ** 2 
             c_terms = c_terms + 1
           enddo
-        case (50)  ! hoc_nz(c_run),  the wangara case
+          case (50)  ! hoc_nz, the wangara case
           do j = z_i(c_run), z_f(c_run)
             err_sum = err_sum + (  ( hoc_zl(j) - les_zl(j) )
      .                             / les_minmax  ) ** 2 
             c_terms = c_terms + 1
           enddo
-        case default ! hoc_nz(c_run)
+          case default ! hoc_nz
            stop "Not able to handle specified number of HOC z-levels"
-        end select
+          end select
 
-      enddo     ! end of do i=1, v_total
+        enddo     ! end of do i=1, v_total
 
-      deallocate (hoc_zl, les_zl)
+        deallocate (hoc_zl, les_zl)
 
       enddo     ! end of do c_run=1, c_total
 !$OMP END PARALLEL
@@ -576,36 +562,40 @@
       
       implicit none
 
-      if (tune_type .eq. 0) print *, "Number of iterations:",  iter
+      if (tune_type == 0) print *, "Number of iterations:",  iter
       
-      write(*,*) "Var         ", "Initial         ", "Optimal"
-      write(*,*) "C1=     ", C1, x_array(1,1)
-      write(*,*) "C2=     ", C2, x_array(1,2)
-      write(*,*) "C4=     ", C4, x_array(1,3)
-      write(*,*) "C5=     ", C5, x_array(1,4)
-      write(*,*) "C6=     ", C6, x_array(1,5)
-      write(*,*) "C7=     ", C7, x_array(1,6)
-      write(*,*) "C8=     ", C8, x_array(1,7)
-      write(*,*) "C10=    ", C10, x_array(1,8)
-      write(*,*) "C11=    ", C11, x_array(1,9)
-      write(*,*) "nu1=    ", nu1, x_array(1,10)
-      write(*,*) "nu2=    ", nu2, x_array(1,11)
-      write(*,*) "nu6=    ", nu6, x_array(1,12)
-      write(*,*) "nu8=    ", nu8, x_array(1,13)
-      write(*,*) "beta=   ", beta, x_array(1,14)
-      write(*,*) "gamma_c=", gamma_coef, x_array(1,15)
-      write(*,*) "c_K=    ", c_K, x_array(1,16)
-      write(*,*) "lmin_c= ", lmin_coef, x_array(1,17)
-      write(*,*) "taumin= ", taumin, x_array(1,18)
-      write(*,*) "taumax= ", taumax, x_array(1,19)
-      write(*,*) "mu=     ",  mu,   x_array(1,20)
+      write(*,'(A12,A12,A12)'), "Var", "Initial ", "Optimal"
+      write(*,'(A12,f12.5,f12.5)') "C1 =", C1, x_array(1,1)
+      write(*,'(A12,f12.5,f12.5)') "C2 =", C2, x_array(1,2)
+      write(*,'(A12,f12.5,f12.5)') "C4 =", C4, x_array(1,3)
+      write(*,'(A12,f12.5,f12.5)') "C5 =", C5, x_array(1,4)
+      write(*,'(A12,f12.5,f12.5)') "C6 =", C6, x_array(1,5)
+      write(*,'(A12,f12.5,f12.5)') "C7 =", C7, x_array(1,6)
+      write(*,'(A12,f12.5,f12.5)') "C8 =", C8, x_array(1,7)
+      write(*,'(A12,f12.5,f12.5)') "C10 =", C10, x_array(1,8)
+      write(*,'(A12,f12.5,f12.5)') "C11 =", C11, x_array(1,9)
+      write(*,'(A12,f12.5,f12.5)') "nu1 =", nu1, x_array(1,10)
+      write(*,'(A12,f12.5,f12.5)') "nu2 =", nu2, x_array(1,11)
+      write(*,'(A12,f12.5,f12.5)') "nu6 =", nu6, x_array(1,12)
+      write(*,'(A12,f12.5,f12.5)') "nu8 =", nu8, x_array(1,13)
+      write(*,'(A12,f12.5,f12.5)') "beta =", beta, x_array(1,14)
+      write(*,'(A12,f12.5,f12.5)') "gamma_coef =", 
+     .                             gamma_coef, x_array(1,15)
+      write(*,'(A12,f12.5,f12.5)') "c_K =", c_K, x_array(1,16)
+      write(*,'(A12,f12.5,f12.5)') "lmin_coef =", 
+     .                             lmin_coef, x_array(1,17)
+      write(*,'(A12,f12.5,f12.5)') "taumin =", taumin, x_array(1,18)
+      write(*,'(A12,f12.5,f12.5)') "taumax =", taumax, x_array(1,19)
+      write(*,'(A12,f12.5,f12.5)') "mu =",  mu,   x_array(1,20)
       
-      write(*,*) "initial error:", init_err
+      write(*,'(A20,e15.6)') "initial error: ", init_err
 
-      write(*,*) "optimal error:", min_err
+      write(*,'(A20,e15.6)') "optimal error: ", min_err
      
-      write(*,*) "approximate percent increase in accuracy:", 
+      write(*,*) "Approximate percent increase in accuracy:", 
      .          ((init_err - min_err)/init_err * 100.), "%"
+
+      return
       end subroutine output_results_stdout
 
 !----------------- Output namelists to a formatted file ----------------
@@ -633,19 +623,19 @@
       write(20,*) "&stats"
       write(20,*) "ftol = " , ftol
       if (results_stdout) then
-          write(20,*) "results_stdout = " // ".TRUE."
+          write(20,*) "results_stdout = " // ".true."
       else
-          write(20,*) "results_stdout = " // ".FALSE."
+          write(20,*) "results_stdout = " // ".false."
       endif
       if (results_file) then
-          write(20,*) "results_file = " // ".TRUE."
+          write(20,*) "results_file = " // ".true."
       else
-          write(20,*) "results_file = " // ".FALSE."
+          write(20,*) "results_file = " // ".false."
       endif
       if (stdout_on_invalid) then
-          write(20,*) "stdout_on_invalid = " // ".TRUE."
+          write(20,*) "stdout_on_invalid = " // ".true."
       else
-          write(20,*) "stdout_on_invalid = " // ".FALSE."
+          write(20,*) "stdout_on_invalid = " // ".false."
       endif
       write(20, *) "t_variables = "
       do i=1, v_total
@@ -660,15 +650,15 @@
       write(20,*) "&cases"
       do i = 1, c_total
         i_c = achar( i + 48 )
-        write(20,*) "les_stats_file_in("// i_c //") = ", 
+        write(20,*) "les_stats_file_nl("// i_c //") = ", 
      .              achar(34), trim( les_stats_file(i) ), achar(34)
-        write(20,*) "run_name_in("// i_c //") = ", 
-     .              achar(34), trim( run_name(i) ), achar(34)
-        write(20,*) "z_i_in("// i_c //")  = " , z_i(i)
-        write(20,*) "z_f_in("// i_c //")  = " ,  z_f(i)
-        write(20,*) "time_in("// i_c //",:)  = " , time(i,:)
-        write(20,*) "hoc_nz_in("// i_c //")  = " ,  hoc_nz(i)
-        write(20,*) "les_nz_in("// i_c //")  = " , les_nz(i)
+        write(20,*) "hoc_stats_file_nl("// i_c //") = ", 
+     .              achar(34), trim( hoc_stats_file(i) ), achar(34)
+        write(20,*) "run_file_nl("// i_c //") = ", 
+     .              achar(34), trim( run_file(i) ), achar(34)
+        write(20,*) "z_i_nl("// i_c //")  = " , z_i(i)
+        write(20,*) "z_f_nl("// i_c //")  = " ,  z_f(i)
+        write(20,*) "time_nl("// i_c //",:)  = " , time(i,:)
       enddo
       write(20,*) "/"
       
@@ -721,6 +711,7 @@
 !------- Close new file ------------------------------------------------
       close(20)
 
+      return
       end subroutine output_nml_tuner
 
 !-------------------Output namelists to a formatted file ---------------
@@ -749,11 +740,8 @@
       write(20,*) "! Parameter file " // results_f
 
       write(20,*) "&model"
-      write(20,*) "run_name = ",
-     .             achar(34), trim( run_name(1) ), achar(34)
-      write(20,*) "runfile  = ",
-     .              achar(34), "../tune/" // trim( run_name(1) )
-     .             // "_hoc.in", achar(34)
+      write(20,*) "run_file  = " // achar(34) // "../tune/" //
+     .             trim( run_file(1) ) // achar(34)
       write(20,*) "stdout   = ", ".true."
       write(20,*) "/"
       
@@ -783,6 +771,7 @@
 !------- Close new file ------------------------------------------------
       close(20)
 
+      return
       end subroutine output_nml_standalone
 
       end module error
