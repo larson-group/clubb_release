@@ -91,7 +91,7 @@
         if ( trim(user_response) /= "y" .and.
      .       trim(user_response) /= "Y"   ) then 
           exit 
-        then
+        endif
        
         write (*,*) "Current ftol= ", ftol 
         write (*, '(A)', advance='no') "Enter new ftol=   "
