@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.12 2005-07-26 18:12:24 dschanen Exp $
+! $Id: error.F,v 1.13 2005-07-27 19:50:34 dschanen Exp $
 
 !       Module ERROR
 !
@@ -471,8 +471,8 @@
 !-----------------------------------------------------------------------
 !  Allocate the arrays for reading in the grads plot data
 !-----------------------------------------------------------------------
-        hoc_nz = grads_zlvl( hoc_stats_file )
-        les_nz = grads_zlvl( les_stats_file )
+        hoc_nz = grads_zlvl( hoc_stats_file(c_run) )
+        les_nz = grads_zlvl( les_stats_file(c_run) )
         allocate( hoc_zl(hoc_nz), les_zl(les_nz), 
      .            stat = AllocateStatus )
         if ( AllocateStatus /= 0 ) then 
@@ -564,7 +564,7 @@
 
       if (tune_type == 0) print *, "Number of iterations:",  iter
       
-      write(*,'(A12,A12,A12)'), "Var", "Initial ", "Optimal"
+      write(*,'(A12,A12,A12)') "Var", "Initial ", "Optimal"
       write(*,'(A12,f12.5,f12.5)') "C1 =", C1, x_array(1,1)
       write(*,'(A12,f12.5,f12.5)') "C2 =", C2, x_array(1,2)
       write(*,'(A12,f12.5,f12.5)') "C4 =", C4, x_array(1,3)
