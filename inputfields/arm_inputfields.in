@@ -28,7 +28,7 @@ mu         = 6.e-4
 
 &setfields
 datafile     = "../data/arm"
-sample_ratio = 1.0
+sample_ratio = 2.0
 input_type ="les"
 input_um      = .true.
 input_vm      = .true.
