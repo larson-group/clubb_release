@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.27 2005-07-26 18:12:24 dschanen Exp $
+# $Id: Makefile,v 1.28 2005-07-27 19:49:41 dschanen Exp $
 # Uses GNU make.  BSD make doesn't like the LH/*.F syntax.
 
 # Compiler invocation
@@ -8,7 +8,7 @@ FC = pgf90 # Portland Group PGF90
 #FC = f95 # Sun Studio / Forte
 
 
-DEBUG = -g -C #-Ktrap=unf -Minform=inform 
+DEBUG = -g -C #-Ktrap=inv,unf -Minform=inform 
 
 # Optimization (assuming pentium4)
 # Sun fortran currently appears to crash if statistics.F is done with 
@@ -16,7 +16,7 @@ DEBUG = -g -C #-Ktrap=unf -Minform=inform
 
 #OPTIMIZE = -O2 -msse2 -march=pentium4 # g95
 #OPTIMIZE = -xarch=sse2 -ftrap=%none # Sun Studio x86/Opteron
- OPTIMIZE = -O2 -fastsse -tp p7 # PGF90
+ OPTIMIZE = -tp p7 # PGF90
 
 # Linking Flags
 LDFLAGS = # use -s to strip
