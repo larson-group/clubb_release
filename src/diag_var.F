@@ -1,5 +1,15 @@
+! $Id: diag_var.F,v 1.9 2005-07-28 20:54:10 dschanen Exp $
+#define SCLR_THETA 1
+#define SCLR_RT 2
+!-----------------------------------------------------------------------
+!  This is a module because optional variables require it to be.
+!-----------------------------------------------------------------------
       module diagnose_variances
+
         implicit none
+
+        public diag_var
+
         contains
 !-----------------------------------------------------------------------
 ! subroutine diag_var( )
@@ -87,7 +97,7 @@ c      prepare tridiagonal system
      .           + 0.5 * wmm(k) * gr%dzm(k)
      .           - nu2 * gr%dzm(k) * gr%dzt(k)
 
-         bb(k) = C2 / tau(k)
+         bb(k) = C2rt / tau(k)
      .           + 0.5 * a1(k)
      .                 * (2./3.) * beta
      .                 * gr%dzm(k)
@@ -144,12 +154,21 @@ c      clip small and negative values
 c Solve for thlp2
 
 c      prepare tridiagonal system
-c      note: we can reuse the same aa, bb, cc arrays
+c      note: we can reuse the same aa & cc arrays
 
        do k=1,gr%nnzp
 
          km1 = max(k-1,1)
          kp1 = min(k+1,gr%nnzp)
+
+         bb(k) = C2thl / tau(k)
+     .           + 0.5 * a1(k)
+     .                 * (2./3.) * beta
+     .                 * gr%dzm(k)
+     .                 * ( wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
+     .                     - wp3(k)/max(wp2(km1)+wp2(k),2.0*eps) )
+     .           + nu2 * gr%dzm(k)*( gr%dzt(kp1) + gr%dzt(k) )
+         if (liter) bb(k) = bb(k) + 1.0/dt
 
          dd(k) = - 2.0 * wpthlp(k) * gr%dzm(k) * (thlm(kp1)-thlm(k))
      .           - 0.5 * a2(k)
@@ -191,7 +210,7 @@ c      clip small and negative values
 c Solve for sclrp2
 
 c      prepare tridiagonal system
-c      note: we can reuse the same aa, bb, cc arrays
+c      note: we can reuse the same aa, cc arrays
 
       if (     present( sclrm )
      .   .and. present( wpsclrp ) 
@@ -199,9 +218,30 @@ c      note: we can reuse the same aa, bb, cc arrays
 
        do i=1, sclrm_dimension
        do k=1, gr%nnzp
-
          km1 = max(k-1,1)
          kp1 = min(k+1,gr%nnzp)
+
+         if ( i == SCLR_THETA ) then
+           bb(k) = C2thl / tau(k)
+     .             + 0.5 * a1(k)
+     .                   * (2./3.) * beta
+     .                   * gr%dzm(k)
+     .                   * ( wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
+     .                       - wp3(k)/max(wp2(km1)+wp2(k),2.0*eps) )
+     .             + nu2 * gr%dzm(k)*( gr%dzt(kp1) + gr%dzt(k) )
+           if (liter) bb(k) = bb(k) + 1.0/dt
+         else 
+           if ( i == SCLR_RT ) then
+             bb(k) = C2rt / tau(k)
+     .               + 0.5 * a1(k)
+     .                     * (2./3.) * beta
+     .                     * gr%dzm(k)
+     .                     * ( wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
+     .                         - wp3(k)/max(wp2(km1)+wp2(k),2.0*eps) )
+     .               + nu2 * gr%dzm(k)*( gr%dzt(kp1) + gr%dzt(k) )
+             if (liter) bb(k) = bb(k) + 1.0/dt
+           endif
+         endif
 
          dd(k) = - 2.0 * wpsclrp(k,i) * gr%dzm(k)
      .                 * ( sclrm(kp1,i) - sclrm(k,i) )
@@ -255,6 +295,15 @@ c      prepare tridiagonal system
          km1 = max(k-1,1)
          kp1 = min(k+1,gr%nnzp)
 
+         bb(k) = C2rtthl / tau(k)
+     .           + 0.5 * a1(k)
+     .                 * (2./3.) * beta
+     .                 * gr%dzm(k)
+     .                 * ( wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
+     .                     - wp3(k)/max(wp2(km1)+wp2(k),2.0*eps) )
+     .           + nu2 * gr%dzm(k)*( gr%dzt(kp1) + gr%dzt(k) )
+         if (liter) bb(k) = bb(k) + 1.0/dt
+
          dd(k) = - wpthlp(k) * gr%dzm(k) * (rtm(kp1)-rtm(k))
      .           - wprtp(k)  * gr%dzm(k) * (thlm(kp1)-thlm(k))
      .           - 0.5 * a2(k)
@@ -290,6 +339,28 @@ c     prepare tridiagonal system
         do k=1, gr%nnzp
           km1 = max(k-1,1)
           kp1 = min(k+1,gr%nnzp)
+
+         if ( i == SCLR_THETA ) then
+           bb(k) = C2rtthl / tau(k)
+     .             + 0.5 * a1(k)
+     .                   * (2./3.) * beta
+     .                   * gr%dzm(k)
+     .                   * ( wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
+     .                       - wp3(k)/max(wp2(km1)+wp2(k),2.0*eps) )
+     .             + nu2 * gr%dzm(k)*( gr%dzt(kp1) + gr%dzt(k) )
+           if (liter) bb(k) = bb(k) + 1.0/dt
+         else 
+           if ( i == SCLR_RT ) then
+             bb(k) = C2rt / tau(k)
+     .               + 0.5 * a1(k)
+     .                     * (2./3.) * beta
+     .                     * gr%dzm(k)
+     .                     * ( wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
+     .                         - wp3(k)/max(wp2(km1)+wp2(k),2.0*eps) )
+     .               + nu2 * gr%dzm(k)*( gr%dzt(kp1) + gr%dzt(k) )
+             if (liter) bb(k) = bb(k) + 1.0/dt
+           endif
+         endif
 
           dd(k) = - wprtp(k) * gr%dzm(k) * (sclrm(kp1,i)-sclrm(k,i)) 
      .            - wpsclrp(k,i) * gr%dzm(k) * (rtm(kp1)-rtm(k))
@@ -343,6 +414,28 @@ c     prepare tridiagonal system
         do k=1, gr%nnzp
           km1 = max(k-1,1)
           kp1 = min(k+1,gr%nnzp)
+
+         if ( i == SCLR_THETA ) then
+           bb(k) = C2thl / tau(k)
+     .             + 0.5 * a1(k)
+     .                   * (2./3.) * beta
+     .                   * gr%dzm(k)
+     .                   * ( wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
+     .                       - wp3(k)/max(wp2(km1)+wp2(k),2.0*eps) )
+     .             + nu2 * gr%dzm(k)*( gr%dzt(kp1) + gr%dzt(k) )
+           if (liter) bb(k) = bb(k) + 1.0/dt
+         else 
+           if ( i == SCLR_RT ) then
+             bb(k) = C2rtthl / tau(k)
+     .               + 0.5 * a1(k)
+     .                     * (2./3.) * beta
+     .                     * gr%dzm(k)
+     .                     * ( wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
+     .                         - wp3(k)/max(wp2(km1)+wp2(k),2.0*eps) )
+     .               + nu2 * gr%dzm(k)*( gr%dzt(kp1) + gr%dzt(k) )
+             if (liter) bb(k) = bb(k) + 1.0/dt
+           endif
+         endif
 
           dd(k) = - wpthlp(k) * gr%dzm(k) * (sclrm(kp1,i)-sclrm(k,i)) 
      .            - wpsclrp(k,i) * gr%dzm(k) * (thlm(kp1)-thlm(k))

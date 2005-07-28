@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.14 2005-07-25 22:29:08 dschanen Exp $
+! $Id: jacobian.F,v 1.15 2005-07-28 20:54:10 dschanen Exp $
 
 ! Program Jacobian
 
@@ -41,7 +41,7 @@
 
 !----- Parameters ------------------------------------------------------
       integer, parameter :: nvar      = 13
-      integer, parameter :: nconst    = 17
+      integer, parameter :: nconst    = 20
 
 !      character, parameter :: delta   = greek_'Δ'
       character, parameter :: delta   = 'D'
@@ -49,7 +49,9 @@
 !----- Model constants -------------------------------------------------
 ! Notes:  C4 and C10 do not currently play a role in the model 5/31/05
 !-----------------------------------------------------------------------
-      real       :: C1, C2, C4, C5, C6, C7, C8, C10, C11
+!      real       :: C1, C2, C4, C5, C6, C7, C8, C10, C11
+      real       :: C1, C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6thl
+      real       :: C7, C8, C10, C11
       real       :: nu1, nu2, nu6, nu8
       real       :: beta
       real       :: gamma_coef, c_K
@@ -89,7 +91,8 @@
       namelist /model/    run_name, times, delta_factor, 
      .                    use_standard_vars
 
-      namelist /initvars/ C1, C2, C4, C5, C6, C7, C8, C10, C11, 
+      namelist /initvars/ C1, C2rt, C2thl, C2rtthl, C4, C5, 
+     .                    C6rt, C6thl, C7, C8, C10, C11, 
      .                    nu1, nu2, nu6, nu8, beta, gamma_coef,
      .                    c_K, lmin_coef, taumin, taumax, mu
 
@@ -117,12 +120,15 @@
       close(10)
       
       ca1%element(1:nconst)%value =
-     .                     (/C1, C2, C4, C5, C6, C7, C8, C10, C11,
+     .                     (/C1, C2rt, C2thl, C2rtthl, C4, C5, 
+     .                       C6rt, C6thl, C7, C8, C10, C11,
      .                       nu1, nu2, nu6, nu8, beta, gamma_coef,
      .                       c_K, mu/)     
       ca1%element(1:nconst)%name =
-     .  (/"C1        ", "C2        ", "C4        ", 
-     .    "C5        ", "C6        ", "C7        ", 
+     .  (/"C1        ", "C2rt      ", "C2thl     ", 
+     .    "C2rtthl   ", "C4        ", 
+     .    "C5        ", "C6rt      ", "C6thl     ", 
+     .    "C7        ", 
      .    "C8        ", "C10       ", "C11       ",
      .    "nu1       ", "nu2       ", 
      .    "nu6       ", "nu8       ", 
@@ -144,8 +150,10 @@
      .                ca1%element(11)%value, ca1%element(12)%value, 
      .                ca1%element(13)%value, ca1%element(14)%value, 
      .                ca1%element(15)%value, ca1%element(16)%value, 
+     .                ca1%element(17)%value, ca1%element(18)%value, 
+     .                ca1%element(19)%value,
      .                lmin_coef, taumin,
-     .                taumax, ca1%element(17)%value,
+     .                taumax, ca1%element(20)%value,
      .                "../tune/"//trim(run_name)//"_hoc.in", 
      .                isValid, .false. )
 
@@ -190,8 +198,10 @@
      .                  ca1%element(11)%value, ca1%element(12)%value, 
      .                  ca1%element(13)%value, ca1%element(14)%value, 
      .                  ca1%element(15)%value, ca1%element(16)%value, 
+     .                  ca1%element(17)%value, ca1%element(18)%value, 
+     .                  ca1%element(19)%value,
      .                  lmin_coef, taumin,
-     .                  taumax, ca1%element(17)%value,
+     .                  taumax, ca1%element(20)%value,
      .                  "../tune/"//trim(run_name)//"_hoc.in", 
      .                  isValid, .false. )
 

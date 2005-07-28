@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: hoc_standalone.F,v 1.5 2005-07-26 18:12:24 dschanen Exp $
+! $Id: hoc_standalone.F,v 1.6 2005-07-28 20:54:10 dschanen Exp $
 !  Program HOC_STANDALONE
 !
 !  This is essentially a minimalist frontend for the hoc subroutine
@@ -13,7 +13,8 @@
 !----- Model constants ------------------------------------------------
 ! Notes:  C4 and C10 do not currently play a role in the model 3/18/05
 !
-      real       :: C1, C2, C4, C5, C6, C7, C8, C10, C11
+      real       :: C1, C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6thl
+      real       :: C7, C8, C10, C11
       real       :: nu1, nu2, nu6, nu8
       real       :: beta
       real       :: gamma_coef, c_K
@@ -29,7 +30,8 @@
       logical isValid 
 
 !----- Namelists ------------------------------------------------------
-      namelist /initvars/ C1, C2, C4, C5, C6, C7, C8, C10, C11, 
+      namelist /initvars/ C1, C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6thl,
+     .                    C7, C8, C10, C11, 
      .                    nu1, nu2, nu6, nu8, beta, gamma_coef,
      .                    c_K, lmin_coef, taumin, taumax, mu
       namelist /model/ run_file, stdout
@@ -46,7 +48,8 @@
       isValid = .true.
       
 !----- Run the model----------------------------------------------------
-      call hoc_model( C1, C2, C4, C5, C6, C7, C8, C10, C11, 
+      call hoc_model( C1, C2rt, C2thl, C2rtthl, C4, C5, 
+     .                C6rt, C6thl, C7, C8, C10, C11, 
      .                nu1, nu2, nu6, nu8, beta,
      .                gamma_coef, c_K, lmin_coef, taumin, taumax, mu,
      .                run_file, isValid, stdout )

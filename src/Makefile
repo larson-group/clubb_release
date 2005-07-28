@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.28 2005-07-27 19:49:41 dschanen Exp $
+# $Id: Makefile,v 1.29 2005-07-28 20:54:09 dschanen Exp $
 # Uses GNU make.  BSD make doesn't like the LH/*.F syntax.
 
 # Compiler invocation
@@ -14,9 +14,9 @@ DEBUG = -g -C #-Ktrap=inv,unf -Minform=inform
 # Sun fortran currently appears to crash if statistics.F is done with 
 #   optimization ( due to a bug in ube I think)
 
-#OPTIMIZE = -O2 -msse2 -march=pentium4 # g95
-#OPTIMIZE = -xarch=sse2 -ftrap=%none # Sun Studio x86/Opteron
- OPTIMIZE = -tp p7 # PGF90
+#OPTIMIZE =-O2 -msse2 -march=pentium4 # g95
+#OPTIMIZE =-xarch=sse2 -ftrap=%none # Sun Studio x86/Opteron
+ OPTIMIZE =-O2 -tp p7 -Kieee # PGF90
 
 # Linking Flags
 LDFLAGS = # use -s to strip
@@ -52,7 +52,7 @@ TARGETS	= int2txt.o hoc_tuner.o hoc_standalone.o compare_runs.o \
 	jacobian.o hoc_inputfields.o
 
 # Targets ( hoc_tuner and jacobian assume statistics )
-all:	hoc_tuner hoc_standalone hoc_inputfields int2txt compare_runs jacobian 
+all:	hoc_tuner hoc_standalone int2txt hoc_inputfields compare_runs jacobian 
 
 # Rules
 .SUFFIXES:	.o .f .F .f90

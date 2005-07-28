@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.8 2005-07-13 20:59:42 dschanen Exp $
+! $Id: constants.F,v 1.9 2005-07-28 20:54:10 dschanen Exp $
 
 !  Contains frequently occuring model constants
 !-----------------------------------------------------------------------
@@ -44,7 +44,8 @@
 
 !       Model parameters and constraints
 
-        real C1, C2, C4, C5, C6, C7, C8, C10, C11
+        real C1, C2rt, C2thl, C2rtthl, C4, C5
+        real C6rt, C6thl, C7, C8, C10, C11
         real nu1, nu2, nu6, nu8
         real mu, c_K, gamma_coef
         real lmin
@@ -86,8 +87,10 @@
 !-----------------------------------------------------------------------
 ! Subroutine to set-up constants
 !-----------------------------------------------------------------------
-      subroutine setup_constants( deltaz, C1_in, C2_in, C4_in, C5_in, 
-     .                            C6_in, C7_in, C8_in, C10_in, C11_in, 
+      subroutine setup_constants( deltaz, C1_in, C2rt_in, C2thl_in, 
+     .                            C2rtthl_in, C4_in, C5_in, 
+     .                            C6rt_in, C6thl_in, C7_in, 
+     .                            C8_in, C10_in, C11_in, 
      .                            nu1_in, nu2_in, nu6_in, nu8_in, 
      .                            gamma_coef_in, mu_in, c_K_in,
      .                            beta_in, lmin_coef_in, taumin_in, 
@@ -98,8 +101,9 @@
       implicit none
 
       real, intent(in) :: deltaz
-      real, intent(in) :: C1_in, C2_in, C4_in, C5_in, C6_in, C7_in, 
-     .                    C8_in, C10_in, C11_in
+      real, intent(in) :: C1_in, C2rt_in, C2thl_in, C2rtthl_in
+      real, intent(in) :: C4_in, C5_in, C6rt_in, C6thl_in, C7_in
+      real, intent(in) :: C8_in, C10_in, C11_in
       real, intent(in) :: nu1_in, nu2_in, nu6_in, nu8_in, beta_in
       real, intent(in) :: lmin_coef_in, taumin_in, taumax_in
       real, intent(in) :: gamma_coef_in, mu_in, c_K_in
@@ -121,15 +125,18 @@
 !      nu8 = 20.
 !-----------------------------------------------------------------------
 
-      C1    = C1_in
-      C2    = C2_in
-      C4    = C4_in
-      C5    = C5_in
-      C6    = C6_in
-      C7    = C7_in
-      C8    = C8_in
-      C10   = C10_in
-      C11   = C11_in
+      C1      = C1_in
+      C2rt    = C2rt_in
+      C2thl   = C2thl_in
+      C2rtthl = C2rtthl_in
+      C4      = C4_in
+      C5      = C5_in
+      C6rt    = C6rt_in
+      C6thl   = C6thl_in
+      C7      = C7_in
+      C8      = C8_in
+      C10     = C10_in
+      C11     = C11_in
 
       nu1   = nu1_in 
       nu2   = nu2_in 

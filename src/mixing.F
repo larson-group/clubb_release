@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.7 2005-07-13 20:59:43 dschanen Exp $
+! $Id: mixing.F,v 1.8 2005-07-28 20:54:10 dschanen Exp $
 !
 ! Module containing the hoc mixing scheme.  Allows for optional variables
 ! and assumed shape arrays.
@@ -78,7 +78,9 @@
 
 !       Setup and decompose matrix
 
-        call mixing_lhs( .true., dt, taum, wmm, wmt, wp2, wp3, Sc,
+!        call mixing_lhs( .true., dt, taum, wmm, wmt, wp2, wp3, Sc,
+!   Prof. Larson's modified mixing_lhs 
+        call mixing_lhs("rtm", .true., dt, taum, wmm, wmt, wp2, wp3, Sc,
      .                   aa, dd, al, indx, isValid )
         if ( .not. isValid ) then
            print *, "mixing_lhs failed"
@@ -96,21 +98,52 @@
      .                     cond_rrm, auto_rrm, accr_rrm, ! Brian DYCOMS_2
      .                     aa, dd, al, indx )  
 
+!   Prof. Larson's modified mixing_lhs 
+        call mixing_lhs("thlm",.true., dt, taum, wmm, wmt, wp2, wp3, Sc,
+     .                   aa, dd, al, indx, isValid )
+        if ( .not. isValid ) then
+           print *, "mixing_lhs failed"
+           deallocate( aa, dd, al, indx )
+           return
+        endif
+
+
 !       Solve thlm / wpthlp
         call mixing_solve( "thlm", .true., dt, taum, exner,
      .                     thlm, wpthlp, thlpthvp, thlm_forcing,
      .                     cond_rrm, auto_rrm, accr_rrm, ! Brian DYCOMS_2
-     .                     aa, dd, al, indx )  
+     .                     aa, dd, al, indx )
 
 !       Solve sclrm / wpsclrp
         if ( present( sclrm )     .and. present( wpsclrp ) .and.
      .       present( sclrpthvp ) .and. present( sclrm_forcing ) ) then
+
+!         Prof. Larson's modified mixing_lhs 
+          call mixing_lhs("rtm",.true., dt, taum, wmm, wmt, wp2, wp3, 
+     .                    Sc, aa, dd, al, indx, isValid )
+          if ( .not. isValid ) then
+            print *, "mixing_lhs failed"
+            deallocate( aa, dd, al, indx )
+            return
+          endif
+
+
           call mixing_solve( "sclrm_rtm", .true., dt, taum, exner,
      .                       sclrm(:,SCLR_RT), wpsclrp(:,SCLR_RT),
      .                       sclrpthvp(:,SCLR_RT), 
      .                       sclrm_forcing(:,SCLR_RT),
      .                       cond_rrm, auto_rrm, accr_rrm,
      .                       aa, dd, al, indx )
+
+!         Prof. Larson's modified mixing_lhs 
+          call mixing_lhs("thlm",.true., dt, taum, wmm, wmt, wp2, wp3,
+     .                    Sc, aa, dd, al, indx, isValid )
+          if ( .not. isValid ) then
+            print *, "mixing_lhs failed"
+            deallocate( aa, dd, al, indx )
+            return
+          endif
+
           call mixing_solve( "sclrm_thlm", .true., dt, taum, exner,
      .                       sclrm(:,SCLR_THETA), wpsclrp(:,SCLR_THETA),
      .                       sclrpthvp(:,SCLR_THETA), 
@@ -128,7 +161,8 @@
 
 !------------------------------------------------------------------------
 
-        subroutine mixing_lhs( liter, dt, taum, wmm, wmt, wp2, wp3, Sc, 
+        subroutine mixing_lhs( solve_type, liter, dt, taum, wmm, wmt,
+     .                         wp2, wp3, Sc, 
      .                         aa, dd, al, indx, isValid )
 
         use constants
@@ -141,6 +175,8 @@
 
 !       Input variables
 
+! Prof. Larson's modification for split C6/C2
+        character(len=*), intent(in) :: solve_type  ! For new mixing scheme
         logical, intent(in) :: liter
 
         real, intent(in) :: dt
@@ -210,16 +246,26 @@
      .      - a1(k) * gr%dzm(k)
      .        * wp3(k)/max(wp2(km1)+wp2(k),2.0*eps)
      .      - nu6 * gr%dzm(k) * gr%dzt(k)      
-
-          aa(k_wpxp,3)
-     .    = + C6 / taum(k)
-     .      + a1(k) * gr%dzm(k)
-     .        * (  wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
-     .           - wp3(k)  /max(wp2(km1)+wp2(k),2.0*eps) )
-     .      + (1.0-C7) * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
-     .      + nu6 * gr%dzm(k)*( gr%dzt(kp1) + gr%dzt(k) )
-          if (liter) aa(k_wpxp,3) = aa(k_wpxp,3) + 1.0 / dt
-
+          select case ( trim(solve_type) )
+          case ("rtm")
+            aa(k_wpxp,3)
+     .      = + C6rt / taum(k)
+     .        + a1(k) * gr%dzm(k)
+     .          * (  wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
+     .             - wp3(k)  /max(wp2(km1)+wp2(k),2.0*eps) )
+     .        + (1.0-C7) * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
+     .        + nu6 * gr%dzm(k)*( gr%dzt(kp1) + gr%dzt(k) )
+            if (liter) aa(k_wpxp,3) = aa(k_wpxp,3) + 1.0 / dt
+          case ("thlm")
+            aa(k_wpxp,3)
+     .      = + C6thl / taum(k)
+     .        + a1(k) * gr%dzm(k)
+     .          * (  wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
+     .             - wp3(k)  /max(wp2(km1)+wp2(k),2.0*eps) )
+     .        + (1.0-C7) * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
+     .        + nu6 * gr%dzm(k)*( gr%dzt(kp1) + gr%dzt(k) )
+            if (liter) aa(k_wpxp,3) = aa(k_wpxp,3) + 1.0 / dt
+          end select
           aa(k_wpxp,3+2)
      .    = + 0.5 * wmm(k) * gr%dzm(k)
      .      + a1(k) * gr%dzm(k)
@@ -267,7 +313,15 @@
            endif
 
            if ( iwpqtp_pr1 > 0 .or. iwpthlp_pr1 > 0 ) then
-             zmscr09(k) = - C6 / taum(k)
+             select case (trim( solve_type ) )
+             case("rtm")
+               zmscr09(k) = - C6rt / taum(k)
+             case("thlm")
+               zmscr09(k) = - C6thl / taum(k)
+             case default
+               print *, "Unknown solve_type:", solve_type
+               stop "invalid mixing_lhs call"
+             end select
            endif
 
            if ( iwpqtp_pr2 > 0 .or. iwpthlp_pr2 > 0 ) then
