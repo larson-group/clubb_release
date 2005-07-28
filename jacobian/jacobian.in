@@ -6,9 +6,9 @@
 !   than the contents of the /initvars/ namelist.
 !---------------------------------------------------------------------- 
 &model
-run_name          = "bomex"
-times             = 120, 180
-delta_factor      = 1.1
+run_name          = "fire"
+times             = 30,60,60,90,120,180
+delta_factor      = 1.16
 use_standard_vars = .false.
 /
 
@@ -16,10 +16,13 @@ use_standard_vars = .false.
 !  taumin, taumax and lmin_coef are not varied by delta_factor
 &initvars
 C1         = 2.1
-C2         = 1.2
+C2rt       = 1.2
+C2thl      = 1.2
+C2rtthl    = 1.2
 C4         = 5.2
 C5         = 0.3
-C6         = 9.3
+C6rt       = 9.3
+C6thl      = 9.3
 C7         = 0.48
 C8         = 2.3
 C10        = 3.3
