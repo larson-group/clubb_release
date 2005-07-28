@@ -5,10 +5,13 @@ stdout  = .true.
 
 &initvars
 C1         = 2.1
-C2         = 1.2
+C2rt       = 1.2
+C2thl      = 1.2
+C2rtthl    = 1.2
 C4         = 5.2
 C5         = 0.3
-C6         = 9.3
+C6rt       = 9.3
+C6thl      = 9.3
 C7         = 0.48
 C8         = 2.3
 C10        = 3.3
