@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.13 2005-07-27 19:50:34 dschanen Exp $
+! $Id: error.F,v 1.14 2005-07-28 15:17:57 dschanen Exp $
 
 !       Module ERROR
 !
@@ -38,7 +38,7 @@
       integer, parameter, public  :: mdim = ndim + 1
 
       real, dimension(mdim, ndim)  :: x_array
-      real, dimension(mdim)        :: x_variance
+      real, dimension(ndim)        :: x_variance
       real, dimension(mdim)        :: err_array
       real, dimension(ndim)        :: pb           ! only used by amebsa
 
@@ -257,50 +257,20 @@
        enddo
 
 !--------------- Initialize the hoc constants -------------------------
-        x_array(1,1)  = C1
-        x_array(1,2)  = C2
-        x_array(1,3)  = C4
-        x_array(1,4)  = C5
-        x_array(1,5)  = C6
-        x_array(1,6)  = C7
-        x_array(1,7)  = C8
-        x_array(1,8)  = C10
-        x_array(1,9)  = C11
-        x_array(1,10) = nu1
-        x_array(1,11) = nu2
-        x_array(1,12) = nu6
-        x_array(1,13) = nu8
-        x_array(1,14) = beta
-        x_array(1,15) = gamma_coef
-        x_array(1,16) = c_K
-        x_array(1,17) = lmin_coef
-        x_array(1,18) = taumin
-        x_array(1,19) = taumax
-        x_array(1,20) = mu
+
+        x_array(1,1:ndim) = (/C1, C2, C4, C5, C6, C7, C8, C10, C11, 
+     .                        nu1, nu2, nu6, nu8, beta, gamma_coef, 
+     .                        c_K, lmin_coef, taumin, taumax, mu/)
 
 !--------------- Initialize the hoc variance -------------------------
-        x_variance(1)  = C1_var
-        x_variance(2)  = C2_var
-        x_variance(3)  = C4_var
-        x_variance(4)  = C5_var
-        x_variance(5)  = C6_var
-        x_variance(6)  = C7_var
-        x_variance(7)  = C8_var
-        x_variance(8)  = C10_var
-        x_variance(9)  = C11_var
-        x_variance(10) = nu1_var
-        x_variance(11) = nu2_var
-        x_variance(12) = nu6_var
-        x_variance(13) = nu8_var
-        x_variance(14) = beta_var
-        x_variance(15) = gamma_coef_var
-        x_variance(16) = c_K_var
-        x_variance(17) = lmin_coef_var
-        x_variance(18) = taumin_var
-        x_variance(19) = taumax_var
-        x_variance(20) = mu_var
- 
 
+        x_variance(1:ndim) = (/C1_var, C2_var, C4_var, C5_var, C6_var,
+     .                         C7_var, C8_var, C10_var, C11_var, 
+     .                         nu1_var, nu2_var, nu6_var, nu8_var, 
+     .                         beta_var, gamma_coef_var, 
+     .                         c_K_var, lmin_coef_var, taumin_var, 
+     .                         taumax_var, mu_var/)
+      
 !-----------------------------------------------------------------------
 !  Attempt to generate a pseudo random seed using a file generated from
 !  /dev/random.  File is ascii text and can be edited manually.
@@ -351,6 +321,7 @@
       write(*,*) "err_array:"
       write(*,'(6e12.5)')  err_array
 
+      return
       end subroutine tuner_init
 
 !-----------------------------------------------------------------------
