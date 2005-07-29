@@ -37,12 +37,13 @@
 
 
 !----- Namelists -------------------------------------------------------
+      namelist /model/ run_file, stdout
+
       namelist /initvars/ C1, C2rt, C2thl, C2rtthl, C4, C5, 
      .                    C6rt, C6thl, C7, C8, C10, C11, 
      .                    nu1, nu2, nu6, nu8, beta, gamma_coef,
      .                    c_K, lmin_coef, taumin, taumax, mu
 
-      namelist /model/ run_file, stdout
       namelist /setfields/ datafile, sample_ratio, input_type,
      .                     input_um, input_vm, input_rtm, input_thlm,
      .                     input_wp2, input_wprtp, input_wpthlp, 

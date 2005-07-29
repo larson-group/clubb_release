@@ -153,7 +153,7 @@
           call close_grads_read( fread_var )
 
         case( "les" )
-          call open_grads_read( 15, trim(datafile)//"_case.ctl", 
+          call open_grads_read( 15, trim(datafile)//"_coamps_sm.ctl", 
      .                          fread_var )
 
 !         stats_sm
