@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: arrays.F,v 1.13 2005-07-25 22:24:46 dschanen Exp $
+! $Id: arrays.F,v 1.14 2005-07-29 17:53:09 dschanen Exp $
 
 ! This module contains definitions of all prognostic and diagnostic
 ! arrays used in the single column model, as well as subroutine
@@ -680,103 +680,129 @@ c Diagnostic variables
 !       wp2, & wp3.       
 !------------------------------------------------------------------------
 
-        invalid_model_arrays = isNaN( um )
-        if ( invalid_model_arrays ) then
+        if ( isNaN( um ) ) then
           print *, "NaN in um model array" 
 !         print *, "um= ", um
-          return
+          invalid_model_arrays = .true.
+!         return
         endif
 
-        invalid_model_arrays = isNaN( vm )
-        if ( invalid_model_arrays ) then
+        if ( isNaN( vm ) ) then
           print *, "NaN in vm model array" 
 !         print *, "vm= ", vm
-          return
+          invalid_model_arrays = .true.
+!         return
         endif
 
-        invalid_model_arrays = isNaN( wp2 )
-        if ( invalid_model_arrays ) then
+        if ( isNaN( wp2 ) ) then
           print *, "NaN in wp2 model array" 
 !         print *, "wp2= ", wp2
-          return
+          invalid_model_arrays = .true.
+!         return
         endif
 
-        invalid_model_arrays = isNaN( rtm )
-        if ( invalid_model_arrays ) then
-          print *, "NaN in rtm model array" 
-!         print *, "rtm= ", rtm
-          return
-        endif
-
-        invalid_model_arrays = isNaN( rtp2 )
-        if ( invalid_model_arrays ) then
-          print *, "NaN in rtp2 model array" 
-!         print *, "rtp2= ", rtp2
-          return
-        endif
-
-        invalid_model_arrays = isNaN( thlp2 )
-        if ( invalid_model_arrays ) then
-          print *, "NaN in thlp2 model array" 
-!         print *, "thlp2= ", thlp2
-          return
-        endif
-
-        invalid_model_arrays = isNaN( wprtp )
-        if ( invalid_model_arrays ) then
-          print *, "NaN in wprtp model array" 
-!         print *, "wprtp= ", wprtp
-          return
-        endif
-
-        invalid_model_arrays = isNaN( wpthlp )
-        if ( invalid_model_arrays ) then
-          print *, "NaN in wpthlp model array" 
-!         print *, "wpthlp= ", wpthlp
-          return
-        endif
-
-        invalid_model_arrays = isNaN( rtpthlp )
-        if ( invalid_model_arrays ) then
-          print *, "NaN in rtpthlp model array" 
-!         print *, "rtpthlp= ", rtpthlp
-          return
-        endif
-
-        invalid_model_arrays = isNaN( wp3 )
-        if ( invalid_model_arrays ) then
+        if ( isNaN( wp3 ) ) then
           print *, "NaN in wp3 model array" 
 !         print *, "wp3= ", wp3
-          return
+          invalid_model_arrays = .true.
+!         return
         endif
 
-        invalid_model_arrays = isNaN( p )
-        if ( invalid_model_arrays ) then
+        if ( isNaN( rtm ) ) then
+          print *, "NaN in rtm model array" 
+!         print *, "rtm= ", rtm
+          invalid_model_arrays = .true.
+!         return
+        endif
+
+        if ( isNaN( thlm ) ) then
+          print *, "NaN in thlm model array" 
+!         print *, "rtm= ", rtm
+          invalid_model_arrays = .true.
+!         return
+        endif
+
+        if ( isNaN( rtp2 ) ) then
+          print *, "NaN in rtp2 model array" 
+!         print *, "rtp2= ", rtp2
+          invalid_model_arrays = .true.
+!         return
+        endif
+
+        if ( isNaN( thlp2 ) ) then
+          print *, "NaN in thlp2 model array" 
+!         print *, "thlp2= ", thlp2
+          invalid_model_arrays = .true.
+!         return
+        endif
+
+        if ( isNaN( wprtp ) ) then
+          print *, "NaN in wprtp model array" 
+!         print *, "wprtp= ", wprtp
+          invalid_model_arrays = .true.
+!         return
+        endif
+
+        if ( isNaN( wpthlp ) ) then
+          print *, "NaN in wpthlp model array" 
+!         print *, "wpthlp= ", wpthlp
+          invalid_model_arrays = .true.
+!         return
+        endif
+
+        if ( isNaN( rtpthlp ) ) then
+          print *, "NaN in rtpthlp model array" 
+!         print *, "rtpthlp= ", rtpthlp
+          invalid_model_arrays = .true.
+!         return
+        endif
+
+        if ( isNaN( p ) ) then
           print *, "NaN in p model array" 
 !         print *, "p= ", p
-          return
+          invalid_model_arrays = .true.
+!         return
         endif
 
-        invalid_model_arrays = isNaN( Nrm )
-        if ( invalid_model_arrays ) then
+        if ( isNaN( Nrm ) ) then
           print *, "NaN in Nrm model array" 
 !         print *, "Nrm= ", Nrm
-          return
+          invalid_model_arrays = .true.
+!         return
         endif
 
-        invalid_model_arrays = isNaN( wmt )
-        if ( invalid_model_arrays ) then
+        if ( isNaN( rrm ) ) then
+          print *, "NaN in Nrm model array" 
+!         print *, "Nrm= ", Nrm
+          invalid_model_arrays = .true.
+!         return
+        endif
+
+        if ( isNaN( wmt ) ) then
           print *, "NaN in wmt model array" 
 !         print *, "wmt= ", wmt
-          return
+          invalid_model_arrays = .true.
+!         return
         endif
 
-!        invalid_model_arrays = isNaN( wp2thvp )
-!        if ( invalid_model_arrays ) then
-!          print *, "NaN in wp2thvp model array" 
+        if ( isNaN( wp2thvp ) ) then
+          print *, "NaN in wp2thvp model array" 
 !         print *, "wp2thvp = ", wp2thvp
-!          return
-!        endif
+          invalid_model_arrays = .true.
+!         return
+        endif
+
+        if ( isNaN( rtpthvp ) ) then
+          print *, "NaN in wp2thvp model array" 
+!         print *, "wp2thvp = ", wp2thvp
+          invalid_model_arrays = .true.
+        endif
+
+        if ( isNaN( thlpthvp ) ) then
+          print *, "NaN in wp2thvp model array" 
+!         print *, "wp2thvp = ", wp2thvp
+          invalid_model_arrays = .true.
+        endif
 
         return
         contains
