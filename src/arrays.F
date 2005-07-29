@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: arrays.F,v 1.14 2005-07-29 17:53:09 dschanen Exp $
+! $Id: arrays.F,v 1.15 2005-07-29 18:00:29 dschanen Exp $
 
 ! This module contains definitions of all prognostic and diagnostic
 ! arrays used in the single column model, as well as subroutine
@@ -772,8 +772,8 @@ c Diagnostic variables
         endif
 
         if ( isNaN( rrm ) ) then
-          print *, "NaN in Nrm model array" 
-!         print *, "Nrm= ", Nrm
+          print *, "NaN in rrm model array" 
+!         print *, "rrm= ", rrm
           invalid_model_arrays = .true.
 !         return
         endif
@@ -793,14 +793,14 @@ c Diagnostic variables
         endif
 
         if ( isNaN( rtpthvp ) ) then
-          print *, "NaN in wp2thvp model array" 
-!         print *, "wp2thvp = ", wp2thvp
+          print *, "NaN in rtpthvp model array" 
+!         print *, "rtpthvp = ", rtpthvp
           invalid_model_arrays = .true.
         endif
 
         if ( isNaN( thlpthvp ) ) then
-          print *, "NaN in wp2thvp model array" 
-!         print *, "wp2thvp = ", wp2thvp
+          print *, "NaN in thlpthvp model array" 
+!         print *, "thlpthvp = ", thlpthvp
           invalid_model_arrays = .true.
         endif
 
