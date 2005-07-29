@@ -1,5 +1,5 @@
 &model
-runfile = "../tune/atex_hoc.in"
+run_file = "../tune/atex_hoc.in"
 stdout  = .true.
 /
 

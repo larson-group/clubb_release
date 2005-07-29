@@ -1,5 +1,5 @@
 &model
-runfile = "../tune/bomex_hoc.in"
+run_file = "../tune/bomex_hoc.in"
 stdout  = .true.
 /
 
@@ -30,9 +30,9 @@ mu         = 6.e-4
 /
 
 &setfields
-datafile     = "../tune/bomex"
-sample_ratio = 3.0
-input_type ="les"
+datafile      = "../les_data/bomex"
+sample_ratio  = 3.0
+input_type    ="les"
 input_um      = .true.
 input_vm      = .true.
 input_rtm     = .true.

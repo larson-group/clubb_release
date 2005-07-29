@@ -1,5 +1,5 @@
 &model
-runfile = "../tune/nov11_altocu_hoc.in"
+run_file = "../tune/nov11_altocu_hoc.in"
 stdout  = .true.
 /
 
@@ -30,7 +30,7 @@ mu         = 6.e-4
 /
 
 &setfields
-datafile     = "../data/nov11_altocu"
+datafile     = "../les_data/nov11_altocu"
 sample_ratio = 12.0
 input_type ="les"
 input_um      = .true.

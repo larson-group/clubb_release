@@ -1,5 +1,5 @@
 &model
-runfile = "../tune/fire_hoc.in"
+run_file = "../tune/fire_hoc.in"
 stdout  = .true.
 /
 
@@ -30,7 +30,7 @@ mu         = 6.e-4
 /
 
 &setfields
-datafile     = "../tune/fire"
+datafile     = "../les_data/fire"
 sample_ratio = 1.0
 input_type ="les"
 input_um      = .true.

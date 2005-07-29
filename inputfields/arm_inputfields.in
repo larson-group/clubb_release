@@ -1,5 +1,5 @@
 &model
-runfile = "../tune/arm_hoc.in"
+run_file = "../tune/arm_hoc.in"
 stdout  = .true.
 /
 
@@ -30,7 +30,7 @@ mu         = 6.e-4
 /
 
 &setfields
-datafile     = "../data/arm"
+datafile     = "../les_data/arm"
 sample_ratio = 2.0
 input_type ="les"
 input_um      = .true.
