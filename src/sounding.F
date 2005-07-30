@@ -1,4 +1,4 @@
-! $Id: sounding.F,v 1.9 2005-07-25 22:28:43 dschanen Exp $
+! $Id: sounding.F,v 1.10 2005-07-30 15:52:56 griffinb Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
       module sounding
@@ -148,8 +148,8 @@
             ELSE  ! DYCOMS II RF02 case
 
               IF ( gr%zt(i) < 795.0 ) THEN
-                um(i)   =  6.5 + (2.0*gr%zt(i))/1000.0
-                vm(i)   = -8.5 + (5.0*gr%zt(i))/1000.0
+                um(i)   =  3.0 + (4.3*gr%zt(i))/1000.0
+                vm(i)   = -9.0 + (5.6*gr%zt(i))/1000.0
                 ugm(i)  = um(i)
                 vgm(i)  = vm(i)
                 thlm(i) = 288.3
@@ -160,8 +160,8 @@
                   sclrm(i, SCLR_RT)    = rtm(i)
                 endif
               ELSE
-                um(i)   =  6.5 + (2.0*gr%zt(i))/1000.0
-                vm(i)   = -8.5 + (5.0*gr%zt(i))/1000.0
+                um(i)   =  3.0 + (4.3*gr%zt(i))/1000.0
+                vm(i)   = -9.0 + (5.6*gr%zt(i))/1000.0
                 ugm(i)  = um(i)
                 vgm(i)  = vm(i)
                 thlm(i) = 295.0 + ( (gr%zt(i) - 795.0)**(1.0/3.0) )
