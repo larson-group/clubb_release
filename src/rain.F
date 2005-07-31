@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------        
-! $Id: rain.F,v 1.18 2005-07-31 22:05:48 griffinb Exp $
+! $Id: rain.F,v 1.19 2005-07-31 23:37:53 griffinb Exp $
 
 ! This subroutine advances drizzle (rrm and Nrm) one timestep.
 ! It uses implicit discretization and formulas by 
@@ -237,9 +237,9 @@
         ! Use nu_r=10 m^2/s for 10-m vertical grid spacing.
         ! Use nu_r=70 m^2/s for 100-m vertical grid spacing.
 !        nu_r = 10.0  ! 10-m grid spacing
-!        nu_r = 20.0  ! 10-m grid spacing  ! Brian: best dycoms2 rf02 HR run.
+        nu_r = 20.0  ! 10-m grid spacing  ! Brian: best dycoms2 rf02 HR run.
 !        nu_r = 70.0  ! 100-m grid spacing
-        nu_r = 80.0  ! 100-m grid spacing ! Brian: best dycoms2 rf02 LR run.
+!        nu_r = 80.0  ! 100-m grid spacing ! Brian: best dycoms2 rf02 LR run.
 
         DO k = 2, gr%nnzp-1, 1
 
