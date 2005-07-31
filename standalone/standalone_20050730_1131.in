@@ -1,0 +1,34 @@
+ ! Parameter file ../standalone/standalone_20050730_1131.in         
+ ! This is the file which contains the tuned parameters for the
+ ! DYCOMS2 RF02 case which were used to get the results that
+ ! were submitted.  Brian.
+ &model
+ run_file  = "../tune/dycoms2_rf02_d_hoc.in"
+ stdout   = .true.
+ /
+ &initvars
+ C1 =             2.078127    
+ C2rt =          0.5538578    
+ C2thl =          1.050765    
+ C2rtthl =        1.130229    
+ C4 =             4.500001    
+ C5 =            0.6003824    
+! C6rt =           8.896463    
+ C6rt =           5.896463    
+ C6thl =          9.556286    
+ C7 =            0.4048623    
+ C8 =             3.018094    
+ C10 =            2.900002    
+ C11 =           0.8889191    
+ nu1 =            20.00000    
+ nu2 =            5.000001    
+ nu6 =            5.000001    
+ nu8 =            20.00000    
+ beta =           1.900474    
+ gamma_coef =    0.3213705    
+ c_K =           0.4053737    
+ lmin_coef =      1.500000    
+ taumin =         90.00002    
+ taumax =         3600.000    
+ mu =            5.8579847E-04
+ /
