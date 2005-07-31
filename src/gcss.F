@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.15 2005-07-16 22:31:23 griffinb Exp $ 
+! $Id: gcss.F,v 1.16 2005-07-31 22:05:48 griffinb Exp $ 
 
 ! This file contains extra subroutines to simulate the GCSS ARM and
 ! GCSS BOMEX, GCSS ATEX, GCSS FIRE intercomparison cases as well 
@@ -1218,7 +1218,7 @@
 !----------------------------------------------------------------------
 
         SUBROUTINE dycoms2_rf02_sfclyr( u_sfc, v_sfc, uw, vw, wtp, wrp,
-     .                                  sclr_sfc, wpsclr_sfc )
+     .                                  ustar, sclr_sfc, wpsclr_sfc )
 
         USE constants
 
@@ -1234,6 +1234,7 @@
         REAL, INTENT(OUT):: vw
         REAL, INTENT(OUT):: wtp
         REAL, INTENT(OUT):: wrp
+        REAL, INTENT(OUT):: ustar
 
 ! Output (optional)
         REAL, OPTIONAL, INTENT(OUT):: wpsclr_sfc(sclrm_dimension)
@@ -1241,9 +1242,10 @@
 ! Internal
         REAL:: wind_sfc
 
-        REAL, PARAMETER:: ustar = 0.25
         REAL, PARAMETER:: SH = 16.0
         REAL, PARAMETER:: LH = 93.0
+
+        ustar = 0.25
 
         wind_sfc = SQRT( u_sfc**2.0 + v_sfc**2.0 )
 

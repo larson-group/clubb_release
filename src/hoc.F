@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.28 2005-07-28 20:54:10 dschanen Exp $
+! $Id: hoc.F,v 1.29 2005-07-31 22:05:48 griffinb Exp $
 
 !      Module HOC
 !-----------------------------------------------------------------------
@@ -1078,7 +1078,7 @@
          case ( "dycoms2_rf02_d", "dycoms2_rf02_nd" )
            call dycoms2_rf02_sfclyr( um(2), vm(2),
      .                               upwp(1), vpwp(1),
-     .                               wpthlp(1), wprtp(1)
+     .                               wpthlp(1), wprtp(1), ustar
 #ifdef SCALARS
      .                               ,sclrm(2,:), wpsclrp(1,:)
 #endif SCALARS
