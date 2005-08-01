@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.16 2005-07-31 22:05:48 griffinb Exp $ 
+! $Id: gcss.F,v 1.17 2005-08-01 18:29:02 vlarson Exp $ 
 
 ! This file contains extra subroutines to simulate the GCSS ARM and
 ! GCSS BOMEX, GCSS ATEX, GCSS FIRE intercomparison cases as well 
@@ -983,7 +983,8 @@
 !----------------------------------------------------------------------
 
         SUBROUTINE dycoms2_rf02_tndcy( rhot, rhom, rtm, rcm, wmt, wmm,
-     .                                 theta_tndcy, rt_tndcy, isValid,
+     .                                 theta_tndcy, rt_tndcy, Frad, 
+     .                                 isValid,
      .                                 sclr_tndcy )
 
         USE grid_class
@@ -1003,6 +1004,7 @@
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: wmm
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: theta_tndcy
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: rt_tndcy
+        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: Frad
 
         ! Optional output
         REAL, OPTIONAL, 
@@ -1014,7 +1016,6 @@
         ! Local
         REAL, DIMENSION(1:gr%nnzp):: LWP
         REAL, DIMENSION(1:gr%nnzp):: Heaviside
-        REAL, DIMENSION(1:gr%nnzp):: F_rad
         REAL, DIMENSION(1:gr%nnzp):: htrt
 
         REAL:: z_i
@@ -1077,16 +1078,16 @@
            ENDIF
         ENDDO
 
-!       Compute radiative flux profile (F_rad).
+!       Compute radiative flux profile (Frad).
 !       Radiative flux is defined on momentum levels.
 
         DO k = 1, gr%nnzp, 1
 
-           F_rad(k) =  F0 * EXP( -kap * LWP(k) )
+           Frad(k) =  F0 * EXP( -kap * LWP(k) )
      .               + F1 * EXP( -kap * (LWP(1) - LWP(k)) )
 
            IF ( Heaviside(k) > 0.0 ) THEN
-              F_rad(k) = F_rad(k)
+              Frad(k) = Frad(k)
      .                  + rhom(k) * Cp * ls_div * Heaviside(k)
      .                  * ( 0.25 * ((gr%zm(k)-z_i)**(4.0/3.0))
      .                     + z_i * ((gr%zm(k)-z_i)**(1.0/3.0)) )
@@ -1099,7 +1100,7 @@
 
         DO k = 2, gr%nnzp, 1
            htrt(k) = ( -1.0/(Cp*rhot(k)) ) 
-     .              * ( F_rad(k) - F_rad(k-1) ) * gr%dzt(k)
+     .              * ( Frad(k) - Frad(k-1) ) * gr%dzt(k)
         ENDDO
         htrt(1) = htrt(2)
 

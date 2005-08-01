@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.29 2005-07-31 22:05:48 griffinb Exp $
+! $Id: hoc.F,v 1.30 2005-08-01 18:29:02 vlarson Exp $
 
 !      Module HOC
 !-----------------------------------------------------------------------
@@ -952,8 +952,9 @@
 
          case ( "dycoms2_rf02_d" ) ! DYCOMS2 RF02 case with drizzle
            call dycoms2_rf02_tndcy( rhot, rhom, rtm,
-     .                              rcm, wmt, wmm, thlm_forcing, 
-     .                              rtm_forcing, isValid
+     .                              rcm, wmt, wmm, 
+     .                              thlm_forcing, rtm_forcing, Frad, 
+     .                              isValid
 #ifdef SCALARS
      .                              ,sclrm_forcing  ! optional variable
 #endif SCALARS
@@ -962,7 +963,7 @@
          case ( "dycoms2_rf02_nd" ) ! DYCOMS2 RF02 case with no drizzle
            call dycoms2_rf02_tndcy( rhot, rhom, rtm, 
      .                              rcm, wmt, wmm,
-     .                              thlm_forcing, rtm_forcing, 
+     .                              thlm_forcing, rtm_forcing, Frad, 
      .                              isValid 
 #ifdef SCALARS
      .                             ,sclrm_forcing   ! optional variable
