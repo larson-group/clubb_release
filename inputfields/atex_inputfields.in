@@ -30,7 +30,7 @@ mu         = 6.e-4
 /
 
 &setfields
-datafile     = "../data/atex"
+datafile     = "../les_data/atex"
 sample_ratio = 3.0
 input_type ="les"
 input_um      = .true.
