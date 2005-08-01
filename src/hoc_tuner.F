@@ -101,6 +101,8 @@
 
       enddo
 
+      call output_optimal_results( )
+
 !--------------- Final namelist file output -----------------------------
       if ( results_file ) then 
 !----------------------- Tuner namelist ---------------------------------      
@@ -140,12 +142,13 @@
       use error
 
       implicit none
-     
+
       call amoeba( x_array(1:mdim, 1:ndim), err_array(1:mdim), 
      .             ftol, funk, iter)
 
-      min_err = minval( err_array )
-
+      min_err =  minval( err_array )
+        
+      return
       end subroutine amoeba_driver
 
 !------------------------------------------------------------------------
@@ -198,4 +201,35 @@
       min_err = ybb
 
       end subroutine amebsa_driver
+!----------------------------------------------------------------------
+      subroutine output_optimal_results
+      use error
+      use hoc, only: hoc_model
+
+      implicit none
+
+      integer c ! loop over cases
+
+      write(*,*) "Calling HOC with optimal results."
+      write(*,*) "This should not result in an invalid run."
+      do c=1, c_total
+        write(*,'(a5,i2)') "Case:", c
+        call hoc_model( x_array(1, 1), x_array(1, 2),
+     .                  x_array(1, 3), x_array(1, 4),
+     .                  x_array(1, 5), x_array(1, 6),
+     .                  x_array(1, 7), x_array(1, 8),
+     .                  x_array(1, 9), x_array(1, 10),
+     .                  x_array(1, 11), x_array(1, 12),
+     .                  x_array(1, 13), x_array(1, 14),
+     .                  x_array(1, 15), x_array(1, 16),
+     .                  x_array(1, 17), x_array(1, 18),
+     .                  x_array(1, 19), x_array(1, 20),
+     .                  x_array(1, 21), x_array(1, 22),
+     .                  x_array(1, 23), run_file(c), 
+     .                  isValid, .false. )
+      enddo
+      write(*,*) "The GRaDS files should now be optimal."
+
+      return
+      end subroutine output_optimal_results
 !----------------------------------------------------------------------
