@@ -58,6 +58,7 @@
         logical error
         type (inputgrads) fread_var
         real, dimension(gr%nnzp + 1) :: tmp1
+        integer k
 
         select case( input_type )
         case( "hoc" )
@@ -230,20 +231,21 @@
      .                    timestep,
      .                    tmp1(1:gr%nnzp), error )
             call interpolate_m( tmp1(1:gr%nnzp), rtp2(2:gr%nnzp) )
-            ! Use linear extrapolation, assuming equal grid spacing,
-            ! although the boundary flux is usually solved in LES
-            ! or hoc via a subroutine like sfc_var.
-            rtp2(1) = 2. * rtp2(2) - rtp2(3)
+            ! Using a linear interpolation here resulted in negatives.
+            rtp2(1) =  rtp2(2)
+            if ( any (rtp2(1:gr%nnzp) < 0.0 ) ) then
+              print *, "Some values of rtp2 are negative, compensating."
+              do k=1, gr%nnzp
+                rtp2(k) = max(rtp2(k), 0.0)
+              enddo
+            endif
           endif
 
           if (present( thlp2 ) .and. input_thlp2) then 
             call get_var( fread_var, "thlp2", 
      .                    timestep, tmp1(1:gr%nnzp), error )
-            call interpolate_m( tmp1(1:gr%nnzp), thlp2(2:gr%nnzp) )
-            ! Use linear extrapolation, assuming equal grid spacing,
-            ! although the boundary flux is usually solved in LES
-            ! or hoc via a subroutine like sfc_var.
-            thlp2(1) = 2. * thlp2(2) - thlp2(3)
+            ! Using a linear interpolation here resulted in negatives.
+            thlp2(1) = thlp2(2)
           endif
 
           if (present( rtpthlp ) .and. input_rtpthlp) then 
@@ -297,7 +299,15 @@
             call get_var( fread_var, "wp2", 
      .                    timestep,
      .                    tmp1(1:gr%nnzp+1), error )
+            ! Use linear extrapolation, assuming equal grid spacing,
+            ! although the boundary flux is usually solved in LES
             wp2(1:gr%nnzp) = tmp1(1:gr%nnzp)
+            if ( any (wp2(1:gr%nnzp) < 0.0 ) ) then
+              print *, "Some values of wp2 are negative, compensating."
+              do k=1, gr%nnzp
+                wp2(k) = max(wp2(k), 0.0)
+              enddo
+            endif
           endif
           if ( error ) stop "get_var failed for wp2 in field_reader"
 
