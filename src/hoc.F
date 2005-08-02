@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.30 2005-08-01 18:29:02 vlarson Exp $
+! $Id: hoc.F,v 1.31 2005-08-02 20:12:39 dschanen Exp $
 
 !      Module HOC
 !-----------------------------------------------------------------------
@@ -30,7 +30,7 @@
 
 !      Model settings
 
-!       integer, private :: runtype     ! = 0 normal run
+!       integer, private :: runtype    ! = 0 normal run
                                        ! = 1 GCSS ARM
                                        ! = 2 GCSS BOMEX
                                        ! = 3 GCSS FIRE
@@ -620,7 +620,7 @@
 !   function zt2zm (from grid_class)
 
 !   Fortran intrinsic functions:
-!   sqrt, min, & max
+!   sqrt; min & max; trim
 
 !-----------------------------------------------------------------------
         subroutine hoc_initialize( thlm, rtm, um, vm, ug, vg, wp2,
@@ -1164,7 +1164,6 @@
 
 
 !      Compute Sc with new formula from Vince
-
        Scm = gamma_coef * ( 1.0 - 
      .       min(
      .       max( ( wpthlp / ( sqrt( wp2 ) * sqrt( thlp2 ) 
