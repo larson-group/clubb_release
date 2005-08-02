@@ -7,13 +7,19 @@
 !  One would be sufficent, the pair are available for convenience
 
 !  native_4byte_real is a portable byte re-ordering subroutine
+!  native_8byte_real is my knock off of the above routine for 8 bytes
 !----------------------------------------------------------------------
       module endian
 
       implicit none
+      interface byte_order_swap
+        module procedure native_4byte_real, native_8byte_real 
+      end interface
+
+      public big_endian, little_endian, byte_order_swap
+      private native_4byte_real, native_8byte_real
 
       contains
-
 !----------------------------------------------------------------------
 !  Adapted from Chris Golaz's subroutine
 !  Return .true. if the system uses most significant bit (MSB) byte ordering
@@ -59,7 +65,7 @@
 !
 !         AUTHOR: David Stepaniak, NCAR/CGD/CAS
 ! DATE INITIATED: 29 April 2003 
-!  LAST MODIFIED: 29 April 2003
+!  LAST MODIFIED: 19 April 2005
 !
 !       SYNOPSIS: Converts a 32 bit, 4 byte, REAL from big Endian to
 !                 little Endian, or conversely from little Endian to big
@@ -108,10 +114,12 @@
 
       IMPLICIT NONE
 
-      REAL, INTENT(INOUT):: realInOut
-                                                   ! a single 32 bit, 4 byte
+      REAL(KIND=4), INTENT(INOUT):: realInOut      ! a single 32 bit, 4 byte
                                                    ! REAL data element
-!      Modified 4/19/05 -dschanen
+!      Modified 8/1/05 
+!      I found transfer does not work on pgf90 when -r8 is used and the mold
+!      is a literal constant real; Changed the mold "0.0" to "readInOut"
+!      -dschanen
 !
 !      REAL, INTENT(IN):: realInOut
 !      REAL, INTENT(OUT) :: realOut
@@ -122,11 +130,11 @@
 !----------------------------------------------------------------------
 ! Local variables (generic 32 bit INTEGER spaces):
 
-      INTEGER                                       :: i_element
-      INTEGER                                       :: i_element_br
+      INTEGER(KIND=4)                               :: i_element
+      INTEGER(KIND=4)                               :: i_element_br
 !----------------------------------------------------------------------
 ! Transfer 32 bits of realIn to generic 32 bit INTEGER space:
-      i_element = TRANSFER( realInOut, 0 )
+      i_element = TRANSFER( realInOut, i_element )
 !----------------------------------------------------------------------
 ! Reverse order of 4 bytes in 32 bit INTEGER space:
       CALL MVBITS( i_element, 24, 8, i_element_br, 0  )
@@ -135,10 +143,43 @@
       CALL MVBITS( i_element,  0, 8, i_element_br, 24 )
 !----------------------------------------------------------------------
 ! Transfer reversed order bytes to 32 bit REAL space (realOut):
-      realInOut = TRANSFER( i_element_br, 0.0 )
+      realInOut = TRANSFER( i_element_br, realInOut )
 
       RETURN
+      END SUBROUTINE
 !----------------------------------------------------------------------
+!     Author: dschanen
+!     This is just a modification of the above routine for 64 bit data
+!----------------------------------------------------------------------
+      SUBROUTINE native_8byte_real( realInOut )
+
+      IMPLICIT NONE
+
+      REAL(KIND=8), INTENT(INOUT) :: realInOut   ! a single 64 bit, 8 byte
+                                                 ! REAL data element
+! Local variables (generic 64 bit INTEGER spaces):
+
+      INTEGER(KIND=8)                               :: i_element
+      INTEGER(KIND=8)                               :: i_element_br
+
+!----------------------------------------------------------------------
+! Transfer 64 bits of realIn to generic 64 bit INTEGER space:
+      i_element = TRANSFER( realInOut, i_element )
+!----------------------------------------------------------------------
+! Reverse order of 8 bytes in 64 bit INTEGER space:
+      CALL MVBITS( i_element, 56, 8, i_element_br, 0  )
+      CALL MVBITS( i_element, 48, 8, i_element_br, 8  )
+      CALL MVBITS( i_element, 40, 8, i_element_br, 16 )
+      CALL MVBITS( i_element, 32, 8, i_element_br, 24 )
+      CALL MVBITS( i_element, 24, 8, i_element_br, 32 )
+      CALL MVBITS( i_element, 16, 8, i_element_br, 40 )
+      CALL MVBITS( i_element,  8, 8, i_element_br, 48 )
+      CALL MVBITS( i_element,  0, 8, i_element_br, 56 )
+!----------------------------------------------------------------------
+! Transfer reversed order bytes to 64 bit REAL space (realOut):
+      realInOut = TRANSFER( i_element_br, realInOut )
+
+      RETURN
       END SUBROUTINE
 !----------------------------------------------------------------------
 
