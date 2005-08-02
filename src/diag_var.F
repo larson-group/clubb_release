@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.9 2005-07-28 20:54:10 dschanen Exp $
+! $Id: diag_var.F,v 1.10 2005-08-02 17:32:39 dschanen Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -24,6 +24,9 @@
 
        use constants
        use grid_class
+#ifdef STATS
+       use statistics
+#endif
        
        implicit none
 
@@ -76,6 +79,24 @@ c Loop indices
        integer i, k
        integer km1, kp1
 
+#ifdef STATS
+       if (lstats_samp) then
+
+         if ( irtp2_bt > 0 ) then
+           zm%x(:,irtp2_bt) = zm%x(:,irtp2_bt) - rtp2 / dt
+         endif
+
+         if ( ithlp2_bt > 0 ) then
+           zm%x(:,ithlp2_bt) = zm%x(:,ithlp2_bt) - thlp2 / dt
+         endif
+
+         if ( irtpthlp_bt > 0 ) then
+           zm%x(:,irtpthlp_bt) = zm%x(:,irtpthlp_bt) - rtpthlp / dt
+         endif
+
+       endif
+#endif
+
 c Define a1 and a2
 
        a1 = 1.0 / (1.0-Sc)
@@ -126,6 +147,64 @@ c      prepare tridiagonal system
      .                   )
          if (liter) dd(k) = dd(k) + 1.0/dt*rtp2(k)
 
+#ifdef STATS
+         if (lstats_samp) then
+
+           if ( irtp2_dp1 * ithlp2_dp1 * irtpthlp_dp1 > 0 ) then
+             zmscr01(k) = - C2rt / tau(k)
+           endif
+         
+           if ( irtp2_dp2 * ithlp2_dp2 * irtpthlp_dp2 > 0 ) then
+             zmscr02(k)
+     .       = + nu2 * gr%dzm(k) * gr%dzt(k)
+             zmscr03(k)
+     .       = - nu2 * gr%dzm(k)*( gr%dzt(kp1) + gr%dzt(k) )
+             zmscr04(k)
+     .       = + nu2 * gr%dzm(k) * gr%dzt(kp1)
+           endif
+
+           if ( irtp2_ta * ithlp2_ta * irtpthlp_ta > 0 ) then
+             zmscr05(k)
+     .       = + 0.5 * a1(k)
+     .               * (2./3.) * beta
+     .               * gr%dzm(k)
+     .               * wp3(k)/max(wp2(km1)+wp2(k),2.0*eps)
+             zmscr06(k)
+     .       = - 0.5 * a1(k)
+     .               * (2./3.) * beta
+     .               * gr%dzm(k)
+     .               * ( wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
+     .                   - wp3(k)/max(wp2(km1)+wp2(k),2.0*eps) )
+             zmscr07(k)
+     .       = - 0.5 * a1(k)
+     .               * (2./3.) * beta
+     .               * gr%dzm(k)
+     .               * wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
+           endif
+
+           if ( irtp2_ma * ithlp2_ma * irtpthlp_ma > 0 ) then
+             zmscr08(k) = - 0.5 * wmm(k) * gr%dzm(k)
+             zmscr09(k) = + 0.5 * wmm(k) * gr%dzm(k)
+           endif
+
+           if ( irtp2_ta > 0 ) then
+             zm%x(k,irtp2_ta) 
+     .       = zm%x(k,irtp2_ta)
+     .         - 0.5 * a2(k)
+     .               * (2./3.) * ( 2 + (1-beta) )
+     .               * gr%dzm(k)
+     .               * (  wp3(kp1)
+     .                    * (wprtp(k)+wprtp(kp1))**2
+     .                    / max(wp2(k)+wp2(kp1),2.0*eps)**2
+     .                  - wp3(k)
+     .                    * (wprtp(km1)+wprtp(k))**2
+     .                    / max(wp2(km1)+wp2(k),2.0*eps)**2
+     .                 )
+           endif
+
+         endif
+#endif
+
        enddo
        
 c      solve tridiagonal system
@@ -135,6 +214,59 @@ c      solve tridiagonal system
           print *, "diag_var: rtp2 tridag failed"
           return
        endif
+#ifdef STATS
+       if (lstats_samp) then
+
+          do k=1,gr%nnzp
+
+           km1 = max(k-1,1)
+           kp1 = min(k+1,gr%nnzp)
+
+           if ( irtp2_dp1 > 0 ) then
+             zm%x(k,irtp2_dp1) = zm%x(k,irtp2_dp1)
+     .       + zmscr01(k) * rtp2(k)
+             zm%n(k,irtp2_dp1) = zm%n(k,irtp2_dp1) + 1
+           endif
+ 
+           if ( irtp2_dp2 > 0 ) then
+             zm%x(k,irtp2_dp2) = zm%x(k,irtp2_dp2)
+     .       + zmscr02(k) * rtp2(km1)
+     .       + zmscr03(k) * rtp2(k)
+     .       + zmscr04(k) * rtp2(kp1)
+             zm%n(k,irtp2_dp2) = zm%n(k,irtp2_dp2) + 1
+           endif
+ 
+           if ( irtp2_ta > 0 ) then
+             zm%x(k,irtp2_ta) = zm%x(k,irtp2_ta)
+     .       + zmscr05(k) * rtp2(km1)
+     .       + zmscr06(k) * rtp2(k)
+     .       + zmscr07(k) * rtp2(kp1)
+             zm%n(k,irtp2_ta) = zm%n(k,irtp2_ta) + 1
+           endif
+
+           if ( irtp2_ma > 0 ) then
+             zm%x(k,irtp2_ma) = zm%x(k,irtp2_ma)
+     .       + zmscr08(k) * rtp2(km1)
+     .       + zmscr09(k) * rtp2(kp1)
+             zm%n(k,irtp2_ma) = zm%n(k,irtp2_ma) + 1
+           endif
+ 
+           if ( irtp2_tp > 0 ) then
+             zm%x(k,irtp2_tp) = zm%x(k,irtp2_tp)
+     .        - 2.0 * wprtp(k) * gr%dzm(k) * (rtm(kp1)-rtm(k))
+             zm%n(k,irtp2_tp) = zm%n(k,irtp2_tp) + 1
+           endif
+
+          enddo
+
+       endif
+#endif
+
+#ifdef STATS
+       if (lstats_samp .and. irtp2_cl > 0 ) then
+         zm%x(:,irtp2_cl) = zm%x(:,irtp2_cl) - rtp2 / dt
+       endif
+#endif
 
 c      clip small and negative values
 
@@ -150,6 +282,13 @@ c      clip small and negative values
          endif
 
        enddo
+
+#ifdef STATS
+       if (lstats_samp .and. irtp2_cl > 0 ) then
+         zm%x(:,irtp2_cl) = zm%x(:,irtp2_cl) + rtp2 / dt
+         zm%n(:,irtp2_cl) = zm%n(:,irtp2_cl) + 1
+       endif
+#endif
 
 c Solve for thlp2
 
@@ -183,6 +322,27 @@ c      note: we can reuse the same aa & cc arrays
      .                   )
          if (liter) dd(k) = dd(k) + 1.0/dt*thlp2(k)
 
+#ifdef STATS
+         if (lstats_samp) then
+
+           if ( ithlp2_ta > 0 ) then
+             zm%x(k,ithlp2_ta) 
+     .       = zm%x(k,ithlp2_ta)
+     .           - 0.5 * a2(k)
+     .                 * (2./3.) * ( 2 + (1-beta) )
+     .                 * gr%dzm(k)
+     .                 * (  wp3(kp1)
+     .                      * (wpthlp(k)+wpthlp(kp1))**2
+     .                      / max(wp2(k)+wp2(kp1),2.0*eps)**2
+     .                    - wp3(k)
+     .                      * (wpthlp(km1)+wpthlp(k))**2
+     .                      / max(wp2(km1)+wp2(k),2.0*eps)**2
+     .                   )
+           endif
+
+         endif
+#endif
+
        enddo
        
 c      solve tridiagonal system
@@ -192,6 +352,63 @@ c      solve tridiagonal system
           print *, "diag_var: thlp2 tridag failed"
           return
        endif
+
+#ifdef STATS
+         if (lstats_samp) then
+
+          do k=1,gr%nnzp
+
+           km1 = max(k-1,1)
+           kp1 = min(k+1,gr%nnzp)
+
+           if ( ithlp2_dp1 > 0 ) then
+             zm%x(k,ithlp2_dp1) = zm%x(k,ithlp2_dp1)
+     .       + zmscr01(k) * thlp2(k)
+             zm%n(k,ithlp2_dp1) = zm%n(k,ithlp2_dp1) + 1
+           endif
+ 
+           if ( ithlp2_dp2 > 0 ) then
+             zm%x(k,ithlp2_dp2) = zm%x(k,ithlp2_dp2)
+     .       + zmscr02(k) * thlp2(km1)
+     .       + zmscr03(k) * thlp2(k)
+     .       + zmscr04(k) * thlp2(kp1)
+             zm%n(k,ithlp2_dp2) = zm%n(k,ithlp2_dp2) + 1
+           endif
+ 
+           if ( ithlp2_ta > 0 ) then
+             zm%x(k,ithlp2_ta) = zm%x(k,ithlp2_ta)
+     .       + zmscr05(k) * thlp2(km1)
+     .       + zmscr06(k) * thlp2(k)
+     .       + zmscr07(k) * thlp2(kp1)
+             zm%n(k,ithlp2_ta) = zm%n(k,ithlp2_ta) + 1
+           endif
+
+           if ( ithlp2_ma > 0 ) then
+             zm%x(k,ithlp2_ma) = zm%x(k,ithlp2_ma)
+     .       + zmscr08(k) * thlp2(km1)
+     .       + zmscr09(k) * thlp2(kp1)
+             zm%n(k,ithlp2_ma) = zm%n(k,ithlp2_ma) + 1
+           endif
+ 
+           if ( ithlp2_tp > 0 ) then
+             zm%x(k,ithlp2_tp) = zm%x(k,ithlp2_tp)
+     .        - 2.0 * wpthlp(k) * gr%dzm(k) * (thlm(kp1)-thlm(k))
+             zm%n(k,ithlp2_tp) = zm%n(k,ithlp2_tp) + 1
+
+           endif
+
+          enddo
+
+         endif
+#endif
+
+#ifdef STATS
+       if (lstats_samp .and. ithlp2_cl > 0 ) then
+         zm%x(:,ithlp2_cl) = zm%x(:,ithlp2_cl) - thlp2 / dt
+       endif
+#endif
+
+
 c      clip small and negative values
 
        do k=1,gr%nnzp
@@ -206,6 +423,13 @@ c      clip small and negative values
          endif
 
        enddo
+
+#ifdef STATS
+       if (lstats_samp .and. ithlp2_cl > 0 ) then
+         zm%x(:,ithlp2_cl) = zm%x(:,ithlp2_cl) + thlp2 / dt
+         zm%n(:,ithlp2_cl) = zm%n(:,ithlp2_cl) + 1
+       endif
+#endif
 
 c Solve for sclrp2
 
@@ -320,6 +544,29 @@ c      prepare tridiagonal system
      .                   )
          if (liter) dd(k) = dd(k) + 1.0/dt*rtpthlp(k)
 
+#ifdef STATS
+         if (lstats_samp) then
+
+           if ( irtpthlp_ta > 0 ) then
+             zm%x(k,irtpthlp_ta) 
+     .       = zm%x(k,irtpthlp_ta)
+     .           - 0.5 * a2(k)
+     .                 * (2./3.) * ( 2 + (1-beta) )
+     .                 * gr%dzm(k)
+     .                 * (  wp3(kp1)
+     .                      * (wprtp(k)+wprtp(kp1))
+     .                      * (wpthlp(k)+wpthlp(kp1))
+     .                      / max(wp2(k)+wp2(kp1),2.0*eps)**2
+     .                    - wp3(k)
+     .                      * (wprtp(km1)+wprtp(k))
+     .                      * (wpthlp(km1)+wpthlp(k))
+     .                      / max(wp2(km1)+wp2(k),2.0*eps)**2
+     .                   )
+           endif
+
+         endif
+#endif
+
        enddo
        
 c      solve tridiagonal system
@@ -328,6 +575,81 @@ c      solve tridiagonal system
           print *, "diag_var: rtpthlp tridag failed"
           return
        endif
+
+#ifdef STATS
+         if (lstats_samp) then
+
+          do k=1,gr%nnzp
+
+           km1 = max(k-1,1)
+           kp1 = min(k+1,gr%nnzp)
+
+           if ( irtpthlp_dp1 > 0 ) then
+             zm%x(k,irtpthlp_dp1) = zm%x(k,irtpthlp_dp1)
+     .       + zmscr01(k) * rtpthlp(k)
+             zm%n(k,irtpthlp_dp1) = zm%n(k,irtpthlp_dp1) + 1
+           endif
+ 
+           if ( irtpthlp_dp2 > 0 ) then
+             zm%x(k,irtpthlp_dp2) = zm%x(k,irtpthlp_dp2)
+     .       + zmscr02(k) * rtpthlp(km1)
+     .       + zmscr03(k) * rtpthlp(k)
+     .       + zmscr04(k) * rtpthlp(kp1)
+             zm%n(k,irtpthlp_dp2) = zm%n(k,irtpthlp_dp2) + 1
+           endif
+ 
+           if ( irtpthlp_ta > 0 ) then
+             zm%x(k,irtpthlp_ta) = zm%x(k,irtpthlp_ta)
+     .       + zmscr05(k) * rtpthlp(km1)
+     .       + zmscr06(k) * rtpthlp(k)
+     .       + zmscr07(k) * rtpthlp(kp1)
+             zm%n(k,irtpthlp_ta) = zm%n(k,irtpthlp_ta) + 1
+           endif
+
+           if ( irtpthlp_ma > 0 ) then
+             zm%x(k,irtpthlp_ma) = zm%x(k,irtpthlp_ma)
+     .       + zmscr08(k) * rtpthlp(km1)
+     .       + zmscr09(k) * rtpthlp(kp1)
+             zm%n(k,irtpthlp_ma) = zm%n(k,irtpthlp_ma) + 1
+           endif
+ 
+           if ( irtpthlp_tp1 > 0 ) then
+             zm%x(k,irtpthlp_tp1) = zm%x(k,irtpthlp_tp1)
+     .       - wprtp(k)  * gr%dzm(k) * (thlm(kp1)-thlm(k))
+             zm%n(k,irtpthlp_tp1) = zm%n(k,irtpthlp_tp1) + 1
+           endif
+
+           if ( irtpthlp_tp2 > 0 ) then
+             zm%x(k,irtpthlp_tp2) = zm%x(k,irtpthlp_tp2)
+     .       - wpthlp(k) * gr%dzm(k) * (rtm(kp1)-rtm(k))
+             zm%n(k,irtpthlp_tp2) = zm%n(k,irtpthlp_tp2) + 1
+           endif
+
+          enddo
+
+         endif
+#endif
+
+#ifdef STATS
+       if (lstats_samp) then
+
+         if ( irtp2_bt > 0 ) then
+           zm%x(:,irtp2_bt) = zm%x(:,irtp2_bt) + rtp2 / dt
+           zm%n(:,irtp2_bt) = zm%n(:,irtp2_bt) + 1
+         endif
+
+         if ( ithlp2_bt > 0 ) then
+           zm%x(:,ithlp2_bt) = zm%x(:,ithlp2_bt) + thlp2 / dt
+           zm%n(:,ithlp2_bt) = zm%n(:,ithlp2_bt) + 1
+         endif
+
+         if ( irtpthlp_bt > 0 ) then
+           zm%x(:,irtpthlp_bt) = zm%x(:,irtpthlp_bt) + rtpthlp / dt
+           zm%n(:,irtpthlp_bt) = zm%n(:,irtpthlp_bt) + 1
+         endif
+
+       endif
+#endif
 
 c Solve for sclrprtp
       if (     present( sclrm )

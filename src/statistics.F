@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.14 2005-07-13 21:39:46 dschanen Exp $
+!  $Id: statistics.F,v 1.15 2005-08-02 17:32:39 dschanen Exp $
 
 !  module stats_type
 !  contains:
@@ -207,17 +207,18 @@ c       Indices for statistics in zm file
      .     iwp2_dp2,
      .     iwp2_cl
 
+!    Changed qt to rt to avoid confusion -dschanen 2 Aug 05
         integer
-     .     iwpqtp_bt,
-     .     iwpqtp_ma,
-     .     iwpqtp_ta,
-     .     iwpqtp_tp,
-     .     iwpqtp_ac,
-     .     iwpqtp_bp,
-     .     iwpqtp_pr1,
-     .     iwpqtp_pr2,
-     .     iwpqtp_pr3,
-     .     iwpqtp_dp1
+     .     iwprtp_bt,
+     .     iwprtp_ma,
+     .     iwprtp_ta,
+     .     iwprtp_tp,
+     .     iwprtp_ac,
+     .     iwprtp_bp,
+     .     iwprtp_pr1,
+     .     iwprtp_pr2,
+     .     iwprtp_pr3,
+     .     iwprtp_dp1
 
         integer
      .     iwpthlp_bt,
@@ -230,6 +231,36 @@ c       Indices for statistics in zm file
      .     iwpthlp_pr2,
      .     iwpthlp_pr3,
      .     iwpthlp_dp1
+
+!    Dr. Golaz's new budget terms
+!    qt was changed to rt to avoid confusion
+
+        integer
+     .     irtp2_bt,
+     .     irtp2_ma,
+     .     irtp2_ta,
+     .     irtp2_tp,
+     .     irtp2_dp1,
+     .     irtp2_dp2,
+     .     irtp2_cl
+
+        integer
+     .     ithlp2_bt,
+     .     ithlp2_ma,
+     .     ithlp2_ta,
+     .     ithlp2_tp,
+     .     ithlp2_dp1,
+     .     ithlp2_dp2,
+     .     ithlp2_cl
+
+        integer
+     .     irtpthlp_bt,
+     .     irtpthlp_ma,
+     .     irtpthlp_ta,
+     .     irtpthlp_tp1,
+     .     irtpthlp_tp2,
+     .     irtpthlp_dp1,
+     .     irtpthlp_dp2
 
 #ifdef SCALARS
 !       New mixing scheme.  Note that floating point roundoff may make 
@@ -1260,16 +1291,16 @@ c     -----------------------------------------------------------------
       iwp2_dp2  = 0
       iwp2_cl   = 0
 
-      iwpqtp_bt  = 0
-      iwpqtp_ma  = 0
-      iwpqtp_ta  = 0
-      iwpqtp_tp  = 0
-      iwpqtp_ac  = 0
-      iwpqtp_bp  = 0
-      iwpqtp_pr1 = 0
-      iwpqtp_pr2 = 0
-      iwpqtp_pr3 = 0
-      iwpqtp_dp1 = 0
+      iwprtp_bt  = 0
+      iwprtp_ma  = 0
+      iwprtp_ta  = 0
+      iwprtp_tp  = 0
+      iwprtp_ac  = 0
+      iwprtp_bp  = 0
+      iwprtp_pr1 = 0
+      iwprtp_pr2 = 0
+      iwprtp_pr3 = 0
+      iwprtp_dp1 = 0
 
       iwpthlp_bt  = 0
       iwpthlp_ma  = 0
@@ -1281,6 +1312,32 @@ c     -----------------------------------------------------------------
       iwpthlp_pr2 = 0
       iwpthlp_pr3 = 0
       iwpthlp_dp1 = 0
+
+!     Dr. Golaz's new budget terms
+
+      irtp2_bt    = 0
+      irtp2_ma    = 0
+      irtp2_ta    = 0
+      irtp2_tp    = 0
+      irtp2_dp1   = 0
+      irtp2_dp2   = 0
+      irtp2_cl    = 0
+
+      ithlp2_bt    = 0
+      ithlp2_ma    = 0
+      ithlp2_ta    = 0
+      ithlp2_tp    = 0
+      ithlp2_dp1   = 0
+      ithlp2_dp2   = 0
+      ithlp2_cl    = 0
+
+      irtpthlp_bt  = 0
+      irtpthlp_ma  = 0
+      irtpthlp_ta  = 0
+      irtpthlp_tp1 = 0
+      irtpthlp_tp2 = 0
+      irtpthlp_dp1 = 0
+      irtpthlp_dp2 = 0
 
 #ifdef SCALARS
       isclraprtp    = 0
@@ -1557,74 +1614,74 @@ c     -----------------------------------------------------------------
           zm%f%var(iwp2_cl)%description = "wp2 clipping term"
           k = k + 1
 
-        case ('wpqtp_bt')
-          iwpqtp_bt = k
-          zm%f%var(iwpqtp_bt)%ptr => zm%x(:,k)
-          zm%f%var(iwpqtp_bt)%name = "wpqtp_bt"
-          zm%f%var(iwpqtp_bt)%description = "wpqtp budget"
+        case ('wprtp_bt')
+          iwprtp_bt = k
+          zm%f%var(iwprtp_bt)%ptr => zm%x(:,k)
+          zm%f%var(iwprtp_bt)%name = "wprtp_bt"
+          zm%f%var(iwprtp_bt)%description = "wprtp budget"
           k = k + 1
 
-        case ('wpqtp_ma')
-          iwpqtp_ma = k
-          zm%f%var(iwpqtp_ma)%ptr => zm%x(:,k)
-          zm%f%var(iwpqtp_ma)%name = "wpqtp_ma"
-          zm%f%var(iwpqtp_ma)%description = "wpqtp mean advection"
+        case ('wprtp_ma')
+          iwprtp_ma = k
+          zm%f%var(iwprtp_ma)%ptr => zm%x(:,k)
+          zm%f%var(iwprtp_ma)%name = "wprtp_ma"
+          zm%f%var(iwprtp_ma)%description = "wprtp mean advection"
           k = k + 1
 
-        case ('wpqtp_ta')
-          iwpqtp_ta = k
-          zm%f%var(iwpqtp_ta)%ptr => zm%x(:,k)
-          zm%f%var(iwpqtp_ta)%name = "wpqtp_ta"
-          zm%f%var(iwpqtp_ta)%description = "wpqtp turbulent advection"
+        case ('wprtp_ta')
+          iwprtp_ta = k
+          zm%f%var(iwprtp_ta)%ptr => zm%x(:,k)
+          zm%f%var(iwprtp_ta)%name = "wprtp_ta"
+          zm%f%var(iwprtp_ta)%description = "wprtp turbulent advection"
           k = k + 1
 
-        case ('wpqtp_tp')
-          iwpqtp_tp = k
-          zm%f%var(iwpqtp_tp)%ptr => zm%x(:,k)
-          zm%f%var(iwpqtp_tp)%name = "wpqtp_tp"
-          zm%f%var(iwpqtp_tp)%description = "wpqtp turbulent production"
+        case ('wprtp_tp')
+          iwprtp_tp = k
+          zm%f%var(iwprtp_tp)%ptr => zm%x(:,k)
+          zm%f%var(iwprtp_tp)%name = "wprtp_tp"
+          zm%f%var(iwprtp_tp)%description = "wprtp turbulent production"
           k = k + 1
 
-        case ('wpqtp_ac')
-          iwpqtp_ac = k
-          zm%f%var(iwpqtp_ac)%ptr => zm%x(:,k)
-          zm%f%var(iwpqtp_ac)%name = "wpqtp_ac"
-          zm%f%var(iwpqtp_ac)%description = "wpqtp accumulation term"
+        case ('wprtp_ac')
+          iwprtp_ac = k
+          zm%f%var(iwprtp_ac)%ptr => zm%x(:,k)
+          zm%f%var(iwprtp_ac)%name = "wprtp_ac"
+          zm%f%var(iwprtp_ac)%description = "wprtp accumulation term"
           k = k + 1
 
-        case ('wpqtp_bp')
-          iwpqtp_bp = k
-          zm%f%var(iwpqtp_bp)%ptr => zm%x(:,k)
-          zm%f%var(iwpqtp_bp)%name = "wpqtp_bp"
-          zm%f%var(iwpqtp_bp)%description = "wpqtp buoyancy production"
+        case ('wprtp_bp')
+          iwprtp_bp = k
+          zm%f%var(iwprtp_bp)%ptr => zm%x(:,k)
+          zm%f%var(iwprtp_bp)%name = "wprtp_bp"
+          zm%f%var(iwprtp_bp)%description = "wprtp buoyancy production"
           k = k + 1
 
-        case ('wpqtp_pr1')
-          iwpqtp_pr1 = k
-          zm%f%var(iwpqtp_pr1)%ptr => zm%x(:,k)
-          zm%f%var(iwpqtp_pr1)%name = "wpqtp_pr1"
-          zm%f%var(iwpqtp_pr1)%description = "wpqtp pressure term 1"
+        case ('wprtp_pr1')
+          iwprtp_pr1 = k
+          zm%f%var(iwprtp_pr1)%ptr => zm%x(:,k)
+          zm%f%var(iwprtp_pr1)%name = "wprtp_pr1"
+          zm%f%var(iwprtp_pr1)%description = "wprtp pressure term 1"
           k = k + 1
 
-        case ('wpqtp_pr2')
-          iwpqtp_pr2 = k
-          zm%f%var(iwpqtp_pr2)%ptr => zm%x(:,k)
-          zm%f%var(iwpqtp_pr2)%name = "wpqtp_pr2"
-          zm%f%var(iwpqtp_pr2)%description = "wpqtp pressure term 2"
+        case ('wprtp_pr2')
+          iwprtp_pr2 = k
+          zm%f%var(iwprtp_pr2)%ptr => zm%x(:,k)
+          zm%f%var(iwprtp_pr2)%name = "wprtp_pr2"
+          zm%f%var(iwprtp_pr2)%description = "wprtp pressure term 2"
           k = k + 1
 
-        case ('wpqtp_pr3')
-          iwpqtp_pr3 = k
-          zm%f%var(iwpqtp_pr3)%ptr => zm%x(:,k)
-          zm%f%var(iwpqtp_pr3)%name = "wpqtp_pr3"
-          zm%f%var(iwpqtp_pr3)%description = "wpqtp pressure term 3"
+        case ('wprtp_pr3')
+          iwprtp_pr3 = k
+          zm%f%var(iwprtp_pr3)%ptr => zm%x(:,k)
+          zm%f%var(iwprtp_pr3)%name = "wprtp_pr3"
+          zm%f%var(iwprtp_pr3)%description = "wprtp pressure term 3"
           k = k + 1
 
-        case ('wpqtp_dp1')
-          iwpqtp_dp1 = k
-          zm%f%var(iwpqtp_dp1)%ptr => zm%x(:,k)
-          zm%f%var(iwpqtp_dp1)%name = "wpqtp_dp1"
-          zm%f%var(iwpqtp_dp1)%description = "wpqtp dissipation term 1"
+        case ('wprtp_dp1')
+          iwprtp_dp1 = k
+          zm%f%var(iwprtp_dp1)%ptr => zm%x(:,k)
+          zm%f%var(iwprtp_dp1)%name = "wprtp_dp1"
+          zm%f%var(iwprtp_dp1)%description = "wprtp dissipation term 1"
           k = k + 1
 
         case ('wpthlp_bt')
@@ -1703,6 +1760,169 @@ c     -----------------------------------------------------------------
           zm%f%var(iwpthlp_dp1)%name = "wpthlp_dp1"
           zm%f%var(iwpthlp_dp1)%description
      .    = "wpthlp dissipation term 1"
+          k = k + 1
+
+!     Dr. Golaz's new budget terms
+        case ('rtp2_bt')
+          irtp2_bt = k
+          zm%f%var(irtp2_bt)%ptr => zm%x(:,k)
+          zm%f%var(irtp2_bt)%name = "rtp2_bt"
+          zm%f%var(irtp2_bt)%description = "rtp2 budget"
+          k = k + 1
+
+        case ('rtp2_ma')
+          irtp2_ma = k
+          zm%f%var(irtp2_ma)%ptr => zm%x(:,k)
+          zm%f%var(irtp2_ma)%name = "rtp2_ma"
+          zm%f%var(irtp2_ma)%description = "rtp2 mean advection"
+          k = k + 1
+
+        case ('rtp2_ta')
+          irtp2_ta = k
+          zm%f%var(irtp2_ta)%ptr => zm%x(:,k)
+          zm%f%var(irtp2_ta)%name = "rtp2_ta"
+          zm%f%var(irtp2_ta)%description
+     .    = "rtp2 turbulent advection"
+          k = k + 1
+
+        case ('rtp2_tp')
+          irtp2_tp = k
+          zm%f%var(irtp2_tp)%ptr => zm%x(:,k)
+          zm%f%var(irtp2_tp)%name = "rtp2_tp"
+          zm%f%var(irtp2_tp)%description
+     .    = "rtp2 turbulent production"
+          k = k + 1
+
+        case ('rtp2_dp1')
+          irtp2_dp1 = k
+          zm%f%var(irtp2_dp1)%ptr => zm%x(:,k)
+          zm%f%var(irtp2_dp1)%name = "rtp2_dp1"
+          zm%f%var(irtp2_dp1)%description
+     .    = "rtp2 dissipation term 1"
+          k = k + 1
+
+        case ('rtp2_dp2')
+          irtp2_dp2 = k
+          zm%f%var(irtp2_dp2)%ptr => zm%x(:,k)
+          zm%f%var(irtp2_dp2)%name = "rtp2_dp2"
+          zm%f%var(irtp2_dp2)%description
+     .    = "rtp2 dissipation term 2"
+          k = k + 1
+
+        case ('rtp2_cl')
+          irtp2_cl = k
+          zm%f%var(irtp2_cl)%ptr => zm%x(:,k)
+          zm%f%var(irtp2_cl)%name = "rtp2_cl"
+          zm%f%var(irtp2_cl)%description
+     .    = "rtp2 clipping term"
+          k = k + 1
+
+        case ('thlp2_bt')
+          ithlp2_bt = k
+          zm%f%var(ithlp2_bt)%ptr => zm%x(:,k)
+          zm%f%var(ithlp2_bt)%name = "thlp2_bt"
+          zm%f%var(ithlp2_bt)%description = "thlp2 budget"
+          k = k + 1
+
+        case ('thlp2_ma')
+          ithlp2_ma = k
+          zm%f%var(ithlp2_ma)%ptr => zm%x(:,k)
+          zm%f%var(ithlp2_ma)%name = "thlp2_ma"
+          zm%f%var(ithlp2_ma)%description = "thlp2 mean advection"
+          k = k + 1
+
+        case ('thlp2_ta')
+          ithlp2_ta = k
+          zm%f%var(ithlp2_ta)%ptr => zm%x(:,k)
+          zm%f%var(ithlp2_ta)%name = "thlp2_ta"
+          zm%f%var(ithlp2_ta)%description
+     .    = "thlp2 turbulent advection"
+          k = k + 1
+
+        case ('thlp2_tp')
+          ithlp2_tp = k
+          zm%f%var(ithlp2_tp)%ptr => zm%x(:,k)
+          zm%f%var(ithlp2_tp)%name = "thlp2_tp"
+          zm%f%var(ithlp2_tp)%description
+     .    = "thlp2 turbulent production"
+          k = k + 1
+
+        case ('thlp2_dp1')
+          ithlp2_dp1 = k
+          zm%f%var(ithlp2_dp1)%ptr => zm%x(:,k)
+          zm%f%var(ithlp2_dp1)%name = "thlp2_dp1"
+          zm%f%var(ithlp2_dp1)%description
+     .    = "thlp2 dissipation term 1"
+          k = k + 1
+
+        case ('thlp2_dp2')
+          ithlp2_dp2 = k
+          zm%f%var(ithlp2_dp2)%ptr => zm%x(:,k)
+          zm%f%var(ithlp2_dp2)%name = "thlp2_dp2"
+          zm%f%var(ithlp2_dp2)%description
+     .    = "thlp2 dissipation term 2"
+          k = k + 1
+
+        case ('thlp2_cl')
+          ithlp2_cl = k
+          zm%f%var(ithlp2_cl)%ptr => zm%x(:,k)
+          zm%f%var(ithlp2_cl)%name = "thlp2_cl"
+          zm%f%var(ithlp2_cl)%description
+     .    = "thlp2 clipping term"
+          k = k + 1
+
+        case ('rtpthlp_bt')
+          irtpthlp_bt = k
+          zm%f%var(irtpthlp_bt)%ptr => zm%x(:,k)
+          zm%f%var(irtpthlp_bt)%name = "rtpthlp_bt"
+          zm%f%var(irtpthlp_bt)%description = "rtpthlp budget"
+          k = k + 1
+
+        case ('rtpthlp_ma')
+          irtpthlp_ma = k
+          zm%f%var(irtpthlp_ma)%ptr => zm%x(:,k)
+          zm%f%var(irtpthlp_ma)%name = "rtpthlp_ma"
+          zm%f%var(irtpthlp_ma)%description = "rtpthlp mean advection"
+          k = k + 1
+
+        case ('rtpthlp_ta')
+          irtpthlp_ta = k
+          zm%f%var(irtpthlp_ta)%ptr => zm%x(:,k)
+          zm%f%var(irtpthlp_ta)%name = "rtpthlp_ta"
+          zm%f%var(irtpthlp_ta)%description
+     .    = "rtpthlp turbulent advection"
+          k = k + 1
+
+        case ('rtpthlp_tp1')
+          irtpthlp_tp1 = k
+          zm%f%var(irtpthlp_tp1)%ptr => zm%x(:,k)
+          zm%f%var(irtpthlp_tp1)%name = "rtpthlp_tp1"
+          zm%f%var(irtpthlp_tp1)%description
+     .    = "rtpthlp turbulent production 1"
+          k = k + 1
+
+        case ('rtpthlp_tp2')
+          irtpthlp_tp2 = k
+          zm%f%var(irtpthlp_tp2)%ptr => zm%x(:,k)
+          zm%f%var(irtpthlp_tp2)%name = "rtpthlp_tp2"
+          zm%f%var(irtpthlp_tp2)%description
+     .    = "rtpthlp turbulent production 2"
+          k = k + 1
+
+        case ('rtpthlp_dp1')
+          irtpthlp_dp1 = k
+          zm%f%var(irtpthlp_dp1)%ptr => zm%x(:,k)
+          zm%f%var(irtpthlp_dp1)%name = "rtpthlp_dp1"
+          zm%f%var(irtpthlp_dp1)%description
+     .    = "rtpthlp dissipation term 1"
+          k = k + 1
+
+        case ('rtpthlp_dp2')
+          irtpthlp_dp2 = k
+          zm%f%var(irtpthlp_dp2)%ptr => zm%x(:,k)
+          zm%f%var(irtpthlp_dp2)%name = "rtpthlp_dp2"
+          zm%f%var(irtpthlp_dp2)%description
+     .    = "rtpthlp dissipation term 2"
           k = k + 1
 
 #ifdef SCALARS

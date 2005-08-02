@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.8 2005-07-28 20:54:10 dschanen Exp $
+! $Id: mixing.F,v 1.9 2005-08-02 17:32:39 dschanen Exp $
 !
 ! Module containing the hoc mixing scheme.  Allows for optional variables
 ! and assumed shape arrays.
@@ -283,14 +283,15 @@
 #ifdef STATS
           if (lstats_samp) then
 
-!          Implicit contributions for wpqtp or wpthlp
+!          Implicit contributions for wprtp or wpthlp
+!          qt changed to rt to avoid confusion -dschanen 2 Aug 05
 
-           if ( iwpqtp_ma > 0 .or. iwpthlp_ma > 0 ) then
+           if ( iwprtp_ma > 0 .or. iwpthlp_ma > 0 ) then
              zmscr01(k) = + 0.5 * wmm(k) * gr%dzm(k)
              zmscr02(k) = - 0.5 * wmm(k) * gr%dzm(k)
            endif
 
-           if ( iwpqtp_ta > 0 .or. iwpthlp_ta > 0 ) then
+           if ( iwprtp_ta > 0 .or. iwpthlp_ta > 0 ) then
             zmscr03(k) =
      .      + a1(k) * gr%dzm(k)
      .        * wp3(k)/max(wp2(km1)+wp2(k),2.0*eps)
@@ -303,16 +304,16 @@
      .        * wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
            endif
 
-           if ( iwpqtp_tp > 0 .or. iwpthlp_tp > 0 ) then
+           if ( iwprtp_tp > 0 .or. iwpthlp_tp > 0 ) then
              zmscr06(k) = + wp2(k) * gr%dzm(k)
              zmscr07(k) = - wp2(k) * gr%dzm(k)
            endif
 
-           if ( iwpqtp_ac > 0 .or. iwpthlp_ac > 0 ) then
+           if ( iwprtp_ac > 0 .or. iwpthlp_ac > 0 ) then
              zmscr08(k) = - 1.0 * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
            endif
 
-           if ( iwpqtp_pr1 > 0 .or. iwpthlp_pr1 > 0 ) then
+           if ( iwprtp_pr1 > 0 .or. iwpthlp_pr1 > 0 ) then
              select case (trim( solve_type ) )
              case("rtm")
                zmscr09(k) = - C6rt / taum(k)
@@ -324,11 +325,11 @@
              end select
            endif
 
-           if ( iwpqtp_pr2 > 0 .or. iwpthlp_pr2 > 0 ) then
+           if ( iwprtp_pr2 > 0 .or. iwpthlp_pr2 > 0 ) then
              zmscr10(k) = + C7 * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
            endif
 
-           if ( iwpqtp_dp1 > 0 .or. iwpthlp_dp1 > 0 ) then
+           if ( iwprtp_dp1 > 0 .or. iwpthlp_dp1 > 0 ) then
              zmscr11(k) = + nu6 * gr%dzm(k) * gr%dzt(k)
              zmscr12(k) = - nu6 * gr%dzm(k) *( gr%dzt(kp1) + gr%dzt(k) )
              zmscr13(k) = + nu6 * gr%dzm(k) * gr%dzt(kp1)
@@ -423,16 +424,16 @@
      .     iwpxp_dp1
         select case ( trim(solve_type) )
         case ( "rtm" )
-          iwpxp_bt  = iwpqtp_bt
-          iwpxp_ma  = iwpqtp_ma
-          iwpxp_ta  = iwpqtp_ta
-          iwpxp_tp  = iwpqtp_tp
-          iwpxp_ac  = iwpqtp_ac
-          iwpxp_bp  = iwpqtp_bp
-          iwpxp_pr1 = iwpqtp_pr1
-          iwpxp_pr2 = iwpqtp_pr2
-          iwpxp_pr3 = iwpqtp_pr3
-          iwpxp_dp1 = iwpqtp_dp1
+          iwpxp_bt  = iwprtp_bt
+          iwpxp_ma  = iwprtp_ma
+          iwpxp_ta  = iwprtp_ta
+          iwpxp_tp  = iwprtp_tp
+          iwpxp_ac  = iwprtp_ac
+          iwpxp_bp  = iwprtp_bp
+          iwpxp_pr1 = iwprtp_pr1
+          iwpxp_pr2 = iwprtp_pr2
+          iwpxp_pr3 = iwprtp_pr3
+          iwpxp_dp1 = iwprtp_dp1
         case ( "thlm" )
           iwpxp_bt  = iwpthlp_bt
           iwpxp_ma  = iwpthlp_ma
@@ -671,7 +672,7 @@
 !               zm%n(k,iwpxp_pr1) = zm%n(k,iwpxp_pr1) + 1
 !             endif
 !
-!             if ( iwpqtp_pr2 > 0 ) then
+!             if ( iwprtp_pr2 > 0 ) then
 !               zm%x(k,iwpxp_pr2) = zm%x(k,iwpxp_pr2)
 !     .         + zmscr10(k) * wpxp(k)
 !               zm%n(k,iwpxp_pr2) = zm%n(k,iwpxp_pr2) + 1
