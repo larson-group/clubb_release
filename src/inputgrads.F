@@ -300,7 +300,7 @@
 
           do k=f%ia,f%iz
              read(f%iounit,rec=nrec) x(k)
-             if (f%lbyteswapped) call native_4byte_real( x(k) )
+             if (f%lbyteswapped) call byte_order_swap( x(k) )
              nrec = nrec + 1
           end do
 
