@@ -234,7 +234,9 @@
             ! Using a linear interpolation here resulted in negatives.
             rtp2(1) =  rtp2(2)
             if ( any (rtp2(1:gr%nnzp) < 0.0 ) ) then
-              print *, "Some values of rtp2 are negative, compensating."
+! %% debug
+!              print *, "Some values of rtp2 are negative, compensating."
+! %% debug
               do k=1, gr%nnzp
                 rtp2(k) = max(rtp2(k), 0.0)
               enddo
@@ -303,14 +305,15 @@
             ! although the boundary flux is usually solved in LES
             wp2(1:gr%nnzp) = tmp1(1:gr%nnzp)
             if ( any (wp2(1:gr%nnzp) < 0.0 ) ) then
-              print *, "Some values of wp2 are negative, compensating."
+! %% debug
+!              print *, "Some values of wp2 are negative, compensating."
+! %% debug
               do k=1, gr%nnzp
                 wp2(k) = max(wp2(k), 0.0)
               enddo
             endif
           endif
           if ( error ) stop "get_var failed for wp2 in field_reader"
-
 
           call close_grads_read( fread_var )
         end select
