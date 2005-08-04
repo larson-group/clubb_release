@@ -1,5 +1,5 @@
 !=======================================================================
-!  $Id: hoc_tuner_budget_terms.F,v 1.1 2005-08-04 21:25:54 dschanen Exp $
+!  $Id: hoc_tuner_budget_terms.F,v 1.2 2005-08-04 22:08:52 dschanen Exp $
 ! PROGRAM hoc_tuner_budget_terms
 
 ! Attempts to tune the constants of the HOC model to best fit the
@@ -67,7 +67,7 @@
       times = 0
 
 !     Read in the namelists
-      open(10, name='budget.in', status='old')
+      open(10, file='budget.in', status='old')
       read(10, nml=budget_tune)
       read(10, nml=initvars)
       read(10, nml=variance)
@@ -111,7 +111,7 @@
       enddo
 
       write(*,*) "diff_array:"
-      write(*,'6f12.5') diff_array
+      write(*,'(6f12.5)') diff_array
 
       call amoeba( const_array, diff_array, ftol, 
      .             budget_min, iter )
