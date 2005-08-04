@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.29 2005-07-28 20:54:09 dschanen Exp $
+# $Id: Makefile,v 1.30 2005-08-04 21:26:31 dschanen Exp $
 # Uses GNU make.  BSD make doesn't like the LH/*.F syntax.
 
 # Compiler invocation
@@ -16,7 +16,8 @@ DEBUG = -g -C #-Ktrap=inv,unf -Minform=inform
 
 #OPTIMIZE =-O2 -msse2 -march=pentium4 # g95
 #OPTIMIZE =-xarch=sse2 -ftrap=%none # Sun Studio x86/Opteron
- OPTIMIZE =-O2 -tp p7 -Kieee # PGF90
+#OPTIMIZE =-O2 -tp p7 -Kieee -r8# PGF90 w/ double precision reals.
+ OPTIMIZE =-O2 -tp p7 -Kieee# PGF90
 
 # Linking Flags
 LDFLAGS = # use -s to strip
@@ -36,7 +37,7 @@ OBJS	= polpak.o \
 	closure_new.o diag_var.o gcss.o hydrostatic.o \
 	length.o mixing.o rsat.o sat_rcm.o sfc.o \
 	sounding.o update.o wp23.o tau.o \
-	inputgrads.o gradsaverage.o inputfields.o hoc.o error.o \
+	inputgrads.o gradsaverage.o inputfields.o hoc.o error.o budget_terms.o \
 	\
 	nrtype.o nr.o nrutil.o ran_state.o ran1.o amebsa.o amoeba.o
 
@@ -49,10 +50,11 @@ LH_OBJS	= autoconv_driver.o corrcoef.o gaus_condt.o \
 	truncate_gaus_mixt.o
 
 TARGETS	= int2txt.o hoc_tuner.o hoc_standalone.o compare_runs.o \
-	jacobian.o hoc_inputfields.o
+	jacobian.o hoc_tuner_budget_terms.o hoc_inputfields.o
 
 # Targets ( hoc_tuner and jacobian assume statistics )
-all:	hoc_tuner hoc_standalone int2txt hoc_inputfields compare_runs jacobian 
+all:	hoc_tuner int2txt hoc_tuner_budget_terms \
+	hoc_standalone hoc_inputfields compare_runs jacobian 
 
 # Rules
 .SUFFIXES:	.o .f .F .f90
@@ -89,6 +91,10 @@ jacobian:	$(OBJS) $(LH_OBJS) $(TARGETS)
 		$(FC) $(FCFLAGS) $(LDFLAGS) -o jacobian \
 		$(OBJS) $(LH_OBJS) $@.o 
 
+hoc_tuner_budget_terms:	$(OBJS) $(LH_OBJS) $(TARGETS)
+			$(FC) $(FCFLAGS) $(LDFLAGS) -o hoc_tuner_budget_terms \
+			$(OBJS) $(LH_OBJS) $@.o 
+
 install: 
 	-cp int2txt ../tune/ 
 	-cp hoc_tuner ../tune/
@@ -96,6 +102,7 @@ install:
 	-cp hoc_standalone ../standalone/
 	-cp compare_runs ../compare_runs/
 	-cp jacobian ../jacobian/
+	-cp hoc_tuner_budget_terms ../tune_budgets/
 clean: 
 	-rm -f *.o *.mod core*
 
@@ -142,6 +149,7 @@ amebsa.o	: nr.f90 nrtype.f90 nrutil.f90 ran_state.f90 ran1.f90 amebsa.f90
 amoeba.o	: nr.f90 nrtype.f90 nrutil.f90 amoeba.f90
 gradsaverage.o	: inputgrads.F gradsaverage.F 
 error.o		: nr.f90 nrtype.f90 gradsaverage.F error.F
+budget_terms.o  : inputfields.F gradsaverage.F hoc.F error.F budget_terms.F
 
 autoconv_driver.o	: LH/autoconv_driver.F
 corrcoef.o		: LH/corrcoef.F
@@ -164,7 +172,9 @@ st_2_rtthl.o		: LH/st_2_rtthl.F
 truncate_gaus_mixt.o	: LH/truncate_gaus_mixt.F
 
 # Executables
-hoc_tuner.o		: nr.f90 nrtype.f90 hoc.F error.o hoc_tuner.F
+hoc_tuner.o		: nr.f90 nrtype.f90 hoc.F error.F hoc_tuner.F
+hoc_tuner_budget_terms.o: nr.f90 nrtype.f90 hoc.F error.F \
+			  budget_terms.F hoc_tuner_budget_terms.F
 hoc_standalone.o	: hoc.F hoc_standalone.F
 hoc_inputfields.o	: hoc.F inputfields.F hoc_inputfields.F
 int2txt.o		: int2txt.f90
