@@ -1,7 +1,10 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.31 2005-08-02 20:12:39 dschanen Exp $
+! $Id: hoc.F,v 1.32 2005-08-04 21:27:47 dschanen Exp $
 
-!      Module HOC
+!  MODULE HOC
+!  Contains the necessary subroutines to execute individual HOC model
+!  runs, using one of the driver programs (the simplest case being the
+!  hoc_standalone program).
 !-----------------------------------------------------------------------
        module hoc
 
@@ -21,7 +24,8 @@
        end interface
 
 
-!      Directives for scalars;  Theta and rt are arbitrary and used to test the code.
+!  Directives for scalars;  
+!  Theta and rt are arbitrary and used to test the code.
 
 #ifdef SCALARS
 #define SCLR_THETA 1
@@ -316,7 +320,8 @@
 !<<<<<<<<<<<<<<<<<<<<<<<< Main time stepping loop <<<<<<<<<<<<<<<<<<<<<<
        do i=1, ifinal
 !        Set time
-         time = time_initial + i * dtmain
+!         time = time_initial + i * dtmain
+         time = time_initial + (i-1) * dtmain
 
 !        Output to file every so often if called for
 #ifdef STATS
@@ -554,7 +559,8 @@
        do i=1, ifinal
 
 !        Set time
-         time = time_initial + i * dtmain
+!         time = time_initial + i * dtmain
+         time = time_initial + (i-1) * dtmain
 
 !        Output to file every so often if called for
 #ifdef STATS
@@ -574,13 +580,13 @@
 
 !      Compute number of iterations for closure loop
          if ( time > time_spinup ) then
-            spunup    = .true.
-            niterlong = 1
-            dt        = dtmain
+           spunup    = .true.
+           niterlong = 1
+           dt        = dtmain
          else
-            spunup    = .false.
-            niterlong = int( dtmain / dtclosure )
-            dt        = dtclosure
+           spunup    = .false.
+           niterlong = int( dtmain / dtclosure )
+           dt        = dtclosure
          endif
 
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
