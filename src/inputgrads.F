@@ -10,6 +10,9 @@
 ! Modifications:
 !  * Uses functions rather than subroutines to get endian type. 
 !  * Other cosmetic changes.  - dschanen 4/19/2005
+
+!  * Overloaded subroutine get_var to allow for 8 byte real output.
+!    -dschanen 8/1/2005
 !-----------------------------------------------------------------------
 
         module inputfile_class
@@ -17,6 +20,10 @@
         use endian
 
         implicit none
+
+        interface get_var
+          module procedure get_4byte_var, get_8byte_var
+        end interface
 
 ! Structure to hold description of a variable
 
@@ -242,7 +249,7 @@
           end subroutine open_grads_read
 
 !----------------------------------------------------------------------
-          subroutine get_var( f, varname, itime, x, error )
+          subroutine get_4byte_var( f, varname, itime, x, error )
 
           implicit none
 
@@ -252,7 +259,7 @@
           integer, intent(IN)           :: itime
 
 !         Output
-          real, intent(OUT)             :: x(:)
+          real(kind=4), intent(OUT)     :: x(:)
           logical, intent(OUT)          :: error
 
 !         Internal
@@ -305,9 +312,33 @@
           end do
 
           return
+          end subroutine get_4byte_var
 
-          end subroutine get_var
+!----------------------------------------------------------------------
+          subroutine get_8byte_var( f, varname, itime, x, error )
 
+          implicit none
+
+!         Input
+          type (inputgrads), intent(IN) :: f
+          character(len=*)              :: varname
+          integer, intent(IN)           :: itime
+
+!         Output
+          real(kind=8), intent(OUT)     :: x(:)
+          logical, intent(OUT)          :: error
+
+!         Internal
+          real(kind=4), dimension(size(x)) :: tmp
+
+          call get_4byte_var( f, varname, itime, tmp, error )
+
+          x = dble( tmp )
+
+          return
+          end subroutine get_8byte_var
+
+!-----------------------------------------------------------------------
           subroutine close_grads_read( f )
 
           implicit none

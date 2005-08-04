@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.15 2005-07-28 20:54:10 dschanen Exp $
+! $Id: error.F,v 1.16 2005-08-04 21:29:29 dschanen Exp $
 
 !       Module ERROR
 !
@@ -128,9 +128,6 @@
 
       real                  :: rannum         ! initial random #
       
-      integer               :: rand_size      ! for random seed
-      integer, allocatable  :: rand_seed(:)
-
 !----------------------------------------------------------------------- 
 !  Namelist vars for determining which variable to tune for:
 
@@ -277,25 +274,10 @@
      .                         taumax_var, mu_var/)
       
 !-----------------------------------------------------------------------
-!  Attempt to generate a pseudo random seed using a file generated from
-!  /dev/random.  File is ascii text and can be edited manually.
+!  Attempt to generate a pseudo-random seed using a file generated from
+!  /dev/random.  File is an ASCII text file and can be edited manually.
 !-----------------------------------------------------------------------
-        call random_seed( SIZE = rand_size )
-        allocate(rand_seed( rand_size ), stat = AllocateStatus)
-        if ( AllocateStatus /= 0 ) then 
-          stop "Allocation of the random seed variable array failed"
-        endif
-
-!------ ascii formatted, created by int2txt ----------------------------
-        open(unit=30, file='rand_seed.dat', action='read')
-        do i=1, rand_size 
-          read(30, *) rand_seed(i)
-        enddo
-
-        close(30)
-      
-        call random_seed( PUT=rand_seed )
-        deallocate(rand_seed)
+        call read_random_seed( "rand_seed.dat" )
 
       endif  ! read_files
 
@@ -481,7 +463,7 @@
           if ( error ) stop "oops, variable was invalid"
 
 !-----------------------------------------------------------------------
-!  Calculate the mean squared difference between hoc and LES variables.
+!  Calculate the mean squared difference between HOC and LES variables.
 
 !  In order to deal with order of magnitude differences between
 !  variables, the err_sum equation has been modified to normalize the
@@ -489,37 +471,11 @@
 !-----------------------------------------------------------------------
 
           les_minmax = maxval(les_zl) - minval(les_zl)
-
           if (les_minmax == 0.) stop "An LES var = 0 over all z-levels"
 
-          select case ( hoc_nz )
-          case (48, 75, 110, 147, 150, 160)
-!-----------------------------------------------------------------------
-!  Due to hoc's lower starting point, we can only use
-!  (total number of z-levels) - 1 (a maximum of 74 for BOMEX).
-!  (Need to interpolate hoc to LES' levels.  Right now we just
-!   compare adjacent z levels.  Vince Larson 12 Jan 2005)
-!-----------------------------------------------------------------------
-          do j = z_i(c_run), z_f(c_run)-1
-            err_sum = err_sum + (  ( hoc_zl(j+1) - les_zl(j) ) 
-     .                            / les_minmax  ) ** 2 
-            c_terms = c_terms + 1
-          enddo
-          case (132)  ! hoc_nz, the dycoms II rf01 case
-          do j = z_i(c_run), z_f(c_run)
-            err_sum = err_sum + (  ( hoc_zl(j+2) - les_zl(j) ) 
-     .                            / les_minmax  ) ** 2 
-            c_terms = c_terms + 1
-          enddo
-          case (50)  ! hoc_nz, the wangara case
-          do j = z_i(c_run), z_f(c_run)
-            err_sum = err_sum + (  ( hoc_zl(j) - les_zl(j) )
-     .                             / les_minmax  ) ** 2 
-            c_terms = c_terms + 1
-          enddo
-          case default ! hoc_nz
-           stop "Not able to handle specified number of HOC z-levels"
-          end select
+          err_sum = err_sum 
+     .            + mean_sqr_diff_zt( hoc_zl, les_zl, les_minmax )
+          c_terms = c_terms + 1
 
         enddo     ! end of do i=1, v_total
 
@@ -765,6 +721,135 @@
 
       return
       end subroutine output_nml_standalone
+!-----------------------------------------------------------------------
+!  FUNCTION mean_sqr_diff_zt
+!  Calculate the mean squared difference between two input vectors, then
+!  normalize.
+!  Configured to do interpolation on LES / HOC comparisons on the t grid
+!-----------------------------------------------------------------------
+      real function mean_sqr_diff_zt( hoc_zl, les_zl, norm_term )
+      
+      implicit none
+
+!     Input
+      real, intent(in), dimension(:) :: hoc_zl 
+      real, intent(in), dimension(:) :: les_zl 
+
+      real, intent(in) :: norm_term ! normalization term; 
+                                    ! typically minval(les) - maxval(les) 
+!     Internal
+      real, dimension(size( hoc_zl )) :: tmp_zl
+      integer nz 
+
+      nz = size( hoc_zl ) 
+
+      select case ( nz )
+      case (48, 75, 110, 147, 150, 160) ! most cases
+!----------------------------------------------------------------------
+!  Due to hoc's lower starting point, we can only use
+!  (total number of z-levels) - 1 (a maximum of 74 for BOMEX).
+!  The code below assumes the LES data are on an evenly spaced grid.
+!  (Need to interpolate hoc to LES' levels.  Right now we just
+!   compare adjacent z levels.  Vince Larson 12 Jan 2005)
+!----------------------------------------------------------------------
+        tmp_zl(1:nz-1) = ( hoc_zl(2:nz) - les_zl(1:(nz-1)) )/norm_term 
+        tmp_zl         = tmp_zl**2
+        mean_sqr_diff_zt = sum( tmp_zl(1:nz-1), 1 ) 
+
+      case (132)  !  the dycoms II RF01 case
+        tmp_zl(1:nz-2) = ( hoc_zl(3:nz) - les_zl(1:nz-2) ) / norm_term 
+        tmp_zl = tmp_zl**2
+        mean_sqr_diff_zt = sum( tmp_zl(1:nz-2), 1 )
+
+      case (50)   !  the wangara case
+        tmp_zl = ( hoc_zl(1:nz) - les_zl(1:nz) ) / norm_term 
+        tmp_zl = tmp_zl**2
+        mean_sqr_diff_zt = sum( tmp_zl, 1 )
+
+      case default !
+        stop "Not able to handle specified number of HOC z-levels"
+      end select
+
+      return
+      end function mean_sqr_diff_zt
+!-----------------------------------------------------------------------
+!  FUNCTION mean_sqr_diff_zm
+!  Calculate the mean squared difference between two input vectors, then
+!  normalize.
+!  Configured to do interpolation on LES / HOC comparisons on the m grid
+!-----------------------------------------------------------------------
+      real function mean_sqr_diff_zm( hoc_zl, les_zl, norm_term )
+      
+      implicit none
+
+!     Input
+      real, intent(in), dimension(:) :: hoc_zl 
+      real, intent(in), dimension(:) :: les_zl 
+
+      real, intent(in) :: norm_term ! normalization term; 
+                                    ! typically minval(les) - maxval(les) 
+!     Internal
+      real, dimension(size( hoc_zl )) :: tmp_zl
+      integer nz 
+
+      nz = size( hoc_zl ) 
+
+      select case ( nz )
+      case (48, 50, 75, 110, 147, 150, 160) ! most cases
+        tmp_zl(1:nz) = ( hoc_zl(1:nz) - les_zl(1:nz) )/norm_term 
+        tmp_zl       = tmp_zl**2
+        mean_sqr_diff_zm  = sum( tmp_zl(1:nz), 1 ) 
+
+      case (132)  !  the dycoms II RF01 case
+        tmp_zl(1:nz-2) = ( hoc_zl(1:nz-2) - les_zl(1:nz-2) )/norm_term 
+        tmp_zl = tmp_zl**2
+        mean_sqr_diff_zm = sum( tmp_zl(1:nz-2), 1 )
+
+      case default !
+        stop "Not able to handle specified number of HOC z-levels"
+      end select
+
+      return
+      end function mean_sqr_diff_zm
+!-----------------------------------------------------------------------
+!  SUBROUTINE read_random_seed( )
+!  Reads a flat file passed as an argument
+!-----------------------------------------------------------------------
+      subroutine read_random_seed( seed_file )
+
+      implicit none
+!     Input
+      character(len=*), intent(in) :: seed_file
+ 
+!     Internal
+      integer, dimension(:), allocatable :: rand_seed
+
+      integer rand_size      ! for random seed
+      integer AllocateStatus
+      integer InputStatus
+      integer i
+
+      call random_seed( SIZE = rand_size )
+
+      allocate(rand_seed( rand_size ), stat = AllocateStatus)
+      if ( AllocateStatus /= 0 ) then 
+        stop "Allocation of the random seed variable array failed"
+      endif
+
+!     ASCII formatted file, usually generated by int2txt
+      open(unit=30, file=seed_file, action='read')
+      do i=1, rand_size 
+        read(unit=30, fmt=*, iostat=InputStatus) rand_seed(i)
+        if ( InputStatus /= 0 ) stop "error reading"//seed_file
+      enddo
+      close(30)
+      
+      call random_seed( PUT = rand_seed )
+
+      deallocate(rand_seed)
+
+      return
+      end subroutine read_random_seed
 
       end module error
 !-----------------------------------------------------------------------
