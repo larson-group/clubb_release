@@ -1,3 +1,7 @@
+!
+! Note that for BOMEX, dtmain is going to need to be changed to be 
+! equal to dtclosure bomex_hoc.in.
+!
 
 &budget_tune
 run_file       = "../tune/bomex_hoc.in"
