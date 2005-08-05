@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.30 2005-08-04 21:26:31 dschanen Exp $
+# $Id: Makefile,v 1.31 2005-08-05 00:27:58 dschanen Exp $
 # Uses GNU make.  BSD make doesn't like the LH/*.F syntax.
 
 # Compiler invocation
@@ -115,7 +115,7 @@ outputgrads.o	: endian.F outputgrads.F
 arrays.o	: arrays.F constants.F
 inputgrads.o	: endian.F inputgrads.F
 grid.o		: grid.F grid.h
-statistics.o	: arrays.F outputgrads.F statistics.F
+statistics.o	: arrays.F gcss.F outputgrads.F statistics.F
 
 banbks.o	: banbks.F
 bandec.o	: bandec.F
