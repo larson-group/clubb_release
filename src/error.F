@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.16 2005-08-04 21:29:29 dschanen Exp $
+! $Id: error.F,v 1.17 2005-08-05 18:03:46 dschanen Exp $
 
 !       Module ERROR
 !
@@ -118,15 +118,14 @@
 !     Input 
       logical, intent(in)   :: read_files ! whether to read in  nml's and
                                           ! allocate arrays
-
 !     Internal
       integer, parameter    :: max_times = 10 ! max number of timesteps 
                                               ! to compare
+      real, dimension(ndim) :: rand_vect      ! vect. of random reals
 
-      integer               :: i, j           ! looping variables
-      integer               :: AllocateStatus ! for allocatable arrays
+      integer i, j           ! looping variables
+      integer AllocateStatus ! for allocatable arrays
 
-      real                  :: rannum         ! initial random #
       
 !----------------------------------------------------------------------- 
 !  Namelist vars for determining which variable to tune for:
@@ -285,14 +284,15 @@
 !    Fill in the remaining values of the array by varying the initial
 !    vector (i.e. the first column of the array) by a small multiple
 !-----------------------------------------------------------------------
+      call random_number( rand_vect(1:mdim) )
+
       do j = 1, ndim
         do i = 2, mdim
 ! Vince Larson made entries of x_array random  10 Feb 2005
 !          x_array(i,j) = x_array(1,j)*
 !     .                   (1.0+((real(i)-1.)/real(ndim)*0.5))
-          call random_number(rannum)
-          x_array(i,j) = x_array(1,j)*
-     .                 ( (1.-x_variance(j)) + rannum * x_variance(j)*2 )
+          x_array(i,j) = x_array(1,j) *( ( 1.0-x_variance(j) ) 
+     .                 + rand_vect(j) * x_variance(j)*2 )
 ! End of Vince Larson's change
         enddo
       enddo
@@ -324,7 +324,8 @@
       implicit none
 
 !     Input 
-      real, intent(in), dimension(ndim) :: x_vector ! tuning vector
+!     real, intent(in), dimension(ndim) :: x_vector ! tuning vector
+      real, dimension(:), intent(in) :: x_vector ! tuning vector
 
 !     Internal
       integer                           :: i, j, c_run    ! looping variables
@@ -840,7 +841,10 @@
       open(unit=30, file=seed_file, action='read')
       do i=1, rand_size 
         read(unit=30, fmt=*, iostat=InputStatus) rand_seed(i)
-        if ( InputStatus /= 0 ) stop "error reading"//seed_file
+        if ( InputStatus /= 0 ) then 
+          print *, "error reading"//seed_file
+          stop
+        endif
       enddo
       close(30)
       

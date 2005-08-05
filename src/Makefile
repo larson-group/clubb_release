@@ -1,23 +1,25 @@
-# $Id: Makefile,v 1.31 2005-08-05 00:27:58 dschanen Exp $
+# $Id: Makefile,v 1.32 2005-08-05 18:03:46 dschanen Exp $
 # Uses GNU make.  BSD make doesn't like the LH/*.F syntax.
 
 # Compiler invocation
 
-FC = pgf90 # Portland Group PGF90
-#FC = g95 # G95
-#FC = f95 # Sun Studio / Forte
+FC=pgf90 # Portland Group PGF90
+#FC=g95 # G95
+#FC=f95 # Sun Studio / Forte
+#FC=ifort # Intel Fortran
 
 
-DEBUG = -g -C #-Ktrap=inv,unf -Minform=inform 
+DEBUG=-g -C#-Ktrap=inv,unf -Minform=inform 
 
 # Optimization (assuming pentium4)
 # Sun fortran currently appears to crash if statistics.F is done with 
 #   optimization ( due to a bug in ube I think)
 
-#OPTIMIZE =-O2 -msse2 -march=pentium4 # g95
-#OPTIMIZE =-xarch=sse2 -ftrap=%none # Sun Studio x86/Opteron
-#OPTIMIZE =-O2 -tp p7 -Kieee -r8# PGF90 w/ double precision reals.
- OPTIMIZE =-O2 -tp p7 -Kieee# PGF90
+#OPTIMIZE=-O2 -msse2 -march=pentium4# g95
+#OPTIMIZE=-xtarget=opteron -ftrap=%none# Sun Studio x86/Opteron
+#OPTIMIZE=-O3 -xN #Intel complier, P4 w/out SSE3
+#OPTIMIZE=-O2 -tp p7 -Kieee -r8# PGF90 w/ double precision reals.
+ OPTIMIZE=-O2 -tp p7 -Kieee# PGF90, P4
 
 # Linking Flags
 LDFLAGS = # use -s to strip
@@ -26,7 +28,7 @@ LDFLAGS = # use -s to strip
 #   -DSTATS enables statistics
 #   -DSCALARS enables passive scalars
 
- FCFLAGS = $(OPTIMIZE) $(DEBUG) -DSTATS
+FCFLAGS = $(OPTIMIZE) $(DEBUG) -DSTATS
 #FCFLAGS = $(OPTIMIZE) $(DEBUG) -DSTATS -DSCALARS
 
 

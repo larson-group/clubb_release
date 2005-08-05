@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: budget_terms.F,v 1.1 2005-08-04 21:25:54 dschanen Exp $     
+! $Id: budget_terms.F,v 1.2 2005-08-05 18:03:46 dschanen Exp $     
 ! MODULE budget_terms
 ! functions and subroutines for tuning for budget terms in the HOC model.
 !-----------------------------------------------------------------------
@@ -90,7 +90,7 @@
 
 !       Input
 
-        real, dimension(ndim) :: const_vect
+        real, dimension(:), intent(in) :: const_vect  ! ndim dimension
 
 !       Internal        
 
@@ -194,7 +194,10 @@
      .                                     times, 
      .                                     trim(hoc_variable_names(k)),
      .                                     ferror )
-          if (ferror) stop "grads_average for "//hoc_variable_names(k)
+          if (ferror) then
+            print *, "grads_average for "//hoc_variable_names(k)
+            stop
+          endif
           hoc_total = hoc_total + hoc_zl
         enddo
 
@@ -203,7 +206,10 @@
      .                                     times, 
      .                                     trim(les_variable_names(k)),
      .                                     ferror )
-          if (ferror) stop "grads_average for "//les_variable_names(k)
+          if (ferror) then
+            print *, "grads_average for "//les_variable_names(k)
+            stop
+          endif
           if (grid_type == "m" ) then
             les_total = les_total + les_zl
           else
