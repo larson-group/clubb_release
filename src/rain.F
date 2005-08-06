@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------        
-! $Id: rain.F,v 1.21 2005-08-06 14:11:02 griffinb Exp $
+! $Id: rain.F,v 1.22 2005-08-06 18:41:19 griffinb Exp $
 
 ! This subroutine advances drizzle (rrm and Nrm) one timestep.
 ! It uses implicit discretization and formulas by 
@@ -34,7 +34,7 @@
         REAL, DIMENSION(1:gr%nnzp, 1:26), INTENT(IN):: pdf_parms
         REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rcm    ! cloud water mixing ratio
         REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rtm    ! total water mixing ratio
-        INTEGER, INTENT(IN):: runtype
+        CHARACTER(50), INTENT(IN):: runtype
 
         ! Input/Output
         REAL, DIMENSION(1:gr%nnzp), INTENT(INOUT):: rrm ! rain water mixing ratio
@@ -189,13 +189,10 @@
 
            ! Concentration of cloud drops at this altitude.
            IF (rcm(k) > 0.0) THEN
-              IF ( runtype == 0 ) THEN
-                 conc_cloud(k) = 50000000.0  ! Average maritime distribution.
-!                 conc_cloud(k) = 150000000.0 ! Average continental distribution.
-              ELSEIF ( runtype == 8 ) THEN
-                 conc_cloud(k) = 25000000.0  ! ASTEX A209 case (peak value).
-              ELSEIF ( runtype == 9 ) THEN
-                 conc_cloud(k) = 55000000.0  ! DYCOMS RF02 case.
+              IF ( TRIM(runtype) == "dycoms2_rf02_d" ) THEN
+                 conc_cloud(k) = 55000000.0
+              ELSEIF ( TRIM(runtype) == "astex_a209" ) THEN
+                 conc_cloud(k) = 25000000.0
               ELSE
                  conc_cloud(k) = 50000000.0  ! Average maritime distribution.
 !                 conc_cloud(k) = 150000000.0 ! Average continental distribution.
