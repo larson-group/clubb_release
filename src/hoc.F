@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.32 2005-08-04 21:27:47 dschanen Exp $
+! $Id: hoc.F,v 1.33 2005-08-06 13:37:53 griffinb Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -138,8 +138,8 @@
      .                       C1_in, C2rt_in, C2thl_in, C2rtthl_in, 
      .                       C4_in, C5_in, C6rt_in, C6thl_in, C7_in, 
      .                       C8_in, C10_in, C11_in, 
-     .                       nu1_in, nu2_in, nu6_in, nu8_in, beta_in,
-     .                       gamma_coef_in, c_K_in, 
+     .                       nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in,
+     .                       beta_in, gamma_coef_in, c_K_in, 
      .                       lmin_coef_in, taumin_in, taumax_in, mu_in,
      .                       runfile, isValid, stdout,
      .                       set_fields, sample_ratio )
@@ -185,7 +185,7 @@
        real, intent(in) :: C1_in, C2rt_in, C2thl_in, C2rtthl_in, C4_in
        real, intent(in) :: C5_in, C6rt_in, C6thl_in, C7_in
        real, intent(in) :: C8_in, C10_in, C11_in
-       real, intent(in) :: nu1_in, nu2_in, nu6_in, nu8_in
+       real, intent(in) :: nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in
        real, intent(in) :: beta_in
        real, intent(in) :: gamma_coef_in
        real, intent(in) :: c_K_in, taumin_in, taumax_in, lmin_coef_in
@@ -253,7 +253,7 @@
      .                       C2rtthl_in, C4_in, C5_in, 
      .                       C6rt_in, C6thl_in,
      .                       C7_in, C8_in, C10_in, C11_in,  
-     .                       nu1_in, nu2_in, nu6_in, nu8_in, 
+     .                       nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in,
      .                       gamma_coef_in, mu_in, c_K_in,
      .                       beta_in, 
      .                       lmin_coef_in, taumin_in, taumax_in )
@@ -411,9 +411,9 @@
      .                                C2rtthl_in, C4_in, C5_in, 
      .                                C6rt_in, C6thl_in, C7_in,
      .                                C8_in, C10_in, C11_in, 
-     .                                nu1_in, nu2_in, nu6_in, nu8_in, 
-     .                                beta_in, gamma_coef_in, c_K_in, 
-     .                                lmin_coef_in, 
+     .                                nu1_in, nu2_in, nu6_in, nu8_in,
+     .                                nu_r_in, beta_in, gamma_coef_in,
+     .                                c_K_in, lmin_coef_in, 
      .                                taumin_in, taumax_in, mu_in,
      .                                runfile, isValid, stdout )
        use constants
@@ -432,7 +432,7 @@
        real, intent(in) :: C1_in, C2rt_in, C2thl_in, C2rtthl_in, C4_in
        real, intent(in) :: C5_in, C6rt_in, C6thl_in, C7_in
        real, intent(in) :: C8_in, C10_in, C11_in
-       real, intent(in) :: nu1_in, nu2_in, nu6_in, nu8_in
+       real, intent(in) :: nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in
        real, intent(in) :: beta_in
        real, intent(in) :: gamma_coef_in
        real, intent(in) :: c_K_in, taumin_in, taumax_in, lmin_coef_in
@@ -487,9 +487,9 @@
 !      Define constants
        call setup_constants( deltaz, C1_in, C2rt_in, C2thl_in, 
      .                       C2rtthl_in, C4_in, C5_in, 
-     .                       C6rt_in, C6thl_in, 
+     .                       C6rt_in, C6thl_in,
      .                       C7_in, C8_in, C10_in, C11_in,  
-     .                       nu1_in, nu2_in, nu6_in, nu8_in, 
+     .                       nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in,
      .                       gamma_coef_in, mu_in, c_K_in,
      .                       beta_in, 
      .                       lmin_coef_in, taumin_in, taumax_in )

@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------        
-! $Id: rain.F,v 1.19 2005-07-31 23:37:53 griffinb Exp $
+! $Id: rain.F,v 1.20 2005-08-06 13:37:53 griffinb Exp $
 
 ! This subroutine advances drizzle (rrm and Nrm) one timestep.
 ! It uses implicit discretization and formulas by 
@@ -75,9 +75,6 @@
 !        REAL:: rs            ! Saturation mixing ratio; kg/kg
 ! End Vince Larson's change
 
-! Vince Larson added a new eddy diffusivity coeff for rain.  20 Apr 2005
-        REAL:: nu_r
-! End Vince Larson's addition
 
         REAL:: a, thl1, thl2, rc1, rc2, s1, s2, ss1, ss2
 
@@ -229,17 +226,9 @@
      .                        Vr(k), VNr(k), mean_vol_rad(k) )
 
         ENDDO
+
         ! This is not looped over the top level because the pdf
         ! parameters are not looped over the top level.
-
-        ! Eddy diffusivity for turbulent transport of 
-        !     rain mix ratio and # conc.
-        ! Use nu_r=10 m^2/s for 10-m vertical grid spacing.
-        ! Use nu_r=70 m^2/s for 100-m vertical grid spacing.
-!        nu_r = 10.0  ! 10-m grid spacing
-        nu_r = 20.0  ! 10-m grid spacing  ! Brian: best dycoms2 rf02 HR run.
-!        nu_r = 70.0  ! 100-m grid spacing
-!        nu_r = 80.0  ! 100-m grid spacing ! Brian: best dycoms2 rf02 LR run.
 
         DO k = 2, gr%nnzp-1, 1
 

@@ -225,8 +225,8 @@
      .                  x_array(1, 17), x_array(1, 18),
      .                  x_array(1, 19), x_array(1, 20),
      .                  x_array(1, 21), x_array(1, 22),
-     .                  x_array(1, 23), run_file(c), 
-     .                  isValid, .false. )
+     .                  x_array(1, 23), x_array(1, 24),
+     .                  run_file(c), isValid, .false. )
       enddo
       write(*,*) "The GRaDS files should now be optimal."
 

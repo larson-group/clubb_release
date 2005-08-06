@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.9 2005-07-28 20:54:10 dschanen Exp $
+! $Id: constants.F,v 1.10 2005-08-06 13:37:53 griffinb Exp $
 
 !  Contains frequently occuring model constants
 !-----------------------------------------------------------------------
@@ -46,7 +46,7 @@
 
         real C1, C2rt, C2thl, C2rtthl, C4, C5
         real C6rt, C6thl, C7, C8, C10, C11
-        real nu1, nu2, nu6, nu8
+        real nu1, nu2, nu6, nu8, nu_r
         real mu, c_K, gamma_coef
         real lmin
         real taumin, taumax
@@ -91,10 +91,10 @@
      .                            C2rtthl_in, C4_in, C5_in, 
      .                            C6rt_in, C6thl_in, C7_in, 
      .                            C8_in, C10_in, C11_in, 
-     .                            nu1_in, nu2_in, nu6_in, nu8_in, 
-     .                            gamma_coef_in, mu_in, c_K_in,
-     .                            beta_in, lmin_coef_in, taumin_in, 
-     .                            taumax_in ) 
+     .                            nu1_in, nu2_in, nu6_in, nu8_in,
+     .                            nu_r_in, gamma_coef_in, mu_in,
+     .                            c_K_in, beta_in, lmin_coef_in,
+     .                            taumin_in, taumax_in ) 
 
       use constants
 
@@ -104,7 +104,8 @@
       real, intent(in) :: C1_in, C2rt_in, C2thl_in, C2rtthl_in
       real, intent(in) :: C4_in, C5_in, C6rt_in, C6thl_in, C7_in
       real, intent(in) :: C8_in, C10_in, C11_in
-      real, intent(in) :: nu1_in, nu2_in, nu6_in, nu8_in, beta_in
+      real, intent(in) :: nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in
+      real, intent(in) :: beta_in
       real, intent(in) :: lmin_coef_in, taumin_in, taumax_in
       real, intent(in) :: gamma_coef_in, mu_in, c_K_in
 
@@ -142,6 +143,7 @@
       nu2   = nu2_in 
       nu6   = nu6_in 
       nu8   = nu8_in 
+      nu_r  = nu_r_in
 
       beta  = beta_in
     

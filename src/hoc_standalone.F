@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: hoc_standalone.F,v 1.6 2005-07-28 20:54:10 dschanen Exp $
+! $Id: hoc_standalone.F,v 1.7 2005-08-06 13:37:53 griffinb Exp $
 !  Program HOC_STANDALONE
 !
 !  This is essentially a minimalist frontend for the hoc subroutine
@@ -15,7 +15,7 @@
 !
       real       :: C1, C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6thl
       real       :: C7, C8, C10, C11
-      real       :: nu1, nu2, nu6, nu8
+      real       :: nu1, nu2, nu6, nu8, nu_r
       real       :: beta
       real       :: gamma_coef, c_K
       real       :: lmin_coef, taumin, taumax
@@ -32,7 +32,7 @@
 !----- Namelists ------------------------------------------------------
       namelist /initvars/ C1, C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6thl,
      .                    C7, C8, C10, C11, 
-     .                    nu1, nu2, nu6, nu8, beta, gamma_coef,
+     .                    nu1, nu2, nu6, nu8, nu_r, beta, gamma_coef,
      .                    c_K, lmin_coef, taumin, taumax, mu
       namelist /model/ run_file, stdout
 
@@ -50,7 +50,7 @@
 !----- Run the model----------------------------------------------------
       call hoc_model( C1, C2rt, C2thl, C2rtthl, C4, C5, 
      .                C6rt, C6thl, C7, C8, C10, C11, 
-     .                nu1, nu2, nu6, nu8, beta,
+     .                nu1, nu2, nu6, nu8, nu_r, beta,
      .                gamma_coef, c_K, lmin_coef, taumin, taumax, mu,
      .                run_file, isValid, stdout )
 

@@ -20,7 +20,7 @@
 !
       real       :: C1, C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6thl 
       real       :: C7, C8, C10, C11
-      real       :: nu1, nu2, nu6, nu8
+      real       :: nu1, nu2, nu6, nu8, nu_r
       real       :: beta
       real       :: gamma_coef, c_K
       real       :: lmin_coef, taumin, taumax
@@ -41,7 +41,7 @@
 
       namelist /initvars/ C1, C2rt, C2thl, C2rtthl, C4, C5, 
      .                    C6rt, C6thl, C7, C8, C10, C11, 
-     .                    nu1, nu2, nu6, nu8, beta, gamma_coef,
+     .                    nu1, nu2, nu6, nu8, nu_r, beta, gamma_coef,
      .                    c_K, lmin_coef, taumin, taumax, mu
 
       namelist /setfields/ datafile, sample_ratio, input_type,
@@ -65,7 +65,7 @@
 !----- Run the model----------------------------------------------------
       call hoc_model( C1, C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6thl, 
      .                C7, C8, C10, C11, 
-     .                nu1, nu2, nu6, nu8, beta,
+     .                nu1, nu2, nu6, nu8, nu_r, beta,
      .                gamma_coef, c_K, lmin_coef, taumin, taumax, mu,
      .                run_file, isValid, stdout,
      .                grads_fields_reader, sample_ratio )

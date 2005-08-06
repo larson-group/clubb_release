@@ -1,5 +1,5 @@
 !=======================================================================
-!  $Id: hoc_tuner_budget_terms.F,v 1.2 2005-08-04 22:08:52 dschanen Exp $
+!  $Id: hoc_tuner_budget_terms.F,v 1.3 2005-08-06 13:37:53 griffinb Exp $
 ! PROGRAM hoc_tuner_budget_terms
 
 ! Attempts to tune the constants of the HOC model to best fit the
@@ -27,7 +27,7 @@
 
       real C1, C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6thl, 
      .     C7, C8, C10, C11
-      real nu1, nu2, nu6, nu8
+      real nu1, nu2, nu6, nu8, nu_r
       real beta, gamma_coef, c_K, lmin_coef, taumin, taumax, mu
 
       real C4_var, C5_var, C8_var, C11_var
@@ -49,7 +49,7 @@
 
       namelist /initvars/ C1, C2rt, C2thl, C2rtthl, C4, C5, 
      .                    C6rt, C6thl, C7, C8, C10, C11, 
-     .                    nu1, nu2, nu6, nu8, beta, gamma_coef,
+     .                    nu1, nu2, nu6, nu8, nu_r, beta, gamma_coef,
      .                    c_K, lmin_coef, taumin, taumax, mu
 
       namelist /variance/ C4_var, C5_var, C8_var, C11_var 
@@ -82,7 +82,7 @@
 !     Create a vectorized version of the constants
       init_const(1:ndim) = (/C1, C2rt, C2thl, C2rtthl, C4, C5, 
      .                       C6rt, C6thl, C7, C8, C10, C11, 
-     .                       nu1, nu2, nu6, nu8, beta, gamma_coef, 
+     .                       nu1, nu2, nu6, nu8, nu_r, beta, gamma_coef,
      .                       c_K, lmin_coef, taumin, taumax, mu/)
 
 !     Initial constants to all columns of the 'p' matrix

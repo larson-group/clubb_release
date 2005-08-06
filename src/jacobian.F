@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.15 2005-07-28 20:54:10 dschanen Exp $
+! $Id: jacobian.F,v 1.16 2005-08-06 13:37:53 griffinb Exp $
 
 ! Program Jacobian
 
@@ -41,7 +41,7 @@
 
 !----- Parameters ------------------------------------------------------
       integer, parameter :: nvar      = 13
-      integer, parameter :: nconst    = 20
+      integer, parameter :: nconst    = 21
 
 !      character, parameter :: delta   = greek_'Δ'
       character, parameter :: delta   = 'D'
@@ -52,7 +52,7 @@
 !      real       :: C1, C2, C4, C5, C6, C7, C8, C10, C11
       real       :: C1, C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6thl
       real       :: C7, C8, C10, C11
-      real       :: nu1, nu2, nu6, nu8
+      real       :: nu1, nu2, nu6, nu8, nu_r
       real       :: beta
       real       :: gamma_coef, c_K
       real       :: mu
@@ -93,7 +93,7 @@
 
       namelist /initvars/ C1, C2rt, C2thl, C2rtthl, C4, C5, 
      .                    C6rt, C6thl, C7, C8, C10, C11, 
-     .                    nu1, nu2, nu6, nu8, beta, gamma_coef,
+     .                    nu1, nu2, nu6, nu8, nu_r, beta, gamma_coef,
      .                    c_K, lmin_coef, taumin, taumax, mu
 
       times      = 0
@@ -122,8 +122,8 @@
       ca1%element(1:nconst)%value =
      .                     (/C1, C2rt, C2thl, C2rtthl, C4, C5, 
      .                       C6rt, C6thl, C7, C8, C10, C11,
-     .                       nu1, nu2, nu6, nu8, beta, gamma_coef,
-     .                       c_K, mu/)     
+     .                       nu1, nu2, nu6, nu8, nu_r, beta,
+     .                       gamma_coef, c_K, mu/)     
       ca1%element(1:nconst)%name =
      .  (/"C1        ", "C2rt      ", "C2thl     ", 
      .    "C2rtthl   ", "C4        ", 
@@ -131,7 +131,7 @@
      .    "C7        ", 
      .    "C8        ", "C10       ", "C11       ",
      .    "nu1       ", "nu2       ", 
-     .    "nu6       ", "nu8       ", 
+     .    "nu6       ", "nu8       ", "nu_r      ",
      .    "beta      ", "gamma_coef",
      .    "c_K       ", "mu        "/)
 
@@ -151,9 +151,9 @@
      .                ca1%element(13)%value, ca1%element(14)%value, 
      .                ca1%element(15)%value, ca1%element(16)%value, 
      .                ca1%element(17)%value, ca1%element(18)%value, 
-     .                ca1%element(19)%value,
+     .                ca1%element(19)%value, ca1%element(20)%value,
      .                lmin_coef, taumin,
-     .                taumax, ca1%element(20)%value,
+     .                taumax, ca1%element(21)%value,
      .                "../tune/"//trim(run_name)//"_hoc.in", 
      .                isValid, .false. )
 
@@ -199,9 +199,9 @@
      .                  ca1%element(13)%value, ca1%element(14)%value, 
      .                  ca1%element(15)%value, ca1%element(16)%value, 
      .                  ca1%element(17)%value, ca1%element(18)%value, 
-     .                  ca1%element(19)%value,
+     .                  ca1%element(19)%value, ca1%element(20)%value,
      .                  lmin_coef, taumin,
-     .                  taumax, ca1%element(20)%value,
+     .                  taumax, ca1%element(21)%value,
      .                  "../tune/"//trim(run_name)//"_hoc.in", 
      .                  isValid, .false. )
 

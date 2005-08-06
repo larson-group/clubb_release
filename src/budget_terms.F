@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: budget_terms.F,v 1.2 2005-08-05 18:03:46 dschanen Exp $     
+! $Id: budget_terms.F,v 1.3 2005-08-06 13:37:53 griffinb Exp $     
 ! MODULE budget_terms
 ! functions and subroutines for tuning for budget terms in the HOC model.
 !-----------------------------------------------------------------------
@@ -9,7 +9,7 @@
 
 !       Parameters (public)
 
-        integer, parameter :: ndim = 23        ! dimensions of constants array
+        integer, parameter :: ndim = 24        ! dimensions of constants array
         integer, parameter :: mdim = ndim + 1  ! dimensions of constants array
 
 !       Run Information
@@ -105,7 +105,7 @@
      .                  const_vect(13), const_vect(14), const_vect(15),
      .                  const_vect(16), const_vect(17), const_vect(18),
      .                  const_vect(19), const_vect(20), const_vect(21),
-     .                  const_vect(22), const_vect(23),
+     .                  const_vect(22), const_vect(23), const_vect(24),
      .                  run_file, isValid, .false.,
      .                  grads_fields_reader, sample_ratio )
 
