@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------        
-! $Id: rain.F,v 1.20 2005-08-06 13:37:53 griffinb Exp $
+! $Id: rain.F,v 1.21 2005-08-06 14:11:02 griffinb Exp $
 
 ! This subroutine advances drizzle (rrm and Nrm) one timestep.
 ! It uses implicit discretization and formulas by 
@@ -103,7 +103,7 @@
 ! This subroutine computes the new rain water mixing ratio.  It computes it
 ! according to the equation:
 !
-! drr/dt = -w*(drr/dz) + Vr*(drr/dz) + nu2*(d2rr/dz2)
+! drr/dt = -w*(drr/dz) + Vr*(drr/dz) + nu_r*(d2rr/dz2)
 !                      + (drr/dt)cond + (drr/dt)auto + (drr/dt)accr
 !
 ! where Vr is the mean sedimentation velocity of the rain drops.  It
@@ -142,7 +142,7 @@
 ! The problem is solved by moving around some terms to result in the following
 ! equation:
 !
-! drr/dt + w*(drr/dz) - Vr*(drr/dz) - nu2*(d2rr/dz2)
+! drr/dt + w*(drr/dz) - Vr*(drr/dz) - nu_r*(d2rr/dz2)
 !                      = (drr/dt)cond + (drr/dt)auto + (drr/dt)accr
 !
 ! The equation is then broken down as following:
@@ -152,7 +152,7 @@
 ! rr(n+1,k)/dt
 ! + w(n,k)*(rr(n+1,k+1)-rr(n+1,k-1))/(del_zm(n+1,k)-del_zm(n+1,k-1))
 ! - Vr(n,k+1)*(rr(n+1,k+1)-rr(n+1,k))/(del_zm(n+z,k))
-! + nu2*(1/del_zt(n+1,k)) 
+! + nu_r*(1/del_zt(n+1,k)) 
 !      * [  (rr(n+1,k+1)-rr(n+1,k))/del_zm(n+1,k) 
 !         - (rr(n+1,k)-rr(n+1,k-1))/del_zm(n+1,k-1)   ]
 ! = rr(n,k)/dt + (drr/dt)cond + (drr/dt)auto + (drr/dt)accr
@@ -166,6 +166,8 @@
 ! main diagonal bb that deals with rr(n+1,k) terms,
 ! superdiagonal cc that deals with rr(n+1,k+1) terms, and
 ! dd, which is the right-hand side matrix with rr(n,k) terms.
+!
+! Notes written by Brian Griffin.
 
 !       Set the boundary condition
 
@@ -427,7 +429,7 @@
 
            sed_rrm(k) = Vr(kp1) * ( (rrm(kp1) - rrm(k)) * gr%dzm(k) )
 
-           diff_rrm(k) = nu2 * gr%dzt(k)
+           diff_rrm(k) = nu_r * gr%dzt(k)
      .                  * (  (rrm(kp1) - rrm(k))*gr%dzm(k)
      .                     - (rrm(k) - rrm(km1))*gr%dzm(km1)  )
 

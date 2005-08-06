@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.10 2005-08-06 13:37:53 griffinb Exp $
+! $Id: constants.F,v 1.11 2005-08-06 14:11:02 griffinb Exp $
 
 !  Contains frequently occuring model constants
 !-----------------------------------------------------------------------
@@ -164,6 +164,16 @@
         nu2 = nu2 * deltaz / 40.
         nu6 = nu6 * deltaz / 40.
         nu8 = nu8 * deltaz / 40.
+      endif
+
+!     There should be a different formula for determining nu_r for
+!     different sized grid spacings.  For DYCOMS2 RF02, nu_r is set
+!     to 20.0 for the high-resolution 10 m. grid spacing and to
+!     80.0 for the low-resolution 100 m. grid spacing.  The following
+!     equation allows for both of those parameters.  Brian.
+!
+      if ( deltaz > 25. ) then
+        nu_r = nu_r * deltaz / 25.
       endif
 
 !     Constraints on mixing length

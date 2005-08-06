@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.33 2005-08-06 13:37:53 griffinb Exp $
+! $Id: hoc.F,v 1.34 2005-08-06 14:11:02 griffinb Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -122,7 +122,7 @@
 
 !  Input: Contants used in the model:
 !         C1_in, C2_in, C4_in, C5_in, C6_in, C7_in, C8_in, C10_in, C11_in
-!         nu1_in, nu2_in, nu6_in, nu8_in, 
+!         nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in
 !         beta_in, gamma_coef_in, c_K_in
 !         lmin_coef_in, taumin_in, taumax_in, mu_in
 
@@ -396,7 +396,7 @@
 
 !  Input: Contants used in the model:
 !         C1_in, C2_in, C4_in, C5_in, C6_in, C7_in, C8_in, C10_in, C11_in
-!         nu1_in, nu2_in, nu6_in, nu8_in, 
+!         nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in 
 !         beta_in, gamma_coef_in, c_K_in
 !         lmin_coef_in, taumin_in, taumax_in, mu_in
 
