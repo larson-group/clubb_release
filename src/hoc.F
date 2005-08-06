@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.34 2005-08-06 14:11:02 griffinb Exp $
+! $Id: hoc.F,v 1.35 2005-08-06 21:14:53 griffinb Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -302,26 +302,34 @@
      .                  day, month, year, time, dtmain )
 #endif STATS
 
-#ifdef STATS
+! Due to the fact that it is handled below in the closure timestep,
+! the output of the initial profiles is no longer needed here.  Brian.
+!#ifdef STATS
 !      Write statistics for the initial timestep.
-       call stats_begin_timestep( time, dtmain )
-       if ( lstats_last .and. stdout ) then
-         write(*,'(a,f8.1)') 'initial timestep; time = ', time
-       endif
-
-       call stats_accumulate( time, dtmain )
-       call stats_end_timestep( time, dtmain, dtclosure )
-#endif STATS
+!       call stats_begin_timestep( time, dtmain )
+!       if ( lstats_last .and. stdout ) then
+!         write(*,'(a,f8.1)') 'initial timestep; time = ', time
+!       endif
+!
+!       call stats_accumulate( time, dtmain )
+!       call stats_end_timestep( time, dtmain, dtclosure )
+!#endif STATS
 
 !-------------------------- Time integration ---------------------------
 !     Call hoc_closure_timestep once per each GrADS output time 
        ifinal  = ( time_final - time_initial ) / dtmain
 
 !<<<<<<<<<<<<<<<<<<<<<<<< Main time stepping loop <<<<<<<<<<<<<<<<<<<<<<
-       do i=1, ifinal
+
+       ! Run from iteration 1 to iteration ifinal + 1 in order to output
+       ! information to the GrADS file for the final model output time.
+       ! Brian.
+       do i = 1, ifinal+1, 1
+
+!      This has been moved to the closure timestep.  Brian.
 !        Set time
 !         time = time_initial + i * dtmain
-         time = time_initial + (i-1) * dtmain
+!         time = time_initial + (i-1) * dtmain
 
 !        Output to file every so often if called for
 #ifdef STATS
@@ -363,13 +371,13 @@
 
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
          do i1=1, niterlong
-           call hoc_closure_timestep( i1, isValid )
+           call hoc_closure_timestep( i, i1, niterlong, isValid )
            if ( .not. isValid ) exit
          enddo
 
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
          if ( .not. isValid ) exit
-       enddo ! i=1, ifinal
+       enddo ! i=1, ifinal+1
 
 !<<<<<<<<<<<<<<<<<<<<<<<< Main time stepping loop <<<<<<<<<<<<<<<<<<<<<<
 
@@ -537,30 +545,34 @@
      .                  day, month, year, time, dtmain )
 #endif STATS
 
-#ifdef STATS
+! Due to the fact that it is handled below in the closure timestep,
+! the output of the initial profiles is no longer needed here.  Brian.
+!#ifdef STATS
 !      Write statistics for the initial timestep.
-       call stats_begin_timestep( time, dtmain )
-       if ( lstats_last .and. stdout ) then
-         write(*,'(a,f8.1)') 'initial timestep; time = ', time
-       endif
-
-       call stats_accumulate( time, dtmain )
-       call stats_end_timestep( time, dtmain, dtclosure )
-#endif STATS
-  
-
-       
+!       call stats_begin_timestep( time, dtmain )
+!       if ( lstats_last .and. stdout ) then
+!         write(*,'(a,f8.1)') 'initial timestep; time = ', time
+!       endif
+!
+!       call stats_accumulate( time, dtmain )
+!       call stats_end_timestep( time, dtmain, dtclosure )
+!#endif STATS
+ 
 !-------------------------- Time integration ---------------------------
        ifinal  = ( time_final - time_initial )  / dtmain
 !       ioutput = dtoutput / dtmain ! no longer needed with new statistics
 
 
 !<<<<<<<<<<<<<<<<<<<<<<<<<< Main time stepping loop <<<<<<<<<<<<<<<<<<<<<<<<
-       do i=1, ifinal
+
+       ! Run from iteration 1 to iteration ifinal + 1 in order to output
+       ! information to the GrADS file for the final model output time.
+       ! Brian.
+       do i = 1, ifinal+1, 1
 
 !        Set time
 !         time = time_initial + i * dtmain
-         time = time_initial + (i-1) * dtmain
+!         time = time_initial + (i-1) * dtmain
 
 !        Output to file every so often if called for
 #ifdef STATS
@@ -591,7 +603,7 @@
 
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
          do i1=1, niterlong
-           call hoc_closure_timestep( i1, isValid )
+           call hoc_closure_timestep( i, i1, niterlong, isValid )
            if ( .not. isValid ) exit
          enddo
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -709,7 +721,7 @@
 ! Compute initial theta-l
 
         select case ( trim( runtype ) )
-        case ( "dycoms2_rf01", "astex", "dycoms2_rf02_d",
+        case ( "dycoms2_rf01", "astex_a209", "dycoms2_rf02_d",
      .         "dycoms2_rf02_nd", "nov11_altocu" )
           ! thlm profile that is initially saturated at points.
           ! thlm profile remains the same as in the input sounding.
@@ -947,7 +959,7 @@
      .                     )
            kk_rain = .false.
 
-         case ( "astex" ) ! ASTEX Sc case for K & K
+         case ( "astex_a209" ) ! ASTEX Sc case for K & K
            call astex_tndcy( time, wmt, wmm, 
      .                       thlm_forcing, rtm_forcing
 #ifdef SCALARS
@@ -1074,7 +1086,7 @@
      .                              ,sclrm(2,:), wpsclrp(1,:)
 #endif SCALARS
      .                              )
-         case ( "astex" )
+         case ( "astex_a209" )
            call astex_sfclyr( rhom(1), um(2), vm(2),
      .                        upwp(1), vpwp(1), wpthlp(1), 
      .                        wprtp(1)
@@ -1131,7 +1143,7 @@
 !    permute_height_time (external)
 !    latin_hypercube_sampling (Internal to module hoc)
 !-----------------------------------------------------------------------
-      subroutine hoc_closure_timestep( iteration, isValid )
+      subroutine hoc_closure_timestep( mi, i1, niterlong, isValid )
 
 !      Modules to be included
        use constants
@@ -1151,7 +1163,9 @@
        real, external :: rsat
 
 !      Input
-       integer, intent(in)    :: iteration ! From i1 argument
+       integer, intent(in)    :: mi        ! main iteration number (i from above)
+       integer, intent(in)    :: i1        ! closure iteration number
+       integer, intent(in)    :: niterlong ! total # of closure iterations
        logical, intent(inout) :: isValid
 
 !      Internal
@@ -1193,7 +1207,7 @@
 !    Latin hypercube sample generation
 !    Generate p_height_time, an nnzp x nt x d array of random integers
        if ( LH_on ) then
-         i_rmd = mod( iteration-1, sequence_length )
+         i_rmd = mod( i1-1, sequence_length )
          if ( i_rmd == 0) then
            call permute_height_time( gr%nnzp, nt, d+1, p_height_time )
          endif
@@ -1440,12 +1454,27 @@
 
 #ifdef STATS
        call stats_accumulate( time, dtmain )
-       call stats_end_timestep( time, dtmain, dtclosure )   ! Brian
+
+       ! Only output the stats on the last closure timestep.  Brian
+       IF ( i1 == niterlong ) THEN
+          call stats_end_timestep( time, dtmain, dtclosure )  ! Brian
+       ENDIF
+
 #endif STATS
 
 !#######################################################################
 !############## ADVANCE PROGNOSTIC VARIABLES ONE TIMESTEP ##############
 !#######################################################################
+
+!      SET TIME
+!      Since the timestep advances from n to n+1 at this point, the
+!      official time should also advance from t to t + dt at this point.
+!      Brian.
+       IF ( i1 < niterlong ) THEN
+          time = time_initial + (mi-1) * dtmain + i1 * dtclosure
+       ELSEIF ( i1 == niterlong ) THEN
+          time = time_initial + mi * dtmain
+       ENDIF
 
 !      Diagnose variances
        call diag_var( taum, wmm, rtm, wprtp, 
