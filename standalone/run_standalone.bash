@@ -10,7 +10,7 @@
 #######################################################################
 # Select a run, comment out the rest
 # RUN_CASE=atex 
-  RUN_CASE=arm 
+# RUN_CASE=arm 
 # RUN_CASE=bomex 
 # RUN_CASE=dycoms2_rf01 
 # RUN_CASE=dycoms2_rf02_d 
@@ -18,7 +18,7 @@
 # RUN_CASE=fire 
 # RUN_CASE=nov11_altocu
 # RUN_CASE=wangara  
-# RUN_CASE=20050726_1137
+  RUN_CASE=20050730_1131
 #######################################################################
 # Check for necessary namelists.  If files exist, then
 # copy them over to the general input files.
