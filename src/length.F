@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------------
-! $Id: length.F,v 1.8 2005-07-01 16:14:54 dschanen Exp $
+! $Id: length.F,v 1.9 2005-08-07 00:48:21 griffinb Exp $
 ! subroutine length( )
 
 ! Larson's 5th moist, nonlocal length scale
@@ -218,8 +218,13 @@
 
         do i=2,gr%nnzp
 
-          lup(i)    = max( lmin, lup(i) )
-          ldown(i)  = max( lmin, ldown(i) )
+! Vince Larson changed to avoid noise above cloud top.  26 July 2005
+!          lup(i)    = max( lmin, lup(i) )
+!          ldown(i)  = max( lmin, ldown(i) )
+
+          lup(i)    = max( 0.0 , lup(i) )
+          ldown(i)  = max( 0.0 , ldown(i) )
+! End Vince Larson's change.
           Lscale(i) = sqrt( lup(i)*ldown(i) )
 
         end do
