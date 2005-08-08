@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.35 2005-08-06 21:14:53 griffinb Exp $
+! $Id: hoc.F,v 1.36 2005-08-08 18:18:57 dschanen Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -235,18 +235,12 @@
 !-------------------- Initialize the Model run --------------------------
 
 !      Initialize run to valid
-
        isValid = .true.
 
-!      set sample_time = 1
-     
-       sample_time = 1
-
-!       Read namelist file
-        open(10, file = runfile, status = 'old')
-        read(10, nml = model_setting)
-        close(10)
-
+!      Read namelist file
+       open(10, file = runfile, status = 'old')
+       read(10, nml = model_setting)
+       close(10)
 
 !      Define constants
        call setup_constants( deltaz, C1_in, C2rt_in, C2thl_in, 
@@ -343,7 +337,7 @@
 !        Sample from the data file
          
          if ( mod( real( i ), sample_ratio) == 0.0 ) then
-           sample_time = int( i / sample_ratio )
+           sample_time = max( int( (i-1) / sample_ratio ), 1 )
          endif
          call set_fields( sample_time,
      .                    um, vm, rtm,           ! optional
