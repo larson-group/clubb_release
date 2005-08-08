@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.18 2005-08-06 13:37:53 griffinb Exp $
+! $Id: error.F,v 1.19 2005-08-08 20:16:17 dschanen Exp $
 
 !       Module ERROR
 !
@@ -285,15 +285,15 @@
 !    Fill in the remaining values of the array by varying the initial
 !    vector (i.e. the first column of the array) by a small multiple
 !-----------------------------------------------------------------------
-      call random_number( rand_vect(1:mdim) )
 
       do j = 1, ndim
+        call random_number( rand_vect(1:mdim) )
         do i = 2, mdim
 ! Vince Larson made entries of x_array random  10 Feb 2005
 !          x_array(i,j) = x_array(1,j)*
 !     .                   (1.0+((real(i)-1.)/real(ndim)*0.5))
           x_array(i,j) = x_array(1,j) *( ( 1.0-x_variance(j) ) 
-     .                 + rand_vect(j) * x_variance(j)*2 )
+     .                 + rand_vect(i) * x_variance(j)*2 )
 ! End of Vince Larson's change
         enddo
       enddo
