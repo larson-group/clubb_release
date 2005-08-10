@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.36 2005-08-08 18:18:57 dschanen Exp $
+! $Id: hoc.F,v 1.37 2005-08-10 12:43:59 griffinb Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -296,19 +296,6 @@
      .                  day, month, year, time, dtmain )
 #endif STATS
 
-! Due to the fact that it is handled below in the closure timestep,
-! the output of the initial profiles is no longer needed here.  Brian.
-!#ifdef STATS
-!      Write statistics for the initial timestep.
-!       call stats_begin_timestep( time, dtmain )
-!       if ( lstats_last .and. stdout ) then
-!         write(*,'(a,f8.1)') 'initial timestep; time = ', time
-!       endif
-!
-!       call stats_accumulate( time, dtmain )
-!       call stats_end_timestep( time, dtmain, dtclosure )
-!#endif STATS
-
 !-------------------------- Time integration ---------------------------
 !     Call hoc_closure_timestep once per each GrADS output time 
        ifinal  = ( time_final - time_initial ) / dtmain
@@ -319,11 +306,6 @@
        ! information to the GrADS file for the final model output time.
        ! Brian.
        do i = 1, ifinal+1, 1
-
-!      This has been moved to the closure timestep.  Brian.
-!        Set time
-!         time = time_initial + i * dtmain
-!         time = time_initial + (i-1) * dtmain
 
 !        Output to file every so often if called for
 #ifdef STATS
@@ -539,19 +521,6 @@
      .                  day, month, year, time, dtmain )
 #endif STATS
 
-! Due to the fact that it is handled below in the closure timestep,
-! the output of the initial profiles is no longer needed here.  Brian.
-!#ifdef STATS
-!      Write statistics for the initial timestep.
-!       call stats_begin_timestep( time, dtmain )
-!       if ( lstats_last .and. stdout ) then
-!         write(*,'(a,f8.1)') 'initial timestep; time = ', time
-!       endif
-!
-!       call stats_accumulate( time, dtmain )
-!       call stats_end_timestep( time, dtmain, dtclosure )
-!#endif STATS
- 
 !-------------------------- Time integration ---------------------------
        ifinal  = ( time_final - time_initial )  / dtmain
 !       ioutput = dtoutput / dtmain ! no longer needed with new statistics
@@ -563,10 +532,6 @@
        ! information to the GrADS file for the final model output time.
        ! Brian.
        do i = 1, ifinal+1, 1
-
-!        Set time
-!         time = time_initial + i * dtmain
-!         time = time_initial + (i-1) * dtmain
 
 !        Output to file every so often if called for
 #ifdef STATS
