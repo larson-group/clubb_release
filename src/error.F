@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.19 2005-08-08 20:16:17 dschanen Exp $
+! $Id: error.F,v 1.20 2005-08-10 22:58:52 griffinb Exp $
 
 !       Module ERROR
 !
@@ -121,7 +121,7 @@
 !     Internal
       integer, parameter    :: max_times = 10 ! max number of timesteps 
                                               ! to compare
-      real, dimension(ndim) :: rand_vect      ! vect. of random reals
+      real, dimension(mdim) :: rand_vect      ! vect. of random reals
 
       integer i, j           ! looping variables
       integer AllocateStatus ! for allocatable arrays
