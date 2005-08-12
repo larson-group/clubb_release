@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.37 2005-08-10 12:43:59 griffinb Exp $
+! $Id: hoc.F,v 1.38 2005-08-12 23:24:56 vlarson Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -300,12 +300,14 @@
 !     Call hoc_closure_timestep once per each GrADS output time 
        ifinal  = ( time_final - time_initial ) / dtmain
 
+       sample_time = 1
+
 !<<<<<<<<<<<<<<<<<<<<<<<< Main time stepping loop <<<<<<<<<<<<<<<<<<<<<<
 
        ! Run from iteration 1 to iteration ifinal + 1 in order to output
        ! information to the GrADS file for the final model output time.
        ! Brian.
-       do i = 1, ifinal+1, 1
+       do i = 1, ifinal-1, 1
 
 !        Output to file every so often if called for
 #ifdef STATS
@@ -319,7 +321,7 @@
 !        Sample from the data file
          
          if ( mod( real( i ), sample_ratio) == 0.0 ) then
-           sample_time = max( int( (i-1) / sample_ratio ), 1 )
+           sample_time = int( i / sample_ratio ) + 1
          endif
          call set_fields( sample_time,
      .                    um, vm, rtm,           ! optional
