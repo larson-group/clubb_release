@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.15 2005-08-02 17:32:39 dschanen Exp $
+!  $Id: statistics.F,v 1.16 2005-08-13 22:12:45 griffinb Exp $
 
 !  module stats_type
 !  contains:
@@ -95,15 +95,18 @@ c       Indices for statistics in zt file
      .     irhot,
      .     irsm,           ! Brian
      .     irrm,           ! Brian
-     .     iNrm,           ! Brian
      .     icond_rrm,      ! Brian
      .     iauto_rrm,      ! Brian
      .     iaccr_rrm,      ! Brian
-     .     icond_Nrm,      ! Brian
-     .     iauto_Nrm,      ! Brian
      .     ised_rrm,       ! Brian
      .     idiff_rrm,      ! Brian
      .     isubs_rrm,      ! Brian
+     .     iNrm,           ! Brian
+     .     icond_Nrm,      ! Brian
+     .     iauto_Nrm,      ! Brian
+     .     ised_Nrm,       ! Brian
+     .     idiff_Nrm,      ! Brian
+     .     isubs_Nrm,      ! Brian
      .     iVr,            ! Brian
      .     imean_vol_rad,  ! Brian
      .     irain_rate,     ! Brian
@@ -476,15 +479,18 @@ c     -----------------------------------------------------------------
       irhot         = 0
       irsm          = 0  ! Brian
       irrm          = 0  ! Brian
-      iNrm          = 0  ! Brian
       icond_rrm     = 0  ! Brian
       iauto_rrm     = 0  ! Brian
       iaccr_rrm     = 0  ! Brian
-      icond_Nrm     = 0  ! Brian
-      iauto_Nrm     = 0  ! Brian
       ised_rrm      = 0  ! Brian
       idiff_rrm     = 0  ! Brian
       isubs_rrm     = 0  ! Brian
+      iNrm          = 0  ! Brian
+      icond_Nrm     = 0  ! Brian
+      iauto_Nrm     = 0  ! Brian
+      ised_Nrm      = 0  ! Brian
+      idiff_Nrm     = 0  ! Brian
+      isubs_Nrm     = 0  ! Brian
       iVr           = 0  ! Brian
       imean_vol_rad = 0  ! Brian
       irain_rate    = 0  ! Brian
@@ -763,14 +769,6 @@ c     -----------------------------------------------------------------
      .    = "rain water mixing ratio (kg/kg)"
           k = k + 1
 
-        case ('Nrm')           ! Brian
-          iNrm = k
-          zt%f%var(iNrm)%ptr => zt%x(:,k)
-          zt%f%var(iNrm)%name = "Nrm"
-          zt%f%var(iNrm)%description
-     .    = "rain droplet number concentration (num/m^3)"
-          k = k + 1
-
         case ('cond_rrm')      ! Brian
           icond_rrm = k
           zt%f%var(icond_rrm)%ptr => zt%x(:,k)
@@ -795,22 +793,6 @@ c     -----------------------------------------------------------------
      .    = "d(rrm)/dt due to accretion ((kg/kg)/s)"
           k = k + 1
 
-        case ('cond_Nrm')      ! Brian
-          icond_Nrm = k
-          zt%f%var(icond_Nrm)%ptr => zt%x(:,k)
-          zt%f%var(icond_Nrm)%name = "cond_Nrm"
-          zt%f%var(icond_Nrm)%description
-     .    = "d(Nrm)/dt due to condensation ((num/m^3)/s)"
-          k = k + 1
-
-        case ('auto_Nrm')      ! Brian
-          iauto_Nrm = k
-          zt%f%var(iauto_Nrm)%ptr => zt%x(:,k)
-          zt%f%var(iauto_Nrm)%name = "auto_Nrm"
-          zt%f%var(iauto_Nrm)%description
-     .    = "d(Nrm)/dt due to autoconversion ((num/m^3)/s)"
-          k = k + 1
-
         case ('sed_rrm')       ! Brian
           ised_rrm = k
           zt%f%var(ised_rrm)%ptr => zt%x(:,k)
@@ -833,6 +815,54 @@ c     -----------------------------------------------------------------
           zt%f%var(isubs_rrm)%name = "subs_rrm"
           zt%f%var(isubs_rrm)%description
      .    = "d(rrm)/dt due to subsidence ((kg/kg)/s)"
+          k = k + 1
+
+        case ('Nrm')           ! Brian
+          iNrm = k
+          zt%f%var(iNrm)%ptr => zt%x(:,k)
+          zt%f%var(iNrm)%name = "Nrm"
+          zt%f%var(iNrm)%description
+     .    = "rain droplet number concentration (num/m^3)"
+          k = k + 1
+
+        case ('cond_Nrm')      ! Brian
+          icond_Nrm = k
+          zt%f%var(icond_Nrm)%ptr => zt%x(:,k)
+          zt%f%var(icond_Nrm)%name = "cond_Nrm"
+          zt%f%var(icond_Nrm)%description
+     .    = "d(Nrm)/dt due to condensation ((num/m^3)/s)"
+          k = k + 1
+
+        case ('auto_Nrm')      ! Brian
+          iauto_Nrm = k
+          zt%f%var(iauto_Nrm)%ptr => zt%x(:,k)
+          zt%f%var(iauto_Nrm)%name = "auto_Nrm"
+          zt%f%var(iauto_Nrm)%description
+     .    = "d(Nrm)/dt due to autoconversion ((num/m^3)/s)"
+          k = k + 1
+
+        case ('sed_Nrm')       ! Brian
+          ised_Nrm = k
+          zt%f%var(ised_Nrm)%ptr => zt%x(:,k)
+          zt%f%var(ised_Nrm)%name = "sed_Nrm"
+          zt%f%var(ised_Nrm)%description
+     .    = "d(Nrm)/dt due to sedimentation ((num/m^3)/s)"
+          k = k + 1
+
+        case ('diff_Nrm')      ! Brian
+          idiff_Nrm = k
+          zt%f%var(idiff_Nrm)%ptr => zt%x(:,k)
+          zt%f%var(idiff_Nrm)%name = "diff_Nrm"
+          zt%f%var(idiff_Nrm)%description
+     .    = "d(Nrm)/dt due to diffusion ((num/m^3)/s)"
+          k = k + 1
+
+        case ('subs_Nrm')      ! Brian
+          isubs_Nrm = k
+          zt%f%var(isubs_Nrm)%ptr => zt%x(:,k)
+          zt%f%var(isubs_Nrm)%name = "subs_Nrm"
+          zt%f%var(isubs_Nrm)%description
+     .    = "d(Nrm)/dt due to subsidence ((num/m^3)/s)"
           k = k + 1
 
         case ('Vr')            ! Brian
@@ -2526,10 +2556,6 @@ c     -----------------------------------------------------------------
           zt%x(:,irrm) = zt%x(:,irrm) + rrm
           zt%n(:,irrm) = zt%n(:,irrm) + 1
         endif
-        if ( iNrm > 0 ) then           ! Brian
-          zt%x(:,iNrm) = zt%x(:,iNrm) + Nrm
-          zt%n(:,iNrm) = zt%n(:,iNrm) + 1
-        endif
         if ( icond_rrm > 0 ) then      ! Brian
           zt%x(:,icond_rrm) = zt%x(:,icond_rrm) + cond_rrm
           zt%n(:,icond_rrm) = zt%n(:,icond_rrm) + 1
@@ -2542,14 +2568,6 @@ c     -----------------------------------------------------------------
           zt%x(:,iaccr_rrm) = zt%x(:,iaccr_rrm) + accr_rrm
           zt%n(:,iaccr_rrm) = zt%n(:,iaccr_rrm) + 1
         endif
-        if ( icond_Nrm > 0 ) then      ! Brian
-          zt%x(:,icond_Nrm) = zt%x(:,icond_Nrm) + cond_Nrm
-          zt%n(:,icond_Nrm) = zt%n(:,icond_Nrm) + 1
-        endif
-        if ( iauto_Nrm > 0 ) then      ! Brian
-          zt%x(:,iauto_Nrm) = zt%x(:,iauto_Nrm) + auto_Nrm
-          zt%n(:,iauto_Nrm) = zt%n(:,iauto_Nrm) + 1
-        endif
         if ( ised_rrm > 0 ) then       ! Brian
           zt%x(:,ised_rrm) = zt%x(:,ised_rrm) + sed_rrm
           zt%n(:,ised_rrm) = zt%n(:,ised_rrm) + 1
@@ -2561,6 +2579,30 @@ c     -----------------------------------------------------------------
         if ( isubs_rrm > 0 ) then      ! Brian
           zt%x(:,isubs_rrm) = zt%x(:,isubs_rrm) + subs_rrm
           zt%n(:,isubs_rrm) = zt%n(:,isubs_rrm) + 1
+        endif
+        if ( iNrm > 0 ) then           ! Brian
+          zt%x(:,iNrm) = zt%x(:,iNrm) + Nrm
+          zt%n(:,iNrm) = zt%n(:,iNrm) + 1
+        endif
+        if ( icond_Nrm > 0 ) then      ! Brian
+          zt%x(:,icond_Nrm) = zt%x(:,icond_Nrm) + cond_Nrm
+          zt%n(:,icond_Nrm) = zt%n(:,icond_Nrm) + 1
+        endif
+        if ( iauto_Nrm > 0 ) then      ! Brian
+          zt%x(:,iauto_Nrm) = zt%x(:,iauto_Nrm) + auto_Nrm
+          zt%n(:,iauto_Nrm) = zt%n(:,iauto_Nrm) + 1
+        endif
+        if ( ised_Nrm > 0 ) then       ! Brian
+          zt%x(:,ised_Nrm) = zt%x(:,ised_Nrm) + sed_Nrm
+          zt%n(:,ised_Nrm) = zt%n(:,ised_Nrm) + 1
+        endif
+        if ( idiff_Nrm > 0 ) then      ! Brian
+          zt%x(:,idiff_Nrm) = zt%x(:,idiff_Nrm) + diff_Nrm
+          zt%n(:,idiff_Nrm) = zt%n(:,idiff_Nrm) + 1
+        endif
+        if ( isubs_Nrm > 0 ) then      ! Brian
+          zt%x(:,isubs_Nrm) = zt%x(:,isubs_Nrm) + subs_Nrm
+          zt%n(:,isubs_Nrm) = zt%n(:,isubs_Nrm) + 1
         endif
         if ( iVr > 0 ) then            ! Brian
           zt%x(:,iVr) = zt%x(:,iVr) + Vr

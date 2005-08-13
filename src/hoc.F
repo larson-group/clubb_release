@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.38 2005-08-12 23:24:56 vlarson Exp $
+! $Id: hoc.F,v 1.39 2005-08-13 22:12:45 griffinb Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -1349,22 +1349,24 @@
 
 !      call Khairoutdinov and Kogan (2000) scheme for rain microphysics.
 
-       if ( kk_rain ) then
-         call rain( dt, thlm, p, exner, rhot, wmt, pdf_parms,
-     .              rcm, rtm, rrm, Nrm, 
-     .              cond_rrm, auto_rrm,
-     .              accr_rrm, cond_Nrm, auto_Nrm, sed_rrm,
-     .              diff_rrm, subs_rrm, Vr, mean_vol_rad,
-     .              runtype, isValid, 
-!        LH Kessler autoconversion.  Vince Larson 22 May 2005:
-     .              AKm_est, AKm )
+       IF ( kk_rain ) THEN
 
-         rain_rate = ( rrm * Vr ) * ( rhot / 1000.0 )     ! rain rate (m/s)
-     .                                 * ( 86400.0 * 1000.0 )  ! rate: mm/day
+           CALL rain( dt, thlm, p, exner, rhot, wmt, pdf_parms,
+     .                rcm, rtm, rrm, Nrm, cond_rrm, auto_rrm,
+     .                accr_rrm, sed_rrm, diff_rrm, subs_rrm,
+     .                cond_Nrm, auto_Nrm, sed_Nrm, diff_Nrm,
+     .                subs_Nrm, Vr, mean_vol_rad,
+     .                runtype, isValid,
+! LH Kessler autoconversion.  Vince Larson 22 May 2005:
+     .                AKm_est, AKm )
 
-         F_precip = ( rrm * Vr ) * ( rhot / 1000.0 )
-     .                                * 1000.0 * Lv       ! Precip. flux (W/m^2)
-       endif ! kk_rain
+           rain_rate = ( rrm * Vr ) * ( rhot / 1000.0 )     ! rain rate (m/s)
+     .                                   * ( 86400.0 * 1000.0 )  ! rate: mm/day
+
+           F_precip = ( rrm * Vr ) * ( rhot / 1000.0 )
+     .                                  * 1000.0 * Lv       ! Precip. flux (W/m^2)
+
+       ENDIF ! kk_rain
        if ( .not. isValid ) return
 
 !      Store the saturation mixing ratio for output purposes.  Brian

@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------        
-! $Id: rain.F,v 1.22 2005-08-06 18:41:19 griffinb Exp $
+! $Id: rain.F,v 1.23 2005-08-13 22:12:45 griffinb Exp $
 
 ! This subroutine advances drizzle (rrm and Nrm) one timestep.
 ! It uses implicit discretization and formulas by 
@@ -7,8 +7,9 @@
 !----------------------------------------------------------------------        
         SUBROUTINE rain( dt, thlm, p, exner, rhot, wmt, pdf_parms,
      .                   rcm, rtm, rrm, Nrm, cond_rrm, auto_rrm,
-     .                   accr_rrm, cond_Nrm, auto_Nrm, sed_rrm, 
-     .                   diff_rrm, subs_rrm, Vr, mean_vol_rad,
+     .                   accr_rrm, sed_rrm, diff_rrm, subs_rrm,
+     .                   cond_Nrm, auto_Nrm, sed_Nrm, diff_Nrm, 
+     .                   subs_Nrm, Vr, mean_vol_rad,
      .                   runtype, isValid,
 ! LH Kessler autoconversion.  Vince Larson 22 May 2005:
      .                   AKm_est, AKm )
@@ -44,11 +45,14 @@
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: cond_rrm
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: auto_rrm
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: accr_rrm
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: cond_Nrm
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: auto_Nrm
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: sed_rrm
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: diff_rrm
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: subs_rrm
+        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: cond_Nrm
+        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: auto_Nrm
+        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: sed_Nrm
+        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: diff_Nrm
+        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: subs_Nrm
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: Vr
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: mean_vol_rad
 
@@ -65,15 +69,12 @@
         REAL, DIMENSION(1:gr%nnzp):: VNr          ! Number conc. sedimentation 
                                                   !   velocity; m/s 
         REAL, DIMENSION(1:gr%nnzp):: aa, bb, cc, dd, oo, pp, qq, rr
-! Vince Larson made rs into an array.  20 April 2005
-        REAL, DIMENSION(1:gr%nnzp):: rs        ! Saturation mixing ratio; kg/kg
+        REAL, DIMENSION(1:gr%nnzp):: rs           ! Saturation mixing ratio; kg/kg
 
 
 
         REAL:: e             ! Vapor pressure; Pa
         REAL:: thm           ! Potential temperature; K
-!        REAL:: rs            ! Saturation mixing ratio; kg/kg
-! End Vince Larson's change
 
 
         REAL:: a, thl1, thl2, rc1, rc2, s1, s2, ss1, ss2
@@ -100,8 +101,8 @@
 
 ! DESCRIPTION
 !
-! This subroutine computes the new rain water mixing ratio.  It computes it
-! according to the equation:
+! This subroutine computes the new rain water mixing ratio, rr.
+! It computes it according to the equation:
 !
 ! drr/dt = -w*(drr/dz) + Vr*(drr/dz) + nu_r*(d2rr/dz2)
 !                      + (drr/dt)cond + (drr/dt)auto + (drr/dt)accr
@@ -118,7 +119,8 @@
 !
 ! It is important to note that a one-sided upwind advection scheme is used
 ! for sedimentation velocity, with Vr being from the level above the level
-! which is being dealt with.
+! which is being dealt with.  This will increase the diffusivity of the
+! model.
 !
 ! For the other terms:
 !
@@ -167,7 +169,66 @@
 ! superdiagonal cc that deals with rr(n+1,k+1) terms, and
 ! dd, which is the right-hand side matrix with rr(n,k) terms.
 !
-! Notes written by Brian Griffin.
+! IMPORTANT NOTES
+!
+! The equations for mean volume radius (and therefore sedimentation
+! velocity), condensation/evaporation, autoconversion, and accretion
+! stated above are all equations from Khairoutdinov and Kogan (2000).
+! These are called the "local" equations, because they show the local
+! value at a grid point with high resolution.  These equations would
+! be used in a LES model.  HOC is a one-dimensional model that uses
+! a Probability Density Function (PDF) to determine variance of values
+! in the horizontal directions.  When put into any 3-dimensional
+! model, HOC can use the PDF to show the subgrid variability of many
+! values.  In order to determine rainfall due to subgrid variability,
+! one needs to put Khairoutdinov and Kogan equations into a PDF
+! form.  Here is a brief description.
+!
+! a) Mean Volume Radius (and therefore sedimentation velocity) uses a
+!    bivariate lognormal distribution because the factors that make it
+!    up (rr and Nr) are both distributed lognormally.
+!
+! b) Condensation/evaporation uses a single normal-lognormal-lognormal
+!    PDF due to the fact that supersaturation, S, (one value that makes
+!    it up) follows a truncated double Gaussian, rr (another factor that
+!    makes it up) follows a single lognormal distribution, and Nr (the
+!    last factor that makes it up) also follows a single lognormal
+!    distribution.
+!
+! c) Autoconversion uses a single normal-lognormal PDF due to the fact
+!    that rc (one factor that makes it up) follows a truncated double
+!    Gaussian and Nc (the other factor that makes it up) follows a
+!    single lognormal distribution.
+!
+! d) Accretion uses a single normal-lognormal PDF due to the fact
+!    that rc (one factor that makes it up) follows a truncated double
+!    Gaussian and rr (the other factor that makes it up) follows a
+!    single lognormal distribution.
+!
+! The above PDF-ed Khairoutdinov and Kogan equations are used for the
+! "non-local" formula, which is the one used in HOC.
+!
+! This subroutine also solves for rain drop number concentration (num/m^3)
+! using the exact same formula as noted in this description.  The left-hand
+! side of the equation is exactly the same as for rr, except for the fact
+! that VNr is used instead of Vr.  VNr also uses the mean volume radius
+! for it's calculation.  The equation is VNr = 0.007*rvr - 0.1, with VNr
+! in m/s and rvr in micrometers.  The right-hand side of the Nr equation
+! only contains terms for time tendency, condensation/evaporation, and
+! autoconversion.
+!
+! (dNr/dt)cond = (Nr/rr) * (drr/dt)cond
+!
+! (dNr/dt)auto = (drr/dt)auto / ( [(4*PI*rho_lw)/(3*rho)] * r_o^3 )
+!
+! where r_o is the assumed radius of all newly-formed rain droplets (m).
+! It is given a value of 25 um.
+!
+! This information is plugged into the tridiagonal matrix in order to
+! solve for Nr at the next timestep.
+!
+! Description and notes written by Brian Griffin.
+
 
 !       Set the boundary condition
 
@@ -177,6 +238,7 @@
         VNr(gr%nnzp)    = 0.
         rvm(gr%nnzp)    = 0.
         Supsat(gr%nnzp) = 0.
+
 
         DO k = 1, gr%nnzp-1, 1
 
@@ -204,27 +266,17 @@
            ! Get theta from theta-l
            thm = thlm(k) + (Lv/(Cp*exner(k)))*rcm(k)
 
-! Vince Larson made rs into an array.  20 April 2005
-!           ! Saturation mixing ratio
-!           rs = rsat(p(k),thm*exner(k))
-!           ! Find temperature and saturation vapor pressure.
-!           Temp(k) = thm/((p0/p(k))**kappa)
-!           es(k) = (p(k)*rs)/(ep + rs)
-
            ! Saturation mixing ratio
            rs(k) = rsat(p(k),thm*exner(k))
            ! Find temperature and saturation vapor pressure.
            Temp(k) = thm/((p0/p(k))**kappa)
            es(k) = (p(k)*rs(k))/(ep + rs(k))
-! End Vince Larson's change
-
-           ! Supersaturation
-!           Supsat(k) = (e/es(k)) - 1.0
 
            CALL sed_velocity( rhot(k), Nrm(k), rrm(k),
      .                        Vr(k), VNr(k), mean_vol_rad(k) )
 
         ENDDO
+
 
         ! This is not looped over the top level because the pdf
         ! parameters are not looped over the top level.
@@ -234,27 +286,29 @@
            km1 = MAX(k-1,1)
            kp1 = MIN(k+1,gr%nnzp)
 
+
            ! LHS terms for rain water mixing ratio, rrm.
 
            ! Find subdiagonal aa
 
            aa(k) = 
      .            - wmt(k) / (1.0/gr%dzm(k) + 1.0/gr%dzm(km1))   ! advection
-     .            - nu_r*gr%dzt(k)*gr%dzm(km1)                  ! diffusion
+     .            - nu_r*gr%dzt(k)*gr%dzm(km1)                   ! diffusion
      
           ! Find main diagonal bb
 
            bb(k) = 
      .              (1.0/dt)                                     ! time tendency
      .            + Vr(kp1)*gr%dzm(k)                            ! sedimentation
-     .            + nu_r*gr%dzt(k)*(gr%dzm(k) + gr%dzm(km1))    ! diffusion
+     .            + nu_r*gr%dzt(k)*(gr%dzm(k) + gr%dzm(km1))     ! diffusion
 
            ! Find superdiagonal cc
 
            cc(k) = 
      .              wmt(k) / (1.0/gr%dzm(k) + 1.0/gr%dzm(km1))   ! advection
      .            - Vr(kp1)*gr%dzm(k)                            ! sedimentation
-     .            - nu_r*gr%dzt(k)*gr%dzm(k)                    ! diffusion
+     .            - nu_r*gr%dzt(k)*gr%dzm(k)                     ! diffusion
+
 
            ! LHS terms for rain droplet number concentration, Nrm.
 
@@ -262,41 +316,24 @@
 
            oo(k) = 
      .            - wmt(k) / (1.0/gr%dzm(k) + 1.0/gr%dzm(km1))   ! advection
-     .            - nu_r*gr%dzt(k)*gr%dzm(km1)                    ! diffusion
-
-! %% Debug
-!           if ( kp1 == 147 ) then
-!           print*, 'kp1=', kp1
-!           print*, 'k=', k
-!           print*, 'VNr(kp1)=', VNr(kp1)
-!           endif
-!           print*, 'nu_r', nu_r
-!           print*, 'dt=', dt
-!           print*, 'gr%dzm(k)=', gr%dzm(k)
-!           print*, 'gr%dzm(km1)=', gr%dzm(km1)
-!           print*, 'gr%dzt(k)=', gr%dzt(k)
-! %% Debug
+     .            - nu_r*gr%dzt(k)*gr%dzm(km1)                   ! diffusion
 
            ! Find main diagonal pp
            pp(k) = 
      .              (1.0/dt)                                     ! time tendency
      .            + VNr(kp1)*gr%dzm(k)                           ! sedimentation
-     .            + nu_r*gr%dzt(k)*(gr%dzm(k) + gr%dzm(km1))      ! diffusion
+     .            + nu_r*gr%dzt(k)*(gr%dzm(k) + gr%dzm(km1))     ! diffusion
 
-! %% Debug
-!           if ( kp1 == 147 ) then
-!           print*, 'k=', k
-!           print*, 'pp=', pp(k)
-!           endif
-! %% Debug
            ! Find superdiagonal qq
 
            qq(k) = 
      .              wmt(k) / (1.0/gr%dzm(k) + 1.0/gr%dzm(km1))   ! advection
      .            - VNr(kp1)*gr%dzm(k)                           ! sedimentation
-     .            - nu_r*gr%dzt(k)*gr%dzm(k)                      ! diffusion
+     .            - nu_r*gr%dzt(k)*gr%dzm(k)                     ! diffusion
 
-           ! PDF parameters from pdf_closure_new for use in
+
+           ! PDF parameters from pdf_closure_new for use in calculation
+           ! of condensation/evaporation, autoconversion, accretion.
 
            a    = pdf_parms(k,13)
            thl1 = pdf_parms(k,9)
@@ -357,6 +394,7 @@
            rr(k) = (1.0/dt)*Nrm(k) + cond_Nrm(k) + auto_Nrm(k)
 
         ENDDO
+
 
 !       set up boundary conditions
 
@@ -419,10 +457,17 @@
               Nrm(k) = 0.0
            ENDIF
 
-           ! Breakdown for output purposes.
+
+           ! Breakdown for output purposes.  This is done here because these
+           ! terms (sedimentation, diffusion, and subsidence) are on the
+           ! the left-hand side of the equation.  Therefore, they are based
+           ! on the values of rrm and Nrm at the (n+1)th time step.  
 
            km1 = MAX(k-1,1)
            kp1 = MIN(k+1,gr%nnzp)
+
+
+           ! Rain Water Mixing Ratio budget.
 
            sed_rrm(k) = Vr(kp1) * ( (rrm(kp1) - rrm(k)) * gr%dzm(k) )
 
@@ -431,6 +476,18 @@
      .                     - (rrm(k) - rrm(km1))*gr%dzm(km1)  )
 
            subs_rrm(k) = -wmt(k) * ( (rrm(kp1) - rrm(km1))
+     .                            / (1.0/gr%dzm(k) + 1.0/gr%dzm(km1)) )
+
+
+           ! Rain Droplet Number Concentration Budget
+
+           sed_Nrm(k) = VNr(kp1) * ( (Nrm(kp1) - Nrm(k)) * gr%dzm(k) )
+
+           diff_Nrm(k) = nu_r * gr%dzt(k)
+     .                  * (  (Nrm(kp1) - Nrm(k))*gr%dzm(k)
+     .                     - (Nrm(k) - Nrm(km1))*gr%dzm(km1)  )
+
+           subs_Nrm(k) = -wmt(k) * ( (Nrm(kp1) - Nrm(km1))
      .                            / (1.0/gr%dzm(k) + 1.0/gr%dzm(km1)) )
 
 
@@ -538,13 +595,6 @@
               mean_vol_rad = ( ((4.0*pi*rho_lw)/3.0)**(-1.0/3.0) )
      .                      * bivar_term
 
-!              print*, 'u_rr_G=', u_rr_G
-!              print*, 'u_Nr_G=', u_Nr_G
-!              print*, 'sig2_rr_G=', sig2_rr_G
-!              print*, 'sig2_Nr_G=', sig2_Nr_G
-!              print*, 'corr_rrNr_G=', corr_rrNr_G
-!              print*, 'mean_vol_rad=', mean_vol_rad
-
            ENDIF
 
         ELSE
@@ -598,14 +648,14 @@
         REAL:: u_rr_G, u_Nr_G
         REAL:: sig2_rr_G, sig2_Nr_G
         REAL:: corr_rcrr_G, corr_rcNr_G, corr_rrNr_G
-!       Now in constants.F
-!        REAL, PARAMETER:: rho_lw = 1000.0 ! density of liquid water; kg/m^3
-        REAL, PARAMETER:: C_evap = 0.86*0.2 ! COAMPS value of
-                                            ! ratio of drizzle drop mean 
-                                            ! geometric radius to drizzle drop
-                                            ! mean volume radius. Khairoutdinov 
-                                            ! and Kogan (2000); p. 233.
-!        REAL, PARAMETER:: C_evap = 0.86    ! KK 2000, Eq. 22 value. 
+
+!        REAL, PARAMETER:: C_evap = 0.86    ! Khairoutdinov and Kogan (2000) 
+!                                           ! ratio of drizzle drop mean 
+!                                           ! geometric radius to drizzle drop
+!                                           ! mean volume radius. Khairoutdinov 
+!                                           ! and Kogan (2000); p. 233.
+!        REAL, PARAMETER:: C_evap = 0.86*0.2 ! COAMPS value of KK C_evap
+        REAL, PARAMETER:: C_evap = 0.55    ! KK 2000, Marshall-Palmer (1948) value.
 
         ! corr_rcrr_L=0.1 agrees w/ COAMPS DYCOMS2 RF02 below cloud.  
         REAL, PARAMETER:: corr_rcrr_L = 0.1
@@ -746,14 +796,14 @@
 
         DOUBLE PRECISION:: scc, gamma_in, gamma_out, Dv_order, test
 
-!       Now in constants.F
-!        REAL, PARAMETER:: rho_lw = 1000.0 ! density of liquid water; kg/m^3
-        REAL, PARAMETER:: C_evap = 0.86*0.2 ! COAMPS value of
-                                            ! ratio of drizzle drop mean 
-                                            ! geometric radius to drizzle drop
-                                            ! mean volume radius. Khairoutdinov 
-                                            ! and Kogan (2000); p. 233.
-!        REAL, PARAMETER:: C_evap = 0.86    ! KK 2000, Eq. 22 value. 
+!        REAL, PARAMETER:: C_evap = 0.86    ! Khairoutdinov and Kogan (2000) 
+!                                           ! ratio of drizzle drop mean 
+!                                           ! geometric radius to drizzle drop
+!                                           ! mean volume radius. Khairoutdinov 
+!                                           ! and Kogan (2000); p. 233.
+!        REAL, PARAMETER:: C_evap = 0.86*0.2 ! COAMPS value of KK C_evap
+        REAL, PARAMETER:: C_evap = 0.55    ! KK 2000, Marshall-Palmer (1948) value.
+
 !        DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308.0
 !       Found that above is not valid on most compilers -dschanen
         DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308
@@ -934,8 +984,6 @@
         REAL:: Ka, Dv
         REAL:: Fk, Fd
         REAL:: es, rs, Celsius
-!       Now in constants.F
-!        REAL, PARAMETER:: rho_lw = 1000.0 ! density of liquid water; kg/m^3
 
         Celsius = Temp - 273.16
 
@@ -1043,11 +1091,13 @@
         REAL, INTENT(IN):: auto_rrm, rhot
         REAL:: autoconv_Nrm
 
-!        now in constants.F
-!        REAL, PARAMETER:: rho_lw = 1000.0 ! density of liquid water; kg/m^3
 ! Vince Larson set r_0=28mum to agree with COAMPS-LES formula. 15 April 2005
-!        REAL, PARAMETER:: r_0 = 25.0e-6   ! Assumed radius of all new drops; m.
-        REAL, PARAMETER:: r_0 = 28.0e-6   ! Assumed radius of all new drops; m.
+        REAL, PARAMETER:: r_0 = 25.0e-6   ! Assumed radius of all new drops; m.
+                                          ! Value specified in KK (2000); p. 235.
+!        REAL, PARAMETER:: r_0 = 28.0e-6   ! Assumed radius of all new drops; m.
+                                          ! Value that COAMPS LES has in it.
+!        REAL, PARAMETER:: r_0 = 30.0e-6   ! Assumed radius of all new drops; m.
+                                          ! Khairoutdinov said it was okay!
 ! End Vince Larson's change.
 
         autoconv_Nrm = auto_rrm /

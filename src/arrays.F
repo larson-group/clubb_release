@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: arrays.F,v 1.15 2005-07-29 18:00:29 dschanen Exp $
+! $Id: arrays.F,v 1.16 2005-08-13 22:12:45 griffinb Exp $
 
 ! This module contains definitions of all prognostic and diagnostic
 ! arrays used in the single column model, as well as subroutine
@@ -73,15 +73,18 @@
         real, allocatable, target :: rcm(:)       ! liquid water mixing ratio
         real, allocatable, target :: rsm(:)       ! saturation mixing ratio  ! Brian
         real, allocatable, target :: rrm(:)       ! rain water mixing ratio  ! Brian
-        real, allocatable, target :: Nrm(:)       ! rain droplet number conc.  ! Brian
         real, allocatable, target :: cond_rrm(:)  ! condensation factor in rrm ! Brian
         real, allocatable, target :: auto_rrm(:)  ! autoconversion factor in rrm ! Brian
         real, allocatable, target :: accr_rrm(:)  ! accretion factor in rrm ! Brian
-        real, allocatable, target :: cond_Nrm(:)  ! condensation factor in Nrm ! Brian
-        real, allocatable, target :: auto_Nrm(:)  ! autoconversion factor in Nrm ! Brian
         real, allocatable, target :: sed_rrm(:)   ! sedimentation output for rrm ! Brian
         real, allocatable, target :: diff_rrm(:)  ! diffusion output for rrm ! Brian
         real, allocatable, target :: subs_rrm(:)  ! subsidence output for rrm ! Brian
+        real, allocatable, target :: Nrm(:)       ! rain droplet number conc.  ! Brian
+        real, allocatable, target :: cond_Nrm(:)  ! condensation factor in Nrm ! Brian
+        real, allocatable, target :: auto_Nrm(:)  ! autoconversion factor in Nrm ! Brian
+        real, allocatable, target :: sed_Nrm(:)   ! sedimentation output for Nrm ! Brian
+        real, allocatable, target :: diff_Nrm(:)  ! diffusion output for Nrm ! Brian
+        real, allocatable, target :: subs_Nrm(:)  ! subsidence output for Nrm ! Brian
         real, allocatable, target :: Vr(:)        ! sedimentation velocity of rain ! Brian
         real, allocatable, target :: mean_vol_rad(:) ! rain drop mean volume radius ! Brian
         real, allocatable, target :: rain_rate(:) ! rainfall rate in mm/day ! Brian
@@ -242,15 +245,18 @@ c Diagnostic variables
         allocate( rcm(1:nzmax) )       ! liquid water mixing ratio
         allocate( rsm(1:nzmax) )       ! saturation mixing ratio  ! Brian
         allocate( rrm(1:nzmax) )       ! rain water mixing ratio  ! Brian
-        allocate( Nrm(1:nzmax) )       ! rain droplet number conc.  ! Brian
         allocate( cond_rrm(1:nzmax) )  ! condensation factor in rrm ! Brian
         allocate( auto_rrm(1:nzmax) )  ! autoconversion factor in rrm ! Brian
         allocate( accr_rrm(1:nzmax) )  ! accretion factor in rrm ! Brian
-        allocate( cond_Nrm(1:nzmax) )  ! condensation factor in Nrm ! Brian
-        allocate( auto_Nrm(1:nzmax) )  ! autoconversion factor in Nrm ! Brian
         allocate( sed_rrm(1:nzmax) )   ! sedimentation output for rrm ! Brian
         allocate( diff_rrm(1:nzmax) )  ! diffusion output for rrm ! Brian
         allocate( subs_rrm(1:nzmax) )  ! subsidence output for rrm ! Brian
+        allocate( Nrm(1:nzmax) )       ! rain droplet number conc.  ! Brian
+        allocate( cond_Nrm(1:nzmax) )  ! condensation factor in Nrm ! Brian
+        allocate( auto_Nrm(1:nzmax) )  ! autoconversion factor in Nrm ! Brian
+        allocate( sed_Nrm(1:nzmax) )   ! sedimentation output for Nrm ! Brian
+        allocate( diff_Nrm(1:nzmax) )  ! diffusion output for Nrm ! Brian
+        allocate( subs_Nrm(1:nzmax) )  ! subsidence output for Nrm ! Brian
         allocate( Vr(1:nzmax) )        ! sedimentation velocity of rain ! Brian
         allocate( mean_vol_rad(1:nzmax) ) ! rain drop mean volume radius ! Brian
         allocate( rain_rate(1:nzmax) ) ! rainfall rate in mm/day ! Brian
@@ -399,16 +405,19 @@ c Diagnostic variables
         deallocate( thvm )      ! virtual potential temperature
         deallocate( rcm )       ! liquid water mixing ratio
         deallocate( rsm )       ! saturation mixing ratio  ! Brian
-        deallocate( rrm )       ! rain water mixing ratio ! Brian
-        deallocate( Nrm )       ! rain droplet number co ! Brian
+        deallocate( rrm )       ! rain water mixing ratio  ! Brian
         deallocate( cond_rrm )  ! condensation factor in rrm ! Brian
         deallocate( auto_rrm )  ! autoconversion factor in rrm ! Brian
         deallocate( accr_rrm )  ! accretion factor in rrm ! Brian
-        deallocate( cond_Nrm )  ! condensation factor in Nrm ! Brian
-        deallocate( auto_Nrm )  ! autoconversion factor in Nrm ! Brian
         deallocate( sed_rrm )   ! sedimentation output for rrm ! Brian
         deallocate( diff_rrm )  ! diffusion output for rrm ! Brian
         deallocate( subs_rrm )  ! subsidence output for rrm ! Brian
+        deallocate( Nrm )       ! rain droplet number conc.  ! Brian
+        deallocate( cond_Nrm )  ! condensation factor in Nrm ! Brian
+        deallocate( auto_Nrm )  ! autoconversion factor in Nrm ! Brian
+        deallocate( sed_Nrm )   ! sedimentation output for Nrm ! Brian
+        deallocate( diff_Nrm )  ! diffusion output for Nrm ! Brian
+        deallocate( subs_Nrm )  ! subsidence output for Nrm ! Brian
         deallocate( Vr )        ! sedimentation velocity of rain ! Brian
         deallocate( mean_vol_rad ) ! rain drop mean volume radius ! Brian
         deallocate( rain_rate ) ! rainfall rate in mm/day ! Brian
@@ -579,16 +588,19 @@ c Diagnostic variables
         thvm         = 0.   ! virtual potential temperature
         rcm          = 0.   ! liquid water mixing ratio
         rsm          = 0.   ! saturation mixing ratio  ! Brian
-        rrm          = 0.   ! rain water mixing ratio ! Brian
-        Nrm          = 0.   ! rain droplet number conc. ! Brian
+        rrm          = 0.   ! rain water mixing ratio  ! Brian
         cond_rrm     = 0.   ! condensation factor in rrm ! Brian
         auto_rrm     = 0.   ! autoconversion factor in rrm ! Brian
         accr_rrm     = 0.   ! accretion factor in rrm ! Brian
-        cond_Nrm     = 0.   ! condensation factor in Nrm ! Brian
-        auto_Nrm     = 0.   ! autoconversion factor in Nrm ! Brian
         sed_rrm      = 0.   ! sedimentation output for rrm ! Brian
         diff_rrm     = 0.   ! diffusion output for rrm ! Brian
         subs_rrm     = 0.   ! subsidence output for rrm ! Brian
+        Nrm          = 0.   ! rain droplet number conc.  ! Brian
+        cond_Nrm     = 0.   ! condensation factor in Nrm ! Brian
+        auto_Nrm     = 0.   ! autoconversion factor in Nrm ! Brian
+        sed_Nrm      = 0.   ! sedimentation output for Nrm ! Brian
+        diff_Nrm     = 0.   ! diffusion output for Nrm ! Brian
+        subs_Nrm     = 0.   ! subsidence output for Nrm ! Brian
         Vr           = 0.   ! sedimentation velocity of rain ! Brian
         mean_vol_rad = 0.   ! rain drop mean volume radius ! Brian
         rain_rate    = 0.   ! rainfall rate in mm/day ! Brian
