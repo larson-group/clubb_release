@@ -18,7 +18,15 @@ c                                       control file. Can be callled as
 c                                       many times as necessary
 c
 c Chris Golaz, updated 2/18/2003
-c
+
+#ifdef IFORT
+#define F_RECL 1
+#else
+#ifdef PGF
+#define F_RECL 4
+#endif
+#endif
+
         module outputfile_class
 
 c         Undefined value
@@ -413,10 +421,10 @@ c         Output data to file
           open( f%iounit,
      .          file = trim(f%fdir)//trim(f%fname)//'.dat',
      .          form = 'unformatted', access = 'direct',
-     .          recl = 4, status = 'unknown', iostat = ios )
-          if ( ios .gt. 0 ) then
+     .          recl = F_RECL, status = 'unknown', iostat = ios )
+          if ( ios /= 0 ) then
              write(*,*) 'write_grads: error opening binary file'
-             write(*,*) 'iostat = ',ios
+             write(*,*) 'iostat = ', ios
              stop
           endif
           do i=1,f%nvar
@@ -435,9 +443,9 @@ c         Output data to file
              end if
           end do
           close( f%iounit, iostat = ios )
-          if ( ios .gt. 0 ) then
+          if ( ios /= 0 ) then
              write(*,*) 'write_grads: error closing binary file'
-             write(*,*) 'iostat = ',ios
+             write(*,*) 'iostat = ', ios
              stop
           endif
 

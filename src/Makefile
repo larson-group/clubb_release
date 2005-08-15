@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.32 2005-08-05 18:03:46 dschanen Exp $
+# $Id: Makefile,v 1.33 2005-08-15 21:17:07 dschanen Exp $
 # Uses GNU make.  BSD make doesn't like the LH/*.F syntax.
 
 # Compiler invocation
@@ -17,9 +17,9 @@ DEBUG=-g -C#-Ktrap=inv,unf -Minform=inform
 
 #OPTIMIZE=-O2 -msse2 -march=pentium4# g95
 #OPTIMIZE=-xtarget=opteron -ftrap=%none# Sun Studio x86/Opteron
-#OPTIMIZE=-O3 -xN #Intel complier, P4 w/out SSE3
+#OPTIMIZE=-O2 -xN #Intel complier, P4 w/out SSE3
 #OPTIMIZE=-O2 -tp p7 -Kieee -r8# PGF90 w/ double precision reals.
- OPTIMIZE=-O2 -tp p7 -Kieee# PGF90, P4
+OPTIMIZE=-O2 -tp p7 -Kieee# PGF90, P4
 
 # Linking Flags
 LDFLAGS = # use -s to strip
@@ -27,8 +27,10 @@ LDFLAGS = # use -s to strip
 # Compiler flags
 #   -DSTATS enables statistics
 #   -DSCALARS enables passive scalars
+#   -DIFORT -DPGF the non-standard record lengths in binary I/O require the 
+#    specification of the compiler;  PGF90 defines records to 1 byte, Intel's ifort to 4 bytes.
 
-FCFLAGS = $(OPTIMIZE) $(DEBUG) -DSTATS
+FCFLAGS = $(OPTIMIZE) $(DEBUG) -DSTATS -DPGF
 #FCFLAGS = $(OPTIMIZE) $(DEBUG) -DSTATS -DSCALARS
 
 
@@ -39,9 +41,10 @@ OBJS	= polpak.o \
 	closure_new.o diag_var.o gcss.o hydrostatic.o \
 	length.o mixing.o rsat.o sat_rcm.o sfc.o \
 	sounding.o update.o wp23.o tau.o \
-	inputgrads.o gradsaverage.o inputfields.o hoc.o error.o budget_terms.o \
+	inputgrads.o gradsaverage.o inputfields.o hoc.o error.o \
 	\
-	nrtype.o nr.o nrutil.o ran_state.o ran1.o amebsa.o amoeba.o
+	nrtype.o nr.o nrutil.o ran_state.o ran1.o amebsa.o amoeba.o \
+	budget_terms.o 
 
 LH_OBJS	= autoconv_driver.o corrcoef.o gaus_condt.o \
 	gaus_mixt_points.o gaussj.o generate_k_order.o \
@@ -117,7 +120,7 @@ outputgrads.o	: endian.F outputgrads.F
 arrays.o	: arrays.F constants.F
 inputgrads.o	: endian.F inputgrads.F
 grid.o		: grid.F grid.h
-statistics.o	: arrays.F gcss.F outputgrads.F statistics.F
+statistics.o	: gcss.F outputgrads.F statistics.F arrays.F 
 
 banbks.o	: banbks.F
 bandec.o	: bandec.F
@@ -151,7 +154,8 @@ amebsa.o	: nr.f90 nrtype.f90 nrutil.f90 ran_state.f90 ran1.f90 amebsa.f90
 amoeba.o	: nr.f90 nrtype.f90 nrutil.f90 amoeba.f90
 gradsaverage.o	: inputgrads.F gradsaverage.F 
 error.o		: nr.f90 nrtype.f90 gradsaverage.F error.F
-budget_terms.o  : inputfields.F gradsaverage.F hoc.F error.F budget_terms.F
+budget_terms.o  : nr.f90 inputfields.F gradsaverage.F hoc.F \
+		  error.F budget_terms.F
 
 autoconv_driver.o	: LH/autoconv_driver.F
 corrcoef.o		: LH/corrcoef.F

@@ -1,131 +1,114 @@
-!=======================================================================
-!  $Id: hoc_tuner_budget_terms.F,v 1.3 2005-08-06 13:37:53 griffinb Exp $
+!-----------------------------------------------------------------------
+!  $Id: hoc_tuner_budget_terms.F,v 1.4 2005-08-15 21:17:07 dschanen Exp $
 ! PROGRAM hoc_tuner_budget_terms
 
 ! Attempts to tune the constants of the HOC model to best fit the
 ! individual budget terms of prognostic variables.
 
-! Currently only setup for wp2 and wp3
-!=======================================================================
+! Currently setup for wp2, wp3, wprtp, and wpthlp;
+! Can tune buoyancy, pressure, dissipation & advection budgets.
+!-----------------------------------------------------------------------
 
       program hoc_tuner_budget_terms
       use budget_terms
       use error, only: read_random_seed
-      use inputfields
-      use nr, only: amoeba
-      use nrtype
 
       implicit none
 
+!     Parameters
+      logical, parameter :: c_update = .true.
+      logical, parameter :: liter    = .false.
+
 !     Internal
-      character(len=50) run_file
-      character(len=50) hoc_stats_file
-      character(len=50) les_stats_file
-
       real ftol
-      real sample_ratio
+      integer i
+       
 
-      real C1, C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6thl, 
-     .     C7, C8, C10, C11
-      real nu1, nu2, nu6, nu8, nu_r
-      real beta, gamma_coef, c_K, lmin_coef, taumin, taumax, mu
-
-      real C4_var, C5_var, C8_var, C11_var
-
-      real, dimension(ndim)       :: init_const
-      real, dimension(mdim)       :: rand_vect
-      real, dimension(mdim, ndim) :: const_array
-!      real, dimension(mdim)       :: diff_array
-      real, dimension(mdim)       :: const_tmp
-
-      integer, dimension(10)      :: times
-
-      real opt_error
-
-      integer j, k  ! loop indices
-      integer iter  ! used by amoeba
-
-!     Namelists
-
-      namelist /initvars/ C1, C2rt, C2thl, C2rtthl, C4, C5, 
-     .                    C6rt, C6thl, C7, C8, C10, C11, 
-     .                    nu1, nu2, nu6, nu8, nu_r, beta, gamma_coef,
-     .                    c_K, lmin_coef, taumin, taumax, mu
-
-      namelist /variance/ C4_var, C5_var, C8_var, C11_var 
-
-      namelist /budget_tune/ run_file, hoc_stats_file, les_stats_file, 
-     .                       times, ftol
-
-      namelist /setfields/ datafile, sample_ratio, input_type,
-     .                     input_um, input_vm, input_rtm, input_thlm,
-     .                     input_wp2, input_wprtp, input_wpthlp, 
-     .                     input_wp3, input_rtp2, input_thlp2, 
-     .                     input_rtpthlp, input_upwp, input_vpwp
-
-!     Initialize variables
-      times = 0
-
-!     Read in the namelists
-      open(10, file='budget.in', status='old')
-      read(10, nml=budget_tune)
-      read(10, nml=initvars)
-      read(10, nml=variance)
-      read(10, nml=setfields)
-      close(10)
-
-      call setup_budget_terms( run_file, sample_ratio, 
-     .                         hoc_stats_file, les_stats_file, 
-     .                         times(1:maxloc(times, 1)) )
+!     Setup the budget terms module
+      call setup_budget_terms( "budget.in", ftol)
       
-
-!     Create a vectorized version of the constants
-      init_const(1:ndim) = (/C1, C2rt, C2thl, C2rtthl, C4, C5, 
-     .                       C6rt, C6thl, C7, C8, C10, C11, 
-     .                       nu1, nu2, nu6, nu8, nu_r, beta, gamma_coef,
-     .                       c_K, lmin_coef, taumin, taumax, mu/)
-
-!     Initial constants to all columns of the 'p' matrix
-      const_array(1:mdim,:) = spread( init_const, 1, mdim )
-
-!     Generate a random vector
+!     Seed the random number generator
       call read_random_seed("../tune/rand_seed.dat") ! from error.mod
-      call random_number( rand_vect(1:mdim) )
 
-!     Vary the constants that influence wp2 and wp3
-      const_array(1:mdim, 5)  = const_array(1:mdim, 5) * (1.0 - C4_var
-     .                        + rand_vect(1:mdim) * (2.0*C4_var) )
+      if ( liter ) then
+        do i=10, 1, -1
+          call execute_tuner_runs( )
+        enddo
+      else
+        i = 1      
+        call execute_tuner_runs( )
+      endif
 
-      const_array(1:mdim, 6)  = const_array(1:mdim, 6) * (1.0 - C5_var
-     .                        + rand_vect(1:mdim) * (2.0*C5_var) )
+      call output_optimal_constants( )
 
-      const_array(1:mdim, 10) = const_array(1:mdim, 10) * (1.0 - C8_var
-     .                        + rand_vect(1:mdim) * (2.0*C8_var) )
+      stop "Program Exited Normally"
 
-      const_array(1:mdim, 12) = const_array(1:mdim, 12) * (1.0 - C11_var
-     .                        + rand_vect(1:mdim) * (2.0*C11_var) )
+      contains
+!-----------------------------------------------------------------------
+!  SUBROUTINE execute_tuner_runs( )
+!-----------------------------------------------------------------------
+      subroutine execute_tuner_runs
 
-!     Calculate initial 'y' vector
-      do k=1, mdim
-        diff_array(k) = budget_min( const_array(k, 1:ndim) )
-      enddo
+      implicit none
 
-      write(*,*) "diff_array:"
-      write(*,'(6f12.5)') diff_array
+      if ( lwp2_prdp ) then
+        write(*,*) "running wp2(pr+dp)"
+        call wpn_run( ftol*i, "2", wp2_min, c_update )
+      endif
 
-      call amoeba( const_array, diff_array, ftol, 
-     .             budget_min, iter )
+      if ( lwp3_prdp ) then
+        write(*,*) "running wp3(pr+dp)"
+        call wpn_run( ftol*i, "3", wp3_min, c_update )
+      endif
 
-      print '(a12,i5)', "Iterations: ", iter
-      print '(a12,a12,a12)', "Constant", "Initial", "Optimal"
-      print '(a12,2f12.5)', "C4=", C4, const_array(1,5)
-      print '(a12,2f12.5)', "C5=", C5, const_array(1,6)
-      print '(a12,2f12.5)', "C8=", C8, const_array(1,10)
-      print '(a12,2f12.5)', "C11=", C11, const_array(1,12)
+      if ( lwprtp_prdp ) then
+        write(*,*) "running wprtp(pr+dp)"
+        call wpxp_run( ftol*i, "rt", wprtp_min, c_update )
+      endif
 
-      print *, "Running with optimal constants."      
-      opt_error = budget_min( const_array(1,:) ) 
-      print '(a15,f12.5)', "Optimal error=", opt_error
+      if ( lwpthlp_prdp ) then
+        write(*,*) "running wpthlp(pr+dp)"
+        call wpxp_run( ftol*i, "thl", wpthlp_min, c_update )
+      endif
+
+      if ( lwp2_bp ) then
+        write(*,*) "running wp2_bp"
+        call buoy_advect_run( ftol*i, "", wp2_buoy_min, c_update )
+      endif
+
+      if ( lwp3_bp ) then
+        write(*,*) "running wp3_bp"
+        call buoy_advect_run( ftol*i, "", wp3_buoy_min, c_update )
+      endif
+
+      if ( lwpthlp_bp ) then
+        write(*,*) "running wpthlp_bp"
+        call buoy_advect_run( ftol*i, "", wpthlp_buoy_min, c_update )
+      endif
+
+      if ( lwprtp_bp ) then
+        write(*,*) "running wprtp_bp"
+        call buoy_advect_run( ftol*i, "", wprtp_buoy_min, c_update )
+      endif
+
+      if ( lwp3_tp ) then
+        write(*,*) "running wp3_tp"
+        call buoy_advect_run( ftol*i, "", wp3_advect_min, c_update )
+      endif
+
+      if ( lwpthlp_tp ) then
+        write(*,*) "running wpthlp_tp"
+        call buoy_advect_run( ftol*i, "", wpthlp_advect_min, c_update )
+      endif
+
+      if ( lwprtp_tp ) then
+        write(*,*) "running wprtp_tp"
+        call buoy_advect_run( ftol*i, "", wprtp_advect_min, c_update )
+      endif
+
+      return
+      end subroutine execute_tuner_runs
+!-----------------------------------------------------------------------
 
       end program hoc_tuner_budget_terms
 !-----------------------------------------------------------------------

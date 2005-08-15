@@ -1,4 +1,6 @@
 !-----------------------------------------------------------------------
+! $Id: inputgrads.F,v 1.7 2005-08-15 21:17:07 dschanen Exp $
+
 ! This module contains structure and subroutine definitions to
 ! open a GrADS data file a read it.
 !
@@ -9,12 +11,17 @@
 
 ! Modifications:
 !  * Uses functions rather than subroutines to get endian type. 
-!  * Other cosmetic changes.  - dschanen 4/19/2005
-
+!  * Other cosmetic changes.
 !  * Overloaded subroutine get_var to allow for 8 byte real output.
-!    -dschanen 8/1/2005
+!  * Added preprocesing for RECL 
 !-----------------------------------------------------------------------
-
+#ifdef IFORT
+#define F_RECL 1
+#else
+#ifdef PGF
+#define F_RECL 4
+#endif
+#endif
         module inputfile_class
 
         use endian
@@ -242,7 +249,14 @@
           open( f%iounit,
      .          file = trim(f%fname),
      .          form = 'unformatted', access = 'direct',
-     .          recl = 4, status = 'old' )
+     .          recl = F_RECL, status = 'old', iostat=ierr )
+
+          if ( ierr /= 0 ) then
+             write(*,*) 'input_grads: error opening binary file'
+             write(*,*) 'iostat = ', ierr
+             stop
+          endif
+
 
           return
 
