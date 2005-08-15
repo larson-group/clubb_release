@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.20 2005-08-10 22:58:52 griffinb Exp $
+! $Id: error.F,v 1.21 2005-08-15 21:13:10 dschanen Exp $
 
 !       Module ERROR
 !
@@ -121,7 +121,7 @@
 !     Internal
       integer, parameter    :: max_times = 10 ! max number of timesteps 
                                               ! to compare
-      real, dimension(mdim) :: rand_vect      ! vect. of random reals
+      real, dimension(ndim) :: rand_vect      ! vect. of random reals
 
       integer i, j           ! looping variables
       integer AllocateStatus ! for allocatable arrays
@@ -287,13 +287,13 @@
 !-----------------------------------------------------------------------
 
       do j = 1, ndim
-        call random_number( rand_vect(1:mdim) )
+        call random_number( rand_vect(1:ndim) )
         do i = 2, mdim
 ! Vince Larson made entries of x_array random  10 Feb 2005
 !          x_array(i,j) = x_array(1,j)*
 !     .                   (1.0+((real(i)-1.)/real(ndim)*0.5))
           x_array(i,j) = x_array(1,j) *( ( 1.0-x_variance(j) ) 
-     .                 + rand_vect(i) * x_variance(j)*2 )
+     .                 + rand_vect(i-1) * x_variance(j)*2 )
 ! End of Vince Larson's change
         enddo
       enddo
@@ -746,12 +746,13 @@
                                     ! typically minval(les) - maxval(les) 
 !     Internal
       real, dimension(size( hoc_zl )) :: tmp_zl
-      integer nz 
+      integer hoc_nz, les_nz
 
-      nz = size( hoc_zl ) 
+      hoc_nz = size( hoc_zl ) 
+      les_nz = size( les_zl ) 
 
-      select case ( nz )
-      case (48, 75, 110, 147, 150, 160) ! most cases
+      select case ( hoc_nz - les_nz )
+      case ( 0 ) ! most cases
 !----------------------------------------------------------------------
 !  Due to hoc's lower starting point, we can only use
 !  (total number of z-levels) - 1 (a maximum of 74 for BOMEX).
@@ -759,19 +760,21 @@
 !  (Need to interpolate hoc to LES' levels.  Right now we just
 !   compare adjacent z levels.  Vince Larson 12 Jan 2005)
 !----------------------------------------------------------------------
-        tmp_zl(1:nz-1) = ( hoc_zl(2:nz) - les_zl(1:(nz-1)) )/norm_term 
-        tmp_zl         = tmp_zl**2
-        mean_sqr_diff_zt = sum( tmp_zl(1:nz-1), 1 ) 
+        tmp_zl(1:hoc_nz-1) = ( hoc_zl(2:hoc_nz) - les_zl(1:(les_nz-1)) )
+     .                     / norm_term 
+        tmp_zl             = tmp_zl**2
+        mean_sqr_diff_zt   = sum( tmp_zl(1:(hoc_nz-1)), 1 ) 
 
-      case (132)  !  the dycoms II RF01 case
-        tmp_zl(1:nz-2) = ( hoc_zl(3:nz) - les_zl(1:nz-2) ) / norm_term 
-        tmp_zl = tmp_zl**2
-        mean_sqr_diff_zt = sum( tmp_zl(1:nz-2), 1 )
+      case ( 2 )  !  the dycoms II RF01 case
+        tmp_zl(1:les_nz) = ( hoc_zl(3:hoc_nz) - les_zl(1:les_nz) ) 
+     .                   / norm_term
+        tmp_zl           = tmp_zl**2
+        mean_sqr_diff_zt = sum( tmp_zl(1:(les_nz)), 1 )
 
-      case (50)   !  the wangara case
-        tmp_zl = ( hoc_zl(1:nz) - les_zl(1:nz) ) / norm_term 
-        tmp_zl = tmp_zl**2
-        mean_sqr_diff_zt = sum( tmp_zl, 1 )
+!     case (50)   !  the wangara case
+!        tmp_zl = ( hoc_zl(1:nz) - les_zl(1:nz) ) / norm_term 
+!        tmp_zl = tmp_zl**2
+!        mean_sqr_diff_zt = sum( tmp_zl, 1 )
 
       case default !
         stop "Not able to handle specified number of HOC z-levels"
@@ -797,20 +800,23 @@
                                     ! typically minval(les) - maxval(les) 
 !     Internal
       real, dimension(size( hoc_zl )) :: tmp_zl
-      integer nz 
+      integer hoc_nz, les_nz
 
-      nz = size( hoc_zl ) 
+      hoc_nz = size( hoc_zl ) 
+      les_nz = size( les_zl ) 
 
-      select case ( nz )
-      case (48, 50, 75, 110, 147, 150, 160) ! most cases
-        tmp_zl(1:nz) = ( hoc_zl(1:nz) - les_zl(1:nz) )/norm_term 
-        tmp_zl       = tmp_zl**2
-        mean_sqr_diff_zm  = sum( tmp_zl(1:nz), 1 ) 
+      select case ( hoc_nz - les_nz )
+      case ( 0 ) ! most cases
+        tmp_zl(1:hoc_nz) = ( hoc_zl(1:hoc_nz) - les_zl(1:les_nz) )
+     .                   / norm_term 
+        tmp_zl           = tmp_zl**2
+        mean_sqr_diff_zm = sum( tmp_zl(1:hoc_nz), 1 ) 
 
-      case (132)  !  the dycoms II RF01 case
-        tmp_zl(1:nz-2) = ( hoc_zl(1:nz-2) - les_zl(1:nz-2) )/norm_term 
-        tmp_zl = tmp_zl**2
-        mean_sqr_diff_zm = sum( tmp_zl(1:nz-2), 1 )
+      case ( 2 )  !  the dycoms II RF01 case
+        tmp_zl(1:les_nz) = ( hoc_zl(1:les_nz) - les_zl(1:les_nz) )
+     .                   / norm_term 
+        tmp_zl           = tmp_zl**2
+        mean_sqr_diff_zm = sum( tmp_zl(1:les_nz), 1 )
 
       case default !
         stop "Not able to handle specified number of HOC z-levels"
