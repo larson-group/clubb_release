@@ -7,7 +7,9 @@
 run_file       = "../tune/bomex_hoc.in"
 hoc_stats_file = "bomex"
 les_stats_file = "../les_data/bomex_coamps"
-times          = 120, 240
+times_nl       = 120, 240
+z_i            = 1
+z_f            = 75
 ftol           = 0.001
 /
 
@@ -43,10 +45,30 @@ mu         = 6.e-4
 ! constant * ( (1 - variance) + rannum * variance * 2 )
 ! thus a variance of 0 will keep a constant static through the run
 &variance
+C1_var         = 0.25
+C2rt_var       = 0.25
+C2thl_var      = 0.25
+C2rtthl_var    = 0.25
 C4_var         = 0.
 C5_var         = 0.25
+C6rt_var       = 0.25
+C6thl_var      = 0.25
+C7_var         = 0.25
 C8_var         = 0.25
+C10_var        = 0.
 C11_var        = 0.25
+nu1_var        = 0.
+nu2_var        = 0.
+nu6_var        = 0.
+nu8_var        = 0.
+nu_r_var       = 0.
+beta_var       = 0.25
+gamma_coef_var = 0.25
+c_K_var        = 0.10
+taumin_var     = 0.
+taumax_var     = 0.
+lmin_coef_var  = 0.
+mu_var         = 0.25
 /
 
 &setfields
@@ -66,4 +88,18 @@ input_thlp2   = .true.
 input_rtpthlp = .true.
 input_upwp    = .true.
 input_vpwp    = .true.
+/
+! Determines which cases will be run
+&case_tune
+lwp2_prdp    = .true.
+lwp3_prdp    = .false.
+lwprtp_prdp  = .false.
+lwpthlp_prdp = .false.
+lwp2_bp      = .false.
+lwp3_bp      = .false.
+lwprtp_bp    = .false.
+lwpthlp_bp   = .false.
+lwp3_tp      = .false.
+lwprtp_tp    = .false.
+lwpthlp_tp   = .false.
 /
