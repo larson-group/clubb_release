@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: budget_terms.F,v 1.4 2005-08-15 21:17:07 dschanen Exp $     
+! $Id: budget_terms.F,v 1.5 2005-08-16 22:45:34 dschanen Exp $     
 
 ! MODULE budget_terms
 
@@ -61,6 +61,8 @@
 
         public wp3_advect_min, wprtp_advect_min, wpthlp_advect_min
 
+        public output_optimal_constants
+
         private term_min, gen_betagamma_min, calc_les_wpthlp
 
 !-----------------------------------------------------------------------
@@ -69,6 +71,8 @@
         character(len=50), private :: run_file       ! namelist
         character(len=50), private :: hoc_stats_file ! GRaDS data
         character(len=50), private :: les_stats_file ! GRaDS data
+
+        integer, dimension(10) :: times_nl
 
         real, private :: sample_ratio
 
@@ -106,6 +110,28 @@
 
         logical :: isValid
 
+!       Namelists
+
+        namelist /initvars/ C1, C2rt, C2thl, C2rtthl, C4, C5, 
+     .                      C6rt, C6thl, C7, C8, C10, C11, 
+     .                      nu1, nu2, nu6, nu8, nu_r, beta, gamma_coef,
+     .                      c_K, lmin_coef, taumin, taumax, mu
+
+        namelist /variance/ C1_var, C2rt_var, C2thl_var, C2rtthl_var,
+     .                      C4_var, C5_var, C6rt_var, C6thl_var,
+     .                      C7_var, C8_var, C10_var, C11_var, 
+     .                      nu1_var, nu2_var, nu6_var, nu8_var, 
+     .                      nu_r_var, beta_var, gamma_coef_var, 
+     .                      c_K_var, lmin_coef_var, taumin_var, 
+     .                      taumax_var, mu_var
+
+        namelist /case_tune/ lwp2_prdp, lwp3_prdp, 
+     .                       lwprtp_prdp, lwpthlp_prdp, 
+     .                       lwp2_bp, lwp3_bp,
+     .                       lwprtp_bp, lwpthlp_bp,
+     .                       lwp3_tp,
+     .                       lwprtp_tp, lwpthlp_tp
+
         contains
 !-----------------------------------------------------------------------
 !  SUBROUTINE setup_budget_terms
@@ -127,14 +153,12 @@
 
 !       Internal
 
-        integer, dimension(10) :: times_nl
-
         integer ios
 
 !       Namelists
 
         namelist /budget_tune/ run_file, hoc_stats_file, les_stats_file,
-     .                       times_nl, z_i, z_f, ftol
+     .                         times_nl, z_i, z_f, ftol
 
         namelist /setfields/ datafile, sample_ratio, input_type,
      .                       input_um, input_vm, input_rtm, input_thlm,
@@ -142,25 +166,7 @@
      .                       input_wp3, input_rtp2, input_thlp2, 
      .                       input_rtpthlp, input_upwp, input_vpwp
 
-        namelist /initvars/ C1, C2rt, C2thl, C2rtthl, C4, C5, 
-     .                      C6rt, C6thl, C7, C8, C10, C11, 
-     .                      nu1, nu2, nu6, nu8, nu_r, beta, gamma_coef,
-     .                      c_K, lmin_coef, taumin, taumax, mu
 
-        namelist /variance/ C1_var, C2rt_var, C2thl_var, C2rtthl_var,
-     .                      C4_var, C5_var, C6rt_var, C6thl_var,
-     .                      C7_var, C8_var, C10_var, C11_var, 
-     .                      nu1_var, nu2_var, nu6_var, nu8_var, 
-     .                      nu_r_var, beta_var, gamma_coef_var, 
-     .                      c_K_var, lmin_coef_var, taumin_var, 
-     .                      taumax_var, mu_var
-
-        namelist /case_tune/ lwp2_prdp, lwp3_prdp, 
-     .                       lwprtp_prdp, lwpthlp_prdp, 
-     .                       lwp2_bp, lwp3_bp,
-     .                       lwprtp_bp, lwpthlp_bp,
-     .                       lwp3_tp,
-     .                       lwprtp_tp, lwpthlp_tp
 
 !       Initialize variables
         times_nl = 0
@@ -1152,14 +1158,13 @@
         function calc_les_wpthlp( nz, times, term )
 
         use grads_common
-        use constants, only: Lv, Cp, p0, R
+        use constants, only: Lv, Cp, R
 
         implicit none
 
 !       Parameters (included from constants.mod)
 !       Lv = latent heat of vaporization at STP
 !       Cp = Specific heat of dry air at constant pressure
-!       p0 = Standard pressure
 !       R = Gas constant for dry air
 
 !       Input
@@ -1171,35 +1176,43 @@
         real, dimension(nz) :: calc_les_wpthlp
 
 !       Internal
-        real, dimension(nz) :: p     ! atmos press in Pa
+!        real, dimension(nz) :: p     ! atmos press in Pa
+        real, dimension(nz) :: exner
         real, dimension(nz) :: wpthlp
         real, dimension(nz) :: wpthp
         real, dimension(nz) :: wpqcp
 
-        real, dimension(nz-1) :: p_tmp   ! atmos press in Pa (t grid)
+!        real, dimension(nz-1) :: p_tmp   ! atmos press in Pa (t grid)
+        character(len=50) les_stats_file_ext
 
         logical ferror
         integer i
 
-        wpthp = grads_average_interval( trim(les_stats_file)//"_sw.ctl",
+        les_stats_file_ext = trim( les_stats_file )//"_sw.ctl"
+
+        wpthp = grads_average_interval( les_stats_file_ext,
      .                                  nz, times, "wpthp_"//term,
      .                                  ferror )
         
-        p_tmp = grads_average_interval( trim(les_stats_file)//"_sm.ctl",
-     .                                  nz-1, times, 
-     .                                  "pm", ferror )
-        do i=1, nz-2
-          p(i+1) = ( p_tmp(i) + p_tmp(i+1) ) / 2.0
-        enddo
-        ! use a linear extrapolation of Pa
-        p(1)  = 2.0 * p(2) - p(3)       
-        p(nz) = 2.0 * p(nz-2) - p(nz-1)
+        exner = grads_average_interval( les_stats_file_ext,
+     .                                  nz, times, 
+     .                                  "ex0", ferror )
 
-        wpqcp = grads_average_interval( trim(les_stats_file)//"_sw.ctl",
+!        p_tmp = grads_average_interval( trim(les_stats_file)//"_sm.ctl",
+!     .                                  nz-1, times, 
+!     .                                  "pm", ferror )
+!        do i=1, nz-2
+!          p(i+1) = ( p_tmp(i) + p_tmp(i+1) ) / 2.0
+!        enddo
+!        ! use a linear extrapolation of Pa
+!        p(1)  = 2.0 * p(2) - p(3)       
+!        p(nz) = 2.0 * p(nz-2) - p(nz-1)
+
+        wpqcp = grads_average_interval( les_stats_file_ext,
      .                                  nz, times, "wpqcp_"//term,
      .                                  ferror )
                 
-        wpthlp = wpthp + wpqcp * ( (Lv/Cp) * (p0/p)**(R/Cp) )
+        wpthlp = wpthp + wpqcp * ( (Lv/Cp) * (1.0/exner)**(R/Cp) )
 
         calc_les_wpthlp(1:nz) = wpthlp(1:nz)
 
@@ -1250,4 +1263,72 @@
 
         return
         end subroutine output_optimal_constants
+
+!-----------------------------------------------------------------------
+!  SUBROUTINE generate_namelists
+!  Writes the namelists to the parameterized file, usually at the end of
+!  a tuning run.
+!-----------------------------------------------------------------------
+        subroutine generate_namelists( filename, ftol )
+
+        use inputfields
+
+        implicit none
+
+!       Input
+
+        character(len=*), intent(in) :: filename
+
+        real, intent(in)             :: ftol
+
+!       Internal
+
+        integer ios
+
+!       Namelists
+
+        namelist /budget_tune/ run_file, hoc_stats_file, les_stats_file,
+     .                         times_nl, z_i, z_f, ftol
+
+        namelist /setfields/ datafile, sample_ratio, input_type,
+     .                       input_um, input_vm, input_rtm, input_thlm,
+     .                       input_wp2, input_wprtp, input_wpthlp, 
+     .                       input_wp3, input_rtp2, input_thlp2, 
+     .                       input_rtpthlp, input_upwp, input_vpwp
+
+
+        open( 20, file=filename, status='unknown', 
+     .        iostat=ios, action='write' )
+        if ( ios /= 0 ) then
+          write(*,*) "Error writing to " // filename
+          return
+        endif
+
+        write(20,*) "! Namelist generated by hoc_tuner_budget_terms "
+        if ( lwp2_prdp ) write(20,*) "! tuned for wp2_pr & wp2_dp"
+        if ( lwp3_prdp ) write(20,*) "! tuned for wp3_pr & wp3_dp"
+        if ( lwprtp_prdp ) write(20,*) "! tuned for wprtp_pr & wprtp_dp"
+        if ( lwpthlp_prdp ) write(20,*) 
+     .                      "! tuned for wpthlp_pr & wpthlp_dp"
+        if ( lwp2_bp ) write(20,*) "! tuned for wp2_bp "
+        if ( lwp3_bp ) write(20,*) "! tuned for wp3_bp "
+        if ( lwprtp_bp ) write(20,*) "! tuned for wprtp_bp "
+        if ( lwpthlp_bp ) write(20,*) "! tuned for wpthlp_bp "
+        if ( lwp2_tp ) write(20,*) "! tuned for wp2_tp "
+        if ( lwp3_tp ) write(20,*) "! tuned for wp3_tp "
+        if ( lwprtp_tp ) write(20,*) "! tuned for wprtp_tp "
+        if ( lwpthlp_tp ) write(20,*) "! tuned for wpthlp_tp "
+ 
+
+        write(20, nml=budget_tune)
+        write(20, nml=initvars)
+        write(20, nml=variance)
+        write(20, nml=setfields)
+        write(20, nml=case_tune)
+
+        close(20)
+
+        return
+        end subroutine generate_namelists
+
       end module budget_terms

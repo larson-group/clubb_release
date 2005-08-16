@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: hoc_tuner_budget_terms.F,v 1.4 2005-08-15 21:17:07 dschanen Exp $
+!  $Id: hoc_tuner_budget_terms.F,v 1.5 2005-08-16 22:45:34 dschanen Exp $
 ! PROGRAM hoc_tuner_budget_terms
 
 ! Attempts to tune the constants of the HOC model to best fit the
@@ -17,11 +17,18 @@
 
 !     Parameters
       logical, parameter :: c_update = .true.
-      logical, parameter :: liter    = .false.
+      logical, parameter :: liter    = .false. ! attempt to optimize for all
+                                               ! cases.  Takes some time and
+                                               ! may never converge.
 
 !     Internal
       real ftol
-      integer i
+      integer i, iterations
+
+      character(4) current_time       ! Current time string (no seconds)
+      character(8) current_date       ! Current date string
+
+      character(1) user_response
        
 
 !     Setup the budget terms module
@@ -31,14 +38,35 @@
       call read_random_seed("../tune/rand_seed.dat") ! from error.mod
 
       if ( liter ) then
-        do i=10, 1, -1
-          call execute_tuner_runs( )
-        enddo
+        iterations = 10
       else
-        i = 1      
-        call execute_tuner_runs( )
+        iterations = 1      
       endif
 
+      do i=iterations, 1, -1
+
+        call execute_tuner_runs( )
+
+        if ( i < iterations ) cycle
+
+        write(*,*) "Run Complete."
+        write(*,'(A)', advance='no') 
+     .       "Re-run with new parameters?(y/n) "
+        read *, user_response
+
+        if ( trim(user_response) /= "y" .and.
+     .       trim(user_response) /= "Y"   ) then 
+          exit 
+        endif
+       
+        write (*,*) "Current ftol= ", ftol 
+        write (*, '(A)', advance='no') "Enter new ftol= "
+        read *, ftol
+      enddo
+
+      call date_and_time (current_date, current_time)
+      call generate_namelists( "budget_"//current_date//
+     .                         "_"//current_time//".in", ftol ) 
       call output_optimal_constants( )
 
       stop "Program Exited Normally"
