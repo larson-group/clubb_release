@@ -1,8 +1,8 @@
 !------------------------------------------------------------------------
-! $Id: arrays.F,v 1.17 2005-08-17 20:31:20 dschanen Exp $
+! $Id: arrays.F,v 1.18 2005-08-17 21:03:12 dschanen Exp $
 
 ! This module contains definitions of all prognostic and diagnostic
-! arrays used in the single column model, as well as subroutine
+! arrays used in the single column model, as well as subroutines
 ! to allocate and deallocate them.
 !------------------------------------------------------------------------
         module model_arrays
@@ -842,16 +842,14 @@ c Diagnostic variables
         real, intent(in), dimension(:)       :: tVar
 
 !---- Internal Variables ----------------------------------------------
-        integer                           :: bits_pinf, bits_ninf 
+        integer                           :: nanbits
 
         real                              :: PosInf, NegInf
 
-        bits_pinf = Z"7F800000"
-        bits_ninf = -bits_pinf
-!        bits_ninf = Z"FF800000"
+        nanbits = Z"7F800000"
 
-        PosInf    = transfer( bits_pinf, PosInf )
-        NegInf    = transfer( bits_ninf, NegInf )
+        PosInf = transfer( nanbits, PosInf )
+        NegInf = -( transfer( nanbits, NegInf ) )
 
         isNaN     = .false.
  
