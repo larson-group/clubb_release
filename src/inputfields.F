@@ -50,9 +50,9 @@
         integer, intent(in)      :: timestep
 
         real, optional, intent(out), 
-     .        dimension(gr%nnzp) :: um, vm, rtm, thlm, wp2,
-     .                              wprtp, wpthlp, wp3, rtp2,
-     .                              thlp2, rtpthlp, upwp, vpwp
+     .        dimension(:) :: um, vm, rtm, thlm, wp2,
+     .                        wprtp, wpthlp, wp3, rtp2,
+     .                        thlp2, rtpthlp, upwp, vpwp
 
 !       Internal
         logical error
