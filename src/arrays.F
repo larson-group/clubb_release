@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: arrays.F,v 1.16 2005-08-13 22:12:45 griffinb Exp $
+! $Id: arrays.F,v 1.17 2005-08-17 20:31:20 dschanen Exp $
 
 ! This module contains definitions of all prognostic and diagnostic
 ! arrays used in the single column model, as well as subroutine
@@ -847,10 +847,11 @@ c Diagnostic variables
         real                              :: PosInf, NegInf
 
         bits_pinf = Z"7F800000"
-        bits_ninf = Z"FF800000"
+        bits_ninf = -bits_pinf
+!        bits_ninf = Z"FF800000"
 
-        PosInf    = transfer(bits_pinf, 1.0)
-        NegInf    = transfer(bits_ninf, 1.0)
+        PosInf    = transfer( bits_pinf, PosInf )
+        NegInf    = transfer( bits_ninf, NegInf )
 
         isNaN     = .false.
  
