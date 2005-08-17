@@ -93,12 +93,12 @@ input_vpwp    = .true.
 
 ! Determines which cases will be run
 &case_tune
-lwp2_prdp    = .true.
+lwp2_prdp    = .false.
 lwp3_prdp    = .false.
 lwprtp_prdp  = .false.
 lwpthlp_prdp = .false.
 lwp2_bp      = .false.
-lwp3_bp      = .false.
+lwp3_bp      = .true.
 lwprtp_bp    = .false.
 lwpthlp_bp   = .false.
 lwp3_tp      = .false.
