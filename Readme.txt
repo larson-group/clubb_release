@@ -1,6 +1,6 @@
 Using the HOC tuner
 -----------------------------------------------------------------------
-Last update July 12, 2005
+Last update August 17, 2005
 
 -----------------------------------------------------------------------
 -                                                                     -
@@ -9,13 +9,13 @@ Last update July 12, 2005
 -----------------------------------------------------------------------
 
 $ cd ~/hoc_v2.2_tuner/src
-edit Makefile for your compiler and optimization options.
+(edit Makefile for your compiler and optimization options.)
 $ make
 $ make install
 
 -----------------------------------------------------------------------
 -                                                                     -
-- Executing a tuning run:                                              -
+- Executing a tuning run:                                             -
 -                                                                     -
 -----------------------------------------------------------------------
 
@@ -37,6 +37,42 @@ $ make install
 4.  Edit run_tuner.bash to use your error_*.in
 
 5.  ./run_tuner.bash 
+-----------------------------------------------------------------------
+-                                                                     -
+- Executing a budget terms tuning run:                                -
+-                                                                     -
+-----------------------------------------------------------------------
+One run at a time:
+1. cd ~/hoc_v2.2_tuner/tune_budgets/ 
+2. Check hoc_v2.2_tuner/tune/<CASE>_hoc.in to make sure dtmain equals
+  dtclosure.  Make a note of what your statistics file's timestep divided by 
+  dtmain is, since this is the sample_ratio in your budget namelist. 
+  e.g. If the situation is a 1 mn timestep in LES GRaDS statistics paired 
+  with a 5 second dtmain, the sample_ratio is 60.0 / 5.0 = 12.0
+  You might also want to verify that your LES file has sufficient data
+  for the whole duration of the HOC run.
+3. edit <CASE>_budget.in;  You will want to set one case_tune variable to true 
+  and the rest to false, or the resultant parameters from one tuning run 
+  will be used in subsequent runs.  
+  Alteratively, you may edit the hoc_tuner_budget_terms.F code, setting liter 
+  to .true., and attempt to optimize the constants over multiple cases.  
+  Sometimes (usually?) this doesn't converge on anything.
+4. edit run_budget.bash for your model <CASE> 
+5. ./run_budget.bash 
+
+Batch mode: 
+1.  cd hoc_v2.2_tuner/tune_budgets/
+    mkdir <directory name you like>
+2.  cp BOMEX/create_files.bash <dir from (1)>
+    cp BOMEX/run_batch.bash <dir from (1)>
+3.  cp <CASE>_budget <dir from (1)>/budget.tmpl
+4.  cd <dir from (1)>
+5.  edit budget.tmpl to your liking;  
+    remove the 'case_tune' namelist entirely.
+5.  ./create_files.bash (you shouldn't see any errors)
+6.  ./run_batch.bash
+7.  Make coffee. Play spider solitaire. Wait an hour or two.
+
 -----------------------------------------------------------------------
 -                                                                     -
 - Executing a standalone run:
@@ -84,22 +120,23 @@ This code tunes certain parameters in a one-dimensional boundary layer cloud
 parameterization (``hoc''), to best fit large-eddy simulation output.  The 
 optimization technique is the simplex algorithm, as implemented in _Numerical 
 Recipes_ (amoeba.f90).  The parameterization is called as a subroutine 
-(hoc_sub) with parameter values as input.
+( hoc_model() ) with parameter values as input.
 
 The code is highly flexible.  One can vary the cases (bomex, fire, arm, or
 atex) to match; the variables to match (cloud fraction, liquid water, third
 moment of vertical velocity, etc.); the altitude and times over which to match
 these variables; and the parameters to tune (C1, beta, etc.). 
 
-The code is written in Fortran 90/95 and executed by a bash runscript. On a
-win32 machine this could be done with a .bat file, but we have not written
-one or tested this.
-
+The code is written in Fortran 90/95 and executed by a bash runscript. On the
+Microsoft Windows platform this could work using MSYS or Cygwin with G95, but 
+this has not been tested.
 We use the Portland Group compiler, version 5.2-4.
 G95 currently only works -ffast-math off, and hoc_standalone is the only
 program which works reliably.
-Sun's fortran 95  appears to work, but has not been tested rigorously.
-The gfortran ( gcc 4.0.x) compiler does not work at all.
+Sun's f95 8.1 on Solaris appears to work for hoc_tuner, but has not been 
+rigorously tested. 
+The GNU fortran compiler (gcc 4.0.x) does not implement the entire 
+Fortran 90 standard yet, and so does not work at all.
 
 -----------------------------------------------------------------------
 -                                                                     -
@@ -114,17 +151,20 @@ file format, which variables are output in which order, etc.
 read_grads_hoc.m:  A MATLAB function that reads GrADS data files.
 
 LES GrADS files:
-  bomex_case.dat, fire_case.dat, arm_case.dat, atex_case.dat.
-  These are our 4 basic ``datasets,'' simulated by COAMPS, that we use to match 
-  HOC data.  Each output file includes an hour of unphysical spinup time.  
-  BOMEX is trade-wind cumulus; FIRE is marine stratocumulus; ARM is continental 
-  cumulus; and ATEX is cumulus under stratocumulus.  BOMEX, FIRE, and ATEX are 
-  statistically steady-state; ARM varies over the course of a day.
+  les_data/bomex_coamps_sw.ctl, les_data/wangara_rams.ctl
+  FIRE, BOMEX, ARM & ATEX are our 4 basic ``datasets'', simulated by COAMPS, 
+  that we use to match HOC data.  Each output file includes an hour of 
+  unphysical spinup time.  BOMEX is trade-wind cumulus; FIRE is marine 
+  stratocumulus; ARM is continental cumulus; and ATEX is cumulus under 
+  stratocumulus.  BOMEX, FIRE, and ATEX are statistically steady-state; 
+  ARM varies over the course of a day.
 
 HOC GrADS files:
-  /standalone/Results_<DATE>/bomex_zt.ctl, etc.
+  results/<DATE>/bomex_zt.ctl, etc.
   These are the 4 basic runs using the default constants. Not used in any
-  way by the tuner, but useful for comparing runs results in grads.
+  way by the tuner, but useful for comparing runs results in grads.  To obtain
+  similar results on differing platforms, check your compiler's documentation
+  for information on enabling IEEE 754 standard floating-point arithmetic.
 
 Generated HOC GrADS files:
   bomex_zt.dat, fire_zt.dat, arm_zt.dat, atex_zt.dat, dycoms_zt.dat,
@@ -139,11 +179,11 @@ Generated HOC GrADS files:
 
 The Namelist files:
 
-  bomex_hoc.in, fire_hoc.in, arm_hoc.in & atex_hoc.in.
+  tune/bomex_hoc.in, fire_hoc.in, arm_hoc.in & atex_hoc.in.
   These files specify the standard hoc model parameters.  Usually these don't
     need to be edited.
   
-  error_all.in, error_<CASE>.in, error_<DATE>.in.
+  tune/error_all.in, error_<CASE>.in, error_<DATE>.in.
   These specify tuning parameters, case information initial constant values, 
     and constant variance.
 
