@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: arrays.F,v 1.18 2005-08-17 21:03:12 dschanen Exp $
+! $Id: arrays.F,v 1.19 2005-08-17 22:33:58 dschanen Exp $
 
 ! This module contains definitions of all prognostic and diagnostic
 ! arrays used in the single column model, as well as subroutines
@@ -839,30 +839,34 @@ c Diagnostic variables
         implicit none
       
 !----- Arguments ------------------------------------------------------
-        real, intent(in), dimension(:)       :: tVar
+        real, intent(in), dimension(:)    :: tVar
 
 !---- Internal Variables ----------------------------------------------
-        integer                           :: nanbits
-
-        real                              :: PosInf, NegInf
+        integer nanbits
+        real    PosInf, NegInf
 
         nanbits = Z"7F800000"
 
         PosInf = transfer( nanbits, PosInf )
         NegInf = -( transfer( nanbits, NegInf ) )
 
-        isNaN     = .false.
- 
+        isNaN = .false.
+
+!       This works on compilers with standardized floating point, because
+!       the IEEE spec defines that subnormals should not equal themselves.
+!       However, all compilers do not seem to follow this. 
         if ( any( (tVar /= tVar), dim=1) ) then
           isNaN = .true. 
           return
         endif
 
+!       This a second check, assuming the above does not work as expected.
         if ( any( (tVar == PosInf), dim=1) ) then
           isNaN = .true. 
           return
         endif
 
+!       This may never be needed, it's here just in case.
         if ( any( (tVar == NegInf), dim=1) ) then
           isNaN = .true. 
           return
@@ -870,6 +874,7 @@ c Diagnostic variables
 
         return
         end function isNaN
+!------------------------------------------------------------------------
 
         end function invalid_model_arrays
 !------------------------------------------------------------------------
