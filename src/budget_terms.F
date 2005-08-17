@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: budget_terms.F,v 1.5 2005-08-16 22:45:34 dschanen Exp $     
+! $Id: budget_terms.F,v 1.6 2005-08-17 19:05:20 dschanen Exp $     
 
 ! MODULE budget_terms
 
@@ -86,18 +86,18 @@
         real, allocatable, dimension(:,:) :: const_array ! 'p' matrix in amoeba
         real, allocatable, dimension(:)   :: diff_array  ! 'y' vector in amoeba
 
-        real, private :: C1, C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6thl
-        real, private :: C7, C8, C10, C11
-        real, private :: nu1, nu2, nu6, nu8, nu_r
-        real, private :: beta, gamma_coef, c_K, lmin_coef
-        real, private :: taumin, taumax, mu
+        real, public :: C1, C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6thl
+        real, public :: C7, C8, C10, C11
+        real, public :: nu1, nu2, nu6, nu8, nu_r
+        real, public :: beta, gamma_coef, c_K, lmin_coef
+        real, public :: taumin, taumax, mu
 
-        real, private :: C1_var, C2rt_var, C2thl_var, C2rtthl_var
-        real, private :: C4_var, C5_var, C6rt_var, C6thl_var
-        real, private :: C7_var, C8_var, C10_var, C11_var
-        real, private :: nu1_var, nu2_var, nu6_var, nu8_var, nu_r_var
-        real, private :: beta_var, gamma_coef_var, c_K_var
-        real, private :: lmin_coef_var, taumin_var, taumax_var, mu_var
+        real, public :: C1_var, C2rt_var, C2thl_var, C2rtthl_var
+        real, public :: C4_var, C5_var, C6rt_var, C6thl_var
+        real, public :: C7_var, C8_var, C10_var, C11_var
+        real, public :: nu1_var, nu2_var, nu6_var, nu8_var, nu_r_var
+        real, public :: beta_var, gamma_coef_var, c_K_var
+        real, public :: lmin_coef_var, taumin_var, taumax_var, mu_var
 
         logical, public :: lwp2_prdp, lwp3_prdp
         logical, public :: lwprtp_prdp, lwpthlp_prdp
