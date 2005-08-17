@@ -54,9 +54,20 @@ One run at a time:
 3. edit <CASE>_budget.in;  You will want to set one case_tune variable to true 
   and the rest to false, or the resultant parameters from one tuning run 
   will be used in subsequent runs.  
+
   Alteratively, you may edit the hoc_tuner_budget_terms.F code, setting liter 
-  to .true., and attempt to optimize the constants over multiple cases.  
-  Sometimes (usually?) this doesn't converge on anything.
+  to .true., and attempt to optimize the constants over multiple budget terms.  
+  This is some experimental code that starts at 10x's the ftol and loops over
+  all the amoeba cases, updating the constants by small amounts.  The idea
+  being that a ``best fit'' set of constant value will eventually be arrived
+  at when the tolerance is lowest( at ftol) on the 10th iteration of the 
+  do loop.
+
+  Sometimes (usually?) this mode doesn't appear to converge on anything.  
+  The more cases this is run over, the more likely it appears the constants 
+  will descend into values that cause the model become invalid and it will
+  fail altogether.
+
 4. edit run_budget.bash for your model <CASE> 
 5. ./run_budget.bash 
 
