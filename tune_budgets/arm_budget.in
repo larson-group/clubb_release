@@ -4,7 +4,7 @@ run_file       = "../tune/arm_hoc.in"
 hoc_stats_file = "arm"
 les_stats_file = "../les_data/arm_coamps"
 times_nl       = 450, 510
-z_i            = 1
+z_i            = 5
 z_f            = 110
 ftol           = 0.1
 /
@@ -88,12 +88,12 @@ input_vpwp    = .true.
 
 ! Determines which cases will be run
 &case_tune
-lwp2_prdp    = .true.
+lwp2_prdp    = .false.
 lwp3_prdp    = .false.
 lwprtp_prdp  = .false.
 lwpthlp_prdp = .false.
 lwp2_bp      = .false.
-lwp3_bp      = .false.
+lwp3_bp      = .true.
 lwprtp_bp    = .false.
 lwpthlp_bp   = .false.
 lwp3_tp      = .false.

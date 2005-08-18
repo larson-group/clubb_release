@@ -4,7 +4,7 @@ run_file       = "../tune/atex_hoc.in"
 hoc_stats_file = "atex"
 les_stats_file = "../les_data/atex_coamps"
 times_nl       = 360, 480
-z_i            = 1
+z_i            = 5
 z_f            = 150
 ftol           = 0.1
 /
@@ -69,7 +69,7 @@ mu_var         = 0.25
 
 &setfields
 datafile      = "../les_data/atex"
-sample_ratio  = 1.0
+sample_ratio  = 3.0
 input_type    = "les"
 input_um      = .true.
 input_vm      = .true.

@@ -1,10 +1,12 @@
-
+!
+!   This run takes a long time
+!
 &budget_tune
 run_file       = "../tune/dycoms2_rf02_d_hoc.in"
 hoc_stats_file = "dycoms2_rf02_d"
 les_stats_file = "../les_data/dycoms2_rf02_d_coamps"
-times_nl       = 120, 360
-z_i            = 1
+times_nl       = 120, 359
+z_i            = 5
 z_f            = 147
 ftol           = 0.01
 /

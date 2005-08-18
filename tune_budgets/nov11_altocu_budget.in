@@ -4,7 +4,7 @@ run_file       = "../tune/nov11_altocu_hoc.in"
 hoc_stats_file = "nov11_altocu"
 les_stats_file = "../les_data/nov11_altocu_coamps"
 times_nl       = 120, 240
-z_i            = 1
+z_i            = 4
 z_f            = 160
 ftol           = 0.01
 /
