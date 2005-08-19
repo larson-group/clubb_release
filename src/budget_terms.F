@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: budget_terms.F,v 1.7 2005-08-19 17:01:58 dschanen Exp $     
+! $Id: budget_terms.F,v 1.8 2005-08-19 17:21:27 dschanen Exp $     
 
 ! MODULE budget_terms
 
@@ -834,7 +834,7 @@
         wp3_buoy_min = gen_betagamma_min( wp3_hoc, wp3_les, 
      .                 const_vect(1), const_vect(2), grid )
 
-        print *, "wprtp_buoy_min=", wprtp_buoy_min
+        print *, "wp3_buoy_min=", wp3_buoy_min
 
         return 
         end function wp3_buoy_min
@@ -865,7 +865,7 @@
         wp3_advect_min = gen_betagamma_min( wp3_hoc, wp3_les, 
      .                   const_vect(1), const_vect(2), grid )
 
-        print *, "wprtp_advect_min=", wprtp_advect_min
+        print *, "wp3_advect_min=", wp3_advect_min
 
         return 
         end function wp3_advect_min
