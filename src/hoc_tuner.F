@@ -49,7 +49,7 @@
 
       implicit none
 
-      character(4)  :: current_time       ! Current time string (no seconds)
+      character(10) :: current_time       ! Current time string (no seconds)
       character(8)  :: current_date       ! Current date string
       character(50) :: results_f          ! Results file
 
@@ -111,7 +111,7 @@
         call date_and_time (current_date, current_time)
 
         results_f = "error_" // current_date // '_' 
-     .              // current_time // ".in" 
+     .              // current_time(1:4) // ".in" 
 
         call output_nml_tuner( results_f, x_array(1,1:ndim) )
         print *, "New filename is: ", results_f
@@ -120,7 +120,7 @@
         print *, "Generating new standalone.in file..."
 
         results_f = "../standalone/standalone_" // current_date // '_' 
-     .              // current_time // ".in" 
+     .              // current_time(1:4) // ".in" 
 
         call output_nml_standalone( results_f, x_array(1,1:ndim) )
         print *, "New filename is: ", results_f
