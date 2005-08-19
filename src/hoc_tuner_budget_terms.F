@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: hoc_tuner_budget_terms.F,v 1.5 2005-08-16 22:45:34 dschanen Exp $
+!  $Id: hoc_tuner_budget_terms.F,v 1.6 2005-08-19 17:02:32 dschanen Exp $
 ! PROGRAM hoc_tuner_budget_terms
 
 ! Attempts to tune the constants of the HOC model to best fit the
@@ -25,7 +25,7 @@
       real ftol
       integer i, iterations
 
-      character(4) current_time       ! Current time string (no seconds)
+      character(10) current_time      ! Current time string
       character(8) current_date       ! Current date string
 
       character(1) user_response
@@ -66,7 +66,7 @@
 
       call date_and_time (current_date, current_time)
       call generate_namelists( "budget_"//current_date//
-     .                         "_"//current_time//".in", ftol ) 
+     .                         "_"//current_time(1:4)//".in", ftol ) 
       call output_optimal_constants( )
 
       stop "Program Exited Normally"
