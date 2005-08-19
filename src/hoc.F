@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.39 2005-08-13 22:12:45 griffinb Exp $
+! $Id: hoc.F,v 1.40 2005-08-19 17:03:59 dschanen Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -253,10 +253,11 @@
      .                       lmin_coef_in, taumin_in, taumax_in )
 
 !      Model sanity Check
-       if (( beta < 0.0 ) .or. ( beta > 3.0 )) then
-         print *, 'beta < 0 OR beta > 3'
-         isValid = .false. 
-       endif 
+!      When tuning, we will allow these invalid results
+!       if (( beta < 0.0 ) .or. ( beta > 3.0 )) then
+!         print *, 'beta < 0 OR beta > 3'
+!         isValid = .false. 
+!       endif 
 
        if (lmin < 4.0) then
          print *, 'lmin < 4.0'
