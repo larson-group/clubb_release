@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: budget_terms.F,v 1.6 2005-08-17 19:05:20 dschanen Exp $     
+! $Id: budget_terms.F,v 1.7 2005-08-19 17:01:58 dschanen Exp $     
 
 ! MODULE budget_terms
 
@@ -596,8 +596,7 @@
 !       Calculate the error
         wp2_min = term_min( wp2_hoc, wp2_les, "m" )
 
-!        print *,  wp2_min   ! %% debug
-
+        print *, "wp2_min=", wp2_min
         return 
         end function wp2_min
 
@@ -645,7 +644,7 @@
 !       Calculate the error
         wp3_min = term_min( wp3_hoc, wp3_les, "t" )
 
-!       print *,  wp3_min   ! %% debug
+        print *, "wp3_min=", wp3_min
 
         return 
         end function wp3_min
@@ -694,7 +693,7 @@
 !       Calculate the error
         wprtp_min = term_min( wprtp_hoc, wprtp_les, "m" )
 
-!        print *,  wprtp_min   ! %% debug
+        print *, "wprtp_min=", wprtp_min
 
         return 
         end function wprtp_min
@@ -743,7 +742,7 @@
 !       Calculate the error
         wpthlp_min = term_min( wpthlp_hoc, wpthlp_les, "m" )
 
-!        print *,  wpthlp_min   ! %% debug
+        print *, "wpthlp_min=", wpthlp_min
 
         return 
         end function wpthlp_min
@@ -773,6 +772,9 @@
 !       Calculate the error
         wp2_buoy_min = gen_betagamma_min( wp2_hoc, wp2_les, 
      .                 const_vect(1), const_vect(2), grid )
+
+        print *, "wp2_buoy_min=", wp2_buoy_min
+
         return 
         end function wp2_buoy_min
 
@@ -831,6 +833,9 @@
 !       Calculate the error
         wp3_buoy_min = gen_betagamma_min( wp3_hoc, wp3_les, 
      .                 const_vect(1), const_vect(2), grid )
+
+        print *, "wprtp_buoy_min=", wprtp_buoy_min
+
         return 
         end function wp3_buoy_min
 
@@ -859,6 +864,9 @@
 !       Calculate the error
         wp3_advect_min = gen_betagamma_min( wp3_hoc, wp3_les, 
      .                   const_vect(1), const_vect(2), grid )
+
+        print *, "wprtp_advect_min=", wprtp_advect_min
+
         return 
         end function wp3_advect_min
 
@@ -888,6 +896,8 @@
         wprtp_buoy_min = gen_betagamma_min( wprtp_hoc, wprtp_les, 
      .                   const_vect(1), const_vect(2), grid )
 
+        print *, "wprtp_buoy_min=", wprtp_buoy_min
+
         return 
         end function wprtp_buoy_min
 
@@ -916,6 +926,8 @@
 !       Calculate the error
         wprtp_advect_min = gen_betagamma_min( wprtp_hoc, wprtp_les, 
      .                     const_vect(1), const_vect(2), grid )
+
+        print *, "wprtp_advect_min=", wprtp_advect_min
 
         return 
         end function wprtp_advect_min
@@ -947,6 +959,8 @@
      .                    wpthlp_hoc, wpthlp_les, 
      .                    const_vect(1), const_vect(2), grid )
 
+        print *, "wpthlp_buoy_min=", wpthlp_buoy_min
+
         return 
         end function wpthlp_buoy_min
 
@@ -976,6 +990,8 @@
         wpthlp_advect_min = gen_betagamma_min(
      .                      wpthlp_hoc, wpthlp_les, 
      .                      const_vect(1), const_vect(2), grid )
+
+        print *, "wpthlp_advect_min=", wpthlp_advect_min
 
         return 
         end function wpthlp_advect_min
@@ -1143,6 +1159,7 @@
 !        print *, "hoc_total", hoc_total
 !        print *, "les_total", les_total
 !       Return mean squared difference( normalized by les_minmax )
+
         if ( grid_type == "m" ) then
          term_min = mean_sqr_diff_zm( hoc_total(z_i:z_f), 
      .                                les_total(z_i:z_f), les_minmax )
