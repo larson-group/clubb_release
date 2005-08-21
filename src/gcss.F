@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.17 2005-08-01 18:29:02 vlarson Exp $ 
+! $Id: gcss.F,v 1.18 2005-08-21 19:36:10 griffinb Exp $ 
 
 ! This file contains extra subroutines to simulate the GCSS ARM and
 ! GCSS BOMEX, GCSS ATEX, GCSS FIRE intercomparison cases as well 
@@ -139,11 +139,13 @@
            endif
 
         enddo
-        wmt(1) = 0.
-        wmt(2) = 0.
 
         wmm = zt2zm( wmt )
-        wmm(gr%nnzp) = 0.
+
+        ! Boundary conditions.
+        wmt(1) = 0.0        ! Below surface
+        wmm(1) = 0.0        ! At surface
+        wmm(gr%nnzp) = 0.0  ! Model top
         
 !       Radiative theta-l tendency
 
@@ -177,6 +179,10 @@
            endif
 
         enddo
+
+        ! Boundary conditions
+        theta_tndcy(1) = 0.0  ! Below surface
+        rt_tndcy(1) = 0.0     ! Below surface
 
         if (present( sclr_tndcy )) sclr_tndcy(:,SCLR_THETA)=theta_tndcy
         if (present( sclr_tndcy )) sclr_tndcy(:,SCLR_RT) = rt_tndcy
@@ -221,12 +227,13 @@
            endif
 
         enddo
-        wmt(1) = 0.
-        wmt(2) = 0.
 
         wmm = zt2zm( wmt )
 
-        wmm(gr%nnzp) = 0.
+        ! Boundary conditions.
+        wmt(1) = 0.0        ! Below surface
+        wmm(1) = 0.0        ! At surface
+        wmm(gr%nnzp) = 0.0  ! Model top
         
 !       Radiative theta-l tendency is computed interactively elsewhere
 
@@ -359,11 +366,13 @@
               endif
 
            end do
-           wmt(1) = 0.
-           wmt(2) = 0.
 
            wmm = zt2zm( wmt )
-           wmm(gr%nnzp) = 0.
+
+           ! Boundary conditions.
+           wmt(1) = 0.0        ! Below surface
+           wmm(1) = 0.0        ! At surface
+           wmm(gr%nnzp) = 0.0  ! Model top
         
 !          theta-l tendency
 
@@ -392,6 +401,10 @@
               endif
 
            end do
+
+           ! Boundary conditions
+           theta_tndcy(1) = 0.0  ! Below surface
+           rt_tndcy(1) = 0.0     ! Below surface
 
         end if
 
@@ -933,11 +946,13 @@
         do i=2,gr%nnzp
            wmt(i) = - lsdiv * gr%zt(i)
         end do
-        wmt(1) = 0.
-        wmt(2) = 0.
 
         wmm = zt2zm( wmt )
-        wmm(gr%nnzp) = 0.
+
+        ! Boundary conditions.
+        wmt(1) = 0.0        ! Below surface
+        wmm(1) = 0.0        ! At surface
+        wmm(gr%nnzp) = 0.0  ! Model top
         
 !       theta-l radiative tendency
 
@@ -1032,12 +1047,14 @@
         DO k = 2, gr%nnzp, 1
            wmt(k) = -ls_div * gr%zt(k)
         ENDDO
-        wmt(1) = 0.0
-        wmt(2) = 0.0
 
         wmm = zt2zm( wmt )
-        wmm(gr%nnzp) = 0.0
 
+        ! Boundary conditions.
+        wmt(1) = 0.0        ! Below surface
+        wmm(1) = 0.0        ! At surface
+        wmm(gr%nnzp) = 0.0  ! Model top
+        
         ! Radiation
 
 !       Compute liquid water path from top of the model
@@ -1309,11 +1326,12 @@
 
         enddo
 
-        wmt(1) = 0.
-        wmt(2) = 0.
-
         wmm = zt2zm( wmt )
-        wmm(gr%nnzp) = 0.
+
+        ! Boundary conditions.
+        wmt(1) = 0.0        ! Below surface
+        wmm(1) = 0.0        ! At surface
+        wmm(gr%nnzp) = 0.0  ! Model top
         
 !       Radiative theta-l tendency
 

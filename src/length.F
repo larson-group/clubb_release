@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------------
-! $Id: length.F,v 1.9 2005-08-07 00:48:21 griffinb Exp $
+! $Id: length.F,v 1.10 2005-08-21 19:36:11 griffinb Exp $
 ! subroutine length( )
 
 ! Larson's 5th moist, nonlocal length scale
@@ -73,7 +73,7 @@
         lup_max_alt = 0.
         do i=2,gr%nnzp
 
-          tke_i = 0.5 * ( em(i-1) + em(i) )        ! tke on thermo level
+          tke_i = zm2zt( em, i )                   ! tke on thermo level
 
           lup(i) = zlmin
           j = i + 1
@@ -145,7 +145,7 @@
         ldown_min_alt = gr%zt(gr%nnzp)
         do i=gr%nnzp,2,-1
 
-          tke_i = 0.5 * ( em(i-1) + em(i) )        ! tke on thermo level
+          tke_i = zm2zt( em, i )                   ! tke on thermo level
 
           ldown(i) = zlmin
           j = i - 1

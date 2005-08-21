@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.40 2005-08-19 17:03:59 dschanen Exp $
+! $Id: hoc.F,v 1.41 2005-08-21 19:36:10 griffinb Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -273,7 +273,7 @@
 
 !      Setup grid
 
-       call gridsetup( nzmax, deltaz, runtype )
+       call gridsetup( nzmax, deltaz )
 
        time = time_initial
        spunup  = .false.
@@ -500,7 +500,7 @@
 
 !      Setup grid
 
-       call gridsetup( nzmax, deltaz, runtype )
+       call gridsetup( nzmax, deltaz )
  
        call hoc_initialize( thlm, rtm, um, vm, ug, vg, wp2,
      .                      rcm, wmt, wmm,
@@ -725,7 +725,7 @@
             if ( gr%zm(k) < 700. ) then
                em(k) = 1.
             else
-               em(k) = 0.
+               em(k) = emin
             end if
           enddo
           em(1) = em(2)
@@ -743,7 +743,7 @@
             if ( gr%zm(k) < 800. ) then
               em(k) = 0.5
             else
-              em(k) = 0.
+              em(k) = emin
             end if
           enddo
           em(1) = em(2)
@@ -757,10 +757,11 @@
 
           wp2 = 2.0 / 3.0 * em
 
-      ! Brian for Nov. 11 altocumulus case.
-          case ( "nov11_altocu" )
-            em = 1.0
-            wp2 = (2.0/3.0) * em
+        ! Brian for Nov. 11 altocumulus case.
+        case ( "nov11_altocu" )
+          em = 1.0
+
+          wp2 = (2.0/3.0) * em
 
         end select
 
@@ -773,24 +774,24 @@
 
 !       dissipation time
 
-        tmp1 = sqrt( zm2zt( em ) )
-        taut = min( Lscale / tmp1, taumax )
+        tmp1 = SQRT( MAX( emin, zm2zt( em ) ) )
+        taut = MIN( Lscale / tmp1, taumax )
+        taum = MIN( ( zt2zm( Lscale ) / SQRT( em ) ), taumax )
 
 !       modification to damp noise in stable region
 
         do k=1,gr%nnzp
           if ( wp2(k) <= 0.005 ) then
             taut(k) = taumin
+            taum(k) = taumin
           endif
         enddo
-
-        taum = zt2zm( taut )
 
 !       eddy diffusivity coefficient
 !       c_K is 0.548 usually (Duynkerke and Driedonks 1987)
 
         Kht = c_K * Lscale * tmp1
-        Khm = zt2zm( Kht )
+        Khm = c_K * zt2zm( Lscale ) * SQRT( em )
 
 !       surface values of second order moments
 
@@ -1154,6 +1155,7 @@
      .              + 0.01 * wtol * rttol ) )**2 ),
      .       1.0      ) )
 
+!       Sct = MAX( 0.0, zm2zt(Scm) )
        Sct = zm2zt(Scm)
 
 !      Call closure scheme
@@ -1207,14 +1209,17 @@
        enddo ! i = 1, sclrm_dimension
 #endif SCALARS
 
-       do k = 2, gr%nnzp - 1
-           call pdf_closure_new( p(k), exner(k), wmt(k), zm2zt(wp2, k), 
-     .                           wp3(k), Sct(k), rtm(k), zm2zt(rtp2, k),
-     .                           zm2zt( wprtp, k ), thlm(k), 
-     .                           zm2zt( thlp2, k ), zm2zt( wpthlp, k ),
+       do k = 2, gr%nnzp, 1
+           call pdf_closure_new( p(k), exner(k),
+     .                           wmt(k), zm2zt(wp2, k), wp3(k), Sct(k),
+     .                           rtm(k), zm2zt(rtp2, k), 
+     .                           zm2zt( wprtp, k ),
+     .                           thlm(k), zm2zt( thlp2, k ),
+     .                           zm2zt( wpthlp, k ),
+     .                           zm2zt(rtpthlp, k),
      .                           wp4(k), wprtp2(k), wp2rtp(k),
      .                           wpthlp2(k), wp2thlp(k), 
-     .                           zm2zt(rtpthlp, k), wprtpthlp(k),
+     .                           wprtpthlp(k),
      .                           cf(k), rcm(k), wpthvp(k), wp2thvp(k), 
      .                           rtpthvp(k), thlpthvp(k),
      .                           wprcp(k), wp2rcp(k),
@@ -1248,16 +1253,33 @@
        sclrpthvp(1,SCLR_THETA) = sclrpthlp(1,SCLR_THETA)
 #endif SCALARS
 
-!      Interpolate variables back to m grid
-       wp4         = zt2zm( wp4 )
-       wpthvp      = zt2zm( wpthvp )
-       wpthvp(1)   = wpthlp( 1 )
-       thlpthvp    = zt2zm( thlpthvp )
-       thlpthvp(1) = thlp2( 1 )
-       rtpthvp     = zt2zm( rtpthvp )
-       wprcp       = zt2zm( wprcp )
-       rtprcp      = zt2zm( rtprcp )
-       thlprcp     = zt2zm( thlprcp )
+!      Interpolate momentum variables back to momentum grid.
+!      Since top momentum level is higher than top thermo level,
+!      set variables at top momentum level to 0.
+
+       wp4               = zt2zm( wp4 )
+       wp4(gr%nnzp)      = 0.0
+       wpthvp            = zt2zm( wpthvp )
+       wpthvp(gr%nnzp)   = 0.0
+       thlpthvp          = zt2zm( thlpthvp )
+       thlpthvp(gr%nnzp) = 0.0
+       rtpthvp           = zt2zm( rtpthvp )
+       rtpthvp(gr%nnzp)  = 0.0
+       wprcp             = zt2zm( wprcp )
+       wprcp(gr%nnzp)    = 0.0
+       rtprcp            = zt2zm( rtprcp )
+       rtprcp(gr%nnzp)   = 0.0
+       thlprcp           = zt2zm( thlprcp )
+       thlprcp           = 0.0
+#ifdef SCALARS
+!      Interpolate passive scalars back onto the m grid
+       do i = 1, sclrm_dimension
+          sclrpthvp(:,i)       = zt2zm( sclrpthvp(:,i) )
+          sclrpthvp(gr%nnzp,i) = 0.0
+          sclrprcp(:,i)        = zt2zm( sclrprcp(:,i) )
+          sclrprcp(gr%nnzp,i)  = 0.0
+       enddo ! i=1, sclrm_dimension
+#endif SCALARS
 
 !      Alternate approach for lower wp4 boundary condition:
 !      call pdf scheme at the 1st momentum level, zm(1)
@@ -1273,10 +1295,10 @@
      .        wmm(1), wp2(1), zt2zm( wp3, 1 ), Scm(1),
      .        zt2zm( rtm, 1 ), rtp2(1), wprtp(1),
      .        zt2zm( thlm, 1 ), thlp2(1), wpthlp(1),
+     .        rtpthlp(1),
      .        wp4(1),
      .        wprtp2(1), wp2rtp(1),
      .        wpthlp2(1), wp2thlp(1),
-     .        rtpthlp(1),
      .        wprtpthlp(1),
      .        cf(1), rcm(1),
      .        wpthvp(1), wp2thvp(1), 
@@ -1295,14 +1317,12 @@
 #endif SCALARS
      .      )
 
-       wp4(gr%nnzp)      = 0.
-       wpthvp(gr%nnzp)   = 0.
+!      Set other specific boundary conditions.
+       wpthvp(1)         = wpthlp( 1 )
+       thlpthvp(1)       = thlp2( 1 )
        wp2thvp(gr%nnzp)  = 0.
-       rtpthvp(gr%nnzp)  = 0.
-       thlpthvp(gr%nnzp) = 0.
-
 #ifdef SCALARS
-       sclrpthvp(gr%nnzp,:) = 0.
+       sclrpthvp(1,SCLR_THETA) = sclrpthlp(1,SCLR_THETA)
 #endif SCALARS
 
 !      Compute thvm
@@ -1320,33 +1340,34 @@
 
 !      Dissipation time
 
-       tmp1 = sqrt( zm2zt( em ) )
-       taut = min( Lscale / tmp1, taumax )
+       tmp1 = SQRT( MAX( emin, zm2zt( em ) ) )
+       taut = MIN( Lscale / tmp1, taumax )
+       taum = MIN( ( zt2zm( Lscale ) / SQRT( em ) ), taumax )
 
 !      Modification to damp noise in stable region
        do k = 1, gr%nnzp
          if ( wp2(k) <= 0.005 ) then
            taut(k) = taumin
+           taum(k) = taumin
          endif
        enddo
 !------------>For DYCOMS, we used this portion of experimental code below
 !             instead of a call to length
-
+!
 !              call tau(thlm,thvm,rtm,rcm,cf,p,exner,taut)
+!              taum = zt2zm( taut )
 !
 !              Lscale = taut * tmp1
 !              Lscale(1) = Lscale(2)
 !              Lscale(gr%nnzp) = Lscale(gr%nnzp-1)
-
+!
 !<------------end of DYCOMS code
-
-       taum = zt2zm( taut )
 
 !      Eddy diffusivity coefficient
 !      c_K is 0.548 usually (Duynkerke and Driedonks 1987)
 
        Kht = c_K * Lscale * tmp1
-       Khm = zt2zm( Kht )
+       Khm = c_K * zt2zm( Lscale ) * SQRT( em )
 
 !      call Khairoutdinov and Kogan (2000) scheme for rain microphysics.
 
@@ -1498,8 +1519,12 @@
      . = - wmt * ddzm( zt2zm( um ) )
      .   + fcor * ( vm - vg )
        call update_wind( um, umt, upwp(1), Khm, dtmain, upwp, isValid)
-       um(1)       = 2. * um(2) - um(3)
-       um(gr%nnzp) = 2. * um(gr%nnzp-1) - um(gr%nnzp-2 )
+       um(1)       = ( ( um(3)-um(2) )/( gr%zt(3)-gr%zt(2) ) )
+     .              * ( gr%zt(1)-gr%zt(2) ) + um(2)
+       um(gr%nnzp) = ( ( um(gr%nnzp-1)-um(gr%nnzp-2) )
+     .                /( gr%zt(gr%nnzp-1)-gr%zt(gr%nnzp-2) ) )
+     .              * ( gr%zt(gr%nnzp)-gr%zt(gr%nnzp-1) )
+     .               + um(gr%nnzp-1)
 
        if ( .not. isValid ) return
 
@@ -1507,8 +1532,12 @@
      . = - wmt * ddzm( zt2zm( vm ) )
      .   - fcor * ( um - ug )
        call update_wind( vm, vmt, vpwp(1), Khm, dtmain, vpwp, isValid)
-       vm(1)       = 2. * vm(2) - vm(3)
-       vm(gr%nnzp) = 2. * vm(gr%nnzp-1) - vm(gr%nnzp-2 )
+       vm(1)       = ( ( vm(3)-vm(2) )/( gr%zt(3)-gr%zt(2) ) )
+     .              * ( gr%zt(1)-gr%zt(2) ) + vm(2)
+       vm(gr%nnzp) = ( ( vm(gr%nnzp-1)-vm(gr%nnzp-2) )
+     .                /( gr%zt(gr%nnzp-1)-gr%zt(gr%nnzp-2) ) )
+     .              * ( gr%zt(gr%nnzp)-gr%zt(gr%nnzp-1) )
+     .               + vm(gr%nnzp-1)
            
        if ( .not. isValid ) return
 

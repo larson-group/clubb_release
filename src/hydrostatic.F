@@ -55,11 +55,10 @@
            rhot(k) = p(k) / ( R * thvm(k) * exner(k) )
         end do
 
-! Interpolate density back to mementum grid
+! Interpolate density back to momentum grid
 
         rhom = zt2zm( rhot )
         rhom(1) = p(1) / ( R * thvm(1) * exner(1) )
-        rhom(gr%nnzp) = 1.5*rhot(gr%nnzp) - 0.5*rhot(gr%nnzp-1)
 
         return
         end subroutine hydrostatic

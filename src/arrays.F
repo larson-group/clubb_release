@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: arrays.F,v 1.19 2005-08-17 22:33:58 dschanen Exp $
+! $Id: arrays.F,v 1.20 2005-08-21 19:36:10 griffinb Exp $
 
 ! This module contains definitions of all prognostic and diagnostic
 ! arrays used in the single column model, as well as subroutines
@@ -644,7 +644,7 @@ c Diagnostic variables
         Kht      = 0.
         Khm      = 0.
 
-        em       = 0.
+        em       = emin
         Lscale   = 0.
         lup      = 0.
         ldown    = 0.
