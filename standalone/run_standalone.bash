@@ -18,7 +18,7 @@
 # RUN_CASE=fire 
 # RUN_CASE=nov11_altocu
 # RUN_CASE=wangara  
-# RUN_CASE=20050730_1131
+# RUN_CASE=20050821_1218
 #######################################################################
 # Check for necessary namelists.  If files exist, then
 # copy them over to the general input files.

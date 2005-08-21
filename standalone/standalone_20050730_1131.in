@@ -1,7 +1,10 @@
  ! Parameter file ../standalone/standalone_20050730_1131.in         
  ! This is the file which contains the tuned parameters for the
  ! DYCOMS2 RF02 case which were used to get the results that
- ! were submitted.  Brian.
+ ! were submitted.  This set of parameters coincides with
+ ! the COAMPS LES with a C_evap of 0.86/5.0 and an initial
+ ! drop radius of 28.0 um.  It matches well with COAMPS results.
+ ! Brian.
  &model
  run_file  = "../tune/dycoms2_rf02_d_hoc.in"
  stdout   = .true.
