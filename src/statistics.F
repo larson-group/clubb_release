@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.17 2005-08-22 00:23:23 griffinb Exp $
+!  $Id: statistics.F,v 1.18 2005-08-22 00:35:47 griffinb Exp $
 
 !  module stats_type
 !  contains:
@@ -3026,8 +3026,9 @@ c     -----------------------------------------------------------------
             k = k + 1
           end do
 
-          if ( k < gr%nnzp) then
+!          if ( k < gr%nnzp) then
 !            sfc%x(1,izb) = sfc%x(1,izb) + gr%zt(k)
+          if ( k > 1 .AND. k < gr%nnzp) then
             sfc%x(1,izb) = sfc%x(1,izb) + (                     ! Use linear interpolation
      .         ( ( 1.0E-6 - rcm(k-1) )/( rcm(k) - rcm(k-1) ) )  ! to find the exact height
      .        * ( gr%zt(k) - gr%zt(k-1) ) + gr%zt(k-1)          ! of the 1.0E-6 kg/kg level.
