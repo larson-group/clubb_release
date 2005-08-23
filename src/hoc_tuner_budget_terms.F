@@ -1,5 +1,6 @@
 !-----------------------------------------------------------------------
-!  $Id: hoc_tuner_budget_terms.F,v 1.6 2005-08-19 17:02:32 dschanen Exp $
+!  $Id: hoc_tuner_budget_terms.F,v 1.7 2005-08-23 21:11:10 dschanen Exp $
+
 ! PROGRAM hoc_tuner_budget_terms
 
 ! Attempts to tune the constants of the HOC model to best fit the

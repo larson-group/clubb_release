@@ -1,5 +1,8 @@
 !------------------------------------------------------------------------
-! subroutine timestep_wp23( )
+! $Id: wp23.F,v 1.6 2005-08-23 21:11:10 dschanen Exp $
+
+! SUBROUTINE timestep_wp23( )
+!  Advance wp2 and wp3 one timestep
 !------------------------------------------------------------------------
         subroutine timestep_wp23
      .             (dt, Lscale, taum, taut, Sc, a, Khm, wmt, wmm,

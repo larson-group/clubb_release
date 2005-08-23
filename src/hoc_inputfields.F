@@ -1,4 +1,6 @@
 !-----------------------------------------------------------------------
+! $Id: hoc_inputfields.F,v 1.6 2005-08-23 21:11:10 dschanen Exp $
+
 !  Program HOC_INPUTFIELDS
  
 !  This is essentially a minimalist frontend for the hoc subroutine

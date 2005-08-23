@@ -1,3 +1,4 @@
+c $Id: banbks.F,v 1.3 2005-08-23 21:11:10 dschanen Exp $
       SUBROUTINE banbks(a,n,m1,m2,np,mp,al,mpl,indx,b)
       INTEGER m1,m2,mp,mpl,n,np,indx(n)
       REAL a(np,mp),al(np,mpl),b(n)

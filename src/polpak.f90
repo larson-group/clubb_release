@@ -1,4 +1,6 @@
 !------------------------------------------------------------------------------
+! $Id: polpak.f90,v 1.6 2005-08-23 21:11:10 dschanen Exp $
+
 !    A collection a well-written functions and subroutines
 
 !    Code compiled and distributed by John Burkardt 

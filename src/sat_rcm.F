@@ -1,3 +1,4 @@
+! $Id: sat_rcm.F,v 1.3 2005-08-23 21:11:10 dschanen Exp $        
         ! This function was created by Brian Griffin.
         ! If you have information about your initial profile in thlm and rtm,
         ! and your profile is saturated at some point, you need to use an

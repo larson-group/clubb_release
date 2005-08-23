@@ -1,4 +1,6 @@
 !------------------------------------------------------------------------
+! $Id: grid.F,v 1.5 2005-08-23 21:11:10 dschanen Exp $
+
 ! Definition of a grid class and associated functions
 !
 ! The grid specification is as follows:

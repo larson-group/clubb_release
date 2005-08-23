@@ -1,4 +1,6 @@
 !-------------------------------------------------------------------------
+! $Id: rsat.F,v 1.3 2005-08-23 21:11:10 dschanen Exp $
+
 ! real function rstat( )
 
 ! Used to compute the saturation mixing ratio. Formula

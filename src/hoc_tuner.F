@@ -1,4 +1,6 @@
 !----------------------------------------------------------------------
+! $Id: hoc_tuner.F,v 1.8 2005-08-23 21:11:10 dschanen Exp $
+
 !   HOC_TUNER.F
 !   ``Tunes" constants in hoc so that the output matches LES output.
 !   Use amebsa.f90 to calculate the min of (f_les - f_hoc)^2

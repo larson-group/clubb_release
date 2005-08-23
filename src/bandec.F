@@ -1,3 +1,4 @@
+c $Id: bandec.F,v 1.2 2005-08-23 21:11:10 dschanen Exp $
       SUBROUTINE bandec(a,n,m1,m2,np,mp,al,mpl,indx,d,isValid )
       INTEGER m1,m2,mp,mpl,n,np,indx(n)
       REAL d,a(np,mp),al(np,mpl),TINY

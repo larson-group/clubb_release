@@ -1,3 +1,4 @@
+! $Id: gradsaverage.F,v 1.5 2005-08-23 21:11:10 dschanen Exp $
       module grads_common
 
       contains

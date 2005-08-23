@@ -1,3 +1,5 @@
+! $Id: erf.F,v 1.2 2005-08-23 21:11:10 dschanen Exp $
+
       FUNCTION erf(x)
       REAL erf,x
 CU    USES gammp

@@ -1,5 +1,8 @@
 !-----------------------------------------------------------------------
+! $Id: inputfields.F,v 1.6 2005-08-23 21:11:10 dschanen Exp $
+
 ! Module inputfields
+
 !  This exists because I wanted to keep the grads_reader code 
 !  generalized and bypass having to pass the datafile as a parameter,
 !  since there may be situations where the fields are be calculated 
