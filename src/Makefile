@@ -1,37 +1,43 @@
-# $Id: Makefile,v 1.33 2005-08-15 21:17:07 dschanen Exp $
+# $Id: Makefile,v 1.34 2005-08-23 21:10:36 dschanen Exp $
 # Uses GNU make.  BSD make doesn't like the LH/*.F syntax.
 
 # Compiler invocation
 
-FC=pgf90 # Portland Group PGF90
-#FC=g95 # G95
-#FC=f95 # Sun Studio / Forte
+ FC=pgf90 # Portland Group PGF90
+#FC=g95 #   G95
+#FC=f95 #   Sun Studio / Forte
 #FC=ifort # Intel Fortran
 
-
-DEBUG=-g -C#-Ktrap=inv,unf -Minform=inform 
+# Debugging
+# Sometimes it is helpful to turn on floating-point trapping for the standalone
+#  program, but this will not work with the tuner.
+# In PGF: -Ktrap=inv,unf
+# In Sun f95: remove the reference to ftrap in optimize
+# In g95: setenv G95_FPU_INVALID TRUE or export G95_FPU_INVALID=TRUE
+# In ifort: -fpe=0
+# The usual options:
+ DEBUG=-g -C# pgf90, g95 & Sun
+#DEBUG=-g -fpe=0#    ifort 
 
 # Optimization (assuming pentium4)
 # Sun fortran currently appears to crash if statistics.F is done with 
 #   optimization ( due to a bug in ube I think)
 
-#OPTIMIZE=-O2 -msse2 -march=pentium4# g95
+#OPTIMIZE=-O2 -msse2 -march=pentium4#    g95
 #OPTIMIZE=-xtarget=opteron -ftrap=%none# Sun Studio x86/Opteron
-#OPTIMIZE=-O2 -xN #Intel complier, P4 w/out SSE3
-#OPTIMIZE=-O2 -tp p7 -Kieee -r8# PGF90 w/ double precision reals.
-OPTIMIZE=-O2 -tp p7 -Kieee# PGF90, P4
+#OPTIMIZE=-xN#                       Intel complier, P4 w/out SSE3
+#OPTIMIZE=-O2 -tp p7 -Kieee -r8#         PGF90 w/ double precision reals.
+ OPTIMIZE=-O2 -tp p7 -Kieee#             PGF90, P4
 
 # Linking Flags
-LDFLAGS = # use -s to strip
+ LDFLAGS=# use -s to strip
 
 # Compiler flags
 #   -DSTATS enables statistics
 #   -DSCALARS enables passive scalars
-#   -DIFORT -DPGF the non-standard record lengths in binary I/O require the 
-#    specification of the compiler;  PGF90 defines records to 1 byte, Intel's ifort to 4 bytes.
 
-FCFLAGS = $(OPTIMIZE) $(DEBUG) -DSTATS -DPGF
-#FCFLAGS = $(OPTIMIZE) $(DEBUG) -DSTATS -DSCALARS
+ FCFLAGS=$(OPTIMIZE) $(DEBUG) -DSTATS
+#FCFLAGS=$(OPTIMIZE) $(DEBUG) -DSTATS -DSCALARS
 
 
 # Object files
