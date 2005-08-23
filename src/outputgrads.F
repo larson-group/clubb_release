@@ -1,4 +1,6 @@
 c------------------------------------------------------------------------
+c $Id: outputgrads.F,v 1.4 2005-08-23 20:05:39 dschanen Exp $
+c
 c This module contains structure and subroutine definitions to
 c create GrADS output data files for one dimensional arrays.
 c
@@ -19,12 +21,10 @@ c                                       many times as necessary
 c
 c Chris Golaz, updated 2/18/2003
 
-#ifdef IFORT
+#ifdef __INTEL_COMPILER=900
 #define F_RECL 1
 #else
-#ifdef PGF
 #define F_RECL 4
-#endif
 #endif
 
         module outputfile_class

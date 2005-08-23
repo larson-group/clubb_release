@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputgrads.F,v 1.7 2005-08-15 21:17:07 dschanen Exp $
+! $Id: inputgrads.F,v 1.8 2005-08-23 20:05:39 dschanen Exp $
 
 ! This module contains structure and subroutine definitions to
 ! open a GrADS data file a read it.
@@ -15,12 +15,10 @@
 !  * Overloaded subroutine get_var to allow for 8 byte real output.
 !  * Added preprocesing for RECL 
 !-----------------------------------------------------------------------
-#ifdef IFORT
+#ifdef __INTEL_COMPILER=900
 #define F_RECL 1
 #else
-#ifdef PGF
 #define F_RECL 4
-#endif
 #endif
         module inputfile_class
 
