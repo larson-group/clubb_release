@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.41 2005-08-21 19:36:10 griffinb Exp $
+! $Id: hoc.F,v 1.42 2005-08-23 21:10:08 dschanen Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -761,7 +761,7 @@
         case ( "nov11_altocu" )
           em = 1.0
 
-          wp2 = (2.0/3.0) * em
+          wp2 = 2.0 / 3.0  * em
 
         end select
 
@@ -1146,6 +1146,19 @@
 #endif SCALARS
 
 
+!      Diagnose variances
+
+       call diag_var( taum, wmm, rtm, wprtp, 
+     .                thlm, wpthlp, wp2, wp3, Scm, 
+     .                rtp2, thlp2, rtpthlp,
+     .                .false., dtclosure, isValid ! diag_var needs to be modified if liter=.true.
+#ifdef SCALARS
+     .                ,sclrm, wpsclrp, sclrp2,    ! optional vars
+     .                sclrprtp, sclrpthlp         !   "       "
+#endif SCALARS
+     .               )
+       if ( .not. isValid ) return
+
 !      Compute Sc with new formula from Vince
        Scm = gamma_coef * ( 1.0 - 
      .       min(
@@ -1341,8 +1354,13 @@
 !      Dissipation time
 
        tmp1 = SQRT( MAX( emin, zm2zt( em ) ) )
+!       print *, "em", em
+!       print *, "Lscale", Lscale
+!       print *, "tmp1", tmp1
        taut = MIN( Lscale / tmp1, taumax )
-       taum = MIN( ( zt2zm( Lscale ) / SQRT( em ) ), taumax )
+!       print *, "Lm", zt2zm( Lscale )
+       taum = MIN( ( zt2zm( Lscale ) / SQRT( max(em, emin) ) ), taumax )
+!       taum = zt2zm( taut )
 
 !      Modification to damp noise in stable region
        do k = 1, gr%nnzp
@@ -1367,7 +1385,8 @@
 !      c_K is 0.548 usually (Duynkerke and Driedonks 1987)
 
        Kht = c_K * Lscale * tmp1
-       Khm = c_K * zt2zm( Lscale ) * SQRT( em )
+       Khm = c_K * zt2zm( Lscale ) * SQRT( max( em, emin ) )
+!       Khm = zt2zm( Kht )
 
 !      call Khairoutdinov and Kogan (2000) scheme for rain microphysics.
 
@@ -1461,17 +1480,6 @@
           time = time_initial + mi * dtmain
        ENDIF
 
-!      Diagnose variances
-       call diag_var( taum, wmm, rtm, wprtp, 
-     .                thlm, wpthlp, wp2, wp3, Scm, 
-     .                rtp2, thlp2, rtpthlp,
-     .                .false., dtclosure, isValid ! diag_var needs to be modified if liter=.true.
-#ifdef SCALARS
-     .                ,sclrm, wpsclrp, sclrp2,    ! optional vars
-     .                sclrprtp, sclrpthlp         !   "       "
-#endif SCALARS
-     .               )
-       if ( .not. isValid ) return
 
 !      Advance rtm/wprtp and thlm/wpthlp one time step
 
