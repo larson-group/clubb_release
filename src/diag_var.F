@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.10 2005-08-02 17:32:39 dschanen Exp $
+! $Id: diag_var.F,v 1.11 2005-08-23 21:08:39 dschanen Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -9,6 +9,8 @@
         implicit none
 
         public diag_var
+
+        private calc_aa, calc_bb, calc_cc, calc_dd_var, calc_dd_covar
 
         contains
 !-----------------------------------------------------------------------
@@ -22,32 +24,33 @@
      .                       sclrm, wpsclrp, sclrp2,        ! optional
      .                       sclrprtp, sclrpthlp )          ! optional
 
-       use constants
-       use grid_class
+        use constants
+        use grid_class
 #ifdef STATS
-       use statistics
+        use statistics
 #endif
        
-       implicit none
+        implicit none
 
 ! Input variables
 
-       real, intent(in) :: tau(1:gr%nnzp)
-       real, intent(in) :: wmm(1:gr%nnzp)
-       real, intent(in) :: rtm(1:gr%nnzp)
-       real, intent(in) :: wprtp(1:gr%nnzp)
-       real, intent(in) :: thlm(1:gr%nnzp)
-       real, intent(in) :: wpthlp(1:gr%nnzp)
-       real, intent(in) :: wp2(1:gr%nnzp)
-       real, intent(in) :: wp3(1:gr%nnzp)
-       real, intent(in) :: Sc(1:gr%nnzp)
+        real, intent(in) :: tau(1:gr%nnzp)
+        real, intent(in) :: wmm(1:gr%nnzp)
+        real, intent(in) :: rtm(1:gr%nnzp)
+        real, intent(in) :: wprtp(1:gr%nnzp)
+        real, intent(in) :: thlm(1:gr%nnzp)
+        real, intent(in) :: wpthlp(1:gr%nnzp)
+        real, intent(in) :: wp2(1:gr%nnzp)
+        real, intent(in) :: wp3(1:gr%nnzp)
+        real, intent(in) :: Sc(1:gr%nnzp)
 
-       logical, intent(in) :: liter
-       real, intent(in)    :: dt
+        logical, intent(in) :: liter
+        real, intent(in)    :: dt
 
 
 ! Output variables
-!  note: if liter=.true., then these would need to have an attrib. of type (inout)
+!  note: if liter=.true., 
+!  then these would need to have an attrib. of type (inout)
 
        real, intent(out) :: rtp2(1:gr%nnzp)
        real, intent(out) :: thlp2(1:gr%nnzp)
@@ -106,49 +109,20 @@ c Solve for rtp2
 
 c      prepare tridiagonal system
 
-       do k=1,gr%nnzp
-
-         km1   = max(k-1,1)
-         kp1   = min(k+1,gr%nnzp)
-
-         aa(k) = - 0.5 * a1(k)
-     .                 * (2./3.) * beta
-     .                 * gr%dzm(k)
-     .                 * wp3(k)/max(wp2(km1)+wp2(k),2.0*eps)
-     .           + 0.5 * wmm(k) * gr%dzm(k)
-     .           - nu2 * gr%dzm(k) * gr%dzt(k)
-
-         bb(k) = C2rt / tau(k)
-     .           + 0.5 * a1(k)
-     .                 * (2./3.) * beta
-     .                 * gr%dzm(k)
-     .                 * ( wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
-     .                     - wp3(k)/max(wp2(km1)+wp2(k),2.0*eps) )
-     .           + nu2 * gr%dzm(k)*( gr%dzt(kp1) + gr%dzt(k) )
-         if (liter) bb(k) = bb(k) + 1.0/dt
-
-         cc(k) =   0.5 * a1(k)
-     .                 * (2./3.) * beta
-     .                 * gr%dzm(k)
-     .                 * wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
-     .           - 0.5 * wmm(k) * gr%dzm(k)
-     .           - nu2 * gr%dzm(k) * gr%dzt(kp1)
-
-         dd(k) = - 2.0 * wprtp(k) * gr%dzm(k) * (rtm(kp1)-rtm(k))
-     .           - 0.5 * a2(k)
-     .                 * (2./3.) * ( 2 + (1-beta) )
-     .                 * gr%dzm(k)
-     .                 * (  wp3(kp1)
-     .                      * (wprtp(k)+wprtp(kp1))**2
-     .                      / max(wp2(k)+wp2(kp1),2.0*eps)**2
-     .                    - wp3(k)
-     .                      * (wprtp(km1)+wprtp(k))**2
-     .                      / max(wp2(km1)+wp2(k),2.0*eps)**2
-     .                   )
-         if (liter) dd(k) = dd(k) + 1.0/dt*rtp2(k)
+       aa = calc_aa( a1, wp2, wp3, wmm, nu2, beta, eps )
+       bb = calc_bb( a1, bb, wp2, wp3, tau, 
+     .               C2rt, dt, nu2, beta, eps, liter )
+       cc = calc_cc( a1, wp2, wp3, wmm, nu2, beta, eps )
+       dd = calc_dd_var( a2, dd, wp2, wp3, wprtp, rtm, 
+     .                   rtp2, dt, beta, eps, liter )
 
 #ifdef STATS
-         if (lstats_samp) then
+       if (lstats_samp) then
+
+         do k=1, gr%nnzp
+
+           km1   = max(k-1,1)
+           kp1   = min(k+1,gr%nnzp)
 
            if ( irtp2_dp1 * ithlp2_dp1 * irtpthlp_dp1 > 0 ) then
              zmscr01(k) = - C2rt / tau(k)
@@ -202,10 +176,10 @@ c      prepare tridiagonal system
      .                 )
            endif
 
-         endif
-#endif
+         enddo
 
-       enddo
+       endif
+#endif
        
 c      solve tridiagonal system
        call tridag( aa, bb, cc, dd, rtp2, gr%nnzp, isValid )
@@ -214,10 +188,11 @@ c      solve tridiagonal system
           print *, "diag_var: rtp2 tridag failed"
           return
        endif
+
 #ifdef STATS
        if (lstats_samp) then
 
-          do k=1,gr%nnzp
+          do k=1, gr%nnzp
 
            km1 = max(k-1,1)
            kp1 = min(k+1,gr%nnzp)
@@ -270,7 +245,7 @@ c      solve tridiagonal system
 
 c      clip small and negative values
 
-       do k=1,gr%nnzp
+       do k=1, gr%nnzp
 
          if ( wp2(k) >= wtol*wtol ) then
            rtp2(k) 
@@ -295,35 +270,18 @@ c Solve for thlp2
 c      prepare tridiagonal system
 c      note: we can reuse the same aa & cc arrays
 
-       do k=1,gr%nnzp
-
-         km1 = max(k-1,1)
-         kp1 = min(k+1,gr%nnzp)
-
-         bb(k) = C2thl / tau(k)
-     .           + 0.5 * a1(k)
-     .                 * (2./3.) * beta
-     .                 * gr%dzm(k)
-     .                 * ( wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
-     .                     - wp3(k)/max(wp2(km1)+wp2(k),2.0*eps) )
-     .           + nu2 * gr%dzm(k)*( gr%dzt(kp1) + gr%dzt(k) )
-         if (liter) bb(k) = bb(k) + 1.0/dt
-
-         dd(k) = - 2.0 * wpthlp(k) * gr%dzm(k) * (thlm(kp1)-thlm(k))
-     .           - 0.5 * a2(k)
-     .                 * (2./3.) * ( 2 + (1-beta) )
-     .                 * gr%dzm(k)
-     .                 * (  wp3(kp1)
-     .                      * (wpthlp(k)+wpthlp(kp1))**2
-     .                      / max(wp2(k)+wp2(kp1),2.0*eps)**2
-     .                    - wp3(k)
-     .                      * (wpthlp(km1)+wpthlp(k))**2
-     .                      / max(wp2(km1)+wp2(k),2.0*eps)**2
-     .                   )
-         if (liter) dd(k) = dd(k) + 1.0/dt*thlp2(k)
+        bb = calc_bb( a1, bb, wp2, wp3, tau, 
+     .                C2thl, dt, nu2, beta, eps, liter )
+        dd = calc_dd_var( a2, dd, wp2, wp3, wpthlp, thlm, 
+     .                    thlp2, dt, beta, eps, liter )
 
 #ifdef STATS
-         if (lstats_samp) then
+       if (lstats_samp) then
+
+         do k=1,gr%nnzp
+
+           km1 = max(k-1,1)
+           kp1 = min(k+1,gr%nnzp)
 
            if ( ithlp2_ta > 0 ) then
              zm%x(k,ithlp2_ta) 
@@ -340,10 +298,10 @@ c      note: we can reuse the same aa & cc arrays
      .                   )
            endif
 
-         endif
-#endif
+         enddo ! k
 
-       enddo
+       endif
+#endif
        
 c      solve tridiagonal system
        call tridag( aa, bb, cc, dd, thlp2, gr%nnzp, isValid )
@@ -354,9 +312,9 @@ c      solve tridiagonal system
        endif
 
 #ifdef STATS
-         if (lstats_samp) then
+       if (lstats_samp) then
 
-          do k=1,gr%nnzp
+         do k=1, gr%nnzp
 
            km1 = max(k-1,1)
            kp1 = min(k+1,gr%nnzp)
@@ -397,9 +355,9 @@ c      solve tridiagonal system
 
            endif
 
-          enddo
+         enddo ! k
 
-         endif
+       endif
 #endif
 
 #ifdef STATS
@@ -411,7 +369,7 @@ c      solve tridiagonal system
 
 c      clip small and negative values
 
-       do k=1,gr%nnzp
+       do k=1, gr%nnzp
 
          if ( wp2(k) >= wtol*wtol ) then
            thlp2(k) 
@@ -422,7 +380,7 @@ c      clip small and negative values
            thlp2(k) = max( thlp2(k), 0.0 )
          endif
 
-       enddo
+       enddo ! k
 
 #ifdef STATS
        if (lstats_samp .and. ithlp2_cl > 0 ) then
@@ -441,71 +399,47 @@ c      note: we can reuse the same aa, cc arrays
      .   .and. present( sclrp2 ) ) then
 
        do i=1, sclrm_dimension
-       do k=1, gr%nnzp
-         km1 = max(k-1,1)
-         kp1 = min(k+1,gr%nnzp)
 
          if ( i == SCLR_THETA ) then
-           bb(k) = C2thl / tau(k)
-     .             + 0.5 * a1(k)
-     .                   * (2./3.) * beta
-     .                   * gr%dzm(k)
-     .                   * ( wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
-     .                       - wp3(k)/max(wp2(km1)+wp2(k),2.0*eps) )
-     .             + nu2 * gr%dzm(k)*( gr%dzt(kp1) + gr%dzt(k) )
-           if (liter) bb(k) = bb(k) + 1.0/dt
+           bb = calc_bb( a1, bb, wp2, wp3, tau,
+     .                   C2thl, dt, nu2, beta, eps, liter )
          else 
            if ( i == SCLR_RT ) then
-             bb(k) = C2rt / tau(k)
-     .               + 0.5 * a1(k)
-     .                     * (2./3.) * beta
-     .                     * gr%dzm(k)
-     .                     * ( wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
-     .                         - wp3(k)/max(wp2(km1)+wp2(k),2.0*eps) )
-     .               + nu2 * gr%dzm(k)*( gr%dzt(kp1) + gr%dzt(k) )
-             if (liter) bb(k) = bb(k) + 1.0/dt
+           bb = calc_bb( a1, bb, wp2, wp3, tau,
+     .                   C2rt, dt, nu2, beta, eps, liter )
            endif
          endif
 
-         dd(k) = - 2.0 * wpsclrp(k,i) * gr%dzm(k)
-     .                 * ( sclrm(kp1,i) - sclrm(k,i) )
-     .           - 0.5 * a2(k)
-     .                 * (2./3.) * ( 2 + (1-beta) )
-     .                 * gr%dzm(k)
-     .                 * (  wp3(kp1)
-     .                      * (wpsclrp(k,i)+wpsclrp(kp1,i))**2
-     .                      / max(wp2(k)+wp2(kp1),2.0*eps)**2
-     .                    - wp3(k)
-     .                      * (wpsclrp(km1,i)+wpsclrp(k,i))**2
-     .                      / max(wp2(km1)+wp2(k),2.0*eps)**2
-     .                   )
-         if (liter) dd(k) = dd(k) + 1.0/dt*sclrp2(k,i)
+         dd = calc_dd_var( a2, dd, wp2, wp3, wpsclrp(:,i), sclrm(:,i), 
+     .                     sclrp2(:,i), dt, beta, eps, liter )
 
-       enddo ! k=1...nz
-       
-c      solve tridiagonal system
-       call tridag( aa, bb, cc, dd, sclrp2(:,i), gr%nnzp, isValid )
+c        solve tridiagonal system
+         call tridag( aa, bb, cc, dd, sclrp2(:,i), gr%nnzp, isValid )
 
-       if ( .not. isValid ) then
-          print *, "diag_var: sclrp2 tridag failed"
-          return
-       endif
-c      clip small and negative values
-
-       do k=1,gr%nnzp
-
-         if ( wp2(k) >= wtol*wtol ) then
-           sclrp2(k,i) 
-     .     = max( sclrp2(k,i), 
-     .            wpsclrp(k,i)*wpsclrp(k,i)/((1.0-Sc(k))*wp2(k)) + eps,
-     .            sclrtol(i)*sclrtol(i) + eps )
-         else
-           sclrp2(k,i) = max( sclrp2(k,i), 0.0 )
+         if ( .not. isValid ) then
+           print *, "diag_var: sclrp2 tridag failed"
+           return
          endif
 
-       enddo ! k
+c        clip small and negative values
+
+         do k=1,gr%nnzp
+
+           if ( wp2(k) >= wtol*wtol ) then
+             sclrp2(k,i) 
+     .       = max( sclrp2(k,i), 
+     .              wpsclrp(k,i)*wpsclrp(k,i)/((1.0-Sc(k))*wp2(k))+eps,
+     .              sclrtol(i)*sclrtol(i) + eps )
+           else
+             sclrp2(k,i) = max( sclrp2(k,i), 0.0 )
+           endif
+
+         enddo ! k
+
        enddo ! i
-      endif
+
+      endif ! if present( sclrs )
+
 ! %% Debug
 !      sclrp2(:,2) = rtp2
 ! %% Debug
@@ -514,40 +448,22 @@ c Solve for rtpthlp
 
 c      prepare tridiagonal system
 
-       do k=1,gr%nnzp
+       dd = calc_dd_covar( a2, dd, wp2, wp3, wprtp, wpthlp, 
+     .                     rtm, thlm, rtpthlp, 
+     .                     dt, beta, eps, liter ) 
 
-         km1 = max(k-1,1)
-         kp1 = min(k+1,gr%nnzp)
-
-         bb(k) = C2rtthl / tau(k)
-     .           + 0.5 * a1(k)
-     .                 * (2./3.) * beta
-     .                 * gr%dzm(k)
-     .                 * ( wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
-     .                     - wp3(k)/max(wp2(km1)+wp2(k),2.0*eps) )
-     .           + nu2 * gr%dzm(k)*( gr%dzt(kp1) + gr%dzt(k) )
-         if (liter) bb(k) = bb(k) + 1.0/dt
-
-         dd(k) = - wpthlp(k) * gr%dzm(k) * (rtm(kp1)-rtm(k))
-     .           - wprtp(k)  * gr%dzm(k) * (thlm(kp1)-thlm(k))
-     .           - 0.5 * a2(k)
-     .                 * (2./3.) * ( 2 + (1-beta) )
-     .                 * gr%dzm(k)
-     .                 * (  wp3(kp1)
-     .                      * (wprtp(k)+wprtp(kp1))
-     .                      * (wpthlp(k)+wpthlp(kp1))
-     .                      / max(wp2(k)+wp2(kp1),2.0*eps)**2
-     .                    - wp3(k)
-     .                      * (wprtp(km1)+wprtp(k))
-     .                      * (wpthlp(km1)+wpthlp(k))
-     .                      / max(wp2(km1)+wp2(k),2.0*eps)**2
-     .                   )
-         if (liter) dd(k) = dd(k) + 1.0/dt*rtpthlp(k)
+       bb = calc_bb( a1, bb, wp2, wp3, tau, 
+     .               C2rtthl, dt, nu2, beta, eps, liter )
 
 #ifdef STATS
-         if (lstats_samp) then
 
-           if ( irtpthlp_ta > 0 ) then
+       if (lstats_samp) then
+         if ( irtpthlp_ta > 0 ) then
+           do k=1, gr%nnzp
+
+             km1 = max(k-1,1)
+             kp1 = min(k+1,gr%nnzp)
+
              zm%x(k,irtpthlp_ta) 
      .       = zm%x(k,irtpthlp_ta)
      .           - 0.5 * a2(k)
@@ -562,12 +478,10 @@ c      prepare tridiagonal system
      .                      * (wpthlp(km1)+wpthlp(k))
      .                      / max(wp2(km1)+wp2(k),2.0*eps)**2
      .                   )
-           endif
-
+           enddo ! k
          endif
+       endif
 #endif
-
-       enddo
        
 c      solve tridiagonal system
        call tridag( aa, bb, cc, dd, rtpthlp, gr%nnzp, isValid )
@@ -577,9 +491,9 @@ c      solve tridiagonal system
        endif
 
 #ifdef STATS
-         if (lstats_samp) then
+       if (lstats_samp) then
 
-          do k=1,gr%nnzp
+         do k=1, gr%nnzp
 
            km1 = max(k-1,1)
            kp1 = min(k+1,gr%nnzp)
@@ -625,9 +539,9 @@ c      solve tridiagonal system
              zm%n(k,irtpthlp_tp2) = zm%n(k,irtpthlp_tp2) + 1
            endif
 
-          enddo
+         enddo
 
-         endif
+       endif
 #endif
 
 #ifdef STATS
@@ -657,57 +571,29 @@ c Solve for sclrprtp
      .   .and. present( sclrprtp ) ) then
 
 c     prepare tridiagonal system
-        do i=1, sclrm_dimension
-        do k=1, gr%nnzp
-          km1 = max(k-1,1)
-          kp1 = min(k+1,gr%nnzp)
+       do i=1, sclrm_dimension
 
          if ( i == SCLR_THETA ) then
-           bb(k) = C2rtthl / tau(k)
-     .             + 0.5 * a1(k)
-     .                   * (2./3.) * beta
-     .                   * gr%dzm(k)
-     .                   * ( wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
-     .                       - wp3(k)/max(wp2(km1)+wp2(k),2.0*eps) )
-     .             + nu2 * gr%dzm(k)*( gr%dzt(kp1) + gr%dzt(k) )
-           if (liter) bb(k) = bb(k) + 1.0/dt
+           bb = calc_bb( a1, bb, wp2, wp3, tau, 
+     .                   C2rtthl, dt, nu2, beta, eps, liter )
          else 
            if ( i == SCLR_RT ) then
-             bb(k) = C2rt / tau(k)
-     .               + 0.5 * a1(k)
-     .                     * (2./3.) * beta
-     .                     * gr%dzm(k)
-     .                     * ( wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
-     .                         - wp3(k)/max(wp2(km1)+wp2(k),2.0*eps) )
-     .               + nu2 * gr%dzm(k)*( gr%dzt(kp1) + gr%dzt(k) )
-             if (liter) bb(k) = bb(k) + 1.0/dt
+             bb = calc_bb( a1, bb, wp2, wp3, tau, 
+     .                     C2rt, dt, nu2, beta, eps, liter )
            endif
          endif
 
-          dd(k) = - wprtp(k) * gr%dzm(k) * (sclrm(kp1,i)-sclrm(k,i)) 
-     .            - wpsclrp(k,i) * gr%dzm(k) * (rtm(kp1)-rtm(k))
-     .            - 0.5 * a2(k)
-     .                  * (2./3.) * ( 2 + (1-beta) )
-     .                  * gr%dzm(k)
-     .                  * (  wp3(kp1)
-     .                       * (wpsclrp(k,i)+wpsclrp(kp1,i))
-     .                       * (wprtp(k)+wprtp(kp1))
-     .                       / max(wp2(k)+wp2(kp1),2.0*eps)**2
-     .                     - wp3(k)
-     .                       * (wpsclrp(km1,i)+wpsclrp(k,i))
-     .                       * (wprtp(km1)+wprtp(k))
-     .                       / max(wp2(km1)+wp2(k),2.0*eps)**2
-     .                    )
-          if (liter) dd(k) = dd(k) + 1.0/dt*sclrprtp(k,i)
+         dd = calc_dd_covar( a2, dd, wp2, wp3, wprtp, wpsclrp(i,:),
+     .                       rtm, sclrm(i,:), sclrprtp(i,:),
+     .                       dt, beta, eps, liter )
 
-        enddo ! k=1, nz
-       
 c       solve tridiagonal system
-        call tridag( aa, bb, cc, dd, sclrprtp(:,i), gr%nnzp, isValid )
-        if ( .not. isValid ) then
-          print *, "diag_var: sclrprtp tridag failed"
-          return
-        endif 
+         call tridag( aa, bb, cc, dd, sclrprtp(:,i), gr%nnzp, isValid )
+         if ( .not. isValid ) then
+           print *, "diag_var: sclrprtp tridag failed"
+           return
+         endif 
+
        enddo ! i=1, slcrm_dimension
 
 c      clip small and negative values
@@ -732,58 +618,30 @@ c Solve for sclrpthlp
      .   .and. present( sclrpthlp ) ) then
 
 c     prepare tridiagonal system
-        do i=1, sclrm_dimension
-        do k=1, gr%nnzp
-          km1 = max(k-1,1)
-          kp1 = min(k+1,gr%nnzp)
+       do i=1, sclrm_dimension
 
          if ( i == SCLR_THETA ) then
-           bb(k) = C2thl / tau(k)
-     .             + 0.5 * a1(k)
-     .                   * (2./3.) * beta
-     .                   * gr%dzm(k)
-     .                   * ( wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
-     .                       - wp3(k)/max(wp2(km1)+wp2(k),2.0*eps) )
-     .             + nu2 * gr%dzm(k)*( gr%dzt(kp1) + gr%dzt(k) )
-           if (liter) bb(k) = bb(k) + 1.0/dt
+           bb = calc_bb( a1, bb, wp2, wp3, tau, 
+     .                   C2thl, dt, nu2, beta, eps, liter )
          else 
            if ( i == SCLR_RT ) then
-             bb(k) = C2rtthl / tau(k)
-     .               + 0.5 * a1(k)
-     .                     * (2./3.) * beta
-     .                     * gr%dzm(k)
-     .                     * ( wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
-     .                         - wp3(k)/max(wp2(km1)+wp2(k),2.0*eps) )
-     .               + nu2 * gr%dzm(k)*( gr%dzt(kp1) + gr%dzt(k) )
-             if (liter) bb(k) = bb(k) + 1.0/dt
+           bb = calc_bb( a1, bb, wp2, wp3, tau, 
+     .                   C2rtthl, dt, nu2, beta, eps, liter )
            endif
          endif
 
-          dd(k) = - wpthlp(k) * gr%dzm(k) * (sclrm(kp1,i)-sclrm(k,i)) 
-     .            - wpsclrp(k,i) * gr%dzm(k) * (thlm(kp1)-thlm(k))
-     .            - 0.5 * a2(k)
-     .                  * (2./3.) * ( 2 + (1-beta) )
-     .                  * gr%dzm(k)
-     .                  * (  wp3(kp1)
-     .                       * (wpsclrp(k,i)+wpsclrp(kp1,i))
-     .                       * (wpthlp(k)+wpthlp(kp1))
-     .                       / max(wp2(k)+wp2(kp1),2.0*eps)**2
-     .                     - wp3(k)
-     .                       * (wpsclrp(km1,i)+wpsclrp(k,i))
-     .                       * (wpthlp(km1)+wpthlp(k))
-     .                       / max(wp2(km1)+wp2(k),2.0*eps)**2
-     .                    )
-          if (liter) dd(k) = dd(k) + 1.0/dt*sclrpthlp(k,i)
+         dd = calc_dd_covar( a2, dd, wp2, wp3, wpthlp, wpsclrp(i,:),
+     .                       thlm, sclrm(i,:), sclrpthlp(i,:),
+     .                       dt, beta, eps, liter )
 
-        enddo ! k=1, nz
-       
 c       solve tridiagonal system
-        call tridag( aa, bb, cc, dd, sclrpthlp(:,i), gr%nnzp, isValid )
-        if ( .not. isValid ) then
-          print *, "diag_var: sclrpthlp tridag failed"
-          return
-        endif 
-        enddo ! i=1, slcrm_dimension
+         call tridag( aa, bb, cc, dd, sclrpthlp(:,i), gr%nnzp, isValid )
+         if ( .not. isValid ) then
+           print *, "diag_var: sclrpthlp tridag failed"
+           return
+         endif 
+
+       enddo ! i=1, slcrm_dimension
 
 c      clip small and negative values
 !        We don't want to do this generally, only to test that the scalars
@@ -803,5 +661,224 @@ c      clip small and negative values
 
       return
       end subroutine diag_var
+
+!-----------------------------------------------------------------------
+!  FUNCTION calc_aa
+!  This only needs to be calculated once per diag_var call
+!-----------------------------------------------------------------------
+        function calc_aa( a1, wp2, wp3, wmm, nu2, beta, eps )
+        use grid_class
+
+        implicit none
+
+!       Input
+        real, intent(in), dimension(:) :: a1, wp2, wp3, wmm
+
+        real, intent(in) :: beta, nu2, eps
+
+!       Return type
+        real, dimension(gr%nnzp) :: calc_aa
+
+!       Internal
+        integer k, km1, kp1
+
+        do k=1, gr%nnzp
+
+          km1   = max(k-1,1)
+          kp1   = min(k+1, gr%nnzp)
+
+          calc_aa(k) = - 0.5 * a1(k)
+     .                       * (2./3.) * beta
+     .                       * gr%dzm(k)
+     .                       * wp3(k)/max(wp2(km1)+wp2(k),2.0*eps)
+     .                 + 0.5 * wmm(k) * gr%dzm(k)
+     .                 - nu2 * gr%dzm(k) * gr%dzt(k)
+        enddo
+
+        return
+        end function calc_aa
+
+!-----------------------------------------------------------------------
+!  FUNCTION calc_bb
+!  Needs to be re-calculated when C2 is using an rt or thl value
+!-----------------------------------------------------------------------
+        function calc_bb( a1, bb, wp2, wp3, tau,
+     .                    C2x, dt, nu2, beta, eps, liter )
+        use grid_class
+
+        implicit none
+
+!       Input
+        real, intent(in), dimension(:) :: a1, bb, wp2, wp3, tau
+
+        real, intent(in)    :: C2x, dt, beta, nu2, eps
+
+        logical, intent(in) :: liter
+
+!       Return type
+        real, dimension(gr%nnzp) :: calc_bb
+
+!       Internal
+        integer k, km1, kp1
+
+        do k=1, gr%nnzp
+
+          km1 = max(k-1,1)
+          kp1 = min(k+1, gr%nnzp)
+
+          calc_bb(k) = C2x / tau(k)
+     .               + 0.5 * a1(k)
+     .                     * (2./3.) * beta
+     .                     * gr%dzm(k)
+     .                     * ( wp3(kp1)/max(wp2(k)+wp2(kp1), 2.0*eps)
+     .                         - wp3(k)/max(wp2(km1)+wp2(k), 2.0*eps) )
+     .               + nu2 * gr%dzm(k)*( gr%dzt(kp1) + gr%dzt(k) )
+
+          if (liter) calc_bb(k) = bb(k) + 1.0/dt
+
+        enddo
+
+        return
+        end function calc_bb
+
+!-----------------------------------------------------------------------
+!  FUNCTION calc_cc
+!  This only needs to be calculated once per diag_var call
+!-----------------------------------------------------------------------
+        function calc_cc( a1, wp2, wp3, wmm, nu2, beta, eps )
+        use grid_class
+
+        implicit none
+
+!       Input
+        real, intent(in), dimension(:) :: a1, wp2, wp3, wmm
+
+        real, intent(in) :: beta, nu2, eps
+
+!       Return type
+        real, dimension(gr%nnzp) :: calc_cc
+
+!       Internal
+        integer k, km1, kp1
+
+        do k=1, gr%nnzp
+
+          km1 = max(k-1,1)
+          kp1 = min(k+1, gr%nnzp)
+
+          calc_cc(k) = 0.5 * a1(k)
+     .                     * (2./3.) * beta
+     .                     * gr%dzm(k)
+     .                     * wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
+     .               - 0.5 * wmm(k) * gr%dzm(k)
+     .               - nu2 * gr%dzm(k) * gr%dzt(kp1)
+        enddo
+
+        return
+        end function calc_cc
+
+!-----------------------------------------------------------------------
+!  FUNCTION calc_dd_covar
+!  Calculate dd for the purpose of solving the tridiagonal system 
+!    of a covariance term ( e.g rtpthlp )
+!-----------------------------------------------------------------------
+        function calc_dd_covar( a2, dd, wp2, wp3, wpxap, wpxbp, 
+     .                          xam, xbm, xapxbp, 
+     .                          dt, beta, eps, liter )
+        use grid_class
+
+        implicit none
+
+!       Input
+        real, intent(in), dimension(:) :: a2, dd, wp2, wp3
+        real, intent(in), dimension(:) :: wpxap, wpxbp
+        real, intent(in), dimension(:) :: xam, xbm
+        real, intent(in), dimension(:) :: xapxbp
+
+        real, intent(in) :: dt, beta, eps
+
+        logical, intent(in) :: liter
+
+!       Return type
+        real, dimension(gr%nnzp) :: calc_dd_covar
+
+!       Internal
+        integer k, km1, kp1
+
+        do k=1, gr%nnzp
+
+          km1 = max(k-1,1)
+          kp1 = min(k+1, gr%nnzp)
+
+          calc_dd_covar(k) = - wpxbp(k) * gr%dzm(k) * (xam(kp1)-xam(k))
+     .                       - wpxap(k) * gr%dzm(k) * (xbm(kp1)-xbm(k))
+     .                       - 0.5 * a2(k)
+     .                             * (2./3.) * ( 2 + (1-beta) )
+     .                             * gr%dzm(k)
+     .                             * (  wp3(kp1)
+     .                                  * (wpxap(k)+wpxap(kp1))
+     .                                  * (wpxbp(k)+wpxbp(kp1))
+     .                                  / max( wp2(k) + wp2(kp1), 
+     .                                         2.0 * eps )**2
+     .                                - wp3(k)
+     .                                  * (wpxap(km1)+wpxap(k))
+     .                                  * (wpxbp(km1)+wpxbp(k))
+     .                                  / max( wp2(km1) + wp2(k),
+     .                                         2.0 * eps )**2
+     .                               )
+          if (liter) calc_dd_covar(k) = dd(k) + 1.0/dt*xapxbp(k)
+
+        enddo
+
+        return
+        end function calc_dd_covar
+
+!-----------------------------------------------------------------------
+!  FUNCTION calc_dd_var
+!  Calculate dd for the purpose of solving the tridiagonal system 
+!    of a variance term (e.g. rtp2)
+!-----------------------------------------------------------------------
+        function calc_dd_var( a2, dd, wp2, wp3, wpxp, xm,
+     .                        xp2, dt, beta, eps, liter )
+        use grid_class
+
+        implicit none
+
+!       Input
+        real, intent(in), dimension(:) :: a2, dd, wp2, wp3
+        real, intent(in), dimension(:) :: wpxp, xm, xp2
+
+        real, intent(in) :: dt, beta, eps
+
+        logical, intent(in) :: liter
+
+!       Return type
+        real, dimension(gr%nnzp) :: calc_dd_var
+
+!       Internal
+        integer k, km1, kp1
+
+        do k=1, gr%nnzp
+
+          km1 = max(k-1,1)
+          kp1 = min(k+1, gr%nnzp)
+
+          calc_dd_var(k) = - 2.0 * wpxp(k) * gr%dzm(k) * (xm(kp1)-xm(k))
+     .                     - 0.5 * a2(k)
+     .                           * (2./3.) * ( 2 + (1-beta) )
+     .                           * gr%dzm(k)
+     .                           * (  wp3(kp1)
+     .                                * (wpxp(k)+wpxp(kp1))**2
+     .                                / max(wp2(k)+wp2(kp1),2.0*eps)**2
+     .                              - wp3(k)
+     .                                * (wpxp(km1)+wpxp(k))**2
+     .                                / max(wp2(km1)+wp2(k),2.0*eps)**2
+     .                             )
+          if (liter) calc_dd_var(k) = dd(k) + 1.0/dt*xp2(k)
+        enddo
+
+        return
+        end function calc_dd_var
+
 !-----------------------------------------------------------------------
       end module diagnose_variances
