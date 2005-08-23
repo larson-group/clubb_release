@@ -4,8 +4,8 @@ run_file       = "../tune/dycoms2_rf01_hoc.in"
 hoc_stats_file = "dycoms2_rf01"
 les_stats_file = "../les_data/dycoms2_rf01_coamps"
 times_nl       = 120, 239
-z_i            = 3
-z_i            = 130
+z_i            = 5
+z_f            = 130
 ftol           = 0.01
 /
 
@@ -69,7 +69,7 @@ mu_var         = 0.25
 
 &setfields
 datafile      = "../les_data/dycoms2_rf01"
-sample_ratio  = 3.0
+sample_ratio  = 1.0
 input_type    = "les"
 input_um      = .true.
 input_vm      = .true.
@@ -79,17 +79,17 @@ input_wp2     = .true.
 input_wprtp   = .true.
 input_wpthlp  = .true.
 input_wp3     = .true.
-input_rtp2    = .true.
-input_thlp2   = .true.
-input_rtpthlp = .true.
+input_rtp2    = .false.
+input_thlp2   = .false.
+input_rtpthlp = .false.
 input_upwp    = .true.
 input_vpwp    = .true.
 /
 ! Determines which cases will be run
 &case_tune
-lwp2_prdp    = .true.
+lwp2_prdp    = .false.
 lwp3_prdp    = .false.
-lwprtp_prdp  = .false.
+lwprtp_prdp  = .true.
 lwpthlp_prdp = .false.
 lwp2_bp      = .false.
 lwp3_bp      = .false.
