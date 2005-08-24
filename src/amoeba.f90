@@ -1,4 +1,4 @@
-! $Id: amoeba.f90,v 1.3 2005-06-23 20:07:53 dschanen Exp $
+! $Id: amoeba.f90,v 1.4 2005-08-24 19:56:55 dschanen Exp $
 !   From _Numerical Recipes in Fortran 90_
 !   (C) 1988-1996 Numerical Recipes Software
 SUBROUTINE amoeba( p, y, ftol, func, iter )
@@ -64,22 +64,22 @@ do
   endif
   ytry = amotry( -1.0_sp )
   iter = iter + 1
-    if (ytry <= y(ilo)) then
-      ytry = amotry( 2.0_sp )
-      iter = iter + 1
-    else if (ytry >= y(inhi)) then
-      ysave = y(ihi)
-      ytry  = amotry( 0.5_sp )
-      iter  = iter + 1
-      if (ytry >= ysave) then
-        p(:,:) = 0.5_sp * (p(:, :) + spread( p(ilo, :), 1, size(p, 1) ))
-        do i=1, ndim+1
-          if (i /= ilo) y(i) = func( p(i, :) )
-        end do
-        iter    = iter + ndim
-        psum(:) = sum( p(:, :), dim=1 )
-      end if
+  if (ytry <= y(ilo)) then
+    ytry = amotry( 2.0_sp )
+    iter = iter + 1
+  else if (ytry >= y(inhi)) then
+    ysave = y(ihi)
+    ytry  = amotry( 0.5_sp )
+    iter  = iter + 1
+    if (ytry >= ysave) then
+      p(:,:) = 0.5_sp * (p(:, :) + spread( p(ilo, :), 1, size(p, 1) ))
+      do i=1, ndim+1
+        if (i /= ilo) y(i) = func( p(i, :) )
+      end do
+      iter    = iter + ndim
+      psum(:) = sum( p(:, :), dim=1 )
     end if
+  end if
 end do
 
 RETURN
