@@ -1,0 +1,92 @@
+!
+! Note that for BOMEX, dtmain is going to need to be changed to be 
+! equal to dtclosure bomex_hoc.in.
+!
+
+&budget_tune
+run_file       = "../tune/bomex_hoc.in"
+hoc_stats_file = "bomex"
+les_stats_file = "../les_data/bomex_coamps"
+times_nl       = 120, 239
+z_i            = 3
+z_f            = 75
+ftol           = 0.001
+/
+
+! initvars note: C4 and C10 are currently not used in any calculations
+&initvars
+C1         = 2.1
+C2rt       = 1.2
+C2thl      = 1.2
+C2rtthl    = 1.2
+C4         = 5.2
+C5         = 0.3
+C6rt       = 9.3
+C6thl      = 9.3
+C7         = 0.48
+C8         = 2.3
+C10        = 3.3
+C11        = 0.4
+nu1        = 20.
+nu2        = 5.
+nu6        = 5.
+nu8        = 20.
+nu_r       = 15.
+beta       = 1.5
+gamma_coef = 0.45
+c_K        = 0.548
+taumin     = 90.
+taumax     = 3600.
+lmin_coef  = 0.5
+mu         = 6.e-4
+/
+
+! variance numbers are used in the equation:
+! constant * ( (1 - variance) + rannum * variance * 2 )
+! thus a variance of 0 will keep a constant static through the run
+&variance
+C1_var         = 0.25
+C2rt_var       = 0.25
+C2thl_var      = 0.25
+C2rtthl_var    = 0.25
+C4_var         = 0.
+C5_var         = 0.25
+C6rt_var       = 0.25
+C6thl_var      = 0.25
+C7_var         = 0.25
+C8_var         = 0.25
+C10_var        = 0.
+C11_var        = 0.25
+nu1_var        = 0.
+nu2_var        = 0.
+nu6_var        = 0.
+nu8_var        = 0.
+nu_r_var       = 0.
+beta_var       = 0.25
+gamma_coef_var = 0.25
+c_K_var        = 0.10
+taumin_var     = 0.
+taumax_var     = 0.
+lmin_coef_var  = 0.
+mu_var         = 0.25
+/
+
+&setfields
+datafile      = "../les_data/bomex"
+sample_ratio  = 1.0
+input_type    = "les"
+input_um      = .true.
+input_vm      = .true.
+input_rtm     = .true.
+input_thlm    = .true.
+input_wp2     = .true.
+input_wprtp   = .true.
+input_wpthlp  = .true.
+input_wp3     = .true.
+input_rtp2    = .false.
+input_thlp2   = .false.
+input_rtpthlp = .false.
+input_upwp    = .true.
+input_vpwp    = .true.
+/
+
