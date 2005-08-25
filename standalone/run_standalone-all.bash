@@ -51,6 +51,8 @@ for (( x = 1; x <= 9; x++)); do
 
 #######################################################################
 #
+# State which case is being run
+ echo "Running" $RUN_CASE
 # Run HOC
  ./hoc_standalone
 

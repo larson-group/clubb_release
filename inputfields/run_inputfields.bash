@@ -37,6 +37,8 @@
 
 #######################################################################
 #
+# State which case is being run
+ echo "Running" $RUN_CASE
 # Run HOC
 ./hoc_inputfields
 
