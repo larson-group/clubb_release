@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.42 2005-08-23 21:10:08 dschanen Exp $
+! $Id: hoc.F,v 1.43 2005-08-25 12:08:43 griffinb Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -777,6 +777,7 @@
         tmp1 = SQRT( MAX( emin, zm2zt( em ) ) )
         taut = MIN( Lscale / tmp1, taumax )
         taum = MIN( ( zt2zm( Lscale ) / SQRT( em ) ), taumax )
+!        taum = zt2zm( taut )
 
 !       modification to damp noise in stable region
 
@@ -792,6 +793,7 @@
 
         Kht = c_K * Lscale * tmp1
         Khm = c_K * zt2zm( Lscale ) * SQRT( em )
+!        Khm = zt2zm( Kht )
 
 !       surface values of second order moments
 
@@ -1168,8 +1170,7 @@
      .              + 0.01 * wtol * rttol ) )**2 ),
      .       1.0      ) )
 
-!       Sct = MAX( 0.0, zm2zt(Scm) )
-       Sct = zm2zt(Scm)
+       Sct = zm2zt( Scm )
 
 !      Call closure scheme
 
@@ -1354,11 +1355,7 @@
 !      Dissipation time
 
        tmp1 = SQRT( MAX( emin, zm2zt( em ) ) )
-!       print *, "em", em
-!       print *, "Lscale", Lscale
-!       print *, "tmp1", tmp1
        taut = MIN( Lscale / tmp1, taumax )
-!       print *, "Lm", zt2zm( Lscale )
        taum = MIN( ( zt2zm( Lscale ) / SQRT( max(em, emin) ) ), taumax )
 !       taum = zt2zm( taut )
 
