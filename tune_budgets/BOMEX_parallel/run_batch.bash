@@ -1,5 +1,5 @@
 ####################################################################### 
-# Runs all the cases on nodes.
+# Does a tuning run for each term on remote nodes.
 # create_files.sh will need to be run before this.
 ####################################################################### 
 BASE_DIR=$HOME"/hoc_v2.2_tuner"
