@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: budget_terms.F,v 1.9 2005-08-26 20:51:53 dschanen Exp $     
+! $Id: budget_terms.F,v 1.10 2005-08-26 22:24:23 dschanen Exp $     
 
 ! MODULE budget_terms
 
@@ -555,7 +555,8 @@
 !-----------------------------------------------------------------------
 !  FUNCTION xapxbp_run( )
 !  Calculate the total difference between the two GRaDS profiles
-!  This particular routine does the variance and covariance budgets
+!  This particular routine does the variance and covariance budgets,
+!  and only for dissipation, since they have no pressure terms.
 !-----------------------------------------------------------------------
         subroutine xapxbp_run(ftol, runtype, func_min, c_update)
         use nrtype
@@ -573,7 +574,7 @@
         real, dimension(2) :: p_elements 
         real, dimension(2) :: p_variance 
 
-        character(10), dimension(2) :: p_string 
+        character(7), dimension(2) :: p_string 
 
         real opt_error
         integer ndim, mdim
@@ -590,21 +591,17 @@
         
 !       Setup constants vector
         select case( runtype )
-        case("any_tp")
-          p_elements = (/beta, gamma_coef/)
-          p_string   = (/"beta      ", "gamma_coef"/)
-          p_variance = (/beta_var, gamma_coef_var/)
-        case("rt2_dp")
+        case("rt")
           p_elements = (/C2rt, mu/)
-          p_string   = (/"C2rt      ", "gamma_coef"/)
+          p_string   = (/"C2rt   ", "mu      "/)
           p_variance = (/C2rt_var, mu_var/)
-        case("thl2_dp")
+        case("thl")
           p_elements = (/C2thl, mu/)
-          p_string   = (/"C2thl     ", "gamma_coef"/)
+          p_string   = (/"C2thl  ", "mu      "/)
           p_variance = (/C2thl_var, mu_var/)
-        case("rtrtl_dp")
+        case("rtthl")
           p_elements = (/C2rtthl, mu/)
-          p_string   = (/"C2rtthl   ", "gamma_coef"/)
+          p_string   = (/"C2rtthl", "mu      "/)
           p_variance = (/C2rtthl_var, mu_var/)
         case default
           stop "xapxbp_run: invalid runtype"
@@ -657,16 +654,13 @@
 !       Update module constants on c_update
         if ( c_update ) then
           select case( trim(runtype) )
-          case("any_tp")
-            beta       = const_array(1,1)
-            gamma_coef = const_array(1,2)
-          case("rt_dp")
+          case("rt")
             C2rt = const_array(1,1)
             mu   = const_array(1,2)
-          case("thl_dp")
+          case("thl")
             C2thl = const_array(1,1)
             mu    = const_array(1,2)
-          case("rtthl_dp")
+          case("rtthl")
             C2rtthl = const_array(1,1)
             mu      = const_array(1,2)
           end select
@@ -877,6 +871,153 @@
 
         return 
         end function wpthlp_min
+
+!-----------------------------------------------------------------------
+!  FUNCTION rtp2_min( )
+!  Calculate the total difference between the two GRaDS profiles
+!  Note that rtp2, thlp2, and rtpthlp have no pressure terms, so this
+!  function includes only dissipation.
+!-----------------------------------------------------------------------
+        real function rtp2_min( const_vect )
+
+        use hoc
+        use inputfields, only: grads_fields_reader
+
+        implicit none
+
+!       Parameters
+
+        character(8), dimension(2), parameter :: rtp2_hoc = 
+     .  (/"rtp2_dp1", "rtp2_dp2"/)
+
+        character(7), dimension(1), parameter :: rtp2_les = 
+     .  (/"qtp2_dp"/) 
+
+!       Input
+
+        real, dimension(:), intent(in) :: const_vect 
+
+
+!       The actual subroutine is hoc_model_variable_input, used via overloading
+
+        call hoc_model( C1, const_vect(1), C2thl, C2rtthl, C4, ! C2rt
+     .                  C5, C6rt, C6thl, C7, C8, C10, C11,
+     .                  nu1, nu2, nu6, nu8, nu_r, 
+     .                  beta, gamma_coef, c_K, lmin_coef, 
+     .                  taumin, taumax, const_vect(2), ! mu
+     .                  run_file, isValid, .false.,
+     .                  grads_fields_reader, sample_ratio )
+
+        if ( .not. isValid ) then
+          rtp2_min = 2 * maxval( diff_array ) - minval( diff_array )
+          return
+        endif
+
+
+!       Calculate the error
+        rtp2_min = term_min( rtp2_hoc, rtp2_les, "m" )
+
+        print *, "rtp2_min=", rtp2_min
+        return 
+        end function rtp2_min
+
+!-----------------------------------------------------------------------
+!  FUNCTION thlp2_min( )
+!  Calculate the total difference between the two GRaDS profiles
+!  Note that rtp2, thlp2, and rtpthlp have no pressure terms, so this
+!  function includes only dissipation.
+!-----------------------------------------------------------------------
+        real function thlp2_min( const_vect )
+
+        use hoc
+        use inputfields, only: grads_fields_reader
+
+        implicit none
+
+!       Parameters
+
+        character(9), dimension(2), parameter :: thlp2_hoc = 
+     .  (/"thlp2_dp1", "thlp2_dp2"/)
+
+        character(8), dimension(1), parameter :: thlp2_les = 
+     .  (/"thlp2_dp"/) 
+
+!       Input
+
+        real, dimension(:), intent(in) :: const_vect 
+
+
+!       The actual subroutine is hoc_model_variable_input, used via overloading
+
+        call hoc_model( C1, C2rt, const_vect(1), C2rtthl, C4, ! C2thl
+     .                  C5, C6rt, C6thl, C7, C8, C10, C11,
+     .                  nu1, nu2, nu6, nu8, nu_r, 
+     .                  beta, gamma_coef, c_K, lmin_coef, 
+     .                  taumin, taumax, const_vect(2), ! mu
+     .                  run_file, isValid, .false.,
+     .                  grads_fields_reader, sample_ratio )
+
+        if ( .not. isValid ) then
+          thlp2_min = 2 * maxval( diff_array ) - minval( diff_array )
+          return
+        endif
+
+
+!       Calculate the error
+        thlp2_min = term_min( thlp2_hoc, thlp2_les, "m" )
+
+        print *, "thlp2_min=", thlp2_min
+        return 
+        end function thlp2_min
+
+!-----------------------------------------------------------------------
+!  FUNCTION rtpthlp_min( )
+!  Calculate the total difference between the two GRaDS profiles
+!  Note that rtp2, thlp2, and rtpthlp have no pressure terms, so this
+!  function includes only dissipation.
+!-----------------------------------------------------------------------
+        real function rtpthlp_min( const_vect )
+
+        use hoc
+        use inputfields, only: grads_fields_reader
+
+        implicit none
+
+!       Parameters
+
+        character(11), dimension(2), parameter :: rtpthlp_hoc = 
+     .  (/"rtpthlp_dp1", "rtpthlp_dp2"/)
+
+        character(10), dimension(1), parameter :: rtpthlp_les = 
+     .  (/"qtpthlp_dp"/) 
+
+!       Input
+
+        real, dimension(:), intent(in) :: const_vect 
+
+
+!       The actual subroutine is hoc_model_variable_input, used via overloading
+
+        call hoc_model( C1, C2rt, C2thl, const_vect(1), C4, ! C2rtthl
+     .                  C5, C6rt, C6thl, C7, C8, C10, C11,
+     .                  nu1, nu2, nu6, nu8, nu_r, 
+     .                  beta, gamma_coef, c_K, lmin_coef, 
+     .                  taumin, taumax, const_vect(2), ! mu
+     .                  run_file, isValid, .false.,
+     .                  grads_fields_reader, sample_ratio )
+
+        if ( .not. isValid ) then
+          rtpthlp_min = 2 * maxval( diff_array ) - minval( diff_array )
+          return
+        endif
+
+
+!       Calculate the error
+        rtpthlp_min = term_min( rtpthlp_hoc, rtpthlp_les, "m" )
+
+        print *, "rtpthlp_min=", rtpthlp_min
+        return 
+        end function rtpthlp_min
 
 !-----------------------------------------------------------------------
 !  FUNCTION wp2_buoy_min( )
@@ -1363,6 +1504,16 @@
           case( "qtpthlp_tp" )
             les_zl = calc_les_rtpthlp_tp( les_nz, times  )
 
+          case( "qtp2_dp" )
+            les_zl = calc_les_rtp2_dp( les_nz, times  )
+
+          case( "thlp2_dp" )
+            les_zl = calc_les_thlp2_dp( les_nz, times  )
+
+          case( "qtpthlp_dp" )
+            les_zl = calc_les_rtpthlp_dp( les_nz, times  )
+
+
           case default
 
             les_zl = grads_average_interval(les_stats_file_ext, les_nz,
@@ -1442,7 +1593,6 @@
         character(len=50) les_stats_file_sm
 
         logical ferror
-        integer i
 
 !       Read in the needed components
         les_stats_file_sm = trim( les_stats_file )//"_sm.ctl"
@@ -1518,7 +1668,6 @@
         character(len=50) les_stats_file_sm
 
         logical ferror
-        integer i
 
 !       Read in the needed components
         les_stats_file_sm = trim( les_stats_file )//"_sm.ctl"
@@ -1597,7 +1746,6 @@
         character(len=50) les_stats_file_sm
 
         logical ferror
-        integer i
 
 !       Read in the needed components
         les_stats_file_sm = trim( les_stats_file )//"_sm.ctl"
@@ -1654,7 +1802,6 @@
         character(len=50) les_stats_file_ext
 
         logical ferror
-        integer i
 
         les_stats_file_ext = trim( les_stats_file )//"_sw.ctl"
 
@@ -1673,6 +1820,180 @@
 
         return
         end function calc_les_wpthlp
+
+!-----------------------------------------------------------------------
+        function calc_les_rtp2_dp( nz, times )
+
+        use grads_common
+        use grid_class
+
+        implicit none
+
+!       Input
+        integer, intent(in)               :: nz
+        integer, dimension(:), intent(in) :: times
+
+!       Return type
+        real, dimension(nz) :: calc_les_rtp2_dp
+
+!       Internal
+        real, dimension(gr%nnzp) :: qvpqcp_bt
+        real, dimension(gr%nnzp) :: qcp2_bt
+        real, dimension(gr%nnzp) :: qvp2_bt
+
+        real, dimension(gr%nnzp) :: qtp2_bt
+
+        character(len=50) les_stats_file_sm
+
+        logical ferror
+
+!       Read in the needed components
+        les_stats_file_sm = trim( les_stats_file )//"_sm.ctl"
+
+        qvpqcp_bt(1:gr%nnzp) = 
+     .    grads_average_interval( les_stats_file_sm,
+     .                            nz, times, "qvpqcp_bt", ferror )
+
+        qvp2_bt(1:gr%nnzp) = 
+     .    grads_average_interval( les_stats_file_sm,
+     .                            nz, times, "qvp2_bt", ferror )
+
+        qcp2_bt(1:gr%nnzp) = 
+     .    grads_average_interval( les_stats_file_sm,
+     .                            nz, times, "qcp2_bt", ferror )
+
+        qtp2_bt(1:gr%nnzp) = qcp2_bt 
+     .                     + 2 * qvpqcp_bt
+     .                     + qvp2_bt
+
+        calc_les_rtp2_dp(1:gr%nnzp) = zt2zm( qtp2_bt )
+     .                              - calc_les_rtp2_tp( nz, times )
+
+        return
+        end function calc_les_rtp2_dp
+
+!-----------------------------------------------------------------------
+        function calc_les_thlp2_dp( nz, times )
+
+        use grads_common
+        use grid_class
+
+        implicit none
+
+!       Input
+        integer, intent(in)               :: nz
+        integer, dimension(:), intent(in) :: times
+
+!       Return type
+        real, dimension(nz) :: calc_les_thlp2_dp
+
+!       Internal
+        real, dimension(gr%nnzp) :: thp2_bt
+        real, dimension(gr%nnzp) :: thpqcp_bt
+        real, dimension(gr%nnzp) :: qcp2_bt
+        real, dimension(gr%nnzp) :: th_on_t
+
+        real, dimension(gr%nnzp) :: thlp2_bt
+
+        character(len=50) les_stats_file_sm
+        character(len=50) les_stats_file_sw
+
+        logical ferror
+
+!       Read in the needed components
+        les_stats_file_sm = trim( les_stats_file )//"_sm.ctl"
+        les_stats_file_sw = trim( les_stats_file )//"_sw.ctl"
+
+        thp2_bt(1:gr%nnzp) = 
+     .    grads_average_interval( les_stats_file_sm,
+     .                            nz, times, "thp2_bt", ferror )
+
+        thpqcp_bt(1:gr%nnzp) = 
+     .    grads_average_interval( les_stats_file_sm,
+     .                            nz, times, "thp2_bt", ferror )
+
+        thpqcp_bt(1:gr%nnzp) = 
+     .    grads_average_interval( les_stats_file_sm,
+     .                            nz, times, "thpqcp_bt", ferror )
+
+        qcp2_bt(1:gr%nnzp) = 
+     .    grads_average_interval( les_stats_file_sm,
+     .                            nz, times, "qcp2_bt", ferror )
+
+        th_on_T(1:gr%nnzp) = 
+     .    zm2zt( theta_on_T( nz, times, les_stats_file_sw ) )
+
+        thlp2_bt(1:gr%nnzp) = thp2_bt 
+     .                      + 2 * thpqcp_bt * th_on_t 
+     .                      + qcp2_bt * th_on_t**2 
+
+        calc_les_thlp2_dp(1:gr%nnzp) = zt2zm( thlp2_bt )
+     .                               - calc_les_thlp2_tp( nz, times )
+
+        return
+        end function calc_les_thlp2_dp
+
+!-----------------------------------------------------------------------
+        function calc_les_rtpthlp_dp( nz, times )
+
+        use grads_common
+        use grid_class
+
+        implicit none
+
+!       Input
+        integer, intent(in)               :: nz
+        integer, dimension(:), intent(in) :: times
+
+!       Return type
+        real, dimension(nz) :: calc_les_rtpthlp_dp
+
+!       Internal
+        real, dimension(gr%nnzp) :: qvpqcp_bt
+        real, dimension(gr%nnzp) :: qcp2_bt
+        real, dimension(gr%nnzp) :: th_on_t
+        real, dimension(gr%nnzp) :: thpqvp_bt
+        real, dimension(gr%nnzp) :: thpqcp_bt
+
+        real, dimension(gr%nnzp) :: qtpthlp_bt
+
+        character(len=50) les_stats_file_sm
+        character(len=50) les_stats_file_sw
+
+        logical ferror
+
+!       Read in the needed components
+        les_stats_file_sm = trim( les_stats_file )//"_sm.ctl"
+        les_stats_file_sw = trim( les_stats_file )//"_sw.ctl"
+
+        qvpqcp_bt(1:gr%nnzp) = 
+     .    grads_average_interval( les_stats_file_sm,
+     .                            nz, times, "qvpqcp_bt", ferror )
+
+        thpqcp_bt(1:gr%nnzp) = 
+     .    grads_average_interval( les_stats_file_sm,
+     .                            nz, times, "thpqcp_bt", ferror )
+        thpqvp_bt(1:gr%nnzp) = 
+     .    grads_average_interval( les_stats_file_sm,
+     .                            nz, times, "thpqvp_bt", ferror )
+
+        qcp2_bt(1:gr%nnzp) = 
+     .    grads_average_interval( les_stats_file_sm,
+     .                            nz, times, "qcp2_bt", ferror )
+
+        th_on_T(1:gr%nnzp) = 
+     .    zm2zt( theta_on_T( nz, times, les_stats_file_sw ) )
+
+        qtpthlp_bt(1:gr%nnzp) = thpqcp_bt 
+     .                        + thpqvp_bt
+     .                        + th_on_T * qcp2_bt
+     .                        + th_on_T * qvpqcp_bt
+
+        calc_les_rtpthlp_dp(1:gr%nnzp) =
+     .    zt2zm( qtpthlp_bt ) - calc_les_rtpthlp_tp( nz, times )
+
+        return
+        end function calc_les_rtpthlp_dp
 
 !-----------------------------------------------------------------------
 !  FUNCTION theta_on_T()
