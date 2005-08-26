@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.19 2005-08-26 00:08:58 griffinb Exp $
+!  $Id: statistics.F,v 1.20 2005-08-26 01:30:36 griffinb Exp $
 
 !  module stats_type
 !  contains:
@@ -94,6 +94,7 @@ c       Indices for statistics in zt file
      .     isct,
      .     irhot,
      .     iNcm,           ! Brian
+     .     ised_rcm,       ! Brian
      .     irsm,           ! Brian
      .     irrm,           ! Brian
      .     icond_rrm,      ! Brian
@@ -479,6 +480,7 @@ c     -----------------------------------------------------------------
       isct          = 0
       irhot         = 0
       iNcm          = 0  ! Brian
+      ised_rcm      = 0  ! Brian
       irsm          = 0  ! Brian
       irrm          = 0  ! Brian
       icond_rrm     = 0  ! Brian
@@ -761,6 +763,14 @@ c     -----------------------------------------------------------------
           zt%f%var(iNcm)%name = "Ncm"
           zt%f%var(iNcm)%description
      .    = "cloud droplet number concentration (num/m^3)"
+          k = k + 1
+
+        case ('sed_rcm')           ! Brian
+          ised_rcm = k
+          zt%f%var(ised_rcm)%ptr => zt%x(:,k)
+          zt%f%var(ised_rcm)%name = "sed_rcm"
+          zt%f%var(ised_rcm)%description
+     .    = "d(rcm)/dt due to cloud sedimentation ((kg/kg)/s)"
           k = k + 1
 
         case ('rsm')           ! Brian

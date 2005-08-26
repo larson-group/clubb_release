@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.10 2005-08-26 00:08:58 griffinb Exp $
+! $Id: mixing.F,v 1.11 2005-08-26 01:30:36 griffinb Exp $
 !
 ! Module containing the hoc mixing scheme.  Allows for optional variables
 ! and assumed shape arrays.
@@ -593,6 +593,19 @@
         ! This value is defined on thermodynamic levels.
         sed_rcm = (1.0/rhot) * ddzm( CS_Flux )
 
+#ifdef STATS
+        if (lstats_samp) then
+           if ( ised_rcm > 0 ) then
+              ! The select case statement is to make sure that the
+              ! statistic is only sampled once per timestep.
+              select case(trim( solve_type ))
+              case ( "rtm" ) 
+                 zt%x(:,ised_rcm) = zm%x(:,ised_rcm) + sed_rcm
+                 zt%n(:,ised_rcm) = zm%n(:,ised_rcm) + 1
+              end select
+           endif
+        endif
+#endif STATS
 
 !       Set up RHS vector dd
 
