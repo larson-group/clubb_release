@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: budget_terms.F,v 1.8 2005-08-19 17:21:27 dschanen Exp $     
+! $Id: budget_terms.F,v 1.9 2005-08-26 20:51:53 dschanen Exp $     
 
 ! MODULE budget_terms
 
@@ -553,6 +553,137 @@
         end subroutine wpxp_run
 
 !-----------------------------------------------------------------------
+!  FUNCTION xapxbp_run( )
+!  Calculate the total difference between the two GRaDS profiles
+!  This particular routine does the variance and covariance budgets
+!-----------------------------------------------------------------------
+        subroutine xapxbp_run(ftol, runtype, func_min, c_update)
+        use nrtype
+        use nr, only: amoeba
+        implicit none
+
+!       Input 
+        real, intent(in)         :: ftol
+        character(*), intent(in) :: runtype
+
+!       Determines whether the module constants are updated
+        logical, intent(in)      :: c_update 
+
+!       Internal
+        real, dimension(2) :: p_elements 
+        real, dimension(2) :: p_variance 
+
+        character(10), dimension(2) :: p_string 
+
+        real opt_error
+        integer ndim, mdim
+        integer iter, i, j, k
+
+!       Interfaces
+        interface
+          function func_min(x)
+          implicit none
+          real, dimension(:), intent(in) :: x
+          real func_min
+          end function func_min
+        end interface
+        
+!       Setup constants vector
+        select case( runtype )
+        case("any_tp")
+          p_elements = (/beta, gamma_coef/)
+          p_string   = (/"beta      ", "gamma_coef"/)
+          p_variance = (/beta_var, gamma_coef_var/)
+        case("rt2_dp")
+          p_elements = (/C2rt, mu/)
+          p_string   = (/"C2rt      ", "gamma_coef"/)
+          p_variance = (/C2rt_var, mu_var/)
+        case("thl2_dp")
+          p_elements = (/C2thl, mu/)
+          p_string   = (/"C2thl     ", "gamma_coef"/)
+          p_variance = (/C2thl_var, mu_var/)
+        case("rtrtl_dp")
+          p_elements = (/C2rtthl, mu/)
+          p_string   = (/"C2rtthl   ", "gamma_coef"/)
+          p_variance = (/C2rtthl_var, mu_var/)
+        case default
+          stop "xapxbp_run: invalid runtype"
+        end select
+
+        ndim = size( p_elements )
+        mdim = size( p_elements ) + 1
+ 
+!       Allocate P, Y, and an random factor to generate the starting simplex
+        allocate( const_array(mdim, ndim) )
+        allocate( diff_array(mdim) )
+        allocate( rand_vect(ndim) )
+
+        const_array(1, 1:ndim) = p_elements(1:ndim)
+
+!       Randomize P columns
+        do j = 1, ndim
+          call random_number( rand_vect(1:ndim) )
+          do i = 2, mdim
+            const_array(i,j) = const_array(1,j)*
+     .                       ( 1.0 - p_variance(j)
+     .                         + rand_vect(i-1)*p_variance(j)*2 )
+          enddo
+        enddo
+
+!       Calculate Y-vector
+        do i=1, mdim
+          diff_array(i) = func_min( const_array(i,:) )
+          if ( .not. isValid ) stop "Initial constants must be valid"
+        enddo
+
+        write(*,*) "diff_array:"
+        do i=1, mdim
+          write(*,'(f12.5)') diff_array(i)
+        enddo
+
+!       Attempt to find the optimal P-matrix
+        call amoeba( const_array, diff_array, ftol, 
+     .               func_min, iter )
+
+!       Write output
+        write(*,'(a12,i5)') "Iterations: ", iter
+        write(*,'(a12,a12,a12)') "Constant", "Initial", "Optimal"
+        do i=1, ndim
+          write(*,'(a12,2f12.5)') p_string(i)//"= ", 
+     .                            p_elements(i), const_array(1,i)
+        enddo
+
+
+!       Update module constants on c_update
+        if ( c_update ) then
+          select case( trim(runtype) )
+          case("any_tp")
+            beta       = const_array(1,1)
+            gamma_coef = const_array(1,2)
+          case("rt_dp")
+            C2rt = const_array(1,1)
+            mu   = const_array(1,2)
+          case("thl_dp")
+            C2thl = const_array(1,1)
+            mu    = const_array(1,2)
+          case("rtthl_dp")
+            C2rtthl = const_array(1,1)
+            mu      = const_array(1,2)
+          end select
+        else
+!       Generate GRaDS with Optimal constants
+          write(*,*) "Running with optimal constants."      
+          opt_error = func_min( const_array(1,:) ) 
+          write(*,'(a15,f12.5)') "Optimal error=", opt_error
+        endif
+
+!       Deallocate & return
+        deallocate( const_array, diff_array, rand_vect )
+
+        return
+        end subroutine xapxbp_run
+
+!-----------------------------------------------------------------------
 !  FUNCTION wp2_min( )
 !  Calculate the total difference between the two GRaDS profiles
 !-----------------------------------------------------------------------
@@ -997,6 +1128,105 @@
         end function wpthlp_advect_min
 
 !-----------------------------------------------------------------------
+!  FUNCTION rtp2_advect_min( )
+!  Calculate the mean squared difference between the two GRaDS profiles
+!-----------------------------------------------------------------------
+        real function rtp2_advect_min( const_vect )
+
+        implicit none
+
+!       Parameters
+
+        character(7), dimension(3), parameter :: rtp2_hoc = 
+     .  (/"rtp2_ma", "rtp2_ta", "rtp2_tp"/) 
+
+        character(7), dimension(1), parameter :: rtp2_les = 
+     .  (/"qtp2_tp"/) 
+
+        character(1), parameter :: grid = "m"
+
+!       Input
+
+        real, dimension(:), intent(in) :: const_vect 
+
+!       Calculate the error
+
+        rtp2_advect_min = gen_betagamma_min(
+     .                    rtp2_hoc, rtp2_les, 
+     .                    const_vect(1), const_vect(2), grid )
+
+        print *, "rtp2_advect_min=", rtp2_advect_min
+
+        return 
+        end function rtp2_advect_min
+
+!-----------------------------------------------------------------------
+!  FUNCTION thlp2_advect_min( )
+!  Calculate the mean squared difference between the two GRaDS profiles
+!-----------------------------------------------------------------------
+        real function thlp2_advect_min( const_vect )
+
+        implicit none
+
+!       Parameters
+
+        character(8), dimension(3), parameter :: thlp2_hoc = 
+     .  (/"thlp2_ma", "thlp2_ta", "thlp2_tp"/) 
+
+        character(8), dimension(1), parameter :: thlp2_les = 
+     .  (/"thlp2_tp"/) 
+
+        character(1), parameter :: grid = "m"
+
+!       Input
+
+        real, dimension(:), intent(in) :: const_vect 
+
+!       Calculate the error
+
+        thlp2_advect_min = gen_betagamma_min(
+     .                     thlp2_hoc, thlp2_les, 
+     .                     const_vect(1), const_vect(2), grid )
+
+        print *, "thlp2_advect_min=", thlp2_advect_min
+
+        return 
+        end function thlp2_advect_min
+
+!-----------------------------------------------------------------------
+!  FUNCTION rtpthlp_advect_min( )
+!  Calculate the mean squared difference between the two GRaDS profiles
+!-----------------------------------------------------------------------
+        real function rtpthlp_advect_min( const_vect )
+
+        implicit none
+
+!       Parameters
+
+        character(11), dimension(4), parameter :: rtpthlp_hoc = 
+     .  (/"rtpthlp_ma ", "rtpthlp_ta ", "rtpthlp_tp1", "rtpthlp_tp2"/) 
+
+        character(10), dimension(1), parameter :: rtpthlp_les = 
+     .  (/"qtpthlp_tp"/) 
+
+        character(1), parameter :: grid = "m"
+
+!       Input
+
+        real, dimension(:), intent(in) :: const_vect 
+
+!       Calculate the error
+
+        rtpthlp_advect_min = gen_betagamma_min(
+     .                       rtpthlp_hoc, rtpthlp_les, 
+     .                       const_vect(1), const_vect(2), grid )
+
+        print *, "rtpthlp_advect_min=", rtpthlp_advect_min
+
+        return 
+        end function rtpthlp_advect_min
+
+!-----------------------------------------------------------------------
 !  FUNCTION gen_betagamma_min
 !  Calculate the mean squared difference in a term that varies with 
 !  respect to beta and gamma
@@ -1124,6 +1354,15 @@
           case( "wpthlp_tp" )
             les_zl = calc_les_wpthlp( les_nz,
      .                                times, "tp" )
+          case( "qtp2_tp" )
+            les_zl = calc_les_rtp2_tp( les_nz, times  )
+
+          case( "thlp2_tp" )
+            les_zl = calc_les_thlp2_tp( les_nz, times  )
+
+          case( "qtpthlp_tp" )
+            les_zl = calc_les_rtpthlp_tp( les_nz, times  )
+
           case default
 
             les_zl = grads_average_interval(les_stats_file_ext, les_nz,
@@ -1172,17 +1411,231 @@
         end function term_min
 
 !-----------------------------------------------------------------------
-        function calc_les_wpthlp( nz, times, term )
+        function calc_les_rtp2_tp( nz, times )
 
         use grads_common
-        use constants, only: Lv, Cp, R
+        use grid_class
 
         implicit none
 
-!       Parameters (included from constants.mod)
-!       Lv = latent heat of vaporization at STP
-!       Cp = Specific heat of dry air at constant pressure
-!       R = Gas constant for dry air
+!       Input
+        integer, intent(in)               :: nz
+        integer, dimension(:), intent(in) :: times
+
+!       Return type
+        real, dimension(nz) :: calc_les_rtp2_tp
+
+!       Internal
+
+        real, dimension(gr%nnzp) :: qtm
+        real, dimension(gr%nnzp) :: wm
+        real, dimension(gr%nnzp) :: qtp2
+        real, dimension(gr%nnzp) :: wpqcp
+        real, dimension(gr%nnzp) :: wpqtp
+        real, dimension(gr%nnzp) :: wpqvp
+
+        real, dimension(gr%nnzp) :: qtp2_ma
+        real, dimension(gr%nnzp) :: qtp2_ta
+        real, dimension(gr%nnzp) :: qtp2_tp
+
+        character(len=50) les_stats_file_sw
+        character(len=50) les_stats_file_sm
+
+        logical ferror
+        integer i
+
+!       Read in the needed components
+        les_stats_file_sm = trim( les_stats_file )//"_sm.ctl"
+        les_stats_file_sw = trim( les_stats_file )//"_sw.ctl"
+
+        qtm(1:gr%nnzp)   = grads_average_interval( les_stats_file_sm,
+     .                                             nz, times, "qtm",
+     .                                             ferror )
+
+        qtp2(1:gr%nnzp)  = grads_average_interval( les_stats_file_sm,
+     .                                             nz, times, "qtp2",
+     .                                             ferror )
+
+        wpqvp(1:gr%nnzp) = grads_average_interval( les_stats_file_sw,
+     .                                             nz+1, times, 
+     .                                             "wpqvp", ferror )
+
+        wpqcp(1:gr%nnzp) = grads_average_interval( les_stats_file_sw,
+     .                                             nz+1, times, 
+     .                                             "wpqcp", ferror )
+
+        wpqtp(1:gr%nnzp) = grads_average_interval( les_stats_file_sm,
+     .                                             nz, times, 
+     .                                             "wpqtp", ferror )
+
+        wm(1:gr%nnzp)    = grads_average_interval( les_stats_file_sw,
+     .                                             nz+1, times, 
+     .                                             "wm", ferror )
+
+!       Derive the terms that exist in HOC
+        qtp2_tp = -2 * ( wpqvp+wpqcp ) * ddzt( qtm )
+
+        qtp2_ta = -( ddzt( wpqtp**2 ) )
+
+        qtp2_ma = -wm * ddzt( qtp2 )
+
+        calc_les_rtp2_tp(1:gr%nnzp) = qtp2_ma + qtp2_ta + qtp2_tp
+
+        return
+        end function calc_les_rtp2_tp
+
+!-----------------------------------------------------------------------
+        function calc_les_rtpthlp_tp( nz, times )
+
+        use grads_common
+        use grid_class
+
+        implicit none
+
+!       Input
+        integer, intent(in)               :: nz
+        integer, dimension(:), intent(in) :: times
+
+!       Return type
+        real, dimension(nz) :: calc_les_rtpthlp_tp
+
+!       Internal
+
+        real, dimension(gr%nnzp) :: qtpthlp
+        real, dimension(gr%nnzp) :: wm
+        real, dimension(gr%nnzp) :: wpqtpthlp
+        real, dimension(gr%nnzp) :: wpqtp
+        real, dimension(gr%nnzp) :: thlm
+        real, dimension(gr%nnzp) :: qtm
+        real, dimension(gr%nnzp) :: wpthlp
+
+        real, dimension(gr%nnzp) :: rtpthlp_ma
+        real, dimension(gr%nnzp) :: rtpthlp_ta
+        real, dimension(gr%nnzp) :: rtpthlp_tp1
+        real, dimension(gr%nnzp) :: rtpthlp_tp2
+
+        character(len=50) les_stats_file_sw
+        character(len=50) les_stats_file_sm
+
+        logical ferror
+        integer i
+
+!       Read in the needed components
+        les_stats_file_sm = trim( les_stats_file )//"_sm.ctl"
+        les_stats_file_sw = trim( les_stats_file )//"_sw.ctl"
+
+        wpthlp(1:gr%nnzp)  = grads_average_interval( les_stats_file_sm,
+     .                                               nz, times, 
+     .                                               "wpthlp", ferror )
+
+        wpqtp(1:gr%nnzp)   = grads_average_interval( les_stats_file_sm,
+     .                                               nz, times, 
+     .                                               "wpqtp", ferror )
+
+        wpqtpthlp(1:gr%nnzp) 
+     .  = grads_average_interval( les_stats_file_sm,
+     .                            nz, times, 
+     .                            "wpqtpthlp", ferror )
+
+        thlm(1:gr%nnzp)    = grads_average_interval( les_stats_file_sm,
+     .                                               nz, times, 
+     .                                               "thlm", ferror )
+
+        qtm(1:gr%nnzp)     = grads_average_interval( les_stats_file_sm,
+     .                                               nz, times, 
+     .                                               "qtm", ferror )
+
+        qtpthlp(1:gr%nnzp) = grads_average_interval( les_stats_file_sm,
+     .                                               nz, times, 
+     .                                               "qtpthlp", ferror )
+
+        wm(1:gr%nnzp)      = grads_average_interval( les_stats_file_sw,
+     .                                               nz+1, times, 
+     .                                               "wm", ferror )
+!       Derive the terms that exist in HOC
+        rtpthlp_tp1 = -2 * zt2zm( wpqtp ) * ddzt( thlm )
+
+        rtpthlp_tp2 = -2 * zt2zm( wpthlp ) * ddzt( qtm )
+
+        rtpthlp_ta  = -( ddzt( wpqtpthlp ) )
+
+        rtpthlp_ma  = -wm * ddzt( qtpthlp )
+
+        calc_les_rtpthlp_tp(1:gr%nnzp) = rtpthlp_ma + rtpthlp_ta 
+     .                                 + rtpthlp_tp1 +  rtpthlp_tp2 
+
+        return
+        end function calc_les_rtpthlp_tp
+
+!-----------------------------------------------------------------------
+        function calc_les_thlp2_tp( nz, times )
+
+        use grads_common
+        use grid_class
+
+        implicit none
+
+!       Input
+        integer, intent(in)               :: nz
+        integer, dimension(:), intent(in) :: times
+
+!       Return type
+        real, dimension(nz) :: calc_les_thlp2_tp
+
+!       Internal
+
+        real, dimension(gr%nnzp) :: thlm
+        real, dimension(gr%nnzp) :: wm
+        real, dimension(gr%nnzp) :: wpthlp
+        real, dimension(gr%nnzp) :: thlp2
+
+        real, dimension(gr%nnzp) :: thlp2_ma
+        real, dimension(gr%nnzp) :: thlp2_ta
+        real, dimension(gr%nnzp) :: thlp2_tp
+
+        character(len=50) les_stats_file_sw
+        character(len=50) les_stats_file_sm
+
+        logical ferror
+        integer i
+
+!       Read in the needed components
+        les_stats_file_sm = trim( les_stats_file )//"_sm.ctl"
+        les_stats_file_sw = trim( les_stats_file )//"_sw.ctl"
+
+        wpthlp(1:gr%nnzp) = grads_average_interval( les_stats_file_sm,
+     .                                              nz, times, 
+     .                                              "wpthlp", ferror )
+
+        thlm(1:gr%nnzp)   = grads_average_interval( les_stats_file_sm,
+     .                                              nz, times, 
+     .                                              "thlm", ferror )
+
+        thlp2(1:gr%nnzp)  = grads_average_interval( les_stats_file_sm,
+     .                                              nz, times, 
+     .                                              "thlp2", ferror )
+
+        wm(1:gr%nnzp)     = grads_average_interval( les_stats_file_sw,
+     .                                              nz+1, times, 
+     .                                              "wm", ferror )
+!       Derive the terms that exist in HOC
+        thlp2_tp = -2 * zt2zm( wpthlp ) * ddzt( thlm )
+
+        thlp2_ta = -( ddzt( wpthlp**2 ) )
+
+        thlp2_ma = -wm * ddzt( thlp2 )
+
+        calc_les_thlp2_tp(1:gr%nnzp) = thlp2_ma + thlp2_ta + thlp2_tp
+
+        return
+        end function calc_les_thlp2_tp
+
+!-----------------------------------------------------------------------
+        function calc_les_wpthlp( nz, times, term )
+
+        use grads_common
+
+        implicit none
 
 !       Input
         integer, intent(in)               :: nz
@@ -1193,8 +1646,6 @@
         real, dimension(nz) :: calc_les_wpthlp
 
 !       Internal
-!        real, dimension(nz) :: p     ! atmos press in Pa
-        real, dimension(nz) :: exner
         real, dimension(nz) :: wpthlp
         real, dimension(nz) :: wpthp
         real, dimension(nz) :: wpqcp
@@ -1210,31 +1661,54 @@
         wpthp = grads_average_interval( les_stats_file_ext,
      .                                  nz, times, "wpthp_"//term,
      .                                  ferror )
-        
-        exner = grads_average_interval( les_stats_file_ext,
-     .                                  nz, times, 
-     .                                  "ex0", ferror )
-
-!        p_tmp = grads_average_interval( trim(les_stats_file)//"_sm.ctl",
-!     .                                  nz-1, times, 
-!     .                                  "pm", ferror )
-!        do i=1, nz-2
-!          p(i+1) = ( p_tmp(i) + p_tmp(i+1) ) / 2.0
-!        enddo
-!        ! use a linear extrapolation of Pa
-!        p(1)  = 2.0 * p(2) - p(3)       
-!        p(nz) = 2.0 * p(nz-2) - p(nz-1)
 
         wpqcp = grads_average_interval( les_stats_file_ext,
      .                                  nz, times, "wpqcp_"//term,
      .                                  ferror )
                 
-        wpthlp = wpthp + wpqcp * ( (Lv/Cp) * (1.0/exner)**(R/Cp) )
+        wpthlp = wpthp 
+     .         + wpqcp * theta_on_T( nz, times, les_stats_file_ext )
 
         calc_les_wpthlp(1:nz) = wpthlp(1:nz)
 
         return
         end function calc_les_wpthlp
+
+!-----------------------------------------------------------------------
+!  FUNCTION theta_on_T()
+!  This equation is used often and so was made its own function.
+!  Note that the R exponent used in earlier revisions of this code was
+!  incorrect and the exner data in the LES already included it.
+!-----------------------------------------------------------------------
+        function theta_on_T( nz, times, les_stats_file_ext )
+        use grads_common
+        use constants, only: Lv, Cp
+
+        implicit none
+
+!       Parameters (included from constants.mod)
+!       Lv = latent heat of vaporization at STP
+!       Cp = Specific heat of dry air at constant pressure
+
+!       Input
+        integer, intent(in)               :: nz
+        integer, dimension(:), intent(in) :: times
+        character(len=*), intent(in)      :: les_stats_file_ext
+
+!       Return type
+        real, dimension(nz) :: theta_on_T
+
+!       Internal
+        real, dimension(nz) :: exner
+        logical ferror
+        
+        exner = grads_average_interval( les_stats_file_ext,
+     .                                  nz, times, 
+     .                                  "ex0", ferror )
+
+        theta_on_T(1:nz) = (Lv/Cp) * (1.0/exner)
+
+        end function theta_on_T
 
 !-----------------------------------------------------------------------
         subroutine output_optimal_constants( )
