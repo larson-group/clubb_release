@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.13 2005-08-22 01:50:56 griffinb Exp $
+! $Id: constants.F,v 1.14 2005-08-26 00:08:58 griffinb Exp $
 
 !  Contains frequently occuring model constants
 !-----------------------------------------------------------------------
@@ -41,6 +41,7 @@
 !       Logical flags
         logical, parameter   :: LH_on    = .false.  ! latin hypercube calc
         logical, parameter   :: local_kk = .false.  ! local drizzle in rain.F
+        logical, parameter   :: cloud_sed = .true.  ! cloud water sedimentation flag
 
 !       Model parameters and constraints
 

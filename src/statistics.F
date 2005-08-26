@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.18 2005-08-22 00:35:47 griffinb Exp $
+!  $Id: statistics.F,v 1.19 2005-08-26 00:08:58 griffinb Exp $
 
 !  module stats_type
 !  contains:
@@ -93,6 +93,7 @@ c       Indices for statistics in zt file
      .     iwprtpthlp,
      .     isct,
      .     irhot,
+     .     iNcm,           ! Brian
      .     irsm,           ! Brian
      .     irrm,           ! Brian
      .     icond_rrm,      ! Brian
@@ -477,6 +478,7 @@ c     -----------------------------------------------------------------
       iwprtpthlp    = 0
       isct          = 0
       irhot         = 0
+      iNcm          = 0  ! Brian
       irsm          = 0  ! Brian
       irrm          = 0  ! Brian
       icond_rrm     = 0  ! Brian
@@ -751,6 +753,14 @@ c     -----------------------------------------------------------------
           zt%f%var(irhot)%ptr => zt%x(:,k)
           zt%f%var(irhot)%name = "rhot"
           zt%f%var(irhot)%description = "density"
+          k = k + 1
+
+        case ('Ncm')           ! Brian
+          iNcm = k
+          zt%f%var(iNcm)%ptr => zt%x(:,k)
+          zt%f%var(iNcm)%name = "Ncm"
+          zt%f%var(iNcm)%description
+     .    = "cloud droplet number concentration (num/m^3)"
           k = k + 1
 
         case ('rsm')           ! Brian
@@ -2547,6 +2557,10 @@ c     -----------------------------------------------------------------
         if ( irhot > 0 ) then
           zt%x(:,irhot) = zt%x(:,irhot) + rhot
           zt%n(:,irhot) = zt%n(:,irhot) + 1
+        endif
+        if ( iNcm > 0 ) then           ! Brian
+          zt%x(:,iNcm) = zt%x(:,iNcm) + Ncm
+          zt%n(:,iNcm) = zt%n(:,iNcm) + 1
         endif
         if ( irsm > 0 ) then           ! Brian
           zt%x(:,irsm) = zt%x(:,irsm) + rsm

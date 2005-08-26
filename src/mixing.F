@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.9 2005-08-02 17:32:39 dschanen Exp $
+! $Id: mixing.F,v 1.10 2005-08-26 00:08:58 griffinb Exp $
 !
 ! Module containing the hoc mixing scheme.  Allows for optional variables
 ! and assumed shape arrays.
@@ -19,11 +19,12 @@
 ! Subroutine timestep_mixing( )
 !-----------------------------------------------------------------------
         subroutine timestep_mixing
-     .             ( dt, taum, wmm, wmt, wp2, wp3, Sc, exner,
-     .               rtm, wprtp, 
-     .               rtpthvp, rtm_forcing,
+     .             ( dt, taum, wmm, wmt, wp2, wp3, Sc,
+     .               rtm, wprtp, rtpthvp, rtm_forcing,
+     .               thlm, wpthlp, thlpthvp, thlm_forcing,
+     .               rhot, rhom, exner, rcm, Ncm, 
      .               cond_rrm, auto_rrm, accr_rrm,
-     .               thlm, wpthlp, thlpthvp, thlm_forcing, isValid,
+     .               cloud_sed, kk_rain, isValid,
      .               sclrm, wpsclrp, sclrpthvp, sclrm_forcing )
 
         use constants
@@ -40,12 +41,6 @@
         real, intent(in)    :: wp2(1:gr%nnzp)
         real, intent(in)    :: wp3(1:gr%nnzp)
         real, intent(in)    :: Sc(1:gr%nnzp)
-!       Additions for DYCOMS_2
-        real, intent(in)    :: exner(1:gr%nnzp)    
-        real, intent(in)    :: cond_rrm(1:gr%nnzp)
-        real, intent(in)    :: auto_rrm(1:gr%nnzp)
-        real, intent(in)    :: accr_rrm(1:gr%nnzp)
-!       End Additions for DYCOMS_2
         real, intent(inout) :: rtm(1:gr%nnzp)
         real, intent(inout) :: wprtp(1:gr%nnzp)
         real, intent(in)    :: rtpthvp(1:gr%nnzp)
@@ -54,6 +49,18 @@
         real, intent(inout) :: wpthlp(1:gr%nnzp)
         real, intent(in)    :: thlpthvp(1:gr%nnzp)
         real, intent(in)    :: thlm_forcing(1:gr%nnzp)
+!       Additions for DYCOMS_2
+        real, intent(in)    :: rhot(1:gr%nnzp)    
+        real, intent(in)    :: rhom(1:gr%nnzp)    
+        real, intent(in)    :: exner(1:gr%nnzp)    
+        real, intent(in)    :: rcm(1:gr%nnzp)    
+        real, intent(in)    :: Ncm(1:gr%nnzp)    
+        real, intent(in)    :: cond_rrm(1:gr%nnzp)
+        real, intent(in)    :: auto_rrm(1:gr%nnzp)
+        real, intent(in)    :: accr_rrm(1:gr%nnzp)
+        logical, intent(in) :: cloud_sed
+        logical, intent(in) :: kk_rain
+!       End Additions for DYCOMS_2
 !       Model status 
         logical, intent(inout) :: isValid
 !       Additions for new mixing scheme
@@ -93,9 +100,11 @@
 !     .           "thvp=",sum( rtpthvp ) - sum ( sclrpthvp )
 
 !       Solve rtm / wprtp
-        call mixing_solve( "rtm", .true., dt, taum, exner,
+        call mixing_solve( "rtm", .true., dt, taum,
      .                     rtm, wprtp, rtpthvp, rtm_forcing,
-     .                     cond_rrm, auto_rrm, accr_rrm, ! Brian DYCOMS_2
+     .                     rhot, rhom, exner, rcm, Ncm,  ! Brian
+     .                     cond_rrm, auto_rrm, accr_rrm, ! Brian
+     .                     cloud_sed, kk_rain,           ! Brian
      .                     aa, dd, al, indx )  
 
 !   Prof. Larson's modified mixing_lhs 
@@ -109,9 +118,11 @@
 
 
 !       Solve thlm / wpthlp
-        call mixing_solve( "thlm", .true., dt, taum, exner,
+        call mixing_solve( "thlm", .true., dt, taum,
      .                     thlm, wpthlp, thlpthvp, thlm_forcing,
-     .                     cond_rrm, auto_rrm, accr_rrm, ! Brian DYCOMS_2
+     .                     rhot, rhom, exner, rcm, Ncm,  ! Brian
+     .                     cond_rrm, auto_rrm, accr_rrm, ! Brian
+     .                     cloud_sed, kk_rain,           ! Brian
      .                     aa, dd, al, indx )
 
 !       Solve sclrm / wpsclrp
@@ -128,11 +139,13 @@
           endif
 
 
-          call mixing_solve( "sclrm_rtm", .true., dt, taum, exner,
+          call mixing_solve( "sclrm_rtm", .true., dt, taum,
      .                       sclrm(:,SCLR_RT), wpsclrp(:,SCLR_RT),
      .                       sclrpthvp(:,SCLR_RT), 
      .                       sclrm_forcing(:,SCLR_RT),
+     .                       rhot, rhom, exner, rcm, Ncm,
      .                       cond_rrm, auto_rrm, accr_rrm,
+     .                       cloud_sed, kk_rain,           ! Brian
      .                       aa, dd, al, indx )
 
 !         Prof. Larson's modified mixing_lhs 
@@ -144,11 +157,13 @@
             return
           endif
 
-          call mixing_solve( "sclrm_thlm", .true., dt, taum, exner,
+          call mixing_solve( "sclrm_thlm", .true., dt, taum,
      .                       sclrm(:,SCLR_THETA), wpsclrp(:,SCLR_THETA),
      .                       sclrpthvp(:,SCLR_THETA), 
      .                       sclrm_forcing(:,SCLR_THETA),
+     .                       rhot, rhom, exner, rcm, Ncm,
      .                       cond_rrm, auto_rrm, accr_rrm,
+     .                       cloud_sed, kk_rain,           ! Brian
      .                       aa, dd, al, indx )
         endif
  
@@ -371,9 +386,11 @@
 
 !------------------------------------------------------------------------
         
-        subroutine mixing_solve( solve_type, liter, dt, taum, exner, ! ex: Brian
+        subroutine mixing_solve( solve_type, liter, dt, taum,
      .                           xm, wpxp, xpthvp, xm_forcing,
+     .                           rhot, rhom, exner, rcm, Ncm,  ! Brian
      .                           cond_rrm, auto_rrm, accr_rrm, ! Brian
+     .                           cloud_sed, kk_rain,           ! Brian
      .                           aa, dd, al, indx )
 
         use constants
@@ -391,14 +408,20 @@
         logical, intent(in) :: liter
         real, intent(in)    :: dt
         real, intent(in)    :: taum(1:gr%nnzp)
-        real, intent(in)    :: exner(1:gr%nnzp) ! Brian
         real, intent(inout) :: xm(1:gr%nnzp), wpxp(1:gr%nnzp)
         real, intent(in)    :: xpthvp(1:gr%nnzp)
         real, intent(in)    :: xm_forcing(1:gr%nnzp)
 
-        real, intent(in)    :: cond_rrm(1:gr%nnzp)
-        real, intent(in)    :: auto_rrm(1:gr%nnzp)
-        real, intent(in)    :: accr_rrm(1:gr%nnzp)
+        real, intent(in)    :: rhot(1:gr%nnzp)      ! Brian
+        real, intent(in)    :: rhom(1:gr%nnzp)      ! Brian
+        real, intent(in)    :: exner(1:gr%nnzp)     ! Brian
+        real, intent(in)    :: rcm(1:gr%nnzp)       ! Brian
+        real, intent(in)    :: Ncm(1:gr%nnzp)       ! Brian
+        real, intent(in)    :: cond_rrm(1:gr%nnzp)  ! Brian
+        real, intent(in)    :: auto_rrm(1:gr%nnzp)  ! Brian
+        real, intent(in)    :: accr_rrm(1:gr%nnzp)  ! Brian
+        logical, intent(in) :: cloud_sed            ! Brian
+        logical, intent(in) :: kk_rain              ! Brian
 
         real, intent(in)    :: aa(1:2*gr%nnzp,1:5)
         real, intent(inout) :: dd(1:2*gr%nnzp)
@@ -406,6 +429,10 @@
         integer, intent(in) :: indx(1:2*gr%nnzp)
 
 !       Internal
+
+        real, dimension(1:gr%nnzp):: CS_Flux  ! Cloud Water Sedimentation Flux
+                                              ! [kg(cloud water)]/[s*m^2]
+        real, dimension(1:gr%nnzp):: sed_rcm  ! drcm/dt due to cloud water sed.
 
         integer k, km1, kp1
         integer k_xm, k_wpxp
@@ -482,9 +509,95 @@
         endif
 #endif
 
+        !=====================================================================
+        ! NOTE:  ADDITION OF RAIN EFFECTS AND CLOUD WATER SEDIMENTATION ON
+        !        RTM AND THLM.
+        !=====================================================================
+        !
+        ! Equations:  rtm = rvm + rcm
+        !            thlm = thm - ( Lv / (Cp*exner) ) * rcm
+        !
+        ! When water condenses, latent heat is given off and theta (thm)
+        ! increases by a factor of ( Lv / (Cp*exner) ) * rcm(condensed).
+        ! The opposite effect occurs with evaporation.
+        !
+        !=====================================================================
+        !||     Effect     |  rvm  |  rcm  |  rtm  |  rrm  |  thm  |  thlm  ||
+        !|===================================================================|
+        !|| Sedimentation  |       |       |       |       |       |        ||
+        !|| Effects of     | stays | incr. | incr. | stays | stays | decr.  ||
+        !|| Cloud Water.   | same  |       |       | same  | same  |        ||
+        !|| sed_rcm > 0    |       |       |       |       |       |        ||
+        !|===================================================================|
+        !|| Evaporation    |       |       |       |       |       |        ||
+        !|| of rain to     | incr. | stays | incr. | decr. | decr. | decr.  ||
+        !|| water vapor.   |       | same  |       |       |       |        ||
+        !|| cond_rrm < 0   |       |       |       |       |       |        ||
+        !|-------------------------------------------------------------------|
+        !|| Autoconversion |       |       |       |       |       |        ||
+        !|| of cloud water | stays | decr. | decr. | incr. | stays | incr.  ||
+        !|| to rain water. | same  |       |       |       | same  |        ||
+        !|| auto_rrm > 0   |       |       |       |       |       |        ||
+        !|-------------------------------------------------------------------|
+        !|| Accretion of   |       |       |       |       |       |        ||
+        !|| cloud water by | stays | decr. | decr. | incr. | stays | incr.  ||
+        !|| rain water.    | same  |       |       |       | same  |        ||
+        !|| accr_rrm > 0   |       |       |       |       |       |        ||
+        !=====================================================================
+        !
+        ! Note: In HOC, cond_rrm will always be either negative or zero.
+        !
+        ! Overall effects of rain and cloud water sedimentation:
+        !
+        ! (drtm/dt)t  = (drtm/dt)0 
+        !                       + sed_rcm - cond_rrm - auto_rrm - accr_rrm
+        ! (dthlm/dt)t = (dthlm/dt)0  -  ( Lv / (Cp*exner) ) 
+        !                       * ( sed_rcm - cond_rrm - auto_rrm - accr_rrm )
+        !
+        ! Note by Brian Griffin.
+        !=====================================================================
+
+        ! Code addition by Brian for cloud water sedimentation.
+        ! Sedimentation Flux = constant
+        !                     *[(3/(4*pi*rho_lw*Nc))^(2/3)]
+        !                     *[(rho*rc)^(5/3)]
+        !                     *EXP[5*((LOG(sigma_g))^2)]
+        ! constant = 1.19 x 10^8 (m^-1 s^-1)
+        ! sigma_g:  geometric standard deviation = 1.5
+        !
+        ! According to the above equation, sedimentation flux
+        ! is defined positive downwards.  Therefore, 
+        !
+        ! (drc/dt)CS_flux = (1.0/rho)*(dCS_Flux/dz)
+
+        ! Define cloud water sedimentation flux on momentum levels.
+        DO k = 2, gr%nnzp-1, 1
+
+           IF ( zt2zm(rcm,k) > 0.0 .AND. zt2zm(Ncm,k) > 0.0 ) THEN
+              CS_Flux(k) = 1.19E8
+     .               * (  ( 3.0 / (4.0*pi*rho_lw*zt2zm(Ncm,k)) )
+     .                  **(2.0/3.0)  )
+     .               * ( ( rhom(k)*zt2zm(rcm,k) )**(5.0/3.0) )
+     .               * EXP( 5.0*( (LOG(1.5))**(2.0) ) )
+           ELSE
+              CS_Flux(k) = 0.0
+           ENDIF
+
+        ENDDO
+
+        ! Boundary conditions.
+        CS_Flux(1)       = 0.0
+        CS_Flux(gr%nnzp) = 0.0
+
+        ! Find drc/dt due to cloud water sedimentation flux.
+        ! This value is defined on thermodynamic levels.
+        sed_rcm = (1.0/rhot) * ddzm( CS_Flux )
+
+
 !       Set up RHS vector dd
 
         dd = 0.0
+
 
 !        do k=2,gr%nnzp
         do k=2,gr%nnzp-1
@@ -505,22 +618,43 @@
      .    = xm(k) / dt
      .    + xm_forcing(k)
 
-          ! Code addition by Brian for rain.
-          select case(trim( solve_type ))
-          case ( "rtm" ) 
-            dd(k_xm) = dd(k_xm)
-     .                 - cond_rrm(k) - auto_rrm(k) - accr_rrm(k)  ! rtm only; Brian
-          case ( "thlm" )
-            dd(k_xm) = dd(k_xm) - ( Lv / (Cp*exner(k)) ) *
-     .                 ( -cond_rrm(k) - auto_rrm(k) - accr_rrm(k) )  ! thlm only; Brian
-          case ( "sclrm_rtm" ) 
-            dd(k_xm) = dd(k_xm) 
-     .                  - cond_rrm(k) - auto_rrm(k) - accr_rrm(k)   ! sclrm = rtm
-          case ( "sclrm_thlm" )
-            dd(k_xm) = dd(k_xm) + ( Lv / (Cp*exner(k)) ) *
-     .                 ( cond_rrm(k) + auto_rrm(k) + accr_rrm(k) )  ! sclrm = thlm
+          ! Code addition by Brian for cloud water sedimentation.
+          IF ( cloud_sed ) THEN
 
-          end select
+             select case(trim( solve_type ))
+             case ( "rtm" ) 
+                dd(k_xm) = dd(k_xm) + sed_rcm(k)
+             case ( "thlm" )
+                dd(k_xm) = dd(k_xm) - ( Lv / (Cp*exner(k)) )
+     .                               * sed_rcm(k)
+             case ( "sclrm_rtm" ) 
+                dd(k_xm) = dd(k_xm) + sed_rcm(k)
+             case ( "sclrm_thlm" )
+                dd(k_xm) = dd(k_xm) - ( Lv / (Cp*exner(k)) )
+     .                               * sed_rcm(k)
+             end select
+
+          ENDIF
+
+          ! Code addition by Brian for rain.
+          IF ( kk_rain ) THEN
+
+             select case(trim( solve_type ))
+             case ( "rtm" ) 
+                dd(k_xm) = dd(k_xm)
+     .                     - cond_rrm(k) - auto_rrm(k) - accr_rrm(k)    ! rtm only; Brian
+             case ( "thlm" )
+                dd(k_xm) = dd(k_xm) - ( Lv / (Cp*exner(k)) ) *
+     .                    ( -cond_rrm(k) - auto_rrm(k) - accr_rrm(k) )  ! thlm only; Brian
+             case ( "sclrm_rtm" ) 
+                dd(k_xm) = dd(k_xm) 
+     .                     - cond_rrm(k) - auto_rrm(k) - accr_rrm(k)    ! sclrm = rtm
+             case ( "sclrm_thlm" )
+                dd(k_xm) = dd(k_xm) - ( Lv / (Cp*exner(k)) ) *
+     .                    ( -cond_rrm(k) - auto_rrm(k) - accr_rrm(k) )  ! sclrm = thlm
+             end select
+
+          ENDIF
 
 !         wpxp: time tendency and buoyancy
 

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.43 2005-08-25 12:08:43 griffinb Exp $
+! $Id: hoc.F,v 1.44 2005-08-26 00:08:58 griffinb Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -1239,7 +1239,8 @@
      .                           wprcp(k), wp2rcp(k),
      .                           rtprcp(k), thlprcp(k),
      .                           pdf_parms(k, :),
-     .                           crt1, crt2, cthl1, cthl2
+     .                           crt1, crt2, cthl1, cthl2,
+     .                           Ncm(k), runtype
 #ifdef SCALARS
      .                           ,sclrm(k,:), sclr_tmp1(k,:),      ! optional
      .                           wpsclrprtp(k,:), wpsclrp2(k,:),   !   "  "
@@ -1320,7 +1321,8 @@
      .        wprcp(1), wp2rcp(1),
      .        rtprcp(1), thlprcp(1),
      .        pdf_parms(1,:),
-     .        crt1, crt2, cthl1, cthl2 
+     .        crt1, crt2, cthl1, cthl2,
+     .        Ncm(1), runtype
 #ifdef SCALARS
      .        ,sclr_tmp1(1,:), wpsclrp(1,:),
      .        wpsclrprtp(1,:), wpsclrp2(1,:),
@@ -1389,22 +1391,23 @@
 
        IF ( kk_rain ) THEN
 
-           CALL rain( dt, thlm, p, exner, rhot, wmt, pdf_parms,
-     .                rcm, rtm, rrm, Nrm, cond_rrm, auto_rrm,
-     .                accr_rrm, sed_rrm, diff_rrm, subs_rrm,
-     .                cond_Nrm, auto_Nrm, sed_Nrm, diff_Nrm,
-     .                subs_Nrm, Vr, mean_vol_rad,
-     .                runtype, isValid,
+          CALL rain( dt, thlm, p, exner, rhot, wmt, pdf_parms,
+     .               rtm, rcm, Ncm, rrm, Nrm, cond_rrm,
+     .               auto_rrm, accr_rrm, sed_rrm, diff_rrm,
+     .               subs_rrm, cond_Nrm, auto_Nrm, sed_Nrm,
+     .               diff_Nrm, subs_Nrm, Vr, mean_vol_rad,
+     .               isValid,
 ! LH Kessler autoconversion.  Vince Larson 22 May 2005:
-     .                AKm_est, AKm )
+     .               AKm_est, AKm )
 
-           rain_rate = ( rrm * Vr ) * ( rhot / 1000.0 )     ! rain rate (m/s)
-     .                                   * ( 86400.0 * 1000.0 )  ! rate: mm/day
+          rain_rate = ( rrm * Vr ) * ( rhot / 1000.0 )     ! rain rate (m/s)
+     .                                  * ( 86400.0 * 1000.0 )  ! rate: mm/day
 
-           F_precip = ( rrm * Vr ) * ( rhot / 1000.0 )
-     .                                  * 1000.0 * Lv       ! Precip. flux (W/m^2)
+          F_precip = ( rrm * Vr ) * ( rhot / 1000.0 )
+     .                                 * 1000.0 * Lv       ! Precip. flux (W/m^2)
 
        ENDIF ! kk_rain
+
        if ( .not. isValid ) return
 
 !      Store the saturation mixing ratio for output purposes.  Brian
@@ -1481,15 +1484,18 @@
 !      Advance rtm/wprtp and thlm/wpthlp one time step
 
        call timestep_mixing
-     .      ( dt, taum, wmm, wmt, wp2, wp3, Scm, exner, 
+     .      ( dt, taum, wmm, wmt, wp2, wp3, Scm, 
      .        rtm, wprtp, rtpthvp, rtm_forcing,
+     .        thlm, wpthlp, thlpthvp, thlm_forcing, 
+     .        rhot, rhom, exner, rcm, Ncm, 
      .        cond_rrm, auto_rrm, accr_rrm,             
-     .        thlm, wpthlp, thlpthvp, thlm_forcing, isValid 
+     .        cloud_sed, kk_rain, isValid 
 #ifdef SCALARS
      .        ,sclrm, wpsclrp, sclrpthvp, sclrm_forcing   ! optional
 #endif SCALARS
      .      )
        if ( .not. isValid ) return
+
 
 !      Advance wp2/wp3 one timestep
 
@@ -1499,6 +1505,7 @@
      .       wmt, wmm,
      .       um, upwp, vm, vpwp, wpthvp, wp2thvp,
      .       wp2, wp3, isValid )
+
        if ( .not. isValid ) return
 
 !      Set initial turbulence over first so many
@@ -1545,6 +1552,7 @@
      .               + vm(gr%nnzp-1)
            
        if ( .not. isValid ) return
+
 
 !      Shear production.  Brian
        do k = 1, gr%nnzp-1, 1

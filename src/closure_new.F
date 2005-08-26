@@ -1,4 +1,4 @@
-! $Id: closure_new.F,v 1.9 2005-08-23 21:11:10 dschanen Exp $
+! $Id: closure_new.F,v 1.10 2005-08-26 00:08:58 griffinb Exp $
       module pdf_closure
 
       implicit none
@@ -29,6 +29,7 @@
      .                              wprcp, wp2rcp, rtprcp, thlprcp,
      .                              pdf_parms,
      .                              crt1, crt2, cthl1, cthl2,
+     .                              Ncm, runtype,
      .                              sclrm, wpsclrp,                    !optional
      .                              wpsclrprtp, wpsclrp2,              ! "    "
      .                              sclrprtp, sclrp2, sclrpthlp,       ! "    "
@@ -51,6 +52,7 @@
         real, intent(in) :: rtm, rtp2, wprtp
         real, intent(in) :: thlm, thlp2, wpthlp
         real, intent(in) :: rtpthlp
+        character(50), intent(in):: runtype
 
 ! Input (Optional mixing scheme variables)
 
@@ -70,6 +72,7 @@
         real, intent(out) :: wprtpthlp
         real, intent(out) :: pdf_parms(26)
         real, intent(out) :: crt1, crt2, cthl1, cthl2
+        real, intent(out) :: Ncm
 
 ! Output (Optional mixing scheme variables)
 
@@ -536,6 +539,34 @@
         ! rcm in the first timestep of the FIRE case.
 
         rcm = MAX(0.0, rcm)
+
+        ! The following lines of code specify cloud droplet
+        ! concentration (Ncm).  The cloud droplet concentration has
+        ! been moved here instead of being stated in Subroutine rain
+        ! for the following reasons:
+        !    a) The effects of cloud droplet sedimentation can be computed
+        !       without having to call the precipitation scheme.
+        !    b) The cloud water mixing ratio (rcm) is computed using the
+        !       PDF scheme.  Perhaps someday Ncm can also be computed by
+        !       the same scheme.
+        !    c) It seems more appropriate to declare Ncm in the same place
+        !       where rcm is computed.
+        !
+        ! Determine Ncm based on rcm and runtype.  Since cloud base (zb) is
+        ! determined by the mixing ratio 1.0E-6, so will cloud droplet
+        ! number concentration (Ncm).
+        IF (rcm > 1.0E-6) THEN
+           IF ( TRIM(runtype) == "dycoms2_rf02_d" ) THEN
+              Ncm = 55000000.0
+           ELSEIF ( TRIM(runtype) == "astex_a209" ) THEN
+              Ncm = 25000000.0
+           ELSE
+              Ncm = 50000000.0  ! Average maritime distribution.
+!              Ncm = 150000000.0 ! Average continental distribution.
+           ENDIF
+        ELSE
+           Ncm = 0.0
+        ENDIF
 
 !       save pdf parameters
 

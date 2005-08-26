@@ -1,16 +1,16 @@
 !----------------------------------------------------------------------        
-! $Id: rain.F,v 1.24 2005-08-25 13:12:16 griffinb Exp $
+! $Id: rain.F,v 1.25 2005-08-26 00:08:58 griffinb Exp $
 
 ! This subroutine advances drizzle (rrm and Nrm) one timestep.
 ! It uses implicit discretization and formulas by 
 !     Khairoutdinov and Kogan (2000)
 !----------------------------------------------------------------------        
         SUBROUTINE rain( dt, thlm, p, exner, rhot, wmt, pdf_parms,
-     .                   rcm, rtm, rrm, Nrm, cond_rrm, auto_rrm,
-     .                   accr_rrm, sed_rrm, diff_rrm, subs_rrm,
-     .                   cond_Nrm, auto_Nrm, sed_Nrm, diff_Nrm, 
-     .                   subs_Nrm, Vr, mean_vol_rad,
-     .                   runtype, isValid,
+     .                   rtm, rcm, Ncm, rrm, Nrm, cond_rrm,
+     .                   auto_rrm, accr_rrm, sed_rrm, diff_rrm,
+     .                   subs_rrm, cond_Nrm, auto_Nrm, sed_Nrm,
+     .                   diff_Nrm, subs_Nrm, Vr, mean_vol_rad,
+     .                   isValid,
 ! LH Kessler autoconversion.  Vince Larson 22 May 2005:
      .                   AKm_est, AKm )
 
@@ -33,9 +33,10 @@
         REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rhot   ! density
         REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: wmt    ! vertical velocity
         REAL, DIMENSION(1:gr%nnzp, 1:26), INTENT(IN):: pdf_parms
-        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rcm    ! cloud water mixing ratio
         REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rtm    ! total water mixing ratio
-        CHARACTER(50), INTENT(IN):: runtype
+        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rcm    ! cloud water mixing ratio
+        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: Ncm    ! cloud droplet number conc.
+                                                        !   number/m^3
 
         ! Input/Output
         REAL, DIMENSION(1:gr%nnzp), INTENT(INOUT):: rrm ! rain water mixing ratio
@@ -61,8 +62,6 @@
 
         ! Local variables
         REAL, DIMENSION(1:gr%nnzp):: rvm          ! water vapor mixing ratio; kg/kg
-        REAL, DIMENSION(1:gr%nnzp):: conc_cloud   ! concentration of cloud drops; 
-                                                  !   number/m^3
         REAL, DIMENSION(1:gr%nnzp):: Temp         ! Temperature; K
         REAL, DIMENSION(1:gr%nnzp):: es           ! Saturation vapor pressure; Pa
         REAL, DIMENSION(1:gr%nnzp):: Supsat       ! Supersaturation
@@ -251,20 +250,6 @@
            ! Find current vapor pressure.
            e = (p(k)*rvm(k))/(ep + rvm(k))
 
-           ! Concentration of cloud drops at this altitude.
-           IF (rcm(k) > 0.0) THEN
-              IF ( TRIM(runtype) == "dycoms2_rf02_d" ) THEN
-                 conc_cloud(k) = 55000000.0
-              ELSEIF ( TRIM(runtype) == "astex_a209" ) THEN
-                 conc_cloud(k) = 25000000.0
-              ELSE
-                 conc_cloud(k) = 50000000.0  ! Average maritime distribution.
-!                 conc_cloud(k) = 150000000.0 ! Average continental distribution.
-              ENDIF
-           ELSE
-              conc_cloud(k) = 0.0
-           ENDIF
-
            ! Get theta from theta-l
            thm = thlm(k) + (Lv/(Cp*exner(k)))*rcm(k)
 
@@ -363,7 +348,7 @@
 
 ! Vince Larson added option to call LH sampled Kessler autoconversion.
 ! 22 May 2005
-!           auto_rrm(k) = autoconv_rrm( rcm(k), conc_cloud(k), rhot(k),
+!           auto_rrm(k) = autoconv_rrm( rcm(k), Ncm(k), rhot(k),
 !     .                        a, s1, s2, ss1, ss2, rc1, rc2 )
            if ( LH_on ) then
 
@@ -372,8 +357,8 @@
 
            else
 
-              auto_rrm(k) = autoconv_rrm( rcm(k), conc_cloud(k), 
-     .               rhot(k), a, s1, s2, ss1, ss2, rc1, rc2 )
+              auto_rrm(k) = autoconv_rrm( rcm(k), Ncm(k), rhot(k),
+     .                           a, s1, s2, ss1, ss2, rc1, rc2 )
 
            endif
 ! End Vince Larson's addition
@@ -1009,19 +994,19 @@
 
 !------------------------------------------------------------------------
 
-        FUNCTION autoconv_rrm( rcm, conc_cloud, rhot,
+        FUNCTION autoconv_rrm( rcm, Ncm, rhot,
      .                         a, s1, s2, ss1, ss2, rc1, rc2 )
         USE constants
 
         IMPLICIT NONE
 
-        REAL, INTENT(IN):: rcm, conc_cloud, rhot
+        REAL, INTENT(IN):: rcm, Ncm, rhot
 !        LOGICAL, INTENT(IN):: local_kk
         REAL, INTENT(IN):: a, s1, s2, ss1, ss2, rc1, rc2
         REAL:: autoconv_rrm
 
         ! Single Normal-Lognormal PDF Variables.
-        REAL:: conc_cloud_kg
+        REAL:: Ncm_kg
         REAL:: Ncp2_Ncm2
         REAL:: u_Nc_G, sig2_Nc_G
         REAL:: corr_rcNc_G
@@ -1034,7 +1019,7 @@
 
         ! Change in rain water mixing ratio over time due to autoconversion.
 
-        IF (rcm > 0.0 .AND. conc_cloud > 0.0) THEN
+        IF (rcm > 0.0 .AND. Ncm > 0.0) THEN
 
            IF ( local_kk ) THEN
 
@@ -1042,7 +1027,7 @@
               ! cloud droplet concentration converted to num/cm^3.
 
               autoconv_rrm = 1350.0*(rcm**2.47)
-     .                      *((conc_cloud/1000000.0)**(-1.79))
+     .                      *((Ncm/1000000.0)**(-1.79))
 
            ELSEIF ( .not. local_kk ) THEN
 
@@ -1051,12 +1036,12 @@
               ! stays as num/m^3 and Larson has changed the value of the
               ! coefficient.
 
-              conc_cloud_kg = conc_cloud/rhot
+              Ncm_kg = Ncm/rhot
 
               ! Ncp2_Ncm2=0.07 agrees with COAMPS DYCOMS2 RF02 (in cloud). 
               Ncp2_Ncm2 = 0.07
 
-              u_Nc_G = LOG( conc_cloud_kg 
+              u_Nc_G = LOG( Ncm_kg 
      .                     * ((1.0 + Ncp2_Ncm2)**(-1.0/2.0)) )
               sig2_Nc_G = LOG(1.0 + Ncp2_Ncm2)
 

@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: arrays.F,v 1.20 2005-08-21 19:36:10 griffinb Exp $
+! $Id: arrays.F,v 1.21 2005-08-26 00:08:58 griffinb Exp $
 
 ! This module contains definitions of all prognostic and diagnostic
 ! arrays used in the single column model, as well as subroutines
@@ -70,7 +70,8 @@
 
         real, allocatable, target :: cf(:)        ! cloud fraction
         real, allocatable, target :: thvm(:)      ! virtual potential temp 
-        real, allocatable, target :: rcm(:)       ! liquid water mixing ratio
+        real, allocatable, target :: rcm(:)       ! cloud water mixing ratio
+        real, allocatable, target :: Ncm(:)       ! cloud droplet number conc. ! Brian
         real, allocatable, target :: rsm(:)       ! saturation mixing ratio  ! Brian
         real, allocatable, target :: rrm(:)       ! rain water mixing ratio  ! Brian
         real, allocatable, target :: cond_rrm(:)  ! condensation factor in rrm ! Brian
@@ -242,7 +243,8 @@ c Diagnostic variables
 
         allocate( cf(1:nzmax) )        ! cloud fraction
         allocate( thvm(1:nzmax) )      ! virtual potential temperature
-        allocate( rcm(1:nzmax) )       ! liquid water mixing ratio
+        allocate( rcm(1:nzmax) )       ! cloud water mixing ratio
+        allocate( Ncm(1:nzmax) )       ! cloud droplet number conc. ! Brian
         allocate( rsm(1:nzmax) )       ! saturation mixing ratio  ! Brian
         allocate( rrm(1:nzmax) )       ! rain water mixing ratio  ! Brian
         allocate( cond_rrm(1:nzmax) )  ! condensation factor in rrm ! Brian
@@ -403,7 +405,8 @@ c Diagnostic variables
 
         deallocate( cf )        ! cloud fraction
         deallocate( thvm )      ! virtual potential temperature
-        deallocate( rcm )       ! liquid water mixing ratio
+        deallocate( rcm )       ! cloud water mixing ratio
+        deallocate( Ncm )       ! cloud droplet number conc. ! Brian
         deallocate( rsm )       ! saturation mixing ratio  ! Brian
         deallocate( rrm )       ! rain water mixing ratio  ! Brian
         deallocate( cond_rrm )  ! condensation factor in rrm ! Brian
@@ -586,7 +589,8 @@ c Diagnostic variables
 
         cf           = 0.   ! cloud fraction
         thvm         = 0.   ! virtual potential temperature
-        rcm          = 0.   ! liquid water mixing ratio
+        rcm          = 0.   ! cloud water mixing ratio
+        Ncm          = 0.   ! cloud droplet number conc. ! Brian
         rsm          = 0.   ! saturation mixing ratio  ! Brian
         rrm          = 0.   ! rain water mixing ratio  ! Brian
         cond_rrm     = 0.   ! condensation factor in rrm ! Brian
