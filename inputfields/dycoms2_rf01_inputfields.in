@@ -31,9 +31,9 @@ mu         = 6.e-4
 /
 
 &setfields
-datafile     = "../les_data/dycoms2_rf01"
-sample_ratio = 3.0
-input_type ="les"
+datafile      = "../les_data/dycoms2_rf01"
+sample_ratio  = 1.0
+input_type    ="rf1"
 input_um      = .true.
 input_vm      = .true.
 input_rtm     = .true.
@@ -42,9 +42,9 @@ input_wp2     = .true.
 input_wprtp   = .true.
 input_wpthlp  = .true.
 input_wp3     = .true.
-input_rtp2    = .true.
-input_thlp2   = .true.
-input_rtpthlp = .true.
+input_rtp2    = .false.
+input_thlp2   = .false.
+input_rtpthlp = .false.
 input_upwp    = .true.
 input_vpwp    = .true.
 /
