@@ -10,14 +10,15 @@
 #######################################################################
 # Select a run, comment out the rest
 # RUN_CASE=atex 
-  RUN_CASE=arm 
+# RUN_CASE=arm 
 # RUN_CASE=bomex 
-# RUN_CASE=dycoms2_rf01 
+  RUN_CASE=dycoms2_rf01 
 # RUN_CASE=dycoms2_rf02_d 
 # RUN_CASE=dycoms2_rf02_nd 
 # RUN_CASE=fire 
 # RUN_CASE=nov11_altocu
 # RUN_CASE=wangara  
+# Brian and Dr. Larson's DYCOMS2 RF02 drizzle parameters:
 # RUN_CASE=20050821_1218
 #######################################################################
 # Check for necessary namelists.  If files exist, then
@@ -42,7 +43,7 @@
 # State which case is being run
  echo "Running" $RUN_CASE
 # Run HOC
-./hoc_standalone
+ ./hoc_standalone
 
 # remove the temporary error.in file
  rm -f 'standalone.in'
