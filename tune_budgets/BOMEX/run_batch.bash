@@ -1,7 +1,7 @@
 ####################################################################### 
-# Runs all the cases in sequence.
-# create_files.sh will need to be run before this if the directories
-# don't exist.
+# Tunes all the budget terms in sequence independently of one another.
+# create_files.sh will need to be run before this if the directories 
+# and namelists don't exist.
 ####################################################################### 
 
 declare -ar CASES=([0]=wp2_bp [1]=wp2_prdp [2]=wp3_bp [3]=wp3_prdp [4]=wp3_tp\
