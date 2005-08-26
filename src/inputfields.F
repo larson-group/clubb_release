@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputfields.F,v 1.6 2005-08-23 21:11:10 dschanen Exp $
+! $Id: inputfields.F,v 1.7 2005-08-26 17:02:36 dschanen Exp $
 
 ! Module inputfields
 
@@ -156,6 +156,113 @@
 
           call close_grads_read( fread_var )
 
+        case( "rf1" )   ! special case for DYCOMS II RF01
+          call open_grads_read( 15, trim(datafile)//"_coamps_sm.ctl", 
+     .                          fread_var )
+!         stats_sm
+
+          if (present( um ) .and. input_um) then
+            call get_var( fread_var, "um", timestep,
+     .                    tmp1(1:gr%nnzp-2), error )
+            um(3:gr%nnzp) = tmp1(1:gr%nnzp-2) 
+            um(2) = 2. * um(3) - um(4) ! Double extrapolation
+            um(1) = 2. * um(2) - um(3)
+          endif
+
+          if (present( vm ) .and. input_vm) then 
+            call get_var( fread_var, "vm", timestep,
+     .                    tmp1(1:gr%nnzp-2), error )
+            vm(3:gr%nnzp) = tmp1(1:gr%nnzp-2) 
+            vm(2) = 2. * vm(3) - vm(4) ! Double extrapolation
+            vm(1) = 2. * vm(2) - vm(3)
+          endif
+
+          if (present( rtm ) .and. input_rtm) then 
+            call get_var( fread_var, "qtm", timestep,
+     .                    tmp1(1:gr%nnzp-2), error )
+            rtm(3:gr%nnzp) = tmp1(1:gr%nnzp-2) 
+            rtm(1:2) = rtm(3)
+          endif
+
+          if (present( thlm ) .and. input_thlm) then
+            call get_var( fread_var, "thlm", 
+     .                    timestep,
+     .                    tmp1(1:gr%nnzp-2), error )
+            thlm(3:gr%nnzp) = tmp1(1:gr%nnzp-2) 
+            thlm(1:2) = thlm(3)
+          endif
+
+          if (present( wp3 ) .and. input_wp3) then 
+            call get_var( fread_var, "wp3", timestep,
+     .                    tmp1(1:gr%nnzp-2), error )
+            wp3(3:gr%nnzp) = tmp1(1:gr%nnzp-2) 
+            wp3(1:2) = 0.
+          endif
+
+          if (present( wprtp ) .and. input_wprtp) then
+            call get_var( fread_var, "wpqtp", 
+     .                    timestep, tmp1(1:gr%nnzp-1),
+     .                    error )
+            call interpolate_m( tmp1(1:gr%nnzp-1), wprtp(3:gr%nnzp) )
+            ! Use linear extrapolation, assuming equal grid spacing,
+            ! although the boundary flux is usually solved in LES
+            ! or hoc via a subroutine like sfc_var.
+            wprtp(2) = 2. * wprtp(3) - wprtp(4) 
+            wprtp(1) = 2. * wprtp(2) - wprtp(3) 
+          endif
+
+          if (present( wpthlp ) .and. input_wpthlp) then 
+            call get_var( fread_var, "wpthlp", 
+     .                    timestep, tmp1(1:gr%nnzp-1), 
+     .                    error )
+            call interpolate_m( tmp1(1:gr%nnzp-1), wpthlp(3:gr%nnzp) )
+            ! Use linear extrapolation, assuming equal grid spacing,
+            ! although the boundary flux is usually solved in LES
+            ! or hoc via a subroutine like sfc_var.
+            wpthlp(2) = 2. * wpthlp(3) - wpthlp(4)
+            wpthlp(1) = 2. * wpthlp(2) - wpthlp(3)
+          endif
+
+          if (present( rtp2 ) .and. input_rtp2) then 
+            call get_var( fread_var, "qtp2", 
+     .                    timestep,
+     .                    tmp1(1:gr%nnzp-1), error )
+            call interpolate_m( tmp1(2:gr%nnzp), rtp2(3:gr%nnzp) )
+            ! Using a linear interpolation here resulted in negatives.
+            rtp2(1:2) =  rtp2(3)
+            if ( any (rtp2(1:gr%nnzp) < 0.0 ) ) then
+! %% debug
+!              print *, "Some values of rtp2 are negative, compensating."
+! %% debug
+              do k=1, gr%nnzp
+                rtp2(k) = max(rtp2(k), 0.0)
+              enddo
+            endif
+          endif
+
+          if (present( thlp2 ) .and. input_thlp2) then 
+            call get_var( fread_var, "thlp2", 
+     .                    timestep, tmp1(1:gr%nnzp), error )
+            ! Using a linear interpolation here resulted in negatives.
+            thlp2(1:2) = thlp2(3)
+          endif
+
+          if (present( rtpthlp ) .and. input_rtpthlp) then 
+            call get_var( fread_var, "qtpthlp", 
+     .                    timestep, tmp1(1:gr%nnzp-1),
+     .                    error )
+            call interpolate_m( tmp1(1:gr%nnzp-1), rtpthlp(3:gr%nnzp) )
+            ! Use linear extrapolation, assuming equal grid spacing,
+            ! although the boundary flux is usually solved in LES
+            ! or hoc via a subroutine like sfc_var.
+            rtpthlp(2) = 2. * rtpthlp(3) - rtpthlp(4)
+            rtpthlp(1) = 2. * rtpthlp(2) - rtpthlp(3)
+          endif
+
+          if ( error ) stop "oops, get_var failed in field_reader"
+
+          call close_grads_read( fread_var )
+
         case( "les" )
           call open_grads_read( 15, trim(datafile)//"_coamps_sm.ctl", 
      .                          fread_var )
@@ -268,7 +375,11 @@
           if ( error ) stop "oops, get_var failed in field_reader"
 
           call close_grads_read( fread_var )
+        end select
 
+
+        select case( input_type )
+        case( "les", "rf1" )
 !         stats_sw
 
           call open_grads_read( 15, trim(datafile)//"_coamps_sw.ctl", 
