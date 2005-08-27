@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.46 2005-08-27 16:09:40 griffinb Exp $
+! $Id: hoc.F,v 1.47 2005-08-27 17:16:11 griffinb Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -64,10 +64,6 @@
        real, private :: dtclosure                 ! closure model timestep (s)
        real, private :: dt
 
-
-!      Flag for Khairoutdinov and Kogan rain microphysics. - Brian
-       logical                :: kk_rain
-
 !      Surface data
        real, private :: Tsfc                       ! surface temperature (K)
        real, private :: psfc                       ! surface pressure (Pa)
@@ -75,8 +71,14 @@
        real, private :: LE                         ! latent heat flux (1/s)
        real, private :: ustar                      ! - Brian DYCOMS_2
 
-!     Coriolis parameter
+!      Coriolis parameter
        real, private :: fcor 
+
+!      Flag for cloud water droplet sedimentation. - Brian
+       logical, private :: cloud_sed
+
+!      Flag for Khairoutdinov and Kogan rain microphysics. - Brian
+       logical, private :: kk_rain
 
 !------- Local variables for Latin Hypercube sampling ------------------
        real, private    :: crt1, crt2, cthl1, cthl2   ! coeffs of s from pdf_closure_new
@@ -216,7 +218,8 @@
      .                          day, month, year, 
      .                          time_initial, time_final, time_spinup,
      .                          dtmain, dtclosure,
-     .                          sfctype, Tsfc, psfc, SE, LE, fcor
+     .                          sfctype, Tsfc, psfc, SE, LE, fcor,
+     .                          cloud_sed, kk_rain
 
 !      Internal Timing Variables
 
@@ -441,12 +444,13 @@
 !      Internal
        integer k
 
-!       Definition of namelists
-        namelist /model_setting/ runtype, nzmax, deltaz, 
-     .                           day, month, year, 
-     .                           time_initial, time_final, time_spinup,
-     .                           dtmain, dtclosure,
-     .                           sfctype, Tsfc, psfc, SE, LE, fcor
+!      Definition of namelists
+       namelist /model_setting/ runtype, nzmax, deltaz, 
+     .                          day, month, year, 
+     .                          time_initial, time_final, time_spinup,
+     .                          dtmain, dtclosure,
+     .                          sfctype, Tsfc, psfc, SE, LE, fcor,
+     .                          cloud_sed, kk_rain
 
 
 !      Internal Timing Variables
@@ -850,7 +854,6 @@
 
          select case ( runtype )
          case ( "normal" ) ! Normal run
-           kk_rain = .false.
 
          case ( "arm" ) ! ARM Cu case
            call arm_tndcy( time, thlm_forcing, rtm_forcing
@@ -858,7 +861,6 @@
      .                     ,sclrm_forcing 
 #endif SCALARS
      .                   )
-           kk_rain = .false.
 
          case ( "bomex" ) ! BOMEX Cu case
            call bomex_tndcy( time, wmt, wmm, 
@@ -867,7 +869,6 @@
      .                       ,sclrm_forcing 
 #endif SCALARS
      .                     )
-           kk_rain = .false.
 
          case ( "fire" ) ! FIRE Sc case
            call fire_tndcy( time, wmt, wmm, thlm_forcing, 
@@ -886,7 +887,6 @@
      .                     ,sclrm_forcing(:,SCLR_THETA)
 #endif SCALARS
      .                   )
-           kk_rain = .false.
 
          case ( "wangara" ) ! Wangara dry CBL
            call wangara_tndcy( time, wmt, wmm, 
@@ -895,7 +895,6 @@
      .                        ,sclrm_forcing   ! optional variable
 #endif SCALARS
      .                        )
-           kk_rain = .false.
 
          case ( "atex" ) ! ATEX case
            call atex_tndcy( time, time_initial, rtm, 
@@ -911,7 +910,6 @@
      .                     ,sclrm_forcing(:, SCLR_THETA)
 #endif SCALARS
      .                   )
-           kk_rain = .false.
 
          case ( "dycoms2_rf01" ) ! DYCOMS2 RF01 case
            call dycoms2_rf01_tndcy( time, rhot, rhom, rtm, 
@@ -922,7 +920,6 @@
      .                              ,sclrm, sclrm_forcing  ! optional variables
 #endif SCALARS
      .                     )
-           kk_rain = .false.
 
          case ( "astex_a209" ) ! ASTEX Sc case for K & K
            call astex_tndcy( time, wmt, wmm, 
@@ -931,7 +928,6 @@
      .                             ,sclrm_forcing   ! optional variable
 #endif SCALARS
      .                     )
-           kk_rain = .true.
 
          case ( "dycoms2_rf02_d" ) ! DYCOMS2 RF02 case with drizzle
            call dycoms2_rf02_tndcy( rhot, rhom, rtm,
@@ -942,7 +938,6 @@
      .                              ,sclrm_forcing  ! optional variable
 #endif SCALARS
      .                             )
-           kk_rain = .true.
          case ( "dycoms2_rf02_nd" ) ! DYCOMS2 RF02 case with no drizzle
            call dycoms2_rf02_tndcy( rhot, rhom, rtm, 
      .                              rcm, wmt, wmm,
@@ -952,7 +947,6 @@
      .                             ,sclrm_forcing   ! optional variable
 #endif SCALARS
      .                             )
-           kk_rain = .false.
 
          case ( "nov11_altocu" ) ! Nov. 11 Altocumulus case.
            call nov11_altocu_tndcy( time, time_initial, dt, thlm,
@@ -963,7 +957,6 @@
      .                             ,sclrm_forcing   ! optional variable
 #endif SCALARS
      .                             )
-           kk_rain = .false.
 
          case default
            stop "hoc_model: Don't know how to do this runtype"
