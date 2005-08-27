@@ -9,7 +9,7 @@
 # OMP_NUM_THREADS=2
 #######################################################################
 # This will loop over all runs in sequence 
-for (( x = 1; x <= 10; x++)); do
+for (( x = 1; x <= 12; x++)); do
   case $x in
    1 )
      RUN_CASE=arm ;;
@@ -20,16 +20,20 @@ for (( x = 1; x <= 10; x++)); do
    4 )
      RUN_CASE=dycoms2_rf01 ;;
    5 )
-     RUN_CASE=dycoms2_rf02_d ;;
+     RUN_CASE=dycoms2_rf02_do ;;
    6 )
-     RUN_CASE=dycoms2_rf02_nd ;;
+     RUN_CASE=dycoms2_rf02_ds ;;
    7 )
-     RUN_CASE=fire ;;
+     RUN_CASE=dycoms2_rf02_nd ;;
    8 )
-     RUN_CASE=nov11_altocu ;;
+     RUN_CASE=dycoms2_rf02_so ;;
    9 )
-     RUN_CASE=wangara ;; 
+     RUN_CASE=fire ;;
    10)
+     RUN_CASE=nov11_altocu ;;
+   11)
+     RUN_CASE=wangara ;; 
+   12)
      RUN_CASE=20050821_1218 ;;
    esac
 #######################################################################
