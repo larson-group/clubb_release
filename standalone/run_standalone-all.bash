@@ -12,9 +12,9 @@
 for (( x = 1; x <= 10; x++)); do
   case $x in
    1 )
-     RUN_CASE=atex ;;
-   2 )
      RUN_CASE=arm ;;
+   2 )
+     RUN_CASE=atex ;;
    3 )
      RUN_CASE=bomex ;;
    4 )
