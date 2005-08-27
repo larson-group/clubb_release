@@ -1,5 +1,5 @@
 &model
-run_file = "../tune/dycoms2_rf02_d_hoc.in"
+run_file = "../tune/dycoms2_rf02_do_hoc.in"
 stdout  = .true.
 /
 
@@ -31,7 +31,7 @@ mu         = 6.e-4
 /
 
 &setfields
-datafile     = "../les_data/dycoms2_rf02_d"
+datafile     = "../les_data/dycoms2_rf02_do"
 sample_ratio = 3.0
 input_type ="les"
 input_um      = .true.
