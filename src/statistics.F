@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.20 2005-08-26 01:30:36 griffinb Exp $
+!  $Id: statistics.F,v 1.21 2005-08-27 14:35:17 griffinb Exp $
 
 !  module stats_type
 !  contains:
@@ -112,8 +112,7 @@ c       Indices for statistics in zt file
      .     iVr,            ! Brian
      .     imean_vol_rad,  ! Brian
      .     irain_rate,     ! Brian
-     .     iF_precip,       ! Brian
-     .     iAKm,            ! analytic Kessler.  Vince Larson 22 May 2005 
+     .     iAKm,           ! analytic Kessler.  Vince Larson 22 May 2005 
      .     iAKm_est        ! LH Kessler.  Vince Larson  22 May 2005
 
 
@@ -192,9 +191,10 @@ c       Indices for statistics in zm file
      .     iupwp,
      .     ivpwp,
      .     irhom,
-     .     ifrad,
-     .     ifrad_LW,  ! Brian
-     .     ifrad_SW,  ! Brian
+     .     iFprec,    ! Brian
+     .     iFrad,
+     .     iFrad_LW,  ! Brian
+     .     iFrad_SW,  ! Brian
      .     iscm,
      .     iem,
      .     ishear     ! Brian
@@ -498,7 +498,6 @@ c     -----------------------------------------------------------------
       iVr           = 0  ! Brian
       imean_vol_rad = 0  ! Brian
       irain_rate    = 0  ! Brian
-      iF_precip     = 0  ! Brian
       iAKm          = 0  ! analytic Kessler.  Vince Larson 22 May 2005
       iAKm_est      = 0  ! LH Kessler.  Vince Larson 22 May 2005
 
@@ -906,13 +905,6 @@ c     -----------------------------------------------------------------
           zt%f%var(irain_rate)%ptr => zt%x(:,k)
           zt%f%var(irain_rate)%name = "rain_rate"
           zt%f%var(irain_rate)%description = "rain rate (mm/day)"
-          k = k + 1
-
-        case ('F_precip')      ! Brian
-          iF_precip = k
-          zt%f%var(iF_precip)%ptr => zt%x(:,k)
-          zt%f%var(iF_precip)%name = "F_precip"
-          zt%f%var(iF_precip)%description = "precipitation flux (W/m^2)"
           k = k + 1
  
         case ('AKm')           ! Vince Larson 22 May 2005
@@ -1322,9 +1314,10 @@ c     -----------------------------------------------------------------
       iupwp     = 0
       ivpwp     = 0
       irhom     = 0
-      ifrad     = 0
-      ifrad_LW  = 0    ! Brian
-      ifrad_SW  = 0    ! Brian
+      iFprec    = 0    ! Brian
+      iFrad     = 0
+      iFrad_LW  = 0    ! Brian
+      iFrad_SW  = 0    ! Brian
       iscm      = 0
       iem       = 0
       ishear    = 0    ! Brian
@@ -1545,25 +1538,32 @@ c     -----------------------------------------------------------------
           zm%f%var(irhom)%description = "density"
           k = k + 1
 
-        case ('frad')
-          ifrad = k
-          zm%f%var(ifrad)%ptr => zm%x(:,k)
-          zm%f%var(ifrad)%name = "frad"
-          zm%f%var(ifrad)%description = "radiative flux"
+        case ('Fprec')      ! Brian
+          iFprec = k
+          zm%f%var(iFprec)%ptr => zm%x(:,k)
+          zm%f%var(iFprec)%name = "Fprec"
+          zm%f%var(iFprec)%description = "precipitation flux (W/m^2)"
+          k = k + 1
+ 
+        case ('Frad')
+          iFrad = k
+          zm%f%var(iFrad)%ptr => zm%x(:,k)
+          zm%f%var(iFrad)%name = "Frad"
+          zm%f%var(iFrad)%description = "radiative flux"
           k = k + 1
 
-        case ('frad_LW')    ! Brian
-          ifrad_LW = k
-          zm%f%var(ifrad_LW)%ptr => zm%x(:,k)
-          zm%f%var(ifrad_LW)%name = "frad_LW"
-          zm%f%var(ifrad_LW)%description = "Long-wave radiative flux"
+        case ('Frad_LW')    ! Brian
+          iFrad_LW = k
+          zm%f%var(iFrad_LW)%ptr => zm%x(:,k)
+          zm%f%var(iFrad_LW)%name = "Frad_LW"
+          zm%f%var(iFrad_LW)%description = "Long-wave radiative flux"
           k = k + 1
 
-        case ('frad_SW')    ! Brian
-          ifrad_SW = k
-          zm%f%var(ifrad_SW)%ptr => zm%x(:,k)
-          zm%f%var(ifrad_SW)%name = "frad_SW"
-          zm%f%var(ifrad_SW)%description = "Short-wave radiative flux"
+        case ('Frad_SW')    ! Brian
+          iFrad_SW = k
+          zm%f%var(iFrad_SW)%ptr => zm%x(:,k)
+          zm%f%var(iFrad_SW)%name = "Frad_SW"
+          zm%f%var(iFrad_SW)%description = "Short-wave radiative flux"
           k = k + 1
 
         case ('sc')
@@ -2640,10 +2640,6 @@ c     -----------------------------------------------------------------
           zt%x(:,irain_rate) = zt%x(:,irain_rate) + rain_rate
           zt%n(:,irain_rate) = zt%n(:,irain_rate) + 1
         endif
-        if ( iF_precip > 0 ) then      ! Brian
-          zt%x(:,iF_precip) = zt%x(:,iF_precip) + F_precip
-          zt%n(:,iF_precip) = zt%n(:,iF_precip) + 1
-        endif
 
         if ( iAKm > 0 ) then           ! Vince Larson 22 May 2005
           zt%x(:,iAKm) = zt%x(:,iAKm) + AKm
@@ -2918,19 +2914,26 @@ c     -----------------------------------------------------------------
           zm%n(:,irhom) = zm%n(:,irhom) + 1
         endif
 
-        if ( ifrad > 0 ) then
-          zm%x(:,ifrad) = zm%x(:,ifrad) + frad
-          zm%n(:,ifrad) = zm%n(:,ifrad) + 1
+        if ( iFprec > 0 ) then    ! Brian
+          zm%x(:,iFprec) = zm%x(:,iFprec) + Fprec
+          zm%n(:,iFprec) = zm%n(:,iFprec) + 1
         endif
 
-       if ( ifrad_LW > 0 ) then  ! Brian
-          zm%x(:,ifrad_LW) = zm%x(:,ifrad_LW) + frad_LW
-          zm%n(:,ifrad_LW) = zm%n(:,ifrad_LW) + 1
+        if ( iFrad > 0 ) then
+          zm%x(:,iFrad) = zm%x(:,iFrad) + Frad
+          zm%n(:,iFrad) = zm%n(:,iFrad) + 1
         endif
-        if ( ifrad_SW > 0 ) then  ! Brian
-          zm%x(:,ifrad_SW) = zm%x(:,ifrad_SW) + frad_SW
-          zm%n(:,ifrad_SW) = zm%n(:,ifrad_SW) + 1
+
+        if ( iFrad_LW > 0 ) then  ! Brian
+          zm%x(:,iFrad_LW) = zm%x(:,iFrad_LW) + Frad_LW
+          zm%n(:,iFrad_LW) = zm%n(:,iFrad_LW) + 1
         endif
+
+        if ( iFrad_SW > 0 ) then  ! Brian
+          zm%x(:,iFrad_SW) = zm%x(:,iFrad_SW) + Frad_SW
+          zm%n(:,iFrad_SW) = zm%n(:,iFrad_SW) + 1
+        endif
+
         if ( iscm > 0 ) then
           zm%x(:,iscm) = zm%x(:,iscm) + scm
           zm%n(:,iscm) = zm%n(:,iscm) + 1
@@ -3066,7 +3069,7 @@ c     -----------------------------------------------------------------
 !       LWP
         if ( ilwp > 0 ) then
           xtmp = 0.
-          do i=gr%nnzp-1,2,-1
+          do i = gr%nnzp-1, 1, -1
            xtmp = xtmp + rhot(i+1) * rcm(i+1) / gr%dzt(i+1)
           enddo
           sfc%x(1,ilwp) = sfc%x(1,ilwp) + xtmp

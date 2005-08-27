@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.18 2005-08-21 19:36:10 griffinb Exp $ 
+! $Id: gcss.F,v 1.19 2005-08-27 14:35:17 griffinb Exp $ 
 
 ! This file contains extra subroutines to simulate the GCSS ARM and
 ! GCSS BOMEX, GCSS ATEX, GCSS FIRE intercomparison cases as well 
@@ -823,14 +823,18 @@
         real, intent(in) :: rhot(gr%nnzp)       ! density (thermo point)
         real, intent(in) :: rcm(gr%nnzp)        ! liquid water mixing ratio
 
-!        Output
+!       Output
 
-        real, intent(out) :: Frad(gr%nnzp)        ! IR radiative flux
-        real, intent(out) :: htrt(gr%nnzp)        ! Radiative heating rate
+        real, intent(out)   :: Frad(gr%nnzp)        ! IR radiative flux
+        real, intent(inout) :: htrt(gr%nnzp)        ! Radiative heating rate
 
-!        Output (optional)
+!       Output (optional)
 
         real, optional, intent(out) :: sclr_rate(gr%nnzp)   ! Radiative heating rate ( scalar(1) )
+
+!       Local
+
+        real, dimension(1:gr%nnzp):: LWP        ! Liquid Water Path
 
         real F0,k
         parameter (F0 = 74., k = 130.)
@@ -840,21 +844,20 @@
 !       Compute liquid water path from top of the model
 !       We define liquid water path on momentum levels
 
-        Frad(gr%nnzp) = 0.
-        do i=gr%nnzp-1,2,-1
-           Frad(i) = Frad(i+1) + rhot(i+1) * rcm(i+1) / gr%dzt(i+1)
+        LWP(gr%nnzp) = 0.
+        do i = gr%nnzp-1, 1, -1
+           LWP(i) = LWP(i+1) + rhot(i+1) * rcm(i+1) / gr%dzt(i+1)
         enddo
-        Frad(1) = Frad(2)
 
 !       Compute IR radiative flux
 
-        do i=1,gr%nnzp
-           Frad(i) = F0 * exp( -k * 1.0 * Frad(i) )
+        do i = 1, gr%nnzp, 1
+           Frad(i) = F0 * EXP( -k * 1.0 * LWP(i) )
         enddo
 
 !       Compute IR heating rate
 
-        htrt          = htrt - 1. / ( Cp * rhot ) * ddzm( Frad )
+        htrt          = htrt + ( -1.0/(Cp*rhot) ) * ddzm( Frad )
         htrt(1)       = 0.
         htrt(gr%nnzp) = 0.
 
@@ -960,17 +963,16 @@
 !       We define liquid water path on momentum levels
 
         lwp(gr%nnzp) = 0.0
-        do i=gr%nnzp-1,2,-1
+        do i = gr%nnzp-1, 1, -1
            lwp(i) = lwp(i+1) + rhot(i+1) * rcm(i+1) / gr%dzt(i+1)
         enddo
-        lwp(1) = lwp(2)
-!        x_sfc(1,ilwp) = lwp(2)
+!        x_sfc(1,ilwp) = lwp(1)
 
 !       Compute IR radiative flux
 
-        do i=1,gr%nnzp
-           Frad(i) = F0 * exp( -kay *lwp(i) )
-     .             + F1 * exp( -kay * (lwp(1)-lwp(i)) )
+        do i = 1, gr%nnzp, 1
+           Frad(i) = F0 * EXP( -kay * lwp(i) )
+     .             + F1 * EXP( -kay * (lwp(1)-lwp(i)) )
            if ( zi > 0 .and. gr%zm(i) > zi ) then
              Frad(i) = Frad(i)
      .               + rhom(i) * cp * lsdiv
@@ -981,7 +983,7 @@
 
 !       Compute IR heating rate
 
-        htrt          = - 1. / ( Cp * rhot ) * ddzm( Frad )
+        htrt          = ( -1.0/(Cp*rhot) ) * ddzm( Frad )
         htrt(1)       = 0.
         htrt(gr%nnzp) = 0.
 
@@ -1061,10 +1063,9 @@
 !       We define liquid water path on momentum levels
 
         LWP(gr%nnzp) = 0.0
-        DO k = gr%nnzp-1, 2, -1
+        DO k = gr%nnzp-1, 1, -1
            LWP(k) = LWP(k+1) + rhot(k+1)*rcm(k+1)/gr%dzt(k+1)
         ENDDO
-        LWP(1) = LWP(2)
 
 !       Find the height of the isotherm rtm = 8.0 g/kg.
 
@@ -1080,8 +1081,8 @@
            isValid = .false.
            return
         ENDIF
-        z_i = (gr%zt(k)-gr%zt(k-1))/(rtm(k)-rtm(k-1))*(8.0e-3-rtm(k-1))
-     .       + gr%zt(k-1)
+        z_i = ( (gr%zt(k)-gr%zt(k-1))/(rtm(k)-rtm(k-1)) )
+     .       * (8.0e-3-rtm(k-1)) + gr%zt(k-1)
 
 !       Compute the Heaviside step function for z - z_i.
 
@@ -1101,14 +1102,14 @@
         DO k = 1, gr%nnzp, 1
 
            Frad(k) =  F0 * EXP( -kap * LWP(k) )
-     .               + F1 * EXP( -kap * (LWP(1) - LWP(k)) )
+     .              + F1 * EXP( -kap * (LWP(1) - LWP(k)) )
 
            IF ( Heaviside(k) > 0.0 ) THEN
               Frad(k) = Frad(k)
      .                  + rhom(k) * Cp * ls_div * Heaviside(k)
      .                  * ( 0.25 * ((gr%zm(k)-z_i)**(4.0/3.0))
      .                     + z_i * ((gr%zm(k)-z_i)**(1.0/3.0)) )
-          ENDIF
+           ENDIF
 
         ENDDO 
 
@@ -1116,7 +1117,7 @@
         ! The radiative heating rate is defined on thermodynamic levels.
 
         DO k = 2, gr%nnzp, 1
-           htrt(k) = ( -1.0/(Cp*rhot(k)) ) 
+           htrt(k) = ( -1.0/(Cp*rhot(k)) )
      .              * ( Frad(k) - Frad(k-1) ) * gr%dzt(k)
         ENDDO
         htrt(1) = htrt(2)
@@ -1612,7 +1613,8 @@
         !                                                                     !
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        ! tau is defined on momentum levels.  Brian
+        ! optical depth, tau, is defined on momentum levels.  Brian
+        ! tauc is the column total optical depth.  Brian.
 
         tauc         = 0.0
         tau(gr%nnzp) = 0.0      ! optical depth at top of atm. is 0.  Brian.

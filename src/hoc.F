@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.44 2005-08-26 00:08:58 griffinb Exp $
+! $Id: hoc.F,v 1.45 2005-08-27 14:35:17 griffinb Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -1400,11 +1400,15 @@
 ! LH Kessler autoconversion.  Vince Larson 22 May 2005:
      .               AKm_est, AKm )
 
-          rain_rate = ( rrm * Vr ) * ( rhot / 1000.0 )     ! rain rate (m/s)
-     .                                  * ( 86400.0 * 1000.0 )  ! rate: mm/day
+          ! Rainfall rate (mm/day) should be defined on thermodynamic
+          ! levels.  Brian.
+          rain_rate = ( rrm * Vr ) * ( rhot / rho_lw )   ! rainfall rate (m/s)
+     .                                  * ( 86400.0 * 1000.0 )
 
-          F_precip = ( rrm * Vr ) * ( rhot / 1000.0 )
-     .                                 * 1000.0 * Lv       ! Precip. flux (W/m^2)
+          ! Precipitation Flux (W/m^2) should be defined on
+          ! momentum levels.  Brian.
+          Fprec = ( zt2zm(rrm) * zt2zm(Vr) ) * ( rhom / rho_lw )
+     .                                  * rho_lw * Lv
 
        ENDIF ! kk_rain
 
@@ -1440,7 +1444,7 @@
            sfc%n(1,irain) = sfc%n(1,irain) + 1
          endif
          if ( ipflux > 0 ) then   ! Added by Brian
-           sfc%x(1,ipflux) = sfc%x(1,ipflux) + F_precip(2)
+           sfc%x(1,ipflux) = sfc%x(1,ipflux) + Fprec(1)
            sfc%n(1,ipflux) = sfc%n(1,ipflux) + 1
          endif
        endif 

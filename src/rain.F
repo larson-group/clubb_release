@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------        
-! $Id: rain.F,v 1.25 2005-08-26 00:08:58 griffinb Exp $
+! $Id: rain.F,v 1.26 2005-08-27 14:35:17 griffinb Exp $
 
 ! This subroutine advances drizzle (rrm and Nrm) one timestep.
 ! It uses implicit discretization and formulas by 
@@ -229,18 +229,6 @@
 ! Description and notes written by Brian Griffin.
 
 
-!       Set the boundary condition
-
-        rvm(1)          = 0.
-        rs(1)           = 0.
-        Temp(1)         = 0.
-        es(1)           = 0.
-        Vr(1)           = 0.
-        VNr(1)          = 0.
-        Supsat(1)       = 0.
-        Supsat(gr%nnzp) = 0.
-
-
         DO k = 2, gr%nnzp, 1
 
            ! Find the important conditions
@@ -263,6 +251,19 @@
      .                        Vr(k), VNr(k), mean_vol_rad(k) )
 
         ENDDO
+
+
+        ! Set the boundary conditions
+
+        Vr(1)           = Vr(2)
+        VNr(1)          = VNr(2)
+
+        rvm(1)          = 0.
+        rs(1)           = 0.
+        Temp(1)         = 0.
+        es(1)           = 0.
+        Supsat(1)       = 0.
+        Supsat(gr%nnzp) = 0.
 
 
         ! This is not looped over the bottom level because the pdf
@@ -422,6 +423,7 @@
           return
         endif
 
+
 !       boundary conditions on results
 
         ! rrm
@@ -431,6 +433,7 @@
         ! Nrm
         Nrm(1) = Nrm(2)
         Nrm(gr%nnzp) = Nrm(gr%nnzp-1)
+
 
         DO k = 1, gr%nnzp, 1
 

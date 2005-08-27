@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: arrays.F,v 1.21 2005-08-26 00:08:58 griffinb Exp $
+! $Id: arrays.F,v 1.22 2005-08-27 14:35:17 griffinb Exp $
 
 ! This module contains definitions of all prognostic and diagnostic
 ! arrays used in the single column model, as well as subroutines
@@ -89,7 +89,7 @@
         real, allocatable, target :: Vr(:)        ! sedimentation velocity of rain ! Brian
         real, allocatable, target :: mean_vol_rad(:) ! rain drop mean volume radius ! Brian
         real, allocatable, target :: rain_rate(:) ! rainfall rate in mm/day ! Brian
-        real, allocatable, target :: F_precip(:)  ! precipitation flux in W/m^2 ! Brian
+        real, allocatable, target :: Fprec(:)     ! precipitation flux in W/m^2 (momentum point) ! Brian
 
         real, allocatable, target :: Frad(:)      ! Radiative flux (momentum point)
         real, allocatable, target :: Frad_LW(:)   ! Long_wave radiative flux (momentum point)
@@ -262,7 +262,7 @@ c Diagnostic variables
         allocate( Vr(1:nzmax) )        ! sedimentation velocity of rain ! Brian
         allocate( mean_vol_rad(1:nzmax) ) ! rain drop mean volume radius ! Brian
         allocate( rain_rate(1:nzmax) ) ! rainfall rate in mm/day ! Brian
-        allocate( F_precip(1:nzmax) )  ! precipitation flux in W/m^2 ! Brian
+        allocate( Fprec(1:nzmax) )     ! precipitation flux in W/m^2 (momentum point) ! Brian
 
         allocate( Frad(1:nzmax) )      ! radiative flux (momentum point)
         allocate( Frad_LW(1:nzmax) )   ! Long_wave radiative flux (momentum point)
@@ -424,7 +424,7 @@ c Diagnostic variables
         deallocate( Vr )        ! sedimentation velocity of rain ! Brian
         deallocate( mean_vol_rad ) ! rain drop mean volume radius ! Brian
         deallocate( rain_rate ) ! rainfall rate in mm/day ! Brian
-        deallocate( F_precip )  ! precipitation flux in W/m^2 ! Brian
+        deallocate( Fprec )     ! precipitation flux in W/m^2 (momentum point) ! Brian
 
         deallocate( Frad )      ! radiative flux (momentum point)
         deallocate( Frad_LW )   ! Long_wave radiative flux (momentum point)
@@ -608,7 +608,7 @@ c Diagnostic variables
         Vr           = 0.   ! sedimentation velocity of rain ! Brian
         mean_vol_rad = 0.   ! rain drop mean volume radius ! Brian
         rain_rate    = 0.   ! rainfall rate in mm/day ! Brian
-        F_precip     = 0.   ! precipitation flux in W/m^2 ! Brian
+        Fprec        = 0.   ! precipitation flux in W/m^2 (momentum point) ! Brian
 
         Frad    = 0.
         Frad_LW = 0.   ! Long_wave radiative flux (momentum point)
