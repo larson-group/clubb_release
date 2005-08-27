@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: arrays.F,v 1.22 2005-08-27 14:35:17 griffinb Exp $
+! $Id: arrays.F,v 1.23 2005-08-27 16:09:40 griffinb Exp $
 
 ! This module contains definitions of all prognostic and diagnostic
 ! arrays used in the single column model, as well as subroutines
@@ -72,6 +72,7 @@
         real, allocatable, target :: thvm(:)      ! virtual potential temp 
         real, allocatable, target :: rcm(:)       ! cloud water mixing ratio
         real, allocatable, target :: Ncm(:)       ! cloud droplet number conc. ! Brian
+        real, allocatable, target :: sed_rcm(:)   ! sedimentation factor in rcm ! Brian
         real, allocatable, target :: rsm(:)       ! saturation mixing ratio  ! Brian
         real, allocatable, target :: rrm(:)       ! rain water mixing ratio  ! Brian
         real, allocatable, target :: cond_rrm(:)  ! condensation factor in rrm ! Brian
@@ -90,6 +91,8 @@
         real, allocatable, target :: mean_vol_rad(:) ! rain drop mean volume radius ! Brian
         real, allocatable, target :: rain_rate(:) ! rainfall rate in mm/day ! Brian
         real, allocatable, target :: Fprec(:)     ! precipitation flux in W/m^2 (momentum point) ! Brian
+        real, allocatable, target :: Fcsed(:)     ! cloud water sedimentation flux (momentum point) ! Brian
+                                                  ! Note: units are [kg(cloud water)]/[s*m^2]
 
         real, allocatable, target :: Frad(:)      ! Radiative flux (momentum point)
         real, allocatable, target :: Frad_LW(:)   ! Long_wave radiative flux (momentum point)
@@ -245,6 +248,7 @@ c Diagnostic variables
         allocate( thvm(1:nzmax) )      ! virtual potential temperature
         allocate( rcm(1:nzmax) )       ! cloud water mixing ratio
         allocate( Ncm(1:nzmax) )       ! cloud droplet number conc. ! Brian
+        allocate( sed_rcm(1:nzmax) )   ! sedimentation factor in rcm ! Brian
         allocate( rsm(1:nzmax) )       ! saturation mixing ratio  ! Brian
         allocate( rrm(1:nzmax) )       ! rain water mixing ratio  ! Brian
         allocate( cond_rrm(1:nzmax) )  ! condensation factor in rrm ! Brian
@@ -263,6 +267,8 @@ c Diagnostic variables
         allocate( mean_vol_rad(1:nzmax) ) ! rain drop mean volume radius ! Brian
         allocate( rain_rate(1:nzmax) ) ! rainfall rate in mm/day ! Brian
         allocate( Fprec(1:nzmax) )     ! precipitation flux in W/m^2 (momentum point) ! Brian
+        allocate( Fcsed(1:nzmax) )     ! cloud water sedimentation flux (momentum point) ! Brian
+                                       ! Note: units are [kg(cloud water)]/[s*m^2]
 
         allocate( Frad(1:nzmax) )      ! radiative flux (momentum point)
         allocate( Frad_LW(1:nzmax) )   ! Long_wave radiative flux (momentum point)
@@ -407,6 +413,7 @@ c Diagnostic variables
         deallocate( thvm )      ! virtual potential temperature
         deallocate( rcm )       ! cloud water mixing ratio
         deallocate( Ncm )       ! cloud droplet number conc. ! Brian
+        deallocate( sed_rcm )   ! sedimentation factor in rcm ! Brian
         deallocate( rsm )       ! saturation mixing ratio  ! Brian
         deallocate( rrm )       ! rain water mixing ratio  ! Brian
         deallocate( cond_rrm )  ! condensation factor in rrm ! Brian
@@ -425,6 +432,8 @@ c Diagnostic variables
         deallocate( mean_vol_rad ) ! rain drop mean volume radius ! Brian
         deallocate( rain_rate ) ! rainfall rate in mm/day ! Brian
         deallocate( Fprec )     ! precipitation flux in W/m^2 (momentum point) ! Brian
+        deallocate( Fcsed )     ! cloud water sedimentation flux (momentum point) ! Brian
+                                ! Note: units are [kg(cloud water)]/[s*m^2]
 
         deallocate( Frad )      ! radiative flux (momentum point)
         deallocate( Frad_LW )   ! Long_wave radiative flux (momentum point)
@@ -591,6 +600,7 @@ c Diagnostic variables
         thvm         = 0.   ! virtual potential temperature
         rcm          = 0.   ! cloud water mixing ratio
         Ncm          = 0.   ! cloud droplet number conc. ! Brian
+        sed_rcm      = 0.   ! sedimentation factor in rcm ! Brian
         rsm          = 0.   ! saturation mixing ratio  ! Brian
         rrm          = 0.   ! rain water mixing ratio  ! Brian
         cond_rrm     = 0.   ! condensation factor in rrm ! Brian
@@ -609,6 +619,8 @@ c Diagnostic variables
         mean_vol_rad = 0.   ! rain drop mean volume radius ! Brian
         rain_rate    = 0.   ! rainfall rate in mm/day ! Brian
         Fprec        = 0.   ! precipitation flux in W/m^2 (momentum point) ! Brian
+        Fcsed        = 0.   ! cloud water sedimentation flux (momentum point) ! Brian
+                            ! Note: units are [kg(cloud water)]/[s*m^2]
 
         Frad    = 0.
         Frad_LW = 0.   ! Long_wave radiative flux (momentum point)

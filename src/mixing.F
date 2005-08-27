@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.11 2005-08-26 01:30:36 griffinb Exp $
+! $Id: mixing.F,v 1.12 2005-08-27 16:09:40 griffinb Exp $
 !
 ! Module containing the hoc mixing scheme.  Allows for optional variables
 ! and assumed shape arrays.
@@ -24,6 +24,7 @@
      .               thlm, wpthlp, thlpthvp, thlm_forcing,
      .               rhot, rhom, exner, rcm, Ncm, 
      .               cond_rrm, auto_rrm, accr_rrm,
+     .               Fcsed, sed_rcm,
      .               cloud_sed, kk_rain, isValid,
      .               sclrm, wpsclrp, sclrpthvp, sclrm_forcing )
 
@@ -58,6 +59,8 @@
         real, intent(in)    :: cond_rrm(1:gr%nnzp)
         real, intent(in)    :: auto_rrm(1:gr%nnzp)
         real, intent(in)    :: accr_rrm(1:gr%nnzp)
+        real, intent(out)   :: Fcsed(1:gr%nnzp)
+        real, intent(out)   :: sed_rcm(1:gr%nnzp)
         logical, intent(in) :: cloud_sed
         logical, intent(in) :: kk_rain
 !       End Additions for DYCOMS_2
@@ -104,6 +107,7 @@
      .                     rtm, wprtp, rtpthvp, rtm_forcing,
      .                     rhot, rhom, exner, rcm, Ncm,  ! Brian
      .                     cond_rrm, auto_rrm, accr_rrm, ! Brian
+     .                     Fcsed, sed_rcm,               ! Brian
      .                     cloud_sed, kk_rain,           ! Brian
      .                     aa, dd, al, indx )  
 
@@ -122,6 +126,7 @@
      .                     thlm, wpthlp, thlpthvp, thlm_forcing,
      .                     rhot, rhom, exner, rcm, Ncm,  ! Brian
      .                     cond_rrm, auto_rrm, accr_rrm, ! Brian
+     .                     Fcsed, sed_rcm,               ! Brian
      .                     cloud_sed, kk_rain,           ! Brian
      .                     aa, dd, al, indx )
 
@@ -143,8 +148,9 @@
      .                       sclrm(:,SCLR_RT), wpsclrp(:,SCLR_RT),
      .                       sclrpthvp(:,SCLR_RT), 
      .                       sclrm_forcing(:,SCLR_RT),
-     .                       rhot, rhom, exner, rcm, Ncm,
-     .                       cond_rrm, auto_rrm, accr_rrm,
+     .                       rhot, rhom, exner, rcm, Ncm,  ! Brian
+     .                       cond_rrm, auto_rrm, accr_rrm, ! Brian
+     .                       Fcsed, sed_rcm,               ! Brian
      .                       cloud_sed, kk_rain,           ! Brian
      .                       aa, dd, al, indx )
 
@@ -161,8 +167,9 @@
      .                       sclrm(:,SCLR_THETA), wpsclrp(:,SCLR_THETA),
      .                       sclrpthvp(:,SCLR_THETA), 
      .                       sclrm_forcing(:,SCLR_THETA),
-     .                       rhot, rhom, exner, rcm, Ncm,
-     .                       cond_rrm, auto_rrm, accr_rrm,
+     .                       rhot, rhom, exner, rcm, Ncm,  ! Brian
+     .                       cond_rrm, auto_rrm, accr_rrm, ! Brian
+     .                       Fcsed, sed_rcm,               ! Brian
      .                       cloud_sed, kk_rain,           ! Brian
      .                       aa, dd, al, indx )
         endif
@@ -390,6 +397,7 @@
      .                           xm, wpxp, xpthvp, xm_forcing,
      .                           rhot, rhom, exner, rcm, Ncm,  ! Brian
      .                           cond_rrm, auto_rrm, accr_rrm, ! Brian
+     .                           Fcsed, sed_rcm,               ! Brian
      .                           cloud_sed, kk_rain,           ! Brian
      .                           aa, dd, al, indx )
 
@@ -420,6 +428,8 @@
         real, intent(in)    :: cond_rrm(1:gr%nnzp)  ! Brian
         real, intent(in)    :: auto_rrm(1:gr%nnzp)  ! Brian
         real, intent(in)    :: accr_rrm(1:gr%nnzp)  ! Brian
+        real, intent(out)   :: Fcsed(1:gr%nnzp)     ! Brian
+        real, intent(out)   :: sed_rcm(1:gr%nnzp)   ! Brian
         logical, intent(in) :: cloud_sed            ! Brian
         logical, intent(in) :: kk_rain              ! Brian
 
@@ -429,10 +439,6 @@
         integer, intent(in) :: indx(1:2*gr%nnzp)
 
 !       Internal
-
-        real, dimension(1:gr%nnzp):: CS_Flux  ! Cloud Water Sedimentation Flux
-                                              ! [kg(cloud water)]/[s*m^2]
-        real, dimension(1:gr%nnzp):: sed_rcm  ! drcm/dt due to cloud water sed.
 
         integer k, km1, kp1
         integer k_xm, k_wpxp
@@ -558,6 +564,11 @@
         !=====================================================================
 
         ! Code addition by Brian for cloud water sedimentation.
+        !
+        ! Sedimentation flux of cloud droplets should be treated by assuming
+        ! a log-normal size distribution of droplets falling in a Stoke's
+        ! regime, in which the sedimentation flux (Fcsed) is given by:
+        !
         ! Sedimentation Flux = constant
         !                     *[(3/(4*pi*rho_lw*Nc))^(2/3)]
         !                     *[(rho*rc)^(5/3)]
@@ -568,44 +579,35 @@
         ! According to the above equation, sedimentation flux
         ! is defined positive downwards.  Therefore, 
         !
-        ! (drc/dt)CS_flux = (1.0/rho)*(dCS_Flux/dz)
+        ! (drc/dt)Fcsed = (1.0/rho) * d(Fcsed)/dz
 
         ! Define cloud water sedimentation flux on momentum levels.
-        DO k = 2, gr%nnzp-1, 1
+        IF ( cloud_sed ) THEN
 
-           IF ( zt2zm(rcm,k) > 0.0 .AND. zt2zm(Ncm,k) > 0.0 ) THEN
-              CS_Flux(k) = 1.19E8
-     .               * (  ( 3.0 / (4.0*pi*rho_lw*zt2zm(Ncm,k)) )
-     .                  **(2.0/3.0)  )
-     .               * ( ( rhom(k)*zt2zm(rcm,k) )**(5.0/3.0) )
-     .               * EXP( 5.0*( (LOG(1.5))**(2.0) ) )
-           ELSE
-              CS_Flux(k) = 0.0
-           ENDIF
+           DO k = 2, gr%nnzp-1, 1
 
-        ENDDO
+              IF ( zt2zm(rcm,k) > 0.0 .AND. zt2zm(Ncm,k) > 0.0 ) THEN
+                 Fcsed(k) = 1.19E8
+     .                  * (  ( 3.0 / (4.0*pi*rho_lw*zt2zm(Ncm,k)) )
+     .                     **(2.0/3.0)  )
+     .                  * ( ( rhom(k)*zt2zm(rcm,k) )**(5.0/3.0) )
+     .                  * EXP( 5.0*( (LOG(1.5))**(2.0) ) )
+              ELSE
+                 Fcsed(k) = 0.0
+              ENDIF
 
-        ! Boundary conditions.
-        CS_Flux(1)       = 0.0
-        CS_Flux(gr%nnzp) = 0.0
+           ENDDO
 
-        ! Find drc/dt due to cloud water sedimentation flux.
-        ! This value is defined on thermodynamic levels.
-        sed_rcm = (1.0/rhot) * ddzm( CS_Flux )
+           ! Boundary conditions.
+           Fcsed(1)       = 0.0
+           Fcsed(gr%nnzp) = 0.0
 
-#ifdef STATS
-        if (lstats_samp) then
-           if ( ised_rcm > 0 ) then
-              ! The select case statement is to make sure that the
-              ! statistic is only sampled once per timestep.
-              select case(trim( solve_type ))
-              case ( "rtm" ) 
-                 zt%x(:,ised_rcm) = zm%x(:,ised_rcm) + sed_rcm
-                 zt%n(:,ised_rcm) = zm%n(:,ised_rcm) + 1
-              end select
-           endif
-        endif
-#endif STATS
+           ! Find drc/dt due to cloud water sedimentation flux.
+           ! This value is defined on thermodynamic levels.
+           sed_rcm = (1.0/rhot) * ddzm( Fcsed )
+
+        ENDIF
+
 
 !       Set up RHS vector dd
 

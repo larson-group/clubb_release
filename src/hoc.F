@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.45 2005-08-27 14:35:17 griffinb Exp $
+! $Id: hoc.F,v 1.46 2005-08-27 16:09:40 griffinb Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -1493,6 +1493,7 @@
      .        thlm, wpthlp, thlpthvp, thlm_forcing, 
      .        rhot, rhom, exner, rcm, Ncm, 
      .        cond_rrm, auto_rrm, accr_rrm,             
+     .        Fcsed, sed_rcm,
      .        cloud_sed, kk_rain, isValid 
 #ifdef SCALARS
      .        ,sclrm, wpsclrp, sclrpthvp, sclrm_forcing   ! optional

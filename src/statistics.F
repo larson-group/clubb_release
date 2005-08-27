@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.21 2005-08-27 14:35:17 griffinb Exp $
+!  $Id: statistics.F,v 1.22 2005-08-27 16:09:40 griffinb Exp $
 
 !  module stats_type
 !  contains:
@@ -191,13 +191,14 @@ c       Indices for statistics in zm file
      .     iupwp,
      .     ivpwp,
      .     irhom,
-     .     iFprec,    ! Brian
+     .     iscm,
+     .     iem,
+     .     ishear,    ! Brian
      .     iFrad,
      .     iFrad_LW,  ! Brian
      .     iFrad_SW,  ! Brian
-     .     iscm,
-     .     iem,
-     .     ishear     ! Brian
+     .     iFprec,    ! Brian
+     .     iFcsed     ! Brian
 
         integer
      .     iwp2_bt,
@@ -764,7 +765,7 @@ c     -----------------------------------------------------------------
      .    = "cloud droplet number concentration (num/m^3)"
           k = k + 1
 
-        case ('sed_rcm')           ! Brian
+        case ('sed_rcm')       ! Brian
           ised_rcm = k
           zt%f%var(ised_rcm)%ptr => zt%x(:,k)
           zt%f%var(ised_rcm)%name = "sed_rcm"
@@ -1314,13 +1315,14 @@ c     -----------------------------------------------------------------
       iupwp     = 0
       ivpwp     = 0
       irhom     = 0
-      iFprec    = 0    ! Brian
-      iFrad     = 0
-      iFrad_LW  = 0    ! Brian
-      iFrad_SW  = 0    ! Brian
       iscm      = 0
       iem       = 0
       ishear    = 0    ! Brian
+      iFrad     = 0
+      iFrad_LW  = 0    ! Brian
+      iFrad_SW  = 0    ! Brian
+      iFprec    = 0    ! Brian
+      iFcsed    = 0    ! Brian
 
       iwp2_bt   = 0
       iwp2_ma   = 0
@@ -1538,34 +1540,6 @@ c     -----------------------------------------------------------------
           zm%f%var(irhom)%description = "density"
           k = k + 1
 
-        case ('Fprec')      ! Brian
-          iFprec = k
-          zm%f%var(iFprec)%ptr => zm%x(:,k)
-          zm%f%var(iFprec)%name = "Fprec"
-          zm%f%var(iFprec)%description = "precipitation flux (W/m^2)"
-          k = k + 1
- 
-        case ('Frad')
-          iFrad = k
-          zm%f%var(iFrad)%ptr => zm%x(:,k)
-          zm%f%var(iFrad)%name = "Frad"
-          zm%f%var(iFrad)%description = "radiative flux"
-          k = k + 1
-
-        case ('Frad_LW')    ! Brian
-          iFrad_LW = k
-          zm%f%var(iFrad_LW)%ptr => zm%x(:,k)
-          zm%f%var(iFrad_LW)%name = "Frad_LW"
-          zm%f%var(iFrad_LW)%description = "Long-wave radiative flux"
-          k = k + 1
-
-        case ('Frad_SW')    ! Brian
-          iFrad_SW = k
-          zm%f%var(iFrad_SW)%ptr => zm%x(:,k)
-          zm%f%var(iFrad_SW)%name = "Frad_SW"
-          zm%f%var(iFrad_SW)%description = "Short-wave radiative flux"
-          k = k + 1
-
         case ('sc')
           iscm = k
           zm%f%var(iscm)%ptr => zm%x(:,k)
@@ -1587,6 +1561,42 @@ c     -----------------------------------------------------------------
           zm%f%var(ishear)%description = "wind shear term (m^2/s^3)"
           k = k + 1
 
+        case ('Frad')
+          iFrad = k
+          zm%f%var(iFrad)%ptr => zm%x(:,k)
+          zm%f%var(iFrad)%name = "Frad"
+          zm%f%var(iFrad)%description = "radiative flux"
+          k = k + 1
+
+        case ('Frad_LW')    ! Brian
+          iFrad_LW = k
+          zm%f%var(iFrad_LW)%ptr => zm%x(:,k)
+          zm%f%var(iFrad_LW)%name = "Frad_LW"
+          zm%f%var(iFrad_LW)%description = "Long-wave radiative flux"
+          k = k + 1
+
+        case ('Frad_SW')    ! Brian
+          iFrad_SW = k
+          zm%f%var(iFrad_SW)%ptr => zm%x(:,k)
+          zm%f%var(iFrad_SW)%name = "Frad_SW"
+          zm%f%var(iFrad_SW)%description = "Short-wave radiative flux"
+          k = k + 1
+
+        case ('Fprec')      ! Brian
+          iFprec = k
+          zm%f%var(iFprec)%ptr => zm%x(:,k)
+          zm%f%var(iFprec)%name = "Fprec"
+          zm%f%var(iFprec)%description = "precipitation flux (W/m^2)"
+          k = k + 1
+ 
+        case ('Fcsed')      ! Brian
+          iFcsed = k
+          zm%f%var(iFcsed)%ptr => zm%x(:,k)
+          zm%f%var(iFcsed)%name = "Fcsed"
+          zm%f%var(iFcsed)%description
+     .    = "cloud water sedimentation flux (kg/(s*m^2))"
+          k = k + 1
+ 
         case ('wp2_bt')
           iwp2_bt = k
           zm%f%var(iwp2_bt)%ptr => zm%x(:,k)
@@ -2572,6 +2582,10 @@ c     -----------------------------------------------------------------
           zt%x(:,iNcm) = zt%x(:,iNcm) + Ncm
           zt%n(:,iNcm) = zt%n(:,iNcm) + 1
         endif
+        if ( ised_rcm > 0 ) then       ! Brian
+          zt%x(:,ised_rcm) = zt%x(:,ised_rcm) + sed_rcm
+          zt%n(:,ised_rcm) = zt%n(:,ised_rcm) + 1
+        endif
         if ( irsm > 0 ) then           ! Brian
           zt%x(:,irsm) = zt%x(:,irsm) + rsm
           zt%n(:,irsm) = zt%n(:,irsm) + 1
@@ -2914,9 +2928,19 @@ c     -----------------------------------------------------------------
           zm%n(:,irhom) = zm%n(:,irhom) + 1
         endif
 
-        if ( iFprec > 0 ) then    ! Brian
-          zm%x(:,iFprec) = zm%x(:,iFprec) + Fprec
-          zm%n(:,iFprec) = zm%n(:,iFprec) + 1
+        if ( iscm > 0 ) then
+          zm%x(:,iscm) = zm%x(:,iscm) + scm
+          zm%n(:,iscm) = zm%n(:,iscm) + 1
+        endif
+
+        if ( iem > 0 ) then
+          zm%x(:,iem) = zm%x(:,iem) + em
+          zm%n(:,iem) = zm%n(:,iem) + 1
+        endif
+
+        if ( ishear > 0 ) then    ! Brian
+          zm%x(:,ishear) = zm%x(:,ishear) + shear
+          zm%n(:,ishear) = zm%n(:,ishear) + 1
         endif
 
         if ( iFrad > 0 ) then
@@ -2934,17 +2958,14 @@ c     -----------------------------------------------------------------
           zm%n(:,iFrad_SW) = zm%n(:,iFrad_SW) + 1
         endif
 
-        if ( iscm > 0 ) then
-          zm%x(:,iscm) = zm%x(:,iscm) + scm
-          zm%n(:,iscm) = zm%n(:,iscm) + 1
+        if ( iFprec > 0 ) then    ! Brian
+          zm%x(:,iFprec) = zm%x(:,iFprec) + Fprec
+          zm%n(:,iFprec) = zm%n(:,iFprec) + 1
         endif
-        if ( iem > 0 ) then
-          zm%x(:,iem) = zm%x(:,iem) + em
-          zm%n(:,iem) = zm%n(:,iem) + 1
-        endif
-        if ( ishear > 0 ) then   ! Brian
-          zm%x(:,ishear) = zm%x(:,ishear) + shear
-          zm%n(:,ishear) = zm%n(:,ishear) + 1
+
+        if ( iFcsed > 0 ) then    ! Brian
+          zm%x(:,iFcsed) = zm%x(:,iFcsed) + Fcsed
+          zm%n(:,iFcsed) = zm%n(:,iFcsed) + 1
         endif
 
 #ifdef SCALARS

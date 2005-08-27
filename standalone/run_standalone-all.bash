@@ -55,7 +55,6 @@ for (( x = 1; x <= 10; x++)); do
 # State which case is being run
  echo "Running" $RUN_CASE
 # Run HOC
- echo RUN_CASE
  ./hoc_standalone
 
 # remove the temporary error.in file
