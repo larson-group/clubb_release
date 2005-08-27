@@ -1,4 +1,4 @@
-! $Id: closure_new.F,v 1.10 2005-08-26 00:08:58 griffinb Exp $
+! $Id: closure_new.F,v 1.11 2005-08-27 20:25:52 griffinb Exp $
       module pdf_closure
 
       implicit none
@@ -555,8 +555,10 @@
         ! Determine Ncm based on rcm and runtype.  Since cloud base (zb) is
         ! determined by the mixing ratio 1.0E-6, so will cloud droplet
         ! number concentration (Ncm).
-        IF (rcm > 1.0E-6) THEN
-           IF ( TRIM(runtype) == "dycoms2_rf02_d" ) THEN
+        IF ( rcm > 1.0E-6 ) THEN
+           IF (      TRIM(runtype) == "dycoms2_rf02_do"
+     .          .OR. TRIM(runtype) == "dycoms2_rf02_ds"
+     .          .OR. TRIM(runtype) == "dycoms2_rf02_so" ) THEN
               Ncm = 55000000.0
            ELSEIF ( TRIM(runtype) == "astex_a209" ) THEN
               Ncm = 25000000.0

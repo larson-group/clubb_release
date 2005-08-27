@@ -4,9 +4,10 @@
  ! were submitted.  This set of parameters coincides with
  ! the COAMPS LES with a C_evap of 0.86/5.0 and an initial
  ! drop radius of 28.0 um.  It matches well with COAMPS results.
- ! Brian.
+ ! These results are for the case where there is drizzle,
+ ! but no cloud water sedimentation.  Brian.
  &model
- run_file  = "../tune/dycoms2_rf02_d_hoc.in"
+ run_file  = "../tune/dycoms2_rf02_do_hoc.in"
  stdout   = .true.
  /
  &initvars

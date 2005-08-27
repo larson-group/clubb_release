@@ -1,4 +1,4 @@
-! $Id: sounding.F,v 1.10 2005-07-30 15:52:56 griffinb Exp $
+! $Id: sounding.F,v 1.11 2005-08-27 20:25:52 griffinb Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
       module sounding
@@ -130,8 +130,10 @@
             endif  ! k > nlevels
 
             ! Regular situation w/ linear int.
-            IF (      trim(runtype) /= "dycoms2_rf02_d" 
-     .          .AND. trim(runtype) /= "dycoms2_rf02_nd" ) THEN  
+            IF (      trim(runtype) /= "dycoms2_rf02_do" 
+     .          .AND. trim(runtype) /= "dycoms2_rf02_ds" 
+     .          .AND. trim(runtype) /= "dycoms2_rf02_nd" 
+     .          .AND. trim(runtype) /= "dycoms2_rf02_so" ) THEN  
               um(i)   = linint( gr%zt(i), z(k), z(k-1), u(k), u(k-1) )
               vm(i)   = linint( gr%zt(i), z(k), z(k-1), v(k), v(k-1) )
               ugm(i)  = linint( gr%zt(i), z(k), z(k-1), ug(k), ug(k-1) )

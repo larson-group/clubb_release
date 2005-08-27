@@ -5,9 +5,11 @@
  ! the code for the actual Khairoutdinov and Kogan (2000)
  ! parameterization with a Marshall-Palmer (1948) C_evap of 0.55
  ! and a standard initial drop radius of 25.0 um.  It matches
- ! with LES results provided from Khairoutdinov.  Brian.
+ ! with LES results provided from Khairoutdinov.
+ ! These results are for the case where there is drizzle,
+ ! but no cloud water sedimentation.
  &model
- run_file  = "../tune/dycoms2_rf02_d_hoc.in"
+ run_file  = "../tune/dycoms2_rf02_do_hoc.in"
  stdout   = .true.
  /
  &initvars

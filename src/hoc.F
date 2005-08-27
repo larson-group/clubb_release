@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.47 2005-08-27 17:16:11 griffinb Exp $
+! $Id: hoc.F,v 1.48 2005-08-27 20:25:52 griffinb Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -687,8 +687,9 @@
 ! Compute initial theta-l
 
         select case ( trim( runtype ) )
-        case ( "dycoms2_rf01", "astex_a209", "dycoms2_rf02_d",
-     .         "dycoms2_rf02_nd", "nov11_altocu" )
+        case ( "dycoms2_rf01", "astex_a209", "nov11_altocu",
+     .         "dycoms2_rf02_do", "dycoms2_rf02_ds",
+     .         "dycoms2_rf02_nd", "dycoms2_rf02_so" )
           ! thlm profile that is initially saturated at points.
           ! thlm profile remains the same as in the input sounding.
           ! use iterative method to find initial rcm.
@@ -756,7 +757,8 @@
           wp2 = 2.0 / 3.0 * em
 
         ! GCSS DYCOMS II RF02
-        case ( "dycoms2_rf02_d","dycoms2_rf02_nd" ) 
+        case ( "dycoms2_rf02_do", "dycoms2_rf02_ds",
+     .         "dycoms2_rf02_nd", "dycoms2_rf02_so" ) 
           em = 1.0
 
           wp2 = 2.0 / 3.0 * em
@@ -929,7 +931,7 @@
 #endif SCALARS
      .                     )
 
-         case ( "dycoms2_rf02_d" ) ! DYCOMS2 RF02 case with drizzle
+         case ( "dycoms2_rf02_do" ) ! DYCOMS2 RF02 case with drizzle only.
            call dycoms2_rf02_tndcy( rhot, rhom, rtm,
      .                              rcm, wmt, wmm, 
      .                              thlm_forcing, rtm_forcing, Frad, 
@@ -938,7 +940,28 @@
      .                              ,sclrm_forcing  ! optional variable
 #endif SCALARS
      .                             )
-         case ( "dycoms2_rf02_nd" ) ! DYCOMS2 RF02 case with no drizzle
+
+         case ( "dycoms2_rf02_ds" ) ! DYCOMS2 RF02 case with drizzle and cloud sedimentation.
+           call dycoms2_rf02_tndcy( rhot, rhom, rtm,
+     .                              rcm, wmt, wmm, 
+     .                              thlm_forcing, rtm_forcing, Frad, 
+     .                              isValid
+#ifdef SCALARS
+     .                              ,sclrm_forcing  ! optional variable
+#endif SCALARS
+     .                             )
+
+         case ( "dycoms2_rf02_nd" ) ! DYCOMS2 RF02 case with no drizzle and no cloud sedimentation.
+           call dycoms2_rf02_tndcy( rhot, rhom, rtm,
+     .                              rcm, wmt, wmm, 
+     .                              thlm_forcing, rtm_forcing, Frad, 
+     .                              isValid
+#ifdef SCALARS
+     .                              ,sclrm_forcing  ! optional variable
+#endif SCALARS
+     .                             )
+
+         case ( "dycoms2_rf02_so" ) ! DYCOMS2 RF02 case with cloud water sedimentation only.
            call dycoms2_rf02_tndcy( rhot, rhom, rtm, 
      .                              rcm, wmt, wmm,
      .                              thlm_forcing, rtm_forcing, Frad, 
@@ -1052,7 +1075,8 @@
      .                        ,wpsclrp(1,:)
 #endif SCALARS
      .                      )
-         case ( "dycoms2_rf02_d", "dycoms2_rf02_nd" )
+         case ( "dycoms2_rf02_do", "dycoms2_rf02_ds",
+     .          "dycoms2_rf02_nd", "dycoms2_rf02_so" )
            call dycoms2_rf02_sfclyr( um(2), vm(2),
      .                               upwp(1), vpwp(1),
      .                               wpthlp(1), wprtp(1), ustar
