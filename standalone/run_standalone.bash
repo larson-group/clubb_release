@@ -22,6 +22,7 @@
 # RUN_CASE=wangara  
 # Brian and Dr. Larson's DYCOMS2 RF02 drizzle parameters:
 # RUN_CASE=20050821_1218
+# RUN_CASE=20050827_2135
 #######################################################################
 # Check for necessary namelists.  If files exist, then
 # copy them over to the general input files.
