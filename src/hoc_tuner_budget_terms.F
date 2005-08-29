@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: hoc_tuner_budget_terms.F,v 1.7 2005-08-23 21:11:10 dschanen Exp $
+!  $Id: hoc_tuner_budget_terms.F,v 1.8 2005-08-29 22:39:40 dschanen Exp $
 
 ! PROGRAM hoc_tuner_budget_terms
 
@@ -30,10 +30,9 @@
       character(8) current_date       ! Current date string
 
       character(1) user_response
-       
 
 !     Setup the budget terms module
-      call setup_budget_terms( "budget.in", ftol)
+      call setup_budget_terms( "budget.in", ftol )
       
 !     Seed the random number generator
       call read_random_seed("../tune/rand_seed.dat") ! from error.mod
@@ -134,6 +133,37 @@
         write(*,*) "running wprtp_tp"
         call buoy_advect_run( ftol*i, "", wprtp_advect_min, c_update )
       endif
+
+      if ( lrtp2_tp ) then
+        write(*,*) "running rtp2_tp"
+        call buoy_advect_run( ftol*i, "", rtp2_advect_min, c_update )
+      endif
+
+      if ( lthlp2_tp ) then
+        write(*,*) "running thlp2_tp"
+        call buoy_advect_run( ftol*i, "", thlp2_advect_min, c_update )
+      endif
+
+      if ( lrtpthlp_tp ) then
+        write(*,*) "running rtpthlp_tp"
+        call buoy_advect_run( ftol*i, "", rtpthlp_advect_min, c_update )
+      endif
+
+      if ( lrtp2_dp ) then
+        write(*,*) "running rtp2_dp"
+        call xapxbp_run( ftol*i, "rt", rtp2_min, c_update )
+      endif
+
+      if ( lthlp2_dp ) then
+        write(*,*) "running thlp2_dp"
+        call xapxbp_run( ftol*i, "thl", thlp2_min, c_update )
+      endif
+
+      if ( lrtpthlp_dp ) then
+        write(*,*) "running rtpthlp_dp"
+        call xapxbp_run( ftol*i, "rtthl", rtpthlp_min, c_update )
+      endif
+
 
       return
       end subroutine execute_tuner_runs
