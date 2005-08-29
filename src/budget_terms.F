@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: budget_terms.F,v 1.10 2005-08-26 22:24:23 dschanen Exp $     
+! $Id: budget_terms.F,v 1.11 2005-08-29 22:38:50 dschanen Exp $     
 
 ! MODULE budget_terms
 
@@ -52,7 +52,7 @@
 !                 +--- term_min
 !-----------------------------------------------------------------------
 
-        public wpn_run, wpxp_run, buoy_advect_run
+        public wpn_run, wpxp_run, buoy_advect_run, xapxbp_run
 
         public wp2_min, wp3_min, wprtp_min, wpthlp_min
 
@@ -61,9 +61,14 @@
 
         public wp3_advect_min, wprtp_advect_min, wpthlp_advect_min
 
+        public rtp2_advect_min, thlp2_advect_min, rtpthlp_advect_min
+        public rtp2_min, thlp2_min, rtpthlp_min
+
         public output_optimal_constants
 
-        private term_min, gen_betagamma_min, calc_les_wpthlp
+        private term_min, gen_betagamma_min
+        private calc_les_wpthlp
+        private calc_les_rtp2_dp, calc_les_thlp2_dp, calc_les_rtpthlp_dp
 
 !-----------------------------------------------------------------------
 !       Internal Run Information
@@ -101,10 +106,14 @@
 
         logical, public :: lwp2_prdp, lwp3_prdp
         logical, public :: lwprtp_prdp, lwpthlp_prdp
+        logical, public :: lrtp2_dp, lthlp2_dp, lrtpthlp_dp
+
         logical, public :: lwp2_bp, lwp3_bp
         logical, public :: lwprtp_bp, lwpthlp_bp
+
         logical, public :: lwp2_tp, lwp3_tp
         logical, public :: lwprtp_tp, lwpthlp_tp
+        logical, public :: lrtp2_tp, lthlp2_tp, lrtpthlp_tp
 
 !       Internal (misc)
 
@@ -127,10 +136,12 @@
 
         namelist /case_tune/ lwp2_prdp, lwp3_prdp, 
      .                       lwprtp_prdp, lwpthlp_prdp, 
+     .                       lrtp2_dp, lthlp2_dp, lrtpthlp_dp,
      .                       lwp2_bp, lwp3_bp,
      .                       lwprtp_bp, lwpthlp_bp,
      .                       lwp3_tp,
-     .                       lwprtp_tp, lwpthlp_tp
+     .                       lwprtp_tp, lwpthlp_tp,
+     .                       lrtp2_tp, lthlp2_tp, lrtpthlp_tp
 
         contains
 !-----------------------------------------------------------------------
@@ -271,6 +282,7 @@
 !        print '(a)', "const_array"
 !        print '(5f8.4)', const_array
 !        pause
+! %% debug
 
 !       Calculate Y-vector
         do i=1, mdim
@@ -918,6 +930,7 @@
         rtp2_min = term_min( rtp2_hoc, rtp2_les, "m" )
 
         print *, "rtp2_min=", rtp2_min
+
         return 
         end function rtp2_min
 
@@ -967,6 +980,7 @@
         thlp2_min = term_min( thlp2_hoc, thlp2_les, "m" )
 
         print *, "thlp2_min=", thlp2_min
+
         return 
         end function thlp2_min
 
@@ -1016,6 +1030,7 @@
         rtpthlp_min = term_min( rtpthlp_hoc, rtpthlp_les, "m" )
 
         print *, "rtpthlp_min=", rtpthlp_min
+
         return 
         end function rtpthlp_min
 
@@ -1468,6 +1483,8 @@
 
         hoc_total = 0.
         les_total = 0.
+        hoc_zl    = 0.
+        les_zl    = 0.
 
 !       Read in the values for the specified terms
 
@@ -1495,23 +1512,25 @@
           case( "wpthlp_tp" )
             les_zl = calc_les_wpthlp( les_nz,
      .                                times, "tp" )
+
+!         For these cases, the return results has less nz's
           case( "qtp2_tp" )
-            les_zl = calc_les_rtp2_tp( les_nz, times  )
+            les_zl(1:les_nz-1) = calc_les_rtp2_tp( les_nz, times )
 
           case( "thlp2_tp" )
-            les_zl = calc_les_thlp2_tp( les_nz, times  )
+            les_zl(1:les_nz-1) = calc_les_thlp2_tp( les_nz, times )
 
           case( "qtpthlp_tp" )
-            les_zl = calc_les_rtpthlp_tp( les_nz, times  )
+            les_zl(1:les_nz-1) = calc_les_rtpthlp_tp( les_nz, times )
 
           case( "qtp2_dp" )
-            les_zl = calc_les_rtp2_dp( les_nz, times  )
+            les_zl(1:les_nz-1) = calc_les_rtp2_dp( les_nz, times )
 
           case( "thlp2_dp" )
-            les_zl = calc_les_thlp2_dp( les_nz, times  )
+            les_zl(1:les_nz-1) = calc_les_thlp2_dp( les_nz, times )
 
           case( "qtpthlp_dp" )
-            les_zl = calc_les_rtpthlp_dp( les_nz, times  )
+            les_zl(1:les_nz-1) = calc_les_rtpthlp_dp( les_nz, times )
 
 
           case default
@@ -1542,7 +1561,9 @@
 !       Calculate the difference between the minimum and maximum elements 
 !       of LES arrays for normalization purposes
 
-        les_minmax = maxval( les_total ) - minval( les_total )
+        les_minmax = maxval( les_total(z_i:z_f) ) 
+     .             - minval( les_total(z_i:z_f) )
+!        les_minmax = maxval( les_total ) - minval( les_total )
         if ( les_minmax == 0. ) stop "les_minmax == 0"
 
 !        print *, "les_minmax", les_minmax
@@ -1583,6 +1604,7 @@
         real, dimension(gr%nnzp) :: qtp2
         real, dimension(gr%nnzp) :: wpqcp
         real, dimension(gr%nnzp) :: wpqtp
+        real, dimension(gr%nnzp) :: wpqtp2
         real, dimension(gr%nnzp) :: wpqvp
 
         real, dimension(gr%nnzp) :: qtp2_ma
@@ -1618,6 +1640,10 @@
      .                                             nz, times, 
      .                                             "wpqtp", ferror )
 
+        wpqtp2(1:gr%nnzp) = grads_average_interval( les_stats_file_sm,
+     .                                             nz, times, 
+     .                                             "wpqtp2", ferror )
+
         wm(1:gr%nnzp)    = grads_average_interval( les_stats_file_sw,
      .                                             nz+1, times, 
      .                                             "wm", ferror )
@@ -1625,7 +1651,7 @@
 !       Derive the terms that exist in HOC
         qtp2_tp = -2 * ( wpqvp+wpqcp ) * ddzt( qtm )
 
-        qtp2_ta = -( ddzt( wpqtp**2 ) )
+        qtp2_ta = -( ddzt( wpqtp2 ) )
 
         qtp2_ma = -wm * ddzt( qtp2 )
 
@@ -1702,9 +1728,9 @@
      .                                               nz+1, times, 
      .                                               "wm", ferror )
 !       Derive the terms that exist in HOC
-        rtpthlp_tp1 = -2 * zt2zm( wpqtp ) * ddzt( thlm )
+        rtpthlp_tp1 = -zt2zm( wpqtp ) * ddzt( thlm )
 
-        rtpthlp_tp2 = -2 * zt2zm( wpthlp ) * ddzt( qtm )
+        rtpthlp_tp2 = -zt2zm( wpthlp ) * ddzt( qtm )
 
         rtpthlp_ta  = -( ddzt( wpqtpthlp ) )
 
@@ -1736,6 +1762,7 @@
         real, dimension(gr%nnzp) :: thlm
         real, dimension(gr%nnzp) :: wm
         real, dimension(gr%nnzp) :: wpthlp
+        real, dimension(gr%nnzp) :: wpthlp2
         real, dimension(gr%nnzp) :: thlp2
 
         real, dimension(gr%nnzp) :: thlp2_ma
@@ -1755,6 +1782,10 @@
      .                                              nz, times, 
      .                                              "wpthlp", ferror )
 
+        wpthlp2(1:gr%nnzp) = grads_average_interval( les_stats_file_sm,
+     .                                              nz, times, 
+     .                                              "wpthlp2", ferror )
+
         thlm(1:gr%nnzp)   = grads_average_interval( les_stats_file_sm,
      .                                              nz, times, 
      .                                              "thlm", ferror )
@@ -1769,7 +1800,7 @@
 !       Derive the terms that exist in HOC
         thlp2_tp = -2 * zt2zm( wpthlp ) * ddzt( thlm )
 
-        thlp2_ta = -( ddzt( wpthlp**2 ) )
+        thlp2_ta = -( ddzt( wpthlp2 ) )
 
         thlp2_ma = -wm * ddzt( thlp2 )
 
@@ -1908,9 +1939,9 @@
      .    grads_average_interval( les_stats_file_sm,
      .                            nz, times, "thp2_bt", ferror )
 
-        thpqcp_bt(1:gr%nnzp) = 
-     .    grads_average_interval( les_stats_file_sm,
-     .                            nz, times, "thp2_bt", ferror )
+!        thpqcp_bt(1:gr%nnzp) = 
+!     .    grads_average_interval( les_stats_file_sm,
+!     .                            nz, times, "thp2_bt", ferror )
 
         thpqcp_bt(1:gr%nnzp) = 
      .    grads_average_interval( les_stats_file_sm,
@@ -1929,6 +1960,8 @@
 
         calc_les_thlp2_dp(1:gr%nnzp) = zt2zm( thlp2_bt )
      .                               - calc_les_thlp2_tp( nz, times )
+
+!        print '(e25.18)', calc_les_thlp2_dp
 
         return
         end function calc_les_thlp2_dp
@@ -1991,6 +2024,8 @@
 
         calc_les_rtpthlp_dp(1:gr%nnzp) =
      .    zt2zm( qtpthlp_bt ) - calc_les_rtpthlp_tp( nz, times )
+
+!        print '(e25.18)', calc_les_rtpthlp_dp
 
         return
         end function calc_les_rtpthlp_dp
