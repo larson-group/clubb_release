@@ -7,9 +7,9 @@
 run_file       = "../tune/bomex_hoc.in"
 hoc_stats_file = "bomex"
 les_stats_file = "../les_data/bomex_coamps"
-times_nl       = 120, 240
+times_nl       = 120, 239
 z_i            = 3
-z_f            = 75
+z_f            = 74
 ftol           = 0.001
 /
 
@@ -91,15 +91,24 @@ input_vpwp    = .true.
 /
 ! Determines which cases will be run
 &case_tune
-lwp2_prdp    = .true.
+lwp2_prdp    = .false.
 lwp3_prdp    = .false.
 lwprtp_prdp  = .false.
 lwpthlp_prdp = .false.
+lthlp2_dp    = .true.
+lrtp2_dp     = .false.
+lrtpthlp_dp  = .false.
+
 lwp2_bp      = .false.
 lwp3_bp      = .false.
 lwprtp_bp    = .false.
 lwpthlp_bp   = .false.
+
 lwp3_tp      = .false.
 lwprtp_tp    = .false.
 lwpthlp_tp   = .false.
+lthlp2_tp    = .false.
+lrtp2_tp     = .false.
+lrtpthlp_tp  = .false.
+
 /
