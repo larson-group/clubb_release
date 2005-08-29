@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.21 2005-08-15 21:13:10 dschanen Exp $
+! $Id: error.F,v 1.22 2005-08-29 22:35:00 dschanen Exp $
 
 !       Module ERROR
 !
@@ -743,7 +743,7 @@
       real, intent(in), dimension(:) :: les_zl 
 
       real, intent(in) :: norm_term ! normalization term; 
-                                    ! typically minval(les) - maxval(les) 
+                                    ! typically maxval(les) - minval(les) 
 !     Internal
       real, dimension(size( hoc_zl )) :: tmp_zl
       integer hoc_nz, les_nz
