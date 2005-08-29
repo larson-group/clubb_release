@@ -13,7 +13,8 @@ MODEL_NML=$NML_DIR"/bomex_hoc.in"
 # All the cases to be run
 declare -ar CASES=([0]=wp2_bp [1]=wp2_prdp [2]=wp3_bp [3]=wp3_prdp [4]=wp3_tp\
  [5]=wprtp_bp [6]=wprtp_prdp [7]=wprtp_tp [8]=wpthlp_bp [9]=wpthlp_prdp\
- [10]=wpthlp_tp)
+ [10]=wpthlp_tp [11]=rtp2_dp [12]=rtp2_tp [13]=thlp2_tp [14]=thlp2_dp\
+ [15]=rtpthlp_tp [16]=rtpthlp_dp )
 
 # And the nodes for them to be run on (i.e. element 0 of NODES will be
 # doing element 0 of CASES)  To make a node do more than one CASE,
