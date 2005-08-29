@@ -92,11 +92,20 @@ lwp2_prdp    = .false.
 lwp3_prdp    = .false.
 lwprtp_prdp  = .false.
 lwpthlp_prdp = .false.
+lthlp2_dp    = .true.
+lrtp2_dp     = .false.
+lrtpthlp_dp  = .false.
+
 lwp2_bp      = .false.
-lwp3_bp      = .true.
+lwp3_bp      = .false.
 lwprtp_bp    = .false.
 lwpthlp_bp   = .false.
+
 lwp3_tp      = .false.
 lwprtp_tp    = .false.
 lwpthlp_tp   = .false.
+lthlp2_tp    = .false.
+lrtp2_tp     = .false.
+lrtpthlp_tp  = .false.
+
 /
