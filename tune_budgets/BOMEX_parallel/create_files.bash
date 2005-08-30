@@ -22,7 +22,8 @@ declare -ar CASES=([0]=wp2_bp [1]=wp2_prdp [2]=wp3_bp [3]=wp3_prdp [4]=wp3_tp\
 
 declare -ar NODES=([0]=tom01 [1]=tom02 [2]=tom03 [3]=tom04 [4]=tom05\
  [5]=tom06 [6]=tom07 [7]=tom08 [8]=tom09 [9]=tom10\
- [10]=tom11)
+ [10]=tom11 [11]=tom12 [12]=tom13 [13]=tom14 [14]=tom15\
+ [15]=tom16 [16]=tom17 )
 
 # The actual script
 
