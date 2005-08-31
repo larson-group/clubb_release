@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.48 2005-08-27 20:25:52 griffinb Exp $
+! $Id: hoc.F,v 1.49 2005-08-31 16:06:49 dschanen Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -34,17 +34,21 @@
 
 !      Model settings
 
-!       integer, private :: runtype    ! = 0 normal run
-                                       ! = 1 GCSS ARM
-                                       ! = 2 GCSS BOMEX
-                                       ! = 3 GCSS FIRE
-                                       ! = 4 Wangara day 33
-                                       ! = 6 GCSS ATEX
-                                       ! = 7 GCSS DYCOMS II (RF01)
-                                       ! = 8 GCSS ASTEX with K & K changes 
-                                       ! = 9 GCSS DYCOMS II (RF02)
-                                       ! = 10 GCSS DYCOMS II (RF02) no drizzle
-                                       ! = 11 Nov. 11 Altocumulus case.
+!      Definition of namelists
+       namelist /model_setting/ runtype, nzmax, deltaz, 
+     .                          day, month, year, 
+     .                          time_initial, time_final, time_spinup,
+     .                          dtmain, dtclosure,
+     .                          sfctype, Tsfc, psfc, SE, LE, fcor,
+     .                          cloud_sed, kk_rain
+       private model_setting
+
+!      Grid definition
+       integer, private :: nzmax
+       real, private    :: deltaz
+
+       integer, private :: day, month, year    ! day of start of simulation
+
 
        character(len=50), private :: runtype
 
@@ -205,21 +209,6 @@
 !      e.g. if dtmain is 20.0 seconds and the data was written every 60.0 sec, 
 !      then sample ratio should be equal to 3.0.
        real, intent(in)             :: sample_ratio 
-
-!      Grid definition
-       integer nzmax
-       real deltaz
-
-!      Model settings
-       integer day, month, year       ! day of start of simulation
-
-!      Definition of namelists
-       namelist /model_setting/ runtype, nzmax, deltaz, 
-     .                          day, month, year, 
-     .                          time_initial, time_final, time_spinup,
-     .                          dtmain, dtclosure,
-     .                          sfctype, Tsfc, psfc, SE, LE, fcor,
-     .                          cloud_sed, kk_rain
 
 !      Internal Timing Variables
 
@@ -433,25 +422,8 @@
        logical, intent(in)          :: stdout     ! whether to print to the terminal
        logical, intent(inout)       :: isValid    ! " " valid run ? (T/F)
 
-!      Grid definition
-
-       integer nzmax
-       real deltaz
-
-!      Model settings
-       integer day, month, year       ! day of start of simulation
-
 !      Internal
        integer k
-
-!      Definition of namelists
-       namelist /model_setting/ runtype, nzmax, deltaz, 
-     .                          day, month, year, 
-     .                          time_initial, time_final, time_spinup,
-     .                          dtmain, dtclosure,
-     .                          sfctype, Tsfc, psfc, SE, LE, fcor,
-     .                          cloud_sed, kk_rain
-
 
 !      Internal Timing Variables
 
