@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: budget_terms.F,v 1.11 2005-08-29 22:38:50 dschanen Exp $     
+! $Id: budget_terms.F,v 1.12 2005-08-31 22:49:41 dschanen Exp $     
 
 ! MODULE budget_terms
 
@@ -21,6 +21,8 @@
 
 !-----------------------------------------------------------------------
       module budget_terms
+
+        use inputfields
 
         implicit none
 
@@ -52,6 +54,8 @@
 !                 +--- term_min
 !-----------------------------------------------------------------------
 
+!       Interfaces
+
         public wpn_run, wpxp_run, buoy_advect_run, xapxbp_run
 
         public wp2_min, wp3_min, wprtp_min, wpthlp_min
@@ -69,56 +73,7 @@
         private term_min, gen_betagamma_min
         private calc_les_wpthlp
         private calc_les_rtp2_dp, calc_les_thlp2_dp, calc_les_rtpthlp_dp
-
-!-----------------------------------------------------------------------
-!       Internal Run Information
-
-        character(len=50), private :: run_file       ! namelist
-        character(len=50), private :: hoc_stats_file ! GRaDS data
-        character(len=50), private :: les_stats_file ! GRaDS data
-
-        integer, dimension(10) :: times_nl
-
-        real, private :: sample_ratio
-
-        integer, allocatable, dimension(:), private :: times
-        integer, private :: z_i
-        integer, private :: z_f
-
-!       diff_array is set from hoc_tuner_budget_terms, it is needed 
-!       by *_min if isValid == .false.
-        real, allocatable, dimension(:)   :: rand_vect
-        real, allocatable, dimension(:,:) :: const_array ! 'p' matrix in amoeba
-        real, allocatable, dimension(:)   :: diff_array  ! 'y' vector in amoeba
-
-        real, public :: C1, C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6thl
-        real, public :: C7, C8, C10, C11
-        real, public :: nu1, nu2, nu6, nu8, nu_r
-        real, public :: beta, gamma_coef, c_K, lmin_coef
-        real, public :: taumin, taumax, mu
-
-        real, public :: C1_var, C2rt_var, C2thl_var, C2rtthl_var
-        real, public :: C4_var, C5_var, C6rt_var, C6thl_var
-        real, public :: C7_var, C8_var, C10_var, C11_var
-        real, public :: nu1_var, nu2_var, nu6_var, nu8_var, nu_r_var
-        real, public :: beta_var, gamma_coef_var, c_K_var
-        real, public :: lmin_coef_var, taumin_var, taumax_var, mu_var
-
-        logical, public :: lwp2_prdp, lwp3_prdp
-        logical, public :: lwprtp_prdp, lwpthlp_prdp
-        logical, public :: lrtp2_dp, lthlp2_dp, lrtpthlp_dp
-
-        logical, public :: lwp2_bp, lwp3_bp
-        logical, public :: lwprtp_bp, lwpthlp_bp
-
-        logical, public :: lwp2_tp, lwp3_tp
-        logical, public :: lwprtp_tp, lwpthlp_tp
-        logical, public :: lrtp2_tp, lthlp2_tp, lrtpthlp_tp
-
-!       Internal (misc)
-
-        logical :: isValid
-
+!----------------------------------------------------------------------
 !       Namelists
 
         namelist /initvars/ C1, C2rt, C2thl, C2rtthl, C4, C5, 
@@ -143,31 +98,6 @@
      .                       lwprtp_tp, lwpthlp_tp,
      .                       lrtp2_tp, lthlp2_tp, lrtpthlp_tp
 
-        contains
-!-----------------------------------------------------------------------
-!  SUBROUTINE setup_budget_terms
-!  Configures information about the data files and run required for the
-!  other functions found in the module.
-!-----------------------------------------------------------------------
-        subroutine setup_budget_terms( budget_file, ftol )
-
-        use inputfields
-
-        implicit none
-
-!       Input
-
-        character(len=*), intent(in) :: budget_file
-
-!       Output
-        real, intent(out) :: ftol
-
-!       Internal
-
-        integer ios
-
-!       Namelists
-
         namelist /budget_tune/ run_file, hoc_stats_file, les_stats_file,
      .                         times_nl, z_i, z_f, ftol
 
@@ -177,7 +107,81 @@
      .                       input_wp3, input_rtp2, input_thlp2, 
      .                       input_rtpthlp, input_upwp, input_vpwp
 
+        private initvars, variance, budget_tune, setfields
 
+        public case_tune ! because the elements are public, the nml must also be
+
+!-----------------------------------------------------------------------
+!       Internal Run Information
+
+        character(len=50), private :: run_file       ! namelist
+        character(len=50), private :: hoc_stats_file ! GRaDS data
+        character(len=50), private :: les_stats_file ! GRaDS data
+
+        integer, dimension(10), private :: times_nl
+
+        real, private :: sample_ratio
+        real, private :: ftol
+
+        integer, allocatable, dimension(:), private :: times
+        integer, private :: z_i
+        integer, private :: z_f
+
+!       diff_array is set from hoc_tuner_budget_terms, it is needed 
+!       by *_min if isValid == .false.
+        real, allocatable, dimension(:), private   :: rand_vect
+        real, allocatable, dimension(:,:), private :: const_array ! 'p' matrix in amoeba
+        real, allocatable, dimension(:), private   :: diff_array  ! 'y' vector in amoeba
+
+        real, private :: C1, C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6thl
+        real, private :: C7, C8, C10, C11
+        real, private :: nu1, nu2, nu6, nu8, nu_r
+        real, private :: beta, gamma_coef, c_K, lmin_coef
+        real, private :: taumin, taumax, mu
+
+        real, private :: C1_var, C2rt_var, C2thl_var, C2rtthl_var
+        real, private :: C4_var, C5_var, C6rt_var, C6thl_var
+        real, private :: C7_var, C8_var, C10_var, C11_var
+        real, private :: nu1_var, nu2_var, nu6_var, nu8_var, nu_r_var
+        real, private :: beta_var, gamma_coef_var, c_K_var
+        real, private :: lmin_coef_var, taumin_var, taumax_var, mu_var
+
+        logical, public :: lwp2_prdp, lwp3_prdp
+        logical, public :: lwprtp_prdp, lwpthlp_prdp
+        logical, public :: lrtp2_dp, lthlp2_dp, lrtpthlp_dp
+
+        logical, public :: lwp2_bp, lwp3_bp
+        logical, public :: lwprtp_bp, lwpthlp_bp
+
+        logical, public :: lwp2_tp, lwp3_tp
+        logical, public :: lwprtp_tp, lwpthlp_tp
+        logical, public :: lrtp2_tp, lthlp2_tp, lrtpthlp_tp
+
+!       Internal (misc)
+
+        logical, private :: isValid
+
+
+        contains
+!-----------------------------------------------------------------------
+!  SUBROUTINE setup_budget_terms
+!  Configures information about the data files and run required for the
+!  other functions found in the module.
+!-----------------------------------------------------------------------
+        subroutine setup_budget_terms( budget_file, ftol_out )
+
+        implicit none
+
+!       Input
+
+        character(len=*), intent(in) :: budget_file
+
+!       Output
+        real, intent(out) :: ftol_out
+
+!       Internal
+
+        integer ios
 
 !       Initialize variables
         times_nl = 0
@@ -195,7 +199,8 @@
 !       Initialize module information
         allocate ( times(maxloc( times_nl, 1 )) )
 
-        times = times_nl(1:size(times))
+        times    = times_nl(1:size(times))
+        ftol_out = ftol
 
         isValid = .true.
 
