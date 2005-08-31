@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputgrads.F,v 1.8 2005-08-23 20:05:39 dschanen Exp $
+! $Id: inputgrads.F,v 1.9 2005-08-31 15:56:47 dschanen Exp $
 
 ! This module contains structure and subroutine definitions to
 ! open a GrADS data file a read it.
@@ -357,7 +357,7 @@
 
 !         Input
 
-          type (inputgrads), intent(IN) :: f
+          type (inputgrads), intent(INOUT) :: f
 
 !         Close file 
           close( f%iounit )
