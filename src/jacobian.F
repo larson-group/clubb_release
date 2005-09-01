@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.17 2005-08-31 22:50:48 dschanen Exp $
+! $Id: jacobian.F,v 1.18 2005-09-01 16:39:40 dschanen Exp $
 
 ! Program Jacobian
 
@@ -7,6 +7,7 @@
 ! and variables (cf,rcm,thlm...etc)
 
 !-----------------------------------------------------------------------
+
       program jacobian
 
       use hoc
@@ -39,16 +40,20 @@
       end type variable_array
 
 !----- Parameters ------------------------------------------------------
-      integer, parameter :: nvar      = 13
-      integer, parameter :: nconst    = 21
+      integer, parameter :: nvarzt = 7
+      integer, parameter :: nvarzm = 6
+      integer, parameter :: nconst = 21
 
-!      character, parameter :: delta   = greek_'Δ'
+!     21 must be changed to be equal to nconst
+
+      character(len=10), parameter :: write_format = "21(e18.10)"
+
+!     character, parameter :: delta   = greek_'Δ' ! Doesn't work
       character, parameter :: delta   = 'D'
 
 !----- Model constants -------------------------------------------------
 ! Notes:  C4 and C10 do not currently play a role in the model 5/31/05
 !-----------------------------------------------------------------------
-!      real       :: C1, C2, C4, C5, C6, C7, C8, C10, C11
       real       :: C1, C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6thl
       real       :: C7, C8, C10, C11
       real       :: nu1, nu2, nu6, nu8, nu_r
@@ -63,25 +68,30 @@
 
       real       :: tmp_constant 
 
-!----- Namelist Variables ----------------------------------------------
+!     Namelist Variables
       real                      :: delta_factor
       integer, dimension(10)    :: times
       character(len=50)         :: run_name
       logical                   :: use_standard_vars
 
-      integer                   :: nz
+!     Internal
+      integer                   :: nzt
+      integer                   :: nzm
       integer                   :: alloc_stat
 
 !----------------------------------------------------------------------
 !  Variable and constant data structures
 !----------------------------------------------------------------------
-      type (constant_array)                :: ca1
+      type (constant_array) :: ca1
 
-      type (variable_array)                :: var1zt
-      type (variable_array)                :: var2zt
+      type (variable_array) :: var1zt
+      type (variable_array) :: var2zt
 
-      real, dimension(nconst, nvar)        :: jmatrix
-      real, dimension(nconst, nvar)        :: impact_matrix
+      type (variable_array) :: var1zm
+      type (variable_array) :: var2zm
+
+      real, dimension(nconst, nvarzt+nvarzm) :: jmatrix
+      real, dimension(nconst, nvarzt+nvarzm) :: impact_matrix
 
       integer i, j, k        ! loop variables
       logical isValid
@@ -157,34 +167,60 @@
 
       if ( .not. isValid ) stop "Initial run wasn't valid"
 
-!-----------------------------------------------------------------------
-      nz = grads_zlvl( trim(run_name)//"_zt.ctl" )
+!     Obtain nz from the generated GRaDS files
 
-      allocate( var1zt%variable( nz, nvar ),
-     .          var2zt%variable( nz, nvar ),
-     .          var1zt%name( nvar ),
-     .          var2zt%name( nvar ),
+      nzt = grads_zlvl( trim(run_name)//"_zt.ctl" )
+      nzm = grads_zlvl( trim(run_name)//"_zm.ctl" )
+
+
+!     Initialize the structures holding the variables
+
+      allocate( var1zt%variable( nzt, nvarzt ),
+     .          var2zt%variable( nzt, nvarzt ),
+     .          var1zt%name( nvarzt ),
+     .          var2zt%name( nvarzt ),
      .          stat = alloc_stat )
 
       if (alloc_stat /= 0 ) stop "allocate failed"
 
-      var1zt%entries = nvar
-      var1zt%nz      = nz
-      var2zt%entries = nvar
-      var2zt%nz      = nz
+      var1zt%entries = nvarzt 
+      var1zt%nz      = nzt
+      var2zt%entries = nvarzt 
+      var2zt%nz      = nzt
+
+      allocate( var1zm%variable( nzm, nvarzm ),
+     .          var2zm%variable( nzm, nvarzm ),
+     .          var1zm%name( nvarzm ),
+     .          var2zm%name( nvarzm ),
+     .          stat = alloc_stat )
+
+      if (alloc_stat /= 0 ) stop "allocate failed"
+
+      var1zm%entries = nvarzm 
+      var1zm%nz      = nzm
+      var2zm%entries = nvarzm 
+      var2zm%nz      = nzm
 
 
 
-      var1zt%name(1:nvar) = 
+      var1zt%name(1:nvarzt) = 
      .                  (/"cf        ", "rcm       ", "rtm       ", 
      .                    "thlm      ", "um        ", "vm        ",
-     .                    "wp3       ", "wp2zt     ", 
-     .                    "rtp2zt    ", "thlp2zt   ", "rtpthlpzt ",
-     .                    "wprtpzt   ", "wpthlpzt  "/)
+     .                    "wp3       "/)
 
-      var2zt%name(1:nvar) = var1zt%name(1:nvar) 
+      var1zm%name(1:nvarzm) = 
+     .                  (/"wp2       ", "rtp2      ", "thlp2     ", 
+     .                    "rtpthlp   ", "wprtp     ", "wpthlp    "/)
+
+      var2zt%name(1:nvarzt) = var1zt%name(1:nvarzt) 
+
+      var2zm%name(1:nvarzm) = var1zm%name(1:nvarzm) 
+
+!     Set var1 fields with initial run results
 
       call getvariables( var1zt, "zt" )
+
+      call getvariables( var1zm, "zm" )
 
       do i = 1, ca1%entries
         tmp_constant    = ca1%constant(i)
@@ -213,16 +249,29 @@
           cycle
         endif
 
-        call getvariables( var2zt, "zt" )
+!       Set var2 results with results from altering the constants
 
-        do j = 1, nvar
-          jmatrix(i, j) = sum(  var2zt%variable(1:nz,j)   
-     .                        - var1zt%variable(1:nz,j) )
+        call getvariables( var2zt, "zt" )
+        call getvariables( var2zm, "zm" )
+
+        do j = 1, nvarzt
+          jmatrix(i, j) = sum(  var2zt%variable(1:nzt,j)   
+     .                        - var1zt%variable(1:nzt,j) )
         enddo
 
-        do j = 1, nvar
+        do j = 1, nvarzt
           jmatrix(i, j) = jmatrix(i, j) / 
      .                       (tmp_constant - ca1%constant(i) )
+        enddo
+
+        do j = 1, nvarzm
+          jmatrix(i, j+nvarzt) = sum(  var2zm%variable(1:nzm,j)   
+     .                               - var1zm%variable(1:nzm,j) )
+        enddo
+
+        do j = 1, nvarzm
+          jmatrix(i, j+nvarzt) = jmatrix(i, j) / 
+     .                           (tmp_constant - ca1%constant(i) )
         enddo
 
         ca1%constant(i) = tmp_constant
@@ -230,51 +279,60 @@
 
 !---- Calculate impact matrix ------------------------------------------
       do j = 1, var2zt%entries
-        impact_matrix(:,j) = jmatrix(:,j) *
-     .                       ca1%constant(:) * (delta_factor - 1.0)
+        impact_matrix(:,j) = jmatrix(:,j)
+     .                     * ca1%constant(:) * (delta_factor - 1.0)
       enddo 
+
+      do j = 1, var2zm%entries
+        impact_matrix(:,j+nvarzt) = jmatrix(:,j+nvarzt)
+     .                            * ca1%constant(:) 
+     .                            * (delta_factor - 1.0)
+      enddo 
+
 
 !---- Output Results to terminal ---------------------------------------
       do i = 1, ca1%entries
+
           do j = 1, var2zt%entries
             write(*,*) delta//var2zt%name(j)//" / "
      .                 //delta//ca1%name(i)//" =",
      .                 jmatrix(i, j),
      .                 "impact: ", impact_matrix(i, j)
           enddo
+
+          do j = 1, var2zm%entries
+            write(*,*) delta//var2zm%name(j)//" / "
+     .                 //delta//ca1%name(i)//" =",
+     .                 jmatrix(i, j+nvarzt),
+     .                 "impact: ", impact_matrix(i, j+nvarzt)
+          enddo
+
           write(*,*) ""
+
       enddo
 
-!---- Output results to an ascii file ----------------------------------
+!---- Output results to an ASCII file ----------------------------------
+
 !     Jacobian Matrix
       open(20, file="jacobian_matrix.txt", action="write" )
-     
-!     Matlab cannot import with this included
-!      write(20,'(A)') "% Tuning parameters vary according to columns"
-!      write(20,'(A)') "% Output fields vary according to rows"
-!      write(20,'(18A)') "% columns:", ca1%name(1:nconst)
-!      write(20,'(14A)') "% rows:   ", var2%name(1:nvar)
-      do j =1, var2zt%entries
-        write(20, '(17e18.10)') jmatrix(:,j)
+
+      do j = 1, nvarzm + nvarzt
+        write(20, write_format) jmatrix(:,j)
       enddo
       close(20)
 
 !     Impact Matrix
       open(20, file="impact_matrix.txt", action="write" )
 
-!     Matlab cannot import with this included
-!      write(20,'(A)') "% Tuning parameters vary according to columns"
-!      write(20,'(A)') "% Output fields vary according to rows"
-!      write(20,'(18A)') "% columns:", ca1%name(1:nconst)
-!      write(20,'(13A)') "% rows:   ", var2%name(1:nvar)
-      do j =1, var2zt%entries
-        write(20, '(17e18.10)') impact_matrix(:,j)
+      do j =1, nvarzm + nvarzt
+        write(20, write_format) impact_matrix(:,j)
       enddo
 
       contains
 !-----------------------------------------------------------------------
-!      subroutine getvariables( ) 
-!      returns a variable_array structure over time intervals
+!     SUBROUTINE getvariables( ) 
+!     returns a variable_array structure over namelist defined
+!     time intervals
 !-----------------------------------------------------------------------
       subroutine getvariables( varray, grid ) 
  
@@ -285,8 +343,7 @@
 !     Input
 
       type (variable_array), intent(inout) :: varray
-
-      character(len=2) grid
+      character(len=2), intent(in)         :: grid
 
     
       do k = 1, varray%entries
