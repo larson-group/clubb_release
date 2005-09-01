@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.18 2005-09-01 16:39:40 dschanen Exp $
+! $Id: jacobian.F,v 1.19 2005-09-01 22:24:16 dschanen Exp $
 
 ! Program Jacobian
 
@@ -33,15 +33,15 @@
         integer nz
         integer entries
 
-        character(len=10), pointer :: name(:)
+        character(len=12), pointer :: name(:)
 
         real, pointer :: variable(:,:) ! (1:nz, entries)
 
       end type variable_array
 
 !----- Parameters ------------------------------------------------------
-      integer, parameter :: nvarzt = 7
-      integer, parameter :: nvarzm = 6
+      integer, parameter :: nvarzt = 14
+      integer, parameter :: nvarzm = 40
       integer, parameter :: nconst = 21
 
 !     21 must be changed to be equal to nconst
@@ -92,6 +92,7 @@
 
       real, dimension(nconst, nvarzt+nvarzm) :: jmatrix
       real, dimension(nconst, nvarzt+nvarzm) :: impact_matrix
+      real, dimension(nconst, nvarzt+nvarzm) :: fc_impact_matrix
 
       integer i, j, k        ! loop variables
       logical isValid
@@ -204,13 +205,30 @@
 
 
       var1zt%name(1:nvarzt) = 
-     .                  (/"cf        ", "rcm       ", "rtm       ", 
-     .                    "thlm      ", "um        ", "vm        ",
-     .                    "wp3       "/)
+     .           (/"cf          ", "rcm         ", "rtm         ", 
+     .             "thlm        ", "um          ", "vm          ",
+     .             "wp3         ", "wp3_ta      ", "wp3_tp      ",
+     .             "wp3_bp      ", "wp3_cl      ",
+     .             "wp3_pr1     ", "wp3_pr2     ", "wp3_dp1     "/)
 
       var1zm%name(1:nvarzm) = 
-     .                  (/"wp2       ", "rtp2      ", "thlp2     ", 
-     .                    "rtpthlp   ", "wprtp     ", "wpthlp    "/)
+     .           (/"wp2         ", "rtp2        ", "thlp2       ", 
+     .             "rtpthlp     ", "wprtp       ", "wpthlp      ",
+     .             "wp2_ta      ", "wp2_bp      ", "wp2_pr2     ",
+     .             "wp2_pr3     ", "wp2_dp1     ", "wp2_dp2     ",
+     .             "wp2_cl      ", 
+     .             "wprtp_ta    ", "wprtp_tp    ", "wprtp_bp    ", 
+     .             "wprtp_pr1   ", "wprtp_pr2   ", 
+     .             "wprtp_pr3   ", "wprtp_dp1   ",
+     .             "wpthlp_ta   ", "wpthlp_tp   ", "wpthlp_bp   ", 
+     .             "wpthlp_pr1  ", "wpthlp_pr2  ", 
+     .             "wpthlp_pr3  ", "wpthlp_dp1  ",
+     .             "rtp2_ta     ", "rtp2_tp     ", 
+     .             "rtp2_dp1    ", "rtp2_dp2    ", 
+     .             "thlp2_ta    ", "thlp2_tp    ", 
+     .             "thlp2_dp1   ", "thlp2_dp2   ",
+     .             "rtpthlp_ta  ", "rtpthlp_tp1 ", "rtpthlp_tp2 ", 
+     .             "rtpthlp_dp1 ", "rtpthlp_dp2 "/)
 
       var2zt%name(1:nvarzt) = var1zt%name(1:nvarzt) 
 
@@ -243,7 +261,7 @@
 
         if ( .not. isValid ) then
           ! Infinity bit pattern 
-          jmatrix(i, :) = transfer( int( Z"7F800000" ), 
+          jmatrix(i, :)   = transfer( int( Z"7F800000" ), 
      .                              jmatrix(1,1) )
           ca1%constant(i) = tmp_constant
           cycle
@@ -255,56 +273,69 @@
         call getvariables( var2zm, "zm" )
 
         do j = 1, nvarzt
-          jmatrix(i, j) = sum(  var2zt%variable(1:nzt,j)   
-     .                        - var1zt%variable(1:nzt,j) )
+          impact_matrix(i, j) = sum(  var2zt%variable(1:nzt,j)   
+     .                              - var1zt%variable(1:nzt,j) )
+     .                        / nzt
+          fc_impact_matrix(i, j) = sum(  var2zt%variable(1:nzt,j)   
+     .                                 - var1zt%variable(1:nzt,j) )
+     .                        / sum( abs( var1zt%variable(1:nzt,j) ) )
         enddo
 
         do j = 1, nvarzt
-          jmatrix(i, j) = jmatrix(i, j) / 
-     .                       (tmp_constant - ca1%constant(i) )
+          jmatrix(i, j) = impact_matrix(i, j) 
+     .                  / ( ca1%constant(i) - tmp_constant )
         enddo
 
         do j = 1, nvarzm
-          jmatrix(i, j+nvarzt) = sum(  var2zm%variable(1:nzm,j)   
-     .                               - var1zm%variable(1:nzm,j) )
+          impact_matrix(i, j+nvarzt) 
+     .    = sum(  var2zm%variable(1:nzm,j)   
+     .          - var1zm%variable(1:nzm,j) )
+     .    / nzm
+          fc_impact_matrix(i, j+nvarzt) 
+     .    = sum(  var2zm%variable(1:nzm,j)   
+     .          - var1zm%variable(1:nzm,j) )
+     .    / sum( abs( var1zm%variable(1:nzm,j) ) )
         enddo
 
         do j = 1, nvarzm
-          jmatrix(i, j+nvarzt) = jmatrix(i, j) / 
-     .                           (tmp_constant - ca1%constant(i) )
+          jmatrix(i, j+nvarzt) = impact_matrix(i, j+nvarzt)
+     .                         / ( ca1%constant(i) - tmp_constant )
         enddo
 
         ca1%constant(i) = tmp_constant
       enddo
 
 !---- Calculate impact matrix ------------------------------------------
-      do j = 1, var2zt%entries
-        impact_matrix(:,j) = jmatrix(:,j)
-     .                     * ca1%constant(:) * (delta_factor - 1.0)
-      enddo 
-
-      do j = 1, var2zm%entries
-        impact_matrix(:,j+nvarzt) = jmatrix(:,j+nvarzt)
-     .                            * ca1%constant(:) 
-     .                            * (delta_factor - 1.0)
-      enddo 
+!      do j = 1, var2zt%entries
+!        impact_matrix(:,j) = jmatrix(:,j)
+!     .                     * ca1%constant(:) * (delta_factor - 1.0)
+!      enddo 
+!
+!      do j = 1, var2zm%entries
+!        impact_matrix(:,j+nvarzt) = jmatrix(:,j+nvarzt)
+!     .                            * ca1%constant(:) 
+!     .                            * (delta_factor - 1.0)
+!      enddo 
 
 
 !---- Output Results to terminal ---------------------------------------
       do i = 1, ca1%entries
 
           do j = 1, var2zt%entries
-            write(*,*) delta//var2zt%name(j)//" / "
-     .                 //delta//ca1%name(i)//" =",
-     .                 jmatrix(i, j),
-     .                 "impact: ", impact_matrix(i, j)
+            write(*,'3(a, e10.4)') 
+     .      delta//var2zt%name(j)//"/"
+     .      //delta//ca1%name(i)//" = ", jmatrix(i, j),
+     .      " impact: ", impact_matrix(i, j),
+     .      " fc imp: ", fc_impact_matrix(i, j)
           enddo
 
           do j = 1, var2zm%entries
-            write(*,*) delta//var2zm%name(j)//" / "
-     .                 //delta//ca1%name(i)//" =",
-     .                 jmatrix(i, j+nvarzt),
-     .                 "impact: ", impact_matrix(i, j+nvarzt)
+            write(*,'3(a, e10.4)') 
+     .      delta//var2zm%name(j)//"/"
+     .      //delta//ca1%name(i)//" = ", jmatrix(i, j+nvarzt),
+     .      " impact: ", impact_matrix(i, j+nvarzt),
+     .      " fc imp: ", fc_impact_matrix(i, j+nvarzt)
+
           enddo
 
           write(*,*) ""
