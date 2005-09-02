@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.22 2005-08-29 22:35:00 dschanen Exp $
+! $Id: error.F,v 1.23 2005-09-02 17:51:10 dschanen Exp $
 
 !       Module ERROR
 !
@@ -503,33 +503,33 @@
 
       if (tune_type == 0) print *, "Number of iterations:",  iter
       
-      write(*,'(A12,A12,A12)') "Var", "Initial ", "Optimal"
-      write(*,'(A12,f12.5,f12.5)') "C1 =", C1, x_array(1,1)
-      write(*,'(A12,f12.5,f12.5)') "C2rt =", C2rt, x_array(1,2)
-      write(*,'(A12,f12.5,f12.5)') "C2thl =", C2thl, x_array(1,3)
-      write(*,'(A12,f12.5,f12.5)') "C2rtthl =", C2rtthl, x_array(1,4)
-      write(*,'(A12,f12.5,f12.5)') "C4 =", C4, x_array(1,5)
-      write(*,'(A12,f12.5,f12.5)') "C5 =", C5, x_array(1,6)
-      write(*,'(A12,f12.5,f12.5)') "C6rt =", C6rt, x_array(1,7)
-      write(*,'(A12,f12.5,f12.5)') "C6thl =", C6thl, x_array(1,8)
-      write(*,'(A12,f12.5,f12.5)') "C7 =", C7, x_array(1,9)
-      write(*,'(A12,f12.5,f12.5)') "C8 =", C8, x_array(1,10)
-      write(*,'(A12,f12.5,f12.5)') "C10 =", C10, x_array(1,11)
-      write(*,'(A12,f12.5,f12.5)') "C11 =", C11, x_array(1,12)
-      write(*,'(A12,f12.5,f12.5)') "nu1 =", nu1, x_array(1,13)
-      write(*,'(A12,f12.5,f12.5)') "nu2 =", nu2, x_array(1,14)
-      write(*,'(A12,f12.5,f12.5)') "nu6 =", nu6, x_array(1,15)
-      write(*,'(A12,f12.5,f12.5)') "nu8 =", nu8, x_array(1,16)
-      write(*,'(A12,f12.5,f12.5)') "nu_r =", nu_r, x_array(1,17)
-      write(*,'(A12,f12.5,f12.5)') "beta =", beta, x_array(1,18)
-      write(*,'(A12,f12.5,f12.5)') "gamma_coef =", 
-     .                             gamma_coef, x_array(1,19)
-      write(*,'(A12,f12.5,f12.5)') "c_K =", c_K, x_array(1,20)
-      write(*,'(A12,f12.5,f12.5)') "lmin_coef =", 
-     .                             lmin_coef, x_array(1,21)
-      write(*,'(A12,f12.5,f12.5)') "taumin =", taumin, x_array(1,22)
-      write(*,'(A12,f12.5,f12.5)') "taumax =", taumax, x_array(1,23)
-      write(*,'(A12,f12.5,f12.5)') "mu =",  mu,   x_array(1,24)
+      write(*,'(3A12)') "Parameter", "Initial", "Optimal"
+      write(*,'(A12,2f12.5)') "C1 =", C1, x_array(1,1)
+      write(*,'(A12,2f12.5)') "C2rt =", C2rt, x_array(1,2)
+      write(*,'(A12,2f12.5)') "C2thl =", C2thl, x_array(1,3)
+      write(*,'(A12,2f12.5)') "C2rtthl =", C2rtthl, x_array(1,4)
+      write(*,'(A12,2f12.5)') "C4 =", C4, x_array(1,5)
+      write(*,'(A12,2f12.5)') "C5 =", C5, x_array(1,6)
+      write(*,'(A12,2f12.5)') "C6rt =", C6rt, x_array(1,7)
+      write(*,'(A12,2f12.5)') "C6thl =", C6thl, x_array(1,8)
+      write(*,'(A12,2f12.5)') "C7 =", C7, x_array(1,9)
+      write(*,'(A12,2f12.5)') "C8 =", C8, x_array(1,10)
+      write(*,'(A12,2f12.5)') "C10 =", C10, x_array(1,11)
+      write(*,'(A12,2f12.5)') "C11 =", C11, x_array(1,12)
+      write(*,'(A12,2f12.5)') "nu1 =", nu1, x_array(1,13)
+      write(*,'(A12,2f12.5)') "nu2 =", nu2, x_array(1,14)
+      write(*,'(A12,2f12.5)') "nu6 =", nu6, x_array(1,15)
+      write(*,'(A12,2f12.5)') "nu8 =", nu8, x_array(1,16)
+      write(*,'(A12,2f12.5)') "nu_r =", nu_r, x_array(1,17)
+      write(*,'(A12,2f12.5)') "beta =", beta, x_array(1,18)
+      write(*,'(A12,2f12.5)') "gamma_coef =", 
+     .                         gamma_coef, x_array(1,19)
+      write(*,'(A12,2f12.5)') "c_K =", c_K, x_array(1,20)
+      write(*,'(A12,2f12.5)') "lmin_coef =", 
+     .                         lmin_coef, x_array(1,21)
+      write(*,'(A12,2f12.5)') "taumin =", taumin, x_array(1,22)
+      write(*,'(A12,2f12.5)') "taumax =", taumax, x_array(1,23)
+      write(*,'(A12,2f12.5)') "mu =",  mu, x_array(1,24)
       
       write(*,'(A20,e15.6)') "initial error: ", init_err
 

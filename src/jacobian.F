@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.19 2005-09-01 22:24:16 dschanen Exp $
+! $Id: jacobian.F,v 1.20 2005-09-02 17:51:10 dschanen Exp $
 
 ! Program Jacobian
 
@@ -46,7 +46,7 @@
 
 !     21 must be changed to be equal to nconst
 
-      character(len=10), parameter :: write_format = "21(e18.10)"
+      character(len=12), parameter :: write_format = "(21(e18.10))"
 
 !     character, parameter :: delta   = greek_'Δ' ! Doesn't work
       character, parameter :: delta   = 'D'
@@ -144,10 +144,10 @@
      .    "beta      ", "gamma_coef",
      .    "c_K       ", "mu        "/)
 
-      write(*, '(3a12)') "constant   ", "initial    ", "varied     "
+      write(*, '(3a12)') "Parameter", "Initial", "Varied"
 
       do i = 1, ca1%entries
-        write(*,*) ca1%name(i), ca1%constant(i), 
+        write(*,'(a12,2f12.5)') ca1%name(i), ca1%constant(i), 
      .             ca1%constant(i) * delta_factor
       enddo
 
@@ -322,7 +322,7 @@
       do i = 1, ca1%entries
 
           do j = 1, var2zt%entries
-            write(*,'3(a, e10.4)') 
+            write(*,'(3(a,e10.4))') 
      .      delta//var2zt%name(j)//"/"
      .      //delta//ca1%name(i)//" = ", jmatrix(i, j),
      .      " impact: ", impact_matrix(i, j),
@@ -330,7 +330,7 @@
           enddo
 
           do j = 1, var2zm%entries
-            write(*,'3(a, e10.4)') 
+            write(*,'(3(a,e10.4))') 
      .      delta//var2zm%name(j)//"/"
      .      //delta//ca1%name(i)//" = ", jmatrix(i, j+nvarzt),
      .      " impact: ", impact_matrix(i, j+nvarzt),
