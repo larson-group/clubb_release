@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.35 2005-08-31 17:44:34 dschanen Exp $
+# $Id: Makefile,v 1.36 2005-09-02 17:48:23 dschanen Exp $
 # This version should work with both BSD and GNU make.
 
 # Compiler invocation
@@ -25,7 +25,7 @@
 # These are all pretty conservative options, check the your compiler manual 
 # for information on using more aggressive techniques (inlining, etc.)
 
-#OPTIMIZE=-O2 -msse2 -march=pentium4#    g95
+#OPTIMIZE=-O2 -msse2 -march=pentium4#    g95, P4
 #OPTIMIZE=-xtarget=opteron -ftrap=%none# Sun Studio x86/Opteron
 #OPTIMIZE=-O2 -xN#                       Intel complier, P4 w/out SSE3
 #OPTIMIZE=-O2 -tp p7 -Kieee -r8#         PGF90 w/ double precision reals.
@@ -102,9 +102,9 @@ hoc_inputfields:	$(HOC_INPUTFIELDS)
 			$(FC) $(FCFLAGS) $(LDFLAGS) -o hoc_inputfields \
 			$(HOC_INPUTFIELDS)
 
-hoc_tuner_budget_terms:	$(HOC_TUNER_BUDGET_TERMS)
+hoc_tuner_budget_terms:	$(HOC_BUDGET_TERMS)
 			$(FC) $(FCFLAGS) $(LDFLAGS) -o hoc_tuner_budget_terms \
-			$(HOC_TUNER_BUDGET_TERMS)
+			$(HOC_BUDGET_TERMS)
 
 jacobian:	$(JACOBIAN)
 		$(FC) $(FCFLAGS) $(LDFLAGS) -o jacobian \
@@ -134,7 +134,7 @@ outputgrads.o	: endian.o outputgrads.F
 arrays.o	: constants.o arrays.F 
 inputgrads.o	: endian.o inputgrads.F
 grid.o		: grid.F grid.h
-statistics.o	: gcss.o outputgrads.o arrays.o statistics.F 
+statistics.o	: outputgrads.o arrays.o statistics.F 
 
 banbks.o	: banbks.F
 bandec.o	: bandec.F
@@ -143,8 +143,8 @@ tridag.o	: tridag.F
 
 closure_new.o	: constants.o closure_new.F 
 diag_var.o	: constants.o tridag.o diag_var.F 
-gcss.o		: constants.o gcss.F
-mixing.o	: constants.o statistics.F banbks.F bandec.F mixing.F 
+gcss.o		: constants.o statistics.o gcss.F
+mixing.o	: constants.o statistics.o banbks.o bandec.o mixing.F 
 hoc.o		: constants.o gcss.o hydrostatic.o mixing.o rain.o \
 		  length.o statistics.o sounding.o diag_var.o rsat.o \
 		  grid.o sat_rcm.o update.o arrays.o hoc.F
