@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.49 2005-08-31 16:06:49 dschanen Exp $
+! $Id: hoc.F,v 1.50 2005-09-07 17:17:17 dschanen Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -33,15 +33,6 @@
 #endif
 
 !      Model settings
-
-!      Definition of namelists
-       namelist /model_setting/ runtype, nzmax, deltaz, 
-     .                          day, month, year, 
-     .                          time_initial, time_final, time_spinup,
-     .                          dtmain, dtclosure,
-     .                          sfctype, Tsfc, psfc, SE, LE, fcor,
-     .                          cloud_sed, kk_rain
-       private model_setting
 
 !      Grid definition
        integer, private :: nzmax
@@ -111,6 +102,15 @@
        logical, private :: sample_flag
 
 !-------- End Latin hypercube section ----------------------------------
+
+!      Definition of namelists
+       namelist /model_setting/ runtype, nzmax, deltaz, 
+     .                          day, month, year, 
+     .                          time_initial, time_final, time_spinup,
+     .                          dtmain, dtclosure,
+     .                          sfctype, Tsfc, psfc, SE, LE, fcor,
+     .                          cloud_sed, kk_rain
+       private model_setting
 
        contains
 !-----------------------------------------------------------------------

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: budget_terms.F,v 1.12 2005-08-31 22:49:41 dschanen Exp $     
+! $Id: budget_terms.F,v 1.13 2005-09-07 17:17:17 dschanen Exp $     
 
 ! MODULE budget_terms
 
@@ -73,43 +73,7 @@
         private term_min, gen_betagamma_min
         private calc_les_wpthlp
         private calc_les_rtp2_dp, calc_les_thlp2_dp, calc_les_rtpthlp_dp
-!----------------------------------------------------------------------
-!       Namelists
 
-        namelist /initvars/ C1, C2rt, C2thl, C2rtthl, C4, C5, 
-     .                      C6rt, C6thl, C7, C8, C10, C11, 
-     .                      nu1, nu2, nu6, nu8, nu_r, beta, gamma_coef,
-     .                      c_K, lmin_coef, taumin, taumax, mu
-
-        namelist /variance/ C1_var, C2rt_var, C2thl_var, C2rtthl_var,
-     .                      C4_var, C5_var, C6rt_var, C6thl_var,
-     .                      C7_var, C8_var, C10_var, C11_var, 
-     .                      nu1_var, nu2_var, nu6_var, nu8_var, 
-     .                      nu_r_var, beta_var, gamma_coef_var, 
-     .                      c_K_var, lmin_coef_var, taumin_var, 
-     .                      taumax_var, mu_var
-
-        namelist /case_tune/ lwp2_prdp, lwp3_prdp, 
-     .                       lwprtp_prdp, lwpthlp_prdp, 
-     .                       lrtp2_dp, lthlp2_dp, lrtpthlp_dp,
-     .                       lwp2_bp, lwp3_bp,
-     .                       lwprtp_bp, lwpthlp_bp,
-     .                       lwp3_tp,
-     .                       lwprtp_tp, lwpthlp_tp,
-     .                       lrtp2_tp, lthlp2_tp, lrtpthlp_tp
-
-        namelist /budget_tune/ run_file, hoc_stats_file, les_stats_file,
-     .                         times_nl, z_i, z_f, ftol
-
-        namelist /setfields/ datafile, sample_ratio, input_type,
-     .                       input_um, input_vm, input_rtm, input_thlm,
-     .                       input_wp2, input_wprtp, input_wpthlp, 
-     .                       input_wp3, input_rtp2, input_thlp2, 
-     .                       input_rtpthlp, input_upwp, input_vpwp
-
-        private initvars, variance, budget_tune, setfields
-
-        public case_tune ! because the elements are public, the nml must also be
 
 !-----------------------------------------------------------------------
 !       Internal Run Information
@@ -161,6 +125,43 @@
 
         logical, private :: isValid
 
+!----------------------------------------------------------------------
+!       Namelists
+
+        namelist /initvars/ C1, C2rt, C2thl, C2rtthl, C4, C5, 
+     .                      C6rt, C6thl, C7, C8, C10, C11, 
+     .                      nu1, nu2, nu6, nu8, nu_r, beta, gamma_coef,
+     .                      c_K, lmin_coef, taumin, taumax, mu
+
+        namelist /variance/ C1_var, C2rt_var, C2thl_var, C2rtthl_var,
+     .                      C4_var, C5_var, C6rt_var, C6thl_var,
+     .                      C7_var, C8_var, C10_var, C11_var, 
+     .                      nu1_var, nu2_var, nu6_var, nu8_var, 
+     .                      nu_r_var, beta_var, gamma_coef_var, 
+     .                      c_K_var, lmin_coef_var, taumin_var, 
+     .                      taumax_var, mu_var
+
+        namelist /case_tune/ lwp2_prdp, lwp3_prdp, 
+     .                       lwprtp_prdp, lwpthlp_prdp, 
+     .                       lrtp2_dp, lthlp2_dp, lrtpthlp_dp,
+     .                       lwp2_bp, lwp3_bp,
+     .                       lwprtp_bp, lwpthlp_bp,
+     .                       lwp3_tp,
+     .                       lwprtp_tp, lwpthlp_tp,
+     .                       lrtp2_tp, lthlp2_tp, lrtpthlp_tp
+
+        namelist /budget_tune/ run_file, hoc_stats_file, les_stats_file,
+     .                         times_nl, z_i, z_f, ftol
+
+        namelist /setfields/ datafile, sample_ratio, input_type,
+     .                       input_um, input_vm, input_rtm, input_thlm,
+     .                       input_wp2, input_wprtp, input_wpthlp, 
+     .                       input_wp3, input_rtp2, input_thlp2, 
+     .                       input_rtpthlp, input_upwp, input_vpwp
+
+        private initvars, variance, budget_tune, setfields
+
+        public case_tune ! because the elements are public, the nml must also be
 
         contains
 !-----------------------------------------------------------------------
@@ -610,15 +611,15 @@
         select case( runtype )
         case("rt")
           p_elements = (/C2rt, mu/)
-          p_string   = (/"C2rt   ", "mu      "/)
+          p_string   = (/"C2rt   ", "mu     "/)
           p_variance = (/C2rt_var, mu_var/)
         case("thl")
           p_elements = (/C2thl, mu/)
-          p_string   = (/"C2thl  ", "mu      "/)
+          p_string   = (/"C2thl  ", "mu     "/)
           p_variance = (/C2thl_var, mu_var/)
         case("rtthl")
           p_elements = (/C2rtthl, mu/)
-          p_string   = (/"C2rtthl", "mu      "/)
+          p_string   = (/"C2rtthl", "mu     "/)
           p_variance = (/C2rtthl_var, mu_var/)
         case default
           stop "xapxbp_run: invalid runtype"
