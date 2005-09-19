@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.23 2005-09-02 17:51:10 dschanen Exp $
+! $Id: error.F,v 1.24 2005-09-19 19:44:27 dschanen Exp $
 
 !       Module ERROR
 !
@@ -34,7 +34,7 @@
 
 !---------------- Dimensions of the array for amoeba -------------------
 
-      integer, parameter, public  :: ndim = 24
+      integer, parameter, public  :: ndim = 25
       integer, parameter, public  :: mdim = ndim + 1
 
       real, dimension(mdim, ndim)  :: x_array
@@ -79,7 +79,7 @@
 
 !----- Hoc constants to tune -----------------------------------------
       real C1, C2rt, C2thl, C2rtthl, C4, C5
-      real C6rt, C6thl, C7, C8, C10, C11
+      real C6rt, C6thl, C7, C8, C10, C11, C12
       real nu1, nu2, nu6, nu8, nu_r
       real beta
       real gamma_coef, c_K
@@ -146,7 +146,8 @@
 
 !----- Hoc variance for generating array ------------------------------
       real C1_var, C2rt_var, C2thl_var, C2rtthl_var, C4_var, C5_var
-      real C6rt_var, C6thl_var, C7_var, C8_var, C10_var, C11_var
+      real C6rt_var, C6thl_var, C7_var, C8_var
+      real C10_var, C11_var, C12_var
       real nu1_var, nu2_var, nu6_var, nu8_var, nu_r_var
       real beta_var
       real gamma_coef_var, c_K_var
@@ -163,13 +164,13 @@
      .                 z_i_nl, z_f_nl, time_nl
 
       namelist /initvars/ C1, C2rt, C2thl, C2rtthl, C4, C5, 
-     .                    C6rt, C6thl, C7, C8, C10, C11, 
+     .                    C6rt, C6thl, C7, C8, C10, C11, C12, 
      .                    nu1, nu2, nu6, nu8, nu_r, beta, gamma_coef,
      .                    c_K, lmin_coef, taumin, taumax, mu
 
       namelist /variance/ C1_var, C2rt_var, C2thl_var, C2rtthl_var, 
      .                    C4_var, C5_var, C6rt_var, C6thl_var, 
-     .                    C7_var, C8_var, C10_var, C11_var, 
+     .                    C7_var, C8_var, C10_var, C11_var, C12_var,
      .                    nu1_var, nu2_var, nu6_var, nu8_var, nu_r_var,
      .                    beta_var, gamma_coef_var, c_K_var,
      .                    lmin_coef_var, taumin_var, taumax_var, mu_var
@@ -258,7 +259,7 @@
 !--------------- Initialize the hoc constants -------------------------
 
         x_array(1,1:ndim) = (/C1, C2rt, C2thl, C2rtthl, C4, C5, 
-     .                        C6rt, C6thl, C7, C8, C10, C11, 
+     .                        C6rt, C6thl, C7, C8, C10, C11, C12,
      .                        nu1, nu2, nu6, nu8, nu_r, beta,
      .                        gamma_coef, c_K, lmin_coef, taumin,
      .                        taumax, mu/)
@@ -267,7 +268,8 @@
 
         x_variance(1:ndim) = (/C1_var, C2rt_var, C2thl_var, C2rtthl_var,
      .                         C4_var, C5_var, C6rt_var, C6thl_var,
-     .                         C7_var, C8_var, C10_var, C11_var, 
+     .                         C7_var, C8_var, C10_var, 
+     .                         C11_var, C12_var,
      .                         nu1_var, nu2_var, nu6_var, nu8_var, 
      .                         nu_r_var, beta_var, gamma_coef_var, 
      .                         c_K_var, lmin_coef_var, taumin_var, 
@@ -370,18 +372,19 @@
         write(*,'(A12,f12.5)') "C8 =", x_vector(10)
         write(*,'(A12,f12.5)') "C10 =", x_vector(11)
         write(*,'(A12,f12.5)') "C11 =", x_vector(12)
-        write(*,'(A12,f12.5)') "nu1 =", x_vector(13)
-        write(*,'(A12,f12.5)') "nu2 =", x_vector(14)
-        write(*,'(A12,f12.5)') "nu6 =", x_vector(15)
-        write(*,'(A12,f12.5)') "nu8 =", x_vector(16)
-        write(*,'(A12,f12.5)') "nu_r =", x_vector(17)
-        write(*,'(A12,f12.5)') "beta =", x_vector(18)
-        write(*,'(A12,f12.5)') "gamma_coef =", x_vector(19)
-        write(*,'(A12,f12.5)') "c_K =", x_vector(20)
-        write(*,'(A12,f12.5)') "lmin_coef =", x_vector(21)
-        write(*,'(A12,f12.5)') "taumin =", x_vector(22)
-        write(*,'(A12,f12.5)') "taumax =", x_vector(23)
-        write(*,'(A12,f12.5)') "mu =", x_vector(24)
+        write(*,'(A12,f12.5)') "C12 =", x_vector(13)
+        write(*,'(A12,f12.5)') "nu1 =", x_vector(14)
+        write(*,'(A12,f12.5)') "nu2 =", x_vector(15)
+        write(*,'(A12,f12.5)') "nu6 =", x_vector(16)
+        write(*,'(A12,f12.5)') "nu8 =", x_vector(17)
+        write(*,'(A12,f12.5)') "nu_r =", x_vector(18)
+        write(*,'(A12,f12.5)') "beta =", x_vector(19)
+        write(*,'(A12,f12.5)') "gamma_coef =", x_vector(20)
+        write(*,'(A12,f12.5)') "c_K =", x_vector(21)
+        write(*,'(A12,f12.5)') "lmin_coef =", x_vector(22)
+        write(*,'(A12,f12.5)') "taumin =", x_vector(23)
+        write(*,'(A12,f12.5)') "taumax =", x_vector(24)
+        write(*,'(A12,f12.5)') "mu =", x_vector(25)
       endif
         
 !----Initialize the return value for funk -----------------------------
@@ -413,7 +416,8 @@
      .                  x_vector(16), x_vector(17), x_vector(18), 
      .                  x_vector(19), x_vector(20), x_vector(21),
      .                  x_vector(22), x_vector(23), x_vector(24),
-     .                  run_file(c_run), isValid, .false. )
+     .                  x_vector(25), run_file(c_run), 
+     .                  isValid, .false. )
 
 !-------------- Basic Sanity Check for negative constants --------------
 !        if (minval( x_vector ) < 0. ) isValid = .false.
@@ -516,20 +520,21 @@
       write(*,'(A12,2f12.5)') "C8 =", C8, x_array(1,10)
       write(*,'(A12,2f12.5)') "C10 =", C10, x_array(1,11)
       write(*,'(A12,2f12.5)') "C11 =", C11, x_array(1,12)
-      write(*,'(A12,2f12.5)') "nu1 =", nu1, x_array(1,13)
-      write(*,'(A12,2f12.5)') "nu2 =", nu2, x_array(1,14)
-      write(*,'(A12,2f12.5)') "nu6 =", nu6, x_array(1,15)
-      write(*,'(A12,2f12.5)') "nu8 =", nu8, x_array(1,16)
-      write(*,'(A12,2f12.5)') "nu_r =", nu_r, x_array(1,17)
-      write(*,'(A12,2f12.5)') "beta =", beta, x_array(1,18)
+      write(*,'(A12,2f12.5)') "C12 =", C12, x_array(1,13)
+      write(*,'(A12,2f12.5)') "nu1 =", nu1, x_array(1,14)
+      write(*,'(A12,2f12.5)') "nu2 =", nu2, x_array(1,15)
+      write(*,'(A12,2f12.5)') "nu6 =", nu6, x_array(1,16)
+      write(*,'(A12,2f12.5)') "nu8 =", nu8, x_array(1,17)
+      write(*,'(A12,2f12.5)') "nu_r =", nu_r, x_array(1,18)
+      write(*,'(A12,2f12.5)') "beta =", beta, x_array(1,19)
       write(*,'(A12,2f12.5)') "gamma_coef =", 
-     .                         gamma_coef, x_array(1,19)
-      write(*,'(A12,2f12.5)') "c_K =", c_K, x_array(1,20)
+     .                         gamma_coef, x_array(1,20)
+      write(*,'(A12,2f12.5)') "c_K =", c_K, x_array(1,21)
       write(*,'(A12,2f12.5)') "lmin_coef =", 
-     .                         lmin_coef, x_array(1,21)
-      write(*,'(A12,2f12.5)') "taumin =", taumin, x_array(1,22)
-      write(*,'(A12,2f12.5)') "taumax =", taumax, x_array(1,23)
-      write(*,'(A12,2f12.5)') "mu =",  mu, x_array(1,24)
+     .                         lmin_coef, x_array(1,22)
+      write(*,'(A12,2f12.5)') "taumin =", taumin, x_array(1,23)
+      write(*,'(A12,2f12.5)') "taumax =", taumax, x_array(1,24)
+      write(*,'(A12,2f12.5)') "mu =",  mu, x_array(1,25)
       
       write(*,'(A20,e15.6)') "initial error: ", init_err
 
@@ -618,18 +623,19 @@
       write(20,*) "C8 =         ", x_vector(10)
       write(20,*) "C10 =        ", x_vector(11)
       write(20,*) "C11 =        ", x_vector(12)
-      write(20,*) "nu1 =        ", x_vector(13)
-      write(20,*) "nu2 =        ", x_vector(14)
-      write(20,*) "nu6 =        ", x_vector(15)
-      write(20,*) "nu8 =        ", x_vector(16)
-      write(20,*) "nu_r =       ", x_vector(17)
-      write(20,*) "beta =       ", x_vector(18)
-      write(20,*) "gamma_coef = ", x_vector(19)
-      write(20,*) "c_K =        ", x_vector(20)
-      write(20,*) "lmin_coef =  ", x_vector(21)
-      write(20,*) "taumin =     ", x_vector(22)
-      write(20,*) "taumax =     ", x_vector(23)
-      write(20,*) "mu =         ", x_vector(24)
+      write(20,*) "C12 =        ", x_vector(13)
+      write(20,*) "nu1 =        ", x_vector(14)
+      write(20,*) "nu2 =        ", x_vector(15)
+      write(20,*) "nu6 =        ", x_vector(16)
+      write(20,*) "nu8 =        ", x_vector(17)
+      write(20,*) "nu_r =       ", x_vector(18)
+      write(20,*) "beta =       ", x_vector(19)
+      write(20,*) "gamma_coef = ", x_vector(20)
+      write(20,*) "c_K =        ", x_vector(21)
+      write(20,*) "lmin_coef =  ", x_vector(22)
+      write(20,*) "taumin =     ", x_vector(23)
+      write(20,*) "taumax =     ", x_vector(24)
+      write(20,*) "mu =         ", x_vector(25)
       write(20,*) "/"
 
       write(20,*) "&variance"
@@ -645,18 +651,19 @@
       write(20,*) "C8_var =         ", x_variance(10)
       write(20,*) "C10_var =        ", x_variance(11)
       write(20,*) "C11_var =        ", x_variance(12)
-      write(20,*) "nu1_var =        ", x_variance(13)
-      write(20,*) "nu2_var =        ", x_variance(14)
-      write(20,*) "nu6_var =        ", x_variance(15)
-      write(20,*) "nu8_var =        ", x_variance(16)
-      write(20,*) "nu_r_var =       ", x_variance(17)
-      write(20,*) "beta_var =       ", x_variance(18)
-      write(20,*) "gamma_coef_var = ", x_variance(19)
-      write(20,*) "c_K_var =        ", x_variance(20)
-      write(20,*) "lmin_coef_var =  ", x_variance(21)
-      write(20,*) "taumin_var =     ", x_variance(22)
-      write(20,*) "taumax_var =     ", x_variance(23)
-      write(20,*) "mu_var =         ", x_variance(24)
+      write(20,*) "C12_var =        ", x_variance(13)
+      write(20,*) "nu1_var =        ", x_variance(14)
+      write(20,*) "nu2_var =        ", x_variance(15)
+      write(20,*) "nu6_var =        ", x_variance(16)
+      write(20,*) "nu8_var =        ", x_variance(17)
+      write(20,*) "nu_r_var =       ", x_variance(18)
+      write(20,*) "beta_var =       ", x_variance(19)
+      write(20,*) "gamma_coef_var = ", x_variance(20)
+      write(20,*) "c_K_var =        ", x_variance(21)
+      write(20,*) "lmin_coef_var =  ", x_variance(22)
+      write(20,*) "taumin_var =     ", x_variance(23)
+      write(20,*) "taumax_var =     ", x_variance(24)
+      write(20,*) "mu_var =         ", x_variance(25)
       write(20,*) "/"
 
 !------- Close new file ------------------------------------------------
@@ -709,18 +716,19 @@
       write(20,*) "C8 =         ", x_vector(10)
       write(20,*) "C10 =        ", x_vector(11)
       write(20,*) "C11 =        ", x_vector(12)
-      write(20,*) "nu1 =        ", x_vector(13)
-      write(20,*) "nu2 =        ", x_vector(14)
-      write(20,*) "nu6 =        ", x_vector(15)
-      write(20,*) "nu8 =        ", x_vector(16)
-      write(20,*) "nu_r =       ", x_vector(17)
-      write(20,*) "beta =       ", x_vector(18)
-      write(20,*) "gamma_coef = ", x_vector(19)
-      write(20,*) "c_K =        ", x_vector(20)
-      write(20,*) "lmin_coef =  ", x_vector(21)
-      write(20,*) "taumin =     ", x_vector(22)
-      write(20,*) "taumax =     ", x_vector(23)
-      write(20,*) "mu =         ", x_vector(24)
+      write(20,*) "C12 =        ", x_vector(13)
+      write(20,*) "nu1 =        ", x_vector(14)
+      write(20,*) "nu2 =        ", x_vector(15)
+      write(20,*) "nu6 =        ", x_vector(16)
+      write(20,*) "nu8 =        ", x_vector(17)
+      write(20,*) "nu_r =       ", x_vector(18)
+      write(20,*) "beta =       ", x_vector(19)
+      write(20,*) "gamma_coef = ", x_vector(20)
+      write(20,*) "c_K =        ", x_vector(21)
+      write(20,*) "lmin_coef =  ", x_vector(22)
+      write(20,*) "taumin =     ", x_vector(23)
+      write(20,*) "taumax =     ", x_vector(24)
+      write(20,*) "mu =         ", x_vector(25)
       write(20,*) "/"
 
 !------- Close new file ------------------------------------------------

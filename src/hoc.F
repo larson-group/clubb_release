@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.50 2005-09-07 17:17:17 dschanen Exp $
+! $Id: hoc.F,v 1.51 2005-09-19 19:44:27 dschanen Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -127,7 +127,8 @@
 !          subroutine set_fields (passed as a parameter) 
 
 !  Input: Contants used in the model:
-!         C1_in, C2_in, C4_in, C5_in, C6_in, C7_in, C8_in, C10_in, C11_in
+!         C1_in, C2_in, C4_in, C5_in, C6_in
+!         C7_in, C8_in, C10_in, C11_in, C12_in
 !         nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in
 !         beta_in, gamma_coef_in, c_K_in
 !         lmin_coef_in, taumin_in, taumax_in, mu_in
@@ -143,7 +144,7 @@
        subroutine hoc_model_field_input( 
      .                       C1_in, C2rt_in, C2thl_in, C2rtthl_in, 
      .                       C4_in, C5_in, C6rt_in, C6thl_in, C7_in, 
-     .                       C8_in, C10_in, C11_in, 
+     .                       C8_in, C10_in, C11_in, C12_in,
      .                       nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in,
      .                       beta_in, gamma_coef_in, c_K_in, 
      .                       lmin_coef_in, taumin_in, taumax_in, mu_in,
@@ -190,7 +191,7 @@
 !      Subroutine Arguments (constants)
        real, intent(in) :: C1_in, C2rt_in, C2thl_in, C2rtthl_in, C4_in
        real, intent(in) :: C5_in, C6rt_in, C6thl_in, C7_in
-       real, intent(in) :: C8_in, C10_in, C11_in
+       real, intent(in) :: C8_in, C10_in, C11_in, C12_in
        real, intent(in) :: nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in
        real, intent(in) :: beta_in
        real, intent(in) :: gamma_coef_in
@@ -238,7 +239,7 @@
        call setup_constants( deltaz, C1_in, C2rt_in, C2thl_in, 
      .                       C2rtthl_in, C4_in, C5_in, 
      .                       C6rt_in, C6thl_in,
-     .                       C7_in, C8_in, C10_in, C11_in,  
+     .                       C7_in, C8_in, C10_in, C11_in, C12_in,
      .                       nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in,
      .                       gamma_coef_in, mu_in, c_K_in,
      .                       beta_in, 
@@ -374,7 +375,8 @@
 !          function invalid_model_arrays
 
 !  Input: Contants used in the model:
-!         C1_in, C2_in, C4_in, C5_in, C6_in, C7_in, C8_in, C10_in, C11_in
+!         C1_in, C2_in, C4_in, C5_in, C6_in, C7_in, 
+!         C8_in, C10_in, C11_in, C12_in
 !         nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in 
 !         beta_in, gamma_coef_in, c_K_in
 !         lmin_coef_in, taumin_in, taumax_in, mu_in
@@ -389,7 +391,7 @@
        subroutine hoc_model_standard( C1_in, C2rt_in, C2thl_in, 
      .                                C2rtthl_in, C4_in, C5_in, 
      .                                C6rt_in, C6thl_in, C7_in,
-     .                                C8_in, C10_in, C11_in, 
+     .                                C8_in, C10_in, C11_in, C12_in,
      .                                nu1_in, nu2_in, nu6_in, nu8_in,
      .                                nu_r_in, beta_in, gamma_coef_in,
      .                                c_K_in, lmin_coef_in, 
@@ -410,7 +412,7 @@
 !      Subroutine Arguments (constants)
        real, intent(in) :: C1_in, C2rt_in, C2thl_in, C2rtthl_in, C4_in
        real, intent(in) :: C5_in, C6rt_in, C6thl_in, C7_in
-       real, intent(in) :: C8_in, C10_in, C11_in
+       real, intent(in) :: C8_in, C10_in, C11_in, C12_in
        real, intent(in) :: nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in
        real, intent(in) :: beta_in
        real, intent(in) :: gamma_coef_in
@@ -451,7 +453,7 @@
        call setup_constants( deltaz, C1_in, C2rt_in, C2thl_in, 
      .                       C2rtthl_in, C4_in, C5_in, 
      .                       C6rt_in, C6thl_in,
-     .                       C7_in, C8_in, C10_in, C11_in,  
+     .                       C7_in, C8_in, C10_in, C11_in, C12_in,
      .                       nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in,
      .                       gamma_coef_in, mu_in, c_K_in,
      .                       beta_in, 

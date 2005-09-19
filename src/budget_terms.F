@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: budget_terms.F,v 1.14 2005-09-07 21:18:12 dschanen Exp $     
+! $Id: budget_terms.F,v 1.15 2005-09-19 19:44:27 dschanen Exp $     
 
 ! MODULE budget_terms
 
@@ -92,14 +92,14 @@
         real, allocatable, dimension(:)   :: diff_array  ! 'y' vector in amoeba
 
         real, public :: C1, C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6thl
-        real, public :: C7, C8, C10, C11
+        real, public :: C7, C8, C10, C11, C12
         real, public :: nu1, nu2, nu6, nu8, nu_r
         real, public :: beta, gamma_coef, c_K, lmin_coef
         real, public :: taumin, taumax, mu
 
         real, public :: C1_var, C2rt_var, C2thl_var, C2rtthl_var
         real, public :: C4_var, C5_var, C6rt_var, C6thl_var
-        real, public :: C7_var, C8_var, C10_var, C11_var
+        real, public :: C7_var, C8_var, C10_var, C11_var, C12_var
         real, public :: nu1_var, nu2_var, nu6_var, nu8_var, nu_r_var
         real, public :: beta_var, gamma_coef_var, c_K_var
         real, public :: lmin_coef_var, taumin_var, taumax_var, mu_var
@@ -122,13 +122,13 @@
 !       Namelists
 
         namelist /initvars/ C1, C2rt, C2thl, C2rtthl, C4, C5, 
-     .                      C6rt, C6thl, C7, C8, C10, C11, 
+     .                      C6rt, C6thl, C7, C8, C10, C11, C12,
      .                      nu1, nu2, nu6, nu8, nu_r, beta, gamma_coef,
      .                      c_K, lmin_coef, taumin, taumax, mu
 
         namelist /variance/ C1_var, C2rt_var, C2thl_var, C2rtthl_var,
      .                      C4_var, C5_var, C6rt_var, C6thl_var,
-     .                      C7_var, C8_var, C10_var, C11_var, 
+     .                      C7_var, C8_var, C10_var, C11_var, C12_var,
      .                      nu1_var, nu2_var, nu6_var, nu8_var, 
      .                      nu_r_var, beta_var, gamma_coef_var, 
      .                      c_K_var, lmin_coef_var, taumin_var, 
@@ -220,10 +220,10 @@
         logical, intent(in)      :: c_update 
 
 !       Internal
-        real, dimension(5) :: p_elements 
-        real, dimension(5) :: p_variance 
+        real, dimension(6) :: p_elements 
+        real, dimension(6) :: p_variance 
 
-        character(10), dimension(5) :: p_string 
+        character(10), dimension(6) :: p_string 
 
         real opt_error
         integer ndim, mdim
@@ -241,18 +241,20 @@
 !       Setup constants vector
         select case( runtype )
         case( "2" )
-          p_elements = (/C1, C5, beta, gamma_coef, mu/)
-          p_string = (/"C1        ", "C5        ",
+          p_elements = (/C1, C4, C5, beta, gamma_coef, mu/)
+          p_string = (/"C1        ", "C4        ",
+     .                 "C5        ",
      .                 "beta      ", "gamma_coef",
      .                 "mu        "/)
-          p_variance = (/C1_var, C5_var, beta_var,
+          p_variance = (/C1_var, C4_var, C5_var, beta_var,
      .                   gamma_coef_var, mu_var/)
         case( "3" )
-          p_elements = (/C8, C11, beta, gamma_coef, mu/)
+          p_elements = (/C8, C11, C12, beta, gamma_coef, mu/)
           p_string = (/"C8        ", "C11       ",
+     .                 "C12       ",
      .                 "beta      ", "gamma_coef",
      .                 "mu        "/)
-          p_variance = (/C8_var, C11_var, beta_var, 
+          p_variance = (/C8_var, C11_var, C12_var, beta_var, 
      .                   gamma_coef_var, mu_var/)
         case default
           stop "wpn_run: invalid runtype"
@@ -311,16 +313,18 @@
           select case( runtype )
           case( "2" )
             C1         = const_array(1,1)
-            C5         = const_array(1,2)
-            beta       = const_array(1,3)
-            gamma_coef = const_array(1,4)
-            mu         = const_array(1,5)
+            C4         = const_array(1,2)
+            C5         = const_array(1,3)
+            beta       = const_array(1,4)
+            gamma_coef = const_array(1,5)
+            mu         = const_array(1,6)
           case( "3" )
             C8         = const_array(1,1)
             C11        = const_array(1,2)
-            beta       = const_array(1,3)
-            gamma_coef = const_array(1,4)
-            mu         = const_array(1,5)
+            C12        = const_array(1,3)
+            beta       = const_array(1,4)
+            gamma_coef = const_array(1,5)
+            mu         = const_array(1,6)
           end select
         else
 !         Generate GRaDS with Optimal constants
@@ -716,11 +720,13 @@
 
 !       The actual subroutine is hoc_model_variable_input, used via overloading
 
-        call hoc_model( const_vect(1), C2rt, C2thl, C2rtthl, C4, 
-     .                  const_vect(2), C6rt, C6thl, C7, C8, C10, C11,
+        call hoc_model( const_vect(1), C2rt, C2thl, C2rtthl, 
+     .                  const_vect(2), const_vect(3),
+     .                  C6rt, C6thl, 
+     .                  C7, C8, C10, C11, C12,
      .                  nu1, nu2, nu6, nu8, nu_r, 
-     .                  const_vect(3), const_vect(4), ! beta and gamma_coef
-     .                  c_K, lmin_coef, taumin, taumax, const_vect(5), ! mu
+     .                  const_vect(4), const_vect(5), ! beta and gamma_coef
+     .                  c_K, lmin_coef, taumin, taumax, const_vect(6), ! mu
      .                  run_file, isValid, .false.,
      .                  grads_fields_reader, sample_ratio )
 
@@ -764,11 +770,11 @@
 !       The actual subroutine is hoc_model_variable_input, used via overloading
 
         call hoc_model( C1, C2rt, C2thl, C2rtthl, C4, C5, 
-     .                  C6rt, C6thl, C7, const_vect(1), 
-     .                  C10, const_vect(2),
+     .                  C6rt, C6thl, C7, const_vect(1),    ! C8
+     .                  C10, const_vect(2), const_vect(3), ! C11 & C12
      .                  nu1, nu2, nu6, nu8, nu_r, 
-     .                  const_vect(3), const_vect(4),  ! beta and gamma_coef
-     .                  c_K, lmin_coef, taumin, taumax, const_vect(5), ! mu
+     .                  const_vect(4), const_vect(5),  ! beta and gamma_coef
+     .                  c_K, lmin_coef, taumin, taumax, const_vect(6), ! mu
      .                  run_file, isValid, .false.,
      .                  grads_fields_reader, sample_ratio )
 
@@ -814,7 +820,7 @@
 
         call hoc_model( C1, C2rt, C2thl, C2rtthl, C4, C5, 
      .                  const_vect(1), C6thl, const_vect(2), 
-     .                  C8, C10, C11,
+     .                  C8, C10, C11, C12,
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  const_vect(3), const_vect(4), ! beta and gamma_coef
      .                  c_K, lmin_coef, taumin, taumax, mu,
@@ -863,7 +869,7 @@
 
         call hoc_model( C1, C2rt, C2thl, C2rtthl, C4, C5, 
      .                  C6rt, const_vect(1), const_vect(2), 
-     .                  C8, C10, C11,
+     .                  C8, C10, C11, C12,
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  const_vect(3), const_vect(4), ! beta and gamma_coef
      .                  c_K, lmin_coef, taumin, taumax, mu,
@@ -913,7 +919,7 @@
 !       The actual subroutine is hoc_model_variable_input, used via overloading
 
         call hoc_model( C1, const_vect(1), C2thl, C2rtthl, C4, ! C2rt
-     .                  C5, C6rt, C6thl, C7, C8, C10, C11,
+     .                  C5, C6rt, C6thl, C7, C8, C10, C11, C12,
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  beta, gamma_coef, c_K, lmin_coef, 
      .                  taumin, taumax, const_vect(2), ! mu
@@ -963,7 +969,7 @@
 !       The actual subroutine is hoc_model_variable_input, used via overloading
 
         call hoc_model( C1, C2rt, const_vect(1), C2rtthl, C4, ! C2thl
-     .                  C5, C6rt, C6thl, C7, C8, C10, C11,
+     .                  C5, C6rt, C6thl, C7, C8, C10, C11, C12,
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  beta, gamma_coef, c_K, lmin_coef, 
      .                  taumin, taumax, const_vect(2), ! mu
@@ -1013,7 +1019,7 @@
 !       The actual subroutine is hoc_model_variable_input, used via overloading
 
         call hoc_model( C1, C2rt, C2thl, const_vect(1), C4, ! C2rtthl
-     .                  C5, C6rt, C6thl, C7, C8, C10, C11,
+     .                  C5, C6rt, C6thl, C7, C8, C10, C11, C12,
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  beta, gamma_coef, c_K, lmin_coef, 
      .                  taumin, taumax, const_vect(2), ! mu
@@ -1405,7 +1411,7 @@
 !       The actual subroutine is hoc_model_variable_input, used via overloading
 
         call hoc_model( C1, C2rt, C2thl, C2rtthl, C4, C5, 
-     .                  C6rt, C6thl, C7, C8, C10, C11,
+     .                  C6rt, C6thl, C7, C8, C10, C11, C12,
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  xbeta, xgamma,
      .                  c_K, lmin_coef, taumin, taumax, mu,
@@ -2073,13 +2079,13 @@
 
         implicit none
 
-        real, dimension(24)          :: p_elements
-        character(10), dimension(24) :: p_string
+        real, dimension(25)          :: p_elements
+        character(10), dimension(25) :: p_string
 
         integer i
 
         p_elements = (/C1, C2rt, C2thl, C2rtthl, C4, C5, 
-     .                 C6rt, C6thl, C7, C8, C10, C11,
+     .                 C6rt, C6thl, C7, C8, C10, C11, C12,
      .                 nu1, nu2, nu6, nu8, nu_r, 
      .                 beta, gamma_coef, c_K, 
      .                 lmin_coef, taumin, taumax, mu/)
@@ -2088,6 +2094,7 @@
      .               "C2rtthl   ", "C4        ", "C5        ", 
      .               "C6rt      ", "C6thl     ", "C7        ", 
      .               "C8        ", "C10       ", "C11       ", 
+     .               "C12       ",
      .               "nu1       ", "nu2       ", "nu6       ", 
      .               "nu8       ", "nu_r      ", "beta      ", 
      .               "gamma_coef", "c_K       ", "lmin_coef ", 
@@ -2097,7 +2104,7 @@
 
 !       The actual subroutine is hoc_model_variable_input, used via overloading
         call hoc_model( C1, C2rt, C2thl, C2rtthl, C4, C5, 
-     .                  C6rt, C6thl, C7, C8, C10, C11,
+     .                  C6rt, C6thl, C7, C8, C10, C11, C12,
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  beta, gamma_coef,
      .                  c_K, lmin_coef, taumin, taumax, mu,

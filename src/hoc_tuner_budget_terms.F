@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: hoc_tuner_budget_terms.F,v 1.8 2005-08-29 22:39:40 dschanen Exp $
+!  $Id: hoc_tuner_budget_terms.F,v 1.9 2005-09-19 19:44:28 dschanen Exp $
 
 ! PROGRAM hoc_tuner_budget_terms
 
@@ -43,9 +43,11 @@
         iterations = 1      
       endif
 
-      do i=iterations, 1, -1
+      i = 1
 
+      do
         call execute_tuner_runs( )
+        i = i + 1
 
         if ( i < iterations ) cycle
 
@@ -56,7 +58,9 @@
 
         if ( trim(user_response) /= "y" .and.
      .       trim(user_response) /= "Y"   ) then 
-          exit 
+          exit
+        else
+          i = 1
         endif
        
         write (*,*) "Current ftol= ", ftol 

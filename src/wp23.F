@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.6 2005-08-23 21:11:10 dschanen Exp $
+! $Id: wp23.F,v 1.7 2005-09-19 19:44:28 dschanen Exp $
 
 ! SUBROUTINE timestep_wp23( )
 !  Advance wp2 and wp3 one timestep
@@ -400,9 +400,10 @@
 #endif STATS
 
 !         wp3
-
-          atmp = -0.5 * ( Kh(km1) + nu8 ) * gr%dzt(k) * gr%dzm(km1)
-          ctmp = -0.5 * ( Kh(k)   + nu8 ) * gr%dzt(k) * gr%dzm(k)
+!  Added a new constant C12, a factor of atmp and ctmp 
+!  Initially, this new constant will be set to 1.0 -dschanen 9/19/05 
+          atmp = -0.5 * C12 * (Kh(km1) + nu8) * gr%dzt(k) * gr%dzm(km1)
+          ctmp = -0.5 * C12 * (Kh(k)   + nu8) * gr%dzt(k) * gr%dzm(k)
 
           aa(k_wp3,3-2)
      .    = atmp

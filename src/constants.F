@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.15 2005-08-27 17:16:11 griffinb Exp $
+! $Id: constants.F,v 1.16 2005-09-19 19:44:27 dschanen Exp $
 
 !  Contains frequently occuring model constants
 !-----------------------------------------------------------------------
@@ -45,7 +45,7 @@
 !       Model parameters and constraints
 
         real C1, C2rt, C2thl, C2rtthl, C4, C5
-        real C6rt, C6thl, C7, C8, C10, C11
+        real C6rt, C6thl, C7, C8, C10, C11, C12
         real nu1, nu2, nu6, nu8, nu_r
         real mu, c_K, gamma_coef
         real lmin
@@ -90,7 +90,7 @@
       subroutine setup_constants( deltaz, C1_in, C2rt_in, C2thl_in, 
      .                            C2rtthl_in, C4_in, C5_in, 
      .                            C6rt_in, C6thl_in, C7_in, 
-     .                            C8_in, C10_in, C11_in, 
+     .                            C8_in, C10_in, C11_in, C12_in,
      .                            nu1_in, nu2_in, nu6_in, nu8_in,
      .                            nu_r_in, gamma_coef_in, mu_in,
      .                            c_K_in, beta_in, lmin_coef_in,
@@ -103,7 +103,7 @@
       real, intent(in) :: deltaz
       real, intent(in) :: C1_in, C2rt_in, C2thl_in, C2rtthl_in
       real, intent(in) :: C4_in, C5_in, C6rt_in, C6thl_in, C7_in
-      real, intent(in) :: C8_in, C10_in, C11_in
+      real, intent(in) :: C8_in, C10_in, C11_in, C12_in
       real, intent(in) :: nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in
       real, intent(in) :: beta_in
       real, intent(in) :: lmin_coef_in, taumin_in, taumax_in
@@ -119,6 +119,7 @@
 !      C8 = 0.7 * 0.6 * 6.5
 !      C10 = 3. * C2
 !      C11 = 0.2
+!      C12 = 1.0
 
 !      nu1 = 20.
 !      nu2 = 5.
@@ -138,6 +139,7 @@
       C8      = C8_in
       C10     = C10_in
       C11     = C11_in
+      C12     = C12_in
 
       nu1   = nu1_in 
       nu2   = nu2_in 
