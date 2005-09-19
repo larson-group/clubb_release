@@ -26,6 +26,7 @@ C7         = 0.48
 C8         = 2.3
 C10        = 3.3
 C11        = 0.4
+C12        = 1.0
 nu1        = 20.
 nu2        = 5.
 nu6        = 5.
@@ -56,6 +57,7 @@ C7_var         = 0.25
 C8_var         = 0.25
 C10_var        = 0.
 C11_var        = 0.25
+C12_var        = 1.0
 nu1_var        = 0.
 nu2_var        = 0.
 nu6_var        = 0.
@@ -94,10 +96,10 @@ input_vpwp    = .true.
 ! Determines which cases will be run
 &case_tune
 lwp2_prdp    = .false.
-lwp3_prdp    = .false.
+lwp3_prdp    = .true.
 lwprtp_prdp  = .false.
 lwpthlp_prdp = .false.
-lthlp2_dp    = .true.
+lthlp2_dp    = .false.
 lrtp2_dp     = .false.
 lrtpthlp_dp  = .false.
 
