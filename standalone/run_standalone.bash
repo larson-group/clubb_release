@@ -12,12 +12,12 @@
 # RUN_CASE=atex 
 # RUN_CASE=arm 
 # RUN_CASE=bomex 
-  RUN_CASE=dycoms2_rf01 
+# RUN_CASE=dycoms2_rf01 
 # RUN_CASE=dycoms2_rf02_do
 # RUN_CASE=dycoms2_rf02_ds
 # RUN_CASE=dycoms2_rf02_nd 
 # RUN_CASE=dycoms2_rf02_so
-# RUN_CASE=fire 
+  RUN_CASE=fire 
 # RUN_CASE=nov11_altocu
 # RUN_CASE=wangara  
 # Brian and Dr. Larson's DYCOMS2 RF02 drizzle parameters:
