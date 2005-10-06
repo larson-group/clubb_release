@@ -1,4 +1,4 @@
-! $Id: gradsaverage.F,v 1.5 2005-08-23 21:11:10 dschanen Exp $
+! $Id: gradsaverage.F,v 1.6 2005-10-06 22:53:14 golaz Exp $
       module grads_common
 
       contains
@@ -7,7 +7,7 @@
 !     Average a GRADS file variable over the interval t1 to t2
 !----------------------------------------------------------------------
       function grads_average( filename, nz, t1, t2, variable_name, 
-     .                        error )
+     .                        npower, error )
 
       use grid_class
       use inputfile_class
@@ -20,6 +20,7 @@
       integer, intent(in)          :: t1             ! beginning timestep to look at
       integer, intent(in)          :: t2             ! ending timestep to look at
       character(len=*), intent(in) :: variable_name  ! which variable to read
+      integer, intent(in)          :: npower
       logical, intent(out)         :: error          ! error status from reading 
 
 !---- Internal Variables ----------------------------------------------
@@ -60,7 +61,17 @@
      .         // " at time=", t
              return 
           endif
-          grads_average(1:nz) = grads_average(1:nz) + grads_temp(1:nz) 
+          if ( npower.eq.1 ) then
+            grads_average(1:nz) 
+     .      = grads_average(1:nz) + grads_temp(1:nz)
+          else if ( npower.eq.2 ) then
+            grads_average(1:nz) 
+     .      = grads_average(1:nz) + grads_temp(1:nz)*grads_temp(1:nz)
+          else
+            print *, "gradsaverage: invalid npower = ",npower
+            error = .true.
+            return
+          end if
         enddo
 
 !-----------------------------------------------------------------------
@@ -81,7 +92,7 @@
 !   Take several averages over an interval.
 !-------------------------------------------------------------------------
       function grads_average_interval( filename, nz, t, variable_name,
-     .                                 error )
+     .                                 npower, error )
 
       implicit none
 
@@ -90,6 +101,7 @@
       integer, intent(in)                  :: nz             ! number of z-levels
       integer, dimension(:), intent(in)    :: t(:)           ! timesteps to look at
       character(len=*), intent(in)         :: variable_name  ! which variable to read
+      integer, intent(in)                  :: npower
       logical, intent(out)                 :: error
 
 !---- Return Type  ----------------------------------------------------
@@ -107,7 +119,8 @@
       enddo
 
       grads_average_interval = grads_average( filename, nz, t(1), t(2), 
-     .                                        variable_name, error ) *
+     .                                        variable_name, 
+     .                                        npower, error ) *
      .                                      ( t(2) - t(1) )
       divisor = t(2) - t(1)
 
@@ -115,7 +128,7 @@
 
       do i=3, tdim, 2 
         grads_temp = grads_average( filename, nz, t(i), t(i+1), 
-     .                              variable_name, error )
+     .                              variable_name, npower, error )
         grads_average_interval = grads_average_interval + grads_temp *
      .                           ( t(i+1) - t(i) )
         divisor =  divisor +  ( t(i+1) - t(i) )
