@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: budget_terms.F,v 1.15 2005-09-19 19:44:27 dschanen Exp $     
+! $Id: budget_terms.F,v 1.16 2005-10-06 22:37:46 golaz Exp $     
 
 ! MODULE budget_terms
 
@@ -92,14 +92,15 @@
         real, allocatable, dimension(:)   :: diff_array  ! 'y' vector in amoeba
 
         real, public :: C1, C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6thl
-        real, public :: C7, C8, C10, C11, C12
+        real, public :: C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12
         real, public :: nu1, nu2, nu6, nu8, nu_r
         real, public :: beta, gamma_coef, c_K, lmin_coef
         real, public :: taumin, taumax, mu
 
         real, public :: C1_var, C2rt_var, C2thl_var, C2rtthl_var
         real, public :: C4_var, C5_var, C6rt_var, C6thl_var
-        real, public :: C7_var, C8_var, C10_var, C11_var, C12_var
+        real, public :: C7_var, C7b_var, C7c_var, C8_var, C8b_var
+        real, public :: C10_var, C11_var, C11b_var, C11c_var, C12_var
         real, public :: nu1_var, nu2_var, nu6_var, nu8_var, nu_r_var
         real, public :: beta_var, gamma_coef_var, c_K_var
         real, public :: lmin_coef_var, taumin_var, taumax_var, mu_var
@@ -122,13 +123,16 @@
 !       Namelists
 
         namelist /initvars/ C1, C2rt, C2thl, C2rtthl, C4, C5, 
-     .                      C6rt, C6thl, C7, C8, C10, C11, C12,
+     .                      C6rt, C6thl, C7, C7b, C7c, C8, C8b,
+     .                      C10, C11, C11b, C11c, C12,
      .                      nu1, nu2, nu6, nu8, nu_r, beta, gamma_coef,
      .                      c_K, lmin_coef, taumin, taumax, mu
 
         namelist /variance/ C1_var, C2rt_var, C2thl_var, C2rtthl_var,
      .                      C4_var, C5_var, C6rt_var, C6thl_var,
-     .                      C7_var, C8_var, C10_var, C11_var, C12_var,
+     .                      C7_var, C7b_var, C7c_var, C8_var, C8b_var,
+     .                      C10_var, C11_var, C11b_var, C11c_var, 
+     .                      C12_var,
      .                      nu1_var, nu2_var, nu6_var, nu8_var, 
      .                      nu_r_var, beta_var, gamma_coef_var, 
      .                      c_K_var, lmin_coef_var, taumin_var, 
@@ -463,10 +467,10 @@
         logical, intent(in)      :: c_update 
 
 !       Internal
-        real, dimension(4) :: p_elements 
-        real, dimension(4) :: p_variance 
+        real, dimension(6) :: p_elements 
+        real, dimension(6) :: p_variance 
 
-        character(10), dimension(4) :: p_string 
+        character(10), dimension(6) :: p_string 
 
         real opt_error
         integer ndim, mdim
@@ -484,15 +488,19 @@
 !       Setup constants vector
         select case( runtype )
         case( "rt" )
-          p_elements = (/C6rt, C7, beta, gamma_coef/)
+          p_elements = (/C6rt, C7, C7b, C7c, beta, gamma_coef/)
           p_string   = (/"C6rt      ", "C7        ",
+     .                   "C7b       ", "C7c       ",
      .                   "beta      ", "gamma_coef"/)
-          p_variance = (/C6rt_var, C7_var, beta_var, gamma_coef_var/)
+          p_variance = (/C6rt_var, C7_var, C7b_var, C7c_var,
+     .                   beta_var, gamma_coef_var/)
         case( "thl" )
-          p_elements = (/C6thl, C7, beta, gamma_coef/)
+          p_elements = (/C6thl, C7, C7b, C7c, beta, gamma_coef/)
           p_string   = (/"C6thl     ", "C7        ",
+     .                   "C7b       ", "C7c       ",
      .                   "beta      ", "gamma_coef"/)
-          p_variance = (/C6thl_var, C7_var, beta_var, gamma_coef_var/)
+          p_variance = (/C6thl_var, C7_var, C7b_var, C7c_var,
+     .                   beta_var, gamma_coef_var/)
         case default
           stop "wpxp_run: invalid runtype"
         end select
@@ -547,13 +555,17 @@
           case( "rt" )
             C6rt       = const_array(1,1)
             C7         = const_array(1,2)
-            beta       = const_array(1,3)
-            gamma_coef = const_array(1,4)
+            C7b        = const_array(1,3)
+            C7c        = const_array(1,4)
+            beta       = const_array(1,5)
+            gamma_coef = const_array(1,6)
           case( "thl" )
             C6thl      = const_array(1,1)
             C7         = const_array(1,2)
-            beta       = const_array(1,3)
-            gamma_coef = const_array(1,4)
+            C7b        = const_array(1,3)
+            C7c        = const_array(1,4)
+            beta       = const_array(1,5)
+            gamma_coef = const_array(1,6)
           end select
         else
 !         Generate GRaDS with Optimal constants
@@ -723,7 +735,8 @@
         call hoc_model( const_vect(1), C2rt, C2thl, C2rtthl, 
      .                  const_vect(2), const_vect(3),
      .                  C6rt, C6thl, 
-     .                  C7, C8, C10, C11, C12,
+     .                  C7, C7b, C7c, C8, C8b, C10, 
+     .                  C11, C11b, C11c, C12,
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  const_vect(4), const_vect(5), ! beta and gamma_coef
      .                  c_K, lmin_coef, taumin, taumax, const_vect(6), ! mu
@@ -770,8 +783,11 @@
 !       The actual subroutine is hoc_model_variable_input, used via overloading
 
         call hoc_model( C1, C2rt, C2thl, C2rtthl, C4, C5, 
-     .                  C6rt, C6thl, C7, const_vect(1),    ! C8
-     .                  C10, const_vect(2), const_vect(3), ! C11 & C12
+     .                  C6rt, C6thl, C7, C7b, C7c,
+     .                  const_vect(1), C8b,  ! C8
+     .                  C10, 
+     .                  const_vect(2), C11b, C11c,  ! C11
+     .                  const_vect(3),  ! C12
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  const_vect(4), const_vect(5),  ! beta and gamma_coef
      .                  c_K, lmin_coef, taumin, taumax, const_vect(6), ! mu
@@ -819,10 +835,11 @@
 !       The actual subroutine is hoc_model_variable_input, used via overloading
 
         call hoc_model( C1, C2rt, C2thl, C2rtthl, C4, C5, 
-     .                  const_vect(1), C6thl, const_vect(2), 
-     .                  C8, C10, C11, C12,
+     .                  const_vect(1), C6thl,  ! C6rt
+     .                  const_vect(2), const_vect(3), const_vect(4),  ! C7, C7b, C7c
+     .                  C8, C8b, C10, C11, C11b, C11c, C12, 
      .                  nu1, nu2, nu6, nu8, nu_r, 
-     .                  const_vect(3), const_vect(4), ! beta and gamma_coef
+     .                  const_vect(5), const_vect(6), ! beta and gamma_coef
      .                  c_K, lmin_coef, taumin, taumax, mu,
      .                  run_file, isValid, .false.,
      .                  grads_fields_reader, sample_ratio )
@@ -868,10 +885,11 @@
 !       The actual subroutine is hoc_model_variable_input, used via overloading
 
         call hoc_model( C1, C2rt, C2thl, C2rtthl, C4, C5, 
-     .                  C6rt, const_vect(1), const_vect(2), 
-     .                  C8, C10, C11, C12,
+     .                  C6rt, const_vect(1),  ! C6thl
+     .                  const_vect(2), const_vect(3), const_vect(4),  ! C7, C7b, C7c
+     .                  C8, C8b, C10, C11, C11b, C11c, C12,
      .                  nu1, nu2, nu6, nu8, nu_r, 
-     .                  const_vect(3), const_vect(4), ! beta and gamma_coef
+     .                  const_vect(5), const_vect(6), ! beta and gamma_coef
      .                  c_K, lmin_coef, taumin, taumax, mu,
      .                  run_file, isValid, .false.,
      .                  grads_fields_reader, sample_ratio )
@@ -919,7 +937,8 @@
 !       The actual subroutine is hoc_model_variable_input, used via overloading
 
         call hoc_model( C1, const_vect(1), C2thl, C2rtthl, C4, ! C2rt
-     .                  C5, C6rt, C6thl, C7, C8, C10, C11, C12,
+     .                  C5, C6rt, C6thl, C7, C7b, C7c, C8, C8b, C10, 
+     .                  C11, C11b, C11c, C12,
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  beta, gamma_coef, c_K, lmin_coef, 
      .                  taumin, taumax, const_vect(2), ! mu
@@ -969,7 +988,8 @@
 !       The actual subroutine is hoc_model_variable_input, used via overloading
 
         call hoc_model( C1, C2rt, const_vect(1), C2rtthl, C4, ! C2thl
-     .                  C5, C6rt, C6thl, C7, C8, C10, C11, C12,
+     .                  C5, C6rt, C6thl, C7, C7b, C7c, C8, C8b, C10, 
+     .                  C11, C11b, C11c, C12,
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  beta, gamma_coef, c_K, lmin_coef, 
      .                  taumin, taumax, const_vect(2), ! mu
@@ -1019,7 +1039,8 @@
 !       The actual subroutine is hoc_model_variable_input, used via overloading
 
         call hoc_model( C1, C2rt, C2thl, const_vect(1), C4, ! C2rtthl
-     .                  C5, C6rt, C6thl, C7, C8, C10, C11, C12,
+     .                  C5, C6rt, C6thl, C7, C7b, C7c, C8, C8b, C10, 
+     .                  C11, C11b, C11c, C12,
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  beta, gamma_coef, c_K, lmin_coef, 
      .                  taumin, taumax, const_vect(2), ! mu
@@ -1411,7 +1432,8 @@
 !       The actual subroutine is hoc_model_variable_input, used via overloading
 
         call hoc_model( C1, C2rt, C2thl, C2rtthl, C4, C5, 
-     .                  C6rt, C6thl, C7, C8, C10, C11, C12,
+     .                  C6rt, C6thl, C7, C7b, C7c, C8, C8b, C10, 
+     .                  C11, C11b, C11c, C12,
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  xbeta, xgamma,
      .                  c_K, lmin_coef, taumin, taumax, mu,
@@ -1498,7 +1520,7 @@
           hoc_zl = grads_average_interval( hoc_stats_file_ext, hoc_nz, 
      .                                     times, 
      .                                     trim(hoc_variable_names(k)),
-     .                                     ferror )
+     .                                     1, ferror )
           if (ferror) then
             print *, "grads_average for "//hoc_variable_names(k)
             stop
@@ -1544,7 +1566,7 @@
             les_zl = grads_average_interval(les_stats_file_ext, les_nz,
      .                                      times, 
      .                                      trim(les_variable_names(k)),
-     .                                      ferror )
+     .                                      1, ferror )
             if (ferror) then
               print *, "grads_average for "//les_variable_names(k)
               stop
@@ -1628,31 +1650,31 @@
 
         qtm(1:gr%nnzp)   = grads_average_interval( les_stats_file_sm,
      .                                             nz, times, "qtm",
-     .                                             ferror )
+     .                                             1, ferror )
 
         qtp2(1:gr%nnzp)  = grads_average_interval( les_stats_file_sm,
      .                                             nz, times, "qtp2",
-     .                                             ferror )
+     .                                             1, ferror )
 
         wpqvp(1:gr%nnzp) = grads_average_interval( les_stats_file_sw,
      .                                             nz+1, times, 
-     .                                             "wpqvp", ferror )
+     .                                             "wpqvp", 1, ferror )
 
         wpqcp(1:gr%nnzp) = grads_average_interval( les_stats_file_sw,
      .                                             nz+1, times, 
-     .                                             "wpqcp", ferror )
+     .                                             "wpqcp", 1, ferror )
 
         wpqtp(1:gr%nnzp) = grads_average_interval( les_stats_file_sm,
      .                                             nz, times, 
-     .                                             "wpqtp", ferror )
+     .                                             "wpqtp", 1, ferror )
 
         wpqtp2(1:gr%nnzp) = grads_average_interval( les_stats_file_sm,
      .                                             nz, times, 
-     .                                             "wpqtp2", ferror )
+     .                                             "wpqtp2", 1, ferror )
 
         wm(1:gr%nnzp)    = grads_average_interval( les_stats_file_sw,
      .                                             nz+1, times, 
-     .                                             "wm", ferror )
+     .                                             "wm", 1, ferror )
 
 !       Derive the terms that exist in HOC
         qtp2_tp = -2 * ( wpqvp+wpqcp ) * ddzt( qtm )
@@ -1707,32 +1729,35 @@
 
         wpthlp(1:gr%nnzp)  = grads_average_interval( les_stats_file_sm,
      .                                               nz, times, 
-     .                                               "wpthlp", ferror )
+     .                                               "wpthlp", 1, ferror
+     .                                             )
 
         wpqtp(1:gr%nnzp)   = grads_average_interval( les_stats_file_sm,
      .                                               nz, times, 
-     .                                               "wpqtp", ferror )
+     .                                               "wpqtp", 1, ferror
+     .                                             )
 
         wpqtpthlp(1:gr%nnzp) 
      .  = grads_average_interval( les_stats_file_sm,
      .                            nz, times, 
-     .                            "wpqtpthlp", ferror )
+     .                            "wpqtpthlp", 1, ferror )
 
         thlm(1:gr%nnzp)    = grads_average_interval( les_stats_file_sm,
      .                                               nz, times, 
-     .                                               "thlm", ferror )
+     .                                               "thlm", 1, ferror )
 
         qtm(1:gr%nnzp)     = grads_average_interval( les_stats_file_sm,
      .                                               nz, times, 
-     .                                               "qtm", ferror )
+     .                                               "qtm", 1, ferror )
 
         qtpthlp(1:gr%nnzp) = grads_average_interval( les_stats_file_sm,
      .                                               nz, times, 
-     .                                               "qtpthlp", ferror )
+     .                                               "qtpthlp", 1, 
+     .                                               ferror )
 
         wm(1:gr%nnzp)      = grads_average_interval( les_stats_file_sw,
      .                                               nz+1, times, 
-     .                                               "wm", ferror )
+     .                                               "wm", 1, ferror )
 !       Derive the terms that exist in HOC
         rtpthlp_tp1 = -zt2zm( wpqtp ) * ddzt( thlm )
 
@@ -1786,23 +1811,25 @@
 
         wpthlp(1:gr%nnzp) = grads_average_interval( les_stats_file_sm,
      .                                              nz, times, 
-     .                                              "wpthlp", ferror )
+     .                                              "wpthlp", 1, 
+     .                                              ferror )
 
         wpthlp2(1:gr%nnzp) = grads_average_interval( les_stats_file_sm,
      .                                              nz, times, 
-     .                                              "wpthlp2", ferror )
+     .                                              "wpthlp2", 1, 
+     .                                              ferror )
 
         thlm(1:gr%nnzp)   = grads_average_interval( les_stats_file_sm,
      .                                              nz, times, 
-     .                                              "thlm", ferror )
+     .                                              "thlm", 1, ferror )
 
         thlp2(1:gr%nnzp)  = grads_average_interval( les_stats_file_sm,
      .                                              nz, times, 
-     .                                              "thlp2", ferror )
+     .                                              "thlp2", 1, ferror )
 
         wm(1:gr%nnzp)     = grads_average_interval( les_stats_file_sw,
      .                                              nz+1, times, 
-     .                                              "wm", ferror )
+     .                                              "wm", 1, ferror )
 !       Derive the terms that exist in HOC
         thlp2_tp = -2 * zt2zm( wpthlp ) * ddzt( thlm )
 
@@ -1844,11 +1871,11 @@
 
         wpthp = grads_average_interval( les_stats_file_ext,
      .                                  nz, times, "wpthp_"//term,
-     .                                  ferror )
+     .                                  1, ferror )
 
         wpqcp = grads_average_interval( les_stats_file_ext,
      .                                  nz, times, "wpqcp_"//term,
-     .                                  ferror )
+     .                                  1, ferror )
                 
         wpthlp = wpthp 
      .         + wpqcp * theta_on_T( nz, times, les_stats_file_ext )
@@ -1889,15 +1916,15 @@
 
         qvpqcp_bt(1:gr%nnzp) = 
      .    grads_average_interval( les_stats_file_sm,
-     .                            nz, times, "qvpqcp_bt", ferror )
+     .                            nz, times, "qvpqcp_bt", 1, ferror )
 
         qvp2_bt(1:gr%nnzp) = 
      .    grads_average_interval( les_stats_file_sm,
-     .                            nz, times, "qvp2_bt", ferror )
+     .                            nz, times, "qvp2_bt", 1, ferror )
 
         qcp2_bt(1:gr%nnzp) = 
      .    grads_average_interval( les_stats_file_sm,
-     .                            nz, times, "qcp2_bt", ferror )
+     .                            nz, times, "qcp2_bt", 1, ferror )
 
         qtp2_bt(1:gr%nnzp) = qcp2_bt 
      .                     + 2 * qvpqcp_bt
@@ -1943,19 +1970,19 @@
 
         thp2_bt(1:gr%nnzp) = 
      .    grads_average_interval( les_stats_file_sm,
-     .                            nz, times, "thp2_bt", ferror )
+     .                            nz, times, "thp2_bt", 1, ferror )
 
 !        thpqcp_bt(1:gr%nnzp) = 
 !     .    grads_average_interval( les_stats_file_sm,
-!     .                            nz, times, "thp2_bt", ferror )
+!     .                            nz, times, "thp2_bt", 1, ferror )
 
         thpqcp_bt(1:gr%nnzp) = 
      .    grads_average_interval( les_stats_file_sm,
-     .                            nz, times, "thpqcp_bt", ferror )
+     .                            nz, times, "thpqcp_bt", 1, ferror )
 
         qcp2_bt(1:gr%nnzp) = 
      .    grads_average_interval( les_stats_file_sm,
-     .                            nz, times, "qcp2_bt", ferror )
+     .                            nz, times, "qcp2_bt", 1, ferror )
 
         th_on_T(1:gr%nnzp) = 
      .    zm2zt( theta_on_T( nz, times, les_stats_file_sw ) )
@@ -2007,18 +2034,18 @@
 
         qvpqcp_bt(1:gr%nnzp) = 
      .    grads_average_interval( les_stats_file_sm,
-     .                            nz, times, "qvpqcp_bt", ferror )
+     .                            nz, times, "qvpqcp_bt", 1, ferror )
 
         thpqcp_bt(1:gr%nnzp) = 
      .    grads_average_interval( les_stats_file_sm,
-     .                            nz, times, "thpqcp_bt", ferror )
+     .                            nz, times, "thpqcp_bt", 1, ferror )
         thpqvp_bt(1:gr%nnzp) = 
      .    grads_average_interval( les_stats_file_sm,
-     .                            nz, times, "thpqvp_bt", ferror )
+     .                            nz, times, "thpqvp_bt", 1, ferror )
 
         qcp2_bt(1:gr%nnzp) = 
      .    grads_average_interval( les_stats_file_sm,
-     .                            nz, times, "qcp2_bt", ferror )
+     .                            nz, times, "qcp2_bt", 1, ferror )
 
         th_on_T(1:gr%nnzp) = 
      .    zm2zt( theta_on_T( nz, times, les_stats_file_sw ) )
@@ -2066,7 +2093,7 @@
         
         exner = grads_average_interval( les_stats_file_ext,
      .                                  nz, times, 
-     .                                  "ex0", ferror )
+     .                                  "ex0", 1, ferror )
 
         theta_on_T(1:nz) = (Lv/Cp) * (1.0/exner)
 
@@ -2079,13 +2106,14 @@
 
         implicit none
 
-        real, dimension(25)          :: p_elements
-        character(10), dimension(25) :: p_string
+        real, dimension(30)          :: p_elements
+        character(10), dimension(30) :: p_string
 
         integer i
 
         p_elements = (/C1, C2rt, C2thl, C2rtthl, C4, C5, 
-     .                 C6rt, C6thl, C7, C8, C10, C11, C12,
+     .                 C6rt, C6thl, C7, C7b, C7c, C8, C8b, C10, 
+     .                 C11, C11b, C11c, C12,
      .                 nu1, nu2, nu6, nu8, nu_r, 
      .                 beta, gamma_coef, c_K, 
      .                 lmin_coef, taumin, taumax, mu/)
@@ -2093,8 +2121,9 @@
         p_string = (/"C1        ", "C2rt      ", "C2thl     ", 
      .               "C2rtthl   ", "C4        ", "C5        ", 
      .               "C6rt      ", "C6thl     ", "C7        ", 
-     .               "C8        ", "C10       ", "C11       ", 
-     .               "C12       ",
+     .               "C7b       ", "C7c       ", "C8        ", 
+     .               "C8b       ", "C10       ", "C11       ", 
+     .               "C11b      ", "C11c      ", "C12       ", 
      .               "nu1       ", "nu2       ", "nu6       ", 
      .               "nu8       ", "nu_r      ", "beta      ", 
      .               "gamma_coef", "c_K       ", "lmin_coef ", 
@@ -2104,7 +2133,8 @@
 
 !       The actual subroutine is hoc_model_variable_input, used via overloading
         call hoc_model( C1, C2rt, C2thl, C2rtthl, C4, C5, 
-     .                  C6rt, C6thl, C7, C8, C10, C11, C12,
+     .                  C6rt, C6thl, C7, C7b, C7c, C8, C8b, C10, 
+     .                  C11, C11b, C11c, C12,
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  beta, gamma_coef,
      .                  c_K, lmin_coef, taumin, taumax, mu,
