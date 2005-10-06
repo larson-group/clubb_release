@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.21 2005-09-19 19:44:28 dschanen Exp $
+! $Id: jacobian.F,v 1.22 2005-10-06 23:05:56 golaz Exp $
 
 ! Program Jacobian
 
@@ -42,11 +42,11 @@
 !----- Parameters ------------------------------------------------------
       integer, parameter :: nvarzt = 14
       integer, parameter :: nvarzm = 40
-      integer, parameter :: nconst = 22
+      integer, parameter :: nconst = 27
 
-!     21 must be changed to be equal to nconst
+!     27 must be changed to be equal to nconst
 
-      character(len=12), parameter :: write_format = "(22(e18.10))"
+      character(len=12), parameter :: write_format = "(27(e18.10))"
 
 !     character, parameter :: delta   = greek_'Δ' ! Doesn't work
       character, parameter :: delta   = 'D'
@@ -55,7 +55,7 @@
 ! Notes:  C4 and C10 do not currently play a role in the model 5/31/05
 !-----------------------------------------------------------------------
       real       :: C1, C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6thl
-      real       :: C7, C8, C10, C11, C12
+      real       :: C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12
       real       :: nu1, nu2, nu6, nu8, nu_r
       real       :: beta
       real       :: gamma_coef, c_K
@@ -102,7 +102,8 @@
      .                    use_standard_vars
 
       namelist /initvars/ C1, C2rt, C2thl, C2rtthl, C4, C5, 
-     .                    C6rt, C6thl, C7, C8, C10, C11, C12,
+     .                    C6rt, C6thl, C7, C7b, C7c, C8, C8b, C10, 
+     .                    C11, C11b, C11c, C12,
      .                    nu1, nu2, nu6, nu8, nu_r, beta, gamma_coef,
      .                    c_K, lmin_coef, taumin, taumax, mu
 
@@ -130,15 +131,18 @@
       close(10)
       
       ca1%constant(1:nconst) = (/C1, C2rt, C2thl, C2rtthl, C4, C5, 
-     .                           C6rt, C6thl, C7, C8, C10, C11, C12,
+     .                           C6rt, C6thl, C7, C7b, C7c, C8, C8b,
+     .                           C10, C11, C11b, C11c, C12,
      .                           nu1, nu2, nu6, nu8, nu_r, beta,
      .                           gamma_coef, c_K, mu/)     
       ca1%name(1:nconst) =
      .  (/"C1        ", "C2rt      ", "C2thl     ", 
      .    "C2rtthl   ", "C4        ", 
      .    "C5        ", "C6rt      ", "C6thl     ", 
-     .    "C7        ", "C8        ", 
-     .    "C10       ", "C11       ", "C12       ",
+     .    "C7        ", "C7b       ", "C7c       ",
+     .    "C8        ", "C8b       ", 
+     .    "C10       ", "C11       ", "C11b      ",
+     .    "C11c      ", "C12       ",
      .    "nu1       ", "nu2       ", 
      .    "nu6       ", "nu8       ", "nu_r      ",
      .    "beta      ", "gamma_coef",
@@ -161,8 +165,11 @@
      .                ca1%constant(15), ca1%constant(16), 
      .                ca1%constant(17), ca1%constant(18), 
      .                ca1%constant(19), ca1%constant(20),
-     .                ca1%constant(21), lmin_coef, taumin,
-     .                taumax, ca1%constant(22),
+     .                ca1%constant(21), ca1%constant(22),
+     .                ca1%constant(23), ca1%constant(24),
+     .                ca1%constant(25), ca1%constant(26),
+     .                lmin_coef, taumin, taumax, 
+     .                ca1%constant(27),
      .                "../tune/"//trim(run_name)//"_hoc.in", 
      .                isValid, .false. )
 
@@ -254,8 +261,11 @@
      .                  ca1%constant(15), ca1%constant(16), 
      .                  ca1%constant(17), ca1%constant(18), 
      .                  ca1%constant(19), ca1%constant(20),
-     .                  ca1%constant(21), lmin_coef, taumin,
-     .                  taumax, ca1%constant(22),
+     .                  ca1%constant(21), ca1%constant(22),
+     .                  ca1%constant(23), ca1%constant(24),
+     .                  ca1%constant(25), ca1%constant(26),
+     .                  lmin_coef, taumin, taumax, 
+     .                  ca1%constant(27),
      .                  "../tune/"//trim(run_name)//"_hoc.in", 
      .                  isValid, .false. )
 
@@ -381,7 +391,7 @@
         varray%variable(1:varray%nz, k) = 
      .    grads_average_interval( trim(run_name)//"_"//grid//".ctl",
      .                            varray%nz,
-     .                            times(:), varray%name(k), error )
+     .                            times(:), varray%name(k), 1, error )
         if ( error ) stop "getvariables(): error"
       enddo
 
