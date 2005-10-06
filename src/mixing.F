@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.12 2005-08-27 16:09:40 griffinb Exp $
+! $Id: mixing.F,v 1.13 2005-10-06 23:10:39 golaz Exp $
 !
 ! Module containing the hoc mixing scheme.  Allows for optional variables
 ! and assumed shape arrays.
@@ -80,18 +80,34 @@
 
         real, dimension(gr%nnzp) :: tmp1, tmp2
 
+        integer k, kp1
+        real, allocatable :: Skw_arr(:), C7_Skw_fnc(:)
+
+        allocate( Skw_arr(1:gr%nnzp) )
+        allocate( C7_Skw_fnc(1:gr%nnzp) )
+
 !       Allocate memory
         allocate( aa(1:2*gr%nnzp,1:5) )
         allocate( dd(1:2*gr%nnzp) )
         allocate( al(1:2*gr%nnzp,1:2) )
         allocate( indx(1:2*gr%nnzp) )
 
+        do k=1,gr%nnzp
+
+          kp1 = min(k+1,gr%nnzp)
+          Skw_arr(k) = (0.5*(wp3(k)+wp3(kp1))) /
+     .                    ( max(wtol**2,wp2(k)) )**1.5
+        enddo
+        C7_Skw_fnc = C7b + (C7-C7b)*exp( -0.5 * (Skw_arr/C7c)**2 )
+
+!        C7_Skw_fnc = C7
+
 !       Setup and decompose matrix
 
 !        call mixing_lhs( .true., dt, taum, wmm, wmt, wp2, wp3, Sc,
 !   Prof. Larson's modified mixing_lhs 
         call mixing_lhs("rtm", .true., dt, taum, wmm, wmt, wp2, wp3, Sc,
-     .                   aa, dd, al, indx, isValid )
+     .                   aa, dd, al, indx, isValid, C7_Skw_fnc )
         if ( .not. isValid ) then
            print *, "mixing_lhs failed"
            deallocate( aa, dd, al, indx )
@@ -109,11 +125,11 @@
      .                     cond_rrm, auto_rrm, accr_rrm, ! Brian
      .                     Fcsed, sed_rcm,               ! Brian
      .                     cloud_sed, kk_rain,           ! Brian
-     .                     aa, dd, al, indx )  
+     .                     aa, dd, al, indx, C7_Skw_fnc )  
 
 !   Prof. Larson's modified mixing_lhs 
         call mixing_lhs("thlm",.true., dt, taum, wmm, wmt, wp2, wp3, Sc,
-     .                   aa, dd, al, indx, isValid )
+     .                   aa, dd, al, indx, isValid, C7_Skw_fnc )
         if ( .not. isValid ) then
            print *, "mixing_lhs failed"
            deallocate( aa, dd, al, indx )
@@ -128,7 +144,7 @@
      .                     cond_rrm, auto_rrm, accr_rrm, ! Brian
      .                     Fcsed, sed_rcm,               ! Brian
      .                     cloud_sed, kk_rain,           ! Brian
-     .                     aa, dd, al, indx )
+     .                     aa, dd, al, indx, C7_Skw_fnc )
 
 !       Solve sclrm / wpsclrp
         if ( present( sclrm )     .and. present( wpsclrp ) .and.
@@ -136,7 +152,7 @@
 
 !         Prof. Larson's modified mixing_lhs 
           call mixing_lhs("rtm",.true., dt, taum, wmm, wmt, wp2, wp3, 
-     .                    Sc, aa, dd, al, indx, isValid )
+     .                    Sc, aa, dd, al, indx, isValid, C7_Skw_fnc )
           if ( .not. isValid ) then
             print *, "mixing_lhs failed"
             deallocate( aa, dd, al, indx )
@@ -152,11 +168,11 @@
      .                       cond_rrm, auto_rrm, accr_rrm, ! Brian
      .                       Fcsed, sed_rcm,               ! Brian
      .                       cloud_sed, kk_rain,           ! Brian
-     .                       aa, dd, al, indx )
+     .                       aa, dd, al, indx, C7_Skw_fnc )
 
 !         Prof. Larson's modified mixing_lhs 
           call mixing_lhs("thlm",.true., dt, taum, wmm, wmt, wp2, wp3,
-     .                    Sc, aa, dd, al, indx, isValid )
+     .                    Sc, aa, dd, al, indx, isValid, C7_Skw_fnc )
           if ( .not. isValid ) then
             print *, "mixing_lhs failed"
             deallocate( aa, dd, al, indx )
@@ -171,12 +187,14 @@
      .                       cond_rrm, auto_rrm, accr_rrm, ! Brian
      .                       Fcsed, sed_rcm,               ! Brian
      .                       cloud_sed, kk_rain,           ! Brian
-     .                       aa, dd, al, indx )
+     .                       aa, dd, al, indx, C7_Skw_fnc )
         endif
  
 !       Free memory
 
         deallocate( aa, dd, al, indx )
+        deallocate( Skw_arr )
+        deallocate( C7_Skw_fnc )
 
         return
         end subroutine timestep_mixing
@@ -185,7 +203,7 @@
 
         subroutine mixing_lhs( solve_type, liter, dt, taum, wmm, wmt,
      .                         wp2, wp3, Sc, 
-     .                         aa, dd, al, indx, isValid )
+     .                         aa, dd, al, indx, isValid, C7_Skw_fnc )
 
         use constants
         use grid_class
@@ -215,6 +233,7 @@
         integer, intent(out)   :: indx(1:2*gr%nnzp)
         logical, intent(inout) :: isValid
 
+        real, intent(in) :: C7_Skw_fnc(1:gr%nnzp)
 
 !       Local constants
 
@@ -275,7 +294,7 @@
      .        + a1(k) * gr%dzm(k)
      .          * (  wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
      .             - wp3(k)  /max(wp2(km1)+wp2(k),2.0*eps) )
-     .        + (1.0-C7) * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
+     .        + (1.0-C7_Skw_fnc(k)) * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
      .        + nu6 * gr%dzm(k)*( gr%dzt(kp1) + gr%dzt(k) )
             if (liter) aa(k_wpxp,3) = aa(k_wpxp,3) + 1.0 / dt
           case ("thlm")
@@ -284,7 +303,7 @@
      .        + a1(k) * gr%dzm(k)
      .          * (  wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
      .             - wp3(k)  /max(wp2(km1)+wp2(k),2.0*eps) )
-     .        + (1.0-C7) * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
+     .        + (1.0-C7_Skw_fnc(k)) * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
      .        + nu6 * gr%dzm(k)*( gr%dzt(kp1) + gr%dzt(k) )
             if (liter) aa(k_wpxp,3) = aa(k_wpxp,3) + 1.0 / dt
           end select
@@ -348,7 +367,8 @@
            endif
 
            if ( iwprtp_pr2 > 0 .or. iwpthlp_pr2 > 0 ) then
-             zmscr10(k) = + C7 * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
+             zmscr10(k) = + C7_Skw_fnc(k) 
+     .                      * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
            endif
 
            if ( iwprtp_dp1 > 0 .or. iwpthlp_dp1 > 0 ) then
@@ -399,7 +419,7 @@
      .                           cond_rrm, auto_rrm, accr_rrm, ! Brian
      .                           Fcsed, sed_rcm,               ! Brian
      .                           cloud_sed, kk_rain,           ! Brian
-     .                           aa, dd, al, indx )
+     .                           aa, dd, al, indx, C7_Skw_fnc )
 
         use constants
         use grid_class
@@ -437,6 +457,8 @@
         real, intent(inout) :: dd(1:2*gr%nnzp)
         real, intent(in)    :: al(1:2*gr%nnzp,1:2)
         integer, intent(in) :: indx(1:2*gr%nnzp)
+
+        real, intent(in) :: C7_Skw_fnc(1:gr%nnzp)
 
 !       Internal
 
@@ -509,7 +531,7 @@
 
           if ( iwpxp_pr3 > 0 ) then
             zm%x(:,iwpxp_pr3) = zm%x(:,iwpxp_pr3)
-     .      - grav/T0 * C7 * xpthvp(:)
+     .      - grav/T0 * C7_Skw_fnc * xpthvp(:)
             zm%n(:,iwpxp_pr3) = zm%n(:,iwpxp_pr3) + 1
           endif
         endif
@@ -674,7 +696,7 @@
 !         wpxp: time tendency and buoyancy
 
           dd(k_wpxp)
-     .    = grav/T0 * (1.0-C7) * xpthvp(k)
+     .    = grav/T0 * (1.0-C7_Skw_fnc(k)) * xpthvp(k)
           if (liter) dd(k_wpxp) = dd(k_wpxp) + wpxp(k) / dt
 
         enddo
