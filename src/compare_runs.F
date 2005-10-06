@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-!  $Id: compare_runs.F,v 1.7 2005-07-25 22:27:51 dschanen Exp $
+!  $Id: compare_runs.F,v 1.8 2005-10-06 22:39:49 golaz Exp $
 !  program compare_runs.F
 
 !  Tests selected GRaDS file variables for low variation
@@ -103,21 +103,21 @@
             allocate( fvar3(nz_file3) )
 
             fvar3 = grads_average( file3, nz_file3, t(i), t(i+1), 
-     .                             hoc_variables(n), error )
+     .                             hoc_variables(n), 1, error )
 
 !           second hoc file or the les file
             nz_file2 = grads_zlvl( file2 )
             allocate( fvar2(nz_file2) )
 
             fvar2 = grads_average( file2, nz_file2, t(i), t(i+1), 
-     .                             les_variables(n), error )
+     .                             les_variables(n), 1, error )
 
 !           first hoc file
             nz_file1 = grads_zlvl( file1 )
             allocate( fvar1(nz_file1) )
 
             fvar1 = grads_average( file1, nz_file1, t(i), t(i+1), 
-     .                             hoc_variables(n), error )
+     .                             hoc_variables(n), 1, error )
 
 !           Choose smallest number of vertical gridpoints.
             nz = min( nz_file3, nz_file2, nz_file1 )
