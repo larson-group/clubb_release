@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.24 2005-09-19 19:44:27 dschanen Exp $
+! $Id: error.F,v 1.25 2005-10-06 22:50:25 golaz Exp $
 
 !       Module ERROR
 !
@@ -34,7 +34,7 @@
 
 !---------------- Dimensions of the array for amoeba -------------------
 
-      integer, parameter, public  :: ndim = 25
+      integer, parameter, public  :: ndim = 30
       integer, parameter, public  :: mdim = ndim + 1
 
       real, dimension(mdim, ndim)  :: x_array
@@ -79,7 +79,8 @@
 
 !----- Hoc constants to tune -----------------------------------------
       real C1, C2rt, C2thl, C2rtthl, C4, C5
-      real C6rt, C6thl, C7, C8, C10, C11, C12
+      real C6rt, C6thl, C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c
+      real C12
       real nu1, nu2, nu6, nu8, nu_r
       real beta
       real gamma_coef, c_K
@@ -146,8 +147,10 @@
 
 !----- Hoc variance for generating array ------------------------------
       real C1_var, C2rt_var, C2thl_var, C2rtthl_var, C4_var, C5_var
-      real C6rt_var, C6thl_var, C7_var, C8_var
-      real C10_var, C11_var, C12_var
+      real C6rt_var, C6thl_var, C7_var, C7b_var, C7c_var
+      real C8_var, C8b_var, C10_var
+      real C11_var, C11b_var, C11c_var
+      real C12_var
       real nu1_var, nu2_var, nu6_var, nu8_var, nu_r_var
       real beta_var
       real gamma_coef_var, c_K_var
@@ -164,13 +167,16 @@
      .                 z_i_nl, z_f_nl, time_nl
 
       namelist /initvars/ C1, C2rt, C2thl, C2rtthl, C4, C5, 
-     .                    C6rt, C6thl, C7, C8, C10, C11, C12, 
+     .                    C6rt, C6thl, C7, C7b, C7c, C8, C8b, C10, 
+     .                    C11, C11b, C11c, C12,
      .                    nu1, nu2, nu6, nu8, nu_r, beta, gamma_coef,
      .                    c_K, lmin_coef, taumin, taumax, mu
 
       namelist /variance/ C1_var, C2rt_var, C2thl_var, C2rtthl_var, 
      .                    C4_var, C5_var, C6rt_var, C6thl_var, 
-     .                    C7_var, C8_var, C10_var, C11_var, C12_var,
+     .                    C7_var, C7b_var, C7c_var,
+     .                    C8_var, C8b_var, C10_var, 
+     .                    C11_var, C11b_var, C11c_var, C12_var,
      .                    nu1_var, nu2_var, nu6_var, nu8_var, nu_r_var,
      .                    beta_var, gamma_coef_var, c_K_var,
      .                    lmin_coef_var, taumin_var, taumax_var, mu_var
@@ -259,7 +265,8 @@
 !--------------- Initialize the hoc constants -------------------------
 
         x_array(1,1:ndim) = (/C1, C2rt, C2thl, C2rtthl, C4, C5, 
-     .                        C6rt, C6thl, C7, C8, C10, C11, C12,
+     .                        C6rt, C6thl, C7, C7b, C7c, C8, C8b,
+     .                        C10, C11, C11b, C11c, C12,
      .                        nu1, nu2, nu6, nu8, nu_r, beta,
      .                        gamma_coef, c_K, lmin_coef, taumin,
      .                        taumax, mu/)
@@ -268,8 +275,9 @@
 
         x_variance(1:ndim) = (/C1_var, C2rt_var, C2thl_var, C2rtthl_var,
      .                         C4_var, C5_var, C6rt_var, C6thl_var,
-     .                         C7_var, C8_var, C10_var, 
-     .                         C11_var, C12_var,
+     .                         C7_var, C7b_var, C7c_var,
+     .                         C8_var, C8b_var, C10_var, 
+     .                         C11_var, C11b_var, C11c_var, C12_var,
      .                         nu1_var, nu2_var, nu6_var, nu8_var, 
      .                         nu_r_var, beta_var, gamma_coef_var, 
      .                         c_K_var, lmin_coef_var, taumin_var, 
@@ -343,7 +351,7 @@
       integer                           :: c_terms  ! num of terms in err_sum
 
 !-------- les and hoc values over nz z-levels --------------------------
-      real, dimension(:), allocatable   :: hoc_zl, les_zl
+      real, dimension(:), allocatable   :: hoc_zl, hoc2_zl, les_zl
 
 !--------- largest value minus smallest value  of all zlvl -------------
       real                              :: les_minmax
@@ -369,22 +377,27 @@
         write(*,'(A12,f12.5)') "C6rt =", x_vector(7)
         write(*,'(A12,f12.5)') "C6thl =", x_vector(8)
         write(*,'(A12,f12.5)') "C7 =", x_vector(9)
-        write(*,'(A12,f12.5)') "C8 =", x_vector(10)
-        write(*,'(A12,f12.5)') "C10 =", x_vector(11)
-        write(*,'(A12,f12.5)') "C11 =", x_vector(12)
-        write(*,'(A12,f12.5)') "C12 =", x_vector(13)
-        write(*,'(A12,f12.5)') "nu1 =", x_vector(14)
-        write(*,'(A12,f12.5)') "nu2 =", x_vector(15)
-        write(*,'(A12,f12.5)') "nu6 =", x_vector(16)
-        write(*,'(A12,f12.5)') "nu8 =", x_vector(17)
-        write(*,'(A12,f12.5)') "nu_r =", x_vector(18)
-        write(*,'(A12,f12.5)') "beta =", x_vector(19)
-        write(*,'(A12,f12.5)') "gamma_coef =", x_vector(20)
-        write(*,'(A12,f12.5)') "c_K =", x_vector(21)
-        write(*,'(A12,f12.5)') "lmin_coef =", x_vector(22)
-        write(*,'(A12,f12.5)') "taumin =", x_vector(23)
-        write(*,'(A12,f12.5)') "taumax =", x_vector(24)
-        write(*,'(A12,f12.5)') "mu =", x_vector(25)
+        write(*,'(A12,f12.5)') "C7b =", x_vector(10)
+        write(*,'(A12,f12.5)') "C7c =", x_vector(11)
+        write(*,'(A12,f12.5)') "C8 =", x_vector(12)
+        write(*,'(A12,f12.5)') "C8b =", x_vector(13)
+        write(*,'(A12,f12.5)') "C10 =", x_vector(14)
+        write(*,'(A12,f12.5)') "C11 =", x_vector(15)
+        write(*,'(A12,f12.5)') "C11b =", x_vector(16)
+        write(*,'(A12,f12.5)') "C11c =", x_vector(17)
+        write(*,'(A12,f12.5)') "C12 =", x_vector(18)
+        write(*,'(A12,f12.5)') "nu1 =", x_vector(19)
+        write(*,'(A12,f12.5)') "nu2 =", x_vector(20)
+        write(*,'(A12,f12.5)') "nu6 =", x_vector(21)
+        write(*,'(A12,f12.5)') "nu8 =", x_vector(22)
+        write(*,'(A12,f12.5)') "nu_r =", x_vector(23)
+        write(*,'(A12,f12.5)') "beta =", x_vector(24)
+        write(*,'(A12,f12.5)') "gamma_coef =", x_vector(25)
+        write(*,'(A12,f12.5)') "c_K =", x_vector(26)
+        write(*,'(A12,f12.5)') "lmin_coef =", x_vector(27)
+        write(*,'(A12,f12.5)') "taumin =", x_vector(28)
+        write(*,'(A12,f12.5)') "taumax =", x_vector(29)
+        write(*,'(A12,f12.5)') "mu =", x_vector(30)
       endif
         
 !----Initialize the return value for funk -----------------------------
@@ -416,8 +429,9 @@
      .                  x_vector(16), x_vector(17), x_vector(18), 
      .                  x_vector(19), x_vector(20), x_vector(21),
      .                  x_vector(22), x_vector(23), x_vector(24),
-     .                  x_vector(25), run_file(c_run), 
-     .                  isValid, .false. )
+     .                  x_vector(25), x_vector(26), x_vector(27),
+     .                  x_vector(28), x_vector(29), x_vector(30),
+     .                  run_file(c_run), isValid, .false. )
 
 !-------------- Basic Sanity Check for negative constants --------------
 !        if (minval( x_vector ) < 0. ) isValid = .false.
@@ -442,7 +456,7 @@
 !-----------------------------------------------------------------------
         hoc_nz = grads_zlvl( hoc_stats_file(c_run) )
         les_nz = grads_zlvl( les_stats_file(c_run) )
-        allocate( hoc_zl(hoc_nz), les_zl(les_nz), 
+        allocate( hoc_zl(hoc_nz), hoc2_zl(hoc_nz), les_zl(les_nz),
      .            stat = AllocateStatus )
         if ( AllocateStatus /= 0 ) then 
           stop "Allocation of z-level arrays in function funk failed"
@@ -459,14 +473,20 @@
           les_zl = grads_average_interval( les_stats_file(c_run), 
      .                                     les_nz,
      .                                     time(c_run,:), les_v(i),
-     .                                     error )
+     .                                     1, error )
           if ( error ) stop "oops, variable was invalid"
 
 !----- Read in HOC grads data for one variable, avgd over intervals ----
           hoc_zl = grads_average_interval( hoc_stats_file(c_run),
      .                                     hoc_nz,
      .                                     time(c_run,:), hoc_v(i), 
-     .                                     error )
+     .                                     1, error )
+          if ( error ) stop "oops, variable was invalid"
+
+          hoc2_zl = grads_average_interval( hoc_stats_file(c_run),
+     .                                      hoc_nz,
+     .                                      time(c_run,:), hoc_v(i), 
+     .                                      2, error )
           if ( error ) stop "oops, variable was invalid"
 
 !-----------------------------------------------------------------------
@@ -481,12 +501,21 @@
           if (les_minmax == 0.) stop "An LES var = 0 over all z-levels"
 
           err_sum = err_sum 
-     .            + mean_sqr_diff_zt( hoc_zl, les_zl, les_minmax )
+          err_sum = err_sum 
+          err_sum = err_sum 
+c-->Chris Golaz modification: mean_sqr_diff_2_zt was designed to try
+c   to limit time noise in tuning simulations.
+!          err_sum = err_sum 
+!     .            + mean_sqr_diff_zt( hoc_zl, les_zl, les_minmax )
+          err_sum = err_sum 
+     .            + mean_sqr_diff_2_zt( hoc_zl, hoc2_zl, les_zl, 
+     .                                les_minmax )
+c<--end of modification
           c_terms = c_terms + 1
 
         enddo     ! end of do i=1, v_total
 
-        deallocate (hoc_zl, les_zl)
+        deallocate (hoc_zl, hoc2_zl, les_zl)
 
       enddo     ! end of do c_run=1, c_total
 !$OMP END PARALLEL
@@ -517,24 +546,29 @@
       write(*,'(A12,2f12.5)') "C6rt =", C6rt, x_array(1,7)
       write(*,'(A12,2f12.5)') "C6thl =", C6thl, x_array(1,8)
       write(*,'(A12,2f12.5)') "C7 =", C7, x_array(1,9)
-      write(*,'(A12,2f12.5)') "C8 =", C8, x_array(1,10)
-      write(*,'(A12,2f12.5)') "C10 =", C10, x_array(1,11)
-      write(*,'(A12,2f12.5)') "C11 =", C11, x_array(1,12)
-      write(*,'(A12,2f12.5)') "C12 =", C12, x_array(1,13)
-      write(*,'(A12,2f12.5)') "nu1 =", nu1, x_array(1,14)
-      write(*,'(A12,2f12.5)') "nu2 =", nu2, x_array(1,15)
-      write(*,'(A12,2f12.5)') "nu6 =", nu6, x_array(1,16)
-      write(*,'(A12,2f12.5)') "nu8 =", nu8, x_array(1,17)
-      write(*,'(A12,2f12.5)') "nu_r =", nu_r, x_array(1,18)
-      write(*,'(A12,2f12.5)') "beta =", beta, x_array(1,19)
+      write(*,'(A12,2f12.5)') "C7b =", C7b, x_array(1,10)
+      write(*,'(A12,2f12.5)') "C7c =", C7c, x_array(1,11)
+      write(*,'(A12,2f12.5)') "C8 =", C8, x_array(1,12)
+      write(*,'(A12,2f12.5)') "C8b =", C8b, x_array(1,13)
+      write(*,'(A12,2f12.5)') "C10 =", C10, x_array(1,14)
+      write(*,'(A12,2f12.5)') "C11 =", C11, x_array(1,15)
+      write(*,'(A12,2f12.5)') "C11b =", C11b, x_array(1,16)
+      write(*,'(A12,2f12.5)') "C11c =", C11c, x_array(1,17)
+      write(*,'(A12,2f12.5)') "C12 =", C12, x_array(1,18)
+      write(*,'(A12,2f12.5)') "nu1 =", nu1, x_array(1,19)
+      write(*,'(A12,2f12.5)') "nu2 =", nu2, x_array(1,20)
+      write(*,'(A12,2f12.5)') "nu6 =", nu6, x_array(1,21)
+      write(*,'(A12,2f12.5)') "nu8 =", nu8, x_array(1,22)
+      write(*,'(A12,2f12.5)') "nu_r =", nu_r, x_array(1,23)
+      write(*,'(A12,2f12.5)') "beta =", beta, x_array(1,24)
       write(*,'(A12,2f12.5)') "gamma_coef =", 
-     .                         gamma_coef, x_array(1,20)
-      write(*,'(A12,2f12.5)') "c_K =", c_K, x_array(1,21)
+     .                         gamma_coef, x_array(1,25)
+      write(*,'(A12,2f12.5)') "c_K =", c_K, x_array(1,26)
       write(*,'(A12,2f12.5)') "lmin_coef =", 
-     .                         lmin_coef, x_array(1,22)
-      write(*,'(A12,2f12.5)') "taumin =", taumin, x_array(1,23)
-      write(*,'(A12,2f12.5)') "taumax =", taumax, x_array(1,24)
-      write(*,'(A12,2f12.5)') "mu =",  mu, x_array(1,25)
+     .                         lmin_coef, x_array(1,27)
+      write(*,'(A12,2f12.5)') "taumin =", taumin, x_array(1,28)
+      write(*,'(A12,2f12.5)') "taumax =", taumax, x_array(1,29)
+      write(*,'(A12,2f12.5)') "mu =",  mu, x_array(1,30)
       
       write(*,'(A20,e15.6)') "initial error: ", init_err
 
@@ -620,22 +654,27 @@
       write(20,*) "C6rt =       ", x_vector(7)
       write(20,*) "C6thl =      ", x_vector(8)
       write(20,*) "C7 =         ", x_vector(9)
-      write(20,*) "C8 =         ", x_vector(10)
-      write(20,*) "C10 =        ", x_vector(11)
-      write(20,*) "C11 =        ", x_vector(12)
-      write(20,*) "C12 =        ", x_vector(13)
-      write(20,*) "nu1 =        ", x_vector(14)
-      write(20,*) "nu2 =        ", x_vector(15)
-      write(20,*) "nu6 =        ", x_vector(16)
-      write(20,*) "nu8 =        ", x_vector(17)
-      write(20,*) "nu_r =       ", x_vector(18)
-      write(20,*) "beta =       ", x_vector(19)
-      write(20,*) "gamma_coef = ", x_vector(20)
-      write(20,*) "c_K =        ", x_vector(21)
-      write(20,*) "lmin_coef =  ", x_vector(22)
-      write(20,*) "taumin =     ", x_vector(23)
-      write(20,*) "taumax =     ", x_vector(24)
-      write(20,*) "mu =         ", x_vector(25)
+      write(20,*) "C7b =        ", x_vector(10)
+      write(20,*) "C7c =        ", x_vector(11)
+      write(20,*) "C8 =         ", x_vector(12)
+      write(20,*) "C8b =        ", x_vector(13)
+      write(20,*) "C10 =        ", x_vector(14)
+      write(20,*) "C11 =        ", x_vector(15)
+      write(20,*) "C11b =       ", x_vector(16)
+      write(20,*) "C11c =       ", x_vector(17)
+      write(20,*) "C12 =        ", x_vector(18)
+      write(20,*) "nu1 =        ", x_vector(19)
+      write(20,*) "nu2 =        ", x_vector(20)
+      write(20,*) "nu6 =        ", x_vector(21)
+      write(20,*) "nu8 =        ", x_vector(22)
+      write(20,*) "nu_r =       ", x_vector(23)
+      write(20,*) "beta =       ", x_vector(24)
+      write(20,*) "gamma_coef = ", x_vector(25)
+      write(20,*) "c_K =        ", x_vector(26)
+      write(20,*) "lmin_coef =  ", x_vector(27)
+      write(20,*) "taumin =     ", x_vector(28)
+      write(20,*) "taumax =     ", x_vector(29)
+      write(20,*) "mu =         ", x_vector(30)
       write(20,*) "/"
 
       write(20,*) "&variance"
@@ -648,22 +687,27 @@
       write(20,*) "C6rt_var =       ", x_variance(7)
       write(20,*) "C6thl_var =      ", x_variance(8)
       write(20,*) "C7_var =         ", x_variance(9)
-      write(20,*) "C8_var =         ", x_variance(10)
-      write(20,*) "C10_var =        ", x_variance(11)
-      write(20,*) "C11_var =        ", x_variance(12)
-      write(20,*) "C12_var =        ", x_variance(13)
-      write(20,*) "nu1_var =        ", x_variance(14)
-      write(20,*) "nu2_var =        ", x_variance(15)
-      write(20,*) "nu6_var =        ", x_variance(16)
-      write(20,*) "nu8_var =        ", x_variance(17)
-      write(20,*) "nu_r_var =       ", x_variance(18)
-      write(20,*) "beta_var =       ", x_variance(19)
-      write(20,*) "gamma_coef_var = ", x_variance(20)
-      write(20,*) "c_K_var =        ", x_variance(21)
-      write(20,*) "lmin_coef_var =  ", x_variance(22)
-      write(20,*) "taumin_var =     ", x_variance(23)
-      write(20,*) "taumax_var =     ", x_variance(24)
-      write(20,*) "mu_var =         ", x_variance(25)
+      write(20,*) "C7b_var =        ", x_variance(10)
+      write(20,*) "C7c_var =        ", x_variance(11)
+      write(20,*) "C8_var =         ", x_variance(12)
+      write(20,*) "C8b_var =        ", x_variance(13)
+      write(20,*) "C10_var =        ", x_variance(14)
+      write(20,*) "C11_var =        ", x_variance(15)
+      write(20,*) "C11b_var =       ", x_variance(16)
+      write(20,*) "C11c_var =       ", x_variance(17)
+      write(20,*) "C12_var =        ", x_variance(18)
+      write(20,*) "nu1_var =        ", x_variance(19)
+      write(20,*) "nu2_var =        ", x_variance(20)
+      write(20,*) "nu6_var =        ", x_variance(21)
+      write(20,*) "nu8_var =        ", x_variance(22)
+      write(20,*) "nu_r_var =       ", x_variance(23)
+      write(20,*) "beta_var =       ", x_variance(24)
+      write(20,*) "gamma_coef_var = ", x_variance(25)
+      write(20,*) "c_K_var =        ", x_variance(26)
+      write(20,*) "lmin_coef_var =  ", x_variance(27)
+      write(20,*) "taumin_var =     ", x_variance(28)
+      write(20,*) "taumax_var =     ", x_variance(29)
+      write(20,*) "mu_var =         ", x_variance(30)
       write(20,*) "/"
 
 !------- Close new file ------------------------------------------------
@@ -713,22 +757,27 @@
       write(20,*) "C6rt =       ", x_vector(7)
       write(20,*) "C6thl =      ", x_vector(8)
       write(20,*) "C7 =         ", x_vector(9)
-      write(20,*) "C8 =         ", x_vector(10)
-      write(20,*) "C10 =        ", x_vector(11)
-      write(20,*) "C11 =        ", x_vector(12)
-      write(20,*) "C12 =        ", x_vector(13)
-      write(20,*) "nu1 =        ", x_vector(14)
-      write(20,*) "nu2 =        ", x_vector(15)
-      write(20,*) "nu6 =        ", x_vector(16)
-      write(20,*) "nu8 =        ", x_vector(17)
-      write(20,*) "nu_r =       ", x_vector(18)
-      write(20,*) "beta =       ", x_vector(19)
-      write(20,*) "gamma_coef = ", x_vector(20)
-      write(20,*) "c_K =        ", x_vector(21)
-      write(20,*) "lmin_coef =  ", x_vector(22)
-      write(20,*) "taumin =     ", x_vector(23)
-      write(20,*) "taumax =     ", x_vector(24)
-      write(20,*) "mu =         ", x_vector(25)
+      write(20,*) "C7b =        ", x_vector(10)
+      write(20,*) "C7c =        ", x_vector(11)
+      write(20,*) "C8 =         ", x_vector(12)
+      write(20,*) "C8b =        ", x_vector(13)
+      write(20,*) "C10 =        ", x_vector(14)
+      write(20,*) "C11 =        ", x_vector(15)
+      write(20,*) "C11b =       ", x_vector(16)
+      write(20,*) "C11c =       ", x_vector(17)
+      write(20,*) "C12 =        ", x_vector(18)
+      write(20,*) "nu1 =        ", x_vector(19)
+      write(20,*) "nu2 =        ", x_vector(20)
+      write(20,*) "nu6 =        ", x_vector(21)
+      write(20,*) "nu8 =        ", x_vector(22)
+      write(20,*) "nu_r =       ", x_vector(23)
+      write(20,*) "beta =       ", x_vector(24)
+      write(20,*) "gamma_coef = ", x_vector(25)
+      write(20,*) "c_K =        ", x_vector(26)
+      write(20,*) "lmin_coef =  ", x_vector(27)
+      write(20,*) "taumin =     ", x_vector(28)
+      write(20,*) "taumax =     ", x_vector(29)
+      write(20,*) "mu =         ", x_vector(30)
       write(20,*) "/"
 
 !------- Close new file ------------------------------------------------
@@ -832,6 +881,75 @@
 
       return
       end function mean_sqr_diff_zm
+!-----------------------------------------------------------------------
+!  FUNCTION mean_sqr_diff_2_zt
+!  Alternate function to compute mean difference between input fields.
+!  It computes:
+!    hoc2_zl - 2 * hoc_zl * les_zl + les_zl**2
+!  where hoc2_zl = avg( hoc_zl**2 )
+!        hoc_zl  = avg( hoc_zl )
+!        les_zl  = avg( les_zl )
+!  This alternate formulation adds a penalty to the cost function
+!  from the time varying noise that might be present in a simulation.
+!  It allows the tuner to avoid very noisy simulations, although some
+!  noise might still be present.
+!  
+!  Configured to do interpolation on LES / HOC comparisons on the t grid
+!-----------------------------------------------------------------------
+      real function mean_sqr_diff_2_zt( hoc_zl, hoc2_zl, les_zl, 
+     .                                  norm_term )
+      
+      implicit none
+
+!     Input
+      real, intent(in), dimension(:) :: hoc_zl 
+      real, intent(in), dimension(:) :: hoc2_zl 
+      real, intent(in), dimension(:) :: les_zl 
+
+      real, intent(in) :: norm_term ! normalization term; 
+                                    ! typically maxval(les) - minval(les) 
+!     Internal
+      real, dimension(size( hoc_zl )) :: tmp_zl
+      integer hoc_nz, les_nz
+
+      hoc_nz = size( hoc_zl ) 
+      les_nz = size( les_zl ) 
+
+      select case ( hoc_nz - les_nz )
+      case ( 0 ) ! most cases
+!----------------------------------------------------------------------
+!  Due to hoc's lower starting point, we can only use
+!  (total number of z-levels) - 1 (a maximum of 74 for BOMEX).
+!  The code below assumes the LES data are on an evenly spaced grid.
+!  (Need to interpolate hoc to LES' levels.  Right now we just
+!   compare adjacent z levels.  Vince Larson 12 Jan 2005)
+!----------------------------------------------------------------------
+        tmp_zl(1:hoc_nz-1) 
+     .  = ( hoc2_zl(2:hoc_nz) 
+     .      - 2.0*hoc_zl(2:hoc_nz)*les_zl(1:(les_nz-1))
+     .      + les_zl(1:(les_nz-1))*les_zl(1:(les_nz-1))
+     .    ) / (norm_term * norm_term)
+        mean_sqr_diff_2_zt   = sum( tmp_zl(1:(hoc_nz-1)), 1 ) 
+
+      case ( 2 )  !  the dycoms II RF01 case
+        tmp_zl(1:les_nz) 
+     .  = ( hoc2_zl(3:hoc_nz) 
+     .      - 2.0*hoc_zl(3:hoc_nz)*les_zl(1:les_nz)
+     .      + les_zl(1:les_nz)*les_zl(1:les_nz)
+     .    ) / (norm_term * norm_term)
+        mean_sqr_diff_2_zt = sum( tmp_zl(1:(les_nz)), 1 )
+
+!     case (50)   !  the wangara case
+!        tmp_zl = ( hoc_zl(1:nz) - les_zl(1:nz) ) / norm_term 
+!        tmp_zl = tmp_zl**2
+!        mean_sqr_diff_2_zt = sum( tmp_zl, 1 )
+
+      case default !
+        stop "Not able to handle specified number of HOC z-levels"
+      end select
+
+      return
+      end function mean_sqr_diff_2_zt
 !-----------------------------------------------------------------------
 !  SUBROUTINE read_random_seed( )
 !  Reads a flat file passed as an argument
