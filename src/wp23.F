@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.7 2005-09-19 19:44:28 dschanen Exp $
+! $Id: wp23.F,v 1.8 2005-10-06 23:13:40 golaz Exp $
 
 ! SUBROUTINE timestep_wp23( )
 !  Advance wp2 and wp3 one timestep
@@ -131,21 +131,19 @@
      .                    ( 0.5*max(wtol**2,wp2(km1)+wp2(k)) )**1.5
         enddo
 
-!        C11_Skw_fnc = 0.55 * exp( -0.5 * (Skw_arr/2.05)**2 ) + 0.15
-        C11_Skw_fnc = 0.5 * exp( -0.5 * (Skw_arr/1.2)**2 ) + 0.2
-!        C11_Skw_fnc = 0.5 * exp( -0.5 * (Skw_arr/1.6)**2 ) + 0.2
-!        print *, 'Skw_arr=', Skw_arr
-!        print *, 'C11_Skw_fnc=', C11_Skw_fnc
+        C11_Skw_fnc = C11b + (C11-C11b)*exp( -0.5 * (Skw_arr/C11c)**2 )
+
+!        C11_Skw_fnc = C11
 
 ! Old version with C11 constant
-        wp3t = - wmt * ddzm( zt2zm( wp3 ) )
-     .         - 3.0*(1.0-C11) * wp3 * ddzm( wmm )
-     .         + 3.0*(1.0-C11) * grav * alpha * wp2thvp
+!        wp3t = - wmt * ddzm( zt2zm( wp3 ) )
+!     .         - 3.0*(1.0-C11) * wp3 * ddzm( wmm )
+!     .         + 3.0*(1.0-C11) * grav * alpha * wp2thvp
 
 ! New version with C11 dependent on Skw
-!        wp3t = - wmt * ddzm( zt2zm( wp3 ) )
-!     .         - 3.0 * (1.0-C11_Skw_fnc) * wp3 * ddzm( wmm )
-!     .         + 3.0 * (1.0-C11_Skw_fnc) * grav * alpha * wp2thvp
+        wp3t = - wmt * ddzm( zt2zm( wp3 ) )
+     .         - 3.0 * (1.0-C11_Skw_fnc) * wp3 * ddzm( wmm )
+     .         + 3.0 * (1.0-C11_Skw_fnc) * grav * alpha * wp2thvp
 ! End Vince Larson's change.
 
 #ifdef STATS
@@ -171,7 +169,8 @@
 
          if ( iwp3_pr2 > 0 ) then
            zt%x(:,iwp3_pr2) = zt%x(:,iwp3_pr2) 
-     .     - C11 * ( - 3.0 * wp3 * ddzm( wmm )
+!     .     - C11 * ( - 3.0 * wp3 * ddzm( wmm )
+     .     - C11_Skw_fnc * ( - 3.0 * wp3 * ddzm( wmm )
      .               + 3.0 * grav * alpha * wp2thvp
      .             )
            zt%n(:,iwp3_pr2) = zt%n(:,iwp3_pr2) + 1
@@ -415,7 +414,7 @@
 
           aa(k_wp3,3)
      .    = 1.0 / dt
-     .      + C8/tauw3t(k)*(5.0*0.005*Skw**4+1.0)
+     .      + C8/tauw3t(k)*(5.0*C8b*Skw**4+1.0)
      .      - atmp - ctmp
      .      + 0.5 * a1(k) * gr%dzt(k) 
      .            * ( (wp3(k)+wp3(kp1))/max(wp2(k),eps)
@@ -434,7 +433,7 @@
      .      + ( atmp + ctmp + 1.0/dt ) * wp3(k)
      .      - ctmp * wp3(kp1)
      .      - C8/tauw3t(k)
-     .        *(-4.0*0.005*Skw**4)*wp3(k)
+     .        *(-4.0*C8b*Skw**4)*wp3(k)
      .      + wp3t(k)
      .      + a3(k) * gr%dzt(k) * ( wp2(k)**2 - wp2(km1)**2 )
      .      + 0.25 * a1(k) * gr%dzt(k)
@@ -462,7 +461,7 @@
            if ( iwp3_pr1 > 0 ) then
             zt%x(k,iwp3_pr1) = zt%x(k,iwp3_pr1) 
      .      - C8/tauw3t(k)
-     .        *(-4.0*0.005*Skw**4)*wp3(k)
+     .        *(-4.0*C8b*Skw**4)*wp3(k)
            endif
 
            if ( iwp3_dp1 > 0 ) then
@@ -500,7 +499,7 @@
 
            if ( iwp3_pr1 > 0 ) then
              ztscr01(k) =
-     .       - C8/tauw3t(k)*(5.0*0.005*Skw**4+1.0)    
+     .       - C8/tauw3t(k)*(5.0*C8b*Skw**4+1.0)    
            endif
 
            if ( iwp3_dp1 > 0 ) then
