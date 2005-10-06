@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.16 2005-09-19 19:44:27 dschanen Exp $
+! $Id: constants.F,v 1.17 2005-10-06 22:41:10 golaz Exp $
 
 !  Contains frequently occuring model constants
 !-----------------------------------------------------------------------
@@ -45,7 +45,9 @@
 !       Model parameters and constraints
 
         real C1, C2rt, C2thl, C2rtthl, C4, C5
-        real C6rt, C6thl, C7, C8, C10, C11, C12
+        real C6rt, C6thl, C7, C7b, C7c, C8, C8b, C10
+        real C11, C11b, C11c
+        real C12
         real nu1, nu2, nu6, nu8, nu_r
         real mu, c_K, gamma_coef
         real lmin
@@ -89,8 +91,11 @@
 !-----------------------------------------------------------------------
       subroutine setup_constants( deltaz, C1_in, C2rt_in, C2thl_in, 
      .                            C2rtthl_in, C4_in, C5_in, 
-     .                            C6rt_in, C6thl_in, C7_in, 
-     .                            C8_in, C10_in, C11_in, C12_in,
+     .                            C6rt_in, C6thl_in, 
+     .                            C7_in, C7b_in, C7c_in,
+     .                            C8_in, C8b_in, C10_in, 
+     .                            C11_in, C11b_in, C11c_in,
+     .                            C12_in,
      .                            nu1_in, nu2_in, nu6_in, nu8_in,
      .                            nu_r_in, gamma_coef_in, mu_in,
      .                            c_K_in, beta_in, lmin_coef_in,
@@ -102,8 +107,11 @@
 
       real, intent(in) :: deltaz
       real, intent(in) :: C1_in, C2rt_in, C2thl_in, C2rtthl_in
-      real, intent(in) :: C4_in, C5_in, C6rt_in, C6thl_in, C7_in
-      real, intent(in) :: C8_in, C10_in, C11_in, C12_in
+      real, intent(in) :: C4_in, C5_in, C6rt_in, C6thl_in
+      real, intent(in) :: C7_in, C7b_in, C7c_in
+      real, intent(in) :: C8_in, C8b_in, C10_in
+      real, intent(in) :: C11_in, C11b_in, C11c_in
+      real, intent(in) :: C12_in
       real, intent(in) :: nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in
       real, intent(in) :: beta_in
       real, intent(in) :: lmin_coef_in, taumin_in, taumax_in
@@ -136,9 +144,14 @@
       C6rt    = C6rt_in
       C6thl   = C6thl_in
       C7      = C7_in
+      C7b     = C7b_in
+      C7c     = C7c_in
       C8      = C8_in
+      C8b     = C8b_in
       C10     = C10_in
       C11     = C11_in
+      C11b    = C11b_in
+      C11c    = C11c_in
       C12     = C12_in
 
       nu1   = nu1_in 
