@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc_inputfields.F,v 1.7 2005-09-19 19:44:27 dschanen Exp $
+! $Id: hoc_inputfields.F,v 1.8 2005-10-06 22:57:41 golaz Exp $
 
 !  Program HOC_INPUTFIELDS
  
@@ -21,7 +21,8 @@
 ! Notes:  C4 and C10 do not currently play a role in the model 3/18/05
 !
       real       :: C1, C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6thl 
-      real       :: C7, C8, C10, C11, C12
+      real       :: C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c
+      real       :: C12
       real       :: nu1, nu2, nu6, nu8, nu_r
       real       :: beta
       real       :: gamma_coef, c_K
@@ -42,7 +43,8 @@
       namelist /model/ run_file, stdout
 
       namelist /initvars/ C1, C2rt, C2thl, C2rtthl, C4, C5, 
-     .                    C6rt, C6thl, C7, C8, C10, C11, C12,
+     .                    C6rt, C6thl, C7, C7b, C7c, C8, C8b,
+     .                    C10, C11, C11b, C11c, C12,
      .                    nu1, nu2, nu6, nu8, nu_r, beta, gamma_coef,
      .                    c_K, lmin_coef, taumin, taumax, mu
 
@@ -66,7 +68,8 @@
 
 !----- Run the model----------------------------------------------------
       call hoc_model( C1, C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6thl, 
-     .                C7, C8, C10, C11, C12,
+     .                C7, C7b, C7c, C8, C8b, C10, 
+     .                C11, C11b, C11c, C12,
      .                nu1, nu2, nu6, nu8, nu_r, beta,
      .                gamma_coef, c_K, lmin_coef, taumin, taumax, mu,
      .                run_file, isValid, stdout,
