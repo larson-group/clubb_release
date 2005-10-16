@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.19 2005-08-27 14:35:17 griffinb Exp $ 
+! $Id: gcss.F,v 1.20 2005-10-16 14:12:30 griffinb Exp $ 
 
 ! This file contains extra subroutines to simulate the GCSS ARM and
 ! GCSS BOMEX, GCSS ATEX, GCSS FIRE intercomparison cases as well 
@@ -811,7 +811,8 @@
 ! Based on GCSS ATEX intercomparison case
 !----------------------------------------------------------------------
 
-        subroutine cloud_rad( rhot, rcm, Frad, htrt, sclr_rate )
+        subroutine cloud_rad( rhot, rcm, exner, Frad, htrt,
+     .                        sclr_rate )
 
         use grid_class
         use constants
@@ -822,6 +823,7 @@
 
         real, intent(in) :: rhot(gr%nnzp)       ! density (thermo point)
         real, intent(in) :: rcm(gr%nnzp)        ! liquid water mixing ratio
+        real, intent(in) :: exner(gr%nnzp)      ! exner function
 
 !       Output
 
@@ -858,6 +860,7 @@
 !       Compute IR heating rate
 
         htrt          = htrt + ( -1.0/(Cp*rhot) ) * ddzm( Frad )
+     .                        * ( 1.0/exner )
         htrt(1)       = 0.
         htrt(gr%nnzp) = 0.
 
@@ -870,8 +873,8 @@
 ! Subroutine to set theta and water tendencies for DYCOMS RF01 case
 !
         subroutine dycoms2_rf01_tndcy( time, rhot, rhom, rtm, rcm,
-     .                                 wmt, wmm, Frad, theta_tndcy, 
-     .                                 rt_tndcy, isValid,
+     .                                 exner, wmt, wmm, Frad,
+     .                                 theta_tndcy, rt_tndcy, isValid,
      .                                 sclr, sclr_tndcy )
 
         use grid_class
@@ -888,6 +891,7 @@
         real, intent(in) :: rhom(gr%nnzp)
         real, intent(in) :: rtm(gr%nnzp)
         real, intent(in) :: rcm(gr%nnzp)
+        real, intent(in) :: exner(gr%nnzp)
 
         real, optional, intent(in) :: sclr(gr%nnzp, sclrm_dimension)
 
@@ -984,6 +988,7 @@
 !       Compute IR heating rate
 
         htrt          = ( -1.0/(Cp*rhot) ) * ddzm( Frad )
+     .                 * ( 1.0/exner )
         htrt(1)       = 0.
         htrt(gr%nnzp) = 0.
 
@@ -999,9 +1004,9 @@
 
 !----------------------------------------------------------------------
 
-        SUBROUTINE dycoms2_rf02_tndcy( rhot, rhom, rtm, rcm, wmt, wmm,
-     .                                 theta_tndcy, rt_tndcy, Frad, 
-     .                                 isValid,
+        SUBROUTINE dycoms2_rf02_tndcy( rhot, rhom, rtm, rcm, exner,
+     .                                 wmt, wmm, theta_tndcy, rt_tndcy,
+     .                                 Frad, isValid,
      .                                 sclr_tndcy )
 
         USE grid_class
@@ -1015,6 +1020,7 @@
         REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rhom
         REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rtm
         REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rcm
+        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: exner
 
         ! Output
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: wmt
@@ -1117,7 +1123,7 @@
         ! The radiative heating rate is defined on thermodynamic levels.
 
         DO k = 2, gr%nnzp, 1
-           htrt(k) = ( -1.0/(Cp*rhot(k)) )
+           htrt(k) = ( 1.0/exner(k) ) * ( -1.0/(Cp*rhot(k)) )
      .              * ( Frad(k) - Frad(k-1) ) * gr%dzt(k)
         ENDDO
         htrt(1) = htrt(2)
@@ -1513,7 +1519,7 @@
         ! The radiative heating rate is defined on thermodynamic levels.
 
         DO k = 2, gr%nnzp, 1
-           htrt(k) = ( -1.0/(Cp*rhot(k)) )
+           htrt(k) = ( 1.0/exner(k) ) * ( -1.0/(Cp*rhot(k)) )
      .              * ( Frad(k) - Frad(k-1) ) * gr%dzt(k)
         ENDDO
         htrt(1) = htrt(2)

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.52 2005-10-06 22:56:30 golaz Exp $
+! $Id: hoc.F,v 1.53 2005-10-16 14:12:30 griffinb Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -871,7 +871,7 @@
            sclrm_forcing(:, SCLR_THETA) = 0.
 #endif SCALARS
 
-           call cloud_rad( rhot, rcm, Frad, thlm_forcing
+           call cloud_rad( rhot, rcm, exner, Frad, thlm_forcing
 #ifdef SCALARS
      .                     ,sclrm_forcing(:,SCLR_THETA)
 #endif SCALARS
@@ -894,17 +894,16 @@
 #endif SCALARS
      .                     )
 
-           call cloud_rad( rhot, rcm, Frad, thlm_forcing
+           call cloud_rad( rhot, rcm, exner, Frad, thlm_forcing
 #ifdef SCALARS
      .                     ,sclrm_forcing(:, SCLR_THETA)
 #endif SCALARS
      .                   )
 
          case ( "dycoms2_rf01" ) ! DYCOMS2 RF01 case
-           call dycoms2_rf01_tndcy( time, rhot, rhom, rtm, 
-     .                              rcm, wmt, wmm, Frad,
-     .                              thlm_forcing, rtm_forcing, 
-     .                              isValid  
+           call dycoms2_rf01_tndcy( time, rhot, rhom, rtm, rcm, exner,
+     .                              wmt, wmm, Frad, thlm_forcing,
+     .                              rtm_forcing, isValid  
 #ifdef SCALARS
      .                              ,sclrm, sclrm_forcing  ! optional variables
 #endif SCALARS
@@ -919,40 +918,36 @@
      .                     )
 
          case ( "dycoms2_rf02_do" ) ! DYCOMS2 RF02 case with drizzle only.
-           call dycoms2_rf02_tndcy( rhot, rhom, rtm,
-     .                              rcm, wmt, wmm, 
-     .                              thlm_forcing, rtm_forcing, Frad, 
-     .                              isValid
+           call dycoms2_rf02_tndcy( rhot, rhom, rtm, rcm, exner,
+     .                              wmt, wmm, thlm_forcing, rtm_forcing,
+     .                              Frad, isValid
 #ifdef SCALARS
      .                              ,sclrm_forcing  ! optional variable
 #endif SCALARS
      .                             )
 
          case ( "dycoms2_rf02_ds" ) ! DYCOMS2 RF02 case with drizzle and cloud sedimentation.
-           call dycoms2_rf02_tndcy( rhot, rhom, rtm,
-     .                              rcm, wmt, wmm, 
-     .                              thlm_forcing, rtm_forcing, Frad, 
-     .                              isValid
+           call dycoms2_rf02_tndcy( rhot, rhom, rtm, rcm, exner,
+     .                              wmt, wmm, thlm_forcing, rtm_forcing,
+     .                              Frad, isValid
 #ifdef SCALARS
      .                              ,sclrm_forcing  ! optional variable
 #endif SCALARS
      .                             )
 
          case ( "dycoms2_rf02_nd" ) ! DYCOMS2 RF02 case with no drizzle and no cloud sedimentation.
-           call dycoms2_rf02_tndcy( rhot, rhom, rtm,
-     .                              rcm, wmt, wmm, 
-     .                              thlm_forcing, rtm_forcing, Frad, 
-     .                              isValid
+           call dycoms2_rf02_tndcy( rhot, rhom, rtm, rcm, exner,
+     .                              wmt, wmm, thlm_forcing, rtm_forcing,
+     .                              Frad, isValid
 #ifdef SCALARS
      .                              ,sclrm_forcing  ! optional variable
 #endif SCALARS
      .                             )
 
          case ( "dycoms2_rf02_so" ) ! DYCOMS2 RF02 case with cloud water sedimentation only.
-           call dycoms2_rf02_tndcy( rhot, rhom, rtm, 
-     .                              rcm, wmt, wmm,
-     .                              thlm_forcing, rtm_forcing, Frad, 
-     .                              isValid 
+           call dycoms2_rf02_tndcy( rhot, rhom, rtm, rcm, exner,
+     .                              wmt, wmm, thlm_forcing, rtm_forcing,
+     .                              Frad, isValid
 #ifdef SCALARS
      .                             ,sclrm_forcing   ! optional variable
 #endif SCALARS
