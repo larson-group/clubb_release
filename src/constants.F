@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.17 2005-10-06 22:41:10 golaz Exp $
+! $Id: constants.F,v 1.18 2005-10-27 19:47:40 dschanen Exp $
 
 !  Contains frequently occuring model constants
 !-----------------------------------------------------------------------
@@ -32,15 +32,21 @@
         real, parameter :: T0    = 300.     ! Reference temperature
         real, parameter :: alpha = 1. / T0  ! Buoyancy factor
 
-        integer, parameter   :: NLM    = 100
+        integer, parameter :: NLM    = 100
 
-        real, parameter      :: emin   = 1.e-6
-        real, parameter      :: vonk   =  0.4   ! von Karmans constant
-        real, parameter      :: rho_lw = 1000. ! density of liquid water; kg/m^3
+        real, parameter :: emin      = 1.e-6
+        real, parameter :: vonk      = 0.4     ! von Karmans constant
+        real, parameter :: rho_lw    = 1000.   ! density of liquid water; kg/m^3
+
+!       BUGSrad Variables
+        ! Nov 11 Altocu; cosine of solar zenith angle
+        real, parameter :: amu0      = 0.4329
+        real, parameter :: sol_const = 1.367e3 ! Solar constant
 
 !       Logical flags
         logical, parameter   :: LH_on    = .false.  ! latin hypercube calc
         logical, parameter   :: local_kk = .false.  ! local drizzle in rain.F
+        logical, parameter   :: lbugsrad = .false.  ! BUGsrad radiation scheme
 
 !       Model parameters and constraints
 
