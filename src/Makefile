@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.36 2005-09-02 17:48:23 dschanen Exp $
+# $Id: Makefile,v 1.37 2005-10-27 19:52:47 dschanen Exp $
 # This version should work with both BSD and GNU make.
 
 # Compiler invocation
@@ -16,20 +16,20 @@
 # In g95: setenv G95_FPU_INVALID TRUE or export G95_FPU_INVALID=TRUE
 # In ifort: -fpe=0
 # The usual options:
- DEBUG=-g -C#        pgf90, g95 & Sun
-#DEBUG=-g -fpe=0#    ifort 
+ DEBUG=-g -C#               pgf90, g95 & Sun
+#DEBUG=-g -fpe=0 -mieee-fp# ifort 
 
 # Optimization (assuming pentium4)
-# Sun fortran currently appears to crash if statistics.F is done with 
+# Sun fortran currently appears to crash if statistics.F is done with any
 #   optimization (due to a bug in ube I think)
 # These are all pretty conservative options, check the your compiler manual 
 # for information on using more aggressive techniques (inlining, etc.)
 
-#OPTIMIZE=-O2 -msse2 -march=pentium4#    g95, P4
-#OPTIMIZE=-xtarget=opteron -ftrap=%none# Sun Studio x86/Opteron
+#OPTIMIZE=-O2 -march=pentium4#           g95, P4
+#OPTIMIZE=-xtarget=native -ftrap=%none#  Sun Studio x86/x64/SPARC
 #OPTIMIZE=-O2 -xN#                       Intel complier, P4 w/out SSE3
 #OPTIMIZE=-O2 -tp p7 -Kieee -r8#         PGF90 w/ double precision reals.
- OPTIMIZE=-O2 -tp p7 -Kieee#             PGF90, P4
+ OPTIMIZE=-O2 -tp p7 -Kieee#             PGF90, Pentium4
 
 # Linking Flags
  LDFLAGS=# use -s to strip
@@ -37,8 +37,9 @@
 # Compiler flags
 #   -DSTATS enables statistics
 #   -DSCALARS enables passive scalars
+#   -Dradoffline and -Dnooverlap (see bugsrad documentation)
 
- FCFLAGS=$(OPTIMIZE) $(DEBUG) -DSTATS
+ FCFLAGS=$(OPTIMIZE) $(DEBUG) -DSTATS -Dnooverlap -Dradoffline
 #FCFLAGS=$(OPTIMIZE) $(DEBUG) -DSTATS -DSCALARS
 
 
@@ -51,8 +52,14 @@ LATIN_HYP	= autoconv_driver.o corrcoef.o gaus_condt.o \
 		ql_estimate.o ran2.o rand_permute.o \
 		rtpthlp_2_sptp.o sample_points.o st_2_rtthl.o \
 		truncate_gaus_mixt.o
-
-COMMON	= $(LATIN_HYP) \
+BUGS_RAD	= kinds.o bugsrad_planck.o bugsrad_physconst.o gases_ckd.o \
+		cloud_correlate.o bugs_lwr.o bugs_swr.o bugs_rad.o \
+		cloudg.o comscp1.o comscp2.o gascon.o \
+		newexp.o rayle.o two_rt_lw.o two_rt_sw.o \
+		two_rt_sw_ocastrndm.o two_rt_lw_ocastrndm.o \
+		two_rt_lw_sel.o two_rt_lw_iter.o \
+		bandsolve.o two_rt_sw_bs.o bugsrad_hoc.o
+COMMON	= $(LATIN_HYP) $(BUGS_RAD) \
 	polpak.o constants.o arrays.o endian.o outputgrads.o \
 	grid.o statistics.o inputgrads.o \
 	banbks.o bandec.o erf.o tridag.o rain.o \
@@ -76,9 +83,9 @@ all:	hoc_tuner int2txt hoc_tuner_budget_terms \
 	hoc_standalone hoc_inputfields compare_runs jacobian 
 
 # Rules
-VPATH=.:LH
+VPATH=.:LH:BUGSrad
 
-.SUFFIXES:	.o .f .F .f90
+.SUFFIXES:	.o .f .F .f90 .F90 .h
 
 .f.o:
 	$(FC) $(FCFLAGS) -c $<
@@ -86,9 +93,11 @@ VPATH=.:LH
 	$(FC) $(FCFLAGS) -c $<
 .F.o:
 	$(FC) $(FCFLAGS) -c $<
+.F90.o:
+	$(FC) $(FCFLAGS) -c $<
 
 int2txt:	$(INT2TXT)
-		$(FC)$(FCFLAGS) $(LDFLAGS) $@.o -o int2txt
+		$(FC) $(FCFLAGS) $(LDFLAGS) $@.o -o int2txt
 
 hoc_tuner:	$(HOC_TUNER)
 		$(FC) $(FCFLAGS) $(LDFLAGS) -o hoc_tuner \
@@ -131,7 +140,7 @@ endian.o	: endian.F
 constants.o	: constants.F
 rain.o		: constants.o polpak.o rain.F 
 outputgrads.o	: endian.o outputgrads.F
-arrays.o	: constants.o arrays.F 
+arrays.o	: constants.o grid.o arrays.F 
 inputgrads.o	: endian.o inputgrads.F
 grid.o		: grid.F grid.h
 statistics.o	: outputgrads.o arrays.o statistics.F 
@@ -142,12 +151,13 @@ erf.o		: erf.F
 tridag.o	: tridag.F
 
 closure_new.o	: constants.o closure_new.F 
-diag_var.o	: constants.o tridag.o diag_var.F 
+diag_var.o	: constants.o tridag.o statistics.o diag_var.F 
 gcss.o		: constants.o statistics.o gcss.F
 mixing.o	: constants.o statistics.o banbks.o bandec.o mixing.F 
 hoc.o		: constants.o gcss.o hydrostatic.o mixing.o rain.o \
-		  length.o statistics.o sounding.o diag_var.o rsat.o \
-		  grid.o sat_rcm.o update.o arrays.o hoc.F
+		length.o statistics.o sounding.o diag_var.o rsat.o \
+		grid.o sat_rcm.o update.o arrays.o sfc.o closure_new.o \
+		hoc.F
 hydrostatic.o	: constants.o hydrostatic.F 
 length.o	: constants.o length.F 
 rsat.o		: constants.o rsat.F 
@@ -167,7 +177,7 @@ ran_state.o	: nrtype.o nr.o nrutil.o ran_state.f90
 amebsa.o	: nrtype.o nr.o nrutil.o ran_state.o ran1.o amebsa.f90
 amoeba.o	: nrtype.o nr.o nrutil.o amoeba.f90
 gradsaverage.o	: inputgrads.o gradsaverage.F 
-error.o		: nrtype.o nr.o gradsaverage.o error.F
+error.o		: nrtype.o nr.o gradsaverage.o hoc.o error.F
 budget_terms.o  : amoeba.o inputfields.o gradsaverage.o hoc.o \
 		  error.o budget_terms.F
 
@@ -190,6 +200,32 @@ rtpthlp_2_sptp.o	: rtpthlp_2_sptp.F
 sample_points.o		: sample_points.F
 st_2_rtthl.o		: st_2_rtthl.F
 truncate_gaus_mixt.o	: truncate_gaus_mixt.F
+
+kinds.o			: kinds.F90
+bugsrad_planck.o	: bugsrad_planck.F90
+cloud_correlate.o	: cloud_correlate.F90
+bugsrad_physconst.o	: bugsrad_physconst.F90
+bugs_lwr.o		: bugs_lwr.F bugsrad_planck.o gases_ckd.o kinds.o 
+bugs_rad.o 		: bugs_rad.F bugs_swr.o bugs_lwr.o gascon.o kinds.o bugsrad_planck.o cloud_correlate.o\
+			  bugsrad_physconst.o gases_ckd.o cloudg.o newexp.o rayle.o bandsolve.o
+bugs_swr.o 		: bugs_swr.F gases_ckd.o kinds.o
+cloudg.o 		: cloudg.F
+comscp1.o 		: comscp1.F
+comscp2.o		: comscp2.F
+gascon.o 		: gascon.F
+gases_ckd.o 		: gases_ckd.F90
+newexp.o 		: newexp.F90
+rayle.o 		: rayle.F
+two_rt_lw.o 		: two_rt_lw.F
+two_rt_lw_sel.o 	: two_rt_lw_sel.F
+two_rt_lw_iter.o 	: two_rt_lw_iter.F
+two_rt_lw_ocastrndm.o	: two_rt_lw_ocastrndm.F90
+two_rt_sw.o		: two_rt_sw.F
+two_rt_sw_bs.o		: two_rt_sw_bs.F
+two_rt_sw_ocastrndm.o	: two_rt_sw_ocastrndm.F90
+bandsolve.o 		: bandsolve.F
+bugsrad_hoc.o 		: bugsrad_hoc.F90 bugs_rad.o constants.o
+
 
 # Executables
 hoc_tuner.o		: nrtype.o nr.o hoc.o error.o hoc_tuner.F
