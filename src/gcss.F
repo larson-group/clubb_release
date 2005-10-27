@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.20 2005-10-16 14:12:30 griffinb Exp $ 
+! $Id: gcss.F,v 1.21 2005-10-27 19:55:20 dschanen Exp $ 
 
 ! This file contains extra subroutines to simulate the GCSS ARM and
 ! GCSS BOMEX, GCSS ATEX, GCSS FIRE intercomparison cases as well 
@@ -21,7 +21,7 @@
      .                        sclr_tndcy )
 
         use grid_class
-        use constants, only: sclrm_dimension
+        use constants, only: sclrm_dimension, lbugsrad
 
         implicit none
 
@@ -61,8 +61,13 @@
            a = ( true_time - (41400. + 10800. * (i1-1)) ) / 9000.
         endif
 
-        theta_tmp = ( 1. - a ) * ( atheta(i1) + rtheta(i1) )
-     .                + a * ( atheta(i2) + rtheta(i2) )
+        if ( .not. lbugsrad ) then
+          theta_tmp = ( 1. - a ) * ( atheta(i1) + rtheta(i1) )
+     .              + a * ( atheta(i2) + rtheta(i2) )
+        else ! factor in radiation later
+          theta_tmp = ( 1. - a ) * ( atheta(i1) + 0.0 )
+     .              + a * ( atheta(i2) + 0.0 )
+        endif
 
         rt_tmp    = ( 1. - a ) * art(i1) + a * art(i2)
 
@@ -74,24 +79,21 @@
 !       Interpolate with respect to height
 
         do i=2, gr%nnzp
-
-           if ( gr%zt(i) >= 0. .and. gr%zt(i) < 1000. ) then
-              theta_tndcy(i) = theta_tmp
-              rt_tndcy(i)    = rt_tmp
-           elseif ( gr%zt(i) >= 1000. .and. gr%zt(i) < 3000. ) then
-              b              = 1. - ( gr%zt(i) - 1000. ) / 2000.
-              theta_tndcy(i) = b * theta_tmp
-              rt_tndcy(i)    = b * rt_tmp
-           else
-              theta_tndcy(i) = 0.
-              rt_tndcy(i)    = 0.
-           endif
-
+          if ( gr%zt(i) >= 0. .and. gr%zt(i) < 1000. ) then
+            rt_tndcy(i)    = rt_tmp
+            theta_tndcy(i) = theta_tmp
+          elseif ( gr%zt(i) >= 1000. .and. gr%zt(i) < 3000. ) then
+            b              = 1. - ( gr%zt(i) - 1000. ) / 2000.
+            rt_tndcy(i)    = b * rt_tmp
+            theta_tndcy(i) = b * theta_tmp
+          else
+            rt_tndcy(i)    = 0.
+            theta_tndcy(i) = 0.
+          endif
         enddo
 
-!       sclr_tndcy = rt_tndcy for now
-        if (present( sclr_tndcy )) sclr_tndcy(:,SCLR_THETA)=theta_tndcy
-        if (present( sclr_tndcy )) sclr_tndcy(:,SCLR_RT) = rt_tndcy
+        if (present( sclr_tndcy )) sclr_tndcy(:,SCLR_THETA)= theta_tndcy
+        if (present( sclr_tndcy )) sclr_tndcy(:,SCLR_RT)   = rt_tndcy
 
         return
         end subroutine arm_tndcy
@@ -182,7 +184,7 @@
 
         ! Boundary conditions
         theta_tndcy(1) = 0.0  ! Below surface
-        rt_tndcy(1) = 0.0     ! Below surface
+        rt_tndcy(1)    = 0.0  ! Below surface
 
         if (present( sclr_tndcy )) sclr_tndcy(:,SCLR_THETA)=theta_tndcy
         if (present( sclr_tndcy )) sclr_tndcy(:,SCLR_RT) = rt_tndcy
@@ -404,7 +406,7 @@
 
            ! Boundary conditions
            theta_tndcy(1) = 0.0  ! Below surface
-           rt_tndcy(1) = 0.0     ! Below surface
+           rt_tndcy(1)    = 0.0  ! Below surface
 
         end if
 
@@ -423,23 +425,23 @@
      .                         wtp, wrp, ustar,
      .                         wpsclrp_sfc )
 
-        use constants, only: grav, sclrm_dimension
+        use constants
         implicit none
 
-!       External
+!       External (not needed with module)
 
 !        real diag_ustar
 !        external diag_ustar
 
-!       Constant
+!       Constants (now in constants.F)
 
-        real ubmin
-        parameter (ubmin = 0.25)
-        real Cp, Lv
-        parameter ( Cp = 1004.67 )
-        parameter ( Lv = 2.5e6 )
+!        real Cp, Lv
+!        parameter ( Cp = 1004.67 )
+!        parameter ( Lv = 2.5e6 )
 !        real g
 !        parameter ( g = 9.81 )
+        real ubmin
+        parameter (ubmin = 0.25)
 
 !       Input variables
 
@@ -811,8 +813,8 @@
 ! Based on GCSS ATEX intercomparison case
 !----------------------------------------------------------------------
 
-        subroutine cloud_rad( rhot, rcm, exner, Frad, htrt,
-     .                        sclr_rate )
+        subroutine cloud_rad( rhot, rcm, Frad, exner, radht, 
+     .                        thlm_forcing, sclr_rate )
 
         use grid_class
         use constants
@@ -827,12 +829,13 @@
 
 !       Output
 
-        real, intent(out)   :: Frad(gr%nnzp)        ! IR radiative flux
-        real, intent(inout) :: htrt(gr%nnzp)        ! Radiative heating rate
+        real, intent(out) :: Frad(gr%nnzp)        ! IR radiative flux
+        real, intent(out) :: thlm_forcing(gr%nnzp)! Radiative heating rate
+        real, intent(out) :: radht(gr%nnzp)       ! Radiative heating rate
 
 !       Output (optional)
 
-        real, optional, intent(out) :: sclr_rate(gr%nnzp)   ! Radiative heating rate ( scalar(1) )
+        real, optional, intent(inout) :: sclr_rate(gr%nnzp)   ! Radiative heating rate ( scalar(1) )
 
 !       Local
 
@@ -843,28 +846,31 @@
 
         integer i, im1, ip1
 
+        if ( .not. lbugsrad ) then
 !       Compute liquid water path from top of the model
 !       We define liquid water path on momentum levels
 
-        LWP(gr%nnzp) = 0.
-        do i = gr%nnzp-1, 1, -1
-           LWP(i) = LWP(i+1) + rhot(i+1) * rcm(i+1) / gr%dzt(i+1)
-        enddo
+          LWP(gr%nnzp) = 0.
+          do i = gr%nnzp-1, 1, -1
+            LWP(i) = LWP(i+1) + rhot(i+1) * rcm(i+1) / gr%dzt(i+1)
+          end do
 
-!       Compute IR radiative flux
+!         Compute IR radiative flux
 
-        do i = 1, gr%nnzp, 1
+          do i = 1, gr%nnzp, 1
            Frad(i) = F0 * EXP( -k * 1.0 * LWP(i) )
-        enddo
+          enddo
 
-!       Compute IR heating rate
+!         Compute IR heating rate
 
-        htrt          = htrt + ( -1.0/(Cp*rhot) ) * ddzm( Frad )
-     .                        * ( 1.0/exner )
-        htrt(1)       = 0.
-        htrt(gr%nnzp) = 0.
+          radht          = radht + ( -1.0/(Cp*rhot) ) 
+     .                   * ddzm( Frad ) * ( 1.0 / exner )
+          radht(1)       = 0.
+          radht(gr%nnzp) = 0.
 
-        if ( present( sclr_rate ) ) sclr_rate = htrt ! Just theta
+          if ( present( sclr_rate ) ) sclr_rate = radht ! Just theta
+
+        endif ! ~ lbugsrad
 
         return
         end subroutine cloud_rad
@@ -873,7 +879,7 @@
 ! Subroutine to set theta and water tendencies for DYCOMS RF01 case
 !
         subroutine dycoms2_rf01_tndcy( time, rhot, rhom, rtm, rcm,
-     .                                 exner, wmt, wmm, Frad,
+     .                                 exner, wmt, wmm, Frad, radht, 
      .                                 theta_tndcy, rt_tndcy, isValid,
      .                                 sclr, sclr_tndcy )
 
@@ -891,19 +897,22 @@
         real, intent(in) :: rhom(gr%nnzp)
         real, intent(in) :: rtm(gr%nnzp)
         real, intent(in) :: rcm(gr%nnzp)
-        real, intent(in) :: exner(gr%nnzp)
 
         real, optional, intent(in) :: sclr(gr%nnzp, sclrm_dimension)
 
 !       Output
+        real, intent(out) :: exner(gr%nnzp)
         real, intent(out) :: wmt(gr%nnzp)
         real, intent(out) :: wmm(gr%nnzp)
+
         real, intent(out) :: Frad(gr%nnzp)
+        real, intent(out) :: radht(gr%nnzp)
         real, intent(out) :: theta_tndcy(gr%nnzp)
+
         real, intent(out) :: rt_tndcy(gr%nnzp)
 
         real, optional, 
-     .  intent(out) :: sclr_tndcy(gr%nnzp,sclrm_dimension)
+     .  intent(out) :: sclr_tndcy(gr%nnzp, sclrm_dimension)
 
 !       Misc
         logical, intent(inout) :: isValid
@@ -917,7 +926,7 @@
 
         integer i
         real zi
-        real lwp(gr%nnzp), htrt(gr%nnzp)
+        real lwp(gr%nnzp)
 
         wmt         = 0.
         wmm         = 0.
@@ -963,50 +972,54 @@
         
 !       theta-l radiative tendency
 
-!       Compute liquid water path from top of the model
-!       We define liquid water path on momentum levels
+        if ( .not. lbugsrad ) then
+!         Compute liquid water path from top of the model
+!         We define liquid water path on momentum levels
 
-        lwp(gr%nnzp) = 0.0
-        do i = gr%nnzp-1, 1, -1
-           lwp(i) = lwp(i+1) + rhot(i+1) * rcm(i+1) / gr%dzt(i+1)
-        enddo
-!        x_sfc(1,ilwp) = lwp(1)
+          lwp(gr%nnzp) = 0.0
+          do i = gr%nnzp-1, 1, -1
+            lwp(i) = lwp(i+1) + rhot(i+1) * rcm(i+1) / gr%dzt(i+1)
+          enddo
+!         x_sfc(1,ilwp) = lwp(1)
 
-!       Compute IR radiative flux
+!         Compute IR radiative flux
 
-        do i = 1, gr%nnzp, 1
-           Frad(i) = F0 * EXP( -kay * lwp(i) )
-     .             + F1 * EXP( -kay * (lwp(1)-lwp(i)) )
-           if ( zi > 0 .and. gr%zm(i) > zi ) then
-             Frad(i) = Frad(i)
-     .               + rhom(i) * cp * lsdiv
-     .                 * ( 0.25*(gr%zm(i)-zi)**(4.0/3.0)
-     .                     + zi*(gr%zm(i)-zi)**(1.0/3.0) )
-           endif
-        enddo
+          do i = 1, gr%nnzp, 1
+            Frad(i) = F0 * EXP( -kay * lwp(i) )
+     .              + F1 * EXP( -kay * (lwp(1)-lwp(i)) )
+            if ( zi > 0 .and. gr%zm(i) > zi ) then
+              Frad(i) = Frad(i)
+     .                + rhom(i) * cp * lsdiv
+     .                  * ( 0.25*(gr%zm(i)-zi)**(4.0/3.0)
+     .                      + zi*(gr%zm(i)-zi)**(1.0/3.0) )
+             endif
+          enddo
 
-!       Compute IR heating rate
+!         Compute IR heating rate
 
-        htrt          = ( -1.0/(Cp*rhot) ) * ddzm( Frad )
-     .                 * ( 1.0/exner )
-        htrt(1)       = 0.
-        htrt(gr%nnzp) = 0.
+          radht          = ( -1.0/(Cp*rhot) ) * ddzm( Frad )
+     .                   * ( 1.0 / exner )
+          radht(1)       = 0.
+          radht(gr%nnzp) = 0.
+
+        endif ! ~ lbugsrad
 
 !       Add heating rate to theta-l forcing
 
-        theta_tndcy = theta_tndcy + htrt
+        if ( .not. lbugsrad ) theta_tndcy = theta_tndcy + radht
         
-        if ( present(sclr_tndcy) ) sclr_tndcy(:,SCLR_THETA)=theta_tndcy
-        if ( present(sclr_tndcy) ) sclr_tndcy(:,SCLR_RT) = rt_tndcy
+        if (present( sclr_tndcy )) sclr_tndcy(:,SCLR_THETA)= theta_tndcy
+        if (present( sclr_tndcy )) sclr_tndcy(:,SCLR_RT)   = rt_tndcy
 
         return
         end subroutine dycoms2_rf01_tndcy
 
 !----------------------------------------------------------------------
 
-        SUBROUTINE dycoms2_rf02_tndcy( rhot, rhom, rtm, rcm, exner,
-     .                                 wmt, wmm, theta_tndcy, rt_tndcy,
-     .                                 Frad, isValid,
+        SUBROUTINE dycoms2_rf02_tndcy( rhot, rhom, rtm, rcm, exner, 
+     .                                 wmt, wmm, theta_tndcy, rt_tndcy, 
+     .                                 Frad, radht, 
+     .                                 isValid,
      .                                 sclr_tndcy )
 
         USE grid_class
@@ -1028,6 +1041,7 @@
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: theta_tndcy
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: rt_tndcy
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: Frad
+        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: radht
 
         ! Optional output
         REAL, OPTIONAL, 
@@ -1039,12 +1053,11 @@
         ! Local
         REAL, DIMENSION(1:gr%nnzp):: LWP
         REAL, DIMENSION(1:gr%nnzp):: Heaviside
-        REAL, DIMENSION(1:gr%nnzp):: htrt
 
         REAL:: z_i
 
         REAL, PARAMETER :: ls_div = 3.75e-6
-        REAL, PARAMETER :: kap    = 85.0 ! m^2/kg
+        REAL, PARAMETER :: kap    = 85.0  ! m^2/kg
         REAL, PARAMETER :: F0     = 70.0  ! W/m^2
         REAL, PARAMETER :: F1     = 22.0  ! W/m^2
 
@@ -1063,77 +1076,81 @@
         wmm(1) = 0.0        ! At surface
         wmm(gr%nnzp) = 0.0  ! Model top
         
+        IF ( .not. lbugsrad ) THEN
         ! Radiation
 
-!       Compute liquid water path from top of the model
-!       We define liquid water path on momentum levels
+!         Compute liquid water path from top of the model
+!         We define liquid water path on momentum levels
 
-        LWP(gr%nnzp) = 0.0
-        DO k = gr%nnzp-1, 1, -1
-           LWP(k) = LWP(k+1) + rhot(k+1)*rcm(k+1)/gr%dzt(k+1)
-        ENDDO
+          LWP(gr%nnzp) = 0.0
+          DO k = gr%nnzp-1, 1, -1
+            LWP(k) = LWP(k+1) + rhot(k+1)*rcm(k+1)/gr%dzt(k+1)
+          ENDDO
 
-!       Find the height of the isotherm rtm = 8.0 g/kg.
+!         Find the height of the isotherm rtm = 8.0 g/kg.
 
-        k = 2
-        DO WHILE ( k <= gr%nnzp .AND. rtm(k) > 8.0e-3 )
-           k = k + 1
-        ENDDO
-        IF ( k == gr%nnzp+1 .or. k == 2 ) THEN
-           write(*,*) 'Identification of 8.0 g/kg level failed'
-           write(*,*) 'Subroutine: dycoms2_rf02_tndcy. File: gcss.f'
-           write(*,*) 'k = ', k
-           write(*,*) 'rtm(k) = ', rtm(k)
-           isValid = .false.
-           return
-        ENDIF
-        z_i = ( (gr%zt(k)-gr%zt(k-1))/(rtm(k)-rtm(k-1)) )
-     .       * (8.0e-3-rtm(k-1)) + gr%zt(k-1)
+          k = 2
+          DO WHILE ( k <= gr%nnzp .AND. rtm(k) > 8.0e-3 )
+            k = k + 1
+          ENDDO
+          IF ( k == gr%nnzp+1 .or. k == 2 ) THEN
+            write(*,*) 'Identification of 8.0 g/kg level failed'
+            write(*,*) 'Subroutine: dycoms2_rf02_tndcy. File: gcss.f'
+            write(*,*) 'k = ', k
+            write(*,*) 'rtm(k) = ', rtm(k)
+            isValid = .false.
+            return
+          ENDIF
+          z_i = ( (gr%zt(k)-gr%zt(k-1))/(rtm(k)-rtm(k-1)) )
+     .        * (8.0e-3-rtm(k-1)) + gr%zt(k-1)
 
-!       Compute the Heaviside step function for z - z_i.
+!         Compute the Heaviside step function for z - z_i.
 
-        DO k = 1, gr%nnzp, 1
-           IF ( gr%zm(k) - z_i  <  0.0 ) THEN
+          DO k = 1, gr%nnzp, 1
+            IF ( gr%zm(k) - z_i  <  0.0 ) THEN
               Heaviside(k) = 0.0
-           ELSEIF ( gr%zm(k) - z_i  ==  0.0 ) THEN
+            ELSEIF ( gr%zm(k) - z_i  ==  0.0 ) THEN
               Heaviside(k) = 0.5
-           ELSEIF ( gr%zm(k) - z_i  >  0.0 ) THEN
+            ELSEIF ( gr%zm(k) - z_i  >  0.0 ) THEN
               Heaviside(k) = 1.0
-           ENDIF
-        ENDDO
+            ENDIF
+          ENDDO
 
-!       Compute radiative flux profile (Frad).
-!       Radiative flux is defined on momentum levels.
+!         Compute radiative flux profile (Frad).
+!         Radiative flux is defined on momentum levels.
 
-        DO k = 1, gr%nnzp, 1
+          DO k = 1, gr%nnzp, 1
 
-           Frad(k) =  F0 * EXP( -kap * LWP(k) )
+            Frad(k) = F0 * EXP( -kap * LWP(k) )
      .              + F1 * EXP( -kap * (LWP(1) - LWP(k)) )
 
-           IF ( Heaviside(k) > 0.0 ) THEN
+            IF ( Heaviside(k) > 0.0 ) THEN
               Frad(k) = Frad(k)
-     .                  + rhom(k) * Cp * ls_div * Heaviside(k)
+     .                + rhom(k) * Cp * ls_div * Heaviside(k)
      .                  * ( 0.25 * ((gr%zm(k)-z_i)**(4.0/3.0))
-     .                     + z_i * ((gr%zm(k)-z_i)**(1.0/3.0)) )
-           ENDIF
+     .                + z_i * ((gr%zm(k)-z_i)**(1.0/3.0)) )
+            ENDIF
 
-        ENDDO 
+          ENDDO 
 
         ! Compute the radiative heating rate.
         ! The radiative heating rate is defined on thermodynamic levels.
 
-        DO k = 2, gr%nnzp, 1
-           htrt(k) = ( 1.0/exner(k) ) * ( -1.0/(Cp*rhot(k)) )
-     .              * ( Frad(k) - Frad(k-1) ) * gr%dzt(k)
-        ENDDO
-        htrt(1) = htrt(2)
+          DO k = 2, gr%nnzp, 1
+            radht(k) = ( 1.0 / exner(k) ) * ( -1.0/(Cp*rhot(k)) )
+     .               * ( Frad(k) - Frad(k-1) ) * gr%dzt(k)
+          ENDDO
+          radht(1) = radht(2)
+        ENDIF ! ~ lbugsrad
 
         ! Enter the final theta-l and rtm tendencies
 
-        DO k = 1, gr%nnzp, 1
-           theta_tndcy(k) = htrt(k)
-           rt_tndcy(k) = 0.0
-        ENDDO 
+        IF ( .not. lbugsrad ) THEN
+          theta_tndcy(1:gr%nnzp) = radht(1:gr%nnzp)
+        ELSE
+          theta_tndcy(1:gr%nnzp) = 0.0
+        ENDIF 
+        rt_tndcy(1:gr%nnzp) = 0.0
 
         ! Update surface statistics
 #ifdef STATS
@@ -1406,7 +1423,7 @@
         SUBROUTINE nov11_altocu_tndcy( time, time_initial, dt, thlm,
      .                                 rcm, p, exner, rhot, wmt, wmm,
      .                                 thl_tndcy, rt_tndcy, Frad,
-     .                                 Frad_lw, Frad_sw,
+     .                                 Frad_lw, Frad_sw, radht,
      .                                 sclr_tndcy )
 
         USE grid_class
@@ -1430,8 +1447,9 @@
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: thl_tndcy
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: rt_tndcy
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: Frad
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: Frad_lw
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: Frad_sw
+        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: Frad_LW
+        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: Frad_SW
+        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: radht
 
         ! Output variables (optional)
         REAL, OPTIONAL, DIMENSION(gr%nnzp, sclrm_dimension), 
@@ -1439,7 +1457,6 @@
 
         ! Local variables
         REAL, DIMENSION(1:gr%nnzp):: LWP
-        REAL, DIMENSION(1:gr%nnzp):: htrt
         REAL, DIMENSION(1:gr%nnzp):: dqc_dt_icedfs
 
         REAL, PARAMETER:: wmax = -3.0E-2
@@ -1479,51 +1496,54 @@
 
         wmm = zt2zm(wmt)
 
+        IF ( .not. lbugsrad ) THEN
 
         ! Long-wave Radiation
 
-!       Compute liquid water path from top of the model
-!       We define liquid water path on momentum levels
+!         Compute liquid water path from top of the model
+!         We define liquid water path on momentum levels
 
-        LWP(gr%nnzp) = 0.0
-        DO k = gr%nnzp-1, 1, -1
-           LWP(k) = LWP(k+1) + rhot(k+1)*rcm(k+1)/gr%dzt(k+1)
-        ENDDO
+          LWP(gr%nnzp) = 0.0
+          DO k = gr%nnzp-1, 1, -1
+            LWP(k) = LWP(k+1) + rhot(k+1)*rcm(k+1)/gr%dzt(k+1)
+          ENDDO
 
-!       Compute long-wave radiative flux profile (Frad_lw).
-!       Radiative flux is defined on momentum levels.
+!         Compute long-wave radiative flux profile (Frad_lw).
+!         Radiative flux is defined on momentum levels.
 
-        DO k = 1, gr%nnzp, 1
+          DO k = 1, gr%nnzp, 1
 
-           Frad_lw(k) =  F0 * EXP( -kap * LWP(k) )
+            Frad_lw(k) = F0 * EXP( -kap * LWP(k) )
      .                 + F1 * EXP( -kap * (LWP(1) - LWP(k)) )
 
-        ENDDO
+          ENDDO
 
 
         ! Short-wave Radiation
-        ! Radiative flux is defined on momentum levels.
 
-        CALL nov11_altocu_sw(rhot, rcm, Frad_sw)
+!         Radiative flux is defined on momentum levels.
+
+          CALL nov11_altocu_sw( rhot, rcm, Frad_SW )
 
 
         ! Total Radiation
         ! Radiative flux is defined on momentum levels.
 
-        DO k = 1, gr%nnzp, 1
-           Frad(k) = Frad_lw(k) + Frad_sw(k)
-        ENDDO
+          DO k = 1, gr%nnzp, 1
+            Frad(k) = Frad_LW(k) + Frad_SW(k)
+          ENDDO
 
 
         ! Compute the radiative heating rate.
         ! The radiative heating rate is defined on thermodynamic levels.
 
-        DO k = 2, gr%nnzp, 1
-           htrt(k) = ( 1.0/exner(k) ) * ( -1.0/(Cp*rhot(k)) )
-     .              * ( Frad(k) - Frad(k-1) ) * gr%dzt(k)
-        ENDDO
-        htrt(1) = htrt(2)
+          DO k = 2, gr%nnzp, 1
+            radht(k) = ( 1.0 / exner(k) ) * ( -1.0/(Cp*rhot(k)) )
+     .               * ( Frad(k) - Frad(k-1) ) * gr%dzt(k)
+          ENDDO
+          radht(1) = radht(2)
 
+        ENDIF ! ~ lbugsrad
 
         ! Compute the loss of total water due to diffusional growth of ice.
         ! This is defined on thermodynamic levels.
@@ -1545,8 +1565,12 @@
         ! Enter the final theta-l and rtm tendencies
 
         DO k = 1, gr%nnzp, 1
-           thl_tndcy(k) = htrt(k)
-     .                   - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
+           IF ( .not. lbugsrad ) THEN
+             thl_tndcy(k) = radht(k)
+     .                    - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
+           ELSE
+             thl_tndcy(k) = - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
+           ENDIF
            rt_tndcy(k) = dqc_dt_icedfs(k)
         ENDDO
 
@@ -1554,6 +1578,8 @@
           sclr_tndcy(:,SCLR_THETA) = thl_tndcy
           sclr_tndcy(:,SCLR_RT)    = rt_tndcy
         ENDIF
+
+        RETURN
         END SUBROUTINE nov11_altocu_tndcy
 
 !-----------------------------------------------------------------------
@@ -1781,7 +1807,7 @@
 
         ENDDO
 
-
+        RETURN
         END SUBROUTINE nov11_altocu_sw
 
 !-----------------------------------------------------------------------
@@ -2003,7 +2029,7 @@
 
         ENDDO
 
-
+        RETURN
         END SUBROUTINE nov11_altocu_icedf
 
 !-----------------------------------------------------------------------
@@ -2037,6 +2063,8 @@
 
         Diff_denom = Fk + Fd
 
+        RETURN
         END FUNCTION Diff_denom
+
       end module gcss
 !------------------------------------------------------------------------
