@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.22 2005-08-27 16:09:40 griffinb Exp $
+!  $Id: statistics.F,v 1.23 2005-10-27 19:53:52 dschanen Exp $
 
 !  module stats_type
 !  contains:
@@ -113,7 +113,10 @@ c       Indices for statistics in zt file
      .     imean_vol_rad,  ! Brian
      .     irain_rate,     ! Brian
      .     iAKm,           ! analytic Kessler.  Vince Larson 22 May 2005 
-     .     iAKm_est        ! LH Kessler.  Vince Larson  22 May 2005
+     .     iAKm_est,       ! LH Kessler.  Vince Larson  22 May 2005
+     .     iradht,         ! Radiative heating.  Dave Schanen 7 Oct 2005
+     .     iradht_LW,      !   "           "   Long-wave
+     .     iradht_SW       !   "           "   Short-wave
 
 
         integer
@@ -501,6 +504,9 @@ c     -----------------------------------------------------------------
       irain_rate    = 0  ! Brian
       iAKm          = 0  ! analytic Kessler.  Vince Larson 22 May 2005
       iAKm_est      = 0  ! LH Kessler.  Vince Larson 22 May 2005
+      iradht        = 0
+      iradht_LW     = 0
+      iradht_SW     = 0
 
       iwp3_bt       = 0
       iwp3_ma       = 0
@@ -920,6 +926,27 @@ c     -----------------------------------------------------------------
           zt%f%var(iAKm_est)%ptr => zt%x(:,k)
           zt%f%var(iAKm_est)%name = "AKm_est"
           zt%f%var(iAKm_est)%description = "LH Kessler estimate [kg/kg]"
+          k = k + 1
+
+        case ('radht')
+          iradht = k
+          zt%f%var(iradht)%ptr => zt%x(:,k)
+          zt%f%var(iradht)%name = "radht"
+          zt%f%var(iradht)%description = "Heating rate"
+          k = k + 1
+
+        case ('radht_LW')
+          iradht_LW = k
+          zt%f%var(iradht_LW)%ptr => zt%x(:,k)
+          zt%f%var(iradht_LW)%name = "radht_LW"
+          zt%f%var(iradht_LW)%description = "Long-wave heating rate"
+          k = k + 1
+
+        case ('radht_SW')
+          iradht_SW = k
+          zt%f%var(iradht_SW)%ptr => zt%x(:,k)
+          zt%f%var(iradht_SW)%name = "radht_SW"
+          zt%f%var(iradht_SW)%description = "Short-wave heating rate"
           k = k + 1
  
         case ('wp3_bt')
@@ -2663,6 +2690,21 @@ c     -----------------------------------------------------------------
         if ( iAKm_est > 0 ) then           ! Vince Larson 22 May 2005
           zt%x(:,iAKm_est) = zt%x(:,iAKm_est) + AKm_est
           zt%n(:,iAKm_est) = zt%n(:,iAKm_est) + 1
+        endif
+
+        if ( iradht > 0 ) then
+          zt%x(:,iradht) = zt%x(:,iradht) + radht
+          zt%n(:,iradht) = zt%n(:,iradht) + 1
+        endif
+
+        if ( iradht_LW > 0 ) then
+          zt%x(:,iradht_LW) = zt%x(:,iradht_LW) + radht_LW
+          zt%n(:,iradht_LW) = zt%n(:,iradht_LW) + 1
+        endif
+
+        if ( iradht_SW > 0 ) then
+          zt%x(:,iradht_SW) = zt%x(:,iradht_SW) + radht_SW
+          zt%n(:,iradht_SW) = zt%n(:,iradht_SW) + 1
         endif
 
         if ( ia > 0 ) then
