@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: budget_terms.F,v 1.16 2005-10-06 22:37:46 golaz Exp $     
+! $Id: budget_terms.F,v 1.17 2005-10-27 19:46:23 dschanen Exp $     
 
 ! MODULE budget_terms
 
@@ -621,15 +621,15 @@
         select case( runtype )
         case("rt")
           p_elements = (/C2rt, mu/)
-          p_string   = (/"C2rt   ", "mu      "/)
+          p_string   = (/"C2rt   ", "mu     "/)
           p_variance = (/C2rt_var, mu_var/)
         case("thl")
           p_elements = (/C2thl, mu/)
-          p_string   = (/"C2thl  ", "mu      "/)
+          p_string   = (/"C2thl  ", "mu     "/)
           p_variance = (/C2thl_var, mu_var/)
         case("rtthl")
           p_elements = (/C2rtthl, mu/)
-          p_string   = (/"C2rtthl", "mu      "/)
+          p_string   = (/"C2rtthl", "mu     "/)
           p_variance = (/C2rtthl_var, mu_var/)
         case default
           stop "xapxbp_run: invalid runtype"
