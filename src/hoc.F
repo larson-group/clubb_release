@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.53 2005-10-16 14:12:30 griffinb Exp $
+! $Id: hoc.F,v 1.54 2005-10-27 19:54:39 dschanen Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -287,7 +287,7 @@
 #ifdef SCALARS
      .                      ,sclrm, wpsclrp, sclrp2,
      .                      sclrpthlp, sclrprtp
-#endif SCALARS
+#endif /* SCALARS */
      .                     )
 
 #ifdef STATS
@@ -334,6 +334,7 @@
          if ( .not. isValid ) exit
 
          call hoc_forcings_timestep( i, stdout, isValid )
+
          if ( .not. isValid ) exit
 
 !      Compute number of iterations for closure loop
@@ -503,7 +504,7 @@
 #ifdef SCALARS
      .                      ,sclrm, wpsclrp, sclrp2,
      .                      sclrpthlp, sclrprtp
-#endif SCALARS
+#endif /* SCALARS */
      .                    )
 
        time = time_initial
@@ -541,6 +542,7 @@
          if ( .not. isValid ) exit
 
          call hoc_forcings_timestep( i, stdout, isValid )
+
          if ( .not. isValid ) exit
 
 !      Compute number of iterations for closure loop
@@ -654,7 +656,7 @@
      .                      runfile, runtype
 #ifdef SCALARS               
      .                      ,sclrm ! optional
-#endif SCALARS
+#endif /* SCALARS */
      .                    )
 
 ! At this point, thlm actually contains theta (except for DYCOMS). 
@@ -795,7 +797,7 @@
 #ifdef SCALARS
      .                ,wpsclrp(1,:), sclrp2(1,:), 
      .                sclrprtp(1,:), sclrpthlp(1,:) ! Optional
-#endif SCALARS
+#endif /* SCALARS */
      .              )
 
 
@@ -848,7 +850,7 @@
            call arm_tndcy( time, thlm_forcing, rtm_forcing
 #ifdef SCALARS
      .                     ,sclrm_forcing 
-#endif SCALARS
+#endif /* SCALARS */
      .                   )
 
          case ( "bomex" ) ! BOMEX Cu case
@@ -856,7 +858,7 @@
      .                       thlm_forcing, rtm_forcing
 #ifdef SCALARS
      .                       ,sclrm_forcing 
-#endif SCALARS
+#endif /* SCALARS */
      .                     )
 
          case ( "fire" ) ! FIRE Sc case
@@ -864,17 +866,17 @@
      .                      rtm_forcing
 #ifdef SCALARS
      .                     ,sclrm_forcing 
-#endif SCALARS
+#endif /* SCALARS */
      . )
            thlm_forcing = 0.
 #ifdef SCALARS
            sclrm_forcing(:, SCLR_THETA) = 0.
-#endif SCALARS
+#endif /* SCALARS */
 
-           call cloud_rad( rhot, rcm, exner, Frad, thlm_forcing
+           call cloud_rad( rhot, rcm, exner, Frad, radht, thlm_forcing
 #ifdef SCALARS
      .                     ,sclrm_forcing(:,SCLR_THETA)
-#endif SCALARS
+#endif /* SCALARS */
      .                   )
 
          case ( "wangara" ) ! Wangara dry CBL
@@ -882,7 +884,7 @@
      .                         thlm_forcing, rtm_forcing
 #ifdef SCALARS
      .                        ,sclrm_forcing   ! optional variable
-#endif SCALARS
+#endif /* SCALARS */
      .                        )
 
          case ( "atex" ) ! ATEX case
@@ -891,22 +893,22 @@
      .                      rtm_forcing, isValid
 #ifdef SCALARS
      .                     ,sclrm_forcing   ! optional variable
-#endif SCALARS
+#endif /* SCALARS */
      .                     )
 
-           call cloud_rad( rhot, rcm, exner, Frad, thlm_forcing
+           call cloud_rad( rhot, rcm, exner, Frad, radht, thlm_forcing
 #ifdef SCALARS
      .                     ,sclrm_forcing(:, SCLR_THETA)
-#endif SCALARS
+#endif /* SCALARS */
      .                   )
 
          case ( "dycoms2_rf01" ) ! DYCOMS2 RF01 case
            call dycoms2_rf01_tndcy( time, rhot, rhom, rtm, rcm, exner,
-     .                              wmt, wmm, Frad, thlm_forcing,
+     .                              wmt, wmm, Frad, radht, thlm_forcing,
      .                              rtm_forcing, isValid  
 #ifdef SCALARS
-     .                              ,sclrm, sclrm_forcing  ! optional variables
-#endif SCALARS
+     .                             ,sclrm, sclrm_forcing  ! optional variables
+#endif /* SCALARS */
      .                     )
 
          case ( "astex_a209" ) ! ASTEX Sc case for K & K
@@ -914,53 +916,53 @@
      .                       thlm_forcing, rtm_forcing
 #ifdef SCALARS
      .                             ,sclrm_forcing   ! optional variable
-#endif SCALARS
+#endif /* SCALARS */
      .                     )
 
          case ( "dycoms2_rf02_do" ) ! DYCOMS2 RF02 case with drizzle only.
            call dycoms2_rf02_tndcy( rhot, rhom, rtm, rcm, exner,
      .                              wmt, wmm, thlm_forcing, rtm_forcing,
-     .                              Frad, isValid
+     .                              Frad, radht, isValid
 #ifdef SCALARS
      .                              ,sclrm_forcing  ! optional variable
-#endif SCALARS
+#endif /* SCALARS */
      .                             )
 
          case ( "dycoms2_rf02_ds" ) ! DYCOMS2 RF02 case with drizzle and cloud sedimentation.
            call dycoms2_rf02_tndcy( rhot, rhom, rtm, rcm, exner,
      .                              wmt, wmm, thlm_forcing, rtm_forcing,
-     .                              Frad, isValid
+     .                              Frad, radht, isValid
 #ifdef SCALARS
      .                              ,sclrm_forcing  ! optional variable
-#endif SCALARS
+#endif /* SCALARS */
      .                             )
 
          case ( "dycoms2_rf02_nd" ) ! DYCOMS2 RF02 case with no drizzle and no cloud sedimentation.
            call dycoms2_rf02_tndcy( rhot, rhom, rtm, rcm, exner,
      .                              wmt, wmm, thlm_forcing, rtm_forcing,
-     .                              Frad, isValid
+     .                              Frad, radht, isValid
 #ifdef SCALARS
      .                              ,sclrm_forcing  ! optional variable
-#endif SCALARS
+#endif /*SCALARS*/
      .                             )
 
          case ( "dycoms2_rf02_so" ) ! DYCOMS2 RF02 case with cloud water sedimentation only.
            call dycoms2_rf02_tndcy( rhot, rhom, rtm, rcm, exner,
      .                              wmt, wmm, thlm_forcing, rtm_forcing,
-     .                              Frad, isValid
+     .                              Frad, radht, isValid
 #ifdef SCALARS
      .                             ,sclrm_forcing   ! optional variable
-#endif SCALARS
+#endif /*SCALARS*/
      .                             )
 
          case ( "nov11_altocu" ) ! Nov. 11 Altocumulus case.
            call nov11_altocu_tndcy( time, time_initial, dt, thlm,
      .                              rcm, p, exner, rhot, wmt, wmm,
      .                              thlm_forcing, rtm_forcing,
-     .                              Frad, Frad_LW, Frad_SW  
+     .                              Frad, Frad_LW, Frad_SW, radht
 #ifdef SCALARS
      .                             ,sclrm_forcing   ! optional variable
-#endif SCALARS
+#endif /* SCALARS */
      .                             )
 
          case default
@@ -985,7 +987,7 @@
 #ifdef SCALARS
              wpsclrp(:,SCLR_THETA) = SE
              wpsclrp(:,SCLR_RT)    = LE
-#endif SCALARS
+#endif /* SCALARS */
            else if ( sfctype == 1 ) then
              call sfc_thermo_fluxes( um(2), vm(2),
      .                               Tsfc, psfc, 
@@ -993,7 +995,7 @@
      .                               wpthlp(1), wprtp(1)
 #ifdef SCALARS
      .                               ,sclrm(2,:), wpsclrp(1,:)
-#endif SCALARS
+#endif /* SCALARS */
      .                              )
 
            else
@@ -1009,7 +1011,7 @@
      .                      wpthlp(1), wprtp(1), ustar
 #ifdef SCALARS
      .                      ,wpsclrp(1,:)
-#endif SCALARS
+#endif /* SCALARS */
      .                    )
 
          case ( "bomex" ) 
@@ -1018,7 +1020,7 @@
      .                        wpthlp(1), wprtp(1)
 #ifdef SCALARS
      .                        ,wpsclrp(1,:)
-#endif SCALARS
+#endif /* SCALARS */
      .                    )
 
          case ( "wangara" )
@@ -1027,7 +1029,7 @@
      .                           wpthlp(1), wprtp(1)
 #ifdef SCALARS
      .                           ,wpsclrp(1,:)
-#endif SCALARS
+#endif /* SCALARS */
      .                        )
 
          case ( "atex" )
@@ -1036,7 +1038,7 @@
      .                       wpthlp(1), wprtp(1)
 #ifdef SCALARS
      .                      ,sclrm(2,:), wpsclrp(1,:)
-#endif SCALARS
+#endif /* SCALARS */
      .                    )
 
          case ( "dycoms2_rf01" ) 
@@ -1047,7 +1049,7 @@
      .                               wpthlp(1), wprtp(1)
 #ifdef SCALARS
      .                              ,sclrm(2,:), wpsclrp(1,:)
-#endif SCALARS
+#endif /* SCALARS */
      .                              )
          case ( "astex_a209" )
            call astex_sfclyr( rhom(1), um(2), vm(2),
@@ -1055,7 +1057,7 @@
      .                        wprtp(1)
 #ifdef SCALARS
      .                        ,wpsclrp(1,:)
-#endif SCALARS
+#endif /* SCALARS */
      .                      )
          case ( "dycoms2_rf02_do", "dycoms2_rf02_ds",
      .          "dycoms2_rf02_nd", "dycoms2_rf02_so" )
@@ -1064,7 +1066,7 @@
      .                               wpthlp(1), wprtp(1), ustar
 #ifdef SCALARS
      .                               ,sclrm(2,:), wpsclrp(1,:)
-#endif SCALARS
+#endif /* SCALARS */
      .                             )
 
          case ( "nov11_altocu" )
@@ -1076,6 +1078,13 @@
            stop
 
          end select
+
+         if ( lbugsrad ) then
+           call bugsrad_hoc( gr%nnzp, thlm, rcm, rtm,
+     .                       rrm, cf, p, rhom, Tsfc,
+     .                       radht, radht_SW, radht_LW,
+     .                       Frad, Frad_SW, Frad_LW, thlm_forcing )
+         endif
 
        return
        end subroutine hoc_forcings_timestep
@@ -1144,10 +1153,12 @@
        real, dimension(1:gr%nnzp,
      .                 1:sclrm_dimension) :: sclr_tmp1, sclr_tmp2,
      .                                       sclr_tmp3, sclr_tmp4
-#endif SCALARS
+#endif /* SCALARS */
 
 
 !      Diagnose variances
+!      We found that if we call diag_var first, we can use a longer timestep.
+!      This requires us to store in memory Scm and taum between timesteps.
 
        call diag_var( taum, wmm, rtm, wprtp, 
      .                thlm, wpthlp, wp2, wp3, Scm, 
@@ -1156,7 +1167,7 @@
 #ifdef SCALARS
      .                ,sclrm, wpsclrp, sclrp2,    ! optional vars
      .                sclrprtp, sclrpthlp         !   "       "
-#endif SCALARS
+#endif /* SCALARS */
      .               )
        if ( .not. isValid ) return
 
@@ -1179,7 +1190,7 @@
 #ifdef SCALARS
      .               ,wpsclrp(1,:), sclrp2(1,:),
      .               sclrprtp(1,:), sclrpthlp(1,:)
-#endif SCALARS
+#endif /* SCALARS */
      .             )
 
 !    Latin hypercube sample generation
@@ -1221,7 +1232,7 @@
          sclr_tmp3(:,i) = zm2zt( sclrp2(:,i) ) 
          sclr_tmp4(:,i) = zm2zt( sclrpthlp(:,i) ) 
        enddo ! i = 1, sclrm_dimension
-#endif SCALARS
+#endif /* SCALARS */
 
        do k = 2, gr%nnzp, 1
            call pdf_closure_new( p(k), exner(k),
@@ -1248,7 +1259,7 @@
      .                           sclr_tmp4(k,:), sclrpthvp(k,:),   !   "  "
      .                           wpsclrpthlp(k,:), sclrprcp(k,:),  !   "  "
      .                           wp2sclrp(k,:)                     !   "  "
-#endif SCALARS
+#endif /* SCALARS */
      .                          )
 !        Latin hypercube sampling.
          if ( LH_on ) call latin_hypercube_sampling( k, p_height_time )
@@ -1266,7 +1277,7 @@
        enddo ! i=1, sclrm_dimension
 
        sclrpthvp(1,SCLR_THETA) = sclrpthlp(1,SCLR_THETA)
-#endif SCALARS
+#endif /* SCALARS */
 
 !      Interpolate momentum variables back to momentum grid.
 !      Since top momentum level is higher than top thermo level,
@@ -1294,7 +1305,7 @@
           sclrprcp(:,i)        = zt2zm( sclrprcp(:,i) )
           sclrprcp(gr%nnzp,i)  = 0.0
        enddo ! i=1, sclrm_dimension
-#endif SCALARS
+#endif /* SCALARS */
 
 !      Alternate approach for lower wp4 boundary condition:
 !      call pdf scheme at the 1st momentum level, zm(1)
@@ -1303,7 +1314,7 @@
        do i = 1, sclrm_dimension
          sclr_tmp1(:,i) = zt2zm( sclrm(:,i) )
        enddo
-#endif SCALARS
+#endif /* SCALARS */
 
         call pdf_closure_new
      .      ( p(1), exner(1),
@@ -1330,7 +1341,7 @@
      .        sclrpthlp(1,:), sclrpthvp(1,:),
      .        wpsclrpthlp(1,:), sclrprcp(1,:),
      .        wp2sclrp(1,:)
-#endif SCALARS
+#endif /* SCALARS */
      .      )
 
 !      Set other specific boundary conditions.
@@ -1339,7 +1350,7 @@
        wp2thvp(gr%nnzp)  = 0.
 #ifdef SCALARS
        sclrpthvp(1,SCLR_THETA) = sclrpthlp(1,SCLR_THETA)
-#endif SCALARS
+#endif /* SCALARS */
 
 !      Compute thvm
 
@@ -1486,7 +1497,7 @@
      .        cloud_sed, kk_rain, isValid 
 #ifdef SCALARS
      .        ,sclrm, wpsclrp, sclrpthvp, sclrm_forcing   ! optional
-#endif SCALARS
+#endif /* SCALARS */
      .      )
        if ( .not. isValid ) return
 
