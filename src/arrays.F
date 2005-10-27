@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: arrays.F,v 1.23 2005-08-27 16:09:40 griffinb Exp $
+! $Id: arrays.F,v 1.24 2005-10-27 19:45:19 dschanen Exp $
 
 ! This module contains definitions of all prognostic and diagnostic
 ! arrays used in the single column model, as well as subroutines
@@ -97,6 +97,10 @@
         real, allocatable, target :: Frad(:)      ! Radiative flux (momentum point)
         real, allocatable, target :: Frad_LW(:)   ! Long_wave radiative flux (momentum point)
         real, allocatable, target :: Frad_SW(:)   ! Short-wave radiative flux (momentum point)
+
+        real, allocatable, target :: radht(:)     ! SW + LW heating rate
+        real, allocatable, target :: radht_SW(:)  ! Short-wave heating rate
+        real, allocatable, target :: radht_LW(:)  ! Long-wave heating rate
 
         real, allocatable, target :: upwp(:)      ! vertical u momentum flux
         real, allocatable, target :: vpwp(:)      ! vertical v momentum flux
@@ -239,7 +243,7 @@ c Diagnostic variables
         allocate( wmt(1:nzmax) )       ! imposed large scale w: t point
         allocate( wmm(1:nzmax) )       ! imposed large scale w: m point
  
-        allocate( p(1:nzmax) )         ! pressure
+        allocate( p(1:nzmax) )         ! pressure (pascals)
         allocate( exner(1:nzmax) )     ! exner
         allocate( rhot(1:nzmax) )      ! density: t points
         allocate( rhom(1:nzmax) )      ! density: m points
@@ -273,6 +277,10 @@ c Diagnostic variables
         allocate( Frad(1:nzmax) )      ! radiative flux (momentum point)
         allocate( Frad_LW(1:nzmax) )   ! Long_wave radiative flux (momentum point)
         allocate( Frad_SW(1:nzmax) )   ! Short-wave radiative flux (momentum point)
+
+        allocate( radht(1:nzmax) )     ! SW + LW heating rate
+        allocate( radht_SW(1:nzmax) )  ! Short-wave heating rate
+        allocate( radht_LW(1:nzmax) )  ! Long-wave heating rate
 
         allocate( upwp(1:nzmax) )      ! vertical u momentum flux
         allocate( vpwp(1:nzmax) )      ! vertical v momentum flux
