@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.25 2005-10-06 22:50:25 golaz Exp $
+! $Id: error.F,v 1.26 2005-10-27 19:57:30 dschanen Exp $
 
 !       Module ERROR
 !
@@ -406,20 +406,17 @@
 !----Initialize the number of terms in the error sum-------------------
       c_terms = 0
 
+      isValid = .true.
+
 !-----------------------------------------------------------------------
 !  Cycle through all the model cases specified for HOC
-
-!  If the compiler supports OpenMP, it will try to run the model cases 
-!    in parallel.
 !-----------------------------------------------------------------------
-!$OMP PARALLEL
-!$OMP DO PRIVATE(hoc_zl, les_zl, les_minmax, run_file, hoc_stats_file) 
-!   . SHARED(c_terms, err_sum)
+!     $OMP PARALLEL DO DEFAULT(PRIVATE), SHARED(isValid)
       do c_run=1, c_total
 
 !-------------- Run the HOC model with x_vector as input ---------------
 
-!      print *, "Calling HOC with case " // run_file ! Debug
+       print *, "Calling HOC with case " // run_file ! Debug
 
         call hoc_model( x_vector(1), x_vector(2), x_vector(3),
      .                  x_vector(4), x_vector(5), x_vector(6), 
@@ -435,6 +432,8 @@
 
 !-------------- Basic Sanity Check for negative constants --------------
 !        if (minval( x_vector ) < 0. ) isValid = .false.
+      enddo ! c_run
+!     $OMP END PARALLEL DO
 
 !-----------------------------------------------------------------------
 !  Checks if hoc has blown up, i.e. if hoc has set a variable to NaN, 
@@ -451,6 +450,7 @@
           return
         endif
 
+      do c_run=1, c_total
 !-----------------------------------------------------------------------
 !  Allocate the arrays for reading in the grads plot data
 !-----------------------------------------------------------------------
@@ -500,9 +500,6 @@
           les_minmax = maxval(les_zl) - minval(les_zl)
           if (les_minmax == 0.) stop "An LES var = 0 over all z-levels"
 
-          err_sum = err_sum 
-          err_sum = err_sum 
-          err_sum = err_sum 
 c-->Chris Golaz modification: mean_sqr_diff_2_zt was designed to try
 c   to limit time noise in tuning simulations.
 !          err_sum = err_sum 
@@ -518,7 +515,6 @@ c<--end of modification
         deallocate (hoc_zl, hoc2_zl, les_zl)
 
       enddo     ! end of do c_run=1, c_total
-!$OMP END PARALLEL
 
 !----------------------------------------------------------------------
 ! funk returns error avgd over all cases, variables, and vertical levels
