@@ -1,4 +1,4 @@
-! CVS:  $Id: bugs_rad.F,v 1.1 2005-10-27 20:06:49 dschanen Exp $
+! CVS:  $Id: bugs_rad.F,v 1.2 2005-10-27 20:11:37 dschanen Exp $
 ! CVS:  $Name: not supported by cvs2svn $
 
 !------------------------------------------------------------------------
@@ -420,7 +420,8 @@
 !---- 1.1 initialization of local scalars
 
       cvs_version1 =
-     & "Version:$Id: bugs_rad.F,v 1.1 2005-10-27 20:06:49 dschanen Exp $"
+     & "Version: 
+     & $Id: bugs_rad.F,v 1.2 2005-10-27 20:11:37 dschanen Exp $"
       cvs_version2 =
      & "Version:$Name: not supported by cvs2svn $"
 
