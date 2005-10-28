@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-!  $Id: compare_runs.F,v 1.8 2005-10-06 22:39:49 golaz Exp $
+!  $Id: compare_runs.F,v 1.9 2005-10-28 01:40:57 dschanen Exp $
 !  program compare_runs.F
 
 !  Tests selected GRaDS file variables for low variation
@@ -94,8 +94,8 @@
 
         do i=1, tmax, 2
         write(*,*) "time: ", t(i), " to ", t(i+1)
-        write(*,*) "Comparison","                (file1 - file2)^2",
-     .             "          (file2 - file3)^2"
+        write(*,'(3a18)') "Comparison        "," (file1 - file2)^2 ",
+     .             " (file2 - file3)^2"
           do n=1, nvar
 
 !           hoc_v2.1 reference file
@@ -140,9 +140,10 @@
      .                                  / minmax )        )**2, 1 )
      .                                                 / (nz)
 
-            write(*,*) "PM^2 for "//hoc_variables(n)// "=", 
-     .                  percent_mean_sqr, reference
-            deallocate ( fvar1, fvar2 )
+            write(*,'(a18,2f18.6)') "PM^2 for "//
+     .      hoc_variables(n)//" = ", percent_mean_sqr, reference
+
+            deallocate ( fvar1, fvar2, fvar3 )
           enddo
         enddo
 
