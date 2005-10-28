@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: arrays.F,v 1.24 2005-10-27 19:45:19 dschanen Exp $
+! $Id: arrays.F,v 1.25 2005-10-28 03:59:59 dschanen Exp $
 
 ! This module contains definitions of all prognostic and diagnostic
 ! arrays used in the single column model, as well as subroutines
@@ -40,7 +40,7 @@
         real, target, allocatable :: wpsclrp2(:,:)       ! w'sclr'^2
         real, target, allocatable :: wpsclrprtp(:,:)     ! w'sclr'rt'
         real, target, allocatable :: wpsclrpthlp(:,:)    ! w'sclr'thl'
-#endif SCALARS
+#endif /*SCALARS*/
 
 ! Tendency arrays for prognostic variables
 
@@ -153,7 +153,7 @@
         real, target, allocatable :: wprtpzt(:)
         real, target, allocatable :: rtp2zt(:)
         real, target, allocatable :: rtpthlpzt(:)
-#endif STATS
+#endif /*STATS*/
 
 ! Variables needed for the pdf closure scheme
 !
@@ -336,7 +336,7 @@ c Diagnostic variables
         allocate( wprtpzt(1:nzmax) )
         allocate( rtp2zt(1:nzmax) )
         allocate( rtpthlpzt(1:nzmax) )
-#endif STATS
+#endif /*STATS*/
 
 ! Array fpr pdf closure scheme
 
@@ -367,7 +367,7 @@ c Diagnostic variables
         allocate( wpsclrp2(1:nzmax, 1:sclrm_dimension) )
         allocate( wpsclrprtp(1:nzmax, 1:sclrm_dimension) )
         allocate( wpsclrpthlp(1:nzmax, 1:sclrm_dimension) )
-#endif SCALARS
+#endif /*SCALARS*/
 
         return
         end subroutine allocate_model_arrays
@@ -447,6 +447,10 @@ c Diagnostic variables
         deallocate( Frad_LW )   ! Long_wave radiative flux (momentum point)
         deallocate( Frad_SW )   ! Short-wave radiative flux (momentum point)
 
+        deallocate( radht )     ! SW + LW heating rate
+        deallocate( radht_SW )  ! Short-wave heating rate
+        deallocate( radht_LW )  ! Long-wave heating rate
+
         deallocate( upwp )      ! vertical u momentum flux
         deallocate( vpwp )      ! vertical v momentum flux
 
@@ -496,7 +500,7 @@ c Diagnostic variables
         deallocate( wprtpzt )   ! w'rt' in t
         deallocate( rtp2zt )    ! rt'^2 in t
         deallocate( rtpthlpzt ) ! rt'th_l' in t
-#endif STATS
+#endif /*STATS*/
 
 ! Temporary array
 
@@ -533,7 +537,7 @@ c Diagnostic variables
         deallocate( wpsclrp2 )
         deallocate( wpsclrprtp )
         deallocate( wpsclrpthlp )
-#endif SCALARS
+#endif /*SCALARS*/
 
         return
         end subroutine deallocate_model_arrays
@@ -581,7 +585,7 @@ c Diagnostic variables
         wpsclrp2(:,:)      = 0. 
         wpsclrprtp(:,:)    = 0.
         wpsclrpthlp(:,:)   = 0.
-#endif SCALARS
+#endif /*SCALARS*/
 
 ! Tendency arrays for prognostic variables
 
