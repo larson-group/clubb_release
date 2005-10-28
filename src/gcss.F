@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.21 2005-10-27 19:55:20 dschanen Exp $ 
+! $Id: gcss.F,v 1.22 2005-10-28 02:14:15 dschanen Exp $ 
 
 ! This file contains extra subroutines to simulate the GCSS ARM and
 ! GCSS BOMEX, GCSS ATEX, GCSS FIRE intercomparison cases as well 
@@ -813,7 +813,7 @@
 ! Based on GCSS ATEX intercomparison case
 !----------------------------------------------------------------------
 
-        subroutine cloud_rad( rhot, rcm, Frad, exner, radht, 
+        subroutine cloud_rad( rhot, rcm, exner, Frad, radht, 
      .                        thlm_forcing, sclr_rate )
 
         use grid_class
