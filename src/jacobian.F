@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.22 2005-10-06 23:05:56 golaz Exp $
+! $Id: jacobian.F,v 1.23 2005-10-29 21:25:07 griffinb Exp $
 
 ! Program Jacobian
 
@@ -42,9 +42,9 @@
 !----- Parameters ------------------------------------------------------
       integer, parameter :: nvarzt = 14
       integer, parameter :: nvarzm = 40
-      integer, parameter :: nconst = 27
+      integer, parameter :: nconst = 31
 
-!     27 must be changed to be equal to nconst
+!     31 must be changed to be equal to nconst
 
       character(len=12), parameter :: write_format = "(27(e18.10))"
 
@@ -54,7 +54,8 @@
 !----- Model constants -------------------------------------------------
 ! Notes:  C4 and C10 do not currently play a role in the model 5/31/05
 !-----------------------------------------------------------------------
-      real       :: C1, C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6thl
+      real       :: C1, C1b, C1c, C2rt, C2thl, C2rtthl
+      real       :: C4, C5, C6rt, C6rtb, C6rtc, C6thl
       real       :: C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12
       real       :: nu1, nu2, nu6, nu8, nu_r
       real       :: beta
@@ -101,8 +102,9 @@
       namelist /model/    run_name, times, delta_factor, 
      .                    use_standard_vars
 
-      namelist /initvars/ C1, C2rt, C2thl, C2rtthl, C4, C5, 
-     .                    C6rt, C6thl, C7, C7b, C7c, C8, C8b, C10, 
+      namelist /initvars/ C1, C1b, C1c, C2rt, C2thl, C2rtthl,
+     .                    C4, C5, C6rt, C6rtb, C6rtc, C6thl,
+     .                    C7, C7b, C7c, C8, C8b, C10, 
      .                    C11, C11b, C11c, C12,
      .                    nu1, nu2, nu6, nu8, nu_r, beta, gamma_coef,
      .                    c_K, lmin_coef, taumin, taumax, mu
@@ -130,15 +132,18 @@
       endif
       close(10)
       
-      ca1%constant(1:nconst) = (/C1, C2rt, C2thl, C2rtthl, C4, C5, 
-     .                           C6rt, C6thl, C7, C7b, C7c, C8, C8b,
+      ca1%constant(1:nconst) = (/C1, C1b, C1c, C2rt, C2thl, C2rtthl,
+     .                           C4, C5, C6rt, C6rtb, C6rtc, C6thl,
+     .                           C7, C7b, C7c, C8, C8b,
      .                           C10, C11, C11b, C11c, C12,
      .                           nu1, nu2, nu6, nu8, nu_r, beta,
      .                           gamma_coef, c_K, mu/)     
       ca1%name(1:nconst) =
-     .  (/"C1        ", "C2rt      ", "C2thl     ", 
-     .    "C2rtthl   ", "C4        ", 
-     .    "C5        ", "C6rt      ", "C6thl     ", 
+     .  (/"C1        ", "C1b       ", "C1c       ",
+     .    "C2rt      ", "C2thl     ", "C2rtthl   ",
+     .    "C4        ", "C5        ",
+     .    "C6rt      ", "C6rtb     ", "C6rtc     ",
+     .    "C6thl     ", 
      .    "C7        ", "C7b       ", "C7c       ",
      .    "C8        ", "C8b       ", 
      .    "C10       ", "C11       ", "C11b      ",
@@ -168,8 +173,10 @@
      .                ca1%constant(21), ca1%constant(22),
      .                ca1%constant(23), ca1%constant(24),
      .                ca1%constant(25), ca1%constant(26),
+     .                ca1%constant(27), ca1%constant(28),
+     .                ca1%constant(29), ca1%constant(30),
      .                lmin_coef, taumin, taumax, 
-     .                ca1%constant(27),
+     .                ca1%constant(31),
      .                "../tune/"//trim(run_name)//"_hoc.in", 
      .                isValid, .false. )
 
@@ -264,8 +271,10 @@
      .                  ca1%constant(21), ca1%constant(22),
      .                  ca1%constant(23), ca1%constant(24),
      .                  ca1%constant(25), ca1%constant(26),
+     .                  ca1%constant(27), ca1%constant(28),
+     .                  ca1%constant(29), ca1%constant(30),
      .                  lmin_coef, taumin, taumax, 
-     .                  ca1%constant(27),
+     .                  ca1%constant(31),
      .                  "../tune/"//trim(run_name)//"_hoc.in", 
      .                  isValid, .false. )
 

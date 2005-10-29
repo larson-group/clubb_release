@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.54 2005-10-27 19:54:39 dschanen Exp $
+! $Id: hoc.F,v 1.55 2005-10-29 21:25:07 griffinb Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -142,9 +142,11 @@
 !-----------------------------------------------------------------------
 
        subroutine hoc_model_field_input( 
-     .                       C1_in, C2rt_in, C2thl_in, C2rtthl_in, 
-     .                       C4_in, C5_in, C6rt_in, C6thl_in, 
-     .                       C7_in, C7b_in, C7c_in,
+     .                       C1_in, C1b_in, C1c_in, 
+     .                       C2rt_in, C2thl_in, C2rtthl_in, 
+     .                       C4_in, C5_in, 
+     .                       C6rt_in, C6rtb_in, C6rtc_in,
+     .                       C6thl_in, C7_in, C7b_in, C7c_in,
      .                       C8_in, C8b_in, C10_in, 
      .                       C11_in, C11b_in, C11c_in, C12_in,
      .                       nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in,
@@ -191,8 +193,10 @@
        logical, external :: invalid_model_arrays
 
 !      Subroutine Arguments (constants)
-       real, intent(in) :: C1_in, C2rt_in, C2thl_in, C2rtthl_in, C4_in
-       real, intent(in) :: C5_in, C6rt_in, C6thl_in
+       real, intent(in) :: C1_in, C1b_in, C1c_in
+       real, intent(in) :: C2rt_in, C2thl_in, C2rtthl_in
+       real, intent(in) :: C4_in, C5_in
+       real, intent(in) :: C6rt_in, C6rtb_in, C6rtc_in, C6thl_in
        real, intent(in) :: C7_in, C7b_in, C7c_in
        real, intent(in) :: C8_in, C8b_in, C10_in
        real, intent(in) :: C11_in, C11b_in, C11c_in, C12_in
@@ -240,9 +244,10 @@
        close(10)
 
 !      Define constants
-       call setup_constants( deltaz, C1_in, C2rt_in, C2thl_in, 
-     .                       C2rtthl_in, C4_in, C5_in, 
-     .                       C6rt_in, C6thl_in,
+       call setup_constants( deltaz, C1_in, C1b_in, C1c_in, 
+     .                       C2rt_in, C2thl_in, C2rtthl_in,
+     .                       C4_in, C5_in, 
+     .                       C6rt_in, C6rtb_in, C6rtc_in, C6thl_in,
      .                       C7_in, C7b_in, C7c_in,
      .                       C8_in, C8b_in, C10_in, 
      .                       C11_in, C11b_in, C11c_in, C12_in,
@@ -395,10 +400,11 @@
 !  Output: 
 !         isValid:  A false return value indicates something was unsound.
 !-----------------------------------------------------------------------
-       subroutine hoc_model_standard( C1_in, C2rt_in, C2thl_in, 
-     .                                C2rtthl_in, C4_in, C5_in, 
-     .                                C6rt_in, C6thl_in, 
-     .                                C7_in, C7b_in, C7c_in,
+       subroutine hoc_model_standard( C1_in, C1b_in, C1c_in,
+     .                                C2rt_in, C2thl_in, C2rtthl_in,
+     .                                C4_in, C5_in, 
+     .                                C6rt_in, C6rtb_in, C6rtc_in,
+     .                                C6thl_in, C7_in, C7b_in, C7c_in,
      .                                C8_in, C8b_in, C10_in, 
      .                                C11_in, C11b_in, C11c_in, C12_in,
      .                                nu1_in, nu2_in, nu6_in, nu8_in,
@@ -419,8 +425,10 @@
        logical, external :: invalid_model_arrays
 
 !      Subroutine Arguments (constants)
-       real, intent(in) :: C1_in, C2rt_in, C2thl_in, C2rtthl_in, C4_in
-       real, intent(in) :: C5_in, C6rt_in, C6thl_in
+       real, intent(in) :: C1_in, C1b_in, C1c_in
+       real, intent(in) :: C2rt_in, C2thl_in, C2rtthl_in
+       real, intent(in) :: C4_in, C5_in
+       real, intent(in) :: C6rt_in, C6rtb_in, C6rtc_in, C6thl_in
        real, intent(in) :: C7_in, C7b_in, C7c_in
        real, intent(in) :: C8_in, C8b_in, C10_in
        real, intent(in) :: C11_in, C11b_in, C11c_in
@@ -462,9 +470,10 @@
        close(10)
 
 !      Define constants
-       call setup_constants( deltaz, C1_in, C2rt_in, C2thl_in, 
-     .                       C2rtthl_in, C4_in, C5_in, 
-     .                       C6rt_in, C6thl_in,
+       call setup_constants( deltaz, C1_in, C1b_in, C1c_in,
+     .                       C2rt_in, C2thl_in, C2rtthl_in,
+     .                       C4_in, C5_in, 
+     .                       C6rt_in, C6rtb_in, C6rtc_in, C6thl_in,
      .                       C7_in, C7b_in, C7c_in,
      .                       C8_in, C8b_in, C10_in, 
      .                       C11_in, C11b_in, C11c_in, C12_in,

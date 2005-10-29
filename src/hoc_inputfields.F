@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc_inputfields.F,v 1.8 2005-10-06 22:57:41 golaz Exp $
+! $Id: hoc_inputfields.F,v 1.9 2005-10-29 21:25:07 griffinb Exp $
 
 !  Program HOC_INPUTFIELDS
  
@@ -20,7 +20,8 @@
 !----- Model constants -------------------------------------------------
 ! Notes:  C4 and C10 do not currently play a role in the model 3/18/05
 !
-      real       :: C1, C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6thl 
+      real       :: C1, C1b, C1c, C2rt, C2thl, C2rtthl
+      real       :: C4, C5, C6rt, C6rtb, C6rtc, C6thl 
       real       :: C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c
       real       :: C12
       real       :: nu1, nu2, nu6, nu8, nu_r
@@ -42,8 +43,9 @@
 !----- Namelists -------------------------------------------------------
       namelist /model/ run_file, stdout
 
-      namelist /initvars/ C1, C2rt, C2thl, C2rtthl, C4, C5, 
-     .                    C6rt, C6thl, C7, C7b, C7c, C8, C8b,
+      namelist /initvars/ C1, C1b, C1c, C2rt, C2thl, C2rtthl,
+     .                    C4, C5, C6rt, C6rtb, C6rtc, C6thl,
+     .                    C7, C7b, C7c, C8, C8b,
      .                    C10, C11, C11b, C11c, C12,
      .                    nu1, nu2, nu6, nu8, nu_r, beta, gamma_coef,
      .                    c_K, lmin_coef, taumin, taumax, mu
@@ -67,7 +69,8 @@
       isValid = .true.
 
 !----- Run the model----------------------------------------------------
-      call hoc_model( C1, C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6thl, 
+      call hoc_model( C1, C1b, C1c, C2rt, C2thl, C2rtthl,
+     .                C4, C5, C6rt, C6rtb, C6rtc, C6thl, 
      .                C7, C7b, C7c, C8, C8b, C10, 
      .                C11, C11b, C11c, C12,
      .                nu1, nu2, nu6, nu8, nu_r, beta,

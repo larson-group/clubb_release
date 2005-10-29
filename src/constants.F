@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.18 2005-10-27 19:47:40 dschanen Exp $
+! $Id: constants.F,v 1.19 2005-10-29 21:25:07 griffinb Exp $
 
 !  Contains frequently occuring model constants
 !-----------------------------------------------------------------------
@@ -50,8 +50,8 @@
 
 !       Model parameters and constraints
 
-        real C1, C2rt, C2thl, C2rtthl, C4, C5
-        real C6rt, C6thl, C7, C7b, C7c, C8, C8b, C10
+        real C1, C1b, C1c, C2rt, C2thl, C2rtthl, C4, C5
+        real C6rt, C6rtb, C6rtc, C6thl, C7, C7b, C7c, C8, C8b, C10
         real C11, C11b, C11c
         real C12
         real nu1, nu2, nu6, nu8, nu_r
@@ -95,9 +95,10 @@
 !-----------------------------------------------------------------------
 ! Subroutine to set-up constants
 !-----------------------------------------------------------------------
-      subroutine setup_constants( deltaz, C1_in, C2rt_in, C2thl_in, 
-     .                            C2rtthl_in, C4_in, C5_in, 
-     .                            C6rt_in, C6thl_in, 
+      subroutine setup_constants( deltaz, C1_in, C1b_in, C1c_in,
+     .                            C2rt_in, C2thl_in, C2rtthl_in,
+     .                            C4_in, C5_in, 
+     .                            C6rt_in, C6rtb_in, C6rtc_in, C6thl_in,
      .                            C7_in, C7b_in, C7c_in,
      .                            C8_in, C8b_in, C10_in, 
      .                            C11_in, C11b_in, C11c_in,
@@ -112,8 +113,10 @@
       implicit none
 
       real, intent(in) :: deltaz
-      real, intent(in) :: C1_in, C2rt_in, C2thl_in, C2rtthl_in
-      real, intent(in) :: C4_in, C5_in, C6rt_in, C6thl_in
+      real, intent(in) :: C1_in, C1b_in, C1c_in
+      real, intent(in) :: C2rt_in, C2thl_in, C2rtthl_in
+      real, intent(in) :: C4_in, C5_in
+      real, intent(in) :: C6rt_in, C6rtb_in, C6rtc_in, C6thl_in
       real, intent(in) :: C7_in, C7b_in, C7c_in
       real, intent(in) :: C8_in, C8b_in, C10_in
       real, intent(in) :: C11_in, C11b_in, C11c_in
@@ -142,12 +145,16 @@
 !-----------------------------------------------------------------------
 
       C1      = C1_in
+      C1b     = C1b_in
+      C1c     = C1c_in
       C2rt    = C2rt_in
       C2thl   = C2thl_in
       C2rtthl = C2rtthl_in
       C4      = C4_in
       C5      = C5_in
       C6rt    = C6rt_in
+      C6rtb   = C6rtb_in
+      C6rtc   = C6rtc_in
       C6thl   = C6thl_in
       C7      = C7_in
       C7b     = C7b_in

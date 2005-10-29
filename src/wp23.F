@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.8 2005-10-06 23:13:40 golaz Exp $
+! $Id: wp23.F,v 1.9 2005-10-29 21:25:07 griffinb Exp $
 
 ! SUBROUTINE timestep_wp23( )
 !  Advance wp2 and wp3 one timestep
@@ -48,8 +48,10 @@
         real aa, Skw
 
 ! Internal variables for C11 function, Vince Larson 13 Mar 2005
-        integer km1
-        real, allocatable :: Skw_arr(:), C11_Skw_fnc(:)
+! Brian added C1 function.
+        integer km1, kp1
+        real, allocatable :: Skw_arr_m(:), C1_Skw_fnc(:)
+        real, allocatable :: Skw_arr_t(:), C11_Skw_fnc(:)
 ! End Vince Larson's addition.
 
 !       Allocate memory
@@ -60,7 +62,10 @@
         allocate( Lm(1:gr%nnzp) )
 
 ! Allocate variables for C11 function, Vince Larson 13 Mar 2005
-        allocate( Skw_arr(1:gr%nnzp) )
+! Brian added C1 function
+        allocate( Skw_arr_m(1:gr%nnzp) )
+        allocate( C1_Skw_fnc(1:gr%nnzp) )
+        allocate( Skw_arr_t(1:gr%nnzp) )
         allocate( C11_Skw_fnc(1:gr%nnzp) )
 ! End Vince Larson's addition.
 
@@ -127,13 +132,23 @@
         do k=1,gr%nnzp
 
           km1 = max(k-1,1)
-          Skw_arr(k) = wp3(k) /
-     .                    ( 0.5*max(wtol**2,wp2(km1)+wp2(k)) )**1.5
+          kp1 = min(k+1,gr%nnzp)
+
+          Skw_arr_t(k) = wp3(k) /
+     .                      ( 0.5*max(wtol**2,wp2(km1)+wp2(k)) )**1.5
+          Skw_arr_m(k) = 0.5*(wp3(kp1)+wp3(k)) /
+     .                      ( MAX(wtol**2.0, wp2(k))**1.5 )
+
         enddo
 
-        C11_Skw_fnc = C11b + (C11-C11b)*exp( -0.5 * (Skw_arr/C11c)**2 )
+        C11_Skw_fnc = C11b + (C11-C11b)
+     .                      *EXP( -0.5 * (Skw_arr_t/C11c)**2.0 )
+
+        C1_Skw_fnc = C1b + (C1-C1b)
+     .                    *EXP( -0.5 * (Skw_arr_m/C1c)**2.0 )
 
 !        C11_Skw_fnc = C11
+!        C1_Skw_fnc = C1
 
 ! Old version with C11 constant
 !        wp3t = - wmt * ddzm( zt2zm( wp3 ) )
@@ -207,11 +222,13 @@
 
         call wp23_solve( dt, Sc, Lscale, Lm, taum, tauw3t, 0.5*Khm,
      .                   wmt, wmm, wpthvp, wp2thvp,
-     .                   wp2t, wp3t, wp2, wp3, isValid )
+     .                   wp2t, wp3t, C1_Skw_fnc, 
+     .                   wp2, wp3, isValid )
         
         if ( .not. isValid ) then
           deallocate( tauw3t, wp2t, wp3t, Lm)
-          deallocate( Skw_arr, C11_Skw_fnc )
+          deallocate( Skw_arr_t, C11_Skw_fnc )
+          deallocate( Skw_arr_m, C1_Skw_fnc )
           return
         endif
 
@@ -225,7 +242,9 @@
         deallocate( tauw3t, wp2t, wp3t, Lm )  ! Brian
 
 ! De-allocate variables for C11 function, Vince Larson 13 Mar 2005
-        deallocate( Skw_arr, C11_Skw_fnc )
+! Brian added C1 function.
+        deallocate( Skw_arr_t, C11_Skw_fnc )
+        deallocate( Skw_arr_m, C1_Skw_fnc )
 ! End Vince Larson's addition.
 
         return
@@ -237,7 +256,7 @@
 
         subroutine wp23_solve( dt, Sc, Lscale, Lm, tau1m, tauw3t, Kh,
      .                         wmt, wmm, wpthvp, wp2thvp,
-     .                         wp2t, wp3t,
+     .                         wp2t, wp3t, C1_Skw_fnc,
      .                         wp2, wp3, isValid)
 
         use grid_class
@@ -263,6 +282,7 @@
         real, intent(in) :: wp2thvp(1:gr%nnzp)
         real, intent(in) :: wp2t(1:gr%nnzp)
         real, intent(in) :: wp3t(1:gr%nnzp)
+        real, intent(in) :: C1_Skw_fnc(1:gr%nnzp)
 
 !       Input/Output
 
@@ -352,7 +372,8 @@
           aa(k_wp2,3)
      .    = 1.0 / dt
      .      - atmp - ctmp
-     .      + C1/tau1m(k)
+!     .      + C1/tau1m(k)
+     .      + C1_Skw_fnc(k)/tau1m(k)
 
           aa(k_wp2,3+1)
      .    = + gr%dzm(k)
@@ -381,7 +402,8 @@
 !          Implicit contributions for wp2
 
            if ( iwp2_dp1 > 0 ) then
-             zmscr01(k) = - C1/tau1m(k)
+!             zmscr01(k) = - C1/tau1m(k)
+             zmscr01(k) = - C1_Skw_fnc(k)/tau1m(k)
            endif
 
            if ( iwp2_dp2 > 0 ) then
