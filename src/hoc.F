@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.55 2005-10-29 21:25:07 griffinb Exp $
+! $Id: hoc.F,v 1.56 2005-11-04 23:42:38 vlarson Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -763,7 +763,20 @@
 
         ! Brian for Nov. 11 altocumulus case.
         case ( "nov11_altocu" )
-          em = 1.0
+
+! Vince Larson reduced initial forcing.  4 Nov 2005
+!          em = 1.0
+!          em = 0.1
+          do k=1,gr%nnzp
+            if ( gr%zm(k) < 1400. ) then
+               em(k) = 0.1
+            else
+               em(k) = emin
+            end if
+          enddo
+          em(1) = em(2)
+          em(gr%nnzp) = em(gr%nnzp-1)
+! End Vince Larson's change.
 
           wp2 = 2.0 / 3.0  * em
 
@@ -1526,7 +1539,10 @@
 !      minutes of the Nov. 11 altocumulus case.  Brian.
        select case( trim( runtype ) )
        case ( "nov11_altocu" )
-         if ( time < time_initial + 1800.0) then
+! Vince Larson removed intial forcing.  4 Nov 2005
+!         if ( time < time_initial + 1800.0) then
+         if ( time < time_initial + 0.0) then
+! End Vince Larson's change.
 
             do k = 1, gr%nnzp, 1
                if ( thlm(k) <= 312.0 ) then

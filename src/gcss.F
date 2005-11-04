@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.22 2005-10-28 02:14:15 dschanen Exp $ 
+! $Id: gcss.F,v 1.23 2005-11-04 23:42:38 vlarson Exp $ 
 
 ! This file contains extra subroutines to simulate the GCSS ARM and
 ! GCSS BOMEX, GCSS ATEX, GCSS FIRE intercomparison cases as well 
@@ -1460,9 +1460,12 @@
         REAL, DIMENSION(1:gr%nnzp):: dqc_dt_icedfs
 
         REAL, PARAMETER:: wmax = -3.0E-2
-        REAL, PARAMETER:: kap  = 100.0 ! m^2/kg
-        REAL, PARAMETER:: F0   = 107.0  ! W/m^2
-        REAL, PARAMETER:: F1   = 61.0   ! W/m^2
+! Vince Larson changed these to agree with Adam Smith's COAMPS sims.
+! 4 Nov 2005.
+        REAL, PARAMETER:: kap  = 94.2 ! m^2/kg
+        REAL, PARAMETER:: F0   = 104.0  ! W/m^2
+        REAL, PARAMETER:: F1   = 62.0   ! W/m^2
+! End Vince Larson's change.
 
         INTEGER:: k
 
