@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.27 2005-10-29 21:25:07 griffinb Exp $
+! $Id: error.F,v 1.28 2005-11-05 18:23:25 griffinb Exp $
 
 !       Module ERROR
 !
@@ -349,7 +349,7 @@
 
 !     Internal
       integer                           :: i, j, c_run    ! looping variables
-      integer                           :: les_nz, hoc_nz ! read dynamically from GRaDS 
+      integer                           :: les_nz, hoc_nz ! read dynamically from GrADS 
       
       character(50)                     :: errorfile ! nml filename for 
                                                      ! invalid runs

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: budget_terms.F,v 1.18 2005-10-29 21:25:07 griffinb Exp $     
+! $Id: budget_terms.F,v 1.19 2005-11-05 18:23:25 griffinb Exp $     
 
 ! MODULE budget_terms
 
@@ -74,8 +74,8 @@
 !       Internal Run Information
 
         character(len=50), private :: run_file       ! namelist
-        character(len=50), private :: hoc_stats_file ! GRaDS data
-        character(len=50), private :: les_stats_file ! GRaDS data
+        character(len=50), private :: hoc_stats_file ! GrADS data
+        character(len=50), private :: les_stats_file ! GrADS data
 
         integer, dimension(10) :: times_nl
 
@@ -340,7 +340,7 @@
             mu         = const_array(1,6)
           end select
         else
-!         Generate GRaDS with Optimal constants
+!         Generate GrADS with Optimal constants
           write(*,*) "Running with optimal constants."      
           opt_error = func_min( const_array(1,:) ) 
           write(*,'(a15,f12.5)') "Optimal error=", opt_error
@@ -446,7 +446,7 @@
           beta       = const_array(1,1)
           gamma_coef = const_array(1,2)
         else
-!         Generate GRaDS with Optimal constants
+!         Generate GrADS with Optimal constants
           write(*,*) "Running with optimal constants."      
           opt_error = func_min( const_array(1,:) ) 
           write(*,'(a15,f12.5)') "Optimal error=", opt_error
@@ -584,7 +584,7 @@
             gamma_coef = const_array(1,6)
           end select
         else
-!         Generate GRaDS with Optimal constants
+!         Generate GrADS with Optimal constants
           write(*,*) "Running with optimal constants."      
           opt_error = func_min( const_array(1,:) ) 
           write(*,'(a15,f12.5)') "Optimal error=", opt_error
@@ -598,7 +598,7 @@
 
 !-----------------------------------------------------------------------
 !  FUNCTION xapxbp_run( )
-!  Calculate the total difference between the two GRaDS profiles
+!  Calculate the total difference between the two GrADS profiles
 !  This particular routine does the variance and covariance budgets,
 !  and only for dissipation, since they have no pressure terms.
 !-----------------------------------------------------------------------
@@ -709,7 +709,7 @@
             mu      = const_array(1,2)
           end select
         else
-!       Generate GRaDS with Optimal constants
+!       Generate GrADS with Optimal constants
           write(*,*) "Running with optimal constants."      
           opt_error = func_min( const_array(1,:) ) 
           write(*,'(a15,f12.5)') "Optimal error=", opt_error
@@ -723,7 +723,7 @@
 
 !-----------------------------------------------------------------------
 !  FUNCTION wp2_min( )
-!  Calculate the total difference between the two GRaDS profiles
+!  Calculate the total difference between the two GrADS profiles
 !-----------------------------------------------------------------------
         real function wp2_min( const_vect )
 
@@ -775,7 +775,7 @@
 
 !-----------------------------------------------------------------------
 !  FUNCTION wp3_min( )
-!  Calculate the total difference between the two GRaDS profiles
+!  Calculate the total difference between the two GrADS profiles
 !-----------------------------------------------------------------------
         real function wp3_min( const_vect )
 
@@ -827,7 +827,7 @@
 
 !-----------------------------------------------------------------------
 !  FUNCTION wprtp_min( )
-!  Calculate the total difference between the two GRaDS profiles
+!  Calculate the total difference between the two GrADS profiles
 !-----------------------------------------------------------------------
         real function wprtp_min( const_vect )
 
@@ -878,7 +878,7 @@
 
 !-----------------------------------------------------------------------
 !  FUNCTION wpthlp_min( )
-!  Calculate the total difference between the two GRaDS profiles
+!  Calculate the total difference between the two GrADS profiles
 !-----------------------------------------------------------------------
         real function wpthlp_min( const_vect )
 
@@ -928,7 +928,7 @@
 
 !-----------------------------------------------------------------------
 !  FUNCTION rtp2_min( )
-!  Calculate the total difference between the two GRaDS profiles
+!  Calculate the total difference between the two GrADS profiles
 !  Note that rtp2, thlp2, and rtpthlp have no pressure terms, so this
 !  function includes only dissipation.
 !-----------------------------------------------------------------------
@@ -980,7 +980,7 @@
 
 !-----------------------------------------------------------------------
 !  FUNCTION thlp2_min( )
-!  Calculate the total difference between the two GRaDS profiles
+!  Calculate the total difference between the two GrADS profiles
 !  Note that rtp2, thlp2, and rtpthlp have no pressure terms, so this
 !  function includes only dissipation.
 !-----------------------------------------------------------------------
@@ -1032,7 +1032,7 @@
 
 !-----------------------------------------------------------------------
 !  FUNCTION rtpthlp_min( )
-!  Calculate the total difference between the two GRaDS profiles
+!  Calculate the total difference between the two GrADS profiles
 !  Note that rtp2, thlp2, and rtpthlp have no pressure terms, so this
 !  function includes only dissipation.
 !-----------------------------------------------------------------------
@@ -1083,7 +1083,7 @@
 
 !-----------------------------------------------------------------------
 !  FUNCTION wp2_buoy_min( )
-!  Calculate the mean squared difference between the two GRaDS profiles
+!  Calculate the mean squared difference between the two GrADS profiles
 !-----------------------------------------------------------------------
         real function wp2_buoy_min( const_vect )
 
@@ -1114,9 +1114,9 @@
 
 !-----------------------------------------------------------------------
 !  FUNCTION wp2_advect_min( )
-!  Calculate the mean squared difference between the two GRaDS profiles
+!  Calculate the mean squared difference between the two GrADS profiles
 !  * Doesn't work -- d( w'3 ) / d ( z ) is computed based on a field
-!    that is set from GRaDS data
+!    that is set from GrADS data
 !-----------------------------------------------------------------------
 !        real function wp2_advect_min( const_vect )
 !
@@ -1144,7 +1144,7 @@
 
 !-----------------------------------------------------------------------
 !  FUNCTION wp3_buoy_min( )
-!  Calculate the mean squared difference between the two GRaDS profiles
+!  Calculate the mean squared difference between the two GrADS profiles
 !-----------------------------------------------------------------------
         real function wp3_buoy_min( const_vect )
 
@@ -1175,7 +1175,7 @@
 
 !-----------------------------------------------------------------------
 !  FUNCTION wp3_advect_min( )
-!  Calculate the mean squared difference between the two GRaDS profiles
+!  Calculate the mean squared difference between the two GrADS profiles
 !-----------------------------------------------------------------------
         real function wp3_advect_min( const_vect )
 
@@ -1206,7 +1206,7 @@
 
 !-----------------------------------------------------------------------
 !  FUNCTION wprtp_buoy_min( )
-!  Calculate the mean squared difference between the two GRaDS profiles
+!  Calculate the mean squared difference between the two GrADS profiles
 !-----------------------------------------------------------------------
         real function wprtp_buoy_min( const_vect )
 
@@ -1237,7 +1237,7 @@
 
 !-----------------------------------------------------------------------
 !  FUNCTION wprtp_advect_min( )
-!  Calculate the mean squared difference between the two GRaDS profiles
+!  Calculate the mean squared difference between the two GrADS profiles
 !-----------------------------------------------------------------------
         real function wprtp_advect_min( const_vect )
 
@@ -1268,7 +1268,7 @@
 
 !-----------------------------------------------------------------------
 !  FUNCTION wpthlp_buoy_min( )
-!  Calculate the mean squared difference between the two GRaDS profiles
+!  Calculate the mean squared difference between the two GrADS profiles
 !-----------------------------------------------------------------------
         real function wpthlp_buoy_min( const_vect )
 
@@ -1300,7 +1300,7 @@
 
 !-----------------------------------------------------------------------
 !  FUNCTION wpthlp_advect_min( )
-!  Calculate the mean squared difference between the two GRaDS profiles
+!  Calculate the mean squared difference between the two GrADS profiles
 !-----------------------------------------------------------------------
         real function wpthlp_advect_min( const_vect )
 
@@ -1332,7 +1332,7 @@
 
 !-----------------------------------------------------------------------
 !  FUNCTION rtp2_advect_min( )
-!  Calculate the mean squared difference between the two GRaDS profiles
+!  Calculate the mean squared difference between the two GrADS profiles
 !-----------------------------------------------------------------------
         real function rtp2_advect_min( const_vect )
 
@@ -1365,7 +1365,7 @@
 
 !-----------------------------------------------------------------------
 !  FUNCTION thlp2_advect_min( )
-!  Calculate the mean squared difference between the two GRaDS profiles
+!  Calculate the mean squared difference between the two GrADS profiles
 !-----------------------------------------------------------------------
         real function thlp2_advect_min( const_vect )
 
@@ -1398,7 +1398,7 @@
 
 !-----------------------------------------------------------------------
 !  FUNCTION rtpthlp_advect_min( )
-!  Calculate the mean squared difference between the two GRaDS profiles
+!  Calculate the mean squared difference between the two GrADS profiles
 !-----------------------------------------------------------------------
         real function rtpthlp_advect_min( const_vect )
 

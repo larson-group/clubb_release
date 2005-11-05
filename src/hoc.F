@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.56 2005-11-04 23:42:38 vlarson Exp $
+! $Id: hoc.F,v 1.57 2005-11-05 18:23:25 griffinb Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -213,7 +213,7 @@
 !      Subroutine Arguments (Output)
        logical, intent(inout)         :: isValid    ! valid run? (T/F)
 
-!      sample_ratio is used to determine often to sample data from the GRaDS 
+!      sample_ratio is used to determine often to sample data from the GrADS 
 !      input per iteration of the main time stepping loop.
 !      e.g. if dtmain is 20.0 seconds and the data was written every 60.0 sec, 
 !      then sample ratio should be equal to 3.0.

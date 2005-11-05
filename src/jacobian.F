@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.23 2005-10-29 21:25:07 griffinb Exp $
+! $Id: jacobian.F,v 1.24 2005-11-05 18:23:25 griffinb Exp $
 
 ! Program Jacobian
 
@@ -182,7 +182,7 @@
 
       if ( .not. isValid ) stop "Initial run wasn't valid"
 
-!     Obtain nz from the generated GRaDS files
+!     Obtain nz from the generated GrADS files
 
       nzt = grads_zlvl( trim(run_name)//"_zt.ctl" )
       nzm = grads_zlvl( trim(run_name)//"_zm.ctl" )

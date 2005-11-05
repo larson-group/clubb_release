@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.23 2005-10-27 19:53:52 dschanen Exp $
+!  $Id: statistics.F,v 1.24 2005-11-05 18:23:25 griffinb Exp $
 
 !  module stats_type
 !  contains:
@@ -42,7 +42,7 @@ c         Data for GrADS output
 !-----------------------------------------------------------------------
 !  module statistics
 
-!  holds pointers to variables to be written to GRaDS files
+!  holds pointers to variables to be written to GrADS files
 !-----------------------------------------------------------------------
       module statistics
 

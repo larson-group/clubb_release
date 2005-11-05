@@ -1,8 +1,8 @@
 !----------------------------------------------------------------------
-!  $Id: compare_runs.F,v 1.9 2005-10-28 01:40:57 dschanen Exp $
+!  $Id: compare_runs.F,v 1.10 2005-11-05 18:23:25 griffinb Exp $
 !  program compare_runs.F
 
-!  Tests selected GRaDS file variables for low variation
+!  Tests selected GrADS file variables for low variation
 !----------------------------------------------------------------------
         program compare_runs 
 
