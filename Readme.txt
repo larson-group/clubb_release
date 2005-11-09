@@ -23,6 +23,8 @@ $ make install
 
 2.  Edit <case>_hoc.in for each case you wish to run, or just leave them as is.
   Usually you will want to keep these the same.
+  See the code for description of kk_rain, cloud_sed, and BUGsrad.
+  Enabling any of these flags may increase runtime considerably.
 
 3.  Edit error_<runtype>.in or select a premade one. Note that there are two
   tuning subroutines, specified by tune_type in the /stats/ namelist.  If 
@@ -89,7 +91,7 @@ Batch mode:
 - Executing a standalone run:
 -                                                                     -
 -----------------------------------------------------------------------
-Do steps (1) and (2) as outlined above.
+Do steps (1) and (2) as outlined in the tuner run.
 
 3. cd ../standalone.  Edit standalone_<case>.in or select a premade one.
 
