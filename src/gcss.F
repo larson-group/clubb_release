@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.23 2005-11-04 23:42:38 vlarson Exp $ 
+! $Id: gcss.F,v 1.24 2005-11-09 22:40:54 dschanen Exp $ 
 
 ! This file contains extra subroutines to simulate the GCSS ARM and
 ! GCSS BOMEX, GCSS ATEX, GCSS FIRE intercomparison cases as well 
@@ -863,7 +863,7 @@
 
 !         Compute IR heating rate
 
-          radht          = radht + ( -1.0/(Cp*rhot) ) 
+          radht          = ( -1.0/(Cp*rhot) ) 
      .                   * ddzm( Frad ) * ( 1.0 / exner )
           radht(1)       = 0.
           radht(gr%nnzp) = 0.

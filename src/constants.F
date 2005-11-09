@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.19 2005-10-29 21:25:07 griffinb Exp $
+! $Id: constants.F,v 1.20 2005-11-09 22:40:54 dschanen Exp $
 
 !  Contains frequently occuring model constants
 !-----------------------------------------------------------------------
@@ -46,7 +46,8 @@
 !       Logical flags
         logical, parameter   :: LH_on    = .false.  ! latin hypercube calc
         logical, parameter   :: local_kk = .false.  ! local drizzle in rain.F
-        logical, parameter   :: lbugsrad = .false.  ! BUGsrad radiation scheme
+
+        logical lbugsrad ! BUGSrad radiation scheme
 
 !       Model parameters and constraints
 
@@ -106,7 +107,7 @@
      .                            nu1_in, nu2_in, nu6_in, nu8_in,
      .                            nu_r_in, gamma_coef_in, mu_in,
      .                            c_K_in, beta_in, lmin_coef_in,
-     .                            taumin_in, taumax_in ) 
+     .                            taumin_in, taumax_in, lbugsrad_in ) 
 
       use constants
 
@@ -125,6 +126,8 @@
       real, intent(in) :: beta_in
       real, intent(in) :: lmin_coef_in, taumin_in, taumax_in
       real, intent(in) :: gamma_coef_in, mu_in, c_K_in
+
+      logical, intent(in) :: lbugsrad_in
 
 !----- These now occur in error.in ------------------------------------
 !      C1 = 1.7
@@ -216,6 +219,7 @@
 
 !      taumin =   90.
 !      taumax = 3600.
+      lbugsrad = lbugsrad_in ! dschanen
 
       return
       end subroutine setup_constants

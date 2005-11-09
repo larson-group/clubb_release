@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.57 2005-11-05 18:23:25 griffinb Exp $
+! $Id: hoc.F,v 1.58 2005-11-09 22:40:54 dschanen Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -75,6 +75,9 @@
 !      Flag for Khairoutdinov and Kogan rain microphysics. - Brian
        logical, private :: kk_rain
 
+!      Flag for BUGsrad radiation scheme - dschanen
+       logical, private :: lbugsrad
+
 !------- Local variables for Latin Hypercube sampling ------------------
        real, private    :: crt1, crt2, cthl1, cthl2   ! coeffs of s from pdf_closure_new
        integer, private :: i_rmd 
@@ -109,7 +112,7 @@
      .                          time_initial, time_final, time_spinup,
      .                          dtmain, dtclosure,
      .                          sfctype, Tsfc, psfc, SE, LE, fcor,
-     .                          cloud_sed, kk_rain
+     .                          cloud_sed, kk_rain, lbugsrad
        private model_setting
 
        contains
@@ -155,7 +158,7 @@
      .                       runfile, isValid, stdout,
      .                       set_fields, sample_ratio )
 
-       use constants
+       use constants, only: lmin, beta
        use model_arrays
        use grid_class
 #ifdef STATS
@@ -253,8 +256,8 @@
      .                       C11_in, C11b_in, C11c_in, C12_in,
      .                       nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in,
      .                       gamma_coef_in, mu_in, c_K_in,
-     .                       beta_in, 
-     .                       lmin_coef_in, taumin_in, taumax_in )
+     .                       beta_in, lmin_coef_in, 
+     .                       taumin_in, taumax_in, lbugsrad )
 
 !      Model sanity Check
 !      When tuning, we will allow these invalid results
@@ -412,7 +415,7 @@
      .                                c_K_in, lmin_coef_in, 
      .                                taumin_in, taumax_in, mu_in,
      .                                runfile, isValid, stdout )
-       use constants
+       use constants, only: lmin, beta
        use grid_class
        use model_arrays
 #ifdef STATS
@@ -479,8 +482,8 @@
      .                       C11_in, C11b_in, C11c_in, C12_in,
      .                       nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in,
      .                       gamma_coef_in, mu_in, c_K_in,
-     .                       beta_in, 
-     .                       lmin_coef_in, taumin_in, taumax_in )
+     .                       beta_in, lmin_coef_in, 
+     .                       taumin_in, taumax_in, lbugsrad )
 
 !      Model sanity Check
        if (( beta < 0.0 ) .or. ( beta > 3.0 )) then
@@ -1102,7 +1105,7 @@
          end select
 
          if ( lbugsrad ) then
-           call bugsrad_hoc( gr%nnzp, thlm, rcm, rtm,
+           call bugsrad_hoc( deltaz*gr%nnzp, gr%nnzp, thlm, rcm, rtm,
      .                       rrm, cf, p, rhom, Tsfc,
      .                       radht, radht_SW, radht_LW,
      .                       Frad, Frad_SW, Frad_LW, thlm_forcing )
@@ -1150,7 +1153,7 @@
        use pdf_closure
 #ifdef STATS
        use statistics
-#endif STATS
+#endif /*STATS*/
 
        implicit none
 
