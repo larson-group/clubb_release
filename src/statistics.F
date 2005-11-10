@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.24 2005-11-05 18:23:25 griffinb Exp $
+!  $Id: statistics.F,v 1.25 2005-11-10 01:53:35 dschanen Exp $
 
 !  module stats_type
 !  contains:
@@ -3150,59 +3150,60 @@ c     -----------------------------------------------------------------
       use statistics
 
       implicit none
+      if ( lstats ) then
+!       De-allocate all zt variables
+        deallocate( zt%z )
 
-!     De-allocate all zt variables
-      deallocate( zt%z )
+        deallocate( zt%x )
+        deallocate( zt%n )
 
-      deallocate( zt%x )
-      deallocate( zt%n )
+        deallocate( zt%f%var )
+        deallocate( zt%f%z )
 
-      deallocate( zt%f%var )
-      deallocate( zt%f%z )
+        deallocate ( ztscr01 )
+        deallocate ( ztscr02 )
+        deallocate ( ztscr03 )
+        deallocate ( ztscr04 )
+        deallocate ( ztscr05 )
+        deallocate ( ztscr06 )
+        deallocate ( ztscr07 )
+        deallocate ( ztscr08 )
+        deallocate ( ztscr09 )
+        deallocate ( ztscr10 )
+        deallocate ( ztscr11 )
 
-      deallocate ( ztscr01 )
-      deallocate ( ztscr02 )
-      deallocate ( ztscr03 )
-      deallocate ( ztscr04 )
-      deallocate ( ztscr05 )
-      deallocate ( ztscr06 )
-      deallocate ( ztscr07 )
-      deallocate ( ztscr08 )
-      deallocate ( ztscr09 )
-      deallocate ( ztscr10 )
-      deallocate ( ztscr11 )
+!       De-allocate all zm variables
+        deallocate( zm%z )
 
-!     De-allocate all zm variables
-      deallocate( zm%z )
+        deallocate( zm%x )
+        deallocate( zm%n )
 
-      deallocate( zm%x )
-      deallocate( zm%n )
+        deallocate( zm%f%var )
+        deallocate( zm%f%z )
 
-      deallocate( zm%f%var )
-      deallocate( zm%f%z )
+        deallocate ( zmscr01 )
+        deallocate ( zmscr02 )
+        deallocate ( zmscr03 )
+        deallocate ( zmscr04 )
+        deallocate ( zmscr05 )
+        deallocate ( zmscr06 )
+        deallocate ( zmscr07 )
+        deallocate ( zmscr08 )
+        deallocate ( zmscr09 )
+        deallocate ( zmscr10 )
+        deallocate ( zmscr11 )
+        deallocate ( zmscr12 )
+        deallocate ( zmscr13 )
 
-      deallocate ( zmscr01 )
-      deallocate ( zmscr02 )
-      deallocate ( zmscr03 )
-      deallocate ( zmscr04 )
-      deallocate ( zmscr05 )
-      deallocate ( zmscr06 )
-      deallocate ( zmscr07 )
-      deallocate ( zmscr08 )
-      deallocate ( zmscr09 )
-      deallocate ( zmscr10 )
-      deallocate ( zmscr11 )
-      deallocate ( zmscr12 )
-      deallocate ( zmscr13 )
+!       De-allocate all sfc variables
+        deallocate( sfc%z )
 
-!     De-allocate all sfc variables
-      deallocate( sfc%z )
+        deallocate( sfc%x )
+        deallocate( sfc%n )
 
-      deallocate( sfc%x )
-      deallocate( sfc%n )
-
-      deallocate( sfc%f%var )
-      deallocate( sfc%f%z )
+        deallocate( sfc%f%var )
+        deallocate( sfc%f%z )
+      endif ! lstats
 
       return
       end subroutine stats_deallocate
