@@ -1,0 +1,53 @@
+ ! Parameter file ../standalone/standalone_20051105_1924.in         
+ ! This is the file which contains the tuned parameters for the
+ ! DYCOMS2 RF02 case which were used to get the results that
+ ! were submitted.  This set of parameters coincides with
+ ! the code for the actual Khairoutdinov and Kogan (2000)
+ ! parameterization with a Marshall-Palmer (1948) C_evap of 0.55
+ ! and a standard initial drop radius of 25.0 um.  It matches
+ ! with LES results provided from Khairoutdinov.  It provides
+ ! for an even better match for cloud water mixing ratio with
+ ! COAMPS LES than has any previous parameter set.
+ ! These results are for the case where there is drizzle,
+ ! as well as cloud water sedimentation.
+ ! Relative Error:  0.305529E+00
+ &model
+ run_file  = "../tune/dycoms2_rf02_ds_hoc.in"
+ stdout   = .true.
+ /
+ &initvars
+ C1 =            0.4754544    
+ C1b =            11.38000    
+ C1c =            1.791031    
+ C2rt =          0.8500000    
+ C2thl =         0.8000000    
+ C2rtthl =        2.000000    
+ C4 =             5.200000    
+ C5 =            0.2750000    
+ C6rt =           1.286683    
+ C6rtb =          5.124119    
+ C6rtc =          1.682398    
+ C6thl =          6.000000    
+ C7 =            0.2660690    
+ C7b =           0.4279120    
+ C7c =            1.309309    
+ C8 =             2.485201    
+ C8b =           5.9805787E-03
+ C10 =            3.300000    
+ C11 =            1.429660    
+ C11b =          0.2291321    
+ C11c =           1.737476    
+ C12 =            1.000000    
+ nu1 =            20.00000    
+ nu2 =            5.000000    
+ nu6 =            5.000000    
+ nu8 =            20.00000    
+ nu_r =           5.000000    
+ beta =           1.700000    
+ gamma_coef =    0.3750000    
+ c_K =           0.5480000    
+ lmin_coef =     0.5000000    
+ taumin =         90.00000    
+ taumax =         3600.000    
+ mu =            6.0000000E-04
+ /
