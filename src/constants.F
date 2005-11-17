@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.21 2005-11-17 15:38:58 griffinb Exp $
+! $Id: constants.F,v 1.22 2005-11-17 17:06:14 griffinb Exp $
 
 !  Contains frequently occuring model constants
 !-----------------------------------------------------------------------
@@ -52,9 +52,9 @@
 !       Model parameters and constraints
 
         real C1, C1b, C1c, C2rt, C2thl, C2rtthl, C4, C5
-        real C6rt, C6rtb, C6rtc, C6thl, C7, C7b, C7c, C8, C8b, C10
-        real C11, C11b, C11c
-        real C12
+        real C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc
+        real C7, C7b, C7c, C8, C8b, C10
+        real C11, C11b, C11c, C12
         real nu1, nu2, nu6, nu8, nu_r
         real mu, c_K, gamma_coef
         real lmin
@@ -99,7 +99,8 @@
       subroutine setup_constants( deltaz, C1_in, C1b_in, C1c_in,
      .                            C2rt_in, C2thl_in, C2rtthl_in,
      .                            C4_in, C5_in, 
-     .                            C6rt_in, C6rtb_in, C6rtc_in, C6thl_in,
+     .                            C6rt_in, C6rtb_in, C6rtc_in, 
+     .                            C6thl_in, C6thlb_in, C6thlc_in,
      .                            C7_in, C7b_in, C7c_in,
      .                            C8_in, C8b_in, C10_in, 
      .                            C11_in, C11b_in, C11c_in,
@@ -117,7 +118,8 @@
       real, intent(in) :: C1_in, C1b_in, C1c_in
       real, intent(in) :: C2rt_in, C2thl_in, C2rtthl_in
       real, intent(in) :: C4_in, C5_in
-      real, intent(in) :: C6rt_in, C6rtb_in, C6rtc_in, C6thl_in
+      real, intent(in) :: C6rt_in, C6rtb_in, C6rtc_in
+      real, intent(in) :: C6thl_in, C6thlb_in, C6thlc_in
       real, intent(in) :: C7_in, C7b_in, C7c_in
       real, intent(in) :: C8_in, C8b_in, C10_in
       real, intent(in) :: C11_in, C11b_in, C11c_in
@@ -159,6 +161,8 @@
       C6rtb   = C6rtb_in
       C6rtc   = C6rtc_in
       C6thl   = C6thl_in
+      C6thlb  = C6thlb_in
+      C6thlc  = C6thlc_in
       C7      = C7_in
       C7b     = C7b_in
       C7c     = C7c_in

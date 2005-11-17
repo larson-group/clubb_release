@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.58 2005-11-09 22:40:54 dschanen Exp $
+! $Id: hoc.F,v 1.59 2005-11-17 17:06:14 griffinb Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -149,7 +149,8 @@
      .                       C2rt_in, C2thl_in, C2rtthl_in, 
      .                       C4_in, C5_in, 
      .                       C6rt_in, C6rtb_in, C6rtc_in,
-     .                       C6thl_in, C7_in, C7b_in, C7c_in,
+     .                       C6thl_in, C6thlb_in, C6thlc_in,
+     .                       C7_in, C7b_in, C7c_in,
      .                       C8_in, C8b_in, C10_in, 
      .                       C11_in, C11b_in, C11c_in, C12_in,
      .                       nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in,
@@ -199,7 +200,8 @@
        real, intent(in) :: C1_in, C1b_in, C1c_in
        real, intent(in) :: C2rt_in, C2thl_in, C2rtthl_in
        real, intent(in) :: C4_in, C5_in
-       real, intent(in) :: C6rt_in, C6rtb_in, C6rtc_in, C6thl_in
+       real, intent(in) :: C6rt_in, C6rtb_in, C6rtc_in
+       real, intent(in) :: C6thl_in, C6thlb_in, C6thlc_in
        real, intent(in) :: C7_in, C7b_in, C7c_in
        real, intent(in) :: C8_in, C8b_in, C10_in
        real, intent(in) :: C11_in, C11b_in, C11c_in, C12_in
@@ -250,7 +252,8 @@
        call setup_constants( deltaz, C1_in, C1b_in, C1c_in, 
      .                       C2rt_in, C2thl_in, C2rtthl_in,
      .                       C4_in, C5_in, 
-     .                       C6rt_in, C6rtb_in, C6rtc_in, C6thl_in,
+     .                       C6rt_in, C6rtb_in, C6rtc_in,
+     .                       C6thl_in, C6thlb_in, C6thlc_in,
      .                       C7_in, C7b_in, C7c_in,
      .                       C8_in, C8b_in, C10_in, 
      .                       C11_in, C11b_in, C11c_in, C12_in,
@@ -407,7 +410,8 @@
      .                                C2rt_in, C2thl_in, C2rtthl_in,
      .                                C4_in, C5_in, 
      .                                C6rt_in, C6rtb_in, C6rtc_in,
-     .                                C6thl_in, C7_in, C7b_in, C7c_in,
+     .                                C6thl_in, C6thlb_in, C6thlc_in,
+     .                                C7_in, C7b_in, C7c_in,
      .                                C8_in, C8b_in, C10_in, 
      .                                C11_in, C11b_in, C11c_in, C12_in,
      .                                nu1_in, nu2_in, nu6_in, nu8_in,
@@ -431,7 +435,8 @@
        real, intent(in) :: C1_in, C1b_in, C1c_in
        real, intent(in) :: C2rt_in, C2thl_in, C2rtthl_in
        real, intent(in) :: C4_in, C5_in
-       real, intent(in) :: C6rt_in, C6rtb_in, C6rtc_in, C6thl_in
+       real, intent(in) :: C6rt_in, C6rtb_in, C6rtc_in
+       real, intent(in) :: C6thl_in, C6thlb_in, C6thlc_in
        real, intent(in) :: C7_in, C7b_in, C7c_in
        real, intent(in) :: C8_in, C8b_in, C10_in
        real, intent(in) :: C11_in, C11b_in, C11c_in
@@ -476,7 +481,8 @@
        call setup_constants( deltaz, C1_in, C1b_in, C1c_in,
      .                       C2rt_in, C2thl_in, C2rtthl_in,
      .                       C4_in, C5_in, 
-     .                       C6rt_in, C6rtb_in, C6rtc_in, C6thl_in,
+     .                       C6rt_in, C6rtb_in, C6rtc_in,
+     .                       C6thl_in, C6thlb_in, C6thlc_in,
      .                       C7_in, C7b_in, C7c_in,
      .                       C8_in, C8b_in, C10_in, 
      .                       C11_in, C11b_in, C11c_in, C12_in,

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.24 2005-11-05 18:23:25 griffinb Exp $
+! $Id: jacobian.F,v 1.25 2005-11-17 17:06:14 griffinb Exp $
 
 ! Program Jacobian
 
@@ -42,7 +42,7 @@
 !----- Parameters ------------------------------------------------------
       integer, parameter :: nvarzt = 14
       integer, parameter :: nvarzm = 40
-      integer, parameter :: nconst = 31
+      integer, parameter :: nconst = 33
 
 !     31 must be changed to be equal to nconst
 
@@ -54,8 +54,8 @@
 !----- Model constants -------------------------------------------------
 ! Notes:  C4 and C10 do not currently play a role in the model 5/31/05
 !-----------------------------------------------------------------------
-      real       :: C1, C1b, C1c, C2rt, C2thl, C2rtthl
-      real       :: C4, C5, C6rt, C6rtb, C6rtc, C6thl
+      real       :: C1, C1b, C1c, C2rt, C2thl, C2rtthl, C4, C5
+      real       :: C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc
       real       :: C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12
       real       :: nu1, nu2, nu6, nu8, nu_r
       real       :: beta
@@ -102,8 +102,8 @@
       namelist /model/    run_name, times, delta_factor, 
      .                    use_standard_vars
 
-      namelist /initvars/ C1, C1b, C1c, C2rt, C2thl, C2rtthl,
-     .                    C4, C5, C6rt, C6rtb, C6rtc, C6thl,
+      namelist /initvars/ C1, C1b, C1c, C2rt, C2thl, C2rtthl, C4, C5,
+     .                    C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .                    C7, C7b, C7c, C8, C8b, C10, 
      .                    C11, C11b, C11c, C12,
      .                    nu1, nu2, nu6, nu8, nu_r, beta, gamma_coef,
@@ -134,7 +134,7 @@
       
       ca1%constant(1:nconst) = (/C1, C1b, C1c, C2rt, C2thl, C2rtthl,
      .                           C4, C5, C6rt, C6rtb, C6rtc, C6thl,
-     .                           C7, C7b, C7c, C8, C8b,
+     .                           C6thlb, C6thlc, C7, C7b, C7c, C8, C8b,
      .                           C10, C11, C11b, C11c, C12,
      .                           nu1, nu2, nu6, nu8, nu_r, beta,
      .                           gamma_coef, c_K, mu/)     
@@ -143,7 +143,7 @@
      .    "C2rt      ", "C2thl     ", "C2rtthl   ",
      .    "C4        ", "C5        ",
      .    "C6rt      ", "C6rtb     ", "C6rtc     ",
-     .    "C6thl     ", 
+     .    "C6thl     ", "C6thlb    ", "C6thlc    ",
      .    "C7        ", "C7b       ", "C7c       ",
      .    "C8        ", "C8b       ", 
      .    "C10       ", "C11       ", "C11b      ",
@@ -175,8 +175,9 @@
      .                ca1%constant(25), ca1%constant(26),
      .                ca1%constant(27), ca1%constant(28),
      .                ca1%constant(29), ca1%constant(30),
+     .                ca1%constant(31), ca1%constant(32),
      .                lmin_coef, taumin, taumax, 
-     .                ca1%constant(31),
+     .                ca1%constant(33),
      .                "../tune/"//trim(run_name)//"_hoc.in", 
      .                isValid, .false. )
 
@@ -273,8 +274,9 @@
      .                  ca1%constant(25), ca1%constant(26),
      .                  ca1%constant(27), ca1%constant(28),
      .                  ca1%constant(29), ca1%constant(30),
+     .                  ca1%constant(31), ca1%constant(32),
      .                  lmin_coef, taumin, taumax, 
-     .                  ca1%constant(31),
+     .                  ca1%constant(33),
      .                  "../tune/"//trim(run_name)//"_hoc.in", 
      .                  isValid, .false. )
 

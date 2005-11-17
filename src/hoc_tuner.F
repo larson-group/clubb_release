@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: hoc_tuner.F,v 1.12 2005-11-05 18:23:25 griffinb Exp $
+! $Id: hoc_tuner.F,v 1.13 2005-11-17 17:06:14 griffinb Exp $
 
 !   HOC_TUNER.F
 !   ``Tunes" constants in hoc so that the output matches LES output.
@@ -233,6 +233,7 @@
      .                  x_array(1, 29), x_array(1, 30),
      .                  x_array(1, 31), x_array(1, 32),
      .                  x_array(1, 33), x_array(1, 34),
+     .                  x_array(1, 35), x_array(1, 36),
      .                  run_file(c), isValid, .false. )
       enddo
       write(*,*) "The GrADS files should now be optimal."

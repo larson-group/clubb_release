@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: hoc_standalone.F,v 1.10 2005-10-29 21:25:07 griffinb Exp $
+! $Id: hoc_standalone.F,v 1.11 2005-11-17 17:06:14 griffinb Exp $
 !  Program HOC_STANDALONE
 !
 !  This is essentially a minimalist frontend for the hoc subroutine
@@ -13,8 +13,8 @@
 !----- Model constants ------------------------------------------------
 ! Notes:  C4 and C10 do not currently play a role in the model 3/18/05
 !
-      real C1, C1b, C1c, C2rt, C2thl, C2rtthl
-      real C4, C5, C6rt, C6rtb, C6rtc, C6thl
+      real C1, C1b, C1c, C2rt, C2thl, C2rtthl, C4, C5
+      real C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc
       real C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12
       real nu1, nu2, nu6, nu8, nu_r
       real beta, gamma_coef, c_K
@@ -30,8 +30,8 @@
       logical isValid 
 
 !----- Namelists ------------------------------------------------------
-      namelist /initvars/ C1, C1b, C1c, C2rt, C2thl, C2rtthl,
-     .                    C4, C5, C6rt, C6rtb, C6rtc, C6thl,
+      namelist /initvars/ C1, C1b, C1c, C2rt, C2thl, C2rtthl, C4, C5,
+     .                    C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .                    C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c,
      .                    C12,
      .                    nu1, nu2, nu6, nu8, nu_r, beta, gamma_coef,
@@ -50,8 +50,8 @@
       isValid = .true.
       
 !----- Run the model----------------------------------------------------
-      call hoc_model( C1, C1b, C1c, C2rt, C2thl, C2rtthl,
-     .                C4, C5, C6rt, C6rtb, C6rtc, C6thl,
+      call hoc_model( C1, C1b, C1c, C2rt, C2thl, C2rtthl, C4, C5,
+     .                C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .                C7, C7b, C7c, C8, C8b, C10, 
      .                C11, C11b, C11c, C12,
      .                nu1, nu2, nu6, nu8, nu_r, beta,

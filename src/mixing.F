@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.14 2005-10-29 21:25:07 griffinb Exp $
+! $Id: mixing.F,v 1.15 2005-11-17 17:06:14 griffinb Exp $
 !
 ! Module containing the hoc mixing scheme.  Allows for optional variables
 ! and assumed shape arrays.
@@ -81,10 +81,13 @@
         real, dimension(gr%nnzp) :: tmp1, tmp2
 
         integer k, kp1
-        real, allocatable :: Skw_arr(:), C6rt_Skw_fnc(:), C7_Skw_fnc(:)
+        real, allocatable :: Skw_arr(:)
+        real, allocatable :: C6rt_Skw_fnc(:), C6thl_Skw_fnc(:)
+        real, allocatable :: C7_Skw_fnc(:)
 
         allocate( Skw_arr(1:gr%nnzp) )
         allocate( C6rt_Skw_fnc(1:gr%nnzp) )
+        allocate( C6thl_Skw_fnc(1:gr%nnzp) )
         allocate( C7_Skw_fnc(1:gr%nnzp) )
 
 !       Allocate memory
@@ -102,10 +105,13 @@
 
         C6rt_Skw_fnc = C6rtb + (C6rt-C6rtb)
      .                        *EXP( -0.5 * (Skw_arr/C6rtc)**2.0 )
+        C6thl_Skw_fnc = C6thlb + (C6thl-C6thlb)
+     .                          *EXP( -0.5 * (Skw_arr/C6thlc)**2.0 )
         C7_Skw_fnc = C7b + (C7-C7b)
      .                    *EXP( -0.5 * (Skw_arr/C7c)**2.0 )
 
 !        C6rt_Skw_fnc = C6rt
+!        C6thl_Skw_fnc = C6thl
 !        C7_Skw_fnc = C7
 
 !       Setup and decompose matrix
@@ -113,7 +119,7 @@
 !        call mixing_lhs( .true., dt, taum, wmm, wmt, wp2, wp3, Sc,
 !   Prof. Larson's modified mixing_lhs 
         call mixing_lhs("rtm", .true., dt, taum, wmm, wmt, wp2, wp3, Sc,
-     .                   C6rt_Skw_fnc, C7_Skw_fnc,
+     .                   C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
      .                   aa, dd, al, indx, isValid )
         if ( .not. isValid ) then
            print *, "mixing_lhs failed"
@@ -136,7 +142,7 @@
 
 !   Prof. Larson's modified mixing_lhs 
         call mixing_lhs("thlm",.true., dt, taum, wmm, wmt, wp2, wp3, Sc,
-     .                   C6rt_Skw_fnc, C7_Skw_fnc,
+     .                   C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
      .                   aa, dd, al, indx, isValid )
         if ( .not. isValid ) then
            print *, "mixing_lhs failed"
@@ -160,7 +166,7 @@
 
 !         Prof. Larson's modified mixing_lhs 
           call mixing_lhs("rtm",.true., dt, taum, wmm, wmt, wp2, wp3, 
-     .                    Sc, C6rt_Skw_fnc, C7_Skw_fnc,
+     .                    Sc, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
      .                    aa, dd, al, indx, isValid )
           if ( .not. isValid ) then
             print *, "mixing_lhs failed"
@@ -181,7 +187,7 @@
 
 !         Prof. Larson's modified mixing_lhs 
           call mixing_lhs("thlm",.true., dt, taum, wmm, wmt, wp2, wp3,
-     .                    Sc, C6rt_Skw_fnc, C7_Skw_fnc,
+     .                    Sc, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
      .                    aa, dd, al, indx, isValid )
           if ( .not. isValid ) then
             print *, "mixing_lhs failed"
@@ -205,6 +211,7 @@
         deallocate( aa, dd, al, indx )
         deallocate( Skw_arr )
         deallocate( C6rt_Skw_fnc )
+        deallocate( C6thl_Skw_fnc )
         deallocate( C7_Skw_fnc )
 
         return
@@ -213,7 +220,8 @@
 !------------------------------------------------------------------------
 
         subroutine mixing_lhs( solve_type, liter, dt, taum, wmm, wmt,
-     .                         wp2, wp3, Sc, C6rt_Skw_fnc, C7_Skw_fnc,
+     .                         wp2, wp3, Sc, 
+     .                         C6rt_Skw_fnc, C6thl_Skw_fnc,C7_Skw_fnc,
      .                         aa, dd, al, indx, isValid )
 
         use constants
@@ -245,6 +253,7 @@
         logical, intent(inout) :: isValid
 
         real, intent(in) :: C6rt_Skw_fnc(1:gr%nnzp)
+        real, intent(in) :: C6thl_Skw_fnc(1:gr%nnzp)
         real, intent(in) :: C7_Skw_fnc(1:gr%nnzp)
 
 !       Local constants
@@ -312,7 +321,8 @@
             if (liter) aa(k_wpxp,3) = aa(k_wpxp,3) + 1.0 / dt
           case ("thlm")
             aa(k_wpxp,3)
-     .      = + C6thl / taum(k)
+!     .      = + C6thl / taum(k)
+     .      = + C6thl_Skw_fnc(k) / taum(k)
      .        + a1(k) * gr%dzm(k)
      .          * (  wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
      .             - wp3(k)  /max(wp2(km1)+wp2(k),2.0*eps) )
@@ -373,7 +383,8 @@
 !               zmscr09(k) = - C6rt / taum(k)
                zmscr09(k) = - C6rt_Skw_fnc(k) / taum(k)
              case("thlm")
-               zmscr09(k) = - C6thl / taum(k)
+!               zmscr09(k) = - C6thl / taum(k)
+               zmscr09(k) = - C6thl_Skw_fnc(k) / taum(k)
              case default
                print *, "Unknown solve_type:", solve_type
                stop "invalid mixing_lhs call"
