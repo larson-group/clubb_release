@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.20 2005-11-09 22:40:54 dschanen Exp $
+! $Id: constants.F,v 1.21 2005-11-17 15:38:58 griffinb Exp $
 
 !  Contains frequently occuring model constants
 !-----------------------------------------------------------------------
@@ -72,7 +72,7 @@
 
         real, parameter :: wtol    = 2.e-2 
         real, parameter :: thltol  = 1.e-2
-        real, parameter :: rttol   = 1.e-4
+        real, parameter :: rttol   = 1.e-5
         real, parameter :: qttol   = 1.e-4
         real, parameter :: sstol   = 1.e-8
         real, parameter :: difftol = 0.4
