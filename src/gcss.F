@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.24 2005-11-09 22:40:54 dschanen Exp $ 
+! $Id: gcss.F,v 1.25 2005-11-29 03:42:14 dschanen Exp $ 
 
 ! This file contains extra subroutines to simulate the GCSS ARM and
 ! GCSS BOMEX, GCSS ATEX, GCSS FIRE intercomparison cases as well 
@@ -246,8 +246,8 @@
         rt_tndcy    = 0.
 
         if ( present( sclr_tndcy ) ) 
-     .    sclr_tndcy(:,SCLR_THETA)=theta_tndcy
-        if ( present( sclr_tndcy ) ) sclr_tndcy(:,SCLR_RT) = rt_tndcy
+     .    sclr_tndcy(:,SCLR_THETA) = theta_tndcy(:)
+        if ( present( sclr_tndcy ) ) sclr_tndcy(:,SCLR_RT) = rt_tndcy(:)
 
         return
         end subroutine fire_tndcy
@@ -835,7 +835,7 @@
 
 !       Output (optional)
 
-        real, optional, intent(inout) :: sclr_rate(gr%nnzp)   ! Radiative heating rate ( scalar(1) )
+        real, optional, intent(out) :: sclr_rate(gr%nnzp)   ! Radiative heating rate ( scalar(1) )
 
 !       Local
 
@@ -868,7 +868,8 @@
           radht(1)       = 0.
           radht(gr%nnzp) = 0.
 
-          if ( present( sclr_rate ) ) sclr_rate = radht ! Just theta
+          thlm_forcing(:) = radht(:)
+          if ( present( sclr_rate ) ) sclr_rate(:) = radht(:) ! Just theta
 
         endif ! ~ lbugsrad
 
@@ -887,7 +888,7 @@
         use constants
 #ifdef STATS
         use statistics
-#endif STATS
+#endif/*STATS*/
 
         implicit none
 
