@@ -1,10 +1,11 @@
 !------------------------------------------------------------------------
-! $Id: update.F,v 1.2 2005-08-23 21:11:10 dschanen Exp $
+! $Id: update.F,v 1.3 2005-11-30 21:00:52 dschanen Exp $
 
-! SUBROUTINE update_wind( )
+! SUBROUTINE update_ed_var( )
+! Description:
+! Computes wind or other variable eddy diffusivity variable
 !------------------------------------------------------------------------
-
-        subroutine update_wind( x, xt, xw0, K, dt, xw, isValid )
+        subroutine update_ed_var( x, xt, xw0, K, dt, xw, isValid )
 
         use grid_class
 
@@ -43,10 +44,10 @@
 
 !       Allocate memory
 
-        allocate( a(1:gr%nnzp) )
-        allocate( b(1:gr%nnzp) )
-        allocate( c(1:gr%nnzp) )
-        allocate( r(1:gr%nnzp) )
+        allocate( a(1:gr%nnzp) ) ! sub diagonal
+        allocate( b(1:gr%nnzp) ) ! main diagonal
+        allocate( c(1:gr%nnzp) ) ! super diagonal
+        allocate( r(1:gr%nnzp) ) ! right hand side
 
 !       Prepare tridiagonal system
 
@@ -98,7 +99,21 @@
         b(gr%nnzp) = - atmp + 1./dt
         r(gr%nnzp) = - atmp * x(gr%nnzp-1)
      .               + ( atmp + 1./dt ) * x(gr%nnzp)
-     .               + xt(gr%nnzp)
+!    Caused problems with DYCOMS II RF02
+!     .               + xt(gr%nnzp)
+
+!    Attempted to compensate for the DYCOMS problem using the code below.
+!    Doesn't actually seem to make a difference
+!       atmp = -0.5 * K(gr%nnzp-1) * gr%dzt(gr%nnzp) * gr%dzm(gr%nnzp-1)
+
+!       a(gr%nnzp) = atmp
+!       b(gr%nnzp) = - c(gr%nnzp-1) + 1./dt
+!       c(gr%nnzp) = UNDEFINED
+!       r(gr%nnzp) = - atmp * x(gr%nnzp-1)
+!    .               + ( atmp + 1./dt ) * x(gr%nnzp)
+!    .               + xt(gr%nnzp)
+
+
 
 !       Store momentum flux (explicit component)
 
@@ -127,5 +142,5 @@
         deallocate( a, b, c, r )
 
         return
-        end subroutine update_wind
-
+        end subroutine update_ed_var
+!-----------------------------------------------------------------------
