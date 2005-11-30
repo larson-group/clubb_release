@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: arrays.F,v 1.25 2005-10-28 03:59:59 dschanen Exp $
+! $Id: arrays.F,v 1.26 2005-11-30 20:34:37 dschanen Exp $
 
 ! This module contains definitions of all prognostic and diagnostic
 ! arrays used in the single column model, as well as subroutines
@@ -40,6 +40,10 @@
         real, target, allocatable :: wpsclrp2(:,:)       ! w'sclr'^2
         real, target, allocatable :: wpsclrprtp(:,:)     ! w'sclr'rt'
         real, target, allocatable :: wpsclrpthlp(:,:)    ! w'sclr'thl'
+
+        real, target, allocatable :: edsclrm(:,:) ! eddy-diff. scalar mean
+        real, target, allocatable :: edsclrmt(:,:)
+        real, target, allocatable :: wpedsclrp(:,:)
 #endif /*SCALARS*/
 
 ! Tendency arrays for prognostic variables
@@ -367,6 +371,11 @@ c Diagnostic variables
         allocate( wpsclrp2(1:nzmax, 1:sclrm_dimension) )
         allocate( wpsclrprtp(1:nzmax, 1:sclrm_dimension) )
         allocate( wpsclrpthlp(1:nzmax, 1:sclrm_dimension) )
+
+! Eddy Diff. Scalar
+        allocate( edsclrm(1:nzmax, 1:sclrm_dimension) )
+        allocate( edsclrmt(1:nzmax, 1:sclrm_dimension) )
+        allocate( wpedsclrp(1:nzmax, 1:sclrm_dimension) )
 #endif /*SCALARS*/
 
         return
@@ -537,6 +546,10 @@ c Diagnostic variables
         deallocate( wpsclrp2 )
         deallocate( wpsclrprtp )
         deallocate( wpsclrpthlp )
+
+        deallocate( edsclrm )
+        deallocate( edsclrmt )
+        deallocate( wpedsclrp )
 #endif /*SCALARS*/
 
         return
@@ -585,6 +598,10 @@ c Diagnostic variables
         wpsclrp2(:,:)      = 0. 
         wpsclrprtp(:,:)    = 0.
         wpsclrpthlp(:,:)   = 0.
+
+        edsclrm(:,:)       = 0.
+        edsclrmt(:,:)      = 0.
+        wpedsclrp(:,:)     = 0.
 #endif /*SCALARS*/
 
 ! Tendency arrays for prognostic variables
