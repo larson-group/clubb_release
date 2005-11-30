@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.59 2005-11-17 17:06:14 griffinb Exp $
+! $Id: hoc.F,v 1.60 2005-11-30 21:11:35 dschanen Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -297,7 +297,7 @@
      .                      runfile, stdout
 #ifdef SCALARS
      .                      ,sclrm, wpsclrp, sclrp2,
-     .                      sclrpthlp, sclrprtp
+     .                      sclrpthlp, sclrprtp, edsclrm
 #endif /* SCALARS */
      .                     )
 
@@ -305,7 +305,7 @@
 !      Initialize statistics output
        call stats_init( 50, runfile, gr%nnzp, gr%zt, gr%zm,
      .                  day, month, year, time, dtmain )
-#endif STATS
+#endif /*STATS*/
 
 !-------------------------- Time integration ---------------------------
 !     Call hoc_closure_timestep once per each GrADS output time 
@@ -327,7 +327,7 @@
            write(*,'(a,i7,a,f8.1)') 'iteration = ', 
      .                              i, '; time = ', time
          endif
-#endif STATS
+#endif /*STATS*/
 
 !        Sample from the data file
          
@@ -521,7 +521,7 @@
      .                      runfile, stdout
 #ifdef SCALARS
      .                      ,sclrm, wpsclrp, sclrp2,
-     .                      sclrpthlp, sclrprtp
+     .                      sclrpthlp, sclrprtp, edsclrm
 #endif /* SCALARS */
      .                    )
 
@@ -532,7 +532,7 @@
 !      Initialize statistics output
        call stats_init( 50, runfile, gr%nnzp, gr%zt, gr%zm,
      .                  day, month, year, time, dtmain )
-#endif STATS
+#endif /*STATS*/
 
 !-------------------------- Time integration ---------------------------
        ifinal  = ( time_final - time_initial )  / dtmain
@@ -553,7 +553,7 @@
            write(*,'(a,i7,a,f8.1)') 'iteration = ', 
      .                               i, '; time = ', time
          endif
-#endif STATS
+#endif /*STATS*/
 
          isValid = .not. invalid_model_arrays( ) ! Check for bad values 
                                                  ! in the model arrays
@@ -622,16 +622,15 @@
      .                             wprtp, thlp2, rtp2, rtpthlp, wpthlp,
      .                             runfile, stdout,
      .                             sclrm, wpsclrp, sclrp2,
-     .                             sclrpthlp, sclrprtp )
+     .                             sclrpthlp, sclrprtp, edsclrm )
 
         use constants
         use grid_class
-!        use model_arrays
         use sounding
         use surface
 #ifdef STATS
         use statistics
-#endif STATS
+#endif /*STATS*/
         implicit none
 
 !       External functions
@@ -659,6 +658,7 @@
         real, optional, dimension(:,:), intent(out) :: sclrpthlp
         real, optional, dimension(:,:), intent(out) :: sclrprtp
 
+        real, optional, dimension(:,:), intent(out) :: edsclrm
 
 !       Subroutine Arguments (Model Setting)
         logical, intent(in)          :: stdout        ! whether to print to the terminal
@@ -673,9 +673,10 @@
         call read_sounding( thlm, rtm, um, vm, ug, vg, 
      .                      runfile, runtype
 #ifdef SCALARS               
-     .                      ,sclrm ! optional
-#endif /* SCALARS */
+     .                      ,sclrm, edsclrm ! optional
+#endif /*SCALARS*/
      .                    )
+
 
 ! At this point, thlm actually contains theta (except for DYCOMS). 
 ! We need to compute liquid water content, and initilialize thlm properly
@@ -1129,7 +1130,7 @@
 !    subroutine rain (if kk_rain is true)
 !    subroutine timestep_mixing
 !    subroutine timestep_wp23
-!    subroutine update_wind
+!    subroutine update_ed_var
 
 !    function rsat
 !    function zm2zt (from grid_class)
@@ -1157,6 +1158,7 @@
        use diagnose_variances
        use surface
        use pdf_closure
+       use rain_equations, only: rain
 #ifdef STATS
        use statistics
 #endif /*STATS*/
@@ -1190,7 +1192,6 @@
 !      Diagnose variances
 !      We found that if we call diag_var first, we can use a longer timestep.
 !      This requires us to store in memory Scm and taum between timesteps.
-
        call diag_var( taum, wmm, rtm, wprtp, 
      .                thlm, wpthlp, wp2, wp3, Scm, 
      .                rtp2, thlp2, rtpthlp,
@@ -1418,6 +1419,7 @@
        Khm = c_K * zt2zm( Lscale ) * SQRT( max( em, emin ) )
 !       Khm = zt2zm( Kht )
 
+
 !      call Khairoutdinov and Kogan (2000) scheme for rain microphysics.
 
        IF ( kk_rain ) THEN
@@ -1427,9 +1429,7 @@
      .               auto_rrm, accr_rrm, sed_rrm, diff_rrm,
      .               subs_rrm, cond_Nrm, auto_Nrm, sed_Nrm,
      .               diff_Nrm, subs_Nrm, Vr, mean_vol_rad,
-     .               isValid,
-! LH Kessler autoconversion.  Vince Larson 22 May 2005:
-     .               AKm_est, AKm )
+     .               AKm_est, AKm, isValid )
 
           ! Rainfall rate (mm/day) should be defined on thermodynamic
           ! levels.  Brian.
@@ -1479,7 +1479,7 @@
            sfc%n(1,ipflux) = sfc%n(1,ipflux) + 1
          endif
        endif 
-#endif STATS
+#endif /*STATS*/
 
 !      Added to allow tuning without using the zm file
 #ifdef STATS
@@ -1489,7 +1489,7 @@
        wprtpzt   = zm2zt( wprtp )
        rtp2zt    = zm2zt( rtp2 )
        rtpthlpzt = zm2zt( rtpthlp )
-#endif STATS
+#endif /*STATS*/
 
 #ifdef STATS
        call stats_accumulate( time, dtmain )
@@ -1499,7 +1499,7 @@
           call stats_end_timestep( time, dtmain, dtclosure )  ! Brian
        ENDIF
 
-#endif STATS
+#endif /*STATS*/
 
 !#######################################################################
 !############## ADVANCE PROGNOSTIC VARIABLES ONE TIMESTEP ##############
@@ -1563,13 +1563,29 @@
          endif
        end select
 
+#ifdef SCALARS
+!      Eddy Diffusivity Code
+       do i=1, sclrm_dimension
+         edsclrmt(1:gr%nnzp,i) = - wmt * ddzm( zt2zm( edsclrm(:,i) ) )
+         if ( i == SCLR_THETA) then
+           call update_ed_var( edsclrm(:,i), edsclrmt(:,i), wpthlp(1), 
+     .                         Khm, dtmain, wpedsclrp(:,i), isValid )
+         else ! i == SCLR_RT
+           call update_ed_var( edsclrm(:,i), edsclrmt(:,i), wprtp(1),
+     .                         Khm, dtmain, wpedsclrp(:,i), isValid )
+         end if
+       end do
+       ! Set boundary condition as in rt
+       edsclrm(1,1:sclrm_dimension) = edsclrm(2,1:sclrm_dimension)
+       if ( .not. isValid ) return
+#endif /*SCALARS*/
 
 !      Update winds
 
        umt
      . = - wmt * ddzm( zt2zm( um ) )
      .   + fcor * ( vm - vg )
-       call update_wind( um, umt, upwp(1), Khm, dtmain, upwp, isValid)
+       call update_ed_var( um, umt, upwp(1), Khm, dtmain, upwp, isValid)
        um(1)       = ( ( um(3)-um(2) )/( gr%zt(3)-gr%zt(2) ) )
      .              * ( gr%zt(1)-gr%zt(2) ) + um(2)
        um(gr%nnzp) = ( ( um(gr%nnzp-1)-um(gr%nnzp-2) )
@@ -1582,7 +1598,7 @@
        vmt 
      . = - wmt * ddzm( zt2zm( vm ) )
      .   - fcor * ( um - ug )
-       call update_wind( vm, vmt, vpwp(1), Khm, dtmain, vpwp, isValid)
+       call update_ed_var( vm, vmt, vpwp(1), Khm, dtmain, vpwp, isValid)
        vm(1)       = ( ( vm(3)-vm(2) )/( gr%zt(3)-gr%zt(2) ) )
      .              * ( gr%zt(1)-gr%zt(2) ) + vm(2)
        vm(gr%nnzp) = ( ( vm(gr%nnzp-1)-vm(gr%nnzp-2) )
