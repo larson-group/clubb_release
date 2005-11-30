@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.11 2005-08-23 21:08:39 dschanen Exp $
+! $Id: diag_var.F,v 1.12 2005-11-30 20:57:08 dschanen Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -179,11 +179,10 @@ c      prepare tridiagonal system
          enddo
 
        endif
-#endif
+#endif /*STATS*/
        
 c      solve tridiagonal system
        call tridag( aa, bb, cc, dd, rtp2, gr%nnzp, isValid )
-
        if ( .not. isValid ) then
           print *, "diag_var: rtp2 tridag failed"
           return
@@ -235,7 +234,7 @@ c      solve tridiagonal system
           enddo
 
        endif
-#endif
+#endif /*STATS*/
 
 #ifdef STATS
        if (lstats_samp .and. irtp2_cl > 0 ) then
@@ -305,7 +304,6 @@ c      note: we can reuse the same aa & cc arrays
        
 c      solve tridiagonal system
        call tridag( aa, bb, cc, dd, thlp2, gr%nnzp, isValid )
-
        if ( .not. isValid ) then
           print *, "diag_var: thlp2 tridag failed"
           return
@@ -403,11 +401,9 @@ c      note: we can reuse the same aa, cc arrays
          if ( i == SCLR_THETA ) then
            bb = calc_bb( a1, bb, wp2, wp3, tau,
      .                   C2thl, dt, nu2, beta, eps, liter )
-         else 
-           if ( i == SCLR_RT ) then
+         elseif ( i == SCLR_RT ) then
            bb = calc_bb( a1, bb, wp2, wp3, tau,
      .                   C2rt, dt, nu2, beta, eps, liter )
-           endif
          endif
 
          dd = calc_dd_var( a2, dd, wp2, wp3, wpsclrp(:,i), sclrm(:,i), 
@@ -415,7 +411,6 @@ c      note: we can reuse the same aa, cc arrays
 
 c        solve tridiagonal system
          call tridag( aa, bb, cc, dd, sclrp2(:,i), gr%nnzp, isValid )
-
          if ( .not. isValid ) then
            print *, "diag_var: sclrp2 tridag failed"
            return
@@ -542,7 +537,7 @@ c      solve tridiagonal system
          enddo
 
        endif
-#endif
+#endif /*STATS*/
 
 #ifdef STATS
        if (lstats_samp) then
@@ -672,7 +667,7 @@ c      clip small and negative values
         implicit none
 
 !       Input
-        real, intent(in), dimension(:) :: a1, wp2, wp3, wmm
+        real, intent(in), dimension(gr%nnzp) :: a1, wp2, wp3, wmm
 
         real, intent(in) :: beta, nu2, eps
 
@@ -709,7 +704,7 @@ c      clip small and negative values
         implicit none
 
 !       Input
-        real, intent(in), dimension(:) :: a1, bb, wp2, wp3, tau
+        real, intent(in), dimension(gr%nnzp) :: a1, bb, wp2, wp3, tau
 
         real, intent(in)    :: C2x, dt, beta, nu2, eps
 
@@ -751,7 +746,7 @@ c      clip small and negative values
         implicit none
 
 !       Input
-        real, intent(in), dimension(:) :: a1, wp2, wp3, wmm
+        real, intent(in), dimension(gr%nnzp) :: a1, wp2, wp3, wmm
 
         real, intent(in) :: beta, nu2, eps
 
@@ -790,10 +785,10 @@ c      clip small and negative values
         implicit none
 
 !       Input
-        real, intent(in), dimension(:) :: a2, dd, wp2, wp3
-        real, intent(in), dimension(:) :: wpxap, wpxbp
-        real, intent(in), dimension(:) :: xam, xbm
-        real, intent(in), dimension(:) :: xapxbp
+        real, intent(in), dimension(gr%nnzp) :: a2, dd, wp2, wp3
+        real, intent(in), dimension(gr%nnzp) :: wpxap, wpxbp
+        real, intent(in), dimension(gr%nnzp) :: xam, xbm
+        real, intent(in), dimension(gr%nnzp) :: xapxbp
 
         real, intent(in) :: dt, beta, eps
 
@@ -845,8 +840,8 @@ c      clip small and negative values
         implicit none
 
 !       Input
-        real, intent(in), dimension(:) :: a2, dd, wp2, wp3
-        real, intent(in), dimension(:) :: wpxp, xm, xp2
+        real, intent(in), dimension(gr%nnzp) :: a2, dd, wp2, wp3
+        real, intent(in), dimension(gr%nnzp) :: wpxp, xm, xp2
 
         real, intent(in) :: dt, beta, eps
 
