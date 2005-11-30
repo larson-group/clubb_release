@@ -1,4 +1,4 @@
-! CVS:  $Id: bugs_swr.F,v 1.1 2005-10-27 20:06:50 dschanen Exp $
+! CVS:  $Id: bugs_swr.F,v 1.2 2005-11-30 22:24:38 dschanen Exp $
 ! CVS:  $Name: not supported by cvs2svn $
 
 !-----------------------------------------------------------------------
@@ -376,7 +376,7 @@
 
 !---- loop over the k-probability distributions starts here:
 
-         do ig = 1, kg(ib) 
+         do ig = 1, int( kg(ib) ) ! D.S. for g95 
 
 !---- 1.4 non-gray gaseous absorption:         
 
