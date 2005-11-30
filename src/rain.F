@@ -1,18 +1,28 @@
-!----------------------------------------------------------------------        
-! $Id: rain.F,v 1.26 2005-08-27 14:35:17 griffinb Exp $
+!----------------------------------------------------------------------
+! $Id: rain.F,v 1.27 2005-11-30 21:09:43 dschanen Exp $
+!----------------------------------------------------------------------
 
+      MODULE rain_equations
+
+      IMPLICIT NONE
+
+      PUBLIC rain
+      PRIVATE accretion_rrm, autoconv_rrm, autoconv_Nrm
+      PRIVATE cond_evap_rrm, cond_evap_Nrm, sed_velocity 
+      PRIVATE D_fnc, NL_PDF, VVLA, DVSA, DVLA
+
+      CONTAINS
+!----------------------------------------------------------------------
 ! This subroutine advances drizzle (rrm and Nrm) one timestep.
 ! It uses implicit discretization and formulas by 
 !     Khairoutdinov and Kogan (2000)
-!----------------------------------------------------------------------        
+!----------------------------------------------------------------------
         SUBROUTINE rain( dt, thlm, p, exner, rhot, wmt, pdf_parms,
      .                   rtm, rcm, Ncm, rrm, Nrm, cond_rrm,
      .                   auto_rrm, accr_rrm, sed_rrm, diff_rrm,
      .                   subs_rrm, cond_Nrm, auto_Nrm, sed_Nrm,
      .                   diff_Nrm, subs_Nrm, Vr, mean_vol_rad,
-     .                   isValid,
-! LH Kessler autoconversion.  Vince Larson 22 May 2005:
-     .                   AKm_est, AKm )
+     .                   AKm_est, AKm, isValid )
 
 
         USE grid_class
@@ -57,9 +67,6 @@
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: Vr
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: mean_vol_rad
 
-        ! Parameter
-!        LOGICAL, PARAMETER:: local_kk = .false.  ! in constants.F
-
         ! Local variables
         REAL, DIMENSION(1:gr%nnzp):: rvm          ! water vapor mixing ratio; kg/kg
         REAL, DIMENSION(1:gr%nnzp):: Temp         ! Temperature; K
@@ -67,7 +74,10 @@
         REAL, DIMENSION(1:gr%nnzp):: Supsat       ! Supersaturation
         REAL, DIMENSION(1:gr%nnzp):: VNr          ! Number conc. sedimentation 
                                                   !   velocity; m/s 
-        REAL, DIMENSION(1:gr%nnzp):: aa, bb, cc, dd, oo, pp, qq, rr
+       
+        REAL, DIMENSION(1:gr%nnzp):: aa, bb, cc, dd  ! Tridiagonals
+        REAL, DIMENSION(1:gr%nnzp):: oo, pp, qq, rr
+
         REAL, DIMENSION(1:gr%nnzp):: rs           ! Saturation mixing ratio; kg/kg
 
 
@@ -78,15 +88,15 @@
 
         REAL:: a, thl1, thl2, rc1, rc2, s1, s2, ss1, ss2
 
-        INTEGER:: k
+        INTEGER:: i, k
         INTEGER:: km1, kp1
 
         REAL :: Beta_T
 
 
         ! Function Calls
-        REAL:: cond_evap_rrm, autoconv_rrm, accretion_rrm
-        REAL:: cond_evap_Nrm, autoconv_Nrm
+!        REAL:: cond_evap_rrm, autoconv_rrm, accretion_rrm
+!        REAL:: cond_evap_Nrm, autoconv_Nrm
 
 ! Whether this is valid
         LOGICAL, INTENT(INOUT)                    :: isValid
@@ -228,7 +238,6 @@
 !
 ! Description and notes written by Brian Griffin.
 
-
         DO k = 2, gr%nnzp, 1
 
            ! Find the important conditions
@@ -274,7 +283,6 @@
            km1 = MAX(k-1,1)
            kp1 = MIN(k+1,gr%nnzp)
 
-
            ! LHS terms for rain water mixing ratio, rrm.
 
            ! Find subdiagonal aa
@@ -318,7 +326,6 @@
      .              wmt(k) / (1.0/gr%dzm(k) + 1.0/gr%dzm(km1))   ! advection
      .            - VNr(kp1)*gr%dzm(k)                           ! sedimentation
      .            - nu_r*gr%dzt(k)*gr%dzm(k)                     ! diffusion
-
 
            ! PDF parameters from pdf_closure_new for use in calculation
            ! of condensation/evaporation, autoconversion, accretion.
@@ -367,9 +374,6 @@
            accr_rrm(k) = accretion_rrm( rcm(k), rrm(k),
      .                             a, s1, s2, ss1, ss2, rc1, rc2 )
 
-           ! Enter the entire dd array, which is the RHS of the equation.
-           dd(k) = (1.0/dt)*rrm(k)
-     .                     + cond_rrm(k) + auto_rrm(k) + accr_rrm(k)
 
            ! Now find the elements that make up the right-hand side of the
            ! equation, rr, for rain droplet number concentration, Nrm.
@@ -378,51 +382,71 @@
 
            auto_Nrm(k) = autoconv_Nrm( auto_rrm(k), rhot(k) )
 
-           ! Enter the entire rr array, which is the RHS of the equation.
-           rr(k) = (1.0/dt)*Nrm(k) + cond_Nrm(k) + auto_Nrm(k)
+        ENDDO ! k=2..gr%nnzp-1
 
-        ENDDO
+        ! Enter the entire dd array, which is the RHS of the equation.
+        dd(2:gr%nnzp-1) = (1.0/dt)*rrm(2:gr%nnzp-1)
+     .                  + cond_rrm(2:gr%nnzp-1) 
+     .                  + auto_rrm(2:gr%nnzp-1) + accr_rrm(2:gr%nnzp-1)
+        ! auto_rrm, cond_rrm, and accr_rrm are not set at nz=1 or nnzp
+        dd(1)       = (1.0/dt)*rrm(1) + cond_rrm(2) 
+     .              + auto_rrm(2) + accr_rrm(2)
+        dd(gr%nnzp) = (1.0/dt)*rrm(gr%nnzp) + cond_rrm(gr%nnzp-1)
+     .              + auto_rrm(gr%nnzp-1) + accr_rrm(gr%nnzp-1)
 
+        ! Enter the entire rr array, which is the RHS of the equation.
+        rr(2:gr%nnzp-1) = (1.0/dt)*Nrm(2:gr%nnzp-1) 
+     .                  + cond_Nrm(2:gr%nnzp-1) + auto_Nrm(2:gr%nnzp-1)
+        ! auto_rrm and cond_Nrm are not set at nz=1 or nnzp
+        rr(1)       = (1.0/dt)*Nrm(1) + cond_Nrm(2) + auto_Nrm(2)
+        rr(gr%nnzp) = (1.0/dt)*Nrm(gr%nnzp) + cond_Nrm(gr%nnzp-1)
+     .              + auto_Nrm(gr%nnzp-1)
 
 !       set up boundary conditions
 
         ! rrm
-        aa(1)       = aa(2)
-        aa(gr%nnzp) = aa(gr%nnzp-1)
-        bb(1)       = bb(2)
+!       This is old scheme - we had problems at the corners of the matrix
+!        aa(1)       = aa(2)
+!        aa(gr%nnzp) = aa(gr%nnzp-1)
+!        bb(1)       = bb(2)
+!        bb(gr%nnzp) = bb(gr%nnzp-1)
+!        cc(1)       = cc(2)
+!        cc(gr%nnzp) = cc(gr%nnzp-1)
+!        dd(1)       = dd(2)
+!        dd(gr%nnzp) = dd(gr%nnzp-1)
+
+        ! rrm
+        bb(1)       = bb(2)                   ! main
         bb(gr%nnzp) = bb(gr%nnzp-1)
-        cc(1)       = cc(2)
+!       aa(1)       = UNDEFINED 
+        aa(gr%nnzp) = -bb(gr%nnzp) + (1.0/dt) ! sub
+        cc(1)       = -bb(1) + (1.0/dt)       ! super
         cc(gr%nnzp) = cc(gr%nnzp-1)
-        dd(1)       = dd(2)
-        dd(gr%nnzp) = dd(gr%nnzp-1)
+!       RHS dd is defined above
 
         ! Nrm
-        oo(1)       = oo(2)
-        oo(gr%nnzp) = oo(gr%nnzp-1)
-        pp(1)       = pp(2)
+        pp(1)       = pp(2)                   ! main
         pp(gr%nnzp) = pp(gr%nnzp-1)
-        qq(1)       = qq(2)
+!       oo(1)       = UNDEFINED
+        oo(gr%nnzp) = -pp(gr%nnzp) + (1.0/dt) ! sub
+        qq(1)       = -pp(1) + (1.0/dt)       ! super
         qq(gr%nnzp) = qq(gr%nnzp-1)
-        rr(1)       = rr(2)
-        rr(gr%nnzp) = rr(gr%nnzp-1)
+!       RHS rr is defined above
 
 
 !       solve tridiagonal systems
 
-        call tridag(aa, bb, cc, dd, rrm, gr%nnzp, isValid)
-!        call tridag(aa, bb, cc, dd, rrm, gr%nnzp)
-        if (.not. isValid ) then
-          print *, "rain: tridag failed for rrm"
-          return
-        endif
+         call tridag(aa, bb, cc, dd, rrm, gr%nnzp, isValid)
+         if (.not. isValid ) then
+           print *, "rain: tridag failed for rrm"
+           return
+         endif
 
         call tridag(oo, pp, qq, rr, Nrm, gr%nnzp, isValid)
-!        call tridag(oo, pp, qq, rr, Nrm, gr%nnzp)
         if (.not. isValid ) then
           print *, "rain: tridag failed for Nrm"
           return
         endif
-
 
 !       boundary conditions on results
 
@@ -433,7 +457,6 @@
         ! Nrm
         Nrm(1) = Nrm(2)
         Nrm(gr%nnzp) = Nrm(gr%nnzp-1)
-
 
         DO k = 1, gr%nnzp, 1
 
@@ -655,8 +678,8 @@
         REAL, PARAMETER:: corr_rrNr_L = 0.85
 
         ! Function call
-        REAL:: G_t_p
-        REAL:: NLL_PDF
+!        REAL:: G_t_p
+!        REAL:: NLL_PDF
 
 
         IF (rrm > 0.0 .AND. Nrm > 0.0 ) THEN
@@ -802,7 +825,7 @@
         DOUBLE PRECISION:: D_fnc
 
         ! Function call
-        REAL:: G_t_p
+!        REAL:: G_t_p
 
         tmpl_pl =  thl_pl * ((press/p0)**kappa)
 
@@ -1018,7 +1041,7 @@
         REAL, PARAMETER:: corr_rcNc_L = 0.45
 
         ! Function call
-        REAL:: NL_PDF
+!        REAL:: NL_PDF
 
         ! Change in rain water mixing ratio over time due to autoconversion.
 
@@ -1120,7 +1143,7 @@
         REAL, PARAMETER:: corr_rcrr_L = 0.35
 
         ! Function call
-        REAL:: NL_PDF
+!        REAL:: NL_PDF
 
         ! Change in rain water mixing ratio over time due to accretion.
 
@@ -1188,7 +1211,7 @@
         DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308
 
         ! Make function D_fnc results a Double Precision number.
-        DOUBLE PRECISION:: D_fnc
+!        DOUBLE PRECISION:: D_fnc
 
         ! DESCRIPTION
         !
@@ -1678,3 +1701,4 @@
 !        RETURN
 !        END SUBROUTINE GAMMA
 !------------------------------------------------------------------------
+      END MODULE rain_equations
