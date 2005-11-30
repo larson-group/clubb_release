@@ -1,49 +1,54 @@
-# $Id: Makefile,v 1.37 2005-10-27 19:52:47 dschanen Exp $
-# This version should work with both BSD and GNU make.
+# $Id: Makefile,v 1.38 2005-11-30 20:27:46 dschanen Exp $
+# This version should work with BSD, GNU make, smake and dmake
+# For HOC we edit this by hand rather than implementing imake or automake
 
-# Compiler invocation
-
+# == Compiler invocation ==
  FC=pgf90 # Portland Group PGF90
 #FC=g95 #   G95
 #FC=f95 #   Sun Studio / Forte
 #FC=ifort # Intel Fortran
 
-# Debugging
+# == Debugging ==
 # Sometimes it is helpful to turn on floating-point trapping for the standalone
 #  program, but this will not work with the tuner.
 # In PGF: -Ktrap=inv,unf
-# In Sun f95: remove the reference to ftrap in optimize
-# In g95: setenv G95_FPU_INVALID TRUE or export G95_FPU_INVALID=TRUE
+# In Sun f95: remove the reference to ftrap in optimize, or -ftrap=%common
+# In g95: `setenv G95_FPU_INVALID TRUE' or `export G95_FPU_INVALID=TRUE'
 # In ifort: -fpe=0
 # The usual options:
- DEBUG=-g -C#               pgf90, g95 & Sun
-#DEBUG=-g -fpe=0 -mieee-fp# ifort 
+ DEBUG=-g -C#        pgf90, g95 & Sun
+#DEBUG=-g -mieee-fp# ifort 
 
-# Optimization (assuming pentium4)
-# Sun fortran currently appears to crash if statistics.F is done with any
-#   optimization (due to a bug in ube I think)
+# == Optimization ==
+# Sun's f95 has great difficulty with statistics.F
+# For SS11, either turn off optimization for that file or expect a long 
+#  compilation.  SS10 appears to fail altogether.
 # These are all pretty conservative options, check the your compiler manual 
 # for information on using more aggressive techniques (inlining, etc.)
 
-#OPTIMIZE=-O2 -march=pentium4#           g95, P4
-#OPTIMIZE=-xtarget=native -ftrap=%none#  Sun Studio x86/x64/SPARC
-#OPTIMIZE=-O2 -xN#                       Intel complier, P4 w/out SSE3
-#OPTIMIZE=-O2 -tp p7 -Kieee -r8#         PGF90 w/ double precision reals.
- OPTIMIZE=-O2 -tp p7 -Kieee#             PGF90, Pentium4
+#OPTIMIZE=-O2 -march=pentium4#               g95, P4
+#OPTIMIZE=-xtarget=native -xO2 -ftrap=%none# Sun Studio x86/x64/SPARC
+#OPTIMIZE=-xN#                               Intel complier, P4 w/out SSE3
+#OPTIMIZE=-O2 -tp p7 -Kieee -r8#             PGF90 w/ double precision reals
+ OPTIMIZE=-O2 -tp p7 -Kieee#                 PGF90, Pentium4
 
-# Linking Flags
- LDFLAGS=# use -s to strip
+# == Linking Flags ==
+# Use -s to strip (no debugging); 
+# Use -Bstatic to static link the fortran libs on Sun, -static-libcxa for Intel
+ LDFLAGS=# none by default
 
-# Compiler flags
+# == Compiler flags (all) ==
+# Preprocessing:
 #   -DSTATS enables statistics
 #   -DSCALARS enables passive scalars
 #   -Dradoffline and -Dnooverlap (see bugsrad documentation)
+# You will need to `make clean' if you change these
 
  FCFLAGS=$(OPTIMIZE) $(DEBUG) -DSTATS -Dnooverlap -Dradoffline
-#FCFLAGS=$(OPTIMIZE) $(DEBUG) -DSTATS -DSCALARS
+#FCFLAGS=$(OPTIMIZE) $(DEBUG) -DSTATS -DSCALARS -Dnooverlap -Dradoffline
 
 
-# Object files
+# == Object files ==
 
 LATIN_HYP	= autoconv_driver.o corrcoef.o gaus_condt.o \
 		gaus_mixt_points.o gaussj.o generate_k_order.o \
@@ -78,11 +83,11 @@ JACOBIAN	= $(COMMON) jacobian.o
 HOC_INPUTFIELDS	= $(COMMON) hoc_inputfields.o
 HOC_BUDGET_TERMS= $(COMMON) $(NUM_REC) budget_terms.o hoc_tuner_budget_terms.o 
 
-# Targets ( hoc_tuner and jacobian assume statistics )
+# == Targets == ( hoc_tuner and jacobian assume statistics )
 all:	hoc_tuner int2txt hoc_tuner_budget_terms \
 	hoc_standalone hoc_inputfields compare_runs jacobian 
 
-# Rules
+# == Rules ==
 VPATH=.:LH:BUGSrad
 
 .SUFFIXES:	.o .f .F .f90 .F90 .h
@@ -134,11 +139,11 @@ install:
 clean: 
 	-rm -f *.o *.mod core*
 
-# Dependencies
+# == Dependencies ==
 polpak.o	: polpak.f90
 endian.o	: endian.F
 constants.o	: constants.F
-rain.o		: constants.o polpak.o rain.F 
+rain.o		: constants.o tridag.o polpak.o rain.F 
 outputgrads.o	: endian.o outputgrads.F
 arrays.o	: constants.o grid.o arrays.F 
 inputgrads.o	: endian.o inputgrads.F
@@ -202,18 +207,19 @@ st_2_rtthl.o		: st_2_rtthl.F
 truncate_gaus_mixt.o	: truncate_gaus_mixt.F
 
 kinds.o			: kinds.F90
-bugsrad_planck.o	: bugsrad_planck.F90
+bugsrad_planck.o	: kinds.o bugsrad_planck.F90
 cloud_correlate.o	: cloud_correlate.F90
-bugsrad_physconst.o	: bugsrad_physconst.F90
+bugsrad_physconst.o	: kinds.o bugsrad_physconst.F90
 bugs_lwr.o		: bugs_lwr.F bugsrad_planck.o gases_ckd.o kinds.o 
-bugs_rad.o 		: bugs_rad.F bugs_swr.o bugs_lwr.o gascon.o kinds.o bugsrad_planck.o cloud_correlate.o\
-			  bugsrad_physconst.o gases_ckd.o cloudg.o newexp.o rayle.o bandsolve.o
+bugs_rad.o 		: bugs_rad.F bugs_swr.o bugs_lwr.o gascon.o kinds.o \
+			bugsrad_planck.o cloud_correlate.o bugsrad_physconst.o \
+			gases_ckd.o cloudg.o newexp.o rayle.o bandsolve.o
 bugs_swr.o 		: bugs_swr.F gases_ckd.o kinds.o
 cloudg.o 		: cloudg.F
 comscp1.o 		: comscp1.F
 comscp2.o		: comscp2.F
-gascon.o 		: gascon.F
-gases_ckd.o 		: gases_ckd.F90
+gascon.o 		: bugsrad_physconst.o gascon.F
+gases_ckd.o 		: bugsrad_physconst.o gases_ckd.F90
 newexp.o 		: newexp.F90
 rayle.o 		: rayle.F
 two_rt_lw.o 		: two_rt_lw.F
@@ -230,7 +236,7 @@ bugsrad_hoc.o 		: bugsrad_hoc.F90 bugs_rad.o constants.o
 # Executables
 hoc_tuner.o		: nrtype.o nr.o hoc.o error.o hoc_tuner.F
 hoc_tuner_budget_terms.o: nrtype.o nr.o hoc.o error.o \
-			  budget_terms.o hoc_tuner_budget_terms.F
+			budget_terms.o hoc_tuner_budget_terms.F
 hoc_standalone.o	: hoc.o hoc_standalone.F
 hoc_inputfields.o	: hoc.o inputfields.o hoc_inputfields.F
 int2txt.o		: int2txt.f90
