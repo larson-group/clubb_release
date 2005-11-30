@@ -1,4 +1,4 @@
-! $Id: sounding.F,v 1.11 2005-08-27 20:25:52 griffinb Exp $
+! $Id: sounding.F,v 1.12 2005-11-30 21:03:34 dschanen Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
       module sounding
@@ -17,7 +17,7 @@
 !------------------------------------------------------------------------
         subroutine read_sounding( thlm, rtm, um, vm, ugm, vgm, runfile, 
      .                            runtype, 
-     .                            sclrm ) ! optional
+     .                            sclrm, edsclrm ) ! optional
 
         use grid_class
         use constants, only: sclrm_dimension
@@ -43,8 +43,8 @@
         real, intent(out), dimension(gr%nnzp) :: vgm
 
 ! Optional Output
-        real, optional, intent(out), 
-     .        dimension(gr%nnzp, sclrm_dimension) :: sclrm
+        real, optional, intent(out),
+     .        dimension(gr%nnzp, sclrm_dimension) :: sclrm, edsclrm
 
 ! Input variables from namelist
 
@@ -52,18 +52,18 @@
         real z(nmaxsnd),theta(nmaxsnd),rt(nmaxsnd)
         real u(nmaxsnd),v(nmaxsnd),ug(nmaxsnd),vg(nmaxsnd)
 
-        real, dimension(nmaxsnd, sclrm_dimension)  :: sclr
+        real, dimension(nmaxsnd, sclrm_dimension)  :: sclr, edsclr
 
         namelist /sounding/ nlevels, z, theta, rt, u, v, ug, vg
-        namelist /scalar_sounding/ sclr
+        namelist /scalar_sounding/ sclr, edsclr
     
 ! Internal
 
         integer i, j, k
-        logical  :: sclr_sounding
+        logical sclr_sounding
 
 ! Read sounding namelist
-        if ( present( sclrm ) ) then 
+        if ( present( sclrm ) .and. present( edsclrm ) ) then 
           sclr_sounding = .true.
         else
           sclr_sounding = .false.
@@ -107,7 +107,8 @@
           vgm(1)  = vg(1)
           thlm(1) = theta(1)
           rtm(1)  = rt(1)
-          if ( sclr_sounding ) sclrm(1,:) = sclr(1,:)  
+          if ( sclr_sounding ) sclrm(1,:)   = sclr(1,:)  
+          if ( sclr_sounding ) edsclrm(1,:) = edsclr(1,:)  
         endif
 
 ! Use linear interpolation from two nearest prescribed grid points
@@ -145,6 +146,8 @@
                 do j = 1, sclrm_dimension 
                   sclrm(i,j) = linint( gr%zt(i), z(k), z(k-1), 
      .                                 sclr(k,j), sclr(k-1,j) )
+                  edsclrm(i,j) = linint( gr%zt(i), z(k), z(k-1), 
+     .                                   edsclr(k,j), edsclr(k-1,j) )
                 enddo
               endif
             ELSE  ! DYCOMS II RF02 case
@@ -158,8 +161,10 @@
                 rtm(i)  = (9.45)/1000.0
 !               Scalars; change if not equal to th and rt
                 if ( sclr_sounding ) then
-                  sclrm(i, SCLR_THETA) = thlm(i)
-                  sclrm(i, SCLR_RT)    = rtm(i)
+                  sclrm(i, SCLR_THETA)   = thlm(i)
+                  sclrm(i, SCLR_RT)      = rtm(i)
+                  edsclrm(i, SCLR_THETA) = thlm(i)
+                  edsclrm(i, SCLR_RT)    = rtm(i)
                 endif
               ELSE
                 um(i)   =  3.0 + (4.3*gr%zt(i))/1000.0
@@ -173,6 +178,8 @@
                 if ( sclr_sounding ) then
                   sclrm(i, SCLR_THETA) = thlm(i)
                   sclrm(i, SCLR_RT)    = rtm(i)
+                  edsclrm(i, SCLR_THETA) = thlm(i)
+                  edsclrm(i, SCLR_RT)    = rtm(i)
                 endif
               ENDIF
 
