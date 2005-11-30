@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.25 2005-11-10 01:53:35 dschanen Exp $
+!  $Id: statistics.F,v 1.26 2005-11-30 21:03:08 dschanen Exp $
 
 !  module stats_type
 !  contains:
@@ -171,7 +171,11 @@ c       Indices for statistics in zt file
      .     isclrbm,          ! New mixing scheme ( mean th_l )
      .     isclram_f,        ! New mixing scheme ( mean rt forcing)
      .     isclrbm_f         ! New mixing scheme ( mean th_l forcing)
-#endif SCALARS
+
+        integer
+     .     iedsclram,         ! Eddy-diff. term ( rt )
+     .     iedsclrbm          ! Eddy-diff. term ( theta_l )
+#endif /*SCALARS*/
 
 c       Indices for statistics in zm file
 
@@ -295,7 +299,11 @@ c       Indices for statistics in zm file
      .     iwpsclrbprtp,        ! w'sclr'(2)rt'   / w'thl'rt'
      .     iwpsclrapthlp,       ! w'sclr'(1)th_l' / w'rt'th_l' 
      .     iwpsclrbpthlp        ! w'sclr'(2)th_l' / w'th_l'^2
-#endif SCALARS
+
+        integer
+     .     iwpedsclrap,  ! eddy sclr'(1)w'
+     .     iwpedsclrbp   ! eddy sclr'(2)w'
+#endif /*SCALARS*/
 
 c       Indices for statistics in sfc file
 
@@ -556,7 +564,10 @@ c     -----------------------------------------------------------------
       isclram_f   = 0    !  "             "
       isclrbm     = 0    ! new mixing scheme
       isclrbm_f   = 0    !  "             "
-#endif SCALARS
+
+      iedsclram   = 0
+      iedsclrbm   = 0
+#endif /*SCALARS*/
 
 !     Assign pointers for statistics variables zt
 
@@ -1260,7 +1271,23 @@ c     -----------------------------------------------------------------
           zt%f%var(isclrbm_f)%description 
      .    = "passive scalar forcing (currently rtm_forcing)"
           k = k + 1
-#endif SCALARS
+
+        case ('edsclram')
+          iedsclram = k
+          zt%f%var(iedsclram)%ptr => zt%x(:,k)
+          zt%f%var(iedsclram)%name = "edsclram"
+          zt%f%var(iedsclram)%description 
+     .    = "eddy-diff scalar (currently thlm)"
+          k = k + 1
+
+        case ('edsclrbm')
+          iedsclrbm = k
+          zt%f%var(iedsclrbm)%ptr => zt%x(:,k)
+          zt%f%var(iedsclrbm)%name = "edsclrbm"
+          zt%f%var(iedsclrbm)%description 
+     .    = "eddy-diff scalar (currently rt)"
+          k = k + 1
+#endif /*SCALARS*/
 
         case default
           write(*,*) 'Error: unrecognized variable ',trim(vars_zt(i))
@@ -1432,7 +1459,10 @@ c     -----------------------------------------------------------------
       iwpsclrbprtp  = 0
       iwpsclrapthlp = 0
       iwpsclrbpthlp = 0
-#endif SCALARS
+
+      iwpedsclrap   = 0
+      iwpedsclrbp   = 0
+#endif /*SCALARS*/
 
 !     Assign pointers for statistics variables zm
 
@@ -2153,8 +2183,22 @@ c     -----------------------------------------------------------------
           zm%f%var(iwpsclrbpthlp)%description
      .    = "w'scalar(2)'th_l'"
           k = k + 1
+        case ('wpedsclrap')
+          iwpedsclrap = k
+          zm%f%var(iwpedsclrap)%ptr => zm%x(:,k)
+          zm%f%var(iwpedsclrap)%name = "wpedsclrap"
+          zm%f%var(iwpedsclrap)%description
+     .    = "eddy scalar(1)'w'"
+          k = k + 1
+        case ('wpedsclrbp')
+          iwpedsclrbp = k
+          zm%f%var(iwpedsclrbp)%ptr => zm%x(:,k)
+          zm%f%var(iwpedsclrbp)%name = "wpedsclrbp"
+          zm%f%var(iwpedsclrbp)%description
+     .    = "eddy scalar(2)'w'"
+          k = k + 1
 
-#endif SCALARS
+#endif /*SCALARS*/
 
         case default
           write(*,*) 'Error: unrecognized variable ', trim(vars_zm(i))
@@ -2876,7 +2920,18 @@ c     -----------------------------------------------------------------
           zt%x(:,isclrbm_f) = zt%x(:,isclrbm_f) + sclrm_forcing(:,2)
           zt%n(:,isclrbm_f) = zt%n(:,isclrbm_f) + 1
         endif
-#endif SCALARS
+
+        if ( iedsclram > 0 ) then
+          zt%x(:,iedsclram) = zt%x(:,iedsclram) + edsclrm(:,1)
+          zt%n(:,iedsclram) = zt%n(:,iedsclram) + 1
+        endif
+
+        if ( iedsclrbm > 0 ) then
+          zt%x(:,iedsclrbm) = zt%x(:,iedsclrbm) + edsclrm(:,2)
+          zt%n(:,iedsclrbm) = zt%n(:,iedsclrbm) + 1
+        endif
+
+#endif /*SCALARS*/
 
 !       zm variables
 
@@ -3097,7 +3152,18 @@ c     -----------------------------------------------------------------
      .                            + wpsclrpthlp(:,2)
           zm%n(:,iwpsclrbpthlp) = zm%n(:,iwpsclrbpthlp) + 1
         endif
-#endif SCALARS
+        if ( iwpedsclrap > 0 ) then
+          zm%x(:,iwpedsclrap) = zm%x(:,iwpedsclrap) 
+     .                            + wpedsclrp(:,1)
+          zm%n(:,iwpedsclrap) = zm%n(:,iwpedsclrap) + 1
+        endif
+        if ( iwpedsclrbp > 0 ) then
+          zm%x(:,iwpedsclrbp) = zm%x(:,iwpedsclrbp) 
+     .                            + wpedsclrp(:,2)
+          zm%n(:,iwpedsclrbp) = zm%n(:,iwpedsclrbp) + 1
+        endif
+        
+#endif /*SCALARS*/
 
 ! sfc variables
 
@@ -3150,6 +3216,7 @@ c     -----------------------------------------------------------------
       use statistics
 
       implicit none
+
       if ( lstats ) then
 !       De-allocate all zt variables
         deallocate( zt%z )
@@ -3208,4 +3275,4 @@ c     -----------------------------------------------------------------
       return
       end subroutine stats_deallocate
 
-#endif STATS
+#endif /*STATS*/
