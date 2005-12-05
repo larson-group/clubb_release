@@ -1,11 +1,11 @@
-# $Id: Makefile,v 1.38 2005-11-30 20:27:46 dschanen Exp $
+# $Id: Makefile,v 1.39 2005-12-05 22:13:59 dschanen Exp $
 # This version should work with BSD, GNU make, smake and dmake
 # For HOC we edit this by hand rather than implementing imake or automake
 
 # == Compiler invocation ==
  FC=pgf90 # Portland Group PGF90
 #FC=g95 #   G95
-#FC=f95 #   Sun Studio / Forte
+#FC=f95 #   Sun Fortran / Compaq Fortran
 #FC=ifort # Intel Fortran
 
 # == Debugging ==
@@ -16,7 +16,7 @@
 # In g95: `setenv G95_FPU_INVALID TRUE' or `export G95_FPU_INVALID=TRUE'
 # In ifort: -fpe=0
 # The usual options:
- DEBUG=-g -C#        pgf90, g95 & Sun
+ DEBUG=-g -C#        pgf90, g95, Sun, and Compaq
 #DEBUG=-g -mieee-fp# ifort 
 
 # == Optimization ==
@@ -28,6 +28,7 @@
 
 #OPTIMIZE=-O2 -march=pentium4#               g95, P4
 #OPTIMIZE=-xtarget=native -xO2 -ftrap=%none# Sun Studio x86/x64/SPARC
+#OPTIMIZE=-O2 -assume byterecl -arch host#   Compaq f95 on Alpha
 #OPTIMIZE=-xN#                               Intel complier, P4 w/out SSE3
 #OPTIMIZE=-O2 -tp p7 -Kieee -r8#             PGF90 w/ double precision reals
  OPTIMIZE=-O2 -tp p7 -Kieee#                 PGF90, Pentium4
@@ -57,6 +58,7 @@ LATIN_HYP	= autoconv_driver.o corrcoef.o gaus_condt.o \
 		ql_estimate.o ran2.o rand_permute.o \
 		rtpthlp_2_sptp.o sample_points.o st_2_rtthl.o \
 		truncate_gaus_mixt.o
+
 BUGS_RAD	= kinds.o bugsrad_planck.o bugsrad_physconst.o gases_ckd.o \
 		cloud_correlate.o bugs_lwr.o bugs_swr.o bugs_rad.o \
 		cloudg.o comscp1.o comscp2.o gascon.o \
@@ -64,6 +66,7 @@ BUGS_RAD	= kinds.o bugsrad_planck.o bugsrad_physconst.o gases_ckd.o \
 		two_rt_sw_ocastrndm.o two_rt_lw_ocastrndm.o \
 		two_rt_lw_sel.o two_rt_lw_iter.o \
 		bandsolve.o two_rt_sw_bs.o bugsrad_hoc.o
+
 COMMON	= $(LATIN_HYP) $(BUGS_RAD) \
 	polpak.o constants.o arrays.o endian.o outputgrads.o \
 	grid.o statistics.o inputgrads.o \
@@ -71,9 +74,9 @@ COMMON	= $(LATIN_HYP) $(BUGS_RAD) \
 	closure_new.o diag_var.o gcss.o hydrostatic.o \
 	length.o mixing.o rsat.o sat_rcm.o sfc.o \
 	sounding.o update.o wp23.o tau.o \
-	inputfields.o gradsaverage.o hoc.o error.o \
+	inputfields.o gradsaverage.o hoc.o error.o
 
-NUM_REC	= nrtype.o nr.o nrutil.o ran_state.o ran1.o amebsa.o amoeba.o \
+NUM_REC	= nrtype.o nr.o nrutil.o ran_state.o ran1.o amebsa.o amoeba.o
 
 INT2TXT		= int2txt.o 
 HOC_TUNER	= $(COMMON) $(NUM_REC) hoc_tuner.o 
@@ -233,7 +236,7 @@ bandsolve.o 		: bandsolve.F
 bugsrad_hoc.o 		: bugsrad_hoc.F90 bugs_rad.o constants.o
 
 
-# Executables
+# == Executables ==
 hoc_tuner.o		: nrtype.o nr.o hoc.o error.o hoc_tuner.F
 hoc_tuner_budget_terms.o: nrtype.o nr.o hoc.o error.o \
 			budget_terms.o hoc_tuner_budget_terms.F
