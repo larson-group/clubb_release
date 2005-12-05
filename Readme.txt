@@ -1,4 +1,4 @@
-$Id: Readme.txt,v 1.11 2005-12-05 20:34:45 dschanen Exp $
+$Id: Readme.txt,v 1.12 2005-12-05 23:14:02 dschanen Exp $
 ***********************************************************************
 *                         Using the HOC Model                         *
 ***********************************************************************
@@ -234,7 +234,8 @@ The compare_runs files:
 ------------------------------------------------------------------------
 
   This is an optional more complex radition scheme, developed apart from
-  HOC by Norm Wood, et al.  When enabled, the analytic computation normally
+  HOC by Stevens, et al.  Code obtained from Norm Wood on 2004/07/10.
+  When enabled, the analytic computation normally
   used for radiation is disabled.  BUGSrad is enabled in the 
   tune/<RUN CASE>_hoc.in file by setting lbugsrad=.true.
   Currently, November 11 will give inaccurate results due to our interface's 
