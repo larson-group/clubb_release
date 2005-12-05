@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.25 2005-11-29 03:42:14 dschanen Exp $ 
+! $Id: gcss.F,v 1.26 2005-12-05 22:14:59 dschanen Exp $ 
 
 ! This file contains extra subroutines to simulate the GCSS ARM and
 ! GCSS BOMEX, GCSS ATEX, GCSS FIRE intercomparison cases as well 
@@ -898,11 +898,11 @@
         real, intent(in) :: rhom(gr%nnzp)
         real, intent(in) :: rtm(gr%nnzp)
         real, intent(in) :: rcm(gr%nnzp)
+        real, intent(in) :: exner(gr%nnzp)
 
         real, optional, intent(in) :: sclr(gr%nnzp, sclrm_dimension)
 
 !       Output
-        real, intent(out) :: exner(gr%nnzp)
         real, intent(out) :: wmt(gr%nnzp)
         real, intent(out) :: wmm(gr%nnzp)
 
