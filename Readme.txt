@@ -1,10 +1,10 @@
-Using the HOC tuner
------------------------------------------------------------------------
-Last update August 17, 2005
-
+$Id: Readme.txt,v 1.11 2005-12-05 20:34:45 dschanen Exp $
+***********************************************************************
+*                         Using the HOC Model                         *
+***********************************************************************
 -----------------------------------------------------------------------
 -                                                                     -
-- Building the source code:                                            -
+- Building the source code:
 -                                                                     -
 -----------------------------------------------------------------------
 
@@ -13,9 +13,12 @@ $ cd ~/hoc_v2.2_tuner/src
 $ make
 $ make install
 
+  If you're using Sun Studio and have a fast parallel machine,
+  dmake should work as well.
+
 -----------------------------------------------------------------------
 -                                                                     -
-- Executing a tuning run:                                             -
+- Executing a tuning run:
 -                                                                     -
 -----------------------------------------------------------------------
 
@@ -23,7 +26,9 @@ $ make install
 
 2.  Edit <case>_hoc.in for each case you wish to run, or just leave them as is.
   Usually you will want to keep these the same.
-  See the code for description of kk_rain, cloud_sed, and BUGsrad.
+  See the rain code for description of kk_rain and cloud_sed.
+  See BUGSrad description below for a description of the interactive
+  radiation scheme.
   Enabling any of these flags may increase runtime considerably.
 
 3.  Edit error_<runtype>.in or select a premade one. Note that there are two
@@ -39,11 +44,13 @@ $ make install
 4.  Edit run_tuner.bash to use your error_*.in
 
 5.  ./run_tuner.bash 
+
 -----------------------------------------------------------------------
 -                                                                     -
-- Executing a budget terms tuning run:                                -
+- Executing a budget terms tuning run:
 -                                                                     -
 -----------------------------------------------------------------------
+
 One run at a time:
 1. cd ~/hoc_v2.2_tuner/tune_budgets/ 
 2. Check hoc_v2.2_tuner/tune/<CASE>_hoc.in to make sure dtmain equals
@@ -91,6 +98,7 @@ Batch mode:
 - Executing a standalone run:
 -                                                                     -
 -----------------------------------------------------------------------
+
 Do steps (1) and (2) as outlined in the tuner run.
 
 3. cd ../standalone.  Edit standalone_<case>.in or select a premade one.
@@ -123,11 +131,10 @@ Do steps (1) and (2) as outlined in the tuner run.
    crash, which will result in no data (results for that term will come
    back as infinite).  The model namelists come from ../tune.
 3. ./jacobian
------------------------------------------------------------------------
--                                                                     -
-- Overview of the code                                                -
--                                                                     -
------------------------------------------------------------------------
+
+************************************************************************
+*                         Overview of the code                         *
+************************************************************************
 
 This code tunes certain parameters in a one-dimensional boundary layer cloud 
 parameterization (``hoc''), to best fit large-eddy simulation output.  The 
@@ -143,17 +150,20 @@ these variables; and the parameters to tune (C1, beta, etc.).
 The code is written in Fortran 90/95 and executed by a bash runscript. On the
 Microsoft Windows platform this could work using MSYS or Cygwin with G95, but 
 this has not been tested.
-We use the Portland Group compiler, version 5.2-4.
-G95 currently only works -ffast-math off, and hoc_standalone is the only
-program which works reliably.
+We use the Portland Group compiler, version 5.2-4 on Redhat EL3.
+G95 currently only works -ffast-math off (this is an unsafe optimization)
 Sun's f95 8.1 on Solaris appears to work for hoc_tuner, but has not been 
-rigorously tested. 
+rigorously tested.
 The GNU fortran compiler (gcc 4.0.x) does not implement the entire 
 Fortran 90 standard yet, and so does not work at all.
 
+In order to get similar results on differing architectures, platforms, and
+compilers, initially try a conversative optimization and enable IEEE standard
+floating point math.
+
 -----------------------------------------------------------------------
 -                                                                     -
--Explanation of the Input and Output Files                            -
+- Explanation of the Input and Output Files                            -
 -                                                                     -
 -----------------------------------------------------------------------
 
@@ -219,7 +229,33 @@ The compare_runs files:
 
 ------------------------------------------------------------------------
 -
--The new scalar code ( Hoc with -DSCALARS enabled )
+- The BUGSrad Radition scheme
+-
+------------------------------------------------------------------------
+
+  This is an optional more complex radition scheme, developed apart from
+  HOC by Norm Wood, et al.  When enabled, the analytic computation normally
+  used for radiation is disabled.  BUGSrad is enabled in the 
+  tune/<RUN CASE>_hoc.in file by setting lbugsrad=.true.
+  Currently, November 11 will give inaccurate results due to our interface's 
+  inability to add lower altitude levels.  Other cases appear to give
+  plausible results, comparable with the analytic code.
+
+  BUGSrad allows the output of the following variables:
+
+  Momentum grid:
+  Frad, Frad_SW, Frad_LW:  Radiative Flux; Short-wave/Long-wave component;
+
+  Thermodynamic grid:
+  radht, radht_SW, radht_LW:  Radiative Heat; Short-wave/Long-wave component;
+
+  The thlm forcing will also be influenced by this calculation.
+
+  Note that for most cases SW and LW are not calculated without BUGSrad.
+
+------------------------------------------------------------------------
+-
+- The new scalar code ( Hoc with -DSCALARS enabled )
 -
 ------------------------------------------------------------------------
 
@@ -294,5 +330,3 @@ The variables follow the convention of the a=1, and b=2, appended after the
 sclr portion of their name.  For example. the first scalar mean is 'sclram',
 and the second is 'sclrbm'.  These and their forcings are all that occurs in
 the zt file, the rest all occur in the zm file.
-
-------------------------------------------------------------------------
