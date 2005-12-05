@@ -1,8 +1,17 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_hoc.F90,v 1.2 2005-11-09 22:42:02 dschanen Exp $
+! $Id: bugsrad_hoc.F90,v 1.3 2005-12-05 23:11:06 dschanen Exp $
+
 ! SUBROUTINE bugsrad_hoc
 ! Does the necessary operations to interface the HOC model with
 ! the bugsrad subprogram.
+
+! References:
+! Stevens, et al., (2001) _Journal of Atmospheric Science_, Vol 58, p.3391-3409
+
+! Contact for information on BUGSrad (other than this routine)
+!   Norm Wood <norm@atmos.colostate.edu>
+
+! All code external to this based on the BUGSrad source from 2004/7/10
 !-----------------------------------------------------------------------
 subroutine bugsrad_hoc( alt, nz, thlm, rcm, rtm, rrm, cf, pinpa, rhom, Tsfc,   &
                         radht, radht_SW, radht_LW, Frad, Frad_SW, Frad_LW,     &
