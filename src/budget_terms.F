@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: budget_terms.F,v 1.20 2005-11-17 17:06:14 griffinb Exp $     
+! $Id: budget_terms.F,v 1.21 2005-12-05 22:13:21 dschanen Exp $     
 
 ! MODULE budget_terms
 
@@ -52,6 +52,10 @@
 !                 +--- term_min
 !-----------------------------------------------------------------------
 
+!       Default to private
+
+        private
+
         public wpn_run, wpxp_run, buoy_advect_run, xapxbp_run
 
         public wp2_min, wp3_min, wprtp_min, wpthlp_min
@@ -65,6 +69,8 @@
         public rtp2_min, thlp2_min, rtpthlp_min
 
         public output_optimal_constants
+
+        public generate_namelists, setup_budget_terms
 
         private term_min, gen_betagamma_min
         private calc_les_wpthlp
