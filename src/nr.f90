@@ -1,4 +1,4 @@
-! $Id: nr.f90,v 1.2 2005-06-15 20:41:44 dschanen Exp $
+! $Id: nr.f90,v 1.3 2005-12-05 09:38:40 dschanen Exp $
 !   From _Numerical Recipes in Fortran 90_
 !   (C) 1988-1996 Numerical Recipes Software
 MODULE nr
@@ -321,19 +321,19 @@ MODULE nr
     REAL(SP), DIMENSION(size(x)) :: bessy1_v
     END FUNCTION bessy1_v
   END INTERFACE
-  INTERFACE beta
-    FUNCTION beta_s(z,w)
-    USE nrtype
-    REAL(SP), INTENT(IN) :: z,w
-    REAL(SP) :: beta_s
-    END FUNCTION beta_s
+! INTERFACE beta
+!   FUNCTION beta_s(z,w)
+!   USE nrtype
+!   REAL(SP), INTENT(IN) :: z,w
+!   REAL(SP) :: beta_s
+!   END FUNCTION beta_s
 !BL
-    FUNCTION beta_v(z,w)
-    USE nrtype
-    REAL(SP), DIMENSION(:), INTENT(IN) :: z,w
-    REAL(SP), DIMENSION(size(z)) :: beta_v
-    END FUNCTION beta_v
-  END INTERFACE
+!   FUNCTION beta_v(z,w)
+!   USE nrtype
+!   REAL(SP), DIMENSION(:), INTENT(IN) :: z,w
+!   REAL(SP), DIMENSION(size(z)) :: beta_v
+!   END FUNCTION beta_v
+! END INTERFACE
   INTERFACE betacf
     FUNCTION betacf_s(a,b,x)
     USE nrtype
@@ -783,19 +783,19 @@ MODULE nr
     REAL(SP), DIMENSION(:,:), INTENT(INOUT) :: a
     END SUBROUTINE elmhes
   END INTERFACE
-  INTERFACE erf
-    FUNCTION erf_s(x)
-    USE nrtype
-    REAL(SP), INTENT(IN) :: x
-    REAL(SP) :: erf_s
-    END FUNCTION erf_s
+! INTERFACE erf
+!   FUNCTION erf_s(x)
+!   USE nrtype
+!   REAL(SP), INTENT(IN) :: x
+!   REAL(SP) :: erf_s
+!   END FUNCTION erf_s
 !BL
-    FUNCTION erf_v(x)
-    USE nrtype
-    REAL(SP), DIMENSION(:), INTENT(IN) :: x
-    REAL(SP), DIMENSION(size(x)) :: erf_v
-    END FUNCTION erf_v
-  END INTERFACE
+!   FUNCTION erf_v(x)
+!   USE nrtype
+!   REAL(SP), DIMENSION(:), INTENT(IN) :: x
+!   REAL(SP), DIMENSION(size(x)) :: erf_v
+!   END FUNCTION erf_v
+! END INTERFACE
   INTERFACE erfc
     FUNCTION erfc_s(x)
     USE nrtype
@@ -1122,45 +1122,45 @@ MODULE nr
     REAL(SP) :: gamdev
     END FUNCTION gamdev
   END INTERFACE
-  INTERFACE gammln
-    FUNCTION gammln_s(xx)
-    USE nrtype
-    REAL(SP), INTENT(IN) :: xx
-    REAL(SP) :: gammln_s
-    END FUNCTION gammln_s
+! INTERFACE gammln
+!   FUNCTION gammln_s(xx)
+!   USE nrtype
+!   REAL(SP), INTENT(IN) :: xx
+!   REAL(SP) :: gammln_s
+!   END FUNCTION gammln_s
 !BL
-    FUNCTION gammln_v(xx)
-    USE nrtype
-    REAL(SP), DIMENSION(:), INTENT(IN) :: xx
-    REAL(SP), DIMENSION(size(xx)) :: gammln_v
-    END FUNCTION gammln_v
-  END INTERFACE
-  INTERFACE gammp
-    FUNCTION gammp_s(a,x)
-    USE nrtype
-    REAL(SP), INTENT(IN) :: a,x
-    REAL(SP) :: gammp_s
-    END FUNCTION gammp_s
+!   FUNCTION gammln_v(xx)
+!   USE nrtype
+!   REAL(SP), DIMENSION(:), INTENT(IN) :: xx
+!   REAL(SP), DIMENSION(size(xx)) :: gammln_v
+!   END FUNCTION gammln_v
+! END INTERFACE
+! INTERFACE gammp
+!   FUNCTION gammp_s(a,x)
+!   USE nrtype
+!   REAL(SP), INTENT(IN) :: a,x
+!   REAL(SP) :: gammp_s
+!   END FUNCTION gammp_s
 !BL
-    FUNCTION gammp_v(a,x)
-    USE nrtype
-    REAL(SP), DIMENSION(:), INTENT(IN) :: a,x
-    REAL(SP), DIMENSION(size(a)) :: gammp_v
-    END FUNCTION gammp_v
-  END INTERFACE
-  INTERFACE gammq
-    FUNCTION gammq_s(a,x)
-    USE nrtype
-    REAL(SP), INTENT(IN) :: a,x
-    REAL(SP) :: gammq_s
-    END FUNCTION gammq_s
+!   FUNCTION gammp_v(a,x)
+!   USE nrtype
+!   REAL(SP), DIMENSION(:), INTENT(IN) :: a,x
+!   REAL(SP), DIMENSION(size(a)) :: gammp_v
+!   END FUNCTION gammp_v
+! END INTERFACE
+! INTERFACE gammq
+!   FUNCTION gammq_s(a,x)
+!   USE nrtype
+!   REAL(SP), INTENT(IN) :: a,x
+!   REAL(SP) :: gammq_s
+!   END FUNCTION gammq_s
 !BL
-    FUNCTION gammq_v(a,x)
-    USE nrtype
-    REAL(SP), DIMENSION(:), INTENT(IN) :: a,x
-    REAL(SP), DIMENSION(size(a)) :: gammq_v
-    END FUNCTION gammq_v
-  END INTERFACE
+!   FUNCTION gammq_v(a,x)
+!   USE nrtype
+!   REAL(SP), DIMENSION(:), INTENT(IN) :: a,x
+!   REAL(SP), DIMENSION(size(a)) :: gammq_v
+!   END FUNCTION gammq_v
+! END INTERFACE
   INTERFACE gasdev
     SUBROUTINE gasdev_s(harvest)
     USE nrtype
@@ -1213,21 +1213,21 @@ MODULE nr
     REAL(SP), DIMENSION(:,:), INTENT(INOUT) :: a,b
     END SUBROUTINE gaussj
   END INTERFACE
-  INTERFACE gcf
-    FUNCTION gcf_s(a,x,gln)
-    USE nrtype
-    REAL(SP), INTENT(IN) :: a,x
-    REAL(SP), OPTIONAL, INTENT(OUT) :: gln
-    REAL(SP) :: gcf_s
-    END FUNCTION gcf_s
+! INTERFACE gcf
+!   FUNCTION gcf_s(a,x,gln)
+!   USE nrtype
+!   REAL(SP), INTENT(IN) :: a,x
+!   REAL(SP), OPTIONAL, INTENT(OUT) :: gln
+!   REAL(SP) :: gcf_s
+!   END FUNCTION gcf_s
 !BL
-    FUNCTION gcf_v(a,x,gln)
-    USE nrtype
-    REAL(SP), DIMENSION(:), INTENT(IN) :: a,x
-    REAL(SP), DIMENSION(:), OPTIONAL, INTENT(OUT) :: gln
-    REAL(SP), DIMENSION(size(a)) :: gcf_v
-    END FUNCTION gcf_v
-  END INTERFACE
+!   FUNCTION gcf_v(a,x,gln)
+!   USE nrtype
+!   REAL(SP), DIMENSION(:), INTENT(IN) :: a,x
+!   REAL(SP), DIMENSION(:), OPTIONAL, INTENT(OUT) :: gln
+!   REAL(SP), DIMENSION(size(a)) :: gcf_v
+!   END FUNCTION gcf_v
+! END INTERFACE
   INTERFACE
     FUNCTION golden(ax,bx,cx,func,tol,xmin)
     USE nrtype
@@ -1243,21 +1243,21 @@ MODULE nr
     END INTERFACE
     END FUNCTION golden
   END INTERFACE
-  INTERFACE gser
-    FUNCTION gser_s(a,x,gln)
-    USE nrtype
-    REAL(SP), INTENT(IN) :: a,x
-    REAL(SP), OPTIONAL, INTENT(OUT) :: gln
-    REAL(SP) :: gser_s
-    END FUNCTION gser_s
+! INTERFACE gser
+!   FUNCTION gser_s(a,x,gln)
+!   USE nrtype
+!   REAL(SP), INTENT(IN) :: a,x
+!   REAL(SP), OPTIONAL, INTENT(OUT) :: gln
+!   REAL(SP) :: gser_s
+!   END FUNCTION gser_s
 !BL
-    FUNCTION gser_v(a,x,gln)
-    USE nrtype
-    REAL(SP), DIMENSION(:), INTENT(IN) :: a,x
-    REAL(SP), DIMENSION(:), OPTIONAL, INTENT(OUT) :: gln
-    REAL(SP), DIMENSION(size(a)) :: gser_v
-    END FUNCTION gser_v
-  END INTERFACE
+!   FUNCTION gser_v(a,x,gln)
+!   USE nrtype
+!   REAL(SP), DIMENSION(:), INTENT(IN) :: a,x
+!   REAL(SP), DIMENSION(:), OPTIONAL, INTENT(OUT) :: gln
+!   REAL(SP), DIMENSION(size(a)) :: gser_v
+!   END FUNCTION gser_v
+! END INTERFACE
   INTERFACE
     SUBROUTINE hqr(a,wr,wi)
     USE nrtype
@@ -3008,20 +3008,20 @@ MODULE nr
 !  On a purely serial machine, for greater efficiency, remove
 !  the generic name tridag from the following interface,
 !  and put it on the next one after that.
-  INTERFACE tridag
-    RECURSIVE SUBROUTINE tridag_par(a,b,c,r,u)
-    USE nrtype
-    REAL(SP), DIMENSION(:), INTENT(IN) :: a,b,c,r
-    REAL(SP), DIMENSION(:), INTENT(OUT) :: u
-    END SUBROUTINE tridag_par
-  END INTERFACE
-  INTERFACE
-    SUBROUTINE tridag_ser(a,b,c,r,u)
-    USE nrtype
-    REAL(SP), DIMENSION(:), INTENT(IN) :: a,b,c,r
-    REAL(SP), DIMENSION(:), INTENT(OUT) :: u
-    END SUBROUTINE tridag_ser
-  END INTERFACE
+! INTERFACE tridag
+!   RECURSIVE SUBROUTINE tridag_par(a,b,c,r,u)
+!   USE nrtype
+!   REAL(SP), DIMENSION(:), INTENT(IN) :: a,b,c,r
+!   REAL(SP), DIMENSION(:), INTENT(OUT) :: u
+!   END SUBROUTINE tridag_par
+! END INTERFACE
+! INTERFACE
+!   SUBROUTINE tridag_ser(a,b,c,r,u)
+!   USE nrtype
+!   REAL(SP), DIMENSION(:), INTENT(IN) :: a,b,c,r
+!   REAL(SP), DIMENSION(:), INTENT(OUT) :: u
+!   END SUBROUTINE tridag_ser
+! END INTERFACE
   INTERFACE
     SUBROUTINE ttest(data1,data2,t,prob)
     USE nrtype
