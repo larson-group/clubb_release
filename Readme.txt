@@ -227,6 +227,10 @@ By default Hoc should be setup to compile without this option.  To use
 this option, you must modify the Makefile in the src directory so that 
 FCFLAGS includes "-DSCALARS" and do a make clean, make, and make install.
 
+Currently the code contains eddy-diffusivity scalar code and the more complex
+code used in diag_var(), closure_new(), and timestep_mixing().  Both use two
+dimensional arrays, but the code and results for each is seperated.
+
 Initially, the sclr arrays are configured to contain two vertical columns
 containing copies of thl and rt (the first and second elements, respectively).
 The code is sufficently general that an arbitrary number of scalars can be
@@ -235,7 +239,7 @@ adjusted to customize the scalars:
 
 constants.F:  sclrm_dimension is the number of scalars per array and sclrtol 
 is used used in the code to diagnose variances. (see diag_var.F for the
-algorithm used to )
+algorithm used).
 
 hoc.F:  The boundary conditions, while fairly general, are setup for thl
 in some places as is noted in the code.  Search for SCLR_THETA and SCLR_RT to
@@ -260,10 +264,12 @@ lines that begin with the "if ( present ( sclrm )" statements.
 
 gcss.F: All the cases that you wish to run will require a modification to the
 tndcy and sfclyr subroutines, since they will be configured for thl and rt by
-default.  Searching for SCLR_RT and SCLR_THETA should come up with all of
-them.
+default.  Searching for SCLR_RT and SCLR_THETA should locate the code for all 
+of them.
 
 All the other source files should work as is.
+
+The edsclrs are only computed in subroutine update().
 
 The Namelists:
 
