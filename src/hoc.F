@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.60 2005-11-30 21:11:35 dschanen Exp $
+! $Id: hoc.F,v 1.61 2005-12-11 13:12:18 griffinb Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -732,6 +732,19 @@
 ! Initialize TKE and other fields as needed
         select case ( trim( runtype ) )
 
+        ! GCSS BOMEX
+        case ( "bomex" )
+          do k = 1, gr%nnzp
+             em(k) = 1.0 - (gr%zm(k)/3000.0)
+             if ( em(k) < emin ) then
+                em(k) = emin
+             endif
+          enddo
+          em(1) = em(2)
+          em(gr%nnzp) = em(gr%nnzp-1)
+
+          wp2 = 2.0 / 3.0 * em
+
         ! GCSS FIRE Sc
         case ( "fire" ) 
           do k=1,gr%nnzp
@@ -749,6 +762,17 @@
         ! GCSS ATEX
         case ( "atex" )
           um = max( um, -8. )
+
+          do k = 1, gr%nnzp
+             em(k) = 1.0 - (gr%zm(k)/3000.0)
+             if ( em(k) < emin ) then
+                em(k) = emin
+             endif
+          enddo
+          em(1) = em(2)
+          em(gr%nnzp) = em(gr%nnzp-1)
+
+          wp2 = 2.0 / 3.0 * em
 
         ! GCSS DYCOMS II RF01
         case ( "dycoms2_rf01" ) 
