@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.27 2005-11-30 21:09:43 dschanen Exp $
+! $Id: rain.F,v 1.28 2005-12-15 23:56:15 griffinb Exp $
 !----------------------------------------------------------------------
 
       MODULE rain_equations
@@ -274,10 +274,76 @@
         Supsat(1)       = 0.
         Supsat(gr%nnzp) = 0.
 
+        ! Boundary Conditions.
+        ! These have been chosen so that the column totals in the LHS matrix
+        ! of the diffusional term are equal to zero.  This leads to 
+        ! "conservative differencing" of the diffusion term for equally spaced grids.     
+        ! The ground is impermeable to diffusion of rrm, Nrm.   Brian.
 
-        ! This is not looped over the bottom level because the pdf
-        ! parameters are not looped over the bottom level.
+        ! rain water mixing ratio (rrm)
+        ! lower boundary
+        aa(1) = 0.0                                           ! aa(1) term
 
+        bb(1) = 
+     .         - ( - nu_r*gr%dzt(2)*gr%dzm(1) )               ! aa(2) diffusion
+     .         + (1.0/dt)                                     ! bb(1) time tendency
+     .         + Vr(2)*gr%dzm(1)                              ! bb(1) sedimentation
+
+        cc(1) = 
+     .         - (   nu_r*gr%dzt(2)*(gr%dzm(2) + gr%dzm(1)) ) ! bb(2) diffusion
+     .         - ( - nu_r*gr%dzt(3)*gr%dzm(2) )               ! aa(3) diffusion
+     .         - Vr(2)*gr%dzm(1)                              ! cc(1) sedimentation
+                                                              ! cc(1) advection = 0.
+
+        ! upper boundary
+        aa(gr%nnzp) =
+     .         - (   nu_r*gr%dzt(gr%nnzp-1)
+     .              *(gr%dzm(gr%nnzp-1) + gr%dzm(gr%nnzp-2)) )  ! bb(gr%nnzp-1) diffusion
+     .         - ( - nu_r*gr%dzt(gr%nnzp-2)*gr%dzm(gr%nnzp-2) ) ! cc(gr%nnzp-2) diffusion
+     .         - wmt(gr%nnzp) 
+     .          / (1.0/gr%dzm(gr%nnzp) + 1.0/gr%dzm(gr%nnzp-1)) ! aa(gr%nnzp) advection
+
+
+        bb(gr%nnzp) =
+     .         - ( - nu_r*gr%dzt(gr%nnzp-1)*gr%dzm(gr%nnzp-1) ) ! cc(gr%nnzp-1) diffusion
+     .         + (1.0/dt)                                       ! bb(gr%nnzp) time tendency
+                                                                ! bb(gr%nnzp) sedimentation = 0.
+
+        cc(gr%nnzp) = 0.0                                       ! cc(gr%nnzp) term
+
+        ! rain drop concentration (Nrm)
+        ! lower boundary
+        oo(1) = 0.0                                           ! oo(1) term
+
+        pp(1) = 
+     .         - ( - nu_r*gr%dzt(2)*gr%dzm(1) )               ! oo(2) diffusion
+     .         + (1.0/dt)                                     ! pp(1) time tendency
+     .         + VNr(2)*gr%dzm(1)                             ! pp(1) sedimentation
+
+        qq(1) = 
+     .         - (   nu_r*gr%dzt(2)*(gr%dzm(2) + gr%dzm(1)) ) ! pp(2) diffusion
+     .         - ( - nu_r*gr%dzt(3)*gr%dzm(2) )               ! oo(3) diffusion
+     .         - VNr(2)*gr%dzm(1)                             ! qq(1) sedimentation
+                                                              ! qq(1) advection = 0.
+
+        ! upper boundary
+        oo(gr%nnzp) =
+     .         - (   nu_r*gr%dzt(gr%nnzp-1)
+     .              *(gr%dzm(gr%nnzp-1) + gr%dzm(gr%nnzp-2)) )  ! pp(gr%nnzp-1) diffusion
+     .         - ( - nu_r*gr%dzt(gr%nnzp-2)*gr%dzm(gr%nnzp-2) ) ! qq(gr%nnzp-2) diffusion
+     .         - wmt(gr%nnzp) 
+     .          / (1.0/gr%dzm(gr%nnzp) + 1.0/gr%dzm(gr%nnzp-1)) ! oo(gr%nnzp) advection
+
+
+        pp(gr%nnzp) =
+     .         - ( - nu_r*gr%dzt(gr%nnzp-1)*gr%dzm(gr%nnzp-1) ) ! qq(gr%nnzp-1) diffusion
+     .         + (1.0/dt)                                       ! pp(gr%nnzp) time tendency
+                                                                ! pp(gr%nnzp) sedimentation = 0.
+
+        qq(gr%nnzp) = 0.0                                       ! qq(gr%nnzp) term
+
+
+        ! Main Loop
         DO k = 2, gr%nnzp-1, 1
 
            km1 = MAX(k-1,1)
@@ -286,20 +352,17 @@
            ! LHS terms for rain water mixing ratio, rrm.
 
            ! Find subdiagonal aa
-
            aa(k) = 
      .            - wmt(k) / (1.0/gr%dzm(k) + 1.0/gr%dzm(km1))   ! advection
      .            - nu_r*gr%dzt(k)*gr%dzm(km1)                   ! diffusion
      
-          ! Find main diagonal bb
-
+           ! Find main diagonal bb
            bb(k) = 
      .              (1.0/dt)                                     ! time tendency
      .            + Vr(kp1)*gr%dzm(k)                            ! sedimentation
      .            + nu_r*gr%dzt(k)*(gr%dzm(k) + gr%dzm(km1))     ! diffusion
 
            ! Find superdiagonal cc
-
            cc(k) = 
      .              wmt(k) / (1.0/gr%dzm(k) + 1.0/gr%dzm(km1))   ! advection
      .            - Vr(kp1)*gr%dzm(k)                            ! sedimentation
@@ -309,7 +372,6 @@
            ! LHS terms for rain droplet number concentration, Nrm.
 
            ! Find subdiagonal oo
-
            oo(k) = 
      .            - wmt(k) / (1.0/gr%dzm(k) + 1.0/gr%dzm(km1))   ! advection
      .            - nu_r*gr%dzt(k)*gr%dzm(km1)                   ! diffusion
@@ -321,11 +383,11 @@
      .            + nu_r*gr%dzt(k)*(gr%dzm(k) + gr%dzm(km1))     ! diffusion
 
            ! Find superdiagonal qq
-
            qq(k) = 
      .              wmt(k) / (1.0/gr%dzm(k) + 1.0/gr%dzm(km1))   ! advection
      .            - VNr(kp1)*gr%dzm(k)                           ! sedimentation
      .            - nu_r*gr%dzt(k)*gr%dzm(k)                     ! diffusion
+
 
            ! PDF parameters from pdf_closure_new for use in calculation
            ! of condensation/evaporation, autoconversion, accretion.
@@ -402,6 +464,8 @@
         rr(gr%nnzp) = (1.0/dt)*Nrm(gr%nnzp) + cond_Nrm(gr%nnzp-1)
      .              + auto_Nrm(gr%nnzp-1)
 
+!       The Boundary condition setup is now located above the main loop.
+!       Brian.  December 15, 2005.
 !       set up boundary conditions
 
         ! rrm
@@ -415,24 +479,23 @@
 !        dd(1)       = dd(2)
 !        dd(gr%nnzp) = dd(gr%nnzp-1)
 
-        ! rrm
-        bb(1)       = bb(2)                   ! main
-        bb(gr%nnzp) = bb(gr%nnzp-1)
-!       aa(1)       = UNDEFINED 
-        aa(gr%nnzp) = -bb(gr%nnzp) + (1.0/dt) ! sub
-        cc(1)       = -bb(1) + (1.0/dt)       ! super
-        cc(gr%nnzp) = cc(gr%nnzp-1)
-!       RHS dd is defined above
+!        ! rrm
+!        bb(1)       = bb(2)                   ! main
+!        bb(gr%nnzp) = bb(gr%nnzp-1)
+!!       aa(1)       = UNDEFINED 
+!        aa(gr%nnzp) = -bb(gr%nnzp) + (1.0/dt) ! sub
+!        cc(1)       = -bb(1) + (1.0/dt)       ! super
+!        cc(gr%nnzp) = cc(gr%nnzp-1)
+!!       RHS dd is defined above
 
-        ! Nrm
-        pp(1)       = pp(2)                   ! main
-        pp(gr%nnzp) = pp(gr%nnzp-1)
-!       oo(1)       = UNDEFINED
-        oo(gr%nnzp) = -pp(gr%nnzp) + (1.0/dt) ! sub
-        qq(1)       = -pp(1) + (1.0/dt)       ! super
-        qq(gr%nnzp) = qq(gr%nnzp-1)
-!       RHS rr is defined above
-
+!        ! Nrm
+!        pp(1)       = pp(2)                   ! main
+!        pp(gr%nnzp) = pp(gr%nnzp-1)
+!!       oo(1)       = UNDEFINED
+!        oo(gr%nnzp) = -pp(gr%nnzp) + (1.0/dt) ! sub
+!        qq(1)       = -pp(1) + (1.0/dt)       ! super
+!        qq(gr%nnzp) = qq(gr%nnzp-1)
+!!       RHS rr is defined above
 
 !       solve tridiagonal systems
 
