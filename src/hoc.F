@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.61 2005-12-11 13:12:18 griffinb Exp $
+! $Id: hoc.F,v 1.62 2005-12-16 00:02:12 griffinb Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -737,6 +737,20 @@
           do k = 1, gr%nnzp
              em(k) = 1.0 - (gr%zm(k)/3000.0)
              if ( em(k) < emin ) then
+                em(k) = emin
+             endif
+          enddo
+          em(1) = em(2)
+          em(gr%nnzp) = em(gr%nnzp-1)
+
+          wp2 = 2.0 / 3.0 * em
+
+        ! GCSS ARM
+        case ( "arm" )
+          do k = 1, gr%nnzp
+             if ( gr%zm(k) < 150.0 ) then
+                em(k) = ( 0.15 * (1.0 - gr%zm(k)/150.0) ) / rhom(k)
+             else
                 em(k) = emin
              endif
           enddo
