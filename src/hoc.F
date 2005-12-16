@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.62 2005-12-16 00:02:12 griffinb Exp $
+! $Id: hoc.F,v 1.63 2005-12-16 00:16:09 griffinb Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -1582,24 +1582,6 @@
 
        if ( .not. isValid ) return
 
-!      Set initial turbulence over first so many
-!      minutes of the Nov. 11 altocumulus case.  Brian.
-       select case( trim( runtype ) )
-       case ( "nov11_altocu" )
-! Vince Larson removed intial forcing.  4 Nov 2005
-!         if ( time < time_initial + 1800.0) then
-         if ( time < time_initial + 0.0) then
-! End Vince Larson's change.
-
-            do k = 1, gr%nnzp, 1
-               if ( thlm(k) <= 312.0 ) then
-                  em(k) = 1.0
-                  wp2(k) = (2.0/3.0) * em(k)
-               endif
-            enddo
-
-         endif
-       end select
 
 #ifdef SCALARS
 !      Eddy Diffusivity Code
@@ -1617,6 +1599,7 @@
        edsclrm(1,1:sclrm_dimension) = edsclrm(2,1:sclrm_dimension)
        if ( .not. isValid ) return
 #endif /*SCALARS*/
+
 
 !      Update winds
 

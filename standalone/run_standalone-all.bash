@@ -9,7 +9,7 @@
 # OMP_NUM_THREADS=2
 #######################################################################
 # This will loop over all runs in sequence 
-for (( x = 1; x <= 13; x++)); do
+for (( x = 1; x <= 11; x++)); do
   case $x in
    1 )
      RUN_CASE=arm ;;
@@ -33,10 +33,6 @@ for (( x = 1; x <= 13; x++)); do
      RUN_CASE=nov11_altocu ;;
    11)
      RUN_CASE=wangara ;; 
-   12)
-     RUN_CASE=20050821_1218 ;;  # Great tune for DYCOMS2 RF02 DO
-   13)
-     RUN_CASE=20050827_2135 ;;  # Great tune for DYCOMS2 RF02 DS
    esac
 #######################################################################
 # Check for necessary namelists.  If files exist, then
