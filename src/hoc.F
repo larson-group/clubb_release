@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.63 2005-12-16 00:16:09 griffinb Exp $
+! $Id: hoc.F,v 1.64 2005-12-19 02:07:47 griffinb Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -860,17 +860,6 @@
         Khm = c_K * zt2zm( Lscale ) * SQRT( em )
 !        Khm = zt2zm( Kht )
 
-!       surface values of second order moments
-
-        call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1),
-     .                wp2(1), thlp2(1), rtp2(1), rtpthlp(1) 
-#ifdef SCALARS
-     .                ,wpsclrp(1,:), sclrp2(1,:), 
-     .                sclrprtp(1,:), sclrpthlp(1,:) ! Optional
-#endif /* SCALARS */
-     .              )
-
-
        return
        end subroutine hoc_initialize
 !----------------------------------------------------------------------
@@ -1227,6 +1216,33 @@
 #endif /* SCALARS */
 
 
+!      Set Surface variances
+!      Surface variances should be set here, before the call to diag_var.
+!      The reasons that surface variances can be set here are because the
+!      only variables that are the input into surface variances are the
+!      surface values of wpthlp, wprtp, upwp, and vpwp.  The surface values
+!      of all those variables are set in the surface forcings section of the
+!      GCSS cases listed in the main timestep above.  Even if they weren't
+!      set there, the updates to wpthlp, wprtp, upwp, and vpwp are at the
+!      end of the closure loop, right before the code loops back around to
+!      this point at the top of the closure loop.
+!      Surface variances need to be set here for two reasons.  One reason is
+!      that the values of rtp2, thlp2, and rtpthlp at the surface will be
+!      used to find the diffusional term and the mean advection term in each
+!      predictive equation for those respective terms.  The other reason is
+!      that if the correct surface variances are not set here and diag_var
+!      outputs it's own value for them, it will results in a faulty value for
+!      Scm at the surface.  Brian Griffin.  December 18, 2005.
+
+       call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1),
+     .               wp2(1), thlp2(1), rtp2(1), rtpthlp(1)
+#ifdef SCALARS
+     .               ,wpsclrp(1,:), sclrp2(1,:),
+     .               sclrprtp(1,:), sclrpthlp(1,:)
+#endif /* SCALARS */
+     .             )
+
+
 !      Diagnose variances
 !      We found that if we call diag_var first, we can use a longer timestep.
 !      This requires us to store in memory Scm and taum between timesteps.
@@ -1241,6 +1257,20 @@
      .               )
        if ( .not. isValid ) return
 
+!      Set Boundary Conditions on thlp2, rtp2, and rtpthlp output.
+       thlp2(gr%nnzp)   = 0.0
+       rtp2(gr%nnzp)    = 0.0
+       rtpthlp(gr%nnzp) = 0.0
+#ifdef SCALARS
+!      Set Boundary Conditions for optional passive scalars
+       do i = 1, sclrm_dimension
+          sclrprtp(gr%nnzp,i)  = 0.0
+          sclrp2(gr%nnzp,i)    = 0.0
+          sclrpthlp(gr%nnzp,i) = 0.0
+       enddo ! i = 1, sclrm_dimension
+#endif /* SCALARS */
+
+
 !      Compute Sc with new formula from Vince
 
        Scm = gamma_coef * ( 1.0 - 
@@ -1253,15 +1283,6 @@
 
        Sct = zm2zt( Scm )
 
-!      Call closure scheme
-
-       call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1),
-     .               wp2(1), thlp2(1), rtp2(1), rtpthlp(1)
-#ifdef SCALARS
-     .               ,wpsclrp(1,:), sclrp2(1,:),
-     .               sclrprtp(1,:), sclrpthlp(1,:)
-#endif /* SCALARS */
-     .             )
 
 !    Latin hypercube sample generation
 !    Generate p_height_time, an nnzp x nt x d array of random integers
@@ -1275,32 +1296,16 @@
 
 !       print*, 'hoc.F: i_rmd=', i_rmd
 
-!      Set Boundary Conditions
 
-       wpthlp(gr%nnzp)  = 0.
-       wprtp(gr%nnzp)   = 0.
-       wp2(gr%nnzp)     = 0.
-       thlp2(gr%nnzp)   = 0.
-       rtp2(gr%nnzp)    = 0.
-       rtpthlp(gr%nnzp) = 0.
-
-       wp3(1)           = 0.
-       wp3(2)           = 0.
-       wp3(gr%nnzp)     = 0.
+!      Call closure scheme
 
 #ifdef SCALARS
-!      Set boundary conditions for optional passive scalars
+!      Put closure scheme input on the m grid
        do i = 1, sclrm_dimension
-         wpsclrp(gr%nnzp,i)   = 0.
-         sclrprtp(gr%nnzp,i)  = 0.
-         sclrp2(gr%nnzp,i)    = 0.
-         sclrpthlp(gr%nnzp,i) = 0.
-
-!        Put closure scheme input on the m grid
-         sclr_tmp1(:,i) = zm2zt( wpsclrp(:,i) ) 
-         sclr_tmp2(:,i) = zm2zt( sclrprtp(:,i) ) 
-         sclr_tmp3(:,i) = zm2zt( sclrp2(:,i) ) 
-         sclr_tmp4(:,i) = zm2zt( sclrpthlp(:,i) ) 
+          sclr_tmp1(:,i) = zm2zt( wpsclrp(:,i) ) 
+          sclr_tmp2(:,i) = zm2zt( sclrprtp(:,i) ) 
+          sclr_tmp3(:,i) = zm2zt( sclrp2(:,i) ) 
+          sclr_tmp4(:,i) = zm2zt( sclrpthlp(:,i) ) 
        enddo ! i = 1, sclrm_dimension
 #endif /* SCALARS */
 
@@ -1338,16 +1343,6 @@
 
 !            print*, 'hoc.F: AKm=', AKm
 !            print*, 'hoc.F: AKm_est=', AKm_est
-              
-#ifdef SCALARS
-!      Interpolate passive scalars back onto the m grid
-       do i = 1, sclrm_dimension
-         sclrpthvp(:,i) = zt2zm( sclrpthvp(:,i) )                
-         sclrprcp(:,i)  = zt2zm( sclrprcp(:,i) )
-       enddo ! i=1, sclrm_dimension
-
-       sclrpthvp(1,SCLR_THETA) = sclrpthlp(1,SCLR_THETA)
-#endif /* SCALARS */
 
 !      Interpolate momentum variables back to momentum grid.
 !      Since top momentum level is higher than top thermo level,
@@ -1382,7 +1377,7 @@
 
 #ifdef SCALARS
        do i = 1, sclrm_dimension
-         sclr_tmp1(:,i) = zt2zm( sclrm(:,i) )
+          sclr_tmp1(:,i) = zt2zm( sclrm(:,i) )
        enddo
 #endif /* SCALARS */
 
@@ -1417,7 +1412,7 @@
 !      Set other specific boundary conditions.
        wpthvp(1)         = wpthlp( 1 )
        thlpthvp(1)       = thlp2( 1 )
-       wp2thvp(gr%nnzp)  = 0.
+       wp2thvp(gr%nnzp)  = 0.0
 #ifdef SCALARS
        sclrpthvp(1,SCLR_THETA) = sclrpthlp(1,SCLR_THETA)
 #endif /* SCALARS */
@@ -1570,6 +1565,16 @@
      .      )
        if ( .not. isValid ) return
 
+!      Set Boundary Conditions on wpthlp and wprtp output.
+       wpthlp(gr%nnzp)  = 0.0
+       wprtp(gr%nnzp)   = 0.0
+#ifdef SCALARS
+!      Set Boundary Conditions for optional passive scalars
+       do i = 1, sclrm_dimension
+          wpsclrp(gr%nnzp,i)   = 0.0
+       enddo ! i = 1, sclrm_dimension
+#endif /* SCALARS */
+
 
 !      Advance wp2/wp3 one timestep
 
@@ -1578,9 +1583,13 @@
      .       pdf_parms(:, 13), Khm,
      .       wmt, wmm,
      .       um, upwp, vm, vpwp, wpthvp, wp2thvp,
-     .       wp2, wp3, isValid )
+     .       wp2, wp3, isValid, runtype )
 
        if ( .not. isValid ) return
+
+!      Set Boundary Conditions on wp2 and wp3 output.
+       wp2(gr%nnzp)     = 0.0
+       wp3(gr%nnzp)     = 0.0
 
 
 #ifdef SCALARS

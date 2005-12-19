@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.12 2005-11-30 20:57:08 dschanen Exp $
+! $Id: diag_var.F,v 1.13 2005-12-19 02:07:47 griffinb Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -51,10 +51,12 @@
 ! Output variables
 !  note: if liter=.true., 
 !  then these would need to have an attrib. of type (inout)
+!     An attribute of (inout) is also needed to import the
+!     value of the variances at the surface.  Brian.  12/18/05.
 
-       real, intent(out) :: rtp2(1:gr%nnzp)
-       real, intent(out) :: thlp2(1:gr%nnzp)
-       real, intent(out) :: rtpthlp(1:gr%nnzp)
+       real, intent(inout) :: rtp2(1:gr%nnzp)
+       real, intent(inout) :: thlp2(1:gr%nnzp)
+       real, intent(inout) :: rtpthlp(1:gr%nnzp)
 
 ! Input mixing scheme variables (optional)
 
@@ -243,8 +245,9 @@ c      solve tridiagonal system
 #endif
 
 c      clip small and negative values
-
-       do k=1, gr%nnzp
+       ! The surface variances are set elsewhere.  They do not need to be
+       ! clipped at the lowest level.  Brian Griffin.  12/18/05.
+       do k = 2, gr%nnzp, 1
 
          if ( wp2(k) >= wtol*wtol ) then
            rtp2(k) 
@@ -366,8 +369,9 @@ c      solve tridiagonal system
 
 
 c      clip small and negative values
-
-       do k=1, gr%nnzp
+       ! The surface variances are set elsewhere.  They do not need to be
+       ! clipped at the lowest level.  Brian Griffin.  12/18/05.
+       do k = 2, gr%nnzp, 1
 
          if ( wp2(k) >= wtol*wtol ) then
            thlp2(k) 
@@ -417,8 +421,9 @@ c        solve tridiagonal system
          endif
 
 c        clip small and negative values
-
-         do k=1,gr%nnzp
+         ! The surface variances are set elsewhere.  They do not need to be
+         ! clipped at the lowest level.  Brian Griffin.  12/18/05.
+         do k = 2, gr%nnzp, 1
 
            if ( wp2(k) >= wtol*wtol ) then
              sclrp2(k,i) 
@@ -594,7 +599,9 @@ c       solve tridiagonal system
 c      clip small and negative values
 !        We don't want to do this generally, only to test that the scalars
 !        work with their 2nd element is rt
-!       do k=1, gr%nnzp
+!         ! The surface variances are set elsewhere.  They do not need to be
+!         ! clipped at the lowest level.  Brian Griffin.  12/18/05.
+!         do k = 2, gr%nnzp, 1
 !         if ( wp2(k) >= wtol*wtol ) then
 !           sclrprtp(k,2) 
 !     .     = max( sclrprtp(k,2), 
@@ -641,7 +648,9 @@ c       solve tridiagonal system
 c      clip small and negative values
 !        We don't want to do this generally, only to test that the scalars
 !        work with their 1st element is thl
-!       do k=1, gr%nnzp
+!         ! The surface variances are set elsewhere.  They do not need to be
+!         ! clipped at the lowest level.  Brian Griffin.  12/18/05.
+!         do k = 2, gr%nnzp, 1
 !         if ( wp2(k) >= wtol*wtol ) then
 !           sclrpthlp(k,1) 
 !     .     = max( sclrpthlp(k,1), 
@@ -677,7 +686,7 @@ c      clip small and negative values
 !       Internal
         integer k, km1, kp1
 
-        do k=1, gr%nnzp
+        do k = 2, gr%nnzp-1, 1
 
           km1   = max(k-1,1)
           kp1   = min(k+1, gr%nnzp)
@@ -689,6 +698,13 @@ c      clip small and negative values
      .                 + 0.5 * wmm(k) * gr%dzm(k)
      .                 - nu2 * gr%dzm(k) * gr%dzt(k)
         enddo
+
+        ! Boundary Conditions
+        ! These are set so that the sfc_var value of rtp2, thlp2, or rtpthlp
+        ! can be used at the lowest boundary and the values of those
+        ! variables can be set to 0 at the top boundary.  Brian.  12/18/05.
+        calc_aa(1) = 0.0
+        calc_aa(gr%nnzp) = 0.0
 
         return
         end function calc_aa
@@ -716,7 +732,7 @@ c      clip small and negative values
 !       Internal
         integer k, km1, kp1
 
-        do k=1, gr%nnzp
+        do k = 2, gr%nnzp-1, 1
 
           km1 = max(k-1,1)
           kp1 = min(k+1, gr%nnzp)
@@ -732,6 +748,15 @@ c      clip small and negative values
           if (liter) calc_bb(k) = bb(k) + 1.0/dt
 
         enddo
+
+        ! Boundary Conditions
+        ! These are set so that the sfc_var value of rtp2, thlp2, or rtpthlp
+        ! can be used at the lowest boundary and the values of those
+        ! variables can be set to 0 at the top boundary.  Brian.  12/18/05.
+        calc_bb(1) = 1.0
+        if (liter) calc_bb(1) = bb(1) + 1.0/dt
+        calc_bb(gr%nnzp) = 1.0
+        if (liter) calc_bb(1) = bb(1) + 1.0/dt
 
         return
         end function calc_bb
@@ -756,7 +781,7 @@ c      clip small and negative values
 !       Internal
         integer k, km1, kp1
 
-        do k=1, gr%nnzp
+        do k = 2, gr%nnzp-1, 1
 
           km1 = max(k-1,1)
           kp1 = min(k+1, gr%nnzp)
@@ -768,6 +793,13 @@ c      clip small and negative values
      .               - 0.5 * wmm(k) * gr%dzm(k)
      .               - nu2 * gr%dzm(k) * gr%dzt(kp1)
         enddo
+
+        ! Boundary Conditions
+        ! These are set so that the sfc_var value of rtp2, thlp2, or rtpthlp
+        ! can be used at the lowest boundary and the values of those
+        ! variables can be set to 0 at the top boundary.  Brian.  12/18/05.
+        calc_cc(1) = 0.0
+        calc_cc(gr%nnzp) = 0.0
 
         return
         end function calc_cc
@@ -800,7 +832,7 @@ c      clip small and negative values
 !       Internal
         integer k, km1, kp1
 
-        do k=1, gr%nnzp
+        do k = 2, gr%nnzp-1, 1
 
           km1 = max(k-1,1)
           kp1 = min(k+1, gr%nnzp)
@@ -824,6 +856,16 @@ c      clip small and negative values
           if (liter) calc_dd_covar(k) = dd(k) + 1.0/dt*xapxbp(k)
 
         enddo
+
+        ! Boundary Conditions
+        ! These are set so that the sfc_var value of rtp2, thlp2, or rtpthlp
+        ! can be used at the lowest boundary and the values of those
+        ! variables can be set to 0 at the top boundary.  Brian.  12/18/05.
+        calc_dd_covar(1) = xapxbp(1)
+        if (liter) calc_dd_covar(1) = dd(1) + 1.0/dt*xapxbp(1)
+        calc_dd_covar(gr%nnzp) = 0.0
+        if (liter) calc_dd_covar(gr%nnzp) = dd(gr%nnzp) 
+     .                                     + 1.0/dt*xapxbp(gr%nnzp)
 
         return
         end function calc_dd_covar
@@ -853,7 +895,7 @@ c      clip small and negative values
 !       Internal
         integer k, km1, kp1
 
-        do k=1, gr%nnzp
+        do k = 2, gr%nnzp-1, 1
 
           km1 = max(k-1,1)
           kp1 = min(k+1, gr%nnzp)
@@ -871,6 +913,16 @@ c      clip small and negative values
      .                             )
           if (liter) calc_dd_var(k) = dd(k) + 1.0/dt*xp2(k)
         enddo
+
+        ! Boundary Conditions
+        ! These are set so that the sfc_var value of rtp2, thlp2, or rtpthlp
+        ! can be used at the lowest boundary and the values of those
+        ! variables can be set to 0 at the top boundary.  Brian.  12/18/05.
+        calc_dd_var(1) = xp2(1)
+        if (liter) calc_dd_var(1) = dd(1) + 1.0/dt*xp2(1)
+        calc_dd_var(gr%nnzp) = 0.0
+        if (liter) calc_dd_var(gr%nnzp) = dd(gr%nnzp) 
+     .                                   + 1.0/dt*xp2(gr%nnzp)
 
         return
         end function calc_dd_var

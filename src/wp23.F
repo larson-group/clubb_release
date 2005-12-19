@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.9 2005-10-29 21:25:07 griffinb Exp $
+! $Id: wp23.F,v 1.10 2005-12-19 02:07:47 griffinb Exp $
 
 ! SUBROUTINE timestep_wp23( )
 !  Advance wp2 and wp3 one timestep
@@ -7,7 +7,7 @@
         subroutine timestep_wp23
      .             (dt, Lscale, taum, taut, Sc, a, Khm, wmt, wmm,
      .              um, upwp, vm, vpwp, wpthvp, wp2thvp,
-     .              wp2, wp3, isValid)
+     .              wp2, wp3, isValid, runtype)
 
         use grid_class
         use constants
@@ -39,6 +39,9 @@
 !        real, intent(inout) :: em(1:gr%nnzp)
 
         logical, intent(inout):: isValid
+
+        character(50), intent(in):: runtype
+
 
 !       Internal
 
@@ -222,7 +225,7 @@
 
         call wp23_solve( dt, Sc, Lscale, Lm, taum, tauw3t, 0.5*Khm,
      .                   wmt, wmm, wpthvp, wp2thvp,
-     .                   wp2t, wp3t, C1_Skw_fnc, 
+     .                   wp2t, wp3t, C1_Skw_fnc, runtype,
      .                   wp2, wp3, isValid )
         
         if ( .not. isValid ) then
@@ -256,7 +259,7 @@
 
         subroutine wp23_solve( dt, Sc, Lscale, Lm, tau1m, tauw3t, Kh,
      .                         wmt, wmm, wpthvp, wp2thvp,
-     .                         wp2t, wp3t, C1_Skw_fnc,
+     .                         wp2t, wp3t, C1_Skw_fnc, runtype,
      .                         wp2, wp3, isValid)
 
         use grid_class
@@ -283,6 +286,8 @@
         real, intent(in) :: wp2t(1:gr%nnzp)
         real, intent(in) :: wp3t(1:gr%nnzp)
         real, intent(in) :: C1_Skw_fnc(1:gr%nnzp)
+
+        character(50), intent(in):: runtype
 
 !       Input/Output
 
@@ -672,25 +677,53 @@
         endif
 #endif STATS
 
-        ! Clip skewness consistently with a
+        ! Clip Skewness.
  
-        do k=1,gr%nnzp
+        DO k = 1, gr%nnzp, 1
 
-         km1 = max(k-1,1)
+           km1 = MAX(k-1,1)
 
-         atmp = max(0.5*(wp2(km1)+wp2(k)),eps)
-         ctmp = atmp**1.5
-         if ( wp3(k)/ctmp .gt. 4.5 ) then
-            wp3(k) = 4.5 * ctmp
-            wp2(k) = atmp
-         elseif ( wp3(k)/ctmp .lt. -4.5 ) then
-            wp3(k) = -4.5 * ctmp
-            wp2(k) = atmp
-         endif
+           ! Clipping wp3 at the first layer above ground according to 
+           ! Andre et al. (1976b & 1978).
+           ! According to Andre et al. (1976b & 1978), wp3 should not
+           ! exceed [2*(wp2^3)]^(1/2) at any level.  However, this term
+           ! should be multiplied by 0.2 close to the surface to include
+           ! surface effects.  There already is a wp3 clipping term in
+           ! place for all other altitudes, but this term will be 
+           ! included for the surface layer only.
+           ! Therefore, the lowest level wp3 should not exceed
+           ! 0.2 * SQRT(2) * wp2^(3/2).  Brian Griffin.  12/18/05.
 
-         wp2(k) = max( 2./3. * emin, wp2(k) ) 
+           IF ( gr%zt(k) <= 100.0  .AND.     ! Clip for 100.0 m. above ground.
+     .          TRIM( runtype ) /= "nov11_altocu" ) THEN   ! lower boundary is not ground.
 
-        enddo
+              atmp = MAX( ( (wp2(km1)+wp2(k)) / 2.0 ) , eps )    ! wp2
+              ctmp = atmp**(3.0/2.0)                             ! wp2^(3/2)
+              IF ( wp3(k) >= 0.2 * SQRT(2.0) * ctmp ) THEN
+                 wp3(k) = 0.2 * SQRT(2.0) * ctmp
+              ENDIF
+
+           ELSE
+
+              ! Clip skewness consistently with a
+              atmp = MAX(0.5*(wp2(km1)+wp2(k)),eps)
+              ctmp = atmp**1.5
+              IF ( wp3(k)/ctmp .gt. 4.5 ) THEN
+                 wp3(k) = 4.5 * ctmp
+                 wp2(k) = atmp
+              ELSEIF ( wp3(k)/ctmp .lt. -4.5 ) THEN
+                 wp3(k) = -4.5 * ctmp
+                 wp2(k) = atmp
+              ENDIF
+
+           ENDIF
+
+           wp2(k) = max( 2./3. * emin, wp2(k) ) 
+
+        ENDDO
+
+        ! wp3 below the surface is set to 0.
+        wp3(1) = 0.0
 
 #ifdef STATS
         if (lstats_samp) then
