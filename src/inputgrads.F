@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputgrads.F,v 1.9 2005-08-31 15:56:47 dschanen Exp $
+! $Id: inputgrads.F,v 1.10 2005-12-19 19:03:03 dschanen Exp $
 
 ! This module contains structure and subroutine definitions to
 ! open a GrADS data file a read it.
@@ -15,10 +15,12 @@
 !  * Overloaded subroutine get_var to allow for 8 byte real output.
 !  * Added preprocesing for RECL 
 !-----------------------------------------------------------------------
-#ifdef __INTEL_COMPILER=900
+#ifdef __INTEL_COMPILER=900 /* Newer ifort follows Compaq Visual Fortran*/
+#define F_RECL 1 /* binary records are measure in 4 byte words */
+#elif __alpha /* Assume that alpha users are using f95 */
 #define F_RECL 1
 #else
-#define F_RECL 4
+#define F_RECL 4 /* binary records are measured in bytes */
 #endif
         module inputfile_class
 
@@ -246,8 +248,8 @@
           f%iounit = unit
           open( f%iounit,
      .          file = trim(f%fname),
-     .          form = 'unformatted', access = 'direct',
-     .          recl = F_RECL, status = 'old', iostat=ierr )
+     .          form = 'unformatted', access = 'direct', 
+     .          recl = F_RECL, status='old', iostat=ierr )
 
           if ( ierr /= 0 ) then
              write(*,*) 'input_grads: error opening binary file'

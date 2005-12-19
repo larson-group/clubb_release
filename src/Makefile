@@ -1,23 +1,26 @@
-# $Id: Makefile,v 1.39 2005-12-05 22:13:59 dschanen Exp $
+# $Id: Makefile,v 1.40 2005-12-19 19:03:03 dschanen Exp $
 # This version should work with BSD, GNU make, smake and dmake
 # For HOC we edit this by hand rather than implementing imake or automake
 
 # == Compiler invocation ==
- FC=pgf90 # Portland Group PGF90
 #FC=g95 #   G95
 #FC=f95 #   Sun Fortran / Compaq Fortran
 #FC=ifort # Intel Fortran
+ FC=pgf90 # Portland Group PGF90
 
 # == Debugging ==
-# Sometimes it is helpful to turn on floating-point trapping for the standalone
-#  program, but this will not work with the tuner.
+# It is sometimes helpful to turn on floating-point trapping for the 
+#  standalone program, but this will not work when using the tuner.
 # In PGF: -Ktrap=inv,unf
-# In Sun f95: remove the reference to ftrap in optimize, or -ftrap=%common
+# In Sun f95: remove the reference to ftrap, or -ftrap=%common
 # In g95: `setenv G95_FPU_INVALID TRUE' or `export G95_FPU_INVALID=TRUE'
 # In ifort: -fpe=0
 # The usual options:
- DEBUG=-g -C#        pgf90, g95, Sun, and Compaq
-#DEBUG=-g -mieee-fp# ifort 
+#DEBUG=-g -C -mieee-fp #                 g95
+#DEBUG=-g -C -fns=no -ftrap=%none #      Sun Studio f95
+#DEBUG=-g -check bounds -no_fp_reorder # Compaq f95
+#DEBUG=-g -check bounds -mieee-fp #      Intel ifort 9
+ DEBUG=-g -C -Kieee #                    pgf90
 
 # == Optimization ==
 # Sun's f95 has great difficulty with statistics.F
@@ -26,12 +29,12 @@
 # These are all pretty conservative options, check the your compiler manual 
 # for information on using more aggressive techniques (inlining, etc.)
 
-#OPTIMIZE=-O2 -march=pentium4#               g95, P4
-#OPTIMIZE=-xtarget=native -xO2 -ftrap=%none# Sun Studio x86/x64/SPARC
-#OPTIMIZE=-O2 -assume byterecl -arch host#   Compaq f95 on Alpha
-#OPTIMIZE=-xN#                               Intel complier, P4 w/out SSE3
-#OPTIMIZE=-O2 -tp p7 -Kieee -r8#             PGF90 w/ double precision reals
- OPTIMIZE=-O2 -tp p7 -Kieee#                 PGF90, Pentium4
+#OPTIMIZE=-O3 -msse2 -march=pentium4 # g95, P4 w/out SSE3
+#OPTIMIZE=-xO2 -xarch=native #         Sun Studio x86/x64/SPARC
+#OPTIMIZE=-O2 -arch host #             Compaq f95 on Alpha
+#OPTIMIZE=-O3 -xN #                    Intel complier, P4 w/out SSE3
+#OPTIMIZE=-O2 -tp p7 -r8 #             PGF90 w/ double precision reals
+ OPTIMIZE=-O2 -tp p7 #                 PGF90, Pentium4
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
