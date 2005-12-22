@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.64 2005-12-19 02:07:47 griffinb Exp $
+! $Id: hoc.F,v 1.65 2005-12-22 16:50:23 griffinb Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -1234,14 +1234,30 @@
 !      outputs it's own value for them, it will results in a faulty value for
 !      Scm at the surface.  Brian Griffin.  December 18, 2005.
 
-       call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1),
-     .               wp2(1), thlp2(1), rtp2(1), rtpthlp(1)
+!      Surface effects should not be included with any case where the lowest
+!      level is not the ground level.  Brian Griffin.  December 22, 2005.
+       IF ( TRIM( runtype ) /= "nov11_altocu" ) THEN
+          call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1),
+     .                  wp2(1), thlp2(1), rtp2(1), rtpthlp(1)
 #ifdef SCALARS
-     .               ,wpsclrp(1,:), sclrp2(1,:),
-     .               sclrprtp(1,:), sclrpthlp(1,:)
+     .                  ,wpsclrp(1,:), sclrp2(1,:),
+     .                  sclrprtp(1,:), sclrpthlp(1,:)
 #endif /* SCALARS */
-     .             )
-
+     .                )
+       ELSE
+          ! Nov. 11 Lowest Level Variances.
+          wp2(1)     = (2.0/3.0) * emin
+          thlp2(1)   = 0.0
+          rtp2(1)    = 0.0
+          rtpthlp(1) = 0.0
+#ifdef SCALARS
+          DO i = 1, sclrm_dimension, 1
+             sclrp2(1,i)    = 0.0
+             sclrprtp(1,i)  = 0.0
+             sclrpthlp(1,i) = 0.0
+          ENDDO
+#endif /* SCALARS */
+       ENDIF
 
 !      Diagnose variances
 !      We found that if we call diag_var first, we can use a longer timestep.

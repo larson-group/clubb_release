@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.10 2005-12-19 02:07:47 griffinb Exp $
+! $Id: wp23.F,v 1.11 2005-12-22 16:50:23 griffinb Exp $
 
 ! SUBROUTINE timestep_wp23( )
 !  Advance wp2 and wp3 one timestep
@@ -693,6 +693,9 @@
            ! included for the surface layer only.
            ! Therefore, the lowest level wp3 should not exceed
            ! 0.2 * SQRT(2) * wp2^(3/2).  Brian Griffin.  12/18/05.
+
+           ! NOTE: Clipping not good; must try to get rid of.  Effects only
+           !       Wangara case.
 
            IF ( gr%zt(k) <= 100.0  .AND.     ! Clip for 100.0 m. above ground.
      .          TRIM( runtype ) /= "nov11_altocu" ) THEN   ! lower boundary is not ground.
