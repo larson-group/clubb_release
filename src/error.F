@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.29 2005-11-17 17:06:14 griffinb Exp $
+! $Id: error.F,v 1.30 2006-01-03 19:38:06 dschanen Exp $
 
 !       Module ERROR
 !
@@ -38,6 +38,7 @@
       integer, parameter, public  :: mdim = ndim + 1
 
       real, dimension(mdim, ndim)  :: x_array
+      real, dimension(ndim)        :: init_const
       real, dimension(ndim)        :: x_variance
       real, dimension(mdim)        :: err_array
       real, dimension(ndim)        :: pb           ! only used by amebsa
@@ -271,13 +272,16 @@
 
 !--------------- Initialize the hoc constants -------------------------
 
-        x_array(1,1:ndim) = (/C1, C1b, C1c, C2rt, C2thl, C2rtthl,
-     .                        C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb,
-     .                        C6thlc, C7, C7b, C7c, C8, C8b,
-     .                        C10, C11, C11b, C11c, C12,
-     .                        nu1, nu2, nu6, nu8, nu_r, beta,
-     .                        gamma_coef, c_K, lmin_coef, taumin,
-     .                        taumax, mu/)
+        init_const(1:ndim) = 
+     .  (/C1, C1b, C1c, C2rt, C2thl, C2rtthl,
+     .    C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb,
+     .    C6thlc, C7, C7b, C7c, C8, C8b,
+     .    C10, C11, C11b, C11c, C12,
+     .    nu1, nu2, nu6, nu8, nu_r, beta,
+     .    gamma_coef, c_K, lmin_coef, taumin,
+     .    taumax, mu/)
+
+        x_array(1,1:ndim) = init_const(1:ndim)
 
 !--------------- Initialize the hoc variance -------------------------
 
@@ -342,12 +346,12 @@
  
       use hoc
       use grads_common
+      use constants, only: constants_list
 
       implicit none
 
 !     Input 
-!     real, intent(in), dimension(ndim) :: x_vector ! tuning vector
-      real, dimension(:), intent(in) :: x_vector ! tuning vector
+      real, dimension(:), intent(in) :: x_vector ! tuning vector(ndim dimension)
 
 !     Internal
       integer                           :: i, j, c_run    ! looping variables
@@ -379,42 +383,9 @@
      .     .and. iter /= 0  ) then
         write(*,'(A12,I10)') "Iteration: ", iter
         write(*,'(A12)') "Constants: "
-        write(*,'(A12,f12.5)') "C1 =", x_vector(1)
-        write(*,'(A12,f12.5)') "C1b =", x_vector(2)
-        write(*,'(A12,f12.5)') "C1c =", x_vector(3)
-        write(*,'(A12,f12.5)') "C2rt =", x_vector(4)
-        write(*,'(A12,f12.5)') "C2thl =", x_vector(5)
-        write(*,'(A12,f12.5)') "C2rtthl =", x_vector(6)
-        write(*,'(A12,f12.5)') "C4 =", x_vector(7)
-        write(*,'(A12,f12.5)') "C5 =", x_vector(8)
-        write(*,'(A12,f12.5)') "C6rt =", x_vector(9)
-        write(*,'(A12,f12.5)') "C6rtb =", x_vector(10)
-        write(*,'(A12,f12.5)') "C6rtc =", x_vector(11)
-        write(*,'(A12,f12.5)') "C6thl =", x_vector(12)
-        write(*,'(A12,f12.5)') "C6thlb =", x_vector(13)
-        write(*,'(A12,f12.5)') "C6thlc =", x_vector(14)
-        write(*,'(A12,f12.5)') "C7 =", x_vector(15)
-        write(*,'(A12,f12.5)') "C7b =", x_vector(16)
-        write(*,'(A12,f12.5)') "C7c =", x_vector(17)
-        write(*,'(A12,f12.5)') "C8 =", x_vector(18)
-        write(*,'(A12,f12.5)') "C8b =", x_vector(19)
-        write(*,'(A12,f12.5)') "C10 =", x_vector(20)
-        write(*,'(A12,f12.5)') "C11 =", x_vector(21)
-        write(*,'(A12,f12.5)') "C11b =", x_vector(22)
-        write(*,'(A12,f12.5)') "C11c =", x_vector(23)
-        write(*,'(A12,f12.5)') "C12 =", x_vector(24)
-        write(*,'(A12,f12.5)') "nu1 =", x_vector(25)
-        write(*,'(A12,f12.5)') "nu2 =", x_vector(26)
-        write(*,'(A12,f12.5)') "nu6 =", x_vector(27)
-        write(*,'(A12,f12.5)') "nu8 =", x_vector(28)
-        write(*,'(A12,f12.5)') "nu_r =", x_vector(29)
-        write(*,'(A12,f12.5)') "beta =", x_vector(30)
-        write(*,'(A12,f12.5)') "gamma_coef =", x_vector(31)
-        write(*,'(A12,f12.5)') "c_K =", x_vector(32)
-        write(*,'(A12,f12.5)') "lmin_coef =", x_vector(33)
-        write(*,'(A12,f12.5)') "taumin =", x_vector(34)
-        write(*,'(A12,f12.5)') "taumax =", x_vector(35)
-        write(*,'(A12,f12.5)') "mu =", x_vector(36)
+        do i = 1, ndim, 1
+          write(*,'(A12,f12.5)') constants_list(i)//" = ", x_vector(i)
+        enddo
       endif
         
 !----Initialize the return value for funk -----------------------------
@@ -433,7 +404,7 @@
 
 !-------------- Run the HOC model with x_vector as input ---------------
 
-       print *, "Calling HOC with case " // run_file ! Debug
+        print *, "Calling HOC with case " // run_file ! Debug
 
         call hoc_model( x_vector(1), x_vector(2), x_vector(3),
      .                  x_vector(4), x_vector(5), x_vector(6), 
@@ -546,51 +517,21 @@ c<--end of modification
 
 !--------------------Output results to STDOUT --------------------------
       subroutine output_results_stdout( )
+      use constants, only: constants_list
       
       implicit none
 
+      integer i
+
       if (tune_type == 0) print *, "Number of iterations:",  iter
       
-      write(*,'(3A12)') "Parameter", "Initial", "Optimal"
-      write(*,'(A12,2f12.5)') "C1 =", C1, x_array(1,1)
-      write(*,'(A12,2f12.5)') "C1b =", C1b, x_array(1,2)
-      write(*,'(A12,2f12.5)') "C1c =", C1c, x_array(1,3)
-      write(*,'(A12,2f12.5)') "C2rt =", C2rt, x_array(1,4)
-      write(*,'(A12,2f12.5)') "C2thl =", C2thl, x_array(1,5)
-      write(*,'(A12,2f12.5)') "C2rtthl =", C2rtthl, x_array(1,6)
-      write(*,'(A12,2f12.5)') "C4 =", C4, x_array(1,7)
-      write(*,'(A12,2f12.5)') "C5 =", C5, x_array(1,8)
-      write(*,'(A12,2f12.5)') "C6rt =", C6rt, x_array(1,9)
-      write(*,'(A12,2f12.5)') "C6rtb =", C6rtb, x_array(1,10)
-      write(*,'(A12,2f12.5)') "C6rtc =", C6rtc, x_array(1,11)
-      write(*,'(A12,2f12.5)') "C6thl =", C6thl, x_array(1,12)
-      write(*,'(A12,2f12.5)') "C6thlb =", C6thlb, x_array(1,13)
-      write(*,'(A12,2f12.5)') "C6thlc =", C6thlc, x_array(1,14)
-      write(*,'(A12,2f12.5)') "C7 =", C7, x_array(1,15)
-      write(*,'(A12,2f12.5)') "C7b =", C7b, x_array(1,16)
-      write(*,'(A12,2f12.5)') "C7c =", C7c, x_array(1,17)
-      write(*,'(A12,2f12.5)') "C8 =", C8, x_array(1,18)
-      write(*,'(A12,2f12.5)') "C8b =", C8b, x_array(1,19)
-      write(*,'(A12,2f12.5)') "C10 =", C10, x_array(1,20)
-      write(*,'(A12,2f12.5)') "C11 =", C11, x_array(1,21)
-      write(*,'(A12,2f12.5)') "C11b =", C11b, x_array(1,22)
-      write(*,'(A12,2f12.5)') "C11c =", C11c, x_array(1,23)
-      write(*,'(A12,2f12.5)') "C12 =", C12, x_array(1,24)
-      write(*,'(A12,2f12.5)') "nu1 =", nu1, x_array(1,25)
-      write(*,'(A12,2f12.5)') "nu2 =", nu2, x_array(1,26)
-      write(*,'(A12,2f12.5)') "nu6 =", nu6, x_array(1,27)
-      write(*,'(A12,2f12.5)') "nu8 =", nu8, x_array(1,28)
-      write(*,'(A12,2f12.5)') "nu_r =", nu_r, x_array(1,29)
-      write(*,'(A12,2f12.5)') "beta =", beta, x_array(1,30)
-      write(*,'(A12,2f12.5)') "gamma_coef =", 
-     .                         gamma_coef, x_array(1,31)
-      write(*,'(A12,2f12.5)') "c_K =", c_K, x_array(1,32)
-      write(*,'(A12,2f12.5)') "lmin_coef =", 
-     .                         lmin_coef, x_array(1,33)
-      write(*,'(A12,2f12.5)') "taumin =", taumin, x_array(1,34)
-      write(*,'(A12,2f12.5)') "taumax =", taumax, x_array(1,35)
-      write(*,'(A12,2f12.5)') "mu =",  mu, x_array(1,36)
-      
+      write(*,'(3A18)') "Parameter", "Initial", "Optimal"
+
+      do i = 1, ndim, 1
+        write(*,'(A18,2f18.5)') constants_list(i)//" = ", 
+     .                          init_const(i), x_array(1,i)
+      enddo
+
       write(*,'(A20,e15.6)') "initial error: ", init_err
 
       write(*,'(A20,e15.6)') "optimal error: ", min_err
@@ -603,6 +544,7 @@ c<--end of modification
 
 !----------------- Output namelists to a formatted file ----------------
       subroutine output_nml_tuner( results_f, x_vector )
+      use constants, only: constants_list
 
       implicit none
 
@@ -610,8 +552,8 @@ c<--end of modification
 
       real, intent(in), dimension(ndim) :: x_vector ! the current constants
     
-      integer                   :: i       ! loop variable
-      character                 :: i_c     ! loop variable character conversion
+      integer i       ! loop variable
+      character i_c   ! loop variable in ASCII
 
 !------- Open new file -------------------------------------------------
       open(unit = 20, file=results_f, action="write",
@@ -666,81 +608,17 @@ c<--end of modification
       write(20,*) "/"
       
       write(20,*) "&initvars"
-      write(20,*) "C1 =         ", x_vector(1)
-      write(20,*) "C1b =        ", x_vector(2)
-      write(20,*) "C1c =        ", x_vector(3)
-      write(20,*) "C2rt =       ", x_vector(4)
-      write(20,*) "C2thl =      ", x_vector(5)
-      write(20,*) "C2rtthl =    ", x_vector(6)
-      write(20,*) "C4 =         ", x_vector(7)
-      write(20,*) "C5 =         ", x_vector(8)
-      write(20,*) "C6rt =       ", x_vector(9)
-      write(20,*) "C6rtb =      ", x_vector(10)
-      write(20,*) "C6rtc =      ", x_vector(11)
-      write(20,*) "C6thl =      ", x_vector(12)
-      write(20,*) "C6thlb =     ", x_vector(13)
-      write(20,*) "C6thlc =     ", x_vector(14)
-      write(20,*) "C7 =         ", x_vector(15)
-      write(20,*) "C7b =        ", x_vector(16)
-      write(20,*) "C7c =        ", x_vector(17)
-      write(20,*) "C8 =         ", x_vector(18)
-      write(20,*) "C8b =        ", x_vector(19)
-      write(20,*) "C10 =        ", x_vector(20)
-      write(20,*) "C11 =        ", x_vector(21)
-      write(20,*) "C11b =       ", x_vector(22)
-      write(20,*) "C11c =       ", x_vector(23)
-      write(20,*) "C12 =        ", x_vector(24)
-      write(20,*) "nu1 =        ", x_vector(25)
-      write(20,*) "nu2 =        ", x_vector(26)
-      write(20,*) "nu6 =        ", x_vector(27)
-      write(20,*) "nu8 =        ", x_vector(28)
-      write(20,*) "nu_r =       ", x_vector(29)
-      write(20,*) "beta =       ", x_vector(30)
-      write(20,*) "gamma_coef = ", x_vector(31)
-      write(20,*) "c_K =        ", x_vector(32)
-      write(20,*) "lmin_coef =  ", x_vector(33)
-      write(20,*) "taumin =     ", x_vector(34)
-      write(20,*) "taumax =     ", x_vector(35)
-      write(20,*) "mu =         ", x_vector(36)
+      do i = 1, ndim, 1 
+        write(20,'(a18,f12.5)') trim(constants_list(i))//" = ", 
+     .                          x_vector(i)
+      enddo
       write(20,*) "/"
 
       write(20,*) "&variance"
-      write(20,*) "C1_var =         ", x_variance(1)
-      write(20,*) "C1b_var =        ", x_variance(2)
-      write(20,*) "C1c_var =        ", x_variance(3)
-      write(20,*) "C2rt_var =       ", x_variance(4)
-      write(20,*) "C2thl_var =      ", x_variance(5)
-      write(20,*) "C2rtthl_var =    ", x_variance(6)
-      write(20,*) "C4_var =         ", x_variance(7)
-      write(20,*) "C5_var =         ", x_variance(8)
-      write(20,*) "C6rt_var =       ", x_variance(9)
-      write(20,*) "C6rtb_var =      ", x_variance(10)
-      write(20,*) "C6rtc_var =      ", x_variance(11)
-      write(20,*) "C6thl_var =      ", x_variance(12)
-      write(20,*) "C6thlb_var =     ", x_variance(13)
-      write(20,*) "C6thlc_var =     ", x_variance(14)
-      write(20,*) "C7_var =         ", x_variance(15)
-      write(20,*) "C7b_var =        ", x_variance(16)
-      write(20,*) "C7c_var =        ", x_variance(17)
-      write(20,*) "C8_var =         ", x_variance(18)
-      write(20,*) "C8b_var =        ", x_variance(19)
-      write(20,*) "C10_var =        ", x_variance(20)
-      write(20,*) "C11_var =        ", x_variance(21)
-      write(20,*) "C11b_var =       ", x_variance(22)
-      write(20,*) "C11c_var =       ", x_variance(23)
-      write(20,*) "C12_var =        ", x_variance(24)
-      write(20,*) "nu1_var =        ", x_variance(25)
-      write(20,*) "nu2_var =        ", x_variance(26)
-      write(20,*) "nu6_var =        ", x_variance(27)
-      write(20,*) "nu8_var =        ", x_variance(28)
-      write(20,*) "nu_r_var =       ", x_variance(29)
-      write(20,*) "beta_var =       ", x_variance(30)
-      write(20,*) "gamma_coef_var = ", x_variance(31)
-      write(20,*) "c_K_var =        ", x_variance(32)
-      write(20,*) "lmin_coef_var =  ", x_variance(33)
-      write(20,*) "taumin_var =     ", x_variance(34)
-      write(20,*) "taumax_var =     ", x_variance(35)
-      write(20,*) "mu_var =         ", x_variance(36)
+      do i = 1, ndim, 1 
+        write(20,'(a18,f12.5)') trim(constants_list(i))//"_var = ", 
+     .                          x_variance(i)
+      enddo
       write(20,*) "/"
 
 !------- Close new file ------------------------------------------------
@@ -751,6 +629,7 @@ c<--end of modification
 
 !-------------------Output namelists to a formatted file ---------------
       subroutine output_nml_standalone ( results_f, x_vector )
+      use constants, only: constants_list
 
       implicit none
 
@@ -760,8 +639,8 @@ c<--end of modification
       real, intent(in), dimension(ndim) :: x_vector ! the current constants
 
 !     Internal    
-      integer                   :: i       ! loop variable
-      character                 :: i_c     ! loop variable character conversion
+      integer i       ! loop variable
+      character i_c   ! loop variable in ASCII
 
 !------- Open new file -------------------------------------------------
       open(unit = 20, file=results_f, action="write",
@@ -781,42 +660,10 @@ c<--end of modification
       write(20,*) "/"
       
       write(20,*) "&initvars"
-      write(20,*) "C1 =         ", x_vector(1)
-      write(20,*) "C1b =        ", x_vector(2)
-      write(20,*) "C1c =        ", x_vector(3)
-      write(20,*) "C2rt =       ", x_vector(4)
-      write(20,*) "C2thl =      ", x_vector(5)
-      write(20,*) "C2rtthl =    ", x_vector(6)
-      write(20,*) "C4 =         ", x_vector(7)
-      write(20,*) "C5 =         ", x_vector(8)
-      write(20,*) "C6rt =       ", x_vector(9)
-      write(20,*) "C6rtb =      ", x_vector(10)
-      write(20,*) "C6rtc =      ", x_vector(11)
-      write(20,*) "C6thl =      ", x_vector(12)
-      write(20,*) "C6thl =      ", x_vector(13)
-      write(20,*) "C6thl =      ", x_vector(14)
-      write(20,*) "C7 =         ", x_vector(15)
-      write(20,*) "C7b =        ", x_vector(16)
-      write(20,*) "C7c =        ", x_vector(17)
-      write(20,*) "C8 =         ", x_vector(18)
-      write(20,*) "C8b =        ", x_vector(19)
-      write(20,*) "C10 =        ", x_vector(20)
-      write(20,*) "C11 =        ", x_vector(21)
-      write(20,*) "C11b =       ", x_vector(22)
-      write(20,*) "C11c =       ", x_vector(23)
-      write(20,*) "C12 =        ", x_vector(24)
-      write(20,*) "nu1 =        ", x_vector(25)
-      write(20,*) "nu2 =        ", x_vector(26)
-      write(20,*) "nu6 =        ", x_vector(27)
-      write(20,*) "nu8 =        ", x_vector(28)
-      write(20,*) "nu_r =       ", x_vector(29)
-      write(20,*) "beta =       ", x_vector(30)
-      write(20,*) "gamma_coef = ", x_vector(31)
-      write(20,*) "c_K =        ", x_vector(32)
-      write(20,*) "lmin_coef =  ", x_vector(33)
-      write(20,*) "taumin =     ", x_vector(34)
-      write(20,*) "taumax =     ", x_vector(35)
-      write(20,*) "mu =         ", x_vector(36)
+      do i = 1, ndim, 1
+        write(20,'(A18,f12.5)') trim(constants_list(i))//" = ", 
+     .                          x_vector(i)
+      enddo
       write(20,*) "/"
 
 !------- Close new file ------------------------------------------------

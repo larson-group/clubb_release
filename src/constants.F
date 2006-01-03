@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.22 2005-11-17 17:06:14 griffinb Exp $
+! $Id: constants.F,v 1.23 2006-01-03 19:38:06 dschanen Exp $
 
 !  Contains frequently occuring model constants
 !-----------------------------------------------------------------------
@@ -65,6 +65,22 @@
 
 !        real, parameter :: beta = 1.5
         real beta
+
+!       These are referenced together often enough that it made sense to 
+!       make a list of them.  Note that lmin_coef is the input parameter, 
+!       while the actual lmin model constant is computed from this
+
+        character(len=10), dimension(36), parameter :: constants_list =
+     .  (/"C1        ", "C1b       ", "C1c       ", "C2rt      ", 
+     .    "C2thl     ", "C2rtthl   ", "C4        ", "C5        ",
+     .    "C6rt      ", "C6rtb     ", "C6rtc     ", "C6thl     ",
+     .    "C6thlb    ", "C6thlc    ", "C7        ", "C7b       ",
+     .    "C7c       ", "C8        ", "C8b       ", "C10       ",
+     .    "C11       ", "C11b      ", "C11c      ", "C12       ",
+     .    "nu1       ", "nu2       ", "nu6       ", "nu8       ",
+     .    "nu_r      ", "beta      ", "gamma_coef", "c_K       ", 
+     .    "lmin_coef ", "taumin    ", "taumax    ", "mu        "/)
+
 
 !       tolerances below which we consider moments to be zero
 !       tolerance on [w, thl, rt]
