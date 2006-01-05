@@ -1,4 +1,4 @@
-! CVS: $Id: cloudg.F,v 1.1 2005-10-27 20:06:50 dschanen Exp $
+! CVS: $Id: cloudg.F,v 1.2 2006-01-05 20:09:59 dschanen Exp $
 ! CVS: $Name: not supported by cvs2svn $
 
 !-----------------------------------------------------------------------
@@ -133,14 +133,14 @@
 !---- calculate cloud optical properties:
 
       do l = 1, nlm
-	 do i = 1, ncol 
-	    if(wcont(i,l) .gt. eps) then
+         do i = 1, ncol 
+            if(wcont(i,l) .gt. eps) then
                !*** NAG error ***
-	       !dz=29.286*alog(pp(i,l+1)/pp(i,l)) * tt(i,l) ! in m
+               !dz=29.286*alog(pp(i,l+1)/pp(i,l)) * tt(i,l) ! in m
                dz=29.286*log(pp(i,l+1)/pp(i,l)) * tt(i,l)
-	       rm = re(i,l)/p2
-	       no = wcont(i,l) / ( (4.*pi/3.)*f3*1.e-6*rm**3 )
-	       area = 1.e-6*pi*f2*no*rm**2
+               rm = re(i,l)/p2
+               no = wcont(i,l) / ( (4.*pi/3.)*f3*1.e-6*rm**3 )
+               area = 1.e-6*pi*f2*no*rm**2
              c0 = 2.*area
              c1 = c0/f2
 !               print *,'area',area,ib,re(i,l)
@@ -148,9 +148,9 @@
 !      extinction and absorption coefficients for all other bands.
              xm = 2.*pi*rm/xlam(ib)
              cm = cmplx(cnr,-cni)
-	       if(ib .eq. 1) then
+               if(ib .eq. 1) then
                um   = 2.*xm*(cnr-1.)*cmplx(0.d0,1.d0)
-	         ext  = c0 + 2.*c1*real(p0/(um*(um+1.)**p1)
+                 ext  = c0 + 2.*c1*real(p0/(um*(um+1.)**p1)
      +                 + 1./(um**2*(um+1.)**p0)-1./um**2)
               tcld(i,l) = ext*dz
 
@@ -162,16 +162,16 @@
                !print *,'wcont,ext,abs',wcont(i,l),ext,abs,cnr,cni
              else
                um    = 2.*xm*(cm-1.)*cmplx(0.d0,1.d0)
-	         ext   = c0 + 2.*c1*real( p0/(um*(um+1.)**p1)
+                 ext   = c0 + 2.*c1*real( p0/(um*(um+1.)**p1)
      +                 + 1./(um**2*(um+1.)**p0)-1./um**2)
-	         vm = 4.*xm*cni
-!	          abs = area + c1*( p0/(vm*(vm+1.)**p1)
+                 vm = 4.*xm*cni
+!                  abs = area + c1*( p0/(vm*(vm+1.)**p1)
 !     +                     + 1./(vm**2*(vm+1.)**p0) - 1./vm**2 )
                abs = area + c1*sngl(
      +            p0/(dble(vm)*(dble(vm)+1.)**dble(p1))
      +            + 1./(dble(vm)**2*(dble(vm)+1.)**dble(p0))
      +            - 1./dble(vm)**2)
-		     tcld(i,l) = ext*dz
+                     tcld(i,l) = ext*dz
 !PHIL
                if (ext.lt.abs) ext = abs
 

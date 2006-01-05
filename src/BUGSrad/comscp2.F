@@ -1,4 +1,4 @@
-! CVS:  $Id: comscp2.F,v 1.1 2005-10-27 20:06:50 dschanen Exp $
+! CVS:  $Id: comscp2.F,v 1.2 2006-01-05 20:09:59 dschanen Exp $
 ! CVS:  $Name: not supported by cvs2svn $
 
 
@@ -94,9 +94,10 @@
             endif
             wccld(i,l) = min(.999999_dbl_kind,wccld(i,l))
 
-     	   enddo
-	enddo
+           enddo
+        enddo
+
         return
-	end subroutine comscp2
+        end subroutine comscp2
 
 c-----------------------------------------------------------------------

@@ -1,4 +1,4 @@
-! CVS:  $Id: rayle.F,v 1.1 2005-10-27 20:06:50 dschanen Exp $
+! CVS:  $Id: rayle.F,v 1.2 2006-01-05 20:09:59 dschanen Exp $
 ! CVS:  $Name: not supported by cvs2svn $
 
 !-----------------------------------------------------------------------
@@ -83,10 +83,10 @@
             endif   
          do l = 1, nlm
                !*** NAG error
-	       !trp = 29.267*ppl(i,l)*alog(pp(i,l+1)/pp(i,l) ) 
+               !trp = 29.267*ppl(i,l)*alog(pp(i,l+1)/pp(i,l) ) 
                trp = 29.267*ppl(i,l)*log(pp(i,l+1)/pp(i,l) )
-	       tray(i,l) = x*trp
-	       wray(i,l) = 1.0
+               tray(i,l) = x*trp
+               wray(i,l) = 1.0
          enddo
       enddo
 
