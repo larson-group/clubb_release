@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.25 2005-11-17 17:06:14 griffinb Exp $
+! $Id: jacobian.F,v 1.26 2006-01-05 20:09:17 dschanen Exp $
 
 ! Program Jacobian
 
@@ -96,6 +96,7 @@
       real, dimension(nconst, nvarzt+nvarzm) :: fc_impact_matrix
 
       integer i, j, k        ! loop variables
+      integer nanbits
       logical isValid
 
 !----- Namelists -------------------------------------------------------
@@ -111,6 +112,7 @@
 
       times      = 0
       isValid    = .true.
+      data nanbits /Z"7F800000"/
 
       allocate( ca1%constant( nconst ), ca1%name( nconst ),
      .          stat = alloc_stat )
@@ -282,7 +284,7 @@
 
         if ( .not. isValid ) then
           ! Infinity bit pattern 
-          jmatrix(i, :)   = transfer( int( Z"7F800000" ), 
+          jmatrix(i, :)   = transfer( int( nanbits ), 
      .                              jmatrix(1,1) )
           ca1%constant(i) = tmp_constant
           cycle
