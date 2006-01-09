@@ -1,4 +1,4 @@
-! CVS:  $Id: two_rt_sw_bs.F,v 1.1 2005-10-27 20:06:50 dschanen Exp $
+! CVS:  $Id: two_rt_sw_bs.F,v 1.2 2006-01-09 21:47:06 dschanen Exp $
 ! CVS:  $Name: not supported by cvs2svn $
 
 !-----------------------------------------------------------------------
@@ -14,7 +14,7 @@
  
  
       use kinds
-      use bandsolve 
+!     use bandsolve 
 #ifdef usenewexp
       use newexp, only: exp
 #endif
@@ -338,8 +338,9 @@
 !         do l = 1,nlm*4+2
 !            print *,l,b(l)
 !         enddo
-!
-         call bandec(a,nlm*4+2,5,5,nlm*4+2,11,al,11,indx,d)
+!        Changed bandec to work with the HOC version -dschanen 9 Jan 06
+         call bandec(a,nlm*4+2,5,5,nlm*4+2,11,al,11,indx,d,fail)
+         if ( fail ) stop "LU decomp in two_rt_sw_bs failed"
          call banbks(a,nlm*4+2,5,5,nlm*4+2,11,al,11,indx,b)
  
 !---- 3. SUM CLEAR AND CLOUDY FLUXES
