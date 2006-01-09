@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.40 2005-12-19 19:03:03 dschanen Exp $
+# $Id: Makefile,v 1.41 2006-01-09 21:49:54 dschanen Exp $
 # This version should work with BSD, GNU make, smake and dmake
 # For HOC we edit this by hand rather than implementing imake or automake
 
@@ -77,7 +77,7 @@ COMMON	= $(LATIN_HYP) $(BUGS_RAD) \
 	closure_new.o diag_var.o gcss.o hydrostatic.o \
 	length.o mixing.o rsat.o sat_rcm.o sfc.o \
 	sounding.o update.o wp23.o tau.o \
-	inputfields.o gradsaverage.o hoc.o error.o
+	inputfields.o gradsaverage.o hoc.o error.o 
 
 NUM_REC	= nrtype.o nr.o nrutil.o ran_state.o ran1.o amebsa.o amoeba.o
 
@@ -221,7 +221,7 @@ bugs_rad.o 		: bugs_rad.F bugs_swr.o bugs_lwr.o gascon.o kinds.o \
 			bugsrad_planck.o cloud_correlate.o bugsrad_physconst.o \
 			gases_ckd.o cloudg.o newexp.o rayle.o bandsolve.o
 bugs_swr.o 		: bugs_swr.F gases_ckd.o kinds.o
-cloudg.o 		: cloudg.F
+cloudg.o 		: kinds.o cloudg.F
 comscp1.o 		: comscp1.F
 comscp2.o		: comscp2.F
 gascon.o 		: bugsrad_physconst.o gascon.F
@@ -233,11 +233,9 @@ two_rt_lw_sel.o 	: two_rt_lw_sel.F
 two_rt_lw_iter.o 	: two_rt_lw_iter.F
 two_rt_lw_ocastrndm.o	: two_rt_lw_ocastrndm.F90
 two_rt_sw.o		: two_rt_sw.F
-two_rt_sw_bs.o		: two_rt_sw_bs.F
+two_rt_sw_bs.o		: bandec.o banbks.o two_rt_sw_bs.F
 two_rt_sw_ocastrndm.o	: two_rt_sw_ocastrndm.F90
-bandsolve.o 		: bandsolve.F
 bugsrad_hoc.o 		: bugsrad_hoc.F90 bugs_rad.o constants.o
-
 
 # == Executables ==
 hoc_tuner.o		: nrtype.o nr.o hoc.o error.o hoc_tuner.F
