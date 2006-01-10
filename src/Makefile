@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.41 2006-01-09 21:49:54 dschanen Exp $
+# $Id: Makefile,v 1.42 2006-01-10 18:18:18 dschanen Exp $
 # This version should work with BSD, GNU make, smake and dmake
 # For HOC we edit this by hand rather than implementing imake or automake
 
@@ -68,7 +68,7 @@ BUGS_RAD	= kinds.o bugsrad_planck.o bugsrad_physconst.o gases_ckd.o \
 		newexp.o rayle.o two_rt_lw.o two_rt_sw.o \
 		two_rt_sw_ocastrndm.o two_rt_lw_ocastrndm.o \
 		two_rt_lw_sel.o two_rt_lw_iter.o \
-		bandsolve.o two_rt_sw_bs.o bugsrad_hoc.o
+		two_rt_sw_bs.o bugsrad_hoc.o
 
 COMMON	= $(LATIN_HYP) $(BUGS_RAD) \
 	polpak.o constants.o arrays.o endian.o outputgrads.o \
@@ -219,7 +219,7 @@ bugsrad_physconst.o	: kinds.o bugsrad_physconst.F90
 bugs_lwr.o		: bugs_lwr.F bugsrad_planck.o gases_ckd.o kinds.o 
 bugs_rad.o 		: bugs_rad.F bugs_swr.o bugs_lwr.o gascon.o kinds.o \
 			bugsrad_planck.o cloud_correlate.o bugsrad_physconst.o \
-			gases_ckd.o cloudg.o newexp.o rayle.o bandsolve.o
+			gases_ckd.o cloudg.o newexp.o rayle.o
 bugs_swr.o 		: bugs_swr.F gases_ckd.o kinds.o
 cloudg.o 		: kinds.o cloudg.F
 comscp1.o 		: comscp1.F
