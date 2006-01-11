@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.42 2006-01-10 18:18:18 dschanen Exp $
+# $Id: Makefile,v 1.43 2006-01-11 17:42:11 dschanen Exp $
 # This version should work with BSD, GNU make, smake and dmake
 # For HOC we edit this by hand rather than implementing imake or automake
 
@@ -226,7 +226,7 @@ comscp1.o 		: comscp1.F
 comscp2.o		: comscp2.F
 gascon.o 		: bugsrad_physconst.o gascon.F
 gases_ckd.o 		: bugsrad_physconst.o gases_ckd.F90
-newexp.o 		: newexp.F90
+newexp.o 		: kinds.o newexp.F90
 rayle.o 		: rayle.F
 two_rt_lw.o 		: two_rt_lw.F
 two_rt_lw_sel.o 	: two_rt_lw_sel.F
