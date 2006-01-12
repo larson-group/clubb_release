@@ -1,4 +1,4 @@
-! $Id: nr.f90,v 1.3 2005-12-05 09:38:40 dschanen Exp $
+! $Id: nr.f90,v 1.4 2006-01-12 23:43:18 dschanen Exp $
 !   From _Numerical Recipes in Fortran 90_
 !   (C) 1988-1996 Numerical Recipes Software
 MODULE nr
@@ -2183,17 +2183,17 @@ MODULE nr
     REAL(SP), DIMENSION(:), INTENT(OUT) :: harvest
     END SUBROUTINE ran1_v
   END INTERFACE
-  INTERFACE ran2
-    SUBROUTINE ran2_s(harvest)
-    USE nrtype
-    REAL(SP), INTENT(OUT) :: harvest
-    END SUBROUTINE ran2_s
+! INTERFACE ran2
+!   SUBROUTINE ran2_s(harvest)
+!   USE nrtype
+!   REAL(SP), INTENT(OUT) :: harvest
+!   END SUBROUTINE ran2_s
 !BL
-    SUBROUTINE ran2_v(harvest)
-    USE nrtype
-    REAL(SP), DIMENSION(:), INTENT(OUT) :: harvest
-    END SUBROUTINE ran2_v
-  END INTERFACE
+!   SUBROUTINE ran2_v(harvest)
+!   USE nrtype
+!   REAL(SP), DIMENSION(:), INTENT(OUT) :: harvest
+!   END SUBROUTINE ran2_v
+! END INTERFACE
   INTERFACE ran3
     SUBROUTINE ran3_s(harvest)
     USE nrtype
