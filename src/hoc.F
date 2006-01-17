@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.65 2005-12-22 16:50:23 griffinb Exp $
+! $Id: hoc.F,v 1.66 2006-01-17 21:53:59 griffinb Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -1590,6 +1590,17 @@
           wpsclrp(gr%nnzp,i)   = 0.0
        enddo ! i = 1, sclrm_dimension
 #endif /* SCALARS */
+
+!      Special Nov. 11 condition for total water above cloud.
+       IF ( TRIM( runtype ) == "nov11_altocu" ) THEN
+          IF ( time == time_initial + 3600.0 ) THEN
+             DO k = 1, gr%nnzp, 1
+                IF ( gr%zt(k) > 1555.0 ) THEN
+                   rtm(k) = 0.89 * rtm(k)
+                ENDIF
+             ENDDO
+          ENDIF
+       ENDIF
 
 
 !      Advance wp2/wp3 one timestep
