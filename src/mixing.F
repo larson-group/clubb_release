@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.15 2005-11-17 17:06:14 griffinb Exp $
+! $Id: mixing.F,v 1.16 2006-01-17 22:14:34 griffinb Exp $
 !
 ! Module containing the hoc mixing scheme.  Allows for optional variables
 ! and assumed shape arrays.
@@ -651,6 +651,9 @@
 
            ! Find drc/dt due to cloud water sedimentation flux.
            ! This value is defined on thermodynamic levels.
+           ! Fcsed units:  kg (liquid) / [ m^2 * s ]
+           ! Multiply by Lv for units of W / m^2.
+           ! sed_rcm units:  [ kg (liquid) / kg (air) ] / s
            sed_rcm = (1.0/rhot) * ddzm( Fcsed )
 
         ENDIF
