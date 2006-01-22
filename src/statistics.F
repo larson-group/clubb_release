@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.26 2005-11-30 21:03:08 dschanen Exp $
+!  $Id: statistics.F,v 1.27 2006-01-22 16:17:20 griffinb Exp $
 
 !  module stats_type
 !  contains:
@@ -787,7 +787,7 @@ c     -----------------------------------------------------------------
           zt%f%var(ised_rcm)%ptr => zt%x(:,k)
           zt%f%var(ised_rcm)%name = "sed_rcm"
           zt%f%var(ised_rcm)%description
-     .    = "d(rcm)/dt due to cloud sedimentation ((kg/kg)/s)"
+     .    = "d(rcm)/dt due to cloud sedimentation (kg / [m^2 s])"
           k = k + 1
 
         case ('rsm')           ! Brian
