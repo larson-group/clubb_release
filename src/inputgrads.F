@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputgrads.F,v 1.10 2005-12-19 19:03:03 dschanen Exp $
+! $Id: inputgrads.F,v 1.11 2006-01-31 22:24:37 golaz Exp $
 
 ! This module contains structure and subroutine definitions to
 ! open a GrADS data file a read it.
@@ -15,13 +15,15 @@
 !  * Overloaded subroutine get_var to allow for 8 byte real output.
 !  * Added preprocesing for RECL 
 !-----------------------------------------------------------------------
-#ifdef __INTEL_COMPILER=900 /* Newer ifort follows Compaq Visual Fortran*/
-#define F_RECL 1 /* binary records are measure in 4 byte words */
+
+#if defined (__i386__) && __INTEL_COMPILER >= 900 /* Newer ifort on i386 */
+#define F_RECL 1
 #elif __alpha /* Assume that alpha users are using f95 */
 #define F_RECL 1
 #else
-#define F_RECL 4 /* binary records are measured in bytes */
+#define F_RECL 4
 #endif
+
         module inputfile_class
 
         use endian

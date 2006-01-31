@@ -1,5 +1,5 @@
 c------------------------------------------------------------------------
-c $Id: outputgrads.F,v 1.4 2005-08-23 20:05:39 dschanen Exp $
+c $Id: outputgrads.F,v 1.5 2006-01-31 22:24:37 golaz Exp $
 c
 c This module contains structure and subroutine definitions to
 c create GrADS output data files for one dimensional arrays.
@@ -21,7 +21,9 @@ c                                       many times as necessary
 c
 c Chris Golaz, updated 2/18/2003
 
-#ifdef __INTEL_COMPILER=900
+#if defined (__i386__) && __INTEL_COMPILER >= 900 /* Newer ifort on i386 */
+#define F_RECL 1
+#elif __alpha /* Assume that alpha users are using f95 */
 #define F_RECL 1
 #else
 #define F_RECL 4
