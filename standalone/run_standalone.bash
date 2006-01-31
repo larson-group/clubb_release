@@ -1,3 +1,4 @@
+#!/bin/bash
 #######################################################################
 #
 # Script to run the standalone hoc program.  

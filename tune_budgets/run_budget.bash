@@ -1,3 +1,4 @@
+#!/bin/bash
 #######################################################################
 #
 # Tested with BASH.  Not tested with Korn shell or Bourne(sh) shell.
