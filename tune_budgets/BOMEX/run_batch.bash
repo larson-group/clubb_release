@@ -1,3 +1,4 @@
+#!/bin/bash
 ####################################################################### 
 # Tunes all the budget terms in sequence independently of one another.
 # create_files.sh will need to be run before this if the directories 

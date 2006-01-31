@@ -1,3 +1,4 @@
+#!/bin/bash
 # Generate namelists, etc. for a batch run.
 
 declare -ar CASES=([0]=wp2_bp [1]=wp2_prdp [2]=wp3_bp [3]=wp3_prdp [4]=wp3_tp\

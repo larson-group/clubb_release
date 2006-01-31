@@ -1,3 +1,4 @@
+#!/bin/bash
 ####################################################################### 
 # Does a tuning run for each term on remote nodes.
 # create_files.sh will need to be run before this.

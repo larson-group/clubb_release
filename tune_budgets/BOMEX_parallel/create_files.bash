@@ -1,3 +1,4 @@
+#!/bin/bash
 # Generate namelists, etc. for a batch run.
 # This version modified to use a cluster of nodes
 
