@@ -1,56 +1,14 @@
-# $Id: Makefile,v 1.43 2006-01-11 17:42:11 dschanen Exp $
+# $Id: Makefile,v 1.44 2006-01-31 22:26:31 golaz Exp $
 # This version should work with BSD, GNU make, smake and dmake
+
 # For HOC we edit this by hand rather than implementing imake or automake
 
-# == Compiler invocation ==
-#FC=g95 #   G95
-#FC=f95 #   Sun Fortran / Compaq Fortran
-#FC=ifort # Intel Fortran
- FC=pgf90 # Portland Group PGF90
+# Include machine specific file. Select the one appropriate for your
+# machine or create a custom one.
 
-# == Debugging ==
-# It is sometimes helpful to turn on floating-point trapping for the 
-#  standalone program, but this will not work when using the tuner.
-# In PGF: -Ktrap=inv,unf
-# In Sun f95: remove the reference to ftrap, or -ftrap=%common
-# In g95: `setenv G95_FPU_INVALID TRUE' or `export G95_FPU_INVALID=TRUE'
-# In ifort: -fpe=0
-# The usual options:
-#DEBUG=-g -C -mieee-fp #                 g95
-#DEBUG=-g -C -fns=no -ftrap=%none #      Sun Studio f95
-#DEBUG=-g -check bounds -no_fp_reorder # Compaq f95
-#DEBUG=-g -check bounds -mieee-fp #      Intel ifort 9
- DEBUG=-g -C -Kieee #                    pgf90
-
-# == Optimization ==
-# Sun's f95 has great difficulty with statistics.F
-# For SS11, either turn off optimization for that file or expect a long 
-#  compilation.  SS10 appears to fail altogether.
-# These are all pretty conservative options, check the your compiler manual 
-# for information on using more aggressive techniques (inlining, etc.)
-
-#OPTIMIZE=-O3 -msse2 -march=pentium4 # g95, P4 w/out SSE3
-#OPTIMIZE=-xO2 -xarch=native #         Sun Studio x86/x64/SPARC
-#OPTIMIZE=-O2 -arch host #             Compaq f95 on Alpha
-#OPTIMIZE=-O3 -xN #                    Intel complier, P4 w/out SSE3
-#OPTIMIZE=-O2 -tp p7 -r8 #             PGF90 w/ double precision reals
- OPTIMIZE=-O2 -tp p7 #                 PGF90, Pentium4
-
-# == Linking Flags ==
-# Use -s to strip (no debugging); 
-# Use -Bstatic to static link the fortran libs on Sun, -static-libcxa for Intel
- LDFLAGS=# none by default
-
-# == Compiler flags (all) ==
-# Preprocessing:
-#   -DSTATS enables statistics
-#   -DSCALARS enables passive scalars
-#   -Dradoffline and -Dnooverlap (see bugsrad documentation)
-# You will need to `make clean' if you change these
-
- FCFLAGS=$(OPTIMIZE) $(DEBUG) -DSTATS -Dnooverlap -Dradoffline
-#FCFLAGS=$(OPTIMIZE) $(DEBUG) -DSTATS -DSCALARS -Dnooverlap -Dradoffline
-
+#include config.linux_ia32_pg.in
+#include config.linux_ia64_intel.in
+ include config.messner.in
 
 # == Object files ==
 
