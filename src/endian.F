@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: endian.F,v 1.4 2005-08-23 21:11:10 dschanen Exp $
+! $Id: endian.F,v 1.5 2006-01-31 22:22:25 golaz Exp $
 
 !  MODULE ENDIAN
 !  contains:
@@ -195,6 +195,15 @@
 
       character(len=4) :: i
 
+! Try to determine big vs little endian status. Override internal
+! determination if BIG_ENDIAN_IO or LITTLE_ENDIAN_IO are defined (for 
+! example for compilers that perform byte swapping during I/O).
+
+#ifdef BIG_ENDIAN_IO
+      internal_endian = .true.   ! big_endian
+#elif LITTLE_ENDIAN_IO
+      internal_endian = .false.  ! little_endian
+#else
       if ( trim(i) == '0123' ) then
         internal_endian = .false.  ! little_endian
       elseif ( trim(i) == '3210' ) then
@@ -202,6 +211,7 @@
       else
         stop "endian() failed"
       endif
+#endif
  
       return
       end function internal_endian
