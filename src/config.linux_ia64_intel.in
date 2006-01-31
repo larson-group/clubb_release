@@ -1,0 +1,28 @@
+# Makefile definitions customized for Linux IA64 using the Intel Fortran 
+# compiler
+
+# == Compiler invocation ==
+ FC=ifort
+
+# == Debugging ==
+ DEBUG=-g -check bounds
+
+# == Optimization ==
+ OPTIMIZE=-O2
+
+# == Linking Flags ==
+ LDFLAGS=
+
+# == Compiler flags (all) ==
+# Preprocessing:
+#   -DSTATS enables statistics
+#   -DSCALARS enables passive scalars
+#   -DBIG_ENDIAN_IO use only if compiler performs big endian file i/O
+#                   regardless of internal representation
+#   -DLITTLE_ENDIAN_IO use only if compiler performs little endian file i/O
+#                   regardless of internal representation
+#   -Dradoffline and -Dnooverlap (see bugsrad documentation)
+# You will need to `make clean' if you change these
+
+ FCFLAGS=$(OPTIMIZE) -DSTATS -DBIG_ENDIAN_IO -Dnooverlap -Dradoffline
+#FCFLAGS=$(DEBUG) -DSTATS -DBIG_ENDIAN_IO -Dnooverlap -Dradoffline

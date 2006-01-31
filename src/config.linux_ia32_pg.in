@@ -1,0 +1,29 @@
+# Makefile definitions customized for Linux IA32 using the Portland Group
+# compiler
+
+# == Compiler invocation ==
+ FC=pgf90
+
+# == Debugging ==
+ DEBUG=-g -C -Kieee
+
+# == Optimization ==
+ OPTIMIZE=-O2 -tp piii #                 PGF90, Pentium III
+#OPTIMIZE=-O2 -tp p7   #                 PGF90, Pentium 4
+
+# == Linking Flags ==
+ LDFLAGS=
+
+# == Compiler flags (all) ==
+# Preprocessing:
+#   -DSTATS enables statistics
+#   -DSCALARS enables passive scalars
+#   -DBIG_ENDIAN_IO use only if compiler performs big endian file i/O
+#                   regardless of internal representation
+#   -DLITTLE_ENDIAN_IO use only if compiler performs little endian file i/O
+#                   regardless of internal representation
+#   -Dradoffline and -Dnooverlap (see bugsrad documentation)
+# You will need to `make clean' if you change these
+
+ FCFLAGS=$(OPTIMIZE) -DSTATS -Dnooverlap -Dradoffline
+#FCFLAGS=$(DEBUG) -DSTATS -Dnooverlap -Dradoffline
