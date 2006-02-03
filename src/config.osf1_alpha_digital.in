@@ -1,0 +1,36 @@
+# $Id $
+# Configuration File for Compaq f95 on the UWM alpha
+# == Compiler invocation ==
+FC=f95 # DEC/Compaq Fortran
+
+# == Debugging ==
+# It is sometimes helpful to turn on floating-point trapping for the 
+#  standalone program, but this will not work when using the tuner.
+# The usual options:
+DEBUG=-g -check bounds -no_fp_reorder # Compaq f95
+
+# == Optimization ==
+# Sun's f95 has great difficulty with statistics.F
+# For SS11, either turn off optimization for that file or expect a long 
+#  compilation.  SS10 appears to fail altogether.
+# These are all pretty conservative options, check the your compiler manual 
+# for information on using more aggressive techniques (inlining, etc.)
+OPTIMIZE=-O2 -arch host # Compaq f95 on Alpha
+
+# == Linking Flags ==
+# Use -s to strip (no debugging); 
+ LDFLAGS=# none by default
+
+# == Compiler flags (all) ==
+# Preprocessing:
+#   -DSTATS enables statistics
+#   -DSCALARS enables passive scalars
+#   -DBIG_ENDIAN_IO use only if compiler performs big endian file i/O
+#                   regardless of internal representation
+#   -DLITTLE_ENDIAN_IO use only if compiler performs little endian file i/O
+#                   regardless of internal representation
+#   -Dradoffline and -Dnooverlap (see bugsrad documentation)
+# You will need to `make clean' if you change these
+
+ FCFLAGS=$(OPTIMIZE) $(DEBUG) -DSTATS -Dnooverlap -Dradoffline
+#FCFLAGS=$(OPTIMIZE) $(DEBUG) -DSTATS -DSCALARS -Dnooverlap -Dradoffline
