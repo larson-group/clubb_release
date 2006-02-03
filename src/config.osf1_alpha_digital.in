@@ -19,7 +19,7 @@ OPTIMIZE=-O2 -arch host # Compaq f95 on Alpha
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
- LDFLAGS=# none by default
+ LDFLAGS= # none by default
 
 # == Compiler flags (all) ==
 # Preprocessing:
