@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.13 2005-12-19 02:07:47 griffinb Exp $
+! $Id: diag_var.F,v 1.14 2006-02-03 20:55:41 griffinb Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -159,8 +159,8 @@ c      prepare tridiagonal system
            endif
 
            if ( irtp2_ma * ithlp2_ma * irtpthlp_ma > 0 ) then
-             zmscr08(k) = - 0.5 * wmm(k) * gr%dzm(k)
-             zmscr09(k) = + 0.5 * wmm(k) * gr%dzm(k)
+             zmscr08(k) = + 0.5 * wmm(k) * gr%dzm(k)
+             zmscr09(k) = - 0.5 * wmm(k) * gr%dzm(k)
            endif
 
            if ( irtp2_ta > 0 ) then
@@ -695,7 +695,7 @@ c      clip small and negative values
      .                       * (2./3.) * beta
      .                       * gr%dzm(k)
      .                       * wp3(k)/max(wp2(km1)+wp2(k),2.0*eps)
-     .                 + 0.5 * wmm(k) * gr%dzm(k)
+     .                 - 0.5 * wmm(k) * gr%dzm(k)
      .                 - nu2 * gr%dzm(k) * gr%dzt(k)
         enddo
 
@@ -790,7 +790,7 @@ c      clip small and negative values
      .                     * (2./3.) * beta
      .                     * gr%dzm(k)
      .                     * wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
-     .               - 0.5 * wmm(k) * gr%dzm(k)
+     .               + 0.5 * wmm(k) * gr%dzm(k)
      .               - nu2 * gr%dzm(k) * gr%dzt(kp1)
         enddo
 
