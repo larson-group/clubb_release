@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.16 2006-01-17 22:14:34 griffinb Exp $
+! $Id: mixing.F,v 1.17 2006-02-03 22:48:58 griffinb Exp $
 !
 ! Module containing the hoc mixing scheme.  Allows for optional variables
 ! and assumed shape arrays.
@@ -305,35 +305,43 @@
 
           aa(k_wpxp,3-2)
      .    = - 0.5 * wmm(k) * gr%dzm(k)
-     .      - a1(k) * gr%dzm(k)
-     .        * wp3(k)/max(wp2(km1)+wp2(k),2.0*eps)
+     .      - gr%dzm(k) * (1.0/2.0)
+     .        * ( a1(k) + a1(km1) )
+     .        * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*eps ) )
      .      - nu6 * gr%dzm(k) * gr%dzt(k)      
           select case ( trim(solve_type) )
           case ("rtm")
             aa(k_wpxp,3)
 !     .      = + C6rt / taum(k)
      .      = + C6rt_Skw_fnc(k) / taum(k)
-     .        + a1(k) * gr%dzm(k)
-     .          * (  wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
-     .             - wp3(k)  /max(wp2(km1)+wp2(k),2.0*eps) )
+     .        + gr%dzm(k) * (1.0/2.0)
+     .          * (  ( a1(kp1) + a1(k) )
+     .             * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
+     .            -  ( a1(k) + a1(km1) )
+     .             * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*eps ) )
+     .            )
      .        + (1.0-C7_Skw_fnc(k)) * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
-     .        + nu6 * gr%dzm(k)*( gr%dzt(kp1) + gr%dzt(k) )
+     .        + nu6 * gr%dzm(k) * ( gr%dzt(kp1) + gr%dzt(k) )
             if (liter) aa(k_wpxp,3) = aa(k_wpxp,3) + 1.0 / dt
           case ("thlm")
             aa(k_wpxp,3)
 !     .      = + C6thl / taum(k)
      .      = + C6thl_Skw_fnc(k) / taum(k)
-     .        + a1(k) * gr%dzm(k)
-     .          * (  wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
-     .             - wp3(k)  /max(wp2(km1)+wp2(k),2.0*eps) )
+     .        + gr%dzm(k) * (1.0/2.0)
+     .          * (  ( a1(kp1) + a1(k) )
+     .             * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
+     .            -  ( a1(k) + a1(km1) )
+     .             * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*eps ) )
+     .            )
      .        + (1.0-C7_Skw_fnc(k)) * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
-     .        + nu6 * gr%dzm(k)*( gr%dzt(kp1) + gr%dzt(k) )
+     .        + nu6 * gr%dzm(k) * ( gr%dzt(kp1) + gr%dzt(k) )
             if (liter) aa(k_wpxp,3) = aa(k_wpxp,3) + 1.0 / dt
           end select
           aa(k_wpxp,3+2)
      .    = + 0.5 * wmm(k) * gr%dzm(k)
-     .      + a1(k) * gr%dzm(k)
-     .        * wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
+     .      + gr%dzm(k) * (1.0/2.0)
+     .        * ( a1(kp1) + a1(k) )
+     .        * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
      .      - nu6 * gr%dzm(k) * gr%dzt(kp1)
 
 !         wpxp: production
