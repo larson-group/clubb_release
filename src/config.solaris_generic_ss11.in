@@ -1,0 +1,42 @@
+# $Id $
+# Makefile definitions for Sun f95
+
+# == Compiler invocation ==
+FC=f95 # Sun Fortran 8.2
+
+# == Debugging ==
+# It is sometimes helpful to turn on floating-point trapping for the 
+#  standalone program, but this will not work when using the tuner.
+# In Sun f95: remove the reference to ftrap, or -ftrap=common
+DEBUG=-g -C -fns=no -ftrap=%none
+
+# == Optimization ==
+# Sun's f95 has great difficulty with statistics.F
+# For SS11, either turn off optimization for that file or expect a long 
+#  compilation. 
+# Using -xtypemap it is possible to compile for quad precision floating 
+# point on SPARC, but on AMD64/EMT64 this is still not implemented.
+# These are all pretty conservative options, check the your compiler manual 
+# for information on using more aggressive techniques (inlining, etc.)
+OPTIMIZE=-xO2 -xarch=native -xcache=native -xchip=native
+
+# == Linking Flags ==
+# Use -s to strip (no debugging); 
+# -Bstatic; for static linking of libraries
+# -xlibmopt; link optimized version of libm
+LDFLAGS=-xlibmopt
+
+# == Compiler flags (all) ==
+# Preprocessing:
+#   -DSTATS enables statistics
+#   -DSCALARS enables passive scalars
+#   -DBIG_ENDIAN_IO use only if compiler performs big endian file i/O
+#                   regardless of internal representation
+#   -DLITTLE_ENDIAN_IO use only if compiler performs little endian file i/O
+#                   regardless of internal representation
+# Note that natively SPARC is big endian and AMD64/IA32 are little endian.
+#   -Dradoffline and -Dnooverlap (see bugsrad documentation)
+# You will need to `make clean' if you change these
+
+ FCFLAGS=$(OPTIMIZE) $(DEBUG) -DSTATS -Dnooverlap -Dradoffline
+#FCFLAGS=$(OPTIMIZE) $(DEBUG) -DSTATS -DSCALARS -Dnooverlap -Dradoffline
