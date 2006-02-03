@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.14 2006-02-03 20:55:41 griffinb Exp $
+! $Id: diag_var.F,v 1.15 2006-02-03 21:10:17 griffinb Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -126,7 +126,7 @@ c      prepare tridiagonal system
            km1   = max(k-1,1)
            kp1   = min(k+1,gr%nnzp)
 
-           if ( irtp2_dp1 * ithlp2_dp1 * irtpthlp_dp1 > 0 ) then
+           if ( irtp2_dp1 > 0 ) then
              zmscr01(k) = - C2rt / tau(k)
            endif
          
@@ -285,6 +285,10 @@ c      note: we can reuse the same aa & cc arrays
            km1 = max(k-1,1)
            kp1 = min(k+1,gr%nnzp)
 
+           if ( ithlp2_dp1 > 0 ) then
+             zmscr01(k) = - C2thl / tau(k)
+           endif
+         
            if ( ithlp2_ta > 0 ) then
              zm%x(k,ithlp2_ta) 
      .       = zm%x(k,ithlp2_ta)
@@ -458,12 +462,17 @@ c      prepare tridiagonal system
 #ifdef STATS
 
        if (lstats_samp) then
-         if ( irtpthlp_ta > 0 ) then
-           do k=1, gr%nnzp
+
+          do k=1, gr%nnzp
 
              km1 = max(k-1,1)
              kp1 = min(k+1,gr%nnzp)
 
+             if ( irtpthlp_dp1 > 0 ) then
+               zmscr01(k) = - C2rtthl / tau(k)
+             endif
+         
+             if ( irtpthlp_ta > 0 ) then
              zm%x(k,irtpthlp_ta) 
      .       = zm%x(k,irtpthlp_ta)
      .           - 0.5 * a2(k)
@@ -478,8 +487,10 @@ c      prepare tridiagonal system
      .                      * (wpthlp(km1)+wpthlp(k))
      .                      / max(wp2(km1)+wp2(k),2.0*eps)**2
      .                   )
-           enddo ! k
-         endif
+             endif
+
+          enddo ! k
+
        endif
 #endif
        
