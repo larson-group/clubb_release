@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.26 2005-12-05 22:14:59 dschanen Exp $ 
+! $Id: gcss.F,v 1.27 2006-02-04 00:35:20 dschanen Exp $ 
 
 ! This file contains extra subroutines to simulate the GCSS ARM and
 ! GCSS BOMEX, GCSS ATEX, GCSS FIRE intercomparison cases as well 
@@ -11,7 +11,17 @@
 
       implicit none
 
-      public
+      public cloud_rad, atex_tndcy, atex_sfclyr, fire_tndcy
+      public wangara_tndcy, wangara_sfclyr
+      public astex_tndcy, astex_sfclyr
+      public arm_tndcy, arm_sfclyr
+      public bomex_tndcy, bomex_sfclyr
+      public dycoms2_rf01_tndcy, dycoms2_rf01_sfclyr 
+      public dycoms2_rf02_tndcy, dycoms2_rf02_sfclyr
+      public nov11_altocu_tndcy
+
+      private diag_ustar, arm_sfcflx, Diff_denom
+      private nov11_altocu_sw, nov11_altocu_icedf
 
       contains
 !----------------------------------------------------------------------
@@ -829,9 +839,10 @@
 
 !       Output
 
-        real, intent(out) :: Frad(gr%nnzp)        ! IR radiative flux
-        real, intent(out) :: thlm_forcing(gr%nnzp)! Radiative heating rate
-        real, intent(out) :: radht(gr%nnzp)       ! Radiative heating rate
+        real, intent(out) :: Frad(gr%nnzp)          ! IR radiative flux
+        real, intent(out) :: radht(gr%nnzp)         ! Radiative heating rate
+
+        real, intent(inout) :: thlm_forcing(gr%nnzp)! Radht + 
 
 !       Output (optional)
 
@@ -868,8 +879,12 @@
           radht(1)       = 0.
           radht(gr%nnzp) = 0.
 
-          thlm_forcing(:) = radht(:)
-          if ( present( sclr_rate ) ) sclr_rate(:) = radht(:) ! Just theta
+          ! note that for ATEX after 90 minutes, advect and clear air
+          ! radiation must be added in from atex_tndcy
+          thlm_forcing(:) = thlm_forcing(:) + radht(:)
+          if ( present( sclr_rate ) ) then
+            sclr_rate(:) = thlm_forcing(:) + radht(:) ! Just theta
+          endif
 
         endif ! ~ lbugsrad
 
