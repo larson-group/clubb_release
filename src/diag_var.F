@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.15 2006-02-03 21:10:17 griffinb Exp $
+! $Id: diag_var.F,v 1.16 2006-02-04 00:22:05 griffinb Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -702,12 +702,14 @@ c      clip small and negative values
           km1   = max(k-1,1)
           kp1   = min(k+1, gr%nnzp)
 
-          calc_aa(k) = - 0.5 * a1(k)
-     .                       * (2./3.) * beta
-     .                       * gr%dzm(k)
-     .                       * wp3(k)/max(wp2(km1)+wp2(k),2.0*eps)
-     .                 - 0.5 * wmm(k) * gr%dzm(k)
-     .                 - nu2 * gr%dzm(k) * gr%dzt(k)
+          calc_aa(k) = 
+     .       - (1.0/3.0) * beta
+     .         * gr%dzm(k) * (1.0/2.0)
+     .         * ( a1(k) + a1(km1) )
+     .         * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*eps ) )
+     .       - 0.5 * wmm(k) * gr%dzm(k)
+     .       - nu2 * gr%dzm(k) * gr%dzt(k)
+
         enddo
 
         ! Boundary Conditions
@@ -748,13 +750,16 @@ c      clip small and negative values
           km1 = max(k-1,1)
           kp1 = min(k+1, gr%nnzp)
 
-          calc_bb(k) = C2x / tau(k)
-     .               + 0.5 * a1(k)
-     .                     * (2./3.) * beta
-     .                     * gr%dzm(k)
-     .                     * ( wp3(kp1)/max(wp2(k)+wp2(kp1), 2.0*eps)
-     .                         - wp3(k)/max(wp2(km1)+wp2(k), 2.0*eps) )
-     .               + nu2 * gr%dzm(k)*( gr%dzt(kp1) + gr%dzt(k) )
+          calc_bb(k) =
+     .       + C2x / tau(k)
+     .       + (1.0/3.0) * beta
+     .         * gr%dzm(k) * (1.0/2.0)
+     .           * (  ( a1(kp1) + a1(k) )
+     .              * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
+     .             -  ( a1(k) + a1(km1) )
+     .              * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*eps ) )
+     .             )
+     .       + nu2 * gr%dzm(k) * ( gr%dzt(kp1) + gr%dzt(k) )
 
           if (liter) calc_bb(k) = bb(k) + 1.0/dt
 
@@ -797,12 +802,14 @@ c      clip small and negative values
           km1 = max(k-1,1)
           kp1 = min(k+1, gr%nnzp)
 
-          calc_cc(k) = 0.5 * a1(k)
-     .                     * (2./3.) * beta
-     .                     * gr%dzm(k)
-     .                     * wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
-     .               + 0.5 * wmm(k) * gr%dzm(k)
-     .               - nu2 * gr%dzm(k) * gr%dzt(kp1)
+          calc_cc(k) =
+     .       + (1.0/3.0) * beta
+     .         * gr%dzm(k) * (1.0/2.0)
+     .         * ( a1(kp1) + a1(k) )
+     .         * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
+     .       + 0.5 * wmm(k) * gr%dzm(k)
+     .       - nu2 * gr%dzm(k) * gr%dzt(kp1)
+
         enddo
 
         ! Boundary Conditions
@@ -848,22 +855,23 @@ c      clip small and negative values
           km1 = max(k-1,1)
           kp1 = min(k+1, gr%nnzp)
 
-          calc_dd_covar(k) = - wpxbp(k) * gr%dzm(k) * (xam(kp1)-xam(k))
-     .                       - wpxap(k) * gr%dzm(k) * (xbm(kp1)-xbm(k))
-     .                       - 0.5 * a2(k)
-     .                             * (2./3.) * ( 2 + (1-beta) )
-     .                             * gr%dzm(k)
-     .                             * (  wp3(kp1)
-     .                                  * (wpxap(k)+wpxap(kp1))
-     .                                  * (wpxbp(k)+wpxbp(kp1))
-     .                                  / max( wp2(k) + wp2(kp1), 
-     .                                         2.0 * eps )**2
-     .                                - wp3(k)
-     .                                  * (wpxap(km1)+wpxap(k))
-     .                                  * (wpxbp(km1)+wpxbp(k))
-     .                                  / max( wp2(km1) + wp2(k),
-     .                                         2.0 * eps )**2
-     .                               )
+          calc_dd_covar(k) = 
+     .       - wpxbp(k) * gr%dzm(k) * (xam(kp1)-xam(k))
+     .       - wpxap(k) * gr%dzm(k) * (xbm(kp1)-xbm(k))
+     .       - ( 1.0 - (1.0/3.0) * beta )
+     .         * gr%dzm(k) * (1.0/2.0)
+     .           * (   ( a2(kp1) + a2(k) )
+     .               * ( wpxap(kp1) + wpxap(k) )
+     .               * ( wpxbp(kp1) + wpxbp(k) )
+     .               * wp3(kp1) 
+     .               / MAX( wp2(kp1) + wp2(k), 2.0*eps )**2.0
+     .             -   ( a2(k) + a2(km1) )
+     .               * ( wpxap(k) + wpxap(km1) )
+     .               * ( wpxbp(k) + wpxbp(km1) )
+     .               * wp3(k) 
+     .               / MAX( wp2(k) + wp2(km1), 2.0*eps )**2.0
+     .             )
+
           if (liter) calc_dd_covar(k) = dd(k) + 1.0/dt*xapxbp(k)
 
         enddo
@@ -911,18 +919,20 @@ c      clip small and negative values
           km1 = max(k-1,1)
           kp1 = min(k+1, gr%nnzp)
 
-          calc_dd_var(k) = - 2.0 * wpxp(k) * gr%dzm(k) * (xm(kp1)-xm(k))
-     .                     - 0.5 * a2(k)
-     .                           * (2./3.) * ( 2 + (1-beta) )
-     .                           * gr%dzm(k)
-     .                           * (  wp3(kp1)
-     .                                * (wpxp(k)+wpxp(kp1))**2
-     .                                / max(wp2(k)+wp2(kp1),2.0*eps)**2
-     .                              - wp3(k)
-     .                                * (wpxp(km1)+wpxp(k))**2
-     .                                / max(wp2(km1)+wp2(k),2.0*eps)**2
-     .                             )
+          calc_dd_var(k) =
+     .       - 2.0 * wpxp(k) * gr%dzm(k) * (xm(kp1)-xm(k))
+     .       - ( 1.0 - (1.0/3.0) * beta )
+     .         * gr%dzm(k) * (1.0/2.0)
+     .           * (   ( a2(kp1) + a2(k) ) * wp3(kp1)
+     .               * ( wpxp(kp1) + wpxp(k) )**2.0
+     .               / MAX( wp2(kp1) + wp2(k), 2.0*eps )**2.0
+     .             -   ( a2(k) + a2(km1) ) * wp3(k)
+     .               * ( wpxp(k) + wpxp(km1) )**2.0
+     .               / MAX( wp2(k) + wp2(km1), 2.0*eps )**2.0
+     .             )
+
           if (liter) calc_dd_var(k) = dd(k) + 1.0/dt*xp2(k)
+
         enddo
 
         ! Boundary Conditions
