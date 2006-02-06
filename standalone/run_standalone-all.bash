@@ -1,45 +1,27 @@
 #!/bin/bash
 #######################################################################
+# $Id: run_standalone-all.bash,v 1.14 2006-02-06 18:55:20 hoc_browser Exp $
 #
-# Script to run the standalone hoc program.  
+# Script to run the standalone hoc program for all models.
 # Tested with BASH.  Not tested with Korn shell or Bourne(sh) shell.
-# Edit to change run
 #
 #######################################################################
 # Useful on multiprocessor machines with OpenMP capable Fortran
 # OMP_NUM_THREADS=2
 #######################################################################
+
+EXIT_CODE=( [0]=0 [1]=0 [2]=0 [3]=0 [4]=0 [5]=0 [6]=0 [7]=0 [8]=0 [9]=0 [10]=0 )
+
+RUN_CASE=(arm atex bomex dycoms2_rf01 dycoms2_rf02_do dycoms2_rf02_ds\
+ dycoms2_rf02_nd dycoms2_rf02_so fire nov11_altocu wangara )
+
 # This will loop over all runs in sequence 
-for (( x = 1; x <= 11; x++)); do
-  case $x in
-   1 )
-     RUN_CASE=arm ;;
-   2 )
-     RUN_CASE=atex ;;
-   3 )
-     RUN_CASE=bomex ;;
-   4 )
-     RUN_CASE=dycoms2_rf01 ;;
-   5 )
-     RUN_CASE=dycoms2_rf02_do ;;
-   6 )
-     RUN_CASE=dycoms2_rf02_ds ;;
-   7 )
-     RUN_CASE=dycoms2_rf02_nd ;;
-   8 )
-     RUN_CASE=dycoms2_rf02_so ;;
-   9 )
-     RUN_CASE=fire ;;
-   10)
-     RUN_CASE=nov11_altocu ;;
-   11)
-     RUN_CASE=wangara ;; 
-   esac
+for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 #######################################################################
 # Check for necessary namelists.  If files exist, then
 # copy them over to the general input files.
 
- STANDALONE_IN='standalone_'$RUN_CASE'.in'
+ STANDALONE_IN='standalone_'"${RUN_CASE[$x]}"'.in'
 
  if [ ! -e "$STANDALONE_IN" ] ; then
 	echo $STANDALONE_IN " does not exist"
@@ -56,11 +38,22 @@ for (( x = 1; x <= 11; x++)); do
 #######################################################################
 #
 # State which case is being run
- echo "Running" $RUN_CASE
-# Run HOC
- ./hoc_standalone
+ echo "Running ""${RUN_CASE[$x]}"
+# Run HOC 
+ RESULT=`./hoc_standalone 2>&1 |grep 'normal'`
+#echo $RESULT
+ if [ -z "$RESULT" ]; then
+	EXIT_CODE[$x]=-1
+ fi
 
-# remove the temporary error.in file
+# remove the temporary standalone.in file
  rm -f 'standalone.in'
 
+done
+
+# Print the results
+for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
+  if [ "${EXIT_CODE[$x]}" != 0 ]; then
+	echo "${RUN_CASE[$x]}"' failure'
+  fi
 done
