@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.45 2006-02-06 20:01:04 dschanen Exp $
+# $Id: Makefile,v 1.46 2006-02-07 02:39:16 dschanen Exp $
 # This version should work with BSD, GNU make, smake and dmake
 
 # For HOC we edit this by hand rather than implementing imake or automake
@@ -8,8 +8,9 @@
 
 #include config.linux_ia32_pg.in
 #include config.linux_ia64_intel.in
-#include config.solaris_generic_s11.in
- include config.messner.in
+#include config.solaris_generic_ss11.in
+#include config.osf1_alpha_digital.in
+include config.messner.in
 
 # == Object files ==
 
@@ -104,6 +105,11 @@ install:
 clean: 
 	-rm -f *.o *.mod core*
 
+clean_all: 
+	-rm -f *.o *.mod core* int2txt hoc_tuner hoc_inputfields \
+	hoc_standalone compare_runs \
+	jacobian hoc_tuner_budget_terms
+
 # == Dependencies ==
 polpak.o	: polpak.f90
 endian.o	: endian.F
@@ -177,23 +183,24 @@ cloud_correlate.o	: cloud_correlate.F90
 bugsrad_physconst.o	: kinds.o bugsrad_physconst.F90
 bugs_lwr.o		: bugs_lwr.F bugsrad_planck.o gases_ckd.o kinds.o 
 bugs_rad.o 		: bugs_rad.F bugs_swr.o bugs_lwr.o gascon.o kinds.o \
-			bugsrad_planck.o cloud_correlate.o bugsrad_physconst.o \
+			bugsrad_planck.o cloud_correlate.o \
+			bugsrad_physconst.o \
 			gases_ckd.o cloudg.o newexp.o rayle.o
-bugs_swr.o 		: bugs_swr.F gases_ckd.o kinds.o
+bugs_swr.o 		: kinds.o gases_ckd.o bugs_swr.F 
 cloudg.o 		: kinds.o cloudg.F
-comscp1.o 		: comscp1.F
-comscp2.o		: comscp2.F
+comscp1.o 		: kinds.o comscp1.F
+comscp2.o		: kinds.o comscp2.F
 gascon.o 		: bugsrad_physconst.o gascon.F
 gases_ckd.o 		: bugsrad_physconst.o gases_ckd.F90
 newexp.o 		: kinds.o newexp.F90
-rayle.o 		: rayle.F
-two_rt_lw.o 		: two_rt_lw.F
-two_rt_lw_sel.o 	: two_rt_lw_sel.F
-two_rt_lw_iter.o 	: two_rt_lw_iter.F
-two_rt_lw_ocastrndm.o	: two_rt_lw_ocastrndm.F90
-two_rt_sw.o		: two_rt_sw.F
-two_rt_sw_bs.o		: bandec.o banbks.o two_rt_sw_bs.F
-two_rt_sw_ocastrndm.o	: two_rt_sw_ocastrndm.F90
+rayle.o 		: kinds.o rayle.F
+two_rt_lw.o 		: kinds.o two_rt_lw.F
+two_rt_lw_sel.o 	: kinds.o two_rt_lw_sel.F
+two_rt_lw_iter.o 	: kinds.o two_rt_lw_iter.F
+two_rt_lw_ocastrndm.o	: kinds.o two_rt_lw_ocastrndm.F90
+two_rt_sw.o		: kinds.o two_rt_sw.F
+two_rt_sw_bs.o		: kinds.o bandec.o banbks.o two_rt_sw_bs.F
+two_rt_sw_ocastrndm.o	: kinds.o two_rt_sw_ocastrndm.F90
 bugsrad_hoc.o 		: bugsrad_hoc.F90 bugs_rad.o constants.o
 
 # == Executables ==
