@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.66 2006-01-17 21:53:59 griffinb Exp $
+! $Id: hoc.F,v 1.67 2006-02-07 20:20:36 dschanen Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -195,6 +195,7 @@
      
 !      External
        logical, external :: invalid_model_arrays
+       intrinsic mod, real, int 
 
 !      Subroutine Arguments (constants)
        real, intent(in) :: C1_in, C1b_in, C1c_in
@@ -361,7 +362,18 @@
 
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
          do i1=1, niterlong
-           call hoc_closure_timestep( i, i1, niterlong, isValid )
+           call hoc_closure_timestep( i1, niterlong, isValid )
+           ! SET TIME
+           ! Advance time here, not in hoc_closure_timestep,
+           ! in order to facilitate use of stats.
+           ! A host model, e.g. WRF, would advance time outside
+           ! of hoc_closure_timestep.  Vince Larson 7 Feb 2006
+           IF ( i1 < niterlong ) THEN
+             time = time_initial + (i-1) * dtmain + i1 * dtclosure
+           ELSEIF ( i1 == niterlong ) THEN
+              time = time_initial + i * dtmain
+           ENDIF
+
            if ( .not. isValid ) exit
          enddo
 
@@ -430,6 +442,7 @@
 
 !      External
        logical, external :: invalid_model_arrays
+       intrinsic mod, real, int 
 
 !      Subroutine Arguments (constants)
        real, intent(in) :: C1_in, C1b_in, C1c_in
@@ -576,9 +589,21 @@
 
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
          do i1=1, niterlong
-           call hoc_closure_timestep( i, i1, niterlong, isValid )
+           call hoc_closure_timestep( i1, niterlong, isValid )
+           ! SET TIME
+           ! Advance time here, not in hoc_closure_timestep,
+           ! in order to facilitate use of stats.
+           ! A host model, e.g. WRF, would advance time outside
+           ! of hoc_closure_timestep.  Vince Larson 7 Feb 2006
+           IF ( i1 < niterlong ) THEN
+             time = time_initial + (i-1) * dtmain + i1 * dtclosure
+           ELSEIF ( i1 == niterlong ) THEN
+              time = time_initial + i * dtmain
+           ENDIF
+
            if ( .not. isValid ) exit
          enddo
+
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
           if ( .not. isValid ) exit
        enddo
@@ -610,9 +635,6 @@
 !   function sat_rcm
 !   function zt2zm (from grid_class)
 
-!   Fortran intrinsic functions:
-!   sqrt; min & max; trim
-
 !-----------------------------------------------------------------------
         subroutine hoc_initialize( thlm, rtm, um, vm, ug, vg, wp2,
      .                             rcm, wmt, wmm,
@@ -636,6 +658,7 @@
 !       External functions
         real, external    :: rsat
         real, external    :: sat_rcm
+        intrinsic min, max, trim, sqrt
 
 !       Output
         real, dimension(:), intent(out) :: thlm, rtm
@@ -874,8 +897,6 @@
 !    subroutine sfc_momentum_fluxes
 !    subroutine sfc_var
 
-!    Fortran intrinsic functions:
-!    none
 !----------------------------------------------------------------------
         subroutine hoc_forcings_timestep( iteration, stdout, isValid )
 
@@ -1163,9 +1184,6 @@
 !    function zm2zt (from grid_class)
 !    function zt2zm (from grid_class)
 
-!    Fortran intrinsic functions:
-!    present, sqrt, min, & max
-
 !    If compiled with STATS:
 !    subroutine stats_begin_timestep
 !    subroutine stats_end_timestep
@@ -1175,7 +1193,7 @@
 !    permute_height_time (external)
 !    latin_hypercube_sampling (Internal to module hoc)
 !-----------------------------------------------------------------------
-      subroutine hoc_closure_timestep( mi, i1, niterlong, isValid )
+      subroutine hoc_closure_timestep( i1, niterlong, isValid )
 
 !      Modules to be included
        use constants
@@ -1194,9 +1212,9 @@
 
 !      External
        real, external :: rsat
+       intrinsic present, sqrt, min, max
 
 !      Input
-       integer, intent(in)    :: mi        ! main iteration number (i from above)
        integer, intent(in)    :: i1        ! closure iteration number
        integer, intent(in)    :: niterlong ! total # of closure iterations
        logical, intent(inout) :: isValid
@@ -1553,16 +1571,6 @@
 !#######################################################################
 !############## ADVANCE PROGNOSTIC VARIABLES ONE TIMESTEP ##############
 !#######################################################################
-
-!      SET TIME
-!      Since the timestep advances from n to n+1 at this point, the
-!      official time should also advance from t to t + dt at this point.
-!      Brian.
-       IF ( i1 < niterlong ) THEN
-          time = time_initial + (mi-1) * dtmain + i1 * dtclosure
-       ELSEIF ( i1 == niterlong ) THEN
-          time = time_initial + mi * dtmain
-       ENDIF
 
 
 !      Advance rtm/wprtp and thlm/wpthlp one time step
