@@ -1,4 +1,4 @@
-# $Id $
+# $Id: config.osf1_alpha_digital.in,v 1.3 2006-02-07 01:22:11 dschanen Exp $
 # Configuration File for Compaq f95 on the UWM alpha
 # == Compiler invocation ==
 FC=f95 # DEC/Compaq Fortran

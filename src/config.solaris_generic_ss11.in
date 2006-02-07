@@ -1,4 +1,4 @@
-# $Id $
+# $Id: config.solaris_generic_ss11.in,v 1.2 2006-02-07 01:22:11 dschanen Exp $
 # Makefile definitions for Sun f95
 
 # == Compiler invocation ==
