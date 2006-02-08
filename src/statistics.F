@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.27 2006-01-22 16:17:20 griffinb Exp $
+!  $Id: statistics.F,v 1.28 2006-02-08 15:42:56 golaz Exp $
 
 !  module stats_type
 !  contains:
@@ -457,8 +457,7 @@ c     -----------------------------------------------------------------
       fname = trim(fname_zt)
       call open_grads( zt%f, 20, fdir, fname, 
      .                 1, zt%kk, zt%z,
-!     .                 day, month, year, time+stats_tout, stats_tout,
-     .                 day, month, year, time, stats_tout,   ! Brian
+     .                 day, month, year, time+stats_tout, stats_tout,
      .                 zt%nn )
 
 !     Default initialization for array indices for zt
@@ -1345,8 +1344,7 @@ c     -----------------------------------------------------------------
       fname = trim(fname_zm)
       call open_grads( zm%f, 20, fdir, fname, 
      .                 1, zm%kk, zm%z,
-!     .                 day, month, year, time+stats_tout, stats_tout,
-     .                 day, month, year, time, stats_tout,   ! Brian
+     .                 day, month, year, time+stats_tout, stats_tout,
      .                 zm%nn )
 
 !     Default initialization for array indices for zm
@@ -2240,8 +2238,7 @@ c     -----------------------------------------------------------------
       fname = trim(fname_sfc)
       call open_grads( sfc%f, 20, fdir, fname, 
      .                 1, sfc%kk, sfc%z,
-!     .                 day, month, year, time+stats_tout, stats_tout,
-     .                 day, month, year, time, stats_tout,   ! Brian
+     .                 day, month, year, time+stats_tout, stats_tout,
      .                 sfc%nn )
 
 !     Default initialization for array indices for sfc
@@ -2443,8 +2440,7 @@ c     -----------------------------------------------------------------
       end subroutine stats_begin_timestep
 
 c     -----------------------------------------------------------------
-!      subroutine stats_end_timestep( time, delt )
-      subroutine stats_end_timestep( time, delt, deltclose )   ! Brian
+      subroutine stats_end_timestep( time, delt )
 
       use statistics
 
@@ -2452,7 +2448,7 @@ c     -----------------------------------------------------------------
 
 !     Input
 
-      real, intent(in) :: time, delt, deltclose   ! Brian
+      real, intent(in) :: time, delt
 
 !     Internal
 
@@ -2466,13 +2462,8 @@ c     -----------------------------------------------------------------
 
       do i=1,zt%nn
        do k=1,zt%kk
-!         if ( zt%n(k,i) /= 0 
-!     .        .and. zt%n(k,i) /= stats_tout/stats_tsamp ) then
-!         if ( zt%n(k,i) /= 0 
-!     .        .and. zt%n(k,i) /= 1 ) then
-         if ( zt%n(k,i) /= 0
-     .        .and. zt%n(k,i) /= 1
-     .        .and. zt%n(k,i) /= int(delt/deltclose) ) then  ! Brian
+         if ( zt%n(k,i) /= 0 
+     .        .and. zt%n(k,i) /= int(stats_tout/stats_tsamp) ) then
            write(*,*) 'Possible sampling error for zt ',i,k,zt%n(k,i)
          endif
         enddo
@@ -2480,13 +2471,8 @@ c     -----------------------------------------------------------------
       
       do i=1,zm%nn
        do k=1,zm%kk
-!         if ( zm%n(k,i) /= 0 
-!     .        .and. zm%n(k,i) /= stats_tout/stats_tsamp ) then
-!         if ( zm%n(k,i) /= 0 
-!     .        .and. zm%n(k,i) /= 1 ) then
-         if ( zm%n(k,i) /= 0
-     .        .and. zm%n(k,i) /= 1
-     .        .and. zm%n(k,i) /= int(delt/deltclose) ) then  ! Brian
+         if ( zm%n(k,i) /= 0 
+     .        .and. zm%n(k,i) /= int(stats_tout/stats_tsamp) ) then
            write(*,*) 'Possible sampling error for zm ',i,k,zm%n(k,i)
          endif
         enddo

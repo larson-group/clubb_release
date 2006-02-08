@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.67 2006-02-07 20:20:36 dschanen Exp $
+! $Id: hoc.F,v 1.68 2006-02-08 15:42:56 golaz Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -228,10 +228,8 @@
 !      Internal Timing Variables
 
        integer ifinal
-       integer ioutput
 
        integer niterlong
-       logical spunup                  ! Set but never used anywhere
 
        integer sample_time
 
@@ -287,7 +285,6 @@
        call gridsetup( nzmax, deltaz )
 
        time = time_initial
-       spunup  = .false.
 
        call hoc_initialize( thlm, rtm, um, vm, ug, vg, wp2,
      .                      rcm, wmt, wmm,
@@ -321,9 +318,10 @@
        ! Brian.
        do i = 1, ifinal-1, 1
 
-!        Output to file every so often if called for
 #ifdef STATS
-         call stats_begin_timestep( time, dtmain )
+!        When this time step is over, the time will be time + dtmain
+
+         call stats_begin_timestep( time + dtmain, dtmain )
          if ( lstats_last .and. stdout ) then
            write(*,'(a,i7,a,f8.1)') 'iteration = ', 
      .                              i, '; time = ', time
@@ -351,11 +349,9 @@
 
 !      Compute number of iterations for closure loop
          if ( time > time_spinup ) then
-            spunup    = .true.
             niterlong = 1
             dt        = dtmain
          else
-            spunup    = .false.
             niterlong = int( dtmain / dtclosure )
             dt        = dtclosure
          endif
@@ -363,6 +359,10 @@
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
          do i1=1, niterlong
            call hoc_closure_timestep( i1, niterlong, isValid )
+#ifdef STATS
+           call stats_end_timestep( time + dtmain, dtmain )
+#endif /*STATS*/
+
            ! SET TIME
            ! Advance time here, not in hoc_closure_timestep,
            ! in order to facilitate use of stats.
@@ -379,7 +379,7 @@
 
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
          if ( .not. isValid ) exit
-       enddo ! i=1, ifinal+1
+       enddo ! i=1, ifinal
 
 !<<<<<<<<<<<<<<<<<<<<<<<< Main time stepping loop <<<<<<<<<<<<<<<<<<<<<<
 
@@ -471,10 +471,8 @@
 !      Internal Timing Variables
 
        integer ifinal
-       integer ioutput
 
        integer niterlong
-       logical spunup                  ! Set but never used anywhere
 
 !      Internal Loop Variables
        integer i, i1
@@ -539,7 +537,6 @@
      .                    )
 
        time = time_initial
-       spunup  = .false.
 
 #ifdef STATS
 !      Initialize statistics output
@@ -549,19 +546,15 @@
 
 !-------------------------- Time integration ---------------------------
        ifinal  = ( time_final - time_initial )  / dtmain
-!       ioutput = dtoutput / dtmain ! no longer needed with new statistics
-
 
 !<<<<<<<<<<<<<<<<<<<<<<<<<< Main time stepping loop <<<<<<<<<<<<<<<<<<<<<<<<
 
-       ! Run from iteration 1 to iteration ifinal + 1 in order to output
-       ! information to the GrADS file for the final model output time.
-       ! Brian.
-       do i = 1, ifinal+1, 1
+       do i = 1, ifinal, 1
 
-!        Output to file every so often if called for
 #ifdef STATS
-         call stats_begin_timestep( time, dtmain )
+!        When this time step is over, the time will be time + dtmain
+
+         call stats_begin_timestep( time + dtmain, dtmain )
          if ( lstats_last .and. stdout ) then
            write(*,'(a,i7,a,f8.1)') 'iteration = ', 
      .                               i, '; time = ', time
@@ -578,11 +571,9 @@
 
 !      Compute number of iterations for closure loop
          if ( time > time_spinup ) then
-           spunup    = .true.
            niterlong = 1
            dt        = dtmain
          else
-           spunup    = .false.
            niterlong = int( dtmain / dtclosure )
            dt        = dtclosure
          endif
@@ -590,6 +581,10 @@
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
          do i1=1, niterlong
            call hoc_closure_timestep( i1, niterlong, isValid )
+#ifdef STATS
+           call stats_end_timestep( time + dtmain, dtmain )
+#endif /*STATS*/
+
            ! SET TIME
            ! Advance time here, not in hoc_closure_timestep,
            ! in order to facilitate use of stats.
@@ -1519,56 +1514,6 @@
        enddo
 
 !#######################################################################
-!##############         SAVE OUTPUT TO DISK               ##############
-!#######################################################################
-
-#ifdef STATS
-!      Store values of surface fluxes for statistics
-       if (lstats_samp) then
-         if ( ish > 0 ) then
-           sfc%x(1,ish) = sfc%x(1,ish) + wpthlp(1) * rhom(1) * cp
-           sfc%n(1,ish) = sfc%n(1,ish) + 1
-         endif
-         if ( ilh > 0 ) then
-           sfc%x(1,ilh) = sfc%x(1,ilh) + wprtp(1) * rhom(1) * Lv
-           sfc%n(1,ilh) = sfc%n(1,ilh) + 1
-         endif
-         if ( iustar > 0 ) then   ! Added by Brian
-           sfc%x(1,iustar) = sfc%x(1,iustar) + ustar
-           sfc%n(1,iustar) = sfc%n(1,iustar) + 1
-         endif
-         if ( irain > 0 ) then   ! Added by Brian
-           sfc%x(1,irain) = sfc%x(1,irain) + rain_rate(2)
-           sfc%n(1,irain) = sfc%n(1,irain) + 1
-         endif
-         if ( ipflux > 0 ) then   ! Added by Brian
-           sfc%x(1,ipflux) = sfc%x(1,ipflux) + Fprec(1)
-           sfc%n(1,ipflux) = sfc%n(1,ipflux) + 1
-         endif
-       endif 
-#endif /*STATS*/
-
-!      Added to allow tuning without using the zm file
-#ifdef STATS
-       wp2zt     = zm2zt( wp2 )
-       thlp2zt   = zm2zt( thlp2 )
-       wpthlpzt  = zm2zt( wpthlp )
-       wprtpzt   = zm2zt( wprtp )
-       rtp2zt    = zm2zt( rtp2 )
-       rtpthlpzt = zm2zt( rtpthlp )
-#endif /*STATS*/
-
-#ifdef STATS
-       call stats_accumulate( time, dtmain )
-
-       ! Only output the stats on the last closure timestep.  Brian
-       IF ( i1 == niterlong ) THEN
-          call stats_end_timestep( time, dtmain, dtclosure )  ! Brian
-       ENDIF
-
-#endif /*STATS*/
-
-!#######################################################################
 !############## ADVANCE PROGNOSTIC VARIABLES ONE TIMESTEP ##############
 !#######################################################################
 
@@ -1680,6 +1625,48 @@
      .              -vpwp(k) * ( vm(k+1) - vm(k) ) * gr%dzm(k)
        enddo
        shear(gr%nnzp) = 0.0
+
+!#######################################################################
+!#############            ACCUMULATE STATISTICS            #############
+!#######################################################################
+
+#ifdef STATS
+!      Store values of surface fluxes for statistics
+       if (lstats_samp) then
+         if ( ish > 0 ) then
+           sfc%x(1,ish) = sfc%x(1,ish) + wpthlp(1) * rhom(1) * cp
+           sfc%n(1,ish) = sfc%n(1,ish) + 1
+         endif
+         if ( ilh > 0 ) then
+           sfc%x(1,ilh) = sfc%x(1,ilh) + wprtp(1) * rhom(1) * Lv
+           sfc%n(1,ilh) = sfc%n(1,ilh) + 1
+         endif
+         if ( iustar > 0 ) then   ! Added by Brian
+           sfc%x(1,iustar) = sfc%x(1,iustar) + ustar
+           sfc%n(1,iustar) = sfc%n(1,iustar) + 1
+         endif
+         if ( irain > 0 ) then   ! Added by Brian
+           sfc%x(1,irain) = sfc%x(1,irain) + rain_rate(2)
+           sfc%n(1,irain) = sfc%n(1,irain) + 1
+         endif
+         if ( ipflux > 0 ) then   ! Added by Brian
+           sfc%x(1,ipflux) = sfc%x(1,ipflux) + Fprec(1)
+           sfc%n(1,ipflux) = sfc%n(1,ipflux) + 1
+         endif
+       endif 
+
+!      Added to allow tuning without using the zm file
+
+       wp2zt     = zm2zt( wp2 )
+       thlp2zt   = zm2zt( thlp2 )
+       wpthlpzt  = zm2zt( wpthlp )
+       wprtpzt   = zm2zt( wprtp )
+       rtp2zt    = zm2zt( rtp2 )
+       rtpthlpzt = zm2zt( rtpthlp )
+
+       call stats_accumulate( time + dtmain, dtmain )
+
+#endif /*STATS*/
 
        return
        end subroutine hoc_closure_timestep
