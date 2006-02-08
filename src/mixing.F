@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.17 2006-02-03 22:48:58 griffinb Exp $
+! $Id: mixing.F,v 1.18 2006-02-08 17:03:21 golaz Exp $
 !
 ! Module containing the hoc mixing scheme.  Allows for optional variables
 ! and assumed shape arrays.
@@ -365,15 +365,20 @@
 
            if ( iwprtp_ta > 0 .or. iwpthlp_ta > 0 ) then
             zmscr03(k) =
-     .      + a1(k) * gr%dzm(k)
-     .        * wp3(k)/max(wp2(km1)+wp2(k),2.0*eps)
+     .      + gr%dzm(k) * (1.0/2.0)
+     .        * ( a1(k) + a1(km1) )
+     .        * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*eps ) )
             zmscr04(k) = 
-     .      - a1(k) * gr%dzm(k)
-     .        * (  wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
-     .           - wp3(k)  /max(wp2(km1)+wp2(k),2.0*eps) )
+     .        - gr%dzm(k) * (1.0/2.0)
+     .          * (  ( a1(kp1) + a1(k) )
+     .             * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
+     .            -  ( a1(k) + a1(km1) )
+     .             * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*eps ) )
+     .            )
             zmscr05(k) = 
-     .      - a1(k) * gr%dzm(k)
-     .        * wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
+     .      - gr%dzm(k) * (1.0/2.0)
+     .        * ( a1(kp1) + a1(k) )
+     .        * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
            endif
 
            if ( iwprtp_tp > 0 .or. iwpthlp_tp > 0 ) then
@@ -836,67 +841,6 @@
 
           endif
 #endif
-!#ifdef STATS
-!          if (lstats_samp) then
-!
-!!          Finalize implicit contributions for wpxp
-!
-!           do k=1,gr%nnzp
-!             km1 = max(k-1,1)
-!             kp1 = min(k+1,gr%nnzp)
-!
-!             if ( iwpxp_ma > 0 ) then
-!               zm%x(k,iwpxp_ma) = zm%x(k,iwpxp_ma)
-!     .         + zmscr01(k) * wpxp(km1)
-!     .         + zmscr02(k) * wpxp(kp1)
-!               zm%n(k,iwpxp_ma) = zm%n(k,iwpxp_ma) + 1
-!             endif
-!
-!             if ( iwpxp_ta > 0 ) then
-!               zm%x(k,iwpxp_ta) = zm%x(k,iwpxp_ta)
-!     .         + zmscr03(k) * wpxp(km1)
-!     .         + zmscr04(k) * wpxp(k)
-!     .         + zmscr05(k) * wpxp(kp1)
-!               zm%n(k,iwpxp_ta) = zm%n(k,iwpxp_ta) + 1
-!             endif
-!
-!             if ( iwpxp_tp > 0 ) then
-!               zm%x(k,iwpxp_tp) = zm%x(k,iwpxp_tp)
-!     .         + zmscr06(k) * xm(k)
-!     .         + zmscr07(k) * xm(kp1)
-!               zm%n(k,iwpxp_tp) = zm%n(k,iwpxp_tp) + 1
-!             endif
-!
-!             if ( iwpxp_ac > 0 ) then
-!               zm%x(k,iwpxp_ac) = zm%x(k,iwpxp_ac)
-!     .         + zmscr08(k) * wpxp(k)
-!               zm%n(k,iwpxp_ac) = zm%n(k,iwpxp_ac) + 1
-!             endif
-!
-!             if ( iwpxp_pr1 > 0 ) then
-!               zm%x(k,iwpxp_pr1) = zm%x(k,iwpxp_pr1)
-!     .         + zmscr09(k) * wpxp(k)
-!               zm%n(k,iwpxp_pr1) = zm%n(k,iwpxp_pr1) + 1
-!             endif
-!
-!             if ( iwprtp_pr2 > 0 ) then
-!               zm%x(k,iwpxp_pr2) = zm%x(k,iwpxp_pr2)
-!     .         + zmscr10(k) * wpxp(k)
-!               zm%n(k,iwpxp_pr2) = zm%n(k,iwpxp_pr2) + 1
-!             endif
-!
-!             if ( iwpxp_dp1 > 0 ) then
-!               zm%x(k,iwpxp_dp1) = zm%x(k,iwpxp_dp1)
-!     .         + zmscr11(k) * wpxp(km1)
-!     .         + zmscr12(k) * wpxp(k)
-!     .         + zmscr13(k) * wpxp(kp1)
-!               zm%n(k,iwpxp_dp1) = zm%n(k,iwpxp_dp1) + 1
-!             endif
-!
-!           enddo
-!
-!          endif
-!#endif STATS
 
 #ifdef STATS
         if (lstats_samp) then
