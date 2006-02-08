@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.16 2006-02-04 00:22:05 griffinb Exp $
+! $Id: diag_var.F,v 1.17 2006-02-08 22:18:17 golaz Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -141,21 +141,23 @@ c      prepare tridiagonal system
 
            if ( irtp2_ta * ithlp2_ta * irtpthlp_ta > 0 ) then
              zmscr05(k)
-     .       = + 0.5 * a1(k)
-     .               * (2./3.) * beta
-     .               * gr%dzm(k)
-     .               * wp3(k)/max(wp2(km1)+wp2(k),2.0*eps)
+     .       = + (1.0/3.0) * beta
+     .         * gr%dzm(k) * (1.0/2.0)
+     .         * ( a1(k) + a1(km1) )
+     .         * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*eps ) )
              zmscr06(k)
-     .       = - 0.5 * a1(k)
-     .               * (2./3.) * beta
-     .               * gr%dzm(k)
-     .               * ( wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
-     .                   - wp3(k)/max(wp2(km1)+wp2(k),2.0*eps) )
+     .       = - (1.0/3.0) * beta
+     .         * gr%dzm(k) * (1.0/2.0)
+     .           * (  ( a1(kp1) + a1(k) )
+     .              * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
+     .             -  ( a1(k) + a1(km1) )
+     .              * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*eps ) )
+     .             )
              zmscr07(k)
-     .       = - 0.5 * a1(k)
-     .               * (2./3.) * beta
-     .               * gr%dzm(k)
-     .               * wp3(kp1)/max(wp2(k)+wp2(kp1),2.0*eps)
+     .       = - (1.0/3.0) * beta
+     .         * gr%dzm(k) * (1.0/2.0)
+     .         * ( a1(kp1) + a1(k) )
+     .         * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
            endif
 
            if ( irtp2_ma * ithlp2_ma * irtpthlp_ma > 0 ) then
@@ -166,16 +168,15 @@ c      prepare tridiagonal system
            if ( irtp2_ta > 0 ) then
              zm%x(k,irtp2_ta) 
      .       = zm%x(k,irtp2_ta)
-     .         - 0.5 * a2(k)
-     .               * (2./3.) * ( 2 + (1-beta) )
-     .               * gr%dzm(k)
-     .               * (  wp3(kp1)
-     .                    * (wprtp(k)+wprtp(kp1))**2
-     .                    / max(wp2(k)+wp2(kp1),2.0*eps)**2
-     .                  - wp3(k)
-     .                    * (wprtp(km1)+wprtp(k))**2
-     .                    / max(wp2(km1)+wp2(k),2.0*eps)**2
-     .                 )
+     .       - ( 1.0 - (1.0/3.0) * beta )
+     .         * gr%dzm(k) * (1.0/2.0)
+     .           * (   ( a2(kp1) + a2(k) ) * wp3(kp1)
+     .               * ( wprtp(kp1) + wprtp(k) )**2.0
+     .               / MAX( wp2(kp1) + wp2(k), 2.0*eps )**2.0
+     .             -   ( a2(k) + a2(km1) ) * wp3(k)
+     .               * ( wprtp(k) + wprtp(km1) )**2.0
+     .               / MAX( wp2(k) + wp2(km1), 2.0*eps )**2.0
+     .             )
            endif
 
          enddo
@@ -292,16 +293,15 @@ c      note: we can reuse the same aa & cc arrays
            if ( ithlp2_ta > 0 ) then
              zm%x(k,ithlp2_ta) 
      .       = zm%x(k,ithlp2_ta)
-     .           - 0.5 * a2(k)
-     .                 * (2./3.) * ( 2 + (1-beta) )
-     .                 * gr%dzm(k)
-     .                 * (  wp3(kp1)
-     .                      * (wpthlp(k)+wpthlp(kp1))**2
-     .                      / max(wp2(k)+wp2(kp1),2.0*eps)**2
-     .                    - wp3(k)
-     .                      * (wpthlp(km1)+wpthlp(k))**2
-     .                      / max(wp2(km1)+wp2(k),2.0*eps)**2
-     .                   )
+     .       - ( 1.0 - (1.0/3.0) * beta )
+     .         * gr%dzm(k) * (1.0/2.0)
+     .           * (   ( a2(kp1) + a2(k) ) * wp3(kp1)
+     .               * ( wpthlp(kp1) + wpthlp(k) )**2.0
+     .               / MAX( wp2(kp1) + wp2(k), 2.0*eps )**2.0
+     .             -   ( a2(k) + a2(km1) ) * wp3(k)
+     .               * ( wpthlp(k) + wpthlp(km1) )**2.0
+     .               / MAX( wp2(k) + wp2(km1), 2.0*eps )**2.0
+     .             )
            endif
 
          enddo ! k
@@ -475,18 +475,31 @@ c      prepare tridiagonal system
              if ( irtpthlp_ta > 0 ) then
              zm%x(k,irtpthlp_ta) 
      .       = zm%x(k,irtpthlp_ta)
-     .           - 0.5 * a2(k)
-     .                 * (2./3.) * ( 2 + (1-beta) )
-     .                 * gr%dzm(k)
-     .                 * (  wp3(kp1)
-     .                      * (wprtp(k)+wprtp(kp1))
-     .                      * (wpthlp(k)+wpthlp(kp1))
-     .                      / max(wp2(k)+wp2(kp1),2.0*eps)**2
-     .                    - wp3(k)
-     .                      * (wprtp(km1)+wprtp(k))
-     .                      * (wpthlp(km1)+wpthlp(k))
-     .                      / max(wp2(km1)+wp2(k),2.0*eps)**2
-     .                   )
+     .       - ( 1.0 - (1.0/3.0) * beta )
+     .         * gr%dzm(k) * (1.0/2.0)
+     .           * (   ( a2(kp1) + a2(k) )
+     .               * ( wprtp(kp1)  + wprtp(k)  )
+     .               * ( wpthlp(kp1) + wpthlp(k) )
+     .               * wp3(kp1) 
+     .               / MAX( wp2(kp1) + wp2(k), 2.0*eps )**2.0
+     .             -   ( a2(k) + a2(km1) )
+     .               * ( wprtp(k)  + wprtp(km1)  )
+     .               * ( wpthlp(k) + wpthlp(km1) )
+     .               * wp3(k) 
+     .               / MAX( wp2(k) + wp2(km1), 2.0*eps )**2.0
+     .             )
+!     .           - 0.5 * a2(k)
+!     .                 * (2./3.) * ( 2 + (1-beta) )
+!     .                 * gr%dzm(k)
+!     .                 * (  wp3(kp1)
+!     .                      * (wprtp(k)+wprtp(kp1))
+!     .                      * (wpthlp(k)+wpthlp(kp1))
+!     .                      / max(wp2(k)+wp2(kp1),2.0*eps)**2
+!     .                    - wp3(k)
+!     .                      * (wprtp(km1)+wprtp(k))
+!     .                      * (wpthlp(km1)+wpthlp(k))
+!     .                      / max(wp2(km1)+wp2(k),2.0*eps)**2
+!     .                   )
              endif
 
           enddo ! k
