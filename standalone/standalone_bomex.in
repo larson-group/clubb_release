@@ -5,7 +5,7 @@
 ! C4 and C10 Currently do nothing in the model - 3/18/05
 
 &model
-run_file  = "../tune/bomex_hoc.in"
+run_file  = "bomex_hoc.in"
 stdout   = .true.
 
 /

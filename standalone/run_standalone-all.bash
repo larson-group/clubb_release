@@ -1,9 +1,9 @@
 #!/bin/bash
 #######################################################################
-# $Id: run_standalone-all.bash,v 1.14 2006-02-06 18:55:20 hoc_browser Exp $
+# $Id: run_standalone-all.bash,v 1.15 2006-02-09 20:44:46 dschanen Exp $
 #
 # Script to run the standalone hoc program for all models.
-# Tested with BASH.  Not tested with Korn shell or Bourne(sh) shell.
+# Tested with bash v2.  Might work with Ksh.
 #
 #######################################################################
 # Useful on multiprocessor machines with OpenMP capable Fortran
@@ -22,6 +22,8 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 # copy them over to the general input files.
 
  STANDALONE_IN='standalone_'"${RUN_CASE[$x]}"'.in'
+ MODEL_IN='../model/'"$RUN_CASE{$x}"'_model.in'
+ STATS_IN='../stats/'"$RUN_CASE{$x}"'_stats.in'
 
  if [ ! -e "$STANDALONE_IN" ] ; then
 	echo $STANDALONE_IN " does not exist"
@@ -33,7 +35,7 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
  fi
 
  ln -s $STANDALONE_IN 'standalone.in'
-
+ cat $MODEL_IN $STATS_IN > "$RUN_CASE{$x}"'_hoc.in'
 
 #######################################################################
 #
@@ -46,8 +48,9 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 	EXIT_CODE[$x]=-1
  fi
 
-# remove the temporary standalone.in file
+# remove the namelists
  rm -f 'standalone.in'
+ rm -f $RUN_CASE'_hoc.in'
 
 done
 

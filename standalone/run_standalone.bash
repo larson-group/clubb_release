@@ -1,16 +1,17 @@
 #!/bin/bash
 #######################################################################
+# $Id: run_standalone.bash,v 1.18 2006-02-09 20:44:46 dschanen Exp $
 #
 # Script to run the standalone hoc program.  
-# Tested with BASH.  Not tested with Korn shell or Bourne(sh) shell.
-# Edit to change run
+# Tested with bash v2.  Might work with Ksh.
 #
 #######################################################################
-# Useful on compilers which have OpenMP
+# Useful on multiprocessor machines with OpenMP capable Fortran
 # OMP_NUM_THREADS=2
 #######################################################################
 # Select a run, comment out the rest
-# RUN_CASE=atex 
+if [ -z $1 ]; then
+  RUN_CASE=atex 
 # RUN_CASE=arm 
 # RUN_CASE=bomex 
 # RUN_CASE=dycoms2_rf01 
@@ -18,14 +19,25 @@
 # RUN_CASE=dycoms2_rf02_ds
 # RUN_CASE=dycoms2_rf02_nd 
 # RUN_CASE=dycoms2_rf02_so
-  RUN_CASE=fire 
+# RUN_CASE=fire 
 # RUN_CASE=nov11_altocu
 # RUN_CASE=wangara  
+
+#######################################################################
+# Or alternatively specify it as a command line argument in the form
+# run_standalone.bash <CASE>.
+else
+ RUN_CASE=$1
+fi
+
+
 #######################################################################
 # Check for necessary namelists.  If files exist, then
 # copy them over to the general input files.
 
  STANDALONE_IN='standalone_'$RUN_CASE'.in'
+ MODEL_IN='../model/'$RUN_CASE'_model.in'
+ STATS_IN='../stats/'$RUN_CASE'_stats.in'
 
  if [ ! -e "$STANDALONE_IN" ] ; then
 	echo $STANDALONE_IN " does not exist"
@@ -37,7 +49,7 @@
  fi
 
  ln -s $STANDALONE_IN 'standalone.in'
-
+ cat $MODEL_IN $STATS_IN > $RUN_CASE'_hoc.in'
 
 #######################################################################
 #
@@ -46,5 +58,6 @@
 # Run HOC
  ./hoc_standalone
 
-# remove the temporary error.in file
+# remove the namelists
  rm -f 'standalone.in'
+ rm -f $RUN_CASE'_hoc.in'

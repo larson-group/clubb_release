@@ -5,7 +5,7 @@
 ! C4 and C10 Currently do nothing in the model - 3/18/05
 
 &model
-run_file  = "../tune/fire_hoc.in"
+run_file  = "fire_hoc.in"
 stdout   = .true.
 
 /
