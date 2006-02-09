@@ -1,0 +1,56 @@
+! $Id: dycoms2_rf02_nd_stats.in,v 1.1 2006-02-09 20:40:12 dschanen Exp $
+&statsnl
+
+lstats = t
+stats_tsamp = 60.0
+stats_tout  = 60.0
+
+fname_zt = 'dycoms2_rf02_nd_zt'
+vars_zt = 
+'thlm', 'thvm', 'rtm', 'rcm', 'um', 'vm', 'wmt', 'ug', 'vg',
+'cf', 'p', 'Lscale', 'thlm_forcing', 'rtm_forcing', 
+'wp3', 'wpthlp2', 'wp2thlp', 'wprtp2', 'wp2rtp', 
+'lup', 'ldown', 'taut', 'kht', 'wp2thvp', 'wp2rcp', 'wprtpthlp',
+'sc', 'rhot', 'Ncm', 'sed_rcm',
+'rsm', 'radht',
+'a', 'w1', 'w2', 'sw1', 'sw2', 'thl1' ,'thl2', 'sthl1', 'sthl2',
+'rt1', 'rt2', 'srt1', 'srt2', 'rc1', 'rc2', 'rsl1', 'rsl2', 'r1', 'r2',
+'s1', 's2', 'ss1', 'ss2', 'rrtthl',
+'wp3_bt', 'wp3_ma', 'wp3_ta', 'wp3_tp', 'wp3_ac', 'wp3_bp', 
+'wp3_pr1', 'wp3_pr2', 'wp3_dp1', 'wp3_cl',
+'wp2zt', 'thlp2zt', 'wpthlpzt', 'wprtpzt','rtp2zt','rtpthlpzt',
+!'sclram','sclram_f','sclrbm','sclrbm_f',
+!'edsclram','edsclrbm',
+''
+
+fname_zm = 'dycoms2_rf02_nd_zm'
+vars_zm = 
+'wp2', 'rtp2', 'thlp2', 'rtpthlp', 'wprtp', 'wpthlp', 'wp4',
+'wpthvp', 'rtpthvp', 'thlpthvp', 'taum ', 'khm', 'wprcp',
+'thlprcp', 'rtprcp', 'upwp', 'vpwp', 'rhom', 'sc', 'em',
+'shear', 'Frad', 
+'wp2_bt', 'wp2_ma', 'wp2_ta', 'wp2_ac', 'wp2_bp', 
+'wp2_pr1', 'wp2_pr2', 'wp2_pr3', 'wp2_dp1', 'wp2_dp2', 'wp2_cl',
+'wprtp_bt', 'wprtp_ma', 'wprtp_ta', 'wprtp_tp', 'wprtp_ac', 'wprtp_bp',
+'wprtp_pr1', 'wprtp_pr2', 'wprtp_pr3', 'wprtp_dp1',
+'wpthlp_bt', 'wpthlp_ma', 'wpthlp_ta', 'wpthlp_tp', 'wpthlp_ac', 'wpthlp_bp',
+'wpthlp_pr1', 'wpthlp_pr2', 'wpthlp_pr3', 'wpthlp_dp1',
+'rtp2_bt', 'rtp2_ma', 'rtp2_ta', 'rtp2_tp', 'rtp2_dp1', 'rtp2_dp2', 'rtp2_cl',
+'thlp2_bt', 'thlp2_ma', 'thlp2_ta', 'thlp2_tp', 
+'thlp2_dp1', 'thlp2_dp2', 'thlp2_cl',
+'rtpthlp_bt', 'rtpthlp_ma', 'rtpthlp_ta', 'rtpthlp_tp1', 'rtpthlp_tp2', 
+'rtpthlp_dp1', 'rtpthlp_dp2', 
+!'sclraprtp', 'sclrbprtp', 'sclrap2', 'sclrbp2', 
+!'sclrapthvp', 'sclrbpthvp',
+!'sclrapthlp', 'sclrbpthlp', 'sclraprcp', 'sclrbprcp', 'wpsclrap', 'wpsclrbp',
+!'wp2sclrap', 'wp2sclrbp', 'wpsclrap2', 'wpsclrbp2', 'wpsclraprtp', 
+!'wpsclrbprtp', 'wpsclrapthlp', 'wpsclrbpthlp',
+!'wpedsclrap', 'wpedsclrbp', 
+''
+
+fname_sfc = 'dycoms2_rf02_nd_sfc',
+vars_sfc = 
+'ustar', 'lh', 'sh', 'cc', 'lwp', 'zb', 'zi', 
+''
+
+/
