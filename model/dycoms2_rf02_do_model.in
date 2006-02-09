@@ -1,0 +1,60 @@
+! $Id: dycoms2_rf02_do_model.in,v 1.1 2006-02-09 20:40:46 dschanen Exp $
+! Parameter file for DYCOMS2 RF02 Sc case with drizzle
+! and no cloud water sedimentation.
+
+&model_setting
+
+runtype = "dycoms2_rf02_do"
+
+nzmax  = 147
+deltaz = 10.0
+
+day = 11, month = 7, year = 2001, 
+
+time_initial = 0.0
+time_final =  21600.0
+time_spinup = 30000.0
+
+dtmain    = 60.0
+dtclosure = 60.0
+
+Tsfc = 292.0
+psfc = 1017.8e2
+
+fcor = 7.6e-5
+
+cloud_sed = .false.
+kk_rain   = .true.
+lbugsrad  = .false.
+/
+
+&sounding
+
+! The DYCOMS2 RF02 soundings are hardwired in the file ../src/sounding.F   ! Brian
+
+nlevels = 4
+
+z = 0.0, 794.0, 795.0, 1600.0
+
+theta = 288.30, 288.30, 295.00, 304.30
+
+rt = 9.45e-3, 9.45e-3, 5.00e-3, 2.60e-3
+
+u = 3.0000, 6.4142, 6.4185, 9.8800
+
+v = -9.0000, -4.5336, -4.5480, -0.0400
+
+ug = 3.0000, 6.4142, 6.4185, 9.8800
+
+vg = -9.0000, -4.5336, -4.5480, -0.0400
+
+/
+
+&scalar_sounding
+sclr(:,1) = 288.30, 288.30, 295.00, 304.30
+sclr(:,2) = 9.45e-3, 9.45e-3, 5.00e-3, 2.60e-3
+
+edsclr(:,1) = 288.30, 288.30, 295.00, 304.30
+edsclr(:,2) = 9.45e-3, 9.45e-3, 5.00e-3, 2.60e-3
+
+/

@@ -1,0 +1,58 @@
+! $Id: arm_model.in,v 1.1 2006-02-09 20:40:46 dschanen Exp $
+! Parameter file for GCSS ARM Cu over land case
+
+&model_setting
+
+runtype = "arm"
+
+nzmax = 110
+deltaz = 40.0
+day = 21, month = 6, year = 1997, 
+
+time_initial = 41400.0
+time_final = 93600.0
+time_spinup = 41400.0
+
+dtmain    = 30.0
+dtclosure = 30.0
+
+sfctype = 1
+
+Tsfc = 315.0
+psfc = 970.e2
+SE = 0.
+LE = 0.
+
+fcor = 1.e-5
+
+cloud_sed = .false.
+kk_rain   = .false.
+lbugsrad  = .false.
+
+/
+
+&sounding
+
+nlevels = 8
+z = 0, 50, 350, 650, 700, 1300, 2500, 5500
+
+theta = 299.00, 301.50, 302.50, 303.53, 303.70, 307.13, 314.00, 343.20
+rt = 0.0152, 0.01517, 0.01498, 0.01480, 0.01470, 0.01350, 0.003, 0.003
+
+u = 10, 10, 10, 10, 10, 10, 10, 10
+v = 0, 0,  0,  0,  0,  0,  0,  0
+
+ug = 10, 10, 10, 10, 10, 10, 10, 10
+vg = 0, 0,  0,  0,  0,  0,  0,  0
+
+/
+
+! Only needed if -DSCALARS is enabled
+!  sclr(:,1) = th; sclr(:,2) = rt
+&scalar_sounding
+sclr(:,1) = 299.00, 301.50, 302.50, 303.53, 303.70, 307.13, 314.00, 343.20
+sclr(:,2) = 0.0152, 0.01517, 0.01498, 0.01480, 0.01470, 0.01350, 0.003, 0.003
+edsclr(:,1) = 299.00, 301.50, 302.50, 303.53, 303.70, 307.13, 314.00, 343.20
+edsclr(:,2) = 0.0152, 0.01517, 0.01498, 0.01480, 0.01470, 0.01350, 0.003, 0.003
+
+/

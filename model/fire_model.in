@@ -1,0 +1,56 @@
+! $Id: fire_model.in,v 1.1 2006-02-09 20:40:46 dschanen Exp $
+! Parameter file for GCSS FIRE Sc case
+
+&model_setting
+
+runtype = "fire"
+
+nzmax = 48
+deltaz = 25.0
+day = 7, month = 7, year = 1987, 
+
+time_initial = 0.0
+time_final   = 10800.0
+time_spinup  = 100000.0
+
+dtmain    = 60.0
+dtclosure = 60.0
+
+sfctype = 1
+Tsfc = 288.0
+psfc = 1000.e2
+SE = 0.0
+LE = 0.0
+
+fcor = 1.e-4
+
+cloud_sed = .false.
+kk_rain   = .false.
+lbugsrad  = .false.
+
+/
+
+&sounding
+
+nlevels = 5
+z = 0, 690, 785, 1000, 2000
+
+theta = 288.0, 288.32, 294.40, 295.30, 299.40
+rt = 0.0081, 0.0081, 0.0035, 0.00337, 0.00281
+
+u = 2, 2, 2, 2, 2
+v = -4, -4, -4, -4, -4
+
+ug = 2, 2, 2, 2, 2
+vg = -4, -4, -4, -4, -4
+
+/
+
+&scalar_sounding
+
+sclr(:,1) = 288.0, 288.32, 294.40, 295.30, 299.40
+sclr(:,2) = 0.0081, 0.0081, 0.0035, 0.00337, 0.00281
+edsclr(:,1) = 288.0, 288.32, 294.40, 295.30, 299.40
+edsclr(:,2) = 0.0081, 0.0081, 0.0035, 0.00337, 0.00281
+
+/

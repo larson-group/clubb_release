@@ -1,0 +1,59 @@
+! $Id: nov11_altocu_model.in,v 1.1 2006-02-09 20:40:46 dschanen Exp $
+! Parameter file for November 11 altocumulus case
+
+&model_setting
+
+runtype = "nov11_altocu"
+
+nzmax = 160
+deltaz = 15.0
+
+day = 11, month = 11, year = 1999, 
+
+time_initial = 61200.0
+time_final =  75600.0
+time_spinup = 3600.0
+
+dtmain    = 60.0
+dtclosure = 60.0
+
+Tsfc = 265.98
+psfc = 601.85e2
+
+fcor = 0.0e-5
+
+cloud_sed = .false.
+kk_rain   = .false.
+lbugsrad  = .false.
+
+/
+
+&sounding
+
+nlevels = 5
+
+z = 0.0, 851.0, 1383.0, 1408.0, 3429.0
+
+theta = 309.15, 311.50, 311.90, 314.00, 324.66
+
+rt = 3.20e-3, 2.70e-3, 2.53e-3, 2.25e-3, 0.55e-3
+
+u = 0.0, 0.0, 0.0, 0.0, 0.0
+
+v = 0.0, 0.0, 0.0, 0.0, 0.0
+
+ug = 0.0, 0.0, 0.0, 0.0, 0.0
+
+vg = 0.0, 0.0, 0.0, 0.0, 0.0
+
+/
+
+&scalar_sounding
+
+sclr(:,1) = 307.50, 311.50, 311.90, 314.00, 324.66
+sclr(:,2) = 3.20e-3, 2.70e-3, 2.53e-3, 2.25e-3, 0.55e-3
+
+edsclr(:,1) = 307.50, 311.50, 311.90, 314.00, 324.66
+edsclr(:,2) = 3.20e-3, 2.70e-3, 2.53e-3, 2.25e-3, 0.55e-3
+
+/
