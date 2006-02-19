@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.18 2006-02-08 17:03:21 golaz Exp $
+! $Id: mixing.F,v 1.19 2006-02-19 05:46:35 griffinb Exp $
 !
 ! Module containing the hoc mixing scheme.  Allows for optional variables
 ! and assumed shape arrays.
@@ -288,8 +288,8 @@
 
 !         xm: mean vertical advection
 
-          aa(k_xm,3-2) = - 0.5 * wmt(k) * gr%dzt(k)
-          aa(k_xm,3+2) = + 0.5 * wmt(k) * gr%dzt(k)
+          aa(k_xm,3-2) = - wmt(k) * (1.0/2.0) * gr%dzt(k)
+          aa(k_xm,3+2) = + wmt(k) * (1.0/2.0) * gr%dzt(k)
 
 !         xm: turbulent transport
 
@@ -304,9 +304,9 @@
 !         damping and diffusion
 
           aa(k_wpxp,3-2)
-     .    = - 0.5 * wmm(k) * gr%dzm(k)
-     .      - gr%dzm(k) * (1.0/2.0)
-     .        * ( a1(k) + a1(km1) )
+     .    = - wmm(k) * (1.0/2.0) * gr%dzm(k)
+     .      - gr%dzm(k)
+     .        * (1.0/2.0) * ( a1(k) + a1(km1) )
      .        * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*eps ) )
      .      - nu6 * gr%dzm(k) * gr%dzt(k)      
           select case ( trim(solve_type) )
@@ -314,10 +314,10 @@
             aa(k_wpxp,3)
 !     .      = + C6rt / taum(k)
      .      = + C6rt_Skw_fnc(k) / taum(k)
-     .        + gr%dzm(k) * (1.0/2.0)
-     .          * (  ( a1(kp1) + a1(k) )
+     .        + gr%dzm(k)
+     .          * (  (1.0/2.0) * ( a1(kp1) + a1(k) )
      .             * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
-     .            -  ( a1(k) + a1(km1) )
+     .            -  (1.0/2.0) * ( a1(k) + a1(km1) )
      .             * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*eps ) )
      .            )
      .        + (1.0-C7_Skw_fnc(k)) * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
@@ -327,10 +327,10 @@
             aa(k_wpxp,3)
 !     .      = + C6thl / taum(k)
      .      = + C6thl_Skw_fnc(k) / taum(k)
-     .        + gr%dzm(k) * (1.0/2.0)
-     .          * (  ( a1(kp1) + a1(k) )
+     .        + gr%dzm(k)
+     .          * (  (1.0/2.0) * ( a1(kp1) + a1(k) )
      .             * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
-     .            -  ( a1(k) + a1(km1) )
+     .            -  (1.0/2.0) * ( a1(k) + a1(km1) )
      .             * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*eps ) )
      .            )
      .        + (1.0-C7_Skw_fnc(k)) * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
@@ -338,9 +338,9 @@
             if (liter) aa(k_wpxp,3) = aa(k_wpxp,3) + 1.0 / dt
           end select
           aa(k_wpxp,3+2)
-     .    = + 0.5 * wmm(k) * gr%dzm(k)
-     .      + gr%dzm(k) * (1.0/2.0)
-     .        * ( a1(kp1) + a1(k) )
+     .    = + wmm(k) * (1.0/2.0) * gr%dzm(k)
+     .      + gr%dzm(k)
+     .        * (1.0/2.0) * ( a1(kp1) + a1(k) )
      .        * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
      .      - nu6 * gr%dzm(k) * gr%dzt(kp1)
 
@@ -359,25 +359,25 @@
 !          qt changed to rt to avoid confusion -dschanen 2 Aug 05
 
            if ( iwprtp_ma > 0 .or. iwpthlp_ma > 0 ) then
-             zmscr01(k) = + 0.5 * wmm(k) * gr%dzm(k)
-             zmscr02(k) = - 0.5 * wmm(k) * gr%dzm(k)
+             zmscr01(k) = + wmm(k) * (1.0/2.0) * gr%dzm(k)
+             zmscr02(k) = - wmm(k) * (1.0/2.0) * gr%dzm(k)
            endif
 
            if ( iwprtp_ta > 0 .or. iwpthlp_ta > 0 ) then
             zmscr03(k) =
-     .      + gr%dzm(k) * (1.0/2.0)
-     .        * ( a1(k) + a1(km1) )
+     .      + gr%dzm(k)
+     .        * (1.0/2.0) * ( a1(k) + a1(km1) )
      .        * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*eps ) )
             zmscr04(k) = 
-     .        - gr%dzm(k) * (1.0/2.0)
-     .          * (  ( a1(kp1) + a1(k) )
+     .        - gr%dzm(k)
+     .          * (  (1.0/2.0) * ( a1(kp1) + a1(k) )
      .             * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
-     .            -  ( a1(k) + a1(km1) )
+     .            -  (1.0/2.0) * ( a1(k) + a1(km1) )
      .             * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*eps ) )
      .            )
             zmscr05(k) = 
-     .      - gr%dzm(k) * (1.0/2.0)
-     .        * ( a1(kp1) + a1(k) )
+     .      - gr%dzm(k)
+     .        * (1.0/2.0) * ( a1(kp1) + a1(k) )
      .        * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
            endif
 
@@ -411,7 +411,8 @@
 
            if ( iwprtp_dp1 > 0 .or. iwpthlp_dp1 > 0 ) then
              zmscr11(k) = + nu6 * gr%dzm(k) * gr%dzt(k)
-             zmscr12(k) = - nu6 * gr%dzm(k) *( gr%dzt(kp1) + gr%dzt(k) )
+             zmscr12(k) = - nu6 * gr%dzm(k) 
+     .                            * ( gr%dzt(kp1) + gr%dzt(k) )
              zmscr13(k) = + nu6 * gr%dzm(k) * gr%dzt(kp1)
            endif
 
