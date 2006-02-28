@@ -10,8 +10,11 @@
 # == Optimization ==
  OPTIMIZE=-O2
 
+# == NetCDF Flags ==
+ NC_LOC=$HOME/netcdf-3.6.0-p1
+
 # == Linking Flags ==
- LDFLAGS=
+ LDFLAGS=-L$(NC_LOC)/lib -lnetcdf
 
 # == Compiler flags (all) ==
 # Preprocessing:
@@ -24,5 +27,6 @@
 #   -Dradoffline and -Dnooverlap (see bugsrad documentation)
 # You will need to `make clean' if you change these
 
- FCFLAGS=$(OPTIMIZE) -DSTATS -DBIG_ENDIAN_IO -Dnooverlap -Dradoffline
-#FCFLAGS=$(DEBUG) -DSTATS -DBIG_ENDIAN_IO -Dnooverlap -Dradoffline
+ FCFLAGS=$(OPTIMIZE) -DSTATS -DBIG_ENDIAN_IO -Dnooverlap -Dradoffline -I$(NC_LOC)/include
+#FCFLAGS=$(DEBUG) -DSTATS -DBIG_ENDIAN_IO -Dnooverlap -Dradoffline -I$(NC_LOC)/include
+ 
