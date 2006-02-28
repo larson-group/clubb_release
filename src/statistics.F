@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.29 2006-02-28 18:27:28 dschanen Exp $
+!  $Id: statistics.F,v 1.30 2006-02-28 21:03:29 dschanen Exp $
 
 !  module stats_type
 !  contains:
@@ -2636,7 +2636,7 @@ c     use stats_type
 
 !     Output
       real, dimension(kk,nn), intent(inout)  :: x
-      integer, dimension(kk,nn), intent(out) :: n
+      integer, dimension(kk,nn), intent(in)  :: n
 
 !     Internal
 
