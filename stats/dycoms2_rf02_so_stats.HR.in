@@ -1,6 +1,7 @@
 &statsnl
 
 lstats = t
+istats_fmt = 'grads'
 stats_tsamp = 5.0
 stats_tout  = 5.0
 
