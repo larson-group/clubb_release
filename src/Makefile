@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.47 2006-02-28 18:18:38 dschanen Exp $
+# $Id: Makefile,v 1.48 2006-02-28 18:47:45 dschanen Exp $
 # This version should work with BSD, GNU make, smake and dmake
 
 # For HOC we edit this by hand rather than implementing imake or automake
@@ -8,9 +8,9 @@
 
 #include config.linux_ia32_pg.in
 #include config.linux_ia64_intel.in
-include config.solaris_generic_ss11.in
+#include config.solaris_generic_ss11.in
 #include config.osf1_alpha_digital.in
-#include config.messner.in
+include config.messner.in
 
 # == Object files ==
 
