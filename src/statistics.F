@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.30 2006-02-28 21:03:29 dschanen Exp $
+!  $Id: statistics.F,v 1.31 2006-02-28 23:44:27 dschanen Exp $
 
 !  module stats_type
 !  contains:
@@ -151,8 +151,8 @@ c       Indices for statistics in zt file
      .     irc2,
      .     irsl1,
      .     irsl2,
-     .     ir1,
-     .     ir2,
+     .     iR1,
+     .     iR2,
      .     is1,
      .     is2,
      .     iss1,
@@ -569,8 +569,8 @@ c     -----------------------------------------------------------------
       irc2          = 0
       irsl1         = 0
       irsl2         = 0
-      ir1           = 0
-      ir2           = 0
+      iR1           = 0
+      iR2           = 0
       is1           = 0
       is2           = 0
       iss1          = 0
@@ -680,7 +680,7 @@ c     -----------------------------------------------------------------
           zt%f%var(icf)%ptr => zt%x(:,k)
           zt%f%var(icf)%name = "cf"
           zt%f%var(icf)%description = "cloud fraction"
-          zt%f%var(icf)%units = "dimensionless"
+          zt%f%var(icf)%units = "count"
           k = k + 1
 
         case ('p')
@@ -696,7 +696,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iLscale)%ptr => zt%x(:,k)
           zt%f%var(iLscale)%name = "Lscale"
           zt%f%var(iLscale)%description = "mixing length"
-          zt%f%var(iLscale)%units = "unknown"
+          zt%f%var(iLscale)%units = "m"
           k = k + 1
 
         case ('thlm_forcing')
@@ -704,7 +704,7 @@ c     -----------------------------------------------------------------
           zt%f%var(ithlm_forcing)%ptr => zt%x(:,k)
           zt%f%var(ithlm_forcing)%name = "thlm_f"
           zt%f%var(ithlm_forcing)%description = "thetal forcing"
-          zt%f%var(ithlm_forcing)%units = "unknown"
+          zt%f%var(ithlm_forcing)%units = "K/s"
           k = k + 1
 
         case ('rtm_forcing')
@@ -712,7 +712,7 @@ c     -----------------------------------------------------------------
           zt%f%var(irtm_forcing)%ptr => zt%x(:,k)
           zt%f%var(irtm_forcing)%name = "rtm_f"
           zt%f%var(irtm_forcing)%description = "rt forcing"
-          zt%f%var(irtm_forcing)%units = "unknown"
+          zt%f%var(irtm_forcing)%units = "kg/(kg s)"
           k = k + 1
 
         case ('wp3')
@@ -720,7 +720,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iwp3)%ptr => zt%x(:,k)
           zt%f%var(iwp3)%name = "wp3"
           zt%f%var(iwp3)%description = "w third order moment"
-          zt%f%var(iwp3)%units = "unknown"
+          zt%f%var(iwp3)%units = "(m^3)/(s^3)"
           k = k + 1
 
         case ('wpthlp2')
@@ -728,7 +728,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iwpthlp2)%ptr => zt%x(:,k)
           zt%f%var(iwpthlp2)%name = "wpthlp2"
           zt%f%var(iwpthlp2)%description = "wpthlp2 covariance"
-          zt%f%var(iwpthlp2)%units = "unknown"
+          zt%f%var(iwpthlp2)%units = "(m K^2)/s"
           k = k + 1
 
         case ('wp2thlp')
@@ -736,7 +736,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iwp2thlp)%ptr => zt%x(:,k)
           zt%f%var(iwp2thlp)%name = "wp2thlp"
           zt%f%var(iwp2thlp)%description = "wp2thlp covariance"
-          zt%f%var(iwp2thlp)%units = "unknown"
+          zt%f%var(iwp2thlp)%units = "(m^2 K)/(s^2)"
           k = k + 1
 
         case ('wprtp2')
@@ -744,7 +744,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iwprtp2)%ptr => zt%x(:,k)
           zt%f%var(iwprtp2)%name = "wprtp2"
           zt%f%var(iwprtp2)%description = "wprtp2 covariance"
-          zt%f%var(iwprtp2)%units = "unknown"
+          zt%f%var(iwprtp2)%units = "(m kg^2)/(s kg^2)"
           k = k + 1
 
         case ('wp2rtp')
@@ -752,7 +752,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iwp2rtp)%ptr => zt%x(:,k)
           zt%f%var(iwp2rtp)%name = "wp2rtp"
           zt%f%var(iwp2rtp)%description = "wp2rtp covariance"
-          zt%f%var(iwp2rtp)%units = "unknown"
+          zt%f%var(iwp2rtp)%units = "(m2 kg)/(s2 kg)"
           k = k + 1
 
         case ('lup')
@@ -760,7 +760,7 @@ c     -----------------------------------------------------------------
           zt%f%var(ilup)%ptr => zt%x(:,k)
           zt%f%var(ilup)%name = "lup"
           zt%f%var(ilup)%description = "upward mixing length"
-          zt%f%var(ilup)%units = "unknown"
+          zt%f%var(ilup)%units = "m"
           k = k + 1
 
         case ('ldown')
@@ -768,7 +768,7 @@ c     -----------------------------------------------------------------
           zt%f%var(ildown)%ptr => zt%x(:,k)
           zt%f%var(ildown)%name = "ldown"
           zt%f%var(ildown)%description = "downward mixing length"
-          zt%f%var(ildown)%units = "unknown"
+          zt%f%var(ildown)%units = "m"
           k = k + 1
 
         case ('taut')
@@ -776,7 +776,7 @@ c     -----------------------------------------------------------------
           zt%f%var(itaut)%ptr => zt%x(:,k)
           zt%f%var(itaut)%name = "taut"
           zt%f%var(itaut)%description = "dissipation time"
-          zt%f%var(itaut)%units = "unknown"
+          zt%f%var(itaut)%units = "s"
           k = k + 1
 
         case ('kht')
@@ -784,7 +784,7 @@ c     -----------------------------------------------------------------
           zt%f%var(ikht)%ptr => zt%x(:,k)
           zt%f%var(ikht)%name = "Kht"
           zt%f%var(ikht)%description = "eddy diffusivity"
-          zt%f%var(ikht)%units = "unknown"
+          zt%f%var(ikht)%units = "m2/s "
           k = k + 1
 
         case ('wp2thvp')
@@ -792,7 +792,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iwp2thvp)%ptr => zt%x(:,k)
           zt%f%var(iwp2thvp)%name = "wp2thvp"
           zt%f%var(iwp2thvp)%description = "wp2thvp"
-          zt%f%var(iwp2thvp)%units = "unknown"
+          zt%f%var(iwp2thvp)%units = "(m2 K)/s2"
           k = k + 1
 
         case ('wp2rcp')
@@ -800,7 +800,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iwp2rcp)%ptr => zt%x(:,k)
           zt%f%var(iwp2rcp)%name = "wp2rcp"
           zt%f%var(iwp2rcp)%description = "wp2rcp"
-          zt%f%var(iwp2rcp)%units = "unknown"
+          zt%f%var(iwp2rcp)%units = "(m2 kg)/(s2 kg)"
           k = k + 1
 
         case ('wprtpthlp')
@@ -808,7 +808,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iwprtpthlp)%ptr => zt%x(:,k)
           zt%f%var(iwprtpthlp)%name = "wprtpthlp"
           zt%f%var(iwprtpthlp)%description = "wprtpthlp"
-          zt%f%var(iwprtpthlp)%units = "unknown"
+          zt%f%var(iwprtpthlp)%units = "(m kg K)/(s kg)"
           k = k + 1
 
         case ('sc')
@@ -816,7 +816,7 @@ c     -----------------------------------------------------------------
           zt%f%var(isct)%ptr => zt%x(:,k)
           zt%f%var(isct)%name = "Sc"
           zt%f%var(isct)%description = "Sc"
-          zt%f%var(isct)%units = "unknown"
+          zt%f%var(isct)%units = "count"
           k = k + 1
 
         case ('rhot')
@@ -824,7 +824,7 @@ c     -----------------------------------------------------------------
           zt%f%var(irhot)%ptr => zt%x(:,k)
           zt%f%var(irhot)%name = "rhot"
           zt%f%var(irhot)%description = "density"
-          zt%f%var(irhot)%units = "unknown"
+          zt%f%var(irhot)%units = "kg / m^3"
           k = k + 1
 
         case ('Ncm')           ! Brian
@@ -887,7 +887,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iaccr_rrm)%name = "accr_rrm"
           zt%f%var(iaccr_rrm)%description
      .    = "d(rrm)/dt due to accretion ((kg/kg)/s)"
-          zt%f%var(iaccr_rrm)%units = "(kg/kg)/s"
+          zt%f%var(iaccr_rrm)%units = "kg/(kg s)"
           k = k + 1
 
         case ('sed_rrm')       ! Brian
@@ -896,7 +896,7 @@ c     -----------------------------------------------------------------
           zt%f%var(ised_rrm)%name = "sed_rrm"
           zt%f%var(ised_rrm)%description
      .    = "d(rrm)/dt due to sedimentation ((kg/kg)/s)"
-          zt%f%var(ised_rrm)%units = "(kg/kg)/s"
+          zt%f%var(ised_rrm)%units = " kg/(kg s)"
           k = k + 1
 
         case ('diff_rrm')      ! Brian
@@ -905,7 +905,7 @@ c     -----------------------------------------------------------------
           zt%f%var(idiff_rrm)%name = "diff_rrm"
           zt%f%var(idiff_rrm)%description
      .    = "d(rrm)/dt due to diffusion ((kg/kg)/s)"
-          zt%f%var(idiff_rrm)%units = "(kg/kg)/s"
+          zt%f%var(idiff_rrm)%units = "kg/(kg s)"
           k = k + 1
 
         case ('subs_rrm')      ! Brian
@@ -914,7 +914,7 @@ c     -----------------------------------------------------------------
           zt%f%var(isubs_rrm)%name = "subs_rrm"
           zt%f%var(isubs_rrm)%description
      .    = "d(rrm)/dt due to subsidence ((kg/kg)/s)"
-          zt%f%var(isubs_rrm)%units = "(kg/kg)/s"
+          zt%f%var(isubs_rrm)%units = "kg/(kg/s)"
           k = k + 1
 
         case ('Nrm')           ! Brian
@@ -923,7 +923,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iNrm)%name = "Nrm"
           zt%f%var(iNrm)%description
      .    = "rain droplet number concentration (num/m^3)"
-          zt%f%var(iNrm)%units = "count/m^3"
+          zt%f%var(iNrm)%units = "count/(m^3)"
           k = k + 1
 
         case ('cond_Nrm')      ! Brian
@@ -932,7 +932,7 @@ c     -----------------------------------------------------------------
           zt%f%var(icond_Nrm)%name = "cond_Nrm"
           zt%f%var(icond_Nrm)%description
      .    = "d(Nrm)/dt due to condensation ((num/m^3)/s)"
-          zt%f%var(icond_Nrm)%units = "(count/m^3)/s"
+          zt%f%var(icond_Nrm)%units = "count/(m^3 s)"
           k = k + 1
 
         case ('auto_Nrm')      ! Brian
@@ -941,7 +941,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iauto_Nrm)%name = "auto_Nrm"
           zt%f%var(iauto_Nrm)%description
      .    = "d(Nrm)/dt due to autoconversion ((num/m^3)/s)"
-          zt%f%var(iauto_Nrm)%units = "(count/m^3)/s"
+          zt%f%var(iauto_Nrm)%units = "count/(m^3 s)"
           k = k + 1
 
         case ('sed_Nrm')       ! Brian
@@ -950,7 +950,7 @@ c     -----------------------------------------------------------------
           zt%f%var(ised_Nrm)%name = "sed_Nrm"
           zt%f%var(ised_Nrm)%description
      .    = "d(Nrm)/dt due to sedimentation ((num/m^3)/s)"
-          zt%f%var(ised_Nrm)%units = "(count/m^3)/s"
+          zt%f%var(ised_Nrm)%units = "count/(m^3 s)"
           k = k + 1
 
         case ('diff_Nrm')      ! Brian
@@ -959,7 +959,7 @@ c     -----------------------------------------------------------------
           zt%f%var(idiff_Nrm)%name = "diff_Nrm"
           zt%f%var(idiff_Nrm)%description
      .    = "d(Nrm)/dt due to diffusion ((num/m^3)/s)"
-          zt%f%var(idiff_Nrm)%units = "(count/m^3)/s"
+          zt%f%var(idiff_Nrm)%units = "count/(m^3/s)"
           k = k + 1
 
         case ('subs_Nrm')      ! Brian
@@ -968,7 +968,7 @@ c     -----------------------------------------------------------------
           zt%f%var(isubs_Nrm)%name = "subs_Nrm"
           zt%f%var(isubs_Nrm)%description
      .    = "d(Nrm)/dt due to subsidence ((num/m^3)/s)"
-          zt%f%var(isubs_Nrm)%units = "(count/m^3)/s"
+          zt%f%var(isubs_Nrm)%units = "count/(m^3 s)"
           k = k + 1
 
         case ('Vr')            ! Brian
@@ -1042,7 +1042,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iwp3_bt)%ptr => zt%x(:,k)
           zt%f%var(iwp3_bt)%name = "wp3_bt"
           zt%f%var(iwp3_bt)%description = "wp3 budget"
-          zt%f%var(iwp3_bt)%units = "unknown"
+          zt%f%var(iwp3_bt)%units = "(m^3)/(s^4)"
           k = k + 1
  
         case ('wp3_ma')
@@ -1050,7 +1050,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iwp3_ma)%ptr => zt%x(:,k)
           zt%f%var(iwp3_ma)%name = "wp3_ma"
           zt%f%var(iwp3_ma)%description = "wp3 mean advection"
-          zt%f%var(iwp3_ma)%units = "unknown"
+          zt%f%var(iwp3_ma)%units = "(m^3)/(s^4)"
           k = k + 1
  
         case ('wp3_ta')
@@ -1058,7 +1058,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iwp3_ta)%ptr => zt%x(:,k)
           zt%f%var(iwp3_ta)%name = "wp3_ta"
           zt%f%var(iwp3_ta)%description = "wp3 turbulent advection"
-          zt%f%var(iwp3_ta)%units = "unknown"
+          zt%f%var(iwp3_ta)%units = "(m^3)/(s^4)"
           k = k + 1
  
         case ('wp3_tp')
@@ -1066,7 +1066,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iwp3_tp)%ptr => zt%x(:,k)
           zt%f%var(iwp3_tp)%name = "wp3_tp"
           zt%f%var(iwp3_tp)%description = "wp3 turbulent transport"
-          zt%f%var(iwp3_tp)%units = "unknown"
+          zt%f%var(iwp3_tp)%units = "(m^3)/(s^4)"
           k = k + 1
  
         case ('wp3_ac')
@@ -1074,7 +1074,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iwp3_ac)%ptr => zt%x(:,k)
           zt%f%var(iwp3_ac)%name = "wp3_ac"
           zt%f%var(iwp3_ac)%description = "wp3 accumulation term"
-          zt%f%var(iwp3_ac)%units = "unknown"
+          zt%f%var(iwp3_ac)%units = "(m^3)/(s^4)"
           k = k + 1
  
         case ('wp3_bp')
@@ -1082,7 +1082,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iwp3_bp)%ptr => zt%x(:,k)
           zt%f%var(iwp3_bp)%name = "wp3_bp"
           zt%f%var(iwp3_bp)%description = "wp3 buoyancy production"
-          zt%f%var(iwp3_bp)%units = "unknown"
+          zt%f%var(iwp3_bp)%units = "(m^3)/(s^4)"
           k = k + 1
  
         case ('wp3_pr1')
@@ -1090,7 +1090,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iwp3_pr1)%ptr => zt%x(:,k)
           zt%f%var(iwp3_pr1)%name = "wp3_pr1"
           zt%f%var(iwp3_pr1)%description = "wp3 pressure term 1"
-          zt%f%var(iwp3_pr1)%units = "unknown"
+          zt%f%var(iwp3_pr1)%units = "(m^3)/(s^4)"
           k = k + 1
  
         case ('wp3_pr2')
@@ -1098,7 +1098,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iwp3_pr2)%ptr => zt%x(:,k)
           zt%f%var(iwp3_pr2)%name = "wp3_pr2"
           zt%f%var(iwp3_pr2)%description = "wp3 pressure term 2"
-          zt%f%var(iwp3_pr2)%units = "unknown"
+          zt%f%var(iwp3_pr2)%units = "(m^3)/(s^4)"
           k = k + 1
  
         case ('wp3_dp1')
@@ -1106,7 +1106,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iwp3_dp1)%ptr => zt%x(:,k)
           zt%f%var(iwp3_dp1)%name = "wp3_dp1"
           zt%f%var(iwp3_dp1)%description = "wp3 dissipation term 1"
-          zt%f%var(iwp3_dp1)%units = "unknown"
+          zt%f%var(iwp3_dp1)%units = "(m^3)/(s^4)"
           k = k + 1
  
         case ('wp3_cl')
@@ -1114,7 +1114,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iwp3_cl)%ptr => zt%x(:,k)
           zt%f%var(iwp3_cl)%name = "wp3_cl"
           zt%f%var(iwp3_cl)%description = "wp3 clipping term"
-          zt%f%var(iwp3_cl)%units = "unknown"
+          zt%f%var(iwp3_cl)%units = "(m^3)/(s^4)"
           k = k + 1
  
         case ('a')
@@ -1122,7 +1122,7 @@ c     -----------------------------------------------------------------
           zt%f%var(ia)%ptr => zt%x(:,k)
           zt%f%var(ia)%name = "a"
           zt%f%var(ia)%description = "pdf parameter a"
-          zt%f%var(ia)%units = "unknown"
+          zt%f%var(ia)%units = "count"
           k = k + 1
  
         case ('w1')
@@ -1130,7 +1130,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iw1)%ptr => zt%x(:,k)
           zt%f%var(iw1)%name = "w1"
           zt%f%var(iw1)%description = "pdf parameter w1"
-          zt%f%var(iw1)%units = "unknown"
+          zt%f%var(iw1)%units = "m/s"
           k = k + 1
  
         case ('w2')
@@ -1138,7 +1138,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iw2)%ptr => zt%x(:,k)
           zt%f%var(iw2)%name = "w2"
           zt%f%var(iw2)%description = "pdf parameter w2"
-          zt%f%var(iw2)%units = "unknown"
+          zt%f%var(iw2)%units = "m/s"
           k = k + 1
  
         case ('sw1')
@@ -1146,7 +1146,7 @@ c     -----------------------------------------------------------------
           zt%f%var(isw1)%ptr => zt%x(:,k)
           zt%f%var(isw1)%name = "sw1"
           zt%f%var(isw1)%description = "pdf parameter sw1"
-          zt%f%var(isw1)%units = "unknown"
+          zt%f%var(isw1)%units = "m2/s2"
           k = k + 1
  
         case ('sw2')
@@ -1154,7 +1154,7 @@ c     -----------------------------------------------------------------
           zt%f%var(isw2)%ptr => zt%x(:,k)
           zt%f%var(isw2)%name = "sw2"
           zt%f%var(isw2)%description = "pdf parameter sw2"
-          zt%f%var(isw2)%units = "unknown"
+          zt%f%var(isw2)%units = "m2/s2"
           k = k + 1
  
         case ('thl1')
@@ -1162,7 +1162,7 @@ c     -----------------------------------------------------------------
           zt%f%var(ithl1)%ptr => zt%x(:,k)
           zt%f%var(ithl1)%name = "thl1"
           zt%f%var(ithl1)%description = "pdf parameter thl1"
-          zt%f%var(ithl1)%units = "unknown"
+          zt%f%var(ithl1)%units = "K"
           k = k + 1
  
         case ('thl2')
@@ -1170,7 +1170,7 @@ c     -----------------------------------------------------------------
           zt%f%var(ithl2)%ptr => zt%x(:,k)
           zt%f%var(ithl2)%name = "thl2"
           zt%f%var(ithl2)%description = "pdf parameter thl2"
-          zt%f%var(ithl2)%units = "unknown"
+          zt%f%var(ithl2)%units = "K"
           k = k + 1
  
         case ('sthl1')
@@ -1178,7 +1178,7 @@ c     -----------------------------------------------------------------
           zt%f%var(isthl1)%ptr => zt%x(:,k)
           zt%f%var(isthl1)%name = "sthl1"
           zt%f%var(isthl1)%description = "pdf parameter sthl1"
-          zt%f%var(isthl1)%units = "unknown"
+          zt%f%var(isthl1)%units = "K^2"
           k = k + 1
  
         case ('sthl2')
@@ -1186,7 +1186,7 @@ c     -----------------------------------------------------------------
           zt%f%var(isthl2)%ptr => zt%x(:,k)
           zt%f%var(isthl2)%name = "sthl2"
           zt%f%var(isthl2)%description = "pdf parameter sthl2"
-          zt%f%var(isthl2)%units = "unknown"
+          zt%f%var(isthl2)%units = "K^2"
           k = k + 1
  
         case ('rt1')
@@ -1194,7 +1194,7 @@ c     -----------------------------------------------------------------
           zt%f%var(irt1)%ptr => zt%x(:,k)
           zt%f%var(irt1)%name = "rt1"
           zt%f%var(irt1)%description = "pdf parameter rt1"
-          zt%f%var(irt1)%units = "unknown"
+          zt%f%var(irt1)%units = "kg/kg"
           k = k + 1
  
         case ('rt2')
@@ -1202,7 +1202,7 @@ c     -----------------------------------------------------------------
           zt%f%var(irt2)%ptr => zt%x(:,k)
           zt%f%var(irt2)%name = "rt2"
           zt%f%var(irt2)%description = "pdf parameter rt2"
-          zt%f%var(irt2)%units = "unknown"
+          zt%f%var(irt2)%units = "kg/kg"
           k = k + 1
  
         case ('srt1')
@@ -1210,7 +1210,7 @@ c     -----------------------------------------------------------------
           zt%f%var(isrt1)%ptr => zt%x(:,k)
           zt%f%var(isrt1)%name = "srt1"
           zt%f%var(isrt1)%description = "pdf parameter srt1"
-          zt%f%var(isrt1)%units = "unknown"
+          zt%f%var(isrt1)%units = "(kg^2)/(kg^2)"
           k = k + 1
  
         case ('srt2')
@@ -1218,7 +1218,7 @@ c     -----------------------------------------------------------------
           zt%f%var(isrt2)%ptr => zt%x(:,k)
           zt%f%var(isrt2)%name = "srt2"
           zt%f%var(isrt2)%description = "pdf parameter srt2"
-          zt%f%var(isrt2)%units = "unknown"
+          zt%f%var(isrt2)%units = "(kg^2)/(kg^2)"
           k = k + 1
  
         case ('rc1')
@@ -1226,7 +1226,7 @@ c     -----------------------------------------------------------------
           zt%f%var(irc1)%ptr => zt%x(:,k)
           zt%f%var(irc1)%name = "rc1"
           zt%f%var(irc1)%description = "pdf parameter rc1"
-          zt%f%var(irc1)%units = "unknown"
+          zt%f%var(irc1)%units = "kg/kg"
           k = k + 1
  
         case ('rc2')
@@ -1234,7 +1234,7 @@ c     -----------------------------------------------------------------
           zt%f%var(irc2)%ptr => zt%x(:,k)
           zt%f%var(irc2)%name = "rc2"
           zt%f%var(irc2)%description = "pdf parameter rc2"
-          zt%f%var(irc2)%units = "unknown"
+          zt%f%var(irc2)%units = "kg/kg"
           k = k + 1
  
         case ('rsl1')
@@ -1242,7 +1242,7 @@ c     -----------------------------------------------------------------
           zt%f%var(irsl1)%ptr => zt%x(:,k)
           zt%f%var(irsl1)%name = "rsl1"
           zt%f%var(irsl1)%description = "pdf parameter rsl1"
-          zt%f%var(irsl1)%units = "unknown"
+          zt%f%var(irsl1)%units = "kg/kg"
           k = k + 1
  
         case ('rsl2')
@@ -1250,23 +1250,23 @@ c     -----------------------------------------------------------------
           zt%f%var(irsl2)%ptr => zt%x(:,k)
           zt%f%var(irsl2)%name = "rsl2"
           zt%f%var(irsl2)%description = "pdf parameter rsl2"
-          zt%f%var(irsl2)%units = "unknown"
+          zt%f%var(irsl2)%units = "kg/kg"
           k = k + 1
  
-        case ('r1')
-          ir1 = k
-          zt%f%var(ir1)%ptr => zt%x(:,k)
-          zt%f%var(ir1)%name = "r1"
-          zt%f%var(ir1)%description = "pdf parameter r1"
-          zt%f%var(ir1)%units = "unknown"
+        case ('R1')
+          iR1 = k
+          zt%f%var(iR1)%ptr => zt%x(:,k)
+          zt%f%var(iR1)%name = "R1"
+          zt%f%var(iR1)%description = "pdf parameter R1"
+          zt%f%var(iR1)%units = "count"
           k = k + 1
  
-        case ('r2')
-          ir2 = k
-          zt%f%var(ir2)%ptr => zt%x(:,k)
-          zt%f%var(ir2)%name = "r2"
-          zt%f%var(ir2)%description = "pdf parameter r2"
-          zt%f%var(ir2)%units = "unknown"
+        case ('R2')
+          iR2 = k
+          zt%f%var(iR2)%ptr => zt%x(:,k)
+          zt%f%var(iR2)%name = "R2"
+          zt%f%var(iR2)%description = "pdf parameter R2"
+          zt%f%var(iR2)%units = "count"
           k = k + 1
  
         case ('s1')
@@ -1274,7 +1274,7 @@ c     -----------------------------------------------------------------
           zt%f%var(is1)%ptr => zt%x(:,k)
           zt%f%var(is1)%name = "s1"
           zt%f%var(is1)%description = "pdf parameter s1"
-          zt%f%var(is1)%units = "unknown"
+          zt%f%var(is1)%units = "kg/kg"
           k = k + 1
  
         case ('s2')
@@ -1282,7 +1282,7 @@ c     -----------------------------------------------------------------
           zt%f%var(is2)%ptr => zt%x(:,k)
           zt%f%var(is2)%name = "s2"
           zt%f%var(is2)%description = "pdf parameter s2"
-          zt%f%var(is2)%units = "unknown"
+          zt%f%var(is2)%units = "kg/kg"
           k = k + 1
  
         case ('ss1')
@@ -1290,7 +1290,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iss1)%ptr => zt%x(:,k)
           zt%f%var(iss1)%name = "ss1"
           zt%f%var(iss1)%description = "pdf parameter ss1"
-          zt%f%var(iss1)%units = "unknown"
+          zt%f%var(iss1)%units = "kg/kg"
           k = k + 1
  
         case ('ss2')
@@ -1298,7 +1298,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iss2)%ptr => zt%x(:,k)
           zt%f%var(iss2)%name = "ss2"
           zt%f%var(iss2)%description = "pdf parameter ss2"
-          zt%f%var(iss2)%units = "unknown"
+          zt%f%var(iss2)%units = "kg/kg"
           k = k + 1
  
         case ('rrtthl')
@@ -1306,7 +1306,7 @@ c     -----------------------------------------------------------------
           zt%f%var(irrtthl)%ptr => zt%x(:,k)
           zt%f%var(irrtthl)%name = "rrtthl"
           zt%f%var(irrtthl)%description = "pdf parameter rrtthl"
-          zt%f%var(irrtthl)%units = "unknown"
+          zt%f%var(irrtthl)%units = "count"
           k = k + 1
 
         case('wp2zt')
@@ -1314,7 +1314,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iwp2zt)%ptr => zt%x(:,k)
           zt%f%var(iwp2zt)%name = "wp2zt"
           zt%f%var(iwp2zt)%description ="wp2zt"
-          zt%f%var(iwp2zt)%units = "unknown"
+          zt%f%var(iwp2zt)%units = "m2/s2"
           k = k + 1
 
         case('thlp2zt')
@@ -1322,7 +1322,7 @@ c     -----------------------------------------------------------------
           zt%f%var(ithlp2zt)%ptr => zt%x(:,k)
           zt%f%var(ithlp2zt)%name = "thlp2zt"
           zt%f%var(ithlp2zt)%description ="thlp2zt"
-          zt%f%var(ithlp2zt)%units = "unknown"
+          zt%f%var(ithlp2zt)%units = "K^2"
           k = k + 1
 
         case('wpthlpzt')
@@ -1330,7 +1330,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iwpthlpzt)%ptr => zt%x(:,k)
           zt%f%var(iwpthlpzt)%name = "wpthlpzt"
           zt%f%var(iwpthlpzt)%description ="wpthlpzt"
-          zt%f%var(iwpthlpzt)%units = "unknown"
+          zt%f%var(iwpthlpzt)%units = "(m K)/s"
           k = k + 1
 
         case('wprtpzt')   
@@ -1338,7 +1338,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iwprtpzt)%ptr => zt%x(:,k)
           zt%f%var(iwprtpzt)%name = "wprtpzt"
           zt%f%var(iwprtpzt)%description = "wprtpzt"
-          zt%f%var(iwprtpzt)%units = "unknown"
+          zt%f%var(iwprtpzt)%units = "(m kg)/(s kg)"
           k = k + 1
 
         case('rtp2zt')   
@@ -1354,7 +1354,7 @@ c     -----------------------------------------------------------------
           zt%f%var(irtpthlpzt)%ptr => zt%x(:,k)
           zt%f%var(irtpthlpzt)%name = "rtpthlpzt"
           zt%f%var(irtpthlpzt)%description = "rtpthlpzt"
-          zt%f%var(irtpthlpzt)%units = "unknown"
+          zt%f%var(irtpthlpzt)%units = "(kg K)/kg"
           k = k + 1
 #ifdef SCALARS 
         case ('sclram')
@@ -1372,7 +1372,7 @@ c     -----------------------------------------------------------------
           zt%f%var(isclram_f)%name = "sclram_f"
           zt%f%var(isclram_f)%description
      .    = "passive scalar forcing (currently thlm_forcing)"
-          zt%f%var(isclram_f)%units = "unknown"
+          zt%f%var(isclram_f)%units = "K/s"
           k = k + 1
 
         case ('sclrbm')
@@ -1381,7 +1381,7 @@ c     -----------------------------------------------------------------
           zt%f%var(isclrbm)%name = "sclrbm"
           zt%f%var(isclrbm)%description 
      .    = "passive scalar (currently rtm)"
-          zt%f%var(isclrbm)%units = "unknown"
+          zt%f%var(isclrbm)%units = "kg/kg"
           k = k + 1
 
         case ('sclrbm_f')
@@ -1390,7 +1390,7 @@ c     -----------------------------------------------------------------
           zt%f%var(isclrbm_f)%name = "sclrbm_f"
           zt%f%var(isclrbm_f)%description 
      .    = "passive scalar forcing (currently rtm_forcing)"
-          zt%f%var(isclrbm)%units = "unknown"
+          zt%f%var(isclrbm)%units = "kg/(kg s)"
           k = k + 1
 
         case ('edsclram')
@@ -1605,7 +1605,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwp2)%ptr => zm%x(:,k)
           zm%f%var(iwp2)%name = "wp2"
           zm%f%var(iwp2)%description = "wp2"
-          zm%f%var(iwp2)%units = "unknown"
+          zm%f%var(iwp2)%units = "m2/s2"
           k = k + 1
 
         case ('rtp2')
@@ -1613,7 +1613,7 @@ c     -----------------------------------------------------------------
           zm%f%var(irtp2)%ptr => zm%x(:,k)
           zm%f%var(irtp2)%name = "rtp2"
           zm%f%var(irtp2)%description = "rtp2"
-          zm%f%var(irtp2)%units = "unknown"
+          zm%f%var(irtp2)%units = "(kg/kg)^2"
           k = k + 1
 
         case ('thlp2')
@@ -1621,7 +1621,7 @@ c     -----------------------------------------------------------------
           zm%f%var(ithlp2)%ptr => zm%x(:,k)
           zm%f%var(ithlp2)%name = "thlp2"
           zm%f%var(ithlp2)%description = "thlp2"
-          zm%f%var(ithlp2)%units = "unknown"
+          zm%f%var(ithlp2)%units = "K^2"
           k = k + 1
 
         case ('rtpthlp')
@@ -1629,7 +1629,7 @@ c     -----------------------------------------------------------------
           zm%f%var(irtpthlp)%ptr => zm%x(:,k)
           zm%f%var(irtpthlp)%name = "rtpthlp"
           zm%f%var(irtpthlp)%description = "rtpthlp"
-          zm%f%var(irtpthlp)%units = "unknown"
+          zm%f%var(irtpthlp)%units = "(kg K)/kg"
           k = k + 1
 
         case ('wprtp')
@@ -1637,7 +1637,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwprtp)%ptr => zm%x(:,k)
           zm%f%var(iwprtp)%name = "wprtp"
           zm%f%var(iwprtp)%description = "wprtp"
-          zm%f%var(iwprtp)%units = "unknown"
+          zm%f%var(iwprtp)%units = "(m kg)/(s kg)"
           k = k + 1
 
         case ('wpthlp')
@@ -1645,7 +1645,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwpthlp)%ptr => zm%x(:,k)
           zm%f%var(iwpthlp)%name = "wpthlp"
           zm%f%var(iwpthlp)%description = "wpthlp"
-          zm%f%var(iwpthlp)%units = "unknown"
+          zm%f%var(iwpthlp)%units = "(m K)/s"
           k = k + 1
 
         case ('wp4')
@@ -1653,7 +1653,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwp4)%ptr => zm%x(:,k)
           zm%f%var(iwp4)%name = "wp4"
           zm%f%var(iwp4)%description = "wp4"
-          zm%f%var(iwp4)%units = "unknown"
+          zm%f%var(iwp4)%units = "(m^4)/(s^4)"
           k = k + 1
 
         case ('wpthvp')
@@ -1661,7 +1661,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwpthvp)%ptr => zm%x(:,k)
           zm%f%var(iwpthvp)%name = "wpthvp"
           zm%f%var(iwpthvp)%description = "Buoyancy flux (K m/s)"
-          zm%f%var(iwpthvp)%units = "K m/s"
+          zm%f%var(iwpthvp)%units = "(K m)/s"
           k = k + 1
 
         case ('rtpthvp')
@@ -1669,7 +1669,7 @@ c     -----------------------------------------------------------------
           zm%f%var(irtpthvp)%ptr => zm%x(:,k)
           zm%f%var(irtpthvp)%name = "rtpthvp"
           zm%f%var(irtpthvp)%description = "rtpthvp"
-          zm%f%var(irtpthvp)%units = "unknown"
+          zm%f%var(irtpthvp)%units = "(kg K)/kg"
           k = k + 1
 
         case ('thlpthvp')
@@ -1677,7 +1677,7 @@ c     -----------------------------------------------------------------
           zm%f%var(ithlpthvp)%ptr => zm%x(:,k)
           zm%f%var(ithlpthvp)%name = "thlpthvp"
           zm%f%var(ithlpthvp)%description = "thlpthvp"
-          zm%f%var(ithlpthvp)%units = "unknown"
+          zm%f%var(ithlpthvp)%units = "K^2"
           k = k + 1
 
         case ('taum')
@@ -1685,7 +1685,7 @@ c     -----------------------------------------------------------------
           zm%f%var(itaum)%ptr => zm%x(:,k)
           zm%f%var(itaum)%name = "taum"
           zm%f%var(itaum)%description = "dissipation time"
-          zm%f%var(itaum)%units = "unknown"
+          zm%f%var(itaum)%units = "s"
           k = k + 1
 
         case ('khm')
@@ -1693,7 +1693,7 @@ c     -----------------------------------------------------------------
           zm%f%var(ikhm)%ptr => zm%x(:,k)
           zm%f%var(ikhm)%name = "khm"
           zm%f%var(ikhm)%description = "eddy diffusivity"
-          zm%f%var(ikhm)%units = "unknown"
+          zm%f%var(ikhm)%units = "m2/s"
           k = k + 1
 
         case ('wprcp')
@@ -1701,7 +1701,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwprcp)%ptr => zm%x(:,k)
           zm%f%var(iwprcp)%name = "wprcp"
           zm%f%var(iwprcp)%description = "wprcp"
-          zm%f%var(iwprcp)%units = "unknown"
+          zm%f%var(iwprcp)%units = "(m kg)/(s kg)"
           k = k + 1
 
         case ('thlprcp')
@@ -1709,7 +1709,7 @@ c     -----------------------------------------------------------------
           zm%f%var(ithlprcp)%ptr => zm%x(:,k)
           zm%f%var(ithlprcp)%name = "thlprcp"
           zm%f%var(ithlprcp)%description = "thlprcp"
-          zm%f%var(ithlprcp)%units = "unknown"
+          zm%f%var(ithlprcp)%units = "(K kg)/(kg)"
           k = k + 1
 
         case ('rtprcp')
@@ -1717,7 +1717,7 @@ c     -----------------------------------------------------------------
           zm%f%var(irtprcp)%ptr => zm%x(:,k)
           zm%f%var(irtprcp)%name = "rtprcp"
           zm%f%var(irtprcp)%description = "rtprcp"
-          zm%f%var(irtprcp)%units = "unknown"
+          zm%f%var(irtprcp)%units = "(kg^2)/(kg^2)"
           k = k + 1
 
         case ('upwp')
@@ -1725,7 +1725,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iupwp)%ptr => zm%x(:,k)
           zm%f%var(iupwp)%name = "upwp"
           zm%f%var(iupwp)%description = "upwp"
-          zm%f%var(iupwp)%units = "unknown"
+          zm%f%var(iupwp)%units = "m2/s2"
           k = k + 1
 
         case ('vpwp')
@@ -1733,7 +1733,7 @@ c     -----------------------------------------------------------------
           zm%f%var(ivpwp)%ptr => zm%x(:,k)
           zm%f%var(ivpwp)%name = "vpwp"
           zm%f%var(ivpwp)%description = "vpwp"
-          zm%f%var(ivpwp)%units = "unknown"
+          zm%f%var(ivpwp)%units = "m2/s2"
           k = k + 1
 
         case ('rhom')
@@ -1741,7 +1741,7 @@ c     -----------------------------------------------------------------
           zm%f%var(irhom)%ptr => zm%x(:,k)
           zm%f%var(irhom)%name = "rhom"
           zm%f%var(irhom)%description = "density"
-          zm%f%var(irhom)%units = "unknown"
+          zm%f%var(irhom)%units = "kg/(m^3)"
           k = k + 1
 
         case ('sc')
@@ -1749,7 +1749,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iscm)%ptr => zm%x(:,k)
           zm%f%var(iscm)%name = "scm"
           zm%f%var(iscm)%description = "scm"
-          zm%f%var(iscm)%units = "unknown"
+          zm%f%var(iscm)%units = "count"
           k = k + 1
 
         case ('em')
@@ -1757,7 +1757,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iem)%ptr => zm%x(:,k)
           zm%f%var(iem)%name = "em"
           zm%f%var(iem)%description = "em"
-          zm%f%var(iem)%units = "unknown"
+          zm%f%var(iem)%units = "m2/s2"
           k = k + 1
 
         case ('shear')      ! Brian
@@ -1814,7 +1814,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwp2_bt)%ptr => zm%x(:,k)
           zm%f%var(iwp2_bt)%name = "wp2_bt"
           zm%f%var(iwp2_bt)%description = "wp2 budget"
-          zm%f%var(iwp2_bt)%units = "unknown"
+          zm%f%var(iwp2_bt)%units = "m2/s3"
           k = k + 1
 
         case ('wp2_ma')
@@ -1822,7 +1822,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwp2_ma)%ptr => zm%x(:,k)
           zm%f%var(iwp2_ma)%name = "wp2_ma"
           zm%f%var(iwp2_ma)%description = "wp2 mean advection"
-          zm%f%var(iwp2_ma)%units = "unknown"
+          zm%f%var(iwp2_ma)%units = "m2/s3"
           k = k + 1
 
         case ('wp2_ta')
@@ -1830,7 +1830,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwp2_ta)%ptr => zm%x(:,k)
           zm%f%var(iwp2_ta)%name = "wp2_ta"
           zm%f%var(iwp2_ta)%description = "wp2 turbulent advection"
-          zm%f%var(iwp2_ta)%units = "unknown"
+          zm%f%var(iwp2_ta)%units = "m2/s3"
           k = k + 1
 
         case ('wp2_ac')
@@ -1838,7 +1838,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwp2_ac)%ptr => zm%x(:,k)
           zm%f%var(iwp2_ac)%name = "wp2_ac"
           zm%f%var(iwp2_ac)%description = "wp2 accumulation term"
-          zm%f%var(iwp2_ac)%units = "unknown"
+          zm%f%var(iwp2_ac)%units = "m2/s3"
           k = k + 1
 
         case ('wp2_bp')
@@ -1846,7 +1846,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwp2_bp)%ptr => zm%x(:,k)
           zm%f%var(iwp2_bp)%name = "wp2_bp"
           zm%f%var(iwp2_bp)%description = "wp2 buoyancy production"
-          zm%f%var(iwp2_bp)%units = "unknown"
+          zm%f%var(iwp2_bp)%units = "m2/s3"
           k = k + 1
 
         case ('wp2_pr1')
@@ -1854,7 +1854,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwp2_pr1)%ptr => zm%x(:,k)
           zm%f%var(iwp2_pr1)%name = "wp2_pr1"
           zm%f%var(iwp2_pr1)%description = "wp2 pressure term 1"
-          zm%f%var(iwp2_pr1)%units = "unknown"
+          zm%f%var(iwp2_pr1)%units = "m2/s3"
           k = k + 1
 
         case ('wp2_pr2')
@@ -1862,7 +1862,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwp2_pr2)%ptr => zm%x(:,k)
           zm%f%var(iwp2_pr2)%name = "wp2_pr2"
           zm%f%var(iwp2_pr2)%description = "wp2 pressure term 2"
-          zm%f%var(iwp2_pr2)%units = "unknown"
+          zm%f%var(iwp2_pr2)%units = "m2/s3"
           k = k + 1
 
         case ('wp2_pr3')
@@ -1870,7 +1870,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwp2_pr3)%ptr => zm%x(:,k)
           zm%f%var(iwp2_pr3)%name = "wp2_pr3"
           zm%f%var(iwp2_pr3)%description = "wp2 pressure term 3"
-          zm%f%var(iwp2_pr3)%units = "unknown"
+          zm%f%var(iwp2_pr3)%units = "m2/s3"
           k = k + 1
 
         case ('wp2_dp1')
@@ -1878,7 +1878,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwp2_dp1)%ptr => zm%x(:,k)
           zm%f%var(iwp2_dp1)%name = "wp2_dp1"
           zm%f%var(iwp2_dp1)%description = "wp2 dissipation term 1"
-          zm%f%var(iwp2_dp1)%units = "unknown"
+          zm%f%var(iwp2_dp1)%units = "m2/s3"
           k = k + 1
 
         case ('wp2_dp2')
@@ -1886,7 +1886,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwp2_dp2)%ptr => zm%x(:,k)
           zm%f%var(iwp2_dp2)%name = "wp2_dp2"
           zm%f%var(iwp2_dp2)%description = "wp2 dissipation term 2"
-          zm%f%var(iwp2_dp2)%units = "unknown"
+          zm%f%var(iwp2_dp2)%units = "m2/s3"
           k = k + 1
 
         case ('wp2_cl')
@@ -1894,7 +1894,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwp2_cl)%ptr => zm%x(:,k)
           zm%f%var(iwp2_cl)%name = "wp2_cl"
           zm%f%var(iwp2_cl)%description = "wp2 clipping term"
-          zm%f%var(iwp2_cl)%units = "unknown"
+          zm%f%var(iwp2_cl)%units = "m2/s3"
           k = k + 1
 
         case ('wprtp_bt')
@@ -1902,7 +1902,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwprtp_bt)%ptr => zm%x(:,k)
           zm%f%var(iwprtp_bt)%name = "wprtp_bt"
           zm%f%var(iwprtp_bt)%description = "wprtp budget"
-          zm%f%var(iwprtp_bt)%units = "unknown"
+          zm%f%var(iwprtp_bt)%units = "(m kg)/(s2 kg)"
           k = k + 1
 
         case ('wprtp_ma')
@@ -1910,7 +1910,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwprtp_ma)%ptr => zm%x(:,k)
           zm%f%var(iwprtp_ma)%name = "wprtp_ma"
           zm%f%var(iwprtp_ma)%description = "wprtp mean advection"
-          zm%f%var(iwprtp_ma)%units = "unknown"
+          zm%f%var(iwprtp_ma)%units = "(m kg)/(s2 kg)"
           k = k + 1
 
         case ('wprtp_ta')
@@ -1918,7 +1918,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwprtp_ta)%ptr => zm%x(:,k)
           zm%f%var(iwprtp_ta)%name = "wprtp_ta"
           zm%f%var(iwprtp_ta)%description = "wprtp turbulent advection"
-          zm%f%var(iwprtp_ta)%units = "unknown"
+          zm%f%var(iwprtp_ta)%units = "(m kg)/(s2 kg)"
           k = k + 1
 
         case ('wprtp_tp')
@@ -1926,7 +1926,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwprtp_tp)%ptr => zm%x(:,k)
           zm%f%var(iwprtp_tp)%name = "wprtp_tp"
           zm%f%var(iwprtp_tp)%description = "wprtp turbulent production"
-          zm%f%var(iwprtp_tp)%units = "unknown"
+          zm%f%var(iwprtp_tp)%units = "(m kg)/(s2 kg)"
           k = k + 1
 
         case ('wprtp_ac')
@@ -1934,7 +1934,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwprtp_ac)%ptr => zm%x(:,k)
           zm%f%var(iwprtp_ac)%name = "wprtp_ac"
           zm%f%var(iwprtp_ac)%description = "wprtp accumulation term"
-          zm%f%var(iwprtp_ac)%units = "unknown"
+          zm%f%var(iwprtp_ac)%units = "(m kg)/(s2 kg)"
           k = k + 1
 
         case ('wprtp_bp')
@@ -1942,7 +1942,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwprtp_bp)%ptr => zm%x(:,k)
           zm%f%var(iwprtp_bp)%name = "wprtp_bp"
           zm%f%var(iwprtp_bp)%description = "wprtp buoyancy production"
-          zm%f%var(iwprtp_bp)%units = "unknown"
+          zm%f%var(iwprtp_bp)%units = "(m kg)/(s2 kg)"
           k = k + 1
 
         case ('wprtp_pr1')
@@ -1950,7 +1950,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwprtp_pr1)%ptr => zm%x(:,k)
           zm%f%var(iwprtp_pr1)%name = "wprtp_pr1"
           zm%f%var(iwprtp_pr1)%description = "wprtp pressure term 1"
-          zm%f%var(iwprtp_pr1)%units = "unknown"
+          zm%f%var(iwprtp_pr1)%units = "(m kg)/(s2 kg)"
           k = k + 1
 
         case ('wprtp_pr2')
@@ -1958,7 +1958,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwprtp_pr2)%ptr => zm%x(:,k)
           zm%f%var(iwprtp_pr2)%name = "wprtp_pr2"
           zm%f%var(iwprtp_pr2)%description = "wprtp pressure term 2"
-          zm%f%var(iwprtp_pr2)%units = "unknown"
+          zm%f%var(iwprtp_pr2)%units = "(m kg)/(s2 kg)"
           k = k + 1
 
         case ('wprtp_pr3')
@@ -1966,7 +1966,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwprtp_pr3)%ptr => zm%x(:,k)
           zm%f%var(iwprtp_pr3)%name = "wprtp_pr3"
           zm%f%var(iwprtp_pr3)%description = "wprtp pressure term 3"
-          zm%f%var(iwprtp_pr3)%units = "unknown"
+          zm%f%var(iwprtp_pr3)%units = "(m kg)/(s2 kg)"
           k = k + 1
 
         case ('wprtp_dp1')
@@ -1974,7 +1974,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwprtp_dp1)%ptr => zm%x(:,k)
           zm%f%var(iwprtp_dp1)%name = "wprtp_dp1"
           zm%f%var(iwprtp_dp1)%description = "wprtp dissipation term 1"
-          zm%f%var(iwprtp_dp1)%units = "unknown"
+          zm%f%var(iwprtp_dp1)%units = "(m kg)/(s2 kg)"
           k = k + 1
 
         case ('wpthlp_bt')
@@ -1982,7 +1982,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwpthlp_bt)%ptr => zm%x(:,k)
           zm%f%var(iwpthlp_bt)%name = "wpthlp_bt"
           zm%f%var(iwpthlp_bt)%description = "wpthlp budget"
-          zm%f%var(iwpthlp_bt)%units = "unknown"
+          zm%f%var(iwpthlp_bt)%units = "(m K)/s2"
           k = k + 1
 
         case ('wpthlp_ma')
@@ -1990,7 +1990,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwpthlp_ma)%ptr => zm%x(:,k)
           zm%f%var(iwpthlp_ma)%name = "wpthlp_ma"
           zm%f%var(iwpthlp_ma)%description = "wpthlp mean advection"
-          zm%f%var(iwpthlp_ma)%units = "unknown"
+          zm%f%var(iwpthlp_ma)%units = "(m K)/s2"
           k = k + 1
 
         case ('wpthlp_ta')
@@ -1999,7 +1999,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwpthlp_ta)%name = "wpthlp_ta"
           zm%f%var(iwpthlp_ta)%description 
      .    = "wpthlp turbulent advection"
-          zm%f%var(iwpthlp_ta)%units = "unknown"
+          zm%f%var(iwpthlp_ta)%units = "(m K)/s2"
           k = k + 1
 
         case ('wpthlp_tp')
@@ -2008,7 +2008,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwpthlp_tp)%name = "wpthlp_tp"
           zm%f%var(iwpthlp_tp)%description
      .    = "wpthlp turbulent production"
-          zm%f%var(iwpthlp_tp)%units = "unknown"
+          zm%f%var(iwpthlp_tp)%units = "(m K)/s2"
           k = k + 1
 
         case ('wpthlp_ac')
@@ -2017,7 +2017,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwpthlp_ac)%name = "wpthlp_ac"
           zm%f%var(iwpthlp_ac)%description
      .    = "wpthlp accumulation term"
-          zm%f%var(iwpthlp_ac)%units = "unknown"
+          zm%f%var(iwpthlp_ac)%units = "(m K)/s2"
           k = k + 1
 
         case ('wpthlp_bp')
@@ -2026,7 +2026,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwpthlp_bp)%name = "wpthlp_bp"
           zm%f%var(iwpthlp_bp)%description
      .    = "wpthlp buoyancy production"
-          zm%f%var(iwpthlp_bp)%units = "unknown"
+          zm%f%var(iwpthlp_bp)%units = "(m K)/s2"
           k = k + 1
 
         case ('wpthlp_pr1')
@@ -2035,7 +2035,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwpthlp_pr1)%name = "wpthlp_pr1"
           zm%f%var(iwpthlp_pr1)%description
      .    = "wpthlp pressure term 1"
-          zm%f%var(iwpthlp_pr1)%units = "unknown"
+          zm%f%var(iwpthlp_pr1)%units = "(m K)/s2"
           k = k + 1
 
         case ('wpthlp_pr2')
@@ -2044,7 +2044,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwpthlp_pr2)%name = "wpthlp_pr2"
           zm%f%var(iwpthlp_pr2)%description
      .    = "wpthlp pressure term 2"
-          zm%f%var(iwpthlp_pr2)%units = "unknown"
+          zm%f%var(iwpthlp_pr2)%units = "(m K)/s2"
           k = k + 1
 
         case ('wpthlp_pr3')
@@ -2053,7 +2053,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwpthlp_pr3)%name = "wpthlp_pr3"
           zm%f%var(iwpthlp_pr3)%description
      .    = "wpthlp pressure term 3"
-          zm%f%var(iwpthlp_pr3)%units = "unknown"
+          zm%f%var(iwpthlp_pr3)%units = "(m K)/s2"
           k = k + 1
 
         case ('wpthlp_dp1')
@@ -2062,7 +2062,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwpthlp_dp1)%name = "wpthlp_dp1"
           zm%f%var(iwpthlp_dp1)%description
      .    = "wpthlp dissipation term 1"
-          zm%f%var(iwpthlp_dp1)%units = "unknown"
+          zm%f%var(iwpthlp_dp1)%units = "(m K)/s2"
           k = k + 1
 
 !     Dr. Golaz's new budget terms
@@ -2071,7 +2071,7 @@ c     -----------------------------------------------------------------
           zm%f%var(irtp2_bt)%ptr => zm%x(:,k)
           zm%f%var(irtp2_bt)%name = "rtp2_bt"
           zm%f%var(irtp2_bt)%description = "rtp2 budget"
-          zm%f%var(irtp2_bt)%units = "unknown"
+          zm%f%var(irtp2_bt)%units = "kg/(kg s)"
           k = k + 1
 
         case ('rtp2_ma')
@@ -2079,7 +2079,7 @@ c     -----------------------------------------------------------------
           zm%f%var(irtp2_ma)%ptr => zm%x(:,k)
           zm%f%var(irtp2_ma)%name = "rtp2_ma"
           zm%f%var(irtp2_ma)%description = "rtp2 mean advection"
-          zm%f%var(irtp2_ma)%units = "unknown"
+          zm%f%var(irtp2_ma)%units = "kg/(kg s)"
           k = k + 1
 
         case ('rtp2_ta')
@@ -2088,7 +2088,7 @@ c     -----------------------------------------------------------------
           zm%f%var(irtp2_ta)%name = "rtp2_ta"
           zm%f%var(irtp2_ta)%description
      .    = "rtp2 turbulent advection"
-          zm%f%var(irtp2_ta)%units = "unknown"
+          zm%f%var(irtp2_ta)%units = "kg/(kg s)"
           k = k + 1
 
         case ('rtp2_tp')
@@ -2097,7 +2097,7 @@ c     -----------------------------------------------------------------
           zm%f%var(irtp2_tp)%name = "rtp2_tp"
           zm%f%var(irtp2_tp)%description
      .    = "rtp2 turbulent production"
-          zm%f%var(irtp2_tp)%units = "unknown"
+          zm%f%var(irtp2_tp)%units = "kg/(kg s)"
           k = k + 1
 
         case ('rtp2_dp1')
@@ -2106,7 +2106,7 @@ c     -----------------------------------------------------------------
           zm%f%var(irtp2_dp1)%name = "rtp2_dp1"
           zm%f%var(irtp2_dp1)%description
      .    = "rtp2 dissipation term 1"
-          zm%f%var(irtp2_dp1)%units = "unknown"
+          zm%f%var(irtp2_dp1)%units = "kg/(kg s)"
           k = k + 1
 
         case ('rtp2_dp2')
@@ -2115,7 +2115,7 @@ c     -----------------------------------------------------------------
           zm%f%var(irtp2_dp2)%name = "rtp2_dp2"
           zm%f%var(irtp2_dp2)%description
      .    = "rtp2 dissipation term 2"
-          zm%f%var(irtp2_dp2)%units = "unknown"
+          zm%f%var(irtp2_dp2)%units = "kg/(kg s)"
           k = k + 1
 
         case ('rtp2_cl')
@@ -2124,7 +2124,7 @@ c     -----------------------------------------------------------------
           zm%f%var(irtp2_cl)%name = "rtp2_cl"
           zm%f%var(irtp2_cl)%description
      .    = "rtp2 clipping term"
-          zm%f%var(irtp2_cl)%units = "unknown"
+          zm%f%var(irtp2_cl)%units = "kg/(kg s)"
           k = k + 1
 
         case ('thlp2_bt')
@@ -2132,7 +2132,7 @@ c     -----------------------------------------------------------------
           zm%f%var(ithlp2_bt)%ptr => zm%x(:,k)
           zm%f%var(ithlp2_bt)%name = "thlp2_bt"
           zm%f%var(ithlp2_bt)%description = "thlp2 budget"
-          zm%f%var(ithlp2_bt)%units = "unknown"
+          zm%f%var(ithlp2_bt)%units = "(K^2)/s"
           k = k + 1
 
         case ('thlp2_ma')
@@ -2140,7 +2140,7 @@ c     -----------------------------------------------------------------
           zm%f%var(ithlp2_ma)%ptr => zm%x(:,k)
           zm%f%var(ithlp2_ma)%name = "thlp2_ma"
           zm%f%var(ithlp2_ma)%description = "thlp2 mean advection"
-          zm%f%var(ithlp2_ma)%units = "unknown"
+          zm%f%var(ithlp2_ma)%units = "(K^2)/s"
           k = k + 1
 
         case ('thlp2_ta')
@@ -2149,7 +2149,7 @@ c     -----------------------------------------------------------------
           zm%f%var(ithlp2_ta)%name = "thlp2_ta"
           zm%f%var(ithlp2_ta)%description
      .    = "thlp2 turbulent advection"
-          zm%f%var(ithlp2_ta)%units = "unknown"
+          zm%f%var(ithlp2_ta)%units = "(K^2)/s"
           k = k + 1
 
         case ('thlp2_tp')
@@ -2158,7 +2158,7 @@ c     -----------------------------------------------------------------
           zm%f%var(ithlp2_tp)%name = "thlp2_tp"
           zm%f%var(ithlp2_tp)%description
      .    = "thlp2 turbulent production"
-          zm%f%var(ithlp2_tp)%units = "unknown"
+          zm%f%var(ithlp2_tp)%units = "(K^2)/s"
           k = k + 1
 
         case ('thlp2_dp1')
@@ -2167,7 +2167,7 @@ c     -----------------------------------------------------------------
           zm%f%var(ithlp2_dp1)%name = "thlp2_dp1"
           zm%f%var(ithlp2_dp1)%description
      .    = "thlp2 dissipation term 1"
-          zm%f%var(ithlp2_dp1)%units = "unknown"
+          zm%f%var(ithlp2_dp1)%units = "(K^2)/s"
           k = k + 1
 
         case ('thlp2_dp2')
@@ -2176,7 +2176,7 @@ c     -----------------------------------------------------------------
           zm%f%var(ithlp2_dp2)%name = "thlp2_dp2"
           zm%f%var(ithlp2_dp2)%description
      .    = "thlp2 dissipation term 2"
-          zm%f%var(ithlp2_dp2)%units = "unknown"
+          zm%f%var(ithlp2_dp2)%units = "(K^2)/s"
           k = k + 1
 
         case ('thlp2_cl')
@@ -2185,7 +2185,7 @@ c     -----------------------------------------------------------------
           zm%f%var(ithlp2_cl)%name = "thlp2_cl"
           zm%f%var(ithlp2_cl)%description
      .    = "thlp2 clipping term"
-          zm%f%var(ithlp2_cl)%units = "unknown"
+          zm%f%var(ithlp2_cl)%units = "(K^2)/s"
           k = k + 1
 
         case ('rtpthlp_bt')
@@ -2193,7 +2193,7 @@ c     -----------------------------------------------------------------
           zm%f%var(irtpthlp_bt)%ptr => zm%x(:,k)
           zm%f%var(irtpthlp_bt)%name = "rtpthlp_bt"
           zm%f%var(irtpthlp_bt)%description = "rtpthlp budget"
-          zm%f%var(irtpthlp_bt)%units = "unknown"
+          zm%f%var(irtpthlp_bt)%units = "(kg K)/(kg s)"
           k = k + 1
 
         case ('rtpthlp_ma')
@@ -2201,7 +2201,7 @@ c     -----------------------------------------------------------------
           zm%f%var(irtpthlp_ma)%ptr => zm%x(:,k)
           zm%f%var(irtpthlp_ma)%name = "rtpthlp_ma"
           zm%f%var(irtpthlp_ma)%description = "rtpthlp mean advection"
-          zm%f%var(irtpthlp_ma)%units = "unknown"
+          zm%f%var(irtpthlp_ma)%units = "(kg K)/(kg s)"
           k = k + 1
 
         case ('rtpthlp_ta')
@@ -2210,7 +2210,7 @@ c     -----------------------------------------------------------------
           zm%f%var(irtpthlp_ta)%name = "rtpthlp_ta"
           zm%f%var(irtpthlp_ta)%description
      .    = "rtpthlp turbulent advection"
-          zm%f%var(irtpthlp_ta)%units = "unknown"
+          zm%f%var(irtpthlp_ta)%units = "(kg K)/(kg s)"
           k = k + 1
 
         case ('rtpthlp_tp1')
@@ -2219,7 +2219,7 @@ c     -----------------------------------------------------------------
           zm%f%var(irtpthlp_tp1)%name = "rtpthlp_tp1"
           zm%f%var(irtpthlp_tp1)%description
      .    = "rtpthlp turbulent production 1"
-          zm%f%var(irtpthlp_tp1)%units = "unknown"
+          zm%f%var(irtpthlp_tp1)%units = "(kg K)/(kg s)"
           k = k + 1
 
         case ('rtpthlp_tp2')
@@ -2228,7 +2228,7 @@ c     -----------------------------------------------------------------
           zm%f%var(irtpthlp_tp2)%name = "rtpthlp_tp2"
           zm%f%var(irtpthlp_tp2)%description
      .    = "rtpthlp turbulent production 2"
-          zm%f%var(irtpthlp_tp2)%units = "unknown"
+          zm%f%var(irtpthlp_tp2)%units = "(kg K)/(kg s)"
           k = k + 1
 
         case ('rtpthlp_dp1')
@@ -2237,7 +2237,7 @@ c     -----------------------------------------------------------------
           zm%f%var(irtpthlp_dp1)%name = "rtpthlp_dp1"
           zm%f%var(irtpthlp_dp1)%description
      .    = "rtpthlp dissipation term 1"
-          zm%f%var(irtpthlp_dp1)%units = "unknown"
+          zm%f%var(irtpthlp_dp1)%units = "(kg K)/(kg s)"
           k = k + 1
 
         case ('rtpthlp_dp2')
@@ -2246,7 +2246,7 @@ c     -----------------------------------------------------------------
           zm%f%var(irtpthlp_dp2)%name = "rtpthlp_dp2"
           zm%f%var(irtpthlp_dp2)%description
      .    = "rtpthlp dissipation term 2"
-          zm%f%var(irtpthlp_dp2)%units = "unknown"
+          zm%f%var(irtpthlp_dp2)%units = "(kg K)/(kg s)"
           k = k + 1
 
 #ifdef SCALARS
@@ -2503,7 +2503,7 @@ c     -----------------------------------------------------------------
           sfc%f%var(iustar)%ptr => sfc%x(:,k)
           sfc%f%var(iustar)%name = "ustar"
           sfc%f%var(iustar)%description = "ustar"
-          sfc%f%var(iustar)%units = "unknown"
+          sfc%f%var(iustar)%units = "m/s"
           k = k + 1
 
         case ('lh')
@@ -2511,7 +2511,7 @@ c     -----------------------------------------------------------------
           sfc%f%var(ilh)%ptr => sfc%x(:,k)
           sfc%f%var(ilh)%name = "lh"
           sfc%f%var(ilh)%description = "lh"
-          sfc%f%var(ilh)%units = "unknown"
+          sfc%f%var(ilh)%units = "W/m2"
           k = k + 1
 
         case ('sh')
@@ -2519,7 +2519,7 @@ c     -----------------------------------------------------------------
           sfc%f%var(ish)%ptr => sfc%x(:,k)
           sfc%f%var(ish)%name = "sh"
           sfc%f%var(ish)%description = "sh"
-          sfc%f%var(ish)%units = "unknown"
+          sfc%f%var(ish)%units = "W/m2"
           k = k + 1
 
         case ('cc')
@@ -2527,7 +2527,7 @@ c     -----------------------------------------------------------------
           sfc%f%var(icc)%ptr => sfc%x(:,k)
           sfc%f%var(icc)%name = "cc"
           sfc%f%var(icc)%description = "cc"
-          sfc%f%var(icc)%units = "unknown"
+          sfc%f%var(icc)%units = "count"
           k = k + 1
 
         case ('lwp')
@@ -2535,7 +2535,7 @@ c     -----------------------------------------------------------------
           sfc%f%var(ilwp)%ptr => sfc%x(:,k)
           sfc%f%var(ilwp)%name = "lwp"
           sfc%f%var(ilwp)%description = "lwp"
-          sfc%f%var(ilwp)%units = "unknown"
+          sfc%f%var(ilwp)%units = "kg/m2"
           k = k + 1
 
         case ('zb')
@@ -2543,7 +2543,7 @@ c     -----------------------------------------------------------------
           sfc%f%var(izb)%ptr => sfc%x(:,k)
           sfc%f%var(izb)%name = "zb"
           sfc%f%var(izb)%description = "zb"
-          sfc%f%var(izb)%units = "unknown"
+          sfc%f%var(izb)%units = "m"
           k = k + 1
 
         case ('zi')
@@ -2551,7 +2551,7 @@ c     -----------------------------------------------------------------
           sfc%f%var(izi)%ptr => sfc%x(:,k)
           sfc%f%var(izi)%name = "zi"
           sfc%f%var(izi)%description = "zi"
-          sfc%f%var(izi)%units = "unknown"
+          sfc%f%var(izi)%units = "m"
           k = k + 1
 
         case ('rain')          ! Brian
@@ -3085,14 +3085,14 @@ c     -----------------------------------------------------------------
           zt%n(:,irsl2) = zt%n(:,irsl2) + 1
         endif
 
-        if ( ir1 > 0 ) then
-          zt%x(:,ir1) = zt%x(:,ir1) + pdf_parms(:,18)
-          zt%n(:,ir1) = zt%n(:,ir1) + 1
+        if ( iR1 > 0 ) then
+          zt%x(:,iR1) = zt%x(:,iR1) + pdf_parms(:,18)
+          zt%n(:,iR1) = zt%n(:,iR1) + 1
         endif
 
-        if ( ir2 > 0 ) then
-          zt%x(:,ir2) = zt%x(:,ir2) + pdf_parms(:,19)
-          zt%n(:,ir2) = zt%n(:,ir2) + 1
+        if ( iR2 > 0 ) then
+          zt%x(:,iR2) = zt%x(:,iR2) + pdf_parms(:,19)
+          zt%n(:,iR2) = zt%n(:,iR2) + 1
         endif
 
         if ( is1 > 0 ) then
