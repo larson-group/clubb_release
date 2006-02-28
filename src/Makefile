@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.46 2006-02-07 02:39:16 dschanen Exp $
+# $Id: Makefile,v 1.47 2006-02-28 18:18:38 dschanen Exp $
 # This version should work with BSD, GNU make, smake and dmake
 
 # For HOC we edit this by hand rather than implementing imake or automake
@@ -8,9 +8,9 @@
 
 #include config.linux_ia32_pg.in
 #include config.linux_ia64_intel.in
-#include config.solaris_generic_ss11.in
+include config.solaris_generic_ss11.in
 #include config.osf1_alpha_digital.in
-include config.messner.in
+#include config.messner.in
 
 # == Object files ==
 
@@ -31,8 +31,8 @@ BUGS_RAD	= kinds.o bugsrad_planck.o bugsrad_physconst.o gases_ckd.o \
 		two_rt_sw_bs.o bugsrad_hoc.o
 
 COMMON	= $(LATIN_HYP) $(BUGS_RAD) \
-	polpak.o constants.o arrays.o endian.o outputgrads.o \
-	grid.o statistics.o inputgrads.o \
+	polpak.o constants.o arrays.o endian.o outputfile.o outputgrads.o \
+	outputnc.o grid.o statistics.o inputgrads.o \
 	banbks.o bandec.o erf.o tridag.o rain.o \
 	closure_new.o diag_var.o gcss.o hydrostatic.o \
 	length.o mixing.o rsat.o sat_rcm.o sfc.o \
@@ -71,28 +71,28 @@ int2txt:	$(INT2TXT)
 		$(FC) $(FCFLAGS) $(LDFLAGS) $@.o -o int2txt
 
 hoc_tuner:	$(HOC_TUNER)
-		$(FC) $(FCFLAGS) $(LDFLAGS) -o hoc_tuner \
-		$(HOC_TUNER)
+		$(FC) $(FCFLAGS) -o hoc_tuner \
+		$(HOC_TUNER) $(LDFLAGS)
 
 hoc_standalone:	$(HOC_STANDALONE)
-		$(FC) $(FCFLAGS) $(LDFLAGS) -o hoc_standalone \
-		$(HOC_STANDALONE)
+		$(FC) $(FCFLAGS) -o hoc_standalone \
+		$(HOC_STANDALONE) $(LDFLAGS)  
 
 hoc_inputfields:	$(HOC_INPUTFIELDS)
-			$(FC) $(FCFLAGS) $(LDFLAGS) -o hoc_inputfields \
-			$(HOC_INPUTFIELDS)
+			$(FC) $(FCFLAGS) -o hoc_inputfields \
+			$(HOC_INPUTFIELDS) $(LDFLAGS)
 
 hoc_tuner_budget_terms:	$(HOC_BUDGET_TERMS)
-			$(FC) $(FCFLAGS) $(LDFLAGS) -o hoc_tuner_budget_terms \
-			$(HOC_BUDGET_TERMS)
+			$(FC) $(FCFLAGS) -o hoc_tuner_budget_terms \
+			$(HOC_BUDGET_TERMS) $(LDFLAGS) 
 
 jacobian:	$(JACOBIAN)
-		$(FC) $(FCFLAGS) $(LDFLAGS) -o jacobian \
-		$(JACOBIAN)
+		$(FC) $(FCFLAGS) -o jacobian \
+		$(JACOBIAN) $(LDFLAGS)
 
 compare_runs:	$(COMPARE_RUNS)
-		$(FC) $(FCFLAGS) $(LDFLAGS) -o compare_runs \
-		$(COMPARE_RUNS)
+		$(FC) $(FCFLAGS) -o compare_runs \
+		$(COMPARE_RUNS) $(LDFLAGS)
 
 install: 
 	-cp int2txt ../tune/ 
@@ -114,12 +114,14 @@ clean_all:
 polpak.o	: polpak.f90
 endian.o	: endian.F
 constants.o	: constants.F
+outputfile.o	: outputfile.F
 rain.o		: constants.o tridag.o polpak.o rain.F 
-outputgrads.o	: endian.o outputgrads.F
+outputgrads.o	: endian.o outputfile.o outputgrads.F
+outputnc.o	: outputfile.o outputnc.F
 arrays.o	: constants.o grid.o arrays.F 
 inputgrads.o	: endian.o inputgrads.F
 grid.o		: grid.F grid.h
-statistics.o	: outputgrads.o arrays.o statistics.F 
+statistics.o	: outputgrads.o outputnc.o arrays.o statistics.F 
 
 banbks.o	: banbks.F
 bandec.o	: bandec.F
