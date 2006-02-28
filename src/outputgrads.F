@@ -1,5 +1,5 @@
 c------------------------------------------------------------------------
-c $Id: outputgrads.F,v 1.5 2006-01-31 22:24:37 golaz Exp $
+c $Id: outputgrads.F,v 1.6 2006-02-28 18:27:28 dschanen Exp $
 c
 c This module contains structure and subroutine definitions to
 c create GrADS output data files for one dimensional arrays.
@@ -23,71 +23,35 @@ c Chris Golaz, updated 2/18/2003
 
 #if defined (__i386__) && __INTEL_COMPILER >= 900 /* Newer ifort on i386 */
 #define F_RECL 1
-#elif __alpha /* Assume that alpha users are using f95 */
+#elif __alpha /* Assume that alpha users are using DEC f95 */
 #define F_RECL 1
 #else
 #define F_RECL 4
 #endif
 
-        module outputfile_class
+        module outputgrads
+
+          public
+          private formatdate
 
 c         Undefined value
 
-          real, parameter :: undef = -9.99e33
+          real, private, parameter :: undef = -9.99e33
 
-c         Structure to hold description of a variable
-
-          type variable
-            real, pointer :: ptr(:)               ! pointer to the array
-!            character (len = 10) name             ! variable name
-            character (len = 15) name             ! variable name
-            character (len = 50) description      ! variable decsription
-          end type variable
-
-c         Structure to hole description of a GrADS output file
-
-          type outputfile
-
-c           File information
-
-            character (len = 200) fname   ! file name without suffix
-            character (len = 200) fdir    ! path where fname resides
-            integer iounit                ! logical unit
-            integer nrecord               ! number of records written
-            integer ntimes                ! number of times written
-
-c           Grid information
-
-            integer ia, iz                ! extent
-            real, pointer :: z(:)         ! height of vertical levels
-
-c           Time information
-
-            integer day, month, year      ! date of starting time
-            real time                     ! start time in seconds
-            real dtwrite                  ! interval between outputs in seconds
-
-c           Variables
-
-            integer nvar                  ! number of variables for this file
-            type (variable), pointer :: var(:)
-                                          ! list and variable description
-
-          end type outputfile
-
-        contains
+          contains
 
           !---------------------------------------------------------
           subroutine open_grads( f, unit, fdir, fname, 
      .                           ia, iz, z,
      .                           day, month, year, time, dtwrite,
      .                           nvar )
+          use outputfile_class
           implicit none
 
 c         Input
 
-          type (outputfile), intent(INOUT)   :: f
-          integer, intent(IN)               :: unit
+          type (outputfile), intent(INOUT) :: f
+          integer, intent(IN)              :: unit
           character*(*), intent(IN) :: fdir, fname
           integer, intent(IN) :: ia, iz
           real, intent(IN)    :: z(:)
@@ -193,11 +157,12 @@ c         If one file exists, but not the other, give up
      .                            day, month, year, time, dtwrite,
      .                            nvar, 
      .                            error, ntimes, nrecord, time_in )
+          use outputfile_class
           implicit none
 
 c         Input
 
-          integer, intent(IN)               :: unit
+          integer, intent(IN)       :: unit
           character*(*), intent(IN) :: fdir, fname
           integer, intent(IN) :: ia, iz
           real, intent(IN)    :: z(:)
@@ -399,6 +364,7 @@ c         part of the problem. -dschanen 4/4/2005
           subroutine write_grads( f )
         
           use endian ! -dschanen 4/4/05
+          use outputfile_class
 
           implicit none
 
@@ -540,6 +506,6 @@ c         Variables description
           return
           end subroutine formatdate
 
-        end module outputfile_class
+        end module outputgrads
 
 c------------------------------------------------------------------------

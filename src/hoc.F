@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.68 2006-02-08 15:42:56 golaz Exp $
+! $Id: hoc.F,v 1.69 2006-02-28 18:27:28 dschanen Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -387,7 +387,7 @@
 
        call deallocate_model_arrays( )
 #ifdef STATS
-       call stats_deallocate( )
+       call stats_finalize( )
 #endif
 
        return
@@ -608,7 +608,7 @@
 
         call deallocate_model_arrays( )
 #ifdef STATS
-        call stats_deallocate( )
+        call stats_finalize( )
 #endif
 
         return
