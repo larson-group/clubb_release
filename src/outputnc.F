@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: outputnc.F,v 1.1 2006-02-28 18:27:28 dschanen Exp $
+! $Id: outputnc.F,v 1.2 2006-03-01 23:08:18 dschanen Exp $
 !      MODULE outputnc
 
 !      functions and subroutines for writing NetCDF files
@@ -121,7 +121,8 @@
        endif
 
        allocate( stat( ncf%nvar ) )
-       time = dble( ncf%ntimes ) * ( ncf%dtwrite / 60.0 )
+       time = int( ncf%ntimes * dble(ncf%dtwrite / 60.0) ) !  minutes(rounded)
+!      time = dble( ncf%ntimes ) * ncf%dtwrite ! seconds
 
        stat(1) = nf90_put_var( ncid=ncf%iounit, varid=ncf%TimeVarId, 
      .                         values=time(:), start=(/ncf%ntimes/) ) 
@@ -179,7 +180,7 @@
 
 !      Internal
        integer stat
-       character(len=34) TimeUnits
+       character(len=35) TimeUnits
 
        ! Define the dimensions for the variables
        stat = 
@@ -347,7 +348,6 @@
 !      Dimensions for variables
        integer, dimension(4) :: var_dim
 
-
 !-----------------------------------------------------------------------
 !      Typical valid ranges (IEEE 754)
 
@@ -361,10 +361,15 @@
        var_range(2) =  huge( var_range(2) )
 !      var_range = (/ -1.e31, 1.e31 /)
 
+!      Explanation:  The NetCDF documentation claims the NF90_UNLIMITED
+!      variable should be the first dimension, but def_var is somehow
+!      inverted and requires the opposite.  After writing, these 
+!      dimensions are all in the opposite order of this in the file.
+
        var_dim(1) = ncf%LongDimId
        var_dim(2) = ncf%LatDimId
        var_dim(3) = ncf%AltDimId
-       var_dim(4) = ncf%TimeDimId
+       var_dim(4) = ncf%TimeDimId ! The NF90_UNLIMITED dimension
 
        allocate( stat( ncf%nvar ) )
 
@@ -383,7 +388,7 @@
          endif
 
          stat(i) = nf90_put_att( ncf%iounit, ncf%var(i)%Id,
-     .             "valid_range", var_range(:) )
+     .             "valid_range", var_range(1:2) )
          if ( stat(i) /= NF90_NOERR ) then
            write(*,*) "Error defining valid range", stat(i)
            error = .true.
@@ -438,21 +443,21 @@
        integer stat
 
        stat = nf90_put_var( ncid=ncf%iounit, varid=ncf%AltVarId, 
-     .                      values=ncf%z(:) ) 
+     .                      values=ncf%z(ncf%ia:ncf%iz) )
        if ( stat /= NF90_NOERR ) then
          write(*,*) "Error entering grid", stat
          stop
        endif
 
        stat = nf90_put_var( ncid=ncf%iounit, varid=ncf%LongVarId, 
-     .                      values=deg_north(:) ) 
+     .                      values=deg_north(1:1) ) 
        if ( stat /= NF90_NOERR ) then
          write(*,*) "Error entering long.", stat
          stop
        endif
 
        stat = nf90_put_var( ncid=ncf%iounit, varid=ncf%LatVarId, 
-     .                      values=deg_east(:) ) 
+     .                      values=deg_east(1:1) ) 
        if ( stat /= NF90_NOERR ) then
          write(*,*) "Error entering lat.", stat
          stop
@@ -471,10 +476,11 @@
 
        integer, intent(in) :: iday, imonth, iyear
        real, intent(in)    :: st_time
-       character(len=34), intent(out) :: date
+       character(len=35), intent(out) :: date
 
 !      date(1:14) = "minutes since "
        date = "minutes since YYYY-MM-DD HH:MM:00.0"
+!      date = "seconds since YYYY-MM-DD HH:MM:00.0"
        write(date(15:18),'(i4.4)') iyear
 !      write(date(19),'(a1)') '-'
        write(date(20:21),'(i2.2)') imonth
@@ -482,9 +488,9 @@
        write(date(23:24),'(i2.2)') iday
 !      write(date(25),'(a1)') ' '
        write(date(26:27),'(i2.2)') int(st_time/3600.)
-!      write(date(28),'(a5)') ":"
+!      write(date(28),'(a1)') ":"
        write(date(29:30),'(i2.2)') int( mod(int(st_time),3600) / 60. )
-!      write(date(30:34),'(a5)') ":00.0"
+!      write(date(30:35),'(a5)') ":00.0"
 
        return
        end subroutine format_date
