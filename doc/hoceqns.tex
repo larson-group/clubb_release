@@ -1,0 +1,1988 @@
+\documentclass[11pt,fleqn]{article}
+
+% PS Tricks
+\usepackage{pstricks}
+
+% AMS math extensions
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+% bibliography style
+\usepackage{natbib}
+\bibliographystyle{ams}
+\bibpunct{(}{)}{;}{a}{}{,}
+
+% changes margins to 1'' on each side
+\addtolength{\oddsidemargin}{-.875in}
+\addtolength{\evensidemargin}{-.875in}
+\addtolength{\textwidth}{1.75in}
+%\addtolength{\topmargin}{-.875in}
+\addtolength{\topmargin}{-.4375in}
+\addtolength{\textheight}{1.75in}
+
+% prevents indenting of paragraphs
+\setlength{\parskip}{\baselineskip}
+\setlength{\parindent}{0em}
+\setlength{\mathindent}{1em}
+
+% change line spacing
+\renewcommand{\baselinestretch}{1.7}
+
+% new commands
+\newcommand{\ptlder}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\totder}[2]{\frac{d #1}{d #2}}
+\newcommand{\inverse}[1]{\frac{1}{#1}}
+\newcommand{\Grad}{\vec{\nabla}}
+\newcommand{\Laplacian}{\nabla^{2}}
+\newcommand{\Div}{\vec{\nabla}\cdot}
+\newcommand{\Curl}{\vec{\nabla}\times}
+\newcommand{\ptlsqd}[2]{\frac{\partial^{2} #1}{\partial #2^{2}}}
+\newcommand{\totsqd}[2]{\frac{d^{2} #1}{d #2^{2}}}
+
+\begin{document}
+
+\begin{flushright} \today \end{flushright}
+
+\vspace*{.1in}
+\begin{center}  {\Large\bf Equations for HOC}  \end{center}
+\vspace*{.1in}
+
+\section{Predictive equations}
+
+\begin{equation}
+\label{eq_um}
+\ptlder{\bar{u}}{t} 
+= - \bar{w}\ptlder{\bar{u}}{z} 
+  - f (v_g - \bar{v})
+  - \ptlder{}{z}\overline{u'w'} 
+\end{equation}
+%
+\begin{equation}
+\label{eq_vm}
+\ptlder{\bar{v}}{t} 
+= - \bar{w}\ptlder{\bar{v}}{z} 
+  + f (u_g - \bar{u})
+  - \ptlder{}{z}\overline{v'w'} 
+\end{equation}
+%
+\begin{equation}
+\label{eq_qtm}
+\ptlder{\bar{q}_t}{t}
+= - \bar{w}\ptlder{\bar{q}_t}{z} 
+  - \ptlder{}{z}\overline{w'q'_t} 
+  + \left. \ptlder{\bar{q}_t}{t} \right|_{\rm ls}
+\end{equation}
+%
+\begin{equation}
+\label{eq_thlm}
+\ptlder{\bar{\theta}_l}{t} 
+= - \bar{w}\ptlder{\bar{\theta}_l}{z} 
+  - \ptlder{}{z}\overline{w'\theta'_l} 
+  + \bar{R}   
+  + \left. \ptlder{\bar{\theta}_l}{t} \right|_{\rm ls}
+\end{equation}
+%
+\begin{equation}
+\label{eq_wp2}
+\begin{split}
+\ptlder{\overline{w^{'2}}}{t} 
+=& - \bar{w}\ptlder{\overline{w^{'2}}}{z}	 
+   - \ptlder{\overline{w^{'3}}}{z} 
+   - 2\overline{w^{'2}}\ptlder{\bar{w}}{z}
+   + \frac{2g}{\theta_0} \overline{w'\theta'_v} \\
+ & - \frac{C_4}{\tau} \left( \overline{w^{'2}} -\frac{2}{3}\bar{e} \right)
+   - C_5 
+     \left(
+       - 2\overline{w^{'2}}\ptlder{\bar{w}}{z}
+       + \frac{2g}{\theta_0} \overline{w'\theta'_v}
+     \right)
+   + \frac{2}{3} C_5
+     \left(
+       \frac{g}{\theta_0} \overline{w'\theta'_v} 
+       - \overline{u'w'}\ptlder{\bar{u}}{z} 
+       - \overline{v'w'}\ptlder{\bar{v}}{z} 
+     \right) \\
+ & - \dfrac{C_1}{\tau} \overline{w^{'2}} 
+   + \nu_1 \nabla_z^2 \, \overline{w^{'2}}
+\end{split}
+\end{equation}
+%
+\begin{equation}
+\label{eq_qtp2}
+\ptlder{\overline{q_t^{'2}}}{t}
+= - \bar{w}\ptlder{\overline{q^{'2}_t}}{z}	  
+  - \ptlder{\overline{w'q_t^{'2}}}{z}
+  - 2\overline{w'q'_t}\ptlder{\bar{q}_t}{z} 
+  - \dfrac{C_2}{\tau} \overline{q_t^{'2}}
+  + \nu_2 \nabla_z^2 \overline{q_t^{'2}}
+\end{equation}
+%
+\begin{equation}
+\label{eq_thlp2}
+\ptlder{\overline{\theta_l^{'2}}}{t}
+= - \bar{w}\ptlder{\overline{\theta^{'2}_l}}{z}	 
+  - \ptlder{\overline{w'\theta_l^{'2}}}{z}
+  - 2\overline{w'\theta'_l}\ptlder{\bar{\theta}_l}{z} 
+  - \dfrac{C_2}{\tau} \overline{\theta_l^{'2}}
+  + \nu_2 \nabla_z^2 \overline{\theta_l^{'2}}
+\end{equation}
+%
+\begin{equation}
+\label{eq_qtpthlp}
+\ptlder{\overline{q'_t\theta'_l}}{t}
+= - \bar{w}\ptlder{\overline{q'_t\theta'_l}}{z}	 
+  - \ptlder{\overline{w'q'_t\theta'_l}}{z}
+  - \overline{w'q'_t}\ptlder{\bar{\theta}_l}{z} 
+  - \overline{w'\theta'_l}\ptlder{\bar{q}_t}{z}
+  - \dfrac{C_2}{\tau} \overline{q_t' \theta_l'}
+  + \nu_2 \nabla_z^2 \overline{q_t^{'}\theta_l^{'}}
+\end{equation}
+%
+\begin{equation}
+\label{eq_wpqtp}
+\begin{split}
+\ptlder{\overline{w'q'_t}}{t} 
+= & - \bar{w}\ptlder{\overline{w'q'_t}}{z}	 		
+    - \ptlder{\overline{w^{'2}q'_t}}{z}
+    - \overline{w^{'2}}\ptlder{\bar{q}_t}{z} 
+    - \overline{w'q'_t}\ptlder{\bar{w}}{z}
+    + \frac{g}{\theta_0} \overline{q'_t\theta'_v} \\
+  & - \frac{C_6}{\tau}\overline{w'q'_t}
+    - C_7 \left(
+             - \overline{w'q'_t}\ptlder{\bar{w}}{z}
+             + \frac{g}{\theta_0} \overline{q'_t\theta'_v}
+          \right) 
+    + \nu_6 \nabla_z^2 \overline{w^{'}q_t^{'}}
+\end{split}
+\end{equation}
+%
+\begin{equation}
+\label{eq_wpthlp}
+\begin{split}
+\ptlder{\overline{w'\theta'_l}}{t}
+= & - \bar{w}\ptlder{\overline{w'\theta'_l}}{z}	 
+    - \ptlder{\overline{w^{'2}\theta'_l}}{z}
+    - \overline{w^{'2}}\ptlder{\bar{\theta}_l}{z} 
+    - \overline{w'\theta'_l}\ptlder{\bar{w}}{z}
+    + \frac{g}{\theta_0} \overline{\theta'_l\theta'_v} \\
+  & - \frac{C_6}{\tau}\overline{w'\theta'_l}
+    - C_7 \left( 
+             - \overline{w'\theta'_l}\ptlder{\bar{w}}{z}
+             + \frac{g}{\theta_0} \overline{\theta'_l\theta'_v}
+          \right)
+    + \nu_6 \nabla_z^2 \overline{w^{'}\theta_l^{'}}
+\end{split}
+\end{equation}
+%
+\begin{equation}
+\label{eq_wp3}
+\begin{split}
+\ptlder{\overline{w^{'3}}}{t}
+= & - \bar{w}\ptlder{\overline{w^{'3}}}{z}
+    - \ptlder{\overline{w^{'4}}}{z} 
+    + 3\overline{w^{'2}}\ptlder{\overline{w^{'2}}}{z}
+    - 3\overline{w^{'3}}\ptlder{\bar{w}}{z}
+    + \frac{3g}{\theta_0} \overline{w^{'2}\theta'_v} \\
+  & - \frac{C_8}{\tau}\left( C_{8b} \, Skw^4 + 1 \right) \overline{w^{'3}}
+    - C_{11} \left(
+                - 3 \overline{w^{'3}}\ptlder{\bar{w}}{z}
+                + \frac{3g}{\theta_0} \overline{w^{'2}\theta'_v}
+             \right)
+    + \left( K_w + \nu_8 \right) \nabla_z^2 \overline{w^{'3}}
+\end{split}
+\end{equation}
+%
+$\bar{R}$ is the radiative heating rate, 
+$f$ the Coriolis parameter and $u_g$, $v_g$ the geostrophic winds.
+$\left. \ptlder{\bar{q}_t}{t} \right|_{\rm ls}$ and 
+$\left. \ptlder{\bar{\theta}_l}{t} \right|_{\rm ls}$ are
+large-scale moisture and temperature forcings.
+$g$ is the gravity, $\rho_0$ and $\theta_0$ the reference
+density and potential temperature.
+
+Because the model does not predict any higher-order moments of the
+horizontal winds, we assume that the turbulence kinetic energy, $\bar{e}$,
+is proportional to the vertical velocity variance $\overline{w^{'2}}$:
+%
+\begin{equation}
+\label{eq_tke}
+\bar{e} = \frac{3}{2} \overline{w^{'2}}.
+\end{equation}
+%
+
+The time scale $\tau$ is:
+%
+\begin{equation}
+\label{eq_tau}
+\tau = \left\{
+\begin{array}{ll}
+\displaystyle \frac{L}{\sqrt{\, \overline{e} \,}}; 
+& L / \sqrt{\, \overline{e} \,} \leqslant \tau_{\rm max} \\
+\displaystyle \tau_{\rm max};
+&  L / \sqrt{\, \overline{e} \,} > \tau_{\rm max}
+\end{array}
+\right. \hbox{ .}
+\end{equation}
+%
+Additionally, $\tau$ is set to a minimum value $\tau_{\rm min}$
+whenever $\overline{w'^2} \leqslant 0.005$ m$^2$ s$^{-2}$.
+
+The eddy diffusivity coefficient $K_w$ is
+%
+\begin{equation}
+\label{eq_Kw}
+K_w = 0.22 \, L \, \overline{e}^{\, 1/2}.
+\end{equation}
+
+The momentum fluxes are closed using a down gradient approach:
+%
+\begin{subequations}
+\begin{equation}
+\label{eq_upwp}
+\overline{u'w'} = -K_m \ptlder{\bar{u}}{z}
+\end{equation}
+%
+\begin{equation}
+\label{eq_vpwp}
+\overline{v'w'} = -K_m \ptlder{\bar{v}}{z}
+\end{equation}
+\end{subequations}
+%
+where the turbulent-transfer coefficient $K_m$ is given by:
+%
+\begin{equation}
+\label{eq_Km}
+K_m = c_K \, L \, \overline{e}^{\, 1/2}
+\end{equation}
+%
+with $c_K = 0.548$ as in \citet{duynkerke1987a}.
+
+The specific values of the constants $C_i$ and $\nu_i$
+are as follows: $C_1 = 1.7$; $C_2 = 1.04$; $C_4 = 4.5$; $C_5 = 0$;
+$C_6 = 4.85$; $C_7 = 0.8$; $C_8 = 2.73$; $C_{11} = 0.2$;
+$\nu_1 = \nu_2 = \nu_8 = 20 \hbox{ (m$^2$/s)}$; 
+and $\nu_6 = 30 \hbox{ (m$^2$/s)}$. 
+
+\section{PDF closure}
+
+Details of the PDF closure can be found in \citet{larson2005a}, hereafter
+referred to as LG. We only briefly summarize key aspects here.
+
+\subsection{Transport terms}
+
+The transport terms appearing in Eqs (\ref{eq_um})-(\ref{eq_wp3}) are
+closed as follows. First, we define $c_{w\theta_l}$ and $c_{wq_t}$
+as in Eqs (LG15) and (LG16):
+%
+\begin{equation}
+\label{eq_cwthl}
+c_{w\theta_l} 
+= \frac{ \overline{w'\theta_l'} }
+       { \sqrt{\overline{w'^2}}\sqrt{\overline{\theta_l'^2}} }
+\end{equation}
+%
+\begin{equation}
+\label{eq_cwqt}
+c_{wq_t} 
+= \frac{ \overline{w'q_t'} }
+       { \sqrt{\overline{w'^2}}\sqrt{\overline{q_t'^2}} }
+\end{equation}
+%
+The width of the individual $w$ plumes is given by (LG37):
+%
+\begin{equation}
+\label{eq_sc}
+\tilde{\sigma}^2_w 
+= \gamma \left[ 1 - \max\left( c^2_{w\theta_l}, c^2_{wq_t} \right) \right]
+\end{equation}
+%
+We define the following quantities in order to simplify the notation:
+% 
+\begin{equation}
+\label{eq_a1}
+a_1 = \frac{1}{ (1-\tilde{\sigma}_w^2) }
+\end{equation}
+%
+\begin{equation}
+\label{eq_a2}
+a_2 = \frac{1}{ (1-\tilde{\sigma}_w^2)^2 }
+\end{equation}
+%
+\begin{equation}
+\label{eq_a3}
+a_3 = 3 \tilde{\sigma}_w^4 
+      + 6 ( 1 - \tilde{\sigma}_w^2 ) \tilde{\sigma}_w^2
+      + ( 1 - \tilde{\sigma}_w^2 )^2 
+      -\frac{3}{2}
+\end{equation}
+%
+The turbulence moment $\overline{w'^4}$ is given by (LG40):
+%
+\begin{equation}
+\label{eq_wp4}
+\overline{w^{'4}}
+= \overline{w^{'2}}^2
+  \left( a_3 + \frac{3}{2} \right)
++ a_1 \frac{ \overline{w^{'3}}^2 }{ \overline{w^{'2}} }
+\end{equation}
+%
+The flux transport terms are given by (LG42):
+%
+\begin{equation}
+\label{eq_wp2thlp}
+\overline{w^{'2}\theta_l'}
+= a_1 \frac{\overline{w^{'3}}}{\overline{w^{'2}}} \,
+  \overline{w'\theta_l'}
+\end{equation}
+%
+\begin{equation}
+\label{eq_wp2qtp}
+\overline{w^{'2}q_t'}
+= a_1 \frac{\overline{w^{'3}}}{\overline{w^{'2}}} \,
+  \overline{w'q_t'}
+\end{equation}
+%
+The variance transport terms follow (LG46):
+%
+\begin{equation}
+\label{eq_wpthlp2}
+\begin{split}
+\overline{w'\theta_l^{'2}}
+& = 
+    \frac{1}{3} \beta
+    a_1 \frac{\overline{w^{'3}}}{\overline{w^{'2}}} \overline{\theta_l^{'2}}
+  + \left( 1 - \frac{1}{3}\beta \right)
+    a_2 \frac{\overline{w^{'3}}}{\overline{w^{'2}}^2} \overline{w'\theta_l'}^2 \,
+\end{split}
+\end{equation}
+%
+\begin{equation}
+\label{eq_wpqtp2}
+\begin{split}
+\overline{w'q_t^{'2}}
+& = 
+    \frac{1}{3} \beta
+    a_1 \frac{\overline{w^{'3}}}{\overline{w^{'2}}} \overline{q_t^{'2}}
+  + \left( 1 - \frac{1}{3}\beta \right)
+    a_2 \frac{\overline{w^{'3}}}{\overline{w^{'2}}^2} \overline{w'q_t'}^2 \,
+\end{split}
+\end{equation}
+%
+Finally, the covariance term is obtained substituting (LG56) into (LG48):
+%
+\begin{equation}
+\label{eq_wpqtpthlp}
+\begin{split}
+\overline{w'q_t'\theta'_l}
+& =
+    \frac{1}{3} \beta
+    a_1 \frac{\overline{w^{'3}}}{\overline{w^{'2}}} \,
+    \overline{q_t'\theta'_l}
+  + \left( 1 - \frac{1}{3}\beta \right)
+    a_2 \frac{\overline{w^{'3}}}{\overline{w^{'2}}^2}
+    \overline{w'q_t'} \, \overline{w'\theta_l'}
+\end{split}
+\end{equation}
+%
+
+\subsection{Buoyancy terms}
+
+There are more unclosed terms involving $\theta_v$. They are
+$\overline{w'\theta'_v}$, $\overline{q'_t\theta'_v}$,
+$\overline{\theta'_l\theta'_v}$, and $\overline{w^{'2}\theta'_v}$ and can be
+written as:
+%
+\begin{equation}
+\overline{\chi'\theta'_v} 
+= \overline{\chi'\theta'_l} 
++ \underbrace{ \frac{1-\epsilon_0}{\epsilon_0} \theta_0 
+             }_{\equiv A \, (\approx \, 200 K)}
+  \overline{\chi'q'_t}
++ \underbrace{
+   \left( 
+     \frac{L_v}{c_p} \left( \frac{p_0}{p} \right)^{R_d/c_p}      
+     - \frac{1}{\epsilon_0}\theta_0
+   \right) }_{\equiv B \, (\approx \, 2000 K)}
+  \overline{\chi'q'_l} \hbox{ ,}
+\end{equation}
+% 
+where $\chi'$ represents $w'$, $q'_t$, $\theta'_l$ or $w^{'2}$.
+Here $\epsilon_0 = R_d/R_v$, $R_d$ is the gas constant of dry air, 
+$R_v$ is the gas constant of water vapor, $L_v$ is the latent heat 
+of vaporization, $c_p$ is the heat capacity of air, 
+and $p_0$ is a reference pressure. The correlations involving
+liquid water ($\overline{\chi'q'_l}$) can be computed for the given
+family of PDFs (see next section).
+
+\section{Cloud properties}
+
+The cloud properties, such as cloud fraction, mean liquid water
+and correlations involving liquid water ($\overline{\chi'q'_l}$)
+are obtained from the PDF. To do so, a certain number of properties
+are computed for each Gaussian ($i=1,2$):
+%
+\begin{equation}
+T_{li} = \theta_{li} \left( \frac{p}{p_0} \right)^{R_d/c_p}
+\end{equation}
+%
+\begin{equation}
+\label{eq:qs_def}
+q_{si} = \frac{R_d}{R_v}\; \frac{e_s(T_{li})}{p-[1-(R_d/R_v)] e_s(T_{li})}
+\end{equation}
+%
+\begin{equation}
+\label{eq:beta_def}
+\beta_i =
+\frac{R_d}{R_v} \left( \frac{L}{R_d T_{li}} \right) 
+\left( \frac{L}{c_p T_{li}} \right)
+\end{equation}
+%
+\begin{equation}
+\label{eq:s_def}
+s_i = q_{ti} - q_{si}\frac{1+\beta_i q_{ti}}{1+\beta_i q_{si}}
+\end{equation}
+%
+\begin{equation}
+c_{q_{ti}} = \frac{1}{1 + \beta_i q_{si}}
+\end{equation}
+%
+\begin{equation}
+c_{\theta_{li}} 
+= \frac{1 + \beta_i q_{ti}}
+       {[1 + \beta_i q_{si}]^2}
+  \frac{c_p}{L} \beta_i q_{si}
+  \left( \frac{p}{p_0} \right)^{R_d/c_p}
+\end{equation}
+%
+\begin{equation}
+\sigma_{si}^2 
+= c_{\theta_{li}}^2 \sigma_{\theta_{li}}^2 
++ c_{q_{ti}}^2 \sigma_{q_{ti}}^2
+- 2 c_{\theta_{li}} \sigma_{\theta_{li}} 
+    c_{q_{ti}} \sigma_{q_{ti}} r_{q_t \theta_l}
+\end{equation}
+%
+\begin{equation}
+\label{eq:C_gauss}
+C_i = \frac{1}{2} 
+      \left[ 
+        1 + \mathrm{erf} \left( \frac{s_i}{\sqrt{2}\sigma_{si}} \right) 
+      \right]
+\end{equation}
+%
+\begin{equation}
+\label{eq:ql_gauss}
+q_{li} 
+= s_i C_i
++ \frac{\sigma_{si}}{\sqrt{2\pi}} 
+  \exp \left[ 
+         -\frac{1}{2}\left( \frac{s_i}{\sigma_{si}} \right)^2 
+       \right]
+\end{equation}
+%
+where $C_i$ and $q_{li}$ are the cloud fractions and liquid water of
+each individual Gaussian.
+
+The layer-averaged cloud properties are given by:
+%
+\begin{equation}
+\overline{C} = a C_1 + (1-a) C_2
+\end{equation}
+%
+\begin{equation}
+\overline{q_l} = a q_{l1} + (1-a) q_{l2}
+\end{equation}
+%
+\begin{equation}
+\overline{w'q_l'} = a (w_1-\bar{w}) q_{l1} + (1-a) (w_2-\bar{w}) q_{l2}
+\end{equation}
+%
+\begin{equation}
+\overline{w^{'2}q_l'} 
+= a \left( (w_1-\bar{w})^2 + \sigma_{w1}^2 \right) q_{l1} 
++ (1-a) \left( (w_2-\bar{w})^2 + \sigma_{w2}^2 \right) q_{l2}
+- \overline{w^{'2}} \left( a q_{l1} + (1-a) q_{l2} \right)
+\end{equation}
+%
+\begin{equation}
+\begin{split}
+\overline{\theta_l'q_l'}
+=& a \left[ 
+       (\theta_{l1} - \bar{\theta}_l ) q_{l1} 
+       - C_1 
+         \left( 
+           c_{\theta_{l1}} \sigma_{\theta_{l1}}^2
+           - r_{q_t \theta_l} c_{q_{t1}} \sigma_{q_{t1}} \sigma_{\theta_{l1}}
+         \right)
+     \right] \\
+&+ (1-a) \left[ 
+           (\theta_{l2} - \bar{\theta}_l ) q_{l2} 
+           - C_2
+             \left( 
+               c_{\theta_{l2}} \sigma_{\theta_{l2}}^2
+               - r_{q_t \theta_l} c_{q_{t2}} \sigma_{q_{t2}} \sigma_{\theta_{l2}}
+             \right)
+         \right]
+\end{split}
+\end{equation}
+%
+\begin{equation}
+\begin{split}
+\overline{q_t'q_l'}
+=& a 
+   \left[ 
+     (q_{t1} - \bar{q}_t ) q_{l1} 
+     + C_1
+       \left(
+         c_{q_{t1}} \sigma_{q_{t1}}^2
+         - r_{q_t \theta_l} c_{\theta_{l1}} \sigma_{q_{t1}} \sigma_{\theta_{l1}}
+       \right)
+   \right]\\
+&+ (1-a) 
+   \left[ 
+     (q_{t2} - \bar{q}_t ) q_{l2} 
+     + C_2
+       \left(
+         c_{q_{t2}} \sigma_{q_{t2}}^2
+         - r_{q_t \theta_l} c_{\theta_{l2}} \sigma_{q_{t2}} \sigma_{\theta_{l2}}
+       \right)
+   \right]
+\end{split}
+\end{equation}
+
+\section{Steady-state solutions for the variances}
+
+\subsection{ $\overline{q_t^{'2}}$ and $\overline{\theta_l^{'2}}$ }
+
+Start with (\ref{eq_qtp2}), substitute (\ref{eq_wpqtp2}), assume steady-state 
+and rearrange:
+%
+\begin{equation}
+\begin{split}
+\label{eq_qtp2_ss}
+& \dfrac{C_2}{\tau} \overline{q_t^{'2}}
++ \bar{w}\ptlder{\overline{q^{'2}_t}}{z}
++ \frac{1}{3} \beta
+   \ptlder{}{z}
+     \left( 
+       a_1
+       \frac{\overline{w^{'3}}}{\overline{w^{'2}}} \,
+       \overline{q_t^{'2}}
+     \right)
+- \nu_2 \nabla_z^2 \overline{q_t^{'2}} \\
+=& - \left( 1 - \frac{1}{3}\beta \right)
+       \ptlder{}{z}
+         \left( 
+           a_2
+           \frac{\overline{w^{'3}}}{\overline{w^{'2}}^2} \,
+           \overline{w'q_t'}^2
+         \right)
+   - 2 \, \overline{w'q'_t} \, \ptlder{\bar{q}_t}{z} 
+\end{split}
+\end{equation}
+%
+The goal is to recast (\ref{eq_qtp2_ss}) so that $\overline{q_t^{'2}}$
+can be computed using a tridiagonal solver:
+%
+\begin{equation}
+\mathtt{ a(k) \, qtp2(k-1) + b(k) \, qtp2(k) + c(k) \, qtp2(k+1) = d(k) }
+\end{equation}
+%
+We now compute the contributions of each term in (\ref{eq_qtp2_ss}) to
+$\mathtt{a(k)}$, $\mathtt{b(k)}$, $\mathtt{c(k)}$, and $\mathtt{d(k)}$.
+
+\subsubsection{Term 1}
+
+\begin{equation}
+\mathtt{ b(k) = b(k) + \frac{C_2}{taum(k)} }
+\end{equation}
+
+\subsubsection{Term 2}
+
+\begin{equation}
+\begin{split}
+& \left. \bar{w}\ptlder{\overline{q^{'2}_t}}{z} \right|_{\mathtt{zm(k)}} \\
+=& \mathtt{ \frac{wmm(k)}{dzm(k)}
+   \left(
+     \frac{1}{2} \left( qtp2(k)+qtp2(k+1) \right)
+     - \frac{1}{2} \left( qtp2(k-1)+qtp2(k) \right)
+   \right) } \\
+=& \mathtt{ \frac{wmm(k)}{2 dzm(k)} qtp2(k+1) - \frac{wmm(k)}{2 dzm(k)} qtp2(k-1) }
+\end{split}
+\end{equation}
+
+Separating out the contributions:
+%
+\begin{equation}
+\begin{split}
+& \mathtt{ a(k) = a(k) - \frac{wmm(k)}{2 dzm(k)} } \\
+& \mathtt{ c(k) = c(k) + \frac{wmm(k)}{2 dzm(k)} }
+\end{split}
+\end{equation}
+
+\subsubsection{Term 3}
+
+\begin{equation}
+\begin{split}
+& \left.
+  \frac{1}{3} \beta
+   \ptlder{}{z}
+     \left( 
+       a_1
+       \frac{\overline{w^{'3}}}{\overline{w^{'2}}} \,
+       \overline{q_t^{'2}}
+     \right)
+   \right|_{\mathtt{zm(k)}} \\
+&= \mathtt{
+    \frac{\beta}{6 dzm(k)}
+    \bigg[ \frac{\left(a1m(k)+a1m(k+1)\right) wp3(k+1) \left(qtp2(k)+qtp2(k+1) \right)}
+                {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)} } \\
+&  \mathtt{ \quad \quad \quad \quad \quad \quad
+          -\frac{\left(a1m(k-1)+a1m(k)\right) wp3(k) \left(qtp2(k-1)+qtp2(k) \right)}
+                {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)}
+    \bigg]
+    }
+\end{split}
+\end{equation}
+%
+Separating out the contributions:
+%
+\begin{equation}
+\begin{split}
+& \mathtt{ 
+   a(k) = a(k) - \frac{\beta}{6 dzm(k)}
+                 \frac{\left(a1m(k-1)+a1m(k)\right) wp3(k)}
+                      {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)}
+  } \\
+& \mathtt{
+   b(k) = b(k) + \frac{\beta}{6 dzm(k)}
+                 \left(
+                   \frac{\left(a1m(k)+a1m(k+1)\right) wp3(k+1)}
+                        {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)}
+                  -\frac{\left(a1m(k-1)+a1m(k)\right) wp3(k)}
+                        {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)}
+                 \right)
+  } \\
+& \mathtt{
+   c(k) = c(k) + \frac{\beta}{6 dzm(k)}
+                 \frac{\left(a1m(k)+a1m(k+1)\right) wp3(k+1)}
+                      {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)}
+  }
+\end{split}
+\end{equation}
+ 
+\subsubsection{Term 4}
+
+\begin{equation}
+\begin{split}
+& \left. - \nu_2 \nabla_z^2 \overline{q_t^{'2}} \right|_{\mathtt{zm(k)}}
+=& \mathtt{
+    \frac{\nu_2}{dzm(k)}
+    \left( \frac{qtp2(k+1)-qtp2(k)}{dzt(k+1)}
+          -\frac{qtp2(k)-qtp2(k-1)}{dzt(k)}
+    \right)
+   }
+\end{split}
+\end{equation}
+%
+Separating out the contributions:
+%
+\begin{equation}
+\begin{split}
+&\mathtt{a(k) = a(k) - \frac{\nu_2}{dzm(k)dzt(k)} } \\
+&\mathtt{b(k) = b(k) + \frac{\nu_2}{dzm(k)}
+                       \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right) } \\
+&\mathtt{c(k) = c(k) - \frac{\nu_2}{dzm(k)dzt(k+1)} }
+\end{split}
+\end{equation}
+
+\subsubsection{Term 5}
+
+\begin{equation}
+\begin{split}
+& - \left. \left( 1 - \frac{1}{3}\beta \right)
+       \ptlder{}{z}
+         \left( 
+           a_2
+           \frac{\overline{w^{'3}}}{\overline{w^{'2}}^2} \,
+           \overline{w'q_t'}^2
+         \right) \right|_{\mathtt{zm(k)}} \\
+=& \mathtt{
+   - \frac{1 - \frac{1}{3}\beta}{2 dzm(k)}
+     \bigg[ \frac{\left(a2m(k)+a2m(k+1)\right) wp3(k+1) \left(wpqtp(k)+wpqtp(k+1)\right)^2}
+                 {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)^2} } \\
+ & \mathtt{ \quad \quad \quad \quad \quad \quad
+           -\frac{\left(a2m(k-1)+a2m(k)\right) wp3(k) \left(wpqtp(k-1)+wpqtp(k)\right)^2}
+                 {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)^2}
+     \bigg]
+   }
+\end{split}
+\end{equation}
+%
+Separating out the contributions:
+%
+\begin{equation}
+\begin{split}
+&\mathtt{d(k)} \\
+=& \mathtt{
+   d(k)
+   - \frac{1 - \frac{1}{3}\beta}{2 dzm(k)}
+     \bigg[ \frac{\left(a2m(k)+a2m(k+1)\right) wp3(k+1) \left(wpqtp(k)+wpqtp(k+1)\right)^2}
+                 {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)^2} } \\
+ & \mathtt{ \quad \quad \quad \quad \quad \quad \quad \quad
+           -\frac{\left(a2m(k-1)+a2m(k)\right) wp3(k) \left(wpqtp(k-1)+wpqtp(k)\right)^2}
+                 {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)^2}
+     \bigg]
+   }
+\end{split}
+\end{equation}
+
+\subsubsection{Term 6}
+
+\begin{equation}
+\begin{split}
+&\left. - 2 \, \overline{w'q'_t} \, \ptlder{\bar{q}_t}{z} \right|_{\mathtt{zm(k)}}
+ = \mathtt{ - 2 wpqtp(k) \frac{qtm(k+1)-qtm(k)}{dzm(k)} }
+\end{split}
+\end{equation}
+%
+Separating out the contributions:
+%
+\begin{equation}
+\begin{split}
+&\mathtt{d(k) = d(k) - 2 wpqtp(k) \frac{qtm(k+1)-qtm(k)}{dzm(k)} }
+\end{split}
+\end{equation}
+
+\subsection{ $\overline{q_t'\theta_l'}$  }
+
+Start with (\ref{eq_qtpthlp}), substitue (\ref{eq_wpqtpthlp}), assume steady-state 
+and rearrange:
+%
+\begin{equation}
+\label{eq_qtpthlp_ss}
+\begin{split}
+& \frac{C_2}{\tau} \overline{q_t' \theta_l'}
++ \bar{w}\ptlder{\overline{q'_t\theta'_l}}{z}
++ \frac{1}{3} \beta
+   \ptlder{}{z}
+     \left( 
+       a_1
+       \frac{\overline{w^{'3}}}{\overline{w^{'2}}} \,
+       \overline{q_t'\theta_l'}
+     \right)
+- \nu_2 \nabla_z^2 \overline{q_t^{'}\theta_l^{'}} \\
+=& 
+   - \left( 1 - \frac{1}{3}\beta \right)
+      \ptlder{}{z}
+        \left( 
+          a_2
+          \frac{\overline{w^{'3}}}{\overline{w^{'2}}^2} \,
+          \overline{w'q_t'} \, \overline{w'\theta_l'}
+        \right)
+   - \overline{w'q'_t}\ptlder{\bar{\theta}_l}{z} 
+   - \overline{w'\theta'_l}\ptlder{\bar{q}_t}{z} \\
+\end{split}
+\end{equation}
+%
+As for the variances, the goal is to recast (\ref{eq_qtpthlp_ss}) so that 
+$\overline{q_t'\theta_l'}$ can be computed using a tridiagonal solver:
+%
+\begin{equation}
+\mathtt{ a(k) \, qtpthlp(k-1) + b(k) \, qtpthlp(k) + c(k) \, qtpthlp(k+1) = d(k) }
+\end{equation}
+%
+We now compute the contributions of each term in (\ref{eq_qtpthlp_ss}) to
+$\mathtt{a(k)}$, $\mathtt{b(k)}$, $\mathtt{c(k)}$, and $\mathtt{d(k)}$.
+
+\subsubsection{Term 1}
+
+\begin{equation}
+\mathtt{ b(k) = b(k) + \frac{C_2}{taum(k)} }
+\end{equation}
+
+\subsubsection{Term 2}
+
+\begin{equation}
+\begin{split}
+& \left. \bar{w}\ptlder{\overline{q_t^{'}\theta_l^{'}}}{z} \right|_{\mathtt{zm(k)}} \\
+=& \mathtt{ \frac{wmm(k)}{dzm(k)}
+   \left(
+     \frac{1}{2} \left( qtpthlp(k)+qtpthlp(k+1) \right)
+     - \frac{1}{2} \left( qtpthlp(k-1)+qtpthlp(k) \right)
+   \right) } \\
+=& \mathtt{ \frac{wmm(k)}{2 dzm(k)} qtpthlp(k+1) - \frac{wmm(k)}{2 dzm(k)} qtpthlp(k-1) }
+\end{split}
+\end{equation}
+
+Separating out the contributions:
+%
+\begin{equation}
+\begin{split}
+& \mathtt{ a(k) = a(k) - \frac{wmm(k)}{2 dzm(k)} } \\
+& \mathtt{ c(k) = c(k) + \frac{wmm(k)}{2 dzm(k)} }
+\end{split}
+\end{equation}
+
+\subsubsection{Term 3}
+
+\begin{equation}
+\begin{split}
+& \left.
+  \frac{1}{3} \beta
+   \ptlder{}{z}
+     \left( 
+       a_1
+       \frac{\overline{w^{'3}}}{\overline{w^{'2}}} \,
+       \overline{q_t^{'}\theta_l^{'}}
+     \right)
+   \right|_{\mathtt{zm(k)}} \\
+&= \mathtt{
+    \frac{\beta}{6 dzm(k)}
+    \bigg[ \frac{\left(a1m(k)+a1m(k+1)\right) wp3(k+1) \left(qtpthlp(k)+qtpthlp(k+1) \right)}
+                {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)} } \\
+&  \mathtt{ \quad \quad \quad \quad \quad \quad
+          -\frac{\left(a1m(k-1)+a1m(k)\right) wp3(k) \left(qtpthlp(k-1)+qtpthlp(k) \right)}
+                {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)}
+    \bigg]
+    }
+\end{split}
+\end{equation}
+%
+Separating out the contributions:
+%
+\begin{equation}
+\begin{split}
+& \mathtt{ 
+   a(k) = a(k) - \frac{\beta}{6 dzm(k)}
+                 \frac{\left(a1m(k-1)+a1m(k)\right) wp3(k)}
+                      {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)}
+  } \\
+& \mathtt{
+   b(k) = b(k) + \frac{\beta}{6 dzm(k)}
+                 \left(
+                   \frac{\left(a1m(k)+a1m(k+1)\right) wp3(k+1)}
+                        {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)}
+                  -\frac{\left(a1m(k-1)+a1m(k)\right) wp3(k)}
+                        {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)}
+                 \right)
+  } \\
+& \mathtt{
+   c(k) = c(k) + \frac{\beta}{6 dzm(k)}
+                 \frac{\left(a1m(k)+a1m(k+1)\right) wp3(k+1)}
+                      {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)}
+  }
+\end{split}
+\end{equation}
+ 
+\subsubsection{Term 4}
+
+\begin{equation}
+\begin{split}
+& \left. - \nu_2 \nabla_z^2 \overline{q_t^{'}\theta_l^{'}} \right|_{\mathtt{zm(k)}}
+=& \mathtt{
+    \frac{\nu_2}{dzm(k)}
+    \left( \frac{qptthlp(k+1)-qptthlp(k)}{dzt(k+1)}
+          -\frac{qptthlp(k)-qptthlp(k-1)}{dzt(k)}
+    \right)
+   }
+\end{split}
+\end{equation}
+%
+Separating out the contributions:
+%
+\begin{equation}
+\begin{split}
+&\mathtt{a(k) = a(k) - \frac{\nu_2}{dzm(k)dzt(k)} } \\
+&\mathtt{b(k) = b(k) + \frac{\nu_2}{dzm(k)}
+                       \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right) } \\
+&\mathtt{c(k) = c(k) - \frac{\nu_2}{dzm(k)dzt(k+1)} }
+\end{split}
+\end{equation}
+
+\subsubsection{Term 5}
+
+\begin{equation}
+\begin{split}
+& - \left. \left( 1 - \frac{1}{3}\beta \right)
+       \ptlder{}{z}
+         \left( 
+           a_2
+           \frac{\overline{w^{'3}}}{\overline{w^{'2}}^2} \,
+           \overline{w'q_t'} \; \overline{w'\theta_l'}
+         \right) \right|_{\mathtt{zm(k)}} \\
+=& \mathtt{
+   - \frac{1 - \frac{1}{3}\beta}{2 dzm(k)} } \\
+ & \mathtt{
+     \times \bigg[ \frac{\left(a2m(k)+a2m(k+1)\right) wp3(k+1) 
+                  \left(wpqtp(k)+wpqtp(k+1)\right)\left(wpthlp(k)+wpthlp(k+1)\right)}
+                 {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)^2} } \\
+ & \mathtt{ \quad \quad
+           -\frac{\left(a2m(k-1)+a2m(k)\right) wp3(k) 
+                  \left(wpqtp(k-1)+wpqtp(k)\right)\left(wpthlp(k-1)+wpthlp(k)\right)}
+                 {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)^2}
+     \bigg]
+   }
+\end{split}
+\end{equation}
+%
+Separating out the contributions:
+%
+\begin{equation}
+\begin{split}
+\mathtt{d(k)} =& \mathtt{d(k)} \\
+ & \mathtt{ - \frac{1 - \frac{1}{3}\beta}{2 dzm(k)} } \\
+ & \mathtt{ \times 
+      \bigg[ \frac{\left(a2m(k)+a2m(k+1)\right) wp3(k+1) 
+                   \left(wpqtp(k)+wpqtp(k+1)\right) 
+                   \left(wpthlp(k)+wpthlp(k+1)\right)}
+                  {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)^2} } \\
+ & \mathtt{ \quad \quad
+            -\frac{\left(a2m(k-1)+a2m(k)\right) wp3(k) 
+                   \left(wpqtp(k-1)+wpqtp(k)\right) 
+                   \left(wpthlp(k-1)+wpthlp(k)\right)}
+                  {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)^2}
+      \bigg]
+   }
+\end{split}
+\end{equation}
+
+\subsubsection{Terms 6 and 7}
+
+\begin{equation}
+\begin{split}
+&\left. -\,\overline{w'q'_t} \, \ptlder{\bar{\theta}_l}{z} \right|_{\mathtt{zm(k)}}
+ \left. -\,\overline{w'\theta'_l} \, \ptlder{\bar{q}_t}{z} \right|_{\mathtt{zm(k)}} \\
+&= \mathtt{ - wpqtp(k) \frac{thlm(k+1)-thlm(k)}{dzm(k)} }
+   \mathtt{ - wpthlp(k) \frac{qtm(k+1)-qtm(k)}{dzm(k)} }
+\end{split}
+\end{equation}
+%
+Separating out the contributions:
+%
+\begin{equation}
+\begin{split}
+&\mathtt{d(k) = d(k) - wpqtp(k) \frac{thlm(k+1)-thlm(k)}{dzm(k)}
+                     - wpthlp(k) \frac{qtm(k+1)-qtm(k)}{dzm(k)} }
+\end{split}
+\end{equation}
+
+\section{Implicit solutions for the means and fluxes}
+
+$\bar{q}_t$ and $\overline{w'q_t'}$ can be solved simultaneously and
+implicitly.
+Start with eqs (\ref{eq_qtm}), (\ref{eq_wpqtp}) and substitute expression
+for the transport term (\ref{eq_wp2qtp}):
+%
+\begin{equation}
+\ptlder{\bar{q}_t}{t}
+= - \bar{w}\ptlder{\bar{q}_t}{z} 
+  - \ptlder{}{z}\overline{w'q'_t} 
+  + \left. \ptlder{\bar{q}_t}{t} \right|_{\rm ls}
+\end{equation}
+%
+\begin{equation}
+\begin{split}
+\ptlder{\overline{w'q'_t}}{t} 
+= & - \bar{w}\ptlder{\overline{w'q'_t}}{z}	 		
+    - \ptlder{}{z}
+      \left(   
+               a_1 \,
+               \frac{\overline{w^{'3}}}{\overline{w^{'2}}} \,
+               \overline{w'q_t'}
+      \right)
+    - \overline{w^{'2}}\ptlder{\bar{q}_t}{z} 
+    - (1-C_7) \overline{w'q'_t}\ptlder{\bar{w}}{z}
+    + (1-C_7) \frac{g}{\theta_0} \overline{q'_t\theta'_v} \\
+  & - \frac{C_6}{\tau}\overline{w'q'_t}
+    + \nu_6 \nabla_z^2 \overline{w^{'}q_t^{'}}
+\end{split}
+\end{equation}
+%
+After discretizing the time derivative and rearranging terms:
+%
+\begin{equation}
+\label{eq_qxm2}
+\begin{split}
+& \frac{\bar{q}_t^{\, t+\Delta t}}{\Delta t}
+  + \bar{w}\ptlder{\bar{q}_t^{\, t+\Delta t}}{z} 
+  + \ptlder{}{z}\overline{w'q'_t}^{\, t+\Delta t} \\
+& = \frac{\bar{q}_t^{\, t}}{\Delta t}
+  + \left. \ptlder{\bar{q}_t}{t} \right|_{\rm ls}
+\end{split}
+\end{equation}
+%
+\begin{equation}
+\label{eq_wpqxp2}
+\begin{split}
+& \frac{\overline{w'q'_t}^{\, t+\Delta t}}{\Delta t} 
+  + \bar{w}\ptlder{}{z}\overline{w'q'_t}^{\, t+\Delta t}
+  + \ptlder{}{z}
+    \left(   
+             a_1 \,
+             \frac{\overline{w^{'3}}}{\overline{w^{'2}}} \,
+             \overline{w'q_t'}^{\, t+\Delta t}
+    \right)
+  + \overline{w^{'2}}\ptlder{\bar{q}_t^{\, t+\Delta t}}{z} \\
+& + (1-C_7) \overline{w'q'_t}^{\, t+\Delta t}\ptlder{\bar{w}}{z}
+  + \frac{C_6}{\tau}\overline{w'q'_t}^{\, t+\Delta t}
+  - \nu_6 \nabla_z^2 \overline{w^{'}q_t^{'}}^{\, t+\Delta t} \\
+& = \frac{\overline{w'q'_t}^{\, t}}{\Delta t} 
+    + (1-C_7) \frac{g}{\theta_0} \overline{q'_t\theta'_v}^{\, t}
+\end{split}
+\end{equation}
+%
+The LHSs of (\ref{eq_qxm2})-(\ref{eq_wpqxp2}) is linear in $\bar{q}$
+and $\overline{w'q'_t}$ and can teherefore be rewritten in matrix form:
+%
+\begin{equation}
+A
+\left( \begin{array}{l}
+  \hfill \vdots \hfill \\
+  \bar{q}^{\, t+\Delta t}_{\, k-1} \\
+  \overline{w'q'_t}^{\, t+\Delta t}_{\, k-1} \\
+  \bar{q}^{\, t+\Delta t}_{\, k} \\
+  \overline{w'q'_t}^{\, t+\Delta t}_{\, k} \\
+  \bar{q}^{\, t+\Delta t}_{\, k+1} \\
+  \overline{w'q'_t}^{\, t+\Delta t}_{\, k+1} \\
+  \hfill \vdots \hfill
+\end{array} \right)
+= d
+\end{equation}
+%
+The matrix $A$ is obtained by vertical discretization of the LHSs,
+and the vector $d$ by discretization of the RHSs. $A$ is band-diagonal
+with two rows above and two below the main diagonal. $A$ is stored
+in compact form in a array with dimensions $\mathtt{(2\,nnzp, 5)}$.
+$d$ is a vector with dimenstion $\mathtt{(2\,nnzp)}$.
+$A$ can be inverted efficiently using a LU decomposition algorithm for 
+band diagonal matrices.
+The construction of the matrix $A$ and vector $d$ are as follows. 
+
+First, we compute
+the finite difference equivalent to (\ref{eq_qxm2}):
+%
+\begin{equation}
+\label{eq_qxm3}
+\begin{split}
+& \mathtt{
+   \frac{qtm^{new}(k)}{dt}
+   + \frac{wmt(k)}{2dzt(k)} qtm^{new}(k+1)
+   - \frac{wmt(k)}{2dzt(k)} qtm^{new}(k-1)
+   + \frac{wpqtp^{new}(k)}{dzt(k)}
+   - \frac{wpqtp^{new}(k-1)}{dzt(k)} } \\
+=& \mathtt{
+   \frac{qtm(k)}{dt} + qtm\_ls(k)
+  }
+\end{split}
+\end{equation}
+%
+Contributions to $A$ from (\ref{eq_qxm3}) are:
+%
+\begin{equation}
+\begin{split}
+& \mathtt{
+  A(k\_xm,1) = A(k\_xm,1) - \frac{wmt(k)}{2dzt(k)}
+  }
+\end{split}
+\end{equation}
+%
+\begin{equation}
+\begin{split}
+& \mathtt{
+  A(k\_xm,2) = A(k\_xm,2) - \frac{1}{dzt(k)}
+  }
+\end{split}
+\end{equation}
+%
+\begin{equation}
+\begin{split}
+& \mathtt{
+  A(k\_xm,3) = A(k\_xm,3) + \frac{1}{dt}
+  }
+\end{split}
+\end{equation}
+%
+\begin{equation}
+\begin{split}
+& \mathtt{
+  A(k\_xm,4) = A(k\_xm,4) + \frac{1}{dzt(k)}
+  }
+\end{split}
+\end{equation}
+%
+\begin{equation}
+\begin{split}
+& \mathtt{
+  A(k\_xm,5) = A(k\_xm,5) + \frac{wmt(k)}{2dzt(k)}
+  }
+\end{split}
+\end{equation}
+%
+Contributions to $d$ from (\ref{eq_qxm3}) are:
+%
+\begin{equation}
+\begin{split}
+& \mathtt{
+  d(k\_xm) = d(k\_xm) + \frac{qtm(k)}{dt} + qtm\_ls(k)
+  }
+\end{split}
+\end{equation}
+%
+where $\mathtt{k\_xm = 2 k - 1}$.
+
+We now write
+the finite difference equivalent to (\ref{eq_wpqxp2}):
+%
+\begin{equation}
+\label{eq_wpqxp3}
+\begin{split}
+& \mathtt{
+  \frac{wpqtp^{new}(k)}{dt}
+  + \frac{wmm(k)}{2 dzm(k)} wpqtp^{new}(k+1)
+  - \frac{wmm(k)}{2 dzm(k)} wpqtp^{new}(k-1)
+  } \\
+& \mathtt{
+  + \frac{1}{2 dzm(k)}
+    \bigg[ -\frac{\left(a1m(k-1)+a1m(k)\right) wp3(k)}
+                 {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)}
+            wpqtp^{new}(k-1)
+  } \\
+& \mathtt{ \quad \quad \quad \quad \quad
+          + \left( 
+             \frac{\left(a1m(k)+a1m(k+1)\right) wp3(k+1)}
+                 {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)}
+            -\frac{\left(a1m(k-1)+a1m(k)\right) wp3(k)}
+                 {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)}
+            \right)
+            wpqtp^{new}(k)
+  } \\
+& \mathtt{ \quad \quad \quad \quad \quad
+           + \frac{\left(a1m(k)+a1m(k+1)\right) wp3(k+1)}
+                 {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)}
+            wpqtp^{new}(k+1)
+    \bigg]
+  } \\
+& \mathtt{
+  + wp2(k) \, \frac{qtm^{new}(k+1)-qtm^{new}(k)}{dzm(k)}
+  + (1-C_7) \, wpqtp^{new}(k) \, \frac{wmt(k+1)-wmt(k)}{dzm(k)}
+  } \\
+& \mathtt{
+  + \frac{C_6}{taum(k)} \, wpqtp^{new}(k)
+  } \\
+& \mathtt{
+  -\frac{\nu_6}{dzm(k)dzt(k)} wpqtp^{new}(k-1)
+  } \\
+& \mathtt{
+  +\frac{\nu_6}{dzm(k)} \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right) wpqtp^{new}(k)
+  } \\
+& \mathtt{
+  -\frac{\nu_6}{dzm(k)dzt(k+1)} wpqtp^{new}(k+1)
+  } \\
+=& \mathtt{ \frac{wpqtp(k)}{dt} + (1-C_7) \frac{g}{\theta_0} qtpthvp(k) }
+\end{split}
+\end{equation}
+%
+Contributions to $A$ from (\ref{eq_wpqxp3}) are:
+%
+\begin{equation}
+\begin{split}
+&  \mathtt{ A(k\_wpxp,1) = A(k\_wpxp,1) } \\
+&  \mathtt{
+- \frac{wmm(k)}{2 dzm(k)}
+- \frac{1}{2 dzm(k)}
+  \frac{\left(a1m(k-1)+a1m(k)\right) wp3(k)}
+       {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)}
+- \frac{\nu_6}{dzm(k)dzt(k)}
+  }
+\end{split}
+\end{equation}
+%
+\begin{equation}
+\begin{split}
+&  \mathtt{ A(k\_wpxp,2) = A(k\_wpxp,2) -\frac{wp2(k)}{dzm(k)} }
+\end{split}
+\end{equation}
+%
+\begin{equation}
+\begin{split}
+&  \mathtt{ A(k\_wpxp,3) = A(k\_wpxp,3) } \\
+&  \mathtt{
++ \frac{1}{dt}
++ \frac{1}{2 dzm(k)}
+  \left( 
+   \frac{\left(a1m(k)+a1m(k+1)\right) wp3(k+1)}
+       {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)}
+  -\frac{\left(a1m(k-1)+a1m(k)\right) wp3(k)}
+       {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)}
+  \right)
+   } \\
+&  \mathtt{
++ (1-C_7) \, \frac{wmt(k+1)-wmt(k)}{dzm(k)}
++ \frac{C_6}{taum(k)}
++\frac{\nu_6}{dzm(k)} \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right)
+   }
+\end{split}
+\end{equation}
+%
+\begin{equation}
+\begin{split}
+&  \mathtt{ A(k\_wpxp,4) = A(k\_wpxp,4) +\frac{wp2(k)}{dzm(k)} }
+\end{split}
+\end{equation}
+%
+\begin{equation}
+\begin{split}
+&  \mathtt{ A(k\_wpxp,5) = A(k\_wpxp,5) } \\
+&  \mathtt{
++ \frac{wmm(k)}{2 dzm(k)}
++ \frac{1}{2 dzm(k)}
+  \frac{\left(a1m(k)+a1m(k+1)\right) wp3(k+1)}
+       {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)}
+-\frac{\nu_6}{dzm(k)dzt(k+1)}
+  }
+\end{split}
+\end{equation}
+
+Contributions to $d$ from (\ref{eq_wpqxp3}) are:
+%
+\begin{equation}
+\begin{split}
+& \mathtt{
+  d(k\_wpxp) 
+= d(k\_wpxp) 
++ \frac{wpqtp(k)}{dt} 
++ (1-C_7) \frac{g}{\theta_0} qtpthvp(k) }
+\end{split}
+\end{equation}
+%
+where $\mathtt{k\_wpxp = 2 k}$.
+
+
+
+
+
+The procedure for solving implicitly for $\bar{\theta}_l$ 
+and $\overline{w'\theta_l'}$ is identical. It leads to the same matrix
+$A$, so $A$ needs to be inverted only once.
+
+\section{Implicit solution for the vertical velocity moments}
+
+Start with equations (\ref{eq_wp2}) and (\ref{eq_wp3}):
+%
+\begin{equation}
+\label{eq_wp2b}
+\begin{split}
+\ptlder{\overline{w^{'2}}}{t} 
+=& - \bar{w}\ptlder{\overline{w^{'2}}}{z}	 
+   - \ptlder{\overline{w^{'3}}}{z} 
+   - 2\overline{w^{'2}}\ptlder{\bar{w}}{z}
+   + \frac{2g}{\theta_0} \overline{w'\theta'_v} \\
+ & - \frac{C_4}{\tau} \left( \overline{w^{'2}} -\frac{2}{3}\bar{e} \right)
+   - C_5 
+     \left(
+       - 2\overline{w^{'2}}\ptlder{\bar{w}}{z}
+       + \frac{2g}{\theta_0} \overline{w'\theta'_v}
+     \right)
+   + \frac{2}{3} C_5
+     \left(
+       \frac{g}{\theta_0} \overline{w'\theta'_v} 
+       - \overline{u'w'}\ptlder{\bar{u}}{z} 
+       - \overline{v'w'}\ptlder{\bar{v}}{z} 
+     \right) \\
+ & - \dfrac{C_1}{\tau} \overline{w^{'2}} 
+   + \nu_1 \nabla_z^2 \, \overline{w^{'2}}
+\end{split}
+\end{equation}
+%
+\begin{equation}
+\label{eq_wp3b}
+\begin{split}
+\ptlder{\overline{w^{'3}}}{t}
+= & - \bar{w}\ptlder{\overline{w^{'3}}}{z}
+    - \ptlder{\overline{w^{'4}}}{z} 
+    + 3\overline{w^{'2}}\ptlder{\overline{w^{'2}}}{z}
+    - 3\overline{w^{'3}}\ptlder{\bar{w}}{z}
+    + \frac{3g}{\theta_0} \overline{w^{'2}\theta'_v} \\
+  & - \frac{C_8}{\tau}\left( C_{8b} \, Skw^4 + 1 \right) \overline{w^{'3}}
+    - C_{11} \left(
+                - 3 \overline{w^{'3}}\ptlder{\bar{w}}{z}
+                + \frac{3g}{\theta_0} \overline{w^{'2}\theta'_v}
+             \right)
+    + \left( K_w + \nu_8 \right) \nabla_z^2 \overline{w^{'3}}
+\end{split}
+\end{equation}
+%
+Using (\ref{eq_wp4}), we can rewrite the transport and production terms
+in (\ref{eq_wp3b}):
+%
+\begin{equation}
+\begin{split}
+& - \ptlder{\overline{w^{'4}}}{z} 
+  + 3\overline{w^{'2}}\ptlder{\overline{w^{'2}}}{z} \\
+& = - \ptlder{}{z}
+         \left( \overline{w^{'4}} -\frac{3}{2}\overline{w^{'2}}^2 \right) \\
+& = - \ptlder{}{z} 
+      \left( a_3 \overline{w^{'2}}^2 \right)
+    - \ptlder{}{z} 
+      \left( a_1 \frac{ \overline{w^{'3}}^2 }{ \overline{w^{'2}} } \right)
+\end{split}
+\end{equation}
+%
+Rearranging terms and making use of (\ref{eq_tke}):
+%
+\begin{equation}
+\label{eq_wp2c}
+\begin{split}
+& \ptlder{\overline{w^{'2}}}{t} 
+  + \ptlder{\overline{w^{'3}}}{z} 
+  + \dfrac{C_1}{\tau} \overline{w^{'2}} 
+  - \nu_1 \nabla_z^2 \, \overline{w^{'2}} \\
+& =
+  - \bar{w}\ptlder{\overline{w^{'2}}}{z}	 
+  + ( 1 - C_5 ) \frac{2g}{\theta_0} \overline{w'\theta'_v}
+  - 2 ( 1 - C_5 ) \overline{w^{'2}}\ptlder{\bar{w}}{z}
+  + \frac{2}{3} C_5
+     \left(
+       \frac{g}{\theta_0} \overline{w'\theta'_v} 
+       - \overline{u'w'}\ptlder{\bar{u}}{z} 
+       - \overline{v'w'}\ptlder{\bar{v}}{z} 
+     \right) \\
+\end{split}
+\end{equation}
+%
+\begin{equation}
+\label{eq_wp3c}
+\begin{split}
+& \ptlder{\overline{w^{'3}}}{t}
+  - \left( K_w + \nu_8 \right) \nabla_z^2 \overline{w^{'3}}
+  + \frac{C_8}{\tau}\left( C_{8b} \, Skw^4 + 1 \right) \overline{w^{'3}}
+  + \ptlder{}{z} \left( a_3 \overline{w^{'2}}^2 \right)
+  + \ptlder{}{z} 
+       \left(
+          a_1 \frac{ \overline{w^{'3}}^2 }{ \overline{w^{'2}} }
+       \right) \\
+& = 
+  - \bar{w}\ptlder{\overline{w^{'3}}}{z}
+  + (1 - C_{11}) \frac{3g}{\theta_0} \overline{w^{'2}\theta'_v}
+  - 3 ( 1 - C_{11} ) \overline{w^{'3}}\ptlder{\bar{w}}{z} \\
+\end{split}
+\end{equation}
+%
+
+\subsection{$\overline{w^{'2}}$}
+
+Terms on the LHS of (\ref{eq_wp2c}) are treated fully implictly, except
+for the diffusion term which is treated with a Crank-Nicholson time step.
+Terms on the RHS explictly:
+%
+\begin{equation}
+\label{eq_wp2d}
+\begin{split}
+  \frac{\overline{w^{'2}}^{t+\Delta t}}{\Delta t} 
+  + \ptlder{\overline{w^{'3}}^{t+\Delta t}}{z} 
+  + \dfrac{C_1}{\tau} \overline{w^{'2}}^{t+\Delta t} 
+  - \frac{1}{2} \nu_1 \nabla_z^2 \, \overline{w^{'2}}^{t+\Delta t}
+=
+  \frac{\overline{w^{'2}}^{t}}{\Delta t} 
+  + \frac{1}{2} \nu_1 \nabla_z^2 \, \overline{w^{'2}}^t
+  + \left. \overline{w^{'2}} \right|_{\rm expl}
+\end{split}
+\end{equation}
+%
+where
+%
+\begin{equation}
+\label{eq_wp2t}
+\left. \overline{w^{'2}} \right|_{\rm expl}
+= 
+  - \bar{w}\ptlder{\overline{w^{'2}}^{t}}{z}	 
+  + ( 1 - C_5 ) \frac{2g}{\theta_0} \overline{w'\theta'_v}^{t}
+  - 2 ( 1 - C_5 ) \overline{w^{'2}}^{t}\ptlder{\bar{w}}{z}
+  + \frac{2}{3} C_5
+     \left(
+       \frac{g}{\theta_0} \overline{w'\theta'_v}
+       - \overline{u'w'}\ptlder{\bar{u}}{z} 
+       - \overline{v'w'}\ptlder{\bar{v}}{z} 
+     \right)^{t}
+\end{equation}
+%
+The next step consists of writing the finite difference equivalent to
+(\ref{eq_wp2d}):
+%
+\begin{equation}
+\label{eq_wp2e}
+\begin{split}
+& \mathtt{
+  \frac{wp2^{new}(k)}{dt}
++ \frac{wp3^{new}(k+1) - wp3^{new}(k)}{dzm(k)}
++ \frac{C_1}{taum(k)} wp2^{new}(k)
+  } \\
+& \mathtt{
+  -\frac{\nu_1}{2 dzm(k)dzt(k)} wp2^{new}(k-1)
+  } \\
+& \mathtt{
+  +\frac{\nu_1}{2 dzm(k)} \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right) wp2^{new}(k)
+  } \\
+& \mathtt{
+  -\frac{\nu_1}{2 dzm(k)dzt(k+1)} wp2^{new}(k+1)
+  } \\
+=& \mathtt{
+  \frac{wp2(k)}{dt}
+  } \\
+& \mathtt{
+  +\frac{\nu_1}{2 dzm(k)dzt(k)} wp2(k-1)
+  } \\
+& \mathtt{
+  -\frac{\nu_1}{2 dzm(k)} \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right) wp2(k)
+  } \\
+& \mathtt{
+  +\frac{\nu_1}{2 dzm(k)dzt(k+1)} wp2(k+1)
+  } \\
+& \mathtt{
+  + wp2t(k)
+  }
+\end{split}
+\end{equation}
+%
+where $\mathtt{wp2t(k)}$ is the finite difference equivalent to (\ref{eq_wp2t}) 
+at level $\mathtt{zm(k)}$.
+
+\subsection{$\overline{w^{'3}}$}
+
+The first two terms on the LHS of (\ref{eq_wp3c}) are treated implictly,
+the last three terms on the LHS are teated semi-implictly (they are linearized
+and the linearized portion is treated implicitly, the rest explicitly)
+and terms on the RHS explictly. Let's focus first on the third term on the LHS, 
+$L_3$:
+%
+\begin{equation}
+\label{eq_l3a}
+L_3
+\equiv \frac{C_8}{\tau}\left( C_{8b} \, Skw^4 + 1 \right) \overline{w^{'3}}
+=   \frac{C_8}{\tau}
+    \left(  C_{8b} \, \frac{\overline{w^{'3}}^5}{\overline{w^{'2}}^6}
+          + \overline{w^{'3}}
+    \right)
+\end{equation}
+%
+We linearize $L_3$ with respect to $\overline{w^{'3}}$:
+%
+\begin{equation}
+\label{eq_l3b}
+L_3 \left( \overline{w^{'3}}^{t+\Delta t} \right)
+\approx L_3 \left( \overline{w^{'3}}^{t} \right)
++ \left. \ptlder{L_3}{\overline{w^{'3}}} \right|_{t}
+  \left( \overline{w^{'3}}^{t+\Delta t} - \overline{w^{'3}}^{t} \right)
+\end{equation}
+%
+where
+%
+\begin{equation}
+\label{eq_l3c}
+\left. \ptlder{L_3}{\overline{w^{'3}}} \right|_{t}
+=   \frac{C_8}{\tau}
+    \left(  5 \, C_{8b} \, \frac{\overline{w^{'3}}^4}{\overline{w^{'2}}^6}
+          + 1
+    \right)
+\end{equation}
+%
+Combining (\ref{eq_l3a}), (\ref{eq_l3c}) with (\ref{eq_l3b}):
+%
+\begin{equation}
+\label{eq_l3d}
+\begin{split}
+& L_3 \left( \overline{w^{'3}}^{t+\Delta t} \right) \\
+&=   \frac{C_8}{\tau}
+      \left(  C_{8b} \, \frac{{\overline{w^{'3}}^t}^5}{{\overline{w^{'2}}^t}^6}
+            + \overline{w^{'3}}^t
+      \right)
+   + \frac{C_8}{\tau}
+     \left(  5 \, C_{8b} \, \frac{{\overline{w^{'3}}^t}^4}{{\overline{w^{'2}}^t}^6}
+           + 1
+     \right)
+     \left( \overline{w^{'3}}^{t + \Delta t} - \overline{w^{'3}}^t \right)  \\
+&= - \frac{C_8}{\tau}
+      \left(  4 \, C_{8b} \, {Skw^t}^4 \right) \overline{w^{'3}}^t
+   + \frac{C_8}{\tau}
+     \left(  5 \, C_{8b} \, {Skw^t}^4 + 1 \right)
+      \overline{w^{'3}}^{t + \Delta t}
+\end{split}
+\end{equation}
+%
+In a similar fashion, let's now linearize the fourth term on the LHS of
+(\ref{eq_wp3c}):
+%
+\begin{equation}
+\label{eq_l4a}
+\begin{split}
+& \ptlder{}{z} \left[ a_3 \left(\overline{w^{'2}}^{t+\Delta t}\right)^2 \right] \\
+&\approx  \ptlder{}{z} 
+    \left[
+      a_3 {\overline{w^{'2}}^t}^2
+      + 2 a_3 \overline{w^{'2}}^t
+              \left( \overline{w^{'2}}^{t+\Delta t} - \overline{w^{'2}}^{t} \right) 
+    \right] \\
+&= \ptlder{}{z} \left( 2 a_3 \overline{w^{'2}}^t \, \overline{w^{'2}}^{t+\Delta t} \right)
+ - \ptlder{}{z} \left( a_3 {\overline{w^{'2}}^t}^2 \right)
+\end{split}
+\end{equation}
+%
+We repeat for the fifth term on the LHS of (\ref{eq_wp3c}):
+%
+\begin{equation}
+\label{eq_l5a}
+\begin{split}
+& \ptlder{}{z} 
+     \left(
+        a_1 \frac{ \left( {\overline{w^{'3}}^{t + \Delta t}}\right)^2 }
+                 { \overline{w^{'2}}^t }
+     \right) \\
+&\approx
+  \ptlder{}{z}
+  \left[
+    a_1 \frac{ \left( {\overline{w^{'3}}^t}\right)^2 }
+             { \overline{w^{'2}}^t }
+  + 2 a_1 \frac{ \overline{w^{'3}}^t }{ \overline{w^{'2}}^t }
+          \left( \overline{w^{'3}}^{t+\Delta t} - \overline{w^{'3}}^{t} \right) 
+  \right] \\
+&=
+  \ptlder{}{z}
+  \left(
+    2 a_1 \frac{ \overline{w^{'3}}^t \, \overline{w^{'3}}^{t+\Delta t} }
+               { \overline{w^{'2}}^t }
+  \right)
+- \ptlder{}{z}
+  \left(
+    a_1 \frac{ \left( {\overline{w^{'3}}^t}\right)^2 }
+             { \overline{w^{'2}}^t }
+  \right) \\
+\end{split}
+\end{equation}
+%
+We can now assemble the time discrete equivalent to (\ref{eq_wp3c}) using
+(\ref{eq_l3d}), (\ref{eq_l4a}) and (\ref{eq_l5a}):
+%
+\begin{equation}
+\label{eq_wp3d}
+\begin{split}
+& \frac{\overline{w^{'3}}^{t+\Delta t}}{\Delta t} 
+- \frac{1}{2} (K_w + \nu_8) \nabla_z^2 \, \overline{w^{'3}}^{t+\Delta t}
++ \frac{C_8}{\tau}
+   \left(  5 \, C_{8b} \, {Skw^t}^4 + 1 \right)
+   \overline{w^{'3}}^{t + \Delta t}
+\\ &
++ \ptlder{}{z} \left( 2 a_3 \overline{w^{'2}}^t \, \overline{w^{'2}}^{t+\Delta t} \right)
++ \ptlder{}{z}
+  \left(
+    2 a_1 \frac{ \overline{w^{'3}}^t \, \overline{w^{'3}}^{t+\Delta t} }
+               { \overline{w^{'2}}^t }
+  \right)
+\\
+&=
+  \frac{\overline{w^{'3}}^{t}}{\Delta t} 
+  + \frac{1}{2} (K_w + \nu_8) \nabla_z^2 \, \overline{w^{'3}}^t
+  +  \frac{C_8}{\tau}
+      \left( 4 \, C_{8b} \, {Skw^t}^4 \right) \overline{w^{'3}}^t
+\\ & \quad
+  + \ptlder{}{z} \left( a_3 {\overline{w^{'2}}^t}^2 \right)
+  + \ptlder{}{z}
+    \left(
+      a_1 \frac{ \left( {\overline{w^{'3}}^t}\right)^2 }
+               { \overline{w^{'2}}^t }
+    \right)
+  + \left. \overline{w^{'3}} \right|_{\rm expl}
+\end{split}
+\end{equation}
+%
+where
+%
+\begin{equation}
+\label{eq_wp3t}
+\left. \overline{w^{'3}} \right|_{\rm expl}
+= 
+  - \bar{w}\ptlder{\overline{w^{'3}}^{t}}{z}	 
+  + (1 - C_{11}) \frac{3g}{\theta_0} \overline{w^{'2}\theta'_v}^t
+  - 3 ( 1 - C_{11} ) \overline{w^{'3}}^t\ptlder{\bar{w}}{z}
+\end{equation}
+%
+Finally, we derive the finite difference form of (\ref{eq_wp3d}):
+%
+\begin{equation}
+\label{eq_wp3e}
+\begin{split}
+& \mathtt{
+  \frac{wp3^{new}(k)}{dt}
+  - \frac{Kwt(k) + \nu_8}{2dzt(k)} 
+    \left( 
+        \frac{wp3^{new}(k+1)-wp3^{new}(k)}{dzm(k)}
+      - \frac{wp3^{new}(k)-wp3^{new}(k-1)}{dzm(k-1)}
+    \right)
+  } \\
+& \mathtt{
++ \frac{C_8}{taut(k)}
+   \left(  5 \, C_{8b} \, {Skwt(k)}^4 + 1 \right) wp3^{new}(k)
+  } \\
+& \mathtt{
+  + \frac{2}{dzt(k)} 
+    \left(a3m(k) wp2(k) wp2^{new}(k) - a3m(k-1) wp2(k-1) wp2^{new}(k-1) \right)
+  } \\
+& \mathtt{
+  + \frac{1}{2 \, dzt(k)}
+    \bigg(
+      \frac{ a1m(k)
+             \left(wp3(k)+wp3(k+1)\right)
+             \left(wp3^{new}(k)+wp3^{new}(k+1)\right) }
+           { \max\left( wp2(k), \epsilon \right) }
+  } \\
+& \mathtt{ \quad \quad \quad \quad \quad \quad
+     -\frac{ a1m(k-1) 
+             \left(wp3(k-1)+wp3(k)\right)
+             \left(wp3^{new}(k-1)+wp3^{new}(k)\right) }
+           { \max\left( wp2(k-1), \epsilon \right) }
+    \bigg)
+  } \\
+=& \mathtt{
+  \frac{wp3(k)}{dt} 
+  + \frac{Kwt(k) + \nu_8}{2dzt(k)} 
+    \left( 
+        \frac{wp3(k+1)-wp3(k)}{dzm(k)}
+      - \frac{wp3(k)-wp3(k-1)}{dzm(k-1)}
+    \right)
+  } \\
+& \mathtt{
++ \frac{C_8}{taut(k)}
+   \left( 4 \, C_{8b} \, {Skwt(k)}^4 \right) wp3(k)
+  } \\
+& \mathtt{
+  + \frac{a3m(k) wp2(k)^2 - a3m(k-1) wp2(k-1)^2 }
+         {dzt(k)}
+  } \\
+& \mathtt{
+  + \frac{1}{4 \, dzt(k)}
+    \bigg(
+      \frac{ a1m(k) 
+             \left(wp3(k)+wp3(k+1)\right)^2 }
+           { \max\left( wp2(k), \epsilon \right) }
+     -\frac{ a1m(k-1)
+             \left(wp3(k-1)+wp3(k)\right)^2 }
+           { \max\left( wp2(k-1), \epsilon \right) }
+    \bigg)
+  } \\
+& \mathtt{
++ wp3t(k)
+  }
+\end{split}
+\end{equation}
+%
+where $\mathtt{wp3t(k)}$ is the finite difference equivalent to (\ref{eq_wp3t}) 
+at level $\mathtt{zt(k)}$.
+
+\subsection{Matrix form}
+
+The final step is to rewrite (\ref{eq_wp2e}) and (\ref{eq_wp3e}) in matrix
+form:
+%
+\begin{equation}
+A_{\mathtt{wp23}}
+\left( \begin{array}{l}
+  \hfill \vdots \hfill \\
+  \mathtt{ wp3^{new}(k-1) } \\
+  \mathtt{ wp2^{new}(k-1) } \\
+  \mathtt{ wp3^{new}(k)   } \\
+  \mathtt{ wp2^{new}(k)   } \\
+  \mathtt{ wp3^{new}(k+1) } \\
+  \mathtt{ wp2^{new}(k+1) } \\
+  \hfill \vdots \hfill
+\end{array} \right)
+= d_{\mathtt{wp23}}
+\end{equation}
+%
+$A_{\mathtt{wp23}}$ is a band-diagonal matrix with two rows above and two below 
+the main diagonal. $A_{\mathtt{wp23}}$ is stored in compact form in a array 
+with dimensions $\mathtt{(2\,nnzp, 5)}$. $d_{\mathtt{wp23}}$ is a vector 
+with dimenstion $\mathtt{(2\,nnzp)}$. $A_{\mathtt{wp23}}$ can be inverted 
+efficiently using a LU decomposition algorithm for band diagonal matrices.
+
+Contributions to $A_{\mathtt{wp23}}$ from (\ref{eq_wp2e}):
+%
+\begin{equation}
+\mathtt{ A(k\_wp2,1) = A(k\_wp2,1) -\frac{\nu_1}{2 dzm(k)dzt(k)} }
+\end{equation}
+%
+\begin{equation}
+\mathtt{ A(k\_wp2,2) = A(k\_wp2,2) - \frac{1}{dzm(k)} }
+\end{equation}
+%
+\begin{equation}
+\mathtt{ 
+ A(k\_wp2,3) 
+ = A(k\_wp2,3) 
+ +\frac{1}{dt}
+ +\frac{C_1}{taum(k)}
+ +\frac{\nu_1}{2 dzm(k)} \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right) }
+\end{equation}
+%
+\begin{equation}
+\mathtt{ A(k\_wp2,4) = A(k\_wp2,4) + \frac{1}{dzm(k)} }
+\end{equation}
+%
+\begin{equation}
+\mathtt{ A(k\_wp2,5) = A(k\_wp2,5) -\frac{\nu_1}{2 dzm(k)dzt(k+1)} }
+\end{equation}
+%
+Contributions to $d_{\mathtt{wp23}}$ from (\ref{eq_wp2e}):
+%
+\begin{equation}
+\begin{split}
+& \mathtt{ d(k\_wp2) = d(k\_wp2) } \\
+& \mathtt{
+  +\frac{wp2(k)}{dt}
+  } \\
+& \mathtt{
+  +\frac{\nu_1}{2 dzm(k)dzt(k)} wp2(k-1)
+  } \\
+& \mathtt{
+  -\frac{\nu_1}{2 dzm(k)} \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right) wp2(k)
+  } \\
+& \mathtt{
+  +\frac{\nu_1}{2 dzm(k)dzt(k+1)} wp2(k+1)
+  } \\
+& \mathtt{
+  + wp2t(k)
+ }
+\end{split}
+\end{equation}
+%
+where
+%
+\begin{equation}
+\mathtt{ k\_wp2 = 2 k}
+\end{equation}
+%
+Contributions to $A_{\mathtt{wp23}}$ from (\ref{eq_wp3e}):
+%
+\begin{equation}
+\begin{split}
+& \mathtt{ A(k\_wp3,1) = A(k\_wp3,1) }\\
+& \mathtt{
+- \frac{Kwt(k) + \nu_8}{2dzt(k)dzm(k-1)} 
+- \frac{1}{2 \, dzt(k)}
+  \frac{ a1m(k-1)
+         \left(wp3(k-1)+wp3(k)\right) }
+       { \max\left( wp2(k-1), \epsilon \right) }
+}
+\end{split}
+\end{equation}
+%
+\begin{equation}
+\begin{split}
+& \mathtt{ A(k\_wp3,2) = A(k\_wp3,2) 
+  - \frac{2 a3m(k-1) wp2(k-1)}{dzt(k)}
+  }
+\end{split}
+\end{equation}
+%
+\begin{equation}
+\begin{split}
+& \mathtt{ A(k\_wp3,3) = A(k\_wp3,3) }\\
+& \mathtt{
++ \frac{1}{dt}
++ \frac{C_8}{taut(k)}
+   \left(  5 \, C_{8b} \, {Skwt(k)}^4 + 1 \right)
++ \frac{Kwt(k) + \nu_8}{2dzt(k)}
+  \left( \frac{1}{dzm(k-1)} + \frac{1}{dzm(k)}  \right)
+} \\
+& \mathtt{
++ \frac{1}{2 \, dzt(k)}
+  \bigg(
+    \frac{ a1m(k)
+           \left(wp3(k)+wp3(k+1)\right) }
+         { \max\left( wp2(k), \epsilon \right) }
+  - \frac{ a1m(k-1)
+           \left(wp3(k-1)+wp3(k)\right) }
+         { \max\left( wp2(k-1), \epsilon \right) }
+  \bigg)
+}
+\end{split}
+\end{equation}
+%
+\begin{equation}
+\begin{split}
+& \mathtt{ A(k\_wp3,4) = A(k\_wp3,4)
+  + \frac{2 a3m(k) wp2(k)}{dzt(k)}
+  }
+\end{split}
+\end{equation}
+%
+\begin{equation}
+\begin{split}
+& \mathtt{ A(k\_wp3,5) = A(k\_wp3,5) }\\
+& \mathtt{
+- \frac{Kwt(k) + \nu_8}{2dzt(k)dzm(k)} 
++ \frac{1}{2 \, dzt(k)}
+  \frac{ a1m(k) \left(wp3(k)+wp3(k+1)\right) }
+       { \max\left( wp2(k), \epsilon \right) }
+}
+\end{split}
+\end{equation}
+%
+Contributions to $d_{\mathtt{wp23}}$ from (\ref{eq_wp3e}):
+%
+\begin{equation}
+\begin{split}
+& \mathtt{ d(k\_wp3) = d(k\_wp3) } \\
+& \mathtt{
+  + \frac{wp3(k)}{dt} 
+  + \frac{Kwt(k) + \nu_8}{2dzt(k)} 
+    \left( 
+        \frac{wp3(k+1)-wp3(k)}{dzm(k)}
+      - \frac{wp3(k)-wp3(k-1)}{dzm(k-1)}
+    \right)
+  } \\
+& \mathtt{
++ \frac{C_8}{taut(k)}
+   \left( 4 \, C_{8b} \, {Skwt(k)}^4 \right) wp3(k)
+  } \\
+& \mathtt{
+  + \frac{a3m(k) wp2(k)^2 - a3m(k-1) wp2(k-1)^2 }
+         {dzt(k)}
+  } \\
+& \mathtt{
+  + \frac{1}{4 \, dzt(k)}
+    \bigg(
+      \frac{ a1m(k)
+             \left(wp3(k)+wp3(k+1)\right)^2 }
+           { \max\left( wp2(k), \epsilon \right) }
+     -\frac{ a1m(k-1)
+             \left(wp3(k-1)+wp3(k)\right)^2 }
+           { \max\left( wp2(k-1), \epsilon \right) }
+    \bigg)
+  } \\
+& \mathtt{
++ wp3t(k)
+  }
+\end{split}
+\end{equation}
+%
+where
+%
+\begin{equation}
+\mathtt{ k\_wp3 = 2 k - 1}
+\end{equation}
+%
+
+
+
+
+\section{Grid configuration}
+
+Figure \ref{grid} shows the vertical grid configuration for HOC.
+The grid consists of two types of levels: $\mathtt{zm}$ and $\mathtt{zt}$.
+Predictive mean variables and third order moments reside on the
+thermodynamic levels ($\mathtt{zt}$). Second and fourth order moments
+reside on the momentum levels ($\mathtt{zm}$).
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+%
+\begin{figure}[htp]
+\vspace*{19cm}
+\begin{center}
+%
+\psline[linewidth=2pt](-4,18)(4,18)
+\rput*[b]{0}(0,17.8){zm(nnzp)}
+%
+\psline[linewidth=2pt,linestyle=dotted,dotsep=2pt](-4,17)(4,17)
+\rput*[b]{0}(0,16.8){zt(nnzp)}
+%
+\psline[linewidth=2pt](-4,16)(4,16)
+\rput*[b]{0}(0,15.8){zm(nnzp-1)}
+%
+\psline[linewidth=2pt,linestyle=dotted,dotsep=2pt](-4,15)(4,15)
+\rput*[b]{0}(0,14.8){zt(nnzp-1)}
+%
+%
+\psline[linewidth=2pt](-4,12)(4,12)
+\rput*[b]{0}(0,11.8){zm(k+1)}
+%
+\psline[linewidth=2pt,linestyle=dotted,dotsep=2pt](-4,11)(4,11)
+\rput*[b]{0}(0,10.8){zt(k+1)}
+%
+\psline[linewidth=2pt](-4,10)(4,10)
+\rput*[b]{0}(0,9.8){zm(k)}
+%
+\psline[linewidth=2pt,linestyle=dotted,dotsep=2pt](-4,9)(4,9)
+\rput*[b]{0}(0,8.8){zt(k)}
+%
+\psline[linewidth=2pt](-4,8)(4,8)
+\rput*[b]{0}(0,7.8){zm(k-1)}
+%
+\psline[linewidth=2pt,linestyle=dotted,dotsep=2pt](-4,7)(4,7)
+\rput*[b]{0}(0,6.8){zt(k-1)}
+%
+\psline[linewidth=2pt](-4,6)(4,6)
+\rput*[b]{0}(0,5.8){zm(k-2)}
+%
+%
+\psline[linewidth=2pt](-4,2)(4,2)
+\rput*[b]{0}(0,1.8){zm(2)}
+\rput*[bl]{0}(1.7,1.8){$\overline{w^{'2}}$, $\overline{w'\theta_l'}$, 
+$\overline{w'q_t'}$, $\overline{w^{'4}}$, $\ldots$}
+%
+\psline[linewidth=2pt,linestyle=dotted,dotsep=2pt](-4,1)(4,1)
+\rput*[b]{0}(0,0.8){zt(2)}
+\rput*[bl]{0}(1.7,0.8){$\bar{u}$, $\bar{v}$, $\bar{\theta}_l$, $\bar{q}_t$,
+$\overline{w^{'3}}$, $\overline{w^{'2}\theta_v'}$, $\ldots$}
+%
+\pspolygon[linestyle=none,fillstyle=crosshatch,hatchwidth=0.1pt,hatchsep=3pt]
+(-4,-0.5)(4,-0.5)(4,0)(-4,0)
+\psline[linewidth=2pt](-4,0)(4,0)
+\rput*[b]{0}(0,-0.2){zm(1)}
+\rput*[bl]{0}(4.2,-0.4){Surface}
+%
+\psline[linewidth=2pt,linestyle=dotted,dotsep=2pt](-4,-1)(4,-1)
+\rput*[b]{0}(0,-1.2){zt(1)}
+%
+\psline[linewidth=3pt,linestyle=dotted,dotsep=8pt](0,2.5)(0,5.5)
+\psline[linewidth=3pt,linestyle=dotted,dotsep=8pt](0,12.5)(0,14.5)
+%
+% delta zt
+%
+\psline[]{|-|}(5,16)(5,18)
+\rput*[b]{0}(5,16.8){$\Delta$zt(nnzp)}
+%
+\psline[]{|-|}(5,10)(5,12)
+\rput*[b]{0}(5,10.8){$\Delta$zt(k+1)}
+%
+\psline[]{|-|}(5,8)(5,10)
+\rput*[b]{0}(5,8.8){$\Delta$zt(k)}
+%
+\psline[]{|-|}(5,6)(5,8)
+\rput*[b]{0}(5,6.8){$\Delta$zt(k-1)}
+%
+% delta zm
+%
+\psline[]{|-|}(-5,15)(-5,17)
+\rput*[b]{0}(-5,15.8){$\Delta$zm(nnzp-1)}
+%
+\psline[]{|-|}(-5,9)(-5,11)
+\rput*[b]{0}(-5,9.8){$\Delta$zm(k)}
+%
+\psline[]{|-|}(-5,7)(-5,9)
+\rput*[b]{0}(-5,7.8){$\Delta$zm(k-1)}
+%
+\end{center}
+\vspace*{1cm}
+\caption{Vertical grid configuration}
+\label{grid}
+\end{figure}
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+%
+
+% Bibliography
+\clearpage
+\bibliography{bibabbr}
+
+
+\end{document}
