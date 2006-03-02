@@ -1,6 +1,6 @@
 #!/bin/bash
 #######################################################################
-# $Id: run_standalone-all.bash,v 1.16 2006-02-09 20:57:03 dschanen Exp $
+# $Id: run_standalone-all.bash,v 1.17 2006-03-02 16:52:49 dschanen Exp $
 #
 # Script to run the standalone hoc program for all models.
 # Tested with bash v2.  Might work with Ksh.
@@ -50,7 +50,7 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 
 # remove the namelists
  rm -f 'standalone.in'
- rm -f $RUN_CASE'_hoc.in'
+ rm -f "${RUN_CASE[$x]}"'_hoc.in'
 
 done
 
