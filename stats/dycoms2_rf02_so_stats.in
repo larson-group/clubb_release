@@ -1,8 +1,8 @@
-! $Id: dycoms2_rf02_so_stats.in,v 1.3 2006-02-28 23:44:41 dschanen Exp $
+! $Id: dycoms2_rf02_so_stats.in,v 1.4 2006-03-02 16:45:09 dschanen Exp $
 &statsnl
 
 lstats = t
-istats_fmt = 'grads'
+stats_fmt = 'grads'
 stats_tsamp = 60.0
 stats_tout  = 60.0
 
