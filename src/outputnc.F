@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: outputnc.F,v 1.2 2006-03-01 23:08:18 dschanen Exp $
+! $Id: outputnc.F,v 1.3 2006-03-06 17:43:50 dschanen Exp $
 !      MODULE outputnc
 
 !      functions and subroutines for writing NetCDF files
@@ -125,17 +125,22 @@
 !      time = dble( ncf%ntimes ) * ncf%dtwrite ! seconds
 
        stat(1) = nf90_put_var( ncid=ncf%iounit, varid=ncf%TimeVarId, 
-     .                         values=time(:), start=(/ncf%ntimes/) ) 
+     .                         values=time(1), start=(/ncf%ntimes/) ) 
        if ( stat(1) /= NF90_NOERR ) then
          stop "time put() failed"
        end if
 
        do i = 1, ncf%nvar, 1
 !        provide values for the variables
+!        stat(i) = nf90_put_var( ncid=ncf%iounit, varid=ncf%var(i)%Id, 
+!    .          values=reshape( ncf%var(i)%ptr(ncf%ia:ncf%iz), 
+!    .                          (/1, 1, ncf%iz, 1/ ) ) ,
+!    .          start=(/1,1,1,ncf%ntimes/) )
+       ! Work around for a performance issue on pgf90
          stat(i) = nf90_put_var( ncid=ncf%iounit, varid=ncf%var(i)%Id, 
-     .          values=reshape( ncf%var(i)%ptr(ncf%ia:ncf%iz), 
-     .                          (/1, 1, ncf%iz, 1/ ) ) ,
-     .          start=(/1,1,1,ncf%ntimes/) )
+     .          values=ncf%var(i)%ptr(ncf%ia:ncf%iz), 
+     .          start=(/1,1,1,ncf%ntimes/),
+     .          count=(/1,1,ncf%iz,1/) )
        end do
        if ( any (stat /= nf90_noerr) ) then 
          write(*,*) stat
