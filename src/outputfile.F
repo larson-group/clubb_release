@@ -1,8 +1,8 @@
 !-----------------------------------------------------------------------
-! $Id: outputfile.F,v 1.1 2006-02-28 18:27:28 dschanen Exp $
+! $Id: outputfile.F,v 1.2 2006-03-06 17:03:49 dschanen Exp $
 !     MODULE outputfile_class
 
-!     contains a structure for either NetCDF or GRaDS
+!     contains a structure for either NetCDF or GrADS
 !-----------------------------------------------------------------------
 
       module outputfile_class
@@ -15,7 +15,7 @@
            real, pointer :: ptr(:)          ! pointer to the array
            character (len = 15) name        ! variable name
            character (len = 50) description ! variable description
-           character (len = 15) units       ! variable units
+           character (len = 20) units       ! variable units
            integer Id                       ! NetCDF module Id for var
          end type variable
 
