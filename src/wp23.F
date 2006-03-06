@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.11 2005-12-22 16:50:23 griffinb Exp $
+! $Id: wp23.F,v 1.12 2006-03-06 19:25:12 golaz Exp $
 
 ! SUBROUTINE timestep_wp23( )
 !  Advance wp2 and wp3 one timestep
@@ -433,19 +433,20 @@
 
           aa(k_wp3,3-2)
      .    = atmp
-     .      - 0.5 * a1(k) * gr%dzt(k) 
+     .      - 0.5 * a1(km1) * gr%dzt(k) 
      .            * (wp3(km1)+wp3(k))/max(wp2(km1),eps)
 
           aa(k_wp3,3-1)
+!     .    = - 2.0 * a3(km1) * gr%dzt(k) * wp2(km1)
      .    = - 2.0 * a3(k) * gr%dzt(k) * wp2(km1)
 
           aa(k_wp3,3)
      .    = 1.0 / dt
      .      + C8/tauw3t(k)*(5.0*C8b*Skw**4+1.0)
      .      - atmp - ctmp
-     .      + 0.5 * a1(k) * gr%dzt(k) 
-     .            * ( (wp3(k)+wp3(kp1))/max(wp2(k),eps)
-     .               -(wp3(km1)+wp3(k))/max(wp2(km1),eps) )
+     .      + 0.5 * gr%dzt(k) 
+     .            * ( a1(k)*(wp3(k)+wp3(kp1))/max(wp2(k),eps)
+     .               -a1(km1)*(wp3(km1)+wp3(k))/max(wp2(km1),eps) )
 
           aa(k_wp3,3+1)
      .    = + 2.0 * a3(k) * gr%dzt(k) * wp2(k)
@@ -462,10 +463,11 @@
      .      - C8/tauw3t(k)
      .        *(-4.0*C8b*Skw**4)*wp3(k)
      .      + wp3t(k)
-     .      + a3(k) * gr%dzt(k) * ( wp2(k)**2 - wp2(km1)**2 )
-     .      + 0.25 * a1(k) * gr%dzt(k)
-     .            * ( (wp3(k)+wp3(kp1))**2/max(wp2(k),eps)
-     .               -(wp3(km1)+wp3(k))**2/max(wp2(km1),eps) )
+!     .      + gr%dzt(k) * ( a3(k)*wp2(k)**2 - a3(km1)*wp2(km1)**2 )
+     .      + gr%dzt(k) * ( a3(k)*wp2(k)**2 - a3(k)*wp2(km1)**2 )
+     .      + 0.25 * gr%dzt(k)
+     .            * ( a1(k)*(wp3(k)+wp3(kp1))**2/max(wp2(k),eps)
+     .               -a1(km1)*(wp3(km1)+wp3(k))**2/max(wp2(km1),eps) )
 
 #ifdef STATS
           if (lstats_samp) then
