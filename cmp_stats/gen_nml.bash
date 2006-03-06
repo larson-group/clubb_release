@@ -1,5 +1,5 @@
 #!/bin/bash
-# $Id: gen_nml.bash,v 1.2 2006-02-28 18:35:56 dschanen Exp $
+# $Id: gen_nml.bash,v 1.3 2006-03-06 23:09:59 dschanen Exp $
 # I'm too lazy to modify these one by one
 
 MODEL_ALL=(arm atex bomex dycoms2_rf01 dycoms2_rf02_do dycoms2_rf02_ds\
@@ -30,5 +30,11 @@ for RUN_CASE in "${MODEL_ALL[@]}"; do
 	echo "'thlprcp', 'rtprcp', 'upwp', 'vpwp', 'rhom', 'sc', 'em'," >> $STATS_IN
 	echo "'shear', 'Frad', 'Fprec', 'Fcsed'," >> $STATS_IN
 	echo "''" >> $STATS_IN
+	
+	echo "fname_sfc = '$RUN_CASE""_sfc'," >> $STATS_IN
+	echo "vars_sfc =" >> $STATS_IN
+	echo "'ustar', " >> $STATS_IN
+	echo "''" >> $STATS_IN
+	
 	echo "/" >> $STATS_IN
 done
