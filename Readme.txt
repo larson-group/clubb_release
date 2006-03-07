@@ -1,4 +1,4 @@
-$Id: Readme.txt,v 1.13 2006-02-06 19:58:33 dschanen Exp $
+$Id: Readme.txt,v 1.14 2006-03-07 19:04:54 dschanen Exp $
 ***********************************************************************
 *                         Using the HOC Model                         *
 ***********************************************************************
@@ -8,13 +8,19 @@ $Id: Readme.txt,v 1.13 2006-02-06 19:58:33 dschanen Exp $
 -                                                                     -
 -----------------------------------------------------------------------
 
+Requirements:
+* A Fortran 90/95 compiler with a complete implementation of the standard.
+* NetCDF >= v3.5.1;  We have not tested our code with anything older.
+* GNU bash, or an equivalent POSIX compliant shell.
+
 $ cd ~/hoc_v2.2_tuner/src
-(edit Makefile for your compiler and optimization options.)
+Edit a config.<PLATFORM> file and include it in the Makefile for your 
+compiler and optimization options.
 $ make
 $ make install
 
-  If you're using Sun Studio and have a fast parallel machine,
-  dmake should work as well.
+If you're using Sun Studio and have a fast parallel machine,
+dmake should work as well.
 
 -----------------------------------------------------------------------
 -                                                                     -
@@ -24,14 +30,18 @@ $ make install
 
 1.  cd ~/hoc_v2.2_tuner/tune
 
-2.  Edit <case>_hoc.in for each case you wish to run, or just leave them as is.
-  Usually you will want to keep these the same.
+2. Edit <case>_model.in for each case you wish to run, or just leave them as 
+  is.  Usually you will want to keep these the same.
   See the rain code for description of kk_rain and cloud_sed.
   See BUGSrad description below for a description of the interactive
   radiation scheme.
   Enabling any of these flags may increase runtime considerably.
 
-3.  Edit error_<runtype>.in or select a premade one. Note that there are two
+3. Edit <case>_stats.in for each case.  A complete list of all computable
+   statistics is found in statistics.F.  Note that HOC now supports GrADS or
+   NetCDF, but you can only tune using GrADS.
+
+4.  Edit error_<runtype>.in or select a premade one. Note that there are two
   tuning subroutines, specified by tune_type in the /stats/ namelist.  If 
   runtype = 0, then the amoeba subroutine, a downhill simplex algorithm, will
   be used.  If runtype is any other value, then amebsa, a variant which uses
@@ -41,9 +51,9 @@ $ make install
   differ.
   Currently, it is only possible to tune for variables occuring in zt.
 
-4.  Edit run_tuner.bash to use your error_*.in
+5.  Edit run_tuner.bash to use your namelists
 
-5.  ./run_tuner.bash 
+6.  ./run_tuner.bash 
 
 -----------------------------------------------------------------------
 -                                                                     -
@@ -53,7 +63,7 @@ $ make install
 
 One run at a time:
 1. cd ~/hoc_v2.2_tuner/tune_budgets/ 
-2. Check hoc_v2.2_tuner/tune/<CASE>_hoc.in to make sure dtmain equals
+2. Check hoc_v2.2_tuner/model/<CASE>_model.in to make sure dtmain equals
   dtclosure.  Make a note of what your statistics file's timestep divided by 
   dtmain is, since this is the sample_ratio in your budget namelist. 
   e.g. If the situation is a 1 mn timestep in LES GRaDS statistics paired 
@@ -99,13 +109,15 @@ Batch mode:
 -                                                                     -
 -----------------------------------------------------------------------
 
-Do steps (1) and (2) as outlined in the tuner run.
+Do steps 1, 2, & 3 as outlined in the tuner run.
 
-3. cd ../standalone.  Edit standalone_<case>.in or select a premade one.
+4. cd ../standalone.  Edit standalone_<CASE>.in or select a premade one.
 
-4. Edit run_standalone.bash to use your standalone_*.in
+5a. Edit run_standalone.bash to use your standalone_*.in
+   and ./run_standalone.bash
+or 
 
-5. ./run_standalone.bash
+5b. ./run_standalone.bash <CASE>
 
 -----------------------------------------------------------------------
 -                                                                     -
@@ -152,8 +164,9 @@ Microsoft Windows platform this could work using MSYS or Cygwin with G95, but
 this has not been tested.
 We use the Portland Group compiler, version 5.2-4 on Redhat EL3.
 G95 currently only works -ffast-math off (this is an unsafe optimization)
-Sun's f95 8.1 on Solaris appears to work for hoc_tuner, but has not been 
-rigorously tested.
+Sun's f95 8.1 and 8.2 on x86 Solaris appears to work for hoc_tuner, but has not 
+been as rigorously tested.
+Compaq fortran on Alpha also appears to work.
 The GNU fortran compiler (gcc 4.0.x) does not implement the entire 
 Fortran 90 standard yet, and so does not work at all.
 
@@ -191,7 +204,7 @@ HOC GrADS files:
 
 Generated HOC GrADS files:
   bomex_zt.dat, fire_zt.dat, arm_zt.dat, atex_zt.dat, dycoms_zt.dat,
-    wangara_zt.dat, <case>_zm, <case>_pdf ...
+    wangara_zt.dat, <case>_zm, <case>_sfc ...
   These are the files generated by the hoc subroutine during a model run
   and compared to the COAMPS LES results.  The last of these generated
   when tuning will we the optimized results.  Every time the hoc subroutine
@@ -237,7 +250,7 @@ The compare_runs files:
   HOC by Stevens, et al.  Code obtained from Norm Wood on 2004/07/10.
   When enabled, the analytic computation normally
   used for radiation is disabled.  BUGSrad is enabled in the 
-  tune/<RUN CASE>_hoc.in file by setting lbugsrad=.true.
+  model/<RUN CASE>_model.in file by setting lbugsrad=.true.
   Currently, November 11 will give inaccurate results due to our interface's 
   inability to add lower altitude levels.  Other cases appear to give
   plausible results, comparable with the analytic code.
@@ -310,7 +323,7 @@ The edsclrs are only computed in subroutine update().
 
 The Namelists:
 
-Within the existing hoc.in for each run a sounding for the scalar variable
+Within the existing _model.in for each run a sounding for the scalar variable
 must be added. 
 
 Setting sclrm(:,1) equal to thlm, and sclrm(:,2) equal to rtm in 
@@ -326,7 +339,7 @@ and it should follow the number of z-levels et cetera found in the &sounding
 namelist.
 
 Finally, if you wish to see the results of your calculations, you will need to
-append their names to the vars_zt and var_zm portion of the namelist.
+append their names to the vars_zt and var_zm portion of the stats namelist.
 The variables follow the convention of the a=1, and b=2, appended after the
 sclr portion of their name.  For example. the first scalar mean is 'sclram',
 and the second is 'sclrbm'.  These and their forcings are all that occurs in
