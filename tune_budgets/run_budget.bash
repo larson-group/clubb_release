@@ -21,27 +21,43 @@
 #######################################################################
 # Check for necessary namelists.  If files exist, then
 # copy them over to the general input files.
+MODEL_DIR='../model/'
+STATS_DIR='../stats/'
 
- BUDGET_IN=$RUN_CASE'_budget.in'
+BUDGET_IN=$RUN_CASE'_budget.in'
+MODEL_IN=$MODEL_DIR$RUN_CASE'_model.in'
+STATS_IN=$STATS_DIR$RUN_CASE'_stats.in'
 
- if [ ! -e "$BUDGET_IN" ] ; then
+if [ ! -e "$BUDGET_IN" ] ; then
 	echo $BUDGET_IN " does not exist"
 	exit 1
- fi
+fi
 
- if [ -e 'budget.in' ] ; then
+if [ ! -e "$MODEL_IN" ] ; then
+	echo $MODEL_IN " does not exist"
+	exit 1
+fi
+
+if [ ! -e "$STATS_TUNE_IN" ] ; then
+	echo $STATS_TUNE_IN " does not exist"
+	exit 1
+fi
+
+
+if [ -e 'budget.in' ] ; then
 	rm -f 'budget.in'
- fi
+fi
 
- ln -s $BUDGET_IN 'budget.in'
-
+ln -s $BUDGET_IN 'budget.in'
+cat $MODEL_IN $STATS_TUNE_IN > $RUN_CASE'_hoc.in'
 
 #######################################################################
 #
 # State which case is being run
- echo "Running" $RUN_CASE
+echo "Running" $RUN_CASE
 # Run HOC
 ./hoc_tuner_budget_terms
 
-# remove the temporary error.in file
- rm -f 'budget.in'
+# remove the temporary namelist files
+rm -f 'budget.in'
+rm -f $RUN_CASE'_hoc.in'
