@@ -20,6 +20,5 @@ for (( i=0; i < "${#CASES[@]}"; i++ )); do
 	echo "/" >> "${CASES[$i]}/budget.in"
 done
 
-
-ln -s ../../tune .
+cat "../../model/bomex_model.in" "../../stats/bomex_stats.in" > "bomex_hoc.in"
 ln -s ../../les_data .
