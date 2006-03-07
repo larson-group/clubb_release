@@ -1,9 +1,9 @@
-# $Id: config.messner.in,v 1.3 2006-02-28 18:47:45 dschanen Exp $
+# $Id: config.messner.in,v 1.4 2006-03-07 18:54:00 dschanen Exp $
 # Configuration file for Messner node
 # == Compiler invocation ==
 #FC=g95 #   G95
 #FC=ifort # Intel Fortran
- FC=pgf90 # Portland Group PGF90
+FC=pgf90 # Portland Group PGF90
 
 # == Debugging ==
 # It is sometimes helpful to turn on floating-point trapping for the 
@@ -13,9 +13,9 @@
 # In g95: `setenv G95_FPU_INVALID TRUE' or `export G95_FPU_INVALID=TRUE'
 # In ifort: -fpe=0
 # The usual options:
-#DEBUG=-g -C -mieee-fp #                 g95
-#DEBUG=-g -check bounds -mieee-fp #      Intel ifort 9
- DEBUG=-g -C -Kieee #                    pgf90
+#DEBUG=-g -C -mieee-fp #             g95
+#DEBUG=-g -check bounds -mieee-fp #  Intel ifort 9
+DEBUG=-g -C -Kieee #                 pgf90
 
 # == Optimization ==
 # Sun's f95 has great difficulty with statistics.F
@@ -24,10 +24,10 @@
 # These are all pretty conservative options, check the your compiler manual 
 # for information on using more aggressive techniques (inlining, etc.)
 
-#OPTIMIZE=-O3 -msse2 -march=pentium4 # g95, P4 w/out SSE3
-#OPTIMIZE=-O2 -xN #                    Intel complier, P4 w/out SSE3
-#OPTIMIZE=-O2 -tp p7 -r8 #             PGF90 w/ double precision reals
- OPTIMIZE=-O2 -tp p7 #                 PGF90, Pentium4
+#OPTIMIZE=-O3 -march=pentium4 -msse2 -mfpmath=sse # g95, P4
+#OPTIMIZE=-O2 -arch SSE2 # Intel complier, P4 w/out SSE3
+#OPTIMIZE=-O2 -tp p7 -r8 # PGF90 w/ double precision reals
+OPTIMIZE=-O2 -tp p7 #      PGF90, Pentium4
 
 # == NetCDF Flags ==
 NC_LOC=/usr/local/netcdf
@@ -35,7 +35,7 @@ NC_LOC=/usr/local/netcdf
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
 # Use -Bstatic to static link the fortran libs on Sun, -static-libcxa for Intel
- LDFLAGS=-L$(NC_LOC)/lib -lnetcdf
+LDFLAGS=-L$(NC_LOC)/lib -lnetcdf
 
 # == Compiler flags (all) ==
 # Preprocessing:
@@ -48,5 +48,5 @@ NC_LOC=/usr/local/netcdf
 #   -Dradoffline and -Dnooverlap (see bugsrad documentation)
 # You will need to `make clean' if you change these
 
- FCFLAGS=$(OPTIMIZE) $(DEBUG) -DSTATS -Dnooverlap -Dradoffline -I$(NC_LOC)/include 
+FCFLAGS=$(OPTIMIZE) $(DEBUG) -DSTATS -Dnooverlap -Dradoffline -I$(NC_LOC)/include 
 #FCFLAGS=$(OPTIMIZE) $(DEBUG) -DSTATS -DSCALARS -Dnooverlap -Dradoffline -I$(NC_LOC)/include 
