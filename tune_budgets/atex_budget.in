@@ -1,6 +1,6 @@
 
 &budget_tune
-run_file       = "../tune/atex_hoc.in"
+run_file       = "atex_hoc.in"
 hoc_stats_file = "atex"
 les_stats_file = "../les_data/atex_coamps"
 times_nl       = 360, 480

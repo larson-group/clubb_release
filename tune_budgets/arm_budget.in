@@ -1,6 +1,6 @@
 
 &budget_tune
-run_file       = "../tune/arm_hoc.in"
+run_file       = "arm_hoc.in"
 hoc_stats_file = "arm"
 les_stats_file = "../les_data/arm_coamps"
 times_nl       = 450, 510

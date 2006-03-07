@@ -1,6 +1,6 @@
 
 &budget_tune
-run_file       = "../tune/dycoms2_rf01_hoc.in"
+run_file       = "dycoms2_rf01_hoc.in"
 hoc_stats_file = "dycoms2_rf01"
 les_stats_file = "../les_data/dycoms2_rf01_coamps"
 times_nl       = 120, 239

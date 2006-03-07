@@ -3,7 +3,7 @@
 !
 ! For fire we set z = 2, because of wp2_dp1's extreme surface layer.
 &budget_tune
-run_file       = "../tune/fire_hoc.in"
+run_file       = "fire_hoc.in"
 hoc_stats_file = "fire"
 les_stats_file = "../les_data/fire_coamps"
 times_nl       = 60, 90, 90, 179

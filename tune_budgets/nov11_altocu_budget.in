@@ -1,6 +1,6 @@
 
 &budget_tune
-run_file       = "../tune/nov11_altocu_hoc.in"
+run_file       = "nov11_altocu_hoc.in"
 hoc_stats_file = "nov11_altocu"
 les_stats_file = "../les_data/nov11_altocu_coamps"
 times_nl       = 120, 239
