@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: hoc_tuner.F,v 1.13 2005-11-17 17:06:14 griffinb Exp $
+! $Id: hoc_tuner.F,v 1.14 2006-03-07 19:12:15 dschanen Exp $
 
 !   HOC_TUNER.F
 !   ``Tunes" constants in hoc so that the output matches LES output.
@@ -103,7 +103,9 @@
 
       enddo
 
-      call output_optimal_results( )
+!     This is done through a script now
+
+!     call output_optimal_results( )
 
 !--------------- Final namelist file output -----------------------------
       if ( results_file ) then 
@@ -203,6 +205,11 @@
       min_err = ybb
 
       end subroutine amebsa_driver
+!----------------------------------------------------------------------
+!     SUBROUTINE output_optimal_results
+
+!     Done in the bash script now, to allow the tuner to use one set 
+!     of output and the optimal results to use a different (larger) set
 !----------------------------------------------------------------------
       subroutine output_optimal_results
       use error

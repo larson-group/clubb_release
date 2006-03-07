@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.30 2006-01-03 19:38:06 dschanen Exp $
+! $Id: error.F,v 1.31 2006-03-07 19:12:15 dschanen Exp $
 
 !       Module ERROR
 !
@@ -654,7 +654,7 @@ c<--end of modification
       write(20,*) "! Parameter file " // results_f
 
       write(20,*) "&model"
-      write(20,*) "run_file  = " // achar(34) // "../tune/" //
+      write(20,*) "run_file  = " // achar(34) //
      .             trim( run_file(1) ) // achar(34)
       write(20,*) "stdout   = ", ".true."
       write(20,*) "/"
