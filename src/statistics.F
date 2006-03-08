@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.31 2006-02-28 23:44:27 dschanen Exp $
+!  $Id: statistics.F,v 1.32 2006-03-08 22:36:59 dschanen Exp $
 
 !  module stats_type
 !  contains:
@@ -365,7 +365,7 @@ c     -----------------------------------------------------------------
 !     Namelist
 
       integer, parameter :: nvarmax = 250
-      character(len=10)  stats_fmt
+      character(len=10) stats_fmt
       character(len=20) vars_zt  (nvarmax)
       character(len=20) vars_zm  (nvarmax)
       character(len=20) vars_sfc (nvarmax)
@@ -2668,6 +2668,8 @@ c     -----------------------------------------------------------------
 
       real, intent(in) :: time, delt
 
+      if ( .not. lstats ) return
+
 !     Set sample this time step flag
       if ( mod( time, stats_tsamp ) < 1.e-8 ) then
          lstats_samp = .true.
@@ -2754,7 +2756,6 @@ c     -----------------------------------------------------------------
       endif
 
 !     Reset sample fields
-
       call stats_zero( zt%kk, zt%nn, zt%x, zt%n )
       call stats_zero( zm%kk, zm%nn, zm%x, zm%n )
       call stats_zero( sfc%kk, sfc%nn, sfc%x, sfc%n )
