@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.15 2006-03-09 23:06:43 griffinb Exp $
+! $Id: wp23.F,v 1.16 2006-03-09 23:14:05 griffinb Exp $
 
 ! SUBROUTINE timestep_wp23( )
 !  Advance wp2 and wp3 one timestep
@@ -366,7 +366,10 @@
 
           aa(k_wp2,3-2)
      .    = - wmm(k) * (1.0/2.0) * gr%dzm(k)
-     .      - nu1 * gr%dzm(k) * gr%dzt(k)
+! This line is for the diffusional term with a Crank-Nicholson time step.         
+     .      + atmp
+! This line is for a completely implicit diffusional term.
+!     .      - nu1 * gr%dzm(k) * gr%dzt(k)
 
           aa(k_wp2,3-1)
      .    = - gr%dzm(k)
@@ -376,17 +379,30 @@
      .      + ( 1.0 - C5 ) * 2.0 * gr%dzm(k) * ( wmt(kp1) + wmt(k) )
 !     .      + C1/tau1m(k)
      .      + C1_Skw_fnc(k)/tau1m(k)
-     .      + nu1 * gr%dzm(k) * ( gr%dzt(kp1) + gr%dzt(k) )
+! This line is for the diffusional term with a Crank-Nicholson time step.         
+     .      - atmp - ctmp
+! This line is for a completely implicit diffusional term.
+!     .      + nu1 * gr%dzm(k) * ( gr%dzt(kp1) + gr%dzt(k) )
 
           aa(k_wp2,3+1)
      .    = + gr%dzm(k)
 
           aa(k_wp2,3+2)
      .    = + wmm(k) * (1.0/2.0) * gr%dzm(k)
-     .      - nu1 * gr%dzm(k) * gr%dzt(kp1)
+! This line is for the diffusional term with a Crank-Nicholson time step.         
+     .      + ctmp
+! This line is for a completely implicit diffusional term.
+!     .      - nu1 * gr%dzm(k) * gr%dzt(kp1)
 
           dd(k_wp2)
-     .    =   ( 1.0/dt * wp2(k) ) + wp2t(k)
+     .    =   1.0/dt * wp2(k) 
+! These lines are for the diffusional term with a Crank-Nicholson time step.         
+     .      - atmp * wp2(km1)
+     .      + ( atmp + ctmp ) * wp2(k)
+     .      - ctmp * wp2(kp1)
+! End Crank-Nicholson.
+     .      + wp2t(k)
+
 
 #ifdef STATS
           if (lstats_samp) then
@@ -477,7 +493,7 @@
      .      - atmp * wp3(km1)
      .      + ( atmp + ctmp ) * wp3(k)
      .      - ctmp * wp3(kp1)
-! End Crank-Nicholson
+! End Crank-Nicholson.
      .      - C8/tauw3t(k)
      .        *(-4.0*C8b*Skw**4)*wp3(k)
      .      + gr%dzt(k) * 
