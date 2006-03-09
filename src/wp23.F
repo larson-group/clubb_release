@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.13 2006-03-09 15:33:04 griffinb Exp $
+! $Id: wp23.F,v 1.14 2006-03-09 19:45:20 griffinb Exp $
 
 ! SUBROUTINE timestep_wp23( )
 !  Advance wp2 and wp3 one timestep
@@ -157,9 +157,7 @@
 !     .         + 3.0*(1.0-C11) * grav * alpha * wp2thvp
 
 ! New version with C11 dependent on Skw
-        wp3t = - wmt * ddzm( zt2zm( wp3 ) )
-     .         - 3.0 * (1.0-C11_Skw_fnc) * wp3 * ddzm( wmm )
-     .         + 3.0 * (1.0-C11_Skw_fnc) * grav * alpha * wp2thvp
+        wp3t = + 3.0 * (1.0-C11_Skw_fnc) * grav * alpha * wp2thvp
 ! End Vince Larson's change.
 
 #ifdef STATS
@@ -221,10 +219,11 @@
 
 !       Solve semi-implicitly
 
-        call wp23_solve( dt, Sc, Lscale, Lm, taum, tauw3t, 0.5*Khm,
+!        call wp23_solve( dt, Sc, Lscale, Lm, taum, tauw3t, 0.5*Khm,
+        call wp23_solve( dt, Sc, Lscale, Lm, taum, tauw3t, zm2zt(Khm),
      .                   wmt, wmm, wpthvp, wp2thvp,
-     .                   wp2t, wp3t, C1_Skw_fnc, runtype,
-     .                   wp2, wp3, isValid )
+     .                   wp2t, wp3t, C1_Skw_fnc, C11_Skw_fnc, 
+     .                   runtype, wp2, wp3, isValid )
         
         if ( .not. isValid ) then
           deallocate( tauw3t, wp2t, wp3t, Lm)
@@ -257,8 +256,8 @@
 
         subroutine wp23_solve( dt, Sc, Lscale, Lm, tau1m, tauw3t, Kh,
      .                         wmt, wmm, wpthvp, wp2thvp,
-     .                         wp2t, wp3t, C1_Skw_fnc, runtype,
-     .                         wp2, wp3, isValid)
+     .                         wp2t, wp3t, C1_Skw_fnc, C11_Skw_fnc,
+     .                         runtype, wp2, wp3, isValid)
 
         use grid_class
         use constants
@@ -284,6 +283,7 @@
         real, intent(in) :: wp2t(1:gr%nnzp)
         real, intent(in) :: wp3t(1:gr%nnzp)
         real, intent(in) :: C1_Skw_fnc(1:gr%nnzp)
+        real, intent(in) :: C11_Skw_fnc(1:gr%nnzp)
 
         character(50), intent(in):: runtype
 
@@ -429,42 +429,52 @@
           ctmp = -0.5 * C12 * (Kh(k)   + nu8) * gr%dzt(k) * gr%dzm(k)
 
           aa(k_wp3,3-2)
-     .    = atmp
-     .      - 0.5 * a1(km1) * gr%dzt(k) 
-     .            * (wp3(km1)+wp3(k))/max(wp2(km1),eps)
+     .    = - wmt(k) * (1.0/2.0) * gr%dzt(k)
+     .      - a1(km1) * gr%dzt(k)
+     .                  * (1.0/2.0) * ( wp3(k) + wp3(km1) )
+     .                  / MAX(wp2(km1),eps)
+     .      - ( Kh(k) + nu8 ) * gr%dzt(k) * gr%dzm(km1)
 
           aa(k_wp3,3-1)
-!     .    = - 2.0 * a3(km1) * gr%dzt(k) * wp2(km1)
-     .    = - 2.0 * a3(k) * gr%dzt(k) * wp2(km1)
+     .    = - 2.0 * a3(km1) * gr%dzt(k) * wp2(km1)
 
           aa(k_wp3,3)
-     .    = 1.0 / dt
+     .    = + 1.0 / dt
      .      + C8/tauw3t(k)*(5.0*C8b*Skw**4+1.0)
-     .      - atmp - ctmp
-     .      + 0.5 * gr%dzt(k) 
-     .            * ( a1(k)*(wp3(k)+wp3(kp1))/max(wp2(k),eps)
-     .               -a1(km1)*(wp3(km1)+wp3(k))/max(wp2(km1),eps) )
+     .      + gr%dzt(k) * 
+     .           (  a1(k) * (1.0/2.0) * ( wp3(kp1) + wp3(k) ) 
+     .                   / MAX(wp2(k),eps)
+     .            - a1(km1) * (1.0/2.0) * ( wp3(k) + wp3(km1) ) 
+     .                    / MAX(wp2(km1),eps)
+     .           )
+     .      + ( 1.0 - C11_Skw_fnc(k) )
+     .                * 2.0 * gr%dzt(k) * ( wmm(k) - wmm(km1) )
+     .      + ( Kh(k) + nu8 ) * gr%dzt(k) * ( gr%dzm(k) + gr%dzm(km1) )
+
 
           aa(k_wp3,3+1)
      .    = + 2.0 * a3(k) * gr%dzt(k) * wp2(k)
 
           aa(k_wp3,3+2)
-     .    = ctmp
-     .      + 0.5 * a1(k) * gr%dzt(k) 
-     .            * (wp3(k)+wp3(kp1))/max(wp2(k),eps)
+     .    =   wmt(k) * (1.0/2.0) * gr%dzt(k)
+     .      + a1(k) * gr%dzt(k)
+     .                * (1.0/2.0) * ( wp3(kp1) + wp3(k) )
+     .                / MAX(wp2(k),eps)
+     .      - ( Kh(k) + nu8 ) * gr%dzt(k) * gr%dzm(k)
 
           dd(k_wp3)
-     .    = - atmp * wp3(km1)
-     .      + ( atmp + ctmp + 1.0/dt ) * wp3(k)
-     .      - ctmp * wp3(kp1)
+     .    = + 1.0/dt
      .      - C8/tauw3t(k)
      .        *(-4.0*C8b*Skw**4)*wp3(k)
+     .      + gr%dzt(k) * 
+     .           (  a3(k) * wp2(k)**2.0 - a3(km1) * wp2(km1)**2.0 )
+     .      + gr%dzt(k) *
+     .           (  a1(k) * (1.0/4.0) * ( wp3(kp1) + wp3(k) )**2.0
+     .                      / MAX(wp2(k),eps)
+     .            - a1(km1) * (1.0/4.0) * ( wp3(k) + wp3(km1) )**2.0
+     .                        / MAX(wp2(km1),eps)
+     .           )
      .      + wp3t(k)
-!     .      + gr%dzt(k) * ( a3(k)*wp2(k)**2 - a3(km1)*wp2(km1)**2 )
-     .      + gr%dzt(k) * ( a3(k)*wp2(k)**2 - a3(k)*wp2(km1)**2 )
-     .      + 0.25 * gr%dzt(k)
-     .            * ( a1(k)*(wp3(k)+wp3(kp1))**2/max(wp2(k),eps)
-     .               -a1(km1)*(wp3(km1)+wp3(k))**2/max(wp2(km1),eps) )
 
 #ifdef STATS
           if (lstats_samp) then
