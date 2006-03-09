@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.16 2006-03-09 23:14:05 griffinb Exp $
+! $Id: wp23.F,v 1.17 2006-03-09 23:32:58 griffinb Exp $
 
 ! SUBROUTINE timestep_wp23( )
 !  Advance wp2 and wp3 one timestep
@@ -454,7 +454,8 @@
 !     .      - ( Khm(k) + nu8 ) * gr%dzt(k) * gr%dzm(km1)
 
           aa(k_wp3,3-1)
-     .    = - 2.0 * a3(km1) * gr%dzt(k) * wp2(km1)
+!     .    = - 2.0 * a3(km1) * gr%dzt(k) * wp2(km1)
+     .    = - 2.0 * a3(k) * gr%dzt(k) * wp2(km1)  ! No Sc/a3 derivative.
 
           aa(k_wp3,3)
      .    = + 1.0 / dt
@@ -497,7 +498,8 @@
      .      - C8/tauw3t(k)
      .        *(-4.0*C8b*Skw**4)*wp3(k)
      .      + gr%dzt(k) * 
-     .           (  a3(k) * wp2(k)**2.0 - a3(km1) * wp2(km1)**2.0 )
+!     .           (  a3(k) * wp2(k)**2.0 - a3(km1) * wp2(km1)**2.0 )
+     .           (  a3(k) * wp2(k)**2.0 - a3(k) * wp2(km1)**2.0 )  ! No Sc/a3 derivative
      .      + gr%dzt(k) *
      .           (  a1(k) * (1.0/4.0) * ( wp3(kp1) + wp3(k) )**2.0
      .                      / MAX(wp2(k),eps)
