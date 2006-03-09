@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.12 2006-03-06 19:25:12 golaz Exp $
+! $Id: wp23.F,v 1.13 2006-03-09 15:33:04 griffinb Exp $
 
 ! SUBROUTINE timestep_wp23( )
 !  Advance wp2 and wp3 one timestep
@@ -80,12 +80,10 @@
 
 !       RHSs
 
-        wp2t = - wmm * ddzt( zm2zt( wp2 ) )
-     .         + 2.0*(1.0-C5) * grav * alpha * wpthvp
-     .         - 2.0*(1.0-C5) * wp2 * ddzt( wmt )
-     .         + C5 * 2./3. * grav * alpha * wpthvp
-     .         - C5 * 2./3. * upwp * ddzt( um )
-     .         - C5 * 2./3. * vpwp * ddzt( vm )
+        wp2t = + ( 1.0 - C5 ) * 2.0 * grav * alpha * wpthvp
+     .         + C5 * (2.0/3.0) * grav * alpha * wpthvp
+     .         - C5 * (2.0/3.0) * upwp * ddzt( um )
+     .         - C5 * (2.0/3.0) * vpwp * ddzt( vm )
 
 #ifdef STATS
        if (lstats_samp) then
@@ -368,29 +366,28 @@
           ctmp = - 0.5 * nu1 * gr%dzm(k) * gr%dzt(kp1)
 
           aa(k_wp2,3-2)
-     .    = atmp
-     .      
+     .    = - wmm(k) * (1.0/2.0) * gr%dzm(k)
+     .      - nu1 * gr%dzm(k) * gr%dzt(k)
 
           aa(k_wp2,3-1)
      .    = - gr%dzm(k)
 
           aa(k_wp2,3)
-     .    = 1.0 / dt
-     .      - atmp - ctmp
+     .    = + 1.0 / dt
+     .      + ( 1.0 - C5 ) * 2.0 * gr%dzm(k) * ( wmt(kp1) + wmt(k) )
 !     .      + C1/tau1m(k)
      .      + C1_Skw_fnc(k)/tau1m(k)
+     .      + nu1 * gr%dzm(k) * ( gr%dzt(kp1) + gr%dzt(k) )
 
           aa(k_wp2,3+1)
      .    = + gr%dzm(k)
 
           aa(k_wp2,3+2)
-     .    = ctmp
+     .    = + wmm(k) * (1.0/2.0) * gr%dzm(k)
+     .      - nu1 * gr%dzm(k) * gr%dzt(kp1)
 
           dd(k_wp2)
-     .    = - atmp * wp2(km1)
-     .      + ( atmp + ctmp + 1.0/dt ) * wp2(k)
-     .      - ctmp * wp2(kp1)
-     .      + wp2t(k)
+     .    =   ( 1.0/dt * wp2(k) ) + wp2t(k)
 
 #ifdef STATS
           if (lstats_samp) then
