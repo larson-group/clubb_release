@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.14 2006-03-09 19:45:20 griffinb Exp $
+! $Id: wp23.F,v 1.15 2006-03-09 23:06:43 griffinb Exp $
 
 ! SUBROUTINE timestep_wp23( )
 !  Advance wp2 and wp3 one timestep
@@ -219,8 +219,7 @@
 
 !       Solve semi-implicitly
 
-!        call wp23_solve( dt, Sc, Lscale, Lm, taum, tauw3t, 0.5*Khm,
-        call wp23_solve( dt, Sc, Lscale, Lm, taum, tauw3t, zm2zt(Khm),
+        call wp23_solve( dt, Sc, Lscale, Lm, taum, tauw3t, 0.5*Khm,
      .                   wmt, wmm, wpthvp, wp2thvp,
      .                   wp2t, wp3t, C1_Skw_fnc, C11_Skw_fnc, 
      .                   runtype, wp2, wp3, isValid )
@@ -433,7 +432,10 @@
      .      - a1(km1) * gr%dzt(k)
      .                  * (1.0/2.0) * ( wp3(k) + wp3(km1) )
      .                  / MAX(wp2(km1),eps)
-     .      - ( Kh(k) + nu8 ) * gr%dzt(k) * gr%dzm(km1)
+! This line is for the diffusional term with a Crank-Nicholson time step.         
+     .      + atmp
+! This line is for a completely implicit diffusional term.
+!     .      - ( Khm(k) + nu8 ) * gr%dzt(k) * gr%dzm(km1)
 
           aa(k_wp3,3-1)
      .    = - 2.0 * a3(km1) * gr%dzt(k) * wp2(km1)
@@ -449,7 +451,10 @@
      .           )
      .      + ( 1.0 - C11_Skw_fnc(k) )
      .                * 2.0 * gr%dzt(k) * ( wmm(k) - wmm(km1) )
-     .      + ( Kh(k) + nu8 ) * gr%dzt(k) * ( gr%dzm(k) + gr%dzm(km1) )
+! This line is for the diffusional term with a Crank-Nicholson time step.         
+     .      - atmp - ctmp
+! This line is for a completely implicit diffusional term.
+!     .      + ( Khm(k) + nu8 ) * gr%dzt(k) * ( gr%dzm(k) + gr%dzm(km1) )
 
 
           aa(k_wp3,3+1)
@@ -460,10 +465,19 @@
      .      + a1(k) * gr%dzt(k)
      .                * (1.0/2.0) * ( wp3(kp1) + wp3(k) )
      .                / MAX(wp2(k),eps)
-     .      - ( Kh(k) + nu8 ) * gr%dzt(k) * gr%dzm(k)
+! This line is for the diffusional term with a Crank-Nicholson time step.         
+     .      + ctmp
+! This line is for a completely implicit diffusional term.
+!     .      - ( Khm(k) + nu8 ) * gr%dzt(k) * gr%dzm(k)
+
 
           dd(k_wp3)
-     .    = + 1.0/dt
+     .    =   1.0/dt * wp3(k)
+! These lines are for the diffusional term with a Crank-Nicholson time step.         
+     .      - atmp * wp3(km1)
+     .      + ( atmp + ctmp ) * wp3(k)
+     .      - ctmp * wp3(kp1)
+! End Crank-Nicholson
      .      - C8/tauw3t(k)
      .        *(-4.0*C8b*Skw**4)*wp3(k)
      .      + gr%dzt(k) * 
@@ -475,6 +489,7 @@
      .                        / MAX(wp2(km1),eps)
      .           )
      .      + wp3t(k)
+
 
 #ifdef STATS
           if (lstats_samp) then
