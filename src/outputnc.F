@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: outputnc.F,v 1.3 2006-03-06 17:43:50 dschanen Exp $
+! $Id: outputnc.F,v 1.4 2006-03-14 17:45:02 dschanen Exp $
 !      MODULE outputnc
 
 !      functions and subroutines for writing NetCDF files
@@ -69,13 +69,14 @@
          enddo
        endif
 
-!      create netCDF dataset: enter define mode  
+!      Create NetCDF dataset: enter define mode  
        stat = nf90_create( path = trim( fdir )//trim( fname )//'.nc', 
      .                     cmode = NF90_CLOBBER, ! overwrite existing file
      .                     ncid = ncf%iounit )  
        if ( stat /= NF90_NOERR ) then
          write(*,*) "Error opening file ", 
-     .              trim( fdir )//trim( fname)//'.nc'
+     .              trim( fdir )//trim( fname)//'.nc',
+     .              trim( nf90_strerror(stat) )
          stop
        endif
 
@@ -142,8 +143,12 @@
      .          start=(/1,1,1,ncf%ntimes/),
      .          count=(/1,1,ncf%iz,1/) )
        end do
-       if ( any (stat /= nf90_noerr) ) then 
-         write(*,*) stat
+       if ( any (stat /= NF90_NOERR ) ) then 
+         do i=1,ncf%nvar,1
+           if( stat(i) /= NF90_NOERR ) then
+             write(*,*) ncf%var(i)%name, trim( nf90_strerror(stat(i)) )
+           end if
+         end do
          stop "nf90_put_var error"
        endif
 
@@ -153,7 +158,7 @@
        return 
        end subroutine write_nc
 !-----------------------------------------------------------------------
-!      SUBROUTINE define_nc
+!      SUBROUTINE define_nc()
 
 !      Used internally to create a definition for the NetCDF dataset
 !-----------------------------------------------------------------------
@@ -191,28 +196,32 @@
        stat = 
      . nf90_def_dim( ncid, "longitude", nlong, LongDimId )
        if ( stat /= NF90_NOERR ) then
-         write(*,*) "Error defining longitude", stat
+         write(*,*) "Error defining longitude",
+     .               trim( nf90_strerror(stat) )
          stop
        endif
 
        stat = 
      . nf90_def_dim( ncid, "latitude", nlat, LatDimId )
        if ( stat /= NF90_NOERR ) then
-         write(*,*) "Error defining latitude", stat
+         write(*,*) "Error defining latitude",
+     .               trim( nf90_strerror(stat) )
          stop
        endif
 
        stat = 
      . nf90_def_dim( ncid, "altitude", iz, AltDimId )
        if ( stat /= NF90_NOERR ) then
-         write(*,*) "Error defining altitude", stat
+         write(*,*) "Error defining altitude",
+     .               trim( nf90_strerror(stat) )
          stop
        endif
 
        stat = 
      . nf90_def_dim( ncid, "time", NF90_UNLIMITED, TimeDimId ) 
        if ( stat /= NF90_NOERR ) then
-         write(*,*) "Error defining time", stat
+         write(*,*) "Error defining time",
+     .               trim( nf90_strerror(stat) )
          stop
        endif
 
@@ -236,7 +245,8 @@
        stat = nf90_put_att( ncid, TimeVarId, "cartesian_axis", 
      .        "T" )
        if ( stat /= NF90_NOERR ) then
-         write(*,*) "Error defining time", stat
+         write(*,*) "Error defining time",
+     .               trim( nf90_strerror(stat) )
          stop
        endif
 
@@ -245,21 +255,24 @@
        stat = nf90_put_att( ncid, TimeVarId, "units", 
      .                      TimeUnits )
        if ( stat /= NF90_NOERR ) then
-         write(*,*) "Error defining time", stat
+         write(*,*) "Error defining time",
+     .               trim( nf90_strerror(stat) )
          stop
        endif
 
        stat = nf90_put_att( ncid, TimeVarId, "ipositive", 
      .         1 )
        if ( stat /= NF90_NOERR ) then
-         write(*,*) "Error defining time", stat
+         write(*,*) "Error defining time",
+     .               trim( nf90_strerror(stat) )
          stop
        endif
 
        stat = nf90_put_att( ncid, TimeVarId, "calendar_type", 
      .        "Gregorian" )
        if ( stat /= NF90_NOERR ) then
-         write(*,*) "Error defining time", stat
+         write(*,*) "Error defining time",
+     .               trim( nf90_strerror(stat) )
          stop
        endif
 
@@ -300,12 +313,13 @@
        end subroutine define_nc
 
 !-----------------------------------------------------------------------
-!      SUBROUTINE close_nc
+!      SUBROUTINE close_nc()
 
-!      I assume nf90_close exists so the netcdf libraries can do some 
-!      sort of buffered I/O, but I don't know the implementation details
+!      I assume nf90_close exists so that the NetCDF libraries can do a
+!      form of buffered I/O, but I don't know the implementation details
 !-----------------------------------------------------------------------
        subroutine close_nc( ncf )
+
        use outputfile_class
        use netcdf
 
@@ -319,7 +333,8 @@
 
        stat = nf90_close( ncf%iounit )
        if ( stat /= NF90_NOERR ) then
-         write(*,*) "Error closing file:"//trim( ncf%fname ), stat
+         write(*,*) "Error closing file:"//trim( ncf%fname ),
+     .               trim( nf90_strerror(stat) )
          stop
        endif
 
@@ -388,28 +403,32 @@
      .             NF90_FLOAT, var_dim(:), ncf%var(i)%Id )
          if ( stat(i) /= NF90_NOERR ) then
            write(*,*) "Error defining variable ", 
-     .                ncf%var(i)%name, stat(i)
+     .                ncf%var(i)%name,
+     .                trim( nf90_strerror(stat(i)) )
            error = .true.
          endif
 
          stat(i) = nf90_put_att( ncf%iounit, ncf%var(i)%Id,
      .             "valid_range", var_range(1:2) )
          if ( stat(i) /= NF90_NOERR ) then
-           write(*,*) "Error defining valid range", stat(i)
+           write(*,*) "Error defining valid range",
+     .                trim( nf90_strerror(stat(i)) )
            error = .true.
          endif
 
          stat(i) = nf90_put_att( ncf%iounit, ncf%var(i)%Id, "title", 
      .             trim( ncf%var(i)%description ) )
          if ( stat(i) /= NF90_NOERR ) then
-           write(*,*) "Error in description", stat(i)
+           write(*,*) "Error in description",
+     .                trim( nf90_strerror(stat(i)) )
            error = .true.
          endif
 
          stat(i) = nf90_put_att( ncf%iounit, ncf%var(i)%Id, "units", 
      .             trim( ncf%var(i)%units ) )
          if ( stat(i) /= NF90_NOERR ) then
-           write(*,*) "Error in units", stat(i)
+           write(*,*) "Error in units",
+     .                trim( nf90_strerror(stat(i)) )
            error = .true.
          endif
        end do
@@ -418,7 +437,8 @@
 
        stat(1) = nf90_enddef( ncf%iounit ) ! end definitions
        if ( stat(1) /= NF90_NOERR ) then
-         write(*,*) "Error finalizing definitions", stat(i)
+         write(*,*) "Error finalizing definitions",
+     .              trim( nf90_strerror(stat(1)) )
          stop
        endif
 
@@ -429,6 +449,7 @@
 
 !-----------------------------------------------------------------------
 !      SUBROUTINE write_grid( )
+
 !      Writes inforation about latitude, longitude and the grid
 !-----------------------------------------------------------------------
        subroutine write_grid( ncf )
@@ -450,21 +471,24 @@
        stat = nf90_put_var( ncid=ncf%iounit, varid=ncf%AltVarId, 
      .                      values=ncf%z(ncf%ia:ncf%iz) )
        if ( stat /= NF90_NOERR ) then
-         write(*,*) "Error entering grid", stat
+         write(*,*) "Error entering grid", 
+     .              trim( nf90_strerror(stat) )
          stop
        endif
 
        stat = nf90_put_var( ncid=ncf%iounit, varid=ncf%LongVarId, 
      .                      values=deg_north(1:1) ) 
        if ( stat /= NF90_NOERR ) then
-         write(*,*) "Error entering long.", stat
+         write(*,*) "Error entering long.", 
+     .              trim( nf90_strerror(stat) )
          stop
        endif
 
        stat = nf90_put_var( ncid=ncf%iounit, varid=ncf%LatVarId, 
      .                      values=deg_east(1:1) ) 
        if ( stat /= NF90_NOERR ) then
-         write(*,*) "Error entering lat.", stat
+         write(*,*) "Error entering lat.", 
+     .              trim( nf90_strerror(stat) )
          stop
        endif
 
