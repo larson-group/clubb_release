@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.48 2006-02-28 18:47:45 dschanen Exp $
+# $Id: Makefile,v 1.49 2006-03-16 19:07:28 dschanen Exp $
 # This version should work with BSD, GNU make, smake and dmake
 
 # For HOC we edit this by hand rather than implementing imake or automake
@@ -56,7 +56,10 @@ all:	hoc_tuner int2txt hoc_tuner_budget_terms \
 # == Rules ==
 VPATH=.:LH:BUGSrad
 
-.SUFFIXES:	.o .f .F .f90 .F90 .h
+# Cancel implicit rules (e.g for modula-2 `m2c -c $@.mod')
+.SUFFIXES:
+# Define valid Fortran suffixes for HOC
+.SUFFIXES: .o .f .F .f90 .F90 .h
 
 .f.o:
 	$(FC) $(FCFLAGS) -c $<
