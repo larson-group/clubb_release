@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.32 2006-03-08 22:36:59 dschanen Exp $
+!  $Id: statistics.F,v 1.33 2006-03-19 19:33:56 griffinb Exp $
 
 !  module stats_type
 !  contains:
@@ -332,7 +332,8 @@ c       Scratch space
         real, allocatable :: ztscr01(:), ztscr02(:), ztscr03(:), 
      .                       ztscr04(:), ztscr05(:), ztscr06(:), 
      .                       ztscr07(:), ztscr08(:), ztscr09(:),
-     .                       ztscr10(:), ztscr11(:)
+     .                       ztscr10(:), ztscr11(:), ztscr12(:),
+     .                       ztscr13(:), ztscr14(:), ztscr15(:)
 
         real, allocatable :: zmscr01(:), zmscr02(:), zmscr03(:), 
      .                       zmscr04(:), zmscr05(:), zmscr06(:),
@@ -469,6 +470,10 @@ c     -----------------------------------------------------------------
       allocate ( ztscr09(zt%kk) )
       allocate ( ztscr10(zt%kk) )
       allocate ( ztscr11(zt%kk) )
+      allocate ( ztscr12(zt%kk) )
+      allocate ( ztscr13(zt%kk) )
+      allocate ( ztscr14(zt%kk) )
+      allocate ( ztscr15(zt%kk) )
 
 !     Open GrADS files
       fdir = "./"
@@ -3495,6 +3500,10 @@ c     -----------------------------------------------------------------
         deallocate ( ztscr09 )
         deallocate ( ztscr10 )
         deallocate ( ztscr11 )
+        deallocate ( ztscr12 )
+        deallocate ( ztscr13 )
+        deallocate ( ztscr14 )
+        deallocate ( ztscr15 )
 
 !       De-allocate all zm variables
         deallocate( zm%z )

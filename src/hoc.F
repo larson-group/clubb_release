@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.70 2006-03-06 19:25:12 golaz Exp $
+! $Id: hoc.F,v 1.71 2006-03-19 19:33:56 griffinb Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -1560,7 +1560,7 @@
 
        call timestep_wp23
      .     ( dtclosure, Lscale, taum, taut, Scm, 
-     .       pdf_parms(:, 13), Khm,
+     .       pdf_parms(:, 13), Kht,
      .       wmt, wmm,
      .       um, upwp, vm, vpwp, wpthvp, wp2thvp,
      .       wp2, wp3, isValid, runtype )

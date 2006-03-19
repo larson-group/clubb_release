@@ -1,11 +1,11 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.19 2006-03-09 23:42:43 griffinb Exp $
+! $Id: wp23.F,v 1.20 2006-03-19 19:33:56 griffinb Exp $
 
 ! SUBROUTINE timestep_wp23( )
 !  Advance wp2 and wp3 one timestep
 !------------------------------------------------------------------------
         subroutine timestep_wp23
-     .             (dt, Lscale, taum, taut, Sc, a, Khm, wmt, wmm,
+     .             (dt, Lscale, taum, taut, Scm, a, Kht, wmt, wmm,
      .              um, upwp, vm, vpwp, wpthvp, wp2thvp,
      .              wp2, wp3, isValid, runtype)
 
@@ -23,9 +23,9 @@
         real, intent(in)    :: Lscale(1:gr%nnzp)
         real, intent(in)    :: taum(1:gr%nnzp)
         real, intent(in)    :: taut(1:gr%nnzp)
-        real, intent(in)    :: Sc(1:gr%nnzp)
+        real, intent(in)    :: Scm(1:gr%nnzp)
         real, intent(in)    :: a(1:gr%nnzp)
-        real, intent(in)    :: Khm(1:gr%nnzp)
+        real, intent(in)    :: Kht(1:gr%nnzp)
         real, intent(in)    :: wmt(1:gr%nnzp)
         real, intent(in)    :: wmm(1:gr%nnzp)
         real, intent(in)    :: um(1:gr%nnzp)
@@ -36,7 +36,6 @@
         real, intent(in)    :: wp2thvp(1:gr%nnzp)
         real, intent(inout) :: wp2(1:gr%nnzp)
         real, intent(inout) :: wp3(1:gr%nnzp)
-!        real, intent(inout) :: em(1:gr%nnzp)
 
         logical, intent(inout):: isValid
 
@@ -45,7 +44,7 @@
 
 !       Internal
 
-        real, allocatable :: wp2t(:), wp3t(:), tauw3t(:), Lm(:)
+        real, allocatable :: wp2t(:), tauw3t(:), Lm(:)
       
         integer k
         real aa, Skw
@@ -61,7 +60,6 @@
 
         allocate( tauw3t(1:gr%nnzp) )
         allocate( wp2t(1:gr%nnzp) )
-        allocate( wp3t(1:gr%nnzp) )
         allocate( Lm(1:gr%nnzp) )
 
 ! Allocate variables for C11 function, Vince Larson 13 Mar 2005
@@ -151,47 +149,6 @@
 !        C11_Skw_fnc = C11
 !        C1_Skw_fnc = C1
 
-! Old version with C11 constant
-!        wp3t = - wmt * ddzm( zt2zm( wp3 ) )
-!     .         - 3.0*(1.0-C11) * wp3 * ddzm( wmm )
-!     .         + 3.0*(1.0-C11) * grav * alpha * wp2thvp
-
-! New version with C11 dependent on Skw
-        wp3t = + 3.0 * (1.0-C11_Skw_fnc) * grav * alpha * wp2thvp
-! End Vince Larson's change.
-
-#ifdef STATS
-       if (lstats_samp) then
-
-         if ( iwp3_ma > 0 ) then
-           zt%x(:,iwp3_ma) = zt%x(:,iwp3_ma) 
-     .     - wmt * ddzm( zt2zm( wp3 ) )
-           zt%n(:,iwp3_ma) = zt%n(:,iwp3_ma) + 1
-         endif
-
-         if ( iwp3_ac > 0 ) then
-           zt%x(:,iwp3_ac) = zt%x(:,iwp3_ac) 
-     .     - 3.0 * wp3 * ddzm( wmm )
-           zt%n(:,iwp3_ac) = zt%n(:,iwp3_ac) + 1
-         endif
-
-         if ( iwp3_bp > 0 ) then
-           zt%x(:,iwp3_bp) = zt%x(:,iwp3_bp) 
-     .     + 3.0 * grav * alpha * wp2thvp
-           zt%n(:,iwp3_bp) = zt%n(:,iwp3_bp) + 1
-         endif
-
-         if ( iwp3_pr2 > 0 ) then
-           zt%x(:,iwp3_pr2) = zt%x(:,iwp3_pr2) 
-!     .     - C11 * ( - 3.0 * wp3 * ddzm( wmm )
-     .     - C11_Skw_fnc * ( - 3.0 * wp3 * ddzm( wmm )
-     .               + 3.0 * grav * alpha * wp2thvp
-     .             )
-           zt%n(:,iwp3_pr2) = zt%n(:,iwp3_pr2) + 1
-         endif
-
-       endif
-#endif STATS
 
 !       Define tauw
 
@@ -218,27 +175,23 @@
         tauw3t = taut 
 
 !       Solve semi-implicitly
-
-        call wp23_solve( dt, Sc, Lscale, Lm, taum, tauw3t, 0.5*Khm,
+!       Note: Kw is defined to be 1/2 of Kht
+        call wp23_solve( dt, Scm, Lscale, Lm, taum, tauw3t, 0.5*Kht,
      .                   wmt, wmm, wpthvp, wp2thvp,
-     .                   wp2t, wp3t, C1_Skw_fnc, C11_Skw_fnc, 
+     .                   wp2t, C1_Skw_fnc, C11_Skw_fnc, 
      .                   runtype, wp2, wp3, isValid )
         
         if ( .not. isValid ) then
-          deallocate( tauw3t, wp2t, wp3t, Lm)
+          deallocate( tauw3t, wp2t, Lm)
           deallocate( Skw_arr_t, C11_Skw_fnc )
           deallocate( Skw_arr_m, C1_Skw_fnc )
           return
         endif
 
-!       tke is assumed to be 3/2 of wp2
-
-!        em = 1.5 * wp2   ! moved to hoc_closure_timestep
-
 !       Free memory
 
-!        deallocate( tauw3t, wp2t, wp3t )
-        deallocate( tauw3t, wp2t, wp3t, Lm )  ! Brian
+!        deallocate( tauw3t, wp2t )
+        deallocate( tauw3t, wp2t, Lm )  ! Brian
 
 ! De-allocate variables for C11 function, Vince Larson 13 Mar 2005
 ! Brian added C1 function.
@@ -253,9 +206,9 @@
 !  subroutine wp23_solve( )
 !------------------------------------------------------------------------
 
-        subroutine wp23_solve( dt, Sc, Lscale, Lm, tau1m, tauw3t, Kh,
+        subroutine wp23_solve( dt, Scm, Lscale, Lm, tau1m, tauw3t, Kw,
      .                         wmt, wmm, wpthvp, wp2thvp,
-     .                         wp2t, wp3t, C1_Skw_fnc, C11_Skw_fnc,
+     .                         wp2t, C1_Skw_fnc, C11_Skw_fnc,
      .                         runtype, wp2, wp3, isValid)
 
         use grid_class
@@ -269,18 +222,17 @@
 !       Input
 
         real, intent(in) :: dt
-        real, intent(in) :: Sc(1:gr%nnzp)
+        real, intent(in) :: Scm(1:gr%nnzp)
         real, intent(in) :: Lscale(1:gr%nnzp)
         real, intent(in) :: Lm(1:gr%nnzp)
         real, intent(in) :: tau1m(1:gr%nnzp)
         real, intent(in) :: tauw3t(1:gr%nnzp)
-        real, intent(in) :: Kh(1:gr%nnzp)
+        real, intent(in) :: Kw(1:gr%nnzp)
         real, intent(in) :: wmt(1:gr%nnzp)
         real, intent(in) :: wmm(1:gr%nnzp)
         real, intent(in) :: wpthvp(1:gr%nnzp)
         real, intent(in) :: wp2thvp(1:gr%nnzp)
         real, intent(in) :: wp2t(1:gr%nnzp)
-        real, intent(in) :: wp3t(1:gr%nnzp)
         real, intent(in) :: C1_Skw_fnc(1:gr%nnzp)
         real, intent(in) :: C11_Skw_fnc(1:gr%nnzp)
 
@@ -333,20 +285,20 @@
         allocate( al(1:2*gr%nnzp,1:2) )
         allocate( indx(1:2*gr%nnzp) )
 
-!       Define a1 and a3
+!       Define a1 and a3 (both are located on momentum levels).
 
-        a1 = 1.0 / (1.0-Sc)
-        a3 = 3.0*Sc*Sc 
-     .       + 6.0*(1.0-Sc)*Sc 
-     .       + (1.0-Sc)*(1.0-Sc) 
-     .       - 1.5
+        a1 = 1.0 / (1.0-Scm)
+        a3 = 3.0*Scm*Scm 
+     .       + 6.0*(1.0-Scm)*Scm 
+     .       + (1.0-Scm)*(1.0-Scm) 
+     .       - (3.0/2.0)
 
 !       Set up matrix aa and RHS dd
 
         aa = 0.0
         dd = 0.0
 
-        do k=1,gr%nnzp
+        DO k = 1, gr%nnzp, 1
 
 !         Define indices
 
@@ -356,8 +308,12 @@
           k_wp3 = 2*k - 1
           k_wp2 = 2*k
 
-          Skw = wp3(k)/(0.5*(wp2(km1)+wp2(k)))**1.5
-          skw = min( max( Skw, -4.5 ), 4.5 )
+          ! Skewness of w is needed on the thermodynamic levels 
+          ! for the wp3 equation
+          Skw = wp3(k) / ( (1.0/2.0)*( wp2(k) + wp2(km1) ) )**(3.0/2.0)
+          ! Skewness of w limited to a magnitude of no more than 4.5
+          Skw = MIN( MAX( Skw, -4.5 ), 4.5 )
+
 
 !         wp2
 
@@ -440,148 +396,187 @@
 !         wp3
 !  Added a new constant C12, a factor of atmp and ctmp 
 !  Initially, this new constant will be set to 1.0 -dschanen 9/19/05 
-          atmp = -0.5 * C12 * (Kh(km1) + nu8) * gr%dzt(k) * gr%dzm(km1)
-          ctmp = -0.5 * C12 * (Kh(k)   + nu8) * gr%dzt(k) * gr%dzm(k)
-
-          aa(k_wp3,3-2)
-     .    = - wmt(k) * (1.0/2.0) * gr%dzt(k)
-     .      - a1(km1) * gr%dzt(k)
-     .                  * (1.0/2.0) * ( wp3(k) + wp3(km1) )
-     .                  / MAX(wp2(km1),eps)
-! This line is for the diffusional term with a Crank-Nicholson time step.         
-     .      + atmp
-! This line is for a completely implicit diffusional term.
-!     .      - ( Khm(k) + nu8 ) * gr%dzt(k) * gr%dzm(km1)
-
-          aa(k_wp3,3-1)
-!     .    = - 2.0 * a3(km1) * gr%dzt(k) * wp2(km1)
-     .    = - 2.0 * 0.5 * ( a3(k) + a3(km1) ) * gr%dzt(k) * wp2(km1)  ! No Sc/a3 derivative.
-
-          aa(k_wp3,3)
-     .    = + 1.0 / dt
-     .      + C8/tauw3t(k)*(5.0*C8b*Skw**4+1.0)
-     .      + gr%dzt(k) * 
-     .           (  a1(k) * (1.0/2.0) * ( wp3(kp1) + wp3(k) ) 
-     .                   / MAX(wp2(k),eps)
-     .            - a1(km1) * (1.0/2.0) * ( wp3(k) + wp3(km1) ) 
-     .                    / MAX(wp2(km1),eps)
-     .           )
-     .      + ( 1.0 - C11_Skw_fnc(k) )
-     .                * 2.0 * gr%dzt(k) * ( wmm(k) - wmm(km1) )
-! This line is for the diffusional term with a Crank-Nicholson time step.         
-     .      - atmp - ctmp
-! This line is for a completely implicit diffusional term.
-!     .      + ( Khm(k) + nu8 ) * gr%dzt(k) * ( gr%dzm(k) + gr%dzm(km1) )
+          ! Diffusional term with Crank-Nicholson time step.
+          atmp = - C12 * ( Kw(k) + nu8 ) 
+     .                 * (1.0/2.0) * gr%dzt(k) * gr%dzm(km1)
+          ! Completely implicit diffusional term.
+!          atmp = - C12 * ( Kw(k) + nu8 ) * gr%dzt(k) * gr%dzm(km1)
+          ! Diffusional term with Crank-Nicholson time step.
+          ctmp = - C12 * ( Kw(k) + nu8 ) 
+     .                 * (1.0/2.0) * gr%dzt(k) * gr%dzm(k)
+          ! Completely implicit diffusional term.
+!          ctmp = - C12 * ( Kw(k) + nu8 ) * gr%dzt(k) * gr%dzm(k)
 
 
-          aa(k_wp3,3+1)
-!     .    = + 2.0 * a3(k) * gr%dzt(k) * wp2(k)
-     .    = + 2.0 * 0.5 * ( a3(k) + a3(km1) ) * gr%dzt(k) * wp2(k)  ! No Sc/a3 derivative.
+          ! Thermodynamic subdiagonal [ x wp3(k-1,<t+1>) ]
+          aa(k_wp3,3-2) = 
+     .    - wmt(k) * (1.0/2.0) * gr%dzt(k)
+     .    - (1.0/2.0) * gr%dzt(k)
+     .      * a1(km1) * ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), eps )
+     .    + atmp
 
-          aa(k_wp3,3+2)
-     .    =   wmt(k) * (1.0/2.0) * gr%dzt(k)
-     .      + a1(k) * gr%dzt(k)
-     .                * (1.0/2.0) * ( wp3(kp1) + wp3(k) )
-     .                / MAX(wp2(k),eps)
-! This line is for the diffusional term with a Crank-Nicholson time step.         
-     .      + ctmp
-! This line is for a completely implicit diffusional term.
-!     .      - ( Khm(k) + nu8 ) * gr%dzt(k) * gr%dzm(k)
+          ! Momentum subdiagonal [ x wp2(k-1,<t+1>) ]
+          aa(k_wp3,3-1) = 
+     .    - 2.0 * gr%dzt(k) * a3(km1) * wp2(km1)
+
+          ! Thermodynamic main diagonal [ ( x wp3(k,<t+1>) ]
+          aa(k_wp3,3) = 
+     .    + 1.0 / dt
+     .    + (1.0/2.0) * gr%dzt(k)
+     .      * (  a1(k) * ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), eps )
+     .         - a1(km1) * ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), eps )
+     .        )
+     .    + ( 1.0 - C11_Skw_fnc(k) )
+     .              * 3.0 * gr%dzt(k) * ( wmm(k) - wmm(km1) )
+     .    + ( C8 / tauw3t(k) ) * ( 5.0 * C8b * Skw**4.0 + 1.0 )
+     .    - atmp - ctmp
+
+          ! Momentum superdiagonal [ x wp2(k,<t+1>) ]
+          aa(k_wp3,3+1) = 
+     .    + 2.0 * gr%dzt(k) * a3(k) * wp2(k)
+
+          ! Thermodynamic superdiagonal [ x wp3(k+1,<t+1>) ]
+          aa(k_wp3,3+2) = 
+     .    + wmt(k) * (1.0/2.0) * gr%dzt(k)
+     .    + (1.0/2.0) * gr%dzt(k)
+     .      * a1(k) * ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), eps )
+     .    + ctmp
 
 
-          dd(k_wp3)
-     .    =   1.0/dt * wp3(k)
-! These lines are for the diffusional term with a Crank-Nicholson time step.         
-     .      - atmp * wp3(km1)
-     .      + ( atmp + ctmp ) * wp3(k)
-     .      - ctmp * wp3(kp1)
-! End Crank-Nicholson.
-     .      - C8/tauw3t(k)
-     .        *(-4.0*C8b*Skw**4)*wp3(k)
-     .      + gr%dzt(k) * 
-!     .           (  a3(k) * wp2(k)**2.0 - a3(km1) * wp2(km1)**2.0 )
-     .           0.5 * ( a3(k) + a3(km1) )          ! No Sc/a3 derivative
-     .           * ( wp2(k)**2.0 - wp2(km1)**2.0 )  ! No Sc/a3 derivative
-     .      + gr%dzt(k) *
-     .           (  a1(k) * (1.0/4.0) * ( wp3(kp1) + wp3(k) )**2.0
-     .                      / MAX(wp2(k),eps)
-     .            - a1(km1) * (1.0/4.0) * ( wp3(k) + wp3(km1) )**2.0
-     .                        / MAX(wp2(km1),eps)
-     .           )
-     .      + wp3t(k)
+          ! Right-hand side
+          dd(k_wp3) = 
+     .    + ( 1.0 / dt ) * wp3(k)
+     .    + gr%dzt(k)
+     .      * ( ( a3(k) * wp2(k)**2.0 ) - ( a3(km1) * wp2(km1)**2.0 ) )
+     .    + (1.0/4.0) * gr%dzt(k)
+     .      * (  a1(k) * ( wp3(kp1) + wp3(k) )**2.0 
+     .                   / MAX( wp2(k), eps )
+     .         - a1(km1) * ( wp3(k) + wp3(km1) )**2.0 
+     .                     / MAX( wp2(km1), eps )
+     .        )
+     .    + ( 1.0 - C11_Skw_fnc(k) ) * 3.0 * grav * alpha * wp2thvp(k)
+     .    + ( C8 / tauw3t(k) ) * ( 4.0 * C8b * Skw**4.0 ) * wp3(k)
+          ! These lines are for the diffusional term with a Crank-Nicholson 
+          ! time step.  They need to be commented out for completely implicit
+          ! diffusion to be used.
+     .    - atmp * wp3(km1)
+     .    + ( atmp + ctmp ) * wp3(k)
+     .    - ctmp * wp3(kp1)
 
 
 #ifdef STATS
           if (lstats_samp) then
 
-!          Explicit contributions for wp3
+!         Explicit contributions for wp3
 
-           if ( iwp3_ta > 0 ) then
-            zt%x(k,iwp3_ta) = zt%x(k,iwp3_ta) 
-     .      + (a3(k)+1.5) * gr%dzt(k) * ( wp2(k)**2 - wp2(km1)**2 )
-     .      + 0.25 * a1(k) * gr%dzt(k)
-     .            * ( (wp3(k)+wp3(kp1))**2/max(wp2(k),eps)
-     .               -(wp3(km1)+wp3(k))**2/max(wp2(km1),eps) )
-           endif
+          if ( iwp3_ta > 0 ) then
+          zt%x(k,iwp3_ta) = zt%x(k,iwp3_ta) 
+     .    + gr%dzt(k)
+     .      * ( ( ( a3(k) + (3.0/2.0) ) * wp2(k)**2.0 )
+     .         - ( ( a3(km1) + (3.0/2.0) ) * wp2(km1)**2.0 )
+     .        )
+     .    + (1.0/4.0) * gr%dzt(k)
+     .      * (  a1(k) * ( wp3(kp1) + wp3(k) )**2.0 
+     .                   / MAX( wp2(k), eps )
+     .         - a1(km1) * ( wp3(k) + wp3(km1) )**2.0 
+     .                     / MAX( wp2(km1), eps )
+     .        )
+          endif
 
-           if ( iwp3_tp > 0 ) then
-            zt%x(k,iwp3_tp) = zt%x(k,iwp3_tp) 
-     .      - 1.5 * gr%dzt(k) * ( wp2(k)**2 - wp2(km1)**2 )
-           endif
+          if ( iwp3_tp > 0 ) then
+          zt%x(k,iwp3_tp) = zt%x(k,iwp3_tp) 
+     .    - gr%dzt(k)
+     .      * (  ( (3.0/2.0) * wp2(k)**2.0 ) 
+     .         - ( (3.0/2.0) * wp2(km1)**2.0 )
+     .        )
+          endif
 
-           if ( iwp3_pr1 > 0 ) then
-            zt%x(k,iwp3_pr1) = zt%x(k,iwp3_pr1) 
-     .      - C8/tauw3t(k)
-     .        *(-4.0*C8b*Skw**4)*wp3(k)
-           endif
+          if ( iwp3_bp > 0 ) then
+          zt%x(k,iwp3_bp) = zt%x(k,iwp3_bp) 
+     .    + 1.0 * 3.0 * grav * alpha * wp2thvp(k)
+          zt%n(k,iwp3_bp) = zt%n(k,iwp3_bp) + 1
+          endif
 
-           if ( iwp3_dp1 > 0 ) then
-            zt%x(k,iwp3_dp1) = zt%x(k,iwp3_dp1) 
-     .      - atmp * wp3(km1)
-     .      + ( atmp + ctmp ) * wp3(k)
-     .      - ctmp * wp3(kp1)
-           endif
+          if ( iwp3_pr2 > 0 ) then
+          zt%x(k,iwp3_pr2) = zt%x(k,iwp3_pr2) 
+     .    - C11_Skw_fnc(k) * 3.0 * grav * alpha * wp2thvp(k)
+          endif
 
-!          Implicit contributions for wp3
+          if ( iwp3_pr1 > 0 ) then
+          zt%x(k,iwp3_pr1) = zt%x(k,iwp3_pr1) 
+     .    + ( C8 / tauw3t(k) ) * ( 4.0 * C8b * Skw**4.0 ) * wp3(k)
+          endif
 
-           if ( iwp3_ta > 0 ) then
-             ztscr05(k) =
-     .       + 0.5 * a1(k) * gr%dzt(k) 
-     .             * (wp3(km1)+wp3(k))/max(wp2(km1),eps)
-             ztscr06(k)
-     .       = + 2.0 * (a3(k)+1.5) * gr%dzt(k) * wp2(km1)
-             ztscr07(k) =
-     .       - 0.5 * a1(k) * gr%dzt(k) 
-     .             * ( (wp3(k)+wp3(kp1))/max(wp2(k),eps)
-     .                -(wp3(km1)+wp3(k))/max(wp2(km1),eps) )
-             ztscr08(k)
-     .       = - 2.0 * (a3(k)+1.5) * gr%dzt(k) * wp2(k)
-             ztscr09(k) =
-     .       - 0.5 * a1(k) * gr%dzt(k) 
-     .             * (wp3(k)+wp3(kp1))/max(wp2(k),eps)
-           endif
+          ! These lines are for the diffusional term with a Crank-Nicholson 
+          ! time step.  They need to be commented out for completely implicit
+          ! diffusion to be used.
+          if ( iwp3_dp1 > 0 ) then
+          zt%x(k,iwp3_dp1) = zt%x(k,iwp3_dp1) 
+     .    - atmp * wp3(km1)
+     .    + ( atmp + ctmp ) * wp3(k)
+     .    - ctmp * wp3(kp1)
+          endif
 
-           if ( iwp3_tp > 0 ) then
-             ztscr10(k)
-     .       = - 2.0 * 1.5 * gr%dzt(k) * wp2(km1)
-             ztscr11(k)
-     .       = + 2.0 * 1.5 * gr%dzt(k) * wp2(k)
-           endif
+!         Implicit contributions for wp3
 
-           if ( iwp3_pr1 > 0 ) then
-             ztscr01(k) =
-     .       - C8/tauw3t(k)*(5.0*C8b*Skw**4+1.0)    
-           endif
+          if ( iwp3_ta > 0 ) then
+          ztscr05(k) =
+     .    + (1.0/2.0) * gr%dzt(k)
+     .      * a1(km1) * ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), eps )
+          ztscr06(k) =
+     .    + 2.0 * gr%dzt(k) * ( a3(km1) + (3.0/2.0) ) * wp2(km1)
+          ztscr07(k) =
+     .    - (1.0/2.0) * gr%dzt(k)
+     .      * (  a1(k) * ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), eps )
+     .         - a1(km1) * ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), eps )
+     .        )
+          ztscr08(k) =
+     .    - 2.0 * gr%dzt(k) * ( a3(k) + (3.0/2.0) ) * wp2(k)
+          ztscr09(k) =
+     .    - (1.0/2.0) * gr%dzt(k)
+     .      * a1(k) * ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), eps )
+          endif
 
-           if ( iwp3_dp1 > 0 ) then
-             ztscr02(k) = - atmp
-             ztscr03(k) = atmp + ctmp
-             ztscr04(k) = - ctmp
-           endif
+          if ( iwp3_tp > 0 ) then
+          ztscr10(k) = 
+     .    - 2.0 * gr%dzt(k) * (3.0/2.0) * wp2(km1)
+          ztscr11(k) = 
+     .    + 2.0 * gr%dzt(k) * (3.0/2.0) * wp2(k)
+          endif
+
+          if ( iwp3_ma > 0 ) then
+          ztscr12(k) = 
+     .    + wmt(k) * (1.0/2.0) * gr%dzt(k)
+          ztscr13(k) = 
+     .    - wmt(k) * (1.0/2.0) * gr%dzt(k)
+          endif
+
+          if ( iwp3_ac > 0 ) then
+          ztscr14(k) = 
+     .    - 1.0 * 3.0 * gr%dzt(k) * ( wmm(k) - wmm(km1) )
+          endif
+
+          if ( iwp3_pr2 > 0 ) then
+          ztscr15(k) =
+     .    + C11_Skw_fnc(k) * 3.0 * gr%dzt(k) * ( wmm(k) - wmm(km1) )
+          endif
+
+          if ( iwp3_pr1 > 0 ) then
+          ztscr01(k) =
+     .    - ( C8 / tauw3t(k) ) * ( 5.0 * C8b * Skw**4.0 + 1.0 )
+          endif
+
+          if ( iwp3_dp1 > 0 ) then
+          ztscr02(k) = - atmp
+          ztscr03(k) = atmp + ctmp
+          ztscr04(k) = - ctmp
+          endif
 
           endif
 #endif STATS
-        enddo
+
+        ENDDO
+
 
 !       Boundary conditions
 
@@ -704,6 +699,25 @@
      .       + ztscr10(k) * wp2(km1)
      .       + ztscr11(k) * wp2(k)
              zt%n(k,iwp3_tp) = zt%n(k,iwp3_tp) + 1
+            endif
+
+            if ( iwp3_ma > 0 ) then
+             zt%x(k,iwp3_ma) = zt%x(k,iwp3_ma)
+     .       + ztscr12(k) * wp3(km1)
+     .       + ztscr13(k) * wp3(kp1)
+             zt%n(k,iwp3_ma) = zt%n(k,iwp3_ma) + 1
+            endif
+
+            if ( iwp3_ac > 0 ) then
+             zt%x(k,iwp3_ac) = zt%x(k,iwp3_ac)
+     .       + ztscr14(k) * wp3(k)
+             zt%n(k,iwp3_ac) = zt%n(k,iwp3_ac) + 1
+            endif
+
+            if ( iwp3_pr2 > 0 ) then
+             zt%x(k,iwp3_pr2) = zt%x(k,iwp3_pr2) 
+     .       + ztscr15(k) * wp3(k)
+             zt%n(k,iwp3_pr2) = zt%n(k,iwp3_pr2) + 1
             endif
 
           enddo
