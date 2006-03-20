@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.22 2006-03-20 01:17:21 griffinb Exp $
+! $Id: wp23.F,v 1.23 2006-03-20 02:05:18 griffinb Exp $
 
 ! SUBROUTINE timestep_wp23( )
 !  Advance wp2 and wp3 one timestep
@@ -317,15 +317,19 @@
 
 !         wp2
 
-          atmp = - 0.5 * nu1 * gr%dzm(k) * gr%dzt(k)
-          ctmp = - 0.5 * nu1 * gr%dzm(k) * gr%dzt(kp1)
+          ! Diffusional term with Crank-Nicholson time step.
+          atmp = - nu1 * (1.0/2.0) * gr%dzm(k) * gr%dzt(k)
+          ! Completely implicit diffusional term.
+!          atmp = - nu1 * gr%dzm(k) * gr%dzt(k)
+          ! Diffusional term with Crank-Nicholson time step.
+          ctmp = - nu1 * (1.0/2.0) * gr%dzm(k) * gr%dzt(kp1)
+          ! Completely implicit diffusional term.
+!          ctmp = - nu1 * gr%dzm(k) * gr%dzt(kp1)
+
 
           aa(k_wp2,3-2)
      .    = - wmm(k) * (1.0/2.0) * gr%dzm(k)
-! This line is for the diffusional term with a Crank-Nicholson time step.         
      .      + atmp
-! This line is for a completely implicit diffusional term.
-!     .      - nu1 * gr%dzm(k) * gr%dzt(k)
 
           aa(k_wp2,3-1)
      .    = - gr%dzm(k)
@@ -333,31 +337,27 @@
           aa(k_wp2,3)
      .    = + 1.0 / dt
      .      + ( 1.0 - C5 ) * 2.0 * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
-!     .      + C1/tau1m(k)
-     .      + C1_Skw_fnc(k)/tau1m(k)
-! This line is for the diffusional term with a Crank-Nicholson time step.         
+!     .      + C1 / tau1m(k)
+     .      + C1_Skw_fnc(k) / tau1m(k)
      .      - atmp - ctmp
-! This line is for a completely implicit diffusional term.
-!     .      + nu1 * gr%dzm(k) * ( gr%dzt(kp1) + gr%dzt(k) )
 
           aa(k_wp2,3+1)
      .    = + gr%dzm(k)
 
           aa(k_wp2,3+2)
      .    = + wmm(k) * (1.0/2.0) * gr%dzm(k)
-! This line is for the diffusional term with a Crank-Nicholson time step.         
      .      + ctmp
-! This line is for a completely implicit diffusional term.
-!     .      - nu1 * gr%dzm(k) * gr%dzt(kp1)
+
 
           dd(k_wp2)
-     .    =   1.0/dt * wp2(k) 
-! These lines are for the diffusional term with a Crank-Nicholson time step.         
+     .    = + ( 1.0 / dt ) * wp2(k) 
+     .      + wp2t(k)
+          ! These lines are for the diffusional term with a Crank-Nicholson 
+          ! time step.  They need to be commented out for completely implicit
+          ! diffusion to be used.
      .      - atmp * wp2(km1)
      .      + ( atmp + ctmp ) * wp2(k)
      .      - ctmp * wp2(kp1)
-! End Crank-Nicholson.
-     .      + wp2t(k)
 
 
 #ifdef STATS
@@ -392,6 +392,7 @@
 
          endif
 #endif STATS
+
 
 !         wp3
 !  Added a new constant C12, a factor of atmp and ctmp 
@@ -625,6 +626,7 @@
         aa(k_wp3,3) = 1.0
         dd(k_wp3)   = 0.0
 
+
 !       Perform LU decomposition
 
         call bandec(aa,2*gr%nnzp,2,2,2*gr%nnzp,5,al,2,indx,d,isValid)
@@ -634,9 +636,11 @@
             return
         endif
 
+
 !       Solve system
 
         call banbks(aa,2*gr%nnzp,2,2,2*gr%nnzp,5,al,2,indx,dd)
+
 
 !       Copy result into output arrays and clip
 
