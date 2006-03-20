@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.20 2006-03-19 19:33:56 griffinb Exp $
+! $Id: wp23.F,v 1.21 2006-03-20 00:23:49 griffinb Exp $
 
 ! SUBROUTINE timestep_wp23( )
 !  Advance wp2 and wp3 one timestep
@@ -332,7 +332,7 @@
 
           aa(k_wp2,3)
      .    = + 1.0 / dt
-     .      + ( 1.0 - C5 ) * 2.0 * gr%dzm(k) * ( wmt(kp1) + wmt(k) )
+     .      + ( 1.0 - C5 ) * 2.0 * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
 !     .      + C1/tau1m(k)
      .      + C1_Skw_fnc(k)/tau1m(k)
 ! This line is for the diffusional term with a Crank-Nicholson time step.         
@@ -417,7 +417,8 @@
 
           ! Momentum subdiagonal [ x wp2(k-1,<t+1>) ]
           aa(k_wp3,3-1) = 
-     .    - 2.0 * gr%dzt(k) * a3(km1) * wp2(km1)
+!     .    - 2.0 * gr%dzt(k) * a3(km1) * wp2(km1)
+     .    - 2.0 * gr%dzt(k) * a3(k) * wp2(km1)   ! Golaz's no a3 deriv.
 
           ! Thermodynamic main diagonal [ ( x wp3(k,<t+1>) ]
           aa(k_wp3,3) = 
@@ -447,7 +448,8 @@
           dd(k_wp3) = 
      .    + ( 1.0 / dt ) * wp3(k)
      .    + gr%dzt(k)
-     .      * ( ( a3(k) * wp2(k)**2.0 ) - ( a3(km1) * wp2(km1)**2.0 ) )
+!     .      * ( ( a3(k) * wp2(k)**2.0 ) - ( a3(km1) * wp2(km1)**2.0 ) )
+     .      * ( ( a3(k) * wp2(k)**2.0 ) - ( a3(k) * wp2(km1)**2.0 ) )   ! Golaz's no a3 deriv.
      .    + (1.0/4.0) * gr%dzt(k)
      .      * (  a1(k) * ( wp3(kp1) + wp3(k) )**2.0 
      .                   / MAX( wp2(k), eps )
@@ -473,7 +475,8 @@
           zt%x(k,iwp3_ta) = zt%x(k,iwp3_ta) 
      .    + gr%dzt(k)
      .      * ( ( ( a3(k) + (3.0/2.0) ) * wp2(k)**2.0 )
-     .         - ( ( a3(km1) + (3.0/2.0) ) * wp2(km1)**2.0 )
+!     .         - ( ( a3(km1) + (3.0/2.0) ) * wp2(km1)**2.0 )
+     .         - ( ( a3(k) + (3.0/2.0) ) * wp2(km1)**2.0 )   ! Golaz's no a3 deriv.
      .        )
      .    + (1.0/4.0) * gr%dzt(k)
      .      * (  a1(k) * ( wp3(kp1) + wp3(k) )**2.0 
@@ -524,7 +527,8 @@
      .    + (1.0/2.0) * gr%dzt(k)
      .      * a1(km1) * ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), eps )
           ztscr06(k) =
-     .    + 2.0 * gr%dzt(k) * ( a3(km1) + (3.0/2.0) ) * wp2(km1)
+!     .    + 2.0 * gr%dzt(k) * ( a3(km1) + (3.0/2.0) ) * wp2(km1)
+     .    + 2.0 * gr%dzt(k) * ( a3(k) + (3.0/2.0) ) * wp2(km1)   ! Golaz's no a3 deriv.
           ztscr07(k) =
      .    - (1.0/2.0) * gr%dzt(k)
      .      * (  a1(k) * ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), eps )
