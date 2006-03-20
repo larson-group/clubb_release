@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.21 2006-03-20 00:23:49 griffinb Exp $
+! $Id: wp23.F,v 1.22 2006-03-20 01:17:21 griffinb Exp $
 
 ! SUBROUTINE timestep_wp23( )
 !  Advance wp2 and wp3 one timestep
@@ -417,8 +417,9 @@
 
           ! Momentum subdiagonal [ x wp2(k-1,<t+1>) ]
           aa(k_wp3,3-1) = 
-!     .    - 2.0 * gr%dzt(k) * a3(km1) * wp2(km1)
-     .    - 2.0 * gr%dzt(k) * a3(k) * wp2(km1)   ! Golaz's no a3 deriv.
+!     .    - 2.0 * gr%dzt(k) * a3(km1) * wp2(km1)   ! standard deriv.
+!     .    - 2.0 * gr%dzt(k) * a3(k) * wp2(km1)     ! Golaz's no a3 deriv.
+     .    - 2.0 * gr%dzt(k) * 0.5*(a3(k)+a3(km1)) * wp2(km1)   ! Centered no a3 deriv.
 
           ! Thermodynamic main diagonal [ ( x wp3(k,<t+1>) ]
           aa(k_wp3,3) = 
@@ -434,7 +435,9 @@
 
           ! Momentum superdiagonal [ x wp2(k,<t+1>) ]
           aa(k_wp3,3+1) = 
-     .    + 2.0 * gr%dzt(k) * a3(k) * wp2(k)
+!     .    + 2.0 * gr%dzt(k) * a3(k) * wp2(k)   ! standard deriv.
+!     .    + 2.0 * gr%dzt(k) * a3(k) * wp2(k)   ! Golaz's no a3 deriv.
+     .    + 2.0 * gr%dzt(k) * 0.5*(a3(k)+a3(km1)) * wp2(k)   ! Centered no a3 deriv.
 
           ! Thermodynamic superdiagonal [ x wp3(k+1,<t+1>) ]
           aa(k_wp3,3+2) = 
@@ -448,8 +451,10 @@
           dd(k_wp3) = 
      .    + ( 1.0 / dt ) * wp3(k)
      .    + gr%dzt(k)
-!     .      * ( ( a3(k) * wp2(k)**2.0 ) - ( a3(km1) * wp2(km1)**2.0 ) )
-     .      * ( ( a3(k) * wp2(k)**2.0 ) - ( a3(k) * wp2(km1)**2.0 ) )   ! Golaz's no a3 deriv.
+!     .      * ( ( a3(k) * wp2(k)**2.0 ) - ( a3(km1) * wp2(km1)**2.0 ) ) ! standard deriv.
+!     .      * ( ( a3(k) * wp2(k)**2.0 ) - ( a3(k) * wp2(km1)**2.0 ) )   ! Golaz's no a3 deriv.
+     .      * (  ( 0.5*(a3(k)+a3(km1)) * wp2(k)**2.0 )        ! Centered no a3 deriv.
+     .         - ( 0.5*(a3(k)+a3(km1)) * wp2(km1)**2.0 )  )   ! Centered no a3 deriv.
      .    + (1.0/4.0) * gr%dzt(k)
      .      * (  a1(k) * ( wp3(kp1) + wp3(k) )**2.0 
      .                   / MAX( wp2(k), eps )
@@ -474,10 +479,17 @@
           if ( iwp3_ta > 0 ) then
           zt%x(k,iwp3_ta) = zt%x(k,iwp3_ta) 
      .    + gr%dzt(k)
-     .      * ( ( ( a3(k) + (3.0/2.0) ) * wp2(k)**2.0 )
-!     .         - ( ( a3(km1) + (3.0/2.0) ) * wp2(km1)**2.0 )
-     .         - ( ( a3(k) + (3.0/2.0) ) * wp2(km1)**2.0 )   ! Golaz's no a3 deriv.
-     .        )
+!     .      * (  ( ( a3(k) + (3.0/2.0) ) * wp2(k)**2.0 )      ! standard deriv.
+!     .         - ( ( a3(km1) + (3.0/2.0) ) * wp2(km1)**2.0 )  ! standard deriv.
+!     .        )                                               ! standard deriv.
+!     .      * (  ( ( a3(k) + (3.0/2.0) ) * wp2(k)**2.0 )      ! Golaz's no a3 deriv.
+!     .         - ( ( a3(k) + (3.0/2.0) ) * wp2(km1)**2.0 )    ! Golaz's no a3 deriv.
+!     .        )                                               ! Golaz's no a3 deriv.
+     .      * (  ( ( 0.5*(a3(k)+a3(km1)) + (3.0/2.0) )        ! Centered no a3 deriv.
+     .             * wp2(k)**2.0 )                            ! Centered no a3 deriv.
+     .         - ( ( 0.5*(a3(k)+a3(km1)) + (3.0/2.0) )        ! Centered no a3 deriv.
+     .             * wp2(km1)**2.0 )                          ! Centered no a3 deriv.
+     .        )                                               ! Centered no a3 deriv.
      .    + (1.0/4.0) * gr%dzt(k)
      .      * (  a1(k) * ( wp3(kp1) + wp3(k) )**2.0 
      .                   / MAX( wp2(k), eps )
@@ -527,15 +539,20 @@
      .    + (1.0/2.0) * gr%dzt(k)
      .      * a1(km1) * ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), eps )
           ztscr06(k) =
-!     .    + 2.0 * gr%dzt(k) * ( a3(km1) + (3.0/2.0) ) * wp2(km1)
-     .    + 2.0 * gr%dzt(k) * ( a3(k) + (3.0/2.0) ) * wp2(km1)   ! Golaz's no a3 deriv.
+!     .    + 2.0 * gr%dzt(k) * ( a3(km1) + (3.0/2.0) ) * wp2(km1)  ! standard deriv.
+!     .    + 2.0 * gr%dzt(k) * ( a3(k) + (3.0/2.0) ) * wp2(km1)    ! Golaz's no a3 deriv.
+     .    + 2.0 * gr%dzt(k) * ( 0.5*(a3(k)+a3(km1)) + (3.0/2.0) ) ! Centered no a3 deriv.
+     .      * wp2(km1)                                            ! Centered no a3 deriv.
           ztscr07(k) =
      .    - (1.0/2.0) * gr%dzt(k)
      .      * (  a1(k) * ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), eps )
      .         - a1(km1) * ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), eps )
      .        )
           ztscr08(k) =
-     .    - 2.0 * gr%dzt(k) * ( a3(k) + (3.0/2.0) ) * wp2(k)
+!     .    - 2.0 * gr%dzt(k) * ( a3(k) + (3.0/2.0) ) * wp2(k)      ! standard deriv.
+!     .    - 2.0 * gr%dzt(k) * ( a3(k) + (3.0/2.0) ) * wp2(k)      ! Golaz's no a3 deriv.
+     .    - 2.0 * gr%dzt(k) * ( 0.5*(a3(k)+a3(km1)) + (3.0/2.0) ) ! Centered a3 deriv.
+     .      * wp2(k)                                              ! Centered no a3 deriv.
           ztscr09(k) =
      .    - (1.0/2.0) * gr%dzt(k)
      .      * a1(k) * ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), eps )
