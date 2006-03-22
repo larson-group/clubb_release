@@ -1,44 +1,43 @@
-# $Id: config.messner.in,v 1.4 2006-03-07 18:54:00 dschanen Exp $
+# $Id: config.messner.in,v 1.5 2006-03-22 01:38:57 dschanen Exp $
 # Configuration file for Messner node
 # == Compiler invocation ==
-#FC=g95 #   G95
-#FC=ifort # Intel Fortran
-FC=pgf90 # Portland Group PGF90
+#FC=g95 #	G95
+#FC=ifort #	Intel Fortran 9
+FC=pgf90 #	Portland Group Fortran 90 5.x/6.x
 
 # == Debugging ==
 # It is sometimes helpful to turn on floating-point trapping for the 
 #  standalone program, but this will not work when using the tuner.
 # In PGF: -Ktrap=inv,unf
-# In Sun f95: remove the reference to ftrap, or -ftrap=%common
 # In g95: `setenv G95_FPU_INVALID TRUE' or `export G95_FPU_INVALID=TRUE'
 # In ifort: -fpe=0
 # The usual options:
-#DEBUG=-g -C -mieee-fp #             g95
-#DEBUG=-g -check bounds -mieee-fp #  Intel ifort 9
-DEBUG=-g -C -Kieee #                 pgf90
+#DEBUG=-g -C -mieee-fp -ftrace=full #	g95
+#DEBUG=-g -check bounds -mieee-fp #	ifort
+DEBUG=-g -C -Kieee #			pgf90
 
 # == Optimization ==
-# Sun's f95 has great difficulty with statistics.F
-# For SS11, either turn off optimization for that file or expect a long 
-#  compilation.  SS10 appears to fail altogether.
-# These are all pretty conservative options, check the your compiler manual 
+# These are all pretty conservative options. Check your compiler manual
 # for information on using more aggressive techniques (inlining, etc.)
 
-#OPTIMIZE=-O3 -march=pentium4 -msse2 -mfpmath=sse # g95, P4
-#OPTIMIZE=-O2 -arch SSE2 # Intel complier, P4 w/out SSE3
-#OPTIMIZE=-O2 -tp p7 -r8 # PGF90 w/ double precision reals
-OPTIMIZE=-O2 -tp p7 #      PGF90, Pentium4
+#OPTIMIZE=-O3 -march=pentium4 -msse2 -mfpmath=sse #	g95, P4
+#OPTIMIZE=-O2 -double_size 128 -real_size 64 #		ifort w/ double prec.
+#OPTIMIZE=-O2 -arch SSE2 #				ifort, P4
+#OPTIMIZE=-O2 -arch SSE2 -tp p7 -r8 #			PGF90 w/ double prec.
+OPTIMIZE=-O2 -tp p7 #					PGF90, P4
 
 # == NetCDF Flags ==
-NC_LOC=/usr/local/netcdf
+#NC_LOC=/usr/local/netcdf-g95
+#NC_LOC=/usr/local/netcdf-pgi
+NC_LOC=/usr/local/netcdf-intel
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
-# Use -Bstatic to static link the fortran libs on Sun, -static-libcxa for Intel
+# Use -L<library path> -l<lib> to link in an external library
 LDFLAGS=-L$(NC_LOC)/lib -lnetcdf
 
 # == Compiler flags (all) ==
-# Preprocessing:
+# Preprocessing Directives:
 #   -DSTATS enables statistics
 #   -DSCALARS enables passive scalars
 #   -DBIG_ENDIAN_IO use only if compiler performs big endian file i/O
@@ -47,6 +46,7 @@ LDFLAGS=-L$(NC_LOC)/lib -lnetcdf
 #                   regardless of internal representation
 #   -Dradoffline and -Dnooverlap (see bugsrad documentation)
 # You will need to `make clean' if you change these
+# Use -I<include path> to set a module or header file directory
 
 FCFLAGS=$(OPTIMIZE) $(DEBUG) -DSTATS -Dnooverlap -Dradoffline -I$(NC_LOC)/include 
 #FCFLAGS=$(OPTIMIZE) $(DEBUG) -DSTATS -DSCALARS -Dnooverlap -Dradoffline -I$(NC_LOC)/include 
