@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_hoc.F90,v 1.3 2005-12-05 23:11:06 dschanen Exp $
+! $Id: bugsrad_hoc.F90,v 1.4 2006-03-22 02:13:26 dschanen Exp $
 
 ! SUBROUTINE bugsrad_hoc
 ! Does the necessary operations to interface the HOC model with
@@ -17,6 +17,7 @@ subroutine bugsrad_hoc( alt, nz, thlm, rcm, rtm, rrm, cf, pinpa, rhom, Tsfc,   &
                         radht, radht_SW, radht_LW, Frad, Frad_SW, Frad_LW,     &
                         thlm_forcing )
   use constants
+  use kinds
 
   implicit none
 
@@ -38,7 +39,7 @@ subroutine bugsrad_hoc( alt, nz, thlm, rcm, rtm, rrm, cf, pinpa, rhom, Tsfc,   &
 
 ! Parameters from U.S. Standard Atmosphere, 1976;  Starting at 1 km altitude
 ! Pressure in millibars
-  double precision, parameter, dimension(std_atmos_dim) ::                     &
+  real(kind=dbl_kind), parameter, dimension(std_atmos_dim) ::                     &
   std_pinmb = (/8.986e2, 7.950e2, 7.012e2, 6.166e2, 5.405e2,                   &
                 4.722e2, 4.111e2, 3.565e2, 3.080e2, 2.650e2,                   &
                 2.270e2, 1.940e2, 1.658e2, 1.417e2, 1.211e2,                   &
@@ -46,7 +47,7 @@ subroutine bugsrad_hoc( alt, nz, thlm, rcm, rtm, rrm, cf, pinpa, rhom, Tsfc,   &
                 4.729e1, 4.047e1, 3.467e1, 2.972e1, 2.546e1/)
 
 ! Temperature in degrees Kelvin
-  double precision, parameter, dimension(std_atmos_dim) ::                     &
+  real(kind=dbl_kind), parameter, dimension(std_atmos_dim) ::                     &
   std_tempk = (/281.6, 275.1, 268.7, 262.2, 255.7,                             &
                 249.2, 242.7, 236.2, 229.7, 223.2,                             &
                 216.8, 216.6, 216.6, 216.6, 216.6,                             &
@@ -54,7 +55,7 @@ subroutine bugsrad_hoc( alt, nz, thlm, rcm, rtm, rrm, cf, pinpa, rhom, Tsfc,   &
                 217.6, 218.6, 219.6, 220.6, 221.6/)
 
 ! Specific Humidity ( Water Vapor / Density )
-  double precision, parameter, dimension(std_atmos_dim) ::                     &
+  real(kind=dbl_kind), parameter, dimension(std_atmos_dim) ::                     &
   std_sp_hmdty = (/0.378e-02, 0.288e-02, 0.198e-02, 0.134e-02, 0.869e-03,      &
                    0.576e-03, 0.356e-03, 0.228e-03, 0.985e-04, 0.435e-04,      &
                    0.225e-04, 0.119e-04, 0.675e-05, 0.369e-05, 0.370e-05,      &
@@ -62,7 +63,7 @@ subroutine bugsrad_hoc( alt, nz, thlm, rcm, rtm, rrm, cf, pinpa, rhom, Tsfc,   &
                    0.634e-05, 0.806e-05, 0.104e-04, 0.130e-04, 0.165e-04/)
 
 ! Ozone ( O_3 / Density )
-  double precision, parameter, dimension(std_atmos_dim) ::                     &
+  real(kind=dbl_kind), parameter, dimension(std_atmos_dim) ::                     &
   std_o3l   = (/0.486e-07, 0.536e-07, 0.550e-07, 0.561e-07, 0.611e-07,         &
                 0.682e-07, 0.814e-07, 0.989e-07, 0.152e-06, 0.218e-06,         &
                 0.356e-06, 0.513e-06, 0.638e-06, 0.834e-06, 0.108e-05,         &
@@ -96,41 +97,41 @@ subroutine bugsrad_hoc( alt, nz, thlm, rcm, rtm, rrm, cf, pinpa, rhom, Tsfc,   &
 
 ! Internal
 ! Altered 3 Oct 2005 to be buffer levels higher
-  double precision, dimension(nlen,(nz-1)+buffer) :: tempk! Temperature in K
-  double precision, dimension(nlen,(nz-1)+buffer) :: rcil ! Ice mixing ratio (kg/kg)
-  double precision, dimension(nlen,(nz-1)+buffer) :: o3l  ! Ozone mixing ratio (kg/kg)
+  real(kind=dbl_kind), dimension(nlen,(nz-1)+buffer) :: tempk! Temperature in K
+  real(kind=dbl_kind), dimension(nlen,(nz-1)+buffer) :: rcil ! Ice mixing ratio (kg/kg)
+  real(kind=dbl_kind), dimension(nlen,(nz-1)+buffer) :: o3l  ! Ozone mixing ratio (kg/kg)
 
-  double precision, dimension(nlen,(nz-1)+buffer+1) :: Frad_uLW ! LW upwelling flux (in W/m^2)
-  double precision, dimension(nlen,(nz-1)+buffer+1) :: Frad_dLW ! LW downwelling flux (in W/m^2)
-  double precision, dimension(nlen,(nz-1)+buffer+1) :: Frad_uSW ! SW upwelling flux (in W/m^2)
-  double precision, dimension(nlen,(nz-1)+buffer+1) :: Frad_dSW ! SW downwelling flux (in W/m^2)
+  real(kind=dbl_kind), dimension(nlen,(nz-1)+buffer+1) :: Frad_uLW ! LW upwelling flux (in W/m^2)
+  real(kind=dbl_kind), dimension(nlen,(nz-1)+buffer+1) :: Frad_dLW ! LW downwelling flux (in W/m^2)
+  real(kind=dbl_kind), dimension(nlen,(nz-1)+buffer+1) :: Frad_uSW ! SW upwelling flux (in W/m^2)
+  real(kind=dbl_kind), dimension(nlen,(nz-1)+buffer+1) :: Frad_dSW ! SW downwelling flux (in W/m^2)
 
-  double precision, dimension(nlen,(nz-1)+buffer)   :: sp_humidity ! Specific humidity (kg/kg)
-  double precision, dimension(nlen,(nz-1)+buffer)   :: pinmb       ! Pressure in millibars
-  double precision, dimension(nlen,(nz-1)+buffer+1) :: playerinmb  ! Pressure in millibars for layers (calculated as an average of pinmb)
-  double precision, dimension(nlen,(nz-1)+buffer)   :: dpl         ! Difference in pressure levels (mb)
+  real(kind=dbl_kind), dimension(nlen,(nz-1)+buffer)   :: sp_humidity ! Specific humidity (kg/kg)
+  real(kind=dbl_kind), dimension(nlen,(nz-1)+buffer)   :: pinmb       ! Pressure in millibars
+  real(kind=dbl_kind), dimension(nlen,(nz-1)+buffer+1) :: playerinmb  ! Pressure in millibars for layers (calculated as an average of pinmb)
+  real(kind=dbl_kind), dimension(nlen,(nz-1)+buffer)   :: dpl         ! Difference in pressure levels (mb)
 
-  double precision, dimension(nlen,(nz-1)+buffer) :: rrm2, rcm2, cf2 ! Two-dimensional copies of the input parameters
+  real(kind=dbl_kind), dimension(nlen,(nz-1)+buffer) :: rrm2, rcm2, cf2 ! Two-dimensional copies of the input parameters
 
-  double precision, dimension(nlen,(nz-1)+buffer+1) :: radht_SW2    ! SW Radiative heating rate
-  double precision, dimension(nlen,(nz-1)+buffer+1) :: radht_LW2    ! LW Radiative heating rate
+  real(kind=dbl_kind), dimension(nlen,(nz-1)+buffer+1) :: radht_SW2    ! SW Radiative heating rate
+  real(kind=dbl_kind), dimension(nlen,(nz-1)+buffer+1) :: radht_LW2    ! LW Radiative heating rate
 
-  double precision alvdr(nlen) ! Visible direct surface albedo  
-  double precision alvdf(nlen) ! Visible diffuse surface albedo  
-  double precision alndr(nlen) ! Near-IR direct surface albedo  
-  double precision alndf(nlen) ! Near-IR diffuse surface albedo  
+  real(kind=dbl_kind) alvdr(nlen) ! Visible direct surface albedo  
+  real(kind=dbl_kind) alvdf(nlen) ! Visible diffuse surface albedo  
+  real(kind=dbl_kind) alndr(nlen) ! Near-IR direct surface albedo  
+  real(kind=dbl_kind) alndf(nlen) ! Near-IR diffuse surface albedo  
 
-  double precision slr(nlen)  ! Fraction of daylight  
-  double precision ts(nlen)   ! Surface temperature in K
+  real(kind=dbl_kind) slr(nlen)  ! Fraction of daylight  
+  real(kind=dbl_kind) ts(nlen)   ! Surface temperature in K
 
   integer i, j, z, z1, z2  ! loop indices
-  double precision z1_fact, z2_fact
+  real(kind=dbl_kind) z1_fact, z2_fact
 
 ! Convert to millibars
-  pinmb(1,1:(nz-1))    = dble( pinpa(2:nz) / 100.0 ) ! t grid in HOC
+  pinmb(1,1:(nz-1))    = real( pinpa(2:nz) / 100.0 ) ! t grid in HOC
 
-  playerinmb(1,2:nz-1) = dble( (pinmb(1,1:(nz-2)) + pinmb(1,2:nz-1))/ 2 ) ! m grid in HOC
-  playerinmb(1,1)      = ( dble( pinpa(1) / 100.0 ) + pinmb(1,2) ) / 2
+  playerinmb(1,2:nz-1) = real( (pinmb(1,1:(nz-2)) + pinmb(1,2:nz-1))/ 2 ) ! m grid in HOC
+  playerinmb(1,1)      = ( real( pinpa(1) / 100.0 ) + pinmb(1,2) ) / 2
   playerinmb(1,nz)     = 2 * playerinmb(1,nz-1) - playerinmb(1,nz-2)
 
 
@@ -141,7 +142,7 @@ subroutine bugsrad_hoc( alt, nz, thlm, rcm, rtm, rrm, cf, pinpa, rhom, Tsfc,   &
                     + Lv*rcm(2:nz) / Cp
 
 ! Derive Specific humidity from rc & rt.
-  sp_humidity(1,1:(nz-1)) = dble( rtm(2:nz) - rcm(2:nz) ) / dble( 1+rtm(2:nz) )
+  sp_humidity(1,1:(nz-1)) = real( rtm(2:nz) - rcm(2:nz) ) / real( 1+rtm(2:nz) )
 
 ! Setup misc. variables
   alvdr = 0.1d0
@@ -155,12 +156,12 @@ subroutine bugsrad_hoc( alt, nz, thlm, rcm, rtm, rrm, cf, pinpa, rhom, Tsfc,   &
 
 ! Ozone = 5.4e-5 g/m^3 from U.S. Standard Atmosphere, 1976. 
 !   Convert from g to kg.
-  o3l(1,1:(nz-1)) = dble( ( 5.4e-5 / rhom(1:(nz-1)) ) * 0.001 )
+  o3l(1,1:(nz-1)) = real( ( 5.4e-5 / rhom(1:(nz-1)) ) * 0.001 )
 
 ! Convert and transpose as needed
-  rrm2(1,buffer+1:(nz-1)+buffer)  = flip( dble( rrm(2:nz) ), nz-1 )
-  rcm2(1,buffer+1:(nz-1)+buffer)  = flip( dble( rcm(2:nz) ), nz-1 )
-  cf2(1,buffer+1:(nz-1)+buffer)   = flip( dble( cf(2:nz) ), nz-1 ) 
+  rrm2(1,buffer+1:(nz-1)+buffer)  = flip( real( rrm(2:nz) ), nz-1 )
+  rcm2(1,buffer+1:(nz-1)+buffer)  = flip( real( rcm(2:nz) ), nz-1 )
+  cf2(1,buffer+1:(nz-1)+buffer)   = flip( real( cf(2:nz) ), nz-1 ) 
 
   tempk(1,buffer+1:(nz-1)+buffer) = flip( tempk(1,1:(nz-1)), nz-1 )
 
@@ -202,8 +203,8 @@ subroutine bugsrad_hoc( alt, nz, thlm, rcm, rtm, rrm, cf, pinpa, rhom, Tsfc,   &
   z1 = buffer + 1
   z2 = std_atmos_buffer
   do z = buffer, std_atmos_buffer+1, -1
-    z1_fact = dble(z2 - z) / dble(z2 - z1) 
-    z2_fact = dble(z - z1) / dble(z2 - z1) 
+    z1_fact = real(z2 - z) / real(z2 - z1) 
+    z2_fact = real(z - z1) / real(z2 - z1) 
 
     tempk(1,z) = z1_fact * tempk(1,z1) + z2_fact * tempk(1,z2)
 
@@ -236,9 +237,9 @@ subroutine bugsrad_hoc( alt, nz, thlm, rcm, rtm, rrm, cf, pinpa, rhom, Tsfc,   &
 ! pause
 
   call bugs_rad( nlen, slen, (nz-1)+buffer, playerinmb, pinmb, dpl, tempk,     &
-                 sp_humidity, rcm2, rcil, rrm2, o3l, ts, dble( amu0 ),         &
+                 sp_humidity, rcm2, rcil, rrm2, o3l, ts, real( amu0 ),         &
                  slr, alvdf, alndf, alvdr, alndr,                              &
-                 dble(sol_const), dble(grav), dble(Cp),                        &
+                 real(sol_const), real(grav), real(Cp),                        &
                  radht_SW2, radht_LW2,                                         &
                  Frad_dSW, Frad_uSW, Frad_dLW, Frad_uLW, cf2 )
 
@@ -277,13 +278,13 @@ subroutine bugsrad_hoc( alt, nz, thlm, rcm, rtm, rrm, cf, pinpa, rhom, Tsfc,   &
 !   Input
     integer, intent(in) :: xdim
 
-    double precision, dimension(xdim), intent(in) :: x
+    real(kind=dbl_kind), dimension(xdim), intent(in) :: x
 
 !   Output
-    double precision, dimension(xdim) :: flip
+    real(kind=dbl_kind), dimension(xdim) :: flip
 
 !   Internal
-    double precision, dimension(xdim) :: tmp
+    real(kind=dbl_kind), dimension(xdim) :: tmp
     integer indx
 
     do indx = 1, xdim, 1
