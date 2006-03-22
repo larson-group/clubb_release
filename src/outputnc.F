@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: outputnc.F,v 1.4 2006-03-14 17:45:02 dschanen Exp $
+! $Id: outputnc.F,v 1.5 2006-03-22 16:56:59 dschanen Exp $
 !      MODULE outputnc
 
 !      functions and subroutines for writing NetCDF files
@@ -109,7 +109,7 @@
 
 !      Internal
        integer, dimension(:), allocatable :: stat
-       double precision, dimension(1) :: time
+       real(kind=8), dimension(1) :: time
 
        integer i
 
