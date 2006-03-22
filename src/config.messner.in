@@ -1,4 +1,4 @@
-# $Id: config.messner.in,v 1.5 2006-03-22 01:38:57 dschanen Exp $
+# $Id: config.messner.in,v 1.6 2006-03-22 04:00:18 dschanen Exp $
 # Configuration file for Messner node
 # == Compiler invocation ==
 #FC=g95 #	G95
@@ -28,8 +28,8 @@ OPTIMIZE=-O2 -tp p7 #					PGF90, P4
 
 # == NetCDF Flags ==
 #NC_LOC=/usr/local/netcdf-g95
-#NC_LOC=/usr/local/netcdf-pgi
-NC_LOC=/usr/local/netcdf-intel
+#NC_LOC=/usr/local/netcdf-intel
+NC_LOC=/usr/local/netcdf-pgi
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
