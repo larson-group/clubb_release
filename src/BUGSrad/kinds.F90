@@ -1,4 +1,4 @@
-! CVS:  $Id: kinds.F90,v 1.1 2005-10-27 20:06:50 dschanen Exp $
+! CVS:  $Id: kinds.F90,v 1.2 2006-03-22 04:17:08 dschanen Exp $
 ! CVS:  $Name: not supported by cvs2svn $
 
 !|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
@@ -10,20 +10,29 @@ module kinds
 !     This module defines variable precision for all common data
 !     types.
 !
+!     Modifications:
+!     Modified by David Schanen for HOC to allow for compile time 
+!     promotion (e.g. to double and quad precision)
 !-----------------------------------------------------------------------
 
 implicit none
 
 !-----------------------------------------------------------------------
 
-integer, parameter :: char_len  = 80,                       &
-                         int_kind  = kind(1),               &
-                         log_kind  = kind(.true.),          &
-                         real_kind = selected_real_kind(6), &
-                         dbl_kind  = selected_real_kind(13)    !13 for dble
+! Additions
+integer, private :: ct_int
+logical, private :: ct_log
+
+real, private :: ct_real
+
+double precision, private :: ct_dble
+
+integer, parameter :: char_len  = 80,                    &
+                      int_kind  = kind(ct_int),          &
+                      log_kind  = kind(ct_log),          &
+                      real_kind = kind(ct_real),         &
+                      dbl_kind  = kind(ct_dble)
 
 end module kinds
 
 !|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-
-
