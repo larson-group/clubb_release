@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.28 2005-12-15 23:56:15 griffinb Exp $
+! $Id: rain.F,v 1.29 2006-03-22 16:54:43 dschanen Exp $
 !----------------------------------------------------------------------
 
       MODULE rain_equations
@@ -885,7 +885,7 @@
         DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308
 
         ! Make function D_fnc results a Double Precision number.
-        DOUBLE PRECISION:: D_fnc
+        !DOUBLE PRECISION:: D_fnc
 
         ! Function call
 !        REAL:: G_t_p
