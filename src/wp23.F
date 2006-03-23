@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.23 2006-03-20 02:05:18 griffinb Exp $
+! $Id: wp23.F,v 1.24 2006-03-23 17:10:17 griffinb Exp $
 
 ! SUBROUTINE timestep_wp23( )
 !  Advance wp2 and wp3 one timestep
@@ -44,7 +44,7 @@
 
 !       Internal
 
-        real, allocatable :: wp2t(:), tauw3t(:), Lm(:)
+        real, allocatable :: tauw3t(:), Lm(:)
       
         integer k
         real aa, Skw
@@ -59,7 +59,6 @@
 !       Allocate memory
 
         allocate( tauw3t(1:gr%nnzp) )
-        allocate( wp2t(1:gr%nnzp) )
         allocate( Lm(1:gr%nnzp) )
 
 ! Allocate variables for C11 function, Vince Larson 13 Mar 2005
@@ -75,80 +74,6 @@
         Lm = zt2zm( Lscale )
         Lm(1) = Lm(2)
         Lm(gr%nnzp) = Lm(gr%nnzp-1)
-
-!       RHSs
-
-        wp2t = + ( 1.0 - C5 ) * 2.0 * grav * alpha * wpthvp
-     .         + C5 * (2.0/3.0) * grav * alpha * wpthvp
-     .         - C5 * (2.0/3.0) * upwp * ddzt( um )
-     .         - C5 * (2.0/3.0) * vpwp * ddzt( vm )
-
-#ifdef STATS
-       if (lstats_samp) then
-
-         if ( iwp2_ma > 0 ) then
-           zm%x(:,iwp2_ma) = zm%x(:,iwp2_ma) 
-     .     - wmm * ddzt( zm2zt( wp2 ) )
-           zm%n(:,iwp2_ma) = zm%n(:,iwp2_ma) + 1
-         endif
-
-         if ( iwp2_ac > 0 ) then
-           zm%x(:,iwp2_ac) = zm%x(:,iwp2_ac) 
-     .     - 2.0 * wp2 * ddzt( wmt )
-           zm%n(:,iwp2_ac) = zm%n(:,iwp2_ac) + 1
-         endif
-
-         if ( iwp2_bp > 0 ) then
-           zm%x(:,iwp2_bp) = zm%x(:,iwp2_bp) 
-     .     + 2.0* grav * alpha * wpthvp
-           zm%n(:,iwp2_bp) = zm%n(:,iwp2_bp) + 1
-         endif
-
-         if ( iwp2_pr2 > 0 ) then
-           zm%x(:,iwp2_pr2) = zm%x(:,iwp2_pr2) 
-     .     - C5 * ( - 2.0 * wp2 * ddzt( wmt ) 
-     .              + 2.0 * grav * alpha * wpthvp
-     .            )
-           zm%n(:,iwp2_pr2) = zm%n(:,iwp2_pr2) + 1
-         endif
-
-         if ( iwp2_pr3 > 0 ) then
-           zm%x(:,iwp2_pr3) = zm%x(:,iwp2_pr3) 
-     .     + C5 * 2./3. * grav * alpha * wpthvp
-     .     - C5 * 2./3. * upwp * ddzt( um )
-     .     - C5 * 2./3. * vpwp * ddzt( vm )
-           zm%n(:,iwp2_pr3) = zm%n(:,iwp2_pr3) + 1
-         endif
-
-       endif
-#endif STATS
-
-! Vince Larson added code to make C11 function of Skw. 13 Mar 2005
-! If this code is used, C11 is no longer relevant, i.e. constants
-!    are hardwired.
-
-! Calculate skewness array
-        do k=1,gr%nnzp
-
-          km1 = max(k-1,1)
-          kp1 = min(k+1,gr%nnzp)
-
-          Skw_arr_t(k) = wp3(k) /
-     .                      ( 0.5*max(wtol**2,wp2(km1)+wp2(k)) )**1.5
-          Skw_arr_m(k) = 0.5*(wp3(kp1)+wp3(k)) /
-     .                      ( MAX(wtol**2.0, wp2(k))**1.5 )
-
-        enddo
-
-        C11_Skw_fnc = C11b + (C11-C11b)
-     .                      *EXP( -0.5 * (Skw_arr_t/C11c)**2.0 )
-
-        C1_Skw_fnc = C1b + (C1-C1b)
-     .                    *EXP( -0.5 * (Skw_arr_m/C1c)**2.0 )
-
-!        C11_Skw_fnc = C11
-!        C1_Skw_fnc = C1
-
 
 !       Define tauw
 
@@ -174,15 +99,43 @@
 
         tauw3t = taut 
 
+! Vince Larson added code to make C11 function of Skw. 13 Mar 2005
+! If this code is used, C11 is no longer relevant, i.e. constants
+!    are hardwired.
+
+! Calculate skewness arrays
+        DO k = 1, gr%nnzp, 1
+
+          km1 = MAX(k-1,1)
+          kp1 = MIN(k+1,gr%nnzp)
+
+          Skw_arr_t(k) = wp3(k) /
+     .    ( (1.0/2.0) * MAX( wp2(km1)+wp2(k), wtol**2.0 ) )**(3.0/2.0)
+          Skw_arr_m(k) = (1.0/2.0) * ( wp3(kp1)+wp3(k) ) /
+     .                   MAX( wp2(k), wtol**2.0 )**(3.0/2.0)
+
+        ENDDO
+
+        C11_Skw_fnc = C11b + (C11-C11b)
+     .                      *EXP( -(1.0/2.0) * (Skw_arr_t/C11c)**2.0 )
+
+        C1_Skw_fnc = C1b + (C1-C1b)
+     .                    *EXP( -(1.0/2.0) * (Skw_arr_m/C1c)**2.0 )
+
+!        C11_Skw_fnc = C11
+!        C1_Skw_fnc = C1
+
+
 !       Solve semi-implicitly
 !       Note: Kw is defined to be 1/2 of Kht
         call wp23_solve( dt, Scm, Lscale, Lm, taum, tauw3t, 0.5*Kht,
      .                   wmt, wmm, wpthvp, wp2thvp,
-     .                   wp2t, C1_Skw_fnc, C11_Skw_fnc, 
+     .                   um, upwp, vm, vpwp,
+     .                   C1_Skw_fnc, C11_Skw_fnc, 
      .                   runtype, wp2, wp3, isValid )
         
         if ( .not. isValid ) then
-          deallocate( tauw3t, wp2t, Lm)
+          deallocate( tauw3t, Lm)
           deallocate( Skw_arr_t, C11_Skw_fnc )
           deallocate( Skw_arr_m, C1_Skw_fnc )
           return
@@ -190,8 +143,8 @@
 
 !       Free memory
 
-!        deallocate( tauw3t, wp2t )
-        deallocate( tauw3t, wp2t, Lm )  ! Brian
+!        deallocate( tauw3t )
+        deallocate( tauw3t, Lm )  ! Brian
 
 ! De-allocate variables for C11 function, Vince Larson 13 Mar 2005
 ! Brian added C1 function.
@@ -208,7 +161,8 @@
 
         subroutine wp23_solve( dt, Scm, Lscale, Lm, tau1m, tauw3t, Kw,
      .                         wmt, wmm, wpthvp, wp2thvp,
-     .                         wp2t, C1_Skw_fnc, C11_Skw_fnc,
+     .                         um, upwp, vm, vpwp,
+     .                         C1_Skw_fnc, C11_Skw_fnc,
      .                         runtype, wp2, wp3, isValid)
 
         use grid_class
@@ -232,7 +186,10 @@
         real, intent(in) :: wmm(1:gr%nnzp)
         real, intent(in) :: wpthvp(1:gr%nnzp)
         real, intent(in) :: wp2thvp(1:gr%nnzp)
-        real, intent(in) :: wp2t(1:gr%nnzp)
+        real, intent(in) :: um(1:gr%nnzp)
+        real, intent(in) :: upwp(1:gr%nnzp)
+        real, intent(in) :: vm(1:gr%nnzp)
+        real, intent(in) :: vpwp(1:gr%nnzp)
         real, intent(in) :: C1_Skw_fnc(1:gr%nnzp)
         real, intent(in) :: C11_Skw_fnc(1:gr%nnzp)
 
@@ -327,13 +284,16 @@
 !          ctmp = - nu1 * gr%dzm(k) * gr%dzt(kp1)
 
 
+          ! Momentum subdiagonal [ x wp2(k-1,<t+1>) ]
           aa(k_wp2,3-2)
      .    = - wmm(k) * (1.0/2.0) * gr%dzm(k)
      .      + atmp
 
+          ! Thermodynamic subdiagonal [ x wp3(k,<t+1>) ]
           aa(k_wp2,3-1)
      .    = - gr%dzm(k)
 
+          ! Momentum main diagonal [ x wp2(k,<t+1>) ]
           aa(k_wp2,3)
      .    = + 1.0 / dt
      .      + ( 1.0 - C5 ) * 2.0 * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
@@ -341,17 +301,25 @@
      .      + C1_Skw_fnc(k) / tau1m(k)
      .      - atmp - ctmp
 
+          ! Thermodynamic superdiagonal [ x wp3(k+1,<t+1>) ]
           aa(k_wp2,3+1)
      .    = + gr%dzm(k)
 
+          ! Momentum superdiagonal [ x wp2(k+1,<t+1>) ]
           aa(k_wp2,3+2)
      .    = + wmm(k) * (1.0/2.0) * gr%dzm(k)
      .      + ctmp
 
 
+          ! Right-hand side
           dd(k_wp2)
      .    = + ( 1.0 / dt ) * wp2(k) 
-     .      + wp2t(k)
+     .      + ( 1.0 - C5 ) * 2.0 * grav * alpha * wpthvp(k)
+     .      + (2.0/3.0) * C5
+     .                  * (  grav * alpha * wpthvp(k)
+     .                     - upwp(k) * gr%dzm(k) * ( um(kp1) - um(k) )
+     .                     - vpwp(k) * gr%dzm(k) * ( vm(kp1) - vm(k) )
+     .                    )
           ! These lines are for the diffusional term with a Crank-Nicholson 
           ! time step.  They need to be commented out for completely implicit
           ! diffusion to be used.
@@ -372,11 +340,32 @@
      .      - ctmp * wp2(kp1)
            endif
 
+           if ( iwp2_bp > 0 ) then
+            zm%x(k,iwp2_bp) = zm%x(k,iwp2_bp) 
+     .      + 1.0 * 2.0 * grav * alpha * wpthvp(k)
+            zm%n(k,iwp2_bp) = zm%n(k,iwp2_bp) + 1
+           endif
+
+           if ( iwp2_pr2 > 0 ) then
+            zm%x(k,iwp2_pr2) = zm%x(k,iwp2_pr2) 
+     .      - C5 * 2.0 * grav * alpha * wpthvp(k)
+           endif
+
+           if ( iwp2_pr3 > 0 ) then
+            zm%x(k,iwp2_pr3) = zm%x(k,iwp2_pr3) 
+     .      + (2.0/3.0) * C5
+     .                  * (  grav * alpha * wpthvp(k)
+     .                     - upwp(k) * gr%dzm(k) * ( um(kp1) - um(k) )
+     .                     - vpwp(k) * gr%dzm(k) * ( vm(kp1) - vm(k) )
+     .                    )
+            zm%n(k,iwp2_pr3) = zm%n(k,iwp2_pr3) + 1
+           endif
+
 !          Implicit contributions for wp2
 
            if ( iwp2_dp1 > 0 ) then
 !             zmscr01(k) = - C1/tau1m(k)
-             zmscr01(k) = - C1_Skw_fnc(k)/tau1m(k)
+             zmscr01(k) = - C1_Skw_fnc(k) / tau1m(k)
            endif
 
            if ( iwp2_dp2 > 0 ) then
@@ -388,6 +377,21 @@
            if ( iwp2_ta > 0 ) then
              zmscr05(k) = + gr%dzm(k)
              zmscr06(k) = - gr%dzm(k)
+           endif
+
+           if ( iwp2_ma > 0 ) then
+             zmscr07(k) = + wmm(k) * (1.0/2.0) * gr%dzm(k)
+             zmscr08(k) = - wmm(k) * (1.0/2.0) * gr%dzm(k)
+           endif
+
+           if ( iwp2_ac > 0 ) then
+             zmscr09(k) = 
+     .       - 1.0 * 2.0 * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
+           endif
+
+           if ( iwp2_pr2 > 0 ) then
+             zmscr10(k) = 
+     .      + C5 * 2.0 * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
            endif
 
          endif
@@ -685,6 +689,25 @@
      .       + zmscr05(k) * wp3(k)
      .       + zmscr06(k) * wp3(kp1)
              zm%n(k,iwp2_ta) = zm%n(k,iwp2_ta) + 1
+            endif
+
+            if ( iwp2_ma > 0 ) then
+             zm%x(k,iwp2_ma) = zm%x(k,iwp2_ma)
+     .       + zmscr07(k) * wp2(km1)
+     .       + zmscr08(k) * wp2(kp1)
+             zm%n(k,iwp2_ma) = zm%n(k,iwp2_ma) + 1
+            endif
+
+            if ( iwp2_ac > 0 ) then
+             zm%x(k,iwp2_ac) = zm%x(k,iwp2_ac)
+     .       + zmscr09(k) * wp2(k)
+             zm%n(k,iwp2_ac) = zm%n(k,iwp2_ac) + 1
+            endif
+
+            if ( iwp2_pr2 > 0 ) then
+             zm%x(k,iwp2_pr2) = zm%x(k,iwp2_pr2)
+     .       + zmscr10(k) * wp2(k)
+             zm%n(k,iwp2_pr2) = zm%n(k,iwp2_pr2) + 1
             endif
 
           enddo
