@@ -1,4 +1,4 @@
-! $Id: bomex_model.in,v 1.4 2006-03-23 19:53:55 griffinb Exp $
+! $Id: bomex_model.in,v 1.5 2006-03-23 19:54:50 griffinb Exp $
 ! Parameter file for GCSS BOMEX tradewind Cu case
 
 &model_setting
@@ -14,8 +14,8 @@ time_final = 21600.0
 !time_final = 14400.0
 time_spinup = 0.0
 
-dtmain    = 60.0
-dtclosure = 60.0
+dtmain    = 30.0
+dtclosure = 30.0
 
 Tsfc = 300.375
 psfc = 1015.e2
