@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.18 2006-03-26 16:48:22 griffinb Exp $
+! $Id: diag_var.F,v 1.19 2006-03-26 20:00:02 griffinb Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -131,52 +131,50 @@ c      prepare tridiagonal system
            endif
          
            if ( irtp2_dp2 * ithlp2_dp2 * irtpthlp_dp2 > 0 ) then
-             zmscr02(k)
-     .       = + nu2 * gr%dzm(k) * gr%dzt(k)
-             zmscr03(k)
-     .       = - nu2 * gr%dzm(k)*( gr%dzt(kp1) + gr%dzt(k) )
-             zmscr04(k)
-     .       = + nu2 * gr%dzm(k) * gr%dzt(kp1)
+             zmscr02(k) = + nu2 * gr%dzm(k) * gr%dzt(k)
+             zmscr03(k) = 
+     .       - nu2 * gr%dzm(k) * ( gr%dzt(kp1) + gr%dzt(k) )
+             zmscr04(k) = + nu2 * gr%dzm(k) * gr%dzt(kp1)
            endif
 
            if ( irtp2_ta * ithlp2_ta * irtpthlp_ta > 0 ) then
-             zmscr05(k)
-     .       = + (1.0/3.0) * beta
-     .         * gr%dzm(k) * (1.0/2.0)
-     .         * ( a1(k) + a1(km1) )
-     .         * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*eps ) )
-             zmscr06(k)
-     .       = - (1.0/3.0) * beta
-     .         * gr%dzm(k) * (1.0/2.0)
-     .           * (  ( a1(kp1) + a1(k) )
-     .              * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
-     .             -  ( a1(k) + a1(km1) )
-     .              * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*eps ) )
-     .             )
-             zmscr07(k)
-     .       = - (1.0/3.0) * beta
-     .         * gr%dzm(k) * (1.0/2.0)
-     .         * ( a1(kp1) + a1(k) )
-     .         * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
+             zmscr05(k) = 
+     .       + (1.0/3.0) * beta
+     .         * (1.0/2.0) * gr%dzm(k)
+     .            * ( a1(k) + a1(km1) )
+     .            * ( wp3(k) / MAX( wp2(k) + wp2(km1), 2.0*eps ) )
+             zmscr06(k) = 
+     .       - (1.0/3.0) * beta
+     .         * (1.0/2.0) * gr%dzm(k)
+     .            * (   ( a1(kp1) + a1(k) )
+     .                * ( wp3(kp1) / MAX( wp2(kp1) + wp2(k), 2.0*eps ) )
+     .               -  ( a1(k) + a1(km1) )
+     .                * ( wp3(k) / MAX( wp2(k) + wp2(km1), 2.0*eps ) )
+     .              )
+             zmscr07(k) = 
+     .       - (1.0/3.0) * beta
+     .         * (1.0/2.0) * gr%dzm(k)
+     .            * ( a1(kp1) + a1(k) )
+     .            * ( wp3(kp1) / MAX( wp2(kp1) + wp2(k), 2.0*eps ) )
            endif
 
            if ( irtp2_ma * ithlp2_ma * irtpthlp_ma > 0 ) then
-             zmscr08(k) = + 0.5 * wmm(k) * gr%dzm(k)
-             zmscr09(k) = - 0.5 * wmm(k) * gr%dzm(k)
+             zmscr08(k) = + wmm(k) * (1.0/2.0) * gr%dzm(k)
+             zmscr09(k) = - wmm(k) * (1.0/2.0) * gr%dzm(k)
            endif
 
            if ( irtp2_ta > 0 ) then
              zm%x(k,irtp2_ta) 
      .       = zm%x(k,irtp2_ta)
      .       - ( 1.0 - (1.0/3.0) * beta )
-     .         * gr%dzm(k) * (1.0/2.0)
-     .           * (   ( a2(kp1) + a2(k) ) * wp3(kp1)
-     .               * ( wprtp(kp1) + wprtp(k) )**2.0
-     .               / MAX( wp2(kp1) + wp2(k), 2.0*eps )**2.0
-     .             -   ( a2(k) + a2(km1) ) * wp3(k)
-     .               * ( wprtp(k) + wprtp(km1) )**2.0
-     .               / MAX( wp2(k) + wp2(km1), 2.0*eps )**2.0
-     .             )
+     .         * (1.0/4.0) * gr%dzm(k)
+     .            * (   ( a1(kp1) + a1(k) )**2.0
+     .                  * wp3(kp1) * ( wprtp(kp1) + wprtp(k) )**2.0
+     .                  / ( MAX( wp2(kp1) + wp2(k), 2.0*eps ) )**2.0
+     .               -  ( a1(k) + a1(km1) )**2.0
+     .                  * wp3(k) * ( wprtp(k) + wprtp(km1) )**2.0
+     .                  / ( MAX( wp2(k) + wp2(km1), 2.0*eps ) )**2.0
+     .              )
            endif
 
          enddo
@@ -230,7 +228,7 @@ c      solve tridiagonal system
  
            if ( irtp2_tp > 0 ) then
              zm%x(k,irtp2_tp) = zm%x(k,irtp2_tp)
-     .        - 2.0 * wprtp(k) * gr%dzm(k) * (rtm(kp1)-rtm(k))
+     .        - 2.0 * wprtp(k) * gr%dzm(k) * ( rtm(kp1) - rtm(k) )
              zm%n(k,irtp2_tp) = zm%n(k,irtp2_tp) + 1
            endif
 
@@ -294,14 +292,14 @@ c      note: we can reuse the same aa & cc arrays
              zm%x(k,ithlp2_ta) 
      .       = zm%x(k,ithlp2_ta)
      .       - ( 1.0 - (1.0/3.0) * beta )
-     .         * gr%dzm(k) * (1.0/2.0)
-     .           * (   ( a2(kp1) + a2(k) ) * wp3(kp1)
-     .               * ( wpthlp(kp1) + wpthlp(k) )**2.0
-     .               / MAX( wp2(kp1) + wp2(k), 2.0*eps )**2.0
-     .             -   ( a2(k) + a2(km1) ) * wp3(k)
-     .               * ( wpthlp(k) + wpthlp(km1) )**2.0
-     .               / MAX( wp2(k) + wp2(km1), 2.0*eps )**2.0
-     .             )
+     .         * (1.0/4.0) * gr%dzm(k)
+     .            * (   ( a1(kp1) + a1(k) )**2.0
+     .                  * wp3(kp1) * ( wpthlp(kp1) + wpthlp(k) )**2.0
+     .                  / ( MAX( wp2(kp1) + wp2(k), 2.0*eps ) )**2.0
+     .               -  ( a1(k) + a1(km1) )**2.0
+     .                  * wp3(k) * ( wpthlp(k) + wpthlp(km1) )**2.0
+     .                  / ( MAX( wp2(k) + wp2(km1), 2.0*eps ) )**2.0
+     .              )
            endif
 
          enddo ! k
@@ -355,7 +353,7 @@ c      solve tridiagonal system
  
            if ( ithlp2_tp > 0 ) then
              zm%x(k,ithlp2_tp) = zm%x(k,ithlp2_tp)
-     .        - 2.0 * wpthlp(k) * gr%dzm(k) * (thlm(kp1)-thlm(k))
+     .        - 2.0 * wpthlp(k) * gr%dzm(k) * ( thlm(kp1) - thlm(k) )
              zm%n(k,ithlp2_tp) = zm%n(k,ithlp2_tp) + 1
 
            endif
@@ -452,12 +450,12 @@ c Solve for rtpthlp
 
 c      prepare tridiagonal system
 
+       bb = calc_bb( a1, bb, wp2, wp3, tau, 
+     .               C2rtthl, dt, nu2, beta, eps, liter )
+
        dd = calc_dd_covar( a2, dd, wp2, wp3, wprtp, wpthlp, 
      .                     rtm, thlm, rtpthlp, 
      .                     dt, beta, eps, liter ) 
-
-       bb = calc_bb( a1, bb, wp2, wp3, tau, 
-     .               C2rtthl, dt, nu2, beta, eps, liter )
 
 #ifdef STATS
 
