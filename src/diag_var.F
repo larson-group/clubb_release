@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.19 2006-03-26 20:00:02 griffinb Exp $
+! $Id: diag_var.F,v 1.20 2006-03-27 00:42:56 griffinb Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -76,7 +76,7 @@ c Misc. Variables -D.S.
 
 c Local arrays allocated dynamically on the stack
 
-       real a1(1:gr%nnzp), a2(1:gr%nnzp)
+       real a1(1:gr%nnzp)
        real aa(1:gr%nnzp), bb(1:gr%nnzp), cc(1:gr%nnzp), dd(1:gr%nnzp)
 
 c Loop indices
@@ -102,10 +102,9 @@ c Loop indices
        endif
 #endif
 
-c Define a1 and a2
+c Define a1
 
        a1 = 1.0 / (1.0-Sc)
-       a2 = 1.0 / ( (1.0-Sc)*(1.0-Sc) )
 
 c Solve for rtp2
 
@@ -453,7 +452,7 @@ c      prepare tridiagonal system
        bb = calc_bb( a1, bb, wp2, wp3, tau, 
      .               C2rtthl, dt, nu2, beta, eps, liter )
 
-       dd = calc_dd_covar( a2, dd, wp2, wp3, wprtp, wpthlp, 
+       dd = calc_dd_covar( a1, dd, wp2, wp3, wprtp, wpthlp, 
      .                     rtm, thlm, rtpthlp, 
      .                     dt, beta, eps, liter ) 
 
@@ -474,30 +473,18 @@ c      prepare tridiagonal system
              zm%x(k,irtpthlp_ta) 
      .       = zm%x(k,irtpthlp_ta)
      .       - ( 1.0 - (1.0/3.0) * beta )
-     .         * gr%dzm(k) * (1.0/2.0)
-     .           * (   ( a2(kp1) + a2(k) )
-     .               * ( wprtp(kp1)  + wprtp(k)  )
-     .               * ( wpthlp(kp1) + wpthlp(k) )
-     .               * wp3(kp1) 
-     .               / MAX( wp2(kp1) + wp2(k), 2.0*eps )**2.0
-     .             -   ( a2(k) + a2(km1) )
-     .               * ( wprtp(k)  + wprtp(km1)  )
-     .               * ( wpthlp(k) + wpthlp(km1) )
-     .               * wp3(k) 
-     .               / MAX( wp2(k) + wp2(km1), 2.0*eps )**2.0
-     .             )
-!     .           - 0.5 * a2(k)
-!     .                 * (2./3.) * ( 2 + (1-beta) )
-!     .                 * gr%dzm(k)
-!     .                 * (  wp3(kp1)
-!     .                      * (wprtp(k)+wprtp(kp1))
-!     .                      * (wpthlp(k)+wpthlp(kp1))
-!     .                      / max(wp2(k)+wp2(kp1),2.0*eps)**2
-!     .                    - wp3(k)
-!     .                      * (wprtp(km1)+wprtp(k))
-!     .                      * (wpthlp(km1)+wpthlp(k))
-!     .                      / max(wp2(km1)+wp2(k),2.0*eps)**2
-!     .                   )
+     .         * (1.0/4.0) * gr%dzm(k)
+     .            * (  ( a1(kp1) + a1(k) )**2.0
+     .                 * ( wprtp(kp1) + wprtp(k) ) 
+     .                 * ( wpthlp(kp1) + wpthlp(k) )
+     .                 * wp3(kp1) 
+     .                 / ( MAX( wp2(kp1) + wp2(k), 2.0*eps ) )**2.0
+     .               - ( a1(k) + a1(km1) )**2.0
+     .                 * ( wprtp(k) + wprtp(km1) ) 
+     .                 * ( wpthlp(k) + wpthlp(km1) )
+     .                 * wp3(k) 
+     .                 / ( MAX( wp2(k) + wp2(km1), 2.0*eps ) )**2.0
+     .              )
              endif
 
           enddo ! k
@@ -551,13 +538,13 @@ c      solve tridiagonal system
  
            if ( irtpthlp_tp1 > 0 ) then
              zm%x(k,irtpthlp_tp1) = zm%x(k,irtpthlp_tp1)
-     .       - wprtp(k)  * gr%dzm(k) * (thlm(kp1)-thlm(k))
+     .       - wprtp(k) * gr%dzm(k) * ( thlm(kp1) - thlm(k) )
              zm%n(k,irtpthlp_tp1) = zm%n(k,irtpthlp_tp1) + 1
            endif
 
            if ( irtpthlp_tp2 > 0 ) then
              zm%x(k,irtpthlp_tp2) = zm%x(k,irtpthlp_tp2)
-     .       - wpthlp(k) * gr%dzm(k) * (rtm(kp1)-rtm(k))
+     .       - wpthlp(k) * gr%dzm(k) * ( rtm(kp1) - rtm(k) )
              zm%n(k,irtpthlp_tp2) = zm%n(k,irtpthlp_tp2) + 1
            endif
 
@@ -605,7 +592,7 @@ c     prepare tridiagonal system
            endif
          endif
 
-         dd = calc_dd_covar( a2, dd, wp2, wp3, wprtp, wpsclrp(i,:),
+         dd = calc_dd_covar( a1, dd, wp2, wp3, wprtp, wpsclrp(i,:),
      .                       rtm, sclrm(i,:), sclrprtp(i,:),
      .                       dt, beta, eps, liter )
 
@@ -654,7 +641,7 @@ c     prepare tridiagonal system
            endif
          endif
 
-         dd = calc_dd_covar( a2, dd, wp2, wp3, wpthlp, wpsclrp(i,:),
+         dd = calc_dd_covar( a1, dd, wp2, wp3, wpthlp, wpsclrp(i,:),
      .                       thlm, sclrm(i,:), sclrpthlp(i,:),
      .                       dt, beta, eps, liter )
 
@@ -838,7 +825,7 @@ c      clip small and negative values
 !  Calculate dd for the purpose of solving the tridiagonal system 
 !    of a covariance term ( e.g rtpthlp )
 !-----------------------------------------------------------------------
-        function calc_dd_covar( a2, dd, wp2, wp3, wpxap, wpxbp, 
+        function calc_dd_covar( a1, dd, wp2, wp3, wpxap, wpxbp, 
      .                          xam, xbm, xapxbp, 
      .                          dt, beta, eps, liter )
         use grid_class
@@ -846,7 +833,7 @@ c      clip small and negative values
         implicit none
 
 !       Input
-        real, intent(in), dimension(gr%nnzp) :: a2, dd, wp2, wp3
+        real, intent(in), dimension(gr%nnzp) :: a1, dd, wp2, wp3
         real, intent(in), dimension(gr%nnzp) :: wpxap, wpxbp
         real, intent(in), dimension(gr%nnzp) :: xam, xbm
         real, intent(in), dimension(gr%nnzp) :: xapxbp
@@ -867,21 +854,21 @@ c      clip small and negative values
           kp1 = min(k+1, gr%nnzp)
 
           calc_dd_covar(k) = 
-     .       - wpxbp(k) * gr%dzm(k) * (xam(kp1)-xam(k))
-     .       - wpxap(k) * gr%dzm(k) * (xbm(kp1)-xbm(k))
-     .       - ( 1.0 - (1.0/3.0) * beta )
-     .         * gr%dzm(k) * (1.0/2.0)
-     .           * (   ( a2(kp1) + a2(k) )
-     .               * ( wpxap(kp1) + wpxap(k) )
-     .               * ( wpxbp(kp1) + wpxbp(k) )
-     .               * wp3(kp1) 
-     .               / MAX( wp2(kp1) + wp2(k), 2.0*eps )**2.0
-     .             -   ( a2(k) + a2(km1) )
-     .               * ( wpxap(k) + wpxap(km1) )
-     .               * ( wpxbp(k) + wpxbp(km1) )
-     .               * wp3(k) 
-     .               / MAX( wp2(k) + wp2(km1), 2.0*eps )**2.0
-     .             )
+     .    - ( 1.0 - (1.0/3.0) * beta )
+     .      * (1.0/4.0) * gr%dzm(k)
+     .         * (  ( a1(kp1) + a1(k) )**2.0
+     .              * ( wpxap(kp1) + wpxap(k) ) 
+     .              * ( wpxbp(kp1) + wpxbp(k) )
+     .              * wp3(kp1) 
+     .              / ( MAX( wp2(kp1) + wp2(k), 2.0*eps ) )**2.0
+     .            - ( a1(k) + a1(km1) )**2.0
+     .              * ( wpxap(k) + wpxap(km1) ) 
+     .              * ( wpxbp(k) + wpxbp(km1) )
+     .              * wp3(k) 
+     .              / ( MAX( wp2(k) + wp2(km1), 2.0*eps ) )**2.0
+     .           )
+     .    - wpxbp(k) * gr%dzm(k) * ( xam(kp1) - xam(k) )
+     .    - wpxap(k) * gr%dzm(k) * ( xbm(kp1) - xbm(k) )
 
           if (liter) calc_dd_covar(k) = dd(k) + 1.0/dt*xapxbp(k)
 
