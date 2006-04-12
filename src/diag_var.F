@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.20 2006-03-27 00:42:56 griffinb Exp $
+! $Id: diag_var.F,v 1.21 2006-04-12 20:53:17 dschanen Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -111,10 +111,10 @@ c Solve for rtp2
 c      prepare tridiagonal system
 
        aa = calc_aa( a1, wp2, wp3, wmm, nu2, beta, eps )
-       bb = calc_bb( a1, bb, wp2, wp3, tau, 
+       bb = calc_bb( a1, wp2, wp3, tau, 
      .               C2rt, dt, nu2, beta, eps, liter )
        cc = calc_cc( a1, wp2, wp3, wmm, nu2, beta, eps )
-       dd = calc_dd_var( a1, dd, wp2, wp3, wprtp, rtm, 
+       dd = calc_dd_var( a1, wp2, wp3, wprtp, rtm, 
      .                   rtp2, dt, beta, eps, liter )
 
 #ifdef STATS
@@ -270,9 +270,9 @@ c Solve for thlp2
 c      prepare tridiagonal system
 c      note: we can reuse the same aa & cc arrays
 
-        bb = calc_bb( a1, bb, wp2, wp3, tau, 
+        bb = calc_bb( a1, wp2, wp3, tau, 
      .                C2thl, dt, nu2, beta, eps, liter )
-        dd = calc_dd_var( a1, dd, wp2, wp3, wpthlp, thlm, 
+        dd = calc_dd_var( a1, wp2, wp3, wpthlp, thlm, 
      .                    thlp2, dt, beta, eps, liter )
 
 #ifdef STATS
@@ -411,7 +411,7 @@ c      note: we can reuse the same aa, cc arrays
      .                   C2rt, dt, nu2, beta, eps, liter )
          endif
 
-         dd = calc_dd_var( a1, dd, wp2, wp3, wpsclrp(:,i), sclrm(:,i), 
+         dd = calc_dd_var( a1, wp2, wp3, wpsclrp(:,i), sclrm(:,i), 
      .                     sclrp2(:,i), dt, beta, eps, liter )
 
 c        solve tridiagonal system
@@ -724,14 +724,14 @@ c      clip small and negative values
 !  FUNCTION calc_bb
 !  Needs to be re-calculated when C2 is using an rt or thl value
 !-----------------------------------------------------------------------
-        function calc_bb( a1, bb, wp2, wp3, tau,
+        function calc_bb( a1, wp2, wp3, tau,
      .                    C2x, dt, nu2, beta, eps, liter )
         use grid_class
 
         implicit none
 
 !       Input
-        real, intent(in), dimension(gr%nnzp) :: a1, bb, wp2, wp3, tau
+        real, intent(in), dimension(gr%nnzp) :: a1, wp2, wp3, tau
 
         real, intent(in)    :: C2x, dt, beta, nu2, eps
 
@@ -759,7 +759,7 @@ c      clip small and negative values
      .     + C2x / tau(k)
      .     + nu2 * gr%dzm(k) * ( gr%dzt(kp1) + gr%dzt(k) )
 
-           if (liter) calc_bb(k) = bb(k) + 1.0/dt
+           if (liter) calc_bb(k) = calc_bb(k) + 1.0/dt
 
         enddo
 
@@ -768,9 +768,9 @@ c      clip small and negative values
         ! can be used at the lowest boundary and the values of those
         ! variables can be set to 0 at the top boundary.  Brian.  12/18/05.
         calc_bb(1) = 1.0
-        if (liter) calc_bb(1) = bb(1) + 1.0/dt
+        if (liter) calc_bb(1) = calc_bb(1) + 1.0/dt
         calc_bb(gr%nnzp) = 1.0
-        if (liter) calc_bb(1) = bb(1) + 1.0/dt
+        if (liter) calc_bb(1) = calc_bb(1) + 1.0/dt
 
         return
         end function calc_bb
@@ -825,7 +825,7 @@ c      clip small and negative values
 !  Calculate dd for the purpose of solving the tridiagonal system 
 !    of a covariance term ( e.g rtpthlp )
 !-----------------------------------------------------------------------
-        function calc_dd_covar( a1, dd, wp2, wp3, wpxap, wpxbp, 
+        function calc_dd_covar( a1, wp2, wp3, wpxap, wpxbp, 
      .                          xam, xbm, xapxbp, 
      .                          dt, beta, eps, liter )
         use grid_class
@@ -833,7 +833,7 @@ c      clip small and negative values
         implicit none
 
 !       Input
-        real, intent(in), dimension(gr%nnzp) :: a1, dd, wp2, wp3
+        real, intent(in), dimension(gr%nnzp) :: a1, wp2, wp3
         real, intent(in), dimension(gr%nnzp) :: wpxap, wpxbp
         real, intent(in), dimension(gr%nnzp) :: xam, xbm
         real, intent(in), dimension(gr%nnzp) :: xapxbp
@@ -870,7 +870,8 @@ c      clip small and negative values
      .    - wpxbp(k) * gr%dzm(k) * ( xam(kp1) - xam(k) )
      .    - wpxap(k) * gr%dzm(k) * ( xbm(kp1) - xbm(k) )
 
-          if (liter) calc_dd_covar(k) = dd(k) + 1.0/dt*xapxbp(k)
+          if (liter) calc_dd_covar(k) = calc_dd_covar(k) 
+     .                                + 1.0/dt*xapxbp(k)
 
         enddo
 
@@ -879,9 +880,10 @@ c      clip small and negative values
         ! can be used at the lowest boundary and the values of those
         ! variables can be set to 0 at the top boundary.  Brian.  12/18/05.
         calc_dd_covar(1) = xapxbp(1)
-        if (liter) calc_dd_covar(1) = dd(1) + 1.0/dt*xapxbp(1)
+        if (liter) calc_dd_covar(1) = calc_dd_covar(1) 
+     .                              + 1.0/dt*xapxbp(1)
         calc_dd_covar(gr%nnzp) = 0.0
-        if (liter) calc_dd_covar(gr%nnzp) = dd(gr%nnzp) 
+        if (liter) calc_dd_covar(gr%nnzp) = calc_dd_covar(gr%nnzp) 
      .                                     + 1.0/dt*xapxbp(gr%nnzp)
 
         return
@@ -892,14 +894,14 @@ c      clip small and negative values
 !  Calculate dd for the purpose of solving the tridiagonal system 
 !    of a variance term (e.g. rtp2)
 !-----------------------------------------------------------------------
-        function calc_dd_var( a1, dd, wp2, wp3, wpxp, xm,
+        function calc_dd_var( a1, wp2, wp3, wpxp, xm,
      .                        xp2, dt, beta, eps, liter )
         use grid_class
 
         implicit none
 
 !       Input
-        real, intent(in), dimension(gr%nnzp) :: a1, dd, wp2, wp3
+        real, intent(in), dimension(gr%nnzp) :: a1, wp2, wp3
         real, intent(in), dimension(gr%nnzp) :: wpxp, xm, xp2
 
         real, intent(in) :: dt, beta, eps
@@ -929,7 +931,7 @@ c      clip small and negative values
      .            )
      .     - 2.0 * wpxp(k) * gr%dzm(k) * ( xm(kp1) - xm(k) )
 
-           if (liter) calc_dd_var(k) = dd(k) + 1.0/dt*xp2(k)
+           if (liter) calc_dd_var(k) = calc_dd_var(k) + 1.0/dt*xp2(k)
 
         enddo
 
@@ -940,7 +942,7 @@ c      clip small and negative values
         calc_dd_var(1) = xp2(1)
         if (liter) calc_dd_var(1) = dd(1) + 1.0/dt*xp2(1)
         calc_dd_var(gr%nnzp) = 0.0
-        if (liter) calc_dd_var(gr%nnzp) = dd(gr%nnzp) 
+        if (liter) calc_dd_var(gr%nnzp) = calc_dd_var(gr%nnzp) 
      .                                   + 1.0/dt*xp2(gr%nnzp)
 
         return
