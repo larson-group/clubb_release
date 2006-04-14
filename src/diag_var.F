@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.21 2006-04-12 20:53:17 dschanen Exp $
+! $Id: diag_var.F,v 1.22 2006-04-14 20:08:07 dschanen Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -404,10 +404,10 @@ c      note: we can reuse the same aa, cc arrays
        do i=1, sclrm_dimension
 
          if ( i == SCLR_THETA ) then
-           bb = calc_bb( a1, bb, wp2, wp3, tau,
+           bb = calc_bb( a1, wp2, wp3, tau,
      .                   C2thl, dt, nu2, beta, eps, liter )
          elseif ( i == SCLR_RT ) then
-           bb = calc_bb( a1, bb, wp2, wp3, tau,
+           bb = calc_bb( a1, wp2, wp3, tau,
      .                   C2rt, dt, nu2, beta, eps, liter )
          endif
 
@@ -449,10 +449,10 @@ c Solve for rtpthlp
 
 c      prepare tridiagonal system
 
-       bb = calc_bb( a1, bb, wp2, wp3, tau, 
+       bb = calc_bb( a1, wp2, wp3, tau, 
      .               C2rtthl, dt, nu2, beta, eps, liter )
 
-       dd = calc_dd_covar( a1, dd, wp2, wp3, wprtp, wpthlp, 
+       dd = calc_dd_covar( a1, wp2, wp3, wprtp, wpthlp, 
      .                     rtm, thlm, rtpthlp, 
      .                     dt, beta, eps, liter ) 
 
@@ -583,16 +583,16 @@ c     prepare tridiagonal system
        do i=1, sclrm_dimension
 
          if ( i == SCLR_THETA ) then
-           bb = calc_bb( a1, bb, wp2, wp3, tau, 
+           bb = calc_bb( a1, wp2, wp3, tau, 
      .                   C2rtthl, dt, nu2, beta, eps, liter )
          else 
            if ( i == SCLR_RT ) then
-             bb = calc_bb( a1, bb, wp2, wp3, tau, 
+             bb = calc_bb( a1, wp2, wp3, tau, 
      .                     C2rt, dt, nu2, beta, eps, liter )
            endif
          endif
 
-         dd = calc_dd_covar( a1, dd, wp2, wp3, wprtp, wpsclrp(i,:),
+         dd = calc_dd_covar( a1, wp2, wp3, wprtp, wpsclrp(i,:),
      .                       rtm, sclrm(i,:), sclrprtp(i,:),
      .                       dt, beta, eps, liter )
 
@@ -632,16 +632,16 @@ c     prepare tridiagonal system
        do i=1, sclrm_dimension
 
          if ( i == SCLR_THETA ) then
-           bb = calc_bb( a1, bb, wp2, wp3, tau, 
+           bb = calc_bb( a1, wp2, wp3, tau, 
      .                   C2thl, dt, nu2, beta, eps, liter )
          else 
            if ( i == SCLR_RT ) then
-           bb = calc_bb( a1, bb, wp2, wp3, tau, 
+           bb = calc_bb( a1, wp2, wp3, tau, 
      .                   C2rtthl, dt, nu2, beta, eps, liter )
            endif
          endif
 
-         dd = calc_dd_covar( a1, dd, wp2, wp3, wpthlp, wpsclrp(i,:),
+         dd = calc_dd_covar( a1, wp2, wp3, wpthlp, wpsclrp(i,:),
      .                       thlm, sclrm(i,:), sclrpthlp(i,:),
      .                       dt, beta, eps, liter )
 
@@ -940,7 +940,7 @@ c      clip small and negative values
         ! can be used at the lowest boundary and the values of those
         ! variables can be set to 0 at the top boundary.  Brian.  12/18/05.
         calc_dd_var(1) = xp2(1)
-        if (liter) calc_dd_var(1) = dd(1) + 1.0/dt*xp2(1)
+        if (liter) calc_dd_var(1) = calc_dd_var(1) + 1.0/dt*xp2(1)
         calc_dd_var(gr%nnzp) = 0.0
         if (liter) calc_dd_var(gr%nnzp) = calc_dd_var(gr%nnzp) 
      .                                   + 1.0/dt*xp2(gr%nnzp)
