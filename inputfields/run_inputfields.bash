@@ -23,26 +23,29 @@
 # Check for necessary namelists.  If files exist, then
 # copy them over to the general input files.
 
- INPUTFIELDS_IN=$RUN_CASE'_inputfields.in'
+INPUTFIELDS_IN=$RUN_CASE'_inputfields.in'
+MODEL_IN='../model/'$RUN_CASE'_model.in'
+STATS_IN='../stats/'$RUN_CASE'_stats.in'
 
- if [ ! -e "$INPUTFIELDS_IN" ] ; then
+if [ ! -e "$INPUTFIELDS_IN" ] ; then
 	echo $INPUTFIELDS_IN " does not exist"
 	exit 1
- fi
+fi
 
- if [ -e 'inputfields.in' ] ; then
+if [ -e 'inputfields.in' ] ; then
 	rm -f 'inputfields.in'
- fi
+fi
 
- ln -s $INPUTFIELDS_IN 'inputfields.in'
-
+ln -s $INPUTFIELDS_IN 'inputfields.in'
+cat $MODEL_IN $STATS_IN > $RUN_CASE'_hoc.in' 
 
 #######################################################################
 #
 # State which case is being run
- echo "Running" $RUN_CASE
+echo "Running" $RUN_CASE
 # Run HOC
 ./hoc_inputfields
-
-# remove the temporary error.in file
- rm -f 'inputfields.in'
+ 
+# remove the namelists
+rm -f 'inputfields.in'
+rm -f $RUN_CASE'_hoc.in'
