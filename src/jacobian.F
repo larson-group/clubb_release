@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.27 2006-04-17 15:03:44 dschanen Exp $
+! $Id: jacobian.F,v 1.28 2006-04-17 15:48:08 dschanen Exp $
 
 ! Program Jacobian
 
@@ -12,6 +12,7 @@
 
       use hoc
       use grads_common
+      use statistics, only: fname_zt, fname_zm
 
       implicit none
 
@@ -72,7 +73,7 @@
 !     Namelist Variables
       real                      :: delta_factor
       integer, dimension(10)    :: times
-      character(len=50)         :: run_name
+      character(len=50)         :: run_file
       logical                   :: use_standard_vars
 
 !     Internal
@@ -100,7 +101,7 @@
       logical isValid
 
 !----- Namelists -------------------------------------------------------
-      namelist /model/    run_name, times, delta_factor, 
+      namelist /jacobian/ run_file, times, delta_factor, 
      .                    use_standard_vars
 
       namelist /initvars/ C1, C1b, C1c, C2, C2b, C2c, C4, C5,
@@ -123,12 +124,12 @@
 
 
       open(10, file = 'jacobian.in', status='old')
-      read(10, nml = model)
+      read(10, nml = jacobian )
       if ( .not. use_standard_vars ) then
         read(10, nml = initvars)
       else
-        open(20, file = "../standalone/standalone_"
-     .                //trim(run_name)//".in", status="old")
+        open(20, file = "../cmp_stats/std_const/std_const_nml.in",
+     .       status="old")
 
         read(20, nml = initvars)
         close(20)
@@ -182,16 +183,15 @@
      .                ca1%constant(31), ca1%constant(32),
      .                ca1%constant(33), ca1%constant(34),
      .                lmin_coef, taumin, taumax, 
-     .                ca1%constant(35),
-     .                "../tune/"//trim(run_name)//"_hoc.in", 
+     .                ca1%constant(35), run_file, 
      .                isValid, .false. )
 
       if ( .not. isValid ) stop "Initial run wasn't valid"
 
 !     Obtain nz from the generated GrADS files
 
-      nzt = grads_zlvl( trim(run_name)//"_zt.ctl" )
-      nzm = grads_zlvl( trim(run_name)//"_zm.ctl" )
+      nzt = grads_zlvl( trim(fname_zt)//".ctl" )
+      nzm = grads_zlvl( trim(fname_zm) //".ctl")
 
 
 !     Initialize the structures holding the variables
@@ -256,9 +256,9 @@
 
 !     Set var1 fields with initial run results
 
-      call getvariables( var1zt, "zt" )
+      call getvariables( var1zt, trim(fname_zt)//".ctl" )
 
-      call getvariables( var1zm, "zm" )
+      call getvariables( var1zm, trim(fname_zm)//".ctl" )
 
       do i = 1, ca1%entries
         tmp_constant    = ca1%constant(i)
@@ -283,7 +283,7 @@
      .                  ca1%constant(33), ca1%constant(34),
      .                  lmin_coef, taumin, taumax, 
      .                  ca1%constant(35),
-     .                  "../tune/"//trim(run_name)//"_hoc.in", 
+     .                  run_file, 
      .                  isValid, .false. )
 
         if ( .not. isValid ) then
@@ -296,8 +296,8 @@
 
 !       Set var2 results with results from altering the constants
 
-        call getvariables( var2zt, "zt" )
-        call getvariables( var2zm, "zm" )
+        call getvariables( var2zt, trim(fname_zt)//".ctl" )
+        call getvariables( var2zm, trim(fname_zm)//".ctl" )
 
         do j = 1, nvarzt
           impact_matrix(i, j) = sum(  var2zt%variable(1:nzt,j)   
@@ -392,22 +392,23 @@
 !     returns a variable_array structure over namelist defined
 !     time intervals
 !-----------------------------------------------------------------------
-      subroutine getvariables( varray, grid ) 
+      subroutine getvariables( varray, fname_zx ) 
  
       implicit none
 
+!     Input
+      type (variable_array), intent(inout) :: varray
+
+      character(len=200), intent(in) :: fname_zx
+
+!     Internal
       logical error
 
-!     Input
-
-      type (variable_array), intent(inout) :: varray
-      character(len=2), intent(in)         :: grid
 
     
       do k = 1, varray%entries
         varray%variable(1:varray%nz, k) = 
-     .    grads_average_interval( trim(run_name)//"_"//grid//".ctl",
-     .                            varray%nz,
+     .    grads_average_interval( fname_zx, varray%nz,
      .                            times(:), varray%name(k), 1, error )
         if ( error ) stop "getvariables(): error"
       enddo
