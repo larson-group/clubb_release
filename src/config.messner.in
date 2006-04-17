@@ -1,4 +1,4 @@
-# $Id: config.messner.in,v 1.6 2006-03-22 04:00:18 dschanen Exp $
+# $Id: config.messner.in,v 1.7 2006-04-17 14:58:52 dschanen Exp $
 # Configuration file for Messner node
 # == Compiler invocation ==
 #FC=g95 #	G95
@@ -23,7 +23,7 @@ DEBUG=-g -C -Kieee #			pgf90
 #OPTIMIZE=-O3 -march=pentium4 -msse2 -mfpmath=sse #	g95, P4
 #OPTIMIZE=-O2 -double_size 128 -real_size 64 #		ifort w/ double prec.
 #OPTIMIZE=-O2 -arch SSE2 #				ifort, P4
-#OPTIMIZE=-O2 -arch SSE2 -tp p7 -r8 #			PGF90 w/ double prec.
+#OPTIMIZE=-O2 -tp p7 -r8 #				PGF90 w/ double prec.
 OPTIMIZE=-O2 -tp p7 #					PGF90, P4
 
 # == NetCDF Flags ==
