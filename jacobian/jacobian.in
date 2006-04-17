@@ -5,7 +5,7 @@
 ! use_standard_var: option to use the standard constant values rather 
 !   than the contents of the /initvars/ namelist.
 !---------------------------------------------------------------------- 
-&jacobian
+&jcbn_nml
 run_file          = "fire_hoc.in"
 times             = 90, 180
 delta_factor      = 1.04
