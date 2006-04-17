@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.28 2006-04-17 15:48:08 dschanen Exp $
+! $Id: jacobian.F,v 1.29 2006-04-17 16:48:03 dschanen Exp $
 
 ! Program Jacobian
 
@@ -101,7 +101,7 @@
       logical isValid
 
 !----- Namelists -------------------------------------------------------
-      namelist /jacobian/ run_file, times, delta_factor, 
+      namelist /jcbn_nml/ run_file, times, delta_factor, 
      .                    use_standard_vars
 
       namelist /initvars/ C1, C1b, C1c, C2, C2b, C2c, C4, C5,
@@ -124,7 +124,7 @@
 
 
       open(10, file = 'jacobian.in', status='old')
-      read(10, nml = jacobian )
+      read(10, nml = jcbn_nml )
       if ( .not. use_standard_vars ) then
         read(10, nml = initvars)
       else
