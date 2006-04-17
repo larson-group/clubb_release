@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.29 2006-04-17 16:48:03 dschanen Exp $
+! $Id: jacobian.F,v 1.30 2006-04-17 18:34:56 dschanen Exp $
 
 ! Program Jacobian
 
@@ -183,7 +183,7 @@
      .                ca1%constant(31), ca1%constant(32),
      .                ca1%constant(33), ca1%constant(34),
      .                lmin_coef, taumin, taumax, 
-     .                ca1%constant(35), run_file, 
+     .                ca1%constant(35), trim( run_file ),
      .                isValid, .false. )
 
       if ( .not. isValid ) stop "Initial run wasn't valid"
@@ -282,8 +282,7 @@
      .                  ca1%constant(31), ca1%constant(32),
      .                  ca1%constant(33), ca1%constant(34),
      .                  lmin_coef, taumin, taumax, 
-     .                  ca1%constant(35),
-     .                  run_file, 
+     .                  ca1%constant(35), trim( run_file ),
      .                  isValid, .false. )
 
         if ( .not. isValid ) then
@@ -399,7 +398,7 @@
 !     Input
       type (variable_array), intent(inout) :: varray
 
-      character(len=200), intent(in) :: fname_zx
+      character(len=*), intent(in) :: fname_zx
 
 !     Internal
       logical error
