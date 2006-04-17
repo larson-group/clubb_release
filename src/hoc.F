@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.71 2006-03-19 19:33:56 griffinb Exp $
+! $Id: hoc.F,v 1.72 2006-04-17 15:03:44 dschanen Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -133,7 +133,7 @@
 !         C1_in, C2_in, C4_in, C5_in, C6_in, C7_in, C7b_in, C7c_in,
 !         C8_in, C8b_in, C10_in, C11_in, C11b_in, C11_c_in, C12_in
 !         nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in
-!         beta_in, gamma_coef_in, c_K_in
+!         beta_in, gamma_coef_in, gamma_coefb_in, gamma_coefc_in, c_K_in
 !         lmin_coef_in, taumin_in, taumax_in, mu_in
 
 !         Other parameters:
@@ -146,7 +146,7 @@
 
        subroutine hoc_model_field_input( 
      .                       C1_in, C1b_in, C1c_in, 
-     .                       C2rt_in, C2thl_in, C2rtthl_in, 
+     .                       C2_in, C2b_in, C2c_in, 
      .                       C4_in, C5_in, 
      .                       C6rt_in, C6rtb_in, C6rtc_in,
      .                       C6thl_in, C6thlb_in, C6thlc_in,
@@ -154,7 +154,8 @@
      .                       C8_in, C8b_in, C10_in, 
      .                       C11_in, C11b_in, C11c_in, C12_in,
      .                       nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in,
-     .                       beta_in, gamma_coef_in, c_K_in, 
+     .                       beta_in, gamma_coef_in, 
+     .                       gamma_coefb_in, gamma_coefc_in, c_K_in, 
      .                       lmin_coef_in, taumin_in, taumax_in, mu_in,
      .                       runfile, isValid, stdout,
      .                       set_fields, sample_ratio )
@@ -199,7 +200,7 @@
 
 !      Subroutine Arguments (constants)
        real, intent(in) :: C1_in, C1b_in, C1c_in
-       real, intent(in) :: C2rt_in, C2thl_in, C2rtthl_in
+       real, intent(in) :: C2_in, C2b_in, C2c_in
        real, intent(in) :: C4_in, C5_in
        real, intent(in) :: C6rt_in, C6rtb_in, C6rtc_in
        real, intent(in) :: C6thl_in, C6thlb_in, C6thlc_in
@@ -208,7 +209,7 @@
        real, intent(in) :: C11_in, C11b_in, C11c_in, C12_in
        real, intent(in) :: nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in
        real, intent(in) :: beta_in
-       real, intent(in) :: gamma_coef_in
+       real, intent(in) :: gamma_coef_in, gamma_coefb_in, gamma_coefc_in
        real, intent(in) :: c_K_in, taumin_in, taumax_in, lmin_coef_in
        real, intent(in) :: mu_in
 
@@ -249,7 +250,7 @@
 
 !      Define constants
        call setup_constants( deltaz, C1_in, C1b_in, C1c_in, 
-     .                       C2rt_in, C2thl_in, C2rtthl_in,
+     .                       C2_in, C2b_in, C2c_in,
      .                       C4_in, C5_in, 
      .                       C6rt_in, C6rtb_in, C6rtc_in,
      .                       C6thl_in, C6thlb_in, C6thlc_in,
@@ -257,7 +258,9 @@
      .                       C8_in, C8b_in, C10_in, 
      .                       C11_in, C11b_in, C11c_in, C12_in,
      .                       nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in,
-     .                       gamma_coef_in, mu_in, c_K_in,
+     .                       gamma_coef_in, 
+     .                       gamma_coefb_in, gamma_coefc_in,
+     .                       mu_in, c_K_in,
      .                       beta_in, lmin_coef_in, 
      .                       taumin_in, taumax_in, lbugsrad )
 
@@ -408,7 +411,7 @@
 !         C1_in, C2_in, C4_in, C5_in, C6_in, C7_in, C7b_in, C7c_in,
 !         C8_in, C8b_in, C10_in, C11_in, C11b_in, C11c_in, C12_in
 !         nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in 
-!         beta_in, gamma_coef_in, c_K_in
+!         beta_in, gamma_coef_in, gamma_coefb_in, gamma_coefc_in, c_K_in
 !         lmin_coef_in, taumin_in, taumax_in, mu_in
 
 !         Other parameters:
@@ -419,7 +422,7 @@
 !         isValid:  A false return value indicates something was unsound.
 !-----------------------------------------------------------------------
        subroutine hoc_model_standard( C1_in, C1b_in, C1c_in,
-     .                                C2rt_in, C2thl_in, C2rtthl_in,
+     .                                C2_in, C2b_in, C2c_in,
      .                                C4_in, C5_in, 
      .                                C6rt_in, C6rtb_in, C6rtc_in,
      .                                C6thl_in, C6thlb_in, C6thlc_in,
@@ -428,6 +431,7 @@
      .                                C11_in, C11b_in, C11c_in, C12_in,
      .                                nu1_in, nu2_in, nu6_in, nu8_in,
      .                                nu_r_in, beta_in, gamma_coef_in,
+     .                                gamma_coefb_in, gamma_coefc_in,
      .                                c_K_in, lmin_coef_in, 
      .                                taumin_in, taumax_in, mu_in,
      .                                runfile, isValid, stdout )
@@ -446,7 +450,7 @@
 
 !      Subroutine Arguments (constants)
        real, intent(in) :: C1_in, C1b_in, C1c_in
-       real, intent(in) :: C2rt_in, C2thl_in, C2rtthl_in
+       real, intent(in) :: C2_in, C2b_in, C2c_in
        real, intent(in) :: C4_in, C5_in
        real, intent(in) :: C6rt_in, C6rtb_in, C6rtc_in
        real, intent(in) :: C6thl_in, C6thlb_in, C6thlc_in
@@ -456,7 +460,7 @@
        real, intent(in) :: C12_in
        real, intent(in) :: nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in
        real, intent(in) :: beta_in
-       real, intent(in) :: gamma_coef_in
+       real, intent(in) :: gamma_coef_in,gamma_coefb_in, gamma_coefc_in 
        real, intent(in) :: c_K_in, taumin_in, taumax_in, lmin_coef_in
        real, intent(in) :: mu_in
 
@@ -490,7 +494,7 @@
 
 !      Define constants
        call setup_constants( deltaz, C1_in, C1b_in, C1c_in,
-     .                       C2rt_in, C2thl_in, C2rtthl_in,
+     .                       C2_in, C2b_in, C2c_in,
      .                       C4_in, C5_in, 
      .                       C6rt_in, C6rtb_in, C6rtc_in,
      .                       C6thl_in, C6thlb_in, C6thlc_in,
@@ -498,7 +502,8 @@
      .                       C8_in, C8b_in, C10_in, 
      .                       C11_in, C11b_in, C11c_in, C12_in,
      .                       nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in,
-     .                       gamma_coef_in, mu_in, c_K_in,
+     .                       gamma_coef_in, gamma_coefb_in, 
+     .                       gamma_coefc_in, mu_in, c_K_in,
      .                       beta_in, lmin_coef_in, 
      .                       taumin_in, taumax_in, lbugsrad )
 
@@ -653,7 +658,7 @@
 !       External functions
         real, external    :: rsat
         real, external    :: sat_rcm
-        intrinsic min, max, trim, sqrt
+        intrinsic min, max, trim, sqrt, size
 
 !       Output
         real, dimension(:), intent(out) :: thlm, rtm
@@ -1207,7 +1212,7 @@
 
 !      External
        real, external :: rsat
-       intrinsic present, sqrt, min, max
+       intrinsic present, sqrt, min, max, size
 
 !      Input
        integer, intent(in)    :: i1        ! closure iteration number
@@ -1215,8 +1220,10 @@
        logical, intent(inout) :: isValid
 
 !      Internal
-       integer i, j, k
-       real, dimension(size( em )) :: tmp1
+       integer i, j, k, km1, kp1
+       real, dimension(1:gr%nnzp) :: tmp1
+       real, dimension(1:gr%nnzp) :: Skw_arr_m
+       real, dimension(1:gr%nnzp) :: gamma_Skw_fnc
 
 !      Internal for latin hypercubes
        integer, dimension(1:gr%nnzp, 
@@ -1278,7 +1285,7 @@
        call diag_var( taum, wmm, rtm, wprtp, 
      .                thlm, wpthlp, wp2, wp3, Scm, 
      .                rtp2, thlp2, rtpthlp,
-     .                .false., dtclosure, isValid ! diag_var needs to be modified if liter=.true.
+     .                .false., dtclosure, isValid
 #ifdef SCALARS
      .                ,sclrm, wpsclrp, sclrp2,    ! optional vars
      .                sclrprtp, sclrpthlp         !   "       "
@@ -1299,10 +1306,28 @@
        enddo ! i = 1, sclrm_dimension
 #endif /* SCALARS */
 
+#ifndef DISABLE_GAMMA_SKW
+!      Compute gamma as a function of Skw  - 14 April 06 dschanen
+       do k = 1, gr%nnzp, 1
+        km1 = MAX(k-1,1)
+        kp1 = MIN(k+1,gr%nnzp)
+
+        Skw_arr_m(k) = (1.0/2.0) * ( wp3(kp1)+wp3(k) ) /
+     .                 MAX( wp2(k), wtol**2.0 )**(3.0/2.0)
+       enddo
+
+        gamma_Skw_fnc 
+     .  = gamma_coefb + (gamma_coef-gamma_coefb)
+     .    *exp( -(1.0/2.0) * (Skw_arr_m/gamma_coefc)**2.0 )
+
+#else
+        gamma_Skw_fnc = gamma_coef
+
+#endif /* DISABLE */
 
 !      Compute Sc with new formula from Vince
 
-       Scm = gamma_coef * ( 1.0 - 
+       Scm = gamma_Skw_fnc * ( 1.0 - 
      .       min(
      .       max( ( wpthlp / ( sqrt( wp2 ) * sqrt( thlp2 ) 
      .              + 0.01 * wtol * thltol ) )**2,

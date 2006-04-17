@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.31 2006-03-07 19:12:15 dschanen Exp $
+! $Id: error.F,v 1.32 2006-04-17 15:03:44 dschanen Exp $
 
 !       Module ERROR
 !
@@ -34,7 +34,7 @@
 
 !---------------- Dimensions of the array for amoeba -------------------
 
-      integer, parameter, public  :: ndim = 36
+      integer, parameter, public  :: ndim = 38
       integer, parameter, public  :: mdim = ndim + 1
 
       real, dimension(mdim, ndim)  :: x_array
@@ -79,13 +79,13 @@
       logical                           :: stdout_on_invalid
 
 !----- Hoc constants to tune -----------------------------------------
-      real C1, C1b, C1c, C2rt, C2thl, C2rtthl, C4, C5
+      real C1, C1b, C1c, C2, C2b, C2c, C4, C5
       real C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc
       real C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c
       real C12
       real nu1, nu2, nu6, nu8, nu_r
       real beta
-      real gamma_coef, c_K
+      real gamma_coef, gamma_coefb, gamma_coefc, c_K
       real lmin_coef, taumin, taumax
       real mu
 
@@ -148,7 +148,7 @@
 
 
 !----- Hoc variance for generating array ------------------------------
-      real C1_var, C1b_var, C1c_var, C2rt_var, C2thl_var, C2rtthl_var
+      real C1_var, C1b_var, C1c_var, C2_var, C2b_var, C2c_var
       real C4_var, C5_var, C6rt_var, C6rtb_var, C6rtc_var
       real C6thl_var, C6thlb_var, C6thlc_var
       real C7_var, C7b_var, C7c_var
@@ -157,7 +157,7 @@
       real C12_var
       real nu1_var, nu2_var, nu6_var, nu8_var, nu_r_var
       real beta_var
-      real gamma_coef_var, c_K_var
+      real gamma_coef_var, gamma_coefb_var, gamma_coefc_var, c_K_var
       real lmin_coef_var, taumin_var, taumax_var
       real mu_var
 
@@ -170,15 +170,16 @@
      .                 run_file_nl,
      .                 z_i_nl, z_f_nl, time_nl
 
-      namelist /initvars/ C1, C1b, C1c, C2rt, C2thl, C2rtthl, C4, C5,
+      namelist /initvars/ C1, C1b, C1c, C2, C2b, C2c, C4, C5,
      .                    C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .                    C7, C7b, C7c, C8, C8b, C10, 
      .                    C11, C11b, C11c, C12,
-     .                    nu1, nu2, nu6, nu8, nu_r, beta, gamma_coef,
+     .                    nu1, nu2, nu6, nu8, nu_r, beta, 
+     .                    gamma_coef, gamma_coefb, gamma_coefc,
      .                    c_K, lmin_coef, taumin, taumax, mu
 
       namelist /variance/ C1_var, C1b_var, C1c_var, 
-     .                    C2rt_var, C2thl_var, C2rtthl_var, 
+     .                    C2_var, C2b_var, C2c_var, 
      .                    C4_var, C5_var,
      .                    C6rt_var, C6rtb_var, C6rtc_var,
      .                    C6thl_var, C6thlb_var, C6thlc_var,
@@ -186,7 +187,8 @@
      .                    C8_var, C8b_var, C10_var, 
      .                    C11_var, C11b_var, C11c_var, C12_var,
      .                    nu1_var, nu2_var, nu6_var, nu8_var, nu_r_var,
-     .                    beta_var, gamma_coef_var, c_K_var,
+     .                    beta_var, gamma_coef_var, gamma_coefb_var, 
+     .                    gamma_coefc_var, c_K_var,
      .                    lmin_coef_var, taumin_var, taumax_var, mu_var
 
 !------------------------- Reset iteration counter ---------------------
@@ -273,12 +275,13 @@
 !--------------- Initialize the hoc constants -------------------------
 
         init_const(1:ndim) = 
-     .  (/C1, C1b, C1c, C2rt, C2thl, C2rtthl,
+     .  (/C1, C1b, C1c, C2, C2b, C2c,
      .    C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb,
      .    C6thlc, C7, C7b, C7c, C8, C8b,
      .    C10, C11, C11b, C11c, C12,
      .    nu1, nu2, nu6, nu8, nu_r, beta,
-     .    gamma_coef, c_K, lmin_coef, taumin,
+     .    gamma_coef, gamma_coefb, gamma_coefc, 
+     .    c_K, lmin_coef, taumin,
      .    taumax, mu/)
 
         x_array(1,1:ndim) = init_const(1:ndim)
@@ -286,16 +289,17 @@
 !--------------- Initialize the hoc variance -------------------------
 
         x_variance(1:ndim) = (/C1_var, C1b_var, C1c_var, 
-     .                         C2rt_var, C2thl_var, C2rtthl_var,
+     .                         C2_var, C2b_var, C2c_var,
      .                         C4_var, C5_var,
      .                         C6rt_var, C6rtb_var, C6rtc_var, 
      .                         C6thl_var, C6thlb_var, C6thlc_var,
      .                         C7_var, C7b_var, C7c_var,
      .                         C8_var, C8b_var, C10_var, 
      .                         C11_var, C11b_var, C11c_var, C12_var,
-     .                         nu1_var, nu2_var, nu6_var, nu8_var, 
-     .                         nu_r_var, beta_var, gamma_coef_var, 
-     .                         c_K_var, lmin_coef_var, taumin_var, 
+     .                         nu1_var, nu2_var, nu6_var, nu8_var,
+     .                         nu_r_var, beta_var, gamma_coef_var,
+     .                         gamma_coefb_var,gamma_coefc_var,
+     .                         c_K_var, lmin_coef_var, taumin_var,
      .                         taumax_var, mu_var/)
       
 !-----------------------------------------------------------------------
@@ -418,6 +422,7 @@
      .                  x_vector(28), x_vector(29), x_vector(30),
      .                  x_vector(31), x_vector(32), x_vector(33),
      .                  x_vector(34), x_vector(35), x_vector(36),
+     .                  x_vector(37), x_vector(38),
      .                  run_file(c_run), isValid, .false. )
 
 !-------------- Basic Sanity Check for negative constants --------------

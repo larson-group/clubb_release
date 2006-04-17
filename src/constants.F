@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.23 2006-01-03 19:38:06 dschanen Exp $
+! $Id: constants.F,v 1.24 2006-04-17 15:03:44 dschanen Exp $
 
 !  Contains frequently occuring model constants
 !-----------------------------------------------------------------------
@@ -39,7 +39,7 @@
         real, parameter :: rho_lw    = 1000.   ! density of liquid water; kg/m^3
 
 !       BUGSrad Variables
-        ! Nov 11 Altocu; cosine of solar zenith angle
+        ! Nov 11 Altocu; cosine of solar zenith angle (BUGSrad)
         real, parameter :: amu0      = 0.4329
         real, parameter :: sol_const = 1.367e3 ! Solar constant
 
@@ -51,12 +51,12 @@
 
 !       Model parameters and constraints
 
-        real C1, C1b, C1c, C2rt, C2thl, C2rtthl, C4, C5
+        real C1, C1b, C1c, C2, C2b, C2c, C4, C5
         real C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc
         real C7, C7b, C7c, C8, C8b, C10
         real C11, C11b, C11c, C12
         real nu1, nu2, nu6, nu8, nu_r
-        real mu, c_K, gamma_coef
+        real mu, c_K, gamma_coef, gamma_coefb, gamma_coefc
         real lmin
         real taumin, taumax
 
@@ -70,16 +70,17 @@
 !       make a list of them.  Note that lmin_coef is the input parameter, 
 !       while the actual lmin model constant is computed from this
 
-        character(len=10), dimension(36), parameter :: constants_list =
-     .  (/"C1        ", "C1b       ", "C1c       ", "C2rt      ", 
-     .    "C2thl     ", "C2rtthl   ", "C4        ", "C5        ",
-     .    "C6rt      ", "C6rtb     ", "C6rtc     ", "C6thl     ",
-     .    "C6thlb    ", "C6thlc    ", "C7        ", "C7b       ",
-     .    "C7c       ", "C8        ", "C8b       ", "C10       ",
-     .    "C11       ", "C11b      ", "C11c      ", "C12       ",
-     .    "nu1       ", "nu2       ", "nu6       ", "nu8       ",
-     .    "nu_r      ", "beta      ", "gamma_coef", "c_K       ", 
-     .    "lmin_coef ", "taumin    ", "taumax    ", "mu        "/)
+        character(len=11), dimension(38), parameter :: constants_list =
+     .  (/"C1         ", "C1b        ", "C1c        ", "C2         ", 
+     .    "C2b        ", "C2c        ", "C4         ", "C5         ",
+     .    "C6rt       ", "C6rtb      ", "C6rtc      ", "C6thl      ",
+     .    "C6thlb     ", "C6thlc     ", "C7         ", "C7b        ",
+     .    "C7c        ", "C8         ", "C8b        ", "C10        ",
+     .    "C11        ", "C11b       ", "C11c       ", "C12        ",
+     .    "nu1        ", "nu2        ", "nu6        ", "nu8        ",
+     .    "nu_r       ", "beta       ", "gamma_coef ",
+     .    "gamma_coefb", "gamma_coefc", "c_K        ", 
+     .    "lmin_coef  ", "taumin     ", "taumax     ", "mu         "/)
 
 
 !       tolerances below which we consider moments to be zero
@@ -113,7 +114,7 @@
 ! Subroutine to set-up constants
 !-----------------------------------------------------------------------
       subroutine setup_constants( deltaz, C1_in, C1b_in, C1c_in,
-     .                            C2rt_in, C2thl_in, C2rtthl_in,
+     .                            C2_in, C2b_in, C2c_in,
      .                            C4_in, C5_in, 
      .                            C6rt_in, C6rtb_in, C6rtc_in, 
      .                            C6thl_in, C6thlb_in, C6thlc_in,
@@ -122,7 +123,9 @@
      .                            C11_in, C11b_in, C11c_in,
      .                            C12_in,
      .                            nu1_in, nu2_in, nu6_in, nu8_in,
-     .                            nu_r_in, gamma_coef_in, mu_in,
+     .                            nu_r_in,
+     .                            gamma_coef_in, gamma_coefb_in, 
+     .                            gamma_coefc_in, mu_in,
      .                            c_K_in, beta_in, lmin_coef_in,
      .                            taumin_in, taumax_in, lbugsrad_in ) 
 
@@ -132,7 +135,7 @@
 
       real, intent(in) :: deltaz
       real, intent(in) :: C1_in, C1b_in, C1c_in
-      real, intent(in) :: C2rt_in, C2thl_in, C2rtthl_in
+      real, intent(in) :: C2_in, C2b_in, C2c_in
       real, intent(in) :: C4_in, C5_in
       real, intent(in) :: C6rt_in, C6rtb_in, C6rtc_in
       real, intent(in) :: C6thl_in, C6thlb_in, C6thlc_in
@@ -143,7 +146,8 @@
       real, intent(in) :: nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in
       real, intent(in) :: beta_in
       real, intent(in) :: lmin_coef_in, taumin_in, taumax_in
-      real, intent(in) :: gamma_coef_in, mu_in, c_K_in
+      real, intent(in) :: gamma_coef_in, gamma_coefb_in, gamma_coefc_in
+      real, intent(in) :: mu_in, c_K_in
 
       logical, intent(in) :: lbugsrad_in
 
@@ -168,9 +172,9 @@
       C1      = C1_in
       C1b     = C1b_in
       C1c     = C1c_in
-      C2rt    = C2rt_in
-      C2thl   = C2thl_in
-      C2rtthl = C2rtthl_in
+      C2      = C2_in
+      C2b     = C2b_in
+      C2c     = C2c_in
       C4      = C4_in
       C5      = C5_in
       C6rt    = C6rt_in
@@ -198,7 +202,9 @@
 
       beta  = beta_in
     
-      gamma_coef = gamma_coef_in
+      gamma_coef  = gamma_coef_in
+      gamma_coefb = gamma_coefb_in
+      gamma_coefc = gamma_coefc_in
 
       taumin = taumin_in
       taumax = taumax_in

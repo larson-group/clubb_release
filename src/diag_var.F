@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.22 2006-04-14 20:08:07 dschanen Exp $
+! $Id: diag_var.F,v 1.23 2006-04-17 15:03:44 dschanen Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -79,6 +79,8 @@ c Local arrays allocated dynamically on the stack
        real a1(1:gr%nnzp)
        real aa(1:gr%nnzp), bb(1:gr%nnzp), cc(1:gr%nnzp), dd(1:gr%nnzp)
 
+       real C2_Skw_fnc(1:gr%nnzp), Skw_arr_m(1:gr%nnzp)
+
 c Loop indices
 
        integer i, k
@@ -106,13 +108,32 @@ c Define a1
 
        a1 = 1.0 / (1.0-Sc)
 
+#ifndef DISABLE_C2_SKW
+c Define C2 as a function of Skw -dschanen 14 April 06
+       do k = 1, gr%nnzp, 1
+        km1 = MAX(k-1,1)
+        kp1 = MIN(k+1,gr%nnzp)
+
+        Skw_arr_m(k) = (1.0/2.0) * ( wp3(kp1)+wp3(k) ) /
+     .                 MAX( wp2(k), wtol**2.0 )**(3.0/2.0)
+       enddo
+
+        C2_Skw_fnc 
+     .  = C2b + (C2 - C2b )
+     .    *exp( -(1.0/2.0) * (Skw_arr_m/C2c)**2.0 )
+
+#else
+        C2_Skw_fnc = C2
+
+#endif /* DISABLE */
+
 c Solve for rtp2
 
 c      prepare tridiagonal system
 
        aa = calc_aa( a1, wp2, wp3, wmm, nu2, beta, eps )
        bb = calc_bb( a1, wp2, wp3, tau, 
-     .               C2rt, dt, nu2, beta, eps, liter )
+     .               C2_Skw_fnc, dt, nu2, beta, eps, liter )
        cc = calc_cc( a1, wp2, wp3, wmm, nu2, beta, eps )
        dd = calc_dd_var( a1, wp2, wp3, wprtp, rtm, 
      .                   rtp2, dt, beta, eps, liter )
@@ -126,7 +147,7 @@ c      prepare tridiagonal system
            kp1   = min(k+1,gr%nnzp)
 
            if ( irtp2_dp1 > 0 ) then
-             zmscr01(k) = - C2rt / tau(k)
+             zmscr01(k) = - C2_Skw_fnc(k) / tau(k)
            endif
          
            if ( irtp2_dp2 * ithlp2_dp2 * irtpthlp_dp2 > 0 ) then
@@ -270,8 +291,8 @@ c Solve for thlp2
 c      prepare tridiagonal system
 c      note: we can reuse the same aa & cc arrays
 
-        bb = calc_bb( a1, wp2, wp3, tau, 
-     .                C2thl, dt, nu2, beta, eps, liter )
+!       bb = calc_bb( a1, wp2, wp3, tau, 
+!    .                C2_Skw_fnc, dt, nu2, beta, eps, liter )
         dd = calc_dd_var( a1, wp2, wp3, wpthlp, thlm, 
      .                    thlp2, dt, beta, eps, liter )
 
@@ -284,7 +305,7 @@ c      note: we can reuse the same aa & cc arrays
            kp1 = min(k+1,gr%nnzp)
 
            if ( ithlp2_dp1 > 0 ) then
-             zmscr01(k) = - C2thl / tau(k)
+             zmscr01(k) = - C2_Skw_fnc(k) / tau(k)
            endif
          
            if ( ithlp2_ta > 0 ) then
@@ -403,13 +424,13 @@ c      note: we can reuse the same aa, cc arrays
 
        do i=1, sclrm_dimension
 
-         if ( i == SCLR_THETA ) then
-           bb = calc_bb( a1, wp2, wp3, tau,
-     .                   C2thl, dt, nu2, beta, eps, liter )
-         elseif ( i == SCLR_RT ) then
-           bb = calc_bb( a1, wp2, wp3, tau,
-     .                   C2rt, dt, nu2, beta, eps, liter )
-         endif
+!        if ( i == SCLR_THETA ) then
+!          bb = calc_bb( a1, wp2, wp3, tau,
+!    .                   C2_Skw_fnc, dt, nu2, beta, eps, liter )
+!        elseif ( i == SCLR_RT ) then
+!          bb = calc_bb( a1, wp2, wp3, tau,
+!    .                   C2_Skw_fnc, dt, nu2, beta, eps, liter )
+!        endif
 
          dd = calc_dd_var( a1, wp2, wp3, wpsclrp(:,i), sclrm(:,i), 
      .                     sclrp2(:,i), dt, beta, eps, liter )
@@ -441,16 +462,12 @@ c        clip small and negative values
 
       endif ! if present( sclrs )
 
-! %% Debug
-!      sclrp2(:,2) = rtp2
-! %% Debug
-
 c Solve for rtpthlp
 
 c      prepare tridiagonal system
 
-       bb = calc_bb( a1, wp2, wp3, tau, 
-     .               C2rtthl, dt, nu2, beta, eps, liter )
+c      bb = calc_bb( a1, wp2, wp3, tau, 
+c    .               C2_Skw_fnc, dt, nu2, beta, eps, liter )
 
        dd = calc_dd_covar( a1, wp2, wp3, wprtp, wpthlp, 
      .                     rtm, thlm, rtpthlp, 
@@ -466,7 +483,7 @@ c      prepare tridiagonal system
              kp1 = min(k+1,gr%nnzp)
 
              if ( irtpthlp_dp1 > 0 ) then
-               zmscr01(k) = - C2rtthl / tau(k)
+               zmscr01(k) = - C2_Skw_fnc(k) / tau(k)
              endif
          
              if ( irtpthlp_ta > 0 ) then
@@ -582,15 +599,15 @@ c Solve for sclrprtp
 c     prepare tridiagonal system
        do i=1, sclrm_dimension
 
-         if ( i == SCLR_THETA ) then
-           bb = calc_bb( a1, wp2, wp3, tau, 
-     .                   C2rtthl, dt, nu2, beta, eps, liter )
-         else 
-           if ( i == SCLR_RT ) then
-             bb = calc_bb( a1, wp2, wp3, tau, 
-     .                     C2rt, dt, nu2, beta, eps, liter )
-           endif
-         endif
+c        if ( i == SCLR_THETA ) then
+c          bb = calc_bb( a1, wp2, wp3, tau, 
+c    .                   C2_Skw_fnc, dt, nu2, beta, eps, liter )
+c        else 
+c          if ( i == SCLR_RT ) then
+c            bb = calc_bb( a1, wp2, wp3, tau, 
+c    .                     C2_Skw_fnc, dt, nu2, beta, eps, liter )
+c          endif
+c        endif
 
          dd = calc_dd_covar( a1, wp2, wp3, wprtp, wpsclrp(i,:),
      .                       rtm, sclrm(i,:), sclrprtp(i,:),
@@ -631,15 +648,15 @@ c Solve for sclrpthlp
 c     prepare tridiagonal system
        do i=1, sclrm_dimension
 
-         if ( i == SCLR_THETA ) then
-           bb = calc_bb( a1, wp2, wp3, tau, 
-     .                   C2thl, dt, nu2, beta, eps, liter )
-         else 
-           if ( i == SCLR_RT ) then
-           bb = calc_bb( a1, wp2, wp3, tau, 
-     .                   C2rtthl, dt, nu2, beta, eps, liter )
-           endif
-         endif
+c        if ( i == SCLR_THETA ) then
+c          bb = calc_bb( a1, wp2, wp3, tau, 
+c    .                   C2_Skw_fnc, dt, nu2, beta, eps, liter )
+c        else 
+c          if ( i == SCLR_RT ) then
+c          bb = calc_bb( a1, wp2, wp3, tau, 
+c    .                   C2_Skw_fnc, dt, nu2, beta, eps, liter )
+c          endif
+c        endif
 
          dd = calc_dd_covar( a1, wp2, wp3, wpthlp, wpsclrp(i,:),
      .                       thlm, sclrm(i,:), sclrpthlp(i,:),
@@ -722,7 +739,9 @@ c      clip small and negative values
 
 !-----------------------------------------------------------------------
 !  FUNCTION calc_bb
+
 !  Needs to be re-calculated when C2 is using an rt or thl value
+!  Note: new C2_Skw need to be generated only once
 !-----------------------------------------------------------------------
         function calc_bb( a1, wp2, wp3, tau,
      .                    C2x, dt, nu2, beta, eps, liter )
@@ -731,9 +750,9 @@ c      clip small and negative values
         implicit none
 
 !       Input
-        real, intent(in), dimension(gr%nnzp) :: a1, wp2, wp3, tau
+        real, intent(in), dimension(gr%nnzp) :: a1, wp2, wp3, tau, C2x
 
-        real, intent(in)    :: C2x, dt, beta, nu2, eps
+        real, intent(in) :: dt, beta, nu2, eps
 
         logical, intent(in) :: liter
 
@@ -756,7 +775,7 @@ c      clip small and negative values
      .             -  ( a1(k) + a1(km1) )
      .              * ( wp3(k) / MAX( wp2(k) + wp2(km1), 2.0*eps ) )
      .            )
-     .     + C2x / tau(k)
+     .     + C2x(k) / tau(k)
      .     + nu2 * gr%dzm(k) * ( gr%dzt(kp1) + gr%dzt(k) )
 
            if (liter) calc_bb(k) = calc_bb(k) + 1.0/dt

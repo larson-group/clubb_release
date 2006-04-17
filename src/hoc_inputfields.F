@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc_inputfields.F,v 1.10 2005-11-17 17:06:14 griffinb Exp $
+! $Id: hoc_inputfields.F,v 1.11 2006-04-17 15:03:44 dschanen Exp $
 
 !  Program HOC_INPUTFIELDS
  
@@ -20,13 +20,13 @@
 !----- Model constants -------------------------------------------------
 ! Notes:  C4 and C10 do not currently play a role in the model 3/18/05
 !
-      real       :: C1, C1b, C1c, C2rt, C2thl, C2rtthl, C4, C5
+      real       :: C1, C1b, C1c, C2, C2b, C2c, C4, C5
       real       :: C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc
       real       :: C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c
       real       :: C12
       real       :: nu1, nu2, nu6, nu8, nu_r
       real       :: beta
-      real       :: gamma_coef, c_K
+      real       :: gamma_coef, gamma_coefb, gamma_coefc, c_K
       real       :: lmin_coef, taumin, taumax
       real       :: mu
 
@@ -43,11 +43,12 @@
 !----- Namelists -------------------------------------------------------
       namelist /model/ run_file, stdout
 
-      namelist /initvars/ C1, C1b, C1c, C2rt, C2thl, C2rtthl, C4, C5,
+      namelist /initvars/ C1, C1b, C1c, C2, C2b, C2c, C4, C5,
      .                    C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .                    C7, C7b, C7c, C8, C8b,
      .                    C10, C11, C11b, C11c, C12,
-     .                    nu1, nu2, nu6, nu8, nu_r, beta, gamma_coef,
+     .                    nu1, nu2, nu6, nu8, nu_r, beta, 
+     .                    gamma_coef, gamma_coefb, gamma_coefc,
      .                    c_K, lmin_coef, taumin, taumax, mu
 
       namelist /setfields/ datafile, sample_ratio, input_type,
@@ -69,12 +70,13 @@
       isValid = .true.
 
 !----- Run the model----------------------------------------------------
-      call hoc_model( C1, C1b, C1c, C2rt, C2thl, C2rtthl, C4, C5,
+      call hoc_model( C1, C1b, C1c, C2, C2b, C2c, C4, C5,
      .                C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .                C7, C7b, C7c, C8, C8b, C10, 
      .                C11, C11b, C11c, C12,
      .                nu1, nu2, nu6, nu8, nu_r, beta,
-     .                gamma_coef, c_K, lmin_coef, taumin, taumax, mu,
+     .                gamma_coef, gamma_coefb, gamma_coefc, 
+     .                c_K, lmin_coef, taumin, taumax, mu,
      .                run_file, isValid, stdout,
      .                grads_fields_reader, sample_ratio )
 
