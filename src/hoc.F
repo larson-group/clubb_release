@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.72 2006-04-17 15:03:44 dschanen Exp $
+! $Id: hoc.F,v 1.73 2006-04-18 21:51:24 griffinb Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -1513,20 +1513,18 @@
 
           CALL rain( dt, thlm, p, exner, rhot, wmt, pdf_parms,
      .               rtm, rcm, Ncm, rrm, Nrm, cond_rrm,
-     .               auto_rrm, accr_rrm, sed_rrm, diff_rrm,
-     .               subs_rrm, cond_Nrm, auto_Nrm, sed_Nrm,
-     .               diff_Nrm, subs_Nrm, Vr, mean_vol_rad,
+     .               auto_rrm, accr_rrm, Vrr, mean_vol_rad,
      .               AKm_est, AKm, isValid )
 
           ! Rainfall rate (mm/day) should be defined on thermodynamic
           ! levels.  Brian.
-          rain_rate = ( rrm * Vr ) * ( rhot / rho_lw )   ! rainfall rate (m/s)
-     .                                  * ( 86400.0 * 1000.0 )
+          rain_rate = ( rrm * zm2zt(Vrr) ) * ( rhot / rho_lw )   ! rainfall rate (m/s)
+     .                                     * ( 86400.0 * 1000.0 )
 
           ! Precipitation Flux (W/m^2) should be defined on
           ! momentum levels.  Brian.
-          Fprec = ( zt2zm(rrm) * zt2zm(Vr) ) * ( rhom / rho_lw )
-     .                                  * rho_lw * Lv
+          Fprec = ( zt2zm(rrm) * Vrr ) * ( rhom / rho_lw )
+     .                                 * rho_lw * Lv
 
        ENDIF ! kk_rain
 

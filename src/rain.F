@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.29 2006-03-22 16:54:43 dschanen Exp $
+! $Id: rain.F,v 1.30 2006-04-18 21:51:24 griffinb Exp $
 !----------------------------------------------------------------------
 
       MODULE rain_equations
@@ -8,7 +8,7 @@
 
       PUBLIC rain
       PRIVATE accretion_rrm, autoconv_rrm, autoconv_Nrm
-      PRIVATE cond_evap_rrm, cond_evap_Nrm, sed_velocity 
+      PRIVATE cond_evap_rrm, cond_evap_Nrm, mean_volume_radius
       PRIVATE D_fnc, NL_PDF, VVLA, DVSA, DVLA
 
       CONTAINS
@@ -19,14 +19,15 @@
 !----------------------------------------------------------------------
         SUBROUTINE rain( dt, thlm, p, exner, rhot, wmt, pdf_parms,
      .                   rtm, rcm, Ncm, rrm, Nrm, cond_rrm,
-     .                   auto_rrm, accr_rrm, sed_rrm, diff_rrm,
-     .                   subs_rrm, cond_Nrm, auto_Nrm, sed_Nrm,
-     .                   diff_Nrm, subs_Nrm, Vr, mean_vol_rad,
+     .                   auto_rrm, accr_rrm, Vrr, mean_vol_rad,
      .                   AKm_est, AKm, isValid )
 
 
         USE grid_class
         USE constants
+#ifdef STATS
+        USE statistics
+#endif STATS
 
         implicit none
 
@@ -56,15 +57,7 @@
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: cond_rrm
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: auto_rrm
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: accr_rrm
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: sed_rrm
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: diff_rrm
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: subs_rrm
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: cond_Nrm
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: auto_Nrm
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: sed_Nrm
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: diff_Nrm
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: subs_Nrm
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: Vr
+        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: Vrr
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: mean_vol_rad
 
         ! Local variables
@@ -80,6 +73,8 @@
 
         REAL, DIMENSION(1:gr%nnzp):: rs           ! Saturation mixing ratio; kg/kg
 
+        REAL, DIMENSION(1:gr%nnzp):: cond_Nrm
+        REAL, DIMENSION(1:gr%nnzp):: auto_Nrm
 
 
         REAL:: e             ! Vapor pressure; Pa
@@ -113,11 +108,11 @@
 ! This subroutine computes the new rain water mixing ratio, rr.
 ! It computes it according to the equation:
 !
-! drr/dt = -w*(drr/dz) + Vr*(drr/dz) + nu_r*(d2rr/dz2)
+! drr/dt = -w*(drr/dz) + Vrr*(drr/dz) + nu_r*(d2rr/dz2)
 !                      + (drr/dt)cond + (drr/dt)auto + (drr/dt)accr
 !
-! where Vr is the mean sedimentation velocity of the rain drops.  It
-! is determined by Vr = 0.012*rvr - 0.2, with Vr in m/s and rvr, the
+! where Vrr is the mean sedimentation velocity of the rain drops.  It
+! is determined by Vrr = 0.012*rvr - 0.2, with Vrr in m/s and rvr, the
 ! rain drop mean volume radius, in um.  In turn the rain drop mean
 ! volume radius is given by the following equation:
 !
@@ -127,7 +122,7 @@
 ! meters.
 !
 ! It is important to note that a one-sided upwind advection scheme is used
-! for sedimentation velocity, with Vr being from the level above the level
+! for sedimentation velocity, with Vrr being from the level above the level
 ! which is being dealt with.  This will increase the diffusivity of the
 ! model.
 !
@@ -153,7 +148,7 @@
 ! The problem is solved by moving around some terms to result in the following
 ! equation:
 !
-! drr/dt + w*(drr/dz) - Vr*(drr/dz) - nu_r*(d2rr/dz2)
+! drr/dt + w*(drr/dz) - Vrr*(drr/dz) - nu_r*(d2rr/dz2)
 !                      = (drr/dt)cond + (drr/dt)auto + (drr/dt)accr
 !
 ! The equation is then broken down as following:
@@ -220,7 +215,7 @@
 ! This subroutine also solves for rain drop number concentration (num/m^3)
 ! using the exact same formula as noted in this description.  The left-hand
 ! side of the equation is exactly the same as for rr, except for the fact
-! that VNr is used instead of Vr.  VNr also uses the mean volume radius
+! that VNr is used instead of Vrr.  VNr also uses the mean volume radius
 ! for it's calculation.  The equation is VNr = 0.007*rvr - 0.1, with VNr
 ! in m/s and rvr in micrometers.  The right-hand side of the Nr equation
 ! only contains terms for time tendency, condensation/evaporation, and
@@ -238,6 +233,72 @@
 !
 ! Description and notes written by Brian Griffin.
 
+#ifdef STATS
+
+        if (lstats_samp) then
+
+         if ( irrm_bt > 0 ) then
+           zt%x(:,irrm_bt) = zt%x(:,irrm_bt) - rrm/dt
+         endif
+
+         if ( irrm_bt > 0 ) then
+           zt%x(:,iNrm_bt) = zt%x(:,iNrm_bt) - Nrm/dt
+         endif
+
+        endif
+
+#endif STATS
+
+        ! Find the drop mean volume radius.  It is calculated using
+        ! the rain water mixing ratio, the rain droplet concentration,
+        ! and the air density.  These values are taken from the previous
+        ! timestep.  It is located on thermodynamic levels.
+        DO k = 1, gr%nnzp, 1
+
+           CALL mean_volume_radius( rhot(k), Nrm(k), rrm(k),
+     .                              mean_vol_rad(k) )
+
+        ENDDO
+
+
+        ! The sedimentation velocity is found from the drop mean volume radius.
+        ! It is located on the momentum levels.  This is due to the fact that
+        ! momentum levels are where other vertical velocities are stored, such
+        ! as the vertical component of wind velocity (w).
+
+        ! Khairoutdinov and Kogan Sedimentation Velocity Calculation.
+        ! sedimentation velocity of rain drops (in m/s).
+        ! mean volume radius converted to um.
+        ! Note 1: positive sedimentation velocity means downwards.
+        ! Note 2: Vrr(m/s) = 0.012*rvr(um) - 0.2
+        ! If rvr(um) is too small, the equation will result in an
+        ! upwards (negative) sedimentation velocity.  The limiter
+        ! is put in there for that reason.
+
+        DO k = 1, gr%nnzp, 1
+
+           kp1 = MIN(k+1,gr%nnzp)
+
+           ! rrm sedimentation velocity.
+           Vrr(k) = 0.012 
+     .             * ( 1000000.0 * (1.0/2.0) 
+     .             * ( mean_vol_rad(kp1) + mean_vol_rad(k) ) )
+     .             - 0.2
+
+           Vrr(k) = MAX( Vrr(k), 0.0 )
+
+           ! Nrm sedimentation velocity.
+           VNr(k) = 0.007 
+     .             * ( 1000000.0 * (1.0/2.0) 
+     .             * ( mean_vol_rad(kp1) + mean_vol_rad(k) ) )
+     .             - 0.1
+
+           VNr(k) = MAX( VNr(k), 0.0 )
+
+        ENDDO
+
+
+        ! Find values for other variables.
         DO k = 2, gr%nnzp, 1
 
            ! Find the important conditions
@@ -256,17 +317,9 @@
            Temp(k) = thm/((p0/p(k))**kappa)
            es(k) = (p(k)*rs(k))/(ep + rs(k))
 
-           CALL sed_velocity( rhot(k), Nrm(k), rrm(k),
-     .                        Vr(k), VNr(k), mean_vol_rad(k) )
-
         ENDDO
 
-
         ! Set the boundary conditions
-
-        Vr(1)           = Vr(2)
-        VNr(1)          = VNr(2)
-
         rvm(1)          = 0.
         rs(1)           = 0.
         Temp(1)         = 0.
@@ -287,12 +340,12 @@
         bb(1) = 
      .         - ( - nu_r*gr%dzt(2)*gr%dzm(1) )               ! aa(2) diffusion
      .         + (1.0/dt)                                     ! bb(1) time tendency
-     .         + Vr(2)*gr%dzm(1)                              ! bb(1) sedimentation
+     .         + Vrr(2)*gr%dzm(1)                              ! bb(1) sedimentation
 
         cc(1) = 
      .         - (   nu_r*gr%dzt(2)*(gr%dzm(2) + gr%dzm(1)) ) ! bb(2) diffusion
      .         - ( - nu_r*gr%dzt(3)*gr%dzm(2) )               ! aa(3) diffusion
-     .         - Vr(2)*gr%dzm(1)                              ! cc(1) sedimentation
+     .         - Vrr(2)*gr%dzm(1)                              ! cc(1) sedimentation
                                                               ! cc(1) advection = 0.
 
         ! upper boundary
@@ -343,6 +396,7 @@
         qq(gr%nnzp) = 0.0                                       ! qq(gr%nnzp) term
 
 
+
         ! Main Loop
         DO k = 2, gr%nnzp-1, 1
 
@@ -353,40 +407,92 @@
 
            ! Find subdiagonal aa
            aa(k) = 
-     .            - wmt(k) / (1.0/gr%dzm(k) + 1.0/gr%dzm(km1))   ! advection
-     .            - nu_r*gr%dzt(k)*gr%dzm(km1)                   ! diffusion
+     .            - wmt(k) * (1.0/2.0) * gr%dzt(k)                  ! advection
+     .            + (1.0/4.0) * ( Vrr(k) + Vrr(km1) ) * gr%dzt(k)   ! sedimentation
+     .            - nu_r * gr%dzt(k) * gr%dzm(km1)                  ! diffusion
      
            ! Find main diagonal bb
            bb(k) = 
-     .              (1.0/dt)                                     ! time tendency
-     .            + Vr(kp1)*gr%dzm(k)                            ! sedimentation
-     .            + nu_r*gr%dzt(k)*(gr%dzm(k) + gr%dzm(km1))     ! diffusion
+     .            + (1.0/dt)                                         ! time tendency
+     .            + nu_r * gr%dzt(k) * ( gr%dzm(k) + gr%dzm(km1) )   ! diffusion
 
            ! Find superdiagonal cc
            cc(k) = 
-     .              wmt(k) / (1.0/gr%dzm(k) + 1.0/gr%dzm(km1))   ! advection
-     .            - Vr(kp1)*gr%dzm(k)                            ! sedimentation
-     .            - nu_r*gr%dzt(k)*gr%dzm(k)                     ! diffusion
+     .            + wmt(k) * (1.0/2.0) * gr%dzt(k)                  ! advection
+     .            - (1.0/4.0) * ( Vrr(k) + Vrr(km1) ) * gr%dzt(k)   ! sedimentation
+     .            - nu_r * gr%dzt(k) * gr%dzm(k)                    ! diffusion
+
+
+        ! Implicit contributions to rrm.
+#ifdef STATS
+
+        if (lstats_samp) then
+
+         if ( irrm_ma > 0 ) then
+           ztscr01(k) = + wmt(k) * (1.0/2.0) * gr%dzt(k)
+           ztscr02(k) = - wmt(k) * (1.0/2.0) * gr%dzt(k)
+         endif
+
+         if ( irrm_sd > 0 ) then
+           ztscr03(k) = - (1.0/4.0) * ( Vrr(k) + Vrr(km1) ) * gr%dzt(k)
+           ztscr04(k) = + (1.0/4.0) * ( Vrr(k) + Vrr(km1) ) * gr%dzt(k)
+         endif
+
+         if ( irrm_dff > 0 ) then
+           ztscr05(k) = + nu_r * gr%dzt(k) * gr%dzm(km1)
+           ztscr06(k) = - nu_r * gr%dzt(k) * ( gr%dzm(k) + gr%dzm(km1) )
+           ztscr07(k) = + nu_r * gr%dzt(k) * gr%dzm(k)
+         endif
+
+        endif
+
+#endif STATS
 
 
            ! LHS terms for rain droplet number concentration, Nrm.
 
            ! Find subdiagonal oo
            oo(k) = 
-     .            - wmt(k) / (1.0/gr%dzm(k) + 1.0/gr%dzm(km1))   ! advection
-     .            - nu_r*gr%dzt(k)*gr%dzm(km1)                   ! diffusion
+     .            - wmt(k) * (1.0/2.0) * gr%dzt(k)                  ! advection
+     .            + (1.0/4.0) * ( VNr(k) + VNr(km1) ) * gr%dzt(k)   ! sedimentation
+     .            - nu_r * gr%dzt(k) * gr%dzm(km1)                  ! diffusion
 
            ! Find main diagonal pp
            pp(k) = 
-     .              (1.0/dt)                                     ! time tendency
-     .            + VNr(kp1)*gr%dzm(k)                           ! sedimentation
-     .            + nu_r*gr%dzt(k)*(gr%dzm(k) + gr%dzm(km1))     ! diffusion
+     .            + (1.0/dt)                                         ! time tendency
+     .            + nu_r * gr%dzt(k) * ( gr%dzm(k) + gr%dzm(km1) )   ! diffusion
 
            ! Find superdiagonal qq
            qq(k) = 
-     .              wmt(k) / (1.0/gr%dzm(k) + 1.0/gr%dzm(km1))   ! advection
-     .            - VNr(kp1)*gr%dzm(k)                           ! sedimentation
-     .            - nu_r*gr%dzt(k)*gr%dzm(k)                     ! diffusion
+     .            + wmt(k) * (1.0/2.0) * gr%dzt(k)                  ! advection
+     .            - (1.0/4.0) * ( VNr(k) + VNr(km1) ) * gr%dzt(k)   ! sedimentation
+     .            - nu_r * gr%dzt(k) * gr%dzm(k)                    ! diffusion
+
+
+        ! Implicit contributions to Nrm.
+#ifdef STATS
+
+        if (lstats_samp) then
+
+         if ( iNrm_ma > 0 ) then
+           ztscr08(k) = + wmt(k) * (1.0/2.0) * gr%dzt(k)
+           ztscr09(k) = - wmt(k) * (1.0/2.0) * gr%dzt(k)
+         endif
+
+         if ( iNrm_sd > 0 ) then
+           ztscr10(k) = - (1.0/4.0) * ( VNr(k) + VNr(km1) ) * gr%dzt(k)
+           ztscr11(k) = + (1.0/4.0) * ( VNr(k) + VNr(km1) ) * gr%dzt(k)
+         endif
+
+         if ( iNrm_dff > 0 ) then
+           ztscr12(k) = + nu_r * gr%dzt(k) * gr%dzm(km1)
+           ztscr13(k) = - nu_r * gr%dzt(k) * ( gr%dzm(k) + gr%dzm(km1) )
+           ztscr14(k) = + nu_r * gr%dzt(k) * gr%dzm(k)
+         endif
+
+        endif
+
+#endif STATS
 
 
            ! PDF parameters from pdf_closure_new for use in calculation
@@ -437,6 +543,31 @@
      .                             a, s1, s2, ss1, ss2, rc1, rc2 )
 
 
+        ! Explicit contributions to rrm.
+#ifdef STATS
+
+        if (lstats_samp) then
+
+         if ( irrm_cond > 0 ) then
+           zt%x(k,irrm_cond) = zt%x(k,irrm_cond) + cond_rrm(k)
+           zt%n(k,irrm_cond) = zt%n(k,irrm_cond) + 1
+         endif
+
+         if ( irrm_auto > 0 ) then
+           zt%x(k,irrm_auto) = zt%x(k,irrm_auto) + auto_rrm(k)
+           zt%n(k,irrm_auto) = zt%n(k,irrm_auto) + 1
+         endif
+
+         if ( irrm_accr > 0 ) then
+           zt%x(k,irrm_accr) = zt%x(k,irrm_accr) + accr_rrm(k)
+           zt%n(k,irrm_accr) = zt%n(k,irrm_accr) + 1
+         endif
+
+        endif
+
+#endif STATS
+
+
            ! Now find the elements that make up the right-hand side of the
            ! equation, rr, for rain droplet number concentration, Nrm.
 
@@ -444,7 +575,30 @@
 
            auto_Nrm(k) = autoconv_Nrm( auto_rrm(k), rhot(k) )
 
+
+        ! Explicit contributions to Nrm.
+#ifdef STATS
+
+        if (lstats_samp) then
+
+         if ( iNrm_cond > 0 ) then
+           zt%x(k,iNrm_cond) = zt%x(k,iNrm_cond) + cond_Nrm(k)
+           zt%n(k,iNrm_cond) = zt%n(k,iNrm_cond) + 1
+         endif
+
+         if ( iNrm_auto > 0 ) then
+           zt%x(k,iNrm_auto) = zt%x(k,iNrm_auto) + auto_Nrm(k)
+           zt%n(k,iNrm_auto) = zt%n(k,iNrm_auto) + 1
+         endif
+
+        endif
+
+#endif STATS
+
+
         ENDDO ! k=2..gr%nnzp-1
+
+
 
         ! Enter the entire dd array, which is the RHS of the equation.
         dd(2:gr%nnzp-1) = (1.0/dt)*rrm(2:gr%nnzp-1)
@@ -497,6 +651,7 @@
 !        qq(gr%nnzp) = qq(gr%nnzp-1)
 !!       RHS rr is defined above
 
+
 !       solve tridiagonal systems
 
          call tridag(aa, bb, cc, dd, rrm, gr%nnzp, isValid)
@@ -511,17 +666,63 @@
           return
         endif
 
-!       boundary conditions on results
 
-        ! rrm
-        rrm(1) = rrm(2)
-        rrm(gr%nnzp) = rrm(gr%nnzp-1)
+        DO k = 2, gr%nnzp, 1
 
-        ! Nrm
-        Nrm(1) = Nrm(2)
-        Nrm(gr%nnzp) = Nrm(gr%nnzp-1)
+#ifdef STATS
 
-        DO k = 1, gr%nnzp, 1
+        if (lstats_samp) then
+
+        ! Finalize implicit contributions to rrm.
+         if ( irrm_ma > 0 ) then
+           zt%x(k,irrm_ma) = zt%x(k,irrm_ma)
+     .       + ztscr01(k) * rrm(km1)
+     .       + ztscr02(k) * rrm(kp1)
+           zt%n(k,irrm_ma) = zt%n(k,irrm_ma) + 1
+         endif
+
+         if ( irrm_sd > 0 ) then
+           zt%x(k,irrm_sd) = zt%x(k,irrm_sd)
+     .       + ztscr03(k) * rrm(km1)
+     .       + ztscr04(k) * rrm(kp1)
+           zt%n(k,irrm_sd) = zt%n(k,irrm_sd) + 1
+         endif
+
+         if ( irrm_dff > 0 ) then
+           zt%x(k,irrm_dff) = zt%x(k,irrm_dff)
+     .       + ztscr05(k) * rrm(km1)
+     .       + ztscr06(k) * rrm(k)
+     .       + ztscr07(k) * rrm(kp1)
+           zt%n(k,irrm_dff) = zt%n(k,irrm_dff) + 1
+         endif
+
+
+        ! Finalize implicit contributions to Nrm.
+         if ( iNrm_ma > 0 ) then
+           zt%x(k,iNrm_ma) = zt%x(k,iNrm_ma)
+     .       + ztscr08(k) * Nrm(km1)
+     .       + ztscr09(k) * Nrm(kp1)
+           zt%n(k,iNrm_ma) = zt%n(k,iNrm_ma) + 1
+         endif
+
+         if ( iNrm_sd > 0 ) then
+           zt%x(k,iNrm_sd) = zt%x(k,iNrm_sd)
+     .       + ztscr10(k) * Nrm(km1)
+     .       + ztscr11(k) * Nrm(kp1)
+           zt%n(k,iNrm_sd) = zt%n(k,iNrm_sd) + 1
+         endif
+
+         if ( iNrm_dff > 0 ) then
+           zt%x(k,iNrm_dff) = zt%x(k,iNrm_dff)
+     .       + ztscr12(k) * Nrm(km1)
+     .       + ztscr13(k) * Nrm(k)
+     .       + ztscr14(k) * Nrm(kp1)
+           zt%n(k,iNrm_dff) = zt%n(k,iNrm_dff) + 1
+         endif
+
+        endif
+
+#endif STATS
 
            ! Value of rain water mixing ratio cannot fall below 0.
            IF (rrm(k) < 0.0) THEN
@@ -533,49 +734,45 @@
               Nrm(k) = 0.0
            ENDIF
 
-
-           ! Breakdown for output purposes.  This is done here because these
-           ! terms (sedimentation, diffusion, and subsidence) are on the
-           ! the left-hand side of the equation.  Therefore, they are based
-           ! on the values of rrm and Nrm at the (n+1)th time step.  
-
-           km1 = MAX(k-1,1)
-           kp1 = MIN(k+1,gr%nnzp)
+        ENDDO  ! k = 2, gr%nnzp-1, 1
 
 
-           ! Rain Water Mixing Ratio budget.
+!       boundary conditions on results
 
-           sed_rrm(k) = Vr(kp1) * ( (rrm(kp1) - rrm(k)) * gr%dzm(k) )
+        ! rrm
+        rrm(1) = rrm(2)
+        rrm(gr%nnzp) = rrm(gr%nnzp-1)
 
-           diff_rrm(k) = nu_r * gr%dzt(k)
-     .                  * (  (rrm(kp1) - rrm(k))*gr%dzm(k)
-     .                     - (rrm(k) - rrm(km1))*gr%dzm(km1)  )
-
-           subs_rrm(k) = -wmt(k) * ( (rrm(kp1) - rrm(km1))
-     .                            / (1.0/gr%dzm(k) + 1.0/gr%dzm(km1)) )
-
-
-           ! Rain Droplet Number Concentration Budget
-
-           sed_Nrm(k) = VNr(kp1) * ( (Nrm(kp1) - Nrm(k)) * gr%dzm(k) )
-
-           diff_Nrm(k) = nu_r * gr%dzt(k)
-     .                  * (  (Nrm(kp1) - Nrm(k))*gr%dzm(k)
-     .                     - (Nrm(k) - Nrm(km1))*gr%dzm(km1)  )
-
-           subs_Nrm(k) = -wmt(k) * ( (Nrm(kp1) - Nrm(km1))
-     .                            / (1.0/gr%dzm(k) + 1.0/gr%dzm(km1)) )
+        ! Nrm
+        Nrm(1) = Nrm(2)
+        Nrm(gr%nnzp) = Nrm(gr%nnzp-1)
 
 
-        ENDDO
+#ifdef STATS
+
+        if (lstats_samp) then
+
+         if ( irrm_bt > 0 ) then
+           zt%x(:,irrm_bt) = zt%x(:,irrm_bt) + rrm/dt
+           zt%n(:,irrm_bt) = zt%n(:,irrm_bt) + 1
+         endif
+
+         if ( irrm_bt > 0 ) then
+           zt%x(:,iNrm_bt) = zt%x(:,iNrm_bt) + Nrm/dt
+           zt%n(:,iNrm_bt) = zt%n(:,iNrm_bt) + 1
+         endif
+
+        endif
+
+#endif STATS
+
 
         RETURN
         END SUBROUTINE rain
 
 !------------------------------------------------------------------------
 
-        SUBROUTINE sed_velocity( rhot, Nrm, rrm, 
-     .                           Vr, VNr, mean_vol_rad )
+        SUBROUTINE mean_volume_radius( rhot, Nrm, rrm, mean_vol_rad )
 
         USE grid_class
         USE constants
@@ -584,7 +781,7 @@
 
         REAL, INTENT(IN):: rhot, Nrm, rrm
 !        LOGICAL, INTENT(IN):: local_kk
-        REAL, INTENT(OUT):: Vr, VNr, mean_vol_rad
+        REAL, INTENT(OUT):: mean_vol_rad
 
 !       Added to constants.F
 !        REAL, PARAMETER:: rho_lw = 1000.0 ! density of liquid water; kg/m^3
@@ -599,9 +796,11 @@
         !     in cloud and below cloud.  7 Apr 2005
         REAL, PARAMETER:: corr_rrNr_L = 0.75 
 
-        ! Find sedimentation velocity, Vr.
-
-        ! First, find mean volume radius of rain drops (in m).
+        ! Find the the mean volume radius of rain drops (in m).
+        ! This is located on thermodynamic levels.
+        ! Obviously, there will only be a mean volume radius of rain drop
+        ! if rain is present, meaning rain water mixing ratio and rain
+        ! drop concentration are both greater than 0.
         IF (rrm > 0.0 .AND. Nrm > 0.0) THEN
 
            IF ( local_kk ) THEN
@@ -627,11 +826,12 @@
               ! constant.  Therefore, rho is taken out of it.  In order to make
               ! up for that, Nr is divided by rho to become concentration per kg.
               !
-              ! rvr = [(4*pi*rho_lw)/3]^(-1/3) * rr^(1/3) * Nr^(-1/3)
+              ! rvr = [(4*pi*rho_lw)/3]^(-1/3) * rr^(1/3) * [Nr/rho]^(-1/3)
               !
               ! For our purposes, we need the mean rvr:
               !
-              ! mean(rvr) = [(4*pi*rho_lw)/3]^(-1/3) * mean(rr^(1/3) * Nr^(-1/3))
+              ! mean(rvr) = [(4*pi*rho_lw)/3]^(-1/3) 
+              !             * mean[ rr^(1/3) * [Nr/rho]^(-1/3) ]
 
               Nrm_kg = Nrm/rhot
 
@@ -656,7 +856,7 @@
      .                       * ((EXP(sig2_Nr_G) - 1.0)**(1.0/2.0)) )  )
      .                     / ( SQRT(sig2_rr_G)*SQRT(sig2_Nr_G) )
 
-              ! This term is:  mean(rr^(1/3) * Nr^(-1/3))
+              ! This term is:  mean[ rr^(1/3) * [Nr/rho]^(-1/3) ]
               bivar_term = EXP(
      .                       (1.0/3.0)*u_rr_G + (-1.0/3.0)*u_Nr_G
      .                     + (1.0/2.0) * ((1.0/3.0)**2.0) * sig2_rr_G
@@ -680,29 +880,8 @@
 
         ENDIF
         
-        ! Khairoutdinov and Kogan Sedimentation Velocity Calculation.
-        ! sedimentation velocity of rain drops (in m/s).
-        ! mean volume radius converted to um.
-        ! Note 1: positive sedimentation velocity means downwards.
-        ! Note 2: Vr(m/s) = 0.012*rvr(um) - 0.2
-        ! If rvr(um) is too small, the equation will result in an
-        ! upwards (negative) sedimentation velocity.  The limiter on
-        ! the first line is put in there for that reason.
-
-        IF (1000000.0*mean_vol_rad > (0.2/0.012) ) THEN
-           Vr = 0.012*(1000000.0*mean_vol_rad) - 0.2
-        ELSE
-           Vr = 0.0
-        ENDIF
-
-        IF (1000000.0*mean_vol_rad > (0.1/0.007) ) THEN
-           VNr = 0.007*(1000000.0*mean_vol_rad) - 0.1
-        ELSE
-           VNr = 0.0
-        ENDIF
-
         RETURN
-        END SUBROUTINE sed_velocity
+        END SUBROUTINE mean_volume_radius
 
 !------------------------------------------------------------------------
 

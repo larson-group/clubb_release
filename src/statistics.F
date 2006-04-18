@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.33 2006-03-19 19:33:56 griffinb Exp $
+!  $Id: statistics.F,v 1.34 2006-04-18 21:51:24 griffinb Exp $
 
 !  module stats_type
 !  contains:
@@ -99,19 +99,8 @@ c       Indices for statistics in zt file
      .     ised_rcm,       ! Brian
      .     irsm,           ! Brian
      .     irrm,           ! Brian
-     .     icond_rrm,      ! Brian
-     .     iauto_rrm,      ! Brian
-     .     iaccr_rrm,      ! Brian
-     .     ised_rrm,       ! Brian
-     .     idiff_rrm,      ! Brian
-     .     isubs_rrm,      ! Brian
      .     iNrm,           ! Brian
-     .     icond_Nrm,      ! Brian
-     .     iauto_Nrm,      ! Brian
-     .     ised_Nrm,       ! Brian
-     .     idiff_Nrm,      ! Brian
-     .     isubs_Nrm,      ! Brian
-     .     iVr,            ! Brian
+     .     iVrr,           ! Brian
      .     imean_vol_rad,  ! Brian
      .     irain_rate,     ! Brian
      .     iAKm,           ! analytic Kessler.  Vince Larson 22 May 2005 
@@ -132,6 +121,21 @@ c       Indices for statistics in zt file
      .     iwp3_pr2,
      .     iwp3_dp1,
      .     iwp3_cl
+
+        integer
+     .     irrm_bt,
+     .     irrm_ma,
+     .     irrm_sd,
+     .     irrm_dff,
+     .     irrm_cond,
+     .     irrm_auto,
+     .     irrm_accr,
+     .     iNrm_bt,
+     .     iNrm_ma,
+     .     iNrm_sd,
+     .     iNrm_dff,
+     .     iNrm_cond,
+     .     iNrm_auto
 
         integer
      .     ia,
@@ -525,19 +529,8 @@ c     -----------------------------------------------------------------
       ised_rcm      = 0  ! Brian
       irsm          = 0  ! Brian
       irrm          = 0  ! Brian
-      icond_rrm     = 0  ! Brian
-      iauto_rrm     = 0  ! Brian
-      iaccr_rrm     = 0  ! Brian
-      ised_rrm      = 0  ! Brian
-      idiff_rrm     = 0  ! Brian
-      isubs_rrm     = 0  ! Brian
       iNrm          = 0  ! Brian
-      icond_Nrm     = 0  ! Brian
-      iauto_Nrm     = 0  ! Brian
-      ised_Nrm      = 0  ! Brian
-      idiff_Nrm     = 0  ! Brian
-      isubs_Nrm     = 0  ! Brian
-      iVr           = 0  ! Brian
+      iVrr          = 0  ! Brian
       imean_vol_rad = 0  ! Brian
       irain_rate    = 0  ! Brian
       iAKm          = 0  ! analytic Kessler.  Vince Larson 22 May 2005
@@ -556,6 +549,20 @@ c     -----------------------------------------------------------------
       iwp3_pr2      = 0
       iwp3_dp1      = 0
       iwp3_cl       = 0
+
+      irrm_bt       = 0
+      irrm_ma       = 0
+      irrm_sd       = 0
+      irrm_dff      = 0
+      irrm_cond     = 0
+      irrm_auto     = 0
+      irrm_accr     = 0
+      iNrm_bt       = 0
+      iNrm_ma       = 0
+      iNrm_sd       = 0
+      iNrm_dff      = 0
+      iNrm_cond     = 0
+      iNrm_auto     = 0
 
       ia            = 0
       iw1           = 0
@@ -868,121 +875,22 @@ c     -----------------------------------------------------------------
           zt%f%var(irrm)%units = "kg/kg"
           k = k + 1
 
-        case ('cond_rrm')      ! Brian
-          icond_rrm = k
-          zt%f%var(icond_rrm)%ptr => zt%x(:,k)
-          zt%f%var(icond_rrm)%name = "cond_rrm"
-          zt%f%var(icond_rrm)%description
-     .    = "d(rrm)/dt due to condensation ((kg/kg)/s)"
-          zt%f%var(icond_rrm)%units = "(kg/kg)/s"
-          k = k + 1
-
-        case ('auto_rrm')      ! Brian
-          iauto_rrm = k
-          zt%f%var(iauto_rrm)%ptr => zt%x(:,k)
-          zt%f%var(iauto_rrm)%name = "auto_rrm"
-          zt%f%var(iauto_rrm)%description
-     .    = "d(rrm)/dt due to autoconversion ((kg/kg)/s)"
-          zt%f%var(iauto_rrm)%units = "(kg/kg)/s"
-          k = k + 1
-
-        case ('accr_rrm')      ! Brian
-          iaccr_rrm = k
-          zt%f%var(iaccr_rrm)%ptr => zt%x(:,k)
-          zt%f%var(iaccr_rrm)%name = "accr_rrm"
-          zt%f%var(iaccr_rrm)%description
-     .    = "d(rrm)/dt due to accretion ((kg/kg)/s)"
-          zt%f%var(iaccr_rrm)%units = "kg/(kg s)"
-          k = k + 1
-
-        case ('sed_rrm')       ! Brian
-          ised_rrm = k
-          zt%f%var(ised_rrm)%ptr => zt%x(:,k)
-          zt%f%var(ised_rrm)%name = "sed_rrm"
-          zt%f%var(ised_rrm)%description
-     .    = "d(rrm)/dt due to sedimentation ((kg/kg)/s)"
-          zt%f%var(ised_rrm)%units = " kg/(kg s)"
-          k = k + 1
-
-        case ('diff_rrm')      ! Brian
-          idiff_rrm = k
-          zt%f%var(idiff_rrm)%ptr => zt%x(:,k)
-          zt%f%var(idiff_rrm)%name = "diff_rrm"
-          zt%f%var(idiff_rrm)%description
-     .    = "d(rrm)/dt due to diffusion ((kg/kg)/s)"
-          zt%f%var(idiff_rrm)%units = "kg/(kg s)"
-          k = k + 1
-
-        case ('subs_rrm')      ! Brian
-          isubs_rrm = k
-          zt%f%var(isubs_rrm)%ptr => zt%x(:,k)
-          zt%f%var(isubs_rrm)%name = "subs_rrm"
-          zt%f%var(isubs_rrm)%description
-     .    = "d(rrm)/dt due to subsidence ((kg/kg)/s)"
-          zt%f%var(isubs_rrm)%units = "kg/(kg/s)"
-          k = k + 1
-
         case ('Nrm')           ! Brian
           iNrm = k
           zt%f%var(iNrm)%ptr => zt%x(:,k)
           zt%f%var(iNrm)%name = "Nrm"
           zt%f%var(iNrm)%description
      .    = "rain droplet number concentration (num/m^3)"
-          zt%f%var(iNrm)%units = "count/(m^3)"
+          zt%f%var(iNrm)%units = "num/(m^3)"
           k = k + 1
 
-        case ('cond_Nrm')      ! Brian
-          icond_Nrm = k
-          zt%f%var(icond_Nrm)%ptr => zt%x(:,k)
-          zt%f%var(icond_Nrm)%name = "cond_Nrm"
-          zt%f%var(icond_Nrm)%description
-     .    = "d(Nrm)/dt due to condensation ((num/m^3)/s)"
-          zt%f%var(icond_Nrm)%units = "count/(m^3 s)"
-          k = k + 1
-
-        case ('auto_Nrm')      ! Brian
-          iauto_Nrm = k
-          zt%f%var(iauto_Nrm)%ptr => zt%x(:,k)
-          zt%f%var(iauto_Nrm)%name = "auto_Nrm"
-          zt%f%var(iauto_Nrm)%description
-     .    = "d(Nrm)/dt due to autoconversion ((num/m^3)/s)"
-          zt%f%var(iauto_Nrm)%units = "count/(m^3 s)"
-          k = k + 1
-
-        case ('sed_Nrm')       ! Brian
-          ised_Nrm = k
-          zt%f%var(ised_Nrm)%ptr => zt%x(:,k)
-          zt%f%var(ised_Nrm)%name = "sed_Nrm"
-          zt%f%var(ised_Nrm)%description
-     .    = "d(Nrm)/dt due to sedimentation ((num/m^3)/s)"
-          zt%f%var(ised_Nrm)%units = "count/(m^3 s)"
-          k = k + 1
-
-        case ('diff_Nrm')      ! Brian
-          idiff_Nrm = k
-          zt%f%var(idiff_Nrm)%ptr => zt%x(:,k)
-          zt%f%var(idiff_Nrm)%name = "diff_Nrm"
-          zt%f%var(idiff_Nrm)%description
-     .    = "d(Nrm)/dt due to diffusion ((num/m^3)/s)"
-          zt%f%var(idiff_Nrm)%units = "count/(m^3/s)"
-          k = k + 1
-
-        case ('subs_Nrm')      ! Brian
-          isubs_Nrm = k
-          zt%f%var(isubs_Nrm)%ptr => zt%x(:,k)
-          zt%f%var(isubs_Nrm)%name = "subs_Nrm"
-          zt%f%var(isubs_Nrm)%description
-     .    = "d(Nrm)/dt due to subsidence ((num/m^3)/s)"
-          zt%f%var(isubs_Nrm)%units = "count/(m^3 s)"
-          k = k + 1
-
-        case ('Vr')            ! Brian
-          iVr = k
-          zt%f%var(iVr)%ptr => zt%x(:,k)
-          zt%f%var(iVr)%name = "Vr"
-          zt%f%var(iVr)%description
-     .    = "sedimentation velocity (m/s)"
-          zt%f%var(iVr)%units = "m/s"
+        case ('Vrr')           ! Brian
+          iVrr = k
+          zt%f%var(iVrr)%ptr => zt%x(:,k)
+          zt%f%var(iVrr)%name = "Vrr"
+          zt%f%var(iVrr)%description
+     .    = "rrm sedimentation velocity (m/s)"
+          zt%f%var(iVrr)%units = "m/s"
           k = k + 1
 
         case ('mean_vol_rad')  ! Brian
@@ -1120,6 +1028,110 @@ c     -----------------------------------------------------------------
           zt%f%var(iwp3_cl)%name = "wp3_cl"
           zt%f%var(iwp3_cl)%description = "wp3 clipping term"
           zt%f%var(iwp3_cl)%units = "(m^3)/(s^4)"
+          k = k + 1
+ 
+        case ('rrm_bt')
+          irrm_bt = k
+          zt%f%var(irrm_bt)%ptr => zt%x(:,k)
+          zt%f%var(irrm_bt)%name = "rrm_bt"
+          zt%f%var(irrm_bt)%description = "rrm budget"
+          zt%f%var(irrm_bt)%units = "(kg/kg)/(s)"
+          k = k + 1
+ 
+        case ('rrm_ma')
+          irrm_ma = k
+          zt%f%var(irrm_ma)%ptr => zt%x(:,k)
+          zt%f%var(irrm_ma)%name = "rrm_ma"
+          zt%f%var(irrm_ma)%description = "rrm mean advection"
+          zt%f%var(irrm_ma)%units = "(kg/kg)/(s)"
+          k = k + 1
+ 
+        case ('rrm_sd')
+          irrm_sd = k
+          zt%f%var(irrm_sd)%ptr => zt%x(:,k)
+          zt%f%var(irrm_sd)%name = "rrm_sd"
+          zt%f%var(irrm_sd)%description = "rrm sedimentation"
+          zt%f%var(irrm_sd)%units = "(kg/kg)/(s)"
+          k = k + 1
+ 
+        case ('rrm_dff')
+          irrm_dff = k
+          zt%f%var(irrm_dff)%ptr => zt%x(:,k)
+          zt%f%var(irrm_dff)%name = "rrm_dff"
+          zt%f%var(irrm_dff)%description = "rrm diffusion"
+          zt%f%var(irrm_dff)%units = "(kg/kg)/(s)"
+          k = k + 1
+ 
+        case ('rrm_cond')
+          irrm_cond = k
+          zt%f%var(irrm_cond)%ptr => zt%x(:,k)
+          zt%f%var(irrm_cond)%name = "rrm_cond"
+          zt%f%var(irrm_cond)%description = "rrm cond/evap"
+          zt%f%var(irrm_cond)%units = "(kg/kg)/(s)"
+          k = k + 1
+ 
+        case ('rrm_auto')
+          irrm_auto = k
+          zt%f%var(irrm_auto)%ptr => zt%x(:,k)
+          zt%f%var(irrm_auto)%name = "rrm_auto"
+          zt%f%var(irrm_auto)%description = "rrm autoconversion"
+          zt%f%var(irrm_auto)%units = "(kg/kg)/(s)"
+          k = k + 1
+ 
+        case ('rrm_accr')
+          irrm_accr = k
+          zt%f%var(irrm_accr)%ptr => zt%x(:,k)
+          zt%f%var(irrm_accr)%name = "rrm_accr"
+          zt%f%var(irrm_accr)%description = "rrm accretion"
+          zt%f%var(irrm_accr)%units = "(kg/kg)/(s)"
+          k = k + 1
+ 
+        case ('Nrm_bt')
+          iNrm_bt = k
+          zt%f%var(iNrm_bt)%ptr => zt%x(:,k)
+          zt%f%var(iNrm_bt)%name = "Nrm_bt"
+          zt%f%var(iNrm_bt)%description = "Nrm budget"
+          zt%f%var(iNrm_bt)%units = "(num/m^3)/(s)"
+          k = k + 1
+ 
+        case ('Nrm_ma')
+          iNrm_ma = k
+          zt%f%var(iNrm_ma)%ptr => zt%x(:,k)
+          zt%f%var(iNrm_ma)%name = "Nrm_ma"
+          zt%f%var(iNrm_ma)%description = "Nrm mean advection"
+          zt%f%var(iNrm_ma)%units = "(num/m^3)/(s)"
+          k = k + 1
+ 
+        case ('Nrm_sd')
+          iNrm_sd = k
+          zt%f%var(iNrm_sd)%ptr => zt%x(:,k)
+          zt%f%var(iNrm_sd)%name = "Nrm_sd"
+          zt%f%var(iNrm_sd)%description = "Nrm sedimentation"
+          zt%f%var(iNrm_sd)%units = "(num/m^3)/(s)"
+          k = k + 1
+ 
+        case ('Nrm_dff')
+          iNrm_dff = k
+          zt%f%var(iNrm_dff)%ptr => zt%x(:,k)
+          zt%f%var(iNrm_dff)%name = "Nrm_dff"
+          zt%f%var(iNrm_dff)%description = "Nrm diffusion"
+          zt%f%var(iNrm_dff)%units = "(num/m^3)/(s)"
+          k = k + 1
+ 
+        case ('Nrm_cond')
+          iNrm_cond = k
+          zt%f%var(iNrm_cond)%ptr => zt%x(:,k)
+          zt%f%var(iNrm_cond)%name = "Nrm_cond"
+          zt%f%var(iNrm_cond)%description = "Nrm cond/evap"
+          zt%f%var(iNrm_cond)%units = "(num/m^3)/(s)"
+          k = k + 1
+ 
+        case ('Nrm_auto')
+          iNrm_auto = k
+          zt%f%var(iNrm_auto)%ptr => zt%x(:,k)
+          zt%f%var(iNrm_auto)%name = "Nrm_auto"
+          zt%f%var(iNrm_auto)%description = "Nrm autoconversion"
+          zt%f%var(iNrm_auto)%units = "(num/m^3)/(s)"
           k = k + 1
  
         case ('a')
@@ -2920,57 +2932,13 @@ c     -----------------------------------------------------------------
           zt%x(:,irrm) = zt%x(:,irrm) + rrm
           zt%n(:,irrm) = zt%n(:,irrm) + 1
         endif
-        if ( icond_rrm > 0 ) then      ! Brian
-          zt%x(:,icond_rrm) = zt%x(:,icond_rrm) + cond_rrm
-          zt%n(:,icond_rrm) = zt%n(:,icond_rrm) + 1
-        endif
-        if ( iauto_rrm > 0 ) then      ! Brian
-          zt%x(:,iauto_rrm) = zt%x(:,iauto_rrm) + auto_rrm
-          zt%n(:,iauto_rrm) = zt%n(:,iauto_rrm) + 1
-        endif
-        if ( iaccr_rrm > 0 ) then      ! Brian
-          zt%x(:,iaccr_rrm) = zt%x(:,iaccr_rrm) + accr_rrm
-          zt%n(:,iaccr_rrm) = zt%n(:,iaccr_rrm) + 1
-        endif
-        if ( ised_rrm > 0 ) then       ! Brian
-          zt%x(:,ised_rrm) = zt%x(:,ised_rrm) + sed_rrm
-          zt%n(:,ised_rrm) = zt%n(:,ised_rrm) + 1
-        endif
-        if ( idiff_rrm > 0 ) then      ! Brian
-          zt%x(:,idiff_rrm) = zt%x(:,idiff_rrm) + diff_rrm
-          zt%n(:,idiff_rrm) = zt%n(:,idiff_rrm) + 1
-        endif
-        if ( isubs_rrm > 0 ) then      ! Brian
-          zt%x(:,isubs_rrm) = zt%x(:,isubs_rrm) + subs_rrm
-          zt%n(:,isubs_rrm) = zt%n(:,isubs_rrm) + 1
-        endif
         if ( iNrm > 0 ) then           ! Brian
           zt%x(:,iNrm) = zt%x(:,iNrm) + Nrm
           zt%n(:,iNrm) = zt%n(:,iNrm) + 1
         endif
-        if ( icond_Nrm > 0 ) then      ! Brian
-          zt%x(:,icond_Nrm) = zt%x(:,icond_Nrm) + cond_Nrm
-          zt%n(:,icond_Nrm) = zt%n(:,icond_Nrm) + 1
-        endif
-        if ( iauto_Nrm > 0 ) then      ! Brian
-          zt%x(:,iauto_Nrm) = zt%x(:,iauto_Nrm) + auto_Nrm
-          zt%n(:,iauto_Nrm) = zt%n(:,iauto_Nrm) + 1
-        endif
-        if ( ised_Nrm > 0 ) then       ! Brian
-          zt%x(:,ised_Nrm) = zt%x(:,ised_Nrm) + sed_Nrm
-          zt%n(:,ised_Nrm) = zt%n(:,ised_Nrm) + 1
-        endif
-        if ( idiff_Nrm > 0 ) then      ! Brian
-          zt%x(:,idiff_Nrm) = zt%x(:,idiff_Nrm) + diff_Nrm
-          zt%n(:,idiff_Nrm) = zt%n(:,idiff_Nrm) + 1
-        endif
-        if ( isubs_Nrm > 0 ) then      ! Brian
-          zt%x(:,isubs_Nrm) = zt%x(:,isubs_Nrm) + subs_Nrm
-          zt%n(:,isubs_Nrm) = zt%n(:,isubs_Nrm) + 1
-        endif
-        if ( iVr > 0 ) then            ! Brian
-          zt%x(:,iVr) = zt%x(:,iVr) + Vr
-          zt%n(:,iVr) = zt%n(:,iVr) + 1
+        if ( iVrr > 0 ) then            ! Brian
+          zt%x(:,iVrr) = zt%x(:,iVrr) + Vrr
+          zt%n(:,iVrr) = zt%n(:,iVrr) + 1
         endif
         if ( imean_vol_rad > 0 ) then  ! Brian
           zt%x(:,imean_vol_rad) = zt%x(:,imean_vol_rad) + mean_vol_rad
