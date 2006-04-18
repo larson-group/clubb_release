@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.19 2006-02-19 05:46:35 griffinb Exp $
+! $Id: mixing.F,v 1.20 2006-04-18 13:28:15 griffinb Exp $
 !
 ! Module containing the hoc mixing scheme.  Allows for optional variables
 ! and assumed shape arrays.
@@ -288,55 +288,65 @@
 
 !         xm: mean vertical advection
 
+          ! Thermodynamic subdiagonal [ x xm(k-1,<t+1>) ]
           aa(k_xm,3-2) = - wmt(k) * (1.0/2.0) * gr%dzt(k)
+          ! Thermodynamic superdiagonal [ x xm(k+1,<t+1>) ]
           aa(k_xm,3+2) = + wmt(k) * (1.0/2.0) * gr%dzt(k)
 
 !         xm: turbulent transport
 
+          ! Momentum subdiagonal [ x wpxp(k-1,<t+1>) ]
           aa(k_xm,3-1) = - gr%dzt(k)
+          ! Momentum superdiagonal [ x wpxp(k,<t+1>) ]
           aa(k_xm,3+1) = + gr%dzt(k)
 
 !         xm: time tendency
 
+          ! Thermodynamic main diagonal [ x xm(k,<t+1>) ]
           aa(k_xm,3) = 1.0 / dt
 
 !         wpxp: mean vertical advection, turbulent transport, time tendency, 
 !         damping and diffusion
 
+          ! Momentum subdiagonal [ x wpxp(k-1,<t+1>) ]
           aa(k_wpxp,3-2)
      .    = - wmm(k) * (1.0/2.0) * gr%dzm(k)
      .      - gr%dzm(k)
      .        * (1.0/2.0) * ( a1(k) + a1(km1) )
      .        * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*eps ) )
      .      - nu6 * gr%dzm(k) * gr%dzt(k)      
+
+          ! Momentum main diagonal [ x wpxp(k,<t+1>) ]
           select case ( trim(solve_type) )
           case ("rtm")
             aa(k_wpxp,3)
-!     .      = + C6rt / taum(k)
-     .      = + C6rt_Skw_fnc(k) / taum(k)
-     .        + gr%dzm(k)
+     .      = + gr%dzm(k)
      .          * (  (1.0/2.0) * ( a1(kp1) + a1(k) )
      .             * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
      .            -  (1.0/2.0) * ( a1(k) + a1(km1) )
      .             * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*eps ) )
      .            )
      .        + (1.0-C7_Skw_fnc(k)) * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
+!     .        + C6rt / taum(k)
+     .        + C6rt_Skw_fnc(k) / taum(k)
      .        + nu6 * gr%dzm(k) * ( gr%dzt(kp1) + gr%dzt(k) )
             if (liter) aa(k_wpxp,3) = aa(k_wpxp,3) + 1.0 / dt
           case ("thlm")
             aa(k_wpxp,3)
-!     .      = + C6thl / taum(k)
-     .      = + C6thl_Skw_fnc(k) / taum(k)
-     .        + gr%dzm(k)
+     .      = + gr%dzm(k)
      .          * (  (1.0/2.0) * ( a1(kp1) + a1(k) )
      .             * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
      .            -  (1.0/2.0) * ( a1(k) + a1(km1) )
      .             * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*eps ) )
      .            )
      .        + (1.0-C7_Skw_fnc(k)) * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
+!     .        + C6thl / taum(k)
+     .        + C6thl_Skw_fnc(k) / taum(k)
      .        + nu6 * gr%dzm(k) * ( gr%dzt(kp1) + gr%dzt(k) )
             if (liter) aa(k_wpxp,3) = aa(k_wpxp,3) + 1.0 / dt
           end select
+
+          ! Momentum superdiagonal [ x wpxp(k+1,<t+1>) ]
           aa(k_wpxp,3+2)
      .    = + wmm(k) * (1.0/2.0) * gr%dzm(k)
      .      + gr%dzm(k)
@@ -346,9 +356,11 @@
 
 !         wpxp: production
 
+          ! Thermodynamic subdiagonal [ x xm(k,<t+1>) ]
           aa(k_wpxp,3-1)
      .    = - wp2(k) * gr%dzm(k)
 
+          ! Thermodynamic superdiagonal [ x xm(k+1,<t+1>) ]
           aa(k_wpxp,3+1)
      .    = + wp2(k) * gr%dzm(k)
 
@@ -365,9 +377,9 @@
 
            if ( iwprtp_ta > 0 .or. iwpthlp_ta > 0 ) then
             zmscr03(k) =
-     .      + gr%dzm(k)
-     .        * (1.0/2.0) * ( a1(k) + a1(km1) )
-     .        * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*eps ) )
+     .        + gr%dzm(k)
+     .          * (1.0/2.0) * ( a1(k) + a1(km1) )
+     .          * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*eps ) )
             zmscr04(k) = 
      .        - gr%dzm(k)
      .          * (  (1.0/2.0) * ( a1(kp1) + a1(k) )
@@ -376,9 +388,9 @@
      .             * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*eps ) )
      .            )
             zmscr05(k) = 
-     .      - gr%dzm(k)
-     .        * (1.0/2.0) * ( a1(kp1) + a1(k) )
-     .        * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
+     .        - gr%dzm(k)
+     .          * (1.0/2.0) * ( a1(kp1) + a1(k) )
+     .          * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
            endif
 
            if ( iwprtp_tp > 0 .or. iwpthlp_tp > 0 ) then
@@ -693,10 +705,12 @@
 !                 thlm also includes effects on thlm of production
 !                   and evaporation of rain (rrm).  3/31/05.
 
+          ! Right-hand side.
           dd(k_xm) 
      .    = xm(k) / dt
      .    + xm_forcing(k)
 
+          ! + xm_microphysics -- cloud water sedimentation.
           ! Code addition by Brian for cloud water sedimentation.
           IF ( cloud_sed ) THEN
 
@@ -715,6 +729,7 @@
 
           ENDIF
 
+          ! + xm_microphysics -- rain effects.
           ! Code addition by Brian for rain.
           IF ( kk_rain ) THEN
 
@@ -737,6 +752,7 @@
 
 !         wpxp: time tendency and buoyancy
 
+          ! Right-hand side.
           dd(k_wpxp)
      .    = grav/T0 * (1.0-C7_Skw_fnc(k)) * xpthvp(k)
           if (liter) dd(k_wpxp) = dd(k_wpxp) + wpxp(k) / dt
