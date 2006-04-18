@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: grid.F,v 1.5 2005-08-23 21:11:10 dschanen Exp $
+! $Id: grid.F,v 1.6 2006-04-18 20:16:15 dschanen Exp $
 
 ! Definition of a grid class and associated functions
 !
@@ -47,11 +47,15 @@
 
            implicit none
 
-           include 'grid.h'
-
            type grid
               integer :: nnzp
-              real :: zm(1:NMAX),zt(1:NMAX),dzm(1:NMAX-1),dzt(1:NMAX)
+!   Note: Fortran 90/95 prevent an allocatable array from appearing
+!   within a derived type.  However, a pointer can be used in the same
+!   manner as an allocatable array, as we have done here (the grid 
+!   pointers are always allocated rather than assigned and nullified 
+!   like real pointers).
+              real, pointer, dimension(:) :: zm, zt
+              real, pointer, dimension(:) :: dzm, dzt
            end type grid
 
            type (grid) gr       ! The grid is defined here so that it
@@ -92,6 +96,10 @@
 
            implicit none
 
+!          Parameter
+
+           integer, parameter :: NWARNING = 200
+
 !          Input
 
            integer, intent(in) :: nnzp
@@ -99,18 +107,19 @@
 
 !          Internal
 
-           integer i
+           integer i, ierr
 
 !          Define grid size
 
-           if ( nnzp > NMAX ) then
-              write(*,*) 'ERROR: nnzp > NMAX'
-              write(*,*) 'nnzp = ',nnzp
-              write(*,*) 'NMAX = ',NMAX
-              write(*,*) 'Check file grid.h'
-              stop 'gridsetup'
-           end if
+           if ( nnzp > NWARNING ) then
+             write(*,*) "Warning: running with vertical grid "//
+     .                  "which is larger than ", NWARNING
+           endif
+
            gr%nnzp = nnzp
+           allocate( gr%zm(1:nnzp), gr%zt(1:nnzp),
+     .               gr%dzm(1:nnzp), gr%dzt(1:nnzp), stat=ierr )
+           if ( ierr /= 0 ) stop "grid allocation failure"
 
 
 !          Original code
