@@ -1,5 +1,5 @@
 c------------------------------------------------------------------------
-c $Id: outputgrads.F,v 1.6 2006-02-28 18:27:28 dschanen Exp $
+c $Id: outputgrads.F,v 1.7 2006-04-19 14:44:14 golaz Exp $
 c
 c This module contains structure and subroutine definitions to
 c create GrADS output data files for one dimensional arrays.
@@ -485,23 +485,68 @@ c         Variables description
           end subroutine write_grads
 
           !---------------------------------------------------------
-          subroutine formatdate(iday,imonth,iyear,st_time,date)
+          subroutine formatdate(day_in,month_in,year_in,time_in,date)
           implicit none
 
-          integer iday,imonth,iyear
-          real st_time
-          character(len=15) date
+          integer, intent(in) :: day_in, month_in, year_in
+          real, intent(in)    :: time_in
+          character(len=15), intent(out) :: date
+
+          integer iday, imonth, iyear
+          real time
+          integer ileap
 
           character(len=3) month(12)
+          integer ndays(24)
           data month /'JAN','FEB','MAR','APR','MAY','JUN',
      .                'JUL','AUG','SEP','OCT','NOV','DEC'/
+          data ndays /   31,   28,   31,   30,  31,   30,
+     .                   31,   31,   30,   31,  30,   31,
+     .                   31,   29,   31,   30,  31,   30,
+     .                   31,   31,   30,   31,  30,   31 /
+
+c         Copy input arguments into internal variables
+
+          iday = day_in
+          imonth = month_in
+          iyear = year_in
+          time = time_in
+
+c         If starting time is greater than 24 hours, update
+c         date accordingly
+
+          do while ( int(time) .ge. 86400 )
+
+            time = time - 86400.0
+            iday = iday + 1
+
+c           determine if current year is leap year
+c           no:  ileap = 0
+c           yes: ileap = 12
+
+            ileap = abs( (mod(iyear,4).eq.0)
+     .                    .and. (.not.(  mod(iyear,100).eq.0
+     .                                   .and. mod(iyear,400).ne.0 )) 
+     .                 )*12
+
+            if ( iday .gt. ndays(imonth+ileap) ) then
+              iday = 1
+              imonth = imonth + 1
+            end if
+
+            if ( imonth .gt. 12 ) then
+              imonth = 1
+              iyear = iyear + 1
+            endif
+
+          enddo
 
           date = 'hh:mmZddmmmyyyy'
           write(date(7:8),'(i2.2)') iday
           write(date(9:11),'(a3)') month(imonth)
           write(date(12:15),'(i4.4)') iyear
-          write(date(1:2),'(i2.2)') int(st_time/3600.)
-          write(date(4:5),'(i2.2)') int( mod(int(st_time),3600) / 60. )
+          write(date(1:2),'(i2.2)') int(time/3600.)
+          write(date(4:5),'(i2.2)') int( mod(int(time),3600) / 60. )
 
           return
           end subroutine formatdate
