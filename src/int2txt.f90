@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: int2txt.f90,v 1.3 2005-06-23 20:07:53 dschanen Exp $
+! $Id: int2txt.f90,v 1.4 2006-04-21 20:59:24 dschanen Exp $
 
 ! Program int2txt
 ! Take a binary file of 34 4 byte integers and generate text file from it
@@ -16,7 +16,7 @@ program int2txt
 implicit none
 
 integer i
-integer, dimension(34) :: x
+integer(kind=4), dimension(34) :: x
 
 open( unit=10, file='rand_seed.bin', action="read", recl=4, &
       form='unformatted', access='direct' )
