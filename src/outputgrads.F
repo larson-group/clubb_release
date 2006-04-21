@@ -1,5 +1,5 @@
 c------------------------------------------------------------------------
-c $Id: outputgrads.F,v 1.7 2006-04-19 14:44:14 golaz Exp $
+c $Id: outputgrads.F,v 1.8 2006-04-21 17:40:44 dschanen Exp $
 c
 c This module contains structure and subroutine definitions to
 c create GrADS output data files for one dimensional arrays.
@@ -524,10 +524,22 @@ c           determine if current year is leap year
 c           no:  ileap = 0
 c           yes: ileap = 12
 
-            ileap = abs( (mod(iyear,4).eq.0)
-     .                    .and. (.not.(  mod(iyear,100).eq.0
-     .                                   .and. mod(iyear,400).ne.0 )) 
-     .                 )*12
+c  Picky compilers will crap out on the code below
+c  Something to do with logical .true./.false. not always being 1/0?
+c           ileap = abs( (mod(iyear,4).eq.0)
+c    .                    .and. (.not.(  mod(iyear,100).eq.0
+c    .                                   .and. mod(iyear,400).ne.0 )) 
+c    .                 )*12
+
+c   Alternate code:
+            if ( (mod(iyear,4).eq.0)
+     .           .and. (.not.(  mod(iyear,100).eq.0 
+     .                  .and. mod(iyear,400).ne.0 ) )
+     .         ) then 
+              ileap = 12
+            else
+              ileap = 0
+            end if
 
             if ( iday .gt. ndays(imonth+ileap) ) then
               iday = 1
