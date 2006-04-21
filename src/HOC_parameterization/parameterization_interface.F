@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.1 2006-04-21 21:50:56 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.2 2006-04-21 23:30:26 dschanen Exp $
 
 
 !  Module hoc_parameterization_interface
@@ -479,14 +479,14 @@
 #endif /* SCALARS */
 
 !      Special Nov. 11 condition for total water above cloud.
-       IF ( TRIM( runtype ) == "nov11_altocu" .and.
-     .      time_current == time_initial + 3600.0 ) THEN
-         DO k = 1, gr%nnzp, 1
-           IF ( gr%zt(k) > 1555.0 ) THEN
-                rtm(k) = 0.89 * rtm(k)
-           ENDIF
-         ENDDO
-       ENDIF
+!      IF ( TRIM( runtype ) == "nov11_altocu" .and.
+!    .      time_current == time_initial + 3600.0 ) THEN
+!        DO k = 1, gr%nnzp, 1
+!          IF ( gr%zt(k) > 1555.0 ) THEN
+!               rtm(k) = 0.89 * rtm(k)
+!          ENDIF
+!        ENDDO
+!      ENDIF
 
 
 !      Advance wp2/wp3 one timestep
@@ -580,11 +580,11 @@
            sfc%x(1,iustar) = sfc%x(1,iustar) + ustar
            sfc%n(1,iustar) = sfc%n(1,iustar) + 1
          endif
-         if ( irain > 0 ) then   ! Added by Brian
+         if ( irain > 0 .and. kk_rain ) then   ! Added by Brian
            sfc%x(1,irain) = sfc%x(1,irain) + rain_rate(2)
            sfc%n(1,irain) = sfc%n(1,irain) + 1
          endif
-         if ( ipflux > 0 ) then   ! Added by Brian
+         if ( ipflux > 0 .and. kk_rain ) then   ! Added by Brian
            sfc%x(1,ipflux) = sfc%x(1,ipflux) + Fprec(1)
            sfc%n(1,ipflux) = sfc%n(1,ipflux) + 1
          endif
