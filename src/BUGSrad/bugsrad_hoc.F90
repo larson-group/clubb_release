@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_hoc.F90,v 1.5 2006-03-22 03:58:15 dschanen Exp $
+! $Id: bugsrad_hoc.F90,v 1.6 2006-04-21 21:37:09 dschanen Exp $
 
 ! SUBROUTINE bugsrad_hoc
 ! Does the necessary operations to interface the HOC model with
@@ -123,8 +123,15 @@ subroutine bugsrad_hoc( alt, nz, thlm, rcm, rtm, rrm, cf, pinpa, rhom, Tsfc,   &
   double precision slr(nlen)  ! Fraction of daylight  
   double precision ts(nlen)   ! Surface temperature in K
 
+  double precision amu0 ! Cosine of the solar zenith angle
+
   integer i, j, z, z1, z2  ! loop indices
   double precision z1_fact, z2_fact
+
+! At some point we should input latitude, longitude, etc. but for now
+! we just set this
+  amu0      = 0.4329 ! Nov 11 Altocu value
+! amu0 = bugsrad_amu0( jul_day, t_since_noon, lat_in_degrees )
 
 ! Convert to millibars
   pinmb(1,1:(nz-1))    = dble( pinpa(2:nz) / 100.0 ) ! t grid in HOC
@@ -296,5 +303,55 @@ subroutine bugsrad_hoc( alt, nz, thlm, rcm, rtm, rrm, cf, pinpa, rhom, Tsfc,   &
   end function flip
 !-----------------------------------------------------------------------
 
-end subroutine bugsrad_hoc
+  end subroutine bugsrad_hoc
+
 !-----------------------------------------------------------------------
+! FUNCTION bugsrad_amu0
+
+! function based on MATLAB function by Liou
+!-----------------------------------------------------------------------
+  function bugsrad_amu0( jul_day, t_since_noon, lat_in_degrees ) result( amu0 )
+    use constants, only: pi_dp
+
+    implicit none
+
+!   Input
+    integer, intent(in) :: jul_day
+    integer, intent(in) :: t_since_noon
+    integer, intent(in) :: lat_in_degrees
+
+!   Output
+    double precision amu0
+
+!   Internal
+    double precision c0, c1, c2, c3, d1, d2, d3
+    double precision t, h
+    double precision delta
+!   double precision delta_in_degrees
+
+    t = 2*pi_dp*(jul_day-1)/365
+
+    ! Liou's coefficients
+    c0 =  0.006918
+    c1 = -0.399912
+    c2 = -0.006758
+    c3 = -0.002697
+    d1 =  0.070257
+    d2 =  0.000907
+    d3 =  0.000148
+
+    delta = c0 + c1*cos(t) + d1*sin(t) &
+          + c2*cos(2*t) + d2*sin(2*t)  & 
+          + c3*cos(3*t) + d3*sin(3*t)
+
+!   delta_in_degrees = delta*(180/pi_dp)
+
+    ! Compute hour angle
+    h = 2*pi_dp*t_since_noon/86400
+
+    ! Cosine of the solar zenith angle.
+    amu0 = sin(lat_in_degrees*pi_dp/180)*sin(delta) &
+         + cos(lat_in_degrees*pi_dp/180)*cos(delta)*cos(h)
+
+    return
+  end function bugsrad_amu0
