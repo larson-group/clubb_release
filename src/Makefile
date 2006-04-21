@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.49 2006-03-16 19:07:28 dschanen Exp $
+# $Id: Makefile,v 1.50 2006-04-21 21:59:26 dschanen Exp $
 # This version should work with BSD, GNU make, smake and dmake
 
 # For HOC we edit this by hand rather than implementing imake or automake
@@ -14,47 +14,54 @@ include config.messner.in
 
 # == Object files ==
 
-LATIN_HYP	= autoconv_driver.o corrcoef.o gaus_condt.o \
-		gaus_mixt_points.o gaussj.o generate_k_order.o \
-		latin_hyper_sample.o lh_sampler.o ltqnorm.o \
-		matmult.o micro_calcs.o permute_height_time.o \
-		ql_estimate.o ran2.o rand_permute.o \
-		rtpthlp_2_sptp.o sample_points.o st_2_rtthl.o \
-		truncate_gaus_mixt.o
+LATIN_HYP = autoconv_driver.o corrcoef.o gaus_condt.o \
+	gaus_mixt_points.o gaussj.o generate_k_order.o \
+	latin_hyper_sample.o lh_sampler.o ltqnorm.o \
+	matmult.o micro_calcs.o permute_height_time.o \
+	ql_estimate.o ran2.o rand_permute.o \
+	rtpthlp_2_sptp.o sample_points.o st_2_rtthl.o \
+	truncate_gaus_mixt.o
 
-BUGS_RAD	= kinds.o bugsrad_planck.o bugsrad_physconst.o gases_ckd.o \
-		cloud_correlate.o bugs_lwr.o bugs_swr.o bugs_rad.o \
-		cloudg.o comscp1.o comscp2.o gascon.o \
-		newexp.o rayle.o two_rt_lw.o two_rt_sw.o \
-		two_rt_sw_ocastrndm.o two_rt_lw_ocastrndm.o \
-		two_rt_lw_sel.o two_rt_lw_iter.o \
-		two_rt_sw_bs.o bugsrad_hoc.o
+BUGS_RAD = kinds.o bugsrad_planck.o bugsrad_physconst.o gases_ckd.o \
+	cloud_correlate.o bugs_lwr.o bugs_swr.o bugs_rad.o \
+	cloudg.o comscp1.o comscp2.o gascon.o \
+	newexp.o rayle.o two_rt_lw.o two_rt_sw.o \
+	two_rt_sw_ocastrndm.o two_rt_lw_ocastrndm.o \
+	two_rt_lw_sel.o two_rt_lw_iter.o \
+	two_rt_sw_bs.o bugsrad_hoc.o
 
-COMMON	= $(LATIN_HYP) $(BUGS_RAD) \
-	polpak.o constants.o arrays.o endian.o outputfile.o outputgrads.o \
-	outputnc.o grid.o statistics.o inputgrads.o \
+PARAMETERIZATION = \
+	$(LATIN_HYP) $(BUGS_RAD) \
+	polpak.o constants.o endian.o outputfile.o outputgrads.o \
+	outputnc.o grid.o model_flags.o statistics.o \
 	banbks.o bandec.o erf.o tridag.o rain.o \
 	closure_new.o diag_var.o gcss.o hydrostatic.o \
 	length.o mixing.o rsat.o sat_rcm.o sfc.o \
 	sounding.o update.o wp23.o tau.o \
-	inputfields.o gradsaverage.o hoc.o error.o 
+	numer_check.o diag_variables.o prog_variables.o \
+	parameterization_interface.o 
+
+INTERFACING = error.o gradsaverage.o inputfields.o inputgrads.o hoc.o 
 
 NUM_REC	= nrtype.o nr.o nrutil.o ran_state.o ran1.o amebsa.o amoeba.o
 
+STANDALONE = $(PARAMETERIZATION) $(INTERFACING)
+TUNING = $(STANDALONE) $(NUM_REC)
+
 INT2TXT		= int2txt.o 
-HOC_TUNER	= $(COMMON) $(NUM_REC) hoc_tuner.o 
-HOC_STANDALONE	= $(COMMON) hoc_standalone.o 
-COMPARE_RUNS	= $(COMMON) compare_runs.o 
-JACOBIAN	= $(COMMON) jacobian.o 
-HOC_INPUTFIELDS	= $(COMMON) hoc_inputfields.o
-HOC_BUDGET_TERMS= $(COMMON) $(NUM_REC) budget_terms.o hoc_tuner_budget_terms.o 
+HOC_TUNER	= $(TUNING) hoc_tuner.o 
+HOC_STANDALONE	= $(STANDALONE) hoc_standalone.o 
+COMPARE_RUNS	= $(STANDALONE) compare_runs.o 
+JACOBIAN	= $(STANDALONE) jacobian.o 
+HOC_INPUTFIELDS	= $(STANDALONE) hoc_inputfields.o
+HOC_BUDGET_TERMS= $(TUNING) budget_terms.o hoc_tuner_budget_terms.o 
 
 # == Targets == ( hoc_tuner and jacobian assume statistics )
 all:	hoc_tuner int2txt hoc_tuner_budget_terms \
 	hoc_standalone hoc_inputfields compare_runs jacobian 
 
 # == Rules ==
-VPATH=.:LH:BUGSrad
+VPATH=.:LH:BUGSrad:HOC_parameterization
 
 # Cancel implicit rules (e.g for modula-2 `m2c -c $@.mod')
 .SUFFIXES:
@@ -117,14 +124,18 @@ clean_all:
 polpak.o	: polpak.f90
 endian.o	: endian.F
 constants.o	: constants.F
+model_flags.o	: model_flags.F
 outputfile.o	: outputfile.F
-rain.o		: constants.o tridag.o polpak.o rain.F 
+rain.o		: constants.o model_flags.o tridag.o polpak.o rain.F 
 outputgrads.o	: endian.o outputfile.o outputgrads.F
 outputnc.o	: outputfile.o outputnc.F
-arrays.o	: constants.o grid.o arrays.F 
+diag_variables.o: constants.o grid.o diag_variables.F 
+prog_variables.o: constants.o grid.o prog_variables.F 
+numer_check.o	: prog_variables.o diag_variables.o numer_check.F
 inputgrads.o	: endian.o inputgrads.F
-grid.o		: grid.F grid.h
-statistics.o	: outputgrads.o outputnc.o arrays.o statistics.F 
+grid.o		: grid.F
+statistics.o	: outputgrads.o outputnc.o prog_variables.o diag_variables.o \
+	statistics.F 
 
 banbks.o	: banbks.F
 bandec.o	: bandec.F
@@ -135,10 +146,12 @@ closure_new.o	: constants.o closure_new.F
 diag_var.o	: constants.o tridag.o statistics.o diag_var.F 
 gcss.o		: constants.o statistics.o gcss.F
 mixing.o	: constants.o statistics.o banbks.o bandec.o mixing.F 
-hoc.o		: constants.o gcss.o hydrostatic.o mixing.o rain.o \
-		length.o statistics.o sounding.o diag_var.o rsat.o \
-		grid.o sat_rcm.o update.o arrays.o sfc.o closure_new.o \
-		hoc.F
+parameterization_interface.o : constants.o gcss.o hydrostatic.o mixing.o \
+	model_flags.o numer_check.o \
+	length.o statistics.o sounding.o diag_var.o rsat.o \
+	grid.o sat_rcm.o update.o prog_variables.o diag_variables.o \
+	sfc.o closure_new.o rain.o parameterization_interface.F 
+hoc.o		: parameterization_interface.o hoc.F
 hydrostatic.o	: constants.o hydrostatic.F 
 length.o	: constants.o length.F 
 rsat.o		: constants.o rsat.F 
@@ -160,7 +173,7 @@ amoeba.o	: nrtype.o nr.o nrutil.o amoeba.f90
 gradsaverage.o	: inputgrads.o gradsaverage.F 
 error.o		: nrtype.o nr.o gradsaverage.o hoc.o error.F
 budget_terms.o  : amoeba.o inputfields.o gradsaverage.o hoc.o \
-		  error.o budget_terms.F
+	error.o budget_terms.F
 
 autoconv_driver.o	: autoconv_driver.F
 corrcoef.o		: corrcoef.F
@@ -184,19 +197,18 @@ truncate_gaus_mixt.o	: truncate_gaus_mixt.F
 
 kinds.o			: kinds.F90
 bugsrad_planck.o	: kinds.o bugsrad_planck.F90
-cloud_correlate.o	: cloud_correlate.F90
+cloud_correlate.o	: kinds.o cloud_correlate.F90
 bugsrad_physconst.o	: kinds.o bugsrad_physconst.F90
-bugs_lwr.o		: bugs_lwr.F bugsrad_planck.o gases_ckd.o kinds.o 
-bugs_rad.o 		: bugs_rad.F bugs_swr.o bugs_lwr.o gascon.o kinds.o \
-			bugsrad_planck.o cloud_correlate.o \
-			bugsrad_physconst.o \
-			gases_ckd.o cloudg.o newexp.o rayle.o
+bugs_lwr.o		: kinds.o bugs_lwr.F bugsrad_planck.o gases_ckd.o 
+bugs_rad.o 		: kinds.o bugs_rad.F bugs_swr.o bugs_lwr.o gascon.o \
+	bugsrad_planck.o cloud_correlate.o bugsrad_physconst.o \
+	gases_ckd.o cloudg.o newexp.o rayle.o
 bugs_swr.o 		: kinds.o gases_ckd.o bugs_swr.F 
 cloudg.o 		: kinds.o cloudg.F
 comscp1.o 		: kinds.o comscp1.F
 comscp2.o		: kinds.o comscp2.F
-gascon.o 		: bugsrad_physconst.o gascon.F
-gases_ckd.o 		: bugsrad_physconst.o gases_ckd.F90
+gascon.o 		: kinds.o bugsrad_physconst.o gascon.F
+gases_ckd.o 		: kinds.o  bugsrad_physconst.o gases_ckd.F90
 newexp.o 		: kinds.o newexp.F90
 rayle.o 		: kinds.o rayle.F
 two_rt_lw.o 		: kinds.o two_rt_lw.F
@@ -206,12 +218,12 @@ two_rt_lw_ocastrndm.o	: kinds.o two_rt_lw_ocastrndm.F90
 two_rt_sw.o		: kinds.o two_rt_sw.F
 two_rt_sw_bs.o		: kinds.o bandec.o banbks.o two_rt_sw_bs.F
 two_rt_sw_ocastrndm.o	: kinds.o two_rt_sw_ocastrndm.F90
-bugsrad_hoc.o 		: bugsrad_hoc.F90 bugs_rad.o constants.o
+bugsrad_hoc.o 		: kinds.o constants.o bugs_rad.o bugsrad_hoc.F90 
 
 # == Executables ==
 hoc_tuner.o		: nrtype.o nr.o hoc.o error.o hoc_tuner.F
 hoc_tuner_budget_terms.o: nrtype.o nr.o hoc.o error.o \
-			budget_terms.o hoc_tuner_budget_terms.F
+	budget_terms.o hoc_tuner_budget_terms.F
 hoc_standalone.o	: hoc.o hoc_standalone.F
 hoc_inputfields.o	: hoc.o inputfields.o hoc_inputfields.F
 int2txt.o		: int2txt.f90
