@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.1 2006-04-21 21:50:56 dschanen Exp $
+! $Id: wp23.F,v 1.2 2006-04-22 18:16:02 dschanen Exp $
 
 ! SUBROUTINE timestep_wp23( )
 !  Advance wp2 and wp3 one timestep
@@ -39,7 +39,7 @@
 
         logical, intent(inout):: isValid
 
-        character(50), intent(in):: runtype
+        character(len=*), intent(in):: runtype
 
 
 !       Internal
@@ -193,7 +193,7 @@
         real, intent(in) :: C1_Skw_fnc(1:gr%nnzp)
         real, intent(in) :: C11_Skw_fnc(1:gr%nnzp)
 
-        character(50), intent(in):: runtype
+        character(len=*), intent(in):: runtype
 
 !       Input/Output
 
