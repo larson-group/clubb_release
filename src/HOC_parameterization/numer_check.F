@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F,v 1.1 2006-04-21 21:50:56 dschanen Exp $
+! $Id: numer_check.F,v 1.2 2006-04-22 20:27:49 dschanen Exp $
         module numerical_check
         implicit none
 
@@ -60,7 +60,7 @@
 
         if ( isnan2d( thlm ) ) then
           print *, "NaN in thlm model array" 
-!         print *, "rtm= ", rtm
+!         print *, "thlm= ", thlm
           invalid_model_arrays = .true.
 !         return
         endif
