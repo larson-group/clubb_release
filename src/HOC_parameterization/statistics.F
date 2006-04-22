@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.1 2006-04-21 21:50:56 dschanen Exp $
+!  $Id: statistics.F,v 1.2 2006-04-22 21:27:17 dschanen Exp $
 
 !  module stats_type
 !  contains:
@@ -2923,7 +2923,7 @@ c     -----------------------------------------------------------------
           zt%x(:,iNcm) = zt%x(:,iNcm) + Ncm
           zt%n(:,iNcm) = zt%n(:,iNcm) + 1
         endif
-        if ( ised_rcm > 0 .and. kk_rain ) then       ! Brian
+        if ( ised_rcm > 0 .and. cloud_sed ) then       ! Brian
           zt%x(:,ised_rcm) = zt%x(:,ised_rcm) + sed_rcm
           zt%n(:,ised_rcm) = zt%n(:,ised_rcm) + 1
         endif
@@ -3286,7 +3286,7 @@ c     -----------------------------------------------------------------
           zm%n(:,iFprec) = zm%n(:,iFprec) + 1
         endif
 
-        if ( iFcsed > 0 .and. kk_rain ) then    ! Brian
+        if ( iFcsed > 0 .and. cloud_sed ) then    ! Brian
           zm%x(:,iFcsed) = zm%x(:,iFcsed) + Fcsed
           zm%n(:,iFcsed) = zm%n(:,iFcsed) + 1
         endif

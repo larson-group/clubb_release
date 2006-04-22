@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F,v 1.1 2006-04-21 21:50:56 dschanen Exp $
+! $Id: diag_variables.F,v 1.2 2006-04-22 21:27:17 dschanen Exp $
         module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -168,7 +168,7 @@
 !  for the HOC model code
 !-----------------------------------------------------------------------
         subroutine setup_diagnostic_variables( nzmax )
-        use model_flags, only: kk_rain, LH_on
+        use model_flags
         use constants, only: sclrm_dimension, emin
 
         implicit none
@@ -195,8 +195,8 @@
 
         allocate( Ncm(1:nzmax) )       ! cloud droplet number conc. ! Brian
         allocate( rsm(1:nzmax) )       ! saturation mixing ratio  ! Brian
+
         if ( kk_rain ) then
-          allocate( sed_rcm(1:nzmax) )   ! sedimentation factor in rcm ! Brian
           allocate( rrm(1:nzmax) )       ! rain water mixing ratio  ! Brian
           allocate( cond_rrm(1:nzmax) )  ! condensation factor in rrm ! Brian
           allocate( auto_rrm(1:nzmax) )  ! autoconversion factor in rrm ! Brian
@@ -208,8 +208,12 @@
           allocate( mean_vol_rad(1:nzmax) ) ! rain drop mean volume radius ! Brian
           allocate( rain_rate(1:nzmax) ) ! rainfall rate in mm/day ! Brian
           allocate( Fprec(1:nzmax) )     ! precipitation flux in W/m^2 (momentum point) ! Brian
-          allocate( Fcsed(1:nzmax) )     ! cloud water sedimentation flux (momentum point) ! Brian
         end if ! kk_rain
+
+        if ( cloud_sed ) then
+          allocate( sed_rcm(1:nzmax) )   ! sedimentation factor in rcm ! Brian
+          allocate( Fcsed(1:nzmax) )     ! cloud water sedimentation flux (momentum point) ! Brian
+        end if ! cloud_sed
 
         allocate( Frad(1:nzmax) )      ! radiative flux (momentum point)
         allocate( Frad_LW(1:nzmax) )   ! Long_wave radiative flux (momentum point)
@@ -322,7 +326,6 @@
         Ncm          = 0.0  ! cloud droplet number conc. ! Brian
         rsm          = 0.0  ! saturation mixing ratio  ! Brian
         if ( kk_rain ) then
-          sed_rcm      = 0.0  ! sedimentation factor in rcm ! Brian
           rrm          = 0.0  ! rain water mixing ratio  ! Brian
           cond_rrm     = 0.0  ! condensation factor in rrm ! Brian
           auto_rrm     = 0.0  ! autoconversion factor in rrm ! Brian
@@ -333,10 +336,13 @@
           Vrr          = 0.0  ! sedimentation velocity of rain ! Brian
           mean_vol_rad = 0.0  ! rain drop mean volume radius ! Brian
           rain_rate    = 0.0  ! rainfall rate in mm/day ! Brian
-          Fprec        = 0.0  ! precipitation flux in W/m^2 (momentum point) ! Brian
+        end if ! kk_rain
+
+        if ( cloud_sed ) then
+          sed_rcm      = 0.0  ! sedimentation factor in rcm ! Brian
           Fcsed        = 0.0  ! cloud water sedimentation flux (momentum point) ! Brian
                               ! Note: units are [kg(cloud water)]/[s*m^2]
-        end if ! kk_rain
+        end if ! cloud_sed
 
         Frad    = 0.0
         Frad_LW = 0.0  ! Long_wave radiative flux (momentum point)
@@ -441,8 +447,8 @@
         deallocate( rcm )       ! cloud water mixing ratio
         deallocate( Ncm )       ! cloud droplet number conc. ! Brian
         deallocate( rsm )       ! saturation mixing ratio  ! Brian
+
         if ( kk_rain ) then
-          deallocate( sed_rcm )   ! sedimentation factor in rcm ! Brian
           deallocate( rrm )       ! rain water mixing ratio  ! Brian
           deallocate( cond_rrm )  ! condensation factor in rrm ! Brian
           deallocate( auto_rrm )  ! autoconversion factor in rrm ! Brian
@@ -454,9 +460,13 @@
           deallocate( mean_vol_rad ) ! rain drop mean volume radius ! Brian
           deallocate( rain_rate ) ! rainfall rate in mm/day ! Brian
           deallocate( Fprec )     ! precipitation flux in W/m^2 (momentum point) ! Brian
+        end if ! kk_rain
+
+        if ( cloud_sed ) then
+          deallocate( sed_rcm )   ! sedimentation factor in rcm ! Brian
           deallocate( Fcsed )     ! cloud water sedimentation flux (momentum point) ! Brian
                                   ! Note: units are [kg(cloud water)]/[s*m^2]
-        end if ! kk_rain
+        end if ! cloud_sed
 
         deallocate( Frad )      ! radiative flux (momentum point)
         deallocate( Frad_LW )   ! Long_wave radiative flux (momentum point)
