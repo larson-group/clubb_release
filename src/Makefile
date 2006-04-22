@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.50 2006-04-21 21:59:26 dschanen Exp $
+# $Id: Makefile,v 1.51 2006-04-22 20:25:39 dschanen Exp $
 # This version should work with BSD, GNU make, smake and dmake
 
 # For HOC we edit this by hand rather than implementing imake or automake
@@ -126,7 +126,8 @@ endian.o	: endian.F
 constants.o	: constants.F
 model_flags.o	: model_flags.F
 outputfile.o	: outputfile.F
-rain.o		: constants.o model_flags.o tridag.o polpak.o rain.F 
+rain.o		: constants.o model_flags.o statistics.o tridag.o \
+	polpak.o rain.F 
 outputgrads.o	: endian.o outputfile.o outputgrads.F
 outputnc.o	: outputfile.o outputnc.F
 diag_variables.o: constants.o grid.o diag_variables.F 
@@ -208,7 +209,7 @@ cloudg.o 		: kinds.o cloudg.F
 comscp1.o 		: kinds.o comscp1.F
 comscp2.o		: kinds.o comscp2.F
 gascon.o 		: kinds.o bugsrad_physconst.o gascon.F
-gases_ckd.o 		: kinds.o  bugsrad_physconst.o gases_ckd.F90
+gases_ckd.o 		: kinds.o bugsrad_physconst.o gases_ckd.F90
 newexp.o 		: kinds.o newexp.F90
 rayle.o 		: kinds.o rayle.F
 two_rt_lw.o 		: kinds.o two_rt_lw.F
