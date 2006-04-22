@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.2 2006-04-21 23:30:26 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.3 2006-04-22 22:17:41 dschanen Exp $
 
 
 !  Module hoc_parameterization_interface
@@ -57,6 +57,7 @@
      .              thlm, rtm, wp2, wp3, 
      .              rtp2, thlp2, rtpthlp, 
      .              wprtp, wpthlp, Scm, taum, 
+     .              rrm, Nrm,
      .              umt, vmt, isValid,
      .              sclrm, sclrm_forcing, ! optional
      .              edsclrm, edsclrmt )   ! optional
@@ -99,11 +100,15 @@
        real, intent(in), dimension(gr%nnzp) :: p, rhom, rhot, exner
 
 !      Input/Output
+!      These are prognostic or are planned to be in the future
        real, intent(inout), dimension(gr%nnzp) :: um, vm, upwp, vpwp
        real, intent(inout), dimension(gr%nnzp) :: thlm, rtm, wp2, wp3
        real, intent(inout), dimension(gr%nnzp) :: rtp2, thlp2, rtpthlp
        real, intent(inout), dimension(gr%nnzp) :: wprtp, wpthlp
        real, intent(inout), dimension(gr%nnzp) :: Scm, taum
+
+!      You can safely leave these uninitialized for a non-drizzle case
+       real, intent(inout), dimension(gr%nnzp) :: rrm, Nrm
 
        real, intent(inout), dimension(gr%nnzp,sclrm_dimension),
      . optional :: sclrm, sclrm_forcing, edsclrm
@@ -309,7 +314,7 @@
            call latin_hypercube_sampling
      .     ( k, n_micro_call, d_variables, 
      .       nt_repeat, i_rmd, crt1, crt2, cthl1, cthl2, 
-     .       gr%nnzp, sample_flag, p_height_time )
+     .       rrm, gr%nnzp, sample_flag, p_height_time )
          endif
 
        enddo ! k = 2, nz-1
@@ -617,11 +622,12 @@
 !       subroutine lh_sampler
 !       subroutine micro_calcs
 !-----------------------------------------------------------------------
-        subroutine latin_hypercube_sampling(k, n, dvar, i_rmd, nt,
-     .                                      crt1, crt2, cthl1, cthl2,
-     .                                      grid, sflag, p_height_time)
+        subroutine latin_hypercube_sampling( k, n, dvar, i_rmd, nt,
+     .                                       crt1, crt2, cthl1, cthl2,
+     .                                       rrm, grid, 
+     .                                       sflag, p_height_time )
         !use model_arrays
-        use diagnostic_variables, only: cf, pdf_parms, rrm, AKm_est, 
+        use diagnostic_variables, only: cf, pdf_parms, AKm_est, 
      .  AKm, AKstd, AKstd_cld, AKm_rcm, AKm_rcc, rcm_est
 
         implicit none  
@@ -633,6 +639,8 @@
 
         ! coeffs of s from pdf_closure_new
         real, intent(in) :: crt1, crt2, cthl1, cthl2
+
+        real, dimension(grid), intent(in) :: rrm
 
         integer, dimension(1:grid, 1:nt, 1:(dvar+1) ) ::
      .  p_height_time ! matrix of rand ints

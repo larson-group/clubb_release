@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F,v 1.2 2006-04-22 21:27:17 dschanen Exp $
+! $Id: diag_variables.F,v 1.3 2006-04-22 22:17:41 dschanen Exp $
         module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -29,13 +29,11 @@
         real, allocatable, target :: Ncm(:)       ! cloud droplet number conc. ! Brian
         real, allocatable, target :: sed_rcm(:)   ! sedimentation factor in rcm ! Brian
         real, allocatable, target :: rsm(:)       ! saturation mixing ratio  ! Brian
-        real, allocatable, target :: rrm(:)       ! rain water mixing ratio  ! Brian
         real, allocatable, target :: cond_rrm(:)  ! condensation factor in rrm ! Brian
         real, allocatable, target :: auto_rrm(:)  ! autoconversion factor in rrm ! Brian
         real, allocatable, target :: accr_rrm(:)  ! accretion factor in rrm ! Brian
         real, allocatable, target :: sed_rrm(:)   ! sedimentation output for rrm ! Brian
         real, allocatable, target :: diff_rrm(:)  ! diffusion output for rrm ! Brian
-        real, allocatable, target :: Nrm(:)       ! rain droplet number conc.  ! Brian
         real, allocatable, target :: Vrr(:)       ! sedimentation velocity of rain ! Brian
         real, allocatable, target :: mean_vol_rad(:) ! rain drop mean volume radius ! Brian
         real, allocatable, target :: rain_rate(:) ! rainfall rate in mm/day ! Brian
@@ -197,13 +195,11 @@
         allocate( rsm(1:nzmax) )       ! saturation mixing ratio  ! Brian
 
         if ( kk_rain ) then
-          allocate( rrm(1:nzmax) )       ! rain water mixing ratio  ! Brian
           allocate( cond_rrm(1:nzmax) )  ! condensation factor in rrm ! Brian
           allocate( auto_rrm(1:nzmax) )  ! autoconversion factor in rrm ! Brian
           allocate( accr_rrm(1:nzmax) )  ! accretion factor in rrm ! Brian
           allocate( sed_rrm(1:nzmax) )   ! sedimentation output for rrm ! Brian
           allocate( diff_rrm(1:nzmax) )  ! diffusion output for rrm ! Brian
-          allocate( Nrm(1:nzmax) )       ! rain droplet number conc.  ! Brian
           allocate( Vrr(1:nzmax) )       ! sedimentation velocity of rain ! Brian
           allocate( mean_vol_rad(1:nzmax) ) ! rain drop mean volume radius ! Brian
           allocate( rain_rate(1:nzmax) ) ! rainfall rate in mm/day ! Brian
@@ -326,13 +322,11 @@
         Ncm          = 0.0  ! cloud droplet number conc. ! Brian
         rsm          = 0.0  ! saturation mixing ratio  ! Brian
         if ( kk_rain ) then
-          rrm          = 0.0  ! rain water mixing ratio  ! Brian
           cond_rrm     = 0.0  ! condensation factor in rrm ! Brian
           auto_rrm     = 0.0  ! autoconversion factor in rrm ! Brian
           accr_rrm     = 0.0  ! accretion factor in rrm ! Brian
           sed_rrm      = 0.0  ! sedimentation output for rrm ! Brian
           diff_rrm     = 0.0  ! diffusion output for rrm ! Brian
-          Nrm          = 0.0  ! rain droplet number conc.  ! Brian
           Vrr          = 0.0  ! sedimentation velocity of rain ! Brian
           mean_vol_rad = 0.0  ! rain drop mean volume radius ! Brian
           rain_rate    = 0.0  ! rainfall rate in mm/day ! Brian
@@ -449,13 +443,11 @@
         deallocate( rsm )       ! saturation mixing ratio  ! Brian
 
         if ( kk_rain ) then
-          deallocate( rrm )       ! rain water mixing ratio  ! Brian
           deallocate( cond_rrm )  ! condensation factor in rrm ! Brian
           deallocate( auto_rrm )  ! autoconversion factor in rrm ! Brian
           deallocate( accr_rrm )  ! accretion factor in rrm ! Brian
           deallocate( sed_rrm )   ! sedimentation output for rrm ! Brian
           deallocate( diff_rrm )  ! diffusion output for rrm ! Brian
-          deallocate( Nrm )       ! rain droplet number conc.  ! Brian
           deallocate( Vrr )       ! sedimentation velocity of rain ! Brian
           deallocate( mean_vol_rad ) ! rain drop mean volume radius ! Brian
           deallocate( rain_rate ) ! rainfall rate in mm/day ! Brian

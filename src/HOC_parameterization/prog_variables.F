@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: prog_variables.F,v 1.1 2006-04-21 21:50:56 dschanen Exp $
+! $Id: prog_variables.F,v 1.2 2006-04-22 22:17:41 dschanen Exp $
         module prognostic_variables
 
 ! This module contains definitions of all prognostic
@@ -34,8 +34,8 @@
         real, target, allocatable :: exner(:)        
                          ! exner = ( p / p0 ) ** kappa
 
-        real, target, allocatable :: rhot(:)      ! density (kg/m^3)
-        real, target, allocatable :: rhom(:)      ! density (kg/m^3)
+        real, target, allocatable :: rhot(:) ! density (kg/m^3)
+        real, target, allocatable :: rhom(:) ! density (kg/m^3)
 
 ! Tendency arrays for prognostic variables
 
@@ -46,12 +46,20 @@
         real, target, allocatable :: rtm_forcing(:)  ! rtm ls forcing
 
 ! PDF width parameter: momentum levels
+
         real, target, allocatable :: Scm(:)   
 
 ! Mixing Lengths
+
         real, target, allocatable :: taum(:)
 
+! Prognostic drizzle variables
+
+        real, allocatable, target :: rrm(:)  ! rain water mixing ratio  ! Brian
+        real, allocatable, target :: Nrm(:)  ! rain droplet number conc.! Brian
+
 ! Surface data
+
         real :: Tsfc             ! surface temperature (K)
         real :: psfc             ! surface pressure (Pa)
         real :: SE               ! sensible heat flux (K/s)
@@ -75,6 +83,7 @@
 !-----------------------------------------------------------------------
         subroutine setup_prognostic_variables( nzmax )
         use constants, only: sclrm_dimension, emin
+        use model_flags
 
         implicit none
 
@@ -113,9 +122,18 @@
         allocate( thlm_forcing(1:nzmax) ) ! thlm ls forcing
         allocate( rtm_forcing(1:nzmax) )  ! rtm ls forcing
 
+! PDF width parameter: momentum levels
+
         allocate( Scm(1:nzmax) ) 
 
+! Mixing lengths
+
         allocate( taum(1:nzmax) ) 
+
+! Prognostic drizzle variables
+
+        allocate( rrm(1:nzmax) )       ! rain water mixing ratio  ! Brian
+        allocate( Nrm(1:nzmax) )       ! rain droplet number conc.  ! Brian
 
 #ifdef SCALARS
 
@@ -155,15 +173,28 @@
         rhot  = 0.0    ! density on thermo. levels
         rhom  = 0.0    ! density on moment. levels
 
+
+
 ! Tendency arrays for prognostic variables
 
         umt = 0.0  ! u wind
         vmt = 0.0  ! v wind
 
-        Scm = 0.0 ! PDF width parameter: momentum levels
+! PDF width parameter: momentum levels
+
+        Scm  = 0.0 
+
+! Mixing lengths
 
         taum = 0.0
  
+! Prognostic drizzle variables
+        
+        ! These must always be allocated, but not necessarily initialized
+        if ( kk_rain ) then
+          rrm          = 0.0  ! rain water mixing ratio  ! Brian
+          Nrm          = 0.0  ! rain droplet number conc.! Brian
+        end if ! kk_rain
 
 #ifdef SCALARS
 ! New mixing scheme Variables
@@ -206,11 +237,24 @@
         deallocate( rhot )      ! density: t points
         deallocate( rhom )      ! density: m points
 
+! PDF width parameter
+
+        deallocate( Scm )
+
+! Mixing lengths
+
+        deallocate( taum )
 
 ! Tendency arrays for prognostic variables
 
         deallocate( umt )       ! u wind
         deallocate( vmt )       ! v wind
+
+! Prognostic drizzle variables
+
+        deallocate( Nrm )       ! rain droplet number conc.! Brian
+        deallocate( rrm )       ! rain water mixing ratio  ! Brian
+
 
 #ifdef SCALARS
 ! New mixing scheme structures
