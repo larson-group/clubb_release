@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.2 2006-04-22 21:27:17 dschanen Exp $
+!  $Id: statistics.F,v 1.3 2006-04-23 02:10:58 dschanen Exp $
 
 !  module stats_type
 !  contains:
@@ -2758,7 +2758,7 @@ c     -----------------------------------------------------------------
 !     Compute averages
 
       call stats_avg( zt%kk, zt%nn, zt%x, zt%n )
-      call stats_avg( zm%kk, zt%nn, zt%x, zt%n )
+      call stats_avg( zm%kk, zm%nn, zm%x, zm%n )
       call stats_avg( sfc%kk, sfc%nn, sfc%x, sfc%n )
 
 !     Write to file
