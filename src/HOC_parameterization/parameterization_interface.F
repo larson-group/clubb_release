@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.3 2006-04-22 22:17:41 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.4 2006-04-24 20:09:40 dschanen Exp $
 
 
 !  Module hoc_parameterization_interface
@@ -120,7 +120,7 @@
        real, intent(out), dimension(gr%nnzp,sclrm_dimension),
      . optional :: edsclrmt
 
-       logical, intent(out) :: isValid
+       logical, intent(inout) :: isValid
 
 !      Internal
 
