@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.32 2006-04-17 15:03:44 dschanen Exp $
+! $Id: error.F,v 1.33 2006-04-24 20:00:06 dschanen Exp $
 
 !       Module ERROR
 !
@@ -408,7 +408,7 @@
 
 !-------------- Run the HOC model with x_vector as input ---------------
 
-        print *, "Calling HOC with case " // run_file ! Debug
+        print *, "Calling HOC with case "//trim( run_file(c_run) )
 
         call hoc_model( x_vector(1), x_vector(2), x_vector(3),
      .                  x_vector(4), x_vector(5), x_vector(6), 
