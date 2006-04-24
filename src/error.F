@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.33 2006-04-24 20:00:06 dschanen Exp $
+! $Id: error.F,v 1.34 2006-04-24 20:10:45 dschanen Exp $
 
 !       Module ERROR
 !
@@ -377,6 +377,8 @@
 
       logical                           :: error ! see if get_var failed
 
+      logical, dimension(c_total) :: run_stat
+
 !-----------------------------------------------------------------------
 ! Output information every 10 iterations if stdout is enabled
 ! Amoeba's unusual calling convention makes this work less often than
@@ -399,11 +401,12 @@
       c_terms = 0
 
       isValid = .true.
+      run_stat = .true.
 
 !-----------------------------------------------------------------------
 !  Cycle through all the model cases specified for HOC
 !-----------------------------------------------------------------------
-!     $OMP PARALLEL DO DEFAULT(PRIVATE), SHARED(isValid)
+!     $OMP PARALLEL DO DEFAULT(PRIVATE)
       do c_run=1, c_total
 
 !-------------- Run the HOC model with x_vector as input ---------------
@@ -423,7 +426,7 @@
      .                  x_vector(31), x_vector(32), x_vector(33),
      .                  x_vector(34), x_vector(35), x_vector(36),
      .                  x_vector(37), x_vector(38),
-     .                  run_file(c_run), isValid, .false. )
+     .                  run_file(c_run), run_stat(c_run), .false. )
 
 !-------------- Basic Sanity Check for negative constants --------------
 !        if (minval( x_vector ) < 0. ) isValid = .false.
@@ -435,7 +438,8 @@
 !  or encountered a failure in subroutines tridag or bandec.  
 !  If it has, then return to amoeba with higher value than previously.
 !-----------------------------------------------------------------------
-        if ( .not. isValid ) then
+        if ( .not. any( run_stat )  ) then
+          isValid = .false.
           funk = 2 * maxval( err_array ) - minval( err_array )
           if ( stdout_on_invalid ) then
             inv_count = modulo(inv_count, 3) + 1          ! 1,2,3,1,2,3...
