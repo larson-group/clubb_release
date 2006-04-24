@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.34 2006-04-24 20:10:45 dschanen Exp $
+! $Id: error.F,v 1.35 2006-04-24 21:34:51 dschanen Exp $
 
 !       Module ERROR
 !
@@ -438,7 +438,7 @@
 !  or encountered a failure in subroutines tridag or bandec.  
 !  If it has, then return to amoeba with higher value than previously.
 !-----------------------------------------------------------------------
-        if ( .not. any( run_stat )  ) then
+        if ( any( .not. run_stat )  ) then
           isValid = .false.
           funk = 2 * maxval( err_array ) - minval( err_array )
           if ( stdout_on_invalid ) then
