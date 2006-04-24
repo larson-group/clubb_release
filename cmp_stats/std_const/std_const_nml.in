@@ -1,4 +1,4 @@
-! $Id: std_const_nml.in,v 1.3 2006-04-22 23:58:44 dschanen Exp $
+! $Id: std_const_nml.in,v 1.4 2006-04-24 17:58:28 dschanen Exp $
 ! This is our static set of constants, so generally no one
 ! should be checking in changes to this file
 
@@ -6,8 +6,8 @@
 C1         = 1.450000   ! Low Skewness in C1 Skewness Function.
 C1b        = 3.500000   ! High Skewness in C1 Skewness Function.
 C1c        = 1.000000   ! Degree of Slope of C1 Skewness Function.
-C2         = 1.500000   ! Low Skewness in C2 Skewness Function.
-C2b        = 1.500000   ! High Skewness in C2 Skewness Function.  
+C2         = 1.300000   ! Low Skewness in C2 Skewness Function.
+C2b        = 1.300000   ! High Skewness in C2 Skewness Function.  
 C2c        = 5.000000   ! Degree of Slope of C2 Skewness Function.
 C4         = 5.200000   ! Currently Not Used in the Model.
 C5         = 0.300000   ! Constant from Chris Golaz.
