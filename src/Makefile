@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.52 2006-04-27 17:51:43 dschanen Exp $
+# $Id: Makefile,v 1.53 2006-04-27 17:55:46 dschanen Exp $
 # This version should work with BSD, GNU make, smake and dmake
 
 # For HOC we edit this by hand rather than implementing imake or automake
@@ -115,7 +115,14 @@ clean:
 	-rm -f *.o *.a *.mod core*
 
 distclean: 
-	-rm -f *.o *.mod core* $(BINDIR)/* $(LIBDIR)/*
+	-rm -f *.o *.mod core* \
+       	$(BINDIR)/hoc_tuner \
+	$(BINDIR)/int2txt \
+	$(BINDIR)/hoc_tuner_budget_terms \
+        $(BINDIR)/hoc_standalone \
+	$(BINDIR)/hoc_inputfields \
+	$(BINDIR)/compare_runs \
+	$(BINDIR)/jacobian
 
 # == Dependencies ==
 polpak.o	: polpak.f90
