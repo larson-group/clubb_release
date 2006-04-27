@@ -1,6 +1,6 @@
 #!/bin/bash
 #######################################################################
-# $Id: run_standalone-all.bash,v 1.17 2006-03-02 16:52:49 dschanen Exp $
+# $Id: run_standalone-all.bash,v 1.18 2006-04-27 17:51:55 dschanen Exp $
 #
 # Script to run the standalone hoc program for all models.
 # Tested with bash v2.  Might work with Ksh.
@@ -42,7 +42,7 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 # State which case is being run
  echo "Running ""${RUN_CASE[$x]}"
 # Run HOC 
- RESULT=`./hoc_standalone 2>&1 |grep 'normal'`
+ RESULT=`../bin/hoc_standalone 2>&1 |grep 'normal'`
 #echo $RESULT
  if [ -z "$RESULT" ]; then
 	EXIT_CODE[$x]=-1

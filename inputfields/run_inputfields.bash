@@ -44,7 +44,7 @@ cat $MODEL_IN $STATS_IN > $RUN_CASE'_hoc.in'
 # State which case is being run
 echo "Running" $RUN_CASE
 # Run HOC
-./hoc_inputfields
+../bin/hoc_inputfields
  
 # remove the namelists
 rm -f 'inputfields.in'

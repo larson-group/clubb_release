@@ -1,6 +1,6 @@
 #!/bin/bash
 #######################################################################
-# $Id: run_standalone.bash,v 1.19 2006-03-23 17:10:19 griffinb Exp $
+# $Id: run_standalone.bash,v 1.20 2006-04-27 17:51:55 dschanen Exp $
 #
 # Script to run the standalone hoc program.  
 # Tested with bash v2.  Might work with Ksh.
@@ -56,7 +56,7 @@ fi
 # State which case is being run
  echo "Running" $RUN_CASE
 # Run HOC
- ./hoc_standalone
+ ../bin/hoc_standalone
 
 # remove the namelists
  rm -f 'standalone.in'

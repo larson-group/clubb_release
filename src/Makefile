@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.51 2006-04-22 20:25:39 dschanen Exp $
+# $Id: Makefile,v 1.52 2006-04-27 17:51:43 dschanen Exp $
 # This version should work with BSD, GNU make, smake and dmake
 
 # For HOC we edit this by hand rather than implementing imake or automake
@@ -31,11 +31,11 @@ BUGS_RAD = kinds.o bugsrad_planck.o bugsrad_physconst.o gases_ckd.o \
 	two_rt_sw_bs.o bugsrad_hoc.o
 
 PARAMETERIZATION = \
-	$(LATIN_HYP) $(BUGS_RAD) \
+	$(LATIN_HYP) \
 	polpak.o constants.o endian.o outputfile.o outputgrads.o \
 	outputnc.o grid.o model_flags.o statistics.o \
 	banbks.o bandec.o erf.o tridag.o rain.o \
-	closure_new.o diag_var.o gcss.o hydrostatic.o \
+	closure_new.o pred_equat.o diag_var.o gcss.o hydrostatic.o \
 	length.o mixing.o rsat.o sat_rcm.o sfc.o \
 	sounding.o update.o wp23.o tau.o \
 	numer_check.o diag_variables.o prog_variables.o \
@@ -43,30 +43,33 @@ PARAMETERIZATION = \
 
 INTERFACING = error.o gradsaverage.o inputfields.o inputgrads.o hoc.o 
 
+STANDALONE = $(BUGS_RAD) $(INTERFACING)
+
 NUM_REC	= nrtype.o nr.o nrutil.o ran_state.o ran1.o amebsa.o amoeba.o
 
-STANDALONE = $(PARAMETERIZATION) $(INTERFACING)
 TUNING = $(STANDALONE) $(NUM_REC)
 
-INT2TXT		= int2txt.o 
-HOC_TUNER	= $(TUNING) hoc_tuner.o 
-HOC_STANDALONE	= $(STANDALONE) hoc_standalone.o 
-COMPARE_RUNS	= $(STANDALONE) compare_runs.o 
-JACOBIAN	= $(STANDALONE) jacobian.o 
+INT2TXT		= int2txt.o
+HOC_TUNER	= $(TUNING) hoc_tuner.o
+HOC_STANDALONE	= $(STANDALONE) hoc_standalone.o
+COMPARE_RUNS	= $(STANDALONE) compare_runs.o
+JACOBIAN	= $(STANDALONE) jacobian.o
 HOC_INPUTFIELDS	= $(STANDALONE) hoc_inputfields.o
-HOC_BUDGET_TERMS= $(TUNING) budget_terms.o hoc_tuner_budget_terms.o 
+HOC_BUDGET_TERMS= $(TUNING) budget_terms.o hoc_tuner_budget_terms.o
 
 # == Targets == ( hoc_tuner and jacobian assume statistics )
 all:	hoc_tuner int2txt hoc_tuner_budget_terms \
-	hoc_standalone hoc_inputfields compare_runs jacobian 
+	hoc_standalone hoc_inputfields compare_runs jacobian
 
 # == Rules ==
+# Note: since we're using a virtual path the make command is going to use the
+# first file it finds with that name.  Be careful when making copies of files.
 VPATH=.:LH:BUGSrad:HOC_parameterization
 
 # Cancel implicit rules (e.g for modula-2 `m2c -c $@.mod')
 .SUFFIXES:
 # Define valid Fortran suffixes for HOC
-.SUFFIXES: .o .f .F .f90 .F90 .h
+.SUFFIXES: .a .o .f .F .f90 .F90 .h
 
 .f.o:
 	$(FC) $(FCFLAGS) -c $<
@@ -77,48 +80,42 @@ VPATH=.:LH:BUGSrad:HOC_parameterization
 .F90.o:
 	$(FC) $(FCFLAGS) -c $<
 
-int2txt:	$(INT2TXT)
-		$(FC) $(FCFLAGS) $(LDFLAGS) $@.o -o int2txt
+libhoc_param.a:	$(PARAMETERIZATION)
+	$(AR) $(ARFLAGS) $(LIBDIR)/$@ $(PARAMETERIZATION)
+	$(RANLIB) $(LIBDIR)/$@
 
-hoc_tuner:	$(HOC_TUNER)
-		$(FC) $(FCFLAGS) -o hoc_tuner \
+int2txt:	$(INT2TXT)
+		$(FC) $(FCFLAGS) $(LDFLAGS) $@.o -o $(BINDIR)/int2txt
+
+hoc_tuner:	libhoc_param.a $(HOC_TUNER)
+		$(FC) $(FCFLAGS) -o $(BINDIR)/hoc_tuner \
 		$(HOC_TUNER) $(LDFLAGS)
 
-hoc_standalone:	$(HOC_STANDALONE)
-		$(FC) $(FCFLAGS) -o hoc_standalone \
+hoc_standalone:	libhoc_param.a $(HOC_STANDALONE)
+		$(FC) $(FCFLAGS) -o $(BINDIR)/hoc_standalone \
 		$(HOC_STANDALONE) $(LDFLAGS)  
 
-hoc_inputfields:	$(HOC_INPUTFIELDS)
-			$(FC) $(FCFLAGS) -o hoc_inputfields \
+hoc_inputfields:	libhoc_param.a $(HOC_INPUTFIELDS)
+			$(FC) $(FCFLAGS) -o $(BINDIR)/hoc_inputfields \
 			$(HOC_INPUTFIELDS) $(LDFLAGS)
 
-hoc_tuner_budget_terms:	$(HOC_BUDGET_TERMS)
-			$(FC) $(FCFLAGS) -o hoc_tuner_budget_terms \
+hoc_tuner_budget_terms:	libhoc_param.a $(HOC_BUDGET_TERMS)
+			$(FC) $(FCFLAGS) -o $(BINDIR)/hoc_tuner_budget_terms \
 			$(HOC_BUDGET_TERMS) $(LDFLAGS) 
 
-jacobian:	$(JACOBIAN)
-		$(FC) $(FCFLAGS) -o jacobian \
+jacobian:	libhoc_param.a $(JACOBIAN)
+		$(FC) $(FCFLAGS) -o $(BINDIR)/jacobian \
 		$(JACOBIAN) $(LDFLAGS)
 
-compare_runs:	$(COMPARE_RUNS)
-		$(FC) $(FCFLAGS) -o compare_runs \
+compare_runs:	libhoc_param.a $(COMPARE_RUNS)
+		$(FC) $(FCFLAGS) -o $(BINDIR)/compare_runs \
 		$(COMPARE_RUNS) $(LDFLAGS)
 
-install: 
-	-cp int2txt ../tune/ 
-	-cp hoc_tuner ../tune/
-	-cp hoc_inputfields ../inputfields/
-	-cp hoc_standalone ../standalone/
-	-cp compare_runs ../compare_runs/
-	-cp jacobian ../jacobian/
-	-cp hoc_tuner_budget_terms ../tune_budgets/
 clean: 
-	-rm -f *.o *.mod core*
+	-rm -f *.o *.a *.mod core*
 
-clean_all: 
-	-rm -f *.o *.mod core* int2txt hoc_tuner hoc_inputfields \
-	hoc_standalone compare_runs \
-	jacobian hoc_tuner_budget_terms
+distclean: 
+	-rm -f *.o *.mod core* $(BINDIR)/* $(LIBDIR)/*
 
 # == Dependencies ==
 polpak.o	: polpak.f90
@@ -144,7 +141,8 @@ erf.o		: erf.F
 tridag.o	: tridag.F
 
 closure_new.o	: constants.o closure_new.F 
-diag_var.o	: constants.o tridag.o statistics.o diag_var.F 
+pred_equat.o	: constants.o bandec.o banbks.o pred_equat.F
+diag_var.o	: constants.o tridag.o statistics.o pred_equat.o diag_var.F 
 gcss.o		: constants.o statistics.o gcss.F
 mixing.o	: constants.o statistics.o banbks.o bandec.o mixing.F 
 parameterization_interface.o : constants.o gcss.o hydrostatic.o mixing.o \
@@ -171,6 +169,7 @@ ran1.o		: nrtype.o nr.o nrutil.o ran1.f90
 ran_state.o	: nrtype.o nr.o nrutil.o ran_state.f90
 amebsa.o	: nrtype.o nr.o nrutil.o ran_state.o ran1.o amebsa.f90
 amoeba.o	: nrtype.o nr.o nrutil.o amoeba.f90
+
 gradsaverage.o	: inputgrads.o gradsaverage.F 
 error.o		: nrtype.o nr.o gradsaverage.o hoc.o error.F
 budget_terms.o  : amoeba.o inputfields.o gradsaverage.o hoc.o \
@@ -225,7 +224,7 @@ bugsrad_hoc.o 		: kinds.o constants.o bugs_rad.o bugsrad_hoc.F90
 hoc_tuner.o		: nrtype.o nr.o hoc.o error.o hoc_tuner.F
 hoc_tuner_budget_terms.o: nrtype.o nr.o hoc.o error.o \
 	budget_terms.o hoc_tuner_budget_terms.F
-hoc_standalone.o	: hoc.o hoc_standalone.F
+hoc_standalone.o	: parameterization_interface.o hoc_standalone.F
 hoc_inputfields.o	: hoc.o inputfields.o hoc_inputfields.F
 int2txt.o		: int2txt.f90
 compare_runs.o		: endian.o inputgrads.o gradsaverage.o compare_runs.F

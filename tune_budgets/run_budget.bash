@@ -56,7 +56,7 @@ cat $MODEL_IN $STATS_TUNE_IN > $RUN_CASE'_hoc.in'
 # State which case is being run
 echo "Running" $RUN_CASE
 # Run HOC
-./hoc_tuner_budget_terms
+../bin/hoc_tuner_budget_terms
 
 # remove the temporary namelist files
 rm -f 'budget.in'
