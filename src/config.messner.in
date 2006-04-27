@@ -1,5 +1,11 @@
-# $Id: config.messner.in,v 1.7 2006-04-17 14:58:52 dschanen Exp $
+# $Id: config.messner.in,v 1.8 2006-04-27 18:10:00 dschanen Exp $
 # Configuration file for Messner node
+
+# == Paths ==
+# This is where the make command is going to put the resulting files
+BINDIR = ../bin
+LIBDIR = ../lib
+
 # == Compiler invocation ==
 #FC=g95 #	G95
 #FC=ifort #	Intel Fortran 9
@@ -19,6 +25,7 @@ DEBUG=-g -C -Kieee #			pgf90
 # == Optimization ==
 # These are all pretty conservative options. Check your compiler manual
 # for information on using more aggressive techniques (inlining, etc.)
+# Note: using -r8 on pgf90 breaks the NaN checking, so use it with caution
 
 #OPTIMIZE=-O3 -march=pentium4 -msse2 -mfpmath=sse #	g95, P4
 #OPTIMIZE=-O2 -double_size 128 -real_size 64 #		ifort w/ double prec.
@@ -26,7 +33,7 @@ DEBUG=-g -C -Kieee #			pgf90
 #OPTIMIZE=-O2 -tp p7 -r8 #				PGF90 w/ double prec.
 OPTIMIZE=-O2 -tp p7 #					PGF90, P4
 
-# == NetCDF Flags ==
+# == NetCDF Location ==
 #NC_LOC=/usr/local/netcdf-g95
 #NC_LOC=/usr/local/netcdf-intel
 NC_LOC=/usr/local/netcdf-pgi
@@ -34,7 +41,7 @@ NC_LOC=/usr/local/netcdf-pgi
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
 # Use -L<library path> -l<lib> to link in an external library
-LDFLAGS=-L$(NC_LOC)/lib -lnetcdf
+LDFLAGS=-L$(LIBDIR) -lhoc_param -L$(NC_LOC)/lib -lnetcdf
 
 # == Compiler flags (all) ==
 # Preprocessing Directives:
@@ -50,3 +57,8 @@ LDFLAGS=-L$(NC_LOC)/lib -lnetcdf
 
 FCFLAGS=$(OPTIMIZE) $(DEBUG) -DSTATS -Dnooverlap -Dradoffline -I$(NC_LOC)/include 
 #FCFLAGS=$(OPTIMIZE) $(DEBUG) -DSTATS -DSCALARS -Dnooverlap -Dradoffline -I$(NC_LOC)/include 
+
+# == Static library processing ==
+AR = ar
+ARFLAGS = cru
+RANLIB = ranlib
