@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: prog_variables.F,v 1.2 2006-04-22 22:17:41 dschanen Exp $
+! $Id: prog_variables.F,v 1.3 2006-04-28 20:57:04 dschanen Exp $
         module prognostic_variables
 
 ! This module contains definitions of all prognostic
@@ -52,6 +52,10 @@
 ! Mixing Lengths
 
         real, target, allocatable :: taum(:)
+
+! Imposed large scale w: m point
+
+        real, target, allocatable :: wmm(:)    
 
 ! Prognostic drizzle variables
 
@@ -130,6 +134,10 @@
 
         allocate( taum(1:nzmax) ) 
 
+! Imposed large scale w: m point
+
+        allocate( wmm(1:nzmax) )       
+
 ! Prognostic drizzle variables
 
         allocate( rrm(1:nzmax) )       ! rain water mixing ratio  ! Brian
@@ -187,6 +195,10 @@
 ! Mixing lengths
 
         taum = 0.0
+
+! Imposed large scale w: m point
+
+        wmm = 0.0      
  
 ! Prognostic drizzle variables
         
@@ -244,6 +256,10 @@
 ! Mixing lengths
 
         deallocate( taum )
+
+! Imposed large scale w: m point
+
+        deallocate( wmm )       
 
 ! Tendency arrays for prognostic variables
 

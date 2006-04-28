@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.4 2006-04-24 20:09:40 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.5 2006-04-28 20:57:04 dschanen Exp $
 
 
 !  Module hoc_parameterization_interface
@@ -57,7 +57,7 @@
      .              thlm, rtm, wp2, wp3, 
      .              rtp2, thlp2, rtpthlp, 
      .              wprtp, wpthlp, Scm, taum, 
-     .              rrm, Nrm,
+     .              wmm, rrm, Nrm,
      .              umt, vmt, isValid,
      .              sclrm, sclrm_forcing, ! optional
      .              edsclrm, edsclrmt )   ! optional
@@ -105,7 +105,7 @@
        real, intent(inout), dimension(gr%nnzp) :: thlm, rtm, wp2, wp3
        real, intent(inout), dimension(gr%nnzp) :: rtp2, thlp2, rtpthlp
        real, intent(inout), dimension(gr%nnzp) :: wprtp, wpthlp
-       real, intent(inout), dimension(gr%nnzp) :: Scm, taum
+       real, intent(inout), dimension(gr%nnzp) :: Scm, taum, wmm
 
 !      You can safely leave these uninitialized for a non-drizzle case
        real, intent(inout), dimension(gr%nnzp) :: rrm, Nrm

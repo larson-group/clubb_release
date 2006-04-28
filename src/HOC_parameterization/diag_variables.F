@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F,v 1.3 2006-04-22 22:17:41 dschanen Exp $
+! $Id: diag_variables.F,v 1.4 2006-04-28 20:57:04 dschanen Exp $
         module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -21,7 +21,6 @@
         real, target, allocatable :: vg(:)    ! v geostrophic wind
 
         real, target, allocatable :: wmt(:)    ! imposed large scale w: t point
-        real, target, allocatable :: wmm(:)    ! imposed large scale w: m point
 
         real, allocatable, target :: cf(:)        ! cloud fraction
         real, allocatable, target :: thvm(:)      ! virtual potential temp 
@@ -185,7 +184,6 @@
         allocate( vg(1:nzmax) )        ! v geostrophic wind
 
         allocate( wmt(1:nzmax) )       ! imposed large scale w: t point
-        allocate( wmm(1:nzmax) )       ! imposed large scale w: m point
  
         allocate( cf(1:nzmax) )        ! cloud fraction
         allocate( thvm(1:nzmax) )      ! virtual potential temperature
@@ -314,7 +312,6 @@
         vg  = 0.0      ! v geostrophic wind
 
         wmt = 0.0      ! imposed large scale w: t point
-        wmm = 0.0      ! imposed large scale w: m point
  
         cf           = 0.0  ! cloud fraction
         thvm         = 0.0  ! virtual potential temperature
@@ -434,7 +431,6 @@
         deallocate( vg )        ! v geostrophic wind
 
         deallocate( wmt )       ! imposed large scale w: t point
-        deallocate( wmm )       ! imposed large scale w: m point
  
         deallocate( cf )        ! cloud fraction
         deallocate( thvm )      ! virtual potential temperature

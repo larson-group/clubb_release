@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.75 2006-04-22 22:17:41 dschanen Exp $
+! $Id: hoc.F,v 1.76 2006-04-28 20:57:00 dschanen Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -324,7 +324,7 @@
      .            thlm, rtm, wp2, wp3, 
      .            rtp2, thlp2, rtpthlp, 
      .            wprtp, wpthlp, Scm, taum, 
-     .            rrm, Nrm,
+     .            wmm, rrm, Nrm,
      .            umt, vmt, isValid
 #ifdef SCALARS
      .            ,sclrm, sclrm_forcing, 
@@ -578,7 +578,7 @@
      .            thlm, rtm, wp2, wp3, 
      .            rtp2, thlp2, rtpthlp, 
      .            wprtp, wpthlp, Scm, taum, 
-     .            rrm, Nrm,
+     .            wmm, rrm, Nrm,
      .            umt, vmt, isValid
 #ifdef SCALARS
      .            ,sclrm, sclrm_forcing, 
@@ -1154,13 +1154,14 @@
            stop
 
          end select
-
+#ifdef radoffline && nooverlap 
          if ( lbugsrad ) then
            call bugsrad_hoc( deltaz*gr%nnzp, gr%nnzp, thlm, rcm, rtm,
      .                       rrm, cf, p, rhom, Tsfc,
      .                       radht, radht_SW, radht_LW,
      .                       Frad, Frad_SW, Frad_LW, thlm_forcing )
          endif
+#endif
 
        return
        end subroutine hoc_forcings_timestep
