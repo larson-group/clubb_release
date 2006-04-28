@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F,v 1.4 2006-04-28 20:57:04 dschanen Exp $
+! $Id: diag_variables.F,v 1.5 2006-04-28 21:48:58 dschanen Exp $
         module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -49,6 +49,11 @@
         real, allocatable, target :: radht_LW(:)  ! Long-wave heating rate
 
         real, allocatable, target :: shear(:)     ! wind shear production
+
+! Tendency arrays for prognostic variables
+
+        real, allocatable :: umt(:)             ! u wind
+        real, allocatable :: vmt(:)             ! v wind
 
         ! Second order moments
 
@@ -192,6 +197,11 @@
         allocate( Ncm(1:nzmax) )       ! cloud droplet number conc. ! Brian
         allocate( rsm(1:nzmax) )       ! saturation mixing ratio  ! Brian
 
+! Tendency arrays for prognostic variables
+
+        allocate( umt(1:nzmax) )       ! u wind
+        allocate( vmt(1:nzmax) )       ! v wind
+
         if ( kk_rain ) then
           allocate( cond_rrm(1:nzmax) )  ! condensation factor in rrm ! Brian
           allocate( auto_rrm(1:nzmax) )  ! autoconversion factor in rrm ! Brian
@@ -312,6 +322,11 @@
         vg  = 0.0      ! v geostrophic wind
 
         wmt = 0.0      ! imposed large scale w: t point
+
+! Tendency arrays for prognostic variables
+
+        umt = 0.0  ! u wind
+        vmt = 0.0  ! v wind
  
         cf           = 0.0  ! cloud fraction
         thvm         = 0.0  ! virtual potential temperature
@@ -431,6 +446,11 @@
         deallocate( vg )        ! v geostrophic wind
 
         deallocate( wmt )       ! imposed large scale w: t point
+
+! Tendency arrays for prognostic variables
+
+        deallocate( umt )       ! u wind
+        deallocate( vmt )       ! v wind
  
         deallocate( cf )        ! cloud fraction
         deallocate( thvm )      ! virtual potential temperature

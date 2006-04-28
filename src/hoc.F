@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.76 2006-04-28 20:57:00 dschanen Exp $
+! $Id: hoc.F,v 1.77 2006-04-28 21:48:46 dschanen Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -325,7 +325,7 @@
      .            rtp2, thlp2, rtpthlp, 
      .            wprtp, wpthlp, Scm, taum, 
      .            wmm, rrm, Nrm,
-     .            umt, vmt, isValid
+     .            isValid
 #ifdef SCALARS
      .            ,sclrm, sclrm_forcing, 
      .            edsclrm, edsclrmt
@@ -579,7 +579,7 @@
      .            rtp2, thlp2, rtpthlp, 
      .            wprtp, wpthlp, Scm, taum, 
      .            wmm, rrm, Nrm,
-     .            umt, vmt, isValid
+     .            isValid
 #ifdef SCALARS
      .            ,sclrm, sclrm_forcing, 
      .            edsclrm, edsclrmt

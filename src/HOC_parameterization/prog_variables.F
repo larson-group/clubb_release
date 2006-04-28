@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: prog_variables.F,v 1.3 2006-04-28 20:57:04 dschanen Exp $
+! $Id: prog_variables.F,v 1.4 2006-04-28 21:48:58 dschanen Exp $
         module prognostic_variables
 
 ! This module contains definitions of all prognostic
@@ -36,11 +36,6 @@
 
         real, target, allocatable :: rhot(:) ! density (kg/m^3)
         real, target, allocatable :: rhom(:) ! density (kg/m^3)
-
-! Tendency arrays for prognostic variables
-
-        real, allocatable :: umt(:)             ! u wind
-        real, allocatable :: vmt(:)             ! v wind
 
         real, target, allocatable :: thlm_forcing(:) ! thlm ls forcing
         real, target, allocatable :: rtm_forcing(:)  ! rtm ls forcing
@@ -118,11 +113,6 @@
         allocate( rhot(1:nzmax) )      ! density: t points
         allocate( rhom(1:nzmax) )      ! density: m points
 
-! Tendency arrays for prognostic variables
-
-        allocate( umt(1:nzmax) )       ! u wind
-        allocate( vmt(1:nzmax) )       ! v wind
-
         allocate( thlm_forcing(1:nzmax) ) ! thlm ls forcing
         allocate( rtm_forcing(1:nzmax) )  ! rtm ls forcing
 
@@ -180,13 +170,6 @@
         exner = 0.0    ! exner
         rhot  = 0.0    ! density on thermo. levels
         rhom  = 0.0    ! density on moment. levels
-
-
-
-! Tendency arrays for prognostic variables
-
-        umt = 0.0  ! u wind
-        vmt = 0.0  ! v wind
 
 ! PDF width parameter: momentum levels
 
@@ -260,11 +243,6 @@
 ! Imposed large scale w: m point
 
         deallocate( wmm )       
-
-! Tendency arrays for prognostic variables
-
-        deallocate( umt )       ! u wind
-        deallocate( vmt )       ! v wind
 
 ! Prognostic drizzle variables
 

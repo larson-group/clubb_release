@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.5 2006-04-28 20:57:04 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.6 2006-04-28 21:48:58 dschanen Exp $
 
 
 !  Module hoc_parameterization_interface
@@ -58,7 +58,7 @@
      .              rtp2, thlp2, rtpthlp, 
      .              wprtp, wpthlp, Scm, taum, 
      .              wmm, rrm, Nrm,
-     .              umt, vmt, isValid,
+     .              isValid,
      .              sclrm, sclrm_forcing, ! optional
      .              edsclrm, edsclrmt )   ! optional
 
@@ -114,8 +114,6 @@
      . optional :: sclrm, sclrm_forcing, edsclrm
 
 !      Output
-
-       real, intent(out), dimension(gr%nnzp) :: umt, vmt
 
        real, intent(out), dimension(gr%nnzp,sclrm_dimension),
      . optional :: edsclrmt
