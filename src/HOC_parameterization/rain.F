@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.1 2006-04-21 21:50:56 dschanen Exp $
+! $Id: rain.F,v 1.2 2006-04-28 18:02:33 griffinb Exp $
 !----------------------------------------------------------------------
 
       MODULE rain_equations
@@ -335,18 +335,17 @@
 
         ! rain water mixing ratio (rrm)
         ! lower boundary
-        aa(1) = 0.0                                           ! aa(1) term
+        aa(1) = 0.0                                                    ! aa(1) term
 
         bb(1) = 
-     .         - ( - nu_r*gr%dzt(2)*gr%dzm(1) )               ! aa(2) diffusion
-     .         + (1.0/dt)                                     ! bb(1) time tendency
-     .         + Vrr(2)*gr%dzm(1)                              ! bb(1) sedimentation
+     .         + (1.0/dt)                                              ! bb(1) time tendency
+     .         - ( - nu_r * gr%dzt(2) * gr%dzm(1) )                    ! minus aa(2) diffusion
 
         cc(1) = 
-     .         - (   nu_r*gr%dzt(2)*(gr%dzm(2) + gr%dzm(1)) ) ! bb(2) diffusion
-     .         - ( - nu_r*gr%dzt(3)*gr%dzm(2) )               ! aa(3) diffusion
-     .         - Vrr(2)*gr%dzm(1)                              ! cc(1) sedimentation
-                                                              ! cc(1) advection = 0.
+     .         + wmt(1) * (1.0/2.0) * gr%dzt(1)                        ! cc(1) advection
+     .         - (1.0/4.0) * ( Vrr(1) + Vrr(1) ) * gr%dzt(1)           ! cc(1) sedimentation
+     .         - ( + nu_r * gr%dzt(2) * ( gr%dzm(2) + gr%dzm(1) ) )    ! minus bb(2) diffusion
+     .         - ( - nu_r * gr%dzt(3) * gr%dzm(2) )                    ! minus aa(3) diffusion
 
         ! upper boundary
         aa(gr%nnzp) =
@@ -364,20 +363,45 @@
 
         cc(gr%nnzp) = 0.0                                       ! cc(gr%nnzp) term
 
+        ! Implicit contributions to rrm.
+#ifdef STATS
+
+        if (lstats_samp) then
+
+         if ( irrm_ma > 0 ) then
+           ztscr01(1) = 0.0
+           ztscr02(1) = - wmt(1) * (1.0/2.0) * gr%dzt(1)
+         endif
+
+         if ( irrm_sd > 0 ) then
+           ztscr03(1) = 0.0
+           ztscr04(1) = + (1.0/4.0) * ( Vrr(1) + Vrr(1) ) * gr%dzt(1)
+         endif
+
+         if ( irrm_dff > 0 ) then
+           ztscr05(1) = 0.0
+           ztscr06(1) = - nu_r * gr%dzt(2) * gr%dzm(1)
+           ztscr07(1) = + nu_r * gr%dzt(2) * ( gr%dzm(2) + gr%dzm(1) )
+     .                  - nu_r * gr%dzt(3) * gr%dzm(2)
+         endif
+
+        endif
+
+#endif STATS
+
         ! rain drop concentration (Nrm)
         ! lower boundary
-        oo(1) = 0.0                                           ! oo(1) term
+        oo(1) = 0.0                                                    ! oo(1) term
 
         pp(1) = 
-     .         - ( - nu_r*gr%dzt(2)*gr%dzm(1) )               ! oo(2) diffusion
-     .         + (1.0/dt)                                     ! pp(1) time tendency
-     .         + VNr(2)*gr%dzm(1)                             ! pp(1) sedimentation
+     .         + (1.0/dt)                                              ! pp(1) time tendency
+     .         - ( - nu_r * gr%dzt(2) * gr%dzm(1) )                    ! minus oo(2) diffusion
 
         qq(1) = 
-     .         - (   nu_r*gr%dzt(2)*(gr%dzm(2) + gr%dzm(1)) ) ! pp(2) diffusion
-     .         - ( - nu_r*gr%dzt(3)*gr%dzm(2) )               ! oo(3) diffusion
-     .         - VNr(2)*gr%dzm(1)                             ! qq(1) sedimentation
-                                                              ! qq(1) advection = 0.
+     .         + wmt(1) * (1.0/2.0) * gr%dzt(1)                        ! qq(1) advection
+     .         - (1.0/4.0) * ( VNr(1) + VNr(1) ) * gr%dzt(1)           ! qq(1) sedimentation
+     .         - ( + nu_r * gr%dzt(2) * ( gr%dzm(2) + gr%dzm(1) ) )    ! minus pp(2) diffusion
+     .         - ( - nu_r * gr%dzt(3) * gr%dzm(2) )                    ! minus oo(3) diffusion
 
         ! upper boundary
         oo(gr%nnzp) =
@@ -394,6 +418,32 @@
                                                                 ! pp(gr%nnzp) sedimentation = 0.
 
         qq(gr%nnzp) = 0.0                                       ! qq(gr%nnzp) term
+
+        ! Implicit contributions to Nrm.
+#ifdef STATS
+
+        if (lstats_samp) then
+
+         if ( iNrm_ma > 0 ) then
+           ztscr08(1) = 0.0
+           ztscr09(1) = - wmt(1) * (1.0/2.0) * gr%dzt(1)
+         endif
+
+         if ( iNrm_sd > 0 ) then
+           ztscr10(1) = 0.0
+           ztscr11(1) = + (1.0/4.0) * ( VNr(1) + VNr(1) ) * gr%dzt(1)
+         endif
+
+         if ( iNrm_dff > 0 ) then
+           ztscr12(1) = 0.0
+           ztscr13(1) = - nu_r * gr%dzt(2) * gr%dzm(1)
+           ztscr14(1) = + nu_r * gr%dzt(2) * ( gr%dzm(2) + gr%dzm(1) )
+     .                  - nu_r * gr%dzt(3) * gr%dzm(2)
+         endif
+
+        endif
+
+#endif STATS
 
 
 
@@ -601,55 +651,29 @@
 
 
         ! Enter the entire dd array, which is the RHS of the equation.
-        dd(2:gr%nnzp-1) = (1.0/dt)*rrm(2:gr%nnzp-1)
+        dd(2:gr%nnzp-1) = (1.0/dt) * rrm(2:gr%nnzp-1)
      .                  + cond_rrm(2:gr%nnzp-1) 
      .                  + auto_rrm(2:gr%nnzp-1) + accr_rrm(2:gr%nnzp-1)
         ! auto_rrm, cond_rrm, and accr_rrm are not set at nz=1 or nnzp
-        dd(1)       = (1.0/dt)*rrm(1) + cond_rrm(2) 
-     .              + auto_rrm(2) + accr_rrm(2)
-        dd(gr%nnzp) = (1.0/dt)*rrm(gr%nnzp) + cond_rrm(gr%nnzp-1)
+        ! There is no condensation/evaporation, autoconversion, or accretion
+        ! at level 1, which is below the ground surface.  Brian.
+        dd(1)       = (1.0/dt) * rrm(1)
+        dd(gr%nnzp) = (1.0/dt) * rrm(gr%nnzp) + cond_rrm(gr%nnzp-1)
      .              + auto_rrm(gr%nnzp-1) + accr_rrm(gr%nnzp-1)
 
         ! Enter the entire rr array, which is the RHS of the equation.
-        rr(2:gr%nnzp-1) = (1.0/dt)*Nrm(2:gr%nnzp-1) 
+        rr(2:gr%nnzp-1) = (1.0/dt) * Nrm(2:gr%nnzp-1) 
      .                  + cond_Nrm(2:gr%nnzp-1) + auto_Nrm(2:gr%nnzp-1)
         ! auto_rrm and cond_Nrm are not set at nz=1 or nnzp
-        rr(1)       = (1.0/dt)*Nrm(1) + cond_Nrm(2) + auto_Nrm(2)
-        rr(gr%nnzp) = (1.0/dt)*Nrm(gr%nnzp) + cond_Nrm(gr%nnzp-1)
+        ! There is no condensation/evaporation or autoconversion
+        ! at level 1, which is below the ground surface.  Brian.
+        rr(1)       = (1.0/dt) * Nrm(1)
+        rr(gr%nnzp) = (1.0/dt) * Nrm(gr%nnzp) + cond_Nrm(gr%nnzp-1)
      .              + auto_Nrm(gr%nnzp-1)
+
 
 !       The Boundary condition setup is now located above the main loop.
 !       Brian.  December 15, 2005.
-!       set up boundary conditions
-
-        ! rrm
-!       This is old scheme - we had problems at the corners of the matrix
-!        aa(1)       = aa(2)
-!        aa(gr%nnzp) = aa(gr%nnzp-1)
-!        bb(1)       = bb(2)
-!        bb(gr%nnzp) = bb(gr%nnzp-1)
-!        cc(1)       = cc(2)
-!        cc(gr%nnzp) = cc(gr%nnzp-1)
-!        dd(1)       = dd(2)
-!        dd(gr%nnzp) = dd(gr%nnzp-1)
-
-!        ! rrm
-!        bb(1)       = bb(2)                   ! main
-!        bb(gr%nnzp) = bb(gr%nnzp-1)
-!!       aa(1)       = UNDEFINED 
-!        aa(gr%nnzp) = -bb(gr%nnzp) + (1.0/dt) ! sub
-!        cc(1)       = -bb(1) + (1.0/dt)       ! super
-!        cc(gr%nnzp) = cc(gr%nnzp-1)
-!!       RHS dd is defined above
-
-!        ! Nrm
-!        pp(1)       = pp(2)                   ! main
-!        pp(gr%nnzp) = pp(gr%nnzp-1)
-!!       oo(1)       = UNDEFINED
-!        oo(gr%nnzp) = -pp(gr%nnzp) + (1.0/dt) ! sub
-!        qq(1)       = -pp(1) + (1.0/dt)       ! super
-!        qq(gr%nnzp) = qq(gr%nnzp-1)
-!!       RHS rr is defined above
 
 
 !       solve tridiagonal systems
@@ -667,7 +691,10 @@
         endif
 
 
-        DO k = 2, gr%nnzp, 1
+        DO k = 1, gr%nnzp, 1
+
+           km1 = MAX(k-1,1)
+           kp1 = MIN(k+1,gr%nnzp)
 
 #ifdef STATS
 
@@ -734,7 +761,7 @@
               Nrm(k) = 0.0
            ENDIF
 
-        ENDDO  ! k = 2, gr%nnzp-1, 1
+        ENDDO  ! k = 1, gr%nnzp, 1
 
 
 !       boundary conditions on results
