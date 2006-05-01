@@ -1,31 +1,42 @@
-$Id: Readme.txt,v 1.14 2006-03-07 19:04:54 dschanen Exp $
+$Id: Readme.txt,v 1.15 2006-05-01 21:23:52 dschanen Exp $
 ***********************************************************************
 *                         Using the HOC Model                         *
 ***********************************************************************
 -----------------------------------------------------------------------
--                                                                     -
-- Building the source code:
--                                                                     -
+- (1.1) Building Everything:
 -----------------------------------------------------------------------
 
 Requirements:
-* A Fortran 90/95 compiler with a complete implementation of the standard.
-* NetCDF >= v3.5.1;  We have not tested our code with anything older.
-* GNU bash, or an equivalent POSIX compliant shell.
+A. A Fortran 90/95 compiler with a complete implementation of the standard.
+B. NetCDF >= v3.5.1;  We have not tested our code with anything older.
+C. GNU bash, or an equivalent POSIX compliant shell.
 
-$ cd ~/hoc_v2.2_tuner/src
-Edit a config.<PLATFORM> file and include it in the Makefile for your 
-compiler and optimization options.
-$ make
-$ make install
+1. $ cd ~/hoc_v2.2_tuner/src
+2. Edit a config.<PLATFORM> file and include it in the Makefile for your 
+   compiler and optimization options.
+3. $ make
+
+The executables will appear in ../bin and libraries in ../lib.
 
 If you're using Sun Studio and have a fast parallel machine,
 dmake should work as well.
 
 -----------------------------------------------------------------------
--                                                                     -
-- Executing a tuning run:
--                                                                     -
+- (1.2) Building for use in a host model:
+-----------------------------------------------------------------------
+Requirements:
+A. and C. as above.
+1. and 2. as above.
+
+$ make libhoc_param.a
+
+This will build just the static library and the f90 modules.
+The static library will be in ../lib, while the modules will be in the
+src directory.  You will need at least the parameterization_interface 
+mod to interface with HOC.
+
+-----------------------------------------------------------------------
+- (2.1) Executing a tuning run:
 -----------------------------------------------------------------------
 
 1.  cd ~/hoc_v2.2_tuner/tune
@@ -56,9 +67,7 @@ dmake should work as well.
 6.  ./run_tuner.bash 
 
 -----------------------------------------------------------------------
--                                                                     -
-- Executing a budget terms tuning run:
--                                                                     -
+- (2.2) Executing a budget terms tuning run:
 -----------------------------------------------------------------------
 
 One run at a time:
@@ -104,9 +113,7 @@ Batch mode:
 7.  Make coffee. Play spider solitaire. Wait an hour or two.
 
 -----------------------------------------------------------------------
--                                                                     -
-- Executing a standalone run:
--                                                                     -
+- (3.1) Executing a standalone run:
 -----------------------------------------------------------------------
 
 Do steps 1, 2, & 3 as outlined in the tuner run.
@@ -120,29 +127,27 @@ or
 5b. ./run_standalone.bash <CASE>
 
 -----------------------------------------------------------------------
--                                                                     -
-- Executing a compare_runs analysis:
--                                                                     -
+- (4.1) Executing a run comparison analysis:
 -----------------------------------------------------------------------
 
 1. cd ../compare_runs  
 
 2. Edit compare_runs.in.  You need to choose three GrADS files on disk
-      to compare.  You also need to choose the time intervals over which
-      the files will be compared.
+   to compare.  You also need to choose the time intervals over which
+   the files will be compared.
 
-3. ./compare_runs
+3. ../bin/compare_runs
 -----------------------------------------------------------------------
--                                                                     -
-- Executing a jacobian analysis:
--                                                                     -
+- (5.1) Executing a Jacobian analysis:
 -----------------------------------------------------------------------
+
 1. cd ../jacobian
 
-2. Edit jacobian.in.  Choosing a high delta_factor may make the model
+2. Edit jacobian.in. 
+   Note that choosing a high delta_factor may make the model
    crash, which will result in no data (results for that term will come
    back as infinite).  The model namelists come from ../tune.
-3. ./jacobian
+3. ../bin/jacobian
 
 ************************************************************************
 *                         Overview of the code                         *
@@ -164,20 +169,19 @@ Microsoft Windows platform this could work using MSYS or Cygwin with G95, but
 this has not been tested.
 We use the Portland Group compiler, version 5.2-4 on Redhat EL3.
 G95 currently only works -ffast-math off (this is an unsafe optimization)
-Sun's f95 8.1 and 8.2 on x86 Solaris appears to work for hoc_tuner, but has not 
-been as rigorously tested.
+Sun's f95 8.1 and 8.2 on x86 Solaris appears to work for hoc_tuner, but has not
+been as rigorously tested as pgf90.
 Compaq fortran on Alpha also appears to work.
 The GNU fortran compiler (gcc 4.0.x) does not implement the entire 
 Fortran 90 standard yet, and so does not work at all.
 
 In order to get similar results on differing architectures, platforms, and
 compilers, initially try a conversative optimization and enable IEEE standard
-floating point math.
+floating point math.  On x86 compatible machines using SSE or SSE2 is usually
+the best way to do this.
 
 -----------------------------------------------------------------------
--                                                                     -
-- Explanation of the Input and Output Files
--                                                                     -
+- (1.1) Explanation of the Input and Output Files
 -----------------------------------------------------------------------
 
 Nota bene: Our numerical output is in GrADS format.  Each output has a header,
@@ -241,13 +245,12 @@ The compare_runs files:
   HOC profiles.
 
 ------------------------------------------------------------------------
--
-- The BUGSrad Radition scheme
--
+- (2.1) The BUGSrad Radition scheme
 ------------------------------------------------------------------------
 
   This is an optional more complex radition scheme, developed apart from
-  HOC by Stevens, et al.  Code obtained from Norm Wood on 2004/07/10.
+  HOC by Stevens, et al. The code used in HOC was obtained from Norm Wood 
+  on 2004/07/10.
   When enabled, the analytic computation normally
   used for radiation is disabled.  BUGSrad is enabled in the 
   model/<RUN CASE>_model.in file by setting lbugsrad=.true.
@@ -268,9 +271,7 @@ The compare_runs files:
   Note that for most cases SW and LW are not calculated without BUGSrad.
 
 ------------------------------------------------------------------------
--
-- The new scalar code ( Hoc with -DSCALARS enabled )
--
+- (3.1) The new scalar code ( Hoc with -DSCALARS enabled )
 ------------------------------------------------------------------------
 
 By default Hoc should be setup to compile without this option.  To use 
@@ -344,3 +345,4 @@ The variables follow the convention of the a=1, and b=2, appended after the
 sclr portion of their name.  For example. the first scalar mean is 'sclram',
 and the second is 'sclrbm'.  These and their forcings are all that occurs in
 the zt file, the rest all occur in the zm file.
+
