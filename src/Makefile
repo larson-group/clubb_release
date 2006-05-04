@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.55 2006-04-27 19:48:50 dschanen Exp $
+# $Id: Makefile,v 1.56 2006-05-04 15:43:37 dschanen Exp $
 # This version should work with BSD, GNU make, smake and dmake
 
 # For HOC we edit this by hand rather than implementing imake or automake
@@ -41,20 +41,18 @@ PARAMETERIZATION = \
 	numer_check.o diag_variables.o prog_variables.o \
 	parameterization_interface.o 
 
-INTERFACING = error.o gradsaverage.o inputfields.o inputgrads.o hoc.o 
-
-STANDALONE = $(BUGS_RAD) $(INTERFACING)
+INTERFACING = gradsaverage.o inputfields.o inputgrads.o hoc.o 
 
 NUM_REC	= nrtype.o nr.o nrutil.o ran_state.o ran1.o amebsa.o amoeba.o
 
-TUNING = $(STANDALONE) $(NUM_REC)
+TUNING = $(INTERFACING) $(NUM_REC) error.o
 
 INT2TXT		= int2txt.o
 HOC_TUNER	= $(TUNING) hoc_tuner.o
-HOC_STANDALONE	= $(STANDALONE) hoc_standalone.o
-COMPARE_RUNS	= $(STANDALONE) compare_runs.o
-JACOBIAN	= $(STANDALONE) jacobian.o
-HOC_INPUTFIELDS	= $(STANDALONE) hoc_inputfields.o
+HOC_STANDALONE	= $(INTERFACING) hoc_standalone.o
+COMPARE_RUNS	= $(INTERFACING) compare_runs.o
+JACOBIAN	= $(INTERFACING) jacobian.o
+HOC_INPUTFIELDS	= $(INTERFACING) hoc_inputfields.o
 HOC_BUDGET_TERMS= $(TUNING) budget_terms.o hoc_tuner_budget_terms.o
 
 # == Targets == ( hoc_tuner and jacobian assume statistics )
@@ -80,34 +78,52 @@ VPATH=.:LH:BUGSrad:HOC_parameterization
 .F90.o:
 	$(FC) $(FCFLAGS) -c $<
 
+# == Static libraries (default) ==
+
 libhoc_param.a:	$(PARAMETERIZATION)
 	$(AR) $(ARFLAGS) $(LIBDIR)/$@ $(PARAMETERIZATION)
 	$(RANLIB) $(LIBDIR)/$@
 
+libhoc_bugsrad.a:	$(BUGS_RAD)
+	$(AR) $(ARFLAGS) $(LIBDIR)/$@ $(BUGS_RAD)
+	$(RANLIB) $(LIBDIR)/$@
+
+# == Shared libraries ==
+
+libhoc_param.so:	$(PARAMETERIZATION)
+	$(SHARED) $(SHAREDFLAGS) -o $(LIBDIR)/$@ $(PARAMETERIZATION)
+
+libhoc_bugsrad.so:	$(BUGS_RAD)
+	$(SHARED) $(SHAREDFLAGS) -o $(LIBDIR)/$@ $(BUGS_RAD)
+
+# Remove comment to use shared libs (make sure you know what you're doing)
+HOCLIBS = libhoc_param.a libhoc_bugsrad.a
+#HOCLIBS = libhoc_param.so libhoc_bugsrad.so
+
 int2txt:	$(INT2TXT)
 		$(FC) $(FCFLAGS) $(LDFLAGS) $@.o -o $(BINDIR)/int2txt
 
-hoc_tuner:	libhoc_param.a $(HOC_TUNER)
+hoc_tuner:	$(HOCLIBS) $(HOC_TUNER)
 		$(FC) $(FCFLAGS) -o $(BINDIR)/hoc_tuner \
 		$(HOC_TUNER) $(LDFLAGS)
 
-hoc_standalone:	libhoc_param.a $(HOC_STANDALONE)
+hoc_standalone:	$(HOCLIBS) $(HOC_STANDALONE)
 		$(FC) $(FCFLAGS) -o $(BINDIR)/hoc_standalone \
 		$(HOC_STANDALONE) $(LDFLAGS)  
 
-hoc_inputfields:	libhoc_param.a $(HOC_INPUTFIELDS)
+hoc_inputfields:	$(HOCLIBS) $(HOC_INPUTFIELDS)
 			$(FC) $(FCFLAGS) -o $(BINDIR)/hoc_inputfields \
 			$(HOC_INPUTFIELDS) $(LDFLAGS)
 
-hoc_tuner_budget_terms:	libhoc_param.a $(HOC_BUDGET_TERMS)
+hoc_tuner_budget_terms:	$(HOCLIBS) $(HOC_BUDGET_TERMS)
 			$(FC) $(FCFLAGS) -o $(BINDIR)/hoc_tuner_budget_terms \
 			$(HOC_BUDGET_TERMS) $(LDFLAGS) 
 
-jacobian:	libhoc_param.a $(JACOBIAN)
+jacobian:	$(HOCLIBS) $(JACOBIAN)
 		$(FC) $(FCFLAGS) -o $(BINDIR)/jacobian \
 		$(JACOBIAN) $(LDFLAGS)
 
-compare_runs:	libhoc_param.a $(COMPARE_RUNS)
+compare_runs:	$(HOCLIBS) $(COMPARE_RUNS)
 		$(FC) $(FCFLAGS) -o $(BINDIR)/compare_runs \
 		$(COMPARE_RUNS) $(LDFLAGS)
 
@@ -132,7 +148,7 @@ constants.o	: constants.F
 model_flags.o	: model_flags.F
 outputfile.o	: outputfile.F
 rain.o		: constants.o model_flags.o statistics.o tridag.o \
-	polpak.o rain.F 
+	polpak.o rain.F
 outputgrads.o	: endian.o outputfile.o outputgrads.F
 outputnc.o	: outputfile.o outputnc.F
 diag_variables.o: constants.o grid.o diag_variables.F 
