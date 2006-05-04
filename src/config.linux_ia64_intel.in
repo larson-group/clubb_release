@@ -1,28 +1,33 @@
-# $Id: config.linux_ia64_intel.in,v 1.3 2006-04-27 17:51:43 dschanen Exp $
+# $Id: config.linux_ia64_intel.in,v 1.4 2006-05-04 15:57:46 dschanen Exp $
 # Makefile definitions customized for Linux IA64 using the Intel Fortran 
 # compiler
 
 # == Paths ==
 # This is where the make command is going to put the resulting files
-BINDIR = ../bin
-LIBDIR = ../lib
+PREFIX = $(HOME)/hoc_v2.2_tuner
+BINDIR = $(PREFIX)/bin
+LIBDIR = $(PREFIX)/lib
 
 # == Compiler invocation ==
- FC=ifort
+FC = ifort
 
 # == Debugging ==
- DEBUG=-g -check bounds
+DEBUG = -g -check bounds
+
+# == Machine specific options ==
+ARCH = -tp p1 # Itanium
+#ARCH = -tp p2 # Itanium 2
 
 # == Optimization ==
- OPTIMIZE=-O2
+OPTIMIZE = -O2
 
 # == NetCDF Location ==
- NC_LOC=$HOME/netcdf-3.6.0-p1
+NC_LOC = $(HOME)/netcdf-3.6.0-p1
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
 # Use -L<library path> -l<lib> to link in an external library
-LDFLAGS=-L$(LIBDIR) -lhoc_param -L$(NC_LOC)/lib -lnetcdf
+LDFLAGS = -L$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib -lnetcdf
 
 # == Compiler flags (all) ==
 # Preprocessing:
@@ -35,10 +40,14 @@ LDFLAGS=-L$(LIBDIR) -lhoc_param -L$(NC_LOC)/lib -lnetcdf
 #   -Dradoffline and -Dnooverlap (see bugsrad documentation)
 # You will need to `make clean' if you change these
 
- FCFLAGS=$(OPTIMIZE) -DSTATS -DBIG_ENDIAN_IO -Dnooverlap -Dradoffline -I$(NC_LOC)/include
-#FCFLAGS=$(DEBUG) -DSTATS -DBIG_ENDIAN_IO -Dnooverlap -Dradoffline -I$(NC_LOC)/include
+FCFLAGS = $(ARCH) $(OPTIMIZE) -DSTATS -DBIG_ENDIAN_IO -Dnooverlap -Dradoffline -I$(NC_LOC)/include
+#FCFLAGS = $(ARCH) $(DEBUG) -DSTATS -DBIG_ENDIAN_IO -Dnooverlap -Dradoffline -I$(NC_LOC)/include
 
 # == Static library processing ==
 AR = ar
 ARFLAGS = cru
 RANLIB = ranlib
+
+# == Shared library processing ==
+SHARED = $(FC)
+SHAREDFLAGS = -fPIC -shared
