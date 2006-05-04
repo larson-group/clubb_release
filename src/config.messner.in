@@ -1,4 +1,4 @@
-# $Id: config.messner.in,v 1.9 2006-05-04 16:35:34 dschanen Exp $
+# $Id: config.messner.in,v 1.10 2006-05-04 16:36:48 dschanen Exp $
 # Configuration file for Messner node
 
 # == Paths ==
@@ -8,9 +8,9 @@ BINDIR = $(PREFIX)/bin
 LIBDIR = $(PREFIX)/lib
 
 # == Compiler invocation ==
-FC = g95 #	G95
+#FC = g95 #	G95
 #FC = ifort #	Intel Fortran 9
-#FC = pgf90 #	Portland Group Fortran 90 5.x/6.x
+FC = pgf90 #	Portland Group Fortran 90 5.x/6.x
 
 # == Debugging ==
 # It is sometimes helpful to turn on floating-point trapping for the 
@@ -19,14 +19,14 @@ FC = g95 #	G95
 # In g95: `setenv G95_FPU_INVALID TRUE' or `export G95_FPU_INVALID=TRUE'
 # In ifort: -fpe=0
 # The usual options:
-DEBUG = -g -C -mieee-fp -ftrace=full #	g95
+#DEBUG = -g -C -mieee-fp -ftrace=full #	g95
 #DEBUG = -g -check bounds -mieee-fp #	ifort
-#DEBUG = -g -C -Kieee #			pgf90
+DEBUG = -g -C -Kieee #			pgf90
 
 # == Machine specific flags ==
-ARCH = -march=pentium4 -msse2 -mfpmath=sse # g95, P4
+#ARCH = -march=pentium4 -msse2 -mfpmath=sse # g95, P4
 #ARCH = -arch pn4 -msse2 # ifort, P4
-#ARCH = -tp p7 # pgf90, P4
+ARCH = -tp p7 # pgf90, P4
 
 # == Optimization ==
 # These are all pretty conservative options. Check your compiler manual
