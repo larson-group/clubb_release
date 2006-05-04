@@ -1,6 +1,6 @@
 #!/bin/bash
 #######################################################################
-# $Id: run_repos.bash,v 1.1 2006-02-14 21:41:26 dschanen Exp $
+# $Id: run_repos.bash,v 1.2 2006-05-04 18:06:45 hoc_browser Exp $
 #
 # Script to run the standalone hoc program for all models, with 
 # repository (non-static) constants.
@@ -15,6 +15,8 @@ EXIT_CODE=( [0]=0 [1]=0 [2]=0 [3]=0 [4]=0 [5]=0 [6]=0 [7]=0 [8]=0 [9]=0 [10]=0 )
 
 RUN_CASE=(arm atex bomex dycoms2_rf01 dycoms2_rf02_do dycoms2_rf02_ds\
  dycoms2_rf02_nd dycoms2_rf02_so fire nov11_altocu wangara )
+
+rm repos_const/*.nc
 
 # This will loop over all runs in sequence 
 for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
@@ -43,7 +45,7 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 # State which case is being run
  echo "Running ""${RUN_CASE[$x]}"
 # Run HOC 
- RESULT=`./hoc_standalone 2>&1 |grep 'normal'`
+ RESULT=`../bin/hoc_standalone 2>&1 |grep 'normal'`
 #echo $RESULT
  if [ -z "$RESULT" ]; then
 	EXIT_CODE[$x]=-1
@@ -60,7 +62,7 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
   if [ "${EXIT_CODE[$x]}" != 0 ]; then
 	echo "${RUN_CASE[$x]}"' failure'
   else
-	cp "${RUN_CASE[$x]}"_zt.??? repos_const/
-	cp "${RUN_CASE[$x]}"_zm.??? repos_const/
+	mv "${RUN_CASE[$x]}"_zt.nc repos_const/
+	mv "${RUN_CASE[$x]}"_zm.nc repos_const/
   fi
 done
