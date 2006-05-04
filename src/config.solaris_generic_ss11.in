@@ -1,38 +1,33 @@
-# $Id: config.solaris_generic_ss11.in,v 1.4 2006-04-27 18:19:08 dschanen Exp $
+# $Id: config.solaris_generic_ss11.in,v 1.5 2006-05-04 15:41:53 dschanen Exp $
 # Makefile definitions for Sun f95
 
 # == Paths ==
 # This is where the make command is going to put the resulting files
-BINDIR = ../bin
-LIBDIR = ../lib
+PREFIX = $(HOME)/hoc_v2.2_tuner
+BINDIR = $(PREFIX)/bin
+LIBDIR = $(PREFIX)/lib
 
 # == Compiler invocation ==
-FC=f95 # Sun Fortran 8.2
+FC = f95 # Sun Fortran 8.2
 
 # == Debugging ==
 # It is sometimes helpful to turn on floating-point trapping for the 
 #  standalone program, but this will not work when using the tuner.
 # In Sun f95: remove the reference to ftrap, or -ftrap=common
-DEBUG=-g -C -fns=no -ftrap=%none
+DEBUG = -g -C -fns=no -ftrap=%none
+
+# == Machine specific flags ==
+ARCH = -xarch=native -xcache=native -xchip=native 
 
 # == Optimization ==
 # Sun's f95 has great difficulty with statistics.F
-# For SS11, either turn off optimization for that file or expect a long 
-#  compilation. 
+# Either turn off optimization for that file or expect a long compilation. 
 # Using -xtypemap it is possible to compile for quad precision floating 
 # point on SPARC, but on AMD64/EMT64 this is still not implemented.
 # These are all pretty conservative options, check the your compiler manual 
 # for information on using more aggressive techniques (inlining, etc.)
-OPTIMIZE=-xO3 -dalign -xarch=native -xcache=native -xchip=native -xvector=yes
-
-# == NetCDF Location  ==
-NC_LOC=/usr/local/netcdf-sun
-
-# == Linking Flags ==
-# Use -s to strip (no debugging); 
-# -Bstatic; for static linking of libraries
-# -xlibmopt; link optimized version of libm
-LDFLAGS=-L$(LIBDIR) -lhoc_param -xlibmopt -L$(NC_LOC)/lib -lnetcdf
+# -KPIC is needed for shared libs
+OPTIMIZE = -xO3 -dalign -xvector=yes 
 
 # == Compiler flags (all) ==
 # Preprocessing:
@@ -46,11 +41,26 @@ LDFLAGS=-L$(LIBDIR) -lhoc_param -xlibmopt -L$(NC_LOC)/lib -lnetcdf
 #   -Dradoffline and -Dnooverlap (see bugsrad documentation)
 # You will need to `make clean' if you change these
 
-FCFLAGS=$(OPTIMIZE) $(DEBUG) -DSTATS -Dnooverlap -Dradoffline -M$(NC_LOC)/include
+FCFLAGS=$(ARCH) $(OPTIMIZE) $(DEBUG) -DSTATS -Dnooverlap -Dradoffline -M$(NC_LOC)/include
  
-#FCFLAGS=$(OPTIMIZE) $(DEBUG) -DSTATS -DSCALARS -Dnooverlap -Dradoffline -M$(NC_LOC)/include
+#FCFLAGS=$(ARCH) $(OPTIMIZE) $(DEBUG) -DSTATS -DSCALARS -Dnooverlap -Dradoffline -M$(NC_LOC)/include
+
+
+# == NetCDF Location  ==
+NC_LOC=/usr/local/netcdf-sun
+
+# == Linking Flags ==
+# Use -s to strip (no debugging); 
+# -Bstatic; for static linking of libraries
+# -xlibmopt; link optimized version of libm
+LDFLAGS=-L$(LIBDIR) -R$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib -lnetcdf -xlibmopt
+
 
 # == Static library processing ==
 AR = ar
 ARFLAGS = cru
 RANLIB = ranlib
+
+# == Shared library processing ==
+SHARED = $(FC)
+SHAREDFLAGS = -G
