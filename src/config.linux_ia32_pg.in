@@ -1,27 +1,31 @@
-# $Id: config.linux_ia32_pg.in,v 1.3 2006-04-27 17:51:43 dschanen Exp $
+# $Id: config.linux_ia32_pg.in,v 1.4 2006-05-04 15:40:48 dschanen Exp $
 # Makefile definitions customized for Linux IA32 using the Portland Group
 # compiler
 
 # == Paths ==
 # This is where the make command is going to put the resulting files
-BINDIR = ../bin
-LIBDIR = ../lib
+PREFIX = $(HOME)/hoc_v2.2_tuner
+BINDIR = $(PREFIX)/bin
+LIBDIR = $(PREFIX)/lib
 
 # == Compiler invocation ==
- FC=pgf90
+FC = pgf90
 
 # == Debugging ==
- DEBUG=-g -C -Kieee
+DEBUG = -g -C -Kieee
+
+# == Machine specific options ==
+ARCH = -tp piii #	PGF90, Pentium III
+#ARCH = -tp p7 #		PGF90, Pentium IV
 
 # == Optimization ==
- OPTIMIZE=-O2 -tp piii #                 PGF90, Pentium III
-#OPTIMIZE=-O2 -tp p7   #                 PGF90, Pentium 4
+OPTIMIZE = -O2
 
 # == NetCDF Location ==
- NC_LOC=$HOME/netcdf-3.6.0-p1
+NC_LOC = $(HOME)/netcdf-3.6.0-p1
 
 # == Linking Flags ==
- LDFLAGS=-L$(LIBDIR) -lhoc_param -L$(NC_LOC)/lib -lnetcdf
+LDFLAGS = -L$(LIBDIR) -Wl,-rpath $(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib -lnetcdf
 
 # == Compiler flags (all) ==
 # Preprocessing:
@@ -32,12 +36,17 @@ LIBDIR = ../lib
 #   -DLITTLE_ENDIAN_IO use only if compiler performs little endian file i/O
 #                   regardless of internal representation
 #   -Dradoffline and -Dnooverlap (see bugsrad documentation)
+# Add -KPIC when using shared libraries
 # You will need to `make clean' if you change these
 
- FCFLAGS=$(OPTIMIZE) -DSTATS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
-#FCFLAGS=$(DEBUG) -DSTATS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
+FCFLAGS = $(ARCH) $(OPTIMIZE) -DSTATS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
+#FCFLAGS = $(ARCH) $(DEBUG) -DSTATS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
 
 # == Static library processing ==
 AR = ar
 ARFLAGS = cru
 RANLIB = ranlib
+
+# == Shared library processing ==
+SHARED = $(FC)
+SHAREDFLAGS = -KPIC -shared
