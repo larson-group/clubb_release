@@ -1,4 +1,4 @@
-$Id: Readme.txt,v 1.15 2006-05-01 21:23:52 dschanen Exp $
+$Id: Readme.txt,v 1.16 2006-05-06 07:44:30 dschanen Exp $
 ***********************************************************************
 *                         Using the HOC Model                         *
 ***********************************************************************
@@ -64,7 +64,66 @@ mod to interface with HOC.
 
 5.  Edit run_tuner.bash to use your namelists
 
-6.  ./run_tuner.bash 
+6.  ./run_tuner.bash
+
+-----------------------------------------------------------------------
+- (2.1.1) Creating a RAM disk (optional)
+-----------------------------------------------------------------------
+
+One means of speeding up tuning runs is reducing the time spent writing
+to the hard disk.  Most operating systems support a virtual device called
+a ram disk, which is main memory that has been allocated to act as an emulated
+file system.  Note that you will need system privileges to make the ram disk, 
+and files copied to the ram disk are not preserved when the computer is 
+powered off.
+
+Generally:
+
+1. mkdir <HOC PATH>/rd_tune/
+
+2. Create and mount RAM disk on rd_tune
+
+3. Copy tune directory to rd_tune
+
+4. Run tuner
+
+Linux Example
+Note that you will need ram disk support compiled into your kernel, which is
+typically the default on most systems.  Linux appears to be less flexible 
+about hen you are allowed to change the ramdisk size.
+
+1. In grub.conf
+   Append to 'kernel' line:
+   kernel /vmlinuz-2.4.21-40.EL ro root=LABEL=/ ramdisk_size=262144
+
+Sets ram disks to be 256 megabytes in size.  Note that your own system may
+have other options besides the ramdisk_size.
+
+2. $ mkfs.ext2 /dev/ram0
+
+3. $ mount /dev/ram0 /home/dschanen/hoc_v2.2_tuner/rd_tune
+
+4. $ cp tune/*.* rd_tune/
+
+5. $ cd rd_tune
+
+(Run your job)
+
+Solaris Example
+Note that these instructions are for Solaris 9 & 10
+
+1. $ ramdiskadm -a hoc 256m 
+Creates a virtual disk hoc that is 256 megabytes in size.
+
+2. $ newfs /dev/ramdisk/hoc
+
+3. $ mount /dev/ramdisk/hoc /home/dschanen/hoc_v2.2_tuner/rd_tune/
+
+4. $ cp tune/*.* rd_tune/
+
+5. $ cd rd_tune
+
+(Run your job)
 
 -----------------------------------------------------------------------
 - (2.2) Executing a budget terms tuning run:
@@ -118,36 +177,36 @@ Batch mode:
 
 Do steps 1, 2, & 3 as outlined in the tuner run.
 
-4. cd ../standalone.  Edit standalone_<CASE>.in or select a premade one.
+4. $ cd ../standalone.  Edit standalone_<CASE>.in or select a premade one.
 
 5a. Edit run_standalone.bash to use your standalone_*.in
    and ./run_standalone.bash
 or 
 
-5b. ./run_standalone.bash <CASE>
+5b. $ ./run_standalone.bash <CASE>
 
 -----------------------------------------------------------------------
 - (4.1) Executing a run comparison analysis:
 -----------------------------------------------------------------------
 
-1. cd ../compare_runs  
+1. $ cd ../compare_runs  
 
 2. Edit compare_runs.in.  You need to choose three GrADS files on disk
    to compare.  You also need to choose the time intervals over which
    the files will be compared.
 
-3. ../bin/compare_runs
+3. $ ../bin/compare_runs
 -----------------------------------------------------------------------
 - (5.1) Executing a Jacobian analysis:
 -----------------------------------------------------------------------
 
-1. cd ../jacobian
+1. $ cd ../jacobian
 
 2. Edit jacobian.in. 
    Note that choosing a high delta_factor may make the model
    crash, which will result in no data (results for that term will come
    back as infinite).  The model namelists come from ../tune.
-3. ../bin/jacobian
+3. $ ../bin/jacobian
 
 ************************************************************************
 *                         Overview of the code                         *
