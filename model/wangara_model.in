@@ -1,4 +1,4 @@
-! $Id: wangara_model.in,v 1.1 2006-02-09 20:40:46 dschanen Exp $
+! $Id: wangara_model.in,v 1.2 2006-05-07 21:47:09 griffinb Exp $
 ! Parameter file for Wangara day 33 dry convective boundary layer
 ! Observed soundings
 
@@ -26,9 +26,10 @@ LE = 0.0
 
 fcor = -8.21e-5
 
-cloud_sed = .false.
-kk_rain   = .false.
-lbugsrad  = .false.
+cloud_sed     = .false.
+kk_rain       = .false.
+lbugsrad      = .false.
+bottom_at_sfc = .true.
 
 /
 

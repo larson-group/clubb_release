@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.6 2006-04-28 21:48:58 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.7 2006-05-07 21:47:14 griffinb Exp $
 
 
 !  Module hoc_parameterization_interface
@@ -50,14 +50,14 @@
 !-----------------------------------------------------------------------
        subroutine parameterization_timestep
      .            ( iter, niterlong, time_initial,
-     .              time_current, dt, runtype, 
+     .              time_current, dt, 
      .              p, rhom, rhot, exner, 
      .              thlm_forcing, rtm_forcing,
      .              um, vm, upwp, vpwp,
      .              thlm, rtm, wp2, wp3, 
      .              rtp2, thlp2, rtpthlp, 
      .              wprtp, wpthlp, Scm, taum, 
-     .              wmm, rrm, Nrm,
+     .              wmm, Ncm, rrm, Nrm,
      .              isValid,
      .              sclrm, sclrm_forcing, ! optional
      .              edsclrm, edsclrmt )   ! optional
@@ -94,8 +94,6 @@
        ! each section of the code -dschanen 20 April 2006 
        real, intent(in) :: dt ! current timestep size
 
-       character(len=*), intent(in) :: runtype
-
        real, intent(in), dimension(gr%nnzp) :: thlm_forcing, rtm_forcing
        real, intent(in), dimension(gr%nnzp) :: p, rhom, rhot, exner
 
@@ -106,6 +104,7 @@
        real, intent(inout), dimension(gr%nnzp) :: rtp2, thlp2, rtpthlp
        real, intent(inout), dimension(gr%nnzp) :: wprtp, wpthlp
        real, intent(inout), dimension(gr%nnzp) :: Scm, taum, wmm
+       real, intent(inout), dimension(gr%nnzp) :: Ncm
 
 !      You can safely leave these uninitialized for a non-drizzle case
        real, intent(inout), dimension(gr%nnzp) :: rrm, Nrm
@@ -181,7 +180,7 @@
 
 !      Surface effects should not be included with any case where the lowest
 !      level is not the ground level.  Brian Griffin.  December 22, 2005.
-       IF ( TRIM( runtype ) /= "nov11_altocu" ) THEN
+       IF ( bottom_at_sfc == .true. ) THEN
           call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1),
      .                  wp2(1), thlp2(1), rtp2(1), rtpthlp(1)
 #ifdef SCALARS
@@ -190,7 +189,8 @@
 #endif /* SCALARS */
      .                )
        ELSE
-          ! Nov. 11 Lowest Level Variances.
+          ! Variances for cases where the lowest level is not at the surface.
+          ! Eliminate surface effects on lowest level variances.
           wp2(1)     = (2.0/3.0) * emin
           thlp2(1)   = 0.0
           rtp2(1)    = 0.0
@@ -298,8 +298,7 @@
      .     wpthlp2(k), wp2thlp(k), wprtpthlp(k),
      .     cf(k), rcm(k), wpthvp(k), wp2thvp(k), rtpthvp(k), 
      .     thlpthvp(k), wprcp(k), wp2rcp(k), rtprcp(k), thlprcp(k),
-     .     pdf_parms(k, :), crt1, crt2, cthl1, cthl2,
-     .     Ncm(k), runtype
+     .     pdf_parms(k, :), crt1, crt2, cthl1, cthl2
 #ifdef SCALARS
      .     ,sclrm(k,:), sclr_tmp1(k,:),
      .     wpsclrprtp(k,:), wpsclrp2(k,:), sclr_tmp2(k,:), 
@@ -367,8 +366,7 @@
      .        wprtpthlp(1), cf(1), rcm(1),
      .        wpthvp(1), wp2thvp(1), rtpthvp(1), thlpthvp(1),
      .        wprcp(1), wp2rcp(1), rtprcp(1), thlprcp(1),
-     .        pdf_parms(1,:), crt1, crt2, cthl1, cthl2,
-     .        Ncm(1), runtype
+     .        pdf_parms(1,:), crt1, crt2, cthl1, cthl2
 #ifdef SCALARS
      .        ,sclr_tmp1(1,:), wpsclrp(1,:),
      .        wpsclrprtp(1,:), wpsclrp2(1,:),
@@ -481,16 +479,6 @@
        enddo ! i = 1, sclrm_dimension
 #endif /* SCALARS */
 
-!      Special Nov. 11 condition for total water above cloud.
-!      IF ( TRIM( runtype ) == "nov11_altocu" .and.
-!    .      time_current == time_initial + 3600.0 ) THEN
-!        DO k = 1, gr%nnzp, 1
-!          IF ( gr%zt(k) > 1555.0 ) THEN
-!               rtm(k) = 0.89 * rtm(k)
-!          ENDIF
-!        ENDDO
-!      ENDIF
-
 
 !      Advance wp2/wp3 one timestep
 
@@ -498,7 +486,7 @@
      .      ( dt, Lscale, taum, taut, Scm, ! dtclosure to dt -dschanen
      .        pdf_parms(:, 13), Kht, wmt, wmm,
      .        um, upwp, vm, vpwp, wpthvp, wp2thvp,
-     .        wp2, wp3, isValid, runtype )
+     .        wp2, wp3, isValid )
 
        if ( .not. isValid ) return
 
@@ -685,7 +673,8 @@
      .               nu1, nu2, nu6, nu8, nu_r, 
      .               gamma_coef, gamma_coefb, gamma_coefc,
      .               mu, c_K, beta, lmin_coef, taumin, taumax, fcor,
-     .               lbugsrad, kk_rain, cloud_sed, implemented )
+     .               lbugsrad, kk_rain, cloud_sed, bottom_at_sfc,
+     .               implemented )
 
         use grid_class
         use diagnostic_variables
@@ -723,6 +712,8 @@
         logical, intent(in) :: lbugsrad  ! BUGSrad interactive radiation scheme
         logical, intent(in) :: kk_rain   ! K & K rain microphysics
         logical, intent(in) :: cloud_sed ! Cloud Sedimentation
+        ! Whether the lowest model level is at the surface or not (T/F).
+        logical, intent(in) :: bottom_at_sfc
 
 
         ! Whether this is part of larger model (T/F)
@@ -730,7 +721,8 @@
 
 !       Setup flags
 
-        call setup_model_flags( lbugsrad, kk_rain, cloud_sed )
+        call setup_model_flags( lbugsrad, kk_rain, cloud_sed,
+     .                          bottom_at_sfc )
 
         if ( .not. implemented ) then
           call setup_diagnostic_variables( nzmax )

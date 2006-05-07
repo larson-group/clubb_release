@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.2 2006-04-22 18:16:02 dschanen Exp $
+! $Id: wp23.F,v 1.3 2006-05-07 21:47:14 griffinb Exp $
 
 ! SUBROUTINE timestep_wp23( )
 !  Advance wp2 and wp3 one timestep
@@ -7,10 +7,11 @@
         subroutine timestep_wp23
      .             (dt, Lscale, taum, taut, Scm, a, Kht, wmt, wmm,
      .              um, upwp, vm, vpwp, wpthvp, wp2thvp,
-     .              wp2, wp3, isValid, runtype)
+     .              wp2, wp3, isValid )
 
         use grid_class
         use constants
+        use model_flags
 #ifdef STATS
         use statistics
 #endif STATS
@@ -38,8 +39,6 @@
         real, intent(inout) :: wp3(1:gr%nnzp)
 
         logical, intent(inout):: isValid
-
-        character(len=*), intent(in):: runtype
 
 
 !       Internal
@@ -132,7 +131,7 @@
      .                   wmt, wmm, wpthvp, wp2thvp,
      .                   um, upwp, vm, vpwp,
      .                   C1_Skw_fnc, C11_Skw_fnc, 
-     .                   runtype, wp2, wp3, isValid )
+     .                   wp2, wp3, isValid )
         
         if ( .not. isValid ) then
           deallocate( tauw3t, Lm)
@@ -163,10 +162,11 @@
      .                         wmt, wmm, wpthvp, wp2thvp,
      .                         um, upwp, vm, vpwp,
      .                         C1_Skw_fnc, C11_Skw_fnc,
-     .                         runtype, wp2, wp3, isValid)
+     .                         wp2, wp3, isValid)
 
         use grid_class
         use constants
+        use model_flags
 #ifdef STATS
         use statistics
 #endif STATS
@@ -192,8 +192,6 @@
         real, intent(in) :: vpwp(1:gr%nnzp)
         real, intent(in) :: C1_Skw_fnc(1:gr%nnzp)
         real, intent(in) :: C11_Skw_fnc(1:gr%nnzp)
-
-        character(len=*), intent(in):: runtype
 
 !       Input/Output
 
@@ -803,8 +801,7 @@
            ! NOTE: Clipping not good; must try to get rid of.  Effects only
            !       Wangara case.
 
-           IF ( gr%zt(k) <= 100.0  .AND.     ! Clip for 100.0 m. above ground.
-     .          TRIM( runtype ) /= "nov11_altocu" ) THEN   ! lower boundary is not ground.
+           IF ( gr%zt(k) <= 100.0 .AND. bottom_at_sfc == .true. ) THEN ! Clip for 100 m. above ground.
 
               atmp = MAX( ( (wp2(km1)+wp2(k)) / 2.0 ) , eps )    ! wp2
               ctmp = atmp**(3.0/2.0)                             ! wp2^(3/2)

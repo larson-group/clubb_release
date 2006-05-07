@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: prog_variables.F,v 1.4 2006-04-28 21:48:58 dschanen Exp $
+! $Id: prog_variables.F,v 1.5 2006-05-07 21:47:14 griffinb Exp $
         module prognostic_variables
 
 ! This module contains definitions of all prognostic
@@ -51,6 +51,9 @@
 ! Imposed large scale w: m point
 
         real, target, allocatable :: wmm(:)    
+
+! Cloud droplet concentration
+        real, allocatable, target :: Ncm(:)
 
 ! Prognostic drizzle variables
 
@@ -128,6 +131,9 @@
 
         allocate( wmm(1:nzmax) )       
 
+! Cloud droplet concentration
+        allocate( Ncm(1:nzmax) )
+
 ! Prognostic drizzle variables
 
         allocate( rrm(1:nzmax) )       ! rain water mixing ratio  ! Brian
@@ -183,6 +189,9 @@
 
         wmm = 0.0      
  
+! Cloud droplet concentration
+        Ncm = 0.0
+
 ! Prognostic drizzle variables
         
         ! These must always be allocated, but not necessarily initialized
@@ -243,6 +252,9 @@
 ! Imposed large scale w: m point
 
         deallocate( wmm )       
+
+! Cloud droplet concentration
+        deallocate( Ncm )
 
 ! Prognostic drizzle variables
 

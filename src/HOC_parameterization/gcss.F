@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.1 2006-04-21 21:50:56 dschanen Exp $ 
+! $Id: gcss.F,v 1.2 2006-05-07 21:47:14 griffinb Exp $ 
 
 ! This file contains extra subroutines to simulate the GCSS ARM and
 ! GCSS BOMEX, GCSS ATEX, GCSS FIRE intercomparison cases as well 
@@ -1035,7 +1035,7 @@
 
         SUBROUTINE dycoms2_rf02_tndcy( rhot, rhom, rtm, rcm, exner, 
      .                                 wmt, wmm, theta_tndcy, rt_tndcy, 
-     .                                 Frad, radht, 
+     .                                 Frad, radht, Ncm,
      .                                 isValid,
      .                                 sclr_tndcy )
 
@@ -1059,6 +1059,7 @@
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: rt_tndcy
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: Frad
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: radht
+        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: Ncm
 
         ! Optional output
         REAL, OPTIONAL, 
@@ -1179,6 +1180,36 @@
         if ( present( sclr_tndcy ) ) 
      .    sclr_tndcy(:,SCLR_THETA) = theta_tndcy 
         if ( present( sclr_tndcy ) ) sclr_tndcy(:,SCLR_RT) = rt_tndcy 
+
+
+        ! The following lines of code specify cloud droplet
+        ! concentration (Ncm).  The cloud droplet concentration has
+        ! been moved here instead of being stated in Subroutine rain
+        ! for the following reasons:
+        !    a) The effects of cloud droplet sedimentation can be computed
+        !       without having to call the precipitation scheme.
+        !    b) Ncm tends to be a case-specific parameter.  Therefore, it
+        !       is appropriate to declare in the same place as other
+        !       case-specific parameters.
+        !
+        ! Someday, we could move the setting of Ncm to pdf_closure_new
+        ! for the following reasons:
+        !    a) The cloud water mixing ratio (rcm) is computed using the
+        !       PDF scheme.  Perhaps someday Ncm can also be computed by
+        !       the same scheme.
+        !    b) It seems more appropriate to declare Ncm in the same place
+        !       where rcm is computed.
+        !
+        ! Since cloud base (zb) is determined by the mixing ratio 1.0E-6,
+        ! so will cloud droplet number concentration (Ncm).
+        DO k = 1, gr%nnzp, 1
+           IF ( rcm(k) > 1.0E-6 ) THEN
+              Ncm(k) = 55000000.0
+           ELSE
+              Ncm(k) = 0.0
+           ENDIF
+        ENDDO
+
 
         RETURN
         END SUBROUTINE dycoms2_rf02_tndcy
@@ -1438,8 +1469,8 @@
 !-----------------------------------------------------------------------
 
         SUBROUTINE nov11_altocu_tndcy( time, time_initial, dt, thlm,
-     .                                 rcm, p, exner, rhot, wmt, wmm,
-     .                                 thl_tndcy, rt_tndcy, Frad,
+     .                                 rcm, p, exner, rhot, rtm, wmt,
+     .                                 wmm, thl_tndcy, rt_tndcy, Frad,
      .                                 Frad_lw, Frad_sw, radht,
      .                                 sclr_tndcy )
 
@@ -1459,6 +1490,7 @@
         REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rhot
 
         ! Output variables
+        REAL, DIMENSION(1:gr%nnzp), INTENT(INOUT):: rtm
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: wmt
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: wmm
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: thl_tndcy
@@ -1581,6 +1613,24 @@
 
         ENDIF
 
+        ! Special Nov. 11 condition for total water above cloud.
+        ! One hour after the initial time, the total water above cloud
+        ! is adjusted to be 0.89 of what it previously was.
+
+        ! The conditional statement here is set so that if the timestep
+        ! is such that there is no timestep at exactly 3600.0 seconds,
+        ! then the operation still happnens at the first timestep and
+        ! only the first timestep after 3600.0 seconds.
+        IF ( time >= time_initial + 3600.0    .AND.
+     .       time <  time_initial + 3600.0 + dt ) THEN
+
+           DO k = 1, gr%nnzp, 1
+              IF ( gr%zt(k) > 1555.0 ) THEN
+                 rtm(k) = 0.89 * rtm(k)
+              ENDIF
+           ENDDO
+
+        ENDIF
 
         ! Enter the final theta-l and rtm tendencies
 

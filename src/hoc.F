@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.77 2006-04-28 21:48:46 dschanen Exp $
+! $Id: hoc.F,v 1.78 2006-05-07 21:47:11 griffinb Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -190,13 +190,19 @@
 !      Flag for BUGsrad radiation scheme - dschanen
        logical :: lbugsrad
 
+!      Flag for the lowest model level being at the surface (true)
+!      or not at the surface (false).  Example of case where it is not
+!      at the surface:  Nov. 11 altocumulus case.
+       logical :: bottom_at_sfc
+
 !      Definition of namelists
        namelist /model_setting/ runtype, nzmax, deltaz, 
      .                          day, month, year, 
      .                          time_initial, time_final, time_spinup,
      .                          dtmain, dtclosure,
      .                          sfctype, Tsfc, psfc, SE, LE, fcor,
-     .                          cloud_sed, kk_rain, lbugsrad
+     .                          cloud_sed, kk_rain, lbugsrad,
+     .                          bottom_at_sfc
 
 !      Internal Loop Variables
 
@@ -226,7 +232,7 @@
      .        gamma_coef_in, gamma_coefb_in, gamma_coefc_in,
      .        mu_in, c_K_in, beta_in, lmin_coef_in, 
      .        taumin_in, taumax_in, fcor,
-     .        lbugsrad, kk_rain, cloud_sed, .false. )
+     .        lbugsrad, kk_rain, cloud_sed, bottom_at_sfc, .false. )
 
 !      Model sanity Check
 !      When tuning, we will allow these invalid results
@@ -317,14 +323,14 @@
          do i1=1, niterlong
             call parameterization_timestep
      .          ( i1, niterlong, time_initial,
-     .            time, dt, trim(runtype),
+     .            time, dt,
      .            p, rhom, rhot, exner, 
      .            thlm_forcing, rtm_forcing,
      .            um, vm, upwp, vpwp,
      .            thlm, rtm, wp2, wp3, 
      .            rtp2, thlp2, rtpthlp, 
      .            wprtp, wpthlp, Scm, taum, 
-     .            wmm, rrm, Nrm,
+     .            wmm, Ncm, rrm, Nrm,
      .            isValid
 #ifdef SCALARS
      .            ,sclrm, sclrm_forcing, 
@@ -464,13 +470,19 @@
 !      Flag for BUGsrad radiation scheme - dschanen
        logical :: lbugsrad
 
+!      Flag for the lowest model level being at the surface (true)
+!      or not at the surface (false).  Example of case where it is not
+!      at the surface:  Nov. 11 altocumulus case.
+       logical :: bottom_at_sfc
+
 !      Definition of namelists
        namelist /model_setting/ runtype, nzmax, deltaz, 
      .                          day, month, year, 
      .                          time_initial, time_final, time_spinup,
      .                          dtmain, dtclosure,
      .                          sfctype, Tsfc, psfc, SE, LE, fcor,
-     .                          cloud_sed, kk_rain, lbugsrad
+     .                          cloud_sed, kk_rain, lbugsrad,
+     .                          bottom_at_sfc
 
 !      Internal Loop Variables
 
@@ -499,7 +511,7 @@
      .        gamma_coef_in, gamma_coefb_in, gamma_coefc_in,
      .        mu_in, c_K_in, beta_in, lmin_coef_in, 
      .        taumin_in, taumax_in, fcor,
-     .        lbugsrad, kk_rain, cloud_sed, .false. )
+     .        lbugsrad, kk_rain, cloud_sed, bottom_at_sfc, .false. )
 
 !      Model sanity Check
        if (( beta < 0.0 ) .or. ( beta > 3.0 )) then
@@ -571,14 +583,14 @@
          do i1=1, niterlong
            call parameterization_timestep
      .          ( i1, niterlong, time_initial,
-     .            time, dt, trim(runtype),
+     .            time, dt,
      .            p, rhom, rhot, exner, 
      .            thlm_forcing, rtm_forcing,
      .            um, vm, upwp, vpwp,
      .            thlm, rtm, wp2, wp3, 
      .            rtp2, thlp2, rtpthlp, 
      .            wprtp, wpthlp, Scm, taum, 
-     .            wmm, rrm, Nrm,
+     .            wmm, Ncm, rrm, Nrm,
      .            isValid
 #ifdef SCALARS
      .            ,sclrm, sclrm_forcing, 
@@ -943,7 +955,7 @@
 #ifdef SCALARS
      .                     ,sclrm_forcing 
 #endif /* SCALARS */
-     . )
+     .                    )
            thlm_forcing = 0.
 #ifdef SCALARS
            sclrm_forcing(:, SCLR_THETA) = 0.
@@ -961,7 +973,7 @@
 #ifdef SCALARS
      .                        ,sclrm_forcing   ! optional variable
 #endif /* SCALARS */
-     .                        )
+     .                       )
 
          case ( "atex" ) ! ATEX case
            call atex_tndcy( time, time_initial, rtm, 
@@ -970,7 +982,7 @@
 #ifdef SCALARS
      .                     ,sclrm_forcing   ! optional variable
 #endif /* SCALARS */
-     .                     )
+     .                    )
 
            call cloud_rad( rhot, rcm, exner, Frad, radht, thlm_forcing
 #ifdef SCALARS
@@ -985,7 +997,7 @@
 #ifdef SCALARS
      .                             ,sclrm, sclrm_forcing  ! optional variables
 #endif /* SCALARS */
-     .                     )
+     .                            )
 
          case ( "astex_a209" ) ! ASTEX Sc case for K & K
            call astex_tndcy( time, wmt, wmm, 
@@ -998,48 +1010,48 @@
          case ( "dycoms2_rf02_do" ) ! DYCOMS2 RF02 case with drizzle only.
            call dycoms2_rf02_tndcy( rhot, rhom, rtm, rcm, exner,
      .                              wmt, wmm, thlm_forcing, rtm_forcing,
-     .                              Frad, radht, isValid
+     .                              Frad, radht, Ncm, isValid
 #ifdef SCALARS
      .                              ,sclrm_forcing  ! optional variable
 #endif /* SCALARS */
-     .                             )
+     .                            )
 
          case ( "dycoms2_rf02_ds" ) ! DYCOMS2 RF02 case with drizzle and cloud sedimentation.
            call dycoms2_rf02_tndcy( rhot, rhom, rtm, rcm, exner,
      .                              wmt, wmm, thlm_forcing, rtm_forcing,
-     .                              Frad, radht, isValid
+     .                              Frad, radht, Ncm, isValid
 #ifdef SCALARS
      .                              ,sclrm_forcing  ! optional variable
 #endif /* SCALARS */
-     .                             )
+     .                            )
 
          case ( "dycoms2_rf02_nd" ) ! DYCOMS2 RF02 case with no drizzle and no cloud sedimentation.
            call dycoms2_rf02_tndcy( rhot, rhom, rtm, rcm, exner,
      .                              wmt, wmm, thlm_forcing, rtm_forcing,
-     .                              Frad, radht, isValid
+     .                              Frad, radht, Ncm, isValid
 #ifdef SCALARS
      .                              ,sclrm_forcing  ! optional variable
 #endif /*SCALARS*/
-     .                             )
+     .                            )
 
          case ( "dycoms2_rf02_so" ) ! DYCOMS2 RF02 case with cloud water sedimentation only.
            call dycoms2_rf02_tndcy( rhot, rhom, rtm, rcm, exner,
      .                              wmt, wmm, thlm_forcing, rtm_forcing,
-     .                              Frad, radht, isValid
+     .                              Frad, radht, Ncm, isValid
 #ifdef SCALARS
      .                             ,sclrm_forcing   ! optional variable
 #endif /*SCALARS*/
-     .                             )
+     .                            )
 
          case ( "nov11_altocu" ) ! Nov. 11 Altocumulus case.
            call nov11_altocu_tndcy( time, time_initial, dt, thlm,
-     .                              rcm, p, exner, rhot, wmt, wmm,
-     .                              thlm_forcing, rtm_forcing,
+     .                              rcm, p, exner, rhot, rtm, wmt,
+     .                              wmm, thlm_forcing, rtm_forcing,
      .                              Frad, Frad_LW, Frad_SW, radht
 #ifdef SCALARS
      .                             ,sclrm_forcing   ! optional variable
 #endif /* SCALARS */
-     .                             )
+     .                            )
 
          case default
            stop "hoc_model: Don't know how to do this runtype"

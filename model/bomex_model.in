@@ -1,4 +1,4 @@
-! $Id: bomex_model.in,v 1.5 2006-03-23 19:54:50 griffinb Exp $
+! $Id: bomex_model.in,v 1.6 2006-05-07 21:47:09 griffinb Exp $
 ! Parameter file for GCSS BOMEX tradewind Cu case
 
 &model_setting
@@ -22,9 +22,10 @@ psfc = 1015.e2
 
 fcor = 0.376e-4
 
-cloud_sed = .false.
-kk_rain   = .false.
-lbugsrad  = .false.
+cloud_sed     = .false.
+kk_rain       = .false.
+lbugsrad      = .false.
+bottom_at_sfc = .true.
 
 /
 
