@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.78 2006-05-07 21:47:11 griffinb Exp $
+! $Id: hoc.F,v 1.79 2006-05-08 22:12:20 dschanen Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -102,7 +102,6 @@
      .                       runfile, isValid, stdout,
      .                       set_fields, sample_ratio )
 
-       use constants, only: lmin, beta
        use diagnostic_variables
        use prognostic_variables
        use grid_class
@@ -219,6 +218,20 @@
        read(10, nml = model_setting)
        close(10)
 
+!      Model sanity Check
+
+!      When tuning budgets, we will allow these invalid results
+!       if (( beta_in < 0.0 ) .or. ( beta_in > 3.0 )) then
+!         print *, 'beta < 0 OR beta > 3'
+!         isValid = .false. 
+!       endif 
+
+       if (lmin_coef_in * deltaz < 4.0) then
+         print *, 'lmin < 4.0'
+         isValid = .false.
+       endif
+       if ( .not. isValid ) return
+
 !      Allocate & initilialize variables,
 !      setup grid, setup constants, and setup flags
 
@@ -234,18 +247,6 @@
      .        taumin_in, taumax_in, fcor,
      .        lbugsrad, kk_rain, cloud_sed, bottom_at_sfc, .false. )
 
-!      Model sanity Check
-!      When tuning, we will allow these invalid results
-!       if (( beta < 0.0 ) .or. ( beta > 3.0 )) then
-!         print *, 'beta < 0 OR beta > 3'
-!         isValid = .false. 
-!       endif 
-
-       if (lmin < 4.0) then
-         print *, 'lmin < 4.0'
-         isValid = .false.
-       endif
-       if ( .not. isValid ) return
 
 !      Intialize 
 
@@ -412,9 +413,8 @@
      .                                c_K_in, lmin_coef_in, 
      .                                taumin_in, taumax_in, mu_in,
      .                                runfile, isValid, stdout )
-       use constants, only: lmin, beta
+
        use grid_class
-       !use model_arrays
        use diagnostic_variables
        use prognostic_variables
        use numerical_check
@@ -498,6 +498,18 @@
        read(10, nml = model_setting)
        close(10)
 
+!      Model sanity Check
+       if (( beta_in < 0.0 ) .or. ( beta_in > 3.0 )) then
+         print *, 'beta < 0 OR beta > 3'
+         isValid = .false. 
+       endif 
+
+       if (lmin_coef_in * deltaz < 4.0) then
+         print *, 'lmin < 4.0'
+         isValid = .false.
+       endif
+       if ( .not. isValid ) return
+
 !      Allocate & initilialize variables,
 !      setup grid, setup constants, and setup flags
 
@@ -513,17 +525,6 @@
      .        taumin_in, taumax_in, fcor,
      .        lbugsrad, kk_rain, cloud_sed, bottom_at_sfc, .false. )
 
-!      Model sanity Check
-       if (( beta < 0.0 ) .or. ( beta > 3.0 )) then
-         print *, 'beta < 0 OR beta > 3'
-         isValid = .false. 
-       endif 
-
-       if (lmin < 4.0) then
-         print *, 'lmin < 4.0'
-         isValid = .false.
-       endif
-       if ( .not. isValid ) return
 
 !      Intialize 
 
