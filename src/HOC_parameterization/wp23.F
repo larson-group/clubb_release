@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.3 2006-05-07 21:47:14 griffinb Exp $
+! $Id: wp23.F,v 1.4 2006-05-08 18:27:19 dschanen Exp $
 
 ! SUBROUTINE timestep_wp23( )
 !  Advance wp2 and wp3 one timestep
@@ -801,7 +801,7 @@
            ! NOTE: Clipping not good; must try to get rid of.  Effects only
            !       Wangara case.
 
-           IF ( gr%zt(k) <= 100.0 .AND. bottom_at_sfc == .true. ) THEN ! Clip for 100 m. above ground.
+           IF ( gr%zt(k) <= 100.0 .AND. bottom_at_sfc ) THEN ! Clip for 100 m. above ground.
 
               atmp = MAX( ( (wp2(km1)+wp2(k)) / 2.0 ) , eps )    ! wp2
               ctmp = atmp**(3.0/2.0)                             ! wp2^(3/2)

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.7 2006-05-07 21:47:14 griffinb Exp $
+! $Id: parameterization_interface.F,v 1.8 2006-05-08 18:27:19 dschanen Exp $
 
 
 !  Module hoc_parameterization_interface
@@ -180,7 +180,7 @@
 
 !      Surface effects should not be included with any case where the lowest
 !      level is not the ground level.  Brian Griffin.  December 22, 2005.
-       IF ( bottom_at_sfc == .true. ) THEN
+       IF ( bottom_at_sfc ) THEN
           call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1),
      .                  wp2(1), thlp2(1), rtp2(1), rtpthlp(1)
 #ifdef SCALARS
