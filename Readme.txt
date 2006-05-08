@@ -1,4 +1,4 @@
-$Id: Readme.txt,v 1.16 2006-05-06 07:44:30 dschanen Exp $
+$Id: Readme.txt,v 1.17 2006-05-08 22:31:15 dschanen Exp $
 ***********************************************************************
 *                         Using the HOC Model                         *
 ***********************************************************************
@@ -12,11 +12,14 @@ B. NetCDF >= v3.5.1;  We have not tested our code with anything older.
 C. GNU bash, or an equivalent POSIX compliant shell.
 
 1. $ cd ~/hoc_v2.2_tuner/src
-2. Edit a config.<PLATFORM> file and include it in the Makefile for your 
-   compiler and optimization options.
+2. Edit a config.<PLATFORM>.in file and choose it in the Makefile for your 
+   compiler and optimization options. Note that PREFIX determines where
+   your executables and libraries will end up, so make sure you set it
+   to the correct location.
 3. $ make
 
-The executables will appear in ../bin and libraries in ../lib.
+The executables will appear in $(PREFIX)/bin and libraries in $(PREFIX)/lib.
+The modules remain in the src directory.
 
 If you're using Sun Studio and have a fast parallel machine,
 dmake should work as well.
@@ -31,8 +34,8 @@ A. and C. as above.
 $ make libhoc_param.a
 
 This will build just the static library and the f90 modules.
-The static library will be in ../lib, while the modules will be in the
-src directory.  You will need at least the parameterization_interface 
+The static library will be in $(PREFIX)/lib, while the modules will be 
+in the src directory.  You will need at least the parameterization_interface 
 mod to interface with HOC.
 
 -----------------------------------------------------------------------
