@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.56 2006-05-04 15:43:37 dschanen Exp $
+# $Id: Makefile,v 1.57 2006-05-09 19:26:33 dschanen Exp $
 # This version should work with BSD, GNU make, smake and dmake
 
 # For HOC we edit this by hand rather than implementing imake or automake
@@ -101,7 +101,7 @@ HOCLIBS = libhoc_param.a libhoc_bugsrad.a
 #HOCLIBS = libhoc_param.so libhoc_bugsrad.so
 
 int2txt:	$(INT2TXT)
-		$(FC) $(FCFLAGS) $(LDFLAGS) $@.o -o $(BINDIR)/int2txt
+		$(FC) $(FCFLAGS) $@.o -o $(BINDIR)/int2txt
 
 hoc_tuner:	$(HOCLIBS) $(HOC_TUNER)
 		$(FC) $(FCFLAGS) -o $(BINDIR)/hoc_tuner \
@@ -247,7 +247,7 @@ bugsrad_hoc.o 		: kinds.o constants.o bugs_rad.o bugsrad_hoc.F90
 hoc_tuner.o		: nrtype.o nr.o hoc.o error.o hoc_tuner.F
 hoc_tuner_budget_terms.o: nrtype.o nr.o hoc.o error.o \
 	budget_terms.o hoc_tuner_budget_terms.F
-hoc_standalone.o	: parameterization_interface.o hoc_standalone.F
+hoc_standalone.o	: hoc.o hoc_standalone.F
 hoc_inputfields.o	: hoc.o inputfields.o hoc_inputfields.F
 int2txt.o		: int2txt.f90
 compare_runs.o		: endian.o inputgrads.o gradsaverage.o compare_runs.F
