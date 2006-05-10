@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.11 2006-05-10 19:16:59 griffinb Exp $
+! $Id: parameterization_interface.F,v 1.12 2006-05-10 20:50:28 griffinb Exp $
 
 
 !  Module hoc_parameterization_interface
@@ -684,7 +684,7 @@
      .               gamma_coef, gamma_coefb, gamma_coefc,
      .               mu, c_K, beta, lmin_coef, taumin, taumax, fcor,
      .               lbugsrad, kk_rain, cloud_sed, bottom_at_sfc,
-     .               implemented )
+     .               implemented, host_momentum, host_thermodynamic )
 
         use grid_class
         use diagnostic_variables
@@ -700,6 +700,10 @@
         ! Grid definition
         integer, intent(in) :: nzmax     ! extent in levels
         real, intent(in)    :: deltaz    ! change in altitude in m per level
+
+        ! Grid setup if part of larger (host) model.
+        real, dimension(1:nzmax):: host_momentum
+        real, dimension(1:nzmax):: host_thermodynamic
 
         ! Constant parameters
         real, intent(in) :: C1, C1b, C1c
@@ -742,7 +746,8 @@
 
 !       Setup grid
 
-        call gridsetup( nzmax, deltaz )
+        call gridsetup( nzmax, deltaz, implemented,
+     .                  host_momentum, host_thermodynamic )
 
 !       Define constants
 

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.80 2006-05-10 18:54:08 griffinb Exp $
+! $Id: hoc.F,v 1.81 2006-05-10 20:50:25 griffinb Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -194,6 +194,10 @@
 !      at the surface:  Nov. 11 altocumulus case.
        logical :: bottom_at_sfc
 
+!      Dummy grid height arrays
+       real, dimension(:), allocatable:: dummy_array_m
+       real, dimension(:), allocatable:: dummy_array_t
+
 !      Definition of namelists
        namelist /model_setting/ runtype, nzmax, deltaz, 
      .                          day, month, year, 
@@ -232,6 +236,13 @@
        endif
        if ( .not. isValid ) return
 
+!      Dummy grid height arrays
+       allocate( dummy_array_m(1:nzmax) )
+       allocate( dummy_array_t(1:nzmax) )
+
+       dummy_array_m = 0.0
+       dummy_array_t = 0.0
+
 !      Allocate & initilialize variables,
 !      setup grid, setup constants, and setup flags
 
@@ -245,8 +256,13 @@
      .        gamma_coef_in, gamma_coefb_in, gamma_coefc_in,
      .        mu_in, c_K_in, beta_in, lmin_coef_in, 
      .        taumin_in, taumax_in, fcor,
-     .        lbugsrad, kk_rain, cloud_sed, bottom_at_sfc, .false. )
+     .        lbugsrad, kk_rain, cloud_sed, bottom_at_sfc,
+     .        .false., dummy_array_m, dummy_array_t )
 
+
+!      Dummy grid height arrays
+       deallocate( dummy_array_m )
+       deallocate( dummy_array_t )
 
 !      Intialize 
 
@@ -475,6 +491,10 @@
 !      at the surface:  Nov. 11 altocumulus case.
        logical :: bottom_at_sfc
 
+!      Dummy grid height arrays
+       real, dimension(:), allocatable:: dummy_array_m
+       real, dimension(:), allocatable:: dummy_array_t
+
 !      Definition of namelists
        namelist /model_setting/ runtype, nzmax, deltaz, 
      .                          day, month, year, 
@@ -510,6 +530,13 @@
        endif
        if ( .not. isValid ) return
 
+!      Dummy grid height arrays
+       allocate( dummy_array_m(1:nzmax) )
+       allocate( dummy_array_t(1:nzmax) )
+
+       dummy_array_m = 0.0
+       dummy_array_t = 0.0
+
 !      Allocate & initilialize variables,
 !      setup grid, setup constants, and setup flags
 
@@ -523,8 +550,13 @@
      .        gamma_coef_in, gamma_coefb_in, gamma_coefc_in,
      .        mu_in, c_K_in, beta_in, lmin_coef_in, 
      .        taumin_in, taumax_in, fcor,
-     .        lbugsrad, kk_rain, cloud_sed, bottom_at_sfc, .false. )
+     .        lbugsrad, kk_rain, cloud_sed, bottom_at_sfc,
+     .        .false., dummy_array_m, dummy_array_t )
 
+
+!      Dummy grid height arrays
+       deallocate( dummy_array_m )
+       deallocate( dummy_array_t )
 
 !      Intialize 
 

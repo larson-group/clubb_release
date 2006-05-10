@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: grid.F,v 1.1 2006-04-21 21:50:56 dschanen Exp $
+! $Id: grid.F,v 1.2 2006-05-10 20:50:28 griffinb Exp $
 
 ! Definition of a grid class and associated functions
 !
@@ -92,7 +92,8 @@
 !             integer nnzp        number of vertical levels in grid
 !             real deltaz        vertical grid spacing
 !-----------------------------------------------------------------------
-           subroutine gridsetup( nnzp, deltaz )
+           subroutine gridsetup( nnzp, deltaz, implemented,
+     .                           host_momentum, host_thermodynamic )
 
            implicit none
 
@@ -104,6 +105,14 @@
 
            integer, intent(in) :: nnzp
            real, intent(in)    :: deltaz
+
+           ! Flag to see if HOC is running on it's own or it it's part
+           ! of a larger model.
+           logical, intent(in) :: implemented
+           ! If it's part of a larger model, it needs to use that models
+           ! grid heights.
+           real, dimension(1:nnzp), intent(in) :: host_momentum
+           real, dimension(1:nnzp), intent(in) :: host_thermodynamic
 
 !          Internal
 
@@ -121,23 +130,37 @@
      .               gr%dzm(1:nnzp), gr%dzt(1:nnzp), stat=ierr )
            if ( ierr /= 0 ) stop "grid allocation failure"
 
+           IF ( .NOT. implemented ) THEN
 
-!          Original code
-!          Define momentum grid points. The first momentum level is 
-!          at the surface
+!             Original code
+!             Define momentum grid points. The first momentum level is 
+!             at the surface
+              DO i = 1, gr%nnzp, 1
+                 gr%zm(i) = (i-1) * deltaz
+              ENDDO
 
-           do i=1,gr%nnzp
-             gr%zm(i) = (i-1) * deltaz
-           end do
+!             Define thermodynamic grid. For the time being, themodynamic 
+!             grid points are located in the center point between momentum 
+!             points. The first thermodynmic point is below the surface.
+              gr%zt(1) = -0.5 * deltaz
+              DO i = 2, gr%nnzp, 1
+                 gr%zt(i) = 0.5 * ( gr%zm(i) + gr%zm(i-1) )
+              ENDDO
 
-!          Define thermodynamic grid. For the time being, themodynamic 
-!          grid points are located in the center point between momentum 
-!          points. The first thermodynmic point is below the surface.
+           ELSE
 
-           gr%zt(1) = -0.5 * deltaz
-           do i=2,gr%nnzp
-             gr%zt(i) = 0.5 * ( gr%zm(i) + gr%zm(i-1) )
-           end do
+!             Momentum levels from host model.
+              DO i = 1, gr%nnzp, 1
+                 gr%zm(i) = host_momentum(i)
+              ENDDO
+
+!             Thermodynamic levels from host model after possible 
+!             grid-index adjustment for HOC interface.
+              DO i = 1, gr%nnzp, 1
+                 gr%zt(i) = host_thermodynamic(i)
+              ENDDO
+
+           ENDIF
 
 !          Define dzm. dzm is the inverse spacing between thermodynamic 
 !          points
