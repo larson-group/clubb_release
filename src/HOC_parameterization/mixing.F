@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.2 2006-05-10 18:46:16 griffinb Exp $
+! $Id: mixing.F,v 1.3 2006-05-10 18:54:10 griffinb Exp $
 !
 ! Module containing the hoc mixing scheme.  Allows for optional variables
 ! and assumed shape arrays.
@@ -65,7 +65,7 @@
         logical, intent(in) :: kk_rain
 !       End Additions for DYCOMS_2
 !       Flag for if HOC is implemented in a larger model or not.
-        logical, intent(inout) :: implemented
+        logical, intent(in) :: implemented
 !       Model status 
         logical, intent(inout) :: isValid
 !       Additions for new mixing scheme
@@ -252,7 +252,7 @@
         real, intent(out)      :: dd(1:2*gr%nnzp)
         real, intent(out)      :: al(1:2*gr%nnzp,1:2)
         integer, intent(out)   :: indx(1:2*gr%nnzp)
-        logical, intent(inout) :: implemented
+        logical, intent(in)    :: implemented
         logical, intent(inout) :: isValid
 
         real, intent(in) :: C6rt_Skw_fnc(1:gr%nnzp)
