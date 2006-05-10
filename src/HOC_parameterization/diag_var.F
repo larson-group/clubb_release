@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.1 2006-04-21 21:50:56 dschanen Exp $
+! $Id: diag_var.F,v 1.2 2006-05-10 19:16:59 griffinb Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -128,6 +128,12 @@ c Define C2 as a function of Skw -dschanen 14 April 06
 #endif /* DISABLE */
 
 c Solve for rtp2
+
+!       ! Brian added this line of code which can be uncommented
+!       ! in order to bring back the use of C2rt, C2thl, and 
+!       ! C2rtthl by overwriting the value of C2_Skw_fnc before
+!       ! the call to the subroutines for each respective variable.
+!       C2_Skw_fnc = 1.5000   ! C2rt
 
 c      prepare tridiagonal system
 
@@ -288,11 +294,17 @@ c      clip small and negative values
 
 c Solve for thlp2
 
+!       ! Brian added this line of code which can be uncommented
+!       ! in order to bring back the use of C2rt, C2thl, and 
+!       ! C2rtthl by overwriting the value of C2_Skw_fnc before
+!       ! the call to the subroutines for each respective variable.
+!       C2_Skw_fnc = 1.000   ! C2thl
+
 c      prepare tridiagonal system
 c      note: we can reuse the same aa & cc arrays
 
-!       bb = calc_bb( a1, wp2, wp3, tau, 
-!    .                C2_Skw_fnc, dt, nu2, beta, eps, liter )
+        bb = calc_bb( a1, wp2, wp3, tau, 
+     .                C2_Skw_fnc, dt, nu2, beta, eps, liter )
         dd = calc_dd_var( a1, wp2, wp3, wpthlp, thlm, 
      .                    thlp2, dt, beta, eps, liter )
 
@@ -424,13 +436,13 @@ c      note: we can reuse the same aa, cc arrays
 
        do i=1, sclrm_dimension
 
-!        if ( i == SCLR_THETA ) then
-!          bb = calc_bb( a1, wp2, wp3, tau,
-!    .                   C2_Skw_fnc, dt, nu2, beta, eps, liter )
-!        elseif ( i == SCLR_RT ) then
-!          bb = calc_bb( a1, wp2, wp3, tau,
-!    .                   C2_Skw_fnc, dt, nu2, beta, eps, liter )
-!        endif
+         if ( i == SCLR_THETA ) then
+           bb = calc_bb( a1, wp2, wp3, tau,
+     .                   C2_Skw_fnc, dt, nu2, beta, eps, liter )
+        elseif ( i == SCLR_RT ) then
+           bb = calc_bb( a1, wp2, wp3, tau,
+     .                   C2_Skw_fnc, dt, nu2, beta, eps, liter )
+         endif
 
          dd = calc_dd_var( a1, wp2, wp3, wpsclrp(:,i), sclrm(:,i), 
      .                     sclrp2(:,i), dt, beta, eps, liter )
@@ -464,10 +476,16 @@ c        clip small and negative values
 
 c Solve for rtpthlp
 
+!       ! Brian added this line of code which can be uncommented
+!       ! in order to bring back the use of C2rt, C2thl, and 
+!       ! C2rtthl by overwriting the value of C2_Skw_fnc before
+!       ! the call to the subroutines for each respective variable.
+!       C2_Skw_fnc = 2.000   ! C2rtthl
+
 c      prepare tridiagonal system
 
-c      bb = calc_bb( a1, wp2, wp3, tau, 
-c    .               C2_Skw_fnc, dt, nu2, beta, eps, liter )
+       bb = calc_bb( a1, wp2, wp3, tau, 
+     .               C2_Skw_fnc, dt, nu2, beta, eps, liter )
 
        dd = calc_dd_covar( a1, wp2, wp3, wprtp, wpthlp, 
      .                     rtm, thlm, rtpthlp, 
@@ -599,15 +617,15 @@ c Solve for sclrprtp
 c     prepare tridiagonal system
        do i=1, sclrm_dimension
 
-c        if ( i == SCLR_THETA ) then
-c          bb = calc_bb( a1, wp2, wp3, tau, 
-c    .                   C2_Skw_fnc, dt, nu2, beta, eps, liter )
-c        else 
-c          if ( i == SCLR_RT ) then
-c            bb = calc_bb( a1, wp2, wp3, tau, 
-c    .                     C2_Skw_fnc, dt, nu2, beta, eps, liter )
-c          endif
-c        endif
+         if ( i == SCLR_THETA ) then
+           bb = calc_bb( a1, wp2, wp3, tau, 
+     .                   C2_Skw_fnc, dt, nu2, beta, eps, liter )
+         else 
+           if ( i == SCLR_RT ) then
+             bb = calc_bb( a1, wp2, wp3, tau, 
+     .                     C2_Skw_fnc, dt, nu2, beta, eps, liter )
+           endif
+         endif
 
          dd = calc_dd_covar( a1, wp2, wp3, wprtp, wpsclrp(i,:),
      .                       rtm, sclrm(i,:), sclrprtp(i,:),
@@ -648,15 +666,15 @@ c Solve for sclrpthlp
 c     prepare tridiagonal system
        do i=1, sclrm_dimension
 
-c        if ( i == SCLR_THETA ) then
-c          bb = calc_bb( a1, wp2, wp3, tau, 
-c    .                   C2_Skw_fnc, dt, nu2, beta, eps, liter )
-c        else 
-c          if ( i == SCLR_RT ) then
-c          bb = calc_bb( a1, wp2, wp3, tau, 
-c    .                   C2_Skw_fnc, dt, nu2, beta, eps, liter )
-c          endif
-c        endif
+         if ( i == SCLR_THETA ) then
+           bb = calc_bb( a1, wp2, wp3, tau, 
+     .                   C2_Skw_fnc, dt, nu2, beta, eps, liter )
+         else 
+           if ( i == SCLR_RT ) then
+           bb = calc_bb( a1, wp2, wp3, tau, 
+     .                   C2_Skw_fnc, dt, nu2, beta, eps, liter )
+           endif
+         endif
 
          dd = calc_dd_covar( a1, wp2, wp3, wpthlp, wpsclrp(i,:),
      .                       thlm, sclrm(i,:), sclrpthlp(i,:),

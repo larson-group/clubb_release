@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.10 2006-05-10 18:54:11 griffinb Exp $
+! $Id: parameterization_interface.F,v 1.11 2006-05-10 19:16:59 griffinb Exp $
 
 
 !  Module hoc_parameterization_interface
@@ -251,6 +251,12 @@
         gamma_Skw_fnc = gamma_coef
 
 #endif /* DISABLE */
+
+!       ! Brian added this line of code which can be uncommented
+!       ! in order to bring back the use of gamma_coef by overwriting
+!       ! the value of C2_Skw_fnc before the computing the equation
+!       ! below.
+!       gamma_Skw_fnc = 0.3200   ! gamma_coef
 
 !      Compute Sc with new formula from Vince
 
