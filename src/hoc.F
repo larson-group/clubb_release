@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.81 2006-05-10 20:50:25 griffinb Exp $
+! $Id: hoc.F,v 1.82 2006-05-10 21:50:56 griffinb Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -338,19 +338,18 @@
 
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
          do i1=1, niterlong
-            call parameterization_timestep
-     .          ( i1, niterlong, time_initial,
-     .            time, dt,
-     .            p, rhom, rhot, exner, 
-     .            thlm_forcing, rtm_forcing,
+           call parameterization_timestep
+     .          ( i1, niterlong, time_initial, time, dt,
+     .            thlm_forcing, rtm_forcing, wmm, wmt,
+     .            wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,
+     .            p, rhom, rhot, exner,
      .            um, vm, upwp, vpwp,
-     .            thlm, rtm, wp2, wp3, 
-     .            rtp2, thlp2, rtpthlp, 
-     .            wprtp, wpthlp, Scm, taum, 
-     .            wmm, Ncm, rrm, Nrm,
+     .            thlm, rtm, wprtp, wpthlp, wp2, wp3,
+     .            rtp2, thlp2, rtpthlp,
+     .            Scm, taum, Ncm, rrm, Nrm,
      .            isValid, .false.
 #ifdef SCALARS
-     .            ,sclrm, sclrm_forcing, 
+     .            ,sclrm, sclrm_forcing,
      .            edsclrm, edsclrmt
 #endif /*SCALARS*/
      .          )
@@ -615,15 +614,14 @@
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
          do i1=1, niterlong
            call parameterization_timestep
-     .          ( i1, niterlong, time_initial,
-     .            time, dt,
+     .          ( i1, niterlong, time_initial, time, dt,
+     .            thlm_forcing, rtm_forcing, wmm, wmt,
+     .            wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,
      .            p, rhom, rhot, exner, 
-     .            thlm_forcing, rtm_forcing,
      .            um, vm, upwp, vpwp,
-     .            thlm, rtm, wp2, wp3, 
+     .            thlm, rtm, wprtp, wpthlp, wp2, wp3, 
      .            rtp2, thlp2, rtpthlp, 
-     .            wprtp, wpthlp, Scm, taum, 
-     .            wmm, Ncm, rrm, Nrm,
+     .            Scm, taum, Ncm, rrm, Nrm,
      .            isValid, .false.
 #ifdef SCALARS
      .            ,sclrm, sclrm_forcing, 
@@ -1097,14 +1095,14 @@
 
          case ( "normal", "fire" )  ! Normal and FIRE
            call sfc_momentum_fluxes( um(2), vm(2),
-     .                               upwp(1), vpwp(1) )
+     .                               upwp_sfc, vpwp_sfc )
            ! sfctype = 0  fixed sfc sensible and latent heat fluxes 
            !                   as given in hoc.in
            ! sfctype = 1  bulk formula: uses given surface temperature 
            !                   and assumes over ocean
            if ( sfctype == 0 ) then
-             wpthlp(1) = SE
-             wprtp(1)  = LE
+             wpthlp_sfc = SE
+             wprtp_sfc  = LE
 #ifdef SCALARS
              wpsclrp(:,SCLR_THETA) = SE
              wpsclrp(:,SCLR_RT)    = LE
@@ -1113,7 +1111,7 @@
              call sfc_thermo_fluxes( um(2), vm(2),
      .                               Tsfc, psfc, 
      .                               thlm(2), rtm(2),
-     .                               wpthlp(1), wprtp(1)
+     .                               wpthlp_sfc, wprtp_sfc
 #ifdef SCALARS
      .                               ,sclrm(2,:), wpsclrp(1,:)
 #endif /* SCALARS */
@@ -1128,8 +1126,8 @@
          case ( "arm" )
            call arm_sfclyr( time, gr%zt(2), 1.1, 
      .                      thlm(2), um(2), vm(2),
-     .                      upwp(1), vpwp(1), 
-     .                      wpthlp(1), wprtp(1), ustar
+     .                      upwp_sfc, vpwp_sfc, 
+     .                      wpthlp_sfc, wprtp_sfc, ustar
 #ifdef SCALARS
      .                      ,wpsclrp(1,:)
 #endif /* SCALARS */
@@ -1137,8 +1135,8 @@
 
          case ( "bomex" ) 
            call bomex_sfclyr( um(2), vm(2),
-     .                        upwp(1), vpwp(1),
-     .                        wpthlp(1), wprtp(1)
+     .                        upwp_sfc, vpwp_sfc,
+     .                        wpthlp_sfc, wprtp_sfc
 #ifdef SCALARS
      .                        ,wpsclrp(1,:)
 #endif /* SCALARS */
@@ -1146,8 +1144,8 @@
 
          case ( "wangara" )
            call wangara_sfclyr( time, um(2), vm(2),
-     .                           upwp(1), vpwp(1),
-     .                           wpthlp(1), wprtp(1)
+     .                           upwp_sfc, vpwp_sfc,
+     .                           wpthlp_sfc, wprtp_sfc
 #ifdef SCALARS
      .                           ,wpsclrp(1,:)
 #endif /* SCALARS */
@@ -1155,8 +1153,8 @@
 
          case ( "atex" )
            call atex_sfclyr( um(2), vm(2), thlm(2), rtm(2),
-     .                       upwp(1), vpwp(1),
-     .                       wpthlp(1), wprtp(1)
+     .                       upwp_sfc, vpwp_sfc,
+     .                       wpthlp_sfc, wprtp_sfc
 #ifdef SCALARS
      .                      ,sclrm(2,:), wpsclrp(1,:)
 #endif /* SCALARS */
@@ -1166,16 +1164,16 @@
            call dycoms2_rf01_sfclyr( sfctype, Tsfc, psfc, 
      .                               exner(1), um(2), vm(2), 
      .                               thlm(2), rtm(2), 
-     .                               rhom(1), upwp(1), vpwp(1), 
-     .                               wpthlp(1), wprtp(1)
+     .                               rhom(1), upwp_sfc, vpwp_sfc, 
+     .                               wpthlp_sfc, wprtp_sfc
 #ifdef SCALARS
      .                              ,sclrm(2,:), wpsclrp(1,:)
 #endif /* SCALARS */
      .                              )
          case ( "astex_a209" )
            call astex_sfclyr( rhom(1), um(2), vm(2),
-     .                        upwp(1), vpwp(1), wpthlp(1), 
-     .                        wprtp(1)
+     .                        upwp_sfc, vpwp_sfc, wpthlp_sfc, 
+     .                        wprtp_sfc
 #ifdef SCALARS
      .                        ,wpsclrp(1,:)
 #endif /* SCALARS */
@@ -1183,8 +1181,8 @@
          case ( "dycoms2_rf02_do", "dycoms2_rf02_ds",
      .          "dycoms2_rf02_nd", "dycoms2_rf02_so" )
            call dycoms2_rf02_sfclyr( um(2), vm(2),
-     .                               upwp(1), vpwp(1),
-     .                               wpthlp(1), wprtp(1), ustar
+     .                               upwp_sfc, vpwp_sfc,
+     .                               wpthlp_sfc, wprtp_sfc, ustar
 #ifdef SCALARS
      .                               ,sclrm(2,:), wpsclrp(1,:)
 #endif /* SCALARS */

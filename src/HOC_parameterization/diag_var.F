@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.2 2006-05-10 19:16:59 griffinb Exp $
+! $Id: diag_var.F,v 1.3 2006-05-10 21:50:58 griffinb Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -129,10 +129,10 @@ c Define C2 as a function of Skw -dschanen 14 April 06
 
 c Solve for rtp2
 
-!       ! Brian added this line of code which can be uncommented
-!       ! in order to bring back the use of C2rt, C2thl, and 
-!       ! C2rtthl by overwriting the value of C2_Skw_fnc before
-!       ! the call to the subroutines for each respective variable.
+       ! Brian added this line of code which can be uncommented
+       ! in order to bring back the use of C2rt, C2thl, and 
+       ! C2rtthl by overwriting the value of C2_Skw_fnc before
+       ! the call to the subroutines for each respective variable.
 !       C2_Skw_fnc = 1.5000   ! C2rt
 
 c      prepare tridiagonal system
@@ -294,10 +294,10 @@ c      clip small and negative values
 
 c Solve for thlp2
 
-!       ! Brian added this line of code which can be uncommented
-!       ! in order to bring back the use of C2rt, C2thl, and 
-!       ! C2rtthl by overwriting the value of C2_Skw_fnc before
-!       ! the call to the subroutines for each respective variable.
+       ! Brian added this line of code which can be uncommented
+       ! in order to bring back the use of C2rt, C2thl, and 
+       ! C2rtthl by overwriting the value of C2_Skw_fnc before
+       ! the call to the subroutines for each respective variable.
 !       C2_Skw_fnc = 1.000   ! C2thl
 
 c      prepare tridiagonal system
@@ -476,10 +476,10 @@ c        clip small and negative values
 
 c Solve for rtpthlp
 
-!       ! Brian added this line of code which can be uncommented
-!       ! in order to bring back the use of C2rt, C2thl, and 
-!       ! C2rtthl by overwriting the value of C2_Skw_fnc before
-!       ! the call to the subroutines for each respective variable.
+       ! Brian added this line of code which can be uncommented
+       ! in order to bring back the use of C2rt, C2thl, and 
+       ! C2rtthl by overwriting the value of C2_Skw_fnc before
+       ! the call to the subroutines for each respective variable.
 !       C2_Skw_fnc = 2.000   ! C2rtthl
 
 c      prepare tridiagonal system

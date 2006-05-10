@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.12 2006-05-10 20:50:28 griffinb Exp $
+! $Id: parameterization_interface.F,v 1.13 2006-05-10 21:50:58 griffinb Exp $
 
 
 !  Module hoc_parameterization_interface
@@ -49,15 +49,14 @@
 !    latin_hypercube_sampling (Internal to module)
 !-----------------------------------------------------------------------
        subroutine parameterization_timestep
-     .            ( iter, niterlong, time_initial,
-     .              time_current, dt, 
-     .              p, rhom, rhot, exner, 
-     .              thlm_forcing, rtm_forcing,
+     .            ( iter, niterlong, time_initial, time_current, dt,
+     .              thlm_forcing, rtm_forcing, wmm, wmt,
+     .              wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,
+     .              p, rhom, rhot, exner,
      .              um, vm, upwp, vpwp,
-     .              thlm, rtm, wp2, wp3, 
-     .              rtp2, thlp2, rtpthlp, 
-     .              wprtp, wpthlp, Scm, taum, 
-     .              wmm, Ncm, rrm, Nrm,
+     .              thlm, rtm, wprtp, wpthlp, wp2, wp3,
+     .              rtp2, thlp2, rtpthlp,
+     .              Scm, taum, Ncm, rrm, Nrm,
      .              isValid, implemented,
      .              sclrm, sclrm_forcing, ! optional
      .              edsclrm, edsclrmt )   ! optional
@@ -95,15 +94,17 @@
        real, intent(in) :: dt ! current timestep size
 
        real, intent(in), dimension(gr%nnzp) :: thlm_forcing, rtm_forcing
+       real, intent(in), dimension(gr%nnzp) :: wmm, wmt
        real, intent(in), dimension(gr%nnzp) :: p, rhom, rhot, exner
 
 !      Input/Output
 !      These are prognostic or are planned to be in the future
        real, intent(inout), dimension(gr%nnzp) :: um, vm, upwp, vpwp
-       real, intent(inout), dimension(gr%nnzp) :: thlm, rtm, wp2, wp3
-       real, intent(inout), dimension(gr%nnzp) :: rtp2, thlp2, rtpthlp
+       real, intent(inout), dimension(gr%nnzp) :: thlm, rtm
        real, intent(inout), dimension(gr%nnzp) :: wprtp, wpthlp
-       real, intent(inout), dimension(gr%nnzp) :: Scm, taum, wmm
+       real, intent(inout), dimension(gr%nnzp) :: wp2, wp3
+       real, intent(inout), dimension(gr%nnzp) :: rtp2, thlp2, rtpthlp
+       real, intent(inout), dimension(gr%nnzp) :: Scm, taum
        real, intent(inout), dimension(gr%nnzp) :: Ncm
 
 !      You can safely leave these uninitialized for a non-drizzle case
@@ -116,6 +117,8 @@
 
        real, intent(out), dimension(gr%nnzp,sclrm_dimension),
      . optional :: edsclrmt
+
+       real:: wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc
 
        logical, intent(in) :: implemented
 
@@ -160,6 +163,12 @@
        real, dimension(1:gr%nnzp,1:sclrm_dimension) ::
      . sclr_tmp1, sclr_tmp2, sclr_tmp3, sclr_tmp4 ! for pdf closure
 #endif /* SCALARS */
+
+!      SET SURFACE VALUES OF FLUXES (BROUGHT IN)
+       wpthlp(1) = wpthlp_sfc
+       wprtp(1)  = wprtp_sfc
+       upwp(1)   = upwp_sfc
+       vpwp(1)   = vpwp_sfc
 
 
 !      Set Surface variances
@@ -252,10 +261,10 @@
 
 #endif /* DISABLE */
 
-!       ! Brian added this line of code which can be uncommented
-!       ! in order to bring back the use of gamma_coef by overwriting
-!       ! the value of C2_Skw_fnc before the computing the equation
-!       ! below.
+       ! Brian added this line of code which can be uncommented
+       ! in order to bring back the use of gamma_coef by overwriting
+       ! the value of C2_Skw_fnc before the computing the equation
+       ! below.
 !       gamma_Skw_fnc = 0.3200   ! gamma_coef
 
 !      Compute Sc with new formula from Vince

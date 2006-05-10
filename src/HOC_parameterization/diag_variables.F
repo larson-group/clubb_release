@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F,v 1.6 2006-05-07 21:47:14 griffinb Exp $
+! $Id: diag_variables.F,v 1.7 2006-05-10 21:50:58 griffinb Exp $
         module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -19,8 +19,6 @@
 
         real, target, allocatable :: ug(:)    ! u geostrophic wind
         real, target, allocatable :: vg(:)    ! v geostrophic wind
-
-        real, target, allocatable :: wmt(:)    ! imposed large scale w: t point
 
         real, allocatable, target :: cf(:)        ! cloud fraction
         real, allocatable, target :: thvm(:)      ! virtual potential temp 
@@ -187,8 +185,6 @@
         allocate( ug(1:nzmax) )        ! u geostrophic wind
         allocate( vg(1:nzmax) )        ! v geostrophic wind
 
-        allocate( wmt(1:nzmax) )       ! imposed large scale w: t point
- 
         allocate( cf(1:nzmax) )        ! cloud fraction
         allocate( thvm(1:nzmax) )      ! virtual potential temperature
         allocate( rcm(1:nzmax) )       ! cloud water mixing ratio
@@ -319,8 +315,6 @@
         ug  = 0.0      ! u geostrophic wind
         vg  = 0.0      ! v geostrophic wind
 
-        wmt = 0.0      ! imposed large scale w: t point
-
 ! Tendency arrays for prognostic variables
 
         umt = 0.0  ! u wind
@@ -441,8 +435,6 @@
         deallocate( Sct )       ! PDF width parameter: t point
         deallocate( ug )        ! u geostrophic wind
         deallocate( vg )        ! v geostrophic wind
-
-        deallocate( wmt )       ! imposed large scale w: t point
 
 ! Tendency arrays for prognostic variables
 

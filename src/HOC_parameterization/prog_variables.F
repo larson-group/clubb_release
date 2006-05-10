@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: prog_variables.F,v 1.5 2006-05-07 21:47:14 griffinb Exp $
+! $Id: prog_variables.F,v 1.6 2006-05-10 21:50:58 griffinb Exp $
         module prognostic_variables
 
 ! This module contains definitions of all prognostic
@@ -21,13 +21,13 @@
 
         real, target, allocatable :: thlm(:)    ! liquid potential temperature
         real, target, allocatable :: rtm(:)     ! total water mixing ratio
-        real, target, allocatable :: rtp2(:)    ! rt'^2
-        real, target, allocatable :: thlp2(:)   ! thl'^2
-        real, target, allocatable :: rtpthlp(:) ! rt'thl'
         real, target, allocatable :: wprtp(:)   ! w'rt'
         real, target, allocatable :: wpthlp(:)  ! w'thl'
         real, target, allocatable :: wp2(:)     ! w'^2
         real, target, allocatable :: wp3(:)     ! w'^3
+        real, target, allocatable :: rtp2(:)    ! rt'^2
+        real, target, allocatable :: thlp2(:)   ! thl'^2
+        real, target, allocatable :: rtpthlp(:) ! rt'thl'
 
         real, target, allocatable :: p(:)
                          ! pressure (Pa) on thermodynamic points
@@ -40,6 +40,11 @@
         real, target, allocatable :: thlm_forcing(:) ! thlm ls forcing
         real, target, allocatable :: rtm_forcing(:)  ! rtm ls forcing
 
+! Imposed large scale w
+
+        real, target, allocatable :: wmm(:) ! momentum levels
+        real, target, allocatable :: wmt(:) ! thermodynamic levels
+
 ! PDF width parameter: momentum levels
 
         real, target, allocatable :: Scm(:)   
@@ -48,11 +53,8 @@
 
         real, target, allocatable :: taum(:)
 
-! Imposed large scale w: m point
-
-        real, target, allocatable :: wmm(:)    
-
 ! Cloud droplet concentration
+
         real, allocatable, target :: Ncm(:)
 
 ! Prognostic drizzle variables
@@ -60,7 +62,11 @@
         real, allocatable, target :: rrm(:)  ! rain water mixing ratio  ! Brian
         real, allocatable, target :: Nrm(:)  ! rain droplet number conc.! Brian
 
-! Surface data
+! Surface fluxes
+
+        real :: wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc
+
+! More surface data
 
         real :: Tsfc             ! surface temperature (K)
         real :: psfc             ! surface pressure (Pa)
@@ -103,13 +109,13 @@
 
         allocate( thlm(1:nzmax) )      ! liquid potential temperature
         allocate( rtm(1:nzmax) )       ! total water mixing ratio
-        allocate( wp2(1:nzmax) )       ! w'^2
-        allocate( rtp2(1:nzmax) )      ! rt'^2
-        allocate( thlp2(1:nzmax) )     ! thl'^2
         allocate( wprtp(1:nzmax) )     ! w'rt'
         allocate( wpthlp(1:nzmax) )    ! w'thl'
-        allocate( rtpthlp(1:nzmax) )   ! rt'thlp'
+        allocate( wp2(1:nzmax) )       ! w'^2
         allocate( wp3(1:nzmax) )       ! w'^3
+        allocate( rtp2(1:nzmax) )      ! rt'^2
+        allocate( thlp2(1:nzmax) )     ! thl'^2
+        allocate( rtpthlp(1:nzmax) )   ! rt'thlp'
 
         allocate( p(1:nzmax) )         ! pressure (pascals)
         allocate( exner(1:nzmax) )     ! exner
@@ -119,6 +125,11 @@
         allocate( thlm_forcing(1:nzmax) ) ! thlm ls forcing
         allocate( rtm_forcing(1:nzmax) )  ! rtm ls forcing
 
+! Imposed large scale w
+
+        allocate( wmm(1:nzmax) )       ! momentum levels
+        allocate( wmt(1:nzmax) )       ! thermodynamic levels
+
 ! PDF width parameter: momentum levels
 
         allocate( Scm(1:nzmax) ) 
@@ -127,11 +138,8 @@
 
         allocate( taum(1:nzmax) ) 
 
-! Imposed large scale w: m point
-
-        allocate( wmm(1:nzmax) )       
-
 ! Cloud droplet concentration
+
         allocate( Ncm(1:nzmax) )
 
 ! Prognostic drizzle variables
@@ -158,24 +166,32 @@
 
         um           = 0.0     ! u wind
         vm           = 0.0     ! v wind
+
         upwp         = 0.0     ! vertical u momentum flux
         vpwp         = 0.0     ! vertical v momentum flux
-        thlm_forcing = 0.0     ! thlm large scale forcing
-        rtm_forcing  = 0.0     ! rtm large scale forcing
+
         thlm         = 0.0     ! liquid potential temperature
         rtm          = 0.0     ! total water mixing ratio
-        wp2          = 2./3. * emin  ! w'^2
-        rtp2         = 0.0     ! rt'^2
-        thlp2        = 0.0     ! thl'^2
         wprtp        = 0.0     ! w'rt'
         wpthlp       = 0.0     ! w'thl'
-        rtpthlp      = 0.0     ! rt'thl'
+        wp2          = 2./3. * emin  ! w'^2
         wp3          = 0.0     ! w'^3
+        rtp2         = 0.0     ! rt'^2
+        thlp2        = 0.0     ! thl'^2
+        rtpthlp      = 0.0     ! rt'thl'
  
         p     = 0.0    ! pressure (Pa)
         exner = 0.0    ! exner
         rhot  = 0.0    ! density on thermo. levels
         rhom  = 0.0    ! density on moment. levels
+
+        thlm_forcing = 0.0     ! thlm large scale forcing
+        rtm_forcing  = 0.0     ! rtm large scale forcing
+
+! Imposed large scale w
+
+        wmm = 0.0      ! momentum levels
+        wmt = 0.0      ! thermodynamic levels
 
 ! PDF width parameter: momentum levels
 
@@ -185,11 +201,8 @@
 
         taum = 0.0
 
-! Imposed large scale w: m point
-
-        wmm = 0.0      
- 
 ! Cloud droplet concentration
+
         Ncm = 0.0
 
 ! Prognostic drizzle variables
@@ -224,22 +237,28 @@
         deallocate( upwp )      ! vertical u momentum flux
         deallocate( vpwp )      ! vertical v momentum flux
 
-        deallocate( thlm_forcing )
-        deallocate( rtm_forcing )
         deallocate( thlm )      ! liquid potential temperature
         deallocate( rtm )       ! total water mixing ratio
-        deallocate( wp2 )       ! w'^2
-        deallocate( rtp2 )      ! rt'^2
-        deallocate( thlp2 )     ! thl'^2
         deallocate( wprtp )     ! w'rt'
         deallocate( wpthlp )    ! w'thl'
-        deallocate( rtpthlp )   ! rt'thl'
+        deallocate( wp2 )       ! w'^2
         deallocate( wp3 )       ! w'^3
+        deallocate( rtp2 )      ! rt'^2
+        deallocate( thlp2 )     ! thl'^2
+        deallocate( rtpthlp )   ! rt'thl'
 
         deallocate( p )         ! pressure
         deallocate( exner )     ! exner
         deallocate( rhot )      ! density: t points
         deallocate( rhom )      ! density: m points
+
+        deallocate( thlm_forcing )
+        deallocate( rtm_forcing )
+
+! Imposed large scale w
+
+        deallocate( wmm )       ! momentum levels
+        deallocate( wmt )       ! thermodynamic levels
 
 ! PDF width parameter
 
@@ -249,11 +268,8 @@
 
         deallocate( taum )
 
-! Imposed large scale w: m point
-
-        deallocate( wmm )       
-
 ! Cloud droplet concentration
+
         deallocate( Ncm )
 
 ! Prognostic drizzle variables
