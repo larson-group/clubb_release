@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.1 2006-04-21 21:50:56 dschanen Exp $
+! $Id: mixing.F,v 1.2 2006-05-10 18:46:16 griffinb Exp $
 !
 ! Module containing the hoc mixing scheme.  Allows for optional variables
 ! and assumed shape arrays.
@@ -25,7 +25,7 @@
      .               rhot, rhom, exner, rcm, Ncm, 
      .               cond_rrm, auto_rrm, accr_rrm,
      .               Fcsed, sed_rcm,
-     .               cloud_sed, kk_rain, isValid,
+     .               cloud_sed, kk_rain, isValid, implemented,
      .               sclrm, wpsclrp, sclrpthvp, sclrm_forcing )
 
         use constants
@@ -64,6 +64,8 @@
         logical, intent(in) :: cloud_sed
         logical, intent(in) :: kk_rain
 !       End Additions for DYCOMS_2
+!       Flag for if HOC is implemented in a larger model or not.
+        logical, intent(inout) :: implemented
 !       Model status 
         logical, intent(inout) :: isValid
 !       Additions for new mixing scheme
@@ -120,7 +122,7 @@
 !   Prof. Larson's modified mixing_lhs 
         call mixing_lhs("rtm", .true., dt, taum, wmm, wmt, wp2, wp3, Sc,
      .                   C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
-     .                   aa, dd, al, indx, isValid )
+     .                   aa, dd, al, indx, implemented, isValid )
         if ( .not. isValid ) then
            print *, "mixing_lhs failed"
            deallocate( aa, dd, al, indx )
@@ -143,7 +145,7 @@
 !   Prof. Larson's modified mixing_lhs 
         call mixing_lhs("thlm",.true., dt, taum, wmm, wmt, wp2, wp3, Sc,
      .                   C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
-     .                   aa, dd, al, indx, isValid )
+     .                   aa, dd, al, indx, implemented, isValid )
         if ( .not. isValid ) then
            print *, "mixing_lhs failed"
            deallocate( aa, dd, al, indx )
@@ -167,7 +169,7 @@
 !         Prof. Larson's modified mixing_lhs 
           call mixing_lhs("rtm",.true., dt, taum, wmm, wmt, wp2, wp3, 
      .                    Sc, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
-     .                    aa, dd, al, indx, isValid )
+     .                    aa, dd, al, indx, implemented, isValid )
           if ( .not. isValid ) then
             print *, "mixing_lhs failed"
             deallocate( aa, dd, al, indx )
@@ -188,7 +190,7 @@
 !         Prof. Larson's modified mixing_lhs 
           call mixing_lhs("thlm",.true., dt, taum, wmm, wmt, wp2, wp3,
      .                    Sc, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
-     .                    aa, dd, al, indx, isValid )
+     .                    aa, dd, al, indx, implemented, isValid )
           if ( .not. isValid ) then
             print *, "mixing_lhs failed"
             deallocate( aa, dd, al, indx )
@@ -222,7 +224,7 @@
         subroutine mixing_lhs( solve_type, liter, dt, taum, wmm, wmt,
      .                         wp2, wp3, Sc, 
      .                         C6rt_Skw_fnc, C6thl_Skw_fnc,C7_Skw_fnc,
-     .                         aa, dd, al, indx, isValid )
+     .                         aa, dd, al, indx, implemented, isValid )
 
         use constants
         use grid_class
@@ -250,6 +252,7 @@
         real, intent(out)      :: dd(1:2*gr%nnzp)
         real, intent(out)      :: al(1:2*gr%nnzp,1:2)
         integer, intent(out)   :: indx(1:2*gr%nnzp)
+        logical, intent(inout) :: implemented
         logical, intent(inout) :: isValid
 
         real, intent(in) :: C6rt_Skw_fnc(1:gr%nnzp)
@@ -288,10 +291,21 @@
 
 !         xm: mean vertical advection
 
+          IF ( .NOT. implemented ) THEN
+
           ! Thermodynamic subdiagonal [ x xm(k-1,<t+1>) ]
           aa(k_xm,3-2) = - wmt(k) * (1.0/2.0) * gr%dzt(k)
           ! Thermodynamic superdiagonal [ x xm(k+1,<t+1>) ]
           aa(k_xm,3+2) = + wmt(k) * (1.0/2.0) * gr%dzt(k)
+
+          ELSE
+
+          ! Thermodynamic subdiagonal [ x xm(k-1,<t+1>) ]
+          aa(k_xm,3-2) = 0.0
+          ! Thermodynamic superdiagonal [ x xm(k+1,<t+1>) ]
+          aa(k_xm,3+2) = 0.0
+
+          ENDIF
 
 !         xm: turbulent transport
 

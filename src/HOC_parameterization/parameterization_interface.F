@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.8 2006-05-08 18:27:19 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.9 2006-05-10 18:46:16 griffinb Exp $
 
 
 !  Module hoc_parameterization_interface
@@ -462,7 +462,7 @@
      .        rhot, rhom, exner, rcm, Ncm, 
      .        cond_rrm, auto_rrm, accr_rrm,             
      .        Fcsed, sed_rcm,
-     .        cloud_sed, kk_rain, isValid 
+     .        cloud_sed, kk_rain, isValid, implemented  
 #ifdef SCALARS
      .        ,sclrm, wpsclrp, sclrpthvp, sclrm_forcing   ! optional
 #endif /* SCALARS */
@@ -516,9 +516,10 @@
 
 !      Update winds
 
-       umt
-     . = - wmt * ddzm( zt2zm( um ) )
-     .   + fcor * ( vm - vg )
+       umt = + fcor * ( vm - vg )
+       IF ( .NOT. implemented ) THEN
+          umt = umt - ( wmt * ddzm( zt2zm( um ) ) )
+       ENDIF
        ! dtmain to dt -dschanen
        call update_ed_var( um, umt, upwp(1), Khm, dt, upwp, isValid)
        um(1)       = ( ( um(3)-um(2) )/( gr%zt(3)-gr%zt(2) ) )
@@ -530,9 +531,10 @@
 
        if ( .not. isValid ) return
 
-       vmt 
-     . = - wmt * ddzm( zt2zm( vm ) )
-     .   - fcor * ( um - ug )
+       vmt = - fcor * ( um - ug )
+       IF ( .NOT. implemented ) THEN
+          vmt = vmt - ( wmt * ddzm( zt2zm( vm ) ) )
+       ENDIF
        ! dtmain to dt -dschanen
        call update_ed_var( vm, vmt, vpwp(1), Khm, dt, vpwp, isValid)
        vm(1)       = ( ( vm(3)-vm(2) )/( gr%zt(3)-gr%zt(2) ) )
