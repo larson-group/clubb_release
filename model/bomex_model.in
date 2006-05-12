@@ -1,4 +1,4 @@
-! $Id: bomex_model.in,v 1.6 2006-05-07 21:47:09 griffinb Exp $
+! $Id: bomex_model.in,v 1.7 2006-05-12 17:35:36 dschanen Exp $
 ! Parameter file for GCSS BOMEX tradewind Cu case
 
 &model_setting
@@ -7,7 +7,8 @@ runtype = "bomex"
 
 nzmax = 75
 deltaz = 40.0
-day = 22, month = 6, year = 1969, 
+day = 22, month = 6, year = 1969,
+rlat = 15.0, rlon = 0.0
 
 time_initial = 0.0
 time_final = 21600.0

@@ -1,4 +1,4 @@
-! $Id: wangara_model.in,v 1.2 2006-05-07 21:47:09 griffinb Exp $
+! $Id: wangara_model.in,v 1.3 2006-05-12 17:35:36 dschanen Exp $
 ! Parameter file for Wangara day 33 dry convective boundary layer
 ! Observed soundings
 
@@ -9,6 +9,8 @@ runtype = "wangara"
 nzmax = 50
 deltaz = 40.0
 day = 15, month = 8, year = 1967, 
+! Note: this is the isocenter of Hay, Toogimbie, & Burrabogie
+rlat = -34.6, rlon = 145.072222
 
 time_initial = 82800.0
 time_final = 111600.0
