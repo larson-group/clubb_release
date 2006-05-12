@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: outputnc.F,v 1.1 2006-04-21 21:50:56 dschanen Exp $
+! $Id: outputnc.F,v 1.2 2006-05-12 16:55:12 dschanen Exp $
 !      MODULE outputnc
 
 !      functions and subroutines for writing NetCDF files
@@ -18,7 +18,8 @@
 !      Defines the structure used to reference the file `ncf'
 !-----------------------------------------------------------------------
        subroutine open_nc( ncf, unit, fdir, fname, ia, iz, zgrid, 
-     .                     day, month, year, time, dtwrite, nvar )
+     .                     day, month, year, rlat, rlon,
+     .                     time, dtwrite, nvar )
        use netcdf
        use outputfile_class
 
@@ -31,6 +32,7 @@
 
        character(len=*), intent(in) :: fdir, fname
        integer, intent(in) :: day, month, year
+       real, intent(in)    :: rlat, rlon
 
        integer, intent(in) :: ia, iz
        integer, intent(in) :: nvar
@@ -54,6 +56,8 @@
        ncf%day    = day
        ncf%month  = month
        ncf%year   = year
+       ncf%rlat   = rlat
+       ncf%rlon   = rlon
  
        ncf%dtwrite = dtwrite
        ncf%nvar    = nvar
@@ -171,8 +175,8 @@
        implicit none
 
 !      Constants
-       integer, parameter :: nlong = 1
        integer, parameter :: nlat  = 1
+       integer, parameter :: nlong = 1
 
 !      Input
        integer, intent(in) :: day, month, year
@@ -460,8 +464,8 @@
        implicit none
 
 !      Constants
-       real, parameter, dimension(1) :: deg_east  = 0.0
-       real, parameter, dimension(1) :: deg_north = 0.0
+!      real, parameter, dimension(1) :: deg_east  = 0.0
+!      real, parameter, dimension(1) :: deg_north = 0.0
 
 !      Input
        type (outputfile), intent(inout) :: ncf
@@ -477,7 +481,7 @@
        endif
 
        stat = nf90_put_var( ncid=ncf%iounit, varid=ncf%LongVarId, 
-     .                      values=deg_north(1:1) ) 
+     .                      values=ncf%rlon ) 
        if ( stat /= NF90_NOERR ) then
          write(*,*) "Error entering long.", 
      .              trim( nf90_strerror(stat) )
@@ -485,7 +489,7 @@
        endif
 
        stat = nf90_put_var( ncid=ncf%iounit, varid=ncf%LatVarId, 
-     .                      values=deg_east(1:1) ) 
+     .                      values=ncf%rlat ) 
        if ( stat /= NF90_NOERR ) then
          write(*,*) "Error entering lat.", 
      .              trim( nf90_strerror(stat) )

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.3 2006-04-23 02:10:58 dschanen Exp $
+!  $Id: statistics.F,v 1.4 2006-05-12 16:55:12 dschanen Exp $
 
 !  module stats_type
 !  contains:
@@ -349,7 +349,7 @@ c       Scratch space
 
 c     -----------------------------------------------------------------
       subroutine stats_init( iunit, fnamelist, nnzp, gzt, gzm,
-     .                       day, month, year, time, delt )
+     .                       day, month, year, rlat, rlon, time, delt )
 
       use statistics
       use outputgrads
@@ -364,6 +364,7 @@ c     -----------------------------------------------------------------
       integer, intent(in) :: nnzp
       real,    intent(in) :: gzt(nnzp), gzm(nnzp)
       integer, intent(in) :: day, month, year
+      real, intent(in)    :: rlat, rlon
       real, intent(in)    :: time
       real, intent(in)    :: delt
 
@@ -485,12 +486,14 @@ c     -----------------------------------------------------------------
       if ( lgrads ) then
         call open_grads( zt%f, 20, fdir, fname, 
      .                   1, zt%kk, zt%z,
-     .                   day, month, year, time+stats_tout, stats_tout,
+     .                   day, month, year, rlat, rlon,
+     .                   time+stats_tout, stats_tout,
      .                   zt%nn )
       else ! lnetcdf
         call open_nc( zt%f, 20, fdir, fname, 
      .                1, zt%kk, zt%z,
-     .                day, month, year, time+stats_tout, stats_tout,
+     .                day, month, year, rlat, rlon,
+     .                time+stats_tout, stats_tout,
      .                zt%nn )
 
       endif
@@ -1486,12 +1489,14 @@ c     -----------------------------------------------------------------
       if ( lgrads ) then
         call open_grads( zm%f, 20, fdir, fname, 
      .                   1, zm%kk, zm%z,
-     .                   day, month, year, time+stats_tout, stats_tout,
+     .                   day, month, year, rlat, rlon,
+     .                   time+stats_tout, stats_tout,
      .                   zm%nn )
       else ! lnetcdf
         call open_nc( zm%f, 20, fdir, fname, 
      .                1, zm%kk, zm%z,
-     .                day, month, year, time+stats_tout, stats_tout,
+     .                day, month, year, rlat, rlon,
+     .                time+stats_tout, stats_tout,
      .                zm%nn )
       end if
 
@@ -2487,12 +2492,14 @@ c     -----------------------------------------------------------------
       if ( lgrads ) then
         call open_grads( sfc%f, 20, fdir, fname, 
      .                   1, sfc%kk, sfc%z,
-     .                   day, month, year, time+stats_tout, stats_tout,
+     .                   day, month, year, rlat, rlon,
+     .                   time+stats_tout, stats_tout,
      .                   sfc%nn )
       else ! netcdf
         call open_nc( sfc%f, 20, fdir, fname, 
      .                1, sfc%kk, sfc%z,
-     .                day, month, year, time+stats_tout, stats_tout,
+     .                day, month, year, rlat, rlon,
+     .                time+stats_tout, stats_tout,
      .                sfc%nn )
       end if
 

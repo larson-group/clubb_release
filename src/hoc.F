@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.82 2006-05-10 21:50:56 griffinb Exp $
+! $Id: hoc.F,v 1.83 2006-05-12 16:55:12 dschanen Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -37,6 +37,7 @@
        real, private    :: deltaz
 
        integer, private :: day, month, year    ! day of start of simulation
+       real, private :: rlat, rlon
 
 
        character(len=50), private :: runtype
@@ -200,7 +201,7 @@
 
 !      Definition of namelists
        namelist /model_setting/ runtype, nzmax, deltaz, 
-     .                          day, month, year, 
+     .                          day, month, year, rlat, rlon,
      .                          time_initial, time_final, time_spinup,
      .                          dtmain, dtclosure,
      .                          sfctype, Tsfc, psfc, SE, LE, fcor,
@@ -282,7 +283,7 @@
 #ifdef STATS
 !      Initialize statistics output
        call stats_init( 50, runfile, gr%nnzp, gr%zt, gr%zm,
-     .                  day, month, year, time, dtmain )
+     .                  day, month, year, rlat, rlon, time, dtmain )
 #endif /*STATS*/
 
 !-------------------------- Time integration ---------------------------
@@ -496,7 +497,7 @@
 
 !      Definition of namelists
        namelist /model_setting/ runtype, nzmax, deltaz, 
-     .                          day, month, year, 
+     .                          day, month, year, rlat, rlon,
      .                          time_initial, time_final, time_spinup,
      .                          dtmain, dtclosure,
      .                          sfctype, Tsfc, psfc, SE, LE, fcor,
@@ -574,7 +575,7 @@
 #ifdef STATS
 !      Initialize statistics output
        call stats_init( 50, runfile, gr%nnzp, gr%zt, gr%zm,
-     .                  day, month, year, time, dtmain )
+     .                  day, month, year, rlat, rlon, time, dtmain )
 #endif /*STATS*/
 
 !-------------------------- Time integration ---------------------------

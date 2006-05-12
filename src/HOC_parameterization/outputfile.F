@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: outputfile.F,v 1.1 2006-04-21 21:50:56 dschanen Exp $
+! $Id: outputfile.F,v 1.2 2006-05-12 16:55:12 dschanen Exp $
 !     MODULE outputfile_class
 
 !     contains a structure for either NetCDF or GrADS
@@ -49,6 +49,7 @@
 !          Time information
 
            integer day, month, year      ! date of starting time
+           real rlat, rlon               ! Deg. N & Deg. E
            real time                     ! start time in seconds
            real dtwrite                  ! interval between outputs in seconds
 

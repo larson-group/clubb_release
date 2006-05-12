@@ -1,5 +1,5 @@
 c------------------------------------------------------------------------
-c $Id: outputgrads.F,v 1.1 2006-04-21 21:50:56 dschanen Exp $
+c $Id: outputgrads.F,v 1.2 2006-05-12 16:55:12 dschanen Exp $
 c
 c This module contains structure and subroutine definitions to
 c create GrADS output data files for one dimensional arrays.
@@ -43,7 +43,8 @@ c         Undefined value
           !---------------------------------------------------------
           subroutine open_grads( f, unit, fdir, fname, 
      .                           ia, iz, z,
-     .                           day, month, year, time, dtwrite,
+     .                           day, month, year, rlat, rlon,
+     .                           time, dtwrite,
      .                           nvar )
           use outputfile_class
           implicit none
@@ -56,6 +57,7 @@ c         Input
           integer, intent(IN) :: ia, iz
           real, intent(IN)    :: z(:)
           integer, intent(IN) :: day, month, year
+	  real, intent(IN)    :: rlat, rlon
           real, intent(IN)    :: time, dtwrite
           integer, intent(IN) :: nvar
         
@@ -85,6 +87,9 @@ c         Define parameters
           f%day = day
           f%month = month
           f%year = year
+
+          f%rlat   = rlat
+          f%rlon   = rlon
 
           f%dtwrite = dtwrite
 
