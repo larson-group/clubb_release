@@ -708,11 +708,11 @@ Separating out the contributions:
            \overline{w'q_t'}^2
          \right) \right|_{\mathtt{zm(k)}} \\
 =& \mathtt{
-   - \frac{1 - \frac{1}{3}\beta}{2 dzm(k)}
-     \bigg[ \frac{\left(a2m(k)+a2m(k+1)\right) wp3(k+1) \left(wpqtp(k)+wpqtp(k+1)\right)^2}
+   - \frac{1 - \frac{1}{3}\beta}{4 dzm(k)}
+     \bigg[ \frac{\left(a1m(k)+a1m(k+1)\right)^2 wp3(k+1) \left(wpqtp(k)+wpqtp(k+1)\right)^2}
                  {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)^2} } \\
  & \mathtt{ \quad \quad \quad \quad \quad \quad
-           -\frac{\left(a2m(k-1)+a2m(k)\right) wp3(k) \left(wpqtp(k-1)+wpqtp(k)\right)^2}
+           -\frac{\left(a1m(k-1)+a1m(k)\right)^2 wp3(k) \left(wpqtp(k-1)+wpqtp(k)\right)^2}
                  {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)^2}
      \bigg]
    }
@@ -726,11 +726,11 @@ Separating out the contributions:
 &\mathtt{d(k)} \\
 =& \mathtt{
    d(k)
-   - \frac{1 - \frac{1}{3}\beta}{2 dzm(k)}
-     \bigg[ \frac{\left(a2m(k)+a2m(k+1)\right) wp3(k+1) \left(wpqtp(k)+wpqtp(k+1)\right)^2}
+   - \frac{1 - \frac{1}{3}\beta}{4 dzm(k)}
+     \bigg[ \frac{\left(a1m(k)+a1m(k+1)\right)^2 wp3(k+1) \left(wpqtp(k)+wpqtp(k+1)\right)^2}
                  {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)^2} } \\
  & \mathtt{ \quad \quad \quad \quad \quad \quad \quad \quad
-           -\frac{\left(a2m(k-1)+a2m(k)\right) wp3(k) \left(wpqtp(k-1)+wpqtp(k)\right)^2}
+           -\frac{\left(a1m(k-1)+a1m(k)\right)^2 wp3(k) \left(wpqtp(k-1)+wpqtp(k)\right)^2}
                  {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)^2}
      \bigg]
    }
@@ -912,13 +912,13 @@ Separating out the contributions:
            \overline{w'q_t'} \; \overline{w'\theta_l'}
          \right) \right|_{\mathtt{zm(k)}} \\
 =& \mathtt{
-   - \frac{1 - \frac{1}{3}\beta}{2 dzm(k)} } \\
+   - \frac{1 - \frac{1}{3}\beta}{4 dzm(k)} } \\
  & \mathtt{
-     \times \bigg[ \frac{\left(a2m(k)+a2m(k+1)\right) wp3(k+1) 
+     \times \bigg[ \frac{\left(a1m(k)+a1m(k+1)\right)^2 wp3(k+1) 
                   \left(wpqtp(k)+wpqtp(k+1)\right)\left(wpthlp(k)+wpthlp(k+1)\right)}
                  {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)^2} } \\
  & \mathtt{ \quad \quad
-           -\frac{\left(a2m(k-1)+a2m(k)\right) wp3(k) 
+           -\frac{\left(a1m(k-1)+a1m(k)\right)^2 wp3(k) 
                   \left(wpqtp(k-1)+wpqtp(k)\right)\left(wpthlp(k-1)+wpthlp(k)\right)}
                  {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)^2}
      \bigg]
@@ -931,14 +931,14 @@ Separating out the contributions:
 \begin{equation}
 \begin{split}
 \mathtt{d(k)} =& \mathtt{d(k)} \\
- & \mathtt{ - \frac{1 - \frac{1}{3}\beta}{2 dzm(k)} } \\
+ & \mathtt{ - \frac{1 - \frac{1}{3}\beta}{4 dzm(k)} } \\
  & \mathtt{ \times 
-      \bigg[ \frac{\left(a2m(k)+a2m(k+1)\right) wp3(k+1) 
+      \bigg[ \frac{\left(a1m(k)+a1m(k+1)\right)^2 wp3(k+1) 
                    \left(wpqtp(k)+wpqtp(k+1)\right) 
                    \left(wpthlp(k)+wpthlp(k+1)\right)}
                   {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)^2} } \\
  & \mathtt{ \quad \quad
-            -\frac{\left(a2m(k-1)+a2m(k)\right) wp3(k) 
+            -\frac{\left(a1m(k-1)+a1m(k)\right)^2 wp3(k) 
                    \left(wpqtp(k-1)+wpqtp(k)\right) 
                    \left(wpthlp(k-1)+wpthlp(k)\right)}
                   {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)^2}
@@ -1033,7 +1033,7 @@ After discretizing the time derivative and rearranging terms:
 \end{equation}
 %
 The LHSs of (\ref{eq_qxm2})-(\ref{eq_wpqxp2}) is linear in $\bar{q}$
-and $\overline{w'q'_t}$ and can teherefore be rewritten in matrix form:
+and $\overline{w'q'_t}$ and can therefore be rewritten in matrix form:
 %
 \begin{equation}
 A
