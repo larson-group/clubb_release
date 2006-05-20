@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.14 2006-05-20 12:51:14 griffinb Exp $
+! $Id: parameterization_interface.F,v 1.15 2006-05-20 13:45:50 griffinb Exp $
 
 
 !  Module hoc_parameterization_interface
@@ -747,11 +747,15 @@
         call setup_model_flags( lbugsrad, kk_rain, cloud_sed,
      .                          bottom_at_sfc )
 
-        if ( .not. implemented ) then
-          call setup_diagnostic_variables( nzmax )
-        end if
+!        if ( .not. implemented ) then
+!          call setup_diagnostic_variables( nzmax )
+!        end if
 
+        ! Both prognostic variables and diagnostic variables need to be
+        ! declared, allocated, initialized, and deallocated whether HOC
+        ! is part of a larger model or not.
         call setup_prognostic_variables( nzmax )
+        call setup_diagnostic_variables( nzmax )
 
 !       Setup grid
 
@@ -784,11 +788,15 @@
         ! whether this is part of larger model (T/F)
         logical, intent(in) :: implemented 
   
-        if ( .not. implemented ) then
-          call cleanup_diagnostic_variables( )
-        end if
+!        if ( .not. implemented ) then
+!          call cleanup_diagnostic_variables( )
+!        end if
 
+        ! Both prognostic variables and diagnostic variables need to be
+        ! declared, allocated, initialized, and deallocated whether HOC
+        ! is part of a larger model or not.
         call cleanup_prognostic_variables( )
+        call cleanup_diagnostic_variables( )
 
         return
         end subroutine parameterization_cleanup
