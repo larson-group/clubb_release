@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.13 2006-05-10 21:50:58 griffinb Exp $
+! $Id: parameterization_interface.F,v 1.14 2006-05-20 12:51:14 griffinb Exp $
 
 
 !  Module hoc_parameterization_interface
@@ -785,10 +785,10 @@
         logical, intent(in) :: implemented 
   
         if ( .not. implemented ) then
-          call cleanup_prognostic_variables( )
+          call cleanup_diagnostic_variables( )
         end if
 
-        call cleanup_diagnostic_variables( )
+        call cleanup_prognostic_variables( )
 
         return
         end subroutine parameterization_cleanup
