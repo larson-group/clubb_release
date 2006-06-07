@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_hoc.F90,v 1.7 2006-06-07 20:39:44 dschanen Exp $
+! $Id: bugsrad_hoc.F90,v 1.8 2006-06-07 23:01:57 dschanen Exp $
 
 ! SUBROUTINE bugsrad_hoc
 ! Does the necessary operations to interface the HOC model with
@@ -131,7 +131,7 @@ subroutine bugsrad_hoc &
   double precision slr(nlen)  ! Fraction of daylight  
   double precision ts(nlen)   ! Surface temperature in K
 
-  double precision amu0 ! Cosine of the solar zenith angle
+  double precision amu0(nlen) ! Cosine of the solar zenith angle
 
   integer i, j, z, z1, z2  ! loop indices
   double precision z1_fact, z2_fact
@@ -245,12 +245,12 @@ subroutine bugsrad_hoc &
 !   write(10,'(i4,9f12.6)') i, pinmb(1,i), playerinmb(1,i),tempk(1,i),         &
 !   sp_humidity(1,i), 100000.0*o3l(1,i), rcm2(1,i), rcil(1,i),cf2(1,i),dpl(1,i)
 ! enddo
-! write(10,'(a4,a12,3f12.6)') "","", playerinmb(1,nz+buffer), ts(1), amu0
+! write(10,'(a4,a12,3f12.6)') "","", playerinmb(1,nz+buffer), ts(1), amu0(1)
 ! close(10)
 ! pause
 
   call bugs_rad( nlen, slen, (nz-1)+buffer, playerinmb, pinmb, dpl, tempk,     &
-                 sp_humidity, rcm2, rcil, rrm2, o3l, ts, dble( amu0 ),         &
+                 sp_humidity, rcm2, rcil, rrm2, o3l, ts, amu0,                 &
                  slr, alvdf, alndf, alvdr, alndr,                              &
                  dble(sol_const), dble(grav), dble(Cp),                        &
                  radht_SW2, radht_LW2,                                         &
@@ -399,7 +399,10 @@ subroutine bugsrad_hoc &
 !     The angle  longang  is equivalent to the
 !     hour angle in the formula for cosZ .
 !     References: zenith.f
-!     from http://magic.gfdi.fsu.edu/seaflux/dms/index.php?DIURNAL/zenith.f 
+!     from http://magic.gfdi.fsu.edu/seaflux/DIURNAL/README.txt
+!     Clayson and Curry formula from C. A. Clayson and J. A. Curry , J. Geophys.
+!     Res. Vol. 101, No. C12, Pages 28515-28528, 15 Dec. 1996 .
+
 !     June 6, 2006
 
     select case( int( hour ) )
@@ -420,7 +423,7 @@ subroutine bugsrad_hoc &
     amu0 = sin(latang)*sin(delta) &
          + cos(latang)*cos(delta)*cos(longang)
 
-    !write(*,'(a,f15.6)') "cosine solar zenith ", amu0 %% debug
+    !write(*,'(a,f15.6)') "cosine solar zenith", amu0 !%% debug
 
     return
   end function bugsrad_amu0
