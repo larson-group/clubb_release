@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.83 2006-05-12 16:55:12 dschanen Exp $
+! $Id: hoc.F,v 1.84 2006-06-07 20:39:44 dschanen Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -1200,7 +1200,9 @@
          end select
 #ifdef radoffline && nooverlap 
          if ( lbugsrad ) then
-           call bugsrad_hoc( deltaz*gr%nnzp, gr%nnzp, thlm, rcm, rtm,
+           call bugsrad_hoc( deltaz*gr%nnzp, gr%nnzp, rlat, rlon,
+     .                       day, month, year, time,
+     .                       thlm, rcm, rtm,
      .                       rrm, cf, p, rhom, Tsfc,
      .                       radht, radht_SW, radht_LW,
      .                       Frad, Frad_SW, Frad_LW, thlm_forcing )

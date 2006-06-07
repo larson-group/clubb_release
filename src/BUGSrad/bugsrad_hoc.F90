@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_hoc.F90,v 1.6 2006-04-21 21:37:09 dschanen Exp $
+! $Id: bugsrad_hoc.F90,v 1.7 2006-06-07 20:39:44 dschanen Exp $
 
 ! SUBROUTINE bugsrad_hoc
 ! Does the necessary operations to interface the HOC model with
@@ -13,12 +13,17 @@
 
 ! All code external to this based on the BUGSrad source from 2004/7/10
 !-----------------------------------------------------------------------
-subroutine bugsrad_hoc( alt, nz, thlm, rcm, rtm, rrm, cf, pinpa, rhom, Tsfc,   &
-                        radht, radht_SW, radht_LW, Frad, Frad_SW, Frad_LW,     &
-                        thlm_forcing )
+subroutine bugsrad_hoc &
+           ( alt, nz, lat_in_degrees, lon_in_degrees, day, month, year, time, &
+             thlm, rcm, rtm, rrm, cf, pinpa, rhom, Tsfc, &
+             radht, radht_SW, radht_LW, Frad, Frad_SW, Frad_LW, thlm_forcing )
   use constants
 
   implicit none
+
+! External
+  double precision, external :: bugsrad_amu0
+  intrinsic dble, real
 
 ! Parameters
   integer, parameter :: nlen = 1 ! length of the total domain
@@ -72,7 +77,10 @@ subroutine bugsrad_hoc( alt, nz, thlm, rcm, rtm, rrm, cf, pinpa, rhom, Tsfc,   &
 ! Input
   real, intent(in)    :: alt ! maximum altitude in the model domain (kilometers)
   integer, intent(in) :: nz  ! nnzp in the grid class
-  
+
+  real, intent(in)    :: lat_in_degrees, lon_in_degrees, time
+  integer, intent(in) :: day, month, year
+
   real, intent(in), dimension(nz) :: thlm  ! Liquid potential temperature (K)
   real, intent(in), dimension(nz) :: rcm   ! Liquid water mixing ratio (kg/kg)
   real, intent(in), dimension(nz) :: rrm   ! Rain water mixing ratio (kg/kg)
@@ -128,10 +136,9 @@ subroutine bugsrad_hoc( alt, nz, thlm, rcm, rtm, rrm, cf, pinpa, rhom, Tsfc,   &
   integer i, j, z, z1, z2  ! loop indices
   double precision z1_fact, z2_fact
 
-! At some point we should input latitude, longitude, etc. but for now
-! we just set this
-  amu0      = 0.4329 ! Nov 11 Altocu value
-! amu0 = bugsrad_amu0( jul_day, t_since_noon, lat_in_degrees )
+! amu0 = 0.4329 ! Nov 11 Altocu value
+! Calculated value
+  amu0 = bugsrad_amu0( day, month, year, time, lat_in_degrees, lon_in_degrees )
 
 ! Convert to millibars
   pinmb(1,1:(nz-1))    = dble( pinpa(2:nz) / 100.0 ) ! t grid in HOC
@@ -310,15 +317,24 @@ subroutine bugsrad_hoc( alt, nz, thlm, rcm, rtm, rrm, cf, pinpa, rhom, Tsfc,   &
 
 ! function based on MATLAB function by Liou
 !-----------------------------------------------------------------------
-  function bugsrad_amu0( jul_day, t_since_noon, lat_in_degrees ) result( amu0 )
+  function bugsrad_amu0( day, month, year, current_time, lat_in_degrees, &
+                         lon_in_degrees ) result( amu0 )
     use constants, only: pi_dp
 
     implicit none
 
+    intrinsic sin, cos, mod, abs, int
+
+!   Parameters
+    integer, dimension(12), parameter :: ndays = &
+    (/ 31,   28,   31,   30,   31,   30, &
+       31,   31,   30,   31,   30,   31 /)
+
 !   Input
-    integer, intent(in) :: jul_day
-    integer, intent(in) :: t_since_noon
-    integer, intent(in) :: lat_in_degrees
+    integer, intent(in) :: day, month, year
+    real, intent(in) :: current_time
+    real, intent(in) :: lat_in_degrees
+    real, intent(in) :: lon_in_degrees
 
 !   Output
     double precision amu0
@@ -328,8 +344,30 @@ subroutine bugsrad_hoc( alt, nz, thlm, rcm, rtm, rrm, cf, pinpa, rhom, Tsfc,   &
     double precision t, h
     double precision delta
 !   double precision delta_in_degrees
+    double precision zln, longang, latang
+    double precision hour
 
-    t = 2*pi_dp*(jul_day-1)/365
+    integer jul_day, j, daysinyear
+
+    ! A version of Dr. Golaz's leap year code (from outputgrads)
+    if ( (mod(year,4) == 0) .and. & 
+      (.not.(  mod(year,100) == 0 .and. mod(year,400) /= 0 ) )  ) then 
+      daysinyear = 366
+    else
+      daysinyear = 365
+    end if
+
+    jul_day = day
+
+    ! Add the days from the previous months
+    do j = 1, month-1, 1
+      jul_day = jul_day + ndays(j)
+    end do
+
+    ! kluge for a leap year
+    if ( daysinyear == 366 .and. month > 2 ) jul_day = jul_day + 1
+
+    t = 2*pi_dp*(jul_day-1)/daysinyear
 
     ! Liou's coefficients
     c0 =  0.006918
@@ -344,14 +382,45 @@ subroutine bugsrad_hoc( alt, nz, thlm, rcm, rtm, rrm, cf, pinpa, rhom, Tsfc,   &
           + c2*cos(2*t) + d2*sin(2*t)  & 
           + c3*cos(3*t) + d3*sin(3*t)
 
-!   delta_in_degrees = delta*(180/pi_dp)
+    !delta_in_degrees = delta*(180/pi_dp)
 
-    ! Compute hour angle
-    h = 2*pi_dp*t_since_noon/86400
+    ! Compute hour angle (old code)
+    ! h = 2*pi_dp*t_since_noon/86400
+
+    hour = current_time / 3600.0
+
+!   Fix the time if we've been running for more than a day
+    j = int( hour / 24.0 )
+    hour = hour - ( j * 24.0 )
+    jul_day = jul_day + j
+
+    if ( jul_day > daysinyear ) stop "problem with days solar zenith code"
+
+!     The angle  longang  is equivalent to the
+!     hour angle in the formula for cosZ .
+!     References: zenith.f
+!     from http://magic.gfdi.fsu.edu/seaflux/dms/index.php?DIURNAL/zenith.f 
+!     June 6, 2006
+
+    select case( int( hour ) )
+    case ( 0:11 )
+      zln = 180.00 - hour*15.00
+    case ( 12:23 )
+      zln = 540.00 - hour*15.00
+    case default
+      print *, hour
+      stop " > 24 hours in cos solar zenith"
+    end select
+
+    longang = abs( lon_in_degrees - zln ) * pi_dp/180.0
+    latang  = lat_in_degrees * pi_dp/180.0
+
 
     ! Cosine of the solar zenith angle.
-    amu0 = sin(lat_in_degrees*pi_dp/180)*sin(delta) &
-         + cos(lat_in_degrees*pi_dp/180)*cos(delta)*cos(h)
+    amu0 = sin(latang)*sin(delta) &
+         + cos(latang)*cos(delta)*cos(longang)
+
+    !write(*,'(a,f15.6)') "cosine solar zenith ", amu0 %% debug
 
     return
   end function bugsrad_amu0
