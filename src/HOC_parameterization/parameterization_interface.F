@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.15 2006-05-20 13:45:50 griffinb Exp $
+! $Id: parameterization_interface.F,v 1.16 2006-06-15 17:44:41 griffinb Exp $
 
 
 !  Module hoc_parameterization_interface
@@ -533,9 +533,11 @@
 
 !      Update winds
 
-       umt = + fcor * ( vm - vg )
        IF ( .NOT. implemented ) THEN
-          umt = umt - ( wmt * ddzm( zt2zm( um ) ) )
+          umt = - wmt * ddzm( zt2zm( um ) )
+     .          + fcor * ( vm - vg )
+       ELSE
+          umt = 0.0
        ENDIF
        ! dtmain to dt -dschanen
        call update_ed_var( um, umt, upwp(1), Khm, dt, upwp, isValid)
@@ -548,9 +550,11 @@
 
        if ( .not. isValid ) return
 
-       vmt = - fcor * ( um - ug )
        IF ( .NOT. implemented ) THEN
-          vmt = vmt - ( wmt * ddzm( zt2zm( vm ) ) )
+          vmt = - wmt * ddzm( zt2zm( vm ) )
+     .          - fcor * ( um - ug )
+       ELSE
+          vmt = 0.0
        ENDIF
        ! dtmain to dt -dschanen
        call update_ed_var( vm, vmt, vpwp(1), Khm, dt, vpwp, isValid)
