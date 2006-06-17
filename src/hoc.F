@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.84 2006-06-07 20:39:44 dschanen Exp $
+! $Id: hoc.F,v 1.85 2006-06-17 22:38:48 griffinb Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -347,7 +347,7 @@
      .            um, vm, upwp, vpwp,
      .            thlm, rtm, wprtp, wpthlp, wp2, wp3,
      .            rtp2, thlp2, rtpthlp,
-     .            Scm, taum, Ncm, rrm, Nrm,
+     .            Scm, taum, rcm, Ncm, rrm, Nrm,
      .            isValid, .false.
 #ifdef SCALARS
      .            ,sclrm, sclrm_forcing,
@@ -622,7 +622,7 @@
      .            um, vm, upwp, vpwp,
      .            thlm, rtm, wprtp, wpthlp, wp2, wp3, 
      .            rtp2, thlp2, rtpthlp, 
-     .            Scm, taum, Ncm, rrm, Nrm,
+     .            Scm, taum, rcm, Ncm, rrm, Nrm,
      .            isValid, .false.
 #ifdef SCALARS
      .            ,sclrm, sclrm_forcing, 

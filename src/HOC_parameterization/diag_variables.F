@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F,v 1.7 2006-05-10 21:50:58 griffinb Exp $
+! $Id: diag_variables.F,v 1.8 2006-06-17 22:38:50 griffinb Exp $
         module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -22,7 +22,6 @@
 
         real, allocatable, target :: cf(:)        ! cloud fraction
         real, allocatable, target :: thvm(:)      ! virtual potential temp 
-        real, allocatable, target :: rcm(:)       ! cloud water mixing ratio
         real, allocatable, target :: sed_rcm(:)   ! sedimentation factor in rcm ! Brian
         real, allocatable, target :: rsm(:)       ! saturation mixing ratio  ! Brian
         real, allocatable, target :: cond_rrm(:)  ! condensation factor in rrm ! Brian
@@ -187,7 +186,6 @@
 
         allocate( cf(1:nzmax) )        ! cloud fraction
         allocate( thvm(1:nzmax) )      ! virtual potential temperature
-        allocate( rcm(1:nzmax) )       ! cloud water mixing ratio
 
         allocate( rsm(1:nzmax) )       ! saturation mixing ratio  ! Brian
 
@@ -322,7 +320,6 @@
  
         cf           = 0.0  ! cloud fraction
         thvm         = 0.0  ! virtual potential temperature
-        rcm          = 0.0  ! cloud water mixing ratio
         rsm          = 0.0  ! saturation mixing ratio  ! Brian
         if ( kk_rain ) then
           cond_rrm     = 0.0  ! condensation factor in rrm ! Brian
@@ -443,7 +440,6 @@
  
         deallocate( cf )        ! cloud fraction
         deallocate( thvm )      ! virtual potential temperature
-        deallocate( rcm )       ! cloud water mixing ratio
         deallocate( rsm )       ! saturation mixing ratio  ! Brian
 
         if ( kk_rain ) then

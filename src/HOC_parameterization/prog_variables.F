@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: prog_variables.F,v 1.6 2006-05-10 21:50:58 griffinb Exp $
+! $Id: prog_variables.F,v 1.7 2006-06-17 22:38:50 griffinb Exp $
         module prognostic_variables
 
 ! This module contains definitions of all prognostic
@@ -53,8 +53,9 @@
 
         real, target, allocatable :: taum(:)
 
-! Cloud droplet concentration
+! Cloud water variables
 
+        real, allocatable, target :: rcm(:)
         real, allocatable, target :: Ncm(:)
 
 ! Prognostic drizzle variables
@@ -138,8 +139,9 @@
 
         allocate( taum(1:nzmax) ) 
 
-! Cloud droplet concentration
+! Cloud water variables
 
+        allocate( rcm(1:nzmax) )
         allocate( Ncm(1:nzmax) )
 
 ! Prognostic drizzle variables
@@ -201,8 +203,9 @@
 
         taum = 0.0
 
-! Cloud droplet concentration
+! Cloud water variables
 
+        rcm = 0.0
         Ncm = 0.0
 
 ! Prognostic drizzle variables
@@ -268,8 +271,9 @@
 
         deallocate( taum )
 
-! Cloud droplet concentration
+! Cloud water variables
 
+        deallocate( rcm )
         deallocate( Ncm )
 
 ! Prognostic drizzle variables
