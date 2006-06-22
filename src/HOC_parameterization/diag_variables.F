@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F,v 1.8 2006-06-17 22:38:50 griffinb Exp $
+! $Id: diag_variables.F,v 1.9 2006-06-22 17:32:28 griffinb Exp $
         module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -20,7 +20,6 @@
         real, target, allocatable :: ug(:)    ! u geostrophic wind
         real, target, allocatable :: vg(:)    ! v geostrophic wind
 
-        real, allocatable, target :: cf(:)        ! cloud fraction
         real, allocatable, target :: thvm(:)      ! virtual potential temp 
         real, allocatable, target :: sed_rcm(:)   ! sedimentation factor in rcm ! Brian
         real, allocatable, target :: rsm(:)       ! saturation mixing ratio  ! Brian
@@ -184,7 +183,6 @@
         allocate( ug(1:nzmax) )        ! u geostrophic wind
         allocate( vg(1:nzmax) )        ! v geostrophic wind
 
-        allocate( cf(1:nzmax) )        ! cloud fraction
         allocate( thvm(1:nzmax) )      ! virtual potential temperature
 
         allocate( rsm(1:nzmax) )       ! saturation mixing ratio  ! Brian
@@ -318,7 +316,6 @@
         umt = 0.0  ! u wind
         vmt = 0.0  ! v wind
  
-        cf           = 0.0  ! cloud fraction
         thvm         = 0.0  ! virtual potential temperature
         rsm          = 0.0  ! saturation mixing ratio  ! Brian
         if ( kk_rain ) then
@@ -438,7 +435,6 @@
         deallocate( umt )       ! u wind
         deallocate( vmt )       ! v wind
  
-        deallocate( cf )        ! cloud fraction
         deallocate( thvm )      ! virtual potential temperature
         deallocate( rsm )       ! saturation mixing ratio  ! Brian
 

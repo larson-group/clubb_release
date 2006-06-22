@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.17 2006-06-17 22:38:50 griffinb Exp $
+! $Id: parameterization_interface.F,v 1.18 2006-06-22 17:32:28 griffinb Exp $
 
 
 !  Module hoc_parameterization_interface
@@ -56,7 +56,7 @@
      .              um, vm, upwp, vpwp,
      .              thlm, rtm, wprtp, wpthlp, wp2, wp3,
      .              rtp2, thlp2, rtpthlp,
-     .              Scm, taum, rcm, Ncm, rrm, Nrm,
+     .              Scm, taum, rcm, Ncm, rrm, Nrm, cf,
      .              isValid, implemented,
      .              sclrm, sclrm_forcing, ! optional
      .              edsclrm, edsclrmt )   ! optional
@@ -109,6 +109,9 @@
 
 !      You can safely leave these uninitialized for a non-drizzle case
        real, intent(inout), dimension(gr%nnzp) :: rrm, Nrm
+
+!      Needed for output for host models
+       real, intent(inout), dimension(gr%nnzp) :: cf
 
        real, intent(inout), dimension(gr%nnzp,sclrm_dimension),
      . optional :: sclrm, sclrm_forcing, edsclrm
@@ -636,7 +639,8 @@
      .                                       rrm, grid, 
      .                                       sflag, p_height_time )
         !use model_arrays
-        use diagnostic_variables, only: cf, pdf_parms, AKm_est, 
+        use prognostic_variables, only: cf
+        use diagnostic_variables, only: pdf_parms, AKm_est, 
      .  AKm, AKstd, AKstd_cld, AKm_rcm, AKm_rcc, rcm_est
 
         implicit none  

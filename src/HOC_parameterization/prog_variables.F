@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: prog_variables.F,v 1.7 2006-06-17 22:38:50 griffinb Exp $
+! $Id: prog_variables.F,v 1.8 2006-06-22 17:32:28 griffinb Exp $
         module prognostic_variables
 
 ! This module contains definitions of all prognostic
@@ -57,6 +57,7 @@
 
         real, allocatable, target :: rcm(:)
         real, allocatable, target :: Ncm(:)
+        real, allocatable, target :: cf(:)
 
 ! Prognostic drizzle variables
 
@@ -143,6 +144,7 @@
 
         allocate( rcm(1:nzmax) )
         allocate( Ncm(1:nzmax) )
+        allocate( cf(1:nzmax) )
 
 ! Prognostic drizzle variables
 
@@ -207,6 +209,7 @@
 
         rcm = 0.0
         Ncm = 0.0
+        cf  = 0.0
 
 ! Prognostic drizzle variables
         
@@ -275,6 +278,7 @@
 
         deallocate( rcm )
         deallocate( Ncm )
+        deallocate( cf )
 
 ! Prognostic drizzle variables
 
