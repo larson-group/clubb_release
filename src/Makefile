@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.58 2006-07-18 01:32:20 ajsmith4 Exp $
+# $Id: Makefile,v 1.59 2006-07-18 16:54:36 dschanen Exp $
 # This version should work with BSD, GNU make, smake and dmake
 
 # For HOC we edit this by hand rather than implementing imake or automake
@@ -169,7 +169,7 @@ closure_new.o	: constants.o closure_new.F
 diag_var.o	: constants.o tridag.o statistics.o diag_var.F 
 gcss.o		: constants.o statistics.o rad_lwsw.o linearinterpolation.F \
                   gcss.F
-rad_lwsw.o      : rad_lwsw.F
+rad_lwsw.o      : rad_lwsw.F statistics.o
 linearinterpolation.o : linearinterpolation.F
 mixing.o	: constants.o statistics.o banbks.o bandec.o mixing.F 
 parameterization_interface.o : constants.o gcss.o hydrostatic.o mixing.o \

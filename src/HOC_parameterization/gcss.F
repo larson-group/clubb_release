@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.4 2006-07-18 01:51:18 ajsmith4 Exp $ 
+! $Id: gcss.F,v 1.5 2006-07-18 16:54:40 dschanen Exp $ 
 
 ! This file contains extra subroutines to simulate the GCSS ARM and
 ! GCSS BOMEX, GCSS ATEX, GCSS FIRE intercomparison cases as well 
@@ -884,7 +884,7 @@
           ! radiation must be added in from atex_tndcy
           thlm_forcing(:) = thlm_forcing(:) + radht(:)
           if ( present( sclr_rate ) ) then
-            sclr_rate(:) = thlm_forcing(:) + radht(:) ! Just theta
+            sclr_rate(:) = thlm_forcing(:) ! Just theta
           endif
 
         endif ! ~ lbugsrad
@@ -1805,7 +1805,7 @@ c Modification by Adam Smith 26 June 2006
 c It is difficult to remember to set xi_abs = 0 when we want to shut off solar
 c radiation.  If sw_on = .FALSE. above, we will automatically set xi_abs to 0
 c to avoid confusion or errors.
-      if (sw_on .eq. .FALSE.) then
+      if ( .NOT. sw_on ) then
         xi_abs = 0.
       endif
 c End of ajsmith4's Modification
@@ -2426,8 +2426,8 @@ c rtm          :  profile of total water mixing ratio                          U
 c wmt          :  profile of vertical ascent/descent at thermodynamic levels   Unit: m/s     c
 c wmm          :  profile of vertical ascent/descent at momentum levels        Unit: m/s     c
 c                                                                                            c
-c thl_tndcy    :  ??                                                           Unit: K ??    c
-c rt_tndcy     :  ??                                                           Unit: kg/kg   c
+c thl_tndcy    :  theta_l forcing                                              Unit: K/s     c
+c rt_tndcy     :  total liquid water tendency                                  Unit: kg/kg/s c
 c                                                                                            c
 c Frad         :  profile of total radiative flux (lw + sw)                    Unit: W/m^2   c
 c Frad_LW      :  profile of longwave radiative flux                           Unit: W/m^2   c
@@ -2437,7 +2437,7 @@ c radht        :  profile of total radiative heating (lw + sw)                 U
 c radht_LW     :  profile of longwave radiative heating                        Unit: K/s     c
 c radht_SW     :  profile of shortwave radiative heating                       Unit: K/s     c
 c                                                                                            c
-c sclr_tndcy   :                                                               Unit: ??      c
+c sclr_tndcy   :  passive scalar tendency                                      Unit: ??      c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
         !!!!!!!!!!!!!!!!!!!!!
@@ -2629,7 +2629,7 @@ c It is difficult to remember to set xi_abs = 0 when we want to shut off solar
 c radiation.  If sw_on = .FALSE. above, we will automatically set xi_abs to 0
 c to avoid confusion or errors.
 
-        if (sw_on .eq. .FALSE.) then
+        if ( .NOT. sw_on ) then
           xi_abs = 0.
         endif
 
