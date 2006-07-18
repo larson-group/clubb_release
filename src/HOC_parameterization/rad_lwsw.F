@@ -191,7 +191,7 @@ c Comments by Adam Smith and Michael Falk.                             c
 c                                                                      c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-      if (lw_on .eq. .TRUE.) then
+      if ( lw_on ) then
         lwp(1) = 0.0
         do k=2,kk+1
           lwp(k) = lwp(k-1)
@@ -292,7 +292,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         enddo
       endif
 
-      if (sw_on .eq. .TRUE.) then
+      if ( sw_on ) then
         call sunray_sw      (qc3,rbm,xi_abs,dsigm,kk,
      .                       Frad_SW,radius,A,gc,Fs0,omega,center)
       else
