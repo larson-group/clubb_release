@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.57 2006-05-09 19:26:33 dschanen Exp $
+# $Id: Makefile,v 1.58 2006-07-18 01:32:20 ajsmith4 Exp $
 # This version should work with BSD, GNU make, smake and dmake
 
 # For HOC we edit this by hand rather than implementing imake or automake
@@ -35,7 +35,8 @@ PARAMETERIZATION = \
 	polpak.o constants.o endian.o outputfile.o outputgrads.o \
 	outputnc.o grid.o model_flags.o statistics.o \
 	banbks.o bandec.o erf.o tridag.o rain.o \
-	closure_new.o diag_var.o gcss.o hydrostatic.o \
+	closure_new.o diag_var.o gcss.o rad_lwsw.o linearinterpolation.o \
+        hydrostatic.o \
 	length.o mixing.o rsat.o sat_rcm.o sfc.o \
 	sounding.o update.o wp23.o tau.o \
 	numer_check.o diag_variables.o prog_variables.o \
@@ -166,7 +167,10 @@ tridag.o	: tridag.F
 
 closure_new.o	: constants.o closure_new.F 
 diag_var.o	: constants.o tridag.o statistics.o diag_var.F 
-gcss.o		: constants.o statistics.o gcss.F
+gcss.o		: constants.o statistics.o rad_lwsw.o linearinterpolation.F \
+                  gcss.F
+rad_lwsw.o      : rad_lwsw.F
+linearinterpolation.o : linearinterpolation.F
 mixing.o	: constants.o statistics.o banbks.o bandec.o mixing.F 
 parameterization_interface.o : constants.o gcss.o hydrostatic.o mixing.o \
 	model_flags.o numer_check.o \

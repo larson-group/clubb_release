@@ -1,16 +1,16 @@
-# $Id: config.messner.in,v 1.11 2006-05-04 21:58:13 dschanen Exp $
+# $Id: config.messner.in,v 1.12 2006-07-18 01:32:20 ajsmith4 Exp $
 # Configuration file for Messner node
 
 # == Paths ==
 # This is where the make command is going to put the resulting files
-PREFIX = $(HOME)/hoc_v2.2_tuner
+PREFIX = ..
 BINDIR = $(PREFIX)/bin
 LIBDIR = $(PREFIX)/lib
 
 # == Compiler invocation ==
 #FC = g95 #	G95
 #FC = ifort #	Intel Fortran 9
-FC = pgf90 #	Portland Group Fortran 90 5.x/6.x
+FC = /usr/pgi/linux86/5.2/bin/pgf90 # Portland Group Fortran 90 5.x/6.x
 
 # == Debugging ==
 # It is sometimes helpful to turn on floating-point trapping for the 

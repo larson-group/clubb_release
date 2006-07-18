@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.86 2006-06-22 17:32:26 griffinb Exp $
+! $Id: hoc.F,v 1.87 2006-07-18 01:32:20 ajsmith4 Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -890,6 +890,34 @@
 
           wp2 = 2.0 / 3.0  * em
 
+        ! Adam for June 25 altocumulus case.
+        case ( "jun25_altocu" )
+
+c! Vince Larson reduced initial forcing.  4 Nov 2005
+c!          em = 1.0
+c!          em = 0.1
+c          do k=1,gr%nnzp
+c            if ( gr%zm(k) < 1400. ) then
+c               em(k) = 0.1
+c            else
+c               em(k) = emin
+c            end if
+c          enddo
+
+c NOTE: emin = 1.0e-6, defined in constants.F
+c Adam Smith, 28 June 2006
+
+          do k = 1, gr%nnzp
+            em(k) = 0.01
+          enddo
+
+
+          em(1) = em(2)
+          em(gr%nnzp) = em(gr%nnzp-1)
+! End Vince Larson's change.
+
+          wp2 = 2.0 / 3.0  * em
+
         end select
 
 ! End Initialize TKE and other fields as needed
@@ -1079,11 +1107,25 @@
            call nov11_altocu_tndcy( time, time_initial, dt, thlm,
      .                              rcm, p, exner, rhot, rtm, wmt,
      .                              wmm, thlm_forcing, rtm_forcing,
-     .                              Frad, Frad_LW, Frad_SW, radht
+     .                              Frad, Frad_LW, Frad_SW,
+     .                              radht, radht_LW, radht_SW
 #ifdef SCALARS
      .                             ,sclrm_forcing   ! optional variable
 #endif /* SCALARS */
      .                            )
+
+         case ( "jun25_altocu" ) ! June 25 Altocumulus case.
+           call jun25_altocu_tndcy( time, time_initial, dt, thlm,
+     .                              rcm, p, exner, rhot, rtm, wmt,
+     .                              wmm, thlm_forcing, rtm_forcing,
+     .                              Frad, Frad_LW, Frad_SW,
+     .                              radht, radht_LW, radht_SW
+#ifdef SCALARS
+     .                             ,sclrm_forcing   ! optional variable
+#endif /* SCALARS */
+     .                            )
+
+
 
          case default
            stop "hoc_model: Don't know how to do this runtype"
@@ -1192,6 +1234,10 @@
          case ( "nov11_altocu" )
              ! There are no surface momentum or heat fluxes
              ! for the Nov. 11 Altocumulus case.
+
+         case ( "jun25_altocu" )
+             ! There are no surface momentum or heat fluxes
+             ! for the Jun. 25 Altocumulus case.
 
          case default
            write(*,*) 'Invalid value of runtype = ', runtype
