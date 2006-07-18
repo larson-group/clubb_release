@@ -1,8 +1,6 @@
-! $Id: diag_var.F,v 1.3 2006-05-10 21:50:58 griffinb Exp $
+! $Id: diag_var.F,v 1.4 2006-07-18 18:10:23 dschanen Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
-!-----------------------------------------------------------------------
-!  This is a module because optional variables require it to be.
 !-----------------------------------------------------------------------
       module diagnose_variances
 
@@ -49,14 +47,16 @@
 
 
 ! Output variables
-!  note: if liter=.true., 
-!  then these would need to have an attrib. of type (inout)
 !     An attribute of (inout) is also needed to import the
 !     value of the variances at the surface.  Brian.  12/18/05.
 
        real, intent(inout) :: rtp2(1:gr%nnzp)
        real, intent(inout) :: thlp2(1:gr%nnzp)
        real, intent(inout) :: rtpthlp(1:gr%nnzp)
+
+! Output variable for singular matrices
+
+       logical, intent(inout) :: isValid
 
 ! Input mixing scheme variables (optional)
 
@@ -68,20 +68,15 @@
        real, optional, intent(out), 
      . dimension(gr%nnzp, sclrm_dimension):: sclrp2, sclrprtp, sclrpthlp
 
-c Local constants
 
-!       real, parameter :: eps = 1.e-10  ! now in constants.F
-c Misc. Variables -D.S.
-       logical, intent(inout) :: isValid
-
-c Local arrays allocated dynamically on the stack
+! Local arrays allocated dynamically on the stack
 
        real a1(1:gr%nnzp)
        real aa(1:gr%nnzp), bb(1:gr%nnzp), cc(1:gr%nnzp), dd(1:gr%nnzp)
 
        real C2_Skw_fnc(1:gr%nnzp), Skw_arr_m(1:gr%nnzp)
 
-c Loop indices
+! Loop indices
 
        integer i, k
        integer km1, kp1
@@ -104,12 +99,12 @@ c Loop indices
        endif
 #endif
 
-c Define a1
+! Define a1
 
        a1 = 1.0 / (1.0-Sc)
 
 #ifndef DISABLE_C2_SKW
-c Define C2 as a function of Skw -dschanen 14 April 06
+! Define C2 as a function of Skw -dschanen 14 April 06
        do k = 1, gr%nnzp, 1
         km1 = MAX(k-1,1)
         kp1 = MIN(k+1,gr%nnzp)
@@ -127,7 +122,7 @@ c Define C2 as a function of Skw -dschanen 14 April 06
 
 #endif /* DISABLE */
 
-c Solve for rtp2
+! Solve for rtp2
 
        ! Brian added this line of code which can be uncommented
        ! in order to bring back the use of C2rt, C2thl, and 
@@ -135,7 +130,9 @@ c Solve for rtp2
        ! the call to the subroutines for each respective variable.
 !       C2_Skw_fnc = 1.5000   ! C2rt
 
-c      prepare tridiagonal system
+!      Prepare tridiagonal system
+!      Where cc, bb & aa contain the LHS super, main, and sub diagonal,
+!      respectively, and dd contains the RHS
 
        aa = calc_aa( a1, wp2, wp3, wmm, nu2, beta, eps )
        bb = calc_bb( a1, wp2, wp3, tau, 
@@ -208,7 +205,7 @@ c      prepare tridiagonal system
        endif
 #endif /*STATS*/
        
-c      solve tridiagonal system
+!      Solve tridiagonal system
        call tridag( aa, bb, cc, dd, rtp2, gr%nnzp, isValid )
        if ( .not. isValid ) then
           print *, "diag_var: rtp2 tridag failed"
@@ -269,7 +266,7 @@ c      solve tridiagonal system
        endif
 #endif
 
-c      clip small and negative values
+!      clip small and negative values
        ! The surface variances are set elsewhere.  They do not need to be
        ! clipped at the lowest level.  Brian Griffin.  12/18/05.
        do k = 2, gr%nnzp, 1
@@ -292,19 +289,19 @@ c      clip small and negative values
        endif
 #endif
 
-c Solve for thlp2
+! Solve for thlp2
 
        ! Brian added this line of code which can be uncommented
        ! in order to bring back the use of C2rt, C2thl, and 
        ! C2rtthl by overwriting the value of C2_Skw_fnc before
        ! the call to the subroutines for each respective variable.
 !       C2_Skw_fnc = 1.000   ! C2thl
+!       bb = calc_bb( a1, wp2, wp3, tau, 
+!    .                C2_Skw_fnc, dt, nu2, beta, eps, liter )
 
-c      prepare tridiagonal system
-c      note: we can reuse the same aa & cc arrays
+!      Prepare tridiagonal system
+!      note: we can reuse the same LHS
 
-        bb = calc_bb( a1, wp2, wp3, tau, 
-     .                C2_Skw_fnc, dt, nu2, beta, eps, liter )
         dd = calc_dd_var( a1, wp2, wp3, wpthlp, thlm, 
      .                    thlp2, dt, beta, eps, liter )
 
@@ -402,7 +399,7 @@ c      solve tridiagonal system
 #endif
 
 
-c      clip small and negative values
+!      clip small and negative values
        ! The surface variances are set elsewhere.  They do not need to be
        ! clipped at the lowest level.  Brian Griffin.  12/18/05.
        do k = 2, gr%nnzp, 1
@@ -425,10 +422,10 @@ c      clip small and negative values
        endif
 #endif
 
-c Solve for sclrp2
+! Solve for sclrp2
 
-c      prepare tridiagonal system
-c      note: we can reuse the same aa, cc arrays
+!      Prepare tridiagonal system
+!      note: we can reuse the same LHS
 
       if (     present( sclrm )
      .   .and. present( wpsclrp ) 
@@ -436,25 +433,25 @@ c      note: we can reuse the same aa, cc arrays
 
        do i=1, sclrm_dimension
 
-         if ( i == SCLR_THETA ) then
-           bb = calc_bb( a1, wp2, wp3, tau,
-     .                   C2_Skw_fnc, dt, nu2, beta, eps, liter )
-        elseif ( i == SCLR_RT ) then
-           bb = calc_bb( a1, wp2, wp3, tau,
-     .                   C2_Skw_fnc, dt, nu2, beta, eps, liter )
-         endif
+!        if ( i == SCLR_THETA ) then
+!          bb = calc_bb( a1, wp2, wp3, tau,
+!    .                   C2_Skw_fnc, dt, nu2, beta, eps, liter )
+!       elseif ( i == SCLR_RT ) then
+!          bb = calc_bb( a1, wp2, wp3, tau,
+!    .                   C2_Skw_fnc, dt, nu2, beta, eps, liter )
+!        endif
 
          dd = calc_dd_var( a1, wp2, wp3, wpsclrp(:,i), sclrm(:,i), 
      .                     sclrp2(:,i), dt, beta, eps, liter )
 
-c        solve tridiagonal system
+!        Solve tridiagonal system
          call tridag( aa, bb, cc, dd, sclrp2(:,i), gr%nnzp, isValid )
          if ( .not. isValid ) then
            print *, "diag_var: sclrp2 tridag failed"
            return
          endif
 
-c        clip small and negative values
+!        Clip small and negative values
          ! The surface variances are set elsewhere.  They do not need to be
          ! clipped at the lowest level.  Brian Griffin.  12/18/05.
          do k = 2, gr%nnzp, 1
@@ -474,18 +471,17 @@ c        clip small and negative values
 
       endif ! if present( sclrs )
 
-c Solve for rtpthlp
+! Solve for rtpthlp
 
        ! Brian added this line of code which can be uncommented
        ! in order to bring back the use of C2rt, C2thl, and 
        ! C2rtthl by overwriting the value of C2_Skw_fnc before
        ! the call to the subroutines for each respective variable.
 !       C2_Skw_fnc = 2.000   ! C2rtthl
+!       bb = calc_bb( a1, wp2, wp3, tau, 
+!     .               C2_Skw_fnc, dt, nu2, beta, eps, liter )
 
-c      prepare tridiagonal system
-
-       bb = calc_bb( a1, wp2, wp3, tau, 
-     .               C2_Skw_fnc, dt, nu2, beta, eps, liter )
+!      Prepare tridiagonal system
 
        dd = calc_dd_covar( a1, wp2, wp3, wprtp, wpthlp, 
      .                     rtm, thlm, rtpthlp, 
@@ -527,7 +523,7 @@ c      prepare tridiagonal system
        endif
 #endif
        
-c      solve tridiagonal system
+!      Solve tridiagonal system
        call tridag( aa, bb, cc, dd, rtpthlp, gr%nnzp, isValid )
        if ( .not. isValid ) then
           print *, "diag_var: rtpthlp tridag failed"
@@ -609,29 +605,29 @@ c      solve tridiagonal system
        endif
 #endif
 
-c Solve for sclrprtp
+!     Solve for sclrprtp
       if (     present( sclrm )
      .   .and. present( wpsclrp ) 
      .   .and. present( sclrprtp ) ) then
 
-c     prepare tridiagonal system
+!     Prepare tridiagonal system
        do i=1, sclrm_dimension
 
-         if ( i == SCLR_THETA ) then
-           bb = calc_bb( a1, wp2, wp3, tau, 
-     .                   C2_Skw_fnc, dt, nu2, beta, eps, liter )
-         else 
-           if ( i == SCLR_RT ) then
-             bb = calc_bb( a1, wp2, wp3, tau, 
-     .                     C2_Skw_fnc, dt, nu2, beta, eps, liter )
-           endif
-         endif
+!         if ( i == SCLR_THETA ) then
+!           bb = calc_bb( a1, wp2, wp3, tau, 
+!     .                   C2_Skw_fnc, dt, nu2, beta, eps, liter )
+!         else 
+!           if ( i == SCLR_RT ) then
+!             bb = calc_bb( a1, wp2, wp3, tau, 
+!     .                     C2_Skw_fnc, dt, nu2, beta, eps, liter )
+!           endif
+!         endif
 
-         dd = calc_dd_covar( a1, wp2, wp3, wprtp, wpsclrp(i,:),
-     .                       rtm, sclrm(i,:), sclrprtp(i,:),
+         dd = calc_dd_covar( a1, wp2, wp3, wprtp, wpsclrp(:,i),
+     .                       rtm, sclrm(:,i), sclrprtp(:,i),
      .                       dt, beta, eps, liter )
 
-c       solve tridiagonal system
+!        Solve tridiagonal system
          call tridag( aa, bb, cc, dd, sclrprtp(:,i), gr%nnzp, isValid )
          if ( .not. isValid ) then
            print *, "diag_var: sclrprtp tridag failed"
@@ -640,7 +636,7 @@ c       solve tridiagonal system
 
        enddo ! i=1, slcrm_dimension
 
-c      clip small and negative values
+!      clip small and negative values
 !        We don't want to do this generally, only to test that the scalars
 !        work with their 2nd element is rt
 !         ! The surface variances are set elsewhere.  They do not need to be
@@ -658,29 +654,29 @@ c      clip small and negative values
 !
       endif ! present (sclr variables)
 
-c Solve for sclrpthlp
+!     Solve for sclrpthlp
       if (     present( sclrm )
      .   .and. present( wpsclrp ) 
      .   .and. present( sclrpthlp ) ) then
 
-c     prepare tridiagonal system
+!     Prepare tridiagonal system
        do i=1, sclrm_dimension
 
-         if ( i == SCLR_THETA ) then
-           bb = calc_bb( a1, wp2, wp3, tau, 
-     .                   C2_Skw_fnc, dt, nu2, beta, eps, liter )
-         else 
-           if ( i == SCLR_RT ) then
-           bb = calc_bb( a1, wp2, wp3, tau, 
-     .                   C2_Skw_fnc, dt, nu2, beta, eps, liter )
-           endif
-         endif
+!        if ( i == SCLR_THETA ) then
+!          bb = calc_bb( a1, wp2, wp3, tau, 
+!    .                   C2_Skw_fnc, dt, nu2, beta, eps, liter )
+!        else 
+!          if ( i == SCLR_RT ) then
+!          bb = calc_bb( a1, wp2, wp3, tau, 
+!    .                   C2_Skw_fnc, dt, nu2, beta, eps, liter )
+!          endif
+!        endif
 
-         dd = calc_dd_covar( a1, wp2, wp3, wpthlp, wpsclrp(i,:),
-     .                       thlm, sclrm(i,:), sclrpthlp(i,:),
+         dd = calc_dd_covar( a1, wp2, wp3, wpthlp, wpsclrp(:,i),
+     .                       thlm, sclrm(:,i), sclrpthlp(:,i),
      .                       dt, beta, eps, liter )
 
-c       solve tridiagonal system
+!        Solve tridiagonal system
          call tridag( aa, bb, cc, dd, sclrpthlp(:,i), gr%nnzp, isValid )
          if ( .not. isValid ) then
            print *, "diag_var: sclrpthlp tridag failed"
@@ -689,7 +685,7 @@ c       solve tridiagonal system
 
        enddo ! i=1, slcrm_dimension
 
-c      clip small and negative values
+!      clip small and negative values
 !        We don't want to do this generally, only to test that the scalars
 !        work with their 1st element is thl
 !         ! The surface variances are set elsewhere.  They do not need to be
