@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.5 2006-07-18 16:54:40 dschanen Exp $ 
+! $Id: gcss.F,v 1.6 2006-07-18 20:09:02 ajsmith4 Exp $ 
 
 ! This file contains extra subroutines to simulate the GCSS ARM and
 ! GCSS BOMEX, GCSS ATEX, GCSS FIRE intercomparison cases as well 
@@ -1480,35 +1480,39 @@
 
         implicit none
 
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c INPUT VARIABLES                                                                            c
-c time         :  time of simulation since start                               Unit: s       c
-c time_initial :  initial time of simulation                                   Unit: s       c
-c dt           :                                                               Unit: s       c
-c thlm         :  profile of liquid water potential temperature                Unit: K       c
-c rcm          :  profile of liquid (cloud) water mixing ratio                 Unit: kg/kg   c
-c p            :  basic state pressure                                         Unit: hPa     c
-c exner        :  basic state Exner function                                   Unit: NONE    c
-c rhot         :  density of reference state at thermodynamic levels           Unit: kg/m^3  c
-c                                                                                            c
-c OUTPUT VARIABLES                                                                           c
-c rtm          :  profile of total water mixing ratio                          Unit: kg/kg   c
-c wmt          :  profile of vertical ascent/descent at thermodynamic levels   Unit: m/s     c
-c wmm          :  profile of vertical ascent/descent at momentum levels        Unit: m/s     c
-c                                                                                            c
-c thl_tndcy    :  ??                                                           Unit: K ??    c
-c rt_tndcy     :  ??                                                           Unit: kg/kg   c
-c                                                                                            c
-c Frad         :  profile of total radiative flux (lw + sw)                    Unit: W/m^2   c
-c Frad_LW      :  profile of longwave radiative flux                           Unit: W/m^2   c
-c Frad_SW      :  profile of shortwave radiative flux                          Unit: W/m^2   c
-c                                                                                            c
-c radht        :  profile of total radiative heating (lw + sw)                 Unit: K/s     c
-c radht_LW     :  profile of longwave radiative heating                        Unit: K/s     c
-c radht_SW     :  profile of shortwave radiative heating                       Unit: K/s     c
-c                                                                                            c
-c sclr_tndcy   :                                                               Unit: ??      c
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c INPUT VARIABLES                                                             c
+c time         :  time of simulation since start                 Unit: s      c
+c time_initial :  initial time of simulation                     Unit: s      c
+c dt           :  length of model time step                      Unit: s      c
+c thlm         :  profile of liquid water potential temperature  Unit: K      c
+c rcm          :  profile of liquid (cloud) water mixing ratio   Unit: kg/kg  c
+c p            :  basic state pressure                           Unit: hPa    c
+c exner        :  basic state Exner function                     Unit: NONE   c
+c rhot         :  density of reference state at thermodynamic levels          c
+c                                                                Unit: kg/m^3 c
+c                                                                             c
+c OUTPUT VARIABLES                                                            c
+c rtm          :  profile of total water mixing ratio            Unit: kg/kg  c
+c wmt          :  profile of vertical ascent/descent at thermodynamic levels  c
+c                                                                Unit: m/s    c
+c wmm          :  profile of vertical ascent/descent at momentum levels       c
+c                                                                Unit: m/s    c
+c                                                                             c
+c thl_tndcy    :  change in liq. water potential temperature due to           c
+c                 radiative heating and ice diffusion            Unit: K      c
+c rt_tndcy     :  change in total water due to ice diffusion     Unit: kg/kg  c
+c                                                                             c
+c Frad         :  profile of total radiative flux (lw + sw)      Unit: W/m^2  c
+c Frad_LW      :  profile of longwave radiative flux             Unit: W/m^2  c
+c Frad_SW      :  profile of shortwave radiative flux            Unit: W/m^2  c
+c                                                                             c
+c radht        :  profile of total radiative heating (lw + sw)   Unit: K/s    c
+c radht_LW     :  profile of longwave radiative heating          Unit: K/s    c
+c radht_SW     :  profile of shortwave radiative heating         Unit: K/s    c
+c                                                                             c
+c sclr_tndcy   :                                                 Unit: ??     c
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
         !!!!!!!!!!!!!!!!!!!!!
         !! Input variables !!
@@ -1546,95 +1550,119 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         REAL, OPTIONAL, DIMENSION(gr%nnzp, sclrm_dimension), 
      .                  INTENT(OUT) :: sclr_tndcy
 
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c LOCAL VARIABLES                                                                                     c
-c dqc_dt_icedfs : change in liquid water over time, due to ice diffusional growth.     Unit: 1/s      c
-c                                                                                                     c
-c LWP           : liquid water path from domain top.                                   Unit: kg/m^2   c
-c                                                                                                     c
-c TEMPORARY ARRAYS USED FOR COAMPS RADIATIVE SCHEME                                                   c
-c (SEE COMMENTS BELOW FOR SCHEME DESCRIPTION)                                                         c
-c thm_rad       : temporary "flipped" array of potential temperature                   Unit: K        c
-c rcm_rad       : temporary "flipped" array of liquid water mixing ratio               Unit: kg/kg    c
-c rhot_rad      : temporary "flipped" array of air density                             Unit: kg/m^3   c
-c dsigm         : temporary "flipped" array of grid spacing                            Unit: m        c
-c                                                                                                     c
-c frad_out      : temporary "flipped" array of total radiative flux from rad_lwsw      Unit: W/m^2    c
-c frad_lw_out   : temporary "flipped" array of LW radiative flux from rad_lwsw         Unit: W/m^2    c
-c frad_sw_out   : temporary "flipped" array of SW radiative flux from rad_lwsw         Unit: W/m^2    c
-c                                                                                                     c
-c radhtk        : temporary "flipped" array of total radiative heating from rad_lwsw   Unit: K/s      c
-c radht_lw_out  : temporary "flipped" array of LW radiative heating from rad_lwsw      Unit: K/s      c
-c radht_sw_out  : temporary "flipped" array of SW radiative heating from rad_lwsw      Unit: K/s      c
-c                                                                                                     c
-c INTERPOLATION ARRAYS AND CONSTANTS                                                                  c
-c zsubs         : heights at which wmt data is supplied (used for subs interpolation)  Unit: m        c
-c tsubs         : times after initialization at which wmt data is supplied             Unit: s        c
-c                 (NOT USED IN NOV.11 CASE)                                                           c
-c wtX(Y)        : vertical velocity specified at height Y and time X                   Unit: m/s      c
-c               : (ONLY wt1 IS USED IN NOV.11 CASE)                                                   c
-c w1-w2         : vertical velocity before (w1) and after (w2)                         Unit: m/s      c
-c                 the current time at the specified level                                             c
-c                 (NOT USED IN NOV.11 CASE)                                                           c
-c                                                                                                     c
-c ADDITIONAL PARAMETERS FOR NOV.11 SUBSIDENCE                                                         c
-c subs_on       : logical variable tells us whether to turn subsidence on              Unit: NONE     c
-c wmax          : defines value of maximum subsidence in profile                       Unit: cm/s     c
-c zi            : defines approx. height of inversion within cloud                     Unit: m        c
-c                 (subsidence is equal to wmax at this height)                                        c
-c dazi          : defines height above inversion                                       Unit: m        c
-c                 (above this height, subsidence linearly tapers off to zero)                         c
-c dbzi          : defines height above inversion                                       Unit: m        c
-c                 (below this height, subsidence linearly tapers off to zero)                         c
-c dac           : defines height above cloud                                           Unit: m        c
-c                 (at / above this height, we have NO subsidence)                      Unit: m        c
-c dbc           : defines height below cloud                                           Unit: m        c
-c                 (at / below this height, we have NO subsidence)                                     c
-c                                                                                                     c
-c RADIATION PARAMETERS                                                                                c
-c sw_on         : logical variable passed to radiation scheme - is SW radiation on?    Unit: NONE     c
-c lw_on         : logical variable passed to radiation scheme - is LW radiation on?    Unit: NONE     c
-c center        : use centered differencing (as opposed to a one-sided forward         Unit: NONE     c
-c                 difference) in radiation code                                                       c
-c                                                                                                     c
-c xi_abs        : cosine of the solar zenith angle                                     Unit: NONE     c
-c F0            : coefficient for cloud top heating (see Stevens)                      Unit: W/m^2    c
-c F1            : coefficient for cloud base heating (see Stevens)                     Unit: W/m^2    c
-c kap           : "a constant" according to Duynkerke eqn. 5, where his value          Unit: m^2/kg   c
-c                 is 130 m^2/kg.                                                                      c
-c radius        : effective droplet radius                                             Unit: m        c
-c AA            : albedo -- sea surface, according to Lenderink.                       Unit: NONE     c
-c gc            : asymmetry parameter, "g" in Duynkerke.                               Unit: NONE     c
-c Fs0           : The incident incoming SW insolation at cloud top in the              Unit: W/m^2    c
-c                 direction of the incoming beam (not the vertical).                                  c
-c omega         : single-scattering albedo                                             Unit: NONE     c
-c                                                                                                     c
-c SOLAR ZENITH ANGLE PARAMETERS (NOT USED IN NOV.11 CASE)                                             c
-c c0            : coefficient for calculation of declination angle from                Unit: NONE     c
-c                 Liou Table 2.2 and Eqn. 2.2.10                                                      c
-c c1            : same as above                                                        Unit: NONE     c
-c c2            : same as above                                                        Unit: NONE     c
-c c3            : same as above                                                        Unit: NONE     c
-c d1            : Same as above                                                                       c
-c d2            : Same as above                                                                       c
-c d3            : Same as above                                                                       c
-c                                                                                                     c
-c sda_t         : Linear function of day of the year.                                                 c
-c                 sda_t=0 January 1 and sda_t -> 2*pi December 31.                                    c
-c sda_delta     : Solar declination angle function from Liou 2.2.10                                   c
-c sda_h         : Hour angle (Angle through which the earth must to turn                              c
-c               to put sun directly overhead on a point's meridian)                                   c
-c               (Angle between current time and solar noon)                                           c
-c t_since_noon  : Number of seconds since noon (after noon > 0)                                       c
-c julday        : Julian day of the year (January 1=1; December 31=365)                               c
-c                                                                                                     c
-c start_time_until_noon: number of seconds between start time and solar noon                          c
-c                                                                                                     c
-c Fs0 INTERPOLATION PARAMETERS                                                                        c
-c nparam        : Number of Fs0 values in the list.                                                   c
-c xilist        : Values of cosine of solar zenith angle corresponding to the values in Fslist        c
-c Fslist        : Values of Fs0 corresponding to the values in xilist.                                c
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c LOCAL VARIABLES                                                             c
+c dqc_dt_icedfs : change in liquid water over time, due to ice diffusional    c
+c                 growth.                                       Unit: 1/s     c
+c                                                                             c
+c LWP           : liquid water path from domain top.            Unit: kg/m^2  c
+c                                                                             c
+c TEMPORARY ARRAYS USED FOR COAMPS RADIATIVE SCHEME                           c
+c (SEE COMMENTS BELOW FOR SCHEME DESCRIPTION)                                 c
+c thm_rad       : temporary "flipped" array of potential temperature          c
+c                                                               Unit: K       c
+c rcm_rad       : temporary "flipped" array of liquid water mixing ratio      c
+c                                                               Unit: kg/kg   c
+c rhot_rad      : temporary "flipped" array of air density      Unit: kg/m^3  c
+c dsigm         : temporary "flipped" array of grid spacing     Unit: m       c
+c                                                                             c
+c frad_out      : temporary "flipped" array of total radiative flux           c
+c                 from rad_lwsw                                 Unit: W/m^2   c
+c frad_lw_out   : temporary "flipped" array of LW radiative flux              c
+c                 from rad_lwsw                                 Unit: W/m^2   c
+c frad_sw_out   : temporary "flipped" array of SW radiative flux              c
+c                 from rad_lwsw                                 Unit: W/m^2   c
+c                                                                             c
+c radhtk        : temporary "flipped" array of total radiative heating        c
+c                 from rad_lwsw                                 Unit: K/s     c
+c radht_lw_out  : temporary "flipped" array of LW radiative heating           c
+c                 from rad_lwsw                                 Unit: K/s     c
+c radht_sw_out  : temporary "flipped" array of SW radiative heating           c
+c                 from rad_lwsw                                 Unit: K/s     c
+c                                                                             c
+c INTERPOLATION ARRAYS AND CONSTANTS                                          c
+c zsubs         : heights at which wmt data is supplied                       c
+c                 (used for subsidence interpolation)           Unit: m       c
+c tsubs         : times after initialization at which wmt data is supplied    c
+c                 (NOT USED IN NOV.11 CASE)                     Unit: s       c
+c wtX(Y)        : vertical velocity specified at height Y and time X          c
+c                 (ONLY wt1 IS USED IN NOV.11 CASE)             Unit: m/s     c
+c w1-w2         : vertical velocity before (w1) and after (w2)                c
+c                 the current time at the specified level                     c
+c                 (NOT USED IN NOV.11 CASE)                     Unit: m/s     c
+c                                                                             c
+c ADDITIONAL PARAMETERS FOR NOV.11 SUBSIDENCE                                 c
+c subs_on       : logical variable tells us whether to turn subsidence on     c
+c                                                               Unit: NONE    c
+c wmax          : defines value of maximum subsidence in profile              c
+c                                                               Unit: cm/s    c
+c zi            : defines approx. height of inversion within cloud            c
+c                 (subsidence is equal to wmax at this height)  Unit: m       c
+c dazi          : defines height above inversion                              c
+c                 (above this height, subsidence linearly tapers off to zero) c
+c                                                               Unit: m       c
+c dbzi          : defines height above inversion                              c
+c                 (below this height, subsidence linearly tapers off to zero) c
+c                                                               Unit: m       c
+c dac           : defines height above cloud                                  c
+c                 (at / above this height, we have NO subsidence)             c
+c                                                               Unit: m       c
+c dbc           : defines height below cloud                                  c
+c                 (at / below this height, we have NO subsidence)             c
+c                                                               Unit: m       c
+c                                                                             c
+c RADIATION PARAMETERS                                                        c
+c sw_on         : logical variable passed to radiation scheme                 c
+c                 - is SW radiation on?                         Unit: NONE    c
+c lw_on         : logical variable passed to radiation scheme                 c
+c                 - is LW radiation on?                         Unit: NONE    c
+c center        : use centered differencing (as opposed to a one-sided        c
+c                 forward difference) in radiation code         Unit: NONE    c
+c                                                                             c
+c xi_abs        : cosine of the solar zenith angle              Unit: NONE    c
+c F0            : coefficient for cloud top heating (see Stevens)             c
+c                                                               Unit: W/m^2   c
+c F1            : coefficient for cloud base heating (see Stevens)            c
+c                                                               Unit: W/m^2   c
+c kap           : "a constant" according to Duynkerke eqn. 5, where his       c
+c                 value is 130 m^2/kg.                          Unit: m^2/kg  c
+c radius        : effective droplet radius                      Unit: m       c
+c AA            : albedo -- sea surface, according to Lenderink.              c
+c                                                               Unit: NONE    c
+c gc            : asymmetry parameter, "g" in Duynkerke.        Unit: NONE    c
+c Fs0           : The incident incoming SW insolation at cloud top in the     c
+c                 direction of the incoming beam (not the vertical).          c
+c                                                               Unit: W/m^2   c
+c omega         : single-scattering albedo                      Unit: NONE    c
+c                                                                             c
+c SOLAR ZENITH ANGLE PARAMETERS (NOT USED IN NOV.11 CASE)                     c
+c c0            : coefficient for calculation of declination angle from       c
+c                 Liou Table 2.2 and Eqn. 2.2.10                Unit: NONE    c
+c c1            : same as above                                 Unit: NONE    c
+c c2            : same as above                                 Unit: NONE    c
+c c3            : same as above                                 Unit: NONE    c
+c d1            : Same as above                                 Unit: NONE    c
+c d2            : Same as above                                 Unit: NONE    c
+c d3            : Same as above                                 Unit: NONE    c
+c                                                                             c
+c sda_t         : Linear function of day of the year.                         c
+c                 sda_t=0 January 1 and sda_t -> 2*pi December 31.            c
+c sda_delta     : Solar declination angle function from Liou 2.2.10           c
+c sda_h         : Hour angle (Angle through which the earth must to turn      c
+c                 to put sun directly overhead on a point's meridian)         c
+c                 (Angle between current time and solar noon)                 c
+c t_since_noon  : Number of seconds since noon (after noon > 0)               c
+c julday        : Julian day of the year (January 1=1; December 31=365)       c
+c                                                                             c
+c start_time_until_noon: number of seconds between start time and solar noon  c
+c                                                               Unit: s       c
+c                                                                             c
+c Fs0 INTERPOLATION PARAMETERS                                                c
+c nparam        : Number of Fs0 values in the list.                           c
+c xilist        : Values of cosine of solar zenith angle corresponding to     c
+c                 the values in Fslist                                        c
+c Fslist        : Values of Fs0 corresponding to the values in xilist.        c
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! Local ice diffusional arrays !!
@@ -1695,29 +1723,27 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         REAL:: xi_abs, Fs0
 
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        !! Variables used for calculating solar zenith angle                     !!
-        !! (Currently not used in Nov.11 case)                                   !!
-        !!                                                                       !!
-        !! NOTE BY ADAM SMITH, 13 April 2006                                     !!
-        !! In COAMPS, these constants are called c0, c1, c2, c3, d1, d2, and d3. !!
-        !! Since HOC uses these variables elsewhere, I have renamed them here.   !!
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !! Variables used for calculating solar zenith angle                 !!
+        !! (Currently not used in Nov.11 case)                               !!
+        !!                                                                   !!
+        !! NOTE BY ADAM SMITH, 13 April 2006                                 !!
+        !! In COAMPS, these constants are called c0, c1, c2, c3, d1, d2,     !!
+        !! and d3.  Since HOC uses these variables elsewhere, I have renamed !!
+        !! them here.                                                        !!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         REAL c_0, c_1, c_2, c_3, d_1, d_2, d_3
         REAL sda_t, sda_delta, sda_h, t_since_noon, julday
         REAL start_time_until_noon
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! Toggle for implementing differencing method in interpolations !!
-        !! .FALSE. = forward differencing                                !!
-        !! .TRUE.  = centered differencing                               !!
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         LOGICAL :: center 
 
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        !! Toggles for activating/deactivating forcings                            !!
-        !! To turn off a specific forcing, set the corresponding toggle to .FALSE. !!
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !! Toggles for activating/deactivating forcings                  !!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         LOGICAL :: icedfs_on, subs_on, lw_on, sw_on
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1796,19 +1822,21 @@ c      xi_abs = sin(rlat*3.14/180) * sin(sda_delta) +
 c     .         cos(rlat*3.14/180) * cos(sda_delta) * cos(sda_h)
 c
 c      xi_abs = max(xi_abs,0.)
-c
-c      print*, 'xi_abs=', xi_abs
-c
+
        xi_abs = .4329
 
-c Modification by Adam Smith 26 June 2006
-c It is difficult to remember to set xi_abs = 0 when we want to shut off solar
-c radiation.  If sw_on = .FALSE. above, we will automatically set xi_abs to 0
-c to avoid confusion or errors.
-      if ( .NOT. sw_on ) then
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Modification by Adam Smith 26 June 2006                                   !!
+!! It is difficult to remember to set xi_abs = 0 when we want to shut off    !!
+!! solar radiation.  If sw_on = .FALSE. above, we will automatically set     !!
+!! xi_abs to 0 to avoid confusion or errors.                                 !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      if (.not. sw_on) then
         xi_abs = 0.
       endif
-c End of ajsmith4's Modification
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! End of ajsmith4's Modification !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       if (xi_abs .eq. 0.) then
         sw_on = .FALSE.
@@ -1870,7 +1898,9 @@ c                                                                      c
 c Comment by Adam Smith on 26 June 2006                                c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-c Nov. 11 subsidence parameters
+!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Subsidence Parameters !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!
         wmax =  -0.03
           zi = 1400.0
         dazi =  400.0
@@ -1894,15 +1924,16 @@ c Nov. 11 subsidence parameters
           wt1(6) = 0.
           wt1(7) = 0.
 
-
-        ! Special Nov. 11 condition for total water above cloud.
-        ! One hour after the initial time, the total water above cloud
-        ! is adjusted to be 0.89 of what it previously was.
-
-        ! The conditional statement here is set so that if the timestep
-        ! is such that there is no timestep at exactly 3600.0 seconds,
-        ! then the operation still happnens at the first timestep and
-        ! only the first timestep after 3600.0 seconds.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!       
+!! SPECIAL NOV.11 CONDITION FOR TOTAL WATER ABOVE CLOUD          !!
+!! One hour after the initial time, the total water above cloud  !!
+!! is adjusted to be 0.89 of what it previously was.             !!
+!!                                                               !!
+!! The conditional statement here is set so that if the timestep !!
+!! is such that there is no timestep at exactly 3600.0 seconds,  !!
+!! then the operation still happnens at the first timestep and   !!
+!! only the first timestep after 3600.0 seconds.                 !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         IF ( time >= time_initial + 3600.0    .AND.
      .       time <  time_initial + 3600.0 + dt ) THEN
 
@@ -1914,11 +1945,6 @@ c Nov. 11 subsidence parameters
 
         ENDIF
 
-
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        ! Calling rad_lwsw to calculate LW and SW radiation
-        ! More comments and description to follow
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c SPECIAL METHOD USED TO CALCULATE RADIATION                           c
@@ -2001,7 +2027,7 @@ c                                                                      c
 c -----Frad----------------------------------    k = 1  (w level)      c
 c     /    \            |-dwm                                          c
 c -LWP------radht----------------------------    k = 1  (mass level)   c
-c     \    /            |-dmw                                          c
+c     \    /            |                                        c
 c -----Frad----------------------------------    k = 2  (w level)      c
 c     /    \                                                           c
 c -LWP------radht----------------------------    k = 2  (mass level)   c
@@ -2037,12 +2063,17 @@ c                                                                      c
 c                                                                      c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-        ! We only implement this section if we choose not to use the
-        ! BUGSRAD radiation scheme.
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+        !! We only implement this section if we choose not to use the !!
+        !! BUGSRAD radiation scheme.                                  !!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         IF ( .not. lbugsrad ) THEN
 
-          ! This code transforms these profiles from HOC grid to COAMPS grid.
-          ! The COAMPS-grid profiles are then passed to rad_lwsw for implementation.
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !! This code transforms these profiles from HOC grid to COAMPS !!
+        !! grid.  The COAMPS-grid profiles are then passed to rad_lwsw !!
+        !! for implementation.                                         !!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           do k = 1, gr%nnzp
             thm_rad(k) = thlm(gr%nnzp-k+1) + Lv/Cp*rcm(gr%nnzp-k+1)
             rcm_rad(k) = rcm(gr%nnzp-k+1)
@@ -2050,8 +2081,11 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
             dsigm(k) = 1.0 / gr%dzt(gr%nnzp-k+1)
           enddo
 
-          ! Calling the radiation subroutine, which uses the COAMPS grid method.
-          ! All input and output profiles use the COAMPS grid setup.
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !! Calling the radiation subroutine, which uses the COAMPS    !!
+        !! grid method.  All input and output profiles use the COAMPS !!
+        !! grid setup.                                                !!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           call rad_lwsw(thm_rad, rcm_rad, rhot_rad, dsigm,
      .                  Frad_out, Frad_LW_out, Frad_SW_out,
      .                  radhtk, radht_LW_out, radht_SW_out,
@@ -2059,8 +2093,11 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
      .                  xi_abs, F0, F1, kap, radius, A, gc, Fs0, omega,
      .                  sw_on, lw_on)
 
-          ! This code transforms the radiation results back into HOC grid setup.
-          ! These Frad and radht arrays are actually applied to the HOC model.
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !! This code transforms the radiation results back into HOC !!
+        !! grid setup.  These Frad and radht arrays are actually    !!
+        !! applied to the HOC model.                                !!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           do k = 1, gr%nnzp-1
             Frad(k)     = Frad_out(gr%nnzp-k+1)
             Frad_LW(k)  = Frad_LW_out(gr%nnzp-k+1)
@@ -2081,11 +2118,16 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
         ENDIF ! ~ lbugsrad
 
-
-        ! Compute the loss of total water due to diffusional growth of ice.
-        ! This is defined on thermodynamic levels.
-
-        IF (time >= time_initial + 3600.0) THEN
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !! Compute the loss of total water due to diffusional       !!
+        !! growth of ice.  This is defined on thermodynamic levels. !!
+        !!                                                          !!
+        !! NOTE FOR JUN.25 CASE                                     !!
+        !! --------------------                                     !!
+        !! Ice diffusion is generally not used in the Jun.25 case.  !!
+        !! The code is still available here if needed.              !!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        IF (time >= time_initial + 3600.0 .and. icedfs_on) THEN
 
            CALL altocu_icedf( dt, thlm, rcm, p, exner, rhot,
      .                              dqc_dt_icedfs )
@@ -2099,46 +2141,46 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         ENDIF
 
 
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c                                                                      c
-c Using linear interpolation scheme to interpolate subsidence          c
-c                                                                      c
-c FOR NOV.11 CASE                                                      c
-c ---------------                                                      c
-c As mentioned above, we want to implement a constant subsidence       c
-c profile throughout the entire simulation (except for the 1 hour      c
-c initial "spinup" period).  Because we do not have variations in      c
-c subsidence over time, all tsubs sections (used in Jun.25 case) have  c
-c been removed below.  Only one loop remains below, which will         c
-c implement the interpolation subroutine, then return the w_ls value.  c
-c Unlike jun25, we use this w_ls value directly instead of using       c
-c interpolation to calculate a value between time steps.               c
-c                                                                      c
-c DIAGRAM OF NOV. 11 SUBSIDENCE PROFILE                                c
-c -------------------------------------                                c
-c       |      <- No subsidence in this region                         c
-c       |                                                              c
-c       ------------ Height = (zi + dazi + dac)                        c
-c        \                                                             c
-c         \    <- Subsidence tapers linearly in this region            c
-c          \                                                           c
-c           -------- Height = (zi + dazi)                              c
-c           |                                                          c
-c           |  <- Subsidence equals wmax in this region                c
-c           |                                                          c
-c           -------- Height = zi                                       c
-c           |                                                          c
-c           -------- Height = (zi - dbzi)                              c
-c          /                                                           c
-c         /    <- Subsidence tapers linearly in this region            c
-c        /                                                             c
-c       ------------ Height = (zi - dbzi - dbc)                        c
-c       |                                                              c
-c       |      <- No subsidence in this region                         c
-c                                                                      c
-c                                                                      c
-c Comment by Adam Smith on 26 June 2006                                c
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c                                                                    c
+c Using linear interpolation scheme to interpolate subsidence        c
+c                                                                    c
+c FOR NOV.11 CASE                                                    c
+c ---------------                                                    c
+c As mentioned above, we want to implement a constant subsidence     c
+c profile throughout the entire simulation (except for the 1 hour    c
+c initial "spinup" period).  Because we do not have variations in    c
+c subsidence over time, all tsubs sections (used in Jun.25 case)     c
+c have been removed below.  Only one loop remains below, which will  c
+c implement the interpolation subroutine, then return the w_ls       c
+c value.  Unlike jun25, we use this w_ls value directly instead of   c
+c using interpolation to calculate a value between time steps.       c
+c                                                                    c
+c DIAGRAM OF NOV. 11 SUBSIDENCE PROFILE                              c
+c -------------------------------------                              c
+c       |      <- No subsidence in this region                       c
+c       |                                                            c
+c       ------------ Height = (zi + dazi + dac)                      c
+c        \                                                           c
+c         \    <- Subsidence tapers linearly in this region          c
+c          \                                                         c
+c           -------- Height = (zi + dazi)                            c
+c           |                                                        c
+c           |  <- Subsidence equals wmax in this region              c
+c           |                                                        c
+c           -------- Height = zi                                     c
+c           |                                                        c
+c           -------- Height = (zi - dbzi)                            c
+c          /                                                         c
+c         /    <- Subsidence tapers linearly in this region          c
+c        /                                                           c
+c       ------------ Height = (zi - dbzi - dbc)                      c
+c       |                                                            c
+c       |      <- No subsidence in this region                       c
+c                                                                    c
+c                                                                    c
+c Comment by Adam Smith on 26 June 2006                              c
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
         do k=2,gr%nnzp
           if ( (time >= time_initial + 3600.0) .and. subs_on ) then
@@ -2153,9 +2195,9 @@ c           If time is not yet one hour, we have no subsidence
 
         wmm = zt2zm(wmt)
 
-
-        ! Enter the final theta-l and rtm tendencies
-
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !! Enter the final theta-l and rtm tendencies !!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         DO k = 1, gr%nnzp, 1
            IF ( .not. lbugsrad ) THEN
              thl_tndcy(k) = radht(k)
@@ -2170,6 +2212,7 @@ c           If time is not yet one hour, we have no subsidence
           sclr_tndcy(:,SCLR_THETA) = thl_tndcy
           sclr_tndcy(:,SCLR_RT)    = rt_tndcy
         ENDIF
+
 
         RETURN
         END SUBROUTINE nov11_altocu_tndcy
@@ -2319,43 +2362,43 @@ c           If time is not yet one hour, we have no subsidence
           ! ice diffusion calculations.
           IF ( rcm(k) >= 1.0E-5 .AND. TT(k) < 273.15 ) THEN
 
-             ! Find saturation mixing ratio over vapor [kg kg^{-1}]
+          ! Find saturation mixing ratio over vapor [kg kg^{-1}]
              rs(k) = rsat( p(k), TT(k) )
 
-             ! Saturation vapor pressure over liquid in Pa
+          ! Saturation vapor pressure over liquid in Pa
              es(k) = ( rs(k)*p(k) ) / ( ep + rs(k) )
 
-             ! Saturation vapor pressure over ice in Pa, Eq. 2.15 Rogers and Yau
+          ! Saturation vapor pressure over ice in Pa, Eq. 2.15 Rogers and Yau
              ei(k) = es(k) / EXP( ( Lf/(Rv*273.16) )
      .                           * ( 273.16/TT(k) - 1.0 ) )
 
-             ! Saturation ratio in a liquid-saturated cloud, p. 158 Rogers and Yau
-             !---------------Brian's comment--------------------------------------!
-             ! The actual formula is:  Si = e/ei = (e/es)*(es/ei) = S*(es/ei)     !
-             ! It is assumed that any supersaturation forms liquid water and that !
-             ! the atmosphere is then saturated with respect to liquid water.     !
-             ! Therefore, S = 1.0, allowing Si = es/ei.
-             !--------------------------------------------------------------------!
+          ! Saturation ratio in a liquid-saturated cloud, p. 158 Rogers and Yau
+          !---------------Brian's comment--------------------------------------!
+          ! The actual formula is:  Si = e/ei = (e/es)*(es/ei) = S*(es/ei)     !
+          ! It is assumed that any supersaturation forms liquid water and that !
+          ! the atmosphere is then saturated with respect to liquid water.     !
+          ! Therefore, S = 1.0, allowing Si = es/ei.                           !
+          !--------------------------------------------------------------------!
              Si(k) = es(k)/ei(k)
 
-             ! Denominator of diffusional growth equation, 9.4 of Rogers and Yau
+          ! Denominator of diffusional growth equation, 9.4 of Rogers and Yau
              Denom(k) = Diff_denom( TT(k), p(k), ei(k) )
 
-             ! Change in mass of a single ice crystal, m,
-             ! as it falls a distance gr%dzt in meters
+          ! Change in mass of a single ice crystal, m,
+          ! as it falls a distance gr%dzt in meters
 
-             !---------------Brian's comment--------------------------------------!
-             ! dm/dt = 4*pi*C*(Si-1)/Denom; Rogers and Yau, Eq. 9.4.              !
-             ! For plate-type ice crystals, C = 2r/pi (Rogers and Yau, p. 159).   !
-             ! Since 2r = D, C = D/pi, and the equation becomes:                  !
-             ! dm/dt = 4*D*(Si-1)/Denom.                                          !
-             ! The mass-diameter relationship for an ice crystal is:              !
-             ! D = (m/a)^(1/b); Rogers and Yau, Eq. 9.7.  This means:             !
-             ! dm/dt = [(m/a)^(1/b)]*4*(Si-1)/Denom;                              !
-             ! Dividing by rho yields the change in mixing ratio over time        !
-             ! for an individual crystal.  Multiplying that by the ice crystal    !
-             ! concentration yields the overall change in mixing ratio over time. !
-             !--------------------------------------------------------------------!
+          !---------------Brian's comment--------------------------------------!
+          ! dm/dt = 4*pi*C*(Si-1)/Denom; Rogers and Yau, Eq. 9.4.              !
+          ! For plate-type ice crystals, C = 2r/pi (Rogers and Yau, p. 159).   !
+          ! Since 2r = D, C = D/pi, and the equation becomes:                  !
+          ! dm/dt = 4*D*(Si-1)/Denom.                                          !
+          ! The mass-diameter relationship for an ice crystal is:              !
+          ! D = (m/a)^(1/b); Rogers and Yau, Eq. 9.7.  This means:             !
+          ! dm/dt = [(m/a)^(1/b)]*4*(Si-1)/Denom;                              !
+          ! Dividing by rho yields the change in mixing ratio over time        !
+          ! for an individual crystal.  Multiplying that by the ice crystal    !
+          ! concentration yields the overall change in mixing ratio over time. !
+          !--------------------------------------------------------------------!
              dqc_dt_icedfs(k) = - (Ni/rhot(k))
      .          * ( 4 * (Si(k) - 1) / Denom(k) )
      .          * (m(k)/a)**(1/b)
@@ -2365,10 +2408,10 @@ c           If time is not yet one hour, we have no subsidence
                 dqc_dt_icedfs(k) = -rcm(k)/dt
              ENDIF
 
-             !---------------Brian's comment--------------------------------------!
-             ! dm = (dm/dt)*(dt/dz)*dz                                            !
-             ! dm = (dm/dt)*(1/u_T)*dz                                            !
-             !--------------------------------------------------------------------!
+             !---------------Brian's comment-----------------------------------!
+             ! dm = (dm/dt)*(dt/dz)*dz                                         !
+             ! dm = (dm/dt)*(1/u_T)*dz                                         !
+             !-----------------------------------------------------------------!
              dm(k) = ( 4 * (Si(k) - 1) / Denom(k) )
      .          * (k_u**(-1.0)) * (rhot(k)**q)
      .          * ( (m(k)/a)**((1.0-n)/b) )
@@ -2410,35 +2453,39 @@ c           If time is not yet one hour, we have no subsidence
 
         implicit none
 
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c INPUT VARIABLES                                                                            c
-c time         :  time of simulation since start                               Unit: s       c
-c time_initial :  initial time of simulation                                   Unit: s       c
-c dt           :                                                               Unit: s       c
-c thlm         :  profile of liquid water potential temperature                Unit: K       c
-c rcm          :  profile of liquid (cloud) water mixing ratio                 Unit: kg/kg   c
-c p            :  basic state pressure                                         Unit: hPa     c
-c exner        :  basic state Exner function                                   Unit: NONE    c
-c rhot         :  density of reference state at thermodynamic levels           Unit: kg/m^3  c
-c                                                                                            c
-c OUTPUT VARIABLES                                                                           c
-c rtm          :  profile of total water mixing ratio                          Unit: kg/kg   c
-c wmt          :  profile of vertical ascent/descent at thermodynamic levels   Unit: m/s     c
-c wmm          :  profile of vertical ascent/descent at momentum levels        Unit: m/s     c
-c                                                                                            c
-c thl_tndcy    :  theta_l forcing                                              Unit: K/s     c
-c rt_tndcy     :  total liquid water tendency                                  Unit: kg/kg/s c
-c                                                                                            c
-c Frad         :  profile of total radiative flux (lw + sw)                    Unit: W/m^2   c
-c Frad_LW      :  profile of longwave radiative flux                           Unit: W/m^2   c
-c Frad_SW      :  profile of shortwave radiative flux                          Unit: W/m^2   c
-c                                                                                            c
-c radht        :  profile of total radiative heating (lw + sw)                 Unit: K/s     c
-c radht_LW     :  profile of longwave radiative heating                        Unit: K/s     c
-c radht_SW     :  profile of shortwave radiative heating                       Unit: K/s     c
-c                                                                                            c
-c sclr_tndcy   :  passive scalar tendency                                      Unit: ??      c
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c INPUT VARIABLES                                                             c
+c time         :  time of simulation since start                 Unit: s      c
+c time_initial :  initial time of simulation                     Unit: s      c
+c dt           :  length of model time step                      Unit: s      c
+c thlm         :  profile of liquid water potential temperature  Unit: K      c
+c rcm          :  profile of liquid (cloud) water mixing ratio   Unit: kg/kg  c
+c p            :  basic state pressure                           Unit: hPa    c
+c exner        :  basic state Exner function                     Unit: NONE   c
+c rhot         :  density of reference state at thermodynamic levels          c
+c                                                                Unit: kg/m^3 c
+c                                                                             c
+c OUTPUT VARIABLES                                                            c
+c rtm          :  profile of total water mixing ratio            Unit: kg/kg  c
+c wmt          :  profile of vertical ascent/descent at thermodynamic levels  c
+c                                                                Unit: m/s    c
+c wmm          :  profile of vertical ascent/descent at momentum levels       c
+c                                                                Unit: m/s    c
+c                                                                             c
+c thl_tndcy    :  change in liq. water potential temperature due to           c
+c                 radiative heating and ice diffusion            Unit: K      c
+c rt_tndcy     :  change in total water due to ice diffusion     Unit: kg/kg  c
+c                                                                             c
+c Frad         :  profile of total radiative flux (lw + sw)      Unit: W/m^2  c
+c Frad_LW      :  profile of longwave radiative flux             Unit: W/m^2  c
+c Frad_SW      :  profile of shortwave radiative flux            Unit: W/m^2  c
+c                                                                             c
+c radht        :  profile of total radiative heating (lw + sw)   Unit: K/s    c
+c radht_LW     :  profile of longwave radiative heating          Unit: K/s    c
+c radht_SW     :  profile of shortwave radiative heating         Unit: K/s    c
+c                                                                              c
+c sclr_tndcy   :                                                 Unit: ??      c
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
         !!!!!!!!!!!!!!!!!!!!!
         !! Input variables !!
@@ -2472,6 +2519,120 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         ! Output variables (optional)
         REAL, OPTIONAL, DIMENSION(gr%nnzp, sclrm_dimension),
      .                  INTENT(OUT) :: sclr_tndcy
+
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c LOCAL VARIABLES                                                             c
+c dqc_dt_icedfs : change in liquid water over time, due to ice diffusional    c
+c                 growth.                                       Unit: 1/s     c
+c                                                                             c
+c LWP           : liquid water path from domain top.            Unit: kg/m^2  c
+c                                                                             c
+c TEMPORARY ARRAYS USED FOR COAMPS RADIATIVE SCHEME                           c
+c (SEE COMMENTS BELOW FOR SCHEME DESCRIPTION)                                 c
+c thm_rad       : temporary "flipped" array of potential temperature          c
+c                                                               Unit: K       c
+c rcm_rad       : temporary "flipped" array of liquid water mixing ratio      c
+c                                                               Unit: kg/kg   c
+c rhot_rad      : temporary "flipped" array of air density      Unit: kg/m^3  c
+c dsigm         : temporary "flipped" array of grid spacing     Unit: m       c
+c                                                                             c
+c frad_out      : temporary "flipped" array of total radiative flux           c
+c                 from rad_lwsw                                 Unit: W/m^2   c
+c frad_lw_out   : temporary "flipped" array of LW radiative flux              c
+c                 from rad_lwsw                                 Unit: W/m^2   c
+c frad_sw_out   : temporary "flipped" array of SW radiative flux              c
+c                 from rad_lwsw                                 Unit: W/m^2   c
+c                                                                             c
+c radhtk        : temporary "flipped" array of total radiative heating        c
+c                 from rad_lwsw                                 Unit: K/s     c
+c radht_lw_out  : temporary "flipped" array of LW radiative heating           c
+c                 from rad_lwsw                                 Unit: K/s     c
+c radht_sw_out  : temporary "flipped" array of SW radiative heating           c
+c                 from rad_lwsw                                 Unit: K/s     c
+c                                                                             c
+c INTERPOLATION ARRAYS AND CONSTANTS                                          c
+c zsubs         : heights at which wmt data is supplied                       c
+c                 (used for subsidence interpolation)           Unit: m       c
+c tsubs         : times after initialization at which wmt data is supplied    c
+c                 (NOT USED IN NOV.11 CASE)                     Unit: s       c
+c wtX(Y)        : vertical velocity specified at height Y and time X          c
+c                 (ONLY wt1 IS USED IN NOV.11 CASE)             Unit: m/s     c
+c w1-w2         : vertical velocity before (w1) and after (w2)                c
+c                 the current time at the specified level                     c
+c                 (NOT USED IN NOV.11 CASE)                     Unit: m/s     c
+c                                                                             c
+c ADDITIONAL PARAMETERS FOR NOV.11 SUBSIDENCE (NOT FOR JUN.25 CASE)           c
+c subs_on       : logical variable tells us whether to turn subsidence on     c
+c                                                               Unit: NONE    c
+c wmax          : defines value of maximum subsidence in profile              c
+c                                                               Unit: cm/s    c
+c zi            : defines approx. height of inversion within cloud            c
+c                 (subsidence is equal to wmax at this height)  Unit: m       c
+c dazi          : defines height above inversion                              c
+c                 (above this height, subsidence linearly tapers off to zero) c
+c                                                               Unit: m       c
+c dbzi          : defines height above inversion                              c
+c                 (below this height, subsidence linearly tapers off to zero) c
+c                                                               Unit: m       c
+c dac           : defines height above cloud                                  c
+c                 (at / above this height, we have NO subsidence)             c
+c                                                               Unit: m       c
+c dbc           : defines height below cloud                                  c
+c                 (at / below this height, we have NO subsidence)             c
+c                                                               Unit: m       c
+c                                                                             c
+c RADIATION PARAMETERS                                                        c
+c sw_on         : logical variable passed to radiation scheme                 c
+c                 - is SW radiation on?                         Unit: NONE    c
+c lw_on         : logical variable passed to radiation scheme                 c
+c                 - is LW radiation on?                         Unit: NONE    c
+c center        : use centered differencing (as opposed to a one-sided        c
+c                 forward difference) in radiation code         Unit: NONE    c
+c                                                                             c
+c xi_abs        : cosine of the solar zenith angle              Unit: NONE    c
+c F0            : coefficient for cloud top heating (see Stevens)             c
+c                                                               Unit: W/m^2   c
+c F1            : coefficient for cloud base heating (see Stevens)            c
+c                                                               Unit: W/m^2   c
+c kap           : "a constant" according to Duynkerke eqn. 5, where his       c
+c                 value is 130 m^2/kg.                          Unit: m^2/kg  c
+c radius        : effective droplet radius                      Unit: m       c
+c AA            : albedo -- sea surface, according to Lenderink.              c
+c                                                               Unit: NONE    c
+c gc            : asymmetry parameter, "g" in Duynkerke.        Unit: NONE    c
+c Fs0           : The incident incoming SW insolation at cloud top in the     c
+c                 direction of the incoming beam (not the vertical).          c
+c                                                               Unit: W/m^2   c
+c omega         : single-scattering albedo                      Unit: NONE    c
+c                                                                             c
+c SOLAR ZENITH ANGLE PARAMETERS (NOT USED IN NOV.11 CASE)                     c
+c c0            : coefficient for calculation of declination angle from       c
+c                 Liou Table 2.2 and Eqn. 2.2.10                Unit: NONE    c
+c c1            : same as above                                 Unit: NONE    c
+c c2            : same as above                                 Unit: NONE    c
+c c3            : same as above                                 Unit: NONE    c
+c d1            : Same as above                                 Unit: NONE    c
+c d2            : Same as above                                 Unit: NONE    c
+c d3            : Same as above                                 Unit: NONE    c
+c                                                                             c
+c sda_t         : Linear function of day of the year.                         c
+c                 sda_t=0 January 1 and sda_t -> 2*pi December 31.            c
+c sda_delta     : Solar declination angle function from Liou 2.2.10           c
+c sda_h         : Hour angle (Angle through which the earth must to turn      c
+c                 to put sun directly overhead on a point's meridian)         c
+c                 (Angle between current time and solar noon)                 c
+c t_since_noon  : Number of seconds since noon (after noon > 0)               c
+c julday        : Julian day of the year (January 1=1; December 31=365)       c
+c                                                                             c
+c start_time_until_noon: number of seconds between start time and solar noon  c
+c                                                               Unit: s       c
+c                                                                             c
+c Fs0 INTERPOLATION PARAMETERS                                                c
+c nparam        : Number of Fs0 values in the list.                           c
+c xilist        : Values of cosine of solar zenith angle corresponding to     c
+c                 the values in Fslist                                        c
+c Fslist        : Values of Fs0 corresponding to the values in xilist.        c
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! Local ice diffusional arrays !!
@@ -2530,14 +2691,15 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         REAL xi_abs, Fs0
 
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        !! Variables used for calculating solar zenith angle                     !!
-        !! (Currently not used in Nov.11 case)                                   !!
-        !!                                                                       !!
-        !! NOTE BY ADAM SMITH, 13 April 2006                                     !!
-        !! In COAMPS, these constants are called c0, c1, c2, c3, d1, d2, and d3. !!
-        !! Since HOC uses these variables elsewhere, I have renamed them here.   !!
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !! Variables used for calculating solar zenith angle                 !!
+        !! (Currently not used in Nov.11 case)                               !!
+        !!                                                                   !!
+        !! NOTE BY ADAM SMITH, 13 April 2006                                 !!
+        !! In COAMPS, these constants are called c0, c1, c2, c3, d1, d2,     !!
+        !! and d3.  Since HOC uses these variables names elsewhere, I have   !!
+        !! renamed them here.                                                !!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         REAL c_0, c_1, c_2, c_3, d_1, d_2, d_3
         REAL sda_t, sda_delta, sda_h, t_since_noon, julday
         REAL start_time_until_noon
@@ -2547,9 +2709,9 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         LOGICAL :: center
 
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        !! Toggles for activating/deactivating forcings                            !!
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !! Toggles for activating/deactivating forcings                  !!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         LOGICAL :: icedfs_on, subs_on, lw_on, sw_on
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2566,7 +2728,7 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 cc Toggles for activating/deactivating forcings                            cc
 cc To turn off a specific forcing, set the corresponding toggle to .FALSE. cc
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-         icedfs_on = .TRUE.
+         icedfs_on = .FALSE.
          subs_on   = .TRUE.
          lw_on     = .TRUE.
          sw_on     = .TRUE.
@@ -2615,36 +2777,29 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         xi_abs = sin(rlat*3.14/180) * sin(sda_delta) +
      .           cos(rlat*3.14/180) * cos(sda_delta) * cos(sda_h)
 
-
-c        print*, 'xi_abs(before) = ', xi_abs
-c        print*, 'sw_on(before) = ', sw_on
-
         xi_abs = max(xi_abs,0.)
 
-c        print*, 'xi_abs(after) = ', xi_abs
-c        print*, 'sw_on(after) = ', sw_on
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Modification by Adam Smith 26 June 2006                                   !!
+!! It is difficult to remember to set xi_abs = 0 when we want to shut off    !!
+!! solar radiation.  If sw_on = .FALSE. above, we will automatically set     !!
+!! xi_abs to 0 to avoid confusion or errors.                                 !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      if (.not. sw_on) then
+        xi_abs = 0.
+      endif
 
-c Modification by Adam Smith 15 June 2006
-c It is difficult to remember to set xi_abs = 0 when we want to shut off solar
-c radiation.  If sw_on = .FALSE. above, we will automatically set xi_abs to 0
-c to avoid confusion or errors.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! End of ajsmith4's Modification !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        if ( .NOT. sw_on ) then
-          xi_abs = 0.
-        endif
+      if (xi_abs .eq. 0.) then
+        sw_on = .FALSE.
+      else
+        sw_on = .TRUE.
+      endif
 
-c        print*, 'xi_abs =', xi_abs
 
-c End of Adam's Modification
-
-        if (xi_abs .eq. 0.) then
-          sw_on = .FALSE.
-        else
-          sw_on = .TRUE.
-        endif
-
-c        print*, 'xi_abs(end) = ', xi_abs
-c        print*, 'sw_on(end) = ', sw_on
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c                                                                      c
 c Fs0 Interpolation Parameters-- these also from Kurt Kotenberg's      c
@@ -2655,40 +2810,37 @@ c                                                                      c
 c The linearinterpolation function returns Fs0.                        c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-        xilist(1) = 0.0
-        xilist(2) = 0.01
-        xilist(3) = 0.1
-        xilist(4) = 0.2
-        xilist(5) = 0.3
-        xilist(6) = 0.4
-        xilist(7) = 0.5
-        xilist(8) = 0.6
-        xilist(9) = 0.7
-        xilist(10) = 0.8
-        xilist(11) = 0.9
-        xilist(12) = 1.0
+      xilist(1) = 0.0
+      xilist(2) = 0.01
+      xilist(3) = 0.1
+      xilist(4) = 0.2
+      xilist(5) = 0.3
+      xilist(6) = 0.4
+      xilist(7) = 0.5
+      xilist(8) = 0.6
+      xilist(9) = 0.7
+      xilist(10) = 0.8
+      xilist(11) = 0.9
+      xilist(12) = 1.0
 
-        Fslist(1)  = 0.0
-        Fslist(2)  = 715.86
-        Fslist(3)  = 1073.577
-        Fslist(4)  = 1165.0905
-        Fslist(5)  = 1204.7033
-        Fslist(6)  = 1227.6898
-        Fslist(7)  = 1243.1772
-        Fslist(8)  = 1254.5893
-        Fslist(9)  = 1263.5491
-        Fslist(10) = 1270.8668
-        Fslist(11) = 1277.0474
-        Fslist(12) = 1282.3994
+      Fslist(1)  = 0.0
+      Fslist(2)  = 715.86
+      Fslist(3)  = 1073.577
+      Fslist(4)  = 1165.0905
+      Fslist(5)  = 1204.7033
+      Fslist(6)  = 1227.6898
+      Fslist(7)  = 1243.1772
+      Fslist(8)  = 1254.5893
+      Fslist(9)  = 1263.5491
+      Fslist(10) = 1270.8668
+      Fslist(11) = 1277.0474
+      Fslist(12) = 1282.3994
 
-        call linearinterpolation(nparam,xilist,Fslist,xi_abs,Fs0)
+      call linearinterpolation(nparam,xilist,Fslist,xi_abs,Fs0)
 
-ccccccccccccccccccccccccc
-c                       c
-c Subsidence Parameters c
-c                       c
-ccccccccccccccccccccccccc
-
+!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Subsidence Parameters !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!
         zsubs(1) = 0
         zsubs(2) = 360
         zsubs(3) = 1090
@@ -2856,13 +3008,18 @@ c                                                                      c
 c                                                                      c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-        ! We only implement this section if we choose not to use the
-        ! BUGSRAD radiation scheme.
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+        !! We only implement this section if we choose not to use the !!
+        !! BUGSRAD radiation scheme.                                  !!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         IF ( .not. lbugsrad ) THEN
 
-          ! This code transforms these profiles from HOC grid to COAMPS grid.
-          ! The COAMPS-grid profiles are then passed to rad_lwsw for implementation.
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !! This code transforms these profiles from HOC grid to COAMPS !!
+        !! grid.  The COAMPS-grid profiles are then passed to rad_lwsw !!
+        !! for implementation.                                         !!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           do k = 1, gr%nnzp
             thm_rad(k) = thlm(gr%nnzp-k+1) + Lv/Cp*rcm(gr%nnzp-k+1)
             rcm_rad(k) = rcm(gr%nnzp-k+1)
@@ -2870,8 +3027,11 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
             dsigm(k) = 1.0 / gr%dzt(gr%nnzp-k+1)
           enddo
 
-          ! Calling the radiation subroutine, which uses the COAMPS grid method.
-          ! All input and output profiles use the COAMPS grid setup.
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !! Calling the radiation subroutine, which uses the COAMPS    !!
+        !! grid method.  All input and output profiles use the COAMPS !!
+        !! grid setup.                                                !!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           call rad_lwsw(thm_rad, rcm_rad, rhot_rad, dsigm,
      .                  Frad_out, Frad_LW_out, Frad_SW_out,
      .                  radhtk, radht_LW_out, radht_SW_out,
@@ -2879,13 +3039,12 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
      .                  xi_abs, F0, F1, kap, radius, AA, gc, Fs0, omega,
      .                  sw_on, lw_on)
 
-c          do k = 1, gr%nnzp-1
-c          print*,'time = ',time, ', k = ',k, ', Frad_SW_out = ',
-c     .         Frad_SW_out(k)
-c          enddo
 
-          ! This code transforms the radiation results back into HOC grid setup.
-          ! These Frad and radht arrays are actually applied to the HOC model.
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !! This code transforms the radiation results back into HOC !!
+        !! grid setup.  These Frad and radht arrays are actually    !!
+        !! applied to the HOC model.                                !!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           do k = 1, gr%nnzp-1
             Frad(k)     = Frad_out(gr%nnzp-k+1)
             Frad_LW(k)  = Frad_LW_out(gr%nnzp-k+1)
@@ -2905,56 +3064,32 @@ c          enddo
           radht_LW(1) = radht_LW(2)
           radht_SW(1) = radht_SW(2)
 
-
-c          ! "Flipping" input variables for COAMPS rad variable scheme
-c          DO k = 1, gr%nnzp
-c            rcm_rad(k+1)  = rcm(k)
-c            rhot_rad(gr%nnzp-k+1) = rhot(k)
-c            dsigm(gr%nnzp-k+1)   = gr%dzt(k)
-c          ENDDO
-c
-c          call rad_lwsw(rcm_rad, rhot_rad, deltaz, gr%nnzp, center,
-c     .                  xi_abs, F0, F1, kap, radius, AA, gc, Fs0, omega,
-c     .                  sw_on, lw_on)
-c
-c          print*, 'hello3'
-c
-c          ! "Flipping" output variables to return to HOC variable scheme
-c          DO k = 1, gr%nnzp
-cc            frad(k)     = 0
-cc            frad_lw(k)  = 0
-cc            frad_sw(k)  = 0
-cc
-cc            radht(k)    = 0
-cc            radht_lw(k) = 0
-cc            radht_sw(k) = 0
-c
-c            frad(gr%nnzp-k+1)     = frad(k)
-c            frad_lw(gr%nnzp-k+1)  = frad_lw(k)
-c            frad_sw(gr%nnzp-k+1)  = frad_sw(k)
-c
-c            radht(gr%nnzp-k+1)    = rcm(k)
-c            radht_lw(gr%nnzp-k+1) = rhot(k)
-c            radht_sw(gr%nnzp-k+1) = gr%dzt(k)
-c
-c          ENDDO
-c
-c          print*, 'hello4'
-
         ENDIF ! ~ lbugsrad
 
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c                                                               c
-c Using linear interpolation scheme to interpolate subsidence   c
-c Original code by Michael Falk                                 c
-c Added for Jun.25 HOC simulation by Adam Smith, 13 April 2006  c
-c                                                               c
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-c        do k=2,gr%nnzp
-c          wmt(k) = 0
-c        enddo
- 
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !! Compute the loss of total water due to diffusional       !!
+        !! growth of ice.  This is defined on thermodynamic levels. !!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        IF (time >= time_initial + 3600.0 .and. icedfs_on) THEN
+
+           CALL altocu_icedf( dt, thlm, rcm, p, exner, rhot,
+     .                              dqc_dt_icedfs )
+
+        ELSE
+
+           DO k = 1, gr%nnzp, 1
+              dqc_dt_icedfs(k) = 0.0
+           ENDDO
+
+        ENDIF
+
+
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !! Using linear interpolation to calculate subsidence !!
+        !! Original code by Michael Falk                      !!
+        !! Added for Jun.25 case by Adam Smith, 13 April 2006 !!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         if (time.lt.tsubs(1)) then
         do k=1,gr%nnzp
             call linearinterpolation(5,zsubs,wt1,gr%zt(k),wmt(k))
@@ -3006,13 +3141,9 @@ c        enddo
         wmm = zt2zm(wmt)
 
 
-        ! We don't use ice diffusion in the Jun.25 case, so we set
-        ! dqc_dt_icedfs = 0 to avoid confusion and errors.
-        DO k = 1, gr%nnzp, 1
-            dqc_dt_icedfs(k) = 0.0
-        ENDDO
-
-
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !! Enter the final theta-l and rtm tendencies !!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         DO k = 1, gr%nnzp, 1
            IF ( .not. lbugsrad ) THEN
              thl_tndcy(k) = radht(k)
@@ -3028,9 +3159,9 @@ c        enddo
           sclr_tndcy(:,SCLR_RT)    = rt_tndcy
         ENDIF
 
+
         RETURN
         END SUBROUTINE jun25_altocu_tndcy
-
 
 !-----------------------------------------------------------------------
 
