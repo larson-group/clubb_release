@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: grid.F,v 1.2 2006-05-10 20:50:28 griffinb Exp $
+! $Id: grid.F,v 1.3 2006-07-18 01:36:41 ajsmith4 Exp $
 
 ! Definition of a grid class and associated functions
 !
@@ -99,7 +99,11 @@
 
 !          Parameter
 
-           integer, parameter :: NWARNING = 200
+c           integer, parameter :: NWARNING = 200
+
+c Modification by Adam Smith, 27 June 2006
+c We want to increase the maximum vertical grid size
+           integer, parameter :: NWARNING = 250
 
 !          Input
 
