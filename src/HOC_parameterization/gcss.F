@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.3 2006-07-18 01:36:41 ajsmith4 Exp $ 
+! $Id: gcss.F,v 1.4 2006-07-18 01:51:18 ajsmith4 Exp $ 
 
 ! This file contains extra subroutines to simulate the GCSS ARM and
 ! GCSS BOMEX, GCSS ATEX, GCSS FIRE intercomparison cases as well 
@@ -2616,13 +2616,13 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
      .           cos(rlat*3.14/180) * cos(sda_delta) * cos(sda_h)
 
 
-        print*, 'xi_abs(before) = ', xi_abs
-        print*, 'sw_on(before) = ', sw_on
+c        print*, 'xi_abs(before) = ', xi_abs
+c        print*, 'sw_on(before) = ', sw_on
 
         xi_abs = max(xi_abs,0.)
 
-        print*, 'xi_abs(after) = ', xi_abs
-        print*, 'sw_on(after) = ', sw_on
+c        print*, 'xi_abs(after) = ', xi_abs
+c        print*, 'sw_on(after) = ', sw_on
 
 c Modification by Adam Smith 15 June 2006
 c It is difficult to remember to set xi_abs = 0 when we want to shut off solar
@@ -2643,8 +2643,8 @@ c End of Adam's Modification
           sw_on = .TRUE.
         endif
 
-        print*, 'xi_abs(end) = ', xi_abs
-        print*, 'sw_on(end) = ', sw_on
+c        print*, 'xi_abs(end) = ', xi_abs
+c        print*, 'sw_on(end) = ', sw_on
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c                                                                      c
 c Fs0 Interpolation Parameters-- these also from Kurt Kotenberg's      c
