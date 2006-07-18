@@ -1,11 +1,11 @@
-! $Id: nov11_altocu_model.in,v 1.3 2006-05-12 17:35:36 dschanen Exp $
+! $Id: nov11_altocu_model.in,v 1.4 2006-07-18 01:29:12 ajsmith4 Exp $
 ! Parameter file for November 11 altocumulus case
 
 &model_setting
 
 runtype = "nov11_altocu"
 
-nzmax = 160
+nzmax = 161
 deltaz = 15.0
 
 day = 11, month = 11, year = 1999,
