@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.87 2006-07-18 01:32:20 ajsmith4 Exp $
+! $Id: hoc.F,v 1.88 2006-07-21 16:32:01 dschanen Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -20,6 +20,8 @@
        interface hoc_model
          module procedure hoc_model_field_input, hoc_model_standard
        end interface
+
+       private ! Default to private
 
 
 !  Directives for scalars;  
@@ -641,7 +643,7 @@
            IF ( i1 < niterlong ) THEN
              time = time_initial + (i-1) * dtmain + i1 * dtclosure
            ELSEIF ( i1 == niterlong ) THEN
-              time = time_initial + i * dtmain
+             time = time_initial + i * dtmain
            ENDIF
 
            if ( .not. isValid ) exit
@@ -968,6 +970,7 @@ c Adam Smith, 28 June 2006
         subroutine hoc_forcings_timestep( iteration, stdout, isValid )
 
 ! Modules to be included
+        use model_flags
         use constants
         use grid_class
         use diagnostic_variables
@@ -989,7 +992,6 @@ c Adam Smith, 28 June 2006
 !-----------------------------------------------------------------------
 !  For GCSS-ARM, set large-scale forcing
 !-----------------------------------------------------------------------
-!           print*, 'hoc.F: just before select runtype'
 
          select case ( runtype )
          case ( "normal" ) ! Normal run
@@ -1128,7 +1130,9 @@ c Adam Smith, 28 June 2006
 
 
          case default
-           stop "hoc_model: Don't know how to do this runtype"
+           write(*,*) "hoc_forcings_timestep: Don't know how to handle "
+     .                // "LS forcing for runtype: " // trim( runtype )
+           stop
 
          end select
 
@@ -1240,11 +1244,11 @@ c Adam Smith, 28 June 2006
              ! for the Jun. 25 Altocumulus case.
 
          case default
-           write(*,*) 'Invalid value of runtype = ', runtype
+           write(*,*) "Invalid value of runtype = ", runtype
            stop
 
          end select
-#ifdef radoffline && nooverlap 
+#ifdef radoffline && nooverlap
          if ( lbugsrad ) then
            call bugsrad_hoc( deltaz*gr%nnzp, gr%nnzp, rlat, rlon,
      .                       day, month, year, time,
