@@ -1,4 +1,6 @@
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c $Id: rad_lwsw.F,v 1.3 2006-07-21 22:42:34 dschanen Exp $
+c
 c Subroutine rad_lwsw -- for 11 November 1999 altocumulus case         c
 c Written by Vince Larson, Chris Golaz, Adam Smith, Michael Falk, and  c
 c others for COAMPS.                                                   c
@@ -99,13 +101,14 @@ c Fs0     :                                                            c
 c omega   :                                                            c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
+      INTEGER, INTENT(IN) :: kk
+
       REAL, DIMENSION(1:kk), INTENT(IN) :: th3
       REAL, DIMENSION(1:kk), INTENT(IN) :: qc3
       REAL, DIMENSION(1:kk), INTENT(IN) :: rbm
       REAL, DIMENSION(1:kk), INTENT(IN) :: dsigm
 
       REAL, INTENT(IN) :: xi_abs, F0, F1, kay, radius, A, gc, Fs0, omega
-      INTEGER, INTENT(IN) :: kk
       LOGICAL, INTENT(IN) :: center, sw_on, lw_on
 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -388,12 +391,12 @@ c#endif
 cc end addition for statistics
 
       return
-      end
+      end subroutine rad_lwsw
 
 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c                                                                      c
-c End of subroutine nov11_rad.                                         c
+c End of subroutine rad_lwsw                                           c
 c                                                                      c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
@@ -462,13 +465,14 @@ c Michael Falk addition for statistics, 28 January 2005
 
       implicit none
 
+      integer, intent(in) :: kk
+
       real qc3    (kk)
       real rbm    (kk)
 
       real xi_abs
       real dsigm  (kk)
 
-      integer kk
       integer nne
       integer i,j,k
 
@@ -765,7 +769,7 @@ cc end addition for statistics
         enddo                                         ! end k loop
 
       return
-      end
+      end subroutine sunray_sw
 
 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
