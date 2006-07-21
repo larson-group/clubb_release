@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.1 2006-04-21 21:50:56 dschanen Exp $
+! $Id: constants.F,v 1.2 2006-07-21 16:32:56 dschanen Exp $
 
 !  Contains frequently occuring model constants
 !-----------------------------------------------------------------------
@@ -37,7 +37,7 @@
         real, parameter :: emin      = 1.e-6
         real, parameter :: vonk      = 0.4     ! von Karmans constant
         real, parameter :: rho_lw    = 1000.0  ! density of liquid water; kg/m^3
-        real :: fcor ! Set from namelist, but not implemented
+        real :: fcor ! Coriolis parameter
 
 !       BUGSrad Variables
         ! Nov 11 Altocu; cosine of solar zenith angle (BUGSrad)
