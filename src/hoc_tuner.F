@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: hoc_tuner.F,v 1.15 2006-04-17 15:03:44 dschanen Exp $
+! $Id: hoc_tuner.F,v 1.16 2006-07-28 21:48:03 dschanen Exp $
 
 !   HOC_TUNER.F
 !   ``Tunes" constants in hoc so that the output matches LES output.
@@ -33,7 +33,7 @@
 !                        vector as a parameter.
 
 !   Included Common:
-!       error.mod: subroutine error_init, function funk, logical isValid,
+!       error.mod: subroutine error_init, function min_les_hoc_diff, logical isValid,
 !                   integer ndim, integer mdim, real x_array, real err_array 
 !                   real init_error, real init_error, 
 !                   results_stdout, results_file
@@ -62,16 +62,17 @@
       call tuner_init(read_files=.true.)
 
 !-------------- Calculate the error for the initial values --------------
-!     Notes: funk is written to deal with undefined and invalid values for
+!     Notes: min_les_hoc_diff 
+!     is written to deal with undefined and invalid values for
 !            variations on the initial vector, but that algorithm relies 
 !            on the initial vector being valid. 
 !------------------------------------------------------------------------
 
-      init_err =  funk( x_array(1, 1:ndim) )
+      init_err =  min_les_hoc_diff( x_array(1, 1:ndim) )
       if ( .not. isValid ) then
          print *, "Initial variable values must be valid"
          stop
-      endif
+      end if
 
 !------------------ Attempt to find the optimal values -----------------
       do
@@ -79,21 +80,21 @@
           call amoeba_driver
         else
           call amebsa_driver
-        endif
+        end if
 
 !---------------- Print to stdout if specified --------------------------
         if ( results_stdout ) call output_results_stdout
 
 !---------------- Query to see if we should end the loop  ---------------
         write(*,*) "Run Complete."
-        write(*,'(A)', advance='no') 
+        write(unit=*,fmt='(A)', advance='no') 
      .        "Re-run with new parameters?(y/n) "
         read *, user_response
 
         if ( trim(user_response) /= "y" .and.
      .       trim(user_response) /= "Y"   ) then 
           exit 
-        endif
+        end if
        
         write (*,*) "Current ftol= ", ftol 
         write (*, '(A)', advance='no') "Enter new ftol=   "
@@ -101,7 +102,7 @@
 
         call tuner_init(read_files=.false.) 
 
-      enddo
+      end do
 
 !     This is done through a script now
 
@@ -129,7 +130,7 @@
         call output_nml_standalone( results_f, x_array(1,1:ndim) )
         print *, "New filename is: ", results_f
 
-      endif
+      end if
 
 !-------------------------- Exit Program  -------------------------------
 
@@ -147,8 +148,8 @@
 
       implicit none
 
-      call amoeba( x_array(1:mdim, 1:ndim), err_array(1:mdim), 
-     .             ftol, funk, iter)
+      call amoeba( x_array(1:mdim,1:ndim), err_array(1:mdim), 
+     .             ftol, min_les_hoc_diff, iter)
 
       min_err =  minval( err_array )
         
@@ -192,12 +193,13 @@
       do jiter = 1, anneal_iter ! anneal_iter taken from /stat/ namelist
         iter  = iiter
         tmptr = tmptr * 0.8_sp
-        call amebsa( x_array(1:mdim,1:ndim), err_array(1:mdim),
-     .               pb(1:ndim), yb, ftol, funk, iter, tmptr )
+        call amebsa
+     .       ( x_array(1:mdim,1:ndim), err_array(1:mdim),
+     .         pb(1:ndim), yb, ftol, min_les_hoc_diff, iter, tmptr )
         nit = nit + iiter - iter
         if (yb < ybb) then
           ybb = yb
-        endif
+        end if
         if (iter > 0) exit
       enddo
       
@@ -205,47 +207,4 @@
       min_err = ybb
 
       end subroutine amebsa_driver
-!----------------------------------------------------------------------
-!     SUBROUTINE output_optimal_results
-
-!     Done in the bash script now, to allow the tuner to use one set 
-!     of output and the optimal results to use a different (larger) set
-!----------------------------------------------------------------------
-      subroutine output_optimal_results
-      use error
-      use hoc, only: hoc_model
-
-      implicit none
-
-      integer c ! loop over cases
-
-      write(*,*) "Calling HOC with optimal results."
-      write(*,*) "This should not result in an invalid run."
-      do c=1, c_total
-        write(*,'(a5,i2)') "Case:", c
-        call hoc_model( x_array(1, 1), x_array(1, 2),
-     .                  x_array(1, 3), x_array(1, 4),
-     .                  x_array(1, 5), x_array(1, 6),
-     .                  x_array(1, 7), x_array(1, 8),
-     .                  x_array(1, 9), x_array(1, 10),
-     .                  x_array(1, 11), x_array(1, 12),
-     .                  x_array(1, 13), x_array(1, 14),
-     .                  x_array(1, 15), x_array(1, 16),
-     .                  x_array(1, 17), x_array(1, 18),
-     .                  x_array(1, 19), x_array(1, 20),
-     .                  x_array(1, 21), x_array(1, 22),
-     .                  x_array(1, 23), x_array(1, 24),
-     .                  x_array(1, 25), x_array(1, 26),
-     .                  x_array(1, 27), x_array(1, 28),
-     .                  x_array(1, 29), x_array(1, 30),
-     .                  x_array(1, 31), x_array(1, 32),
-     .                  x_array(1, 33), x_array(1, 34),
-     .                  x_array(1, 35), x_array(1, 36),
-     .                  x_array(1, 37), x_array(1, 38),
-     .                  run_file(c), isValid, .false. )
-      enddo
-      write(*,*) "The GrADS files should now be optimal."
-
-      return
-      end subroutine output_optimal_results
 !----------------------------------------------------------------------
