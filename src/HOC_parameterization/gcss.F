@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.6 2006-07-18 20:09:02 ajsmith4 Exp $ 
+! $Id: gcss.F,v 1.7 2006-07-28 20:37:37 ajsmith4 Exp $ 
 
 ! This file contains extra subroutines to simulate the GCSS ARM and
 ! GCSS BOMEX, GCSS ATEX, GCSS FIRE intercomparison cases as well 
@@ -19,7 +19,8 @@
       public bomex_tndcy, bomex_sfclyr
       public dycoms2_rf01_tndcy, dycoms2_rf01_sfclyr 
       public dycoms2_rf02_tndcy, dycoms2_rf02_sfclyr
-      public nov11_altocu_tndcy 
+      public nov11_altocu_tndcy
+      public jun25_altocu_tndcy 
 
       private diag_ustar, arm_sfcflx, Diff_denom
       private altocu_icedf
@@ -2097,15 +2098,21 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         !! This code transforms the radiation results back into HOC !!
         !! grid setup.  These Frad and radht arrays are actually    !!
         !! applied to the HOC model.                                !!
+        !!                                                          !!
+        !! The radht results are initially calculated in terms of   !!
+        !! standard temperature (T).  However, HOC calculates       !!
+        !! temperature in terms of potential temperature (theta).   !!
+        !! Therefore, we multiply all radht results by (1.0/exner)  !!
+        !! to convert from T to theta.                              !! 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           do k = 1, gr%nnzp-1
             Frad(k)     = Frad_out(gr%nnzp-k+1)
             Frad_LW(k)  = Frad_LW_out(gr%nnzp-k+1)
             Frad_SW(k)  = Frad_SW_out(gr%nnzp-k+1)
 
-            radht(k)    = radhtk(gr%nnzp-k+1)
-            radht_LW(k) = radht_LW_out(gr%nnzp-k+1)
-            radht_SW(k) = radht_SW_out(gr%nnzp-k+1)
+            radht(k)    = ( 1.0/exner(k) ) * radhtk(gr%nnzp-k+1)
+            radht_LW(k) = ( 1.0/exner(k) ) * radht_LW_out(gr%nnzp-k+1)
+            radht_SW(k) = ( 1.0/exner(k) ) * radht_SW_out(gr%nnzp-k+1)
           enddo
 
           Frad(1) = Frad(2)
@@ -3044,17 +3051,22 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         !! This code transforms the radiation results back into HOC !!
         !! grid setup.  These Frad and radht arrays are actually    !!
         !! applied to the HOC model.                                !!
+        !!                                                          !!
+        !! The radht results are initially calculated in terms of   !!
+        !! standard temperature (T).  However, HOC calculates       !!
+        !! temperature in terms of potential temperature (theta).   !!
+        !! Therefore, we multiply all radht results by (1.0/exner)  !!
+        !! to convert from T to theta.                              !!
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           do k = 1, gr%nnzp-1
             Frad(k)     = Frad_out(gr%nnzp-k+1)
             Frad_LW(k)  = Frad_LW_out(gr%nnzp-k+1)
             Frad_SW(k)  = Frad_SW_out(gr%nnzp-k+1)
 
-            radht(k)    = radhtk(gr%nnzp-k+1)
-            radht_LW(k) = radht_LW_out(gr%nnzp-k+1)
-            radht_SW(k) = radht_SW_out(gr%nnzp-k+1)
+            radht(k)    = ( 1.0/exner(k) ) * radhtk(gr%nnzp-k+1)
+            radht_LW(k) = ( 1.0/exner(k) ) * radht_LW_out(gr%nnzp-k+1)
+            radht_SW(k) = ( 1.0/exner(k) ) * radht_SW_out(gr%nnzp-k+1)
           enddo
-
 
           Frad(1) = Frad(2)
           Frad_LW(1) = Frad_LW(2)
