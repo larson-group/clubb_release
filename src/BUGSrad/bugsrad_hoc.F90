@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_hoc.F90,v 1.8 2006-06-07 23:01:57 dschanen Exp $
+! $Id: bugsrad_hoc.F90,v 1.9 2006-07-28 20:29:04 dschanen Exp $
 
 ! SUBROUTINE bugsrad_hoc
 ! Does the necessary operations to interface the HOC model with
@@ -256,14 +256,19 @@ subroutine bugsrad_hoc &
                  radht_SW2, radht_LW2,                                         &
                  Frad_dSW, Frad_uSW, Frad_dLW, Frad_uLW, cf2 )
 
-  radht_SW(2:nz) = real( flip( radht_SW2(1,buffer+1:nz+buffer), nz-1 ) )
-  radht_LW(2:nz) = real( flip( radht_LW2(1,buffer+1:nz+buffer), nz-1 ) )
+! Michael pointed out that this was a temperature tendency, not a theta_l
+! tendency.  The 2nd line should fix both.  dschanen 28 July 2006
+  radht_SW(2:nz) = real( flip( radht_SW2(1,buffer+1:nz+buffer), nz-1 ) )       &
+                   * ( pinpa(2:nz) / 100000.0 )**kappa
 
-! No radiative heating below ground
+  radht_LW(2:nz) = real( flip( radht_LW2(1,buffer+1:nz+buffer), nz-1 ) )       &
+                   * ( pinpa(2:nz) / 100000.0 )**kappa
+
+  ! No radiative heating below ground
   radht_SW(1) = 0.0
   radht_LW(1) = 0.0
 
-  radht = radht_SW + radht_LW
+  radht = radht_SW + radht_LW 
 
 ! These are on the m grid, and require no adjusting
   Frad_SW(1:nz) = real( flip(  Frad_uSW(1,buffer+1:nz+buffer)                  &
@@ -302,7 +307,7 @@ subroutine bugsrad_hoc &
 
     do indx = 1, xdim, 1
       tmp(indx) = x((xdim+1) - (indx))
-    enddo
+    end do
 
     flip = tmp
 
