@@ -1,12 +1,23 @@
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c $Id: rad_lwsw.F,v 1.3 2006-07-21 22:42:34 dschanen Exp $
-c
-c Subroutine rad_lwsw -- for 11 November 1999 altocumulus case         c
+c Subroutine rad_lwsw -- for Larson group altocumulus cases            c
 c Written by Vince Larson, Chris Golaz, Adam Smith, Michael Falk, and  c
-c others for COAMPS.                                                   c
+c others for COAMPS and HOC                                            c
 c                                                                      c
 c Subroutine to compute cloud radiation according to GCSS DYCOMS       c
 c specifications.                                                      c
+c                                                                      c
+c                                                                      c
+c NOTE BY ADAM SMITH, 28 July 2006.                                    c
+c We are attempting to compare HOC results with the COAMPS-LES model.  c
+c To keep the two codes as similar as possible, this subroutine is a   c
+c near-duplicate of the rad_lwsw subroutine  used in COAMPS_LES.  I    c
+c have  modified variable declarations as needed to match HOC          c
+c standards, and sections that do not apply to HOC have been removed.  c
+c                                                                      c
+c For a full explanation of how this subroutine is implemented in HOC, c
+c please see the nov11_altocu_tndcy or jun25_altocu_tndcy subroutines  c
+c within gcss.F.                                                       c
+c                                                                      c
 c                                                                      c
 c SUBROUTINES:                                                         c
 c sunray_sw - to calculate diffuse and direct shortwave fluxes         c
@@ -18,7 +29,6 @@ c rbm   : Density of reference state at mass levels     Unit: kg/m^3   c
 c dsigm : Thickness of sigma (mass) levels              Unit: m        c
 c aoz   : Derivative of sigma wrt z                     Unit: none     c
 c i,j   : Current location on x,y grid                  Unit: none     c
-c nne   : ?? (number of nest?)                          Unit: ??       c
 c kk    : Number of vertical levels                     Unit: none     c
 c lrad  : True/false-- is COAMPS radiation on?		Unit: none     c
 c center: True/false-- use centered differences?        Unit: none     c
@@ -41,13 +51,20 @@ c sw_on : Logical variable passed to radiation scheme--                c
 c         is shortwave radiation on?                                   c
 c lw_on : Logical variable passed to radiation scheme--                c
 c         is longwave radiation on?                                    c
-c                                                                      
-c
 c                                                                      c
 c ARGUMENTS (OUT):                                                     c
-c radhtk: dT/dt caused by radiation.                    Unit: K/s      c
+c Frad    : Total radiative flux                        Unit: W/m^2    c
+c Frad_SW : Shortwave radiative flux                    Unit: W/m^2    c
+c Frad_LW : Longwave radiative flux                     Unit: W/m^2    c
+c radhtk  : Total radiational heating (dT/dt).          Unit: K/s      c
+c radht_sw: Shortwave component of radiational heating. Unit: K/s      c
+c radht_lw: Longwave component of radiational heating.  Unit: K/s      c
 c                                                                      c
-c REFERENCES (for nov11_rad and sunray_sw):                            c
+c LOCAL VARIABLES:                                                     c
+c lwp     : Liquid water path from domain top.          Unit: kg/m^2   c
+c k       : for loop in the z-direction                 Unit: none     c
+c                                                                      c
+c REFERENCES (for rad_lwsw and sunray_sw):                             c
 c Bluestein, H. B., 1992: Synoptic-Dynamic Meteorology in              c
 c       Midlatitudes, Volume I.  Oxford Univerity Press, 431 pp.       c
 c Duynkerke, P.G. et al., 2005: Observations and numerical simulations c
@@ -65,7 +82,7 @@ c Wallace, J. M., and P. V. Hobbs, 1977: Atmospheric Science: An       c
 c       Introductory Survey.  Academic Press, 467 pp.                  c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-      subroutine rad_lwsw(th3, qc3, rbm, dsigm, 
+      subroutine rad_lwsw(th3, qc3, rbm, dsigm,
      .                  Frad, Frad_LW, Frad_SW,
      .                  radhtk, radht_LW, radht_SW,
      .                  kk, center,
@@ -82,77 +99,33 @@ c<--end of addition
 
       implicit none
 
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c INPUT VARIABLES                                                      c
-c                                                                      c
-c th3     : liquid potential temperature                Unit: K        c
-c qc3     : liquid water mixing ratio                   Unit: kg/kg    c
-c rbm     : air density                                 Unit: kg/m^3   c
-c dsigm   : spacing between grid heights                Unit: m        c
-c                                                                      c
-c xi_abs  : cosine of the solar zenith angle            Unit: NONE     c
-c F0      : magnitude of cloud top heating                             c
-c F1      :                                                            c
-c kay     :                                                            c
-c radius  :                                                            c
-c A       :                                                            c
-c gc      :                                                            c
-c Fs0     :                                                            c
-c omega   :                                                            c
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-
-      INTEGER, INTENT(IN) :: kk
-
+      !!!!!!!!!!!!!!!!!!!!!
+      !! INPUT VARIABLES !!
+      !!!!!!!!!!!!!!!!!!!!!
       REAL, DIMENSION(1:kk), INTENT(IN) :: th3
       REAL, DIMENSION(1:kk), INTENT(IN) :: qc3
       REAL, DIMENSION(1:kk), INTENT(IN) :: rbm
       REAL, DIMENSION(1:kk), INTENT(IN) :: dsigm
 
       REAL, INTENT(IN) :: xi_abs, F0, F1, kay, radius, A, gc, Fs0, omega
+      INTEGER, INTENT(IN) :: kk
       LOGICAL, INTENT(IN) :: center, sw_on, lw_on
 
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c OUTPUT VARIABLES                                                     c
-c                                                                      c
-c radhtk  : Total radiational heating.                  Unit: K/s      c
-c radht_sw: Shortwave component of radiational heating. Unit: K/s      c
-c radht_lw: Longwave component of radiational heating.  Unit: K/s      c
-c lwp     : Liquid water path from domain top.          Unit: kg/m^2   c
-c Frad    : Total radiative flux                        Unit: W/m^2    c
-c Frad_SW : Shortwave radiative flux                    Unit: W/m^2    c
-c Frad_LW : Longwave radiative flux                     Unit: W/m^2    c
-c k       : for loop in the z-direction                 Unit: none     c
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+      !!!!!!!!!!!!!!!!!!!!!!
+      !! OUTPUT VARIABLES !!
+      !!!!!!!!!!!!!!!!!!!!!!
       REAL, DIMENSION(1:kk),   INTENT(OUT) :: radhtk
-      REAL, DIMENSION(1:kk),   INTENT(OUT) :: radht_sw
-      REAL, DIMENSION(1:kk),   INTENT(OUT) :: radht_lw
+      REAL, DIMENSION(1:kk),   INTENT(OUT) :: radht_SW
+      REAL, DIMENSION(1:kk),   INTENT(OUT) :: radht_LW
       REAL, DIMENSION(1:kk+1), INTENT(OUT) :: Frad
-      REAL, DIMENSION(1:kk+1), INTENT(OUT) :: Frad_SW ! SW radiative flux
-      REAL, DIMENSION(1:kk+1), INTENT(OUT) :: Frad_LW ! LW radiative flux
+      REAL, DIMENSION(1:kk+1), INTENT(OUT) :: Frad_SW
+      REAL, DIMENSION(1:kk+1), INTENT(OUT) :: Frad_LW
 
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c LOCAL VARIABLES                                                      c
-c                                                                      c
-c lwp     : Liquid water path from domain top.          Unit: kg/m^2   c
-c k       : for loop in the z-direction                 Unit: none     c
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-
-      real lwp      (kk+1)
-      integer k
-
-
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c CONSTANTS/PARAMETERS                                                 c
-c                                                                      c
-c values added by Michael Falk and Adam Smith                          c
-c                                                                      c
-c rgas    : Gas constant for dry air                    Unit: J/kg/K   c
-c cp      : Specific heat constant for dry air          Unit: J/kg/K   c
-c                                                                      c
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-
-c      real, parameter :: rgas   = 287.04
-c      real, parameter :: cp     = 1005.
+      !!!!!!!!!!!!!!!!!!!!!
+      !! LOCAL VARIABLES !!
+      !!!!!!!!!!!!!!!!!!!!!
+      REAL, DIMENSION(1:kk+1) :: lwp
+      INTEGER k
 
 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -194,7 +167,7 @@ c Comments by Adam Smith and Michael Falk.                             c
 c                                                                      c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-      if ( lw_on ) then
+      if (lw_on) then
         lwp(1) = 0.0
         do k=2,kk+1
           lwp(k) = lwp(k-1)
@@ -295,7 +268,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         enddo
       endif
 
-      if ( sw_on ) then
+      if (sw_on) then
         call sunray_sw      (qc3,rbm,xi_abs,dsigm,kk,
      .                       Frad_SW,radius,A,gc,Fs0,omega,center)
       else
@@ -333,70 +306,21 @@ c                                                                      c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
       do k=1,kk
-        radhtk(k) = (-1./(Cp*rbm(k)))
-     .            * (Frad(k)-Frad(k+1))/dsigm(k) !*aoz(i,j)
-        radht_sw(k) = (-1./(Cp*rbm(k)))
-     .            * (Frad_SW(k)-Frad_SW(k+1))/dsigm(k) !*aoz(i,j)
-        radht_lw(k) = (-1./(Cp*rbm(k)))
-     .            * (Frad_LW(k)-Frad_LW(k+1))/dsigm(k) !*aoz(i,j)
+        radhtk(k)   = (-1.0/(Cp*rbm(k)))
+     .            * (Frad(k)-Frad(k+1))/dsigm(k)
+        radht_SW(k) = (-1.0/(Cp*rbm(k)))
+     .            * (Frad_SW(k)-Frad_SW(k+1))/dsigm(k)
+        radht_LW(k) = (-1.0/(Cp*rbm(k)))
+     .            * (Frad_LW(k)-Frad_LW(k+1))/dsigm(k)
       enddo
 
-cc-->Chris Golaz addition for statistics
-c#ifdef STATS
-c      if ( lstats_samp .and. ifrad > 0 .and.
-c     .     i.ge.imin_stats .and. i.le.imax_stats .and.
-c     .     j.ge.jmin_stats .and. j.le.jmax_stats ) then
-c        do k=1,kk+1
-c          stats_sw%x(k,ifrad)
-c     .    = stats_sw%x(k,ifrad) + Frad(k)
-c         stats_sw%n(k,ifrad) = stats_sw%n(k,ifrad) + 1
-c        enddo
-c      endif
-c#endif
-cc<--end of addition
-c
-cc Michael Falk, 28 January 2005, addition for statistics
-c#ifdef STATS
-c      do k=1,kk
-c        if ( lstats_samp .and. ifrad_lw > 0
-c     .       .and. i.ge.imin_stats .and. i.le.imax_stats
-c     .       .and. j.ge.jmin_stats .and. j.le.jmax_stats ) then
-c          stats_sw%x(k,ifrad_lw) 
-c     .    = stats_sw%x(k,ifrad_lw) + Frad_LW(k)
-c          stats_sw%n(k,ifrad_lw) = stats_sw%n(k,ifrad_lw) + 1
-c        endif
-c        if ( lstats_samp .and. iradhtk > 0
-c     .       .and. i.ge.imin_stats .and. i.le.imax_stats
-c     .       .and. j.ge.jmin_stats .and. j.le.jmax_stats ) then
-c          stats_sm%x(k,iradhtk) 
-c     .    = stats_sm%x(k,iradhtk) + radhtk(k)
-c          stats_sm%n(k,iradhtk) = stats_sm%n(k,iradhtk) + 1
-c        endif
-c        if ( lstats_samp .and. iradht_sw > 0
-c     .       .and. i.ge.imin_stats .and. i.le.imax_stats
-c     .       .and. j.ge.jmin_stats .and. j.le.jmax_stats ) then
-c          stats_sm%x(k,iradht_sw) 
-c     .    = stats_sm%x(k,iradht_sw) + radht_sw(k)
-c          stats_sm%n(k,iradht_sw) = stats_sm%n(k,iradht_sw) + 1
-c        endif
-c        if ( lstats_samp .and. iradht_lw > 0
-c     .       .and. i.ge.imin_stats .and. i.le.imax_stats
-c     .       .and. j.ge.jmin_stats .and. j.le.jmax_stats ) then
-c          stats_sm%x(k,iradht_lw) 
-c     .    = stats_sm%x(k,iradht_lw) + radht_lw(k)
-c          stats_sm%n(k,iradht_lw) = stats_sm%n(k,iradht_lw) + 1
-c        endif
-c      enddo                                         ! end k loop
-c#endif
-cc end addition for statistics
-
       return
-      end subroutine rad_lwsw
+      end
 
 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c                                                                      c
-c End of subroutine rad_lwsw                                           c
+c End of subroutine nov11_rad.                                         c
 c                                                                      c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
@@ -410,15 +334,16 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c Subroutine sunray_sw -- for 11 November 1999 altocumulus case        c
+c Subroutine sunray_sw -- for CLEX altocumulus case                    c
 c Written by Geert Lenderink for implementation of Shettle and         c
 c Weinman's formulation for radiative flux into the EUROCS             c
 c stratocumulus case.                                                  c
 c                                                                      c
 c Adapted by Vince Larson, Chris Golaz, Adam Smith, Michael Falk, and  c
-c others for COAMPS.                                                   c
+c others for COAMPS and HOC.                                           c
 c                                                                      c
 c Subroutine to compute shortwave radiative flux.                      c
+c                                                                      c
 c                                                                      c
 c The code for sunray_sw was slightly reconstructed in order to more   c
 c closely follow Geert Lenderink's code for the Duynkerke et al.       c
@@ -433,20 +358,34 @@ c cloud.  F_diff and F_dir are also zero outside of cloud.             c
 c                                                                      c
 c Comments by Michael Falk, 26 January 2005.                           c
 c                                                                      c
+c ADDITION TO COMMENT BY ADAM SMITH, 28 July 2006.                     c
+c We are attempting to compare HOC results with the COAMPS-LES model.  c
+c To keep the two codes as similar as possible, this subroutine is a   c
+c near-duplicate of the rad_lwsw subroutine  used in COAMPS_LES.  I    c
+c have  modified variable declarations as needed to match HOC          c
+c standards, and sections that do not apply to HOC have been removed.  c
+c                                                                      c
+c For a full explanation of how this subroutine is implemented in HOC, c
+c please see the nov11_altocu_tndcy or jun25_altocu_tndcy subroutines  c
+c within gcss.F.                                                       c
+c                                                                      c
+c                                                                      c
 c SUBROUTINES:                                                         c
 c none                                                                 c
 c                                                                      c
 c ARGUMENTS (IN):                                                      c
 c qc3     : Cloud water mixing ratio at time t + dt     Unit: kg/kg    c
 c rbm     : Density of reference state at mass levels   Unit: kg/m^3   c
-c aoz     : Derivative of sigma wrt z                   Unit: none     c
-c           aoz = dsigma / dz.  dsigm/aoz = dz.         Unit: m        c
-c xi_abs  : Cosine of the solar zenith angle                           c
-c           (.4325 value is specific to Nov. 11 case)   Unit: none     c
+c xi_abs  : Cosine of the solar zenith angle            Unit: none     c
 c dsigm   : Thickness of sigma (mass) levels            Unit: m        c
 c kk      : Number of vertical levels                   Unit: none     c
-c nne     : ?? (number of nest?)                        Unit: ??       c
-c i,j     : Current location on x,y grid                Unit: none     c
+c radius  : effective droplet radius.                   Unit: m        c
+c A       : Albedo-sea surface, according to Lenderink. Unit: none     c
+c gc      : asymmetry parameter, "g" in Duynkerke.      Unit: none     c
+c Fs0     : Incident incoming SW insolation at cld top in direction    c
+c           of the incoming beam (not the vertical).    Unit: W/m^2    c
+c omega   : single-scattering albedo                    Unit: none     c
+c center  : True/false-- use centered differences?      Unit: none     c
 c                                                                      c
 c ARGUMENTS (OUT):                                                     c
 c Frad_SW : Shortwave radiative flux                    Unit: W/m^2    c
@@ -458,28 +397,35 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       subroutine sunray_sw(qc3,rbm,xi_abs,dsigm,kk,Frad_SW,
      .                  radius,A,gc,Fs0,omega,center)
 
-c Michael Falk addition for statistics, 28 January 2005
-#ifdef STATS
-      use statistics
-#endif
+c#ifdef STATS
+c      use statistics
+c#endif
 
       implicit none
 
-      integer, intent(in) :: kk
+      !!!!!!!!!!!!!!!!!!!!!
+      !! Input variables !!
+      !!!!!!!!!!!!!!!!!!!!!
+      REAL, DIMENSION(1:kk), INTENT(IN) :: qc3
+      REAL, DIMENSION(1:kk), INTENT(IN) :: rbm 
+      REAL, DIMENSION(1:kk), INTENT(IN) :: dsigm
 
-      real qc3    (kk)
-      real rbm    (kk)
+      REAL, INTENT(IN) :: xi_abs
+      REAL, INTENT(IN) :: radius, A, gc, Fs0, omega
 
-      real xi_abs
-      real dsigm  (kk)
+      INTEGER, INTENT(IN) :: kk
 
-      integer nne
-      integer i,j,k
+      LOGICAL, INTENT(IN) :: center
 
-      real radius, A, gc, Fs0, omega
-      logical center
+      !!!!!!!!!!!!!!!!!!!!!!
+      !! Output variables !!
+      !!!!!!!!!!!!!!!!!!!!!!
+      REAL, DIMENSION(1:kk+1), INTENT(OUT) :: Frad_SW      (kk+1)
 
-      real Frad_SW      (kk+1)
+      !!!!!!!!!!!!!!!!!!!!!
+      !! Local variables !!
+      !!!!!!!!!!!!!!!!!!!!!
+      INTEGER i,j,k
 
 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -540,8 +486,10 @@ c Comments by Michael Falk, 26 January 2005                            c
 c                                                                      c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
+
       tauc = 0.0
       do k=1, kk
+
         tau(k) = 1.5 * qc3(k) * rbm(k) * dsigm(k) !/ aoz(i,j)
      .         / radius / rho_l
         tauc = tauc + tau(k)
@@ -740,36 +688,10 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
           F_dir(k) = -Fs0*xi_abs*exp(-taupath/xi_abs)
           Frad_SW(k) = F_diff(k) + F_dir(k)
 
-cc Michael Falk, 28 January 2005, addition for statistics
-c#ifdef STATS
-c
-c          if ( lstats_samp .and. if_diff > 0
-c     .         .and. i.ge.imin_stats .and. i.le.imax_stats
-c     .         .and. j.ge.jmin_stats .and. j.le.jmax_stats ) then
-c            stats_sm%x(k,if_diff) 
-c     .      = stats_sm%x(k,if_diff) + f_diff(k)
-c            stats_sm%n(k,if_diff) = stats_sm%n(k,if_diff) + 1
-c          endif
-c          if ( lstats_samp .and. if_dir > 0
-c     .         .and. i.ge.imin_stats .and. i.le.imax_stats
-c     .         .and. j.ge.jmin_stats .and. j.le.jmax_stats ) then
-c            stats_sm%x(k,if_dir) 
-c     .      = stats_sm%x(k,if_dir) + f_dir(k)
-c            stats_sm%n(k,if_dir) = stats_sm%n(k,if_dir) + 1
-c          endif
-c          if ( lstats_samp .and. ifrad_sw > 0
-c     .         .and. i.ge.imin_stats .and. i.le.imax_stats
-c     .         .and. j.ge.jmin_stats .and. j.le.jmax_stats ) then
-c            stats_sw%x(k,ifrad_sw) 
-c     .      = stats_sw%x(k,ifrad_sw) + Frad_SW(k)
-c            stats_sw%n(k,ifrad_sw) = stats_sw%n(k,ifrad_sw) + 1
-c          endif
-c#endif
-cc end addition for statistics
         enddo                                         ! end k loop
 
       return
-      end subroutine sunray_sw
+      end
 
 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
