@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: budget_terms.F,v 1.22 2006-04-17 15:03:44 dschanen Exp $     
+! $Id: budget_terms.F,v 1.23 2006-07-31 21:01:56 dschanen Exp $     
 
 ! MODULE budget_terms
 
@@ -1650,11 +1650,13 @@
 !       Return mean squared difference( normalized by les_minmax )
 
         if ( grid_type == "m" ) then
-         term_min = mean_sqr_diff_zm( hoc_total(z_i:z_f), 
-     .                                les_total(z_i:z_f), les_minmax )
+         term_min = mean_sqr_diff_zm
+     .              ( (z_f-z_i)+1, (z_f-z_i)+1, hoc_total(z_i:z_f),
+     .                les_total(z_i:z_f), les_minmax )
         else
-         term_min = mean_sqr_diff_zt( hoc_total(z_i:z_f), 
-     .                                les_total(z_i:z_f), les_minmax )
+         term_min = mean_sqr_diff_zt
+     .              ( (z_f-z_i)+1, (z_f-z_i)+1, hoc_total(z_i:z_f), 
+     .                les_total(z_i:z_f), les_minmax )
         endif
 
         return
