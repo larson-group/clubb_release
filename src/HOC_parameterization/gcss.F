@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.7 2006-07-28 20:37:37 ajsmith4 Exp $ 
+! $Id: gcss.F,v 1.8 2006-08-01 21:24:17 ajsmith4 Exp $ 
 
 ! This file contains extra subroutines to simulate the GCSS ARM and
 ! GCSS BOMEX, GCSS ATEX, GCSS FIRE intercomparison cases as well 
@@ -2442,6 +2442,15 @@ c           If time is not yet one hour, we have no subsidence
           ENDIF
 
         ENDDO
+
+! Michael Falk added boundary condx, 31 July 2006
+
+        m(1) = m(2)
+        dqc_dt_icedfs(1) = dqc_dt_icedfs(2)
+        diam(1) = diam(2)
+        u_T_cm(1) = u_T_cm(2)
+
+! eMFc
 
         RETURN
         END SUBROUTINE altocu_icedf
