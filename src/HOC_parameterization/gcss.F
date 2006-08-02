@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.9 2006-08-02 18:01:45 mjfalk Exp $ 
+! $Id: gcss.F,v 1.10 2006-08-02 19:28:05 dschanen Exp $ 
 
 ! This file contains extra subroutines to simulate the GCSS ARM and
 ! GCSS BOMEX, GCSS ATEX, GCSS FIRE intercomparison cases as well 
@@ -905,7 +905,7 @@
         use constants
 #ifdef STATS
         use statistics
-#endif/*STATS*/
+#endif /*STATS*/
 
         implicit none
 
@@ -973,7 +973,7 @@
           sfc%x(1,izi) = sfc%x(1,izi) + zi
           sfc%n(1,izi) = sfc%n(1,izi) + 1
         end if
-#endif STATS
+#endif /*STATS*/
 
 !       Large scale subsidence
 
@@ -1044,7 +1044,7 @@
         USE constants
 #ifdef STATS
         USE statistics
-#endif
+#endif /*STATS*/
 
         ! Input
         REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rhot
@@ -1177,7 +1177,7 @@
           sfc%x(1,izi) = sfc%x(1,izi) + z_i
           sfc%n(1,izi) = sfc%n(1,izi) + 1
         endif
-#endif
+#endif /*STATS*/
         if ( present( sclr_tndcy ) ) 
      .    sclr_tndcy(:,SCLR_THETA) = theta_tndcy 
         if ( present( sclr_tndcy ) ) sclr_tndcy(:,SCLR_RT) = rt_tndcy 
@@ -1227,7 +1227,7 @@
         use constants
 #ifdef STATS
         use statistics
-#endif STATS
+#endif /*STATS*/
 
         implicit none
 
@@ -1301,7 +1301,7 @@
           sfc%x(1,iustar) = sfc%x(1,iustar) + ustar
           sfc%n(1,iustar) = sfc%n(1,iustar) + 1
         end if
-#endif STATS
+#endif /*STATS*/
 
         return
         end subroutine dycoms2_rf01_sfclyr
@@ -2076,7 +2076,8 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         !! for implementation.                                         !!
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           do k = 1, gr%nnzp
-            thm_rad(k) = thlm(gr%nnzp-k+1) + Lv/(Cp*exner(k))*rcm(gr%nnzp-k+1)
+            thm_rad(k) = thlm(gr%nnzp-k+1) 
+     .                 + Lv/(Cp*exner(k))*rcm(gr%nnzp-k+1)
             rcm_rad(k) = rcm(gr%nnzp-k+1)
             rhot_rad(k) = rhot(gr%nnzp-k+1)
             dsigm(k) = 1.0 / gr%dzt(gr%nnzp-k+1)
@@ -3037,7 +3038,8 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         !! for implementation.                                         !!
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           do k = 1, gr%nnzp
-            thm_rad(k) = thlm(gr%nnzp-k+1) + Lv/(Cp*exner(k))*rcm(gr%nnzp-k+1)
+            thm_rad(k) = thlm(gr%nnzp-k+1) 
+     .                 + Lv/(Cp*exner(k))*rcm(gr%nnzp-k+1)
             rcm_rad(k) = rcm(gr%nnzp-k+1)
             rhot_rad(k) = rhot(gr%nnzp-k+1)
             dsigm(k) = 1.0 / gr%dzt(gr%nnzp-k+1)
