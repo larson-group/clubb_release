@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.2 2006-04-28 18:02:33 griffinb Exp $
+! $Id: rain.F,v 1.3 2006-08-02 20:55:14 dschanen Exp $
 !----------------------------------------------------------------------
 
       MODULE rain_equations
@@ -887,10 +887,10 @@
               ! This term is:  mean[ rr^(1/3) * [Nr/rho]^(-1/3) ]
               bivar_term = EXP(
      .                       (1.0/3.0)*u_rr_G + (-1.0/3.0)*u_Nr_G
-     .                     + (1.0/2.0) * ((1.0/3.0)**2.0) * sig2_rr_G
-!     .                     + (1.0/2.0) * ((-1.0/3.0)**2.0) * sig2_Nr_G
+     .                     + (1.0/2.0) * ((1.0/3.0)**2) * sig2_rr_G
+!     .                     + (1.0/2.0) * ((-1.0/3.0)**2) * sig2_Nr_G
 !                                           ^causes problems on some compilers
-     .                     + (1.0/2.0) * ((1.0/3.0)**2.0) * sig2_Nr_G
+     .                     + (1.0/2.0) * ((1.0/3.0)**2) * sig2_Nr_G
      .                     + corr_rrNr_G
      .                     * (1.0/3.0) * SQRT(sig2_rr_G)
      .                     * (-1.0/3.0) * SQRT(sig2_Nr_G)        )
@@ -1144,13 +1144,13 @@
      .           * EXP(beta_exp*u_rr_G + gamma_exp*u_Nr_G)
                  ! Factor 3
      .           * EXP( (1.0/2.0) * (
-     .              (1.0 - corr_rcrr_G**2.0)*(beta_exp**2.0)*sig2_rr_G
-     .            + (1.0 - corr_rcNr_G**2.0)*(gamma_exp**2.0)*sig2_Nr_G
+     .              (1.0 - corr_rcrr_G**2)*(beta_exp**2)*sig2_rr_G
+     .            + (1.0 - corr_rcNr_G**2)*(gamma_exp**2)*sig2_Nr_G
      .            + 2.0*(corr_rrNr_G - corr_rcNr_G*corr_rcrr_G)
      .              *beta_exp*SQRT(sig2_rr_G)*gamma_exp*SQRT(sig2_Nr_G)
      .                              )     )
                  ! Factor 4 
-     .            * EXP( (1.0/4.0)*scc**2.0 - (1.0/2.0)*(s/ss)*scc )
+     .            * EXP( (1.0/4.0)*scc**2 - (1.0/2.0)*(s/ss)*scc )
      .            * gamma_out * D_fnc( Dv_order, scc )
 
 
@@ -1180,8 +1180,8 @@
      .           * EXP(beta_exp*u_rr_G + gamma_exp*u_Nr_G)
                  ! Factor 3
      .           * EXP( (1.0/2.0) * (
-     .              (1.0 - corr_rcrr_G**2.0)*(beta_exp**2.0)*sig2_rr_G
-     .            + (1.0 - corr_rcNr_G**2.0)*(gamma_exp**2.0)*sig2_Nr_G
+     .              (1.0 - corr_rcrr_G**2)*(beta_exp**2)*sig2_rr_G
+     .            + (1.0 - corr_rcNr_G**2)*(gamma_exp**2)*sig2_Nr_G
      .            + 2.0*(corr_rrNr_G - corr_rcNr_G*corr_rcrr_G)
      .              *beta_exp*SQRT(sig2_rr_G)*gamma_exp*SQRT(sig2_Nr_G)
      .                              )     )
@@ -1223,8 +1223,8 @@
      .        * EXP(beta_exp*u_rr_G + gamma_exp*u_Nr_G)
               ! Factor 3
      .        * EXP( (1.0/2.0) * (
-     .           (1.0 - corr_rcrr_G**2.0)*(beta_exp**2.0)*sig2_rr_G
-     .         + (1.0 - corr_rcNr_G**2.0)*(gamma_exp**2.0)*sig2_Nr_G
+     .           (1.0 - corr_rcrr_G**2)*(beta_exp**2)*sig2_rr_G
+     .         + (1.0 - corr_rcNr_G**2)*(gamma_exp**2)*sig2_Nr_G
      .         + 2.0*(corr_rrNr_G - corr_rcNr_G*corr_rcrr_G)
      .           *beta_exp*SQRT(sig2_rr_G)*gamma_exp*SQRT(sig2_Nr_G)
      .                           )     )
@@ -1386,7 +1386,7 @@
 ! End Vince Larson's change.
 
         autoconv_Nrm = auto_rrm /
-     .                 ( ((4.0*pi*rho_lw)/(3.0*rhot)) * (r_0**3.0) )
+     .                 ( ((4.0*pi*rho_lw)/(3.0*rhot)) * (r_0**3) )
 
         RETURN
         END FUNCTION autoconv_Nrm
@@ -1432,7 +1432,7 @@
               ! Larson's formulation for subgrid variability.
 
               ! rrp2_rrm2=0.4 agrees with COAMPS DYCOMS2 RF02 in cloud.  
-!              rrp2_rrm2 = rcp2 / MAX(rcm**2.0, 1.0E-10)
+!              rrp2_rrm2 = rcp2 / MAX(rcm**2, 1.0E-10)
               rrp2_rrm2   = 0.4
 
               u_rr_G      = LOG( rrm 
@@ -1557,8 +1557,8 @@
 
               NL_PDF = ( (1.0/SQRT(2.0*pi))*(ss**alpha_exp) )
      .                * EXP( beta_exp*u
-     .                      + (1.0/2.0)*(beta_exp**2.0)*sig2 
-     .                      - (1.0/4.0)*sc**2.0 )
+     .                      + (1.0/2.0)*(beta_exp**2)*sig2 
+     .                      - (1.0/4.0)*sc**2 )
      .                * gamma_out * D_fnc( Dv_order, -sc )
 
 
@@ -1573,7 +1573,7 @@
 
               NL_PDF = ( rc_pl**alpha_exp )
      .                * EXP( beta_exp*u 
-     .                      + (1.0/2.0)*(beta_exp**2.0)*sig2 )
+     .                      + (1.0/2.0)*(beta_exp**2)*sig2 )
 
 
            ! The following ELSE statement is for a case where ss = 0 and
@@ -1599,7 +1599,7 @@
 
            NL_PDF = ( rc_pl**alpha_exp )
      .             * EXP( beta_exp*u
-     .                   + (1.0/2.0)*(beta_exp**2.0)*sig2 )
+     .                   + (1.0/2.0)*(beta_exp**2)*sig2 )
 
         ELSE
 

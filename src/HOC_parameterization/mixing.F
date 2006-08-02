@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.3 2006-05-10 18:54:10 griffinb Exp $
+! $Id: mixing.F,v 1.4 2006-08-02 20:55:14 dschanen Exp $
 !
 ! Module containing the hoc mixing scheme.  Allows for optional variables
 ! and assumed shape arrays.
@@ -106,11 +106,11 @@
         enddo
 
         C6rt_Skw_fnc = C6rtb + (C6rt-C6rtb)
-     .                        *EXP( -0.5 * (Skw_arr/C6rtc)**2.0 )
+     .                        *EXP( -0.5 * (Skw_arr/C6rtc)**2 )
         C6thl_Skw_fnc = C6thlb + (C6thl-C6thlb)
-     .                          *EXP( -0.5 * (Skw_arr/C6thlc)**2.0 )
+     .                          *EXP( -0.5 * (Skw_arr/C6thlc)**2 )
         C7_Skw_fnc = C7b + (C7-C7b)
-     .                    *EXP( -0.5 * (Skw_arr/C7c)**2.0 )
+     .                    *EXP( -0.5 * (Skw_arr/C7c)**2 )
 
 !        C6rt_Skw_fnc = C6rt
 !        C6thl_Skw_fnc = C6thl
@@ -678,7 +678,7 @@
      .                  * (  ( 3.0 / (4.0*pi*rho_lw*zt2zm(Ncm,k)) )
      .                     **(2.0/3.0)  )
      .                  * ( ( rhom(k)*zt2zm(rcm,k) )**(5.0/3.0) )
-     .                  * EXP( 5.0*( (LOG(1.5))**(2.0) ) )
+     .                  * EXP( 5.0*( (LOG(1.5))**(2) ) )
               ELSE
                  Fcsed(k) = 0.0
               ENDIF
