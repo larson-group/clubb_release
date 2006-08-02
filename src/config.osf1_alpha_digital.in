@@ -1,9 +1,9 @@
-# $Id: config.osf1_alpha_digital.in,v 1.6 2006-05-04 16:04:10 dschanen Exp $
+# $Id: config.osf1_alpha_digital.in,v 1.7 2006-08-02 22:34:15 dschanen Exp $
 # Configuration File for Compaq f95 on the UWM alpha
 
 # == Paths ==
 # This is where the make command is going to put the resulting files
-PREFIX = $(HOME)/hoc_v2.2_tuner
+PREFIX = ..
 BINDIR = $(PREFIX)/bin
 LIBDIR = $(PREFIX)/lib
 
