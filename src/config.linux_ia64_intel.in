@@ -1,10 +1,10 @@
-# $Id: config.linux_ia64_intel.in,v 1.4 2006-05-04 15:57:46 dschanen Exp $
+# $Id: config.linux_ia64_intel.in,v 1.5 2006-08-02 22:35:03 dschanen Exp $
 # Makefile definitions customized for Linux IA64 using the Intel Fortran 
 # compiler
 
 # == Paths ==
 # This is where the make command is going to put the resulting files
-PREFIX = $(HOME)/hoc_v2.2_tuner
+PREFIX = ..
 BINDIR = $(PREFIX)/bin
 LIBDIR = $(PREFIX)/lib
 
