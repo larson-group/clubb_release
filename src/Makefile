@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.59 2006-07-18 16:54:36 dschanen Exp $
+# $Id: Makefile,v 1.60 2006-08-02 22:48:46 dschanen Exp $
 # This version should work with BSD, GNU make, smake and dmake
 
 # For HOC we edit this by hand rather than implementing imake or automake
@@ -7,6 +7,7 @@
 # machine or create a custom one.
 
 #include config.linux_ia32_pg.in
+#include config.linux_ia32_g95.in
 #include config.linux_ia64_intel.in
 #include config.solaris_generic_ss11.in
 #include config.osf1_alpha_digital.in
@@ -36,8 +37,7 @@ PARAMETERIZATION = \
 	outputnc.o grid.o model_flags.o statistics.o \
 	banbks.o bandec.o erf.o tridag.o rain.o \
 	closure_new.o diag_var.o gcss.o rad_lwsw.o linearinterpolation.o \
-        hydrostatic.o \
-	length.o mixing.o rsat.o sat_rcm.o sfc.o \
+        hydrostatic.o length.o mixing.o rsat.o sat_rcm.o sfc.o \
 	sounding.o update.o wp23.o tau.o \
 	numer_check.o diag_variables.o prog_variables.o \
 	parameterization_interface.o 
@@ -192,8 +192,8 @@ inputfields.o	: grid.o inputgrads.o inputfields.F
 nrtype.o	: nrtype.f90
 nr.o		: nrtype.o nr.f90 
 nrutil.o	: nrtype.o nr.o nrutil.f90
-ran1.o		: nrtype.o nr.o nrutil.o ran1.f90
 ran_state.o	: nrtype.o nr.o nrutil.o ran_state.f90
+ran1.o		: nrtype.o nr.o nrutil.o ran_state.o ran1.f90
 amebsa.o	: nrtype.o nr.o nrutil.o ran_state.o ran1.o amebsa.f90
 amoeba.o	: nrtype.o nr.o nrutil.o amoeba.f90
 
