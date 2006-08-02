@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.8 2006-08-01 21:24:17 ajsmith4 Exp $ 
+! $Id: gcss.F,v 1.9 2006-08-02 18:01:45 mjfalk Exp $ 
 
 ! This file contains extra subroutines to simulate the GCSS ARM and
 ! GCSS BOMEX, GCSS ATEX, GCSS FIRE intercomparison cases as well 
@@ -2076,7 +2076,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         !! for implementation.                                         !!
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           do k = 1, gr%nnzp
-            thm_rad(k) = thlm(gr%nnzp-k+1) + Lv/Cp*rcm(gr%nnzp-k+1)
+            thm_rad(k) = thlm(gr%nnzp-k+1) + Lv/(Cp*exner(k))*rcm(gr%nnzp-k+1)
             rcm_rad(k) = rcm(gr%nnzp-k+1)
             rhot_rad(k) = rhot(gr%nnzp-k+1)
             dsigm(k) = 1.0 / gr%dzt(gr%nnzp-k+1)
@@ -3037,7 +3037,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         !! for implementation.                                         !!
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           do k = 1, gr%nnzp
-            thm_rad(k) = thlm(gr%nnzp-k+1) + Lv/Cp*rcm(gr%nnzp-k+1)
+            thm_rad(k) = thlm(gr%nnzp-k+1) + Lv/(Cp*exner(k))*rcm(gr%nnzp-k+1)
             rcm_rad(k) = rcm(gr%nnzp-k+1)
             rhot_rad(k) = rhot(gr%nnzp-k+1)
             dsigm(k) = 1.0 / gr%dzt(gr%nnzp-k+1)
