@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.18 2006-06-22 17:32:28 griffinb Exp $
+! $Id: parameterization_interface.F,v 1.19 2006-08-02 20:48:51 dschanen Exp $
 
 
 !  Module hoc_parameterization_interface
@@ -97,6 +97,8 @@
        real, intent(in), dimension(gr%nnzp) :: wmm, wmt
        real, intent(in), dimension(gr%nnzp) :: p, rhom, rhot, exner
 
+       real, intent(in) :: wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc
+
 !      Input/Output
 !      These are prognostic or are planned to be in the future
        real, intent(inout), dimension(gr%nnzp) :: um, vm, upwp, vpwp
@@ -120,8 +122,6 @@
 
        real, intent(out), dimension(gr%nnzp,sclrm_dimension),
      . optional :: edsclrmt
-
-       real:: wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc
 
        logical, intent(in) :: implemented
 
@@ -252,12 +252,12 @@
         kp1 = MIN(k+1,gr%nnzp)
 
         Skw_arr_m(k) = (1.0/2.0) * ( wp3(kp1)+wp3(k) ) /
-     .                 MAX( wp2(k), wtol**2.0 )**(3.0/2.0)
+     .                 MAX( wp2(k), wtol**2 )**(3.0/2.0)
        enddo
 
         gamma_Skw_fnc 
      .  = gamma_coefb + (gamma_coef-gamma_coefb)
-     .    *exp( -(1.0/2.0) * (Skw_arr_m/gamma_coefc)**2.0 )
+     .    *exp( -(1.0/2.0) * (Skw_arr_m/gamma_coefc)**2 )
 
 #else
         gamma_Skw_fnc = gamma_coef
