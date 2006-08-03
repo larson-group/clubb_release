@@ -1,4 +1,4 @@
-$Id: Readme.txt,v 1.17 2006-05-08 22:31:15 dschanen Exp $
+$Id: Readme.txt,v 1.18 2006-08-03 21:04:09 dschanen Exp $
 ***********************************************************************
 *                         Using the HOC Model                         *
 ***********************************************************************
@@ -206,9 +206,11 @@ or
 1. $ cd ../jacobian
 
 2. Edit jacobian.in. 
+   cat ../model/<model name>_model.in ../stats/<model name>_stats.in \
+   >  <model name>_hoc.in
    Note that choosing a high delta_factor may make the model
    crash, which will result in no data (results for that term will come
-   back as infinite).  The model namelists come from ../tune.
+   back as infinite).  The model namelists come from ../model.
 3. $ ../bin/jacobian
 
 ************************************************************************
@@ -333,10 +335,13 @@ The compare_runs files:
   Note that for most cases SW and LW are not calculated without BUGSrad.
 
 ------------------------------------------------------------------------
-- (3.1) The new scalar code ( Hoc with -DSCALARS enabled )
+- (3.1) The new scalar code ( HOC with -DSCALARS enabled )
 ------------------------------------------------------------------------
 
-By default Hoc should be setup to compile without this option.  To use 
+The scalars in the code provide a generalized way of simulating a 
+passive scalar in the atmosphere.
+
+By default HOC should be setup to compile without this option.  To use 
 this option, you must modify the Makefile in the src directory so that 
 FCFLAGS includes "-DSCALARS" and do a make clean, make, and make install.
 
@@ -369,7 +374,7 @@ statistics.F:  Currently it is only configured to generate data for 2 elements
 for each of the sclr arrays.  Adding more will probably take some time.
 
 sfc.F:  sfc_var has a peculiar constant factor used for calculations on rt
- and thl.  Commenting out the case statement in that subroutine will disable 
+and thl.  Commenting out the case statement in that subroutine will disable 
 this for a new sclr element.
 The other subroutine, sfc_thermo_fluxes, only affects the fire case and just
 requires a small modification to change its influence on sclrm, found on the
