@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.5 2006-08-02 20:55:14 dschanen Exp $
+! $Id: diag_var.F,v 1.6 2006-08-04 21:08:56 dschanen Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -61,12 +61,12 @@
 ! Input mixing scheme variables (optional)
 
        real, optional, intent(in), 
-     . dimension(gr%nnzp, sclrm_dimension) :: sclrm, wpsclrp
+     . dimension(gr%nnzp, sclr_dim) :: sclrm, wpsclrp
 
 ! Output mixing scheme variables (optional)
 
        real, optional, intent(out), 
-     . dimension(gr%nnzp, sclrm_dimension):: sclrp2, sclrprtp, sclrpthlp
+     . dimension(gr%nnzp, sclr_dim):: sclrp2, sclrprtp, sclrpthlp
 
 
 ! Local arrays allocated dynamically on the stack
@@ -431,7 +431,7 @@ c      solve tridiagonal system
      .   .and. present( wpsclrp ) 
      .   .and. present( sclrp2 ) ) then
 
-       do i=1, sclrm_dimension
+       do i=1, sclr_dim
 
 !        if ( i == SCLR_THETA ) then
 !          bb = calc_bb( a1, wp2, wp3, tau,
@@ -611,7 +611,7 @@ c      solve tridiagonal system
      .   .and. present( sclrprtp ) ) then
 
 !     Prepare tridiagonal system
-       do i=1, sclrm_dimension
+       do i=1, sclr_dim
 
 !         if ( i == SCLR_THETA ) then
 !           bb = calc_bb( a1, wp2, wp3, tau, 
@@ -660,7 +660,7 @@ c      solve tridiagonal system
      .   .and. present( sclrpthlp ) ) then
 
 !     Prepare tridiagonal system
-       do i=1, sclrm_dimension
+       do i=1, sclr_dim
 
 !        if ( i == SCLR_THETA ) then
 !          bb = calc_bb( a1, wp2, wp3, tau, 

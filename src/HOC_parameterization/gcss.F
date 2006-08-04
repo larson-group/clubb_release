@@ -1,67 +1,101 @@
-!----------------------------------------------------------------------
-! $Id: gcss.F,v 1.10 2006-08-02 19:28:05 dschanen Exp $ 
-
-! This file contains extra subroutines to simulate the GCSS ARM and
-! GCSS BOMEX, GCSS ATEX, GCSS FIRE intercomparison cases as well 
-! as Wangara day 33
-!----------------------------------------------------------------------
 #define SCLR_THETA 1
 #define SCLR_RT 2
-      module gcss
-      use model_flags
-
-      implicit none
-
-      public cloud_rad, atex_tndcy, atex_sfclyr, fire_tndcy
-      public wangara_tndcy, wangara_sfclyr
-      public astex_tndcy, astex_sfclyr
-      public arm_tndcy, arm_sfclyr
-      public bomex_tndcy, bomex_sfclyr
-      public dycoms2_rf01_tndcy, dycoms2_rf01_sfclyr 
-      public dycoms2_rf02_tndcy, dycoms2_rf02_sfclyr
-      public nov11_altocu_tndcy
-      public jun25_altocu_tndcy 
-
-      private diag_ustar, arm_sfcflx, Diff_denom
-      private altocu_icedf
-
-      contains
 !----------------------------------------------------------------------
-! Subroutine to set theta and water tendencies for ARM case
-!----------------------------------------------------------------------
-        subroutine arm_tndcy( time, theta_tndcy, rt_tndcy,
-     .                        sclr_tndcy )
+! $Id: gcss.F,v 1.11 2006-08-04 21:08:56 dschanen Exp $ 
+        module gcss
 
-        use grid_class
-        use constants, only: sclrm_dimension
+!       Description:
+!       This file contains extra subroutines to simulate the GCSS ARM, 
+!       GCSS BOMEX, GCSS ATEX, and GCSS FIRE intercomparison cases 
+!       as well as Wangara day 33.
+
+!       References:
+!       http://www.gewex.org/gcss.html 
+!----------------------------------------------------------------------
+        use model_flags
 
         implicit none
 
-!       Input
-        real, intent(in)  :: time
+        private ! Default to private
 
-!       Output
-        real, intent(out) :: theta_tndcy(gr%nnzp)
-        real, intent(out) :: rt_tndcy(gr%nnzp)
+        public ::
+     .  cloud_rad, ! Used by both FIRE and ATEX
+     .  atex_tndcy, 
+     .  atex_sfclyr, 
+     .  fire_tndcy,
+     .  wangara_tndcy, 
+     .  wangara_sfclyr,
+     .  astex_tndcy, 
+     .  astex_sfclyr,
+     .  arm_tndcy, 
+     .  arm_sfclyr,
+     .  bomex_tndcy, 
+     .  bomex_sfclyr,
+     .  dycoms2_rf01_tndcy, 
+     .  dycoms2_rf01_sfclyr,
+     .  dycoms2_rf02_tndcy, 
+     .  dycoms2_rf02_sfclyr,
+     .  nov11_altocu_tndcy, ! Note that neither altocu case 
+     .  jun25_altocu_tndcy  !   starts at the surface
 
-!       Output (optional)
-        real, optional, intent(out), 
-     .  dimension(gr%nnzp,sclrm_dimension) :: sclr_tndcy
+        private ::
+     .  diag_ustar, 
+     .  arm_sfcflx, 
+     .  Diff_denom,
+     .  altocu_icedf
 
-!       Internal variables
-        integer i, i1, i2
-        real a, b
-        real true_time
-        real theta_tmp, rt_tmp
+        contains
+!----------------------------------------------------------------------
 
-        real atheta(6), rtheta(6), art(6)
-        data atheta / 0.000, 0.000, 0.000, -0.080, -0.160, -0.160 /
-        data rtheta / -0.125, 0.000, 0.000, 0.000, 0.000, -0.100 /
-        data art    / 0.080, 0.020, -0.040, -0.100, -0.160, -0.300 /
+        subroutine arm_tndcy( time, theta_tndcy, rt_tndcy,
+     .                        sclr_tndcy )
+!       Description:
+!       Subroutine to set theta and water tendencies for ARM case
+
+!       References:
+!       None
+!----------------------------------------------------------------------
+
+        use grid_class
+        use constants, only: sclr_dim
+
+        implicit none
+
+        ! External
+        intrinsic ::
+     .  int, min, max, present
+
+        ! Constant Parameters
+        real, parameter, dimension(6) :: 
+     .  atheta = (/ 0.000, 0.000,  0.000, -0.080, -0.160, -0.160/),
+     .  rtheta = (/-0.125, 0.000,  0.000,  0.000,  0.000, -0.100/),
+     .  art    = (/ 0.080, 0.020, -0.040, -0.100, -0.160, -0.300/)
+
+        ! Input Variables
+        real, intent(in) :: time ! Model time [s]
+
+        ! Output Variables
+        real, intent(out), dimension(gr%nnzp) :: 
+     .  theta_tndcy, ! Liquid water potential temperature tendency [K/s]
+     .  rt_tndcy     ! Total water mixing ratio tendency [kg/kg/s]
+
+        ! Output (optional) Variables
+        real, optional, intent(out), dimension(gr%nnzp,sclr_dim) :: 
+     .  sclr_tndcy ! Passive scalar tendency [units vary]
+
+        ! Local variables
+        integer :: i, i1, i2 ! Loop indices
+        real :: 
+     .  a, b,      ! [-]
+     .  true_time, ! [s]
+     .  theta_tmp, ! [K/s]
+     .  rt_tmp     ! [kg/kg/s]
+
+!-----------------------------------------------------------------------
 
         true_time = time
 
-!       Interpolate in time to get theta and rt tendency
+        ! Interpolate in time to get theta and rt tendency
 
         i1 = int( ( true_time - 41400. ) / 10800. ) + 1
         i1 = min( max( i1, 1 ), 5 )
@@ -71,7 +105,7 @@
            a = ( true_time - (41400. + 10800. * (i1-1)) ) / 10800.
         else
            a = ( true_time - (41400. + 10800. * (i1-1)) ) / 9000.
-        endif
+        end if
 
         if ( .not. lbugsrad ) then
           theta_tmp = ( 1. - a ) * ( atheta(i1) + rtheta(i1) )
@@ -79,80 +113,87 @@
         else ! factor in radiation later
           theta_tmp = ( 1. - a ) * ( atheta(i1) + 0.0 )
      .              + a * ( atheta(i2) + 0.0 )
-        endif
+        end if
 
-        rt_tmp    = ( 1. - a ) * art(i1) + a * art(i2)
+        rt_tmp = ( 1. - a ) * art(i1) + a * art(i2)
 
-!       Convert to the right units
+        ! Convert to the right units
 
         theta_tmp = theta_tmp / 3600.
         rt_tmp    = rt_tmp / ( 3600. * 1000. )
 
-!       Interpolate with respect to height
+        ! Interpolate with respect to height
 
-        do i=2, gr%nnzp
+        do i = 2, gr%nnzp
           if ( gr%zt(i) >= 0. .and. gr%zt(i) < 1000. ) then
             rt_tndcy(i)    = rt_tmp
             theta_tndcy(i) = theta_tmp
-          elseif ( gr%zt(i) >= 1000. .and. gr%zt(i) < 3000. ) then
+          else if ( gr%zt(i) >= 1000. .and. gr%zt(i) < 3000. ) then
             b              = 1. - ( gr%zt(i) - 1000. ) / 2000.
             rt_tndcy(i)    = b * rt_tmp
             theta_tndcy(i) = b * theta_tmp
           else
-            rt_tndcy(i)    = 0.
-            theta_tndcy(i) = 0.
-          endif
-        enddo
+            rt_tndcy(i)    = 0.0
+            theta_tndcy(i) = 0.0
+          end if
+        end do
 
-        if (present( sclr_tndcy )) sclr_tndcy(:,SCLR_THETA)= theta_tndcy
-        if (present( sclr_tndcy )) sclr_tndcy(:,SCLR_RT)   = rt_tndcy
+        if ( present( sclr_tndcy ) ) then
+          sclr_tndcy(1:gr%nnzp,SCLR_THETA) = theta_tndcy
+          sclr_tndcy(1:gr%nnzp,SCLR_RT)    = rt_tndcy
+        end if
 
         return
         end subroutine arm_tndcy
 
 !----------------------------------------------------------------------
-! Subroutine to set theta and water tendencies for BOMEX case
-!----------------------------------------------------------------------
         subroutine bomex_tndcy( time, wmt, wmm, theta_tndcy, rt_tndcy,
      .                          sclr_tndcy )
+!       Description:
+!       Subroutine to set theta and water tendencies for BOMEX case
+
+!       References:
+!       None
+!----------------------------------------------------------------------
 
         use grid_class
-        use constants, only: sclrm_dimension
+        use constants, only: sclr_dim
 
         implicit none
 
-!       Input
-        real, intent(in)  :: time
+        ! Input
+        real, intent(in)  :: time ! Model time [s]
 
-!       Output
-        real, intent(out) :: wmt(gr%nnzp)
-        real, intent(out) :: wmm(gr%nnzp)
-        real, intent(out) :: theta_tndcy(gr%nnzp)
-        real, intent(out) :: rt_tndcy(gr%nnzp)
+        ! Output Variables
+        real, intent(out), dimension(gr%nnzp) ::
+     .  wmt,         ! w wind on thermodynamic grid [m/s]
+     .  wmm,         ! w wind on momentum grid [m/s]
+     .  theta_tndcy, ! Liquid water potential temperature tendency [K/s]
+     .  rt_tndcy     ! Total water mixing ratio tendency [kg/kg/s]
 
-!       Output (optional)
-        real, optional, intent(out), dimension(gr%nnzp,sclrm_dimension)
-     .                    :: sclr_tndcy
+        ! Output Variables (optional)
+        real, optional, intent(out), dimension(gr%nnzp,sclr_dim) ::
+     .  sclr_tndcy ! Passive scalar forcing [units vary]
 
-!       Internal variables
+        ! Local Variables
 
-        integer i
+        integer :: i
 
 !       Large scale subsidence
 
-        do i=2, gr%nnzp
+        do i = 2, gr%nnzp, 1
 
            if ( gr%zt(i) >= 0. .and. gr%zt(i) < 1500. ) then
               wmt(i) = - ( 0.0065 / 1500. ) * gr%zt(i)
-           elseif ( gr%zt(i) >= 1500. .and. gr%zt(i) < 2100. ) then
+           else if ( gr%zt(i) >= 1500. .and. gr%zt(i) < 2100. ) then
               wmt(i)
      .          = - 0.0065 
      .            + 0.0065 * ( gr%zt(i) - 1500. ) / ( 2100. - 1500. )
            else
               wmt(i) = 0.
-           endif
+           end if
 
-        enddo
+        end do
 
         wmm = zt2zm( wmt )
 
@@ -161,86 +202,93 @@
         wmm(1) = 0.0        ! At surface
         wmm(gr%nnzp) = 0.0  ! Model top
         
-!       Radiative theta-l tendency
+        ! Radiative theta-l tendency
 
-        do i=2,gr%nnzp
+        do i = 2, gr%nnzp
 
            if ( gr%zt(i) >= 0. .and. gr%zt(i) < 1500. ) then
               theta_tndcy(i) = -2.315e-5
-           elseif ( gr%zt(i) >= 1500. .and. gr%zt(i) < 2500. ) then
+           else if ( gr%zt(i) >= 1500. .and. gr%zt(i) < 2500. ) then
               theta_tndcy(i)
      .          = - 2.315e-5 
      .            + 2.315e-5 
      .              * ( gr%zt(i) - 1500. ) / ( 2500. - 1500. )
            else
               theta_tndcy(i) = 0.
-           endif
+           end if
 
-        enddo
+        end do
 
 !       Large scale advective moisture tendency
 
-        do i=2,gr%nnzp
+        do i = 2, gr%nnzp
 
            if ( gr%zt(i) >= 0. .and. gr%zt(i) < 300. ) then
               rt_tndcy(i) = -1.2e-8
-           elseif ( gr%zt(i) >= 300. .and. gr%zt(i) < 500. ) then
+           else if ( gr%zt(i) >= 300. .and. gr%zt(i) < 500. ) then
               rt_tndcy(i) 
      .          = - 1.2e-8 
      .              * ( 1. - ( gr%zt(i) - 300. )/( 500. - 300. ) )
            else
               rt_tndcy(i) = 0.
-           endif
+           end if
 
-        enddo
+        end do
 
         ! Boundary conditions
         theta_tndcy(1) = 0.0  ! Below surface
         rt_tndcy(1)    = 0.0  ! Below surface
 
-        if (present( sclr_tndcy )) sclr_tndcy(:,SCLR_THETA)=theta_tndcy
-        if (present( sclr_tndcy )) sclr_tndcy(:,SCLR_RT) = rt_tndcy
+        if ( present( sclr_tndcy ) ) then 
+          sclr_tndcy(1:gr%nnzp,SCLR_THETA) = theta_tndcy
+          sclr_tndcy(1:gr%nnzp,SCLR_RT)    = rt_tndcy
+        end if
 
         return
         end subroutine bomex_tndcy
 
 !----------------------------------------------------------------------
-! Subroutine to large-scale subsidence for FIRE case
-!----------------------------------------------------------------------
         subroutine fire_tndcy( time, wmt, wmm, theta_tndcy, rt_tndcy,
      .                         sclr_tndcy )
+!       Description:
+!       Subroutine to large-scale subsidence for FIRE case
 
-        use constants, only: sclrm_dimension
+!       References:
+!       None
+!----------------------------------------------------------------------
+
+        use constants, only: sclr_dim
         use grid_class
 
         implicit none
 
-!       Input
-        real, intent(in) :: time
+        ! Input
+        real, intent(in) :: time ! Model time [s]
 
-!       Output
-        real, intent(out) :: wmt(gr%nnzp)
-        real, intent(out) :: wmm(gr%nnzp)
-        real, intent(out) :: theta_tndcy(gr%nnzp)
-        real, intent(out) :: rt_tndcy(gr%nnzp)
+        ! Output Variables
+        real, intent(out), dimension(gr%nnzp) ::
+     .  wmt,         ! w wind on thermodynamic grid [m/s]
+     .  wmm,         ! w wind on momentum grid [m/s]
+     .  theta_tndcy, ! Liquid water potential temperature tendency [K/s]
+     .  rt_tndcy     ! Total water mixing ratio tendency [kg/kg/s]
 
-!       Output (optional)
-        real, optional, intent(out), dimension(gr%nnzp,sclrm_dimension)
-     .                    :: sclr_tndcy
+        ! Output Variables (optional)
+        real, optional, intent(out), dimension(gr%nnzp,sclr_dim) ::
+     .  sclr_tndcy ! Passive scalar tendency [units vary]
 
 !       Internal variables
 
-        integer i
+        integer :: i
 
 !       Large-scale subsidence
 
-        do i=2,gr%nnzp
+        do i = 2, gr%nnzp
 
            if ( gr%zt(i) >= 0. .and. gr%zt(i) < 1500. ) then
               wmt(i) = - 5.e-6 * gr%zt(i)
-           endif
+           end if
 
-        enddo
+        end do
 
         wmm = zt2zm( wmt )
 
@@ -251,56 +299,61 @@
         
 !       Radiative theta-l tendency is computed interactively elsewhere
 
-        theta_tndcy = 0.
+        theta_tndcy = 0.0
 
 !       Large scale advective moisture tendency
 
-        rt_tndcy    = 0.
+        rt_tndcy    = 0.0
 
-        if ( present( sclr_tndcy ) ) 
-     .    sclr_tndcy(:,SCLR_THETA) = theta_tndcy(:)
-        if ( present( sclr_tndcy ) ) sclr_tndcy(:,SCLR_RT) = rt_tndcy(:)
+        if ( present( sclr_tndcy ) ) then
+          sclr_tndcy(1:gr%nnzp,SCLR_THETA) = theta_tndcy(1:gr%nnzp)
+          sclr_tndcy(1:gr%nnzp,SCLR_RT)    = rt_tndcy(1:gr%nnzp)
+        end if
 
         return
         end subroutine fire_tndcy
 
 !----------------------------------------------------------------------
-! Subroutine to set theta and water tendencies for Wangara case
-!
         subroutine wangara_tndcy( time, wmt, wmm, theta_tndcy, 
      .                            rt_tndcy,
      .                            sclr_tndcy )
+!       Description:
+!       Subroutine to set theta and water tendencies for Wangara case
+!       References;
+!       None
+!----------------------------------------------------------------------
         use grid_class
-        use constants, only: sclrm_dimension
+        use constants, only: sclr_dim
 
         implicit none
 
-!       Input
-        real, intent(in) :: time
+        ! Input Variables
+        real, intent(in) :: time ! Model time [s]
 
-!       Output
-        real, dimension(gr%nnzp), intent(out) :: wmt
-        real, dimension(gr%nnzp), intent(out) :: wmm
-        real, dimension(gr%nnzp), intent(out) :: theta_tndcy
-        real, dimension(gr%nnzp), intent(out) :: rt_tndcy
+        ! Output Variables
+        real, intent(out), dimension(gr%nnzp) ::
+     .  wmt,         ! w wind on thermodynamic grid [m/s]
+     .  wmm,         ! w wind on momentum grid [m/s]
+     .  theta_tndcy, ! Liquid water potential temperature tendency [K/s]
+     .  rt_tndcy     ! Total water mixing ratio tendency [kg/kg/s]
 
-!       Optional Output
-        real, optional, dimension(gr%nnzp, sclrm_dimension), 
-     .        intent(out) :: sclr_tndcy
+        ! Output Variables (optional)
+        real, optional, intent(out), dimension(gr%nnzp,sclr_dim) ::
+     .  sclr_tndcy ! Passive scalar tendency [units vary]
 
 !       No large-scale subsidence for now
-        wmt = 0.
-        wmm = 0.
+        wmt = 0.0
+        wmm = 0.0
 
 !       No large-scale water tendency or cooling
 
-        rt_tndcy    = 0.
-        theta_tndcy = 0.
+        rt_tndcy    = 0.0
+        theta_tndcy = 0.0
 
-!       Scalar r forcing is just set to be = to rtm_forcing for now
-        if ( present( sclr_tndcy ) ) 
-     .    sclr_tndcy(:,SCLR_THETA) = theta_tndcy
-        if ( present( sclr_tndcy ) ) sclr_tndcy(:,SCLR_RT) = rt_tndcy
+        if ( present( sclr_tndcy ) ) then
+          sclr_tndcy(1:gr%nnzp,SCLR_THETA) = theta_tndcy(1:gr%nnzp)
+          sclr_tndcy(1:gr%nnzp,SCLR_RT)    = rt_tndcy(1:gr%nnzp)
+        end if
 
         return
         end subroutine wangara_tndcy
@@ -312,7 +365,7 @@
      .                         theta_tndcy, rt_tndcy, isValid,
      .                         sclr_tndcy )
 
-        use constants, only: sclrm_dimension
+        use constants, only: sclr_dim
         use grid_class
 
         implicit none
@@ -329,7 +382,7 @@
         real, intent(out) :: rt_tndcy(gr%nnzp)
 
 !       Output (optional)
-        real, optional, intent(out), dimension(gr%nnzp, sclrm_dimension)
+        real, optional, intent(out), dimension(gr%nnzp, sclr_dim)
      .                    :: sclr_tndcy
 
 !       Misc
@@ -367,17 +420,17 @@
 
 !          Large scale subsidence
 
-           do i=2,gr%nnzp
+           do i = 2, gr%nnzp
 
               if ( gr%zt(i) > 0. .and. gr%zt(i) <= zi ) then
                  wmt(i) 
      .             = -0.0065 * gr%zt(i)/zi
-              elseif ( gr%zt(i) > zi .and. gr%zt(i) <= zi+300. ) then
+              else if ( gr%zt(i) > zi .and. gr%zt(i) <= zi+300. ) then
                  wmt(i)
      .             = - 0.0065 * ( 1. - (gr%zt(i)-zi)/300. )
               else
                  wmt(i) = 0.
-              endif
+              end if
 
            end do
 
@@ -388,31 +441,31 @@
            wmm(1) = 0.0        ! At surface
            wmm(gr%nnzp) = 0.0  ! Model top
         
-!          theta-l tendency
+           ! Theta-l tendency
 
-           do i=2,gr%nnzp
+           do i = 2, gr%nnzp
 
               if ( gr%zt(i) > 0. .and. gr%zt(i) < zi ) then
                  theta_tndcy(i) 
      .             = -1.1575e-5 * ( 3. - gr%zt(i)/zi )
-              elseif ( gr%zt(i) > zi .and. gr%zt(i) <= zi+300. ) then
+              else if ( gr%zt(i) > zi .and. gr%zt(i) <= zi+300. ) then
                  theta_tndcy(i)
      .             = -2.315e-5 * ( 1. - (gr%zt(i)-zi)/300. )
               else
-                 theta_tndcy(i) = 0.
-              endif
+                 theta_tndcy(i) = 0.0
+              end if
 
            end do
 
-!          moisture tendency
+           ! Moisture tendency
 
-           do i=2,gr%nnzp
+           do i = 2, gr%nnzp
 
               if ( gr%zt(i) > 0. .and. gr%zt(i) < zi ) then
                  rt_tndcy(i) = -1.58e-8 * ( 1. - gr%zt(i)/zi )  ! Brian
               else
                  rt_tndcy(i) = 0.0       ! Brian
-              endif
+              end if
 
            end do
 
@@ -420,11 +473,12 @@
            theta_tndcy(1) = 0.0  ! Below surface
            rt_tndcy(1)    = 0.0  ! Below surface
 
-        end if
+        end if ! time >= time_initial + 5400.0
 
-        if ( present( sclr_tndcy ) ) 
-     .    sclr_tndcy(:,SCLR_THETA) = theta_tndcy
-        if ( present( sclr_tndcy ) ) sclr_tndcy(:,SCLR_RT) = rt_tndcy
+        if ( present( sclr_tndcy ) ) then
+          sclr_tndcy(1:gr%nnzp,SCLR_THETA) = theta_tndcy(1:gr%nnzp)
+          sclr_tndcy(1:gr%nnzp,SCLR_RT)    = rt_tndcy(1:gr%nnzp)
+        end if
 
         return
         end subroutine atex_tndcy
@@ -437,25 +491,19 @@
      .                         wtp, wrp, ustar,
      .                         wpsclrp_sfc )
 
-        use constants
+        use constants, only: Cp, Lv, grav, sclr_dim
         implicit none
 
-!       External (not needed with module)
+        ! External
+        ! In module calls:
+        ! real diag_ustar
 
-!        real diag_ustar
-!        external diag_ustar
+        ! Parameter Constants
 
-!       Constants (now in constants.F)
+        real, parameter ::
+     .  ubmin = 0.25
 
-!        real Cp, Lv
-!        parameter ( Cp = 1004.67 )
-!        parameter ( Lv = 2.5e6 )
-!        real g
-!        parameter ( g = 9.81 )
-        real ubmin
-        parameter (ubmin = 0.25)
-
-!       Input variables
+        ! Input variables
 
         real, intent(in) :: time
         real, intent(in) :: z
@@ -470,7 +518,7 @@
         real, intent(out) :: uw, vw, wtp, wrp
 
 !       Output variables (optional)
-        real, optional, intent(out) :: wpsclrp_sfc(sclrm_dimension)
+        real, optional, intent(out) :: wpsclrp_sfc(sclr_dim)
 
 !       Internal variables
 
@@ -523,7 +571,7 @@
         subroutine bomex_sfclyr( up, vp, uw, vw, wtp, wrp,
      .                           wpsclrp_sfc )
 
-        use constants, only: sclrm_dimension
+        use constants, only: sclr_dim
 
         implicit none
 
@@ -542,7 +590,7 @@
 
 !       Output variables (optional)
 
-        real, optional, intent(out) :: wpsclrp_sfc(sclrm_dimension)
+        real, optional, intent(out) :: wpsclrp_sfc(sclr_dim)
 
 !       Internal variables
 
@@ -556,7 +604,7 @@
         if ( present(wpsclrp_sfc) ) then 
           wpsclrp_sfc(SCLR_THETA) = 8.e-3
           wpsclrp_sfc(SCLR_RT)    = 5.2e-5
-        endif
+        end if
 
 ! Compute momentum fluxes
 
@@ -592,7 +640,7 @@
 
 !       Input variables (optional)
 
-        real, optional, intent(in) :: sclrm_sfc(sclrm_dimension)
+        real, optional, intent(in) :: sclrm_sfc(sclr_dim)
 
 !       Output variables
 
@@ -600,7 +648,7 @@
 
 !       Output variables (optional)
 
-        real, optional, intent(out) :: wpsclrp_sfc(sclrm_dimension)
+        real, optional, intent(out) :: wpsclrp_sfc(sclr_dim)
 
 !       Internal variables
 
@@ -620,7 +668,7 @@
 
           wpsclrp_sfc(SCLR_RT) = -C_10 * ubar * 
      .                     ( sclrm_sfc(SCLR_RT) - 0.0198293 )
-        endif
+        end if
 
 ! Compute momentum fluxes
 
@@ -636,7 +684,7 @@
 !
         subroutine wangara_sfclyr( time, up, vp, uw, vw, wtp, wrp,
      .                             wpsclrp_sfc )
-        use constants, only: sclrm_dimension
+        use constants, only: sclr_dim
         implicit none
 
 !       Constants
@@ -653,7 +701,7 @@
 
         real, intent(out) :: uw, vw, wtp, wrp
         
-        real, optional, intent(out), dimension(sclrm_dimension) :: 
+        real, optional, intent(out), dimension(sclr_dim) :: 
      .        wpsclrp_sfc
 
 !       Internal variables
@@ -674,7 +722,7 @@
      .   'wangara_sfclyr: error local time must be between 730 and 1730'
            write(*,*) 'time_est = ',time_est
            stop
-        endif
+        end if
 
 ! Compute heat and moisture fluxes
 
@@ -741,10 +789,10 @@
                  heat_flx     = ( 1. - a ) * H(i1) + a * H(i2)
                  moisture_flx = ( 1. - a ) * LE(i1) + a * LE(i2)
                  i1           = ntimes
-              endif
+              end if
               i1 = i2
-           enddo
-        endif
+           end do
+        end if
 
         return
         end subroutine arm_sfcflx
@@ -776,10 +824,6 @@
 
       implicit none
 
-!     Added to constants.F
-!      real, parameter      :: vonk =  0.4   ! von Karmans constant
-!      real, parameter      :: g    = 9.81   ! gravitational acceleration
-!      real, parameter      :: eps  = 1.e-10 ! non-zero, small number
       real, parameter      :: z0   = 0.035  ! momentum roughness height
       real, parameter      :: am   =  4.8   !   "          "         "
       real, parameter      :: bm   = 19.3   !   "          "         "
@@ -871,8 +915,8 @@
 !         Compute IR radiative flux
 
           do i = 1, gr%nnzp, 1
-           Frad(i) = F0 * EXP( -k * 1.0 * LWP(i) )
-          enddo
+            Frad(i) = F0 * EXP( -k * 1.0 * LWP(i) )
+          end do
 
 !         Compute IR heating rate
 
@@ -886,9 +930,9 @@
           thlm_forcing(:) = thlm_forcing(:) + radht(:)
           if ( present( sclr_rate ) ) then
             sclr_rate(:) = thlm_forcing(:) ! Just theta
-          endif
+          end if
 
-        endif ! ~ lbugsrad
+        end if ! ~ lbugsrad
 
         return
         end subroutine cloud_rad
@@ -905,7 +949,7 @@
         use constants
 #ifdef STATS
         use statistics
-#endif /*STATS*/
+#end if /*STATS*/
 
         implicit none
 
@@ -917,7 +961,7 @@
         real, intent(in) :: rcm(gr%nnzp)
         real, intent(in) :: exner(gr%nnzp)
 
-        real, optional, intent(in) :: sclr(gr%nnzp, sclrm_dimension)
+        real, optional, intent(in) :: sclr(gr%nnzp, sclr_dim)
 
 !       Output
         real, intent(out) :: wmt(gr%nnzp)
@@ -930,7 +974,7 @@
         real, intent(out) :: rt_tndcy(gr%nnzp)
 
         real, optional, 
-     .  intent(out) :: sclr_tndcy(gr%nnzp, sclrm_dimension)
+     .  intent(out) :: sclr_tndcy(gr%nnzp, sclr_dim)
 
 !       Misc
         logical, intent(inout) :: isValid
@@ -973,7 +1017,7 @@
           sfc%x(1,izi) = sfc%x(1,izi) + zi
           sfc%n(1,izi) = sfc%n(1,izi) + 1
         end if
-#endif /*STATS*/
+#end if /*STATS*/
 
 !       Large scale subsidence
 
@@ -997,7 +1041,7 @@
           lwp(gr%nnzp) = 0.0
           do i = gr%nnzp-1, 1, -1
             lwp(i) = lwp(i+1) + rhot(i+1) * rcm(i+1) / gr%dzt(i+1)
-          enddo
+          end do
 !         x_sfc(1,ilwp) = lwp(1)
 
 !         Compute IR radiative flux
@@ -1010,8 +1054,8 @@
      .                + rhom(i) * cp * lsdiv
      .                  * ( 0.25*(gr%zm(i)-zi)**(4.0/3.0)
      .                      + zi*(gr%zm(i)-zi)**(1.0/3.0) )
-             endif
-          enddo
+             end if
+          end do
 
 !         Compute IR heating rate
 
@@ -1020,7 +1064,7 @@
           radht(1)       = 0.
           radht(gr%nnzp) = 0.
 
-        endif ! ~ lbugsrad
+        end if ! ~ lbugsrad
 
 !       Add heating rate to theta-l forcing
 
@@ -1044,7 +1088,7 @@
         USE constants
 #ifdef STATS
         USE statistics
-#endif /*STATS*/
+#end if /*STATS*/
 
         ! Input
         REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rhot
@@ -1064,7 +1108,7 @@
 
         ! Optional output
         REAL, OPTIONAL, 
-     .  DIMENSION(gr%nnzp, sclrm_dimension), INTENT(OUT):: sclr_tndcy
+     .  DIMENSION(gr%nnzp, sclr_dim), INTENT(OUT):: sclr_tndcy
 
         ! Misc
         LOGICAL, INTENT(INOUT) :: isValid
@@ -1085,8 +1129,8 @@
         ! Large-scale subsidence
 
         DO k = 2, gr%nnzp, 1
-           wmt(k) = -ls_div * gr%zt(k)
-        ENDDO
+          wmt(k) = -ls_div * gr%zt(k)
+        END DO
 
         wmm = zt2zm( wmt )
 
@@ -1104,14 +1148,14 @@
           LWP(gr%nnzp) = 0.0
           DO k = gr%nnzp-1, 1, -1
             LWP(k) = LWP(k+1) + rhot(k+1)*rcm(k+1)/gr%dzt(k+1)
-          ENDDO
+          END DO
 
 !         Find the height of the isotherm rtm = 8.0 g/kg.
 
           k = 2
           DO WHILE ( k <= gr%nnzp .AND. rtm(k) > 8.0e-3 )
             k = k + 1
-          ENDDO
+          END DO
           IF ( k == gr%nnzp+1 .or. k == 2 ) THEN
             write(*,*) 'Identification of 8.0 g/kg level failed'
             write(*,*) 'Subroutine: dycoms2_rf02_tndcy. File: gcss.f'
@@ -1119,7 +1163,7 @@
             write(*,*) 'rtm(k) = ', rtm(k)
             isValid = .false.
             return
-          ENDIF
+          END IF
           z_i = ( (gr%zt(k)-gr%zt(k-1))/(rtm(k)-rtm(k-1)) )
      .        * (8.0e-3-rtm(k-1)) + gr%zt(k-1)
 
@@ -1128,12 +1172,12 @@
           DO k = 1, gr%nnzp, 1
             IF ( gr%zm(k) - z_i  <  0.0 ) THEN
               Heaviside(k) = 0.0
-            ELSEIF ( gr%zm(k) - z_i  ==  0.0 ) THEN
+            ELSE IF ( gr%zm(k) - z_i  ==  0.0 ) THEN
               Heaviside(k) = 0.5
-            ELSEIF ( gr%zm(k) - z_i  >  0.0 ) THEN
+            ELSE IF ( gr%zm(k) - z_i  >  0.0 ) THEN
               Heaviside(k) = 1.0
-            ENDIF
-          ENDDO
+            END IF
+          END DO
 
 !         Compute radiative flux profile (Frad).
 !         Radiative flux is defined on momentum levels.
@@ -1148,9 +1192,9 @@
      .                + rhom(k) * Cp * ls_div * Heaviside(k)
      .                  * ( 0.25 * ((gr%zm(k)-z_i)**(4.0/3.0))
      .                + z_i * ((gr%zm(k)-z_i)**(1.0/3.0)) )
-            ENDIF
+            END IF
 
-          ENDDO 
+          END DO 
 
         ! Compute the radiative heating rate.
         ! The radiative heating rate is defined on thermodynamic levels.
@@ -1158,9 +1202,9 @@
           DO k = 2, gr%nnzp, 1
             radht(k) = ( 1.0 / exner(k) ) * ( -1.0/(Cp*rhot(k)) )
      .               * ( Frad(k) - Frad(k-1) ) * gr%dzt(k)
-          ENDDO
+          END DO
           radht(1) = radht(2)
-        ENDIF ! ~ lbugsrad
+        END IF ! ~ lbugsrad
 
         ! Enter the final theta-l and rtm tendencies
 
@@ -1168,7 +1212,7 @@
           theta_tndcy(1:gr%nnzp) = radht(1:gr%nnzp)
         ELSE
           theta_tndcy(1:gr%nnzp) = 0.0
-        ENDIF 
+        END IF 
         rt_tndcy(1:gr%nnzp) = 0.0
 
         ! Update surface statistics
@@ -1176,8 +1220,8 @@
         if ( lstats_samp .and. izi > 0 ) then
           sfc%x(1,izi) = sfc%x(1,izi) + z_i
           sfc%n(1,izi) = sfc%n(1,izi) + 1
-        endif
-#endif /*STATS*/
+        end if
+#end if /*STATS*/
         if ( present( sclr_tndcy ) ) 
      .    sclr_tndcy(:,SCLR_THETA) = theta_tndcy 
         if ( present( sclr_tndcy ) ) sclr_tndcy(:,SCLR_RT) = rt_tndcy 
@@ -1208,8 +1252,8 @@
               Ncm(k) = 55000000.0
            ELSE
               Ncm(k) = 0.0
-           ENDIF
-        ENDDO
+           END IF
+        END DO
 
 
         RETURN
@@ -1227,7 +1271,7 @@
         use constants
 #ifdef STATS
         use statistics
-#endif /*STATS*/
+#end if /*STATS*/
 
         implicit none
 
@@ -1247,13 +1291,13 @@
         real, intent(in)    :: Tsfc, psfc, exnersfc, up, vp
         real, intent(in)    :: thp, rtp, rhop
 
-        real, optional, intent(in) :: sclrm_sfc(sclrm_dimension) 
+        real, optional, intent(in) :: sclrm_sfc(sclr_dim) 
 
 !       Output variables
 
         real, intent(out) :: uw, vw, wtp, wrp
 
-        real, optional, intent(out) :: wpsclrp_sfc(sclrm_dimension) 
+        real, optional, intent(out) :: wpsclrp_sfc(sclr_dim) 
 
 !       Internal variables
 
@@ -1276,8 +1320,8 @@
           if ( present( sclrm_sfc ).and.present( wpsclrp_sfc ) ) then
             wpsclrp_sfc(SCLR_THETA) = wtp
             wpsclrp_sfc(SCLR_RT)    = wrp
-          endif
-        elseif ( sfctype == 1 ) then
+          end if
+        else if ( sfctype == 1 ) then
 
           wtp = -Cd * ubar * ( thp - Tsfc/exnersfc )
           wrp = -Cd * ubar * ( rtp - rsat(psfc,Tsfc) )        
@@ -1287,13 +1331,13 @@
      .                        ( sclrm_sfc(SCLR_THETA) - Tsfc/exnersfc )
             wpsclrp_sfc(SCLR_RT)    = -Cd * ubar * 
      .                        ( sclrm_sfc(SCLR_RT) - rsat(psfc, Tsfc) )
-          endif
+          end if
         else
 
           write(*,*) 'Invalid sfctype value = ', sfctype
           stop
 
-        endif
+        end if
 #ifdef STATS
 ! Save ustar for statistics
 !        x_sfc(1,iustar) = ustar
@@ -1301,7 +1345,7 @@
           sfc%x(1,iustar) = sfc%x(1,iustar) + ustar
           sfc%n(1,iustar) = sfc%n(1,iustar) + 1
         end if
-#endif /*STATS*/
+#end if /*STATS*/
 
         return
         end subroutine dycoms2_rf01_sfclyr
@@ -1318,7 +1362,7 @@
         REAL, INTENT(IN):: v_sfc
 
 ! Input (optional)
-        REAL, OPTIONAL, INTENT(IN):: sclr_sfc(sclrm_dimension)
+        REAL, OPTIONAL, INTENT(IN):: sclr_sfc(sclr_dim)
 
 ! Output
         REAL, INTENT(OUT):: uw
@@ -1328,7 +1372,7 @@
         REAL, INTENT(OUT):: ustar
 
 ! Output (optional)
-        REAL, OPTIONAL, INTENT(OUT):: wpsclr_sfc(sclrm_dimension)
+        REAL, OPTIONAL, INTENT(OUT):: wpsclr_sfc(sclr_dim)
 
 ! Internal
         REAL:: wind_sfc
@@ -1350,7 +1394,7 @@
            uw = 0.0
            vw = 0.0
 
-        ENDIF
+        END IF
 
         wtp = SH / (1.21 * Cp)
         wrp = LH / (1.21 * Lv)
@@ -1359,7 +1403,7 @@
           wpsclr_sfc(SCLR_THETA) = SH / (1.21 * Cp)
 
           wpsclr_sfc(SCLR_RT) = LH / (1.21 * Lv)
-        endif
+        end if
 
         RETURN
         END SUBROUTINE dycoms2_rf02_sfclyr
@@ -1370,7 +1414,7 @@
         subroutine astex_tndcy( time, wmt, wmm, theta_tndcy, rt_tndcy,
      .                          sclr_tndcy )
 
-        use constants, only: sclrm_dimension
+        use constants, only: sclr_dim
         use grid_class
 
         implicit none
@@ -1385,7 +1429,7 @@
         real, intent(out) :: rt_tndcy(gr%nnzp)
 
         real, optional, 
-     .        intent(out) :: sclr_tndcy(gr%nnzp, sclrm_dimension)
+     .        intent(out) :: sclr_tndcy(gr%nnzp, sclr_dim)
 
 !       Internal variables
 
@@ -1397,7 +1441,7 @@
 
            wmt(i) = - 5.e-6 * gr%zt(i)
 
-        enddo
+        end do
 
         wmm = zt2zm( wmt )
 
@@ -1414,7 +1458,7 @@
 
         rt_tndcy = 0.
 
-        if (present( sclr_tndcy )) sclr_tndcy = 0.
+        if (present( sclr_tndcy )) sclr_tndcy = 0.0
 
         return
         end subroutine astex_tndcy
@@ -1441,7 +1485,7 @@
 
 !       Output variables (optional) 
 
-        real, optional, intent(out) :: wpsclrp_sfc(sclrm_dimension)
+        real, optional, intent(out) :: wpsclrp_sfc(sclr_dim)
 
 !       Internal variables
 
@@ -1548,7 +1592,7 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! Output variables (optional) !!
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        REAL, OPTIONAL, DIMENSION(gr%nnzp, sclrm_dimension), 
+        REAL, OPTIONAL, DIMENSION(gr%nnzp, sclr_dim), 
      .                  INTENT(OUT) :: sclr_tndcy
 
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -1834,7 +1878,7 @@ c      xi_abs = max(xi_abs,0.)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if (.not. sw_on) then
         xi_abs = 0.
-      endif
+      end if
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! End of ajsmith4's Modification !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1843,7 +1887,7 @@ c      xi_abs = max(xi_abs,0.)
         sw_on = .FALSE.
       else
         sw_on = .TRUE.
-      endif
+      end if
 
 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -1941,10 +1985,10 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
            DO k = 1, gr%nnzp, 1
               IF ( gr%zt(k) > 1555.0 ) THEN
                  rtm(k) = 0.89 * rtm(k)
-              ENDIF
+              END IF
            ENDDO
 
-        ENDIF
+        END IF
 
 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -2081,7 +2125,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
             rcm_rad(k) = rcm(gr%nnzp-k+1)
             rhot_rad(k) = rhot(gr%nnzp-k+1)
             dsigm(k) = 1.0 / gr%dzt(gr%nnzp-k+1)
-          enddo
+          end do
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! Calling the radiation subroutine, which uses the COAMPS    !!
@@ -2114,7 +2158,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
             radht(k)    = ( 1.0/exner(k) ) * radhtk(gr%nnzp-k+1)
             radht_LW(k) = ( 1.0/exner(k) ) * radht_LW_out(gr%nnzp-k+1)
             radht_SW(k) = ( 1.0/exner(k) ) * radht_SW_out(gr%nnzp-k+1)
-          enddo
+          end do
 
           Frad(1) = Frad(2)
           Frad_LW(1) = Frad_LW(2)
@@ -2124,7 +2168,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
           radht_LW(1) = radht_LW(2)
           radht_SW(1) = radht_SW(2)
 
-        ENDIF ! ~ lbugsrad
+        END IF ! ~ lbugsrad
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! Compute the loss of total water due to diffusional       !!
@@ -2146,7 +2190,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
               dqc_dt_icedfs(k) = 0.0
            ENDDO
 
-        ENDIF
+        END IF
 
 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -2196,10 +2240,10 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
           else
 c           If time is not yet one hour, we have no subsidence
             wmt(k) = 0.0
-          endif
+          end if
 
           wmt(1) = wmt(2)
-        enddo
+        end do
 
         wmm = zt2zm(wmt)
 
@@ -2212,14 +2256,14 @@ c           If time is not yet one hour, we have no subsidence
      .                    - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
            ELSE
              thl_tndcy(k) = - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
-           ENDIF
+           END IF
            rt_tndcy(k) = dqc_dt_icedfs(k)
         ENDDO
 
         IF ( present( sclr_tndcy ) ) THEN
           sclr_tndcy(:,SCLR_THETA) = thl_tndcy
           sclr_tndcy(:,SCLR_RT)    = rt_tndcy
-        ENDIF
+        END IF
 
 
         RETURN
@@ -2414,7 +2458,7 @@ c           If time is not yet one hour, we have no subsidence
              ! Ensure that liquid is not over-depleted
              IF ( rcm(k) + dqc_dt_icedfs(k)*dt < 0.0 ) THEN
                 dqc_dt_icedfs(k) = -rcm(k)/dt
-             ENDIF
+             END IF
 
              !---------------Brian's comment-----------------------------------!
              ! dm = (dm/dt)*(dt/dz)*dz                                         !
@@ -2440,7 +2484,7 @@ c           If time is not yet one hour, we have no subsidence
              diam(k)          = 0.0  ! Set zero to remind that we don't grow ice
              u_T_cm(k)        = 0.0  ! Set zero to remind that we don't grow ice
 
-          ENDIF
+          END IF
 
         ENDDO
 
@@ -2461,7 +2505,7 @@ c           If time is not yet one hour, we have no subsidence
         SUBROUTINE jun25_altocu_tndcy( time, time_initial, dt, thlm,
      .                                 rcm, p, exner, rhot, rtm, wmt,
      .                                 wmm, thl_tndcy, rt_tndcy, Frad,
-     .                                 Frad_lw, Frad_sw,
+     .                                 Frad_LW, Frad_SW,
      .                                 radht, radht_LW, radht_SW,
      .                                 sclr_tndcy )
 
@@ -2477,7 +2521,7 @@ c time_initial :  initial time of simulation                     Unit: s      c
 c dt           :  length of model time step                      Unit: s      c
 c thlm         :  profile of liquid water potential temperature  Unit: K      c
 c rcm          :  profile of liquid (cloud) water mixing ratio   Unit: kg/kg  c
-c p            :  basic state pressure                           Unit: hPa    c
+c p            :  basic state pressure                           Unit: Pa     c
 c exner        :  basic state Exner function                     Unit: NONE   c
 c rhot         :  density of reference state at thermodynamic levels          c
 c                                                                Unit: kg/m^3 c
@@ -2500,9 +2544,9 @@ c                                                                             c
 c radht        :  profile of total radiative heating (lw + sw)   Unit: K/s    c
 c radht_LW     :  profile of longwave radiative heating          Unit: K/s    c
 c radht_SW     :  profile of shortwave radiative heating         Unit: K/s    c
-c                                                                              c
-c sclr_tndcy   :                                                 Unit: ??      c
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c                                                                             c
+c sclr_tndcy   :  Passive scalar tendency                        Unit: varies c
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
         !!!!!!!!!!!!!!!!!!!!!
         !! Input variables !!
@@ -2534,7 +2578,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: radht_SW
 
         ! Output variables (optional)
-        REAL, OPTIONAL, DIMENSION(gr%nnzp, sclrm_dimension),
+        REAL, OPTIONAL, DIMENSION(gr%nnzp, sclr_dim),
      .                  INTENT(OUT) :: sclr_tndcy
 
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -2804,7 +2848,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if (.not. sw_on) then
         xi_abs = 0.
-      endif
+      end if
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! End of ajsmith4's Modification !!
@@ -2814,7 +2858,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         sw_on = .FALSE.
       else
         sw_on = .TRUE.
-      endif
+      end if
 
 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -3043,7 +3087,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
             rcm_rad(k) = rcm(gr%nnzp-k+1)
             rhot_rad(k) = rhot(gr%nnzp-k+1)
             dsigm(k) = 1.0 / gr%dzt(gr%nnzp-k+1)
-          enddo
+          end do
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! Calling the radiation subroutine, which uses the COAMPS    !!
@@ -3077,7 +3121,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
             radht(k)    = ( 1.0/exner(k) ) * radhtk(gr%nnzp-k+1)
             radht_LW(k) = ( 1.0/exner(k) ) * radht_LW_out(gr%nnzp-k+1)
             radht_SW(k) = ( 1.0/exner(k) ) * radht_SW_out(gr%nnzp-k+1)
-          enddo
+          end do
 
           Frad(1) = Frad(2)
           Frad_LW(1) = Frad_LW(2)
@@ -3087,7 +3131,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
           radht_LW(1) = radht_LW(2)
           radht_SW(1) = radht_SW(2)
 
-        ENDIF ! ~ lbugsrad
+        END IF ! ~ lbugsrad
 
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -3105,7 +3149,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
               dqc_dt_icedfs(k) = 0.0
            ENDDO
 
-        ENDIF
+        END IF
 
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -3116,48 +3160,48 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         if (time.lt.tsubs(1)) then
         do k=1,gr%nnzp
             call linearinterpolation(5,zsubs,wt1,gr%zt(k),wmt(k))
-        enddo
+        end do
  
-        elseif (time.lt.tsubs(2)) then
+        else if (time.lt.tsubs(2)) then
         do k=2,gr%nnzp
           call linearinterpolation(5,zsubs,wt1,gr%zt(k),w1(k))
           call linearinterpolation(5,zsubs,wt2,gr%zt(k),w2(k))
         wmt(k) = (time-tsubs(1))/(tsubs(2)-tsubs(1))*(w2(k)-w1(k))+w1(k)
-        enddo
+        end do
  
-        elseif (time.lt.tsubs(3)) then
+        else if (time.lt.tsubs(3)) then
         do k=2,gr%nnzp
           call linearinterpolation(5,zsubs,wt2,gr%zt(k),w1(k))
           call linearinterpolation(5,zsubs,wt3,gr%zt(k),w2(k))
         wmt(k) = (time-tsubs(2))/(tsubs(3)-tsubs(2))*(w2(k)-w1(k))+w1(k)
-        enddo
+        end do
  
-        elseif (time.lt.tsubs(4)) then
+        else if (time.lt.tsubs(4)) then
         do k=2,gr%nnzp
           call linearinterpolation(5,zsubs,wt3,gr%zt(k),w1(k))
           call linearinterpolation(5,zsubs,wt4,gr%zt(k),w2(k))
         wmt(k) = (time-tsubs(3))/(tsubs(4)-tsubs(3))*(w2(k)-w1(k))+w1(k)
-        enddo
+        end do
  
-        elseif (time.lt.tsubs(5)) then
+        else if (time.lt.tsubs(5)) then
         do k=2,gr%nnzp
           call linearinterpolation(5,zsubs,wt4,gr%zt(k),w1(k))
           call linearinterpolation(5,zsubs,wt5,gr%zt(k),w2(k))
         wmt(k) = (time-tsubs(4))/(tsubs(5)-tsubs(4))*(w2(k)-w1(k))+w1(k)
-        enddo
+        end do
  
-        elseif (time.lt.tsubs(6)) then
+        else if (time.lt.tsubs(6)) then
         do k=2,gr%nnzp
           call linearinterpolation(5,zsubs,wt5,gr%zt(k),w1(k))
           call linearinterpolation(5,zsubs,wt6,gr%zt(k),w2(k))
         wmt(k) = (time-tsubs(5))/(tsubs(6)-tsubs(5))*(w2(k)-w1(k))+w1(k)
-        enddo
+        end do
  
-        elseif (time.ge.tsubs(6)) then
+        else if (time.ge.tsubs(6)) then
         do k=2,gr%nnzp
           call linearinterpolation(5,zsubs,wt6,gr%zt(k),wmt(k))
-        enddo
-        endif
+        end do
+        end if
 
         wmt(1) = wmt(2)
 
@@ -3173,14 +3217,14 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
      .                    - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
            ELSE
              thl_tndcy(k) = - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
-           ENDIF
+           END IF
            rt_tndcy(k) = dqc_dt_icedfs(k)
         ENDDO
 
         IF ( present( sclr_tndcy ) ) THEN
           sclr_tndcy(:,SCLR_THETA) = thl_tndcy
           sclr_tndcy(:,SCLR_RT)    = rt_tndcy
-        ENDIF
+        END IF
 
 
         RETURN

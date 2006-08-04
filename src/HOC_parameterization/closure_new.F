@@ -1,4 +1,4 @@
-! $Id: closure_new.F,v 1.2 2006-05-07 21:47:14 griffinb Exp $
+! $Id: closure_new.F,v 1.3 2006-08-04 21:08:56 dschanen Exp $
       module pdf_closure
 
       implicit none
@@ -91,9 +91,9 @@
 
 !       New mixing scheme internal variables
 
-        real, dimension(sclrm_dimension) :: sclr1, sclr2, ssclr1, ssclr2
-        real, dimension(sclrm_dimension) :: alpha_sclr, sclr1_n, sclr2_n
-        real, dimension(sclrm_dimension) :: rsclrthl, rsclrrt
+        real, dimension(sclr_dim) :: sclr1, sclr2, ssclr1, ssclr2
+        real, dimension(sclr_dim) :: alpha_sclr, sclr1_n, sclr2_n
+        real, dimension(sclr_dim) :: rsclrthl, rsclrrt
  
         logical scalar_calc
 
@@ -256,7 +256,7 @@
 
 ! Compute pdf parameters for passive scalars
           if ( scalar_calc ) then
-            do i = 1, sclrm_dimension
+            do i = 1, sclr_dim
               if ( sclrp2(i) <= sclrtol(i)**2 ) then
                 sclr1(i)      = sclrm(i)
                 sclr2(i)      = sclrm(i)
@@ -285,7 +285,7 @@
                 ssclr2(i) = ( alpha_sclr(i) / (1.-a) * sclrp2(i) ) 
      .                        * width_factor_2
               end if
-            enddo ! i=1, sclrm_dimension
+            enddo ! i=1, sclr_dim
           endif ! scalar_calc
 
 !       We include sub-plume correlation with coeff rrtthl.
@@ -308,7 +308,7 @@
 !       Sub-plume correlation, rsclrthl, between passive scalar
 !              and theta_l.
           if ( scalar_calc ) then
-            do i=1, sclrm_dimension
+            do i=1, sclr_dim
               if ( ssclr1(i)*sthl1 > 0 .and. ssclr2(i)*sthl2 > 0 ) then
                   rsclrthl(i) = ( sclrpthlp(i) 
      .             - a * ( sclr1(i)-sclrm(i) ) * ( thl1-thlm )
@@ -343,7 +343,7 @@
               else
                 rsclrrt(i) = 0.
               end if
-            end do ! i=1, sclrm_dimension
+            end do ! i=1, sclr_dim
           end if ! scalar_calc 
 
         end if
@@ -372,7 +372,7 @@
 
 !       Scalar Addition to higher order moments
         if ( scalar_calc ) then
-          do i=1, sclrm_dimension
+          do i=1, sclr_dim
 
             wp2sclrp(i)  = a * ( (w1-wm)**2+sw1 )*( sclr1(i)-sclrm(i) )
      .          + (1-a) * ( (w2-wm)**2+sw2 ) * ( sclr2(i)-sclrm(i) )
@@ -397,7 +397,7 @@
      .         + rsclrthl(i)*sqrt(ssclr2(i)*sthl2) )
 
 
-          end do ! i=1, sclrm_dimension
+          end do ! i=1, sclr_dim
         end if ! scalar_calc
 
 !       Compute higher order moments that include theta_v.
@@ -505,7 +505,7 @@
 !       See Eqs. A13, A8 from Larson et al. (2002) ``Small-scale...''
 !          where the ``scalar'' in this paper is w.
         if ( scalar_calc ) then
-          do i=1, sclrm_dimension
+          do i=1, sclr_dim
             sclrprcp(i) = a * ( ( sclr1(i)-sclrm(i) ) * rc1 )
      .                  + (1-a) * ( ( sclr2(i)-sclrm(i) ) * rc2 )
      .                  + a*rsclrrt(i) * crt1 
@@ -519,7 +519,7 @@
 
             sclrpthvp(i) = sclrpthlp(i) + ep1*T0*sclrprtp(i) 
      .                      + BD*sclrprcp(i)
-          end do ! i=1, sclrm_dimension
+          end do ! i=1, sclr_dim
         end if
 
 !       compute mean cloud fraction and cloud water

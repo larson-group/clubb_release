@@ -1,9 +1,11 @@
-! $Id: sfc.F,v 1.1 2006-04-21 21:50:56 dschanen Exp $
+! $Id: sfc.F,v 1.2 2006-08-04 21:08:56 dschanen Exp $
 #define SCLR_RT 2
 #define SCLR_THETA 1
       module surface
 
       implicit none
+
+      private ! Default to private
 
       public sfc_momentum_fluxes
       public sfc_thermo_fluxes
@@ -74,7 +76,7 @@
 ! Input (optional)
 
         real, optional, intent(IN), 
-     .  dimension(sclrm_dimension) :: sclrair
+     .  dimension(sclr_dim) :: sclrair
 
 ! Output
 
@@ -84,7 +86,7 @@
 ! Output (optional) 
 
         real, optional, intent(OUT), 
-     .  dimension(sclrm_dimension) :: wpsclrp_sfc
+     .  dimension(sclr_dim) :: wpsclrp_sfc
 
 ! Parameter
 
@@ -133,7 +135,7 @@
 
 ! Input (Optional) 
         real, optional, intent(IN),
-     .        dimension(sclrm_dimension)   :: wpsclrp_sfc
+     .        dimension(sclr_dim)   :: wpsclrp_sfc
 
 ! Output
 
@@ -144,11 +146,11 @@
 
 ! Output (Optional) 
         real, optional, intent(OUT),
-     .        dimension(sclrm_dimension)   :: sclrp2_sfc
+     .        dimension(sclr_dim)   :: sclrp2_sfc
         real, optional, intent(OUT),
-     .        dimension(sclrm_dimension)   :: sclrprtp_sfc
+     .        dimension(sclr_dim)   :: sclrprtp_sfc
         real, optional, intent(OUT),
-     .        dimension(sclrm_dimension)   :: sclrpthlp_sfc
+     .        dimension(sclr_dim)   :: sclrpthlp_sfc
 
        
 ! Internal
@@ -171,7 +173,7 @@
 ! Compute wstar following Andre et al., 1976
 
         if ( wpthlp_sfc > 0 ) then
-          wstar = ( alpha * grav * wpthlp_sfc * z ) ** (1./3.)
+          wstar = ( 1.0/T0 * grav * wpthlp_sfc * z ) ** (1./3.)
         else
           wstar = 0.
         end if
@@ -192,7 +194,7 @@
 ! Optional mixing scheme scalars
         if (      present( wpsclrp_sfc ) .and. present( sclrprtp_sfc ) 
      .      .and. present( sclrpthlp_sfc ) ) then
-          do i=1, sclrm_dimension
+          do i=1, sclr_dim
             sclrprtp_sfc(i)  = a * (wprtp_sfc / uf) 
      .                           * (wpsclrp_sfc(i) / uf)
             sclrpthlp_sfc(i) = a * (wpthlp_sfc / uf) 
@@ -209,7 +211,7 @@
               sclrp2_sfc(i)    =  0.1 * a * ( wpsclrp_sfc(i) / uf )**2
               sclrpthlp_sfc(i) =  0.1 * a * ( wpsclrp_sfc(i) / uf )**2
             end select
-          end do ! 1,...sclrm_dimension
+          end do ! 1,...sclr_dim
         endif
 
         return

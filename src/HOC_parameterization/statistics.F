@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.4 2006-05-12 16:55:12 dschanen Exp $
+!  $Id: statistics.F,v 1.5 2006-08-04 21:08:56 dschanen Exp $
 
 !  module stats_type
 !  contains:
@@ -173,14 +173,14 @@ c       Indices for statistics in zt file
 
 #ifdef SCALARS
         integer
-     .     isclram,          ! New mixing scheme ( mean rt )
-     .     isclrbm,          ! New mixing scheme ( mean th_l )
-     .     isclram_f,        ! New mixing scheme ( mean rt forcing)
-     .     isclrbm_f         ! New mixing scheme ( mean th_l forcing)
+     .    isclram,   ! Passive scalar mean (currently mean thl)
+     .    isclrbm,   ! Passive scalar mean (currently mean rt)
+     .    isclram_f, ! Passive scalar tendency (currently mean thl forcing)
+     .    isclrbm_f  ! Passive scalar tendency (currently mean rt forcing)
 
         integer
-     .     iedsclram,         ! Eddy-diff. term ( rt )
-     .     iedsclrbm          ! Eddy-diff. term ( theta_l )
+     .    iedsclram, ! Eddy-diff. scalar term (currently rt)
+     .    iedsclrbm  ! Eddy-diff. scalar term (currently thl)
 #endif /*SCALARS*/
 
 c       Indices for statistics in zm file
@@ -251,7 +251,7 @@ c       Indices for statistics in zm file
      .     iwpthlp_pr3,
      .     iwpthlp_dp1
 
-!    Dr. Golaz's new budget terms
+!    Dr. Golaz's new variance budget terms
 !    qt was changed to rt to avoid confusion
 
         integer
@@ -282,29 +282,29 @@ c       Indices for statistics in zm file
      .     irtpthlp_dp2
 
 #ifdef SCALARS
-!       New mixing scheme.  Note that floating point roundoff may make 
-!       mathematically equivalent variables different.
+!       Passive scalars.  Note that floating point roundoff may make 
+!       mathematically equivalent variables different values.
         integer
-     .     isclraprtp,          ! sclr'(1)rt'     / rt'^2
-     .     isclrbprtp,          ! sclr'(2)rt'     / thl'rt'
-     .     isclrap2,            ! sclr'(1)^2      / rt'^2
-     .     isclrbp2,            ! sclr'(2)^2      / thl'^2
-     .     isclrapthvp,         ! sclr'(1)th_v'   / rt'th_v' 
-     .     isclrbpthvp,         ! sclr'(2)th_v'   / th_l' th_v'
-     .     isclrapthlp,         ! sclr'(1)th_l'   / rt'th_l' 
-     .     isclrbpthlp,         ! sclr'(2)th_l'   / th_l'^2
-     .     isclraprcp,          ! sclr'(1)rc'     / rt'rc'
-     .     isclrbprcp,          ! sclr'(2)rc'     / th_l'rc'
-     .     iwpsclrap,           ! w'slcr'(1)      / w'rt'
-     .     iwpsclrbp,           ! w'sclr'(2)      / w'th_l'
-     .     iwp2sclrap,          ! w'^2 sclr'(1)   / w'^2 rt'
-     .     iwp2sclrbp,          ! w'^2 sclr'(2)   / w'^2 th_l'
-     .     iwpsclrap2,          ! w'sclr'(1)^2    / w'rt'^2
-     .     iwpsclrbp2,          ! w'sclr'(2)^2    / w'th_l'^2
-     .     iwpsclraprtp,        ! w'sclr'(1)rt'   / w'rt'^2
-     .     iwpsclrbprtp,        ! w'sclr'(2)rt'   / w'thl'rt'
-     .     iwpsclrapthlp,       ! w'sclr'(1)th_l' / w'rt'th_l' 
-     .     iwpsclrbpthlp        ! w'sclr'(2)th_l' / w'th_l'^2
+     .    isclraprtp,          ! sclr'(1)rt'     / rt'^2
+     .    isclrbprtp,          ! sclr'(2)rt'     / thl'rt'
+     .    isclrap2,            ! sclr'(1)^2      / rt'^2
+     .    isclrbp2,            ! sclr'(2)^2      / thl'^2
+     .    isclrapthvp,         ! sclr'(1)th_v'   / rt'th_v' 
+     .    isclrbpthvp,         ! sclr'(2)th_v'   / th_l' th_v'
+     .    isclrapthlp,         ! sclr'(1)th_l'   / rt'th_l' 
+     .    isclrbpthlp,         ! sclr'(2)th_l'   / th_l'^2
+     .    isclraprcp,          ! sclr'(1)rc'     / rt'rc'
+     .    isclrbprcp,          ! sclr'(2)rc'     / th_l'rc'
+     .    iwpsclrap,           ! w'slcr'(1)      / w'rt'
+     .    iwpsclrbp,           ! w'sclr'(2)      / w'th_l'
+     .    iwp2sclrap,          ! w'^2 sclr'(1)   / w'^2 rt'
+     .    iwp2sclrbp,          ! w'^2 sclr'(2)   / w'^2 th_l'
+     .    iwpsclrap2,          ! w'sclr'(1)^2    / w'rt'^2
+     .    iwpsclrbp2,          ! w'sclr'(2)^2    / w'th_l'^2
+     .    iwpsclraprtp,        ! w'sclr'(1)rt'   / w'rt'^2
+     .    iwpsclrbprtp,        ! w'sclr'(2)rt'   / w'thl'rt'
+     .    iwpsclrapthlp,       ! w'sclr'(1)th_l' / w'rt'th_l' 
+     .    iwpsclrbpthlp        ! w'sclr'(2)th_l' / w'th_l'^2
 
         integer
      .     iwpedsclrap,  ! eddy sclr'(1)w'
@@ -600,10 +600,10 @@ c     -----------------------------------------------------------------
       irtpthlpzt = 0
 
 #ifdef SCALARS
-      isclram     = 0    ! new mixing scheme
-      isclram_f   = 0    !  "             "
-      isclrbm     = 0    ! new mixing scheme
-      isclrbm_f   = 0    !  "             "
+      isclram     = 0
+      isclram_f   = 0
+      isclrbm     = 0
+      isclrbm_f   = 0
 
       iedsclram   = 0
       iedsclrbm   = 0

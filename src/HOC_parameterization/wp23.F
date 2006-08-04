@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.5 2006-08-02 20:55:14 dschanen Exp $
+! $Id: wp23.F,v 1.6 2006-08-04 21:08:56 dschanen Exp $
 
 ! SUBROUTINE timestep_wp23( )
 !  Advance wp2 and wp3 one timestep
@@ -313,9 +313,9 @@
           ! Right-hand side
           dd(k_wp2)
      .    = + ( 1.0 / dt ) * wp2(k) 
-     .      + ( 1.0 - C5 ) * 2.0 * grav * alpha * wpthvp(k)
+     .      + ( 1.0 - C5 ) * 2.0 * ( grav / T0 ) * wpthvp(k)
      .      + (2.0/3.0) * C5
-     .                  * (  grav * alpha * wpthvp(k)
+     .                  * ( ( grav / T0 ) * wpthvp(k)
      .                     - upwp(k) * gr%dzm(k) * ( um(kp1) - um(k) )
      .                     - vpwp(k) * gr%dzm(k) * ( vm(kp1) - vm(k) )
      .                    )
@@ -341,19 +341,19 @@
 
            if ( iwp2_bp > 0 ) then
             zm%x(k,iwp2_bp) = zm%x(k,iwp2_bp) 
-     .      + 1.0 * 2.0 * grav * alpha * wpthvp(k)
+     .      + 1.0 * 2.0 * grav * (1.0/T0) * wpthvp(k)
             zm%n(k,iwp2_bp) = zm%n(k,iwp2_bp) + 1
            endif
 
            if ( iwp2_pr2 > 0 ) then
             zm%x(k,iwp2_pr2) = zm%x(k,iwp2_pr2) 
-     .      - C5 * 2.0 * grav * alpha * wpthvp(k)
+     .      - C5 * 2.0 * grav * (1.0/T0) * wpthvp(k)
            endif
 
            if ( iwp2_pr3 > 0 ) then
             zm%x(k,iwp2_pr3) = zm%x(k,iwp2_pr3) 
      .      + (2.0/3.0) * C5
-     .                  * (  grav * alpha * wpthvp(k)
+     .                  * (  grav * (1.0/T0) * wpthvp(k)
      .                     - upwp(k) * gr%dzm(k) * ( um(kp1) - um(k) )
      .                     - vpwp(k) * gr%dzm(k) * ( vm(kp1) - vm(k) )
      .                    )
@@ -465,7 +465,7 @@
      .         - a1(km1) * ( wp3(k) + wp3(km1) )**2
      .                     / MAX( wp2(km1), eps )
      .        )
-     .    + ( 1.0 - C11_Skw_fnc(k) ) * 3.0 * grav * alpha * wp2thvp(k)
+     .    + ( 1.0 - C11_Skw_fnc(k) ) * 3.0 * ( grav/T0 ) * wp2thvp(k)
      .    + ( C8 / tauw3t(k) ) * ( 4.0 * C8b * Skw**4 ) * wp3(k)
           ! These lines are for the diffusional term with a Crank-Nicholson 
           ! time step.  They need to be commented out for completely implicit
@@ -512,13 +512,13 @@
 
           if ( iwp3_bp > 0 ) then
           zt%x(k,iwp3_bp) = zt%x(k,iwp3_bp) 
-     .    + 1.0 * 3.0 * grav * alpha * wp2thvp(k)
+     .    + 1.0 * 3.0 * ( grav / T0 )  * wp2thvp(k)
           zt%n(k,iwp3_bp) = zt%n(k,iwp3_bp) + 1
           endif
 
           if ( iwp3_pr2 > 0 ) then
           zt%x(k,iwp3_pr2) = zt%x(k,iwp3_pr2) 
-     .    - C11_Skw_fnc(k) * 3.0 * grav * alpha * wp2thvp(k)
+     .    - C11_Skw_fnc(k) * 3.0 * grav * ( grav / T0 ) * wp2thvp(k)
           endif
 
           if ( iwp3_pr1 > 0 ) then

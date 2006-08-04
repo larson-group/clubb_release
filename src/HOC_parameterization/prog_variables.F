@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: prog_variables.F,v 1.8 2006-06-22 17:32:28 griffinb Exp $
+! $Id: prog_variables.F,v 1.9 2006-08-04 21:08:56 dschanen Exp $
         module prognostic_variables
 
 ! This module contains definitions of all prognostic
@@ -92,7 +92,7 @@
 !  for the HOC model code
 !-----------------------------------------------------------------------
         subroutine setup_prognostic_variables( nzmax )
-        use constants, only: sclrm_dimension, emin
+        use constants, only: sclr_dim, emin
         use model_flags
 
         implicit none
@@ -155,11 +155,11 @@
 
 ! Variables for new mixing scheme
 
-        allocate( sclrm(1:nzmax, 1:sclrm_dimension) )
-        allocate( sclrm_forcing(1:nzmax, 1:sclrm_dimension) )
+        allocate( sclrm(1:nzmax, 1:sclr_dim) )
+        allocate( sclrm_forcing(1:nzmax, 1:sclr_dim) )
 
-        allocate( edsclrm(1:nzmax, 1:sclrm_dimension) )
-        allocate( edsclrmt(1:nzmax, 1:sclrm_dimension) )
+        allocate( edsclrm(1:nzmax, 1:sclr_dim) )
+        allocate( edsclrmt(1:nzmax, 1:sclr_dim) )
 
 
 #endif /*SCALARS*/

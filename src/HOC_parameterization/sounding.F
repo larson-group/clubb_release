@@ -1,4 +1,4 @@
-! $Id: sounding.F,v 1.1 2006-04-21 21:50:56 dschanen Exp $
+! $Id: sounding.F,v 1.2 2006-08-04 21:08:56 dschanen Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
       module sounding
@@ -20,7 +20,7 @@
      .                            sclrm, edsclrm ) ! optional
 
         use grid_class
-        use constants, only: sclrm_dimension
+        use constants, only: sclr_dim
 
         implicit none
 
@@ -44,7 +44,7 @@
 
 ! Optional Output
         real, optional, intent(out),
-     .        dimension(gr%nnzp, sclrm_dimension) :: sclrm, edsclrm
+     .        dimension(gr%nnzp, sclr_dim) :: sclrm, edsclrm
 
 ! Input variables from namelist
 
@@ -52,7 +52,7 @@
         real z(nmaxsnd),theta(nmaxsnd),rt(nmaxsnd)
         real u(nmaxsnd),v(nmaxsnd),ug(nmaxsnd),vg(nmaxsnd)
 
-        real, dimension(nmaxsnd, sclrm_dimension)  :: sclr, edsclr
+        real, dimension(nmaxsnd, sclr_dim)  :: sclr, edsclr
 
         namelist /sounding/ nlevels, z, theta, rt, u, v, ug, vg
         namelist /scalar_sounding/ sclr, edsclr
@@ -143,7 +143,7 @@
      .                      theta(k), theta(k-1) )
               rtm(i)  = linint( gr%zt(i), z(k), z(k-1), rt(k), rt(k-1) )
               if ( sclr_sounding ) then
-                do j = 1, sclrm_dimension 
+                do j = 1, sclr_dim 
                   sclrm(i,j) = linint( gr%zt(i), z(k), z(k-1), 
      .                                 sclr(k,j), sclr(k-1,j) )
                   edsclrm(i,j) = linint( gr%zt(i), z(k), z(k-1), 

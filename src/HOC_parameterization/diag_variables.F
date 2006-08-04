@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F,v 1.9 2006-06-22 17:32:28 griffinb Exp $
+! $Id: diag_variables.F,v 1.10 2006-08-04 21:08:56 dschanen Exp $
         module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -166,7 +166,7 @@
 !-----------------------------------------------------------------------
         subroutine setup_diagnostic_variables( nzmax )
         use model_flags
-        use constants, only: sclrm_dimension, emin
+        use constants, only: sclr_dim, emin
 
         implicit none
  
@@ -285,21 +285,21 @@
 
 ! Variables for new mixing scheme
 
-        allocate( sclrprtp(1:nzmax, 1:sclrm_dimension) )
-        allocate( sclrp2(1:nzmax, 1:sclrm_dimension) )
-        allocate( sclrpthvp(1:nzmax, 1:sclrm_dimension) )
-        allocate( sclrpthlp(1:nzmax, 1:sclrm_dimension) )
-        allocate( sclrprcp(1:nzmax, 1:sclrm_dimension) )
+        allocate( sclrprtp(1:nzmax, 1:sclr_dim) )
+        allocate( sclrp2(1:nzmax, 1:sclr_dim) )
+        allocate( sclrpthvp(1:nzmax, 1:sclr_dim) )
+        allocate( sclrpthlp(1:nzmax, 1:sclr_dim) )
+        allocate( sclrprcp(1:nzmax, 1:sclr_dim) )
 
-        allocate( wpsclrp(1:nzmax, 1:sclrm_dimension) )
-        allocate( wp2sclrp(1:nzmax, 1:sclrm_dimension) )
-        allocate( wpsclrp2(1:nzmax, 1:sclrm_dimension) )
-        allocate( wpsclrprtp(1:nzmax, 1:sclrm_dimension) )
-        allocate( wpsclrpthlp(1:nzmax, 1:sclrm_dimension) )
+        allocate( wpsclrp(1:nzmax, 1:sclr_dim) )
+        allocate( wp2sclrp(1:nzmax, 1:sclr_dim) )
+        allocate( wpsclrp2(1:nzmax, 1:sclr_dim) )
+        allocate( wpsclrprtp(1:nzmax, 1:sclr_dim) )
+        allocate( wpsclrpthlp(1:nzmax, 1:sclr_dim) )
 
 ! Eddy Diff. Scalar
 
-        allocate( wpedsclrp(1:nzmax, 1:sclrm_dimension) )
+        allocate( wpedsclrp(1:nzmax, 1:sclr_dim) )
 #endif /*SCALARS*/
 
 !   --- Initializaton ---

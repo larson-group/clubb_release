@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.19 2006-08-02 20:48:51 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.20 2006-08-04 21:08:56 dschanen Exp $
 
 
 !  Module hoc_parameterization_interface
@@ -115,12 +115,12 @@
 !      Needed for output for host models
        real, intent(inout), dimension(gr%nnzp) :: cf
 
-       real, intent(inout), dimension(gr%nnzp,sclrm_dimension),
+       real, intent(inout), dimension(gr%nnzp,sclr_dim),
      . optional :: sclrm, sclrm_forcing, edsclrm
 
 !      Output
 
-       real, intent(out), dimension(gr%nnzp,sclrm_dimension),
+       real, intent(out), dimension(gr%nnzp,sclr_dim),
      . optional :: edsclrmt
 
        logical, intent(in) :: implemented
@@ -163,7 +163,7 @@
 !-------- End Latin hypercube section ----------------------------------
 
 #ifdef SCALARS
-       real, dimension(1:gr%nnzp,1:sclrm_dimension) ::
+       real, dimension(1:gr%nnzp,1:sclr_dim) ::
      . sclr_tmp1, sclr_tmp2, sclr_tmp3, sclr_tmp4 ! for pdf closure
 #endif /* SCALARS */
 
@@ -210,7 +210,7 @@
           rtp2(1)    = 0.0
           rtpthlp(1) = 0.0
 #ifdef SCALARS
-          DO i = 1, sclrm_dimension, 1
+          DO i = 1, sclr_dim, 1
              sclrp2(1,i)    = 0.0
              sclrprtp(1,i)  = 0.0
              sclrpthlp(1,i) = 0.0
@@ -238,11 +238,11 @@
        rtpthlp(gr%nnzp) = 0.0
 #ifdef SCALARS
 !      Set Boundary Conditions for optional passive scalars
-       do i = 1, sclrm_dimension
+       do i = 1, sclr_dim
           sclrprtp(gr%nnzp,i)  = 0.0
           sclrp2(gr%nnzp,i)    = 0.0
           sclrpthlp(gr%nnzp,i) = 0.0
-       enddo ! i = 1, sclrm_dimension
+       enddo ! i = 1, sclr_dim
 #endif /* SCALARS */
 
 #ifndef DISABLE_GAMMA_SKW
@@ -301,12 +301,12 @@
 
 #ifdef SCALARS
 !      Put closure scheme input on the m grid
-       do i = 1, sclrm_dimension
+       do i = 1, sclr_dim
           sclr_tmp1(:,i) = zm2zt( wpsclrp(:,i) ) 
           sclr_tmp2(:,i) = zm2zt( sclrprtp(:,i) ) 
           sclr_tmp3(:,i) = zm2zt( sclrp2(:,i) ) 
           sclr_tmp4(:,i) = zm2zt( sclrpthlp(:,i) ) 
-       enddo ! i = 1, sclrm_dimension
+       enddo ! i = 1, sclr_dim
 #endif /* SCALARS */
 
        do k = 2, gr%nnzp, 1
@@ -359,19 +359,19 @@
        thlprcp           = 0.0
 #ifdef SCALARS
 !      Interpolate passive scalars back onto the m grid
-       do i = 1, sclrm_dimension
+       do i = 1, sclr_dim
           sclrpthvp(:,i)       = zt2zm( sclrpthvp(:,i) )
           sclrpthvp(gr%nnzp,i) = 0.0
           sclrprcp(:,i)        = zt2zm( sclrprcp(:,i) )
           sclrprcp(gr%nnzp,i)  = 0.0
-       enddo ! i=1, sclrm_dimension
+       enddo ! i=1, sclr_dim
 #endif /* SCALARS */
 
 !      Alternate approach for lower wp4 boundary condition:
 !      call pdf scheme at the 1st momentum level, zm(1)
 
 #ifdef SCALARS
-       do i = 1, sclrm_dimension
+       do i = 1, sclr_dim
           sclr_tmp1(:,i) = zt2zm( sclrm(:,i) )
        enddo
 #endif /* SCALARS */
@@ -494,9 +494,9 @@
        wprtp(gr%nnzp)   = 0.0
 #ifdef SCALARS
 !      Set Boundary Conditions for optional passive scalars
-       do i = 1, sclrm_dimension
+       do i = 1, sclr_dim
           wpsclrp(gr%nnzp,i)   = 0.0
-       enddo ! i = 1, sclrm_dimension
+       enddo ! i = 1, sclr_dim
 #endif /* SCALARS */
 
 
@@ -517,7 +517,7 @@
 
 #ifdef SCALARS
 !      Eddy Diffusivity Code
-       do i=1, sclrm_dimension
+       do i=1, sclr_dim
          edsclrmt(1:gr%nnzp,i) = - wmt * ddzm( zt2zm( edsclrm(:,i) ) )
          if ( i == SCLR_THETA) then
           ! Note changed from dtmain=>dt -dschanen
@@ -529,7 +529,7 @@
          end if
        end do
        ! Set boundary condition as in rt
-       edsclrm(1,1:sclrm_dimension) = edsclrm(2,1:sclrm_dimension)
+       edsclrm(1,1:sclr_dim) = edsclrm(2,1:sclr_dim)
        if ( .not. isValid ) return
 #endif /*SCALARS*/
 
