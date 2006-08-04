@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.11 2006-08-04 21:08:56 dschanen Exp $ 
+! $Id: gcss.F,v 1.12 2006-08-04 22:04:02 dschanen Exp $ 
         module gcss
 
 !       Description:
@@ -949,7 +949,7 @@
         use constants
 #ifdef STATS
         use statistics
-#end if /*STATS*/
+#endif /*STATS*/
 
         implicit none
 
@@ -1017,7 +1017,7 @@
           sfc%x(1,izi) = sfc%x(1,izi) + zi
           sfc%n(1,izi) = sfc%n(1,izi) + 1
         end if
-#end if /*STATS*/
+#endif /*STATS*/
 
 !       Large scale subsidence
 
@@ -1088,7 +1088,7 @@
         USE constants
 #ifdef STATS
         USE statistics
-#end if /*STATS*/
+#endif /*STATS*/
 
         ! Input
         REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rhot
@@ -1221,7 +1221,7 @@
           sfc%x(1,izi) = sfc%x(1,izi) + z_i
           sfc%n(1,izi) = sfc%n(1,izi) + 1
         end if
-#end if /*STATS*/
+#endif /*STATS*/
         if ( present( sclr_tndcy ) ) 
      .    sclr_tndcy(:,SCLR_THETA) = theta_tndcy 
         if ( present( sclr_tndcy ) ) sclr_tndcy(:,SCLR_RT) = rt_tndcy 
@@ -1271,7 +1271,7 @@
         use constants
 #ifdef STATS
         use statistics
-#end if /*STATS*/
+#endif /*STATS*/
 
         implicit none
 
@@ -1345,7 +1345,7 @@
           sfc%x(1,iustar) = sfc%x(1,iustar) + ustar
           sfc%n(1,iustar) = sfc%n(1,iustar) + 1
         end if
-#end if /*STATS*/
+#endif /*STATS*/
 
         return
         end subroutine dycoms2_rf01_sfclyr
