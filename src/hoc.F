@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.88 2006-07-21 16:32:01 dschanen Exp $
+! $Id: hoc.F,v 1.89 2006-08-04 21:01:16 dschanen Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -724,9 +724,9 @@
 
 !       Output (optional)
         real, optional, 
-     .  dimension(gr%nnzp,sclrm_dimension), intent(out) :: sclrm
+     .  dimension(gr%nnzp,sclr_dim), intent(out) :: sclrm
         real, optional, 
-     .  dimension(gr%nnzp,sclrm_dimension), intent(out) :: edsclrm
+     .  dimension(gr%nnzp,sclr_dim), intent(out) :: edsclrm
 
 !       Internal
         real, dimension(gr%nnzp) :: tmp1
