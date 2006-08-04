@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: hydrostatic.F,v 1.1 2006-04-21 21:50:56 dschanen Exp $
+! $Id: hydrostatic.F,v 1.2 2006-08-04 22:05:04 dschanen Exp $
 
 ! SUBROUTINE hydrostatic( )
 
@@ -54,13 +54,13 @@
 ! Compute density on thermodynamic grid
 
         do k=1,gr%nnzp
-           rhot(k) = p(k) / ( R * thvm(k) * exner(k) )
+           rhot(k) = p(k) / ( Rd * thvm(k) * exner(k) )
         end do
 
 ! Interpolate density back to momentum grid
 
         rhom = zt2zm( rhot )
-        rhom(1) = p(1) / ( R * thvm(1) * exner(1) )
+        rhom(1) = p(1) / ( Rd * thvm(1) * exner(1) )
 
         return
         end subroutine hydrostatic

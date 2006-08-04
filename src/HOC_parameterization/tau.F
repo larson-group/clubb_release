@@ -1,9 +1,9 @@
 !----------------------------------------------------------------------
-! $Id: tau.F,v 1.1 2006-04-21 21:50:56 dschanen Exp $
+! $Id: tau.F,v 1.2 2006-08-04 22:05:04 dschanen Exp $
 
 !     SUBROUTINE tau( )
 !----------------------------------------------------------------------
-      subroutine tau(thlm, thvm, rtm, rcm, cf, p, exner, taut)
+      subroutine tau( thlm, thvm, rtm, rcm, cf, p, exner, taut )
 
       use constants
       use grid_class
@@ -74,8 +74,8 @@
 
         n2dry   = grav/T0 * dthvm(k)
 
-        n2moist = grav*(  ( 1.0 + (Lv*rs(k))/(R*tm(k)) )
-     .                 /( 1.0 + (ep1*Lv*Lv*rs(k))/(cp*R*tm(k)*tm(k)) )
+        n2moist = grav*(  ( 1.0 + (Lv*rs(k))/(Rd*tm(k)) )
+     .                 /( 1.0 + (ep1*Lv*Lv*rs(k))/(cp*Rd*tm(k)*tm(k)) )
      .                 *( dthm(k)/thm(k) + Lv/(cp*tm(k))*drs(k) )
      .                - drt(k)
      .               )

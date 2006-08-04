@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.3 2006-08-04 21:08:56 dschanen Exp $
+! $Id: constants.F,v 1.4 2006-08-04 22:05:04 dschanen Exp $
 
 !  Contains frequently occuring model constants
 !-----------------------------------------------------------------------
@@ -16,19 +16,19 @@
 
         ! Physical constants
         real, parameter :: 
-     .  Cp = 1004.67,    ! Dry air specific heat at constant p
-     .  Lv = 2.5e6,      ! Latent heat of vaporization
-     .  R  = 287.04, ! Dry air gas constant
-     .  Rv = 461.5   ! Water vapor gas constant
+     .  Cp = 1004.67, ! Dry air specific heat at constant p [J/kg/K]
+     .  Lv = 2.5e6,   ! Latent heat of vaporization         [J/kg]
+     .  Rd = 287.04,  ! Dry air gas constant                [J/kg/K]
+     .  Rv = 461.5    ! Water vapor gas constant            [J/kg/K]
 
         ! Useful combinations of R and Rv
         real, parameter :: 
-     .  ep  = R/Rv,       ! ep = 0.622
+     .  ep  = Rd / Rv,    ! ep = 0.622
      .  ep1 = (1.0-ep)/ep,! ep1 = 0.61
      .  ep2 = 1.0/ep      ! ep2 = 1.61
 
         real, parameter :: 
-     .  kappa = R/Cp   ! kappa
+     .  kappa = Rd / Cp   ! kappa
 
         ! Changed g to grav to make it easier to find in the code 5/25/05
 !       real, parameter :: grav  = 9.80665 ! Gravitational acceleration [m/s^2]
@@ -101,15 +101,12 @@
         real, parameter :: 
      .  eps = 1.0e-10 ! Small value to prevent a divide by zero
 
-!       Added for new mixing scheme.  
-!       Without this the intrinsic size() would have to be called often
-
-!       integer, parameter :: sclr_dim = 1
+        ! Added for new mixing scheme.  
+        ! Without this the intrinsic size() would have to be called often
         integer, parameter :: sclr_dim = 2
 
-!       Tolerance for new mixing scheme
-!       Currently it's elements are equal to rttol and thltol
-
+        ! Tolerance for new mixing scheme
+        ! Currently it's elements are equal to rttol and thltol
         real, dimension(sclr_dim), parameter :: 
      .  sclrtol = (/thltol, rttol/)
 

@@ -1,4 +1,4 @@
-! $Id: closure_new.F,v 1.3 2006-08-04 21:08:56 dschanen Exp $
+! $Id: closure_new.F,v 1.4 2006-08-04 22:05:04 dschanen Exp $
       module pdf_closure
 
       implicit none
@@ -413,8 +413,8 @@
         rsl2 = rsat(p,tl2)
 
 !       SD's beta (eqn. 8)
-        beta1 = ep*(Lv/(R*tl1))*(Lv/(cp*tl1))
-        beta2 = ep*(Lv/(R*tl2))*(Lv/(cp*tl2))
+        beta1 = ep*(Lv/(Rd*tl1))*(Lv/(cp*tl1))
+        beta2 = ep*(Lv/(Rd*tl2))*(Lv/(cp*tl2))
 
 !       s from Lewellen and Yoh 1993 (LY) eqn. 1
         s1 = (rt1-rsl1)/(1+beta1*rsl1)

@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.3 2006-08-02 20:55:14 dschanen Exp $
+! $Id: rain.F,v 1.4 2006-08-04 22:05:04 dschanen Exp $
 !----------------------------------------------------------------------
 
       MODULE rain_equations
@@ -561,7 +561,7 @@
            ! Compute supersaturation via s1, s2. 
            !     Larson et al 2002, JAS, Vol 59, p 3534.
            ! This allows a more direct comparison of local, nonlocal formulas.
-           Beta_T = (R/Rv) * ( Lv/(R*Temp(k)) ) * ( Lv/(Cp*Temp(k)) )
+           Beta_T = (Rd/Rv) * ( Lv/(Rd*Temp(k)) ) * ( Lv/(Cp*Temp(k)) )
 
            Supsat(k) = (a*s1+(1-a)*s2)*((1.0 + Beta_T*rs(k))/rs(k))
 
@@ -1104,7 +1104,7 @@
 
         rsl_pl = rsat(press, tmpl_pl)
 
-        Beta_T = (R/Rv) * ( Lv/(R*tmpl_pl) ) * ( Lv/(Cp*tmpl_pl) )
+        Beta_T = (Rd/Rv) * ( Lv/(Rd*tmpl_pl) ) * ( Lv/(Cp*tmpl_pl) )
 
         ! The following IF statement is for a normal situation where
         ! there is variance in liquid water, meaning that ss > 0.

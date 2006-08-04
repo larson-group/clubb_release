@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------------
-! $Id: length.F,v 1.1 2006-04-21 21:50:56 dschanen Exp $
+! $Id: length.F,v 1.2 2006-08-04 22:05:04 dschanen Exp $
 ! subroutine length( )
 
 ! Larson's 5th moist, nonlocal length scale
@@ -99,7 +99,7 @@
             tl_par_j = thl_par_j*exner(j)
             rsl_par_j = rsat(p(j),tl_par_j)
 !           SD's beta (eqn. 8)
-            beta_par_j = ep*(Lv/(R*tl_par_j))*(Lv/(cp*tl_par_j))
+            beta_par_j = ep*(Lv/(Rd*tl_par_j))*(Lv/(cp*tl_par_j))
 !           s from Lewellen and Yoh 1993 (LY) eqn. 1
             s_par_j = (rt_par_j-rsl_par_j)/(1+beta_par_j*rsl_par_j)
             rc_par_j = max( s_par_j, 0. )
@@ -171,7 +171,7 @@
             tl_par_j = thl_par_j*exner(j)
             rsl_par_j = rsat(p(j),tl_par_j)
 !           SD's beta (eqn. 8)
-            beta_par_j = ep*(Lv/(R*tl_par_j))*(Lv/(cp*tl_par_j))
+            beta_par_j = ep*(Lv/(Rd*tl_par_j))*(Lv/(cp*tl_par_j))
 !           s from Lewellen and Yoh 1993 (LY) eqn. 1
             s_par_j = (rt_par_j-rsl_par_j)/(1+beta_par_j*rsl_par_j)
             rc_par_j = max(s_par_j,0.)
