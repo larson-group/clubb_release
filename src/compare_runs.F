@@ -1,53 +1,69 @@
 !----------------------------------------------------------------------
-!  $Id: compare_runs.F,v 1.10 2005-11-05 18:23:25 griffinb Exp $
-!  program compare_runs.F
+!  $Id: compare_runs.F,v 1.11 2006-08-04 15:20:54 dschanen Exp $
 
-!  Tests selected GrADS file variables for low variation
-!----------------------------------------------------------------------
         program compare_runs 
+
+!       Description:
+!       Tests selected GrADS file variables between runs
+
+!       References:
+!       None
+!----------------------------------------------------------------------
 
         use inputfile_class
         use grads_common        
 
         implicit none
  
-!        integer, parameter               :: nvar = 14
-        integer, parameter               :: nvar = 14
-        integer, parameter               :: max_times = 10
+        integer, parameter :: 
+     .  nvar = 14,
+     .  max_times = 10
 
 
-        real(kind=4), allocatable, dimension(:)      :: fvar1
-        real(kind=4), allocatable, dimension(:)      :: fvar2
-        real(kind=4), allocatable, dimension(:)      :: fvar3
+        real(kind=4), allocatable, dimension(:) :: 
+     .  fvar1,
+     .  fvar2,
+     .  fvar3
 
-        character(len=10), dimension(nvar)           :: hoc_variables
-        character(len=10), dimension(nvar)           :: les_variables
+        character(len=10), dimension(nvar) :: 
+     .  hoc_variables,
+     .  les_variables
 
-        real(kind=8) :: percent_mean_sqr
-        real(kind=8) :: reference
+        real(kind=8) :: 
+     .  percent_mean_sqr,
+     .  reference
 
         real(kind=4) :: minmax
 
-        character(len=80)     :: file1 ! Always a HOC file
-        character(len=80)     :: file2 ! Either a HOC or LES file
-        character(len=80)     :: file3 ! Always the 2.1 reference files
+        character(len=80) :: 
+     .  file1,! Always a HOC file
+     .  file2,! Either a HOC or LES file
+     .  file3 ! Always a HOC file
 
-        integer, dimension(max_times) :: t        ! times to analyze
+        integer, dimension(max_times) :: 
+     .  t ! times to analyze
 
-        integer                :: nz, nz_file1,
-     .                            nz_file2, nz_file3    ! z-levels
-        integer                :: n               ! loop
-        integer                :: i               ! loop
-        integer                :: tmax            ! max time to analyze 
+        integer :: 
+     .  nz,       ! smallest of the 3 grids
+     .  nz_file1, ! grid levels
+     .  nz_file2, ! grid levels
+     .  nz_file3  ! grid levels
 
-        logical                :: les_comparison
+        integer ::
+     .  n, i ! loop
 
-        logical                :: error           ! set, never used
+        integer :: tmax  ! max time to analyze 
+
+        logical :: les_comparison
+
+        logical :: error ! set, never used
 
         namelist /compare/ les_comparison, file1, file2, file3, t
 
-        open ( 10, file="compare_runs.in", status='old' )
-        read ( 10, nml = compare )
+!-----------------------------------------------------------------------
+
+        open(unit=10,file="compare_runs.in",status='old')
+        read(unit=10,nml=compare)
         
         hoc_variables(1)  = "rcm"
         hoc_variables(2)  = "rtm" 
@@ -80,103 +96,111 @@
           les_variables(13) = "wpqtp"
           les_variables(14) = "qtp2"
         else
-          les_variables( 1:nvar ) = hoc_variables( 1:nvar )
-        endif
+          les_variables(1:nvar) = hoc_variables(1:nvar)
+        end if ! les_comparison
 
-        do i=1, max_times
+        do i = 1, max_times
           if ( t(i) == 0 ) exit
-        enddo
+        end do
+
         tmax = i - 1
  
-        write(*,*) "file1: ", file1
-        write(*,*) "file2: ", file2
-        write(*,*) "file3: ", file3
+        write(unit=*,fmt=*) "file1: ", file1
+        write(unit=*,fmt=*) "file2: ", file2
+        write(unit=*,fmt=*) "file3: ", file3
 
-        do i=1, tmax, 2
-        write(*,*) "time: ", t(i), " to ", t(i+1)
-        write(*,'(3a18)') "Comparison        "," (file1 - file2)^2 ",
-     .             " (file2 - file3)^2"
-          do n=1, nvar
+        do i = 1, tmax, 2
+          write(unit=*,fmt=*) "time: ", t(i), " to ", t(i+1)
+          write(unit=*,fmt='(3a18)') "Comparison        ",
+     .      " (file1 - file2)^2 ", " (file2 - file3)^2"
+          do n = 1, nvar, 1
 
-!           hoc_v2.1 reference file
+            ! HOC reference file
             nz_file3 = grads_zlvl( file3 )
             allocate( fvar3(nz_file3) )
 
             fvar3 = grads_average( file3, nz_file3, t(i), t(i+1), 
      .                             hoc_variables(n), 1, error )
 
-!           second hoc file or the les file
+            ! Second HOC file or the LES file
             nz_file2 = grads_zlvl( file2 )
             allocate( fvar2(nz_file2) )
 
             fvar2 = grads_average( file2, nz_file2, t(i), t(i+1), 
      .                             les_variables(n), 1, error )
 
-!           first hoc file
+            ! First hoc file
             nz_file1 = grads_zlvl( file1 )
             allocate( fvar1(nz_file1) )
 
             fvar1 = grads_average( file1, nz_file1, t(i), t(i+1), 
      .                             hoc_variables(n), 1, error )
 
-!           Choose smallest number of vertical gridpoints.
+            ! Choose smallest number of vertical gridpoints.
             nz = min( nz_file3, nz_file2, nz_file1 )
 
             minmax = maxval( fvar2 ) - minval( fvar2 )
-            if ( minmax == 0. ) then
-              write(*,*) "minmax = 0. for ", les_variables(n)
-              minmax = 1.             ! no normalization
-            endif
+            if ( minmax == 0.0 ) then
+              write(unit=*,fmt=*) "minmax = 0. for ", les_variables(n)
+              minmax = 1.0 ! no normalization
+            end if
 
             if ( .not. les_comparison ) then
-            percent_mean_sqr = sum( ( ( ( fvar1(1:nz)-fvar2(1:nz) )
-     .                                  / minmax )        )**2, 1 )
-     .                                                 / (nz)
+              percent_mean_sqr = 
+     .          sum( (( fvar1(1:nz)-fvar2(1:nz) )/minmax )**2, 1 ) / nz
             else
               call les_interpolate( )
-            endif
+            end if
 
-            reference = sum( ( ( ( fvar2(1:nz)-fvar3(1:nz) )
-     .                                  / minmax )        )**2, 1 )
-     .                                                 / (nz)
+            reference =
+     .        sum( (( fvar2(1:nz)-fvar3(1:nz) )/minmax )**2, 1 ) / nz
 
-            write(*,'(a18,2f18.6)') "PM^2 for "//
-     .      hoc_variables(n)//" = ", percent_mean_sqr, reference
+            write(unit=*,fmt='(a18,2f18.6)') "PM^2 for "//
+     .        hoc_variables(n)//" = ", percent_mean_sqr, reference
 
-            deallocate ( fvar1, fvar2, fvar3 )
-          enddo
-        enddo
+            deallocate( fvar1, fvar2, fvar3 )
+
+          end do   ! n = 1, nvar, 1
+
+        end do     ! i = 1, tmax, 2
 
         contains
+!-----------------------------------------------------------------------
 
         subroutine les_interpolate( ) 
+
+!       Description:
+!       This is more a "shift" than an actual interpolation of grid
+!       points, done on a case by case basis.  At some point perhaps
+!       this could be changed to do an actual generalized interpolation.
+
+!       References:
+!       None
+!-----------------------------------------------------------------------
         
         implicit none
 
         select case ( nz )
-          case (48, 75, 110, 147, 150, 160)
-!----------------------------------------------------------------------
-!  Due to hoc's lower starting point, we can only use
-!  (total number of z-levels) - 1 (a maximum of 74 for BOMEX).
-!  The code below assumes the LES data are on an evenly spaced grid.
-!  fvar1 = hoc profile; fvar2 = LES profile.
-!  (Need to interpolate hoc to LES' levels.  Right now we just
-!   compare adjacent z levels.  Vince Larson 12 Jan 2005)
-!----------------------------------------------------------------------
-             percent_mean_sqr = sum(((( fvar1(2:nz)-fvar2(1:(nz-1))) 
-     .                              / minmax )         ) ** 2, 1 )
-     .                                               / (nz-1)
-          case (132)  !  the dycoms II RF01 case
-             percent_mean_sqr = sum(((( fvar1(3:nz) - fvar2(1:(nz-2))) 
-     .                               / minmax )         ) ** 2, 1 )
-     .                                               / (nz-2)
-          case (50)   !  the wangara case
-             percent_mean_sqr = sum(((( fvar1(1:nz)-fvar2(1:nz) )
-     .                               / minmax )        )**2, 1 )
-     .                                                 / (nz)
-          case default !
-            stop "Not able to handle specified number of HOC z-levels"
-        end select
+        case( 48, 75, 110, 147, 150, 160 )
+          ! Due to HOC's lower starting point, we can only use
+          ! (total number of z-levels) - 1 (a maximum of 74 
+          ! for BOMEX).  The code below assumes the LES data 
+          ! are on an evenly spaced grid.
+          ! fvar1 = HOC profile; fvar2 = LES profile.
+          ! (Need to interpolate hoc to LES' levels.  Right now we just
+          ! compare adjacent z levels.  Vince Larson 12 Jan 2005)
+          percent_mean_sqr = 
+     .      sum( (( fvar1(2:nz)-fvar2(1:nz-1) )/minmax)**2, 1 ) / (nz-1)
+        case( 132 ) !  the DYCOMS II RF01 case
+          percent_mean_sqr = 
+     .      sum( (( fvar1(3:nz)-fvar2(1:nz-2) )/minmax)**2, 1 )/ (nz-2)
+        case( 50 ) !  the Wangara case
+          percent_mean_sqr =
+     .      sum( (( fvar1(1:nz)-fvar2(1:nz) )/minmax)**2, 1 ) / nz
+
+        case default !
+          stop "Not able to handle specified number of HOC z-levels"
+        end select ! nz
 
         return
         end subroutine les_interpolate
