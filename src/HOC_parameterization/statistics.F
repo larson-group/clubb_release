@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.5 2006-08-04 21:08:56 dschanen Exp $
+!  $Id: statistics.F,v 1.6 2006-08-08 19:39:05 dschanen Exp $
 
 !  module stats_type
 !  contains:
@@ -78,6 +78,7 @@ c       Indices for statistics in zt file
      .     ivg,
      .     icf,
      .     ip,
+     .     iexner,
      .     iLscale,
      .     ithlm_forcing,
      .     irtm_forcing,
@@ -511,6 +512,7 @@ c     -----------------------------------------------------------------
       ivg           = 0
       icf           = 0
       ip            = 0
+      iexner        = 0
       iLscale       = 0
       ithlm_forcing = 0
       irtm_forcing  = 0
@@ -704,6 +706,14 @@ c     -----------------------------------------------------------------
           zt%f%var(ip)%name = "p"
           zt%f%var(ip)%description = "pressure (Pa)"
           zt%f%var(ip)%units = "Pa"
+          k = k + 1
+
+        case ('exner')
+          iexner = k
+          zt%f%var(iexner)%ptr => zt%x(:,k)
+          zt%f%var(iexner)%name = "exner"
+          zt%f%var(iexner)%description = "Exner"
+          zt%f%var(iexner)%units = "count"
           k = k + 1
 
         case ('Lscale')
@@ -2857,6 +2867,10 @@ c     -----------------------------------------------------------------
         if ( ip > 0 ) then
           zt%x(:,ip) = zt%x(:,ip) + p
           zt%n(:,ip) = zt%n(:,ip) + 1
+        endif
+        if ( iexner > 0 ) then
+          zt%x(:,iexner) = zt%x(:,iexner) + exner
+          zt%n(:,iexner) = zt%n(:,iexner) + 1
         endif
         if ( iLscale > 0 ) then
           zt%x(:,iLscale) = zt%x(:,iLscale) + Lscale
