@@ -1,4 +1,4 @@
-! $Id: closure_new.F,v 1.4 2006-08-04 22:05:04 dschanen Exp $
+! $Id: closure_new.F,v 1.5 2006-08-08 16:55:25 dschanen Exp $
       module pdf_closure
 
       implicit none
@@ -15,25 +15,19 @@
 
 ! Corrected version that should remove inconsistency
 !------------------------------------------------------------------------
-        subroutine pdf_closure_new( p, exner,
-     .                              wm, wp2, wp3, Sc,
-     .                              rtm, rtp2, wprtp,
-     .                              thlm, thlp2, wpthlp,
-     .                              rtpthlp,
-     .                              wp4,
-     .                              wprtp2, wp2rtp,
-     .                              wpthlp2, wp2thlp,
-     .                              wprtpthlp,
-     .                              cf, rcm,
-     .                              wpthvp, wp2thvp, rtpthvp, thlpthvp,
-     .                              wprcp, wp2rcp, rtprcp, thlprcp,
-     .                              pdf_parms,
-     .                              crt1, crt2, cthl1, cthl2,
-     .                              sclrm, wpsclrp,                    !optional
-     .                              wpsclrprtp, wpsclrp2,              ! "    "
-     .                              sclrprtp, sclrp2, sclrpthlp,       ! "    "
-     .                              sclrpthvp , wpsclrpthlp, sclrprcp, ! "    "
-     .                              wp2sclrp )                         ! "    "
+        subroutine pdf_closure_new
+     .             ( p, exner, wm, wp2, wp3, Sc,
+     .               rtm, rtp2, wprtp,
+     .               thlm, thlp2, wpthlp,
+     .               rtpthlp, wp4, wprtp2, wp2rtp,
+     .               wpthlp2, wp2thlp, wprtpthlp,
+     .               cf, rcm, wpthvp, wp2thvp, rtpthvp, 
+     .               thlpthvp, wprcp, wp2rcp, rtprcp, thlprcp,
+     .               pdf_parms, crt1, crt2, cthl1, cthl2,
+     .               sclrm, wpsclrp,                    !optional
+     .               wpsclrprtp, wpsclrp2, sclrprtp,    ! "    "
+     .               sclrp2, sclrpthlp, sclrpthvp,      ! "    "
+     .               wpsclrpthlp, sclrprcp, wp2sclrp )  ! "    "
 
         use constants
 
@@ -146,7 +140,7 @@
           scalar_calc = .true.
         else
           scalar_calc = .false.
-        endif
+        end if
 
         BD = Lv / (exner*cp) - ep2 * T0
 
@@ -183,7 +177,7 @@
      .            )
           end if
 
-!          clip a, 1-a, to avoid dividing by zero
+          ! Clip a, 1-a, to avoid dividing by zero
           if (a > 0.99) a = 0.99
           if (a < 0.01) a = 0.01
 
@@ -284,9 +278,9 @@
      .                        * width_factor_1
                 ssclr2(i) = ( alpha_sclr(i) / (1.-a) * sclrp2(i) ) 
      .                        * width_factor_2
-              end if
-            enddo ! i=1, sclr_dim
-          endif ! scalar_calc
+              end if ! sclrp2(i) <= sclrtol(i)**2
+            end do ! i=1, sclr_dim
+          end if ! scalar_calc
 
 !       We include sub-plume correlation with coeff rrtthl.
 
@@ -317,13 +311,13 @@
      .                         + (1-a)*sqrt( ssclr2(i)*sthl2 ) )
                 if (rsclrthl(i) < -1.) then
                   rsclrthl(i) = -1.
-                endif
+                end if
                 if (rsclrthl(i) > 1.) then
                   rsclrthl(i) = 1.
-                endif
+                end if
               else
                 rsclrthl(i) = 0.
-              endif
+              end if
 
 !       Sub-plume correlation, rsclrrt, between passive scalar
 !              and total water.
