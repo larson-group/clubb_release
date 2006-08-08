@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.60 2006-08-02 22:48:46 dschanen Exp $
+# $Id: Makefile,v 1.61 2006-08-08 22:52:09 dschanen Exp $
 # This version should work with BSD, GNU make, smake and dmake
 
 # For HOC we edit this by hand rather than implementing imake or automake
@@ -152,8 +152,8 @@ rain.o		: constants.o model_flags.o statistics.o tridag.o \
 	polpak.o rain.F
 outputgrads.o	: endian.o outputfile.o outputgrads.F
 outputnc.o	: outputfile.o outputnc.F
-diag_variables.o: constants.o grid.o diag_variables.F 
-prog_variables.o: constants.o grid.o prog_variables.F 
+diag_variables.o: constants.o grid.o model_flags.o diag_variables.F 
+prog_variables.o: constants.o grid.o model_flags.o prog_variables.F 
 numer_check.o	: prog_variables.o diag_variables.o numer_check.F
 inputgrads.o	: endian.o inputgrads.F
 grid.o		: grid.F
