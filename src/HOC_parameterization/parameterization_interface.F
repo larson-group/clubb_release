@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.20 2006-08-04 21:08:56 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.21 2006-08-10 18:57:02 vlarson Exp $
 
 
 !  Module hoc_parameterization_interface
@@ -330,7 +330,8 @@
          if ( LH_on ) then 
            call latin_hypercube_sampling
      .     ( k, n_micro_call, d_variables, 
-     .       nt_repeat, i_rmd, crt1, crt2, cthl1, cthl2, 
+     .       nt_repeat, i_rmd, 
+     .       crt1, crt2, cthl1, cthl2, 
      .       rrm, gr%nnzp, sample_flag, p_height_time )
          endif
 
@@ -634,7 +635,8 @@
 !       subroutine lh_sampler
 !       subroutine micro_calcs
 !-----------------------------------------------------------------------
-        subroutine latin_hypercube_sampling( k, n, dvar, i_rmd, nt,
+        subroutine latin_hypercube_sampling( k, n, dvar, 
+     .                                       nt, i_rmd,
      .                                       crt1, crt2, cthl1, cthl2,
      .                                       rrm, grid, 
      .                                       sflag, p_height_time )
