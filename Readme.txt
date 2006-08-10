@@ -1,4 +1,4 @@
-$Id: Readme.txt,v 1.18 2006-08-03 21:04:09 dschanen Exp $
+$Id: Readme.txt,v 1.19 2006-08-10 19:12:32 vlarson Exp $
 ***********************************************************************
 *                         Using the HOC Model                         *
 ***********************************************************************
@@ -39,7 +39,7 @@ in the src directory.  You will need at least the parameterization_interface
 mod to interface with HOC.
 
 -----------------------------------------------------------------------
-- (2.1) Executing a tuning run:
+- (2.1) Executing a standalone run:
 -----------------------------------------------------------------------
 
 1.  cd ~/hoc_v2.2_tuner/tune
@@ -54,6 +54,20 @@ mod to interface with HOC.
 3. Edit <case>_stats.in for each case.  A complete list of all computable
    statistics is found in statistics.F.  Note that HOC now supports GrADS or
    NetCDF, but you can only tune using GrADS.
+
+4. $ cd ../standalone.  Edit standalone_<CASE>.in or select a premade one.
+
+5a. Edit run_standalone.bash to use your standalone_*.in
+   and ./run_standalone.bash
+or 
+
+5b. $ ./run_standalone.bash <CASE>
+
+-----------------------------------------------------------------------
+- (3.1) Executing a tuning run:
+-----------------------------------------------------------------------
+
+Do steps 1, 2, & 3 as outlined in the standalone run.
 
 4.  Edit error_<runtype>.in or select a premade one. Note that there are two
   tuning subroutines, specified by tune_type in the /stats/ namelist.  If 
@@ -70,7 +84,7 @@ mod to interface with HOC.
 6.  ./run_tuner.bash
 
 -----------------------------------------------------------------------
-- (2.1.1) Creating a RAM disk (optional)
+- (3.1.1) Creating a RAM disk (optional)
 -----------------------------------------------------------------------
 
 One means of speeding up tuning runs is reducing the time spent writing
@@ -129,7 +143,7 @@ Creates a virtual disk hoc that is 256 megabytes in size.
 (Run your job)
 
 -----------------------------------------------------------------------
-- (2.2) Executing a budget terms tuning run:
+- (3.2) Executing a budget terms tuning run:
 -----------------------------------------------------------------------
 
 One run at a time:
@@ -173,20 +187,6 @@ Batch mode:
 5.  ./create_files.bash (you shouldn't see any errors)
 6.  ./run_batch.bash
 7.  Make coffee. Play spider solitaire. Wait an hour or two.
-
------------------------------------------------------------------------
-- (3.1) Executing a standalone run:
------------------------------------------------------------------------
-
-Do steps 1, 2, & 3 as outlined in the tuner run.
-
-4. $ cd ../standalone.  Edit standalone_<CASE>.in or select a premade one.
-
-5a. Edit run_standalone.bash to use your standalone_*.in
-   and ./run_standalone.bash
-or 
-
-5b. $ ./run_standalone.bash <CASE>
 
 -----------------------------------------------------------------------
 - (4.1) Executing a run comparison analysis:
@@ -309,11 +309,11 @@ The compare_runs files:
   HOC profiles.
 
 ------------------------------------------------------------------------
-- (2.1) The BUGSrad Radition scheme
+- (2.1) The BUGSrad Radiation scheme
 ------------------------------------------------------------------------
 
-  This is an optional more complex radition scheme, developed apart from
-  HOC by Stevens, et al. The code used in HOC was obtained from Norm Wood 
+  This is an optional more complex radiation scheme, developed apart from
+  HOC by Stephens, et al. The code used in HOC was obtained from Norm Wood 
   on 2004/07/10.
   When enabled, the analytic computation normally
   used for radiation is disabled.  BUGSrad is enabled in the 
