@@ -1,4 +1,4 @@
-$Id: Readme.txt,v 1.19 2006-08-10 19:12:32 vlarson Exp $
+$Id: Readme.txt,v 1.20 2006-08-10 21:08:47 vlarson Exp $
 ***********************************************************************
 *                         Using the HOC Model                         *
 ***********************************************************************
@@ -195,10 +195,12 @@ Batch mode:
 1. $ cd ../compare_runs  
 
 2. Edit compare_runs.in.  You need to choose three GrADS files on disk
-   to compare.  You also need to choose the time intervals over which
-   the files will be compared.
+   to compare.  If necessary, uncompress the files you choose using
+   the command $ bunzip2 filename.bz2.  You also need to choose the 
+   time intervals over which the files will be compared.
 
 3. $ ../bin/compare_runs
+
 -----------------------------------------------------------------------
 - (5.1) Executing a Jacobian analysis:
 -----------------------------------------------------------------------

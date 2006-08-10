@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-!  $Id: compare_runs.F,v 1.11 2006-08-04 15:20:54 dschanen Exp $
+!  $Id: compare_runs.F,v 1.12 2006-08-10 21:09:10 vlarson Exp $
 
         program compare_runs 
 
@@ -111,8 +111,9 @@
 
         do i = 1, tmax, 2
           write(unit=*,fmt=*) "time: ", t(i), " to ", t(i+1)
-          write(unit=*,fmt='(3a18)') "Comparison        ",
-     .      " (file1 - file2)^2 ", " (file2 - file3)^2"
+          write(unit=*,fmt='(1a11)') "Comparison:"
+          write(unit=*,fmt='(1a85)') 
+     .   "( (file1-file2)/(max-min) )^2   ( (file2-file3)/(max-min) )^2"
           do n = 1, nvar, 1
 
             ! HOC reference file
@@ -141,7 +142,8 @@
 
             minmax = maxval( fvar2 ) - minval( fvar2 )
             if ( minmax == 0.0 ) then
-              write(unit=*,fmt=*) "minmax = 0. for ", les_variables(n)
+              write(unit=*,fmt=*) "maxval - minval = 0. for ", 
+     .           les_variables(n)
               minmax = 1.0 ! no normalization
             end if
 
@@ -155,7 +157,7 @@
             reference =
      .        sum( (( fvar2(1:nz)-fvar3(1:nz) )/minmax )**2, 1 ) / nz
 
-            write(unit=*,fmt='(a18,2f18.6)') "PM^2 for "//
+            write(unit=*,fmt='(a30,2f18.6)') "Pct mean-square-diff "//
      .        hoc_variables(n)//" = ", percent_mean_sqr, reference
 
             deallocate( fvar1, fvar2, fvar3 )
