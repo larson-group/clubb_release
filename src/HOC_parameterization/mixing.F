@@ -1,8 +1,7 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.4 2006-08-02 20:55:14 dschanen Exp $
+! $Id: mixing.F,v 1.5 2006-08-16 23:39:38 dschanen Exp $
 !
-! Module containing the hoc mixing scheme.  Allows for optional variables
-! and assumed shape arrays.
+! Module containing the HOC mixing scheme.  Allows for optional variables.
 !-----------------------------------------------------------------------
 #define SCLR_THETA 1
 #define SCLR_RT 2
@@ -16,10 +15,8 @@
 
       contains
 !-----------------------------------------------------------------------
-! Subroutine timestep_mixing( )
-!-----------------------------------------------------------------------
         subroutine timestep_mixing
-     .             ( dt, taum, wmm, wmt, wp2, wp3, Sc,
+     .             ( dt, taum, wmm, wmt, wp2, wp3, Scm, Skwm,
      .               rtm, wprtp, rtpthvp, rtm_forcing,
      .               thlm, wpthlp, thlpthvp, thlm_forcing,
      .               rhot, rhom, exner, rcm, Ncm, 
@@ -27,90 +24,115 @@
      .               Fcsed, sed_rcm,
      .               cloud_sed, kk_rain, isValid, implemented,
      .               sclrm, wpsclrp, sclrpthvp, sclrm_forcing )
+!       Description:
+!       Advance means and fluxes one timestep.
+
+!       References:
+!       ``Implicit solutions for the means and fluxes''
+!       _Equations for HOC_ (5)
+!-----------------------------------------------------------------------
 
         use constants
         use grid_class
 
         implicit none
 
-!       Input/Output
+        ! Input Variables
+        real, intent(in) :: 
+     .  dt           ! Timestep                       [s]
+        real, intent(in), dimension(gr%nnzp) ::
+     .  taum,        ! Tau on moment. grid            [s]
+     .  wmm,         ! w wind on m                    [m/s]
+     .  wmt,         ! w wind on t                    [m/s]
+     .  wp2,         ! w'^2                           [m^2/s^2]
+     .  wp3,         ! w'^3                           [m^3/s^3]
+     .  Scm,         ! Sc on moment. grid             [-]
+     .  Skwm,        ! Skw on moment. grid            [-]
+     .  rtpthvp,     ! r_t'th_v'                      [(kg K)/kg]
+     .  rtm_forcing, ! rt forcing                     [(kg/kg)/s]
+     .  thlpthvp,    ! th_l' th_v'                    [K^2]
+     .  thlm_forcing ! Large scale tendency for thlm  [K/s]
 
-        real, intent(in)    :: dt
-        real, intent(in)    :: taum(1:gr%nnzp)
-        real, intent(in)    :: wmm(1:gr%nnzp)
-        real, intent(in)    :: wmt(1:gr%nnzp)
-        real, intent(in)    :: wp2(1:gr%nnzp)
-        real, intent(in)    :: wp3(1:gr%nnzp)
-        real, intent(in)    :: Sc(1:gr%nnzp)
-        real, intent(inout) :: rtm(1:gr%nnzp)
-        real, intent(inout) :: wprtp(1:gr%nnzp)
-        real, intent(in)    :: rtpthvp(1:gr%nnzp)
-        real, intent(in)    :: rtm_forcing(1:gr%nnzp)
-        real, intent(inout) :: thlm(1:gr%nnzp)
-        real, intent(inout) :: wpthlp(1:gr%nnzp)
-        real, intent(in)    :: thlpthvp(1:gr%nnzp)
-        real, intent(in)    :: thlm_forcing(1:gr%nnzp)
-!       Additions for DYCOMS_2
-        real, intent(in)    :: rhot(1:gr%nnzp)    
-        real, intent(in)    :: rhom(1:gr%nnzp)    
-        real, intent(in)    :: exner(1:gr%nnzp)    
-        real, intent(in)    :: rcm(1:gr%nnzp)    
-        real, intent(in)    :: Ncm(1:gr%nnzp)    
-        real, intent(in)    :: cond_rrm(1:gr%nnzp)
-        real, intent(in)    :: auto_rrm(1:gr%nnzp)
-        real, intent(in)    :: accr_rrm(1:gr%nnzp)
-        real, intent(out)   :: Fcsed(1:gr%nnzp)
-        real, intent(out)   :: sed_rcm(1:gr%nnzp)
-        logical, intent(in) :: cloud_sed
-        logical, intent(in) :: kk_rain
-!       End Additions for DYCOMS_2
-!       Flag for if HOC is implemented in a larger model or not.
-        logical, intent(in) :: implemented
-!       Model status 
-        logical, intent(inout) :: isValid
-!       Additions for new mixing scheme
-        real, intent(inout), optional, 
-     .    dimension(:,:) :: sclrm, wpsclrp 
-        real, intent(in), optional, 
-     .    dimension(:,:) :: sclrpthvp, sclrm_forcing
-!       End Additions for new mixing scheme
+        ! Additions for DYCOMS_2
+        real, intent(in), dimension(gr%nnzp) ::
+     .  rhot,        ! rho (density) on thermo. grid  [kg/m^3] 
+     .  rhom,        ! rho (density) on moment. grid  [kg/m^3] 
+     .  exner,       ! Exner function                 [-]
+     .  rcm,         ! Liquid water mixing ration     [kg/kg]
+     .  Ncm,         ! Cloud droplet number conc.     [num/m^3]
+     .  cond_rrm,    ! rrm condensation/evaporation   [(kg/kg)/s]
+     .  auto_rrm,    ! rrm autoconversion             [(kg/kg)/s]
+     .  accr_rrm     ! rrm accretion                  [(kg/kg)/s]
 
-!       Internal
-        real, allocatable    :: aa(:,:), dd(:), al(:,:)
-        integer, allocatable :: indx(:)
-        integer i
+        logical, intent(in) :: 
+     .  cloud_sed,   ! Cloud sedimentation flag -Brian
+     .  kk_rain,     ! Khairoutdinov and Kogan (2000) drizzle scheme -Brian
+     .  implemented  ! Flag for if HOC is implemented in a larger model or not.
 
+         
+        ! Input/Output Variables
+        real, intent(inout), dimension(gr%nnzp) :: 
+     .  rtm,         ! r_t Total water mixing ratio   [kg/kg]
+     .  wprtp,       ! w' r_t'                        [(m kg)(s kg)]
+     .  thlm,        ! th_l Liquid potential temp.    [K]
+     .  wpthlp       ! w' th_l'                       [(m K)/s]
+
+        logical, intent(inout) :: isValid ! Model status 
+
+        ! Output Variables
+        ! Addition for DYCOMS_2
+        real, intent(out), dimension(gr%nnzp) :: 
+     .  Fcsed,       ! Cloud water sedimentation flux       [kg/(m^2 s)]
+     .  sed_rcm      ! d(rcm)/dt due to cloud sedimentation [kg/(m^2 s)]
+
+        ! Additional optional variables for passive scalars
+        ! Input Variables
+        real, intent(in), optional, dimension(gr%nnzp,sclr_dim) :: 
+     .  sclrpthvp, sclrm_forcing ! [Units vary]
+        ! Input/Output Variables
+        real, intent(inout), optional, dimension(gr%nnzp,sclr_dim) :: 
+     .  sclrm, wpsclrp           ! [Units vary]
+
+        ! Local variables
+        real, allocatable, dimension(:,:) :: 
+     .  aa, ! Banded matrix in compact form 
+     .  al  ! LU decomposition of banded matrix 
+
+        real, allocatable, dimension(:) :: 
+     .  dd ! RHS for banded matrix
+
+        integer, allocatable, dimension(:) :: 
+     .  indx ! Index of pivots for LU decomposition
+
+        ! Constant parameters with Skw applied
+        real, allocatable, dimension(:) :: 
+     .  C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc
+
+        ! Misc. storage
         real, dimension(gr%nnzp) :: tmp1, tmp2
+        
+        ! Indices
+        integer :: i
+        integer :: k, kp1
 
-        integer k, kp1
-        real, allocatable :: Skw_arr(:)
-        real, allocatable :: C6rt_Skw_fnc(:), C6thl_Skw_fnc(:)
-        real, allocatable :: C7_Skw_fnc(:)
+!-----------------------------------------------------------------------
 
-        allocate( Skw_arr(1:gr%nnzp) )
+        ! Allocate memory
         allocate( C6rt_Skw_fnc(1:gr%nnzp) )
         allocate( C6thl_Skw_fnc(1:gr%nnzp) )
         allocate( C7_Skw_fnc(1:gr%nnzp) )
 
-!       Allocate memory
         allocate( aa(1:2*gr%nnzp,1:5) )
         allocate( dd(1:2*gr%nnzp) )
         allocate( al(1:2*gr%nnzp,1:2) )
         allocate( indx(1:2*gr%nnzp) )
 
-        do k=1,gr%nnzp
-
-          kp1 = min(k+1,gr%nnzp)
-          Skw_arr(k) = (0.5*(wp3(k)+wp3(kp1))) /
-     .                    ( max(wtol**2,wp2(k)) )**1.5
-        enddo
-
         C6rt_Skw_fnc = C6rtb + (C6rt-C6rtb)
-     .                        *EXP( -0.5 * (Skw_arr/C6rtc)**2 )
+     .                        *EXP( -0.5 * (Skwm/C6rtc)**2 )
         C6thl_Skw_fnc = C6thlb + (C6thl-C6thlb)
-     .                          *EXP( -0.5 * (Skw_arr/C6thlc)**2 )
+     .                          *EXP( -0.5 * (Skwm/C6thlc)**2 )
         C7_Skw_fnc = C7b + (C7-C7b)
-     .                    *EXP( -0.5 * (Skw_arr/C7c)**2 )
+     .                    *EXP( -0.5 * (Skwm/C7c)**2 )
 
 !        C6rt_Skw_fnc = C6rt
 !        C6thl_Skw_fnc = C6thl
@@ -118,22 +140,20 @@
 
 !       Setup and decompose matrix
 
-!        call mixing_lhs( .true., dt, taum, wmm, wmt, wp2, wp3, Sc,
+!        call mixing_lhs( .true., dt, taum, wmm, wmt, wp2, wp3, Scm,
 !   Prof. Larson's modified mixing_lhs 
-        call mixing_lhs("rtm", .true., dt, taum, wmm, wmt, wp2, wp3, Sc,
+        call mixing_lhs("rtm", .true., dt, taum, wmm, wmt, 
+     .                   wp2, wp3, Scm,
      .                   C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
      .                   aa, dd, al, indx, implemented, isValid )
         if ( .not. isValid ) then
            print *, "mixing_lhs failed"
-           deallocate( aa, dd, al, indx )
+           deallocate( aa, dd, al, indx, 
+     .                 C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc )
            return
         endif
-!        print *, "before"
-!        print *, "rt=",  sum( sclrm )   - sum ( rtm ),
-!     .           "wp=",  sum( wprtp )   - sum ( wpsclrp ),
-!     .           "thvp=",sum( rtpthvp ) - sum ( sclrpthvp )
 
-!       Solve rtm / wprtp
+        ! Solve rtm / wprtp
         call mixing_solve( "rtm", .true., dt, taum,
      .                     rtm, wprtp, rtpthvp, rtm_forcing,
      .                     rhot, rhom, exner, rcm, Ncm,  ! Brian
@@ -142,13 +162,15 @@
      .                     cloud_sed, kk_rain,           ! Brian
      .                     aa, dd, al, indx, C7_Skw_fnc )  
 
-!   Prof. Larson's modified mixing_lhs 
-        call mixing_lhs("thlm",.true., dt, taum, wmm, wmt, wp2, wp3, Sc,
+        ! Prof. Larson's modified mixing_lhs 
+        call mixing_lhs("thlm",.true., dt, taum, wmm, wmt, 
+     .                   wp2, wp3, Scm,
      .                   C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
      .                   aa, dd, al, indx, implemented, isValid )
         if ( .not. isValid ) then
            print *, "mixing_lhs failed"
-           deallocate( aa, dd, al, indx )
+           deallocate( aa, dd, al, indx, 
+     .                 C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc )
            return
         endif
 
@@ -167,12 +189,14 @@
      .       present( sclrpthvp ) .and. present( sclrm_forcing ) ) then
 
 !         Prof. Larson's modified mixing_lhs 
-          call mixing_lhs("rtm",.true., dt, taum, wmm, wmt, wp2, wp3, 
-     .                    Sc, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
+          call mixing_lhs("rtm",.true., dt, taum, wmm, wmt, 
+     .                    wp2, wp3, Scm,
+     .                    C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
      .                    aa, dd, al, indx, implemented, isValid )
           if ( .not. isValid ) then
             print *, "mixing_lhs failed"
-            deallocate( aa, dd, al, indx )
+            deallocate( aa, dd, al, indx, 
+     .                  C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc )
             return
           endif
 
@@ -188,12 +212,14 @@
      .                       aa, dd, al, indx, C7_Skw_fnc )
 
 !         Prof. Larson's modified mixing_lhs 
-          call mixing_lhs("thlm",.true., dt, taum, wmm, wmt, wp2, wp3,
-     .                    Sc, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
+          call mixing_lhs("thlm",.true., dt, taum, wmm, wmt, 
+     .                    wp2, wp3, Scm, 
+     .                    C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
      .                    aa, dd, al, indx, implemented, isValid )
           if ( .not. isValid ) then
             print *, "mixing_lhs failed"
-            deallocate( aa, dd, al, indx )
+            deallocate( aa, dd, al, indx, 
+     .                  C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc )
             return
           endif
 
@@ -209,12 +235,8 @@
         endif
  
 !       Free memory
-
-        deallocate( aa, dd, al, indx )
-        deallocate( Skw_arr )
-        deallocate( C6rt_Skw_fnc )
-        deallocate( C6thl_Skw_fnc )
-        deallocate( C7_Skw_fnc )
+        deallocate( aa, dd, al, indx, 
+     .              C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc )
 
         return
         end subroutine timestep_mixing
@@ -222,7 +244,7 @@
 !------------------------------------------------------------------------
 
         subroutine mixing_lhs( solve_type, liter, dt, taum, wmm, wmt,
-     .                         wp2, wp3, Sc, 
+     .                         wp2, wp3, Scm, 
      .                         C6rt_Skw_fnc, C6thl_Skw_fnc,C7_Skw_fnc,
      .                         aa, dd, al, indx, implemented, isValid )
 
@@ -244,7 +266,7 @@
         real, intent(in) :: taum(1:gr%nnzp)
         real, intent(in) :: wmm(1:gr%nnzp), wmt(1:gr%nnzp) 
         real, intent(in) :: wp2(1:gr%nnzp), wp3(1:gr%nnzp)
-        real, intent(in) :: Sc(1:gr%nnzp)
+        real, intent(in) :: Scm(1:gr%nnzp)
 
 !       Output variables
 
@@ -272,7 +294,7 @@
 
 !       Define a1
 
-        a1 = 1.0 / (1.0-Sc)
+        a1 = 1.0 / (1.0-Scm)
 
 !       Set up matrix aa
 

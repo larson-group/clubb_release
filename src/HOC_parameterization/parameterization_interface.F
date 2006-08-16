@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.21 2006-08-10 18:57:02 vlarson Exp $
+! $Id: parameterization_interface.F,v 1.22 2006-08-16 23:39:38 dschanen Exp $
 
 
 !  Module hoc_parameterization_interface
@@ -79,8 +79,11 @@
        implicit none
 
 !      External
-       real, external :: rsat
-       intrinsic sqrt, min, max, size, exp
+       real, external :: 
+     . rsat,
+     . Skw_func
+
+       intrinsic :: sqrt, min, max, size, exp
 
 !      Input
        integer, intent(in) :: iter      ! closure iteration number
@@ -131,7 +134,6 @@
 
        integer i, j, k, km1, kp1
        real, dimension(1:gr%nnzp) :: tmp1
-       real, dimension(1:gr%nnzp) :: Skw_arr_m
        real, dimension(1:gr%nnzp) :: gamma_Skw_fnc
 
 !------- Local variables for Latin Hypercube sampling ------------------
@@ -166,6 +168,15 @@
        real, dimension(1:gr%nnzp,1:sclr_dim) ::
      . sclr_tmp1, sclr_tmp2, sclr_tmp3, sclr_tmp4 ! for pdf closure
 #endif /* SCALARS */
+
+       ! Interpolate wp2 & wp3, and then compute Skw for m & t grid
+       do k = 1, gr%nnzp, 1
+         km1 = max( k-1, 1 )
+         kp1 = min( k+1, gr%nnzp )
+
+         Skwt(k) = Skw_func( wp2(km1)+wp2(k), wp3(k), wtol )
+         Skwm(k) = Skw_func( wp2(k), wp3(k)+wp3(kp1), wtol )
+       end do
 
 !      SET SURFACE VALUES OF FLUXES (BROUGHT IN)
        wpthlp(1) = wpthlp_sfc
@@ -222,7 +233,8 @@
 !      We found that if we call diag_var first, we can use a longer timestep.
 !      This requires us to store in memory Scm and taum between timesteps.
        call diag_var( taum, wmm, rtm, wprtp, 
-     .                thlm, wpthlp, wp2, wp3, Scm, 
+     .                thlm, wpthlp, 
+     .                wp2, wp3, Scm, Skwm,
      .                rtp2, thlp2, rtpthlp,
      .                .false., dt, isValid ! dtclosure to dt -dschanen
 #ifdef SCALARS
@@ -247,17 +259,10 @@
 
 #ifndef DISABLE_GAMMA_SKW
 !      Compute gamma as a function of Skw  - 14 April 06 dschanen
-       do k = 1, gr%nnzp, 1
-        km1 = MAX(k-1,1)
-        kp1 = MIN(k+1,gr%nnzp)
-
-        Skw_arr_m(k) = (1.0/2.0) * ( wp3(kp1)+wp3(k) ) /
-     .                 MAX( wp2(k), wtol**2 )**(3.0/2.0)
-       enddo
 
         gamma_Skw_fnc 
      .  = gamma_coefb + (gamma_coef-gamma_coefb)
-     .    *exp( -(1.0/2.0) * (Skw_arr_m/gamma_coefc)**2 )
+     .    *exp( -(1.0/2.0) * (Skwm/gamma_coefc)**2 )
 
 #else
         gamma_Skw_fnc = gamma_coef
@@ -290,8 +295,8 @@
          if ( i_rmd == 0) then
            call permute_height_time( gr%nnzp, nt_repeat, 
      .                               d_variables+1, p_height_time )
-         endif
-       endif
+         end if
+       end if
 !    End Latin hypercube sample generation
 
 !       print*, 'hoc.F: i_rmd=', i_rmd
@@ -329,10 +334,9 @@
 !        Latin hypercube sampling.
          if ( LH_on ) then 
            call latin_hypercube_sampling
-     .     ( k, n_micro_call, d_variables, 
-     .       nt_repeat, i_rmd, 
+     .     ( k, n_micro_call, d_variables, nt_repeat, i_rmd, 
      .       crt1, crt2, cthl1, cthl2, 
-     .       rrm, gr%nnzp, sample_flag, p_height_time )
+     .       rrm, cf, gr%nnzp, sample_flag, p_height_time )
          endif
 
        enddo ! k = 2, nz-1
@@ -477,7 +481,7 @@
 !      Advance rtm/wprtp and thlm/wpthlp one time step
 
        call timestep_mixing
-     .      ( dt, taum, wmm, wmt, wp2, wp3, Scm, 
+     .      ( dt, taum, wmm, wmt, wp2, wp3, Scm, Skwm, 
      .        rtm, wprtp, rtpthvp, rtm_forcing,
      .        thlm, wpthlp, thlpthvp, thlm_forcing, 
      .        rhot, rhom, exner, rcm, Ncm, 
@@ -503,8 +507,8 @@
 
 !      Advance wp2/wp3 one timestep
 
-       call timestep_wp23
-     .      ( dt, Lscale, taum, taut, Scm, ! dtclosure to dt -dschanen
+       call timestep_wp23 ! dtclosure to dt -dschanen
+     .      ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
      .        pdf_parms(:, 13), Kht, wmt, wmm,
      .        um, upwp, vm, vpwp, wpthvp, wp2thvp,
      .        wp2, wp3, isValid )
@@ -624,30 +628,29 @@
 
        return
        end subroutine parameterization_timestep
-!-----------------------------------------------------------------------
-!       Subroutine latin_hypercube_sampling()
 
+
+!-----------------------------------------------------------------------
+        subroutine latin_hypercube_sampling
+     .             ( k, n, dvar, nt, i_rmd,
+     .               crt1, crt2, cthl1, cthl2,
+     .               rrm, cf, grid, sflag, p_height_time )
+!       Description:
 !       Estimate using Latin Hypercubes.  This is usually disabled by default.
 !       The actual generation of a random matrix is done in a call from the
 !       subroutine hoc_initialize to permute_height_time()
-
-!       Calls:
-!       subroutine lh_sampler
-!       subroutine micro_calcs
+!       References:
 !-----------------------------------------------------------------------
-        subroutine latin_hypercube_sampling( k, n, dvar, 
-     .                                       nt, i_rmd,
-     .                                       crt1, crt2, cthl1, cthl2,
-     .                                       rrm, grid, 
-     .                                       sflag, p_height_time )
-        !use model_arrays
-        use prognostic_variables, only: cf
+
         use diagnostic_variables, only: pdf_parms, AKm_est, 
      .  AKm, AKstd, AKstd_cld, AKm_rcm, AKm_rcc, rcm_est
 
         implicit none  
 
-!       Input 
+        ! External
+        external :: lh_sampler, micro_calcs
+
+        ! Input Variables 
         integer, intent(in) :: k  ! index
         integer, intent(in) :: n, dvar, i_rmd, nt, grid
         logical, intent(in) :: sflag
@@ -655,12 +658,14 @@
         ! coeffs of s from pdf_closure_new
         real, intent(in) :: crt1, crt2, cthl1, cthl2
 
-        real, dimension(grid), intent(in) :: rrm
+        real, dimension(grid), intent(in) :: 
+     .  rrm, ! Rain water mixing ratio  [kg/kg]
+     .  cf   ! Cloud fraction           [%]
 
-        integer, dimension(1:grid, 1:nt, 1:(dvar+1) ) ::
+        integer, dimension(1:grid, 1:nt, 1:(dvar+1) ), intent(in) ::
      .  p_height_time ! matrix of rand ints
 
-!       Internal
+        ! Local Variables
 
         integer :: p_matrix(n, dvar+1)
         ! Sample drawn from uniform distribution
@@ -669,13 +674,13 @@
         ! Sample that is transformed ultimately to normal-lognormal
         double precision, dimension(1:n,1:dvar) :: X_nl
 
-! Choose which rows of LH sample to feed into closure.
+        ! Choose which rows of LH sample to feed into closure.
         p_matrix(1:n,1:(dvar+1)) =
      .  p_height_time( k,n*i_rmd+1:n*i_rmd+n, 1:(dvar+1) )
 
 !       print*, 'hoc.F: got past p_matrix'
 
-! Generate LH sample, represented by X_u and X_nl, for level k
+        ! Generate LH sample, represented by X_u and X_nl, for level k
         call lh_sampler( n, nt, dvar, p_matrix,
      .                   cf(k), pdf_parms(k, :),
      .                   crt1, crt2, cthl1, cthl2,
@@ -683,7 +688,7 @@
 
 !       print *, 'hoc.F: got past lh_sampler'
 
-! Perform LH and analytic microphysical calculations
+        ! Perform LH and analytic microphysical calculations
         call micro_calcs( n, dvar, X_u, X_nl, sflag,
      .                    pdf_parms(k,:),
      .                    AKm_est(k), AKm(k), AKstd(k), AKstd_cld(k),

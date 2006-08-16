@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F,v 1.10 2006-08-04 21:08:56 dschanen Exp $
+! $Id: diag_variables.F,v 1.11 2006-08-16 23:39:38 dschanen Exp $
         module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -16,6 +16,9 @@
 
 !       real, target, allocatable :: Scm(:)   ! PDF width parameter: m point
         real, target, allocatable :: Sct(:)   ! PDF width parameter: t point
+
+        real, target, allocatable :: Skwm(:)  ! Skw on moment. grid
+        real, target, allocatable :: Skwt(:)  ! Skw on thermo. grid
 
         real, target, allocatable :: ug(:)    ! u geostrophic wind
         real, target, allocatable :: vg(:)    ! v geostrophic wind
@@ -180,6 +183,8 @@
 
 !       allocate( Scm(1:nzmax) )       ! PDF width parameter: m point
         allocate( Sct(1:nzmax) )       ! PDF width parameter: t point
+        allocate( Skwm(1:nzmax) )      ! Skw
+        allocate( Skwt(1:nzmax) )      ! Skw
         allocate( ug(1:nzmax) )        ! u geostrophic wind
         allocate( vg(1:nzmax) )        ! v geostrophic wind
 
@@ -308,6 +313,10 @@
 
 !       Scm = 0.0      ! PDF width parameter: m point
         Sct = 0.0      ! PDF width parameter: t point
+
+        Skwm = 0.0
+        Skwt = 0.0
+
         ug  = 0.0      ! u geostrophic wind
         vg  = 0.0      ! v geostrophic wind
 
@@ -427,6 +436,8 @@
 
 !       deallocate( Scm )       ! PDF width parameter: m point
         deallocate( Sct )       ! PDF width parameter: t point
+        deallocate( Skwm )
+        deallocate( Skwt )
         deallocate( ug )        ! u geostrophic wind
         deallocate( vg )        ! v geostrophic wind
 

@@ -1,13 +1,18 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.6 2006-08-04 21:08:56 dschanen Exp $
+! $Id: wp23.F,v 1.7 2006-08-16 23:39:38 dschanen Exp $
 
-! SUBROUTINE timestep_wp23( )
-!  Advance wp2 and wp3 one timestep
-!------------------------------------------------------------------------
         subroutine timestep_wp23
-     .             (dt, Lscale, taum, taut, Scm, a, Kht, wmt, wmm,
-     .              um, upwp, vm, vpwp, wpthvp, wp2thvp,
-     .              wp2, wp3, isValid )
+     .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
+     .               a, Kht, wmt, wmm,
+     .               um, upwp, vm, vpwp, wpthvp, wp2thvp,
+     .               wp2, wp3, isValid )
+!       Description:
+!       Advance wp2 and wp3 one timestep
+
+!       References:
+!       See ``Implict solution for the vertical velocity moments''
+!       _Equations for HOC_ (6)
+!------------------------------------------------------------------------
 
         use grid_class
         use constants
@@ -18,59 +23,65 @@
 
         implicit none
 
-        ! Input
-        real, intent(in)    :: dt
-        real, intent(in)    :: Lscale(1:gr%nnzp)
-        real, intent(in)    :: taum(1:gr%nnzp)
-        real, intent(in)    :: taut(1:gr%nnzp)
-        real, intent(in)    :: Scm(1:gr%nnzp)
-        real, intent(in)    :: a(1:gr%nnzp)
-        real, intent(in)    :: Kht(1:gr%nnzp)
-        real, intent(in)    :: wmt(1:gr%nnzp)
-        real, intent(in)    :: wmm(1:gr%nnzp)
-        real, intent(in)    :: um(1:gr%nnzp)
-        real, intent(in)    :: upwp(1:gr%nnzp)
-        real, intent(in)    :: vm(1:gr%nnzp)
-        real, intent(in)    :: vpwp(1:gr%nnzp)
-        real, intent(in)    :: wpthvp(1:gr%nnzp)
-        real, intent(in)    :: wp2thvp(1:gr%nnzp)
+        ! External
+        external :: wp23_solve
+
+        intrinsic :: exp
+
+        ! Input Variables
+        real, intent(in) :: dt ! Timestep       [s]
+
+        real, intent(in), dimension(gr%nnzp) :: 
+     .  Lscale,! Mixing Length                  [m]
+     .  taum,  ! Tau on moment. grid            [s]
+     .  taut,  ! Tau on thermo. grid            [s]
+     .  Scm,   ! Sc on moment. grid             [-]
+     .  Skwm,  ! Skw on moment. grid            [-]
+     .  Skwt,  ! Skw on thermo. grid            [-]
+     .  a,     ! PDF parm a (13)                [-]
+     .  Kht,   ! Kh Eddy diffusivity on thermo. [m^2/s]
+     .  wmt,   ! w wind on t                    [m/s]
+     .  wmm,   ! w wind on m                    [m/s]
+     .  um,    ! u wind                         [m/s]
+     .  upwp,  ! u'w'                           [m^2/s^2]
+     .  vm,    ! v wind                         [m/s]
+     .  vpwp,  ! u'w'                           [m^2/s^2]
+     .  wpthvp,! w'th_v' Buoyancy flux          [(K m)/s]
+     .  wp2thvp! w'^2 th_v'                     [(m^2 K)/s^2]
 
         ! Input/Output
-        real, intent(inout) :: wp2(1:gr%nnzp)
-        real, intent(inout) :: wp3(1:gr%nnzp)
+        real, dimension(gr%nnzp), intent(inout) :: 
+     .  wp2, ! w'^2                             [m^2/s^2]
+     .  wp3  ! w'^3                             [m^3/s^3]
 
-        logical, intent(inout):: isValid
+        logical, intent(inout) :: isValid
 
-
-!       Internal
-
+        ! Local Variables
         real, allocatable :: tauw3t(:), Lm(:)
       
-        integer k
-        real aa, Skw
+        integer :: k, km1, kp1
+        real :: aa
 
-! Internal variables for C11 function, Vince Larson 13 Mar 2005
-! Brian added C1 function.
-        integer km1, kp1
-        real, allocatable :: Skw_arr_m(:), C1_Skw_fnc(:)
-        real, allocatable :: Skw_arr_t(:), C11_Skw_fnc(:)
-! End Vince Larson's addition.
+        ! Internal variables for C11 function, Vince Larson 13 Mar 2005
+        ! Brian added C1 function.
+        real, dimension(:), allocatable :: 
+     .  C1_Skw_fnc, 
+     .  C11_Skw_fnc
+        ! End Vince Larson's addition.
 
-!       Allocate memory
+!-----------------------------------------------------------------------
 
+        ! Allocate memory
         allocate( tauw3t(1:gr%nnzp) )
         allocate( Lm(1:gr%nnzp) )
 
-! Allocate variables for C11 function, Vince Larson 13 Mar 2005
-! Brian added C1 function
-        allocate( Skw_arr_m(1:gr%nnzp) )
+        ! Allocate variables for C11 function, Vince Larson 13 Mar 2005
+        ! Brian added C1 function
         allocate( C1_Skw_fnc(1:gr%nnzp) )
-        allocate( Skw_arr_t(1:gr%nnzp) )
         allocate( C11_Skw_fnc(1:gr%nnzp) )
-! End Vince Larson's addition.
+        ! End Vince Larson's addition.
 
-!       Define L on momentum levels
-
+        ! Define L on momentum levels
         Lm = zt2zm( Lscale )
         Lm(1) = Lm(2)
         Lm(gr%nnzp) = Lm(gr%nnzp-1)
@@ -104,23 +115,23 @@
 !    are hardwired.
 
 ! Calculate skewness arrays
-        DO k = 1, gr%nnzp, 1
+!       DO k = 1, gr%nnzp, 1
 
-          km1 = MAX(k-1,1)
-          kp1 = MIN(k+1,gr%nnzp)
+!         km1 = MAX(k-1,1)
+!         kp1 = MIN(k+1,gr%nnzp)
 
-          Skw_arr_t(k) = wp3(k) /
-     .    ( (1.0/2.0) * MAX( wp2(km1)+wp2(k), wtol**2 ) )**(3.0/2.0)
-          Skw_arr_m(k) = (1.0/2.0) * ( wp3(kp1)+wp3(k) ) /
-     .                   MAX( wp2(k), wtol**2 )**(3.0/2.0)
+!         Skw_arr_t(k) = wp3(k) /
+!    .    ( (1.0/2.0) * MAX( wp2(km1)+wp2(k), wtol**2 ) )**(3.0/2.0)
+!         Skw_arr_m(k) = (1.0/2.0) * ( wp3(kp1)+wp3(k) ) /
+!    .                   MAX( wp2(k), wtol**2 )**(3.0/2.0)
 
-        ENDDO
+!       ENDDO
 
-        C11_Skw_fnc = C11b + (C11-C11b)
-     .                      *EXP( -(1.0/2.0) * (Skw_arr_t/C11c)**2 )
+        C11_Skw_fnc(1:gr%nnzp) = 
+     .  C11b + (C11-C11b)*EXP( -(1.0/2.0) * (Skwt(1:gr%nnzp)/C11c)**2 )
 
-        C1_Skw_fnc = C1b + (C1-C1b)
-     .                    *EXP( -(1.0/2.0) * (Skw_arr_m/C1c)**2 )
+        C1_Skw_fnc(1:gr%nnzp) = 
+     .  C1b + (C1-C1b)*EXP( -(1.0/2.0) * (Skwm(1:gr%nnzp)/C1c)**2 )
 
 !        C11_Skw_fnc = C11
 !        C1_Skw_fnc = C1
@@ -131,39 +142,42 @@
         call wp23_solve( dt, Scm, Lscale, Lm, taum, tauw3t, 0.5*Kht,
      .                   wmt, wmm, wpthvp, wp2thvp,
      .                   um, upwp, vm, vpwp,
-     .                   C1_Skw_fnc, C11_Skw_fnc, 
+     .                   Skwt, C1_Skw_fnc, C11_Skw_fnc, 
      .                   wp2, wp3, isValid )
         
         if ( .not. isValid ) then
           deallocate( tauw3t, Lm)
-          deallocate( Skw_arr_t, C11_Skw_fnc )
-          deallocate( Skw_arr_m, C1_Skw_fnc )
+          deallocate( C11_Skw_fnc )
+          deallocate( C1_Skw_fnc )
           return
         endif
 
-!       Free memory
+        ! Free memory
 
 !        deallocate( tauw3t )
         deallocate( tauw3t, Lm )  ! Brian
 
-! De-allocate variables for C11 function, Vince Larson 13 Mar 2005
-! Brian added C1 function.
-        deallocate( Skw_arr_t, C11_Skw_fnc )
-        deallocate( Skw_arr_m, C1_Skw_fnc )
-! End Vince Larson's addition.
+        ! De-allocate variables for C11 function, Vince Larson 13 Mar 2005
+        ! Brian added C1 function.
+        deallocate( C11_Skw_fnc )
+        deallocate( C1_Skw_fnc )
+        ! End Vince Larson's addition.
 
         return
         end subroutine timestep_wp23
 
 !------------------------------------------------------------------------
-!  subroutine wp23_solve( )
-!------------------------------------------------------------------------
-
         subroutine wp23_solve( dt, Scm, Lscale, Lm, tau1m, tauw3t, Kw,
      .                         wmt, wmm, wpthvp, wp2thvp,
      .                         um, upwp, vm, vpwp,
-     .                         C1_Skw_fnc, C11_Skw_fnc,
+     .                         Skwt, C1_Skw_fnc, C11_Skw_fnc,
      .                         wp2, wp3, isValid)
+!       Description:
+!       Decompose, and back substitute the matrix for wp2/wp3
+
+!       References:
+!       _Equations for HOC_ section 6.3 
+!------------------------------------------------------------------------
 
         use grid_class
         use constants
@@ -174,51 +188,61 @@
 
         implicit none
 
-!       Input
+        ! External
+        intrinsic :: max, min, sqrt
 
-        real, intent(in) :: dt
-        real, intent(in) :: Scm(1:gr%nnzp)
-        real, intent(in) :: Lscale(1:gr%nnzp)
-        real, intent(in) :: Lm(1:gr%nnzp)
-        real, intent(in) :: tau1m(1:gr%nnzp)
-        real, intent(in) :: tauw3t(1:gr%nnzp)
-        real, intent(in) :: Kw(1:gr%nnzp)
-        real, intent(in) :: wmt(1:gr%nnzp)
-        real, intent(in) :: wmm(1:gr%nnzp)
-        real, intent(in) :: wpthvp(1:gr%nnzp)
-        real, intent(in) :: wp2thvp(1:gr%nnzp)
-        real, intent(in) :: um(1:gr%nnzp)
-        real, intent(in) :: upwp(1:gr%nnzp)
-        real, intent(in) :: vm(1:gr%nnzp)
-        real, intent(in) :: vpwp(1:gr%nnzp)
-        real, intent(in) :: C1_Skw_fnc(1:gr%nnzp)
-        real, intent(in) :: C11_Skw_fnc(1:gr%nnzp)
+        ! Input Variables
+        real, intent(in) :: 
+     .  dt          ! Timestep                               [s]
 
-!       Input/Output
+        real, intent(in), dimension(gr%nnzp) :: 
+     .  Scm,        ! Sc on moment. grid                     [-]
+     .  Lscale,     ! Mixing Length                          [m]
+     .  Lm,         ! Mixing Length interp. to moment.       [m]
+     .  tau1m,      ! Tau on moment. grid                    [s]
+     .  tauw3t,     ! Tau on thermo. grid                    [s]
+     .  Kw,         ! 1/2 Kht Eddy diffusivity               [m^2/s]
+     .  wmt,        ! w wind on t                            [m/s]
+     .  wmm,        ! w wind on m                            [m/s]
+     .  wpthvp,     ! w'th_v' Buoyancy flux                  [(K m)/s]
+     .  wp2thvp,    ! w'^2 th_v'                             [(m^2 K)/s^2]
+     .  um,         ! u wind                                 [m/s]
+     .  upwp,       ! u'w'                                   [m^2/s^2]
+     .  vm,         ! v wind                                 [m/s]
+     .  vpwp,       ! u'w'                                   [m^2/s^2]
+     .  Skwt,       ! Skw in thermo. grid                    [-]
+     .  C1_Skw_fnc, ! C1 parameter with Skw applied          [-]
+     .  C11_Skw_fnc ! C11 parameter with Skw applied         [-]
 
-        real, intent(inout) :: wp2(1:gr%nnzp)
-        real, intent(inout) :: wp3(1:gr%nnzp)
+        ! Input/Output Variables
+        real, dimension(gr%nnzp), intent(inout) :: 
+     .  wp2, ! w'^2                                          [m^2/s^2]
+     .  wp3  ! w'^3                                          [m^3/s^3]
+
         logical, intent(inout) :: isValid
 
-!       Local constants
+        ! Local Variables
+        real, dimension(:,:), allocatable :: 
+     .  aa, ! Band matrix
+     .  al  ! LU decomposition of the band matrix
 
-!        real, parameter    :: eps = 1.e-10     ! in constants module
+        real, dimension(:), allocatable :: 
+     .  dd ! RHS of band matrix
 
-!       Internal
+        integer, allocatable :: 
+     .  indx(:) ! Index of pivots in band matrix decomposition process
 
-        real, allocatable    :: aa(:,:), dd(:), al(:,:)
-        integer, allocatable :: indx(:)
+        real :: d ! diagnostic variable for LU decomposition
 
-!       Internal
+        real, dimension(gr%nnzp) :: 
+     .  a1, ! a1; See (20) in _Equations for HOC_             [-]
+     .  a3  ! a3; See (22) in _Equations for HOC_             [-]
 
-        real Skw
+        real :: atmp, ctmp
 
-        real atmp, ctmp
-        real d
-        integer k, km1, kp1
-        integer k_wp2, k_wp3
+        integer :: k, km1, kp1
+        integer :: k_wp2, k_wp3
 
-        real a1(1:gr%nnzp), a3(1:gr%nnzp)
 
 #ifdef STATS
         if (lstats_samp) then
@@ -266,9 +290,9 @@
 
           ! Skewness of w is needed on the thermodynamic levels 
           ! for the wp3 equation
-          Skw = wp3(k) / ( (1.0/2.0)*( wp2(k) + wp2(km1) ) )**(3.0/2.0)
+          !Skw = wp3(k) / ( (1.0/2.0)*( wp2(k) + wp2(km1) ) )**(3.0/2.0)
           ! Skewness of w limited to a magnitude of no more than 4.5
-          Skw = MIN( MAX( Skw, -4.5 ), 4.5 )
+          !Skw = MIN( MAX( Skw, -4.5 ), 4.5 )
 
 
 !         wp2
@@ -434,7 +458,7 @@
      .        )
      .    + ( 1.0 - C11_Skw_fnc(k) )
      .              * 3.0 * gr%dzt(k) * ( wmm(k) - wmm(km1) )
-     .    + ( C8 / tauw3t(k) ) * ( 5.0 * C8b * Skw**4 + 1.0 )
+     .    + ( C8 / tauw3t(k) ) * ( 5.0 * C8b * Skwt(k)**4 + 1.0 )
      .    - atmp - ctmp
 
           ! Momentum superdiagonal [ x wp2(k,<t+1>) ]
@@ -466,7 +490,7 @@
      .                     / MAX( wp2(km1), eps )
      .        )
      .    + ( 1.0 - C11_Skw_fnc(k) ) * 3.0 * ( grav/T0 ) * wp2thvp(k)
-     .    + ( C8 / tauw3t(k) ) * ( 4.0 * C8b * Skw**4 ) * wp3(k)
+     .    + ( C8 / tauw3t(k) ) * ( 4.0 * C8b * Skwt(k)**4 ) * wp3(k)
           ! These lines are for the diffusional term with a Crank-Nicholson 
           ! time step.  They need to be commented out for completely implicit
           ! diffusion to be used.
@@ -523,7 +547,7 @@
 
           if ( iwp3_pr1 > 0 ) then
           zt%x(k,iwp3_pr1) = zt%x(k,iwp3_pr1) 
-     .    + ( C8 / tauw3t(k) ) * ( 4.0 * C8b * Skw**4 ) * wp3(k)
+     .    + ( C8 / tauw3t(k) ) * ( 4.0 * C8b * Skwt(k)**4 ) * wp3(k)
           endif
 
           ! These lines are for the diffusional term with a Crank-Nicholson 
@@ -588,7 +612,7 @@
 
           if ( iwp3_pr1 > 0 ) then
           ztscr01(k) =
-     .    - ( C8 / tauw3t(k) ) * ( 5.0 * C8b * Skw**4 + 1.0 )
+     .    - ( C8 / tauw3t(k) ) * ( 5.0 * C8b * Skwt(k)**4 + 1.0 )
           endif
 
           if ( iwp3_dp1 > 0 ) then
@@ -634,9 +658,9 @@
 
         call bandec(aa,2*gr%nnzp,2,2,2*gr%nnzp,5,al,2,indx,d,isValid)
         if ( .not. isValid ) then
-            print *, "LU decomp. failed"
-            deallocate( aa, dd, al, indx )
-            return
+          print *, "wp23 LU decomp. failed"
+          deallocate( aa, dd, al, indx )
+          return
         endif
 
 

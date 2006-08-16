@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.61 2006-08-08 22:52:09 dschanen Exp $
+# $Id: Makefile,v 1.62 2006-08-16 23:39:38 dschanen Exp $
 # This version should work with BSD, GNU make, smake and dmake
 
 # For HOC we edit this by hand rather than implementing imake or automake
@@ -38,7 +38,7 @@ PARAMETERIZATION = \
 	banbks.o bandec.o erf.o tridag.o rain.o \
 	closure_new.o diag_var.o gcss.o rad_lwsw.o linearinterpolation.o \
         hydrostatic.o length.o mixing.o rsat.o sat_rcm.o sfc.o \
-	sounding.o update.o wp23.o tau.o \
+	sounding.o update.o wp23.o tau.o Skw_func.o \
 	numer_check.o diag_variables.o prog_variables.o \
 	parameterization_interface.o 
 
@@ -164,16 +164,17 @@ banbks.o	: banbks.F
 bandec.o	: bandec.F
 erf.o		: erf.F
 tridag.o	: tridag.F
+Skw_func.o	: Skw_func.F
 
-closure_new.o	: constants.o closure_new.F 
-diag_var.o	: constants.o tridag.o statistics.o diag_var.F 
+closure_new.o	: constants.o grid.o rsat.o erf.o closure_new.F 
+diag_var.o	: constants.o grid.o tridag.o statistics.o diag_var.F 
 gcss.o		: constants.o statistics.o rad_lwsw.o linearinterpolation.F \
                   gcss.F
 rad_lwsw.o      : rad_lwsw.F statistics.o
 linearinterpolation.o : linearinterpolation.F
 mixing.o	: constants.o statistics.o banbks.o bandec.o mixing.F 
 parameterization_interface.o : constants.o gcss.o hydrostatic.o mixing.o \
-	model_flags.o numer_check.o \
+	model_flags.o numer_check.o Skw_func.o \
 	length.o statistics.o sounding.o diag_var.o rsat.o \
 	grid.o sat_rcm.o update.o prog_variables.o diag_variables.o \
 	sfc.o closure_new.o rain.o parameterization_interface.F 

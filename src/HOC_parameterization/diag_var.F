@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.6 2006-08-04 21:08:56 dschanen Exp $
+! $Id: diag_var.F,v 1.7 2006-08-16 23:39:38 dschanen Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -12,15 +12,16 @@
 
         contains
 !-----------------------------------------------------------------------
-! subroutine diag_var( )
-! Subprogram to diagnose variances by solving steady-state equations
-!-----------------------------------------------------------------------
-        subroutine diag_var( tau, wmm, rtm, wprtp, thlm, wpthlp, 
-     .                       wp2, wp3, Sc,
+        subroutine diag_var( taum, wmm, rtm, wprtp, 
+     .                       thlm, wpthlp, 
+     .                       wp2, wp3, Scm, Skwm,
      .                       rtp2, thlp2, rtpthlp,
      .                       liter, dt, isValid,
      .                       sclrm, wpsclrp, sclrp2,        ! optional
      .                       sclrprtp, sclrpthlp )          ! optional
+!       Description:
+!       Subprogram to diagnose variances by solving steady-state equations
+!-----------------------------------------------------------------------
 
         use constants
         use grid_class
@@ -30,9 +31,9 @@
        
         implicit none
 
-! Input variables
+        ! Input variables
 
-        real, intent(in) :: tau(1:gr%nnzp)
+        real, intent(in) :: taum(1:gr%nnzp)
         real, intent(in) :: wmm(1:gr%nnzp)
         real, intent(in) :: rtm(1:gr%nnzp)
         real, intent(in) :: wprtp(1:gr%nnzp)
@@ -40,7 +41,8 @@
         real, intent(in) :: wpthlp(1:gr%nnzp)
         real, intent(in) :: wp2(1:gr%nnzp)
         real, intent(in) :: wp3(1:gr%nnzp)
-        real, intent(in) :: Sc(1:gr%nnzp)
+        real, intent(in) :: Scm(1:gr%nnzp)
+        real, intent(in) :: Skwm(1:gr%nnzp)
 
         logical, intent(in) :: liter
         real, intent(in)    :: dt
@@ -71,15 +73,18 @@
 
 ! Local arrays allocated dynamically on the stack
 
-       real a1(1:gr%nnzp)
-       real aa(1:gr%nnzp), bb(1:gr%nnzp), cc(1:gr%nnzp), dd(1:gr%nnzp)
+       real, dimension(gr%nnzp) :: 
+     . a1
+       real, dimension(gr%nnzp) :: 
+     . aa, bb, cc, dd
 
-       real C2_Skw_fnc(1:gr%nnzp), Skw_arr_m(1:gr%nnzp)
+       real, dimension(gr%nnzp) :: 
+     . C2_Skw_fnc
 
 ! Loop indices
 
-       integer i, k
-       integer km1, kp1
+       integer :: i
+       integer :: k, km1, kp1
 
 #ifdef STATS
        if (lstats_samp) then
@@ -101,21 +106,13 @@
 
 ! Define a1
 
-       a1 = 1.0 / (1.0-Sc)
+       a1 = 1.0 / (1.0-Scm)
 
 #ifndef DISABLE_C2_SKW
 ! Define C2 as a function of Skw -dschanen 14 April 06
-       do k = 1, gr%nnzp, 1
-        km1 = MAX(k-1,1)
-        kp1 = MIN(k+1,gr%nnzp)
-
-        Skw_arr_m(k) = (1.0/2.0) * ( wp3(kp1)+wp3(k) ) /
-     .                 MAX( wp2(k), wtol**2 )**(3.0/2.0)
-       enddo
-
-        C2_Skw_fnc 
+        C2_Skw_fnc(1:gr%nnzp) 
      .  = C2b + (C2 - C2b )
-     .    *exp( -(1.0/2.0) * (Skw_arr_m/C2c)**2 )
+     .    *exp( -(1.0/2.0) * (Skwm(1:gr%nnzp)/C2c)**2 )
 
 #else
         C2_Skw_fnc = C2
@@ -135,7 +132,7 @@
 !      respectively, and dd contains the RHS
 
        aa = calc_aa( a1, wp2, wp3, wmm, nu2, beta, eps )
-       bb = calc_bb( a1, wp2, wp3, tau, 
+       bb = calc_bb( a1, wp2, wp3, taum, 
      .               C2_Skw_fnc, dt, nu2, beta, eps, liter )
        cc = calc_cc( a1, wp2, wp3, wmm, nu2, beta, eps )
        dd = calc_dd_var( a1, wp2, wp3, wprtp, rtm, 
@@ -150,7 +147,7 @@
            kp1   = min(k+1,gr%nnzp)
 
            if ( irtp2_dp1 > 0 ) then
-             zmscr01(k) = - C2_Skw_fnc(k) / tau(k)
+             zmscr01(k) = - C2_Skw_fnc(k) / taum(k)
            endif
          
            if ( irtp2_dp2 * ithlp2_dp2 * irtpthlp_dp2 > 0 ) then
@@ -200,7 +197,7 @@
      .              )
            endif
 
-         enddo
+         enddo ! k=1,gr%nnzp
 
        endif
 #endif /*STATS*/
@@ -274,7 +271,7 @@
          if ( wp2(k) >= wtol*wtol ) then
            rtp2(k) 
      .     = max( rtp2(k), 
-     .            wprtp(k)*wprtp(k)/((1.0-Sc(k))*wp2(k)) + eps,
+     .            wprtp(k)*wprtp(k)/((1.0-Scm(k))*wp2(k)) + eps,
      .            rttol*rttol + eps )
          else
            rtp2(k) = max( rtp2(k), 0.0 )
@@ -296,7 +293,7 @@
        ! C2rtthl by overwriting the value of C2_Skw_fnc before
        ! the call to the subroutines for each respective variable.
 !       C2_Skw_fnc = 1.000   ! C2thl
-!       bb = calc_bb( a1, wp2, wp3, tau, 
+!       bb = calc_bb( a1, wp2, wp3, taum, 
 !    .                C2_Skw_fnc, dt, nu2, beta, eps, liter )
 
 !      Prepare tridiagonal system
@@ -314,7 +311,7 @@
            kp1 = min(k+1,gr%nnzp)
 
            if ( ithlp2_dp1 > 0 ) then
-             zmscr01(k) = - C2_Skw_fnc(k) / tau(k)
+             zmscr01(k) = - C2_Skw_fnc(k) / taum(k)
            endif
          
            if ( ithlp2_ta > 0 ) then
@@ -407,7 +404,7 @@ c      solve tridiagonal system
          if ( wp2(k) >= wtol*wtol ) then
            thlp2(k) 
      .     = max( thlp2(k), 
-     .            wpthlp(k)*wpthlp(k)/((1.0-Sc(k))*wp2(k)) + eps,
+     .            wpthlp(k)*wpthlp(k)/((1.0-Scm(k))*wp2(k)) + eps,
      .            thltol*thltol + eps )
          else
            thlp2(k) = max( thlp2(k), 0.0 )
@@ -434,10 +431,10 @@ c      solve tridiagonal system
        do i=1, sclr_dim
 
 !        if ( i == SCLR_THETA ) then
-!          bb = calc_bb( a1, wp2, wp3, tau,
+!          bb = calc_bb( a1, wp2, wp3, taum,
 !    .                   C2_Skw_fnc, dt, nu2, beta, eps, liter )
 !       elseif ( i == SCLR_RT ) then
-!          bb = calc_bb( a1, wp2, wp3, tau,
+!          bb = calc_bb( a1, wp2, wp3, taum,
 !    .                   C2_Skw_fnc, dt, nu2, beta, eps, liter )
 !        endif
 
@@ -459,7 +456,7 @@ c      solve tridiagonal system
            if ( wp2(k) >= wtol*wtol ) then
              sclrp2(k,i) 
      .       = max( sclrp2(k,i), 
-     .              wpsclrp(k,i)*wpsclrp(k,i)/((1.0-Sc(k))*wp2(k))+eps,
+     .              wpsclrp(k,i)*wpsclrp(k,i)/((1.0-Scm(k))*wp2(k))+eps,
      .              sclrtol(i)*sclrtol(i) + eps )
            else
              sclrp2(k,i) = max( sclrp2(k,i), 0.0 )
@@ -478,7 +475,7 @@ c      solve tridiagonal system
        ! C2rtthl by overwriting the value of C2_Skw_fnc before
        ! the call to the subroutines for each respective variable.
 !       C2_Skw_fnc = 2.000   ! C2rtthl
-!       bb = calc_bb( a1, wp2, wp3, tau, 
+!       bb = calc_bb( a1, wp2, wp3, taum, 
 !     .               C2_Skw_fnc, dt, nu2, beta, eps, liter )
 
 !      Prepare tridiagonal system
@@ -497,7 +494,7 @@ c      solve tridiagonal system
              kp1 = min(k+1,gr%nnzp)
 
              if ( irtpthlp_dp1 > 0 ) then
-               zmscr01(k) = - C2_Skw_fnc(k) / tau(k)
+               zmscr01(k) = - C2_Skw_fnc(k) / taum(k)
              endif
          
              if ( irtpthlp_ta > 0 ) then
@@ -614,11 +611,11 @@ c      solve tridiagonal system
        do i=1, sclr_dim
 
 !         if ( i == SCLR_THETA ) then
-!           bb = calc_bb( a1, wp2, wp3, tau, 
+!           bb = calc_bb( a1, wp2, wp3, taum, 
 !     .                   C2_Skw_fnc, dt, nu2, beta, eps, liter )
 !         else 
 !           if ( i == SCLR_RT ) then
-!             bb = calc_bb( a1, wp2, wp3, tau, 
+!             bb = calc_bb( a1, wp2, wp3, taum, 
 !     .                     C2_Skw_fnc, dt, nu2, beta, eps, liter )
 !           endif
 !         endif
@@ -645,7 +642,7 @@ c      solve tridiagonal system
 !         if ( wp2(k) >= wtol*wtol ) then
 !           sclrprtp(k,2) 
 !     .     = max( sclrprtp(k,2), 
-!     .            wpsclrp(k,2)*wpsclrp(k,2)/((1.0-Sc(k))*wp2(k)) + eps,
+!     .            wpsclrp(k,2)*wpsclrp(k,2)/((1.0-Scm(k))*wp2(k)) + eps,
 !     .            sclrtol(2)*sclrtol(2) + eps )
 !         else
 !           sclrprtp(k,2) = max( sclrprtp(k,2), 0.0 )
@@ -663,11 +660,11 @@ c      solve tridiagonal system
        do i=1, sclr_dim
 
 !        if ( i == SCLR_THETA ) then
-!          bb = calc_bb( a1, wp2, wp3, tau, 
+!          bb = calc_bb( a1, wp2, wp3, taum, 
 !    .                   C2_Skw_fnc, dt, nu2, beta, eps, liter )
 !        else 
 !          if ( i == SCLR_RT ) then
-!          bb = calc_bb( a1, wp2, wp3, tau, 
+!          bb = calc_bb( a1, wp2, wp3, taum, 
 !    .                   C2_Skw_fnc, dt, nu2, beta, eps, liter )
 !          endif
 !        endif
@@ -694,7 +691,7 @@ c      solve tridiagonal system
 !         if ( wp2(k) >= wtol*wtol ) then
 !           sclrpthlp(k,1) 
 !     .     = max( sclrpthlp(k,1), 
-!     .            wpsclrp(k,1)*wpsclrp(k,1)/((1.0-Sc(k))*wp2(k)) + eps,
+!     .            wpsclrp(k,1)*wpsclrp(k,1)/((1.0-Scm(k))*wp2(k)) + eps,
 !     .            sclrtol(1)*sclrtol(1) + eps )
 !         else
 !           sclrpthlp(k,1) = max( sclrpthlp(k,1), 0.0 )
@@ -757,14 +754,14 @@ c      solve tridiagonal system
 !  Needs to be re-calculated when C2 is using an rt or thl value
 !  Note: new C2_Skw need to be generated only once
 !-----------------------------------------------------------------------
-        function calc_bb( a1, wp2, wp3, tau,
+        function calc_bb( a1, wp2, wp3, taum,
      .                    C2x, dt, nu2, beta, eps, liter )
         use grid_class
 
         implicit none
 
 !       Input
-        real, intent(in), dimension(gr%nnzp) :: a1, wp2, wp3, tau, C2x
+        real, intent(in), dimension(gr%nnzp) :: a1, wp2, wp3, taum, C2x
 
         real, intent(in) :: dt, beta, nu2, eps
 
@@ -789,7 +786,7 @@ c      solve tridiagonal system
      .             -  ( a1(k) + a1(km1) )
      .              * ( wp3(k) / MAX( wp2(k) + wp2(km1), 2.0*eps ) )
      .            )
-     .     + C2x(k) / tau(k)
+     .     + C2x(k) / taum(k)
      .     + nu2 * gr%dzm(k) * ( gr%dzt(kp1) + gr%dzt(k) )
 
            if (liter) calc_bb(k) = calc_bb(k) + 1.0/dt
