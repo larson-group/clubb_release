@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.89 2006-08-04 21:01:16 dschanen Exp $
+! $Id: hoc.F,v 1.90 2006-08-18 21:13:47 mjfalk Exp $
 
 !  MODULE HOC
 !  Contains the necessary subroutines to execute individual HOC model
@@ -730,6 +730,7 @@
 
 !       Internal
         real, dimension(gr%nnzp) :: tmp1
+        real cloud_top_height
         integer k
 
 ! Read sounding information
@@ -825,8 +826,9 @@
 
         ! GCSS FIRE Sc
         case ( "fire" ) 
+          cloud_top_height = 700. ! 700 m is the top of the cloud in FIRE
           do k=1,gr%nnzp
-            if ( gr%zm(k) < 700. ) then
+            if ( gr%zm(k) < cloud_top_height ) then
                em(k) = 1.
             else
                em(k) = emin
@@ -854,8 +856,9 @@
 
         ! GCSS DYCOMS II RF01
         case ( "dycoms2_rf01" ) 
+          cloud_top_height = 800. ! 800 m is the top of the cloud in RF01
           do k=1,gr%nnzp
-            if ( gr%zm(k) < 800. ) then
+            if ( gr%zm(k) < cloud_top_height ) then
               em(k) = 0.5
             else
               em(k) = emin
@@ -879,8 +882,9 @@
 ! Vince Larson reduced initial forcing.  4 Nov 2005
 !          em = 1.0
 !          em = 0.1
+          cloud_top_height = 1400. ! 1400 m is the top of the cloud in Nov11
           do k=1,gr%nnzp
-            if ( gr%zm(k) < 1400. ) then
+            if ( gr%zm(k) < cloud_top_height ) then
                em(k) = 0.1
             else
                em(k) = emin
