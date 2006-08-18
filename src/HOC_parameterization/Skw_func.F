@@ -26,7 +26,7 @@
          real ::
      .   Skw ! Result Skw [-]
 
-         Skw = wp3 / ( 0.5 * max( wp2, wtol**2 ) )**1.5
+         Skw = wp3 / ( max( wp2, wtol**2 ) )**1.5
 
          if ( clipping_kluge ) then
            Skw = min( max( Skw, -4.5 ), 4.5)

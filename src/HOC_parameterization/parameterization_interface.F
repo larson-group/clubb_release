@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.22 2006-08-16 23:39:38 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.23 2006-08-18 16:29:17 dschanen Exp $
 
 
 !  Module hoc_parameterization_interface
@@ -174,8 +174,8 @@
          km1 = max( k-1, 1 )
          kp1 = min( k+1, gr%nnzp )
 
-         Skwt(k) = Skw_func( wp2(km1)+wp2(k), wp3(k), wtol )
-         Skwm(k) = Skw_func( wp2(k), wp3(k)+wp3(kp1), wtol )
+         Skwt(k) = Skw_func( 0.5*wp2(km1)+wp2(k), wp3(k), wtol )
+         Skwm(k) = Skw_func( wp2(k), 0.5*wp3(k)+wp3(kp1), wtol )
        end do
 
 !      SET SURFACE VALUES OF FLUXES (BROUGHT IN)
