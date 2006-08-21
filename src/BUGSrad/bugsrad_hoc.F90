@@ -1,7 +1,13 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_hoc.F90,v 1.9 2006-07-28 20:29:04 dschanen Exp $
+! $Id: bugsrad_hoc.F90,v 1.10 2006-08-21 20:54:10 dschanen Exp $
 
-! SUBROUTINE bugsrad_hoc
+subroutine bugsrad_hoc( alt, nz, lat_in_degrees, lon_in_degrees, &
+                        day, month, year, time,                  &
+                        thlm, rcm, rtm,                          & 
+                        rrm, cf, pinpa, exner, rhom, Tsfc,       &
+                        radht, radht_SW, radht_LW,               &
+                        Frad, Frad_SW, Frad_LW, thlm_forcing )
+! Description:
 ! Does the necessary operations to interface the HOC model with
 ! the bugsrad subprogram.
 
@@ -13,21 +19,20 @@
 
 ! All code external to this based on the BUGSrad source from 2004/7/10
 !-----------------------------------------------------------------------
-subroutine bugsrad_hoc &
-           ( alt, nz, lat_in_degrees, lon_in_degrees, day, month, year, time, &
-             thlm, rcm, rtm, rrm, cf, pinpa, rhom, Tsfc, &
-             radht, radht_SW, radht_LW, Frad, Frad_SW, Frad_LW, thlm_forcing )
+
   use constants
 
   implicit none
 
 ! External
   double precision, external :: bugsrad_amu0
-  intrinsic dble, real
+
+  intrinsic :: dble, real
 
 ! Parameters
-  integer, parameter :: nlen = 1 ! length of the total domain
-  integer, parameter :: slen = 1 ! length of the sub domain
+  integer, parameter :: &
+  nlen = 1, &   ! length of the total domain
+  slen = 1      ! length of the sub domain
 
 ! Number of levels to take from U.S. Std. Atmos tables
   integer, parameter :: std_atmos_buffer = 10 
@@ -43,98 +48,117 @@ subroutine bugsrad_hoc &
 
 ! Parameters from U.S. Standard Atmosphere, 1976;  Starting at 1 km altitude
 ! Pressure in millibars
-  double precision, parameter, dimension(std_atmos_dim) ::                     &
-  std_pinmb = (/8.986e2, 7.950e2, 7.012e2, 6.166e2, 5.405e2,                   &
-                4.722e2, 4.111e2, 3.565e2, 3.080e2, 2.650e2,                   &
-                2.270e2, 1.940e2, 1.658e2, 1.417e2, 1.211e2,                   &
-                1.035e2, 8.850e1, 7.565e1, 6.467e1, 5.529e1,                   &
+  double precision, parameter, dimension(std_atmos_dim) ::      &
+  std_pinmb = (/8.986e2, 7.950e2, 7.012e2, 6.166e2, 5.405e2,    &
+                4.722e2, 4.111e2, 3.565e2, 3.080e2, 2.650e2,    & 
+                2.270e2, 1.940e2, 1.658e2, 1.417e2, 1.211e2,    &
+                1.035e2, 8.850e1, 7.565e1, 6.467e1, 5.529e1,    &
                 4.729e1, 4.047e1, 3.467e1, 2.972e1, 2.546e1/)
 
 ! Temperature in degrees Kelvin
-  double precision, parameter, dimension(std_atmos_dim) ::                     &
-  std_tempk = (/281.6, 275.1, 268.7, 262.2, 255.7,                             &
-                249.2, 242.7, 236.2, 229.7, 223.2,                             &
-                216.8, 216.6, 216.6, 216.6, 216.6,                             &
-                216.6, 216.6, 216.6, 216.6, 216.6,                             &
+  double precision, parameter, dimension(std_atmos_dim) :: &
+  std_tempk = (/281.6, 275.1, 268.7, 262.2, 255.7,         &
+                249.2, 242.7, 236.2, 229.7, 223.2,         &
+                216.8, 216.6, 216.6, 216.6, 216.6,         &
+                216.6, 216.6, 216.6, 216.6, 216.6,         &
                 217.6, 218.6, 219.6, 220.6, 221.6/)
 
 ! Specific Humidity ( Water Vapor / Density )
-  double precision, parameter, dimension(std_atmos_dim) ::                     &
-  std_sp_hmdty = (/0.378e-02, 0.288e-02, 0.198e-02, 0.134e-02, 0.869e-03,      &
-                   0.576e-03, 0.356e-03, 0.228e-03, 0.985e-04, 0.435e-04,      &
-                   0.225e-04, 0.119e-04, 0.675e-05, 0.369e-05, 0.370e-05,      &
-                   0.366e-05, 0.365e-05, 0.362e-05, 0.423e-05, 0.495e-05,      &
+  double precision, parameter, dimension(std_atmos_dim) ::                &
+  std_sp_hmdty = (/0.378e-02, 0.288e-02, 0.198e-02, 0.134e-02, 0.869e-03, & 
+                   0.576e-03, 0.356e-03, 0.228e-03, 0.985e-04, 0.435e-04, &
+                   0.225e-04, 0.119e-04, 0.675e-05, 0.369e-05, 0.370e-05, &
+                   0.366e-05, 0.365e-05, 0.362e-05, 0.423e-05, 0.495e-05, &
                    0.634e-05, 0.806e-05, 0.104e-04, 0.130e-04, 0.165e-04/)
 
 ! Ozone ( O_3 / Density )
-  double precision, parameter, dimension(std_atmos_dim) ::                     &
-  std_o3l   = (/0.486e-07, 0.536e-07, 0.550e-07, 0.561e-07, 0.611e-07,         &
-                0.682e-07, 0.814e-07, 0.989e-07, 0.152e-06, 0.218e-06,         &
-                0.356e-06, 0.513e-06, 0.638e-06, 0.834e-06, 0.108e-05,         &
-                0.138e-05, 0.197e-05, 0.263e-05, 0.337e-05, 0.427e-05,         &
+  double precision, parameter, dimension(std_atmos_dim) ::             &
+  std_o3l   = (/0.486e-07, 0.536e-07, 0.550e-07, 0.561e-07, 0.611e-07, &
+                0.682e-07, 0.814e-07, 0.989e-07, 0.152e-06, 0.218e-06, &
+                0.356e-06, 0.513e-06, 0.638e-06, 0.834e-06, 0.108e-05, &
+                0.138e-05, 0.197e-05, 0.263e-05, 0.337e-05, 0.427e-05, &
                 0.502e-05, 0.605e-05, 0.691e-05, 0.767e-05, 0.848e-05/)
 
-! Input
-  real, intent(in)    :: alt ! maximum altitude in the model domain (kilometers)
-  integer, intent(in) :: nz  ! nnzp in the grid class
+! Input Variables
+  real, intent(in) :: &
+  alt,           &! Maximum altitude in the model domain [m]
+  lat_in_degrees,&! Latitude                             [Degrees North]
+  lon_in_degrees,&! Longitude                            [Degrees East]
+  time            ! Model time                           [s]
+  
+  integer, intent(in) :: &
+  nz,              & ! vertical extent;  i.e. nnzp in the grid class
+  day, month, year   ! Time of year
 
-  real, intent(in)    :: lat_in_degrees, lon_in_degrees, time
-  integer, intent(in) :: day, month, year
+  real, intent(in), dimension(nz) :: &
+  thlm,  & ! Liquid potential temp.     [K]
+  rcm,   & ! Liquid water mixing ratio  [kg/kg]
+  rrm,   & ! Rain water mixing ratio    [kg/kg]
+  rtm,   & ! Total water mixing ratio   [kg/kg]
+  rhom,  & ! Density                    [kg/m^3]
+  cf,    & ! Cloud fraction             [%]
+  pinpa, & ! Pressure                   [Pa]
+  exner    ! Exner function             [-]
 
-  real, intent(in), dimension(nz) :: thlm  ! Liquid potential temperature (K)
-  real, intent(in), dimension(nz) :: rcm   ! Liquid water mixing ratio (kg/kg)
-  real, intent(in), dimension(nz) :: rrm   ! Rain water mixing ratio (kg/kg)
-  real, intent(in), dimension(nz) :: rtm   ! Total water mixing ratio (kg/kg)
-  real, intent(in), dimension(nz) :: rhom  ! Rho m
-  real, intent(in), dimension(nz) :: cf    ! Cloud fraction (%)
-  real, intent(in), dimension(nz) :: pinpa ! Pressure in pascals
+  real, intent(in) :: Tsfc ! Theta at the surface [K]
 
-  real, intent(in) :: Tsfc     ! Temperature in K (surface)
+! Input/Output Variables
+  real, intent(inout), dimension(nz) :: thlm_forcing ! Theta_l LS tendency [K/s]
 
-! Output
-  real, intent(out), dimension(nz) :: Frad    ! Total radiative flux
-  real, intent(out), dimension(nz) :: Frad_SW ! SW radiative flux
-  real, intent(out), dimension(nz) :: Frad_LW ! LW radiative flux
+! Output Variables
+  real, intent(out), dimension(nz) :: &
+  Frad,    & ! Total radiative flux       [W/m^2]
+  Frad_SW, & ! SW radiative flux          [W/m^2]
+  Frad_LW, & ! LW radiative flux          [W/m^2]
+  radht,   & ! Total heating rate         [K/s]
+  radht_SW,& ! SW heating rate            [K/s]
+  radht_LW   ! LW heating rate            [K/s]
 
-  real, intent(out), dimension(nz) :: radht    ! Total heating rate
-  real, intent(out), dimension(nz) :: radht_SW ! SW heating rate
-  real, intent(out), dimension(nz) :: radht_LW ! LW heating rate
-
-  real, intent(inout), dimension(nz) :: thlm_forcing
-
-! Internal
+! Local Variables
 ! Altered 3 Oct 2005 to be buffer levels higher
-  double precision, dimension(nlen,(nz-1)+buffer) :: tempk! Temperature in K
-  double precision, dimension(nlen,(nz-1)+buffer) :: rcil ! Ice mixing ratio (kg/kg)
-  double precision, dimension(nlen,(nz-1)+buffer) :: o3l  ! Ozone mixing ratio (kg/kg)
+  double precision, dimension(nlen,(nz-1)+buffer) :: &
+  tempk,& ! Temperature            [K]
+  rcil, & ! Ice mixing ratio       [kg/kg]
+  o3l     ! Ozone mixing ratio     [kg/kg]
 
-  double precision, dimension(nlen,(nz-1)+buffer+1) :: Frad_uLW ! LW upwelling flux (in W/m^2)
-  double precision, dimension(nlen,(nz-1)+buffer+1) :: Frad_dLW ! LW downwelling flux (in W/m^2)
-  double precision, dimension(nlen,(nz-1)+buffer+1) :: Frad_uSW ! SW upwelling flux (in W/m^2)
-  double precision, dimension(nlen,(nz-1)+buffer+1) :: Frad_dSW ! SW downwelling flux (in W/m^2)
+  double precision, dimension(nlen,(nz-1)+buffer+1) :: &
+  Frad_uLW, & ! LW upwelling flux         [W/m^2]
+  Frad_dLW, & ! LW downwelling flux       [W/m^2]
+  Frad_uSW, & ! SW upwelling flux         [W/m^2]
+  Frad_dSW    ! SW downwelling flux       [W/m^2]
 
-  double precision, dimension(nlen,(nz-1)+buffer)   :: sp_humidity ! Specific humidity (kg/kg)
-  double precision, dimension(nlen,(nz-1)+buffer)   :: pinmb       ! Pressure in millibars
-  double precision, dimension(nlen,(nz-1)+buffer+1) :: playerinmb  ! Pressure in millibars for layers (calculated as an average of pinmb)
-  double precision, dimension(nlen,(nz-1)+buffer)   :: dpl         ! Difference in pressure levels (mb)
+  double precision, dimension(nlen,(nz-1)+buffer) :: &
+  sp_humidity, & ! Specific humidity      [kg/kg]
+  pinmb          ! Pressure in millibars  [hPa]
 
-  double precision, dimension(nlen,(nz-1)+buffer) :: rrm2, rcm2, cf2 ! Two-dimensional copies of the input parameters
+! Pressure in millibars for layers (calculated as an average of pinmb)
+  double precision, dimension(nlen,(nz-1)+buffer+1) :: &
+  playerinmb ! [hPa]
 
-  double precision, dimension(nlen,(nz-1)+buffer+1) :: radht_SW2    ! SW Radiative heating rate
-  double precision, dimension(nlen,(nz-1)+buffer+1) :: radht_LW2    ! LW Radiative heating rate
+  double precision, dimension(nlen,(nz-1)+buffer) :: &
+  dpl, &          ! Difference in pressure levels       [hPa]
+  rrm2, rcm2, cf2 ! Two-dimensional copies of the input parameters
 
-  double precision alvdr(nlen) ! Visible direct surface albedo  
-  double precision alvdf(nlen) ! Visible diffuse surface albedo  
-  double precision alndr(nlen) ! Near-IR direct surface albedo  
-  double precision alndf(nlen) ! Near-IR diffuse surface albedo  
+  double precision, dimension(nlen,(nz-1)+buffer+1) :: &
+  radht_SW2,&! SW Radiative heating rate        [W/m^2]
+  radht_LW2  ! LW Radiative heating rate        [W/m^2]
 
-  double precision slr(nlen)  ! Fraction of daylight  
-  double precision ts(nlen)   ! Surface temperature in K
+  double precision, dimension(nlen) :: &
+  alvdr,&! Visible direct surface albedo        [-]
+  alvdf,&! Visible diffuse surface albedo       [-]
+  alndr,&! Near-IR direct surface albedo        [-]
+  alndf  ! Near-IR diffuse surface albedo       [-]
 
-  double precision amu0(nlen) ! Cosine of the solar zenith angle
+  double precision, dimension(nlen) :: &
+  slr, & ! Fraction of daylight  
+  ts,  & ! Surface temperature [K]
+  amu0   ! Cosine of the solar zenith angle
 
-  integer i, j, z, z1, z2  ! loop indices
-  double precision z1_fact, z2_fact
+  double precision :: z1_fact, z2_fact ! Temp storage
+
+  integer :: i, j, z, z1, z2  ! Loop indices
+
+!-----------------------------------------------------------------------
 
 ! amu0 = 0.4329 ! Nov 11 Altocu value
 ! Calculated value
@@ -151,7 +175,7 @@ subroutine bugsrad_hoc &
 ! Convert theta_l to temperature
 !   kappa: Dry air gas constant / Dry air specific heat at p
 !   Lv:    Latent heat of vaporization
-  tempk(1,1:(nz-1)) = thlm(2:nz) * ( 1000.0d0 / pinmb(1,1:(nz-1)) )**(-kappa)  &
+  tempk(1,1:(nz-1)) = thlm(2:nz) * ( 1000.0d0 / pinmb(1,1:(nz-1)) )**(-kappa) &
                     + Lv*rcm(2:nz) / Cp
 
 ! Derive Specific humidity from rc & rt.
@@ -163,7 +187,7 @@ subroutine bugsrad_hoc &
   alndr = 0.1d0
   alndf = 0.1d0
 
-  slr  = 1.0d0 ! fraction of daylight
+  slr  = 1.0d0 ! Fraction of daylight
  
   rcil(1,1:(nz-1)+buffer) = 0.0d0 ! Assume no ice for HOC
 
@@ -249,20 +273,20 @@ subroutine bugsrad_hoc &
 ! close(10)
 ! pause
 
-  call bugs_rad( nlen, slen, (nz-1)+buffer, playerinmb, pinmb, dpl, tempk,     &
-                 sp_humidity, rcm2, rcil, rrm2, o3l, ts, amu0,                 &
-                 slr, alvdf, alndf, alvdr, alndr,                              &
-                 dble(sol_const), dble(grav), dble(Cp),                        &
-                 radht_SW2, radht_LW2,                                         &
+  call bugs_rad( nlen, slen, (nz-1)+buffer, playerinmb, pinmb, dpl, tempk, &
+                 sp_humidity, rcm2, rcil, rrm2, o3l, ts, amu0,             &
+                 slr, alvdf, alndf, alvdr, alndr,                          &
+                 dble( sol_const ), dble( grav ), dble( Cp ),              &
+                 radht_SW2, radht_LW2,                                     &
                  Frad_dSW, Frad_uSW, Frad_dLW, Frad_uLW, cf2 )
 
 ! Michael pointed out that this was a temperature tendency, not a theta_l
 ! tendency.  The 2nd line should fix both.  dschanen 28 July 2006
-  radht_SW(2:nz) = real( flip( radht_SW2(1,buffer+1:nz+buffer), nz-1 ) )       &
-                   * ( pinpa(2:nz) / 100000.0 )**kappa
+  radht_SW(2:nz) = real( flip( radht_SW2(1,buffer+1:nz+buffer), nz-1 ) ) &
+                   * ( 1.0 / exner(2:nz) )
 
-  radht_LW(2:nz) = real( flip( radht_LW2(1,buffer+1:nz+buffer), nz-1 ) )       &
-                   * ( pinpa(2:nz) / 100000.0 )**kappa
+  radht_LW(2:nz) = real( flip( radht_LW2(1,buffer+1:nz+buffer), nz-1 ) ) &
+                   * ( 1.0 / exner(2:nz) )
 
   ! No radiative heating below ground
   radht_SW(1) = 0.0
@@ -271,9 +295,9 @@ subroutine bugsrad_hoc &
   radht = radht_SW + radht_LW 
 
 ! These are on the m grid, and require no adjusting
-  Frad_SW(1:nz) = real( flip(  Frad_uSW(1,buffer+1:nz+buffer)                  &
+  Frad_SW(1:nz) = real( flip(  Frad_uSW(1,buffer+1:nz+buffer) &
                              - Frad_dSW(1,buffer+1:nz+buffer), nz ) )
-  Frad_LW(1:nz) = real( flip(  Frad_uLW(1,buffer+1:nz+buffer)                  &
+  Frad_LW(1:nz) = real( flip(  Frad_uLW(1,buffer+1:nz+buffer) &
                              - Frad_dLW(1,buffer+1:nz+buffer), nz ) )
 
   Frad(1:nz) = Frad_SW(1:nz) + Frad_LW(1:nz)
@@ -315,120 +339,129 @@ subroutine bugsrad_hoc &
   end function flip
 !-----------------------------------------------------------------------
 
-  end subroutine bugsrad_hoc
+end subroutine bugsrad_hoc
 
 !-----------------------------------------------------------------------
-! FUNCTION bugsrad_amu0
+function bugsrad_amu0( day, month, year, current_time, lat_in_degrees, &
+                       lon_in_degrees ) result( amu0 )
+! Description:
+! function based on coefficients from Liou and Clayson and Curry formula
 
-! function based on MATLAB function by Liou
+! References:
+! Clayson and Curry formula from C. A. Clayson and J. A. Curry , J. Geophys.
+!   Res. Vol. 101, No. C12, Pages 28515-28528, 15 Dec. 1996.
+! Liou ``An Introduction to Atmospheric Radiation'' 
+!   Table 2.2 and Eqn. 2.2.10
 !-----------------------------------------------------------------------
-  function bugsrad_amu0( day, month, year, current_time, lat_in_degrees, &
-                         lon_in_degrees ) result( amu0 )
-    use constants, only: pi_dp
+  use constants, only: pi_dp
 
-    implicit none
+  implicit none
 
-    intrinsic sin, cos, mod, abs, int
+  intrinsic :: sin, cos, mod, abs, int
 
-!   Parameters
-    integer, dimension(12), parameter :: ndays = &
-    (/ 31,   28,   31,   30,   31,   30, &
-       31,   31,   30,   31,   30,   31 /)
+! Constant Parameters
+  integer, dimension(12), parameter ::  &
+  ndays = (/31, 28, 31, 30, 31, 30,     &
+            31, 31, 30, 31, 30, 31/)
+  ! Liou's coefficients
+  double precision, parameter :: &
+  c0 =  0.006918, &
+  c1 = -0.399912, &
+  c2 = -0.006758, &
+  c3 = -0.002697, &
+  d1 =  0.070257, &
+  d2 =  0.000907, &
+  d3 =  0.000148
 
-!   Input
-    integer, intent(in) :: day, month, year
-    real, intent(in) :: current_time
-    real, intent(in) :: lat_in_degrees
-    real, intent(in) :: lon_in_degrees
+! Input Variables
+  integer, intent(in) :: day, month, year
+  real, intent(in) :: &
+  current_time,         &
+  lat_in_degrees,       &
+  lon_in_degrees
 
-!   Output
-    double precision amu0
+! Output Variables
+  double precision :: &
+  amu0 ! Cosine of the solar zenith angle
 
-!   Internal
-    double precision c0, c1, c2, c3, d1, d2, d3
-    double precision t, h
-    double precision delta
-!   double precision delta_in_degrees
-    double precision zln, longang, latang
-    double precision hour
+! Local Variables
+  double precision :: &
+  t, h,    &
+  delta,   &
+  zln,     &
+  longang, &
+  latang,  &
+  hour 
 
-    integer jul_day, j, daysinyear
+  integer :: &
+  jul_day, j, daysinyear
 
-    ! A version of Dr. Golaz's leap year code (from outputgrads)
-    if ( (mod(year,4) == 0) .and. & 
-      (.not.(  mod(year,100) == 0 .and. mod(year,400) /= 0 ) )  ) then 
-      daysinyear = 366
-    else
-      daysinyear = 365
-    end if
+  ! A version of Dr. Golaz's leap year code (from outputgrads)
+  if ( (mod(year,4) == 0) .and. &
+    (.not.(  mod(year,100) == 0 .and. mod(year,400) /= 0 ) )  ) then 
+    daysinyear = 366
+  else
+    daysinyear = 365
+  end if
 
-    jul_day = day
+  jul_day = day
 
-    ! Add the days from the previous months
-    do j = 1, month-1, 1
-      jul_day = jul_day + ndays(j)
-    end do
+  ! Add the days from the previous months
+  do j = 1, month-1, 1
+    jul_day = jul_day + ndays(j)
+  end do
 
-    ! kluge for a leap year
-    if ( daysinyear == 366 .and. month > 2 ) jul_day = jul_day + 1
+  ! kluge for a leap year
+  if ( daysinyear == 366 .and. month > 2 ) jul_day = jul_day + 1
 
-    t = 2*pi_dp*(jul_day-1)/daysinyear
+  t = 2*pi_dp*(jul_day-1)/daysinyear
 
-    ! Liou's coefficients
-    c0 =  0.006918
-    c1 = -0.399912
-    c2 = -0.006758
-    c3 = -0.002697
-    d1 =  0.070257
-    d2 =  0.000907
-    d3 =  0.000148
+  delta = c0 + c1*cos(t) + d1*sin(t) &
+        + c2*cos(2*t) + d2*sin(2*t)  &
+        + c3*cos(3*t) + d3*sin(3*t)
 
-    delta = c0 + c1*cos(t) + d1*sin(t) &
-          + c2*cos(2*t) + d2*sin(2*t)  & 
-          + c3*cos(3*t) + d3*sin(3*t)
+  !delta_in_degrees = delta*(180/pi_dp)
 
-    !delta_in_degrees = delta*(180/pi_dp)
+  ! Compute hour angle (old code)
+  ! h = 2*pi_dp*t_since_noon/86400
 
-    ! Compute hour angle (old code)
-    ! h = 2*pi_dp*t_since_noon/86400
+  hour = current_time / 3600.0
 
-    hour = current_time / 3600.0
+! Fix the time if we've been running for more than a day
+  j = int( hour / 24.0 )
+  hour = hour - ( j * 24.0 )
+  jul_day = jul_day + j
 
-!   Fix the time if we've been running for more than a day
-    j = int( hour / 24.0 )
-    hour = hour - ( j * 24.0 )
-    jul_day = jul_day + j
+  if ( jul_day > daysinyear ) stop "problem with days solar zenith code"
 
-    if ( jul_day > daysinyear ) stop "problem with days solar zenith code"
+!   The angle  longang  is equivalent to the
+!   hour angle in the formula for cosZ .
+!   References: zenith.f
+!   from http://magic.gfdi.fsu.edu/seaflux/DIURNAL/README.txt
+!   Clayson and Curry formula from C. A. Clayson and J. A. Curry , J. Geophys.
+!   Res. Vol. 101, No. C12, Pages 28515-28528, 15 Dec. 1996 .
 
-!     The angle  longang  is equivalent to the
-!     hour angle in the formula for cosZ .
-!     References: zenith.f
-!     from http://magic.gfdi.fsu.edu/seaflux/DIURNAL/README.txt
-!     Clayson and Curry formula from C. A. Clayson and J. A. Curry , J. Geophys.
-!     Res. Vol. 101, No. C12, Pages 28515-28528, 15 Dec. 1996 .
+!   June 6, 2006
 
-!     June 6, 2006
+  select case( int( hour ) )
+  case( 0:11 )
+    zln = 180.00 - hour*15.00
+  case( 12:23 )
+    zln = 540.00 - hour*15.00
+  case default
+    print *, hour
+    stop " > 24 hours in cos solar zenith"
+  end select
 
-    select case( int( hour ) )
-    case ( 0:11 )
-      zln = 180.00 - hour*15.00
-    case ( 12:23 )
-      zln = 540.00 - hour*15.00
-    case default
-      print *, hour
-      stop " > 24 hours in cos solar zenith"
-    end select
-
-    longang = abs( lon_in_degrees - zln ) * pi_dp/180.0
-    latang  = lat_in_degrees * pi_dp/180.0
+  longang = abs( lon_in_degrees - zln ) * pi_dp/180.0
+  latang  = lat_in_degrees * pi_dp/180.0
 
 
-    ! Cosine of the solar zenith angle.
-    amu0 = sin(latang)*sin(delta) &
-         + cos(latang)*cos(delta)*cos(longang)
+  ! Cosine of the solar zenith angle.
+  amu0 = sin(latang)*sin(delta) &
+       + cos(latang)*cos(delta)*cos(longang)
 
-    !write(*,'(a,f15.6)') "cosine solar zenith", amu0 !%% debug
+  !write(*,'(a,f15.6)') "cosine solar zenith", amu0 !%% debug
 
-    return
-  end function bugsrad_amu0
+  return
+end function bugsrad_amu0
