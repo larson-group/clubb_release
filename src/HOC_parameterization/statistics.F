@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.6 2006-08-08 19:39:05 dschanen Exp $
+!  $Id: statistics.F,v 1.7 2006-08-21 21:00:03 dschanen Exp $
 
 !  module stats_type
 !  contains:
@@ -1797,7 +1797,7 @@ c     -----------------------------------------------------------------
           zm%f%var(ishear)%ptr => zm%x(:,k)
           zm%f%var(ishear)%name = "shear"
           zm%f%var(ishear)%description = "wind shear term (m^2/s^3)"
-          zm%f%var(ishear)%units = "m2/s3"
+          zm%f%var(ishear)%units = "m^2/s^3"
           k = k + 1
 
         case ('Frad')
@@ -1805,7 +1805,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iFrad)%ptr => zm%x(:,k)
           zm%f%var(iFrad)%name = "Frad"
           zm%f%var(iFrad)%description = "radiative flux"
-          zm%f%var(iFrad)%units = "W/(m^-2)"
+          zm%f%var(iFrad)%units = "W/m^2"
           k = k + 1
 
         case ('Frad_LW')    ! Brian
@@ -1813,7 +1813,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iFrad_LW)%ptr => zm%x(:,k)
           zm%f%var(iFrad_LW)%name = "Frad_LW"
           zm%f%var(iFrad_LW)%description = "Long-wave radiative flux"
-          zm%f%var(iFrad_LW)%units = "W/(m^-2)"
+          zm%f%var(iFrad_LW)%units = "W/m^2"
           k = k + 1
 
         case ('Frad_SW')    ! Brian
@@ -1821,7 +1821,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iFrad_SW)%ptr => zm%x(:,k)
           zm%f%var(iFrad_SW)%name = "Frad_SW"
           zm%f%var(iFrad_SW)%description = "Short-wave radiative flux"
-          zm%f%var(iFrad_SW)%units = "W/(m^-2)"
+          zm%f%var(iFrad_SW)%units = "W/m^2"
           k = k + 1
 
         case ('Fprec')      ! Brian
@@ -1829,7 +1829,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iFprec)%ptr => zm%x(:,k)
           zm%f%var(iFprec)%name = "Fprec"
           zm%f%var(iFprec)%description = "precipitation flux (W/m^2)"
-          zm%f%var(iFprec)%units = "W/(m^2)"
+          zm%f%var(iFprec)%units = "W/m^2"
           k = k + 1
  
         case ('Fcsed')      ! Brian
