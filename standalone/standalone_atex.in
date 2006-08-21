@@ -1,3 +1,4 @@
+! $Id: standalone_atex.in,v 1.19 2006-08-21 20:49:45 dschanen Exp $
 ! Namelists for the hoc_standalone program
 ! run_file is the location of the model namelist file, which contains the
 ! statistics and sounding data.
