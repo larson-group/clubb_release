@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.62 2006-08-16 23:39:38 dschanen Exp $
+# $Id: Makefile,v 1.63 2006-08-23 16:49:42 dschanen Exp $
 # This version should work with BSD, GNU make, smake and dmake
 
 # For HOC we edit this by hand rather than implementing imake or automake
@@ -33,7 +33,7 @@ BUGS_RAD = kinds.o bugsrad_planck.o bugsrad_physconst.o gases_ckd.o \
 
 PARAMETERIZATION = \
 	$(LATIN_HYP) \
-	polpak.o constants.o endian.o outputfile.o outputgrads.o \
+	gamma.o constants.o endian.o outputfile.o outputgrads.o \
 	outputnc.o grid.o model_flags.o statistics.o \
 	banbks.o bandec.o erf.o tridag.o rain.o \
 	closure_new.o diag_var.o gcss.o rad_lwsw.o linearinterpolation.o \
@@ -143,13 +143,13 @@ distclean:
 	$(LIBDIR)/lib*
 
 # == Dependencies ==
-polpak.o	: polpak.f90
+gamma.o		: gamma.f90
 endian.o	: endian.F
 constants.o	: constants.F
 model_flags.o	: model_flags.F
 outputfile.o	: outputfile.F
 rain.o		: constants.o model_flags.o statistics.o tridag.o \
-	polpak.o rain.F
+	gamma.o rain.F
 outputgrads.o	: endian.o outputfile.o outputgrads.F
 outputnc.o	: outputfile.o outputnc.F
 diag_variables.o: constants.o grid.o model_flags.o diag_variables.F 

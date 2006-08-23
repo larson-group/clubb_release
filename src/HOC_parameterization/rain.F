@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.4 2006-08-04 22:05:04 dschanen Exp $
+! $Id: rain.F,v 1.5 2006-08-23 16:49:48 dschanen Exp $
 !----------------------------------------------------------------------
 
       MODULE rain_equations
@@ -1060,15 +1060,14 @@
      .                    corr_rcrr_G, corr_rcNr_G, corr_rrNr_G )
 
         USE constants
+        use polpak_gamma, only: gamma
 
         IMPLICIT NONE
 
         ! External functions
 
         real rsat
-        real(kind=8) gamma
         external rsat
-        external gamma
 
         REAL, INTENT(IN):: thl_pl, press, rc_pl, s, ss
         REAL, INTENT(IN):: alpha_exp, beta_exp, gamma_exp
@@ -1467,12 +1466,10 @@
      .                   beta_exp, corr, rc_pl )
 
         USE constants
+        use polpak_gamma, only: gamma
 
         IMPLICIT NONE
 
-!       New gamma function in polpak
-        real(kind=8) gamma
-        external gamma
         REAL, INTENT(IN):: s, ss, alpha_exp, u, sig2
         REAL, INTENT(IN):: beta_exp, corr, rc_pl
         REAL:: NL_PDF
@@ -1767,6 +1764,7 @@
 !       Output:  PD --- Dv(x)
 !       Routine called: GAMMA for computing âx)
 !       ===================================================
+        use polpak_gamma, only: gamma
 
         IMPLICIT NONE
 !        IMPLICIT DOUBLE PRECISION (A-H,O-Z)! Cleaned this up 6/22/05
@@ -1775,9 +1773,6 @@
         DOUBLE PRECISION EPS, PI, SQ2, EP, VA0, GA0, G1, A0, VM, VT, G0
         DOUBLE PRECISION R, R1, GM
         INTEGER M
-!       New gamma function in polpak.f90
-        REAL(KIND=8) GAMMA
-        EXTERNAL GAMMA
         EPS=1.0D-15
         PI=3.141592653589793D0
         SQ2=DSQRT(2.0D0)
@@ -1833,6 +1828,7 @@
 !             (1) VVLA for computing Vv(x) for large |x|
 !             (2) GAMMA for computing âx)
 !       ====================================================
+        use polpak_gamma, only: gamma
 
         IMPLICIT NONE
 !        IMPLICIT DOUBLE PRECISION (A-H,O-Z) ! Cleaned this up 6/22/05
@@ -1840,9 +1836,6 @@
         DOUBLE PRECISION, INTENT(OUT) :: PD
         DOUBLE PRECISION PI, EPS, EP, A0, R, X1, VL, GL
         INTEGER K
-!       New gamma function in polpak.f90
-        REAL(KIND=8) GAMMA
-        EXTERNAL GAMMA
         PI=3.141592653589793D0
         EPS=1.0D-12
         EP=DEXP(-.25*X*X)
@@ -1880,6 +1873,7 @@
 !             (1) DVLA for computing Dv(x) for large |x|
 !             (2) GAMMA for computing âx)
 !       ===================================================
+        use polpak_gamma, only: gamma
 
         IMPLICIT NONE
 !        IMPLICIT DOUBLE PRECISION (A-H,O-Z) ! Cleaned this up 6/22/05
@@ -1887,9 +1881,6 @@
         DOUBLE PRECISION, INTENT(OUT) :: PV
         DOUBLE PRECISION PI, EPS, QE, A0, R, X1, PDL, GL, DSL
         INTEGER K
-!       New gamma function in polpak.f90
-        REAL(KIND=8) GAMMA
-        EXTERNAL GAMMA
         PI=3.141592653589793D0
         EPS=1.0D-12
         QE=DEXP(0.25*X*X)
@@ -1914,7 +1905,7 @@
         RETURN
         END SUBROUTINE VVLA
 !------------------------------------------------------------------------
-!       Now occurs as part of the function in polpak.f90 -dschanen
+!       Now occurs as part of the function in gamma.f90 -dschanen
 !------------------------------------------------------------------------
 !
 !        SUBROUTINE GAMMA(X,GA)
