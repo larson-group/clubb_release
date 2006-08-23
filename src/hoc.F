@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.91 2006-08-21 20:54:10 dschanen Exp $
+! $Id: hoc.F,v 1.92 2006-08-23 21:11:56 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -559,6 +559,10 @@
      .       i, '; time = ', time
          end if
 #endif /*STATS*/
+
+         isValid = .not. invalid_model_arrays( ) ! Check for bad values 
+                                                 ! in the model arrays
+         if ( .not. isValid ) exit
 
          call hoc_forcings_timestep( i, stdout, isValid )
 
