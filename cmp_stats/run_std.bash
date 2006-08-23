@@ -1,6 +1,6 @@
 #!/bin/bash
 #######################################################################
-# $Id: run_std.bash,v 1.2 2006-05-04 18:06:45 hoc_browser Exp $
+# $Id: run_std.bash,v 1.3 2006-08-23 17:49:11 dschanen Exp $
 #
 # Script to run the standalone hoc program for all models, with the
 # static set of constants.
@@ -48,7 +48,7 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 
 # remove the namelists
  rm -f 'standalone.in'
- rm -f $RUN_CASE'_hoc.in'
+ rm -f "${RUN_CASE[$x]}"'_hoc.in'
 
 done
 
