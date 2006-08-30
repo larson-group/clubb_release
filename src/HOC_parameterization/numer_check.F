@@ -1,14 +1,23 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F,v 1.2 2006-04-22 20:27:49 dschanen Exp $
+! $Id: numer_check.F,v 1.3 2006-08-30 03:16:24 dschanen Exp $
         module numerical_check
+
         implicit none
 
+        public :: invalid_model_arrays
+        private :: isnan2d
+
         contains
-!------------------------------------------------------------------------
-! Function invalid_model_arrays()
-! Checks for invalid floating point values in select model arrays.
+
 !------------------------------------------------------------------------
         logical function invalid_model_arrays( ) 
+
+!       Description:
+!       Checks for invalid floating point values in select model arrays.
+
+!       References:
+!       None
+!------------------------------------------------------------------------
 
         use diagnostic_variables
         use prognostic_variables
@@ -17,11 +26,9 @@
 
         invalid_model_arrays = .false.
            
-!------------------------------------------------------------------------
-!       Check whether any variable array contains a NaN for
-!       um, vm, thlm, rtm, rtp2, thlp2, wprtp, wpthlp, rtpthlp, 
-!       wp2, & wp3.       
-!------------------------------------------------------------------------
+        ! Check whether any variable array contains a NaN for
+        ! um, vm, thlm, rtm, rtp2, thlp2, wprtp, wpthlp, rtpthlp, 
+        ! wp2, & wp3.       
 
         if ( isnan2d( um ) ) then
           print *, "NaN in um model array" 
@@ -142,65 +149,61 @@
 
         return
         end function invalid_model_arrays
-!------------------------------------------------------------------------
-! function isnan2d( )
 
-! Checks if a given real is NaN, +inf or -inf
-
-! Certain compiler optimizations may cause variables with invalid
-! results to flush to zero.  Avoid these!
-
-! Input: x2d: the real type array to be tested.
-
-! Output: isnan2d: true if a variable in tVar is of Not-a-Number type
-
-! Notes: 
-! Got a tip from Andy Vaught to use transfer( ) for portability.
-! Ideally this would be done with intrinsic module ieee in fortran 2003
-!  or with the isnan( ) function provided by some ( not pgf90 ) compilers
 !------------------------------------------------------------------------
         logical function isnan2d( x2d )
+
+!       Description:
+!       Checks if a given real is a NaN, +inf or -inf.
+
+!       Notes: 
+!       Got a tip from Andy Vaught to use transfer( ) for portability.
+!       Ideally this would be done with intrinsic module ieee in 
+!       Fortran 2003 or with the isnan( ) extension provided by some 
+!       (not pgroup) compilers.
+
+!       Certain compiler optimizations may cause variables with invalid
+!       results to flush to zero.  Avoid these!
+!------------------------------------------------------------------------
         
         implicit none
 
-!       External
-
-        intrinsic transfer, any
+        ! External
+        intrinsic :: transfer, any
     
-!       Input
-        real, intent(in), dimension(:) :: x2d
+        ! Input Variables
+        real, dimension(:), intent(in) :: x2d
 
-!       Internal Variables
-        integer :: nanbits
+        ! Local Variables
+        integer(kind=4) :: nanbits
 
-        real :: PosInf, NegInf
+        real(kind=4) :: PosInf, NegInf
 
         data nanbits /Z"7F800000"/
 
         PosInf = transfer( nanbits, PosInf )
         NegInf = -( transfer( nanbits, NegInf ) )
 
-        isnan2d = .false.
+        ! This works on compilers with standardized floating point, 
+        ! because the IEEE 754 spec defines that subnormals and NaNs 
+        ! should not equal themselves.
+        ! However, all compilers do not seem to follow this. 
+        if ( any( x2d /= x2d ) ) then
+          isnan2d = .true.
 
-!       This works on compilers with standardized floating point, because
-!       the IEEE spec defines that subnormals should not equal themselves.
-!       However, all compilers do not seem to follow this. 
-        if ( any( ( x2d /= x2d ), dim=1) ) then
-          isnan2d = .true. 
-          return
-        endif
+        ! This a second check, assuming the above does not work as 
+        ! expected.
+        else if ( any( x2d == PosInf ) ) then
+          isnan2d = .true.
 
-!       This a second check, assuming the above does not work as expected.
-        if ( any( ( x2d == PosInf), dim=1) ) then
-          isnan2d = .true. 
-          return
-        endif
+        ! This may never be needed, it's here just in case.
+        else if ( any( x2d == NegInf ) ) then
+          isnan2d = .true.
 
-!       This may never be needed, it's here just in case.
-        if ( any( ( x2d == NegInf), dim=1) ) then
-          isnan2d = .true. 
-          return
-        endif
+        else 
+          isnan2d = .false. ! Yippee, real numbers.
+
+        end if
 
         return
         end function isnan2d
