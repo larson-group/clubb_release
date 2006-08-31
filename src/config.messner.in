@@ -1,4 +1,4 @@
-# $Id: config.messner.in,v 1.12 2006-07-18 01:32:20 ajsmith4 Exp $
+# $Id: config.messner.in,v 1.13 2006-08-31 21:56:58 dschanen Exp $
 # Configuration file for Messner node
 
 # == Paths ==
@@ -10,7 +10,7 @@ LIBDIR = $(PREFIX)/lib
 # == Compiler invocation ==
 #FC = g95 #	G95
 #FC = ifort #	Intel Fortran 9
-FC = /usr/pgi/linux86/5.2/bin/pgf90 # Portland Group Fortran 90 5.x/6.x
+FC = pgf90 #	Portland Group Fortran 90 5.x/6.x
 
 # == Debugging ==
 # It is sometimes helpful to turn on floating-point trapping for the 
@@ -19,7 +19,7 @@ FC = /usr/pgi/linux86/5.2/bin/pgf90 # Portland Group Fortran 90 5.x/6.x
 # In g95: `setenv G95_FPU_INVALID TRUE' or `export G95_FPU_INVALID=TRUE'
 # In ifort: -fpe=0
 # The usual options:
-#DEBUG = -g -C -mieee-fp -ftrace=full #	g95
+#DEBUG = -g -fbounds-check -mieee-fp -ftrace=full #	g95
 #DEBUG = -g -check bounds -mieee-fp #	ifort
 DEBUG = -g -C -Kieee #			pgf90
 

@@ -1,4 +1,4 @@
-# $Id: config.linux_ia32_g95.in,v 1.1 2006-08-02 22:33:30 dschanen Exp $
+# $Id: config.linux_ia32_g95.in,v 1.2 2006-08-31 21:56:58 dschanen Exp $
 # Configuration file for Linux machine using g95
 # An MS Windows machine with MSYS should be similar
 
@@ -17,7 +17,7 @@ FC = g95 # g95 ( http://www.g95.org )
 # In g95: `setenv G95_FPU_INVALID TRUE' or `export G95_FPU_INVALID=TRUE'
 # These are the options for debugging symbols, bounds checking, IEEE-754,
 # and a special g95 flag for debugging, respectively. 
-DEBUG = -g -C -mieee-fp -ftrace=full
+DEBUG = -g -fbounds-check -mieee-fp -ftrace=full
 
 # == Machine specific flags ==
 # Note: some of these are 64 bit architectures, so make sure NetCDF is
@@ -32,8 +32,8 @@ ARCH = -march=pentium4 -msse2 -mfpmath=sse # Old P4's
 OPTIMIZE = -O2
 
 # == NetCDF Location ==
-NC_LOC = $(HOME)/netcdf-3.6.1
-#NC_LOC = /usr/local/netcdf-g95
+#NC_LOC = $(HOME)/netcdf-3.6.1
+NC_LOC = /usr/local/netcdf-g95
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
