@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.92 2006-08-23 21:11:56 dschanen Exp $
+! $Id: hoc.F,v 1.93 2006-09-05 22:31:09 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -1228,16 +1228,18 @@
 
         end select ! runtype
 
-#ifdef radoffline && nooverlap
-          if ( lbugsrad ) then
-            call bugsrad_hoc( deltaz*gr%nnzp, gr%nnzp, rlat, rlon,
-     .                        day, month, year, time,
-     .                        thlm, rcm, rtm,
-     .                        rrm, cf, p, exner, rhom, Tsfc,
-     .                        radht, radht_SW, radht_LW,
-     .                        Frad, Frad_SW, Frad_LW, thlm_forcing )
-          end if
+        if ( lbugsrad ) then
+#ifdef radoffline /*This directive is need for this to work at all*/
+          call bugsrad_hoc( deltaz*gr%nnzp, gr%nnzp, rlat, rlon,
+     .                      day, month, year, time,
+     .                      thlm, rcm, rtm,
+     .                      rrm, cf, p, exner, rhom, Tsfc,
+     .                      radht, radht_SW, radht_LW,
+     .                      Frad, Frad_SW, Frad_LW, thlm_forcing )
+#else
+          stop "Cannot call BUGSrad with these compile options."
 #endif
+        end if ! lbugsrad
 
         return
         end subroutine hoc_forcings_timestep
