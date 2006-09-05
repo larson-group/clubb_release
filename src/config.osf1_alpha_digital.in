@@ -1,4 +1,4 @@
-# $Id: config.osf1_alpha_digital.in,v 1.7 2006-08-02 22:34:15 dschanen Exp $
+# $Id: config.osf1_alpha_digital.in,v 1.8 2006-09-05 22:38:42 dschanen Exp $
 # Configuration File for Compaq f95 on the UWM alpha
 
 # == Paths ==
@@ -31,10 +31,13 @@ OPTIMIZE = -O2
 # == NetCDF Flags ==
 NC_LOC=$(HOME)/netcdf-3.6.1/
 
+# == LAPACK libraries ==
+LAPACK = -llapack -lblas
+
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
 # Use -L<library path> -l<lib> to link in an external library
-LDFLAGS = -L$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib -lnetcdf
+LDFLAGS = -L$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib -lnetcdf $(LAPACK)
 
 # == Compiler flags (all) ==
 # Preprocessing:

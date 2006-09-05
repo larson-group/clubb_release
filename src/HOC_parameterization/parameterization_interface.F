@@ -1,10 +1,7 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.23 2006-08-18 16:29:17 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.24 2006-09-05 22:39:04 dschanen Exp $
 
 
-!  Module hoc_parameterization_interface
-
-!  The `core' of the HOC model 
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -14,39 +11,27 @@
 #define SCLR_RT 2
 #endif
 
+!-----------------------------------------------------------------------
         module hoc_parameterization_interface
+
+!       Description:
+!       The `core' of the HOC model 
+
+!       References:
+!       None
+!-----------------------------------------------------------------------
+
         implicit none
 
-        public parameterization_setup
-        public parameterization_timestep
-        public parameterization_cleanup
+        public :: 
+     .  parameterization_setup,
+     .  parameterization_timestep,
+     .  parameterization_cleanup
 
-        private latin_hypercube_sampling
+        private :: latin_hypercube_sampling
 
         contains
 
-!-----------------------------------------------------------------------
-!    SUBROUTINE parameterization_timestep
-
-!    Calls:
-!    subroutine diag_var
-!    subroutine length
-!    subroutine pdf_closure_new
-!    subroutine rain (when kk_rain is true)
-!    subroutine timestep_mixing
-!    subroutine timestep_wp23
-!    subroutine update_ed_var
-
-!    function rsat
-!    function zm2zt (from grid_class)
-!    function zt2zm (from grid_class)
-
-!    If compiled with STATS:
-!    subroutine stats_accumulate
-
-!    If LH_on is true:
-!    permute_height_time (external)
-!    latin_hypercube_sampling (Internal to module)
 !-----------------------------------------------------------------------
        subroutine parameterization_timestep
      .            ( iter, niterlong, time_initial, time_current, dt,
@@ -61,78 +46,140 @@
      .              sclrm, sclrm_forcing, ! optional
      .              edsclrm, edsclrmt )   ! optional
 
-!      Modules to be included
+!      Description:
+!      subroutine to advance the model one timestep
+
+!      References:
+!      None
+
+!      Calls:
+!      subroutine diag_var
+!      subroutine length
+!      subroutine pdf_closure_new
+!      subroutine rain (when kk_rain is true)
+!      subroutine timestep_mixing
+!      subroutine timestep_wp23
+!      subroutine update_ed_var
+
+!      function rsat
+!      function zm2zt (from grid_class)
+!      function zt2zm (from grid_class)
+
+!      If compiled with STATS:
+!      subroutine stats_accumulate
+
+!      If LH_on is true:
+!      permute_height_time (external)
+!      latin_hypercube_sampling (Internal to module)
+!-----------------------------------------------------------------------
+
+       ! Modules to be included
        use constants
        use model_flags
        use grid_class
        use diagnostic_variables
-!      use prognostic_variables
-       use mixing
-       use diagnose_variances
+       use mixing, only: timestep_mixing
+       use diagnose_variances, only: diag_var
        use surface
        use pdf_closure
-       use rain_equations
+       use rain_equations, only: rain
 #ifdef STATS
        use statistics
 #endif /*STATS*/
 
        implicit none
 
-!      External
+       ! External
        real, external :: 
      . rsat,
      . Skw_func
 
+       external ::
+     . length
+#ifdef STATS
+     . ,stats_accumulate
+#endif /*STATS*/
+
        intrinsic :: sqrt, min, max, size, exp
 
-!      Input
-       integer, intent(in) :: iter      ! closure iteration number
-       integer, intent(in) :: niterlong ! total # of closure iterations
+       ! Input
+       integer, intent(in) :: 
+     . iter,     ! closure iteration number
+     . niterlong ! total # of closure iterations
 
-       real, intent(in) :: time_initial, time_current ! initial time, current time
+       logical, intent(in) :: 
+     . implemented ! Is this part of a larger host model (T/F) ?
+
        ! Note on dt, dmain, and dtclosure: since being moved out of
        ! hoc.F, all subroutines within parameterization_timestep now use
        ! dt for time dependent calculations.  The old dt is noted in
        ! each section of the code -dschanen 20 April 2006 
-       real, intent(in) :: dt ! current timestep size
+       real, intent(in) :: 
+     . time_initial, ! Initial time             [s] 
+     . time_current, ! Current time             [s]
+     . dt            ! Current timestep size    [s]
 
-       real, intent(in), dimension(gr%nnzp) :: thlm_forcing, rtm_forcing
-       real, intent(in), dimension(gr%nnzp) :: wmm, wmt
-       real, intent(in), dimension(gr%nnzp) :: p, rhom, rhot, exner
+       real, intent(in), dimension(gr%nnzp) :: 
+     . thlm_forcing,  ! theta_l forcing.        [K/s]
+     . rtm_forcing,   ! r_t forcing.            [(kg/kg)/s] 
+     . wmm,           ! wm on moment. grid.     [m/s]
+     . wmt,           ! wm on thermo. grid.     [m/s]
+     . p,             ! Pressure.               [Pa] 
+     . rhom,          ! Density on moment. grid [kg/m^3]
+     . rhot,          ! Density on thermo. grid [kg/m^3] 
+     . exner          ! Exner function.         [-]
 
-       real, intent(in) :: wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc
+       real, intent(in) :: 
+     . wpthlp_sfc,  ! w' theta_l' at surface.   [(m K)/s]
+     . wprtp_sfc,   ! w' r_t' at surface.       [(kg m)/( kg s)]
+     . upwp_sfc,    ! u'w' at surface.          [m^2/s^2]
+     . vpwp_sfc     ! v'w' at surface.          [m^2/s^2]
 
-!      Input/Output
-!      These are prognostic or are planned to be in the future
-       real, intent(inout), dimension(gr%nnzp) :: um, vm, upwp, vpwp
-       real, intent(inout), dimension(gr%nnzp) :: thlm, rtm
-       real, intent(inout), dimension(gr%nnzp) :: wprtp, wpthlp
-       real, intent(inout), dimension(gr%nnzp) :: wp2, wp3
-       real, intent(inout), dimension(gr%nnzp) :: rtp2, thlp2, rtpthlp
-       real, intent(inout), dimension(gr%nnzp) :: Scm, taum
-       real, intent(inout), dimension(gr%nnzp) :: rcm, Ncm
 
-!      You can safely leave these uninitialized for a non-drizzle case
-       real, intent(inout), dimension(gr%nnzp) :: rrm, Nrm
+       ! Input/Output
+       ! These are prognostic or are planned to be in the future
+       real, intent(inout), dimension(gr%nnzp) :: 
+     . um,      ! u wind.                       [m/s]
+     . upwp,    ! u'w'.                         [m^2/s^2]
+     . vm,      ! v wind.                       [m/s]
+     . vpwp,    ! u'w'.                         [m^2/s^2]
+     . rtm,     ! r_t Total water mixing ratio. [kg/kg]
+     . wprtp,   ! w' r_t'.                      [(m kg)/(s kg)]
+     . thlm,    ! th_l Liquid potential temp.   [K]
+     . wpthlp,  ! w' th_l'.                     [(m K)/s]
+     . wp2,     ! w'^2.                         [m^2/s^2]
+     . wp3,     ! w'^3.                         [m^3/s^3]
+     . Scm,     ! Sc on moment. grid.           [-]
+     . rtp2,    ! r_t'^2.                       [(kg/kg)^2]
+     . thlp2,   ! th_l'^2.                      [K^2]
+     . rtpthlp, ! r_t' th_l'.                   [(kg K)/kg]
+     . taum,    ! Tau on moment. grid.          [s]
+     . rcm,     ! Liquid water mixing ratio.    [kg/kg]
+     . Ncm      ! Cloud droplet number conc.    [num/m^3]
 
-!      Needed for output for host models
-       real, intent(inout), dimension(gr%nnzp) :: cf
+       ! You can safely leave these uninitialized for a non-drizzle case
+       real, intent(inout), dimension(gr%nnzp) :: 
+     . rrm,     ! Rain water mixing ratio.              [kg/kg]
+     . Nrm      ! Rain droplet number concentration.    [num/(m^3)]
 
-       real, intent(inout), dimension(gr%nnzp,sclr_dim),
-     . optional :: sclrm, sclrm_forcing, edsclrm
+       ! Needed for output for host models
+       real, intent(inout), dimension(gr%nnzp) :: 
+     . cf ! Cloud fraction.     [%]
 
-!      Output
+       real, intent(inout), dimension(gr%nnzp,sclr_dim), optional ::
+     . sclrm,          ! Passive scalar mean.
+     . sclrm_forcing,  ! Passive scalar forcing.
+     . edsclrm         ! Eddy passive scalar mean.
 
-       real, intent(out), dimension(gr%nnzp,sclr_dim),
-     . optional :: edsclrmt
-
-       logical, intent(in) :: implemented
+       ! Output Variables
+       real, intent(out), dimension(gr%nnzp,sclr_dim), optional :: 
+     . edsclrmt ! Eddy passive scalar mean tendency.
 
        logical, intent(inout) :: isValid
 
-!      Internal
+       ! Local Variables
+       integer :: i, j, k, km1, kp1
 
-       integer i, j, k, km1, kp1
        real, dimension(1:gr%nnzp) :: tmp1
        real, dimension(1:gr%nnzp) :: gamma_Skw_fnc
 
@@ -168,6 +215,8 @@
        real, dimension(1:gr%nnzp,1:sclr_dim) ::
      . sclr_tmp1, sclr_tmp2, sclr_tmp3, sclr_tmp4 ! for pdf closure
 #endif /* SCALARS */
+
+!-----------------------------------------------------------------------
 
        ! Interpolate wp2 & wp3, and then compute Skw for m & t grid
        do k = 1, gr%nnzp, 1
@@ -225,9 +274,9 @@
              sclrp2(1,i)    = 0.0
              sclrprtp(1,i)  = 0.0
              sclrpthlp(1,i) = 0.0
-          ENDDO
+          END DO
 #endif /* SCALARS */
-       ENDIF
+       END IF
 
 !      Diagnose variances
 !      We found that if we call diag_var first, we can use a longer timestep.
@@ -254,7 +303,7 @@
           sclrprtp(gr%nnzp,i)  = 0.0
           sclrp2(gr%nnzp,i)    = 0.0
           sclrpthlp(gr%nnzp,i) = 0.0
-       enddo ! i = 1, sclr_dim
+       end do ! i = 1, sclr_dim
 #endif /* SCALARS */
 
 #ifndef DISABLE_GAMMA_SKW
@@ -311,7 +360,7 @@
           sclr_tmp2(:,i) = zm2zt( sclrprtp(:,i) ) 
           sclr_tmp3(:,i) = zm2zt( sclrp2(:,i) ) 
           sclr_tmp4(:,i) = zm2zt( sclrpthlp(:,i) ) 
-       enddo ! i = 1, sclr_dim
+       end do ! i = 1, sclr_dim
 #endif /* SCALARS */
 
        do k = 2, gr%nnzp, 1
@@ -337,9 +386,9 @@
      .     ( k, n_micro_call, d_variables, nt_repeat, i_rmd, 
      .       crt1, crt2, cthl1, cthl2, 
      .       rrm, cf, gr%nnzp, sample_flag, p_height_time )
-         endif
+         end if
 
-       enddo ! k = 2, nz-1
+       end do ! k = 2, nz-1
 
 !            print*, 'hoc.F: AKm=', AKm
 !            print*, 'hoc.F: AKm_est=', AKm_est
@@ -369,7 +418,7 @@
           sclrpthvp(gr%nnzp,i) = 0.0
           sclrprcp(:,i)        = zt2zm( sclrprcp(:,i) )
           sclrprcp(gr%nnzp,i)  = 0.0
-       enddo ! i=1, sclr_dim
+       end do ! i=1, sclr_dim
 #endif /* SCALARS */
 
 !      Alternate approach for lower wp4 boundary condition:
@@ -378,7 +427,7 @@
 #ifdef SCALARS
        do i = 1, sclr_dim
           sclr_tmp1(:,i) = zt2zm( sclrm(:,i) )
-       enddo
+       end do
 #endif /* SCALARS */
 
         call pdf_closure_new
@@ -434,8 +483,8 @@
          if ( wp2(k) <= 0.005 ) then
            taut(k) = taumin
            taum(k) = taumin
-         endif
-       enddo
+         end if
+       end do
 
 !      Eddy diffusivity coefficient
 !      c_K is 0.548 usually (Duynkerke and Driedonks 1987)
@@ -463,7 +512,7 @@
           Fprec = ( zt2zm(rrm) * Vrr ) * ( rhom / rho_lw )
      .                                 * rho_lw * Lv
 
-       ENDIF ! kk_rain
+       END IF ! kk_rain
 
        if ( .not. isValid ) return
 
@@ -471,7 +520,7 @@
        do k = 1, gr%nnzp, 1
          rsm(k) =
      .   rsat(p(k), (thlm(k)+(Lv/(Cp*exner(k)))*rcm(k))*exner(k))
-       enddo
+       end do
 
 !#######################################################################
 !############## ADVANCE PROGNOSTIC VARIABLES ONE TIMESTEP ##############
@@ -487,7 +536,7 @@
      .        rhot, rhom, exner, rcm, Ncm, 
      .        cond_rrm, auto_rrm, accr_rrm,             
      .        Fcsed, sed_rcm,
-     .        cloud_sed, kk_rain, isValid, implemented  
+     .        isValid, implemented  
 #ifdef SCALARS
      .        ,sclrm, wpsclrp, sclrpthvp, sclrm_forcing   ! optional
 #endif /* SCALARS */
@@ -501,7 +550,7 @@
 !      Set Boundary Conditions for optional passive scalars
        do i = 1, sclr_dim
           wpsclrp(gr%nnzp,i)   = 0.0
-       enddo ! i = 1, sclr_dim
+       end do ! i = 1, sclr_dim
 #endif /* SCALARS */
 
 
@@ -526,11 +575,13 @@
          edsclrmt(1:gr%nnzp,i) = - wmt * ddzm( zt2zm( edsclrm(:,i) ) )
          if ( i == SCLR_THETA) then
           ! Note changed from dtmain=>dt -dschanen
-           call update_ed_var( edsclrm(:,i), edsclrmt(:,i), wpthlp(1), 
-     .                         Khm, dt, wpedsclrp(:,i), isValid )
+           call update_ed_var( "edsclr", edsclrm(:,i), edsclrmt(:,i), 
+     .                         wpthlp(1), Khm, dt, 
+     .                         wpedsclrp(:,i), isValid )
          else ! i == SCLR_RT
-           call update_ed_var( edsclrm(:,i), edsclrmt(:,i), wprtp(1),
-     .                         Khm, dt, wpedsclrp(:,i), isValid )
+           call update_ed_var( "edsclr", edsclrm(:,i), edsclrmt(:,i), 
+     .                         wprtp(1), Khm, dt, 
+     .                         wpedsclrp(:,i), isValid )
          end if
        end do
        ! Set boundary condition as in rt
@@ -546,9 +597,10 @@
      .          + fcor * ( vm - vg )
        ELSE
           umt = 0.0
-       ENDIF
+       END IF
        ! dtmain to dt -dschanen
-       call update_ed_var( um, umt, upwp(1), Khm, dt, upwp, isValid)
+       call update_ed_var( "um", um, umt, upwp(1), 
+     .                     Khm, dt, upwp, isValid )
        um(1)       = ( ( um(3)-um(2) )/( gr%zt(3)-gr%zt(2) ) )
      .              * ( gr%zt(1)-gr%zt(2) ) + um(2)
        um(gr%nnzp) = ( ( um(gr%nnzp-1)-um(gr%nnzp-2) )
@@ -563,9 +615,10 @@
      .          - fcor * ( um - ug )
        ELSE
           vmt = 0.0
-       ENDIF
+       END IF
        ! dtmain to dt -dschanen
-       call update_ed_var( vm, vmt, vpwp(1), Khm, dt, vpwp, isValid)
+       call update_ed_var( "vm", vm, vmt, vpwp(1), 
+     .                     Khm, dt, vpwp, isValid )
        vm(1)       = ( ( vm(3)-vm(2) )/( gr%zt(3)-gr%zt(2) ) )
      .              * ( gr%zt(1)-gr%zt(2) ) + vm(2)
        vm(gr%nnzp) = ( ( vm(gr%nnzp-1)-vm(gr%nnzp-2) )
@@ -580,7 +633,7 @@
        do k = 1, gr%nnzp-1, 1
          shear(k) = -upwp(k) * ( um(k+1) - um(k) ) * gr%dzm(k)
      .              -vpwp(k) * ( vm(k+1) - vm(k) ) * gr%dzm(k)
-       enddo
+       end do
        shear(gr%nnzp) = 0.0
 
 !#######################################################################
@@ -593,24 +646,24 @@
          if ( ish > 0 ) then
            sfc%x(1,ish) = sfc%x(1,ish) + wpthlp(1) * rhom(1) * cp
            sfc%n(1,ish) = sfc%n(1,ish) + 1
-         endif
+         end if
          if ( ilh > 0 ) then
            sfc%x(1,ilh) = sfc%x(1,ilh) + wprtp(1) * rhom(1) * Lv
            sfc%n(1,ilh) = sfc%n(1,ilh) + 1
-         endif
+         end if
          if ( iustar > 0 ) then   ! Added by Brian
            sfc%x(1,iustar) = sfc%x(1,iustar) + ustar
            sfc%n(1,iustar) = sfc%n(1,iustar) + 1
-         endif
+         end if
          if ( irain > 0 .and. kk_rain ) then   ! Added by Brian
            sfc%x(1,irain) = sfc%x(1,irain) + rain_rate(2)
            sfc%n(1,irain) = sfc%n(1,irain) + 1
-         endif
+         end if
          if ( ipflux > 0 .and. kk_rain ) then   ! Added by Brian
            sfc%x(1,ipflux) = sfc%x(1,ipflux) + Fprec(1)
            sfc%n(1,ipflux) = sfc%n(1,ipflux) + 1
-         endif
-       endif 
+         end if
+       end if 
 
 !      Added to allow tuning without using the zm stats file
 
@@ -716,18 +769,19 @@
 
         implicit none
 
-!       External
-        external setup_constants, setup_model_flags
+        ! External
+        external :: setup_constants, setup_model_flags
 
-!       Input
+        ! Input
 
         ! Grid definition
-        integer, intent(in) :: nzmax     ! extent in levels
-        real, intent(in)    :: deltaz    ! change in altitude in m per level
+        integer, intent(in) :: nzmax  ! Extent in levels
+        real, intent(in)    :: deltaz ! Change in altitude in per level [m]
 
         ! Grid setup if part of larger (host) model.
-        real, dimension(1:nzmax):: host_momentum
-        real, dimension(1:nzmax):: host_thermodynamic
+        real, dimension(1:nzmax) :: 
+     .  host_momentum,
+     .  host_thermodynamic
 
         ! Constant parameters
         real, intent(in) :: C1, C1b, C1c

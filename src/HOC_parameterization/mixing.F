@@ -1,19 +1,27 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.5 2006-08-16 23:39:38 dschanen Exp $
-!
-! Module containing the HOC mixing scheme.  Allows for optional variables.
-!-----------------------------------------------------------------------
+! $Id: mixing.F,v 1.6 2006-09-05 22:39:04 dschanen Exp $
+
+        ! Passive scalars
 #define SCLR_THETA 1
 #define SCLR_RT 2
 
-      module mixing
-      implicit none
+!-----------------------------------------------------------------------
+        module mixing
 
-      public timestep_mixing
-      private mixing_solve
-      private mixing_lhs
+!       Description:
+!       Contains the HOC mixing scheme.  Allows for optional variables.
 
-      contains
+!       References:
+!       None
+!-----------------------------------------------------------------------
+
+        implicit none
+
+        public  :: timestep_mixing
+
+        private :: mixing_solve, mixing_lhs
+
+        contains
 !-----------------------------------------------------------------------
         subroutine timestep_mixing
      .             ( dt, taum, wmm, wmt, wp2, wp3, Scm, Skwm,
@@ -22,14 +30,20 @@
      .               rhot, rhom, exner, rcm, Ncm, 
      .               cond_rrm, auto_rrm, accr_rrm,
      .               Fcsed, sed_rcm,
-     .               cloud_sed, kk_rain, isValid, implemented,
+     .               isValid, implemented,
      .               sclrm, wpsclrp, sclrpthvp, sclrm_forcing )
 !       Description:
-!       Advance means and fluxes one timestep.
+!       Advance the mean and flux terms by one timestep.
 
 !       References:
-!       ``Implicit solutions for the means and fluxes''
-!       _Equations for HOC_ (5)
+!       Eqn. 16 & 17 on p. 3546 of 
+!       ``A PDF-Based Model for Boundary Layer Clouds. Part I:
+!         Method and Model Description'' Golaz, et al. (2002)
+!       JAS, Vol. 59, pp. 3540--3551.
+
+!       See Also
+!       ``Equations for HOC'' Section 5:
+!       /Implicit solutions for the means and fluxes/
 !-----------------------------------------------------------------------
 
         use constants
@@ -37,9 +51,13 @@
 
         implicit none
 
+        ! External
+        intrinsic :: exp, present
+
         ! Input Variables
         real, intent(in) :: 
      .  dt           ! Timestep                       [s]
+
         real, intent(in), dimension(gr%nnzp) ::
      .  taum,        ! Tau on moment. grid            [s]
      .  wmm,         ! w wind on m                    [m/s]
@@ -58,22 +76,20 @@
      .  rhot,        ! rho (density) on thermo. grid  [kg/m^3] 
      .  rhom,        ! rho (density) on moment. grid  [kg/m^3] 
      .  exner,       ! Exner function                 [-]
-     .  rcm,         ! Liquid water mixing ration     [kg/kg]
+     .  rcm,         ! Liquid water mixing ratio      [kg/kg]
      .  Ncm,         ! Cloud droplet number conc.     [num/m^3]
      .  cond_rrm,    ! rrm condensation/evaporation   [(kg/kg)/s]
      .  auto_rrm,    ! rrm autoconversion             [(kg/kg)/s]
      .  accr_rrm     ! rrm accretion                  [(kg/kg)/s]
 
         logical, intent(in) :: 
-     .  cloud_sed,   ! Cloud sedimentation flag -Brian
-     .  kk_rain,     ! Khairoutdinov and Kogan (2000) drizzle scheme -Brian
      .  implemented  ! Flag for if HOC is implemented in a larger model or not.
 
          
         ! Input/Output Variables
         real, intent(inout), dimension(gr%nnzp) :: 
      .  rtm,         ! r_t Total water mixing ratio   [kg/kg]
-     .  wprtp,       ! w' r_t'                        [(m kg)(s kg)]
+     .  wprtp,       ! w' r_t'                        [(m kg)/(s kg)]
      .  thlm,        ! th_l Liquid potential temp.    [K]
      .  wpthlp       ! w' th_l'                       [(m K)/s]
 
@@ -88,21 +104,21 @@
         ! Additional optional variables for passive scalars
         ! Input Variables
         real, intent(in), optional, dimension(gr%nnzp,sclr_dim) :: 
-     .  sclrpthvp, sclrm_forcing ! [Units vary]
+     .  sclrpthvp, sclrm_forcing !                           [Units vary]
         ! Input/Output Variables
         real, intent(inout), optional, dimension(gr%nnzp,sclr_dim) :: 
-     .  sclrm, wpsclrp           ! [Units vary]
+     .  sclrm, wpsclrp !                                     [Units vary]
 
         ! Local variables
         real, allocatable, dimension(:,:) :: 
-     .  aa, ! Banded matrix in compact form 
-     .  al  ! LU decomposition of banded matrix 
+     .  aa  ! Banded matrix in compact form 
+!    .  al  ! LU decomposition of banded matrix 
 
         real, allocatable, dimension(:) :: 
      .  dd ! RHS for banded matrix
 
-        integer, allocatable, dimension(:) :: 
-     .  indx ! Index of pivots for LU decomposition
+!       integer, allocatable, dimension(:) :: 
+!    .  indx ! Index of pivots for LU decomposition
 
         ! Constant parameters with Skw applied
         real, allocatable, dimension(:) :: 
@@ -122,10 +138,11 @@
         allocate( C6thl_Skw_fnc(1:gr%nnzp) )
         allocate( C7_Skw_fnc(1:gr%nnzp) )
 
-        allocate( aa(1:2*gr%nnzp,1:5) )
+        !allocate( aa(1:2*gr%nnzp,1:5) ) ! (NR)
+        allocate( aa(1:5,1:2*gr%nnzp) )  ! (LAPACK)
         allocate( dd(1:2*gr%nnzp) )
-        allocate( al(1:2*gr%nnzp,1:2) )
-        allocate( indx(1:2*gr%nnzp) )
+        !allocate( al(1:2*gr%nnzp,1:2) )
+        !allocate( indx(1:2*gr%nnzp) )
 
         C6rt_Skw_fnc = C6rtb + (C6rt-C6rtb)
      .                        *EXP( -0.5 * (Skwm/C6rtc)**2 )
@@ -141,17 +158,11 @@
 !       Setup and decompose matrix
 
 !        call mixing_lhs( .true., dt, taum, wmm, wmt, wp2, wp3, Scm,
-!   Prof. Larson's modified mixing_lhs 
-        call mixing_lhs("rtm", .true., dt, taum, wmm, wmt, 
+!       Prof. Larson's modified mixing_lhs 
+        call mixing_lhs( "rtm", .true., dt, taum, wmm, wmt, 
      .                   wp2, wp3, Scm,
      .                   C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
-     .                   aa, dd, al, indx, implemented, isValid )
-        if ( .not. isValid ) then
-           print *, "mixing_lhs failed"
-           deallocate( aa, dd, al, indx, 
-     .                 C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc )
-           return
-        endif
+     .                   aa, implemented )
 
         ! Solve rtm / wprtp
         call mixing_solve( "rtm", .true., dt, taum,
@@ -159,47 +170,41 @@
      .                     rhot, rhom, exner, rcm, Ncm,  ! Brian
      .                     cond_rrm, auto_rrm, accr_rrm, ! Brian
      .                     Fcsed, sed_rcm,               ! Brian
-     .                     cloud_sed, kk_rain,           ! Brian
-     .                     aa, dd, al, indx, C7_Skw_fnc )  
+     .                     aa, dd, C7_Skw_fnc, isValid )  
+        if ( .not. isValid ) then
+          print *, "rt mixing failed"
+          deallocate( aa, dd, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc )
+          return
+        end if
 
         ! Prof. Larson's modified mixing_lhs 
-        call mixing_lhs("thlm",.true., dt, taum, wmm, wmt, 
+        call mixing_lhs( "thlm",.true., dt, taum, wmm, wmt, 
      .                   wp2, wp3, Scm,
      .                   C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
-     .                   aa, dd, al, indx, implemented, isValid )
-        if ( .not. isValid ) then
-           print *, "mixing_lhs failed"
-           deallocate( aa, dd, al, indx, 
-     .                 C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc )
-           return
-        endif
+     .                   aa, implemented )
 
-
-!       Solve thlm / wpthlp
+        ! Solve for thlm / wpthlp
         call mixing_solve( "thlm", .true., dt, taum,
      .                     thlm, wpthlp, thlpthvp, thlm_forcing,
      .                     rhot, rhom, exner, rcm, Ncm,  ! Brian
      .                     cond_rrm, auto_rrm, accr_rrm, ! Brian
      .                     Fcsed, sed_rcm,               ! Brian
-     .                     cloud_sed, kk_rain,           ! Brian
-     .                     aa, dd, al, indx, C7_Skw_fnc )
+     .                     aa, dd, C7_Skw_fnc, isValid )
+        if ( .not. isValid ) then
+          print *, "theta mixing failed"
+          deallocate( aa, dd, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc )
+          return
+        end if
 
-!       Solve sclrm / wpsclrp
+        ! Solve sclrm / wpsclrp
         if ( present( sclrm )     .and. present( wpsclrp ) .and.
      .       present( sclrpthvp ) .and. present( sclrm_forcing ) ) then
 
-!         Prof. Larson's modified mixing_lhs 
-          call mixing_lhs("rtm",.true., dt, taum, wmm, wmt, 
-     .                    wp2, wp3, Scm,
-     .                    C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
-     .                    aa, dd, al, indx, implemented, isValid )
-          if ( .not. isValid ) then
-            print *, "mixing_lhs failed"
-            deallocate( aa, dd, al, indx, 
-     .                  C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc )
-            return
-          endif
-
+          ! Prof. Larson's modified mixing_lhs 
+          call mixing_lhs( "rtm",.true., dt, taum, wmm, wmt, 
+     .                     wp2, wp3, Scm,
+     .                     C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
+     .                     aa, implemented )
 
           call mixing_solve( "sclrm_rtm", .true., dt, taum,
      .                       sclrm(:,SCLR_RT), wpsclrp(:,SCLR_RT),
@@ -208,93 +213,101 @@
      .                       rhot, rhom, exner, rcm, Ncm,  ! Brian
      .                       cond_rrm, auto_rrm, accr_rrm, ! Brian
      .                       Fcsed, sed_rcm,               ! Brian
-     .                       cloud_sed, kk_rain,           ! Brian
-     .                       aa, dd, al, indx, C7_Skw_fnc )
-
-!         Prof. Larson's modified mixing_lhs 
-          call mixing_lhs("thlm",.true., dt, taum, wmm, wmt, 
-     .                    wp2, wp3, Scm, 
-     .                    C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
-     .                    aa, dd, al, indx, implemented, isValid )
+     .                       aa, dd, C7_Skw_fnc, isValid )
           if ( .not. isValid ) then
-            print *, "mixing_lhs failed"
-            deallocate( aa, dd, al, indx, 
-     .                  C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc )
+            print *, "sclr rt mixing failed"
+            deallocate( aa, dd, C6rt_Skw_fnc, 
+     .                  C6thl_Skw_fnc, C7_Skw_fnc )
             return
-          endif
+          end if
 
-          call mixing_solve( "sclrm_thlm", .true., dt, taum,
+          ! Prof. Larson's modified mixing_lhs 
+          call mixing_lhs( "thlm",.true., dt, taum, wmm, wmt, 
+     .                     wp2, wp3, Scm, 
+     .                     C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
+     .                     aa, implemented )
+
+          call mixing_solve( "sclrm_theta", .true., dt, taum,
      .                       sclrm(:,SCLR_THETA), wpsclrp(:,SCLR_THETA),
      .                       sclrpthvp(:,SCLR_THETA), 
      .                       sclrm_forcing(:,SCLR_THETA),
      .                       rhot, rhom, exner, rcm, Ncm,  ! Brian
      .                       cond_rrm, auto_rrm, accr_rrm, ! Brian
      .                       Fcsed, sed_rcm,               ! Brian
-     .                       cloud_sed, kk_rain,           ! Brian
-     .                       aa, dd, al, indx, C7_Skw_fnc )
-        endif
+     .                       aa, dd, C7_Skw_fnc, isValid )
+          if ( .not. isValid ) then
+            print *, "sclr theta mixing failed"
+            deallocate( aa, dd, C6rt_Skw_fnc, 
+     .                  C6thl_Skw_fnc, C7_Skw_fnc )
+            return
+          end if
+        end if ! passive scalars
  
-!       Free memory
-        deallocate( aa, dd, al, indx, 
-     .              C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc )
+        ! Free memory
+        deallocate( aa, dd, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc )
 
         return
         end subroutine timestep_mixing
 
 !------------------------------------------------------------------------
-
         subroutine mixing_lhs( solve_type, liter, dt, taum, wmm, wmt,
      .                         wp2, wp3, Scm, 
-     .                         C6rt_Skw_fnc, C6thl_Skw_fnc,C7_Skw_fnc,
-     .                         aa, dd, al, indx, implemented, isValid )
+     .                         C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
+     .                         aa, implemented )
+!       Description:
+!       References:
+!------------------------------------------------------------------------
 
         use constants
         use grid_class
 #ifdef STATS
         use statistics
-#endif STATS
+#endif /*STATS*/
 
         implicit none
 
-!       Input variables
+        ! Input variables
 
-! Prof. Larson's modification for split C6/C2
         character(len=*), intent(in) :: solve_type  ! For new mixing scheme
+
         logical, intent(in) :: liter
 
-        real, intent(in) :: dt
-        real, intent(in) :: taum(1:gr%nnzp)
-        real, intent(in) :: wmm(1:gr%nnzp), wmt(1:gr%nnzp) 
-        real, intent(in) :: wp2(1:gr%nnzp), wp3(1:gr%nnzp)
-        real, intent(in) :: Scm(1:gr%nnzp)
+        real, intent(in) :: dt ! Timestep             [s]
+        real, intent(in), dimension(gr%nnzp) :: 
+     .  taum,        ! Tau on moment. grid            [s]
+     .  wmm,         ! w wind on m                    [m/s]
+     .  wmt,         ! w wind on t                    [m/s]
+     .  wp2,         ! w'^2                           [m^2/s^2]
+     .  wp3,         ! w'^3                           [m^3/s^3]
+     .  Scm          ! Sc on moment. grid             [-]
 
-!       Output variables
+        ! Output variables
 
-        real, intent(out)      :: aa(1:2*gr%nnzp,1:5)
-        real, intent(out)      :: dd(1:2*gr%nnzp)
-        real, intent(out)      :: al(1:2*gr%nnzp,1:2)
-        integer, intent(out)   :: indx(1:2*gr%nnzp)
+!       real, intent(out)      :: aa(1:2*gr%nnzp,1:5) !(NR)
+!       real, intent(out)      :: dd(1:2*gr%nnzp)
+!       real, intent(out)      :: al(1:2*gr%nnzp,1:2)
+!       integer, intent(out)   :: indx(1:2*gr%nnzp)
+        real, intent(out)      :: aa(1:5,1:2*gr%nnzp) !(LAPACK)
         logical, intent(in)    :: implemented
-        logical, intent(inout) :: isValid
 
-        real, intent(in) :: C6rt_Skw_fnc(1:gr%nnzp)
-        real, intent(in) :: C6thl_Skw_fnc(1:gr%nnzp)
-        real, intent(in) :: C7_Skw_fnc(1:gr%nnzp)
+        real, intent(in), dimension(gr%nnzp) :: 
+     .  C6rt_Skw_fnc,
+     .  C6thl_Skw_fnc,
+     .  C7_Skw_fnc
 
-!       Local constants
 
-!        real, parameter    :: eps = 1.e-10   ! in module constants
+        ! Local Variables
+        ! real :: d
 
-!       Internal
+        real, dimension(gr%nnzp) :: a1
 
-        real d
-        integer k, km1, kp1
-        integer k_xm, k_wpxp
-        real a1(1:gr%nnzp)
+        ! Indices
+        integer :: k, km1, kp1
+        integer :: k_xm, k_wpxp
 
 !       Define a1
 
-        a1 = 1.0 / (1.0-Scm)
+        a1(1:gr%nnzp) = 1.0 / ( 1.0 - Scm(1:gr%nnzp) )
 
 !       Set up matrix aa
 
@@ -315,37 +328,45 @@
 
           IF ( .NOT. implemented ) THEN
 
-          ! Thermodynamic subdiagonal [ x xm(k-1,<t+1>) ]
-          aa(k_xm,3-2) = - wmt(k) * (1.0/2.0) * gr%dzt(k)
-          ! Thermodynamic superdiagonal [ x xm(k+1,<t+1>) ]
-          aa(k_xm,3+2) = + wmt(k) * (1.0/2.0) * gr%dzt(k)
+            ! Thermodynamic subdiagonal [ x xm(k-1,<t+1>) ]
+            !aa(k_xm,3-2) = - wmt(k) * (1.0/2.0) * gr%dzt(k)
+            aa(3+2,k_xm) = - wmt(k) * (1.0/2.0) * gr%dzt(k)
+            ! Thermodynamic superdiagonal [ x xm(k+1,<t+1>) ]
+            !aa(k_xm,3+2) = + wmt(k) * (1.0/2.0) * gr%dzt(k)
+            aa(3-2,k_xm) = + wmt(k) * (1.0/2.0) * gr%dzt(k)
 
-          ELSE
+            ELSE
 
-          ! Thermodynamic subdiagonal [ x xm(k-1,<t+1>) ]
-          aa(k_xm,3-2) = 0.0
-          ! Thermodynamic superdiagonal [ x xm(k+1,<t+1>) ]
-          aa(k_xm,3+2) = 0.0
+            ! Thermodynamic subdiagonal [ x xm(k-1,<t+1>) ]
+            !aa(k_xm,3-2) = 0.0
+            aa(3+2,k_xm) = 0.0
+            ! Thermodynamic superdiagonal [ x xm(k+1,<t+1>) ]
+            !aa(k_xm,3+2) = 0.0
+            aa(3-2,k_xm) = 0.0
 
-          ENDIF
+          END IF
 
 !         xm: turbulent transport
 
           ! Momentum subdiagonal [ x wpxp(k-1,<t+1>) ]
-          aa(k_xm,3-1) = - gr%dzt(k)
+          !aa(k_xm,3-1) = - gr%dzt(k)
+          aa(3+1,k_xm) = - gr%dzt(k)
           ! Momentum superdiagonal [ x wpxp(k,<t+1>) ]
-          aa(k_xm,3+1) = + gr%dzt(k)
+          !aa(k_xm,3+1) = + gr%dzt(k)
+          aa(3-1,k_xm) = + gr%dzt(k)
 
 !         xm: time tendency
 
           ! Thermodynamic main diagonal [ x xm(k,<t+1>) ]
-          aa(k_xm,3) = 1.0 / dt
+          !aa(k_xm,3) = 1.0 / dt
+          aa(3,k_xm) = 1.0 / dt
 
 !         wpxp: mean vertical advection, turbulent transport, time tendency, 
 !         damping and diffusion
 
           ! Momentum subdiagonal [ x wpxp(k-1,<t+1>) ]
-          aa(k_wpxp,3-2)
+          !aa(k_wpxp,3-2)
+          aa(3+2,k_wpxp)
      .    = - wmm(k) * (1.0/2.0) * gr%dzm(k)
      .      - gr%dzm(k)
      .        * (1.0/2.0) * ( a1(k) + a1(km1) )
@@ -355,7 +376,8 @@
           ! Momentum main diagonal [ x wpxp(k,<t+1>) ]
           select case ( trim(solve_type) )
           case ("rtm")
-            aa(k_wpxp,3)
+            !aa(k_wpxp,3)
+            aa(3,k_wpxp)
      .      = + gr%dzm(k)
      .          * (  (1.0/2.0) * ( a1(kp1) + a1(k) )
      .             * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
@@ -366,9 +388,11 @@
 !     .        + C6rt / taum(k)
      .        + C6rt_Skw_fnc(k) / taum(k)
      .        + nu6 * gr%dzm(k) * ( gr%dzt(kp1) + gr%dzt(k) )
-            if (liter) aa(k_wpxp,3) = aa(k_wpxp,3) + 1.0 / dt
+            !if (liter) aa(k_wpxp,3) = aa(k_wpxp,3) + 1.0 / dt
+            if (liter) aa(3,k_wpxp) = aa(3,k_wpxp) + 1.0 / dt
           case ("thlm")
-            aa(k_wpxp,3)
+            !aa(k_wpxp,3)
+            aa(3,k_wpxp)
      .      = + gr%dzm(k)
      .          * (  (1.0/2.0) * ( a1(kp1) + a1(k) )
      .             * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
@@ -379,11 +403,13 @@
 !     .        + C6thl / taum(k)
      .        + C6thl_Skw_fnc(k) / taum(k)
      .        + nu6 * gr%dzm(k) * ( gr%dzt(kp1) + gr%dzt(k) )
-            if (liter) aa(k_wpxp,3) = aa(k_wpxp,3) + 1.0 / dt
+            !if (liter) aa(k_wpxp,3) = aa(k_wpxp,3) + 1.0 / dt
+            if (liter) aa(3,k_wpxp) = aa(3,k_wpxp) + 1.0 / dt
           end select
 
           ! Momentum superdiagonal [ x wpxp(k+1,<t+1>) ]
-          aa(k_wpxp,3+2)
+          !aa(k_wpxp,3+2)
+          aa(3-2,k_wpxp)
      .    = + wmm(k) * (1.0/2.0) * gr%dzm(k)
      .      + gr%dzm(k)
      .        * (1.0/2.0) * ( a1(kp1) + a1(k) )
@@ -393,11 +419,13 @@
 !         wpxp: production
 
           ! Thermodynamic subdiagonal [ x xm(k,<t+1>) ]
-          aa(k_wpxp,3-1)
+          !aa(k_wpxp,3-1)
+          aa(3+1,k_wpxp)
      .    = - wp2(k) * gr%dzm(k)
 
           ! Thermodynamic superdiagonal [ x xm(k+1,<t+1>) ]
-          aa(k_wpxp,3+1)
+          !aa(k_wpxp,3+1)
+          aa(3-1,k_wpxp)
      .    = + wp2(k) * gr%dzm(k)
 
 #ifdef STATS
@@ -473,27 +501,41 @@
         k      = 1
         k_xm   = 2*k - 1
         k_wpxp = 2*k
-        aa(k_xm,3-1)   = 0.0
-        aa(k_xm,3)     = 1.0
-        aa(k_xm,3+1)   = 0.0
-        aa(k_wpxp,3-2) = 0.0
-        aa(k_wpxp,3)   = 1.0
-        aa(k_wpxp,3+2) = 0.0
+        ! (NR)
+        !aa(k_xm,3-1)   = 0.0
+        !aa(k_xm,3)     = 1.0
+        !aa(k_xm,3+1)   = 0.0
+        !aa(k_wpxp,3-2) = 0.0
+        !aa(k_wpxp,3)   = 1.0
+        !aa(k_wpxp,3+2) = 0.0
+        aa(3+1,k_xm)   = 0.0
+        aa(3,k_xm)     = 1.0
+        aa(3-1,k_xm)   = 0.0
+        aa(3+2,k_wpxp) = 0.0
+        aa(3,k_wpxp)   = 1.0
+        aa(3-2,k_wpxp) = 0.0
 
         k      = gr%nnzp
         k_xm   = 2*k - 1
         k_wpxp = 2*k
-        aa(k_xm,3-1)   = 0.0
-        aa(k_xm,3)     = 1.0
-        aa(k_xm,3+1)   = 0.0
-        aa(k_wpxp,3-2) = 0.0
-        aa(k_wpxp,3)   = 1.0
-        aa(k_wpxp,3+2) = 0.0
+        ! (NR)
+        !aa(k_xm,3-1)   = 0.0
+        !aa(k_xm,3)     = 1.0
+        !aa(k_xm,3+1)   = 0.0
+        !aa(k_wpxp,3-2) = 0.0
+        !aa(k_wpxp,3)   = 1.0
+        !aa(k_wpxp,3+2) = 0.0
+        aa(3+1,k_xm)   = 0.0
+        aa(3,k_xm)     = 1.0
+        aa(3-1,k_xm)   = 0.0
+        aa(3+2,k_wpxp) = 0.0
+        aa(3,k_wpxp)   = 1.0
+        aa(3-2,k_wpxp) = 0.0
 
-!       Perform LU decomposition
+!       Perform LU decomposition (NR)
 
-        call bandec( aa, 2*gr%nnzp, 2, 2, 2*gr%nnzp, 5, al, 2, indx, d, 
-     .               isValid )
+!       call bandec( aa, 2*gr%nnzp, 2, 2, 2*gr%nnzp, 5, al, 2, indx, d, 
+!    .               isValid )
 
         return
         end subroutine mixing_lhs
@@ -505,55 +547,76 @@
      .                           rhot, rhom, exner, rcm, Ncm,  ! Brian
      .                           cond_rrm, auto_rrm, accr_rrm, ! Brian
      .                           Fcsed, sed_rcm,               ! Brian
-     .                           cloud_sed, kk_rain,           ! Brian
-     .                           aa, dd, al, indx, C7_Skw_fnc )
+     .                           aa, dd, C7_Skw_fnc, isValid )
 
         use constants
         use grid_class
+        use lapack_wrap, only: band_solve
+        use model_flags, only:
+     .    cloud_sed, ! Cloud sedimentation flag -Brian
+     .    kk_rain    ! Khairoutdinov and Kogan (2000) drizzle scheme -Brian
 #ifdef STATS
         use statistics
-#endif STATS
+#endif /*STATS*/
 
         implicit none
 
-!       Input/Output
 
-        character(len=*), intent(in) :: solve_type  ! For new mixing scheme
+        ! Input
+        character(len=*), intent(in) :: 
+     .  solve_type ! Variables being solved for
 
-        logical, intent(in) :: liter
-        real, intent(in)    :: dt
-        real, intent(in)    :: taum(1:gr%nnzp)
-        real, intent(inout) :: xm(1:gr%nnzp), wpxp(1:gr%nnzp)
-        real, intent(in)    :: xpthvp(1:gr%nnzp)
-        real, intent(in)    :: xm_forcing(1:gr%nnzp)
+        logical, intent(in) :: 
+     .  liter ! Whether the mean and flux terms are prognostic
 
-        real, intent(in)    :: rhot(1:gr%nnzp)      ! Brian
-        real, intent(in)    :: rhom(1:gr%nnzp)      ! Brian
-        real, intent(in)    :: exner(1:gr%nnzp)     ! Brian
-        real, intent(in)    :: rcm(1:gr%nnzp)       ! Brian
-        real, intent(in)    :: Ncm(1:gr%nnzp)       ! Brian
-        real, intent(in)    :: cond_rrm(1:gr%nnzp)  ! Brian
-        real, intent(in)    :: auto_rrm(1:gr%nnzp)  ! Brian
-        real, intent(in)    :: accr_rrm(1:gr%nnzp)  ! Brian
-        real, intent(out)   :: Fcsed(1:gr%nnzp)     ! Brian
-        real, intent(out)   :: sed_rcm(1:gr%nnzp)   ! Brian
-        logical, intent(in) :: cloud_sed            ! Brian
-        logical, intent(in) :: kk_rain              ! Brian
+        real, intent(in)    :: dt ! Timestep              [s]
 
-        real, intent(in)    :: aa(1:2*gr%nnzp,1:5)
-        real, intent(inout) :: dd(1:2*gr%nnzp)
-        real, intent(in)    :: al(1:2*gr%nnzp,1:2)
-        integer, intent(in) :: indx(1:2*gr%nnzp)
+        real, intent(in), dimension(gr%nnzp) :: 
+     .  taum,      ! Tau on moment. grid                  [s]
+     .  rhot,      ! Rho (density) on thermo. grid -Brian [kg/m^3]
+     .  rhom,      ! Rho (density) on moment. grid -Brian [kg/m^3]
+     .  exner,     ! Exner function -Brian                [-]
+     .  rcm,       ! Liquid water mixing ratio -Brian     [kg/kg] 
+     .  Ncm,       ! Cloud droplet number conc. -Brian    [num/m^3]
+     .  cond_rrm,  ! rrm condensation/evaporation -Brian  [(kg/kg)/s]
+     .  auto_rrm,  ! rrm autoconversion -Brian            [(kg/kg)/s]   
+     .  accr_rrm,  ! rrm accretion -Brian                 [(kg/kg)/s]
+     .  xpthvp,    ! x' theta_v'                          [(units)(K)]
+     .  xm_forcing,! xm forcing -Brian                    [(units)/s] 
+     .  C7_Skw_fnc ! C7 parameter (Skw dependent)         [-] 
 
-        real, intent(in) :: C7_Skw_fnc(1:gr%nnzp)
+        ! Input/Output
+        real, intent(inout), dimension(gr%nnzp) :: 
+     .  xm,  ! Mean term                                  [units vary] 
+     .  wpxp ! Flux term                                  [units vary] 
 
-!       Internal
+        real, intent(inout), dimension(5,2*gr%nnzp) :: 
+     .  aa   ! Left hand side (LAPACK)
+        real, intent(inout), dimension(2*gr%nnzp) :: 
+     .  dd   ! Right hand side (LAPACK)
 
-        integer k, km1, kp1
-        integer k_xm, k_wpxp
+        ! These were the LU decomp. and pivot index, respectively
+        !real, intent(in)    :: al(1:2*gr%nnzp,1:2) !(NR)
+        !integer, intent(in) :: indx(1:2*gr%nnzp)   !(NR)
+
+        ! Output
+        real, intent(out), dimension(gr%nnzp) :: 
+     .  Fcsed,  ! Cloud water sedimentation flux.-Brian       [kg/(m^2 s)]
+     .  sed_rcm ! d(rcm)/dt due to cloud sedimentation.-Brian [kg/(m^2 s)]
+
+        logical, intent(out) :: isValid
+
+        ! Local Variables
+        real, dimension(2*gr%nnzp) :: 
+     .  xx ! Solution to band diagonal system
+
+        ! Indices
+        integer :: k, km1, kp1
+        integer :: k_xm, k_wpxp
+
 
 #ifdef STATS
-        integer
+        integer ::
      .     iwpxp_bt,
      .     iwpxp_ma,
      .     iwpxp_ta,
@@ -564,8 +627,9 @@
      .     iwpxp_pr2,
      .     iwpxp_pr3,
      .     iwpxp_dp1
+
         select case ( trim(solve_type) )
-        case ( "rtm" )
+        case ( "rtm" ) ! rtm/wprtp budget terms
           iwpxp_bt  = iwprtp_bt
           iwpxp_ma  = iwprtp_ma
           iwpxp_ta  = iwprtp_ta
@@ -576,7 +640,7 @@
           iwpxp_pr2 = iwprtp_pr2
           iwpxp_pr3 = iwprtp_pr3
           iwpxp_dp1 = iwprtp_dp1
-        case ( "thlm" )
+        case ( "thlm" ) ! thlm/wpthlp budget terms
           iwpxp_bt  = iwpthlp_bt
           iwpxp_ma  = iwpthlp_ma
           iwpxp_ta  = iwpthlp_ta
@@ -599,30 +663,30 @@
           iwpxp_pr3 = 0
           iwpxp_dp1 = 0
         end select
-#endif STATS
+#endif /*STATS*/
 
 #ifdef STATS
         if (lstats_samp) then
 
-!         Explicit contributions for wpxp
+          ! Explicit contributions for wpxp
 
           if ( iwpxp_bt > 0 ) then
             zm%x(:,iwpxp_bt) = zm%x(:,iwpxp_bt) - wpxp / dt
-          endif
+          end if
 
           if ( iwpxp_bp > 0 ) then
             zm%x(:,iwpxp_bp) = zm%x(:,iwpxp_bp)
      .      + grav/T0 * 1.0 * xpthvp(:)
             zm%n(:,iwpxp_bp) = zm%n(:,iwpxp_bp) + 1
-          endif
+          end if
 
           if ( iwpxp_pr3 > 0 ) then
             zm%x(:,iwpxp_pr3) = zm%x(:,iwpxp_pr3)
      .      - grav/T0 * C7_Skw_fnc * xpthvp(:)
             zm%n(:,iwpxp_pr3) = zm%n(:,iwpxp_pr3) + 1
-          endif
-        endif
-#endif
+          end if
+        end if ! lstats_samp
+#endif /*STATS*/
 
         !=====================================================================
         ! NOTE:  ADDITION OF RAIN EFFECTS AND CLOUD WATER SEDIMENTATION ON
@@ -703,9 +767,9 @@
      .                  * EXP( 5.0*( (LOG(1.5))**(2) ) )
               ELSE
                  Fcsed(k) = 0.0
-              ENDIF
+              END IF
 
-           ENDDO
+           END DO ! k=2..gr%nnzp-1
 
            ! Boundary conditions.
            Fcsed(1)       = 0.0
@@ -718,7 +782,7 @@
            ! sed_rcm units:  [ kg (liquid) / kg (air) ] / s
            sed_rcm = (1.0/rhot) * ddzm( Fcsed )
 
-        ENDIF
+        END IF ! cloud_sed
 
 
 !       Set up RHS vector dd
@@ -763,7 +827,7 @@
      .                               * sed_rcm(k)
              end select
 
-          ENDIF
+          END IF ! cloud_sed
 
           ! + xm_microphysics -- rain effects.
           ! Code addition by Brian for rain.
@@ -784,7 +848,7 @@
      .                    ( -cond_rrm(k) - auto_rrm(k) - accr_rrm(k) )  ! sclrm = thlm
              end select
 
-          ENDIF
+          END IF ! kk_rain
 
 !         wpxp: time tendency and buoyancy
 
@@ -793,7 +857,7 @@
      .    = grav/T0 * (1.0-C7_Skw_fnc(k)) * xpthvp(k)
           if (liter) dd(k_wpxp) = dd(k_wpxp) + wpxp(k) / dt
 
-        enddo
+        end do ! k=2..gr%nnzp-1
 
 !       Boundary condition for the flux
 
@@ -809,10 +873,18 @@
         dd(k_xm)   = xm(k)
         dd(k_wpxp) = 0.0
 
-!       Solve system
+!       Solve system (NR)
 
-        call banbks( aa, 2 * gr%nnzp, 2, 2, 
-     .               2 * gr%nnzp, 5, al, 2, indx, dd )
+!       call banbks( aa, 2 * gr%nnzp, 2, 2, 
+!    .               2 * gr%nnzp, 5, al, 2, indx, dd )
+
+        ! Perform LU decomposition and solve system
+        ! Note: band_solvex has the same interface and can compute
+        ! additional diagnostics at a higher computational cost.
+        call band_solve( solve_type, 2, 2, 2*gr%nnzp, 1,
+     .                   aa, dd, xx, isValid )
+
+        if ( .not. isValid ) return
 
 !       Copy result into output arrays
 
@@ -821,10 +893,12 @@
           k_xm   = 2 * k - 1
           k_wpxp = 2 * k
 
-          xm(k)   = dd(k_xm)
-          wpxp(k) = dd(k_wpxp)
+          !xm(k)   = dd(k_xm)
+          !wpxp(k) = dd(k_wpxp)
+          xm(k)   = xx(k_xm)
+          wpxp(k) = xx(k_wpxp)
 
-        enddo
+        end do ! k=1..gr%nnzp
 
 !       Boundary condition on xm
 
@@ -836,7 +910,7 @@
 #ifdef STATS
           if (lstats_samp) then
 
-!          Finalize implicit contributions for wpxp
+           ! Finalize implicit contributions for wpxp
 
            do k = 1, gr%nnzp
              km1 = max(k-1,1)
@@ -847,7 +921,7 @@
      .         + zmscr01(k) * wpxp(km1)
      .         + zmscr02(k) * wpxp(kp1)
                zm%n(k,iwpxp_ma) = zm%n(k,iwpxp_ma) + 1
-             endif
+             end if
 
              if ( iwpxp_ta > 0 ) then
                zm%x(k,iwpxp_ta) = zm%x(k,iwpxp_ta)
@@ -855,32 +929,32 @@
      .         + zmscr04(k) * wpxp(k)
      .         + zmscr05(k) * wpxp(kp1)
                zm%n(k,iwpxp_ta) = zm%n(k,iwpxp_ta) + 1
-             endif
+             end if
 
              if ( iwpxp_tp > 0 ) then
                zm%x(k,iwpxp_tp) = zm%x(k,iwpxp_tp)
      .         + zmscr06(k) * xm(k)
      .         + zmscr07(k) * xm(kp1)
                zm%n(k,iwpxp_tp) = zm%n(k,iwpxp_tp) + 1
-             endif
+             end if
 
              if ( iwpxp_ac > 0 ) then
                zm%x(k,iwpxp_ac) = zm%x(k,iwpxp_ac)
      .         + zmscr08(k) * wpxp(k)
                zm%n(k,iwpxp_ac) = zm%n(k,iwpxp_ac) + 1
-             endif
+             end if
 
              if ( iwpxp_pr1 > 0 ) then
                zm%x(k,iwpxp_pr1) = zm%x(k,iwpxp_pr1)
      .         + zmscr09(k) * wpxp(k)
                zm%n(k,iwpxp_pr1) = zm%n(k,iwpxp_pr1) + 1
-             endif
+             end if
 
              if ( iwpxp_pr2 > 0 ) then
                zm%x(k,iwpxp_pr2) = zm%x(k,iwpxp_pr2)
      .         + zmscr10(k) * wpxp(k)
                zm%n(k,iwpxp_pr2) = zm%n(k,iwpxp_pr2) + 1
-             endif
+             end if
 
              if ( iwpxp_dp1 > 0 ) then
                zm%x(k,iwpxp_dp1) = zm%x(k,iwpxp_dp1)
@@ -888,11 +962,11 @@
      .         + zmscr12(k) * wpxp(k)
      .         + zmscr13(k) * wpxp(kp1)
                zm%n(k,iwpxp_dp1) = zm%n(k,iwpxp_dp1) + 1
-             endif
+             end if
 
-           enddo
+           end do ! 1..gr%nnzp
 
-          endif
+          end if ! lstats_samp
 #endif
 
 #ifdef STATS
@@ -901,11 +975,12 @@
           if ( iwpxp_bt > 0 ) then
             zm%x(:,iwpxp_bt) = zm%x(:,iwpxp_bt) + wpxp / dt
             zm%n(:,iwpxp_bt) = zm%n(:,iwpxp_bt) + 1
-          endif
+          end if
 
-        endif
-#endif STATS
+        end if
+#endif /*STATS*/
 
         return
         end subroutine mixing_solve
-      end module mixing
+
+        end module mixing

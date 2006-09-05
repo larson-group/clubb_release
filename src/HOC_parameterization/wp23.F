@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.7 2006-08-16 23:39:38 dschanen Exp $
+! $Id: wp23.F,v 1.8 2006-09-05 22:39:04 dschanen Exp $
 
         subroutine timestep_wp23
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
@@ -10,8 +10,14 @@
 !       Advance wp2 and wp3 one timestep
 
 !       References:
-!       See ``Implict solution for the vertical velocity moments''
-!       _Equations for HOC_ (6)
+!       Eqn. 12 & 18 on p. 3545--3546 of
+!       ``A PDF-Based Model for Boundary Layer Clouds. Part I:
+!         Method and Model Description'' Golaz, et al. (2002)
+!       JAS, Vol. 59, pp. 3540--3551.
+
+!       See also 
+!       ``Equations for HOC'', Section 6:
+!       /Implict solution for the vertical velocity moments/
 !------------------------------------------------------------------------
 
         use grid_class
@@ -106,7 +112,7 @@
 !          Skw = min( 5.0, Skw )
 !          tauw3t(k) = taut(k) / ( 0.005*Skw**4 + 1.0 )
 !
-!        enddo
+!        end do
 
         tauw3t = taut 
 
@@ -125,7 +131,7 @@
 !         Skw_arr_m(k) = (1.0/2.0) * ( wp3(kp1)+wp3(k) ) /
 !    .                   MAX( wp2(k), wtol**2 )**(3.0/2.0)
 
-!       ENDDO
+!       END DO
 
         C11_Skw_fnc(1:gr%nnzp) = 
      .  C11b + (C11-C11b)*EXP( -(1.0/2.0) * (Skwt(1:gr%nnzp)/C11c)**2 )
@@ -150,7 +156,7 @@
           deallocate( C11_Skw_fnc )
           deallocate( C1_Skw_fnc )
           return
-        endif
+        end if
 
         ! Free memory
 
@@ -182,6 +188,7 @@
         use grid_class
         use constants
         use model_flags
+        use lapack_wrap, only: band_solve
 #ifdef STATS
         use statistics
 #endif /*STATS*/
@@ -189,6 +196,7 @@
         implicit none
 
         ! External
+        ! external :: bandec, banbks
         intrinsic :: max, min, sqrt
 
         ! Input Variables
@@ -223,11 +231,12 @@
 
         ! Local Variables
         real, dimension(:,:), allocatable :: 
-     .  aa, ! Band matrix
-     .  al  ! LU decomposition of the band matrix
+     .  aa ! Band matrix
+!    .  al ! LU decomposition of the band matrix (NR)
 
         real, dimension(:), allocatable :: 
-     .  dd ! RHS of band matrix
+     .  dd, ! RHS of band matrix
+     .  xx  ! Solution to band matrix
 
         integer, allocatable :: 
      .  indx(:) ! Index of pivots in band matrix decomposition process
@@ -235,8 +244,8 @@
         real :: d ! diagnostic variable for LU decomposition
 
         real, dimension(gr%nnzp) :: 
-     .  a1, ! a1; See (20) in _Equations for HOC_             [-]
-     .  a3  ! a3; See (22) in _Equations for HOC_             [-]
+     .  a1, ! a1; See eqn. 20 in `Equations for HOC'             [-]
+     .  a3  ! a3; See eqn. 22 in `Equations for HOC'             [-]
 
         real :: atmp, ctmp
 
@@ -249,20 +258,22 @@
 
           if ( iwp2_bt > 0 ) then
             zm%x(:,iwp2_bt) = zm%x(:,iwp2_bt) - wp2 / dt
-          endif
+          end if
 
           if ( iwp3_bt > 0 ) then
             zt%x(:,iwp3_bt) = zt%x(:,iwp3_bt) - wp3 / dt
-          endif
+          end if
 
-        endif
+        end if
 #endif /*STATS*/
 
 !       Allocate memory
 
-        allocate( aa(1:2*gr%nnzp,1:5) )
+        !allocate( aa(1:2*gr%nnzp,1:5) ) ! NR
+        allocate( aa(5,2*gr%nnzp) ) ! LAPACK
         allocate( dd(1:2*gr%nnzp) )
-        allocate( al(1:2*gr%nnzp,1:2) )
+        allocate( xx(1:2*gr%nnzp) )
+        !allocate( al(1:2*gr%nnzp,1:2) ) ! NR
         allocate( indx(1:2*gr%nnzp) )
 
 !       Define a1 and a3 (both are located on momentum levels).
@@ -308,16 +319,19 @@
 
 
           ! Momentum subdiagonal [ x wp2(k-1,<t+1>) ]
-          aa(k_wp2,3-2)
+          !aa(k_wp2,3-2)
+          aa(3+2,k_wp2)
      .    = - wmm(k) * (1.0/2.0) * gr%dzm(k)
      .      + atmp
 
           ! Thermodynamic subdiagonal [ x wp3(k,<t+1>) ]
-          aa(k_wp2,3-1)
+          !aa(k_wp2,3-1)
+          aa(3+1,k_wp2)
      .    = - gr%dzm(k)
 
           ! Momentum main diagonal [ x wp2(k,<t+1>) ]
-          aa(k_wp2,3)
+          !aa(k_wp2,3)
+          aa(3,k_wp2)
      .    = + 1.0 / dt
      .      + ( 1.0 - C5 ) * 2.0 * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
 !     .      + C1 / tau1m(k)
@@ -325,11 +339,13 @@
      .      - atmp - ctmp
 
           ! Thermodynamic superdiagonal [ x wp3(k+1,<t+1>) ]
-          aa(k_wp2,3+1)
+          !aa(k_wp2,3+1)
+          aa(3-1,k_wp2)
      .    = + gr%dzm(k)
 
           ! Momentum superdiagonal [ x wp2(k+1,<t+1>) ]
-          aa(k_wp2,3+2)
+          !aa(k_wp2,3+2)
+          aa(3-2,k_wp2)
      .    = + wmm(k) * (1.0/2.0) * gr%dzm(k)
      .      + ctmp
 
@@ -361,18 +377,18 @@
      .      - atmp * wp2(km1)
      .      + ( atmp + ctmp ) * wp2(k)
      .      - ctmp * wp2(kp1)
-           endif
+           end if
 
            if ( iwp2_bp > 0 ) then
             zm%x(k,iwp2_bp) = zm%x(k,iwp2_bp) 
      .      + 1.0 * 2.0 * grav * (1.0/T0) * wpthvp(k)
             zm%n(k,iwp2_bp) = zm%n(k,iwp2_bp) + 1
-           endif
+           end if
 
            if ( iwp2_pr2 > 0 ) then
             zm%x(k,iwp2_pr2) = zm%x(k,iwp2_pr2) 
      .      - C5 * 2.0 * grav * (1.0/T0) * wpthvp(k)
-           endif
+           end if
 
            if ( iwp2_pr3 > 0 ) then
             zm%x(k,iwp2_pr3) = zm%x(k,iwp2_pr3) 
@@ -382,42 +398,42 @@
      .                     - vpwp(k) * gr%dzm(k) * ( vm(kp1) - vm(k) )
      .                    )
             zm%n(k,iwp2_pr3) = zm%n(k,iwp2_pr3) + 1
-           endif
+           end if
 
 !          Implicit contributions for wp2
 
            if ( iwp2_dp1 > 0 ) then
 !             zmscr01(k) = - C1/tau1m(k)
              zmscr01(k) = - C1_Skw_fnc(k) / tau1m(k)
-           endif
+           end if
 
            if ( iwp2_dp2 > 0 ) then
              zmscr02(k) = - atmp
              zmscr03(k) = atmp + ctmp
              zmscr04(k) = - ctmp
-           endif
+           end if
 
            if ( iwp2_ta > 0 ) then
              zmscr05(k) = + gr%dzm(k)
              zmscr06(k) = - gr%dzm(k)
-           endif
+           end if
 
            if ( iwp2_ma > 0 ) then
              zmscr07(k) = + wmm(k) * (1.0/2.0) * gr%dzm(k)
              zmscr08(k) = - wmm(k) * (1.0/2.0) * gr%dzm(k)
-           endif
+           end if
 
            if ( iwp2_ac > 0 ) then
              zmscr09(k) = 
      .       - 1.0 * 2.0 * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
-           endif
+           end if
 
            if ( iwp2_pr2 > 0 ) then
              zmscr10(k) = 
      .      + C5 * 2.0 * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
-           endif
+           end if
 
-         endif
+         end if
 #endif /*STATS*/
 
 
@@ -437,20 +453,23 @@
 
 
           ! Thermodynamic subdiagonal [ x wp3(k-1,<t+1>) ]
-          aa(k_wp3,3-2) = 
+          !aa(k_wp3,3-2) = 
+          aa(3+2,k_wp3) = 
      .    - wmt(k) * (1.0/2.0) * gr%dzt(k)
      .    - (1.0/2.0) * gr%dzt(k)
      .      * a1(km1) * ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), eps )
      .    + atmp
 
           ! Momentum subdiagonal [ x wp2(k-1,<t+1>) ]
-          aa(k_wp3,3-1) = 
+          !aa(k_wp3,3-1) = 
+          aa(3+1,k_wp3) = 
 !     .    - 2.0 * gr%dzt(k) * a3(km1) * wp2(km1)   ! standard deriv.
 !     .    - 2.0 * gr%dzt(k) * a3(k) * wp2(km1)     ! Golaz's no a3 deriv.
      .    - 2.0 * gr%dzt(k) * 0.5*(a3(k)+a3(km1)) * wp2(km1)   ! Centered no a3 deriv.
 
           ! Thermodynamic main diagonal [ ( x wp3(k,<t+1>) ]
-          aa(k_wp3,3) = 
+          !aa(k_wp3,3) = 
+          aa(3,k_wp3) = 
      .    + 1.0 / dt
      .    + (1.0/2.0) * gr%dzt(k)
      .      * (  a1(k) * ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), eps )
@@ -462,13 +481,15 @@
      .    - atmp - ctmp
 
           ! Momentum superdiagonal [ x wp2(k,<t+1>) ]
-          aa(k_wp3,3+1) = 
+          !aa(k_wp3,3+1) = 
+          aa(3-1,k_wp3) = 
 !     .    + 2.0 * gr%dzt(k) * a3(k) * wp2(k)   ! standard deriv.
 !     .    + 2.0 * gr%dzt(k) * a3(k) * wp2(k)   ! Golaz's no a3 deriv.
      .    + 2.0 * gr%dzt(k) * 0.5*(a3(k)+a3(km1)) * wp2(k)   ! Centered no a3 deriv.
 
           ! Thermodynamic superdiagonal [ x wp3(k+1,<t+1>) ]
-          aa(k_wp3,3+2) = 
+          !aa(k_wp3,3+2) = 
+          aa(3-2,k_wp3) = 
      .    + wmt(k) * (1.0/2.0) * gr%dzt(k)
      .    + (1.0/2.0) * gr%dzt(k)
      .      * a1(k) * ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), eps )
@@ -524,7 +545,7 @@
      .         - a1(km1) * ( wp3(k) + wp3(km1) )**2 
      .                     / MAX( wp2(km1), eps )
      .        )
-          endif
+          end if
 
           if ( iwp3_tp > 0 ) then
           zt%x(k,iwp3_tp) = zt%x(k,iwp3_tp) 
@@ -532,23 +553,23 @@
      .      * (  ( (3.0/2.0) * wp2(k)**2 ) 
      .         - ( (3.0/2.0) * wp2(km1)**2 )
      .        )
-          endif
+          end if
 
           if ( iwp3_bp > 0 ) then
           zt%x(k,iwp3_bp) = zt%x(k,iwp3_bp) 
      .    + 1.0 * 3.0 * ( grav / T0 )  * wp2thvp(k)
           zt%n(k,iwp3_bp) = zt%n(k,iwp3_bp) + 1
-          endif
+          end if
 
           if ( iwp3_pr2 > 0 ) then
           zt%x(k,iwp3_pr2) = zt%x(k,iwp3_pr2) 
      .    - C11_Skw_fnc(k) * 3.0 * grav * ( grav / T0 ) * wp2thvp(k)
-          endif
+          end if
 
           if ( iwp3_pr1 > 0 ) then
           zt%x(k,iwp3_pr1) = zt%x(k,iwp3_pr1) 
      .    + ( C8 / tauw3t(k) ) * ( 4.0 * C8b * Skwt(k)**4 ) * wp3(k)
-          endif
+          end if
 
           ! These lines are for the diffusional term with a Crank-Nicholson 
           ! time step.  They need to be commented out for completely implicit
@@ -558,7 +579,7 @@
      .    - atmp * wp3(km1)
      .    + ( atmp + ctmp ) * wp3(k)
      .    - ctmp * wp3(kp1)
-          endif
+          end if
 
 !         Implicit contributions for wp3
 
@@ -584,47 +605,47 @@
           ztscr09(k) =
      .    - (1.0/2.0) * gr%dzt(k)
      .      * a1(k) * ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), eps )
-          endif
+          end if
 
           if ( iwp3_tp > 0 ) then
           ztscr10(k) = 
      .    - 2.0 * gr%dzt(k) * (3.0/2.0) * wp2(km1)
           ztscr11(k) = 
      .    + 2.0 * gr%dzt(k) * (3.0/2.0) * wp2(k)
-          endif
+          end if
 
           if ( iwp3_ma > 0 ) then
           ztscr12(k) = 
      .    + wmt(k) * (1.0/2.0) * gr%dzt(k)
           ztscr13(k) = 
      .    - wmt(k) * (1.0/2.0) * gr%dzt(k)
-          endif
+          end if
 
           if ( iwp3_ac > 0 ) then
           ztscr14(k) = 
      .    - 1.0 * 3.0 * gr%dzt(k) * ( wmm(k) - wmm(km1) )
-          endif
+          end if
 
           if ( iwp3_pr2 > 0 ) then
           ztscr15(k) =
      .    + C11_Skw_fnc(k) * 3.0 * gr%dzt(k) * ( wmm(k) - wmm(km1) )
-          endif
+          end if
 
           if ( iwp3_pr1 > 0 ) then
           ztscr01(k) =
      .    - ( C8 / tauw3t(k) ) * ( 5.0 * C8b * Skwt(k)**4 + 1.0 )
-          endif
+          end if
 
           if ( iwp3_dp1 > 0 ) then
           ztscr02(k) = - atmp
           ztscr03(k) = atmp + ctmp
           ztscr04(k) = - ctmp
-          endif
+          end if
 
-          endif
+          end if
 #endif /*STATS*/
 
-        ENDDO
+        END DO
 
 
 !       Boundary conditions
@@ -633,40 +654,52 @@
         k_wp3 = 2*k - 1
         k_wp2 = 2*k
 
-        aa(k_wp2,:) = 0.0
-        aa(k_wp2,3) = 1.0
+        !aa(k_wp2,:) = 0.0
+        !aa(k_wp2,3) = 1.0
+        aa(:,k_wp2) = 0.0
+        aa(3,k_wp2) = 1.0
         dd(k_wp2)   = wp2(k)
    
-        aa(k_wp3,:) = 0.0
-        aa(k_wp3,3) = 1.0
+        !aa(k_wp3,:) = 0.0
+        !aa(k_wp3,3) = 1.0
+        aa(:,k_wp3) = 0.0
+        aa(3,k_wp3) = 1.0
         dd(k_wp3)   = 0.0
 
         k = gr%nnzp
         k_wp3 = 2*k - 1
         k_wp2 = 2*k
 
-        aa(k_wp2,:) = 0.0
-        aa(k_wp2,3) = 1.0
+        !aa(k_wp2,:) = 0.0
+        !aa(k_wp2,3) = 1.0
+        aa(:,k_wp2) = 0.0
+        aa(3,k_wp2) = 1.0
         dd(k_wp2)   = 0.0
    
-        aa(k_wp3,:) = 0.0
-        aa(k_wp3,3) = 1.0
+        !aa(k_wp3,:) = 0.0
+        !aa(k_wp3,3) = 1.0
+        aa(:,k_wp3) = 0.0
+        aa(3,k_wp3) = 1.0
         dd(k_wp3)   = 0.0
 
 
-!       Perform LU decomposition
+!       Perform LU decomposition (NR)
 
-        call bandec(aa,2*gr%nnzp,2,2,2*gr%nnzp,5,al,2,indx,d,isValid)
-        if ( .not. isValid ) then
-          print *, "wp23 LU decomp. failed"
-          deallocate( aa, dd, al, indx )
-          return
-        endif
+!       call bandec(aa,2*gr%nnzp,2,2,2*gr%nnzp,5,al,2,indx,d,isValid)
+!       if ( .not. isValid ) then
+!         print *, "wp23 LU decomp. failed"
+!         deallocate( aa, dd, al, indx )
+!         return
+!       end if
 
 
-!       Solve system
+!       Solve system (NR)
 
-        call banbks(aa,2*gr%nnzp,2,2,2*gr%nnzp,5,al,2,indx,dd)
+!       call banbks(aa,2*gr%nnzp,2,2,2*gr%nnzp,5,al,2,indx,dd)
+
+        ! Perform LU decomp and solve system (LAPACK)
+        call band_solve( "wp23", 2, 2, 2*gr%nnzp, 1, 
+     .                   aa, dd, xx, isValid )
 
 
 !       Copy result into output arrays and clip
@@ -679,10 +712,12 @@
           k_wp3 = 2*k - 1
           k_wp2 = 2*k
 
-          wp2(k) = dd(k_wp2)
-          wp3(k) = dd(k_wp3)
+          !wp2(k) = dd(k_wp2) ! (NR)
+          !wp3(k) = dd(k_wp3) ! " "
+          wp2(k) = xx(k_wp2)
+          wp3(k) = xx(k_wp3)
 
-        enddo
+        end do
 
 #ifdef STATS
         if (lstats_samp) then
@@ -697,7 +732,7 @@
              zm%x(k,iwp2_dp1) = zm%x(k,iwp2_dp1)
      .       + zmscr01(k) * wp2(k)
              zm%n(k,iwp2_dp1) = zm%n(k,iwp2_dp1) + 1
-            endif
+            end if
 
             if ( iwp2_dp2 > 0 ) then
              zm%x(k,iwp2_dp2) = zm%x(k,iwp2_dp2)
@@ -705,35 +740,35 @@
      .       + zmscr03(k) * wp2(k)
      .       + zmscr04(k) * wp2(kp1)
              zm%n(k,iwp2_dp2) = zm%n(k,iwp2_dp2) + 1
-            endif
+            end if
 
             if ( iwp2_ta > 0 ) then
              zm%x(k,iwp2_ta) = zm%x(k,iwp2_ta)
      .       + zmscr05(k) * wp3(k)
      .       + zmscr06(k) * wp3(kp1)
              zm%n(k,iwp2_ta) = zm%n(k,iwp2_ta) + 1
-            endif
+            end if
 
             if ( iwp2_ma > 0 ) then
              zm%x(k,iwp2_ma) = zm%x(k,iwp2_ma)
      .       + zmscr07(k) * wp2(km1)
      .       + zmscr08(k) * wp2(kp1)
              zm%n(k,iwp2_ma) = zm%n(k,iwp2_ma) + 1
-            endif
+            end if
 
             if ( iwp2_ac > 0 ) then
              zm%x(k,iwp2_ac) = zm%x(k,iwp2_ac)
      .       + zmscr09(k) * wp2(k)
              zm%n(k,iwp2_ac) = zm%n(k,iwp2_ac) + 1
-            endif
+            end if
 
             if ( iwp2_pr2 > 0 ) then
              zm%x(k,iwp2_pr2) = zm%x(k,iwp2_pr2)
      .       + zmscr10(k) * wp2(k)
              zm%n(k,iwp2_pr2) = zm%n(k,iwp2_pr2) + 1
-            endif
+            end if
 
-          enddo
+          end do
 
 !         Finalize implicit contributions for wp3
 
@@ -745,7 +780,7 @@
              zt%x(k,iwp3_pr1) = zt%x(k,iwp3_pr1)
      .       + ztscr01(k) * wp3(k)
              zt%n(k,iwp3_pr1) = zt%n(k,iwp3_pr1) + 1
-            endif
+            end if
 
             if ( iwp3_dp1 > 0 ) then
              zt%x(k,iwp3_dp1) = zt%x(k,iwp3_dp1)
@@ -753,7 +788,7 @@
      .       + ztscr03(k) * wp3(k)
      .       + ztscr04(k) * wp3(kp1)
              zt%n(k,iwp3_dp1) = zt%n(k,iwp3_dp1) + 1
-            endif
+            end if
 
             if ( iwp3_ta > 0 ) then
              zt%x(k,iwp3_ta) = zt%x(k,iwp3_ta)
@@ -763,47 +798,47 @@
      .       + ztscr08(k) * wp2(k)
      .       + ztscr09(k) * wp3(kp1)
              zt%n(k,iwp3_ta) = zt%n(k,iwp3_ta) + 1
-            endif
+            end if
 
             if ( iwp3_tp > 0 ) then
              zt%x(k,iwp3_tp) = zt%x(k,iwp3_tp)
      .       + ztscr10(k) * wp2(km1)
      .       + ztscr11(k) * wp2(k)
              zt%n(k,iwp3_tp) = zt%n(k,iwp3_tp) + 1
-            endif
+            end if
 
             if ( iwp3_ma > 0 ) then
              zt%x(k,iwp3_ma) = zt%x(k,iwp3_ma)
      .       + ztscr12(k) * wp3(km1)
      .       + ztscr13(k) * wp3(kp1)
              zt%n(k,iwp3_ma) = zt%n(k,iwp3_ma) + 1
-            endif
+            end if
 
             if ( iwp3_ac > 0 ) then
              zt%x(k,iwp3_ac) = zt%x(k,iwp3_ac)
      .       + ztscr14(k) * wp3(k)
              zt%n(k,iwp3_ac) = zt%n(k,iwp3_ac) + 1
-            endif
+            end if
 
             if ( iwp3_pr2 > 0 ) then
              zt%x(k,iwp3_pr2) = zt%x(k,iwp3_pr2) 
      .       + ztscr15(k) * wp3(k)
              zt%n(k,iwp3_pr2) = zt%n(k,iwp3_pr2) + 1
-            endif
+            end if
 
-          enddo
+          end do
 
 !         Effect of clipping term
 
           if ( iwp2_cl > 0 ) then
             zm%x(:,iwp2_cl) = zm%x(:,iwp2_cl) - wp2 / dt
-          endif
+          end if
 
           if ( iwp3_cl > 0 ) then
             zt%x(:,iwp3_cl) = zt%x(:,iwp3_cl) - wp3 / dt
-          endif
+          end if
 
-        endif
+        end if
 #endif /*STATS*/
 
         ! Clip Skewness.
@@ -832,7 +867,7 @@
               ctmp = atmp**(3.0/2.0)                             ! wp2^(3/2)
               IF ( wp3(k) >= 0.2 * SQRT(2.0) * ctmp ) THEN
                  wp3(k) = 0.2 * SQRT(2.0) * ctmp
-              ENDIF
+              END IF
 
            ELSE
 
@@ -842,16 +877,16 @@
               IF ( wp3(k)/ctmp .gt. 4.5 ) THEN
                  wp3(k) = 4.5 * ctmp
                  wp2(k) = atmp
-              ELSEIF ( wp3(k)/ctmp .lt. -4.5 ) THEN
+              ELSE IF ( wp3(k)/ctmp .lt. -4.5 ) THEN
                  wp3(k) = -4.5 * ctmp
                  wp2(k) = atmp
-              ENDIF
+              END IF
 
-           ENDIF
+           END IF
 
            wp2(k) = max( 2./3. * emin, wp2(k) ) 
 
-        ENDDO
+        END DO
 
         ! wp3 below the surface is set to 0.
         wp3(1) = 0.0
@@ -861,17 +896,13 @@
           if ( iwp2_cl > 0 ) then
             zm%x(:,iwp2_cl) = zm%x(:,iwp2_cl) + wp2 / dt
             zm%n(:,iwp2_cl) = zm%n(:,iwp2_cl) + 1
-          endif
+          end if
           if ( iwp3_cl > 0 ) then
             zt%x(:,iwp3_cl) = zt%x(:,iwp3_cl) + wp3 / dt
             zt%n(:,iwp3_cl) = zt%n(:,iwp3_cl) + 1
-          endif
-        endif
+          end if
+        end if
 #endif /*STATS*/
-
-!       Free memory
-
-        deallocate( aa, dd, al, indx )
 
 #ifdef STATS
         if (lstats_samp) then
@@ -879,15 +910,18 @@
           if ( iwp2_bt > 0 ) then
             zm%x(:,iwp2_bt) = zm%x(:,iwp2_bt) + wp2 / dt
             zm%n(:,iwp2_bt) = zm%n(:,iwp2_bt) + 1
-          endif
+          end if
 
           if ( iwp3_bt > 0 ) then
             zt%x(:,iwp3_bt) = zt%x(:,iwp3_bt) + wp3 / dt
             zt%n(:,iwp3_bt) = zt%n(:,iwp3_bt) + 1
-          endif
+          end if
 
-        endif
+        end if
 #endif /*STATS*/
+
+        ! Free memory
+        deallocate( aa, dd, xx, indx )
 
         return
         end subroutine wp23_solve

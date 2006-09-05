@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.5 2006-08-23 16:49:48 dschanen Exp $
+! $Id: rain.F,v 1.6 2006-09-05 22:39:04 dschanen Exp $
 !----------------------------------------------------------------------
 
       MODULE rain_equations
@@ -25,9 +25,10 @@
         USE model_flags
         USE grid_class
         USE constants
+        use lapack_wrap, only: tridag_solve
 #ifdef STATS
         USE statistics
-#endif STATS
+#endif /*STATS*/
 
         implicit none
 
@@ -678,17 +679,17 @@
 
 !       solve tridiagonal systems
 
-         call tridag(aa, bb, cc, dd, rrm, gr%nnzp, isValid)
-         if (.not. isValid ) then
-           print *, "rain: tridag failed for rrm"
-           return
-         endif
+        !call tridag(aa, bb, cc, dd, rrm, gr%nnzp, isValid)
+        call tridag_solve( "rrm", gr%nnzp, 1, cc, bb, aa, dd, 
+     .                      rrm, isValid)
 
-        call tridag(oo, pp, qq, rr, Nrm, gr%nnzp, isValid)
-        if (.not. isValid ) then
-          print *, "rain: tridag failed for Nrm"
-          return
-        endif
+        if (.not. isValid ) return
+
+        !call tridag(oo, pp, qq, rr, Nrm, gr%nnzp, isValid)
+        call tridag_solve( "Nrm", gr%nnzp, 1, qq, pp, oo, rr, 
+     .                      Nrm, isValid)
+
+        if (.not. isValid ) return
 
 
         DO k = 1, gr%nnzp, 1

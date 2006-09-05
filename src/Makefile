@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.63 2006-08-23 16:49:42 dschanen Exp $
+# $Id: Makefile,v 1.64 2006-09-05 22:38:42 dschanen Exp $
 # This version should work with BSD, GNU make, smake and dmake
 
 # For HOC we edit this by hand rather than implementing imake or automake
@@ -35,12 +35,12 @@ PARAMETERIZATION = \
 	$(LATIN_HYP) \
 	gamma.o constants.o endian.o outputfile.o outputgrads.o \
 	outputnc.o grid.o model_flags.o statistics.o \
-	banbks.o bandec.o erf.o tridag.o rain.o \
+	erf.o rain.o \
 	closure_new.o diag_var.o gcss.o rad_lwsw.o linearinterpolation.o \
         hydrostatic.o length.o mixing.o rsat.o sat_rcm.o sfc.o \
 	sounding.o update.o wp23.o tau.o Skw_func.o \
 	numer_check.o diag_variables.o prog_variables.o \
-	parameterization_interface.o 
+	parameterization_interface.o lapack_wrap.o
 
 INTERFACING = gradsaverage.o inputfields.o inputgrads.o hoc.o 
 
@@ -148,7 +148,7 @@ endian.o	: endian.F
 constants.o	: constants.F
 model_flags.o	: model_flags.F
 outputfile.o	: outputfile.F
-rain.o		: constants.o model_flags.o statistics.o tridag.o \
+rain.o		: constants.o model_flags.o statistics.o lapack_wrap.o \
 	gamma.o rain.F
 outputgrads.o	: endian.o outputfile.o outputgrads.F
 outputnc.o	: outputfile.o outputnc.F
@@ -158,26 +158,26 @@ numer_check.o	: prog_variables.o diag_variables.o numer_check.F
 inputgrads.o	: endian.o inputgrads.F
 grid.o		: grid.F
 statistics.o	: outputgrads.o outputnc.o prog_variables.o diag_variables.o \
-	statistics.F 
+	grid.o statistics.F 
 
-banbks.o	: banbks.F
-bandec.o	: bandec.F
 erf.o		: erf.F
-tridag.o	: tridag.F
+lapack_wrap.o	: lapack_wrap.F
 Skw_func.o	: Skw_func.F
 
 closure_new.o	: constants.o grid.o rsat.o erf.o closure_new.F 
-diag_var.o	: constants.o grid.o tridag.o statistics.o diag_var.F 
+diag_var.o	: constants.o grid.o statistics.o lapack_wrap.o \
+	diag_var.F
 gcss.o		: constants.o statistics.o rad_lwsw.o linearinterpolation.F \
                   gcss.F
 rad_lwsw.o      : rad_lwsw.F statistics.o
 linearinterpolation.o : linearinterpolation.F
-mixing.o	: constants.o statistics.o banbks.o bandec.o mixing.F 
+mixing.o	: constants.o statistics.o lapack_wrap.o mixing.F 
 parameterization_interface.o : constants.o gcss.o hydrostatic.o mixing.o \
 	model_flags.o numer_check.o Skw_func.o \
 	length.o statistics.o sounding.o diag_var.o rsat.o \
 	grid.o sat_rcm.o update.o prog_variables.o diag_variables.o \
-	sfc.o closure_new.o rain.o parameterization_interface.F 
+	sfc.o closure_new.o rain.o latin_hyper_sample.o lh_sampler.o \
+	parameterization_interface.F 
 hoc.o		: parameterization_interface.o hoc.F
 hydrostatic.o	: constants.o hydrostatic.F 
 length.o	: constants.o length.F 
@@ -185,8 +185,8 @@ rsat.o		: constants.o rsat.F
 sat_rcm.o	: constants.o sat_rcm.F 
 sfc.o		: constants.o sfc.F 
 sounding.o	: constants.o sounding.F
-update.o	: tridag.o update.F
-wp23.o		: constants.o statistics.o banbks.o bandec.o wp23.F 
+update.o	: grid.o lapack_wrap.o update.F
+wp23.o		: constants.o statistics.o lapack_wrap.o wp23.F 
 tau.o		: constants.o tau.F 
 inputfields.o	: grid.o inputgrads.o inputfields.F 
 
@@ -244,7 +244,7 @@ two_rt_lw_sel.o 	: kinds.o two_rt_lw_sel.F
 two_rt_lw_iter.o 	: kinds.o two_rt_lw_iter.F
 two_rt_lw_ocastrndm.o	: kinds.o two_rt_lw_ocastrndm.F90
 two_rt_sw.o		: kinds.o two_rt_sw.F
-two_rt_sw_bs.o		: kinds.o bandec.o banbks.o two_rt_sw_bs.F
+two_rt_sw_bs.o		: kinds.o lapack_wrap.o two_rt_sw_bs.F
 two_rt_sw_ocastrndm.o	: kinds.o two_rt_sw_ocastrndm.F90
 bugsrad_hoc.o 		: kinds.o constants.o bugs_rad.o bugsrad_hoc.F90 
 

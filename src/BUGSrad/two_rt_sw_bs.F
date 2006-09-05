@@ -1,4 +1,4 @@
-! CVS:  $Id: two_rt_sw_bs.F,v 1.2 2006-01-09 21:47:06 dschanen Exp $
+! CVS:  $Id: two_rt_sw_bs.F,v 1.3 2006-09-05 22:38:51 dschanen Exp $
 ! CVS:  $Name: not supported by cvs2svn $
 
 !-----------------------------------------------------------------------
@@ -14,7 +14,6 @@
  
  
       use kinds
-!     use bandsolve 
 #ifdef usenewexp
       use newexp, only: exp
 #endif
@@ -31,7 +30,8 @@
 !   Laura D. Fowler/slikrock (02-01-00).
 
 ! SUBROUTINES CALLED:
-!     none.
+! DGBSV: LAPACK simple driver routine for solving band diagonal
+!        systems w/ LU decomposition. -dschanen 4 Sept. 2006
 
 ! FUNCTIONS CALLED:
 !     none.
@@ -43,6 +43,11 @@
 ! All arrays indexed as nlm correspond to variables defined in the
 ! middle of layers. All arrays indexed as nlm+1 correspond to variables
 ! defined at levels at the top and bottom of layers.
+
+!     EXTERNAL CALLS:
+!     ----------------
+      external ::
+     &  dgbsv
  
 !     INPUT ARGUMENTS:
 !     ----------------
@@ -89,7 +94,10 @@
      &, l     ! Vertical index.
 
       integer (kind=int_kind), dimension(nlm*4+2)::
-     &  indx    !Vector used by bandec and banbks
+     &  indx  ! Pivot index used by LU decomposition
+
+      integer (kind=int_kind)
+     &  info  ! Diagnostic for LAPACK band solver
  
       real (kind=dbl_kind), dimension(nlm)::
      &  rrcld   !All sky global reflection
@@ -101,9 +109,12 @@
      &, sigdcld !All sky downwelling source
      &, sigdclr !Clear sky downwelling source
 
-      real (kind=dbl_kind), dimension(nlm*4+2,11)::
-     &  a       !Diagonal matrix for bandec and banbks
-     &, al      !Matrix used by bandec and banbks
+      ! Modified by dschanen for LAPACK
+      real (kind=dbl_kind), dimension(5+5+1,nlm*4+2)::
+     &  a       !Diagonal matrix for LAPACK LU decomp.
+
+      real (kind=dbl_kind), dimension(2*5+5+1,nlm*4+2)::
+     &  al      !LU Decomposition of a
 
       real (kind=dbl_kind), dimension(nlm*4+2)::
      &  b       !Vector of sources (for A*x = b)
@@ -113,7 +124,6 @@
      &, exptauclr
      &, directcld(nlm+1)
      &, directclr(nlm+1)
-     &, d
 
       real (kind=dbl_kind)
      &      aa ,    bb ,   cc , denom
@@ -269,53 +279,55 @@
  
 !---- 2. LOAD A MATRIX, B MATRIX
          a(:,:) = 0.0
+
+        ! Modified by dschanen for LAPACK 
+         a(6,1)  = -1.0
+         a(2,1) = trcld(1) * b4(i,1)
+         a(1,1) = trcld(1) * (1.-b2(i,1))
  
-         a(1,6)  = -1.0
-         a(1,10) = trcld(1) * b4(i,1)
-         a(1,11) = trcld(1) * (1.-b2(i,1))
+         a(6,2)  = -1.0
+         a(3,2)  = trclr(1) * (1.-b4(i,1))
+         a(2,2) = trclr(1) * b2(i,1)
  
-         a(2,6)  = -1.0
-         a(2,9)  = trclr(1) * (1.-b4(i,1))
-         a(2,10) = trclr(1) * b2(i,1)
+         a(6,3)  = -1.0
+         a(4,3)  = rrcld(1) * b4(i,1)
+         a(3,3)  = rrcld(1) * (1.-b2(i,1))
  
-         a(3,6)  = -1.0
-         a(3,8)  = rrcld(1) * b4(i,1)
-         a(3,9)  = rrcld(1) * (1.-b2(i,1))
- 
-         a(4,6)  = -1.0
-         a(4,7)  = rrclr(1) * (1.-b4(i,1))
-         a(4,8)  = rrclr(1) * b2(i,1)
+         a(6,4)  = -1.0
+         a(5,4)  = rrclr(1) * (1.-b4(i,1))
+         a(4,4)  = rrclr(1) * b2(i,1)
  
          do l = 2,nlm
-            a(l*4-3,4)  = rrcld(l) * b3(i,l)
-            a(l*4-3,5)  = rrcld(l) * (1.-b1(i,l))
-            a(l*4-3,6)  = -1.0
-            a(l*4-3,10) = trcld(l) * b4(i,l)
-            a(l*4-3,11) = trcld(l) * (1.-b2(i,l))
+            a(8,l*4-3)  = rrcld(l) * b3(i,l)
+            a(7,l*4-3)  = rrcld(l) * (1.-b1(i,l))
+            a(6,l*4-3)  = -1.0
+            a(2,l*4-3)  = trcld(l) * b4(i,l)
+            a(1,l*4-3)  = trcld(l) * (1.-b2(i,l))
  
-            a(l*4-2,3)  = rrclr(l) * (1.-b3(i,l))
-            a(l*4-2,4)  = rrclr(l) * b1(i,l)
-            a(l*4-2,6)  = -1.0
-            a(l*4-2,9)  = trclr(l) * (1.-b4(i,l))
-            a(l*4-2,10) = trclr(l) * b2(i,l)
+            a(9,l*4-2)  = rrclr(l) * (1.-b3(i,l))
+            a(8,l*4-2)  = rrclr(l) * b1(i,l)
+            a(6,l*4-2)  = -1.0
+            a(3,l*4-2)  = trclr(l) * (1.-b4(i,l))
+            a(2,l*4-2)  = trclr(l) * b2(i,l)
  
-            a(l*4-1,2)  = trcld(l) * b3(i,l)
-            a(l*4-1,3)  = trcld(l) * (1.-b1(i,l))
-            a(l*4-1,6)  = -1.0
-            a(l*4-1,8)  = rrcld(l) * b4(i,l)
-            a(l*4-1,9)  = rrcld(l) * (1.-b2(i,l))
+            a(10,l*4-1) = trcld(l) * b3(i,l)
+            a(9,l*4-1)  = trcld(l) * (1.-b1(i,l))
+            a(6,l*4-1)  = -1.0
+            a(4,l*4-1)  = rrcld(l) * b4(i,l)
+            a(3,l*4-1)  = rrcld(l) * (1.-b2(i,l))
  
-            a(l*4,1)    = trclr(l) * (1.-b3(i,l))
-            a(l*4,2)    = trclr(l) * b1(i,l)
-            a(l*4,6)    = -1.0
-            a(l*4,7)    = rrclr(l) * (1.-b4(i,l))
-            a(l*4,8)    = rrclr(l) * b2(i,l)
+            a(11,l*4)   = trclr(l) * (1.-b3(i,l))
+            a(10,l*4)   = trclr(l) * b1(i,l)
+            a(6,l*4)    = -1.0
+            a(5,l*4)    = rrclr(l) * (1.-b4(i,l))
+            a(4,l*4)    = rrclr(l) * b2(i,l)
          enddo
  
-         a(nlm*4+1,4) = asdif(i,ib)
-         a(nlm*4+1,6) = -1.0
-         a(nlm*4+2,4) = asdif(i,ib)
-         a(nlm*4+2,6) = -1.0
+         a(8,nlm*4+1) = asdif(i,ib)
+         a(6,nlm*4+1) = -1.0
+         a(8,nlm*4+2) = asdif(i,ib)
+         a(6,nlm*4+2) = -1.0
+         ! End LAPACK modification
 
          b(:) = 0.0
          do l = 1,nlm
@@ -338,10 +350,32 @@
 !         do l = 1,nlm*4+2
 !            print *,l,b(l)
 !         enddo
-!        Changed bandec to work with the HOC version -dschanen 9 Jan 06
-         call bandec(a,nlm*4+2,5,5,nlm*4+2,11,al,11,indx,d,fail)
-         if ( fail ) stop "LU decomp in two_rt_sw_bs failed"
-         call banbks(a,nlm*4+2,5,5,nlm*4+2,11,al,11,indx,b)
+
+         ! Modified to use LAPACK -dschanen 4 Sept. 2006
+         do l = 1, 5, 1
+          a(5+1+l,1:nlm*4+2)
+     .    = eoshift( a(5+1+l,1:nlm*4+2), l )
+         end do 
+
+         do l = 1, 5, 1
+           a(5+1-l,1:nlm*4+2)
+     .     = eoshift( a(5+1-l,1:nlm*4+2), -l )
+         end do
+
+         ! Copy LHS into decomposition scratch space
+         al(5+1:2*5+5+1, 1:nlm*4+2) = a(1:5+5+1, 1:nlm*4+2)
+
+         ! If dbl_kind isn't the same double precision as LAPACK, then
+         ! this will fail
+         call dgbsv( nlm*4+2, 5, 5, 1, al, 5*2+5+1, 
+     &               indx, b, nlm*4+2, info )
+
+         if ( info /= 0 ) then
+           ! Matrix is singular, singular to working precision, or had
+           ! incorrect arguments.
+           stop "BUGSrad: two_rt_sw_bs LU decomp. failed"
+         end if
+         ! End LAPACK modification
  
 !---- 3. SUM CLEAR AND CLOUDY FLUXES
          do l = 1,nlm+1

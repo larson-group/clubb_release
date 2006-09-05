@@ -1,4 +1,4 @@
-# $Id: config.linux_ia32_pg.in,v 1.5 2006-08-02 22:35:03 dschanen Exp $
+# $Id: config.linux_ia32_pg.in,v 1.6 2006-09-05 22:38:42 dschanen Exp $
 # Makefile definitions customized for Linux IA32 using the Portland Group
 # compiler
 
@@ -24,8 +24,12 @@ OPTIMIZE = -O2
 # == NetCDF Location ==
 NC_LOC = $(HOME)/netcdf-3.6.0-p1
 
+# == LAPACK libraries ==
+# Portland group usually has static versions of these
+LAPACK = -llapack -lblas
+
 # == Linking Flags ==
-LDFLAGS = -L$(LIBDIR) -Wl,-rpath $(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib -lnetcdf
+LDFLAGS = -L$(LIBDIR) -Wl,-rpath $(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib -lnetcdf $(LAPACK)
 
 # == Compiler flags (all) ==
 # Preprocessing:

@@ -1,4 +1,4 @@
-# $Id: config.messner.in,v 1.13 2006-08-31 21:56:58 dschanen Exp $
+# $Id: config.messner.in,v 1.14 2006-09-05 22:38:42 dschanen Exp $
 # Configuration file for Messner node
 
 # == Paths ==
@@ -25,27 +25,29 @@ DEBUG = -g -C -Kieee #			pgf90
 
 # == Machine specific flags ==
 #ARCH = -march=pentium4 -msse2 -mfpmath=sse # g95, P4
-#ARCH = -arch pn4 -msse2 # ifort, P4
+#ARCH = -arch pn4 -xP # ifort, P4
 ARCH = -tp p7 # pgf90, P4
 
 # == Optimization ==
 # These are all pretty conservative options. Check your compiler manual
 # for information on using more aggressive techniques (inlining, etc.)
-# Note: using -r8 on pgf90 breaks the NaN checking, so use it with caution
 OPTIMIZE = -O2
 
 # == NetCDF Location ==
 #NC_LOC = /usr/local/netcdf-g95
 #NC_LOC = /usr/local/netcdf-intel
 NC_LOC = /usr/local/netcdf-pgi
+ 
+# == LAPACK libraries ==
+#LAPACK = -llapack -lf77blas -lcblas -latlas # ATLAS BLAS/LAPACK
+#LAPACK = -L/opt/intel/mkl/8.1/lib/32 -lmkl_lapack32 -lmkl_p4p -lmkl -lmkl_vml_p4p -lvml -lguide -lpthread # Intel MKL (P4)
+LAPACK = -llapack -lblas # Generic with reference BLAS
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
 # Use -L<library path> -l<lib> to link in an external library
 # Use -Wl,-rpath <library path> to set a search path for shared libs
-LDFLAGS = -L$(LIBDIR) -Wl,-rpath,$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib -lnetcdf
-#LDFLAGS = -L$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib
-#-Wl,-rpath,$(LIBDIR) 
+LDFLAGS = -L$(LIBDIR) -Wl,-rpath,$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib -lnetcdf $(LAPACK)
 
 # == Compiler flags (all) ==
 # Preprocessing Directives:
@@ -59,9 +61,9 @@ LDFLAGS = -L$(LIBDIR) -Wl,-rpath,$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)
 # You will need to `make clean' if you change these
 # Use -I<include path> to set a module or header file directory
 
-FCFLAGS = $(ARCH) $(DEBUG) -DSTATS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
-#FCFLAGS = $(ARCH) $(OPTIMIZE) -DSTATS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
-#FCFLAGS = $(ARCH) $(OPTIMIZE) -DSTATS -DSCALARS -Dnooverlap -Dradoffline -I$(NC_LOC)/include 
+FCFLAGS = $(DEBUG) $(ARCH) -DSTATS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
+#FCFLAGS = $(OPTIMIZE) $(ARCH) -DSTATS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
+#FCFLAGS = $(OPTIMIZE) $(ARCH) -DSTATS -DSCALARS -Dnooverlap -Dradoffline -I$(NC_LOC)/include 
 
 # == Static library processing ==
 AR = ar
