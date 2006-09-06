@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputgrads.F,v 1.11 2006-01-31 22:24:37 golaz Exp $
+! $Id: inputgrads.F,v 1.12 2006-09-06 17:03:27 dschanen Exp $
 
 ! This module contains structure and subroutine definitions to
 ! open a GrADS data file a read it.
@@ -17,6 +17,8 @@
 !-----------------------------------------------------------------------
 
 #if defined (__i386__) && __INTEL_COMPILER >= 900 /* Newer ifort on i386 */
+#define F_RECL 1
+#elif defined (__x86_64__) && __INTEL_COMPILER >= 900 /*Newer ifort on x86_64*/
 #define F_RECL 1
 #elif __alpha /* Assume that alpha users are using f95 */
 #define F_RECL 1
