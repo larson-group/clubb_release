@@ -26,12 +26,9 @@
      .                        AKm_rcm_k, AKm_rcc_k, rcm_est_k )
 
       use constants
+      use anl_erf, only: erf
 
       implicit none
-
-! External
-
-      real, external :: erf
 
 ! Input
 

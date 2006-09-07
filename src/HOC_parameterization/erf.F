@@ -1,122 +1,231 @@
-! $Id: erf.F,v 1.1 2006-04-21 21:50:56 dschanen Exp $
+! $Id: erf.F,v 1.2 2006-09-07 00:35:35 dschanen Exp $
+        module anl_erf
 
-      FUNCTION erf(x)
-      REAL erf,x
-CU    USES gammp
-      REAL gammp
-      if(x.lt.0.)then
-        erf=-gammp(.5,x**2)
-      else
-        erf=gammp(.5,x**2)
-      endif
-      return
-      END
+        implicit none
 
-      FUNCTION gammp(a,x)
-      REAL a,gammp,x
-CU    USES gcf,gser
-      REAL gammcf,gamser,gln
-      if(x.lt.0..or.a.le.0.) stop 'bad arguments in gammp'
-      if(x.lt.a+1.)then
-        call gser(gamser,a,x,gln)
-        gammp=gamser
-      else
-        call gcf(gammcf,a,x,gln)
-        gammp=1.-gammcf
-      endif
-      return
-      END
+        public :: erf
 
-      FUNCTION gammq(a,x)
-      REAL a,gammq,x
-CU    USES gcf,gser
-      REAL gammcf,gamser,gln
-      if(x.lt.0..or.a.le.0.) stop 'bad arguments in gammq'
-      if(x.lt.a+1.)then
-        call gser(gamser,a,x,gln)
-        gammq=1.-gamser
-      else
-        call gcf(gammcf,a,x,gln)
-        gammq=gammcf
-      endif
-      return
-      END
+        interface erf
+          module procedure dp_erf, sp_erf
+        end interface
 
-      SUBROUTINE gcf(gammcf,a,x,gln)
-      INTEGER ITMAX
-      REAL a,gammcf,gln,x,EPS,FPMIN
-      PARAMETER (ITMAX=100,EPS=3.e-7,FPMIN=1.e-30)
-CU    USES gammln
-      INTEGER i
-      REAL an,b,c,d,del,h,gammln
-      gln=gammln(a)
-      b=x+1.-a
-      c=1./FPMIN
-      d=1./b
-      h=d
-      do 11 i=1,ITMAX
-        an=-i*(i-a)
-        b=b+2.
-        d=an*d+b
-        if(abs(d).lt.FPMIN)d=FPMIN
-        c=b+an/c
-        if(abs(c).lt.FPMIN)c=FPMIN
-        d=1./d
-        del=d*c
-        h=h*del
-        if(abs(del-1.).lt.EPS)goto 1
-11    continue
-c Chris Golaz modification
-c      pause 'a too large, ITMAX too small in gcf'
-1     gammcf=exp(-x+a*log(x)-gln)*h
-      return
-      END
+        private
 
-      SUBROUTINE gser(gamser,a,x,gln)
-      INTEGER ITMAX
-      REAL a,gamser,gln,x,EPS
-      PARAMETER (ITMAX=100,EPS=3.e-7)
-CU    USES gammln
-      INTEGER n
-      REAL ap,del,sum,gammln
-      gln=gammln(a)
-      if(x.le.0.)then
-        if(x.lt.0.) stop 'x < 0 in gser'
-        gamser=0.
+        contains
+
+        function dp_erf( x ) result( erfx )
+!-----------------------------------------------------------------------
+!       Description:
+!       DP_ERF evaluates the error function DP_ERF(X).
+!
+!       Modified:
+!       06 Sept 2006
+!
+!       Author:
+!       William Cody,
+!       Mathematics and Computer Science Division,
+!       Argonne National Laboratory,
+!       Argonne, Illinois, 60439.
+!
+!       Modifications:
+!       David Schanen,
+!       UWM.
+!       Change subroutine to a function, Changed formatting, and Changed
+!       the save attribute to a parameter for some variables.
+!
+!       References:
+!       William Cody,
+!       "Rational Chebyshev approximations for the error function",
+!       Mathematics of Computation, 
+!       1969, pages 631-638.
+!
+!       Parameters:
+!
+!       Input, real ( kind = 8 ) X, the argument of ERF.
+!
+!       Output, real ( kind = 8 ) ERFX, the value of ERF(X).
+!-----------------------------------------------------------------------
+
+        implicit none
+
+        ! External
+        intrinsic :: epsilon, exp, aint
+
+        ! Local Constants
+        real( kind = 8 ), parameter, dimension( 5 ) :: 
+     .  a = (/ 3.16112374387056560D+00,
+     .         1.13864154151050156D+02,
+     .         3.77485237685302021D+02,
+     .         3.20937758913846947D+03,
+     .         1.85777706184603153D-01 /)
+        real( kind = 8 ), parameter, dimension( 4 ) :: 
+     .  b = (/ 2.36012909523441209D+01,
+     .         2.44024637934444173D+02,
+     .         1.28261652607737228D+03,
+     .         2.84423683343917062D+03 /)
+        real( kind = 8 ), parameter, dimension( 9 ) :: 
+     .  c = (/ 5.64188496988670089D-01,
+     .         8.88314979438837594D+00,
+     .         6.61191906371416295D+01,
+     .         2.98635138197400131D+02,
+     .         8.81952221241769090D+02,
+     .         1.71204761263407058D+03,
+     .         2.05107837782607147D+03,
+     .         1.23033935479799725D+03,
+     .         2.15311535474403846D-08 /)
+         real( kind = 8 ), parameter, dimension( 8 ) ::
+     .   d = (/ 1.57449261107098347D+01,
+     .          1.17693950891312499D+02,
+     .          5.37181101862009858D+02, 
+     .          1.62138957456669019D+03,
+     .          3.29079923573345963D+03,
+     .          4.36261909014324716D+03,
+     .          3.43936767414372164D+03,
+     .          1.23033935480374942D+03 /)
+        real( kind = 8 ), parameter, dimension( 6 ) :: 
+     .  p = (/ 3.05326634961232344D-01,
+     .         3.60344899949804439D-01,
+     .         1.25781726111229246D-01,
+     .         1.60837851487422766D-02,
+     .         6.58749161529837803D-04,
+     .         1.63153871373020978D-02 /)
+
+        real( kind = 8 ), parameter, dimension( 5 ) :: 
+     .  q = (/ 2.56852019228982242D+00,
+     .         1.87295284992346047D+00,
+     .         5.27905102951428412D-01,
+     .         6.05183413124413191D-02,
+     .         2.33520497626869185D-03 /)
+
+        real( kind = 8 ), parameter :: 
+     .  SQRPI  = 0.56418958354775628695D+00,
+     .  THRESH = 0.46875D+00,
+     .  XBIG   = 26.543D+00
+        
+        ! Return type
+        real( kind = 8 ) :: erfx
+
+        ! Local variables
+        real( kind = 8 ) :: 
+     .  del,
+     .  x,
+     .  xabs,
+     .  xden,
+     .  xnum,
+     .  xsq
+
+        integer :: i ! Index
+!-----------------------------------------------------------------------
+        xabs = abs( x )
+
+        !
+        !  Evaluate ERF(X) for |X| <= 0.46875.
+        !
+        if ( xabs <= THRESH ) then
+
+          if ( epsilon( xabs ) < xabs ) then
+            xsq = xabs * xabs
+          else
+            xsq = 0.0D+00
+          end if
+
+          xnum = a(5) * xsq
+          xden = xsq
+          do i = 1, 3
+            xnum = ( xnum + a(i) ) * xsq
+            xden = ( xden + b(i) ) * xsq
+          end do
+
+          erfx = x * ( xnum + a(4) ) / ( xden + b(4) )
+        !
+        !  Evaluate ERFC(X) for 0.46875 <= |X| <= 4.0.
+        !
+        else if ( xabs <= 4.0D+00 ) then
+
+          xnum = c(9) * xabs
+          xden = xabs
+          do i = 1, 7
+            xnum = ( xnum + c(i) ) * xabs
+            xden = ( xden + d(i) ) * xabs
+          end do
+
+          erfx = ( xnum + c(8) ) / ( xden + d(8) )
+          xsq = aint( xabs * 16.0D+00 ) / 16.0D+00
+          del = ( xabs - xsq ) * ( xabs + xsq )
+          erfx = exp( - xsq * xsq ) * exp( - del ) * erfx
+
+          erfx = ( 0.5D+00 - erfx ) + 0.5D+00
+
+          if ( x < 0.0D+00 ) then
+            erfx = - erfx
+          end if
+        !
+        !  Evaluate ERFC(X) for 4.0 < |X|.
+        !
+        else
+
+          if ( XBIG <= xabs ) then
+
+            if ( 0.0D+00 < x ) then
+              erfx = 1.0D+00
+            else
+              erfx = -1.0D+00
+            end if
+
+          else
+
+            xsq = 1.0D+00 / ( xabs * xabs )
+
+            xnum = p(6) * xsq
+            xden = xsq
+            do i = 1, 4
+              xnum = ( xnum + p(i) ) * xsq
+              xden = ( xden + q(i) ) * xsq
+            end do
+
+            erfx = xsq * ( xnum + p(5) ) / ( xden + q(5) )
+            erfx = ( SQRPI -  erfx ) / xabs
+            xsq = aint( xabs * 16.0D+00 ) / 16.0D+00
+            del = ( xabs - xsq ) * ( xabs + xsq )
+            erfx = exp( - xsq * xsq ) * exp( - del ) * erfx
+
+            erfx = ( 0.5D+00 - erfx ) + 0.5D+00
+            if ( x < 0.0D+00 ) then
+              erfx = - erfx
+            end if
+
+          end if
+
+        end if
+
         return
-      endif
-      ap=a
-      sum=1./a
-      del=sum
-      do 11 n=1,ITMAX
-        ap=ap+1.
-        del=del*x/ap
-        sum=sum+del
-        if(abs(del).lt.abs(sum)*EPS)goto 1
-11    continue
-c Chris Golaz modification
-c      pause 'a too large, ITMAX too small in gser'
-1     gamser=sum*exp(-x+a*log(x)-gln)
-      return
-      END
+        end function dp_erf
 
-      FUNCTION gammln(xx)
-      REAL gammln,xx
-      INTEGER j
-      DOUBLE PRECISION ser,stp,tmp,x,y,cof(6)
-      SAVE cof,stp
-      DATA cof,stp/76.18009172947146d0,-86.50532032941677d0,
-     *24.01409824083091d0,-1.231739572450155d0,.1208650973866179d-2,
-     *-.5395239384953d-5,2.5066282746310005d0/
-      x=xx
-      y=x
-      tmp=x+5.5d0
-      tmp=(x+0.5d0)*log(tmp)-tmp
-      ser=1.000000000190015d0
-      do 11 j=1,6
-        y=y+1.d0
-        ser=ser+cof(j)/y
-11    continue
-      gammln=tmp+log(stp*ser/x)
-      return
-      END
+!-----------------------------------------------------------------------
+        function sp_erf( x ) result( erfx )
+
+!       Description:
+!       Return a truncation of the 64bit approx. of the error function.
+!       Ideally we would probably use a 32bit table for our approx. 
+
+!       References:
+!       None
+!-----------------------------------------------------------------------
+
+        implicit none
+
+        ! External
+        intrinsic :: real
+
+        ! Input Variables
+        real( kind=4 ) :: x
+
+        ! Return type
+        real( kind=4 ) :: erfx
+
+        erfx = real( dp_erf( real(x, kind=8) ), kind=4 )
+
+        return
+        end function sp_erf
+
+        end module anl_erf

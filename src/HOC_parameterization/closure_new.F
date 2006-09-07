@@ -1,19 +1,11 @@
-! $Id: closure_new.F,v 1.5 2006-08-08 16:55:25 dschanen Exp $
-      module pdf_closure
+! $Id: closure_new.F,v 1.6 2006-09-07 00:35:35 dschanen Exp $
+        module pdf_closure
 
-      implicit none
+        implicit none
 
-      public pdf_closure_new
+        public :: pdf_closure_new
 
-      contains 
-!------------------------------------------------------------------------
-! Subroutine that computes pdf parameters analytically.
-
-! Based of the original formulation, but with some tweaks
-! to remove some of the less realistic assumptions and
-! improve transport terms.
-
-! Corrected version that should remove inconsistency
+        contains 
 !------------------------------------------------------------------------
         subroutine pdf_closure_new
      .             ( p, exner, wm, wp2, wp3, Sc,
@@ -29,92 +21,144 @@
      .               sclrp2, sclrpthlp, sclrpthvp,      ! "    "
      .               wpsclrpthlp, sclrprcp, wp2sclrp )  ! "    "
 
+!       Description;
+!       Subroutine that computes pdf parameters analytically.
+
+!       Based of the original formulation, but with some tweaks
+!       to remove some of the less realistic assumptions and
+!       improve transport terms.
+
+!       Corrected version that should remove inconsistency
+
+!       References:
+!       Eqn. 29, 30, 31, 32 & 33  on p. 3547 of 
+!       ``A PDF-Based Model for Boundary Layer Clouds. Part I:
+!         Method and Model Description'' Golaz, et al. (2002)
+!       JAS, Vol. 59, pp. 3540--3551.
+
+!------------------------------------------------------------------------
+
         use constants
+        use anl_erf, only: erf
 
         implicit none
 
-! External
+        ! External
 
-        real, external :: erf
         real, external :: rsat
 
-! Input
+        ! Input Variables
+        real, intent(in) :: 
+     .  p,      ! Pressure.                     [Pa] 
+     .  exner,  ! Exner function.               [-]
+     .  wm,     ! mean w                        [m/s] 
+     .  wp2,    ! w'^2                          [m^2/s^2] 
+     .  wp3,    ! w'^3                          [m^3/s^3]
+     .  Sc,     ! Width of individual w plumes  [-]                          [-]
+     .  rtm,    ! Mean total water              [kg/kg]
+     .  rtp2,   ! Total water mixing ratio      [kg/kg]
+     .  wprtp,  ! w' r_t'                       [(kg m)(kg s)]
+     .  thlm,   ! Mean th_l                     [K]
+     .  thlp2,  ! th_l'^2                       [K^2]
+     .  wpthlp, ! w' th_l'                      [(m K)/s]
+     .  rtpthlp ! r_t' th_l'                    [(K kg)/kg]
 
-        real, intent(in) :: p, exner
-        real, intent(in) :: wm, wp2, wp3, Sc
-        real, intent(in) :: rtm, rtp2, wprtp
-        real, intent(in) :: thlm, thlp2, wpthlp
-        real, intent(in) :: rtpthlp
+        ! Input (Optional mixing scheme variables)
+        real, optional,  dimension(sclr_dim), intent(in) :: 
+     .  sclrm,     ! Mean passive scalar        [units vary]
+     .  wpsclrp,   ! w' sclr'                   [units vary]
+     .  sclrp2,    ! sclr'^2                    [units vary]
+     .  sclrprtp,  ! sclr' r_t'                 [units vary]
+     .  sclrpthlp  ! sclr' th_l'                [units vary]
 
-! Input (Optional mixing scheme variables)
+        ! Output Variables
 
-        real, optional, intent(in) :: sclrm(:)
-        real, optional, intent(in) :: wpsclrp(:)
-        real, optional, intent(in) :: sclrp2(:)
-        real, optional, intent(in) :: sclrprtp(:)
-        real, optional, intent(in) :: sclrpthlp(:)
+        real, intent(out) :: 
+     .  wp4,            ! w'^4                  [m^4/s^4]
+     .  wprtp2,         ! w' r_t'               [(m kg)/(s kg)]
+     .  wp2rtp,         ! w'^2 r_t'             [(m^2 kg)/(s^2 kg)]
+     .  wpthlp2,        ! w' th_l'^2            [(m K^2)/s]
+     .  wp2thlp,        ! w'^2 th_l'            [(m^2 K)/s^2]
+     .  cf,             ! Cloud fraction        [%]
+     .  rcm,            ! Mean liquid water     [kg/kg]
+     .  wpthvp,         ! Buoyancy flux         [(K m)/s] 
+     .  wp2thvp,        ! w'^2 th_v'            [(m^2 K)/s^2]
+     .  rtpthvp,        ! r_t' th_v'            [(kg K)/kg]
+     .  thlpthvp,       ! th_l' th_v'           [K^2]
+     .  wprcp,          ! w' r_c'               [(m kg)/(s kg)]
+     .  wp2rcp,         ! w'^2 r_c'             [(m^2 kg)/(s^2 kg)]
+     .  rtprcp,         ! r_t' r_c'             [(kg^2)/(kg^2)]
+     .  thlprcp,        ! th_l' r_c'            [(K kg)/kg]
+     .  wprtpthlp,      ! w' r_t' th_l'         [(m kg K)/(s kg)]
+     .  crt1, crt2, 
+     .  cthl1, cthl2
 
-! Output
+        real, intent(out), dimension(26) ::
+     .  pdf_parms       ! pdf paramters         [units vary]
 
-        real, intent(out) :: wp4
-        real, intent(out) :: wprtp2, wp2rtp, wpthlp2, wp2thlp
-        real, intent(out) :: cf, rcm
-        real, intent(out) :: wpthvp, wp2thvp, rtpthvp, thlpthvp
-        real, intent(out) :: wprcp, wp2rcp, rtprcp, thlprcp
-        real, intent(out) :: wprtpthlp
-        real, intent(out) :: pdf_parms(26)
-        real, intent(out) :: crt1, crt2, cthl1, cthl2
+        ! Output (Optional passive scalar variables)
 
-! Output (Optional mixing scheme variables)
+        real, optional, intent(out), dimension(sclr_dim) :: 
+     .  sclrpthvp,
+     .  sclrprcp,
+     .  wpsclrp2,
+     .  wpsclrprtp,
+     .  wpsclrpthlp,
+     .  wp2sclrp
 
-        real, optional, intent(out) :: sclrpthvp(:)
-        real, optional, intent(out) :: sclrprcp(:)
-        real, optional, intent(out) :: wpsclrp2(:)
-        real, optional, intent(out) :: wpsclrprtp(:)
-        real, optional, intent(out) :: wpsclrpthlp(:)
-        real, optional, intent(out) :: wp2sclrp(:)
+        ! Local Variables 
 
-! Internal 
-        integer i   ! used to loop over sclr arrays
+        real :: 
+     .  a,                      ! pdf parameter
+     .  w1, w2, sw1, sw2,       ! pdf parameters
+     .  thl1, thl2,             ! pdf parameters
+     .  sthl1, sthl2,           ! pdf parameters
+     .  rt1, rt2,               ! pdf parameters
+     .  srt1, srt2,             ! pdf parameters 
+     .  w1_n, w2_n, 
+     .  thl1_n, thl2_n, 
+     .  rt1_n, rt2_n
 
-        real :: a
-        real :: w1, w2, sw1, sw2
-        real :: thl1, thl2, sthl1, sthl2
-        real :: rt1, rt2, srt1, srt2
-        real :: w1_n, w2_n, thl1_n, thl2_n, rt1_n, rt2_n
-
-!       New mixing scheme internal variables
-
-        real, dimension(sclr_dim) :: sclr1, sclr2, ssclr1, ssclr2
-        real, dimension(sclr_dim) :: alpha_sclr, sclr1_n, sclr2_n
-        real, dimension(sclr_dim) :: rsclrthl, rsclrrt
+        ! Passive scalar variables
+        real, dimension(sclr_dim) :: 
+     .  sclr1, sclr2, 
+     .  ssclr1, ssclr2,
+     .  alpha_sclr, 
+     .  sclr1_n, sclr2_n,
+     .  rsclrthl, rsclrrt
  
-        logical scalar_calc
+        logical :: scalar_calc
 
-!       Quantities needed to predict higher order moments
+        ! Quantities needed to predict higher order moments
+        real :: 
+     .  tl1, tl2, 
+     .  beta1, beta2, 
+     .  rsl1, rsl2, 
+     .  es1, es2,
+     .  ss1, ss2,
+     .  s1, s2, 
+     .  zeta1, zeta2,
+     .  rc1, rc2, 
+     .  R1, R2
 
-        real :: tl1, tl2, beta1, beta2, rsl1, rsl2, es1, es2
-        real :: ss1, ss2, s1, s2, zeta1, zeta2
-        real :: rc1, rc2, R1, R2
-
-!        sub-plume correlation coefficient between rt, thl
-!        varies between -1 < rrtthl < 1
+        ! Sub-plume correlation coefficient between rt, thl
+        ! varies between -1 < rrtthl < 1
 
         real :: rrtthl
 
-!        thermodynamic quantity
+        ! Thermodynamic quantity
 
         real :: bd
 
-!        skewness of w
+        ! Skewness of w
 
         real :: Skw 
 
-!       weighting factor for interpolation of srt1,2, sthl1,2
+        ! weighting factor for interpolation of srt1,2, sthl1,2
 
         real :: diffweight
 
-!       alpha coefficients
+        ! alpha coefficients
 
         real :: alpha_thl, alpha_rt
 
@@ -122,9 +166,9 @@
 !       varies width of plumes in theta_l, rt
         real :: width_factor_1, width_factor_2
 
+        integer :: i   ! Index
 
-
-! Code begins -------------------------------------------
+!------------------------ Code begins ----------------------------------
 
 !   Check whether the optional scalars are present.
 !   Rather than test this on an equation to variable basis
@@ -135,8 +179,7 @@
      .      .and. present( sclrpthlp ) .and. present( sclrprcp )
      .      .and. present( wpsclrprtp ).and. present( wpsclrp2 ) 
      .      .and. present( sclrp2 )    .and. present( wpsclrpthlp )
-     .      .and. present( wp2sclrp )
-     .     ) then
+     .      .and. present( wp2sclrp ) ) then
           scalar_calc = .true.
         else
           scalar_calc = .false.
@@ -532,7 +575,7 @@
         rcm = MAX(0.0, rcm)
 
 
-!       save pdf parameters
+        ! Save pdf parameters
 
         pdf_parms(1)  = w1
         pdf_parms(2)  = w2
@@ -564,4 +607,4 @@
         return
         end subroutine pdf_closure_new
 
-      end module pdf_closure
+        end module pdf_closure
