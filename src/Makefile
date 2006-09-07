@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.64 2006-09-05 22:38:42 dschanen Exp $
+# $Id: Makefile,v 1.65 2006-09-07 00:30:13 dschanen Exp $
 # This version should work with BSD, GNU make, smake and dmake
 
 # For HOC we edit this by hand rather than implementing imake or automake
@@ -213,7 +213,7 @@ latin_hyper_sample.o	: latin_hyper_sample.F
 lh_sampler.o		: lh_sampler.F
 ltqnorm.o		: constants.o ltqnorm.F
 matmult.o		: matmult.F
-micro_calcs.o		: constants.o micro_calcs.F 
+micro_calcs.o		: constants.o erf.o micro_calcs.F 
 permute_height_time.o	: permute_height_time.F
 ql_estimate.o		: ql_estimate.F
 ran2.o			: ran2.F
