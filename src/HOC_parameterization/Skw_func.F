@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-         elemental function Skw_func( wp2, wp3, wtol ) 
+         function Skw_func( wp2, wp3, wtol ) 
      .   result( Skw )
 
 !        Description:
