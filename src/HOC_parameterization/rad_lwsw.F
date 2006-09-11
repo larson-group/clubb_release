@@ -1,3 +1,4 @@
+! $Id: rad_lwsw.F,v 1.5 2006-09-11 16:06:43 dschanen Exp $
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c Subroutine rad_lwsw -- for Larson group altocumulus cases            c
 c Written by Vince Larson, Chris Golaz, Adam Smith, Michael Falk, and  c
@@ -102,13 +103,14 @@ c<--end of addition
       !!!!!!!!!!!!!!!!!!!!!
       !! INPUT VARIABLES !!
       !!!!!!!!!!!!!!!!!!!!!
+      INTEGER, INTENT(IN) :: kk
+
       REAL, DIMENSION(1:kk), INTENT(IN) :: th3
       REAL, DIMENSION(1:kk), INTENT(IN) :: qc3
       REAL, DIMENSION(1:kk), INTENT(IN) :: rbm
       REAL, DIMENSION(1:kk), INTENT(IN) :: dsigm
 
       REAL, INTENT(IN) :: xi_abs, F0, F1, kay, radius, A, gc, Fs0, omega
-      INTEGER, INTENT(IN) :: kk
       LOGICAL, INTENT(IN) :: center, sw_on, lw_on
 
       !!!!!!!!!!!!!!!!!!!!!!
@@ -406,14 +408,15 @@ c#endif
       !!!!!!!!!!!!!!!!!!!!!
       !! Input variables !!
       !!!!!!!!!!!!!!!!!!!!!
+
+      INTEGER, INTENT(IN) :: kk
+
       REAL, DIMENSION(1:kk), INTENT(IN) :: qc3
       REAL, DIMENSION(1:kk), INTENT(IN) :: rbm 
       REAL, DIMENSION(1:kk), INTENT(IN) :: dsigm
 
       REAL, INTENT(IN) :: xi_abs
       REAL, INTENT(IN) :: radius, A, gc, Fs0, omega
-
-      INTEGER, INTENT(IN) :: kk
 
       LOGICAL, INTENT(IN) :: center
 

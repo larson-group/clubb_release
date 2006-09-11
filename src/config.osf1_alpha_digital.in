@@ -1,5 +1,5 @@
-# $Id: config.osf1_alpha_digital.in,v 1.8 2006-09-05 22:38:42 dschanen Exp $
-# Configuration File for Compaq f95 on the UWM alpha
+# $Id: config.osf1_alpha_digital.in,v 1.9 2006-09-11 16:06:38 dschanen Exp $
+# Configuration File for HP/Compaq/DEC f95 on the UWM alpha
 
 # == Paths ==
 # This is where the make command is going to put the resulting files
@@ -14,7 +14,7 @@ FC = f95
 # It is sometimes helpful to turn on floating-point trapping for the 
 #  standalone program, but this will not work when using the tuner.
 # The usual options:
-DEBUG = -g -check bounds -no_fp_reorder # Compaq f95
+DEBUG = -g -check bounds -no_fp_reorder # Digital f95
 
 
 # ==  Machine specific options ==
@@ -32,12 +32,12 @@ OPTIMIZE = -O2
 NC_LOC=$(HOME)/netcdf-3.6.1/
 
 # == LAPACK libraries ==
-LAPACK = -llapack -lblas
+LAPACK = -L/usr/lib -lcxml -L/usr/ccs/lib/cmplrs/cc -lexc
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
 # Use -L<library path> -l<lib> to link in an external library
-LDFLAGS = -L$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib -lnetcdf $(LAPACK)
+LDFLAGS = -L$(LIBDIR) -Wl,-rpath,$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib -lnetcdf $(LAPACK)
 
 # == Compiler flags (all) ==
 # Preprocessing:
@@ -59,5 +59,5 @@ ARFLAGS = cru
 RANLIB = ranlib
 
 # == Shared library processing ==
-SHARED = $(FC)
-SHAREDFLAGS = -shared -fPIC
+SHARED = ld
+SHAREDFLAGS = -shared -KPIC
