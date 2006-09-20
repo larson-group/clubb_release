@@ -1,7 +1,6 @@
-! $Id: module_bl_newhoc.F,v 1.1 2006-08-02 18:47:07 dschanen Exp $
 MODULE module_bl_newhoc
 
-! This module contains three subroutines and functions:
+! This module contains four subroutines and functions:
 !
 ! 1) SUBROUTINE HOC_BL_SCHEME
 !    This subroutine is called every timestep in order to provide results
@@ -10,7 +9,11 @@ MODULE module_bl_newhoc
 ! 2) FUNCTION LIN_EXT
 !    This is a simple linear extension computation to use for any variable.
 !
-! 3) SUBROUTINE HOC_BL_INIT
+! 3) FUNCTION LIN_INT
+!    This is a simple linear interpolation computation to use for any variable.
+!    It is not currently being referenced in the code.
+!
+! 4) SUBROUTINE HOC_BL_INIT
 !    This is a subroutine that is called once in the initialization part of
 !    WRF.  It is important because it provides some essential initialization
 !    information for some HOC variables (namely tau and wp2) that need to be
@@ -106,9 +109,9 @@ MODULE module_bl_newhoc
 REAL, PARAMETER:: C1_in          = 1.450000 ! Low Skewness in C1 Skewness Function.
 REAL, PARAMETER:: C1b_in         = 3.500000 ! High Skewness in C1 Skewness Function.
 REAL, PARAMETER:: C1c_in         = 1.000000 ! Degree of Slope of C1 Skewness Function.
-REAL, PARAMETER:: C2_in          = 1.200000 ! Low Skewness in C2 Skewness Function.
-REAL, PARAMETER:: C2b_in         = 1.000000 ! High Skewness in C2 Skewness Function.
-REAL, PARAMETER:: C2c_in         = 1.400000 ! Degree of Slope of C2 Skewness Function.
+REAL, PARAMETER:: C2_in          = 1.300000 ! Low Skewness in C2 Skewness Function.
+REAL, PARAMETER:: C2b_in         = 1.300000 ! High Skewness in C2 Skewness Function.
+REAL, PARAMETER:: C2c_in         = 5.000000 ! Degree of Slope of C2 Skewness Function.
 REAL, PARAMETER:: C4_in          = 5.200000 ! Currently Not Used in the Model.
 REAL, PARAMETER:: C5_in          = 0.300000 ! Constant from Chris Golaz.
 REAL, PARAMETER:: C6rt_in        = 2.250000 ! Low Skewness in C6rt Skewness Function.
@@ -134,8 +137,8 @@ REAL, PARAMETER:: nu8_in         = 20.00000 ! Previously determined eddy viscosi
 REAL, PARAMETER:: nu_r_in        = 3.000000 ! Tuned to LES from Surface Value of DYCOMS2 RF02 DS.
 REAL, PARAMETER:: beta_in        = 1.750000 ! Constant from Chris Golaz.
 REAL, PARAMETER:: gamma_coef_in  = 0.320000 ! Low Skewness in gamma coefficient Skewness Function.
-REAL, PARAMETER:: gamma_coefb_in = 0.500000 ! High Skewness in gamma coefficient Skewness Function.
-REAL, PARAMETER:: gamma_coefc_in = 3.000000 ! Degree of Slope of gamma coefficient Skewness Function.
+REAL, PARAMETER:: gamma_coefb_in = 0.320000 ! High Skewness in gamma coefficient Skewness Function.
+REAL, PARAMETER:: gamma_coefc_in = 5.000000 ! Degree of Slope of gamma coefficient Skewness Function.
 REAL, PARAMETER:: c_K_in         = 0.548000 ! Constant from Chris Golaz.
 REAL, PARAMETER:: taumin_in      = 90.00000 ! Previously determined value.
 REAL, PARAMETER:: taumax_in      = 3600.000 ! Previously determined value.
@@ -161,7 +164,6 @@ SUBROUTINE HOC_BL_SCHEME ( ITIMESTEP, DT, z_at_w, dz8w, z, config_flags,       &
                            Sc_3d, tau_3d,                                      &
                            wp3_sgs, Ncm_HOC, rcm_HOC,                          &
                            rrm_HOC, Nrm_HOC, cf_HOC,                           &
-                           thl_bar_HOC, rt_bar_HOC, u_bar_HOC, v_bar_HOC,      &
                            RUBLTEN, RVBLTEN, RTHBLTEN, RQVBLTEN,               &
                            ids, ide, jds, jde, kds, kde,                       &
                            ims, ime, jms, jme, kms, kme,                       &
@@ -182,10 +184,6 @@ USE module_state_description
 ! WRF module for surface fluxes.
 USE module_diffusion_em
 ! WRF modules for case-specific forcings.
-!USE module_cu_bomex
-!USE module_cu_arm
-!USE module_cu_fire
-!USE module_cu_atex
 USE module_cu_GCSS
 
 IMPLICIT NONE
@@ -251,12 +249,6 @@ REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT)::  wp3_sgs, &  ! overbar
                                                            rrm_HOC, &  ! HOC's mean rain water mixing ratio.
                                                            Nrm_HOC, &  ! HOC's mean rain droplet concentration.
                                                             cf_HOC     ! HOC's grid-box cloud fraction
-
-! HOC test variables.
-REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT)::  thl_bar_HOC, &  ! overbar[thl] for HOC
-                                                            rt_bar_HOC, &  ! overbar[rt] for HOC
-                                                             u_bar_HOC, &  ! overbar[u] for HOC
-                                                             v_bar_HOC     ! overbar[v] for HOC
 
 ! Local variables.
 
@@ -379,17 +371,27 @@ CALL set_surface_fluxes ( th_phy, p_phy, u_phy, v_phy, z,     &
 
 !###############################################################################
 !
+! NOTES ON INTERFACE WITH GCSS SUBROUTINES
+!
 ! We need to import information about the imposed large-scale subsidence for
 ! each test case to this subroutine.  This information is needed in order to 
 ! properly apply the vertical velocity, w, to each of the turbulent parameters
 ! in the HOC parameterization (such as w'rt', w'^2, w'thetal', etc.)
 !
-! By the way I have set up the WRF code for all of the test cases, we also
-! import other large-scale forcings (th_tend, rt_tend), as well as large-scale
-! subsidence (w_sub).  However, the HOC code is set up so that the information
-! on the other large-scale forcings is not needed.
+! By the way, I have previously set up the WRF code for all of the test cases.
+! That portion of the WRF code (which is in the cumulus parameterization 
+! section of WRF, referenced from module_cumulus_driver.F) computes the 
+! GCSS-specific forcings.  This includes the effects of large-scale subsidence,
+! other large-scale forcings, and radiative cooling.  Due to the structure of 
+! these subroutines, we import other large-scale forcings (th_tend, rt_tend),
+! as well as large-scale subsidence (w_sub).  However, the HOC code is set up 
+! so that the information on the other large-scale forcings is not needed.
 !
 ! If available, we also want information on cloud droplet concentration (Ncm).
+!
+! It should also be noted that information on cloud water mixing ratio,
+! gathered from the HOC parameterization, is used by the GCSS subroutines in
+! order to compute radiative cooling.
 
 IF ( config_flags%cu_physics > 0 ) THEN
 
@@ -593,7 +595,7 @@ DO i = i_start, i_end, 1
          ! The following thermodynamic-level variables are passed from WRF
          ! to HOC as INPUT ONLY!  They are not directly altered by HOC.
          thetam(k)  = th_phy(i,k-1,j)
-         rtm(k)     = moist(i,k-1,j,P_QV)
+         rtm(k)     = moist(i,k-1,j,P_QV) !+ moist(i,k-1,j,P_QC)
          um(k)      = u_phy(i,k-1,j)
          vm(k)      = v_phy(i,k-1,j)
          p(k)       = p_phy(i,k-1,j)
@@ -601,6 +603,16 @@ DO i = i_start, i_end, 1
          rhot(k)    = rho(i,k-1,j)
 
          thlm(k)    = thetam(k) !- (  XLV / ( cp * exner(k) )  ) * rcm(k)
+
+         ! Note on rtm and thlm:  WRF uses theta and rvm.  However, I am
+         ! turning off WRF's internal microphysics (mp_physics = 0), allowing
+         ! WRF's theta and rvm to be treated as theta-l and rtm (which are the
+         ! variables that HOC uses).  Therefore, there is no need to convert
+         ! from theta to theta-l and from rvm to rtm.  Cloud water mixing ratio
+         ! is determined from HOC's internal subgrid microphysics.  Rain water
+         ! mixing ratio can also be determined from HOC's subgrid microphysics 
+         ! (based on scheme by Khairoutdinov and Kogan (2000)).  In order to do
+         ! so, the kk_rain logical flag at the top must be set to .true.  Brian 
 
       ENDDO
 
@@ -766,8 +778,48 @@ DO i = i_start, i_end, 1
 
       ENDDO 
 
+      !########## SAVE OUTPUT FROM HOC PARAMETERIZATION ##########
+
       ! Overwrite the WRF Storage variables with the 1-D HOC results for every
       ! grid column.
+      ! NOTE:  All of the momentum-level variables listed below were specially
+      !        created 3-D variables in the WRF Registry.  They are being used
+      !        to save all of the HOC output (from every single column) for use
+      !        by HOC during the next timestep.  The same is true for most of
+      !        the thermodynamic-level variables listed below, namely wp3_sgs,
+      !        rcm_HOC, Ncm_HOC, rrm_HOC, Nrm_HOC, and cf_HOC.  However, the 
+      !        thermodynamic-level variables moist(i,k,j,P_QC) and
+      !        moist(i,k,j,P_QR) are WRF's own variables for cloud water mixing
+      !        ratio and rain water mixing ratio, respectively.  Usually, they
+      !        are updated in the microphysics portion of WRF, while various
+      !        moisture tendencies are saved along the way, only to be entered
+      !        into the equation in the microphysics portion of WRF.  However,
+      !        all WRF microphysics are turned off in order to run HOC.  HOC 
+      !        uses its own intrinsic microphysics instead.  We make WRF track
+      !        total moisture mixing ratio using its moist(i,k,j,P_QV), which 
+      !        is its normal variable for water vapor mixing ratio.  However, 
+      !        when GCSS cases are being run, values need to be saved in the WRF
+      !        moist(P_QC and P_QR) arrays.  This is because those arrays allow
+      !        WRF to take the data to its cumulus_driver portions.  There, 
+      !        GCSS subroutines use the data to compute such things as radiative
+      !        cooling.  There are no other subroutines that will alter the data
+      !        between its output here and its input into the GCSS subroutines.
+      !        Once the data has been used there, it does not matter what else
+      !        happens to it.  It is not used again for HOC purposes.  It will
+      !        simply be overwritten here at the next timestep.  However, the
+      !        only way to turn off WRF's microphysics is to use the passiveqv
+      !        microphysics option (mp_physics = 0 in the WRF namelist).  This
+      !        allows for advective and diffusional effects on the water vapor
+      !        (in our case, total moisture) field, but does not effect it with
+      !        microphysics.  The unfortunate thing with WRF is that using this
+      !        option means that only the moist(P_QV) variable will be
+      !        available.  In order to have the same effects while using the
+      !        moist(P_QC and P_QR) variables, one has to create a brand new
+      !        package in the WRF Registry.  In addition to WRF's own passiveqv
+      !        package (where only P_QV is available), I have also created
+      !        passiveqvqc (where P_QV and P_QC are available) and
+      !        passiveqvqcqr (where P_QV, P_QC, and P_QR are available).  Brian
+
       ! Momentum-level variables.
       DO k = k_start, kte, 1
 
@@ -791,10 +843,10 @@ DO i = i_start, i_end, 1
 
          wp3_sgs(i,k,j)     = wp3(k+1)
          rcm_HOC(i,k,j)     = rcm(k+1)
-         moist(i,k,j,P_QC)  = rcm(k+1)  ! Save for output purposes.
+         moist(i,k,j,P_QC)  = rcm(k+1)
          Ncm_HOC(i,k,j)     = Ncm(k+1)
          rrm_HOC(i,k,j)     = rrm(k+1)
-!         moist(i,k,j,P_QR)  = rrm(k+1)  ! Save for output purposes.
+         moist(i,k,j,P_QR)  = rrm(k+1)
          Nrm_HOC(i,k,j)     = Nrm(k+1)
          cf_HOC(i,k,j)      = cf(k+1)
 
@@ -835,8 +887,6 @@ DO i = i_start, i_end, 1
       ENDDO
    ENDDO
 ENDDO
-
-PRINT *, RTHBLTEN(2,:,2)
 
 END SUBROUTINE HOC_BL_SCHEME
 
@@ -891,6 +941,55 @@ END FUNCTION LIN_EXT
 
 !==============================================================================
 
+FUNCTION LIN_INT( var_high, var_low, height_high, height_low, height_int )
+
+! This function computes a linear interpolation of the value of variable.
+! Given two known values of a variable at two height values, the value
+! of that variable at a height between those two height levels (rather 
+! than a height outside of those two height levels) is computed.
+!
+! Here is a diagram:
+!
+!  ################################ Height high, know variable value
+!
+!
+!
+!  -------------------------------- Height to be interpolated to; linear interpolation
+!
+!
+!
+!
+!
+!  ################################ Height low, know variable value
+!
+!
+! FORMULA:
+!
+! variable(@ Height interpolation) =
+!
+! [ (variable(@ Height high) - variable(@ Height low)) / (Height high - Height low) ]
+! * (Height interpolation - Height low)  +  variable(@ Height low)
+
+IMPLICIT NONE
+
+! Input Variables
+REAL, INTENT(IN):: var_high
+REAL, INTENT(IN):: var_low
+REAL, INTENT(IN):: height_high
+REAL, INTENT(IN):: height_low
+REAL, INTENT(IN):: height_int
+
+! Output Variable
+REAL:: lin_int
+
+lin_int = ( var_high - var_low ) / ( height_high - height_low ) &
+         * ( height_int - height_low ) + var_low
+
+
+END FUNCTION LIN_INT
+
+!==============================================================================
+
 SUBROUTINE HOC_BL_INIT ( RUBLTEN, RVBLTEN, RTHBLTEN, RQVBLTEN,                 &
                          restart, config_flags, DT,                            &
                          wpthlp_sgs, wprtp_sgs, wp2_sgs, rtp2_sgs,             &
@@ -898,7 +997,6 @@ SUBROUTINE HOC_BL_INIT ( RUBLTEN, RVBLTEN, RTHBLTEN, RQVBLTEN,                 &
                          Sc_3d, tau_3d,                                        &
                          wp3_sgs, rcm_HOC, Ncm_HOC, rrm_HOC,                   &
                          Nrm_HOC, cf_HOC,                                      &
-                         thl_bar_HOC, rt_bar_HOC, u_bar_HOC, v_bar_HOC,        &
                          u_2, v_2,                                             &
                          t_2, pp, pb, php, phb, tke_2, f,                      &
                          moist, n_moist, P_QV, P_QC,                           &
@@ -962,12 +1060,6 @@ REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(OUT)::  wp3_sgs, &  ! overbar[w
                                                          rrm_HOC, &  ! HOC's mean rain water mixing ratio.
                                                          Nrm_HOC, &  ! HOC's mean rain droplet concentration.
                                                           cf_HOC     ! HOC's grid-box cloud fraction
-
-! HOC test variables.
-REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(OUT)::  thl_bar_HOC, &  ! overbar[thl] for HOC
-                                                          rt_bar_HOC, &  ! overbar[rt] for HOC
-                                                           u_bar_HOC, &  ! overbar[u] for HOC
-                                                           v_bar_HOC     ! overbar[v] for HOC
 
 ! Local variables.
 REAL, PARAMETER:: emin = 1.0E-6
