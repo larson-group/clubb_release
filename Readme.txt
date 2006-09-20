@@ -1,4 +1,4 @@
-$Id: Readme.txt,v 1.20 2006-08-10 21:08:47 vlarson Exp $
+$Id: Readme.txt,v 1.21 2006-09-20 22:47:12 griffinb Exp $
 ***********************************************************************
 *                         Using the HOC Model                         *
 ***********************************************************************
@@ -37,6 +37,25 @@ This will build just the static library and the f90 modules.
 The static library will be in $(PREFIX)/lib, while the modules will be 
 in the src directory.  You will need at least the parameterization_interface 
 mod to interface with HOC.
+
+Addition by Brian:  In addition to the above, you will have to make
+                    reference to the HOC library from the configuration
+                    file of the host program.  Since HOC now uses the
+                    Lapack libraries, you will also have to make reference
+                    to those.  Currently, we do not include the Lapack
+                    libraries with the HOC download.  You will have to 
+                    find them and then download them onto your own computer.
+
+                    Once you have done this, you can reference them in a line
+                    such as the following:
+
+                    -L/home/griffinb/hoc_v2.2_tuner/lib -lhoc_param -llapack -lblas
+
+                    Don't forget that you will also have to make reference
+                    to the HOC src code.  You can reference that with a line
+                    such as the following:
+
+                    -I/home/griffinb/hoc_v2.2_tuner/src
 
 -----------------------------------------------------------------------
 - (2.1) Executing a standalone run:
