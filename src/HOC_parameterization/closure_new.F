@@ -1,4 +1,4 @@
-! $Id: closure_new.F,v 1.6 2006-09-07 00:35:35 dschanen Exp $
+! $Id: closure_new.F,v 1.7 2006-09-22 22:51:18 dschanen Exp $
         module pdf_closure
 
         implicit none
@@ -21,7 +21,7 @@
      .               sclrp2, sclrpthlp, sclrpthvp,      ! "    "
      .               wpsclrpthlp, sclrprcp, wp2sclrp )  ! "    "
 
-!       Description;
+!       Description:
 !       Subroutine that computes pdf parameters analytically.
 
 !       Based of the original formulation, but with some tweaks
@@ -35,17 +35,34 @@
 !       ``A PDF-Based Model for Boundary Layer Clouds. Part I:
 !         Method and Model Description'' Golaz, et al. (2002)
 !       JAS, Vol. 59, pp. 3540--3551.
-
 !------------------------------------------------------------------------
 
-        use constants
+        use constants, only: 
+     .  pi,      ! The ratio of radii to their circumference
+     .  Cp,      ! Dry air specific heat at constant p [J/kg/K]
+     .  Lv,      ! Latent heat of vaporization         [J/kg]
+     .  Rd,      ! Dry air gas constant                [J/kg/K]
+     .  Rv,      ! Water vapor gas constant            [J/kg/K]
+     .  ep,      ! Rd / Rv;     ep  = 0.622            [-]
+     .  ep1,     ! (1.0-ep)/ep; ep1 = 0.61             [-]
+     .  ep2,     ! 1.0/ep;      ep2 = 1.61             [-]
+     .  T0,      ! Reference temperature               [K]
+     .  wtol,    ! Tolerance for w                     [m/s]
+     .  rttol,   ! Tolerance for r_t                   [kg/kg]
+     .  thltol,  ! Tolerance for th_l                  [K]
+     .  sstol,   ! Tolerance for pdf parameter         [kg/kg]
+     .  sclrtol, ! Array of passive scalar tolerances  [units vary]
+     .  beta,    ! Plume widths for th_l and r_t       [-]
+     .  sclr_dim ! Number of passive scalar variables
+
         use anl_erf, only: erf
 
         implicit none
 
         ! External
-
         real, external :: rsat
+
+        intrinsic :: sqrt, exp, min, max, abs
 
         ! Input Variables
         real, intent(in) :: 
@@ -54,7 +71,7 @@
      .  wm,     ! mean w                        [m/s] 
      .  wp2,    ! w'^2                          [m^2/s^2] 
      .  wp3,    ! w'^3                          [m^3/s^3]
-     .  Sc,     ! Width of individual w plumes  [-]                          [-]
+     .  Sc,     ! Width of individual w plumes  [-]
      .  rtm,    ! Mean total water              [kg/kg]
      .  rtp2,   ! Total water mixing ratio      [kg/kg]
      .  wprtp,  ! w' r_t'                       [(kg m)(kg s)]
@@ -148,7 +165,7 @@
 
         ! Thermodynamic quantity
 
-        real :: bd
+        real :: BD
 
         ! Skewness of w
 
@@ -170,9 +187,9 @@
 
 !------------------------ Code begins ----------------------------------
 
-!   Check whether the optional scalars are present.
-!   Rather than test this on an equation to variable basis
-!   as in mixing, this uses an all or nothing test.
+        ! Check whether the optional scalars are present.
+        ! Rather than test this on an equation to variable basis
+        ! as in mixing, this uses an all or nothing test.
 
         if (      present( sclrm )     .and. present( wpsclrp )
      .      .and. present( sclrprtp )  .and. present( sclrpthvp )
@@ -185,10 +202,10 @@
           scalar_calc = .false.
         end if
 
-        BD = Lv / (exner*cp) - ep2 * T0
+        BD = Lv / (exner*Cp) - ep2 * T0
 
-!        if no velocity, then use single delta fnc. as pdf
-!        else compute parameters explicitly
+        ! If there is no velocity, then use single delta fnc. as pdf
+        ! Otherwise compute parameters explicitly.
 
         if ( wp2 <= wtol**2 )  then
 
@@ -207,7 +224,7 @@
           sthl2  = 0.
           rrtthl = 0.
 
-        else
+        else ! Explicitly 
 
           Skw = wp3/wp2**1.5
 
@@ -216,7 +233,7 @@
           else
             a = 0.5
      .          * ( 
-     .              1. - Skw/sqrt(4.*(1.-Sc)**3+Skw**2)
+     .              1.0 - Skw/sqrt( 4.0*( 1.0 - Sc )**3 + Skw**2 )
      .            )
           end if
 
@@ -224,81 +241,83 @@
           if (a > 0.99) a = 0.99
           if (a < 0.01) a = 0.01
 
-          w1_n = sqrt(((1-a)/a)*(1-Sc))
-          w2_n = -sqrt((a/(1-a))*(1-Sc))
-          w1   = wm + sqrt(wp2)*w1_n
-          w2   = wm + sqrt(wp2)*w2_n
+          w1_n = sqrt( ( (1-a)/a )*(1-Sc) )
+          w2_n = -sqrt( ( a/(1-a) )*(1-Sc) )
+          w1   = wm + sqrt( wp2 )*w1_n
+          w2   = wm + sqrt( wp2 )*w2_n
 
           sw1  = Sc*wp2
           sw2  = Sc*wp2
 
-!         Vince Larson added a factor so that width of plumes in 
-!         theta_l, rt can vary.  
-!         beta is a constant defined in constants.f.  Set 0<beta<3.
-!         beta=1.5 recovers Chris Golaz' simplified formula.
-!         3 Nov 2003
+          ! Vince Larson added a dimensionless factor so that the
+          ! width of plumes in theta_l, rt can vary.  
+          ! beta is a constant defined in module constants  
+          !   Set 0<beta<3.
+          ! beta=1.5 recovers Chris Golaz' simplified formula.
+          ! 3 Nov 2003
 
-          width_factor_1 = (2./3.)*beta + 2.*a*(1 - (2./3.)*beta)
-          width_factor_2 = 2. - width_factor_1
+          width_factor_1 = ( 2.0/3.0 )*beta 
+     .                   + 2.0*a*( 1.0 - ( 2.0/3.0 )*beta )
+          width_factor_2 = 2.0 - width_factor_1
 
           if ( thlp2 <= thltol**2 ) then
             thl1      = thlm
             thl2      = thlm
-            sthl1     = 0.
-            sthl2     = 0.
+            sthl1     = 0.0
+            sthl2     = 0.0
             alpha_thl = 0.5
           else
-            thl1_n = - (wpthlp/(sqrt(wp2)*sqrt(thlp2)))/w2_n
-            thl2_n = - (wpthlp/(sqrt(wp2)*sqrt(thlp2)))/w1_n
+            thl1_n = - (wpthlp/(sqrt( wp2 )*sqrt( thlp2 )))/w2_n
+            thl2_n = - (wpthlp/(sqrt( wp2 )*sqrt( thlp2 )))/w1_n
 
-            thl1   = thlm - (wpthlp/sqrt(wp2))/w2_n
-            thl2   = thlm - (wpthlp/sqrt(wp2))/w1_n
+            thl1   = thlm - ( wpthlp/sqrt( wp2 ) )/w2_n
+            thl2   = thlm - ( wpthlp/sqrt( wp2 ) )/w1_n
 
             alpha_thl
      .      = 0.5
      .        * ( 1.0 - wpthlp*wpthlp /((1.0-Sc)*wp2*thlp2) )
             alpha_thl = max( min( alpha_thl, 1.0 ), 0.0 )
 
-! Vince Larson multiplied original expressions by width_factor_1,2
-!  to generalize scalar skewnesses.  05 Nov 03
+        ! Vince Larson multiplied original expressions by width_factor_1,2
+        !   to generalize scalar skewnesses.  05 Nov 03
             sthl1 = ( alpha_thl / a * thlp2 ) * width_factor_1
             sthl2 = ( alpha_thl / (1.-a) * thlp2 ) * width_factor_2
 
-          end if
+          end if ! thlp2 <= thltol**2
 
-          if ( rtp2 <= rttol**2) then
+          if ( rtp2 <= rttol**2 ) then
             rt1      = rtm
             rt2      = rtm
-            srt1     = 0.
-            srt2     = 0.
+            srt1     = 0.0
+            srt2     = 0.0
             alpha_rt = 0.5
           else
-            rt1_n = - (wprtp/(sqrt(wp2)*sqrt(rtp2)))/w2_n
-            rt2_n = - (wprtp/(sqrt(wp2)*sqrt(rtp2)))/w1_n
+            rt1_n = -( wprtp / ( sqrt( wp2 )*sqrt( rtp2 ) ) ) / w2_n
+            rt2_n = -( wprtp / ( sqrt( wp2 )*sqrt( rtp2 ) ) ) / w1_n
 
-            rt1 = rtm - (wprtp/sqrt(wp2))/w2_n
-            rt2 = rtm - (wprtp/sqrt(wp2))/w1_n
+            rt1 = rtm - ( wprtp / sqrt( wp2 ) ) / w2_n
+            rt2 = rtm - ( wprtp / sqrt( wp2 ) ) / w1_n
 
             alpha_rt
      .      = 0.5
      .        * ( 1.0 - wprtp*wprtp /((1.0-Sc)*wp2*rtp2) )
             alpha_rt = max( min( alpha_rt, 1.0 ), 0.0 )
 
-! Vince Larson multiplied original expressions by width_factor_1,2
-!    to generalize scalar skewnesses.  05 Nov 03
+        ! Vince Larson multiplied original expressions by width_factor_1,2
+        !   to generalize scalar skewnesses.  05 Nov 03
             srt1 = ( alpha_rt / a * rtp2 ) * width_factor_1
             srt2 = ( alpha_rt / (1.-a) * rtp2 ) * width_factor_2
 
-          end if
+          end if ! rtp2 <= rttol**2 
 
-! Compute pdf parameters for passive scalars
+        ! Compute pdf parameters for passive scalars
           if ( scalar_calc ) then
             do i = 1, sclr_dim
               if ( sclrp2(i) <= sclrtol(i)**2 ) then
                 sclr1(i)      = sclrm(i)
                 sclr2(i)      = sclrm(i)
-                ssclr1(i)     = 0.
-                ssclr2(i)     = 0.
+                ssclr1(i)     = 0.0
+                ssclr2(i)     = 0.0
                 alpha_sclr(i) = 0.5
               else
                 sclr1_n(i) = - ( wpsclrp(i) / (sqrt( wp2 ) 
@@ -306,8 +325,10 @@
                 sclr2_n(i) = - ( wpsclrp(i) / (sqrt( wp2 ) 
      .                           * sqrt( sclrp2(i) )) )/w1_n
   
-                sclr1(i) = sclrm(i) - (wpsclrp(i)/sqrt(wp2))/w2_n
-                sclr2(i) = sclrm(i) - (wpsclrp(i)/sqrt(wp2))/w1_n
+                sclr1(i) = sclrm(i) 
+     .                   - ( wpsclrp(i) / sqrt( wp2 ) ) / w2_n
+                sclr2(i) = sclrm(i) 
+     .                   - ( wpsclrp(i) / sqrt( wp2 ) ) / w1_n
 
                 alpha_sclr(i) 
      .          = 0.5
@@ -315,8 +336,8 @@
      .                      / ((1.0-Sc)*wp2*sclrp2(i)) )
                 alpha_sclr(i) = max( min( alpha_sclr(i), 1.0 ), 0.0 )
 
-! Vince Larson multiplied original expressions by width_factor_1,2
-!    to generalize scalar skewnesses.  05 Nov 03
+        ! Vince Larson multiplied original expressions by width_factor_1,2
+        !  to generalize scalar skewnesses.  05 Nov 03
                 ssclr1(i) = ( alpha_sclr(i) / a * sclrp2(i) ) 
      .                        * width_factor_1
                 ssclr2(i) = ( alpha_sclr(i) / (1.-a) * sclrp2(i) ) 
@@ -325,25 +346,26 @@
             end do ! i=1, sclr_dim
           end if ! scalar_calc
 
-!       We include sub-plume correlation with coeff rrtthl.
+        ! We include sub-plume correlation with coeff rrtthl.
 
           if ( srt1*sthl1 > 0 .and. srt2*sthl2 > 0) then
-              rrtthl = ( rtpthlp 
+            rrtthl = ( rtpthlp 
      .             - a * ( rt1-rtm ) * ( thl1-thlm )
      .             - (1-a) * ( rt2-rtm ) * ( thl2-thlm ) )
-     .                 / ( a*sqrt(srt1*sthl1) + (1-a)*sqrt(srt2*sthl2) )
-                if (rrtthl < -1.) then
-                        rrtthl = -1.
-                endif
-                if (rrtthl > 1.) then
-                        rrtthl = 1.
-                endif
+     .                 / ( a*sqrt( srt1*sthl1 ) 
+     .                     + (1-a)*sqrt( srt2*sthl2 ) )
+            if ( rrtthl < -1.0 ) then
+              rrtthl = -1.0
+            end if
+            if ( rrtthl > 1.0 ) then
+              rrtthl = 1.0
+            end if
           else
-                rrtthl = 0.
-          end if
+            rrtthl = 0.0
+          end if ! srt1*sthl1 > 0 .and. srt2*sthl2 > 0
 
-!       Sub-plume correlation, rsclrthl, between passive scalar
-!              and theta_l.
+        ! Sub-plume correlation, rsclrthl, between passive scalar
+        !      and theta_l.
           if ( scalar_calc ) then
             do i=1, sclr_dim
               if ( ssclr1(i)*sthl1 > 0 .and. ssclr2(i)*sthl2 > 0 ) then
@@ -352,40 +374,40 @@
      .             - (1-a) * ( sclr2(i)-sclrm(i) ) * ( thl2-thlm ) )
      .                 / ( a*sqrt( ssclr1(i)*sthl1 ) 
      .                         + (1-a)*sqrt( ssclr2(i)*sthl2 ) )
-                if (rsclrthl(i) < -1.) then
-                  rsclrthl(i) = -1.
+                if ( rsclrthl(i) < -1.0 ) then
+                  rsclrthl(i) = -1.0
                 end if
-                if (rsclrthl(i) > 1.) then
-                  rsclrthl(i) = 1.
+                if ( rsclrthl(i) > 1.0 ) then
+                  rsclrthl(i) = 1.0
                 end if
               else
-                rsclrthl(i) = 0.
+                rsclrthl(i) = 0.0
               end if
 
-!       Sub-plume correlation, rsclrrt, between passive scalar
-!              and total water.
+         ! Sub-plume correlation, rsclrrt, between passive scalar
+         !   and total water.
 
               if ( ssclr1(i)*srt1 > 0 .and. ssclr2(i)*srt2 > 0 ) then
                 rsclrrt(i) = ( sclrprtp(i) 
      .           - a * ( sclr1(i)-sclrm(i) ) * ( rt1-rtm )
      .           - (1-a) * ( sclr2(i)-sclrm(i) ) * ( rt2-rtm ) )
-     .               / ( a*sqrt(ssclr1(i)*srt1) 
-     .                   + (1-a)*sqrt(ssclr2(i)*srt2) )
-                if (rsclrrt(i) < -1.) then
-                  rsclrrt(i) = -1.
+     .               / ( a*sqrt( ssclr1(i)*srt1 ) 
+     .                   + (1-a)*sqrt( ssclr2(i)*srt2 ) )
+                if ( rsclrrt(i) < -1.0 ) then
+                  rsclrrt(i) = -1.0
                 endif
-                if (rsclrrt(i) > 1.) then
-                  rsclrrt(i) = 1.
+                if ( rsclrrt(i) > 1.0 ) then
+                  rsclrrt(i) = 1.0
                 endif
               else
-                rsclrrt(i) = 0.
+                rsclrrt(i) = 0.0
               end if
             end do ! i=1, sclr_dim
           end if ! scalar_calc 
 
         end if
 
-!       higher order moments
+        ! Compute higher order moments
 
         wp2rtp  = a * ( (w1-wm)**2+sw1 ) * ( rt1-rtm )
      .          + (1-a) * ( (w2-wm)**2+sw2 ) * ( rt2-rtm )
@@ -403,11 +425,11 @@
      .          + (1-a) * ( w2-wm )*( (thl2-thlm)**2+sthl2 )
 
         wprtpthlp = a * ( w1-wm )*( (rt1-rtm)*(thl1-thlm) 
-     .                + rrtthl*sqrt(srt1*sthl1) )
+     .                + rrtthl*sqrt( srt1*sthl1 ) )
      .            + ( 1-a ) * ( w2-wm )*( (rt2-rtm)*(thl2-thlm)
-     .                + rrtthl*sqrt(srt2*sthl2) )
+     .                + rrtthl*sqrt( srt2*sthl2 ) )
 
-!       Scalar Addition to higher order moments
+        ! Scalar Addition to higher order moments
         if ( scalar_calc ) then
           do i=1, sclr_dim
 
@@ -424,24 +446,24 @@
      .         + rsclrrt(i)*sqrt( srt1*ssclr1(i) ) )
      .      + ( 1-a )*( w2-wm )*
      .      ( ( rt2-rtm )*( sclr2(i)-sclrm(i) )
-     .         + rsclrrt(i)*sqrt(srt2*ssclr2(i)) )
+     .         + rsclrrt(i)*sqrt( srt2*ssclr2(i) ) )
 
             wpsclrpthlp(i) = a * ( w1-wm ) * 
      .      ( ( sclr1(i)-sclrm(i) )*( thl1-thlm ) 
-     .         + rsclrthl(i)*sqrt(ssclr1(i)*sthl1) )
+     .         + rsclrthl(i)*sqrt( ssclr1(i)*sthl1 ) )
      .      + ( 1-a ) * ( w2-wm ) *
      .      ( ( sclr2(i)-sclrm(i) )*( thl2-thlm )
-     .         + rsclrthl(i)*sqrt(ssclr2(i)*sthl2) )
+     .         + rsclrthl(i)*sqrt( ssclr2(i)*sthl2 ) )
 
 
           end do ! i=1, sclr_dim
         end if ! scalar_calc
 
-!       Compute higher order moments that include theta_v.
+        ! Compute higher order moments that include theta_v.
 
-!       First compute some preliminary quantities.
-!       "1" denotes first Gaussian; "2" denotes 2nd Gaussian
-!       liq water temp (Sommeria & Deardorff 1977 (SD), eqn. 3)
+        ! First compute some preliminary quantities.
+        ! "1" denotes first Gaussian; "2" denotes 2nd Gaussian
+        ! liq water temp (Sommeria & Deardorff 1977 (SD), eqn. 3)
 
         tl1  = thl1*exner
         tl2  = thl2*exner
@@ -449,34 +471,38 @@
         rsl1 = rsat(p,tl1)
         rsl2 = rsat(p,tl2)
 
-!       SD's beta (eqn. 8)
-        beta1 = ep*(Lv/(Rd*tl1))*(Lv/(cp*tl1))
-        beta2 = ep*(Lv/(Rd*tl2))*(Lv/(cp*tl2))
+        ! SD's beta (eqn. 8)
+        beta1 = ep * ( Lv/(Rd*tl1) ) * ( Lv/(Cp*tl1) )
+        beta2 = ep * ( Lv/(Rd*tl2) ) * ( Lv/(Cp*tl2) )
 
-!       s from Lewellen and Yoh 1993 (LY) eqn. 1
-        s1 = (rt1-rsl1)/(1+beta1*rsl1)
-        s2 = (rt2-rsl2)/(1+beta2*rsl2)
+        ! s from Lewellen and Yoh 1993 (LY) eqn. 1
+        s1 = ( rt1 - rsl1 ) / ( 1 + beta1 * rsl1 )
+        s2 = ( rt2 - rsl2 ) / ( 1 + beta2 * rsl2 )
 
-!       coefficient for s'
-        crt1  = 1/(1+beta1*rsl1)
-        crt2  = 1/(1+beta2*rsl2)
+        ! Coefficient for s'
+        crt1  = 1/( 1 + beta1*rsl1)
+        crt2  = 1/( 1 + beta2*rsl2)
 
-        cthl1 = ((1+beta1*rt1)/(1+beta1*rsl1)**2)*(cp/Lv)
-     .        *beta1*rsl1*exner
-        cthl2 = ((1+beta2*rt2)/(1+beta2*rsl2)**2)*(cp/Lv)
-     .        *beta2*rsl2*exner
+        cthl1 = ( (1 + beta1 * rt1) / ( 1 + beta1*rsl1)**2 )
+     .          * ( Cp/Lv ) * beta1 * rsl1 * exner
+        cthl2 = ( ( 1 + beta2 * rt2) / ( 1 + beta2*rsl2 )**2 )
+     .          * ( Cp/Lv ) * beta2 * rsl2 * exner
 
-!     standard deviation of s
-!     include subplume correlation of qt, thl
-!     Because of round-off error, 
-!     ss1 (and probably ss2) can become negative when rrtthl=1
-!     One could also write this as a squared term
-!     plus a postive correction; this might be a neater format
+        ! Standard deviation of s
+        ! include subplume correlation of qt, thl
+        ! Because of round-off error, 
+        ! ss1 (and probably ss2) can become negative when rrtthl=1
+        ! One could also write this as a squared term
+        ! plus a postive correction; this might be a neater format
 
-        ss1 = sqrt(max(0.,(srt1*crt1**2 + sthl1*cthl1**2 
-     .          - 2.*rrtthl*crt1*sqrt(srt1)*cthl1*sqrt(sthl1)) ) )
-        ss2 = sqrt(max(0.,(srt2*crt2**2 + sthl2*cthl2**2
-     .          - 2.*rrtthl*crt2*sqrt(srt2)*cthl2*sqrt(sthl2)) ) )
+        ss1 = sqrt( max( 0.0, ( srt1*crt1**2 + sthl1*cthl1**2 
+     .          - 2.0*rrtthl*crt1*sqrt( srt1 )*cthl1*sqrt( sthl1 ) ) 
+     .                 ) 
+     .            )
+        ss2 = sqrt( max( 0.0, ( srt2*crt2**2 + sthl2*cthl2**2
+     .          - 2.0*rrtthl*crt2*sqrt( srt2 )*cthl2*sqrt( sthl2 ) ) 
+     .                 ) 
+     .            )
 
 !        ss1 = sqrt( (sqrt(srt1)*crt1 - sqrt(sthl1)*cthl1)**2 
 !     .          + (1.-rrtthl)*2.*crt1*sqrt(srt1)*cthl1*sqrt(sthl1)  )
@@ -484,36 +510,36 @@
 !     .          + (1.-rrtthl)*2.*crt2*sqrt(srt2)*cthl2*sqrt(sthl2)  )
 
 
-!       we need to introduce a threshold value for the variance of s
+        ! We need to introduce a threshold value for the variance of s
 
         if ( ss1 > sstol ) then
            zeta1 = s1/ss1
-           R1 = 0.5*(1+erf(zeta1/sqrt(2.0)))
-           rc1 =s1*R1+ss1*exp(-0.5*zeta1**2)/(sqrt(2*pi))
+           R1  = 0.5*( 1 + erf( zeta1/sqrt( 2.0 ) ) )
+           rc1 = s1*R1+ss1*exp( -0.5*zeta1**2 )/( sqrt( 2*pi ) )
         else
-           if ( s1 < 0. ) then
-              R1  = 0.
-              rc1 = 0.
+           if ( s1 < 0.0 ) then
+              R1  = 0.0
+              rc1 = 0.0
            else
-              R1  = 1.
+              R1  = 1.0
               rc1 = s1
            end if
         end if
         if ( ss2 > sstol ) then
            zeta2 = s2/ss2
-           R2    = 0.5*(1+erf(zeta2/sqrt(2.0)))
-           rc2   = s2*R2+ss2*exp(-0.5*zeta2**2)/(sqrt(2*pi))
+           R2    = 0.5*( 1 + erf( zeta2/sqrt( 2.0 ) ) )
+           rc2   = s2*R2+ss2*exp( -0.5*zeta2**2 )/( sqrt( 2*pi ) )
         else
-           if ( s2 < 0. ) then
-             R2  = 0.
-             rc2 = 0.
+           if ( s2 < 0.0 ) then
+             R2  = 0.0
+             rc2 = 0.0
            else
-             R2  = 1.
+             R2  = 1.0
              rc2 = s2
-           end if
-        end if
+           end if ! s2 < 0
+        end if ! ss2 > sstol
 
-!       now compute moments that depend on theta_v
+        ! Compute moments that depend on theta_v
 
         wp2rcp  = a * ((w1-wm)**2 + sw1)*rc1
      .                 + (1-a) * ((w2-wm)**2 + sw2)*rc2
@@ -523,24 +549,24 @@
         wprcp   = a * (w1-wm)*rc1 + (1-a) * (w2-wm)*rc2
         wpthvp  = wpthlp + ep1*T0*wprtp + BD*wprcp
 
-!       account for subplume correlation in qt-thl
+        ! Account for subplume correlation in qt-thl
         thlprcp  = a * ( (thl1-thlm)*rc1 - (cthl1*sthl1)*R1 )
      .            + (1-a) * ( (thl2-thlm)*rc2 - (cthl2*sthl2)*R2 )
-     .            + a*rrtthl*crt1*sqrt(srt1)*sqrt(sthl1)*R1
-     .            + (1-a)*rrtthl*crt2*sqrt(srt2)*sqrt(sthl2)*R2
+     .            + a*rrtthl*crt1*sqrt( srt1 )*sqrt( sthl1 )*R1
+     .            + (1-a)*rrtthl*crt2*sqrt( srt2 )*sqrt( sthl2 )*R2
         thlpthvp = thlp2 + ep1*T0*rtpthlp + BD*thlprcp
 
-!       account for subplume correlation in qt-thl
+        ! Account for subplume correlation in qt-thl
         rtprcp   = a * ( (rt1-rtm)*rc1 + (crt1*srt1)*R1 )
      .            + (1-a) * ( (rt2-rtm)*rc2 + (crt2*srt2)*R2 )
-     .            - a*rrtthl*cthl1*sqrt(srt1)*sqrt(sthl1)*R1
-     .            - (1-a)*rrtthl*cthl2*sqrt(srt2)*sqrt(sthl2)*R2
+     .            - a*rrtthl*cthl1*sqrt( srt1 )*sqrt( sthl1 )*R1
+     .            - (1-a)*rrtthl*cthl2*sqrt( srt2 )*sqrt( sthl2 )*R2
 
         rtpthvp  = rtpthlp + ep1*T0*rtp2 + BD*rtprcp
 
-!       Account for subplume correlation between scalar, theta_v.
-!       See Eqs. A13, A8 from Larson et al. (2002) ``Small-scale...''
-!          where the ``scalar'' in this paper is w.
+        ! Account for subplume correlation between scalar, theta_v.
+        ! See Eqs. A13, A8 from Larson et al. (2002) ``Small-scale...''
+        !  where the ``scalar'' in this paper is w.
         if ( scalar_calc ) then
           do i=1, sclr_dim
             sclrprcp(i) = a * ( ( sclr1(i)-sclrm(i) ) * rc1 )
@@ -555,11 +581,11 @@
      .                    * sqrt( ssclr2(i) ) * sqrt( sthl2 ) * R2
 
             sclrpthvp(i) = sclrpthlp(i) + ep1*T0*sclrprtp(i) 
-     .                      + BD*sclrprcp(i)
+     .                   + BD*sclrprcp(i)
           end do ! i=1, sclr_dim
-        end if
+        end if ! scalar_calc
 
-!       compute mean cloud fraction and cloud water
+        ! Compute mean cloud fraction and cloud water
 
         cf  = a * R1 + (1-a) * R2
         rcm = a * rc1 + (1-a) * rc2
@@ -572,7 +598,7 @@
         ! corrected because Brian found a small negative value of
         ! rcm in the first timestep of the FIRE case.
 
-        rcm = MAX(0.0, rcm)
+        rcm = max(0.0, rcm)
 
 
         ! Save pdf parameters
