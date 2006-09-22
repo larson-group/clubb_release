@@ -1,4 +1,4 @@
-$Id: Readme.txt,v 1.21 2006-09-20 22:47:12 griffinb Exp $
+$Id: Readme.txt,v 1.22 2006-09-22 17:40:41 dschanen Exp $
 ***********************************************************************
 *                         Using the HOC Model                         *
 ***********************************************************************
@@ -9,8 +9,12 @@ $Id: Readme.txt,v 1.21 2006-09-20 22:47:12 griffinb Exp $
 Requirements:
 A. A Fortran 90/95 compiler with a complete implementation of the standard.
 B. NetCDF >= v3.5.1;  We have not tested our code with anything older.
-C. GNU bash, or an equivalent POSIX compliant shell.
+C. LAPACK & BLAS.  These provide the tri and band diagonal solver
+   subroutines needed by HOC.  Many vendors provide optimized versions of
+   these routines, which may be much faster than the reference BLAS.
+D. GNU bash, or an equivalent POSIX compliant shell.
 
+Build:
 1. $ cd ~/hoc_v2.2_tuner/src
 2. Edit a config.<PLATFORM>.in file and choose it in the Makefile for your 
    compiler and optimization options. Note that PREFIX determines where
@@ -21,14 +25,19 @@ C. GNU bash, or an equivalent POSIX compliant shell.
 The executables will appear in $(PREFIX)/bin and libraries in $(PREFIX)/lib.
 The modules remain in the src directory.
 
-If you're using Sun Studio and have a fast parallel machine,
-dmake should work as well.
+If you're using dmake or GNU make and have a fast parallel machine, 
+parallel builds should work as well. 
+
+E.g. for 3 threads:
+gmake -j 3
 
 -----------------------------------------------------------------------
 - (1.2) Building for use in a host model:
 -----------------------------------------------------------------------
 Requirements:
 A. and C. as above.
+
+Build:
 1. and 2. as above.
 
 $ make libhoc_param.a
@@ -38,47 +47,50 @@ The static library will be in $(PREFIX)/lib, while the modules will be
 in the src directory.  You will need at least the parameterization_interface 
 mod to interface with HOC.
 
-Addition by Brian:  In addition to the above, you will have to make
-                    reference to the HOC library from the configuration
-                    file of the host program.  Since HOC now uses the
-                    Lapack libraries, you will also have to make reference
-                    to those.  Currently, we do not include the Lapack
-                    libraries with the HOC download.  You will have to 
-                    find them and then download them onto your own computer.
+Addition by Brian:  
+In addition to the above, you will have to make a reference to the HOC library 
+from the configuration file of the host program.  Since HOC now uses the
+LAPACK libraries, you will also have to make reference to those.  Currently, 
+we do not include the LAPACK libraries with the HOC download.  You will have 
+to find them and then download them onto your own computer if they are not
+included with your operating system or compiler.  Once you have done this, you 
+can reference them in a line such as the following:
 
-                    Once you have done this, you can reference them in a line
-                    such as the following:
+-L/home/griffinb/hoc_v2.2_tuner/lib -lhoc_param -llapack -lblas
 
-                    -L/home/griffinb/hoc_v2.2_tuner/lib -lhoc_param -llapack -lblas
+If the LAPACK and BLAS libraries were compiled with GNU Fortran 77, you may 
+need to link to the runtime libs for that with -lg2c as well.
 
-                    Don't forget that you will also have to make reference
-                    to the HOC src code.  You can reference that with a line
-                    such as the following:
+Don't forget that you will also have to make reference
+to the HOC src code.  You can reference that with a line
+such as the following:
 
-                    -I/home/griffinb/hoc_v2.2_tuner/src
+-I/home/griffinb/hoc_v2.2_tuner/src
 
 -----------------------------------------------------------------------
 - (2.1) Executing a standalone run:
 -----------------------------------------------------------------------
 
-1.  cd ~/hoc_v2.2_tuner/tune
+1.  cd ~/hoc_v2.2_tuner/model
 
-2. Edit <case>_model.in for each case you wish to run, or just leave them as 
-  is.  Usually you will want to keep these the same.
-  See the rain code for description of kk_rain and cloud_sed.
-  See BUGSrad description below for a description of the interactive
-  radiation scheme.
-  Enabling any of these flags may increase runtime considerably.
+2. Edit <case>_model.in for each case you wish to run, or just leave 
+   them as is.  Usually you will want to keep these the same.
+   See the rain code for description of kk_rain and cloud_sed.
+   See BUGSrad description below for a description of the interactive
+   radiation scheme.
+   Enabling any of these flags may increase runtime considerably.
 
-3. Edit <case>_stats.in for each case.  A complete list of all computable
+3. cd ../stats
+   Edit <case>_stats.in for each case.  A complete list of all computable
    statistics is found in statistics.F.  Note that HOC now supports GrADS or
    NetCDF, but you can only tune using GrADS.
 
 4. $ cd ../standalone.  Edit standalone_<CASE>.in or select a premade one.
 
 5a. Edit run_standalone.bash to use your standalone_*.in
-   and ./run_standalone.bash
-or 
+    and ./run_standalone.bash
+
+or alternatively:
 
 5b. $ ./run_standalone.bash <CASE>
 
@@ -88,15 +100,15 @@ or
 
 Do steps 1, 2, & 3 as outlined in the standalone run.
 
-4.  Edit error_<runtype>.in or select a premade one. Note that there are two
+4.  Edit error_<runtype>.in or select an existing one. Note that there are two
   tuning subroutines, specified by tune_type in the /stats/ namelist.  If 
   runtype = 0, then the amoeba subroutine, a downhill simplex algorithm, will
   be used.  If runtype is any other value, then amebsa, a variant which uses
   simulated annealing, is used.  A complete explanation of these minimization
   algorithms can be found in _Numerical Recipes in Fortran 90_.
-  Sometimes the variable names in hoc's zt and the coamps grads file will 
+  Sometimes the variable names in HOC's zt and the LES grads files will 
   differ.
-  Currently, it is only possible to tune for variables occuring in zt.
+  Currently, it is only possible to tune for variables that occur in zt.
 
 5.  Edit run_tuner.bash to use your namelists
 
@@ -174,11 +186,11 @@ One run at a time:
   with a 5 second dtmain, the sample_ratio is 60.0 / 5.0 = 12.0
   You might also want to verify that your LES file has sufficient data
   for the whole duration of the HOC run.
-3. edit <CASE>_budget.in;  You will want to set one case_tune variable to true 
+3. Edit <CASE>_budget.in;  You will want to set one case_tune variable to true 
   and the rest to false, or the resultant parameters from one tuning run 
   will be used in subsequent runs.  
 
-  Alteratively, you may edit the hoc_tuner_budget_terms.F code, setting liter 
+  Alternatively, you may edit the hoc_tuner_budget_terms.F code, setting liter 
   to .true., and attempt to optimize the constants over multiple budget terms.  
   This is some experimental code that starts at 10x's the ftol and loops over
   all the amoeba cases, updating the constants by small amounts.  The idea
@@ -191,7 +203,7 @@ One run at a time:
   will descend into values that cause the model become invalid and it will
   fail altogether.
 
-4. edit run_budget.bash for your model <CASE> 
+4. Edit run_budget.bash for your model <CASE> 
 5. ./run_budget.bash 
 
 Batch mode: 
@@ -235,43 +247,68 @@ Batch mode:
 3. $ ../bin/jacobian
 
 ************************************************************************
-*                         Overview of the code                         *
+*                     Overview of the HOC code                         *
 ************************************************************************
 
-This code tunes certain parameters in a one-dimensional boundary layer cloud 
-parameterization (``hoc''), to best fit large-eddy simulation output.  The 
-optimization technique is the simplex algorithm, as implemented in _Numerical 
-Recipes_ (amoeba.f90).  The parameterization is called as a subroutine 
-( hoc_model() ) with parameter values as input.
+For a detailed description of the model code see:
+
+``A PDF-Based Model for Boundary Layer Clouds. Part I:
+  Method and Model Description'' Golaz, et al. (2002)
+  JAS, Vol. 59, pp. 3540--3551.
+
+See also the hoc_v2.2_tuner/doc/hoc_eqns.pdf file in the CVS repository for
+finer details on how the discretization was done.
+
+The tuner code tunes certain parameters in a one-dimensional boundary layer 
+cloud parameterization (``hoc''), to best fit large-eddy simulation output.  
+The optimization technique is the downhill-simplex method of Needler and Mead, 
+as implemented in _Numerical Recipes In Fortran 90_ (amoeba.f90).  
+The parameterization is called as a subroutine ( hoc_model() ) with 
+parameter values as input.
 
 The code is highly flexible.  One can vary the cases (bomex, fire, arm, or
 atex) to match; the variables to match (cloud fraction, liquid water, third
 moment of vertical velocity, etc.); the altitude and times over which to match
 these variables; and the parameters to tune (C1, beta, etc.). 
 
-The code is written in Fortran 90/95 and executed by a bash runscript. On the
-Microsoft Windows platform this could work using MSYS or Cygwin with G95, but 
-this has not been tested.
-We use the Portland Group compiler, version 5.2-4 on Redhat EL3.
-G95 currently only works -ffast-math off (this is an unsafe optimization)
-Sun's f95 8.1 and 8.2 on x86 Solaris appears to work for hoc_tuner, but has not
-been as rigorously tested as pgf90.
-Compaq fortran on Alpha also appears to work.
-The GNU fortran compiler (gcc 4.0.x) does not implement the entire 
+The code is written in Fortran 90/95 and executed by a bash runscript. 
+On the Microsoft Windows platform this could work using MSYS or Cygwin 
+with G95, but we have not tested this sort of configuration.
+
+We use the Portland Group compiler, version 5.2-4 on Redhat Enterprise 3.
+
+G95 <http://www.g95.org/> has been tested on SPARC & x86 Solaris,
+x64 & x86 GNU/Linux.
+
+Sun Fortran 8.1 and 8.2 on Solaris works, but has not been as rigorously 
+tested as pgf90.
+
+Using Intel Fortran 9 we have been able to compile on Linux x86/x64 and
+Itanium.
+
+HP/Compaq/DEC Fortran on Alpha also appears to work but because future 
+Alpha processor development has ceased it is not extensively tested.
+
+The GNU Fortran compiler (GCC 4.0.x) does not implement the entire 
 Fortran 90 standard yet, and so does not work at all.
 
+It is important to note that all these compilers use *incompatible* module
+formats for the .mod files!  If you want to use different compilers on the
+same system, you will need to build a different set of mod files for each
+compiler and use -M or -I to specify their location.
+
 In order to get similar results on differing architectures, platforms, and
-compilers, initially try a conversative optimization and enable IEEE standard
-floating point math.  On x86 compatible machines using SSE or SSE2 is usually
-the best way to do this.
+compilers, initially try a conservative optimization and enable 
+IEEE-754 standard style floating point math.  On x86 compatible machines 
+using SSE or SSE2 is usually the best way to do this.
 
 -----------------------------------------------------------------------
 - (1.1) Explanation of the Input and Output Files
 -----------------------------------------------------------------------
 
-Nota bene: Our numerical output is in GrADS format.  Each output has a header,
-or control file, (.ctl) and a data file (.dat).  The .ctl file describes the
-file format, which variables are output in which order, etc.
+Nota bene: Our numerical output is usually in GrADS format.  Each output 
+has a header, or control file, (.ctl) and a data file (.dat).  The .ctl file 
+describes the file format, which variables are output in which order, etc.
 
 read_grads_hoc.m:  A MATLAB function that reads GrADS data files.
 
@@ -304,9 +341,13 @@ Generated HOC GrADS files:
 
 The Namelist files:
 
-  tune/bomex_hoc.in, fire_hoc.in, arm_hoc.in & atex_hoc.in.
-  These files specify the standard hoc model parameters.  Usually these don't
-    need to be edited.
+  model/bomex_model.in, fire_model.in, arm_model.in & atex_model.in.
+  These files specify the standard HOC model parameters.  Usually these 
+  do not need to be modified.
+
+  stats/bomex_stats.in, fire_stats.in, arm_stats.in & atex_stats.in.
+  These files specify statistics output for each simulation.  See statistics.F
+  for a complete list of the all output supported.
   
   tune/error_all.in, error_<CASE>.in, error_<DATE>.in.
   These specify tuning parameters, case information initial constant values, 
@@ -314,12 +355,12 @@ The Namelist files:
 
 The Randomization files:
 
-  generate_seed.bash, random_seed.dat, int2txt
+  generate_seed.bash, rand_seed.dat, bin/int2txt
   The script uses intrinsic functionality in the Linux kernel to generate
-  a pseudo random seed (the .dat) used by the tuner for creating the x_array 
-  of constants.  This works on any operating system with a Linux compatible 
-  /dev/random (Solaris, Tru64, etc.) as well.  The seed file is now ascii 
-  and can be edited by hand.
+  a pseudo random seed (the .dat) used by the tuner for randomizing initial
+  parameters.  This works on any operating system with a Linux style 
+  /dev/random (Solaris, Tru64, etc.) as well.  The seed file is now ASCII 
+  text and can be edited by hand.
 
 The compare_runs files:
 
@@ -339,7 +380,8 @@ The compare_runs files:
   When enabled, the analytic computation normally
   used for radiation is disabled.  BUGSrad is enabled in the 
   model/<RUN CASE>_model.in file by setting lbugsrad=.true.
-  Currently, November 11 will give inaccurate results due to our interface's 
+  Currently,  all cases where bottom_at_sfc is false, including November 11,
+  will give inaccurate results due to our interface's
   inability to add lower altitude levels.  Other cases appear to give
   plausible results, comparable with the analytic code.
 
@@ -353,7 +395,8 @@ The compare_runs files:
 
   The thlm forcing will also be influenced by this calculation.
 
-  Note that for most cases SW and LW are not calculated without BUGSrad.
+  Note that for most cases SW and LW components are not calculated 
+  without using BUGSrad.
 
 ------------------------------------------------------------------------
 - (3.1) The new scalar code ( HOC with -DSCALARS enabled )
@@ -364,15 +407,15 @@ passive scalar in the atmosphere.
 
 By default HOC should be setup to compile without this option.  To use 
 this option, you must modify the Makefile in the src directory so that 
-FCFLAGS includes "-DSCALARS" and do a make clean, make, and make install.
+FCFLAGS includes "-DSCALARS" and do a make clean and make.
 
 Currently the code contains eddy-diffusivity scalar code and the more complex
 code used in diag_var(), closure_new(), and timestep_mixing().  Both use two
-dimensional arrays, but the code and results for each is seperated.
+dimensional arrays, but the code and results for each is separated.
 
 Initially, the sclr arrays are configured to contain two vertical columns
 containing copies of thl and rt (the first and second elements, respectively).
-The code is sufficently general that an arbitrary number of scalars can be
+The code is sufficiently general that an arbitrary number of scalars can be
 added with a small number of modifications.  The following files must be
 adjusted to customize the scalars:
 
@@ -380,7 +423,8 @@ constants.F:  sclrm_dimension is the number of scalars per array and sclrtol
 is used used in the code to diagnose variances. (see diag_var.F for the
 algorithm used).
 
-hoc.F:  The boundary conditions, while fairly general, are setup for thl
+hoc.F & parameterization_interface.F:  
+The boundary conditions, while fairly general, are setup for thl
 in some places as is noted in the code.  Search for SCLR_THETA and SCLR_RT to
 find places where the code is not general for both cases.
 
@@ -423,7 +467,7 @@ sclr(:,1) = 298.7, 298.7, 299.39375, 302.4, 308.4, 313.675
 sclr(:,2) = 0.01729, 0.01657, 0.01549, 0.01082, 0.00422, 0.00241
 /
 
-This can be appended to the end of the file (in this case tune/bomex_hoc.in),
+This can be appended to the end of the file (in this case model/bomex_model.in),
 and it should follow the number of z-levels et cetera found in the &sounding 
 namelist.
 
@@ -433,4 +477,3 @@ The variables follow the convention of the a=1, and b=2, appended after the
 sclr portion of their name.  For example. the first scalar mean is 'sclram',
 and the second is 'sclrbm'.  These and their forcings are all that occurs in
 the zt file, the rest all occur in the zm file.
-
