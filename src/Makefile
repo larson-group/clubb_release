@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.65 2006-09-07 00:30:13 dschanen Exp $
+# $Id: Makefile,v 1.66 2006-10-04 16:48:04 dschanen Exp $
 # This version should work with BSD, GNU make, smake and dmake
 
 # For HOC we edit this by hand rather than implementing imake or automake
@@ -254,6 +254,6 @@ hoc_tuner_budget_terms.o: nrtype.o nr.o hoc.o error.o \
 	budget_terms.o hoc_tuner_budget_terms.F
 hoc_standalone.o	: hoc.o hoc_standalone.F
 hoc_inputfields.o	: hoc.o inputfields.o hoc_inputfields.F
-int2txt.o		: int2txt.f90
+int2txt.o		: int2txt.F
 compare_runs.o		: endian.o inputgrads.o gradsaverage.o compare_runs.F
 jacobian.o		: gradsaverage.o hoc.o jacobian.F
