@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.6 2006-09-05 22:39:04 dschanen Exp $
+! $Id: mixing.F,v 1.7 2006-10-31 18:00:51 dschanen Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -318,15 +318,15 @@
 
 !         Define indices
 
-          km1 = max(k-1,1)
-          kp1 = min(k+1,gr%nnzp)
+          km1 = max( k-1, 1 )
+          kp1 = min( k+1, gr%nnzp )
 
           k_xm   = 2*k - 1
           k_wpxp = 2*k
 
 !         xm: mean vertical advection
 
-          IF ( .NOT. implemented ) THEN
+          if ( .not. implemented ) then
 
             ! Thermodynamic subdiagonal [ x xm(k-1,<t+1>) ]
             !aa(k_xm,3-2) = - wmt(k) * (1.0/2.0) * gr%dzt(k)
@@ -335,7 +335,7 @@
             !aa(k_xm,3+2) = + wmt(k) * (1.0/2.0) * gr%dzt(k)
             aa(3-2,k_xm) = + wmt(k) * (1.0/2.0) * gr%dzt(k)
 
-            ELSE
+          else
 
             ! Thermodynamic subdiagonal [ x xm(k-1,<t+1>) ]
             !aa(k_xm,3-2) = 0.0
@@ -344,7 +344,7 @@
             !aa(k_xm,3+2) = 0.0
             aa(3-2,k_xm) = 0.0
 
-          END IF
+          end if
 
 !         xm: turbulent transport
 
@@ -374,7 +374,7 @@
      .      - nu6 * gr%dzm(k) * gr%dzt(k)      
 
           ! Momentum main diagonal [ x wpxp(k,<t+1>) ]
-          select case ( trim(solve_type) )
+          select case( trim( solve_type ) )
           case ("rtm")
             !aa(k_wpxp,3)
             aa(3,k_wpxp)
@@ -431,15 +431,24 @@
 #ifdef STATS
           if (lstats_samp) then
 
-!          Implicit contributions for wprtp or wpthlp
-!          qt changed to rt to avoid confusion -dschanen 2 Aug 05
+            ! Implicit contributions for rtm or wprtp
+            if ( irtm_ma > 0 .or. ithlm_ma > 0 ) then
+              ztscr01(k) = + wmt(k) * (1.0/2.0) * gr%dzt(k)
+              ztscr02(k) = - wmt(k) * (1.0/2.0) * gr%dzt(k)
+            end if ! ma
 
-           if ( iwprtp_ma > 0 .or. iwpthlp_ma > 0 ) then
-             zmscr01(k) = + wmm(k) * (1.0/2.0) * gr%dzm(k)
-             zmscr02(k) = - wmm(k) * (1.0/2.0) * gr%dzm(k)
-           endif
+            if ( irtm_ta > 0 .or. ithlm_ta > 0 ) then
+              ztscr03(k) = + gr%dzt(k)
+              ztscr04(k) = - gr%dzt(k)
+            end if ! ta
 
-           if ( iwprtp_ta > 0 .or. iwpthlp_ta > 0 ) then
+            ! Implicit contributions for wprtp or wpthlp
+            if ( iwprtp_ma > 0 .or. iwpthlp_ma > 0 ) then
+              zmscr01(k) = + wmm(k) * (1.0/2.0) * gr%dzm(k)
+              zmscr02(k) = - wmm(k) * (1.0/2.0) * gr%dzm(k)
+            end if ! ma
+
+            if ( iwprtp_ta > 0 .or. iwpthlp_ta > 0 ) then
             zmscr03(k) =
      .        + gr%dzm(k)
      .          * (1.0/2.0) * ( a1(k) + a1(km1) )
@@ -455,46 +464,46 @@
      .        - gr%dzm(k)
      .          * (1.0/2.0) * ( a1(kp1) + a1(k) )
      .          * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
-           endif
+            end if ! ta
 
-           if ( iwprtp_tp > 0 .or. iwpthlp_tp > 0 ) then
-             zmscr06(k) = + wp2(k) * gr%dzm(k)
-             zmscr07(k) = - wp2(k) * gr%dzm(k)
-           endif
+            if ( iwprtp_tp > 0 .or. iwpthlp_tp > 0 ) then
+              zmscr06(k) = + wp2(k) * gr%dzm(k)
+              zmscr07(k) = - wp2(k) * gr%dzm(k)
+            end if
 
-           if ( iwprtp_ac > 0 .or. iwpthlp_ac > 0 ) then
-             zmscr08(k) = - 1.0 * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
-           endif
+            if ( iwprtp_ac > 0 .or. iwpthlp_ac > 0 ) then
+              zmscr08(k) = - 1.0 * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
+            end if
 
-           if ( iwprtp_pr1 > 0 .or. iwpthlp_pr1 > 0 ) then
-             select case (trim( solve_type ) )
-             case("rtm")
+            if ( iwprtp_pr1 > 0 .or. iwpthlp_pr1 > 0 ) then
+              select case (trim( solve_type ) )
+              case("rtm")
 !               zmscr09(k) = - C6rt / taum(k)
-               zmscr09(k) = - C6rt_Skw_fnc(k) / taum(k)
-             case("thlm")
-!               zmscr09(k) = - C6thl / taum(k)
-               zmscr09(k) = - C6thl_Skw_fnc(k) / taum(k)
-             case default
-               print *, "Unknown solve_type:", solve_type
-               stop "invalid mixing_lhs call"
-             end select
-           endif
+                zmscr09(k) = - C6rt_Skw_fnc(k) / taum(k)
+              case("thlm")
+!                zmscr09(k) = - C6thl / taum(k)
+                zmscr09(k) = - C6thl_Skw_fnc(k) / taum(k)
+              case default
+                print *, "Unknown solve_type:", solve_type
+                stop "invalid mixing_lhs call"
+              end select
+            end if ! pr1
 
-           if ( iwprtp_pr2 > 0 .or. iwpthlp_pr2 > 0 ) then
-             zmscr10(k) = + C7_Skw_fnc(k) 
-     .                      * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
-           endif
+            if ( iwprtp_pr2 > 0 .or. iwpthlp_pr2 > 0 ) then
+              zmscr10(k) = + C7_Skw_fnc(k) 
+     .                       * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
+            end if
 
-           if ( iwprtp_dp1 > 0 .or. iwpthlp_dp1 > 0 ) then
-             zmscr11(k) = + nu6 * gr%dzm(k) * gr%dzt(k)
-             zmscr12(k) = - nu6 * gr%dzm(k) 
-     .                            * ( gr%dzt(kp1) + gr%dzt(k) )
-             zmscr13(k) = + nu6 * gr%dzm(k) * gr%dzt(kp1)
-           endif
+            if ( iwprtp_dp1 > 0 .or. iwpthlp_dp1 > 0 ) then
+              zmscr11(k) = + nu6 * gr%dzm(k) * gr%dzt(k)
+              zmscr12(k) = - nu6 * gr%dzm(k) 
+     .                             * ( gr%dzt(kp1) + gr%dzt(k) )
+              zmscr13(k) = + nu6 * gr%dzm(k) * gr%dzt(kp1)
+            end if
 
-          endif
+          end if
 #endif
-        enddo
+        end do ! 2..gr%nnzp-1
 
 !       Boundary condition for the flux
 
@@ -617,19 +626,27 @@
 
 #ifdef STATS
         integer ::
-     .     iwpxp_bt,
-     .     iwpxp_ma,
-     .     iwpxp_ta,
-     .     iwpxp_tp,
-     .     iwpxp_ac,
-     .     iwpxp_bp,
-     .     iwpxp_pr1,
-     .     iwpxp_pr2,
-     .     iwpxp_pr3,
-     .     iwpxp_dp1
+     .    ixm_bt,
+     .    ixm_ta,
+     .    ixm_ma,
+     .    ixm_f,
+     .    iwpxp_bt,
+     .    iwpxp_ma,
+     .    iwpxp_ta,
+     .    iwpxp_tp,
+     .    iwpxp_ac,
+     .    iwpxp_bp,
+     .    iwpxp_pr1,
+     .    iwpxp_pr2,
+     .    iwpxp_pr3,
+     .    iwpxp_dp1
 
-        select case ( trim(solve_type) )
-        case ( "rtm" ) ! rtm/wprtp budget terms
+        select case( trim( solve_type ) )
+        case( "rtm" ) ! rtm/wprtp budget terms
+          ixm_bt    = irtm_bt
+          ixm_ta    = irtm_ta
+          ixm_ma    = irtm_ma
+          ixm_f     = irtm_forcing
           iwpxp_bt  = iwprtp_bt
           iwpxp_ma  = iwprtp_ma
           iwpxp_ta  = iwprtp_ta
@@ -640,7 +657,11 @@
           iwpxp_pr2 = iwprtp_pr2
           iwpxp_pr3 = iwprtp_pr3
           iwpxp_dp1 = iwprtp_dp1
-        case ( "thlm" ) ! thlm/wpthlp budget terms
+        case( "thlm" ) ! thlm/wpthlp budget terms
+          ixm_bt    = ithlm_bt
+          ixm_ta    = ithlm_ta
+          ixm_ma    = ithlm_ma
+          ixm_f     = ithlm_forcing
           iwpxp_bt  = iwpthlp_bt
           iwpxp_ma  = iwpthlp_ma
           iwpxp_ta  = iwpthlp_ta
@@ -652,6 +673,9 @@
           iwpxp_pr3 = iwpthlp_pr3
           iwpxp_dp1 = iwpthlp_dp1
         case default  ! this includes the sclrm case
+          ixm_bt    = 0
+          ixm_ta    = 0
+          ixm_ma    = 0
           iwpxp_bt  = 0
           iwpxp_ma  = 0
           iwpxp_ta  = 0
@@ -666,14 +690,25 @@
 #endif /*STATS*/
 
 #ifdef STATS
-        if (lstats_samp) then
+        if ( lstats_samp ) then
 
-          ! Explicit contributions for wpxp
+          ! xm total time tendency ( 1st calculation)
+          if ( ixm_bt > 0 ) then
+            zt%x(:,ixm_bt) = zt%x(:,ixm_bt) - xm / dt
+          end if
 
+          ! Explicit contributions for xm (not including drizzle)
+          if ( ixm_f > 0 ) then
+            zt%x(:,ixm_f) = zt%x(:,ixm_f) + xm_forcing
+            zt%n(:,ixm_f) = zt%n(:,ixm_f) + 1
+          end if
+
+          ! wpxp total time tendency (1st calculation)
           if ( iwpxp_bt > 0 ) then
             zm%x(:,iwpxp_bt) = zm%x(:,iwpxp_bt) - wpxp / dt
           end if
 
+          ! Explicit contributions for wpxp
           if ( iwpxp_bp > 0 ) then
             zm%x(:,iwpxp_bp) = zm%x(:,iwpxp_bp)
      .      + grav/T0 * 1.0 * xpthvp(:)
@@ -831,7 +866,7 @@
 
           ! + xm_microphysics -- rain effects.
           ! Code addition by Brian for rain.
-          IF ( kk_rain ) THEN
+          if ( kk_rain ) then
 
              select case(trim( solve_type ))
              case ( "rtm" ) 
@@ -848,18 +883,19 @@
      .                    ( -cond_rrm(k) - auto_rrm(k) - accr_rrm(k) )  ! sclrm = thlm
              end select
 
-          END IF ! kk_rain
+          end if ! kk_rain
 
 !         wpxp: time tendency and buoyancy
 
           ! Right-hand side.
           dd(k_wpxp)
      .    = grav/T0 * (1.0-C7_Skw_fnc(k)) * xpthvp(k)
-          if (liter) dd(k_wpxp) = dd(k_wpxp) + wpxp(k) / dt
+
+          if ( liter ) dd(k_wpxp) = dd(k_wpxp) + wpxp(k) / dt
 
         end do ! k=2..gr%nnzp-1
 
-!       Boundary condition for the flux
+        ! Boundary condition for the flux and mean
 
         k      = 1
         k_xm   = 2*k - 1
@@ -873,7 +909,7 @@
         dd(k_xm)   = xm(k)
         dd(k_wpxp) = 0.0
 
-!       Solve system (NR)
+        ! Solve system (NR)
 
 !       call banbks( aa, 2 * gr%nnzp, 2, 2, 
 !    .               2 * gr%nnzp, 5, al, 2, indx, dd )
@@ -908,14 +944,28 @@
 !        xm(gr%nnzp) = xm(gr%nnzp-1)
 
 #ifdef STATS
-          if (lstats_samp) then
-
-           ! Finalize implicit contributions for wpxp
+          if ( lstats_samp ) then
 
            do k = 1, gr%nnzp
-             km1 = max(k-1,1)
-             kp1 = min(k+1,gr%nnzp)
+             km1 = max( k-1, 1 )
+             kp1 = min( k+1, gr%nnzp )
 
+             ! Finalize implicit contributions for xm
+             if ( ixm_ma > 0 ) then
+               zt%x(k,ixm_ma) = zt%x(k,ixm_ma)
+     .         + ztscr01(k) * xm(km1)
+     .         + ztscr02(k) * xm(kp1)
+               zt%n(k,ixm_ma) = zt%n(k,ixm_ma) + 1
+             end if ! ma
+
+             if ( ixm_ta > 0 ) then
+               zt%x(k,ixm_ta) = zt%x(k,ixm_ta)
+     .         + ztscr03(k) * wpxp(km1)
+     .         + ztscr04(k) * wpxp(k)
+               zt%n(k,ixm_ta) = zt%n(k,ixm_ta) + 1
+             end if ! ta
+
+             ! Finalize implicit contributions for wpxp
              if ( iwpxp_ma > 0 ) then
                zm%x(k,iwpxp_ma) = zm%x(k,iwpxp_ma)
      .         + zmscr01(k) * wpxp(km1)
@@ -967,11 +1017,17 @@
            end do ! 1..gr%nnzp
 
           end if ! lstats_samp
-#endif
+#endif /*STATS*/
 
 #ifdef STATS
-        if (lstats_samp) then
+        if ( lstats_samp ) then
+          ! xm time tendency (2nd calculation)
+          if ( ixm_bt > 0 ) then
+            zt%x(:,ixm_bt) = zt%x(:,ixm_bt) + xm / dt
+            zt%n(:,ixm_bt) = zt%n(:,ixm_bt) + 1
+          end if
 
+          ! wpxp time tendency (2nd calculation)
           if ( iwpxp_bt > 0 ) then
             zm%x(:,iwpxp_bt) = zm%x(:,iwpxp_bt) + wpxp / dt
             zm%n(:,iwpxp_bt) = zm%n(:,iwpxp_bt) + 1

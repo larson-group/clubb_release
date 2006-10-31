@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.7 2006-08-21 21:00:03 dschanen Exp $
+!  $Id: statistics.F,v 1.8 2006-10-31 18:00:51 dschanen Exp $
 
 !  module stats_type
 !  contains:
@@ -51,7 +51,7 @@ c         Data for GrADS output
 c       Sampling and output frequencies
 
         logical lstats         ! Main flag to turn statistics on/off
-        logical lnetcdf        ! Output to netcdf format
+        logical lnetcdf        ! Output to NetCDF format
         logical lgrads         ! Output to GrADS format
         real stats_tsamp       ! Sampling interval (s)
         real stats_tout        ! Output interval (s)
@@ -80,8 +80,6 @@ c       Indices for statistics in zt file
      .     ip,
      .     iexner,
      .     iLscale,
-     .     ithlm_forcing,
-     .     irtm_forcing,
      .     iwp3,
      .     iwpthlp2,
      .     iwp2thlp,
@@ -109,6 +107,17 @@ c       Indices for statistics in zt file
      .     iradht,         ! Radiative heating.  Dave Schanen 7 Oct 2005
      .     iradht_LW,      !   "           "   Long-wave
      .     iradht_SW       !   "           "   Short-wave
+
+        ! thlm/rtm budget terms
+        integer ::
+     .    irtm_bt,      ! rtm total time tendency
+     .    irtm_ma,      ! rtm mean advect. term
+     .    irtm_ta,      ! rtm turb. advect. term
+     .    irtm_forcing, ! rtm large scale forcing term
+     .    ithlm_bt,     ! thlm total time tendency
+     .    ithlm_ma,     ! thlm mean advect. term
+     .    ithlm_ta,     ! thlm turb. advect. term
+     .    ithlm_forcing ! thlm large scale forcing term
 
 
         integer
@@ -227,7 +236,6 @@ c       Indices for statistics in zm file
      .     iwp2_dp2,
      .     iwp2_cl
 
-!    Changed qt to rt to avoid confusion -dschanen 2 Aug 05
         integer
      .     iwprtp_bt,
      .     iwprtp_ma,
@@ -416,7 +424,7 @@ c     -----------------------------------------------------------------
       else
         write(*,*) "invalid data format "//trim( stats_fmt )
         stop
-      endif
+      end if
 
 !     Check sampling and output frequencies
 
@@ -426,7 +434,7 @@ c     -----------------------------------------------------------------
          write(*,*) 'Error: stats_tsamp should be a multiple of delt'
          write(*,*) 'stats_tsamp = ',stats_tsamp
          write(*,*) 'delt = ',delt
-      endif
+      end if
 
       if ( abs( stats_tout/stats_tsamp - int(stats_tout/stats_tsamp) ) 
      .     > 1.e-8 ) then
@@ -435,7 +443,7 @@ c     -----------------------------------------------------------------
      .      'Error: stats_tout should be a multiple of stats_tsamp'
          write(*,*) 'stats_tout = ',stats_tout
          write(*,*) 'stats_tsamp = ',stats_tsamp
-      endif
+      end if
 
 !     Initialize zt (mass points)
 
@@ -514,8 +522,6 @@ c     -----------------------------------------------------------------
       ip            = 0
       iexner        = 0
       iLscale       = 0
-      ithlm_forcing = 0
-      irtm_forcing  = 0
       iwp3          = 0
       iwpthlp2      = 0
       iwp2thlp      = 0
@@ -543,6 +549,15 @@ c     -----------------------------------------------------------------
       iradht        = 0
       iradht_LW     = 0
       iradht_SW     = 0
+
+      irtm_bt       = 0
+      irtm_ma       = 0
+      irtm_ta       = 0
+      irtm_forcing  = 0
+      ithlm_bt      = 0
+      ithlm_ma      = 0
+      ithlm_ta      = 0
+      ithlm_forcing = 0
 
       iwp3_bt       = 0
       iwp3_ma       = 0
@@ -961,6 +976,54 @@ c     -----------------------------------------------------------------
           zt%f%var(iradht_SW)%name = "radht_SW"
           zt%f%var(iradht_SW)%description = "Short-wave heating rate"
           zt%f%var(iradht_SW)%units = "K/s"
+          k = k + 1
+
+        case ('rtm_bt')
+          irtm_bt = k
+          zt%f%var(irtm_bt)%ptr => zt%x(:,k)
+          zt%f%var(irtm_bt)%name = "rtm_bt"
+          zt%f%var(irtm_bt)%description = "rtm budget"
+          zt%f%var(irtm_bt)%units = "kg/kg/s"
+          k = k + 1
+
+        case ('rtm_ma')
+          irtm_ma = k
+          zt%f%var(irtm_ma)%ptr => zt%x(:,k)
+          zt%f%var(irtm_ma)%name = "rtm_ma"
+          zt%f%var(irtm_ma)%description = "rtm ma"
+          zt%f%var(irtm_ma)%units = "kg/kg/s"
+          k = k + 1
+
+        case ('rtm_ta')
+          irtm_ta = k
+          zt%f%var(irtm_ta)%ptr => zt%x(:,k)
+          zt%f%var(irtm_ta)%name = "rtm_ta"
+          zt%f%var(irtm_ta)%description = "rtm ta"
+          zt%f%var(irtm_ta)%units = "kg/kg/s"
+          k = k + 1
+
+        case ('thlm_bt')
+          ithlm_bt = k
+          zt%f%var(ithlm_bt)%ptr => zt%x(:,k)
+          zt%f%var(ithlm_bt)%name = "thlm_bt"
+          zt%f%var(ithlm_bt)%description = "thlm bt"
+          zt%f%var(ithlm_bt)%units = "kg/kg/s"
+          k = k + 1
+
+        case ('thlm_ma')
+          ithlm_ma = k
+          zt%f%var(ithlm_ma)%ptr => zt%x(:,k)
+          zt%f%var(ithlm_ma)%name = "thlm_ma"
+          zt%f%var(ithlm_ma)%description = "thlm ma"
+          zt%f%var(ithlm_ma)%units = "kg/kg/s"
+          k = k + 1
+
+        case ('thlm_ta')
+          ithlm_ta = k
+          zt%f%var(ithlm_ta)%ptr => zt%x(:,k)
+          zt%f%var(ithlm_ta)%name = "thlm_ta"
+          zt%f%var(ithlm_ta)%description = "thlm ta"
+          zt%f%var(ithlm_ta)%units = "kg/kg/s"
           k = k + 1
  
         case ('wp3_bt')
@@ -2876,14 +2939,14 @@ c     -----------------------------------------------------------------
           zt%x(:,iLscale) = zt%x(:,iLscale) + Lscale
           zt%n(:,iLscale) = zt%n(:,iLscale) + 1
         endif
-        if ( ithlm_forcing > 0 ) then
-          zt%x(:,ithlm_forcing) = zt%x(:,ithlm_forcing) + thlm_forcing
-          zt%n(:,ithlm_forcing) = zt%n(:,ithlm_forcing) + 1
-        endif
-        if ( irtm_forcing > 0 ) then
-          zt%x(:,irtm_forcing) = zt%x(:,irtm_forcing) + rtm_forcing
-          zt%n(:,irtm_forcing) = zt%n(:,irtm_forcing) + 1
-        endif
+!       if ( ithlm_forcing > 0 ) then
+!         zt%x(:,ithlm_forcing) = zt%x(:,ithlm_forcing) + thlm_forcing
+!         zt%n(:,ithlm_forcing) = zt%n(:,ithlm_forcing) + 1
+!       endif
+!       if ( irtm_forcing > 0 ) then
+!         zt%x(:,irtm_forcing) = zt%x(:,irtm_forcing) + rtm_forcing
+!         zt%n(:,irtm_forcing) = zt%n(:,irtm_forcing) + 1
+!       endif
         if ( iwp3 > 0 ) then
           zt%x(:,iwp3) = zt%x(:,iwp3) + wp3
           zt%n(:,iwp3) = zt%n(:,iwp3) + 1
