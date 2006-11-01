@@ -1,0 +1,11 @@
+This software was developed by the Naval Research Laboratory.
+
+Access and use of this software shall impose the following obligations on the user. The user is granted the right, without any fee or cost, to use, copy, modify, alter, enhance, and distribute this software, and any derivative works thereof, and its supporting documentation for any purpose whatsoever, except commercial sales, provided that this entire notice appears in all copies of the software, derivative works and supporting documentation. Further, the user agrees to credit NRL in any publications that result from the use of this software or in any software package that includes this software. The standard reference to COAMPS® is:
+
+The Naval Research Laboratory's Coupled Ocean/Atmosphere Mesoscale Prediction System (COAMPS®). 1997 Mon. Wea. Rev., 125, 1414-1430.
+
+The name NRL, however, may not be used in any advertising or publicity to endorse or promote any products or commercial entity unless specific written permission is obtained from NRL. The user also understands that NRL is not obligated to provide non-DoD or non-ONR-sponsored users with any support, consulting, training or assistance of any kind with regard to the use, operation and performance of this software nor to provide the user with any updates, revisions, new versions or "bug" fixes.
+
+We ask that if the user discovers some error, bug, or difficulty with the model code, that they report the problem to the COAMPS ® webmaster, who will then pass it on to the community and the developers. If the user develops some modification, code enhancement, or other improvement, and wishes to make this publicly available, we welcome them to announce this availability through the web page by sending a message to the COAMPS® webmaster.
+
+THIS SOFTWARE IS PROVIDED BY NRL "AS IS" AND ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NRL BE LIABLE FOR ANY SPECIAL, INDIRECT, OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER, INCLUDING BUT NOT LIMITED TO CLAIMS ASSOCIATED WITH THE LOSS OF DATA OR PROFITS, WHICH MAY RESULT FROM AN ACTION IN CONTRACT, NEGLIGENCE OR OTHER TORTIOUS CLAIM THAT ARISES OUT OF OR IN CONNECTION WITH THE ACCESS, USE OR PERFORMANCE OF THIS SOFTWARE. 
