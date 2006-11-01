@@ -1,0 +1,87 @@
+C.............................START PROLOGUE............................
+C
+C SCCS IDENTIFICATION:   %W% %G%
+C                        %U% %P%
+C
+C CONFIGURATION IDENTIFICATION:  Version 4.0
+C
+C MODULE NAME:            qsatvi.f
+C DESCRIPTION:		  compute saturation mixing ratio over water 
+C                         and ice
+C
+C COPYRIGHT:              (c) 1994 FLENUMMETOCCEN
+C                         U.S. GOVERNMENT DOMAIN
+C                         ALL RIGHTS RESERVED
+C CONTRACT NUMBER
+C    AND TITLE:
+C REFERENCES:             None
+C CLASSIFICATION:         Unclassified
+C RESTRICTIONS:           None
+C COMPUTER/OPERATING
+C    SYSTEM DEPENDENCIES: None
+C
+C LIBRARIES OF RESIDENCE:
+C    /a/ops/lib/coampslib.a
+C
+C USAGE:
+C call  qsatvi(t,p,qvs,qvi,w1,w2,w3,i1,lice,len)
+C
+C PARAMETERS:
+C Name			Type	Usage	Description
+C -----------		------	------	-----------
+C len                   integer input   dimension (number of data items)
+C                                       of input/output arrays
+C                                       (for direct access, len must be
+C                                       the same for all records on given 
+C                                       file)
+C i1(len)		integer	NOT USED????
+C lice			logical	input	ice flag:
+C					true  - calculate saturation mixing 
+C					ratio over ice
+C					false - do not calculate saturation
+C					mixing ratio over ice
+C p(len)		real	input   pressure in decibars(0 to 10000 db)
+C					perturbation exner function
+C qvi(len)		real	output	saturation mixing ratio over ice
+C qvs(len)		real	output	saturation mixing ratio over water
+C t(len)		real	input	temperature in deg c (0-40 degrees)
+C w1(len)		real	NOT USED????
+C w2(len)		real	NOT USED????
+C w3(len)		real	NOT USED????
+C	
+C COMMON BLOCKS:          None
+C			
+C FILES:                  None
+C DATA BASES:             None
+C NON-FILE INPUT/OUTPUT:  None
+C ERROR CONDITIONS:       None
+C ADDITIONAL COMMENTS:    None
+C
+C...................... MAINTENANCE SECTION ..............................
+C
+C MODULES CALLED:
+C Name		Description
+C -----------	------------------------
+C esati		compute saturation mixing ration over ice
+C esatv		compute saturation mixing ration over water
+C	
+C LOCAL VARIABLES AND
+C            STRUCTURES:
+C Name			Type	Description
+C -------------------	------	-----------
+C i			integer	loop index
+C	
+C METHOD:
+C          compute saturation mixing ratio over water
+C          saturation mixing ratio over ice
+C
+C INCLUDE FILES:          qsatvi.f.pro
+C
+C COMPILER DEPENDENCIES:  FORTRAN 77
+C COMPILE OPTIONS:        -Zu -wd"dO"-Wf"-em -o aggress"
+C MAKEFILE:
+C     /a/ops/src/met/coamps/src/sub/makefile
+C
+C  RECORD OF CHANGES:
+C    NONE
+C........................ END PROLOGUE ...................................

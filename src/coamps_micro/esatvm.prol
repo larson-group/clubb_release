@@ -1,0 +1,71 @@
+C.............................START PROLOGUE............................
+C
+C SCCS IDENTIFICATION:   %W% %G%
+C                        %U% %P%
+C
+C CONFIGURATION IDENTIFICATION:  Version 4.0
+C
+C MODULE NAME:            esatvm.f
+C DESCRIPTION:
+C
+C COPYRIGHT:              (c) 1994 FLENUMMETOCCEN
+C                         U.S. GOVERNMENT DOMAIN
+C                         ALL RIGHTS RESERVED
+C CONTRACT NUMBER
+C    AND TITLE:
+C REFERENCES:             None
+C CLASSIFICATION:         Unclassified
+C RESTRICTIONS:           None
+C COMPUTER/OPERATING
+C    SYSTEM DEPENDENCIES: None
+C
+C LIBRARIES OF RESIDENCE:
+C    /a/ops/lib/coampslib.a
+C
+C USAGE:
+C call  esatvm(t,w,m,msk)
+C
+C PARAMETERS:
+C Name			Type	Usage	Description
+C -----------		------	------	-----------
+C m			integer	input	x-dimension of grid
+C t(m)			real	input	temperature
+C w(m)			real	output	saturation vapor pressure
+C msk                   logical input   vector mask for land/water	
+C
+C COMMON BLOCKS:
+C Block		Name	Type	Usage	Notes
+C -----------	------	------	-----	------------
+C vap           esv(375)real
+C vap           epv(375)real
+C			
+C FILES:                  None
+C DATA BASES:             None
+C NON-FILE INPUT/OUTPUT:  None
+C ERROR CONDITIONS:       None
+C ADDITIONAL COMMENTS:    None
+C
+C...................... MAINTENANCE SECTION ..............................
+C
+C MODULES CALLED:         None
+C
+C LOCAL VARIABLES AND
+C            STRUCTURES:	
+C Name			Type	Description	
+C -------------------	------	-----------	
+C i                     integer index loop
+C it			integer	integer truncation of temperature value
+C esv                   real    vapor pressure over water
+
+C METHOD: 	interpolation of table lookup for saturation vapor pressure	
+C	
+C INCLUDE FILES:          None	
+C	
+C COMPILER DEPENDENCIES:  FORTRAN 77	
+C COMPILE OPTIONS:        -Zu -wd"dO"-Wf"-em -o aggress"	
+C MAKEFILE:	
+C     /a/ops/src/met/coamps/src/sub/makefile	
+C	
+C  RECORD OF CHANGES:	
+C    NONE	
+C........................ END PROLOGUE ...................................	

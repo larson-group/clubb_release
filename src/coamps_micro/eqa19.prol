@@ -1,0 +1,76 @@
+C.............................START PROLOGUE............................
+C
+C SCCS IDENTIFICATION:   %W% %G%
+C                        %U% %P%
+C
+C CONFIGURATION IDENTIFICATION:  Version 4.0
+C
+C MODULE NAME:            eqa19.f
+C DESCRIPTION:		  compute conversion of cloud ice to snow
+C
+C COPYRIGHT:              (c) 1994 FLENUMMETOCCEN
+C                         U.S. GOVERNMENT DOMAIN
+C                         ALL RIGHTS RESERVED
+C CONTRACT NUMBER
+C    AND TITLE:
+C REFERENCES:             None
+C CLASSIFICATION:         Unclassified
+C RESTRICTIONS:           None
+C COMPUTER/OPERATING
+C    SYSTEM DEPENDENCIES: None
+C
+C LIBRARIES OF RESIDENCE:
+C    /a/ops/lib/coampslib.a
+C
+C USAGE:
+C call  eqa19(qi,rho,conci,pconv,pcut
+C                  ,cimass,delt,len)
+C
+C PARAMETERS:
+C Name			Type	Usage	Description
+C -----------		------	------	-----------
+C len			integer	input	dimension of input/output arrays
+C cimass                real    input	maximum mass of cloud ice crystal 
+C conci(len)		real	input   working array
+C delt			real	input	time step
+C pconv(len)		real	output  conversion of cloud ice to snow
+C pcut			real	input	lowest allowable mixing ratio of
+C					cloud droplets, ice crystals,
+C					snowflakes, and raindrops
+C qi(len)		real	input	ice crystals at each grid point
+C					and each sigma level
+C rho(len)              real    input   density of air
+C	
+C COMMON BLOCKS:          None
+C			
+C FILES:                  None
+C DATA BASES:             None
+C NON-FILE INPUT/OUTPUT:  None
+C ERROR CONDITIONS:       None
+C ADDITIONAL COMMENTS:    None
+C
+C...................... MAINTENANCE SECTION ..............................
+C
+C MODULES CALLED:         None
+C
+C LOCAL VARIABLES AND
+C            STRUCTURES:	
+C Name			Type	Description	
+C -------------------	------	-----------	
+C i			integer	do loop index
+C qcimax                real    maximum mixing ratio of cloud ice before
+C				initiation of snow
+C tp1			real	temporary variable
+C	
+C METHOD:	
+C	use method of rutledge and hobbs (mwr vol 40, 1983, pp 1185-1206)
+C INCLUDE FILES:          eqa19.f.pro
+C	
+C COMPILER DEPENDENCIES:  FORTRAN 77	
+C COMPILE OPTIONS:        -Zu -wd"dO"-Wf"-em -o aggress"	
+C MAKEFILE:	
+C     /a/ops/src/met/coamps/src/sub/makefile	
+C	
+C  RECORD OF CHANGES:	
+C    NONE	
+C........................ END PROLOGUE ...................................	

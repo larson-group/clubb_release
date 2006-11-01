@@ -1,0 +1,90 @@
+C.............................START PROLOGUE............................
+C
+C SCCS IDENTIFICATION:   %W% %G%
+C                        %U% %P%
+C
+C CONFIGURATION IDENTIFICATION:  Version 4.0
+C
+C MODULE NAME:            esat1.f
+C DESCRIPTION:		  initialize arrays for saturation vapor pressure
+C			  table look-up
+C
+C COPYRIGHT:              (c) 1994 FLENUMMETOCCEN
+C                         U.S. GOVERNMENT DOMAIN
+C                         ALL RIGHTS RESERVED
+C CONTRACT NUMBER
+C    AND TITLE:
+C REFERENCES:             None
+C CLASSIFICATION:         Unclassified
+C RESTRICTIONS:           None
+C COMPUTER/OPERATING
+C    SYSTEM DEPENDENCIES: None
+C
+C LIBRARIES OF RESIDENCE:
+C    /a/ops/lib/coampslib.a
+C
+C USAGE:
+C call  esat1
+C
+C PARAMETERS:             None
+C
+C COMMON BLOCKS:
+C Block		Name	Type	Usage	Notes	
+C -----------	------	------	-----	------------	
+C vap           esv(375)real    output  saturation vapor pressure with respect
+C					to water
+C vap           epv(375)real    output  change of saturation vapor pressure withC					respect to temperature for water
+C ice           esi(375)real    output  saturation vapor pressure with respect
+C					to ice
+C	
+C	
+C				
+C FILES:                  None	
+C DATA BASES:             None	
+C NON-FILE INPUT/OUTPUT:  None	
+C ERROR CONDITIONS:       None	
+C ADDITIONAL COMMENTS:    None	
+C	
+C...................... MAINTENANCE SECTION ..............................	
+C	
+C MODULES CALLED:         None	
+C	
+C LOCAL VARIABLES AND	
+C            STRUCTURES:	
+C Name			Type	Description	
+C -------------------	------	-----------	
+C i			integer	index loop
+C ai			real	empirical constant of 9.5
+C arg                   real    temporary variable
+C av			real    empirical constant of 7.5	
+C bi			real	empirical constant of 265.5
+C bv			real	empirical constant of 237.3
+C epi                   real    change of saturation vapor pressure with respectC				to temperature for ice
+C epv                   real    change of saturation vapor pressure with respectC				to temperature for water
+C esi                   real    vapor pressure over ice
+C esv			real	vapor pressure over water
+C tp1			real	temporary variable
+C tp2			real	temporary variable
+C	
+C METHOD:	
+C **********************************************************************	
+C        initialize look-up arrays for saturation	
+C        vapor pressure over water (esv) and over ice (esi)	
+C        using teton's formula	
+C        also initializes look-up arrays for	
+C        change of saturation vapor pressure with respect to	
+C        temperature for vapor (epv) and ice (epi)	
+C        tables hold values for temperatures from 1k to 375k	
+C        inclusive	
+C        all output values are in mb*100	
+C	
+C INCLUDE FILES:          esat1.f.pro
+C	
+C COMPILER DEPENDENCIES:  FORTRAN 77	
+C COMPILE OPTIONS:        -Zu -wd"dO"-Wf"-em -o aggress"	
+C MAKEFILE:	
+C     /a/ops/src/met/coamps/src/sub/makefile	
+C	
+C  RECORD OF CHANGES:	
+C    NONE	
+C........................ END PROLOGUE ...................................	

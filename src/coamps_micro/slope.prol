@@ -1,0 +1,86 @@
+C.............................START PROLOGUE............................
+C
+C SCCS IDENTIFICATION:   %W% %G%
+C                        %U% %P%
+C
+C CONFIGURATION IDENTIFICATION:  Version 4.0
+C
+C MODULE NAME:            slope.f
+C DESCRIPTION:		  computes slope factor for rain and snow
+C
+C COPYRIGHT:              (c) 1994 FLENUMMETOCCEN
+C                         U.S. GOVERNMENT DOMAIN
+C                         ALL RIGHTS RESERVED
+C CONTRACT NUMBER
+C    AND TITLE:
+C REFERENCES:             None
+C CLASSIFICATION:         Unclassified
+C RESTRICTIONS:           None
+C COMPUTER/OPERATING
+C    SYSTEM DEPENDENCIES: None
+C
+C LIBRARIES OF RESIDENCE:
+C    /a/ops/lib/coampslib.a
+C
+C USAGE:
+C call  slope(sr,ss,qr,qs,rho,sloper,slopes,pcut
+C                  ,lice,len)
+C
+C PARAMETERS:
+C Name			Type	Usage	Description
+C -----------		------	------	-----------
+C len			integer	input	dimension (number of data items)
+C					 of input/output arrays
+C					 (for direct access, len must be
+C					 the same for all records on given file)
+C lice			logical	input   ice physices:
+C					true  - allow for frozen (ice, snow)
+C					        precip, but only if  lmoist is
+C					        set to true also DEFAULT 
+C					false - do not allow for frozen precip
+C pcut			real	input   lowest allowable mixing ratio of
+C					cloud droplets, ice crystals,
+C					snowflakes, and raindrops
+C qr(len)		real	input   rain drops at each grid point
+C					and sigma level
+C qs(len)		real	input   snow flakes at each grid point
+C					and for each sigma level
+C rho(len)		real	input	atmospheric density
+C sloper		real	input	slope factor for rain
+C slopes		real	input	slope factor for snow
+C sr(len)		real	output	slope factor for rain
+C ss(len)		real	output	slope factor for snow
+C	
+C COMMON BLOCKS:          None
+C			
+C FILES:                  None
+C DATA BASES:             None
+C NON-FILE INPUT/OUTPUT:  None
+C ERROR CONDITIONS:       None
+C ADDITIONAL COMMENTS:    None
+C
+C...................... MAINTENANCE SECTION ..............................
+C
+C MODULES CALLED:         None
+C
+C LOCAL VARIABLES AND
+C            STRUCTURES:	
+C Name			Type	Description	
+C -------------------	------	-----------	
+C i			integer	loop index	
+C cm2m			real	local constant = 100.0
+C	
+C METHOD:	
+C          compute slope factor for rain (rs)	
+C          compute slope factor for snow (ss)	
+C	
+C INCLUDE FILES:          slope.f.pro
+C	
+C COMPILER DEPENDENCIES:  FORTRAN 77	
+C COMPILE OPTIONS:        -Zu -wd"dO"-Wf"-em -o aggress"	
+C MAKEFILE:	
+C     /a/ops/src/met/coamps/src/sub/makefile	
+C	
+C  RECORD OF CHANGES:	
+C    NONE	
+C........................ END PROLOGUE ...................................	

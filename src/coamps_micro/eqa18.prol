@@ -1,0 +1,94 @@
+C.............................START PROLOGUE............................
+C
+C SCCS IDENTIFICATION:   %W% %G%
+C                        %U% %P%
+C
+C CONFIGURATION IDENTIFICATION:  Version 4.0
+C
+C MODULE NAME:            eqa18.f
+C DESCRIPTION:		  compute depositional growth of ice
+C
+C COPYRIGHT:              (c) 1994 FLENUMMETOCCEN
+C                         U.S. GOVERNMENT DOMAIN
+C                         ALL RIGHTS RESERVED
+C CONTRACT NUMBER
+C    AND TITLE:
+C REFERENCES:             None
+C CLASSIFICATION:         Unclassified
+C RESTRICTIONS:           None
+C COMPUTER/OPERATING
+C    SYSTEM DEPENDENCIES: None
+C
+C LIBRARIES OF RESIDENCE:
+C    /a/ops/lib/coampslib.a
+C
+C USAGE:
+C call  eqa18(qv,qi,qsati,tt,rho,conci
+C                  ,appbpp,w1,w2,w3,pdepi
+C                  ,tice,delt,pcut,len)
+C
+C PARAMETERS:
+C Name			Type	Usage	Description
+C -----------		------	------	-----------
+C len			integer	input	dimension of input/output arrays
+C appbpp(len)		real	input	work array
+C conci(len)		real	input	work array
+C delt			real	input	time step
+C pcut			real	input	lowest allowable mixing ratio of
+C					cloud droplets, ice crystals,
+C					snowflakes, and raindrops
+C pdepi(len)		real	output	deposition growth of cloud ice
+C qi(len)		real	input	ice crystals at each grid point
+C					and each sigma level
+C qsati(len)		real	input	saturation vapor pressure with respect
+C                                       to ice
+C qv(len)		real	input	water vapor at each grid point
+C					for each sigma level
+C rho(len)		real	
+C tice			real	input   constant temp of ice of 269.16K
+C tt(len)		real	input	model level temperatures
+C w1(len)               real    input (NOT USED)w wind component at each grid
+C                                       point for each sigma leve at
+C                                       t - delt
+C w2(len)               real    input (NOT USED)w wind component at each grid
+C                                       point for each sigma leve at t
+C w3(len)               real    input (NOT USED)w wind component at each grid
+C                                       point for each sigma leve at
+C                                       t + delt
+C	
+C COMMON BLOCKS:          None
+C			
+C FILES:                  None
+C DATA BASES:             None
+C NON-FILE INPUT/OUTPUT:  None
+C ERROR CONDITIONS:       None
+C ADDITIONAL COMMENTS:    None
+C
+C...................... MAINTENANCE SECTION ..............................
+C
+C MODULES CALLED:         None
+C
+C LOCAL VARIABLES AND
+C            STRUCTURES:	
+C Name			Type	Description	
+C -------------------	------	-----------	
+C i			integer	loop index
+C avgmas                real    average mass of cloud ice crystal
+C dbari                 real    diameter of hexgonal plate of ice
+C rate                  real    rate of depositional growth of ice
+C rhi                   real    relative humidity with respect to ice
+C tp1			real	temporary variable
+C tp2			real	temporary variable
+C	
+C METHOD:	
+C	use method of rutledge and hobbs (mwr vol 40, 1983, pp 1185-1206)kk
+C INCLUDE FILES:          eqa15.f.pro
+C	
+C COMPILER DEPENDENCIES:  FORTRAN 77	
+C COMPILE OPTIONS:        -Zu -wd"dO"-Wf"-em -o aggress"	
+C MAKEFILE:	
+C     /a/ops/src/met/coamps/src/sub/makefile	
+C	
+C  RECORD OF CHANGES:	
+C    NONE	
+C........................ END PROLOGUE ...................................	

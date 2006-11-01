@@ -1,0 +1,376 @@
+C.............................START PROLOGUE............................
+C
+C SCCS IDENTIFICATION:   %W% %G%
+C                        %U% %P%
+C
+C CONFIGURATION IDENTIFICATION:  Version 4.0
+C
+C MODULE NAME:            adjtq.f
+C DESCRIPTION:
+C          This subroutine is the microphysical parameterization
+C          scheme based on:  rutledge,s.a.,and p.v. hobbs,1983:
+C          the mesoscale and microscale structure and organization
+C          of clouds and precipitation in midlatitude cyclones.
+C          viii: a model for the "seeder-feeder" process in warm-frontal
+C          rainbands.  j. atmos. sci.,40,1185-1206.  This paper
+C          is referred to as rh-1983 in the remaining documentation
+C          of this subroutine
+C
+C COPYRIGHT:              (c) 1994 FLENUMMETOCCEN
+C                         U.S. GOVERNMENT DOMAIN
+C                         ALL RIGHTS RESERVED
+C CONTRACT NUMBER
+C    AND TITLE:           
+C REFERENCES:             None
+C CLASSIFICATION:         Unclassified
+C RESTRICTIONS:           None
+C COMPUTER/OPERATING
+C    SYSTEM DEPENDENCIES: None
+C 
+C LIBRARIES OF RESIDENCE: 
+C    /a/ops/lib/coampslib.a
+C
+C USAGE:
+C call  adjtq
+C    (cond,evap,p3,qc3,qi3,qr3,qs3,qv3,th3,w3
+C   ,wtm
+C   ,exbm,rbm
+C   ,cp,delt,heatlf,heatls,heatlv,pcut,p00,r,rvap,sloper
+C   ,slopes,timea
+C   ,idgadj,iter1,jdgadj
+C   ,ldgadj,lice
+C   ,m,n,kk)
+C
+C PARAMETERS:             
+C Name			Type	Usage	Description
+C -----------		------	------	-----------
+C idgadj                integer input	i coordinate of diagnostic printout
+C iter1			integer input	iteration number of coarse mesh
+C jdgadj		integer input	j coordinate of diagnostic printout
+C kk                    integer input   number of sigma levels
+C m                     integer input   x-dimension of grid
+C n                     integer input   y-dimension of grid
+C cond(m,n,kk)		real    output  condensation and evaporation of
+C                                       cloud water
+C cp                    real    input   specific heat at constant press
+C delt                  real    input   time step
+C evap(m,n,kk)		real    output  evaporation of rain drops
+C exbm(m,n,kk)		real    input   exner function for mean state
+C heatlf		real    input   latent heat of fusion
+C heatls		real    input   latent heat of sublimation
+C heatlv		real    input   latent heat of vaporization
+C ldgadj		logical input   flag to turn on/off diagnostic
+C                                       values
+C lice			logical in/out  flag to turn on/off computation
+C                                       of ice concentration
+C p00                   real    input   reference pressure (1000 mb)
+C p3(m,n,kk)            real    input   perturbation exner function at
+C                                       t + delt
+C pcut                  real    in/out  lowest allowable mixing ratio of
+C                                       cloud droplets, ice crystals,
+C                                       snowflakes, and raindrops
+C qc3(m,n,kk)           real    in/out  cloud droplets at time + delt
+C qi3(m,n,kk)           real    in/out  ice crystals at time + delt
+C qr3(m,n,kk)           real    in/out  raindrops at time + delt
+C qs3(m,n,kk)           real    in/out  snowflakes at time + delt
+C qv3(m,n,kk)           real    in/out  water vapor at time + delt
+C rbm(m,n,kk)           real    (not used) density of reference state at
+C                                       mass levels                          
+C rvap			real    input	gas constant for water vapor
+C sloper		real    in/out  slope factor for rain
+C slopes		real    in/out  slope factor for snow
+C th3(m,n,kk)           real    in/out  potential temperature at time 
+C                                       + delt
+C timea			real    input	output time
+C w3(m,n,kk)            real    input   wind vertical component at time
+C                                       + delt
+C wtm(m,n)              real    input   weighting array for mass points
+C
+C COMMON BLOCKS:          None
+C FILES:                  None 
+C DATA BASES:             None
+C NON-FILE INPUT/OUTPUT:  None
+C ERROR CONDITIONS:       None
+C ADDITIONAL COMMENTS:    None
+C
+C...................... MAINTENANCE SECTION ............................
+C
+C MODULES CALLED:         
+C Name		Description
+C -----------	------------------------
+C conice        compute ice concentration, and reevalute
+C eqa12         compute prevp - evaporation of rain drops
+C eqa15         compute pint - initiation of cloud ice
+C eqa18         compute pdepi - depositional growth of cloud ice
+C eqa19         compute pconv - conversion of cloud ice to snow
+C eqa21         compute psaci - collection of cloud ice by snow
+C eqa22         compute psacw - collection of cloud ice by snow
+C eqa25         compute psmlt - melting of snow
+C eqa26         compute psdep - depositional growth of snow
+C eqa27         compute psmltev - evaporation of melting snow
+C eqa28         compute psmlt - melting of snow
+C eqa6          compute pcond - condensation and evaporation of cloud 
+C               water
+C eqa7          compute praut - autoconversion of cloud water
+C eqa9          compute prawc - collection of cloud water by rain
+C esati         compute saturation mixing ration over ice
+C esatv         compute saturation mixing ration over water
+C gamma         produce gamma function of z
+C qprntn        print out i1,j1 to i2,j2 of an array
+C qsatvi        driver to call esati and esatv             
+C setmin        set minimum values of array to a certain value
+C slope         driver to calculate slopes and sloper
+C uptqv         update temperatures and water vapor mixing ratios
+C               due to pint term
+C
+C LOCAL VARIABLES AND 
+C            STRUCTURES:
+C Name			Type	Description
+C -------------------	------	-----------
+C i                     integer do loop counter
+C id			integer local variable = idgadj
+C iterp			integer local variable = 180
+C j			integer do loop counter
+C jcen			integer local variable = n/2+1
+C jd			integer local variable = jdgadj
+C k                     integer do loop counter
+C m1                    integer m-1
+C m2                    integer m-2
+C mkk                   integer m*kk
+C mn                    integer m*n
+C n1                    integer n-1
+C n2                    integer n-2
+C noiter                integer local vaiable = 1
+C iwx1(m,kk)		integer (not used)
+C aa0			real    local constant = -0.267
+C aa1			real    local constant = 5150.0
+C aa2			real    local constant = -1.0225e6
+C aa3			real    local constant = 7.55e7
+C apbp(m,kk)		real	work array
+C appbpp(m,kk)		real	work array
+C apr			real    local constant = 3000.0
+C aprpr			real    local constant = 1.139
+C bsnow			real    local constant = 0.11
+C cbeta			real    local constant = 0.6
+C cimass                real    local constant = 9.4e-10
+C cnzero                real    local constant = .01
+C conci(m,kk)		real    concentration of ice crystals
+C dg1(kk)		real    diagnostic value = pr*.01
+C dg10(kk)		real    diagnostic value = prevp*1000
+C dg11(kk)              real    diagnostic value potential temperature
+C                               -273.16
+C dg12(kk)              real    diagnostic value of water vapor temp 
+C                               *1000.
+C dg13(kk)              real    diagnostic value of cloud droplets 
+C                               *1000 at t + delt
+C dg14(kk)              real    diagnostic value of raindrops 1000 at 
+C                               t + delt
+C dg15(kk)              real    diagnostic value of dg11-dg2
+C dg16(kk)              real    diagnostic value of dg12-dg3
+C dg17(kk)              real    diagnostic value of dg13-dg4
+C dg18(kk)              real    diagnostic value of dg14-dg5
+C dg19(kk)              real    diagnostic value of passed variable w3
+C dg2(kk)               real    diagnostic value of
+C dg20(kk)              real    diagnostic value of perturbat exner 
+C                               func at t + delt
+C dg21(kk)              real    diagnostic value of water vapor 
+C                               temperature
+C dg22(kk)              real    diagnostic value of saturated air
+C dg23(kk)              real    diagnostic value of saturated air - 
+C                               water vapor temp
+C dg24(kk)              real    (not used)
+C dg25(kk)              real    (not used)
+C dg26(kk)              real    diagnostic value of snow flakes*1000
+C dg27(kk)              real    diagnostic value of psdep*1000
+C dg28(kk)              real    diagnostic value of snow flakes at 
+C                               t + delt
+C dg29(kk)              real    diagnostic value of dg28-dg26
+C dg3(kk)               real    diagnostic values of water vapor temp 
+C                               *1000
+C dg4(kk)               real    diagnostic value of cloud droplet *1000
+C dg5(kk)               real    diagnostic value of rain drop temp *1000
+C dg6(kk)               real    diagnostic value saturated air *1000
+C dg6(kk)		real    diagnostic value of qsatv*1000
+C dg7(kk)		real    diagnostic value of pcond*1000
+C dg8(kk)		real    diagnostic value of praut*1000
+C dg9(kk)		real    diagnostic value of pracw*1000
+C difvap                real    local constant = 2.26e-5
+C dq                    real    water vapor temp - saturated air at 
+C                               array(i,1)
+C erc                   real    constant = 1.0
+C esc                   real    constant = 1.0
+C esi                   real    constant = .1
+C ex1                   real    constant = .2
+C ex2                   real    constant = bsnow*0.5+2.5
+C ex3                   real    constant = bsnow+3.0
+C gm3			real    result of producing the gamma function
+C                               with 3
+C gm4			real    result of producing the gamma function
+C                               with 4
+C gm5			real    result of producing the gamma function
+C                               with 5
+C gm6			real    result of producing the gamma function
+C                               with 6
+C gmbov2                real    result of producing the gamma function
+C                               bsnow*.5+2.5
+C gmbp3                 real    result of producing the gamma function
+C                               bsnow+3.0
+C hlvoka                real    result of latent heat of vaporization/therco
+C hlvorv                real    pressure due to water vapor evaporation
+C				 latent heat of vaporization / gas constant
+C				 for water vapor
+C hlsorv                real    pressure due to water vapor condensation
+c				 latent heat of sublimation / gas constant
+C				 for water vapor
+C pcond(m,kk)           real    condensation and evaporation of cloud 
+C                               water
+C pconv(m,kk)           real    conversion of cloud ice to snow
+C pdepi(m,kk)           real    deposition growth of cloud ice
+C pi                    real    4.0*atan(1.0)
+C pint(m,kk)            real    initiation of cloud ice
+C pr(m,kk)              real    pressure
+C prsmin                real    locam constant of q.e10
+C pracw(m,kk)           real    collection of cloud water by rain water
+C praut(m,kk)           real    autoconversion of cloud water
+C praut1                real    local constant = .001
+C praut2                real    local constant = .001
+C prevp(m,kk)           real    evaporation of raindrops
+C psaci(m,kk)           real    collection of cloud ice by snow
+C psacw(m,kk)           real    collection of cloud water by snow
+C psdep(m,kk)           real    depositional growth of snow
+C psmlt(m,kk)           real    melting of snow
+C psmlte(m,kk)          real    evaporation of melting snow
+C psmlti(m,kk)          real    melting of cloud ice
+C pterm(m,kk)		real    resultant of (p00/p)**2
+C qctemp(m,kk)          real    internal value of cloud droplet temp at
+C                               t + delt
+C qitemp(m,kk)          real    internal value of ice crystal temp at 
+C                               t + delt
+C qrtemp(m,kk)          real    internal value of rain drop temp at 
+C                               t + delt
+C qsati(m,kk)		real	saturation vapor pressure of ice crystals
+C qsatv(m,kk)		real	saturation vapor pressure of water vapor
+C qstemp(m,kk)          real    internal value of snow temp at t + delt
+C qvtemp(m,kk)          real    internal value of water vapor temp at
+C                               t + delt                                
+C rbar2d(m,kk)		real    value = pressure/(universal gas constant
+C                               * temperature)
+C rhosno                real    local constant = 100.
+C rnzero                real    local constant = 8.0e6
+C rvochi                real    value = rvap/difvap
+C sfrain(m,kk)          real    slope factor for rain
+C sfsnow(m,kk)          real    slope factor for snow
+C snzero                real    local constant = 2.0e7
+C temp                  real    log value of sfsnow
+C terma(m,kk)		real	1st derivative of snow fall
+C termb(m,kk)		real	2nd derivative of snow fall
+C th2t(m,kk)		real    temporary array potential temperature 
+C                               converted to temperature
+C tice                  real    constant temp of ice of 269.16
+C tp1                   real    local temporary variable
+C tp2                   real    local temporary variable
+C tp4			real    local temporary variable
+C tp5			real    local temporary variable
+C tp6			real    local temporary variable
+C tttemp(m,kk)          real    local working array for temperature
+C twodt                 real    constant value of delt*2 
+C tzero                 real    kelvin to celcius conversion constant 273.16
+C visair                real	constant
+C x6(m,kk)		real	work array
+C x7(m,kk)		real	work array
+C x8(m,kk)		real	work array
+C x9(m,kk)		real	work array
+C xa(m,kk)              real    work space for time and space 
+C                               interpolation
+C xb(m,kk)		real	work array
+C xc(m,kk)		real	work array
+C cname                 char*8  filename to be written to
+C
+C METHOD
+C     Define local constants
+C     Compute gamma functions
+C     Loop over north-south index
+C     Compute pressure
+C     Convert potential temperature to temperature
+C     Store temperature in temporary working array
+C     Store mixing ratios in temporary working arrays
+C     Zero out ice/snow related terms if ice is turned off for
+C     this run
+C     Compute saturation mixing ratios
+C     Store diagnostic values
+C     Compute ice concentration (eq. a13, rh-1983)
+C     Compute slope factors for rain (sfrain) and for
+C     snow (sfsnow) (eqs. 3a and 3b, rh-1983)
+C     Special printout
+C     Compute pint - initiation of cloud ice (eq. a15,
+C     rh-1983)
+C     Update temperatures and water vapor mixing ratio
+C     due to pint term
+C     Re-evaluate saturation mixing ratios
+C     Re-evaluate ice concentration (eq. a13, rh-1983)
+C     Compute pconv - conversion of cloud ice to snow
+C     (eq. a19, rh-1983)
+C     Compute arrays to be shared in various terms to follow
+C     (p00/p)**2
+C     Compute pdepi - depositional growth of cloud ice
+C     (eq. a18, rh-1983)
+C     Update temperatures and water vapor mixing ratio
+C     due to pdepi term
+C     Re-evaluate saturation mixing ratios
+C     compute psdep - depositional growth of snow
+C     Ceq. a26, rh-1983)
+C     Update temperatures and water vapor mixing ratio
+C     due to psdep term
+C     Re-evaluate saturation mixing ratios
+C     Compute pcond - condensation and evaporation of
+C     cloud water (eq. a6, rh-1983)
+C     Update temperatures and water vapor mixing ratio
+C     due to pcond term
+C     Re-evaluate saturation mixing ratios
+C     Compute prevp - evaporation of rain drops
+C     (eq. a12, rh-1983)
+C     Update temperatures and water vapor mixing ratio
+C     due to prevp term
+C     Re-evaluate saturation mixing ratios
+C     Compute pracw - collection of cloud water by rain
+C     water (eq. a9, rh-1983)
+C     Compute psacw - collection of cloud water by snow
+C     (eq. a22, rh-1983)
+C     Compute praut - autoconversion of cloud water
+C     (eq. a7, rh-1983)
+C     Compute psaci - collection of cloud ice by snow
+C     (eq. a21, rh-1983)
+C     Compute psmlt - melting of snow (eq. a25, rh-1983)
+C     Compute psmlti - melting of cloud ice (eq. a28, rh-1983)
+C     Compute psmltev - evaporation of melting snow
+C     (eq. a27, rh-1983)
+C     Update temperatures and water vapor mixing ratio
+C     due to pcond term
+C     Re-evaluate saturation mixing ratios
+C     Update temperatures and mixing ratios
+C     first, take care of the temperature
+C     Special printout of fields
+C     Store diagnostic values
+C     Convert to potential temperature
+C     Put adjusted values of potential temperature and
+C     water vapor into prognostic equations
+C     Add in heating and moistening tendencies
+C     Finalize rain and snow
+C     Convert to potential temperature
+C     For temperature above freezing
+C     For temperature below freezing
+C     Compute remaining diagnostic values
+C     End of loop over north-south index
+C     Set values of cloud droplets, rain drops, ice crystals
+C     and snow flakes that are less than pcut to zero
+C     Write out diagnostic file
+C
+C INCLUDE FILES:          None
+C COMPILER DEPENDENCIES:  FORTRAN 77
+C COMPILE OPTIONS:        -Zu -wd"dO"-Wf"-em -o aggress"
+C MAKEFILE:               
+C     /a/ops/src/met/coamps/src/sub/makefile
+C
+C  RECORD OF CHANGES:
+C    NONE
+C........................ END PROLOGUE .................................
