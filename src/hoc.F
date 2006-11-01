@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.93 2006-09-05 22:31:09 dschanen Exp $
+! $Id: hoc.F,v 1.94 2006-11-01 20:41:33 mjfalk Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -256,7 +256,8 @@
 
        call hoc_initialize( runfile, psfc, thlm, rtm, 
      .                      um, vm, ug, vg, wp2,
-     .                      rcm, wmt, wmm, em, exner,
+     .                      rcm, rrm, rim, rgm, rsnowm,
+     .                      wmt, wmm, em, exner,
      .                      taut, taum, thvm, p,
      .                      rhot, rhom, Lscale, lup,
      .                      ldown, Kht, Khm
@@ -526,7 +527,8 @@
 
        call hoc_initialize( runfile, psfc, thlm, rtm, 
      .                      um, vm, ug, vg, wp2,
-     .                      rcm, wmt, wmm, em, exner,
+     .                      rcm, rrm, rim, rgm, rsnowm,
+     .                      wmt, wmm, em, exner,
      .                      taut, taum, thvm, p,
      .                      rhot, rhom, Lscale, lup,
      .                      ldown, Kht, Khm
@@ -534,6 +536,9 @@
      .                      ,sclrm, edsclrm
 #endif /*SCALARS*/
      .                     )
+
+       um_init = um ! Michael Falk addition for nudging code.  27 Sep/1 Nov 2006
+       vm_init = vm ! ditto
 
 #ifdef STATS
 !      Initialize statistics output
@@ -634,11 +639,13 @@
 !-----------------------------------------------------------------------
         subroutine hoc_initialize
      .             ( runfile, psfc, thlm, rtm, um, vm,
-     .               ug, vg, wp2, rcm, wmt, wmm,
+     .               ug, vg, wp2, rcm, rrm, rim,
+     .               rgm, rsnowm, wmt, wmm,
      .               em, exner, taut, taum, thvm,
      .               p, rhot, rhom, Lscale, lup,
      .               ldown, Kht, Khm, 
      .               sclrm, edsclrm )
+
 !       Description:
 !       Execute the necessary steps for the initialization of the 
 !       HOC model run. 
@@ -685,6 +692,10 @@
      .  vg,             ! u geostrophic wind            [m/s] 
      .  wp2,            ! w'^2                          [m^2/s^2]
      .  rcm,            ! Cloud water mixing ratio      [kg/kg]
+     .  rrm,            ! Rain water mixing ratio       [kg/kg] Michael Falk, 1 Nov 2006
+     .  rim,            ! Ice water mixing ratio        [kg/kg]           "
+     .  rgm,            ! Graupel water mixing ratio    [kg/kg]           "
+     .  rsnowm,         ! Snow water mixing ratio       [kg/kg]           "
      .  wmt, wmm,       ! w wind                        [m/s]
      .  exner,          ! Exner function                [-] 
      .  em,             ! Em                            [m^2/s^2]
@@ -706,6 +717,7 @@
         real, dimension(gr%nnzp) :: tmp1
 
         real :: cloud_top_height ! [m]
+        real :: emax
 
         integer :: k
 
@@ -901,6 +913,29 @@
 
           wp2 = 2.0 / 3.0  * em
 
+        ! Michael Falk for MPACE Arctic Stratus case.
+        case ( "mpace" )
+
+          cloud_top_height = 1300. ! 1300 m is the cloud top in MPACE.  Michael Falk 17 Aug 2006
+          emax = 1.0
+          do k=1,gr%nnzp
+
+            rrm(k) = 0.
+            rim(k) = 0.
+            rgm(k) = 0.
+            rsnowm(k) = 0.
+
+            if ( gr%zm(k) < cloud_top_height ) then
+               em(k) = emax
+            else
+               em(k) = emin
+            end if
+          enddo
+          em(1) = em(2)
+          em(gr%nnzp) = em(gr%nnzp-1)
+
+          wp2 = 2.0 / 3.0 * em
+
         end select
 
         ! End Initialize TKE and other fields as needed
@@ -966,6 +1001,14 @@
 
         ! Input/Output Variables
         logical, intent(inout) :: isValid
+
+        ! Michael Falk, 1 November 2006, thinks these should be renamed
+        ! and moved to diag_variables.F .
+        real snowv(1,1,gr%nnzp)
+        real falli(1,1,gr%nnzp)
+        real fallg(1,1,gr%nnzp)
+        real fallr(1,1,gr%nnzp)
+        ! eMFc
 
 !-----------------------------------------------------------------------
 
@@ -1107,7 +1150,23 @@
 #endif /* SCALARS */
      .                            )
 
+         case ( "mpace" ) ! MPACE case
+           call mpace_tndcy( time, time_initial, dtmain, thlm,
+     .                       rim, rrm, rgm, rsnowm,
+     .                       exner, rhot, rtm, p, thvm, rcm,
+     .                       wmt, wmm, thlm_forcing, rtm_forcing,
+     .                       Frad, Frad_LW, Frad_SW,
+     .                       radht, radht_LW, radht_SW,
+     .                       nc3, ni3, nr3, ncn3,
+     .                       snowv, falli, fallg, fallr
+#ifdef SCALARS
+     .                     ,sclrm_forcing
+#endif /* SCALARS */
+     .                    )
 
+#ifdef SCALARS
+           sclrm_forcing(:, SCLR_THETA) = 0.
+#endif /* SCALARS */
 
          case default
            write(*,*) "hoc_forcings_timestep: Don't know how to handle "
@@ -1221,6 +1280,14 @@
         case( "jun25_altocu" )
           ! There are no surface momentum or heat fluxes
           ! for the Jun. 25 Altocumulus case.
+
+         case ( "mpace" )
+           call mpace_sfclyr( rhom(1), um(2), vm(2), upwp_sfc, vpwp_sfc,
+     .                        wpthlp_sfc, wprtp_sfc
+#ifdef SCALARS
+     .                        ,wpsclrp(1,:)
+#endif /* SCALARS */
+     .                      )
 
         case default
           write(*,*) "Invalid value of runtype = ", runtype
