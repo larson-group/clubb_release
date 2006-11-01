@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.24 2006-09-05 22:39:04 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.25 2006-11-01 20:42:56 mjfalk Exp $
 
 
 
@@ -601,6 +601,14 @@
        ! dtmain to dt -dschanen
        call update_ed_var( "um", um, umt, upwp(1), 
      .                     Khm, dt, upwp, isValid )
+
+       if (lnudging) then
+         do k=1,gr%nnzp
+           um(k) = um(k) - ((um(k) - um_init(k)) * (dt/3600)) ! Nudging; 3600 s is nudging timescale
+           vm(k) = vm(k) - ((vm(k) - vm_init(k)) * (dt/3600)) ! Michael Falk; 8 Sep-1 Nov 2006
+         end do
+       end if
+
        um(1)       = ( ( um(3)-um(2) )/( gr%zt(3)-gr%zt(2) ) )
      .              * ( gr%zt(1)-gr%zt(2) ) + um(2)
        um(gr%nnzp) = ( ( um(gr%nnzp-1)-um(gr%nnzp-2) )

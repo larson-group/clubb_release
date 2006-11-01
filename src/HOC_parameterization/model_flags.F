@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: model_flags.F,v 1.2 2006-05-07 21:47:14 griffinb Exp $
+! $Id: model_flags.F,v 1.3 2006-11-01 20:42:56 mjfalk Exp $
 
 ! Various model options that can be toggled off and on as desired
 !-----------------------------------------------------------------------
@@ -7,6 +7,7 @@
 
        logical, parameter :: LH_on    = .false. ! latin hypercube calculation
        logical, parameter :: local_kk = .false. ! local drizzle for rain microphysics
+       logical, parameter :: lnudging = .false. ! for wind speed nudging.  Michael Falk, 1 Nov 2006
 
 !      BUGSrad interactive radiation scheme
        logical :: lbugsrad

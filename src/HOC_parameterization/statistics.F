@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.8 2006-10-31 18:00:51 dschanen Exp $
+!  $Id: statistics.F,v 1.9 2006-11-01 20:42:56 mjfalk Exp $
 
 !  module stats_type
 !  contains:
@@ -98,6 +98,9 @@ c       Indices for statistics in zt file
      .     ised_rcm,       ! Brian
      .     irsm,           ! Brian
      .     irrm,           ! Brian
+     .     irgm,           ! Michael Falk
+     .     irim,           ! Michael Falk
+     .     irsnowm,        ! Michael Falk
      .     iNrm,           ! Brian
      .     iVrr,           ! Brian
      .     imean_vol_rad,  ! Brian
@@ -106,7 +109,11 @@ c       Indices for statistics in zt file
      .     iAKm_est,       ! LH Kessler.  Vince Larson  22 May 2005
      .     iradht,         ! Radiative heating.  Dave Schanen 7 Oct 2005
      .     iradht_LW,      !   "           "   Long-wave
-     .     iradht_SW       !   "           "   Short-wave
+     .     iradht_SW,      !   "           "   Short-wave
+     .     idiam,          ! Necessary for icedfs scheme.  Michael Falk, 1 Nov 2006
+     .     im,             ! Necessary for icedfs scheme.  Michael Falk, 1 Nov 2006
+     .     idqc_dt_icedfs, ! Necessary for icedfs scheme.  Michael Falk, 1 Nov 2006
+     .     iu_T_cm         ! Necessary for icedfs scheme.  Michael Falk, 1 Nov 2006
 
         ! thlm/rtm budget terms
         integer ::
@@ -540,6 +547,9 @@ c     -----------------------------------------------------------------
       ised_rcm      = 0  ! Brian
       irsm          = 0  ! Brian
       irrm          = 0  ! Brian
+      irgm          = 0  ! Michael Falk
+      irim          = 0  ! Michael Falk
+      irsnowm       = 0  ! Michael Falk
       iNrm          = 0  ! Brian
       iVrr          = 0  ! Brian
       imean_vol_rad = 0  ! Brian
@@ -549,6 +559,10 @@ c     -----------------------------------------------------------------
       iradht        = 0
       iradht_LW     = 0
       iradht_SW     = 0
+      idiam         = 0
+      im            = 0
+      idqc_dt_icedfs= 0
+      iu_T_cm       = 0
 
       irtm_bt       = 0
       irtm_ma       = 0
@@ -903,6 +917,33 @@ c     -----------------------------------------------------------------
           zt%f%var(irrm)%units = "kg/kg"
           k = k + 1
 
+        case ('rim')           ! Michael Falk
+          irim = k
+          zt%f%var(irim)%ptr => zt%x(:,k)
+          zt%f%var(irim)%name = "rim"
+          zt%f%var(irim)%description
+     .    = "ice water mixing ratio (kg/kg)"
+          zt%f%var(irim)%units = "kg/kg"
+          k = k + 1
+
+        case ('rgm')           ! Michael Falk
+          irgm = k
+          zt%f%var(irgm)%ptr => zt%x(:,k)
+          zt%f%var(irgm)%name = "rgm"
+          zt%f%var(irgm)%description
+     .    = "graupel water mixing ratio (kg/kg)"
+          zt%f%var(irgm)%units = "kg/kg"
+          k = k + 1
+
+        case ('rsnowm')           ! Brian
+          irsnowm = k
+          zt%f%var(irsnowm)%ptr => zt%x(:,k)
+          zt%f%var(irsnowm)%name = "rsnowm"
+          zt%f%var(irsnowm)%description
+     .    = "snow water mixing ratio (kg/kg)"
+          zt%f%var(irsnowm)%units = "kg/kg"
+          k = k + 1
+
         case ('Nrm')           ! Brian
           iNrm = k
           zt%f%var(iNrm)%ptr => zt%x(:,k)
@@ -976,6 +1017,39 @@ c     -----------------------------------------------------------------
           zt%f%var(iradht_SW)%name = "radht_SW"
           zt%f%var(iradht_SW)%description = "Short-wave heating rate"
           zt%f%var(iradht_SW)%units = "K/s"
+          k = k + 1
+
+        case ('diam')
+          idiam = k
+          zt%f%var(idiam)%ptr => zt%x(:,k)
+          zt%f%var(idiam)%name = "diam"
+          zt%f%var(idiam)%description = "Ice crystal diameter"
+          zt%f%var(idiam)%units = "m"
+          k = k + 1
+
+        case ('m')
+          im = k
+          zt%f%var(im)%ptr => zt%x(:,k)
+          zt%f%var(im)%name = "m"
+          zt%f%var(im)%description = "Ice crystal mass"
+          zt%f%var(im)%units = "kg"
+          k = k + 1
+
+        case ('dqc_dt_icedfs')
+          idqc_dt_icedfs = k
+          zt%f%var(idqc_dt_icedfs)%ptr => zt%x(:,k)
+          zt%f%var(idqc_dt_icedfs)%name = "dqc_dt_icedfs"
+          zt%f%var(idqc_dt_icedfs)%description =
+     .                             "change in liquid due to ice"
+          zt%f%var(idqc_dt_icedfs)%units = "kg/kg/s"
+          k = k + 1
+
+        case ('u_T_cm')
+          iu_T_cm = k
+          zt%f%var(iu_T_cm)%ptr => zt%x(:,k)
+          zt%f%var(iu_T_cm)%name = "u_T_cm"
+          zt%f%var(iu_T_cm)%description = "ice crystal fallspeed"
+          zt%f%var(iu_T_cm)%units = "cm/s"
           k = k + 1
 
         case ('rtm_bt')
@@ -3015,9 +3089,21 @@ c     -----------------------------------------------------------------
           zt%x(:,irsm) = zt%x(:,irsm) + rsm
           zt%n(:,irsm) = zt%n(:,irsm) + 1
         endif
-        if ( irrm > 0 .and. kk_rain ) then     ! Brian
+        if ( irrm > 0) then     ! Brian
           zt%x(:,irrm) = zt%x(:,irrm) + rrm
           zt%n(:,irrm) = zt%n(:,irrm) + 1
+        endif
+        if ( irim > 0) then     ! Michael Falk
+          zt%x(:,irim) = zt%x(:,irim) + rim
+          zt%n(:,irim) = zt%n(:,irim) + 1
+        endif
+        if ( irgm > 0) then     ! Michael Falk
+          zt%x(:,irgm) = zt%x(:,irgm) + rgm
+          zt%n(:,irgm) = zt%n(:,irgm) + 1
+        endif
+        if ( irsnowm > 0) then     ! Michael Falk
+          zt%x(:,irsnowm) = zt%x(:,irsnowm) + rsnowm
+          zt%n(:,irsnowm) = zt%n(:,irsnowm) + 1
         endif
         if ( iNrm > 0 .and. kk_rain ) then     ! Brian
           zt%x(:,iNrm) = zt%x(:,iNrm) + Nrm

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: prog_variables.F,v 1.9 2006-08-04 21:08:56 dschanen Exp $
+! $Id: prog_variables.F,v 1.10 2006-11-01 20:42:56 mjfalk Exp $
         module prognostic_variables
 
 ! This module contains definitions of all prognostic
@@ -58,6 +58,11 @@
         real, allocatable, target :: rcm(:)
         real, allocatable, target :: Ncm(:)
         real, allocatable, target :: cf(:)
+
+        real, allocatable, target :: rim(:)    ! ice water mixing ratio; Michael Falk, 1 Nov 2006
+        real, allocatable, target :: rgm(:)    ! graupel water mixing ratio; Michael Falk, 1 Nov 2006
+        real, allocatable, target :: rsnowm(:) ! snow water mixing ratio; Michael Falk, 1 Nov 2006
+
 
 ! Prognostic drizzle variables
 
@@ -146,6 +151,10 @@
         allocate( Ncm(1:nzmax) )
         allocate( cf(1:nzmax) )
 
+        allocate( rim(1:nzmax) )    !
+        allocate( rgm(1:nzmax) )    !
+        allocate( rsnowm(1:nzmax) ) ! Michael Falk, 1 Nov 2006
+
 ! Prognostic drizzle variables
 
         allocate( rrm(1:nzmax) )       ! rain water mixing ratio  ! Brian
@@ -210,6 +219,10 @@
         rcm = 0.0
         Ncm = 0.0
         cf  = 0.0
+
+        rim = 0.0    !
+        rgm = 0.0    !
+        rsnowm = 0.0 ! Michael Falk, 1 Nov 2006
 
 ! Prognostic drizzle variables
         
@@ -279,6 +292,10 @@
         deallocate( rcm )
         deallocate( Ncm )
         deallocate( cf )
+
+        deallocate( rim )    !
+        deallocate( rgm )    !
+        deallocate( rsnowm ) ! Michael Falk, 1 Nov 2006
 
 ! Prognostic drizzle variables
 

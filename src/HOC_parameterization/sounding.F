@@ -1,4 +1,4 @@
-! $Id: sounding.F,v 1.2 2006-08-04 21:08:56 dschanen Exp $
+! $Id: sounding.F,v 1.3 2006-11-01 20:42:56 mjfalk Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
       module sounding
@@ -31,7 +31,7 @@
 
 ! Parameter
 
-        integer, parameter :: nmaxsnd = 200
+        integer, parameter :: nmaxsnd = 1000
 
 ! Output
 

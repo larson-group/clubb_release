@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.12 2006-08-04 22:04:02 dschanen Exp $ 
+! $Id: gcss.F,v 1.13 2006-11-01 20:42:56 mjfalk Exp $ 
         module gcss
 
 !       Description:
@@ -36,7 +36,9 @@
      .  dycoms2_rf02_tndcy, 
      .  dycoms2_rf02_sfclyr,
      .  nov11_altocu_tndcy, ! Note that neither altocu case 
-     .  jun25_altocu_tndcy  !   starts at the surface
+     .  jun25_altocu_tndcy, !   starts at the surface
+     .  mpace_tndcy,        ! Michael Falk, 1 Nov 2006
+     .  mpace_sfclyr        ! Michael Falk, 1 Nov 2006
 
         private ::
      .  diag_ustar, 
@@ -3232,6 +3234,656 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 !-----------------------------------------------------------------------
 
+
+
+!----------------------------------------------------------------------
+        subroutine mpace_tndcy( time, time_initial, dt, thlm,
+     .                          rim, rrm, rgm, rsnowm, 
+     .                          exner, rhot, rtm, p, thvm, rcm, 
+     .                          wmt, wmm,theta_tndcy, rt_tndcy,
+     .                          Frad, Frad_LW, Frad_SW,
+     .                          radht, radht_LW, radht_SW,
+     .                          nc3, ni3, nr3, ncn3,
+     .                          snowv, falli, fallg, fallr,
+     .                          sclr_tndcy )
+
+!----------------------------------------------------------------------
+!        Description:
+!          Subroutine to large-scale subsidence for MPACE case (Michael
+!          Falk, 21 July 2006).  Added ice and radiation based on Adam
+!          Smith Nov 11 case, 27 July 2006.  Comments and documentation
+!          added 31 July 2006.
+!
+!        References:
+!          Liou, Wallace and Hobbs
+!
+!-----------------------------------------------------------------------
+! Variables (input):
+! time...........: current time of simulation              Unit: s
+! time_initial...: initial time of simulation              Unit: s
+! dt.............: length of timestep (dtmain after spinup;
+!                  dtclosure before spinup, I think)       Unit: s
+! thlm(k)........: Liquid water potential temperature      Unit: K
+! rcm(k).........: Cloud water mixing ratio                Unit: kg/kg
+! exner(k).......: Exner function (p/p0)^(R/Cp)            Unit: none
+! rhot(k)........: Density of air                          Unit: kg/m^3
+! p(k)...........: Pressure                                Unit: Pa
+! thvm(k)........: Virtual potential temperature           Unit: K
+!-----------------------------------------------------------------------
+! Variables (input/output):
+! rtm(k).........: Total water mixing ratio                Unit: kg/kg
+!-----------------------------------------------------------------------
+! Variables (output):
+! wmt(k).........: Large-scale vertical motion on t grid   Unit: m/s
+! wmm(k).........: Large-scale vertical motion on m grid   Unit: m/s
+! theta_tndcy(k).: Large-scale thlm tendency               Unit: K/s
+! rt_tndcy(k)....: Large-scale rtm tendency                Unit: kg/kg/s
+! Frad(k)........: Total radiative flux                    Unit: W/m^2
+! Frad_LW........: Longwave radiative flux                 Unit: W/m^2
+! Frad_SW........: Longwave radiative flux                 Unit: W/m^2
+! radht..........: dT/dt, then d Theta/dt, due to rad.     Unit: K/s
+! radht_LW.......: dT/dt, then d Theta/dt, due to LW rad.  Unit: K/s
+! radht_SW.......: dT/dt, then d Theta/dt, due to SW rad.  Unit: K/s
+! radht_theta....: d Theta/dt due to radiative flux        Unit: K/s
+! radht_theta_LW.: d Theta/dt due to LW radiative flux     Unit: K/s
+! radht_theta_SW.: d Theta/dt due to SW radiative flux     Unit: K/s
+! sclr_tndcy.....: pass                                    Unit: #/s
+!-----------------------------------------------------------------------
+
+        use constants
+        use grid_class
+
+        implicit none
+
+!-----------------------------------------------------------------------
+! INPUT VARIABLES
+!-----------------------------------------------------------------------
+        real, intent(in) ::  time
+        real, intent(in) ::  time_initial
+        real, intent(in) ::  dt
+        real, intent(in) ::  thlm(gr%nnzp)
+
+        real, intent(in) ::  rim(1,1,gr%nnzp)
+        real, intent(in) ::  rrm(gr%nnzp)
+        real, intent(in) ::  rgm(1,1,gr%nnzp)
+        real, intent(in) ::  rsnowm(1,1,gr%nnzp)
+
+        real, intent(in) :: exner(gr%nnzp)
+        real, intent(in) :: rhot(gr%nnzp)
+        real, intent(in) :: rtm(gr%nnzp)
+
+        real, intent(in) :: p(gr%nnzp)
+        real, intent(in) :: thvm(gr%nnzp)
+
+!-----------------------------------------------------------------------
+! OUTPUT VARIABLES
+!-----------------------------------------------------------------------
+        real, intent(inout) ::  rcm(gr%nnzp)
+
+!-----------------------------------------------------------------------
+! OUTPUT VARIABLES
+!-----------------------------------------------------------------------
+        real, intent(out) :: wmt(gr%nnzp)
+        real, intent(out) :: wmm(gr%nnzp)
+        real, intent(out) :: theta_tndcy(gr%nnzp)
+        real, intent(out) :: rt_tndcy(gr%nnzp)
+
+        real, intent(out) :: Frad(gr%nnzp)
+        real, intent(out) :: Frad_LW(gr%nnzp)
+        real, intent(out) :: Frad_SW(gr%nnzp)
+
+        real, intent(out) :: radht(gr%nnzp)
+        real, intent(out) :: radht_LW(gr%nnzp)
+        real, intent(out) :: radht_SW(gr%nnzp)
+
+        real, intent(out) :: nc3(gr%nnzp)
+        real, intent(out) :: ni3(gr%nnzp)
+        real, intent(out) :: nr3(gr%nnzp)
+        real, intent(out) :: ncn3(gr%nnzp)
+
+        real, intent(out) ::  snowv(1,1,gr%nnzp)          ! ajsmith; ARRAY?
+        real, intent(out) ::  falli(1,1,gr%nnzp)          ! ajsmith; ARRAY?
+        real, intent(out) ::  fallg(1,1,gr%nnzp)          ! ajsmith; ARRAY?
+        real, intent(out) ::  fallr(1,1,gr%nnzp)          ! ajsmith; ARRAY?
+
+!       Output (optional)
+        real, optional, intent(out), dimension(gr%nnzp,sclr_dim)
+     .                    :: sclr_tndcy
+
+!-----------------------------------------------------------------------
+! INTERNAL VARIABLES
+!-----------------------------------------------------------------------
+
+!   --------------------------------------------------------------------
+!   Loop control variables
+!   --------------------------------------------------------------------
+        integer i,k
+
+!   -----------------------------------------------------------------
+!   Subsidence variables
+!   -----------------------------------------------------------------
+        real, parameter :: grav0 = 9.8     ! m/s
+!        real, parameter :: Rd    = 287.    ! J/kg/K
+        real, parameter :: D     = 5.8e-6  ! 1/s
+        real, parameter :: psfc  = 101000. ! Pa
+        real, parameter :: p00   = 100000. ! Pa; for theta calcs
+        real, parameter :: pinv  = 85000.  ! Pa; ditto
+
+        real velocity_omega
+
+!   -----------------------------------------------------------------
+!   Radiation variables
+!   -----------------------------------------------------------------
+
+!      --------------------------------------------------------------
+!      Longwave radiation constants from the DYCOMS-RF01 case
+!      --------------------------------------------------------------
+        real, parameter :: F0=70.
+        real, parameter :: F1=22.
+        real, parameter :: kap=85.
+        real xi_abs, Fs0
+
+!      -----------------------------------------------------------------
+!      Shortwave radiation constants from Shettle and Weinman, June 25
+!      -----------------------------------------------------------------
+        real, parameter :: radius = 1.0e-5
+        real, parameter :: A = 0.1
+        real, parameter :: gc = 0.86
+        real, parameter :: omega = .9965
+        real, parameter :: rlat = 71.75
+
+!      -----------------------------------------------------------------
+!      Shortwave radiation constants for Liou scheme to compute solar
+!      zenith angle (xi_abs)
+!      -----------------------------------------------------------------
+        real c_0, c_1, c_2, c_3, d_1, d_2, d_3
+        real sda_t, sda_delta, sda_h, t_since_noon, julday
+        real start_time_until_noon
+
+!      --------------------------------------------------------------
+!      Output from longwave and shortwave schemes
+!      --------------------------------------------------------------
+        real t_tendency
+        real radht_theta(gr%nnzp)
+        real radht_LW_theta(gr%nnzp)
+        real radht_SW_theta(gr%nnzp)
+        real LWP(gr%nnzp), thm_rad(gr%nnzp), rcm_rad(gr%nnzp),
+     .       rhot_rad(gr%nnzp), dsigm(gr%nnzp), frad_out(gr%nnzp),
+     .       frad_lw_out(gr%nnzp), frad_sw_out(gr%nnzp),radhtk(gr%nnzp),
+     .       radht_lw_out(gr%nnzp), radht_sw_out(gr%nnzp)
+
+
+!   --------------------------------------------------------------------
+!   Icedfs Microphysics Variables
+!   --------------------------------------------------------------------
+        real dqc_dt_icedfs(gr%nnzp)
+
+!   --------------------------------------------------------------------
+!   COAMPS Microphysics Variables
+!   --------------------------------------------------------------------
+
+!      -----------------------------------------------------------------
+!      Inputs to COAMPS Microphysics
+!      -----------------------------------------------------------------
+        real TT(1,1,gr%nnzp)
+        real rvm(1,1,gr%nnzp)
+        real cond(1,1,gr%nnzp)
+        real p3(1,1,gr%nnzp)
+        real thm(1,1,gr%nnzp)
+
+        real, parameter :: wtm  = 1    ! "Weighting array for mass point" (never used)
+        real, parameter :: Lf   = 3.34e5 ! Latent Heat of Fusion
+        real, parameter :: pcut = 1.0e-10 ! Cutoff threshold for mixing ratios
+        real rs(1,1,gr%nnzp)
+        real rsi(1,1,gr%nnzp)
+        integer, parameter :: nrdamp = 0 ! number of damping points
+            
+        real ary1d(1,gr%nnzp,1) ! 1d graphics parameters
+        real cpor
+        real dtmain
+
+        logical ldrizzle
+        logical lgrpl
+        integer len
+        integer icase
+
+!      -----------------------------------------------------------------
+!      Variables for computing COAMPS Microphysics tendencies
+!      -----------------------------------------------------------------
+        real nc33d(1,1,gr%nnzp)
+        real nr33d(1,1,gr%nnzp)
+        real ncn33d(1,1,gr%nnzp)
+        real ni33d(1,1,gr%nnzp)
+
+        real rrtend(1,1,gr%nnzp)
+        real rgtend(1,1,gr%nnzp)
+        real ritend(1,1,gr%nnzp)
+        real rsnowtend(1,1,gr%nnzp)
+        real rttend(1,1,gr%nnzp)
+        real thlmtend(1,1,gr%nnzp)
+
+        real rv_before(gr%nnzp)
+        real rc_before(gr%nnzp)
+        real th_before(gr%nnzp)
+
+        real delta_rv(gr%nnzp)
+        real delta_rc(gr%nnzp)
+        real delta_thl(gr%nnzp)
+
+!      -----------------------------------------------------------------
+!      Variables for each term within COAMPS Microphysics
+!      -----------------------------------------------------------------
+        real  snslp(1,1,gr%nnzp)        ! ajsmith; ARRAY?
+        real  pcond(1,1,gr%nnzp)        ! condensation/evaporation of cloud water (cond may not matter; pcond may be the important one) 
+        real  psmlti(1,1,gr%nnzp)        ! melting of cloud ice
+        real  psacw(1,1,gr%nnzp)       ! collection of cloud water by snow
+        real  pgacw(1,1,gr%nnzp)        ! ???
+        real  piacw(1,1,gr%nnzp)        ! ???
+        real  pchomo(1,1,gr%nnzp)        ! ???
+        real  praut(1,1,gr%nnzp)       ! autoconversion of cloud water
+        real  pracw(1,1,gr%nnzp)        ! collection of cloud water by rain water
+        real  pdepi(1,1,gr%nnzp)        ! depositional growth of cloud ice
+        real  pint(1,1,gr%nnzp)        ! initiation of cloud ice
+        real  pgdep(1,1,gr%nnzp)        ! ???
+        real  pconv(1,1,gr%nnzp)        ! conversion of cloud ice to snow
+        real  psaci(1,1,gr%nnzp)        ! collection of cloud ice by snow
+        real  pgaci(1,1,gr%nnzp)        ! ???
+        real  praci(1,1,gr%nnzp)        ! ???
+        real  prevp(1,1,gr%nnzp)        ! evaporation of raindrops
+        real  psdep(1,1,gr%nnzp)        ! depositional growth of snow
+        real  pmltge(1,1,gr%nnzp)        ! ???
+        real  pgmlt(1,1,gr%nnzp)       ! ???
+        real  psmlt(1,1,gr%nnzp)        ! melting of snow
+        real  pgacrm(1,1,gr%nnzp)        ! ???
+        real  pgacwm(1,1,gr%nnzp)       ! ???
+        real  pracs(1,1,gr%nnzp)       ! ???
+        real  pgshr(1,1,gr%nnzp)        ! ???
+        real  pgacr(1,1,gr%nnzp)        ! ???
+        real  psacr(1,1,gr%nnzp)        ! ???
+        real  piacr(1,1,gr%nnzp)        ! ???
+        real  prhomo(1,1,gr%nnzp)        ! ???
+        real  pgacs(1,1,gr%nnzp)       ! ???
+        real  pmltse(1,1,gr%nnzp)        ! ???
+        real  pwacs(1,1,gr%nnzp)       ! ???
+
+!   --------------------------------------------------------------------
+!   ON/OFF Switches for schemes
+!   --------------------------------------------------------------------
+
+        logical center, icedfs_on, coamps_micro_on,
+     .          subs_on, lw_on, sw_on
+
+
+!-----------------------------------------------------------------------
+! Beginning executable code here
+!-----------------------------------------------------------------------
+
+        icedfs_on       = .FALSE.
+        coamps_micro_on = .TRUE.
+        subs_on         = .TRUE.
+        lw_on           = .TRUE.
+        sw_on           = .TRUE.
+        center          = .TRUE.
+
+! If coamps_micro_on and icedfs_on, then error
+
+!-----------------------------------------------------------------------
+! COMPUTE VERTICAL MOTION
+! Apply the specified omega from the MPACE specification, and then
+! convert omega (Pa/s) to w (m/s) using Wallace and Hobbs (p.363).
+! Then snap to m grid (wmm) from t grid (wmm).
+!-----------------------------------------------------------------------
+
+        do i=2,gr%nnzp
+          velocity_omega = min(D*(psfc-p(i)), D*(psfc-pinv))
+          wmt(i) = -velocity_omega * Rd * thvm(i) / p(i) / grav0
+        end do
+        wmm = zt2zm( wmt )
+
+        ! Boundary conditions.
+        wmt(1) = 0.0        ! Below surface
+        wmm(1) = 0.0        ! At surface
+        wmm(gr%nnzp) = 0.0  ! Model top
+        
+!-----------------------------------------------------------------------
+! COMPUTE HEAT AND MOISTURE ADVECTION.
+! Large-scale horizontal advection of T and moisture from MPACE
+! specification.  Convert T tendency to theta tendency using:
+!                  d(theta) = dT * (ps/p)^(R/Cp)
+! Get everything into correct units (K/s and kg/kg/s).  Also do sclr_
+! tndcy if necessary.
+!-----------------------------------------------------------------------
+
+        do i=1,gr%nnzp
+         t_tendency = min(-4.,-15.*(1.-((psfc-p(i))/21818.))) ! K/day
+         theta_tndcy(i) = (t_tendency * ((psfc/p(i)) ** (Rd/Cp))) 
+     .                    / 86400. ! K/s
+         rt_tndcy(i)  = min(0.164,-3*(1-((psfc-p(i))/15171.))) / 
+     .                 1000. / 86400. ! g/kg/day -> kg/kg/s
+        end do
+
+        if ( present( sclr_tndcy ) ) 
+     .    sclr_tndcy(:,SCLR_THETA) = theta_tndcy(:)
+        if ( present( sclr_tndcy ) ) sclr_tndcy(:,SCLR_RT) = rt_tndcy(:)
+
+!-----------------------------------------------------------------------
+! COMPUTE RADIATION.
+!-----------------------------------------------------------------------
+
+!   --------------------------------------------------------------------
+!   COMPUTE SOLAR ZENITH ANGLE.
+!   For shortwave radiation, use formula from Liou (2.2.10) to compute
+!   xi_abs to be passed into radiation scheme.
+!   --------------------------------------------------------------------
+
+      julday = 282
+      start_time_until_noon = 18840 + 61200
+      t_since_noon   = time - start_time_until_noon
+      sda_t = 2*3.14*(julday-1)/365
+
+      c_0 = 0.006918
+      c_1 = -0.399912
+      c_2 = -0.006758
+      c_3 = -0.002697
+      d_1 = 0.070257
+      d_2 = 0.000907
+      d_3 = 0.000148
+
+      sda_delta = c_0 + c_1*cos(sda_t) + d_1*sin(sda_t) +
+     .            c_2*cos(2*sda_t) + d_2*sin(2*sda_t) +
+     .            c_3*cos(3*sda_t) + d_3*sin(3*sda_t)
+
+      sda_h = 2*3.14*t_since_noon/86400
+
+      xi_abs = sin(rlat*3.14/180) * sin(sda_delta) +
+     .         cos(rlat*3.14/180) * cos(sda_delta) * cos(sda_h)
+
+      xi_abs = max(xi_abs,0.)
+
+      if (xi_abs .eq. 0.) then
+        sw_on = .FALSE.
+      end if
+
+      if (.not. sw_on) then
+        xi_abs = 0.
+      end if
+
+!   --------------------------------------------------------------------
+!   DECLARE SOLAR CONSTANT.
+!   --------------------------------------------------------------------
+        Fs0 = 1212.75
+
+!   --------------------------------------------------------------------
+!   CALL RADIATION SCHEME.
+!   --------------------------------------------------------------------
+        if ( .not. lbugsrad ) then
+
+!      -----------------------------------------------------------------
+!      This code transforms these profiles from HOC grid to COAMPS
+!      grid.  The COAMPS-grid profiles are then passed to rad_lwsw
+!      for implementation.
+!      -----------------------------------------------------------------
+
+          do k = 1, gr%nnzp
+            thm_rad(k)  = thlm(gr%nnzp-k+1) + Lv/Cp*rcm(gr%nnzp-k+1)
+            rcm_rad(k)  = rcm(gr%nnzp-k+1)
+            rhot_rad(k) = rhot(gr%nnzp-k+1)
+            dsigm(k)    = 1.0 / gr%dzt(gr%nnzp-k+1)
+          end do
+
+!      -----------------------------------------------------------------
+!      Calling the radiation subroutine, which uses the COAMPS
+!      grid method.  All input and output profiles use the COAMPS
+!      grid setup.
+!      -----------------------------------------------------------------
+
+          call rad_lwsw(thm_rad, rcm_rad, rhot_rad, dsigm,
+     .                  Frad_out, Frad_LW_out, Frad_SW_out,
+     .                  radhtk, radht_LW_out, radht_SW_out,
+     .                  gr%nnzp-1, center,
+     .                  xi_abs, F0, F1, kap, radius, A, gc, Fs0, omega,
+     .                  sw_on, lw_on)
+
+!      -----------------------------------------------------------------
+!      This code transforms the radiation results back into HOC
+!      grid setup.  These Frad and radht arrays are actually
+!      applied to the HOC model.
+!      -----------------------------------------------------------------
+
+          do k = 1, gr%nnzp-1
+            Frad(k)     = Frad_out(gr%nnzp-k+1)
+            Frad_LW(k)  = Frad_LW_out(gr%nnzp-k+1)
+            Frad_SW(k)  = Frad_SW_out(gr%nnzp-k+1)
+
+            radht(k)    = radhtk(gr%nnzp-k+1)
+            radht_LW(k) = radht_LW_out(gr%nnzp-k+1)
+            radht_SW(k) = radht_SW_out(gr%nnzp-k+1)
+
+            radht_theta(k)    = radht(k) * ((p00/p(k))**(Rd/Cp))
+            radht_LW_theta(k) = radht_LW(k) * ((p00/p(k))**(Rd/Cp))
+            radht_SW_theta(k) = radht_SW(k) * ((p00/p(k))**(Rd/Cp))
+          end do ! k
+
+          Frad(1)    = Frad(2)
+          Frad_LW(1) = Frad_LW(2)
+          Frad_SW(1) = Frad_SW(2)
+          radht_theta(1)    = radht_theta(2)
+          radht_LW_theta(1) = radht_LW_theta(2)
+          radht_SW_theta(1) = radht_SW_theta(2)
+
+          Frad(gr%nnzp)    = Frad(gr%nnzp-1)
+          Frad_LW(gr%nnzp) = Frad_LW(gr%nnzp-1)
+          Frad_SW(gr%nnzp) = Frad_SW(gr%nnzp-1)
+          radht_theta(gr%nnzp)    = radht_theta(gr%nnzp-1)
+          radht_LW_theta(gr%nnzp) = radht_LW_theta(gr%nnzp-1)
+          radht_SW_theta(gr%nnzp) = radht_SW_theta(gr%nnzp-1)
+
+          radht(1:gr%nnzp)    = radht_theta(1:gr%nnzp)
+          radht_LW(1:gr%nnzp) = radht_LW_theta(1:gr%nnzp)
+          radht_SW(1:gr%nnzp) = radht_SW_theta(1:gr%nnzp)
+
+!      -----------------------------------------------------------------
+!      Set temperature tendency due to radiation.
+!      -----------------------------------------------------------------
+          do k = 1, gr%nnzp
+            theta_tndcy(k) = theta_tndcy(k) + radht_theta(k)
+          end do
+
+        end if ! ~ lbugsrad
+
+!-----------------------------------------------------------------------
+! COMPUTE ICEDFS.
+! If ice is on, call the function; otherwise set it to zero.
+!-----------------------------------------------------------------------
+        if (icedfs_on) then
+
+          call altocu_icedf( dt, thlm, rcm, p, exner, rhot,
+     .                       dqc_dt_icedfs )
+
+           do k = 1, gr%nnzp, 1
+             theta_tndcy(k) = theta_tndcy(k)
+     .                        - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
+             rt_tndcy(k) = rt_tndcy(k) + dqc_dt_icedfs(k)
+           end do
+
+!-----------------------------------------------------------------------
+! COMPUTE COAMPS MICROPHYSICS
+!-----------------------------------------------------------------------
+        elseif (coamps_micro_on) then
+
+!   --------------------------------------------------------------------
+!   Setting necessary parameters.
+!   --------------------------------------------------------------------
+          ldrizzle = .TRUE.
+          lgrpl    = .TRUE.
+          len      = gr%nnzp
+          icase    = 62
+
+          do k = 1, gr%nnzp
+           p3(1,1,k) = 0.
+           rvm(1,1,k) = rtm(k) - rcm(k) - rim(1,1,k) - rrm(k)
+     .                  - rgm(1,1,k) - rsnowm(1,1,k)
+           rcm(k) = rcm(k) - rim(1,1,k) - rrm(k) - rgm(1,1,k) 
+     .              - rsnowm(1,1,k)
+
+           if (rcm(k) < 0.) rcm(k) = 0.
+
+           thm(1,1,k) = thlm(k) + 
+     .                  (Lv / (Cp * exner(k)) * rcm(k))
+          end do ! k
+
+          if (time == time_initial) then
+            do k=1,gr%nnzp
+              ncn3(k) = 30. * (1. + exp(-gr%zt(k)/2000))
+            end do
+          end if
+
+          do k=1,gr%nnzp
+            rv_before(k) = rvm(1,1,k)
+            rc_before(k) = rcm(k)
+            th_before(k) = thm(1,1,k)
+            nc33d(1,1,k) = nc3(k)
+            nr33d(1,1,k) = nr3(k)
+            ncn33d(1,1,k) = ncn3(k)
+            ni33d(1,1,k) = ni3(k)
+          end do
+
+!   --------------------------------------------------------------------
+!   Calling adjtq.F, the heart of the COAMPS microphysics scheme.
+!   --------------------------------------------------------------------
+
+          call coamps_micro_driver(gr%nnzp,p3,wmt,p,wtm,exner,rhot,time,
+     .           thlm,dt,1,gr%nnzp,gr%nnzp+1,nrdamp,1,1,1,
+     .           len,icase,coamps_micro_on,ldrizzle,lgrpl,
+     .           rcm,rim,rrm,rgm,rsnowm,rvm,thm,
+     .           nc33d,nr33d,ncn33d,ni33d,pcut,
+     .           cond,snowv,falli,fallr,fallg,thlmtend,
+     .           ritend,rrtend,rgtend,rsnowtend,rttend)
+
+!          call coamps_micro_driver(gr%nnzp,cond,p3,rcm,rim,rrm,rgm,
+!     .           rsnowm,rvm,thm,wmt,p,wtm,exner,rhot,
+!     .           nc33d,nr33d,ncn33d,ni33d,thlm,dt,
+!     .           pcut,time,coamps_micro_on,1,gr%nnzp,gr%nnzp+1,nrdamp,
+!     .           1,ldrizzle,lgrpl,1,1,len,icase,snowv,snslp,
+!     .           pcond,psmlti,psacw,pgacw,piacw,pchomo,praut,pracw,
+!     .           pdepi,pint,pgdep,pconv,psaci,pgaci,praci,prevp,
+!     .           psdep,pmltge,pgmlt,psmlt,pgacrm,pgacwm,pracs,pgshr,
+!     .           pgacr,psacr,piacr,prhomo,pgacs,pmltse,pwacs,falli,
+!     .           fallg,fallr,rrtend,rgtend,ritend,rsnowtend,
+!     .           rttend,thlmtend)
+
+!   --------------------------------------------------------------------
+!   Compute tendencies
+!   --------------------------------------------------------------------
+
+          do k=1,gr%nnzp
+            nc3(k) = nc33d(1,1,k)
+            nr3(k) = nr33d(1,1,k)
+            ncn3(k)= ncn33d(1,1,k)
+            ni3(k) = ni33d(1,1,k)
+
+            delta_rv(k)  = (rvm(1,1,k) - rv_before(k)) / dt
+            delta_rc(k)  = (rcm(k) - rc_before(k)) / dt
+            delta_thl(k) = (thm(1,1,k)
+     .                     - (Lv / (Cp * exner(k))) * rcm(k)
+     .                     - th_before(k)
+     .                     + (Lv / (Cp * exner(k))) * rc_before(k) )
+     .                     / dt
+
+            theta_tndcy(k) = theta_tndcy(k) + (delta_thl(k))
+            rt_tndcy(k)    = rt_tndcy(k)
+     .                       + (delta_rv(k) + delta_rc(k))             ! for COAMPS ice
+          end do ! k
+
+        end if ! coamps_micro
+
+!-----------------------------------------------------------------------
+! SET SCALAR TENDENCIES.
+! If they're set, they're set here.
+!-----------------------------------------------------------------------
+
+        if ( present( sclr_tndcy ) ) then
+          sclr_tndcy(:,SCLR_THETA) = theta_tndcy
+          sclr_tndcy(:,SCLR_RT)    = rt_tndcy
+        end if
+
+        return
+        end subroutine mpace_tndcy
+!----------------------------------------------------------------------
+
+
+
+!----------------------------------------------------------------------
+        subroutine mpace_sfclyr( rho0, up, vp, uw, vw,
+     .                          wtp, wrp, wpsclrp_sfc )
+
+!----------------------------------------------------------------------
+!        Description:
+!          Surface forcing subroutine for MPACE case.  Written July-
+!          October 2006.
+!
+!        References:
+!          none thus far
+
+        use constants
+        implicit none
+
+!-----------------------------------------------------------------------
+! INPUT VARIABLES
+!-----------------------------------------------------------------------
+        real, intent(in)  :: rho0, up, vp
+
+!-----------------------------------------------------------------------
+! OUTPUT VARIABLES
+!-----------------------------------------------------------------------
+        real, intent(out) :: uw, vw, wtp, wrp
+
+!       Output variables (optional) 
+        real, optional, intent(out) :: wpsclrp_sfc(sclr_dim)
+
+!-----------------------------------------------------------------------
+! INTERNAL VARIABLES
+!-----------------------------------------------------------------------
+        real HF, LF
+        real ubar
+        real, parameter :: ubmin = 0.25
+        real, parameter :: ustar = 0.25
+
+!-----------------------------------------------------------------------
+! Compute heat and moisture fluxes
+!-----------------------------------------------------------------------
+
+! Specified by the MPACE specification
+        HF  = 136.5 ! Sensible Heat Flux is 136.5 W m^-2
+        LF  = 107.7 ! Latent Heat Flux is 107.7 W m^-2
+
+        wtp = HF/(rho0*Cp)
+        wrp = LF/(rho0*Lv)
+
+!-----------------------------------------------------------------------
+! Compute momentum fluxes
+!-----------------------------------------------------------------------
+
+        ubar = max(ubmin,sqrt(up*up + vp*vp))
+
+!        uw = 0.0
+!        vw = 0.0
+        uw = -up * ustar*ustar / ubar
+        vw = -vp * ustar*ustar / ubar
+
+!-----------------------------------------------------------------------
+! Compute scalar fluxes
+!-----------------------------------------------------------------------
+
+        if (present( wpsclrp_sfc )) wpsclrp_sfc(SCLR_THETA) = wtp
+        if (present( wpsclrp_sfc )) wpsclrp_sfc(SCLR_RT) = wrp
+
+        return
+        end subroutine mpace_sfclyr
+
+
+!-----------------------------------------------------------------------
+
         FUNCTION Diff_denom(Temp, press, ei)
 
         USE constants
@@ -3245,7 +3897,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         REAL:: Fk, Fd
         REAL:: Celsius
 
-        REAL, PARAMETER:: Ls = 2.834e6
+!        REAL, PARAMETER:: Ls = 2.834e6
 
         Celsius = Temp - 273.16
 
@@ -3266,3 +3918,4 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
       end module gcss
 !------------------------------------------------------------------------
+

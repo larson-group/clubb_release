@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F,v 1.11 2006-08-16 23:39:38 dschanen Exp $
+! $Id: diag_variables.F,v 1.12 2006-11-01 20:42:56 mjfalk Exp $
         module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -22,6 +22,13 @@
 
         real, target, allocatable :: ug(:)    ! u geostrophic wind
         real, target, allocatable :: vg(:)    ! v geostrophic wind
+
+        real, target, allocatable :: um_init(:) ! initial u wind; Michael Falk, 1 Nov 2006
+        real, target, allocatable :: vm_init(:) ! initial v wind; Michael Falk, 1 Nov 2006
+        real, target, allocatable :: nc3(:) ! cloud droplet concentration; Michael Falk, 1 Nov 2006
+        real, target, allocatable :: ni3(:) ! ice crystal concentration; Michael Falk, 1 Nov 2006
+        real, target, allocatable :: nr3(:) ! raindrop concentration; Michael Falk, 1 Nov 2006
+        real, target, allocatable :: ncn3(:) ! cloud nucleus concentration; Michael Falk, 1 Nov 2006
 
         real, allocatable, target :: thvm(:)      ! virtual potential temp 
         real, allocatable, target :: sed_rcm(:)   ! sedimentation factor in rcm ! Brian
@@ -47,6 +54,11 @@
         real, allocatable, target :: radht_LW(:)  ! Long-wave heating rate
 
         real, allocatable, target :: shear(:)     ! wind shear production
+
+        real, allocatable, target :: diam(:)          ! Icedfs diameter; Michael Falk, 1 Nov 2006
+        real, allocatable, target :: m(:)             ! Icedfs mass; Michael Falk, 1 Nov 2006
+        real, allocatable, target :: dqc_dt_icedfs(:) ! Icedfs change in liquid; Michael Falk, 1 Nov 2006
+        real, allocatable, target :: u_T_cm(:)        ! Icedfs fallspeed (cm/s); Michael Falk, 1 Nov 2006
 
 ! Tendency arrays for prognostic variables
 
@@ -187,6 +199,12 @@
         allocate( Skwt(1:nzmax) )      ! Skw
         allocate( ug(1:nzmax) )        ! u geostrophic wind
         allocate( vg(1:nzmax) )        ! v geostrophic wind
+        allocate( um_init(1:nzmax) )   ! initial u wind; Michael Falk, 1 Nov 2006
+        allocate( vm_init(1:nzmax) )   ! initial u wind; Michael Falk, 1 Nov 2006
+        allocate( nc3(1:nzmax) )       ! cloud droplet concentration; Michael Falk, 1 Nov 2006
+        allocate( ni3(1:nzmax) )       ! ice crystal concentration; Michael Falk, 1 Nov 2006
+        allocate( nr3(1:nzmax) )       ! raindrop concentration; Michael Falk, 1 Nov 2006
+        allocate( ncn3(1:nzmax) )      ! cloud nucleus concentration; Michael Falk, 1 Nov 2006
 
         allocate( thvm(1:nzmax) )      ! virtual potential temperature
 
@@ -221,6 +239,11 @@
         allocate( radht(1:nzmax) )     ! SW + LW heating rate
         allocate( radht_SW(1:nzmax) )  ! Short-wave heating rate
         allocate( radht_LW(1:nzmax) )  ! Long-wave heating rate
+
+        allocate( diam(1:nzmax) )          ! Ice crystal diameter; Michael Falk, 3 Aug-1 Nov 2006
+        allocate( m(1:nzmax) )             ! Ice crystal mass; Michael Falk, 3 Aug-1 Nov 2006
+        allocate( dqc_dt_icedfs(1:nzmax) ) ! Change in liquid due to ice; Michael Falk, 3 Aug-1 Nov 2006
+        allocate( u_T_cm(1:nzmax) )        ! Ice crystal fallspeed; Michael Falk, 3 Aug-1 Nov 2006
 
         allocate( shear(1:nzmax) )     ! wind shear production
 
@@ -319,6 +342,12 @@
 
         ug  = 0.0      ! u geostrophic wind
         vg  = 0.0      ! v geostrophic wind
+        um_init  = 0.0 !
+        vm_init  = 0.0 !
+        nc3      = 0.0 !
+        ni3      = 0.0 !
+        nr3      = 0.0 !
+        ncn3     = 0.0 ! Michael Falk, 1 Nov 2006
 
 ! Tendency arrays for prognostic variables
 
@@ -440,6 +469,13 @@
         deallocate( Skwt )
         deallocate( ug )        ! u geostrophic wind
         deallocate( vg )        ! v geostrophic wind
+        deallocate( um_init )   ! u initial
+        deallocate( vm_init )   ! v initial
+
+        deallocate( nc3 )   !
+        deallocate( ni3 )   !
+        deallocate( nr3 )   !
+        deallocate( ncn3 )  ! Michael Falk, 1 Nov 2006
 
 ! Tendency arrays for prognostic variables
 
@@ -476,6 +512,11 @@
         deallocate( radht_LW )  ! Long-wave heating rate
 
         deallocate( shear )     ! wind shear production
+
+        deallocate( diam )          ! ice crystal diameter; Michael Falk, 1 Nov 2006
+        deallocate( m )             ! ice crystal mass
+        deallocate( dqc_dt_icedfs ) ! change in liquid due to ice
+        deallocate( u_T_cm )        ! ice crystal fallspeed
 
         ! Second order moments
 

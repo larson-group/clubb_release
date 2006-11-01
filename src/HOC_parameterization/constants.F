@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.4 2006-08-04 22:05:04 dschanen Exp $
+! $Id: constants.F,v 1.5 2006-11-01 20:42:56 mjfalk Exp $
 
 !  Contains frequently occuring model constants
 !-----------------------------------------------------------------------
@@ -18,6 +18,7 @@
         real, parameter :: 
      .  Cp = 1004.67, ! Dry air specific heat at constant p [J/kg/K]
      .  Lv = 2.5e6,   ! Latent heat of vaporization         [J/kg]
+     .  Ls = 2.834e6, ! Latent heat of sublimation          [J/kg]
      .  Rd = 287.04,  ! Dry air gas constant                [J/kg/K]
      .  Rv = 461.5    ! Water vapor gas constant            [J/kg/K]
 

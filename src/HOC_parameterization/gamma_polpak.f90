@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------------
-! $Id: gamma.f90,v 1.1 2006-08-23 16:49:48 dschanen Exp $
+! $Id: gamma_polpak.f90,v 1.1 2006-11-01 20:42:56 mjfalk Exp $
 
 ! Description:
 ! POLPAK is a library of FORTRAN90 routines, using double precision arithemetic, that evaluate a variety of mathematical functions.
