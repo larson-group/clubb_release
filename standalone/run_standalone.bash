@@ -1,6 +1,6 @@
 #!/bin/bash
 #######################################################################
-# $Id: run_standalone.bash,v 1.21 2006-07-18 01:36:51 ajsmith4 Exp $
+# $Id: run_standalone.bash,v 1.22 2006-11-01 20:43:37 mjfalk Exp $
 #
 # Script to run the standalone hoc program.  
 # Tested with bash v2.  Might work with Ksh.
@@ -21,8 +21,9 @@ if [ -z $1 ]; then
 # RUN_CASE=dycoms2_rf02_so
 # RUN_CASE=fire 
 # RUN_CASE=nov11_altocu
- RUN_CASE=jun25_altocu
+# RUN_CASE=jun25_altocu
 # RUN_CASE=wangara  
+ RUN_CASE=mpace
 
 #######################################################################
 # Or alternatively specify it as a command line argument in the form
