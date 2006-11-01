@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.66 2006-10-04 16:48:04 dschanen Exp $
+# $Id: Makefile,v 1.67 2006-11-01 20:34:07 mjfalk Exp $
 # This version should work with BSD, GNU make, smake and dmake
 
 # For HOC we edit this by hand rather than implementing imake or automake
@@ -33,14 +33,25 @@ BUGS_RAD = kinds.o bugsrad_planck.o bugsrad_physconst.o gases_ckd.o \
 
 PARAMETERIZATION = \
 	$(LATIN_HYP) \
-	gamma.o constants.o endian.o outputfile.o outputgrads.o \
+	gamma_polpak.o constants.o endian.o outputfile.o outputgrads.o \
 	outputnc.o grid.o model_flags.o statistics.o \
 	erf.o rain.o \
 	closure_new.o diag_var.o gcss.o rad_lwsw.o linearinterpolation.o \
         hydrostatic.o length.o mixing.o rsat.o sat_rcm.o sfc.o \
 	sounding.o update.o wp23.o tau.o Skw_func.o \
 	numer_check.o diag_variables.o prog_variables.o \
-	parameterization_interface.o lapack_wrap.o
+	parameterization_interface.o lapack_wrap.o \
+        adjmlt.o adjtq.o coamps_micro_driver.o conice.o \
+        eqa10g.o eqa11g.o eqa12.o eqa12g.o \
+        eqa13g.o eqa14g.o eqa15.o eqa17g.o eqa18.o \
+        eqa18g.o eqa19.o eqa19g.o eqa20g.o eqa21.o \
+        eqa21g.o eqa22.o eqa22g.o eqa25.o eqa26.o eqa27.o \
+        eqa27r.o eqa28.o eqa5g.o eqa6.o eqa7.o eqa7g.o \
+        eqa8g.o eqa9.o eqa9g.o esati.o esat_new.o \
+        esatv.o frzh.o nrmcol.o nrmtqi.o \
+        nrmtqw.o qsatvi.o qtadj.o slope.o tgqg.o \
+        tgqi.o tgqr.o tgqs.o rsati.o
+
 
 INTERFACING = gradsaverage.o inputfields.o inputgrads.o hoc.o 
 
@@ -63,7 +74,7 @@ all:	hoc_tuner int2txt hoc_tuner_budget_terms \
 # == Rules ==
 # Note: since we're using a virtual path the make command is going to use the
 # first file it finds with that name.  Be careful when making copies of files.
-VPATH=.:LH:BUGSrad:HOC_parameterization
+VPATH=.:LH:BUGSrad:HOC_parameterization:coamps_micro
 
 # Cancel implicit rules (e.g for modula-2 `m2c -c $@.mod')
 .SUFFIXES:
@@ -143,13 +154,13 @@ distclean:
 	$(LIBDIR)/lib*
 
 # == Dependencies ==
-gamma.o		: gamma.f90
+gamma_polpak.o	: gamma_polpak.f90
 endian.o	: endian.F
 constants.o	: constants.F
 model_flags.o	: model_flags.F
 outputfile.o	: outputfile.F
 rain.o		: constants.o model_flags.o statistics.o lapack_wrap.o \
-	gamma.o rain.F
+	gamma_polpak.o rain.F
 outputgrads.o	: endian.o outputfile.o outputgrads.F
 outputnc.o	: outputfile.o outputnc.F
 diag_variables.o: constants.o grid.o model_flags.o diag_variables.F 
@@ -168,7 +179,7 @@ closure_new.o	: constants.o grid.o rsat.o erf.o closure_new.F
 diag_var.o	: constants.o grid.o statistics.o lapack_wrap.o \
 	diag_var.F
 gcss.o		: constants.o statistics.o rad_lwsw.o linearinterpolation.F \
-                  gcss.F
+                  gcss.F coamps_micro_driver.o rsat.o rsati.o
 rad_lwsw.o      : rad_lwsw.F statistics.o
 linearinterpolation.o : linearinterpolation.F
 mixing.o	: constants.o statistics.o lapack_wrap.o mixing.F 
@@ -177,7 +188,7 @@ parameterization_interface.o : constants.o gcss.o hydrostatic.o mixing.o \
 	length.o statistics.o sounding.o diag_var.o rsat.o \
 	grid.o sat_rcm.o update.o prog_variables.o diag_variables.o \
 	sfc.o closure_new.o rain.o latin_hyper_sample.o lh_sampler.o \
-	parameterization_interface.F 
+	coamps_micro_driver.o parameterization_interface.F 
 hoc.o		: parameterization_interface.o hoc.F
 hydrostatic.o	: constants.o hydrostatic.F 
 length.o	: constants.o length.F 
@@ -257,3 +268,46 @@ hoc_inputfields.o	: hoc.o inputfields.o hoc_inputfields.F
 int2txt.o		: int2txt.F
 compare_runs.o		: endian.o inputgrads.o gradsaverage.o compare_runs.F
 jacobian.o		: gradsaverage.o hoc.o jacobian.F
+
+# == Michael Falk 25 August 2006 ==
+adjmlt.o                : adjmlt.F
+coamps_micro_driver.o   : gamma.o adjtq.o coamps_micro_driver.F
+adjtq.o                 : slope.o esatv.o esati.o tgqg.o tgqr.o tgqs.o \
+                          frzh.o eqa22.o eqa25.o eqa28.o eqa11g.o conice.o \
+                          tgqi.o eqa27r.o eqa7g.o eqa8g.o eqa9g.o eqa13g.o \
+                          eqa18g.o eqa21g.o eqa22g.o adjmlt.o qsatvi.o \
+                          qtadj.o slope.o eqa6.o eqa12.o eqa27.o eqa19g.o \
+                          nrmtqw.o conice.o eqa15.o eqa18.o eqa26.o eqa17g.o \
+                          nrmtqi.o eqa7.o eqa9.o eqa19.o eqa10g.o eqa21.o \
+                          eqa5g.o eqa12g.o eqa14g.o eqa20g.o nrmcol.o \
+                          adjtq.F
+conice.o                : conice.F
+constants.o             : constants.F
+eqa10g.o                : gamma.o eqa10g.F
+eqa11g.o                : gamma.o eqa11g.F
+eqa12.o                 : eqa12.F
+eqa12g.o                : gamma.o eqa12.F
+eqa13g.o                : eqa13g.F
+eqa14g.o                : eqa14g.F
+eqa15.o                 : eqa15.F
+eqa17g.o                : eqa17g.F
+eqa18.o                 : eqa18.F
+eqa18g.o                : eqa18g.F
+eqa19.o                 : eqa19.F
+eqa19g.o                : eqa19g.F
+eqa20g.o                : eqa20g.F
+eqa21.o                 : eqa21.F
+eqa22.o                 : eqa22.F
+eqa22g.o                : eqa22g.F
+eqa25.o                 : eqa25.F
+eqa26.o                 : eqa26.F
+eqa27.o                 : eqa27.F
+eqa27r.o                : eqa27r.F
+eqa28.o                 : eqa28.F
+eqa5g.o                 : eqa5g.F
+eqa6.o                  : eqa6.F
+eqa7.o                  : eqa7.F
+eqa7g.o                 : eqa7g.F
+eqa8g.o                 : eqa8g.F
+eqa9.o                  : eqa9.F
+eqa9g.o                 : eqa9g.F
