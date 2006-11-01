@@ -1,7 +1,7 @@
       subroutine eqa15(pint,tt,qv,qsati,qadj,rho,conci,tice
      1                ,pcut,delt,icon,len)
 c
-#include <eqa15.prol>
+#include "eqa15.prol"
 c SCCS IDENTIFICATION:  %W% %G%
 
       implicit none

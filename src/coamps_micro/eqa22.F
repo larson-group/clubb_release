@@ -1,6 +1,6 @@
       subroutine eqa22(psacw,qc,qs,tt,termb,esc,pcut,delt,tzero,len)
 c
-#include <eqa22.prol>
+#include "eqa22.prol"
 c SCCS IDENTIFICATION:  %W% %G%
 
       implicit none

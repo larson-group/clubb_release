@@ -1,7 +1,7 @@
       subroutine eqa18(pdepi,qv,qi,qsati,qadj,tt,rho,conci
      1                ,appbpp,tice,delt,pcut,j,icon,len)
 c
-#include <eqa18.prol>
+#include "eqa18.prol"
 c SCCS IDENTIFICATION:  %W% %G%
 
       implicit none

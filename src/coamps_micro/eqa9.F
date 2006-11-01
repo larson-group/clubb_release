@@ -2,7 +2,7 @@
      1               ,rnzero,aa0,aa1,aa2,aa3,gm3,gm4,gm5,gm6
      2               ,pcut,delt,ldrizzle,len)
 c
-#include <eqa9.prol>
+#include "eqa9.prol"
 c SCCS IDENTIFICATION:  %W% %G%
 
       implicit none

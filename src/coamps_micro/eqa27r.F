@@ -1,7 +1,7 @@
       subroutine eqa27r(piacw,qc,qi,tt,vi,conci,rho,pi,eic
      1                 ,pcut,delt,rholiq,tice,len)
 c
-#include <eqa22.prol>
+#include "eqa22.prol"
       implicit none
 c
 c***********************************************************************

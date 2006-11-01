@@ -1,7 +1,7 @@
       subroutine eqa27(psmlte,qs,qv,qsatv,qadj,tt,terma,apbp,rho
      1                ,snzero,tzero,pcut,delt,j,len)
 c
-#include <eqa27.prol>
+#include "eqa27.prol"
 c SCCS IDENTIFICATION:  %W% %G%
 
       implicit none

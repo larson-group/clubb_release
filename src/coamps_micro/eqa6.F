@@ -1,7 +1,7 @@
       subroutine eqa6(pcond,tt,qadj,qv,qc,qsatv,qsati,pp,w1,w2
      1               ,iwx1,heatlv,cp,delt,pcut,j,len)
 c
-#include <eqa6.prol>
+#include "eqa6.prol"
 c SCCS IDENTIFICATION:  %W% %G%
 
 c***********************************************************************

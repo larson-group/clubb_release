@@ -3,7 +3,7 @@
      2          ,cnzero,cbeta,delt,tice,tzero,cimass,len)
 
 c
-#include <conice.prol>
+#include "conice.prol"
       implicit none
 c
 c***********************************************************************

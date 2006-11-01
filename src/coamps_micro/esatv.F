@@ -1,6 +1,6 @@
       subroutine esatv(t,w1,m)
 c
-#include <esatv.prol>
+#include "esatv.prol"
 c SCCS IDENTIFICATION:  %W% %G%
       implicit none
 c

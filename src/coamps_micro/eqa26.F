@@ -1,7 +1,7 @@
       subroutine eqa26(psdep,qv,qs,qsati,qadj,terma,appbpp,tt
      1                ,rho,snzero,tzero,pcut,delt,len)
 c
-#include <eqa26.prol>
+#include "eqa26.prol"
 c SCCS IDENTIFICATION:  %W% %G%
 
       implicit none

@@ -1,6 +1,6 @@
       subroutine eqa28(psmlti,qi,tt,pcut,delt,tzero,len)
 c
-#include <eqa28.prol>
+#include "eqa28.prol"
 c SCCS IDENTIFICATION:  %W% %G%
 
       implicit none

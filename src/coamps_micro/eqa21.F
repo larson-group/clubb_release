@@ -1,6 +1,6 @@
       subroutine eqa21(psaci,qi,qs,ss,termb,esi,pcut,twodt,len)
 c
-#include <eqa21.prol>
+#include "eqa21.prol"
 c SCCS IDENTIFICATION:  %W% %G%
 
       implicit none

@@ -1,7 +1,7 @@
       subroutine tgqr(fallv,qr,sr,nr,rbm,pterm4,pcut,
      1                tvr1,tvr2,tvr3,tvr4,ldrizzle,len)
 
-#include <tvqr.prol>
+#include "tvqr.prol"
 c
       implicit none
 c

@@ -1,6 +1,6 @@
       subroutine esati(t,w1,m)
 c
-#include <esati.prol>
+#include "esati.prol"
 c SCCS IDENTIFICATION:  %W% %G%
       implicit none
 c

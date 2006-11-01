@@ -1,6 +1,6 @@
       subroutine tgqi(fallv,qi,rbm,pr,conci,pcut,p00,cimass,dmax,len)
 
-#include <tvqs.prol>
+#include "tvqs.prol"
 c SCCS IDENTIFICATION:  %W% %G%
 c
       implicit none

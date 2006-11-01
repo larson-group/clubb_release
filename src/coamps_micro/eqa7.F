@@ -1,7 +1,7 @@
       subroutine eqa7(praut,qc,rho,ccn,pr1,pr2,pi
      1                ,rholiq,icond,delt,pcut,len)
 c
-#include <eqa7.prol>
+#include "eqa7.prol"
 c SCCS IDENTIFICATION:  %W% %G%
 
       implicit none

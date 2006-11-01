@@ -1,6 +1,6 @@
       subroutine tgqs(fallv,qs,ss,pterm4,pcut,aprpr,bsnow,len)
 
-#include <tvqs.prol>
+#include "tvqs.prol"
 c
       implicit none
 c

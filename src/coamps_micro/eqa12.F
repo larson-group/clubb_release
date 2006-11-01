@@ -2,7 +2,7 @@
      1                ,nr,pr,w1,w2,w3,w4,w5,w6,w7,iwx1,pi,rnzero,apr
      2                ,pcut,visair,gm3,delt,ldrizzle,len)
 c
-#include <eqa12.prol>
+#include "eqa12.prol"
 c SCCS IDENTIFICATION:  %W% %G%
 
       implicit none

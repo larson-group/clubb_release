@@ -1,6 +1,6 @@
       subroutine eqa19(pconv,qi,rho,conci,tt,pcut,cimass,delt,len)
 c
-#include <eqa19.prol>
+#include "eqa19.prol"
 c SCCS IDENTIFICATION:  %W% %G%
 
       implicit none

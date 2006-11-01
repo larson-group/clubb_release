@@ -2,7 +2,7 @@
      1  (sr,srcm,ss,sg,qr,qs,qg,rho,sloper,slopes
      1   ,slopeg,pcut,lice,lgrpl,len)
 
-#include <slope.prol>
+#include "slope.prol"
 c SCCS IDENTIFICATION:  %W% %G%
 c
 c***********************************************************************

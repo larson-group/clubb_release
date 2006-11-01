@@ -2,7 +2,7 @@
 !      subroutine gamma(arg,val)
       real function gamma(arg,val)
 
-#include <gamma.prol>
+#include "gamma.prol"
 c SCCS IDENTIFICATION:  %W% %G%
       implicit none
 c

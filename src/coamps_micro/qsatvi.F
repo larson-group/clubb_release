@@ -1,6 +1,6 @@
       subroutine qsatvi(t,p,qvs,qvi,lice,len)
 
-#include <qsatvi.prol>
+#include "qsatvi.prol"
 c SCCS IDENTIFICATION:  %W% %G%
 c
       implicit none

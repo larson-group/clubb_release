@@ -30,7 +30,7 @@ c    08Aug2006: Added terms for microphysics source budgets
 c<--end of ajsmith4's modification
 c<--end of modification
 c                                                                      c
-#include <adjtq.prol>
+#include "adjtq.prol"
 c SCCS IDENTIFICATION:  %W% %G%
 c***********************************************************************
 c***********************************************************************

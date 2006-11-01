@@ -1,7 +1,7 @@
       subroutine eqa25(psmlt,qs,tt,terma,rho,pi,snzero,pcut
      1                 ,therco,tzero,heatlf,delt,len)
 c
-#include <eqa25.prol>
+#include "eqa25.prol"
 c SCCS IDENTIFICATION:  %W% %G%
 
       implicit none
