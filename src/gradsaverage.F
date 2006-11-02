@@ -1,168 +1,236 @@
-! $Id: gradsaverage.F,v 1.6 2005-10-06 22:53:14 golaz Exp $
-      module grads_common
+! $Id: gradsaverage.F,v 1.7 2006-11-02 01:45:57 dschanen Exp $
+        module grads_common
 
-      contains
+        contains
+
 !----------------------------------------------------------------------
-!     Function GRADS_AVERAGE( )
-!     Average a GRADS file variable over the interval t1 to t2
+        function grads_average( filename, nz, t1, t2, variable_name, 
+     .                          npower, error )
+!       Description:
+!       Average a GrADS file variable over the interval t1 to t2
+
+!       References:
+!       None
 !----------------------------------------------------------------------
-      function grads_average( filename, nz, t1, t2, variable_name, 
-     .                        npower, error )
 
-      use grid_class
-      use inputfile_class
+        use grid_class
+        use constants, only: fstderr
+        use inputfile_class
 
-      implicit none
+        implicit none
 
-!---- Arguments -------------------------------------------------------
-      character(len=*), intent(in) :: filename
-      integer, intent(in)          :: nz             ! number of z-levels
-      integer, intent(in)          :: t1             ! beginning timestep to look at
-      integer, intent(in)          :: t2             ! ending timestep to look at
-      character(len=*), intent(in) :: variable_name  ! which variable to read
-      integer, intent(in)          :: npower
-      logical, intent(out)         :: error          ! error status from reading 
+        ! Input Variables
+        character(len=*), intent(in) :: 
+     .  filename ! Name of the file
 
-!---- Internal Variables ----------------------------------------------
+        integer, intent(in) :: 
+     .  nz, ! Number of vertial levels in the GrADS file.
+     .  t1, ! Beginning timestep to look at
+     .  t2  ! Ending timestep to look at
 
-      integer i                             ! les_array loop variable
-      integer t                             ! timestep loop variable
+        character(len=*), intent(in) :: 
+     .  variable_name ! Name of the variable to read in
 
-      integer num_timesteps                 ! steps between t1 and t2 
+        integer, intent(in) :: 
+     .  npower ! Exponent operator, must be 1 or 2
 
-      type (inputgrads) faverage            ! Data file
+        ! Output Variable
+        logical, intent(out) :: 
+     .  error ! error status for this function
 
-      real, dimension(nz)  :: grads_temp
+        ! Return Variable for function
+        real, dimension(nz) :: grads_average
 
-!---- Return ----------------------------------------------------------
-      real, dimension(nz)  :: grads_average
+        ! Local Variables
+        type (inputgrads) :: faverage ! Data file derived type
 
-!-----------------------------------------------------------------------
-!  Open grads file
-!-----------------------------------------------------------------------
-      call open_grads_read(10, filename, faverage)
+        real, dimension(nz) :: grads_temp ! Temporary variable
 
-!-----------------------------------------------------------------------
-! initialize variables
-!-----------------------------------------------------------------------
-      num_timesteps = ( t2 - t1 ) + 1
-      grads_temp    = 0.
-      grads_average = 0.
+        integer :: 
+     .  i, ! les_array loop index 
+     .  t  ! timestep loop index
+
+        integer :: 
+     .  num_timesteps ! steps between t1 and t2 
 
 !-----------------------------------------------------------------------
-! read in floating point values
-!-----------------------------------------------------------------------
+
+        ! Initialize variables
+        num_timesteps = ( t2 - t1 ) + 1
+        grads_average = 0.0
+
+        ! Open grads file
+        call open_grads_read( 10, filename, faverage )
+
+        ! Read in variables from GrADS file
         do t = t1, t2
           call get_var( faverage, variable_name, t, 
      .                  grads_temp(1:nz), error ) 
           if ( error ) then
-             print *, "grads_average: get_var failed for " 
-     .         // trim( variable_name ) // " in " // trim( filename )
-     .         // " at time=", t
+             write(fstderr,*) "grads_average: get_var failed for " 
+     .         //trim( variable_name )//" in "//trim( filename )
+     .         //" at time=", t
              return 
-          endif
-          if ( npower.eq.1 ) then
+          end if
+
+          if ( npower == 1 ) then
             grads_average(1:nz) 
      .      = grads_average(1:nz) + grads_temp(1:nz)
-          else if ( npower.eq.2 ) then
+
+          else if ( npower == 2 ) then
             grads_average(1:nz) 
      .      = grads_average(1:nz) + grads_temp(1:nz)*grads_temp(1:nz)
+
           else
-            print *, "gradsaverage: invalid npower = ",npower
+            write(fstderr,*) "gradsaverage: invalid npower = ", npower
             error = .true.
             return
-          end if
-        enddo
 
-!-----------------------------------------------------------------------
-! close data file
-!-----------------------------------------------------------------------
-      call close_grads_read( faverage )
+          end if ! npower
 
-!-----------------------------------------------------------------------
-! Take average over num_timesteps
-!-----------------------------------------------------------------------
-      grads_average(1:nz) = grads_average(1:nz) / real(num_timesteps)
+        end do ! t = t1, t2
 
-      return
-      end function grads_average
+        ! Close GrADS file
+        call close_grads_read( faverage )
 
-!-------------------------------------------------------------------------
-!   Function GRADS_AVERAGE_INTERVAL( )
-!   Take several averages over an interval.
-!-------------------------------------------------------------------------
-      function grads_average_interval( filename, nz, t, variable_name,
-     .                                 npower, error )
+        ! Take average over num_timesteps
+        grads_average(1:nz) 
+     .  = grads_average(1:nz) / real( num_timesteps )
 
-      implicit none
-
-!---- Arguments -------------------------------------------------------
-      character(len=*), intent(in)         :: filename
-      integer, intent(in)                  :: nz             ! number of z-levels
-      integer, dimension(:), intent(in)    :: t(:)           ! timesteps to look at
-      character(len=*), intent(in)         :: variable_name  ! which variable to read
-      integer, intent(in)                  :: npower
-      logical, intent(out)                 :: error
-
-!---- Return Type  ----------------------------------------------------
-      real, dimension(nz)                  :: grads_average_interval
-
-!---- Internal Variables ----------------------------------------------
-      integer                              :: i       ! loop variable 
-      integer                              :: tdim    ! dimension of t variable
-      real, dimension(nz)                  :: grads_temp
-      integer                              :: divisor
-
-      do i=1, size( t )
-        if ( t( i ) == 0 ) exit
-        tdim = i
-      enddo
-
-      grads_average_interval = grads_average( filename, nz, t(1), t(2), 
-     .                                        variable_name, 
-     .                                        npower, error ) *
-     .                                      ( t(2) - t(1) )
-      divisor = t(2) - t(1)
-
-      if ( error ) return
-
-      do i=3, tdim, 2 
-        grads_temp = grads_average( filename, nz, t(i), t(i+1), 
-     .                              variable_name, npower, error )
-        grads_average_interval = grads_average_interval + grads_temp *
-     .                           ( t(i+1) - t(i) )
-        divisor =  divisor +  ( t(i+1) - t(i) )
-      enddo
-
-      grads_average_interval(1:nz) = grads_average_interval(1:nz)
-     .                                 / real(divisor)
-
-      return
-      end function grads_average_interval
+        return
+        end function grads_average
 
 !-------------------------------------------------------------------------
-!   Function GRADS_ZLVL( )
-!   returns a scalar of the number of z-levels in a file
+        function grads_average_interval
+     .           ( filename, nz, t, variable_name,
+     .             npower, error )
+
+!       Description:
+!       Reads in GrADS data from a file and then takes several averages 
+!       over an interval.
+
+!       References:
+!       None
+
+!       Notes:
+!       The variable t is assumed size, which needs to be used with
+!       caution.
 !-------------------------------------------------------------------------
-      integer function grads_zlvl( filename )
+        use constants, only: fstderr
 
-      use grid_class
-      use inputfile_class
+        implicit none
 
-      implicit none
+        ! Constant Parameters
+        integer, parameter :: 
+     .  tmax = huge( 1 ) ! Sanity check for huge t array
 
-      character(len=*), intent(in) :: filename
+        ! Input Variables
+        character(len=*), intent(in) :: 
+     .  filename ! Name of the file
 
-      type (inputgrads) fz            ! Data file
+        integer, intent(in) :: 
+     .  nz ! Number of vertical grid levels
 
-      call open_grads_read( 10, filename, fz )
+        integer, dimension(:), intent(in) :: 
+     .  t ! Timesteps to use for taking an average over an interval
 
-      grads_zlvl = fz%iz
+        character(len=*), intent(in) :: 
+     .  variable_name  ! Name of the variable to read in
 
-      call close_grads_read( fz )
+        integer, intent(in) :: 
+     .  npower ! exponent applied to data retrieved from the file( 1 or 2) 
 
-      return
-      end function grads_zlvl
+        ! Output Variables
+        logical, intent(out) :: 
+     .  error ! status of this function
+
+        ! Return Variables
+        real, dimension(nz) :: 
+     .  grads_average_interval
+
+        ! Local Variables 
+        real, dimension(nz) :: grads_temp
+
+        integer :: 
+     .  i,      ! Loop variable 
+     .  tdim,   ! Dimension to read over for t variable
+     .  divisor
 
 !-------------------------------------------------------------------------
-      end module grads_common
+
+        ! Sanity check
+        if ( size( t ) > tmax .or. size( t ) < 2 ) then
+          write(unit=fstderr,fmt=*) 
+     .      "grads_average_interval: Invalid time interval"
+          error = .true.
+          return
+        end if
+
+        do i = 1, size( t )
+          if ( t( i ) == 0 ) exit
+          tdim = i
+        end do
+
+        grads_average_interval
+     .  = grads_average
+     .    ( filename, nz, t(1), t(2), variable_name, npower, error ) 
+     .    * ( t(2) - t(1) )
+
+        divisor = t(2) - t(1)
+
+        if ( error ) return
+
+        do i=3, tdim, 2 
+          grads_temp = grads_average
+     .                 ( filename, nz, t(i), t(i+1), 
+     .                   variable_name, npower, error )
+          grads_average_interval 
+     .    = grads_average_interval + grads_temp * ( t(i+1) - t(i) )
+          divisor = divisor + ( t(i+1) - t(i) )
+        end do
+
+        grads_average_interval(1:nz) 
+     .  = grads_average_interval(1:nz) / real( divisor )
+
+        return
+        end function grads_average_interval
+
+!-------------------------------------------------------------------------
+        integer function grads_zlvl( filename )
+
+!       Description:
+!       Returns a integer for the number of vertical levels in a file
+
+!       References:
+!       None
+
+!       Notes:
+!       Somewhat inefficient, since it reads in the entire .ctl file to
+!       determine the number of levels
+!-------------------------------------------------------------------------
+
+        use grid_class
+        use inputfile_class
+
+        implicit none
+
+        ! Input Variables
+        character(len=*), intent(in) :: 
+     .  filename ! File name
+
+        ! Local Variables
+        type (inputgrads) :: fz            ! Data file
+
+        ! Read in the control file
+        call open_grads_read( 10, filename, fz )
+
+        ! Set return variable
+        grads_zlvl = fz%iz
+
+        ! Close file
+        call close_grads_read( fz )
+
+        return
+        end function grads_zlvl
+
+        end module grads_common
