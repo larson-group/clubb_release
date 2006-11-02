@@ -1,108 +1,111 @@
 !-----------------------------------------------------------------------
-! $Id: inputgrads.F,v 1.12 2006-09-06 17:03:27 dschanen Exp $
-
-! This module contains structure and subroutine definitions to
-! open a GrADS data file a read it.
-!
-! The structure (inputgrads) contains all necessary information
-! about the file to read a specific variable at  specific time.
-!
-! Chris Golaz, 9/12/2000
-
-! Modifications:
-!  * Uses functions rather than subroutines to get endian type. 
-!  * Other cosmetic changes.
-!  * Overloaded subroutine get_var to allow for 8 byte real output.
-!  * Added preprocesing for RECL 
-!-----------------------------------------------------------------------
-
-#if defined (__i386__) && __INTEL_COMPILER >= 900 /* Newer ifort on i386 */
-#define F_RECL 1
-#elif defined (__x86_64__) && __INTEL_COMPILER >= 900 /*Newer ifort on x86_64*/
-#define F_RECL 1
-#elif __alpha /* Assume that alpha users are using f95 */
-#define F_RECL 1
-#else
-#define F_RECL 4
-#endif
+! $Id: inputgrads.F,v 1.13 2006-11-02 01:36:10 dschanen Exp $
 
         module inputfile_class
 
+!       Description:
+!       This module contains structure and subroutine definitions to
+!       open a GrADS data file a read it.
+!
+!       The structure (inputgrads) contains all necessary information
+!       about the file to read a specific variable at  specific time.
+!
+!       Chris Golaz, 9/12/2000
+
+!       Modifications:
+!       * Uses functions rather than subroutines to get endian type. 
+!       * Other cosmetic changes.
+!       * Overloaded subroutine get_var to allow for 8 byte real output.
+!       * Added preprocesing for RECL 
+!-----------------------------------------------------------------------
+#include "recl.F"
         use endian
+        use constants, only: fstdout, fstderr
 
         implicit none
-
+        ! Overloaded interface for get_var.  All GrADS files are assumed
+        ! to store variable as 4 byte IEEE floats, but the model may be
+        ! using double or extended precision.
         interface get_var
           module procedure get_4byte_var, get_8byte_var
         end interface
 
-! Structure to hold description of a variable
+        ! Structure to hold description of a variable
+        type variable
+          integer :: index
+          character(len=15) :: name ! variable name
+        end type variable
 
-          type variable
-            integer index
-            character (len = 15) name             ! variable name
-          end type variable
+        ! Structure to hold description of a GrADS input file
 
-! Structure to hold description of a GrADS input file
+        type inputgrads
 
-          type inputgrads
+          ! File information
+          character(len=128) :: fname ! Binary data file name
+          integer :: iounit           ! Fortran unit #
+          logical :: lbyteswapped     ! Need to swap bytes? (T/F)
 
-!           File information
+          ! Grid information
+          integer ia, iz              ! Vertical extent
+          real, pointer :: z(:)       ! Height of levels        [m]
 
-            character (len = 128) fname           ! binary data file name
-            integer iounit                        ! unit #
-            logical lbyteswapped                  ! need to swap bytes
+          ! Time information
+          integer day, month, year    ! date of starting time
 
-!           Grid information
+          real :: 
+     .    time,    ! Start time                 [s]
+     .    dtwrite  ! Interval between output    [s]
 
-            integer ia, iz                        ! extent
-            real, pointer :: z(:)                 ! height of levels
+          integer :: ntimes ! Number of time records in file
 
-!           Time information
+          ! Local Variables
+          integer :: nvar
 
-            integer day, month, year    ! date of starting time
-            real time                   ! start time in seconds
-            real dtwrite                ! interval between outputs in seconds
-            integer ntimes              ! number of time records in file
+          type (variable), pointer :: var(:)
 
-!           Variables
-
-            integer nvar
-            type (variable), pointer :: var(:)
-
-          end type inputgrads
+        end type inputgrads
 
         contains
 
 !-----------------------------------------------------------------------
           subroutine open_grads_read( unit, fname, f )
 
+!         Description:
+!         Open a GrADS data set in read-only mode
+!-----------------------------------------------------------------------
           implicit none
 
-!         Input / Output
+          ! Input Variables
+          integer, intent(in) :: unit ! Fortran I/O unit
 
-          integer, intent(IN)              :: unit
-          character(len=*), intent(IN)     :: fname
-          type (inputgrads), intent(INOUT) :: f
+          character(len=*), intent(in) :: 
+     .    fname ! The file name
 
-!         Internal
+          ! Input / Output
+          type (inputgrads), intent(inout) :: 
+     .    f ! The GrADS file
 
-          logical               :: done, error
-          integer               :: ierr
-          character (len = 256) :: line, tmp, date, dt
+          ! Local Variables
+          logical :: done, error
+          integer :: ierr
 
-          integer               :: i, nx, ny, nz
-          integer               :: ihour, imin
+          character(len=256) :: 
+     .    line, tmp, date, dt
 
-! Open control file
-          open( unit, file = trim( fname ), status = 'old' )
+          integer :: 
+     .    i, nx, ny, nz,
+     .    ihour, imin
 
-!  Initialize status booleans
+!-----------------------------------------------------------------------
+          !  Initialize status booleans
           f%lbyteswapped = .false.
           error          = .false.
           done           = .false.
 
-! Read and process it
+          ! Open control file
+          open( unit=unit, file=trim( fname ), status = 'old' )
+
+          ! Read and process it
           read(unit,iostat=ierr,fmt='(a256)') line
           if ( ierr < 0 ) done = .true.
 
@@ -110,113 +113,127 @@
 
              if ( index(line,'DSET') > 0 ) then
         
-               read(line,*) tmp, f%fname
+               read(unit=line,fmt=*) tmp, f%fname
                if ( f%fname(1:1) == '^' ) then
                   f%fname = f%fname(2:len_trim(f%fname)) 
                   i = index( fname, '/', back = .true. )
                   if ( i > 0 ) then
                      f%fname = fname(1:i) // f%fname
                   end if
-               endif
+               end if
 
-             elseif ( index(line,'BYTESWAPPED') > 0 ) then
+             else if ( index(line,'BYTESWAPPED') > 0 ) then
 
                f%lbyteswapped = .true.
 
-             elseif ( index(line,'BIG_ENDIAN') > 0 ) then
+             else if ( index(line,'BIG_ENDIAN') > 0 ) then
 
-!              Swap bytes if local machine is little_endian and file
-!              big_endian
+               ! Swap bytes if local machine is little_endian and file
+               ! big_endian
 
                if ( little_endian( ) ) f%lbyteswapped = .true.
 
-             elseif ( index(line,'LITTLE_ENDIAN') > 0 ) then
+             else if ( index(line,'LITTLE_ENDIAN') > 0 ) then
 
-!              Swap bytes if local machine is big_endian and file
-!              little_endian
+               ! Swap bytes if local machine is big_endian and file
+               ! little_endian
 
                if ( big_endian( ) ) f%lbyteswapped = .true.
 
-             elseif ( index(line,'XDEF') > 0 ) then
+             else if ( index(line,'XDEF') > 0 ) then
 
-               read(line,*) tmp, nx
+               read(unit=line,fmt=*) tmp, nx
                if ( nx /= 1 ) then
-                  write(*,*) 'Error: XDEF can only be 1'
-                  error = .true.
+                 write(unit=fstderr,fmt=*) 'Error: XDEF can only be 1'
+                 error = .true.
                end if
 
-             elseif ( index(line,'YDEF') > 0 ) then
+             else if ( index(line,'YDEF') > 0 ) then
 
-               read(line,*) tmp, ny
+               read(unit=line,fmt=*) tmp, ny
                if ( ny /= 1 ) then
-                  write(*,*) 'Error: YDEF can only be 1'
-                  error = .true.
+                 write(unit=fstderr,fmt=*) 'Error: YDEF can only be 1'
+                 error = .true.
                end if
 
-             elseif ( index(line,'ZDEF') > 0 ) then
+             else if ( index(line,'ZDEF') > 0 ) then
 
-               read(line,*) tmp, f%iz
+               read(unit=line,fmt=*) tmp, f%iz
                f%ia = 1
                allocate( f%z(f%ia:f%iz) )
-               read(unit,*) (f%z(i),i=f%ia,f%iz)
+               read(unit=unit,fmt=*) (f%z(i),i=f%ia,f%iz)
 
-             elseif ( index(line,'TDEF') > 0 ) then
+             else if ( index(line,'TDEF') > 0 ) then
 
-               read(line,*) tmp, f%ntimes, tmp, date, dt
-               read(date(1:2),*) ihour
-               read(date(4:5),*) imin
+               read(unit=line,fmt=*) tmp, f%ntimes, tmp, date, dt
+               read(unit=date(1:2),fmt=*) ihour
+               read(unit=date(4:5),fmt=*) imin
+
                f%time = ihour * 3600. + imin * 60.
-               read(date(7:8),*) f%day
-               read(date(12:15),*) f%year
-               if ( date(9:11) == 'JAN' ) then
-                  f%month = 1
-               else if ( date(9:11) == 'FEB' ) then
-                  f%month = 2
-               else if ( date(9:11) == 'MAR' ) then
-                  f%month = 3
-               else if ( date(9:11) == 'APR' ) then
-                  f%month = 4
-               else if ( date(9:11) == 'MAY' ) then
-                  f%month = 5
-               else if ( date(9:11) == 'JUN' ) then
-                  f%month = 6
-               else if ( date(9:11) == 'JUL' ) then
-                  f%month = 7
-               else if ( date(9:11) == 'AUG' ) then
-                  f%month = 8
-               else if ( date(9:11) == 'SEP' ) then
-                  f%month = 9
-               else if ( date(9:11) == 'OCT' ) then
-                  f%month = 10
-               else if ( date(9:11) == 'NOV' ) then
-                  f%month = 11
-               else if ( date(9:11) == 'DEC' ) then
-                  f%month = 12
-               end if
+
+               read(unit=date(7:8),fmt=*) f%day
+               read(unit=date(12:15),fmt=*) f%year
+
+               select case( date(9:11) )
+               case( 'JAN' )
+                 f%month = 1
+               case( 'FEB' )
+                 f%month = 2
+               case( 'MAR' )
+                 f%month = 3
+               case( 'APR' )
+                 f%month = 4
+               case( 'MAY' )
+                 f%month = 5
+               case( 'JUN' )
+                 f%month = 6
+               case( 'JUL' )
+                 f%month = 7
+               case( 'AUG' )
+                 f%month = 8
+               case( 'SEP' )
+                 f%month = 9
+               case( 'OCT' )
+                 f%month = 10
+               case( 'NOV' )
+                 f%month = 11
+               case( 'DEC' )
+                 f%month = 12
+               case default
+                 write(unit=fstderr,fmt=*) "Unknown month: "//date(9:11)
+                 error = .true.
+               end select
 
                read(dt(1:len_trim(dt)-2),*) f%dtwrite
                f%dtwrite = f%dtwrite * 60.
 
-             elseif ( index(line,'ENDVARS') > 0 ) then
+             else if ( index(line,'ENDVARS') > 0 ) then
 
                done = .true.
 
-             elseif ( index(line,'VARS') > 0 ) then
+             else if ( index(line,'VARS') > 0 ) then
 
-               read(line,*) tmp, f%nvar
+               read(unit=line,fmt=*) tmp, f%nvar
                allocate( f%var(f%nvar) )
-               do i=1,f%nvar
-                  read(unit,iostat=ierr,fmt='(a256)') line
-                  read(line,*) f%var(i)%name, nz
+
+               do i = 1, f%nvar, 1
+
+                  read(unit=unit,iostat=ierr,fmt='(a256)') line
+                  read(unit=line,fmt=*) f%var(i)%name, nz
+
                   if ( nz /= f%iz ) then
-                     write(*,*) 'Error reading ',trim(f%var(i)%name)
+                     write(unit=fstderr,fmt=*) "Error reading ", 
+     .                 trim( f%var(i)%name )
                      error = .true.
                   end if
-                  f%var(i)%index = i
-               end do
-             endif
 
-             read(unit,iostat=ierr,fmt='(a256)') line
+                  f%var(i)%index = i
+
+               end do ! 1..f%nvar
+
+             end if
+
+             read(unit=unit,iostat=ierr,fmt='(a256)') line
              if ( ierr < 0 ) done = .true.
 
           end do
@@ -241,92 +258,105 @@
 !         end do
 !--------- Debug -------------------------------------------------------
           if ( error ) then
-             write(*,*) 
+             write(unit=fstderr,fmt=*) 
      .         'Fatal error encountered while reading control file'
-             write(*,*) 'Cannot do miracles...'
+             write(unit=fstderr,fmt=*) 'Cannot do miracles...'
              stop
           end if
 
-! Open binary file for direct access
+        ! Open binary file for direct access
 
           f%iounit = unit
-          open( f%iounit,
-     .          file = trim(f%fname),
+          open( unit = f%iounit,
+     .          file = trim( f%fname ),
      .          form = 'unformatted', access = 'direct', 
      .          recl = F_RECL, status='old', iostat=ierr )
 
           if ( ierr /= 0 ) then
-             write(*,*) 'input_grads: error opening binary file'
-             write(*,*) 'iostat = ', ierr
-             stop
-          endif
-
+            write(unit=fstderr,fmt=*) 
+     .        "input_grads: error opening binary file"
+            write(unit=fstderr,fmt=*) "iostat = ", ierr
+            stop
+          end if
 
           return
-
           end subroutine open_grads_read
 
 !----------------------------------------------------------------------
           subroutine get_4byte_var( f, varname, itime, x, error )
 
+!         Description:
+!         Read binary data from file units and return the result as 
+!         as 4 byte float 'x'
+!----------------------------------------------------------------------
+
           implicit none
 
-!         Input
-          type (inputgrads), intent(IN) :: f
-          character(len=*)              :: varname
-          integer, intent(IN)           :: itime
+          ! Input Variables
+          type (inputgrads), intent(in) ::
+     .    f ! The file to read data from
 
-!         Output
-          real(kind=4), intent(OUT)     :: x(:)
-          logical, intent(OUT)          :: error
+          character(len=*) :: 
+     .    varname ! The variable name as it occurs in the control file
+          
+          integer, intent(in) :: 
+     .    itime ! Obtain variable varname at time itime 
 
-!         Internal
-          logical                       :: flag, done
-          integer                       :: i, k, nrec, ivar
+          ! Output
+          real(kind=4), dimension(:), intent(out) :: 
+     .    x ! Result variable
 
-!         Initialize error to false
+          logical, intent(out) :: error
+
+          ! Internal
+          logical :: flag, done
+          integer :: i, k, nrec, ivar
+
+          ! Initialize error to false
           error = .false.
 
-!         Check time index
+          ! Check time index
 
           if ( itime < 1 .or. itime > f%ntimes ) then
-             error = .true.
-             write(*,*) 'get_var: itime < 1 .or. itime > f%ntimes'
-             write(*,*) 'itime = ',itime
-             write(*,*) 'f%ntimes = ',f%ntimes
-             return
+            error = .true.
+            write(unit=fstderr,fmt=*) 
+     .        "get_var: itime < 1 .or. itime > f%ntimes"
+            write(unit=fstderr,fmt=*) "itime = ", itime
+            write(unit=fstderr,fmt=*) "f%ntimes = ", f%ntimes
+
+            return
           end if
 
-!         Look up variable in list
+          ! Look up variable in list
           done = .false.
           i    = 1
           do while ( .not. done )
-             if ( trim(varname) == trim(f%var(i)%name) ) then
-                ivar = i
-                done = .true.
+             if ( trim( varname ) == trim( f%var(i)%name ) ) then
+               ivar = i
+               done = .true.
              else
-                i = i + 1
-                if ( i > f%nvar ) done = .true.
+               i = i + 1
+               if ( i > f%nvar ) done = .true.
              end if
-          end do
+          end do ! .not. done
 
           if ( i > f%nvar ) then
-             error = .true.
-!             write(*,*) 'get_var: i > f%nvar'
-!             write(*,*) 'i = ',i
-!             write(*,*) 'f%nvar = ',f%nvar
-             return
+            error = .true.
+!            write(*,*) 'get_var: i > f%nvar'
+!            write(*,*) 'i = ',i
+!            write(*,*) 'f%nvar = ',f%nvar
+            return
           end if
 
 !         Read variable from file
 
           nrec = (itime-1)*f%nvar*(f%iz-f%ia+1) 
-     .           + (ivar-1)*(f%iz-f%ia+1) + 1
+     .         + (ivar-1)*(f%iz-f%ia+1) + 1
 
           do k=f%ia,f%iz
-             read(f%iounit,rec=nrec) x(k)
-             if (f%lbyteswapped) call byte_order_swap( x(k) )
-             nrec = nrec + 1
+            read(unit=f%iounit,rec=nrec) x(k)
+            if ( f%lbyteswapped ) call byte_order_swap( x(k) )
+            nrec = nrec + 1
           end do
 
           return
@@ -335,19 +365,33 @@
 !----------------------------------------------------------------------
           subroutine get_8byte_var( f, varname, itime, x, error )
 
+!         Description:
+!         Takes the result from get_4byte_var and returns it as a double
+!         precision type, allowing for compile time promotion.
+!----------------------------------------------------------------------
+
           implicit none
 
-!         Input
-          type (inputgrads), intent(IN) :: f
-          character(len=*)              :: varname
-          integer, intent(IN)           :: itime
+          ! External
+          intrinsic :: dble, size
 
-!         Output
-          real(kind=8), intent(OUT)     :: x(:)
-          logical, intent(OUT)          :: error
+          ! Input Variables
+          type (inputgrads), intent(in) :: 
+     .    f ! The GrADS file
 
-!         Internal
-          real(kind=4), dimension(size(x)) :: tmp
+          character(len=*) :: 
+     .    varname ! The variable name as it occurs in the control file
+
+          integer, intent(in) ::
+     .    itime   ! Obtain variable varname at time itime 
+
+          ! Output Variables
+          real(kind=8), intent(out) :: x(:)
+
+          logical, intent(out) :: error
+
+          ! Internal
+          real(kind=4), dimension(size( x )) :: tmp
 
           call get_4byte_var( f, varname, itime, tmp, error )
 
@@ -359,22 +403,24 @@
 !-----------------------------------------------------------------------
           subroutine close_grads_read( f )
 
+!         Description:
+!         Close a previously opened GrADS file
+!-----------------------------------------------------------------------
+
           implicit none
 
-!         Input
-
+          ! Input Variables
           type (inputgrads), intent(INOUT) :: f
 
-!         Close file 
-          close( f%iounit )
+!-----------------------------------------------------------------------
+          ! Close file 
+          close( unit=f%iounit )
 
-!         Deallocate
+          ! Deallocate
           deallocate( f%var )
           deallocate( f%z )
 
           return
-
           end subroutine close_grads_read
-!----------------------------------------------------------------------
 
         end module inputfile_class

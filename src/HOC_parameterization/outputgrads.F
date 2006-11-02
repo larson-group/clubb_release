@@ -1,74 +1,73 @@
-c------------------------------------------------------------------------
-c $Id: outputgrads.F,v 1.3 2006-09-06 15:59:59 dschanen Exp $
-c
-c This module contains structure and subroutine definitions to
-c create GrADS output data files for one dimensional arrays.
-c
-c The structure type (outputfile) contains all necessay information
-c to generate a GrADS file and a list of variables to be output
-c in the data file.
-c
-c Two subroutines are needed to create a GrADS file
-c
-c        subroutine open_grads( f )     Open initialize structure
-c                                       If GrADS files already exist,
-c                                       open_grads will attempt to
-c                                       append data to them
-c
-c        subroutine write_grads( f )    Write data to file and update
-c                                       control file. Can be callled as 
-c                                       many times as necessary
-c
-c Chris Golaz, updated 2/18/2003
-
-#if defined (__i386__) && __INTEL_COMPILER >= 900 /* Newer ifort on i386 */
-#define F_RECL 1
-#elif defined (__x86_64__) && __INTEL_COMPILER >= 900 /* Newer ifort on x64 */
-#define F_RECL 1
-#elif __alpha /* Assume that alpha users are using DEC f95 */
-#define F_RECL 1
-#else
-#define F_RECL 4
-#endif
-
+!-----------------------------------------------------------------------
+! $Id: outputgrads.F,v 1.4 2006-11-02 01:36:12 dschanen Exp $
+ 
         module outputgrads
 
-          public
-          private formatdate
+!       Description:
+!       This module contains structure and subroutine definitions to
+!       create GrADS output data files for one dimensional arrays.
+!
+!       The structure type (outputfile) contains all necessay information
+!       to generate a GrADS file and a list of variables to be output
+!       in the data file.
+!
+!       Two subroutines are needed to create a GrADS file
+!
+!        subroutine open_grads( f )     Open initialize structure
+!                                       If GrADS files already exist,
+!                                       open_grads will attempt to
+!                                       append data to them
+!
+!        subroutine write_grads( f )    Write data to file and update
+!                                       control file. Can be callled as 
+!                                       many times as necessary
+!       Author:
+!        Chris Golaz, updated 2/18/2003
+!-----------------------------------------------------------------------
 
-c         Undefined value
+          use constants, only: fstdout, fstderr
 
+          public  :: open_grads, write_grads
+          private :: formatdate, check_grads
+
+          ! Undefined value
           real, private, parameter :: undef = -9.99e33
 
           contains
 
-          !---------------------------------------------------------
+!-----------------------------------------------------------------------
           subroutine open_grads( f, unit, fdir, fname, 
      .                           ia, iz, z,
      .                           day, month, year, rlat, rlon,
      .                           time, dtwrite,
      .                           nvar )
+
+!-----------------------------------------------------------------------
+          use constants, only: fstderr, fstdout
           use outputfile_class
+
           implicit none
 
-c         Input
+!         ! Input Variables
 
-          type (outputfile), intent(INOUT) :: f
           integer, intent(IN)              :: unit
           character*(*), intent(IN) :: fdir, fname
           integer, intent(IN) :: ia, iz
           real, intent(IN)    :: z(:)
           integer, intent(IN) :: day, month, year
-	  real, intent(IN)    :: rlat, rlon
+          real, intent(IN)    :: rlat, rlon
           real, intent(IN)    :: time, dtwrite
           integer, intent(IN) :: nvar
+
+          ! Input/Output Variables
+          type (outputfile), intent(INOUT) :: f
         
-c         Internal
+          ! Local Variables
 
-          integer k
-          logical lctl, ldat, lerror
+          integer :: k
+          logical :: lctl, ldat, lerror
 
-c         Define parameters
+          ! Define parameters
           
           f%iounit = unit
           f%fdir   = fdir
@@ -76,28 +75,28 @@ c         Define parameters
           f%ia     = ia
           f%iz     = iz
 
-          if ( ia .le. iz ) then
+          if ( ia <= iz ) then
             do k=1,iz-ia+1
               f%z(k) = z(ia+k-1)
-            enddo
+            end do
           else
             do k=1,ia-iz+1
               f%z(k) = z(ia-k+1)
-            enddo
-          endif
+            end do
+          end if
 
-          f%day = day
+          f%day   = day
           f%month = month
-          f%year = year
+          f%year  = year
 
-          f%rlat   = rlat
-          f%rlon   = rlon
+          f%rlat  = rlat
+          f%rlon  = rlon
 
           f%dtwrite = dtwrite
 
           f%nvar = nvar
 
-c         Check whether GrADS files already exists
+!         Check whether GrADS files already exists
 
 !         We don't need this feature for the single-column model
 !         since there is no history restart feature
@@ -107,8 +106,8 @@ c         Check whether GrADS files already exists
           lctl = .false.
           ldat = .false.
 
-c         If none of the files exists, set ntimes and nrecord and
-c         to initial values and return
+          ! If none of the files exist, set ntimes and nrecord and
+          ! to initial values and return
 
           if ( .not.lctl .and. .not.ldat ) then
 
@@ -117,11 +116,11 @@ c         to initial values and return
             f%nrecord = 1
             return
 
-c         If both files exists, attempt to append to existing files
+          ! If both files exists, attempt to append to existing files
 
-          elseif ( lctl .and. ldat ) then
+          else if ( lctl .and. ldat ) then
 
-c           check existing ctl file
+            !  Check existing ctl file
 
             call check_grads( unit, fdir, fname, 
      .                        ia, iz, z,
@@ -130,446 +129,482 @@ c           check existing ctl file
      .                        lerror, f%ntimes, f%nrecord, f%time )
 
             if ( lerror ) then
-              write(*,*) 'Error in open_grads:'
-              write(*,*) 'Attempt to append to existing files failed'
+              write(unit=fstderr,fmt=*) "Error in open_grads:"
+              write(unit=fstderr,fmt=*) 
+     .        "Attempt to append to existing files failed"
 !              call stopcode('open_grads')
               stop 'open_grads'
-            endif
+            end if
 
             return
 
-c         If one file exists, but not the other, give up
+!         If one file exists, but not the other, give up
 
           else
+            write(unit=fstderr,fmt=*) 'Error in open_grads:'
+            write(unit=fstderr,fmt=*) 
+     .        "Attempt to append to existing files failed,"// 
+     .        " because only one of the two GrADS files was found."
+            stop "open_grads"
 
-              write(*,*) 'Error in open_grads:'
-              write(*,*) 'Attempt to append to existing files failed'
-              write(*,*) 
-     .        'because only one of the two GrADS files was found'
-!              call stopcode('open_grads')
-              stop 'open_grads'
-
-          endif
+          end if
 
           return
           end subroutine open_grads
 
-          !---------------------------------------------------------
-          ! For existing GrADS file, this subroutine will attempt
-          ! to determine whether data can be safely appended to
-          ! existing file.
-
+!-----------------------------------------------------------------------
           subroutine check_grads( unit, fdir, fname, 
      .                            ia, iz, z,
      .                            day, month, year, time, dtwrite,
      .                            nvar, 
      .                            error, ntimes, nrecord, time_in )
+!         Description:
+!         For existing GrADS file, this subroutine will attempt
+!         to determine whether data can be safely appended to
+!         existing file.
+!-----------------------------------------------------------------------
           use outputfile_class
+          use constants, only: fstderr, fstdout
+
           implicit none
 
-c         Input
+          ! Input Variables
 
-          integer, intent(IN)       :: unit
-          character*(*), intent(IN) :: fdir, fname
-          integer, intent(IN) :: ia, iz
-          real, intent(IN)    :: z(:)
-          integer, intent(IN) :: day, month, year
-          real, intent(IN)    :: time, dtwrite
-          integer, intent(IN) :: nvar
+          integer, intent(in) :: 
+     .    unit,             ! Fortran file unit
+     .    ia, iz,           ! First and last level
+     .    day, month, year, ! Day, month and year numbers
+     .    nvar              ! Number of variables in the file
 
-c         Output
+          character*(*), intent(in) ::
+     .    fdir, fname ! File directory and name
 
-          logical, intent(OUT) :: error
-          integer, intent(OUT) :: ntimes, nrecord
-          real, intent(OUT)    :: time_in
+          real, dimension(:), intent(in) ::
+     .    z(:) ! Altitudes
+          real, intent(in) ::
+     .    time, dtwrite ! Time and time between writes interval
+
+          ! Output Variables
+          logical, intent(out) :: 
+     .    error
+
+          integer, intent(out) :: 
+     .    ntimes, nrecord
+
+          real, intent(out) :: time_in
         
-c         Internal
+          ! Local Variables
+          logical :: done
+          integer :: ierr
+          character(len = 256) :: line, tmp, date, dt
 
-          logical done
-          integer ierr
-          character (len = 256) :: line, tmp, date, dt
+          integer :: 
+     .    i, nx, ny, nz,
+     .    ihour, imin,
+     .    ia_in, iz_in, ntimes_in, nvar_in,
+     .    day_in, month_in, year_in,
+     .    ios
 
-          integer i, nx, ny, nz
-          integer ihour, imin
+          real :: dtwrite_in
 
-          integer ia_in, iz_in, ntimes_in, nvar_in
-          integer day_in, month_in, year_in
-          real dtwrite_in
-          real, allocatable :: z_in(:)
-          type (variable), pointer :: var_in(:)
+          real, dimension(:), allocatable :: z_in
 
-          integer ios
+          type (variable), dimension(:), pointer :: var_in
 
-c Open control file
+!-----------------------------------------------------------------------
 
+          ! Initialize logicals
           error = .false.
-          done = .false.
+          done  = .false.
+
+          ! Open control file
           open( unit,
-     .          file = trim(fdir)//trim(fname)//'.ctl',
+     .          file = trim( fdir )//trim( fname )//'.ctl',
      .          status = 'old', iostat = ierr )
           if ( ierr < 0 ) done = .true.
 
-c Read and process it
+          ! Read and process it
 
-          read(unit,iostat=ierr,fmt='(a256)') line
+          read(unit=unit,iostat=ierr,fmt='(a256)') line
           if ( ierr < 0 ) done = .true.
 
           do while ( .not. done )
 
              if ( index(line,'XDEF') > 0 ) then
 
-               read(line,*) tmp, nx
+               read(unit=line,fmt=*) tmp, nx
                if ( nx /= 1 ) then
-                  write(*,*) 'Error: XDEF can only be 1'
-                  error = .true.
+                 write(unit=fstderr,fmt=*) 'Error: XDEF can only be 1'
+                 error = .true.
                end if
 
-             elseif ( index(line,'YDEF') > 0 ) then
+             else if ( index(line,'YDEF') > 0 ) then
 
-               read(line,*) tmp, ny
+               read(unit=line,fmt=*) tmp, ny
                if ( ny /= 1 ) then
-                  write(*,*) 'Error: YDEF can only be 1'
-                  error = .true.
+                 write(unit=fstderr,fmt=*) "Error: YDEF can only be 1"
+                 error = .true.
                end if
 
-             elseif ( index(line,'ZDEF') > 0 ) then
+             else if ( index(line,'ZDEF') > 0 ) then
 
-               read(line,*) tmp, iz_in
+               read(unit=line,fmt=*) tmp, iz_in
 
                if ( index(line,'LEVELS') > 0 ) then
                  ia_in = 1
                  allocate( z_in(ia_in:iz_in) )
-                 read(unit,*) (z_in(i),i=ia_in,iz_in)
-               endif
-
-             elseif ( index(line,'TDEF') > 0 ) then
-
-               read(line,*) tmp, ntimes_in, tmp, date, dt
-               read(date(1:2),*) ihour
-               read(date(4:5),*) imin
-               time_in = ihour * 3600. + imin * 60.
-               read(date(7:8),*) day_in
-               read(date(12:15),*) year_in
-               if ( date(9:11) == 'JAN' ) then
-                  month_in = 1
-               else if ( date(9:11) == 'FEB' ) then
-                  month_in = 2
-               else if ( date(9:11) == 'MAR' ) then
-                  month_in = 3
-               else if ( date(9:11) == 'APR' ) then
-                  month_in = 4
-               else if ( date(9:11) == 'MAY' ) then
-                  month_in = 5
-               else if ( date(9:11) == 'JUN' ) then
-                  month_in = 6
-               else if ( date(9:11) == 'JUL' ) then
-                  month_in = 7
-               else if ( date(9:11) == 'AUG' ) then
-                  month_in = 8
-               else if ( date(9:11) == 'SEP' ) then
-                  month_in = 9
-               else if ( date(9:11) == 'OCT' ) then
-                  month_in = 10
-               else if ( date(9:11) == 'NOV' ) then
-                  month_in = 11
-               else if ( date(9:11) == 'DEC' ) then
-                  month_in = 12
+                 read(unit=unit,fmt=*) (z_in(i),i=ia_in,iz_in)
                end if
 
-               read(dt(1:len_trim(dt)-2),*) dtwrite_in
-               dtwrite_in = dtwrite_in * 60.
+             else if ( index(line,'TDEF') > 0 ) then
 
-             elseif ( index(line,'ENDVARS') > 0 ) then
+               read(unit=line,fmt=*) tmp, ntimes_in, tmp, date, dt
+               read(unit=date(1:2),fmt=*) ihour
+               read(unit=date(4:5),fmt=*) imin
+               time_in = ihour * 3600.0 + imin * 60.0
+               read(unit=date(7:8),fmt=*) day_in
+               read(unit=date(12:15),fmt=*) year_in
+
+               select case( date(9:11) )
+               case( 'JAN' )
+                 month_in = 1
+               case( 'FEB' )
+                 month_in = 2
+               case( 'MAR' )
+                 month_in = 3
+               case( 'APR' )
+                 month_in = 4
+               case( 'MAY' )
+                 month_in = 5
+               case( 'JUN' )
+                 month_in = 6
+               case( 'JUL' )
+                 month_in = 7
+               case( 'AUG' )
+                 month_in = 8
+               case( 'SEP' )
+                 month_in = 9
+               case( 'OCT' )
+                 month_in = 10
+               case( 'NOV' )
+                 month_in = 11
+               case( 'DEC' )
+                 month_in = 12
+               case default
+                 write(unit=fstderr,fmt=*) "Unknown month: "//date(9:11)
+                 error = .true.
+               end select
+
+               read(unit=dt(1:len_trim(dt)-2),fmt=*) dtwrite_in
+               dtwrite_in = dtwrite_in * 60.0
+
+             else if ( index(line,'ENDVARS') > 0 ) then
 
                done = .true.
 
-             elseif ( index(line,'VARS') > 0 ) then
+             else if ( index(line,'VARS') > 0 ) then
 
                read(line,*) tmp, nvar_in
                allocate( var_in(nvar_in) )
-               do i=1,nvar_in
-                  read(unit,iostat=ierr,fmt='(a256)') line
-                  read(line,*) var_in(i)%name, nz
+               do i=1, nvar_in
+                  read(unit=unit,iostat=ierr,fmt='(a256)') line
+                  read(unit=line,fmt=*) var_in(i)%name, nz
                   if ( nz /= iz_in ) then
-                     write(*,*) 'Error reading ',trim(var_in(i)%name)
+                    write(unit=fstderr,fmt=*) 
+     .                "Error reading ", trim( var_in(i)%name )
                      error = .true.
-                  end if
-               end do
-             endif
+                  end if ! nz /= iz_in
+               end do ! 1..nvar_in
+             end if
 
              read(unit,iostat=ierr,fmt='(a256)') line
              if ( ierr < 0 ) done = .true.
 
-          end do
+          end do ! while ( .not. done )
           
-          close( unit )
+          close( unit=unit )
 
-c         Perform some error check
+          ! Perform some error check
 
           if ( abs(ia_in - iz_in) /= abs(ia - iz) ) then
-            write(*,*) 'check_grads: size mismatch'
+            write(unit=fstderr,fmt=*) "check_grads: size mismatch"
             error = .true.
-          endif
+          end if
 
           if ( day_in /= day ) then
-            write(*,*) 'check_grads: day mismatch'
+            write(unit=fstderr,fmt=*) "check_grads: day mismatch"
             error = .true.
-          endif
+          end if
 
           if ( month_in /= month ) then
-            write(*,*) 'check_grads: month mismatch'
+            write(unit=fstderr,fmt=*) "check_grads: month mismatch"
             error = .true.
-          endif
+          end if
 
           if ( year_in /= year ) then
-            write(*,*) 'check_grads: year mismatch'
+            write(unit=fstderr,fmt=*) "check_grads: year mismatch"
             error = .true.
-          endif
+          end if
 
           if ( int( time_in + ntimes_in*dtwrite_in ) 
      .         /= int( time ) ) then
-            write(*,*) 'check_grads: time mismatch'
+            write(unit=fstderr,fmt=*) "check_grads: time mismatch"
             error = .true.
-          endif
+          end if
 
           if ( int( dtwrite_in ) /= int( dtwrite) ) then
-            write(*,*) 'check_grads: dtwrite mismatch'
+            write(unit=fstderr,fmt=*) 'check_grads: dtwrite mismatch'
             error = .true.
-          endif
+          end if
 
           if ( nvar_in /= nvar ) then
-            write(*,*) 'check_grads: nvar mismatch'
+            write(unit=fstderr,fmt=*) 'check_grads: nvar mismatch'
             error = .true.
-          endif
+          end if
 
           if ( error ) then
-            write(*,*) 'check_grads diagnostic'
-            write(*,*) 'ia      = ',ia_in,ia
-            write(*,*) 'iz      = ',iz_in,iz
-            write(*,*) 'day     = ',day_in,day
-            write(*,*) 'month   = ',month_in,month
-            write(*,*) 'year    = ',year_in,year
-            write(*,*) 'time    = ',time_in,time
-            write(*,*) 'dtwrite = ',dtwrite_in,dtwrite
-            write(*,*) 'nvar    = ',nvar_in,nvar
-          endif
+            write(unit=fstderr,fmt=*) "check_grads diagnostic"
+            write(unit=fstderr,fmt=*) "ia      = ", ia_in, ia
+            write(unit=fstderr,fmt=*) "iz      = ", iz_in, iz
+            write(unit=fstderr,fmt=*) "day     = ", day_in, day
+            write(unit=fstderr,fmt=*) "month   = ", month_in, month
+            write(unit=fstderr,fmt=*) "year    = ", year_in, year
+            write(unit=fstderr,fmt=*) "time    = ", time_in, time
+            write(unit=fstderr,fmt=*) "dtwrite = ", dtwrite_in, dtwrite
+            write(unit=fstderr,fmt=*) "nvar    = ", nvar_in, nvar
+          end if
 
-c         Set ntimes and nrecord to append to existing files
+          ! Set ntimes and nrecord to append to existing files
 
-          ntimes = ntimes_in
+          ntimes  = ntimes_in
           nrecord = ntimes_in * nvar_in * iz_in + 1
-
-c         Searching for a memory leak.  This seems to fixed only 
-c         part of the problem. -dschanen 4/4/2005
 
           deallocate ( z_in ) 
 
           return
           end subroutine check_grads
 
-          !---------------------------------------------------------
+!---------------------------------------------------------
           subroutine write_grads( f )
+
+!         Description:
+!         Write part of a GrADS file to disk
+!---------------------------------------------------------
         
-          use endian ! -dschanen 4/4/05
+          use endian
           use outputfile_class
 
           implicit none
 
-c         Input
+          ! Input Variables
+          type (outputfile), intent(inout) :: f
 
-          type (outputfile), intent(INOUT) :: f
+          ! Local Variables
+          integer :: 
+     .    i, k, ! Loop indices
+     .    ios   ! I/O status
 
-c         Internal
+          character(len=15) :: date
 
-          integer i,k
-          integer ios
-!          real*4 xtmp    
-          real(kind=4) xtmp    
-          character(len=15) date
-
-c         Check number of variables and write nothing if less than 1
+          ! Check number of variables and write nothing if less than 1
 
           if ( f%nvar < 1 ) return
 
-c         Output data to file
+#include "../recl.F"
 
-          open( f%iounit,
-     .          file = trim(f%fdir)//trim(f%fname)//'.dat',
-     .          form = 'unformatted', access = 'direct',
-     .          recl = F_RECL, status = 'unknown', iostat = ios )
+          ! Output data to file
+          open( unit=f%iounit,
+     .          file=trim( f%fdir )//trim( f%fname )//'.dat',
+     .          form='unformatted', access='direct',
+     .          recl=F_RECL*abs( f%iz-f%ia+1 ),
+     .          status='unknown', iostat=ios )
+!         open( f%iounit,
+!    .          file = trim(f%fdir)//trim(f%fname)//'.dat',
+!    .          form = 'unformatted', access = 'direct',
+!    .          recl = F_RECL, status = 'unknown', iostat = ios )
           if ( ios /= 0 ) then
-             write(*,*) 'write_grads: error opening binary file'
-             write(*,*) 'iostat = ', ios
-             stop
-          endif
-          do i=1,f%nvar
-             if ( f%ia .le. f%iz ) then
-               do k=f%ia,f%iz
-                  xtmp = f%var(i)%ptr(k)
-                  write(f%iounit,rec=f%nrecord) xtmp
-                  f%nrecord = f%nrecord + 1
-               end do
-             else
-               do k=f%ia,f%iz,-1
-                  xtmp = f%var(i)%ptr(k)
-                  write(f%iounit,rec=f%nrecord) xtmp
-                  f%nrecord = f%nrecord + 1
-               end do
-             end if
-          end do
+            write(unit=fstderr,fmt=*) 
+     .        "write_grads: error opening binary file"
+            write(unit=fstderr,fmt=*) "iostat = ", ios
+            stop
+          end if
+
+          if ( f%ia <= f%iz ) then
+            do i=1,f%nvar
+              write(f%iounit,rec=f%nrecord) f%var(i)%ptr(f%ia:f%iz)
+              f%nrecord = f%nrecord + 1
+            end do
+
+          else
+            do i=1, f%nvar
+              write(f%iounit,rec=f%nrecord) f%var(i)%ptr(f%ia:f%iz:-1)
+              f%nrecord = f%nrecord + 1 
+            end do
+
+          end if ! f%ia <= f%iz
+
           close( f%iounit, iostat = ios )
           if ( ios /= 0 ) then
-             write(*,*) 'write_grads: error closing binary file'
-             write(*,*) 'iostat = ', ios
-             stop
-          endif
+            write(unit=fstderr,fmt=*) 
+     .        "write_grads: error closing binary file"
+            write(unit=fstderr,fmt=*) "iostat = ", ios
+            stop
+          end if
 
           f%ntimes = f%ntimes + 1
 
-c         Write control file
+          ! Write control file
 
-          open( f%iounit,
-     .          file = trim(f%fdir)//trim(f%fname)//'.ctl',
-     .          status = 'unknown', iostat = ios )
-          if ( ios .gt. 0 ) then
-             write(*,*) 'write_grads: error opening control file'
-             write(*,*) 'iostat = ',ios
-             stop
-          endif
+          open(unit=f%iounit,
+     .         file=trim( f%fdir )//trim( f%fname )//'.ctl',
+     .         status='unknown', iostat=ios)
+          if ( ios > 0 ) then
+            write(unit=fstderr,fmt=*) 
+     .        "write_grads: error opening control file"
+            write(unit=fstderr,fmt=*) "iostat = ", ios
+            stop
+          end if
 
-c         File header
-
-! Added Endian options to file header to avoid confusing gradsc
-! 4/4/2005 - dschanen
+          ! Write file header
           if ( big_endian( ) ) then
-            write(f%iounit,'(a)') 'OPTIONS BIG_ENDIAN'
+            write(unit=f%iounit,fmt='(a)') 'OPTIONS BIG_ENDIAN'
           else
-            write(f%iounit,'(a)') 'OPTIONS LITTLE_ENDIAN'
-          endif 
-! end change 4/4/2005
-          write(f%iounit,'(a)') 'DSET ^'//trim(f%fname)//'.dat'
-          write(f%iounit,'(a,e11.5)') 'UNDEF ',undef
-          write(f%iounit,'(a)') 'XDEF    1 LINEAR 0. 1.'
-          write(f%iounit,'(a)') 'YDEF    1 LINEAR 0. 1.'
-          if ( f%ia .eq. f%iz ) then
-            write(f%iounit,'(a,i5,a)') 'ZDEF    1 LINEAR 0. 1.'
-          elseif ( f%ia .lt. f%iz ) then
-            write(f%iounit,'(a,i5,a)') 
-     .        'ZDEF',abs(f%iz-f%ia)+1,' LEVELS '
-            write(f%iounit,'(8f8.1)') (f%z(i-f%ia+1),i=f%ia,f%iz)
+            write(unit=f%iounit,fmt='(a)') 'OPTIONS LITTLE_ENDIAN'
+          end if 
+          write(unit=f%iounit,fmt='(a)') 'DSET ^'//trim(f%fname)//'.dat'
+          write(unit=f%iounit,fmt='(a,e11.5)') 'UNDEF ',undef
+          write(unit=f%iounit,fmt='(a)') 'XDEF    1 LINEAR 0. 1.'
+          write(unit=f%iounit,fmt='(a)') 'YDEF    1 LINEAR 0. 1.'
+          if ( f%ia == f%iz ) then
+            write(unit=f%iounit,fmt='(a,i5,a)') 'ZDEF    1 LINEAR 0. 1.'
+          else if ( f%ia < f%iz ) then
+            write(unit=f%iounit,fmt='(a,i5,a)') 
+     .        'ZDEF', abs(f%iz-f%ia)+1,' LEVELS '
+            write(unit=f%iounit,fmt='(8f8.1)') 
+     .        (f%z(i-f%ia+1),i=f%ia,f%iz)
           else
-            write(f%iounit,'(a,i5,a)') 
+            write(unit=f%iounit,fmt='(a,i5,a)') 
      .        'ZDEF',abs(f%iz-f%ia)+1,' LEVELS '
             write(f%iounit,'(8f8.1)') (f%z(f%ia-i+1),i=f%ia,f%iz,-1)
-          endif
+          end if
 
           call formatdate(f%day,f%month,f%year,f%time,date)
 
-          write(f%iounit,'(a,i6,a,a,i3,a)') 'TDEF    '
-     .     ,f%ntimes,' LINEAR ',date,max(1,int(f%dtwrite/60.)),'mn'
+          write(unit=f%iounit,fmt='(a,i6,a,a,i3,a)') 'TDEF    ',
+     .      f%ntimes, ' LINEAR ', date, max(1,int(f%dtwrite/60.)),'mn'
 
-c         Variables description
+          ! Variables description
+          write(unit=f%iounit,fmt='(a,i5)') 'VARS', f%nvar
 
-          write(f%iounit,'(a,i5)') 'VARS',f%nvar
-
-          do i=1,f%nvar
-             write(f%iounit,'(a,i5,a,a)')
+          do i=1, f%nvar, 1
+             write(unit=f%iounit,fmt='(a,i5,a,a)')
      .         f%var(i)%name(1:len_trim(f%var(i)%name)),
      .         abs(f%iz-f%ia)+1,' 99 ',
      .         f%var(i)%description(1:len_trim(f%var(i)%description))
           end do
 
-          write(f%iounit,'(a)') 'ENDVARS'
+          write(unit=f%iounit,fmt='(a)') 'ENDVARS'
 
-          close( f%iounit, iostat = ios )
-          if ( ios .gt. 0 ) then
-             write(*,*) 'write_grads: error closing control file'
-             write(*,*) 'iostat = ',ios
-             stop
-          endif
+          close( unit=f%iounit, iostat=ios )
+          if ( ios > 0 ) then
+            write(unit=fstderr,fmt=*) 
+     .        "write_grads: error closing control file"
+            write(unit=fstderr,fmt=*) "iostat = ",ios
+            stop
+          end if
 
           return
           end subroutine write_grads
 
           !---------------------------------------------------------
-          subroutine formatdate(day_in,month_in,year_in,time_in,date)
+          subroutine formatdate( day_in, month_in, year_in, 
+     .                           time_in, date )
           implicit none
 
-          integer, intent(in) :: day_in, month_in, year_in
-          real, intent(in)    :: time_in
+          ! Constant Parameters
+          character(len=3), dimension(12), parameter ::
+     .    month = (/'JAN','FEB','MAR','APR','MAY','JUN',
+     .              'JUL','AUG','SEP','OCT','NOV','DEC'/)
+
+          integer, dimension(24), parameter ::
+     .    ndays = (/31, 28, 31, 30, 31, 30,
+     .              31, 31, 30, 31, 30, 31,
+     .              31, 29, 31, 30, 31, 30,
+     .              31, 31, 30, 31, 30, 31 /)
+
+          ! Input Variables
+          integer, intent(in) :: 
+     .    day_in, month_in, year_in
+
+          real, intent(in) :: time_in
+
+          ! Output Variables
           character(len=15), intent(out) :: date
 
-          integer iday, imonth, iyear
-          real time
-          integer ileap
+          ! Local Variables
+          integer :: iday, imonth, iyear, ileap
+          real :: time
 
-          character(len=3) month(12)
-          integer ndays(24)
-          data month /'JAN','FEB','MAR','APR','MAY','JUN',
-     .                'JUL','AUG','SEP','OCT','NOV','DEC'/
-          data ndays /   31,   28,   31,   30,  31,   30,
-     .                   31,   31,   30,   31,  30,   31,
-     .                   31,   29,   31,   30,  31,   30,
-     .                   31,   31,   30,   31,  30,   31 /
 
-c         Copy input arguments into internal variables
+!         Copy input arguments into internal variables
 
-          iday = day_in
+          iday   = day_in
           imonth = month_in
-          iyear = year_in
-          time = time_in
+          iyear  = year_in
+          time   = time_in
 
-c         If starting time is greater than 24 hours, update
-c         date accordingly
+!         If starting time is greater than 24 hours, update
+!         date accordingly
 
-          do while ( int(time) .ge. 86400 )
+          do while ( int(time) >= 86400 )
 
             time = time - 86400.0
             iday = iday + 1
 
-c           determine if current year is leap year
-c           no:  ileap = 0
-c           yes: ileap = 12
+!           determine if current year is leap year
+!           no:  ileap = 0
+!           yes: ileap = 12
 
-c  Picky compilers will crap out on the code below
-c  Something to do with logical .true./.false. not always being 1/0?
-c           ileap = abs( (mod(iyear,4).eq.0)
-c    .                    .and. (.not.(  mod(iyear,100).eq.0
-c    .                                   .and. mod(iyear,400).ne.0 )) 
-c    .                 )*12
+!  Picky compilers will crap out on the code below
+!  Something to do with logical .true./.false. not always being 1/0?
+!           ileap = abs( (mod(iyear,4).eq.0)
+!    .                    .and. (.not.(  mod(iyear,100).eq.0
+!    .                                   .and. mod(iyear,400).ne.0 )) 
+!    .                 )*12
 
-c   Alternate code:
-            if ( (mod(iyear,4).eq.0)
-     .           .and. (.not.(  mod(iyear,100).eq.0 
-     .                  .and. mod(iyear,400).ne.0 ) )
+!   Alternate code:
+            if ( ( mod( iyear, 4 ) == 0)
+     .            .and. (.not.( mod( iyear, 100 ) == 0 
+     .                        .and. mod( iyear, 400 ) /= 0 ) )
      .         ) then 
               ileap = 12
             else
               ileap = 0
             end if
 
-            if ( iday .gt. ndays(imonth+ileap) ) then
+            if ( iday > ndays(imonth+ileap) ) then
               iday = 1
               imonth = imonth + 1
             end if
 
-            if ( imonth .gt. 12 ) then
+            if ( imonth > 12 ) then
               imonth = 1
               iyear = iyear + 1
-            endif
+            end if
 
-          enddo
+          end do
 
           date = 'hh:mmZddmmmyyyy'
-          write(date(7:8),'(i2.2)') iday
-          write(date(9:11),'(a3)') month(imonth)
-          write(date(12:15),'(i4.4)') iyear
-          write(date(1:2),'(i2.2)') int(time/3600.)
-          write(date(4:5),'(i2.2)') int( mod(int(time),3600) / 60. )
+          write(unit=date(7:8),fmt='(i2.2)') iday
+          write(unit=date(9:11),fmt='(a3)') month(imonth)
+          write(unit=date(12:15),fmt='(i4.4)') iyear
+          write(unit=date(1:2),fmt='(i2.2)') int( time/3600. )
+          write(unit=date(4:5),fmt='(i2.2)') 
+     .      int( mod( int( time ),3600 ) / 60. )
 
           return
           end subroutine formatdate
 
         end module outputgrads
 
-c------------------------------------------------------------------------
+!------------------------------------------------------------------------

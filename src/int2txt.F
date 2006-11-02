@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: int2txt.F,v 1.1 2006-10-04 16:48:04 dschanen Exp $
+! $Id: int2txt.F,v 1.2 2006-11-02 01:36:10 dschanen Exp $
         program int2txt
 
 !       Description:
@@ -10,17 +10,7 @@
 !       Notes:  Not very useful on machines without a /dev/random, 
 !       though any 34 bytes of pseudo-random seed data will suffice.
 !-----------------------------------------------------------------------
-
-! The same rules as inputgrads
-#if defined (__i386__) && __INTEL_COMPILER >= 900 /* Newer ifort on i386 */
-#define F_RECL 1
-#elif defined (__x86_64__) && __INTEL_COMPILER >= 900 /*Newer ifort on x86_64*/
-#define F_RECL 1
-#elif __alpha /* Assume that alpha users are using f95 */
-#define F_RECL 1
-#else
-#define F_RECL 4
-#endif
+#include "recl.F"
 
         implicit none
 
