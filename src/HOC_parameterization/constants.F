@@ -1,10 +1,10 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.6 2006-11-02 01:43:41 dschanen Exp $
+! $Id: constants.F,v 1.7 2006-11-02 22:41:30 dschanen Exp $
+
+        module constants
 
 !  Contains frequently occuring model constants
 !-----------------------------------------------------------------------
-
-        module constants
 
         implicit none
 
@@ -38,38 +38,67 @@
         ! Changed g to grav to make it easier to find in the code 5/25/05
 !       real, parameter :: grav  = 9.80665 ! Gravitational acceleration [m/s^2]
         real, parameter :: 
-     .  grav = 9.81,   ! Gravitational acceleration [m/s^2]
-     .  p0   = 1.0e5   ! Reference pressure [P]
+     .  grav = 9.81,   ! Gravitational acceleration     [m/s^2]
+     .  p0   = 1.0e5   ! Reference pressure             [P]
 
         ! Von Karman's constant
         ! Constant of the logarithmic wind profile in the surface layer 
         real, parameter :: 
-     .  vonk   = 0.4,    ! Accepted value 0.40 (+/-) 0.01
-     .  rho_lw = 1000.0, ! Density of liquid water [kg/m^3]
-     .  T0     = 300.0   ! Reference temperature [K]
+     .  vonk   = 0.4,    ! Accepted value is 0.40 (+/-) 0.01    [-]
+     .  rho_lw = 1000.0, ! Density of liquid water              [kg/m^3]
+     .  T0     = 300.0   ! Reference temperature                [K]
 
         real, parameter :: emin = 1.0e-6
 
         ! BUGSrad Constants
         real, parameter :: 
-     .  sol_const = 1.367e3 ! Solar constant
+     .  sol_const = 1367.0 ! Solar constant     [W/m^2]
 
 
         ! Model parameters and constraints
 
         real :: 
-     .  fcor ! Coriolis parameter
+     .  fcor ! Coriolis parameter               [s^-1]
 
+        ! Model constant parameters 
         real ::
-     .  C1, C1b, C1c, C2, C2b, C2c, C4, C5,
-     .  C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
-     .  C7, C7b, C7c, C8, C8b, C10,
-     .  C11, C11b, C11c, C12,
-     .  nu1, nu2, nu6, nu8, nu_r,
-     .  mu, c_K, 
-     .  gamma_coef, gamma_coefb, gamma_coefc,
-     .  lmin,
-     .  taumin, taumax
+     .  C1,         ! Low Skewness in C1 Skewness Function.
+     .  C1b,        ! High Skewness in C1 Skewness Function.
+     .  C1c,        ! Degree of Slope of C1 Skewness Function.
+     .  C2,         ! Low Skewness in C2 Skewness Function.
+     .  C2b,        ! High Skewness in C2 Skewness Function.  
+     .  C2c,        ! Degree of Slope of C2 Skewness Function.
+     .  C4,         ! Currently Not Used in the Model.
+     .  C5,         ! Constant from Chris Golaz.
+     .  C6rt,       ! Low Skewness in C6rt Skewness Function.
+     .  C6rtb,      ! High Skewness in C6rt Skewness Function.
+     .  C6rtc,      ! Degree of Slope of C6rt Skewness Function.
+     .  C6thl,      ! Low Skewness in C6thl Skewness Function.
+     .  C6thlb,     ! High Skewness in C6thl Skewness Function.
+     .  C6thlc,     ! Degree of Slope of C6thl Skewness Function.
+     .  C7,         ! Low Skewness in C7 Skewness Function.
+     .  C7b,        ! High Skewness in C7 Skewness Function.
+     .  C7c,        ! Degree of Slope of C7 Skewness Function.
+     .  C8,         ! Coefficient #1 in C8 Skewness Equation.
+     .  C8b,        ! Coefficient #2 in C8 Skewness Equation.  From Golaz.
+     .  C10,        ! Currently Not Used in the Model.
+     .  C11,        ! Low Skewness in C11 Skewness Function.
+     .  C11b,       ! High Skewness in C11 Skewness Function.  From Golaz.
+     .  C11c,       ! Degree of Slope of C11 Skewness Function.  From Golaz.
+     .  C12,        ! Constant from Chris Golaz.
+     .  nu1,        ! Previously determined eddy viscosity.
+     .  nu2,        ! Previously determined eddy viscosity.
+     .  nu6,        ! Previously determined eddy viscosity.
+     .  nu8,        ! Previously determined eddy viscosity.
+     .  nu_r,       ! Tuned to LES from Surface Value of DYCOMS2 RF02 DS.
+     .  gamma_coef, ! Low Skewness in gamma coefficient Skewness Function.
+     .  gamma_coefb,! High Skewness in gamma coefficient Skewness Function.
+     .  gamma_coefc,! Degree of Slope of gamma coefficient Skewness Function.
+     .  c_K,        ! Constant from Chris Golaz.
+     .  mu,         ! Constant from Chris Golaz.
+     .  taumin,     ! Previously determined value.
+     .  taumax,     ! Previously determined value.
+     .  lmin        ! Previously determined value.
 
 !       Vince Larson added a constant to set plume widths for theta_l and rt
 !       beta should vary between 0 and 3, with 1.5 the standard value
