@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.94 2006-11-01 20:41:33 mjfalk Exp $
+! $Id: hoc.F,v 1.95 2006-11-02 01:44:43 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -104,6 +104,7 @@
         use grid_class
         use numerical_check
         use hoc_parameterization_interface
+        use constants, only: fstdout, fstderr
 #ifdef STATS
         use statistics
 #endif
@@ -184,13 +185,17 @@
      .  cloud_sed,    ! Flag for cloud water droplet sedimentation. - Brian
      .  kk_rain,      ! Flag for Khairoutdinov and Kogan rain microphysics. - Brian
      .  lbugsrad,     ! Flag for BUGsrad radiation scheme - dschanen
-     .  bottom_at_sfc ! Flag for the lowest model level being at the surface (true)
-                      ! or not at the surface (false).  Example of case where it is not
-                      ! at the surface:  Nov. 11 altocumulus case.
+     .  lmpace_nudge  ! Whether to adjust the winds within the timestep
 
-       ! Dummy grid height arrays
-       real, dimension(:), allocatable:: dummy_array_m
-       real, dimension(:), allocatable:: dummy_array_t
+        ! Flag for the lowest model level being at the surface (true)
+        ! or not at the surface (false).  Example of case where it is not
+        ! at the surface:  Nov. 11 altocumulus case.
+        logical ::
+     .  bottom_at_sfc 
+
+        ! Dummy grid height arrays
+        real, dimension(:), allocatable :: 
+     .  dummy_array_m, dummy_array_t
 
        integer :: i, i1 ! Internal Loop Variables
 
@@ -232,9 +237,14 @@
        dummy_array_m = 0.0
        dummy_array_t = 0.0
 
+       if ( trim( runtype ) == "mpace" ) then 
+         lmpace_nudge = .true.
+       else
+         lmpace_nudge = .false.
+       end if
+
        ! Allocate & initilialize variables,
        ! setup grid, setup constants, and setup flags
-
        call parameterization_setup
      .      ( nzmax, deltaz, C1_in, C1b_in, C1c_in, 
      .        C2_in, C2b_in, C2c_in, C4_in, C5_in, 
@@ -246,7 +256,7 @@
      .        mu_in, c_K_in, beta_in, lmin_coef_in, 
      .        taumin_in, taumax_in, fcor,
      .        lbugsrad, kk_rain, cloud_sed, bottom_at_sfc,
-     .        .false., dummy_array_m, dummy_array_t )
+     .        lmpace_nudge, .false., dummy_array_m, dummy_array_t )
 
 
        ! Dummy grid height arrays
@@ -289,9 +299,10 @@
          ! When this time step is over, the time will be time + dtmain
 
          call stats_begin_timestep( time + dtmain, dtmain )
+
          if ( lstats_last .and. stdout ) then
-           write(*,'(a,i7,a,f8.1)') 'iteration = ', 
-     .                              i, '; time = ', time
+           write(unit=fstdout,fmt='(a,i7,a,f8.1)') 'iteration = ',
+     .       i, '; time = ', time
          end if
 #endif /*STATS*/
 
@@ -412,6 +423,7 @@
         use prognostic_variables
         use numerical_check
         use hoc_parameterization_interface
+        use constants, only: fstdout, fstderr
 #ifdef STATS
         use statistics
 #endif /*STATS*/
@@ -438,6 +450,7 @@
         ! Subroutine Arguments (Model Setting)
         character(len=*), intent(in) :: 
      .  runfile ! Name of file containing &model_setting and &sounding
+
         logical, intent(in) :: 
      .  stdout  ! Whether to print output per timestep
 
@@ -456,13 +469,17 @@
      .  cloud_sed,    ! Flag for cloud water droplet sedimentation. - Brian
      .  kk_rain,      ! Flag for Khairoutdinov and Kogan rain microphysics. - Brian
      .  lbugsrad,     ! Flag for BUGsrad radiation scheme - dschanen
-     .  bottom_at_sfc ! Flag for the lowest model level being at the surface (true)
-                      ! or not at the surface (false).  Example of case where it is not
-                      ! at the surface:  Nov. 11 altocumulus case.
+     .  lmpace_nudge  ! Whether to adjust the winds within the timestep
+
+        ! Flag for the lowest model level being at the surface (true)
+        ! or not at the surface (false).  Example of case where it is not
+        ! at the surface:  Nov. 11 altocumulus case.
+        logical ::
+     .  bottom_at_sfc 
 
         ! Dummy grid height arrays
-        real, dimension(:), allocatable:: dummy_array_m
-        real, dimension(:), allocatable:: dummy_array_t
+        real, dimension(:), allocatable :: 
+     .  dummy_array_m, dummy_array_t
 
         integer :: i, i1 ! Internal Loop Variables
 
@@ -473,6 +490,8 @@
      .  dtmain, dtclosure,
      .  sfctype, Tsfc, psfc, SE, LE, fcor,
      .  cloud_sed, kk_rain, lbugsrad, bottom_at_sfc
+
+!-----------------------------------------------------------------------
 
         !  Initialize the model run 
 
@@ -517,7 +536,7 @@
      .        mu_in, c_K_in, beta_in, lmin_coef_in, 
      .        taumin_in, taumax_in, fcor,
      .        lbugsrad, kk_rain, cloud_sed, bottom_at_sfc,
-     .        .false., dummy_array_m, dummy_array_t )
+     .        lmpace_nudge, .false., dummy_array_m, dummy_array_t )
 
 
        ! Dummy grid height arrays
@@ -559,8 +578,9 @@
          ! When this time step is over, the time will be time + dtmain
 
          call stats_begin_timestep( time + dtmain, dtmain )
+
          if ( lstats_last .and. stdout ) then
-           write(*,'(a,i7,a,f8.1)') 'iteration = ', 
+           write(unit=fstdout,fmt='(a,i7,a,f8.1)') 'iteration = ', 
      .       i, '; time = ', time
          end if
 #endif /*STATS*/
@@ -1132,19 +1152,17 @@
            call nov11_altocu_tndcy( time, time_initial, dt, thlm,
      .                              rcm, p, exner, rhot, rtm, wmt,
      .                              wmm, thlm_forcing, rtm_forcing,
-     .                              Frad, Frad_LW, Frad_SW,
-     .                              radht, radht_LW, radht_SW
+     .                              Frad, radht
 #ifdef SCALARS
      .                             ,sclrm_forcing   ! optional variable
 #endif /* SCALARS */
      .                            )
 
          case( "jun25_altocu" ) ! June 25 Altocumulus case.
-           call jun25_altocu_tndcy( time, time_initial, dt, thlm,
+           call jun25_altocu_tndcy( time, time_initial, rlat, dt, thlm,
      .                              rcm, p, exner, rhot, rtm, wmt,
      .                              wmm, thlm_forcing, rtm_forcing,
-     .                              Frad, Frad_LW, Frad_SW,
-     .                              radht, radht_LW, radht_SW
+     .                              Frad, radht
 #ifdef SCALARS
      .                             ,sclrm_forcing   ! optional variable
 #endif /* SCALARS */
@@ -1155,8 +1173,7 @@
      .                       rim, rrm, rgm, rsnowm,
      .                       exner, rhot, rtm, p, thvm, rcm,
      .                       wmt, wmm, thlm_forcing, rtm_forcing,
-     .                       Frad, Frad_LW, Frad_SW,
-     .                       radht, radht_LW, radht_SW,
+     .                       Frad, radht, 
      .                       nc3, ni3, nr3, ncn3,
      .                       snowv, falli, fallg, fallr
 #ifdef SCALARS
@@ -1169,8 +1186,9 @@
 #endif /* SCALARS */
 
          case default
-           write(*,*) "hoc_forcings_timestep: Don't know how to handle "
-     .                // "LS forcing for runtype: " // trim( runtype )
+           write(unit=fstderr,fmt=*) 
+     .       "hoc_forcings_timestep: Don't know how to handle "
+     .       //"LS forcing for runtype: "//trim( runtype )
            stop
 
          end select
@@ -1204,8 +1222,10 @@
      .                            )
 
           else
-            write(*,*) 'Invalid value of sfctype = ', sfctype
+            write(unit=fstderr,fmt=*) 
+     .        "Invalid value of sfctype = ", sfctype
             stop
+
           end if
 
         case( "arm" )
@@ -1290,19 +1310,19 @@
      .                      )
 
         case default
-          write(*,*) "Invalid value of runtype = ", runtype
+          write(unit=fstderr,fmt=*) 
+     .      "Invalid value of runtype = ", runtype
           stop
 
         end select ! runtype
 
         if ( lbugsrad ) then
-#ifdef radoffline /*This directive is need for this to work at all*/
+#ifdef radoffline /*This directive is needed for this to work at all.*/
           call bugsrad_hoc( deltaz*gr%nnzp, gr%nnzp, rlat, rlon,
      .                      day, month, year, time,
      .                      thlm, rcm, rtm,
      .                      rrm, cf, p, exner, rhom, Tsfc,
-     .                      radht, radht_SW, radht_LW,
-     .                      Frad, Frad_SW, Frad_LW, thlm_forcing )
+     .                      radht, Frad, thlm_forcing )
 #else
           stop "Cannot call BUGSrad with these compile options."
 #endif

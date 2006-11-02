@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.25 2006-11-01 20:42:56 mjfalk Exp $
+! $Id: parameterization_interface.F,v 1.26 2006-11-02 01:44:41 dschanen Exp $
 
 
 
@@ -602,10 +602,12 @@
        call update_ed_var( "um", um, umt, upwp(1), 
      .                     Khm, dt, upwp, isValid )
 
-       if (lnudging) then
+       if ( lmpace_nudge ) then
          do k=1,gr%nnzp
-           um(k) = um(k) - ((um(k) - um_init(k)) * (dt/3600)) ! Nudging; 3600 s is nudging timescale
-           vm(k) = vm(k) - ((vm(k) - vm_init(k)) * (dt/3600)) ! Michael Falk; 8 Sep-1 Nov 2006
+           ! Nudging; 3600 s is nudging timescale
+           ! Michael Falk; 8 Sep-1 Nov 2006
+           um(k) = um(k) - ((um(k) - um_init(k)) * (dt/3600)) 
+           vm(k) = vm(k) - ((vm(k) - vm_init(k)) * (dt/3600)) 
          end do
        end if
 
@@ -769,7 +771,8 @@
      .               gamma_coef, gamma_coefb, gamma_coefc,
      .               mu, c_K, beta, lmin_coef, taumin, taumax, fcor,
      .               lbugsrad, kk_rain, cloud_sed, bottom_at_sfc,
-     .               implemented, host_momentum, host_thermodynamic )
+     .               lmpace_nudge, implemented, 
+     .               host_momentum, host_thermodynamic )
 
         use grid_class
         use diagnostic_variables
@@ -792,37 +795,38 @@
      .  host_thermodynamic
 
         ! Constant parameters
-        real, intent(in) :: C1, C1b, C1c
-        real, intent(in) :: C2, C2b, C2c
-        real, intent(in) :: C4, C5
-        real, intent(in) :: C6rt, C6rtb, C6rtc
-        real, intent(in) :: C6thl, C6thlb, C6thlc
-        real, intent(in) :: C7, C7b, C7c
-        real, intent(in) :: C8, C8b, C10
-        real, intent(in) :: C11, C11b, C11c
-        real, intent(in) :: C12
-        real, intent(in) :: nu1, nu2, nu6, nu8, nu_r
-        real, intent(in) :: beta
-        real, intent(in) :: lmin_coef, taumin, taumax
-        real, intent(in) :: gamma_coef, gamma_coefb, gamma_coefc
-        real, intent(in) :: mu, c_K
-        real, intent(in) :: fcor
+        real, intent(in) :: 
+     .  C1, C1b, C1c,
+     .  C2, C2b, C2c,
+     .  C4, C5,
+     .  C6rt, C6rtb, C6rtc,
+     .  C6thl, C6thlb, C6thlc,
+     .  C7, C7b, C7c,
+     .  C8, C8b, C10,
+     .  C11, C11b, C11c,
+     .  C12,
+     .  nu1, nu2, nu6, nu8, nu_r,
+     .  beta,
+     .  lmin_coef, taumin, taumax,
+     .  gamma_coef, gamma_coefb, gamma_coefc,
+     .  mu, c_K,
+     .  fcor
 
         ! Flags
-        logical, intent(in) :: lbugsrad  ! BUGSrad interactive radiation scheme
-        logical, intent(in) :: kk_rain   ! K & K rain microphysics
-        logical, intent(in) :: cloud_sed ! Cloud Sedimentation
-        ! Whether the lowest model level is at the surface or not (T/F).
-        logical, intent(in) :: bottom_at_sfc
-
+        logical, intent(in) :: 
+     .  lbugsrad,      ! BUGSrad interactive radiation scheme
+     .  kk_rain,       ! K & K rain microphysics
+     .  cloud_sed,     ! Cloud Sedimentation
+     .  bottom_at_sfc, ! Whether the lowest model level is at the surface or not
+     .  lmpace_nudge   ! Wind nudging for MPACE case
 
         ! Whether this is part of larger model (T/F)
         logical, intent(in) :: implemented 
 
-!       Setup flags
+        ! Setup flags
 
         call setup_model_flags( lbugsrad, kk_rain, cloud_sed,
-     .                          bottom_at_sfc )
+     .                          bottom_at_sfc, lmpace_nudge )
 
 !        if ( .not. implemented ) then
 !          call setup_diagnostic_variables( nzmax )
