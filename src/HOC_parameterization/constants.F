@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.5 2006-11-01 20:42:56 mjfalk Exp $
+! $Id: constants.F,v 1.6 2006-11-02 01:43:41 dschanen Exp $
 
 !  Contains frequently occuring model constants
 !-----------------------------------------------------------------------
@@ -7,6 +7,10 @@
         module constants
 
         implicit none
+
+        ! Fortran file unit I/O constants
+        integer, parameter :: 
+     .  fstderr = 0, fstdin = 5, fstdout = 6
 
         ! Mathematical Constants
         double precision, parameter :: 
