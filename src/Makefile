@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.67 2006-11-01 20:34:07 mjfalk Exp $
+# $Id: Makefile,v 1.68 2006-11-02 02:10:34 dschanen Exp $
 # This version should work with BSD, GNU make, smake and dmake
 
 # For HOC we edit this by hand rather than implementing imake or automake
@@ -31,6 +31,17 @@ BUGS_RAD = kinds.o bugsrad_planck.o bugsrad_physconst.o gases_ckd.o \
 	two_rt_lw_sel.o two_rt_lw_iter.o \
 	two_rt_sw_bs.o bugsrad_hoc.o
 
+COAMPS_MICRO = adjmlt.o adjtq.o coamps_micro_driver.o conice.o \
+        eqa10g.o eqa11g.o eqa12.o eqa12g.o \
+        eqa13g.o eqa14g.o eqa15.o eqa17g.o eqa18.o \
+        eqa18g.o eqa19.o eqa19g.o eqa20g.o eqa21.o \
+        eqa21g.o eqa22.o eqa22g.o eqa25.o eqa26.o eqa27.o \
+        eqa27r.o eqa28.o eqa5g.o eqa6.o eqa7.o eqa7g.o \
+        eqa8g.o eqa9.o eqa9g.o esati.o esat_new.o \
+        esatv.o frzh.o nrmcol.o nrmtqi.o \
+        nrmtqw.o qsatvi.o qtadj.o slope.o tgqg.o \
+        tgqi.o tgqr.o tgqs.o rsati.o gamma.o
+
 PARAMETERIZATION = \
 	$(LATIN_HYP) \
 	gamma_polpak.o constants.o endian.o outputfile.o outputgrads.o \
@@ -40,17 +51,8 @@ PARAMETERIZATION = \
         hydrostatic.o length.o mixing.o rsat.o sat_rcm.o sfc.o \
 	sounding.o update.o wp23.o tau.o Skw_func.o \
 	numer_check.o diag_variables.o prog_variables.o \
-	parameterization_interface.o lapack_wrap.o \
-        adjmlt.o adjtq.o coamps_micro_driver.o conice.o \
-        eqa10g.o eqa11g.o eqa12.o eqa12g.o \
-        eqa13g.o eqa14g.o eqa15.o eqa17g.o eqa18.o \
-        eqa18g.o eqa19.o eqa19g.o eqa20g.o eqa21.o \
-        eqa21g.o eqa22.o eqa22g.o eqa25.o eqa26.o eqa27.o \
-        eqa27r.o eqa28.o eqa5g.o eqa6.o eqa7.o eqa7g.o \
-        eqa8g.o eqa9.o eqa9g.o esati.o esat_new.o \
-        esatv.o frzh.o nrmcol.o nrmtqi.o \
-        nrmtqw.o qsatvi.o qtadj.o slope.o tgqg.o \
-        tgqi.o tgqr.o tgqs.o rsati.o
+	parameterization_interface.o lapack_wrap.o rsati.o \
+	$(COAMPS_MICRO)
 
 
 INTERFACING = gradsaverage.o inputfields.o inputgrads.o hoc.o 
@@ -153,7 +155,7 @@ distclean:
 	$(BINDIR)/jacobian \
 	$(LIBDIR)/lib*
 
-# == Dependencies ==
+# == Parameterization dependencies ==
 gamma_polpak.o	: gamma_polpak.f90
 endian.o	: endian.F
 constants.o	: constants.F
@@ -161,12 +163,12 @@ model_flags.o	: model_flags.F
 outputfile.o	: outputfile.F
 rain.o		: constants.o model_flags.o statistics.o lapack_wrap.o \
 	gamma_polpak.o rain.F
-outputgrads.o	: endian.o outputfile.o outputgrads.F
+outputgrads.o	: constants.o recl.F endian.o outputfile.o outputgrads.F
 outputnc.o	: outputfile.o outputnc.F
 diag_variables.o: constants.o grid.o model_flags.o diag_variables.F 
 prog_variables.o: constants.o grid.o model_flags.o prog_variables.F 
 numer_check.o	: prog_variables.o diag_variables.o numer_check.F
-inputgrads.o	: endian.o inputgrads.F
+inputgrads.o	: constants.o endian.o recl.F inputgrads.F
 grid.o		: grid.F
 statistics.o	: outputgrads.o outputnc.o prog_variables.o diag_variables.o \
 	grid.o statistics.F 
@@ -234,6 +236,50 @@ sample_points.o		: sample_points.F
 st_2_rtthl.o		: st_2_rtthl.F
 truncate_gaus_mixt.o	: truncate_gaus_mixt.F
 
+# == COAMPS Microphysics ==
+adjmlt.o                : adjmlt.F
+coamps_micro_driver.o   : gamma.o adjtq.o coamps_micro_driver.F
+adjtq.o                 : slope.o esatv.o esati.o tgqg.o tgqr.o tgqs.o \
+	frzh.o eqa22.o eqa25.o eqa28.o eqa11g.o conice.o \
+	tgqi.o eqa27r.o eqa7g.o eqa8g.o eqa9g.o eqa13g.o \
+	eqa18g.o eqa21g.o eqa22g.o adjmlt.o qsatvi.o \
+	qtadj.o slope.o eqa6.o eqa12.o eqa27.o eqa19g.o \
+	nrmtqw.o conice.o eqa15.o eqa18.o eqa26.o eqa17g.o \
+	nrmtqi.o eqa7.o eqa9.o eqa19.o eqa10g.o eqa21.o \
+	eqa5g.o eqa12g.o eqa14g.o eqa20g.o nrmcol.o adjtq.F
+conice.o     : conice.F
+constants.o  : constants.F
+eqa10g.o     : gamma.o eqa10g.F
+eqa11g.o     : gamma.o eqa11g.F
+eqa12.o      : eqa12.F
+eqa12g.o     : gamma.o eqa12.F
+eqa13g.o     : eqa13g.F
+eqa14g.o     : eqa14g.F
+eqa15.o      : eqa15.F
+eqa17g.o     : eqa17g.F
+eqa18.o      : eqa18.F
+eqa18g.o     : eqa18g.F
+eqa19.o      : eqa19.F
+eqa19g.o     : eqa19g.F
+eqa20g.o     : eqa20g.F
+eqa21.o      : eqa21.F
+eqa22.o      : eqa22.F
+eqa22g.o     : eqa22g.F
+eqa25.o      : eqa25.F
+eqa26.o      : eqa26.F
+eqa27.o      : eqa27.F
+eqa27r.o     : eqa27r.F
+eqa28.o      : eqa28.F
+eqa5g.o      : eqa5g.F
+eqa6.o       : eqa6.F
+eqa7.o       : eqa7.F
+eqa7g.o      : eqa7g.F
+eqa8g.o      : eqa8g.F
+eqa9.o       : eqa9.F
+eqa9g.o      : eqa9g.F
+gamma.o      : gamma.F
+
+# == BUGSrad ==
 kinds.o			: kinds.F90
 bugsrad_planck.o	: kinds.o bugsrad_planck.F90
 cloud_correlate.o	: kinds.o cloud_correlate.F90
@@ -257,7 +303,8 @@ two_rt_lw_ocastrndm.o	: kinds.o two_rt_lw_ocastrndm.F90
 two_rt_sw.o		: kinds.o two_rt_sw.F
 two_rt_sw_bs.o		: kinds.o lapack_wrap.o two_rt_sw_bs.F
 two_rt_sw_ocastrndm.o	: kinds.o two_rt_sw_ocastrndm.F90
-bugsrad_hoc.o 		: kinds.o constants.o bugs_rad.o bugsrad_hoc.F90 
+bugsrad_hoc.o 		: kinds.o constants.o bugs_rad.o statistics.o \
+	bugsrad_hoc.F90
 
 # == Executables ==
 hoc_tuner.o		: nrtype.o nr.o hoc.o error.o hoc_tuner.F
@@ -265,49 +312,6 @@ hoc_tuner_budget_terms.o: nrtype.o nr.o hoc.o error.o \
 	budget_terms.o hoc_tuner_budget_terms.F
 hoc_standalone.o	: hoc.o hoc_standalone.F
 hoc_inputfields.o	: hoc.o inputfields.o hoc_inputfields.F
-int2txt.o		: int2txt.F
+int2txt.o		: int2txt.F recl.F
 compare_runs.o		: endian.o inputgrads.o gradsaverage.o compare_runs.F
 jacobian.o		: gradsaverage.o hoc.o jacobian.F
-
-# == Michael Falk 25 August 2006 ==
-adjmlt.o                : adjmlt.F
-coamps_micro_driver.o   : gamma.o adjtq.o coamps_micro_driver.F
-adjtq.o                 : slope.o esatv.o esati.o tgqg.o tgqr.o tgqs.o \
-                          frzh.o eqa22.o eqa25.o eqa28.o eqa11g.o conice.o \
-                          tgqi.o eqa27r.o eqa7g.o eqa8g.o eqa9g.o eqa13g.o \
-                          eqa18g.o eqa21g.o eqa22g.o adjmlt.o qsatvi.o \
-                          qtadj.o slope.o eqa6.o eqa12.o eqa27.o eqa19g.o \
-                          nrmtqw.o conice.o eqa15.o eqa18.o eqa26.o eqa17g.o \
-                          nrmtqi.o eqa7.o eqa9.o eqa19.o eqa10g.o eqa21.o \
-                          eqa5g.o eqa12g.o eqa14g.o eqa20g.o nrmcol.o \
-                          adjtq.F
-conice.o                : conice.F
-constants.o             : constants.F
-eqa10g.o                : gamma.o eqa10g.F
-eqa11g.o                : gamma.o eqa11g.F
-eqa12.o                 : eqa12.F
-eqa12g.o                : gamma.o eqa12.F
-eqa13g.o                : eqa13g.F
-eqa14g.o                : eqa14g.F
-eqa15.o                 : eqa15.F
-eqa17g.o                : eqa17g.F
-eqa18.o                 : eqa18.F
-eqa18g.o                : eqa18g.F
-eqa19.o                 : eqa19.F
-eqa19g.o                : eqa19g.F
-eqa20g.o                : eqa20g.F
-eqa21.o                 : eqa21.F
-eqa22.o                 : eqa22.F
-eqa22g.o                : eqa22g.F
-eqa25.o                 : eqa25.F
-eqa26.o                 : eqa26.F
-eqa27.o                 : eqa27.F
-eqa27r.o                : eqa27r.F
-eqa28.o                 : eqa28.F
-eqa5g.o                 : eqa5g.F
-eqa6.o                  : eqa6.F
-eqa7.o                  : eqa7.F
-eqa7g.o                 : eqa7g.F
-eqa8g.o                 : eqa8g.F
-eqa9.o                  : eqa9.F
-eqa9g.o                 : eqa9g.F
