@@ -1,44 +1,54 @@
-! $Id: sfc.F,v 1.2 2006-08-04 21:08:56 dschanen Exp $
+! $Id: sfc.F,v 1.3 2006-11-02 01:45:17 dschanen Exp $
 #define SCLR_RT 2
 #define SCLR_THETA 1
-      module surface
 
-      implicit none
-
-      private ! Default to private
-
-      public sfc_momentum_fluxes
-      public sfc_thermo_fluxes
-      public sfc_var
-
-      contains
-!------------------------------------------------------------------------
-! This subroutine computes surface momentum fluxes using aerodynamic
-! formulas.
-!------------------------------------------------------------------------
-        subroutine sfc_momentum_fluxes( u, v, upwp_sfc, vpwp_sfc )
+        module surface
 
         implicit none
 
-! Parameter
+        private ! Default to private
 
-        real, parameter :: ustar = 0.3
+        public ::
+     .  sfc_momentum_fluxes,
+     .  sfc_thermo_fluxes,
+     .  sfc_var
 
-! Input
+        contains
 
-        real, intent(IN) :: u         ! u wind (m/s) first level above ground
-        real, intent(IN) :: v         ! v wind (m/s) first level above ground
+!------------------------------------------------------------------------
+        subroutine sfc_momentum_fluxes( u, v, upwp_sfc, vpwp_sfc )
 
-! Output
+!       Description:
+!       This subroutine computes surface momentum fluxes using aerodynamic
+!       formulas.
 
-        real, intent(OUT) :: upwp_sfc ! sfc u momentum flux (m^2/s^2)
-        real, intent(OUT) :: vpwp_sfc ! sfc v momentum flux (m^2/s^2)
+!       References:
+!       None
+!------------------------------------------------------------------------
 
-! Internal
+        implicit none
 
-        real M                        ! total wind speed above ground
+        ! External
+        intrinsic :: sqrt
 
-! Computes fluxes
+        ! Constant parameter
+        real, parameter :: 
+     .  ustar = 0.3
+
+        ! Input variables
+        real, intent(in) :: 
+     .  u, ! u wind first level above ground    [m/s]
+     .  v  ! v wind first level above ground    [m/s]
+
+        ! Output Variables
+        real, intent(out) :: 
+     .  upwp_sfc,! sfc u momentum flux (m^2/s^2)
+     .  vpwp_sfc ! sfc v momentum flux (m^2/s^2)
+
+        ! Local Variables
+        real :: M ! total wind speed above ground
+
+        ! Computes fluxes
 
         M = sqrt( u*u + v*v )
         upwp_sfc = - ustar*ustar * u / M
@@ -48,61 +58,61 @@
         end subroutine sfc_momentum_fluxes
 
 !------------------------------------------------------------------------
-! This subroutine computes surface fluxes of heat and moisture using
-! aerodynamic formulas.
-!------------------------------------------------------------------------
         subroutine sfc_thermo_fluxes( u, v, Tsfc, psfc, thlair, rtair,
      .                                wpthlp_sfc, wprtp_sfc,
      .                                sclrair, wpsclrp_sfc )
+!       Description:
+!       This subroutine computes surface fluxes of heat and moisture 
+!       using aerodynamic formulas.
+
+!       References:
+!       None
+!------------------------------------------------------------------------
 
         use constants
 
         implicit none
         
-! External
+        ! External
+        intrinsic :: present, sqrt
 
-        real rsat
-        external rsat
+        real, external :: rsat
 
-! Input
-
-        real, intent(IN) :: u           ! u wind (m/s)
-        real, intent(IN) :: v           ! u wind (m/s)
-        real, intent(IN) :: Tsfc        ! surface temperature (K)
-        real, intent(IN) :: psfc        ! surface pressure (Pa)
-        real, intent(IN) :: thlair      ! thetal at first model layer (K)
-        real, intent(IN) :: rtair       ! rt at first model layer (kg/kg)
-
-! Input (optional)
-
-        real, optional, intent(IN), 
-     .  dimension(sclr_dim) :: sclrair
-
-! Output
-
-        real, intent(OUT) :: wpthlp_sfc ! surface thetal flux ( K m/s )
-        real, intent(OUT) :: wprtp_sfc  ! surface moisture flux ( kg/kg m/s )
-
-! Output (optional) 
-
-        real, optional, intent(OUT), 
-     .  dimension(sclr_dim) :: wpsclrp_sfc
-
-! Parameter
-
+        ! Parameter
         real, parameter :: C = 1.3e-3
 
-! Internal
+        ! Input Variables
+        real, intent(in) :: 
+     .  u,      ! u wind                        [m/s]
+     .  v,      ! u wind                        [m/s]
+     .  Tsfc,   ! Surface temperature           [K]
+     .  psfc,   ! Surface pressure              [Pa]
+     .  thlair, ! theta_l at first model layer  [K]
+     .  rtair   ! rt at first model layer       [kg/kg]
 
-        real M                          ! total wind speed above ground
 
-! Compute fluxes
+        ! Output Variables
+        real, intent(out) :: 
+     .  wpthlp_sfc,! surface thetal flux        [K m/s]
+     .  wprtp_sfc  ! surface moisture flux      [kg/kg m/s]
 
+        ! Input Variables (optional)
+        real, optional, intent(in), dimension(sclr_dim) :: 
+     .  sclrair ! Passive scalars at first model layer  [units vary]
+
+        ! Output Variables (optional) 
+        real, optional, intent(out), dimension(sclr_dim) :: 
+     .  wpsclrp_sfc ! surface passive scalar flux       [units m/s]
+
+        ! Local Variables
+        real :: M  ! Total wind speed above ground
+
+        ! Compute fluxes
         M = sqrt( u*u + v*v )
         wpthlp_sfc = -C * M * ( thlair - Tsfc * (psfc/p0)**kappa )
-        wprtp_sfc  = -C * M * ( rtair - rsat(psfc,Tsfc) )
+        wprtp_sfc  = -C * M * ( rtair - rsat( psfc, Tsfc ) )
 
-! Compute passive scalar as == to wprtp & wpthlp for now
+        ! Compute passive scalar as == to wprtp & wpthlp for now
         if ( present( wpsclrp_sfc ) .and. present( sclrair ) ) then
           wpsclrp_sfc(SCLR_THETA) = -C * M *
      .               ( sclrair(SCLR_THETA) - Tsfc*(psfc/p0)**kappa )
@@ -114,63 +124,67 @@
         end subroutine sfc_thermo_fluxes
 
 !------------------------------------------------------------------------
-! This subroutine computes estimate of the surface thermodynamic second
-! order moments
-!------------------------------------------------------------------------
         subroutine sfc_var( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc,
      .                      wp2_sfc, thlp2_sfc, rtp2_sfc, rtpthlp_sfc, 
      .                      wpsclrp_sfc, sclrp2_sfc,
      .                      sclrprtp_sfc, sclrpthlp_sfc )
+!       Description:
+!       This subroutine computes estimate of the surface thermodynamic 
+!       second order moments
+
+!       References:
+!       None
+!------------------------------------------------------------------------
 
         use constants
 
         implicit none
 
-! Input
+        ! External
+        intrinsic :: sqrt, present, max
 
-        real, intent(IN) :: upwp_sfc     ! surface u momentum flux ( m^2/s^2 )
-        real, intent(IN) :: vpwp_sfc     ! surface v momentum flux ( m^2/s^2 )
-        real, intent(IN) :: wpthlp_sfc   ! surface thetal flux ( K m/s )
-        real, intent(IN) :: wprtp_sfc    ! surface moisture flux ( kg/kg m/s )
+        ! Constant Parameters
+        real, parameter :: 
+     .  a = 1.8,
+     .  z = 1.0,
+     .  ufmin = 0.0001,
+     .  sclr_var_coef = 0.25 ! This value is made up! - Vince Larson 12 Jul 2005
 
-! Input (Optional) 
-        real, optional, intent(IN),
-     .        dimension(sclr_dim)   :: wpsclrp_sfc
+        ! Input Variables
+        real, intent(in) :: 
+     .  upwp_sfc,    ! Surface u momentum flux  [m^2/s^2]
+     .  vpwp_sfc,    ! Surface v momentum flux  [m^2/s^2]
+     .  wpthlp_sfc,  ! Surface thetal flux      [K m/s]
+     .  wprtp_sfc    ! Surface moisture flux    [kg/kg m/s]
 
-! Output
+        ! Input (Optional) 
+        real, optional, intent(in), dimension(sclr_dim) :: 
+     .  wpsclrp_sfc ! Passive scalar flux       [units m/s]
 
-        real, intent(OUT) :: wp2_sfc     ! vertical velocity variance
-        real, intent(OUT) :: thlp2_sfc   ! thetal variance
-        real, intent(OUT) :: rtp2_sfc    ! rt variance
-        real, intent(OUT) :: rtpthlp_sfc ! thetal rt covariance
+        ! Output Variables
+        real, intent(out) :: 
+     .  wp2_sfc,    ! Vertical velocity variance        [m^2/s^2]
+     .  thlp2_sfc,  ! thetal variance                   [K^2]
+     .  rtp2_sfc,   ! rt variance                       [kg/kg]
+     .  rtpthlp_sfc ! thetal rt covariance              [kg K]
 
-! Output (Optional) 
-        real, optional, intent(OUT),
-     .        dimension(sclr_dim)   :: sclrp2_sfc
-        real, optional, intent(OUT),
-     .        dimension(sclr_dim)   :: sclrprtp_sfc
-        real, optional, intent(OUT),
-     .        dimension(sclr_dim)   :: sclrpthlp_sfc
+        ! Output Variables (Optional) 
+        real, optional, intent(out), dimension(sclr_dim) :: 
+     .  sclrp2_sfc,   ! Passive scalar variance                 [units^2]
+     .  sclrprtp_sfc, ! Passive scalar r_t covariance           [units kg/kg]
+     .  sclrpthlp_sfc ! Passive scalar theta_l covariance       [units K]
 
-       
-! Internal
+        ! Local Variables 
+        real :: ustar2, wstar
+        real :: uf
 
-        real, parameter :: a = 1.8
-        real, parameter :: z = 1.
-        real, parameter :: ufmin = 0.0001
-        real, parameter :: sclr_var_coef = 0.25  ! This value is made up!
-                                                 ! Vince Larson 12 Jul 2005
+        integer :: i ! Loop index
 
-        real ustar2, wstar
-        real uf
-
-        integer i
-
-! Compute ustar^2
+        ! Compute ustar^2
 
         ustar2 = sqrt( upwp_sfc * upwp_sfc + vpwp_sfc * vpwp_sfc )
 
-! Compute wstar following Andre et al., 1976
+        ! Compute wstar following Andre et al., 1976
 
         if ( wpthlp_sfc > 0 ) then
           wstar = ( 1.0/T0 * grav * wpthlp_sfc * z ) ** (1./3.)
@@ -178,42 +192,44 @@
           wstar = 0.
         end if
 
-! Surface friction velocity following Andre et al. 1978
+        ! Surface friction velocity following Andre et al. 1978
 
         uf = sqrt( ustar2 + 0.3 * wstar * wstar ) 
 !        uf = sqrt( ustar2 + 0.3 * wstar**2 )  !test
         uf = max( ufmin, uf )
 
-! Compute estimate for surface second order moments
+        ! Compute estimate for surface second order moments
 
         wp2_sfc     =  a * uf**2
         thlp2_sfc   = 0.1 * a * ( wpthlp_sfc / uf )**2
         rtp2_sfc    = 0.4 * a * ( wprtp_sfc / uf )**2
         rtpthlp_sfc = a * ( wpthlp_sfc / uf ) * ( wprtp_sfc / uf )
 
-! Optional mixing scheme scalars
-        if (      present( wpsclrp_sfc ) .and. present( sclrprtp_sfc ) 
-     .      .and. present( sclrpthlp_sfc ) ) then
+        ! Optional mixing scheme scalars
+        if ( present( wpsclrp_sfc ) .and. present( sclrprtp_sfc ) 
+     .       .and. present( sclrpthlp_sfc ) ) then
           do i=1, sclr_dim
-            sclrprtp_sfc(i)  = a * (wprtp_sfc / uf) 
-     .                           * (wpsclrp_sfc(i) / uf)
-            sclrpthlp_sfc(i) = a * (wpthlp_sfc / uf) 
-     .                           * (wpsclrp_sfc(i) / uf)
-            sclrp2_sfc(i)    = 
-     .                sclr_var_coef * a * ( wpsclrp_sfc(i) / uf )**2
-!       I have no idea why rtp2 and thlp2 have these coefficients
-!       -dschanen 7/6/05
+            sclrprtp_sfc(i) 
+     .      = a * (wprtp_sfc / uf) * (wpsclrp_sfc(i) / uf)
+            sclrpthlp_sfc(i) 
+     .      = a * (wpthlp_sfc / uf) * (wpsclrp_sfc(i) / uf)
+            sclrp2_sfc(i)
+     .      = sclr_var_coef * a * ( wpsclrp_sfc(i) / uf )**2
+
+        ! Note: I have no idea why rtp2 and thlp2 have these coefficients
+        ! -dschanen 7/6/05
             select case( i ) 
-            case ( SCLR_RT )
+            case( SCLR_RT )
               sclrp2_sfc(i)   = 0.4 * a * ( wpsclrp_sfc(i) / uf )**2
               sclrprtp_sfc(i) = 0.4 * a * ( wpsclrp_sfc(i) / uf )**2
-            case ( SCLR_THETA )
+            case( SCLR_THETA )
               sclrp2_sfc(i)    =  0.1 * a * ( wpsclrp_sfc(i) / uf )**2
               sclrpthlp_sfc(i) =  0.1 * a * ( wpsclrp_sfc(i) / uf )**2
             end select
           end do ! 1,...sclr_dim
-        endif
+        end if
 
         return
         end subroutine sfc_var
-      end module surface
+
+        end module surface
