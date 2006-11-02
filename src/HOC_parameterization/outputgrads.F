@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: outputgrads.F,v 1.4 2006-11-02 01:36:12 dschanen Exp $
+! $Id: outputgrads.F,v 1.5 2006-11-02 22:59:50 dschanen Exp $
  
         module outputgrads
 
@@ -431,13 +431,15 @@
 
           if ( f%ia <= f%iz ) then
             do i=1,f%nvar
-              write(f%iounit,rec=f%nrecord) f%var(i)%ptr(f%ia:f%iz)
+              write(f%iounit,rec=f%nrecord) 
+     .          real( f%var(i)%ptr(f%ia:f%iz), kind=4)
               f%nrecord = f%nrecord + 1
             end do
 
           else
             do i=1, f%nvar
-              write(f%iounit,rec=f%nrecord) f%var(i)%ptr(f%ia:f%iz:-1)
+              write(f%iounit,rec=f%nrecord)
+     .          real( f%var(i)%ptr(f%ia:f%iz:-1), kind=4)
               f%nrecord = f%nrecord + 1 
             end do
 
