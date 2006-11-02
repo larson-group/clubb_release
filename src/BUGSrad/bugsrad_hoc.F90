@@ -1,12 +1,11 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_hoc.F90,v 1.10 2006-08-21 20:54:10 dschanen Exp $
+! $Id: bugsrad_hoc.F90,v 1.11 2006-11-02 01:40:32 dschanen Exp $
 
 subroutine bugsrad_hoc( alt, nz, lat_in_degrees, lon_in_degrees, &
                         day, month, year, time,                  &
                         thlm, rcm, rtm,                          & 
                         rrm, cf, pinpa, exner, rhom, Tsfc,       &
-                        radht, radht_SW, radht_LW,               &
-                        Frad, Frad_SW, Frad_LW, thlm_forcing )
+                        radht, Frad, thlm_forcing )
 ! Description:
 ! Does the necessary operations to interface the HOC model with
 ! the bugsrad subprogram.
@@ -21,6 +20,9 @@ subroutine bugsrad_hoc( alt, nz, lat_in_degrees, lon_in_degrees, &
 !-----------------------------------------------------------------------
 
   use constants
+#ifdef STATS
+  use statistics
+#endif
 
   implicit none
 
@@ -103,18 +105,21 @@ subroutine bugsrad_hoc( alt, nz, lat_in_degrees, lon_in_degrees, &
   real, intent(in) :: Tsfc ! Theta at the surface [K]
 
 ! Input/Output Variables
-  real, intent(inout), dimension(nz) :: thlm_forcing ! Theta_l LS tendency [K/s]
+  real, intent(inout), dimension(nz) :: &
+  thlm_forcing ! Theta_l LS tendency [K/s]
 
 ! Output Variables
   real, intent(out), dimension(nz) :: &
-  Frad,    & ! Total radiative flux       [W/m^2]
+  Frad, & ! Total radiative flux       [W/m^2]
+  radht   ! Total heating rate         [K/s]
+
+! Local Variables
+  real, dimension(nz) :: &
   Frad_SW, & ! SW radiative flux          [W/m^2]
   Frad_LW, & ! LW radiative flux          [W/m^2]
-  radht,   & ! Total heating rate         [K/s]
   radht_SW,& ! SW heating rate            [K/s]
   radht_LW   ! LW heating rate            [K/s]
 
-! Local Variables
 ! Altered 3 Oct 2005 to be buffer levels higher
   double precision, dimension(nlen,(nz-1)+buffer) :: &
   tempk,& ! Temperature            [K]
@@ -304,6 +309,30 @@ subroutine bugsrad_hoc( alt, nz, lat_in_degrees, lon_in_degrees, &
 
   thlm_forcing(1:nz) = thlm_forcing(1:nz) + radht(1:nz)
 
+#ifdef STATS
+        if ( lstats_samp ) then
+
+          if ( iradht_LW > 0 ) then
+            zt%x(:,iradht_LW) = zt%x(:,iradht_LW) + radht_LW
+            zt%n(:,iradht_LW) = zt%n(:,iradht_LW) + 1
+          end if
+          if ( iradht_SW > 0 ) then
+            zt%x(:,iradht_SW) = zt%x(:,iradht_SW) + radht_SW
+            zt%n(:,iradht_SW) = zt%n(:,iradht_SW) + 1
+          end if
+
+          if ( iFrad_SW > 0 ) then
+            zm%x(:,iFrad_SW) = zm%x(:,iFrad_SW) + Frad_SW
+            zt%n(:,iFrad_SW) = zm%n(:,iFrad_SW) + 1
+          end if
+          if ( iFrad_LW > 0 ) then
+            zm%x(:,iFrad_LW) = zm%x(:,iFrad_LW) + Frad_LW
+            zm%n(:,iFrad_LW) = zm%n(:,iFrad_LW) + 1
+          end if
+
+        end if
+#endif /*STATS*/
+
   return
 !-----------------------------------------------------------------------
   contains
@@ -450,7 +479,7 @@ function bugsrad_amu0( day, month, year, current_time, lat_in_degrees, &
     zln = 540.00 - hour*15.00
   case default
     print *, hour
-    stop " > 24 hours in cos solar zenith"
+    stop " > 24 hours in cosine solar zenith code"
   end select
 
   longang = abs( lon_in_degrees - zln ) * pi_dp/180.0

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.9 2006-11-01 20:42:56 mjfalk Exp $
+!  $Id: statistics.F,v 1.10 2006-11-02 01:40:37 dschanen Exp $
 
 !  module stats_type
 !  contains:
@@ -3137,15 +3137,15 @@ c     -----------------------------------------------------------------
           zt%n(:,iradht) = zt%n(:,iradht) + 1
         endif
 
-        if ( iradht_LW > 0 ) then
-          zt%x(:,iradht_LW) = zt%x(:,iradht_LW) + radht_LW
-          zt%n(:,iradht_LW) = zt%n(:,iradht_LW) + 1
-        endif
+!       if ( iradht_LW > 0 ) then
+!         zt%x(:,iradht_LW) = zt%x(:,iradht_LW) + radht_LW
+!         zt%n(:,iradht_LW) = zt%n(:,iradht_LW) + 1
+!       endif
 
-        if ( iradht_SW > 0 ) then
-          zt%x(:,iradht_SW) = zt%x(:,iradht_SW) + radht_SW
-          zt%n(:,iradht_SW) = zt%n(:,iradht_SW) + 1
-        endif
+!       if ( iradht_SW > 0 ) then
+!         zt%x(:,iradht_SW) = zt%x(:,iradht_SW) + radht_SW
+!         zt%n(:,iradht_SW) = zt%n(:,iradht_SW) + 1
+!       endif
 
         if ( ia > 0 ) then
           zt%x(:,ia) = zt%x(:,ia) + pdf_parms(:,13)
@@ -3441,15 +3441,15 @@ c     -----------------------------------------------------------------
           zm%n(:,iFrad) = zm%n(:,iFrad) + 1
         endif
 
-        if ( iFrad_LW > 0 ) then  ! Brian
-          zm%x(:,iFrad_LW) = zm%x(:,iFrad_LW) + Frad_LW
-          zm%n(:,iFrad_LW) = zm%n(:,iFrad_LW) + 1
-        endif
+!       if ( iFrad_LW > 0 ) then  ! Brian
+!         zm%x(:,iFrad_LW) = zm%x(:,iFrad_LW) + Frad_LW
+!         zm%n(:,iFrad_LW) = zm%n(:,iFrad_LW) + 1
+!       endif
 
-        if ( iFrad_SW > 0 ) then  ! Brian
-          zm%x(:,iFrad_SW) = zm%x(:,iFrad_SW) + Frad_SW
-          zm%n(:,iFrad_SW) = zm%n(:,iFrad_SW) + 1
-        endif
+!       if ( iFrad_SW > 0 ) then  ! Brian
+!         zm%x(:,iFrad_SW) = zm%x(:,iFrad_SW) + Frad_SW
+!         zm%n(:,iFrad_SW) = zm%n(:,iFrad_SW) + 1
+!       endif
 
         if ( iFprec > 0 .and. kk_rain ) then    ! Brian
           zm%x(:,iFprec) = zm%x(:,iFprec) + Fprec

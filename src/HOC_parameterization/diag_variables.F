@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F,v 1.12 2006-11-01 20:42:56 mjfalk Exp $
+! $Id: diag_variables.F,v 1.13 2006-11-02 01:40:37 dschanen Exp $
         module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -46,12 +46,8 @@
                                                   ! Note: units are [kg(cloud water)]/[s*m^2]
 
         real, allocatable, target :: Frad(:)      ! Radiative flux (momentum point)
-        real, allocatable, target :: Frad_LW(:)   ! Long_wave radiative flux (momentum point)
-        real, allocatable, target :: Frad_SW(:)   ! Short-wave radiative flux (momentum point)
 
         real, allocatable, target :: radht(:)     ! SW + LW heating rate
-        real, allocatable, target :: radht_SW(:)  ! Short-wave heating rate
-        real, allocatable, target :: radht_LW(:)  ! Long-wave heating rate
 
         real, allocatable, target :: shear(:)     ! wind shear production
 
@@ -233,12 +229,8 @@
         end if ! cloud_sed
 
         allocate( Frad(1:nzmax) )      ! radiative flux (momentum point)
-        allocate( Frad_LW(1:nzmax) )   ! Long_wave radiative flux (momentum point)
-        allocate( Frad_SW(1:nzmax) )   ! Short-wave radiative flux (momentum point)
 
         allocate( radht(1:nzmax) )     ! SW + LW heating rate
-        allocate( radht_SW(1:nzmax) )  ! Short-wave heating rate
-        allocate( radht_LW(1:nzmax) )  ! Long-wave heating rate
 
         allocate( diam(1:nzmax) )          ! Ice crystal diameter; Michael Falk, 3 Aug-1 Nov 2006
         allocate( m(1:nzmax) )             ! Ice crystal mass; Michael Falk, 3 Aug-1 Nov 2006
@@ -374,8 +366,6 @@
         end if ! cloud_sed
 
         Frad    = 0.0
-        Frad_LW = 0.0  ! Long_wave radiative flux (momentum point)
-        Frad_SW = 0.0  ! Short-wave radiative flux (momentum point)
 
 
         shear = 0.0    ! wind shear production
@@ -504,12 +494,8 @@
         end if ! cloud_sed
 
         deallocate( Frad )      ! radiative flux (momentum point)
-        deallocate( Frad_LW )   ! Long_wave radiative flux (momentum point)
-        deallocate( Frad_SW )   ! Short-wave radiative flux (momentum point)
 
         deallocate( radht )     ! SW + LW heating rate
-        deallocate( radht_SW )  ! Short-wave heating rate
-        deallocate( radht_LW )  ! Long-wave heating rate
 
         deallocate( shear )     ! wind shear production
 

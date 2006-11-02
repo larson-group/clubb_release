@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.13 2006-11-01 20:42:56 mjfalk Exp $ 
+! $Id: gcss.F,v 1.14 2006-11-02 01:40:37 dschanen Exp $ 
         module gcss
 
 !       Description:
@@ -10,7 +10,7 @@
 !       as well as Wangara day 33.
 
 !       References:
-!       http://www.gewex.org/gcss.html 
+!       <http://www.gewex.org/gcss.html>
 !----------------------------------------------------------------------
         use model_flags
 
@@ -686,7 +686,8 @@
 !
         subroutine wangara_sfclyr( time, up, vp, uw, vw, wtp, wrp,
      .                             wpsclrp_sfc )
-        use constants, only: sclr_dim
+        use constants, only: sclr_dim, pi
+
         implicit none
 
 !       Constants
@@ -709,7 +710,7 @@
 !       Internal variables
 
         real ubar
-        real time_utc,time_est
+        real time_utc, time_est
 
 ! Compute UTC time of the day in seconds
 
@@ -729,12 +730,12 @@
 ! Compute heat and moisture fluxes
 
         wtp = 0.18
-     .        * cos( (time_est-45000.)/36000. * 3.141592654 )
+     .        * cos( (time_est-45000.0)/36000.0 * pi )
         wrp = 1.3e-4 * wtp
 
 ! Compute new mixing variables
         if ( present(wpsclrp_sfc) ) wpsclrp_sfc(SCLR_THETA) = 0.18
-     .        * cos( (time_est-45000.)/36000. * 3.141592654 )
+     .        * cos( (time_est-45000.0)/36000.0 * pi )
 
         if ( present(wpsclrp_sfc) ) wpsclrp_sfc(SCLR_RT) = 1.3e-4*wtp
 
@@ -822,7 +823,7 @@
 !
       real function diag_ustar( z, bflx, wnd ) 
 
-      use constants, only: eps, grav, vonk
+      use constants, only: eps, grav, vonk, pi
 
       implicit none
 
@@ -837,9 +838,9 @@
       integer :: iterate
       real    :: lnz, klnz, c1, x, psi1, zeta, lmo, ustar
 
-      lnz   = log(z/z0)
+      lnz   = log( z / z0 )
       klnz  = vonk/lnz
-      c1    = 3.14159/2. - 3.*log(2.)
+      c1    = pi / 2.0 - 3.0*log( 2.0 )
 
       ustar =  wnd*klnz
 !      if (bflx /= 0.0) then
@@ -853,7 +854,7 @@
             ustar =  vonk*wnd  /(lnz + am*zeta)
           else
             x     = sqrt( sqrt( 1.0 - bm*zeta ) )
-            psi1  = 2.*log(1.0+x) + log(1.0+x*x) - 2.*atan(x) + c1
+            psi1  = 2.*log( 1.0+x ) + log( 1.0+x*x ) - 2.*atan( x ) + c1
             ustar = wnd*vonk/(lnz - psi1)
           end if
         end do
@@ -1515,15 +1516,17 @@
 
 !-----------------------------------------------------------------------
 
-        SUBROUTINE nov11_altocu_tndcy( time, time_initial, dt, thlm,
-     .                                 rcm, p, exner, rhot, rtm, wmt,
-     .                                 wmm, thl_tndcy, rt_tndcy,
-     .                                 Frad, Frad_LW, Frad_SW,
-     .                                 radht, radht_LW, radht_SW,
-     .                                 sclr_tndcy )
+        subroutine nov11_altocu_tndcy
+     .             ( time, time_initial, dt, thlm,
+     .               rcm, p, exner, rhot, rtm, wmt,
+     .               wmm, thl_tndcy, rt_tndcy,
+     .               Frad, radht, sclr_tndcy )
 
-        USE grid_class
-        USE constants
+        use grid_class
+        use constants
+#ifdef STATS
+        use statistics
+#endif /*STATS*/
 
         implicit none
 
@@ -1551,12 +1554,8 @@ c                 radiative heating and ice diffusion            Unit: K      c
 c rt_tndcy     :  change in total water due to ice diffusion     Unit: kg/kg  c
 c                                                                             c
 c Frad         :  profile of total radiative flux (lw + sw)      Unit: W/m^2  c
-c Frad_LW      :  profile of longwave radiative flux             Unit: W/m^2  c
-c Frad_SW      :  profile of shortwave radiative flux            Unit: W/m^2  c
 c                                                                             c
 c radht        :  profile of total radiative heating (lw + sw)   Unit: K/s    c
-c radht_LW     :  profile of longwave radiative heating          Unit: K/s    c
-c radht_SW     :  profile of shortwave radiative heating         Unit: K/s    c
 c                                                                             c
 c sclr_tndcy   :                                                 Unit: ??     c
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -1584,12 +1583,8 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: rt_tndcy
 
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: Frad
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: Frad_LW
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: Frad_SW
 
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: radht
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: radht_LW
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: radht_SW
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! Output variables (optional) !!
@@ -1719,6 +1714,11 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! Local radiation arrays !!
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        REAL, DIMENSION(1:gr%nnzp) :: 
+     .  Frad_LW, ! Long wave radiative flux     [W/m^2]
+     .  Frad_SW, ! Short wave radiative flux    [W/m^2]
+     .  radht_LW,! Long wave radiative heating  [K/s]
+     .  radht_SW ! Short wave radiative heating [K/s]
         REAL, DIMENSION(1:gr%nnzp):: LWP
         REAL, DIMENSION(1:gr%nnzp):: thm_rad
         REAL, DIMENSION(1:gr%nnzp):: rcm_rad
@@ -1849,7 +1849,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c      julday = 315
 c      start_time_until_noon = 7916
 c      t_since_noon   = time - start_time_until_noon
-c      sda_t = 2*3.14*(julday-1)/365
+c      sda_t = 2*pi*(julday-1)/365
 c
 c      c0 = 0.006918
 c      c1 = -0.399912
@@ -1863,10 +1863,10 @@ c      sda_delta = c0 + c1*cos(sda_t) + d1*sin(sda_t) +
 c     .            c2*cos(2*sda_t) + d2*sin(2*sda_t) +
 c     .            c3*cos(3*sda_t) + d3*sin(3*sda_t)
 c
-c      sda_h = 2*3.14*t_since_noon/86400
+c      sda_h = 2*pi*t_since_noon/86400
 c
-c      xi_abs = sin(rlat*3.14/180) * sin(sda_delta) +
-c     .         cos(rlat*3.14/180) * cos(sda_delta) * cos(sda_h)
+c      xi_abs = sin(rlat*pi/180) * sin(sda_delta) +
+c     .         cos(rlat*pi/180) * cos(sda_delta) * cos(sda_h)
 c
 c      xi_abs = max(xi_abs,0.)
 
@@ -1922,7 +1922,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       Fslist(1) = 1212.75
       Fslist(2) = 1212.75
 
-      call linearinterpolation(nparam,xilist,Fslist,xi_abs,Fs0)
+      call linearinterpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
 
 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -2267,6 +2267,29 @@ c           If time is not yet one hour, we have no subsidence
           sclr_tndcy(:,SCLR_RT)    = rt_tndcy
         END IF
 
+#ifdef STATS
+        if ( .not.lbugsrad .and. lstats_samp ) then
+
+          if ( iradht_LW > 0 ) then
+            zt%x(:,iradht_LW) = zt%x(:,iradht_LW) + radht_LW
+            zt%n(:,iradht_LW) = zt%n(:,iradht_LW) + 1
+          end if
+          if ( iradht_SW > 0 ) then
+            zt%x(:,iradht_SW) = zt%x(:,iradht_SW) + radht_SW
+            zt%n(:,iradht_SW) = zt%n(:,iradht_SW) + 1
+          end if
+
+          if ( iFrad_SW > 0 ) then
+            zm%x(:,iFrad_SW) = zm%x(:,iFrad_SW) + Frad_SW
+            zm%n(:,iFrad_SW) = zm%n(:,iFrad_SW) + 1
+          end if
+          if ( iFrad_LW > 0 ) then
+            zm%x(:,iFrad_LW) = zm%x(:,iFrad_LW) + Frad_LW
+            zm%n(:,iFrad_LW) = zm%n(:,iFrad_LW) + 1
+          end if
+
+        end if
+#endif /*STATS*/
 
         RETURN
         END SUBROUTINE nov11_altocu_tndcy
@@ -2302,7 +2325,7 @@ c           If time is not yet one hour, we have no subsidence
         !--------------------------------------------------------------------!
 
         SUBROUTINE altocu_icedf( dt, thlm, rcm, p, exner, rhot,
-     .                                 dqc_dt_icedfs )
+     .                           dqc_dt_icedfs )
 
         USE grid_class
         USE constants
@@ -2503,85 +2526,56 @@ c           If time is not yet one hour, we have no subsidence
         END SUBROUTINE altocu_icedf
 
 !-----------------------------------------------------------------------
-
-        SUBROUTINE jun25_altocu_tndcy( time, time_initial, dt, thlm,
-     .                                 rcm, p, exner, rhot, rtm, wmt,
-     .                                 wmm, thl_tndcy, rt_tndcy, Frad,
-     .                                 Frad_LW, Frad_SW,
-     .                                 radht, radht_LW, radht_SW,
-     .                                 sclr_tndcy )
-
-        USE grid_class
-        USE constants
+        subroutine jun25_altocu_tndcy
+     .             ( time, time_initial, rlat, dt, thlm, 
+     .               rcm, p, exner, rhot, rtm, wmt,
+     .               wmm, thl_tndcy, rt_tndcy, 
+     .               Frad, radht, 
+     .               sclr_tndcy ) ! Optional
+!       Description:
+!       References:
+!-----------------------------------------------------------------------
+        use grid_class
+        use constants
+#ifdef STATS
+        use statistics
+#endif /*STATS*/
 
         implicit none
 
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c INPUT VARIABLES                                                             c
-c time         :  time of simulation since start                 Unit: s      c
-c time_initial :  initial time of simulation                     Unit: s      c
-c dt           :  length of model time step                      Unit: s      c
-c thlm         :  profile of liquid water potential temperature  Unit: K      c
-c rcm          :  profile of liquid (cloud) water mixing ratio   Unit: kg/kg  c
-c p            :  basic state pressure                           Unit: Pa     c
-c exner        :  basic state Exner function                     Unit: NONE   c
-c rhot         :  density of reference state at thermodynamic levels          c
-c                                                                Unit: kg/m^3 c
-c                                                                             c
-c OUTPUT VARIABLES                                                            c
-c rtm          :  profile of total water mixing ratio            Unit: kg/kg  c
-c wmt          :  profile of vertical ascent/descent at thermodynamic levels  c
-c                                                                Unit: m/s    c
-c wmm          :  profile of vertical ascent/descent at momentum levels       c
-c                                                                Unit: m/s    c
-c                                                                             c
-c thl_tndcy    :  change in liq. water potential temperature due to           c
-c                 radiative heating and ice diffusion            Unit: K      c
-c rt_tndcy     :  change in total water due to ice diffusion     Unit: kg/kg  c
-c                                                                             c
-c Frad         :  profile of total radiative flux (lw + sw)      Unit: W/m^2  c
-c Frad_LW      :  profile of longwave radiative flux             Unit: W/m^2  c
-c Frad_SW      :  profile of shortwave radiative flux            Unit: W/m^2  c
-c                                                                             c
-c radht        :  profile of total radiative heating (lw + sw)   Unit: K/s    c
-c radht_LW     :  profile of longwave radiative heating          Unit: K/s    c
-c radht_SW     :  profile of shortwave radiative heating         Unit: K/s    c
-c                                                                             c
-c sclr_tndcy   :  Passive scalar tendency                        Unit: varies c
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+        ! Input variables
+        real, intent(in) :: 
+     .  time,         ! Time of simulation since start        [s]
+     .  time_initial, ! Initial time of simulation            [s]
+     .  rlat,         ! Reference latitude should be 37.6     [Degrees North]
+     .  dt            ! Length of model timestep              [s]
 
-        !!!!!!!!!!!!!!!!!!!!!
-        !! Input variables !!
-        !!!!!!!!!!!!!!!!!!!!!
-        REAL, INTENT(IN):: time
-        REAL, INTENT(IN):: time_initial
-        REAL, INTENT(IN):: dt
-        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: thlm
-        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rcm
-        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: p
-        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: exner
-        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rhot
+        real, dimension(gr%nnzp), intent(in) :: 
+     .  thlm,  ! Liquid potential temperature           [K]
+     .  rcm,   ! Liquid water mixing ratio              [kg/kg]
+     .  p,     ! Basic state pressure                   [Pa]
+     .  exner, ! Exner function                         [-]
+     .  rhot   ! Density of reference state on t grid   [kg/m^3]
 
-        !!!!!!!!!!!!!!!!!!!!!!
-        !! Output variables !!
-        !!!!!!!!!!!!!!!!!!!!!!
-        REAL, DIMENSION(1:gr%nnzp), INTENT(INOUT):: rtm
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: wmt
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: wmm
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: thl_tndcy
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: rt_tndcy
+        ! Input/Output Variables
+        real, dimension(gr%nnzp), intent(inout) :: 
+     .  rtm    ! Total water mixing ratio               [kg/kg]
 
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: Frad
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: Frad_LW
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: Frad_SW
+        ! Output variables
+        real, dimension(gr%nnzp), intent(inout) :: 
+     .  wmt,      ! Vertical ascent/descent on therm. grid      [m/s]
+     .  wmm,      ! Vertical ascent/descent on moment. grid     [m/s]
+     .  thl_tndcy ! Change in liq. water potential temperature 
+                  ! due to radiative heating and ice diffusion  [K/s]
 
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: radht
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: radht_LW
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: radht_SW
+        real, dimension(gr%nnzp), intent(inout) :: 
+     .  rt_tndcy, ! Change in total water due to ice diffusion  [kg/kg/s]
+     .  Frad,     ! Total radiative flux (LW + SW)              [W/m^2]
+     .  radht     ! Total radiative heating (LW +SW)            [K/s]
 
         ! Output variables (optional)
-        REAL, OPTIONAL, DIMENSION(gr%nnzp, sclr_dim),
-     .                  INTENT(OUT) :: sclr_tndcy
+        real, optional, dimension(gr%nnzp,sclr_dim),intent(out) :: 
+     .  sclr_tndcy ! Large-scale tendency for passive scalars
 
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c LOCAL VARIABLES                                                             c
@@ -2700,24 +2694,30 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! Local ice diffusional arrays !!
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        REAL, DIMENSION(1:gr%nnzp):: dqc_dt_icedfs
+        REAL, DIMENSION(gr%nnzp):: dqc_dt_icedfs
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! Local radiation arrays !!
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        REAL, DIMENSION(1:gr%nnzp):: LWP
-        REAL, DIMENSION(1:gr%nnzp):: thm_rad
-        REAL, DIMENSION(1:gr%nnzp):: rcm_rad
-        REAL, DIMENSION(1:gr%nnzp):: rhot_rad
-        REAL, DIMENSION(1:gr%nnzp):: dsigm
+        real, dimension(gr%nnzp) :: 
+     .  Frad_LW, ! Long wave radiative flux     [W/m^2]
+     .  Frad_SW, ! Short wave radiative flux    [W/m^2]
+     .  radht_LW,! Long wave radiative heating  [K/s]
+     .  radht_SW ! Short wave radiative heating [K/s]
 
-        REAL, DIMENSION(1:gr%nnzp):: frad_out
-        REAL, DIMENSION(1:gr%nnzp):: frad_lw_out
-        REAL, DIMENSION(1:gr%nnzp):: frad_sw_out
+        REAL, DIMENSION(gr%nnzp):: LWP
+        REAL, DIMENSION(gr%nnzp):: thm_rad
+        REAL, DIMENSION(gr%nnzp):: rcm_rad
+        REAL, DIMENSION(gr%nnzp):: rhot_rad
+        REAL, DIMENSION(gr%nnzp):: dsigm
 
-        REAL, DIMENSION(1:gr%nnzp):: radhtk
-        REAL, DIMENSION(1:gr%nnzp):: radht_lw_out
-        REAL, DIMENSION(1:gr%nnzp):: radht_sw_out
+        REAL, DIMENSION(gr%nnzp):: frad_out
+        REAL, DIMENSION(gr%nnzp):: frad_lw_out
+        REAL, DIMENSION(gr%nnzp):: frad_sw_out
+
+        REAL, DIMENSION(gr%nnzp):: radhtk
+        REAL, DIMENSION(gr%nnzp):: radht_lw_out
+        REAL, DIMENSION(gr%nnzp):: radht_sw_out
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! Working arrays for subsidence interpolation !!
@@ -2746,8 +2746,7 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         REAL, PARAMETER :: radius = 1.0e-5
         REAL, PARAMETER :: AA     = 0.1
         REAL, PARAMETER :: gc     = 0.85
-        REAL, PARAMETER :: omega  = .992
-        REAL, PARAMETER :: rlat = 37.6
+        REAL, PARAMETER :: omega  = 0.992
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! Additional SW radiative variables !!
@@ -2821,7 +2820,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         julday = 176
         start_time_until_noon = 30540
         t_since_noon   = time - start_time_until_noon
-        sda_t = 2*3.14*(julday-1)/365
+        sda_t = 2.0*pi*(julday-1)/365
 
         c_0 = 0.006918
         c_1 = -0.399912
@@ -2835,10 +2834,10 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
      .                    c_2*cos(2*sda_t) + d_2*sin(2*sda_t) +
      .                    c_3*cos(3*sda_t) + d_3*sin(3*sda_t)
 
-        sda_h = 2*3.14*t_since_noon/86400
+        sda_h = 2.0*pi*t_since_noon/86400.0
 
-        xi_abs = sin(rlat*3.14/180) * sin(sda_delta) +
-     .           cos(rlat*3.14/180) * cos(sda_delta) * cos(sda_h)
+        xi_abs = sin(rlat*pi/180) * sin(sda_delta) +
+     .           cos(rlat*pi/180) * cos(sda_delta) * cos(sda_h)
 
         xi_abs = max(xi_abs,0.)
 
@@ -2848,7 +2847,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 !! solar radiation.  If sw_on = .FALSE. above, we will automatically set     !!
 !! xi_abs to 0 to avoid confusion or errors.                                 !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      if (.not. sw_on) then
+      if ( .not. sw_on ) then
         xi_abs = 0.
       end if
 
@@ -2856,7 +2855,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 !! End of ajsmith4's Modification !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      if (xi_abs .eq. 0.) then
+      if (xi_abs == 0.) then
         sw_on = .FALSE.
       else
         sw_on = .TRUE.
@@ -2899,7 +2898,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       Fslist(11) = 1277.0474
       Fslist(12) = 1282.3994
 
-      call linearinterpolation(nparam,xilist,Fslist,xi_abs,Fs0)
+      call linearinterpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Subsidence Parameters !!
@@ -3143,7 +3142,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         IF (time >= time_initial + 3600.0 .and. icedfs_on) THEN
 
            CALL altocu_icedf( dt, thlm, rcm, p, exner, rhot,
-     .                              dqc_dt_icedfs )
+     .                        dqc_dt_icedfs )
 
         ELSE
 
@@ -3164,42 +3163,42 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
             call linearinterpolation(5,zsubs,wt1,gr%zt(k),wmt(k))
         end do
  
-        else if (time.lt.tsubs(2)) then
+        else if (time < tsubs(2)) then
         do k=2,gr%nnzp
           call linearinterpolation(5,zsubs,wt1,gr%zt(k),w1(k))
           call linearinterpolation(5,zsubs,wt2,gr%zt(k),w2(k))
         wmt(k) = (time-tsubs(1))/(tsubs(2)-tsubs(1))*(w2(k)-w1(k))+w1(k)
         end do
  
-        else if (time.lt.tsubs(3)) then
+        else if (time < tsubs(3)) then
         do k=2,gr%nnzp
           call linearinterpolation(5,zsubs,wt2,gr%zt(k),w1(k))
           call linearinterpolation(5,zsubs,wt3,gr%zt(k),w2(k))
         wmt(k) = (time-tsubs(2))/(tsubs(3)-tsubs(2))*(w2(k)-w1(k))+w1(k)
         end do
  
-        else if (time.lt.tsubs(4)) then
+        else if (time < tsubs(4)) then
         do k=2,gr%nnzp
           call linearinterpolation(5,zsubs,wt3,gr%zt(k),w1(k))
           call linearinterpolation(5,zsubs,wt4,gr%zt(k),w2(k))
         wmt(k) = (time-tsubs(3))/(tsubs(4)-tsubs(3))*(w2(k)-w1(k))+w1(k)
         end do
  
-        else if (time.lt.tsubs(5)) then
+        else if (time < tsubs(5)) then
         do k=2,gr%nnzp
           call linearinterpolation(5,zsubs,wt4,gr%zt(k),w1(k))
           call linearinterpolation(5,zsubs,wt5,gr%zt(k),w2(k))
         wmt(k) = (time-tsubs(4))/(tsubs(5)-tsubs(4))*(w2(k)-w1(k))+w1(k)
         end do
  
-        else if (time.lt.tsubs(6)) then
+        else if (time < tsubs(6)) then
         do k=2,gr%nnzp
           call linearinterpolation(5,zsubs,wt5,gr%zt(k),w1(k))
           call linearinterpolation(5,zsubs,wt6,gr%zt(k),w2(k))
         wmt(k) = (time-tsubs(5))/(tsubs(6)-tsubs(5))*(w2(k)-w1(k))+w1(k)
         end do
  
-        else if (time.ge.tsubs(6)) then
+        else if (time >= tsubs(6)) then
         do k=2,gr%nnzp
           call linearinterpolation(5,zsubs,wt6,gr%zt(k),wmt(k))
         end do
@@ -3223,31 +3222,49 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
            rt_tndcy(k) = dqc_dt_icedfs(k)
         ENDDO
 
-        IF ( present( sclr_tndcy ) ) THEN
+        if ( present( sclr_tndcy ) ) then
           sclr_tndcy(:,SCLR_THETA) = thl_tndcy
           sclr_tndcy(:,SCLR_RT)    = rt_tndcy
-        END IF
+        end if 
 
+#ifdef STATS
+        if ( .not.lbugsrad .and. lstats_samp ) then
+
+          if ( iradht_LW > 0 ) then
+            zt%x(:,iradht_LW) = zt%x(:,iradht_LW) + radht_LW
+            zt%n(:,iradht_LW) = zt%n(:,iradht_LW) + 1
+          end if
+          if ( iradht_SW > 0 ) then
+            zt%x(:,iradht_SW) = zt%x(:,iradht_SW) + radht_SW
+            zt%n(:,iradht_SW) = zt%n(:,iradht_SW) + 1
+          end if
+
+          if ( iFrad_SW > 0 ) then
+            zm%x(:,iFrad_SW) = zm%x(:,iFrad_SW) + Frad_SW
+            zm%n(:,iFrad_SW) = zm%n(:,iFrad_SW) + 1
+          end if
+          if ( iFrad_LW > 0 ) then
+            zm%x(:,iFrad_LW) = zm%x(:,iFrad_LW) + Frad_LW
+            zm%n(:,iFrad_LW) = zm%n(:,iFrad_LW) + 1
+          end if
+
+        end if
+#endif /*STATS*/
 
         RETURN
         END SUBROUTINE jun25_altocu_tndcy
 
-!-----------------------------------------------------------------------
-
-
-
 !----------------------------------------------------------------------
-        subroutine mpace_tndcy( time, time_initial, dt, thlm,
-     .                          rim, rrm, rgm, rsnowm, 
-     .                          exner, rhot, rtm, p, thvm, rcm, 
-     .                          wmt, wmm,theta_tndcy, rt_tndcy,
-     .                          Frad, Frad_LW, Frad_SW,
-     .                          radht, radht_LW, radht_SW,
-     .                          nc3, ni3, nr3, ncn3,
-     .                          snowv, falli, fallg, fallr,
-     .                          sclr_tndcy )
+        subroutine mpace_tndcy
+     .  ( time, time_initial, dt, thlm,
+     .    rim, rrm, rgm, rsnowm, 
+     .    exner, rhot, rtm, p, thvm, rcm,
+     .    wmt, wmm, theta_tndcy, rt_tndcy,
+     .    Frad, radht, 
+     .    nc3, ni3, nr3, ncn3,
+     .    snowv, falli, fallg, fallr,
+     .    sclr_tndcy )
 
-!----------------------------------------------------------------------
 !        Description:
 !          Subroutine to large-scale subsidence for MPACE case (Michael
 !          Falk, 21 July 2006).  Added ice and radiation based on Adam
@@ -3256,114 +3273,74 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 !
 !        References:
 !          Liou, Wallace and Hobbs
-!
-!-----------------------------------------------------------------------
-! Variables (input):
-! time...........: current time of simulation              Unit: s
-! time_initial...: initial time of simulation              Unit: s
-! dt.............: length of timestep (dtmain after spinup;
-!                  dtclosure before spinup, I think)       Unit: s
-! thlm(k)........: Liquid water potential temperature      Unit: K
-! rcm(k).........: Cloud water mixing ratio                Unit: kg/kg
-! exner(k).......: Exner function (p/p0)^(R/Cp)            Unit: none
-! rhot(k)........: Density of air                          Unit: kg/m^3
-! p(k)...........: Pressure                                Unit: Pa
-! thvm(k)........: Virtual potential temperature           Unit: K
-!-----------------------------------------------------------------------
-! Variables (input/output):
-! rtm(k).........: Total water mixing ratio                Unit: kg/kg
-!-----------------------------------------------------------------------
-! Variables (output):
-! wmt(k).........: Large-scale vertical motion on t grid   Unit: m/s
-! wmm(k).........: Large-scale vertical motion on m grid   Unit: m/s
-! theta_tndcy(k).: Large-scale thlm tendency               Unit: K/s
-! rt_tndcy(k)....: Large-scale rtm tendency                Unit: kg/kg/s
-! Frad(k)........: Total radiative flux                    Unit: W/m^2
-! Frad_LW........: Longwave radiative flux                 Unit: W/m^2
-! Frad_SW........: Longwave radiative flux                 Unit: W/m^2
-! radht..........: dT/dt, then d Theta/dt, due to rad.     Unit: K/s
-! radht_LW.......: dT/dt, then d Theta/dt, due to LW rad.  Unit: K/s
-! radht_SW.......: dT/dt, then d Theta/dt, due to SW rad.  Unit: K/s
-! radht_theta....: d Theta/dt due to radiative flux        Unit: K/s
-! radht_theta_LW.: d Theta/dt due to LW radiative flux     Unit: K/s
-! radht_theta_SW.: d Theta/dt due to SW radiative flux     Unit: K/s
-! sclr_tndcy.....: pass                                    Unit: #/s
 !-----------------------------------------------------------------------
 
         use constants
         use grid_class
+        use statistics
 
         implicit none
 
-!-----------------------------------------------------------------------
-! INPUT VARIABLES
-!-----------------------------------------------------------------------
-        real, intent(in) ::  time
-        real, intent(in) ::  time_initial
-        real, intent(in) ::  dt
-        real, intent(in) ::  thlm(gr%nnzp)
+        ! Input Variables
+        real, intent(in) :: 
+     .  time,         ! current time of simulation                [s]
+     .  time_initial, ! Initial time of simulation                [s]
+     .  dt            ! Current length of timestep                [s]
 
-        real, intent(in) ::  rim(1,1,gr%nnzp)
-        real, intent(in) ::  rrm(gr%nnzp)
-        real, intent(in) ::  rgm(1,1,gr%nnzp)
-        real, intent(in) ::  rsnowm(1,1,gr%nnzp)
+        real, dimension(gr%nnzp), intent(in) :: 
+     .  thlm,  ! Liquid water potential temperature     [K]
+     .  rrm,   ! Rain water mixing ratio                [kg/kg]
+     .  exner, ! Exner function                         [-]
+     .  rhot,  ! Density of air                         [kg/m^3]
+     .  rtm,   ! Total water mixing ratio               [kg/kg]
+     .  p,     ! Pressure                               [Pa]
+     .  thvm   ! Virtual potential temperature          [K]
 
-        real, intent(in) :: exner(gr%nnzp)
-        real, intent(in) :: rhot(gr%nnzp)
-        real, intent(in) :: rtm(gr%nnzp)
+        real, dimension(1,1,gr%nnzp), intent(in) ::
+     .  rim,   ! Ice mixing ratio        [kg/kg] 
+     .  rgm,   ! Graupel mixing ratio    [kg/kg]
+     .  rsnowm ! Snow mixing ratio       [kg/kg]               
 
-        real, intent(in) :: p(gr%nnzp)
-        real, intent(in) :: thvm(gr%nnzp)
+        ! Input/Output Variables
+        real, dimension(gr%nnzp), intent(inout) :: 
+     .  rcm ! Cloud water mixing ratio  [kg/kg]
 
-!-----------------------------------------------------------------------
-! OUTPUT VARIABLES
-!-----------------------------------------------------------------------
-        real, intent(inout) ::  rcm(gr%nnzp)
+        ! Output Variables
+        real, dimension(gr%nnzp), intent(out) :: 
+     .  wmt,         ! Large-scale vertical motion on t grid   [m/s]
+     .  wmm,         ! Large-scale vertical motion on m grid   [m/s]
+     .  theta_tndcy, ! Large-scale thlm tendency               [K/s]
+     .  rt_tndcy,    ! Large-scale rtm tendency                [kg/kg/s]
+     .  Frad,        ! Total radiative flux                    [W/m^2]
+     .  radht,       ! dT/dt, then d Theta/dt, due to rad.     [K/s]
+     .  nc3,
+     .  ni3,
+     .  nr3,
+     .  ncn3
 
-!-----------------------------------------------------------------------
-! OUTPUT VARIABLES
-!-----------------------------------------------------------------------
-        real, intent(out) :: wmt(gr%nnzp)
-        real, intent(out) :: wmm(gr%nnzp)
-        real, intent(out) :: theta_tndcy(gr%nnzp)
-        real, intent(out) :: rt_tndcy(gr%nnzp)
+        real, dimension(1,1,gr%nnzp), intent(out) ::
+     .  snowv,
+     .  falli,
+     .  fallg,
+     .  fallr
 
-        real, intent(out) :: Frad(gr%nnzp)
-        real, intent(out) :: Frad_LW(gr%nnzp)
-        real, intent(out) :: Frad_SW(gr%nnzp)
+        ! Output Variables (optional)
+        real, optional, intent(out), dimension(gr%nnzp,sclr_dim) ::
+     .  sclr_tndcy ! Passive scalar LS tendency         [units/s]
 
-        real, intent(out) :: radht(gr%nnzp)
-        real, intent(out) :: radht_LW(gr%nnzp)
-        real, intent(out) :: radht_SW(gr%nnzp)
+        ! Local Variables
+        real, dimension(gr%nnzp) :: 
+     .  radht_LW,! dT/dt, then d Theta/dt, due to LW rad.  [K/s]
+     .  radht_SW,! dT/dt, then d Theta/dt, due to SW rad.  [K/s]
+     .  Frad_LW, ! Longwave radiative flux                 [W/m^2]
+     .  Frad_SW  ! Shortwave radiative flux                [W/m^2]
 
-        real, intent(out) :: nc3(gr%nnzp)
-        real, intent(out) :: ni3(gr%nnzp)
-        real, intent(out) :: nr3(gr%nnzp)
-        real, intent(out) :: ncn3(gr%nnzp)
-
-        real, intent(out) ::  snowv(1,1,gr%nnzp)          ! ajsmith; ARRAY?
-        real, intent(out) ::  falli(1,1,gr%nnzp)          ! ajsmith; ARRAY?
-        real, intent(out) ::  fallg(1,1,gr%nnzp)          ! ajsmith; ARRAY?
-        real, intent(out) ::  fallr(1,1,gr%nnzp)          ! ajsmith; ARRAY?
-
-!       Output (optional)
-        real, optional, intent(out), dimension(gr%nnzp,sclr_dim)
-     .                    :: sclr_tndcy
-
-!-----------------------------------------------------------------------
-! INTERNAL VARIABLES
-!-----------------------------------------------------------------------
-
-!   --------------------------------------------------------------------
-!   Loop control variables
-!   --------------------------------------------------------------------
-        integer i,k
+        integer :: i, k ! Loop indices
 
 !   -----------------------------------------------------------------
 !   Subsidence variables
 !   -----------------------------------------------------------------
         real, parameter :: grav0 = 9.8     ! m/s
-!        real, parameter :: Rd    = 287.    ! J/kg/K
         real, parameter :: D     = 5.8e-6  ! 1/s
         real, parameter :: psfc  = 101000. ! Pa
         real, parameter :: p00   = 100000. ! Pa; for theta calcs
@@ -3510,8 +3487,9 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 !   ON/OFF Switches for schemes
 !   --------------------------------------------------------------------
 
-        logical center, icedfs_on, coamps_micro_on,
-     .          subs_on, lw_on, sw_on
+        logical :: 
+     .  center, icedfs_on, coamps_micro_on,
+     .  subs_on, lw_on, sw_on
 
 
 !-----------------------------------------------------------------------
@@ -3796,6 +3774,30 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
           end do ! k
 
         end if ! coamps_micro
+
+#ifdef STATS
+        if ( .not.lbugsrad .and. lstats_samp ) then
+
+          if ( iradht_LW > 0 ) then
+            zt%x(:,iradht_LW) = zt%x(:,iradht_LW) + radht_LW
+            zt%n(:,iradht_LW) = zt%n(:,iradht_LW) + 1
+          end if
+          if ( iradht_SW > 0 ) then
+            zt%x(:,iradht_SW) = zt%x(:,iradht_SW) + radht_SW
+            zt%n(:,iradht_SW) = zt%n(:,iradht_SW) + 1
+          end if
+
+          if ( iFrad_SW > 0 ) then
+            zm%x(:,iFrad_SW) = zm%x(:,iFrad_SW) + Frad_SW
+            zm%n(:,iFrad_SW) = zm%n(:,iFrad_SW) + 1
+          end if
+          if ( iFrad_LW > 0 ) then
+            zm%x(:,iFrad_LW) = zm%x(:,iFrad_LW) + Frad_LW
+            zm%n(:,iFrad_LW) = zm%n(:,iFrad_LW) + 1
+          end if
+
+        end if
+#endif /*STATS*/
 
 !-----------------------------------------------------------------------
 ! SET SCALAR TENDENCIES.
