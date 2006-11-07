@@ -1,10 +1,10 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_hoc.F90,v 1.11 2006-11-02 01:40:32 dschanen Exp $
+! $Id: bugsrad_hoc.F90,v 1.12 2006-11-07 21:36:12 dschanen Exp $
 
 subroutine bugsrad_hoc( alt, nz, lat_in_degrees, lon_in_degrees, &
                         day, month, year, time,                  &
-                        thlm, rcm, rtm,                          & 
-                        rrm, cf, pinpa, exner, rhom, Tsfc,       &
+                        thlm, rcm, rtm, rrm, rim,                & 
+                        cf, pinpa, exner, rhom, Tsfc,            &
                         radht, Frad, thlm_forcing )
 ! Description:
 ! Does the necessary operations to interface the HOC model with
@@ -31,19 +31,19 @@ subroutine bugsrad_hoc( alt, nz, lat_in_degrees, lon_in_degrees, &
 
   intrinsic :: dble, real
 
-! Parameters
+! Constant parameters
   integer, parameter :: &
-  nlen = 1, &   ! length of the total domain
-  slen = 1      ! length of the sub domain
+  nlen = 1, &   ! Length of the total domain
+  slen = 1      ! Length of the sub domain
 
 ! Number of levels to take from U.S. Std. Atmos tables
   integer, parameter :: std_atmos_buffer = 10 
 
 ! Number of levels to interpolate from the bottom of std_atmos to the top
-! of the HOC profile, hopefully enough to elminate cooling spikes, etc. 
+! of the HOC profile, hopefully enough to eliminate cooling spikes, etc. 
   integer, parameter :: lin_int_buffer = 20
 
-! The sum of the above to two
+! The sum of the above to two buffers
   integer, parameter :: buffer = lin_int_buffer + std_atmos_buffer
 
   integer, parameter :: std_atmos_dim = 25
@@ -89,13 +89,14 @@ subroutine bugsrad_hoc( alt, nz, lat_in_degrees, lon_in_degrees, &
   time            ! Model time                           [s]
   
   integer, intent(in) :: &
-  nz,              & ! vertical extent;  i.e. nnzp in the grid class
+  nz,              & ! Vertical extent;  i.e. nnzp in the grid class
   day, month, year   ! Time of year
 
   real, intent(in), dimension(nz) :: &
   thlm,  & ! Liquid potential temp.     [K]
   rcm,   & ! Liquid water mixing ratio  [kg/kg]
   rrm,   & ! Rain water mixing ratio    [kg/kg]
+  rim,   & ! Ice water mixing ratio     [kg/kg]
   rtm,   & ! Total water mixing ratio   [kg/kg]
   rhom,  & ! Density                    [kg/m^3]
   cf,    & ! Cloud fraction             [%]
@@ -186,21 +187,26 @@ subroutine bugsrad_hoc( alt, nz, lat_in_degrees, lon_in_degrees, &
 ! Derive Specific humidity from rc & rt.
   sp_humidity(1,1:(nz-1)) = dble( rtm(2:nz) - rcm(2:nz) ) / dble( 1+rtm(2:nz) )
 
-! Setup misc. variables
+! Setup miscellaneous variables
+
+! Albedo values
   alvdr = 0.1d0
   alvdf = 0.1d0
   alndr = 0.1d0
   alndf = 0.1d0
 
   slr  = 1.0d0 ! Fraction of daylight
- 
-  rcil(1,1:(nz-1)+buffer) = 0.0d0 ! Assume no ice for HOC
+
+! Changed for MPACE inter comparison -dschanen 3 Nov 2006
+! rcil(1,1:(nz-1)+buffer) = 0.0d0 ! Assume no ice for HOC
+  
 
 ! Ozone = 5.4e-5 g/m^3 from U.S. Standard Atmosphere, 1976. 
 !   Convert from g to kg.
   o3l(1,1:(nz-1)) = dble( ( 5.4e-5 / rhom(1:(nz-1)) ) * 0.001 )
 
 ! Convert and transpose as needed
+  rcil(1,buffer+1:(nz-1)+buffer)  = flip( dble( rim(2:nz) ), nz-1 )
   rrm2(1,buffer+1:(nz-1)+buffer)  = flip( dble( rrm(2:nz) ), nz-1 )
   rcm2(1,buffer+1:(nz-1)+buffer)  = flip( dble( rcm(2:nz) ), nz-1 )
   cf2(1,buffer+1:(nz-1)+buffer)   = flip( dble( cf(2:nz) ), nz-1 ) 
@@ -216,6 +222,7 @@ subroutine bugsrad_hoc( alt, nz, lat_in_degrees, lon_in_degrees, &
 
 ! Assume these are all zero above the HOC profile
   rrm2(1,1:buffer) = 0.0d0
+  rcil(1,1:buffer) = 0.0d0
   rcm2(1,1:buffer) = 0.0d0
   cf2(1,1:buffer)  = 0.0d0
 
@@ -278,15 +285,17 @@ subroutine bugsrad_hoc( alt, nz, lat_in_degrees, lon_in_degrees, &
 ! close(10)
 ! pause
 
-  call bugs_rad( nlen, slen, (nz-1)+buffer, playerinmb, pinmb, dpl, tempk, &
-                 sp_humidity, rcm2, rcil, rrm2, o3l, ts, amu0,             &
-                 slr, alvdf, alndf, alvdr, alndr,                          &
-                 dble( sol_const ), dble( grav ), dble( Cp ),              &
-                 radht_SW2, radht_LW2,                                     &
-                 Frad_dSW, Frad_uSW, Frad_dLW, Frad_uLW, cf2 )
+  call bugs_rad( nlen, slen, (nz-1)+buffer, playerinmb,          &
+                 pinmb, dpl, tempk, sp_humidity,                 &
+                 rcm2, rcil, rrm2, o3l,                          &
+                 ts, amu0, slr, alvdf,                           &
+                 alndf, alvdr, alndr, dble( sol_const ),         &
+                 dble( grav ), dble( Cp ), radht_SW2, radht_LW2, &
+                 Frad_dSW, Frad_uSW, Frad_dLW, Frad_uLW,         &
+                 cf2 )
 
 ! Michael pointed out that this was a temperature tendency, not a theta_l
-! tendency.  The 2nd line should fix both.  dschanen 28 July 2006
+! tendency.  The 2nd line should fix both.  -dschanen 28 July 2006
   radht_SW(2:nz) = real( flip( radht_SW2(1,buffer+1:nz+buffer), nz-1 ) ) &
                    * ( 1.0 / exner(2:nz) )
 
@@ -323,7 +332,7 @@ subroutine bugsrad_hoc( alt, nz, lat_in_degrees, lon_in_degrees, &
 
           if ( iFrad_SW > 0 ) then
             zm%x(:,iFrad_SW) = zm%x(:,iFrad_SW) + Frad_SW
-            zt%n(:,iFrad_SW) = zm%n(:,iFrad_SW) + 1
+            zm%n(:,iFrad_SW) = zm%n(:,iFrad_SW) + 1
           end if
           if ( iFrad_LW > 0 ) then
             zm%x(:,iFrad_LW) = zm%x(:,iFrad_LW) + Frad_LW
