@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.95 2006-11-02 01:44:43 dschanen Exp $
+! $Id: hoc.F,v 1.96 2006-11-07 21:37:03 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -1320,8 +1320,8 @@
 #ifdef radoffline /*This directive is needed for this to work at all.*/
           call bugsrad_hoc( deltaz*gr%nnzp, gr%nnzp, rlat, rlon,
      .                      day, month, year, time,
-     .                      thlm, rcm, rtm,
-     .                      rrm, cf, p, exner, rhom, Tsfc,
+     .                      thlm, rcm, rtm, rrm, rim, 
+     .                      cf, p, exner, rhom, Tsfc,
      .                      radht, Frad, thlm_forcing )
 #else
           stop "Cannot call BUGSrad with these compile options."
