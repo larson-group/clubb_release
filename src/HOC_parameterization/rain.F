@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.6 2006-09-05 22:39:04 dschanen Exp $
+! $Id: rain.F,v 1.7 2006-11-14 22:41:33 griffinb Exp $
 !----------------------------------------------------------------------
 
       MODULE rain_equations
@@ -7,9 +7,9 @@
       IMPLICIT NONE
 
       PUBLIC rain
-      PRIVATE accretion_rrm, autoconv_rrm, autoconv_Nrm
-      PRIVATE cond_evap_rrm, cond_evap_Nrm, mean_volume_radius
-      PRIVATE D_fnc, NL_PDF, VVLA, DVSA, DVLA
+      PRIVATE cond_evap_rrm_2, cond_evap_Nrm, autoconv_rrm_2
+      PRIVATE autoconv_Nrm, accretion_rrm_2, mean_volume_radius_2
+      PRIVATE D_fnc, VVLA, DVSA, DVLA
 
       CONTAINS
 !----------------------------------------------------------------------
@@ -256,8 +256,8 @@
         ! timestep.  It is located on thermodynamic levels.
         DO k = 1, gr%nnzp, 1
 
-           CALL mean_volume_radius( rhot(k), Nrm(k), rrm(k),
-     .                              mean_vol_rad(k) )
+           mean_vol_rad(k) = mean_volume_radius_2( rrm(k), Nrm(k),
+     .                                             rhot(k)         )
 
         ENDDO
 
@@ -569,9 +569,9 @@
            ! Now find the elements that make up the right-hand side of the
            ! equation, dd, for rain water mixing ratio, rrm.
 
-           cond_rrm(k) = cond_evap_rrm( Temp(k), p(k), rhot(k),
-     .                     a, thl1, thl2, rc1, rc2, s1, s2,
-     .                     ss1, ss2, es(k), Supsat(k), Nrm(k), rrm(k) )
+           cond_rrm(k) = cond_evap_rrm_2( rrm(k), Nrm(k),
+     .                     s1, ss1, s2, ss2, thl1, thl2, rc1, rc2, a,
+     .                     p(k), rhot(k), Temp(k), Supsat(k)  )
 
 ! Vince Larson added option to call LH sampled Kessler autoconversion.
 ! 22 May 2005
@@ -584,15 +584,14 @@
 
            else
 
-              auto_rrm(k) = autoconv_rrm( rcm(k), Ncm(k), rhot(k),
-     .                           a, s1, s2, ss1, ss2, rc1, rc2 )
+              auto_rrm(k) = autoconv_rrm_2( rcm(k), Ncm(k),
+     .                           s1, ss1, s2, ss2, a, rhot(k) )
 
            endif
 ! End Vince Larson's addition
 
-           accr_rrm(k) = accretion_rrm( rcm(k), rrm(k),
-     .                             a, s1, s2, ss1, ss2, rc1, rc2 )
-
+            accr_rrm(k) = accretion_rrm_2( rcm(k), rrm(k),
+     .                                     s1, ss1, s2, ss2, a )
 
         ! Explicit contributions to rrm.
 #ifdef STATS
@@ -798,141 +797,263 @@
         RETURN
         END SUBROUTINE rain
 
-!------------------------------------------------------------------------
-
-        SUBROUTINE mean_volume_radius( rhot, Nrm, rrm, mean_vol_rad )
-
-        USE grid_class
-        USE model_flags
-        USE constants
-
-        IMPLICIT NONE
-
-        REAL, INTENT(IN):: rhot, Nrm, rrm
-!        LOGICAL, INTENT(IN):: local_kk
-        REAL, INTENT(OUT):: mean_vol_rad
-
-!       Added to constants.F
-!        REAL, PARAMETER:: rho_lw = 1000.0 ! density of liquid water; kg/m^3
-
-        ! Lognormal Distribution Variables.
-        REAL:: Nrm_kg
-        REAL:: rrp2_rrm2, Nrp2_Nrm2
-        REAL:: u_rr_G, sig2_rr_G, u_Nr_G, sig2_Nr_G
-        REAL:: corr_rrNr_G, bivar_term
-
-        ! Vince Larson: 0.75 agrees with COAMPS DYCOMS2 RF02
-        !     in cloud and below cloud.  7 Apr 2005
-        REAL, PARAMETER:: corr_rrNr_L = 0.75 
-
-        ! Find the the mean volume radius of rain drops (in m).
-        ! This is located on thermodynamic levels.
-        ! Obviously, there will only be a mean volume radius of rain drop
-        ! if rain is present, meaning rain water mixing ratio and rain
-        ! drop concentration are both greater than 0.
-        IF (rrm > 0.0 .AND. Nrm > 0.0) THEN
-
-           IF ( local_kk ) THEN
+!===============================================================================
+        !
+        ! FUNCTION mean_volume_radius_2
+        !-----------------------------------------------------------------------
+        !
+        ! DESCRIPTION
+        !------------
+        !
+        ! This function calculates the mean volume radius of a rain drop from
+        ! Khairoutdinov and Kogan (2000) equation 3. That equation is:
+        !
+        ! mvr = [(4*PI*rho_lw)/(3*rho)]^(-1/3) * rr^(1/3) * Nr^(-1/3)
+        !
+        ! This turns into:
+        !
+        ! mvr = [(4*PI*rho_lw)/(3*rho)]^(-1/3) * rr^alpha * Nr^beta
+        !
+        ! where alpha = 1/3 and beta = -1/3
+        !
+        ! When applied to a Probability Density Function (PDF), it becomes:
+        !
+        ! mvr = [(4*PI*rho_lw)/(3*rho)]^(-1/3) * Y1^alpha * Y2^beta
+        !
+        ! Y1 is used for rr.  It is distributed as a log-normal with a
+        ! domain from zero to infinity.
+        ! Y2 is used for Nr.  It is distributed as a log-normal with a
+        ! domain from zero to infinity.
+        !
+        ! Notes:  For our PDF-version (non-local), we turn Nrm into
+        !         concentration per mass instead of concentration per volume.
+        !         It is divided by air density (rho) in order to achieve
+        !         that value.  That also explains why rho is removed from
+        !         the denominator of the factor [(4*PI*rho_lw)/(3*rho)]^(2/3).
+        !         The factor becomes [(4*PI*rho_lw)/(3)]^(2/3).
+        !
+        !         For our code using the local version, we use KK(2000)
+        !         equation 22 exactly, as listed above.  We do not mess around
+        !         with changing anything.
+        !
+        ! Brian Griffin.  November 14, 2006.
+        !
+        !-----------------------------------------------------------------------
         
-              mean_vol_rad = ( ( (4.0*pi*rho_lw)
-     .                      /(3.0*rhot) )**(-1.0/3.0) )
-     .                      *(rrm**(1.0/3.0))
-     .                      *(Nrm**(-1.0/3.0))
+        FUNCTION mean_volume_radius_2( rrm, Nrm, rhot )
 
-           ELSEIF ( .not. local_kk ) THEN
+        USE constants
+        USE model_flags
 
-              ! The following code is to find the grid-box average mean
-              ! volume radius for a drizzle drop based on a lognormal 
-              ! distribution.  This takes the original Khairoutdinov and
-              ! Kogan code and turns it into a calculation of grid-box average
-              ! based on a bivariate lognormal distribution.  This is done
-              ! because the orignal code works for a local formula for 3-D 
-              ! models with high resolution, but this code is for a 1-D model.
-              ! The equation was produced by Vince Larson (2005).
+        ! Input variables.
+        REAL, INTENT(IN):: rrm    ! Grid-box average rrm
+!        REAL, INTENT(IN):: rrp2   ! Grid-box rr variance
+        REAL, INTENT(IN):: Nrm    ! Grid-box average Nrm
+!        REAL, INTENT(IN):: Nrp2   ! Grid-box Nr variance
+        REAL, INTENT(IN):: rhot   ! Grid-box average density (t-level)
 
-              ! Note:  In order to make this equation able to be turned into
-              ! a bivariate lognormal distribution, the first term must be 
-              ! constant.  Therefore, rho is taken out of it.  In order to make
-              ! up for that, Nr is divided by rho to become concentration per kg.
-              !
-              ! rvr = [(4*pi*rho_lw)/3]^(-1/3) * rr^(1/3) * [Nr/rho]^(-1/3)
-              !
-              ! For our purposes, we need the mean rvr:
-              !
-              ! mean(rvr) = [(4*pi*rho_lw)/3]^(-1/3) 
-              !             * mean[ rr^(1/3) * [Nr/rho]^(-1/3) ]
+        ! Output variables.
+        REAL:: mean_volume_radius_2
 
-              Nrm_kg = Nrm/rhot
+        ! Exponential terms.
+        REAL:: alpha_exp  ! Exponent of Y1
+        REAL:: beta_exp   ! Exponent of Y2
 
-              ! rrp2_rrm2=1 agrees with COAMPS DYCOMS2 RF02 in and below cloud.  
-              !     7 Apr 2005
-!              rrp2_rrm2 = 2 * rcp2 / MAX(rcm**2.0, 1.0E-10)
-              rrp2_rrm2 = 1.0
+        ! Original terms.
+        REAL:: muY1       ! Grid-box average of Y1
+        REAL:: sigmaY1    ! Grid-box standard deviation of Y1
+        REAL:: muY2       ! Grid-box average of Y2
+        REAL:: sigmaY2    ! Grid-box standard deviation of Y2
+        REAL:: corrY1Y2   ! Correlation of Y1 and Y2
 
-              Nrp2_Nrm2 = 0.75
+        REAL, PARAMETER:: rrp2_rrm2 = 1.2
+        REAL, PARAMETER:: Nrp2_Nrm2 = 1.0
+        REAL, PARAMETER:: corr_rrNr_LL =  0.85
 
-              u_rr_G    = LOG( rrm 
-     .                     * ((1.0 + rrp2_rrm2)**(-1.0/2.0)) )
-              sig2_rr_G = LOG(1.0 + rrp2_rrm2)
+!-------------------------------------------------------------------------------
 
-              u_Nr_G    = LOG( Nrm_kg 
-     .                     * ((1.0 + Nrp2_Nrm2)**(-1.0/2.0)) )
-              sig2_Nr_G = LOG(1.0 + Nrp2_Nrm2)
+        IF ( local_kk ) THEN
 
-              ! Correlation coefficient for rr and Nr.
-              corr_rrNr_G = (  LOG( 1.0 + corr_rrNr_L
-     .                       * ((EXP(sig2_rr_G) - 1.0)**(1.0/2.0))
-     .                       * ((EXP(sig2_Nr_G) - 1.0)**(1.0/2.0)) )  )
-     .                     / ( SQRT(sig2_rr_G)*SQRT(sig2_Nr_G) )
+           IF ( rrm > 0.0 .AND. Nrm > 0.0 ) THEN
 
-              ! This term is:  mean[ rr^(1/3) * [Nr/rho]^(-1/3) ]
-              bivar_term = EXP(
-     .                       (1.0/3.0)*u_rr_G + (-1.0/3.0)*u_Nr_G
-     .                     + (1.0/2.0) * ((1.0/3.0)**2) * sig2_rr_G
-!     .                     + (1.0/2.0) * ((-1.0/3.0)**2) * sig2_Nr_G
-!                                           ^causes problems on some compilers
-     .                     + (1.0/2.0) * ((1.0/3.0)**2) * sig2_Nr_G
-     .                     + corr_rrNr_G
-     .                     * (1.0/3.0) * SQRT(sig2_rr_G)
-     .                     * (-1.0/3.0) * SQRT(sig2_Nr_G)        )
+              mean_volume_radius_2 = 
+     .           (  ((4.0*pi*rho_lw)/(3.0*rhot))**(-1.0/3.0)  )
+     .          * rrm**(1.0/3.0) * Nrm**(-1.0/3.0)
 
-              ! The mean volume radius
-              mean_vol_rad = ( ((4.0*pi*rho_lw)/3.0)**(-1.0/3.0) )
-     .                      * bivar_term
+           ELSE
+
+              ! If either rrm or Nrm are 0.
+              mean_volume_radius_2 = 0.0
 
            ENDIF
 
-        ELSE
+        ELSEIF ( .NOT. local_kk ) THEN
 
-           ! If there isn't any rain, then there isn't any drop rad.
-           mean_vol_rad = 0.0
+           IF ( rrm > 0.0 .AND. Nrm > 0.0 ) THEN
+
+              ! Exponents on Y1 and Y2, respectively.
+              alpha_exp = (1.0/3.0)
+              beta_exp  = -(1.0/3.0)
+
+              ! Y1 is distributed Lognormally.
+              muY1 = rrm
+!              sigmaY1 = SQRT(rrp2)
+              sigmaY1 = rrm * SQRT(rrp2_rrm2)  ! rr'2/rrm^2 = 1.2
+
+              ! Y2 is distributed Lognormally.
+              muY2 = (Nrm/rhot)
+!              sigmaY2 = SQRT(Nrp2)
+              sigmaY2 = (Nrm/rhot) * SQRT(Nrp2_Nrm2)  ! Nr'2/Nrm^2 = 1.0
+
+              ! Correlations.
+              corrY1Y2 = corr_rrNr_LL  ! corr_rcNr_LL =  0.85
+
+              mean_volume_radius_2 =
+     .           (  ((4.0*pi*rho_lw)/3.0)**(-1.0/3.0)  )
+     .           * PDF_BIVAR_LN_LN( muY1, muY2, sigmaY1, sigmaY2,
+     .                              corrY1Y2, alpha_exp, beta_exp )
+
+           ELSE
+
+              ! If either rrm or Nrm are 0.
+              mean_volume_radius_2 = 0.0
+
+           ENDIF
 
         ENDIF
-        
+
         RETURN
-        END SUBROUTINE mean_volume_radius
 
-!------------------------------------------------------------------------
+        END FUNCTION mean_volume_radius_2
 
-        FUNCTION cond_evap_rrm( Temp, press, rhot, a, 
-     .                          thl1, thl2, rc1, rc2, s1, s2, ss1, ss2,
-     .                          es, Supsat, Nrm, rrm )
-        USE model_flags
+!===============================================================================
+        !
+        ! FUNCTION cond_evap_rrm_2
+        !-----------------------------------------------------------------------
+        !
+        ! DESCRIPTION
+        !------------
+        !
+        ! This function calculates the evaporation of rain water based on
+        ! Khairoutdinov and Kogan (2000) equation 22. That equation is:
+        !
+        ! (drr/dt)cond = 
+        !    3 * Cevap * G(T,p) * [(4*PI*rho_lw)/(3*rho)]^(2/3) 
+        !      * rr^(1/3) * Nr^(2/3) * S
+        !
+        ! where S = (e/es) - 1
+        !
+        ! since S = [ ( 1 + Beta_T * rs ) / rs ] * s
+        !
+        ! (where s is the extended liquid water specific humidity),
+        !
+        ! the equation becomes:
+        !
+        ! (drr/dt)cond = 
+        !    3 * Cevap * G(T,p) * [(4*PI*rho_lw)/(3*rho)]^(2/3) 
+        !      * rr^(1/3) * Nr^(2/3) * [ ( 1 + Beta_T * rs ) / rs ] * s
+        !
+        ! This turns into:
+        !
+        ! (drr/dt)cond = 
+        !    3 * Cevap * G(T,p) * [(4*PI*rho_lw)/(3*rho)]^(2/3) 
+        !      * [ ( 1 + Beta_T * rs ) / rs ]
+        !      * s^alpha * rr^beta * Nr^gamma
+        !
+        ! where alpha = 1.0, beta = 1/3, and gamma = 2/3
+        !
+        ! When applied to a Probability Density Function (PDF), it becomes:
+        !
+        ! (drr/dt)cond = 
+        !    3 * Cevap * G(T,p) * [(4*PI*rho_lw)/(3*rho)]^(2/3) 
+        !      * [ ( 1 + Beta_T * rs ) / rs ]
+        !      * Y1^alpha * Y2^beta * Y3^gamma
+        !
+        ! Y1 is used for s.  It is distributed as a double Gaussian with a
+        ! domain from negative infinity to zero.  It is truncated at zero
+        ! because we are only interested in cases of evaporation, not
+        ! condensation.
+        ! Y2 is used for rr.  It is distributed as a log-normal with a
+        ! domain from zero to infinity.
+        ! Y3 is used for Nr.  It is distributed as a log-normal with a
+        ! domain from zero to infinity.
+        !
+        ! Notes:  For our PDF-version (non-local), we turn Nrm into
+        !         concentration per mass instead of concentration per volume.
+        !         It is divided by air density (rho) in order to achieve
+        !         that value.  That also explains why rho is removed from
+        !         the denominator of the factor [(4*PI*rho_lw)/(3*rho)]^(2/3).
+        !         The factor becomes [(4*PI*rho_lw)/(3)]^(2/3).
+        !
+        !         For our code using the local version, we use KK(2000)
+        !         equation 22 exactly, as listed above.  We do not mess around
+        !         with changing anything.
+        !
+        ! Brian Griffin.  November 14, 2006.
+        !
+        !-----------------------------------------------------------------------
+        
+        FUNCTION cond_evap_rrm_2( rrm, Nrm, s1, ss1, s2, ss2,
+     .                            thl1, thl2, rc1, rc2, a,
+     .                            press, rhot, Temp, Supsat  )
+
         USE constants
+        USE model_flags
 
-        IMPLICIT NONE
+        ! External functions
 
-        REAL, INTENT(IN):: Temp, press, rhot
-        REAL, INTENT(IN):: a, thl1, thl2, rc1, rc2, s1, s2, ss1, ss2
-        REAL, INTENT(IN):: es, Supsat, Nrm, rrm
-!        LOGICAL, INTENT(IN):: local_kk
-        REAL:: cond_evap_rrm
+        real rsat
+        external rsat
 
-        REAL:: Nrm_kg
-        REAL:: rrp2_rrm2, Nrp2_Nrm2
-        REAL:: u_rr_G, u_Nr_G
-        REAL:: sig2_rr_G, sig2_Nr_G
-        REAL:: corr_rcrr_G, corr_rcNr_G, corr_rrNr_G
+        ! Input variables.
+        REAL, INTENT(IN):: rrm    ! Grid-box average rrm
+!        REAL, INTENT(IN):: rrp2   ! Grid-box rr variance
+        REAL, INTENT(IN):: Nrm    ! Grid-box average Nrm
+!        REAL, INTENT(IN):: Nrp2   ! Grid-box Nr variance
+        REAL, INTENT(IN):: s1     ! Plume 1 average s
+        REAL, INTENT(IN):: ss1    ! Plume 1 sigma s1 (not sigma^2 s1)
+        REAL, INTENT(IN):: s2     ! Plume 2 average s
+        REAL, INTENT(IN):: ss2    ! Plume 2 sigma s2 (not sigma^2 s2)
+        REAL, INTENT(IN):: thl1   ! Plume 1 average theta-l
+        REAL, INTENT(IN):: thl2   ! Plume 2 average theta-l
+        REAL, INTENT(IN):: rc1    ! Plume 1 average rc
+        REAL, INTENT(IN):: rc2    ! Plume 2 average rc
+        REAL, INTENT(IN):: a      ! Relative weight of each individual
+                                  ! Gaussian "plume."
+        REAL, INTENT(IN):: press  ! Grid-box average pressure
+        REAL, INTENT(IN):: rhot   ! Grid-box average density (t-level)
+        REAL, INTENT(IN):: Temp   ! Grid-box average Temperature
+        REAL, INTENT(IN):: Supsat ! Grid-box average Supersaturation
+
+        ! Output variables.
+        REAL:: cond_evap_rrm_2
+
+        ! Exponential terms.
+        REAL:: alpha_exp  ! Exponent of Y1
+        REAL:: beta_exp   ! Exponent of Y2
+        REAL:: gamma_exp  ! Exponent of Y3
+
+        ! Original terms.
+        REAL:: muY1_1     ! Plume 1 average of Y1
+        REAL:: sigmaY1_1  ! Plume 1 standard deviation of Y1
+        REAL:: muY1_2     ! Plume 2 average of Y1
+        REAL:: sigmaY1_2  ! Plume 2 standard deviation of Y1
+        REAL:: muY2       ! Grid-box average of Y2
+        REAL:: sigmaY2    ! Grid-box standard deviation of Y2
+        REAL:: muY3       ! Grid-box average of Y3
+        REAL:: sigmaY3    ! Grid-box standard deviation of Y3
+        REAL:: corrY1Y2   ! Correlation of Y1 and Y2
+        REAL:: corrY1Y3   ! Correlation of Y1 and Y3
+        REAL:: corrY2Y3   ! Correlation of Y2 and Y3
+
+        REAL:: Tl_1, Tl_2, T_1, T_2, rsl_1, rsl_2, Beta_T1, Beta_T2
+        REAL:: plume_1_constants, plume_2_constants
+
+        REAL, PARAMETER:: rrp2_rrm2 = 1.2
+        REAL, PARAMETER:: Nrp2_Nrm2 = 1.0
+        REAL, PARAMETER:: corr_rcrr_NL =  0.10
+        REAL, PARAMETER:: corr_rcNr_NL = -0.15
+        REAL, PARAMETER:: corr_rrNr_LL =  0.85
 
 !        REAL, PARAMETER:: C_evap = 0.86    ! Khairoutdinov and Kogan (2000) 
 !                                           ! ratio of drizzle drop mean 
@@ -942,96 +1063,114 @@
 !        REAL, PARAMETER:: C_evap = 0.86*0.2 ! COAMPS value of KK C_evap
         REAL, PARAMETER:: C_evap = 0.55    ! KK 2000, Marshall-Palmer (1948) value.
 
-        ! corr_rcrr_L=0.1 agrees w/ COAMPS DYCOMS2 RF02 below cloud.  
-        REAL, PARAMETER:: corr_rcrr_L = 0.1
-        ! corr_rcNr_L=-0.15 agrees w/ COAMPS DYCOMS2 RF02 below cloud.  
-        REAL, PARAMETER:: corr_rcNr_L = -0.15
-        ! corr_rrNr_L=0.85 agrees w/ COAMPS DYCOMS2 RF02 below cloud.  
-        REAL, PARAMETER:: corr_rrNr_L = 0.85
+!-------------------------------------------------------------------------------
 
-        ! Function call
-!        REAL:: G_t_p
-!        REAL:: NLL_PDF
+        IF ( local_kk ) THEN
 
+           IF ( rrm > 0.0 .AND. Nrm > 0.0 ) THEN
 
-        IF (rrm > 0.0 .AND. Nrm > 0.0 ) THEN
+              cond_evap_rrm_2 =
+     .           3.0 * C_evap * G_T_p(Temp, press)
+     .               * ( ((4.0*pi*rho_lw)/(3.0*rhot))**(2.0/3.0) )
+     .               * (rrm**(1.0/3.0)) * (Nrm**(2.0/3.0)) * Supsat
 
-           IF (local_kk ) THEN
+           ELSE
 
-              IF ( Supsat < 0.0 ) THEN
-
-                 ! change in rain mixing ratio over time due to condensation.
-                 cond_evap_rrm = 3.0 * C_evap * G_t_p(Temp, press)
-     .                   * ( ((4.0*pi*rho_lw)/(3.0*rhot))**(2.0/3.0) )
-     .                   * (rrm**(1.0/3.0)) * (Nrm**(2.0/3.0))
-     .                   * Supsat
-
-              ELSE  ! layer contains cloud
-
-                 cond_evap_rrm = 0.0
-
-              ENDIF   
-
-           ELSEIF (.not. local_kk ) THEN
-
-              ! Convert to number per unit mass
-              Nrm_kg = Nrm/rhot
-
-              ! rrp2_rrm2=1.2 below cloud acc. to COAMPS DYCOMS2 RF02.
-!              rrp2_rrm2 = 2 * rcp2 / MAX(rcm**2.0, 1.0E-10)
-              rrp2_rrm2 = 1.2
-
-              ! Nrp2_Nrm2=1.0 below cloud acc. to COAMPS DYCOMS2 RF02.
-              Nrp2_Nrm2 = 1.0
-
-              u_rr_G = LOG( rrm 
-     .                     * ((1.0 + rrp2_rrm2)**(-1.0/2.0)) )
-              sig2_rr_G = LOG(1.0 + rrp2_rrm2)
-
-              u_Nr_G = LOG( Nrm_kg 
-     .                     * ((1.0 + Nrp2_Nrm2)**(-1.0/2.0)) )
-              sig2_Nr_G = LOG(1.0 + Nrp2_Nrm2)
-
-              ! Correlation coefficient for rc and rr.
-              corr_rcrr_G = corr_rcrr_L
-     .                     * ((EXP(sig2_rr_G) - 1.0)**(1.0/2.0)) 
-     .                     / SQRT(sig2_rr_G)
-
-              ! Correlation coefficient for rc and Nr.
-              corr_rcNr_G = corr_rcNr_L
-     .                     * ((EXP(sig2_Nr_G) - 1.0)**(1.0/2.0)) 
-     .                     / SQRT(sig2_Nr_G)
-
-              ! Correlation coefficient for rr and Nr.
-              corr_rrNr_G = (  LOG( 1.0 + corr_rrNr_L
-     .                       * ((EXP(sig2_rr_G) - 1.0)**(1.0/2.0))
-     .                       * ((EXP(sig2_Nr_G) - 1.0)**(1.0/2.0)) )  )
-     .                     / ( SQRT(sig2_rr_G)*SQRT(sig2_Nr_G) )
-
-              cond_evap_rrm =    a    * NLL_PDF(
-     .                          thl1, press, rc1, s1, ss1,
-     .                          1.0, 1.0/3.0, 2.0/3.0, 
-     .                          u_rr_G, u_Nr_G, sig2_rr_G, sig2_Nr_G,
-     .                          corr_rcrr_G, corr_rcNr_G, corr_rrNr_G )
-     .                      + (1.0-a) * NLL_PDF(
-     .                          thl2, press, rc2, s2, ss2,
-     .                          1.0, 1.0/3.0, 2.0/3.0, 
-     .                          u_rr_G, u_Nr_G, sig2_rr_G, sig2_Nr_G,
-     .                          corr_rcrr_G, corr_rcNr_G, corr_rrNr_G )
-
+              ! If either rrm or Nrm are 0.
+              cond_evap_rrm_2 = 0.0
 
            ENDIF
 
-        ELSE  ! Nrm or rrm is zero, i.e. there is no rain
+        ELSEIF ( .NOT. local_kk ) THEN
 
-           cond_evap_rrm = 0.0
+           IF ( rrm > 0.0 .AND. Nrm > 0.0 ) THEN
+
+              !!! Define plume constants for each plume
+
+              ! Gaussian "plume" 1
+              Tl_1 = thl1 * ((press/p0)**kappa)
+
+              T_1 = Tl_1 + (Lv/Cp)*rc1
+
+              rsl_1 = rsat(press, Tl_1)
+
+              Beta_T1 = (Rd/Rv) * ( Lv/(Rd*Tl_1) ) 
+     .                          * ( Lv/(Cp*Tl_1) )
+
+              plume_1_constants = 
+     .           3.0 * C_evap * G_T_p(T_1, press)
+     .               * ( ((4.0*pi*rho_lw)/3.0)**(2.0/3.0) )
+     .               * ( (1.0 + Beta_T1*rsl_1)/rsl_1 )
+
+              ! Gaussian "plume" 2
+              Tl_2 = thl2 * ((press/p0)**kappa)
+
+              T_2 = Tl_2 + (Lv/Cp)*rc2
+
+              rsl_2 = rsat(press, Tl_2)
+
+              Beta_T2 = (Rd/Rv) * ( Lv/(Rd*Tl_2) ) 
+     .                          * ( Lv/(Cp*Tl_2) )
+
+              plume_2_constants = 
+     .           3.0 * C_evap * G_T_p(T_2, press)
+     .               * ( ((4.0*pi*rho_lw)/3.0)**(2.0/3.0) )
+     .               * ( (1.0 + Beta_T2*rsl_2)/rsl_2 )
+
+              ! Exponents on Y1, Y2, and Y3, respectively.
+              alpha_exp = 1.0
+              beta_exp  = (1.0/3.0)
+              gamma_exp = (2.0/3.0)
+
+              ! Y1 is a truncated double Gaussian.
+              muY1_1 = s1
+              sigmaY1_1 = ss1
+              muY1_2 = s2
+              sigmaY1_2 = ss2
+
+              ! Y2 is distributed Lognormally.
+              muY2 = rrm
+!              sigmaY2 = SQRT(rrp2)
+              sigmaY2 = rrm * SQRT(rrp2_rrm2)  ! rr'2/rrm^2 = 1.2
+
+              ! Y3 is distributed Lognormally.
+              muY3 = (Nrm/rhot)
+!              sigmaY3 = SQRT(Nrp2)
+              sigmaY3 = (Nrm/rhot) * SQRT(Nrp2_Nrm2)  ! Nr'2/Nrm^2 = 1.0
+
+              ! Correlations.
+              corrY1Y2 = corr_rcrr_NL  ! corr_rcrr_NL =  0.10
+              corrY1Y3 = corr_rcNr_NL  ! corr_rcNr_NL = -0.15
+              corrY2Y3 = corr_rrNr_LL  ! corr_rrNr_LL =  0.85
+
+
+              cond_evap_rrm_2 = 
+     .         ( a ) * plume_1_constants
+     .         * PDF_TRIVAR_2G_LN_LN ( muY1_1, muY2, muY3,
+     .                                 sigmaY1_1, sigmaY2, sigmaY3,
+     .                                 corrY1Y2, corrY1Y3, corrY2Y3,
+     .                                 alpha_exp, beta_exp, gamma_exp )
+     .        +
+     .         (1-a) * plume_2_constants
+     .         * PDF_TRIVAR_2G_LN_LN ( muY1_2, muY2, muY3,
+     .                                 sigmaY1_2, sigmaY2, sigmaY3,
+     .                                 corrY1Y2, corrY1Y3, corrY2Y3,
+     .                                 alpha_exp, beta_exp, gamma_exp )
+
+           ELSE
+
+              ! If either rrm or Nrm are 0.
+              cond_evap_rrm_2 = 0.0
+
+           ENDIF
 
         ENDIF
 
         RETURN
-        END FUNCTION cond_evap_rrm
 
-!------------------------------------------------------------------------
+        END FUNCTION cond_evap_rrm_2
+
+!===============================================================================
 
         FUNCTION cond_evap_Nrm( cond_rrm, Nrm, rrm )
 
@@ -1053,198 +1192,1186 @@
         RETURN
         END FUNCTION cond_evap_Nrm
 
-!------------------------------------------------------------------------
-
-        FUNCTION NLL_PDF( thl_pl, press, rc_pl, s, ss,
-     .                    alpha_exp, beta_exp, gamma_exp, 
-     .                    u_rr_G, u_Nr_G, sig2_rr_G, sig2_Nr_G,
-     .                    corr_rcrr_G, corr_rcNr_G, corr_rrNr_G )
+!===============================================================================
+        !
+        ! FUNCTION autoconv_rrm_2
+        !-----------------------------------------------------------------------
+        !
+        ! DESCRIPTION
+        !------------
+        !
+        ! This function calculates the autoconversion of cloud water to
+        ! rain water based on Khairoutdinov and Kogan (2000) equation 29.
+        ! That equation is:
+        !
+        ! (drr/dt)auto = 1350 * rc^2.47 * Nc^-1.79
+        !
+        ! where Nc is in concentration per cm^3.  Since there are 10^-6
+        ! cubic meters in one cubic centimenter, the equation becomes:
+        !
+        ! (drr/dt)auto = 1350 * rc^2.47 * ((10^-6)Nc)^-1.79
+        !
+        ! simplified:
+        !
+        ! (drr/dt)auto = 1350 * (10^-6)^-1.79 * rc^2.47 * Nc^-1.79
+        !
+        ! This turns into:
+        !
+        ! (drr/dt)auto = 1350 * 10^10.74 * rc^2.47 * Nc^-1.79
+        !
+        ! with Nc in concentration per m^3.
+        !
+        ! For our PDF version, we want to express Nc in concentration per mass
+        ! instead of concentration per volume.  We end up with:
+        !
+        ! (drr/dt)auto = 1350 * 10^10.74 * rc^2.47 * (rho*Nc)^-1.79
+        !
+        ! simplified:
+        !
+        ! (drr/dt)auto = 1350 * 10^10.74 * rho^-1.79 * rc^2.47 * Nc^-1.79
+        !
+        ! with Nc in concentration per kg.
+        !
+        ! This equation becomes:
+        !
+        ! (drr/dt)auto = 1350 * 10^10.74 * rho^-1.79 * rc^alpha * Nc^beta
+        !
+        ! where alpha = 2.47 and beta = -1.79
+        !
+        ! s (extended liquid water specific humidity) is equal to rc anywhere
+        ! that rc is greater than 0.
+        ! 
+        ! (drr/dt)auto = 1350 * 10^10.74 * rho^-1.79 * s^alpha * Nc^beta
+        !
+        ! When applied to a Probability Density Function (PDF), it becomes:
+        !
+        ! (drr/dt)auto = 1350 * 10^10.74 * rho^-1.79 * Y1^alpha * Y2^beta
+        !
+        ! Y1 is used for s.  It is distributed as a double Gaussian with a
+        ! domain from zero to infinity.  It is truncated at zero because we 
+        ! are only interested in cases where there is cloud water.
+        ! Y2 is used for Nc.  It is distributed as a log-normal with a
+        ! domain from zero to infinity.
+        !
+        ! Notes:  For our code using the local version, we use KK(2000)
+        !         equation 33, only modifying it to express Nc in
+        !         concentration per m^3.  We do not mess around with 
+        !         changing anything else.
+        !
+        ! Brian Griffin.  November 14, 2006.
+        !
+        !-----------------------------------------------------------------------
+        
+        FUNCTION autoconv_rrm_2( rcm, Ncm, s1, ss1, s2, ss2, a, rhot )
 
         USE constants
-        use polpak_gamma, only: gamma
+        USE model_flags
 
-        IMPLICIT NONE
+        ! Input variables.
+        REAL, INTENT(IN):: rcm    ! Grid-box average rcm
+!        REAL, INTENT(IN):: rcp2   ! Grid-box rc variance
+        REAL, INTENT(IN):: Ncm    ! Grid-box average Ncm
+!        REAL, INTENT(IN):: Ncp2   ! Grid-box Nc variance
+        REAL, INTENT(IN):: s1     ! Plume 1 average s
+        REAL, INTENT(IN):: ss1    ! Plume 1 sigma s1 (not sigma^2 s1)
+        REAL, INTENT(IN):: s2     ! Plume 2 average s
+        REAL, INTENT(IN):: ss2    ! Plume 2 sigma s2 (not sigma^2 s2)
+        REAL, INTENT(IN):: a      ! Relative weight of each individual
+                                  ! Gaussian "plume."
+        REAL, INTENT(IN):: rhot   ! Grid-box average density (t-level)
 
-        ! External functions
+        ! Output variables.
+        REAL:: autoconv_rrm_2
 
-        real rsat
-        external rsat
+        ! Exponential terms.
+        REAL:: alpha_exp  ! Exponent of Y1
+        REAL:: beta_exp   ! Exponent of Y2
 
-        REAL, INTENT(IN):: thl_pl, press, rc_pl, s, ss
-        REAL, INTENT(IN):: alpha_exp, beta_exp, gamma_exp
-        REAL, INTENT(IN):: u_rr_G, u_Nr_G, sig2_rr_G, sig2_Nr_G
-        REAL, INTENT(IN):: corr_rcrr_G, corr_rcNr_G, corr_rrNr_G
-        REAL:: NLL_PDF
+        ! Original terms.
+        REAL:: muY1_1     ! Plume 1 average of Y1
+        REAL:: sigmaY1_1  ! Plume 1 standard deviation of Y1
+        REAL:: muY1_2     ! Plume 2 average of Y1
+        REAL:: sigmaY1_2  ! Plume 2 standard deviation of Y1
+        REAL:: muY2       ! Grid-box average of Y2
+        REAL:: sigmaY2    ! Grid-box standard deviation of Y2
+        REAL:: corrY1Y2   ! Correlation of Y1 and Y2
 
-        REAL:: tmpl_pl, tmp_pl, rsl_pl, Beta_T
+        REAL, PARAMETER:: Ncp2_Ncm2 = 0.07
+        REAL, PARAMETER:: corr_rcNc_NL =  0.45
 
-        DOUBLE PRECISION:: scc, gamma_in, gamma_out, Dv_order, test
+!-------------------------------------------------------------------------------
 
-!        REAL, PARAMETER:: C_evap = 0.86    ! Khairoutdinov and Kogan (2000) 
-!                                           ! ratio of drizzle drop mean 
-!                                           ! geometric radius to drizzle drop
-!                                           ! mean volume radius. Khairoutdinov 
-!                                           ! and Kogan (2000); p. 233.
-!        REAL, PARAMETER:: C_evap = 0.86*0.2 ! COAMPS value of KK C_evap
-        REAL, PARAMETER:: C_evap = 0.55    ! KK 2000, Marshall-Palmer (1948) value.
+        IF ( local_kk ) THEN
 
-!        DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308.0
-!       Found that above is not valid on most compilers -dschanen
-        DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308
+           IF ( rcm > 0.0 .AND. Ncm > 0.0 ) THEN
 
-        ! Make function D_fnc results a Double Precision number.
-        !DOUBLE PRECISION:: D_fnc
-
-        ! Function call
-!        REAL:: G_t_p
-
-        tmpl_pl =  thl_pl * ((press/p0)**kappa)
-
-        tmp_pl = tmpl_pl + (Lv/Cp)*rc_pl
-
-        rsl_pl = rsat(press, tmpl_pl)
-
-        Beta_T = (Rd/Rv) * ( Lv/(Rd*tmpl_pl) ) * ( Lv/(Cp*tmpl_pl) )
-
-        ! The following IF statement is for a normal situation where
-        ! there is variance in liquid water, meaning that ss > 0.
-        ! This is Larson's eq. number 46.
-
-
-        ! Vince Larson skipped IF to simplify subroutine.  3 May 2005.  
-        ! Then only the final ELSEIF and below is called.
-!        IF (ss > 0.0) THEN
-        IF (-1.0 > 0.0) THEN
-
-           scc = (s/ss) + corr_rcrr_G*beta_exp*SQRT(sig2_rr_G)
-     .                  + corr_rcNr_G*gamma_exp*SQRT(sig2_Nr_G)
-
-           Dv_order = -alpha_exp - 1.0
-
-           test = D_fnc( Dv_order, scc )
-
-
-           ! The following if statement makes sure that the result
-           ! of the Parabolic Cylinder function falls within the range
-           ! of a Double Precision number for the given alpha and scc.
-
-           IF ( test >= 0.0d0 .AND. test < limit ) THEN
-
-              gamma_in = alpha_exp + 1.0
-              gamma_out = GAMMA( gamma_in )
-!              CALL GAMMA( gamma_in, gamma_out )
-
-              NLL_PDF = 
-                 ! Factor 1
-     .           3.0 * C_evap * G_t_p(tmp_pl, press)
-     .           * ( ((4.0*pi*rho_lw)/3.0)**(2.0/3.0) )
-     .           * ( (1.0 + Beta_T*rsl_pl)/rsl_pl )
-                 ! Factor 2
-     .           * (1.0/SQRT(2.0*pi))*(-ss**alpha_exp)
-     .           * EXP(beta_exp*u_rr_G + gamma_exp*u_Nr_G)
-                 ! Factor 3
-     .           * EXP( (1.0/2.0) * (
-     .              (1.0 - corr_rcrr_G**2)*(beta_exp**2)*sig2_rr_G
-     .            + (1.0 - corr_rcNr_G**2)*(gamma_exp**2)*sig2_Nr_G
-     .            + 2.0*(corr_rrNr_G - corr_rcNr_G*corr_rcrr_G)
-     .              *beta_exp*SQRT(sig2_rr_G)*gamma_exp*SQRT(sig2_Nr_G)
-     .                              )     )
-                 ! Factor 4 
-     .            * EXP( (1.0/4.0)*scc**2 - (1.0/2.0)*(s/ss)*scc )
-     .            * gamma_out * D_fnc( Dv_order, scc )
-
-
-           ! The following ELSEIF statement is for a situation where there
-           ! is such small variance (ss) that the result of the Parabolic
-           ! Cylinder function (D_fnc) is higher than can be represented
-           ! by a Double Precision number.  Therefore, it is treated as a 
-           ! spike with ss = 0.  This is Larson's eq. number 45.
-           ! Also, for this particular situation, s must be less than 0, 
-           ! meaning that the air is subsaturated and evaporation occurs.
-           ! If this is not the case, then the air would be saturated or 
-           ! supersaturated and condensation would occur.  However, the HOC
-           ! code requires that all supersaturation be removed from the air
-           ! and made into cloud water.  None of it is left for rain water
-           ! condensation and therefore we must make this factor 0 if 
-           ! a saturation or a supersaturation is present. 
-
-           ELSEIF (s < 0.0) THEN
-
-              NLL_PDF = 
-                 ! Factor 1
-     .           3.0 * C_evap * G_t_p(tmp_pl, press)
-     .           * ( ((4.0*pi*rho_lw)/3.0)**(2.0/3.0) )
-     .           * ( (1.0 + Beta_T*rsl_pl)/rsl_pl )
-                 ! Factor 2
-     .           * (s**alpha_exp)
-     .           * EXP(beta_exp*u_rr_G + gamma_exp*u_Nr_G)
-                 ! Factor 3
-     .           * EXP( (1.0/2.0) * (
-     .              (1.0 - corr_rcrr_G**2)*(beta_exp**2)*sig2_rr_G
-     .            + (1.0 - corr_rcNr_G**2)*(gamma_exp**2)*sig2_Nr_G
-     .            + 2.0*(corr_rrNr_G - corr_rcNr_G*corr_rcrr_G)
-     .              *beta_exp*SQRT(sig2_rr_G)*gamma_exp*SQRT(sig2_Nr_G)
-     .                              )     )
-
-
-           ! The following ELSE statement is for a situation where 
-           ! s >= 0 and ss = 0, which means no clear air.  Therefore,
-           ! no evaporation can occur.
+              autoconv_rrm_2 = 7.4188E13 * rcm**2.47 * Ncm**-1.79
 
            ELSE
 
-              NLL_PDF = 0.0
+              ! If either rcm or Ncm are 0.
+              autoconv_rrm_2 = 0.0
 
            ENDIF
 
+        ELSEIF ( .NOT. local_kk ) THEN
 
-        ! The following ELSEIF statement is for a situation where there
-        ! is no variance (ss) so that the result of the Parabolic
-        ! Cylinder function (D_fnc) is infinite.  Therefore, it is a 
-        ! spike with ss = 0.  This is Larson's eq. number 45.
-        ! Also, for this particular situation, s must be less than 0, 
-        ! meaning that the air is subsaturated and evaporation occurs.
-        ! If this is not the case, then the air would be saturated or 
-        ! supersaturated and condensation would occur.  However, the HOC
-        ! code requires that all supersaturation be removed from the air
-        ! and made into cloud water.  None of it is left for rain water
-        ! condensation and therefore we must make this factor 0 if 
-        ! a saturation or a supersaturation is present. 
+           IF ( rcm > 0.0 .AND. Ncm > 0.0 ) THEN
 
-        ELSEIF (s < 0.0) THEN
+              ! Exponents on Y1 and Y2, respectively.
+              alpha_exp = 2.47
+              beta_exp  = -1.79
 
-           NLL_PDF = 
-              ! Factor 1
-     .        3.0 * C_evap * G_t_p(tmp_pl, press)
-     .        * ( ((4.0*pi*rho_lw)/3.0)**(2.0/3.0) )
-     .        * ( (1.0 + Beta_T*rsl_pl)/rsl_pl )
-              ! Factor 2
-     .        * (s**alpha_exp)
-     .        * EXP(beta_exp*u_rr_G + gamma_exp*u_Nr_G)
-              ! Factor 3
-     .        * EXP( (1.0/2.0) * (
-     .           (1.0 - corr_rcrr_G**2)*(beta_exp**2)*sig2_rr_G
-     .         + (1.0 - corr_rcNr_G**2)*(gamma_exp**2)*sig2_Nr_G
-     .         + 2.0*(corr_rrNr_G - corr_rcNr_G*corr_rcrr_G)
-     .           *beta_exp*SQRT(sig2_rr_G)*gamma_exp*SQRT(sig2_Nr_G)
-     .                           )     )
+              ! Y1 is a truncated double Gaussian.
+              muY1_1 = s1
+              sigmaY1_1 = ss1
+              muY1_2 = s2
+              sigmaY1_2 = ss2
 
-        ! The following ELSE statement is for a situation where 
-        ! s >= 0 and ss = 0, which means no clear air.  Therefore,
-        ! no evaporation can occur.
+              ! Y2 is distributed Lognormally.
+              muY2 = (Ncm/rhot)
+!              sigmaY2 = SQRT(Ncp2)
+              sigmaY2 = (Ncm/rhot) * SQRT(Ncp2_Ncm2)  ! Nc'2/Ncm^2 = 0.07
 
-        ELSE   ! No clear air
+              ! Correlations.
+              corrY1Y2 = corr_rcNc_NL  ! corr_rcNc_NL =  0.45
 
-           NLL_PDF = 0.0
+              autoconv_rrm_2 = 7.4188E13 * rhot**-1.79 * (
+     .             ( a ) 
+     .           * PDF_BIVAR_2G_LN( muY1_1, muY2, sigmaY1_1, sigmaY2,
+     .                              corrY1Y2, alpha_exp, beta_exp )
+     .         +   (1-a)
+     .           * PDF_BIVAR_2G_LN( muY1_2, muY2, sigmaY1_2, sigmaY2,
+     .                              corrY1Y2, alpha_exp, beta_exp )
+     .                                                   )
+
+           ELSE
+
+              ! If either rcm or Ncm are 0.
+              autoconv_rrm_2 = 0.0
+
+           ENDIF
 
         ENDIF
 
         RETURN
-        END FUNCTION NLL_PDF
 
-!------------------------------------------------------------------------
+        END FUNCTION autoconv_rrm_2
 
-        FUNCTION G_t_p( Temp, press )
+!===============================================================================
+
+        FUNCTION autoconv_Nrm(auto_rrm, rhot)
+
+        USE constants
+
+        IMPLICIT NONE
+
+        REAL, INTENT(IN):: auto_rrm, rhot
+        REAL:: autoconv_Nrm
+
+! Vince Larson set r_0=28mum to agree with COAMPS-LES formula. 15 April 2005
+        REAL, PARAMETER:: r_0 = 25.0e-6   ! Assumed radius of all new drops; m.
+                                          ! Value specified in KK (2000); p. 235.
+!        REAL, PARAMETER:: r_0 = 28.0e-6   ! Assumed radius of all new drops; m.
+                                          ! Value that COAMPS LES has in it.
+!        REAL, PARAMETER:: r_0 = 30.0e-6   ! Assumed radius of all new drops; m.
+                                          ! Khairoutdinov said it was okay!
+! End Vince Larson's change.
+
+        autoconv_Nrm = auto_rrm /
+     .                 ( ((4.0*pi*rho_lw)/(3.0*rhot)) * (r_0**3) )
+
+        RETURN
+        END FUNCTION autoconv_Nrm
+
+!===============================================================================
+        !
+        ! FUNCTION accretion_rrm_2
+        !-----------------------------------------------------------------------
+        !
+        ! DESCRIPTION
+        !------------
+        !
+        ! This function calculates the accretion of rain water based on
+        ! Khairoutdinov and Kogan (2000) equation 33. That equation is:
+        !
+        ! (drr/dt)accr = 67 * (rc*rr)^1.15
+        !
+        ! the equation becomes:
+        !
+        ! (drr/dt)accr = 67 * rc^1.15 * rr^1.15
+        !
+        ! This turns into:
+        !
+        ! (drr/dt)accr = 67 * rc^alpha * rr^beta
+        !
+        ! where alpha = 1.15 and beta = 1.15
+        !
+        ! s (extended liquid water specific humidity) is equal to rc anywhere
+        ! that rc is greater than 0.
+        ! 
+        ! (drr/dt)accr = 67 * s^alpha * rr^beta
+        !
+        ! When applied to a Probability Density Function (PDF), it becomes:
+        !
+        ! (drr/dt)accr = 67 * Y1^alpha * Y2^beta
+        !
+        ! Y1 is used for s.  It is distributed as a double Gaussian with a
+        ! domain from zero to infinity.  It is truncated at zero because we 
+        ! are only interested in cases where there is cloud water.
+        ! Y2 is used for rr.  It is distributed as a log-normal with a
+        ! domain from zero to infinity.
+        !
+        ! Notes:  For our code using the local version, we use KK(2000)
+        !         equation 33 exactly, as listed above.  We do not mess around
+        !         with changing anything.
+        !
+        ! Brian Griffin.  November 14, 2006.
+        !
+        !-----------------------------------------------------------------------
+        
+        FUNCTION accretion_rrm_2( rcm, rrm, s1, ss1, s2, ss2, a )
+
+        USE constants
+        USE model_flags
+
+        ! Input variables.
+        REAL, INTENT(IN):: rcm    ! Grid-box average rcm
+!        REAL, INTENT(IN):: rcp2   ! Grid-box rc variance
+        REAL, INTENT(IN):: rrm    ! Grid-box average rrm
+!        REAL, INTENT(IN):: rrp2   ! Grid-box rr variance
+        REAL, INTENT(IN):: s1     ! Plume 1 average s
+        REAL, INTENT(IN):: ss1    ! Plume 1 sigma s1 (not sigma^2 s1)
+        REAL, INTENT(IN):: s2     ! Plume 2 average s
+        REAL, INTENT(IN):: ss2    ! Plume 2 sigma s2 (not sigma^2 s2)
+        REAL, INTENT(IN):: a      ! Relative weight of each individual
+                                  ! Gaussian "plume."
+
+        ! Output variables.
+        REAL:: accretion_rrm_2
+
+        ! Exponential terms.
+        REAL:: alpha_exp  ! Exponent of Y1
+        REAL:: beta_exp   ! Exponent of Y2
+
+        ! Original terms.
+        REAL:: muY1_1     ! Plume 1 average of Y1
+        REAL:: sigmaY1_1  ! Plume 1 standard deviation of Y1
+        REAL:: muY1_2     ! Plume 2 average of Y1
+        REAL:: sigmaY1_2  ! Plume 2 standard deviation of Y1
+        REAL:: muY2       ! Grid-box average of Y2
+        REAL:: sigmaY2    ! Grid-box standard deviation of Y2
+        REAL:: corrY1Y2   ! Correlation of Y1 and Y2
+
+        REAL, PARAMETER:: rrp2_rrm2 = 1.2
+        REAL, PARAMETER:: corr_rcrr_NL =  0.10
+
+!-------------------------------------------------------------------------------
+
+        IF ( local_kk ) THEN
+
+           IF ( rcm > 0.0 .AND. rrm > 0.0 ) THEN
+
+              accretion_rrm_2 = 67.0 * (rcm*rrm)**1.15
+
+           ELSE
+
+              ! If either rcm or rrm are 0.
+              accretion_rrm_2 = 0.0
+
+           ENDIF
+
+        ELSEIF ( .NOT. local_kk ) THEN
+
+           IF ( rcm > 0.0 .AND. rrm > 0.0 ) THEN
+
+              ! Exponents on Y1 and Y2, respectively.
+              alpha_exp = 1.15
+              beta_exp  = 1.15
+
+              ! Y1 is a truncated double Gaussian.
+              muY1_1 = s1
+              sigmaY1_1 = ss1
+              muY1_2 = s2
+              sigmaY1_2 = ss2
+
+              ! Y2 is distributed Lognormally.
+              muY2 = rrm
+!              sigmaY2 = SQRT(rrp2)
+              sigmaY2 = rrm * SQRT(rrp2_rrm2)  ! rr'2/rrm^2 = 1.2
+
+              ! Correlations.
+              corrY1Y2 = corr_rcrr_NL  ! corr_rcrr_NL =  0.10
+
+              accretion_rrm_2 = 67.0 * (
+     .             ( a ) 
+     .           * PDF_BIVAR_2G_LN( muY1_1, muY2, sigmaY1_1, sigmaY2,
+     .                              corrY1Y2, alpha_exp, beta_exp )
+     .         +   (1-a)
+     .           * PDF_BIVAR_2G_LN( muY1_2, muY2, sigmaY1_2, sigmaY2,
+     .                              corrY1Y2, alpha_exp, beta_exp )
+     .                                 )
+
+           ELSE
+
+              ! If either rcm or rrm are 0.
+              accretion_rrm_2 = 0.0
+
+           ENDIF
+
+        ENDIF
+
+        RETURN
+
+        END FUNCTION accretion_rrm_2
+
+!===============================================================================
+        !
+        ! FUNCTION PDF_TRIVAR_2G_LN_LN
+        !-----------------------------------------------------------------------
+        !
+        ! DESCRIPTION
+        !------------
+        !
+        ! TRIVARIATE DOUBLE GAUSSIAN -- LOG-NORMAL -- LOG-NORMAL PDF
+        !
+        ! This function helps solve for the expression:
+        !
+        ! overbar{ Y1^alpha Y2^beta Y3^gamma }; where:
+        !
+        ! Y1 is distributed as a Double Gaussian with a domain from negative
+        ! infinity to zero.
+        ! Y2 is distributed as Log-normal with a domain from zero to infinity.
+        ! Y3 is distributed as Log-normal with a domain from zero to infinity.
+        !
+        ! Y1, Y2, and Y3 are then transformed into X1, X2, and X3 respectively.
+        !
+        ! X1 is distributed as a Double Gaussian with a domain from negative
+        ! infinity to zero.  X1 = Y1
+        ! X2 is distributed as Normal (Gaussian) with a domain from negative
+        ! infinity to infinity.  X2 = LN( Y2 )
+        ! X3 is distributed as Normal (Gaussian) with a domain from negative
+        ! infinity to infinity.  X3 = LN( Y3 )
+        !
+        ! The resulting equation that needs to be solved for is:
+        !
+        ! overbar{ Y1^alpha Y2^beta Y3^gamma } =
+        ! INT(-inf:0) INT(-inf:inf) INT(-inf:inf)
+        !             X1^alpha exp( beta*X2 + gamma*X3 ) P(X1,X2,X3) dX3 dX2 dX1
+        !
+        ! since X1 is a double Gaussian, P(X1,X2,X3) =  ( a ) P_1(X1,X2,X3) 
+        !                                             + (1-a) P_2(X1,X2,X3)
+        !
+        ! where "a" is a constant and is the relative weight of each individual
+        ! Gaussian.
+        !
+        ! P_1(X1,X2,X3) and P_2(X1,X2,X3) are simply the equation for a
+        ! Trivariate Gaussian Distribution.  The only difference between the
+        ! two is the dependence on each individual plume for the plume average
+        ! and plume variance for the X1 variable.
+        !
+        ! The Probability Density Function for a Trivariate Normal Distribution:
+        !
+        ! P_i(X1,X2,X3) = 
+        !
+        ! 1 /
+        !     {
+        !       (2*PI)^(3/2) * sigmaX1i * sigmaX2 * sigmaX3 
+        !       * SQRT[ 1 - ( corrX1X2^2 + corrX1X3^2 + corrX2X3^2 ) 
+        !                 + 2*corrX1X2*corrX1X3*corrX2X3 ]
+        !     }
+        ! * EXP{ -(1/2) * phi }
+        !
+        ! where,
+        !
+        ! phi =
+        !
+        ! 1 /
+        !     [
+        !       1 - ( corrX1X2^2 + corrX1X3^2 + corrX2X3^2 ) 
+        !         + 2*corrX1X2*corrX1X3*corrX2X3
+        !     ]
+        ! * {
+        !       [ (1-corrX2X3^2) / sigmaX1i^2 ] * ( X1i - muX1i )^2
+        !     + [ (1-corrX1X3^2) / sigmaX2^2 ] * ( X2 - muX2 )^2
+        !     + [ (1-corrX1X2^2) / sigmaX3^2 ] * ( X3 - muX3 )^2
+        !     + [ 2*(corrX1X3*corrX2X3-corrX1X2) / (sigmaX1i*sigmaX2) ]
+        !       * ( X1i - muX1i ) * ( X2 - muX2 )
+        !     + [ 2*(corrX1X2*corrX2X3-corrX1X3) / (sigmaX1i*sigmaX3) ]
+        !       * ( X1i - muX1i ) * ( X3 - muX3 )
+        !     + [ 2*(corrX1X2*corrX1X3-corrX2X3) / (sigmaX2*sigmaX3) ]
+        !       * ( X2 - muX2 ) * ( X3 - muX3 )
+        !   }
+        !
+        ! Definitions:
+        !
+        ! muX1i:  The plume average of the X1 (or Y1) variable.
+        ! muX2:  The average of the X2 (or ln Y2) variable.
+        ! muX3:  The average of the X3 (or ln Y3) variable.
+        !
+        ! sigmaX1i:  The plume standard deviation (square-root of variance)
+        !            of the X1 (or Y1) variable.
+        ! sigmaX2:  The standard deviation (square-root of variance) of the
+        !           X2 (or ln Y2) variable.
+        ! sigmaX3:  The standard deviation (square-root of variance) of the 
+        !           X3 (or ln Y3) variable.
+        !
+        ! corrX1X2:  Intra-Gaussian correlation between X1 and X2 (or between
+        !            Y1 and ln Y2).
+        ! corrX1X3:  Intra-Gaussian correlation between X1 and X3 (or between
+        !            Y1 and ln Y3).
+        ! corrX2X3:  Intra-Gaussian correlation between X2 and X3 (or between
+        !            ln Y2 and ln Y3).
+        !
+        ! After careful (and long) triple-integration of the above equation,
+        ! one gets the result for each plume of the trivariate normal
+        ! -- log-normal -- log-normal equation.
+        !
+        ! The result for each plume is (Equation #1):
+        !
+        !   [ 1 / SQRT(2*PI) ] * ( -sigmaX1i )^alpha 
+        ! * EXP{ muX2*beta + muX3*gamma }
+        ! * EXP{ (1/2) * [  (1-corrX1X2^2)*sigmaX2^2*beta^2 
+        !                 + (1-corrX1X3^2)*sigmaX3^2*gamma^2 
+        !                 + 2*(corrX2X3-corrX1X2*corrX1X3)
+        !                    *sigmaX2*beta*sigmaX3*gamma
+        !                ]
+        !      }
+        ! * EXP{  (1/4) * [  ( muX1i / sigmaX1i ) 
+        !                  + corrX1X2*sigmaX2*beta
+        !                  + corrX1X3*sigmaX3*gamma
+        !                 ]^2
+        !       - ( muX1i / sigmaX1i ) *
+        !                 [  ( muX1i / sigmaX1i ) 
+        !                  + corrX1X2*sigmaX2*beta
+        !                  + corrX1X3*sigmaX3*gamma
+        !                 ]
+        !       + (1/2) * ( muX1i^2 / sigmaX1i^2 )
+        !      }
+        ! * GAMMA_FNC { alpha + 1 }
+        ! * PARAB_CYL_FNC_[-(alpha+1)] {  ( muX1i / sigmaX1i ) 
+        !                               + corrX1X2*sigmaX2*beta
+        !                               + corrX1X3*sigmaX3*gamma
+        !                              }
+        !
+        ! The sum of the weighted results for each plume give us the answer for:
+        !
+        ! overbar{ Y1^alpha Y2^beta Y3^gamma }
+        !
+        ! The purpose of this function is to give results for each plume.
+        !
+        ! Brian Griffin.  November 4, 2006.
+        !
+        !-----------------------------------------------------------------------
+        !
+        ! NOTE -- special case if sigmaX1i = 0
+        ! ------------------------------------
+        !
+        ! The equation above is only a valid answer if sigmaX1i is not equal
+        ! to 0.  The only variable that can be found in the denominator of any
+        ! term or factor of the equation is sigmaX1i.  This is also the only
+        ! case where the equation above is not a valid answer.
+        !
+        ! When sigmaX1i = 0, the Gaussian for X1i becomes a "spike" at muX1i
+        ! with no variance.  This is also known as a Delta function.  The
+        ! domain of X1i is from negative infinity to zero.  If sigmaX1i = 0
+        ! and muX1i >= 0, then the entire Gaussian lies outside the domain,
+        ! and the result is 0 for that individual plume.
+        !
+        ! However, if sigmaX1i = 0 and muX1i < 0, then the entire Gaussian
+        ! lies within the domain.  A close approximation for the parabolic
+        ! cylinder function is made.
+        !
+        ! The result for each plume is (Equation #2):
+        !
+        !   ( muX1i )^alpha 
+        ! * EXP{ muX2*beta + muX3*gamma }
+        ! * EXP{ (1/2) * [  (1-corrX1X2^2)*sigmaX2^2*beta^2 
+        !                 + (1-corrX1X3^2)*sigmaX3^2*gamma^2 
+        !                 + 2*(corrX2X3-corrX1X2*corrX1X3)
+        !                    *sigmaX2*beta*sigmaX3*gamma
+        !                ]
+        !      }
+        !
+        ! One also needs to note an issue with numerical error.  If sigmaX1i
+        ! is very small, but not quite 0, one would still be able to compute
+        ! the answer mathematically using the equation for sigmaX1i /= 0.
+        ! However, ( muX1i / sigmaX1i ) becomes very large.  If it becomes
+        ! large enough, the result of the parabolic cylinder function becomes
+        ! greater than the computer can represent.  The greatest value that
+        ! can be represented by a DOUBLE PRECISION variable is of the order
+        ! of 10^308.  Therefore, a sufficiently small sigmaX1i must be treated
+        ! the same as if sigmaX1i = 0.  A test is needed to determine if the
+        ! computer can represent the number or not.
+        !
+        ! In Summary:
+        ! 
+        ! When sigmaX1i /= 0 (or is not sufficiently small):  Equation #1
+        ! When sigmaX1i = 0 (or is sufficiently small)
+        !                                     and muX1i < 0:  Equation #2
+        ! When sigmaX1i = 0 (or is sufficiently small)
+        !                                    and muX1i >= 0:  0
+        !
+        ! In Equation #1, the factor ( -sigmaX1i )^alpha restricts the value
+        ! of alpha so that the factor does not become one of an i-term.
+        ! Ex: alpha = (1/2) is not allowed.  alpha = 1 is fine.
+        !
+        ! Brian Griffin.  November 10, 2006.
+        !
+        !-----------------------------------------------------------------------
+
+
+        FUNCTION PDF_TRIVAR_2G_LN_LN ( muY1i, muY2, muY3,
+     .                                 sigmaY1i, sigmaY2, sigmaY3,
+     .                                 corrY1Y2, corrY1Y3, corrY2Y3,
+     .                                 alpha_exp, beta_exp, gamma_exp )
+
+        USE constants
+        USE polpak_gamma, ONLY: gamma
+
+        IMPLICIT NONE
+
+        ! Input variables.
+        REAL, INTENT(IN):: muY1i     ! Plume average of Y1
+        REAL, INTENT(IN):: muY2      ! Average of Y2
+        REAL, INTENT(IN):: muY3      ! Average of Y3
+        REAL, INTENT(IN):: sigmaY1i  ! Plume standard deviation of Y1
+        REAL, INTENT(IN):: sigmaY2   ! Standard deviation of Y2
+        REAL, INTENT(IN):: sigmaY3   ! Standard deviation of Y3
+        REAL, INTENT(IN):: corrY1Y2  ! Intra-Gaussian correlation between Y1,Y2
+        REAL, INTENT(IN):: corrY1Y3  ! Intra-Gaussian correlation between Y1,Y3
+        REAL, INTENT(IN):: corrY2Y3  ! Intra-Gaussian correlation between Y2,Y3
+        REAL, INTENT(IN):: alpha_exp ! Exponent associated with Y1 variable.
+        REAL, INTENT(IN):: beta_exp  ! Exponent associated with Y2 variable.
+        REAL, INTENT(IN):: gamma_exp ! Exponent associated with Y3 variable.
+        
+        ! Output variable.
+        REAL:: PDF_TRIVAR_2G_LN_LN
+
+        ! Local variables.
+
+        ! "Y" variables Gaussianized and coverted to "X" variables.
+        REAL:: muX1i     ! Plume average of X1
+        REAL:: muX2      ! Average of X2
+        REAL:: muX3      ! Average of X3
+        REAL:: sigmaX1i  ! Plume standard deviation of X1
+        REAL:: sigmaX2   ! Standard deviation of X2
+        REAL:: sigmaX3   ! Standard deviation of X3
+        REAL:: corrX1X2  ! Intra-Gaussian correlation between X1,X2
+        REAL:: corrX1X3  ! Intra-Gaussian correlation between X1,X3
+        REAL:: corrX2X3  ! Intra-Gaussian correlation between X2,X3
+
+        DOUBLE PRECISION:: gamma_fnc_input
+        DOUBLE PRECISION:: parab_cyl_fnc_ord
+        DOUBLE PRECISION:: parab_cyl_fnc_input
+        DOUBLE PRECISION:: test
+        LOGICAL:: use_eq_1
+!        DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308.0
+!       Found that above is not valid on most compilers -dschanen
+        DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308
+
+        !----- Section #1 ------------------------------------------------------
+
+        !!!!!!!!!! Convert all means, standard deviations, and correlations
+        !!!!!!!!!! to Gaussian terms.
+
+        ! Y1i is a truncated double Gaussian.
+        ! Therefore, X1i is still a truncated double Gaussian.
+        ! It does not change.
+        muX1i = muY1i
+        sigmaX1i = sigmaY1i
+
+        ! Y2 is a Lognormal.  It is converted to X2, which is a Gaussian.
+        ! X2 = ln Y2
+        muX2 = LOG(  muY2 * (  1.0 
+     .                       + ( (sigmaY2**2.0) / (muY2**2.0) ) 
+     .                      )**(-1.0/2.0)
+     .            )
+        sigmaX2 = SQRT( LOG(  1.0 + ( (sigmaY2**2.0) / (muY2**2.0) ) )
+     .                )
+
+        ! Y3 is a Lognormal.  It is converted to X3, which is a Gaussian.
+        ! X3 = ln Y3
+        muX3 = LOG(  muY3 * (  1.0 
+     .                       + ( (sigmaY3**2.0) / (muY3**2.0) ) 
+     .                      )**(-1.0/2.0)
+     .            )
+        sigmaX3 = SQRT( LOG(  1.0 + ( (sigmaY3**2.0) / (muY3**2.0) ) )
+     .                )
+
+        !!! Intra-Gaussian correlations.
+
+        ! corrY1Y2 is a correlation between a Gaussian and a Log-normal.
+        ! It must be converted to corrX1X2, which is a correlation between
+        ! two Gaussians.
+        corrX1X2 = corrY1Y2 
+     .                   * SQRT( EXP(sigmaX2**2.0) - 1.0 ) / sigmaX2
+        ! corrY1Y3 is a correlation between a Gaussian and a Log-normal.
+        ! It must be converted to corrX1X3, which is a correlation between
+        ! two Gaussians.
+        corrX1X3 = corrY1Y3
+     .                   * SQRT( EXP(sigmaX3**2.0) - 1.0 ) / sigmaX3
+        ! corrY2Y3 is a correlation between two Log-normals.  It must be 
+        ! converted to corrX2X3, which is a correlation between two Gaussians.
+        corrX2X3 = LOG( 1.0 + corrY2Y3
+     .                             * SQRT( EXP(sigmaX2**2.0) - 1.0 )
+     .                             * SQRT( EXP(sigmaX3**2.0) - 1.0 )
+     .                ) / ( sigmaX2 * sigmaX3 )
+
+        !----- Section #2 ------------------------------------------------------
+
+        !!!!!!!!!! Use the appropriate equation and solve.
+
+        ! Initialize logical to false.
+        use_eq_1 = .false.
+
+        ! Input to the gamma function.
+        gamma_fnc_input = alpha_exp + 1.0
+
+        ! Order of the parabolic cylinder function.
+        parab_cyl_fnc_ord = - ( alpha_exp + 1.0 )
+
+        ! Input to the parabolic cylinder function.
+        parab_cyl_fnc_input =  (muX1i/sigmaX1i)
+     .                       + corrX1X2*sigmaX2*beta_exp 
+     .                       + corrX1X3*sigmaX3*gamma_exp
+
+        ! If sigmaX1i = 0, then equation #1 cannot be used.
+        IF (sigmaX1i == 0.0 ) THEN
+           use_eq_1 = .false.
+        ELSE
+           ! Test to see whether the value of sigmaX1i is sufficiently small
+           ! enough to cause the parabolic cylinder function to produce a
+           ! result to large to be represented numerically by the computer.
+           test = D_fnc( parab_cyl_fnc_ord, parab_cyl_fnc_input )
+
+           IF ( test >= 0.0d0 .AND. test < limit ) THEN
+              use_eq_1 = .true.
+           ELSE
+              use_eq_1 = .false.
+           ENDIF
+
+        ENDIF
+
+
+        IF ( use_eq_1 == .true.) THEN
+
+           ! Case where sigmaX1i is not equal to 0 (and sigmaX1i is not
+           ! sufficiently small enough to cause the parabolic cylinder function
+           ! to produce a result greater than what the computer can represent 
+           ! numerically).
+
+           PDF_TRIVAR_2G_LN_LN =
+     .       (1.0/SQRT(2.0*pi)) * (-sigmaX1i)**alpha_exp 
+     .     * EXP( muX2*beta_exp + muX3*gamma_exp )
+     .     * EXP( (1.0/2.0) * (
+     .                            ( 1.0 - corrX1X2**2.0 )
+     .                           *(sigmaX2**2.0)*(beta_exp**2.0)
+     .                         +  ( 1.0 - corrX1X3**2.0 )
+     .                           *(sigmaX3**2.0)*(gamma_exp**2.0)
+     .                         + 2.0*( corrX2X3 - corrX1X2*corrX1X3 )
+     .                              *sigmaX2*beta_exp*sigmaX3*gamma_exp
+     .                        )
+     .          )
+     .     * EXP(   (1.0/4.0) * (
+     .                             (muX1i/sigmaX1i)
+     .                           + corrX1X2*sigmaX2*beta_exp 
+     .                           + corrX1X3*sigmaX3*gamma_exp
+     .                          )**2.0
+     .            - (muX1i/sigmaX1i) * (
+     .                                    (muX1i/sigmaX1i)
+     .                                  + corrX1X2*sigmaX2*beta_exp 
+     .                                  + corrX1X3*sigmaX3*gamma_exp
+     .                                 )
+     .            + (1.0/2.0) * ( (muX1i**2.0) / (sigmaX1i**2.0) )
+     .          )
+     .     * GAMMA( gamma_fnc_input )
+     .     * D_fnc( parab_cyl_fnc_ord, parab_cyl_fnc_input )
+
+        ELSEIF ( use_eq_1 == .false. .AND. muX1i < 0.0 ) THEN
+
+           ! Case where sigmaX1i is equal to 0 (or sigmaX1i is sufficiently
+           ! small enough to cause the parabolic cylinder function to produce a
+           ! result greater than what the computer can represent numerically)
+           ! and muX1i is less than 0.
+
+           PDF_TRIVAR_2G_LN_LN =
+     .       (muX1i)**alpha_exp 
+     .     * EXP( muX2*beta_exp + muX3*gamma_exp )
+     .     * EXP( (1.0/2.0) * (
+     .                            ( 1.0 - corrX1X2**2.0 )
+     .                           *(sigmaX2**2.0)*(beta_exp**2.0)
+     .                         +  ( 1.0 - corrX1X3**2.0 )
+     .                           *(sigmaX3**2.0)*(gamma_exp**2.0)
+     .                         + 2.0*( corrX2X3 - corrX1X2*corrX1X3 )
+     .                              *sigmaX2*beta_exp*sigmaX3*gamma_exp
+     .                        )
+     .          )
+
+        ELSEIF ( use_eq_1 == .false. .AND. muX1i >=  0.0 ) THEN
+           ! Case where sigmaX1i is equal to 0 (or sigmaX1i is sufficiently
+           ! small enough to cause the parabolic cylinder function to produce a
+           ! result greater than what the computer can represent numerically)
+           ! and muX1i is greater than or equal to 0.
+
+           PDF_TRIVAR_2G_LN_LN = 0.0
+
+        ENDIF
+
+        RETURN
+
+        END FUNCTION PDF_TRIVAR_2G_LN_LN
+
+!===============================================================================
+        !
+        ! FUNCTION PDF_BIVAR_2G_LN
+        !-----------------------------------------------------------------------
+        !
+        ! DESCRIPTION
+        !------------
+        !
+        ! BIVARIATE DOUBLE GAUSSIAN -- LOG-NORMAL PDF
+        !
+        ! This function helps solve for the expression:
+        !
+        ! overbar{ Y1^alpha Y2^beta }; where:
+        !
+        ! Y1 is distributed as a Double Gaussian with a domain from zero to
+        ! infinity.
+        ! Y2 is distributed as Log-normal with a domain from zero to infinity.
+        !
+        ! Y1 and Y2 are then transformed into X1 and X2 respectively.
+        !
+        ! X1 is distributed as a Double Gaussian with a domain from zero to
+        ! infinity.  X1 = Y1
+        ! X2 is distributed as Normal (Gaussian) with a domain from negative
+        ! infinity to infinity.  X2 = LN( Y2 )
+        !
+        ! The resulting equation that needs to be solved for is:
+        !
+        ! overbar{ Y1^alpha Y2^beta } =
+        ! INT(0:inf) INT(-inf:inf)
+        !             X1^alpha exp( beta*X2 ) P(X1,X2) dX2 dX1
+        !
+        ! since X1 is a double Gaussian, P(X1,X2) =  ( a ) P_1(X1,X2) 
+        !                                          + (1-a) P_2(X1,X2)
+        !
+        ! where "a" is a constant and is the relative weight of each individual
+        ! Gaussian.
+        !
+        ! P_1(X1,X2) and P_2(X1,X2) are simply the equation for a
+        ! Bivariate Gaussian Distribution.  The only difference between the
+        ! two is the dependence on each individual plume for the plume average
+        ! and plume variance for the X1 variable.
+        !
+        ! The Probability Density Function for a Bivariate Normal Distribution:
+        !
+        ! P_i(X1,X2) = 
+        !
+        ! 1 / { 2 * PI * sigmaX1i * sigmaX2 * SQRT[ 1 - corrX1X2^2 ] }
+        ! * EXP{ -(1/2) * phi }
+        !
+        ! where,
+        !
+        ! phi =
+        !
+        ! 1 / [ 1 - corrX1X2^2 ]
+        ! * {
+        !       [ 1 / sigmaX1i^2 ] * ( X1i - muX1i )^2
+        !     + [ 1 / sigmaX2^2 ] * ( X2 - muX2 )^2
+        !     + [ 2*corrX1X2 / (sigmaX1i*sigmaX2) ]
+        !       * ( X1i - muX1i ) * ( X2 - muX2 )
+        !   }
+        !
+        ! Definitions:
+        !
+        ! muX1i:  The plume average of the X1 (or Y1) variable.
+        ! muX2:  The average of the X2 (or ln Y2) variable.
+        !
+        ! sigmaX1i:  The plume standard deviation (square-root of variance)
+        !            of the X1 (or Y1) variable.
+        ! sigmaX2:  The standard deviation (square-root of variance) of the
+        !           X2 (or ln Y2) variable.
+        !
+        ! corrX1X2:  Intra-Gaussian correlation between X1 and X2 (or between
+        !            Y1 and ln Y2).
+        !
+        ! After careful (and long) double-integration of the above equation,
+        ! one gets the result for each plume of the bivariate normal
+        ! -- log-normal equation.
+        !
+        ! The result for each plume is (Equation #1):
+        !
+        !   [ 1 / SQRT(2*PI) ] * ( sigmaX1i )^alpha 
+        ! * EXP{    muX2*beta + (1/2)*sigmaX2^2*beta^2
+        !        - (1/4) * [ ( muX1i / sigmaX1i ) + corrX1X2*sigmaX2*beta ]^2
+        !      }
+        ! * GAMMA_FNC { alpha + 1 }
+        ! * PARAB_CYL_FNC_[-(alpha+1)] { - [  ( muX1i / sigmaX1i )
+        !                                   + corrX1X2*sigmaX2*beta ]
+        !                              }
+        !
+        ! The sum of the weighted results for each plume give us the answer for:
+        !
+        ! overbar{ Y1^alpha Y2^beta }
+        !
+        ! The purpose of this function is to give results for each plume.
+        !
+        ! Brian Griffin.  November 10, 2006.
+        !
+        !-----------------------------------------------------------------------
+        !
+        ! NOTE -- special case if sigmaX1i = 0
+        ! ------------------------------------
+        !
+        ! The equation above is only a valid answer if sigmaX1i is not equal
+        ! to 0.  The only variable that can be found in the denominator of any
+        ! term or factor of the equation is sigmaX1i.  This is also the only
+        ! case where the equation above is not a valid answer.
+        !
+        ! When sigmaX1i = 0, the Gaussian for X1i becomes a "spike" at muX1i
+        ! with no variance.  This is also known as a Delta function.  The
+        ! domain of X1i is from zero to infinity.  If sigmaX1i = 0 and 
+        ! muX1i <= 0, then the entire Gaussian lies outside the domain,
+        ! and the result is 0 for that individual plume.
+        !
+        ! However, if sigmaX1i = 0 and muX1i > 0, then the entire Gaussian
+        ! lies within the domain.  A close approximation for the parabolic
+        ! cylinder function is made.
+        !
+        ! The result for each plume is (Equation #2):
+        !
+        ! ( muX1i )^alpha * EXP{ muX2*beta + (1/2)*sigmaX2^2*beta^2 }
+        !
+        ! One also needs to note an issue with numerical error.  If sigmaX1i
+        ! is very small, but not quite 0, one would still be able to compute
+        ! the answer mathematically using the equation for sigmaX1i /= 0.
+        ! However, ( muX1i / sigmaX1i ) becomes very large.  If it becomes
+        ! large enough, the result of the parabolic cylinder function becomes
+        ! greater than the computer can represent.  The greatest value that
+        ! can be represented by a DOUBLE PRECISION variable is of the order
+        ! of 10^308.  Therefore, a sufficiently small sigmaX1i must be treated
+        ! the same as if sigmaX1i = 0.  A test is needed to determine if the
+        ! computer can represent the number or not.
+        !
+        ! In Summary:
+        ! 
+        ! When sigmaX1i /= 0 (or is not sufficiently small):  Equation #1
+        ! When sigmaX1i = 0 (or is sufficiently small)
+        !                                     and muX1i > 0:  Equation #2
+        ! When sigmaX1i = 0 (or is sufficiently small)
+        !                                    and muX1i <= 0:  0
+        !
+        ! Brian Griffin.  November 10, 2006.
+        !
+        !-----------------------------------------------------------------------
+
+
+        FUNCTION PDF_BIVAR_2G_LN ( muY1i, muY2, sigmaY1i, sigmaY2,
+     .                             corrY1Y2, alpha_exp, beta_exp )
+
+        USE constants
+        USE polpak_gamma, ONLY: gamma
+
+        IMPLICIT NONE
+
+        ! Input variables.
+        REAL, INTENT(IN):: muY1i     ! Plume average of Y1
+        REAL, INTENT(IN):: muY2      ! Average of Y2
+        REAL, INTENT(IN):: sigmaY1i  ! Plume standard deviation of Y1
+        REAL, INTENT(IN):: sigmaY2   ! Standard deviation of Y2
+        REAL, INTENT(IN):: corrY1Y2  ! Intra-Gaussian correlation between Y1,Y2
+        REAL, INTENT(IN):: alpha_exp ! Exponent associated with Y1 variable.
+        REAL, INTENT(IN):: beta_exp  ! Exponent associated with Y2 variable.
+        
+        ! Output variable.
+        REAL:: PDF_BIVAR_2G_LN
+
+        ! Local variables.
+
+        ! "Y" variables Gaussianized and coverted to "X" variables.
+        REAL:: muX1i     ! Plume average of X1
+        REAL:: muX2      ! Average of X2
+        REAL:: sigmaX1i  ! Plume standard deviation of X1
+        REAL:: sigmaX2   ! Standard deviation of X2
+        REAL:: corrX1X2  ! Intra-Gaussian correlation between X1,X2
+
+        DOUBLE PRECISION:: gamma_fnc_input
+        DOUBLE PRECISION:: parab_cyl_fnc_ord
+        DOUBLE PRECISION:: parab_cyl_fnc_input
+        DOUBLE PRECISION:: test
+        LOGICAL:: use_eq_1
+!        DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308.0
+!       Found that above is not valid on most compilers -dschanen
+        DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308
+
+        !----- Section #1 ------------------------------------------------------
+
+        !!!!!!!!!! Convert all means, standard deviations, and correlations
+        !!!!!!!!!! to Gaussian terms.
+
+        ! Y1i is a truncated double Gaussian.
+        ! Therefore, X1i is still a truncated double Gaussian.
+        ! It does not change.
+        muX1i = muY1i
+        sigmaX1i = sigmaY1i
+
+        ! Y2 is a Lognormal.  It is converted to X2, which is a Gaussian.
+        ! X2 = ln Y2
+        muX2 = LOG(  muY2 * (  1.0 
+     .                       + ( (sigmaY2**2.0) / (muY2**2.0) ) 
+     .                      )**(-1.0/2.0)
+     .            )
+        sigmaX2 = SQRT( LOG(  1.0 + ( (sigmaY2**2.0) / (muY2**2.0) ) )
+     .                )
+
+        !!! Intra-Gaussian correlation.
+
+        ! corrY1Y2 is a correlation between a Gaussian and a Log-normal.
+        ! It must be converted to corrX1X2, which is a correlation between
+        ! two Gaussians.
+        corrX1X2 = corrY1Y2 
+     .                   * SQRT( EXP(sigmaX2**2.0) - 1.0 ) / sigmaX2
+
+        !----- Section #2 ------------------------------------------------------
+
+        !!!!!!!!!! Use the appropriate equation and solve.
+
+        ! Initialize logical to false.
+        use_eq_1 = .false.
+
+        ! Input to the gamma function.
+        gamma_fnc_input = alpha_exp + 1.0
+
+        ! Order of the parabolic cylinder function.
+        parab_cyl_fnc_ord = - ( alpha_exp + 1.0 )
+
+        ! Input to the parabolic cylinder function.
+        parab_cyl_fnc_input = - ( (muX1i/sigmaX1i)
+     .                           + corrX1X2*sigmaX2*beta_exp )
+
+        ! If sigmaX1i = 0, then equation #1 cannot be used.
+        IF (sigmaX1i == 0.0 ) THEN
+           use_eq_1 = .false.
+        ELSE
+           ! Test to see whether the value of sigmaX1i is sufficiently small
+           ! enough to cause the parabolic cylinder function to produce a
+           ! result to large to be represented numerically by the computer.
+           test = D_fnc( parab_cyl_fnc_ord, parab_cyl_fnc_input )
+
+           IF ( test >= 0.0d0 .AND. test < limit ) THEN
+              use_eq_1 = .true.
+           ELSE
+              use_eq_1 = .false.
+           ENDIF
+
+        ENDIF
+
+
+        IF ( use_eq_1 == .true.) THEN
+
+           ! Case where sigmaX1i is not equal to 0 (and sigmaX1i is not
+           ! sufficiently small enough to cause the parabolic cylinder function
+           ! to produce a result greater than what the computer can represent 
+           ! numerically).
+
+           PDF_BIVAR_2G_LN =
+     .       (1.0/SQRT(2.0*pi)) * (sigmaX1i)**alpha_exp 
+     .     * EXP(   muX2*beta_exp
+     .            + (1.0/2.0)*(sigmaX2**2.0)*(beta_exp**2.0)
+     .            - (1.0/4.0)*(  (muX1i/sigmaX1i)
+     .                         + corrX1X2*sigmaX2*beta_exp )**2.0
+     .          )
+     .     * GAMMA( gamma_fnc_input )
+     .     * D_fnc( parab_cyl_fnc_ord, parab_cyl_fnc_input )
+
+        ELSEIF ( use_eq_1 == .false. .AND. muX1i > 0.0 ) THEN
+
+           ! Case where sigmaX1i is equal to 0 (or sigmaX1i is sufficiently
+           ! small enough to cause the parabolic cylinder function to produce a
+           ! result greater than what the computer can represent numerically)
+           ! and muX1i is greater than 0.
+
+           PDF_BIVAR_2G_LN =
+     .       (muX1i)**alpha_exp 
+     .     * EXP(   muX2*beta_exp
+     .            + (1.0/2.0)*(sigmaX2**2.0)*(beta_exp**2.0) )
+
+        ELSEIF ( use_eq_1 == .false. .AND. muX1i <=  0.0 ) THEN
+           ! Case where sigmaX1i is equal to 0 (or sigmaX1i is sufficiently
+           ! small enough to cause the parabolic cylinder function to produce a
+           ! result greater than what the computer can represent numerically)
+           ! and muX1i is less than or equal to 0.
+
+           PDF_BIVAR_2G_LN = 0.0
+
+        ENDIF
+
+        RETURN
+
+        END FUNCTION PDF_BIVAR_2G_LN
+
+!===============================================================================
+        !
+        ! FUNCTION PDF_BIVAR_LN_LN
+        !-----------------------------------------------------------------------
+        !
+        ! DESCRIPTION
+        !------------
+        !
+        ! BIVARIATE LOG-NORMAL -- LOG-NORMAL PDF
+        !
+        ! This function helps solve for the expression:
+        !
+        ! overbar{ Y1^alpha Y2^beta }; where:
+        !
+        ! Y1 is distributed as Log-normal with a domain from zero to infinity.
+        ! Y2 is distributed as Log-normal with a domain from zero to infinity.
+        !
+        ! Y1 and Y2 are then transformed into X1 and X2 respectively.
+        !
+        ! X1 is distributed as Normal (Gaussian) with a domain from negative
+        ! infinity to infinity.  X1 = LN( Y1 )
+        ! X2 is distributed as Normal (Gaussian) with a domain from negative
+        ! infinity to infinity.  X2 = LN( Y2 )
+        !
+        ! The resulting equation that needs to be solved for is:
+        !
+        ! overbar{ Y1^alpha Y2^beta } =
+        ! INT(-inf:inf) INT(-inf:inf)
+        !             exp( alpha*X1 + beta*X2 ) P(X1,X2) dX2 dX1
+        !
+        ! P(X1,X2) is simply the equation for a Bivariate Gaussian Distribution.
+        !
+        ! The Probability Density Function for a Bivariate Normal Distribution:
+        !
+        ! P(X1,X2) = 
+        !
+        ! 1 / { 2 * PI * sigmaX1 * sigmaX2 * SQRT[ 1 - corrX1X2^2 ] }
+        ! * EXP{ -(1/2) * phi }
+        !
+        ! where,
+        !
+        ! phi =
+        !
+        ! 1 / [ 1 - corrX1X2^2 ]
+        ! * {
+        !       [ 1 / sigmaX1^2 ] * ( X1 - muX1 )^2
+        !     + [ 1 / sigmaX2^2 ] * ( X2 - muX2 )^2
+        !     + [ 2*corrX1X2 / (sigmaX1*sigmaX2) ]
+        !       * ( X1 - muX1 ) * ( X2 - muX2 )
+        !   }
+        !
+        ! Definitions:
+        !
+        ! muX1:  The average of the X1 (or ln Y1) variable.
+        ! muX2:  The average of the X2 (or ln Y2) variable.
+        !
+        ! sigmaX1:  The standard deviation (square-root of variance) of the
+        !           X1 (or ln Y1) variable.
+        ! sigmaX2:  The standard deviation (square-root of variance) of the
+        !           X2 (or ln Y2) variable.
+        !
+        ! corrX1X2:  Intra-Gaussian correlation between X1 and X2 (or between
+        !            ln Y1 and ln Y2).
+        !
+        ! After careful double-integration of the above equation, one gets the
+        ! result for each plume of the bivariate log-normal -- log-normal
+        ! equation.
+        !
+        ! The result is:
+        !
+        ! * EXP{    muX1*alpha + muX2*beta
+        !        + (1/2)*sigmaX1^2*alpha^2 + (1/2)*sigmaX2^2*beta^2
+        !        + corrX1X2*sigmaX1*alpha*sigmaX2*beta
+        !      }
+        !
+        ! The above equation gives us the answer for:
+        !
+        ! overbar{ Y1^alpha Y2^beta }
+        !
+        ! Brian Griffin.  November 14, 2006.
+        !
+        !-----------------------------------------------------------------------
+
+
+        FUNCTION PDF_BIVAR_LN_LN ( muY1, muY2, sigmaY1, sigmaY2,
+     .                             corrY1Y2, alpha_exp, beta_exp )
+
+        USE constants
+
+        IMPLICIT NONE
+
+        ! Input variables.
+        REAL, INTENT(IN):: muY1      ! Average of Y1
+        REAL, INTENT(IN):: muY2      ! Average of Y2
+        REAL, INTENT(IN):: sigmaY1   ! Standard deviation of Y1
+        REAL, INTENT(IN):: sigmaY2   ! Standard deviation of Y2
+        REAL, INTENT(IN):: corrY1Y2  ! Intra-Gaussian correlation between Y1,Y2
+        REAL, INTENT(IN):: alpha_exp ! Exponent associated with Y1 variable.
+        REAL, INTENT(IN):: beta_exp  ! Exponent associated with Y2 variable.
+        
+        ! Output variable.
+        REAL:: PDF_BIVAR_LN_LN
+
+        ! Local variables.
+
+        ! "Y" variables Gaussianized and coverted to "X" variables.
+        REAL:: muX1      ! Average of X1
+        REAL:: muX2      ! Average of X2
+        REAL:: sigmaX1   ! Standard deviation of X1
+        REAL:: sigmaX2   ! Standard deviation of X2
+        REAL:: corrX1X2  ! Intra-Gaussian correlation between X1,X2
+
+        !----- Section #1 ------------------------------------------------------
+
+        !!!!!!!!!! Convert all means, standard deviations, and correlations
+        !!!!!!!!!! to Gaussian terms.
+
+        ! Y1 is a Lognormal.  It is converted to X1, which is a Gaussian.
+        ! X1 = ln Y1
+        muX1 = LOG(  muY1 * (  1.0 
+     .                       + ( (sigmaY1**2.0) / (muY1**2.0) ) 
+     .                      )**(-1.0/2.0)
+     .            )
+        sigmaX1 = SQRT( LOG(  1.0 + ( (sigmaY1**2.0) / (muY1**2.0) ) )
+     .                )
+
+        ! Y2 is a Lognormal.  It is converted to X2, which is a Gaussian.
+        ! X2 = ln Y2
+        muX2 = LOG(  muY2 * (  1.0 
+     .                       + ( (sigmaY2**2.0) / (muY2**2.0) ) 
+     .                      )**(-1.0/2.0)
+     .            )
+        sigmaX2 = SQRT( LOG(  1.0 + ( (sigmaY2**2.0) / (muY2**2.0) ) )
+     .                )
+
+        !!! Intra-Gaussian correlation.
+        ! corrY1Y2 is a correlation between two Log-normals.  It must be 
+        ! converted to corrX1X2, which is a correlation between two Gaussians.
+        corrX1X2 = LOG( 1.0 + corrY1Y2
+     .                             * SQRT( EXP(sigmaX1**2.0) - 1.0 )
+     .                             * SQRT( EXP(sigmaX2**2.0) - 1.0 )
+     .                ) / ( sigmaX1 * sigmaX2 )
+
+        !----- Section #2 ------------------------------------------------------
+
+        !!!!!!!!!! Solve.
+
+        PDF_BIVAR_LN_LN =
+     .     EXP(   muX1*alpha_exp + muX2*beta_exp
+     .          + (1.0/2.0)*(sigmaX1**2.0)*(alpha_exp**2.0)
+     .          + (1.0/2.0)*(sigmaX2**2.0)*(beta_exp**2.0)
+     .          + corrX1X2*sigmaX1*alpha_exp*sigmaX2*beta_exp
+     .        )
+
+        RETURN
+
+        END FUNCTION PDF_BIVAR_LN_LN
+
+!===============================================================================
+
+        FUNCTION G_T_p( Temp, press )
 
         USE constants
 
@@ -1289,326 +2416,7 @@
         RETURN
         END FUNCTION G_t_p
 
-!------------------------------------------------------------------------
-
-        FUNCTION autoconv_rrm( rcm, Ncm, rhot,
-     .                         a, s1, s2, ss1, ss2, rc1, rc2 )
-        USE constants
-        USE model_flags
-
-        IMPLICIT NONE
-
-        REAL, INTENT(IN):: rcm, Ncm, rhot
-!        LOGICAL, INTENT(IN):: local_kk
-        REAL, INTENT(IN):: a, s1, s2, ss1, ss2, rc1, rc2
-        REAL:: autoconv_rrm
-
-        ! Single Normal-Lognormal PDF Variables.
-        REAL:: Ncm_kg
-        REAL:: Ncp2_Ncm2
-        REAL:: u_Nc_G, sig2_Nc_G
-        REAL:: corr_rcNc_G
-
-        ! corr_rcNc_L=0.45 agrees with DYCOMS II RF02 in cloud.
-        REAL, PARAMETER:: corr_rcNc_L = 0.45
-
-        ! Function call
-!        REAL:: NL_PDF
-
-        ! Change in rain water mixing ratio over time due to autoconversion.
-
-        IF (rcm > 0.0 .AND. Ncm > 0.0) THEN
-
-           IF ( local_kk ) THEN
-
-              ! Khairoutdinov and Kogan local formula
-              ! cloud droplet concentration converted to num/cm^3.
-
-              autoconv_rrm = 1350.0*(rcm**2.47)
-     .                      *((Ncm/1000000.0)**(-1.79))
-
-           ELSEIF ( .not. local_kk ) THEN
-
-              ! Larson's formulation for subgrid variability.
-              ! Note:  For this version the cloud droplet concentration
-              ! stays as num/m^3 and Larson has changed the value of the
-              ! coefficient.
-
-              Ncm_kg = Ncm/rhot
-
-              ! Ncp2_Ncm2=0.07 agrees with COAMPS DYCOMS2 RF02 (in cloud). 
-              Ncp2_Ncm2 = 0.07
-
-              u_Nc_G = LOG( Ncm_kg 
-     .                     * ((1.0 + Ncp2_Ncm2)**(-1.0/2.0)) )
-              sig2_Nc_G = LOG(1.0 + Ncp2_Ncm2)
-
-              corr_rcNc_G = corr_rcNc_L
-     .                     * ((EXP(sig2_Nc_G) - 1.0)**(1.0/2.0)) 
-     .                     / SQRT(sig2_Nc_G)
-
-              autoconv_rrm = 7.419E13 * (
-     .                       a    * NL_PDF(s1, ss1, 2.47, u_Nc_G, 
-     .                              sig2_Nc_G, -1.79, corr_rcNc_G, rc1)
-     .                  + (1.0-a) * NL_PDF(s2, ss2, 2.47, u_Nc_G, 
-     .                              sig2_Nc_G, -1.79, corr_rcNc_G, rc2)
-     .                                  )
-
-           ENDIF
-
-        ELSE
-
-           autoconv_rrm = 0.0
-
-        ENDIF
-
-        RETURN
-        END FUNCTION autoconv_rrm
-
-!------------------------------------------------------------------------
-
-        FUNCTION autoconv_Nrm(auto_rrm, rhot)
-
-        USE constants
-
-        IMPLICIT NONE
-
-        REAL, INTENT(IN):: auto_rrm, rhot
-        REAL:: autoconv_Nrm
-
-! Vince Larson set r_0=28mum to agree with COAMPS-LES formula. 15 April 2005
-        REAL, PARAMETER:: r_0 = 25.0e-6   ! Assumed radius of all new drops; m.
-                                          ! Value specified in KK (2000); p. 235.
-!        REAL, PARAMETER:: r_0 = 28.0e-6   ! Assumed radius of all new drops; m.
-                                          ! Value that COAMPS LES has in it.
-!        REAL, PARAMETER:: r_0 = 30.0e-6   ! Assumed radius of all new drops; m.
-                                          ! Khairoutdinov said it was okay!
-! End Vince Larson's change.
-
-        autoconv_Nrm = auto_rrm /
-     .                 ( ((4.0*pi*rho_lw)/(3.0*rhot)) * (r_0**3) )
-
-        RETURN
-        END FUNCTION autoconv_Nrm
-
-!------------------------------------------------------------------------
-
-        FUNCTION accretion_rrm( rcm, rrm,
-     .                          a, s1, s2, ss1, ss2, rc1, rc2 )
-
-        USE model_flags
-        USE constants
-
-        IMPLICIT NONE
-
-        REAL, INTENT(IN):: rcm, rrm
-!        LOGICAL, INTENT(IN):: local_kk
-        REAL, INTENT(IN):: a, s1, s2, ss1, ss2, rc1, rc2
-
-        REAL:: accretion_rrm
-
-        ! Single Normal-Lognormal PDF Variables.
-        REAL:: rrp2_rrm2
-        REAL:: u_rr_G, sig2_rr_G
-        REAL:: corr_rcrr_G
-
-        ! corr_rcrr_L = 0.35 agrees with DYCOMS II RF02 in cloud.
-        REAL, PARAMETER:: corr_rcrr_L = 0.35
-
-        ! Function call
-!        REAL:: NL_PDF
-
-        ! Change in rain water mixing ratio over time due to accretion.
-
-        IF (rcm > 0.0 .AND. rrm > 0.0) THEN
-
-           IF ( local_kk ) THEN
-
-              ! Khairoutdinov and Kogan local formula
-              accretion_rrm = 67.0*((rcm*rrm)**1.15)
-
-           ELSEIF ( .not. local_kk ) THEN
-
-              ! Larson's formulation for subgrid variability.
-
-              ! rrp2_rrm2=0.4 agrees with COAMPS DYCOMS2 RF02 in cloud.  
-!              rrp2_rrm2 = rcp2 / MAX(rcm**2, 1.0E-10)
-              rrp2_rrm2   = 0.4
-
-              u_rr_G      = LOG( rrm 
-     .                     * ((1.0 + rrp2_rrm2)**(-1.0/2.0)) )
-              sig2_rr_G   = LOG(1.0 + rrp2_rrm2)
-
-              corr_rcrr_G = corr_rcrr_L
-     .                     * ((EXP(sig2_rr_G) - 1.0)**(1.0/2.0)) 
-     .                     / SQRT(sig2_rr_G)
-
-              accretion_rrm = 67.0 * (
-     .                       a    * NL_PDF(s1, ss1, 1.15, u_rr_G, 
-     .                              sig2_rr_G, 1.15, corr_rcrr_G, rc1)
-     .                  + (1.0-a) * NL_PDF(s2, ss2, 1.15, u_rr_G, 
-     .                              sig2_rr_G, 1.15, corr_rcrr_G, rc2)
-     .                               )
-
-           ENDIF
-
-        ELSE
-
-           accretion_rrm = 0.0
-
-        ENDIF
-
-        RETURN
-        END FUNCTION accretion_rrm
-
-!------------------------------------------------------------------------
-
-        FUNCTION NL_PDF( s, ss, alpha_exp, u, sig2, 
-     .                   beta_exp, corr, rc_pl )
-
-        USE constants
-        use polpak_gamma, only: gamma
-
-        IMPLICIT NONE
-
-        REAL, INTENT(IN):: s, ss, alpha_exp, u, sig2
-        REAL, INTENT(IN):: beta_exp, corr, rc_pl
-        REAL:: NL_PDF
-
-        DOUBLE PRECISION:: sc, gamma_in, gamma_out, Dv_order, test
-
-!        DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308.0d0
-!       Found that above is not valid on most compilers -dschanen
-        DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308
-
-        ! Make function D_fnc results a Double Precision number.
-!        DOUBLE PRECISION:: D_fnc
-
-        ! DESCRIPTION
-        !
-        ! This function solves the equation for AUTO_NL or ACCR_NL,
-        ! which is:
-        !
-        ! ( (1/SQRT(2*pi))*(ss^alpha) )
-        ! * EXP( beta*u + (1/2)*(beta^2)*sig2 - (1/4)*sc^2 )
-        ! * GAMMA(alpha + 1.0) * D[order: -alpha - 1](-sc )
-        !
-        ! where: sc = (s/ss) + corr*beta*SQRT(sig2)
-        !
-        ! In a case where there is no variability in s throughout
-        ! the entire grid box, ss (sigma s) = 0.  In that case, sc
-        ! would be infinite.  This would give the parabolic cylinder
-        ! function and the EXP term both infinite values, and the 1st
-        ! term a 0 value, leading to an answer that could be anything.
-        ! Therefore, we have a special equation for this condition.
-        ! It is:
-        !
-        ! ( rc_pl**alpha ) * EXP( beta*u + (1.0/2.0)*(beta**2.0)*sig2 )
-        !
-        ! rc_pl is the liquid water mixing ratio for that specific plume.
-        ! s and rc_pl are the exact same parameter, except s can be negative
-        ! in order to represent a subsaturation.  In those cases, rc_pl is 0.
-        !
-        ! There is one more thing which further complicates this equation.
-        ! When the ratio of s to ss is very large (low, but not quite 0 
-        ! variability), the value of sc becomes large.  When the value of
-        ! sc becomes large and positive, taking the value of the parabolic
-        ! cylinder function of -sc results in a very large number.
-        ! Mathematically, this number is offset the 1st and 2nd terms of the 
-        ! equation.  Also mathematically, as the variability in s gets lower
-        ! and lower, the value of the 1st equation (the one with the Parabolic
-        ! Cylinder function) gets closer and closer to the value of the 2nd
-        ! equation (the one without the Parabolic Cylinder function). However,
-        ! the computer induces errors into these mathematical calculations due
-        ! to the fact that there is a limit to the size of the values that can
-        ! be represented.  If the value of the parabolic cylinder function
-        ! gets above 10^308 for a Double Precision data type, it is 
-        ! represented as infinite by the computer.  Therefore, anything
-        ! that results in that value being two high must be treated as
-        ! though it has constant variability.  This is very close to the
-        ! actual value anyway, so no accuracy is lost.
-
-
-        ! The following IF statement is for a case where there is variability
-        ! in liquid water (ss > 0).  This is for Larson's eq. number 24 and 36.
-
-        IF (ss > 0.0) THEN
-
-           sc = (s/ss) + corr*beta_exp*SQRT(sig2)
-
-           Dv_order = -alpha_exp - 1.0
-
-           test = D_fnc( Dv_order, -sc )
-
-
-           ! The following IF statement is to test whether the result of the
-           ! Parabolic Cylinder function is within the limits of a 
-           ! Double Precision number.  If it is not, the Parabolic Cylinder
-           ! function will produce an infinite result.  If that is the case,
-           ! a different equation (the equation for a spike) must be used.
-
-           IF ( test >= 0.0d0 .AND. test < limit ) THEN
-
-              gamma_in  = alpha_exp + 1.0
-              gamma_out = GAMMA( gamma_in )
-!              CALL GAMMA( gamma_in, gamma_out )
-
-              NL_PDF = ( (1.0/SQRT(2.0*pi))*(ss**alpha_exp) )
-     .                * EXP( beta_exp*u
-     .                      + (1.0/2.0)*(beta_exp**2)*sig2 
-     .                      - (1.0/4.0)*sc**2 )
-     .                * gamma_out * D_fnc( Dv_order, -sc )
-
-
-           ! The following ELSEIF statement is for a case where the variability
-           ! of liquid water (ss) is so low that the Parabolic Cylinder function
-           ! becomes infinite.  When this happens, the equation for a spike is 
-           ! used.  If there is a spike and sc > 0, then the following equation
-           ! is used.  If sc <= 0, then there is no cloud and NL_PDF = 0.  The
-           ! following equation is Larson's eq. number 23 and 35.
-
-           ELSEIF (sc > 0.0) THEN
-
-              NL_PDF = ( rc_pl**alpha_exp )
-     .                * EXP( beta_exp*u 
-     .                      + (1.0/2.0)*(beta_exp**2)*sig2 )
-
-
-           ! The following ELSE statement is for a case where ss = 0 and
-           ! sc <= 0, which means only clear air.  Therefore, NL_PDF = 0.
-
-           ELSE
-
-              NL_PDF = 0.0
-
-           ENDIF
-
-
-        ! The following ELSEIF statement is for a case where the variability
-        ! of liquid water (ss) is 0.  When this happens, the equation for a 
-        ! spike is used.  If there is a spike and sc > 0, then the following
-        ! equation is used.  Since sc = s/ss + ... and ss = 0, then sc is 
-        ! either positive or negative infinity based on if s is positive or
-        ! negative.  If s <= 0 (and therefore sc <= 0), then there is no 
-        ! cloud and NL_PDF = 0.  The following equation is Larson's eq. number
-        ! 23 and 35.
-
-        ELSEIF (s > 0.0) THEN 
-
-           NL_PDF = ( rc_pl**alpha_exp )
-     .             * EXP( beta_exp*u
-     .                   + (1.0/2.0)*(beta_exp**2)*sig2 )
-
-        ELSE
-
-           NL_PDF = 0.0
-
-        ENDIF
-
-        RETURN
-        END FUNCTION NL_PDF
-
-!------------------------------------------------------------------------
+!===============================================================================
 
         ! DESCRIPTION
         !
