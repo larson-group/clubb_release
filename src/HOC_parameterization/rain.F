@@ -1,10 +1,34 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.7 2006-11-14 22:41:33 griffinb Exp $
+! $Id: rain.F,v 1.8 2006-11-14 23:34:19 griffinb Exp $
 !----------------------------------------------------------------------
 
       MODULE rain_equations
 
       IMPLICIT NONE
+
+      ! Statistical rain parameters.
+      REAL, PARAMETER:: rrp2_rrm2 = 1.2
+      REAL, PARAMETER:: Nrp2_Nrm2 = 1.0
+      REAL, PARAMETER:: Ncp2_Ncm2 = 0.07
+      REAL, PARAMETER:: corr_rrNr_LL =  0.85
+      REAL, PARAMETER:: corr_rcrr_NL =  0.10
+      REAL, PARAMETER:: corr_rcNr_NL = -0.15
+      REAL, PARAMETER:: corr_rcNc_NL =  0.45
+      !REAL, PARAMETER:: C_evap = 0.86    ! Khairoutdinov and Kogan (2000) 
+      !                                   ! ratio of drizzle drop mean 
+      !                                   ! geometric radius to drizzle drop
+      !                                   ! mean volume radius. Khairoutdinov
+      !                                   ! and Kogan (2000); p. 233.
+      !REAL, PARAMETER:: C_evap = 0.86*0.2 ! COAMPS value of KK C_evap
+      REAL, PARAMETER:: C_evap = 0.55    ! KK 2000, Marshall-Palmer (1948) value.
+      ! Vince Larson set r_0=28mum to agree with COAMPS-LES formula. 15 April 2005
+      REAL, PARAMETER:: r_0 = 25.0e-6   ! Assumed radius of all new drops; m.
+                                        ! Value specified in KK (2000); p. 235.
+      !REAL, PARAMETER:: r_0 = 28.0e-6   ! Assumed radius of all new drops; m.
+                                         ! Value that COAMPS LES has in it.
+      !REAL, PARAMETER:: r_0 = 30.0e-6   ! Assumed radius of all new drops; m.
+                                         ! Khairoutdinov said it was okay!
+      ! End Vince Larson's change.
 
       PUBLIC rain
       PRIVATE cond_evap_rrm_2, cond_evap_Nrm, autoconv_rrm_2
@@ -866,10 +890,6 @@
         REAL:: sigmaY2    ! Grid-box standard deviation of Y2
         REAL:: corrY1Y2   ! Correlation of Y1 and Y2
 
-        REAL, PARAMETER:: rrp2_rrm2 = 1.2
-        REAL, PARAMETER:: Nrp2_Nrm2 = 1.0
-        REAL, PARAMETER:: corr_rrNr_LL =  0.85
-
 !-------------------------------------------------------------------------------
 
         IF ( local_kk ) THEN
@@ -1048,20 +1068,6 @@
 
         REAL:: Tl_1, Tl_2, T_1, T_2, rsl_1, rsl_2, Beta_T1, Beta_T2
         REAL:: plume_1_constants, plume_2_constants
-
-        REAL, PARAMETER:: rrp2_rrm2 = 1.2
-        REAL, PARAMETER:: Nrp2_Nrm2 = 1.0
-        REAL, PARAMETER:: corr_rcrr_NL =  0.10
-        REAL, PARAMETER:: corr_rcNr_NL = -0.15
-        REAL, PARAMETER:: corr_rrNr_LL =  0.85
-
-!        REAL, PARAMETER:: C_evap = 0.86    ! Khairoutdinov and Kogan (2000) 
-!                                           ! ratio of drizzle drop mean 
-!                                           ! geometric radius to drizzle drop
-!                                           ! mean volume radius. Khairoutdinov 
-!                                           ! and Kogan (2000); p. 233.
-!        REAL, PARAMETER:: C_evap = 0.86*0.2 ! COAMPS value of KK C_evap
-        REAL, PARAMETER:: C_evap = 0.55    ! KK 2000, Marshall-Palmer (1948) value.
 
 !-------------------------------------------------------------------------------
 
@@ -1296,9 +1302,6 @@
         REAL:: sigmaY2    ! Grid-box standard deviation of Y2
         REAL:: corrY1Y2   ! Correlation of Y1 and Y2
 
-        REAL, PARAMETER:: Ncp2_Ncm2 = 0.07
-        REAL, PARAMETER:: corr_rcNc_NL =  0.45
-
 !-------------------------------------------------------------------------------
 
         IF ( local_kk ) THEN
@@ -1368,15 +1371,6 @@
 
         REAL, INTENT(IN):: auto_rrm, rhot
         REAL:: autoconv_Nrm
-
-! Vince Larson set r_0=28mum to agree with COAMPS-LES formula. 15 April 2005
-        REAL, PARAMETER:: r_0 = 25.0e-6   ! Assumed radius of all new drops; m.
-                                          ! Value specified in KK (2000); p. 235.
-!        REAL, PARAMETER:: r_0 = 28.0e-6   ! Assumed radius of all new drops; m.
-                                          ! Value that COAMPS LES has in it.
-!        REAL, PARAMETER:: r_0 = 30.0e-6   ! Assumed radius of all new drops; m.
-                                          ! Khairoutdinov said it was okay!
-! End Vince Larson's change.
 
         autoconv_Nrm = auto_rrm /
      .                 ( ((4.0*pi*rho_lw)/(3.0*rhot)) * (r_0**3) )
@@ -1462,9 +1456,6 @@
         REAL:: muY2       ! Grid-box average of Y2
         REAL:: sigmaY2    ! Grid-box standard deviation of Y2
         REAL:: corrY1Y2   ! Correlation of Y1 and Y2
-
-        REAL, PARAMETER:: rrp2_rrm2 = 1.2
-        REAL, PARAMETER:: corr_rcrr_NL =  0.10
 
 !-------------------------------------------------------------------------------
 
