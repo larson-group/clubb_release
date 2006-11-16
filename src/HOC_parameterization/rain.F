@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.8 2006-11-14 23:34:19 griffinb Exp $
+! $Id: rain.F,v 1.9 2006-11-16 23:03:55 dschanen Exp $
 !----------------------------------------------------------------------
 
       MODULE rain_equations
@@ -1308,7 +1308,7 @@
 
            IF ( rcm > 0.0 .AND. Ncm > 0.0 ) THEN
 
-              autoconv_rrm_2 = 7.4188E13 * rcm**2.47 * Ncm**-1.79
+              autoconv_rrm_2 = 7.4188E13 * rcm**2.47 * Ncm**(-1.79)
 
            ELSE
 
@@ -1339,7 +1339,7 @@
               ! Correlations.
               corrY1Y2 = corr_rcNc_NL  ! corr_rcNc_NL =  0.45
 
-              autoconv_rrm_2 = 7.4188E13 * rhot**-1.79 * (
+              autoconv_rrm_2 = 7.4188E13 * rhot**(-1.79) * (
      .             ( a ) 
      .           * PDF_BIVAR_2G_LN( muY1_1, muY2, sigmaY1_1, sigmaY2,
      .                              corrY1Y2, alpha_exp, beta_exp )
@@ -1845,7 +1845,7 @@
         ENDIF
 
 
-        IF ( use_eq_1 == .true.) THEN
+        IF ( use_eq_1 ) THEN
 
            ! Case where sigmaX1i is not equal to 0 (and sigmaX1i is not
            ! sufficiently small enough to cause the parabolic cylinder function
@@ -1879,7 +1879,7 @@
      .     * GAMMA( gamma_fnc_input )
      .     * D_fnc( parab_cyl_fnc_ord, parab_cyl_fnc_input )
 
-        ELSEIF ( use_eq_1 == .false. .AND. muX1i < 0.0 ) THEN
+        ELSEIF ( .not. use_eq_1 .AND. muX1i < 0.0 ) THEN
 
            ! Case where sigmaX1i is equal to 0 (or sigmaX1i is sufficiently
            ! small enough to cause the parabolic cylinder function to produce a
@@ -1899,7 +1899,7 @@
      .                        )
      .          )
 
-        ELSEIF ( use_eq_1 == .false. .AND. muX1i >=  0.0 ) THEN
+        ELSEIF ( .not. use_eq_1 .AND. muX1i >=  0.0 ) THEN
            ! Case where sigmaX1i is equal to 0 (or sigmaX1i is sufficiently
            ! small enough to cause the parabolic cylinder function to produce a
            ! result greater than what the computer can represent numerically)
@@ -2159,7 +2159,7 @@
         ENDIF
 
 
-        IF ( use_eq_1 == .true.) THEN
+        IF ( use_eq_1 ) THEN
 
            ! Case where sigmaX1i is not equal to 0 (and sigmaX1i is not
            ! sufficiently small enough to cause the parabolic cylinder function
@@ -2176,7 +2176,7 @@
      .     * GAMMA( gamma_fnc_input )
      .     * D_fnc( parab_cyl_fnc_ord, parab_cyl_fnc_input )
 
-        ELSEIF ( use_eq_1 == .false. .AND. muX1i > 0.0 ) THEN
+        ELSEIF ( .not. use_eq_1 .AND. muX1i > 0.0 ) THEN
 
            ! Case where sigmaX1i is equal to 0 (or sigmaX1i is sufficiently
            ! small enough to cause the parabolic cylinder function to produce a
@@ -2188,7 +2188,7 @@
      .     * EXP(   muX2*beta_exp
      .            + (1.0/2.0)*(sigmaX2**2.0)*(beta_exp**2.0) )
 
-        ELSEIF ( use_eq_1 == .false. .AND. muX1i <=  0.0 ) THEN
+        ELSEIF ( .not. use_eq_1 .AND. muX1i <=  0.0 ) THEN
            ! Case where sigmaX1i is equal to 0 (or sigmaX1i is sufficiently
            ! small enough to cause the parabolic cylinder function to produce a
            ! result greater than what the computer can represent numerically)
