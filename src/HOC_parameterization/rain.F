@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.9 2006-11-16 23:03:55 dschanen Exp $
+! $Id: rain.F,v 1.10 2006-11-17 01:05:19 griffinb Exp $
 !----------------------------------------------------------------------
 
       MODULE rain_equations
@@ -1049,22 +1049,22 @@
         REAL:: cond_evap_rrm_2
 
         ! Exponential terms.
-        REAL:: alpha_exp  ! Exponent of Y1
-        REAL:: beta_exp   ! Exponent of Y2
-        REAL:: gamma_exp  ! Exponent of Y3
+        REAL:: alpha_exp  ! Exponent of s
+        REAL:: beta_exp   ! Exponent of rr
+        REAL:: gamma_exp  ! Exponent of Nr
 
         ! Original terms.
-        REAL:: muY1_1     ! Plume 1 average of Y1
-        REAL:: sigmaY1_1  ! Plume 1 standard deviation of Y1
-        REAL:: muY1_2     ! Plume 2 average of Y1
-        REAL:: sigmaY1_2  ! Plume 2 standard deviation of Y1
-        REAL:: muY2       ! Grid-box average of Y2
-        REAL:: sigmaY2    ! Grid-box standard deviation of Y2
-        REAL:: muY3       ! Grid-box average of Y3
-        REAL:: sigmaY3    ! Grid-box standard deviation of Y3
-        REAL:: corrY1Y2   ! Correlation of Y1 and Y2
-        REAL:: corrY1Y3   ! Correlation of Y1 and Y3
-        REAL:: corrY2Y3   ! Correlation of Y2 and Y3
+        REAL:: mu_s1       ! Plume 1 average of s
+        REAL:: sigma_s1    ! Plume 1 standard deviation of s
+        REAL:: mu_s2       ! Plume 2 average of s
+        REAL:: sigma_s2    ! Plume 2 standard deviation of s
+        REAL:: mu_rr       ! Grid-box average of rr
+        REAL:: sigma_rr    ! Grid-box standard deviation of rr
+        REAL:: mu_Nr       ! Grid-box average of Nr
+        REAL:: sigma_Nr    ! Grid-box standard deviation of Nr
+        REAL:: corr_rcrr   ! Correlation of rc and rr
+        REAL:: corr_rcNr   ! Correlation of rc and Nr
+        REAL:: corr_rrNr   ! Correlation of rr and Nr
 
         REAL:: Tl_1, Tl_2, T_1, T_2, rsl_1, rsl_2, Beta_T1, Beta_T2
         REAL:: plume_1_constants, plume_2_constants
@@ -1128,39 +1128,39 @@
               beta_exp  = (1.0/3.0)
               gamma_exp = (2.0/3.0)
 
-              ! Y1 is a truncated double Gaussian.
-              muY1_1 = s1
-              sigmaY1_1 = ss1
-              muY1_2 = s2
-              sigmaY1_2 = ss2
+              ! "s" is a truncated double Gaussian.
+              mu_s1 = s1
+              sigma_s1 = ss1
+              mu_s2 = s2
+              sigma_s2 = ss2
 
               ! Y2 is distributed Lognormally.
-              muY2 = rrm
-!              sigmaY2 = SQRT(rrp2)
-              sigmaY2 = rrm * SQRT(rrp2_rrm2)  ! rr'2/rrm^2 = 1.2
+              mu_rr = rrm
+!              sigma_rr = SQRT(rrp2)
+              sigma_rr = rrm * SQRT(rrp2_rrm2)  ! rr'2/rrm^2 = 1.2
 
               ! Y3 is distributed Lognormally.
-              muY3 = (Nrm/rhot)
-!              sigmaY3 = SQRT(Nrp2)
-              sigmaY3 = (Nrm/rhot) * SQRT(Nrp2_Nrm2)  ! Nr'2/Nrm^2 = 1.0
+              mu_Nr = (Nrm/rhot)
+!              sigma_Nr = SQRT(Nrp2)
+              sigma_Nr = (Nrm/rhot) * SQRT(Nrp2_Nrm2)  ! Nr'2/Nrm^2 = 1.0
 
               ! Correlations.
-              corrY1Y2 = corr_rcrr_NL  ! corr_rcrr_NL =  0.10
-              corrY1Y3 = corr_rcNr_NL  ! corr_rcNr_NL = -0.15
-              corrY2Y3 = corr_rrNr_LL  ! corr_rrNr_LL =  0.85
+              corr_rcrr = corr_rcrr_NL  ! corr_rcrr_NL =  0.10
+              corr_rcNr = corr_rcNr_NL  ! corr_rcNr_NL = -0.15
+              corr_rrNr = corr_rrNr_LL  ! corr_rrNr_LL =  0.85
 
 
               cond_evap_rrm_2 = 
      .         ( a ) * plume_1_constants
-     .         * PDF_TRIVAR_2G_LN_LN ( muY1_1, muY2, muY3,
-     .                                 sigmaY1_1, sigmaY2, sigmaY3,
-     .                                 corrY1Y2, corrY1Y3, corrY2Y3,
+     .         * PDF_TRIVAR_2G_LN_LN ( mu_s1, mu_rr, mu_Nr,
+     .                                 sigma_s1, sigma_rr, sigma_Nr,
+     .                                 corr_rcrr, corr_rcNr, corr_rrNr,
      .                                 alpha_exp, beta_exp, gamma_exp )
      .        +
      .         (1-a) * plume_2_constants
-     .         * PDF_TRIVAR_2G_LN_LN ( muY1_2, muY2, muY3,
-     .                                 sigmaY1_2, sigmaY2, sigmaY3,
-     .                                 corrY1Y2, corrY1Y3, corrY2Y3,
+     .         * PDF_TRIVAR_2G_LN_LN ( mu_s2, mu_rr, mu_Nr,
+     .                                 sigma_s2, sigma_rr, sigma_Nr,
+     .                                 corr_rcrr, corr_rcNr, corr_rrNr,
      .                                 alpha_exp, beta_exp, gamma_exp )
 
            ELSE
@@ -1672,6 +1672,12 @@
         ! However, if sigmaX1i = 0 and muX1i < 0, then the entire Gaussian
         ! lies within the domain.  A close approximation for the parabolic
         ! cylinder function is made.
+        ! cases where the input into the parabolic cylinder function is
+        ! extremely large in magnitude and very much greater in magnitude than
+        ! the order of the parabolic cylinder function -- as it is in this case
+        ! where sigmaX1i = 0 means that the magnitude of the input is infinite
+        ! and very much greater than the magnitude of the order of the function
+        ! which comes to | - (alpha + 1) | = alpha + 1.
         !
         ! The result for each plume is (Equation #2):
         !
@@ -1828,7 +1834,7 @@
      .                       + corrX1X3*sigmaX3*gamma_exp
 
         ! If sigmaX1i = 0, then equation #1 cannot be used.
-        IF (sigmaX1i == 0.0 ) THEN
+        IF ( sigmaX1i == 0.0 ) THEN
            use_eq_1 = .false.
         ELSE
            ! Test to see whether the value of sigmaX1i is sufficiently small
@@ -2028,7 +2034,13 @@
         !
         ! However, if sigmaX1i = 0 and muX1i > 0, then the entire Gaussian
         ! lies within the domain.  A close approximation for the parabolic
-        ! cylinder function is made.
+        ! cylinder function is made.  This approximation is only valid in
+        ! cases where the input into the parabolic cylinder function is
+        ! extremely large in magnitude and very much greater in magnitude than
+        ! the order of the parabolic cylinder function -- as it is in this case
+        ! where sigmaX1i = 0 means that the magnitude of the input is infinite
+        ! and very much greater than the magnitude of the order of the function
+        ! which comes to | - (alpha + 1) | = alpha + 1.
         !
         ! The result for each plume is (Equation #2):
         !
@@ -2407,7 +2419,863 @@
         RETURN
         END FUNCTION G_t_p
 
-!===============================================================================
+!!===============================================================================
+!        !
+!        ! FUNCTION PDF_TRIVAR_2G_LN_LN
+!        !-----------------------------------------------------------------------
+!        !
+!        ! DESCRIPTION
+!        !------------
+!        !
+!        ! TRIVARIATE DOUBLE GAUSSIAN -- LOG-NORMAL -- LOG-NORMAL PDF
+!        !
+!        ! This function helps solve for the expression:
+!        !
+!        ! overbar{ Y1^alpha Y2^beta Y3^gamma }; where:
+!        !
+!        ! Y1 is distributed as a Double Gaussian with a domain from negative
+!        ! infinity to zero.
+!        ! Y2 is distributed as Log-normal with a domain from zero to infinity.
+!        ! Y3 is distributed as Log-normal with a domain from zero to infinity.
+!        !
+!        ! Y1, Y2, and Y3 are then transformed into X1, X2, and X3 respectively.
+!        !
+!        ! X1 is distributed as a Double Gaussian with a domain from negative
+!        ! infinity to zero.  X1 = Y1
+!        ! X2 is distributed as Normal (Gaussian) with a domain from negative
+!        ! infinity to infinity.  X2 = LN( Y2 )
+!        ! X3 is distributed as Normal (Gaussian) with a domain from negative
+!        ! infinity to infinity.  X3 = LN( Y3 )
+!        !
+!        ! The resulting equation that needs to be solved for is:
+!        !
+!        ! overbar{ Y1^alpha Y2^beta Y3^gamma } =
+!        ! INT(-inf:0) INT(-inf:inf) INT(-inf:inf)
+!        !             X1^alpha exp( beta*X2 + gamma*X3 ) P(X1,X2,X3) dX3 dX2 dX1
+!        !
+!        ! since X1 is a double Gaussian, P(X1,X2,X3) =  ( a ) P_1(X1,X2,X3) 
+!        !                                             + (1-a) P_2(X1,X2,X3)
+!        !
+!        ! where "a" is a constant and is the relative weight of each individual
+!        ! Gaussian.
+!        !
+!        ! P_1(X1,X2,X3) and P_2(X1,X2,X3) are simply the equation for a
+!        ! Trivariate Gaussian Distribution.  The only difference between the
+!        ! two is the dependence on each individual plume for the plume average
+!        ! and plume variance for the X1 variable.
+!        !
+!        ! The Probability Density Function for a Trivariate Normal Distribution:
+!        !
+!        ! P_i(X1,X2,X3) = 
+!        !
+!        ! 1 /
+!        !     {
+!        !       (2*PI)^(3/2) * sigmaX1i * sigmaX2 * sigmaX3 
+!        !       * SQRT[ 1 - ( corrX1X2^2 + corrX1X3^2 + corrX2X3^2 ) 
+!        !                 + 2*corrX1X2*corrX1X3*corrX2X3 ]
+!        !     }
+!        ! * EXP{ -(1/2) * phi }
+!        !
+!        ! where,
+!        !
+!        ! phi =
+!        !
+!        ! 1 /
+!        !     [
+!        !       1 - ( corrX1X2^2 + corrX1X3^2 + corrX2X3^2 ) 
+!        !         + 2*corrX1X2*corrX1X3*corrX2X3
+!        !     ]
+!        ! * {
+!        !       [ (1-corrX2X3^2) / sigmaX1i^2 ] * ( X1i - muX1i )^2
+!        !     + [ (1-corrX1X3^2) / sigmaX2^2 ] * ( X2 - muX2 )^2
+!        !     + [ (1-corrX1X2^2) / sigmaX3^2 ] * ( X3 - muX3 )^2
+!        !     + [ 2*(corrX1X3*corrX2X3-corrX1X2) / (sigmaX1i*sigmaX2) ]
+!        !       * ( X1i - muX1i ) * ( X2 - muX2 )
+!        !     + [ 2*(corrX1X2*corrX2X3-corrX1X3) / (sigmaX1i*sigmaX3) ]
+!        !       * ( X1i - muX1i ) * ( X3 - muX3 )
+!        !     + [ 2*(corrX1X2*corrX1X3-corrX2X3) / (sigmaX2*sigmaX3) ]
+!        !       * ( X2 - muX2 ) * ( X3 - muX3 )
+!        !   }
+!        !
+!        ! Definitions:
+!        !
+!        ! muX1i:  The plume average of the X1 (or Y1) variable.
+!        ! muX2:  The average of the X2 (or ln Y2) variable.
+!        ! muX3:  The average of the X3 (or ln Y3) variable.
+!        !
+!        ! sigmaX1i:  The plume standard deviation (square-root of variance)
+!        !            of the X1 (or Y1) variable.
+!        ! sigmaX2:  The standard deviation (square-root of variance) of the
+!        !           X2 (or ln Y2) variable.
+!        ! sigmaX3:  The standard deviation (square-root of variance) of the 
+!        !           X3 (or ln Y3) variable.
+!        !
+!        ! corrX1X2:  Intra-Gaussian correlation between X1 and X2 (or between
+!        !            Y1 and ln Y2).
+!        ! corrX1X3:  Intra-Gaussian correlation between X1 and X3 (or between
+!        !            Y1 and ln Y3).
+!        ! corrX2X3:  Intra-Gaussian correlation between X2 and X3 (or between
+!        !            ln Y2 and ln Y3).
+!        !
+!        ! After careful (and long) triple-integration of the above equation,
+!        ! one gets the result for each plume of the trivariate normal
+!        ! -- log-normal -- log-normal equation.
+!        !
+!        ! The result for each plume is (Equation #1):
+!        !
+!        !   [ 1 / SQRT(2*PI) ] * ( -sigmaX1i )^alpha 
+!        ! * EXP{ muX2*beta + muX3*gamma }
+!        ! * EXP{ (1/2) * [  (1-corrX1X2^2)*sigmaX2^2*beta^2 
+!        !                 + (1-corrX1X3^2)*sigmaX3^2*gamma^2 
+!        !                 + 2*(corrX2X3-corrX1X2*corrX1X3)
+!        !                    *sigmaX2*beta*sigmaX3*gamma
+!        !                ]
+!        !      }
+!        ! * EXP{  (1/4) * [  ( muX1i / sigmaX1i ) 
+!        !                  + corrX1X2*sigmaX2*beta
+!        !                  + corrX1X3*sigmaX3*gamma
+!        !                 ]^2
+!        !       - ( muX1i / sigmaX1i ) *
+!        !                 [  ( muX1i / sigmaX1i ) 
+!        !                  + corrX1X2*sigmaX2*beta
+!        !                  + corrX1X3*sigmaX3*gamma
+!        !                 ]
+!        !       + (1/2) * ( muX1i^2 / sigmaX1i^2 )
+!        !      }
+!        ! * GAMMA_FNC { alpha + 1 }
+!        ! * PARAB_CYL_FNC_[-(alpha+1)] {  ( muX1i / sigmaX1i ) 
+!        !                               + corrX1X2*sigmaX2*beta
+!        !                               + corrX1X3*sigmaX3*gamma
+!        !                              }
+!        !
+!        ! The sum of the weighted results for each plume give us the answer for:
+!        !
+!        ! overbar{ Y1^alpha Y2^beta Y3^gamma }
+!        !
+!        ! The purpose of this function is to give results for each plume.
+!        !
+!        ! Brian Griffin.  November 4, 2006.
+!        !
+!        !-----------------------------------------------------------------------
+!        !
+!        ! NOTE -- special case if sigmaX1i = 0
+!        ! ------------------------------------
+!        !
+!        ! The equation above is only a valid answer if sigmaX1i is not equal
+!        ! to 0.  The only variable that can be found in the denominator of any
+!        ! term or factor of the equation is sigmaX1i.  This is also the only
+!        ! case where the equation above is not a valid answer.
+!        !
+!        ! When sigmaX1i = 0, the Gaussian for X1i becomes a "spike" at muX1i
+!        ! with no variance.  This is also known as a Delta function.  The
+!        ! domain of X1i is from negative infinity to zero.  If sigmaX1i = 0
+!        ! and muX1i >= 0, then the entire Gaussian lies outside the domain,
+!        ! and the result is 0 for that individual plume.
+!        !
+!        ! However, if sigmaX1i = 0 and muX1i < 0, then the entire Gaussian
+!        ! lies within the domain.  A close approximation for the parabolic
+!        ! cylinder function is made.  This approximation is only valid in
+!        ! cases where the input into the parabolic cylinder function is
+!        ! extremely large in magnitude and very much greater in magnitude than
+!        ! the order of the parabolic cylinder function -- as it is in this case
+!        ! where sigmaX1i = 0 means that the magnitude of the input is infinite
+!        ! and very much greater than the magnitude of the order of the function
+!        ! which comes to | - (alpha + 1) | = alpha + 1.
+!        !
+!        ! The result for each plume is (Equation #2):
+!        !
+!        !   ( muX1i )^alpha 
+!        ! * EXP{ muX2*beta + muX3*gamma }
+!        ! * EXP{ (1/2) * [  (1-corrX1X2^2)*sigmaX2^2*beta^2 
+!        !                 + (1-corrX1X3^2)*sigmaX3^2*gamma^2 
+!        !                 + 2*(corrX2X3-corrX1X2*corrX1X3)
+!        !                    *sigmaX2*beta*sigmaX3*gamma
+!        !                ]
+!        !      }
+!        !
+!        ! One also needs to note an issue with numerical error.  If sigmaX1i
+!        ! is very small, but not quite 0, one would still be able to compute
+!        ! the answer mathematically using the equation for sigmaX1i /= 0.
+!        ! However, ( muX1i / sigmaX1i ) becomes very large.  If it becomes
+!        ! large enough, the result of the parabolic cylinder function becomes
+!        ! greater than the computer can represent.  The greatest value that
+!        ! can be represented by a DOUBLE PRECISION variable is of the order
+!        ! of 10^308.  Therefore, a sufficiently small sigmaX1i must be treated
+!        ! the same as if sigmaX1i = 0.  A test is needed to determine if the
+!        ! computer can represent the number or not.
+!        !
+!        ! In Summary:
+!        ! 
+!        ! When sigmaX1i /= 0 (or is not sufficiently small):  Equation #1
+!        ! When sigmaX1i = 0 (or is sufficiently small)
+!        !                                     and muX1i < 0:  Equation #2
+!        ! When sigmaX1i = 0 (or is sufficiently small)
+!        !                                    and muX1i >= 0:  0
+!        !
+!        ! In Equation #1, the factor ( -sigmaX1i )^alpha restricts the value
+!        ! of alpha so that the factor does not become one of an i-term.
+!        ! Ex: alpha = (1/2) is not allowed.  alpha = 1 is fine.
+!        !
+!        ! Brian Griffin.  November 10, 2006.
+!        !
+!        !-----------------------------------------------------------------------
+!
+!
+!        FUNCTION PDF_TRIVAR_2G_LN_LN ( muY1i, muY2, muY3,
+!     .                                 sigmaY1i, sigmaY2, sigmaY3,
+!     .                                 corrY1Y2, corrY1Y3, corrY2Y3,
+!     .                                 alpha_exp, beta_exp, gamma_exp )
+!
+!        USE constants
+!        USE polpak_gamma, ONLY: gamma
+!
+!        IMPLICIT NONE
+!
+!        ! Input variables.
+!        REAL, INTENT(IN):: muY1i     ! Plume average of Y1
+!        REAL, INTENT(IN):: muY2      ! Average of Y2
+!        REAL, INTENT(IN):: muY3      ! Average of Y3
+!        REAL, INTENT(IN):: sigmaY1i  ! Plume standard deviation of Y1
+!        REAL, INTENT(IN):: sigmaY2   ! Standard deviation of Y2
+!        REAL, INTENT(IN):: sigmaY3   ! Standard deviation of Y3
+!        REAL, INTENT(IN):: corrY1Y2  ! Intra-Gaussian correlation between Y1,Y2
+!        REAL, INTENT(IN):: corrY1Y3  ! Intra-Gaussian correlation between Y1,Y3
+!        REAL, INTENT(IN):: corrY2Y3  ! Intra-Gaussian correlation between Y2,Y3
+!        REAL, INTENT(IN):: alpha_exp ! Exponent associated with Y1 variable.
+!        REAL, INTENT(IN):: beta_exp  ! Exponent associated with Y2 variable.
+!        REAL, INTENT(IN):: gamma_exp ! Exponent associated with Y3 variable.
+!        
+!        ! Output variable.
+!        REAL:: PDF_TRIVAR_2G_LN_LN
+!
+!        ! Local variables.
+!
+!        ! "Y" variables Gaussianized and coverted to "X" variables.
+!        REAL:: muX1i     ! Plume average of X1
+!        REAL:: muX2      ! Average of X2
+!        REAL:: muX3      ! Average of X3
+!        REAL:: sigmaX1i  ! Plume standard deviation of X1
+!        REAL:: sigmaX2   ! Standard deviation of X2
+!        REAL:: sigmaX3   ! Standard deviation of X3
+!        REAL:: corrX1X2  ! Intra-Gaussian correlation between X1,X2
+!        REAL:: corrX1X3  ! Intra-Gaussian correlation between X1,X3
+!        REAL:: corrX2X3  ! Intra-Gaussian correlation between X2,X3
+!
+!        DOUBLE PRECISION:: gamma_fnc_input
+!        DOUBLE PRECISION:: parab_cyl_fnc_ord
+!        DOUBLE PRECISION:: parab_cyl_fnc_input
+!        DOUBLE PRECISION:: test
+!        LOGICAL:: use_eq_1
+!!        DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308.0
+!!       Found that above is not valid on most compilers -dschanen
+!        DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308
+!
+!        !----- Section #1 ------------------------------------------------------
+!
+!        !!!!!!!!!! Convert all means, standard deviations, and correlations
+!        !!!!!!!!!! to Gaussian terms.
+!
+!        ! Y1i is a truncated double Gaussian.
+!        ! Therefore, X1i is still a truncated double Gaussian.
+!        ! It does not change.
+!        muX1i = muY1i
+!        sigmaX1i = sigmaY1i
+!
+!        ! Y2 is a Lognormal.  It is converted to X2, which is a Gaussian.
+!        ! X2 = ln Y2
+!        muX2 = LOG(  muY2 * (  1.0 
+!     .                       + ( (sigmaY2**2.0) / (muY2**2.0) ) 
+!     .                      )**(-1.0/2.0)
+!     .            )
+!        sigmaX2 = SQRT( LOG(  1.0 + ( (sigmaY2**2.0) / (muY2**2.0) ) )
+!     .                )
+!
+!        ! Y3 is a Lognormal.  It is converted to X3, which is a Gaussian.
+!        ! X3 = ln Y3
+!        muX3 = LOG(  muY3 * (  1.0 
+!     .                       + ( (sigmaY3**2.0) / (muY3**2.0) ) 
+!     .                      )**(-1.0/2.0)
+!     .            )
+!        sigmaX3 = SQRT( LOG(  1.0 + ( (sigmaY3**2.0) / (muY3**2.0) ) )
+!     .                )
+!
+!        !!! Intra-Gaussian correlations.
+!
+!        ! corrY1Y2 is a correlation between a Gaussian and a Log-normal.
+!        ! It must be converted to corrX1X2, which is a correlation between
+!        ! two Gaussians.
+!        corrX1X2 = corrY1Y2 
+!     .                   * SQRT( EXP(sigmaX2**2.0) - 1.0 ) / sigmaX2
+!        ! corrY1Y3 is a correlation between a Gaussian and a Log-normal.
+!        ! It must be converted to corrX1X3, which is a correlation between
+!        ! two Gaussians.
+!        corrX1X3 = corrY1Y3
+!     .                   * SQRT( EXP(sigmaX3**2.0) - 1.0 ) / sigmaX3
+!        ! corrY2Y3 is a correlation between two Log-normals.  It must be 
+!        ! converted to corrX2X3, which is a correlation between two Gaussians.
+!        corrX2X3 = LOG( 1.0 + corrY2Y3
+!     .                             * SQRT( EXP(sigmaX2**2.0) - 1.0 )
+!     .                             * SQRT( EXP(sigmaX3**2.0) - 1.0 )
+!     .                ) / ( sigmaX2 * sigmaX3 )
+!
+!        !----- Section #2 ------------------------------------------------------
+!
+!        !!!!!!!!!! Use the appropriate equation and solve.
+!
+!        ! Initialize logical to false.
+!        use_eq_1 = .false.
+!
+!        ! Input to the gamma function.
+!        gamma_fnc_input = alpha_exp + 1.0
+!
+!        ! Order of the parabolic cylinder function.
+!        parab_cyl_fnc_ord = - ( alpha_exp + 1.0 )
+!
+!        ! Input to the parabolic cylinder function.
+!        parab_cyl_fnc_input =  (muX1i/sigmaX1i)
+!     .                       + corrX1X2*sigmaX2*beta_exp 
+!     .                       + corrX1X3*sigmaX3*gamma_exp
+!
+!        ! If sigmaX1i = 0, then equation #1 cannot be used.
+!        IF ( sigmaX1i == 0.0 ) THEN
+!           use_eq_1 = .false.
+!        ELSE
+!           ! Test to see whether the value of sigmaX1i is sufficiently small
+!           ! enough to cause the parabolic cylinder function to produce a
+!           ! result to large to be represented numerically by the computer.
+!           test = D_fnc( parab_cyl_fnc_ord, parab_cyl_fnc_input )
+!
+!           IF ( test >= 0.0d0 .AND. test < limit ) THEN
+!              use_eq_1 = .true.
+!           ELSE
+!              use_eq_1 = .false.
+!           ENDIF
+!
+!        ENDIF
+!
+!
+!        IF ( use_eq_1 ) THEN
+!
+!           ! Case where sigmaX1i is not equal to 0 (and sigmaX1i is not
+!           ! sufficiently small enough to cause the parabolic cylinder function
+!           ! to produce a result greater than what the computer can represent 
+!           ! numerically).
+!
+!           PDF_TRIVAR_2G_LN_LN =
+!     .       (1.0/SQRT(2.0*pi)) * (-sigmaX1i)**alpha_exp 
+!     .     * EXP( muX2*beta_exp + muX3*gamma_exp )
+!     .     * EXP( (1.0/2.0) * (
+!     .                            ( 1.0 - corrX1X2**2.0 )
+!     .                           *(sigmaX2**2.0)*(beta_exp**2.0)
+!     .                         +  ( 1.0 - corrX1X3**2.0 )
+!     .                           *(sigmaX3**2.0)*(gamma_exp**2.0)
+!     .                         + 2.0*( corrX2X3 - corrX1X2*corrX1X3 )
+!     .                              *sigmaX2*beta_exp*sigmaX3*gamma_exp
+!     .                        )
+!     .          )
+!     .     * EXP(   (1.0/4.0) * (
+!     .                             (muX1i/sigmaX1i)
+!     .                           + corrX1X2*sigmaX2*beta_exp 
+!     .                           + corrX1X3*sigmaX3*gamma_exp
+!     .                          )**2.0
+!     .            - (muX1i/sigmaX1i) * (
+!     .                                    (muX1i/sigmaX1i)
+!     .                                  + corrX1X2*sigmaX2*beta_exp 
+!     .                                  + corrX1X3*sigmaX3*gamma_exp
+!     .                                 )
+!     .            + (1.0/2.0) * ( (muX1i**2.0) / (sigmaX1i**2.0) )
+!     .          )
+!     .     * GAMMA( gamma_fnc_input )
+!     .     * D_fnc( parab_cyl_fnc_ord, parab_cyl_fnc_input )
+!
+!        ELSEIF ( .not. use_eq_1 .AND. muX1i < 0.0 ) THEN
+!
+!           ! Case where sigmaX1i is equal to 0 (or sigmaX1i is sufficiently
+!           ! small enough to cause the parabolic cylinder function to produce a
+!           ! result greater than what the computer can represent numerically)
+!           ! and muX1i is less than 0.
+!
+!           PDF_TRIVAR_2G_LN_LN =
+!     .       (muX1i)**alpha_exp 
+!     .     * EXP( muX2*beta_exp + muX3*gamma_exp )
+!     .     * EXP( (1.0/2.0) * (
+!     .                            ( 1.0 - corrX1X2**2.0 )
+!     .                           *(sigmaX2**2.0)*(beta_exp**2.0)
+!     .                         +  ( 1.0 - corrX1X3**2.0 )
+!     .                           *(sigmaX3**2.0)*(gamma_exp**2.0)
+!     .                         + 2.0*( corrX2X3 - corrX1X2*corrX1X3 )
+!     .                              *sigmaX2*beta_exp*sigmaX3*gamma_exp
+!     .                        )
+!     .          )
+!
+!        ELSEIF ( .not. use_eq_1 .AND. muX1i >= 0.0 ) THEN
+!           ! Case where sigmaX1i is equal to 0 (or sigmaX1i is sufficiently
+!           ! small enough to cause the parabolic cylinder function to produce a
+!           ! result greater than what the computer can represent numerically)
+!           ! and muX1i is greater than or equal to 0.
+!
+!           PDF_TRIVAR_2G_LN_LN = 0.0
+!
+!        ENDIF
+!
+!        RETURN
+!
+!        END FUNCTION PDF_TRIVAR_2G_LN_LN
+!
+!!===============================================================================
+!        !
+!        ! FUNCTION PDF_BIVAR_2G_LN
+!        !-----------------------------------------------------------------------
+!        !
+!        ! DESCRIPTION
+!        !------------
+!        !
+!        ! BIVARIATE DOUBLE GAUSSIAN -- LOG-NORMAL PDF
+!        !
+!        ! This function helps solve for the expression:
+!        !
+!        ! overbar{ Y1^alpha Y2^beta }; where:
+!        !
+!        ! Y1 is distributed as a Double Gaussian with a domain from zero to
+!        ! infinity.
+!        ! Y2 is distributed as Log-normal with a domain from zero to infinity.
+!        !
+!        ! Y1 and Y2 are then transformed into X1 and X2 respectively.
+!        !
+!        ! X1 is distributed as a Double Gaussian with a domain from zero to
+!        ! infinity.  X1 = Y1
+!        ! X2 is distributed as Normal (Gaussian) with a domain from negative
+!        ! infinity to infinity.  X2 = LN( Y2 )
+!        !
+!        ! The resulting equation that needs to be solved for is:
+!        !
+!        ! overbar{ Y1^alpha Y2^beta } =
+!        ! INT(0:inf) INT(-inf:inf)
+!        !             X1^alpha exp( beta*X2 ) P(X1,X2) dX2 dX1
+!        !
+!        ! since X1 is a double Gaussian, P(X1,X2) =  ( a ) P_1(X1,X2) 
+!        !                                          + (1-a) P_2(X1,X2)
+!        !
+!        ! where "a" is a constant and is the relative weight of each individual
+!        ! Gaussian.
+!        !
+!        ! P_1(X1,X2) and P_2(X1,X2) are simply the equation for a
+!        ! Bivariate Gaussian Distribution.  The only difference between the
+!        ! two is the dependence on each individual plume for the plume average
+!        ! and plume variance for the X1 variable.
+!        !
+!        ! The Probability Density Function for a Bivariate Normal Distribution:
+!        !
+!        ! P_i(X1,X2) = 
+!        !
+!        ! 1 / { 2 * PI * sigmaX1i * sigmaX2 * SQRT[ 1 - corrX1X2^2 ] }
+!        ! * EXP{ -(1/2) * phi }
+!        !
+!        ! where,
+!        !
+!        ! phi =
+!        !
+!        ! 1 / [ 1 - corrX1X2^2 ]
+!        ! * {
+!        !       [ 1 / sigmaX1i^2 ] * ( X1i - muX1i )^2
+!        !     + [ 1 / sigmaX2^2 ] * ( X2 - muX2 )^2
+!        !     + [ 2*corrX1X2 / (sigmaX1i*sigmaX2) ]
+!        !       * ( X1i - muX1i ) * ( X2 - muX2 )
+!        !   }
+!        !
+!        ! Definitions:
+!        !
+!        ! muX1i:  The plume average of the X1 (or Y1) variable.
+!        ! muX2:  The average of the X2 (or ln Y2) variable.
+!        !
+!        ! sigmaX1i:  The plume standard deviation (square-root of variance)
+!        !            of the X1 (or Y1) variable.
+!        ! sigmaX2:  The standard deviation (square-root of variance) of the
+!        !           X2 (or ln Y2) variable.
+!        !
+!        ! corrX1X2:  Intra-Gaussian correlation between X1 and X2 (or between
+!        !            Y1 and ln Y2).
+!        !
+!        ! After careful (and long) double-integration of the above equation,
+!        ! one gets the result for each plume of the bivariate normal
+!        ! -- log-normal equation.
+!        !
+!        ! The result for each plume is (Equation #1):
+!        !
+!        !   [ 1 / SQRT(2*PI) ] * ( sigmaX1i )^alpha 
+!        ! * EXP{    muX2*beta + (1/2)*sigmaX2^2*beta^2
+!        !        - (1/4) * [ ( muX1i / sigmaX1i ) + corrX1X2*sigmaX2*beta ]^2
+!        !      }
+!        ! * GAMMA_FNC { alpha + 1 }
+!        ! * PARAB_CYL_FNC_[-(alpha+1)] { - [  ( muX1i / sigmaX1i )
+!        !                                   + corrX1X2*sigmaX2*beta ]
+!        !                              }
+!        !
+!        ! The sum of the weighted results for each plume give us the answer for:
+!        !
+!        ! overbar{ Y1^alpha Y2^beta }
+!        !
+!        ! The purpose of this function is to give results for each plume.
+!        !
+!        ! Brian Griffin.  November 10, 2006.
+!        !
+!        !-----------------------------------------------------------------------
+!        !
+!        ! NOTE -- special case if sigmaX1i = 0
+!        ! ------------------------------------
+!        !
+!        ! The equation above is only a valid answer if sigmaX1i is not equal
+!        ! to 0.  The only variable that can be found in the denominator of any
+!        ! term or factor of the equation is sigmaX1i.  This is also the only
+!        ! case where the equation above is not a valid answer.
+!        !
+!        ! When sigmaX1i = 0, the Gaussian for X1i becomes a "spike" at muX1i
+!        ! with no variance.  This is also known as a Delta function.  The
+!        ! domain of X1i is from zero to infinity.  If sigmaX1i = 0 and 
+!        ! muX1i <= 0, then the entire Gaussian lies outside the domain,
+!        ! and the result is 0 for that individual plume.
+!        !
+!        ! However, if sigmaX1i = 0 and muX1i > 0, then the entire Gaussian
+!        ! lies within the domain.  A close approximation for the parabolic
+!        ! cylinder function is made.  This approximation is only valid in
+!        ! cases where the input into the parabolic cylinder function is
+!        ! extremely large in magnitude and very much greater in magnitude than
+!        ! the order of the parabolic cylinder function -- as it is in this case
+!        ! where sigmaX1i = 0 means that the magnitude of the input is infinite
+!        ! and very much greater than the magnitude of the order of the function
+!        ! which comes to | - (alpha + 1) | = alpha + 1.
+!        !
+!        ! The result for each plume is (Equation #2):
+!        !
+!        ! ( muX1i )^alpha * EXP{ muX2*beta + (1/2)*sigmaX2^2*beta^2 }
+!        !
+!        ! One also needs to note an issue with numerical error.  If sigmaX1i
+!        ! is very small, but not quite 0, one would still be able to compute
+!        ! the answer mathematically using the equation for sigmaX1i /= 0.
+!        ! However, ( muX1i / sigmaX1i ) becomes very large.  If it becomes
+!        ! large enough, the result of the parabolic cylinder function becomes
+!        ! greater than the computer can represent.  The greatest value that
+!        ! can be represented by a DOUBLE PRECISION variable is of the order
+!        ! of 10^308.  Therefore, a sufficiently small sigmaX1i must be treated
+!        ! the same as if sigmaX1i = 0.  A test is needed to determine if the
+!        ! computer can represent the number or not.
+!        !
+!        ! In Summary:
+!        ! 
+!        ! When sigmaX1i /= 0 (or is not sufficiently small):  Equation #1
+!        ! When sigmaX1i = 0 (or is sufficiently small)
+!        !                                     and muX1i > 0:  Equation #2
+!        ! When sigmaX1i = 0 (or is sufficiently small)
+!        !                                    and muX1i <= 0:  0
+!        !
+!        ! Brian Griffin.  November 10, 2006.
+!        !
+!        !-----------------------------------------------------------------------
+!
+!
+!        FUNCTION PDF_BIVAR_2G_LN ( muY1i, muY2, sigmaY1i, sigmaY2,
+!     .                             corrY1Y2, alpha_exp, beta_exp )
+!
+!        USE constants
+!        USE polpak_gamma, ONLY: gamma
+!
+!        IMPLICIT NONE
+!
+!        ! Input variables.
+!        REAL, INTENT(IN):: muY1i     ! Plume average of Y1
+!        REAL, INTENT(IN):: muY2      ! Average of Y2
+!        REAL, INTENT(IN):: sigmaY1i  ! Plume standard deviation of Y1
+!        REAL, INTENT(IN):: sigmaY2   ! Standard deviation of Y2
+!        REAL, INTENT(IN):: corrY1Y2  ! Intra-Gaussian correlation between Y1,Y2
+!        REAL, INTENT(IN):: alpha_exp ! Exponent associated with Y1 variable.
+!        REAL, INTENT(IN):: beta_exp  ! Exponent associated with Y2 variable.
+!        
+!        ! Output variable.
+!        REAL:: PDF_BIVAR_2G_LN
+!
+!        ! Local variables.
+!
+!        ! "Y" variables Gaussianized and coverted to "X" variables.
+!        REAL:: muX1i     ! Plume average of X1
+!        REAL:: muX2      ! Average of X2
+!        REAL:: sigmaX1i  ! Plume standard deviation of X1
+!        REAL:: sigmaX2   ! Standard deviation of X2
+!        REAL:: corrX1X2  ! Intra-Gaussian correlation between X1,X2
+!
+!        DOUBLE PRECISION:: gamma_fnc_input
+!        DOUBLE PRECISION:: parab_cyl_fnc_ord
+!        DOUBLE PRECISION:: parab_cyl_fnc_input
+!        DOUBLE PRECISION:: test
+!        LOGICAL:: use_eq_1
+!!        DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308.0
+!!       Found that above is not valid on most compilers -dschanen
+!        DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308
+!
+!        !----- Section #1 ------------------------------------------------------
+!
+!        !!!!!!!!!! Convert all means, standard deviations, and correlations
+!        !!!!!!!!!! to Gaussian terms.
+!
+!        ! Y1i is a truncated double Gaussian.
+!        ! Therefore, X1i is still a truncated double Gaussian.
+!        ! It does not change.
+!        muX1i = muY1i
+!        sigmaX1i = sigmaY1i
+!
+!        ! Y2 is a Lognormal.  It is converted to X2, which is a Gaussian.
+!        ! X2 = ln Y2
+!        muX2 = LOG(  muY2 * (  1.0 
+!     .                       + ( (sigmaY2**2.0) / (muY2**2.0) ) 
+!     .                      )**(-1.0/2.0)
+!     .            )
+!        sigmaX2 = SQRT( LOG(  1.0 + ( (sigmaY2**2.0) / (muY2**2.0) ) )
+!     .                )
+!
+!        !!! Intra-Gaussian correlation.
+!
+!        ! corrY1Y2 is a correlation between a Gaussian and a Log-normal.
+!        ! It must be converted to corrX1X2, which is a correlation between
+!        ! two Gaussians.
+!        corrX1X2 = corrY1Y2 
+!     .                   * SQRT( EXP(sigmaX2**2.0) - 1.0 ) / sigmaX2
+!
+!        !----- Section #2 ------------------------------------------------------
+!
+!        !!!!!!!!!! Use the appropriate equation and solve.
+!
+!        ! Initialize logical to false.
+!        use_eq_1 = .false.
+!
+!        ! Input to the gamma function.
+!        gamma_fnc_input = alpha_exp + 1.0
+!
+!        ! Order of the parabolic cylinder function.
+!        parab_cyl_fnc_ord = - ( alpha_exp + 1.0 )
+!
+!        ! Input to the parabolic cylinder function.
+!        parab_cyl_fnc_input = - ( (muX1i/sigmaX1i)
+!     .                           + corrX1X2*sigmaX2*beta_exp )
+!
+!        ! If sigmaX1i = 0, then equation #1 cannot be used.
+!        IF ( sigmaX1i == 0.0 ) THEN
+!           use_eq_1 = .false.
+!        ELSE
+!           ! Test to see whether the value of sigmaX1i is sufficiently small
+!           ! enough to cause the parabolic cylinder function to produce a
+!           ! result to large to be represented numerically by the computer.
+!           test = D_fnc( parab_cyl_fnc_ord, parab_cyl_fnc_input )
+!
+!           IF ( test >= 0.0d0 .AND. test < limit ) THEN
+!              use_eq_1 = .true.
+!           ELSE
+!              use_eq_1 = .false.
+!           ENDIF
+!
+!        ENDIF
+!
+!
+!        IF ( use_eq_1 ) THEN
+!
+!           ! Case where sigmaX1i is not equal to 0 (and sigmaX1i is not
+!           ! sufficiently small enough to cause the parabolic cylinder function
+!           ! to produce a result greater than what the computer can represent 
+!           ! numerically).
+!
+!           PDF_BIVAR_2G_LN =
+!     .       (1.0/SQRT(2.0*pi)) * (sigmaX1i)**alpha_exp 
+!     .     * EXP(   muX2*beta_exp
+!     .            + (1.0/2.0)*(sigmaX2**2.0)*(beta_exp**2.0)
+!     .            - (1.0/4.0)*(  (muX1i/sigmaX1i)
+!     .                         + corrX1X2*sigmaX2*beta_exp )**2.0
+!     .          )
+!     .     * GAMMA( gamma_fnc_input )
+!     .     * D_fnc( parab_cyl_fnc_ord, parab_cyl_fnc_input )
+!
+!        ELSEIF ( .not. use_eq_1 .AND. muX1i > 0.0 ) THEN
+!
+!           ! Case where sigmaX1i is equal to 0 (or sigmaX1i is sufficiently
+!           ! small enough to cause the parabolic cylinder function to produce a
+!           ! result greater than what the computer can represent numerically)
+!           ! and muX1i is greater than 0.
+!
+!           PDF_BIVAR_2G_LN =
+!     .       (muX1i)**alpha_exp 
+!     .     * EXP(   muX2*beta_exp
+!     .            + (1.0/2.0)*(sigmaX2**2.0)*(beta_exp**2.0) )
+!
+!        ELSEIF ( .not. use_eq_1 .AND. muX1i <=  0.0 ) THEN
+!           ! Case where sigmaX1i is equal to 0 (or sigmaX1i is sufficiently
+!           ! small enough to cause the parabolic cylinder function to produce a
+!           ! result greater than what the computer can represent numerically)
+!           ! and muX1i is less than or equal to 0.
+!
+!           PDF_BIVAR_2G_LN = 0.0
+!
+!        ENDIF
+!
+!        RETURN
+!
+!        END FUNCTION PDF_BIVAR_2G_LN
+!
+!!===============================================================================
+!        !
+!        ! FUNCTION PDF_BIVAR_LN_LN
+!        !-----------------------------------------------------------------------
+!        !
+!        ! DESCRIPTION
+!        !------------
+!        !
+!        ! BIVARIATE LOG-NORMAL -- LOG-NORMAL PDF
+!        !
+!        ! This function helps solve for the expression:
+!        !
+!        ! overbar{ Y1^alpha Y2^beta }; where:
+!        !
+!        ! Y1 is distributed as Log-normal with a domain from zero to infinity.
+!        ! Y2 is distributed as Log-normal with a domain from zero to infinity.
+!        !
+!        ! Y1 and Y2 are then transformed into X1 and X2 respectively.
+!        !
+!        ! X1 is distributed as Normal (Gaussian) with a domain from negative
+!        ! infinity to infinity.  X1 = LN( Y1 )
+!        ! X2 is distributed as Normal (Gaussian) with a domain from negative
+!        ! infinity to infinity.  X2 = LN( Y2 )
+!        !
+!        ! The resulting equation that needs to be solved for is:
+!        !
+!        ! overbar{ Y1^alpha Y2^beta } =
+!        ! INT(-inf:inf) INT(-inf:inf)
+!        !             exp( alpha*X1 + beta*X2 ) P(X1,X2) dX2 dX1
+!        !
+!        ! P(X1,X2) is simply the equation for a Bivariate Gaussian Distribution.
+!        !
+!        ! The Probability Density Function for a Bivariate Normal Distribution:
+!        !
+!        ! P(X1,X2) = 
+!        !
+!        ! 1 / { 2 * PI * sigmaX1 * sigmaX2 * SQRT[ 1 - corrX1X2^2 ] }
+!        ! * EXP{ -(1/2) * phi }
+!        !
+!        ! where,
+!        !
+!        ! phi =
+!        !
+!        ! 1 / [ 1 - corrX1X2^2 ]
+!        ! * {
+!        !       [ 1 / sigmaX1^2 ] * ( X1 - muX1 )^2
+!        !     + [ 1 / sigmaX2^2 ] * ( X2 - muX2 )^2
+!        !     + [ 2*corrX1X2 / (sigmaX1*sigmaX2) ]
+!        !       * ( X1 - muX1 ) * ( X2 - muX2 )
+!        !   }
+!        !
+!        ! Definitions:
+!        !
+!        ! muX1:  The average of the X1 (or ln Y1) variable.
+!        ! muX2:  The average of the X2 (or ln Y2) variable.
+!        !
+!        ! sigmaX1:  The standard deviation (square-root of variance) of the
+!        !           X1 (or ln Y1) variable.
+!        ! sigmaX2:  The standard deviation (square-root of variance) of the
+!        !           X2 (or ln Y2) variable.
+!        !
+!        ! corrX1X2:  Intra-Gaussian correlation between X1 and X2 (or between
+!        !            ln Y1 and ln Y2).
+!        !
+!        ! After careful double-integration of the above equation, one gets the
+!        ! result for each plume of the bivariate log-normal -- log-normal
+!        ! equation.
+!        !
+!        ! The result is:
+!        !
+!        ! * EXP{    muX1*alpha + muX2*beta
+!        !        + (1/2)*sigmaX1^2*alpha^2 + (1/2)*sigmaX2^2*beta^2
+!        !        + corrX1X2*sigmaX1*alpha*sigmaX2*beta
+!        !      }
+!        !
+!        ! The above equation gives us the answer for:
+!        !
+!        ! overbar{ Y1^alpha Y2^beta }
+!        !
+!        ! Brian Griffin.  November 14, 2006.
+!        !
+!        !-----------------------------------------------------------------------
+!
+!
+!        FUNCTION PDF_BIVAR_LN_LN ( muY1, muY2, sigmaY1, sigmaY2,
+!     .                             corrY1Y2, alpha_exp, beta_exp )
+!
+!        USE constants
+!
+!        IMPLICIT NONE
+!
+!        ! Input variables.
+!        REAL, INTENT(IN):: muY1      ! Average of Y1
+!        REAL, INTENT(IN):: muY2      ! Average of Y2
+!        REAL, INTENT(IN):: sigmaY1   ! Standard deviation of Y1
+!        REAL, INTENT(IN):: sigmaY2   ! Standard deviation of Y2
+!        REAL, INTENT(IN):: corrY1Y2  ! Intra-Gaussian correlation between Y1,Y2
+!        REAL, INTENT(IN):: alpha_exp ! Exponent associated with Y1 variable.
+!        REAL, INTENT(IN):: beta_exp  ! Exponent associated with Y2 variable.
+!        
+!        ! Output variable.
+!        REAL:: PDF_BIVAR_LN_LN
+!
+!        ! Local variables.
+!
+!        ! "Y" variables Gaussianized and coverted to "X" variables.
+!        REAL:: muX1      ! Average of X1
+!        REAL:: muX2      ! Average of X2
+!        REAL:: sigmaX1   ! Standard deviation of X1
+!        REAL:: sigmaX2   ! Standard deviation of X2
+!        REAL:: corrX1X2  ! Intra-Gaussian correlation between X1,X2
+!
+!        !----- Section #1 ------------------------------------------------------
+!
+!        !!!!!!!!!! Convert all means, standard deviations, and correlations
+!        !!!!!!!!!! to Gaussian terms.
+!
+!        ! Y1 is a Lognormal.  It is converted to X1, which is a Gaussian.
+!        ! X1 = ln Y1
+!        muX1 = LOG(  muY1 * (  1.0 
+!     .                       + ( (sigmaY1**2.0) / (muY1**2.0) ) 
+!     .                      )**(-1.0/2.0)
+!     .            )
+!        sigmaX1 = SQRT( LOG(  1.0 + ( (sigmaY1**2.0) / (muY1**2.0) ) )
+!     .                )
+!
+!        ! Y2 is a Lognormal.  It is converted to X2, which is a Gaussian.
+!        ! X2 = ln Y2
+!        muX2 = LOG(  muY2 * (  1.0 
+!     .                       + ( (sigmaY2**2.0) / (muY2**2.0) ) 
+!     .                      )**(-1.0/2.0)
+!     .            )
+!        sigmaX2 = SQRT( LOG(  1.0 + ( (sigmaY2**2.0) / (muY2**2.0) ) )
+!     .                )
+!
+!        !!! Intra-Gaussian correlation.
+!        ! corrY1Y2 is a correlation between two Log-normals.  It must be 
+!        ! converted to corrX1X2, which is a correlation between two Gaussians.
+!        corrX1X2 = LOG( 1.0 + corrY1Y2
+!     .                             * SQRT( EXP(sigmaX1**2.0) - 1.0 )
+!     .                             * SQRT( EXP(sigmaX2**2.0) - 1.0 )
+!     .                ) / ( sigmaX1 * sigmaX2 )
+!
+!        !----- Section #2 ------------------------------------------------------
+!
+!        !!!!!!!!!! Solve.
+!
+!        PDF_BIVAR_LN_LN =
+!     .     EXP(   muX1*alpha_exp + muX2*beta_exp
+!     .          + (1.0/2.0)*(sigmaX1**2.0)*(alpha_exp**2.0)
+!     .          + (1.0/2.0)*(sigmaX2**2.0)*(beta_exp**2.0)
+!     .          + corrX1X2*sigmaX1*alpha_exp*sigmaX2*beta_exp
+!     .        )
+!
+!        RETURN
+!
+!        END FUNCTION PDF_BIVAR_LN_LN
+!
+!!===============================================================================
 
         ! DESCRIPTION
         !
