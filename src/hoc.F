@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.96 2006-11-07 21:37:03 dschanen Exp $
+! $Id: hoc.F,v 1.97 2006-11-17 19:57:46 mjfalk Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -1015,20 +1015,44 @@
 
         implicit none
 
+        ! Local Constants
+        integer, parameter ::
+     .    nrdamp = 0              ! number of damping points
+
+
         ! Input Variables
-        integer, intent(in) :: iteration
-        logical, intent(in) :: stdout
+        integer, intent(in) ::
+     .    iteration
+
+        logical, intent(in) ::
+     .    stdout
+
 
         ! Input/Output Variables
-        logical, intent(inout) :: isValid
+        logical, intent(inout) ::
+     .    isValid
 
-        ! Michael Falk, 1 November 2006, thinks these should be renamed
-        ! and moved to diag_variables.F .
-        real snowv(1,1,gr%nnzp)
-        real falli(1,1,gr%nnzp)
-        real fallg(1,1,gr%nnzp)
-        real fallr(1,1,gr%nnzp)
-        ! eMFc
+
+        ! Local variables
+        real, dimension(1,1,gr%nnzp) ::
+     .    snowv,     ! velocity of snowflakes (added by Michael Falk)
+     .    falli,     ! velocity of pristine ice
+     .    fallg,     ! velocity of graupel
+     .    fallr,     ! velocity of raindrops
+     .    cond,      ! condensation/evaporation
+     .    ritend,    ! d(rim)/dt (ice tendency)
+     .    rrtend,    ! d(rrm)/dt (rain tendency)
+     .    rgtend,    ! d(rgm)/dt (graupel tendency)
+     .    rsnowtend, ! d(rsnowm)/dt (snow tendency)
+     .    rttend,    ! d(rtm)/dt (total water tendency)
+     .    thlmtend   ! d(thlm)/dt (theta-l tendency)
+
+        integer ::
+     .    k          ! vertical loop control variable
+
+        logical ::
+     .    icedfs_on,       ! Using the simplified ice scheme?
+     .    coamps_micro_on  ! Using COAMPS microphysics? (end Michael Falk additions)
 
 !-----------------------------------------------------------------------
 
@@ -1169,13 +1193,18 @@
      .                            )
 
          case ( "mpace" ) ! MPACE case
-           call mpace_tndcy( time, time_initial, dtmain, thlm,
-     .                       rim, rrm, rgm, rsnowm,
-     .                       exner, rhot, rtm, p, thvm, rcm,
+           icedfs_on       = .FALSE.
+           coamps_micro_on = .TRUE.
+
+           if ((icedfs_on) .and. (coamps_micro_on)) then
+            write(*,*) 'Cannot use both icedfs and COAMPS microphysics.'
+            stop
+           end if
+
+           call mpace_tndcy( time, dtmain, thlm,
+     .                       exner, rhot, rtm, p, thvm, icedfs_on, rcm,
      .                       wmt, wmm, thlm_forcing, rtm_forcing,
-     .                       Frad, radht, 
-     .                       nc3, ni3, nr3, ncn3,
-     .                       snowv, falli, fallg, fallr
+     .                       Frad, radht
 #ifdef SCALARS
      .                     ,sclrm_forcing
 #endif /* SCALARS */
@@ -1184,6 +1213,32 @@
 #ifdef SCALARS
            sclrm_forcing(:, SCLR_THETA) = 0.
 #endif /* SCALARS */
+
+!           call coamps_micro_driver(gr%nnzp,wmt,p,1,exner,rhot,time,
+!     .            time_initial,gr%zt,
+!     .            thlm,dtmain,1,gr%nnzp,gr%nnzp+1,nrdamp,1,1,1,
+!     .            coamps_micro_on,
+!     .            rtm,rcm,rim,rrm,rgm,rsnowm,
+!     .            nc3,nr3,ncn3,ni3,
+!     .            cond,snowv,falli,fallr,fallg,thlmtend,
+!     .            ritend,rrtend,rgtend,rsnowtend,rttend)
+
+           call coamps_micro_driver(gr%nnzp,1,time,time_initial,dtmain,
+     .            gr%zt,rtm,wmt,p,exner,rhot,
+     .            thlm,rim,rrm,rgm,rsnowm,
+     .            1,gr%nnzp,gr%nnzp+1,nrdamp,1,1,1,
+     .            coamps_micro_on,
+     .            rcm,nc3,nr3,ncn3,ni3,
+     .            cond,snowv,falli,fallr,fallg,
+     .            ritend,rrtend,rgtend,rsnowtend,
+     .            rttend,thlmtend)
+
+
+           do k=1,gr%nnzp
+             thlm_forcing(k) = thlm_forcing(k) + thlmtend(1,1,k)
+             rtm_forcing(k)  = rtm_forcing(k)  + rttend(1,1,k)
+           end do ! k
+
 
          case default
            write(unit=fstderr,fmt=*) 
