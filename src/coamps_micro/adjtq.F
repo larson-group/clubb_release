@@ -448,6 +448,7 @@ c
           th    (i)=0.0
           tttemp(i)=0.0
       enddo
+
 c
 c***********************************************************************
 c     compute pressure (assume cp/r=3.5)
@@ -471,6 +472,7 @@ c
         rbar2d(ilen) = pr(ilen)/(r*tttemp(ilen))
        enddo
       enddo
+
 c
 c***********************************************************************
 c initialize ccn if not using drizzle scheme
@@ -501,6 +503,7 @@ c
         enddo
        enddo
       endif
+
 c
 c***********************************************************************
 c          store mixing ratios in temporary working arrays
@@ -592,17 +595,6 @@ c
         pterm(i)=exp(ex1*log(p00/pr(i)))
         pterm4(i)=pterm(i)*pterm(i)
       enddo
-! Michael Falk, 29 August 2006, checking for balance
-      do k=1,kk
-        sum1(k) = qvtemp(k) + qctemp(k) + qitemp(k) + qstemp(k) +
-     .            qrtemp(k) + qgtemp(k)
-!        if (.not. (sum1(k) .eq. sum2(k))) then
-!          print *,'imbalance: 2 at k=',k
-!          print *,'sum1(k)=',sum1(k)
-!          print *,'sum2(k)=',sum1(k)
-!        end if
-      end do
-! eMFc
 c
 c***********************************************************************
 c          1.0/(a'+b'), 1.0/(a''+b''), terma and termb
@@ -631,21 +623,7 @@ c
         apbp  (i)=1.0/(xb(i)*hlvoka+apbp  (i))
         appbpp(i)=1.0/(xc(i)*hlsoka+appbpp(i))
       enddo
-c
-c Michael Falk 25 Aug 2006
-c      print *,'Tracer 3'
-c eMFc
-! Michael Falk, 29 August 2006, checking for balance
-      do k=1,kk
-        sum2(k) = qvtemp(k) + qctemp(k) + qitemp(k) + qstemp(k) +
-     .            qrtemp(k) + qgtemp(k)
-!        if (.not. (sum1(k) .eq. sum2(k))) then
-!          print *,'imbalance: 3 at k=',k
-!          print *,'sum1(k)=',sum1(k)
-!          print *,'sum2(k)=',sum1(k)
-!        end if
-      end do
-! eMFc
+
       if(lice)then
 c
 c***********************************************************************
@@ -717,17 +695,6 @@ c         pristine ice category. Frozen rain water will be converted
 c         to the snow category
 c***********************************************************************
 c
-! Michael Falk, 29 August 2006, checking for balance
-      do k=1,kk
-        sum1(k) = qvtemp(k) + qctemp(k) + qitemp(k) + qstemp(k) +
-     .            qrtemp(k) + qgtemp(k)
-!        if (.not. (sum1(k) .eq. sum2(k))) then
-!          print *,'imbalance: 4 at k=',k
-!          print *,'sum1(k)=',sum1(k)
-!          print *,'sum2(k)=',sum1(k)
-!        end if
-      end do
-! eMFc
        if(lgrpl)then
          call tgqg(fallg,qgtemp,sfgraup,pterm4,pcut,abar,bgrp,mkk)
        endif
@@ -760,21 +727,6 @@ c          compute psmlti - melting of cloud ice (eq. a28, rh-1983)
 c***********************************************************************
 c
        call eqa28(psmlti,qitemp,tttemp,pcut,twodt,tzero,mkk)
-
-c Michael Falk 25 Aug 2006
-c      print *,'Tracer 4'
-c eMFc
-! Michael Falk, 29 August 2006, checking for balance
-      do k=1,kk
-        sum2(k) = qvtemp(k) + qctemp(k) + qitemp(k) + qstemp(k) +
-     .            qrtemp(k) + qgtemp(k)
-!        if (.not. (sum1(k) .eq. sum2(k))) then
-!          print *,'imbalance: 5 at k=',k
-!          print *,'sum1(k)=',sum1(k)
-!          print *,'sum2(k)=',sum1(k)
-!        end if
-      end do
-! eMFc
 
 c
 c***********************************************************************
@@ -873,20 +825,6 @@ c***********************************************************************
 c
        if(lgrpl)call eqa22g(pgacwm,pgacw,tttemp,rbar2d,qgtemp
      1                     ,tzero,twodt,pcut,heatlf,cw,mkk)
-c Michael Falk 25 Aug 2006
-c      print *,'Tracer 5'
-c eMFc
-! Michael Falk, 29 August 2006, checking for balance
-      do k=1,kk
-        sum1(k) = qvtemp(k) + qctemp(k) + qitemp(k) + qstemp(k) +
-     .            qrtemp(k) + qgtemp(k)
-!        if (.not. (sum1(k) .eq. sum2(k))) then
-!          print *,'imbalance: 6 at k=',k
-!          print *,'sum1(k)=',sum1(k)
-!          print *,'sum2(k)=',sum1(k)
-!        end if
-      end do
-! eMFc
 c
 c***********************************************************************
 c          adjust temperature and moisture fields over interior of 
@@ -939,20 +877,6 @@ c
 c
       endif
       
-c Michael Falk 25 Aug 2006
-c      print *,'Tracer 6'
-c eMFc
-! Michael Falk, 29 August 2006, checking for balance
-      do k=1,kk
-        sum2(k) = qvtemp(k) + qctemp(k) + qitemp(k) + qstemp(k) +
-     .            qrtemp(k) + qgtemp(k)
-!        if (.not. (sum1(k) .eq. sum2(k))) then
-!          print *,'imbalance: 7 at k=',k
-!          print *,'sum1(k)=',sum1(k)
-!          print *,'sum2(k)=',sum1(k)
-!        end if
-      end do
-! eMFc
 c
 c***********************************************************************
 c                        warm phase microphysics
@@ -1062,20 +986,7 @@ c
      1       ,xa,iwx1,termg,apbp,qadjw,rbar2d,tzero,twodt,pcut,mkk)
 
       endif
-c Michael Falk 25 Aug 2006
-c      print *,'Tracer 7'
-c eMFc
-! Michael Falk, 29 August 2006, checking for balance
-      do k=1,kk
-        sum1(k) = qvtemp(k) + qctemp(k) + qitemp(k) + qstemp(k) +
-     .            qrtemp(k) + qgtemp(k)
-!        if (.not. (sum1(k) .eq. sum2(k))) then
-!          print *,'imbalance: 8 at k=',k
-!          print *,'sum1(k)=',sum1(k)
-!          print *,'sum2(k)=',sum1(k)
-!        end if
-      end do
-! eMFc
+
 c
 c***********************************************************************
 c compute weights to used to normalize microphysical rates
@@ -1097,6 +1008,7 @@ c***********************************************************************
 c
       call qsatvi(tttemp,pr,qsatv,qsati,lice,mkk)
 c
+
       call slope(sfrain,sfraincm,sfsnow,sfgraup,qrtemp,qstemp,qgtemp
      1          ,rbar2d,sloper,slopes,slopeg,pcut,lice,lgrpl,mkk)
 c
@@ -1161,21 +1073,7 @@ c          Ice-phase Microphysics
 c***********************************************************************
 c
       if (lice) then
-c
-c Michael Falk 25 Aug 2006
-c      print *,'Tracer 8'
-c eMFc
-! Michael Falk, 29 August 2006, checking for balance
-      do k=1,kk
-        sum2(k) = qvtemp(k) + qctemp(k) + qitemp(k) + qstemp(k) +
-     .            qrtemp(k) + qgtemp(k)
-!        if (.not. (sum1(k) .eq. sum2(k))) then
-!          print *,'imbalance: 9 at k=',k
-!          print *,'sum1(k)=',sum1(k)
-!          print *,'sum2(k)=',sum1(k)
-!        end if
-      end do
-! eMFc
+
 c***********************************************************************
 c          compute adjusted values of t and q (tadj,qadj) expected from 
 c          ice-phase microphysics 
@@ -1267,20 +1165,6 @@ c
 c
       call slope(sfrain,sfraincm,sfsnow,sfgraup,qrtemp,qstemp,qgtemp
      1          ,rbar2d,sloper,slopes,slopeg,pcut,lice,lgrpl,mkk)
-c Michael Falk 25 Aug 2006
-c      print *,'Tracer 9'
-c eMFc
-! Michael Falk, 29 August 2006, checking for balance
-      do k=1,kk
-        sum1(k) = qvtemp(k) + qctemp(k) + qitemp(k) + qstemp(k) +
-     .            qrtemp(k) + qgtemp(k)
-!        if (.not. (sum1(k) .eq. sum2(k))) then
-!          print *,'imbalance: 10 at k=',k
-!          print *,'sum1(k)=',sum1(k)
-!          print *,'sum2(k)=',sum1(k)
-!        end if
-      end do
-! eMFc
 c
 c***********************************************************************
 c          compute praut - autoconversion of cloud water
@@ -1365,20 +1249,6 @@ c
 c
         call tgqs(falls,qstemp,sfsnow,pterm4,pcut,aprpr,bsnow,mkk)
        endif
-c Michael Falk 25 Aug 2006
-c      print *,'Tracer 10'
-c eMFc
-! Michael Falk, 29 August 2006, checking for balance
-      do k=1,kk
-        sum2(k) = qvtemp(k) + qctemp(k) + qitemp(k) + qstemp(k) +
-     .            qrtemp(k) + qgtemp(k)
-!        if (.not. (sum1(k) .eq. sum2(k))) then
-!          print *,'imbalance: 11 at k=',k
-!          print *,'sum1(k)=',sum1(k)
-!          print *,'sum2(k)=',sum1(k)
-!        end if
-      end do
-! eMFc
 c
 c***********************************************************************
 c          compute pconv - conversion of cloud ice to snow
@@ -1454,20 +1324,6 @@ c
      2            ,nrtemp,nntemp,pcut,twodt,lice,lgrpl,tttemp,ary1d
      3            ,maxpt1d,kmax,maxvr1d,n1d,i1dflg,i1d,j1d,j,icomp
      4            ,ldrizzle,nitemp,nipts,mkk)
-c Michael Falk 25 Aug 2006
-c      print *,'Tracer 11'
-c eMFc
-! Michael Falk, 29 August 2006, checking for balance
-      do k=1,kk
-        sum1(k) = qvtemp(k) + qctemp(k) + qitemp(k) + qstemp(k) +
-     .            qrtemp(k) + qgtemp(k)
-!        if (.not. (sum1(k) .eq. sum2(k))) then
-!          print *,'imbalance: 12 at k=',k
-!          print *,'sum1(k)=',sum1(k)
-!          print *,'sum2(k)=',sum1(k)
-!        end if
-      end do
-! eMFc
 c
 c***********************************************************************
 c     finalize fields
@@ -1563,21 +1419,6 @@ c eMFc
        enddo
       enddo
 
-c
-c Michael Falk 25 Aug 2006
-c      print *,'Tracer 13'
-c eMFc
-! Michael Falk, 29 August 2006, checking for balance
-      do k=1,kk
-        sum2(k) = qvtemp(k) + qctemp(k) + qitemp(k) + qstemp(k) +
-     .            qrtemp(k) + qgtemp(k)
-!        if (.not. (sum1(k) .eq. sum2(k))) then
-!          print *,'imbalance: 13 at k=',k
-!          print *,'sum1(k)=',sum1(k)
-!          print *,'sum2(k)=',sum1(k)
-!        end if
-      end do
-! eMFc
       if(ldrizzle)then
        ilen=0
        do i=1,nipts
@@ -1604,20 +1445,6 @@ c<--end of modification
         enddo
        enddo
       endif
-c Michael Falk 25 Aug 2006
-c      print *,'Tracer 14'
-c eMFc
-! Michael Falk, 29 August 2006, checking for balance
-      do k=1,kk
-        sum1(k) = qvtemp(k) + qctemp(k) + qitemp(k) + qstemp(k) +
-     .            qrtemp(k) + qgtemp(k)
-!        if (.not. (sum1(k) .eq. sum2(k))) then
-!          print *,'imbalance: 14 at k=',k
-!          print *,'sum1(k)=',sum1(k)
-!          print *,'sum2(k)=',sum1(k)
-!        end if
-      end do
-! eMFc
 c
 c***********************************************************************
 c zero out fields in the damping layer
@@ -1636,50 +1463,8 @@ c
         qv3(icomp(i),j,k)=max(pcut,qv3(icomp(i),j,k) )
        enddo
       enddo
-c Michael Falk 25 Aug 2006
-c      print *,'Tracer 15'
-c eMFc
-! Michael Falk, 29 August 2006, checking for balance
-!      do k=1,kk
-!        print *,'qc3 test is : ',qc3(1,1,k)
-!        print *,'qctemp test is : ',qctemp(k)
-!        sum2(k) = qvtemp(k) + qctemp(k) + qitemp(k) + qstemp(k) +
-!     .            qrtemp(k) + qgtemp(k)
-!        sumfinal(k) = qvtemp(k) + qctemp(k) + qitemp(k) + qstemp(k) +
-!     .            qrtemp(k) + qgtemp(k)
-!        print *,'sumfinal ',sumfinal(k),' k ',k
-!        print *,'qv ',qvtemp(k),' qc ',qctemp(k),' qi ',qitemp(k)
-!        print *,'qv3',qv3(1,1,k),' qc3 ',qc3(1,1,k),' qi3 ',qi3(1,1,k)
-!        print *,'================================================'
-!        if (.not. (sum1(k) .eq. sum2(k))) then
-!          print *,'imbalance: 15 at k=',k
-!          print *,'sum1(k)=',sum1(k)
-!          print *,'sum2(k)=',sum2(k)
-!        end if
-!        if (.not. (suminit(k) .eq. sumfinal(k))) then
-!          print *,'imbalance: final at k=',k
-!          print *,'suminit(k)=',suminit(k)
-!          print *,'sumfinal(k)=',sumfinal(k)
-!        end if
-!      end do
-! eMFc
 c
 c***********************************************************************
 c
-c Michael Falk 31 Aug 2006
-c      print *,'Tracer 16'
-c      print *,'qc is ',qctemp
-c      print *,'qv is ',qvtemp
-c      print *,'qi is ',qitemp
-c eMFc
-
-! Michael Falk, 9 Oct 2006
-!      print *,'adjtq snowv:',snowv
-!      print *,'adjtq falli:',falli
-!      print *,'adjtq fallg:',fallg
-!      print *,'adjtq falls:',falls
-!      print *,'adjtq fallr:',fallr
-! eMFc
-
       return
       end
