@@ -1,12 +1,14 @@
 !----------------------------------------------------------------------
       subroutine coamps_micro_driver
-     .       (grnnzp,p3,w3,w3dw1,wtm,exbm,rbm,timea,
-     .        thlm,deltf,nne,kk,kmax,nrdamp,j,icon,icond,
-     .        len,icase,lice,ldrizzle,lgrpl,
-     .        qc3,qi3,qr3,qg3,qs3,qv3,th3,
-     .        nc3,nr3,ncn3,ni3,pcut,
-     .        cond,snowv,falli,fallr,fallg,thlmtend,
-     .        ritend,rrtend,rgtend,rsnowtend,rttend)
+     .       (grnnzp,wtm,timea,time_initial,deltf,
+     .        grzt,qt3,w3,w3dw1,exbm,rbm,
+     .        thlm,qi3,qr3,qg3,qs3,
+     .        nne,kk,kmax,nrdamp,j,icon,icond,
+     .        lice,
+     .        qc3,nc31d,nr31d,ncn31d,ni31d,
+     .        cond,snowv,falli,fallr,fallg,
+     .        ritend,rrtend,rgtend,rsnowtend,
+     .        rttend,thlmtend)
 
 !    Description:
 !      Subroutine to compute ice, as it is done in COAMPS, using
@@ -19,224 +21,278 @@
       use constants
       implicit none
 
+      ! External Calls
+      real, external ::
+     .  gamma,
+     .  rsat,
+     .  rsati
+
+
+      ! Local Constants
+      real, parameter ::
+     .  aa0 = -0.267,  ! All of these are constants set in COAMPS and used by adjtq.
+     .  aa1 = 5150.,
+     .  aa2 = -1.0225e6,
+     .  aa3 = 7.55e7,
+     .  abar = 19.3,
+     .  apr = 3000.,
+     .  aprpr = 1.139,
+     .  bsnow = 0.11,
+     .  cbeta = 0.6,
+     .  cnzero = 0.01,
+     .  cimass = 9.4e-10,
+     .  cw = 4218.,
+     .  difvap = 2.26e-5,
+     .  erc = 1.,
+     .  esi = 0.1,
+     .  eic = 1.,
+     .  eri = 1.,
+     .  egc = 1.,
+     .  esc = 1.,
+     .  esr = 0.4,
+     .  egi = 0.1,
+     .  egr = 1.0,
+     .  egs = 0.1,
+     .  mw = 18.016,
+     .  praut1 = 0.001,
+     .  praut2 = 0.0004,
+     .  rholiq = 1000.,
+     .  rhosno = 100.,
+     .  rhogrp = 400.,
+     .  rnzero = 8.0e6,
+     .  snzero = 2.0e7,
+     .  gnzero = 4.0e6,
+     .  therco = 2.43e-2,
+     .  tice = 269.16,
+     .  tvr1 = -0.267,
+     .  tvr2 = 206.,
+     .  tvr3 = -2045.,
+     .  tvr4 = 9060.,
+     .  tzero = 273.16,
+     .  visair = 1.718e-5,
+     .  bgrp = 0.37,
+     .  ex1 = 0.2,
+     .  pcut = 1.0e-10,
+     .  i1d = 0, ! 1d graphics parameters
+     .  j1d = 0, ! 1d graphics parameters
+     .  n1d = 0  ! 1d graphics parameters
+
+      integer, parameter ::
+     .  i1dflg = 0,  ! 1d graphics parameters
+     .  maxpt1d = 0, ! 1d graphics parameters
+     .  maxvr1d = 0, ! 1d graphics parameters
+     .  ipts = 1,    ! ??
+     .  xland = 1    ! Land/Sea assumption
+
+
+      ! Input Variables
+      integer, intent(in) ::
+     .  grnnzp        ! number of gridpoints in the vertical (this needs to be first)
+
+      real, intent(in) ::
+     .  wtm,          ! weighting array for mass point (never used)
+     .  timea,        ! Output time
+     .  time_initial, ! Initial time
+     .  deltf         ! Timestep, I think
+
+      real, dimension(grnnzp), intent(in) ::
+     .  grzt,         ! List of heights associated with gridpoints
+     .  qt3(grnnzp)   ! cloud water mixing ratio
+
+      real, dimension(1,1,grnnzp), intent(in) ::
+     .  w3,           ! vertical wind
+     .  w3dw1,        ! aka pr3d    -- pressure array?
+     .  exbm,         ! mean exner function
+     .  rbm,          ! mean density
+     .  thlm,         ! liquid water potential temperature
+     .  qi3,          ! pristine ice mixing ratio
+     .  qr3,          ! rain water mixing ratio
+     .  qg3,          ! graupel mixing ratio
+     .  qs3           ! snow water mixing ratio
+
+      integer, intent(in) ::
+     .  nne,           ! has to do with horiz domain; 1 for HOC?
+     .  kk,            ! equal to grnnzp
+     .  kmax,          ! maximum array size (grnnzp + ??)
+     .  nrdamp,        ! Number of upper model levels in sponge layer (8?)
+     .  j,             ! j-coordinate (always 1 for HOC)
+     .  icon,          ! ice nucleation type
+     .  icond          ! autoconversion; 1=Kessler, 2=Manton/Cotton, 3=K&K, 4=none
+
+      logical, intent(in) ::
+     .  lice           ! Logical: is ice on?
+
+
+      ! Input-Output Variables
+      real, dimension(1,1,grnnzp), intent(inout) ::
+     .  qc3        ! cloud water mixing ratio
+
+      real, dimension(grnnzp), intent(inout) ::
+     .  nc31d,     ! Number of cloud droplets
+     .  nr31d,     ! Number of rain drops
+     .  ncn31d,    ! Number of cloud nuclei
+     .  ni31d      ! Number of ice crystals
+
+
+      ! Output Variables
+      real, dimension(1,1,grnnzp), intent(out) ::
+     .  cond,      ! condensation/evaporation of liquid water
+     .  snowv,     ! snow fall speed
+     .  falli,     ! pristine ice fall speed
+     .  fallr,     ! rain drop fall speed
+     .  fallg,     ! graupel fall speed
+     .  ritend,    ! d(ri)/dt
+     .  rrtend,    ! d(rr)/dt
+     .  rgtend,    ! d(rg)/dt
+     .  rsnowtend, ! d(rsnow)/dt
+     .  rttend,    ! d(rt)/dt
+     .  thlmtend   ! d(thlm)/dt
+
+
+      ! Local Variables
+
+      real ::
+     .  gmbov2,
+     .  gmbov2g,
+     .  gmbp3,
+     .  gm3,
+     .  gm4,
+     .  gm5,
+     .  gm6,
+     .  gm7,
+     .  gm8,
+     .  gm9,
+     .  ex2,
+     .  ex2g,
+     .  ex3,
+     .  ex7,
+     .  ex7g,
+     .  ex4,
+     .  ex4g,
+     .  ex5,
+     .  Lf,
+     .  hlvoka,
+     .  hlsoka,
+     .  hlvorv,
+     .  hlsorv,
+     .  rvochi,
+     .  cpor,
+     .  lfocp,
+     .  lvocp,
+     .  lsocp,
+     .  hkaolf,
+     .  sloper,
+     .  slopes,
+     .  slopeg
+
+      real, dimension(1,1,grnnzp) ::
+     .  w3dw2,    ! aka qsatv3d -- saturation mr array?
+     .  w3dw3,    ! aka temp3d  -- temperature array?
+     .  w3dw4,    ! aka qsati3d -- saturation mr over ice array?
+     .  w3dw5,    ! aka th2t3d  -- exner function array?
+     .  qv3,      ! water vapor mixing ratio
+     .  th3,      ! potential temperature
+     .  p3,       ! perturbation exner function
+     .  nc3,      ! Number of cloud droplets
+     .  nr3,      ! Number of rain drops
+     .  ncn3,     ! Number of cloud nuclei
+     .  ni3,      ! Number of ice crystals
+     .  rcbefore,    ! Temporary variable for calculating rc(qc3) tendency
+     .  rsnowbefore, ! Temporary variable for calculating rsnow(qs3) tendency
+     .  ribefore,    ! Temporary variable for calculating ri(qi3) tendency
+     .  rvbefore,    ! Temporary variable for calculating rv(qv3) tendency
+     .  rrbefore,    ! Temporary variable for calculating rr(qr3) tendency
+     .  rgbefore,    ! Temporary variable for calculating rg(qg3) tendency
+     .  rtbefore,    ! Temporary variable for calculating rt(qt3) tendency
+     .  qt3_fortend, ! Temporary qt3 tendency
+     .  thlmbefore,  ! Temporary variable for calculating thlm tendency
+     .  thmbefore,   ! Temporary variable for calculating thm tendency
+     .  snslp,       ! These variables are the individual microphysical terms.  Michael Falk
+     .  pcond,       ! condensation/evaporation of cloud water
+     .  psmlti,      ! melting of cloud ice
+     .  psacw,       ! collection of cloud water by snow
+     .  pgacw,       ! ???
+     .  piacw,       ! ???
+     .  pchomo,      ! ???
+     .  praut,       ! autoconversion of cloud water
+     .  pracw,       ! collection of cloud water by rain water
+     .  pdepi,       ! depositional growth of cloud ice
+     .  pint,        ! initiation of cloud ice
+     .  pgdep,       ! ???
+     .  pconv,       ! conversion of cloud ice to snow
+     .  psaci,       ! collection of cloud ice by snow
+     .  pgaci,       ! ???
+     .  praci,       ! ???
+     .  prevp,       ! evaporation of raindrops
+     .  psdep,       ! depositional growth of snow
+     .  pmltge,      ! ???
+     .  pgmlt,       ! ???
+     .  psmlt,       ! melting of snow
+     .  pgacrm,      ! ???
+     .  pgacwm,      ! ???
+     .  pracs,       ! ???
+     .  pgshr,       ! ???
+     .  pgacr,       ! ???
+     .  psacr,       ! ???
+     .  piacr,       ! ???
+     .  prhomo,      ! ???
+     .  pgacs,       ! ???
+     .  pmltse,      ! ???
+     .  pwacs        ! ??? end Michael Falk variables
+
+      real, dimension(1,grnnzp,1) ::
+     .  ary1d        ! 1d graphics parameters
+
+      integer ::
+     .  i,
+     .  k,             ! loop control variables
+     .  len,           ! # of saturated points???
+     .  icase,         ! Which case?
+     .  kpts        
+
+      integer, dimension(grnnzp) ::
+     .  icomp          !
+
+      integer, dimension(1,grnnzp) ::
+     .  kcomp          !
+
+      logical ::
+     .  ldrizzle,      ! is drizzle on?
+     .  lgrpl          ! is graupel on?
+
+
 !----------------------------------------------------------------------
-! INPUT VARIABLES
-!----------------------------------------------------------------------
 
-      integer, intent(in) :: grnnzp            ! number of gridpoints in the vertical
+      ! Begin coamps_micro_driver code
+      ldrizzle = .TRUE.
+      lgrpl    = .TRUE.
+      len      = grnnzp
+      icase    = 62
 
-      real, intent(in)    :: p3(1,1,grnnzp)    ! perturbation exner function
-      real, intent(in)    :: w3(1,1,grnnzp)    ! vertical wind
-      real, intent(in)    :: w3dw1(1,1,grnnzp) ! aka pr3d    -- pressure array?
-      real, intent(in)    :: wtm               ! weighting array for mass point (never used)
-      real, intent(in)    :: exbm(1,1,grnnzp)  ! mean exner function
-      real, intent(in)    :: rbm(1,1,grnnzp)   ! mean density
-      real, intent(in)    :: timea             ! Output time
-      real, intent(in)    :: thlm(1,1,grnnzp)  ! liquid water potential temperature
-      real, intent(in)    :: deltf             ! Timestep, I think
+      ! Set up initial fields
+      do k=1,grnnzp
+        p3(1,1,k) = 0.
+        nc3(1,1,k) = nc31d(k)
+        nr3(1,1,k) = nr31d(k)
+        ncn3(1,1,k) = ncn31d(k)
+        ni3(1,1,k) = ni31d(k)
 
-      integer, intent(in)     :: nne           ! has to do with horiz domain; 1 for HOC?
-      integer, intent(in)     :: kk            ! equal to grnnzp
-      integer, intent(in)     :: kmax          ! maximum array size (grnnzp + ??)
-      integer, intent(in)     :: nrdamp        ! Number of upper model levels in sponge layer (8?)
-      integer, intent(in)     :: j             ! j-coordinate???
-      integer, intent(in)     :: icon          ! ice nucleation type
-      integer, intent(in)     :: icond         ! autoconversion; 1=Kessler, 2=Manton/Cotton, 3=K&K, 4=none
-      integer, intent(in)     :: len           ! # of saturated points???
-      integer, intent(in)     :: icase         ! Which case?
+        qv3(1,1,k) = qt3(k) - qc3(1,1,k) - qi3(1,1,k) - qr3(1,1,k)
+     .                  - qg3(1,1,k) - qs3(1,1,k)
+        qc3(1,1,k) = qc3(1,1,k) - qi3(1,1,k) - qr3(1,1,k) - qg3(1,1,k)
+     .              - qs3(1,1,k)
 
-      logical, intent(in)     :: lice          ! Logical: is ice on?
-      logical, intent(in)     :: ldrizzle      ! is drizzle on?
-      logical, intent(in)     :: lgrpl         ! is graupel on?
+        if (qc3(1,1,k) < 0.) qc3(1,1,k) = 0.
+        th3(1,1,k) = thlm(1,1,k) +
+     .               (Lv / (Cp * exbm(1,1,k)) * qc3(1,1,k))
+      end do
 
-!----------------------------------------------------------------------
-! INPUT/OUTPUT VARIABLES
-!----------------------------------------------------------------------
-      real, intent(inout) :: qc3(1,1,grnnzp)   ! cloud water mixing ratio
-      real, intent(inout) :: qi3(1,1,grnnzp)   ! pristine ice mixing ratio
-      real, intent(inout) :: qr3(1,1,grnnzp)   ! rain water mixing ratio
-      real, intent(inout) :: qg3(1,1,grnnzp)   ! graupel mixing ratio
-      real, intent(inout) :: qs3(1,1,grnnzp)   ! snow water mixing ratio
-      real, intent(inout) :: qv3(1,1,grnnzp)   ! water vapor mixing ratio
-      real, intent(inout) :: th3(1,1,grnnzp)   ! potential temperature
-      real, intent(inout) :: nc3(1,1,grnnzp)   ! Number of cloud droplets
-      real, intent(inout) :: nr3(1,1,grnnzp)   ! Number of rain drops
-      real, intent(inout) :: ncn3(1,1,grnnzp)  ! Number of cloud nuclei
-      real, intent(inout) :: ni3(1,1,grnnzp)   ! Number of ice crystals
-      real, intent(inout) :: pcut              ! low threshold for mixing ratio
+      if (timea == time_initial) then
+        do k=1,grnnzp
+          ncn3(1,1,k) = 30. * (1. + exp(-grzt(k)/2000))
+        end do
+      end if
 
-!----------------------------------------------------------------------
-! OUTPUT VARIABLES
-!----------------------------------------------------------------------
-      real, intent(out)     :: cond(1,1,grnnzp)     ! condensation/evaporation of liquid water
-
-      real, intent(out)     :: snowv(1,1,grnnzp)  ! snow fall speed
-      real, intent(out)     :: falli(1,1,grnnzp)  ! pristine ice fall speed
-      real, intent(out)     :: fallr(1,1,grnnzp)  !
-      real, intent(out)     :: fallg(1,1,grnnzp)  !
-
-      real, intent(out)     :: ritend(1,1,grnnzp)    ! d(ri)/dt
-      real, intent(out)     :: rrtend(1,1,grnnzp)    ! d(rr)/dt
-      real, intent(out)     :: rgtend(1,1,grnnzp)    ! d(rg)/dt
-      real, intent(out)     :: rsnowtend(1,1,grnnzp) ! d(rsnow)/dt
-      real, intent(out)     :: rttend(1,1,grnnzp)    ! d(rt)/dt
-
-      real, intent(out)     :: thlmtend(1,1,grnnzp)  ! d(thlm)/dt
-
-!----------------------------------------------------------------------
-! EXTERNAL FUNCTIONS
-!----------------------------------------------------------------------
-      real, external :: gamma
-      real, external :: rsat
-      real, external :: rsati
-
-!----------------------------------------------------------------------
-! INTERNAL VARIABLES
-!----------------------------------------------------------------------
-      integer i,k ! for loops
-
-      real w3dw2(1,1,grnnzp) ! aka qsatv3d -- saturation mr array?
-      real w3dw3(1,1,grnnzp) ! aka temp3d  -- temperature array?
-      real w3dw4(1,1,grnnzp) ! aka qsati3d -- saturation mr over ice array?
-      real w3dw5(1,1,grnnzp) ! aka th2t3d  -- exner function array?
-      real thlmtemp(1,1,grnnzp) ! liquid water potential temperature
-
-!   -------------------------------------------------------------------
-!   Constants set at various places with COAMPS
-!   -------------------------------------------------------------------
-      real, parameter ::       aa0 = -0.267
-      real, parameter ::       aa1 = 5150.
-      real, parameter ::       aa2 = -1.0225e6
-      real, parameter ::       aa3 = 7.55e7
-      real, parameter ::       abar = 19.3
-      real, parameter ::       apr = 3000.
-      real, parameter ::       aprpr = 1.139
-      real, parameter ::       bsnow = 0.11
-      real, parameter ::       cbeta = 0.6
-      real, parameter ::       cnzero = 0.01
-      real, parameter ::       cimass = 9.4e-10
-      real, parameter ::       cw = 4218.
-      real, parameter ::       difvap = 2.26e-5
-      real, parameter ::       erc = 1.
-      real, parameter ::       esi = 0.1
-      real, parameter ::       eic = 1.
-      real, parameter ::       eri = 1.
-      real, parameter ::       egc = 1.
-      real, parameter ::       esc = 1.
-      real, parameter ::       esr = 0.4
-      real, parameter ::       egi = 0.1
-      real, parameter ::       egr = 1.0
-      real, parameter ::       egs = 0.1
-      real, parameter ::       mw = 18.016
-      real, parameter ::       praut1 = 0.001
-      real, parameter ::       praut2 = 0.0004
-      real, parameter ::       rholiq = 1000.
-      real, parameter ::       rhosno = 100.
-      real, parameter ::       rhogrp = 400.
-      real, parameter ::       rnzero = 8.0e6
-      real, parameter ::       snzero = 2.0e7
-      real, parameter ::       gnzero = 4.0e6
-      real, parameter ::       therco = 2.43e-2
-      real, parameter ::       tice = 269.16
-      real, parameter ::       tvr1 = -0.267
-      real, parameter ::       tvr2 = 206.
-      real, parameter ::       tvr3 = -2045.
-      real, parameter ::       tvr4 = 9060.
-      real, parameter ::       tzero = 273.16
-      real, parameter ::       visair = 1.718e-5
-      real, parameter ::       bgrp = 0.37
-      real, parameter ::       ex1 = 0.2
-
-!   -------------------------------------------------------------------
-!   Parameters computed for adjtq.F
-!   -------------------------------------------------------------------
-      real gmbov2
-      real gmbov2g
-      real gmbp3
-      real gm3, gm4, gm5, gm6, gm7, gm8, gm9
-      real ex2,ex2g,ex3
-      real ex7
-      real ex7g
-      real ex4
-      real ex4g
-      real ex5
-
-      real Lf
-      real hlvoka
-      real hlsoka
-      real hlvorv
-      real hlsorv
-      real rvochi
-      real cpor
-      real lfocp
-      real lvocp
-      real lsocp
-      real hkaolf
-
-      real sloper,slopes,slopeg
-
-      real, parameter    :: i1d = 0 ! 1d graphics parameters
-      real, parameter    :: j1d = 0 ! 1d graphics parameters
-      real, parameter    :: n1d = 0 ! 1d graphics parameters
-      integer, parameter :: i1dflg = 0 ! 1d graphics parameters
-      integer, parameter :: maxpt1d = 0 ! 1d graphics parameters
-      integer, parameter :: maxvr1d = 0 ! 1d graphics parameters
-      integer, parameter :: ipts = 1 ! ??
-      integer, parameter :: xland = 1 ! We're over land.
-      integer kpts
-      integer icomp(grnnzp)       ! ???
-      integer kcomp(1,grnnzp)  ! ???
-      real ary1d(1,grnnzp,1) ! 1d graphics parameters
-
-      real rcbefore(1,1,grnnzp)
-      real rsnowbefore(1,1,grnnzp)
-      real ribefore(1,1,grnnzp)
-      real rvbefore(1,1,grnnzp)
-      real rrbefore(1,1,grnnzp)
-      real rgbefore(1,1,grnnzp)
-      real rtbefore(1,1,grnnzp)
-      real qt3(1,1,grnnzp)
-      real thlmbefore(1,1,grnnzp)
-
-!   -------------------------------------------------------------------
-!   Unused output from adjtq.F
-!   -------------------------------------------------------------------
-      real snslp(1,1,grnnzp)        ! ajsmith; ARRAY?
-      real pcond(1,1,grnnzp)        ! condensation/evaporation of cloud water
-      real psmlti(1,1,grnnzp)       ! melting of cloud ice
-      real psacw(1,1,grnnzp)        ! collection of cloud water by snow
-      real pgacw(1,1,grnnzp)        ! ???
-      real piacw(1,1,grnnzp)        ! ???
-      real pchomo(1,1,grnnzp)       ! ???
-      real praut(1,1,grnnzp)        ! autoconversion of cloud water
-      real pracw(1,1,grnnzp)        ! collection of cloud water by rain water
-      real pdepi(1,1,grnnzp)        ! depositional growth of cloud ice
-      real pint(1,1,grnnzp)         ! initiation of cloud ice
-      real pgdep(1,1,grnnzp)        ! ???
-      real pconv(1,1,grnnzp)        ! conversion of cloud ice to snow
-      real psaci(1,1,grnnzp)        ! collection of cloud ice by snow
-      real pgaci(1,1,grnnzp)        ! ???
-      real praci(1,1,grnnzp)        ! ???
-      real prevp(1,1,grnnzp)        ! evaporation of raindrops
-      real psdep(1,1,grnnzp)        ! depositional growth of snow
-      real pmltge(1,1,grnnzp)       ! ???
-      real pgmlt(1,1,grnnzp)        ! ???
-      real psmlt(1,1,grnnzp)        ! melting of snow
-      real pgacrm(1,1,grnnzp)       ! ???
-      real pgacwm(1,1,grnnzp)       ! ???
-      real pracs(1,1,grnnzp)        ! ???
-      real pgshr(1,1,grnnzp)        ! ???
-      real pgacr(1,1,grnnzp)        ! ???
-      real psacr(1,1,grnnzp)        ! ???
-      real piacr(1,1,grnnzp)        ! ???
-      real prhomo(1,1,grnnzp)       ! ???
-      real pgacs(1,1,grnnzp)        ! ???
-      real pmltse(1,1,grnnzp)       ! ???
-      real pwacs(1,1,grnnzp)        ! ???
-
-!----------------------------------------------------------------------
-! COMMENCE EXECUTABLE CODE
-!----------------------------------------------------------------------
       gm3 = gamma(3.0,gm3)
       gm4 = gamma(4.0,gm4)
       gm5 = gamma(5.0,gm5)
@@ -282,10 +338,8 @@
       slopes = pi * rhosno * snzero * 1.0e-8
       slopeg = pi * rhogrp * gnzero * 1.0e-8
 
-!   -------------------------------------------------------------------
-!   Saving pre-adjtq values, for computation of tendencies
-!   Computing w3dw2-w3dw5 for use in call to adjtq
-!   -------------------------------------------------------------------
+
+      ! Saving pre-adjtq values for computation of tendencies
       do k=1,grnnzp
         rcbefore(1,1,k) = qc3(1,1,k)
         rsnowbefore(1,1,k) = qs3(1,1,k)
@@ -296,6 +350,7 @@
         rtbefore(1,1,k) = qc3(1,1,k) + qs3(1,1,k) + qi3(1,1,k) +
      .                    qv3(1,1,k) + qr3(1,1,k) + qg3(1,1,k)
         thlmbefore(1,1,k) = thlm(1,1,k)
+        thmbefore(1,1,k) = th3(1,1,k)
 
         w3dw3(1,1,k) = th3(1,1,k) * exbm(1,1,k)
         w3dw2(1,1,k) = rsat(w3dw1(1,1,k), w3dw3(1,1,k))
@@ -303,10 +358,8 @@
         w3dw5(1,1,k) = exbm(1,1,k)
       enddo ! k
 
-!   -------------------------------------------------------------------
-!   Actually call adjtq.F
-!   -------------------------------------------------------------------
 
+      ! Call the actual COAMPS microphysics scheme
       call adjtq
      .       (cond,p3,qc3,qi3,qr3,qg3,qs3,qv3,th3,w3,w3dw1,w3dw2,w3dw3
      .       ,w3dw4,w3dw5,wtm,exbm,rbm,nc3,nr3,ncn3,ni3,cp,deltf,Lf
@@ -328,9 +381,8 @@
      .       ,psacr,piacr,prhomo,pgacs,pmltse,pwacs
      .       ,falli,fallg,fallr)
 
-!   -------------------------------------------------------------------
-!   Assure positive definiteness in nc3/nr3/ncn3 fields
-!   -------------------------------------------------------------------
+
+      ! Assure positive definiteness in nc3/nr3/ncn3 fields
       do k=1,grnnzp
         if (nr3(1,1,k) < 0.) then
           ncn3(1,1,k) = ncn3(1,1,k) + nr3(1,1,k)
@@ -344,29 +396,31 @@
 
         if (ncn3(1,1,k) < 0.) then
           ncn3(1,1,k)  = 0.
-          end if
-      end do ! k
+        end if
 
-!   -------------------------------------------------------------------
-!   Compute tendencies
-!   -------------------------------------------------------------------
+        nc31d(k) = nc3(1,1,k)
+        nr31d(k) = nr3(1,1,k)
+        ncn31d(k)= ncn3(1,1,k)
+        ni31d(k) = ni3(1,1,k)
+      enddo
+
+
+      ! Compute tendencies
       do k=1,grnnzp
-        qt3(1,1,k)       = qr3(1,1,k) + qc3(1,1,k) + qs3(1,1,k) +
+        qt3_fortend(1,1,k) = qr3(1,1,k) + qc3(1,1,k) + qs3(1,1,k) +
      .                     qi3(1,1,k) + qg3(1,1,k) + qv3(1,1,k)
         rrtend(1,1,k)    = (qr3(1,1,k) - rrbefore(1,1,k)) / deltf
         rgtend(1,1,k)    = (qg3(1,1,k) - rgbefore(1,1,k)) / deltf
         ritend(1,1,k)    = (qi3(1,1,k) - ribefore(1,1,k)) / deltf
         rsnowtend(1,1,k) = (qs3(1,1,k) - rsnowbefore(1,1,k))
      .                     / deltf
-        rttend(1,1,k)    = (qt3(1,1,k) - rtbefore(1,1,k)) / deltf
-        thlmtend(1,1,k)  = ((th3(1,1,k) -
-     .                     (Lv / (Cp * exbm(1,1,k)))
-     .                     * qc3(1,1,k)) - thlmbefore(1,1,k)) 
-     .                     / deltf
-        thlmtemp(1,1,k)  = thlm(1,1,k) + thlmtend(1,1,k)
-        if (abs(thlmtend(1,1,k)) < 1e-9) then
-          thlmtend(1,1,k) = 0.
-        end if
+        rttend(1,1,k)    = ((qv3(1,1,k) - rvbefore(1,1,k)) / deltf)
+     .                     + ((qc3(1,1,k) - rcbefore(1,1,k)) / deltf)
+        thlmtend(1,1,k) = (th3(1,1,k) -
+     .                    (Lv / (Cp * exbm(1,1,k))) * qc3(1,1,k)
+     .                    - thmbefore(1,1,k)
+     .                    + (Lv / (Cp * exbm(1,1,k))) * rcbefore(1,1,k))
+     .                    / deltf
       end do ! k
 
       return
