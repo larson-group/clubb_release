@@ -1,4 +1,4 @@
-! $Id: rsat.F,v 1.3 2006-11-18 17:26:27 griffinb Exp $
+! $Id: rsat.F,v 1.4 2006-11-18 18:36:07 griffinb Exp $
 
 !-------------------------------------------------------------------------
         real function rsat( p, T )
@@ -26,11 +26,13 @@
         real :: esat
 
         ! Saturation Vapor Pressure, esat, can be found to be approximated
-        ! many differenet ways.
-
+        ! in many different ways.
+        !
+        ! Formula for Saturation Mixing Ratio:
+        !
         ! rs = (epsilon) * [ es / ( p - es ) ];
         ! where epsilon = R_d / R_v
-
+       
         esat = 611.2 * exp( (17.67*(T-273.15)) / (T-29.65) )
         rsat = ep * ( esat / ( p - esat ) )
 
