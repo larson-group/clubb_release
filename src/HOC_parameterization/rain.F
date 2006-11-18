@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.11 2006-11-18 16:13:43 griffinb Exp $
+! $Id: rain.F,v 1.12 2006-11-18 19:51:31 griffinb Exp $
 !----------------------------------------------------------------------
 
       MODULE rain_equations
@@ -1107,7 +1107,7 @@
               plume_1_constants = 
      .           3.0 * C_evap * G_T_p(T_1, press)
      .               * ( ((4.0*pi*rho_lw)/3.0)**(2.0/3.0) )
-     .               * ( (1.0 + Beta_T1*rsl_1)/rsl_1 )
+     .               * ( (1.0 + Beta_T1*rsl_1) / rsl_1 )
 
               ! Gaussian "plume" 2
               Tl_2 = thl2 * ((press/p0)**kappa)
@@ -1122,7 +1122,7 @@
               plume_2_constants = 
      .           3.0 * C_evap * G_T_p(T_2, press)
      .               * ( ((4.0*pi*rho_lw)/3.0)**(2.0/3.0) )
-     .               * ( (1.0 + Beta_T2*rsl_2)/rsl_2 )
+     .               * ( (1.0 + Beta_T2*rsl_2) / rsl_2 )
 
               ! Exponents on s, rr, and Nr, respectively.
               alpha_exp = 1.0
