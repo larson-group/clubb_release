@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.10 2006-11-17 01:05:19 griffinb Exp $
+! $Id: rain.F,v 1.11 2006-11-18 16:13:43 griffinb Exp $
 !----------------------------------------------------------------------
 
       MODULE rain_equations
@@ -31,8 +31,8 @@
       ! End Vince Larson's change.
 
       PUBLIC rain
-      PRIVATE cond_evap_rrm_2, cond_evap_Nrm, autoconv_rrm_2
-      PRIVATE autoconv_Nrm, accretion_rrm_2, mean_volume_radius_2
+      PRIVATE mean_volume_radius, cond_evap_rrm, cond_evap_Nrm
+      PRIVATE autoconv_rrm, autoconv_Nrm, accretion_rrm
       PRIVATE D_fnc, VVLA, DVSA, DVLA
 
       CONTAINS
@@ -280,8 +280,8 @@
         ! timestep.  It is located on thermodynamic levels.
         DO k = 1, gr%nnzp, 1
 
-           mean_vol_rad(k) = mean_volume_radius_2( rrm(k), Nrm(k),
-     .                                             rhot(k)         )
+           mean_vol_rad(k) = mean_volume_radius( rrm(k), Nrm(k),
+     .                                           rhot(k)         )
 
         ENDDO
 
@@ -593,7 +593,7 @@
            ! Now find the elements that make up the right-hand side of the
            ! equation, dd, for rain water mixing ratio, rrm.
 
-           cond_rrm(k) = cond_evap_rrm_2( rrm(k), Nrm(k),
+           cond_rrm(k) = cond_evap_rrm( rrm(k), Nrm(k),
      .                     s1, ss1, s2, ss2, thl1, thl2, rc1, rc2, a,
      .                     p(k), rhot(k), Temp(k), Supsat(k)  )
 
@@ -608,14 +608,14 @@
 
            else
 
-              auto_rrm(k) = autoconv_rrm_2( rcm(k), Ncm(k),
+              auto_rrm(k) = autoconv_rrm( rcm(k), Ncm(k),
      .                           s1, ss1, s2, ss2, a, rhot(k) )
 
            endif
 ! End Vince Larson's addition
 
-            accr_rrm(k) = accretion_rrm_2( rcm(k), rrm(k),
-     .                                     s1, ss1, s2, ss2, a )
+            accr_rrm(k) = accretion_rrm( rcm(k), rrm(k),
+     .                                   s1, ss1, s2, ss2, a )
 
         ! Explicit contributions to rrm.
 #ifdef STATS
@@ -823,7 +823,7 @@
 
 !===============================================================================
         !
-        ! FUNCTION mean_volume_radius_2
+        ! FUNCTION mean_volume_radius
         !-----------------------------------------------------------------------
         !
         ! DESCRIPTION
@@ -864,7 +864,7 @@
         !
         !-----------------------------------------------------------------------
         
-        FUNCTION mean_volume_radius_2( rrm, Nrm, rhot )
+        FUNCTION mean_volume_radius( rrm, Nrm, rhot )
 
         USE constants
         USE model_flags
@@ -877,18 +877,18 @@
         REAL, INTENT(IN):: rhot   ! Grid-box average density (t-level)
 
         ! Output variables.
-        REAL:: mean_volume_radius_2
+        REAL:: mean_volume_radius
 
         ! Exponential terms.
-        REAL:: alpha_exp  ! Exponent of Y1
-        REAL:: beta_exp   ! Exponent of Y2
+        REAL:: alpha_exp  ! Exponent of rr
+        REAL:: beta_exp   ! Exponent of Nr
 
         ! Original terms.
-        REAL:: muY1       ! Grid-box average of Y1
-        REAL:: sigmaY1    ! Grid-box standard deviation of Y1
-        REAL:: muY2       ! Grid-box average of Y2
-        REAL:: sigmaY2    ! Grid-box standard deviation of Y2
-        REAL:: corrY1Y2   ! Correlation of Y1 and Y2
+        REAL:: mu_rr       ! Grid-box average of rr
+        REAL:: sigma_rr    ! Grid-box standard deviation of rr
+        REAL:: mu_Nr       ! Grid-box average of Nr
+        REAL:: sigma_Nr    ! Grid-box standard deviation of Nr
+        REAL:: corr_rrNr   ! Correlation of rr and Nr
 
 !-------------------------------------------------------------------------------
 
@@ -896,14 +896,14 @@
 
            IF ( rrm > 0.0 .AND. Nrm > 0.0 ) THEN
 
-              mean_volume_radius_2 = 
+              mean_volume_radius = 
      .           (  ((4.0*pi*rho_lw)/(3.0*rhot))**(-1.0/3.0)  )
      .          * rrm**(1.0/3.0) * Nrm**(-1.0/3.0)
 
            ELSE
 
               ! If either rrm or Nrm are 0.
-              mean_volume_radius_2 = 0.0
+              mean_volume_radius = 0.0
 
            ENDIF
 
@@ -911,32 +911,33 @@
 
            IF ( rrm > 0.0 .AND. Nrm > 0.0 ) THEN
 
-              ! Exponents on Y1 and Y2, respectively.
+              ! Exponents on rr and Nr, respectively.
               alpha_exp = (1.0/3.0)
               beta_exp  = -(1.0/3.0)
 
-              ! Y1 is distributed Lognormally.
-              muY1 = rrm
-!              sigmaY1 = SQRT(rrp2)
-              sigmaY1 = rrm * SQRT(rrp2_rrm2)  ! rr'2/rrm^2 = 1.2
+              ! rr is distributed Lognormally.
+              mu_rr = rrm
+!              sigma_rr = SQRT(rrp2)
+              sigma_rr = rrm * SQRT(rrp2_rrm2)  ! rr'2/rrm^2 = 1.2
 
-              ! Y2 is distributed Lognormally.
-              muY2 = (Nrm/rhot)
-!              sigmaY2 = SQRT(Nrp2)
-              sigmaY2 = (Nrm/rhot) * SQRT(Nrp2_Nrm2)  ! Nr'2/Nrm^2 = 1.0
+              ! Nr is distributed Lognormally.
+              mu_Nr = (Nrm/rhot)
+!              sigma_Nr = SQRT(Nrp2)
+              sigma_Nr = (Nrm/rhot) * SQRT(Nrp2_Nrm2)  ! Nr'2/Nrm^2 = 1.0
 
               ! Correlations.
-              corrY1Y2 = corr_rrNr_LL  ! corr_rcNr_LL =  0.85
+              corr_rrNr = corr_rrNr_LL  ! corr_rcNr_LL =  0.85
 
-              mean_volume_radius_2 =
+
+              mean_volume_radius =
      .           (  ((4.0*pi*rho_lw)/3.0)**(-1.0/3.0)  )
-     .           * PDF_BIVAR_LN_LN( muY1, muY2, sigmaY1, sigmaY2,
-     .                              corrY1Y2, alpha_exp, beta_exp )
+     .           * PDF_BIVAR_LN_LN ( mu_rr, mu_Nr, sigma_rr, sigma_Nr,
+     .                               corr_rrNr, alpha_exp, beta_exp )
 
            ELSE
 
               ! If either rrm or Nrm are 0.
-              mean_volume_radius_2 = 0.0
+              mean_volume_radius = 0.0
 
            ENDIF
 
@@ -944,11 +945,11 @@
 
         RETURN
 
-        END FUNCTION mean_volume_radius_2
+        END FUNCTION mean_volume_radius
 
 !===============================================================================
         !
-        ! FUNCTION cond_evap_rrm_2
+        ! FUNCTION cond_evap_rrm
         !-----------------------------------------------------------------------
         !
         ! DESCRIPTION
@@ -1013,9 +1014,9 @@
         !
         !-----------------------------------------------------------------------
         
-        FUNCTION cond_evap_rrm_2( rrm, Nrm, s1, ss1, s2, ss2,
-     .                            thl1, thl2, rc1, rc2, a,
-     .                            press, rhot, Temp, Supsat  )
+        FUNCTION cond_evap_rrm( rrm, Nrm, s1, ss1, s2, ss2,
+     .                          thl1, thl2, rc1, rc2, a,
+     .                          press, rhot, Temp, Supsat  )
 
         USE constants
         USE model_flags
@@ -1046,7 +1047,7 @@
         REAL, INTENT(IN):: Supsat ! Grid-box average Supersaturation
 
         ! Output variables.
-        REAL:: cond_evap_rrm_2
+        REAL:: cond_evap_rrm
 
         ! Exponential terms.
         REAL:: alpha_exp  ! Exponent of s
@@ -1075,7 +1076,7 @@
 
            IF ( rrm > 0.0 .AND. Nrm > 0.0 ) THEN
 
-              cond_evap_rrm_2 =
+              cond_evap_rrm =
      .           3.0 * C_evap * G_T_p(Temp, press)
      .               * ( ((4.0*pi*rho_lw)/(3.0*rhot))**(2.0/3.0) )
      .               * (rrm**(1.0/3.0)) * (Nrm**(2.0/3.0)) * Supsat
@@ -1083,7 +1084,7 @@
            ELSE
 
               ! If either rrm or Nrm are 0.
-              cond_evap_rrm_2 = 0.0
+              cond_evap_rrm = 0.0
 
            ENDIF
 
@@ -1123,7 +1124,7 @@
      .               * ( ((4.0*pi*rho_lw)/3.0)**(2.0/3.0) )
      .               * ( (1.0 + Beta_T2*rsl_2)/rsl_2 )
 
-              ! Exponents on Y1, Y2, and Y3, respectively.
+              ! Exponents on s, rr, and Nr, respectively.
               alpha_exp = 1.0
               beta_exp  = (1.0/3.0)
               gamma_exp = (2.0/3.0)
@@ -1134,12 +1135,12 @@
               mu_s2 = s2
               sigma_s2 = ss2
 
-              ! Y2 is distributed Lognormally.
+              ! rr is distributed Lognormally.
               mu_rr = rrm
 !              sigma_rr = SQRT(rrp2)
               sigma_rr = rrm * SQRT(rrp2_rrm2)  ! rr'2/rrm^2 = 1.2
 
-              ! Y3 is distributed Lognormally.
+              ! Nr is distributed Lognormally.
               mu_Nr = (Nrm/rhot)
 !              sigma_Nr = SQRT(Nrp2)
               sigma_Nr = (Nrm/rhot) * SQRT(Nrp2_Nrm2)  ! Nr'2/Nrm^2 = 1.0
@@ -1150,7 +1151,7 @@
               corr_rrNr = corr_rrNr_LL  ! corr_rrNr_LL =  0.85
 
 
-              cond_evap_rrm_2 = 
+              cond_evap_rrm = 
      .         ( a ) * plume_1_constants
      .         * PDF_TRIVAR_2G_LN_LN ( mu_s1, mu_rr, mu_Nr,
      .                                 sigma_s1, sigma_rr, sigma_Nr,
@@ -1166,7 +1167,7 @@
            ELSE
 
               ! If either rrm or Nrm are 0.
-              cond_evap_rrm_2 = 0.0
+              cond_evap_rrm = 0.0
 
            ENDIF
 
@@ -1174,7 +1175,7 @@
 
         RETURN
 
-        END FUNCTION cond_evap_rrm_2
+        END FUNCTION cond_evap_rrm
 
 !===============================================================================
 
@@ -1200,7 +1201,7 @@
 
 !===============================================================================
         !
-        ! FUNCTION autoconv_rrm_2
+        ! FUNCTION autoconv_rrm
         !-----------------------------------------------------------------------
         !
         ! DESCRIPTION
@@ -1268,7 +1269,7 @@
         !
         !-----------------------------------------------------------------------
         
-        FUNCTION autoconv_rrm_2( rcm, Ncm, s1, ss1, s2, ss2, a, rhot )
+        FUNCTION autoconv_rrm( rcm, Ncm, s1, ss1, s2, ss2, a, rhot )
 
         USE constants
         USE model_flags
@@ -1287,20 +1288,20 @@
         REAL, INTENT(IN):: rhot   ! Grid-box average density (t-level)
 
         ! Output variables.
-        REAL:: autoconv_rrm_2
+        REAL:: autoconv_rrm
 
         ! Exponential terms.
-        REAL:: alpha_exp  ! Exponent of Y1
-        REAL:: beta_exp   ! Exponent of Y2
+        REAL:: alpha_exp  ! Exponent of s1
+        REAL:: beta_exp   ! Exponent of Nc
 
         ! Original terms.
-        REAL:: muY1_1     ! Plume 1 average of Y1
-        REAL:: sigmaY1_1  ! Plume 1 standard deviation of Y1
-        REAL:: muY1_2     ! Plume 2 average of Y1
-        REAL:: sigmaY1_2  ! Plume 2 standard deviation of Y1
-        REAL:: muY2       ! Grid-box average of Y2
-        REAL:: sigmaY2    ! Grid-box standard deviation of Y2
-        REAL:: corrY1Y2   ! Correlation of Y1 and Y2
+        REAL:: mu_s1       ! Plume 1 average of s1
+        REAL:: sigma_s1    ! Plume 1 standard deviation of s1
+        REAL:: mu_s2       ! Plume 2 average of s2
+        REAL:: sigma_s2    ! Plume 2 standard deviation of s2
+        REAL:: mu_Nc       ! Grid-box average of Nc
+        REAL:: sigma_Nc    ! Grid-box standard deviation of Nc
+        REAL:: corr_rcNc   ! Correlation of rc and Nc
 
 !-------------------------------------------------------------------------------
 
@@ -1308,12 +1309,12 @@
 
            IF ( rcm > 0.0 .AND. Ncm > 0.0 ) THEN
 
-              autoconv_rrm_2 = 7.4188E13 * rcm**2.47 * Ncm**(-1.79)
+              autoconv_rrm = 7.4188E13 * rcm**2.47 * Ncm**(-1.79)
 
            ELSE
 
               ! If either rcm or Ncm are 0.
-              autoconv_rrm_2 = 0.0
+              autoconv_rrm = 0.0
 
            ENDIF
 
@@ -1321,37 +1322,38 @@
 
            IF ( rcm > 0.0 .AND. Ncm > 0.0 ) THEN
 
-              ! Exponents on Y1 and Y2, respectively.
+              ! Exponents on s and Nc, respectively.
               alpha_exp = 2.47
               beta_exp  = -1.79
 
-              ! Y1 is a truncated double Gaussian.
-              muY1_1 = s1
-              sigmaY1_1 = ss1
-              muY1_2 = s2
-              sigmaY1_2 = ss2
+              ! "s" is a truncated double Gaussian.
+              mu_s1 = s1
+              sigma_s1 = ss1
+              mu_s2 = s2
+              sigma_s2 = ss2
 
-              ! Y2 is distributed Lognormally.
-              muY2 = (Ncm/rhot)
-!              sigmaY2 = SQRT(Ncp2)
-              sigmaY2 = (Ncm/rhot) * SQRT(Ncp2_Ncm2)  ! Nc'2/Ncm^2 = 0.07
+              ! Nc is distributed Lognormally.
+              mu_Nc = (Ncm/rhot)
+!              sigma_Nc = SQRT(Ncp2)
+              sigma_Nc = (Ncm/rhot) * SQRT(Ncp2_Ncm2)  ! Nc'2/Ncm^2 = 0.07
 
               ! Correlations.
-              corrY1Y2 = corr_rcNc_NL  ! corr_rcNc_NL =  0.45
+              corr_rcNc = corr_rcNc_NL  ! corr_rcNc_NL =  0.45
 
-              autoconv_rrm_2 = 7.4188E13 * rhot**(-1.79) * (
+
+              autoconv_rrm = 7.4188E13 * rhot**(-1.79) * (
      .             ( a ) 
-     .           * PDF_BIVAR_2G_LN( muY1_1, muY2, sigmaY1_1, sigmaY2,
-     .                              corrY1Y2, alpha_exp, beta_exp )
+     .           * PDF_BIVAR_2G_LN ( mu_s1, mu_Nc, sigma_s1, sigma_Nc,
+     .                               corr_rcNc, alpha_exp, beta_exp )
      .         +   (1-a)
-     .           * PDF_BIVAR_2G_LN( muY1_2, muY2, sigmaY1_2, sigmaY2,
-     .                              corrY1Y2, alpha_exp, beta_exp )
+     .           * PDF_BIVAR_2G_LN ( mu_s2, mu_Nc, sigma_s2, sigma_Nc,
+     .                               corr_rcNc, alpha_exp, beta_exp )
      .                                                   )
 
            ELSE
 
               ! If either rcm or Ncm are 0.
-              autoconv_rrm_2 = 0.0
+              autoconv_rrm = 0.0
 
            ENDIF
 
@@ -1359,11 +1361,11 @@
 
         RETURN
 
-        END FUNCTION autoconv_rrm_2
+        END FUNCTION autoconv_rrm
 
 !===============================================================================
 
-        FUNCTION autoconv_Nrm(auto_rrm, rhot)
+        FUNCTION autoconv_Nrm( auto_rrm, rhot )
 
         USE constants
 
@@ -1380,7 +1382,7 @@
 
 !===============================================================================
         !
-        ! FUNCTION accretion_rrm_2
+        ! FUNCTION accretion_rrm
         !-----------------------------------------------------------------------
         !
         ! DESCRIPTION
@@ -1424,7 +1426,7 @@
         !
         !-----------------------------------------------------------------------
         
-        FUNCTION accretion_rrm_2( rcm, rrm, s1, ss1, s2, ss2, a )
+        FUNCTION accretion_rrm( rcm, rrm, s1, ss1, s2, ss2, a )
 
         USE constants
         USE model_flags
@@ -1442,20 +1444,20 @@
                                   ! Gaussian "plume."
 
         ! Output variables.
-        REAL:: accretion_rrm_2
+        REAL:: accretion_rrm
 
         ! Exponential terms.
-        REAL:: alpha_exp  ! Exponent of Y1
-        REAL:: beta_exp   ! Exponent of Y2
+        REAL:: alpha_exp  ! Exponent of s
+        REAL:: beta_exp   ! Exponent of rr
 
         ! Original terms.
-        REAL:: muY1_1     ! Plume 1 average of Y1
-        REAL:: sigmaY1_1  ! Plume 1 standard deviation of Y1
-        REAL:: muY1_2     ! Plume 2 average of Y1
-        REAL:: sigmaY1_2  ! Plume 2 standard deviation of Y1
-        REAL:: muY2       ! Grid-box average of Y2
-        REAL:: sigmaY2    ! Grid-box standard deviation of Y2
-        REAL:: corrY1Y2   ! Correlation of Y1 and Y2
+        REAL:: mu_s1       ! Plume 1 average of s
+        REAL:: sigma_s1    ! Plume 1 standard deviation of s
+        REAL:: mu_s2       ! Plume 2 average of s
+        REAL:: sigma_s2    ! Plume 2 standard deviation of s
+        REAL:: mu_rr       ! Grid-box average of rr
+        REAL:: sigma_rr    ! Grid-box standard deviation of rr
+        REAL:: corr_rcrr   ! Correlation of rc and rr
 
 !-------------------------------------------------------------------------------
 
@@ -1463,12 +1465,12 @@
 
            IF ( rcm > 0.0 .AND. rrm > 0.0 ) THEN
 
-              accretion_rrm_2 = 67.0 * (rcm*rrm)**1.15
+              accretion_rrm = 67.0 * (rcm*rrm)**1.15
 
            ELSE
 
               ! If either rcm or rrm are 0.
-              accretion_rrm_2 = 0.0
+              accretion_rrm = 0.0
 
            ENDIF
 
@@ -1476,37 +1478,38 @@
 
            IF ( rcm > 0.0 .AND. rrm > 0.0 ) THEN
 
-              ! Exponents on Y1 and Y2, respectively.
+              ! Exponents on s and rr, respectively.
               alpha_exp = 1.15
               beta_exp  = 1.15
 
-              ! Y1 is a truncated double Gaussian.
-              muY1_1 = s1
-              sigmaY1_1 = ss1
-              muY1_2 = s2
-              sigmaY1_2 = ss2
+              ! "s" is a truncated double Gaussian.
+              mu_s1 = s1
+              sigma_s1 = ss1
+              mu_s2 = s2
+              sigma_s2 = ss2
 
-              ! Y2 is distributed Lognormally.
-              muY2 = rrm
-!              sigmaY2 = SQRT(rrp2)
-              sigmaY2 = rrm * SQRT(rrp2_rrm2)  ! rr'2/rrm^2 = 1.2
+              ! rr is distributed Lognormally.
+              mu_rr = rrm
+!              sigma_rr = SQRT(rrp2)
+              sigma_rr = rrm * SQRT(rrp2_rrm2)  ! rr'2/rrm^2 = 1.2
 
               ! Correlations.
-              corrY1Y2 = corr_rcrr_NL  ! corr_rcrr_NL =  0.10
+              corr_rcrr = corr_rcrr_NL  ! corr_rcrr_NL =  0.10
 
-              accretion_rrm_2 = 67.0 * (
+
+              accretion_rrm = 67.0 * (
      .             ( a ) 
-     .           * PDF_BIVAR_2G_LN( muY1_1, muY2, sigmaY1_1, sigmaY2,
-     .                              corrY1Y2, alpha_exp, beta_exp )
+     .           * PDF_BIVAR_2G_LN ( mu_s1, mu_rr, sigma_s1, sigma_rr,
+     .                               corr_rcrr, alpha_exp, beta_exp )
      .         +   (1-a)
-     .           * PDF_BIVAR_2G_LN( muY1_2, muY2, sigmaY1_2, sigmaY2,
-     .                              corrY1Y2, alpha_exp, beta_exp )
-     .                                 )
+     .           * PDF_BIVAR_2G_LN ( mu_s2, mu_rr, sigma_s2, sigma_rr,
+     .                               corr_rcrr, alpha_exp, beta_exp )
+     .                               )
 
            ELSE
 
               ! If either rcm or rrm are 0.
-              accretion_rrm_2 = 0.0
+              accretion_rrm = 0.0
 
            ENDIF
 
@@ -1514,7 +1517,7 @@
 
         RETURN
 
-        END FUNCTION accretion_rrm_2
+        END FUNCTION accretion_rrm
 
 !===============================================================================
         !
