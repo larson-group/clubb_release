@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.12 2006-11-18 19:51:31 griffinb Exp $
+! $Id: rain.F,v 1.13 2006-11-18 21:20:11 griffinb Exp $
 !----------------------------------------------------------------------
 
       MODULE rain_equations
@@ -1719,11 +1719,32 @@
         ! Brian Griffin.  November 10, 2006.
         !
         !-----------------------------------------------------------------------
+        !
+        ! NOTE #2 -- variable notation
+        ! ----------------------------
+        !
+        ! In this particular case, Y1 stands for "s," Y2 stands for "rr," and
+        ! Y3 stands for "Nr."  X1 stands for a Gaussianized "s," although s
+        ! already is a Gaussian, so nothing is changed.  X2 stands for a
+        ! Gaussianized "rr" and X3 stands for a Gaussianized "Nr."
+        !
+        ! Furthermore, mu stands for an average, sigma for a standard deviation,
+        ! corr for a correlation. The letter "i" (by either X1, Y1, or "s")
+        ! stands for the individual Gaussian plume (1 or 2).
+        !
+        ! While the equations written above are in a more generalized form, the
+        ! actual code written below is written in terms of the actual names
+        ! of the individual variables in order to decrease confusion and to be
+        ! comparable with the notes by Griffin and Larson.
+        !
+        ! Brian Griffin.  November 18, 2006.
+        !
+        !-----------------------------------------------------------------------
 
 
-        FUNCTION PDF_TRIVAR_2G_LN_LN ( muY1i, muY2, muY3,
-     .                                 sigmaY1i, sigmaY2, sigmaY3,
-     .                                 corrY1Y2, corrY1Y3, corrY2Y3,
+        FUNCTION PDF_TRIVAR_2G_LN_LN ( mu_si, mu_rr, mu_Nr,
+     .                                 sigma_si, sigma_rr, sigma_Nr,
+     .                                 corr_rcrr, corr_rcNr, corr_rrNr,
      .                                 alpha_exp, beta_exp, gamma_exp )
 
         USE constants
@@ -1732,38 +1753,38 @@
         IMPLICIT NONE
 
         ! Input variables.
-        REAL, INTENT(IN):: muY1i     ! Plume average of Y1
-        REAL, INTENT(IN):: muY2      ! Average of Y2
-        REAL, INTENT(IN):: muY3      ! Average of Y3
-        REAL, INTENT(IN):: sigmaY1i  ! Plume standard deviation of Y1
-        REAL, INTENT(IN):: sigmaY2   ! Standard deviation of Y2
-        REAL, INTENT(IN):: sigmaY3   ! Standard deviation of Y3
-        REAL, INTENT(IN):: corrY1Y2  ! Intra-Gaussian correlation between Y1,Y2
-        REAL, INTENT(IN):: corrY1Y3  ! Intra-Gaussian correlation between Y1,Y3
-        REAL, INTENT(IN):: corrY2Y3  ! Intra-Gaussian correlation between Y2,Y3
-        REAL, INTENT(IN):: alpha_exp ! Exponent associated with Y1 variable.
-        REAL, INTENT(IN):: beta_exp  ! Exponent associated with Y2 variable.
-        REAL, INTENT(IN):: gamma_exp ! Exponent associated with Y3 variable.
+        REAL, INTENT(IN):: mu_si     ! Plume (i) average of s
+        REAL, INTENT(IN):: mu_rr     ! Average of rr
+        REAL, INTENT(IN):: mu_Nr     ! Average of Nr
+        REAL, INTENT(IN):: sigma_si  ! Plume (i) standard deviation of s
+        REAL, INTENT(IN):: sigma_rr  ! Standard deviation of rr
+        REAL, INTENT(IN):: sigma_Nr  ! Standard deviation of Nr
+        REAL, INTENT(IN):: corr_rcrr ! Intra-Gaussian correlation between rc, rr
+        REAL, INTENT(IN):: corr_rcNr ! Intra-Gaussian correlation between rc, Nr
+        REAL, INTENT(IN):: corr_rrNr ! Intra-Gaussian correlation between rr, Nr
+        REAL, INTENT(IN):: alpha_exp ! Exponent associated with "s" variable.
+        REAL, INTENT(IN):: beta_exp  ! Exponent associated with rr variable.
+        REAL, INTENT(IN):: gamma_exp ! Exponent associated with Nr variable.
         
         ! Output variable.
         REAL:: PDF_TRIVAR_2G_LN_LN
 
         ! Local variables.
 
-        ! "Y" variables Gaussianized and coverted to "X" variables.
-        REAL:: muX1i     ! Plume average of X1
-        REAL:: muX2      ! Average of X2
-        REAL:: muX3      ! Average of X3
-        REAL:: sigmaX1i  ! Plume standard deviation of X1
-        REAL:: sigmaX2   ! Standard deviation of X2
-        REAL:: sigmaX3   ! Standard deviation of X3
-        REAL:: corrX1X2  ! Intra-Gaussian correlation between X1,X2
-        REAL:: corrX1X3  ! Intra-Gaussian correlation between X1,X3
-        REAL:: corrX2X3  ! Intra-Gaussian correlation between X2,X3
+        ! Variables Gaussianized and Coverted.
+        REAL:: mu_siG      ! Plume (i) average of s(G)
+        REAL:: mu_rrG      ! Average of rr(G)
+        REAL:: mu_NrG      ! Average of Nr(G)
+        REAL:: sigma_siG   ! Plume (i) standard deviation of s(G)
+        REAL:: sigma_rrG   ! Standard deviation of rr(G)
+        REAL:: sigma_NrG   ! Standard deviation of Nr(G)
+        REAL:: corr_rcrrG  ! Intra-Gaussian correlation between rc(G), rr(G)
+        REAL:: corr_rcNrG  ! Intra-Gaussian correlation between rc(G), Nr(G)
+        REAL:: corr_rrNrG  ! Intra-Gaussian correlation between rr(G), Nr(G)
 
         DOUBLE PRECISION:: gamma_fnc_input
         DOUBLE PRECISION:: parab_cyl_fnc_ord
-        DOUBLE PRECISION:: parab_cyl_fnc_input
+        DOUBLE PRECISION:: scci
         DOUBLE PRECISION:: test
         LOGICAL:: use_eq_1
 !        DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308.0
@@ -1775,48 +1796,52 @@
         !!!!!!!!!! Convert all means, standard deviations, and correlations
         !!!!!!!!!! to Gaussian terms.
 
-        ! Y1i is a truncated double Gaussian.
-        ! Therefore, X1i is still a truncated double Gaussian.
+        ! si is a truncated double Gaussian.
+        ! Therefore, si is still a truncated double Gaussian.
         ! It does not change.
-        muX1i = muY1i
-        sigmaX1i = sigmaY1i
+        mu_siG = mu_si
+        sigma_siG = sigma_si
 
-        ! Y2 is a Lognormal.  It is converted to X2, which is a Gaussian.
-        ! X2 = ln Y2
-        muX2 = LOG(  muY2 * (  1.0 
-     .                       + ( (sigmaY2**2.0) / (muY2**2.0) ) 
-     .                      )**(-1.0/2.0)
-     .            )
-        sigmaX2 = SQRT( LOG(  1.0 + ( (sigmaY2**2.0) / (muY2**2.0) ) )
-     .                )
+        ! rr is a Lognormal.  It is converted to rr(G), which is a Gaussian.
+        ! rr(G) = ln rr
+        mu_rrG = LOG(  mu_rr * (  1.0 
+     .                          + ( (sigma_rr**2.0) / (mu_rr**2.0) ) 
+     .                         )**(-1.0/2.0)
+     .              )
+        sigma_rrG = SQRT( LOG(  1.0 
+     .                        + ( (sigma_rr**2.0) / (mu_rr**2.0) )
+     .                       )
+     .                  )
 
-        ! Y3 is a Lognormal.  It is converted to X3, which is a Gaussian.
-        ! X3 = ln Y3
-        muX3 = LOG(  muY3 * (  1.0 
-     .                       + ( (sigmaY3**2.0) / (muY3**2.0) ) 
-     .                      )**(-1.0/2.0)
-     .            )
-        sigmaX3 = SQRT( LOG(  1.0 + ( (sigmaY3**2.0) / (muY3**2.0) ) )
-     .                )
+        ! Nr is a Lognormal.  It is converted to Nr(G), which is a Gaussian.
+        ! Nr(G) = ln Nr
+        mu_NrG = LOG(  mu_Nr * (  1.0 
+     .                          + ( (sigma_Nr**2.0) / (mu_Nr**2.0) ) 
+     .                         )**(-1.0/2.0)
+     .              )
+        sigma_NrG = SQRT( LOG(  1.0
+     .                        + ( (sigma_Nr**2.0) / (mu_Nr**2.0) )
+     .                       )
+     .                  )
 
         !!! Intra-Gaussian correlations.
 
-        ! corrY1Y2 is a correlation between a Gaussian and a Log-normal.
-        ! It must be converted to corrX1X2, which is a correlation between
+        ! corr_rcrr is a correlation between a Gaussian and a Log-normal.
+        ! It must be converted to corr_rcrrG, which is a correlation between
         ! two Gaussians.
-        corrX1X2 = corrY1Y2 
-     .                   * SQRT( EXP(sigmaX2**2.0) - 1.0 ) / sigmaX2
-        ! corrY1Y3 is a correlation between a Gaussian and a Log-normal.
-        ! It must be converted to corrX1X3, which is a correlation between
+        corr_rcrrG = corr_rcrr
+     .                   * SQRT( EXP(sigma_rrG**2.0) - 1.0 ) / sigma_rrG
+        ! corr_rcNr is a correlation between a Gaussian and a Log-normal.
+        ! It must be converted to corr_rcNrG, which is a correlation between
         ! two Gaussians.
-        corrX1X3 = corrY1Y3
-     .                   * SQRT( EXP(sigmaX3**2.0) - 1.0 ) / sigmaX3
-        ! corrY2Y3 is a correlation between two Log-normals.  It must be 
-        ! converted to corrX2X3, which is a correlation between two Gaussians.
-        corrX2X3 = LOG( 1.0 + corrY2Y3
-     .                             * SQRT( EXP(sigmaX2**2.0) - 1.0 )
-     .                             * SQRT( EXP(sigmaX3**2.0) - 1.0 )
-     .                ) / ( sigmaX2 * sigmaX3 )
+        corr_rcNrG = corr_rcNr
+     .                   * SQRT( EXP(sigma_NrG**2.0) - 1.0 ) / sigma_NrG
+        ! corr_rrNr is a correlation between two Log-normals.  It must be 
+        ! converted to corr_rrNrG, which is a correlation between two Gaussians.
+        corr_rrNrG = LOG( 1.0 + corr_rrNr
+     .                             * SQRT( EXP(sigma_rrG**2.0) - 1.0 )
+     .                             * SQRT( EXP(sigma_NrG**2.0) - 1.0 )
+     .                  ) / ( sigma_rrG * sigma_NrG )
 
         !----- Section #2 ------------------------------------------------------
 
@@ -1832,18 +1857,18 @@
         parab_cyl_fnc_ord = - ( alpha_exp + 1.0 )
 
         ! Input to the parabolic cylinder function.
-        parab_cyl_fnc_input =  (muX1i/sigmaX1i)
-     .                       + corrX1X2*sigmaX2*beta_exp 
-     .                       + corrX1X3*sigmaX3*gamma_exp
+        scci =  (mu_siG/sigma_siG)
+     .        + corr_rcrrG*sigma_rrG*beta_exp 
+     .        + corr_rcNrG*sigma_NrG*gamma_exp
 
-        ! If sigmaX1i = 0, then equation #1 cannot be used.
-        IF ( sigmaX1i == 0.0 ) THEN
+        ! If sigma_siG = 0, then equation #1 cannot be used.
+        IF ( sigma_siG == 0.0 ) THEN
            use_eq_1 = .false.
         ELSE
-           ! Test to see whether the value of sigmaX1i is sufficiently small
+           ! Test to see whether the value of sigma_siG is sufficiently small
            ! enough to cause the parabolic cylinder function to produce a
            ! result to large to be represented numerically by the computer.
-           test = D_fnc( parab_cyl_fnc_ord, parab_cyl_fnc_input )
+           test = D_fnc( parab_cyl_fnc_ord, scci )
 
            IF ( test >= 0.0d0 .AND. test < limit ) THEN
               use_eq_1 = .true.
@@ -1856,63 +1881,57 @@
 
         IF ( use_eq_1 ) THEN
 
-           ! Case where sigmaX1i is not equal to 0 (and sigmaX1i is not
+           ! Case where sigma_siG is not equal to 0 (and sigma_siG is not
            ! sufficiently small enough to cause the parabolic cylinder function
            ! to produce a result greater than what the computer can represent 
            ! numerically).
 
            PDF_TRIVAR_2G_LN_LN =
-     .       (1.0/SQRT(2.0*pi)) * (-sigmaX1i)**alpha_exp 
-     .     * EXP( muX2*beta_exp + muX3*gamma_exp )
+     .       (1.0/SQRT(2.0*pi)) * (-sigma_siG)**alpha_exp 
+     .     * EXP( mu_rrG*beta_exp + mu_NrG*gamma_exp )
      .     * EXP( (1.0/2.0) * (
-     .                            ( 1.0 - corrX1X2**2.0 )
-     .                           *(sigmaX2**2.0)*(beta_exp**2.0)
-     .                         +  ( 1.0 - corrX1X3**2.0 )
-     .                           *(sigmaX3**2.0)*(gamma_exp**2.0)
-     .                         + 2.0*( corrX2X3 - corrX1X2*corrX1X3 )
-     .                              *sigmaX2*beta_exp*sigmaX3*gamma_exp
+     .                            ( 1.0 - corr_rcrrG**2.0 )
+     .                           *(sigma_rrG**2.0)*(beta_exp**2.0)
+     .                         +  ( 1.0 - corr_rcNrG**2.0 )
+     .                           *(sigma_NrG**2.0)*(gamma_exp**2.0)
+     .                         + 2.0
+     .                           *( corr_rrNrG - corr_rcrrG*corr_rcNrG )
+     .                           *sigma_rrG*beta_exp*sigma_NrG*gamma_exp
      .                        )
      .          )
-     .     * EXP(   (1.0/4.0) * (
-     .                             (muX1i/sigmaX1i)
-     .                           + corrX1X2*sigmaX2*beta_exp 
-     .                           + corrX1X3*sigmaX3*gamma_exp
-     .                          )**2.0
-     .            - (muX1i/sigmaX1i) * (
-     .                                    (muX1i/sigmaX1i)
-     .                                  + corrX1X2*sigmaX2*beta_exp 
-     .                                  + corrX1X3*sigmaX3*gamma_exp
-     .                                 )
-     .            + (1.0/2.0) * ( (muX1i**2.0) / (sigmaX1i**2.0) )
+     .     * EXP(   (1.0/4.0) * ( scci )**2.0
+     .            - (mu_siG/sigma_siG) * ( scci )
+     .            + (1.0/2.0) * ( (mu_siG**2.0) / (sigma_siG**2.0) )
      .          )
      .     * GAMMA( gamma_fnc_input )
-     .     * D_fnc( parab_cyl_fnc_ord, parab_cyl_fnc_input )
+     .     * D_fnc( parab_cyl_fnc_ord, scci )
 
-        ELSEIF ( .not. use_eq_1 .AND. muX1i < 0.0 ) THEN
+        ELSEIF ( .not. use_eq_1 .AND. mu_siG < 0.0 ) THEN
 
-           ! Case where sigmaX1i is equal to 0 (or sigmaX1i is sufficiently
+           ! Case where sigma_siG is equal to 0 (or sigma_siG is sufficiently
            ! small enough to cause the parabolic cylinder function to produce a
            ! result greater than what the computer can represent numerically)
-           ! and muX1i is less than 0.
+           ! and mu_siG is less than 0.
 
            PDF_TRIVAR_2G_LN_LN =
-     .       (muX1i)**alpha_exp 
-     .     * EXP( muX2*beta_exp + muX3*gamma_exp )
+     .       (mu_siG)**alpha_exp 
+     .     * EXP( mu_rrG*beta_exp + mu_NrG*gamma_exp )
      .     * EXP( (1.0/2.0) * (
-     .                            ( 1.0 - corrX1X2**2.0 )
-     .                           *(sigmaX2**2.0)*(beta_exp**2.0)
-     .                         +  ( 1.0 - corrX1X3**2.0 )
-     .                           *(sigmaX3**2.0)*(gamma_exp**2.0)
-     .                         + 2.0*( corrX2X3 - corrX1X2*corrX1X3 )
-     .                              *sigmaX2*beta_exp*sigmaX3*gamma_exp
+     .                            ( 1.0 - corr_rcrrG**2.0 )
+     .                           *(sigma_rrG**2.0)*(beta_exp**2.0)
+     .                         +  ( 1.0 - corr_rcNrG**2.0 )
+     .                           *(sigma_NrG**2.0)*(gamma_exp**2.0)
+     .                         + 2.0
+     .                           *( corr_rrNrG - corr_rcrrG*corr_rcNrG )
+     .                           *sigma_rrG*beta_exp*sigma_NrG*gamma_exp
      .                        )
      .          )
 
-        ELSEIF ( .not. use_eq_1 .AND. muX1i >=  0.0 ) THEN
-           ! Case where sigmaX1i is equal to 0 (or sigmaX1i is sufficiently
+        ELSEIF ( .not. use_eq_1 .AND. mu_siG >=  0.0 ) THEN
+           ! Case where sigma_siG is equal to 0 (or sigma_siG is sufficiently
            ! small enough to cause the parabolic cylinder function to produce a
            ! result greater than what the computer can represent numerically)
-           ! and muX1i is greater than or equal to 0.
+           ! and mu_siG is greater than or equal to 0.
 
            PDF_TRIVAR_2G_LN_LN = 0.0
 
