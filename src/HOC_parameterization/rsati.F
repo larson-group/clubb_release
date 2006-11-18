@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------
-! $Id: rsati.F,v 1.1 2006-11-01 20:45:17 mjfalk Exp $
+! $Id: rsati.F,v 1.2 2006-11-18 18:49:12 griffinb Exp $
 
 ! real function rstati( )
 
@@ -19,8 +19,13 @@
 !       Internal
         real esati
 
+        ! Formula for Saturation Mixing Ratio:
+        !
+        ! rs = (epsilon) * [ es / ( p - es ) ];
+        ! where epsilon = R_d / R_v
+
         esati = 100 * exp (23.33086 - (6111.72784/T) + (0.15215*log(T)))
-        rsati = ep*esati/(p-(1-ep)*esati)
+        rsat = ep * ( esat / ( p - esat ) )
 
         return
         end function rsati
