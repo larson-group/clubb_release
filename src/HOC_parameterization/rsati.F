@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------
-! $Id: rsati.F,v 1.2 2006-11-18 18:49:12 griffinb Exp $
+! $Id: rsati.F,v 1.3 2006-11-18 18:53:09 griffinb Exp $
 
 ! real function rstati( )
 
@@ -25,7 +25,7 @@
         ! where epsilon = R_d / R_v
 
         esati = 100 * exp (23.33086 - (6111.72784/T) + (0.15215*log(T)))
-        rsat = ep * ( esat / ( p - esat ) )
+        rsati = ep * ( esati / ( p - esati ) )
 
         return
         end function rsati
