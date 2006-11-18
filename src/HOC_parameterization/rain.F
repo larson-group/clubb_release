@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.14 2006-11-18 22:09:15 griffinb Exp $
+! $Id: rain.F,v 1.15 2006-11-18 23:53:31 griffinb Exp $
 !----------------------------------------------------------------------
 
       MODULE rain_equations
@@ -2342,76 +2342,99 @@
         ! Brian Griffin.  November 14, 2006.
         !
         !-----------------------------------------------------------------------
+        !
+        ! NOTE #2 -- variable notation
+        ! ----------------------------
+        !
+        ! In this particular case, Y1 stands for "rr" and Y2 stands for "Nr."
+        ! X1 stands for a Gaussianized "rr" and X2 stands for a
+        ! Gaussianized "Nr."
+        !
+        ! Furthermore, mu stands for an average, sigma for a standard deviation,
+        ! corr for a correlation.
+        !
+        ! While the equations written above are in a more generalized form, the
+        ! actual code written below is written in terms of the actual names
+        ! of the individual variables in order to decrease confusion and to be
+        ! comparable with the notes by Griffin and Larson.
+        !
+        ! Brian Griffin.  November 18, 2006.
+        !
+        !-----------------------------------------------------------------------
 
 
-        FUNCTION PDF_BIVAR_LN_LN ( muY1, muY2, sigmaY1, sigmaY2,
-     .                             corrY1Y2, alpha_exp, beta_exp )
+        FUNCTION PDF_BIVAR_LN_LN ( mu_rr, mu_Nr, sigma_rr, sigma_Nr,
+     .                             corr_rrNr, alpha_exp, beta_exp   )
 
         USE constants
 
         IMPLICIT NONE
 
         ! Input variables.
-        REAL, INTENT(IN):: muY1      ! Average of Y1
-        REAL, INTENT(IN):: muY2      ! Average of Y2
-        REAL, INTENT(IN):: sigmaY1   ! Standard deviation of Y1
-        REAL, INTENT(IN):: sigmaY2   ! Standard deviation of Y2
-        REAL, INTENT(IN):: corrY1Y2  ! Intra-Gaussian correlation between Y1,Y2
-        REAL, INTENT(IN):: alpha_exp ! Exponent associated with Y1 variable.
-        REAL, INTENT(IN):: beta_exp  ! Exponent associated with Y2 variable.
+        REAL, INTENT(IN):: mu_rr     ! Average of rr
+        REAL, INTENT(IN):: mu_Nr     ! Average of Nr
+        REAL, INTENT(IN):: sigma_rr  ! Standard deviation of rr
+        REAL, INTENT(IN):: sigma_Nr  ! Standard deviation of Nr
+        REAL, INTENT(IN):: corr_rrNr ! Intra-Gaussian correlation between rr, Nr
+        REAL, INTENT(IN):: alpha_exp ! Exponent associated with rr variable.
+        REAL, INTENT(IN):: beta_exp  ! Exponent associated with Nr variable.
         
         ! Output variable.
         REAL:: PDF_BIVAR_LN_LN
 
         ! Local variables.
 
-        ! "Y" variables Gaussianized and converted to "X" variables.
-        REAL:: muX1      ! Average of X1
-        REAL:: muX2      ! Average of X2
-        REAL:: sigmaX1   ! Standard deviation of X1
-        REAL:: sigmaX2   ! Standard deviation of X2
-        REAL:: corrX1X2  ! Intra-Gaussian correlation between X1,X2
+        ! Variables Gaussianized and Converted.
+        REAL:: mu_rrG      ! Average of rr(G)
+        REAL:: mu_NrG      ! Average of Nr(G)
+        REAL:: sigma_rrG   ! Standard deviation of rr(G)
+        REAL:: sigma_NrG   ! Standard deviation of Nr(G)
+        REAL:: corr_rrNrG  ! Intra-Gaussian correlation between rr(G), X2(G)
 
         !----- Section #1 ------------------------------------------------------
 
         !!!!!!!!!! Convert all means, standard deviations, and correlations
         !!!!!!!!!! to Gaussian terms.
 
-        ! Y1 is a Lognormal.  It is converted to X1, which is a Gaussian.
-        ! X1 = ln Y1
-        muX1 = LOG(  muY1 * (  1.0 
-     .                       + ( (sigmaY1**2.0) / (muY1**2.0) ) 
-     .                      )**(-1.0/2.0)
-     .            )
-        sigmaX1 = SQRT( LOG(  1.0 + ( (sigmaY1**2.0) / (muY1**2.0) ) )
-     .                )
+        ! rr is a Lognormal.  It is converted to rr(G), which is a Gaussian.
+        ! rr(G) = ln rr
+        mu_rrG = LOG(  mu_rr * (  1.0 
+     .                          + ( (sigma_rr**2.0) / (mu_rr**2.0) ) 
+     .                         )**(-1.0/2.0)
+     .              )
+        sigma_rrG = SQRT( LOG(  1.0 
+     .                        + ( (sigma_rr**2.0) / (mu_rr**2.0) )
+     .                       )
+     .                  )
 
-        ! Y2 is a Lognormal.  It is converted to X2, which is a Gaussian.
-        ! X2 = ln Y2
-        muX2 = LOG(  muY2 * (  1.0 
-     .                       + ( (sigmaY2**2.0) / (muY2**2.0) ) 
-     .                      )**(-1.0/2.0)
-     .            )
-        sigmaX2 = SQRT( LOG(  1.0 + ( (sigmaY2**2.0) / (muY2**2.0) ) )
-     .                )
+        ! Nr is a Lognormal.  It is converted to Nr(G), which is a Gaussian.
+        ! Nr(G) = ln Nr
+        mu_NrG = LOG(  mu_Nr * (  1.0 
+     .                          + ( (sigma_Nr**2.0) / (mu_Nr**2.0) ) 
+     .                         )**(-1.0/2.0)
+     .              )
+        sigma_NrG = SQRT( LOG(  1.0
+     .                        + ( (sigma_Nr**2.0) / (mu_Nr**2.0) )
+     .                       )
+     .                  )
 
         !!! Intra-Gaussian correlation.
-        ! corrY1Y2 is a correlation between two Log-normals.  It must be 
-        ! converted to corrX1X2, which is a correlation between two Gaussians.
-        corrX1X2 = LOG( 1.0 + corrY1Y2
-     .                             * SQRT( EXP(sigmaX1**2.0) - 1.0 )
-     .                             * SQRT( EXP(sigmaX2**2.0) - 1.0 )
-     .                ) / ( sigmaX1 * sigmaX2 )
+        ! corr_rrNr is a correlation between two Log-normals.  It must be 
+        ! converted to corr_rrNrG, which is a correlation between two Gaussians.
+        corr_rrNrG = LOG( 1.0 + corr_rrNr
+     .                             * SQRT( EXP(sigma_rrG**2.0) - 1.0 )
+     .                             * SQRT( EXP(sigma_NrG**2.0) - 1.0 )
+     .                  ) / ( sigma_rrG * sigma_NrG )
 
         !----- Section #2 ------------------------------------------------------
 
         !!!!!!!!!! Solve.
 
         PDF_BIVAR_LN_LN =
-     .     EXP(   muX1*alpha_exp + muX2*beta_exp
-     .          + (1.0/2.0)*(sigmaX1**2.0)*(alpha_exp**2.0)
-     .          + (1.0/2.0)*(sigmaX2**2.0)*(beta_exp**2.0)
-     .          + corrX1X2*sigmaX1*alpha_exp*sigmaX2*beta_exp
+     .     EXP(   mu_rrG*alpha_exp + mu_NrG*beta_exp
+     .          + (1.0/2.0)*(sigma_rrG**2.0)*(alpha_exp**2.0)
+     .          + (1.0/2.0)*(sigma_NrG**2.0)*(beta_exp**2.0)
+     .          + corr_rrNrG*sigma_rrG*alpha_exp*sigma_NrG*beta_exp
      .        )
 
         RETURN
