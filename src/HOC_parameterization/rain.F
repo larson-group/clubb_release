@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.15 2006-11-18 23:53:31 griffinb Exp $
+! $Id: rain.F,v 1.16 2006-11-19 00:04:39 griffinb Exp $
 !----------------------------------------------------------------------
 
       MODULE rain_equations
@@ -33,6 +33,8 @@
       PUBLIC rain
       PRIVATE mean_volume_radius, cond_evap_rrm, cond_evap_Nrm
       PRIVATE autoconv_rrm, autoconv_Nrm, accretion_rrm
+      PRIVATE G_T_p
+!      PRIVATE PDF_TRIVAR_2G_LN_LN, PDF_BIVAR_2G_LN, PDF_BIVAR_LN_LN
       PRIVATE D_fnc, VVLA, DVSA, DVLA
 
       CONTAINS
@@ -1077,7 +1079,7 @@
            IF ( rrm > 0.0 .AND. Nrm > 0.0 ) THEN
 
               cond_evap_rrm =
-     .           3.0 * C_evap * G_T_p(Temp, press)
+     .           3.0 * C_evap * G_T_p( Temp, press )
      .               * ( ((4.0*pi*rho_lw)/(3.0*rhot))**(2.0/3.0) )
      .               * (rrm**(1.0/3.0)) * (Nrm**(2.0/3.0)) * Supsat
 
@@ -1105,7 +1107,7 @@
      .                          * ( Lv/(Cp*Tl_1) )
 
               plume_1_constants = 
-     .           3.0 * C_evap * G_T_p(T_1, press)
+     .           3.0 * C_evap * G_T_p( T_1, press )
      .               * ( ((4.0*pi*rho_lw)/3.0)**(2.0/3.0) )
      .               * ( (1.0 + Beta_T1*rsl_1) / rsl_1 )
 
@@ -1120,7 +1122,7 @@
      .                          * ( Lv/(Cp*Tl_2) )
 
               plume_2_constants = 
-     .           3.0 * C_evap * G_T_p(T_2, press)
+     .           3.0 * C_evap * G_T_p( T_2, press )
      .               * ( ((4.0*pi*rho_lw)/3.0)**(2.0/3.0) )
      .               * ( (1.0 + Beta_T2*rsl_2) / rsl_2 )
 
@@ -1518,6 +1520,54 @@
         RETURN
 
         END FUNCTION accretion_rrm
+
+!===============================================================================
+
+        FUNCTION G_T_p( Temp, press )
+
+        USE constants
+
+        IMPLICIT NONE
+
+
+        ! Here we compute G(T,p) as in KK (17) 
+        !      and Eq. (7.17) of Rogers and Yau 1989
+
+        ! External functions
+
+        real, external :: rsat
+
+        ! Input      
+        REAL, INTENT(IN):: Temp, press
+
+        ! Ouput
+        REAL:: G_T_p
+
+        ! Internal
+        REAL:: Ka, Dv
+        REAL:: Fk, Fd
+        REAL:: es, rs, Celsius
+
+        Celsius = Temp - 273.16
+
+        Ka = (5.69 + 0.017*Celsius)*0.00001  ! Ka in cal./(cm.*sec.*C)
+        Ka = 4.1868*100.0*Ka  ! Ka in J./(m.*sec.*K)
+
+        Dv = 0.221*((Temp/273.16)**1.94)*(101325.0/press)  
+                                ! Dv in (cm.^2)/sec.  ! .221 is correct.
+        Dv = Dv/10000.0  ! Dv in (m.^2)/sec.
+
+        rs = rsat(press, Temp)
+        es = (press*rs)/(ep + rs)
+
+        Fk = (Lv/(Rv*Temp) - 1.0)*(Lv*rho_lw)/(Ka*Temp)
+        Fd = (rho_lw*Rv*Temp)/(Dv*es)
+
+        G_T_p = 1.0/(Fk + Fd)
+
+        RETURN
+
+        END FUNCTION G_T_p
 
 !===============================================================================
         !
@@ -2440,53 +2490,6 @@
         RETURN
 
         END FUNCTION PDF_BIVAR_LN_LN
-
-!===============================================================================
-
-        FUNCTION G_T_p( Temp, press )
-
-        USE constants
-
-        IMPLICIT NONE
-
-
-        ! Here we compute G(T,p) as in KK (17) 
-        !      and Eq. (7.17) of Rogers and Yau 1989
-
-        ! External functions
-
-        real, external :: rsat
-
-        ! Input      
-        REAL, INTENT(IN):: Temp, press
-
-        ! Ouput
-        REAL:: G_t_p
-
-        ! Internal
-        REAL:: Ka, Dv
-        REAL:: Fk, Fd
-        REAL:: es, rs, Celsius
-
-        Celsius = Temp - 273.16
-
-        Ka = (5.69 + 0.017*Celsius)*0.00001  ! Ka in cal./(cm.*sec.*C)
-        Ka = 4.1868*100.0*Ka  ! Ka in J./(m.*sec.*K)
-
-        Dv = 0.221*((Temp/273.16)**1.94)*(101325.0/press)  
-                                ! Dv in (cm.^2)/sec.  ! .221 is correct.
-        Dv = Dv/10000.0  ! Dv in (m.^2)/sec.
-
-        rs = rsat(press, Temp)
-        es = (press*rs)/(ep + rs)
-
-        Fk = (Lv/(Rv*Temp) - 1.0)*(Lv*rho_lw)/(Ka*Temp)
-        Fd = (rho_lw*Rv*Temp)/(Dv*es)
-
-        G_t_p = 1.0/(Fk + Fd)
-
-        RETURN
-        END FUNCTION G_t_p
 
 !!===============================================================================
 !        !
@@ -3489,7 +3492,7 @@
         RETURN
         END FUNCTION D_fnc
 
-!------------------------------------------------------------------------
+!===============================================================================
 
         SUBROUTINE DVSA(VA,X,PD)
 
@@ -3551,7 +3554,7 @@
         RETURN
         END SUBROUTINE DVSA
 
-!------------------------------------------------------------------------
+!===============================================================================
 
         SUBROUTINE DVLA(VA,X,PD)
 
@@ -3596,7 +3599,7 @@
         RETURN
         END SUBROUTINE DVLA
 
-!------------------------------------------------------------------------
+!===============================================================================
 
         SUBROUTINE VVLA(VA,X,PV)
 
@@ -3641,7 +3644,8 @@
 
         RETURN
         END SUBROUTINE VVLA
-!------------------------------------------------------------------------
+
+!===============================================================================
 !       Now occurs as part of the function in gamma.f90 -dschanen
 !------------------------------------------------------------------------
 !
@@ -3701,5 +3705,7 @@
 !
 !        RETURN
 !        END SUBROUTINE GAMMA
-!------------------------------------------------------------------------
+!
+!===============================================================================
+
       END MODULE rain_equations
