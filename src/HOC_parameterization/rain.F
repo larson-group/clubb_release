@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.16 2006-11-19 00:04:39 griffinb Exp $
+! $Id: rain.F,v 1.17 2006-11-20 20:37:23 griffinb Exp $
 !----------------------------------------------------------------------
 
       MODULE rain_equations
@@ -29,6 +29,12 @@
       !REAL, PARAMETER:: r_0 = 30.0e-6   ! Assumed radius of all new drops; m.
                                          ! Khairoutdinov said it was okay!
       ! End Vince Larson's change.
+
+      ! Set tolerances to insure against numerical errors.
+      REAL, PARAMETER:: rc_tol = 10.0**(-18)
+      REAL, PARAMETER:: Nc_tol = 10.0**(-18)
+      REAL, PARAMETER:: rr_tol = 10.0**(-18)
+      REAL, PARAMETER:: Nr_tol = 10.0**(-18)
 
       PUBLIC rain
       PRIVATE mean_volume_radius, cond_evap_rrm, cond_evap_Nrm
@@ -896,7 +902,9 @@
 
         IF ( local_kk ) THEN
 
-           IF ( rrm > 0.0 .AND. Nrm > 0.0 ) THEN
+           ! Tolerance values are used instead of 0 in order to prevent
+           ! numerical error.
+           IF ( rrm > rr_tol .AND. Nrm > Nr_tol ) THEN
 
               mean_volume_radius = 
      .           (  ((4.0*pi*rho_lw)/(3.0*rhot))**(-1.0/3.0)  )
@@ -911,7 +919,9 @@
 
         ELSEIF ( .NOT. local_kk ) THEN
 
-           IF ( rrm > 0.0 .AND. Nrm > 0.0 ) THEN
+           ! Tolerance values are used instead of 0 in order to prevent
+           ! numerical error.
+           IF ( rrm > rr_tol .AND. Nrm > Nr_tol ) THEN
 
               ! Exponents on rr and Nr, respectively.
               alpha_exp = (1.0/3.0)
@@ -1076,7 +1086,9 @@
 
         IF ( local_kk ) THEN
 
-           IF ( rrm > 0.0 .AND. Nrm > 0.0 ) THEN
+           ! Tolerance values are used instead of 0 in order to prevent
+           ! numerical error.
+           IF ( rrm > rr_tol .AND. Nrm > Nr_tol ) THEN
 
               cond_evap_rrm =
      .           3.0 * C_evap * G_T_p( Temp, press )
@@ -1092,7 +1104,9 @@
 
         ELSEIF ( .NOT. local_kk ) THEN
 
-           IF ( rrm > 0.0 .AND. Nrm > 0.0 ) THEN
+           ! Tolerance values are used instead of 0 in order to prevent
+           ! numerical error.
+           IF ( rrm > rr_tol .AND. Nrm > Nr_tol ) THEN
 
               !!! Define plume constants for each plume
 
@@ -1309,7 +1323,9 @@
 
         IF ( local_kk ) THEN
 
-           IF ( rcm > 0.0 .AND. Ncm > 0.0 ) THEN
+           ! Tolerance values are used instead of 0 in order to prevent
+           ! numerical error.
+           IF ( rcm > rc_tol .AND. Ncm > Nc_tol ) THEN
 
               autoconv_rrm = 7.4188E13 * rcm**2.47 * Ncm**(-1.79)
 
@@ -1322,7 +1338,9 @@
 
         ELSEIF ( .NOT. local_kk ) THEN
 
-           IF ( rcm > 0.0 .AND. Ncm > 0.0 ) THEN
+           ! Tolerance values are used instead of 0 in order to prevent
+           ! numerical error.
+           IF ( rcm > rc_tol .AND. Ncm > Nc_tol ) THEN
 
               ! Exponents on s and Nc, respectively.
               alpha_exp = 2.47
@@ -1465,7 +1483,9 @@
 
         IF ( local_kk ) THEN
 
-           IF ( rcm > 0.0 .AND. rrm > 0.0 ) THEN
+           ! Tolerance values are used instead of 0 in order to prevent
+           ! numerical error.
+           IF ( rcm > rc_tol .AND. rrm > rr_tol ) THEN
 
               accretion_rrm = 67.0 * (rcm*rrm)**1.15
 
@@ -1478,7 +1498,9 @@
 
         ELSEIF ( .NOT. local_kk ) THEN
 
-           IF ( rcm > 0.0 .AND. rrm > 0.0 ) THEN
+           ! Tolerance values are used instead of 0 in order to prevent
+           ! numerical error.
+           IF ( rcm > rc_tol .AND. rrm > rr_tol ) THEN
 
               ! Exponents on s and rr, respectively.
               alpha_exp = 1.15
@@ -1752,7 +1774,12 @@
         ! can be represented by a DOUBLE PRECISION variable is of the order
         ! of 10^308.  Therefore, a sufficiently small sigmaX1i must be treated
         ! the same as if sigmaX1i = 0.  A test is needed to determine if the
-        ! computer can represent the number or not.
+        ! computer can represent the number or not.  Secondly, there is a case
+        ! where sigmaX1i^2 is in the denominator.  While sigmaX1i may not equal
+        ! 0, it may be small enough so that sigmaX1i^2 can not be represented
+        ! by the computer, thereby returning a value of 0 for sigmaX1i^2.
+        ! A tolerance value for sigmaX1i is used so that sigmaX1i^2 does not
+        ! return a value of 0 when sigmaX1i /= 0.
         !
         ! In Summary:
         ! 
@@ -1840,6 +1867,7 @@
 !        DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308.0
 !       Found that above is not valid on most compilers -dschanen
         DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308
+        REAL, PARAMETER:: sigs_tol = 10.0**(-18)
 
         !----- Section #1 ------------------------------------------------------
 
@@ -1906,15 +1934,17 @@
         ! Order of the parabolic cylinder function.
         parab_cyl_fnc_ord = - ( alpha_exp + 1.0 )
 
-        ! Input to the parabolic cylinder function.
-        scci =  (mu_siG/sigma_siG)
-     .        + corr_rcrrG*sigma_rrG*beta_exp 
-     .        + corr_rcNrG*sigma_NrG*gamma_exp
-
         ! If sigma_siG = 0, then equation #1 cannot be used.
-        IF ( sigma_siG == 0.0 ) THEN
+        ! A tolerance value (a small number) is used instead of zero in order
+        ! to prevent numerical errors.
+        IF ( sigma_siG < sigs_tol ) THEN
            use_eq_1 = .false.
         ELSE
+           ! Input to the parabolic cylinder function.
+           scci =  (mu_siG/sigma_siG)
+     .           + corr_rcrrG*sigma_rrG*beta_exp 
+     .           + corr_rcNrG*sigma_NrG*gamma_exp
+
            ! Test to see whether the value of sigma_siG is sufficiently small
            ! enough to cause the parabolic cylinder function to produce a
            ! result to large to be represented numerically by the computer.
@@ -2127,7 +2157,12 @@
         ! can be represented by a DOUBLE PRECISION variable is of the order
         ! of 10^308.  Therefore, a sufficiently small sigmaX1i must be treated
         ! the same as if sigmaX1i = 0.  A test is needed to determine if the
-        ! computer can represent the number or not.
+        ! computer can represent the number or not.  Secondly, there is a case
+        ! where sigmaX1i^2 is in the denominator.  While sigmaX1i may not equal
+        ! 0, it may be small enough so that sigmaX1i^2 can not be represented
+        ! by the computer, thereby returning a value of 0 for sigmaX1i^2.
+        ! A tolerance value for sigmaX1i is used so that sigmaX1i^2 does not
+        ! return a value of 0 when sigmaX1i /= 0.
         !
         ! In Summary:
         ! 
@@ -2202,6 +2237,7 @@
 !        DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308.0
 !       Found that above is not valid on most compilers -dschanen
         DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308
+        REAL, PARAMETER:: sigs_tol = 10.0**(-18)
 
         !----- Section #1 ------------------------------------------------------
 
@@ -2246,14 +2282,16 @@
         ! Order of the parabolic cylinder function.
         parab_cyl_fnc_ord = - ( alpha_exp + 1.0 )
 
-        ! Input to the parabolic cylinder function (without minus sign).
-        sci =  (mu_siG/sigma_siG)
-     .       + corr_rcxxG*sigma_xxG*beta_exp 
-
         ! If sigma_siG = 0, then equation #1 cannot be used.
-        IF (sigma_siG == 0.0 ) THEN
+        ! A tolerance value (a small number) is used instead of zero in order
+        ! to prevent numerical errors.
+        IF (sigma_siG < sigs_tol ) THEN
            use_eq_1 = .false.
         ELSE
+           ! Input to the parabolic cylinder function (without minus sign).
+           sci =  (mu_siG/sigma_siG)
+     .          + corr_rcxxG*sigma_xxG*beta_exp 
+
            ! Test to see whether the value of sigma_siG is sufficiently small
            ! enough to cause the parabolic cylinder function to produce a
            ! result to large to be represented numerically by the computer.
@@ -2674,7 +2712,12 @@
 !        ! can be represented by a DOUBLE PRECISION variable is of the order
 !        ! of 10^308.  Therefore, a sufficiently small sigmaX1i must be treated
 !        ! the same as if sigmaX1i = 0.  A test is needed to determine if the
-!        ! computer can represent the number or not.
+!        ! computer can represent the number or not.  Secondly, there is a case
+!        ! where sigmaX1i^2 is in the denominator.  While sigmaX1i may not equal
+!        ! 0, it may be small enough so that sigmaX1i^2 can not be represented
+!        ! by the computer, thereby returning a value of 0 for sigmaX1i^2.
+!        ! A tolerance value for sigmaX1i is used so that sigmaX1i^2 does not
+!        ! return a value of 0 when sigmaX1i /= 0.
 !        !
 !        ! In Summary:
 !        ! 
@@ -2741,6 +2784,7 @@
 !!        DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308.0
 !!       Found that above is not valid on most compilers -dschanen
 !        DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308
+!        REAL, PARAMETER:: sigX1_tol = 10.0**(-18)
 !
 !        !----- Section #1 ------------------------------------------------------
 !
@@ -2803,15 +2847,17 @@
 !        ! Order of the parabolic cylinder function.
 !        parab_cyl_fnc_ord = - ( alpha_exp + 1.0 )
 !
-!        ! Input to the parabolic cylinder function.
-!        parab_cyl_fnc_input =  (muX1i/sigmaX1i)
-!     .                       + corrX1X2*sigmaX2*beta_exp 
-!     .                       + corrX1X3*sigmaX3*gamma_exp
-!
 !        ! If sigmaX1i = 0, then equation #1 cannot be used.
-!        IF ( sigmaX1i == 0.0 ) THEN
+!        ! A tolerance value (a small number) is used instead of zero in order
+!        ! to prevent numerical errors.
+!        IF ( sigmaX1i < sigX1_tol ) THEN
 !           use_eq_1 = .false.
 !        ELSE
+!           ! Input to the parabolic cylinder function.
+!           parab_cyl_fnc_input =  (muX1i/sigmaX1i)
+!     .                          + corrX1X2*sigmaX2*beta_exp 
+!     .                          + corrX1X3*sigmaX3*gamma_exp
+!
 !           ! Test to see whether the value of sigmaX1i is sufficiently small
 !           ! enough to cause the parabolic cylinder function to produce a
 !           ! result to large to be represented numerically by the computer.
@@ -3030,7 +3076,12 @@
 !        ! can be represented by a DOUBLE PRECISION variable is of the order
 !        ! of 10^308.  Therefore, a sufficiently small sigmaX1i must be treated
 !        ! the same as if sigmaX1i = 0.  A test is needed to determine if the
-!        ! computer can represent the number or not.
+!        ! computer can represent the number or not.  Secondly, there is a case
+!        ! where sigmaX1i^2 is in the denominator.  While sigmaX1i may not equal
+!        ! 0, it may be small enough so that sigmaX1i^2 can not be represented
+!        ! by the computer, thereby returning a value of 0 for sigmaX1i^2.
+!        ! A tolerance value for sigmaX1i is used so that sigmaX1i^2 does not
+!        ! return a value of 0 when sigmaX1i /= 0.
 !        !
 !        ! In Summary:
 !        ! 
@@ -3082,6 +3133,7 @@
 !!        DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308.0
 !!       Found that above is not valid on most compilers -dschanen
 !        DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308
+!        REAL, PARAMETER:: sigX1_tol = 10.0**(-18)
 !
 !        !----- Section #1 ------------------------------------------------------
 !
@@ -3124,14 +3176,16 @@
 !        ! Order of the parabolic cylinder function.
 !        parab_cyl_fnc_ord = - ( alpha_exp + 1.0 )
 !
-!        ! Input to the parabolic cylinder function.
-!        parab_cyl_fnc_input = - (  (muX1i/sigmaX1i)
-!     .                           + corrX1X2*sigmaX2*beta_exp )
-!
 !        ! If sigmaX1i = 0, then equation #1 cannot be used.
-!        IF ( sigmaX1i == 0.0 ) THEN
+!        ! A tolerance value (a small number) is used instead of zero in order
+!        ! to prevent numerical errors.
+!        IF ( sigmaX1i < sigX1_tol ) THEN
 !           use_eq_1 = .false.
 !        ELSE
+!           ! Input to the parabolic cylinder function.
+!           parab_cyl_fnc_input = - (  (muX1i/sigmaX1i)
+!     .                              + corrX1X2*sigmaX2*beta_exp )
+!
 !           ! Test to see whether the value of sigmaX1i is sufficiently small
 !           ! enough to cause the parabolic cylinder function to produce a
 !           ! result to large to be represented numerically by the computer.
