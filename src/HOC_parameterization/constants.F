@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.7 2006-11-02 22:41:30 dschanen Exp $
+! $Id: constants.F,v 1.8 2006-11-26 21:45:01 dschanen Exp $
 
         module constants
 
@@ -131,6 +131,14 @@
      .  qttol   = 1.e-4, ! [?]
      .  sstol   = 1.e-8, ! [kg/kg]
      .  difftol = 0.4    ! [?]
+
+        ! Set tolerances for Khairoutdinov and Kogan rain microphysics
+        ! to insure against numerical errors.
+        real, parameter :: 
+     .  rc_tol = 10.0**(-18), ! [kg/kg]
+     .  Nc_tol = 10.0**(-18), ! [#/m^3]
+     .  rr_tol = 10.0**(-18), ! [kg/kg]
+     .  Nr_tol = 10.0**(-18)  ! [#/m^3]
 
         real, parameter :: 
      .  eps = 1.0e-10 ! Small value to prevent a divide by zero

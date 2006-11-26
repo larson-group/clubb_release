@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.17 2006-11-20 20:37:23 griffinb Exp $
+! $Id: rain.F,v 1.18 2006-11-26 21:45:01 dschanen Exp $
 !----------------------------------------------------------------------
 
       MODULE rain_equations
@@ -30,18 +30,12 @@
                                          ! Khairoutdinov said it was okay!
       ! End Vince Larson's change.
 
-      ! Set tolerances to insure against numerical errors.
-      REAL, PARAMETER:: rc_tol = 10.0**(-18)
-      REAL, PARAMETER:: Nc_tol = 10.0**(-18)
-      REAL, PARAMETER:: rr_tol = 10.0**(-18)
-      REAL, PARAMETER:: Nr_tol = 10.0**(-18)
-
       PUBLIC rain
       PRIVATE mean_volume_radius, cond_evap_rrm, cond_evap_Nrm
       PRIVATE autoconv_rrm, autoconv_Nrm, accretion_rrm
       PRIVATE G_T_p
 !      PRIVATE PDF_TRIVAR_2G_LN_LN, PDF_BIVAR_2G_LN, PDF_BIVAR_LN_LN
-      PRIVATE D_fnc, VVLA, DVSA, DVLA
+      PRIVATE Dv_fnc
 
       CONTAINS
 !----------------------------------------------------------------------
@@ -57,7 +51,7 @@
         USE model_flags
         USE grid_class
         USE constants
-        use lapack_wrap, only: tridag_solve
+        USE lapack_wrap, ONLY: tridag_solve
 #ifdef STATS
         USE statistics
 #endif /*STATS*/
@@ -280,7 +274,7 @@
 
         endif
 
-#endif STATS
+#endif /*STATS*/
 
         ! Find the drop mean volume radius.  It is calculated using
         ! the rain water mixing ratio, the rain droplet concentration,
@@ -420,7 +414,7 @@
 
         endif
 
-#endif STATS
+#endif /*STATS*/
 
         ! rain drop concentration (Nrm)
         ! lower boundary
@@ -476,7 +470,7 @@
 
         endif
 
-#endif STATS
+#endif /*STATS*/
 
 
 
@@ -529,7 +523,7 @@
 
         endif
 
-#endif STATS
+#endif /*STATS*/
 
 
            ! LHS terms for rain droplet number concentration, Nrm.
@@ -575,7 +569,7 @@
 
         endif
 
-#endif STATS
+#endif /*STATS*/
 
 
            ! PDF parameters from pdf_closure_new for use in calculation
@@ -647,7 +641,7 @@
 
         endif
 
-#endif STATS
+#endif /*STATS*/
 
 
            ! Now find the elements that make up the right-hand side of the
@@ -675,7 +669,7 @@
 
         endif
 
-#endif STATS
+#endif /*STATS*/
 
 
         ENDDO ! k=2..gr%nnzp-1
@@ -781,7 +775,7 @@
 
         endif
 
-#endif STATS
+#endif /*STATS*/
 
            ! Value of rain water mixing ratio cannot fall below 0.
            IF (rrm(k) < 0.0) THEN
@@ -823,7 +817,7 @@
 
         endif
 
-#endif STATS
+#endif /*STATS*/
 
 
         RETURN
@@ -1825,7 +1819,7 @@
      .                                 alpha_exp, beta_exp, gamma_exp )
 
         USE constants
-        USE polpak_gamma, ONLY: gamma
+        USE parabolic, ONLY: gamma
 
         IMPLICIT NONE
 
@@ -1948,7 +1942,7 @@
            ! Test to see whether the value of sigma_siG is sufficiently small
            ! enough to cause the parabolic cylinder function to produce a
            ! result to large to be represented numerically by the computer.
-           test = D_fnc( parab_cyl_fnc_ord, scci )
+           test = Dv_fnc( parab_cyl_fnc_ord, scci )
 
            IF ( test >= 0.0d0 .AND. test < limit ) THEN
               use_eq_1 = .true.
@@ -1984,7 +1978,7 @@
      .            + (1.0/2.0) * ( (mu_siG**2.0) / (sigma_siG**2.0) )
      .          )
      .     * GAMMA( gamma_fnc_input )
-     .     * D_fnc( parab_cyl_fnc_ord, scci )
+     .     * Dv_fnc( parab_cyl_fnc_ord, scci )
 
         ELSEIF ( .not. use_eq_1 .AND. mu_siG < 0.0 ) THEN
 
@@ -2204,7 +2198,7 @@
      .                             corr_rcxx, alpha_exp, beta_exp )
 
         USE constants
-        USE polpak_gamma, ONLY: gamma
+        USE parabolic, ONLY: gamma
 
         IMPLICIT NONE
 
@@ -2295,7 +2289,7 @@
            ! Test to see whether the value of sigma_siG is sufficiently small
            ! enough to cause the parabolic cylinder function to produce a
            ! result to large to be represented numerically by the computer.
-           test = D_fnc( parab_cyl_fnc_ord, -sci )
+           test = Dv_fnc( parab_cyl_fnc_ord, -sci )
 
            IF ( test >= 0.0d0 .AND. test < limit ) THEN
               use_eq_1 = .true.
@@ -2320,7 +2314,7 @@
      .            - (1.0/4.0)*( sci )**2.0
      .          )
      .     * GAMMA( gamma_fnc_input )
-     .     * D_fnc( parab_cyl_fnc_ord, -sci )
+     .     * Dv_fnc( parab_cyl_fnc_ord, -sci )
 
         ELSEIF ( .not. use_eq_1 .AND. mu_siG > 0.0 ) THEN
 
@@ -2861,7 +2855,7 @@
 !           ! Test to see whether the value of sigmaX1i is sufficiently small
 !           ! enough to cause the parabolic cylinder function to produce a
 !           ! result to large to be represented numerically by the computer.
-!           test = D_fnc( parab_cyl_fnc_ord, parab_cyl_fnc_input )
+!           test = Dv_fnc( parab_cyl_fnc_ord, parab_cyl_fnc_input )
 !
 !           IF ( test >= 0.0d0 .AND. test < limit ) THEN
 !              use_eq_1 = .true.
@@ -2904,7 +2898,7 @@
 !     .            + (1.0/2.0) * ( (muX1i**2.0) / (sigmaX1i**2.0) )
 !     .          )
 !     .     * GAMMA( gamma_fnc_input )
-!     .     * D_fnc( parab_cyl_fnc_ord, parab_cyl_fnc_input )
+!     .     * Dv_fnc( parab_cyl_fnc_ord, parab_cyl_fnc_input )
 !
 !        ELSEIF ( .not. use_eq_1 .AND. muX1i < 0.0 ) THEN
 !
@@ -3189,7 +3183,7 @@
 !           ! Test to see whether the value of sigmaX1i is sufficiently small
 !           ! enough to cause the parabolic cylinder function to produce a
 !           ! result to large to be represented numerically by the computer.
-!           test = D_fnc( parab_cyl_fnc_ord, parab_cyl_fnc_input )
+!           test = Dv_fnc( parab_cyl_fnc_ord, parab_cyl_fnc_input )
 !
 !           IF ( test >= 0.0d0 .AND. test < limit ) THEN
 !              use_eq_1 = .true.
@@ -3215,7 +3209,7 @@
 !     .                         + corrX1X2*sigmaX2*beta_exp )**2.0
 !     .          )
 !     .     * GAMMA( gamma_fnc_input )
-!     .     * D_fnc( parab_cyl_fnc_ord, parab_cyl_fnc_input )
+!     .     * Dv_fnc( parab_cyl_fnc_ord, parab_cyl_fnc_input )
 !
 !        ELSEIF ( .not. use_eq_1 .AND. muX1i > 0.0 ) THEN
 !
@@ -3403,363 +3397,61 @@
 !
 !!===============================================================================
 
-        ! DESCRIPTION
-        !
-        ! The following function is a function which computes the Parabolic
-        ! Cylinder function.  It's inputs are V (the order of the function)
-        ! and X (the value at which the function is evaluated at).  Both
-        ! inputs HAVE to be declared as Double Precision numbers in any code
-        ! that calls this particular function.  The output of this function
-        ! is also a Double Precision number.  As part of the computing the 
-        ! Parabolic Cylinder function, there is a Subroutine GAMMA which
-        ! computes the Gamma function.  It can be called from a separate
-        ! area of code, as well.  In the subroutine call, the first argument
-        ! is the value at which the function is evaluated at.  It must be
-        ! declared as a Double Precision number in the code that calls that
-        ! subroutine.  The second argument is the output of the gamma
-        ! function.  It must also be declared as a Double Precision number
-        ! in the code that calls Subroutine GAMMA.
-
-        DOUBLE PRECISION FUNCTION D_fnc(V,X)
-
-!       Reference: http://jin.ece.uiuc.edu/routines/mpbdv.for
-!       COMPUTATION OF SPECIAL FUNCTIONS
-!          by Shanjie Zhang and Jianming Jin
-!       Copyright 1996 by John Wiley & Sons, Inc.
-!
-!       ====================================================
-!       Purpose: Compute parabolic cylinder function Dv(x).
-!                This is the D function of Whittaker,
-!                Eq. 19.3.7 Abramowitz and Stegun.
-!       Input:   x --- Argument of Dv(x)
-!                v --- Order of Dv(x)
-!       Output:  D_fnc = PDF --- Dv(x)
-!       Extras:  DV(na) --- Dn+v0(x)
-!                DP(na) --- Dn+v0'(x)
-!                ( na = |n|, v0 = v-n, |v0| < 1,
-!                  n = 0,ñ,ñ,úú)
-!                PDD --- Dv'(x)
-!       Routines called:
-!             (1) DVSA for computing Dv(x) for small |x|
-!             (2) DVLA for computing Dv(x) for large |x|
-!       ====================================================
-
-        IMPLICIT NONE
-!        IMPLICIT DOUBLE PRECISION (A-H,O-Z) ! Cleaned this up 6/27/05
-        DOUBLE PRECISION DV, DP
-        DIMENSION DV(0:100), DP(0:100)
-        DOUBLE PRECISION, INTENT(IN)    :: X
-        DOUBLE PRECISION, INTENT(INOUT) :: V
-        DOUBLE PRECISION XA, VH, NV, V0, V1, V2, EP
-        DOUBLE PRECISION PD, PD0, PD1, PDF, F, F0, F1, F2, S0
-        INTEGER L, JA, K, NA, NK, M
-        XA=DABS(X)
-        VH=V
-        V=V+DSIGN(1.0D0,V)
-        NV=INT(V)
-        V0=V-NV
-        NA=ABS(NV)
-        EP=DEXP(-.25D0*X*X)
-        IF (NA.GE.1) JA=1
-        IF (V.GE.0.0) THEN
-           IF (V0.EQ.0.0) THEN
-              PD0=EP
-              PD1=X*EP
-           ELSE
-              DO 10 L=0,JA
-                 V1=V0+L
-                 IF (XA.LE.5.8) CALL DVSA(V1,X,PD1)
-                 IF (XA.GT.5.8) CALL DVLA(V1,X,PD1)
-                 IF (L.EQ.0) PD0=PD1
-10            CONTINUE
-           ENDIF
-           DV(0)=PD0
-           DV(1)=PD1
-           DO 15 K=2,NA
-              PDF=X*PD1-(K+V0-1.0D0)*PD0
-              DV(K)=PDF
-              PD0=PD1
-15            PD1=PDF
-        ELSE  ! (V < 0.0)
-           IF (X.LE.0.0) THEN
-              IF (XA.LE.5.8D0)  THEN
-                 CALL DVSA(V0,X,PD0)
-                 V1=V0-1.0D0
-                 CALL DVSA(V1,X,PD1)
-              ELSE
-                 CALL DVLA(V0,X,PD0)
-                 V1=V0-1.0D0
-                 CALL DVLA(V1,X,PD1)
-              ENDIF
-              DV(0)=PD0
-              DV(1)=PD1
-              DO 20 K=2,NA
-                 PD=(-X*PD1+PD0)/(K-1.0D0-V0)
-                 DV(K)=PD
-                 PD0=PD1
-20               PD1=PD
-           ELSE IF (X.LE.2.0) THEN
-              V2=NV+V0
-              IF (NV.EQ.0) V2=V2-1.0D0
-              NK=INT(-V2)
-              CALL DVSA(V2,X,F1)
-              V1=V2+1.0D0
-              CALL DVSA(V1,X,F0)
-              DV(NK)=F1
-              DV(NK-1)=F0
-              DO 25 K=NK-2,0,-1
-                 F=X*F0+(K-V0+1.0D0)*F1
-                 DV(K)=F
-                 F1=F0
-25               F0=F
-           ELSE ! (X > 2.0)
-              IF (XA.LE.5.8) CALL DVSA(V0,X,PD0)
-              IF (XA.GT.5.8) CALL DVLA(V0,X,PD0)
-              DV(0)=PD0
-              M=100+NA
-              F1=0.0D0
-              F0=1.0D-30
-              DO 30 K=M,0,-1
-                 F=X*F0+(K-V0+1.0D0)*F1
-                 IF (K.LE.NA) DV(K)=F
-                 F1=F0
-30               F0=F
-              S0=PD0/F
-              DO 35 K=0,NA
-35               DV(K)=S0*DV(K)
-           ENDIF ! X categories
-        ENDIF  ! V categories
-!        DO 40 K=0,NA-1
-!           V1=ABS(V0)+K
-!           IF (V.GE.0.0D0) THEN
-!              DP(K)=0.5D0*X*DV(K)-DV(K+1)
-!           ELSE
-!              DP(K)=-0.5D0*X*DV(K)-V1*DV(K+1)
-!           ENDIF
-!40      CONTINUE
-!        PDF=DV(NA-1)
-!        PDD=DP(NA-1)
-        V=VH
-
-        D_fnc=DV(NA-1)
-
-        RETURN
-        END FUNCTION D_fnc
-
 !===============================================================================
+        double precision function Dv_fnc( order, argument )
 
-        SUBROUTINE DVSA(VA,X,PD)
+!       Description:
+!       Compute the parabolic cylinder function in terms of Dv
+!       using an Algorithm from ACM TOMS.  Replaces the more expensive
+!       D_fnc function used previously.
 
-!       ===================================================
-!       Purpose: Compute parabolic cylinder function Dv(x)
-!                for small argument
-!       Input:   x  --- Argument
-!                va --- Order
-!       Output:  PD --- Dv(x)
-!       Routine called: GAMMA for computing âx)
-!       ===================================================
-        use polpak_gamma, only: gamma
-
-        IMPLICIT NONE
-!        IMPLICIT DOUBLE PRECISION (A-H,O-Z)! Cleaned this up 6/22/05
-        DOUBLE PRECISION, INTENT(IN)  :: X, VA
-        DOUBLE PRECISION, INTENT(OUT) :: PD
-        DOUBLE PRECISION EPS, PI, SQ2, EP, VA0, GA0, G1, A0, VM, VT, G0
-        DOUBLE PRECISION R, R1, GM
-        INTEGER M
-        EPS=1.0D-15
-        PI=3.141592653589793D0
-        SQ2=DSQRT(2.0D0)
-        EP=DEXP(-.25D0*X*X)
-        VA0=0.5D0*(1.0D0-VA)
-        IF (VA.EQ.0.0) THEN
-           PD=EP
-        ELSE
-           IF (X.EQ.0.0) THEN
-              IF (VA0.LE.0.0.AND.VA0.EQ.INT(VA0)) THEN
-                 PD=0.0D0
-              ELSE
-!                 CALL GAMMA(VA0,GA0)
-                 GA0 = GAMMA( VA0 )
-                 PD=DSQRT(PI)/(2.0D0**(-.5D0*VA)*GA0)
-              ENDIF
-           ELSE
-!              CALL GAMMA(-VA,G1)
-              G1 = GAMMA( -VA )
-              A0=2.0D0**(-0.5D0*VA-1.0D0)*EP/G1
-              VT=-.5D0*VA
-!              CALL GAMMA(VT,G0)
-              G0 = GAMMA( VT ) 
-              PD=G0
-              R=1.0D0
-              DO 10 M=1,250
-                 VM=.5D0*(M-VA)
-!                 CALL GAMMA(VM,GM)
-                 GM = GAMMA( VM )
-                 R=-R*SQ2*X/M
-                 R1=GM*R
-                 PD=PD+R1
-                 IF (DABS(R1).LT.DABS(PD)*EPS) GO TO 15
-10            CONTINUE
-15            PD=A0*PD
-           ENDIF
-        ENDIF
-
-        RETURN
-        END SUBROUTINE DVSA
-
+!       References:
+!       Algorithm 850, collected algorithms from ACM.
+!       ACM Transactions on Mathematical Software,
+!       Vol. 32, No. 1, March 2006 pp. 102--112
 !===============================================================================
+        use parabolic, only: gamma, parab
+        use constants, only: pi_dp
 
-        SUBROUTINE DVLA(VA,X,PD)
+        implicit none
 
-!       ====================================================
-!       Purpose: Compute parabolic cylinder functions Dv(x)
-!                for large argument
-!       Input:   x  --- Argument
-!                va --- Order
-!       Output:  PD --- Dv(x)
-!       Routines called:
-!             (1) VVLA for computing Vv(x) for large |x|
-!             (2) GAMMA for computing âx)
-!       ====================================================
-        use polpak_gamma, only: gamma
+        ! External
+        intrinsic :: sin
 
-        IMPLICIT NONE
-!        IMPLICIT DOUBLE PRECISION (A-H,O-Z) ! Cleaned this up 6/22/05
-        DOUBLE PRECISION, INTENT(IN)  :: VA, X
-        DOUBLE PRECISION, INTENT(OUT) :: PD
-        DOUBLE PRECISION PI, EPS, EP, A0, R, X1, VL, GL
-        INTEGER K
-        PI=3.141592653589793D0
-        EPS=1.0D-12
-        EP=DEXP(-.25*X*X)
-        A0=DABS(X)**VA*EP
-        R=1.0D0
-        PD=1.0D0
-        DO 10 K=1,16
-           R=-0.5D0*R*(2.0*K-VA-1.0)*(2.0*K-VA-2.0)/(K*X*X)
-           PD=PD+R
-           IF (DABS(R/PD).LT.EPS) GO TO 15
-10      CONTINUE
-15      PD=A0*PD
-        IF (X.LT.0.0D0) THEN
-            X1=-X
-            CALL VVLA(VA,X1,VL)
-            GL = GAMMA( -VA )
-!            CALL GAMMA(-VA,GL)
-            PD=PI*VL/GL+DCOS(PI*VA)*PD
-        ENDIF
+        ! Parameter constants
+        integer, parameter ::
+     .  scaling = 0 ! 0 = Unscaled functions, 1 = scaled functions
 
-        RETURN
-        END SUBROUTINE DVLA
+        double precision, parameter :: limit = 10.0d0**308
 
-!===============================================================================
+        ! Input Variables
+        double precision, intent(in) ::
+     .  order,   ! Order 'a' of Dv(a,x)         [-]
+     .  argument ! Order 'x' of Dv(a,x)         [-]
 
-        SUBROUTINE VVLA(VA,X,PV)
+        ! Local Variables
+        double precision, dimension(2) ::
+     .  uaxx,  ! U(a,x), U'(a,x)                [-]
+     .  vaxx   ! V(a,x), V'(a,x)                [-]
+        ! Where a is the order and x is the argument
 
-!       ===================================================
-!       Purpose: Compute parabolic cylinder function Vv(x)
-!                for large argument
-!       Input:   x  --- Argument
-!                va --- Order
-!       Output:  PV --- Vv(x)
-!       Routines called:
-!             (1) DVLA for computing Dv(x) for large |x|
-!             (2) GAMMA for computing âx)
-!       ===================================================
-        use polpak_gamma, only: gamma
+        integer :: ierr ! Error condition
 
-        IMPLICIT NONE
-!        IMPLICIT DOUBLE PRECISION (A-H,O-Z) ! Cleaned this up 6/22/05
-        DOUBLE PRECISION, INTENT(IN)  :: VA, X
-        DOUBLE PRECISION, INTENT(OUT) :: PV
-        DOUBLE PRECISION PI, EPS, QE, A0, R, X1, PDL, GL, DSL
-        INTEGER K
-        PI=3.141592653589793D0
-        EPS=1.0D-12
-        QE=DEXP(0.25*X*X)
-        A0=DABS(X)**(-VA-1.0D0)*DSQRT(2.0D0/PI)*QE
-        R=1.0D0
-        PV=1.0D0
-        DO 10 K=1,18
-           R=0.5D0*R*(2.0*K+VA-1.0)*(2.0*K+VA)/(K*X*X)
-           PV=PV+R
-           IF (DABS(R/PV).LT.EPS) GO TO 15
-10      CONTINUE
-15      PV=A0*PV
-        IF (X.LT.0.0D0) THEN
-           X1=-X
-           CALL DVLA(VA,X1,PDL)
-           GL = GAMMA( -VA )
-!           CALL GAMMA(-VA,GL)
-           DSL=DSIN(PI*VA)*DSIN(PI*VA)
-           PV=DSL*GL/PI*PDL-DCOS(PI*VA)*PV
-        ENDIF
+        if ( argument <= 0.0d0 ) then
+          call parab( -order-0.5, -argument, scaling, uaxx, vaxx, ierr )
+          Dv_fnc = vaxx(1) / ( (1.0d0/pi_dp) * gamma( -order ) )
+     .           - sin( pi_dp * ( -order ) ) * uaxx(1)
+        else
+          call parab( -order-0.5, argument, scaling, uaxx, vaxx, ierr )
+          Dv_fnc = uaxx(1)
+        end if
 
-        RETURN
-        END SUBROUTINE VVLA
+        ! Handle the overflow condition
+        if ( ierr /= 0 ) then 
+          Dv_fnc = limit
+        end if
 
-!===============================================================================
-!       Now occurs as part of the function in gamma.f90 -dschanen
-!------------------------------------------------------------------------
-!
-!        SUBROUTINE GAMMA(X,GA)
-!
-!       ==================================================
-!       Purpose: Compute gamma function âx)
-!       Input :  x  --- Argument of âx)
-!                       ( x is not equal to 0,-1,-2,úú
-!       Output:  GA --- âx)
-!       ==================================================
-!
-!        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-!        DIMENSION G(26)
-!        PI=3.141592653589793D0
-!        IF (X.EQ.INT(X)) THEN
-!           IF (X.GT.0.0D0) THEN
-!              GA=1.0D0
-!              M1=X-1
-!              DO 10 K=2,M1
-!10               GA=GA*K
-!           ELSE
-!              GA=1.0D+300
-!           ENDIF
-!        ELSE
-!           IF (DABS(X).GT.1.0D0) THEN
-!              Z=DABS(X)
-!              M=INT(Z)
-!              R=1.0D0
-!              DO 15 K=1,M
-!15               R=R*(Z-K)
-!              Z=Z-M
-!           ELSE
-!              Z=X
-!           ENDIF
-!           DATA G/1.0D0,0.5772156649015329D0,
-!     .          -0.6558780715202538D0, -0.420026350340952D-1,
-!     .          0.1665386113822915D0,-.421977345555443D-1,
-!     .          -.96219715278770D-2, .72189432466630D-2,
-!     .          -.11651675918591D-2, -.2152416741149D-3,
-!     .          .1280502823882D-3, -.201348547807D-4,
-!     .          -.12504934821D-5, .11330272320D-5,
-!     .          -.2056338417D-6, .61160950D-8,
-!     .          .50020075D-8, -.11812746D-8,
-!     .          .1043427D-9, .77823D-11,
-!     .          -.36968D-11, .51D-12,
-!     .          -.206D-13, -.54D-14, .14D-14, .1D-15/
-!           GR=G(26)
-!           DO 20 K=25,1,-1
-!20            GR=GR*Z+G(K)
-!           GA=1.0D0/(GR*Z)
-!           IF (DABS(X).GT.1.0D0) THEN
-!              GA=GA*R
-!              IF (X.LT.0.0D0) GA=-PI/(X*GA*DSIN(PI*X))
-!           ENDIF
-!        ENDIF
-!
-!        RETURN
-!        END SUBROUTINE GAMMA
-!
-!===============================================================================
+        return
+        end function Dv_fnc
 
-      END MODULE rain_equations
+       END MODULE rain_equations
