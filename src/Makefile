@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.69 2006-11-26 21:43:55 dschanen Exp $
+# $Id: Makefile,v 1.70 2006-11-26 22:11:23 dschanen Exp $
 # This version should work with BSD, GNU make, smake and dmake
 
 # For HOC we edit this by hand rather than implementing imake or automake
@@ -157,14 +157,14 @@ distclean:
 
 # == Parameterization dependencies ==
 cons.o		: cons.f90
-airy.o		: cons.o air.f90 
+air.o		: cons.o air.f90 
 parab.o		: air.o cons.o parab.f90
 endian.o	: endian.F
 constants.o	: constants.F
 model_flags.o	: model_flags.F
 outputfile.o	: outputfile.F
 rain.o		: constants.o model_flags.o statistics.o lapack_wrap.o \
-	cons.o airy.o parab.o rain.F
+	cons.o air.o parab.o rain.F
 outputgrads.o	: constants.o recl.F endian.o outputfile.o outputgrads.F
 outputnc.o	: outputfile.o outputnc.F
 diag_variables.o: constants.o grid.o model_flags.o diag_variables.F 
