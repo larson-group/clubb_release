@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.68 2006-11-02 02:10:34 dschanen Exp $
+# $Id: Makefile,v 1.69 2006-11-26 21:43:55 dschanen Exp $
 # This version should work with BSD, GNU make, smake and dmake
 
 # For HOC we edit this by hand rather than implementing imake or automake
@@ -44,15 +44,15 @@ COAMPS_MICRO = adjmlt.o adjtq.o coamps_micro_driver.o conice.o \
 
 PARAMETERIZATION = \
 	$(LATIN_HYP) \
-	gamma_polpak.o constants.o endian.o outputfile.o outputgrads.o \
+	$(COAMPS_MICRO) \
+	constants.o endian.o outputfile.o outputgrads.o \
 	outputnc.o grid.o model_flags.o statistics.o \
-	erf.o rain.o \
+	erf.o rain.o cons.o air.o parab.o \
 	closure_new.o diag_var.o gcss.o rad_lwsw.o linearinterpolation.o \
         hydrostatic.o length.o mixing.o rsat.o sat_rcm.o sfc.o \
 	sounding.o update.o wp23.o tau.o Skw_func.o \
 	numer_check.o diag_variables.o prog_variables.o \
-	parameterization_interface.o lapack_wrap.o rsati.o \
-	$(COAMPS_MICRO)
+	parameterization_interface.o lapack_wrap.o rsati.o
 
 
 INTERFACING = gradsaverage.o inputfields.o inputgrads.o hoc.o 
@@ -156,13 +156,15 @@ distclean:
 	$(LIBDIR)/lib*
 
 # == Parameterization dependencies ==
-gamma_polpak.o	: gamma_polpak.f90
+cons.o		: cons.f90
+airy.o		: cons.o air.f90 
+parab.o		: air.o cons.o parab.f90
 endian.o	: endian.F
 constants.o	: constants.F
 model_flags.o	: model_flags.F
 outputfile.o	: outputfile.F
 rain.o		: constants.o model_flags.o statistics.o lapack_wrap.o \
-	gamma_polpak.o rain.F
+	cons.o airy.o parab.o rain.F
 outputgrads.o	: constants.o recl.F endian.o outputfile.o outputgrads.F
 outputnc.o	: outputfile.o outputnc.F
 diag_variables.o: constants.o grid.o model_flags.o diag_variables.F 
