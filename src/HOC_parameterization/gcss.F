@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.16 2006-12-01 14:31:34 griffinb Exp $ 
+! $Id: gcss.F,v 1.17 2006-12-01 17:41:43 griffinb Exp $ 
         module gcss
 
 !       Description:
@@ -533,6 +533,9 @@
         real heat_flx2, moisture_flx2
         real bflx
 
+!       ARM roughness height
+        real, parameter :: z0 = 0.035  ! momentum roughness height
+
 ! Compute heat and moisture fluxes from ARM data in (W/m2)
 
         true_time = time
@@ -553,7 +556,7 @@
         ubar = max( ubmin, sqrt( usfc ** 2 + vsfc ** 2 ) )
 
 !       Compute ustar
-        ustar = diag_ustar( z, bflx, ubar )
+        ustar = diag_ustar( z, bflx, ubar, z0 )
 
 !       Assign fluxes
 
@@ -823,19 +826,19 @@
 !
 ! Code writen March, 1999 by Bjorn Stevens
 !
-      real function diag_ustar( z, bflx, wnd ) 
+      real function diag_ustar( z, bflx, wnd, z0 ) 
 
       use constants, only: eps, grav, vonk, pi
 
       implicit none
 
-      real, parameter      :: z0   = 0.035  ! momentum roughness height
       real, parameter      :: am   =  4.8   !   "          "         "
       real, parameter      :: bm   = 19.3   !   "          "         "
 
       real, intent (in)    :: z             ! height where u locates
       real, intent (in)    :: bflx          ! surface buoyancy flux (m^2/s^3)
       real, intent (in)    :: wnd           ! wind speed at z
+      real, intent (in)    :: z0            ! momentum roughness height
 
       integer :: iterate
       real    :: lnz, klnz, c1, x, psi1, zeta, lmo, ustar
@@ -3701,14 +3704,143 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         end subroutine cobra_tndcy
 
 !-----------------------------------------------------------------------
+! This subroutine computes surface fluxes of horizontal momentum,
+! heat and moisture according to the format used for the GCSS ARM case.
+!
+! The data has been altered so it can be used for the COBRA CO2 case.
 
-        subroutine cobra_sfclyr ( )
+        subroutine cobra_sfclyr( time, z, dn0, thp, up, vp,
+     .                           uw, vw, wtp, wrp, ustar,
+     .                           wpsclrp_sfc )
 
-        ! Surface tendencies for COBRA CO2 case.
+        use constants, only: Cp, Lv, grav, sclr_dim
+        implicit none
 
+        ! External
+        ! In module calls:
+        ! real diag_ustar
+
+        ! Parameter Constants
+
+        real, parameter ::
+     .  ubmin = 0.25
+
+        ! Input variables
+
+        real, intent(in) :: time
+        real, intent(in) :: z
+        real, intent(in) :: dn0
+        real, intent(in) :: thp
+        real, intent(in) :: up,vp
+
+        real, intent(inout) :: ustar
+
+!       Output variables
+
+        real, intent(out) :: uw, vw, wtp, wrp
+
+!       Output variables (optional)
+        real, optional, intent(out) :: wpsclrp_sfc(sclr_dim)
+
+!       Internal variables
+
+        integer i, j
+        real usfc, vsfc, ubar
+        real true_time
+        real heat_flx, moisture_flx
+        real heat_flx2, moisture_flx2
+        real bflx
+
+!       COBRA roughness height
+        real, parameter :: z0 = 0.035  ! ARM momentum roughness height
+
+! Compute heat and moisture fluxes from ARM data in (W/m2)
+
+        true_time = time
+        call cobra_sfcflx( true_time, heat_flx, moisture_flx )
+
+! Compute momentum fluxes
+
+!       Convert heat_flx and moisture_flx to natural units
+        heat_flx2     = heat_flx / ( Cp * dn0 )    ! (K m/s)
+        moisture_flx2 = moisture_flx / ( Lv * dn0 )! (m/s)
+
+!       Heat flux in units of (m2/s3) (needed by diag_ustar)
+        bflx = grav/thp * heat_flx2
+
+!       Sfc winds
+        usfc = up
+        vsfc = vp
+        ubar = max( ubmin, sqrt( usfc ** 2 + vsfc ** 2 ) )
+
+!       Compute ustar
+        ustar = diag_ustar( z, bflx, ubar, z0 )
+
+!       Assign fluxes
+
+        uw  = -usfc/ubar * ustar * ustar
+        vw  = -vsfc/ubar * ustar * ustar
+        wtp = heat_flx2
+        wrp = moisture_flx2
+
+        if (present( wpsclrp_sfc )) wpsclrp_sfc(SCLR_THETA) = wtp
+        if (present( wpsclrp_sfc )) wpsclrp_sfc(SCLR_RT) = wrp
 
         return
         end subroutine cobra_sfclyr
+
+!-----------------------------------------------------------------------
+! This subroutine computes surface heat and moisture for a specific time
+! according to the format used for the GCSS ARM case.
+! Fluxes returned are in (W/m2).
+!
+! The data has been altered so it can be used for the COBRA CO2 case.
+
+        subroutine cobra_sfcflx( time, heat_flx, moisture_flx )
+        implicit none
+
+!       Input variable
+        real time       ! time in seconds
+
+!       Output variables
+        real heat_flx, moisture_flx
+
+!       Internal variables
+        integer i1,i2
+        real a
+
+        integer ntimes
+        parameter ( ntimes = 7 )
+        real times(ntimes),H(ntimes), LE(ntimes)
+        data times / 41400., 55800., 64800., 68400.,
+     +               77400., 86400., 93600. /
+
+!       H and LE specifications
+        data H  / -30, 90, 140, 140, 100, -10, -10 /
+        data LE / 5, 250, 450, 500, 420, 180, 0 /
+
+        if ( time <= times(1) ) then
+           heat_flx     = H(1)
+           moisture_flx = LE(1)
+        else if ( time >= times(ntimes) ) then
+           heat_flx     = H(ntimes)
+           moisture_flx = LE(ntimes)
+        else
+           i1 = 1
+           do while ( i1 <= ntimes-1 )
+              i2 = i1 + 1
+              if ( time >= times(i1) .and. time < times(i2) ) then
+                 a            = (time-times(i1))/(times(i2)-times(i1))
+                 heat_flx     = ( 1. - a ) * H(i1) + a * H(i2)
+                 moisture_flx = ( 1. - a ) * LE(i1) + a * LE(i2)
+                 i1           = ntimes
+              end if
+              i1 = i2
+           end do
+        end if
+
+        return
+        end subroutine cobra_sfcflx
 
 !-----------------------------------------------------------------------
 
