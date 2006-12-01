@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.97 2006-11-17 19:57:46 mjfalk Exp $
+! $Id: hoc.F,v 1.98 2006-12-01 14:31:22 griffinb Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -956,6 +956,13 @@
 
           wp2 = 2.0 / 3.0 * em
 
+        ! Brian Griffin for COBRA CO2 case.
+        case ( "cobra" )
+
+        em = 1.0
+
+        wp2 = 2.0 / 3.0 * em
+
         end select
 
         ! End Initialize TKE and other fields as needed
@@ -1240,6 +1247,16 @@
            end do ! k
 
 
+        ! Brian Griffin for COBRA CO2 case.
+        case ( "cobra" )
+           call cobra_tndcy( time, wmt, wmm, 
+     .                       thlm_forcing, rtm_forcing
+#ifdef SCALARS
+     .                      ,sclrm_forcing   ! optional variable
+#endif /* SCALARS */
+     .                     )
+
+
          case default
            write(unit=fstderr,fmt=*) 
      .       "hoc_forcings_timestep: Don't know how to handle "
@@ -1363,6 +1380,10 @@
      .                        ,wpsclrp(1,:)
 #endif /* SCALARS */
      .                      )
+
+        ! Brian Griffin for COBRA CO2 case.
+        case ( "cobra" )
+          call cobra_sfclyr( )
 
         case default
           write(unit=fstderr,fmt=*) 
