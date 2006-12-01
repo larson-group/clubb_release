@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.15 2006-11-17 20:00:54 mjfalk Exp $ 
+! $Id: gcss.F,v 1.16 2006-12-01 14:31:34 griffinb Exp $ 
         module gcss
 
 !       Description:
@@ -38,7 +38,9 @@
      .  nov11_altocu_tndcy, ! Note that neither altocu case 
      .  jun25_altocu_tndcy, !   starts at the surface
      .  mpace_tndcy,        ! Michael Falk, 1 Nov 2006
-     .  mpace_sfclyr        ! Michael Falk, 1 Nov 2006
+     .  mpace_sfclyr,       ! Michael Falk, 1 Nov 2006
+     .  cobra_tndcy,
+     .  cobra_sfclyr
 
         private ::
      .  diag_ustar, 
@@ -3653,6 +3655,60 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         return
         end subroutine mpace_sfclyr
 
+!----------------------------------------------------------------------
+
+        subroutine cobra_tndcy( time, wmt, wmm, theta_tndcy, 
+     .                          rt_tndcy,
+     .                          sclr_tndcy )
+!       Description:
+!       Subroutine to set theta and water tendencies for COBRA CO2 case
+!       References;
+!       None
+        use grid_class
+        use constants, only: sclr_dim
+
+        implicit none
+
+        ! Input Variables
+        real, intent(in) :: time ! Model time [s]
+
+        ! Output Variables
+        real, intent(out), dimension(gr%nnzp) ::
+     .  wmt,         ! w wind on thermodynamic grid [m/s]
+     .  wmm,         ! w wind on momentum grid [m/s]
+     .  theta_tndcy, ! Liquid water potential temperature tendency [K/s]
+     .  rt_tndcy     ! Total water mixing ratio tendency [kg/kg/s]
+
+        ! Output Variables (optional)
+        real, optional, intent(out), dimension(gr%nnzp,sclr_dim) ::
+     .  sclr_tndcy ! Passive scalar tendency [units vary]
+
+!       No large-scale subsidence for now
+        wmt = 0.0
+        wmm = 0.0
+
+!       No large-scale water tendency or cooling
+
+        rt_tndcy    = 0.0
+        theta_tndcy = 0.0
+
+        if ( present( sclr_tndcy ) ) then
+          sclr_tndcy(1:gr%nnzp,SCLR_THETA) = theta_tndcy(1:gr%nnzp)
+          sclr_tndcy(1:gr%nnzp,SCLR_RT)    = rt_tndcy(1:gr%nnzp)
+        end if
+
+        return
+        end subroutine cobra_tndcy
+
+!-----------------------------------------------------------------------
+
+        subroutine cobra_sfclyr ( )
+
+        ! Surface tendencies for COBRA CO2 case.
+
+
+        return
+        end subroutine cobra_sfclyr
 
 !-----------------------------------------------------------------------
 
