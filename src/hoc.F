@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.98 2006-12-01 14:31:22 griffinb Exp $
+! $Id: hoc.F,v 1.99 2006-12-01 17:41:24 griffinb Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -1383,7 +1383,14 @@
 
         ! Brian Griffin for COBRA CO2 case.
         case ( "cobra" )
-          call cobra_sfclyr( )
+          call cobra_sfclyr( time, gr%zt(2), rhom(1),
+     .                       thlm(2), um(2), vm(2),
+     .                       upwp_sfc, vpwp_sfc,
+     .                       wpthlp_sfc, wprtp_sfc, ustar
+#ifdef SCALARS
+     .                      ,wpsclrp(1,:)
+#endif /* SCALARS */
+     .                     )
 
         case default
           write(unit=fstderr,fmt=*) 
