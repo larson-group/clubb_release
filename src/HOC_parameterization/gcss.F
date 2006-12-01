@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.17 2006-12-01 17:41:43 griffinb Exp $ 
+! $Id: gcss.F,v 1.18 2006-12-01 20:22:48 griffinb Exp $ 
         module gcss
 
 !       Description:
@@ -3752,7 +3752,8 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         real bflx
 
 !       COBRA roughness height
-        real, parameter :: z0 = 0.035  ! ARM momentum roughness height
+!        real, parameter :: z0 = 0.035  ! ARM momentum roughness height
+        real, parameter :: z0 = 1.75   ! momentum roughness height
 
 ! Compute heat and moisture fluxes from ARM data in (W/m2)
 
@@ -3810,14 +3811,13 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         real a
 
         integer ntimes
-        parameter ( ntimes = 7 )
+        parameter ( ntimes = 4 )
         real times(ntimes),H(ntimes), LE(ntimes)
-        data times / 41400., 55800., 64800., 68400.,
-     +               77400., 86400., 93600. /
+        data times / 57600.0, 64800.0, 73800.0, 75600.0 /
 
 !       H and LE specifications
-        data H  / -30, 90, 140, 140, 100, -10, -10 /
-        data LE / 5, 250, 450, 500, 420, 180, 0 /
+        data H  / 400.0, 400.0, 225.0, 225.0 /
+        data LE / 120.0, 120.0, 100.0, 75.0 /
 
         if ( time <= times(1) ) then
            heat_flx     = H(1)
