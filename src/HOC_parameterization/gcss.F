@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.19 2006-12-03 20:08:54 griffinb Exp $ 
+! $Id: gcss.F,v 1.20 2006-12-03 20:11:25 griffinb Exp $ 
         module gcss
 
 !       Description:
@@ -3811,7 +3811,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         real a
 
         integer ntimes
-        parameter ( ntimes = 4 )
+        parameter ( ntimes = 6 )
         real times(ntimes),H(ntimes), LE(ntimes)
         ! Best fit line
 !        data times / 57600.0, 64800.0, 73800.0, 75600.0 /
