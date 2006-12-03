@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.18 2006-12-01 20:22:48 griffinb Exp $ 
+! $Id: gcss.F,v 1.19 2006-12-03 20:08:54 griffinb Exp $ 
         module gcss
 
 !       Description:
@@ -3813,11 +3813,21 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         integer ntimes
         parameter ( ntimes = 4 )
         real times(ntimes),H(ntimes), LE(ntimes)
-        data times / 57600.0, 64800.0, 73800.0, 75600.0 /
+        ! Best fit line
+!        data times / 57600.0, 64800.0, 73800.0, 75600.0 /
+        ! Every hour (3 half-hour point weighted average)
+        data times / 57600.0, 61200.0, 64800.0, 68400.0,
+     .               72000.0, 75600.0 /
 
 !       H and LE specifications
-        data H  / 400.0, 400.0, 225.0, 225.0 /
-        data LE / 120.0, 120.0, 100.0, 75.0 /
+        ! Best fit line
+!        data H  / 400.0, 400.0, 225.0, 225.0 /
+!        data LE / 120.0, 120.0, 100.0, 75.0 /
+        ! Every hour (3 half-hour point weighted average)
+        data H  / 415.3, 388.3, 404.0, 326.8, 
+     .            236.9, 220.1 /
+        data LE / 121.2, 119.1, 122.9, 102.7,
+     .            104.8,  87.1 /
 
         if ( time <= times(1) ) then
            heat_flx     = H(1)
