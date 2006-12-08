@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.20 2006-12-03 20:11:25 griffinb Exp $ 
+! $Id: gcss.F,v 1.21 2006-12-08 14:55:10 griffinb Exp $ 
         module gcss
 
 !       Description:
@@ -3711,7 +3711,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
         subroutine cobra_sfclyr( time, z, dn0, thp, up, vp,
      .                           uw, vw, wtp, wrp, ustar,
-     .                           wpsclrp_sfc )
+     .                           wpsclrp_sfc, wpedsclrp_sfc )
 
         use constants, only: Cp, Lv, grav, sclr_dim
         implicit none
@@ -3740,7 +3740,9 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         real, intent(out) :: uw, vw, wtp, wrp
 
 !       Output variables (optional)
+
         real, optional, intent(out) :: wpsclrp_sfc(sclr_dim)
+        real, optional, intent(out) :: wpedsclrp_sfc(sclr_dim)
 
 !       Internal variables
 
@@ -3751,6 +3753,11 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         real heat_flx2, moisture_flx2
         real bflx
 
+#ifdef SCALARS
+        real CO2_flx, CO2_flx2
+        real, parameter :: M_da = 0.02897  ! Molecular weight of dry air.
+#endif /* SCALARS */
+
 !       COBRA roughness height
 !        real, parameter :: z0 = 0.035  ! ARM momentum roughness height
         real, parameter :: z0 = 1.75   ! momentum roughness height
@@ -3758,13 +3765,29 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ! Compute heat and moisture fluxes from ARM data in (W/m2)
 
         true_time = time
-        call cobra_sfcflx( true_time, heat_flx, moisture_flx )
+        call cobra_sfcflx( true_time, heat_flx, moisture_flx
+#ifdef SCALARS
+     .                    ,CO2_flx
+#endif /* SCALARS */
+     .                   )
 
 ! Compute momentum fluxes
 
 !       Convert heat_flx and moisture_flx to natural units
         heat_flx2     = heat_flx / ( Cp * dn0 )    ! (K m/s)
         moisture_flx2 = moisture_flx / ( Lv * dn0 )! (m/s)
+
+#ifdef SCALARS
+!       Convert CO2 surface flux to natural units.
+!       The CO2 flux has been given in units of:  umol/(m^2 s).
+!       umol stands for micromoles.  The CO2 concentration in
+!       this code is in units of ppmv, which is also the molar
+!       mixing ratio times 10^6.
+!       The units are:  10^6 * [ mol (CO2) / mol (dry air) ].
+!       w'CO2' = (Flux) * [ M (dry air) / rho (dry air) ];
+!       where M is the molecular weight of dry air.
+        CO2_flx2 = CO2_flx * ( M_da / dn0 )
+#endif /* SCALARS */
 
 !       Heat flux in units of (m2/s3) (needed by diag_ustar)
         bflx = grav/thp * heat_flx2
@@ -3784,8 +3807,19 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         wtp = heat_flx2
         wrp = moisture_flx2
 
-        if (present( wpsclrp_sfc )) wpsclrp_sfc(SCLR_THETA) = wtp
-        if (present( wpsclrp_sfc )) wpsclrp_sfc(SCLR_RT) = wrp
+!        if (present( wpsclrp_sfc ))
+!     .                 wpsclrp_sfc(SCLR_THETA) = wtp
+        if (present( wpsclrp_sfc ))
+     .                 wpsclrp_sfc(SCLR_THETA) = CO2_flx2
+        if (present( wpsclrp_sfc ))
+     .                 wpsclrp_sfc(SCLR_RT) = wrp
+
+!        if (present( wpedsclrp_sfc ))
+!     .                 wpedsclrp_sfc(SCLR_THETA) = wtp
+        if (present( wpedsclrp_sfc ))
+     .                 wpedsclrp_sfc(SCLR_THETA) = CO2_flx2
+        if (present( wpedsclrp_sfc ))
+     .                 wpedsclrp_sfc(SCLR_RT) = wrp
 
         return
         end subroutine cobra_sfclyr
@@ -3797,14 +3831,19 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 !
 ! The data has been altered so it can be used for the COBRA CO2 case.
 
-        subroutine cobra_sfcflx( time, heat_flx, moisture_flx )
+        subroutine cobra_sfcflx( time, heat_flx, moisture_flx,
+     .                           CO2_flx )
+
         implicit none
 
 !       Input variable
-        real time       ! time in seconds
+        real, intent(in) :: time       ! time in seconds
 
 !       Output variables
-        real heat_flx, moisture_flx
+        real, intent(out) :: heat_flx, moisture_flx
+
+!       Output variables (optional)
+        real, optional, intent(out) :: CO2_flx
 
 !       Internal variables
         integer i1,i2
@@ -3812,7 +3851,10 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
         integer ntimes
         parameter ( ntimes = 6 )
-        real times(ntimes),H(ntimes), LE(ntimes)
+        real times(ntimes), H(ntimes), LE(ntimes)
+#ifdef SCALARS
+        real CO2(ntimes)
+#endif /* SCALARS */
         ! Best fit line
 !        data times / 57600.0, 64800.0, 73800.0, 75600.0 /
         ! Every hour (3 half-hour point weighted average)
@@ -3820,14 +3862,18 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
      .               72000.0, 75600.0 /
 
 !       H and LE specifications
-        ! Best fit line
-!        data H  / 400.0, 400.0, 225.0, 225.0 /
-!        data LE / 120.0, 120.0, 100.0, 75.0 /
         ! Every hour (3 half-hour point weighted average)
-        data H  / 415.3, 388.3, 404.0, 326.8, 
-     .            236.9, 220.1 /
-        data LE / 121.2, 119.1, 122.9, 102.7,
-     .            104.8,  87.1 /
+        data H   / 415.3, 388.3, 404.0, 326.8, 
+     .             236.9, 220.1 /
+        data LE  / 121.2, 119.1, 122.9, 102.7,
+     .             104.8,  87.1 /
+
+#ifdef SCALARS
+!       CO2 specifications
+        ! Every hour (3 half-hour point weighted average)
+        data CO2 / -12.4, -11.3, -10.4,  -8.0,
+     .              -7.2,  -7.1 /
+#endif /* SCALARS */
 
         if ( time <= times(1) ) then
            heat_flx     = H(1)
@@ -3843,6 +3889,9 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
                  a            = (time-times(i1))/(times(i2)-times(i1))
                  heat_flx     = ( 1. - a ) * H(i1) + a * H(i2)
                  moisture_flx = ( 1. - a ) * LE(i1) + a * LE(i2)
+#ifdef SCALARS
+                 CO2_flx      = ( 1. - a ) * CO2(i1) + a * CO2(i2)
+#endif /* SCALARS */
                  i1           = ntimes
               end if
               i1 = i2

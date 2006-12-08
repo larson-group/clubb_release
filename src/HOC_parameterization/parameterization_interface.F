@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.26 2006-11-02 01:44:41 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.27 2006-12-08 14:55:10 griffinb Exp $
 
 
 
@@ -576,11 +576,11 @@
          if ( i == SCLR_THETA) then
           ! Note changed from dtmain=>dt -dschanen
            call update_ed_var( "edsclr", edsclrm(:,i), edsclrmt(:,i), 
-     .                         wpthlp(1), Khm, dt, 
+     .                         wpedsclrp(1,i), Khm, dt, 
      .                         wpedsclrp(:,i), isValid )
          else ! i == SCLR_RT
            call update_ed_var( "edsclr", edsclrm(:,i), edsclrmt(:,i), 
-     .                         wprtp(1), Khm, dt, 
+     .                         wpedsclrp(1,i), Khm, dt, 
      .                         wpedsclrp(:,i), isValid )
          end if
        end do
