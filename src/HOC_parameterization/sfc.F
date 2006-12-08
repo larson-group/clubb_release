@@ -1,4 +1,4 @@
-! $Id: sfc.F,v 1.3 2006-11-02 01:45:17 dschanen Exp $
+! $Id: sfc.F,v 1.4 2006-12-08 18:35:25 griffinb Exp $
 #define SCLR_RT 2
 #define SCLR_THETA 1
 
@@ -218,14 +218,17 @@
 
         ! Note: I have no idea why rtp2 and thlp2 have these coefficients
         ! -dschanen 7/6/05
-            select case( i ) 
-            case( SCLR_RT )
-              sclrp2_sfc(i)   = 0.4 * a * ( wpsclrp_sfc(i) / uf )**2
-              sclrprtp_sfc(i) = 0.4 * a * ( wpsclrp_sfc(i) / uf )**2
-            case( SCLR_THETA )
-              sclrp2_sfc(i)    =  0.1 * a * ( wpsclrp_sfc(i) / uf )**2
-              sclrpthlp_sfc(i) =  0.1 * a * ( wpsclrp_sfc(i) / uf )**2
-            end select
+            ! The following cases used the formulas for rt and theta in order
+            ! to test the scalar code.  However, they need to be commented out
+            ! because they do not apply to such things as CO2.
+!            select case( i ) 
+!            case( SCLR_RT )
+!              sclrp2_sfc(i)   = 0.4 * a * ( wpsclrp_sfc(i) / uf )**2
+!              sclrprtp_sfc(i) = 0.4 * a * ( wpsclrp_sfc(i) / uf )**2
+!            case( SCLR_THETA )
+!              sclrp2_sfc(i)    =  0.1 * a * ( wpsclrp_sfc(i) / uf )**2
+!              sclrpthlp_sfc(i) =  0.1 * a * ( wpsclrp_sfc(i) / uf )**2
+!            end select
           end do ! 1,...sclr_dim
         end if
 
