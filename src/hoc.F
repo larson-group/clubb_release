@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.99 2006-12-01 17:41:24 griffinb Exp $
+! $Id: hoc.F,v 1.100 2006-12-08 14:54:28 griffinb Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -959,7 +959,7 @@
         ! Brian Griffin for COBRA CO2 case.
         case ( "cobra" )
 
-        em = 1.0
+        em = 0.1
 
         wp2 = 2.0 / 3.0 * em
 
@@ -1388,7 +1388,7 @@
      .                       upwp_sfc, vpwp_sfc,
      .                       wpthlp_sfc, wprtp_sfc, ustar
 #ifdef SCALARS
-     .                      ,wpsclrp(1,:)
+     .                      ,wpsclrp(1,:), wpedsclrp(1,:)
 #endif /* SCALARS */
      .                     )
 
