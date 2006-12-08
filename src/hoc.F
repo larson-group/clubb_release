@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.100 2006-12-08 14:54:28 griffinb Exp $
+! $Id: hoc.F,v 1.101 2006-12-08 17:55:09 griffinb Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -784,7 +784,10 @@
           ! Initial profile is non-saturated thlm or any type of theta.
           thlm = thlm - Lv/(Cp*exner) * rcm
 #ifdef SCALARS
-          sclrm(:,SCLR_THETA) = sclrm(:,SCLR_THETA) - Lv/(Cp*exner)*rcm
+          ! The following case used the formulas for theta in order to test
+          ! the scalar code.  However, it needs to be commented out because
+          ! it does not apply to such things as CO2.
+!          sclrm(:,SCLR_THETA) = sclrm(:,SCLR_THETA) - Lv/(Cp*exner)*rcm
 #endif
         end select
 
