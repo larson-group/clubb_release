@@ -19,8 +19,8 @@ vars_zt =
 'wp3_bt', 'wp3_ma', 'wp3_ta', 'wp3_tp', 'wp3_ac', 'wp3_bp', 
 'wp3_pr1', 'wp3_pr2', 'wp3_dp1', 'wp3_cl',
 'wp2zt', 'thlp2zt', 'wpthlpzt', 'wprtpzt','rtp2zt','rtpthlpzt',
-!'sclram','sclram_f','sclrbm','sclrbm_f',
-!'edsclram', 'edsclrbm',
+'sclram','sclram_f','sclrbm','sclrbm_f',
+'edsclram', 'edsclrbm',
 ''
 
 fname_zm = 'cobra_zm',
@@ -40,12 +40,12 @@ vars_zm =
 'thlp2_dp1', 'thlp2_dp2', 'thlp2_cl',
 'rtpthlp_bt', 'rtpthlp_ma', 'rtpthlp_ta', 'rtpthlp_tp1', 'rtpthlp_tp2', 
 'rtpthlp_dp1', 'rtpthlp_dp2', 
-!'sclraprtp', 'sclrbprtp', 'sclrap2', 'sclrbp2', 
-!'sclrapthvp', 'sclrbpthvp',
-!'sclrapthlp', 'sclrbpthlp', 'sclraprcp', 'sclrbprcp', 'wpsclrap', 'wpsclrbp',
-!'wp2sclrap', 'wp2sclrbp', 'wpsclrap2', 'wpsclrbp2', 'wpsclraprtp', 
-!'wpsclrbprtp', 'wpsclrapthlp', 'wpsclrbpthlp',
-!'wpedsclrap', 'wpedsclrbp',
+'sclraprtp', 'sclrbprtp', 'sclrap2', 'sclrbp2', 
+'sclrapthvp', 'sclrbpthvp',
+'sclrapthlp', 'sclrbpthlp', 'sclraprcp', 'sclrbprcp', 'wpsclrap', 'wpsclrbp',
+'wp2sclrap', 'wp2sclrbp', 'wpsclrap2', 'wpsclrbp2', 'wpsclraprtp', 
+'wpsclrbprtp', 'wpsclrapthlp', 'wpsclrbpthlp',
+'wpedsclrap', 'wpedsclrbp',
 ''
 
 fname_sfc = 'cobra_sfc',
