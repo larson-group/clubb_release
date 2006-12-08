@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.8 2006-12-06 19:57:01 dschanen Exp $
+! $Id: mixing.F,v 1.9 2006-12-08 17:55:34 griffinb Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -856,11 +856,15 @@
              case ( "thlm" )
                 dd(k_xm) = dd(k_xm) - ( Lv / (Cp*exner(k)) )
      .                               * sed_rcm(k)
-             case ( "sclrm_rtm" ) 
-                dd(k_xm) = dd(k_xm) + sed_rcm(k)
-             case ( "sclrm_thlm" )
-                dd(k_xm) = dd(k_xm) - ( Lv / (Cp*exner(k)) )
-     .                               * sed_rcm(k)
+             ! The following cases used the formulas for rt and theta in order
+             ! to test the scalar code.  However, they need to be commented out
+             ! because they do not apply to such things as CO2.  Cloud water
+             ! sedimentation would have no effect on such a parameter.
+!             case ( "sclrm_rtm" ) 
+!                dd(k_xm) = dd(k_xm) + sed_rcm(k)
+!             case ( "sclrm_thlm" )
+!                dd(k_xm) = dd(k_xm) - ( Lv / (Cp*exner(k)) )
+!     .                               * sed_rcm(k)
              end select
 
           END IF ! cloud_sed
@@ -876,12 +880,16 @@
              case ( "thlm" )
                 dd(k_xm) = dd(k_xm) - ( Lv / (Cp*exner(k)) ) *
      .                    ( -cond_rrm(k) - auto_rrm(k) - accr_rrm(k) )  ! thlm only; Brian
-             case ( "sclrm_rtm" ) 
-                dd(k_xm) = dd(k_xm) 
-     .                     - cond_rrm(k) - auto_rrm(k) - accr_rrm(k)    ! sclrm = rtm
-             case ( "sclrm_thlm" )
-                dd(k_xm) = dd(k_xm) - ( Lv / (Cp*exner(k)) ) *
-     .                    ( -cond_rrm(k) - auto_rrm(k) - accr_rrm(k) )  ! sclrm = thlm
+             ! The following cases used the formulas for rt and theta in order
+             ! to test the scalar code.  However, they need to be commented out
+             ! because they do not apply to such things as CO2.  Rain water
+             ! effects would have no effect on such a parameter.
+!             case ( "sclrm_rtm" ) 
+!                dd(k_xm) = dd(k_xm) 
+!     .                     - cond_rrm(k) - auto_rrm(k) - accr_rrm(k)    ! sclrm = rtm
+!             case ( "sclrm_thlm" )
+!                dd(k_xm) = dd(k_xm) - ( Lv / (Cp*exner(k)) ) *
+!     .                    ( -cond_rrm(k) - auto_rrm(k) - accr_rrm(k) )  ! sclrm = thlm
              end select
 
           end if ! kk_rain

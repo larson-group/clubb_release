@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.21 2006-12-08 14:55:10 griffinb Exp $ 
+! $Id: gcss.F,v 1.22 2006-12-08 17:55:34 griffinb Exp $ 
         module gcss
 
 !       Description:
@@ -3696,7 +3696,8 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         theta_tndcy = 0.0
 
         if ( present( sclr_tndcy ) ) then
-          sclr_tndcy(1:gr%nnzp,SCLR_THETA) = theta_tndcy(1:gr%nnzp)
+!          sclr_tndcy(1:gr%nnzp,SCLR_THETA) = theta_tndcy(1:gr%nnzp)
+          sclr_tndcy(1:gr%nnzp,SCLR_THETA) = 0.0
           sclr_tndcy(1:gr%nnzp,SCLR_RT)    = rt_tndcy(1:gr%nnzp)
         end if
 
