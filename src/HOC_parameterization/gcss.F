@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.22 2006-12-08 17:55:34 griffinb Exp $ 
+! $Id: gcss.F,v 1.23 2006-12-11 18:21:39 dschanen Exp $ 
         module gcss
 
 !       Description:
@@ -3754,10 +3754,8 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         real heat_flx2, moisture_flx2
         real bflx
 
-#ifdef SCALARS
         real CO2_flx, CO2_flx2
         real, parameter :: M_da = 0.02897  ! Molecular weight of dry air.
-#endif /* SCALARS */
 
 !       COBRA roughness height
 !        real, parameter :: z0 = 0.035  ! ARM momentum roughness height
