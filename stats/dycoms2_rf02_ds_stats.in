@@ -1,4 +1,4 @@
-! $Id: dycoms2_rf02_ds_stats.in,v 1.4 2006-04-18 21:51:27 griffinb Exp $
+! $Id: dycoms2_rf02_ds_stats.in,v 1.5 2006-12-12 21:13:26 dschanen Exp $
 &statsnl
 
 lstats = t
@@ -13,7 +13,7 @@ vars_zt =
 'wp3', 'wpthlp2', 'wp2thlp', 'wprtp2', 'wp2rtp', 
 'lup', 'ldown', 'taut', 'kht', 'wp2thvp', 'wp2rcp', 'wprtpthlp',
 'sc', 'rhot', 'Ncm', 'sed_rcm', 'rsm',
-'rrm', 'Nrm', 'Vrr', 'mean_vol_rad', 'rain_rate',
+'rrm', 'Nrm', 'Vrr', 'mean_vol_rad_rain', 'rain_rate',
 'AKm', 'radht',
 'a', 'w1', 'w2', 'sw1', 'sw2', 'thl1' ,'thl2', 'sthl1', 'sthl2',
 'rt1', 'rt2', 'srt1', 'srt2', 'rc1', 'rc2', 'rsl1', 'rsl2', 'R1', 'R2',
