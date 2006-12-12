@@ -1,4 +1,4 @@
-! $Id: jun25_altocu_model.in,v 1.1 2006-07-18 01:39:12 ajsmith4 Exp $
+! $Id: jun25_altocu_model.in,v 1.2 2006-12-12 20:20:32 dschanen Exp $
 ! Parameter file for June 25 altocumulus case
 
 &model_setting
@@ -25,6 +25,8 @@ fcor = 8.9763e-5
 
 cloud_sed     = .false.
 kk_rain       = .false.
+lcoamps_micro = .false.
+licedfs       = .false.
 lbugsrad      = .false.
 bottom_at_sfc = .false.
 

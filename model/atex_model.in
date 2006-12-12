@@ -1,4 +1,4 @@
-! $Id: atex_model.in,v 1.4 2006-08-21 14:46:59 dschanen Exp $
+! $Id: atex_model.in,v 1.5 2006-12-12 20:20:32 dschanen Exp $
 ! Parameter file for ATEX intermediate regime
 
 &model_setting
@@ -24,6 +24,8 @@ fcor = 0.375e-4
 
 cloud_sed     = .false.
 kk_rain       = .false.
+lcoamps_micro = .false.
+licedfs       = .false.
 lbugsrad      = .false.
 bottom_at_sfc = .true.
 

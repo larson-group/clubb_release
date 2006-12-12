@@ -27,6 +27,8 @@ fcor = 1.0349e-4
 
 cloud_sed     = .false.
 kk_rain       = .false.
+lcoamps_micro = .false.
+licedfs       = .false.
 lbugsrad      = .false.
 bottom_at_sfc = .true.
 

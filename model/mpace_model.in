@@ -1,4 +1,4 @@
-! $Id: mpace_model.in,v 1.1 2006-11-01 20:44:20 mjfalk Exp $
+! $Id: mpace_model.in,v 1.2 2006-12-12 20:20:33 dschanen Exp $
 ! Parameter file for GCSS FIRE Sc case
 
 &model_setting
@@ -28,6 +28,8 @@ fcor = 1.e-4
 
 cloud_sed     = .false.
 kk_rain       = .false.
+lcoamps_micro = .true.
+licedfs       = .false.
 lbugsrad      = .false.
 bottom_at_sfc = .true.
 
