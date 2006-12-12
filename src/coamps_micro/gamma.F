@@ -1,6 +1,4 @@
-! Michael Falk 31 Aug 2006
-!      subroutine gamma(arg,val)
-      real function gamma(arg,val)
+      subroutine gamma(arg,val)
 
 #include "gamma.prol"
 c SCCS IDENTIFICATION:  %W% %G%
@@ -47,17 +45,13 @@ c
       wamma=0.0
 c
       do k=1,15
+        !print *, k, wamma, c(k), zarg**k
         wamma=wamma+c(k)*zarg**k
       enddo
 c
       val=fac/wamma
-! Michael Falk 31 Aug 2006
-      gamma = val
-! eMFc
 
 c***********************************************************************
 c
       return
-!      end
-      end function gamma
-
+      end subroutine gamma

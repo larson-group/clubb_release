@@ -1,6 +1,6 @@
        subroutine nrmcol(tttemp,qctemp,qitemp,qgtemp,qrtemp,qstemp
      1            ,pconv,pgaci,pgacs,praci,pracw,praut,psaci,pwacs
-     2            ,rho,nc,nr,ncn,pcut,twodt,lice,lgrpl,tt
+     2            ,rho,nc,nr,ncn,pcut,twodt,lice,lgrpl,tt,rvc
      3            ,ary1d,maxpt1d,kmax,maxvr1d,n1d,i1dflg,i1d,j1d,j
      4            ,icomp,ldrizzle,ni,m,len)
 c
@@ -44,6 +44,7 @@ c
        real rho     (len)
        real tt      (len)
        real tttemp  (len)
+       real rvc     (len)
        real twodt
 c
        logical ldrizzle
@@ -63,10 +64,10 @@ c
        real abs4
        real abs5
        real abs6
-       real delt1  
-       real delt3  
+       real delt1
+       real delt3
        real qsum
-       real rvc
+c      real rvc
        real rvcof
        real tem
        real tp2
@@ -133,16 +134,17 @@ c
          qcplus = max(0.0, qctemp(i) )
          qrplus = max(0.0, qrtemp(i) )
          ncplus = max(0.01,nc(i) )
-c
-         rvc=(rvcof*qcplus/ncplus)**0.333333
-c
+c ---> dschanen made rvc an output for stats purposes
+c        rvc=(rvcof*qcplus/ncplus)**0.333333
+         rvc(i)=(rvcof*qcplus/ncplus)**0.333333
+c <--- end dschanen modification
 c***********************************************************************
 c  apparently there was a bug here with Mechem's original code autoconv.F
 c  as rvc can be zero if qc = 0.
 c***********************************************************************
 c
-         if(rvc.ne.0.)then
-          nc(i) = max(0.0,nc(i) - rvcof*abs2*twodt*pracw(i)/rvc**3)
+         if(rvc(i).ne.0.)then
+          nc(i) = max(0.0,nc(i) - rvcof*abs2*twodt*pracw(i)/rvc(i)**3)
          else
           nc(i)=0.0
          endif
@@ -150,7 +152,7 @@ c
 c-->Chris Golaz modification: these lines cause problem during initialization
 c   if the initial sounding is saturated. They will cause a spurious
 c   increase in the cloud droplet number concentration.
-!         if (rvc.gt.0.0025) then
+!         if (rvc(i).gt.0.0025) then
 !           nc(i) = rvcof * qcplus / (0.0025)**3
 !         endif
 c<--end of modification
@@ -271,4 +273,3 @@ c
 c
       return
       end
-

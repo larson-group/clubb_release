@@ -1,5 +1,5 @@
-      subroutine tgqr(fallv,qr,sr,nr,rbm,pterm4,pcut,
-     1                tvr1,tvr2,tvr3,tvr4,ldrizzle,len)
+      subroutine tgqr(fallv,falln,qr,sr,nr,rbm,pterm4,pcut,
+     1                rvr,tvr1,tvr2,tvr3,tvr4,ldrizzle,len)
 
 #include "tvqr.prol"
 c
@@ -12,6 +12,8 @@ c
       integer len
 c
       real fallv  (len)
+      real falln  (len) ! Added for HOC on 29 Nov 2006
+      real rvr    (len)
       real pcut
       real qr     (len)
       real sr     (len)
@@ -33,7 +35,7 @@ c
       real nrplus
       real qrplus
       real rvcof
-      real rvr
+c     real rvr
       real temp
       real tvr1
       real tvr2
@@ -92,11 +94,25 @@ c          note: mean volume radius (cm)
 c***********************************************************************
 c
          do i = 1,len
-          qrplus = max (0.0, qr(i))
-          nrplus = max (1.E-7, nr(i))
-          rvcof=rbm(i)*temp
-          rvr=(rvcof*qrplus/nrplus)**0.333333
-          fallv(i) = min (0.0, -120.*(rvr-0.2))
+          if (qr(i).le.pcut.or.sr(i).lt.0.) then
+            fallv(i)=0.0
+          else
+            qrplus = max (0.0, qr(i))
+            nrplus = max (1.E-7, nr(i))
+            rvcof=rbm(i)*temp
+c           rvr=(rvcof*qrplus/nrplus)**0.333333
+            ! Preserve rvr for stats -dschanen 5 Dec 2006
+            rvr(i)=(rvcof*qrplus/nrplus)**0.333333 
+c---> mjfalk noticed an error in order of operations
+c           fallv(i) = min (0.0, -120.*(rvr(i)-0.2))
+            fallv(i) = min (0.0, -120.*rvr(i)+0.2)
+c<--- End change for order of operations
+c----> Khairoutdinov and Kogan says rain droplet number concentration
+c      fall should be calculated differently than rain mixing
+c      ratio fall speeds, so we add this:
+            falln(i) = min (0.0, -70.*rvr(i)+0.1)
+C<---- End nr3 fall speed addition
+          end if
          enddo
 
       endif

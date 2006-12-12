@@ -25,7 +25,7 @@ c    08Aug2006: Added terms for microphysics source budgets
 ! Michael Falk, 3 Oct 2006
 !     1  ,pgacr3,psacr3,piacr3,prhomo3,pgacs3,pmltse3,pwacs3)
      1  ,pgacr3,psacr3,piacr3,prhomo3,pgacs3,pmltse3,pwacs3
-     2  ,falli,fallg,fallr)
+     2  ,falli,fallg,fallr,falln,rvc,rvr)
 ! eMFc
 c<--end of ajsmith4's modification
 c<--end of modification
@@ -271,6 +271,9 @@ c
       real      delta3  (len)
       real      dmax
       real      fallr   (len)
+      real      falln   (len)
+      real      rvc     (len)
+      real      rvr     (len)
       real      fallg   (len)
       real      falls   (len)
       real      falli   (len)
@@ -385,6 +388,9 @@ c
           falli (i)=0.0
           falls (i)=0.0
           fallr (i)=0.0
+          falln (i)=0.0
+          rvc   (i)=0.0
+          rvr   (i)=0.0
           nctemp(i)=0.0
           nrtemp(i)=0.0
           nntemp(i)=0.0
@@ -699,8 +705,8 @@ c
          call tgqg(fallg,qgtemp,sfgraup,pterm4,pcut,abar,bgrp,mkk)
        endif
 c
-       call tgqr(fallr,qrtemp,sfraincm,nrtemp,rbar2d,pterm4,pcut,tvr1
-     1             ,tvr2,tvr3,tvr4,ldrizzle,mkk)
+       call tgqr(fallr,falln,qrtemp,sfraincm,nrtemp,rbar2d,pterm4,pcut,
+     1           rvr,tvr1,tvr2,tvr3,tvr4,ldrizzle,mkk)
 
        call tgqs(falls,qstemp,sfsnow,pterm4,pcut,aprpr,bsnow,mkk)
 c
@@ -1321,7 +1327,7 @@ c***********************************************************************
 c
       call nrmcol(tttemp,qctemp,qitemp,qgtemp,qrtemp,qstemp,pconv,pgaci
      1            ,pgacs,praci,pracw,praut,psaci,pwacs,rbar2d,nctemp
-     2            ,nrtemp,nntemp,pcut,twodt,lice,lgrpl,tttemp,ary1d
+     2            ,nrtemp,nntemp,pcut,twodt,lice,lgrpl,tttemp,rvc,ary1d
      3            ,maxpt1d,kmax,maxvr1d,n1d,i1dflg,i1d,j1d,j,icomp
      4            ,ldrizzle,nitemp,nipts,mkk)
 c
@@ -1467,4 +1473,4 @@ c
 c***********************************************************************
 c
       return
-      end
+      end subroutine adjtq
