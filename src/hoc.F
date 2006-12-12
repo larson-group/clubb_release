@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.101 2006-12-08 17:55:09 griffinb Exp $
+! $Id: hoc.F,v 1.102 2006-12-12 20:20:49 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -184,7 +184,9 @@
         logical :: 
      .  cloud_sed,    ! Flag for cloud water droplet sedimentation. - Brian
      .  kk_rain,      ! Flag for Khairoutdinov and Kogan rain microphysics. - Brian
-     .  lbugsrad,     ! Flag for BUGsrad radiation scheme - dschanen
+     .  licedfs,      ! Flag for simplified ice scheme
+     .  lcoamps_micro,! Flag for COAMPS microphysical scheme
+     .  lbugsrad,     ! Flag for BUGSrad interactive radiation scheme
      .  lmpace_nudge  ! Whether to adjust the winds within the timestep
 
         ! Flag for the lowest model level being at the surface (true)
@@ -205,7 +207,8 @@
      .   time_initial, time_final, time_spinup,
      .   dtmain, dtclosure,
      .   sfctype, Tsfc, psfc, SE, LE, fcor,
-     .   cloud_sed, kk_rain, lbugsrad, bottom_at_sfc
+     .   cloud_sed, kk_rain, licedfs, lcoamps_micro, 
+     .   lbugsrad, bottom_at_sfc
 
        !  Initialize the model run 
 
@@ -255,7 +258,8 @@
      .        gamma_coef_in, gamma_coefb_in, gamma_coefc_in,
      .        mu_in, c_K_in, beta_in, lmin_coef_in, 
      .        taumin_in, taumax_in, fcor,
-     .        lbugsrad, kk_rain, cloud_sed, bottom_at_sfc,
+     .        lbugsrad, kk_rain, licedfs, lcoamps_micro,
+     .        cloud_sed, bottom_at_sfc,
      .        lmpace_nudge, .false., dummy_array_m, dummy_array_t )
 
 
@@ -266,7 +270,7 @@
 
        call hoc_initialize( runfile, psfc, thlm, rtm, 
      .                      um, vm, ug, vg, wp2,
-     .                      rcm, rrm, rim, rgm, rsnowm,
+     .                      rcm, hydromet,
      .                      wmt, wmm, em, exner,
      .                      taut, taum, thvm, p,
      .                      rhot, rhom, Lscale, lup,
@@ -344,8 +348,8 @@
      .            um, vm, upwp, vpwp,
      .            thlm, rtm, wprtp, wpthlp, wp2, wp3,
      .            rtp2, thlp2, rtpthlp,
-     .            Scm, taum, rcm, Ncm, rrm, Nrm, cf,
-     .            isValid, .false.
+     .            Scm, taum, rcm, Ncm, Ncnm, Nim,
+     .            hydromet, cf, isValid, .false.
 #ifdef SCALARS
      .            ,sclrm, sclrm_forcing,
      .            edsclrm, edsclrmt
@@ -468,7 +472,9 @@
         logical :: 
      .  cloud_sed,    ! Flag for cloud water droplet sedimentation. - Brian
      .  kk_rain,      ! Flag for Khairoutdinov and Kogan rain microphysics. - Brian
-     .  lbugsrad,     ! Flag for BUGsrad radiation scheme - dschanen
+     .  licedfs,      ! Flag for simplified ice scheme
+     .  lcoamps_micro,! Flag for COAMPS microphysical scheme
+     .  lbugsrad,     ! Flag for BUGsrad radiation scheme
      .  lmpace_nudge  ! Whether to adjust the winds within the timestep
 
         ! Flag for the lowest model level being at the surface (true)
@@ -489,7 +495,8 @@
      .  time_initial, time_final, time_spinup,
      .  dtmain, dtclosure,
      .  sfctype, Tsfc, psfc, SE, LE, fcor,
-     .  cloud_sed, kk_rain, lbugsrad, bottom_at_sfc
+     .  cloud_sed, kk_rain, licedfs, lcoamps_micro, 
+     .  lbugsrad, bottom_at_sfc
 
 !-----------------------------------------------------------------------
 
@@ -535,7 +542,8 @@
      .        gamma_coef_in, gamma_coefb_in, gamma_coefc_in,
      .        mu_in, c_K_in, beta_in, lmin_coef_in, 
      .        taumin_in, taumax_in, fcor,
-     .        lbugsrad, kk_rain, cloud_sed, bottom_at_sfc,
+     .        lbugsrad, kk_rain, licedfs, lcoamps_micro,
+     .        cloud_sed, bottom_at_sfc,
      .        lmpace_nudge, .false., dummy_array_m, dummy_array_t )
 
 
@@ -546,7 +554,7 @@
 
        call hoc_initialize( runfile, psfc, thlm, rtm, 
      .                      um, vm, ug, vg, wp2,
-     .                      rcm, rrm, rim, rgm, rsnowm,
+     .                      rcm, hydromet,
      .                      wmt, wmm, em, exner,
      .                      taut, taum, thvm, p,
      .                      rhot, rhom, Lscale, lup,
@@ -612,8 +620,8 @@
      .            um, vm, upwp, vpwp,
      .            thlm, rtm, wprtp, wpthlp, wp2, wp3,
      .            rtp2, thlp2, rtpthlp,
-     .            Scm, taum, rcm, Ncm, rrm, Nrm, cf,
-     .            isValid, .false.
+     .            Scm, taum, rcm, Ncm, Ncnm, Nim,
+     .            hydromet, cf, isValid, .false.
 #ifdef SCALARS
      .            ,sclrm, sclrm_forcing,
      .            edsclrm, edsclrmt
@@ -659,9 +667,8 @@
 !-----------------------------------------------------------------------
         subroutine hoc_initialize
      .             ( runfile, psfc, thlm, rtm, um, vm,
-     .               ug, vg, wp2, rcm, rrm, rim,
-     .               rgm, rsnowm, wmt, wmm,
-     .               em, exner, taut, taum, thvm,
+     .               ug, vg, wp2, rcm, hydromet,
+     .               wmt, wmm, em, exner, taut, taum, thvm,
      .               p, rhot, rhom, Lscale, lup,
      .               ldown, Kht, Khm, 
      .               sclrm, edsclrm )
@@ -712,10 +719,6 @@
      .  vg,             ! u geostrophic wind            [m/s] 
      .  wp2,            ! w'^2                          [m^2/s^2]
      .  rcm,            ! Cloud water mixing ratio      [kg/kg]
-     .  rrm,            ! Rain water mixing ratio       [kg/kg] Michael Falk, 1 Nov 2006
-     .  rim,            ! Ice water mixing ratio        [kg/kg]           "
-     .  rgm,            ! Graupel water mixing ratio    [kg/kg]           "
-     .  rsnowm,         ! Snow water mixing ratio       [kg/kg]           "
      .  wmt, wmm,       ! w wind                        [m/s]
      .  exner,          ! Exner function                [-] 
      .  em,             ! Em                            [m^2/s^2]
@@ -728,6 +731,9 @@
      .  taum, taut,     ! Dissipation time              [s]
      .  thvm            ! Virtual potential temperature [K]
 
+        real, dimension(gr%nnzp,hydromet_dim), target, intent(out) :: 
+     .  hydromet        ! Hydrometeor types             [units vary]
+
 !       Output (optional)
         real, optional, dimension(gr%nnzp,sclr_dim), intent(out) :: 
      .  sclrm,  ! Standard passive scalar [units vary]
@@ -736,12 +742,24 @@
         ! Local Variables
         real, dimension(gr%nnzp) :: tmp1
 
+        real, dimension(:), pointer ::
+     .  rrm,        ! Rain water mixing ratio           [kg/kg]
+     .  ricem,      ! Ice water mixing ratio            [kg/kg]
+     .  rgraupelm,  ! Graupel water mixing ratio        [kg/kg] 
+     .  rsnowm      ! Snow water mixing ratio           [kg/kg]
+
         real :: cloud_top_height ! [m]
         real :: emax
 
         integer :: k
 
 !-----------------------------------------------------------------------
+
+        ! Assign pointers to each hydrometeor field
+        rrm       => hydromet(1:gr%nnzp,1)
+        rsnowm    => hydromet(1:gr%nnzp,3)
+        ricem     => hydromet(1:gr%nnzp,4)
+        rgraupelm => hydromet(1:gr%nnzp,5)
 
         ! Read sounding information
 
@@ -944,8 +962,8 @@
           do k=1,gr%nnzp
 
             rrm(k) = 0.
-            rim(k) = 0.
-            rgm(k) = 0.
+            ricem(k) = 0.
+            rgraupelm(k) = 0.
             rsnowm(k) = 0.
 
             if ( gr%zm(k) < cloud_top_height ) then
@@ -1022,13 +1040,9 @@
         use prognostic_variables
         use gcss
         use surface
+        use microphysics
 
         implicit none
-
-        ! Local Constants
-        integer, parameter ::
-     .    nrdamp = 0              ! number of damping points
-
 
         ! Input Variables
         integer, intent(in) ::
@@ -1037,32 +1051,17 @@
         logical, intent(in) ::
      .    stdout
 
-
         ! Input/Output Variables
         logical, intent(inout) ::
      .    isValid
 
+        ! Local Variables
 
-        ! Local variables
-        real, dimension(1,1,gr%nnzp) ::
-     .    snowv,     ! velocity of snowflakes (added by Michael Falk)
-     .    falli,     ! velocity of pristine ice
-     .    fallg,     ! velocity of graupel
-     .    fallr,     ! velocity of raindrops
-     .    cond,      ! condensation/evaporation
-     .    ritend,    ! d(rim)/dt (ice tendency)
-     .    rrtend,    ! d(rrm)/dt (rain tendency)
-     .    rgtend,    ! d(rgm)/dt (graupel tendency)
-     .    rsnowtend, ! d(rsnowm)/dt (snow tendency)
-     .    rttend,    ! d(rtm)/dt (total water tendency)
-     .    thlmtend   ! d(thlm)/dt (theta-l tendency)
+        real, dimension(:), pointer :: 
+     .    rrm,   ! Rain water mixing ratio              [kg/kg]
+     .    ricem  ! Prisitine ice water mixing ratio     [kg/kg]
 
-        integer ::
-     .    k          ! vertical loop control variable
-
-        logical ::
-     .    icedfs_on,       ! Using the simplified ice scheme?
-     .    coamps_micro_on  ! Using COAMPS microphysics? (end Michael Falk additions)
+        integer :: k ! Vertical loop index variable
 
 !-----------------------------------------------------------------------
 
@@ -1146,40 +1145,19 @@
 #endif /* SCALARS */
      .                     )
 
-         case( "dycoms2_rf02_do" ) ! DYCOMS2 RF02 case with drizzle only.
-           call dycoms2_rf02_tndcy( rhot, rhom, rtm, rcm, exner,
-     .                              wmt, wmm, thlm_forcing, rtm_forcing,
-     .                              Frad, radht, Ncm, isValid
+         case( "dycoms2_rf02_do",     ! DYCOMS2 RF02 case with drizzle only.
+     .         "dycoms2_rf02_ds",     ! DYCOMS2 RF02 case with drizzle and cloud sedimentation.
+     .         "dycoms2_rf02_nd",     ! DYCOMS2 RF02 case with no drizzle and no cloud sedimentation.
+     .         "dycoms2_rf02_so"     )! DYCOMS2 RF02 case with cloud water sedimentation only.
+           ! Added time, time_initial, and Ncnm to arguments for testing
+           ! the COAMPS microphysics with RF02 -dschanen 30 Nov 2006
+           call dycoms2_rf02_tndcy
+     .          ( time, time_initial, rhot, rhom, rtm, rcm, exner,
+     .            wmt, wmm, thlm_forcing, rtm_forcing,
+     .            Frad, radht, Ncm, Ncnm, isValid
 #ifdef SCALARS
-     .                              ,sclrm_forcing  ! optional variable
+     .           ,sclrm_forcing  ! optional variable
 #endif /* SCALARS */
-     .                            )
-
-         case( "dycoms2_rf02_ds" ) ! DYCOMS2 RF02 case with drizzle and cloud sedimentation.
-           call dycoms2_rf02_tndcy( rhot, rhom, rtm, rcm, exner,
-     .                              wmt, wmm, thlm_forcing, rtm_forcing,
-     .                              Frad, radht, Ncm, isValid
-#ifdef SCALARS
-     .                              ,sclrm_forcing  ! optional variable
-#endif /* SCALARS */
-     .                            )
-
-         case( "dycoms2_rf02_nd" ) ! DYCOMS2 RF02 case with no drizzle and no cloud sedimentation.
-           call dycoms2_rf02_tndcy( rhot, rhom, rtm, rcm, exner,
-     .                              wmt, wmm, thlm_forcing, rtm_forcing,
-     .                              Frad, radht, Ncm, isValid
-#ifdef SCALARS
-     .                              ,sclrm_forcing  ! optional variable
-#endif /*SCALARS*/
-     .                            )
-
-         case( "dycoms2_rf02_so" ) ! DYCOMS2 RF02 case with cloud water sedimentation only.
-           call dycoms2_rf02_tndcy( rhot, rhom, rtm, rcm, exner,
-     .                              wmt, wmm, thlm_forcing, rtm_forcing,
-     .                              Frad, radht, Ncm, isValid
-#ifdef SCALARS
-     .                             ,sclrm_forcing   ! optional variable
-#endif /*SCALARS*/
      .                            )
 
          case( "nov11_altocu" ) ! Nov. 11 Altocumulus case.
@@ -1203,52 +1181,14 @@
      .                            )
 
          case ( "mpace" ) ! MPACE case
-           icedfs_on       = .FALSE.
-           coamps_micro_on = .TRUE.
-
-           if ((icedfs_on) .and. (coamps_micro_on)) then
-            write(*,*) 'Cannot use both icedfs and COAMPS microphysics.'
-            stop
-           end if
-
-           call mpace_tndcy( time, dtmain, thlm,
-     .                       exner, rhot, rtm, p, thvm, icedfs_on, rcm,
+           call mpace_tndcy( time, time_initial, dtmain, rlat, thlm,
+     .                       exner, rhot, rtm, p, thvm, rcm,
      .                       wmt, wmm, thlm_forcing, rtm_forcing,
-     .                       Frad, radht
+     .                       Ncnm, Ncm, Frad, radht
 #ifdef SCALARS
      .                     ,sclrm_forcing
 #endif /* SCALARS */
      .                    )
-
-#ifdef SCALARS
-           sclrm_forcing(:, SCLR_THETA) = 0.
-#endif /* SCALARS */
-
-!           call coamps_micro_driver(gr%nnzp,wmt,p,1,exner,rhot,time,
-!     .            time_initial,gr%zt,
-!     .            thlm,dtmain,1,gr%nnzp,gr%nnzp+1,nrdamp,1,1,1,
-!     .            coamps_micro_on,
-!     .            rtm,rcm,rim,rrm,rgm,rsnowm,
-!     .            nc3,nr3,ncn3,ni3,
-!     .            cond,snowv,falli,fallr,fallg,thlmtend,
-!     .            ritend,rrtend,rgtend,rsnowtend,rttend)
-
-           call coamps_micro_driver(gr%nnzp,1,time,time_initial,dtmain,
-     .            gr%zt,rtm,wmt,p,exner,rhot,
-     .            thlm,rim,rrm,rgm,rsnowm,
-     .            1,gr%nnzp,gr%nnzp+1,nrdamp,1,1,1,
-     .            coamps_micro_on,
-     .            rcm,nc3,nr3,ncn3,ni3,
-     .            cond,snowv,falli,fallr,fallg,
-     .            ritend,rrtend,rgtend,rsnowtend,
-     .            rttend,thlmtend)
-
-
-           do k=1,gr%nnzp
-             thlm_forcing(k) = thlm_forcing(k) + thlmtend(1,1,k)
-             rtm_forcing(k)  = rtm_forcing(k)  + rttend(1,1,k)
-           end do ! k
-
 
         ! Brian Griffin for COBRA CO2 case.
         case ( "cobra" )
@@ -1258,7 +1198,6 @@
      .                      ,sclrm_forcing   ! optional variable
 #endif /* SCALARS */
      .                     )
-
 
          case default
            write(unit=fstderr,fmt=*) 
@@ -1404,9 +1343,14 @@
 
         if ( lbugsrad ) then
 #ifdef radoffline /*This directive is needed for this to work at all.*/
+
+          ! Assign pointers to rain and ice
+          rrm   => hydromet(1:gr%nnzp,1)
+          ricem => hydromet(1:gr%nnzp,4)
+
           call bugsrad_hoc( deltaz*gr%nnzp, gr%nnzp, rlat, rlon,
      .                      day, month, year, time,
-     .                      thlm, rcm, rtm, rrm, rim, 
+     .                      thlm, rcm, rtm, rrm, ricem, 
      .                      cf, p, exner, rhom, Tsfc,
      .                      radht, Frad, thlm_forcing )
 #else

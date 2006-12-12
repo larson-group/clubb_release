@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.70 2006-11-26 22:11:23 dschanen Exp $
+# $Id: Makefile,v 1.71 2006-12-12 20:20:49 dschanen Exp $
 # This version should work with BSD, GNU make, smake and dmake
 
 # For HOC we edit this by hand rather than implementing imake or automake
@@ -10,6 +10,8 @@
 #include config.linux_ia32_g95.in
 #include config.linux_ia64_intel.in
 #include config.solaris_generic_ss11.in
+#include config.solaris_sparc_ss11.in
+#include config.solaris_sparc_g95.in
 #include config.osf1_alpha_digital.in
 include config.messner.in
 
@@ -47,7 +49,7 @@ PARAMETERIZATION = \
 	$(COAMPS_MICRO) \
 	constants.o endian.o outputfile.o outputgrads.o \
 	outputnc.o grid.o model_flags.o statistics.o \
-	erf.o rain.o cons.o air.o parab.o \
+	erf.o rain.o microphysics.o cons.o air.o parab.o \
 	closure_new.o diag_var.o gcss.o rad_lwsw.o linearinterpolation.o \
         hydrostatic.o length.o mixing.o rsat.o sat_rcm.o sfc.o \
 	sounding.o update.o wp23.o tau.o Skw_func.o \
@@ -163,8 +165,9 @@ endian.o	: endian.F
 constants.o	: constants.F
 model_flags.o	: model_flags.F
 outputfile.o	: outputfile.F
-rain.o		: constants.o model_flags.o statistics.o lapack_wrap.o \
-	cons.o air.o parab.o rain.F
+rain.o          : constants.o model_flags.o lapack_wrap.o parab.o rain.F
+microphysics.o	: constants.o model_flags.o lapack_wrap.o rain.o \
+	coamps_micro_driver.o statistics.o microphysics.F
 outputgrads.o	: constants.o recl.F endian.o outputfile.o outputgrads.F
 outputnc.o	: outputfile.o outputnc.F
 diag_variables.o: constants.o grid.o model_flags.o diag_variables.F 
@@ -183,16 +186,16 @@ closure_new.o	: constants.o grid.o rsat.o erf.o closure_new.F
 diag_var.o	: constants.o grid.o statistics.o lapack_wrap.o \
 	diag_var.F
 gcss.o		: constants.o statistics.o rad_lwsw.o linearinterpolation.F \
-                  gcss.F coamps_micro_driver.o rsat.o rsati.o
+                  gcss.F rsat.o rsati.o
 rad_lwsw.o      : rad_lwsw.F statistics.o
 linearinterpolation.o : linearinterpolation.F
 mixing.o	: constants.o statistics.o lapack_wrap.o mixing.F 
 parameterization_interface.o : constants.o gcss.o hydrostatic.o mixing.o \
-	model_flags.o numer_check.o Skw_func.o \
+	model_flags.o numer_check.o Skw_func.o microphysics.o \
 	length.o statistics.o sounding.o diag_var.o rsat.o \
 	grid.o sat_rcm.o update.o prog_variables.o diag_variables.o \
-	sfc.o closure_new.o rain.o latin_hyper_sample.o lh_sampler.o \
-	coamps_micro_driver.o parameterization_interface.F 
+	sfc.o closure_new.o latin_hyper_sample.o lh_sampler.o \
+	parameterization_interface.F 
 hoc.o		: parameterization_interface.o hoc.F
 hydrostatic.o	: constants.o hydrostatic.F 
 length.o	: constants.o length.F 
@@ -238,9 +241,10 @@ sample_points.o		: sample_points.F
 st_2_rtthl.o		: st_2_rtthl.F
 truncate_gaus_mixt.o	: truncate_gaus_mixt.F
 
-# == COAMPS Microphysics ==
+# == COAMPS Microphysics dependencies ==
 adjmlt.o                : adjmlt.F
-coamps_micro_driver.o   : gamma.o adjtq.o coamps_micro_driver.F
+coamps_micro_driver.o   : gamma.o adjtq.o constants.o statistics.o \
+	coamps_micro_driver.F
 adjtq.o                 : slope.o esatv.o esati.o tgqg.o tgqr.o tgqs.o \
 	frzh.o eqa22.o eqa25.o eqa28.o eqa11g.o conice.o \
 	tgqi.o eqa27r.o eqa7g.o eqa8g.o eqa9g.o eqa13g.o \
@@ -281,7 +285,7 @@ eqa9.o       : eqa9.F
 eqa9g.o      : eqa9g.F
 gamma.o      : gamma.F
 
-# == BUGSrad ==
+# == BUGSrad dependencies ==
 kinds.o			: kinds.F90
 bugsrad_planck.o	: kinds.o bugsrad_planck.F90
 cloud_correlate.o	: kinds.o cloud_correlate.F90
