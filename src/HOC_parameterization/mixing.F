@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.9 2006-12-08 17:55:34 griffinb Exp $
+! $Id: mixing.F,v 1.10 2006-12-12 20:21:17 dschanen Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -28,7 +28,7 @@
      .               rtm, wprtp, rtpthvp, rtm_forcing,
      .               thlm, wpthlp, thlpthvp, thlm_forcing,
      .               rhot, rhom, exner, rcm, Ncm, 
-     .               cond_rrm, auto_rrm, accr_rrm,
+     .               hm_thl_tndcy, hm_rt_tndcy,
      .               Fcsed, sed_rcm,
      .               isValid, implemented,
      .               sclrm, wpsclrp, sclrpthvp, sclrm_forcing )
@@ -78,13 +78,11 @@
      .  exner,       ! Exner function                 [-]
      .  rcm,         ! Liquid water mixing ratio      [kg/kg]
      .  Ncm,         ! Cloud droplet number conc.     [num/m^3]
-     .  cond_rrm,    ! rrm condensation/evaporation   [(kg/kg)/s]
-     .  auto_rrm,    ! rrm autoconversion             [(kg/kg)/s]
-     .  accr_rrm     ! rrm accretion                  [(kg/kg)/s]
+     .  hm_rt_tndcy, ! Change in rt due to microphys. [kg/kg/s]
+     .  hm_thl_tndcy ! Change in thl due to microphys.[K/s]
 
         logical, intent(in) :: 
      .  implemented  ! Flag for if HOC is implemented in a larger model or not.
-
          
         ! Input/Output Variables
         real, intent(inout), dimension(gr%nnzp) :: 
@@ -111,7 +109,7 @@
 
         ! Local variables
         real, allocatable, dimension(:,:) :: 
-     .  aa  ! Banded matrix in compact form 
+     .  lhs  ! Banded matrix in compact form 
 !    .  al  ! LU decomposition of banded matrix 
 
         real, allocatable, dimension(:) :: 
@@ -138,8 +136,8 @@
         allocate( C6thl_Skw_fnc(1:gr%nnzp) )
         allocate( C7_Skw_fnc(1:gr%nnzp) )
 
-        !allocate( aa(1:2*gr%nnzp,1:5) ) ! (NR)
-        allocate( aa(1:5,1:2*gr%nnzp) )  ! (LAPACK)
+        !allocate( lhs(1:2*gr%nnzp,1:5) ) ! (NR)
+        allocate( lhs(1:5,1:2*gr%nnzp) )  ! (LAPACK)
         allocate( dd(1:2*gr%nnzp) )
         !allocate( al(1:2*gr%nnzp,1:2) )
         !allocate( indx(1:2*gr%nnzp) )
@@ -162,18 +160,18 @@
         call mixing_lhs( "rtm", .true., dt, taum, wmm, wmt, 
      .                   wp2, wp3, Scm,
      .                   C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
-     .                   aa, implemented )
+     .                   lhs, implemented )
 
         ! Solve rtm / wprtp
         call mixing_solve( "rtm", .true., dt, taum,
      .                     rtm, wprtp, rtpthvp, rtm_forcing,
      .                     rhot, rhom, exner, rcm, Ncm,  ! Brian
-     .                     cond_rrm, auto_rrm, accr_rrm, ! Brian
+     .                     hm_rt_tndcy,
      .                     Fcsed, sed_rcm,               ! Brian
-     .                     aa, dd, C7_Skw_fnc, isValid )  
+     .                     lhs, dd, C7_Skw_fnc, isValid )  
         if ( .not. isValid ) then
           print *, "rt mixing failed"
-          deallocate( aa, dd, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc )
+          deallocate( lhs, dd, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc )
           return
         end if
 
@@ -181,18 +179,18 @@
         call mixing_lhs( "thlm",.true., dt, taum, wmm, wmt, 
      .                   wp2, wp3, Scm,
      .                   C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
-     .                   aa, implemented )
+     .                   lhs, implemented )
 
         ! Solve for thlm / wpthlp
         call mixing_solve( "thlm", .true., dt, taum,
      .                     thlm, wpthlp, thlpthvp, thlm_forcing,
      .                     rhot, rhom, exner, rcm, Ncm,  ! Brian
-     .                     cond_rrm, auto_rrm, accr_rrm, ! Brian
+     .                     hm_thl_tndcy,
      .                     Fcsed, sed_rcm,               ! Brian
-     .                     aa, dd, C7_Skw_fnc, isValid )
+     .                     lhs, dd, C7_Skw_fnc, isValid )
         if ( .not. isValid ) then
           print *, "theta mixing failed"
-          deallocate( aa, dd, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc )
+          deallocate( lhs, dd, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc )
           return
         end if
 
@@ -204,19 +202,19 @@
           call mixing_lhs( "rtm",.true., dt, taum, wmm, wmt, 
      .                     wp2, wp3, Scm,
      .                     C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
-     .                     aa, implemented )
+     .                     lhs, implemented )
 
           call mixing_solve( "sclrm_rtm", .true., dt, taum,
      .                       sclrm(:,SCLR_RT), wpsclrp(:,SCLR_RT),
      .                       sclrpthvp(:,SCLR_RT), 
      .                       sclrm_forcing(:,SCLR_RT),
      .                       rhot, rhom, exner, rcm, Ncm,  ! Brian
-     .                       cond_rrm, auto_rrm, accr_rrm, ! Brian
+     .                       hm_rt_tndcy,
      .                       Fcsed, sed_rcm,               ! Brian
-     .                       aa, dd, C7_Skw_fnc, isValid )
+     .                       lhs, dd, C7_Skw_fnc, isValid )
           if ( .not. isValid ) then
             print *, "sclr rt mixing failed"
-            deallocate( aa, dd, C6rt_Skw_fnc, 
+            deallocate( lhs, dd, C6rt_Skw_fnc, 
      .                  C6thl_Skw_fnc, C7_Skw_fnc )
             return
           end if
@@ -225,26 +223,26 @@
           call mixing_lhs( "thlm",.true., dt, taum, wmm, wmt, 
      .                     wp2, wp3, Scm, 
      .                     C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
-     .                     aa, implemented )
+     .                     lhs, implemented )
 
           call mixing_solve( "sclrm_theta", .true., dt, taum,
      .                       sclrm(:,SCLR_THETA), wpsclrp(:,SCLR_THETA),
      .                       sclrpthvp(:,SCLR_THETA), 
      .                       sclrm_forcing(:,SCLR_THETA),
      .                       rhot, rhom, exner, rcm, Ncm,  ! Brian
-     .                       cond_rrm, auto_rrm, accr_rrm, ! Brian
+     .                       hm_thl_tndcy,
      .                       Fcsed, sed_rcm,               ! Brian
-     .                       aa, dd, C7_Skw_fnc, isValid )
+     .                       lhs, dd, C7_Skw_fnc, isValid )
           if ( .not. isValid ) then
             print *, "sclr theta mixing failed"
-            deallocate( aa, dd, C6rt_Skw_fnc, 
+            deallocate( lhs, dd, C6rt_Skw_fnc, 
      .                  C6thl_Skw_fnc, C7_Skw_fnc )
             return
           end if
         end if ! passive scalars
  
         ! Free memory
-        deallocate( aa, dd, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc )
+        deallocate( lhs, dd, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc )
 
         return
         end subroutine timestep_mixing
@@ -253,7 +251,7 @@
         subroutine mixing_lhs( solve_type, liter, dt, taum, wmm, wmt,
      .                         wp2, wp3, Scm, 
      .                         C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
-     .                         aa, implemented )
+     .                         lhs, implemented )
 !       Description:
 !       References:
 !------------------------------------------------------------------------
@@ -283,11 +281,11 @@
 
         ! Output variables
 
-!       real, intent(out)      :: aa(1:2*gr%nnzp,1:5) !(NR)
+!       real, intent(out)      :: lhs(1:2*gr%nnzp,1:5) !(NR)
 !       real, intent(out)      :: dd(1:2*gr%nnzp)
 !       real, intent(out)      :: al(1:2*gr%nnzp,1:2)
 !       integer, intent(out)   :: indx(1:2*gr%nnzp)
-        real, intent(out)      :: aa(1:5,1:2*gr%nnzp) !(LAPACK)
+        real, intent(out)      :: lhs(1:5,1:2*gr%nnzp) !(LAPACK)
         logical, intent(in)    :: implemented
 
         real, intent(in), dimension(gr%nnzp) :: 
@@ -309,9 +307,9 @@
 
         a1(1:gr%nnzp) = 1.0 / ( 1.0 - Scm(1:gr%nnzp) )
 
-!       Set up matrix aa
+!       Set up left hand side matrix
 
-        aa = 0.0
+        lhs = 0.0
 
 !        do k=2,gr%nnzp
         do k=2,gr%nnzp-1
@@ -329,44 +327,44 @@
           if ( .not. implemented ) then
 
             ! Thermodynamic subdiagonal [ x xm(k-1,<t+1>) ]
-            !aa(k_xm,3-2) = - wmt(k) * (1.0/2.0) * gr%dzt(k)
-            aa(3+2,k_xm) = - wmt(k) * (1.0/2.0) * gr%dzt(k)
+            !lhs(k_xm,3-2) = - wmt(k) * (1.0/2.0) * gr%dzt(k)
+            lhs(3+2,k_xm) = - wmt(k) * (1.0/2.0) * gr%dzt(k)
             ! Thermodynamic superdiagonal [ x xm(k+1,<t+1>) ]
-            !aa(k_xm,3+2) = + wmt(k) * (1.0/2.0) * gr%dzt(k)
-            aa(3-2,k_xm) = + wmt(k) * (1.0/2.0) * gr%dzt(k)
+            !lhs(k_xm,3+2) = + wmt(k) * (1.0/2.0) * gr%dzt(k)
+            lhs(3-2,k_xm) = + wmt(k) * (1.0/2.0) * gr%dzt(k)
 
           else
 
             ! Thermodynamic subdiagonal [ x xm(k-1,<t+1>) ]
-            !aa(k_xm,3-2) = 0.0
-            aa(3+2,k_xm) = 0.0
+            !lhs(k_xm,3-2) = 0.0
+            lhs(3+2,k_xm) = 0.0
             ! Thermodynamic superdiagonal [ x xm(k+1,<t+1>) ]
-            !aa(k_xm,3+2) = 0.0
-            aa(3-2,k_xm) = 0.0
+            !lhs(k_xm,3+2) = 0.0
+            lhs(3-2,k_xm) = 0.0
 
           end if
 
 !         xm: turbulent transport
 
           ! Momentum subdiagonal [ x wpxp(k-1,<t+1>) ]
-          !aa(k_xm,3-1) = - gr%dzt(k)
-          aa(3+1,k_xm) = - gr%dzt(k)
+          !lhs(k_xm,3-1) = - gr%dzt(k)
+          lhs(3+1,k_xm) = - gr%dzt(k)
           ! Momentum superdiagonal [ x wpxp(k,<t+1>) ]
-          !aa(k_xm,3+1) = + gr%dzt(k)
-          aa(3-1,k_xm) = + gr%dzt(k)
+          !lhs(k_xm,3+1) = + gr%dzt(k)
+          lhs(3-1,k_xm) = + gr%dzt(k)
 
 !         xm: time tendency
 
           ! Thermodynamic main diagonal [ x xm(k,<t+1>) ]
-          !aa(k_xm,3) = 1.0 / dt
-          aa(3,k_xm) = 1.0 / dt
+          !lhs(k_xm,3) = 1.0 / dt
+          lhs(3,k_xm) = 1.0 / dt
 
 !         wpxp: mean vertical advection, turbulent transport, time tendency, 
 !         damping and diffusion
 
           ! Momentum subdiagonal [ x wpxp(k-1,<t+1>) ]
-          !aa(k_wpxp,3-2)
-          aa(3+2,k_wpxp)
+          !lhs(k_wpxp,3-2)
+          lhs(3+2,k_wpxp)
      .    = - wmm(k) * (1.0/2.0) * gr%dzm(k)
      .      - gr%dzm(k)
      .        * (1.0/2.0) * ( a1(k) + a1(km1) )
@@ -376,8 +374,8 @@
           ! Momentum main diagonal [ x wpxp(k,<t+1>) ]
           select case( trim( solve_type ) )
           case ("rtm")
-            !aa(k_wpxp,3)
-            aa(3,k_wpxp)
+            !lhs(k_wpxp,3)
+            lhs(3,k_wpxp)
      .      = + gr%dzm(k)
      .          * (  (1.0/2.0) * ( a1(kp1) + a1(k) )
      .             * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
@@ -388,11 +386,11 @@
 !     .        + C6rt / taum(k)
      .        + C6rt_Skw_fnc(k) / taum(k)
      .        + nu6 * gr%dzm(k) * ( gr%dzt(kp1) + gr%dzt(k) )
-            !if (liter) aa(k_wpxp,3) = aa(k_wpxp,3) + 1.0 / dt
-            if (liter) aa(3,k_wpxp) = aa(3,k_wpxp) + 1.0 / dt
+            !if (liter) lhs(k_wpxp,3) = lhs(k_wpxp,3) + 1.0 / dt
+            if (liter) lhs(3,k_wpxp) = lhs(3,k_wpxp) + 1.0 / dt
           case ("thlm")
-            !aa(k_wpxp,3)
-            aa(3,k_wpxp)
+            !lhs(k_wpxp,3)
+            lhs(3,k_wpxp)
      .      = + gr%dzm(k)
      .          * (  (1.0/2.0) * ( a1(kp1) + a1(k) )
      .             * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
@@ -403,13 +401,13 @@
 !     .        + C6thl / taum(k)
      .        + C6thl_Skw_fnc(k) / taum(k)
      .        + nu6 * gr%dzm(k) * ( gr%dzt(kp1) + gr%dzt(k) )
-            !if (liter) aa(k_wpxp,3) = aa(k_wpxp,3) + 1.0 / dt
-            if (liter) aa(3,k_wpxp) = aa(3,k_wpxp) + 1.0 / dt
+            !if (liter) lhs(k_wpxp,3) = lhs(k_wpxp,3) + 1.0 / dt
+            if (liter) lhs(3,k_wpxp) = lhs(3,k_wpxp) + 1.0 / dt
           end select
 
           ! Momentum superdiagonal [ x wpxp(k+1,<t+1>) ]
-          !aa(k_wpxp,3+2)
-          aa(3-2,k_wpxp)
+          !lhs(k_wpxp,3+2)
+          lhs(3-2,k_wpxp)
      .    = + wmm(k) * (1.0/2.0) * gr%dzm(k)
      .      + gr%dzm(k)
      .        * (1.0/2.0) * ( a1(kp1) + a1(k) )
@@ -419,13 +417,13 @@
 !         wpxp: production
 
           ! Thermodynamic subdiagonal [ x xm(k,<t+1>) ]
-          !aa(k_wpxp,3-1)
-          aa(3+1,k_wpxp)
+          !lhs(k_wpxp,3-1)
+          lhs(3+1,k_wpxp)
      .    = - wp2(k) * gr%dzm(k)
 
           ! Thermodynamic superdiagonal [ x xm(k+1,<t+1>) ]
-          !aa(k_wpxp,3+1)
-          aa(3-1,k_wpxp)
+          !lhs(k_wpxp,3+1)
+          lhs(3-1,k_wpxp)
      .    = + wp2(k) * gr%dzm(k)
 
 #ifdef STATS
@@ -511,39 +509,39 @@
         k_xm   = 2*k - 1
         k_wpxp = 2*k
         ! (NR)
-        !aa(k_xm,3-1)   = 0.0
-        !aa(k_xm,3)     = 1.0
-        !aa(k_xm,3+1)   = 0.0
-        !aa(k_wpxp,3-2) = 0.0
-        !aa(k_wpxp,3)   = 1.0
-        !aa(k_wpxp,3+2) = 0.0
-        aa(3+1,k_xm)   = 0.0
-        aa(3,k_xm)     = 1.0
-        aa(3-1,k_xm)   = 0.0
-        aa(3+2,k_wpxp) = 0.0
-        aa(3,k_wpxp)   = 1.0
-        aa(3-2,k_wpxp) = 0.0
+        !lhs(k_xm,3-1)   = 0.0
+        !lhs(k_xm,3)     = 1.0
+        !lhs(k_xm,3+1)   = 0.0
+        !lhs(k_wpxp,3-2) = 0.0
+        !lhs(k_wpxp,3)   = 1.0
+        !lhs(k_wpxp,3+2) = 0.0
+        lhs(3+1,k_xm)   = 0.0
+        lhs(3,k_xm)     = 1.0
+        lhs(3-1,k_xm)   = 0.0
+        lhs(3+2,k_wpxp) = 0.0
+        lhs(3,k_wpxp)   = 1.0
+        lhs(3-2,k_wpxp) = 0.0
 
         k      = gr%nnzp
         k_xm   = 2*k - 1
         k_wpxp = 2*k
         ! (NR)
-        !aa(k_xm,3-1)   = 0.0
-        !aa(k_xm,3)     = 1.0
-        !aa(k_xm,3+1)   = 0.0
-        !aa(k_wpxp,3-2) = 0.0
-        !aa(k_wpxp,3)   = 1.0
-        !aa(k_wpxp,3+2) = 0.0
-        aa(3+1,k_xm)   = 0.0
-        aa(3,k_xm)     = 1.0
-        aa(3-1,k_xm)   = 0.0
-        aa(3+2,k_wpxp) = 0.0
-        aa(3,k_wpxp)   = 1.0
-        aa(3-2,k_wpxp) = 0.0
+        !lhs(k_xm,3-1)   = 0.0
+        !lhs(k_xm,3)     = 1.0
+        !lhs(k_xm,3+1)   = 0.0
+        !lhs(k_wpxp,3-2) = 0.0
+        !lhs(k_wpxp,3)   = 1.0
+        !lhs(k_wpxp,3+2) = 0.0
+        lhs(3+1,k_xm)   = 0.0
+        lhs(3,k_xm)     = 1.0
+        lhs(3-1,k_xm)   = 0.0
+        lhs(3+2,k_wpxp) = 0.0
+        lhs(3,k_wpxp)   = 1.0
+        lhs(3-2,k_wpxp) = 0.0
 
 !       Perform LU decomposition (NR)
 
-!       call bandec( aa, 2*gr%nnzp, 2, 2, 2*gr%nnzp, 5, al, 2, indx, d, 
+!       call bandec( lhs, 2*gr%nnzp, 2, 2, 2*gr%nnzp, 5, al, 2, indx, d, 
 !    .               isValid )
 
         return
@@ -554,16 +552,17 @@
         subroutine mixing_solve( solve_type, liter, dt, taum,
      .                           xm, wpxp, xpthvp, xm_forcing,
      .                           rhot, rhom, exner, rcm, Ncm,  ! Brian
-     .                           cond_rrm, auto_rrm, accr_rrm, ! Brian
+     .                           hm_tndcy,
      .                           Fcsed, sed_rcm,               ! Brian
-     .                           aa, dd, C7_Skw_fnc, isValid )
+     .                           lhs, dd, C7_Skw_fnc, isValid )
 
         use constants
         use grid_class
         use lapack_wrap, only: band_solve
         use model_flags, only:
-     .    cloud_sed, ! Cloud sedimentation flag -Brian
-     .    kk_rain    ! Khairoutdinov and Kogan (2000) drizzle scheme -Brian
+     .    cloud_sed,   ! Cloud sedimentation flag -Brian
+     .    kk_rain,     ! Khairoutdinov and Kogan (2000) drizzle scheme -Brian
+     .    lcoamps_micro! COAMPS(R) microphysics
 #ifdef STATS
         use statistics
 #endif /*STATS*/
@@ -578,21 +577,19 @@
         logical, intent(in) :: 
      .  liter ! Whether the mean and flux terms are prognostic
 
-        real, intent(in)    :: dt ! Timestep              [s]
+        real, intent(in) :: dt      ! Timestep              [s]
 
         real, intent(in), dimension(gr%nnzp) :: 
-     .  taum,      ! Tau on moment. grid                  [s]
-     .  rhot,      ! Rho (density) on thermo. grid -Brian [kg/m^3]
-     .  rhom,      ! Rho (density) on moment. grid -Brian [kg/m^3]
-     .  exner,     ! Exner function -Brian                [-]
-     .  rcm,       ! Liquid water mixing ratio -Brian     [kg/kg] 
-     .  Ncm,       ! Cloud droplet number conc. -Brian    [num/m^3]
-     .  cond_rrm,  ! rrm condensation/evaporation -Brian  [(kg/kg)/s]
-     .  auto_rrm,  ! rrm autoconversion -Brian            [(kg/kg)/s]   
-     .  accr_rrm,  ! rrm accretion -Brian                 [(kg/kg)/s]
-     .  xpthvp,    ! x' theta_v'                          [(units)(K)]
-     .  xm_forcing,! xm forcing -Brian                    [(units)/s] 
-     .  C7_Skw_fnc ! C7 parameter (Skw dependent)         [-] 
+     .  taum,        ! Tau on moment. grid                  [s]
+     .  rhot,        ! Rho (density) on thermo. grid -Brian [kg/m^3]
+     .  rhom,        ! Rho (density) on moment. grid -Brian [kg/m^3]
+     .  exner,       ! Exner function -Brian                [-]
+     .  rcm,         ! Liquid water mixing ratio -Brian     [kg/kg] 
+     .  Ncm,         ! Cloud droplet number conc. -Brian    [num/m^3]
+     .  hm_tndcy,    ! Change in r_t or theta_l due to micro[(units)/s]  
+     .  xpthvp,      ! x' theta_v'                          [(units)(K)]
+     .  xm_forcing,  ! xm forcing -Brian                    [(units)/s] 
+     .  C7_Skw_fnc   ! C7 parameter (Skw dependent)         [-] 
 
         ! Input/Output
         real, intent(inout), dimension(gr%nnzp) :: 
@@ -600,7 +597,7 @@
      .  wpxp ! Flux term                                  [units vary] 
 
         real, intent(inout), dimension(5,2*gr%nnzp) :: 
-     .  aa   ! Left hand side (LAPACK)
+     .  lhs  ! Left hand side (LAPACK)
         real, intent(inout), dimension(2*gr%nnzp) :: 
      .  dd   ! Right hand side (LAPACK)
 
@@ -617,7 +614,7 @@
 
         ! Local Variables
         real, dimension(2*gr%nnzp) :: 
-     .  xx ! Solution to band diagonal system
+     .  solution ! Solution to band diagonal system
 
         ! Indices
         integer :: k, km1, kp1
@@ -630,6 +627,7 @@
      .    ixm_ta,
      .    ixm_ma,
      .    ixm_f,
+     .    ixm_mc,
      .    iwpxp_bt,
      .    iwpxp_ma,
      .    iwpxp_ta,
@@ -647,6 +645,7 @@
           ixm_ta    = irtm_ta
           ixm_ma    = irtm_ma
           ixm_f     = irtm_forcing
+          ixm_mc    = irtm_mc
           iwpxp_bt  = iwprtp_bt
           iwpxp_ma  = iwprtp_ma
           iwpxp_ta  = iwprtp_ta
@@ -662,6 +661,7 @@
           ixm_ta    = ithlm_ta
           ixm_ma    = ithlm_ma
           ixm_f     = ithlm_forcing
+          ixm_mc    = ithlm_mc
           iwpxp_bt  = iwpthlp_bt
           iwpxp_ma  = iwpthlp_ma
           iwpxp_ta  = iwpthlp_ta
@@ -702,6 +702,12 @@
           if ( ixm_f > 0 ) then
             zt%x(:,ixm_f) = zt%x(:,ixm_f) + xm_forcing
             zt%n(:,ixm_f) = zt%n(:,ixm_f) + 1
+          end if
+          ! Explicit contributions for xm from microphysics 
+          ! (including drizzle )
+          if ( ixm_mc > 0 .and. ( kk_rain .or. lcoamps_micro ) ) then
+            zt%x(:,ixm_mc) = zt%x(:,ixm_mc) + hm_tndcy
+            zt%n(:,ixm_mc) = zt%n(:,ixm_mc) + 1
           end if
 
           ! wpxp total time tendency (1st calculation)
@@ -871,28 +877,25 @@
 
           ! + xm_microphysics -- rain effects.
           ! Code addition by Brian for rain.
-          if ( kk_rain ) then
+          if ( kk_rain .or. lcoamps_micro ) then
+            select case(trim( solve_type ))
+            case ( "rtm", "thlm" ) 
+            dd(k_xm) = dd(k_xm) + hm_tndcy(k)  ! thlm/rtm only; Brian
 
-             select case(trim( solve_type ))
-             case ( "rtm" ) 
-                dd(k_xm) = dd(k_xm)
-     .                     - cond_rrm(k) - auto_rrm(k) - accr_rrm(k)    ! rtm only; Brian
-             case ( "thlm" )
-                dd(k_xm) = dd(k_xm) - ( Lv / (Cp*exner(k)) ) *
-     .                    ( -cond_rrm(k) - auto_rrm(k) - accr_rrm(k) )  ! thlm only; Brian
-             ! The following cases used the formulas for rt and theta in order
-             ! to test the scalar code.  However, they need to be commented out
-             ! because they do not apply to such things as CO2.  Rain water
-             ! effects would have no effect on such a parameter.
-!             case ( "sclrm_rtm" ) 
-!                dd(k_xm) = dd(k_xm) 
-!     .                     - cond_rrm(k) - auto_rrm(k) - accr_rrm(k)    ! sclrm = rtm
-!             case ( "sclrm_thlm" )
-!                dd(k_xm) = dd(k_xm) - ( Lv / (Cp*exner(k)) ) *
+            ! The following cases used the formulas for rt and theta in order
+            ! to test the scalar code.  However, they need to be commented out
+            ! because they do not apply to such things as CO2.  Rain water
+            ! effects would have no effect on such a parameter.
+!            case ( "sclrm_rtm" ) 
+!              dd(k_xm) = dd(k_xm) 
+!     .                 - cond_rrm(k) - auto_rrm(k) - accr_rrm(k)    ! sclrm = rtm
+!            case ( "sclrm_thlm" )
+!              dd(k_xm) = dd(k_xm) - ( Lv / (Cp*exner(k)) ) *
 !     .                    ( -cond_rrm(k) - auto_rrm(k) - accr_rrm(k) )  ! sclrm = thlm
+             case default
+               ! Add nothing
              end select
-
-          end if ! kk_rain
+           end if ! kk_rain .or lcoamps_micro
 
 !         wpxp: time tendency and buoyancy
 
@@ -920,14 +923,14 @@
 
         ! Solve system (NR)
 
-!       call banbks( aa, 2 * gr%nnzp, 2, 2, 
+!       call banbks( lhs, 2 * gr%nnzp, 2, 2, 
 !    .               2 * gr%nnzp, 5, al, 2, indx, dd )
 
         ! Perform LU decomposition and solve system
         ! Note: band_solvex has the same interface and can compute
         ! additional diagnostics at a higher computational cost.
         call band_solve( solve_type, 2, 2, 2*gr%nnzp, 1,
-     .                   aa, dd, xx, isValid )
+     .                   lhs, dd, solution, isValid )
 
         if ( .not. isValid ) return
 
@@ -940,8 +943,8 @@
 
           !xm(k)   = dd(k_xm)
           !wpxp(k) = dd(k_wpxp)
-          xm(k)   = xx(k_xm)
-          wpxp(k) = xx(k_wpxp)
+          xm(k)   = solution(k_xm)
+          wpxp(k) = solution(k_wpxp)
 
         end do ! k=1..gr%nnzp
 

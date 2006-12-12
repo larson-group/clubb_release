@@ -1,103 +1,106 @@
 !-----------------------------------------------------------------------
-! $Id: prog_variables.F,v 1.10 2006-11-01 20:42:56 mjfalk Exp $
+! $Id: prog_variables.F,v 1.11 2006-12-12 20:21:17 dschanen Exp $
         module prognostic_variables
 
-! This module contains definitions of all prognostic
-! arrays used in the single column model, as well as subroutines
-! to allocate, deallocate and initialize them.
+!       This module contains definitions of all prognostic
+!       arrays used in the single column model, as well as subroutines
+!       to allocate, deallocate and initialize them.
 
-! Note that while these are all same dimension, there is a
-! thermodynamic and momentum grid and they have different levels
+!       Note that while these are all same dimension, there is a
+!       thermodynamic grid and a momentum grid, and the grids have 
+!       different points.
 !-----------------------------------------------------------------------
+
         implicit none
 
-! Prognostic variables
+        ! Prognostic variables
+        real, target, allocatable, dimension(:) ::
+     .  um,     ! u wind                        [m/s]
+     .  vm,     ! v wind                        [m/s]
+     .  upwp,   ! vertical u momentum flux      [m^2/s^2]
+     .  vpwp,   ! vertical v momentum flux      [m^2/s^2]
+     .  thlm,   ! liquid potential temperature  [K]
+     .  rtm,    ! total water mixing ratio      [kg/kg]
+     .  wprtp,  ! w'rt'                         [m kg/s kg]
+     .  wpthlp, ! w'thl'                        [m K /s]
+     .  wp2,    ! w'^2                          [m^2/s^2]
+     .  wp3,    ! w'^3                          [m^3/s^3]
+     .  rtp2,   ! rt'^2                         [kg/kg]
+     .  thlp2,  ! thl'^2                        [K^2]
+     .  rtpthlp ! rt'thl'                       [kg/kg K]
 
-        real, target, allocatable :: um(:)      ! u wind
-        real, target, allocatable :: vm(:)      ! v wind
+        real, target, allocatable, dimension(:) ::
+     .  p,           ! Pressure (Pa) on thermodynamic points    [Pa]
+     .  exner,       ! Exner function = ( p / p0 ) ** kappa     [-]
+     .  rhot,        ! Density                                  [kg/m^3]
+     .  rhom,        ! Density                                  [kg/m^3]
+     .  thlm_forcing,! thlm large-scale forcing                 [K/s]
+     .  rtm_forcing  ! rtm large-scale forcing                  [kg/kg/s]
 
-        real, allocatable, target :: upwp(:)      ! vertical u momentum flux
-        real, allocatable, target :: vpwp(:)      ! vertical v momentum flux
+        ! Imposed large scale w
+        real, target, allocatable, dimension(:) ::
+     .  wmm,! w on momentum levels              [m/s]
+     .  wmt ! w on thermodynamic levels         [m/s]
 
-        real, target, allocatable :: thlm(:)    ! liquid potential temperature
-        real, target, allocatable :: rtm(:)     ! total water mixing ratio
-        real, target, allocatable :: wprtp(:)   ! w'rt'
-        real, target, allocatable :: wpthlp(:)  ! w'thl'
-        real, target, allocatable :: wp2(:)     ! w'^2
-        real, target, allocatable :: wp3(:)     ! w'^3
-        real, target, allocatable :: rtp2(:)    ! rt'^2
-        real, target, allocatable :: thlp2(:)   ! thl'^2
-        real, target, allocatable :: rtpthlp(:) ! rt'thl'
+        ! PDF width parameter: momentum levels
+        real, target, allocatable, dimension(:) :: Scm  ! [-]
 
-        real, target, allocatable :: p(:)
-                         ! pressure (Pa) on thermodynamic points
-        real, target, allocatable :: exner(:)        
-                         ! exner = ( p / p0 ) ** kappa
+        ! Mixing Lengths
+        real, target, allocatable, dimension(:) :: taum ! [s]
 
-        real, target, allocatable :: rhot(:) ! density (kg/m^3)
-        real, target, allocatable :: rhom(:) ! density (kg/m^3)
+        ! Cloud water variables
+        real, target, allocatable, dimension(:) ::
+     .  rcm,  ! Cloud water mixing ratio                [kg/kg]
+     .  Ncm,  ! Cloud droplet number concentration      [num/m^3]
+     .  Ncnm, ! Cloud nuclei number concentration       [num/m^3]
+     .  Nim,  ! Ice nuclei number concentration         [num/m^3]
+     .  cf    ! Cloud fraction                          [%]
 
-        real, target, allocatable :: thlm_forcing(:) ! thlm ls forcing
-        real, target, allocatable :: rtm_forcing(:)  ! rtm ls forcing
+        ! Prognostic drizzle variable array
+        real, target, allocatable, dimension(:,:) :: hydromet
+        ! Contains:
+        ! 1 rrm      Rain water mixing ratio               [kg/kg]
+        ! 2 Nrm      Rain droplet number concentration     [num/m^3]
+        ! 3 rsnow    Snow water mixing ratio               [kg/kg]
+        ! 4 rice     Ice water mixing ratio                [kg/kg]
+        ! 5 rgraupel Graupel water mixing ratio            [kg/kg]
 
-! Imposed large scale w
+        ! Surface fluxes
+        real :: 
+     .  wpthlp_sfc,        ! w'thl'      [m K/s]
+     .  wprtp_sfc,         ! w'rt'       [m kg/kg s]
+     .  upwp_sfc, vpwp_sfc ! u'w' & v'w' [m^2/s^2]
 
-        real, target, allocatable :: wmm(:) ! momentum levels
-        real, target, allocatable :: wmt(:) ! thermodynamic levels
-
-! PDF width parameter: momentum levels
-
-        real, target, allocatable :: Scm(:)   
-
-! Mixing Lengths
-
-        real, target, allocatable :: taum(:)
-
-! Cloud water variables
-
-        real, allocatable, target :: rcm(:)
-        real, allocatable, target :: Ncm(:)
-        real, allocatable, target :: cf(:)
-
-        real, allocatable, target :: rim(:)    ! ice water mixing ratio; Michael Falk, 1 Nov 2006
-        real, allocatable, target :: rgm(:)    ! graupel water mixing ratio; Michael Falk, 1 Nov 2006
-        real, allocatable, target :: rsnowm(:) ! snow water mixing ratio; Michael Falk, 1 Nov 2006
-
-
-! Prognostic drizzle variables
-
-        real, allocatable, target :: rrm(:)  ! rain water mixing ratio  ! Brian
-        real, allocatable, target :: Nrm(:)  ! rain droplet number conc.! Brian
-
-! Surface fluxes
-
-        real :: wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc
-
-! More surface data
-
-        real :: Tsfc             ! surface temperature (K)
-        real :: psfc             ! surface pressure (Pa)
-        real :: SE               ! sensible heat flux (K/s)
-        real :: LE               ! latent heat flux (1/s)
+        ! More surface data
+        real :: 
+     .  Tsfc, ! surface temperature     [K]
+     .  psfc, ! surface pressure        [Pa]
+     .  SE,   ! sensible heat flux      [K/s]
+     .  LE    ! latent heat flux        [1/s]
 
 #ifdef SCALARS
 ! New mixing scheme variables
 
-        real, target, allocatable :: sclrm(:,:)          ! passive scalars
-        real, target, allocatable :: sclrm_forcing(:,:)  ! scalars' forcing
-
-        real, target, allocatable :: edsclrm(:,:)  ! eddy-diff. scalar mean
-        real, target, allocatable :: edsclrmt(:,:) ! edsclrm tendency
+        real, target, allocatable, dimension(:,:) ::
+     .  sclrm,         ! Mean passive scalars           [units vary]
+     .  sclrm_forcing, ! Scalars' forcing               [units/s]
+     .  edsclrm,       ! Mean eddy-diffusivity scalars  [units vary]
+     .  edsclrmt       ! Mean Edsclrm tendency          [units/s]
 
 #endif /*SCALARS*/
 
         contains
 !-----------------------------------------------------------------------
-!  Allocates and Initializes prognostic scalar and array variables 
-!  for the HOC model code
-!-----------------------------------------------------------------------
         subroutine setup_prognostic_variables( nzmax )
-        use constants, only: sclr_dim, emin
+
+!       Description:
+!       Allocates and Initializes prognostic scalar and array variables 
+!       for the HOC model code
+
+!       References:
+!       None
+!-----------------------------------------------------------------------
+        use constants, only: sclr_dim, emin, hydromet_dim
         use model_flags
 
         implicit none
@@ -145,20 +148,15 @@
 
         allocate( taum(1:nzmax) ) 
 
-! Cloud water variables
+        ! Cloud water variables
 
         allocate( rcm(1:nzmax) )
         allocate( Ncm(1:nzmax) )
+        allocate( Ncnm(1:nzmax) )
+        allocate( Nim(1:nzmax) )
         allocate( cf(1:nzmax) )
 
-        allocate( rim(1:nzmax) )    !
-        allocate( rgm(1:nzmax) )    !
-        allocate( rsnowm(1:nzmax) ) ! Michael Falk, 1 Nov 2006
-
-! Prognostic drizzle variables
-
-        allocate( rrm(1:nzmax) )       ! rain water mixing ratio  ! Brian
-        allocate( Nrm(1:nzmax) )       ! rain droplet number conc.  ! Brian
+        allocate( hydromet(1:nzmax,1:hydromet_dim) ) ! All hydrometeor fields
 
 #ifdef SCALARS
 
@@ -173,72 +171,65 @@
 
 #endif /*SCALARS*/
 
-!   --- Initializaton ---
+!--------- Set initial values for array variables ---------
 
-! Prognostic variables
+        ! Prognostic variables
 
-        um           = 0.0     ! u wind
-        vm           = 0.0     ! v wind
+        um(1:nzmax)      = 0.0     ! u wind
+        vm (1:nzmax)     = 0.0     ! v wind
 
-        upwp         = 0.0     ! vertical u momentum flux
-        vpwp         = 0.0     ! vertical v momentum flux
+        upwp(1:nzmax)    = 0.0     ! vertical u momentum flux
+        vpwp(1:nzmax)    = 0.0     ! vertical v momentum flux
 
-        thlm         = 0.0     ! liquid potential temperature
-        rtm          = 0.0     ! total water mixing ratio
-        wprtp        = 0.0     ! w'rt'
-        wpthlp       = 0.0     ! w'thl'
-        wp2          = 2./3. * emin  ! w'^2
-        wp3          = 0.0     ! w'^3
-        rtp2         = 0.0     ! rt'^2
-        thlp2        = 0.0     ! thl'^2
-        rtpthlp      = 0.0     ! rt'thl'
+        thlm(1:nzmax)    = 0.0     ! liquid potential temperature
+        rtm(1:nzmax)     = 0.0     ! total water mixing ratio
+        wprtp(1:nzmax)   = 0.0     ! w'rt'
+        wpthlp(1:nzmax)  = 0.0     ! w'thl'
+        wp2(1:nzmax)     = 2./3. * emin  ! w'^2
+        wp3(1:nzmax)     = 0.0     ! w'^3
+        rtp2(1:nzmax)    = 0.0     ! rt'^2
+        thlp2(1:nzmax)   = 0.0     ! thl'^2
+        rtpthlp(1:nzmax) = 0.0     ! rt'thl'
  
-        p     = 0.0    ! pressure (Pa)
-        exner = 0.0    ! exner
-        rhot  = 0.0    ! density on thermo. levels
-        rhom  = 0.0    ! density on moment. levels
+        p(1:nzmax)     = 0.0    ! pressure (Pa)
+        exner(1:nzmax) = 0.0    ! exner
+        rhot(1:nzmax)  = 0.0    ! density on thermo. levels
+        rhom(1:nzmax)  = 0.0    ! density on moment. levels
 
-        thlm_forcing = 0.0     ! thlm large scale forcing
-        rtm_forcing  = 0.0     ! rtm large scale forcing
+        thlm_forcing(1:nzmax) = 0.0     ! thlm large-scale forcing
+        rtm_forcing(1:nzmax)  = 0.0     ! rtm large-scale forcing
 
-! Imposed large scale w
+        ! Imposed large scale w
 
-        wmm = 0.0      ! momentum levels
-        wmt = 0.0      ! thermodynamic levels
+        wmm(1:nzmax) = 0.0      ! Momentum levels
+        wmt(1:nzmax) = 0.0      ! Thermodynamic levels
 
-! PDF width parameter: momentum levels
+        ! PDF width parameter: momentum levels
 
-        Scm  = 0.0 
+        Scm(1:nzmax)  = 0.0 
 
-! Mixing lengths
+        ! Mixing lengths
 
-        taum = 0.0
+        taum(1:nzmax) = 0.0
 
-! Cloud water variables
+        ! Cloud water variables
 
-        rcm = 0.0
-        Ncm = 0.0
-        cf  = 0.0
+        rcm(1:nzmax)  = 0.0
+        Ncm(1:nzmax)  = 0.0
+        Ncnm(1:nzmax) = 0.0
+        Nim(1:nzmax)  = 0.0
+        cf(1:nzmax)   = 0.0
 
-        rim = 0.0    !
-        rgm = 0.0    !
-        rsnowm = 0.0 ! Michael Falk, 1 Nov 2006
-
-! Prognostic drizzle variables
-        
-        ! These must always be allocated, but not necessarily initialized
-        if ( kk_rain ) then
-          rrm          = 0.0  ! rain water mixing ratio  ! Brian
-          Nrm          = 0.0  ! rain droplet number conc.! Brian
-        end if ! kk_rain
+        ! Hydrometer types
+        hydromet(1:nzmax,1:hydromet_dim) = 0.0
 
 #ifdef SCALARS
-! New mixing scheme Variables
-        sclrm(:,:)         = 0.0
-        sclrm_forcing(:,:) = 0.0
+        ! Passive scalars 
+        sclrm(1:nzmax,1:sclr_dim)         = 0.0
+        sclrm_forcing(1:nzmax,1:sclr_dim) = 0.0
 
-        edsclrm(:,:)       = 0.0
-        edsclrmt(:,:)      = 0.0
+        edsclrm(1:nzmax,1:sclr_dim)       = 0.0
+        edsclrmt(1:nzmax,1:sclr_dim)      = 0.0
 #endif /*SCALARS*/
 
 
@@ -248,7 +239,7 @@
         subroutine cleanup_prognostic_variables
         implicit none
 
-! Prognostic variables
+        ! Prognostic variables
 
         deallocate( um )        ! u wind
         deallocate( vm )        ! v wind
@@ -274,37 +265,33 @@
         deallocate( thlm_forcing )
         deallocate( rtm_forcing )
 
-! Imposed large scale w
+        ! Imposed large scale w
 
         deallocate( wmm )       ! momentum levels
         deallocate( wmt )       ! thermodynamic levels
 
-! PDF width parameter
+        ! PDF width parameter
 
         deallocate( Scm )
 
-! Mixing lengths
+        ! Mixing lengths
 
         deallocate( taum )
 
-! Cloud water variables
+        ! Cloud water variables
 
         deallocate( rcm )
         deallocate( Ncm )
+        deallocate( Ncnm )
+        deallocate( Nim )
         deallocate( cf )
 
-        deallocate( rim )    !
-        deallocate( rgm )    !
-        deallocate( rsnowm ) ! Michael Falk, 1 Nov 2006
+        ! Prognostic drizzle variables
 
-! Prognostic drizzle variables
-
-        deallocate( Nrm )       ! rain droplet number conc.! Brian
-        deallocate( rrm )       ! rain water mixing ratio  ! Brian
-
+        deallocate( hydromet )  ! Hydrometeor fields
 
 #ifdef SCALARS
-! New mixing scheme structures
+        ! Passive scalars
 
         deallocate( sclrm )
         deallocate( sclrm_forcing )

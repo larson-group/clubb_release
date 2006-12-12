@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F,v 1.13 2006-11-02 01:40:37 dschanen Exp $
+! $Id: diag_variables.F,v 1.14 2006-12-12 20:21:17 dschanen Exp $
         module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -12,162 +12,148 @@
 
         implicit none
 
-! Diagnostic variables
+        ! Diagnostic variables
 
-!       real, target, allocatable :: Scm(:)   ! PDF width parameter: m point
-        real, target, allocatable :: Sct(:)   ! PDF width parameter: t point
+        real, target, allocatable, dimension(:) ::
+     .  Sct,    ! PDF width parameter: t point          [-]
+     .  Skwm,   ! Skw on moment. grid                   [-]
+     .  Skwt,   ! Skw on thermo. grid                   [-]
+     .  ug,     ! u geostrophic wind                    [m/s]
+     .  vg,     ! v geostrophic wind                    [m/s]
+     .  um_init,! Initial u wind; Michael Falk,         [m/s]
+     .  vm_init,! Initial v wind; Michael Falk,         [m/s]
+     .  thvm,   ! Virtual potential Temperature         [K]
+     .  shear   ! Wind shear production
 
-        real, target, allocatable :: Skwm(:)  ! Skw on moment. grid
-        real, target, allocatable :: Skwt(:)  ! Skw on thermo. grid
+        real, target, allocatable, dimension(:) ::
+     .  sed_rcm,     ! sedimentation factor in rcm ! Brian
+     .  rsm,         ! Saturation mixing ratio  ! Brian
+     .  Fcsed ! Cloud water sedimentation flux (momentum point) [kg(cloud water)]/[s*m^2]
 
-        real, target, allocatable :: ug(:)    ! u geostrophic wind
-        real, target, allocatable :: vg(:)    ! v geostrophic wind
+        real, target, allocatable, dimension(:) ::
+     .  Frad, ! Radiative flux (momentum point)
+     .  radht ! SW + LW heating rate
 
-        real, target, allocatable :: um_init(:) ! initial u wind; Michael Falk, 1 Nov 2006
-        real, target, allocatable :: vm_init(:) ! initial v wind; Michael Falk, 1 Nov 2006
-        real, target, allocatable :: nc3(:) ! cloud droplet concentration; Michael Falk, 1 Nov 2006
-        real, target, allocatable :: ni3(:) ! ice crystal concentration; Michael Falk, 1 Nov 2006
-        real, target, allocatable :: nr3(:) ! raindrop concentration; Michael Falk, 1 Nov 2006
-        real, target, allocatable :: ncn3(:) ! cloud nucleus concentration; Michael Falk, 1 Nov 2006
+        real, allocatable, target, dimension(:) ::
+     .  hm_rt_tndcy,
+     .  hm_thl_tndcy
 
-        real, allocatable, target :: thvm(:)      ! virtual potential temp 
-        real, allocatable, target :: sed_rcm(:)   ! sedimentation factor in rcm ! Brian
-        real, allocatable, target :: rsm(:)       ! saturation mixing ratio  ! Brian
-        real, allocatable, target :: cond_rrm(:)  ! condensation factor in rrm ! Brian
-        real, allocatable, target :: auto_rrm(:)  ! autoconversion factor in rrm ! Brian
-        real, allocatable, target :: accr_rrm(:)  ! accretion factor in rrm ! Brian
-        real, allocatable, target :: sed_rrm(:)   ! sedimentation output for rrm ! Brian
-        real, allocatable, target :: diff_rrm(:)  ! diffusion output for rrm ! Brian
-        real, allocatable, target :: Vrr(:)       ! sedimentation velocity of rain ! Brian
-        real, allocatable, target :: mean_vol_rad(:) ! rain drop mean volume radius ! Brian
-        real, allocatable, target :: rain_rate(:) ! rainfall rate in mm/day ! Brian
-        real, allocatable, target :: Fprec(:)     ! precipitation flux in W/m^2 (momentum point) ! Brian
-        real, allocatable, target :: Fcsed(:)     ! cloud water sedimentation flux (momentum point) ! Brian
-                                                  ! Note: units are [kg(cloud water)]/[s*m^2]
-
-        real, allocatable, target :: Frad(:)      ! Radiative flux (momentum point)
-
-        real, allocatable, target :: radht(:)     ! SW + LW heating rate
-
-        real, allocatable, target :: shear(:)     ! wind shear production
-
-        real, allocatable, target :: diam(:)          ! Icedfs diameter; Michael Falk, 1 Nov 2006
-        real, allocatable, target :: m(:)             ! Icedfs mass; Michael Falk, 1 Nov 2006
-        real, allocatable, target :: dqc_dt_icedfs(:) ! Icedfs change in liquid; Michael Falk, 1 Nov 2006
-        real, allocatable, target :: u_T_cm(:)        ! Icedfs fallspeed (cm/s); Michael Falk, 1 Nov 2006
-
-! Tendency arrays for prognostic variables
-
-        real, allocatable :: umt(:)             ! u wind
-        real, allocatable :: vmt(:)             ! v wind
+        ! Tendency arrays for u and v wind
+        real, target, allocatable, dimension(:) ::
+     .  umt,    ! u wind [m/s^2]
+     .  vmt     ! v wind [m/s^2]
 
         ! Second order moments
-
-        real, target, allocatable :: wprcp(:)     ! w'rc'
-        real, target, allocatable :: thlprcp(:)   ! thl'rc'
-        real, target, allocatable :: rtprcp(:)    ! rt'rc'
+        real, target, allocatable, dimension(:) ::
+     .  wprcp,   ! w'rc'                [m kg/s kg]
+     .  thlprcp, ! thl'rc'              [K kg/kg]
+     .  rtprcp   ! rt'rc'               [kg^2/kg^2]
 
         ! Third order moments
-
-        real, target, allocatable :: wpthlp2(:)   ! w'thl'^2
-        real, target, allocatable :: wp2thlp(:)   ! w'^2thl'
-        real, target, allocatable :: wprtp2(:)    ! w'rt'^2
-        real, target, allocatable :: wp2rtp(:)    ! w'^2rt'
-        real, target, allocatable :: wprtpthlp(:) ! w'rt'thl'
-        real, target, allocatable :: wp2rcp(:)    ! w'^2rc'
+        real, target, allocatable, dimension(:) ::
+     .  wpthlp2,  ! w'thl'^2    [m K^2/s]
+     .  wp2thlp,  ! w'^2 thl'   [m^2 K/s^2]
+     .  wprtp2,   ! w'rt'^2     [m kg^2/kg^2]
+     .  wp2rtp,   ! w'^2rt'     [m^2 kg/kg]
+     .  wprtpthlp,! w'rt'thl'   [m kg K/kg s]
+     .  wp2rcp    ! w'^2 rc'    [m^2 kg/kg s^2]
 
         ! Fourth order moments
-
-        real, allocatable, target :: wp4(:)
+        real, target, allocatable, dimension(:) ::
+     .  wp4 ! w'^4      [m^4/s^4]
 
         ! Buoyancy related moments
+        real, target, allocatable, dimension(:) ::
+     .  wpthvp,  ! w'thv'       [m K/s]
+     .  rtpthvp, ! rt' thv'     [kg K/kg]
+     .  thlpthvp,! thl'thv'     [K^2] 
+     .  wp2thvp  ! w'^2 thv'    [m^2 K/s^2]
 
-        real, allocatable, target :: wpthvp(:)
-        real, allocatable, target :: rtpthvp(:)
-        real, allocatable, target :: thlpthvp(:)
-        real, allocatable, target :: wp2thvp(:)
+        real, target, allocatable, dimension(:) ::
+     .  Kht, ! Eddy diffusivity: zt grid        [m^2/s]
+     .  Khm  ! Eddy diffusivity: zm grid        [m^2/s]
 
-        real, allocatable, target :: Kht(:)        ! eddy diffusivity: zt grid
-        real, allocatable, target :: Khm(:)        ! eddy diffusivity: zm grid
+        ! Mixing lengths
+        real, target, allocatable, dimension(:) ::
+     .  Lscale, lup, ldown ! [m]
 
-        ! mixing lengths
-        real, allocatable, target :: Lscale(:), lup(:), ldown(:)
-
-        real, allocatable, target :: em(:)
-        real, allocatable, target :: taut(:)
-!       real, allocatable, target :: taum(:)
+        real, target, allocatable, dimension(:) ::
+     .  em,  ! em               [m^2/s^2]
+     .  taut ! Dissipation time [s]
 
         ! Surface data
-        real :: ustar            ! average value of friction velocity (m/s)
+        real :: ustar ! Average value of friction velocity [m/s]
 
 #ifdef SCALARS
-! New mixing scheme variables
+        ! Passive scalar variables
+        real, target, allocatable, dimension(:,:) ::
+     .  sclrpthvp,  ! sclr'th_v'
+     .  sclrprtp,   ! sclr'rt'
+     .  sclrp2,     ! sclr'^2
+     .  sclrpthlp,  ! sclr'th_l'
+     .  sclrprcp,   ! sclr'rc'
+     .  wpsclrp,    ! w'sclr'
+     .  wp2sclrp,   ! w'^2 sclr'
+     .  wpsclrp2,   ! w'sclr'^2
+     .  wpsclrprtp, ! w'sclr'rt'
+     .  wpsclrpthlp,! w'sclr'thl'
+     .  wpedsclrp   ! w'edsclr'
 
-        real, target, allocatable :: sclrpthvp(:,:)      ! sclr'th_v'
-        real, target, allocatable :: sclrprtp(:,:)       ! sclr'rt'
-        real, target, allocatable :: sclrp2(:,:)         ! sclr'^2
-        real, target, allocatable :: sclrpthlp(:,:)      ! sclr'th_l'
-        real, target, allocatable :: sclrprcp(:,:)       ! sclr'rc'
-
-        real, target, allocatable :: wpsclrp(:,:)        ! w'sclr'
-        real, target, allocatable :: wp2sclrp(:,:)       ! w'^2 sclr'
-        real, target, allocatable :: wpsclrp2(:,:)       ! w'sclr'^2
-        real, target, allocatable :: wpsclrprtp(:,:)     ! w'sclr'rt'
-        real, target, allocatable :: wpsclrpthlp(:,:)    ! w'sclr'thl'
-
-        real, target, allocatable :: wpedsclrp(:,:)
 #endif /*SCALARS*/
 
-! Variables for tuning
+        ! Interpolated variables for tuning
 #ifdef STATS
-        real, target, allocatable :: wp2zt(:)      ! w'^2 in zt
-        real, target, allocatable :: thlp2zt(:)    
-        real, target, allocatable :: wpthlpzt(:)   
-        real, target, allocatable :: wprtpzt(:)
-        real, target, allocatable :: rtp2zt(:)
-        real, target, allocatable :: rtpthlpzt(:)
+        real, target, allocatable, dimension(:) ::
+     .  wp2zt,    ! w'^2 on thermo. grid
+     .  thlp2zt,  ! thl'^2 on thermo. grid
+     .  wpthlpzt, ! w'thl' on thermo. grid
+     .  wprtpzt,  ! w'rt' on thermo. grid
+     .  rtp2zt,   ! rt'^2 on therm. grid
+     .  rtpthlpzt ! rt'thl' on thermo. grid
+
 #endif /*STATS*/
 
 ! Variables needed for the pdf closure scheme
 !
 !       pdf_parms contains the parameters of the pdf:
 !
-!        pdf_parms(1) = w1
-!        pdf_parms(2) = w2
-!        pdf_parms(3) = sw1
-!        pdf_parms(4) = sw2
-!        pdf_parms(5) = rt1
-!        pdf_parms(6) = rt2
-!        pdf_parms(7) = srt1
-!        pdf_parms(8) = srt2
-!        pdf_parms(9) = thl1
-!        pdf_parms(10) = thl2
-!        pdf_parms(11) = sthl1
-!        pdf_parms(12) = sthl2
-!        pdf_parms(13) = a
-!        pdf_parms(14) = rc1
-!        pdf_parms(15) = rc2
-!        pdf_parms(16) = rsl1
-!        pdf_parms(17) = rsl2
-!        pdf_parms(18) = R1
-!        pdf_parms(19) = R2
-!        pdf_parms(20) = s1
-!        pdf_parms(21) = s2
-!        pdf_parms(22) = ss1
-!        pdf_parms(23) = ss2
-!        pdf_parms(24) = rrtthl
+!        pdf_parms(:,1) = w1
+!        pdf_parms(:,2) = w2
+!        pdf_parms(:,3) = sw1
+!        pdf_parms(:,4) = sw2
+!        pdf_parms(:,5) = rt1
+!        pdf_parms(:,6) = rt2
+!        pdf_parms(:,7) = srt1
+!        pdf_parms(:,8) = srt2
+!        pdf_parms(:,9) = thl1
+!        pdf_parms(:,10) = thl2
+!        pdf_parms(:,11) = sthl1
+!        pdf_parms(:,12) = sthl2
+!        pdf_parms(:,13) = a
+!        pdf_parms(:,14) = rc1
+!        pdf_parms(:,15) = rc2
+!        pdf_parms(:,16) = rsl1
+!        pdf_parms(:,17) = rsl2
+!        pdf_parms(:,18) = R1
+!        pdf_parms(:,19) = R2
+!        pdf_parms(:,20) = s1
+!        pdf_parms(:,21) = s2
+!        pdf_parms(:,22) = ss1
+!        pdf_parms(:,23) = ss2
+!        pdf_parms(:,24) = rrtthl
 
-        real, allocatable, target :: pdf_parms(:,:)
+        real, target, allocatable, dimension(:,:) ::
+     .  pdf_parms
 
-! Latin Hypercube arrays.  Vince Larson 22 May 2005
-        real, allocatable, target :: AKm_est(:)   ! Kessler ac estimate
-        real, allocatable, target :: AKm(:)       ! Exact Kessler ac
-        real, allocatable, target :: AKstd(:)     ! St dev of exact Kessler ac
-        real, allocatable, target :: AKstd_cld(:) ! Stdev of exact w/in cloud ac
-        real, allocatable, target :: rcm_est(:)   ! Monte Carlo rcm estimate
-        real, allocatable, target :: AKm_rcm(:)   ! Kessler ac based on rcm
-        real, allocatable, target :: AKm_rcc(:)   ! Kessler ac based on rcm/cf
-! End Latin hypercube arrays        
+        ! Latin Hypercube arrays.  Vince Larson 22 May 2005
+        real, target, allocatable, dimension(:) ::
+     .  AKm_est,  ! Kessler ac estimate                 [kg/kg]
+     .  AKm,      ! Exact Kessler ac                    [kg/kg]
+     .  AKstd,    ! St dev of exact Kessler ac          [???]
+     .  AKstd_cld,! Stdev of exact w/in cloud ac        [???]
+     .  rcm_est,  ! Monte Carlo rcm estimate            [kg/kg]
+     .  AKm_rcm,  ! Kessler ac based on rcm             [???]
+     .  AKm_rcc   ! Kessler ac based on rcm/cf          [???]
 
         contains
 
@@ -180,48 +166,35 @@
         use constants, only: sclr_dim, emin
 
         implicit none
- 
+
+        ! Constant Parameters 
         integer, parameter :: pdf_dimension = 26
 
+        ! Input Variables
         integer, intent(in) :: nzmax
 
-!   --- Allocation ---
+        !   --- Allocation ---
 
-! Diagnostic variables
+        ! Diagnostic variables
 
-!       allocate( Scm(1:nzmax) )       ! PDF width parameter: m point
         allocate( Sct(1:nzmax) )       ! PDF width parameter: t point
         allocate( Skwm(1:nzmax) )      ! Skw
         allocate( Skwt(1:nzmax) )      ! Skw
         allocate( ug(1:nzmax) )        ! u geostrophic wind
         allocate( vg(1:nzmax) )        ! v geostrophic wind
         allocate( um_init(1:nzmax) )   ! initial u wind; Michael Falk, 1 Nov 2006
-        allocate( vm_init(1:nzmax) )   ! initial u wind; Michael Falk, 1 Nov 2006
-        allocate( nc3(1:nzmax) )       ! cloud droplet concentration; Michael Falk, 1 Nov 2006
-        allocate( ni3(1:nzmax) )       ! ice crystal concentration; Michael Falk, 1 Nov 2006
-        allocate( nr3(1:nzmax) )       ! raindrop concentration; Michael Falk, 1 Nov 2006
-        allocate( ncn3(1:nzmax) )      ! cloud nucleus concentration; Michael Falk, 1 Nov 2006
+        allocate( vm_init(1:nzmax) )   ! Initial u wind; Michael Falk, 1 Nov 2006
+        allocate( thvm(1:nzmax) )      ! Virtual potential temperature
 
-        allocate( thvm(1:nzmax) )      ! virtual potential temperature
-
-        allocate( rsm(1:nzmax) )       ! saturation mixing ratio  ! Brian
+        allocate( rsm(1:nzmax) )       ! Saturation mixing ratio  ! Brian
 
 ! Tendency arrays for prognostic variables
 
         allocate( umt(1:nzmax) )       ! u wind
         allocate( vmt(1:nzmax) )       ! v wind
 
-        if ( kk_rain ) then
-          allocate( cond_rrm(1:nzmax) )  ! condensation factor in rrm ! Brian
-          allocate( auto_rrm(1:nzmax) )  ! autoconversion factor in rrm ! Brian
-          allocate( accr_rrm(1:nzmax) )  ! accretion factor in rrm ! Brian
-          allocate( sed_rrm(1:nzmax) )   ! sedimentation output for rrm ! Brian
-          allocate( diff_rrm(1:nzmax) )  ! diffusion output for rrm ! Brian
-          allocate( Vrr(1:nzmax) )       ! sedimentation velocity of rain ! Brian
-          allocate( mean_vol_rad(1:nzmax) ) ! rain drop mean volume radius ! Brian
-          allocate( rain_rate(1:nzmax) ) ! rainfall rate in mm/day ! Brian
-          allocate( Fprec(1:nzmax) )     ! precipitation flux in W/m^2 (momentum point) ! Brian
-        end if ! kk_rain
+        allocate( hm_rt_tndcy(1:nzmax) )  ! Change in r_t due to hydrometors
+        allocate( hm_thl_tndcy(1:nzmax) ) ! Change in th_l due to hydrometeors 
 
         if ( cloud_sed ) then
           allocate( sed_rcm(1:nzmax) )   ! sedimentation factor in rcm ! Brian
@@ -231,11 +204,6 @@
         allocate( Frad(1:nzmax) )      ! radiative flux (momentum point)
 
         allocate( radht(1:nzmax) )     ! SW + LW heating rate
-
-        allocate( diam(1:nzmax) )          ! Ice crystal diameter; Michael Falk, 3 Aug-1 Nov 2006
-        allocate( m(1:nzmax) )             ! Ice crystal mass; Michael Falk, 3 Aug-1 Nov 2006
-        allocate( dqc_dt_icedfs(1:nzmax) ) ! Change in liquid due to ice; Michael Falk, 3 Aug-1 Nov 2006
-        allocate( u_T_cm(1:nzmax) )        ! Ice crystal fallspeed; Michael Falk, 3 Aug-1 Nov 2006
 
         allocate( shear(1:nzmax) )     ! wind shear production
 
@@ -324,9 +292,8 @@
 
 !   --- Initializaton ---
 
-! Diagnostic variables
+        ! Diagnostic variables
 
-!       Scm = 0.0      ! PDF width parameter: m point
         Sct = 0.0      ! PDF width parameter: t point
 
         Skwm = 0.0
@@ -336,48 +303,34 @@
         vg  = 0.0      ! v geostrophic wind
         um_init  = 0.0 !
         vm_init  = 0.0 !
-        nc3      = 0.0 !
-        ni3      = 0.0 !
-        nr3      = 0.0 !
-        ncn3     = 0.0 ! Michael Falk, 1 Nov 2006
 
-! Tendency arrays for prognostic variables
+        ! Tendency arrays for prognostic variables
 
         umt = 0.0  ! u wind
         vmt = 0.0  ! v wind
  
-        thvm         = 0.0  ! virtual potential temperature
-        rsm          = 0.0  ! saturation mixing ratio  ! Brian
-        if ( kk_rain ) then
-          cond_rrm     = 0.0  ! condensation factor in rrm ! Brian
-          auto_rrm     = 0.0  ! autoconversion factor in rrm ! Brian
-          accr_rrm     = 0.0  ! accretion factor in rrm ! Brian
-          sed_rrm      = 0.0  ! sedimentation output for rrm ! Brian
-          diff_rrm     = 0.0  ! diffusion output for rrm ! Brian
-          Vrr          = 0.0  ! sedimentation velocity of rain ! Brian
-          mean_vol_rad = 0.0  ! rain drop mean volume radius ! Brian
-          rain_rate    = 0.0  ! rainfall rate in mm/day ! Brian
-        end if ! kk_rain
+        thvm = 0.0  ! Virtual potential temperature
+        rsm  = 0.0  ! Saturation mixing ratio  ! Brian
+
+        hm_rt_tndcy  = 0.0
+        hm_thl_tndcy = 0.0
 
         if ( cloud_sed ) then
-          sed_rcm      = 0.0  ! sedimentation factor in rcm ! Brian
-          Fcsed        = 0.0  ! cloud water sedimentation flux (momentum point) ! Brian
-                              ! Note: units are [kg(cloud water)]/[s*m^2]
+          sed_rcm = 0.0  ! Sedimentation factor in rcm ! Brian
+          Fcsed   = 0.0  ! Cloud water sedimentation flux (momentum point) ! Brian
+                         ! Note: units are [kg(cloud water)]/[s*m^2]
         end if ! cloud_sed
 
-        Frad    = 0.0
+        Frad = 0.0
 
-
-        shear = 0.0    ! wind shear production
+        shear = 0.0    ! Wind shear production
 
         ! Second order moments
-
         wprcp   = 0.0
         thlprcp = 0.0
         rtprcp  = 0.0
 
         ! Third order moments
-
         wpthlp2   = 0.0
         wp2thlp   = 0.0
         wprtp2    = 0.0
@@ -386,45 +339,44 @@
         wprtpthlp = 0.0
 
         ! Fourth order moments
-
         wp4 = 0.0
 
         ! Buoyancy related moments
-
         wpthvp   = 0.0
         rtpthvp  = 0.0
         thlpthvp = 0.0
         wp2thvp  = 0.0
 
+        ! Eddy diffusivity
         Kht      = 0.0
         Khm      = 0.0
 
         em       = emin
+
+        ! Length scale
         Lscale   = 0.0
         lup      = 0.0
         ldown    = 0.0
+
+        ! Dissipation time
         taut     = 0.0
-!       taum     = 0.0
 
-! Array fpr pdf closure scheme
+        ! Array fpr pdf closure scheme
+        pdf_parms(1:nzmax,:) = 0.0
 
-        pdf_parms(:,:) = 0.0
-
-! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
+        ! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
         if ( LH_on ) then
-          AKm_est       = 0.0  ! Kessler ac estimate
-          AKm           = 0.0  ! Exact Kessler ac
-          AKstd         = 0.0  ! St dev of exact Kessler ac
-          AKstd_cld     = 0.0  ! St dev of exact w/in cloud Kessler ac
-          rcm_est       = 0.0  ! Monte Carlo rcm estimate
-          AKm_rcm       = 0.0  ! Kessler ac based on rcm
-          AKm_rcc       = 0.0  ! Kessler ac based on rcm/cf
+          AKm_est   = 0.0  ! Kessler ac estimate
+          AKm       = 0.0  ! Exact Kessler ac
+          AKstd     = 0.0  ! St dev of exact Kessler ac
+          AKstd_cld = 0.0  ! St dev of exact w/in cloud Kessler ac
+          rcm_est   = 0.0  ! Monte Carlo rcm estimate
+          AKm_rcm   = 0.0  ! Kessler ac based on rcm
+          AKm_rcc   = 0.0  ! Kessler ac based on rcm/cf
         end if ! LH_on
-! End of variables for Latin hypercube.
 
 #ifdef SCALARS
-! New mixing scheme Variables
-
+        ! Passive scalars
         sclrprtp(:,:)      = 0.0
         sclrp2(:,:)        = 0.0
         sclrpthvp(:,:)     = 0.0
@@ -444,16 +396,17 @@
         end subroutine setup_diagnostic_variables
 
 !------------------------------------------------------------------------
-! Subroutine to deallocate variables defined in module global
-!
         subroutine cleanup_diagnostic_variables( )
+
+!       Description:
+!       Subroutine to deallocate variables defined in module global
+!------------------------------------------------------------------------
         use model_flags
 
         implicit none
 
-! Diagnostic variables
+! --- Deallocate --- 
 
-!       deallocate( Scm )       ! PDF width parameter: m point
         deallocate( Sct )       ! PDF width parameter: t point
         deallocate( Skwm )
         deallocate( Skwt )
@@ -462,12 +415,7 @@
         deallocate( um_init )   ! u initial
         deallocate( vm_init )   ! v initial
 
-        deallocate( nc3 )   !
-        deallocate( ni3 )   !
-        deallocate( nr3 )   !
-        deallocate( ncn3 )  ! Michael Falk, 1 Nov 2006
-
-! Tendency arrays for prognostic variables
+        ! Tendency arrays for prognostic variables
 
         deallocate( umt )       ! u wind
         deallocate( vmt )       ! v wind
@@ -475,17 +423,8 @@
         deallocate( thvm )      ! virtual potential temperature
         deallocate( rsm )       ! saturation mixing ratio  ! Brian
 
-        if ( kk_rain ) then
-          deallocate( cond_rrm )  ! condensation factor in rrm ! Brian
-          deallocate( auto_rrm )  ! autoconversion factor in rrm ! Brian
-          deallocate( accr_rrm )  ! accretion factor in rrm ! Brian
-          deallocate( sed_rrm )   ! sedimentation output for rrm ! Brian
-          deallocate( diff_rrm )  ! diffusion output for rrm ! Brian
-          deallocate( Vrr )       ! sedimentation velocity of rain ! Brian
-          deallocate( mean_vol_rad ) ! rain drop mean volume radius ! Brian
-          deallocate( rain_rate ) ! rainfall rate in mm/day ! Brian
-          deallocate( Fprec )     ! precipitation flux in W/m^2 (momentum point) ! Brian
-        end if ! kk_rain
+        deallocate( hm_rt_tndcy )
+        deallocate( hm_thl_tndcy )
 
         if ( cloud_sed ) then
           deallocate( sed_rcm )   ! sedimentation factor in rcm ! Brian
@@ -498,11 +437,6 @@
         deallocate( radht )     ! SW + LW heating rate
 
         deallocate( shear )     ! wind shear production
-
-        deallocate( diam )          ! ice crystal diameter; Michael Falk, 1 Nov 2006
-        deallocate( m )             ! ice crystal mass
-        deallocate( dqc_dt_icedfs ) ! change in liquid due to ice
-        deallocate( u_T_cm )        ! ice crystal fallspeed
 
         ! Second order moments
 
@@ -538,24 +472,23 @@
         deallocate( lup )
         deallocate( ldown )
         deallocate( taut )
-!       deallocate( taum )
 
-! Tuning Variables
 #ifdef STATS
-        deallocate( wp2zt )     ! w'^2 in t
-        deallocate( thlp2zt )   ! th_l'^2 in t 
-        deallocate( wpthlpzt )  ! w'th_l' in t
-        deallocate( wprtpzt )   ! w'rt' in t
-        deallocate( rtp2zt )    ! rt'^2 in t
-        deallocate( rtpthlpzt ) ! rt'th_l' in t
+        ! Interpolated variables for tuning
+        deallocate( wp2zt )     ! w'^2 on t
+        deallocate( thlp2zt )   ! th_l'^2 on t 
+        deallocate( wpthlpzt )  ! w'th_l' on t
+        deallocate( wprtpzt )   ! w'rt' on t
+        deallocate( rtp2zt )    ! rt'^2 on t
+        deallocate( rtpthlpzt ) ! rt'th_l' on t
 #endif /*STATS*/
 
 
-! Array for pdf closure scheme
+        ! Array for pdf closure scheme
 
         deallocate( pdf_parms )
 
-! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
+        ! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
         if ( LH_on ) then
           deallocate( AKm_est )   ! Kessler ac estimate
           deallocate( AKm )       ! Exact Kessler ac
@@ -565,11 +498,9 @@
           deallocate( AKm_rcm )   ! Kessler ac based on rcm
           deallocate( AKm_rcc )   ! Kessler ac based on rcm/cf
         end if ! LH_on
-! End of variables for Latin hypercube.
 
 #ifdef SCALARS
-! New mixing scheme structures
-
+        ! Passive scalars
         deallocate( sclrprtp )
         deallocate( sclrp2 )
         deallocate( sclrpthvp )

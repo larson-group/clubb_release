@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.8 2006-11-26 21:45:01 dschanen Exp $
+! $Id: constants.F,v 1.9 2006-12-12 20:21:17 dschanen Exp $
 
         module constants
 
@@ -143,9 +143,10 @@
         real, parameter :: 
      .  eps = 1.0e-10 ! Small value to prevent a divide by zero
 
-        ! Added for new mixing scheme.  
-        ! Without this the intrinsic size() would have to be called often
-        integer, parameter :: sclr_dim = 2
+        
+        integer, parameter :: 
+     .  sclr_dim     = 2, ! Number of passive scalars. 
+     .  hydromet_dim = 5  ! Number of hydrometeor fields.
 
         ! Tolerance for new mixing scheme
         ! Currently it's elements are equal to rttol and thltol

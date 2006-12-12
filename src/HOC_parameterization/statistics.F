@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.10 2006-11-02 01:40:37 dschanen Exp $
+!  $Id: statistics.F,v 1.11 2006-12-12 20:21:17 dschanen Exp $
 
 !  module stats_type
 !  contains:
@@ -95,25 +95,29 @@ c       Indices for statistics in zt file
      .     isct,
      .     irhot,
      .     iNcm,           ! Brian
+     .     iNcnm,
+     .     iNim,
      .     ised_rcm,       ! Brian
      .     irsm,           ! Brian
      .     irrm,           ! Brian
-     .     irgm,           ! Michael Falk
-     .     irim,           ! Michael Falk
-     .     irsnowm,        ! Michael Falk
      .     iNrm,           ! Brian
-     .     iVrr,           ! Brian
-     .     imean_vol_rad,  ! Brian
+     .     imean_vol_rad_rain,  ! Brian
+     .     imean_vol_rad_cloud, ! COAMPS only. dschanen 6 Dec 2006
      .     irain_rate,     ! Brian
      .     iAKm,           ! analytic Kessler.  Vince Larson 22 May 2005 
      .     iAKm_est,       ! LH Kessler.  Vince Larson  22 May 2005
-     .     iradht,         ! Radiative heating.  Dave Schanen 7 Oct 2005
+     .     iradht,         ! Radiative heating. dschanen 7 Oct 2005
      .     iradht_LW,      !   "           "   Long-wave
-     .     iradht_SW,      !   "           "   Short-wave
-     .     idiam,          ! Necessary for icedfs scheme.  Michael Falk, 1 Nov 2006
-     .     im,             ! Necessary for icedfs scheme.  Michael Falk, 1 Nov 2006
-     .     idqc_dt_icedfs, ! Necessary for icedfs scheme.  Michael Falk, 1 Nov 2006
-     .     iu_T_cm         ! Necessary for icedfs scheme.  Michael Falk, 1 Nov 2006
+     .     iradht_SW       !   "           "   Short-wave
+
+        integer ::
+     .    irsnowm,
+     .    irgraupelm,
+     .    iricem,
+     .    idiam,          ! Necessary for icedfs scheme.  Michael Falk
+     .    im,             ! Necessary for icedfs scheme.  Michael Falk
+     .    idqc_dt_icedfs, ! Necessary for icedfs scheme.  Michael Falk
+     .    iu_T_cm         ! Necessary for icedfs scheme.  Michael Falk
 
         ! thlm/rtm budget terms
         integer ::
@@ -121,13 +125,15 @@ c       Indices for statistics in zt file
      .    irtm_ma,      ! rtm mean advect. term
      .    irtm_ta,      ! rtm turb. advect. term
      .    irtm_forcing, ! rtm large scale forcing term
+     .    irtm_mc,     ! rtm change from microphysics
      .    ithlm_bt,     ! thlm total time tendency
      .    ithlm_ma,     ! thlm mean advect. term
      .    ithlm_ta,     ! thlm turb. advect. term
-     .    ithlm_forcing ! thlm large scale forcing term
+     .    ithlm_forcing,! thlm large scale forcing term
+     .    ithlm_mc      ! thlm change from microphysics
 
 
-        integer
+        integer ::
      .     iwp3_bt,
      .     iwp3_ma,
      .     iwp3_ta,
@@ -139,7 +145,8 @@ c       Indices for statistics in zt file
      .     iwp3_dp1,
      .     iwp3_cl
 
-        integer
+        ! Rain mixing ratio budgets
+        integer ::
      .     irrm_bt,
      .     irrm_ma,
      .     irrm_sd,
@@ -147,13 +154,42 @@ c       Indices for statistics in zt file
      .     irrm_cond,
      .     irrm_auto,
      .     irrm_accr,
+     .     irrm_mc,
+     .     irrm_cl
+        integer ::
      .     iNrm_bt,
      .     iNrm_ma,
      .     iNrm_sd,
      .     iNrm_dff,
      .     iNrm_cond,
-     .     iNrm_auto
+     .     iNrm_auto,
+     .     iNrm_mc,
+     .     iNrm_cl
 
+        ! Snow/Ice/Graupel mixing ratio budgets
+        integer ::
+     .     irsnowm_bt,
+     .     irsnowm_ma,
+     .     irsnowm_sd,
+     .     irsnowm_dff,
+     .     irsnowm_mc,
+     .     irsnowm_cl
+        integer ::
+     .     irgraupelm_bt,
+     .     irgraupelm_ma,
+     .     irgraupelm_sd,
+     .     irgraupelm_dff,
+     .     irgraupelm_mc,
+     .     irgraupelm_cl
+        integer ::
+     .     iricem_bt,
+     .     iricem_ma,
+     .     iricem_sd,
+     .     iricem_dff,
+     .     iricem_mc,
+     .     iricem_cl
+
+        ! PDF parameters
         integer
      .     ia,
      .     iw1,
@@ -229,6 +265,14 @@ c       Indices for statistics in zm file
      .     iFrad_SW,  ! Brian
      .     iFprec,    ! Brian
      .     iFcsed     ! Brian
+
+        ! Sedimentation velocities
+        integer ::
+     .    iVrr,     ! Brian
+     .    iVNr,     !  " "
+     .    iVsnow,   ! COAMPS
+     .    iVice,    !  " "
+     .    iVgraupel !  " " 
 
         integer
      .     iwp2_bt,
@@ -400,7 +444,7 @@ c     -----------------------------------------------------------------
 
 !     Internal
 
-      logical lerror
+      logical :: lerror
 
       character(len=200) :: fdir, fname
 
@@ -544,15 +588,12 @@ c     -----------------------------------------------------------------
       isct          = 0
       irhot         = 0
       iNcm          = 0  ! Brian
+      iNcnm         = 0
+      iNim          = 0
       ised_rcm      = 0  ! Brian
       irsm          = 0  ! Brian
       irrm          = 0  ! Brian
-      irgm          = 0  ! Michael Falk
-      irim          = 0  ! Michael Falk
-      irsnowm       = 0  ! Michael Falk
       iNrm          = 0  ! Brian
-      iVrr          = 0  ! Brian
-      imean_vol_rad = 0  ! Brian
       irain_rate    = 0  ! Brian
       iAKm          = 0  ! analytic Kessler.  Vince Larson 22 May 2005
       iAKm_est      = 0  ! LH Kessler.  Vince Larson 22 May 2005
@@ -564,14 +605,23 @@ c     -----------------------------------------------------------------
       idqc_dt_icedfs= 0
       iu_T_cm       = 0
 
+      imean_vol_rad_rain  = 0  ! Brian
+      imean_vol_rad_cloud = 0
+
+      irsnowm       = 0
+      irgraupelm    = 0
+      iricem        = 0
+
       irtm_bt       = 0
       irtm_ma       = 0
       irtm_ta       = 0
       irtm_forcing  = 0
+      irtm_mc       = 0
       ithlm_bt      = 0
       ithlm_ma      = 0
       ithlm_ta      = 0
       ithlm_forcing = 0
+      ithlm_mc      = 0
 
       iwp3_bt       = 0
       iwp3_ma       = 0
@@ -591,12 +641,38 @@ c     -----------------------------------------------------------------
       irrm_cond     = 0
       irrm_auto     = 0
       irrm_accr     = 0
+      irrm_mc       = 0
+      irrm_cl       = 0
+
       iNrm_bt       = 0
       iNrm_ma       = 0
       iNrm_sd       = 0
       iNrm_dff      = 0
       iNrm_cond     = 0
       iNrm_auto     = 0
+      iNrm_mc       = 0
+      iNrm_cl       = 0
+
+      irsnowm_bt    = 0
+      irsnowm_ma    = 0
+      irsnowm_sd    = 0
+      irsnowm_dff   = 0
+      irsnowm_mc    = 0
+      irsnowm_cl    = 0
+
+      irgraupelm_bt = 0
+      irgraupelm_ma = 0
+      irgraupelm_sd = 0
+      irgraupelm_dff= 0
+      irgraupelm_mc = 0
+      irgraupelm_cl = 0
+
+      iricem_bt     = 0
+      iricem_ma     = 0
+      iricem_sd     = 0
+      iricem_dff    = 0
+      iricem_mc     = 0
+      iricem_cl     = 0
 
       ia            = 0
       iw1           = 0
@@ -749,7 +825,7 @@ c     -----------------------------------------------------------------
           iLscale = k
           zt%f%var(iLscale)%ptr => zt%x(:,k)
           zt%f%var(iLscale)%name = "Lscale"
-          zt%f%var(iLscale)%description = "mixing length"
+          zt%f%var(iLscale)%description = "Mixing length"
           zt%f%var(iLscale)%units = "m"
           k = k + 1
 
@@ -761,12 +837,28 @@ c     -----------------------------------------------------------------
           zt%f%var(ithlm_forcing)%units = "K/s"
           k = k + 1
 
+        case ('thlm_mc')
+          ithlm_mc = k
+          zt%f%var(ithlm_mc)%ptr => zt%x(:,k)
+          zt%f%var(ithlm_mc)%name = "thlm_mc"
+          zt%f%var(ithlm_mc)%description = "thetal micro"
+          zt%f%var(ithlm_mc)%units = "K/s"
+          k = k + 1
+
         case ('rtm_forcing')
           irtm_forcing = k
           zt%f%var(irtm_forcing)%ptr => zt%x(:,k)
           zt%f%var(irtm_forcing)%name = "rtm_f"
           zt%f%var(irtm_forcing)%description = "rt forcing"
           zt%f%var(irtm_forcing)%units = "kg/(kg s)"
+          k = k + 1
+
+        case ('rtm_mc')
+          irtm_mc = k
+          zt%f%var(irtm_mc)%ptr => zt%x(:,k)
+          zt%f%var(irtm_mc)%name = "rtm_mc"
+          zt%f%var(irtm_mc)%description = "rt micro"
+          zt%f%var(irtm_mc)%units = "kg/(kg s)"
           k = k + 1
 
         case ('wp3')
@@ -813,7 +905,7 @@ c     -----------------------------------------------------------------
           ilup = k
           zt%f%var(ilup)%ptr => zt%x(:,k)
           zt%f%var(ilup)%name = "lup"
-          zt%f%var(ilup)%description = "upward mixing length"
+          zt%f%var(ilup)%description = "Upward mixing length"
           zt%f%var(ilup)%units = "m"
           k = k + 1
 
@@ -821,7 +913,7 @@ c     -----------------------------------------------------------------
           ildown = k
           zt%f%var(ildown)%ptr => zt%x(:,k)
           zt%f%var(ildown)%name = "ldown"
-          zt%f%var(ildown)%description = "downward mixing length"
+          zt%f%var(ildown)%description = "Downward mixing length"
           zt%f%var(ildown)%units = "m"
           k = k + 1
 
@@ -829,7 +921,7 @@ c     -----------------------------------------------------------------
           itaut = k
           zt%f%var(itaut)%ptr => zt%x(:,k)
           zt%f%var(itaut)%name = "taut"
-          zt%f%var(itaut)%description = "dissipation time"
+          zt%f%var(itaut)%description = "Dissipation time"
           zt%f%var(itaut)%units = "s"
           k = k + 1
 
@@ -837,7 +929,7 @@ c     -----------------------------------------------------------------
           ikht = k
           zt%f%var(ikht)%ptr => zt%x(:,k)
           zt%f%var(ikht)%name = "Kht"
-          zt%f%var(ikht)%description = "eddy diffusivity"
+          zt%f%var(ikht)%description = "Eddy diffusivity"
           zt%f%var(ikht)%units = "m2/s "
           k = k + 1
 
@@ -878,7 +970,7 @@ c     -----------------------------------------------------------------
           zt%f%var(irhot)%ptr => zt%x(:,k)
           zt%f%var(irhot)%name = "rhot"
           zt%f%var(irhot)%description = "density"
-          zt%f%var(irhot)%units = "kg / m^3"
+          zt%f%var(irhot)%units = "kg/m^3"
           k = k + 1
 
         case ('Ncm')           ! Brian
@@ -886,8 +978,26 @@ c     -----------------------------------------------------------------
           zt%f%var(iNcm)%ptr => zt%x(:,k)
           zt%f%var(iNcm)%name = "Ncm"
           zt%f%var(iNcm)%description
-     .    = "cloud droplet number concentration (num/m^3)"
+     .    = "Cloud droplet number concentration (num/m^3)"
           zt%f%var(iNcm)%units = "count/m^3"
+          k = k + 1
+
+        case ('Ncnm')
+          iNcnm = k
+          zt%f%var(iNcnm)%ptr => zt%x(:,k)
+          zt%f%var(iNcnm)%name = "Ncnm"
+          zt%f%var(iNcnm)%description
+     .    = "Cloud nuclei number concentration (num/m^3)"
+          zt%f%var(iNcnm)%units = "count/m^3"
+          k = k + 1
+
+        case ('Nim')           ! Brian
+          iNim = k
+          zt%f%var(iNim)%ptr => zt%x(:,k)
+          zt%f%var(iNim)%name = "Nim"
+          zt%f%var(iNim)%description
+     .    = "Ice crystal number concentration (num/m^3)"
+          zt%f%var(iNim)%units = "count/m^3"
           k = k + 1
 
         case ('sed_rcm')       ! Brian
@@ -904,7 +1014,7 @@ c     -----------------------------------------------------------------
           zt%f%var(irsm)%ptr => zt%x(:,k)
           zt%f%var(irsm)%name = "rsm"
           zt%f%var(irsm)%description
-     .    = "saturation mixing ratio (kg/kg)"
+     .    = "Saturation mixing ratio (kg/kg)"
           zt%f%var(irsm)%units = "kg/kg"
           k = k + 1
 
@@ -913,35 +1023,35 @@ c     -----------------------------------------------------------------
           zt%f%var(irrm)%ptr => zt%x(:,k)
           zt%f%var(irrm)%name = "rrm"
           zt%f%var(irrm)%description
-     .    = "rain water mixing ratio (kg/kg)"
+     .    = "Rain water mixing ratio (kg/kg)"
           zt%f%var(irrm)%units = "kg/kg"
           k = k + 1
 
-        case ('rim')           ! Michael Falk
-          irim = k
-          zt%f%var(irim)%ptr => zt%x(:,k)
-          zt%f%var(irim)%name = "rim"
-          zt%f%var(irim)%description
-     .    = "ice water mixing ratio (kg/kg)"
-          zt%f%var(irim)%units = "kg/kg"
-          k = k + 1
-
-        case ('rgm')           ! Michael Falk
-          irgm = k
-          zt%f%var(irgm)%ptr => zt%x(:,k)
-          zt%f%var(irgm)%name = "rgm"
-          zt%f%var(irgm)%description
-     .    = "graupel water mixing ratio (kg/kg)"
-          zt%f%var(irgm)%units = "kg/kg"
-          k = k + 1
-
-        case ('rsnowm')           ! Brian
+        case ('rsnowm')
           irsnowm = k
           zt%f%var(irsnowm)%ptr => zt%x(:,k)
           zt%f%var(irsnowm)%name = "rsnowm"
           zt%f%var(irsnowm)%description
-     .    = "snow water mixing ratio (kg/kg)"
+     .    = "Snow water mixing ratio (kg/kg)"
           zt%f%var(irsnowm)%units = "kg/kg"
+          k = k + 1
+
+        case ('ricem')
+          iricem = k
+          zt%f%var(iricem)%ptr => zt%x(:,k)
+          zt%f%var(iricem)%name = "ricem"
+          zt%f%var(iricem)%description
+     .    = "Pristine ice water mixing ratio (kg/kg)"
+          zt%f%var(iricem)%units = "kg/kg"
+          k = k + 1
+
+        case ('rgraupelm')
+          irgraupelm = k
+          zt%f%var(irgraupelm)%ptr => zt%x(:,k)
+          zt%f%var(irgraupelm)%name = "rgraupelm"
+          zt%f%var(irgraupelm)%description
+     .    = "Graupel water mixing ratio (kg/kg)"
+          zt%f%var(irgraupelm)%units = "kg/kg"
           k = k + 1
 
         case ('Nrm')           ! Brian
@@ -949,33 +1059,34 @@ c     -----------------------------------------------------------------
           zt%f%var(iNrm)%ptr => zt%x(:,k)
           zt%f%var(iNrm)%name = "Nrm"
           zt%f%var(iNrm)%description
-     .    = "rain droplet number concentration (num/m^3)"
-          zt%f%var(iNrm)%units = "num/(m^3)"
+     .    = "Rain droplet number concentration (num/m^3)"
+          zt%f%var(iNrm)%units = "count/(m^3)"
           k = k + 1
 
-        case ('Vrr')           ! Brian
-          iVrr = k
-          zt%f%var(iVrr)%ptr => zt%x(:,k)
-          zt%f%var(iVrr)%name = "Vrr"
-          zt%f%var(iVrr)%description
-     .    = "rrm sedimentation velocity (m/s)"
-          zt%f%var(iVrr)%units = "m/s"
+
+        case ('mean_vol_rad_rain')  ! Brian
+          imean_vol_rad_rain = k
+          zt%f%var(imean_vol_rad_rain)%ptr => zt%x(:,k)
+          zt%f%var(imean_vol_rad_rain)%name = "mvrr"
+          zt%f%var(imean_vol_rad_rain)%description
+     .    = "Rain drop mean volume radius (m)"
+          zt%f%var(imean_vol_rad_rain)%units = "m"
           k = k + 1
 
-        case ('mean_vol_rad')  ! Brian
-          imean_vol_rad = k
-          zt%f%var(imean_vol_rad)%ptr => zt%x(:,k)
-          zt%f%var(imean_vol_rad)%name = "mvr"
-          zt%f%var(imean_vol_rad)%description
-     .    = "rain drop mean volume radius (m)"
-          zt%f%var(imean_vol_rad)%units = "m"
+        case ('mean_vol_rad_cloud')
+          imean_vol_rad_cloud = k
+          zt%f%var(imean_vol_rad_cloud)%ptr => zt%x(:,k)
+          zt%f%var(imean_vol_rad_cloud)%name = "mvrc"
+          zt%f%var(imean_vol_rad_cloud)%description
+     .    = "Cloud drop mean volume radius (m)"
+          zt%f%var(imean_vol_rad_cloud)%units = "m"
           k = k + 1
 
         case ('rain_rate')     ! Brian
           irain_rate = k
           zt%f%var(irain_rate)%ptr => zt%x(:,k)
           zt%f%var(irain_rate)%name = "rain_rate"
-          zt%f%var(irain_rate)%description = "rain rate (mm/day)"
+          zt%f%var(irain_rate)%description = "Rain rate (mm/day)"
           zt%f%var(irain_rate)%units = "mm/day"
           k = k + 1
  
@@ -1040,7 +1151,7 @@ c     -----------------------------------------------------------------
           zt%f%var(idqc_dt_icedfs)%ptr => zt%x(:,k)
           zt%f%var(idqc_dt_icedfs)%name = "dqc_dt_icedfs"
           zt%f%var(idqc_dt_icedfs)%description =
-     .                             "change in liquid due to ice"
+     .    "Change in liquid due to ice"
           zt%f%var(idqc_dt_icedfs)%units = "kg/kg/s"
           k = k + 1
 
@@ -1048,7 +1159,7 @@ c     -----------------------------------------------------------------
           iu_T_cm = k
           zt%f%var(iu_T_cm)%ptr => zt%x(:,k)
           zt%f%var(iu_T_cm)%name = "u_T_cm"
-          zt%f%var(iu_T_cm)%description = "ice crystal fallspeed"
+          zt%f%var(iu_T_cm)%description = "Ice crystal fallspeed"
           zt%f%var(iu_T_cm)%units = "cm/s"
           k = k + 1
 
@@ -1235,13 +1346,30 @@ c     -----------------------------------------------------------------
           zt%f%var(irrm_accr)%description = "rrm accretion"
           zt%f%var(irrm_accr)%units = "(kg/kg)/(s)"
           k = k + 1
+
+        case ('rrm_mc')
+          irrm_mc = k
+          zt%f%var(irrm_mc)%ptr => zt%x(:,k)
+          zt%f%var(irrm_mc)%name = "rrm_mc"
+          zt%f%var(irrm_mc)%description 
+     .    = "rrm total microphysical tendency"
+          zt%f%var(irrm_mc)%units = "(kg/kg)/s"
+          k = k + 1
+
+        case ('rrm_cl')
+          irrm_cl = k
+          zt%f%var(irrm_cl)%ptr => zt%x(:,k)
+          zt%f%var(irrm_cl)%name = "rrm_cl"
+          zt%f%var(irrm_cl)%description = "rrm clipping term"
+          zt%f%var(irrm_cl)%units = "(kg/kg)/(s)"
+          k = k + 1
  
         case ('Nrm_bt')
           iNrm_bt = k
           zt%f%var(iNrm_bt)%ptr => zt%x(:,k)
           zt%f%var(iNrm_bt)%name = "Nrm_bt"
           zt%f%var(iNrm_bt)%description = "Nrm budget"
-          zt%f%var(iNrm_bt)%units = "(num/m^3)/(s)"
+          zt%f%var(iNrm_bt)%units = "(count/m^3)/s"
           k = k + 1
  
         case ('Nrm_ma')
@@ -1249,7 +1377,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iNrm_ma)%ptr => zt%x(:,k)
           zt%f%var(iNrm_ma)%name = "Nrm_ma"
           zt%f%var(iNrm_ma)%description = "Nrm mean advection"
-          zt%f%var(iNrm_ma)%units = "(num/m^3)/(s)"
+          zt%f%var(iNrm_ma)%units = "(count/m^3)/s"
           k = k + 1
  
         case ('Nrm_sd')
@@ -1257,7 +1385,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iNrm_sd)%ptr => zt%x(:,k)
           zt%f%var(iNrm_sd)%name = "Nrm_sd"
           zt%f%var(iNrm_sd)%description = "Nrm sedimentation"
-          zt%f%var(iNrm_sd)%units = "(num/m^3)/(s)"
+          zt%f%var(iNrm_sd)%units = "(count/m^3)/s"
           k = k + 1
  
         case ('Nrm_dff')
@@ -1265,7 +1393,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iNrm_dff)%ptr => zt%x(:,k)
           zt%f%var(iNrm_dff)%name = "Nrm_dff"
           zt%f%var(iNrm_dff)%description = "Nrm diffusion"
-          zt%f%var(iNrm_dff)%units = "(num/m^3)/(s)"
+          zt%f%var(iNrm_dff)%units = "(count/m^3)/s"
           k = k + 1
  
         case ('Nrm_cond')
@@ -1273,7 +1401,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iNrm_cond)%ptr => zt%x(:,k)
           zt%f%var(iNrm_cond)%name = "Nrm_cond"
           zt%f%var(iNrm_cond)%description = "Nrm cond/evap"
-          zt%f%var(iNrm_cond)%units = "(num/m^3)/(s)"
+          zt%f%var(iNrm_cond)%units = "(count/m^3)/s"
           k = k + 1
  
         case ('Nrm_auto')
@@ -1281,8 +1409,172 @@ c     -----------------------------------------------------------------
           zt%f%var(iNrm_auto)%ptr => zt%x(:,k)
           zt%f%var(iNrm_auto)%name = "Nrm_auto"
           zt%f%var(iNrm_auto)%description = "Nrm autoconversion"
-          zt%f%var(iNrm_auto)%units = "(num/m^3)/(s)"
+          zt%f%var(iNrm_auto)%units = "(count/m^3)/s"
           k = k + 1
+
+        case ('Nrm_mc')
+          iNrm_mc = k
+          zt%f%var(iNrm_mc)%ptr => zt%x(:,k)
+          zt%f%var(iNrm_mc)%name = "Nrm_mc"
+          zt%f%var(iNrm_mc)%description = "Nrm micro"
+          zt%f%var(iNrm_mc)%units = "(count/m^3)/s"
+          k = k + 1
+
+        case ('Nrm_cl')
+          iNrm_cl = k
+          zt%f%var(iNrm_cl)%ptr => zt%x(:,k)
+          zt%f%var(iNrm_cl)%name = "Nrm_cl"
+          zt%f%var(iNrm_cl)%description = "Nrm clipping term"
+          zt%f%var(iNrm_cl)%units = "(kg/kg)/s"
+          k = k + 1
+
+        case ('rsnowm_bt')
+          irsnowm_bt = k
+          zt%f%var(irsnowm_bt)%ptr => zt%x(:,k)
+          zt%f%var(irsnowm_bt)%name = "rsnowm_bt"
+          zt%f%var(irsnowm_bt)%description = "rsnowm budget"
+          zt%f%var(irsnowm_bt)%units = "(kg/kg)/s"
+          k = k + 1
+ 
+        case ('rsnowm_ma')
+          irsnowm_ma = k
+          zt%f%var(irsnowm_ma)%ptr => zt%x(:,k)
+          zt%f%var(irsnowm_ma)%name = "rsnowm_ma"
+          zt%f%var(irsnowm_ma)%description = "rsnowm mean advection"
+          zt%f%var(irsnowm_ma)%units = "(kg/kg)/s"
+          k = k + 1
+ 
+        case ('rsnowm_sd')
+          irsnowm_sd = k
+          zt%f%var(irsnowm_sd)%ptr => zt%x(:,k)
+          zt%f%var(irsnowm_sd)%name = "rsnowm_sd"
+          zt%f%var(irsnowm_sd)%description = "rsnowm sedimentation"
+          zt%f%var(irsnowm_sd)%units = "(kg/kg)/s"
+          k = k + 1
+ 
+        case ('rsnowm_dff')
+          irsnowm_dff = k
+          zt%f%var(irsnowm_dff)%ptr => zt%x(:,k)
+          zt%f%var(irsnowm_dff)%name = "rsnowm_dff"
+          zt%f%var(irsnowm_dff)%description = "rsnowm diffusion"
+          zt%f%var(irsnowm_dff)%units = "(kg/kg)/s"
+          k = k + 1
+
+        case ('rsnowm_mc')
+          irsnowm_mc = k
+          zt%f%var(irsnowm_mc)%ptr => zt%x(:,k)
+          zt%f%var(irsnowm_mc)%name = "rsnowm_mc"
+          zt%f%var(irsnowm_mc)%description = "rsnowm micro"
+          zt%f%var(irsnowm_mc)%units = "(kg/kg)/s"
+          k = k + 1
+
+        case ('rsnowm_cl')
+          irsnowm_cl = k
+          zt%f%var(irsnowm_cl)%ptr => zt%x(:,k)
+          zt%f%var(irsnowm_cl)%name = "rsnowm_cl"
+          zt%f%var(irsnowm_cl)%description = "rsnowm clipping term"
+          zt%f%var(irsnowm_cl)%units = "(kg/kg)/s"
+          k = k + 1
+
+       case ('ricem_bt')
+          iricem_bt = k
+          zt%f%var(iricem_bt)%ptr => zt%x(:,k)
+          zt%f%var(iricem_bt)%name = "ricem_bt"
+          zt%f%var(iricem_bt)%description = "ricem budget"
+          zt%f%var(iricem_bt)%units = "(kg/kg)/s"
+          k = k + 1
+ 
+        case ('ricem_ma')
+          iricem_ma = k
+          zt%f%var(iricem_ma)%ptr => zt%x(:,k)
+          zt%f%var(iricem_ma)%name = "ricem_ma"
+          zt%f%var(iricem_ma)%description = "ricem mean advection"
+          zt%f%var(iricem_ma)%units = "(kg/kg)/s"
+          k = k + 1
+ 
+        case ('ricem_sd')
+          iricem_sd = k
+          zt%f%var(iricem_sd)%ptr => zt%x(:,k)
+          zt%f%var(iricem_sd)%name = "ricem_sd"
+          zt%f%var(iricem_sd)%description = "ricem sedimentation"
+          zt%f%var(iricem_sd)%units = "(kg/kg)/s"
+          k = k + 1
+ 
+        case ('ricem_dff')
+          iricem_dff = k
+          zt%f%var(iricem_dff)%ptr => zt%x(:,k)
+          zt%f%var(iricem_dff)%name = "ricem_dff"
+          zt%f%var(iricem_dff)%description = "ricem diffusion"
+          zt%f%var(iricem_dff)%units = "(kg/kg)/s"
+          k = k + 1
+
+        case ('ricem_mc')
+          iricem_mc = k
+          zt%f%var(iricem_mc)%ptr => zt%x(:,k)
+          zt%f%var(iricem_mc)%name = "ricem_mc"
+          zt%f%var(iricem_mc)%description = "ricem micro"
+          zt%f%var(iricem_mc)%units = "(kg/kg)/s"
+          k = k + 1
+
+        case ('ricem_cl')
+          iricem_cl = k
+          zt%f%var(iricem_cl)%ptr => zt%x(:,k)
+          zt%f%var(iricem_cl)%name = "ricem_cl"
+          zt%f%var(iricem_cl)%description = "ricem clipping term"
+          zt%f%var(iricem_cl)%units = "(kg/kg)/s"
+          k = k + 1
+
+        case ('rgraupelm_bt')
+          irgraupelm_bt = k
+          zt%f%var(irgraupelm_bt)%ptr => zt%x(:,k)
+          zt%f%var(irgraupelm_bt)%name = "rgraupelm_bt"
+          zt%f%var(irgraupelm_bt)%description = "rgraupelm budget"
+          zt%f%var(irgraupelm_bt)%units = "(kg/kg)/s"
+          k = k + 1
+ 
+        case ('rgraupelm_ma')
+          irgraupelm_ma = k
+          zt%f%var(irgraupelm_ma)%ptr => zt%x(:,k)
+          zt%f%var(irgraupelm_ma)%name = "rgraupelm_ma"
+          zt%f%var(irgraupelm_ma)%description = 
+     .    "rgraupelm mean advection"
+          zt%f%var(irgraupelm_ma)%units = "(kg/kg)/s"
+          k = k + 1
+ 
+        case ('rgraupelm_sd')
+          irgraupelm_sd = k
+          zt%f%var(irgraupelm_sd)%ptr => zt%x(:,k)
+          zt%f%var(irgraupelm_sd)%name = "rgraupelm_sd"
+          zt%f%var(irgraupelm_sd)%description 
+     .    = "rgraupelm sedimentation"
+          zt%f%var(irgraupelm_sd)%units = "(kg/kg)/s"
+          k = k + 1
+ 
+        case ('rgraupelm_dff')
+          irgraupelm_dff = k
+          zt%f%var(irgraupelm_dff)%ptr => zt%x(:,k)
+          zt%f%var(irgraupelm_dff)%name = "rgraupelm_dff"
+          zt%f%var(irgraupelm_dff)%description = "rgraupelm diffusion"
+          zt%f%var(irgraupelm_dff)%units = "(kg/kg)/s"
+          k = k + 1
+
+        case ('rgraupelm_mc')
+          irgraupelm_mc = k
+          zt%f%var(irgraupelm_mc)%ptr => zt%x(:,k)
+          zt%f%var(irgraupelm_mc)%name = "rgraupelm_mc"
+          zt%f%var(irgraupelm_mc)%description = "rgraupelm micro"
+          zt%f%var(irgraupelm_mc)%units = "(kg/kg)/s"
+          k = k + 1
+
+        case ('rgraupelm_cl')
+          irgraupelm_cl = k
+          zt%f%var(irgraupelm_cl)%ptr => zt%x(:,k)
+          zt%f%var(irgraupelm_cl)%name = "rgraupelm_cl"
+          zt%f%var(irgraupelm_cl)%description 
+     .    = "rgraupelm clipping term"
+          zt%f%var(irgraupelm_cl)%units = "(kg/kg)/s"
+          k = k + 1
+
  
         case ('a')
           ia = k
@@ -1313,7 +1605,7 @@ c     -----------------------------------------------------------------
           zt%f%var(isw1)%ptr => zt%x(:,k)
           zt%f%var(isw1)%name = "sw1"
           zt%f%var(isw1)%description = "pdf parameter sw1"
-          zt%f%var(isw1)%units = "m2/s2"
+          zt%f%var(isw1)%units = "m^2/s^2"
           k = k + 1
  
         case ('sw2')
@@ -1321,7 +1613,7 @@ c     -----------------------------------------------------------------
           zt%f%var(isw2)%ptr => zt%x(:,k)
           zt%f%var(isw2)%name = "sw2"
           zt%f%var(isw2)%description = "pdf parameter sw2"
-          zt%f%var(isw2)%units = "m2/s2"
+          zt%f%var(isw2)%units = "m^2/s^2"
           k = k + 1
  
         case ('thl1')
@@ -1481,7 +1773,7 @@ c     -----------------------------------------------------------------
           zt%f%var(iwp2zt)%ptr => zt%x(:,k)
           zt%f%var(iwp2zt)%name = "wp2zt"
           zt%f%var(iwp2zt)%description ="wp2zt"
-          zt%f%var(iwp2zt)%units = "m2/s2"
+          zt%f%var(iwp2zt)%units = "m^2/s^2"
           k = k + 1
 
         case('thlp2zt')
@@ -1669,13 +1961,21 @@ c     -----------------------------------------------------------------
       irhom     = 0
       iscm      = 0
       iem       = 0
-      ishear    = 0    ! Brian
+      ishear    = 0  ! Brian
       iFrad     = 0
-      iFrad_LW  = 0    ! Brian
-      iFrad_SW  = 0    ! Brian
-      iFprec    = 0    ! Brian
-      iFcsed    = 0    ! Brian
+      iFrad_LW  = 0  ! Brian
+      iFrad_SW  = 0  ! Brian
+      iFprec    = 0  ! Brian
+      iFcsed    = 0  ! Brian
 
+      ! Sedimentation velocities
+      iVrr      = 0  ! Brian
+      iVNr      = 0  !  " "
+      iVice     = 0  ! COAMPS
+      iVgraupel = 0  !  " "
+      iVsnow    = 0  !  " "
+
+      ! Vertical velocity budgets
       iwp2_bt   = 0
       iwp2_ma   = 0
       iwp2_ta   = 0
@@ -1688,6 +1988,7 @@ c     -----------------------------------------------------------------
       iwp2_dp2  = 0
       iwp2_cl   = 0
 
+      ! Flux budgets
       iwprtp_bt  = 0
       iwprtp_ma  = 0
       iwprtp_ta  = 0
@@ -1710,8 +2011,7 @@ c     -----------------------------------------------------------------
       iwpthlp_pr3 = 0
       iwpthlp_dp1 = 0
 
-!     Dr. Golaz's new budget terms
-
+      ! Variance budgets
       irtp2_bt    = 0
       irtp2_ma    = 0
       irtp2_ta    = 0
@@ -1774,7 +2074,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwp2)%ptr => zm%x(:,k)
           zm%f%var(iwp2)%name = "wp2"
           zm%f%var(iwp2)%description = "wp2"
-          zm%f%var(iwp2)%units = "m2/s2"
+          zm%f%var(iwp2)%units = "m^2/s^2"
           k = k + 1
 
         case ('rtp2')
@@ -1861,8 +2161,8 @@ c     -----------------------------------------------------------------
           ikhm = k
           zm%f%var(ikhm)%ptr => zm%x(:,k)
           zm%f%var(ikhm)%name = "khm"
-          zm%f%var(ikhm)%description = "eddy diffusivity"
-          zm%f%var(ikhm)%units = "m2/s"
+          zm%f%var(ikhm)%description = "Eddy diffusivity"
+          zm%f%var(ikhm)%units = "m^2/s"
           k = k + 1
 
         case ('wprcp')
@@ -1894,7 +2194,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iupwp)%ptr => zm%x(:,k)
           zm%f%var(iupwp)%name = "upwp"
           zm%f%var(iupwp)%description = "upwp"
-          zm%f%var(iupwp)%units = "m2/s2"
+          zm%f%var(iupwp)%units = "m^2/s^2"
           k = k + 1
 
         case ('vpwp')
@@ -1902,7 +2202,7 @@ c     -----------------------------------------------------------------
           zm%f%var(ivpwp)%ptr => zm%x(:,k)
           zm%f%var(ivpwp)%name = "vpwp"
           zm%f%var(ivpwp)%description = "vpwp"
-          zm%f%var(ivpwp)%units = "m2/s2"
+          zm%f%var(ivpwp)%units = "m^2/s^2"
           k = k + 1
 
         case ('rhom')
@@ -1976,6 +2276,51 @@ c     -----------------------------------------------------------------
           zm%f%var(iFcsed)%description
      .    = "cloud water sedimentation flux (kg/(s*m^2))"
           zm%f%var(iFcsed)%units = "kg/(s m2)"
+          k = k + 1
+
+        case ('Vrr')           ! Brian
+          iVrr = k
+          zm%f%var(iVrr)%ptr => zm%x(:,k)
+          zm%f%var(iVrr)%name = "Vrr"
+          zm%f%var(iVrr)%description
+     .    = "rrm sedimentation velocity (m/s)"
+          zm%f%var(iVrr)%units = "m/s"
+          k = k + 1
+
+        case ('VNr')           ! Brian
+          iVNr = k
+          zm%f%var(iVNr)%ptr => zm%x(:,k)
+          zm%f%var(iVNr)%name = "VNr"
+          zm%f%var(iVNr)%description
+     .    = "Nrm sedimentation velocity (m/s)"
+          zm%f%var(iVNr)%units = "m/s"
+          k = k + 1
+
+        case ('Vsnow')
+          iVsnow = k
+          zm%f%var(iVsnow)%ptr => zm%x(:,k)
+          zm%f%var(iVsnow)%name = "Vsnow"
+          zm%f%var(iVsnow)%description
+     .    = "Snow sedimentation velocity (m/s)"
+          zm%f%var(iVsnow)%units = "m/s"
+          k = k + 1
+
+        case ('Vgraupel')
+          iVgraupel = k
+          zm%f%var(iVgraupel)%ptr => zm%x(:,k)
+          zm%f%var(iVgraupel)%name = "Vgraupel"
+          zm%f%var(iVgraupel)%description
+     .    = "Graupel sedimentation velocity (m/s)"
+          zm%f%var(iVgraupel)%units = "m/s"
+          k = k + 1
+
+        case ('Vice')
+          iVice = k
+          zm%f%var(iVice)%ptr => zm%x(:,k)
+          zm%f%var(iVice)%name = "Vice"
+          zm%f%var(iVice)%description
+     .    = "Pristine ice sedimentation velocity (m/s)"
+          zm%f%var(iVice)%units = "m/s"
           k = k + 1
  
         case ('wp2_bt')
@@ -2234,7 +2579,7 @@ c     -----------------------------------------------------------------
           zm%f%var(iwpthlp_dp1)%units = "(m K)/s2"
           k = k + 1
 
-!     Dr. Golaz's new budget terms
+        ! Variance budgets
         case ('rtp2_bt')
           irtp2_bt = k
           zm%f%var(irtp2_bt)%ptr => zm%x(:,k)
@@ -2792,10 +3137,10 @@ c     -----------------------------------------------------------------
       return
       end subroutine stats_zero
 
-c     -----------------------------------------------------------------
+!     -----------------------------------------------------------------
       subroutine stats_avg( kk, nn, x, n )
 
-c     use stats_type
+!     use stats_type
       implicit none
 
 !     Input/output
@@ -3076,11 +3421,19 @@ c     -----------------------------------------------------------------
         if ( irhot > 0 ) then
           zt%x(:,irhot) = zt%x(:,irhot) + rhot
           zt%n(:,irhot) = zt%n(:,irhot) + 1
-        endif
+        end if
         if ( iNcm > 0 ) then           ! Brian
           zt%x(:,iNcm) = zt%x(:,iNcm) + Ncm
           zt%n(:,iNcm) = zt%n(:,iNcm) + 1
-        endif
+        end if
+        if ( iNcnm > 0 ) then
+          zt%x(:,iNcnm) = zt%x(:,iNcnm) + Ncnm
+          zt%n(:,iNcnm) = zt%n(:,iNcnm) + 1
+        end if
+        if ( iNim > 0 ) then
+          zt%x(:,iNim) = zt%x(:,iNim) + Nim
+          zt%n(:,iNim) = zt%n(:,iNim) + 1
+        end if
         if ( ised_rcm > 0 .and. cloud_sed ) then       ! Brian
           zt%x(:,ised_rcm) = zt%x(:,ised_rcm) + sed_rcm
           zt%n(:,ised_rcm) = zt%n(:,ised_rcm) + 1
@@ -3089,38 +3442,31 @@ c     -----------------------------------------------------------------
           zt%x(:,irsm) = zt%x(:,irsm) + rsm
           zt%n(:,irsm) = zt%n(:,irsm) + 1
         endif
-        if ( irrm > 0) then     ! Brian
-          zt%x(:,irrm) = zt%x(:,irrm) + rrm
+
+        if ( irrm > 0 ) then     ! Brian
+          zt%x(:,irrm) = zt%x(:,irrm) + hydromet(:,1)
           zt%n(:,irrm) = zt%n(:,irrm) + 1
-        endif
-        if ( irim > 0) then     ! Michael Falk
-          zt%x(:,irim) = zt%x(:,irim) + rim
-          zt%n(:,irim) = zt%n(:,irim) + 1
-        endif
-        if ( irgm > 0) then     ! Michael Falk
-          zt%x(:,irgm) = zt%x(:,irgm) + rgm
-          zt%n(:,irgm) = zt%n(:,irgm) + 1
-        endif
-        if ( irsnowm > 0) then     ! Michael Falk
-          zt%x(:,irsnowm) = zt%x(:,irsnowm) + rsnowm
-          zt%n(:,irsnowm) = zt%n(:,irsnowm) + 1
-        endif
-        if ( iNrm > 0 .and. kk_rain ) then     ! Brian
-          zt%x(:,iNrm) = zt%x(:,iNrm) + Nrm
+        end if
+
+        if ( iNrm > 0 ) then     ! Brian
+          zt%x(:,iNrm) = zt%x(:,iNrm) + hydromet(:,2)
           zt%n(:,iNrm) = zt%n(:,iNrm) + 1
-        endif
-        if ( iVrr > 0 .and. kk_rain ) then      ! Brian
-          zt%x(:,iVrr) = zt%x(:,iVrr) + Vrr
-          zt%n(:,iVrr) = zt%n(:,iVrr) + 1
-        endif
-        if ( imean_vol_rad > 0 .and. kk_rain ) then  ! Brian
-          zt%x(:,imean_vol_rad) = zt%x(:,imean_vol_rad) + mean_vol_rad
-          zt%n(:,imean_vol_rad) = zt%n(:,imean_vol_rad) + 1
-        endif
-        if ( irain_rate > 0 .and. kk_rain ) then     ! Brian
-          zt%x(:,irain_rate) = zt%x(:,irain_rate) + rain_rate
-          zt%n(:,irain_rate) = zt%n(:,irain_rate) + 1
-        endif
+        end if
+
+        if ( irsnowm > 0 ) then
+          zt%x(:,irsnowm) = zt%x(:,irsnowm) + hydromet(:,3)
+          zt%n(:,irsnowm) = zt%n(:,irsnowm) + 1
+        end if
+
+        if ( iricem > 0 ) then
+          zt%x(:,iricem) = zt%x(:,iricem) + hydromet(:,4)
+          zt%n(:,iricem) = zt%n(:,iricem) + 1
+        end if
+
+        if ( irgraupelm > 0 ) then
+          zt%x(:,irgraupelm) = zt%x(:,irgraupelm) + hydromet(:,5)
+          zt%n(:,irgraupelm) = zt%n(:,irgraupelm) + 1
+        end if
 
         if ( iAKm > 0 .and. LH_on ) then         ! Vince Larson 22 May 2005
           zt%x(:,iAKm) = zt%x(:,iAKm) + AKm
@@ -3136,16 +3482,6 @@ c     -----------------------------------------------------------------
           zt%x(:,iradht) = zt%x(:,iradht) + radht
           zt%n(:,iradht) = zt%n(:,iradht) + 1
         endif
-
-!       if ( iradht_LW > 0 ) then
-!         zt%x(:,iradht_LW) = zt%x(:,iradht_LW) + radht_LW
-!         zt%n(:,iradht_LW) = zt%n(:,iradht_LW) + 1
-!       endif
-
-!       if ( iradht_SW > 0 ) then
-!         zt%x(:,iradht_SW) = zt%x(:,iradht_SW) + radht_SW
-!         zt%n(:,iradht_SW) = zt%n(:,iradht_SW) + 1
-!       endif
 
         if ( ia > 0 ) then
           zt%x(:,ia) = zt%x(:,ia) + pdf_parms(:,13)
@@ -3439,21 +3775,6 @@ c     -----------------------------------------------------------------
         if ( iFrad > 0 ) then
           zm%x(:,iFrad) = zm%x(:,iFrad) + Frad
           zm%n(:,iFrad) = zm%n(:,iFrad) + 1
-        endif
-
-!       if ( iFrad_LW > 0 ) then  ! Brian
-!         zm%x(:,iFrad_LW) = zm%x(:,iFrad_LW) + Frad_LW
-!         zm%n(:,iFrad_LW) = zm%n(:,iFrad_LW) + 1
-!       endif
-
-!       if ( iFrad_SW > 0 ) then  ! Brian
-!         zm%x(:,iFrad_SW) = zm%x(:,iFrad_SW) + Frad_SW
-!         zm%n(:,iFrad_SW) = zm%n(:,iFrad_SW) + 1
-!       endif
-
-        if ( iFprec > 0 .and. kk_rain ) then    ! Brian
-          zm%x(:,iFprec) = zm%x(:,iFprec) + Fprec
-          zm%n(:,iFprec) = zm%n(:,iFprec) + 1
         endif
 
         if ( iFcsed > 0 .and. cloud_sed ) then    ! Brian

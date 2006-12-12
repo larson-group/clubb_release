@@ -1,19 +1,21 @@
 !-----------------------------------------------------------------------
-! $Id: model_flags.F,v 1.4 2006-11-02 01:44:41 dschanen Exp $
+! $Id: model_flags.F,v 1.5 2006-12-12 20:21:17 dschanen Exp $
 
 ! Various model options that can be toggled off and on as desired
 !-----------------------------------------------------------------------
-       module model_flags
+        module model_flags
 
-       logical, parameter :: 
-     . LH_on    = .false., ! latin hypercube calculation
-     . local_kk = .false.  ! local drizzle for rain microphysics
+        logical, parameter :: 
+     .  LH_on    = .false., ! Latin hypercube calculation
+     .  local_kk = .false.  ! Local drizzle for rain microphysics
 
-       logical ::
-     . lbugsrad,    ! BUGSrad interactive radiation scheme
-     . kk_rain,     ! Khairoutdinov and Kogan (2000) drizzle scheme. - Brian
-     . cloud_sed,   ! Cloud water droplet sedimentation. - Brian
-     . lmpace_nudge ! For wind speed nudging. - Michael Falk
+        logical :: 
+     .  lbugsrad,     ! BUGSrad interactive radiation scheme
+     .  kk_rain,      ! Khairoutdinov and Kogan (2000) drizzle scheme. - Brian
+     .  licedfs,      ! Simplified ice scheme
+     .  lcoamps_micro,! COAMPS rain microphysics
+     .  cloud_sed,    ! Cloud water droplet sedimentation. - Brian
+     .  lmpace_nudge  ! For wind speed nudging. - Michael Falk
 
        ! Flag for the lowest model level being at the surface (true)
        ! or not at the surface (false).  Example of case where it is not
@@ -23,31 +25,44 @@
        end module model_flags
 
 !-----------------------------------------------------------------------
-       subroutine setup_model_flags
-     .            ( lbugsrad_in, kk_rain_in, 
-     .              cloud_sed_in, bottom_at_sfc_in, lmpace_nudge_in)
+        subroutine setup_model_flags
+     .             ( lbugsrad_in, kk_rain_in, cloud_sed_in, 
+     .               licedfs_in, lcoamps_micro_in, bottom_at_sfc_in,
+     .               lmpace_nudge_in )
 !      Description:
 !      Setup model flags
-
-!      References:
-!      None
 !-----------------------------------------------------------------------
-       use model_flags
-       implicit none
+        use constants, only: fstderr
+        use model_flags
 
-       logical, intent(in) :: 
-     . lbugsrad_in, 
-     . kk_rain_in,
-     . cloud_sed_in,
-     . bottom_at_sfc_in,
-     . lmpace_nudge_in
+        implicit none
 
-       lbugsrad      = lbugsrad_in
-       kk_rain       = kk_rain_in
-       cloud_sed     = cloud_sed_in
-       bottom_at_sfc = bottom_at_sfc_in
-       lmpace_nudge  = lmpace_nudge_in
+        ! Input Variables
+        logical, intent(in) :: 
+     .  lbugsrad_in, kk_rain_in, cloud_sed_in,
+     .  bottom_at_sfc_in, licedfs_in, lcoamps_micro_in, lmpace_nudge_in
 
-       return
-       end subroutine setup_model_flags
+        lbugsrad      = lbugsrad_in
+        kk_rain       = kk_rain_in
+        cloud_sed     = cloud_sed_in
+        bottom_at_sfc = bottom_at_sfc_in
+        lcoamps_micro = lcoamps_micro_in
+        licedfs       = licedfs_in
+        lmpace_nudge  = lmpace_nudge_in
 
+        ! Make sure only one microphysical scheme is enabled.
+!       if ( .not.( kk_rain .and. lcoamps_micro ) .and. 
+!    .       .not.( kk_rain .and. licedfs ) .and. 
+!    .       .not.( licedfs .and. lcoamps_micro ) ) then
+        if ( count( (/kk_rain, lcoamps_micro, licedfs/) ) > 1 ) then
+
+          write(unit=fstderr, fmt='(3(a18,l1,a1))') 
+     .      "kk_rain = ", kk_rain, ",",
+     .      "lcoamps_micro = ", lcoamps_micro,",",
+     .      "licedfs = ", licedfs, "."
+          stop "Only one microphysics scheme may be enabled per run"
+
+        end if ! More than one microphysical scheme enabled
+
+        return
+        end subroutine setup_model_flags

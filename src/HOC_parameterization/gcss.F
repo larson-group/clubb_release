@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.23 2006-12-11 18:21:39 dschanen Exp $ 
+! $Id: gcss.F,v 1.24 2006-12-12 20:21:17 dschanen Exp $ 
         module gcss
 
 !       Description:
@@ -1086,11 +1086,11 @@
 
 !----------------------------------------------------------------------
 
-        SUBROUTINE dycoms2_rf02_tndcy( rhot, rhom, rtm, rcm, exner, 
-     .                                 wmt, wmm, theta_tndcy, rt_tndcy, 
-     .                                 Frad, radht, Ncm,
-     .                                 isValid,
-     .                                 sclr_tndcy )
+        SUBROUTINE dycoms2_rf02_tndcy
+     .             ( time, time_initial, rhot, rhom, rtm, rcm, exner, 
+     .               wmt, wmm, theta_tndcy, rt_tndcy, 
+     .               Frad, radht, Ncm, Ncnm, isValid, 
+     .               sclr_tndcy )
 
         USE grid_class
         USE constants
@@ -1098,7 +1098,11 @@
         USE statistics
 #endif /*STATS*/
 
-        ! Input
+        ! Input Variables
+        real, intent(in) ::
+     .  time,         ! Current time    [s]
+     .  time_initial  ! Initial time    [s]
+
         REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rhot
         REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rhom
         REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rtm
@@ -1112,6 +1116,7 @@
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: rt_tndcy
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: Frad
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: radht
+        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: Ncnm
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: Ncm
 
         ! Optional output
@@ -1230,10 +1235,6 @@
           sfc%n(1,izi) = sfc%n(1,izi) + 1
         end if
 #endif /*STATS*/
-        if ( present( sclr_tndcy ) ) 
-     .    sclr_tndcy(:,SCLR_THETA) = theta_tndcy 
-        if ( present( sclr_tndcy ) ) sclr_tndcy(:,SCLR_RT) = rt_tndcy 
-
 
         ! The following lines of code specify cloud droplet
         ! concentration (Ncm).  The cloud droplet concentration has
@@ -1255,14 +1256,26 @@
         !
         ! Since cloud base (zb) is determined by the mixing ratio 1.0E-6,
         ! so will cloud droplet number concentration (Ncm).
-        DO k = 1, gr%nnzp, 1
-           IF ( rcm(k) > 1.0E-6 ) THEN
-              Ncm(k) = 55000000.0
-           ELSE
-              Ncm(k) = 0.0
-           END IF
-        END DO
 
+        if ( lcoamps_micro .and. time == time_initial ) then
+          ! Taken from COAMPS subroutine ncn_init()
+          Ncnm(1:gr%nnzp) = 55000000.0 / rhot(1:gr%nnzp)
+
+        else
+          ! K & K or no micro
+          DO k = 1, gr%nnzp, 1
+            IF ( rcm(k) > 1.0E-6 ) THEN
+              Ncm(k) = 55000000.0
+            ELSE
+              Ncm(k) = 0.0
+            END IF
+          END DO
+
+        end if
+
+        if ( present( sclr_tndcy ) ) 
+     .    sclr_tndcy(:,SCLR_THETA) = theta_tndcy 
+        if ( present( sclr_tndcy ) ) sclr_tndcy(:,SCLR_RT) = rt_tndcy 
 
         RETURN
         END SUBROUTINE dycoms2_rf02_tndcy
@@ -2531,6 +2544,11 @@ c           If time is not yet one hour, we have no subsidence
 !
 #ifdef STATS
         if ( lstats_samp ) then
+!       diam(:) ! Icedfs diameter; Michael Falk, 1 Nov 2006
+!       m(:)    ! Icedfs mass; Michael Falk, 1 Nov 2006
+!       dqc_dt_icedfs(:) ! Icedfs change in liquid; Michael Falk, 1 Nov 2006
+!       u_T_cm(:)        ! Icedfs fallspeed (cm/s); Michael Falk, 1 Nov 2006
+
           if ( idqc_dt_icedfs > 0 ) then
             zt%x(:,idqc_dt_icedfs) = zt%x(:,idqc_dt_icedfs)
      .                               + dqc_dt_icedfs
@@ -3285,10 +3303,10 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 !----------------------------------------------------------------------
         subroutine mpace_tndcy
-     .  ( time, dt, thlm,
-     .    exner, rhot, rtm, p, thvm, icedfs, rcm,
+     .  ( time, time_initial, dt, rlat, thlm,
+     .    exner, rhot, rtm, p, thvm, rcm,
      .    wmt, wmm, theta_tndcy, rt_tndcy,
-     .    Frad, radht,
+     .    Ncnm, Ncm, Frad, radht,
      .    sclr_tndcy )
 
 !        Description:
@@ -3303,8 +3321,9 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
         use constants
         use grid_class
+#ifdef STATS
         use statistics
-
+#endif /*STATS*/
         implicit none
 
         ! Local constants, subsidence
@@ -3317,18 +3336,18 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
         ! Local constants, LW radiation (from DYCOMS II-RF01)
         real, parameter ::
-     .  F0=70.,
-     .  F1=22.,
-     .  kap=85.
+     .  F0  = 70.0,
+     .  F1  = 22.0,
+     .  kap = 85.0
 
         ! Local constants, SW radiation (Shettle and Weinman)
         real, parameter ::
-     .  Fs0 = 1212.75,
+     .  Fs0    = 1212.75,
      .  radius = 1.0e-5,
-     .  A = 0.1,
-     .  gc = 0.86,
-     .  omega = .9965,
-     .  rlat = 71.75
+     .  A      = 0.1,
+     .  gc     = 0.86,
+     .  omega  = 0.9965
+!    .  rlat = 71.75
 
         ! Local constants, SW radiation (Liou solar angle scheme)
         real, parameter ::
@@ -3340,11 +3359,12 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
      .  d_2 = 0.000907,
      .  d_3 = 0.000148
 
-
         ! Input Variables
         real, intent(in) :: 
-     .  time,         ! Current time of simulation                [s]
-     .  dt            ! Current length of timestep                [s]
+     .  time,         ! Current time of simulation      [s]
+     .  time_initial, ! Initial time of simulation      [s]
+     .  dt,           ! Current length of timestep      [s]
+     .  rlat          ! Latitude                        [Degrees North]
 
         real, dimension(gr%nnzp), intent(in) ::
      .  thlm,  ! Liquid water potential temperature     [K]
@@ -3352,15 +3372,8 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
      .  rhot,  ! Density of air                         [kg/m^3]
      .  rtm,   ! Total water mixing ratio               [kg/kg]
      .  p,     ! Pressure                               [Pa]
-     .  thvm   ! Virtual potential temperature          [K]
-
-        logical, intent(in) ::
-     .  icedfs  ! Is icedfs on?
-
-
-        ! Input/Output Variables
-        real, dimension(gr%nnzp), intent(inout) :: 
-     .  rcm ! Cloud water mixing ratio  [kg/kg]
+     .  thvm,  ! Virtual potential temperature          [K]
+     .  rcm    ! Cloud water mixing ratio               [kg/kg]
 
 
         ! Output Variables
@@ -3370,6 +3383,8 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
      .  theta_tndcy, ! Large-scale thlm tendency               [K/s]
      .  rt_tndcy,    ! Large-scale rtm tendency                [kg/kg/s]
      .  Frad,        ! Total radiative flux                    [W/m^2]
+     .  Ncm,         ! Cloud droplet number concentration      [count/m^3]
+     .  Ncnm,        ! Cloud nuclei number concentration       [count/m^3]
      .  radht        ! dT/dt, then d Theta/dt, due to rad.     [K/s]
 
 
@@ -3422,10 +3437,8 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
      .  radht_lw_out,
      .  radht_sw_out
 
-
         ! Local variables, simplified ice (icedfs) microphysics
-        real dqc_dt_icedfs(gr%nnzp)
-
+        real, dimension(gr%nnzp) :: dqc_dt_icedfs
 
         ! Local variables, on/off switches for individual schemes
         logical :: 
@@ -3441,10 +3454,9 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         sw_on           = .TRUE.
         center          = .TRUE.
 
-
         ! Compute vertical motion
         do i=2,gr%nnzp
-          velocity_omega = min(D*(psfc-p(i)), D*(psfc-pinv))
+          velocity_omega = min( D*(psfc-p(i)), D*(psfc-pinv) )
           wmt(i) = -velocity_omega * Rd * thvm(i) / p(i) / grav0
         end do
         wmm = zt2zm( wmt )
@@ -3458,17 +3470,12 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
         ! Compute large-scale tendencies
         do i=1,gr%nnzp
-         t_tendency = min(-4.,-15.*(1.-((psfc-p(i))/21818.))) ! K/day
+         t_tendency = min( -4.,-15.*(1.-((psfc-p(i))/21818.)) ) ! K/day
          theta_tndcy(i) = (t_tendency * ((psfc/p(i)) ** (Rd/Cp))) 
      .                    / 86400. ! K/s
-         rt_tndcy(i)  = min(0.164,-3*(1-((psfc-p(i))/15171.))) / 
+         rt_tndcy(i)  = min( 0.164,-3*(1-((psfc-p(i))/15171.)) ) / 
      .                 1000. / 86400. ! g/kg/day -> kg/kg/s
         end do
-
-        if ( present( sclr_tndcy ) ) 
-     .    sclr_tndcy(:,SCLR_THETA) = theta_tndcy(:)
-        if ( present( sclr_tndcy ) ) sclr_tndcy(:,SCLR_RT) = rt_tndcy(:)
-
 
         ! Compute radiation
         julday = 282
@@ -3487,7 +3494,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
         xi_abs = max(xi_abs,0.)
 
-        if (xi_abs .eq. 0.) then
+        if (xi_abs == 0.) then
           sw_on = .FALSE.
         end if
 
@@ -3574,13 +3581,27 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 
         ! Compute icedfs microphysics
-        if (icedfs) then
+        if ( licedfs ) then
           call altocu_icedf( dt, thlm, rcm, p, exner, rhot,
      .                       dqc_dt_icedfs )
           do k=1,gr%nnzp
             theta_tndcy(k) = theta_tndcy(k)
      .                       - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
             rt_tndcy(k) = rt_tndcy(k) + dqc_dt_icedfs(k)
+          end do
+        end if
+
+        ! Initialize Ncnm on first timestep
+        if ( lcoamps_micro .and. time == time_initial ) then
+          Ncnm(1:gr%nnzp) 
+     .    = 30.0 * (1.0 + exp(-gr%zt(1:gr%nnzp)/2000.0)) * 1.e6
+
+        else if ( kk_rain ) then
+          do k=1, gr%nnzp, 1
+            if ( rcm(k) >= 1.e-6 ) then
+              Ncm(k) = 30.0 * (1.0 + exp(-gr%zt(k)/2000.0)) * 1.e6
+     .                 * rhot(k) 
+            end if
           end do
         end if
 
@@ -3594,8 +3615,6 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         return
         end subroutine mpace_tndcy
 !----------------------------------------------------------------------
-
-
 
 !----------------------------------------------------------------------
         subroutine mpace_sfclyr( rho0, up, vp, uw, vw,

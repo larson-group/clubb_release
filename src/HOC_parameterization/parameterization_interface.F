@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.27 2006-12-08 14:55:10 griffinb Exp $
+! $Id: parameterization_interface.F,v 1.28 2006-12-12 20:21:17 dschanen Exp $
 
 
 
@@ -41,7 +41,8 @@
      .              um, vm, upwp, vpwp,
      .              thlm, rtm, wprtp, wpthlp, wp2, wp3,
      .              rtp2, thlp2, rtpthlp,
-     .              Scm, taum, rcm, Ncm, rrm, Nrm, cf,
+     .              Scm, taum, rcm, Ncm, Ncnm, Nim, 
+     .              hydromet, cf,
      .              isValid, implemented,
      .              sclrm, sclrm_forcing, ! optional
      .              edsclrm, edsclrmt )   ! optional
@@ -82,7 +83,7 @@
        use diagnose_variances, only: diag_var
        use surface
        use pdf_closure
-       use rain_equations, only: rain
+       use microphysics, only: timestep_microphys
 #ifdef STATS
        use statistics
 #endif /*STATS*/
@@ -155,12 +156,18 @@
      . rtpthlp, ! r_t' th_l'.                   [(kg K)/kg]
      . taum,    ! Tau on moment. grid.          [s]
      . rcm,     ! Liquid water mixing ratio.    [kg/kg]
-     . Ncm      ! Cloud droplet number conc.    [num/m^3]
+     . Ncm,     ! Cloud droplet number conc.    [num/m^3]
+     . Ncnm,    ! Cloud nuclei number conc.     [num/m^3]
+     . Nim      ! Ice crystal number conc.      [num/m^3]
 
-       ! You can safely leave these uninitialized for a non-drizzle case
-       real, intent(inout), dimension(gr%nnzp) :: 
-     . rrm,     ! Rain water mixing ratio.              [kg/kg]
-     . Nrm      ! Rain droplet number concentration.    [num/(m^3)]
+
+       real, intent(inout), dimension(gr%nnzp,hydromet_dim) ::
+     . hydromet  ! Hydrometer fields                     [units vary]
+       ! (:,1) rrm      Rain water mixing ratio          [kg/kg]
+       ! (:,2) Nrm      Rain droplet number conc.        [num/(m^3)]
+       ! (:,3) rsnow    Snow water mixing ratio          [kg/kg]
+       ! (:,4) rice     Ice water mixing ratio           [kg/kg]
+       ! (:,5) rgraupel Graupel water mixing ratio       [kg/kg]
 
        ! Needed for output for host models
        real, intent(inout), dimension(gr%nnzp) :: 
@@ -384,8 +391,8 @@
          if ( LH_on ) then 
            call latin_hypercube_sampling
      .     ( k, n_micro_call, d_variables, nt_repeat, i_rmd, 
-     .       crt1, crt2, cthl1, cthl2, 
-     .       rrm, cf, gr%nnzp, sample_flag, p_height_time )
+     .       crt1, crt2, cthl1, cthl2, hydromet(:,1), 
+     .       cf, gr%nnzp, sample_flag, p_height_time )
          end if
 
        end do ! k = 2, nz-1
@@ -490,29 +497,24 @@
 !      c_K is 0.548 usually (Duynkerke and Driedonks 1987)
 
        Kht = c_K * Lscale * tmp1
-       Khm = c_K * zt2zm( Lscale ) * SQRT( max( em, emin ) )
+       Khm = c_K * zt2zm( Lscale ) * sqrt( max( em, emin ) )
+ 
+!#######################################################################
+!############## ADVANCE PROGNOSTIC VARIABLES ONE TIMESTEP ##############
+!#######################################################################
 
+      ! Call Khairoutdinov and Kogan (2000) scheme for rain microphysics.
+       if ( kk_rain .or. lcoamps_micro ) then
 
-!      call Khairoutdinov and Kogan (2000) scheme for rain microphysics.
+         call timestep_microphys
+     .        ( dt, time_current, time_initial,
+     .          thlm, p, exner, rhot, rhom, rtm, rcm, Ncm, 
+     .          pdf_parms, wmt, wmm, AKm_est, Akm, 
+     .          Ncnm, Nim,
+     .          hydromet,
+     .          hm_rt_tndcy, hm_thl_tndcy, isValid )
 
-       IF ( kk_rain ) THEN
-
-          CALL rain( dt, thlm, p, exner, rhot, wmt, pdf_parms,
-     .               rtm, rcm, Ncm, rrm, Nrm, cond_rrm,
-     .               auto_rrm, accr_rrm, Vrr, mean_vol_rad,
-     .               AKm_est, AKm, isValid )
-
-          ! Rainfall rate (mm/day) should be defined on thermodynamic
-          ! levels.  Brian.
-          rain_rate = ( rrm * zm2zt(Vrr) ) * ( rhot / rho_lw )   ! rainfall rate (m/s)
-     .                                     * ( 86400.0 * 1000.0 )
-
-          ! Precipitation Flux (W/m^2) should be defined on
-          ! momentum levels.  Brian.
-          Fprec = ( zt2zm(rrm) * Vrr ) * ( rhom / rho_lw )
-     .                                 * rho_lw * Lv
-
-       END IF ! kk_rain
+       end if
 
        if ( .not. isValid ) return
 
@@ -522,10 +524,6 @@
      .   rsat(p(k), (thlm(k)+(Lv/(Cp*exner(k)))*rcm(k))*exner(k))
        end do
 
-!#######################################################################
-!############## ADVANCE PROGNOSTIC VARIABLES ONE TIMESTEP ##############
-!#######################################################################
-
 
 !      Advance rtm/wprtp and thlm/wpthlp one time step
 
@@ -534,7 +532,8 @@
      .        rtm, wprtp, rtpthvp, rtm_forcing,
      .        thlm, wpthlp, thlpthvp, thlm_forcing, 
      .        rhot, rhom, exner, rcm, Ncm, 
-     .        cond_rrm, auto_rrm, accr_rrm,             
+     .        hm_thl_tndcy, hm_rt_tndcy, 
+*    .        cond_rrm, auto_rrm, accr_rrm,             
      .        Fcsed, sed_rcm,
      .        isValid, implemented  
 #ifdef SCALARS
@@ -654,7 +653,7 @@
 !      Store values of surface fluxes for statistics
        if (lstats_samp) then
          if ( ish > 0 ) then
-           sfc%x(1,ish) = sfc%x(1,ish) + wpthlp(1) * rhom(1) * cp
+           sfc%x(1,ish) = sfc%x(1,ish) + wpthlp(1) * rhom(1) * Cp
            sfc%n(1,ish) = sfc%n(1,ish) + 1
          end if
          if ( ilh > 0 ) then
@@ -665,18 +664,18 @@
            sfc%x(1,iustar) = sfc%x(1,iustar) + ustar
            sfc%n(1,iustar) = sfc%n(1,iustar) + 1
          end if
-         if ( irain > 0 .and. kk_rain ) then   ! Added by Brian
-           sfc%x(1,irain) = sfc%x(1,irain) + rain_rate(2)
-           sfc%n(1,irain) = sfc%n(1,irain) + 1
-         end if
-         if ( ipflux > 0 .and. kk_rain ) then   ! Added by Brian
-           sfc%x(1,ipflux) = sfc%x(1,ipflux) + Fprec(1)
-           sfc%n(1,ipflux) = sfc%n(1,ipflux) + 1
-         end if
+         ! Moved to timestep_microphys
+!        if ( irain > 0 .and. kk_rain ) then   ! Added by Brian
+!          sfc%x(1,irain) = sfc%x(1,irain) + rain_rate(2)
+!          sfc%n(1,irain) = sfc%n(1,irain) + 1
+!        end if
+!        if ( ipflux > 0 .and. kk_rain ) then   ! Added by Brian
+!          sfc%x(1,ipflux) = sfc%x(1,ipflux) + Fprec(1)
+!          sfc%n(1,ipflux) = sfc%n(1,ipflux) + 1
+!        end if
        end if 
 
-!      Added to allow tuning without using the zm stats file
-
+       ! Added to allow tuning without using the zm stats file
        wp2zt     = zm2zt( wp2 )
        thlp2zt   = zm2zt( thlp2 )
        wpthlpzt  = zm2zt( wpthlp )
@@ -770,7 +769,8 @@
      .               nu1, nu2, nu6, nu8, nu_r, 
      .               gamma_coef, gamma_coefb, gamma_coefc,
      .               mu, c_K, beta, lmin_coef, taumin, taumax, fcor,
-     .               lbugsrad, kk_rain, cloud_sed, bottom_at_sfc,
+     .               lbugsrad, kk_rain, licedfs, lcoamps_micro,
+     .               cloud_sed, bottom_at_sfc,
      .               lmpace_nudge, implemented, 
      .               host_momentum, host_thermodynamic )
 
@@ -791,8 +791,8 @@
 
         ! Grid setup if part of larger (host) model.
         real, dimension(1:nzmax) :: 
-     .  host_momentum,
-     .  host_thermodynamic
+     .  host_momentum,     !    [m]
+     .  host_thermodynamic !    [m]
 
         ! Constant parameters
         real, intent(in) :: 
@@ -814,19 +814,22 @@
 
         ! Flags
         logical, intent(in) :: 
-     .  lbugsrad,      ! BUGSrad interactive radiation scheme
-     .  kk_rain,       ! K & K rain microphysics
-     .  cloud_sed,     ! Cloud Sedimentation
-     .  bottom_at_sfc, ! Whether the lowest model level is at the surface or not
-     .  lmpace_nudge   ! Wind nudging for MPACE case
+     .  lbugsrad,     ! BUGSrad interactive radiation scheme
+     .  kk_rain,      ! K & K rain microphysics
+     .  licedfs,      ! Simplified ice scheme
+     .  lcoamps_micro,! COAMPS microphysics scheme
+     .  cloud_sed,    ! Cloud Sedimentation
+     .  bottom_at_sfc,! Whether the lowest model level is at the surface or not
+     .  lmpace_nudge  ! Wind nudging for MPACE case
 
-        ! Whether this is part of larger model (T/F)
-        logical, intent(in) :: implemented 
+        logical, intent(in) :: 
+     .  implemented ! Whether this is part of larger model (T/F)
 
         ! Setup flags
 
-        call setup_model_flags( lbugsrad, kk_rain, cloud_sed,
-     .                          bottom_at_sfc, lmpace_nudge )
+        call setup_model_flags
+     .       ( lbugsrad, kk_rain, cloud_sed,
+     .         licedfs, lcoamps_micro, bottom_at_sfc, lmpace_nudge )
 
 !        if ( .not. implemented ) then
 !          call setup_diagnostic_variables( nzmax )
@@ -838,12 +841,12 @@
         call setup_prognostic_variables( nzmax )
         call setup_diagnostic_variables( nzmax )
 
-!       Setup grid
+        ! Setup grid
 
         call gridsetup( nzmax, deltaz, implemented,
      .                  host_momentum, host_thermodynamic )
 
-!       Define constants
+        ! Define constants
 
         call setup_constants
      .       ( deltaz, C1, C1b, C1c, C2, C2b, C2c, C4, C5, 

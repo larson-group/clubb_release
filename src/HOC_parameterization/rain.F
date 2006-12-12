@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.18 2006-11-26 21:45:01 dschanen Exp $
+! $Id: rain.F,v 1.19 2006-12-12 20:21:17 dschanen Exp $
 !----------------------------------------------------------------------
 
       MODULE rain_equations
@@ -30,12 +30,14 @@
                                          ! Khairoutdinov said it was okay!
       ! End Vince Larson's change.
 
-      PUBLIC rain
-      PRIVATE mean_volume_radius, cond_evap_rrm, cond_evap_Nrm
-      PRIVATE autoconv_rrm, autoconv_Nrm, accretion_rrm
-      PRIVATE G_T_p
-!      PRIVATE PDF_TRIVAR_2G_LN_LN, PDF_BIVAR_2G_LN, PDF_BIVAR_LN_LN
-      PRIVATE Dv_fnc
+      PUBLIC :: rain, kk_microphys
+      PRIVATE :: mean_volume_radius, cond_evap_rrm, cond_evap_Nrm
+      PRIVATE :: autoconv_rrm, autoconv_Nrm, accretion_rrm
+      PRIVATE :: G_T_p
+!      PRIVATE :: PDF_TRIVAR_2G_LN_LN, PDF_BIVAR_2G_LN, PDF_BIVAR_LN_LN
+      PRIVATE :: Dv_fnc
+
+      PRIVATE ! Default
 
       CONTAINS
 !----------------------------------------------------------------------
@@ -822,6 +824,289 @@
 
         RETURN
         END SUBROUTINE rain
+
+!----------------------------------------------------------------------
+        subroutine kk_microphys
+     .             ( thlm, p, exner, rhot, thl1, thl2, a, rc1, rc2, s1,
+     .               s2, ss1, ss2, rtm, rcm, Ncm, rrm, Nrm, 
+     .               lsample, AKm_est, AKm,
+     .               rrm_mc_tndcy, Nrm_mc_tndcy, 
+     .               hm_rt_tndcy, hm_thl_tndcy,
+     .               Vrr, VNr )
+!       Description:
+!       This code takes Brian Griffin's code from subroutine rain()
+!       (above) and computes microphysical tendencies and fall speeds
+!       per se rather than adding in the effects of diffusion, advection, 
+!       and sedimentation.  This is for the purpose of testing different
+!       microphysical schemes with the same diff., advect., and sed.
+!----------------------------------------------------------------------
+
+        use model_flags
+        use grid_class
+        use constants
+        use statistics
+
+        implicit none
+
+        ! External functions
+        real, external :: rsat
+
+        ! Input
+        real, intent(in), dimension(1:gr%nnzp) ::
+     .  thlm,      ! theta-l                            [K]
+     .  p,         ! pressure                           [Pa]
+     .  exner,     ! exner function                     [-]
+     .  rhot,      ! density on thermo. grid            [kg/m^3]
+     .  thl1, thl2,! PDF parameters thl1 &thl2          [K]
+     .  a,         ! PDF parameter a                    [-]
+     .  s1, s2,    ! PDF parameters s1 & s2             [kg/kg]
+     .  ss1, ss2,  ! PDF parameters ss1 & ss2           [kg/kg]
+     .  rc1, rc2,  ! PDF parameters rc1 & rc2           [kg/kg]
+     .  rtm,       ! Total water mixing ratio           [kg/kg]
+     .  rcm,       ! Cloud water mixing ratio           [kg/kg]
+     .  Ncm,       ! Cloud droplet number conc.         [number/m^3]
+     .  rrm,       ! rain water mixing ratio            [kg/kg]
+     .  Nrm        ! rain droplet number conc.          [number/m^3]
+
+        ! Latin hypercube variables - Vince Larson 22 May 2005
+        real, intent(in), dimension(gr%nnzp) :: 
+     .  Akm,    ! Latin hypercube estimate of Kessler autoconversion   
+     .  AKm_est ! Analytic calculation of Kessler autoconversion
+
+        logical, intent(in) ::
+     .  lsample ! Whether to sample stats for this call
+
+        ! Output
+        real, intent(out), dimension(gr%nnzp) :: 
+     .  Vrr,         ! Mean sedimentation velocity of rrm       [m/s]    
+     .  VNr,         ! Mean sedimentation velocity of Nrm       [m/s]
+     .  rrm_mc_tndcy,! Rain water microphysical tendency        [(kg/kg)/s]
+     .  Nrm_mc_tndcy,! Rain droplet number conc. micro. tend.   [(num/m^3)/s]
+     .  hm_rt_tndcy, ! Contributions to total water from micro. [(kg/kg)/s]
+     .  hm_thl_tndcy ! Contributions to theta_l from micro.     [K/s]
+
+        ! Local variables
+        real, dimension(gr%nnzp):: 
+     .  rrm_cond,    ! Change in rrm due to condensation        [(kg/kg)/s]
+     .  rrm_auto,    ! Change in rrm due to autoconversion      [(kg/kg)/s]
+     .  rrm_accr,    ! Change in rrm due to accretion           [(kg/kg)/s]
+     .  Nrm_cond,    ! Change in Nrm due to condensation        [(num/m^3)/s]
+     .  Nrm_auto,    ! Change in Nrm due to autoconversion      [(num/m^3)/s]
+     .  mean_vol_rad,! Mean volume radius                       [m]
+     .  rvm,         ! Water vapor mixing ratio                 [kg/kg]
+     .  Temp,        ! Temperature                              [K]
+     .  es,          ! Saturation vapor pressure                [Pa]
+     .  Supsat,      ! Supersaturation                          [-]
+     .  rs           ! Saturation mixing ratio                  [kg/kg]
+
+        real :: 
+     .  e,      ! Vapor pressure                [Pa]
+     .  thm,    ! Potential temperature         [K]
+     .  Beta_T  ! Beta_T                        [kg/kg]
+
+        ! Array indices
+        integer :: k, km1, kp1, i
+
+
+        ! Find the drop mean volume radius.  It is calculated using
+        ! the rain water mixing ratio, the rain droplet concentration,
+        ! and the air density.  These values are taken from the previous
+        ! timestep.  It is located on thermodynamic levels.
+        do k = 1, gr%nnzp, 1
+
+           mean_vol_rad(k) 
+     .     = mean_volume_radius( rrm(k), Nrm(k), rhot(k) )
+
+        end do
+
+#ifdef STATS
+        ! Save mean volume radius for stats purposes
+        ! Note: added lsample for latin hypercube sampling -dschanen
+
+        if ( lsample .and. lstats_samp 
+     .       .and. imean_vol_rad_rain > 0 ) then ! Brian
+
+          zt%x(:,imean_vol_rad_rain) 
+     .    = zt%x(:,imean_vol_rad_rain) + mean_vol_rad
+          zt%n(:,imean_vol_rad_rain) = zt%n(:,imean_vol_rad_rain) + 1
+
+        end if
+
+#endif /*STATS*/
+
+        ! The sedimentation velocity is found from the drop mean volume radius.
+        ! It is located on the momentum levels.  This is due to the fact that
+        ! momentum levels are where other vertical velocities are stored, such
+        ! as the vertical component of wind velocity (w).
+
+        ! Khairoutdinov and Kogan Sedimentation Velocity Calculation.
+        ! sedimentation velocity of rain drops (in m/s).
+        ! mean volume radius converted to um.
+        ! Note 1: positive sedimentation velocity means downwards.
+        ! Note 2: Vrr(m/s) = 0.012*rvr(um) - 0.2
+
+        ! Note 3:
+        ! Changed sedimentation to be negative and consistent with
+        ! the COAMPS microphysics.
+        ! -dschanen 5 Dec 2006
+
+        ! If rvr(um) is too small, the equation will result in an
+        ! upwards (positive) sedimentation velocity.  The limiter
+        ! is put in there for that reason.
+
+        do k = 1, gr%nnzp, 1
+
+           kp1 = min( k+1, gr%nnzp )
+
+
+           ! rrm sedimentation velocity.
+           Vrr(k) = 0.012 
+     .             * ( 1000000.0 * (1.0/2.0) 
+     .             * ( mean_vol_rad(kp1) + mean_vol_rad(k) ) )
+     .             - 0.2
+           ! Negative meaning a downward velocity now -dschanen 5 Dec 2006
+           Vrr(k) = -max( Vrr(k), 0.0 )
+
+           ! Nrm sedimentation velocity.
+           VNr(k) = 0.007 
+     .             * ( 1000000.0 * (1.0/2.0) 
+     .             * ( mean_vol_rad(kp1) + mean_vol_rad(k) ) )
+     .             - 0.1
+
+           ! Negative meaning a downward velocity now -dschanen 5 Dec 2006
+           VNr(k) = -max( VNr(k), 0.0 )
+
+        end do ! 1..gr%nnzp
+
+
+        ! Find values for other variables.
+        do k = 2, gr%nnzp, 1
+
+           ! Find the important conditions
+
+           rvm(k) = rtm(k) - rcm(k)   ! rvm is water vapor mixing ratio.
+
+           ! Find current vapor pressure.
+           e = (p(k)*rvm(k))/(ep + rvm(k))
+
+           ! Get theta from theta-l
+           thm = thlm(k) + (Lv/(Cp*exner(k)))*rcm(k)
+
+           ! Saturation mixing ratio
+           rs(k) = rsat( p(k),thm*exner(k) )
+
+           ! Find temperature and saturation vapor pressure.
+           Temp(k) = thm/((p0/p(k))**kappa)
+           es(k) = (p(k)*rs(k))/(ep + rs(k))
+
+        end do ! 2..gr%nnzp
+
+        ! Set the boundary conditions
+        rvm(1)          = 0.0
+        rs(1)           = 0.0
+        Temp(1)         = 0.0
+        es(1)           = 0.0
+        Supsat(1)       = 0.0
+        Supsat(gr%nnzp) = 0.0
+
+        do k = 2, gr%nnzp-1, 1
+
+           ! Compute supersaturation via s1, s2. 
+           !     Larson et al 2002, JAS, Vol 59, p 3534.
+           ! This allows a more direct comparison of local, nonlocal formulas.
+           Beta_T = (Rd/Rv) * ( Lv/(Rd*Temp(k)) ) * ( Lv/(Cp*Temp(k)) )
+
+           Supsat(k) = ( a(k)*s1(k) + (1-a(k))*s2(k) )
+     .                 *( ( 1.0 + Beta_T*rs(k) ) / rs(k) )
+
+           ! Now find the elements that make up the right-hand side of the
+           ! equation, dd, for rain water mixing ratio, rrm.
+
+           rrm_cond(k) 
+     .     = cond_evap_rrm( rrm(k), Nrm(k),
+     .                      s1(k), ss1(k), s2(k), ss2(k), 
+     .                      thl1(k), thl2(k), rc1(k), rc2(k), a(k),
+     .                      p(k), rhot(k), Temp(k), Supsat(k)  )
+
+
+        ! Vince Larson added option to call LH sampled Kessler autoconversion.
+        ! 22 May 2005
+!           rrm_auto(k) = autoconv_rrm( rcm(k), Ncm(k), rhot(k),
+!     .                        a, s1, s2, ss1, ss2, rc1, rc2 )
+           if ( LH_on ) then
+
+!              rrm_auto(k) = AKm_est(k)
+              rrm_auto(k) = AKm(k)
+
+           else
+
+              rrm_auto(k) 
+     .        = autoconv_rrm( rcm(k), Ncm(k), s1(k), ss1(k), 
+     .                        s2(k), ss2(k), a(k), rhot(k) )
+
+           end if ! LH_on
+        ! End Vince Larson's addition
+
+           rrm_accr(k) 
+     .     = accretion_rrm( rcm(k), rrm(k), s1(k), ss1(k), 
+     .                      s2(k), ss2(k), a(k) )
+
+           ! Now find the elements that make up the right-hand side of the
+           ! equation, rr, for rain droplet number concentration, Nrm.
+
+           Nrm_cond(k) = cond_evap_Nrm( rrm_cond(k), Nrm(k), rrm(k) )
+
+           Nrm_auto(k) = autoconv_Nrm( rrm_auto(k), rhot(k) )
+
+#ifdef STATS
+           if ( lsample .and. lstats_samp ) then
+              ! Explicit contributions to rrm.
+              if ( irrm_cond > 0 ) then
+                zt%x(k,irrm_cond) = zt%x(k,irrm_cond) + rrm_cond(k)
+                zt%n(k,irrm_cond) = zt%n(k,irrm_cond) + 1
+              end if
+
+              if ( irrm_auto > 0 ) then
+                zt%x(k,irrm_auto) = zt%x(k,irrm_auto) + rrm_auto(k)
+                zt%n(k,irrm_auto) = zt%n(k,irrm_auto) + 1
+              end if
+
+              if ( irrm_accr > 0 ) then
+                zt%x(k,irrm_accr) = zt%x(k,irrm_accr) + rrm_accr(k)
+                zt%n(k,irrm_accr) = zt%n(k,irrm_accr) + 1
+              end if
+
+             ! Explicit contributions to Nrm.
+             if ( iNrm_cond > 0 ) then
+               zt%x(k,iNrm_cond) = zt%x(k,iNrm_cond) + Nrm_cond(k)
+               zt%n(k,iNrm_cond) = zt%n(k,iNrm_cond) + 1
+             end if
+
+             if ( iNrm_auto > 0 ) then
+               zt%x(k,iNrm_auto) = zt%x(k,iNrm_auto) + Nrm_auto(k)
+               zt%n(k,iNrm_auto) = zt%n(k,iNrm_auto) + 1
+             end if
+
+           end if ! lstats_samp and lsample
+#endif /*STATS*/
+
+          ! Explicit contributions to rrm and Nrm from microphysics
+          rrm_mc_tndcy(k) = rrm_cond(k) + rrm_auto(k) + rrm_accr(k)
+          Nrm_mc_tndcy(k) = Nrm_cond(k) + Nrm_auto(k)
+
+          ! Explicit contributions to thlm and rtm from the microphysics
+          hm_rt_tndcy(k)  = -rrm_mc_tndcy(k)
+          hm_thl_tndcy(k) = ( Lv / ( Cp*exner(k) ) ) * rrm_mc_tndcy(k)
+        end do ! k=2..gr%nnzp-1
+
+        ! Boundary conditions
+        hm_rt_tndcy(1)  = 0.0
+        hm_thl_tndcy(1) = 0.0
+        hm_rt_tndcy(gr%nnzp)  = 0.0
+        hm_thl_tndcy(gr%nnzp) = 0.0
+
+        return
+        end subroutine kk_microphys
 
 !===============================================================================
         !
@@ -2228,8 +2513,6 @@
         DOUBLE PRECISION:: sci
         DOUBLE PRECISION:: test
         LOGICAL:: use_eq_1
-!        DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308.0
-!       Found that above is not valid on most compilers -dschanen
         DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308
         REAL, PARAMETER:: sigs_tol = 10.0**(-18)
 
