@@ -1,4 +1,74 @@
-$Id: Readme.txt,v 1.22 2006-09-22 17:40:41 dschanen Exp $
+$Id: Readme.txt,v 1.23 2006-12-13 00:22:18 dschanen Exp $
+************************************************************************
+*                           Copyright Notice
+*                         This code is (C) 2006 
+*         Jean-Christophe Golaz, Vincent E. Larson, Brian M. Griffin, 
+*            David P. Schanen, Adam J. Smith, and Michael J. Falk.
+*
+*         The distribution of this code and derived works thereof 
+*                      should include this notice.
+*
+*         Portions of this code derived from other sources (ACM TOMS,
+*         Numerical Recipes, etc.) are the property of their respective
+*         authors as noted and also subject to copyright.
+************************************************************************
+
+************************************************************************
+*                     Overview of the HOC code
+************************************************************************
+
+For a detailed description of the model code see:
+
+``A PDF-Based Model for Boundary Layer Clouds. Part I:
+  Method and Model Description'' Golaz, et al. (2002)
+  JAS, Vol. 59, pp. 3540--3551.
+
+See also the hoc_v2.2_tuner/doc/hoc_eqns.pdf file in the CVS repository for
+finer details on how the discretization was done.
+
+The tuner code tunes certain parameters in a one-dimensional boundary layer 
+cloud parameterization (``hoc''), to best fit large-eddy simulation output.  
+The optimization technique is the downhill-simplex method of Needler and Mead, 
+as implemented in _Numerical Recipes In Fortran 90_ (amoeba.f90).  
+The parameterization is called as a subroutine ( hoc_model() ) with 
+parameter values as input.
+
+The code is highly flexible.  One can vary the cases (bomex, fire, arm, or
+atex) to match; the variables to match (cloud fraction, liquid water, third
+moment of vertical velocity, etc.); the altitude and times over which to match
+these variables; and the parameters to tune (C1, beta, etc.). 
+
+The code is written in Fortran 90/95 and executed by a bash runscript. 
+On the Microsoft Windows platform this could work using MSYS or Cygwin 
+with G95, but we have not tested this sort of configuration.
+
+We use the Portland Group compiler, version 5.2-4 on Redhat Enterprise 3.
+
+G95 <http://www.g95.org/> has been tested on SPARC & x86 Solaris,
+x64 & x86 GNU/Linux.
+
+Sun Fortran 8.1 and 8.2 on Solaris works, but has not been as rigorously 
+tested as pgf90.
+
+Using Intel Fortran 9 we have been able to compile on Linux x86/x64 and
+Itanium.
+
+HP/Compaq/DEC Fortran on Alpha also appears to work but because future 
+Alpha processor development has ceased it is not extensively tested.
+
+The GNU Fortran compiler (GCC 4.0.x) does not implement the entire 
+Fortran 90 standard yet, and so does not work at all.
+
+It is important to note that all these compilers use *incompatible* module
+formats for the .mod files!  If you want to use different compilers on the
+same system, you will need to build a different set of mod files for each
+compiler and use -M or -I to specify their location.
+
+In order to get similar results on differing architectures, platforms, and
+compilers, initially try a conservative optimization and enable 
+IEEE-754 standard style floating point math.  On x86 compatible machines 
+using SSE or SSE2 is usually the best way to do this.
+
 ***********************************************************************
 *                         Using the HOC Model                         *
 ***********************************************************************
@@ -12,7 +82,7 @@ B. NetCDF >= v3.5.1;  We have not tested our code with anything older.
 C. LAPACK & BLAS.  These provide the tri and band diagonal solver
    subroutines needed by HOC.  Many vendors provide optimized versions of
    these routines, which may be much faster than the reference BLAS.
-D. GNU bash, or an equivalent POSIX compliant shell.
+D. GNU bash, or an equivalent POSIX compliant shell to use the run scripts.
 
 Build:
 1. $ cd ~/hoc_v2.2_tuner/src
@@ -246,61 +316,6 @@ Batch mode:
    back as infinite).  The model namelists come from ../model.
 3. $ ../bin/jacobian
 
-************************************************************************
-*                     Overview of the HOC code                         *
-************************************************************************
-
-For a detailed description of the model code see:
-
-``A PDF-Based Model for Boundary Layer Clouds. Part I:
-  Method and Model Description'' Golaz, et al. (2002)
-  JAS, Vol. 59, pp. 3540--3551.
-
-See also the hoc_v2.2_tuner/doc/hoc_eqns.pdf file in the CVS repository for
-finer details on how the discretization was done.
-
-The tuner code tunes certain parameters in a one-dimensional boundary layer 
-cloud parameterization (``hoc''), to best fit large-eddy simulation output.  
-The optimization technique is the downhill-simplex method of Needler and Mead, 
-as implemented in _Numerical Recipes In Fortran 90_ (amoeba.f90).  
-The parameterization is called as a subroutine ( hoc_model() ) with 
-parameter values as input.
-
-The code is highly flexible.  One can vary the cases (bomex, fire, arm, or
-atex) to match; the variables to match (cloud fraction, liquid water, third
-moment of vertical velocity, etc.); the altitude and times over which to match
-these variables; and the parameters to tune (C1, beta, etc.). 
-
-The code is written in Fortran 90/95 and executed by a bash runscript. 
-On the Microsoft Windows platform this could work using MSYS or Cygwin 
-with G95, but we have not tested this sort of configuration.
-
-We use the Portland Group compiler, version 5.2-4 on Redhat Enterprise 3.
-
-G95 <http://www.g95.org/> has been tested on SPARC & x86 Solaris,
-x64 & x86 GNU/Linux.
-
-Sun Fortran 8.1 and 8.2 on Solaris works, but has not been as rigorously 
-tested as pgf90.
-
-Using Intel Fortran 9 we have been able to compile on Linux x86/x64 and
-Itanium.
-
-HP/Compaq/DEC Fortran on Alpha also appears to work but because future 
-Alpha processor development has ceased it is not extensively tested.
-
-The GNU Fortran compiler (GCC 4.0.x) does not implement the entire 
-Fortran 90 standard yet, and so does not work at all.
-
-It is important to note that all these compilers use *incompatible* module
-formats for the .mod files!  If you want to use different compilers on the
-same system, you will need to build a different set of mod files for each
-compiler and use -M or -I to specify their location.
-
-In order to get similar results on differing architectures, platforms, and
-compilers, initially try a conservative optimization and enable 
-IEEE-754 standard style floating point math.  On x86 compatible machines 
-using SSE or SSE2 is usually the best way to do this.
 
 -----------------------------------------------------------------------
 - (1.1) Explanation of the Input and Output Files
@@ -477,3 +492,4 @@ The variables follow the convention of the a=1, and b=2, appended after the
 sclr portion of their name.  For example. the first scalar mean is 'sclram',
 and the second is 'sclrbm'.  These and their forcings are all that occurs in
 the zt file, the rest all occur in the zm file.
+************************************************************************
