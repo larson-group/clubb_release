@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.72 2006-12-13 01:40:35 dschanen Exp $
+# $Id: Makefile,v 1.73 2006-12-13 23:46:51 dschanen Exp $
 # This version should work with BSD, GNU make, smake and dmake
 
 # For HOC we edit this by hand rather than implementing imake or automake
@@ -28,7 +28,7 @@ BUGS_RAD = kinds.o bugsrad_planck.o bugsrad_physconst.o gases_ckd.o \
 	cloudg.o comscp1.o comscp2.o gascon.o \
 	newexp.o rayle.o two_rt_lw.o two_rt_sw.o \
 	two_rt_sw_ocastrndm.o two_rt_lw_ocastrndm.o \
-	two_rt_lw_sel.o two_rt_lw_iter.o \
+	two_rt_lw_sel.o two_rt_lw_iter.o cos_solar_zen.o \
 	two_rt_sw_bs.o bugsrad_hoc.o
 
 COAMPS_MICRO = adjmlt.o adjtq.o coamps_micro_driver.o conice.o \
@@ -156,6 +156,7 @@ distclean:
 	$(LIBDIR)/lib*
 
 # == Parameterization dependencies ==
+cos_solar_zen.o : cos_solar_zen.F
 cons.o		: cons.f90
 air.o		: cons.o air.f90 
 parab.o		: air.o cons.o parab.f90
@@ -183,8 +184,8 @@ Skw_func.o	: Skw_func.F
 closure_new.o	: constants.o grid.o rsat.o erf.o closure_new.F 
 diag_var.o	: constants.o grid.o statistics.o lapack_wrap.o \
 	diag_var.F
-gcss.o		: constants.o statistics.o rad_lwsw.o linearinterpolation.F \
-                  gcss.F rsat.o rsati.o
+gcss.o		: constants.o statistics.o rad_lwsw.o linearinterpolation.o \
+                  cos_solar_zen.o rsat.o rsati.o gcss.F
 rad_lwsw.o      : rad_lwsw.F statistics.o
 linearinterpolation.o : linearinterpolation.F
 mixing.o	: constants.o statistics.o lapack_wrap.o mixing.F 
@@ -307,8 +308,8 @@ two_rt_lw_ocastrndm.o	: kinds.o two_rt_lw_ocastrndm.F90
 two_rt_sw.o		: kinds.o two_rt_sw.F
 two_rt_sw_bs.o		: kinds.o lapack_wrap.o two_rt_sw_bs.F
 two_rt_sw_ocastrndm.o	: kinds.o two_rt_sw_ocastrndm.F90
-bugsrad_hoc.o 		: kinds.o constants.o bugs_rad.o statistics.o \
-	bugsrad_hoc.F90
+bugsrad_hoc.o 		: kinds.o cos_solar_zen.o constants.o bugs_rad.o \
+	statistics.o bugsrad_hoc.F90
 
 # == Executables ==
 hoc_tuner.o		: nrtype.o nr.o hoc.o error.o hoc_tuner.F
