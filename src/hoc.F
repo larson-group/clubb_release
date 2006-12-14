@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.102 2006-12-12 20:20:49 dschanen Exp $
+! $Id: hoc.F,v 1.103 2006-12-14 21:57:49 mjfalk Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -984,6 +984,25 @@
 
         wp2 = 2.0 / 3.0 * em
 
+
+        ! Michael Falk for RICO tropical cumulus case, 13 Dec 2006
+        case ( "rico" )
+
+          cloud_top_height = 1500.
+          emax = 1.0
+          do k=1,gr%nnzp
+            if ( gr%zm(k) < cloud_top_height ) then
+              em(k) = emax
+            else
+              em(k) = emin
+            end if
+          enddo
+
+          em(1) = em(2)
+          em(gr%nnzp) = em(gr%nnzp-1)
+
+          wp2(1:gr%nnzp) = 2.0 / 3.0 * em(1:gr%nnzp) ! Michael Falk reworded this.
+
         end select
 
         ! End Initialize TKE and other fields as needed
@@ -1199,6 +1218,14 @@
 #endif /* SCALARS */
      .                     )
 
+         case ( "rico" ) ! RICO case
+           call rico_tndcy( dtmain, exner, wmt, wmm, thlm_forcing,
+     .                      rtm_forcing, radht
+#ifdef SCALARS
+     .                     ,sclrm_forcing
+#endif /* SCALARS */
+     .                    )
+
          case default
            write(unit=fstderr,fmt=*) 
      .       "hoc_forcings_timestep: Don't know how to handle "
@@ -1333,6 +1360,23 @@
      .                      ,wpsclrp(1,:), wpedsclrp(1,:)
 #endif /* SCALARS */
      .                     )
+
+         case ( "rico" )
+          call atex_sfclyr( um(2), vm(2), thlm(2), rtm(2),
+     .                      upwp_sfc, vpwp_sfc,
+     .                      wpthlp_sfc, wprtp_sfc
+#ifdef SCALARS
+     .                     ,sclrm(2,:), wpsclrp(1,:)
+#endif /* SCALARS */
+     .                    )
+
+           call rico_sfclyr( um(2), vm(2), thlm(2), rtm(2),
+     .                        gr%zt(2), 299.8, 101540., ! 299.8 K is the RICO SST; 101540 Pa is the sfc pressure.
+     .                        upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc
+#ifdef SCALARS
+     .                     ,sclrm(2,:), wpsclrp(1,:)
+#endif /* SCALARS */
+     .                      )
 
         case default
           write(unit=fstderr,fmt=*) 
