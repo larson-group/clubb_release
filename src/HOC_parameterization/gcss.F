@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: gcss.F,v 1.25 2006-12-14 21:57:52 mjfalk Exp $ 
+! $Id: gcss.F,v 1.26 2006-12-15 14:31:35 griffinb Exp $ 
         module gcss
 
 !       Description:
@@ -3707,10 +3707,22 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         real, optional, intent(out), dimension(gr%nnzp,sclr_dim) ::
      .  sclr_tndcy ! Passive scalar tendency [units vary]
 
-!       No large-scale subsidence for now
-        wmt = 0.0
-        wmm = 0.0
+        ! Local Variables
+        integer :: k
 
+        ! Large-scale subsidence
+
+        DO k = 2, gr%nnzp, 1
+          wmt(k) = -5.0E-6 * gr%zt(k)
+        END DO
+
+        wmm = zt2zm( wmt )
+
+        ! Boundary conditions.
+        wmt(1) = 0.0        ! Below surface
+        wmm(1) = 0.0        ! At surface
+        wmm(gr%nnzp) = 0.0  ! Model top
+        
 !       No large-scale water tendency or cooling
 
         rt_tndcy    = 0.0
