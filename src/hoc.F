@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.103 2006-12-14 21:57:49 mjfalk Exp $
+! $Id: hoc.F,v 1.104 2006-12-16 00:32:36 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -1058,8 +1058,18 @@
         use diagnostic_variables
         use prognostic_variables
         use gcss
+        use arm, only: arm_tndcy, arm_sfclyr
+        use astex, only: astex_tndcy, astex_sfclyr
+        use atex, only: atex_tndcy, atex_sfclyr
+        use bomex, only: bomex_tndcy, bomex_sfclyr
+        use dycoms2_rf01, only: dycoms2_rf01_tndcy, dycoms2_rf01_sfclyr
+        use dycoms2_rf02, only: dycoms2_rf02_tndcy, dycoms2_rf02_sfclyr
+        use fire, only: fire_tndcy
+        use mpace, only: mpace_tndcy, mpace_sfclyr
+        use nov11, only: nov11_altocu_tndcy ! Above surface
+        use jun25, only: jun25_altocu_tndcy ! Above surface
+        use wangara, only: wangara_tndcy, wangara_sfclyr
         use surface
-        use microphysics
 
         implicit none
 
@@ -1107,22 +1117,13 @@
      .                     )
 
          case( "fire" ) ! FIRE Sc case
-           call fire_tndcy( time, wmt, wmm, thlm_forcing, 
-     .                      rtm_forcing
+           call fire_tndcy( time, rhot, rcm, exner, 
+     .                      wmt, wmm, Frad, radht,
+     .                      thlm_forcing, rtm_forcing
 #ifdef SCALARS
      .                     ,sclrm_forcing 
 #endif /* SCALARS */
      .                    )
-           thlm_forcing = 0.0
-#ifdef SCALARS
-           sclrm_forcing(:, SCLR_THETA) = 0.0
-#endif /* SCALARS */
-
-           call cloud_rad( rhot, rcm, exner, Frad, radht, thlm_forcing
-#ifdef SCALARS
-     .                     ,sclrm_forcing(:,SCLR_THETA)
-#endif /* SCALARS */
-     .                   )
 
          case( "wangara" ) ! Wangara dry CBL
            call wangara_tndcy( time, wmt, wmm, 
@@ -1134,18 +1135,12 @@
 
          case( "atex" ) ! ATEX case
            call atex_tndcy( time, time_initial, rtm, 
-     .                      wmt, wmm, thlm_forcing,
-     .                      rtm_forcing, isValid
+     .                      rhot, rcm, exner, wmt, wmm, Frad, radht,
+     .                      thlm_forcing, rtm_forcing, isValid
 #ifdef SCALARS
      .                     ,sclrm_forcing   ! optional variable
 #endif /* SCALARS */
      .                    )
-
-           call cloud_rad( rhot, rcm, exner, Frad, radht, thlm_forcing
-#ifdef SCALARS
-     .                     ,sclrm_forcing(:, SCLR_THETA)
-#endif /* SCALARS */
-     .                   )
 
          case( "dycoms2_rf01" ) ! DYCOMS2 RF01 case
            call dycoms2_rf01_tndcy( time, rhot, rhom, rtm, rcm, exner,

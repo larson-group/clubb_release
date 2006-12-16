@@ -29,7 +29,7 @@ c
 c      call linearinterpolation(nparam,xlist,tlist,xvalue,tvalue)
 c      print *,'Tvalue:', tvalue
 c      stop
-c      end
+c      end program interp
 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c Subroutine linearinterpolation.F -- for 25 June 1996 altocumulus     c
@@ -51,12 +51,18 @@ c in xvalue, and tvalue will be the temperature at that point.         c
 c                                                                      c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-      subroutine linearinterpolation(nparam,xlist,tlist,xvalue,tvalue)
-      integer nparam
-      real xlist(nparam)
-      real tlist(nparam)
-      real xvalue
-      real tvalue
+      subroutine linear_interpolation(nparam,xlist,tlist,xvalue,tvalue)
+
+      implicit none
+
+      ! Input Variables
+      integer, intent(in) :: nparam
+
+      real, intent(inout), dimension(nparam) :: xlist
+      real, intent(inout), dimension(nparam) :: tlist
+
+      real, intent(inout) :: xvalue
+      real, intent(inout) :: tvalue
 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c LOCAL VARIABLES                                                      c
@@ -72,8 +78,8 @@ c temp       : A temporary variable used for the bubble sort swap      c
 c                                                                      c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-      integer i, j, bottombound, topbound, smallest
-      real temp
+      integer :: i, j, bottombound, topbound, smallest
+      real :: temp
 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c                                                                      c
@@ -88,8 +94,8 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         do j=i,nparam
           if (xlist(j) .lt. xlist(smallest)) then
             smallest = j
-          endif
-        enddo
+          end if
+        end do
 
         temp = xlist(i)
         xlist(i) = xlist(smallest)
@@ -98,7 +104,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         temp = tlist(i)
         tlist(i) = tlist(smallest)
         tlist(smallest) = temp
-      enddo
+      end do
 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c                                                                      c
@@ -110,7 +116,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       if ((xvalue .lt. xlist(1)) .or. (xvalue .gt. xlist(nparam))) then
         print *,'Value out of range'
         stop
-      endif
+      end if
 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c                                                                      c
@@ -124,12 +130,12 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
           bottombound = i-1
           topbound    = i
         endif
-      enddo
-                                                                                                               
+      end do
+
       tvalue = (xvalue - xlist(bottombound)) /
      .         (xlist(topbound) - xlist(bottombound)) *
      .         (tlist(topbound) - tlist(bottombound)) +
      .         tlist(bottombound)
-                                                                                                               
+
       return
-      end
+      end subroutine linear_interpolation

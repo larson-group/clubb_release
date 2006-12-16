@@ -1,4 +1,4 @@
-! $Id: rad_lwsw.F,v 1.5 2006-09-11 16:06:43 dschanen Exp $
+! $Id: rad_lwsw.F,v 1.1 2006-12-16 00:32:45 dschanen Exp $
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c Subroutine rad_lwsw -- for Larson group altocumulus cases            c
 c Written by Vince Larson, Chris Golaz, Adam Smith, Michael Falk, and  c
@@ -91,14 +91,14 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
      .                  sw_on, lw_on)
 
       use constants
-
-c-->Chris Golaz addition for statistics
 #ifdef STATS
       use statistics
 #endif
-c<--end of addition
 
       implicit none
+
+      ! External
+      external :: sunray_sw
 
       !!!!!!!!!!!!!!!!!!!!!
       !! INPUT VARIABLES !!
@@ -174,7 +174,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         do k=2,kk+1
           lwp(k) = lwp(k-1)
      .           + rbm(k-1)*qc3(k-1)*dsigm(k-1) !/aoz(i,j)
-        enddo
+        end do
 
 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -256,18 +256,18 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
             Frad_LW(k) = F0 * exp( -kay * ((lwp(k)+lwp(k-1))/2))
      .                 + F1 * exp( -kay *
      .                      (lwp(kk+1) - ((lwp(k)+lwp(k-1))/2) ) )
-          enddo
+          end do
         else
           do k=1,kk+1
             Frad_LW(k) = F0 * exp( -kay * lwp(k) )
      .                 + F1 * exp( -kay * (lwp(kk+1)-lwp(k)) )
-          enddo
+          end do
         endif
 
       else ! this 'else' means lw_on is .FALSE.
         do k=1,kk+1
           Frad_LW(k) = 0.
-        enddo
+        end do
       endif
 
       if (sw_on) then
@@ -276,12 +276,12 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       else
         do k=1,kk+1
           Frad_SW(k) = 0.
-        enddo
+        end do
       endif
 
       do k=1,kk+1
         Frad(k) = Frad_LW(k) + Frad_SW(k)
-      enddo
+      end do
 
 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -314,26 +314,10 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
      .            * (Frad_SW(k)-Frad_SW(k+1))/dsigm(k)
         radht_LW(k) = (-1.0/(Cp*rbm(k)))
      .            * (Frad_LW(k)-Frad_LW(k+1))/dsigm(k)
-      enddo
+      end do
 
       return
-      end
-
-
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c                                                                      c
-c End of subroutine nov11_rad.                                         c
-c                                                                      c
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-
-
-
-
-
-
-
-
-
+      end subroutine rad_lwsw
 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c Subroutine sunray_sw -- for CLEX altocumulus case                    c
@@ -399,10 +383,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       subroutine sunray_sw(qc3,rbm,xi_abs,dsigm,kk,Frad_SW,
      .                  radius,A,gc,Fs0,omega,center)
 
-c#ifdef STATS
-c      use statistics
-c#endif
-
+      use constants, only: Cp, rho_lw, pi
       implicit none
 
       !!!!!!!!!!!!!!!!!!!!!
@@ -448,8 +429,8 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
       real taupath, tauc, t1, t2, t3, c1, c2, omegade,
      .     x1, x2, x3, rk, rk2, xi_abs2, rp, alpha, beta, rtt,
-     .     exmu0, expk, exmk, xp23p, xm23p, ap23b, am23b, taucde,
-     .     pi
+     .     exmu0, expk, exmk, xp23p, xm23p, ap23b, am23b, taucde
+!    .     pi
 
 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -465,12 +446,12 @@ c          Notated g-prime in Duynkerke eqn.18.         Unit: None     c
 c                                                                      c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-      real, parameter :: rho_l = 1000.0
-      real, parameter :: cp = 1005.0
+c     real, parameter :: rho_l = 1000.0
+c     real, parameter :: cp = 1005.0
       real ff, gcde
       ff = gc*gc
       gcde = gc/(1.0+gc)
-      pi = 4.0*atan(1.0)
+!     pi = 4.0*atan(1.0)
 
 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -494,9 +475,9 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       do k=1, kk
 
         tau(k) = 1.5 * qc3(k) * rbm(k) * dsigm(k) !/ aoz(i,j)
-     .         / radius / rho_l
+     .         / radius / rho_lw
         tauc = tauc + tau(k)
-      enddo
+      end do
       tau(kk+1) = tau(kk)
 
       omegade = (1.0-ff)*omega/(1.0-omega*ff)
@@ -504,7 +485,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
       do k=1, kk+1
         taude(k) = (1.0-omega*ff)*tau(k)
-      enddo
+      end do
 
 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -656,7 +637,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         taupath = 0.5*taude(1)
       else
         taupath = 0.
-      endif
+      end if
 
           F_diff(1) = (-4.0/3.0) * Fs0
      .              * ( 
@@ -691,14 +672,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
           F_dir(k) = -Fs0*xi_abs*exp(-taupath/xi_abs)
           Frad_SW(k) = F_diff(k) + F_dir(k)
 
-        enddo                                         ! end k loop
+        end do ! k=2..kk+1
 
       return
-      end
-
-
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c                                                                      c
-c End of subroutine sunray_sw.                                         c
-c                                                                      c
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+      end subroutine sunray_sw

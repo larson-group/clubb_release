@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.73 2006-12-13 23:46:51 dschanen Exp $
+# $Id: Makefile,v 1.74 2006-12-16 00:32:36 dschanen Exp $
 # This version should work with BSD, GNU make, smake and dmake
 
 # For HOC we edit this by hand rather than implementing imake or automake
@@ -42,32 +42,36 @@ COAMPS_MICRO = adjmlt.o adjtq.o coamps_micro_driver.o conice.o \
         nrmtqw.o qsatvi.o qtadj.o slope.o tgqg.o \
         tgqi.o tgqr.o tgqs.o rsati.o gamma.o
 
+MODEL = hoc.o gcss.o rad_lwsw.o cloud_rad.o astex.o atex.o fire.o bomex.o \
+	arm.o dycoms2_rf01.o dycoms2_rf02.o mpace.o nov11.o jun25.o wangara.o \
+	linear_interpolation.o diag_ustar.o icedfs.o 
+
 PARAMETERIZATION = \
 	$(LATIN_HYP) \
 	$(COAMPS_MICRO) \
 	constants.o endian.o outputfile.o outputgrads.o \
 	outputnc.o grid.o model_flags.o statistics.o \
 	erf.o rain.o microphysics.o cons.o air.o parab.o \
-	closure_new.o diag_var.o gcss.o rad_lwsw.o linearinterpolation.o \
+	closure_new.o diag_var.o \
         hydrostatic.o length.o mixing.o rsat.o sat_rcm.o sfc.o \
 	sounding.o update.o wp23.o tau.o Skw_func.o \
 	numer_check.o diag_variables.o prog_variables.o \
 	parameterization_interface.o lapack_wrap.o rsati.o
 
 
-INTERFACING = gradsaverage.o inputfields.o inputgrads.o hoc.o 
+INTERFACING = gradsaverage.o inputfields.o inputgrads.o 
 
 NUM_REC	= nrtype.o nr.o nrutil.o ran_state.o ran1.o amebsa.o amoeba.o
 
-TUNING = $(INTERFACING) $(NUM_REC) error.o
+TUNING = $(MODEL) $(INTERFACING) $(NUM_REC) error.o
 
 INT2TXT		= int2txt.o
 HOC_TUNER	= $(TUNING) hoc_tuner.o
-HOC_STANDALONE	= $(INTERFACING) hoc_standalone.o
+HOC_STANDALONE	= $(MODEL) $(INTERFACING) hoc_standalone.o
 COMPARE_RUNS	= $(INTERFACING) compare_runs.o
-JACOBIAN	= $(INTERFACING) jacobian.o
-HOC_INPUTFIELDS	= $(INTERFACING) hoc_inputfields.o
-HOC_BUDGET_TERMS= $(TUNING) budget_terms.o hoc_tuner_budget_terms.o
+JACOBIAN	= $(MODEL) $(INTERFACING) jacobian.o
+HOC_INPUTFIELDS	= $(MODEL) $(INTERFACING) hoc_inputfields.o
+HOC_BUDGET_TERMS= $(TUNING) $(GCSS) budget_terms.o hoc_tuner_budget_terms.o
 
 # == Targets == ( hoc_tuner and jacobian assume statistics )
 all:	hoc_tuner int2txt hoc_tuner_budget_terms \
@@ -76,7 +80,7 @@ all:	hoc_tuner int2txt hoc_tuner_budget_terms \
 # == Rules ==
 # Note: since we're using a virtual path the make command is going to use the
 # first file it finds with that name.  Be careful when making copies of files.
-VPATH=.:LH:BUGSrad:HOC_parameterization:coamps_micro
+VPATH=.:LH:GCSS:BUGSrad:HOC_parameterization:coamps_micro
 
 # Cancel implicit rules (e.g for modula-2 `m2c -c $@.mod')
 .SUFFIXES:
@@ -184,18 +188,18 @@ Skw_func.o	: Skw_func.F
 closure_new.o	: constants.o grid.o rsat.o erf.o closure_new.F 
 diag_var.o	: constants.o grid.o statistics.o lapack_wrap.o \
 	diag_var.F
-gcss.o		: constants.o statistics.o rad_lwsw.o linearinterpolation.o \
-                  cos_solar_zen.o rsat.o rsati.o gcss.F
 rad_lwsw.o      : rad_lwsw.F statistics.o
-linearinterpolation.o : linearinterpolation.F
+linear_interpolation.o : linear_interpolation.F
 mixing.o	: constants.o statistics.o lapack_wrap.o mixing.F 
-parameterization_interface.o : constants.o gcss.o hydrostatic.o mixing.o \
+parameterization_interface.o : constants.o hydrostatic.o mixing.o \
 	model_flags.o numer_check.o Skw_func.o microphysics.o \
 	length.o statistics.o sounding.o diag_var.o rsat.o \
 	grid.o sat_rcm.o update.o prog_variables.o diag_variables.o \
 	sfc.o closure_new.o latin_hyper_sample.o lh_sampler.o \
 	parameterization_interface.F 
-hoc.o		: parameterization_interface.o hoc.F
+hoc.o		: parameterization_interface.o gcss.o arm.o astex.o atex.o \
+	bomex.o dycoms2_rf01.o dycoms2_rf02.o fire.o jun25.o mpace.o nov11.o \
+	wangara.o hoc.F
 hydrostatic.o	: constants.o hydrostatic.F 
 length.o	: constants.o length.F 
 rsat.o		: constants.o rsat.F 
@@ -239,6 +243,24 @@ rtpthlp_2_sptp.o	: rtpthlp_2_sptp.F
 sample_points.o		: sample_points.F
 st_2_rtthl.o		: st_2_rtthl.F
 truncate_gaus_mixt.o	: truncate_gaus_mixt.F
+
+# == GCSS dependencies ==
+gcss.o      : constants.o statistics.o rad_lwsw.o linear_interpolation.o \
+	cos_solar_zen.o icedfs.o rsat.o rsati.o gcss.F
+diag_ustar.o: diag_ustar.F
+arm.o       : constants.o diag_ustar.o model_flags.o grid.o arm.F
+astex.o     : constants.o model_flags.o grid.o astex.F
+atex.o      : constants.o model_flags.o grid.o cloud_rad.o atex.F
+bomex.o     : constants.o model_flags.o grid.o bomex.F
+fire.o      : constants.o model_flags.o grid.o cloud_rad.o fire.F
+mpace.o     : constants.o grid.o icedfs.o statistics.o mpace.F
+nov11.o     : constants.o grid.o icedfs.o statistics.o nov11.F
+jun25.o     : constants.o grid.o icedfs.o statistics.o jun25.F
+wangara.o   : constants.o grid.o wangara.F
+icedfs.o    : constants.o grid.o statistics.o icedfs.F
+cloud_rad.o : constants.o grid.o cloud_rad.F
+dycoms2_rf01.o : constants.o model_flags.o grid.o dycoms2_rf01.F
+dycoms2_rf02.o : constants.o model_flags.o grid.o dycoms2_rf02.F
 
 # == COAMPS Microphysics dependencies ==
 adjmlt.o                : adjmlt.F
