@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: bomex.F,v 1.1 2006-12-16 00:32:45 dschanen Exp $
+! $Id: bomex.F,v 1.2 2006-12-16 20:03:16 dschanen Exp $
         module bomex
 
 !       Description:
@@ -12,14 +12,14 @@
         contains
 
 !----------------------------------------------------------------------
-        subroutine bomex_tndcy( time, wmt, wmm, 
+        subroutine bomex_tndcy( time, wmt, wmm, radht,
      .                          thlm_forcing, rtm_forcing,
      .                          sclrm_forcing )
 !       Description:
 !       Subroutine to set theta and water tendencies for BOMEX case
 
 !       References:
-!       None
+!       <http://www.knmi.nl/~siebesma/gcss/bomexcomp.init.html>
 !----------------------------------------------------------------------
 
         use grid_class
@@ -29,12 +29,13 @@
         implicit none
 
         ! Input
-        real, intent(in)  :: time ! Model time [s]
+        real, intent(in)  :: time ! Current model time [s]
 
         ! Output Variables
         real, intent(out), dimension(gr%nnzp) ::
      .  wmt,          ! w wind on thermodynamic grid                 [m/s]
      .  wmm,          ! w wind on momentum grid                      [m/s]
+     .  radht,        ! Radiative heating rate                       [K/s]
      .  thlm_forcing, ! Liquid water potential temperature tendency  [K/s]
      .  rtm_forcing   ! Total water mixing ratio tendency            [kg/kg/s]
 
@@ -45,8 +46,7 @@
         ! Local Variables
         integer :: k
 
-!       Large scale subsidence
-
+        ! Large scale subsidence
         do k = 2, gr%nnzp, 1
 
            if ( gr%zt(k) >= 0. .and. gr%zt(k) < 1500. ) then
@@ -68,25 +68,32 @@
         wmm(1) = 0.0        ! At surface
         wmm(gr%nnzp) = 0.0  ! Model top
         
+        if ( .not. lbugsrad ) then
+
         ! Radiative theta-l tendency
+          do k = 2, gr%nnzp
 
-        do k = 2, gr%nnzp
-
-           if ( gr%zt(k) >= 0. .and. gr%zt(k) < 1500. ) then
-              thlm_forcing(k) = -2.315e-5
-           else if ( gr%zt(k) >= 1500. .and. gr%zt(k) < 2500. ) then
-              thlm_forcing(k)
+            if ( gr%zt(k) >= 0. .and. gr%zt(k) < 1500. ) then
+              radht(k) = -2.315e-5
+            else if ( gr%zt(k) >= 1500. .and. gr%zt(k) < 2500. ) then
+              radht(k)
      .          = - 2.315e-5 
      .            + 2.315e-5 
      .              * ( gr%zt(k) - 1500. ) / ( 2500. - 1500. )
-           else
-              thlm_forcing(k) = 0.
-           end if
+            else
+              radht(k) = 0.
+            end if
 
-        end do
+          end do
 
-!       Large scale advective moisture tendency
+          thlm_forcing = radht
+        else ! Compute radht interactively with BUGSrad
 
+          thlm_forcing = 0.0
+
+        end if ! ~lbugsrad
+
+        ! Large scale advective moisture tendency
         do k = 2, gr%nnzp
 
            if ( gr%zt(k) >= 0. .and. gr%zt(k) < 300. ) then
@@ -100,6 +107,7 @@
            end if
 
         end do
+
 
         ! Boundary conditions
         thlm_forcing(1) = 0.0  ! Below surface

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.104 2006-12-16 00:32:36 dschanen Exp $
+! $Id: hoc.F,v 1.105 2006-12-16 20:03:13 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -1109,7 +1109,7 @@
      .                   )
 
          case( "bomex" ) ! BOMEX Cu case
-           call bomex_tndcy( time, wmt, wmm, 
+           call bomex_tndcy( time, wmt, wmm, radht,
      .                       thlm_forcing, rtm_forcing
 #ifdef SCALARS
      .                       ,sclrm_forcing 
