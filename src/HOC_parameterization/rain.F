@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.20 2006-12-20 02:31:07 dschanen Exp $
+! $Id: rain.F,v 1.21 2006-12-20 18:53:02 griffinb Exp $
 !----------------------------------------------------------------------
 
       MODULE rain_equations
@@ -7,13 +7,38 @@
       IMPLICIT NONE
 
       ! Statistical rain parameters.
-      REAL, PARAMETER:: rrp2_rrm2 = 1.2
-      REAL, PARAMETER:: Nrp2_Nrm2 = 1.0
-      REAL, PARAMETER:: Ncp2_Ncm2 = 0.07
-      REAL, PARAMETER:: corr_rrNr_LL =  0.85
-      REAL, PARAMETER:: corr_rcrr_NL =  0.10
-      REAL, PARAMETER:: corr_rcNr_NL = -0.15
-      REAL, PARAMETER:: corr_rcNc_NL =  0.45
+!      ! Old parameterization.
+!      REAL, PARAMETER:: rrp2_rrm2 = 1.2
+!      REAL, PARAMETER:: Nrp2_Nrm2 = 1.0
+!      REAL, PARAMETER:: Ncp2_Ncm2 = 0.07
+!      REAL, PARAMETER:: corr_rrNr_LL =  0.85
+!      REAL, PARAMETER:: corr_rcrr_NL =  0.10
+!      REAL, PARAMETER:: corr_rcNr_NL = -0.15
+!      REAL, PARAMETER:: corr_rcNc_NL =  0.45
+!      ! Parameters for case with cloud water sedimentation.
+!      REAL, PARAMETER:: rrp2_rrm2 = 1.7123
+!      REAL, PARAMETER:: Nrp2_Nrm2 = 1.0618
+!      REAL, PARAMETER:: Ncp2_Ncm2 = 0.2964
+!      REAL, PARAMETER:: corr_rrNr_LL = 0.872580
+!      REAL, PARAMETER:: corr_rcrr_NL = 0.393905
+!      REAL, PARAMETER:: corr_rcNr_NL = 0.402948
+!      REAL, PARAMETER:: corr_rcNc_NL = 0.670482
+!      ! Parameters for case without cloud water sedimentation.
+!      REAL, PARAMETER:: rrp2_rrm2 = 1.4584
+!      REAL, PARAMETER:: Nrp2_Nrm2 = 1.0285
+!      REAL, PARAMETER:: Ncp2_Ncm2 = 0.1034
+!      REAL, PARAMETER:: corr_rrNr_LL = 0.861597
+!      REAL, PARAMETER:: corr_rcrr_NL = 0.252875
+!      REAL, PARAMETER:: corr_rcNr_NL = 0.196055
+!      REAL, PARAMETER:: corr_rcNc_NL = 0.616638
+      ! Rounded average of the above two sets (to nearest 0.05).
+      REAL, PARAMETER:: rrp2_rrm2 = 1.60
+      REAL, PARAMETER:: Nrp2_Nrm2 = 1.05
+      REAL, PARAMETER:: Ncp2_Ncm2 = 0.20
+      REAL, PARAMETER:: corr_rrNr_LL = 0.85
+      REAL, PARAMETER:: corr_rcrr_NL = 0.30
+      REAL, PARAMETER:: corr_rcNr_NL = 0.30
+      REAL, PARAMETER:: corr_rcNc_NL = 0.65
       !REAL, PARAMETER:: C_evap = 0.86    ! Khairoutdinov and Kogan (2000) 
       !                                   ! ratio of drizzle drop mean 
       !                                   ! geometric radius to drizzle drop
