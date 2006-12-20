@@ -1,4 +1,4 @@
-! $Id: sfc.F,v 1.4 2006-12-08 18:35:25 griffinb Exp $
+! $Id: sfc.F,v 1.5 2006-12-20 03:14:54 dschanen Exp $
 #define SCLR_RT 2
 #define SCLR_THETA 1
 
@@ -9,125 +9,18 @@
         private ! Default to private
 
         public ::
-     .  sfc_momentum_fluxes,
-     .  sfc_thermo_fluxes,
+c    .  sfc_momentum_fluxes,
+c    .  sfc_thermo_fluxes,
      .  sfc_var
 
         contains
-
-!------------------------------------------------------------------------
-        subroutine sfc_momentum_fluxes( u, v, upwp_sfc, vpwp_sfc )
-
-!       Description:
-!       This subroutine computes surface momentum fluxes using aerodynamic
-!       formulas.
-
-!       References:
-!       None
-!------------------------------------------------------------------------
-
-        implicit none
-
-        ! External
-        intrinsic :: sqrt
-
-        ! Constant parameter
-        real, parameter :: 
-     .  ustar = 0.3
-
-        ! Input variables
-        real, intent(in) :: 
-     .  u, ! u wind first level above ground    [m/s]
-     .  v  ! v wind first level above ground    [m/s]
-
-        ! Output Variables
-        real, intent(out) :: 
-     .  upwp_sfc,! sfc u momentum flux (m^2/s^2)
-     .  vpwp_sfc ! sfc v momentum flux (m^2/s^2)
-
-        ! Local Variables
-        real :: M ! total wind speed above ground
-
-        ! Computes fluxes
-
-        M = sqrt( u*u + v*v )
-        upwp_sfc = - ustar*ustar * u / M
-        vpwp_sfc = - ustar*ustar * v / M
-
-        return
-        end subroutine sfc_momentum_fluxes
-
-!------------------------------------------------------------------------
-        subroutine sfc_thermo_fluxes( u, v, Tsfc, psfc, thlair, rtair,
-     .                                wpthlp_sfc, wprtp_sfc,
-     .                                sclrair, wpsclrp_sfc )
-!       Description:
-!       This subroutine computes surface fluxes of heat and moisture 
-!       using aerodynamic formulas.
-
-!       References:
-!       None
-!------------------------------------------------------------------------
-
-        use constants
-
-        implicit none
-        
-        ! External
-        intrinsic :: present, sqrt
-
-        real, external :: rsat
-
-        ! Parameter
-        real, parameter :: C = 1.3e-3
-
-        ! Input Variables
-        real, intent(in) :: 
-     .  u,      ! u wind                        [m/s]
-     .  v,      ! u wind                        [m/s]
-     .  Tsfc,   ! Surface temperature           [K]
-     .  psfc,   ! Surface pressure              [Pa]
-     .  thlair, ! theta_l at first model layer  [K]
-     .  rtair   ! rt at first model layer       [kg/kg]
-
-
-        ! Output Variables
-        real, intent(out) :: 
-     .  wpthlp_sfc,! surface thetal flux        [K m/s]
-     .  wprtp_sfc  ! surface moisture flux      [kg/kg m/s]
-
-        ! Input Variables (optional)
-        real, optional, intent(in), dimension(sclr_dim) :: 
-     .  sclrair ! Passive scalars at first model layer  [units vary]
-
-        ! Output Variables (optional) 
-        real, optional, intent(out), dimension(sclr_dim) :: 
-     .  wpsclrp_sfc ! surface passive scalar flux       [units m/s]
-
-        ! Local Variables
-        real :: M  ! Total wind speed above ground
-
-        ! Compute fluxes
-        M = sqrt( u*u + v*v )
-        wpthlp_sfc = -C * M * ( thlair - Tsfc * (psfc/p0)**kappa )
-        wprtp_sfc  = -C * M * ( rtair - rsat( psfc, Tsfc ) )
-
-        ! Compute passive scalar as == to wprtp & wpthlp for now
-        if ( present( wpsclrp_sfc ) .and. present( sclrair ) ) then
-          wpsclrp_sfc(SCLR_THETA) = -C * M *
-     .               ( sclrair(SCLR_THETA) - Tsfc*(psfc/p0)**kappa )
-          wpsclrp_sfc(SCLR_RT) = -C * M *
-     .               ( sclrair(SCLR_RT) - rsat(psfc, Tsfc) )
-        endif
-
-        return
-        end subroutine sfc_thermo_fluxes
 
 !------------------------------------------------------------------------
         subroutine sfc_var( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc,
      .                      wp2_sfc, thlp2_sfc, rtp2_sfc, rtpthlp_sfc, 
      .                      wpsclrp_sfc, sclrp2_sfc,
      .                      sclrprtp_sfc, sclrpthlp_sfc )
+
 !       Description:
 !       This subroutine computes estimate of the surface thermodynamic 
 !       second order moments
