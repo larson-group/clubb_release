@@ -21,7 +21,9 @@
                               
       use constants
       use grid_class, only: zt2zm
+#ifdef STATS
       use statistics
+#endif
 
       implicit none
 

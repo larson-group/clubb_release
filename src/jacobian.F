@@ -1,7 +1,8 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.31 2006-07-27 01:46:48 dschanen Exp $
+! $Id: jacobian.F,v 1.32 2006-12-20 02:31:04 dschanen Exp $
 
       program jacobian
+#ifdef STATS
 
 !     Description:
 !     Generates a matrix based on variation between parameter 
@@ -481,4 +482,5 @@
         end subroutine getvariables 
 
 !-----------------------------------------------------------------------
+#endif /*STATS*/
         end program jacobian

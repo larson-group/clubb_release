@@ -38,7 +38,9 @@
 
         USE grid_class
         USE constants
+#ifdef STATS
         USE statistics
+#endif
 
         implicit none
 

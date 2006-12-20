@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.19 2006-12-12 20:21:17 dschanen Exp $
+! $Id: rain.F,v 1.20 2006-12-20 02:31:07 dschanen Exp $
 !----------------------------------------------------------------------
 
       MODULE rain_equations
@@ -844,7 +844,9 @@
         use model_flags
         use grid_class
         use constants
+#ifdef STATS
         use statistics
+#endif
 
         implicit none
 

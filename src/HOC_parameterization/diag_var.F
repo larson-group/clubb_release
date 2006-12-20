@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.8 2006-09-05 22:39:04 dschanen Exp $
+! $Id: diag_var.F,v 1.9 2006-12-20 02:31:07 dschanen Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -603,7 +603,9 @@
 !       None
 !-----------------------------------------------------------------------
         use grid_class
+#ifdef STATS
         use statistics
+#endif
 
         implicit none
 
