@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: hoc_tuner.F,v 1.17 2006-12-16 22:17:54 dschanen Exp $
+! $Id: hoc_tuner.F,v 1.18 2006-12-20 22:13:15 dschanen Exp $
 
       program hoc_tuner 
 
@@ -55,6 +55,8 @@
      .  x_array, err_array, init_err, results_stdout, ! Variables
      .  results_file, isValid, tune_type, ftol, ndim, mdim ! Variables
 
+      use constants, only: fstdout, fstderr
+
       implicit none
 
       ! Variables
@@ -64,24 +66,22 @@
 
       character(len=1)  :: user_response ! Simple Y/N query
 
-!-------------------------- Define Constants ---------------------------- 
+      ! Read in namelists and define parameters
+      call tuner_init( read_files=.true. )
 
-      call tuner_init(read_files=.true.)
+      ! Calculate the error for the initial values 
+      init_err = min_les_hoc_diff( x_array(1, 1:ndim) )
 
-!-------------- Calculate the error for the initial values --------------
-!     Notes: min_les_hoc_diff 
-!     is written to deal with undefined and invalid values for
-!            variations on the initial vector, but that algorithm relies 
-!            on the initial vector being valid. 
-!------------------------------------------------------------------------
+      ! Note: min_les_hoc_diff is written to deal with undefined and 
+      ! invalid values for variations on the initial vector, but that 
+      ! algorithm relies on the initial vector being valid. 
 
-      init_err =  min_les_hoc_diff( x_array(1, 1:ndim) )
       if ( .not. isValid ) then
-         print *, "Initial variable values must be valid"
-         stop
+        write(fstderr,*) "Initial variable values must be valid"
+        stop
       end if
 
-!------------------ Attempt to find the optimal values -----------------
+      ! Attempt to find the optimal parameter set
       do
         if ( tune_type == 0 ) then 
           call amoeba_driver( )
@@ -89,13 +89,13 @@
           call amebsa_driver( )
         end if
 
-!---------------- Print to stdout if specified --------------------------
-        if ( results_stdout ) call output_results_stdout
+        ! Print to stdout if specified
+        if ( results_stdout ) call output_results_stdout( )
 
-!---------------- Query to see if we should end the loop  ---------------
-        write(*,*) "Run Complete."
-        write(unit=*,fmt='(A)', advance='no') 
-     .        "Re-run with new parameters?(y/n) "
+        ! Query to see if we should exit the loop
+        write(fstdout,*) "Run Complete."
+        write(unit=fstdout,fmt='(A)', advance='no') 
+     .    "Re-run with new parameters?(y/n) "
         read *, user_response
 
         if ( trim(user_response) /= "y" .and.
@@ -103,20 +103,18 @@
           exit 
         end if
        
-        write (*,*) "Current ftol= ", ftol 
-        write (*, '(A)', advance='no') "Enter new ftol=   "
+        write (fstdout,*) "Current ftol= ", ftol 
+        write (fstdout,fmt='(A)', advance='no') "Enter new ftol=   "
         read *, ftol
 
         call tuner_init(read_files=.false.) 
 
-      end do
+      end do ! user_response /= 'y', 'Y' or 'yes'
 
-!     This is done through a script now
+      ! Final namelist file output 
 
-!     call output_optimal_results( )
-
-!--------------- Final namelist file output -----------------------------
       if ( results_file ) then 
+
         ! Tuner namelist
         print *, "Generating new error.in file..."
 
@@ -125,6 +123,9 @@
         results_f = "error_" // current_date // '_' 
      .              // current_time(1:4) // ".in" 
 
+        ! Note:
+        ! The first column of x_array is the optimized result, which
+        ! is swapped in by amoeba.
         call output_nml_tuner( results_f, x_array(1,1:ndim) )
         print *, "New filename is: ", results_f
 
@@ -139,7 +140,7 @@
 
       end if
 
-!-------------------------- Exit Program  -------------------------------
+      ! Exit Program
 
       stop "Program exited normally"
 
@@ -148,11 +149,21 @@
 !------------------------------------------------------------------------
       subroutine amoeba_driver
 
-!     Description
+!     Description:
 !     Simple interface for the amoeba minimization algorithm
+
+!     References:
+!     _Numerical Recipes in Fortran 90_.  See full citation above.
 !------------------------------------------------------------------------
       use nr, only: amoeba
-      use error
+      use error, only: 
+     .  ndim, mdim,         ! Array dimensions
+     .  x_array, err_array, ! The 'p' matrix and 'y' vector resp.
+     .  ftol,               ! Tolerance of tuning
+     .  iter,               ! Iteration number
+     .  min_les_hoc_diff,   ! Cost function
+     .  min_err             ! Minimum value of the cost function
+
 
       implicit none
 
@@ -162,8 +173,13 @@
       call amoeba( x_array(1:mdim,1:ndim), err_array(1:mdim), 
      .             ftol, min_les_hoc_diff, iter)
 
-      min_err =  minval( err_array )
-        
+      ! Note:
+      ! Amoeba will make the optimal cost result the first element of
+      ! err_array and the optimal parameter set the first column of x_array, 
+      ! where x_array is 'p' in the NR subroutine and err_array is 'y'.
+
+      min_err = err_array(1)
+
       return
       end subroutine amoeba_driver
 
