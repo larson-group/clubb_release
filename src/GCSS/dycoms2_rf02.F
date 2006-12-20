@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf02.F,v 1.1 2006-12-16 00:32:45 dschanen Exp $
+! $Id: dycoms2_rf02.F,v 1.2 2006-12-20 03:16:08 dschanen Exp $
         module dycoms2_rf02
 
 !       Description:
@@ -15,9 +15,9 @@
 !----------------------------------------------------------------------
         SUBROUTINE dycoms2_rf02_tndcy
      .             ( time, time_initial, rhot, rhom, rtm, rcm, exner, 
-     .               wmt, wmm, theta_tndcy, rt_tndcy, 
+     .               wmt, wmm, thlm_forcing, rtm_forcing, 
      .               Frad, radht, Ncm, Ncnm, isValid, 
-     .               sclr_tndcy )
+     .               sclrm_forcing )
 !       Description:
 
 !       References:
@@ -30,46 +30,51 @@
         USE statistics
 #endif /*STATS*/
 
+        ! Constant parameters
+        real, parameter :: 
+     .  ls_div = 3.75e-6,
+     .  kap    = 85.0,    ! [m^2/kg]
+     .  F0     = 70.0,    ! [W/m^2]
+     .  F1     = 22.0     ! [W/m^2]
+
         ! Input Variables
         real, intent(in) ::
      .  time,         ! Current time    [s]
      .  time_initial  ! Initial time    [s]
 
-        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rhot
-        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rhom
-        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rtm
-        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rcm
-        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: exner
+        real, intent(in), dimension(gr%nnzp) ::
+     .  rhot,          ! Density on thermo. grid        [kg/m^3] 
+     .  rhom,          ! Density on moment. grid        [kg/m^3]
+     .  rtm,           ! Total water mixing ratio       [kg/kg]
+     .  rcm,           ! Cloud water mixing ratio       [kg/kg]
+     .  exner          ! Exner function.                [-]
 
-        ! Output
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: wmt
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: wmm
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: theta_tndcy
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: rt_tndcy
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: Frad
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: radht
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: Ncnm
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: Ncm
+        ! Input/Output Variables
+        logical, intent(inout) :: isValid
 
-        ! Optional output
-        REAL, OPTIONAL, 
-     .  DIMENSION(gr%nnzp, sclr_dim), INTENT(OUT):: sclr_tndcy
+        ! Output Variables
+        real, intent(out), dimension(gr%nnzp) :: 
+     .  wmt,           ! wm on thermodynamic grid       [m/s]
+     .  wmm,           ! wm on momentum grid            [m/s]
+     .  thlm_forcing,  ! theta_l forcing                [K/s]
+     .  rtm_forcing,   ! r_t forcing                    [(kg/kg)/s] 
+     .  Frad,          ! Radiative flux                 [W/m^2]
+     .  radht,         ! Radiative heating rate         [K/s] 
+     .  Ncm,           ! Cloud droplet number conc.     [#/m^3]
+     .  Ncnm           ! Cloud nuclei number conc.      [#/m^3]
 
-        ! Misc
-        LOGICAL, INTENT(INOUT) :: isValid
+        ! Optional Output Variables
+        real, intent(out), optional, dimension(gr%nnzp,sclr_dim) ::
+     .  sclrm_forcing  ! Passive scalar tendency        [units/s]
 
-        ! Local
-        REAL, DIMENSION(1:gr%nnzp):: LWP
-        REAL, DIMENSION(1:gr%nnzp):: Heaviside
+        ! Local Variables
+        real, dimension(gr%nnzp) :: 
+     .  LWP,       ! Liquid water path
+     .  Heaviside
 
-        REAL:: z_i
+        real :: z_i
 
-        REAL, PARAMETER :: ls_div = 3.75e-6
-        REAL, PARAMETER :: kap    = 85.0  ! m^2/kg
-        REAL, PARAMETER :: F0     = 70.0  ! W/m^2
-        REAL, PARAMETER :: F1     = 22.0  ! W/m^2
-
-        INTEGER:: k
+        integer :: k  ! Loop index
 
         ! Large-scale subsidence
 
@@ -85,15 +90,16 @@
         wmm(gr%nnzp) = 0.0  ! Model top
         
         IF ( .not. lbugsrad ) THEN
-        ! Radiation
 
-!         Compute liquid water path from top of the model
-!         We define liquid water path on momentum levels
+         ! Radiation
+
+         ! Compute liquid water path from top of the model
+         ! We define liquid water path on momentum levels
 
           LWP(gr%nnzp) = 0.0
           DO k = gr%nnzp-1, 1, -1
             LWP(k) = LWP(k+1) + rhot(k+1)*rcm(k+1)/gr%dzt(k+1)
-          END DO
+          END DO  ! k = gr%nnzp..1
 
 !         Find the height of the isotherm rtm = 8.0 g/kg.
 
@@ -150,16 +156,24 @@
      .               * ( Frad(k) - Frad(k-1) ) * gr%dzt(k)
           END DO
           radht(1) = radht(2)
+
+#ifdef STATS
+          if ( lstats_samp .and. iradht_LW > 0 ) then
+            zt%x(:,iradht_LW) = zt%x(:,iradht_LW) + radht
+            zt%n(:,iradht_LW) = zt%n(:,iradht_LW) + 1
+          end if
+#endif
         END IF ! ~ lbugsrad
 
         ! Enter the final theta-l and rtm tendencies
 
         IF ( .not. lbugsrad ) THEN
-          theta_tndcy(1:gr%nnzp) = radht(1:gr%nnzp)
+          thlm_forcing(1:gr%nnzp) = radht(1:gr%nnzp)
         ELSE
-          theta_tndcy(1:gr%nnzp) = 0.0
-        END IF 
-        rt_tndcy(1:gr%nnzp) = 0.0
+          thlm_forcing(1:gr%nnzp) = 0.0
+        END IF
+
+        rtm_forcing(1:gr%nnzp) = 0.0
 
         ! Update surface statistics
 #ifdef STATS
@@ -191,24 +205,27 @@
         ! so will cloud droplet number concentration (Ncm).
 
         if ( lcoamps_micro .and. time == time_initial ) then
+
           ! Taken from COAMPS subroutine ncn_init()
           Ncnm(1:gr%nnzp) = 55000000.0 / rhot(1:gr%nnzp)
 
         else
-          ! K & K or no micro
+
+          ! K & K or no microphysics
           DO k = 1, gr%nnzp, 1
             IF ( rcm(k) > 1.0E-6 ) THEN
               Ncm(k) = 55000000.0
             ELSE
               Ncm(k) = 0.0
             END IF
-          END DO
+          END DO ! k=1..gr%nnzp
 
         end if
 
-        if ( present( sclr_tndcy ) ) 
-     .    sclr_tndcy(:,SCLR_THETA) = theta_tndcy 
-        if ( present( sclr_tndcy ) ) sclr_tndcy(:,SCLR_RT) = rt_tndcy 
+        if ( present( sclrm_forcing ) )  then
+          sclrm_forcing(:,SCLR_THETA) = thlm_forcing(:) 
+          sclrm_forcing(:,SCLR_RT)    = rtm_forcing(:)
+        end if
 
         RETURN
         END SUBROUTINE dycoms2_rf02_tndcy
@@ -216,60 +233,65 @@
 
 !----------------------------------------------------------------------
 
-        SUBROUTINE dycoms2_rf02_sfclyr( u_sfc, v_sfc, uw, vw, wtp, wrp,
-     .                                  ustar, sclr_sfc, wpsclr_sfc )
+        subroutine dycoms2_rf02_sfclyr( um_sfc, vm_sfc, 
+     .                                  upwp_sfc, vpwp_sfc, 
+     .                                  wpthlp_sfc, wprtp_sfc, ustar,
+     .                                  wpsclrp_sfc )
 
-        USE constants
+        use constants
 
-        ! Input
-        REAL, INTENT(IN):: u_sfc
-        REAL, INTENT(IN):: v_sfc
+        ! External
+        intrinsic :: sqrt, present
 
-        ! Input (optional)
-        REAL, OPTIONAL, INTENT(IN):: sclr_sfc(sclr_dim)
+        ! Constant parameters
+        real, parameter :: 
+     .  SH = 16.0,
+     .  LH = 93.0
+
+        ! Input Variables
+        real, intent(in) :: 
+     .  um_sfc, ! um(2) [m/s]
+     .  vm_sfc  ! vm(2) [m/s]
 
         ! Output
-        REAL, INTENT(OUT):: uw
-        REAL, INTENT(OUT):: vw
-        REAL, INTENT(OUT):: wtp
-        REAL, INTENT(OUT):: wrp
-        REAL, INTENT(OUT):: ustar
+        real, intent(out) :: 
+     .  upwp_sfc,    ! u'w' at (1)      [m^2/s^2]
+     .  vpwp_sfc,    ! v'w'at (1)       [m^2/s^2]
+     .  wpthlp_sfc,  ! w'th_l' at (1)   [(m K)/s]  
+     .  wprtp_sfc,   ! w'r_t'(1) at (1) [(m kg)/(s kg)]
+     .  ustar
 
-        ! Output (optional)
-        REAL, OPTIONAL, INTENT(OUT):: wpsclr_sfc(sclr_dim)
+        ! Output Variables (optional)
+        real, intent(out), optional, dimension(sclr_dim) :: 
+     .  wpsclrp_sfc  ! w' scalar at (1) [units vary]
 
-        ! Internal
-        REAL:: wind_sfc
-
-        REAL, PARAMETER:: SH = 16.0
-        REAL, PARAMETER:: LH = 93.0
+        ! Local Variables
+        real :: wind_sfc  ! ? [m^2/s^2]?
 
         ustar = 0.25
 
-        wind_sfc = SQRT( u_sfc**2.0 + v_sfc**2.0 )
+        wind_sfc = sqrt( um_sfc**2 + vm_sfc**2 )
 
-        IF (wind_sfc > 0.0) THEN
+        if (wind_sfc > 0.0) then
+          upwp_sfc = -um_sfc * ( ustar**2 ) / wind_sfc
+          vpwp_sfc = -vm_sfc * ( ustar**2 ) / wind_sfc
 
-           uw = -u_sfc * (ustar**2.0) / wind_sfc
-           vw = -v_sfc * (ustar**2.0) / wind_sfc
+        else
+           upwp_sfc = 0.0
+           vpwp_sfc = 0.0
 
-        ELSE
+        end if  ! wind_sfc > 0
 
-           uw = 0.0
-           vw = 0.0
+        wpthlp_sfc = SH / (1.21 * Cp)
+        wprtp_sfc  = LH / (1.21 * Lv)
 
-        END IF
-
-        wtp = SH / (1.21 * Cp)
-        wrp = LH / (1.21 * Lv)
-
-        if ( PRESENT( wpsclr_sfc ) ) then
-          wpsclr_sfc(SCLR_THETA) = SH / (1.21 * Cp)
-
-          wpsclr_sfc(SCLR_RT) = LH / (1.21 * Lv)
+        ! For testing the passive scalars
+        if ( present( wpsclrp_sfc ) ) then
+          wpsclrp_sfc(SCLR_THETA) = SH / (1.21 * Cp)
+          wpsclrp_sfc(SCLR_RT)    = LH / (1.21 * Lv)
         end if
 
-        RETURN
-        END SUBROUTINE dycoms2_rf02_sfclyr
+        return
+        end subroutine dycoms2_rf02_sfclyr
 
         end module dycoms2_rf02

@@ -1,9 +1,10 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.9 2006-12-12 20:21:17 dschanen Exp $
+! $Id: constants.F,v 1.10 2006-12-20 03:16:10 dschanen Exp $
 
         module constants
 
-!  Contains frequently occuring model constants
+!       Description:
+!       Contains frequently occuring model constants
 !-----------------------------------------------------------------------
 
         implicit none
@@ -26,14 +27,14 @@
      .  Rd = 287.04,  ! Dry air gas constant                [J/kg/K]
      .  Rv = 461.5    ! Water vapor gas constant            [J/kg/K]
 
-        ! Useful combinations of R and Rv
+        ! Useful combinations of Rd and Rv
         real, parameter :: 
-     .  ep  = Rd / Rv,    ! ep = 0.622
-     .  ep1 = (1.0-ep)/ep,! ep1 = 0.61
-     .  ep2 = 1.0/ep      ! ep2 = 1.61
+     .  ep  = Rd / Rv,    ! ep  = 0.622  [-]
+     .  ep1 = (1.0-ep)/ep,! ep1 = 0.61   [-]
+     .  ep2 = 1.0/ep      ! ep2 = 1.61   [-]
 
         real, parameter :: 
-     .  kappa = Rd / Cp   ! kappa
+     .  kappa = Rd / Cp   ! kappa        [-]
 
         ! Changed g to grav to make it easier to find in the code 5/25/05
 !       real, parameter :: grav  = 9.80665 ! Gravitational acceleration [m/s^2]
@@ -48,14 +49,11 @@
      .  rho_lw = 1000.0, ! Density of liquid water              [kg/m^3]
      .  T0     = 300.0   ! Reference temperature                [K]
 
-        real, parameter :: emin = 1.0e-6
-
         ! BUGSrad Constants
         real, parameter :: 
      .  sol_const = 1367.0 ! Solar constant     [W/m^2]
 
-
-        ! Model parameters and constraints
+        ! Model parameters and constraints setup in the namelists
 
         real :: 
      .  fcor ! Coriolis parameter               [s^-1]
@@ -95,7 +93,7 @@
      .  gamma_coefb,! High Skewness in gamma coefficient Skewness Function.
      .  gamma_coefc,! Degree of Slope of gamma coefficient Skewness Function.
      .  c_K,        ! Constant from Chris Golaz.
-     .  mu,         ! Constant from Chris Golaz.
+     .  mu,         ! Fractional entrainment rate per unit altitude.
      .  taumin,     ! Previously determined value.
      .  taumax,     ! Previously determined value.
      .  lmin        ! Previously determined value.
@@ -132,6 +130,7 @@
      .  sstol   = 1.e-8, ! [kg/kg]
      .  difftol = 0.4    ! [?]
 
+
         ! Set tolerances for Khairoutdinov and Kogan rain microphysics
         ! to insure against numerical errors.
         real, parameter :: 
@@ -139,6 +138,9 @@
      .  Nc_tol = 10.0**(-18), ! [#/m^3]
      .  rr_tol = 10.0**(-18), ! [kg/kg]
      .  Nr_tol = 10.0**(-18)  ! [#/m^3]
+
+        ! Minimum value for em (turbulence kinetic energy)
+        real, parameter :: emin = 1.0e-6  ! [m^2/s^2]
 
         real, parameter :: 
      .  eps = 1.0e-10 ! Small value to prevent a divide by zero

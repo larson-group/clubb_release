@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 1
 !----------------------------------------------------------------------
-!$Id: atex.F,v 1.1 2006-12-16 00:32:45 dschanen Exp $
+!$Id: atex.F,v 1.2 2006-12-20 03:16:08 dschanen Exp $
         module atex
 
 !       Description:
@@ -22,10 +22,13 @@
 !       References:
 
 !----------------------------------------------------------------------
-        use constants, only: sclr_dim
+        use constants, only: sclr_dim, fstderr
         use model_flags, only: lbugsrad
         use grid_class
         use atex_cloud_rad
+#ifdef STATS
+        use statistics
+#endif
 
         implicit none
 
@@ -40,50 +43,50 @@
      .  rcm,  ! Liquid water mixing ratio       [kg/kg]
      .  exner ! Exner function                  [-]
 
+        ! Input/output
+        logical, intent(inout) :: isValid ! Diagnostic 
+
         ! Output Variables
         real, intent(out), dimension(gr%nnzp) ::
-     .  wmt,         ! w wind on thermodynamic grid     [m/s]
-     .  wmm,         ! w wind on momentum grid          [m/s]
-     .  Frad,        ! Radiative flux                   [W/m^2]
-     .  radht,       ! Radiative heating rate           [K/s]
+     .  wmt,         ! w wind on thermodynamic grid                [m/s]
+     .  wmm,         ! w wind on momentum grid                     [m/s]
+     .  Frad,        ! Radiative flux                              [W/m^2]
+     .  radht,       ! Radiative heating rate                      [K/s]
      .  thlm_forcing,! Liquid water potential temperature tendency [K/s]
-     .  rtm_forcing  ! Total water mixing ratio tendency [kg/kg/s]
+     .  rtm_forcing  ! Total water mixing ratio tendency           [kg/kg/s]
 
-        ! Diagnostic output
-        logical, intent(inout) :: isValid
 
         ! Output (optional)
         real, optional, intent(out), dimension(gr%nnzp, sclr_dim) ::
      .  sclrm_forcing ! Passive scalar tendency         [units/s]
 
 
-!       Internal variables
-
+        ! Internal variables
         integer :: i
         real :: zi
 
-!       Forcings are applied only after t = 5400 s
+        ! Forcings are applied only after t = 5400 s
+        wmt = 0.
+        wmm = 0.
 
-        wmt         = 0.
-        wmm         = 0.
         thlm_forcing = 0.
-        rtm_forcing    = 0.
+        rtm_forcing  = 0.
 
         if ( time >= time_initial + 5400.0 ) then
 
-!          Identify height of 6.5 g/kg moisture level
+        !  Identify height of 6.5 g/kg moisture level
 
            i = 2
            do while ( i <= gr%nnzp .and. rtm(i) > 6.5e-3 )
               i = i + 1
            end do
            if ( i == gr%nnzp+1 .or. i == 2 ) then
-              write(*,*) 'Identification of 6.5 g/kg level failed'
-              write(*,*) 'Subroutine: atex_tndcy. File: gcss.f'
-              write(*,*) 'i = ',i
-              write(*,*) 'rtm(i) = ',rtm(i)
-              isValid = .false.
-              return
+             write(fstderr,*) "Identification of 6.5 g/kg level failed"
+             write(fstderr,*) "Subroutine: atex_tndcy. File: atex.F"
+             write(fstderr,*) "i = ", i
+             write(fstderr,*) "rtm(i) = ",rtm(i)
+             isValid = .false.
+             return
            end if
            zi = gr%zt(i-1)
 
@@ -139,7 +142,7 @@
 
            ! Boundary conditions
            thlm_forcing(1) = 0.0  ! Below surface
-           rtm_forcing(1)    = 0.0  ! Below surface
+           rtm_forcing(1)  = 0.0  ! Below surface
 
         end if ! time >= time_initial + 5400.0
 
@@ -148,6 +151,14 @@
           call cloud_rad( rhot, rcm, exner, Frad, radht, thlm_forcing )
         end if
 
+#ifdef STATS
+        if ( .not. lbugsrad .and. lstats_samp ) then
+          if ( iradht_LW > 0 ) then
+            zt%x(:,iradht_LW) = zt%x(:,iradht_LW) + radht
+            zt%n(:,iradht_LW) = zt%n(:,iradht_LW) + 1
+          end if
+        end if
+#endif
         if ( present( sclrm_forcing ) ) then
           sclrm_forcing(1:gr%nnzp,SCLR_THETA) = thlm_forcing(1:gr%nnzp)
           sclrm_forcing(1:gr%nnzp,SCLR_RT)    = rtm_forcing(1:gr%nnzp)
@@ -173,16 +184,17 @@
 
         ! Constants
 
-        real, parameter :: ubmin = 0.25
-        real, parameter :: ustar = 0.3
-        real, parameter :: C_10 = 0.0013
-        real, parameter :: SST = 298
+        real, parameter :: 
+     .  ubmin = 0.25,
+     .  ustar = 0.3,
+     .  C_10 = 0.0013,
+     .  SST = 298 
 
         ! Input variables
-        real, intent(in) :: up,vp,thp,rtp
+        real, intent(in) :: up, vp, thp, rtp
 
         ! Input variables (optional)
-        real, optional, intent(in) :: sclrm_sfc(sclr_dim)
+        real, intent(in), optional, dimension(sclr_dim) :: sclrm_sfc
 
         ! Output variables
         real, intent(out) :: uw, vw, wtp, wrp
@@ -196,12 +208,12 @@
 
         ! Compute heat and moisture fluxes
 
-        ubar = max(ubmin, sqrt(up*up + vp*vp))
+        ubar = max( ubmin, sqrt( up*up + vp*vp ) )
 
         wtp  = -C_10 * ubar * ( thp - SST * (1000./1015.)**kappa )
         wrp  = -C_10 * ubar * ( rtp - 0.0198293 )
 
-! Optional passive scalar
+        ! Optional passive scalar
         if ( present( wpsclrp_sfc ) .and. present( sclrm_sfc ) ) then
           wpsclrp_sfc(SCLR_THETA) = -C_10 * ubar * 
      .           ( sclrm_sfc(SCLR_THETA) - SST * (1000./1015.)**kappa )
@@ -210,7 +222,7 @@
      .                     ( sclrm_sfc(SCLR_RT) - 0.0198293 )
         end if
 
-! Compute momentum fluxes
+        ! Compute momentum fluxes
 
         uw = -up * ustar*ustar / ubar
         vw = -vp * ustar*ustar / ubar

@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm.F,v 1.1 2006-12-16 00:32:45 dschanen Exp $
+! $Id: arm.F,v 1.2 2006-12-20 03:16:08 dschanen Exp $
         module arm
 
 !       Description:
@@ -15,7 +15,7 @@
         contains
 
 !----------------------------------------------------------------------
-        subroutine arm_tndcy( time, theta_tndcy, rt_tndcy,
+        subroutine arm_tndcy( time, thlm_forcing, rtm_forcing,
      .                        sclr_tndcy )
 !       Description:
 !       Subroutine to set theta and water tendencies for ARM case
@@ -45,8 +45,8 @@
 
         ! Output Variables
         real, intent(out), dimension(gr%nnzp) :: 
-     .  theta_tndcy, ! Liquid water potential temperature tendency [K/s]
-     .  rt_tndcy     ! Total water mixing ratio tendency [kg/kg/s]
+     .  thlm_forcing, ! Liquid water potential temperature tendency [K/s]
+     .  rtm_forcing   ! Total water mixing ratio tendency [kg/kg/s]
 
         ! Output (optional) Variables
         real, optional, intent(out), dimension(gr%nnzp,sclr_dim) :: 
@@ -79,10 +79,12 @@
         if ( .not. lbugsrad ) then
           theta_tmp = ( 1. - a ) * ( atheta(i1) + rtheta(i1) )
      .              + a * ( atheta(i2) + rtheta(i2) )
+
         else ! factor in radiation later
           theta_tmp = ( 1. - a ) * ( atheta(i1) + 0.0 )
      .              + a * ( atheta(i2) + 0.0 )
-        end if
+
+        end if ! ~ lbugsrad
 
         rt_tmp = ( 1. - a ) * art(i1) + a * art(i2)
 
@@ -95,21 +97,23 @@
 
         do i = 2, gr%nnzp
           if ( gr%zt(i) >= 0. .and. gr%zt(i) < 1000. ) then
-            rt_tndcy(i)    = rt_tmp
-            theta_tndcy(i) = theta_tmp
+            rtm_forcing(i)  = rt_tmp
+            thlm_forcing(i) = theta_tmp
+
           else if ( gr%zt(i) >= 1000. .and. gr%zt(i) < 3000. ) then
-            b              = 1. - ( gr%zt(i) - 1000. ) / 2000.
-            rt_tndcy(i)    = b * rt_tmp
-            theta_tndcy(i) = b * theta_tmp
+            b               = 1. - ( gr%zt(i) - 1000. ) / 2000.
+            rtm_forcing(i)  = b * rt_tmp
+            thlm_forcing(i) = b * theta_tmp
+
           else
-            rt_tndcy(i)    = 0.0
-            theta_tndcy(i) = 0.0
+            rtm_forcing(i)  = 0.0
+            thlm_forcing(i) = 0.0
           end if
         end do
 
         if ( present( sclr_tndcy ) ) then
-          sclr_tndcy(1:gr%nnzp,SCLR_THETA) = theta_tndcy
-          sclr_tndcy(1:gr%nnzp,SCLR_RT)    = rt_tndcy
+          sclr_tndcy(1:gr%nnzp,SCLR_THETA) = thlm_forcing(1:gr%nnzp)
+          sclr_tndcy(1:gr%nnzp,SCLR_RT)    = rtm_forcing(1:gr%nnzp)
         end if
 
         return

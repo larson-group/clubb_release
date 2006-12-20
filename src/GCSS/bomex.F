@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: bomex.F,v 1.2 2006-12-16 20:03:16 dschanen Exp $
+! $Id: bomex.F,v 1.3 2006-12-20 03:16:08 dschanen Exp $
         module bomex
 
 !       Description:
@@ -122,7 +122,9 @@
         end subroutine bomex_tndcy
 
 !----------------------------------------------------------------------
-        subroutine bomex_sfclyr( up, vp, uw, vw, wtp, wrp,
+        subroutine bomex_sfclyr( um_sfc, vm_sfc, 
+     .                           upwp_sfc, vpwp_sfc,
+     .                           wpthlp_sfc, wprtp_sfc,
      .                           wpsclrp_sfc )
 
 !       Description:
@@ -142,23 +144,28 @@
      .  ustar = 0.28
 
         ! Input Variables
-        real, intent(in) :: up, vp
+        real, intent(in) :: 
+     .  um_sfc, ! um(2) [m/s]
+     .  vm_sfc  ! vm(2) [m/s]
 
         ! Output variables
-        real, intent(out) :: uw, vw, wtp, wrp
+        real, intent(out) :: 
+     .  upwp_sfc,    ! u'w' at (1)      [m^2/s^2]
+     .  vpwp_sfc,    ! v'w'at (1)       [m^2/s^2]
+     .  wpthlp_sfc,  ! w'th_l' at (1)   [(m K)/s]  
+     .  wprtp_sfc    ! w'r_t'(1) at (1) [(m kg)/(s kg)]
 
         ! Output variables (optional)
         real, intent(out), optional, dimension(sclr_dim) :: 
-     .  wpsclrp_sfc
+     .  wpsclrp_sfc ! Passive scalars at (1)
 
         ! Local variables
-
         real :: ubar
 
         ! Compute heat and moisture fluxes
 
-        wtp = 8.e-3
-        wrp = 5.2e-5
+        wpthlp_sfc = 8.e-3
+        wprtp_sfc  = 5.2e-5
         
         if ( present(wpsclrp_sfc) ) then 
           wpsclrp_sfc(SCLR_THETA) = 8.e-3
@@ -167,10 +174,10 @@
 
         ! Compute momentum fluxes
 
-        ubar = max( ubmin, sqrt(up*up + vp*vp) )
+        ubar = max( ubmin, sqrt( um_sfc**2 + vm_sfc**2 ) )
 
-        uw = -up * ustar*ustar / ubar
-        vw = -vp * ustar*ustar / ubar
+        upwp_sfc = -um_sfc * ustar**2 / ubar
+        vpwp_sfc = -vm_sfc * ustar**2 / ubar
 
         return
         end subroutine bomex_sfclyr

@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf01.F,v 1.1 2006-12-16 00:32:45 dschanen Exp $
+! $Id: dycoms2_rf01.F,v 1.2 2006-12-20 03:16:08 dschanen Exp $
         module dycoms2_rf01
 
 !       Description:
@@ -12,10 +12,11 @@
         contains
 
 !----------------------------------------------------------------------
-        subroutine dycoms2_rf01_tndcy( time, rhot, rhom, rtm, rcm,
-     .                                 exner, wmt, wmm, Frad, radht, 
-     .                               thlm_forcing, rtm_forcing, isValid,
-     .                                 sclrm, sclrm_forcing )
+        subroutine dycoms2_rf01_tndcy
+     .             ( time, rhot, rhom, rtm, rcm, exner,
+     .               wmt, wmm, Frad, radht, thlm_forcing,
+     .               rtm_forcing, isValid,
+     .               sclrm, sclrm_forcing )
 !       Description:
 !       Subroutine to set theta and water tendencies for DYCOMS RF01 case.
 
@@ -120,8 +121,9 @@
         ! Theta-l radiative tendency
 
         if ( .not. lbugsrad ) then
-!         Compute liquid water path from top of the model
-!         We define liquid water path on momentum levels
+
+          ! Compute liquid water path from top of the model
+          ! We define liquid water path on momentum levels
 
           lwp(gr%nnzp) = 0.0
           do i = gr%nnzp-1, 1, -1
@@ -129,7 +131,7 @@
           end do
 !         x_sfc(1,ilwp) = lwp(1)
 
-!         Compute IR radiative flux
+          ! Compute IR radiative flux
 
           do i = 1, gr%nnzp, 1
             Frad(i) = F0 * EXP( -kay * lwp(i) )
@@ -142,13 +144,19 @@
              end if
           end do
 
-        ! Compute IR heating rate
+          ! Compute IR heating rate
 
           radht          = ( -1.0/(Cp*rhot) ) * ddzm( Frad )
      .                   * ( 1.0 / exner )
           radht(1)       = 0.
           radht(gr%nnzp) = 0.
 
+#ifdef STATS
+          if ( lstats_samp .and. iradht_LW > 0 ) then
+            zt%x(:,iradht_LW) = zt%x(:,iradht_LW) + radht
+            zt%n(:,iradht_LW) = zt%n(:,iradht_LW) + 1
+          end if
+#endif
         end if ! ~ lbugsrad
 
         ! Add heating rate to theta-l forcing
@@ -156,9 +164,9 @@
         if ( .not. lbugsrad ) thlm_forcing = thlm_forcing + radht
         
         if (present( sclrm_forcing )) sclrm_forcing(:,SCLR_THETA)
-     .  = thlm_forcing
+     .  = thlm_forcing(:)
         if (present( sclrm_forcing )) sclrm_forcing(:,SCLR_RT)
-     .  = rtm_forcing
+     .  = rtm_forcing(:)
 
         return
         end subroutine dycoms2_rf01_tndcy
@@ -237,7 +245,7 @@
           end if
         else
 
-          write(*,*) 'Invalid sfctype value = ', sfctype
+          write(fstderr,*) 'Invalid sfctype value = ', sfctype
           stop
 
         end if

@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: wangara.F,v 1.1 2006-12-16 00:32:45 dschanen Exp $
+! $Id: wangara.F,v 1.2 2006-12-20 03:16:08 dschanen Exp $
         module wangara
 
         public :: wangara_tndcy, wangard_sfclyr
@@ -53,7 +53,9 @@
         end subroutine wangara_tndcy
 
 !----------------------------------------------------------------------
-        subroutine wangara_sfclyr( time, up, vp, uw, vw, wtp, wrp,
+        subroutine wangara_sfclyr( time, um_sfc, vm_sfc, 
+     .                             upwp_sfc, vpwp_sfc, 
+     .                             wpthlp_sfc, wprtp_sfc,
      .                             wpsclrp_sfc )
 !       Description:
 !       This subroutine computes surface fluxes of horizontal momentum,
@@ -67,25 +69,30 @@
         intrinsic :: mod, max, cos, sqrt, present
 
         ! Constants
-        real, parameter :: ubmin = 0.25
-        real, parameter :: ustar = 0.13
+        real, parameter :: 
+     .  ubmin = 0.25,
+     .  ustar = 0.13
 
         ! Input variables
-
-        real, intent(in) :: time
-        real, intent(in) :: up, vp
+        real, intent(in) :: 
+     .  time,   ! Current time  [s]
+     .  um_sfc, ! um(2)         [m/s]
+     .  vm_sfc  ! vm(2)         [m/s]
 
         ! Output variables
+        real, intent(out) :: 
+     .  upwp_sfc,    ! u'w' at (1)      [m^2/s^2]
+     .  vpwp_sfc,    ! v'w'at (1)       [m^2/s^2]
+     .  wpthlp_sfc,  ! w'th_l' at (1)   [(m K)/s]  
+     .  wprtp_sfc    ! w'r_t'(1) at (1) [(m kg)/(s kg)]
 
-        real, intent(out) :: uw, vw, wtp, wrp
-        
-        real, optional, intent(out), dimension(sclr_dim) :: 
-     .  wpsclrp_sfc
+        ! Output variables (optional)
+        real, intent(out), optional, dimension(sclr_dim) :: 
+     .  wpsclrp_sfc ! Passive scalars at (1)
 
-!       Internal variables
+        ! Local variables
 
-        real :: ubar
-        real :: time_utc, time_est
+        real :: ubar, time_utc, time_est
 
         ! Compute UTC time of the day in seconds
 
@@ -104,22 +111,22 @@
 
         ! Compute heat and moisture fluxes
 
-        wtp = 0.18
-     .        * cos( (time_est-45000.0)/36000.0 * pi )
-        wrp = 1.3e-4 * wtp
+        wpthlp_sfc = 0.18 * cos( (time_est-45000.0)/36000.0 * pi )
+        wprtp_sfc  = 1.3e-4 * wpthlp_sfc
 
-        ! Compute new mixing variables
-        if ( present(wpsclrp_sfc) ) wpsclrp_sfc(SCLR_THETA) = 0.18
-     .        * cos( (time_est-45000.0)/36000.0 * pi )
+        ! For testing the passive scalars
 
-        if ( present(wpsclrp_sfc) ) wpsclrp_sfc(SCLR_RT) = 1.3e-4*wtp
+        if ( present(wpsclrp_sfc) ) then
+          wpsclrp_sfc(SCLR_THETA) = wpthlp_sfc
+          wpsclrp_sfc(SCLR_RT)    = wprtp_sfc
+        end if
 
         ! Compute momentum fluxes
 
-        ubar = max(ubmin, sqrt(up*up + vp*vp))
+        ubar = max( ubmin, sqrt( um_sfc**2 + vm_sfc**2 ) )
 
-        uw = -up * ustar*ustar / ubar
-        vw = -vp * ustar*ustar / ubar
+        upwp_sfc = -um_sfc * ustar**2 / ubar
+        vpwp_sfc = -vm_sfc * ustar**2 / ubar
 
         return
         end subroutine wangara_sfclyr

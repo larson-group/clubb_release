@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: astex.F,v 1.1 2006-12-16 00:32:45 dschanen Exp $
+! $Id: astex.F,v 1.2 2006-12-20 03:16:08 dschanen Exp $
         module astex
 
 !       Description:
@@ -15,8 +15,9 @@
         contains
 
 !----------------------------------------------------------------------
-        subroutine astex_tndcy( time, wmt, wmm, theta_tndcy, rt_tndcy,
-     .                          sclr_tndcy )
+        subroutine astex_tndcy( time, wmt, wmm, 
+     .                          thlm_forcing, rtm_forcing,
+     .                          sclrm_forcing )
 
 !       Description:
 !       Subroutine to set theta and water tendencies for ASTEX KK case
@@ -28,23 +29,24 @@
 
         implicit none
 
-!       Input
-        real, intent(in) :: time
+        ! Input Variables
+        real, intent(in) :: time ! Current time         [s]
 
-!       Output
-        real, intent(out) :: wmt(gr%nnzp)
-        real, intent(out) :: wmm(gr%nnzp)
-        real, intent(out) :: theta_tndcy(gr%nnzp)
-        real, intent(out) :: rt_tndcy(gr%nnzp)
+        ! Output Variables
+        real, intent(out), dimension(gr%nnzp) :: 
+     .  wmt,          ! w wind on the thermodynamic grid        [m/s]
+     .  wmm,          ! w wind on the momentum grid             [m/s]
+     .  thlm_forcing, ! Liquid potential temperature tendency   [K/s]
+     .  rtm_forcing   ! Total water mixing ratio tendency       [kg/kg/s]
 
-        real, optional, 
-     .        intent(out) :: sclr_tndcy(gr%nnzp, sclr_dim)
+        real, intent(out), optional, dimension(gr%nnzp,sclr_dim) :: 
+     .  sclrm_forcing ! Passive scalar forcing  [units/s]
 
-!       Internal variables
+        ! Local variables
 
-        integer i
+        integer :: i
 
-!       Large-scale subsidence
+        ! Large-scale subsidence
 
         do i=2,gr%nnzp
 
@@ -59,22 +61,24 @@
         wmm(1) = 0.0        ! At surface
         wmm(gr%nnzp) = 0.0  ! Model top
         
-!       Radiative theta-l tendency
+        ! Radiative theta-l tendency
 
-        theta_tndcy = 0.
+        thlm_forcing = 0.0
 
-!       Large scale advective moisture tendency
+        ! Large scale advective moisture tendency
 
-        rt_tndcy = 0.
+        rtm_forcing = 0.0
 
-        if (present( sclr_tndcy )) sclr_tndcy = 0.0
+        ! Passive scalar testing
+
+        if ( present( sclrm_forcing ) ) sclrm_forcing(:,:) = 0.0
 
         return
         end subroutine astex_tndcy
 
 !----------------------------------------------------------------------
-        subroutine astex_sfclyr( rho0, up, vp, uw, vw, wtp, wrp,
-     .                           wpsclrp_sfc )
+        subroutine astex_sfclyr( rho0, up, vp, upwp_sfc, vpwp_sfc, 
+     .                           wpthlp_sfc, wprtp_sfc, wpsclrp_sfc )
 
 !       Description:
 !       This subroutine computes surface fluxes of horizontal momentum,
@@ -88,38 +92,47 @@
 
         implicit none
 
-!       Input variables
+        ! Input variables
 
-        real, intent(in)  :: rho0, up, vp
+        real, intent(in) :: 
+     .  rho0,    ! Density at (1)          [kg/m^3]
+     .  up, vp   ! um(2), vm(2) (not used) [m/s]
 
-!       Output variables
+        ! Output variables
 
-        real, intent(out) :: uw, vw, wtp, wrp
+        real, intent(out) :: 
+     .  upwp_sfc,    ! u'w' at (1)      [m^2/s^2]
+     .  vpwp_sfc,    ! v'w'at (1)       [m^2/s^2]
+     .  wpthlp_sfc,  ! w'th_l' at (1)   [(m K)/s]  
+     .  wprtp_sfc    ! w'r_t'(1) at (1) [(m kg)/(s kg)]
 
-!       Output variables (optional) 
+        ! Output variables (optional) 
 
-        real, optional, intent(out) :: wpsclrp_sfc(sclr_dim)
+        real, intent(out), optional, dimension(sclr_dim) :: 
+     .  wpsclrp_sfc  ! w' scalar at (1) [units vary]
 
-!       Internal variables
+        ! Local variables
 
-        real HF, LF
+        real :: HF, LF
 
-! Compute heat and moisture fluxes
+        ! Compute heat and moisture fluxes
 
         HF = 10.0
         LF = 25.0
 
-        wtp = HF/(rho0*Cp)
-        wrp = LF/(rho0*Lv)
+        wpthlp_sfc = HF/( rho0*Cp )
+        wprtp_sfc  = LF/( rho0*Lv )
 
-! Compute momentum fluxes
+        ! Compute momentum fluxes
 
-        uw = 0.09
-        vw = 0.09
+        upwp_sfc = 0.09
+        vpwp_sfc = 0.09
 
-        if (present( wpsclrp_sfc )) 
-     .    wpsclrp_sfc(SCLR_THETA) = HF/(rho0*Cp)
-        if (present( wpsclrp_sfc )) wpsclrp_sfc(SCLR_RT) = LF/(rho0*Lv)
+        ! Test scalars
+        if ( present( wpsclrp_sfc ) ) then
+          wpsclrp_sfc(SCLR_THETA) = HF/( rho0*Cp )
+          wpsclrp_sfc(SCLR_RT)    = LF/( rho0*Lv )
+        end if
 
         return
         end subroutine astex_sfclyr

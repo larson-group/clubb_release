@@ -1,4 +1,4 @@
-! $Id: cloud_rad.F,v 1.1 2006-12-16 00:32:45 dschanen Exp $
+! $Id: cloud_rad.F,v 1.2 2006-12-20 03:16:08 dschanen Exp $
 !----------------------------------------------------------------------
         module atex_cloud_rad
 
@@ -21,6 +21,9 @@
         use constants
 
         implicit none
+
+        ! External
+        intrinsic :: exp
 
         ! Constant parameters
         real, parameter :: F0 = 74., ktemp = 130.
