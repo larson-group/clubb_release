@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.21 2006-12-20 18:53:02 griffinb Exp $
+! $Id: rain.F,v 1.22 2006-12-20 22:13:34 dschanen Exp $
 !----------------------------------------------------------------------
 
       MODULE rain_equations
@@ -3737,7 +3737,7 @@
         ! Input Variables
         double precision, intent(in) ::
      .  order,   ! Order 'a' of Dv(a,x)         [-]
-     .  argument ! Order 'x' of Dv(a,x)         [-]
+     .  argument ! Argument 'x' of Dv(a,x)      [-]
 
         ! Local Variables
         double precision, dimension(2) ::
