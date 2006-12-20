@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.74 2006-12-16 00:32:36 dschanen Exp $
+# $Id: Makefile,v 1.75 2006-12-20 03:15:52 dschanen Exp $
 # This version should work with BSD, GNU make, smake and dmake
 
 # For HOC we edit this by hand rather than implementing imake or automake
@@ -245,22 +245,21 @@ st_2_rtthl.o		: st_2_rtthl.F
 truncate_gaus_mixt.o	: truncate_gaus_mixt.F
 
 # == GCSS dependencies ==
-gcss.o      : constants.o statistics.o rad_lwsw.o linear_interpolation.o \
-	cos_solar_zen.o icedfs.o rsat.o rsati.o gcss.F
+gcss.o      : constants.o grid.o gcss.F
 diag_ustar.o: diag_ustar.F
 arm.o       : constants.o diag_ustar.o model_flags.o grid.o arm.F
 astex.o     : constants.o model_flags.o grid.o astex.F
 atex.o      : constants.o model_flags.o grid.o cloud_rad.o atex.F
 bomex.o     : constants.o model_flags.o grid.o bomex.F
 fire.o      : constants.o model_flags.o grid.o cloud_rad.o fire.F
-mpace.o     : constants.o grid.o icedfs.o statistics.o mpace.F
-nov11.o     : constants.o grid.o icedfs.o statistics.o nov11.F
-jun25.o     : constants.o grid.o icedfs.o statistics.o jun25.F
-wangara.o   : constants.o grid.o wangara.F
+mpace.o     : constants.o model_flags.o grid.o icedfs.o statistics.o mpace.F
+nov11.o     : constants.o model_flags.o grid.o icedfs.o statistics.o nov11.F
+jun25.o     : constants.o model_flags.o grid.o icedfs.o statistics.o jun25.F
+wangara.o   : constants.o model_flags.o grid.o wangara.F
 icedfs.o    : constants.o grid.o statistics.o icedfs.F
 cloud_rad.o : constants.o grid.o cloud_rad.F
-dycoms2_rf01.o : constants.o model_flags.o grid.o dycoms2_rf01.F
-dycoms2_rf02.o : constants.o model_flags.o grid.o dycoms2_rf02.F
+dycoms2_rf01.o : constants.o model_flags.o grid.o statistics.o dycoms2_rf01.F
+dycoms2_rf02.o : constants.o model_flags.o grid.o statistics.o dycoms2_rf02.F
 
 # == COAMPS Microphysics dependencies ==
 adjmlt.o                : adjmlt.F

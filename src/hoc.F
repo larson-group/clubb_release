@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.105 2006-12-16 20:03:13 dschanen Exp $
+! $Id: hoc.F,v 1.106 2006-12-20 03:15:52 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -36,9 +36,9 @@
 
         ! Grid definition
         integer, private :: 
-     .  nzmax  ! Vertical extent [-]
+     .  nzmax  ! Vertical extent        [-]
         real, private :: 
-     .  deltaz ! Change per grid level [m]
+     .  deltaz ! Change per grid level  [m]
 
         integer, private :: 
      .  day, month, year ! Day of start of simulation
@@ -680,7 +680,6 @@
 !       Calls: (all these are external)
 !       subroutine read_sounding
 !       subroutine hydrostatic (twice)
-!       subroutine sfc_var
 !       subroutine length
 
 !       function rsat
@@ -691,16 +690,16 @@
         use constants
         use grid_class
         use sounding
-        use surface
 #ifdef STATS
         use statistics
 #endif /*STATS*/
 
         implicit none
 
-!       External functions
+        ! External
         real, external :: rsat
         real, external :: sat_rcm
+        external :: length
 
         intrinsic :: min, max, trim, sqrt, size
 
@@ -709,7 +708,7 @@
 
         real, intent(in) :: psfc ! Pressure at the surface [Pa]
 
-!       ! Output
+        ! Output
         real, dimension(gr%nnzp), intent(out) :: 
      .  thlm,           ! Theta l mean                  [K] 
      .  rtm,            ! Total water mixing ratio      [kg/kg]
@@ -721,7 +720,7 @@
      .  rcm,            ! Cloud water mixing ratio      [kg/kg]
      .  wmt, wmm,       ! w wind                        [m/s]
      .  exner,          ! Exner function                [-] 
-     .  em,             ! Em                            [m^2/s^2]
+     .  em,             ! Turbulence kinetic energy     [m^2/s^2]
      .  p,              ! Pressure                      [Pa]
      .  rhot, rhom,     ! Density                       [kg/m^3]
      .  Lscale,         ! Mixing length                 [m] 
@@ -1048,7 +1047,6 @@
 !         subroutines *_tndncy
 !         subroutine sfc_thermo_fluxes
 !         subroutine sfc_momentum_fluxes
-!         subroutine sfc_var
 !----------------------------------------------------------------------
 
         ! Modules to be included
@@ -1064,12 +1062,12 @@
         use bomex, only: bomex_tndcy, bomex_sfclyr
         use dycoms2_rf01, only: dycoms2_rf01_tndcy, dycoms2_rf01_sfclyr
         use dycoms2_rf02, only: dycoms2_rf02_tndcy, dycoms2_rf02_sfclyr
-        use fire, only: fire_tndcy
+        use fire, only: fire_tndcy, sfc_momentum_fluxes,
+     .                  sfc_thermo_fluxes
         use mpace, only: mpace_tndcy, mpace_sfclyr
         use nov11, only: nov11_altocu_tndcy ! Above surface
         use jun25, only: jun25_altocu_tndcy ! Above surface
         use wangara, only: wangara_tndcy, wangara_sfclyr
-        use surface
 
         implicit none
 
@@ -1155,7 +1153,7 @@
            call astex_tndcy( time, wmt, wmm, 
      .                       thlm_forcing, rtm_forcing
 #ifdef SCALARS
-     .                             ,sclrm_forcing   ! optional variable
+     .                      ,sclrm_forcing   ! optional variable
 #endif /* SCALARS */
      .                     )
 
@@ -1325,7 +1323,7 @@
      .                              upwp_sfc, vpwp_sfc,
      .                              wpthlp_sfc, wprtp_sfc, ustar
 #ifdef SCALARS
-     .                              ,sclrm(2,:), wpsclrp(1,:)
+     .                              ,wpsclrp(1,:)
 #endif /* SCALARS */
      .                             )
 
