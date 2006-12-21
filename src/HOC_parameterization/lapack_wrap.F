@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: lapack_wrap.F,v 1.1 2006-09-05 22:39:04 dschanen Exp $
+! $Id: lapack_wrap.F,v 1.2 2006-12-21 00:38:41 dschanen Exp $
         module lapack_wrap
 
 !       Description:
@@ -13,11 +13,15 @@
 
         implicit none
 
+        integer, parameter :: fstderr = 0
+
         ! Simple routines
         public :: tridag_solve, band_solve
 
         ! Expert routines
         public :: tridag_solvex, band_solvex
+
+        private
 
         contains
 
@@ -130,7 +134,7 @@
 
         select case( info )
         case( :-1 )
-          write(*,*) solve_type//
+          write(fstderr,*) solve_type//
      .      "illegal value in argument", -info
           isValid = .false.
 
@@ -140,13 +144,14 @@
 
         case( 1: )
           if ( info == ndim+1 ) then
-            write(*,*) solve_type//
+            write(fstderr,*) solve_type//
      .        " matrix is singular to working precision."
-            write(*,*) "rcond", rcond 
+            write(fstderr,*) "rcond", rcond 
+            isValid = .true.
           else
-            write(*,*) solve_type//
+            write(fstderr,*) solve_type//
      .        " singular matrix."
-            write(*,*) "rcond", rcond
+            write(fstderr,*) "rcond", rcond
             isValid = .false.
           end if
 
@@ -220,21 +225,22 @@
 
         select case( info )
         case( :-1 )
-          write(*,*) solve_type//
+          write(fstderr,*) solve_type//
      .      " illegal value in argument", -info
           isValid = .false.
 
         case( 0 )
-        ! Success!
-        solution = rhs
-        isValid = .true.
+          ! Success!
+          solution = rhs
+          isValid = .true.
 
         case( 1: )
           if ( info == ndim+1 ) then
-            write(*,*) solve_type//
+            write(fstderr,*) solve_type//
      .        " matrix is singular to working precision."
+            isValid = .true.
           else
-            write(*,*) solve_type//
+            write(fstderr,*) solve_type//
      .        " singular matrix."
             isValid = .false.
           end if
@@ -309,7 +315,8 @@
 
         integer :: 
      .  info,  ! If this doesn't come back as 0, something went wrong
-     .  offset ! Loop iterator
+     .  offset,! Loop iterator
+     .  imain  ! Main diagonal of the matrix
 
         character :: 
      .  equed ! Row equilibration status
@@ -320,7 +327,7 @@
      .  rcond
 
 !-----------------------------------------------------------------------
-!       Reorder Matrix to use LAPACK band matrix format
+!       Reorder Matrix to use LAPACK band matrix format (5x6)
 
 !       Shift example:
 
@@ -330,17 +337,26 @@
 ! <=(1) [ lhs(4,2) lhs(4,3) lhs(4,4) lhs(4,5) lhs(4,6)    *     ]
 ! <=(2) [ lhs(5,3) lhs(5,4) lhs(5,5) lhs(5,6)    *        *     ]
 
-!       Et cetera for additional bands above and below the main diagonal
+!       The '*' indicates unreferenced elements.
+!       For additional bands above and below the main diagonal, the
+!       shifts to the left or right increases by the distance from the
+!       main diagonal of the matrix.
 !-----------------------------------------------------------------------
 
+        imain = nsup + 1
+
+        ! For the offset, (+) is left, and (-) is right
+
+        ! Sub diagonals
         do offset = 1, nsub, 1
-          lhs(nsup+1+offset,1:ndim)
-     .    = eoshift( lhs(nsup+1+offset,1:ndim), offset )
+          lhs(imain+offset, 1:ndim)
+     .    = eoshift( lhs(imain+offset, 1:ndim), offset )
         end do 
 
+        ! Super diagonals
         do offset = 1, nsup, 1
-          lhs(nsub+1-offset,1:ndim)
-     .    = eoshift( lhs(nsub+1-offset,1:ndim), -offset )
+          lhs(imain-offset, 1:ndim)
+     .    = eoshift( lhs(imain-offset, 1:ndim), -offset )
         end do
 
 !-----------------------------------------------------------------------
@@ -366,7 +382,7 @@
      .                 rcond, ferr, berr, work, iwork, info )
         else
           stop "Cannot handle this precision" 
-          ! One implication of this is that HOC cannot be used with quad 
+          ! One implication of this is that HOC cannot be used with quad
           ! precision variables without a quad precision band diagonal solver
         end if 
 
@@ -393,7 +409,7 @@
         select case( info )
 
         case( :-1 )
-          write(*,*) trim(solve_type)//
+          write(fstderr,*) trim(solve_type)//
      .      " illegal value for argument", -info
           isValid = .false.
 
@@ -403,12 +419,14 @@
 
         case( 1: )
           if ( info == ndim+1 ) then
-            write(*,*) trim(solve_type)//
+            write(fstderr,*) trim(solve_type)//
      .        " Warning: matrix singular to working precision"
-            write(*,'(a,e12.5)') "Estimate of the reciprocal of the"//
+            write(fstderr,'(a,e12.5)') 
+     .        "Estimate of the reciprocal of the"//
      .        " condition number: ", rcond
+            isValid = .true.
           else
-            write(*,*) trim(solve_type)//
+            write(fstderr,*) trim(solve_type)//
      .        " band solver: singular matrix"
             isValid = .false.
           end if
@@ -447,7 +465,9 @@
      .  ndim, ! The order of the LHS Matrix, i.e. the # of linear equations
      .  nrhs  ! Number of RHS's to solve for
 
-        real, dimension(nsup+nsub+1,ndim), intent(inout) :: 
+        ! Note: matrix lhs is intent(in), not intent(inout) 
+        ! as in the subroutine band_solvex( )
+        real, dimension(nsup+nsub+1,ndim), intent(in) :: 
      .  lhs ! Left hand side
         real, dimension(ndim,nrhs), intent(inout) :: 
      .  rhs ! Right hand side(s)
@@ -468,34 +488,53 @@
 
         integer :: 
      .  info,  ! If this doesn't come back as 0, something went wrong
-     .  offset ! Loop iterator
+     .  offset,! Loop iterator
+     .  imain  ! Main diagonal of the matrix
+
+        ! Copy LHS into Decomposition scratch space
+
+        lulhs(nsub+1:2*nsub+nsup+1, 1:ndim) = lhs(1:nsub+nsup+1, 1:ndim)
 
 !-----------------------------------------------------------------------
-!       Reorder Matrix to use LAPACK band matrix format
+!       Reorder LU Matrix to use LAPACK band matrix format
 
-!       Shift example:
+!       Shift example for lulhs matrix (note the extra bands):
 
+!       [    +        +        +        +        +        +     ]    
+!       [    +        +        +        +        +        +     ]    
 !       [    *        *     lhs(1,1) lhs(1,2) lhs(1,3) lhs(1,4) ] (2)=>
 !       [    *     lhs(2,1) lhs(2,2) lhs(2,3) lhs(2,4) lhs(2,5) ] (1)=>
 !       [ lhs(3,1) lhs(3,2) lhs(3,3) lhs(3,4) lhs(3,5) lhs(3,6) ]
 ! <=(1) [ lhs(4,2) lhs(4,3) lhs(4,4) lhs(4,5) lhs(4,6)    *     ]
 ! <=(2) [ lhs(5,3) lhs(5,4) lhs(5,5) lhs(5,6)    *        *     ]
+!       [    +        +        +        +        +        +     ]    
+!       [    +        +        +        +        +        +     ]    
 
-!       Et cetera for additional bands above and below the main diagonal
+!       The '*' indicates unreferenced elements.
+!       The '+' indicates an element overwritten during decomposition.
+!       For additional bands above and below the main diagonal, the
+!       shifts to the left or right increases by the distance from the
+!       main diagonal of the matrix.
 !-----------------------------------------------------------------------
 
+        ! Reorder lulhs, omitting the additional 2*nsub bands
+        ! that are used for the LU decomposition of the matrix.
+
+        imain = nsub + nsup + 1
+
+        ! For the offset, (+) is left, and (-) is right
+
+        ! Sub diagonals
         do offset = 1, nsub, 1
-          lhs(nsup+1+offset,1:ndim)
-     .    = eoshift( lhs(nsup+1+offset,1:ndim), offset )
+          lulhs(imain+offset, 1:ndim)
+     .    = eoshift( lulhs(imain+offset, 1:ndim), offset )
         end do 
 
+        ! Super diagonals
         do offset = 1, nsup, 1
-          lhs(nsub+1-offset,1:ndim)
-     .    = eoshift( lhs(nsub+1-offset,1:ndim), -offset )
+          lulhs(imain-offset, 1:ndim)
+     .    = eoshift( lulhs(imain-offset, 1:ndim), -offset )
         end do
-
-        ! Copy LHS into Decomposition scratch space
-        lulhs(nsub+1:2*nsub+nsup+1,1:ndim) = lhs(1:nsub+nsup+1,1:ndim)
 
 !-----------------------------------------------------------------------
 !       *** LAPACK routine ***
@@ -517,7 +556,7 @@
         select case( info )
 
         case( :-1 )
-          write(*,*) trim(solve_type)//
+          write(fstderr,*) trim(solve_type)//
      .      " illegal value for argument ", -info
           isValid = .false.
 
@@ -528,10 +567,11 @@
 
         case( 1: )
           if ( info == ndim+1 ) then
-            write(*,*) trim(solve_type)//
+            write(fstderr,*) trim(solve_type)//
      .        " Warning: matrix singular to working precision"
+            isValid = .true.
           else
-            write(*,*) trim(solve_type)//
+            write(fstderr,*) trim(solve_type)//
      .        " band solver: singular matrix"
             isValid = .false.
           end if
