@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf01.F,v 1.2 2006-12-20 03:16:08 dschanen Exp $
+! $Id: dycoms2_rf01.F,v 1.3 2006-12-24 16:54:20 dschanen Exp $
         module dycoms2_rf01
 
 !       Description:
@@ -32,7 +32,7 @@
 
         implicit none
 
-        intrinsic :: exp, sqrt
+        intrinsic :: exp, sqrt, present
 
         ! Constant Parameters
         real, parameter :: 
@@ -170,14 +170,21 @@
 
         return
         end subroutine dycoms2_rf01_tndcy
+
 !----------------------------------------------------------------------
-! This subroutine computes surface fluxes of horizontal momentum,
-! heat and moisture according to GCSS DYCOMS specifications
-!
-        subroutine dycoms2_rf01_sfclyr( sfctype, Tsfc, psfc, exnersfc,
-     .                                  up, vp, thp, rtp, rhop,
-     .                                  uw, vw, wtp, wrp,
-     .                                  sclrm_sfc, wpsclrp_sfc )
+        subroutine dycoms2_rf01_sfclyr
+     .             ( sfctype, Tsfc, psfc, 
+     .               exner_sfc, um_sfc, vm_sfc, 
+     .               thlm_sfc, rtm_sfc, 
+     .               rhom_sfc, upwp_sfc, vpwp_sfc,
+     .               wpthlp_sfc, wprtp_sfc,
+     .               sclrm_sfc, wpsclrp_sfc )
+!       Description:
+!       This subroutine computes surface fluxes of horizontal momentum,
+!       heat and moisture according to GCSS DYCOMS II RF 01 specifications
+
+!       References:
+!----------------------------------------------------------------------
 
         use constants
 #ifdef STATS
@@ -186,66 +193,81 @@
 
         implicit none
 
-!       External
-
+        ! External
         real, external :: rsat
 
-!       Constants
+        intrinsic :: max, sqrt, present
 
-        real, parameter :: ubmin = 0.25
-        real, parameter :: ustar = 0.25
-        real, parameter :: Cd    = 0.0011
+        ! Constant parameters
+        real, parameter :: 
+     .  ubmin = 0.25,
+     .  ustar = 0.25,
+     .  Cd    = 0.0011
 
-!       Input variables
-
+        ! Input variables
         integer, intent(in) :: sfctype
-        real, intent(in)    :: Tsfc, psfc, exnersfc, up, vp
-        real, intent(in)    :: thp, rtp, rhop
 
-        real, optional, intent(in) :: sclrm_sfc(sclr_dim) 
+        real, intent(in) :: 
+     .  Tsfc,      ! Surface temperature                [K]
+     .  psfc,      ! Surface pressure                   [Pa]
+     .  exner_sfc, ! Exner function at the surface      [-]
+     .  um_sfc,    ! u wind at the surface              [m/s]
+     .  vm_sfc,    ! v wind at the surface              [m/s]
+     .  thlm_sfc,  ! theta_l at the surface             [K]
+     .  rtm_sfc,   ! r_t at the surface                 [kg/kg]
+     .  rhom_sfc   ! Density at the surface             [kg/m^3]
 
-!       Output variables
+        ! Optional input variables
+        real, intent(in), optional, dimension(sclr_dim) :: 
+     .  sclrm_sfc  ! Passive scalar at the surface      [units vary]
 
-        real, intent(out) :: uw, vw, wtp, wrp
+        ! Output variables
+        real, intent(out) :: 
+     .  upwp_sfc,   ! u' w' at the surface              [m^2/s^2]
+     .  vpwp_sfc,   ! v' w' at the surface              [m^2/s^2]
+     .  wpthlp_sfc, ! w' thl' at the surface            [m K/s]
+     .  wprtp_sfc   ! w' rt'  at the surface            [m kg/kg]
 
-        real, optional, intent(out) :: wpsclrp_sfc(sclr_dim) 
+        real, intent(out), optional, dimension(sclr_dim) :: 
+     .  wpsclrp_sfc  ! w' sclr' at the surface          [m units/s]
 
-!       Internal variables
+        ! Local variables
 
-        real ubar
+        real :: ubar
 
-! Compute heat and moisture fluxes
+        ! Compute heat and moisture fluxes
 
-        ubar = max(ubmin,sqrt(up*up + vp*vp))
+        ubar = max( ubmin, sqrt( um_sfc**2 + vm_sfc**2 ) )
 
-! Compute momentum fluxes
+        ! Compute momentum fluxes
 
-        uw = -up * ustar*ustar / ubar
-        vw = -vp * ustar*ustar / ubar
+        upwp_sfc = -um_sfc * ustar**2 / ubar
+        vpwp_sfc = -vm_sfc * ustar**2 / ubar
 
         if ( sfctype == 0 ) then
 
-          wtp =  15.0 / ( rhop * cp )
-          wrp = 115.0 / ( rhop * lv )
+          wpthlp_sfc =  15.0 / ( rhom_sfc * Cp )
+          wprtp_sfc  = 115.0 / ( rhom_sfc * Lv )
 
           if ( present( sclrm_sfc ).and.present( wpsclrp_sfc ) ) then
-            wpsclrp_sfc(SCLR_THETA) = wtp
-            wpsclrp_sfc(SCLR_RT)    = wrp
+            wpsclrp_sfc(SCLR_THETA) = wpthlp_sfc
+            wpsclrp_sfc(SCLR_RT)    = wprtp_sfc
           end if
+
         else if ( sfctype == 1 ) then
 
-          wtp = -Cd * ubar * ( thp - Tsfc/exnersfc )
-          wrp = -Cd * ubar * ( rtp - rsat(psfc,Tsfc) )        
+          wpthlp_sfc = -Cd * ubar * ( thlm_sfc - Tsfc/exner_sfc )
+          wprtp_sfc  = -Cd * ubar * ( rtm_sfc  - rsat( psfc, Tsfc ) )
 
-          if ( present( sclrm_sfc ).and.present( wpsclrp_sfc ) ) then
-            wpsclrp_sfc(SCLR_THETA) = -Cd * ubar * 
-     .                        ( sclrm_sfc(SCLR_THETA) - Tsfc/exnersfc )
-            wpsclrp_sfc(SCLR_RT)    = -Cd * ubar * 
-     .                        ( sclrm_sfc(SCLR_RT) - rsat(psfc, Tsfc) )
+          if ( present( sclrm_sfc ) .and. present( wpsclrp_sfc ) ) then
+
+            wpsclrp_sfc(SCLR_THETA) = wpthlp_sfc
+            wpsclrp_sfc(SCLR_RT)    = wprtp_sfc
           end if
-        else
 
-          write(fstderr,*) 'Invalid sfctype value = ', sfctype
+        else  ! Undefined value for sfctype
+
+          write(fstderr,*) "Invalid sfctype value = ", sfctype
           stop
 
         end if
