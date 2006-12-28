@@ -1,6 +1,10 @@
 !------------------------------------------------------------------------
-! $Id: grid.F,v 1.3 2006-07-18 01:36:41 ajsmith4 Exp $
+! $Id: grid.F,v 1.4 2006-12-28 23:11:12 dschanen Exp $
 
+        module grid_class
+
+! Description:
+!
 ! Definition of a grid class and associated functions
 !
 ! The grid specification is as follows:
@@ -42,8 +46,14 @@
 ! modified 2/28/01 to get rid of UNDEFINED.
 ! Experience has shown that the 'UNDEFINED' idea was not shuch a good idea
 ! after all.
+
+!  References:
+
+!  Section 3c, p. 3548 /Numerical discretization/ of:
+!   ``A PDF-Based Model for Boundary Layer Clouds. Part I:
+!     Method and Model Description'' Golaz, et al. (2002)
+!     JAS, Vol. 59, pp. 3540--3551.
 !-----------------------------------------------------------------------
-        module grid_class
 
            implicit none
 
@@ -58,11 +68,14 @@
               real, pointer, dimension(:) :: dzm, dzt
            end type grid
 
-           type (grid) gr       ! The grid is defined here so that it
-                                ! is common throughout the module
-                                ! The implication is that only one grid
-                                ! can be defined !
+!   The grid is defined here so that it is common throughout the module. 
+!   The implication is that only one grid can be defined !
 
+           type (grid) gr  
+
+           ! Interfaces provided for function overloading
+
+           ! Interpolation functions
            interface zt2zm
               module procedure interpolated_azm, interpolated_azmk
            end interface
@@ -71,6 +84,7 @@
               module procedure interpolated_azt, interpolated_aztk
            end interface
 
+           ! Vertical derivative functions
            interface ddzm
               module procedure gradzm
            end interface
@@ -82,102 +96,104 @@
            contains
 
 !-----------------------------------------------------------------------
-!           Grid Constructor
-!
-!           This subroutine sets up a uniformly spaced vertical grid similar
-!           to RAMS grid.
-!
-!          Input parameters:
-!
-!             integer nnzp        number of vertical levels in grid
-!             real deltaz        vertical grid spacing
-!-----------------------------------------------------------------------
            subroutine gridsetup( nnzp, deltaz, implemented,
      .                           host_momentum, host_thermodynamic )
 
+!          Description:
+!          Grid Constructor
+!
+!          This subroutine sets up a uniformly spaced vertical grid 
+!          similar to the RAMS grid.
+!
+!-----------------------------------------------------------------------
+           use constants, only: fstderr
+
            implicit none
 
-!          Parameter
+           ! Constant parameters
+           ! Issue a warning if nnzp exceeds this number.
+           integer, parameter ::
+     .     NWARNING = 250  
 
-c           integer, parameter :: NWARNING = 200
+           ! Input Variables
+           integer, intent(in) :: 
+     .     nnzp ! Number of vertical levels in grid             [count]
 
-c Modification by Adam Smith, 27 June 2006
-c We want to increase the maximum vertical grid size
-           integer, parameter :: NWARNING = 250
-
-!          Input
-
-           integer, intent(in) :: nnzp
-           real, intent(in)    :: deltaz
+           real, intent(in) :: deltaz  ! Vertical grid spacing  [m]
 
            ! Flag to see if HOC is running on it's own or it it's part
            ! of a larger model.
            logical, intent(in) :: implemented
+
            ! If it's part of a larger model, it needs to use that models
            ! grid heights.
-           real, dimension(1:nnzp), intent(in) :: host_momentum
-           real, dimension(1:nnzp), intent(in) :: host_thermodynamic
+           real, intent(in), dimension(nnzp) :: 
+     .     host_momentum,     ! Host momentum grid              [m]
+     .     host_thermodynamic ! Host thermodynamic grid         [m]
 
-!          Internal
+           ! Local Variables
+           integer :: k, ierr ! Loop index and allocation stat
 
-           integer i, ierr
 
-!          Define grid size
+           ! Define the grid size
 
            if ( nnzp > NWARNING ) then
-             write(*,*) "Warning: running with vertical grid "//
-     .                  "which is larger than ", NWARNING
+             write(fstderr,*) "Warning: running with vertical grid "//
+     .         "which is larger than ", NWARNING
            endif
 
            gr%nnzp = nnzp
+
            allocate( gr%zm(1:nnzp), gr%zt(1:nnzp),
      .               gr%dzm(1:nnzp), gr%dzt(1:nnzp), stat=ierr )
-           if ( ierr /= 0 ) stop "grid allocation failure"
+
+           if ( ierr /= 0 ) stop "Grid allocation failed."
 
            IF ( .NOT. implemented ) THEN
 
-!             Original code
-!             Define momentum grid points. The first momentum level is 
-!             at the surface
-              DO i = 1, gr%nnzp, 1
-                 gr%zm(i) = (i-1) * deltaz
-              ENDDO
+              ! Original code
 
-!             Define thermodynamic grid. For the time being, themodynamic 
-!             grid points are located in the center point between momentum 
-!             points. The first thermodynmic point is below the surface.
+              ! Define momentum grid points. The first momentum level is 
+              ! at the surface
+              DO k = 1, gr%nnzp, 1
+                 gr%zm(k) = (k-1) * deltaz
+              END DO
+
+             ! Define thermodynamic grid. For the time being, themodynamic 
+             ! grid points are located in the center point between momentum 
+             ! points. The first thermodynmic point is below the surface.
               gr%zt(1) = -0.5 * deltaz
-              DO i = 2, gr%nnzp, 1
-                 gr%zt(i) = 0.5 * ( gr%zm(i) + gr%zm(i-1) )
-              ENDDO
+              DO k = 2, gr%nnzp, 1
+                 gr%zt(k) = 0.5 * ( gr%zm(k) + gr%zm(k-1) )
+              END DO
 
            ELSE
 
-!             Momentum levels from host model.
-              DO i = 1, gr%nnzp, 1
-                 gr%zm(i) = host_momentum(i)
-              ENDDO
+              ! Momentum levels from host model.
+              DO k = 1, gr%nnzp, 1
+                 gr%zm(k) = host_momentum(k)
+              END DO
 
-!             Thermodynamic levels from host model after possible 
-!             grid-index adjustment for HOC interface.
-              DO i = 1, gr%nnzp, 1
-                 gr%zt(i) = host_thermodynamic(i)
-              ENDDO
+              ! Thermodynamic levels from host model after possible 
+              ! grid-index adjustment for HOC interface.
+              DO k = 1, gr%nnzp, 1
+                 gr%zt(k) = host_thermodynamic(k)
+              END DO
 
-           ENDIF
+           END IF
 
-!          Define dzm. dzm is the inverse spacing between thermodynamic 
-!          points
+           ! Define dzm. dzm is the inverse spacing between 
+           ! thermodynamic points
 
-           do i=1,gr%nnzp-1
-              gr%dzm(i) = 1. / ( gr%zt(i+1) - gr%zt(i) )
+           do k=1,gr%nnzp-1
+              gr%dzm(k) = 1. / ( gr%zt(k+1) - gr%zt(k) )
            end do
            gr%dzm(gr%nnzp) = gr%dzm(gr%nnzp-1)
 
-!          Define dzt. dzt is the inverse spacing between momentum points
+           ! Define dzt. dzt is the inverse spacing between momentum points
 
-           do i=2,gr%nnzp
-              gr%dzt(i) = 1. / ( gr%zm(i) - gr%zm(i-1) )
+           do k=2,gr%nnzp
+              gr%dzt(k) = 1. / ( gr%zm(k) - gr%zm(k-1) )
            end do
            gr%dzt(1) = gr%dzt(2)
 
@@ -185,33 +201,35 @@ c We want to increase the maximum vertical grid size
            end subroutine gridsetup
 
 !-----------------------------------------------------------------------
-!           Function to interpolate a variable located on the 
+           function interpolated_azm( azt )
+
+!          Description:
+!          Function to interpolate a variable located on the 
 !          thermodynamic grid (azt) to a variable on the momentum 
 !          grid (azm)
+
+!          Notes:
+!          Modified by Brian for a non-uniform grid.
 !-----------------------------------------------------------------------
 
-           function interpolated_azm( azt )
            implicit none
 
-!          Input
+           ! Input Variable
+           real, intent(in), dimension(gr%nnzp) :: azt
 
-           real, dimension(1:gr%nnzp), intent(in) :: azt
-
-!          Output
-
-           real, dimension(1:gr%nnzp) :: interpolated_azm
+           ! Return Variable
+           real, dimension(gr%nnzp) :: interpolated_azm
         
-!          Internal
+           ! Local Variable
+           integer :: k
 
-           integer i
+           ! Do the actual interpolation 
 
-!          Do actual interpolation 
-
-           do i=1, gr%nnzp-1
-!              interpolated_azm(i) = 0.5 * ( azt(i) + azt(i+1) )
-              interpolated_azm(i) = 
-     .                ( ( azt(i+1)-azt(i) )/( gr%zt(i+1)-gr%zt(i) ) )
-     .               * ( gr%zm(i)-gr%zt(i) ) + azt(i)
+           do k=1, gr%nnzp-1
+!              interpolated_azm(k) = 0.5 * ( azt(k) + azt(k+1) )
+              interpolated_azm(k) = 
+     .                ( ( azt(k+1)-azt(k) )/( gr%zt(k+1)-gr%zt(k) ) )
+     .               * ( gr%zm(k)-gr%zt(k) ) + azt(k)
            end do
 !           interpolated_azm(gr%nnzp) = UNDEFINED
 !           interpolated_azm(gr%nnzp) = azt(gr%nnzp)
@@ -224,24 +242,28 @@ c We want to increase the maximum vertical grid size
            end function interpolated_azm
 
 !-----------------------------------------------------------------------
-!           Function to interpolate a variable located on the
-!           thermodynamic grid (azt) to a variable on the momentum
-!           grid (azm). The function interpolates only for level k
+           function interpolated_azmk( azt, k )
+
+!          Description:
+!          Function to interpolate a variable located on the
+!          thermodynamic grid (azt) to a variable on the momentum
+!          grid (azm). The function interpolates only for level k
+
+!          Notes:
+!          Modified by Brian for a non-uniform grid.
 !-----------------------------------------------------------------------
 
-           function interpolated_azmk( azt, k )
            implicit none
 
-!           Input
+           ! Input Variable
+           real, intent(in), dimension(gr%nnzp) :: azt
 
-           real, dimension(1:gr%nnzp), intent(in) :: azt
-           integer, intent(in)                    :: k
+           integer, intent(in) :: k
 
-!           Output
+           ! Return Variable
+           real :: interpolated_azmk
 
-           real interpolated_azmk
-
-!           Do actual interpolation
+           ! Do the actual interpolation
 
            if ( k /= gr%nnzp ) then
 !              interpolated_azmk = 0.5 * ( azt(k) + azt(k+1) )
@@ -261,34 +283,37 @@ c We want to increase the maximum vertical grid size
            end function interpolated_azmk
         
 !-----------------------------------------------------------------------
-!           Function to interpolate a variable located on the 
+           function interpolated_azt( azm )
+
+!          Description:
+!          Function to interpolate a variable located on the 
 !          momentum grid (azm) to a variable on the thermodynamic
 !          grid (azt)
+
+!          Notes:
+!          Modified by Brian for a non-uniform grid.
 !-----------------------------------------------------------------------
 
-           function interpolated_azt( azm )
            implicit none
 
-!          Input
+           ! Input Variable
+           real, intent(in), dimension(gr%nnzp) :: azm
 
-           real, dimension(1:gr%nnzp), intent(in) :: azm
-
-!          Output
-
-           real, dimension(1:gr%nnzp) :: interpolated_azt
+           ! Output Variable
+           real, dimension(gr%nnzp) :: interpolated_azt
         
-!          Internal
+           ! Local Variable
+           integer :: k  ! Index
 
-           integer i
+           ! Do actual interpolation 
 
-!          Do actual interpolation 
-
-           do i=gr%nnzp,2,-1
-!              interpolated_azt(i) = 0.5 * ( azm(i-1) + azm(i) )
-              interpolated_azt(i) =
-     .                ( ( azm(i)-azm(i-1) )/( gr%zm(i)-gr%zm(i-1) ) )
-     .               * ( gr%zt(i)-gr%zm(i-1) ) + azm(i-1)
+           do k=gr%nnzp,2,-1
+!              interpolated_azt(k) = 0.5 * ( azm(k-1) + azm(k) )
+              interpolated_azt(k) =
+     .                ( ( azm(k)-azm(k-1) )/( gr%zm(k)-gr%zm(k-1) ) )
+     .               * ( gr%zt(k)-gr%zm(k-1) ) + azm(k-1)
            end do
+
 !           interpolated_azt(1) = UNDEFINED
 !           interpolated_azt(1) = azm(1)
            interpolated_azt(1) =
@@ -299,24 +324,27 @@ c We want to increase the maximum vertical grid size
            end function interpolated_azt
 
 !-----------------------------------------------------------------------
-!           Function to interpolate a variable located on the 
+           function interpolated_aztk( azm, k )
+
+!          Description:
+!          Function to interpolate a variable located on the 
 !          momentum grid (azm) to a variable on the thermodynamic
 !          grid (azt). This function interpolates only for level k.
-!-----------------------------------------------------------------------
 
-           function interpolated_aztk( azm, k )
+!          Notes:
+!          Modified by Brian for a non-uniform grid.
+!-----------------------------------------------------------------------
            implicit none
 
-!          Input
+           ! Input Variables
+           real, intent(in), dimension(gr%nnzp) :: azm
 
-           real, dimension(1:gr%nnzp), intent(in) :: azm
-           integer, intent(in)                    :: k
+           integer, intent(in) :: k
 
-!          Output
-
-           real interpolated_aztk
+           ! Return Variables
+           real :: interpolated_aztk
         
-!          Do actual interpolation 
+           ! Do actual interpolation 
 
            if ( k /= 1 ) then
 !              interpolated_aztk = 0.5 * ( azm(k-1) + azm(k) )
@@ -335,31 +363,30 @@ c We want to increase the maximum vertical grid size
            end function interpolated_aztk
 
 !-----------------------------------------------------------------------
+           function gradzm( azm )
+
+!          Description:
 !          Function to compute the vertical derivative of a variable (azm)
 !          located on the momentum grid. The results is returned in an 
 !          array defined on the thermodynamic grid.
 !-----------------------------------------------------------------------
-
-           function gradzm( azm )
            implicit none
 
-!           Input
+           ! Input Variable
+           real, intent(in), dimension(gr%nnzp) :: azm
 
-           real, dimension(1:gr%nnzp), intent(in) :: azm
+           ! Return Variable
+           real, dimension(gr%nnzp) :: gradzm
 
-!          Output
+           ! Local Variable
+           integer :: k
 
-           real, dimension(1:gr%nnzp) :: gradzm
+           ! Compute vertical derivative
 
-!           Internal
-
-           integer i
-
-!           Compute vertical derivative
-
-           do i=gr%nnzp, 2, -1
-              gradzm(i) = ( azm(i) - azm(i-1) ) * gr%dzt(i)
+           do k=gr%nnzp, 2, -1
+              gradzm(k) = ( azm(k) - azm(k-1) ) * gr%dzt(k)
            end do
+
 !           gradzm(1) = UNDEFINED
 !           gradzm(1) = 0.
            gradzm(1) = gradzm(2)
@@ -368,30 +395,28 @@ c We want to increase the maximum vertical grid size
            end function gradzm
 
 !-----------------------------------------------------------------------
-!           Function to compute the vertical derivative of a variable (azt)
+           function gradzt( azt )
+
+!          Description:
+!          Function to compute the vertical derivative of a variable (azt)
 !          located on the thermodynamic grid. The results is returned in
 !          an array defined on the momentum grid.
 !-----------------------------------------------------------------------
-
-           function gradzt( azt )
            implicit none
 
-!           Input
+           ! Input Variable
+           real, intent(in), dimension(gr%nnzp) :: azt
 
-           real, dimension(1:gr%nnzp), intent(in) :: azt
+           ! Output Variable
+           real, dimension(gr%nnzp) :: gradzt
 
-!          Output
+           ! Local Variable
+           integer :: k
 
-           real, dimension(1:gr%nnzp) :: gradzt
+           ! Compute vertical derivative
 
-!           Internal
-
-           integer i
-
-!          Compute vertical derivative
-
-           do i=1,gr%nnzp-1
-              gradzt(i) = ( azt(i+1) - azt(i) ) * gr%dzm(i)
+           do k=1,gr%nnzp-1
+              gradzt(k) = ( azt(k+1) - azt(k) ) * gr%dzm(k)
            end do
 !           gradzt(gr%nnzp) = UNDEFINED
 !           gradzt(gr%nnzp) = 0.
