@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm.F,v 1.2 2006-12-20 03:16:08 dschanen Exp $
+! $Id: arm.F,v 1.3 2006-12-28 23:10:50 dschanen Exp $
         module arm
 
 !       Description:
@@ -15,7 +15,7 @@
         contains
 
 !----------------------------------------------------------------------
-        subroutine arm_tndcy( time, thlm_forcing, rtm_forcing,
+        subroutine arm_tndcy( time, thlm_forcing, radht, rtm_forcing,
      .                        sclr_tndcy )
 !       Description:
 !       Subroutine to set theta and water tendencies for ARM case
@@ -27,6 +27,9 @@
         use grid_class
         use constants, only: sclr_dim
         use model_flags, only: lbugsrad
+#ifdef STATS
+        use statistics
+#endif
 
         implicit none
 
@@ -46,18 +49,20 @@
         ! Output Variables
         real, intent(out), dimension(gr%nnzp) :: 
      .  thlm_forcing, ! Liquid water potential temperature tendency [K/s]
-     .  rtm_forcing   ! Total water mixing ratio tendency [kg/kg/s]
+     .  radht,        ! Radiative heating rate                      [K/s]
+     .  rtm_forcing   ! Total water mixing ratio tendency           [kg/kg/s]
 
         ! Output (optional) Variables
         real, optional, intent(out), dimension(gr%nnzp,sclr_dim) :: 
      .  sclr_tndcy ! Passive scalar tendency [units vary]
 
         ! Local variables
-        integer :: i, i1, i2 ! Loop indices
+        integer :: k, i1, i2 ! Loop indices
         real :: 
      .  a, b,      ! [-]
      .  true_time, ! [s]
      .  theta_tmp, ! [K/s]
+     .  rad_tmp,   ! [K/s]
      .  rt_tmp     ! [kg/kg/s]
 
 !-----------------------------------------------------------------------
@@ -77,12 +82,16 @@
         end if
 
         if ( .not. lbugsrad ) then
-          theta_tmp = ( 1. - a ) * ( atheta(i1) + rtheta(i1) )
-     .              + a * ( atheta(i2) + rtheta(i2) )
+          theta_tmp = ( 1. - a ) * ( atheta(i1) )
+     .              + a * ( atheta(i2) )
 
-        else ! factor in radiation later
+          rad_tmp = ( 1. - a ) * ( rtheta(i1) )
+     .            + a * ( rtheta(i2) )
+
+        else ! Factor in radiation later
           theta_tmp = ( 1. - a ) * ( atheta(i1) + 0.0 )
      .              + a * ( atheta(i2) + 0.0 )
+          rad_tmp   = 0.0
 
         end if ! ~ lbugsrad
 
@@ -91,25 +100,39 @@
         ! Convert to the right units
 
         theta_tmp = theta_tmp / 3600.
+        rad_tmp   = rad_tmp / 3600.
         rt_tmp    = rt_tmp / ( 3600. * 1000. )
 
         ! Interpolate with respect to height
 
-        do i = 2, gr%nnzp
-          if ( gr%zt(i) >= 0. .and. gr%zt(i) < 1000. ) then
-            rtm_forcing(i)  = rt_tmp
-            thlm_forcing(i) = theta_tmp
+        do k = 2, gr%nnzp
+          select case( int( gr%zt(k) ) )
+          case ( 0:999 )
+            rtm_forcing(k)  = rt_tmp
+            thlm_forcing(k) = theta_tmp + rad_tmp
+            radht(k)        = rad_tmp
 
-          else if ( gr%zt(i) >= 1000. .and. gr%zt(i) < 3000. ) then
-            b               = 1. - ( gr%zt(i) - 1000. ) / 2000.
-            rtm_forcing(i)  = b * rt_tmp
-            thlm_forcing(i) = b * theta_tmp
+          case ( 1000:2999 )
+            b               = 1. - ( gr%zt(k) - 1000. ) / 2000.
+            rtm_forcing(k)  = b * rt_tmp
+            thlm_forcing(k) = b * ( theta_tmp + rad_tmp )
+            radht(k)        = b * rad_tmp
 
-          else
-            rtm_forcing(i)  = 0.0
-            thlm_forcing(i) = 0.0
+          case default
+            rtm_forcing(k)  = 0.0
+            thlm_forcing(k) = 0.0
+
+          end select
+        end do ! k=2..gr%nnzp
+
+#ifdef STATS
+        if ( lstats_samp .and. .not.lbugsrad ) then
+          if ( iradht_LW > 0 ) then
+            zt%x(:,iradht_LW) = zt%x(:,iradht_LW) + radht(:)
+            zt%n(:,iradht_LW) = zt%n(:,iradht_LW) + 1
           end if
-        end do
+        end if
+#endif
 
         if ( present( sclr_tndcy ) ) then
           sclr_tndcy(1:gr%nnzp,SCLR_THETA) = thlm_forcing(1:gr%nnzp)
