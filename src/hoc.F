@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.106 2006-12-20 03:15:52 dschanen Exp $
+! $Id: hoc.F,v 1.107 2006-12-28 23:01:15 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -1071,6 +1071,11 @@
 
         implicit none
 
+        ! External
+#ifdef radoffline
+        external :: bugsrad_hoc
+#endif
+
         ! Input Variables
         integer, intent(in) ::
      .    iteration
@@ -1100,7 +1105,7 @@
          case( "normal" ) ! Normal run
 
          case( "arm" ) ! ARM Cu case
-           call arm_tndcy( time, thlm_forcing, rtm_forcing
+           call arm_tndcy( time, thlm_forcing, radht, rtm_forcing
 #ifdef SCALARS
      .                     ,sclrm_forcing 
 #endif /* SCALARS */
@@ -1157,10 +1162,10 @@
 #endif /* SCALARS */
      .                     )
 
-         case( "dycoms2_rf02_do",     ! DYCOMS2 RF02 case with drizzle only.
-     .         "dycoms2_rf02_ds",     ! DYCOMS2 RF02 case with drizzle and cloud sedimentation.
-     .         "dycoms2_rf02_nd",     ! DYCOMS2 RF02 case with no drizzle and no cloud sedimentation.
-     .         "dycoms2_rf02_so"     )! DYCOMS2 RF02 case with cloud water sedimentation only.
+         case( "dycoms2_rf02_do", ! DYCOMS2 RF02 case with drizzle only.
+     .         "dycoms2_rf02_ds", ! DYCOMS2 RF02 case with drizzle and cloud sedimentation.
+     .         "dycoms2_rf02_nd", ! DYCOMS2 RF02 case with no drizzle and no cloud sedimentation.
+     .         "dycoms2_rf02_so" )! DYCOMS2 RF02 case with cloud water sedimentation only.
            ! Added time, time_initial, and Ncnm to arguments for testing
            ! the COAMPS microphysics with RF02 -dschanen 30 Nov 2006
            call dycoms2_rf02_tndcy
@@ -1168,7 +1173,7 @@
      .            wmt, wmm, thlm_forcing, rtm_forcing,
      .            Frad, radht, Ncm, Ncnm, isValid
 #ifdef SCALARS
-     .           ,sclrm_forcing  ! optional variable
+     .           ,sclrm_forcing  ! Optional variable
 #endif /* SCALARS */
      .                            )
 
@@ -1192,7 +1197,7 @@
 #endif /* SCALARS */
      .                            )
 
-         case ( "mpace" ) ! MPACE case
+         case ( "mpace" ) ! MPACE arctic stratus case
            call mpace_tndcy( time, time_initial, dtmain, rlat, thlm,
      .                       exner, rhot, rtm, p, thvm, rcm,
      .                       wmt, wmm, thlm_forcing, rtm_forcing,
