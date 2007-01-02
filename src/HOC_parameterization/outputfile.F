@@ -1,62 +1,75 @@
 !-----------------------------------------------------------------------
-! $Id: outputfile.F,v 1.2 2006-05-12 16:55:12 dschanen Exp $
-!     MODULE outputfile_class
-
-!     contains a structure for either NetCDF or GrADS
-!-----------------------------------------------------------------------
+! $Id: outputfile.F,v 1.3 2007-01-02 23:27:08 dschanen Exp $
 
       module outputfile_class
+
+!     Description:
+!     Contains two derived types for either NetCDF or GrADS files.
+!-----------------------------------------------------------------------
        
          implicit none
 
-!        Structure to hold description of a variable
+        ! Structure to hold the description of a variable
 
          type variable
-           real, pointer :: ptr(:)          ! pointer to the array
-           character (len = 15) name        ! variable name
-           character (len = 50) description ! variable description
-           character (len = 20) units       ! variable units
-           integer Id                       ! NetCDF module Id for var
+           real, dimension(:), pointer :: ptr ! Pointer to the array
+
+           character(len = 15) :: name        ! Variable name
+           character(len = 50) :: description ! Variable description
+           character(len = 20) :: units       ! Variable units
+
+           integer :: Id                      ! NetCDF module Id for var
          end type variable
 
-!        Structure to hold the description of a NetCDF output file
-!        This makes the new code as compatible as possible with the old
+        ! Structure to hold the description of a NetCDF output file
+        ! This makes the new code as compatible as possible with the
+        ! GrADS output code
 
          type outputfile
 
-!          File information
+        ! File information
 
-           character (len = 200) fname   ! file name without suffix
-           character (len = 200) fdir    ! path where fname resides
-           integer iounit  ! this number is used internally by the 
-                           ! netcdf module to track the data set, or by 
-                           ! grads to track the actual file unit
+           character(len = 200) :: 
+     .     fname,  ! File name without suffix
+     .     fdir    ! Path where fname resides
+
+           integer :: iounit  ! This number is used internally by the 
+                              ! NetCDF module to track the data set, or by 
+                              ! GrADS to track the actual file unit.
                                          
-           integer nrecord               ! number of records written
-           integer ntimes                ! number of times written
-           logical ldefined              ! whether nf90_enddef() has been called
+           integer :: nrecord  ! Number of records written
+           integer :: ntimes   ! Number of times written
+           logical :: ldefined ! Whether nf90_enddef() has been called
 
-!          NetCDF datafile dimensions indices
-           integer LatDimId, LongDimId, AltDimId, TimeDimId
-           integer LatVarId, LongVarId, AltVarId, TimeVarId
+        ! NetCDF datafile dimensions indices
+           integer :: 
+     .     LatDimId, LongDimId, AltDimId, TimeDimId,
+     .     LatVarId, LongVarId, AltVarId, TimeVarId
 
 
-!          Grid information
+        ! Grid information
 
-           integer ia, iz                ! extent
-           real, pointer :: z(:)         ! height of vertical levels
+           integer :: ia, iz  ! Vertical extent
 
-!          Time information
+           real, dimension(:), pointer :: 
+     .     z ! Height of vertical levels [m]
 
-           integer day, month, year      ! date of starting time
-           real rlat, rlon               ! Deg. N & Deg. E
-           real time                     ! start time in seconds
-           real dtwrite                  ! interval between outputs in seconds
+        ! Time information
 
-!           Variables
+           integer :: day, month, year ! Date of starting time
 
-           integer nvar                  ! number of variables for this file
-           type (variable), pointer :: var(:) ! list and variable description
+           real :: 
+     .     rlat,   ! Latitude                   [Degrees N]
+     .     rlon,   ! Longitude                  [Degrees E]
+     .     time,   ! Start time                 [Seconds]
+     .     dtwrite ! Interval between output    [Seconds]
+
+        ! Statistical Variables
+
+           integer :: nvar  ! Number of variables for this file
+
+           type (variable), dimension(:), pointer :: 
+     .     var ! List and variable description
 
          end type outputfile
 

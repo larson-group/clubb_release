@@ -1,4 +1,4 @@
-! $Id: outputnc.F,v 1.3 2006-12-20 03:16:10 dschanen Exp $
+! $Id: outputnc.F,v 1.4 2007-01-02 23:27:08 dschanen Exp $
 !-----------------------------------------------------------------------
 
        module outputnc
@@ -79,15 +79,15 @@
        ncf%nvar    = nvar
 
        ! From open_grads.
-       ! Must be in case of a reversed grid as in COAMPS
+       ! Must be for the case of a reversed grid as in COAMPS
        if ( ia <= iz ) then
          do k=1,iz-ia+1
            ncf%z(k) = zgrid(ia+k-1)
-         enddo
+         end do
        else ! Always this for HOC
          do k=1,ia-iz+1
            ncf%z(k) = zgrid(ia-k+1)
-         enddo
+         end do
        endif
 
        ! Create NetCDF dataset: enter define mode  
@@ -184,15 +184,16 @@
 
        return 
        end subroutine write_nc
-!-----------------------------------------------------------------------
-!      SUBROUTINE define_nc()
 
-!      Used internally to create a definition for the NetCDF dataset
 !-----------------------------------------------------------------------
        subroutine define_nc( ncid, ia, iz, zgrid, day, month, 
      .                       year, time, dtwrite, nvar,
      .                       LatDimId, LongDimId, AltDimId, TimeDimId,
      .                       LatVarId, LongVarId, AltVarId, TimeVarId )
+
+!      Description:
+!      Used internally to create a definition for the NetCDF dataset
+!-----------------------------------------------------------------------
        use netcdf
        use constants, only: fstderr
 
@@ -200,8 +201,8 @@
 
        ! Constant parameters
        integer, parameter :: 
-     .  nlat  = 1,  ! Number of points in the E/W direction
-     .  nlong = 1   ! Number of points in the N/S direction
+     .  nlat  = 1,  ! Number of points in the N/S direction
+     .  nlong = 1   ! Number of points in the E/W direction
 
        ! Input Variables
        integer, intent(in) :: 
