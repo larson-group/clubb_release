@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf02.F,v 1.2 2006-12-20 03:16:08 dschanen Exp $
+! $Id: dycoms2_rf02.F,v 1.3 2007-01-08 23:43:23 dschanen Exp $
         module dycoms2_rf02
 
 !       Description:
@@ -19,8 +19,13 @@
      .               Frad, radht, Ncm, Ncnm, isValid, 
      .               sclrm_forcing )
 !       Description:
+!       Compute wm, thlm_ls, rtm_ls, radiative heating rate, and cloud
+!       droplet number concentration as needed.
 
 !       References:
+!       ``Dynamics and Chemistry of Marine Stratocumulus -- DYCOMS-II''
+!       Stevens, Bjorn, et al., (2003) 
+!       Bull. Amer. Meteorol. Soc., 84, 579-593.
 !----------------------------------------------------------------------
 
         USE grid_class
