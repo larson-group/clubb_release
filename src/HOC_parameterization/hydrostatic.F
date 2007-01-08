@@ -1,66 +1,72 @@
 !------------------------------------------------------------------------
-! $Id: hydrostatic.F,v 1.2 2006-08-04 22:05:04 dschanen Exp $
+! $Id: hydrostatic.F,v 1.3 2007-01-08 20:37:45 dschanen Exp $
 
-! SUBROUTINE hydrostatic( )
+        subroutine hydrostatic( thvm, psfc, pinpa, exner, rhot, rhom )
 
-! Subprogram to integrate hydrostatic equation
+!       Description:
+!       Subprogram to integrate hydrostatic equation
+
+!       References:
+!
 !------------------------------------------------------------------------
-        subroutine hydrostatic(thvm, psfc, p, exner, rhot, rhom)
 
         use constants
         use grid_class
 
         implicit none
 
-! Input
+        ! Input Variables
+        real, intent(in) :: psfc ! Pressure at the surface      [Pa]
 
-        real, intent(in)        :: thvm(1:gr%nnzp)
-        real, intent(in)        :: psfc
+        real, intent(in), dimension(gr%nnzp) :: 
+     .  thvm  ! Virtual potential temperature   [K]
 
-! Output
+        ! Output Variables
+        real, intent(out), dimension(gr%nnzp) :: 
+     .  pinpa, ! Pressure                       [Pa]
+     .  exner, ! Exner function                 [-]
+     .  rhot,  ! Density on thermo. points      [kg/m^3]
+     .  rhom   ! Density on moment. points      [kg/m^3]
 
-        real, intent(out)       :: p(1:gr%nnzp)
-        real, intent(out)       :: exner(1:gr%nnzp)
-        real, intent(out)       :: rhot(1:gr%nnzp)   ! thermodynamics points
-        real, intent(out)       :: rhom(1:gr%nnzp)   ! momentum points
+        !  Local Variables
 
-! Internal
+        integer :: k
 
-        integer k
+        ! Integrate hydrostatic equation: we first compute Exner function
+        ! on the momentum grid
 
-! Integrate hydrostatic equation: we first compute Exner function
-! on the momentum grid
-
-        exner(1) = ( psfc/p0 ) ** kappa
+        exner(1) = ( psfc/p0 )**kappa
         do k=2,gr%nnzp
-           exner(k) = exner(k-1) - grav/( Cp * thvm(k) * gr%dzt(k) )
+          exner(k) = exner(k-1) - grav/( Cp * thvm(k) * gr%dzt(k) )
         end do
 
-! Now interpolate Exner to the thermodynamic grid points
+        ! Now interpolate Exner to the thermodynamic grid points
 
         exner = zm2zt( exner )
 
-! Exner is defined on the thermodynamic grid point except for the first
-! element which corresponds to surface value
+        ! Exner is defined on the thermodynamic grid point except for the first
+        ! element which corresponds to surface value
 
-        exner(1) = ( psfc/p0 ) ** kappa
+        ! Note: kappa = Rd / Cp
 
-! Compute pressure on thermodynamic points
+        exner(1) = ( psfc/p0 )**kappa
 
-        do k=1,gr%nnzp
-           p(k) = p0 * exner(k)**(1./kappa)
-        end do
-
-! Compute density on thermodynamic grid
+        ! Compute pressure on thermodynamic points
 
         do k=1,gr%nnzp
-           rhot(k) = p(k) / ( Rd * thvm(k) * exner(k) )
+          pinpa(k) = p0 * exner(k)**( 1./kappa )
         end do
 
-! Interpolate density back to momentum grid
+        ! Compute density on thermodynamic grid
+
+        do k=1,gr%nnzp
+          rhot(k) = pinpa(k) / ( Rd * thvm(k) * exner(k) )
+        end do
+
+        ! Interpolate density back to momentum grid
 
         rhom = zt2zm( rhot )
-        rhom(1) = p(1) / ( Rd * thvm(1) * exner(1) )
+        rhom(1) = pinpa(1) / ( Rd * thvm(1) * exner(1) )
 
         return
         end subroutine hydrostatic
