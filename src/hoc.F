@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.107 2006-12-28 23:01:15 dschanen Exp $
+! $Id: hoc.F,v 1.108 2007-01-08 20:38:45 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -7,6 +7,7 @@
 #endif /*SCALARS*/
 
         module hoc
+
 !       Description:
 !       Contains the necessary subroutines to execute individual HOC 
 !       model runs, using one of the driver programs (the simplest case
@@ -1178,8 +1179,8 @@
      .                            )
 
          case( "nov11_altocu" ) ! Nov. 11 Altocumulus case.
-           call nov11_altocu_tndcy( time, time_initial, dt, thlm,
-     .                              rcm, p, exner, rhot, rtm, wmt,
+           call nov11_altocu_tndcy( time, time_initial, dt, rlat, rlon,
+     .                              thlm, rcm, p, exner, rhot, rtm, wmt,
      .                              wmm, thlm_forcing, rtm_forcing,
      .                              Frad, radht
 #ifdef SCALARS
