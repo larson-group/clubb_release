@@ -1,4 +1,4 @@
-! $Id: arm_model.in,v 1.6 2006-12-12 20:20:32 dschanen Exp $
+! $Id: arm_model.in,v 1.7 2007-01-12 18:25:02 dschanen Exp $
 ! Parameter file for GCSS ARM Cu over land case
 
 &model_setting
@@ -24,7 +24,7 @@ psfc = 970.e2
 SE = 0.
 LE = 0.
 
-fcor = 1.e-5
+fcor = 8.5e-5
 
 cloud_sed     = .false.
 kk_rain       = .false.
