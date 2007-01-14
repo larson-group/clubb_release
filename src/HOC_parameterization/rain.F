@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.22 2006-12-20 22:13:34 dschanen Exp $
+! $Id: rain.F,v 1.23 2007-01-14 21:08:45 griffinb Exp $
 !----------------------------------------------------------------------
 
       MODULE rain_equations
@@ -12,33 +12,33 @@
 !      REAL, PARAMETER:: Nrp2_Nrm2 = 1.0
 !      REAL, PARAMETER:: Ncp2_Ncm2 = 0.07
 !      REAL, PARAMETER:: corr_rrNr_LL =  0.85
-!      REAL, PARAMETER:: corr_rcrr_NL =  0.10
-!      REAL, PARAMETER:: corr_rcNr_NL = -0.15
-!      REAL, PARAMETER:: corr_rcNc_NL =  0.45
+!      REAL, PARAMETER:: corr_srr_NL =  0.10
+!      REAL, PARAMETER:: corr_sNr_NL = -0.15
+!      REAL, PARAMETER:: corr_sNc_NL =  0.45
 !      ! Parameters for case with cloud water sedimentation.
 !      REAL, PARAMETER:: rrp2_rrm2 = 1.7123
 !      REAL, PARAMETER:: Nrp2_Nrm2 = 1.0618
 !      REAL, PARAMETER:: Ncp2_Ncm2 = 0.2964
 !      REAL, PARAMETER:: corr_rrNr_LL = 0.872580
-!      REAL, PARAMETER:: corr_rcrr_NL = 0.393905
-!      REAL, PARAMETER:: corr_rcNr_NL = 0.402948
-!      REAL, PARAMETER:: corr_rcNc_NL = 0.670482
+!      REAL, PARAMETER:: corr_srr_NL = 0.393905
+!      REAL, PARAMETER:: corr_sNr_NL = 0.402948
+!      REAL, PARAMETER:: corr_sNc_NL = 0.670482
 !      ! Parameters for case without cloud water sedimentation.
 !      REAL, PARAMETER:: rrp2_rrm2 = 1.4584
 !      REAL, PARAMETER:: Nrp2_Nrm2 = 1.0285
 !      REAL, PARAMETER:: Ncp2_Ncm2 = 0.1034
 !      REAL, PARAMETER:: corr_rrNr_LL = 0.861597
-!      REAL, PARAMETER:: corr_rcrr_NL = 0.252875
-!      REAL, PARAMETER:: corr_rcNr_NL = 0.196055
-!      REAL, PARAMETER:: corr_rcNc_NL = 0.616638
+!      REAL, PARAMETER:: corr_srr_NL = 0.252875
+!      REAL, PARAMETER:: corr_sNr_NL = 0.196055
+!      REAL, PARAMETER:: corr_sNc_NL = 0.616638
       ! Rounded average of the above two sets (to nearest 0.05).
       REAL, PARAMETER:: rrp2_rrm2 = 1.60
       REAL, PARAMETER:: Nrp2_Nrm2 = 1.05
       REAL, PARAMETER:: Ncp2_Ncm2 = 0.20
       REAL, PARAMETER:: corr_rrNr_LL = 0.85
-      REAL, PARAMETER:: corr_rcrr_NL = 0.30
-      REAL, PARAMETER:: corr_rcNr_NL = 0.30
-      REAL, PARAMETER:: corr_rcNc_NL = 0.65
+      REAL, PARAMETER:: corr_srr_NL = 0.30
+      REAL, PARAMETER:: corr_sNr_NL = 0.30
+      REAL, PARAMETER:: corr_sNc_NL = 0.65
       !REAL, PARAMETER:: C_evap = 0.86    ! Khairoutdinov and Kogan (2000) 
       !                                   ! ratio of drizzle drop mean 
       !                                   ! geometric radius to drizzle drop
@@ -1244,7 +1244,7 @@
               sigma_Nr = (Nrm/rhot) * SQRT(Nrp2_Nrm2)  ! Nr'2/Nrm^2 = 1.0
 
               ! Correlations.
-              corr_rrNr = corr_rrNr_LL  ! corr_rcNr_LL =  0.85
+              corr_rrNr = corr_rrNr_LL  ! corr_rrNr_LL =  0.85
 
 
               mean_volume_radius =
@@ -1381,8 +1381,8 @@
         REAL:: sigma_rr    ! Grid-box standard deviation of rr
         REAL:: mu_Nr       ! Grid-box average of Nr
         REAL:: sigma_Nr    ! Grid-box standard deviation of Nr
-        REAL:: corr_rcrr   ! Correlation of rc and rr
-        REAL:: corr_rcNr   ! Correlation of rc and Nr
+        REAL:: corr_srr    ! Correlation of s and rr
+        REAL:: corr_sNr    ! Correlation of s and Nr
         REAL:: corr_rrNr   ! Correlation of rr and Nr
 
         REAL:: Tl_1, Tl_2, T_1, T_2, rsl_1, rsl_2, Beta_T1, Beta_T2
@@ -1468,8 +1468,8 @@
               sigma_Nr = (Nrm/rhot) * SQRT(Nrp2_Nrm2)  ! Nr'2/Nrm^2 = 1.0
 
               ! Correlations.
-              corr_rcrr = corr_rcrr_NL  ! corr_rcrr_NL =  0.10
-              corr_rcNr = corr_rcNr_NL  ! corr_rcNr_NL = -0.15
+              corr_srr = corr_srr_NL    ! corr_srr_NL =  0.10
+              corr_sNr = corr_sNr_NL    ! corr_sNr_NL = -0.15
               corr_rrNr = corr_rrNr_LL  ! corr_rrNr_LL =  0.85
 
 
@@ -1477,13 +1477,13 @@
      .         ( a ) * plume_1_constants
      .         * PDF_TRIVAR_2G_LN_LN ( mu_s1, mu_rr, mu_Nr,
      .                                 sigma_s1, sigma_rr, sigma_Nr,
-     .                                 corr_rcrr, corr_rcNr, corr_rrNr,
+     .                                 corr_srr, corr_sNr, corr_rrNr,
      .                                 alpha_exp, beta_exp, gamma_exp )
      .        +
      .         (1-a) * plume_2_constants
      .         * PDF_TRIVAR_2G_LN_LN ( mu_s2, mu_rr, mu_Nr,
      .                                 sigma_s2, sigma_rr, sigma_Nr,
-     .                                 corr_rcrr, corr_rcNr, corr_rrNr,
+     .                                 corr_srr, corr_sNr, corr_rrNr,
      .                                 alpha_exp, beta_exp, gamma_exp )
 
            ELSE
@@ -1623,7 +1623,7 @@
         REAL:: sigma_s2    ! Plume 2 standard deviation of s2
         REAL:: mu_Nc       ! Grid-box average of Nc
         REAL:: sigma_Nc    ! Grid-box standard deviation of Nc
-        REAL:: corr_rcNc   ! Correlation of rc and Nc
+        REAL:: corr_sNc    ! Correlation of s and Nc
 
 !-------------------------------------------------------------------------------
 
@@ -1664,16 +1664,16 @@
               sigma_Nc = (Ncm/rhot) * SQRT(Ncp2_Ncm2)  ! Nc'2/Ncm^2 = 0.07
 
               ! Correlations.
-              corr_rcNc = corr_rcNc_NL  ! corr_rcNc_NL =  0.45
+              corr_sNc = corr_sNc_NL  ! corr_sNc_NL =  0.45
 
 
               autoconv_rrm = 7.4188E13 * rhot**(-1.79) * (
      .             ( a ) 
      .           * PDF_BIVAR_2G_LN ( mu_s1, mu_Nc, sigma_s1, sigma_Nc,
-     .                               corr_rcNc, alpha_exp, beta_exp )
+     .                               corr_sNc, alpha_exp, beta_exp )
      .         +   (1-a)
      .           * PDF_BIVAR_2G_LN ( mu_s2, mu_Nc, sigma_s2, sigma_Nc,
-     .                               corr_rcNc, alpha_exp, beta_exp )
+     .                               corr_sNc, alpha_exp, beta_exp )
      .                                                   )
 
            ELSE
@@ -1783,7 +1783,7 @@
         REAL:: sigma_s2    ! Plume 2 standard deviation of s
         REAL:: mu_rr       ! Grid-box average of rr
         REAL:: sigma_rr    ! Grid-box standard deviation of rr
-        REAL:: corr_rcrr   ! Correlation of rc and rr
+        REAL:: corr_srr    ! Correlation of s and rr
 
 !-------------------------------------------------------------------------------
 
@@ -1824,16 +1824,16 @@
               sigma_rr = rrm * SQRT(rrp2_rrm2)  ! rr'2/rrm^2 = 1.2
 
               ! Correlations.
-              corr_rcrr = corr_rcrr_NL  ! corr_rcrr_NL =  0.10
+              corr_srr = corr_srr_NL  ! corr_srr_NL =  0.10
 
 
               accretion_rrm = 67.0 * (
      .             ( a ) 
      .           * PDF_BIVAR_2G_LN ( mu_s1, mu_rr, sigma_s1, sigma_rr,
-     .                               corr_rcrr, alpha_exp, beta_exp )
+     .                               corr_srr, alpha_exp, beta_exp )
      .         +   (1-a)
      .           * PDF_BIVAR_2G_LN ( mu_s2, mu_rr, sigma_s2, sigma_rr,
-     .                               corr_rcrr, alpha_exp, beta_exp )
+     .                               corr_srr, alpha_exp, beta_exp )
      .                               )
 
            ELSE
@@ -2127,7 +2127,7 @@
 
         FUNCTION PDF_TRIVAR_2G_LN_LN ( mu_si, mu_rr, mu_Nr,
      .                                 sigma_si, sigma_rr, sigma_Nr,
-     .                                 corr_rcrr, corr_rcNr, corr_rrNr,
+     .                                 corr_srr, corr_sNr, corr_rrNr,
      .                                 alpha_exp, beta_exp, gamma_exp )
 
         USE constants
@@ -2142,8 +2142,8 @@
         REAL, INTENT(IN):: sigma_si  ! Plume (i) standard deviation of s
         REAL, INTENT(IN):: sigma_rr  ! Standard deviation of rr
         REAL, INTENT(IN):: sigma_Nr  ! Standard deviation of Nr
-        REAL, INTENT(IN):: corr_rcrr ! Intra-Gaussian correlation between rc, rr
-        REAL, INTENT(IN):: corr_rcNr ! Intra-Gaussian correlation between rc, Nr
+        REAL, INTENT(IN):: corr_srr  ! Intra-Gaussian correlation between s, rr
+        REAL, INTENT(IN):: corr_sNr  ! Intra-Gaussian correlation between s, Nr
         REAL, INTENT(IN):: corr_rrNr ! Intra-Gaussian correlation between rr, Nr
         REAL, INTENT(IN):: alpha_exp ! Exponent associated with "s" variable.
         REAL, INTENT(IN):: beta_exp  ! Exponent associated with rr variable.
@@ -2161,8 +2161,8 @@
         REAL:: sigma_siG   ! Plume (i) standard deviation of s(G)
         REAL:: sigma_rrG   ! Standard deviation of rr(G)
         REAL:: sigma_NrG   ! Standard deviation of Nr(G)
-        REAL:: corr_rcrrG  ! Intra-Gaussian correlation between rc(G), rr(G)
-        REAL:: corr_rcNrG  ! Intra-Gaussian correlation between rc(G), Nr(G)
+        REAL:: corr_srrG   ! Intra-Gaussian correlation between s(G), rr(G)
+        REAL:: corr_sNrG   ! Intra-Gaussian correlation between s(G), Nr(G)
         REAL:: corr_rrNrG  ! Intra-Gaussian correlation between rr(G), Nr(G)
 
         DOUBLE PRECISION:: gamma_fnc_input
@@ -2210,15 +2210,15 @@
 
         !!! Intra-Gaussian correlations.
 
-        ! corr_rcrr is a correlation between a Gaussian and a Log-normal.
-        ! It must be converted to corr_rcrrG, which is a correlation between
+        ! corr_srr is a correlation between a Gaussian and a Log-normal.
+        ! It must be converted to corr_srrG, which is a correlation between
         ! two Gaussians.
-        corr_rcrrG = corr_rcrr
+        corr_srrG = corr_srr
      .                   * SQRT( EXP(sigma_rrG**2.0) - 1.0 ) / sigma_rrG
-        ! corr_rcNr is a correlation between a Gaussian and a Log-normal.
-        ! It must be converted to corr_rcNrG, which is a correlation between
+        ! corr_sNr is a correlation between a Gaussian and a Log-normal.
+        ! It must be converted to corr_sNrG, which is a correlation between
         ! two Gaussians.
-        corr_rcNrG = corr_rcNr
+        corr_sNrG = corr_sNr
      .                   * SQRT( EXP(sigma_NrG**2.0) - 1.0 ) / sigma_NrG
         ! corr_rrNr is a correlation between two Log-normals.  It must be 
         ! converted to corr_rrNrG, which is a correlation between two Gaussians.
@@ -2248,8 +2248,8 @@
         ELSE
            ! Input to the parabolic cylinder function.
            scci =  (mu_siG/sigma_siG)
-     .           + corr_rcrrG*sigma_rrG*beta_exp 
-     .           + corr_rcNrG*sigma_NrG*gamma_exp
+     .           + corr_srrG*sigma_rrG*beta_exp 
+     .           + corr_sNrG*sigma_NrG*gamma_exp
 
            ! Test to see whether the value of sigma_siG is sufficiently small
            ! enough to cause the parabolic cylinder function to produce a
@@ -2276,12 +2276,12 @@
      .       (1.0/SQRT(2.0*pi)) * (-sigma_siG)**alpha_exp 
      .     * EXP( mu_rrG*beta_exp + mu_NrG*gamma_exp )
      .     * EXP( (1.0/2.0) * (
-     .                            ( 1.0 - corr_rcrrG**2.0 )
+     .                            ( 1.0 - corr_srrG**2.0 )
      .                           *(sigma_rrG**2.0)*(beta_exp**2.0)
-     .                         +  ( 1.0 - corr_rcNrG**2.0 )
+     .                         +  ( 1.0 - corr_sNrG**2.0 )
      .                           *(sigma_NrG**2.0)*(gamma_exp**2.0)
      .                         + 2.0
-     .                           *( corr_rrNrG - corr_rcrrG*corr_rcNrG )
+     .                           *( corr_rrNrG - corr_srrG*corr_sNrG )
      .                           *sigma_rrG*beta_exp*sigma_NrG*gamma_exp
      .                        )
      .          )
@@ -2303,12 +2303,12 @@
      .       (mu_siG)**alpha_exp 
      .     * EXP( mu_rrG*beta_exp + mu_NrG*gamma_exp )
      .     * EXP( (1.0/2.0) * (
-     .                            ( 1.0 - corr_rcrrG**2.0 )
+     .                            ( 1.0 - corr_srrG**2.0 )
      .                           *(sigma_rrG**2.0)*(beta_exp**2.0)
-     .                         +  ( 1.0 - corr_rcNrG**2.0 )
+     .                         +  ( 1.0 - corr_sNrG**2.0 )
      .                           *(sigma_NrG**2.0)*(gamma_exp**2.0)
      .                         + 2.0
-     .                           *( corr_rrNrG - corr_rcrrG*corr_rcNrG )
+     .                           *( corr_rrNrG - corr_srrG*corr_sNrG )
      .                           *sigma_rrG*beta_exp*sigma_NrG*gamma_exp
      .                        )
      .          )
@@ -2507,7 +2507,7 @@
 
 
         FUNCTION PDF_BIVAR_2G_LN ( mu_si, mu_xx, sigma_si, sigma_xx,
-     .                             corr_rcxx, alpha_exp, beta_exp )
+     .                             corr_sxx, alpha_exp, beta_exp )
 
         USE constants
         USE parabolic, ONLY: gamma
@@ -2519,7 +2519,7 @@
         REAL, INTENT(IN):: mu_xx     ! Average of xx
         REAL, INTENT(IN):: sigma_si  ! Plume (i) standard deviation of s
         REAL, INTENT(IN):: sigma_xx  ! Standard deviation of Y2
-        REAL, INTENT(IN):: corr_rcxx ! Intra-Gaussian correlation between rc, xx
+        REAL, INTENT(IN):: corr_sxx  ! Intra-Gaussian correlation between s, xx
         REAL, INTENT(IN):: alpha_exp ! Exponent associated with "s" variable.
         REAL, INTENT(IN):: beta_exp  ! Exponent associated with xx variable.
         
@@ -2533,7 +2533,7 @@
         REAL:: mu_xxG      ! Average of xx(G)
         REAL:: sigma_siG   ! Plume (i) standard deviation of s(G)
         REAL:: sigma_xxG   ! Standard deviation of xx(G)
-        REAL:: corr_rcxxG  ! Intra-Gaussian correlation between rc(G), xx(G)
+        REAL:: corr_sxxG   ! Intra-Gaussian correlation between s(G), xx(G)
 
         DOUBLE PRECISION:: gamma_fnc_input
         DOUBLE PRECISION:: parab_cyl_fnc_ord
@@ -2567,10 +2567,10 @@
 
         !!! Intra-Gaussian correlation.
 
-        ! corr_rcxx is a correlation between a Gaussian and a Log-normal.
-        ! It must be converted to corr_rcxxG, which is a correlation between
+        ! corr_sxx is a correlation between a Gaussian and a Log-normal.
+        ! It must be converted to corr_sxxG, which is a correlation between
         ! two Gaussians.
-        corr_rcxxG = corr_rcxx
+        corr_sxxG = corr_sxx
      .                   * SQRT( EXP(sigma_xxG**2.0) - 1.0 ) / sigma_xxG
 
         !----- Section #2 ------------------------------------------------------
@@ -2594,7 +2594,7 @@
         ELSE
            ! Input to the parabolic cylinder function (without minus sign).
            sci =  (mu_siG/sigma_siG)
-     .          + corr_rcxxG*sigma_xxG*beta_exp 
+     .          + corr_sxxG*sigma_xxG*beta_exp 
 
            ! Test to see whether the value of sigma_siG is sufficiently small
            ! enough to cause the parabolic cylinder function to produce a
