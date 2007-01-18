@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.10 2006-12-20 03:16:10 dschanen Exp $
+! $Id: constants.F,v 1.11 2007-01-18 23:54:36 dschanen Exp $
 
         module constants
 
@@ -64,6 +64,9 @@
      .  C1b,        ! High Skewness in C1 Skewness Function.
      .  C1c,        ! Degree of Slope of C1 Skewness Function.
      .  C2,         ! Low Skewness in C2 Skewness Function.
+     .  C2rt,       ! 
+     .  C2thl,      ! 
+     .  C2rtthl,    ! 
      .  C2b,        ! High Skewness in C2 Skewness Function.  
      .  C2c,        ! Degree of Slope of C2 Skewness Function.
      .  C4,         ! Currently Not Used in the Model.
@@ -108,9 +111,10 @@
 !       make a list of them.  Note that lmin_coef is the input parameter, 
 !       while the actual lmin model constant is computed from this
 
-        character(len=11), dimension(38), parameter :: constants_list =
+        character(len=11), dimension(41), parameter :: constants_list =
      .  (/"C1         ", "C1b        ", "C1c        ", "C2         ", 
-     .    "C2b        ", "C2c        ", "C4         ", "C5         ",
+     .    "C2b        ", "C2c        ", "C2rt       ", "C2thl      ",
+     .    "C2rtthl    ", "C4         ", "C5         ",
      .    "C6rt       ", "C6rtb      ", "C6rtc      ", "C6thl      ",
      .    "C6thlb     ", "C6thlc     ", "C7         ", "C7b        ",
      .    "C7c        ", "C8         ", "C8b        ", "C10        ",
@@ -160,7 +164,9 @@
 !-----------------------------------------------------------------------
         subroutine setup_constants
      .             ( deltaz, C1_in, C1b_in, C1c_in, 
-     .               C2_in, C2b_in, C2c_in, C4_in, C5_in, 
+     .               C2_in, C2b_in, C2c_in, 
+     .               C2rt_in, C2thl_in, C2rtthl_in, 
+     .               C4_in, C5_in, 
      .               C6rt_in, C6rtb_in, C6rtc_in, 
      .               C6thl_in, C6thlb_in, C6thlc_in,
      .               C7_in, C7b_in, C7c_in,
@@ -189,6 +195,7 @@
         real, intent(in) :: 
      .  C1_in, C1b_in, C1c_in,
      .  C2_in, C2b_in, C2c_in, C4_in, C5_in,
+     .  C2rt_in, C2thl_in, C2rtthl_in,
      .  C6rt_in, C6rtb_in, C6rtc_in,
      .  C6thl_in, C6thlb_in, C6thlc_in,
      .  C7_in, C7b_in, C7c_in,
@@ -222,6 +229,9 @@
        C2     = C2_in
        C2b    = C2b_in
        C2c    = C2c_in
+       C2rt   = C2rt_in
+       C2thl  = C2thl_in
+       C2rtthl= C2rtthl_in
        C4     = C4_in
        C5     = C5_in
        C6rt   = C6rt_in

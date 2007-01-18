@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.36 2006-07-28 21:46:33 dschanen Exp $
+! $Id: error.F,v 1.37 2007-01-18 23:54:32 dschanen Exp $
 
         module error
  
@@ -35,7 +35,7 @@
 
         ! Dimensions of the array for amoeba
         integer, parameter, public  :: 
-     .  ndim = 38,
+     .  ndim = 41,
      .  mdim = ndim + 1
 
         real, dimension(mdim,ndim) :: 
@@ -92,6 +92,9 @@
      .  C2,         ! Low Skewness in C2 Skewness Function.
      .  C2b,        ! High Skewness in C2 Skewness Function.  
      .  C2c,        ! Degree of Slope of C2 Skewness Function.
+     .  C2rt,       ! C2 used in rtp2 diffusion term.
+     .  C2thl,      ! C2 used in thlp2 diffusion term.
+     .  C2rtthl,    ! C2 used in rtpthlp diffusion term.
      .  C4,         ! Currently Not Used in the Model.
      .  C5,         ! Constant from Chris Golaz.
      .  C6rt,       ! Low Skewness in C6rt Skewness Function.
@@ -131,6 +134,19 @@
 
         integer, dimension(:,:), allocatable :: 
      .  time ! time intervals
+
+        ! Additions for using imposed weights as scaling factors
+        logical :: linitialize_sigma
+
+        real, dimension(:,:), allocatable :: 
+     .  err_terms,
+     .  invsigma2,
+     .  min_err_terms,
+     .  init_err_terms
+
+        real, dimension(:), allocatable :: weight_case, weight_var
+        
+        ! End additions for using imposed weights
 
         integer, dimension(:), allocatable ::
      .  z_i, ! Initial z level for tuning purposes
@@ -190,23 +206,29 @@
 
         ! Namelist vars for determining which variable to tune for:
 
-!  time_nl:   Order pairs of time intervals to analyze
-!  z_i_nl:    initial z-level to begin reading in for tuning
-!  z_f_nl:    final z-level to end reading in for tuning
+        !  time_nl:   Order pairs of time intervals to analyze
+        !  z_i_nl:    initial z-level to begin reading in for tuning
+        !  z_f_nl:    final z-level to end reading in for tuning
 
         integer, dimension(max_run, max_times):: time_nl 
         integer, dimension(max_run)           :: z_i_nl, z_f_nl
 
-        character(len=50), dimension(max_run) :: run_file_nl
-        character(len=50), dimension(max_run) :: hoc_stats_file_nl
-        character(len=50), dimension(max_run) :: les_stats_file_nl
+c-->Chris Golaz addition to use imposed weights as scaling factors
+        real, dimension(max_run)       :: weight_case_nl
+        real, dimension(max_variables) :: weight_var_nl
+c<--end of addition
+
+        character(len=50), dimension(max_run) :: 
+     .  run_file_nl,
+     .  hoc_stats_file_nl,
+     .  les_stats_file_nl
 
         character(len=10), dimension(max_variables) :: t_variables
-
 
         ! Amount to change each parameter for the initial simplex
         real :: 
      .  C1_var, C1b_var, C1c_var, C2_var, C2b_var, C2c_var,
+     .  C2rt_var, C2thl_var, C2rtthl_var,
      .  C4_var, C5_var, C6rt_var, C6rtb_var, C6rtc_var,
      .  C6thl_var, C6thlb_var, C6thlc_var,
      .  C7_var, C7b_var, C7c_var, C8_var, C8b_var, C10_var,
@@ -217,12 +239,14 @@
 
         ! Namelists read from error.in 
         namelist /stats/ ftol, tune_type, anneal_temp, anneal_iter,
-     .  results_stdout, results_file, stdout_on_invalid, t_variables
+     .  results_stdout, results_file, stdout_on_invalid, t_variables,
+     .  weight_var_nl
 
         namelist /cases/ les_stats_file_nl, hoc_stats_file_nl, 
-     .  run_file_nl, z_i_nl, z_f_nl, time_nl
+     .  run_file_nl, z_i_nl, z_f_nl, time_nl, weight_case_nl
 
-        namelist /initvars/ C1, C1b, C1c, C2, C2b, C2c, C4, C5,
+        namelist /initvars/ C1, C1b, C1c, C2, C2b, C2c, 
+     .  C2rt, C2thl, C2rtthl, C4, C5,
      .  C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .  C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12,
      .  nu1, nu2, nu6, nu8, nu_r, 
@@ -230,7 +254,8 @@
      .  c_K, lmin_coef, taumin, taumax, mu
 
         namelist /variance/ C1_var, C1b_var, C1c_var,
-     .  C2_var, C2b_var, C2c_var, C4_var, C5_var,
+     .  C2_var, C2b_var, C2c_var, 
+     .  C2rt_var, C2thl_var, C2rtthl_var, C4_var, C5_var,
      .  C6rt_var, C6rtb_var, C6rtc_var, 
      .  C6thl_var, C6thlb_var, C6thlc_var, 
      .  C7_var, C7b_var, C7c_var, C8_var, C8b_var, C10_var, 
@@ -250,8 +275,12 @@
 
           ! Initialize all compile time arrays to zero
           time_nl = 0 
-          z_i_nl  = 0 
-          z_f_nl  = 0
+c-->Chris Golaz addition to use imposed weights as scaling factors
+          weight_case_nl = 0.0
+          weight_var_nl  = 0.0
+c<--end of addition
+          z_i_nl = 0 
+          z_f_nl = 0
 
           ! Initialize variable names to spaces
           t_variables(1:max_variables)  = "          "
@@ -281,11 +310,7 @@
             v_total = (i + 1) / 2
           end do 
 
-          allocate( hoc_v(v_total), les_v(v_total), 
-     .              stat=AllocateStatus )
-          if ( AllocateStatus /= 0 ) then 
-            stop "Allocation of the tuning variable arrays failed"
-          end if
+          allocate( hoc_v(v_total), les_v(v_total) )
 
           ! Allocate the arrays for the run cases
           do i=1, max_run  
@@ -293,13 +318,17 @@
             c_total = i
           end do
 
-          allocate
-     .    ( z_i(c_total), z_f(c_total), time(c_total, max_times), 
-     .      run_file(c_total), les_stats_file(c_total),
-     .      hoc_stats_file(c_total), stat=AllocateStatus )
-          if ( AllocateStatus /= 0 ) then 
-            stop "Allocation of the case information arrays failed"
-          end if
+          allocate(
+     .      z_i(c_total), z_f(c_total), time(c_total, max_times), 
+     .      run_file(c_total), 
+     .      les_stats_file(c_total), hoc_stats_file(c_total) )
+
+          allocate(
+     .      err_terms(c_total, v_total),
+     .      min_err_terms(c_total, v_total),
+     .      init_err_terms(c_total, v_total),
+     .      invsigma2(c_total, v_total),
+     .      weight_case(c_total), weight_var(v_total) )
 
           ! Transfer the variable numbers to hoc_v and les_v
           do i=1, v_total
@@ -317,10 +346,15 @@
             time(i,1:max_times) = time_nl(i,1:max_times)
           end do
 
+c-->Chris Golaz addition to use imposed weights as scaling factors
+         weight_case(1:c_total) = weight_case_nl(1:c_total)
+         weight_var(1:v_total)  = weight_var_nl(1:v_total)
+c<--end of addition
+
           ! Initialize the HOC constant parameters
           init_const(1:ndim) = 
      .    (/C1, C1b, C1c, C2, C2b, C2c,
-     .      C4, C5, C6rt, C6rtb, C6rtc, 
+     .      C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6rtb, C6rtc, 
      .      C6thl, C6thlb, C6thlc, 
      .      C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12,
      .      nu1, nu2, nu6, nu8, nu_r, beta,
@@ -333,7 +367,8 @@
 
           x_variance(1:ndim) = 
      .    (/C1_var, C1b_var, C1c_var, C2_var, C2b_var, C2c_var, 
-     .      C4_var, C5_var, C6rt_var, C6rtb_var, C6rtc_var, 
+     .      C2rt_var, C2thl_var, C2rtthl_var, C4_var, C5_var, 
+     .      C6rt_var, C6rtb_var, C6rtc_var, 
      .      C6thl_var, C6thlb_var, C6thlc_var,
      .      C7_var, C7b_var, C7c_var, C8_var, C8b_var,  
      .      C10_var, C11_var, C11b_var, C11c_var, C12_var,
@@ -366,6 +401,29 @@
 
         end do ! j..ndim
 
+
+        ! First call is used to initialize weights
+
+        linitialize_sigma = .true.
+        err_array(1) =  min_les_hoc_diff( x_array(1,1:ndim) )
+        linitialize_sigma = .false.
+
+        ! Note: min_les_hoc_diff is written to deal with undefined and 
+        ! invalid values for variations on the initial vector, but that 
+        ! algorithm relies on the initial vector being valid. 
+
+        if ( .not. isValid ) then
+           write(0,*) "Initial variable values must be valid"
+           stop
+         endif
+
+        ! Save initial error
+
+        init_err = err_array(1) 
+        init_err_terms = err_terms
+
+        ! Other initialization runs
+
         ! Initialize the 'y' vector for amoeba 
         ! This is done by calling min_les_hoc_diff with the initial vector 
         do i = 1, mdim
@@ -397,7 +455,7 @@
         implicit none
 
         ! External
-        intrinsic achar, modulo, minval, maxval, trim, any, real
+        intrinsic :: achar, modulo, minval, maxval, trim, any, real
 
         ! Input Variables
 
@@ -430,7 +488,10 @@
         real, dimension(:), allocatable :: 
      .  hoc_zl,
      .  hoc2_zl,
-     .  les_zl
+     .  les_zl 
+
+        real, dimension(:,:), allocatable :: 
+     .  err_sums  ! To save breakdown of cost function
 
         real :: 
      .  les_minmax ! The largest LES value subtracted from the 
@@ -462,18 +523,21 @@
           end do
 
         end if
-        
+
+        allocate( err_sums(c_total, v_total) )        
+
         ! Initialize
-        err_sum = 0.0
-        c_terms = 0
-        isValid = .true.
+        err_sum  = 0.0
+        err_sums = 0.0
+        c_terms  = 0
+        isValid  = .true.
         run_stat(1:c_total) = .true.
 
 !-----------------------------------------------------------------------
 
         ! Cycle through all the model cases specified for HOC
-        ! Use OpenMP if we can, otherwise this directive is ignored
 
+        ! Note: OpenMP is currently broken
 !       $omp parallel do default(private)
         do c_run=1, c_total, 1
 
@@ -495,7 +559,8 @@
      .           x_vector(28), x_vector(29), x_vector(30),
      .           x_vector(31), x_vector(32), x_vector(33),
      .           x_vector(34), x_vector(35), x_vector(36),
-     .           x_vector(37), x_vector(38),
+     .           x_vector(37), x_vector(38), x_vector(39), 
+     .           x_vector(40), x_vector(41), 
      .           run_file(c_run), run_stat(c_run), .false. )
 
       ! Basic Sanity Check for negative constants (disabled)
@@ -529,11 +594,11 @@
 
         do c_run=1, c_total, 1
 
-          ! Determine how large the GRaDS input is
+          ! Determine how large the GrADS input is
           hoc_nz = grads_zlvl( hoc_stats_file(c_run) )
           les_nz = grads_zlvl( les_stats_file(c_run) )
 
-          ! Allocate the arrays for reading in the grads plot data
+          ! Allocate the arrays for reading in the GrADS plot data
           allocate( hoc_zl(hoc_nz), hoc2_zl(hoc_nz), 
      .              les_zl(les_nz), stat=AllocateStatus )
           if ( AllocateStatus /= 0 ) then 
@@ -559,6 +624,7 @@
      .      grads_average_interval
      .      ( hoc_stats_file(c_run), hoc_nz, 
      .        time(c_run,:), hoc_v(i), 1, error )
+
             if ( error ) stop "The specified HOC variable was invalid"
 
             ! The same variable, with npower = 2
@@ -566,6 +632,7 @@
      .      grads_average_interval
      .      ( hoc_stats_file(c_run), hoc_nz,
      .        time(c_run,:), hoc_v(i), 2, error )
+
             if ( error ) stop "The specified HOC variable was invalid"
 
 !-----------------------------------------------------------------------
@@ -578,7 +645,7 @@
             ! modified to normalize the values with respect to the 
             ! the minimum and maximum in the LES. -Dave Schanen
 
-            les_minmax = maxval(les_zl) - minval(les_zl)
+            les_minmax = maxval( les_zl ) - minval( les_zl )
 
             if ( les_minmax == 0.0 ) then
               stop "An LES var = 0 over all z-levels"
@@ -592,11 +659,15 @@
             ! Chris Golaz modification: mean_sqr_diff_2_zt was designed to try
             ! to limit time noise in tuning simulations.
             ! New code
-            err_sum = err_sum 
-     .              + mean_sqr_diff_2_zt
-     .                ( hoc_nz, les_nz, hoc_zl, hoc2_zl, 
-     .                  les_zl, les_minmax )
+!           err_sum = err_sum 
+!    .              + mean_sqr_diff_2_zt
+!    .                ( hoc_nz, les_nz, hoc_zl, hoc2_zl, 
+!    .                  les_zl, les_minmax )
             ! End new code
+            ! Modification for weighting
+            err_sums(c_run,i)
+     .      = mean_sqr_diff_2_zt( hoc_nz, les_nz, hoc_zl, 
+     .                            hoc2_zl, les_zl, les_minmax )
 
             c_terms = c_terms + 1
 
@@ -607,9 +678,38 @@
         end do     ! end of do c_run=1, c_total
 !----------------------------------------------------------------------
 
-        ! return error averaged over all cases, variables, 
+        ! Return error averaged over all cases, variables, 
         ! and vertical levels
-        min_les_hoc_diff = err_sum / real( c_terms )
+        ! Old Code
+!       min_les_hoc_diff = err_sum / real( c_terms )
+
+        !---------------------------------------------------------------
+        ! Compute normalization factors to satisfy imposed weights
+        !---------------------------------------------------------------
+        if ( linitialize_sigma ) then
+          do c_run=1,c_total
+            do i=1,v_total
+              invsigma2(c_run,i) 
+     .        = weight_case(c_run)*weight_var(i) / err_sums(c_run,i)
+            end do
+          end do
+        end if
+
+        !---------------------------------------------------------------
+        ! Compute normalized error
+        !---------------------------------------------------------------
+        err_sums = invsigma2 * err_sums
+        err_sum  = sum( err_sums )
+
+        !---------------------------------------------------------------
+        ! Save total error and error contributions breakdown
+        !---------------------------------------------------------------
+        err_terms = err_sums
+        min_les_hoc_diff = err_sum
+
+        deallocate( err_sums )
+
+        print *, "cost function=", min_les_hoc_diff
 
         return
         end function min_les_hoc_diff
@@ -669,7 +769,10 @@
         implicit none
 
         ! External
-        intrinsic achar, trim
+        intrinsic :: achar, trim
+
+        ! Parameter Constants
+        character(len=1), parameter :: dbqt = '"'
 
         ! Input Variables
         character(len=*), intent(in) :: 
@@ -711,8 +814,8 @@
         end if
         write(unit=20,fmt=*) "t_variables = "
         do i=1, v_total
-          write(unit=20,fmt=*) achar( 34 ), hoc_v(i), achar( 34 ), ",", 
-     .      achar( 34 ), les_v(i), achar( 34 ), "," 
+          write(unit=20,fmt=*) dbqt, hoc_v(i), dbqt, ",", 
+     .      dbqt, les_v(i), dbqt, "," 
         end do
         write(unit=20,fmt=*) "anneal_temp = " , anneal_temp
         write(unit=20,fmt=*) "anneal_iter = " , anneal_iter
@@ -723,11 +826,11 @@
         do i = 1, c_total
           i_c = achar( i + 48 )
           write(unit=20,fmt=*) "les_stats_file_nl("// i_c //") = ", 
-     .      achar( 34 ), trim( les_stats_file(i) ), achar( 34 )
+     .      dbqt, trim( les_stats_file(i) ), dbqt
           write(unit=20,fmt=*) "hoc_stats_file_nl("// i_c //") = ", 
-     .      achar( 34 ), trim( hoc_stats_file(i) ), achar( 34 )
+     .      dbqt, trim( hoc_stats_file(i) ), dbqt
           write(unit=20,fmt=*) "run_file_nl("// i_c //") = ", 
-     .      achar( 34 ), trim( run_file(i) ), achar( 34 )
+     .      dbqt, trim( run_file(i) ), dbqt
           write(unit=20,fmt=*) "z_i_nl("// i_c //")  = " , z_i(i)
           write(unit=20,fmt=*) "z_f_nl("// i_c //")  = " ,  z_f(i)
           write(unit=20,fmt=*) "time_nl("// i_c //",:)  = " , time(i,:)
@@ -771,7 +874,10 @@
         implicit none
 
         ! External
-        intrinsic achar, trim
+        intrinsic :: achar, trim
+
+        ! Constants Parameters
+        character(len=1), parameter :: dbqt = '"'
 
         ! Input
         character(len=*), intent(in) :: 
@@ -794,8 +900,8 @@
         write(unit=20,fmt=*) "! Parameter file " // results_f
 
         write(unit=20,fmt=*) "&model"
-        write(unit=20,fmt=*) "run_file  = " // achar( 34 ) //
-     .    trim( run_file(1) ) // achar( 34 )
+        write(unit=20,fmt=*) "run_file  = " // dbqt //
+     .    trim( run_file(1) ) // dbqt
         write(unit=20,fmt=*) "stdout   = ", ".true."
         write(unit=20,fmt=*) "/"
       
@@ -1018,7 +1124,7 @@
 
           mean_sqr_diff_2_zt   = sum( tmp_zl(1:(hoc_nz-1)), 1 ) 
 
-        case ( 2 )  !  the dycoms II RF01 case
+        case ( 2 )  !  the DYCOMS II RF01 case
           tmp_zl(1:les_nz) 
      .    = ( hoc2_zl(3:hoc_nz) 
      .        - 2.0*hoc_zl(3:hoc_nz)*les_zl(1:les_nz)
@@ -1039,7 +1145,7 @@
         subroutine read_random_seed( seed_file )
 
 !       Description:
-!       Reads a flat file passed as an argument
+!       Reads an ASCII flat file passed as an argument
 
 !       References:
 !       None
@@ -1048,7 +1154,7 @@
         implicit none
 
         ! External
-        intrinsic random_seed
+        intrinsic :: random_seed
 
         ! Input
         character(len=*), intent(in) :: 
@@ -1061,8 +1167,8 @@
         integer :: 
      .  AllocateStatus,
      .  InputStatus,
-     .  rand_size, ! for random seed
-     .  indx ! loop index
+     .  rand_size, ! Ror the random seed
+     .  indx       ! Loop index
 
 !-----------------------------------------------------------------------
 
@@ -1081,7 +1187,7 @@
 
         read(unit=30, fmt=*, iostat=InputStatus) rand_seed(indx)
         if ( InputStatus /= 0 ) then 
-          print *, "error reading"//seed_file
+          write(0,*) "Error reading "//seed_file
           stop
         end if
 

@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: hoc_tuner.F,v 1.18 2006-12-20 22:13:15 dschanen Exp $
+! $Id: hoc_tuner.F,v 1.19 2007-01-18 23:54:32 dschanen Exp $
 
       program hoc_tuner 
 
@@ -55,7 +55,7 @@
      .  x_array, err_array, init_err, results_stdout, ! Variables
      .  results_file, isValid, tune_type, ftol, ndim, mdim ! Variables
 
-      use constants, only: fstdout, fstderr
+      use constants, only: fstdout
 
       implicit none
 
@@ -68,18 +68,6 @@
 
       ! Read in namelists and define parameters
       call tuner_init( read_files=.true. )
-
-      ! Calculate the error for the initial values 
-      init_err = min_les_hoc_diff( x_array(1, 1:ndim) )
-
-      ! Note: min_les_hoc_diff is written to deal with undefined and 
-      ! invalid values for variations on the initial vector, but that 
-      ! algorithm relies on the initial vector being valid. 
-
-      if ( .not. isValid ) then
-        write(fstderr,*) "Initial variable values must be valid"
-        stop
-      end if
 
       ! Attempt to find the optimal parameter set
       do

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.32 2006-12-20 02:31:04 dschanen Exp $
+! $Id: jacobian.F,v 1.33 2007-01-18 23:54:32 dschanen Exp $
 
       program jacobian
 #ifdef STATS
@@ -22,7 +22,7 @@
 !----------------------------------------------------------------------
         type constant_array
 
-          integer entries ! Total constant parameters
+          integer :: entries ! Total constant parameters
 
           character(len=11), pointer :: name(:)
 
@@ -65,9 +65,9 @@
      .  C1,         ! Low Skewness in C1 Skewness Function.
      .  C1b,        ! High Skewness in C1 Skewness Function.
      .  C1c,        ! Degree of Slope of C1 Skewness Function.
-     .  C2,         ! Low Skewness in C2 Skewness Function.
-     .  C2b,        ! High Skewness in C2 Skewness Function.  
-     .  C2c,        ! Degree of Slope of C2 Skewness Function.
+     .  C2rt,       ! Coefficient for rtp2_dp1 term.
+     .  C2thl,      ! Coefficient for thlp2_dp1 term.  
+     .  C2rtthl,    ! Coefficient for rtpthlp_dp1 term. 
      .  C4,         ! Currently Not Used in the Model.
      .  C5,         ! Constant from Chris Golaz.
      .  C6rt,       ! Low Skewness in C6rt Skewness Function.
@@ -148,7 +148,7 @@
      .  run_file, times, delta_factor, use_standard_vars
 
         namelist /initvars/ 
-     .  C1, C1b, C1c, C2, C2b, C2c, C4, C5,
+     .  C1, C1b, C1c, C2rt, C2thl, C2rtthl, C4, C5,
      .  C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .  C7, C7b, C7c, C8, C8b, C10, 
      .  C11, C11b, C11c, C12,
@@ -187,7 +187,7 @@
         close( unit=10 )
       
         ca1%constant(1:nconst) = 
-     .  (/C1, C1b, C1c, C2, C2b, C2c,
+     .  (/C1, C1b, C1c, C2rt, C2thl, C2rtthl,
      .    C4, C5, C6rt, C6rtb, C6rtc, C6thl,
      .    C6thlb, C6thlc, C7, C7b, C7c, C8, C8b,
      .    C10, C11, C11b, C11c, C12,
@@ -196,7 +196,7 @@
      .    c_K, mu/)     
         ca1%name(1:nconst) =
      .  (/"C1         ", "C1b        ", "C1c        ",
-     .    "C2         ", "C2b        ", "C2c        ",
+     .    "C2rt       ", "C2thl      ", "C2rtthl    ",
      .    "C4         ", "C5         ",
      .    "C6rt       ", "C6rtb      ", "C6rtc      ",
      .    "C6thl      ", "C6thlb     ", "C6thlc     ",
@@ -218,7 +218,8 @@
 
         call hoc_model 
      .  ( ca1%constant(1), ca1%constant(2), 
-     .    ca1%constant(3), ca1%constant(4), 
+     .    ca1%constant(3), 0.0, 0.0, 0.0,
+     .    ca1%constant(4), 
      .    ca1%constant(5), ca1%constant(6), 
      .    ca1%constant(7), ca1%constant(8), 
      .    ca1%constant(9), ca1%constant(10), 
@@ -318,7 +319,8 @@
 
           call hoc_model
      .         ( ca1%constant(1),  ca1%constant(2), 
-     .           ca1%constant(3),  ca1%constant(4), 
+     .           ca1%constant(3),  0.0, 0.0, 0.0,
+     .           ca1%constant(4), 
      .           ca1%constant(5),  ca1%constant(6), 
      .           ca1%constant(7),  ca1%constant(8), 
      .           ca1%constant(9),  ca1%constant(10), 
@@ -482,5 +484,8 @@
         end subroutine getvariables 
 
 !-----------------------------------------------------------------------
+#else
+        stop "Compile all files with -DSTATS to use this program."
 #endif /*STATS*/
+
         end program jacobian

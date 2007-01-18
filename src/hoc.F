@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.108 2007-01-08 20:38:45 dschanen Exp $
+! $Id: hoc.F,v 1.109 2007-01-18 23:54:32 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -73,7 +73,8 @@
 
         subroutine hoc_model_field_input
      .             ( C1_in, C1b_in, C1c_in, 
-     .               C2_in, C2b_in, C2c_in, C4_in, C5_in, 
+     .               C2_in, C2b_in, C2c_in,
+     .               C2rt_in, C2thl_in, C2rtthl_in, C4_in, C5_in, 
      .               C6rt_in, C6rtb_in, C6rtc_in,
      .               C6thl_in, C6thlb_in, C6thlc_in,
      .               C7_in, C7b_in, C7c_in,
@@ -147,7 +148,9 @@
         ! Input Variables
         real, intent(in) :: 
      .  C1_in, C1b_in, C1c_in,
-     .  C2_in, C2b_in, C2c_in, C4_in, C5_in,
+     .  C2_in, C2b_in, C2c_in,
+     .  C2rt_in, C2thl_in, C2rtthl_in,
+     .  C4_in, C5_in,
      .  C6rt_in, C6rtb_in, C6rtc_in,
      .  C6thl_in, C6thlb_in, C6thlc_in,
      .  C7_in, C7b_in, C7c_in,
@@ -251,7 +254,8 @@
        ! setup grid, setup constants, and setup flags
        call parameterization_setup
      .      ( nzmax, deltaz, C1_in, C1b_in, C1c_in, 
-     .        C2_in, C2b_in, C2c_in, C4_in, C5_in, 
+     .        C2_in, C2b_in, C2c_in, 
+     .        C2rt_in, C2thl_in, C2rtthl_in, C4_in, C5_in, 
      .        C6rt_in, C6rtb_in, C6rtc_in, C6thl_in, 
      .        C6thlb_in, C6thlc_in, C7_in, C7b_in, C7c_in, 
      .        C8_in, C8b_in, C10_in, C11_in, C11b_in, C11c_in, C12_in,
@@ -395,7 +399,8 @@
 !-----------------------------------------------------------------------
         subroutine hoc_model_standard
      .            ( C1_in, C1b_in, C1c_in,
-     .              C2_in, C2b_in, C2c_in, C4_in, C5_in, 
+     .              C2_in, C2b_in, C2c_in,
+     .              C2rt_in, C2thl_in, C2rtthl_in, C4_in, C5_in,
      .              C6rt_in, C6rtb_in, C6rtc_in,
      .              C6thl_in, C6thlb_in, C6thlc_in,
      .              C7_in, C7b_in, C7c_in,
@@ -441,7 +446,8 @@
         ! Input Variables
         real, intent(in) :: 
      .  C1_in, C1b_in, C1c_in,
-     .  C2_in, C2b_in, C2c_in, C4_in, C5_in,
+     .  C2_in, C2b_in, C2c_in,
+     .  C2rt_in, C2thl_in, C2rtthl_in, C4_in, C5_in,
      .  C6rt_in, C6rtb_in, C6rtc_in,
      .  C6thl_in, C6thlb_in, C6thlc_in,
      .  C7_in, C7b_in, C7c_in,
@@ -535,7 +541,8 @@
 
        call parameterization_setup
      .      ( nzmax, deltaz, C1_in, C1b_in, C1c_in, 
-     .        C2_in, C2b_in, C2c_in, C4_in, C5_in, 
+     .        C2_in, C2b_in, C2c_in,
+     .        C2rt_in, C2thl_in, C2rtthl_in, C4_in, C5_in, 
      .        C6rt_in, C6rtb_in, C6rtc_in, C6thl_in, 
      .        C6thlb_in, C6thlc_in, C7_in, C7b_in, C7c_in, 
      .        C8_in, C8b_in, C10_in, C11_in, C11b_in, C11c_in, C12_in,

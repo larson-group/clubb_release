@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: hoc_standalone.F,v 1.13 2006-08-21 20:54:10 dschanen Exp $
+! $Id: hoc_standalone.F,v 1.14 2007-01-18 23:54:32 dschanen Exp $
 
         program hoc_standalone
         use hoc, only: hoc_model
@@ -17,7 +17,6 @@
         integer, parameter :: funit = 10
 
         character(len=13), parameter :: fstandalone = "standalone.in"
-
  
         ! Model constant parameters 
         real ::
@@ -27,6 +26,9 @@
      .  C2,         ! Low Skewness in C2 Skewness Function.
      .  C2b,        ! High Skewness in C2 Skewness Function.  
      .  C2c,        ! Degree of Slope of C2 Skewness Function.
+     .  C2rt,       ! C2 used in rtp2 diffusion term.
+     .  C2thl,      ! C2 used in thlp2 diffusion term.
+     .  C2rtthl,    ! C2 used in rtpthlp diffusion term.
      .  C4,         ! Currently Not Used in the Model.
      .  C5,         ! Constant from Chris Golaz.
      .  C6rt,       ! Low Skewness in C6rt Skewness Function.
@@ -69,17 +71,18 @@
         logical :: isValid 
 
         ! Namelists 
-        namelist /initvars/ C1, C1b, C1c, C2, C2b, C2c, C4, C5,
-     .  C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
-     .  C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c,
-     .  C12, nu1, nu2, nu6, nu8, nu_r, beta, 
-     .  gamma_coef, gamma_coefb, gamma_coefc,
-     .  c_K, lmin_coef, taumin, taumax, mu
+        namelist /initvars/ C1, C1b, C1c, C2, C2b, C2c, 
+     .    C2rt, C2thl, C2rtthl, C4, C5,
+     .    C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
+     .    C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c,
+     .    C12, nu1, nu2, nu6, nu8, nu_r, beta, 
+     .    gamma_coef, gamma_coefb, gamma_coefc,
+     .    c_K, lmin_coef, taumin, taumax, mu
 
         namelist /model/ run_file, stdout
 
         ! Read in our namelists
-        open(unit=funit, file=fstandalone, status='old')
+        open(unit=funit, file=fstandalone, status='old', action='read')
 
         read(unit=funit, nml=model)
         read(unit=funit, nml=initvars)
@@ -91,7 +94,8 @@
       
         ! Run the model
         call hoc_model
-     .       ( C1, C1b, C1c, C2, C2b, C2c, C4, C5,
+     .       ( C1, C1b, C1c, C2, C2b, C2c, 
+     .         C2rt, C2thl, C2rtthl, C4, C5,
      .         C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .         C7, C7b, C7c, C8, C8b, C10, 
      .         C11, C11b, C11c, C12,

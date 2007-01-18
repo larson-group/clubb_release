@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: budget_terms.F,v 1.23 2006-07-31 21:01:56 dschanen Exp $     
+! $Id: budget_terms.F,v 1.24 2007-01-18 23:54:32 dschanen Exp $     
 
 ! MODULE budget_terms
 
@@ -97,7 +97,7 @@
         real, allocatable, dimension(:,:) :: const_array ! 'p' matrix in amoeba
         real, allocatable, dimension(:)   :: diff_array  ! 'y' vector in amoeba
 
-        real, public :: C1, C1b, C1c, C2, C2b, C2c, C4, C5
+        real, public :: C1, C1b, C1c, C2rt, C2thl, C2rtthl, C4, C5
         real, public :: C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc
         real, public :: C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12
         real, public :: nu1, nu2, nu6, nu8, nu_r
@@ -106,7 +106,7 @@
         real, public :: taumin, taumax, mu
 
         real, public :: C1_var, C1b_var, C1c_var
-        real, public :: C2_var, C2b_var, C2c_var
+        real, public :: C2rt_var, C2thl_var, C2rtthl_var
         real, public :: C4_var, C5_var
         real, public :: C6rt_var, C6rtb_var, C6rtc_var
         real, public :: C6thl_var, C6thlb_var, C6thlc_var
@@ -134,7 +134,7 @@
 
 !       Namelists
 
-        namelist /initvars/ C1, C1b, C1c, C2, C2b, C2c, C4, C5,
+        namelist /initvars/ C1, C1b, C1c, C2rt, C2thl, C2rtthl, C4, C5,
      .                      C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .                      C7, C7b, C7c, C8, C8b,
      .                      C10, C11, C11b, C11c, C12,
@@ -143,7 +143,7 @@
      .                      c_K, lmin_coef, taumin, taumax, mu
 
         namelist /variance/ C1_var, C1b_var, C1c_var, 
-     .                      C2_var, C2b_var, C2c_var,
+     .                      C2rt_var, C2thl_var, C2rtthl_var,
      .                      C4_var, C5_var,
      .                      C6rt_var, C6rtb_var, C6rtc_var,
      .                      C6thl_var, C6thlb_var, C6thlc_var,
@@ -651,17 +651,17 @@
 !       Setup constants vector
         select case( runtype )
         case("rt")
-          p_elements = (/C2, mu/)
-          p_string   = (/"C2     ", "mu     "/)
-          p_variance = (/C2_var, mu_var/)
+          p_elements = (/C2rt, mu/)
+          p_string   = (/"C2rt   ", "mu     "/)
+          p_variance = (/C2rt_var, mu_var/)
         case("thl")
-          p_elements = (/C2b, mu/)
-          p_string   = (/"C2b    ", "mu     "/)
-          p_variance = (/C2b_var, mu_var/)
+          p_elements = (/C2thl, mu/)
+          p_string   = (/"C2thl  ", "mu     "/)
+          p_variance = (/C2thl_var, mu_var/)
         case("rtthl")
-          p_elements = (/C2c, mu/)
-          p_string   = (/"C2c    ", "mu     "/)
-          p_variance = (/C2c_var, mu_var/)
+          p_elements = (/C2rtthl, mu/)
+          p_string   = (/"C2rtthl", "mu     "/)
+          p_variance = (/C2rtthl_var, mu_var/)
         case default
           stop "xapxbp_run: invalid runtype"
         end select
@@ -714,14 +714,14 @@
         if ( c_update ) then
           select case( trim(runtype) )
           case("rt")
-            C2  = const_array(1,1)
-            mu  = const_array(1,2)
+            C2rt = const_array(1,1)
+            mu   = const_array(1,2)
           case("thl")
-            C2b = const_array(1,1)
-            mu  = const_array(1,2)
+            C2thl = const_array(1,1)
+            mu    = const_array(1,2)
           case("rtthl")
-            C2c = const_array(1,1)
-            mu  = const_array(1,2)
+            C2rtthl = const_array(1,1)
+            mu      = const_array(1,2)
           end select
         else
 !       Generate GrADS with Optimal constants
@@ -764,7 +764,7 @@
 !       The actual subroutine is hoc_model_variable_input, used via overloading
 
         call hoc_model( const_vect(1), const_vect(2), const_vect(3),  ! C1, C1b, C1c
-     .                  C2, C2b, C2c, 
+     .                  0.0, 0.0, 0.0, C2rt, C2thl, C2rtthl, 
      .                  const_vect(4), const_vect(5), ! C4, C5
      .                  C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .                  C7, C7b, C7c, C8, C8b, C10, 
@@ -815,7 +815,8 @@
 
 !       The actual subroutine is hoc_model_variable_input, used via overloading
 
-        call hoc_model( C1, C1b, C1c, C2, C2b, C2c, C4, C5, 
+        call hoc_model( C1, C1b, C1c, 0.0, 0.0, 0.0, 
+     .                  C2rt, C2thl, C2rtthl, C4, C5, 
      .                  C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, 
      .                  C7, C7b, C7c, const_vect(1), C8b,  ! C8
      .                  C10, 
@@ -868,7 +869,8 @@
 
 !       The actual subroutine is hoc_model_variable_input, used via overloading
 
-        call hoc_model( C1, C1b, C1c, C2, C2b, C2c, C4, C5, 
+        call hoc_model( C1, C1b, C1c, 0.0, 0.0, 0.0,
+     .                  C2rt, C2thl, C2rtthl, C4, C5, 
      .                  const_vect(1), const_vect(2), const_vect(3),  ! C6rt, C6rtb, C6rtc
      .                  C6thl, C6thlb, C6thlc,
      .                  const_vect(4), const_vect(5), const_vect(6),  ! C7, C7b, C7c
@@ -920,7 +922,8 @@
 
 !       The actual subroutine is hoc_model_variable_input, used via overloading
 
-        call hoc_model( C1, C1b, C1c, C2, C2b, C2c, C4, C5, 
+        call hoc_model( C1, C1b, C1c, 0.0, 0.0, 0.0,
+     .                  C2rt, C2thl, C2rtthl, C4, C5, 
      .                  C6rt, C6rtb, C6rtc,
      .                  const_vect(1), const_vect(2), const_vect(3),  ! C6thl, C6thlb, C6thlc
      .                  const_vect(4), const_vect(5), const_vect(6),  ! C7, C7b, C7c
@@ -974,7 +977,8 @@
 
 !       The actual subroutine is hoc_model_variable_input, used via overloading
 
-        call hoc_model( C1, C1b, C1c, const_vect(1), C2b, C2c, ! C2
+        call hoc_model( C1, C1b, C1c, 0.0, 0.0, 0.0,
+     .                  const_vect(1), C2thl, C2rtthl, ! C2rt
      .                  C4, C5, C6rt, C6rtb, C6rtc,
      .                  C6thl, C6thlb, C6thlc,
      .                  C7, C7b, C7c, C8, C8b, C10, 
@@ -1029,8 +1033,9 @@
 
 !       The actual subroutine is hoc_model_variable_input, used via overloading
 
-        call hoc_model( C1, C1b, C1c, C2, const_vect(1), C2c, C4, ! C2thl
-     .                  C5, C6rt, C6rtb, C6rtc,
+        call hoc_model( C1, C1b, C1c, 0.0, 0.0, 0.0,
+     .                  C2rt, const_vect(1), C2rtthl, ! C2thl
+     .                  C4, C5, C6rt, C6rtb, C6rtc,
      .                  C6thl, C6thlb, C6thlc, C7, C7b, C7c,
      .                  C8, C8b, C10, 
      .                  C11, C11b, C11c, C12,
@@ -1084,7 +1089,8 @@
 
 !       The actual subroutine is hoc_model_variable_input, used via overloading
 
-        call hoc_model( C1, C1b, C1c, C2, C2b, const_vect(1), C4, ! C2rtthl
+        call hoc_model( C1, C1b, C1c, 0.0, 0.0, 0.0,
+     .                  C2rt, C2thl, const_vect(1), C4, ! C2rtthl
      .                  C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, 
      .                  C7, C7b, C7c, C8, C8b, C10,
      .                  C11, C11b, C11c, C12,
@@ -1480,7 +1486,8 @@
 
 !       The actual subroutine is hoc_model_variable_input, used via overloading
 
-        call hoc_model( C1, C1b, C1c, C2, C2b, C2c, C4, C5, 
+        call hoc_model( C1, C1b, C1c, 0.0, 0.0, 0.0,
+     .                  C2rt, C2thl, C2rtthl, C4, C5, 
      .                  C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .                  C7, C7b, C7c, C8, C8b, C10, 
      .                  C11, C11b, C11c, C12,
@@ -2163,7 +2170,7 @@
 
         integer i
 
-        p_elements = (/C1, C1b, C1c, C2, C2b, C2c, C4, C5, 
+        p_elements = (/C1, C1b, C1c, C2rt, C2thl, C2rtthl, C4, C5, 
      .                 C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .                 C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12,
      .                 nu1, nu2, nu6, nu8, nu_r, 
@@ -2171,7 +2178,7 @@
      .                 lmin_coef, taumin, taumax, mu/)
 
         p_string = (/"C1        ", "C1b       ", "C1c       ",
-     .               "C2        ", "C2b       ", "C2c       ",
+     .               "C2rt      ", "C2thl     ", "C2rtthl   ",
      .               "C4        ", "C5        ", 
      .               "C6rt      ", "C6rtb     ", "C6rtc     ",
      .               "C6thl     ", "C6thlb    ", "C6thlc    ",
@@ -2187,7 +2194,8 @@
         write(*,*) "Calling HOC with optimal constants"
 
 !       The actual subroutine is hoc_model_variable_input, used via overloading
-        call hoc_model( C1, C1b, C1c, C2, C2b, C2c, C4, C5, 
+        call hoc_model( C1, C1b, C1c, 0., 0., 0., 
+     .                  C2rt, C2thl, C2rtthl, C4, C5, 
      .                  C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, 
      .                  C7, C7b, C7c, C8, C8b, C10, 
      .                  C11, C11b, C11c, C12,

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc_inputfields.F,v 1.12 2006-12-28 23:01:15 dschanen Exp $
+! $Id: hoc_inputfields.F,v 1.13 2007-01-18 23:54:32 dschanen Exp $
 
         program hoc_inputfields
 
@@ -22,6 +22,9 @@
      .  C2,         ! Low Skewness in C2 Skewness Function.
      .  C2b,        ! High Skewness in C2 Skewness Function.  
      .  C2c,        ! Degree of Slope of C2 Skewness Function.
+     .  C2rt,       ! C2 used in rtp2 diffusion term.
+     .  C2thl,      ! C2 used in thlp2 diffusion term.
+     .  C2rtthl,    ! C2 used in rtpthlp diffusion term.
      .  C4,         ! Currently Not Used in the Model.
      .  C5,         ! Constant from Chris Golaz.
      .  C6rt,       ! Low Skewness in C6rt Skewness Function.
@@ -68,7 +71,8 @@
         ! Namelist definitions
         namelist /model/ run_file, stdout
 
-        namelist /initvars/ C1, C1b, C1c, C2, C2b, C2c, C4, C5,
+        namelist /initvars/ C1, C1b, C1c, C2, C2b, C2c, 
+     .    C2rt, C2thl, C2rtthl, C4, C5,
      .    C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .    C7, C7b, C7c, C8, C8b,
      .    C10, C11, C11b, C11c, C12,
@@ -98,7 +102,8 @@
 
         ! Run the model
         call hoc_model( C1, C1b, C1c,
-     .                  C2, C2b, C2c, C4, C5,
+     .                  C2, C2b, C2c,
+     .                  C2rt, C2thl, C2rtthl, C4, C5,
      .                  C6rt, C6rtb, C6rtc, 
      .                  C6thl, C6thlb, C6thlc,
      .                  C7, C7b, C7c, 

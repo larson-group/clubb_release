@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.28 2006-12-12 20:21:17 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.29 2007-01-18 23:54:37 dschanen Exp $
 
 
 
@@ -763,7 +763,8 @@
         end subroutine latin_hypercube_sampling
 !-----------------------------------------------------------------------
         subroutine parameterization_setup
-     .             ( nzmax, deltaz, C1, C1b, C1c, C2, C2b, C2c, C4, C5, 
+     .             ( nzmax, deltaz, C1, C1b, C1c, C2, C2b, C2c, 
+     .               C2rt, C2thl, C2rtthl, C4, C5,
      .               C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .               C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12,
      .               nu1, nu2, nu6, nu8, nu_r, 
@@ -798,6 +799,7 @@
         real, intent(in) :: 
      .  C1, C1b, C1c,
      .  C2, C2b, C2c,
+     .  C2rt, C2thl, C2rtthl,
      .  C4, C5,
      .  C6rt, C6rtb, C6rtc,
      .  C6thl, C6thlb, C6thlc,
@@ -849,12 +851,19 @@
         ! Define constants
 
         call setup_constants
-     .       ( deltaz, C1, C1b, C1c, C2, C2b, C2c, C4, C5, 
-     .         C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
-     .         C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12,
-     .         nu1, nu2, nu6, nu8, nu_r, 
+     .       ( deltaz, C1, C1b, C1c,
+     .         C2, C2b, C2c,
+     .         C2rt, C2thl, C2rtthl,
+     .         C4, C5,
+     .         C6rt, C6rtb, C6rtc,
+     .         C6thl, C6thlb, C6thlc,
+     .         C7, C7b, C7c,
+     .         C8, C8b, C10,
+     .         C11, C11b, C11c, C12,
+     .         nu1, nu2, nu6, nu8, nu_r,
      .         gamma_coef, gamma_coefb, gamma_coefc,
-     .         mu, c_K, beta, lmin_coef, taumin, taumax, fcor )
+     .         mu, c_K, beta, lmin_coef,
+     .         taumin, taumax, fcor )
 
         return
         end subroutine parameterization_setup
