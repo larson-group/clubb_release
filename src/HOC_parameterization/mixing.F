@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.10 2006-12-12 20:21:17 dschanen Exp $
+! $Id: mixing.F,v 1.11 2007-01-21 22:29:45 griffinb Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -677,6 +677,7 @@
           ixm_ta    = 0
           ixm_ma    = 0
           ixm_f     = 0
+          ixm_mc    = 0
           iwpxp_bt  = 0
           iwpxp_ma  = 0
           iwpxp_ta  = 0
