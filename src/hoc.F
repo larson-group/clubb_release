@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.109 2007-01-18 23:54:32 dschanen Exp $
+! $Id: hoc.F,v 1.110 2007-01-25 23:46:48 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -837,30 +837,34 @@
 
         ! GCSS BOMEX
         case ( "bomex" )
-          do k = 1, gr%nnzp
-             em(k) = 1.0 - (gr%zm(k)/3000.0)
-             if ( em(k) < emin ) then
-                em(k) = emin
-             end if
-          end do
-          em(1) = em(2)
-          em(gr%nnzp) = em(gr%nnzp-1)
+!---> Reduction of initial sounding for stability
+!         do k = 1, gr%nnzp
+!            em(k) = 1.0 - (gr%zm(k)/3000.0)
+!            if ( em(k) < emin ) then
+!               em(k) = emin
+!            end if
+!         end do
+!         em(1) = em(2)
+!         em(gr%nnzp) = em(gr%nnzp-1)
 
-          wp2 = 2.0 / 3.0 * em
+!         wp2 = 2.0 / 3.0 * em
+!<--- End reduction of initial sounding for stability 24 Jan 07
 
         ! GCSS ARM
         case ( "arm" )
-          do k = 1, gr%nnzp
-             if ( gr%zm(k) < 150.0 ) then
-                em(k) = ( 0.15 * (1.0 - gr%zm(k)/150.0) ) / rhom(k)
-             else
-                em(k) = emin
-             end if
-          end do
-          em(1) = em(2)
-          em(gr%nnzp) = em(gr%nnzp-1)
+!---> Reduction of initial sounding for stability
+!         do k = 1, gr%nnzp
+!            if ( gr%zm(k) < 150.0 ) then
+!               em(k) = ( 0.15 * (1.0 - gr%zm(k)/150.0) ) / rhom(k)
+!            else
+!               em(k) = emin
+!            end if
+!         end do
+!         em(1) = em(2)
+!         em(gr%nnzp) = em(gr%nnzp-1)
 
-          wp2 = 2.0 / 3.0 * em
+!         wp2 = 2.0 / 3.0 * em
+!<--- End reduction of initial sounding for stability 24 Jan 07
 
         ! GCSS FIRE Sc
         case ( "fire" ) 
@@ -881,17 +885,19 @@
         case ( "atex" )
           um = max( um, -8. )
 
-          do k = 1, gr%nnzp
-             em(k) = 1.0 - (gr%zm(k)/3000.0)
-             if ( em(k) < emin ) then
-                em(k) = emin
-             end if
-          end do
-          em(1) = em(2)
-          em(gr%nnzp) = em(gr%nnzp-1)
+!---> Reduction of initial sounding for stability
+!         do k = 1, gr%nnzp
+!           em(k) = 1.0 - (gr%zm(k)/3000.0)
+!           if ( em(k) < emin ) then
+!             em(k) = emin
+!           end if
+!         end do
+!         em(1) = em(2)
+!         em(gr%nnzp) = em(gr%nnzp-1)
 
-          wp2 = 2.0 / 3.0 * em
+!         wp2 = 2.0 / 3.0 * em
 
+!<--- End reduction of initial sounding for stability 24 Jan 07
         ! GCSS DYCOMS II RF01
         case ( "dycoms2_rf01" ) 
           cloud_top_height = 800. ! 800 m is the top of the cloud in RF01
