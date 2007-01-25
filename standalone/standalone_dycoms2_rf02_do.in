@@ -1,4 +1,4 @@
-! $Id: standalone_dycoms2_rf02_do.in,v 1.15 2007-01-25 03:03:27 dschanen Exp $
+! $Id: standalone_dycoms2_rf02_do.in,v 1.16 2007-01-25 23:49:13 dschanen Exp $
 ! Description:
 ! Namelists for the hoc_standalone program. 
 ! run_file is the location of the model namelist file, which contains the 
@@ -16,7 +16,7 @@ stdout   = .true.
 C1          = 2.500000 ! Low Skewness in C1 Skewness Function. 
 C1b         = 2.500000 ! High Skewness in C1 Skewness Function. 
 C1c         = 1.000000 ! Degree of Slope of C1 Skewness Function. 
-C2rt        = 1.500000 ! C2 constant associated with rtp2 dissipation term.
+C2rt        = 1.000000 ! C2 constant associated with rtp2 dissipation term.
 C2thl       = 1.000000 ! C2 constant associated with thlp2 dissipation term.
 C2rtthl     = 2.000000 ! C2 constant associated with rtpthlp dissipation term.
 C2          = 1.300000 ! Low Skewness in C2 Skewness Function.
