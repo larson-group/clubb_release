@@ -2,8 +2,8 @@
 
 lstats = t
 stats_fmt = 'grads'
-stats_tsamp = 120.0
-stats_tout  = 120.0
+stats_tsamp = 60.0
+stats_tout  = 60.0
 
 fname_zt = 'wangara_zt',
 vars_zt = 
