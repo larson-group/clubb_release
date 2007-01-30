@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.110 2007-01-25 23:46:48 dschanen Exp $
+! $Id: hoc.F,v 1.111 2007-01-30 17:49:55 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -535,6 +535,12 @@
 
        dummy_array_m = 0.0
        dummy_array_t = 0.0
+
+       if ( trim( runtype ) == "mpace" ) then 
+         lmpace_nudge = .true.
+       else
+         lmpace_nudge = .false.
+       end if
 
        ! Allocate & initilialize variables,
        ! setup grid, setup constants, and setup flags
@@ -1074,6 +1080,7 @@
         use astex, only: astex_tndcy, astex_sfclyr
         use atex, only: atex_tndcy, atex_sfclyr
         use bomex, only: bomex_tndcy, bomex_sfclyr
+        use cobra, only: cobra_tndcy, cobra_sfclyr
         use dycoms2_rf01, only: dycoms2_rf01_tndcy, dycoms2_rf01_sfclyr
         use dycoms2_rf02, only: dycoms2_rf02_tndcy, dycoms2_rf02_sfclyr
         use fire, only: fire_tndcy, sfc_momentum_fluxes,
