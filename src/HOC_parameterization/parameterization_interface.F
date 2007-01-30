@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.30 2007-01-25 23:46:23 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.31 2007-01-30 18:00:00 dschanen Exp $
 
 
 
@@ -594,6 +594,24 @@
        IF ( .NOT. implemented ) THEN
           umt = - wmt * ddzm( zt2zm( um ) )
      .          + fcor * ( vm - vg )
+#ifdef STATS
+         if ( lstats_samp ) then
+           if ( ium_ma > 0 ) then
+             zt%x(:,ium_ma)
+     .       = zt%x(:,ium_ma) - wmt * ddzm( zt2zm( um ) )
+             zt%n(:,ium_ma) = zt%n(:,ium_ma) + 1
+           end if
+           if ( ium_gf > 0 ) then
+             zt%x(:,ium_gf) = zt%x(:,ium_gf) - fcor * vg
+             zt%n(:,ium_gf) = zt%n(:,ium_gf) + 1
+           end if
+           if ( ium_cf > 0 ) then
+             zt%x(:,ium_cf) = zt%x(:,ium_cf) + fcor * vm
+             zt%n(:,ium_cf) = zt%n(:,ium_cf) + 1
+           end if
+         end if
+#endif
+
        ELSE
           umt = 0.0
        END IF
@@ -622,6 +640,24 @@
        IF ( .NOT. implemented ) THEN
           vmt = - wmt * ddzm( zt2zm( vm ) )
      .          - fcor * ( um - ug )
+#ifdef STATS
+         if ( lstats_samp ) then
+           if ( ivm_ma > 0 ) then
+             zt%x(:,ivm_ma)
+     .       = zt%x(:,ivm_ma) - wmt * ddzm( zt2zm( vm ) )
+             zt%n(:,ivm_ma) = zt%n(:,ivm_ma) + 1
+           end if
+           if ( ivm_gf > 0 ) then
+             zt%x(:,ivm_gf) = zt%x(:,ivm_gf) - fcor * ug
+             zt%n(:,ivm_gf) = zt%n(:,ivm_gf) + 1
+           end if
+           if ( ivm_cf > 0 ) then
+             zt%x(:,ivm_cf) = zt%x(:,ivm_cf) + fcor * um
+             zt%n(:,ivm_cf) = zt%n(:,ivm_cf) + 1
+           end if
+         end if
+#endif
+
        ELSE
           vmt = 0.0
        END IF

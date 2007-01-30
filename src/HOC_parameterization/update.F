@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: update.F,v 1.2 2006-09-05 22:39:04 dschanen Exp $
+! $Id: update.F,v 1.3 2007-01-30 18:00:00 dschanen Exp $
 
         subroutine update_ed_var( solve_type, x, xt, xw0, Khm, 
      .                            dt, xw, isValid )
@@ -15,6 +15,9 @@
 
         use grid_class
         use lapack_wrap, only: tridag_solve
+#ifdef STATS
+        use statistics
+#endif
 
         implicit none
 
@@ -33,7 +36,6 @@
         ! Input/Output Variables
         real, dimension(1:gr%nnzp), intent(inout) :: 
      .  x  ! Prognostic array on the thermodynamic grid [units vary]
-
         
         ! Output Variables
         real, dimension(1:gr%nnzp), intent(out) :: 
@@ -42,18 +44,36 @@
         logical, intent(out) :: isValid ! false when matrix is singular
 
         ! Local Variables
-        real,  dimension(:), allocatable :: a, b, c, r
+        real,  dimension(gr%nnzp) :: a, b, c, r
 
         real :: atmp, ctmp
 
-        integer :: k ! Index
+        integer :: k, kp1, km1 ! Indices
 
+#ifdef STATS
+        integer :: ixm_ta, ixm_bt
 
-        ! Allocate memory for the tridiagonal matrix
-        allocate( a(1:gr%nnzp) ) ! sub diagonal
-        allocate( b(1:gr%nnzp) ) ! main diagonal
-        allocate( c(1:gr%nnzp) ) ! super diagonal
-        allocate( r(1:gr%nnzp) ) ! right hand side
+        select case ( trim( solve_type ) )
+        case ( "um" )
+          ixm_bt = ium_bt
+          ixm_ta = ium_ta
+        case ( "vm" )
+          ixm_bt = ivm_bt
+          ixm_ta = ivm_ta
+        case default  ! Eddy scalars
+          ixm_bt = 0
+          ixm_ta = 0
+        end select
+#endif
+
+#ifdef STATS
+        if ( lstats_samp ) then
+          ! xm total time tendency ( 1st calculation)
+          if ( ixm_bt > 0 ) then
+            zt%x(:,ixm_bt) = zt%x(:,ixm_bt) - x / dt
+          end if
+        end if
+#endif /*STATS*/
 
         ! Prepare tridiagonal system
 
@@ -78,6 +98,17 @@
      .         + xt(2)
      .         + xw0 * gr%dzt(2)
 
+#ifdef STATS
+           if ( lstats_samp .and. ixm_ta > 0 ) then
+             ztscr01(1) = 0.0
+             ztscr02(1) = 0.0
+             ztscr03(1) = 0.0
+
+             ztscr01(2) = -atmp
+             ztscr02(2) = ctmp
+             ztscr03(2) = -ctmp
+           end if
+#endif
         ! Loop from level 3 to gr%nnzp
 
         do k=3, gr%nnzp-1, 1
@@ -92,7 +123,13 @@
      .            + ( atmp + ctmp + 1./dt ) * x(k)
      .            - ctmp * x(k+1)
      .            + xt(k)
-
+#ifdef STATS
+           if ( lstats_samp .and. ixm_ta > 0 ) then
+             ztscr01(k) = -atmp
+             ztscr02(k) =  atmp + ctmp
+             ztscr03(k) = -ctmp
+           end if
+#endif
         end do
 
         ! Level gr%nnzp. We impose zero flux from model top
@@ -107,6 +144,13 @@
         r(gr%nnzp) = - atmp * x(gr%nnzp-1)
      .               + ( atmp + 1./dt ) * x(gr%nnzp)
 
+#ifdef STATS
+           if ( lstats_samp .and. ixm_ta > 0 ) then
+             ztscr01(gr%nnzp) = -atmp
+             ztscr02(gr%nnzp) =  atmp
+             ztscr03(gr%nnzp) = -ctmp
+           end if
+#endif
 !    Caused problems with DYCOMS II RF02
 !     .               + xt(gr%nnzp)
 
@@ -128,11 +172,25 @@
         end do
         xw(gr%nnzp) = 0.
 
+#ifdef STATS
+           ! Turbulent transport (explicit component)
+           if ( lstats_samp .and. ixm_ta > 0 ) then
+             do k=1,gr%nnzp,1
+               km1 = max( k-1, 1 )
+               kp1 = min( k+1, gr%nnzp )
+
+               zt%x(k,ixm_ta) = zt%x(k,ixm_ta)
+     .         + ztscr01(k) * x(km1)
+     .         + ztscr02(k) * x(k)
+     .         + ztscr03(k) * x(kp1)
+             end do
+           end if
+#endif
+
         ! Solve tridiagonal system
         call tridag_solve( solve_type, gr%nnzp, 1, c, b, a, 
      .                     r, x, isValid )
         if (.not. isValid ) then
-          deallocate( a, b, c, r )
           return
         end if
 
@@ -141,8 +199,29 @@
           xw(k) = xw(k) - 0.5 * Khm(k) * gr%dzm(k) * ( x(k+1) - x(k) ) 
         end do
 
-        ! Deallocate memory
-        deallocate( a, b, c, r )
+#ifdef STATS
+        if ( lstats_samp ) then
+          do k = 1, gr%nnzp, 1
+            km1 = max( k-1, 1 )
+            kp1 = min( k+1, gr%nnzp )
+
+            ! x time tendency (2nd calculation)
+            if ( ixm_bt > 0 ) then
+              zt%x(k,ixm_bt) = zt%x(k,ixm_bt) + x(k) / dt
+              zt%n(k,ixm_bt) = zt%n(k,ixm_bt) + 1
+            end if
+            ! x turbulent transport (implicit component)
+            if ( ixm_ta > 0 ) then
+              zt%x(k,ixm_ta) = zt%x(k,ixm_ta)
+     .        + ztscr01(k) * x(km1)
+     .        + ztscr02(k) * x(k)
+     .        + ztscr03(k) * x(kp1)
+              zt%n(k,ixm_ta) = zt%n(k,ixm_ta) + 1
+             end if
+           end do
+
+         end if
+#endif
 
         return
         end subroutine update_ed_var

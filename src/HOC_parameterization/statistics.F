@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.12 2007-01-02 23:27:08 dschanen Exp $
+!  $Id: statistics.F,v 1.13 2007-01-30 18:00:00 dschanen Exp $
 
 #ifdef STATS
       module stats_type
@@ -188,6 +188,21 @@
      .     iricem_dff,
      .     iricem_mc,
      .     iricem_cl
+
+        ! Wind budgets
+        integer ::
+     .     ivm_bt,
+     .     ivm_ma,
+     .     ivm_ta,
+     .     ivm_gf,
+     .     ivm_cf
+        integer ::
+     .     ium_bt,
+     .     ium_ma,
+     .     ium_ta,
+     .     ium_gf,
+     .     ium_cf
+
 
         ! PDF parameters
         integer
@@ -705,6 +720,18 @@
       iricem_dff    = 0
       iricem_mc     = 0
       iricem_cl     = 0
+
+      ivm_bt = 0
+      ivm_ma = 0
+      ivm_gf = 0
+      ivm_cf = 0
+      ivm_ta = 0
+
+      ium_bt = 0
+      ium_ma = 0
+      ium_gf = 0
+      ium_cf = 0
+      ium_ta = 0
 
       ia            = 0
       iw1           = 0
@@ -1607,6 +1634,95 @@
           zt%f%var(irgraupelm_cl)%units = "(kg/kg)/s"
           k = k + 1
 
+        case ('vm_bt')
+          ivm_bt = k
+          zt%f%var(ivm_bt)%ptr => zt%x(:,k)
+          zt%f%var(ivm_bt)%name = "vm_bt"
+          zt%f%var(ivm_bt)%description 
+     .    = "vm time tendency"
+          zt%f%var(ivm_bt)%units = "m/s"
+          k = k + 1
+
+        case ('vm_ma')
+          ivm_ma = k
+          zt%f%var(ivm_ma)%ptr => zt%x(:,k)
+          zt%f%var(ivm_ma)%name = "vm_ma"
+          zt%f%var(ivm_ma)%description 
+     .    = "vm mean advection"
+          zt%f%var(ivm_ma)%units = "m/s"
+          k = k + 1
+
+        case ('vm_gf')
+          ivm_gf = k
+          zt%f%var(ivm_gf)%ptr => zt%x(:,k)
+          zt%f%var(ivm_gf)%name = "vm_gf"
+          zt%f%var(ivm_gf)%description 
+     .    = "vm geostrophic forcing"
+          zt%f%var(ivm_gf)%units = "m/s"
+          k = k + 1
+
+        case ('vm_cf')
+          ivm_cf = k
+          zt%f%var(ivm_cf)%ptr => zt%x(:,k)
+          zt%f%var(ivm_cf)%name = "vm_cf"
+          zt%f%var(ivm_cf)%description 
+     .    = "vm coriolis forcing"
+          zt%f%var(ivm_cf)%units = "m/s"
+          k = k + 1
+
+        case ('vm_ta')
+          ivm_ta = k
+          zt%f%var(ivm_ta)%ptr => zt%x(:,k)
+          zt%f%var(ivm_ta)%name = "vm_ta"
+          zt%f%var(ivm_ta)%description 
+     .    = "vm turbulent transport"
+          zt%f%var(ivm_ta)%units = "m/s"
+          k = k + 1
+
+        case ('um_bt')
+          ium_bt = k
+          zt%f%var(ium_bt)%ptr => zt%x(:,k)
+          zt%f%var(ium_bt)%name = "um_bt"
+          zt%f%var(ium_bt)%description 
+     .    = "um time tendency"
+          zt%f%var(ium_bt)%units = "m/s"
+          k = k + 1
+
+        case ('um_ma')
+          ium_ma = k
+          zt%f%var(ium_ma)%ptr => zt%x(:,k)
+          zt%f%var(ium_ma)%name = "um_ma"
+          zt%f%var(ium_ma)%description 
+     .    = "um mean advection"
+          zt%f%var(ium_ma)%units = "m/s"
+          k = k + 1
+
+        case ('um_gf')
+          ium_gf = k
+          zt%f%var(ium_gf)%ptr => zt%x(:,k)
+          zt%f%var(ium_gf)%name = "um_gf"
+          zt%f%var(ium_gf)%description 
+     .    = "um geostrophic forcing"
+          zt%f%var(ium_gf)%units = "m/s"
+          k = k + 1
+
+        case ('um_cf')
+          ium_cf = k
+          zt%f%var(ium_cf)%ptr => zt%x(:,k)
+          zt%f%var(ium_cf)%name = "um_cf"
+          zt%f%var(ium_cf)%description 
+     .    = "um coriolis forcing"
+          zt%f%var(ium_cf)%units = "m/s"
+          k = k + 1
+
+        case ('um_ta')
+          ium_ta = k
+          zt%f%var(ium_ta)%ptr => zt%x(:,k)
+          zt%f%var(ium_ta)%name = "um_ta"
+          zt%f%var(ium_ta)%description 
+     .    = "um turbulent transport"
+          zt%f%var(ium_ta)%units = "m/s"
+          k = k + 1
  
         case ('a')
           ia = k
