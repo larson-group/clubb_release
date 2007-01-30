@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.10 2007-01-18 23:54:36 dschanen Exp $
+! $Id: diag_var.F,v 1.11 2007-01-30 17:59:07 dschanen Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -666,24 +666,29 @@
 
 #ifdef STATS
         integer ::
+     .  ixapxbp_ta,
      .  ixapxbp_tp,
      .  ixapxbp_tp1,
      .  ixapxbp_tp2
 
         select case( trim( solve_type ) )
         case( "rtp2" )
+          ixapxbp_ta  = irtp2_ta
           ixapxbp_tp  = irtp2_tp
           ixapxbp_tp1 = 0
           ixapxbp_tp2 = 0
         case( "thlp2" )
+          ixapxbp_ta  = ithlp2_ta
           ixapxbp_tp  = ithlp2_tp
           ixapxbp_tp1 = 0
           ixapxbp_tp2 = 0
         case( "rtpthlp" )
+          ixapxbp_ta  = irtpthlp_ta
           ixapxbp_tp  = 0
           ixapxbp_tp1 = irtpthlp_tp1
           ixapxbp_tp2 = irtpthlp_tp2
         case default ! No budgets for passive scalars
+          ixapxbp_ta  = 0
           ixapxbp_tp  = 0
           ixapxbp_tp1 = 0
           ixapxbp_tp2 = 0
@@ -730,7 +735,17 @@
 
             km1 = max( k-1, 1 )
             kp1 = min( k+1, gr%nnzp )
-  
+            if ( ixapxbp_ta > 0 ) then
+              zm%x(k,ixapxbp_ta) 
+     .          = zm%x(k,ixapxbp_ta)
+     .          + term_ta_rhs
+     .           ( a1(kp1), a1(k), a1(km1), wp3(kp1), wp3(k),
+     .             wp2(kp1), wp2(k), wp2(km1), 
+     .             wpxbp(kp1), wpxbp(k), wpxbp(km1),
+     .             wpxap(kp1), wpxap(k), wpxap(km1),
+     .             gr%dzm(k), beta, eps )
+
+            end if 
             ! rtp2/thlp2 case (1 term)
             if ( ixapxbp_tp > 0 ) then
               zm%x(k,ixapxbp_tp) 
