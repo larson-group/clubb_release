@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: grid.F,v 1.4 2006-12-28 23:11:12 dschanen Exp $
+! $Id: grid.F,v 1.5 2007-02-02 22:05:53 dschanen Exp $
 
         module grid_class
 
@@ -73,6 +73,9 @@
 
            type (grid) gr  
 
+!   Modification for using HOC in a host model (i.e. one grid per column)
+!$omp   threadprivate(gr)
+
            ! Interfaces provided for function overloading
 
            ! Interpolation functions
@@ -140,7 +143,7 @@
            if ( nnzp > NWARNING ) then
              write(fstderr,*) "Warning: running with vertical grid "//
      .         "which is larger than ", NWARNING
-           endif
+           end if
 
            gr%nnzp = nnzp
 
