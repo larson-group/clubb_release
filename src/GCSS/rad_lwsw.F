@@ -1,4 +1,4 @@
-! $Id: rad_lwsw.F,v 1.1 2006-12-16 00:32:45 dschanen Exp $
+! $Id: rad_lwsw.F,v 1.2 2007-02-02 22:01:07 dschanen Exp $
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c Subroutine rad_lwsw -- for Larson group altocumulus cases            c
 c Written by Vince Larson, Chris Golaz, Adam Smith, Michael Falk, and  c
@@ -91,9 +91,6 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
      .                  sw_on, lw_on)
 
       use constants
-#ifdef STATS
-      use statistics
-#endif
 
       implicit none
 
