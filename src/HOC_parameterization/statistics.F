@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.13 2007-01-30 18:00:00 dschanen Exp $
+!  $Id: statistics.F,v 1.14 2007-02-02 22:16:51 dschanen Exp $
 
 #ifdef STATS
       module stats_type
@@ -14,28 +14,29 @@
 
         type stats 
 
-!         Number of fields to sample
+          ! Number of fields to sample
+          integer :: nn
 
-          integer nn
+          ! Vertical extent of variable
+          integer :: kk
 
-!         Vertical extend of variable
-
-          integer kk
-
-!         Vertical levels
-
-          real,    pointer :: z (:)
+          ! Vertical levels
+          real, pointer, dimension(:) :: z
 
 !         Array to store sampled fields
 
-          real,    pointer :: x (:,:)
-          integer, pointer :: n (:,:)
+          real, pointer, dimension(:,:) :: x
+
+          integer, pointer, dimension(:,:) :: n
 
 !         Data for GrADS output
 
           type (outputfile) f
 
         end type stats
+
+!$omp     threadprivate(stats)
+
 
       end module stats_type
 
@@ -48,25 +49,34 @@
 
         use stats_type
 
-!       Sampling and output frequencies
+        ! Sampling and output frequencies
+        real :: stats_tsamp       ! Sampling interval   [s]
+        real :: stats_tout        ! Output interval     [s]
 
-        logical lstats         ! Main flag to turn statistics on/off
-        logical lnetcdf        ! Output to NetCDF format
-        logical lgrads         ! Output to GrADS format
-        real stats_tsamp       ! Sampling interval (s)
-        real stats_tout        ! Output interval (s)
+        logical :: 
+     .  lstats,  ! Main flag to turn statistics on/off
+     .  lnetcdf, ! Output to NetCDF format
+     .  lgrads   ! Output to GrADS format
 
-        logical lstats_samp    ! Sample flag for current time step
-        logical lstats_first   ! First time step of output period
-        logical lstats_last    ! Last time step of output period
+!$omp   threadprivate(lstats, lnetcdf, lgrads)
+!$omp   threadprivate(stats_tsamp, stats_tout)
+
+        logical ::
+     .  lstats_samp,   ! Sample flag for current time step
+     .  lstats_first,  ! First time step of output period
+     .  lstats_last    ! Last time step of output period
+
+!$omp   threadprivate(lstats_samp, lstats_first, lstats_last)
 
         character(len=200) :: fname_zt
         character(len=200) :: fname_zm
         character(len=200) :: fname_sfc
 
+!$omp   threadprivate(fname_zt, fname_zm, fname_sfc)
+
 !       Indices for statistics in zt file
 
-        integer
+        integer ::
      .     ithlm,
      .     ithvm,
      .     irtm,
@@ -110,6 +120,15 @@
      .     iradht_LW,      !   "           "   Long-wave
      .     iradht_SW       !   "           "   Short-wave
 
+!$omp   threadprivate(ithlm, ithvm, irtm, ircm, ium, ivm, iwmt, iug)
+!$omp   threadprivate(ivg, icf, ip, iexner, iLscale, iwp3, iwpthlp2)
+!$omp   threadprivate(iwp2thlp, iwprtp2, iwp2rtp, ilup, ildown, itaut)
+!$omp   threadprivate(ikht, iwp2thvp, iwp2rcp, iwprtpthlp, isct, irhot)
+!$omp   threadprivate(iNcm, iNcnm, iNim, ised_rcm, irsm, irrm, iNrm)
+!$omp   threadprivate(imean_vol_rad_rain, imean_vol_rad_cloud)
+!$omp   threadprivate(irain_rate, iAKm, iAKm_est)
+!$omp   threadprivate(iradht, iradht_LW, iradht_SW)
+
         integer ::
      .    irsnowm,
      .    irgraupelm,
@@ -119,18 +138,26 @@
      .    idqc_dt_icedfs, ! Necessary for icedfs scheme.  Michael Falk
      .    iu_T_cm         ! Necessary for icedfs scheme.  Michael Falk
 
+!$omp   threadprivate(irsnowm, irgraupelm, iricem, idiam)
+!$omp   threadprivate(im, idqc_dt_icedfs, iu_T_cm)
+
+
         ! thlm/rtm budget terms
         integer ::
      .    irtm_bt,      ! rtm total time tendency
      .    irtm_ma,      ! rtm mean advect. term
      .    irtm_ta,      ! rtm turb. advect. term
      .    irtm_forcing, ! rtm large scale forcing term
-     .    irtm_mc,     ! rtm change from microphysics
+     .    irtm_mc,      ! rtm change from microphysics
      .    ithlm_bt,     ! thlm total time tendency
      .    ithlm_ma,     ! thlm mean advect. term
      .    ithlm_ta,     ! thlm turb. advect. term
      .    ithlm_forcing,! thlm large scale forcing term
      .    ithlm_mc      ! thlm change from microphysics
+
+!$omp   threadprivate(irtm_bt, irtm_ma, irtm_ta, irtm_forcing, irtm_mc)
+!$omp   threadprivate(ithlm_bt, ithlm_ma, ithlm_ta)
+!$omp   threadprivate(ithlm_forcing, ithlm_mc)
 
 
         integer ::
@@ -145,6 +172,9 @@
      .     iwp3_dp1,
      .     iwp3_cl
 
+!$omp   threadprivate(iwp3_bt, iwp3_ma, iwp3_ta, iwp3_tp, iwp3_ac)
+!$omp   threadprivate(iwp3_bp, iwp3_pr1, iwp3_pr2, iwp3_dp1, iwp3_cl)
+
         ! Rain mixing ratio budgets
         integer ::
      .     irrm_bt,
@@ -156,6 +186,10 @@
      .     irrm_accr,
      .     irrm_mc,
      .     irrm_cl
+
+!$omp   threadprivate(irrm_bt, irrm_ma, irrm_sd, irrm_dff, irrm_cond)
+!$omp   threadprivate(irrm_auto, irrm_accr, irrm_mc, irrm_cl)
+
         integer ::
      .     iNrm_bt,
      .     iNrm_ma,
@@ -166,6 +200,10 @@
      .     iNrm_mc,
      .     iNrm_cl
 
+!$omp   threadprivate(iNrm_bt, iNrm_ma, iNrm_sd, iNrm_dff, iNrm_cond)
+!$omp   threadprivate(iNrm_auto, iNrm_mc, iNrm_cl)
+
+
         ! Snow/Ice/Graupel mixing ratio budgets
         integer ::
      .     irsnowm_bt,
@@ -174,6 +212,10 @@
      .     irsnowm_dff,
      .     irsnowm_mc,
      .     irsnowm_cl
+
+!$omp   threadprivate(irsnowm_bt, irsnowm_ma, irsnowm_sd, irsnowm_dff)
+!$omp   threadprivate(irsnowm_mc, irsnowm_cl)
+
         integer ::
      .     irgraupelm_bt,
      .     irgraupelm_ma,
@@ -181,6 +223,10 @@
      .     irgraupelm_dff,
      .     irgraupelm_mc,
      .     irgraupelm_cl
+
+!$omp   threadprivate(irgraupelm_bt, irgraupelm_ma, irgraupelm_sd)
+!$omp   threadprivate(irgraupelm_dff, irgraupelm_mc, irgraupelm_cl)
+
         integer ::
      .     iricem_bt,
      .     iricem_ma,
@@ -189,6 +235,9 @@
      .     iricem_mc,
      .     iricem_cl
 
+!$omp   threadprivate(iricem_bt, iricem_ma, iricem_sd, iricem_dff)
+!$omp   threadprivate(iricem_mc, iricem_cl)
+
         ! Wind budgets
         integer ::
      .     ivm_bt,
@@ -196,6 +245,9 @@
      .     ivm_ta,
      .     ivm_gf,
      .     ivm_cf
+
+!$omp   threadprivate(ivm_bt, ivm_ma, ivm_ta, ivm_gf, ivm_cf)
+
         integer ::
      .     ium_bt,
      .     ium_ma,
@@ -203,9 +255,11 @@
      .     ium_gf,
      .     ium_cf
 
+!$omp   threadprivate(ium_bt, ium_ma, ium_ta, ium_gf, ium_cf)
+
 
         ! PDF parameters
-        integer
+        integer ::
      .     ia,
      .     iw1,
      .     iw2,
@@ -229,9 +283,14 @@
      .     is2,
      .     iss1,
      .     iss2,
-     .     irrtthl 
+     .     irrtthl
 
-        integer
+!$omp   threadprivate(ia, iw1, iw2, isw1, isw2, ithl1, ithl2, isthl1)
+!$omp   threadprivate(isthl2, irt1, irt2, isrt1, isrt2, irc1, irc2)
+!$omp   threadprivate(irsl1, irsl2, iR1, iR2, is1, is2, iss1, iss2)
+!$omp   threadprivate(irrtthl)
+
+        integer ::
      .     iwp2zt,
      .     ithlp2zt,
      .     iwpthlpzt,
@@ -239,21 +298,27 @@
      .     irtp2zt,
      .     irtpthlpzt
 
+!$omp   threadprivate(iwp2zt, ithlp2zt, iwpthlpzt, irtp2zt, irtpthlpzt)
+
 #ifdef SCALARS
-        integer
+        integer ::
      .    isclram,   ! Passive scalar mean (currently mean thl)
      .    isclrbm,   ! Passive scalar mean (currently mean rt)
      .    isclram_f, ! Passive scalar tendency (currently mean thl forcing)
      .    isclrbm_f  ! Passive scalar tendency (currently mean rt forcing)
 
-        integer
+        integer ::
      .    iedsclram, ! Eddy-diff. scalar term (currently rt)
      .    iedsclrbm  ! Eddy-diff. scalar term (currently thl)
+
+!$omp   threadprivate(isclram, isclrbm, isclram_f, isclrbm_f)
+!$omp   threadprivate(iedsclram, iedsclrbm)
+
 #endif /*SCALARS*/
 
 !       Indices for statistics in zm file
 
-        integer
+        integer ::
      .     iwp2,
      .     irtp2,
      .     ithlp2,
@@ -281,6 +346,12 @@
      .     iFprec,    ! Brian
      .     iFcsed     ! Brian
 
+!$omp   threadprivate(iwp2, irtp2, ithlp2, irtpthlp, iwprtp, iwpthlp)
+!$omp   threadprivate(iwp4, iwpthvp, irtpthvp, ithlpthvp, itaum, ikhm)
+!$omp   threadprivate(iwprcp, ithlprcp, irtprcp, iupwp, ivpwp, irhom)
+!$omp   threadprivate(iscm, iem, ishear, iFrad, iFrad_LW, iFrad_SW)
+!$omp   threadprivate(iFprec, iFcsed)
+
         ! Sedimentation velocities
         integer ::
      .    iVrr,     ! Brian
@@ -289,7 +360,9 @@
      .    iVice,    !  " "
      .    iVgraupel !  " " 
 
-        integer
+!$omp   threadprivate(iVrr, iVNr, iVsnow, iVice, iVgraupel)
+
+        integer ::
      .     iwp2_bt,
      .     iwp2_ma,
      .     iwp2_ta,
@@ -302,7 +375,11 @@
      .     iwp2_dp2,
      .     iwp2_cl
 
-        integer
+!$omp   threadprivate(iwp2_bt, iwp2_ma, iwp2_ta, iwp2_ac, iwp2_bp)
+!$omp   threadprivate(iwp2_pr1, iwp2_pr2, iwp2_pr3, iwp2_dp1, iwp2_dp2)
+!$omp   threadprivate(iwp2_cl)
+
+        integer ::
      .     iwprtp_bt,
      .     iwprtp_ma,
      .     iwprtp_ta,
@@ -314,7 +391,11 @@
      .     iwprtp_pr3,
      .     iwprtp_dp1
 
-        integer
+!$omp   threadprivate(iwprtp_bt, iwprtp_ma, iwprtp_ta, iwprtp_tp)
+!$omp   threadprivate(iwprtp_ac, iwprtp_bp, iwprtp_pr1, iwprtp_pr2)
+!$omp   threadprivate(iwprtp_pr3, iwprtp_dp1)
+
+        integer ::
      .     iwpthlp_bt,
      .     iwpthlp_ma,
      .     iwpthlp_ta,
@@ -326,10 +407,14 @@
      .     iwpthlp_pr3,
      .     iwpthlp_dp1
 
+!$omp   threadprivate(iwpthlp_bt, iwpthlp_ma, iwpthlp_ta, iwpthlp_tp)
+!$omp   threadprivate(iwpthlp_ac, iwpthlp_bp, iwpthlp_pr1, iwpthlp_pr2)
+!$omp   threadprivate(iwpthlp_pr3, iwpthlp_dp1)
+
 !    Dr. Golaz's new variance budget terms
 !    qt was changed to rt to avoid confusion
 
-        integer
+        integer ::
      .     irtp2_bt,
      .     irtp2_ma,
      .     irtp2_ta,
@@ -337,8 +422,10 @@
      .     irtp2_dp1,
      .     irtp2_dp2,
      .     irtp2_cl
+!$omp   threadprivate(irtp2_bt, irtp2_ma, irtp2_ta, irtp2_tp)
+!$omp   threadprivate(irtp2_dp1, irtp2_dp2, irtp2_cl)
 
-        integer
+        integer ::
      .     ithlp2_bt,
      .     ithlp2_ma,
      .     ithlp2_ta,
@@ -347,7 +434,10 @@
      .     ithlp2_dp2,
      .     ithlp2_cl
 
-        integer
+!$omp   threadprivate(ithlp2_bt, ithlp2_ma, ithlp2_ta, ithlp2_tp)
+!$omp   threadprivate(ithlp2_dp1, ithlp2_dp2, ithlp2_cl)
+
+        integer ::
      .     irtpthlp_bt,
      .     irtpthlp_ma,
      .     irtpthlp_ta,
@@ -356,10 +446,14 @@
      .     irtpthlp_dp1,
      .     irtpthlp_dp2
 
+!$omp   threadprivate(irtpthlp_bt, irtpthlp_ma, irtpthlp_ta)
+!$omp   threadprivate(irtpthlp_tp1, irtpthlp_tp2, irtpthlp_dp1)
+!$omp   threadprivate(irtpthlp_dp2, irtpthlp_cl)
+
 #ifdef SCALARS
 !       Passive scalars.  Note that floating point roundoff may make 
 !       mathematically equivalent variables different values.
-        integer
+        integer ::
      .    isclraprtp,          ! sclr'(1)rt'     / rt'^2
      .    isclrbprtp,          ! sclr'(2)rt'     / thl'rt'
      .    isclrap2,            ! sclr'(1)^2      / rt'^2
@@ -399,12 +493,16 @@
      .    irain,   ! Brian
      .    ipflux   ! Brian
 
+!$omp   threadprivate(iustar, ilh, ish, icc, ilwp, izb, izi)
+!$omp   threadprivate(irain, ipflux)
+
         ! Variables that contains all the statistics
 
         type (stats), target :: zt,  ! zt grid
      .                          zm,  ! zm grid
      .                          sfc  ! sfc
 
+!$omp   threadprivate(zt, zm, sfc)
 
         ! Scratch space
 
@@ -414,11 +512,19 @@
      .                       ztscr10(:), ztscr11(:), ztscr12(:),
      .                       ztscr13(:), ztscr14(:), ztscr15(:)
 
+!$omp   threadprivate(ztscr01, ztscr02, ztscr03, ztscr04, ztscr05)
+!$omp   threadprivate(ztscr06, ztscr07, ztscr08, ztscr09, ztscr10)
+!$omp   threadprivate(ztscr11, ztscr12, ztscr13, ztscr14, ztscr15)
+
         real, allocatable :: zmscr01(:), zmscr02(:), zmscr03(:), 
      .                       zmscr04(:), zmscr05(:), zmscr06(:),
      .                       zmscr07(:), zmscr08(:), zmscr09(:),
      .                       zmscr10(:), zmscr11(:), zmscr12(:),
      .                       zmscr13(:)
+
+!$omp   threadprivate(zmscr01, zmscr02, zmscr03, zmscr04, zmscr05) 
+!$omp   threadprivate(zmscr06, zmscr07, zmscr08, zmscr09, zmscr10)
+!$omp   threadprivate(zmscr11, zmscr12, zmscr13)
 
       end module statistics
 
@@ -438,10 +544,11 @@
       ! Constant Parameters
       ! Because the units are only open and closed on at a time, they can
       ! all use the same file unit with the scope of write_grads()
-      integer, parameter :: 
-     .  zt_funit  = 20,
-     .  zm_funit  = 20,
-     .  sfc_funit = 20
+!     integer, parameter :: 
+!    .  zt_funit  = 20,
+!    .  zm_funit  = 20,
+!    .  sfc_funit = 20
+      ! dschanen changed this for threadsafe-ish I/O
 
       integer, parameter :: nvarmax = 250  ! Max variables
 
@@ -590,14 +697,14 @@
       if ( lgrads ) then
 
         ! Open GrADS file
-        call open_grads( zt%f, zt_funit, fdir, fname, 
+        call open_grads( zt%f, iunit, fdir, fname, 
      .                   1, zt%kk, zt%z,
      .                   day, month, year, rlat, rlon,
      .                   time+stats_tout, stats_tout,
      .                   zt%nn )
 
       else ! Open NetCDF file
-        call open_nc( zt%f, zt_funit, fdir, fname, 
+        call open_nc( zt%f, iunit, fdir, fname, 
      .                1, zt%kk, zt%z,
      .                day, month, year, rlat, rlon,
      .                time+stats_tout, stats_tout,
@@ -2076,14 +2183,14 @@
       if ( lgrads ) then
 
         ! Open GrADS files
-        call open_grads( zm%f, zm_funit, fdir, fname, 
+        call open_grads( zm%f, iunit, fdir, fname, 
      .                   1, zm%kk, zm%z,
      .                   day, month, year, rlat, rlon,
      .                   time+stats_tout, stats_tout,
      .                   zm%nn )
 
       else ! Open NetCDF file
-        call open_nc( zm%f, zm_funit, fdir, fname, 
+        call open_nc( zm%f, iunit, fdir, fname, 
      .                1, zm%kk, zm%z,
      .                day, month, year, rlat, rlon,
      .                time+stats_tout, stats_tout,
@@ -3134,14 +3241,14 @@
       if ( lgrads ) then
 
         ! Open GrADS files
-        call open_grads( sfc%f, sfc_funit, fdir, fname, 
+        call open_grads( sfc%f, iunit, fdir, fname, 
      .                   1, sfc%kk, sfc%z,
      .                   day, month, year, rlat, rlon,
      .                   time+stats_tout, stats_tout,
      .                   sfc%nn )
 
       else ! Open NetCDF files
-        call open_nc( sfc%f, sfc_funit, fdir, fname, 
+        call open_nc( sfc%f, iunit, fdir, fname, 
      .                1, sfc%kk, sfc%z,
      .                day, month, year, rlat, rlon,
      .                time+stats_tout, stats_tout,
@@ -4100,6 +4207,8 @@
 
       implicit none
 
+      integer :: i
+
       if ( lstats .and. lnetcdf ) then
         call close_nc( zt%f )
         call close_nc( zm%f )
@@ -4110,7 +4219,7 @@
         ! De-allocate all zt variables
         deallocate( zt%z )
 
-        deallocate( zt%x )
+        deallocate( zt%x, stat=i )
         deallocate( zt%n )
 
         deallocate( zt%f%var )
