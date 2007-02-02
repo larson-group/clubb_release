@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.111 2007-01-30 17:49:55 dschanen Exp $
+! $Id: hoc.F,v 1.112 2007-02-02 22:08:54 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -41,32 +41,42 @@
         real, private :: 
      .  deltaz ! Change per grid level  [m]
 
+!$omp   threadprivate(nzmax, deltaz)
+
         integer, private :: 
      .  day, month, year ! Day of start of simulation
+
+!$omp   threadprivate(day, month, year)
 
         real, private :: 
      .  rlat, ! Latitude  [Degrees North]
      .  rlon  ! Longitude [Degrees East]
 
+!$omp threadprivate(rlat, rlon)
+
         character(len=50), private :: 
      .  runtype ! String identifying the model case; e.g. bomex
+!$omp   threadprivate(runtype)
 
         ! 0: fixed sfc sensible and latent heat fluxes as
         !    given in namelist
         ! 1: bulk formula: uses given surface temperature
         !    and assumes over ocean
         integer, private :: sfctype 
+!$omp   threadprivate(sfctype)
 
         real, private :: 
      .  time_initial, ! Time of start of simulation     [s]
      .  time_final,   ! Time end of simulation          [s]
      .  time_spinup,  ! Time end of spin up period      [s]
      .  time          ! Current time of simulation      [s]
+!$omp   threadprivate(time_initial, time_final, time_spinup, time)
 
         real, private :: 
      .  dtmain,     ! Main model timestep                      [s]
      .  dtclosure,  ! Closure model timestep                   [s]
      .  dt          ! Current model timestep (based on spinup) [s]
+!$omp   threadprivate(dtmain, dtclosure, dt)
 
         contains
 !-----------------------------------------------------------------------
@@ -174,7 +184,7 @@
         real, intent(in) :: sample_ratio 
 
         ! Output Variables
-        logical, intent(out) :: isValid    ! valid run? (T/F)
+        logical, intent(inout) :: isValid    ! valid run? (T/F)
 
         ! Local Variables
         ! Internal Timing Variables
@@ -217,7 +227,7 @@
        !  Initialize the model run 
 
        ! Initialize run to valid
-       isValid = .true.
+       !isValid = .true.
 
        ! Read namelist file
        open(unit=10, file=runfile, status='old')
@@ -273,7 +283,7 @@
 
        time = time_initial
 
-       call hoc_initialize( runfile, psfc, thlm, rtm, 
+       call hoc_initialize( 10, runfile, psfc, thlm, rtm, 
      .                      um, vm, ug, vg, wp2,
      .                      rcm, hydromet,
      .                      wmt, wmm, em, exner,
@@ -440,6 +450,12 @@
 
         implicit none
 
+        ! Because Fortran I/O is not thread safe, we use this here to
+        ! insure that no model uses the same file number simultaneously
+        ! when doing a tuning run. -dschanen 31 Jan 2007
+#ifdef _OPENMP
+        integer :: omp_get_thread_num
+#endif
         ! External
         intrinsic :: mod, real, int 
 
@@ -466,7 +482,7 @@
      .  stdout  ! Whether to print output per timestep
 
         ! Output Variables
-        logical, intent(out) :: isValid    ! valid run? (T/F)
+        logical, intent(inout) :: isValid    ! valid run? (T/F)
 
         ! Local Variables
         ! Internal Timing Variables
@@ -496,6 +512,8 @@
 
         integer :: i, i1 ! Internal Loop Variables
 
+        integer :: iunit
+
         ! Definition of namelists
         namelist /model_setting/ runtype, nzmax, deltaz, 
      .  day, month, year, rlat, rlon,
@@ -507,15 +525,19 @@
 
 !-----------------------------------------------------------------------
 
-        !  Initialize the model run 
+        ! Initialize the model run 
 
-        ! Initialize run to valid
-        isValid = .true.
+        ! Figure out which iounit to use
+#ifdef _OPENMP
+        iunit = omp_get_thread_num( ) + 10
+#else
+        iunit = 10
+#endif
 
         ! Read namelist file
-        open(unit=10, file=runfile, status='old')
-        read(unit=10, nml=model_setting)
-        close(unit=10)
+        open(unit=iunit, file=runfile, status='old')
+        read(unit=iunit, nml=model_setting)
+        close(unit=iunit)
 
        ! Model sanity Check
 
@@ -566,7 +588,7 @@
 
        time = time_initial
 
-       call hoc_initialize( runfile, psfc, thlm, rtm, 
+       call hoc_initialize( iunit, runfile, psfc, thlm, rtm, 
      .                      um, vm, ug, vg, wp2,
      .                      rcm, hydromet,
      .                      wmt, wmm, em, exner,
@@ -582,8 +604,13 @@
        vm_init = vm ! ditto
 
 #ifdef STATS
+#ifdef _OPENMP
+       iunit = omp_get_thread_num( ) + 50
+#else
+       iunit = 50
+#endif
 !      Initialize statistics output
-       call stats_init( 50, runfile, gr%nnzp, gr%zt, gr%zm,
+       call stats_init( iunit, runfile, gr%nnzp, gr%zt, gr%zm,
      .                  day, month, year, rlat, rlon, time, dtmain )
 #endif /*STATS*/
 
@@ -680,7 +707,7 @@
 
 !-----------------------------------------------------------------------
         subroutine hoc_initialize
-     .             ( runfile, psfc, thlm, rtm, um, vm,
+     .             ( iunit, runfile, psfc, thlm, rtm, um, vm,
      .               ug, vg, wp2, rcm, hydromet,
      .               wmt, wmm, em, exner, taut, taum, thvm,
      .               p, rhot, rhom, Lscale, lup,
@@ -718,6 +745,7 @@
         intrinsic :: min, max, trim, sqrt, size
 
         ! Input
+        integer, intent(in) :: iunit
         character(len=*), intent(in) :: runfile  ! filename for the namelist
 
         real, intent(in) :: psfc ! Pressure at the surface [Pa]
@@ -776,7 +804,7 @@
 
         ! Read sounding information
 
-        call read_sounding( thlm, rtm, um, vm, ug, vg, 
+        call read_sounding( iunit, thlm, rtm, um, vm, ug, vg, 
      .                      runfile, runtype
 #ifdef SCALARS               
      .                      ,sclrm, edsclrm ! optional
@@ -798,7 +826,7 @@
      .                   thlm(k) * exner(k)), 0.0 )
         end do
 
-! Compute initial theta-l
+        ! Compute initial theta-l
 
         select case ( trim( runtype ) )
         case ( "dycoms2_rf01", "astex_a209", "nov11_altocu",
@@ -840,6 +868,9 @@
 
         ! Initialize TKE and other fields as needed
         select case ( trim( runtype ) )
+        case ( "generic" )
+          em = 1.0
+          wp2 = 2.0 / 3.0 * em
 
         ! GCSS BOMEX
         case ( "bomex" )
@@ -1123,7 +1154,7 @@
 !#######################################################################
 
          select case ( runtype )
-         case( "normal" ) ! Normal run
+         case( "generic" ) ! Generic run
 
          case( "arm" ) ! ARM Cu case
            call arm_tndcy( time, thlm_forcing, radht, rtm_forcing
@@ -1257,7 +1288,7 @@
 
         select case ( trim( runtype ) )
 
-        case( "normal", "fire" )  ! Normal and FIRE
+        case( "generic", "fire" )  ! Normal and FIRE
           call sfc_momentum_fluxes( um(2), vm(2),
      .                              upwp_sfc, vpwp_sfc )
           ! sfctype = 0  fixed sfc sensible and latent heat fluxes 
