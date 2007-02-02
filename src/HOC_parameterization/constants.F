@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.11 2007-01-18 23:54:36 dschanen Exp $
+! $Id: constants.F,v 1.12 2007-02-02 22:13:57 dschanen Exp $
 
         module constants
 
@@ -57,6 +57,7 @@
 
         real :: 
      .  fcor ! Coriolis parameter               [s^-1]
+!omp threadprivate(fcor)
 
         ! Model constant parameters 
         real ::
@@ -64,9 +65,9 @@
      .  C1b,        ! High Skewness in C1 Skewness Function.
      .  C1c,        ! Degree of Slope of C1 Skewness Function.
      .  C2,         ! Low Skewness in C2 Skewness Function.
-     .  C2rt,       ! 
-     .  C2thl,      ! 
-     .  C2rtthl,    ! 
+     .  C2rt,       ! C2 coefficient for the rtp2_dp1 term.
+     .  C2thl,      ! C2 coefficient for the thlp2_dp1 term.
+     .  C2rtthl,    ! C2 coefficient for the rtpthlp_dp1 term.
      .  C2b,        ! High Skewness in C2 Skewness Function.  
      .  C2c,        ! Degree of Slope of C2 Skewness Function.
      .  C4,         ! Currently Not Used in the Model.
@@ -101,11 +102,21 @@
      .  taumax,     ! Previously determined value.
      .  lmin        ! Previously determined value.
 
+!omp threadprivate(C1, C1b, C1c, C2, C2b, C2c)
+!omp threadprivate(C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6rtb, C6rtc)
+!omp threadprivate(C6thl, C6thlb, C6thlc)
+!omp threadprivate(C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12)
+!omp threadprivate(nu1, nu2, nu6, nu8, nu_r, beta)
+!omp threadprivate(gamma_coef, gamma_coefb, gamma_coefc)
+!omp threadprivate(c_K, lmin, taumin, taumax, mu)
+
 !       Vince Larson added a constant to set plume widths for theta_l and rt
 !       beta should vary between 0 and 3, with 1.5 the standard value
 
 !       real, parameter :: beta = 1.5
         real :: beta
+
+!omp threadprivate(beta)
 
 !       These are referenced together often enough that it made sense to 
 !       make a list of them.  Note that lmin_coef is the input parameter, 

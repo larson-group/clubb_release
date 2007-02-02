@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: model_flags.F,v 1.5 2006-12-12 20:21:17 dschanen Exp $
+! $Id: model_flags.F,v 1.6 2007-02-02 22:13:57 dschanen Exp $
 
 ! Various model options that can be toggled off and on as desired
 !-----------------------------------------------------------------------
@@ -21,6 +21,10 @@
        ! or not at the surface (false).  Example of case where it is not
        ! at the surface:  Nov. 11 altocumulus case.
        logical :: bottom_at_sfc
+
+!$omp threadprivate(lbugsrad, kk_rain, licedfs)
+!$omp threadprivate(lcoamps_micro, cloud_sed, lmpace_nudge)
+!$omp threadprivate(bottom_at_sfc)
 
        end module model_flags
 
