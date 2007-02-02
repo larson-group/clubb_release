@@ -1,7 +1,7 @@
 !------------------------------------------------------------------------
-! $Id: update.F,v 1.3 2007-01-30 18:00:00 dschanen Exp $
+! $Id: update.F,v 1.4 2007-02-02 22:05:11 dschanen Exp $
 
-        subroutine update_ed_var( solve_type, x, xt, xw0, Khm, 
+        subroutine update_ed_var( solve_type, xm, xt, xw0, Khm, 
      .                            dt, xw, isValid )
 !       Description:
 !       Computes wind or other eddy diffusivity variable.
@@ -35,7 +35,7 @@
 
         ! Input/Output Variables
         real, dimension(1:gr%nnzp), intent(inout) :: 
-     .  x  ! Prognostic array on the thermodynamic grid [units vary]
+     .  xm ! Prognostic array on the thermodynamic grid [units vary]
         
         ! Output Variables
         real, dimension(1:gr%nnzp), intent(out) :: 
@@ -70,7 +70,7 @@
         if ( lstats_samp ) then
           ! xm total time tendency ( 1st calculation)
           if ( ixm_bt > 0 ) then
-            zt%x(:,ixm_bt) = zt%x(:,ixm_bt) - x / dt
+            zt%x(:,ixm_bt) = zt%x(:,ixm_bt) - xm / dt
           end if
         end if
 #endif /*STATS*/
@@ -93,8 +93,8 @@
         a(2) = atmp
         c(2) = ctmp
         b(2) = - ctmp + 1./dt
-        r(2) = ( ctmp + 1./dt ) * x(2)
-     .         - ctmp * x(3)
+        r(2) = ( ctmp + 1./dt ) * xm(2)
+     .         - ctmp * xm(3)
      .         + xt(2)
      .         + xw0 * gr%dzt(2)
 
@@ -119,9 +119,9 @@
            a(k) = atmp
            c(k) = ctmp
            b(k) = - atmp - ctmp + 1./dt
-           r(k) = - atmp * x(k-1)
-     .            + ( atmp + ctmp + 1./dt ) * x(k)
-     .            - ctmp * x(k+1)
+           r(k) = - atmp * xm(k-1)
+     .            + ( atmp + ctmp + 1./dt ) * xm(k)
+     .            - ctmp * xm(k+1)
      .            + xt(k)
 #ifdef STATS
            if ( lstats_samp .and. ixm_ta > 0 ) then
@@ -141,8 +141,8 @@
         a(gr%nnzp) = atmp
         c(gr%nnzp) = ctmp
         b(gr%nnzp) = - atmp + 1./dt
-        r(gr%nnzp) = - atmp * x(gr%nnzp-1)
-     .               + ( atmp + 1./dt ) * x(gr%nnzp)
+        r(gr%nnzp) = - atmp * xm(gr%nnzp-1)
+     .               + ( atmp + 1./dt ) * xm(gr%nnzp)
 
 #ifdef STATS
            if ( lstats_samp .and. ixm_ta > 0 ) then
@@ -168,7 +168,7 @@
         ! Store momentum flux (explicit component)
         xw(1) = xw0
         do k=2,gr%nnzp-1
-          xw(k) = -0.5 * Khm(k) * gr%dzm(k) * ( x(k+1) - x(k) ) 
+          xw(k) = -0.5 * Khm(k) * gr%dzm(k) * ( xm(k+1) - xm(k) ) 
         end do
         xw(gr%nnzp) = 0.
 
@@ -180,23 +180,23 @@
                kp1 = min( k+1, gr%nnzp )
 
                zt%x(k,ixm_ta) = zt%x(k,ixm_ta)
-     .         + ztscr01(k) * x(km1)
-     .         + ztscr02(k) * x(k)
-     .         + ztscr03(k) * x(kp1)
+     .         + ztscr01(k) * xm(km1)
+     .         + ztscr02(k) * xm(k)
+     .         + ztscr03(k) * xm(kp1)
              end do
            end if
 #endif
 
         ! Solve tridiagonal system
         call tridag_solve( solve_type, gr%nnzp, 1, c, b, a, 
-     .                     r, x, isValid )
+     .                     r, xm, isValid )
         if (.not. isValid ) then
           return
         end if
 
         ! Second part of momentum (implicit component)
         do k=2, gr%nnzp-1, 1
-          xw(k) = xw(k) - 0.5 * Khm(k) * gr%dzm(k) * ( x(k+1) - x(k) ) 
+          xw(k) = xw(k) - 0.5 * Khm(k) * gr%dzm(k) * ( xm(k+1) - xm(k) )
         end do
 
 #ifdef STATS
@@ -207,15 +207,15 @@
 
             ! x time tendency (2nd calculation)
             if ( ixm_bt > 0 ) then
-              zt%x(k,ixm_bt) = zt%x(k,ixm_bt) + x(k) / dt
+              zt%x(k,ixm_bt) = zt%x(k,ixm_bt) + xm(k) / dt
               zt%n(k,ixm_bt) = zt%n(k,ixm_bt) + 1
             end if
             ! x turbulent transport (implicit component)
             if ( ixm_ta > 0 ) then
               zt%x(k,ixm_ta) = zt%x(k,ixm_ta)
-     .        + ztscr01(k) * x(km1)
-     .        + ztscr02(k) * x(k)
-     .        + ztscr03(k) * x(kp1)
+     .        + ztscr01(k) * xm(km1)
+     .        + ztscr02(k) * xm(k)
+     .        + ztscr03(k) * xm(kp1)
               zt%n(k,ixm_ta) = zt%n(k,ixm_ta) + 1
              end if
            end do
