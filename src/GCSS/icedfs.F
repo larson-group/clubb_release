@@ -39,7 +39,8 @@
         USE grid_class
         USE constants
 #ifdef STATS
-        USE statistics
+        use statistics, only: zt, lstats_samp,
+     .      idqc_dt_icedfs, idiam, im, iu_T_cm
 #endif
 
         implicit none
