@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.31 2007-01-30 18:00:00 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.32 2007-02-02 00:55:08 dschanen Exp $
 
 
 
@@ -648,11 +648,11 @@
              zt%n(:,ivm_ma) = zt%n(:,ivm_ma) + 1
            end if
            if ( ivm_gf > 0 ) then
-             zt%x(:,ivm_gf) = zt%x(:,ivm_gf) - fcor * ug
+             zt%x(:,ivm_gf) = zt%x(:,ivm_gf) + fcor * ug
              zt%n(:,ivm_gf) = zt%n(:,ivm_gf) + 1
            end if
            if ( ivm_cf > 0 ) then
-             zt%x(:,ivm_cf) = zt%x(:,ivm_cf) + fcor * um
+             zt%x(:,ivm_cf) = zt%x(:,ivm_cf) - fcor * um
              zt%n(:,ivm_cf) = zt%n(:,ivm_cf) + 1
            end if
          end if
