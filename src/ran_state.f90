@@ -1,4 +1,4 @@
-! $Id: ran_state.f90,v 1.2 2005-06-15 20:41:44 dschanen Exp $
+! $Id: ran_state.f90,v 1.3 2007-02-02 22:02:21 dschanen Exp $
 !   From _Numerical Recipes in Fortran 90_
 !   (C) 1988-1996 Numerical Recipes Software
 MODULE ran_state
@@ -26,7 +26,10 @@ CONTAINS
   hgt=hg
   if (hg /= 2147483647) call nrerror('ran_init: arith assump 1 fails')
   if (hgng >= 0)        call nrerror('ran_init: arith assump 2 fails')
-  if (hgt+1 /= hgng)    call nrerror('ran_init: arith assump 3 fails')
+!--> dschanen kluge for 64bit intermediate results
+! if (hgt+1 /= hgng)    call nrerror('ran_init: arith assump 3 fails')
+  if (int( hgt+1, kind=K4B) /= hgng)    call nrerror('ran_init: arith assump 3 fails')
+!<-- dschanen end kluge
   if (not(hg) >= 0)     call nrerror('ran_init: arith assump 4 fails')
   if (not(hgng) < 0)    call nrerror('ran_init: arith assump 5 fails')
   if (hg+hgng >= 0)     call nrerror('ran_init: arith assump 6 fails')
