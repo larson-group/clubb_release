@@ -22,7 +22,9 @@
       use constants
       use grid_class, only: zt2zm
 #ifdef STATS
-      use statistics
+      use statistics, only: zt, zm, lstats_samp,
+     .    imean_vol_rad_rain,
+     .    imean_vol_rad_cloud
 #endif
 
       implicit none
