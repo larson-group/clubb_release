@@ -1,4 +1,4 @@
-! $Id: sounding.F,v 1.4 2007-01-02 23:27:08 dschanen Exp $
+! $Id: sounding.F,v 1.5 2007-02-02 22:09:45 dschanen Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
         module sounding
@@ -13,7 +13,8 @@
 
         contains
 !------------------------------------------------------------------------
-        subroutine read_sounding( thlm, rtm, um, vm, ugm, vgm, runfile, 
+        subroutine read_sounding( iunit, 
+     .                            thlm, rtm, um, vm, ugm, vgm, runfile, 
      .                            runtype, 
      .                            sclrm, edsclrm ) ! optional
 
@@ -29,7 +30,10 @@
         ! Constant parameter
         integer, parameter :: nmaxsnd = 1000
 
+
         ! Input variables
+        integer, intent(in) :: iunit ! File unit to use for namelist
+
         character(len=*), intent(in) :: 
      .  runfile,  ! Contains namelists
      .  runtype   ! String for DYCOMS II RF02
@@ -68,7 +72,7 @@
         namelist /sounding/ nlevels, z, theta, rt, u, v, ug, vg
 
         namelist /scalar_sounding/ sclr, edsclr
-    
+
         integer :: i, j, k  ! Loop indices
 
         ! Whether this routine needs to read in data for the 
@@ -81,13 +85,14 @@
         else
           sclr_sounding = .false.
         end if
+
         
-        open(unit = 10, file = runfile, status = 'old')
-        read(unit = 10, nml = sounding)
+        open(unit = iunit, file = runfile, status = 'old')
+        read(unit = iunit, nml = sounding)
 
-        if ( sclr_sounding ) read(unit = 10, nml = scalar_sounding)
+        if ( sclr_sounding ) read(unit = iunit, nml = scalar_sounding)
 
-        close(unit=10)
+        close(unit=iunit)
 
         if ( nlevels > nmaxsnd ) then
            write(fstderr,*) 'Error in sounding: nlevels > nmaxsnd'
@@ -134,13 +139,12 @@
           do while ( z(k) < gr%zt(i) )
             k=k+1
             if ( k > nlevels ) then
-              write(*,*) 'STOP Not enough sounding data to ',
-     .                   'initialize grid:'
-              write(*,'(a,f7.1,/a,f7.1)') '  highest sounding level'
-     .        ,z(nlevels)
-     .        ,'  should be higher than highest thermodynamic point'
-     .        ,gr%zt(gr%nnzp)
-
+              write(fstderr,*) 'STOP Not enough sounding data to ',
+     .          'initialize grid:'
+              write(fstderr,'(a,f7.1,/a,f7.1)') 
+     .          '  highest sounding level', z(nlevels),
+     .          '  should be higher than highest thermodynamic point',
+     .          gr%zt(gr%nnzp)
               stop 'STOP in sounding'
             endif  ! k > nlevels
 
