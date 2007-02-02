@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: prog_variables.F,v 1.11 2006-12-12 20:21:17 dschanen Exp $
+! $Id: prog_variables.F,v 1.12 2007-02-02 22:14:37 dschanen Exp $
         module prognostic_variables
 
 !       This module contains definitions of all prognostic
@@ -29,6 +29,9 @@
      .  thlp2,  ! thl'^2                        [K^2]
      .  rtpthlp ! rt'thl'                       [kg/kg K]
 
+!$omp   threadprivate(um, vm, upwp, vpwp, thlm, rtm, wprtp, wpthlp, wp2)
+!$omp   threadprivate(wp3, rtp2, thlp2, rtpthlp)
+
         real, target, allocatable, dimension(:) ::
      .  p,           ! Pressure (Pa) on thermodynamic points    [Pa]
      .  exner,       ! Exner function = ( p / p0 ) ** kappa     [-]
@@ -36,6 +39,8 @@
      .  rhom,        ! Density                                  [kg/m^3]
      .  thlm_forcing,! thlm large-scale forcing                 [K/s]
      .  rtm_forcing  ! rtm large-scale forcing                  [kg/kg/s]
+
+!$omp   threadprivate(p, exner, rhot, rhom, thlm_forcing, rtm_forcing)
 
         ! Imposed large scale w
         real, target, allocatable, dimension(:) ::
@@ -48,6 +53,8 @@
         ! Mixing Lengths
         real, target, allocatable, dimension(:) :: taum ! [s]
 
+!$omp   threadprivate(wmm, wmt, Scm, taum)
+
         ! Cloud water variables
         real, target, allocatable, dimension(:) ::
      .  rcm,  ! Cloud water mixing ratio                [kg/kg]
@@ -55,6 +62,8 @@
      .  Ncnm, ! Cloud nuclei number concentration       [num/m^3]
      .  Nim,  ! Ice nuclei number concentration         [num/m^3]
      .  cf    ! Cloud fraction                          [%]
+
+!$omp   threadprivate(rcm, Ncm, Ncnm, Nim, cf)
 
         ! Prognostic drizzle variable array
         real, target, allocatable, dimension(:,:) :: hydromet
@@ -65,11 +74,15 @@
         ! 4 rice     Ice water mixing ratio                [kg/kg]
         ! 5 rgraupel Graupel water mixing ratio            [kg/kg]
 
+!$omp   threadprivate(hydromet)
+
         ! Surface fluxes
         real :: 
      .  wpthlp_sfc,        ! w'thl'      [m K/s]
      .  wprtp_sfc,         ! w'rt'       [m kg/kg s]
      .  upwp_sfc, vpwp_sfc ! u'w' & v'w' [m^2/s^2]
+
+!$omp   threadprivate(wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc)
 
         ! More surface data
         real :: 
@@ -77,6 +90,8 @@
      .  psfc, ! surface pressure        [Pa]
      .  SE,   ! sensible heat flux      [K/s]
      .  LE    ! latent heat flux        [1/s]
+
+!$omp   threadprivate(Tsfc, psfc, SE, LE)
 
 #ifdef SCALARS
 ! New mixing scheme variables
@@ -86,6 +101,8 @@
      .  sclrm_forcing, ! Scalars' forcing               [units/s]
      .  edsclrm,       ! Mean eddy-diffusivity scalars  [units vary]
      .  edsclrmt       ! Mean Edsclrm tendency          [units/s]
+
+!$omp   threadprivate(sclrm, sclrm_forcing, edsclrm, edsclrmt)
 
 #endif /*SCALARS*/
 
@@ -106,7 +123,7 @@
         implicit none
 
         integer, intent(in) :: nzmax
-
+!$omp   parallel
 !   --- Allocation ---
 
 ! Prognostic variables
@@ -231,7 +248,7 @@
         edsclrm(1:nzmax,1:sclr_dim)       = 0.0
         edsclrmt(1:nzmax,1:sclr_dim)      = 0.0
 #endif /*SCALARS*/
-
+!$omp   end parallel
 
         return
         end subroutine setup_prognostic_variables
@@ -240,6 +257,7 @@
         implicit none
 
         ! Prognostic variables
+!$omp   parallel
 
         deallocate( um )        ! u wind
         deallocate( vm )        ! v wind
@@ -300,6 +318,7 @@
         deallocate( edsclrmt )
 
 #endif /*SCALARS*/
+!$omp   end parallel
 
         return
         end subroutine cleanup_prognostic_variables

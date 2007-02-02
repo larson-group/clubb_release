@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F,v 1.14 2006-12-12 20:21:17 dschanen Exp $
+! $Id: diag_variables.F,v 1.15 2007-02-02 22:14:37 dschanen Exp $
         module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -25,29 +25,41 @@
      .  thvm,   ! Virtual potential Temperature         [K]
      .  shear   ! Wind shear production
 
+!$omp   threadprivate(Sct, Skwm, Skwt, ug, vg, um_init, vm_init)
+!$omp   threadprivate(thvm, shear)
+
         real, target, allocatable, dimension(:) ::
      .  sed_rcm,     ! sedimentation factor in rcm ! Brian
      .  rsm,         ! Saturation mixing ratio  ! Brian
      .  Fcsed ! Cloud water sedimentation flux (momentum point) [kg(cloud water)]/[s*m^2]
+!$omp   threadprivate(sed_rcm, rsm, Fcsed)
 
         real, target, allocatable, dimension(:) ::
      .  Frad, ! Radiative flux (momentum point)
      .  radht ! SW + LW heating rate
 
+!$omp   threadprivate(Frad, radht)
+
         real, allocatable, target, dimension(:) ::
      .  hm_rt_tndcy,
      .  hm_thl_tndcy
+
+!$omp   threadprivate(hm_rt_tndcy, hm_thl_tndcy)
 
         ! Tendency arrays for u and v wind
         real, target, allocatable, dimension(:) ::
      .  umt,    ! u wind [m/s^2]
      .  vmt     ! v wind [m/s^2]
 
+!$omp   threadprivate(umt, vmt)
+
         ! Second order moments
         real, target, allocatable, dimension(:) ::
      .  wprcp,   ! w'rc'                [m kg/s kg]
      .  thlprcp, ! thl'rc'              [K kg/kg]
      .  rtprcp   ! rt'rc'               [kg^2/kg^2]
+
+!$omp   threadprivate(wprcp, thlprcp, rtprcp)
 
         ! Third order moments
         real, target, allocatable, dimension(:) ::
@@ -58,9 +70,14 @@
      .  wprtpthlp,! w'rt'thl'   [m kg K/kg s]
      .  wp2rcp    ! w'^2 rc'    [m^2 kg/kg s^2]
 
+!$omp   threadprivate(wpthlp2, wp2thlp, wprtp2, wp2rtp )
+!$omp   threadprivate(wprtpthlp, wp2rcp)
+
         ! Fourth order moments
         real, target, allocatable, dimension(:) ::
      .  wp4 ! w'^4      [m^4/s^4]
+
+!$omp   threadprivate(wp4)
 
         ! Buoyancy related moments
         real, target, allocatable, dimension(:) ::
@@ -69,20 +86,30 @@
      .  thlpthvp,! thl'thv'     [K^2] 
      .  wp2thvp  ! w'^2 thv'    [m^2 K/s^2]
 
+!$omp   threadprivate(wpthvp, rtpthvp, thlpthvp, wp2thvp)
+
         real, target, allocatable, dimension(:) ::
      .  Kht, ! Eddy diffusivity: zt grid        [m^2/s]
      .  Khm  ! Eddy diffusivity: zm grid        [m^2/s]
+
+!$omp   threadprivate(Kht, Khm)
 
         ! Mixing lengths
         real, target, allocatable, dimension(:) ::
      .  Lscale, lup, ldown ! [m]
 
+!$omp   threadprivate(Lscale, lup, ldown)
+
         real, target, allocatable, dimension(:) ::
      .  em,  ! em               [m^2/s^2]
      .  taut ! Dissipation time [s]
 
+!$omp   threadprivate(em, taut)
+
         ! Surface data
         real :: ustar ! Average value of friction velocity [m/s]
+
+!$omp   threadprivate(ustar)
 
 #ifdef SCALARS
         ! Passive scalar variables
@@ -99,6 +126,10 @@
      .  wpsclrpthlp,! w'sclr'thl'
      .  wpedsclrp   ! w'edsclr'
 
+!$omp   threadprivate(sclrpthvp, sclrprtp, sclrp2, sclrpthlp)
+!$omp   threadprivate(wpsclrp, wp2sclrp, wpsclrprtp, wpsclrpthlp)
+!$omp   threadprivate(wpedsclrp)
+
 #endif /*SCALARS*/
 
         ! Interpolated variables for tuning
@@ -110,6 +141,9 @@
      .  wprtpzt,  ! w'rt' on thermo. grid
      .  rtp2zt,   ! rt'^2 on therm. grid
      .  rtpthlpzt ! rt'thl' on thermo. grid
+
+!$omp   threadprivate(wp2zt, thlp2zt, wpthlpzt, wprtpzt) 
+!$omp   threadprivate(rtp2zt, rtpthlpzt)
 
 #endif /*STATS*/
 
@@ -145,6 +179,8 @@
         real, target, allocatable, dimension(:,:) ::
      .  pdf_parms
 
+!$omp   threadprivate(pdf_parms)
+
         ! Latin Hypercube arrays.  Vince Larson 22 May 2005
         real, target, allocatable, dimension(:) ::
      .  AKm_est,  ! Kessler ac estimate                 [kg/kg]
@@ -154,6 +190,9 @@
      .  rcm_est,  ! Monte Carlo rcm estimate            [kg/kg]
      .  AKm_rcm,  ! Kessler ac based on rcm             [???]
      .  AKm_rcc   ! Kessler ac based on rcm/cf          [???]
+
+!$omp   threadprivate(AKm_est, AKm, AKstd, AKstd_cld, rcm_est, AKm_rcm)
+!$omp   threadprivate(AKm_rcc)
 
         contains
 
@@ -173,6 +212,7 @@
         ! Input Variables
         integer, intent(in) :: nzmax
 
+!$omp   parallel
         !   --- Allocation ---
 
         ! Diagnostic variables
@@ -391,6 +431,7 @@
 
         wpedsclrp(:,:)     = 0.0
 #endif /*SCALARS*/
+!$omp   end parallel
 
         return
         end subroutine setup_diagnostic_variables
@@ -404,6 +445,8 @@
         use model_flags
 
         implicit none
+
+!$omp   parallel
 
 ! --- Deallocate --- 
 
@@ -515,6 +558,7 @@
 
         deallocate( wpedsclrp )
 #endif /*SCALARS*/
+!$omp   end parallel
 
         return
         end subroutine cleanup_diagnostic_variables
