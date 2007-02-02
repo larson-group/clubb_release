@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: hoc_tuner.F,v 1.19 2007-01-18 23:54:32 dschanen Exp $
+! $Id: hoc_tuner.F,v 1.20 2007-02-02 22:12:44 dschanen Exp $
 
       program hoc_tuner 
 
@@ -195,7 +195,10 @@
       integer :: 
      .  iiter, jiter,! Loop variables
      .  nit ! ???
-   
+
+      real, dimension(ndim) :: 
+     .  pb ! ???
+ 
       real :: 
      .  ybb,  ! ???
      .  yb,   ! ???

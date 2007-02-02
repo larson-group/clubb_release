@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.37 2007-01-18 23:54:32 dschanen Exp $
+! $Id: error.F,v 1.38 2007-02-02 22:12:44 dschanen Exp $
 
         module error
  
@@ -44,9 +44,6 @@
         real, dimension(ndim) :: 
      .  init_const, ! Initial Constant parameters
      .  x_variance  ! Amount to vary each respec. constant by
-
-        real, dimension(ndim) :: 
-     .  pb ! Only used by amebsa.  No idea what it holds
 
         real, dimension(mdim) :: 
      .  err_array ! cache of differences between the LES and HOC
@@ -537,12 +534,14 @@ c<--end of addition
 
         ! Cycle through all the model cases specified for HOC
 
-        ! Note: OpenMP is currently broken
-!       $omp parallel do default(private)
+        ! OpenMP directives should work as expected now, assuming new
+        ! variables are declared threadprivate -dschanen 31 Jan 2007
+!$omp   parallel do default(none), private(c_run),
+!$omp.    shared(x_vector, run_file, run_stat, c_total)
         do c_run=1, c_total, 1
 
-          write(unit=*,fmt=*) "Calling HOC with case "//
-     .      trim( run_file(c_run) )
+!         write(unit=*,fmt=*) "Calling HOC with case "//
+!    .      trim( run_file(c_run) )
 
           ! Run the HOC model with x_vector as input
 
@@ -565,9 +564,13 @@ c<--end of addition
 
       ! Basic Sanity Check for negative constants (disabled)
 !     if (minval( x_vector ) < 0. ) isValid = .false.
-
         end do ! 1..c_run
-!       $omp end parallel do
+
+!$omp   end parallel do
+
+        do c_run = 1, c_total, 1
+          if ( .not. run_stat(c_run) ) isValid = .false.
+        end do
 
 !-----------------------------------------------------------------------
 
@@ -576,8 +579,7 @@ c<--end of addition
 
         ! If it has, it returns higher value than those previous to
         ! Amoeba (the downhill simplex)
-        if ( any( .not. run_stat ) ) then
-          isValid = .false.
+        if ( .not. isValid ) then
           min_les_hoc_diff = 2 * maxval( err_array ) 
      .                     - minval( err_array )
 
@@ -586,7 +588,6 @@ c<--end of addition
             errorfile = "error_crash_"// achar( inv_count+48 )// ".in"
             call output_nml_tuner( errorfile, x_vector(1:ndim) )
           end if
-
           return
         end if
 
@@ -709,7 +710,7 @@ c<--end of addition
 
         deallocate( err_sums )
 
-        print *, "cost function=", min_les_hoc_diff
+        write(*,'(a,12f.5)') "Cost function: ", min_les_hoc_diff
 
         return
         end function min_les_hoc_diff
@@ -1052,6 +1053,7 @@ c<--end of addition
           mean_sqr_diff_zt = sum( tmp_zl(1:(les_nz)), 1 )
 
         case default !
+          write(0,*) "HOC:", hoc_nz, "LES:", les_nz
           stop "Not able to handle specified number of HOC z-levels"
         end select
 
