@@ -1,4 +1,4 @@
-! $Id: bomex_stats.in,v 1.4 2007-02-02 00:12:05 griffinb Exp $
+! $Id: bomex_stats.in,v 1.5 2007-02-03 20:58:01 griffinb Exp $
 &statsnl
 
 lstats = t
@@ -19,6 +19,8 @@ vars_zt =
 !'rain_rate', 'AKm', 'AKm_est', 'rsnowm', 'ricem', 'rgraupelm',
 !'diam', 'm', 'dqc_dt_icedfs', 'u_T_cm',
 'rtm_bt', 'rtm_ma', 'rtm_ta', 'thlm_bt', 'thlm_ma', 'thlm_ta',
+'um_bt', 'um_ma', 'um_gf', 'um_cf', 'um_ta',
+'vm_bt', 'vm_ma', 'vm_gf', 'vm_cf', 'vm_ta',
 'wp3_bt', 'wp3_ma', 'wp3_ta', 'wp3_tp', 'wp3_ac', 'wp3_bp',
 'wp3_pr1', 'wp3_pr2', 'wp3_dp1', 'wp3_cl',
 !'rrm_bt', 'rrm_ma', 'rrm_sd', 'rrm_dff', 'rrm_cond', 'rrm_auto',
