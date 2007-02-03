@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.23 2007-01-14 21:08:45 griffinb Exp $
+! $Id: rain.F,v 1.24 2007-02-03 23:59:35 griffinb Exp $
 !----------------------------------------------------------------------
 
       MODULE rain_equations
@@ -15,30 +15,22 @@
 !      REAL, PARAMETER:: corr_srr_NL =  0.10
 !      REAL, PARAMETER:: corr_sNr_NL = -0.15
 !      REAL, PARAMETER:: corr_sNc_NL =  0.45
-!      ! Parameters for case with cloud water sedimentation.
-!      REAL, PARAMETER:: rrp2_rrm2 = 1.7123
-!      REAL, PARAMETER:: Nrp2_Nrm2 = 1.0618
-!      REAL, PARAMETER:: Ncp2_Ncm2 = 0.2964
-!      REAL, PARAMETER:: corr_rrNr_LL = 0.872580
-!      REAL, PARAMETER:: corr_srr_NL = 0.393905
-!      REAL, PARAMETER:: corr_sNr_NL = 0.402948
-!      REAL, PARAMETER:: corr_sNc_NL = 0.670482
-!      ! Parameters for case without cloud water sedimentation.
-!      REAL, PARAMETER:: rrp2_rrm2 = 1.4584
-!      REAL, PARAMETER:: Nrp2_Nrm2 = 1.0285
-!      REAL, PARAMETER:: Ncp2_Ncm2 = 0.1034
-!      REAL, PARAMETER:: corr_rrNr_LL = 0.861597
-!      REAL, PARAMETER:: corr_srr_NL = 0.252875
-!      REAL, PARAMETER:: corr_sNr_NL = 0.196055
-!      REAL, PARAMETER:: corr_sNc_NL = 0.616638
-      ! Rounded average of the above two sets (to nearest 0.05).
-      REAL, PARAMETER:: rrp2_rrm2 = 1.60
-      REAL, PARAMETER:: Nrp2_Nrm2 = 1.05
-      REAL, PARAMETER:: Ncp2_Ncm2 = 0.20
-      REAL, PARAMETER:: corr_rrNr_LL = 0.85
-      REAL, PARAMETER:: corr_srr_NL = 0.30
-      REAL, PARAMETER:: corr_sNr_NL = 0.30
-      REAL, PARAMETER:: corr_sNc_NL = 0.65
+      ! Parameters for in-cloud (from RF02 DO).
+      REAL, PARAMETER:: rrp2_rrm2_cloud = 1.60
+      REAL, PARAMETER:: Nrp2_Nrm2_cloud = 1.05
+      REAL, PARAMETER:: Ncp2_Ncm2_cloud = 0.20
+      REAL, PARAMETER:: corr_rrNr_LL_cloud = 0.85
+      REAL, PARAMETER:: corr_srr_NL_cloud = 0.30
+      REAL, PARAMETER:: corr_sNr_NL_cloud = 0.30
+      REAL, PARAMETER:: corr_sNc_NL_cloud = 0.65
+      ! Parameters for below-cloud (from RF02 DO).
+      REAL, PARAMETER:: rrp2_rrm2_below = 1.60
+      REAL, PARAMETER:: Nrp2_Nrm2_below = 1.05
+      REAL, PARAMETER:: Ncp2_Ncm2_below = 0.20
+      REAL, PARAMETER:: corr_rrNr_LL_below = 0.85
+      REAL, PARAMETER:: corr_srr_NL_below = 0.30
+      REAL, PARAMETER:: corr_sNr_NL_below = 0.30
+      REAL, PARAMETER:: corr_sNc_NL_below = 0.65
       !REAL, PARAMETER:: C_evap = 0.86    ! Khairoutdinov and Kogan (2000) 
       !                                   ! ratio of drizzle drop mean 
       !                                   ! geometric radius to drizzle drop
@@ -115,6 +107,14 @@
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: mean_vol_rad
 
         ! Local variables
+        REAL, DIMENSION(1:gr%nnzp):: rrp2_rrm2    ! rrp2/rrm^2
+        REAL, DIMENSION(1:gr%nnzp):: Nrp2_Nrm2    ! Nrp2/Nrm^2
+        REAL, DIMENSION(1:gr%nnzp):: Ncp2_Ncm2    ! Ncp2/Ncm^2
+        REAL, DIMENSION(1:gr%nnzp):: corr_rrNr_LL ! Correlation of rr and Nr
+        REAL, DIMENSION(1:gr%nnzp):: corr_srr_NL  ! Correlation of s and rr
+        REAL, DIMENSION(1:gr%nnzp):: corr_sNr_NL  ! Correlation of s and Nr
+        REAL, DIMENSION(1:gr%nnzp):: corr_sNc_NL  ! Correlation of s and Nc
+
         REAL, DIMENSION(1:gr%nnzp):: rvm          ! water vapor mixing ratio; kg/kg
         REAL, DIMENSION(1:gr%nnzp):: Temp         ! Temperature; K
         REAL, DIMENSION(1:gr%nnzp):: es           ! Saturation vapor pressure; Pa
@@ -136,6 +136,8 @@
 
 
         REAL:: a, thl1, thl2, rc1, rc2, s1, s2, ss1, ss2
+
+        INTEGER:: cloud_base
 
         INTEGER:: i, k
         INTEGER:: km1, kp1
@@ -303,14 +305,59 @@
 
 #endif /*STATS*/
 
+        ! Set up the values of the statistical correlations and variances.
+        ! Since we currently do not have enough variables to compute the 
+        ! correlations and variances directly, we have obtained these values 
+        ! by analyzing LES runs of certain cases.  We have divided those 
+        ! results into an in-cloud average and a below-cloud average.
+        ! This coding leaves the software architecture in place in case we
+        ! ever have the variables in place to compute these values directly.
+        ! It also allows us to use separate in-cloud and below-cloud 
+        ! parameter values.  Brian Griffin; February 3, 2007.
+        !
+        ! Find the level of the cloud base.  If there isn't any cloud, then
+        ! set it equal to the model top.
+        ! Use a value of rcm of 1.0E-6 kg/kg to determine the cloud base.
+        DO k = 1, gr%nnzp, 1
+           IF ( rcm(k) >= 1.0E-6 ) THEN
+              cloud_base = k
+              EXIT
+           ENDIF
+           IF ( k == gr%nnzp ) THEN
+              cloud_base = gr%nnzp
+           ENDIF
+        ENDDO
+        ! Set the value of the parameters based on whether the altitude
+        ! is above or below cloud  base.
+        DO k = 1, gr%nnzp, 1
+           IF ( k < cloud_base ) THEN
+              rrp2_rrm2(k)    = rrp2_rrm2_below
+              Nrp2_Nrm2(k)    = Nrp2_Nrm2_below
+              Ncp2_Ncm2(k)    = Ncp2_Ncm2_below
+              corr_rrNr_LL(k) = corr_rrNr_LL_below
+              corr_srr_NL(k)  = corr_srr_NL_below
+              corr_sNr_NL(k)  = corr_sNr_NL_below
+              corr_sNc_NL(k)  = corr_sNc_NL_below
+           ELSE
+              rrp2_rrm2(k)    = rrp2_rrm2_cloud
+              Nrp2_Nrm2(k)    = Nrp2_Nrm2_cloud
+              Ncp2_Ncm2(k)    = Ncp2_Ncm2_cloud
+              corr_rrNr_LL(k) = corr_rrNr_LL_cloud
+              corr_srr_NL(k)  = corr_srr_NL_cloud
+              corr_sNr_NL(k)  = corr_sNr_NL_cloud
+              corr_sNc_NL(k)  = corr_sNc_NL_cloud
+           ENDIF
+        ENDDO
+
         ! Find the drop mean volume radius.  It is calculated using
         ! the rain water mixing ratio, the rain droplet concentration,
         ! and the air density.  These values are taken from the previous
         ! timestep.  It is located on thermodynamic levels.
         DO k = 1, gr%nnzp, 1
 
-           mean_vol_rad(k) = mean_volume_radius( rrm(k), Nrm(k),
-     .                                           rhot(k)         )
+           mean_vol_rad(k)
+     .     = mean_volume_radius( rrm(k), Nrm(k), rhot(k), rrp2_rrm2(k), 
+     .                           Nrp2_Nrm2(k), corr_rrNr_LL(k) )
 
         ENDDO
 
@@ -622,9 +669,13 @@
            ! Now find the elements that make up the right-hand side of the
            ! equation, dd, for rain water mixing ratio, rrm.
 
-           cond_rrm(k) = cond_evap_rrm( rrm(k), Nrm(k),
-     .                     s1, ss1, s2, ss2, thl1, thl2, rc1, rc2, a,
-     .                     p(k), rhot(k), Temp(k), Supsat(k)  )
+           cond_rrm(k)
+     .     = cond_evap_rrm( rrm(k), Nrm(k),
+     .                      s1, ss1, s2, ss2,
+     .                      thl1, thl2, rc1, rc2, a,
+     .                      p(k), rhot(k), Temp(k), Supsat(k), 
+     .                      rrp2_rrm2(k), Nrp2_Nrm2(k), corr_srr_NL(k),
+     .                      corr_sNr_NL(k), corr_rrNr_LL(k)  )
 
 ! Vince Larson added option to call LH sampled Kessler autoconversion.
 ! 22 May 2005
@@ -637,14 +688,18 @@
 
            else
 
-              auto_rrm(k) = autoconv_rrm( rcm(k), Ncm(k),
-     .                           s1, ss1, s2, ss2, a, rhot(k) )
+              auto_rrm(k)
+     .        = autoconv_rrm( rcm(k), Ncm(k), s1, ss1, 
+     .                        s2, ss2, a, rhot(k),
+     ,                        Ncp2_Ncm2(k), corr_sNc_NL(k) )
 
            endif
 ! End Vince Larson's addition
 
-            accr_rrm(k) = accretion_rrm( rcm(k), rrm(k),
-     .                                   s1, ss1, s2, ss2, a )
+            accr_rrm(k)
+     .      = accretion_rrm( rcm(k), rrm(k), s1, ss1,
+     .                       s2, ss2, a, 
+     .                       rrp2_rrm2(k), corr_srr_NL(k) )
 
         ! Explicit contributions to rrm.
 #ifdef STATS
@@ -924,7 +979,14 @@
      .  Temp,        ! Temperature                              [K]
      .  es,          ! Saturation vapor pressure                [Pa]
      .  Supsat,      ! Supersaturation                          [-]
-     .  rs           ! Saturation mixing ratio                  [kg/kg]
+     .  rs,          ! Saturation mixing ratio                  [kg/kg]
+     .  rrp2_rrm2,   ! rrp2/rrm^2
+     .  Nrp2_Nrm2,   ! Nrp2/Nrm^2
+     .  Ncp2_Ncm2,   ! Ncp2/Ncm^2
+     .  corr_rrNr_LL,! Correlation of rr and Nr
+     .  corr_srr_NL, ! Correlation of s and rr
+     .  corr_sNr_NL, ! Correlation of s and Nr
+     .  corr_sNc_NL  ! Correlation of s and Nc
 
         real :: 
      .  e,      ! Vapor pressure                [Pa]
@@ -932,8 +994,51 @@
      .  Beta_T  ! Beta_T                        [kg/kg]
 
         ! Array indices
-        integer :: k, km1, kp1, i
+        integer :: k, km1, kp1, i, cloud_base
 
+        ! Set up the values of the statistical correlations and variances.
+        ! Since we currently do not have enough variables to compute the 
+        ! correlations and variances directly, we have obtained these values 
+        ! by analyzing LES runs of certain cases.  We have divided those 
+        ! results into an in-cloud average and a below-cloud average.
+        ! This coding leaves the software architecture in place in case we
+        ! ever have the variables in place to compute these values directly.
+        ! It also allows us to use separate in-cloud and below-cloud 
+        ! parameter values.  Brian Griffin; February 3, 2007.
+        !
+        ! Find the level of the cloud base.  If there isn't any cloud, then
+        ! set it equal to the model top.
+        ! Use a value of rcm of 1.0E-6 kg/kg to determine the cloud base.
+        DO k = 1, gr%nnzp, 1
+           IF ( rcm(k) >= 1.0E-6 ) THEN
+              cloud_base = k
+              EXIT
+           ENDIF
+           IF ( k == gr%nnzp ) THEN
+              cloud_base = gr%nnzp
+           ENDIF
+        ENDDO
+        ! Set the value of the parameters based on whether the altitude
+        ! is above or below cloud  base.
+        DO k = 1, gr%nnzp, 1
+           IF ( k < cloud_base ) THEN
+              rrp2_rrm2(k)    = rrp2_rrm2_below
+              Nrp2_Nrm2(k)    = Nrp2_Nrm2_below
+              Ncp2_Ncm2(k)    = Ncp2_Ncm2_below
+              corr_rrNr_LL(k) = corr_rrNr_LL_below
+              corr_srr_NL(k)  = corr_srr_NL_below
+              corr_sNr_NL(k)  = corr_sNr_NL_below
+              corr_sNc_NL(k)  = corr_sNc_NL_below
+           ELSE
+              rrp2_rrm2(k)    = rrp2_rrm2_cloud
+              Nrp2_Nrm2(k)    = Nrp2_Nrm2_cloud
+              Ncp2_Ncm2(k)    = Ncp2_Ncm2_cloud
+              corr_rrNr_LL(k) = corr_rrNr_LL_cloud
+              corr_srr_NL(k)  = corr_srr_NL_cloud
+              corr_sNr_NL(k)  = corr_sNr_NL_cloud
+              corr_sNc_NL(k)  = corr_sNc_NL_cloud
+           ENDIF
+        ENDDO
 
         ! Find the drop mean volume radius.  It is calculated using
         ! the rain water mixing ratio, the rain droplet concentration,
@@ -942,7 +1047,8 @@
         do k = 1, gr%nnzp, 1
 
            mean_vol_rad(k) 
-     .     = mean_volume_radius( rrm(k), Nrm(k), rhot(k) )
+     .     = mean_volume_radius( rrm(k), Nrm(k), rhot(k), rrp2_rrm2(k), 
+     .                           Nrp2_Nrm2(k), corr_rrNr_LL(k) )
 
         end do
 
@@ -1051,9 +1157,11 @@
 
            rrm_cond(k) 
      .     = cond_evap_rrm( rrm(k), Nrm(k),
-     .                      s1(k), ss1(k), s2(k), ss2(k), 
+     .                      s1(k), ss1(k), s2(k), ss2(k),
      .                      thl1(k), thl2(k), rc1(k), rc2(k), a(k),
-     .                      p(k), rhot(k), Temp(k), Supsat(k)  )
+     .                      p(k), rhot(k), Temp(k), Supsat(k), 
+     .                      rrp2_rrm2(k), Nrp2_Nrm2(k), corr_srr_NL(k),
+     .                      corr_sNr_NL(k), corr_rrNr_LL(k)  )
 
 
         ! Vince Larson added option to call LH sampled Kessler autoconversion.
@@ -1069,14 +1177,16 @@
 
               rrm_auto(k) 
      .        = autoconv_rrm( rcm(k), Ncm(k), s1(k), ss1(k), 
-     .                        s2(k), ss2(k), a(k), rhot(k) )
+     .                        s2(k), ss2(k), a(k), rhot(k),
+     ,                        Ncp2_Ncm2(k), corr_sNc_NL(k) )
 
            end if ! LH_on
         ! End Vince Larson's addition
 
            rrm_accr(k) 
-     .     = accretion_rrm( rcm(k), rrm(k), s1(k), ss1(k), 
-     .                      s2(k), ss2(k), a(k) )
+     .     = accretion_rrm( rcm(k), rrm(k), s1(k), ss1(k),
+     .                      s2(k), ss2(k), a(k), 
+     .                      rrp2_rrm2(k), corr_srr_NL(k) )
 
            ! Now find the elements that make up the right-hand side of the
            ! equation, rr, for rain droplet number concentration, Nrm.
@@ -1178,17 +1288,21 @@
         !
         !-----------------------------------------------------------------------
         
-        FUNCTION mean_volume_radius( rrm, Nrm, rhot )
+        FUNCTION mean_volume_radius( rrm, Nrm, rhot, rrp2_rrm2, 
+     .                               Nrp2_Nrm2, corr_rrNr_LL )
 
         USE constants
         USE model_flags
 
         ! Input variables.
-        REAL, INTENT(IN):: rrm    ! Grid-box average rrm
-!        REAL, INTENT(IN):: rrp2   ! Grid-box rr variance
-        REAL, INTENT(IN):: Nrm    ! Grid-box average Nrm
-!        REAL, INTENT(IN):: Nrp2   ! Grid-box Nr variance
-        REAL, INTENT(IN):: rhot   ! Grid-box average density (t-level)
+        REAL, INTENT(IN):: rrm          ! Grid-box average rrm
+!        REAL, INTENT(IN):: rrp2         ! Grid-box rr variance
+        REAL, INTENT(IN):: Nrm          ! Grid-box average Nrm
+!        REAL, INTENT(IN):: Nrp2         ! Grid-box Nr variance
+        REAL, INTENT(IN):: rhot         ! Grid-box average density (t-level)
+        REAL, INTENT(IN):: rrp2_rrm2    ! rrp2/rrm^2
+        REAL, INTENT(IN):: Nrp2_Nrm2    ! Nrp2/Nrm^2
+        REAL, INTENT(IN):: corr_rrNr_LL ! Correlation of rr and Nr
 
         ! Output variables.
         REAL:: mean_volume_radius
@@ -1236,15 +1350,15 @@
               ! rr is distributed Lognormally.
               mu_rr = rrm
 !              sigma_rr = SQRT(rrp2)
-              sigma_rr = rrm * SQRT(rrp2_rrm2)  ! rr'2/rrm^2 = 1.2
+              sigma_rr = rrm * SQRT(rrp2_rrm2)
 
               ! Nr is distributed Lognormally.
               mu_Nr = (Nrm/rhot)
 !              sigma_Nr = SQRT(Nrp2)
-              sigma_Nr = (Nrm/rhot) * SQRT(Nrp2_Nrm2)  ! Nr'2/Nrm^2 = 1.0
+              sigma_Nr = (Nrm/rhot) * SQRT(Nrp2_Nrm2)
 
               ! Correlations.
-              corr_rrNr = corr_rrNr_LL  ! corr_rrNr_LL =  0.85
+              corr_rrNr = corr_rrNr_LL
 
 
               mean_volume_radius =
@@ -1332,9 +1446,12 @@
         !
         !-----------------------------------------------------------------------
         
-        FUNCTION cond_evap_rrm( rrm, Nrm, s1, ss1, s2, ss2,
+        FUNCTION cond_evap_rrm( rrm, Nrm,
+     .                          s1, ss1, s2, ss2,
      .                          thl1, thl2, rc1, rc2, a,
-     .                          press, rhot, Temp, Supsat  )
+     .                          press, rhot, Temp, Supsat, 
+     .                          rrp2_rrm2, Nrp2_Nrm2, corr_srr_NL,
+     .                          corr_sNr_NL, corr_rrNr_LL  )
 
         USE constants
         USE model_flags
@@ -1345,24 +1462,29 @@
         external rsat
 
         ! Input variables.
-        REAL, INTENT(IN):: rrm    ! Grid-box average rrm
-!        REAL, INTENT(IN):: rrp2   ! Grid-box rr variance
-        REAL, INTENT(IN):: Nrm    ! Grid-box average Nrm
-!        REAL, INTENT(IN):: Nrp2   ! Grid-box Nr variance
-        REAL, INTENT(IN):: s1     ! Plume 1 average s
-        REAL, INTENT(IN):: ss1    ! Plume 1 sigma s1 (not sigma^2 s1)
-        REAL, INTENT(IN):: s2     ! Plume 2 average s
-        REAL, INTENT(IN):: ss2    ! Plume 2 sigma s2 (not sigma^2 s2)
-        REAL, INTENT(IN):: thl1   ! Plume 1 average theta-l
-        REAL, INTENT(IN):: thl2   ! Plume 2 average theta-l
-        REAL, INTENT(IN):: rc1    ! Plume 1 average rc
-        REAL, INTENT(IN):: rc2    ! Plume 2 average rc
-        REAL, INTENT(IN):: a      ! Relative weight of each individual
-                                  ! Gaussian "plume."
-        REAL, INTENT(IN):: press  ! Grid-box average pressure
-        REAL, INTENT(IN):: rhot   ! Grid-box average density (t-level)
-        REAL, INTENT(IN):: Temp   ! Grid-box average Temperature
-        REAL, INTENT(IN):: Supsat ! Grid-box average Supersaturation
+        REAL, INTENT(IN):: rrm          ! Grid-box average rrm
+!        REAL, INTENT(IN):: rrp2         ! Grid-box rr variance
+        REAL, INTENT(IN):: Nrm          ! Grid-box average Nrm
+!        REAL, INTENT(IN):: Nrp2         ! Grid-box Nr variance
+        REAL, INTENT(IN):: s1           ! Plume 1 average s
+        REAL, INTENT(IN):: ss1          ! Plume 1 sigma s1 (not sigma^2 s1)
+        REAL, INTENT(IN):: s2           ! Plume 2 average s
+        REAL, INTENT(IN):: ss2          ! Plume 2 sigma s2 (not sigma^2 s2)
+        REAL, INTENT(IN):: thl1         ! Plume 1 average theta-l
+        REAL, INTENT(IN):: thl2         ! Plume 2 average theta-l
+        REAL, INTENT(IN):: rc1          ! Plume 1 average rc
+        REAL, INTENT(IN):: rc2          ! Plume 2 average rc
+        REAL, INTENT(IN):: a            ! Relative weight of each individual
+                                        ! Gaussian "plume."
+        REAL, INTENT(IN):: press        ! Grid-box average pressure
+        REAL, INTENT(IN):: rhot         ! Grid-box average density (t-level)
+        REAL, INTENT(IN):: Temp         ! Grid-box average Temperature
+        REAL, INTENT(IN):: Supsat       ! Grid-box average Supersaturation
+        REAL, INTENT(IN):: rrp2_rrm2    ! rrp2/rrm^2
+        REAL, INTENT(IN):: Nrp2_Nrm2    ! Nrp2/Nrm^2
+        REAL, INTENT(IN):: corr_srr_NL  ! Correlation of s and rr
+        REAL, INTENT(IN):: corr_sNr_NL  ! Correlation of s and Nr
+        REAL, INTENT(IN):: corr_rrNr_LL ! Correlation of rr and Nr
 
         ! Output variables.
         REAL:: cond_evap_rrm
@@ -1460,17 +1582,17 @@
               ! rr is distributed Lognormally.
               mu_rr = rrm
 !              sigma_rr = SQRT(rrp2)
-              sigma_rr = rrm * SQRT(rrp2_rrm2)  ! rr'2/rrm^2 = 1.2
+              sigma_rr = rrm * SQRT(rrp2_rrm2)
 
               ! Nr is distributed Lognormally.
               mu_Nr = (Nrm/rhot)
 !              sigma_Nr = SQRT(Nrp2)
-              sigma_Nr = (Nrm/rhot) * SQRT(Nrp2_Nrm2)  ! Nr'2/Nrm^2 = 1.0
+              sigma_Nr = (Nrm/rhot) * SQRT(Nrp2_Nrm2)
 
               ! Correlations.
-              corr_srr = corr_srr_NL    ! corr_srr_NL =  0.10
-              corr_sNr = corr_sNr_NL    ! corr_sNr_NL = -0.15
-              corr_rrNr = corr_rrNr_LL  ! corr_rrNr_LL =  0.85
+              corr_srr = corr_srr_NL
+              corr_sNr = corr_sNr_NL
+              corr_rrNr = corr_rrNr_LL
 
 
               cond_evap_rrm = 
@@ -1591,23 +1713,27 @@
         !
         !-----------------------------------------------------------------------
         
-        FUNCTION autoconv_rrm( rcm, Ncm, s1, ss1, s2, ss2, a, rhot )
+        FUNCTION autoconv_rrm( rcm, Ncm, s1, ss1, 
+     .                         s2, ss2, a, rhot,
+     ,                         Ncp2_Ncm2, corr_sNc_NL )
 
         USE constants
         USE model_flags
 
         ! Input variables.
-        REAL, INTENT(IN):: rcm    ! Grid-box average rcm
-!        REAL, INTENT(IN):: rcp2   ! Grid-box rc variance
-        REAL, INTENT(IN):: Ncm    ! Grid-box average Ncm
-!        REAL, INTENT(IN):: Ncp2   ! Grid-box Nc variance
-        REAL, INTENT(IN):: s1     ! Plume 1 average s
-        REAL, INTENT(IN):: ss1    ! Plume 1 sigma s1 (not sigma^2 s1)
-        REAL, INTENT(IN):: s2     ! Plume 2 average s
-        REAL, INTENT(IN):: ss2    ! Plume 2 sigma s2 (not sigma^2 s2)
-        REAL, INTENT(IN):: a      ! Relative weight of each individual
-                                  ! Gaussian "plume."
-        REAL, INTENT(IN):: rhot   ! Grid-box average density (t-level)
+        REAL, INTENT(IN):: rcm         ! Grid-box average rcm
+!        REAL, INTENT(IN):: rcp2        ! Grid-box rc variance
+        REAL, INTENT(IN):: Ncm         ! Grid-box average Ncm
+!        REAL, INTENT(IN):: Ncp2        ! Grid-box Nc variance
+        REAL, INTENT(IN):: s1          ! Plume 1 average s
+        REAL, INTENT(IN):: ss1         ! Plume 1 sigma s1 (not sigma^2 s1)
+        REAL, INTENT(IN):: s2          ! Plume 2 average s
+        REAL, INTENT(IN):: ss2         ! Plume 2 sigma s2 (not sigma^2 s2)
+        REAL, INTENT(IN):: a           ! Relative weight of each individual
+                                       ! Gaussian "plume."
+        REAL, INTENT(IN):: rhot        ! Grid-box average density (t-level)
+        REAL, INTENT(IN):: Ncp2_Ncm2   ! Ncp2/Ncm^2
+        REAL, INTENT(IN):: corr_sNc_NL ! Correlation of s and Nc
 
         ! Output variables.
         REAL:: autoconv_rrm
@@ -1661,10 +1787,10 @@
               ! Nc is distributed Lognormally.
               mu_Nc = (Ncm/rhot)
 !              sigma_Nc = SQRT(Ncp2)
-              sigma_Nc = (Ncm/rhot) * SQRT(Ncp2_Ncm2)  ! Nc'2/Ncm^2 = 0.07
+              sigma_Nc = (Ncm/rhot) * SQRT(Ncp2_Ncm2)
 
               ! Correlations.
-              corr_sNc = corr_sNc_NL  ! corr_sNc_NL =  0.45
+              corr_sNc = corr_sNc_NL
 
 
               autoconv_rrm = 7.4188E13 * rhot**(-1.79) * (
@@ -1752,22 +1878,26 @@
         !
         !-----------------------------------------------------------------------
         
-        FUNCTION accretion_rrm( rcm, rrm, s1, ss1, s2, ss2, a )
+        FUNCTION accretion_rrm( rcm, rrm, s1, ss1,
+     .                          s2, ss2, a, 
+     .                          rrp2_rrm2, corr_srr_NL )
 
         USE constants
         USE model_flags
 
         ! Input variables.
-        REAL, INTENT(IN):: rcm    ! Grid-box average rcm
-!        REAL, INTENT(IN):: rcp2   ! Grid-box rc variance
-        REAL, INTENT(IN):: rrm    ! Grid-box average rrm
-!        REAL, INTENT(IN):: rrp2   ! Grid-box rr variance
-        REAL, INTENT(IN):: s1     ! Plume 1 average s
-        REAL, INTENT(IN):: ss1    ! Plume 1 sigma s1 (not sigma^2 s1)
-        REAL, INTENT(IN):: s2     ! Plume 2 average s
-        REAL, INTENT(IN):: ss2    ! Plume 2 sigma s2 (not sigma^2 s2)
-        REAL, INTENT(IN):: a      ! Relative weight of each individual
-                                  ! Gaussian "plume."
+        REAL, INTENT(IN):: rcm         ! Grid-box average rcm
+!        REAL, INTENT(IN):: rcp2        ! Grid-box rc variance
+        REAL, INTENT(IN):: rrm         ! Grid-box average rrm
+!        REAL, INTENT(IN):: rrp2        ! Grid-box rr variance
+        REAL, INTENT(IN):: s1          ! Plume 1 average s
+        REAL, INTENT(IN):: ss1         ! Plume 1 sigma s1 (not sigma^2 s1)
+        REAL, INTENT(IN):: s2          ! Plume 2 average s
+        REAL, INTENT(IN):: ss2         ! Plume 2 sigma s2 (not sigma^2 s2)
+        REAL, INTENT(IN):: a           ! Relative weight of each individual
+                                       ! Gaussian "plume."
+        REAL, INTENT(IN):: rrp2_rrm2   ! rrp2/rrm^2
+        REAL, INTENT(IN):: corr_srr_NL ! Correlation of s and rr
 
         ! Output variables.
         REAL:: accretion_rrm
@@ -1821,10 +1951,10 @@
               ! rr is distributed Lognormally.
               mu_rr = rrm
 !              sigma_rr = SQRT(rrp2)
-              sigma_rr = rrm * SQRT(rrp2_rrm2)  ! rr'2/rrm^2 = 1.2
+              sigma_rr = rrm * SQRT(rrp2_rrm2)
 
               ! Correlations.
-              corr_srr = corr_srr_NL  ! corr_srr_NL =  0.10
+              corr_srr = corr_srr_NL
 
 
               accretion_rrm = 67.0 * (
