@@ -1,3 +1,9 @@
+! This file contains a comprehensive listing of all the HOC variables that 
+! can be output to GrADS, as found in src/HOC_parameterization/statistics.F.
+! This file, as well as the statistical files for all the other cases, needs
+! to be updated every time a new statistical parameter is added.
+! This file was created on January 21, 2007.
+! This file was last updated on January 21, 2007.
 &statsnl
 
 lstats = t
@@ -5,10 +11,10 @@ stats_fmt = 'grads'
 stats_tsamp = 60.0
 stats_tout  = 60.0
 
-fname_zt = 'mpace_zt',
+fname_zt = 'all_zt',
 vars_zt = 
 'thlm', 'thvm', 'rtm', 'rcm', 'um', 'vm', 'wmt', 'ug', 'vg',
-'cf', 'p', 'exner', 'Lscale', 'thlm_forcing', 'thlm_mc',
+'cf', 'p', 'exner', 'Lscale', 'thlm_forcing', 'thlm_mc', 
 'rtm_forcing', 'rtm_mc',
 'wp3', 'wpthlp2', 'wp2thlp', 'wprtp2', 'wp2rtp',
 'lup', 'ldown', 'taut', 'kht', 'wp2thvp', 'wp2rcp', 'wprtpthlp',
@@ -31,18 +37,18 @@ vars_zt =
 'rt1', 'rt2', 'srt1', 'srt2', 'rc1', 'rc2', 'rsl1', 'rsl2', 'R1', 'R2',
 's1', 's2', 'ss1', 'ss2', 'rrtthl',
 'wp2zt', 'thlp2zt', 'wpthlpzt', 'wprtpzt', 'rtp2zt', 'rtpthlpzt',
-!'sclram', 'sclram_f', 'sclrbm', 'sclrbm_f',
-!'edsclram', 'edsclrbm',
+'sclram', 'sclram_f', 'sclrbm', 'sclrbm_f',
+'edsclram', 'edsclrbm',
 ''
 
-fname_zm = 'mpace_zm',
+fname_zm = 'all_zm',
 vars_zm = 
 'wp2', 'rtp2', 'thlp2', 'rtpthlp', 'wprtp', 'wpthlp', 'wp4',
 'wpthvp', 'rtpthvp', 'thlpthvp', 'taum', 'khm', 'wprcp',
 'thlprcp', 'rtprcp', 'upwp', 'vpwp', 'rhom', 'sc', 'em',
 'shear', 'Frad', 'Frad_LW', 'Frad_SW', 'Fprec', 'Fcsed',
 'Vrr', 'VNr', 'Vsnow', 'Vgraupel', 'Vice',
-'wp2_bt', 'wp2_ma', 'wp2_ta', 'wp2_ac', 'wp2_bp', 'wp2_pr1',
+'wp2_bt', 'wp2_ma', 'wp2_ta', 'wp2_ac', 'wp2_bp', 'wp2_pr1', 
 'wp2_pr2', 'wp2_pr3', 'wp2_dp1', 'wp2_dp2', 'wp2_cl',
 'wprtp_bt', 'wprtp_ma', 'wprtp_ta', 'wprtp_tp', 'wprtp_ac', 'wprtp_bp',
 'wprtp_pr1', 'wprtp_pr2', 'wprtp_pr2', 'wprtp_dp1',
@@ -53,15 +59,15 @@ vars_zm =
 'thlp2_dp1', 'thlp2_dp2', 'thlp2_cl',
 'rtpthlp_bt', 'rtpthlp_ma', 'rtpthlp_ta', 'rtpthlp_tp1', 'rtpthlp_tp2',
 'rtpthlp_dp1', 'rtpthlp_dp2',
-!'sclraprtp', 'sclrbprtp', 'sclrap2', 'sclrbp2',
-!'sclrapthvp', 'sclrbpthvp', 'sclrapthlp', 'sclrbpthlp',
-!'sclraprcp', 'sclrbprcp', 'wpsclrap', 'wpsclrbp',
-!'wpsclrap2', 'wpsclrbp2', 'wp2sclrap', 'wp2sclrbp',
-!'wpsclraprtp', 'wpsclrbprtp', 'wpsclrapthlp', 'wpsclrbpthlp',
-!'wpedsclrap', 'wpedsclrbp',
+'sclraprtp', 'sclrbprtp', 'sclrap2', 'sclrbp2',
+'sclrapthvp', 'sclrbpthvp', 'sclrapthlp', 'sclrbpthlp', 
+'sclraprcp', 'sclrbprcp', 'wpsclrap', 'wpsclrbp', 
+'wpsclrap2', 'wpsclrbp2', 'wp2sclrap', 'wp2sclrbp',
+'wpsclraprtp', 'wpsclrbprtp', 'wpsclrapthlp', 'wpsclrbpthlp',
+'wpedsclrap', 'wpedsclrbp',
 ''
 
-fname_sfc = 'mpace_sfc',
+fname_sfc = 'all_sfc',
 vars_sfc = 
 'ustar', 'lh', 'sh', 'cc', 'lwp', 'zb', 'zi', 'rain', 'pflux',
 ''
