@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.38 2007-02-02 22:12:44 dschanen Exp $
+! $Id: error.F,v 1.39 2007-02-05 16:44:54 dschanen Exp $
 
         module error
  
@@ -710,7 +710,7 @@ c<--end of addition
 
         deallocate( err_sums )
 
-        write(*,'(a,12f.5)') "Cost function: ", min_les_hoc_diff
+        write(*,'(a,f12.5)') "Cost function: ", min_les_hoc_diff
 
         return
         end function min_les_hoc_diff
