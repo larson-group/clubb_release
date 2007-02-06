@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.14 2007-02-02 22:16:51 dschanen Exp $
+!  $Id: statistics.F,v 1.15 2007-02-06 16:16:06 dschanen Exp $
 
 #ifdef STATS
       module stats_type
@@ -34,9 +34,6 @@
           type (outputfile) f
 
         end type stats
-
-!$omp     threadprivate(stats)
-
 
       end module stats_type
 
@@ -98,7 +95,7 @@
      .     ilup,
      .     ildown,
      .     itaut,
-     .     ikht,
+     .     iKht,
      .     iwp2thvp,
      .     iwp2rcp,
      .     iwprtpthlp,
@@ -123,7 +120,7 @@
 !$omp   threadprivate(ithlm, ithvm, irtm, ircm, ium, ivm, iwmt, iug)
 !$omp   threadprivate(ivg, icf, ip, iexner, iLscale, iwp3, iwpthlp2)
 !$omp   threadprivate(iwp2thlp, iwprtp2, iwp2rtp, ilup, ildown, itaut)
-!$omp   threadprivate(ikht, iwp2thvp, iwp2rcp, iwprtpthlp, isct, irhot)
+!$omp   threadprivate(iKht, iwp2thvp, iwp2rcp, iwprtpthlp, isct, irhot)
 !$omp   threadprivate(iNcm, iNcnm, iNim, ised_rcm, irsm, irrm, iNrm)
 !$omp   threadprivate(imean_vol_rad_rain, imean_vol_rad_cloud)
 !$omp   threadprivate(irain_rate, iAKm, iAKm_est)
@@ -330,7 +327,7 @@
      .     irtpthvp,
      .     ithlpthvp,
      .     itaum,
-     .     ikhm,
+     .     iKhm,
      .     iwprcp,
      .     ithlprcp,
      .     irtprcp,
@@ -347,7 +344,7 @@
      .     iFcsed     ! Brian
 
 !$omp   threadprivate(iwp2, irtp2, ithlp2, irtpthlp, iwprtp, iwpthlp)
-!$omp   threadprivate(iwp4, iwpthvp, irtpthvp, ithlpthvp, itaum, ikhm)
+!$omp   threadprivate(iwp4, iwpthvp, irtpthvp, ithlpthvp, itaum, iKhm)
 !$omp   threadprivate(iwprcp, ithlprcp, irtprcp, iupwp, ivpwp, irhom)
 !$omp   threadprivate(iscm, iem, ishear, iFrad, iFrad_LW, iFrad_SW)
 !$omp   threadprivate(iFprec, iFcsed)
@@ -735,7 +732,7 @@
       ilup          = 0
       ildown        = 0
       itaut         = 0
-      ikht          = 0
+      iKht          = 0
       iwp2thvp      = 0
       iwp2rcp       = 0
       iwprtpthlp    = 0
@@ -1092,11 +1089,11 @@
           k = k + 1
 
         case ('kht')
-          ikht = k
-          zt%f%var(ikht)%ptr => zt%x(:,k)
-          zt%f%var(ikht)%name = "Kht"
-          zt%f%var(ikht)%description = "Eddy diffusivity"
-          zt%f%var(ikht)%units = "m2/s "
+          iKht = k
+          zt%f%var(iKht)%ptr => zt%x(:,k)
+          zt%f%var(iKht)%name = "Kht"
+          zt%f%var(iKht)%description = "Eddy diffusivity"
+          zt%f%var(iKht)%units = "m^2/s "
           k = k + 1
 
         case ('wp2thvp')
@@ -2210,7 +2207,7 @@
       irtpthvp  = 0
       ithlpthvp = 0
       itaum     = 0
-      ikhm      = 0
+      iKhm      = 0
       iwprcp    = 0
       ithlprcp  = 0
       irtprcp   = 0
@@ -2411,16 +2408,16 @@
           itaum = k
           zm%f%var(itaum)%ptr => zm%x(:,k)
           zm%f%var(itaum)%name = "taum"
-          zm%f%var(itaum)%description = "dissipation time"
+          zm%f%var(itaum)%description = "Dissipation time"
           zm%f%var(itaum)%units = "s"
           k = k + 1
 
         case ('khm')
-          ikhm = k
-          zm%f%var(ikhm)%ptr => zm%x(:,k)
-          zm%f%var(ikhm)%name = "khm"
-          zm%f%var(ikhm)%description = "Eddy diffusivity"
-          zm%f%var(ikhm)%units = "m^2/s"
+          iKhm = k
+          zm%f%var(iKhm)%ptr => zm%x(:,k)
+          zm%f%var(iKhm)%name = "Khm"
+          zm%f%var(iKhm)%description = "Eddy diffusivity"
+          zm%f%var(iKhm)%units = "m^2/s"
           k = k + 1
 
         case ('wprcp')
@@ -3395,8 +3392,8 @@
       ! Zero out arrays
 
       if ( nn > 0 ) then
-        x = 0.0
-        n = 0
+        x(:,:) = 0.0
+        n(:,:) = 0
       end if
 
       return
@@ -3667,9 +3664,9 @@
           zt%x(:,itaut) = zt%x(:,itaut) + taut
           zt%n(:,itaut) = zt%n(:,itaut) + 1
         end if
-        if ( ikht > 0 ) then
-          zt%x(:,ikht) = zt%x(:,ikht) + kht
-          zt%n(:,ikht) = zt%n(:,ikht) + 1
+        if ( iKht > 0 ) then
+          zt%x(:,iKht) = zt%x(:,iKht) + Kht
+          zt%n(:,iKht) = zt%n(:,iKht) + 1
         end if
         if ( iwp2thvp > 0 ) then
           zt%x(:,iwp2thvp) = zt%x(:,iwp2thvp) + wp2thvp
@@ -3991,9 +3988,9 @@
           zm%n(:,itaum) = zm%n(:,itaum) + 1
         end if
 
-        if ( ikhm > 0 ) then
-          zm%x(:,ikhm) = zm%x(:,ikhm) + khm
-          zm%n(:,ikhm) = zm%n(:,ikhm) + 1
+        if ( iKhm > 0 ) then
+          zm%x(:,iKhm) = zm%x(:,iKhm) + Khm
+          zm%n(:,iKhm) = zm%n(:,iKhm) + 1
         end if
 
         if ( iwprcp > 0 ) then
