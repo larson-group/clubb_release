@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.76 2007-01-30 17:49:55 dschanen Exp $
+# $Id: Makefile,v 1.77 2007-02-07 22:30:19 mjfalk Exp $
 # This version should work with BSD, GNU make, smake and dmake
 
 # For HOC we edit this by hand rather than implementing imake or automake
@@ -42,9 +42,9 @@ COAMPS_MICRO = adjmlt.o adjtq.o coamps_micro_driver.o conice.o \
         nrmtqw.o qsatvi.o qtadj.o slope.o tgqg.o \
         tgqi.o tgqr.o tgqs.o rsati.o gamma.o
 
-MODEL = hoc.o gcss.o rad_lwsw.o cloud_rad.o astex.o atex.o fire.o bomex.o \
+MODEL = hoc.o rad_lwsw.o cloud_rad.o astex.o atex.o fire.o bomex.o \
 	arm.o dycoms2_rf01.o dycoms2_rf02.o mpace.o nov11.o jun25.o wangara.o \
-	linear_interpolation.o diag_ustar.o icedfs.o cobra.o
+	linear_interpolation.o diag_ustar.o icedfs.o cobra.o rico.o gabls2.o
 
 PARAMETERIZATION = \
 	$(LATIN_HYP) \
@@ -196,10 +196,10 @@ parameterization_interface.o : constants.o hydrostatic.o mixing.o \
 	length.o statistics.o sounding.o diag_var.o rsat.o \
 	grid.o sat_rcm.o update.o prog_variables.o diag_variables.o \
 	sfc.o closure_new.o latin_hyper_sample.o lh_sampler.o \
-	parameterization_interface.F 
-hoc.o		: parameterization_interface.o gcss.o arm.o astex.o atex.o \
+	parameterization_interface.F
+hoc.o		: parameterization_interface.o arm.o astex.o atex.o \
 	bomex.o dycoms2_rf01.o dycoms2_rf02.o fire.o jun25.o mpace.o nov11.o \
-	wangara.o cobra.o hoc.F
+	wangara.o cobra.o rico.o gabls2.o hoc.F
 hydrostatic.o	: constants.o hydrostatic.F 
 length.o	: constants.o length.F 
 rsat.o		: constants.o rsat.F 
@@ -245,7 +245,6 @@ st_2_rtthl.o		: st_2_rtthl.F
 truncate_gaus_mixt.o	: truncate_gaus_mixt.F
 
 # == GCSS dependencies ==
-gcss.o      : constants.o grid.o gcss.F
 diag_ustar.o: diag_ustar.F
 arm.o       : constants.o diag_ustar.o model_flags.o grid.o arm.F
 astex.o     : constants.o model_flags.o grid.o astex.F
@@ -253,9 +252,11 @@ atex.o      : constants.o model_flags.o grid.o cloud_rad.o atex.F
 bomex.o     : constants.o model_flags.o grid.o bomex.F
 cobra.o     : constants.o model_flags.o grid.o cobra.F
 fire.o      : constants.o model_flags.o grid.o cloud_rad.o fire.F
+gabls2.o    : constants.o diag_ustar.o model_flags.o grid.o gabls2.F
 mpace.o     : constants.o model_flags.o grid.o icedfs.o statistics.o mpace.F
 nov11.o     : constants.o model_flags.o grid.o icedfs.o statistics.o nov11.F
 jun25.o     : constants.o model_flags.o grid.o icedfs.o statistics.o jun25.F
+rico.o      : constants.o model_flags.o grid.o rico.F
 wangara.o   : constants.o model_flags.o grid.o wangara.F
 icedfs.o    : constants.o grid.o statistics.o icedfs.F
 cloud_rad.o : constants.o grid.o cloud_rad.F
