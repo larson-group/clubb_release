@@ -27,6 +27,7 @@ cloud_sed     = .false.
 kk_rain       = .false.
 lbugsrad      = .false.
 bottom_at_sfc = .true.
+lKhm_aniso    = .false.
 
 /
 

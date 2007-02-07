@@ -1,4 +1,4 @@
-! $Id: dycoms2_rf02_ds_model.in,v 1.6 2007-01-19 00:18:28 dschanen Exp $
+! $Id: dycoms2_rf02_ds_model.in,v 1.7 2007-02-07 22:42:21 mjfalk Exp $
 ! Parameter file for DYCOMS2 RF02 Sc case with drizzle
 ! and cloud water sedimentation.
 
@@ -30,6 +30,7 @@ lcoamps_micro = .false.
 licedfs       = .false.
 lbugsrad      = .false.
 bottom_at_sfc = .true.
+lKhm_aniso    = .false.
 
 /
 

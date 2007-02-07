@@ -1,4 +1,4 @@
-! $Id: dycoms2_rf01_model.in,v 1.7 2007-01-26 00:03:00 dschanen Exp $
+! $Id: dycoms2_rf01_model.in,v 1.8 2007-02-07 22:42:21 mjfalk Exp $
 ! Parameter file for DYCOMS II RF01 Sc case
 
 &model_setting
@@ -30,6 +30,7 @@ lcoamps_micro = .false.
 licedfs       = .false.
 lbugsrad      = .false.
 bottom_at_sfc = .true.
+lKhm_aniso    = .false.
 
 /
 
