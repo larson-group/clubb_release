@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.15 2007-02-06 16:16:06 dschanen Exp $
+!  $Id: statistics.F,v 1.16 2007-02-07 22:39:00 mjfalk Exp $
 
 #ifdef STATS
       module stats_type
@@ -341,7 +341,8 @@
      .     iFrad_LW,  ! Brian
      .     iFrad_SW,  ! Brian
      .     iFprec,    ! Brian
-     .     iFcsed     ! Brian
+     .     iFcsed,    ! Brian
+     .     iup2_plus_vp2   ! Michael Falk, for GABLS case
 
 !$omp   threadprivate(iwp2, irtp2, ithlp2, irtpthlp, iwprtp, iwpthlp)
 !$omp   threadprivate(iwp4, iwpthvp, irtpthvp, ithlpthvp, itaum, iKhm)
@@ -2222,6 +2223,7 @@
       iFrad_SW  = 0  ! Brian
       iFprec    = 0  ! Brian
       iFcsed    = 0  ! Brian
+      iup2_plus_vp2 = 0 ! Michael
 
       ! Sedimentation velocities
       iVrr      = 0  ! Brian
@@ -3016,6 +3018,14 @@
           zm%f%var(irtpthlp_dp2)%description
      .    = "rtpthlp dissipation term 2"
           zm%f%var(irtpthlp_dp2)%units = "(kg K)/(kg s)"
+          k = k + 1
+
+        case ('up2_plus_vp2')
+          iup2_plus_vp2 = k
+          zm%f%var(iup2_plus_vp2)%ptr => zm%x(:,k)
+          zm%f%var(iup2_plus_vp2)%name = "up2_plus_vp2"
+          zm%f%var(iup2_plus_vp2)%description = "up2_plus_vp2"
+          zm%f%var(iup2_plus_vp2)%units = "m^2/s^2"
           k = k + 1
 
 #ifdef SCALARS
