@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.24 2007-02-03 23:59:35 griffinb Exp $
+! $Id: rain.F,v 1.25 2007-02-07 13:19:33 griffinb Exp $
 !----------------------------------------------------------------------
 
       MODULE rain_equations
@@ -42,9 +42,9 @@
       REAL, PARAMETER:: r_0 = 25.0e-6   ! Assumed radius of all new drops; m.
                                         ! Value specified in KK (2000); p. 235.
       !REAL, PARAMETER:: r_0 = 28.0e-6   ! Assumed radius of all new drops; m.
-                                         ! Value that COAMPS LES has in it.
+      !                                  ! Value that COAMPS LES has in it.
       !REAL, PARAMETER:: r_0 = 30.0e-6   ! Assumed radius of all new drops; m.
-                                         ! Khairoutdinov said it was okay!
+      !                                  ! Khairoutdinov said it was okay!
       ! End Vince Larson's change.
 
       PUBLIC :: rain, kk_microphys
@@ -305,6 +305,11 @@
 
 #endif /*STATS*/
 
+        ! The following section should always identically match the same
+        ! section that is found in subroutine kk_microphys.  Whenever a 
+        ! change is made to one, the same change must be made to the other
+        ! one.
+        !
         ! Set up the values of the statistical correlations and variances.
         ! Since we currently do not have enough variables to compute the 
         ! correlations and variances directly, we have obtained these values 
@@ -996,6 +1001,10 @@
         ! Array indices
         integer :: k, km1, kp1, i, cloud_base
 
+        ! The following section should always identically match the same
+        ! section that is found in subroutine rain.  Whenever a change is
+        ! made to one, the same change must be made to the other one.
+        !
         ! Set up the values of the statistical correlations and variances.
         ! Since we currently do not have enough variables to compute the 
         ! correlations and variances directly, we have obtained these values 
