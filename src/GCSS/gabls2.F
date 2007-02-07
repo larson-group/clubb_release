@@ -1,0 +1,229 @@
+#define SCLR_THETA 1
+#define SCLR_RT 2
+
+!----------------------------------------------------------------------
+      module gabls2
+
+!       Description:
+!       Contains subroutines for the GABLS2 case.
+!----------------------------------------------------------------------
+        public :: gabls2_tndcy, gabls2_sfclyr
+
+        contains
+
+!----------------------------------------------------------------------
+        subroutine gabls2_tndcy
+     .  ( time, time_initial,
+     .    rhot, rcm, kk_rain, wmt, wmm,
+     .    theta_tndcy, rt_tndcy, radht, Ncm,
+     .    sclr_tndcy )
+
+!        Description:
+!          Subroutine to apply case-specific forcings to GABLS case
+!          (Michael Falk, 29 Dec 2006).
+!
+!        References:
+!          Gunilla Svensson's GABLS paper (citation forthcoming)
+!-----------------------------------------------------------------------
+
+        use constants
+        use grid_class
+#ifdef STATS
+        use statistics
+#endif /*STATS*/
+        implicit none
+
+        ! Input Variables
+        real, intent(in) ::
+     .  time,          ! Current length of timestep      [s]
+     .  time_initial   ! Current length of timestep      [s]
+
+        real, dimension(gr%nnzp), intent(in) ::
+     .  rhot,          ! Air density on t-grid           [kg/m^3]
+     .  rcm            ! Cloud water mixing ratio        [kg/kg]
+
+        logical, intent(in) ::
+     .  kk_rain       !  Logical variable-- are we using KK scheme?
+
+        ! Output Variables
+        real, dimension(gr%nnzp), intent(out) ::
+     .  wmt,         ! Large-scale vertical motion on t grid   [m/s]
+     .  wmm,         ! Large-scale vertical motion on m grid   [m/s]
+     .  theta_tndcy, ! Large-scale thlm tendency               [K/s]
+     .  rt_tndcy,    ! Large-scale rtm tendency                [kg/kg/s]
+     .  radht,       ! dT/dt, then d Theta/dt, due to rad.     [K/s]
+     .  Ncm          ! Number of cloud droplets                [#]
+
+        ! Output Variables (optional)
+        real, optional, intent(out), dimension(gr%nnzp,sclr_dim) ::
+     .  sclr_tndcy ! Passive scalar LS tendency            [units/s]
+
+        ! Local Variables, general
+        integer :: i, k ! Loop indices
+        real    :: t_tendency ! Temperature (not potential temperature) tendency
+
+        ! Compute vertical motion
+        if (time > (time_initial + 93600.)) then ! That is, after 26 hours of model time; per GABLS specification
+          do k=1,gr%nnzp
+            if (gr%zt(k) <= 1000) then
+              wmt(k) = -0.005 * (gr%zt(k) / 1000)
+            else
+              wmt(k) = -0.005
+            end if
+          end do
+        else
+          do k=1,gr%nnzp
+            wmt(k) = 0.
+          end do
+        end if
+
+        wmm = zt2zm( wmt )
+
+        ! Boundary conditions on vertical motion.
+        wmt(1) = 0.0        ! Below surface
+        wmm(1) = 0.0        ! At surface
+        wmm(gr%nnzp) = 0.0  ! Model top
+
+
+        ! Compute large-scale horizontal temperature advection
+        do k=1,gr%nnzp
+          theta_tndcy(k) = 0.
+          radht(k) = 0.
+        end do
+
+
+        ! Compute large-scale horizontal moisture advection [g/kg/s]
+       do k=1,gr%nnzp
+          rt_tndcy(k) = 0.
+        end do
+
+        if ( kk_rain ) then
+          do k=1,gr%nnzp
+            if ( rcm(k) >= 1.e-6 ) then
+              Ncm(k) = 30.0 * (1.0 + exp(-gr%zt(k)/2000.0)) * 1.e6
+     .                 * rhot(k)
+            else
+              Ncm(k) = 0.
+            end if
+          end do
+        end if
+
+        ! Set scalar tendencies
+        if ( present( sclr_tndcy ) ) then
+          sclr_tndcy(:,SCLR_THETA) = theta_tndcy
+          sclr_tndcy(:,SCLR_RT)    = rt_tndcy
+        end if
+
+        return
+        end subroutine gabls2_tndcy
+!----------------------------------------------------------------------
+
+
+
+
+!----------------------------------------------------------------------
+        subroutine gabls2_sfclyr(time, time_initial, lowest_level, psfc,
+     .                          um, vm, thlm, rtm,
+     .                          uw, vw, wtp, wrp,
+     .                          sclrm_sfc, wpsclrp_sfc )
+
+!----------------------------------------------------------------------
+!        Description:
+!          Surface forcing subroutine for GABLS case.  Written
+!          29 December 2006 by Michael Falk.
+!
+!        References:
+!-----------------------------------------------------------------------
+          use constants
+          implicit none
+
+          ! External calls
+          real, external ::
+     .      rsat,             ! Computes saturation mixing ratio
+     .      diag_ustar
+
+
+          ! Local constants
+          real, parameter ::
+     .    ubmin   = 0.25,     ! I don't know where this comes from.
+     .    C_10    = 0.0013,   ! Drag coefficient, defined by ATEX specification
+     .    z0      = 0.03      ! Roughness length, defined by GABLS specification
+
+          ! Input variables
+          real, intent(in) ::
+     .    time,               ! Time elapsed since 0.0 s          [s]
+     .    time_initial,       ! Initial time of model integration [s]
+     .    psfc,               ! Surface pressure [Pa]
+     .    lowest_level,       ! Height of lowest above-ground gridpoint [m]
+     .    um,                 ! u at the lowest above-ground model level.  [m/s]
+     .    vm,                 ! v at the lowest above-ground model level.  [m/s]
+     .    thlm,               ! theta-l at the lowest above-ground model level.  (theta = theta-l because there's no liquid in this case)  [K]
+     .    rtm                 ! rt at the lowest above-ground model level.  [kg/kg]
+
+          ! Input variables (optional)
+          real, optional, intent(in) ::
+     .    sclrm_sfc(sclr_dim) ! Concentration of scalar
+
+          ! Output variables
+          real, intent(out) ::
+     .    uw,                 ! The upward flux of u-momentum         [(m/s)^2]
+     .    vw,                 ! The upward flux of v-momentum         [(m/s)^2]
+     .    wtp,                ! The upward flux of theta-l            [K m/s]
+     .    wrp                 ! The upward flux of rtm (total water)  [kg/kg m/s]
+
+          ! Output variables (optional)
+          real, optional, intent(out) ::
+     .    wpsclrp_sfc(sclr_dim) ! The upward flux of scalar
+
+          ! Local variables
+          real ::
+     .    ubar,               ! Root (u^2 + v^2), per ATEX and RICO spec.
+     .    ustar,              ! Friction velocity, computed from diag_ustar.
+     .    Cz,                 ! C_10 scaled to the height of the lowest model level. (Per ATEX spec)
+     .    time_in_hours,      ! time in hours from 00 local on first day of experiment (experiment starts at 14)
+     .    sst,                ! Sea surface temperature [K].
+     .    sstheta,            ! Sea surface potential temperature [K].
+     .    bflx                ! Needed for diag_ustar; equal to wtp * (g/theta)
+
+          ! Define variable values
+          ubar = max(ubmin, sqrt(um*um + vm*vm))
+          Cz   = C_10 * ((log(10/z0))/(log(lowest_level/z0))) *
+     .           ((log(10/z0))/(log(lowest_level/z0)))             ! Modification in case lowest model level isn't at 10 m, from ATEX specification
+          time_in_hours = (time - time_initial) / 3600. + 14.      ! at initial time, time_in_hours = 14 (14 local; 19 UTC)
+
+
+          ! Compute sea surface temperature
+          if (time_in_hours <= 17.4) then
+            sst = -10 - (25*cos(time_in_hours*0.22 + 0.2))         ! SST in celsius per GABLS spec
+          else if (time_in_hours <= 30.0) then
+            sst = (-0.54 * time_in_hours) + 15.2
+          else if (time_in_hours <= 41.9) then
+            sst = -7 - (25*cos(time_in_hours*0.21 + 1.8))
+          else if (time_in_hours <= 53.3) then
+            sst = (-0.37 * time_in_hours) + 18.0
+          else if (time_in_hours <= 65.6) then
+            sst = -4 - (25*cos(time_in_hours*0.22 + 2.5))
+          else
+            sst = 4.4
+          end if
+
+          sst     = sst + 273.15
+          sstheta = sst * ((p0 / psfc)**(Rd/Cp))
+
+          ! Compute heat and moisture fluxes
+          wtp  = -Cz * ubar * ( thlm - sst * (p0/psfc)**kappa )    ! [K * m/s]
+          wrp  = -Cz * ubar * ( rtm - rsat(psfc,sst) ) * 0.025     ! [kg/kg * m/s]; 2.5% factor from GABLS specification
+          ! Compute momentum fluxes
+          bflx  = wtp * grav / sstheta
+          ustar = diag_ustar(lowest_level,bflx,ubar,z0)
+          uw    = -um * ustar*ustar / ubar                         ! [(m/s)^2]
+          vw    = -vm * ustar*ustar / ubar                         ! [(m/s)^2]
+
+          ! Compute scalar fluxes
+          if (present( wpsclrp_sfc )) wpsclrp_sfc(SCLR_THETA) = wtp
+          if (present( wpsclrp_sfc )) wpsclrp_sfc(SCLR_RT) = wrp
+
+        return
+        end subroutine gabls2_sfclyr
+
+      end module gabls2

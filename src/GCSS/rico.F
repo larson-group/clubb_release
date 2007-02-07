@@ -1,0 +1,259 @@
+#define SCLR_THETA 1
+#define SCLR_RT 2
+
+!----------------------------------------------------------------------
+      module rico
+
+!       Description:
+!       Contains subroutines for the RICO case.
+!----------------------------------------------------------------------
+        public :: rico_tndcy, rico_sfclyr
+
+        contains
+
+!----------------------------------------------------------------------
+        subroutine rico_tndcy
+     .  ( time, time_initial, dt, exner,
+     .    rhot, rcm, kk_rain, wmt, wmm,
+     .    theta_tndcy, rt_tndcy, radht, Ncm,
+     .    sclr_tndcy )
+
+!        Description:
+!          Subroutine to apply case-specific forcings to RICO case
+!          (Michael Falk, 13 Dec 2006).
+!
+!        References:
+!-----------------------------------------------------------------------
+
+        use constants
+        use grid_class
+#ifdef STATS
+        use statistics
+#endif /*STATS*/
+        implicit none
+
+        ! Input Variables
+        real, intent(in) ::
+     .  time,          ! Current length of timestep      [s]
+     .  time_initial,  ! Current length of timestep      [s]
+     .  dt             ! Current length of timestep      [s]
+
+        real, dimension(gr%nnzp), intent(in) ::
+     .  exner,         ! Exner function                         [-]
+     .  rhot,          !
+     .  rcm            !
+
+        logical, intent(in) ::
+     .  kk_rain       !
+
+        ! Output Variables
+        real, dimension(gr%nnzp), intent(out) ::
+     .  wmt,         ! Large-scale vertical motion on t grid   [m/s]
+     .  wmm,         ! Large-scale vertical motion on m grid   [m/s]
+     .  theta_tndcy, ! Large-scale thlm tendency               [K/s]
+     .  rt_tndcy,    ! Large-scale rtm tendency                [kg/kg/s]
+     .  radht,       ! dT/dt, then d Theta/dt, due to rad.     [K/s]
+     .  Ncm          !
+
+
+        ! Output Variables (optional)
+        real, optional, intent(out), dimension(gr%nnzp,sclr_dim) ::
+     .  sclr_tndcy ! Passive scalar LS tendency            [units/s]
+
+        ! Local Variables, general
+        integer :: i, k ! Loop indices
+        real    :: t_tendency ! Temperature (not potential temperature) tendency
+
+        ! Compute vertical motion
+        do k=1,gr%nnzp
+          if (gr%zt(k) < 2260) then
+            wmt(k) = -(0.005 / 2260) * gr%zt(k)
+          else if (gr%zt(k) < 4000) then
+            wmt(k) = -0.005
+          else if (gr%zt(k) < 5000) then
+            wmt(k) = -0.005 + (0.005 / (5000 - 4000))
+     .               * (gr%zt(k) - 4000)
+          else
+            wmt(k) = 0.
+          end if
+        end do
+        wmm = zt2zm( wmt )
+
+        ! Boundary conditions on vertical motion.
+        wmt(1) = 0.0        ! Below surface
+        wmm(1) = 0.0        ! At surface
+        wmm(gr%nnzp) = 0.0  ! Model top
+
+
+        ! Compute large-scale horizontal temperature advection
+        ! NEW-- "And Radiation"... 15 Dec 2006, Michael Falk
+        do k=1,gr%nnzp
+          if (gr%zt(k) < 4000) then
+            t_tendency = -2.51 / 86400 +
+     .        (-2.18 + 2.51) / (86400*4000) * gr%zt(k)  ! Units [K/s]
+          else if (gr%zt(k) < 5000) then
+            t_tendency = -2.18 / 86400 +
+     .        (2.18) / (86400*(5000-4000)) * (gr%zt(k)-4000)  ! Units [K/s]
+          else
+            t_tendency = 0.  ! Units [K/s]
+          end if
+          ! Convert to units of [K/s] but potential T instead of T
+!          theta_tndcy(k) = (t_tendency * ((psfc/p(k)) ** (Rd/Cp)))
+          theta_tndcy(k) = (t_tendency / exner(k))
+          radht(k) = 0.  !  So we don't have undefined numbers in the radht stats.  Radht is actually rolled into t_tendency.
+        end do
+
+
+        ! Compute large-scale horizontal moisture advection [g/kg/s]
+        do k=1,gr%nnzp
+          if (gr%zt(k) < 3000) then
+            rt_tndcy(k) = - 1.0 / 86400 +
+     .        (0.345+1.0) / (86400 * 3000) * gr%zt(k)  ! Units [g/kg/s]
+          else if (gr%zt(k) < 4000) then
+            rt_tndcy(k) = 0.345 / 86400  ! Units [g/kg/s]
+          else if (gr%zt(k) < 5000) then
+            rt_tndcy(k) = 0.345 / 86400 +
+     .        (-0.345) / (86400*(5000-4000)) * (gr%zt(k) - 4000) ! Units [g/kg/s]
+          else
+            rt_tndcy(k) = 0.  ! Units [K/s]
+          end if
+          rt_tndcy(k) = rt_tndcy(k) / 1000.  ! Converts [g/kg/s] to [kg/kg/s]
+        end do
+
+        if ( kk_rain ) then
+          do k=1,gr%nnzp
+            if ( rcm(k) >= 1.e-6 ) then
+              Ncm(k) = 30.0 * (1.0 + exp(-gr%zt(k)/2000.0)) * 1.e6
+     .                 * rhot(k)
+            else
+              Ncm(k) = 0.
+            end if
+          end do
+        end if
+
+        ! Set scalar tendencies
+        if ( present( sclr_tndcy ) ) then
+          sclr_tndcy(:,SCLR_THETA) = theta_tndcy
+          sclr_tndcy(:,SCLR_RT)    = rt_tndcy
+        end if
+
+        return
+        end subroutine rico_tndcy
+!----------------------------------------------------------------------
+
+
+
+
+!----------------------------------------------------------------------
+        subroutine rico_sfclyr( um, vm, thlm, rtm,
+     .                          lowestlevel, sst, psfc,
+     .                          uw, vw, wtp, wrp,
+     .                          sclrm_sfc, wpsclrp_sfc )
+
+!----------------------------------------------------------------------
+!        Description:
+!          Surface forcing subroutine for RICO case.  Written
+!          December 2006 by Michael Falk.
+!
+!          Updated to use specific formulations for surface fluxes
+!          as specified in the RICO 3D LES specification, in hopes that
+!          they'll be more accurate.
+!
+!        References:
+!          ATEX: http://www.atmos.ucla.edu/~bstevens/gcss/setup.html
+!          RICO: http://www.knmi.nl/samenw/rico/setup3d.html
+!-----------------------------------------------------------------------
+
+        use constants
+        implicit none
+
+!       External
+        real, external :: rsat
+
+!       Constants
+        real, parameter ::
+     .    ubmin   = 0.25,     ! I don't know where this comes from.
+     .    ustar   = 0.3,      ! Defined by ATEX specification
+     .    C_10    = 0.0013,   ! Drag coefficient, defined by ATEX specification
+     .    C_m_20  = 0.001229, ! Drag coefficient, defined by RICO 3D specification
+     .    C_h_20  = 0.001094, ! Drag coefficient, defined by RICO 3D specification
+     .    C_q_20  = 0.001133, ! Drag coefficient, defined by RICO 3D specification
+     .    z0      = 0.00015   ! Roughness length, defined by ATEX specification
+
+!       Internal variables
+        real ::
+     .    ubar,  ! This is root (u^2 + v^2), per ATEX and RICO spec.
+     .    Cz,    ! This is C_10 scaled to the height of the lowest model level.
+     .    Cm,    ! This is C_m_20 scaled to the height of the lowest model level.
+     .    Ch,    ! This is C_h_20 scaled to the height of the lowest model level.
+     .    Cq     ! This is C_q_20 scaled to the height of the lowest model level.
+
+        logical ::
+     .    use_old_atex  ! if true, use ATEX version; if not, use RICO-specific
+
+!       Input variables
+        real, intent(in) ::
+     .    um,           ! This is u at the lowest above-ground model level.  [m/s]
+     .    vm,           ! This is v at the lowest above-ground model level.  [m/s]
+     .    thlm,         ! This is theta-l at the lowest above-ground model level.  (DOES THIS NEED A CORRECTION FOR THETA-L TO THETA?)  [K]
+     .    rtm,          ! This is rt at the lowest above-ground model level.  [kg/kg]
+     .    lowestlevel,  ! This is z at the lowest above-ground model level.  [m]
+     .    sst,          ! This is the sea surface temperature [K].
+     .    psfc          ! This is the surface pressure [Pa].
+
+!       Input variables (optional)
+        real, optional, intent(in) ::
+     .    sclrm_sfc(sclr_dim)
+
+!       Output variables
+        real, intent(out) ::
+     .    uw,          ! The upward flux of u-momentum         [(m/s)^2]
+     .    vw,          ! The Upward flux of v-momentum         [(m/s)^2]
+     .    wtp,         ! The upward flux of theta-l            [K m/s]
+     .    wrp          ! The upward flux of rtm (total water)  [kg/kg m/s]
+
+!       Output variables (optional)
+        real, optional, intent(out) ::
+     .    wpsclrp_sfc(sclr_dim)
+
+
+!       Choose which scheme to use
+        use_old_atex = .FALSE.
+
+!       Define variable values
+        ubar = max(ubmin, sqrt(um*um + vm*vm))
+        Cz   = C_10 * ((log(10/z0))/(log(lowestlevel/z0))) *
+     .         ((log(10/z0))/(log(lowestlevel/z0)))              ! Modification in case lowest model level isn't at 10 m, from ATEX specification
+        Cm   = C_m_20 * ((log(20/z0))/(log(lowestlevel/z0))) *
+     .         ((log(20/z0))/(log(lowestlevel/z0)))              ! Modification in case lowest model level isn't at 10 m, from ATEX specification
+        Ch   = C_h_20 * ((log(20/z0))/(log(lowestlevel/z0))) *
+     .         ((log(20/z0))/(log(lowestlevel/z0)))              ! Modification in case lowest model level isn't at 10 m, from ATEX specification
+        Cq   = C_q_20 * ((log(20/z0))/(log(lowestlevel/z0))) *
+     .         ((log(20/z0))/(log(lowestlevel/z0)))              ! Modification in case lowest model level isn't at 10 m, from ATEX specification
+
+!       Compute heat and moisture fluxes
+        if (use_old_atex) then ! Use ATEX version
+
+          wtp  = -Cz * ubar * ( thlm - sst * (p0/psfc)**kappa )    ! K * m/s
+          wrp  = -Cz * ubar * ( rtm - rsat(psfc,sst) )             ! kg/kg * m/s
+          uw   = -um * ustar*ustar / ubar                          ! (m/s)^2
+          vw   = -vm * ustar*ustar / ubar                          ! (m/s)^2
+
+        else ! Use RICO version
+
+          wtp  = -Ch * ubar * ( thlm - sst * (p0/psfc)**kappa )    ! K * m/s
+          wrp  = -Cq * ubar * ( rtm - rsat(psfc,sst) )             ! kg/kg * m/s
+          uw   = -um * Cm * ubar                                   ! (m/s)^2
+          vw   = -vm * Cm * ubar                                   ! (m/s)^2
+        end if
+
+!       Compute scalar fluxes
+        if (present( wpsclrp_sfc )) wpsclrp_sfc(SCLR_THETA) = wtp
+        if (present( wpsclrp_sfc )) wpsclrp_sfc(SCLR_RT) = wrp
+
+        return
+        end subroutine rico_sfclyr
+
+!----------------------------------------------------------------------
+
+      end module rico
