@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.113 2007-02-07 22:31:12 mjfalk Exp $
+! $Id: hoc.F,v 1.114 2007-02-07 22:48:54 mjfalk Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -255,12 +255,9 @@
        dummy_array_m = 0.0
        dummy_array_t = 0.0
 
-       print *,'runtype is ',runtype
        if ( trim( runtype ) == "mpace" ) then 
-         print *,'lmpace_nudge is true'
          lmpace_nudge = .true.
        else
-         print *,'lmpace_nudge is false'
          lmpace_nudge = .false.
        end if
 
