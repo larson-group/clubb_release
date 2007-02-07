@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: model_flags.F,v 1.6 2007-02-02 22:13:57 dschanen Exp $
+! $Id: model_flags.F,v 1.7 2007-02-07 22:36:30 mjfalk Exp $
 
 ! Various model options that can be toggled off and on as desired
 !-----------------------------------------------------------------------
@@ -15,7 +15,8 @@
      .  licedfs,      ! Simplified ice scheme
      .  lcoamps_micro,! COAMPS rain microphysics
      .  cloud_sed,    ! Cloud water droplet sedimentation. - Brian
-     .  lmpace_nudge  ! For wind speed nudging. - Michael Falk
+     .  lmpace_nudge, ! For wind speed nudging. - Michael Falk
+     .  lKhm_aniso    ! For anisotropic Khm, as in GABLS.
 
        ! Flag for the lowest model level being at the surface (true)
        ! or not at the surface (false).  Example of case where it is not
@@ -32,7 +33,7 @@
         subroutine setup_model_flags
      .             ( lbugsrad_in, kk_rain_in, cloud_sed_in, 
      .               licedfs_in, lcoamps_micro_in, bottom_at_sfc_in,
-     .               lmpace_nudge_in )
+     .               lmpace_nudge_in, lKhm_aniso_in )
 !      Description:
 !      Setup model flags
 !-----------------------------------------------------------------------
@@ -44,7 +45,8 @@
         ! Input Variables
         logical, intent(in) :: 
      .  lbugsrad_in, kk_rain_in, cloud_sed_in,
-     .  bottom_at_sfc_in, licedfs_in, lcoamps_micro_in, lmpace_nudge_in
+     .  bottom_at_sfc_in, licedfs_in, lcoamps_micro_in, lmpace_nudge_in,
+     .  lKhm_aniso_in
 
         lbugsrad      = lbugsrad_in
         kk_rain       = kk_rain_in
@@ -53,6 +55,7 @@
         lcoamps_micro = lcoamps_micro_in
         licedfs       = licedfs_in
         lmpace_nudge  = lmpace_nudge_in
+        lKhm_aniso    = lKhm_aniso_in
 
         ! Make sure only one microphysical scheme is enabled.
 !       if ( .not.( kk_rain .and. lcoamps_micro ) .and. 
