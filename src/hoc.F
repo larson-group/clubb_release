@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.112 2007-02-02 22:08:54 dschanen Exp $
+! $Id: hoc.F,v 1.113 2007-02-07 22:31:12 mjfalk Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -201,7 +201,8 @@
      .  licedfs,      ! Flag for simplified ice scheme
      .  lcoamps_micro,! Flag for COAMPS microphysical scheme
      .  lbugsrad,     ! Flag for BUGSrad interactive radiation scheme
-     .  lmpace_nudge  ! Whether to adjust the winds within the timestep
+     .  lmpace_nudge, ! Whether to adjust the winds within the timestep
+     .  lKhm_aniso    ! Whether to use anisotropic Khm.  - Michael Falk 2 Feb 2007
 
         ! Flag for the lowest model level being at the surface (true)
         ! or not at the surface (false).  Example of case where it is not
@@ -222,7 +223,7 @@
      .   dtmain, dtclosure,
      .   sfctype, Tsfc, psfc, SE, LE, fcor,
      .   cloud_sed, kk_rain, licedfs, lcoamps_micro, 
-     .   lbugsrad, bottom_at_sfc
+     .   lbugsrad, bottom_at_sfc, lKhm_aniso
 
        !  Initialize the model run 
 
@@ -254,9 +255,12 @@
        dummy_array_m = 0.0
        dummy_array_t = 0.0
 
+       print *,'runtype is ',runtype
        if ( trim( runtype ) == "mpace" ) then 
+         print *,'lmpace_nudge is true'
          lmpace_nudge = .true.
        else
+         print *,'lmpace_nudge is false'
          lmpace_nudge = .false.
        end if
 
@@ -275,7 +279,8 @@
      .        taumin_in, taumax_in, fcor,
      .        lbugsrad, kk_rain, licedfs, lcoamps_micro,
      .        cloud_sed, bottom_at_sfc,
-     .        lmpace_nudge, .false., dummy_array_m, dummy_array_t )
+     .        lmpace_nudge, lKhm_aniso, 
+     .        .false., dummy_array_m, dummy_array_t )
 
 
        ! Dummy grid height arrays
@@ -498,7 +503,8 @@
      .  licedfs,      ! Flag for simplified ice scheme
      .  lcoamps_micro,! Flag for COAMPS microphysical scheme
      .  lbugsrad,     ! Flag for BUGsrad radiation scheme
-     .  lmpace_nudge  ! Whether to adjust the winds within the timestep
+     .  lmpace_nudge, ! Whether to adjust the winds within the timestep
+     .  lKhm_aniso    ! Whether to use anisotropic Khm.  - Michael Falk 2 Feb 2007
 
         ! Flag for the lowest model level being at the surface (true)
         ! or not at the surface (false).  Example of case where it is not
@@ -521,7 +527,7 @@
      .  dtmain, dtclosure,
      .  sfctype, Tsfc, psfc, SE, LE, fcor,
      .  cloud_sed, kk_rain, licedfs, lcoamps_micro, 
-     .  lbugsrad, bottom_at_sfc
+     .  lbugsrad, bottom_at_sfc, lKhm_aniso
 
 !-----------------------------------------------------------------------
 
@@ -580,7 +586,8 @@
      .        taumin_in, taumax_in, fcor,
      .        lbugsrad, kk_rain, licedfs, lcoamps_micro,
      .        cloud_sed, bottom_at_sfc,
-     .        lmpace_nudge, .false., dummy_array_m, dummy_array_t )
+     .        lmpace_nudge, lKhm_aniso, 
+     .        .false., dummy_array_m, dummy_array_t )
 
 
        ! Dummy grid height arrays
@@ -1053,6 +1060,24 @@
 
           wp2(1:gr%nnzp) = 2.0 / 3.0 * em(1:gr%nnzp) ! Michael Falk reworded this.
 
+        ! Michael Falk for GABLS case, 29 Dec 2006
+        case ( "gabls" )
+
+          cloud_top_height = 800.  ! per GABLS specifications
+          emax = 0.5
+          do k=1,gr%nnzp
+            if ( gr%zm(k) < cloud_top_height ) then
+              em(k) = emax * (1 - (gr%zm(k)/cloud_top_height))
+            else
+              em(k) = emin
+            end if
+          end do
+
+          em(1) = em(2)
+          em(gr%nnzp) = em(gr%nnzp-1)
+
+          wp2(1:gr%nnzp) = 2.0 / 3.0 * em(1:gr%nnzp)
+
         end select
 
         ! End Initialize TKE and other fields as needed
@@ -1106,7 +1131,7 @@
         use grid_class
         use diagnostic_variables
         use prognostic_variables
-        use gcss
+!        use gcss
         use arm, only: arm_tndcy, arm_sfclyr
         use astex, only: astex_tndcy, astex_sfclyr
         use atex, only: atex_tndcy, atex_sfclyr
@@ -1116,6 +1141,8 @@
         use dycoms2_rf02, only: dycoms2_rf02_tndcy, dycoms2_rf02_sfclyr
         use fire, only: fire_tndcy, sfc_momentum_fluxes,
      .                  sfc_thermo_fluxes
+        use gabls2, only: gabls2_tndcy, gabls2_sfclyr
+        use rico, only: rico_tndcy, rico_sfclyr
         use mpace, only: mpace_tndcy, mpace_sfclyr
         use nov11, only: nov11_altocu_tndcy ! Above surface
         use jun25, only: jun25_altocu_tndcy ! Above surface
@@ -1269,8 +1296,18 @@
      .                     )
 
          case ( "rico" ) ! RICO case
-           call rico_tndcy( dtmain, exner, wmt, wmm, thlm_forcing,
-     .                      rtm_forcing, radht
+           call rico_tndcy( time, time_initial, dtmain, exner,
+     .                      rhot, rcm, kk_rain, wmt, wmm,
+     .                      thlm_forcing, rtm_forcing, radht, Ncm
+#ifdef SCALARS
+     .                     ,sclrm_forcing
+#endif /* SCALARS */
+     .                    )
+
+         case ( "gabls" ) ! GABLS case
+           call gabls2_tndcy( time, time_initial, 
+     .                      rhot, rcm, kk_rain, wmt, wmm,
+     .                      thlm_forcing, rtm_forcing, radht, Ncm
 #ifdef SCALARS
      .                     ,sclrm_forcing
 #endif /* SCALARS */
@@ -1412,14 +1449,6 @@
      .                     )
 
          case ( "rico" )
-          call atex_sfclyr( um(2), vm(2), thlm(2), rtm(2),
-     .                      upwp_sfc, vpwp_sfc,
-     .                      wpthlp_sfc, wprtp_sfc
-#ifdef SCALARS
-     .                     ,sclrm(2,:), wpsclrp(1,:)
-#endif /* SCALARS */
-     .                    )
-
            call rico_sfclyr( um(2), vm(2), thlm(2), rtm(2),
      .                        gr%zt(2), 299.8, 101540., ! 299.8 K is the RICO SST; 101540 Pa is the sfc pressure.
      .                        upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc
@@ -1427,6 +1456,16 @@
      .                     ,sclrm(2,:), wpsclrp(1,:)
 #endif /* SCALARS */
      .                      )
+
+         case ( "gabls" )
+          call gabls2_sfclyr(time, time_initial, gr%zt(2), 97200.,
+     .                      um(2), vm(2), thlm(2), rtm(2),
+     .                      upwp_sfc, vpwp_sfc,
+     .                      wpthlp_sfc, wprtp_sfc
+#ifdef SCALARS
+     .                     ,sclrm(2,:), wpsclrp(1,:)
+#endif /* SCALARS */
+     .                    )
 
         case default
           write(unit=fstderr,fmt=*) 
