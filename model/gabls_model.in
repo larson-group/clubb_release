@@ -1,0 +1,65 @@
+! $Id: gabls_model.in,v 1.1 2007-02-07 22:43:06 mjfalk Exp $
+! Parameter file for GABLS case
+! Edited by Michael Falk, 28 December 2006
+
+&model_setting
+
+runtype = "gabls"
+
+nzmax = 400
+deltaz = 10.0
+day = 22, month = 10, year = 1999,
+rlat = 37.6, rlon = -96.7
+
+time_initial = 0.0
+time_final   = 212400.0
+time_spinup  = 0.0
+
+dtmain    = 10.0
+dtclosure = 10.0
+
+sfctype = 0
+Tsfc = 280.86
+psfc = 972.e2
+SE = 0.
+LE = 0.
+
+! Michael Falk made this chance, 22 January 2007, to test fcor effect.
+fcor = 8.8983571e-5
+!fcor = 8.8983571e-6
+! eMFc
+
+cloud_sed     = .false.
+kk_rain       = .false.
+lcoamps_micro = .false.
+licedfs       = .false.
+lbugsrad      = .false.
+bottom_at_sfc = .true.
+lKhm_aniso    = .true.
+
+/
+
+&sounding
+
+nlevels = 8
+z = 0, 200, 850, 900, 1000, 2000, 3500, 4000
+
+theta = 288., 286., 286., 288., 292., 300., 310., 312.
+rt = .0025063, .0025063, .0025063, .0025063, .0005003, .003090, .002040, .0015023
+
+u = 3., 3., 3., 3., 3., 3., 3., 3.
+v = -9., -9., -9., -9., -9., -9., -9., -9.
+
+ug = 3., 3., 3., 3., 3., 3., 3., 3.
+vg = -9., -9., -9., -9., -9., -9., -9., -9.
+
+/
+
+&scalar_sounding
+
+sclr(:,1) = 288., 286., 286., 288., 292., 300., 310., 312.
+sclr(:,2) = .0025063, .0025063, .0025063, .0025063, .0005003, .003090, .002040, .0015023
+edsclr(:,1) = 288., 286., 286., 288., 292., 300., 310., 312.
+edsclr(:,2) = .0025063, .0025063, .0025063, .0025063, .0005003, .003090, .002040, .0015023
+
+/
