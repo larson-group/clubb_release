@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.16 2007-02-07 22:39:00 mjfalk Exp $
+!  $Id: statistics.F,v 1.17 2007-02-07 23:04:35 dschanen Exp $
 
 #ifdef STATS
       module stats_type
@@ -1744,7 +1744,7 @@
           zt%f%var(ivm_bt)%ptr => zt%x(:,k)
           zt%f%var(ivm_bt)%name = "vm_bt"
           zt%f%var(ivm_bt)%description 
-     .    = "vm time tendency"
+     .    = "vm time tendency(note: does not balance at zt=2)"
           zt%f%var(ivm_bt)%units = "m/s"
           k = k + 1
 
@@ -1789,7 +1789,7 @@
           zt%f%var(ium_bt)%ptr => zt%x(:,k)
           zt%f%var(ium_bt)%name = "um_bt"
           zt%f%var(ium_bt)%description 
-     .    = "um time tendency"
+     .    = "um time tendency (note: does not balance at zt=2)"
           zt%f%var(ium_bt)%units = "m/s"
           k = k + 1
 
