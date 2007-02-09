@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F,v 1.15 2007-02-02 22:14:37 dschanen Exp $
+! $Id: diag_variables.F,v 1.16 2007-02-09 22:13:42 dschanen Exp $
         module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -113,6 +113,11 @@
 
 #ifdef SCALARS
         ! Passive scalar variables
+
+        real, target, allocatable, dimension(:,:) ::
+     .  edsclrmt,   ! Explicit contributions to edsclrm
+     .  wpedsclrp   ! w'edsclr'
+
         real, target, allocatable, dimension(:,:) ::
      .  sclrpthvp,  ! sclr'th_v'
      .  sclrprtp,   ! sclr'rt'
@@ -123,12 +128,12 @@
      .  wp2sclrp,   ! w'^2 sclr'
      .  wpsclrp2,   ! w'sclr'^2
      .  wpsclrprtp, ! w'sclr'rt'
-     .  wpsclrpthlp,! w'sclr'thl'
-     .  wpedsclrp   ! w'edsclr'
+     .  wpsclrpthlp ! w'sclr'thl'
 
+!$omp   threadprivate(edsclrmt)
+!$omp   threadprivate(wpedsclrp)
 !$omp   threadprivate(sclrpthvp, sclrprtp, sclrp2, sclrpthlp)
 !$omp   threadprivate(wpsclrp, wp2sclrp, wpsclrprtp, wpsclrpthlp)
-!$omp   threadprivate(wpedsclrp)
 
 #endif /*SCALARS*/
 
@@ -312,7 +317,6 @@
 #ifdef SCALARS
 
 ! Variables for new mixing scheme
-
         allocate( sclrprtp(1:nzmax, 1:sclr_dim) )
         allocate( sclrp2(1:nzmax, 1:sclr_dim) )
         allocate( sclrpthvp(1:nzmax, 1:sclr_dim) )
@@ -325,8 +329,8 @@
         allocate( wpsclrprtp(1:nzmax, 1:sclr_dim) )
         allocate( wpsclrpthlp(1:nzmax, 1:sclr_dim) )
 
-! Eddy Diff. Scalar
-
+        ! Eddy Diff. Scalars
+        allocate( edsclrmt(1:nzmax, 1:sclr_dim) )
         allocate( wpedsclrp(1:nzmax, 1:sclr_dim) )
 #endif /*SCALARS*/
 
@@ -429,6 +433,7 @@
         wpsclrprtp(:,:)    = 0.0
         wpsclrpthlp(:,:)   = 0.0
 
+        edsclrmt(:,:)      = 0.0
         wpedsclrp(:,:)     = 0.0
 #endif /*SCALARS*/
 !$omp   end parallel
@@ -556,6 +561,7 @@
         deallocate( wpsclrprtp )
         deallocate( wpsclrpthlp )
 
+        deallocate( edsclrmt )
         deallocate( wpedsclrp )
 #endif /*SCALARS*/
 !$omp   end parallel

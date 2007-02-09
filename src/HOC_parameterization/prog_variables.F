@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: prog_variables.F,v 1.12 2007-02-02 22:14:37 dschanen Exp $
+! $Id: prog_variables.F,v 1.13 2007-02-09 22:13:43 dschanen Exp $
         module prognostic_variables
 
 !       This module contains definitions of all prognostic
@@ -10,6 +10,7 @@
 !       thermodynamic grid and a momentum grid, and the grids have 
 !       different points.
 !-----------------------------------------------------------------------
+        use constants, only: sclr_dim
 
         implicit none
 
@@ -84,6 +85,15 @@
 
 !$omp   threadprivate(wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc)
 
+#ifdef SCALARS 
+        ! Surface fluxes for passive scalars
+        real, dimension(sclr_dim) ::
+     .  wpsclrp_sfc,    ! w'sclr' at surface    [units m/s]
+     .  wpedsclrp_sfc   ! w'edsclr' at surface  [units m/s]
+
+!$omp   threadprivate(wpsclrp_sfc, wpedsclrp_sfc)
+#endif /* SCALARS */
+
         ! More surface data
         real :: 
      .  Tsfc, ! surface temperature     [K]
@@ -94,15 +104,14 @@
 !$omp   threadprivate(Tsfc, psfc, SE, LE)
 
 #ifdef SCALARS
-! New mixing scheme variables
 
+        ! Passive scalars 
         real, target, allocatable, dimension(:,:) ::
      .  sclrm,         ! Mean passive scalars           [units vary]
      .  sclrm_forcing, ! Scalars' forcing               [units/s]
-     .  edsclrm,       ! Mean eddy-diffusivity scalars  [units vary]
-     .  edsclrmt       ! Mean Edsclrm tendency          [units/s]
+     .  edsclrm        ! Mean eddy-diffusivity scalars  [units vary]
 
-!$omp   threadprivate(sclrm, sclrm_forcing, edsclrm, edsclrmt)
+!$omp   threadprivate(sclrm, sclrm_forcing, edsclrm)
 
 #endif /*SCALARS*/
 
@@ -177,14 +186,12 @@
 
 #ifdef SCALARS
 
-! Variables for new mixing scheme
+        ! Passive scalar variables 
 
         allocate( sclrm(1:nzmax, 1:sclr_dim) )
         allocate( sclrm_forcing(1:nzmax, 1:sclr_dim) )
 
         allocate( edsclrm(1:nzmax, 1:sclr_dim) )
-        allocate( edsclrmt(1:nzmax, 1:sclr_dim) )
-
 
 #endif /*SCALARS*/
 
@@ -240,13 +247,21 @@
         ! Hydrometer types
         hydromet(1:nzmax,1:hydromet_dim) = 0.0
 
+        ! Surface fluxes
+        wpthlp_sfc = 0.0
+        wprtp_sfc  = 0.0
+        upwp_sfc   = 0.0
+        vpwp_sfc   = 0.0
+
 #ifdef SCALARS
         ! Passive scalars 
+        wpsclrp_sfc(1:sclr_dim)   = 0.0
+        wpedsclrp_sfc(1:sclr_dim) = 0.0
+
         sclrm(1:nzmax,1:sclr_dim)         = 0.0
         sclrm_forcing(1:nzmax,1:sclr_dim) = 0.0
 
         edsclrm(1:nzmax,1:sclr_dim)       = 0.0
-        edsclrmt(1:nzmax,1:sclr_dim)      = 0.0
 #endif /*SCALARS*/
 !$omp   end parallel
 
@@ -315,7 +330,6 @@
         deallocate( sclrm_forcing )
 
         deallocate( edsclrm )
-        deallocate( edsclrmt )
 
 #endif /*SCALARS*/
 !$omp   end parallel

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.34 2007-02-09 00:52:20 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.35 2007-02-09 22:13:43 dschanen Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -41,9 +41,12 @@
      .              rtp2, thlp2, rtpthlp,
      .              Scm, taum, rcm, Ncm, Ncnm, Nim, 
      .              hydromet, cf,
-     .              isValid, implemented,
-     .              sclrm, sclrm_forcing, ! optional
-     .              edsclrm, edsclrmt )   ! optional
+     .              isValid, implemented
+#ifdef SCALARS
+     .              ,wpsclrp_sfc, wpedsclrp_sfc,   ! Optional
+     .              sclrm, sclrm_forcing, edsclrm  ! Optional
+#endif
+     .            )
 
 !      Description:
 !      subroutine to advance the model one timestep
@@ -104,8 +107,8 @@
 
        ! Input
        integer, intent(in) :: 
-     . iter,     ! closure iteration number
-     . niterlong ! total # of closure iterations
+     . iter,     ! Closure iteration number
+     . niterlong ! Total # of closure iterations
 
        logical, intent(in) :: 
      . implemented ! Is this part of a larger host model (T/F) ?
@@ -134,7 +137,6 @@
      . wprtp_sfc,   ! w' r_t' at surface.       [(kg m)/( kg s)]
      . upwp_sfc,    ! u'w' at surface.          [m^2/s^2]
      . vpwp_sfc     ! v'w' at surface.          [m^2/s^2]
-
 
        ! Input/Output
        ! These are prognostic or are planned to be in the future
@@ -171,27 +173,39 @@
        real, intent(inout), dimension(gr%nnzp) :: 
      . cf ! Cloud fraction.     [%]
 
-       real, intent(inout), dimension(gr%nnzp,sclr_dim), optional ::
+       ! Diagnostic, for if some calculation goes amiss.
+       logical, intent(inout) :: isValid
+
+#ifdef SCALARS
+
+       ! Optional Input Variables
+       real, intent(in),  dimension(sclr_dim) :: 
+     . wpsclrp_sfc,  ! Scalar flux at surface           [units m/s]
+     . wpedsclrp_sfc ! Eddy-Scalar flux at surface      [units m/s]
+
+       ! Optional Input/Output Variables
+       real, intent(inout), dimension(gr%nnzp,sclr_dim) ::
      . sclrm,          ! Passive scalar mean.
      . sclrm_forcing,  ! Passive scalar forcing.
      . edsclrm         ! Eddy passive scalar mean.
 
-       ! Output Variables
-       real, intent(out), dimension(gr%nnzp,sclr_dim), optional :: 
-     . edsclrmt ! Eddy passive scalar mean tendency.
-
-       logical, intent(inout) :: isValid
+#endif /*SCALARS*/
 
        ! Local Variables
        integer :: i, j, k, km1, kp1
 
-       real, dimension(1:gr%nnzp) ::
+       real, dimension(gr%nnzp) ::
      . tmp1,
      . gamma_Skw_fnc,
        ! Michael Falk added these, 23 Jan 2007
      . up2_plus_vp2,
      . Khm_temp
        ! eMFc
+
+#ifdef SCALARS
+       real, dimension(gr%nnzp,sclr_dim) ::
+     . sclr_tmp1, sclr_tmp2, sclr_tmp3, sclr_tmp4 ! for PDF closure
+#endif /* SCALARS */
 
 !------- Local variables for Latin Hypercube sampling ------------------
 
@@ -213,18 +227,13 @@
 !     the PDF allows us to construct a sample
        logical sample_flag
 
-       integer, dimension(1:gr%nnzp, 1:nt_repeat, 1:(d_variables+1) ) 
+       integer, dimension(gr%nnzp, nt_repeat, d_variables+1) 
      . :: p_height_time ! matrix of rand ints
 
 ! coeffs of s from pdf_closure_new
        real :: crt1, crt2, cthl1, cthl2   
 
 !-------- End Latin hypercube section ----------------------------------
-
-#ifdef SCALARS
-       real, dimension(1:gr%nnzp,1:sclr_dim) ::
-     . sclr_tmp1, sclr_tmp2, sclr_tmp3, sclr_tmp4 ! for PDF closure
-#endif /* SCALARS */
 
 !-----------------------------------------------------------------------
 
@@ -237,11 +246,17 @@
          Skwm(k) = Skw_func( wp2(k), 0.5*(wp3(k)+wp3(kp1)), wtol )
        end do
 
-!      SET SURFACE VALUES OF FLUXES (BROUGHT IN)
+       ! SET SURFACE VALUES OF FLUXES (BROUGHT IN)
        wpthlp(1) = wpthlp_sfc
        wprtp(1)  = wprtp_sfc
        upwp(1)   = upwp_sfc
        vpwp(1)   = vpwp_sfc
+
+#ifdef SCALARS
+       ! Set fluxes for passive scalars (if enabled)
+       wpsclrp(1,1:sclr_dim)   = wpsclrp_sfc(1:sclr_dim)
+       wpedsclrp(1,1:sclr_dim) = wpedsclrp_sfc(1:sclr_dim)
+#endif
 
 !      Set Surface variances
 !      Surface variances should be set here, before the call to diag_var.
@@ -267,8 +282,8 @@
           call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1),
      .                  wp2(1), thlp2(1), rtp2(1), rtpthlp(1)
 #ifdef SCALARS
-     .                  ,wpsclrp(1,:), sclrp2(1,:),
-     .                  sclrprtp(1,:), sclrpthlp(1,:)
+     .                 ,wpsclrp(1,1:sclr_dim), sclrp2(1,1:sclr_dim),
+     .                  sclrprtp(1,1:sclr_dim), sclrpthlp(1,1:sclr_dim)
 #endif /* SCALARS */
      .                )
        ELSE
@@ -538,7 +553,7 @@
      .        Fcsed, sed_rcm,
      .        isValid, implemented  
 #ifdef SCALARS
-     .        ,sclrm, wpsclrp, sclrpthvp, sclrm_forcing   ! optional
+     .       ,sclrm, wpsclrp, sclrpthvp, sclrm_forcing   ! optional
 #endif /* SCALARS */
      .      )
        if ( .not. isValid ) return

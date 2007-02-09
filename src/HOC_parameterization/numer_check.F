@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F,v 1.3 2006-08-30 03:16:24 dschanen Exp $
+! $Id: numer_check.F,v 1.4 2007-02-09 22:13:43 dschanen Exp $
         module numerical_check
 
         implicit none
@@ -21,8 +21,13 @@
 
         use diagnostic_variables
         use prognostic_variables
+        use model_flags, only: lcoamps_micro, kk_rain
+        use constants, only: sclr_dim, hydromet_dim, fstderr
 
         implicit none
+
+        ! Local Variables
+        integer :: i
 
         invalid_model_arrays = .false.
            
@@ -31,121 +36,135 @@
         ! wp2, & wp3.       
 
         if ( isnan2d( um ) ) then
-          print *, "NaN in um model array" 
-!         print *, "um= ", um
+          write(fstderr,*) "NaN in um model array" 
+!         write(fstderr,*) "um= ", um
           invalid_model_arrays = .true.
 !         return
-        endif
+        end if
 
         if ( isnan2d( vm ) ) then
-          print *, "NaN in vm model array" 
-!         print *, "vm= ", vm
+          write(fstderr,*) "NaN in vm model array" 
+!         write(fstderr,*) "vm= ", vm
           invalid_model_arrays = .true.
 !         return
-        endif
+        end if
 
         if ( isnan2d( wp2 ) ) then
-          print *, "NaN in wp2 model array" 
-!         print *, "wp2= ", wp2
+          write(fstderr,*) "NaN in wp2 model array" 
+!         write(fstderr,*) "wp2= ", wp2
           invalid_model_arrays = .true.
 !         return
-        endif
+        end if
 
         if ( isnan2d( wp3 ) ) then
-          print *, "NaN in wp3 model array" 
-!         print *, "wp3= ", wp3
+          write(fstderr,*) "NaN in wp3 model array" 
+!         write(fstderr,*) "wp3= ", wp3
           invalid_model_arrays = .true.
 !         return
-        endif
+        end if
 
         if ( isnan2d( rtm ) ) then
-          print *, "NaN in rtm model array" 
-!         print *, "rtm= ", rtm
+          write(fstderr,*) "NaN in rtm model array" 
+!         write(fstderr,*) "rtm= ", rtm
           invalid_model_arrays = .true.
 !         return
-        endif
+        end if
 
         if ( isnan2d( thlm ) ) then
-          print *, "NaN in thlm model array" 
-!         print *, "thlm= ", thlm
+          write(fstderr,*) "NaN in thlm model array" 
+!         write(fstderr,*) "thlm= ", thlm
           invalid_model_arrays = .true.
 !         return
-        endif
+        end if
 
         if ( isnan2d( rtp2 ) ) then
-          print *, "NaN in rtp2 model array" 
-!         print *, "rtp2= ", rtp2
+          write(fstderr,*) "NaN in rtp2 model array" 
+!         write(fstderr,*) "rtp2= ", rtp2
           invalid_model_arrays = .true.
 !         return
-        endif
+        end if
 
         if ( isnan2d( thlp2 ) ) then
-          print *, "NaN in thlp2 model array" 
-!         print *, "thlp2= ", thlp2
+          write(fstderr,*) "NaN in thlp2 model array" 
+!         write(fstderr,*) "thlp2= ", thlp2
           invalid_model_arrays = .true.
 !         return
-        endif
+        end if
 
         if ( isnan2d( wprtp ) ) then
-          print *, "NaN in wprtp model array" 
-!         print *, "wprtp= ", wprtp
+          write(fstderr,*) "NaN in wprtp model array" 
+!         write(fstderr,*) "wprtp= ", wprtp
           invalid_model_arrays = .true.
 !         return
-        endif
+        end if
 
         if ( isnan2d( wpthlp ) ) then
-          print *, "NaN in wpthlp model array" 
-!         print *, "wpthlp= ", wpthlp
+          write(fstderr,*) "NaN in wpthlp model array" 
+!         write(fstderr,*) "wpthlp= ", wpthlp
           invalid_model_arrays = .true.
 !         return
-        endif
+        end if
 
         if ( isnan2d( rtpthlp ) ) then
-          print *, "NaN in rtpthlp model array" 
-!         print *, "rtpthlp= ", rtpthlp
+          write(fstderr,*) "NaN in rtpthlp model array" 
+!         write(fstderr,*) "rtpthlp= ", rtpthlp
           invalid_model_arrays = .true.
 !         return
-        endif
+        end if
 
-!       if ( isnan2d( Nrm ) ) then
-!         print *, "NaN in Nrm model array" 
-!         print *, "Nrm= ", Nrm
+        if ( kk_rain .or. lcoamps_micro ) then
+          do i = 1, hydromet_dim, 1
+            if ( isnan2d( hydromet(:,i) ) ) then
+              write(fstderr,*) "NaN in a hydrometeor model array" 
+!             write(fstderr,*) "hydromet= ", hydromet
+              invalid_model_arrays = .true.
+!             return
+            end if
+          end do
+        end if
+
+!       if ( isnan2d( wmt ) ) then
+!         write(fstderr,*) "NaN in wmt model array" 
+!         write(fstderr,*) "wmt= ", wmt
 !         invalid_model_arrays = .true.
 !         return
-!       endif
-
-!       if ( isnan2d( rrm ) ) then
-!         print *, "NaN in rrm model array" 
-!         print *, "rrm= ", rrm
-!         invalid_model_arrays = .true.
-!         return
-!       endif
-
-        if ( isnan2d( wmt ) ) then
-          print *, "NaN in wmt model array" 
-!         print *, "wmt= ", wmt
-          invalid_model_arrays = .true.
-!         return
-        endif
+!       end if
 
         if ( isnan2d( wp2thvp ) ) then
-          print *, "NaN in wp2thvp model array" 
-!         print *, "wp2thvp = ", wp2thvp
+          write(fstderr,*) "NaN in wp2thvp model array" 
+!         write(fstderr,*) "wp2thvp = ", wp2thvp
           invalid_model_arrays = .true.
 !         return
-        endif
+        end if
 
         if ( isnan2d( rtpthvp ) ) then
-          print *, "NaN in rtpthvp model array" 
-!         print *, "rtpthvp = ", rtpthvp
+          write(fstderr,*) "NaN in rtpthvp model array" 
+!         write(fstderr,*) "rtpthvp = ", rtpthvp
           invalid_model_arrays = .true.
-        endif
+        end if
 
         if ( isnan2d( thlpthvp ) ) then
-          print *, "NaN in thlpthvp model array" 
-!         print *, "thlpthvp = ", thlpthvp
+          write(fstderr,*) "NaN in thlpthvp model array" 
+!         write(fstderr,*) "thlpthvp = ", thlpthvp
           invalid_model_arrays = .true.
-        endif
+        end if
+
+#ifdef SCALARS
+        do i = 1, sclr_dim, 1
+          if ( isnan2d( sclrm(:,i) ) ) then
+            write(fstderr,*) "NaN in sclrm", i, "model array"
+!           write(fstderr,'(a6,i2,a1)') "sclrm(", i, ")"
+!           write(fstderr,*) sclrm(:,i)
+            invalid_model_arrays = .true.
+          end if
+          if ( isnan2d( edsclrm(:,i) ) ) then
+            write(fstderr,*) "NaN in edsclrm", i, "model array"
+!           write(fstderr,'(a8,i2,a1)') "edsclrm(", i, ")"
+!           write(fstderr,*) edsclrm(:,i)
+            invalid_model_arrays = .true.
+          end if
+        end do
+#endif /*SCALARS*/
 
         return
         end function invalid_model_arrays
