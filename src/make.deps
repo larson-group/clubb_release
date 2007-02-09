@@ -1,0 +1,217 @@
+################################################################################
+# $Id: make.deps,v 1.1 2007-02-09 00:52:20 dschanen Exp $
+#
+# Dependencies file for the Makefile
+#
+# Explanation:
+# The use of dependencies allows shared data utilized through the use of a
+# Fortran 90 style 'USE' directive, an include directive, or a COMMON block
+# to be properly dealt with when compiling a program.
+#
+# Furthermore, the compiling of a module file creates a .mod file that contains
+# an implicitly determined F90 INTERFACE block for each of its member 
+# SUBROUTINE and FUNCTION declarations that occur after the CONTAINS statement,
+# which makes their arguments type safe.
+#
+# Therefore, whenever you add a USE statement in a file you should add 
+# the corresponding object file to the dependencies list for the file being
+# modified.  
+# E.g. when adding a "use statistics" line to fire.F, the new line should read:
+# fire.o : fire.F statistics.o
+# Plus any other files that fire.F has in a use or include.
+#
+# You do not need to add a dependency for functions or subrountines called via
+# an EXTERNAL directive, because they have no .mod file and are not typesafe.
+#
+################################################################################
+
+# == Parameterization dependencies ==
+cons.o		: cons.f90
+air.o		: cons.o air.f90 
+parab.o		: air.o cons.o parab.f90
+endian.o	: endian.F
+constants.o	: constants.F
+model_flags.o	: model_flags.F
+outputfile.o	: outputfile.F
+rain.o          : constants.o model_flags.o lapack_wrap.o parab.o statistics.o \
+	rain.F
+microphysics.o	: constants.o model_flags.o lapack_wrap.o rain.o \
+	coamps_micro_driver.o statistics.o microphysics.F
+outputgrads.o	: constants.o recl.F endian.o outputfile.o outputgrads.F
+outputnc.o	: outputfile.o outputnc.F
+diag_variables.o: constants.o grid.o model_flags.o diag_variables.F 
+prog_variables.o: constants.o grid.o model_flags.o prog_variables.F 
+numer_check.o	: prog_variables.o diag_variables.o numer_check.F
+inputgrads.o	: constants.o endian.o recl.F inputgrads.F
+grid.o		: grid.F
+statistics.o	: outputgrads.o outputnc.o prog_variables.o diag_variables.o \
+	grid.o statistics.F 
+
+erf.o		: erf.F
+lapack_wrap.o	: lapack_wrap.F
+Skw_func.o	: Skw_func.F
+
+closure_new.o	: constants.o grid.o rsat.o erf.o closure_new.F 
+diag_var.o	: constants.o grid.o statistics.o lapack_wrap.o \
+	diag_var.F
+mixing.o	: constants.o statistics.o lapack_wrap.o mixing.F 
+parameterization_interface.o : constants.o hydrostatic.o mixing.o \
+	model_flags.o numer_check.o Skw_func.o microphysics.o \
+	length.o statistics.o sounding.o diag_var.o rsat.o \
+	grid.o sat_rcm.o update.o prog_variables.o diag_variables.o \
+	sfc.o closure_new.o latin_hyper_sample.o lh_sampler.o \
+	parameterization_interface.F 
+hydrostatic.o	: constants.o hydrostatic.F 
+length.o	: constants.o length.F 
+rsat.o		: constants.o rsat.F 
+sat_rcm.o	: constants.o sat_rcm.F 
+sfc.o		: constants.o sfc.F 
+update.o	: grid.o statistics.o lapack_wrap.o update.F
+wp23.o		: constants.o statistics.o lapack_wrap.o wp23.F 
+tau.o		: constants.o tau.F
+compute_Khm_anisotropic	: grid.o compute_Khm_anisotropic.F
+
+# == Numerical Recipes dependencies (For the tuner) ==
+nrtype.o	: nrtype.f90
+nr.o		: nrtype.o nr.f90 
+nrutil.o	: nrtype.o nr.o nrutil.f90
+ran_state.o	: nrtype.o nr.o nrutil.o ran_state.f90
+ran1.o		: nrtype.o nr.o nrutil.o ran_state.o ran1.f90
+amebsa.o	: nrtype.o nr.o nrutil.o ran_state.o ran1.o amebsa.f90
+amoeba.o	: nrtype.o nr.o nrutil.o amoeba.f90
+
+
+# == Latin Hypercube dependencies  ==
+autoconv_driver.o	: autoconv_driver.F
+corrcoef.o		: corrcoef.F
+gaus_condt.o		: gaus_condt.F
+gaus_mixt_points.o	: gaus_mixt_points.F
+gaussj.o		: gaussj.F
+generate_k_order.o	: generate_k_order.F
+latin_hyper_sample.o	: latin_hyper_sample.F
+lh_sampler.o		: lh_sampler.F
+ltqnorm.o		: constants.o ltqnorm.F
+matmult.o		: matmult.F
+micro_calcs.o		: constants.o erf.o micro_calcs.F 
+permute_height_time.o	: permute_height_time.F
+ql_estimate.o		: ql_estimate.F
+ran2.o			: ran2.F
+rand_permute.o		: rand_permute.F
+rtpthlp_2_sptp.o	: rtpthlp_2_sptp.F
+sample_points.o		: sample_points.F
+st_2_rtthl.o		: st_2_rtthl.F
+truncate_gaus_mixt.o	: truncate_gaus_mixt.F
+
+# == GCSS dependencies ==
+diag_ustar.o: diag_ustar.F
+arm.o       : constants.o diag_ustar.o model_flags.o grid.o arm.F
+astex.o     : constants.o model_flags.o grid.o astex.F
+atex.o      : constants.o model_flags.o grid.o cloud_rad.o atex.F
+bomex.o     : constants.o model_flags.o grid.o bomex.F
+cobra.o     : constants.o model_flags.o grid.o cobra.F
+fire.o      : constants.o model_flags.o grid.o statistics.o cloud_rad.o fire.F
+gabls2.o    : constants.o diag_ustar.o model_flags.o grid.o gabls2.F
+mpace.o     : constants.o model_flags.o grid.o icedfs.o statistics.o mpace.F
+nov11.o     : constants.o model_flags.o grid.o icedfs.o statistics.o nov11.F
+jun25.o     : constants.o model_flags.o grid.o icedfs.o statistics.o jun25.F
+rico.o      : constants.o model_flags.o grid.o rico.F
+wangara.o   : constants.o model_flags.o grid.o wangara.F
+icedfs.o    : constants.o grid.o statistics.o icedfs.F
+cloud_rad.o : constants.o grid.o cloud_rad.F
+dycoms2_rf01.o : constants.o model_flags.o grid.o statistics.o dycoms2_rf01.F
+dycoms2_rf02.o : constants.o model_flags.o grid.o statistics.o dycoms2_rf02.F
+
+rad_lwsw.o      : rad_lwsw.F statistics.o
+linear_interpolation.o : linear_interpolation.F
+
+# == COAMPS Microphysics dependencies ==
+adjmlt.o                : adjmlt.F
+coamps_micro_driver.o   : gamma.o adjtq.o constants.o statistics.o \
+	coamps_micro_driver.F
+adjtq.o                 : slope.o esatv.o esati.o tgqg.o tgqr.o tgqs.o \
+	frzh.o eqa22.o eqa25.o eqa28.o eqa11g.o conice.o \
+	tgqi.o eqa27r.o eqa7g.o eqa8g.o eqa9g.o eqa13g.o \
+	eqa18g.o eqa21g.o eqa22g.o adjmlt.o qsatvi.o \
+	qtadj.o slope.o eqa6.o eqa12.o eqa27.o eqa19g.o \
+	nrmtqw.o conice.o eqa15.o eqa18.o eqa26.o eqa17g.o \
+	nrmtqi.o eqa7.o eqa9.o eqa19.o eqa10g.o eqa21.o \
+	eqa5g.o eqa12g.o eqa14g.o eqa20g.o nrmcol.o adjtq.F
+conice.o     : conice.F
+eqa10g.o     : gamma.o eqa10g.F
+eqa11g.o     : gamma.o eqa11g.F
+eqa12.o      : eqa12.F
+eqa12g.o     : gamma.o eqa12.F
+eqa13g.o     : eqa13g.F
+eqa14g.o     : eqa14g.F
+eqa15.o      : eqa15.F
+eqa17g.o     : eqa17g.F
+eqa18.o      : eqa18.F
+eqa18g.o     : eqa18g.F
+eqa19.o      : eqa19.F
+eqa19g.o     : eqa19g.F
+eqa20g.o     : eqa20g.F
+eqa21.o      : eqa21.F
+eqa22.o      : eqa22.F
+eqa22g.o     : eqa22g.F
+eqa25.o      : eqa25.F
+eqa26.o      : eqa26.F
+eqa27.o      : eqa27.F
+eqa27r.o     : eqa27r.F
+eqa28.o      : eqa28.F
+eqa5g.o      : eqa5g.F
+eqa6.o       : eqa6.F
+eqa7.o       : eqa7.F
+eqa7g.o      : eqa7g.F
+eqa8g.o      : eqa8g.F
+eqa9.o       : eqa9.F
+eqa9g.o      : eqa9g.F
+gamma.o      : gamma.F
+
+# == BUGSrad dependencies ==
+cos_solar_zen.o         : cos_solar_zen.F
+kinds.o			: kinds.F90
+bugsrad_planck.o	: kinds.o bugsrad_planck.F90
+cloud_correlate.o	: kinds.o cloud_correlate.F90
+bugsrad_physconst.o	: kinds.o bugsrad_physconst.F90
+bugs_lwr.o		: kinds.o bugs_lwr.F bugsrad_planck.o gases_ckd.o 
+bugs_rad.o 		: kinds.o bugs_rad.F bugs_swr.o bugs_lwr.o gascon.o \
+	bugsrad_planck.o cloud_correlate.o bugsrad_physconst.o \
+	gases_ckd.o cloudg.o newexp.o rayle.o
+bugs_swr.o 		: kinds.o gases_ckd.o bugs_swr.F 
+cloudg.o 		: kinds.o cloudg.F
+comscp1.o 		: kinds.o comscp1.F
+comscp2.o		: kinds.o comscp2.F
+gascon.o 		: kinds.o bugsrad_physconst.o gascon.F
+gases_ckd.o 		: kinds.o bugsrad_physconst.o gases_ckd.F90
+newexp.o 		: kinds.o newexp.F90
+rayle.o 		: kinds.o rayle.F
+two_rt_lw.o 		: kinds.o two_rt_lw.F
+two_rt_lw_sel.o 	: kinds.o two_rt_lw_sel.F
+two_rt_lw_iter.o 	: kinds.o two_rt_lw_iter.F
+two_rt_lw_ocastrndm.o	: kinds.o two_rt_lw_ocastrndm.F90
+two_rt_sw.o		: kinds.o two_rt_sw.F
+two_rt_sw_bs.o		: kinds.o lapack_wrap.o two_rt_sw_bs.F
+two_rt_sw_ocastrndm.o	: kinds.o two_rt_sw_ocastrndm.F90
+bugsrad_hoc.o 		: kinds.o cos_solar_zen.o constants.o bugs_rad.o \
+	statistics.o bugsrad_hoc.F90
+
+# == Misc. program related source files  ==
+hoc.o		: parameterization_interface.o arm.o astex.o atex.o \
+	bomex.o dycoms2_rf01.o dycoms2_rf02.o fire.o jun25.o mpace.o nov11.o \
+	wangara.o cobra.o rico.o gabls2.o hoc.F
+sounding.o	: constants.o sounding.F
+inputfields.o	: grid.o inputgrads.o inputfields.F 
+gradsaverage.o	: inputgrads.o gradsaverage.F 
+error.o		: nrtype.o nr.o gradsaverage.o hoc.o error.F
+budget_terms.o  : amoeba.o inputfields.o gradsaverage.o hoc.o \
+	error.o budget_terms.F
+
+# == Executables ==
+hoc_tuner.o		: nrtype.o nr.o hoc.o error.o hoc_tuner.F
+hoc_tuner_budget_terms.o: nrtype.o nr.o hoc.o error.o \
+	budget_terms.o hoc_tuner_budget_terms.F
+hoc_standalone.o	: hoc.o hoc_standalone.F
+hoc_inputfields.o	: hoc.o inputfields.o hoc_inputfields.F
+int2txt.o		: int2txt.F recl.F
+compare_runs.o		: endian.o inputgrads.o gradsaverage.o compare_runs.F
+jacobian.o		: gradsaverage.o hoc.o jacobian.F

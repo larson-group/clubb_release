@@ -1,7 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.33 2007-02-07 22:37:15 mjfalk Exp $
-
-
+! $Id: parameterization_interface.F,v 1.34 2007-02-09 00:52:20 dschanen Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -15,7 +13,7 @@
         module hoc_parameterization_interface
 
 !       Description:
-!       The `core' of the HOC model 
+!       The `core' of the HOC model.
 
 !       References:
 !       None
@@ -96,7 +94,8 @@
      . Skw_func
 
        external ::
-     . length
+     . length,
+     . compute_Khm_anisotropic
 #ifdef STATS
      . ,stats_accumulate
 #endif /*STATS*/
@@ -159,7 +158,6 @@
      . Ncm,     ! Cloud droplet number conc.    [num/m^3]
      . Ncnm,    ! Cloud nuclei number conc.     [num/m^3]
      . Nim      ! Ice crystal number conc.      [num/m^3]
-
 
        real, intent(inout), dimension(gr%nnzp,hydromet_dim) ::
      . hydromet  ! Hydrometer fields                     [units vary]
@@ -225,7 +223,7 @@
 
 #ifdef SCALARS
        real, dimension(1:gr%nnzp,1:sclr_dim) ::
-     . sclr_tmp1, sclr_tmp2, sclr_tmp3, sclr_tmp4 ! for pdf closure
+     . sclr_tmp1, sclr_tmp2, sclr_tmp3, sclr_tmp4 ! for PDF closure
 #endif /* SCALARS */
 
 !-----------------------------------------------------------------------
@@ -244,7 +242,6 @@
        wprtp(1)  = wprtp_sfc
        upwp(1)   = upwp_sfc
        vpwp(1)   = vpwp_sfc
-
 
 !      Set Surface variances
 !      Surface variances should be set here, before the call to diag_var.
@@ -526,11 +523,11 @@
 !      Store the saturation mixing ratio for output purposes.  Brian
        do k = 1, gr%nnzp, 1
          rsm(k) =
-     .   rsat(p(k), (thlm(k)+(Lv/(Cp*exner(k)))*rcm(k))*exner(k))
+     .   rsat( p(k), (thlm(k)+(Lv/(Cp*exner(k)))*rcm(k))*exner(k) )
        end do
 
 
-!      Advance rtm/wprtp and thlm/wpthlp one time step
+       ! Advance rtm/wprtp and thlm/wpthlp one time step
 
        call timestep_mixing
      .      ( dt, taum, wmm, wmt, wp2, wp3, Scm, Skwm, 
@@ -538,7 +535,6 @@
      .        thlm, wpthlp, thlpthvp, thlm_forcing, 
      .        rhot, rhom, exner, rcm, Ncm, 
      .        hm_thl_tndcy, hm_rt_tndcy, 
-*    .        cond_rrm, auto_rrm, accr_rrm,             
      .        Fcsed, sed_rcm,
      .        isValid, implemented  
 #ifdef SCALARS
@@ -553,12 +549,12 @@
 #ifdef SCALARS
 !      Set Boundary Conditions for optional passive scalars
        do i = 1, sclr_dim
-          wpsclrp(gr%nnzp,i)   = 0.0
+         wpsclrp(gr%nnzp,i)   = 0.0
        end do ! i = 1, sclr_dim
 #endif /* SCALARS */
 
 
-!      Advance wp2/wp3 one timestep
+       ! Advance wp2/wp3 one timestep
 
        call timestep_wp23 ! dtclosure to dt -dschanen
      .      ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
@@ -568,54 +564,44 @@
 
        if ( .not. isValid ) return
 
-!      Set Boundary Conditions on wp2 and wp3 output.
+       ! Set Boundary Conditions on wp2 and wp3 output.
        wp2(gr%nnzp)     = 0.0
        wp3(gr%nnzp)     = 0.0
 
-! Michael Falk, 2 February 2007, for new GABLS parameters
-           if (lKhm_aniso) then
-             call compute_Khm_anisotropic ( C4, C_k, um, vm, Lscale,
-     .                                      zm2zt(wp2), up2_plus_vp2,
-     .                                      Khm_temp,time_current,
-     .                                      time_initial)
-           else
-             Khm_temp = Khm
-           end if
-! eMFc
+       ! Michael Falk, 2 February 2007, for new GABLS parameters
+       ! This is an alternative method to calculate the Eddy-diffusivity (Khm)
+       ! and is applied to um wind, vm wind, and the Eddy-scalars.
+       ! Elsewhere Khm and Kht are calculated as before.
+       if ( lKhm_aniso ) then
+         call compute_Khm_anisotropic
+     .        ( C4, C_k, time_current, time_initial, um, vm, Lscale,
+     .          zm2zt( wp2 ), up2_plus_vp2, Khm_temp  )
+
+       else
+         Khm_temp = Khm
+
+       end if
+       ! eMFc
 
 #ifdef SCALARS
-!      Eddy Diffusivity Code
+       ! Eddy-Diff. passive scalars
        do i=1, sclr_dim
+
          edsclrmt(1:gr%nnzp,i) = - wmt * ddzm( zt2zm( edsclrm(:,i) ) )
-         if ( i == SCLR_THETA) then
-          ! Note changed from dtmain=>dt -dschanen
-           call update_ed_var( "edsclr", edsclrm(:,i), edsclrmt(:,i), 
-     .                         wpedsclrp(1,i), Khm_temp, dt, 
-     .                         wpedsclrp(:,i), isValid )
-         else ! i == SCLR_RT
-           call update_ed_var( "edsclr", edsclrm(:,i), edsclrmt(:,i), 
-     .                         wpedsclrp(1,i), Khm_temp, dt, 
-     .                         wpedsclrp(:,i), isValid )
-         end if
+
+         call update_ed_var( "edsclr", edsclrm(:,i), edsclrmt(:,i), 
+     .                       wpedsclrp(1,i), Khm_temp, dt, 
+     .                       wpedsclrp(:,i), isValid )
+
        end do
+
        ! Set boundary condition as in rt
        edsclrm(1,1:sclr_dim) = edsclrm(2,1:sclr_dim)
        if ( .not. isValid ) return
 #endif /*SCALARS*/
 
 
-!      Update winds
-
-! Michael Falk, 2 February 2007, for new GABLS parameters
-           if (lKhm_aniso) then
-             call compute_Khm_anisotropic ( C4, C_k, um, vm, Lscale,
-     .                                      zm2zt(wp2), up2_plus_vp2,
-     .                                      Khm_temp,time_current,
-     .                                      time_initial)
-           else
-             Khm_temp = Khm
-           end if
-! eMFc
+       ! Update winds
 
        IF ( .NOT. implemented ) THEN
           umt = - wmt * ddzm( zt2zm( um ) )
@@ -641,17 +627,17 @@
        ELSE
           umt = 0.0
        END IF
+
        ! dtmain to dt -dschanen
        call update_ed_var( "um", um, umt, upwp(1), 
      .                     Khm_temp, dt, upwp, isValid )
+
        if ( lmpace_nudge ) then
          do k=1,gr%nnzp
            ! Nudging; 3600 s is nudging timescale
            ! Michael Falk; 8 Sep-1 Nov 2006
-! Michael Falk commented these out on 29 Jan 2007 to make GABLS work.
-!           um(k) = um(k) - ((um(k) - um_init(k)) * (dt/3600)) 
-!           vm(k) = vm(k) - ((vm(k) - vm_init(k)) * (dt/3600)) 
-! eMFc
+            um(k) = um(k) - ((um(k) - um_init(k)) * (dt/3600)) 
+            vm(k) = vm(k) - ((vm(k) - vm_init(k)) * (dt/3600)) 
          end do
        end if
 
@@ -663,17 +649,6 @@
      .               + um(gr%nnzp-1)
 
        if ( .not. isValid ) return
-
-! Michael Falk, 2 February 2007, for new GABLS parameters
-           if (lKhm_aniso) then
-             call compute_Khm_anisotropic ( C4, C_k, um, vm, Lscale,
-     .                                      zm2zt(wp2), up2_plus_vp2,
-     .                                      Khm_temp,time_current,
-     .                                      time_initial)
-           else
-             Khm_temp = Khm
-           end if
-! eMFc
 
        IF ( .NOT. implemented ) THEN
           vmt = - wmt * ddzm( zt2zm( vm ) )
@@ -738,12 +713,12 @@
            sfc%x(1,iustar) = sfc%x(1,iustar) + ustar
            sfc%n(1,iustar) = sfc%n(1,iustar) + 1
          end if
-! Michael Falk added this for up2_plus_vp2, 23 Jan 2007.
+         ! Michael Falk added this for up2_plus_vp2, 23 Jan 2007.
          if ( iup2_plus_vp2 > 0) then
            zm%x(:,iup2_plus_vp2) = zm%x(:,iup2_plus_vp2) + up2_plus_vp2
            zm%n(:,iup2_plus_vp2) = zm%n(:,iup2_plus_vp2) + 1
          end if
-! eMFc
+         ! eMFc
          ! Moved to timestep_microphys
 !        if ( irain > 0 .and. kk_rain ) then   ! Added by Brian
 !          sfc%x(1,irain) = sfc%x(1,irain) + rain_rate(2)
@@ -849,7 +824,8 @@
      .               C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12,
      .               nu1, nu2, nu6, nu8, nu_r, 
      .               gamma_coef, gamma_coefb, gamma_coefc,
-     .               mu, c_K, beta, lmin_coef, taumin, taumax, fcor,
+     .               mu, c_K, beta, lmin_coef, taumin, taumax, 
+     .               fcor, T0,
      .               lbugsrad, kk_rain, licedfs, lcoamps_micro,
      .               cloud_sed, bottom_at_sfc,
      .               lmpace_nudge, lKhm_aniso, implemented, 
@@ -892,7 +868,7 @@
      .  lmin_coef, taumin, taumax,
      .  gamma_coef, gamma_coefb, gamma_coefc,
      .  mu, c_K,
-     .  fcor
+     .  fcor, T0
 
         ! Flags
         logical, intent(in) :: 
@@ -945,7 +921,7 @@
      .         nu1, nu2, nu6, nu8, nu_r,
      .         gamma_coef, gamma_coefb, gamma_coefc,
      .         mu, c_K, beta, lmin_coef,
-     .         taumin, taumax, fcor )
+     .         taumin, taumax, fcor, T0 )
 
         return
         end subroutine parameterization_setup
@@ -975,70 +951,5 @@
 
         return
         end subroutine parameterization_cleanup
-
-!-----------------------------------------------------------------------
-        subroutine compute_Khm_anisotropic( C4, C_k, um, vm, Lscale,
-     .    wp2zt, up2_plus_vp2, Khm_anisotropic, time, time_initial )
-
-        use grid_class
-        implicit none
-
-        ! Local constant
-        real, parameter ::
-     .  C13 = 0.1     ! Constant for up2_plus_vp2
-
-        ! Input variables
-        real, intent(in) :: 
-     .  C4,          ! Constant C4 from model standalone file   [-]   start Michael Falk, 11 Jan 2007
-     .  C_k,         ! Coefficient of something                 [-]
-     .  time,        ! time since zero                          [s]
-     .  time_initial ! initialization time                      [s]   eMFc
-
-        real, dimension(1:gr%nnzp), intent(in) ::
-     .  um,     ! u-direction wind speed                    [m s^-1]  start Michael Falk, 11 Jan 2007
-     .  vm,     ! v-direction wind speed                    [m s^-1]
-     .  Lscale, ! Turbulent length scale                    [m]
-     .  wp2zt   ! wp2 interpolated to t grid                [m^2 s^-2] eMFc
-
-        ! Output variables
-        real, dimension(1:gr%nnzp), intent(out) ::
-     .  up2_plus_vp2,    ! up2_plus_vp2                   [m^2 s^-2]
-     .  Khm_anisotropic  ! new Khm based on new e_anisotropic
-
-        ! Local variables
-        real, dimension (1:gr%nnzp) ::
-     .  du_dz,           ! Derivative of um with respect to height [s^-1]
-     .  dv_dz,           ! Derivative of vm with respect to height [s^-1]
-     .  e_anisotropic,   ! new TKE, computed without the assumption that up2=vp2=wp2
-     .  Lscale_with_min, ! Turbulent length scale                    [m]
-     .  wp2zt_with_min   ! wp2 interpolated to t grid                [m^2 s^-2]
-
-        integer :: k ! Index
-
-        du_dz = ddzm(zt2zm(um))
-        dv_dz = ddzm(zt2zm(vm))
-
-        do k=1,gr%nnzp
-          wp2zt_with_min(k) = max(wp2zt(k), 2.e-2*2.e-2) !wtol^2
-          Lscale_with_min(k) = max(Lscale(k), 5.0)
-! These are the old values.  7 Feb 2007, Michael Falk
-!          wp2zt_with_min(k) = max(wp2zt(k), 0.3)
-!          Lscale_with_min(k) = max(Lscale(k), 30.0)
-          up2_plus_vp2(k) = 1 / (C13 + (1./3.) * C4)
-     .                      * ( 2 * C_k * Lscale_with_min(k)
-     .                          * Lscale_with_min(k)
-     .                          *   ((du_dz(k) * du_dz(k))
-     .                              + (dv_dz(k) * dv_dz(k)))
-     .                          + (2./3.) * C4 * wp2zt_with_min(k)
-     .                        )
-          e_anisotropic(k) = (0.5 * up2_plus_vp2(k))
-     .                       + (0.5 * wp2zt_with_min(k))
-
-          Khm_anisotropic(k) = C_k * Lscale_with_min(k) *
-     .                         sqrt(e_anisotropic(k))
-        end do
-
-        return
-        end subroutine compute_Khm_anisotropic
 
         end module hoc_parameterization_interface

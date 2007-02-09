@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.114 2007-02-07 22:48:54 mjfalk Exp $
+! $Id: hoc.F,v 1.115 2007-02-09 00:52:20 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -193,7 +193,9 @@
      .  niterlong,
      .  sample_time
 
-        real :: fcor ! Coriolis parameter [s^-1]
+        real :: 
+     .  fcor, ! Coriolis parameter       [s^-1]
+     .  T0    ! Reference Temperature    [K]
 
         logical :: 
      .  cloud_sed,    ! Flag for cloud water droplet sedimentation. - Brian
@@ -221,7 +223,7 @@
      .   day, month, year, rlat, rlon,
      .   time_initial, time_final, time_spinup,
      .   dtmain, dtclosure,
-     .   sfctype, Tsfc, psfc, SE, LE, fcor,
+     .   sfctype, Tsfc, psfc, SE, LE, fcor, T0,
      .   cloud_sed, kk_rain, licedfs, lcoamps_micro, 
      .   lbugsrad, bottom_at_sfc, lKhm_aniso
 
@@ -273,7 +275,8 @@
      .        nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in, 
      .        gamma_coef_in, gamma_coefb_in, gamma_coefc_in,
      .        mu_in, c_K_in, beta_in, lmin_coef_in, 
-     .        taumin_in, taumax_in, fcor,
+     .        taumin_in, taumax_in, 
+     .        fcor, T0,
      .        lbugsrad, kk_rain, licedfs, lcoamps_micro,
      .        cloud_sed, bottom_at_sfc,
      .        lmpace_nudge, lKhm_aniso, 
@@ -492,7 +495,9 @@
      .  ifinal,
      .  niterlong
 
-        real :: fcor ! Coriolis parameter [s^-1]
+        real :: 
+     .  fcor, ! Coriolis parameter [s^-1]
+     .  T0    ! Reference Temperature    [K]
 
         logical :: 
      .  cloud_sed,    ! Flag for cloud water droplet sedimentation. - Brian
@@ -522,7 +527,7 @@
      .  day, month, year, rlat, rlon,
      .  time_initial, time_final, time_spinup,
      .  dtmain, dtclosure,
-     .  sfctype, Tsfc, psfc, SE, LE, fcor,
+     .  sfctype, Tsfc, psfc, SE, LE, fcor, T0,
      .  cloud_sed, kk_rain, licedfs, lcoamps_micro, 
      .  lbugsrad, bottom_at_sfc, lKhm_aniso
 
@@ -580,7 +585,8 @@
      .        nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in, 
      .        gamma_coef_in, gamma_coefb_in, gamma_coefc_in,
      .        mu_in, c_K_in, beta_in, lmin_coef_in, 
-     .        taumin_in, taumax_in, fcor,
+     .        taumin_in, taumax_in, 
+     .        fcor, T0,
      .        lbugsrad, kk_rain, licedfs, lcoamps_micro,
      .        cloud_sed, bottom_at_sfc,
      .        lmpace_nudge, lKhm_aniso, 

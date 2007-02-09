@@ -1,9 +1,11 @@
 !-----------------------------------------------------------------------
-! $Id: model_flags.F,v 1.7 2007-02-07 22:36:30 mjfalk Exp $
+! $Id: model_flags.F,v 1.8 2007-02-09 00:52:20 dschanen Exp $
 
-! Various model options that can be toggled off and on as desired
-!-----------------------------------------------------------------------
         module model_flags
+
+!       Description:
+!       Various model options that can be toggled off and on as desired.
+!-----------------------------------------------------------------------
 
         logical, parameter :: 
      .  LH_on    = .false., ! Latin hypercube calculation
@@ -23,9 +25,9 @@
        ! at the surface:  Nov. 11 altocumulus case.
        logical :: bottom_at_sfc
 
-!$omp threadprivate(lbugsrad, kk_rain, licedfs)
-!$omp threadprivate(lcoamps_micro, cloud_sed, lmpace_nudge)
-!$omp threadprivate(bottom_at_sfc)
+!$omp  threadprivate(lbugsrad, kk_rain, licedfs)
+!$omp  threadprivate(lcoamps_micro, cloud_sed, lmpace_nudge)
+!$omp  threadprivate(bottom_at_sfc, lKhm_aniso)
 
        end module model_flags
 

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.12 2007-02-02 22:13:57 dschanen Exp $
+! $Id: constants.F,v 1.13 2007-02-09 00:52:20 dschanen Exp $
 
         module constants
 
@@ -45,9 +45,8 @@
         ! Von Karman's constant
         ! Constant of the logarithmic wind profile in the surface layer 
         real, parameter :: 
-     .  vonk   = 0.4,    ! Accepted value is 0.40 (+/-) 0.01    [-]
-     .  rho_lw = 1000.0, ! Density of liquid water              [kg/m^3]
-     .  T0     = 300.0   ! Reference temperature                [K]
+     .  vonk   = 0.4,   ! Accepted value is 0.40 (+/-) 0.01    [-]
+     .  rho_lw = 1000.0 ! Density of liquid water              [kg/m^3]
 
         ! BUGSrad Constants
         real, parameter :: 
@@ -56,8 +55,10 @@
         ! Model parameters and constraints setup in the namelists
 
         real :: 
-     .  fcor ! Coriolis parameter               [s^-1]
-!omp threadprivate(fcor)
+     .  fcor, ! Coriolis parameter                       [s^-1]
+     .  T0    ! Reference temperature (usually 300)      [K]
+
+!$omp    threadprivate(fcor, T0)
 
         ! Model constant parameters 
         real ::
@@ -102,13 +103,13 @@
      .  taumax,     ! Previously determined value.
      .  lmin        ! Previously determined value.
 
-!omp threadprivate(C1, C1b, C1c, C2, C2b, C2c)
-!omp threadprivate(C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6rtb, C6rtc)
-!omp threadprivate(C6thl, C6thlb, C6thlc)
-!omp threadprivate(C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12)
-!omp threadprivate(nu1, nu2, nu6, nu8, nu_r, beta)
-!omp threadprivate(gamma_coef, gamma_coefb, gamma_coefc)
-!omp threadprivate(c_K, lmin, taumin, taumax, mu)
+!$omp   threadprivate(C1, C1b, C1c, C2, C2b, C2c)
+!$omp   threadprivate(C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6rtb, C6rtc)
+!$omp   threadprivate(C6thl, C6thlb, C6thlc)
+!$omp   threadprivate(C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12)
+!$omp   threadprivate(nu1, nu2, nu6, nu8, nu_r, beta)
+!$omp   threadprivate(gamma_coef, gamma_coefb, gamma_coefc)
+!$omp   threadprivate(c_K, lmin, taumin, taumax, mu)
 
 !       Vince Larson added a constant to set plume widths for theta_l and rt
 !       beta should vary between 0 and 3, with 1.5 the standard value
@@ -116,7 +117,7 @@
 !       real, parameter :: beta = 1.5
         real :: beta
 
-!omp threadprivate(beta)
+!$omp   threadprivate(beta)
 
 !       These are referenced together often enough that it made sense to 
 !       make a list of them.  Note that lmin_coef is the input parameter, 
@@ -186,7 +187,7 @@
      .               nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in,
      .               gamma_coef_in, gamma_coefb_in, gamma_coefc_in, 
      .               mu_in, c_K_in, beta_in, lmin_coef_in,
-     .               taumin_in, taumax_in, fcor_in ) 
+     .               taumin_in, taumax_in, fcor_in, T0_in ) 
 !       Description:
 !       Subroutine to set-up constants
 
@@ -215,7 +216,7 @@
      .  nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in,
      .  gamma_coef_in, gamma_coefb_in, gamma_coefc_in,
      .  mu_in, c_K_in, beta_in, lmin_coef_in, 
-     .  taumin_in, taumax_in, fcor_in
+     .  taumin_in, taumax_in, fcor_in, T0_in
 
        ! These now occur as parameters in a namelist
 !      C1 = 1.7
@@ -281,7 +282,8 @@
        mu  = mu_in
        c_K = c_K_in
 
-       fcor = fcor_in ! Not currently used 
+       fcor = fcor_in
+       T0   = T0_in
 
        ! The nu's are chosen for deltaz <= 40 m. Looks like they must 
        ! be adjusted for larger grid spacings (Vince Larson)
