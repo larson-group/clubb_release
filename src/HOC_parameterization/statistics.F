@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.17 2007-02-07 23:04:35 dschanen Exp $
+!  $Id: statistics.F,v 1.18 2007-02-09 00:54:11 dschanen Exp $
 
 #ifdef STATS
       module stats_type
@@ -348,7 +348,7 @@
 !$omp   threadprivate(iwp4, iwpthvp, irtpthvp, ithlpthvp, itaum, iKhm)
 !$omp   threadprivate(iwprcp, ithlprcp, irtprcp, iupwp, ivpwp, irhom)
 !$omp   threadprivate(iscm, iem, ishear, iFrad, iFrad_LW, iFrad_SW)
-!$omp   threadprivate(iFprec, iFcsed)
+!$omp   threadprivate(iFprec, iFcsed, iup2_plus_vp2)
 
         ! Sedimentation velocities
         integer ::
@@ -2223,6 +2223,7 @@
       iFrad_SW  = 0  ! Brian
       iFprec    = 0  ! Brian
       iFcsed    = 0  ! Brian
+
       iup2_plus_vp2 = 0 ! Michael
 
       ! Sedimentation velocities
