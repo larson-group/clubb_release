@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm.F,v 1.3 2006-12-28 23:10:50 dschanen Exp $
+! $Id: arm.F,v 1.4 2007-02-09 22:10:10 dschanen Exp $
         module arm
 
 !       Description:
@@ -142,9 +142,10 @@
         return
         end subroutine arm_tndcy
 !----------------------------------------------------------------------
-        subroutine arm_sfclyr( time, z, dn0, thp, up, vp, uw, vw, 
-     .                         wtp, wrp, ustar,
-     .                         wpsclrp_sfc )
+        subroutine arm_sfclyr( time, z, dn0, thlm_sfc, um_sfc, vm_sfc, 
+     .                         upwp_sfc, vpwp_sfc, 
+     .                         wpthlp_sfc, wprtp_sfc, ustar,
+     .                         wpsclrp_sfc, wpedsclrp_sfc )
 
 !       Description:
 !       This subroutine computes surface fluxes of horizontal momentum,
@@ -158,71 +159,89 @@
         ! External
         real, external :: diag_ustar
 
-        ! Parameter Constants
+        intrinsic :: max, sqrt, present
 
+        ! Parameter Constants
         real, parameter ::
      .  ubmin = 0.25
+        ! ARM roughness height
+        real, parameter :: 
+     .  z0 = 0.035  ! momentum roughness height
 
         ! Input variables
-
-        real, intent(in) :: time
-        real, intent(in) :: z
-        real, intent(in) :: dn0
-        real, intent(in) :: thp
-        real, intent(in) :: up,vp
+        real, intent(in) :: 
+     .  time,           ! Current time          [s]
+     .  z,              ! Height at zt(2)       [m]
+     .  dn0,            ! ???
+     .  thlm_sfc,       ! Theta_l at zt(2)      [K]
+     .  um_sfc,         ! um at zt(2)           [m/s]
+     .  vm_sfc          ! vm at zt(2)           [m/s]
 
         real, intent(inout) :: ustar
 
-!       Output variables
+        ! Output variables
+        real, intent(out) :: 
+     .  upwp_sfc,   ! u'w' at surface           [m^2/s^2]
+     .  vpwp_sfc,   ! v'w' at surface           [m^2/s^2]
+     .  wpthlp_sfc, ! w'theta_l' surface flux   [(m K)/s]
+     .  wprtp_sfc   ! w'rt' surface flux        [(m kg)/(kg s)]
 
-        real, intent(out) :: uw, vw, wtp, wrp
+        ! Output variables (optional)
+        real,  dimension(sclr_dim), optional, intent(out) :: 
+     .  wpsclrp_sfc,    ! Passive scalar surface flux      [units m/s] 
+     .  wpedsclrp_sfc   ! Passive eddy-scalar surface flux [units m/s]
 
-!       Output variables (optional)
-        real, optional, intent(out) :: wpsclrp_sfc(sclr_dim)
+        ! Internal variables
 
-!       Internal variables
+        integer :: i, j ! Loop indices
 
-        integer i, j
-        real usfc, vsfc, ubar
-        real true_time
-        real heat_flx, moisture_flx
-        real heat_flx2, moisture_flx2
-        real bflx
+        real :: 
+     .  usfc, 
+     .  vsfc, 
+     .  ubar,
+     .  true_time,
+     .  heat_flx, moisture_flx,
+     .  heat_flx2, moisture_flx2,
+     .  bflx
 
-!       ARM roughness height
-        real, parameter :: z0 = 0.035  ! momentum roughness height
-
-! Compute heat and moisture fluxes from ARM data in (W/m2)
-
+        ! Compute heat and moisture fluxes from ARM data in (W/m2)
         true_time = time
+
         call arm_sfcflx( true_time, heat_flx, moisture_flx )
 
-! Compute momentum fluxes
+        ! Compute momentum fluxes
 
-!       Convert heat_flx and moisture_flx to natural units
+        ! Convert heat_flx and moisture_flx to natural units
         heat_flx2     = heat_flx / ( Cp * dn0 )    ! (K m/s)
         moisture_flx2 = moisture_flx / ( Lv * dn0 )! (m/s)
 
-!       Heat flux in units of (m2/s3) (needed by diag_ustar)
-        bflx = grav/thp * heat_flx2
+        ! Heat flux in units of (m2/s3) (needed by diag_ustar)
+        bflx = grav/thlm_sfc * heat_flx2
 
-!       Sfc winds
-        usfc = up
-        vsfc = vp
+        ! Surface winds
+        usfc = um_sfc
+        vsfc = vm_sfc
         ubar = max( ubmin, sqrt( usfc ** 2 + vsfc ** 2 ) )
 
-!       Compute ustar
+        ! Compute ustar
         ustar = diag_ustar( z, bflx, ubar, z0 )
 
-!       Assign fluxes
+        ! Assign fluxes
+        upwp_sfc   = -usfc/ubar * ustar * ustar
+        vpwp_sfc   = -vsfc/ubar * ustar * ustar
+        wpthlp_sfc = heat_flx2
+        wprtp_sfc  = moisture_flx2
 
-        uw  = -usfc/ubar * ustar * ustar
-        vw  = -vsfc/ubar * ustar * ustar
-        wtp = heat_flx2
-        wrp = moisture_flx2
+        ! Let passive scalars be equal to rt and theta_l for now
+        if ( present( wpsclrp_sfc ) ) then
+          wpsclrp_sfc(SCLR_THETA) = wpthlp_sfc
+          wpsclrp_sfc(SCLR_RT)    = wprtp_sfc
+        end if
 
-        if (present( wpsclrp_sfc )) wpsclrp_sfc(SCLR_THETA) = wtp
-        if (present( wpsclrp_sfc )) wpsclrp_sfc(SCLR_RT) = wrp
+        if ( present( wpedsclrp_sfc ) ) then
+          wpedsclrp_sfc(SCLR_THETA) = wpthlp_sfc
+          wpedsclrp_sfc(SCLR_RT)    = wprtp_sfc
+        end if
 
         return
         end subroutine arm_sfclyr

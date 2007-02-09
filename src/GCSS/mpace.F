@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace.F,v 1.1 2006-12-16 00:32:45 dschanen Exp $
+! $Id: mpace.F,v 1.2 2007-02-09 22:10:11 dschanen Exp $
         module mpace
 
 !       Description:
@@ -39,6 +39,7 @@
 #ifdef STATS
         use statistics
 #endif /*STATS*/
+
         implicit none
 
         ! Local constants, subsidence
@@ -332,8 +333,10 @@
         end subroutine mpace_tndcy
 
 !----------------------------------------------------------------------
-        subroutine mpace_sfclyr( rho0, up, vp, uw, vw,
-     .                          wtp, wrp, wpsclrp_sfc )
+        subroutine mpace_sfclyr( rho0, um_sfc, vm_sfc,
+     .                           upwp_sfc, vpwp_sfc,
+     .                           wpthlp_sfc, wprtp_sfc,
+     .                           wpsclrp_sfc, wpedsclrp_sfc )
 
 !        Description:
 !          Surface forcing subroutine for MPACE case.  Written July-
@@ -344,49 +347,62 @@
 !-----------------------------------------------------------------------
 
         use constants
+
         implicit none
+
+        ! External
+        intrinsic :: max, sqrt, present
+
+        ! Parameter Constants
+        real, parameter ::
+     .  ubmin = 0.25,
+     .  ustar = 0.25,
+        ! Values of HF & LF are from the MPACE specification.
+     .  HF    = 136.5, ! Sensible Heat Flux     [W m^-2] 
+     .  LF    = 107.7  ! Latent Heat Flux       [W m^-2] 
 
         ! Input Variables
         real, intent(in)  ::
-     .   rho0,
-     .   up,
-     .   vp
+     .  rho0,    ! Air density at surface       [kg/m^3
+     .  um_sfc,  ! um at zt(2)                  [m/s]
+     .  vm_sfc   ! vm at zt(2)                  [m/s]
 
         ! Output Variables
-        real, intent(out) ::
-     .    uw,
-     .    vw,
-     .    wtp,
-     .    wrp
+        real, intent(out) :: 
+     .  upwp_sfc,    ! u'w' at (1)      [m^2/s^2]
+     .  vpwp_sfc,    ! v'w'at (1)       [m^2/s^2]
+     .  wpthlp_sfc,  ! w'th_l' at (1)   [(m K)/s]  
+     .  wprtp_sfc    ! w'r_t'(1) at (1) [(m kg)/(s kg)]
 
         ! Output Variables (optional) 
-        real, optional, intent(out) ::
-     .    wpsclrp_sfc(sclr_dim)
+        real, dimension(sclr_dim), optional, intent(out) ::
+     .  wpsclrp_sfc,   ! Passive scalar surface flux      [units m/s]
+     .  wpedsclrp_sfc  ! Passive eddy-scalar surface flux [units m/s]
 
-        ! Internal Variables
-        real ::
-     .    ubar
-
-        real, parameter ::
-     .    ubmin = 0.25,
-     .    ustar = 0.25,
-     .    HF    = 136.5, ! Sensible Heat Flux is 136.5 W m^-2, Specified by MPACE specification
-     .    LF    = 107.7  ! Latent Heat Flux is 107.7 W m^-2, Specified by MPACE specification
+        ! Local Variables
+        real :: ubar
 
 !-----------------------------------------------------------------------
 
         ! Compute heat and moisture fluxes
-        wtp = HF/(rho0*Cp)
-        wrp = LF/(rho0*Lv)
+        wpthlp_sfc = HF/(rho0*Cp)
+        wprtp_sfc  = LF/(rho0*Lv)
 
         ! Compute momentum fluxes
-        ubar = max( ubmin, sqrt( up*up + vp*vp ) )
-        uw = -up * ustar*ustar / ubar
-        vw = -vp * ustar*ustar / ubar
+        ubar = max( ubmin, sqrt( um_sfc**2 + vm_sfc**2 ) )
 
-        ! Compute scalar fluxes
-        if (present( wpsclrp_sfc )) wpsclrp_sfc(SCLR_THETA) = wtp
-        if (present( wpsclrp_sfc )) wpsclrp_sfc(SCLR_RT) = wrp
+        upwp_sfc = -um_sfc * ustar*ustar / ubar
+        vpwp_sfc = -vm_sfc * ustar*ustar / ubar
+
+        ! Compute passive scalar fluxes (set to rt and theta for now)
+        if ( present( wpsclrp_sfc ) ) then
+          wpsclrp_sfc(SCLR_THETA) = wpthlp_sfc
+          wpsclrp_sfc(SCLR_RT)    = wprtp_sfc
+        end if
+        if ( present( wpedsclrp_sfc ) ) then
+          wpedsclrp_sfc(SCLR_THETA) = wpthlp_sfc
+          wpedsclrp_sfc(SCLR_RT)    = wprtp_sfc
+        end if
 
         return
         end subroutine mpace_sfclyr

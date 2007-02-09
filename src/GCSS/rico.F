@@ -148,7 +148,7 @@
         subroutine rico_sfclyr( um, vm, thlm, rtm,
      .                          lowestlevel, sst, psfc,
      .                          uw, vw, wtp, wrp,
-     .                          sclrm_sfc, wpsclrp_sfc )
+     .                          sclrm_sfc, wpsclrp_sfc, wpedsclrp_sfc )
 
 !----------------------------------------------------------------------
 !        Description:
@@ -213,8 +213,9 @@
      .    wrp          ! The upward flux of rtm (total water)  [kg/kg m/s]
 
 !       Output variables (optional)
-        real, optional, intent(out) ::
-     .    wpsclrp_sfc(sclr_dim)
+        real, dimension(sclr_dim), optional, intent(out) ::
+     .    wpsclrp_sfc,   ! Passive scalar surface flux      [units m/s]
+     .    wpedsclrp_sfc  ! Passive eddy-scalar surface flux [units m/s]
 
 
 !       Choose which scheme to use
@@ -248,8 +249,14 @@
         end if
 
 !       Compute scalar fluxes
-        if (present( wpsclrp_sfc )) wpsclrp_sfc(SCLR_THETA) = wtp
-        if (present( wpsclrp_sfc )) wpsclrp_sfc(SCLR_RT) = wrp
+        if ( present( wpsclrp_sfc ) ) then
+          wpsclrp_sfc(SCLR_THETA) = wtp
+          wpsclrp_sfc(SCLR_RT)    = wrp
+        end if
+        if ( present( wpedsclrp_sfc ) ) then
+          wpedsclrp_sfc(SCLR_THETA) = wtp
+          wpedsclrp_sfc(SCLR_RT)    = wrp
+        end if
 
         return
         end subroutine rico_sfclyr

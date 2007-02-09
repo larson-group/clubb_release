@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: astex.F,v 1.2 2006-12-20 03:16:08 dschanen Exp $
+! $Id: astex.F,v 1.3 2007-02-09 22:10:10 dschanen Exp $
         module astex
 
 !       Description:
@@ -77,8 +77,10 @@
         end subroutine astex_tndcy
 
 !----------------------------------------------------------------------
-        subroutine astex_sfclyr( rho0, up, vp, upwp_sfc, vpwp_sfc, 
-     .                           wpthlp_sfc, wprtp_sfc, wpsclrp_sfc )
+        subroutine astex_sfclyr( rho0, um_sfc, vm_sfc, 
+     .                           upwp_sfc, vpwp_sfc, 
+     .                           wpthlp_sfc, wprtp_sfc, 
+     .                           wpsclrp_sfc, wpedsclrp_sfc )
 
 !       Description:
 !       This subroutine computes surface fluxes of horizontal momentum,
@@ -95,8 +97,9 @@
         ! Input variables
 
         real, intent(in) :: 
-     .  rho0,    ! Density at (1)          [kg/m^3]
-     .  up, vp   ! um(2), vm(2) (not used) [m/s]
+     .  rho0,    ! Density at (1)         [kg/m^3]
+     .  um_sfc,  ! um at zt(2) (not used) [m/s]
+     .  vm_sfc   ! vm at zt(2) (not used) [m/s]
 
         ! Output variables
 
@@ -109,7 +112,8 @@
         ! Output variables (optional) 
 
         real, intent(out), optional, dimension(sclr_dim) :: 
-     .  wpsclrp_sfc  ! w' scalar at (1) [units vary]
+     .  wpsclrp_sfc,  ! w' scalar at surface [units m/s]
+     .  wpedsclrp_sfc ! w' scalar at surface [units m/s]
 
         ! Local variables
 
@@ -130,8 +134,12 @@
 
         ! Test scalars
         if ( present( wpsclrp_sfc ) ) then
-          wpsclrp_sfc(SCLR_THETA) = HF/( rho0*Cp )
-          wpsclrp_sfc(SCLR_RT)    = LF/( rho0*Lv )
+          wpsclrp_sfc(SCLR_THETA) = wpthlp_sfc
+          wpsclrp_sfc(SCLR_RT)    = wprtp_sfc
+        end if
+        if ( present( wpedsclrp_sfc ) ) then
+          wpedsclrp_sfc(SCLR_THETA) = wpthlp_sfc
+          wpedsclrp_sfc(SCLR_RT)    = wprtp_sfc
         end if
 
         return

@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf01.F,v 1.3 2006-12-24 16:54:20 dschanen Exp $
+! $Id: dycoms2_rf01.F,v 1.4 2007-02-09 22:10:11 dschanen Exp $
         module dycoms2_rf01
 
 !       Description:
@@ -178,7 +178,7 @@
      .               thlm_sfc, rtm_sfc, 
      .               rhom_sfc, upwp_sfc, vpwp_sfc,
      .               wpthlp_sfc, wprtp_sfc,
-     .               sclrm_sfc, wpsclrp_sfc )
+     .               sclrm_sfc, wpsclrp_sfc, wpedsclrp_sfc )
 !       Description:
 !       This subroutine computes surface fluxes of horizontal momentum,
 !       heat and moisture according to GCSS DYCOMS II RF 01 specifications
@@ -229,7 +229,8 @@
      .  wprtp_sfc   ! w' rt'  at the surface            [m kg/kg]
 
         real, intent(out), optional, dimension(sclr_dim) :: 
-     .  wpsclrp_sfc  ! w' sclr' at the surface          [m units/s]
+     .  wpsclrp_sfc,  ! w' sclr' at the surface         [m units/s]
+     .  wpedsclrp_sfc ! w' edsclr' at the surface       [m units/s]
 
         ! Local variables
 
@@ -249,21 +250,10 @@
           wpthlp_sfc =  15.0 / ( rhom_sfc * Cp )
           wprtp_sfc  = 115.0 / ( rhom_sfc * Lv )
 
-          if ( present( sclrm_sfc ).and.present( wpsclrp_sfc ) ) then
-            wpsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-            wpsclrp_sfc(SCLR_RT)    = wprtp_sfc
-          end if
-
         else if ( sfctype == 1 ) then
 
           wpthlp_sfc = -Cd * ubar * ( thlm_sfc - Tsfc/exner_sfc )
           wprtp_sfc  = -Cd * ubar * ( rtm_sfc  - rsat( psfc, Tsfc ) )
-
-          if ( present( sclrm_sfc ) .and. present( wpsclrp_sfc ) ) then
-
-            wpsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-            wpsclrp_sfc(SCLR_RT)    = wprtp_sfc
-          end if
 
         else  ! Undefined value for sfctype
 
@@ -271,6 +261,18 @@
           stop
 
         end if
+
+        ! Let passive scalars be rt and theta for now
+        if ( present( wpsclrp_sfc ) ) then
+          wpsclrp_sfc(SCLR_THETA) = wpthlp_sfc
+          wpsclrp_sfc(SCLR_RT)    = wprtp_sfc
+        end if
+
+        if ( present( wpedsclrp_sfc ) ) then
+          wpedsclrp_sfc(SCLR_THETA) = wpthlp_sfc
+          wpedsclrp_sfc(SCLR_RT)    = wprtp_sfc
+        end if
+
 #ifdef STATS
 ! Save ustar for statistics
 !        x_sfc(1,iustar) = ustar

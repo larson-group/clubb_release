@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: fire.F,v 1.2 2006-12-20 03:15:14 dschanen Exp $
+! $Id: fire.F,v 1.3 2007-02-09 22:10:11 dschanen Exp $
         module fire
 
 !       Description:
@@ -152,7 +152,8 @@
 !------------------------------------------------------------------------
         subroutine sfc_thermo_fluxes( u, v, Tsfc, psfc, thlair, rtair,
      .                                wpthlp_sfc, wprtp_sfc,
-     .                                sclrair, wpsclrp_sfc )
+     .                                sclrair, wpsclrp_sfc,
+     .                                wpedsclrp_sfc )
 !       Description:
 !       This subroutine computes surface fluxes of heat and moisture 
 !       using aerodynamic formulas.
@@ -194,7 +195,8 @@
 
         ! Output Variables (optional) 
         real, optional, intent(out), dimension(sclr_dim) :: 
-     .  wpsclrp_sfc ! surface passive scalar flux       [units m/s]
+     .  wpsclrp_sfc,   ! scalar surface flux            [units m/s]
+     .  wpedsclrp_sfc  ! eddy-scalar surface flux       [units m/s]
 
         ! Local Variables
         real :: M  ! Total wind speed above ground
@@ -205,11 +207,14 @@
         wprtp_sfc  = -C * M * ( rtair - rsat( psfc, Tsfc ) )
 
         ! Compute passive scalar as == to wprtp & wpthlp for now
-        if ( present( wpsclrp_sfc ) .and. present( sclrair ) ) then
-          wpsclrp_sfc(SCLR_THETA) = -C * M *
-     .               ( sclrair(SCLR_THETA) - Tsfc*(psfc/p0)**kappa )
-          wpsclrp_sfc(SCLR_RT) = -C * M *
-     .               ( sclrair(SCLR_RT) - rsat(psfc, Tsfc) )
+        if ( present( wpsclrp_sfc ) ) then
+          wpsclrp_sfc(SCLR_THETA) = wpthlp_sfc
+          wpsclrp_sfc(SCLR_RT)    = wprtp_sfc
+        endif
+
+        if ( present( wpedsclrp_sfc ) ) then
+          wpedsclrp_sfc(SCLR_THETA) = wpthlp_sfc
+          wpedsclrp_sfc(SCLR_RT)    = wprtp_sfc
         endif
 
         return

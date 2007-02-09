@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: bomex.F,v 1.3 2006-12-20 03:16:08 dschanen Exp $
+! $Id: bomex.F,v 1.4 2007-02-09 22:10:11 dschanen Exp $
         module bomex
 
 !       Description:
@@ -125,7 +125,7 @@
         subroutine bomex_sfclyr( um_sfc, vm_sfc, 
      .                           upwp_sfc, vpwp_sfc,
      .                           wpthlp_sfc, wprtp_sfc,
-     .                           wpsclrp_sfc )
+     .                           wpsclrp_sfc, wpedsclrp_sfc )
 
 !       Description:
 !       This subroutine computes surface fluxes of horizontal momentum,
@@ -157,7 +157,8 @@
 
         ! Output variables (optional)
         real, intent(out), optional, dimension(sclr_dim) :: 
-     .  wpsclrp_sfc ! Passive scalars at (1)
+     .  wpsclrp_sfc,  ! Passive scalar surface flux      [units m/s] 
+     .  wpedsclrp_sfc ! Passive eddy-scalar surface flux [units m/s]
 
         ! Local variables
         real :: ubar
@@ -166,10 +167,16 @@
 
         wpthlp_sfc = 8.e-3
         wprtp_sfc  = 5.2e-5
-        
-        if ( present(wpsclrp_sfc) ) then 
-          wpsclrp_sfc(SCLR_THETA) = 8.e-3
-          wpsclrp_sfc(SCLR_RT)    = 5.2e-5
+
+        ! Let passive scalars be equal to rt and theta_l for now 
+        if ( present( wpsclrp_sfc ) ) then 
+          wpsclrp_sfc(SCLR_THETA) = wpthlp_sfc
+          wpsclrp_sfc(SCLR_RT)    = wprtp_sfc
+        end if
+
+        if ( present( wpsclrp_sfc ) ) then 
+          wpedsclrp_sfc(SCLR_THETA) = wpthlp_sfc
+          wpedsclrp_sfc(SCLR_RT)    = wprtp_sfc
         end if
 
         ! Compute momentum fluxes

@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 1
 !----------------------------------------------------------------------
-!$Id: atex.F,v 1.2 2006-12-20 03:16:08 dschanen Exp $
+!$Id: atex.F,v 1.3 2007-02-09 22:10:10 dschanen Exp $
         module atex
 
 !       Description:
@@ -168,8 +168,10 @@
         end subroutine atex_tndcy
 
 !----------------------------------------------------------------------
-        subroutine atex_sfclyr( up, vp, thp, rtp, uw, vw, wtp, wrp,
-     .                          sclrm_sfc, wpsclrp_sfc )
+        subroutine atex_sfclyr( um_sfc, vm_sfc, thlm_sfc, rtm_sfc, 
+     .                          upwp_sfc, vpwp_sfc, 
+     .                          wpthlp_sfc, wprtp_sfc,
+     .                          sclrm_sfc, wpsclrp_sfc, wpedsclrp_sfc )
 !       Description:
 !       This subroutine computes surface fluxes of horizontal momentum,
 !       heat and moisture according to GCSS ATEX specifications
@@ -187,45 +189,60 @@
         real, parameter :: 
      .  ubmin = 0.25,
      .  ustar = 0.3,
-     .  C_10 = 0.0013,
-     .  SST = 298 
+     .  C_10  = 0.0013,
+     .  SST   = 298.
 
         ! Input variables
-        real, intent(in) :: up, vp, thp, rtp
+        real, intent(in) :: 
+     .  um_sfc,         ! um at zt(2)           [m/s]
+     .  vm_sfc,         ! vm at zt(2)           [m/s]
+     .  thlm_sfc,       ! Theta_l at zt(2)      [K]
+     .  rtm_sfc         ! rt at zt(2)           [kg/kg]
 
         ! Input variables (optional)
-        real, intent(in), optional, dimension(sclr_dim) :: sclrm_sfc
+        real, intent(in), optional, dimension(sclr_dim) :: 
+     .  sclrm_sfc       ! Sclr at zt(2)         [units vary]
 
         ! Output variables
-        real, intent(out) :: uw, vw, wtp, wrp
+        real, intent(out) :: 
+     .  upwp_sfc,   ! u'w' at surface           [m^2/s^2]
+     .  vpwp_sfc,   ! v'w' at surface           [m^2/s^2]
+     .  wpthlp_sfc, ! w'theta_l' surface flux   [(m K)/s]
+     .  wprtp_sfc   ! w'rt' surface flux        [(m kg)/(kg s)]
 
         ! Output variables (optional)
 
-        real, optional, intent(out) :: wpsclrp_sfc(sclr_dim)
+        real, optional, dimension(sclr_dim), intent(out) :: 
+     .  wpsclrp_sfc,   ! Passive scalar surface flux      [units m/s]
+     .  wpedsclrp_sfc  ! Passive eddy-scalar surface flux [units m/s]
 
         ! Local Variables
         real :: ubar
 
         ! Compute heat and moisture fluxes
 
-        ubar = max( ubmin, sqrt( up*up + vp*vp ) )
+        ubar = max( ubmin, sqrt( um_sfc**2 + vm_sfc**2 ) )
 
-        wtp  = -C_10 * ubar * ( thp - SST * (1000./1015.)**kappa )
-        wrp  = -C_10 * ubar * ( rtp - 0.0198293 )
+        wpthlp_sfc
+     .  = -C_10 * ubar * ( thlm_sfc - SST * (1000./1015.)**kappa )
+        wprtp_sfc  = -C_10 * ubar * ( rtm_sfc - 0.0198293 )
 
-        ! Optional passive scalar
-        if ( present( wpsclrp_sfc ) .and. present( sclrm_sfc ) ) then
-          wpsclrp_sfc(SCLR_THETA) = -C_10 * ubar * 
-     .           ( sclrm_sfc(SCLR_THETA) - SST * (1000./1015.)**kappa )
+        ! Let passive scalars be equal to rt and theta for now
 
-          wpsclrp_sfc(SCLR_RT) = -C_10 * ubar * 
-     .                     ( sclrm_sfc(SCLR_RT) - 0.0198293 )
+        if ( present( wpsclrp_sfc ) ) then
+          wpsclrp_sfc(SCLR_THETA) = wpthlp_sfc
+          wpsclrp_sfc(SCLR_RT)    = wprtp_sfc
+        end if
+
+        if ( present( wpedsclrp_sfc ) ) then
+          wpedsclrp_sfc(SCLR_THETA) = wpthlp_sfc
+          wpedsclrp_sfc(SCLR_RT)    = wprtp_sfc
         end if
 
         ! Compute momentum fluxes
 
-        uw = -up * ustar*ustar / ubar
-        vw = -vp * ustar*ustar / ubar
+        upwp_sfc = -um_sfc * ustar**2 / ubar
+        vpwp_sfc = -vm_sfc * ustar**2 / ubar
 
         return
         end subroutine atex_sfclyr

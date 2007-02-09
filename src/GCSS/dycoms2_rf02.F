@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf02.F,v 1.3 2007-01-08 23:43:23 dschanen Exp $
+! $Id: dycoms2_rf02.F,v 1.4 2007-02-09 22:10:11 dschanen Exp $
         module dycoms2_rf02
 
 !       Description:
@@ -241,7 +241,7 @@
         subroutine dycoms2_rf02_sfclyr( um_sfc, vm_sfc, 
      .                                  upwp_sfc, vpwp_sfc, 
      .                                  wpthlp_sfc, wprtp_sfc, ustar,
-     .                                  wpsclrp_sfc )
+     .                                  wpsclrp_sfc, wpedsclrp_sfc )
 
         use constants
 
@@ -268,7 +268,8 @@
 
         ! Output Variables (optional)
         real, intent(out), optional, dimension(sclr_dim) :: 
-     .  wpsclrp_sfc  ! w' scalar at (1) [units vary]
+     .  wpsclrp_sfc,   ! w' scalar at surface [units m/s]
+     .  wpedsclrp_sfc  ! w' scalar at surface [units m/s]
 
         ! Local Variables
         real :: wind_sfc  ! ? [m^2/s^2]?
@@ -290,10 +291,15 @@
         wpthlp_sfc = SH / (1.21 * Cp)
         wprtp_sfc  = LH / (1.21 * Lv)
 
-        ! For testing the passive scalars
+        ! Let passive scalars be equal to rt and theta_l for now
         if ( present( wpsclrp_sfc ) ) then
-          wpsclrp_sfc(SCLR_THETA) = SH / (1.21 * Cp)
-          wpsclrp_sfc(SCLR_RT)    = LH / (1.21 * Lv)
+          wpsclrp_sfc(SCLR_THETA) = wpthlp_sfc
+          wpsclrp_sfc(SCLR_RT)    = wprtp_sfc
+        end if
+
+        if ( present( wpedsclrp_sfc ) ) then
+          wpedsclrp_sfc(SCLR_THETA) = wpthlp_sfc
+          wpedsclrp_sfc(SCLR_RT)    = wprtp_sfc
         end if
 
         return

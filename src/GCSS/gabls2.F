@@ -2,12 +2,14 @@
 #define SCLR_RT 2
 
 !----------------------------------------------------------------------
-      module gabls2
+        module gabls2
 
 !       Description:
 !       Contains subroutines for the GABLS2 case.
 !----------------------------------------------------------------------
         public :: gabls2_tndcy, gabls2_sfclyr
+
+        private
 
         contains
 
@@ -122,10 +124,11 @@
 
 
 !----------------------------------------------------------------------
-        subroutine gabls2_sfclyr(time, time_initial, lowest_level, psfc,
-     .                          um, vm, thlm, rtm,
-     .                          uw, vw, wtp, wrp,
-     .                          sclrm_sfc, wpsclrp_sfc )
+        subroutine gabls2_sfclyr
+     .             ( time, time_initial, lowest_level, psfc,
+     .               um, vm, thlm, rtm,
+     .               uw, vw, wtp, wrp,
+     .               sclrm_sfc, wpsclrp_sfc, wpedsclrp_sfc )
 
 !----------------------------------------------------------------------
 !        Description:
@@ -161,8 +164,8 @@
      .    rtm                 ! rt at the lowest above-ground model level.  [kg/kg]
 
           ! Input variables (optional)
-          real, optional, intent(in) ::
-     .    sclrm_sfc(sclr_dim) ! Concentration of scalar
+          real, dimension(sclr_dim), optional, intent(in) ::
+     .    sclrm_sfc ! Concentration of scalar
 
           ! Output variables
           real, intent(out) ::
@@ -172,8 +175,9 @@
      .    wrp                 ! The upward flux of rtm (total water)  [kg/kg m/s]
 
           ! Output variables (optional)
-          real, optional, intent(out) ::
-     .    wpsclrp_sfc(sclr_dim) ! The upward flux of scalar
+          real, optional, intent(out), dimension(sclr_dim) ::
+     .    wpsclrp_sfc,   ! The upward flux of the scalars       [units m/s]
+     .    wpedsclrp_sfc  ! The upward flux of the eddy-scalars  [units m/s]
 
           ! Local variables
           real ::
@@ -186,9 +190,9 @@
      .    bflx                ! Needed for diag_ustar; equal to wtp * (g/theta)
 
           ! Define variable values
-          ubar = max(ubmin, sqrt(um*um + vm*vm))
-          Cz   = C_10 * ((log(10/z0))/(log(lowest_level/z0))) *
-     .           ((log(10/z0))/(log(lowest_level/z0)))             ! Modification in case lowest model level isn't at 10 m, from ATEX specification
+          ubar = max( ubmin, sqrt( um*um + vm*vm ) )
+          Cz   = C_10 * ((log( 10/z0 ))/(log( lowest_level/z0 ))) *
+     .           ((log( 10/z0 ))/(log( lowest_level/z0 )))             ! Modification in case lowest model level isn't at 10 m, from ATEX specification
           time_in_hours = (time - time_initial) / 3600. + 14.      ! at initial time, time_in_hours = 14 (14 local; 19 UTC)
 
 
@@ -219,11 +223,19 @@
           uw    = -um * ustar*ustar / ubar                         ! [(m/s)^2]
           vw    = -vm * ustar*ustar / ubar                         ! [(m/s)^2]
 
-          ! Compute scalar fluxes
-          if (present( wpsclrp_sfc )) wpsclrp_sfc(SCLR_THETA) = wtp
-          if (present( wpsclrp_sfc )) wpsclrp_sfc(SCLR_RT) = wrp
+          ! Set scalar fluxes to be equal to rt and theta
+          if ( present( wpsclrp_sfc ) ) then
+            wpsclrp_sfc(SCLR_THETA) = wtp
+            wpsclrp_sfc(SCLR_RT)    = wrp
+          end if
+
+          ! Set eddy-scalar fluxes to be equal to rt and theta
+          if ( present( wpedsclrp_sfc ) ) then
+            wpedsclrp_sfc(SCLR_THETA) = wtp
+            wpedsclrp_sfc(SCLR_RT)    = wrp
+          end if
 
         return
         end subroutine gabls2_sfclyr
 
-      end module gabls2
+        end module gabls2
