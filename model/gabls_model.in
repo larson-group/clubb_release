@@ -1,5 +1,5 @@
-! $Id: gabls_model.in,v 1.1 2007-02-07 22:43:06 mjfalk Exp $
-! Parameter file for GABLS case
+! $Id: gabls_model.in,v 1.2 2007-02-09 00:55:24 dschanen Exp $
+! Parameter file for GABLS 2 case
 ! Edited by Michael Falk, 28 December 2006
 
 &model_setting
@@ -28,6 +28,7 @@ LE = 0.
 fcor = 8.8983571e-5
 !fcor = 8.8983571e-6
 ! eMFc
+T0   = 283.15
 
 cloud_sed     = .false.
 kk_rain       = .false.

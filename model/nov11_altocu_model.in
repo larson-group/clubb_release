@@ -1,4 +1,4 @@
-! $Id: nov11_altocu_model.in,v 1.6 2007-02-07 22:42:21 mjfalk Exp $
+! $Id: nov11_altocu_model.in,v 1.7 2007-02-09 00:55:24 dschanen Exp $
 ! Parameter file for November 11 altocumulus case
 
 &model_setting
@@ -22,6 +22,7 @@ Tsfc = 265.98
 psfc = 601.85e2
 
 fcor = 0.0e-5
+T0   = 300.
 
 cloud_sed     = .false.
 kk_rain       = .false.

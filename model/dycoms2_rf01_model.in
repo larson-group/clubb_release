@@ -1,4 +1,4 @@
-! $Id: dycoms2_rf01_model.in,v 1.8 2007-02-07 22:42:21 mjfalk Exp $
+! $Id: dycoms2_rf01_model.in,v 1.9 2007-02-09 00:55:24 dschanen Exp $
 ! Parameter file for DYCOMS II RF01 Sc case
 
 &model_setting
@@ -23,6 +23,7 @@ Tsfc = 292.5
 psfc = 1017.e2
 
 fcor = 7.6e-5
+T0   = 300.
 
 cloud_sed     = .false.
 kk_rain       = .false.

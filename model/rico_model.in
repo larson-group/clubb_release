@@ -1,4 +1,4 @@
-! $Id: rico_model.in,v 1.1 2007-02-07 22:43:06 mjfalk Exp $
+! $Id: rico_model.in,v 1.2 2007-02-09 00:55:24 dschanen Exp $
 ! Parameter file for GCSS RICO case
 ! Edited by Michael Falk, 12 December 2006
 
@@ -27,6 +27,7 @@ SE = 0.
 LE = 0.
 
 fcor = 4.506704e-5
+T0   = 300.
 
 cloud_sed     = .false.
 kk_rain       = .true.

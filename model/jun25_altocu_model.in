@@ -1,4 +1,4 @@
-! $Id: jun25_altocu_model.in,v 1.3 2007-02-07 22:42:21 mjfalk Exp $
+! $Id: jun25_altocu_model.in,v 1.4 2007-02-09 00:55:24 dschanen Exp $
 ! Parameter file for June 25 altocumulus case
 
 &model_setting
@@ -22,6 +22,7 @@ Tsfc = 271.07
 psfc = 574.87e2
 
 fcor = 8.9763e-5
+T0   = 300.
 
 cloud_sed     = .false.
 kk_rain       = .false.
@@ -52,8 +53,6 @@ ug = -4.8564, -.38845, -1.3088, -.26200, 1.29492, -.04398, 3.00225, 5.29700, 5.8
 vg = 5.96400, 4.74191, 5.84218, 4.30227, 5.05869, 4.10923, 3.63221, 6.00700, 7.88700, 7.79500, 9.84900, 10.1430, 5.42000, 5.39900
 
 /
-
-&scalar_sounding
 
 &scalar_sounding
 
