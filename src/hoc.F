@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.115 2007-02-09 00:52:20 dschanen Exp $
+! $Id: hoc.F,v 1.116 2007-02-09 22:11:45 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -371,8 +371,8 @@
      .            Scm, taum, rcm, Ncm, Ncnm, Nim,
      .            hydromet, cf, isValid, .false.
 #ifdef SCALARS
-     .            ,sclrm, sclrm_forcing,
-     .            edsclrm, edsclrmt
+     .            ,wpsclrp_sfc, wpedsclrp_sfc,
+     .            sclrm, sclrm_forcing, edsclrm
 #endif /*SCALARS*/
      .          )
 
@@ -674,8 +674,8 @@
      .            Scm, taum, rcm, Ncm, Ncnm, Nim,
      .            hydromet, cf, isValid, .false.
 #ifdef SCALARS
-     .            ,sclrm, sclrm_forcing,
-     .            edsclrm, edsclrmt
+     .            ,wpsclrp_sfc, wpedsclrp_sfc, 
+     .            sclrm, sclrm_forcing, edsclrm
 #endif /*SCALARS*/
      .          )
 
@@ -721,8 +721,11 @@
      .               ug, vg, wp2, rcm, hydromet,
      .               wmt, wmm, em, exner, taut, taum, thvm,
      .               p, rhot, rhom, Lscale, lup,
-     .               ldown, Kht, Khm, 
-     .               sclrm, edsclrm )
+     .               ldown, Kht, Khm
+#ifdef SCALARS
+     .               ,sclrm, edsclrm
+#endif
+     .             )
 
 !       Description:
 !       Execute the necessary steps for the initialization of the 
@@ -785,10 +788,12 @@
         real, dimension(gr%nnzp,hydromet_dim), target, intent(out) :: 
      .  hydromet        ! Hydrometeor types             [units vary]
 
+#ifdef SCALARS
 !       Output (optional)
-        real, optional, dimension(gr%nnzp,sclr_dim), intent(out) :: 
+        real, dimension(gr%nnzp,sclr_dim), intent(out) :: 
      .  sclrm,  ! Standard passive scalar [units vary]
      .  edsclrm ! Eddy diffusivity passive scalar [units vary]
+#endif
 
         ! Local Variables
         real, dimension(gr%nnzp) :: tmp1
@@ -1134,7 +1139,6 @@
         use grid_class
         use diagnostic_variables
         use prognostic_variables
-!        use gcss
         use arm, only: arm_tndcy, arm_sfclyr
         use astex, only: astex_tndcy, astex_sfclyr
         use atex, only: atex_tndcy, atex_sfclyr
@@ -1307,7 +1311,7 @@
 #endif /* SCALARS */
      .                    )
 
-         case ( "gabls" ) ! GABLS case
+         case ( "gabls" ) ! GABLS 2 case
            call gabls2_tndcy( time, time_initial, 
      .                      rhot, rcm, kk_rain, wmt, wmm,
      .                      thlm_forcing, rtm_forcing, radht, Ncm
@@ -1341,6 +1345,8 @@
 #ifdef SCALARS
             wpsclrp(:,SCLR_THETA) = SE
             wpsclrp(:,SCLR_RT)    = LE
+            wpedsclrp(:,SCLR_THETA) = SE
+            wpedsclrp(:,SCLR_RT)    = LE
 #endif /* SCALARS */
           else if ( sfctype == 1 ) then
             call sfc_thermo_fluxes( um(2), vm(2),
@@ -1365,7 +1371,7 @@
      .                     upwp_sfc, vpwp_sfc, 
      .                     wpthlp_sfc, wprtp_sfc, ustar
 #ifdef SCALARS
-     .                     ,wpsclrp(1,:)
+     .                     ,wpsclrp_sfc, wpedsclrp_sfc
 #endif /* SCALARS */
      .                    )
 
@@ -1374,7 +1380,7 @@
      .                       upwp_sfc, vpwp_sfc,
      .                       wpthlp_sfc, wprtp_sfc
 #ifdef SCALARS
-     .                       ,wpsclrp(1,:)
+     .                       ,wpsclrp_sfc, wpedsclrp_sfc
 #endif /* SCALARS */
      .                     )
 
@@ -1383,7 +1389,7 @@
      .                         upwp_sfc, vpwp_sfc,
      .                         wpthlp_sfc, wprtp_sfc
 #ifdef SCALARS
-     .                         ,wpsclrp(1,:)
+     .                         ,wpsclrp_sfc, wpedsclrp_sfc
 #endif /* SCALARS */
      .                       )
 
@@ -1392,7 +1398,7 @@
      .                      upwp_sfc, vpwp_sfc,
      .                      wpthlp_sfc, wprtp_sfc
 #ifdef SCALARS
-     .                     ,sclrm(2,:), wpsclrp(1,:)
+     .                     ,sclrm(2,:), wpsclrp_sfc, wpedsclrp_sfc
 #endif /* SCALARS */
      .                    )
 
@@ -1403,7 +1409,8 @@
      .                              rhom(1), upwp_sfc, vpwp_sfc, 
      .                              wpthlp_sfc, wprtp_sfc
 #ifdef SCALARS
-     .                              ,sclrm(2,:), wpsclrp(1,:)
+     .                             ,sclrm(2,:), wpsclrp_sfc, 
+     .                              wpedsclrp_sfc
 #endif /* SCALARS */
      .                             )
         case( "astex_a209" )
@@ -1411,7 +1418,7 @@
      .                       upwp_sfc, vpwp_sfc, wpthlp_sfc, 
      .                       wprtp_sfc
 #ifdef SCALARS
-     .                       ,wpsclrp(1,:)
+     .                       ,wpsclrp_sfc, wpedsclrp_sfc
 #endif /* SCALARS */
      .                     )
         case( "dycoms2_rf02_do", "dycoms2_rf02_ds",
@@ -1420,7 +1427,7 @@
      .                              upwp_sfc, vpwp_sfc,
      .                              wpthlp_sfc, wprtp_sfc, ustar
 #ifdef SCALARS
-     .                              ,wpsclrp(1,:)
+     .                              ,wpsclrp_sfc, wpedsclrp_sfc
 #endif /* SCALARS */
      .                             )
 
@@ -1436,7 +1443,7 @@
            call mpace_sfclyr( rhom(1), um(2), vm(2), upwp_sfc, vpwp_sfc,
      .                        wpthlp_sfc, wprtp_sfc
 #ifdef SCALARS
-     .                        ,wpsclrp(1,:)
+     .                        ,wpsclrp_sfc, wpedsclrp_sfc
 #endif /* SCALARS */
      .                      )
 
@@ -1447,7 +1454,7 @@
      .                       upwp_sfc, vpwp_sfc,
      .                       wpthlp_sfc, wprtp_sfc, ustar
 #ifdef SCALARS
-     .                      ,wpsclrp(1,:), wpedsclrp(1,:)
+     .                      ,wpsclrp_sfc, wpedsclrp_sfc
 #endif /* SCALARS */
      .                     )
 
@@ -1456,7 +1463,7 @@
      .                        gr%zt(2), 299.8, 101540., ! 299.8 K is the RICO SST; 101540 Pa is the sfc pressure.
      .                        upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc
 #ifdef SCALARS
-     .                     ,sclrm(2,:), wpsclrp(1,:)
+     .                       ,sclrm(2,:), wpsclrp_sfc, wpedsclrp_sfc
 #endif /* SCALARS */
      .                      )
 
@@ -1466,7 +1473,7 @@
      .                      upwp_sfc, vpwp_sfc,
      .                      wpthlp_sfc, wprtp_sfc
 #ifdef SCALARS
-     .                     ,sclrm(2,:), wpsclrp(1,:)
+     .                     ,sclrm(2,:), wpsclrp_sfc, wpedsclrp_sfc
 #endif /* SCALARS */
      .                    )
 
