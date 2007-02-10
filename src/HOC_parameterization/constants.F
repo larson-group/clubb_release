@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.13 2007-02-09 00:52:20 dschanen Exp $
+! $Id: constants.F,v 1.14 2007-02-10 19:15:19 griffinb Exp $
 
         module constants
 
@@ -149,11 +149,19 @@
 
         ! Set tolerances for Khairoutdinov and Kogan rain microphysics
         ! to insure against numerical errors.
+        ! The tolerance values for Nc, rr, and Nr insure against
+        ! underflow errors in computing the PDF for kk_rain.  Basically,
+        ! they insure that those values squared won't be less then 
+        ! 10^-38, which is the lowest number that can be numerically
+        ! represented.  However, the tolerance value for rc doubles as
+        ! the lowest mixing ratio there can be to still officially have 
+        ! a cloud at that level.  This is figured to be about 
+        ! 1.0 x 10^-7 kg/kg.  Brian; February 10, 2007.
         real, parameter :: 
-     .  rc_tol = 10.0**(-18), ! [kg/kg]
-     .  Nc_tol = 10.0**(-18), ! [#/m^3]
-     .  rr_tol = 10.0**(-18), ! [kg/kg]
-     .  Nr_tol = 10.0**(-18)  ! [#/m^3]
+     .  rc_tol = 1.0E-7,  ! [kg/kg]
+     .  Nc_tol = 1.0E-18, ! [#/m^3]
+     .  rr_tol = 1.0E-18, ! [kg/kg]
+     .  Nr_tol = 1.0E-18  ! [#/m^3]
 
         ! Minimum value for em (turbulence kinetic energy)
         real, parameter :: emin = 1.0e-6  ! [m^2/s^2]
