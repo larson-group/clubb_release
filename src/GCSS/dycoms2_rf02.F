@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf02.F,v 1.4 2007-02-09 22:10:11 dschanen Exp $
+! $Id: dycoms2_rf02.F,v 1.5 2007-02-10 16:55:58 griffinb Exp $
         module dycoms2_rf02
 
 !       Description:
@@ -206,7 +206,7 @@
         !    b) It seems more appropriate to declare Ncm in the same place
         !       where rcm is computed.
         !
-        ! Since cloud base (zb) is determined by the mixing ratio 1.0E-6,
+        ! Since cloud base (zb) is determined by the mixing ratio rc_tol,
         ! so will cloud droplet number concentration (Ncm).
 
         if ( lcoamps_micro .and. time == time_initial ) then
@@ -218,7 +218,7 @@
 
           ! K & K or no microphysics
           DO k = 1, gr%nnzp, 1
-            IF ( rcm(k) > 1.0E-6 ) THEN
+            IF ( rcm(k) > rc_tol ) THEN
               Ncm(k) = 55000000.0
             ELSE
               Ncm(k) = 0.0

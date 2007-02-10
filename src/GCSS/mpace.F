@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace.F,v 1.2 2007-02-09 22:10:11 dschanen Exp $
+! $Id: mpace.F,v 1.3 2007-02-10 16:55:58 griffinb Exp $
         module mpace
 
 !       Description:
@@ -315,7 +315,7 @@
 
         else if ( kk_rain ) then
           do k=1, gr%nnzp, 1
-            if ( rcm(k) >= 1.e-6 ) then
+            if ( rcm(k) >= rc_tol ) then
               Ncm(k) = 30.0 * (1.0 + exp(-gr%zt(k)/2000.0)) * 1.e6
      .                 * rhot(k) 
             end if

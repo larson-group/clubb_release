@@ -101,7 +101,7 @@
 
         if ( kk_rain ) then
           do k=1,gr%nnzp
-            if ( rcm(k) >= 1.e-6 ) then
+            if ( rcm(k) >= rc_tol ) then
               Ncm(k) = 30.0 * (1.0 + exp(-gr%zt(k)/2000.0)) * 1.e6
      .                 * rhot(k)
             else
