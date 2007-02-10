@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.25 2007-02-07 13:19:33 griffinb Exp $
+! $Id: rain.F,v 1.26 2007-02-10 16:59:58 griffinb Exp $
 !----------------------------------------------------------------------
 
       MODULE rain_equations
@@ -26,11 +26,11 @@
       ! Parameters for below-cloud (from RF02 DO).
       REAL, PARAMETER:: rrp2_rrm2_below = 1.60
       REAL, PARAMETER:: Nrp2_Nrm2_below = 1.05
-      REAL, PARAMETER:: Ncp2_Ncm2_below = 0.20
+      REAL, PARAMETER:: Ncp2_Ncm2_below = 0.00 ! Not applicable below cloud.
       REAL, PARAMETER:: corr_rrNr_LL_below = 0.85
       REAL, PARAMETER:: corr_srr_NL_below = 0.30
       REAL, PARAMETER:: corr_sNr_NL_below = 0.30
-      REAL, PARAMETER:: corr_sNc_NL_below = 0.65
+      REAL, PARAMETER:: corr_sNc_NL_below = 0.00 ! Not applicable below cloud.
       !REAL, PARAMETER:: C_evap = 0.86    ! Khairoutdinov and Kogan (2000) 
       !                                   ! ratio of drizzle drop mean 
       !                                   ! geometric radius to drizzle drop
@@ -322,9 +322,9 @@
         !
         ! Find the level of the cloud base.  If there isn't any cloud, then
         ! set it equal to the model top.
-        ! Use a value of rcm of 1.0E-6 kg/kg to determine the cloud base.
+        ! Use a value of rcm of rc_tol to determine the cloud base.
         DO k = 1, gr%nnzp, 1
-           IF ( rcm(k) >= 1.0E-6 ) THEN
+           IF ( rcm(k) >= rc_tol ) THEN
               cloud_base = k
               EXIT
            ENDIF
@@ -1017,9 +1017,9 @@
         !
         ! Find the level of the cloud base.  If there isn't any cloud, then
         ! set it equal to the model top.
-        ! Use a value of rcm of 1.0E-6 kg/kg to determine the cloud base.
+        ! Use a value of rcm of rc_tol to determine the cloud base.
         DO k = 1, gr%nnzp, 1
-           IF ( rcm(k) >= 1.0E-6 ) THEN
+           IF ( rcm(k) >= rc_tol ) THEN
               cloud_base = k
               EXIT
            ENDIF

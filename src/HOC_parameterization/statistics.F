@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.18 2007-02-09 00:54:11 dschanen Exp $
+!  $Id: statistics.F,v 1.19 2007-02-10 16:59:58 griffinb Exp $
 
 #ifdef STATS
       module stats_type
@@ -3572,6 +3572,7 @@
       use prognostic_variables
       use diagnostic_variables
       use model_flags
+      use constants
 
       implicit none
 
@@ -4170,7 +4171,7 @@
 !       Cloud base
         if ( izb > 0 ) then
           k = 1
-          do while ( rcm(k) < 1.e-6 .and. k < gr%nnzp )
+          do while ( rcm(k) < rc_tol .and. k < gr%nnzp )
             k = k + 1
           end do
 
@@ -4178,8 +4179,8 @@
 !            sfc%x(1,izb) = sfc%x(1,izb) + gr%zt(k)
           if ( k > 1 .AND. k < gr%nnzp) then
             sfc%x(1,izb) = sfc%x(1,izb) + (                     ! Use linear interpolation
-     .         ( ( 1.0E-6 - rcm(k-1) )/( rcm(k) - rcm(k-1) ) )  ! to find the exact height
-     .        * ( gr%zt(k) - gr%zt(k-1) ) + gr%zt(k-1)          ! of the 1.0E-6 kg/kg level.
+     .         ( ( rc_tol - rcm(k-1) )/( rcm(k) - rcm(k-1) ) )  ! to find the exact height
+     .        * ( gr%zt(k) - gr%zt(k-1) ) + gr%zt(k-1)          ! of the rc_tol kg/kg level.
      .                                    )                     ! Brian.
           else
             sfc%x(1,izb) = sfc%x(1,izb) - 10
