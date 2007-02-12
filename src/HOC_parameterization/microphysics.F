@@ -1,9 +1,13 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.1 2006-12-12 20:23:50 dschanen Exp $
+! $Id: microphysics.F,v 1.2 2007-02-12 23:35:10 dschanen Exp $
         module microphysics
 
 !       Description:
-!       Call a microphysical scheme to compute hydrometeor species
+!       Call a microphysical scheme to compute hydrometeor species,
+!       and advect, sediment, & diffuse using a tridiagonal system.
+
+!       References:
+!       None
 !-----------------------------------------------------------------------
         implicit none
 
@@ -30,6 +34,7 @@
 
 !       Description:
 !       Compute pristine ice, snow, graupel, & rain hydrometeor fields.
+!       Uses implicit discretization.
 
 !       References:
 !       None
@@ -328,12 +333,12 @@
 
 #ifdef STATS
         if ( lstats_samp ) then
-
           ! Rainfall rate (mm/day) should be defined on thermodynamic
           ! levels.  -Brian
           if ( irain_rate > 0 ) then
+            ! Rainfall rate (m/s)
             zt%x(:,irain_rate) = zt%x(:,irain_rate) + 
-     .        ( rrm * zm2zt( Vrr ) ) * ( rhot / rho_lw ) ! rainfall rate (m/s)
+     .        ( rrm * zm2zt( -Vrr ) ) * ( rhot / rho_lw )
      .        * ( 86400.0 * 1000.0 )
             zt%n(:,irain_rate) = zt%n(:,irain_rate) + 1
           end if
@@ -342,21 +347,22 @@
           ! momentum levels.  -Brian
           if ( iFprec > 0 ) then    ! Brian
             zm%x(:,iFprec) = zm%x(:,iFprec) +
-     .      ( zt2zm( rrm ) * Vrr ) * ( rhom / rho_lw ) * rho_lw * Lv
+     .      ( zt2zm( rrm ) * abs( Vrr ) ) 
+     .      * ( rhom / rho_lw ) * rho_lw * Lv
             zm%n(:,iFprec) = zm%n(:,iFprec) + 1
           end if
 
           ! Store values of surface fluxes for statistics 
           if ( irain > 0 ) then   ! Added by Brian
             sfc%x(1,irain) = sfc%x(1,irain) +
-     .        ( rrm(2) * zm2zt( Vrr, 1 ) ) * ( rhot(2) / rho_lw ) 
-     .        * ( 86400.0 * 1000.0 ) ! rainfall rate (m/s)
+     .        ( rrm(2) * abs( zm2zt( Vrr, 1 ) ) ) * ( rhot(2) / rho_lw )
+     .        * ( 86400.0 * 1000.0 ) ! Rainfall rate (m/s)
             sfc%n(1,irain) = sfc%n(1,irain) + 1
           end if
           if ( ipflux > 0 ) then   ! Added by Brian
             sfc%x(1,ipflux) 
      .      = sfc%x(1,ipflux) + ( zt2zm( rrm, 1 )
-     .           * Vrr(1) ) * ( rhom(1) / rho_lw ) * rho_lw * Lv
+     .           * abs( Vrr(1) ) ) * ( rhom(1) / rho_lw ) * rho_lw * Lv
             sfc%n(1,ipflux) = sfc%n(1,ipflux) + 1
           end if
 
@@ -374,7 +380,7 @@
 !       References:
 !-----------------------------------------------------------------------
         use grid_class
-        use lapack_wrap, only: tridag_solve
+        use lapack_wrap, only: tridag_solve !,band_solve
 #ifdef STATS
         use statistics
 #endif
@@ -467,10 +473,17 @@
         rhs(1) = xrm(1) / dt
         rhs(gr%nnzp) = ( xrm(gr%nnzp) / dt ) + xrm_tndcy(gr%nnzp-1)
 
-        ! Solve system
+        ! Solve system using tridag_solve. This uses LAPACK sgtsv,
+        ! which relies on Gaussian elimination to decompose the matrix.
         call tridag_solve
      .       ( solve_type, gr%nnzp, 1, lhs(1,:), lhs(2,:), lhs(3,:),
      .         rhs, xrm, isValid )
+
+        ! Alternative: Use LU decomposition instead.
+        ! This doesn't seem to change the answer too much.
+!       call band_solve
+!    .       ( solve_type, 1, 1, gr%nnzp, 1, 
+!    .         lhs, rhs, xrm, isValid )
 
 #ifdef STATS
          if ( lstats_samp ) then
@@ -546,9 +559,10 @@
 !       Description:
 !       Setup the matrix of implicit contributions to a term
 !       Includes the effects of sedimentation, diffusion, and advection.
+!
 !       Notes:
 !       Setup for tridiagonal system and boundary conditions should be
-!       the same as the subroutine rain code.
+!       the same as the original rain subroutine code.
 !-----------------------------------------------------------------------
         use grid_class
 #ifdef STATS
@@ -629,20 +643,27 @@
         end if
 #endif /*STATS*/
 
-        ! Setup LHS
+        ! Setup LHS Matrix
         do k = 2, gr%nnzp-1, 1
           km1 = max( k-1, 1 )
           kp1 = min( k+1, gr%nnzp )
 
-          lhs(kp1diag:km1diag,k)  
+          ! All diagonals
+          lhs(kp1diag:km1diag,k)
      .    = diffusion( nu, gr%dzm(km1), gr%dzm(k), gr%dzt(k) )
 
+          ! Main diagonal
           lhs(kdiag,k) = lhs(kdiag,k) + ( 1.0 / dt ) ! Time tendency
 
+          ! Super and sub diagonal
           lhs((/kp1diag,km1diag/),k) 
      .    = lhs((/kp1diag,km1diag/),k) 
      .    + advection( wmt(k), gr%dzt(k) )
 
+          ! Super and sub diagonal
+          ! Note: originally pristine ice did not sediment, so it was
+          ! setup to be disabled as needed, but now pristine ice does
+          ! sediment in the COAMPS case. -dschanen 12 Feb 2007
           if ( lsed ) then
             lhs((/kp1diag,km1diag/),k) 
      .      = lhs((/kp1diag,km1diag/),k) 
@@ -678,9 +699,16 @@
 
         end do ! 2..gr%nnzp-1
 
+        ! Boundary conditions
+
+        ! These have been chosen so that the column totals in the LHS matrix
+        ! of the diffusional term are equal to zero.  This leads to 
+        ! "conservative differencing" of the diffusion term for equally spaced grids.     
+        ! The ground is impermeable to diffusion of rrm, Nrm.   Brian.
+
         ! Lower boundary conditions
 
-        ! Not referenced
+        ! Not referenced by solver
         !lhs(km1diag,1) = 0.0   ! sub(1) term
 
         lhs(kdiag,1)
@@ -773,6 +801,7 @@
 !       Vertical diffusion of a hydrometeor using an implicit scheme.
 
 !       References:
+!       None
 !-----------------------------------------------------------------------
 
         implicit none
@@ -807,6 +836,7 @@
 !       Mean advection term
 
 !       References:
+!       None
 !-----------------------------------------------------------------------
 
         implicit none
@@ -841,8 +871,8 @@
 !       None
 
 !       Notes:
-!       Both COAMPS microphysics and Brian Griffin's implementation use
-!       Khartidinov and Kogan (2000) for the calculation of rain mixing
+!       Both COAMPS Microphysics and Brian Griffin's implementation use
+!       Khairoutdinov and Kogan (2000) for the calculation of rain mixing
 !       ratio and rain droplet number concentration sedimentation
 !       velocities.
 !-----------------------------------------------------------------------
@@ -862,8 +892,8 @@
         ! Output
         real, dimension(2) :: lhs
 
-*       lhs(kp1diag) = - (1.0/4.0) * ( v_t + v_tm1 ) * dzt
-*       lhs(km1diag) = + (1.0/4.0) * ( v_t + v_tm1 ) * dzt
+!       lhs(kp1diag) = - (1.0/4.0) * ( v_t + v_tm1 ) * dzt
+!       lhs(km1diag) = + (1.0/4.0) * ( v_t + v_tm1 ) * dzt
 
         ! For a negative downward sedimentation velocity
         lhs(kp1diag) = - (1.0/4.0) * abs( v_t + v_tm1 ) * dzt
