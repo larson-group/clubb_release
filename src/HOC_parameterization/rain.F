@@ -1,8 +1,15 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.26 2007-02-10 16:59:58 griffinb Exp $
-!----------------------------------------------------------------------
+! $Id: rain.F,v 1.27 2007-02-14 21:09:12 dschanen Exp $
 
       MODULE rain_equations
+
+!     Description:
+!     Functions and subroutines for the Khairoutdinov & Kogan
+!     rain parameterization.
+
+!     References:
+!     None
+!----------------------------------------------------------------------
 
       IMPLICIT NONE
 
@@ -47,7 +54,7 @@
       !                                  ! Khairoutdinov said it was okay!
       ! End Vince Larson's change.
 
-      PUBLIC :: rain, kk_microphys
+      PUBLIC :: kk_microphys
       PRIVATE :: mean_volume_radius, cond_evap_rrm, cond_evap_Nrm
       PRIVATE :: autoconv_rrm, autoconv_Nrm, accretion_rrm
       PRIVATE :: G_T_p
@@ -57,115 +64,117 @@
       PRIVATE ! Default
 
       CONTAINS
-!----------------------------------------------------------------------
-! This subroutine advances drizzle (rrm and Nrm) one timestep.
-! It uses implicit discretization and formulas by 
-!     Khairoutdinov and Kogan (2000)
-!----------------------------------------------------------------------
-        SUBROUTINE rain( dt, thlm, p, exner, rhot, wmt, pdf_parms,
-     .                   rtm, rcm, Ncm, rrm, Nrm, cond_rrm,
-     .                   auto_rrm, accr_rrm, Vrr, mean_vol_rad,
-     .                   AKm_est, AKm, isValid )
 
-        USE model_flags
-        USE grid_class
-        USE constants
-        USE lapack_wrap, ONLY: tridag_solve
+        subroutine kk_microphys
+     .             ( thlm, p, exner, rhot, thl1, thl2, a, rc1, rc2, s1,
+     .               s2, ss1, ss2, rtm, rcm, Ncm, rrm, Nrm, 
+     .               lsample, AKm_est, AKm,
+     .               rrm_mc_tndcy, Nrm_mc_tndcy, 
+     .               hm_rt_tndcy, hm_thl_tndcy,
+     .               Vrr, VNr )
+!       Description:
+!       This uses the code from Brian Griffin's old subroutine rain
+!       and computes microphysical tendencies and fall speeds
+!       per se rather than adding in the effects of diffusion, advection, 
+!       and sedimentation.  This is for the purpose of generalizing the
+!       code to use different microphysical schemes with the same 
+!       diffusion, advection, and sedimentation code.
+
+!       References:
+!       ``A New Cloud Physics Parameterization in a Large-Eddy Simulation
+!         Model of Marine Stratocumulus''  Khairoutdinov and Kogan. (2000)
+!       Monthly Weather Review, Volume 128, Issue 1 pp. 229–-243
+!----------------------------------------------------------------------
+
+        use model_flags
+        use grid_class
+        use constants
 #ifdef STATS
-        USE statistics
-#endif /*STATS*/
+        use statistics
+#endif
 
         implicit none
 
         ! External functions
-
-        real rsat
-        external rsat
+        real, external :: rsat
 
         ! Input
-        REAL, INTENT(IN):: dt
-        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: thlm   ! theta-l
-        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: p      ! pressure
-        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: exner  ! exner function
-        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rhot   ! density
-        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: wmt    ! vertical velocity
-        REAL, DIMENSION(1:gr%nnzp, 1:26), INTENT(IN):: pdf_parms
-        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rtm    ! total water mixing ratio
-        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rcm    ! cloud water mixing ratio
-        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: Ncm    ! cloud droplet number conc.
-                                                        !   number/m^3
+        real, intent(in), dimension(gr%nnzp) ::
+     .  thlm,      ! Theta-l                            [K]
+     .  p,         ! Pressure                           [Pa]
+     .  exner,     ! Exner function                     [-]
+     .  rhot,      ! Density on thermo. grid            [kg/m^3]
+     .  thl1, thl2,! PDF parameters thl1 &thl2          [K]
+     .  a,         ! PDF parameter a                    [-]
+     .  s1, s2,    ! PDF parameters s1 & s2             [kg/kg]
+     .  ss1, ss2,  ! PDF parameters ss1 & ss2           [kg/kg]
+     .  rc1, rc2,  ! PDF parameters rc1 & rc2           [kg/kg]
+     .  rtm,       ! Total water mixing ratio           [kg/kg]
+     .  rcm,       ! Cloud water mixing ratio           [kg/kg]
+     .  Ncm,       ! Cloud droplet number conc.         [number/m^3]
+     .  rrm,       ! Rain water mixing ratio            [kg/kg]
+     .  Nrm        ! Rain droplet number conc.          [number/m^3]
 
-        ! Input/Output
-        REAL, DIMENSION(1:gr%nnzp), INTENT(INOUT):: rrm ! rain water mixing ratio
-        REAL, DIMENSION(1:gr%nnzp), INTENT(INOUT):: Nrm ! rain droplet number conc.
+        ! Latin hypercube variables - Vince Larson 22 May 2005
+        real, intent(in), dimension(gr%nnzp) :: 
+     .  Akm,    ! Latin hypercube estimate of Kessler autoconversion   
+     .  AKm_est ! Analytic calculation of Kessler autoconversion
+
+        logical, intent(in) ::
+     .  lsample ! Whether to sample stats for this call
 
         ! Output
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: cond_rrm
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: auto_rrm
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: accr_rrm
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: Vrr
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: mean_vol_rad
+        real, intent(out), dimension(gr%nnzp) :: 
+     .  Vrr,         ! Mean sedimentation velocity of rrm       [m/s]    
+     .  VNr,         ! Mean sedimentation velocity of Nrm       [m/s]
+     .  rrm_mc_tndcy,! Rain water microphysical tendency        [(kg/kg)/s]
+     .  Nrm_mc_tndcy,! Rain droplet number conc. micro. tend.   [(num/m^3)/s]
+     .  hm_rt_tndcy, ! Contributions to total water from micro. [(kg/kg)/s]
+     .  hm_thl_tndcy ! Contributions to theta_l from micro.     [K/s]
 
         ! Local variables
-        REAL, DIMENSION(1:gr%nnzp):: rrp2_rrm2    ! rrp2/rrm^2
-        REAL, DIMENSION(1:gr%nnzp):: Nrp2_Nrm2    ! Nrp2/Nrm^2
-        REAL, DIMENSION(1:gr%nnzp):: Ncp2_Ncm2    ! Ncp2/Ncm^2
-        REAL, DIMENSION(1:gr%nnzp):: corr_rrNr_LL ! Correlation of rr and Nr
-        REAL, DIMENSION(1:gr%nnzp):: corr_srr_NL  ! Correlation of s and rr
-        REAL, DIMENSION(1:gr%nnzp):: corr_sNr_NL  ! Correlation of s and Nr
-        REAL, DIMENSION(1:gr%nnzp):: corr_sNc_NL  ! Correlation of s and Nc
+        real, dimension(gr%nnzp) :: 
+     .  rrm_cond,    ! Change in rrm due to condensation        [(kg/kg)/s]
+     .  rrm_auto,    ! Change in rrm due to autoconversion      [(kg/kg)/s]
+     .  rrm_accr,    ! Change in rrm due to accretion           [(kg/kg)/s]
+     .  Nrm_cond,    ! Change in Nrm due to condensation        [(num/m^3)/s]
+     .  Nrm_auto,    ! Change in Nrm due to autoconversion      [(num/m^3)/s]
+     .  mean_vol_rad,! Mean volume radius                       [m]
+     .  rvm,         ! Water vapor mixing ratio                 [kg/kg]
+     .  Temp,        ! Temperature                              [K]
+     .  es,          ! Saturation vapor pressure                [Pa]
+     .  Supsat,      ! Supersaturation                          [-]
+     .  rs           ! Saturation mixing ratio                  [kg/kg]
 
-        REAL, DIMENSION(1:gr%nnzp):: rvm          ! water vapor mixing ratio; kg/kg
-        REAL, DIMENSION(1:gr%nnzp):: Temp         ! Temperature; K
-        REAL, DIMENSION(1:gr%nnzp):: es           ! Saturation vapor pressure; Pa
-        REAL, DIMENSION(1:gr%nnzp):: Supsat       ! Supersaturation
-        REAL, DIMENSION(1:gr%nnzp):: VNr          ! Number conc. sedimentation 
-                                                  !   velocity; m/s 
-       
-        REAL, DIMENSION(1:gr%nnzp):: aa, bb, cc, dd  ! Tridiagonals
-        REAL, DIMENSION(1:gr%nnzp):: oo, pp, qq, rr
+        real, dimension(gr%nnzp) :: 
+     .  rrp2_rrm2,   ! rrp2/rrm^2               []
+     .  Nrp2_Nrm2,   ! Nrp2/Nrm^2               []
+     .  Ncp2_Ncm2,   ! Ncp2/Ncm^2               []
+     .  corr_rrNr_LL,! Correlation of rr and Nr [num/m^3 kg/kg]
+     .  corr_srr_NL, ! Correlation of s and rr  []
+     .  corr_sNr_NL, ! Correlation of s and Nr  []
+     .  corr_sNc_NL  ! Correlation of s and Nc  []
 
-        REAL, DIMENSION(1:gr%nnzp):: rs           ! Saturation mixing ratio; kg/kg
+        real :: 
+     .  e,      ! Vapor pressure                [Pa]
+     .  thm,    ! Potential temperature         [K]
+     .  Beta_T  ! Beta_T                        [kg/kg]
 
-        REAL, DIMENSION(1:gr%nnzp):: cond_Nrm
-        REAL, DIMENSION(1:gr%nnzp):: auto_Nrm
+        ! Array indices
+        integer :: k, km1, kp1, i, cloud_base
 
-
-        REAL:: e             ! Vapor pressure; Pa
-        REAL:: thm           ! Potential temperature; K
-
-
-        REAL:: a, thl1, thl2, rc1, rc2, s1, s2, ss1, ss2
-
-        INTEGER:: cloud_base
-
-        INTEGER:: i, k
-        INTEGER:: km1, kp1
-
-        REAL :: Beta_T
-
-
-        ! Function Calls
-!        REAL:: cond_evap_rrm, autoconv_rrm, accretion_rrm
-!        REAL:: cond_evap_Nrm, autoconv_Nrm
-
-! Whether this is valid
-        LOGICAL, INTENT(INOUT)                    :: isValid
-
-! Latin hypercube estimate of Kessler autoconversion   Vince Larson 22 May 2005
-        REAL, DIMENSION(1:gr%nnzp), INTENT(IN) :: AKm_est
-! Analytic calculation of Kessler autoconversion       Vince Larson 22 May 2005
-        REAL, DIMENSION(1:gr%nnzp), INTENT(IN) :: AKm
-
-
-
-! DESCRIPTION
+! DESCRIPTION:
 !
-! This subroutine computes the new rain water mixing ratio, rr.
+! This subroutine computes microphysical contributions of 
+! the new rain water mixing ratio, rr.
 ! It computes it according to the equation:
 !
-! drr/dt = -w*(drr/dz) + Vrr*(drr/dz) + nu_r*(d2rr/dz2)
-!                      + (drr/dt)cond + (drr/dt)auto + (drr/dt)accr
+! drr/dt(explicit) = (drr/dt)cond + (drr/dt)auto + (drr/dt)accr
+!
+! It also computes Vrr, which is applied to the LHS of the tridiagonal
+! system in subroutine timestep_microphys like so:
+!
+! drr/dt(implicit) = -w*(drr/dz) + Vrr*(drr/dz) + nu_r*(d2rr/dz2)
 !
 ! where Vrr is the mean sedimentation velocity of the rain drops.  It
 ! is determined by Vrr = 0.012*rvr - 0.2, with Vrr in m/s and rvr, the
@@ -288,28 +297,9 @@
 ! solve for Nr at the next timestep.
 !
 ! Description and notes written by Brian Griffin.
+!
+! Changes for kk_microphys -dschanen 14 Feb 2007
 
-#ifdef STATS
-
-        if (lstats_samp) then
-
-         if ( irrm_bt > 0 ) then
-           zt%x(:,irrm_bt) = zt%x(:,irrm_bt) - rrm/dt
-         endif
-
-         if ( irrm_bt > 0 ) then
-           zt%x(:,iNrm_bt) = zt%x(:,iNrm_bt) - Nrm/dt
-         endif
-
-        endif
-
-#endif /*STATS*/
-
-        ! The following section should always identically match the same
-        ! section that is found in subroutine kk_microphys.  Whenever a 
-        ! change is made to one, the same change must be made to the other
-        ! one.
-        !
         ! Set up the values of the statistical correlations and variances.
         ! Since we currently do not have enough variables to compute the 
         ! correlations and variances directly, we have obtained these values 
@@ -327,11 +317,11 @@
            IF ( rcm(k) >= rc_tol ) THEN
               cloud_base = k
               EXIT
-           ENDIF
+           END IF
            IF ( k == gr%nnzp ) THEN
               cloud_base = gr%nnzp
-           ENDIF
-        ENDDO
+           END IF
+        END DO
         ! Set the value of the parameters based on whether the altitude
         ! is above or below cloud  base.
         DO k = 1, gr%nnzp, 1
@@ -351,703 +341,8 @@
               corr_srr_NL(k)  = corr_srr_NL_cloud
               corr_sNr_NL(k)  = corr_sNr_NL_cloud
               corr_sNc_NL(k)  = corr_sNc_NL_cloud
-           ENDIF
-        ENDDO
-
-        ! Find the drop mean volume radius.  It is calculated using
-        ! the rain water mixing ratio, the rain droplet concentration,
-        ! and the air density.  These values are taken from the previous
-        ! timestep.  It is located on thermodynamic levels.
-        DO k = 1, gr%nnzp, 1
-
-           mean_vol_rad(k)
-     .     = mean_volume_radius( rrm(k), Nrm(k), rhot(k), rrp2_rrm2(k), 
-     .                           Nrp2_Nrm2(k), corr_rrNr_LL(k) )
-
-        ENDDO
-
-
-        ! The sedimentation velocity is found from the drop mean volume radius.
-        ! It is located on the momentum levels.  This is due to the fact that
-        ! momentum levels are where other vertical velocities are stored, such
-        ! as the vertical component of wind velocity (w).
-
-        ! Khairoutdinov and Kogan Sedimentation Velocity Calculation.
-        ! sedimentation velocity of rain drops (in m/s).
-        ! mean volume radius converted to um.
-        ! Note 1: positive sedimentation velocity means downwards.
-        ! Note 2: Vrr(m/s) = 0.012*rvr(um) - 0.2
-        ! If rvr(um) is too small, the equation will result in an
-        ! upwards (negative) sedimentation velocity.  The limiter
-        ! is put in there for that reason.
-
-        DO k = 1, gr%nnzp, 1
-
-           kp1 = MIN(k+1,gr%nnzp)
-
-           ! rrm sedimentation velocity.
-           Vrr(k) = 0.012 
-     .             * ( 1000000.0 * (1.0/2.0) 
-     .             * ( mean_vol_rad(kp1) + mean_vol_rad(k) ) )
-     .             - 0.2
-
-           Vrr(k) = MAX( Vrr(k), 0.0 )
-
-           ! Nrm sedimentation velocity.
-           VNr(k) = 0.007 
-     .             * ( 1000000.0 * (1.0/2.0) 
-     .             * ( mean_vol_rad(kp1) + mean_vol_rad(k) ) )
-     .             - 0.1
-
-           VNr(k) = MAX( VNr(k), 0.0 )
-
-        ENDDO
-
-
-        ! Find values for other variables.
-        DO k = 2, gr%nnzp, 1
-
-           ! Find the important conditions
-
-           rvm(k) = rtm(k) - rcm(k)   ! rvm is water vapor mixing ratio.
-
-           ! Find current vapor pressure.
-           e = (p(k)*rvm(k))/(ep + rvm(k))
-
-           ! Get theta from theta-l
-           thm = thlm(k) + (Lv/(Cp*exner(k)))*rcm(k)
-
-           ! Saturation mixing ratio
-           rs(k) = rsat(p(k),thm*exner(k))
-           ! Find temperature and saturation vapor pressure.
-           Temp(k) = thm/((p0/p(k))**kappa)
-           es(k) = (p(k)*rs(k))/(ep + rs(k))
-
-        ENDDO
-
-        ! Set the boundary conditions
-        rvm(1)          = 0.
-        rs(1)           = 0.
-        Temp(1)         = 0.
-        es(1)           = 0.
-        Supsat(1)       = 0.
-        Supsat(gr%nnzp) = 0.
-
-        ! Boundary Conditions.
-        ! These have been chosen so that the column totals in the LHS matrix
-        ! of the diffusional term are equal to zero.  This leads to 
-        ! "conservative differencing" of the diffusion term for equally spaced grids.     
-        ! The ground is impermeable to diffusion of rrm, Nrm.   Brian.
-
-        ! rain water mixing ratio (rrm)
-        ! lower boundary
-        aa(1) = 0.0                                                    ! aa(1) term
-
-        bb(1) = 
-     .         + (1.0/dt)                                              ! bb(1) time tendency
-     .         - ( - nu_r * gr%dzt(2) * gr%dzm(1) )                    ! minus aa(2) diffusion
-
-        cc(1) = 
-     .         + wmt(1) * (1.0/2.0) * gr%dzt(1)                        ! cc(1) advection
-     .         - (1.0/4.0) * ( Vrr(1) + Vrr(1) ) * gr%dzt(1)           ! cc(1) sedimentation
-     .         - ( + nu_r * gr%dzt(2) * ( gr%dzm(2) + gr%dzm(1) ) )    ! minus bb(2) diffusion
-     .         - ( - nu_r * gr%dzt(3) * gr%dzm(2) )                    ! minus aa(3) diffusion
-
-        ! upper boundary
-        aa(gr%nnzp) =
-     .         - (   nu_r*gr%dzt(gr%nnzp-1)
-     .              *(gr%dzm(gr%nnzp-1) + gr%dzm(gr%nnzp-2)) )  ! bb(gr%nnzp-1) diffusion
-     .         - ( - nu_r*gr%dzt(gr%nnzp-2)*gr%dzm(gr%nnzp-2) ) ! cc(gr%nnzp-2) diffusion
-     .         - wmt(gr%nnzp) 
-     .          / (1.0/gr%dzm(gr%nnzp) + 1.0/gr%dzm(gr%nnzp-1)) ! aa(gr%nnzp) advection
-
-
-        bb(gr%nnzp) =
-     .         - ( - nu_r*gr%dzt(gr%nnzp-1)*gr%dzm(gr%nnzp-1) ) ! cc(gr%nnzp-1) diffusion
-     .         + (1.0/dt)                                       ! bb(gr%nnzp) time tendency
-                                                                ! bb(gr%nnzp) sedimentation = 0.
-
-        cc(gr%nnzp) = 0.0                                       ! cc(gr%nnzp) term
-
-        ! Implicit contributions to rrm.
-#ifdef STATS
-
-        if (lstats_samp) then
-
-         if ( irrm_ma > 0 ) then
-           ztscr01(1) = 0.0
-           ztscr02(1) = - wmt(1) * (1.0/2.0) * gr%dzt(1)
-         endif
-
-         if ( irrm_sd > 0 ) then
-           ztscr03(1) = 0.0
-           ztscr04(1) = + (1.0/4.0) * ( Vrr(1) + Vrr(1) ) * gr%dzt(1)
-         endif
-
-         if ( irrm_dff > 0 ) then
-           ztscr05(1) = 0.0
-           ztscr06(1) = - nu_r * gr%dzt(2) * gr%dzm(1)
-           ztscr07(1) = + nu_r * gr%dzt(2) * ( gr%dzm(2) + gr%dzm(1) )
-     .                  - nu_r * gr%dzt(3) * gr%dzm(2)
-         endif
-
-        endif
-
-#endif /*STATS*/
-
-        ! rain drop concentration (Nrm)
-        ! lower boundary
-        oo(1) = 0.0                                                    ! oo(1) term
-
-        pp(1) = 
-     .         + (1.0/dt)                                              ! pp(1) time tendency
-     .         - ( - nu_r * gr%dzt(2) * gr%dzm(1) )                    ! minus oo(2) diffusion
-
-        qq(1) = 
-     .         + wmt(1) * (1.0/2.0) * gr%dzt(1)                        ! qq(1) advection
-     .         - (1.0/4.0) * ( VNr(1) + VNr(1) ) * gr%dzt(1)           ! qq(1) sedimentation
-     .         - ( + nu_r * gr%dzt(2) * ( gr%dzm(2) + gr%dzm(1) ) )    ! minus pp(2) diffusion
-     .         - ( - nu_r * gr%dzt(3) * gr%dzm(2) )                    ! minus oo(3) diffusion
-
-        ! upper boundary
-        oo(gr%nnzp) =
-     .         - (   nu_r*gr%dzt(gr%nnzp-1)
-     .              *(gr%dzm(gr%nnzp-1) + gr%dzm(gr%nnzp-2)) )  ! pp(gr%nnzp-1) diffusion
-     .         - ( - nu_r*gr%dzt(gr%nnzp-2)*gr%dzm(gr%nnzp-2) ) ! qq(gr%nnzp-2) diffusion
-     .         - wmt(gr%nnzp) 
-     .          / (1.0/gr%dzm(gr%nnzp) + 1.0/gr%dzm(gr%nnzp-1)) ! oo(gr%nnzp) advection
-
-
-        pp(gr%nnzp) =
-     .         - ( - nu_r*gr%dzt(gr%nnzp-1)*gr%dzm(gr%nnzp-1) ) ! qq(gr%nnzp-1) diffusion
-     .         + (1.0/dt)                                       ! pp(gr%nnzp) time tendency
-                                                                ! pp(gr%nnzp) sedimentation = 0.
-
-        qq(gr%nnzp) = 0.0                                       ! qq(gr%nnzp) term
-
-        ! Implicit contributions to Nrm.
-#ifdef STATS
-
-        if (lstats_samp) then
-
-         if ( iNrm_ma > 0 ) then
-           ztscr08(1) = 0.0
-           ztscr09(1) = - wmt(1) * (1.0/2.0) * gr%dzt(1)
-         endif
-
-         if ( iNrm_sd > 0 ) then
-           ztscr10(1) = 0.0
-           ztscr11(1) = + (1.0/4.0) * ( VNr(1) + VNr(1) ) * gr%dzt(1)
-         endif
-
-         if ( iNrm_dff > 0 ) then
-           ztscr12(1) = 0.0
-           ztscr13(1) = - nu_r * gr%dzt(2) * gr%dzm(1)
-           ztscr14(1) = + nu_r * gr%dzt(2) * ( gr%dzm(2) + gr%dzm(1) )
-     .                  - nu_r * gr%dzt(3) * gr%dzm(2)
-         endif
-
-        endif
-
-#endif /*STATS*/
-
-
-
-        ! Main Loop
-        DO k = 2, gr%nnzp-1, 1
-
-           km1 = MAX(k-1,1)
-           kp1 = MIN(k+1,gr%nnzp)
-
-           ! LHS terms for rain water mixing ratio, rrm.
-
-           ! Find subdiagonal aa
-           aa(k) = 
-     .            - wmt(k) * (1.0/2.0) * gr%dzt(k)                  ! advection
-     .            + (1.0/4.0) * ( Vrr(k) + Vrr(km1) ) * gr%dzt(k)   ! sedimentation
-     .            - nu_r * gr%dzt(k) * gr%dzm(km1)                  ! diffusion
-     
-           ! Find main diagonal bb
-           bb(k) = 
-     .            + (1.0/dt)                                         ! time tendency
-     .            + nu_r * gr%dzt(k) * ( gr%dzm(k) + gr%dzm(km1) )   ! diffusion
-
-           ! Find superdiagonal cc
-           cc(k) = 
-     .            + wmt(k) * (1.0/2.0) * gr%dzt(k)                  ! advection
-     .            - (1.0/4.0) * ( Vrr(k) + Vrr(km1) ) * gr%dzt(k)   ! sedimentation
-     .            - nu_r * gr%dzt(k) * gr%dzm(k)                    ! diffusion
-
-
-        ! Implicit contributions to rrm.
-#ifdef STATS
-
-        if (lstats_samp) then
-
-         if ( irrm_ma > 0 ) then
-           ztscr01(k) = + wmt(k) * (1.0/2.0) * gr%dzt(k)
-           ztscr02(k) = - wmt(k) * (1.0/2.0) * gr%dzt(k)
-         endif
-
-         if ( irrm_sd > 0 ) then
-           ztscr03(k) = - (1.0/4.0) * ( Vrr(k) + Vrr(km1) ) * gr%dzt(k)
-           ztscr04(k) = + (1.0/4.0) * ( Vrr(k) + Vrr(km1) ) * gr%dzt(k)
-         endif
-
-         if ( irrm_dff > 0 ) then
-           ztscr05(k) = + nu_r * gr%dzt(k) * gr%dzm(km1)
-           ztscr06(k) = - nu_r * gr%dzt(k) * ( gr%dzm(k) + gr%dzm(km1) )
-           ztscr07(k) = + nu_r * gr%dzt(k) * gr%dzm(k)
-         endif
-
-        endif
-
-#endif /*STATS*/
-
-
-           ! LHS terms for rain droplet number concentration, Nrm.
-
-           ! Find subdiagonal oo
-           oo(k) = 
-     .            - wmt(k) * (1.0/2.0) * gr%dzt(k)                  ! advection
-     .            + (1.0/4.0) * ( VNr(k) + VNr(km1) ) * gr%dzt(k)   ! sedimentation
-     .            - nu_r * gr%dzt(k) * gr%dzm(km1)                  ! diffusion
-
-           ! Find main diagonal pp
-           pp(k) = 
-     .            + (1.0/dt)                                         ! time tendency
-     .            + nu_r * gr%dzt(k) * ( gr%dzm(k) + gr%dzm(km1) )   ! diffusion
-
-           ! Find superdiagonal qq
-           qq(k) = 
-     .            + wmt(k) * (1.0/2.0) * gr%dzt(k)                  ! advection
-     .            - (1.0/4.0) * ( VNr(k) + VNr(km1) ) * gr%dzt(k)   ! sedimentation
-     .            - nu_r * gr%dzt(k) * gr%dzm(k)                    ! diffusion
-
-
-        ! Implicit contributions to Nrm.
-#ifdef STATS
-
-        if (lstats_samp) then
-
-         if ( iNrm_ma > 0 ) then
-           ztscr08(k) = + wmt(k) * (1.0/2.0) * gr%dzt(k)
-           ztscr09(k) = - wmt(k) * (1.0/2.0) * gr%dzt(k)
-         endif
-
-         if ( iNrm_sd > 0 ) then
-           ztscr10(k) = - (1.0/4.0) * ( VNr(k) + VNr(km1) ) * gr%dzt(k)
-           ztscr11(k) = + (1.0/4.0) * ( VNr(k) + VNr(km1) ) * gr%dzt(k)
-         endif
-
-         if ( iNrm_dff > 0 ) then
-           ztscr12(k) = + nu_r * gr%dzt(k) * gr%dzm(km1)
-           ztscr13(k) = - nu_r * gr%dzt(k) * ( gr%dzm(k) + gr%dzm(km1) )
-           ztscr14(k) = + nu_r * gr%dzt(k) * gr%dzm(k)
-         endif
-
-        endif
-
-#endif /*STATS*/
-
-
-           ! PDF parameters from pdf_closure_new for use in calculation
-           ! of condensation/evaporation, autoconversion, accretion.
-
-           a    = pdf_parms(k,13)
-           thl1 = pdf_parms(k,9)
-           thl2 = pdf_parms(k,10)
-           rc1  = pdf_parms(k,14)
-           rc2  = pdf_parms(k,15)
-           s1   = pdf_parms(k,20)
-           s2   = pdf_parms(k,21)
-           ss1  = pdf_parms(k,22)
-           ss2  = pdf_parms(k,23)
-
-           ! Compute supersaturation via s1, s2. 
-           !     Larson et al 2002, JAS, Vol 59, p 3534.
-           ! This allows a more direct comparison of local, nonlocal formulas.
-           Beta_T = (Rd/Rv) * ( Lv/(Rd*Temp(k)) ) * ( Lv/(Cp*Temp(k)) )
-
-           Supsat(k) = (a*s1+(1-a)*s2)*((1.0 + Beta_T*rs(k))/rs(k))
-
-           ! Now find the elements that make up the right-hand side of the
-           ! equation, dd, for rain water mixing ratio, rrm.
-
-           cond_rrm(k)
-     .     = cond_evap_rrm( rrm(k), Nrm(k),
-     .                      s1, ss1, s2, ss2,
-     .                      thl1, thl2, rc1, rc2, a,
-     .                      p(k), rhot(k), Temp(k), Supsat(k), 
-     .                      rrp2_rrm2(k), Nrp2_Nrm2(k), corr_srr_NL(k),
-     .                      corr_sNr_NL(k), corr_rrNr_LL(k)  )
-
-! Vince Larson added option to call LH sampled Kessler autoconversion.
-! 22 May 2005
-!           auto_rrm(k) = autoconv_rrm( rcm(k), Ncm(k), rhot(k),
-!     .                        a, s1, s2, ss1, ss2, rc1, rc2 )
-           if ( LH_on ) then
-
-!              auto_rrm(k) = AKm_est(k)
-              auto_rrm(k) = AKm(k)
-
-           else
-
-              auto_rrm(k)
-     .        = autoconv_rrm( rcm(k), Ncm(k), s1, ss1, 
-     .                        s2, ss2, a, rhot(k),
-     ,                        Ncp2_Ncm2(k), corr_sNc_NL(k) )
-
-           endif
-! End Vince Larson's addition
-
-            accr_rrm(k)
-     .      = accretion_rrm( rcm(k), rrm(k), s1, ss1,
-     .                       s2, ss2, a, 
-     .                       rrp2_rrm2(k), corr_srr_NL(k) )
-
-        ! Explicit contributions to rrm.
-#ifdef STATS
-
-        if (lstats_samp) then
-
-         if ( irrm_cond > 0 ) then
-           zt%x(k,irrm_cond) = zt%x(k,irrm_cond) + cond_rrm(k)
-           zt%n(k,irrm_cond) = zt%n(k,irrm_cond) + 1
-         endif
-
-         if ( irrm_auto > 0 ) then
-           zt%x(k,irrm_auto) = zt%x(k,irrm_auto) + auto_rrm(k)
-           zt%n(k,irrm_auto) = zt%n(k,irrm_auto) + 1
-         endif
-
-         if ( irrm_accr > 0 ) then
-           zt%x(k,irrm_accr) = zt%x(k,irrm_accr) + accr_rrm(k)
-           zt%n(k,irrm_accr) = zt%n(k,irrm_accr) + 1
-         endif
-
-        endif
-
-#endif /*STATS*/
-
-
-           ! Now find the elements that make up the right-hand side of the
-           ! equation, rr, for rain droplet number concentration, Nrm.
-
-           cond_Nrm(k) = cond_evap_Nrm( cond_rrm(k), Nrm(k), rrm(k) )
-
-           auto_Nrm(k) = autoconv_Nrm( auto_rrm(k), rhot(k) )
-
-
-        ! Explicit contributions to Nrm.
-#ifdef STATS
-
-        if (lstats_samp) then
-
-         if ( iNrm_cond > 0 ) then
-           zt%x(k,iNrm_cond) = zt%x(k,iNrm_cond) + cond_Nrm(k)
-           zt%n(k,iNrm_cond) = zt%n(k,iNrm_cond) + 1
-         endif
-
-         if ( iNrm_auto > 0 ) then
-           zt%x(k,iNrm_auto) = zt%x(k,iNrm_auto) + auto_Nrm(k)
-           zt%n(k,iNrm_auto) = zt%n(k,iNrm_auto) + 1
-         endif
-
-        endif
-
-#endif /*STATS*/
-
-
-        ENDDO ! k=2..gr%nnzp-1
-
-
-
-        ! Enter the entire dd array, which is the RHS of the equation.
-        dd(2:gr%nnzp-1) = (1.0/dt) * rrm(2:gr%nnzp-1)
-     .                  + cond_rrm(2:gr%nnzp-1) 
-     .                  + auto_rrm(2:gr%nnzp-1) + accr_rrm(2:gr%nnzp-1)
-        ! auto_rrm, cond_rrm, and accr_rrm are not set at nz=1 or nnzp
-        ! There is no condensation/evaporation, autoconversion, or accretion
-        ! at level 1, which is below the ground surface.  Brian.
-        dd(1)       = (1.0/dt) * rrm(1)
-        dd(gr%nnzp) = (1.0/dt) * rrm(gr%nnzp) + cond_rrm(gr%nnzp-1)
-     .              + auto_rrm(gr%nnzp-1) + accr_rrm(gr%nnzp-1)
-
-        ! Enter the entire rr array, which is the RHS of the equation.
-        rr(2:gr%nnzp-1) = (1.0/dt) * Nrm(2:gr%nnzp-1) 
-     .                  + cond_Nrm(2:gr%nnzp-1) + auto_Nrm(2:gr%nnzp-1)
-        ! auto_rrm and cond_Nrm are not set at nz=1 or nnzp
-        ! There is no condensation/evaporation or autoconversion
-        ! at level 1, which is below the ground surface.  Brian.
-        rr(1)       = (1.0/dt) * Nrm(1)
-        rr(gr%nnzp) = (1.0/dt) * Nrm(gr%nnzp) + cond_Nrm(gr%nnzp-1)
-     .              + auto_Nrm(gr%nnzp-1)
-
-
-!       The Boundary condition setup is now located above the main loop.
-!       Brian.  December 15, 2005.
-
-
-!       solve tridiagonal systems
-
-        !call tridag(aa, bb, cc, dd, rrm, gr%nnzp, isValid)
-        call tridag_solve( "rrm", gr%nnzp, 1, cc, bb, aa, dd, 
-     .                      rrm, isValid)
-
-        if (.not. isValid ) return
-
-        !call tridag(oo, pp, qq, rr, Nrm, gr%nnzp, isValid)
-        call tridag_solve( "Nrm", gr%nnzp, 1, qq, pp, oo, rr, 
-     .                      Nrm, isValid)
-
-        if (.not. isValid ) return
-
-
-        DO k = 1, gr%nnzp, 1
-
-           km1 = MAX(k-1,1)
-           kp1 = MIN(k+1,gr%nnzp)
-
-#ifdef STATS
-
-        if (lstats_samp) then
-
-        ! Finalize implicit contributions to rrm.
-         if ( irrm_ma > 0 ) then
-           zt%x(k,irrm_ma) = zt%x(k,irrm_ma)
-     .       + ztscr01(k) * rrm(km1)
-     .       + ztscr02(k) * rrm(kp1)
-           zt%n(k,irrm_ma) = zt%n(k,irrm_ma) + 1
-         endif
-
-         if ( irrm_sd > 0 ) then
-           zt%x(k,irrm_sd) = zt%x(k,irrm_sd)
-     .       + ztscr03(k) * rrm(km1)
-     .       + ztscr04(k) * rrm(kp1)
-           zt%n(k,irrm_sd) = zt%n(k,irrm_sd) + 1
-         endif
-
-         if ( irrm_dff > 0 ) then
-           zt%x(k,irrm_dff) = zt%x(k,irrm_dff)
-     .       + ztscr05(k) * rrm(km1)
-     .       + ztscr06(k) * rrm(k)
-     .       + ztscr07(k) * rrm(kp1)
-           zt%n(k,irrm_dff) = zt%n(k,irrm_dff) + 1
-         endif
-
-
-        ! Finalize implicit contributions to Nrm.
-         if ( iNrm_ma > 0 ) then
-           zt%x(k,iNrm_ma) = zt%x(k,iNrm_ma)
-     .       + ztscr08(k) * Nrm(km1)
-     .       + ztscr09(k) * Nrm(kp1)
-           zt%n(k,iNrm_ma) = zt%n(k,iNrm_ma) + 1
-         endif
-
-         if ( iNrm_sd > 0 ) then
-           zt%x(k,iNrm_sd) = zt%x(k,iNrm_sd)
-     .       + ztscr10(k) * Nrm(km1)
-     .       + ztscr11(k) * Nrm(kp1)
-           zt%n(k,iNrm_sd) = zt%n(k,iNrm_sd) + 1
-         endif
-
-         if ( iNrm_dff > 0 ) then
-           zt%x(k,iNrm_dff) = zt%x(k,iNrm_dff)
-     .       + ztscr12(k) * Nrm(km1)
-     .       + ztscr13(k) * Nrm(k)
-     .       + ztscr14(k) * Nrm(kp1)
-           zt%n(k,iNrm_dff) = zt%n(k,iNrm_dff) + 1
-         endif
-
-        endif
-
-#endif /*STATS*/
-
-           ! Value of rain water mixing ratio cannot fall below 0.
-           IF (rrm(k) < 0.0) THEN
-              rrm(k) = 0.0
-           ENDIF
-
-           ! Value of rain droplet number concentration cannot fall below 0.
-           IF (Nrm(k) < 0.0) THEN
-              Nrm(k) = 0.0
-           ENDIF
-
-        ENDDO  ! k = 1, gr%nnzp, 1
-
-
-!       boundary conditions on results
-
-        ! rrm
-        rrm(1) = rrm(2)
-        rrm(gr%nnzp) = rrm(gr%nnzp-1)
-
-        ! Nrm
-        Nrm(1) = Nrm(2)
-        Nrm(gr%nnzp) = Nrm(gr%nnzp-1)
-
-
-#ifdef STATS
-
-        if (lstats_samp) then
-
-         if ( irrm_bt > 0 ) then
-           zt%x(:,irrm_bt) = zt%x(:,irrm_bt) + rrm/dt
-           zt%n(:,irrm_bt) = zt%n(:,irrm_bt) + 1
-         endif
-
-         if ( irrm_bt > 0 ) then
-           zt%x(:,iNrm_bt) = zt%x(:,iNrm_bt) + Nrm/dt
-           zt%n(:,iNrm_bt) = zt%n(:,iNrm_bt) + 1
-         endif
-
-        endif
-
-#endif /*STATS*/
-
-
-        RETURN
-        END SUBROUTINE rain
-
-!----------------------------------------------------------------------
-        subroutine kk_microphys
-     .             ( thlm, p, exner, rhot, thl1, thl2, a, rc1, rc2, s1,
-     .               s2, ss1, ss2, rtm, rcm, Ncm, rrm, Nrm, 
-     .               lsample, AKm_est, AKm,
-     .               rrm_mc_tndcy, Nrm_mc_tndcy, 
-     .               hm_rt_tndcy, hm_thl_tndcy,
-     .               Vrr, VNr )
-!       Description:
-!       This code takes Brian Griffin's code from subroutine rain()
-!       (above) and computes microphysical tendencies and fall speeds
-!       per se rather than adding in the effects of diffusion, advection, 
-!       and sedimentation.  This is for the purpose of testing different
-!       microphysical schemes with the same diff., advect., and sed.
-!----------------------------------------------------------------------
-
-        use model_flags
-        use grid_class
-        use constants
-#ifdef STATS
-        use statistics
-#endif
-
-        implicit none
-
-        ! External functions
-        real, external :: rsat
-
-        ! Input
-        real, intent(in), dimension(1:gr%nnzp) ::
-     .  thlm,      ! theta-l                            [K]
-     .  p,         ! pressure                           [Pa]
-     .  exner,     ! exner function                     [-]
-     .  rhot,      ! density on thermo. grid            [kg/m^3]
-     .  thl1, thl2,! PDF parameters thl1 &thl2          [K]
-     .  a,         ! PDF parameter a                    [-]
-     .  s1, s2,    ! PDF parameters s1 & s2             [kg/kg]
-     .  ss1, ss2,  ! PDF parameters ss1 & ss2           [kg/kg]
-     .  rc1, rc2,  ! PDF parameters rc1 & rc2           [kg/kg]
-     .  rtm,       ! Total water mixing ratio           [kg/kg]
-     .  rcm,       ! Cloud water mixing ratio           [kg/kg]
-     .  Ncm,       ! Cloud droplet number conc.         [number/m^3]
-     .  rrm,       ! rain water mixing ratio            [kg/kg]
-     .  Nrm        ! rain droplet number conc.          [number/m^3]
-
-        ! Latin hypercube variables - Vince Larson 22 May 2005
-        real, intent(in), dimension(gr%nnzp) :: 
-     .  Akm,    ! Latin hypercube estimate of Kessler autoconversion   
-     .  AKm_est ! Analytic calculation of Kessler autoconversion
-
-        logical, intent(in) ::
-     .  lsample ! Whether to sample stats for this call
-
-        ! Output
-        real, intent(out), dimension(gr%nnzp) :: 
-     .  Vrr,         ! Mean sedimentation velocity of rrm       [m/s]    
-     .  VNr,         ! Mean sedimentation velocity of Nrm       [m/s]
-     .  rrm_mc_tndcy,! Rain water microphysical tendency        [(kg/kg)/s]
-     .  Nrm_mc_tndcy,! Rain droplet number conc. micro. tend.   [(num/m^3)/s]
-     .  hm_rt_tndcy, ! Contributions to total water from micro. [(kg/kg)/s]
-     .  hm_thl_tndcy ! Contributions to theta_l from micro.     [K/s]
-
-        ! Local variables
-        real, dimension(gr%nnzp):: 
-     .  rrm_cond,    ! Change in rrm due to condensation        [(kg/kg)/s]
-     .  rrm_auto,    ! Change in rrm due to autoconversion      [(kg/kg)/s]
-     .  rrm_accr,    ! Change in rrm due to accretion           [(kg/kg)/s]
-     .  Nrm_cond,    ! Change in Nrm due to condensation        [(num/m^3)/s]
-     .  Nrm_auto,    ! Change in Nrm due to autoconversion      [(num/m^3)/s]
-     .  mean_vol_rad,! Mean volume radius                       [m]
-     .  rvm,         ! Water vapor mixing ratio                 [kg/kg]
-     .  Temp,        ! Temperature                              [K]
-     .  es,          ! Saturation vapor pressure                [Pa]
-     .  Supsat,      ! Supersaturation                          [-]
-     .  rs,          ! Saturation mixing ratio                  [kg/kg]
-     .  rrp2_rrm2,   ! rrp2/rrm^2
-     .  Nrp2_Nrm2,   ! Nrp2/Nrm^2
-     .  Ncp2_Ncm2,   ! Ncp2/Ncm^2
-     .  corr_rrNr_LL,! Correlation of rr and Nr
-     .  corr_srr_NL, ! Correlation of s and rr
-     .  corr_sNr_NL, ! Correlation of s and Nr
-     .  corr_sNc_NL  ! Correlation of s and Nc
-
-        real :: 
-     .  e,      ! Vapor pressure                [Pa]
-     .  thm,    ! Potential temperature         [K]
-     .  Beta_T  ! Beta_T                        [kg/kg]
-
-        ! Array indices
-        integer :: k, km1, kp1, i, cloud_base
-
-        ! The following section should always identically match the same
-        ! section that is found in subroutine rain.  Whenever a change is
-        ! made to one, the same change must be made to the other one.
-        !
-        ! Set up the values of the statistical correlations and variances.
-        ! Since we currently do not have enough variables to compute the 
-        ! correlations and variances directly, we have obtained these values 
-        ! by analyzing LES runs of certain cases.  We have divided those 
-        ! results into an in-cloud average and a below-cloud average.
-        ! This coding leaves the software architecture in place in case we
-        ! ever have the variables in place to compute these values directly.
-        ! It also allows us to use separate in-cloud and below-cloud 
-        ! parameter values.  Brian Griffin; February 3, 2007.
-        !
-        ! Find the level of the cloud base.  If there isn't any cloud, then
-        ! set it equal to the model top.
-        ! Use a value of rcm of rc_tol to determine the cloud base.
-        DO k = 1, gr%nnzp, 1
-           IF ( rcm(k) >= rc_tol ) THEN
-              cloud_base = k
-              EXIT
-           ENDIF
-           IF ( k == gr%nnzp ) THEN
-              cloud_base = gr%nnzp
-           ENDIF
-        ENDDO
-        ! Set the value of the parameters based on whether the altitude
-        ! is above or below cloud  base.
-        DO k = 1, gr%nnzp, 1
-           IF ( k < cloud_base ) THEN
-              rrp2_rrm2(k)    = rrp2_rrm2_below
-              Nrp2_Nrm2(k)    = Nrp2_Nrm2_below
-              Ncp2_Ncm2(k)    = Ncp2_Ncm2_below
-              corr_rrNr_LL(k) = corr_rrNr_LL_below
-              corr_srr_NL(k)  = corr_srr_NL_below
-              corr_sNr_NL(k)  = corr_sNr_NL_below
-              corr_sNc_NL(k)  = corr_sNc_NL_below
-           ELSE
-              rrp2_rrm2(k)    = rrp2_rrm2_cloud
-              Nrp2_Nrm2(k)    = Nrp2_Nrm2_cloud
-              Ncp2_Ncm2(k)    = Ncp2_Ncm2_cloud
-              corr_rrNr_LL(k) = corr_rrNr_LL_cloud
-              corr_srr_NL(k)  = corr_srr_NL_cloud
-              corr_sNr_NL(k)  = corr_sNr_NL_cloud
-              corr_sNc_NL(k)  = corr_sNc_NL_cloud
-           ENDIF
-        ENDDO
+           END IF
+        END DO
 
         ! Find the drop mean volume radius.  It is calculated using
         ! the rain water mixing ratio, the rain droplet concentration,
@@ -1236,8 +531,8 @@
            end if ! lstats_samp and lsample
 #endif /*STATS*/
 
-          ! Explicit contributions to rrm and Nrm from microphysics
           rrm_mc_tndcy(k) = rrm_cond(k) + rrm_auto(k) + rrm_accr(k)
+
           Nrm_mc_tndcy(k) = Nrm_cond(k) + Nrm_auto(k)
 
           ! Explicit contributions to thlm and rtm from the microphysics
@@ -1245,9 +540,24 @@
           hm_thl_tndcy(k) = ( Lv / ( Cp*exner(k) ) ) * rrm_mc_tndcy(k)
         end do ! k=2..gr%nnzp-1
 
+
         ! Boundary conditions
+
+        ! Explicit contributions to rrm and Nrm from microphysics
+        ! auto_rrm, cond_rrm, and accr_rrm are not set at nz=1 or nnzp
+        ! There is no condensation/evaporation, autoconversion, or accretion
+        ! at level 1, which is below the ground surface.  Brian.
+        rrm_mc_tndcy(1) = 0.0
+        Nrm_mc_tndcy(1) = 0.0
+
+        rrm_mc_tndcy(gr%nnzp) = 0.0
+        Nrm_mc_tndcy(gr%nnzp) = 0.0
+
+        ! Contributions to theta_l and rt.  See further comments 
+        ! about this in the subroutine mixing_solve.
         hm_rt_tndcy(1)  = 0.0
         hm_thl_tndcy(1) = 0.0
+
         hm_rt_tndcy(gr%nnzp)  = 0.0
         hm_thl_tndcy(gr%nnzp) = 0.0
 
