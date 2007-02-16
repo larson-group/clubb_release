@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.27 2007-02-14 21:09:12 dschanen Exp $
+! $Id: rain.F,v 1.28 2007-02-16 20:08:44 griffinb Exp $
 
       MODULE rain_equations
 
@@ -375,26 +375,40 @@
         ! It is located on the momentum levels.  This is due to the fact that
         ! momentum levels are where other vertical velocities are stored, such
         ! as the vertical component of wind velocity (w).
-
+        !
         ! Khairoutdinov and Kogan Sedimentation Velocity Calculation.
         ! sedimentation velocity of rain drops (in m/s).
         ! mean volume radius converted to um.
         ! Note 1: positive sedimentation velocity means downwards.
         ! Note 2: Vrr(m/s) = 0.012*rvr(um) - 0.2
-
+        !
         ! Note 3:
         ! Changed sedimentation to be negative and consistent with
         ! the COAMPS microphysics.
         ! -dschanen 5 Dec 2006
-
+        !
         ! If rvr(um) is too small, the equation will result in an
         ! upwards (positive) sedimentation velocity.  The limiter
         ! is put in there for that reason.
+        !
+        ! Note 4:
+        ! The original Khairoutdinov and Kogan prognostic equations for rain 
+        ! water mixing ratio (eq. 8) and rain drop concentration (eq. 9)
+        ! defined sedimentation velocity as positive downwards and read:
+        !
+        ! d(rr)/dt = -w (drr/dz) + V_rr (drr/dz) + ...;
+        !
+        ! However, to be consistent with COAMPS microphysical schemes, we 
+        ! have defined sedimentation velocity to be positive upwards (or 
+        ! negative downwards), which alters the prognostic equation to read:
+        !
+        ! d(rr)/dt = -w (drr/dz) - V_rr (drr/dz) + ...;
+        !
+        ! This enters into computation in microphysics.F.  Brian Griffin.
 
         do k = 1, gr%nnzp, 1
 
            kp1 = min( k+1, gr%nnzp )
-
 
            ! rrm sedimentation velocity.
            Vrr(k) = 0.012 

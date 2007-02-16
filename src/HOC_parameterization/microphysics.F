@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.2 2007-02-12 23:35:10 dschanen Exp $
+! $Id: microphysics.F,v 1.3 2007-02-16 20:08:44 griffinb Exp $
         module microphysics
 
 !       Description:
@@ -335,16 +335,23 @@
         if ( lstats_samp ) then
           ! Rainfall rate (mm/day) should be defined on thermodynamic
           ! levels.  -Brian
+          ! The absolute value of Vrr is taken because rainfall rate
+          ! is a scalar quantity, and is therefore positive.
           if ( irain_rate > 0 ) then
-            ! Rainfall rate (m/s)
+            ! Rainfall rate (mm/day)
             zt%x(:,irain_rate) = zt%x(:,irain_rate) + 
-     .        ( rrm * zm2zt( -Vrr ) ) * ( rhot / rho_lw )
+     .        ( rrm * zm2zt( abs(Vrr) ) ) * ( rhot / rho_lw )
      .        * ( 86400.0 * 1000.0 )
             zt%n(:,irain_rate) = zt%n(:,irain_rate) + 1
           end if
 
           ! Precipitation Flux (W/m^2) should be defined on
           ! momentum levels.  -Brian
+          ! Normally, a flux is a vector quantity.  Since rain obviously
+          ! falls downward, the sign of the flux would normally be negative.
+          ! However, it is generally a convention in meteorology to show
+          ! Precipitation Flux as a positive downward quantity.  Thus, the
+          ! absolute value of vrr is taken.
           if ( iFprec > 0 ) then    ! Brian
             zm%x(:,iFprec) = zm%x(:,iFprec) +
      .      ( zt2zm( rrm ) * abs( Vrr ) ) 
@@ -352,11 +359,12 @@
             zm%n(:,iFprec) = zm%n(:,iFprec) + 1
           end if
 
-          ! Store values of surface fluxes for statistics 
+          ! Store values of surface fluxes for statistics
+          ! See notes above.
           if ( irain > 0 ) then   ! Added by Brian
             sfc%x(1,irain) = sfc%x(1,irain) +
-     .        ( rrm(2) * abs( zm2zt( Vrr, 1 ) ) ) * ( rhot(2) / rho_lw )
-     .        * ( 86400.0 * 1000.0 ) ! Rainfall rate (m/s)
+     .        ( rrm(2) * abs( zm2zt( Vrr, 2 ) ) ) * ( rhot(2) / rho_lw )
+     .        * ( 86400.0 * 1000.0 ) ! Rainfall rate (mm/day)
             sfc%n(1,irain) = sfc%n(1,irain) + 1
           end if
           if ( ipflux > 0 ) then   ! Added by Brian
@@ -717,7 +725,7 @@
 
         lhs(kp1diag,1)
      .  = + wmt(1) * (1.0/2.0) * gr%dzt(1)                 ! super(1) advection
-     .  - (1.0/4.0) * abs( v_t(1) + v_t(1) ) * gr%dzt(1)   ! super(1) sediment.
+     .  + (1.0/4.0) * ( v_t(1) + v_t(1) ) * gr%dzt(1)      ! super(1) sediment.
      .  - ( + nu * gr%dzt(2) * ( gr%dzm(2) + gr%dzm(1) ) ) ! minus main(2) diffusion
      .  - ( - nu * gr%dzt(3) * gr%dzm(2) )                 ! minus sub(3) diffusion
 
@@ -726,15 +734,13 @@
      .  = - ( nu*gr%dzt(gr%nnzp-1)
      .        *( gr%dzm(gr%nnzp-1) + gr%dzm(gr%nnzp-2) ) ) ! main(gr%nnzp-1) diffusion
      .    - ( - nu*gr%dzt(gr%nnzp-2)*gr%dzm(gr%nnzp-2) )   ! super(gr%nnzp-2) diffusion
-     .    - wmt(gr%nnzp) 
-     .       / (1.0/gr%dzm(gr%nnzp) + 1.0/gr%dzm(gr%nnzp-1)) ! sub(gr%nnzp) advection
-
+     .    - wmt(gr%nnzp) * (1.0/2.0) * gr%dzt(gr%nnzp)     ! sub(gr%nnzp) advection
+                                                           ! sub(gr%nnzp) sediment = 0.
 
         lhs(kdiag,gr%nnzp)
      .  = - ( - nu*gr%dzt(gr%nnzp-1)
      .      *gr%dzm(gr%nnzp-1) ) ! super(gr%nnzp-1) diffusion
      .    + (1.0/dt) ! main(gr%nnzp) time tendency
-                     ! main(gr%nnzp) sedimentation = 0.
 
         ! Not referenced
         !lhs(kp1diag,gr%nnzp) = 0.0 ! super(gr%nnzp) term
@@ -752,7 +758,7 @@
 
          if ( ixrm_sd > 0 ) then
            ztscr03(1) = 0.0
-           ztscr04(1) = + (1.0/4.0) * abs( v_t(1) + v_t(1) ) * gr%dzt(1)
+           ztscr04(1) = - (1.0/4.0) * ( v_t(1) + v_t(1) ) * gr%dzt(1)
          endif
 
          if ( ixrm_dff > 0 ) then
@@ -765,7 +771,7 @@
          ! Upper boundary
          if ( ixrm_ma > 0 ) then
            ztscr01(gr%nnzp) = + wmt(gr%nnzp) 
-     .     / (1.0/gr%dzm(gr%nnzp) + 1.0/gr%dzm(gr%nnzp-1))
+     .                          * (1.0/2.0) * gr%dzt(gr%nnzp)
            ztscr02(gr%nnzp) = 0.0
          end if
 
@@ -892,12 +898,13 @@
         ! Output
         real, dimension(2) :: lhs
 
+        ! For a positive downward sedimentation velocity
 !       lhs(kp1diag) = - (1.0/4.0) * ( v_t + v_tm1 ) * dzt
 !       lhs(km1diag) = + (1.0/4.0) * ( v_t + v_tm1 ) * dzt
 
         ! For a negative downward sedimentation velocity
-        lhs(kp1diag) = - (1.0/4.0) * abs( v_t + v_tm1 ) * dzt
-        lhs(km1diag) = + (1.0/4.0) * abs( v_t + v_tm1 ) * dzt
+        lhs(kp1diag) = + (1.0/4.0) * ( v_t + v_tm1 ) * dzt
+        lhs(km1diag) = - (1.0/4.0) * ( v_t + v_tm1 ) * dzt
 
         return
         end function sedimentation
