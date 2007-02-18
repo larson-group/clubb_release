@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.2 2007-02-09 22:11:45 dschanen Exp $
+# $Id: make.deps,v 1.3 2007-02-18 19:59:32 dschanen Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -105,17 +105,17 @@ truncate_gaus_mixt.o	: truncate_gaus_mixt.F
 
 # == GCSS dependencies ==
 diag_ustar.o: diag_ustar.F
-arm.o       : constants.o diag_ustar.o model_flags.o grid.o arm.F
+arm.o       : constants.o diag_ustar.o model_flags.o grid.o statistics.o arm.F
 astex.o     : constants.o model_flags.o grid.o astex.F
-atex.o      : constants.o model_flags.o grid.o cloud_rad.o atex.F
+atex.o      : constants.o model_flags.o grid.o cloud_rad.o statistics.o atex.F
 bomex.o     : constants.o model_flags.o grid.o bomex.F
 cobra.o     : constants.o model_flags.o grid.o cobra.F
 fire.o      : constants.o model_flags.o grid.o statistics.o cloud_rad.o fire.F
-gabls2.o    : constants.o diag_ustar.o model_flags.o grid.o gabls2.F
+gabls2.o    : constants.o diag_ustar.o model_flags.o grid.o statistics.o gabls2.F
 mpace.o     : constants.o model_flags.o grid.o icedfs.o statistics.o mpace.F
 nov11.o     : constants.o model_flags.o grid.o icedfs.o statistics.o nov11.F
 jun25.o     : constants.o model_flags.o grid.o icedfs.o statistics.o jun25.F
-rico.o      : constants.o model_flags.o grid.o rico.F
+rico.o      : constants.o model_flags.o grid.o statistics.o rico.F
 wangara.o   : constants.o model_flags.o grid.o wangara.F
 icedfs.o    : constants.o grid.o statistics.o icedfs.F
 cloud_rad.o : constants.o grid.o cloud_rad.F
