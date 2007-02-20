@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: update.F,v 1.5 2007-02-07 22:40:38 mjfalk Exp $
+! $Id: update.F,v 1.6 2007-02-20 22:58:15 dschanen Exp $
 
         subroutine update_ed_var( solve_type, xm, xt, xw0, Khm, 
      .                            dt, xw, isValid )
@@ -26,20 +26,20 @@
      .  solve_type ! Desc. of what is being solved for
 
         real, intent(in) :: 
-     .  dt,          ! Timestep                                 [s]
-     .  xw0          ! sfc flux                                 [units vary]
+     .  dt,          ! Timestep                             [s]
+     .  xw0          ! sfc flux                             [units vary]
 
-        real, dimension(1:gr%nnzp), intent(in) :: 
+        real, dimension(gr%nnzp), intent(in) :: 
      .  xt,     ! x tendency                                [units vary]
      .  Khm     ! Diffusion coefficient on momentum grid    [m^2/s]
 
         ! Input/Output Variables
-        real, dimension(1:gr%nnzp), intent(inout) :: 
-     .  xm ! Prognostic array on the thermodynamic grid [units vary]
+        real, dimension(gr%nnzp), intent(inout) :: 
+     .  xm ! Prognostic array on the thermodynamic grid     [units vary]
         
         ! Output Variables
-        real, dimension(1:gr%nnzp), intent(out) :: 
-     .  xw   ! Momentum flux                            [units vary]
+        real, dimension(gr%nnzp), intent(out) :: 
+     .  xw   ! Momentum flux                                [units vary]
 
         logical, intent(out) ::
      .  isValid ! false when matrix is singular
