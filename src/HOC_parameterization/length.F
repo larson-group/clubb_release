@@ -1,4 +1,4 @@
-! $Id: length.F,v 1.3 2006-12-20 03:16:10 dschanen Exp $
+! $Id: length.F,v 1.4 2007-02-20 23:03:34 dschanen Exp $
 !-----------------------------------------------------------------------------
         subroutine length( thvm, thlm, rtm, rcm, em, p, exner,
      .                     Lscale, lup, ldown ) 
@@ -40,7 +40,7 @@
         ! Constant Parameters
         real, parameter :: 
      .  zlmin = 0.1,
-     .  zeps = 1.e-10
+     .  zeps  = 1.e-10
 
         ! Input Variables
         real, dimension(gr%nnzp), intent(in) :: 
@@ -53,7 +53,7 @@
      .  p       ! Pressure on thermodynamic level                 [Pa]
 
         ! Output Variables
-        real, dimension(1:gr%nnzp), intent(out) :: 
+        real, dimension(gr%nnzp), intent(out) :: 
      .  Lscale, ! Mixing length                 [m]
      .  lup,    ! Upward mixing length          [m]
      .  ldown   ! Downward mixing length        [m]
@@ -170,7 +170,7 @@
           rt_par_j_plus_1 = rtm(i)
           rc_par_j_plus_1 = rcm(i)
 
-          do while ((tke_i > 0.) .and. (j >= 2))
+          do while ( (tke_i > 0.) .and. (j >= 2) )
 
             ! thl, rt of parcel are conserved except for entrainment
 
@@ -190,7 +190,7 @@
             beta_par_j = ep*(Lv/(Rd*tl_par_j))*(Lv/(cp*tl_par_j))
             ! s from Lewellen and Yoh 1993 (LY) eqn. 1
             s_par_j = (rt_par_j-rsl_par_j)/(1+beta_par_j*rsl_par_j)
-            rc_par_j = max(s_par_j,0.)
+            rc_par_j = max( s_par_j, 0. )
 
             ! theta_v of entraining parcel
             thv_par_j = thl_par_j + ep1 * T0 * rt_par_j
@@ -223,7 +223,7 @@
 
           end do
 
-!         make ldown nonlocal
+          ! Make ldown nonlocal
           ldown_min_alt = max( ldown_min_alt, gr%zt(i)-ldown(i) )
           if ( (gr%zt(i)-ldown(i)) > ldown_min_alt ) then
             ldown(i) = gr%zt(i) - ldown_min_alt
