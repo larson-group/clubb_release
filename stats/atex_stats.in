@@ -1,4 +1,4 @@
-! $Id: atex_stats.in,v 1.5 2007-02-03 20:58:01 griffinb Exp $
+! $Id: atex_stats.in,v 1.6 2007-02-20 17:00:28 dschanen Exp $
 &statsnl
 
 lstats = t
@@ -48,9 +48,9 @@ vars_zm =
 'wp2_bt', 'wp2_ma', 'wp2_ta', 'wp2_ac', 'wp2_bp', 'wp2_pr1',
 'wp2_pr2', 'wp2_pr3', 'wp2_dp1', 'wp2_dp2', 'wp2_cl',
 'wprtp_bt', 'wprtp_ma', 'wprtp_ta', 'wprtp_tp', 'wprtp_ac', 'wprtp_bp',
-'wprtp_pr1', 'wprtp_pr2', 'wprtp_pr2', 'wprtp_dp1',
+'wprtp_pr1', 'wprtp_pr2', 'wprtp_dp1',
 'wpthlp_bt', 'wpthlp_ma', 'wpthlp_ta', 'wpthlp_tp', 'wpthlp_ac', 'wpthlp_bp',
-'wpthlp_pr1', 'wpthlp_pr2', 'wpthlp_pr2', 'wpthlp_dp1',
+'wpthlp_pr1', 'wpthlp_pr2', 'wpthlp_dp1',
 'rtp2_bt', 'rtp2_ma', 'rtp2_ta', 'rtp2_tp', 'rtp2_dp1', 'rtp2_dp2', 'rtp2_cl',
 'thlp2_bt', 'thlp2_ma', 'thlp2_ta', 'thlp2_tp',
 'thlp2_dp1', 'thlp2_dp2', 'thlp2_cl',
