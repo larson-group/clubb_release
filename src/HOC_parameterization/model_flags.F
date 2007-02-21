@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: model_flags.F,v 1.8 2007-02-09 00:52:20 dschanen Exp $
+! $Id: model_flags.F,v 1.9 2007-02-21 19:07:51 mjfalk Exp $
 
         module model_flags
 
@@ -18,7 +18,7 @@
      .  lcoamps_micro,! COAMPS rain microphysics
      .  cloud_sed,    ! Cloud water droplet sedimentation. - Brian
      .  lmpace_nudge, ! For wind speed nudging. - Michael Falk
-     .  lKhm_aniso    ! For anisotropic Khm, as in GABLS.
+     .  lKhm_aniso    ! For anisotropic Khm, as in GABLS2.
 
        ! Flag for the lowest model level being at the surface (true)
        ! or not at the surface (false).  Example of case where it is not
