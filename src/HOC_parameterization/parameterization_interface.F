@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.35 2007-02-09 22:13:43 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.36 2007-02-21 19:04:24 mjfalk Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -583,20 +583,17 @@
        wp2(gr%nnzp)     = 0.0
        wp3(gr%nnzp)     = 0.0
 
-       ! Michael Falk, 2 February 2007, for new GABLS parameters
-       ! This is an alternative method to calculate the Eddy-diffusivity (Khm)
-       ! and is applied to um wind, vm wind, and the Eddy-scalars.
-       ! Elsewhere Khm and Kht are calculated as before.
-       if ( lKhm_aniso ) then
-         call compute_Khm_anisotropic
-     .        ( C4, C_k, time_current, time_initial, um, vm, Lscale,
-     .          zm2zt( wp2 ), up2_plus_vp2, Khm_temp  )
-
-       else
-         Khm_temp = Khm
-
-       end if
-       ! eMFc
+! Michael Falk, 2 February 2007, for new GABLS2 parameters
+           if (lKhm_aniso) then
+             call compute_Khm_anisotropic ( C4, c_K, time_current,
+     .                                      time_initial,wtol,lmin,
+     .                                      um, vm, Lscale,
+     .                                      zm2zt(wp2), up2_plus_vp2,
+     .                                      Khm_temp)
+           else
+             Khm_temp = Khm
+           end if
+! eMFc
 
 #ifdef SCALARS
        ! Eddy-Diff. passive scalars
@@ -616,7 +613,19 @@
 #endif /*SCALARS*/
 
 
-       ! Update winds
+!      Update winds
+
+! Michael Falk, 2 February 2007, for new GABLS2 parameters
+           if (lKhm_aniso) then
+             call compute_Khm_anisotropic ( C4, c_K, time_current,
+     .                                      time_initial,wtol,lmin,
+     .                                      um, vm, Lscale,
+     .                                      zm2zt(wp2), up2_plus_vp2,
+     .                                      Khm_temp)
+           else
+             Khm_temp = Khm
+           end if
+! eMFc
 
        IF ( .NOT. implemented ) THEN
           umt = - wmt * ddzm( zt2zm( um ) )
@@ -648,11 +657,12 @@
      .                     Khm_temp, dt, upwp, isValid )
 
        if ( lmpace_nudge ) then
+         print *,'lmpace_nudge 5 is ',lmpace_nudge
          do k=1,gr%nnzp
            ! Nudging; 3600 s is nudging timescale
            ! Michael Falk; 8 Sep-1 Nov 2006
-            um(k) = um(k) - ((um(k) - um_init(k)) * (dt/3600)) 
-            vm(k) = vm(k) - ((vm(k) - vm_init(k)) * (dt/3600)) 
+!            um(k) = um(k) - ((um(k) - um_init(k)) * (dt/3600)) 
+!            vm(k) = vm(k) - ((vm(k) - vm_init(k)) * (dt/3600)) 
          end do
        end if
 
@@ -664,6 +674,18 @@
      .               + um(gr%nnzp-1)
 
        if ( .not. isValid ) return
+
+! Michael Falk, 2 February 2007, for new GABLS2 parameters
+           if (lKhm_aniso) then
+             call compute_Khm_anisotropic ( C4, c_K, time_current,
+     .                                      time_initial,wtol,lmin,
+     .                                      um, vm, Lscale,
+     .                                      zm2zt(wp2), up2_plus_vp2,
+     .                                      Khm_temp)
+           else
+             Khm_temp = Khm
+           end if
+! eMFc
 
        IF ( .NOT. implemented ) THEN
           vmt = - wmt * ddzm( zt2zm( vm ) )
@@ -967,4 +989,4 @@
         return
         end subroutine parameterization_cleanup
 
-        end module hoc_parameterization_interface
+      end module hoc_parameterization_interface
