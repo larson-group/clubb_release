@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.3 2007-02-16 20:08:44 griffinb Exp $
+! $Id: microphysics.F,v 1.4 2007-02-21 19:59:21 mjfalk Exp $
         module microphysics
 
 !       Description:
@@ -162,6 +162,7 @@
         ! Khairoutdinov and Kogan microphysical scheme or 
         ! alternatively the Rutlege and Hobbes scheme from COAMPS(R).
         ! Note: COAMPS appears to have some K&K elements to it as well.
+
         if ( lcoamps_micro ) then
 
            call coamps_micro_driver
@@ -242,10 +243,10 @@
 
          end if ! lstats_samp
 #endif /*STATS*/
-
         else if ( kk_rain ) then
           ! Note that Ncm for DYCOMS II RF 02 is specified in the GCSS,
           ! so new cases will need this computed beforehand as well.
+
           call kk_microphys
      .         ( thlm, p, exner, rhot, thl1, thl2, a, rc1, rc2,
      .           s1, s2, ss1, ss2, rtm, rcm, Ncm, rrm, Nrm,

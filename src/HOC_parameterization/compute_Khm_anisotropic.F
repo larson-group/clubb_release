@@ -1,15 +1,10 @@
-! $Id: compute_Khm_anisotropic.F,v 1.1 2007-02-09 00:52:20 dschanen Exp $
-!-----------------------------------------------------------------------
-        subroutine compute_Khm_anisotropic
-     .             ( C4, C_k, time, time_initial, um, vm, Lscale, 
-     .               wp2zt, up2_plus_vp2, Khm_anisotropic )
-!       Description:
-!
-!       References:
-!
-!-----------------------------------------------------------------------
-        use grid_class
+        subroutine compute_Khm_anisotropic ( C4, C_k, time,
+     .               time_initial, wtol, lmin, 
+     .               um, vm, Lscale, 
+     .               wp2zt, up2_plus_vp2,
+     .               Khm_anisotropic)
 
+        use grid_class
         implicit none
 
         ! Local constant
@@ -21,7 +16,9 @@
      .  C4,          ! Constant C4 from model standalone file   [-]   start Michael Falk, 11 Jan 2007
      .  C_k,         ! Coefficient of something                 [-]
      .  time,        ! time since zero                          [s]
-     .  time_initial ! initialization time                      [s]   eMFc
+     .  time_initial,! initialization time                      [s]   eMFc
+     .  wtol,        ! time since zero                          [s]
+     .  lmin         ! time since zero                          [s]
 
         real, dimension(gr%nnzp), intent(in) ::
      .  um,     ! u-direction wind speed                    [m s^-1]  start Michael Falk, 11 Jan 2007
@@ -48,8 +45,8 @@
         dv_dz = ddzm( zt2zm( vm ) )
 
         do k=1,gr%nnzp
-          wp2zt_with_min(k) = max(wp2zt(k), 2.e-2*2.e-2) !wtol^2
-          Lscale_with_min(k) = max(Lscale(k), 5.0)
+          wp2zt_with_min(k) = max(wp2zt(k), wtol*wtol) !wtol^2
+          Lscale_with_min(k) = max(Lscale(k), lmin)
 ! These are the old values.  7 Feb 2007, Michael Falk
 !          wp2zt_with_min(k) = max(wp2zt(k), 0.3)
 !          Lscale_with_min(k) = max(Lscale(k), 30.0)
