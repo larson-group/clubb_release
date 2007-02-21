@@ -1,10 +1,10 @@
-! $Id: gabls_model.in,v 1.2 2007-02-09 00:55:24 dschanen Exp $
-! Parameter file for GABLS 2 case
+! $Id: gabls2_model.in,v 1.1 2007-02-21 20:04:05 mjfalk Exp $
+! Parameter file for GABLS2 case
 ! Edited by Michael Falk, 28 December 2006
 
 &model_setting
 
-runtype = "gabls"
+runtype = "gabls2"
 
 nzmax = 400
 deltaz = 10.0
@@ -24,10 +24,7 @@ psfc = 972.e2
 SE = 0.
 LE = 0.
 
-! Michael Falk made this chance, 22 January 2007, to test fcor effect.
 fcor = 8.8983571e-5
-!fcor = 8.8983571e-6
-! eMFc
 T0   = 283.15
 
 cloud_sed     = .false.

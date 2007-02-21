@@ -1,4 +1,4 @@
-! $Id: rico_model.in,v 1.2 2007-02-09 00:55:24 dschanen Exp $
+! $Id: rico_model.in,v 1.3 2007-02-21 20:04:05 mjfalk Exp $
 ! Parameter file for GCSS RICO case
 ! Edited by Michael Falk, 12 December 2006
 
@@ -6,8 +6,8 @@
 
 runtype = "rico"
 
-nzmax = 80
-deltaz = 50.0
+nzmax = 100
+deltaz = 40.0
 day = 16, month = 12, year = 2004,
 rlat = 18.0, rlon = -61.5
 
