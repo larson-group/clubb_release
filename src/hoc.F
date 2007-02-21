@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.116 2007-02-09 22:11:45 dschanen Exp $
+! $Id: hoc.F,v 1.117 2007-02-21 19:06:33 mjfalk Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -1068,10 +1068,10 @@
 
           wp2(1:gr%nnzp) = 2.0 / 3.0 * em(1:gr%nnzp) ! Michael Falk reworded this.
 
-        ! Michael Falk for GABLS case, 29 Dec 2006
-        case ( "gabls" )
+        ! Michael Falk for GABLS2 case, 29 Dec 2006
+        case ( "gabls2" )
 
-          cloud_top_height = 800.  ! per GABLS specifications
+          cloud_top_height = 800.  ! per GABLS2 specifications
           emax = 0.5
           do k=1,gr%nnzp
             if ( gr%zm(k) < cloud_top_height ) then
@@ -1311,7 +1311,7 @@
 #endif /* SCALARS */
      .                    )
 
-         case ( "gabls" ) ! GABLS 2 case
+         case ( "gabls2" ) ! GABLS 2 case
            call gabls2_tndcy( time, time_initial, 
      .                      rhot, rcm, kk_rain, wmt, wmm,
      .                      thlm_forcing, rtm_forcing, radht, Ncm
@@ -1461,13 +1461,14 @@
          case ( "rico" )
            call rico_sfclyr( um(2), vm(2), thlm(2), rtm(2),
      .                        gr%zt(2), 299.8, 101540., ! 299.8 K is the RICO SST; 101540 Pa is the sfc pressure.
+!     .                        gr%zt(2), Tsfc, psfc,
      .                        upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc
 #ifdef SCALARS
      .                       ,sclrm(2,:), wpsclrp_sfc, wpedsclrp_sfc
 #endif /* SCALARS */
      .                      )
 
-         case ( "gabls" )
+         case ( "gabls2" )
           call gabls2_sfclyr(time, time_initial, gr%zt(2), 97200.,
      .                      um(2), vm(2), thlm(2), rtm(2),
      .                      upwp_sfc, vpwp_sfc,
