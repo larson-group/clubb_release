@@ -40,20 +40,20 @@
 
         real, dimension(gr%nnzp), intent(in) ::
      .  exner,         ! Exner function                         [-]
-     .  rhot,          !
-     .  rcm            !
+     .  rhot,          ! Air density on t levels                [kg m^-3]
+     .  rcm            ! Cloud water mixing ratio               [kg kg^-1]
 
         logical, intent(in) ::
-     .  kk_rain       !
+     .  kk_rain       !  Flag-- is KK rain being used?
 
         ! Output Variables
         real, dimension(gr%nnzp), intent(out) ::
-     .  wmt,         ! Large-scale vertical motion on t grid   [m/s]
-     .  wmm,         ! Large-scale vertical motion on m grid   [m/s]
-     .  theta_tndcy, ! Large-scale thlm tendency               [K/s]
-     .  rt_tndcy,    ! Large-scale rtm tendency                [kg/kg/s]
-     .  radht,       ! dT/dt, then d Theta/dt, due to rad.     [K/s]
-     .  Ncm          !
+     .  wmt,         ! Large-scale vertical motion on t grid   [m s^-1]
+     .  wmm,         ! Large-scale vertical motion on m grid   [m s^-1]
+     .  theta_tndcy, ! Large-scale thlm tendency               [K s^-1]
+     .  rt_tndcy,    ! Large-scale rtm tendency                [kg kg^-1 s^-1]
+     .  radht,       ! dT/dt, then d Theta/dt, due to rad.     [K s^-1]
+     .  Ncm          ! Initial cloud droplet concentration     [# m^-3]
 
 
         ! Output Variables (optional)
@@ -62,7 +62,7 @@
 
         ! Local Variables, general
         integer :: i, k ! Loop indices
-        real    :: t_tendency ! Temperature (not potential temperature) tendency
+        real    :: t_tendency ! Temperature (not potential temperature) tendency [K s^-1]
 
         ! Compute vertical motion
         do k=1,gr%nnzp
@@ -90,34 +90,34 @@
         do k=1,gr%nnzp
           if (gr%zt(k) < 4000) then
             t_tendency = -2.51 / 86400 +
-     .        (-2.18 + 2.51) / (86400*4000) * gr%zt(k)  ! Units [K/s]
+     .        (-2.18 + 2.51) / (86400*4000) * gr%zt(k)  ! Units [K s^-1]
           else if (gr%zt(k) < 5000) then
             t_tendency = -2.18 / 86400 +
-     .        (2.18) / (86400*(5000-4000)) * (gr%zt(k)-4000)  ! Units [K/s]
+     .        (2.18) / (86400*(5000-4000)) * (gr%zt(k)-4000)  ! Units [K s^-1]
           else
-            t_tendency = 0.  ! Units [K/s]
+            t_tendency = 0.  ! Units [K s^-1]
           end if
-          ! Convert to units of [K/s] but potential T instead of T
+          ! Convert to units of [K s^-1] but potential T instead of T
 !          theta_tndcy(k) = (t_tendency * ((psfc/p(k)) ** (Rd/Cp)))
           theta_tndcy(k) = (t_tendency / exner(k))
           radht(k) = 0.  !  So we don't have undefined numbers in the radht stats.  Radht is actually rolled into t_tendency.
         end do
 
 
-        ! Compute large-scale horizontal moisture advection [g/kg/s]
+        ! Compute large-scale horizontal moisture advection [g kg^-1 s^-1]
         do k=1,gr%nnzp
           if (gr%zt(k) < 3000) then
             rt_tndcy(k) = - 1.0 / 86400 +
-     .        (0.345+1.0) / (86400 * 3000) * gr%zt(k)  ! Units [g/kg/s]
+     .        (0.345+1.0) / (86400 * 3000) * gr%zt(k)  ! Units [g kg^-1 s^-1]
           else if (gr%zt(k) < 4000) then
-            rt_tndcy(k) = 0.345 / 86400  ! Units [g/kg/s]
+            rt_tndcy(k) = 0.345 / 86400  ! Units [g kg^-1 s^-1]
           else if (gr%zt(k) < 5000) then
             rt_tndcy(k) = 0.345 / 86400 +
-     .        (-0.345) / (86400*(5000-4000)) * (gr%zt(k) - 4000) ! Units [g/kg/s]
+     .        (-0.345) / (86400*(5000-4000)) * (gr%zt(k) - 4000) ! Units [g kg^-1 s^-1]
           else
-            rt_tndcy(k) = 0.  ! Units [K/s]
+            rt_tndcy(k) = 0.  ! Units [K s^-1]
           end if
-          rt_tndcy(k) = rt_tndcy(k) / 1000.  ! Converts [g/kg/s] to [kg/kg/s]
+          rt_tndcy(k) = rt_tndcy(k) / 1000.  ! Converts [g kg^-1 s^-1] to [kg kg^-1 s^-1]
         end do
 
         if ( kk_rain ) then
@@ -171,7 +171,7 @@
 
 !       Constants
         real, parameter ::
-     .    ubmin   = 0.25,     ! I don't know where this comes from.
+     .    ubmin   = 0.25,     ! Minimum value for ubar.
      .    ustar   = 0.3,      ! Defined by ATEX specification
      .    C_10    = 0.0013,   ! Drag coefficient, defined by ATEX specification
      .    C_m_20  = 0.001229, ! Drag coefficient, defined by RICO 3D specification
@@ -206,15 +206,15 @@
 
 !       Output variables
         real, intent(out) ::
-     .    uw,          ! The upward flux of u-momentum         [(m/s)^2]
-     .    vw,          ! The Upward flux of v-momentum         [(m/s)^2]
-     .    wtp,         ! The upward flux of theta-l            [K m/s]
-     .    wrp          ! The upward flux of rtm (total water)  [kg/kg m/s]
+     .    uw,          ! The upward flux of u-momentum         [(m^2 s^-2]
+     .    vw,          ! The Upward flux of v-momentum         [(m^2 s^-2]
+     .    wtp,         ! The upward flux of theta-l            [K m s^-1]
+     .    wrp          ! The upward flux of rtm (total water)  [kg kg^-1 m s^-1]
 
 !       Output variables (optional)
         real, dimension(sclr_dim), optional, intent(out) ::
-     .    wpsclrp_sfc,   ! Passive scalar surface flux      [units m/s]
-     .    wpedsclrp_sfc  ! Passive eddy-scalar surface flux [units m/s]
+     .    wpsclrp_sfc,   ! Passive scalar surface flux      [units m s^-1]
+     .    wpedsclrp_sfc  ! Passive eddy-scalar surface flux [units m s^-1]
 
 
 !       Choose which scheme to use
@@ -233,18 +233,18 @@
 
 !       Compute heat and moisture fluxes
         if (use_old_atex) then ! Use ATEX version
-          wtp  = -Cz * ubar * ( thlm - sst * (p0/psfc)**kappa )    ! K * m/s
-          wrp  = -Cz * ubar * ( rtm - rsat(psfc,sst) )             ! kg/kg * m/s
-          uw   = -um * ustar*ustar / ubar                          ! (m/s)^2
-          vw   = -vm * ustar*ustar / ubar                          ! (m/s)^2
+          wtp  = -Cz * ubar * ( thlm - sst * (p0/psfc)**kappa )    ! [K m s^-1
+          wrp  = -Cz * ubar * ( rtm - rsat(psfc,sst) )             ! [kg kg^-1  m s^-1]
+          uw   = -um * ustar*ustar / ubar                          ! [m^2 s^-2]
+          vw   = -vm * ustar*ustar / ubar                          ! [m^2 s^-2]
 
         else ! Use RICO version
-          wtp  = -Ch * ubar * ( thlm - sst * (p0/psfc)**kappa )    ! K * m/s
-!          wrp  = -Cz * ubar * ( .01726 - rsat(psfc,sst) )          ! kg/kg * m/s
-!          wrp  = -Cz * ubar * ( .01626 - rsat(psfc,sst) )          ! kg/kg * m/s
-          wrp  = -Cq * ubar * ( rtm - rsat(psfc,sst) )             ! kg/kg * m/s
-          uw   = -um * Cm * ubar                                   ! (m/s)^2
-          vw   = -vm * Cm * ubar                                   ! (m/s)^2
+          wtp  = -Ch * ubar * ( thlm - sst * (p0/psfc)**kappa )    ! K m s^-1
+!          wrp  = -Cz * ubar * ( .01726 - rsat(psfc,sst) )          ! kg kg^-1  m s^-1
+!          wrp  = -Cz * ubar * ( .01626 - rsat(psfc,sst) )          ! kg kg^-1  m s^-1
+          wrp  = -Cq * ubar * ( rtm - rsat(psfc,sst) )             ! kg kg^-1 m s^-1
+          uw   = -um * Cm * ubar                                   ! m^2 s^-2
+          vw   = -vm * Cm * ubar                                   ! m^2 s^-2
         end if
 
 !       Compute scalar fluxes
