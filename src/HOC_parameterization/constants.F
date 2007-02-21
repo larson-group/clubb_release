@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.14 2007-02-10 19:15:19 griffinb Exp $
+! $Id: constants.F,v 1.15 2007-02-21 19:03:37 mjfalk Exp $
 
         module constants
 
@@ -45,8 +45,8 @@
         ! Von Karman's constant
         ! Constant of the logarithmic wind profile in the surface layer 
         real, parameter :: 
-     .  vonk   = 0.4,   ! Accepted value is 0.40 (+/-) 0.01    [-]
-     .  rho_lw = 1000.0 ! Density of liquid water              [kg/m^3]
+     .  vonk   = 0.4,    ! Accepted value is 0.40 (+/-) 0.01      [-]
+     .  rho_lw = 1000.0  ! Density of liquid water                [kg/m^3]
 
         ! BUGSrad Constants
         real, parameter :: 
