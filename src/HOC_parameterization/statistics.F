@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.19 2007-02-10 16:59:58 griffinb Exp $
+!  $Id: statistics.F,v 1.20 2007-02-21 19:08:11 mjfalk Exp $
 
 #ifdef STATS
       module stats_type
@@ -342,7 +342,7 @@
      .     iFrad_SW,  ! Brian
      .     iFprec,    ! Brian
      .     iFcsed,    ! Brian
-     .     iup2_plus_vp2   ! Michael Falk, for GABLS case
+     .     iup2_plus_vp2   ! Michael Falk, for GABLS2 case
 
 !$omp   threadprivate(iwp2, irtp2, ithlp2, irtpthlp, iwprtp, iwpthlp)
 !$omp   threadprivate(iwp4, iwpthvp, irtpthvp, ithlpthvp, itaum, iKhm)
