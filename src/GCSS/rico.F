@@ -123,8 +123,7 @@
         if ( kk_rain ) then
           do k=1,gr%nnzp
             if ( rcm(k) >= rc_tol ) then
-              Ncm(k) = 30.0 * (1.0 + exp(-gr%zt(k)/2000.0)) * 1.e6
-     .                 * rhot(k)
+              Ncm(k) = 70.0 * 1.e6 * rhot(k)
             else
               Ncm(k) = 0.
             end if
@@ -234,15 +233,15 @@
 
 !       Compute heat and moisture fluxes
         if (use_old_atex) then ! Use ATEX version
-
           wtp  = -Cz * ubar * ( thlm - sst * (p0/psfc)**kappa )    ! K * m/s
           wrp  = -Cz * ubar * ( rtm - rsat(psfc,sst) )             ! kg/kg * m/s
           uw   = -um * ustar*ustar / ubar                          ! (m/s)^2
           vw   = -vm * ustar*ustar / ubar                          ! (m/s)^2
 
         else ! Use RICO version
-
           wtp  = -Ch * ubar * ( thlm - sst * (p0/psfc)**kappa )    ! K * m/s
+!          wrp  = -Cz * ubar * ( .01726 - rsat(psfc,sst) )          ! kg/kg * m/s
+!          wrp  = -Cz * ubar * ( .01626 - rsat(psfc,sst) )          ! kg/kg * m/s
           wrp  = -Cq * ubar * ( rtm - rsat(psfc,sst) )             ! kg/kg * m/s
           uw   = -um * Cm * ubar                                   ! (m/s)^2
           vw   = -vm * Cm * ubar                                   ! (m/s)^2
