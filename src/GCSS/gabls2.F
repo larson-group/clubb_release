@@ -21,11 +21,11 @@
      .    sclr_tndcy )
 
 !        Description:
-!          Subroutine to apply case-specific forcings to GABLS case
+!          Subroutine to apply case-specific forcings to GABLS2 case
 !          (Michael Falk, 29 Dec 2006).
 !
 !        References:
-!          Gunilla Svensson's GABLS paper (citation forthcoming)
+!          http://people.su.se/~gsven/gabls/
 !-----------------------------------------------------------------------
 
         use constants
@@ -37,35 +37,36 @@
 
         ! Input Variables
         real, intent(in) ::
-     .  time,          ! Current length of timestep      [s]
-     .  time_initial   ! Current length of timestep      [s]
+     .    time,          ! Current length of timestep      [s]
+     .    time_initial   ! Current length of timestep      [s]
 
         real, dimension(gr%nnzp), intent(in) ::
-     .  rhot,          ! Air density on t-grid           [kg/m^3]
-     .  rcm            ! Cloud water mixing ratio        [kg/kg]
+     .    rhot,          ! Air density on t-grid           [kg/m^3]
+     .    rcm            ! Cloud water mixing ratio        [kg/kg]
 
         logical, intent(in) ::
-     .  kk_rain       !  Logical variable-- are we using KK scheme?
+     .    kk_rain       !  Logical variable-- are we using KK scheme?
 
         ! Output Variables
         real, dimension(gr%nnzp), intent(out) ::
-     .  wmt,         ! Large-scale vertical motion on t grid   [m/s]
-     .  wmm,         ! Large-scale vertical motion on m grid   [m/s]
-     .  theta_tndcy, ! Large-scale thlm tendency               [K/s]
-     .  rt_tndcy,    ! Large-scale rtm tendency                [kg/kg/s]
-     .  radht,       ! dT/dt, then d Theta/dt, due to rad.     [K/s]
-     .  Ncm          ! Number of cloud droplets                [#]
+     .    wmt,         ! Large-scale vertical motion on t grid   [m/s]
+     .    wmm,         ! Large-scale vertical motion on m grid   [m/s]
+     .    theta_tndcy, ! Large-scale thlm tendency               [K/s]
+     .    rt_tndcy,    ! Large-scale rtm tendency                [kg/kg/s]
+     .    radht,       ! dT/dt, then d Theta/dt, due to rad.     [K/s]
+     .    Ncm          ! Number of cloud droplets                [#]
 
         ! Output Variables (optional)
         real, optional, intent(out), dimension(gr%nnzp,sclr_dim) ::
-     .  sclr_tndcy ! Passive scalar LS tendency            [units/s]
+     .    sclr_tndcy ! Passive scalar LS tendency            [units/s]
 
         ! Local Variables, general
+        real    :: 
+     .    t_tendency ! Temperature (not potential temperature) tendency
         integer :: i, k ! Loop indices
-        real    :: t_tendency ! Temperature (not potential temperature) tendency
 
         ! Compute vertical motion
-        if (time > (time_initial + 93600.)) then ! That is, after 26 hours of model time; per GABLS specification
+        if (time > (time_initial + 93600.)) then ! That is, after 26 hours of model time; per GABLS2 specification
           do k=1,gr%nnzp
             if (gr%zt(k) <= 1000) then
               wmt(k) = -0.005 * (gr%zt(k) / 1000)
@@ -99,9 +100,10 @@
           rt_tndcy(k) = 0.
         end do
 
+        ! Compute initial cloud droplet concentration
         if ( kk_rain ) then
           do k=1,gr%nnzp
-            if ( rcm(k) >= rc_tol ) then
+            if ( rcm(k) >= 1.e-6 ) then
               Ncm(k) = 30.0 * (1.0 + exp(-gr%zt(k)/2000.0)) * 1.e6
      .                 * rhot(k)
             else
@@ -132,10 +134,11 @@
 
 !----------------------------------------------------------------------
 !        Description:
-!          Surface forcing subroutine for GABLS case.  Written
+!          Surface forcing subroutine for GABLS2 case.  Written
 !          29 December 2006 by Michael Falk.
 !
 !        References:
+!          http://people.su.se/~gsven/gabls/
 !-----------------------------------------------------------------------
           use constants
           implicit none
@@ -145,49 +148,48 @@
      .      rsat,             ! Computes saturation mixing ratio
      .      diag_ustar
 
-
           ! Local constants
           real, parameter ::
-     .    ubmin   = 0.25,     ! I don't know where this comes from.
-     .    C_10    = 0.0013,   ! Drag coefficient, defined by ATEX specification
-     .    z0      = 0.03      ! Roughness length, defined by GABLS specification
+     .      ubmin   = 0.25,     ! Minimum value for ubar.
+     .      C_10    = 0.0013,   ! Drag coefficient, defined by ATEX specification
+     .      z0      = 0.03      ! Roughness length, defined by GABLS2 specification
 
           ! Input variables
           real, intent(in) ::
-     .    time,               ! Time elapsed since 0.0 s          [s]
-     .    time_initial,       ! Initial time of model integration [s]
-     .    psfc,               ! Surface pressure [Pa]
-     .    lowest_level,       ! Height of lowest above-ground gridpoint [m]
-     .    um,                 ! u at the lowest above-ground model level.  [m/s]
-     .    vm,                 ! v at the lowest above-ground model level.  [m/s]
-     .    thlm,               ! theta-l at the lowest above-ground model level.  (theta = theta-l because there's no liquid in this case)  [K]
-     .    rtm                 ! rt at the lowest above-ground model level.  [kg/kg]
+     .      time,               ! Time elapsed since 0.0 s          [s]
+     .      time_initial,       ! Initial time of model integration [s]
+     .      psfc,               ! Surface pressure [Pa]
+     .      lowest_level,       ! Height of lowest above-ground gridpoint [m]
+     .      um,                 ! u at the lowest above-ground model level.  [m/s]
+     .      vm,                 ! v at the lowest above-ground model level.  [m/s]
+     .      thlm,               ! theta-l at the lowest above-ground model level.  (theta = theta-l because there's no liquid in this case)  [K]
+     .      rtm                 ! rt at the lowest above-ground model level.  [kg/kg]
 
           ! Input variables (optional)
           real, dimension(sclr_dim), optional, intent(in) ::
-     .    sclrm_sfc ! Concentration of scalar
+     .      sclrm_sfc ! Concentration of scalar
 
           ! Output variables
           real, intent(out) ::
-     .    uw,                 ! The upward flux of u-momentum         [(m/s)^2]
-     .    vw,                 ! The upward flux of v-momentum         [(m/s)^2]
-     .    wtp,                ! The upward flux of theta-l            [K m/s]
-     .    wrp                 ! The upward flux of rtm (total water)  [kg/kg m/s]
+     .      uw,                 ! The turbulent upward flux of u-momentum         [(m/s)^2]
+     .      vw,                 ! The turbulent upward flux of v-momentum         [(m/s)^2]
+     .      wtp,                ! The turbulent upward flux of theta-l            [K m/s]
+     .      wrp                 ! The turbulent upward flux of rtm (total water)  [kg/kg m/s]
 
           ! Output variables (optional)
           real, optional, intent(out), dimension(sclr_dim) ::
-     .    wpsclrp_sfc,   ! The upward flux of the scalars       [units m/s]
-     .    wpedsclrp_sfc  ! The upward flux of the eddy-scalars  [units m/s]
+     .      wpsclrp_sfc,   ! The upward flux of the scalars       [units m/s]
+     .      wpedsclrp_sfc  ! The upward flux of the eddy-scalars  [units m/s]
 
           ! Local variables
           real ::
-     .    ubar,               ! Root (u^2 + v^2), per ATEX and RICO spec.
-     .    ustar,              ! Friction velocity, computed from diag_ustar.
-     .    Cz,                 ! C_10 scaled to the height of the lowest model level. (Per ATEX spec)
-     .    time_in_hours,      ! time in hours from 00 local on first day of experiment (experiment starts at 14)
-     .    sst,                ! Sea surface temperature [K].
-     .    sstheta,            ! Sea surface potential temperature [K].
-     .    bflx                ! Needed for diag_ustar; equal to wtp * (g/theta)
+     .      ubar,               ! Root (u^2 + v^2), per ATEX and RICO spec.
+     .      ustar,              ! Friction velocity, computed from diag_ustar.
+     .      Cz,                 ! C_10 scaled to the height of the lowest model level. (Per ATEX spec)
+     .      time_in_hours,      ! time in hours from 00 local on first day of experiment (experiment starts at 14)
+     .      sst,                ! Sea surface temperature [K].
+     .      sstheta,            ! Sea surface potential temperature [K].
+     .      bflx                ! Needed for diag_ustar; equal to wtp * (g/theta)
 
           ! Define variable values
           ubar = max( ubmin, sqrt( um*um + vm*vm ) )
@@ -198,7 +200,7 @@
 
           ! Compute sea surface temperature
           if (time_in_hours <= 17.4) then
-            sst = -10 - (25*cos(time_in_hours*0.22 + 0.2))         ! SST in celsius per GABLS spec
+            sst = -10 - (25*cos(time_in_hours*0.22 + 0.2))         ! SST in celsius per GABLS2 spec
           else if (time_in_hours <= 30.0) then
             sst = (-0.54 * time_in_hours) + 15.2
           else if (time_in_hours <= 41.9) then
@@ -216,7 +218,7 @@
 
           ! Compute heat and moisture fluxes
           wtp  = -Cz * ubar * ( thlm - sst * (p0/psfc)**kappa )    ! [K * m/s]
-          wrp  = -Cz * ubar * ( rtm - rsat(psfc,sst) ) * 0.025     ! [kg/kg * m/s]; 2.5% factor from GABLS specification
+          wrp  = -Cz * ubar * ( rtm - rsat(psfc,sst) ) * 0.025     ! [kg/kg * m/s]; 2.5% factor from GABLS2 specification
           ! Compute momentum fluxes
           bflx  = wtp * grav / sstheta
           ustar = diag_ustar(lowest_level,bflx,ubar,z0)
