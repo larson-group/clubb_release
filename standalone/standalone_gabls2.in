@@ -1,4 +1,4 @@
-! $Id: standalone_gabls.in,v 1.1 2007-02-07 22:46:20 mjfalk Exp $
+! $Id: standalone_gabls2.in,v 1.1 2007-02-21 20:10:10 mjfalk Exp $
 ! Description:
 ! Namelists for the hoc_standalone program. 
 ! run_file is the location of the model namelist file, which contains the 
@@ -8,7 +8,7 @@
 ! C2, C2b, & C2c are not used unless diag_var is compiled with -DSINGLE_C2_SKW
 
 &model
-run_file = "gabls_hoc.in"
+run_file = "gabls2_hoc.in"
 stdout   = .true.
 /
 
