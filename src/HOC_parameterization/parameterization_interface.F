@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.36 2007-02-21 19:04:24 mjfalk Exp $
+! $Id: parameterization_interface.F,v 1.37 2007-02-21 19:07:13 mjfalk Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -657,12 +657,11 @@
      .                     Khm_temp, dt, upwp, isValid )
 
        if ( lmpace_nudge ) then
-         print *,'lmpace_nudge 5 is ',lmpace_nudge
          do k=1,gr%nnzp
            ! Nudging; 3600 s is nudging timescale
            ! Michael Falk; 8 Sep-1 Nov 2006
-!            um(k) = um(k) - ((um(k) - um_init(k)) * (dt/3600)) 
-!            vm(k) = vm(k) - ((vm(k) - vm_init(k)) * (dt/3600)) 
+            um(k) = um(k) - ((um(k) - um_init(k)) * (dt/3600)) 
+            vm(k) = vm(k) - ((vm(k) - vm_init(k)) * (dt/3600)) 
          end do
        end if
 
