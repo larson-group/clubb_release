@@ -1,10 +1,13 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.15 2007-02-21 19:03:37 mjfalk Exp $
+! $Id: constants.F,v 1.16 2007-02-22 23:51:43 dschanen Exp $
 
         module constants
 
 !       Description:
 !       Contains frequently occuring model constants
+
+!       References:
+!       None
 !-----------------------------------------------------------------------
 
         implicit none
@@ -33,7 +36,7 @@
      .  ep1 = (1.0-ep)/ep,! ep1 = 0.61   [-]
      .  ep2 = 1.0/ep      ! ep2 = 1.61   [-]
 
-        real, parameter :: 
+        real, parameter ::
      .  kappa = Rd / Cp   ! kappa        [-]
 
         ! Changed g to grav to make it easier to find in the code 5/25/05
@@ -52,13 +55,17 @@
         real, parameter :: 
      .  sol_const = 1367.0 ! Solar constant     [W/m^2]
 
+        ! Parameter constant (not in namelists yet)
+        real, parameter ::
+     .  C13 = 0.1     ! Constant for up2_plus_vp2
+
         ! Model parameters and constraints setup in the namelists
 
         real :: 
      .  fcor, ! Coriolis parameter                       [s^-1]
      .  T0    ! Reference temperature (usually 300)      [K]
 
-!$omp    threadprivate(fcor, T0)
+!$omp   threadprivate(fcor, T0)
 
         ! Model constant parameters 
         real ::
@@ -71,7 +78,7 @@
      .  C2rtthl,    ! C2 coefficient for the rtpthlp_dp1 term.
      .  C2b,        ! High Skewness in C2 Skewness Function.  
      .  C2c,        ! Degree of Slope of C2 Skewness Function.
-     .  C4,         ! Currently Not Used in the Model.
+     .  C4,         ! Used only when lKhm_aniso is true.
      .  C5,         ! Constant from Chris Golaz.
      .  C6rt,       ! Low Skewness in C6rt Skewness Function.
      .  C6rtb,      ! High Skewness in C6rt Skewness Function.
@@ -88,7 +95,7 @@
      .  C11,        ! Low Skewness in C11 Skewness Function.
      .  C11b,       ! High Skewness in C11 Skewness Function.  From Golaz.
      .  C11c,       ! Degree of Slope of C11 Skewness Function.  From Golaz.
-     .  C12,        ! Constant from Chris Golaz.
+     .  C12,        ! Constant in w'^3 Crank-Nicholson diffusional term.
      .  nu1,        ! Previously determined eddy viscosity.
      .  nu2,        ! Previously determined eddy viscosity.
      .  nu6,        ! Previously determined eddy viscosity.
@@ -97,7 +104,7 @@
      .  gamma_coef, ! Low Skewness in gamma coefficient Skewness Function.
      .  gamma_coefb,! High Skewness in gamma coefficient Skewness Function.
      .  gamma_coefc,! Degree of Slope of gamma coefficient Skewness Function.
-     .  c_K,        ! Constant from Chris Golaz.
+     .  c_K,        ! Constant C_mu^(1/4) in Duynkerke & Driedonks 1987.
      .  mu,         ! Fractional entrainment rate per unit altitude.
      .  taumin,     ! Previously determined value.
      .  taumax,     ! Previously determined value.

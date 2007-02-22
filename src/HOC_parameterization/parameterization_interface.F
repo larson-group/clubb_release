@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.37 2007-02-21 19:07:13 mjfalk Exp $
+! $Id: parameterization_interface.F,v 1.38 2007-02-22 23:51:43 dschanen Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -13,7 +13,7 @@
         module hoc_parameterization_interface
 
 !       Description:
-!       The `core' of the HOC model.
+!       The module containing the `core' of the HOC model.
 
 !       References:
 !       None
@@ -52,27 +52,9 @@
 !      subroutine to advance the model one timestep
 
 !      References:
-!      None
-
-!      Calls:
-!      subroutine diag_var
-!      subroutine length
-!      subroutine pdf_closure_new
-!      subroutine rain (when kk_rain is true)
-!      subroutine timestep_mixing
-!      subroutine timestep_wp23
-!      subroutine update_ed_var
-
-!      function rsat
-!      function zm2zt (from grid_class)
-!      function zt2zm (from grid_class)
-
-!      If compiled with STATS:
-!      subroutine stats_accumulate
-
-!      If LH_on is true:
-!      permute_height_time (external)
-!      latin_hypercube_sampling (Internal to module)
+!       ``A PDF-Based Model for Boundary Layer Clouds. Part I:
+!         Method and Model Description'' Golaz, et al. (2002)
+!       JAS, Vol. 59, pp. 3540--3551.
 !-----------------------------------------------------------------------
 
        ! Modules to be included
@@ -82,8 +64,8 @@
        use diagnostic_variables
        use mixing, only: timestep_mixing
        use diagnose_variances, only: diag_var
-       use surface
-       use pdf_closure
+       use surface, only: sfc_var
+       use pdf_closure, only: pdf_closure_new
        use microphysics, only: timestep_microphys
 #ifdef STATS
        use statistics
@@ -93,17 +75,18 @@
 
        ! External
        real, external :: 
-     . rsat,
-     . Skw_func
+     . rsat,    ! Saturation mixing ratio
+     . Skw_func ! Skw function
 
        external ::
-     . length,
-     . compute_Khm_anisotropic
+     . timestep_wp23,          ! Computes vert. vel. moments w'^2/w'^3
+     . length,                 ! Length scale
+     . compute_Khm_anisotropic ! Recomputes Khm if lKhm_aniso is true
 #ifdef STATS
-     . ,stats_accumulate
+     . ,stats_accumulate       ! Computes and average of stats
 #endif /*STATS*/
 
-       intrinsic :: sqrt, min, max, size, exp
+       intrinsic :: sqrt, min, max, exp, mod
 
        ! Input
        integer, intent(in) :: 
@@ -500,7 +483,8 @@
 
        tmp1 = SQRT( MAX( emin, zm2zt( em ) ) )
        taut = MIN( Lscale / tmp1, taumax )
-       taum = MIN( ( zt2zm( Lscale ) / SQRT( max(em, emin) ) ), taumax )
+       taum 
+     . = MIN( ( zt2zm( Lscale ) / SQRT( max( em, emin ) ) ), taumax )
 
 !      Modification to damp noise in stable region
        do k = 1, gr%nnzp
@@ -520,7 +504,8 @@
 !############## ADVANCE PROGNOSTIC VARIABLES ONE TIMESTEP ##############
 !#######################################################################
 
-      ! Call Khairoutdinov and Kogan (2000) scheme for rain microphysics.
+       ! Call Khairoutdinov and Kogan (2000) scheme, or COAMPS
+       ! for rain microphysics.
        if ( kk_rain .or. lcoamps_micro ) then
 
          call timestep_microphys
@@ -535,7 +520,7 @@
 
        if ( .not. isValid ) return
 
-!      Store the saturation mixing ratio for output purposes.  Brian
+       ! Store the saturation mixing ratio for output purposes.  Brian
        do k = 1, gr%nnzp, 1
          rsm(k) =
      .   rsat( p(k), (thlm(k)+(Lv/(Cp*exner(k)))*rcm(k))*exner(k) )
@@ -558,13 +543,13 @@
      .      )
        if ( .not. isValid ) return
 
-!      Set Boundary Conditions on wpthlp and wprtp output.
+       ! Set Boundary Conditions on wpthlp and wprtp output.
        wpthlp(gr%nnzp)  = 0.0
        wprtp(gr%nnzp)   = 0.0
 #ifdef SCALARS
-!      Set Boundary Conditions for optional passive scalars
+       ! Set Boundary Conditions for passive scalar flux.
        do i = 1, sclr_dim
-         wpsclrp(gr%nnzp,i)   = 0.0
+         wpsclrp(gr%nnzp,i) = 0.0
        end do ! i = 1, sclr_dim
 #endif /* SCALARS */
 
@@ -583,17 +568,19 @@
        wp2(gr%nnzp)     = 0.0
        wp3(gr%nnzp)     = 0.0
 
-! Michael Falk, 2 February 2007, for new GABLS2 parameters
-           if (lKhm_aniso) then
-             call compute_Khm_anisotropic ( C4, c_K, time_current,
-     .                                      time_initial,wtol,lmin,
-     .                                      um, vm, Lscale,
-     .                                      zm2zt(wp2), up2_plus_vp2,
-     .                                      Khm_temp)
-           else
-             Khm_temp = Khm
-           end if
-! eMFc
+        ! Michael Falk, 2 February 2007, for new GABLS2 parameters
+       if ( lKhm_aniso ) then
+         call compute_Khm_anisotropic
+     .        ( C4, C13, c_K, time_current,
+     .          time_initial, wtol, lmin,
+     .          um, vm, Lscale,
+     .          zm2zt( wp2 ), up2_plus_vp2,
+     .          Khm_temp )
+
+        else
+          Khm_temp = Khm
+
+        end if
 
 #ifdef SCALARS
        ! Eddy-Diff. passive scalars
@@ -613,19 +600,7 @@
 #endif /*SCALARS*/
 
 
-!      Update winds
-
-! Michael Falk, 2 February 2007, for new GABLS2 parameters
-           if (lKhm_aniso) then
-             call compute_Khm_anisotropic ( C4, c_K, time_current,
-     .                                      time_initial,wtol,lmin,
-     .                                      um, vm, Lscale,
-     .                                      zm2zt(wp2), up2_plus_vp2,
-     .                                      Khm_temp)
-           else
-             Khm_temp = Khm
-           end if
-! eMFc
+       ! Update winds
 
        IF ( .NOT. implemented ) THEN
           umt = - wmt * ddzm( zt2zm( um ) )
@@ -660,8 +635,8 @@
          do k=1,gr%nnzp
            ! Nudging; 3600 s is nudging timescale
            ! Michael Falk; 8 Sep-1 Nov 2006
-            um(k) = um(k) - ((um(k) - um_init(k)) * (dt/3600)) 
-            vm(k) = vm(k) - ((vm(k) - vm_init(k)) * (dt/3600)) 
+            um(k) = um(k) - ((um(k) - um_init(k)) * (dt/3600.)) 
+            vm(k) = vm(k) - ((vm(k) - vm_init(k)) * (dt/3600.)) 
          end do
        end if
 
@@ -674,21 +649,10 @@
 
        if ( .not. isValid ) return
 
-! Michael Falk, 2 February 2007, for new GABLS2 parameters
-           if (lKhm_aniso) then
-             call compute_Khm_anisotropic ( C4, c_K, time_current,
-     .                                      time_initial,wtol,lmin,
-     .                                      um, vm, Lscale,
-     .                                      zm2zt(wp2), up2_plus_vp2,
-     .                                      Khm_temp)
-           else
-             Khm_temp = Khm
-           end if
-! eMFc
-
        IF ( .NOT. implemented ) THEN
           vmt = - wmt * ddzm( zt2zm( vm ) )
      .          - fcor * ( um - ug )
+
 #ifdef STATS
          if ( lstats_samp ) then
            if ( ivm_ma > 0 ) then
@@ -755,15 +719,6 @@
            zm%n(:,iup2_plus_vp2) = zm%n(:,iup2_plus_vp2) + 1
          end if
          ! eMFc
-         ! Moved to timestep_microphys
-!        if ( irain > 0 .and. kk_rain ) then   ! Added by Brian
-!          sfc%x(1,irain) = sfc%x(1,irain) + rain_rate(2)
-!          sfc%n(1,irain) = sfc%n(1,irain) + 1
-!        end if
-!        if ( ipflux > 0 .and. kk_rain ) then   ! Added by Brian
-!          sfc%x(1,ipflux) = sfc%x(1,ipflux) + Fprec(1)
-!          sfc%n(1,ipflux) = sfc%n(1,ipflux) + 1
-!        end if
        end if 
 
        ! Added to allow tuning without using the zm stats file
@@ -883,7 +838,7 @@
         real, intent(in)    :: deltaz ! Change in altitude in per level [m]
 
         ! Grid setup if part of larger (host) model.
-        real, dimension(1:nzmax) :: 
+        real, dimension(nzmax) :: 
      .  host_momentum,     !    [m]
      .  host_thermodynamic !    [m]
 
