@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.39 2007-02-05 16:44:54 dschanen Exp $
+! $Id: error.F,v 1.40 2007-02-23 01:25:47 dschanen Exp $
 
         module error
  
@@ -35,7 +35,7 @@
 
         ! Dimensions of the array for amoeba
         integer, parameter, public  :: 
-     .  ndim = 41,
+     .  ndim = 42,
      .  mdim = ndim + 1
 
         real, dimension(mdim,ndim) :: 
@@ -110,6 +110,7 @@
      .  C11b,       ! High Skewness in C11 Skewness Function.  From Golaz.
      .  C11c,       ! Degree of Slope of C11 Skewness Function.  From Golaz.
      .  C12,        ! Constant from Chris Golaz.
+     .  C13,        ! Constant applied to up2_plus_vp2.
      .  nu1,        ! Previously determined eddy viscosity.
      .  nu2,        ! Previously determined eddy viscosity.
      .  nu6,        ! Previously determined eddy viscosity.
@@ -229,7 +230,7 @@ c<--end of addition
      .  C4_var, C5_var, C6rt_var, C6rtb_var, C6rtc_var,
      .  C6thl_var, C6thlb_var, C6thlc_var,
      .  C7_var, C7b_var, C7c_var, C8_var, C8b_var, C10_var,
-     .  C11_var, C11b_var, C11c_var, C12_var,
+     .  C11_var, C11b_var, C11c_var, C12_var, C13_var,
      .  nu1_var, nu2_var, nu6_var, nu8_var, nu_r_var,
      .  beta_var, gamma_coef_var, gamma_coefb_var, gamma_coefc_var, 
      .  c_K_var, lmin_coef_var, taumin_var, taumax_var, mu_var
@@ -245,7 +246,7 @@ c<--end of addition
         namelist /initvars/ C1, C1b, C1c, C2, C2b, C2c, 
      .  C2rt, C2thl, C2rtthl, C4, C5,
      .  C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
-     .  C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12,
+     .  C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12, C13,
      .  nu1, nu2, nu6, nu8, nu_r, 
      .  beta, gamma_coef, gamma_coefb, gamma_coefc,
      .  c_K, lmin_coef, taumin, taumax, mu
@@ -256,7 +257,7 @@ c<--end of addition
      .  C6rt_var, C6rtb_var, C6rtc_var, 
      .  C6thl_var, C6thlb_var, C6thlc_var, 
      .  C7_var, C7b_var, C7c_var, C8_var, C8b_var, C10_var, 
-     .  C11_var, C11b_var, C11c_var, C12_var, 
+     .  C11_var, C11b_var, C11c_var, C12_var, C13_var,
      .  nu1_var, nu2_var, nu6_var, nu8_var, nu_r_var,
      .  beta_var, gamma_coef_var, gamma_coefb_var, gamma_coefc_var, 
      .  c_K_var, lmin_coef_var, taumin_var, taumax_var, mu_var
@@ -353,7 +354,7 @@ c<--end of addition
      .    (/C1, C1b, C1c, C2, C2b, C2c,
      .      C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6rtb, C6rtc, 
      .      C6thl, C6thlb, C6thlc, 
-     .      C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12,
+     .      C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12, C13,
      .      nu1, nu2, nu6, nu8, nu_r, beta,
      .      gamma_coef, gamma_coefb, gamma_coefc, 
      .      c_K, lmin_coef, taumin, taumax, mu/)
@@ -368,7 +369,7 @@ c<--end of addition
      .      C6rt_var, C6rtb_var, C6rtc_var, 
      .      C6thl_var, C6thlb_var, C6thlc_var,
      .      C7_var, C7b_var, C7c_var, C8_var, C8b_var,  
-     .      C10_var, C11_var, C11b_var, C11c_var, C12_var,
+     .      C10_var, C11_var, C11b_var, C11c_var, C12_var, C13_var,
      .      nu1_var, nu2_var, nu6_var, nu8_var, nu_r_var, beta_var, 
      .      gamma_coef_var, gamma_coefb_var,gamma_coefc_var,
      .      c_K_var, lmin_coef_var, taumin_var, taumax_var, mu_var/)
@@ -559,7 +560,7 @@ c<--end of addition
      .           x_vector(31), x_vector(32), x_vector(33),
      .           x_vector(34), x_vector(35), x_vector(36),
      .           x_vector(37), x_vector(38), x_vector(39), 
-     .           x_vector(40), x_vector(41), 
+     .           x_vector(40), x_vector(41), x_vector(42),
      .           run_file(c_run), run_stat(c_run), .false. )
 
       ! Basic Sanity Check for negative constants (disabled)

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.117 2007-02-21 19:06:33 mjfalk Exp $
+! $Id: hoc.F,v 1.118 2007-02-23 01:25:47 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -89,7 +89,7 @@
      .               C6thl_in, C6thlb_in, C6thlc_in,
      .               C7_in, C7b_in, C7c_in,
      .               C8_in, C8b_in, C10_in, 
-     .               C11_in, C11b_in, C11c_in, C12_in,
+     .               C11_in, C11b_in, C11c_in, C12_in, C13_in,
      .               nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in,
      .               beta_in, 
      .               gamma_coef_in, gamma_coefb_in, gamma_coefc_in, 
@@ -165,7 +165,7 @@
      .  C6thl_in, C6thlb_in, C6thlc_in,
      .  C7_in, C7b_in, C7c_in,
      .  C8_in, C8b_in, C10_in,
-     .  C11_in, C11b_in, C11c_in, C12_in,
+     .  C11_in, C11b_in, C11c_in, C12_in, C13_in,
      .  nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in,
      .  beta_in,
      .  gamma_coef_in, gamma_coefb_in, gamma_coefc_in,
@@ -271,7 +271,8 @@
      .        C2rt_in, C2thl_in, C2rtthl_in, C4_in, C5_in, 
      .        C6rt_in, C6rtb_in, C6rtc_in, C6thl_in, 
      .        C6thlb_in, C6thlc_in, C7_in, C7b_in, C7c_in, 
-     .        C8_in, C8b_in, C10_in, C11_in, C11b_in, C11c_in, C12_in,
+     .        C8_in, C8b_in, C10_in, C11_in, C11b_in, C11c_in, 
+     .        C12_in, C13_in,
      .        nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in, 
      .        gamma_coef_in, gamma_coefb_in, gamma_coefc_in,
      .        mu_in, c_K_in, beta_in, lmin_coef_in, 
@@ -420,7 +421,7 @@
      .              C6thl_in, C6thlb_in, C6thlc_in,
      .              C7_in, C7b_in, C7c_in,
      .              C8_in, C8b_in, C10_in, 
-     .              C11_in, C11b_in, C11c_in, C12_in,
+     .              C11_in, C11b_in, C11c_in, C12_in, C13_in,
      .              nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in, 
      .              beta_in, 
      .              gamma_coef_in, gamma_coefb_in, gamma_coefc_in,
@@ -473,7 +474,7 @@
      .  C6thl_in, C6thlb_in, C6thlc_in,
      .  C7_in, C7b_in, C7c_in,
      .  C8_in, C8b_in, C10_in,
-     .  C11_in, C11b_in, C11c_in, C12_in,
+     .  C11_in, C11b_in, C11c_in, C12_in, C13_in,
      .  nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in,
      .  beta_in,
      .  gamma_coef_in, gamma_coefb_in, gamma_coefc_in,
@@ -581,7 +582,8 @@
      .        C2rt_in, C2thl_in, C2rtthl_in, C4_in, C5_in, 
      .        C6rt_in, C6rtb_in, C6rtc_in, C6thl_in, 
      .        C6thlb_in, C6thlc_in, C7_in, C7b_in, C7c_in, 
-     .        C8_in, C8b_in, C10_in, C11_in, C11b_in, C11c_in, C12_in,
+     .        C8_in, C8b_in, C10_in, C11_in, C11b_in, C11c_in, 
+     .        C12_in, C13_in,
      .        nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in, 
      .        gamma_coef_in, gamma_coefb_in, gamma_coefc_in,
      .        mu_in, c_K_in, beta_in, lmin_coef_in, 

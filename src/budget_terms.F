@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: budget_terms.F,v 1.24 2007-01-18 23:54:32 dschanen Exp $     
+! $Id: budget_terms.F,v 1.25 2007-02-23 01:25:47 dschanen Exp $     
 
 ! MODULE budget_terms
 
@@ -99,7 +99,8 @@
 
         real, public :: C1, C1b, C1c, C2rt, C2thl, C2rtthl, C4, C5
         real, public :: C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc
-        real, public :: C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12
+        real, public :: 
+     .  C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12, C13
         real, public :: nu1, nu2, nu6, nu8, nu_r
         real, public :: beta, gamma_coef, gamma_coefb, gamma_coefc
         real, public :: c_K, lmin_coef
@@ -137,7 +138,7 @@
         namelist /initvars/ C1, C1b, C1c, C2rt, C2thl, C2rtthl, C4, C5,
      .                      C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .                      C7, C7b, C7c, C8, C8b,
-     .                      C10, C11, C11b, C11c, C12,
+     .                      C10, C11, C11b, C11c, C12, C13,
      .                      nu1, nu2, nu6, nu8, nu_r, 
      .                      beta, gamma_coef, gamma_coefb, gamma_coefc,
      .                      c_K, lmin_coef, taumin, taumax, mu
@@ -768,7 +769,7 @@
      .                  const_vect(4), const_vect(5), ! C4, C5
      .                  C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .                  C7, C7b, C7c, C8, C8b, C10, 
-     .                  C11, C11b, C11c, C12,
+     .                  C11, C11b, C11c, C12, C13,
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  const_vect(6), const_vect(7), ! beta and gamma_coef
      .                  gamma_coefb, gamma_coefc,
@@ -821,7 +822,7 @@
      .                  C7, C7b, C7c, const_vect(1), C8b,  ! C8
      .                  C10, 
      .                  const_vect(2), C11b, C11c,  ! C11
-     .                  const_vect(3),  ! C12
+     .                  const_vect(3), C13,  ! C12
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  const_vect(4), const_vect(5),  ! beta and gamma_coef
      .                  gamma_coefb, gamma_coefc,
@@ -874,7 +875,7 @@
      .                  const_vect(1), const_vect(2), const_vect(3),  ! C6rt, C6rtb, C6rtc
      .                  C6thl, C6thlb, C6thlc,
      .                  const_vect(4), const_vect(5), const_vect(6),  ! C7, C7b, C7c
-     .                  C8, C8b, C10, C11, C11b, C11c, C12, 
+     .                  C8, C8b, C10, C11, C11b, C11c, C12, C13,
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  const_vect(7), const_vect(8), ! beta and gamma_coef
      .                  gamma_coefb, gamma_coefc,
@@ -927,7 +928,7 @@
      .                  C6rt, C6rtb, C6rtc,
      .                  const_vect(1), const_vect(2), const_vect(3),  ! C6thl, C6thlb, C6thlc
      .                  const_vect(4), const_vect(5), const_vect(6),  ! C7, C7b, C7c
-     .                  C8, C8b, C10, C11, C11b, C11c, C12,
+     .                  C8, C8b, C10, C11, C11b, C11c, C12, C13,
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  const_vect(7), const_vect(8), ! beta and gamma_coef
      .                  gamma_coefb, gamma_coefc,
@@ -982,7 +983,7 @@
      .                  C4, C5, C6rt, C6rtb, C6rtc,
      .                  C6thl, C6thlb, C6thlc,
      .                  C7, C7b, C7c, C8, C8b, C10, 
-     .                  C11, C11b, C11c, C12,
+     .                  C11, C11b, C11c, C12, C13,
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  beta, gamma_coef, 
      .                  gamma_coefb, gamma_coefc,
@@ -1038,7 +1039,7 @@
      .                  C4, C5, C6rt, C6rtb, C6rtc,
      .                  C6thl, C6thlb, C6thlc, C7, C7b, C7c,
      .                  C8, C8b, C10, 
-     .                  C11, C11b, C11c, C12,
+     .                  C11, C11b, C11c, C12, C13,
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  beta, gamma_coef,
      .                  gamma_coefb, gamma_coefc,
@@ -1093,7 +1094,7 @@
      .                  C2rt, C2thl, const_vect(1), C4, ! C2rtthl
      .                  C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, 
      .                  C7, C7b, C7c, C8, C8b, C10,
-     .                  C11, C11b, C11c, C12,
+     .                  C11, C11b, C11c, C12, C13,
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  beta, gamma_coef,
      .                  gamma_coefb, gamma_coefc,
@@ -1490,7 +1491,7 @@
      .                  C2rt, C2thl, C2rtthl, C4, C5, 
      .                  C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .                  C7, C7b, C7c, C8, C8b, C10, 
-     .                  C11, C11b, C11c, C12,
+     .                  C11, C11b, C11c, C12, C13,
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  xbeta, xgamma, gamma_coefb, gamma_coefc,
      .                  c_K, lmin_coef, taumin, taumax, mu,
@@ -2198,7 +2199,7 @@
      .                  C2rt, C2thl, C2rtthl, C4, C5, 
      .                  C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, 
      .                  C7, C7b, C7c, C8, C8b, C10, 
-     .                  C11, C11b, C11c, C12,
+     .                  C11, C11b, C11c, C12, C13,
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  beta, gamma_coef, gamma_coefb, gamma_coefc,
      .                  c_K, lmin_coef, taumin, taumax, mu,

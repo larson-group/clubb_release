@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.33 2007-01-18 23:54:32 dschanen Exp $
+! $Id: jacobian.F,v 1.34 2007-02-23 01:25:47 dschanen Exp $
 
       program jacobian
 #ifdef STATS
@@ -50,10 +50,10 @@
         integer, parameter ::
      .  nvarzt = 14,
      .  nvarzm = 40,
-     .  nconst = 35
+     .  nconst = 36
 
         ! 35 must be changed to be equal to nconst
-        character(len=12), parameter :: write_format = "(35(e18.10))"
+        character(len=12), parameter :: write_format = "(36(e18.10))"
 
 !       character, parameter :: delta   = greek_'Δ' ! Doesn't work
         character, parameter :: delta   = 'D'
@@ -86,6 +86,7 @@
      .  C11b,       ! High Skewness in C11 Skewness Function.  From Golaz.
      .  C11c,       ! Degree of Slope of C11 Skewness Function.  From Golaz.
      .  C12,        ! Constant from Chris Golaz.
+     .  C13,        ! Constant applied to vp2_plus_up2.
      .  nu1,        ! Previously determined eddy viscosity.
      .  nu2,        ! Previously determined eddy viscosity.
      .  nu6,        ! Previously determined eddy viscosity.
@@ -151,7 +152,7 @@
      .  C1, C1b, C1c, C2rt, C2thl, C2rtthl, C4, C5,
      .  C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .  C7, C7b, C7c, C8, C8b, C10, 
-     .  C11, C11b, C11c, C12,
+     .  C11, C11b, C11c, C12, C13,
      .  nu1, nu2, nu6, nu8, nu_r, beta, gamma_coef, 
      .  gamma_coefb, gamma_coefc,
      .  c_K, lmin_coef, taumin, taumax, mu
@@ -190,10 +191,11 @@
      .  (/C1, C1b, C1c, C2rt, C2thl, C2rtthl,
      .    C4, C5, C6rt, C6rtb, C6rtc, C6thl,
      .    C6thlb, C6thlc, C7, C7b, C7c, C8, C8b,
-     .    C10, C11, C11b, C11c, C12,
+     .    C10, C11, C11b, C11c, C12, C13,
      .    nu1, nu2, nu6, nu8, nu_r, beta,
      .    gamma_coef, gamma_coefb, gamma_coefc, 
-     .    c_K, mu/)     
+     .    c_K, mu/)
+
         ca1%name(1:nconst) =
      .  (/"C1         ", "C1b        ", "C1c        ",
      .    "C2rt       ", "C2thl      ", "C2rtthl    ",
@@ -203,7 +205,7 @@
      .    "C7         ", "C7b        ", "C7c        ",
      .    "C8         ", "C8b        ",
      .    "C10        ", "C11        ", "C11b       ",
-     .    "C11c       ", "C12        ",
+     .    "C11c       ", "C12        ", "C13        ",
      .    "nu1        ", "nu2        ", 
      .    "nu6        ", "nu8        ", "nu_r       ",
      .    "beta       ", "gamma_coef ", "gamma_coefb", "gamma_coefc",
@@ -219,8 +221,8 @@
         call hoc_model 
      .  ( ca1%constant(1), ca1%constant(2), 
      .    ca1%constant(3), 0.0, 0.0, 0.0,
-     .    ca1%constant(4), 
-     .    ca1%constant(5), ca1%constant(6), 
+     .    ca1%constant(4), ca1%constant(5), 
+     .    ca1%constant(6), 
      .    ca1%constant(7), ca1%constant(8), 
      .    ca1%constant(9), ca1%constant(10), 
      .    ca1%constant(11), ca1%constant(12), 
@@ -234,9 +236,9 @@
      .    ca1%constant(27), ca1%constant(28),
      .    ca1%constant(29), ca1%constant(30),
      .    ca1%constant(31), ca1%constant(32),
-     .    ca1%constant(33), ca1%constant(34),
+     .    ca1%constant(33), ca1%constant(34), ca1%constant(35),
      .    lmin_coef, taumin, taumax, 
-     .    ca1%constant(35), trim( run_file ),
+     .    ca1%constant(36), trim( run_file ),
      .    isValid, .false. )
 
         if ( .not. isValid ) stop "Initial run wasn't valid"
@@ -335,9 +337,9 @@
      .           ca1%constant(27), ca1%constant(28),
      .           ca1%constant(29), ca1%constant(30),
      .           ca1%constant(31), ca1%constant(32),
-     .           ca1%constant(33), ca1%constant(34),
+     .           ca1%constant(33), ca1%constant(34), ca1%constant(35),
      .           lmin_coef, taumin, taumax, 
-     .           ca1%constant(35), trim( run_file ),
+     .           ca1%constant(36), trim( run_file ),
      .           isValid, .false. )
 
           if ( .not. isValid ) then

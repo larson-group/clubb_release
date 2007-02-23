@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc_inputfields.F,v 1.13 2007-01-18 23:54:32 dschanen Exp $
+! $Id: hoc_inputfields.F,v 1.14 2007-02-23 01:25:47 dschanen Exp $
 
         program hoc_inputfields
 
@@ -43,6 +43,7 @@
      .  C11b,       ! High Skewness in C11 Skewness Function.  From Golaz.
      .  C11c,       ! Degree of Slope of C11 Skewness Function.  From Golaz.
      .  C12,        ! Constant from Chris Golaz.
+     .  C13,        ! Coefficient of up2_plus_vp2.
      .  nu1,        ! Previously determined eddy viscosity.
      .  nu2,        ! Previously determined eddy viscosity.
      .  nu6,        ! Previously determined eddy viscosity.
@@ -75,7 +76,7 @@
      .    C2rt, C2thl, C2rtthl, C4, C5,
      .    C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .    C7, C7b, C7c, C8, C8b,
-     .    C10, C11, C11b, C11c, C12,
+     .    C10, C11, C11b, C11c, C12, C13,
      .    nu1, nu2, nu6, nu8, nu_r, beta, 
      .    gamma_coef, gamma_coefb, gamma_coefc,
      .    c_K, lmin_coef, taumin, taumax, mu
@@ -108,7 +109,7 @@
      .                  C6thl, C6thlb, C6thlc,
      .                  C7, C7b, C7c, 
      .                  C8, C8b, C10, 
-     .                  C11, C11b, C11c, C12,
+     .                  C11, C11b, C11c, C12, C13,
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  beta,
      .                  gamma_coef, gamma_coefb, gamma_coefc, 
