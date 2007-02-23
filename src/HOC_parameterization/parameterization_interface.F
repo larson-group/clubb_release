@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.38 2007-02-22 23:51:43 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.39 2007-02-23 01:26:14 dschanen Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -812,7 +812,8 @@
      .             ( nzmax, deltaz, C1, C1b, C1c, C2, C2b, C2c, 
      .               C2rt, C2thl, C2rtthl, C4, C5,
      .               C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
-     .               C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12,
+     .               C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, 
+     .               C12, C13,
      .               nu1, nu2, nu6, nu8, nu_r, 
      .               gamma_coef, gamma_coefb, gamma_coefc,
      .               mu, c_K, beta, lmin_coef, taumin, taumax, 
@@ -853,7 +854,7 @@
      .  C7, C7b, C7c,
      .  C8, C8b, C10,
      .  C11, C11b, C11c,
-     .  C12,
+     .  C12, C13,
      .  nu1, nu2, nu6, nu8, nu_r,
      .  beta,
      .  lmin_coef, taumin, taumax,
@@ -908,7 +909,7 @@
      .         C6thl, C6thlb, C6thlc,
      .         C7, C7b, C7c,
      .         C8, C8b, C10,
-     .         C11, C11b, C11c, C12,
+     .         C11, C11b, C11c, C12, C13,
      .         nu1, nu2, nu6, nu8, nu_r,
      .         gamma_coef, gamma_coefb, gamma_coefc,
      .         mu, c_K, beta, lmin_coef,

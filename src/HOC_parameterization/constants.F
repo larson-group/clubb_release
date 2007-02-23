@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.16 2007-02-22 23:51:43 dschanen Exp $
+! $Id: constants.F,v 1.17 2007-02-23 01:26:14 dschanen Exp $
 
         module constants
 
@@ -43,7 +43,7 @@
 !       real, parameter :: grav  = 9.80665 ! Gravitational acceleration [m/s^2]
         real, parameter :: 
      .  grav = 9.81,   ! Gravitational acceleration     [m/s^2]
-     .  p0   = 1.0e5   ! Reference pressure             [P]
+     .  p0   = 1.0e5   ! Reference pressure             [Pa]
 
         ! Von Karman's constant
         ! Constant of the logarithmic wind profile in the surface layer 
@@ -54,10 +54,6 @@
         ! BUGSrad Constants
         real, parameter :: 
      .  sol_const = 1367.0 ! Solar constant     [W/m^2]
-
-        ! Parameter constant (not in namelists yet)
-        real, parameter ::
-     .  C13 = 0.1     ! Constant for up2_plus_vp2
 
         ! Model parameters and constraints setup in the namelists
 
@@ -96,6 +92,7 @@
      .  C11b,       ! High Skewness in C11 Skewness Function.  From Golaz.
      .  C11c,       ! Degree of Slope of C11 Skewness Function.  From Golaz.
      .  C12,        ! Constant in w'^3 Crank-Nicholson diffusional term.
+     .  C13,        ! Constant for up2_plus_vp2.
      .  nu1,        ! Previously determined eddy viscosity.
      .  nu2,        ! Previously determined eddy viscosity.
      .  nu6,        ! Previously determined eddy viscosity.
@@ -114,6 +111,7 @@
 !$omp   threadprivate(C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6rtb, C6rtc)
 !$omp   threadprivate(C6thl, C6thlb, C6thlc)
 !$omp   threadprivate(C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12)
+!$omp   threadprivate(C13)
 !$omp   threadprivate(nu1, nu2, nu6, nu8, nu_r, beta)
 !$omp   threadprivate(gamma_coef, gamma_coefb, gamma_coefc)
 !$omp   threadprivate(c_K, lmin, taumin, taumax, mu)
@@ -130,18 +128,18 @@
 !       make a list of them.  Note that lmin_coef is the input parameter, 
 !       while the actual lmin model constant is computed from this
 
-        character(len=11), dimension(41), parameter :: constants_list =
+        character(len=11), dimension(42), parameter :: constants_list =
      .  (/"C1         ", "C1b        ", "C1c        ", "C2         ", 
      .    "C2b        ", "C2c        ", "C2rt       ", "C2thl      ",
-     .    "C2rtthl    ", "C4         ", "C5         ",
-     .    "C6rt       ", "C6rtb      ", "C6rtc      ", "C6thl      ",
-     .    "C6thlb     ", "C6thlc     ", "C7         ", "C7b        ",
-     .    "C7c        ", "C8         ", "C8b        ", "C10        ",
-     .    "C11        ", "C11b       ", "C11c       ", "C12        ",
+     .    "C2rtthl    ", "C4         ", "C5         ", "C6rt       ",
+     .    "C6rtb      ", "C6rtc      ", "C6thl      ", "C6thlb     ", 
+     .    "C6thlc     ", "C7         ", "C7b        ", "C7c        ", 
+     .    "C8         ", "C8b        ", "C10        ", "C11        ", 
+     .    "C11b       ", "C11c       ", "C12        ", "C13        ",
      .    "nu1        ", "nu2        ", "nu6        ", "nu8        ",
-     .    "nu_r       ", "beta       ", "gamma_coef ",
-     .    "gamma_coefb", "gamma_coefc", "c_K        ", 
-     .    "lmin_coef  ", "taumin     ", "taumax     ", "mu         "/)
+     .    "nu_r       ", "beta       ", "gamma_coef ", "gamma_coefb", 
+     .    "gamma_coefc", "c_K        ", "lmin_coef  ", "taumin     ",
+     .    "taumax     ", "mu         "/)
 
 
         ! Tolerances below which we consider moments to be zero
@@ -198,7 +196,7 @@
      .               C6thl_in, C6thlb_in, C6thlc_in,
      .               C7_in, C7b_in, C7c_in,
      .               C8_in, C8b_in, C10_in, 
-     .               C11_in, C11b_in, C11c_in, C12_in,
+     .               C11_in, C11b_in, C11c_in, C12_in, C13_in,
      .               nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in,
      .               gamma_coef_in, gamma_coefb_in, gamma_coefc_in, 
      .               mu_in, c_K_in, beta_in, lmin_coef_in,
@@ -227,7 +225,7 @@
      .  C6thl_in, C6thlb_in, C6thlc_in,
      .  C7_in, C7b_in, C7c_in,
      .  C8_in, C8b_in, C10_in,
-     .  C11_in, C11b_in, C11c_in, C12_in,
+     .  C11_in, C11b_in, C11c_in, C12_in, C13_in,
      .  nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in,
      .  gamma_coef_in, gamma_coefb_in, gamma_coefc_in,
      .  mu_in, c_K_in, beta_in, lmin_coef_in, 
@@ -277,6 +275,7 @@
        C11b   = C11b_in
        C11c   = C11c_in
        C12    = C12_in
+       C13    = C13_in
 
        nu1  = nu1_in 
        nu2  = nu2_in 
