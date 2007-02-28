@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.118 2007-02-23 01:25:47 dschanen Exp $
+! $Id: hoc.F,v 1.119 2007-02-28 00:21:09 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -323,7 +323,8 @@
 #ifdef STATS
          ! When this time step is over, the time will be time + dtmain
 
-         call stats_begin_timestep( time + dtmain, dtmain )
+         ! We use elapsed time for stats_begin_step
+         call stats_begin_timestep( time-time_initial+dtmain, dtmain )
 
          if ( lstats_last .and. stdout ) then
            write(unit=fstdout,fmt='(a,i7,a,f8.1)') 'iteration = ',
@@ -638,7 +639,8 @@
 #ifdef STATS
          ! When this time step is over, the time will be time + dtmain
 
-         call stats_begin_timestep( time + dtmain, dtmain )
+         ! We use elapsed time for stats_begin_step
+         call stats_begin_timestep( time-time_initial+dtmain, dtmain )
 
          if ( lstats_last .and. stdout ) then
            write(unit=fstdout,fmt='(a,i7,a,f8.1)') 'iteration = ', 

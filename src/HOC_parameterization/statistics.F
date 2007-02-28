@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.20 2007-02-21 19:08:11 mjfalk Exp $
+!  $Id: statistics.F,v 1.21 2007-02-28 00:21:13 dschanen Exp $
 
 #ifdef STATS
       module stats_type
@@ -3446,9 +3446,10 @@
       end subroutine stats_avg
 
 !-----------------------------------------------------------------------
-      subroutine stats_begin_timestep( time, delt )
+      subroutine stats_begin_timestep( time_elapsed, delt )
 
 !     Description:
+!     Begin sampling for the current timestep.
 !-----------------------------------------------------------------------
 
       use statistics
@@ -3457,31 +3458,33 @@
 
       ! Input
 
-      real, intent(in) :: time, delt
+      real, intent(in) :: 
+     .  time_elapsed,! Elapsed model time       [s]
+     .  delt         ! Model time step          [s]
 
       if ( .not. lstats ) return
 
       ! Set sample this time step flag
-      if ( mod( time, stats_tsamp ) < 1.e-8 ) then
-         lstats_samp = .true.
+      if ( mod( time_elapsed, stats_tsamp ) < 1.e-8 ) then
+        lstats_samp = .true.
       else
-         lstats_samp = .false.
+        lstats_samp = .false.
       end if
 
       ! Set first time step flag
 
-      if ( mod( time - delt, stats_tout ) < 1.e-8 ) then
-         lstats_first = .true.
+      if ( mod( time_elapsed - delt, stats_tout ) < 1.e-8 ) then
+        lstats_first = .true.
       else
-         lstats_first = .false.
+        lstats_first = .false.
       end if
 
       ! Set last time step flag
 
-      if ( mod( time, stats_tout ) < 1.e-8 ) then
-         lstats_last = .true.
+      if ( mod( time_elapsed, stats_tout ) < 1.e-8 ) then
+        lstats_last = .true.
       else
-         lstats_last = .false.
+        lstats_last = .false.
       end if
 
       return
