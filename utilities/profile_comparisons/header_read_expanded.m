@@ -1,4 +1,6 @@
-% $Id: header_read_expanded.m,v 1.1 2007-02-28 17:54:24 dschanen Exp $
+%
+% $Id: header_read_expanded.m,v 1.2 2007-03-02 20:42:34 dschanen Exp $
+%
 % This file is a slightly altered version of function header_read from file
 % header_read.m.  The difference between this version and that version is
 % that this version reads and outputs the GrADS output timestep length, in

@@ -1,4 +1,6 @@
-% $Id: read_grads_hoc_endian.m,v 1.1 2007-02-28 17:54:24 dschanen Exp $
+%
+% $Id: read_grads_hoc_endian.m,v 1.2 2007-03-02 20:42:34 dschanen Exp $
+%
 function avg_field = read_grads_hoc_endian(filename,MachineFormat,nz,t1,t2,varnum,numvars)
 
 % Reads and time-averages profiles from 1D GrADS *.dat files.

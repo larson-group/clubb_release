@@ -1,4 +1,6 @@
-% $Id: compare_plots_cases.m,v 1.1 2007-02-28 17:54:24 dschanen Exp $
+%
+% $Id: compare_plots_cases.m,v 1.2 2007-03-02 20:42:34 dschanen Exp $
+%
 % Compares the time-averaged profiles between any LES, HOC Golaz
 % "best-ever", HOC 12/17/2005, HOC previous (prior CVS HOC), and HOC 
 % current files for 18 different variables fields.  It can be easily run 
@@ -320,7 +322,10 @@ end
 % the ending of the averaging period.  The averaging period is sent into
 % this function as a number of minutes.  The number of minutes divided by
 % the output timestep for each file determines which timestep is
-% appropriate.
+% appropriate.  Since HOC GrADS output measures an accumulation of
+% statistics over the previous timestep period, integers for timestep
+% values should always be rounded up.  This is the usefulness of the "ceil"
+% command.
 
 if ( cmp_les == 1 )
 
@@ -332,28 +337,28 @@ if ( cmp_les == 1 )
        % elapsed_time = timestep * time_step_length;
        % which results in:  timestep = elapsed_time/time_step_length.
 
-       t1_les = double( int32(t1_min/ts_length_les) );
+       t1_les = ceil(t1_min/ts_length_les);
        if ( t1_les < 1 )
           t1_les = 1;
        elseif ( t1_les > t_time_steps_les )
           t1_les = t_time_steps_les;
        end
 
-       t2_les = double( int32(t2_min/ts_length_les) );
+       t2_les = ceil(t2_min/ts_length_les);
        if ( t2_les < 1 )
           t2_les = 1;
        elseif ( t2_les > t_time_steps_les )
           t2_les = t_time_steps_les;
        end
         
-       t1_les2 = double( int32(t1_min/ts_length_les2) );
+       t1_les2 = ceil(t1_min/ts_length_les2);
        if ( t1_les2 < 1 )
           t1_les2 = 1;
        elseif ( t1_les2 > t_time_steps_les2 )
           t1_les2 = t_time_steps_les2;
        end
 
-       t2_les2 = double( int32(t2_min/ts_length_les2) );
+       t2_les2 = ceil(t2_min/ts_length_les2);
        if ( t2_les2 < 1 )
           t2_les2 = 1;
        elseif ( t2_les2 > t_time_steps_les2 )
@@ -367,14 +372,14 @@ if ( cmp_les == 1 )
        % elapsed_time = ( timestep - 1 ) * time_step_length;
        % which results in:  timestep = (elapsed_time/time_step_length) + 1.
         
-       t1_les = double( int32(t1_min/ts_length_les) + 1 );
+       t1_les = ceil(t1_min/ts_length_les) + 1;
        if ( t1_les < 1 )
           t1_les = 1;
        elseif ( t1_les > t_time_steps_les )
           t1_les = t_time_steps_les;
        end
 
-       t2_les = double( int32(t2_min/ts_length_les) + 1 );
+       t2_les = ceil(t2_min/ts_length_les) + 1;
        if ( t2_les < 1 )
           t2_les = 1;
        elseif ( t2_les > t_time_steps_les )
@@ -392,28 +397,28 @@ if ( cmp_cgbe == 1 )
     % file is:  elapsed_time = ( timestep - 1 ) * time_step_length;
     % which results in:  timestep = (elapsed_time/time_step_length) + 1.
     
-    t1_cgbe_zt = double( int32(t1_min/ts_length_cgbe_zt) + 1 );
+    t1_cgbe_zt = ceil(t1_min/ts_length_cgbe_zt) + 1;
     if ( t1_cgbe_zt < 1 )
        t1_cgbe_zt = 1;
     elseif ( t1_cgbe_zt > t_time_steps_cgbe_zt )
        t1_cgbe_zt = t_time_steps_cgbe_zt;
     end
 
-    t2_cgbe_zt = double( int32(t2_min/ts_length_cgbe_zt) + 1 );
+    t2_cgbe_zt = ceil(t2_min/ts_length_cgbe_zt) + 1;
     if ( t2_cgbe_zt < 1 )
        t2_cgbe_zt = 1;
     elseif ( t2_cgbe_zt > t_time_steps_cgbe_zt )
        t2_cgbe_zt = t_time_steps_cgbe_zt;
     end
     
-    t1_cgbe_zm = double( int32(t1_min/ts_length_cgbe_zt) + 1 );
+    t1_cgbe_zm = ceil(t1_min/ts_length_cgbe_zt) + 1;
     if ( t1_cgbe_zm < 1 )
        t1_cgbe_zm = 1;
     elseif ( t1_cgbe_zm > t_time_steps_cgbe_zm )
        t1_cgbe_zm = t_time_steps_cgbe_zm;
     end
     
-    t2_cgbe_zm = double( int32(t2_min/ts_length_cgbe_zt) + 1 );
+    t2_cgbe_zm = ceil(t2_min/ts_length_cgbe_zt) + 1;
     if ( t2_cgbe_zm < 1 )
        t2_cgbe_zm = 1;
     elseif ( t2_cgbe_zm > t_time_steps_cgbe_zm )
@@ -429,28 +434,28 @@ if ( cmp_1217 == 1 )
     % file is:  elapsed_time = ( timestep - 1 ) * time_step_length;
     % which results in:  timestep = (elapsed_time/time_step_length) + 1.
 
-    t1_1217_zt = double( int32(t1_min/ts_length_1217_zt) + 1 );
+    t1_1217_zt = ceil(t1_min/ts_length_1217_zt) + 1;
     if ( t1_1217_zt < 1 )
        t1_1217_zt = 1;
     elseif ( t1_1217_zt > t_time_steps_1217_zt )
        t1_1217_zt = t_time_steps_1217_zt;
     end
 
-    t2_1217_zt = double( int32(t2_min/ts_length_1217_zt) + 1 );
+    t2_1217_zt = ceil(t2_min/ts_length_1217_zt) + 1;
     if ( t2_1217_zt < 1 )
        t2_1217_zt = 1;
     elseif ( t2_1217_zt > t_time_steps_1217_zt )
        t2_1217_zt = t_time_steps_1217_zt;
     end
     
-    t1_1217_zm = double( int32(t1_min/ts_length_1217_zt) + 1 );
+    t1_1217_zm = ceil(t1_min/ts_length_1217_zt) + 1;
     if ( t1_1217_zm < 1 )
        t1_1217_zm = 1;
     elseif ( t1_1217_zm > t_time_steps_1217_zm )
        t1_1217_zm = t_time_steps_1217_zm;
     end
     
-    t2_1217_zm = double( int32(t2_min/ts_length_1217_zt) + 1 );
+    t2_1217_zm = ceil(t2_min/ts_length_1217_zt) + 1;
     if ( t2_1217_zm < 1 )
        t2_1217_zm = 1;
     elseif ( t2_1217_zm > t_time_steps_1217_zm )
@@ -467,28 +472,28 @@ if ( cmp_prev == 1 )
     % elapsed_time = timestep * time_step_length;
     % which results in:  timestep = elapsed_time/time_step_length.
 
-    t1_prev_zt = double( int32(t1_min/ts_length_prev_zt) );
+    t1_prev_zt = ceil(t1_min/ts_length_prev_zt);
     if ( t1_prev_zt < 1 )
        t1_prev_zt = 1;
     elseif ( t1_prev_zt > t_time_steps_prev_zt )
        t1_prev_zt = t_time_steps_prev_zt;
     end
 
-    t2_prev_zt = double( int32(t2_min/ts_length_prev_zt) );
+    t2_prev_zt = ceil(t2_min/ts_length_prev_zt);
     if ( t2_prev_zt < 1 )
        t2_prev_zt = 1;
     elseif ( t2_prev_zt > t_time_steps_prev_zt )
        t2_prev_zt = t_time_steps_prev_zt;
     end
     
-    t1_prev_zm = double( int32(t1_min/ts_length_prev_zt) );
+    t1_prev_zm = ceil(t1_min/ts_length_prev_zt);
     if ( t1_prev_zm < 1 )
        t1_prev_zm = 1;
     elseif ( t1_prev_zm > t_time_steps_prev_zm )
        t1_prev_zm = t_time_steps_prev_zm;
     end
     
-    t2_prev_zm = double( int32(t2_min/ts_length_prev_zt) );
+    t2_prev_zm = ceil(t2_min/ts_length_prev_zt);
     if ( t2_prev_zm < 1 )
        t2_prev_zm = 1;
     elseif ( t2_prev_zm > t_time_steps_prev_zm )
@@ -505,28 +510,28 @@ if ( cmp_curr == 1 )
     % elapsed_time = timestep * time_step_length;
     % which results in:  timestep = elapsed_time/time_step_length.
     
-    t1_curr_zt = double( int32(t1_min/ts_length_curr_zt) );
+    t1_curr_zt = ceil(t1_min/ts_length_curr_zt);
     if ( t1_curr_zt < 1 )
        t1_curr_zt = 1;
     elseif ( t1_curr_zt > t_time_steps_curr_zt )
        t1_curr_zt = t_time_steps_curr_zt;
     end
 
-    t2_curr_zt = double( int32(t2_min/ts_length_curr_zt) );
+    t2_curr_zt = ceil(t2_min/ts_length_curr_zt);
     if ( t2_curr_zt < 1 )
        t2_curr_zt = 1;
     elseif ( t2_curr_zt > t_time_steps_curr_zt )
        t2_curr_zt = t_time_steps_curr_zt;
     end
     
-    t1_curr_zm = double( int32(t1_min/ts_length_curr_zt) );
+    t1_curr_zm = ceil(t1_min/ts_length_curr_zt);
     if ( t1_curr_zm < 1 )
        t1_curr_zm = 1;
     elseif ( t1_curr_zm > t_time_steps_curr_zm )
        t1_curr_zm = t_time_steps_curr_zm;
     end
     
-    t2_curr_zm = double( int32(t2_min/ts_length_curr_zt) );
+    t2_curr_zm = ceil(t2_min/ts_length_curr_zt);
     if ( t2_curr_zm < 1 )
        t2_curr_zm = 1;
     elseif ( t2_curr_zm > t_time_steps_curr_zm )
@@ -2268,6 +2273,14 @@ if ( cmp_curr == 1 )
                         'ieee-le', nz_curr_zt, t1_curr_zt, t2_curr_zt, varnum, numvars_curr_zt);
          break
       end
+   end
+end
+
+% Adjustment:  COAMPS LES outputs Nrm in num/cm^3.  This factor needs to be
+%              multiplied by 10^6 in order to be converted to num/m^3.
+if ( cmp_les == 1 )
+   if ( strcmp( les_type, 'coamps' ) )
+      avg_Nrm_les = (10^6).*avg_Nrm_les;
    end
 end
 
