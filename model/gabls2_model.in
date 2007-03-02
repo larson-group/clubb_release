@@ -1,4 +1,4 @@
-! $Id: gabls2_model.in,v 1.1 2007-02-21 20:04:05 mjfalk Exp $
+! $Id: gabls2_model.in,v 1.2 2007-03-02 22:08:00 mjfalk Exp $
 ! Parameter file for GABLS2 case
 ! Edited by Michael Falk, 28 December 2006
 
@@ -33,7 +33,7 @@ lcoamps_micro = .false.
 licedfs       = .false.
 lbugsrad      = .false.
 bottom_at_sfc = .true.
-lKhm_aniso    = .true.
+lKhm_aniso    = .false.
 
 /
 
