@@ -14,12 +14,12 @@ rlat = 45.20407, rlon = -68.7402  ! Howland obs. tower
 ! which took place at ~1600 GMT (1200 EDT).
 ! The downwind flights took place at ~2100 GMT (1700 EDT).
 time_initial =  57600.0  ! 1600 GMT
-time_final   =  75600.0  ! 2100 GMT
-!time_final   = 230400.0  ! 48 hour run
+!time_final   =  75600.0  ! 2100 GMT
+time_final   = 230400.0  ! 48 hour run
 time_spinup  =  57600.0
 
-dtmain    = 15.0
-dtclosure = 15.0
+dtmain    = 10.0
+dtclosure = 10.0
 
 Tsfc = 284.25
 psfc = 977.5e2
@@ -33,7 +33,7 @@ lcoamps_micro = .false.
 licedfs       = .false.
 lbugsrad      = .false.
 bottom_at_sfc = .true.
-lKhm_aniso    = .false.
+lKhm_aniso    = .true.
 
 /
 
