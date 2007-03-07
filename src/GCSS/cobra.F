@@ -1,7 +1,7 @@
 #define SCLR_CO2 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: cobra.F,v 1.3 2007-03-03 19:42:30 griffinb Exp $
+! $Id: cobra.F,v 1.4 2007-03-07 16:11:30 vlarson Exp $
         module cobra
 !       Description:
 !       Contains subroutines for the COBRA CO2 case.
@@ -28,7 +28,7 @@
 !       None
 !----------------------------------------------------------------------
         use grid_class
-        use constants, only: sclr_dim
+        use constants, only: sclr_dim, fstderr
 
         implicit none
 
@@ -52,7 +52,26 @@
         ! Large-scale subsidence
 
         DO k = 2, gr%nnzp, 1
-          wmt(k) = -5.0E-6 * gr%zt(k)
+
+!  Vince Larson tapered the subsidence to zero to avoid 
+!     constant thlm and instability aloft. 
+!  6 Mar 2007
+!          wmt(k) = -5.0E-6 * gr%zt(k)
+
+           if ( gr%zt(k) >= 0. .and. gr%zt(k) < 3000. ) then
+              wmt(k) = -5.0E-6 * gr%zt(k)
+           else if ( gr%zt(k) >= 3000. ) then
+              wmt(k)
+     .          = - 0.0150
+     .            + 0.0150 * ( gr%zt(k) - 3000. ) / ( 4000. - 3000. )
+           else
+              write(fstderr,*) "cobra_tndcy:"
+     .           //" error in subsidence profile."
+              write(fstderr,*) 'Altitude gr%zt = ', gr%zt(k)
+              stop
+           end if
+! End Vince Larson's change
+
         END DO
 
         wmm = zt2zm( wmt )
