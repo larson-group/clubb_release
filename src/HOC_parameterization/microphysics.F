@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.4 2007-02-21 19:59:21 mjfalk Exp $
+! $Id: microphysics.F,v 1.5 2007-03-07 21:08:19 griffinb Exp $
         module microphysics
 
 !       Description:
@@ -504,23 +504,25 @@
              ! Finalize implicit contributions
              if ( ixrm_ma > 0 ) then
                zt%x(k,ixrm_ma) = zt%x(k,ixrm_ma)
-     .         + ztscr01(k) * xrm(km1)
-     .         + ztscr02(k) * xrm(kp1)
+     .           + ztscr01(k) * xrm(km1)
+     .           + ztscr02(k) * xrm(k)
+     .           + ztscr03(k) * xrm(kp1)
                zt%n(k,ixrm_ma) = zt%n(k,ixrm_ma) + 1
              end if
 
              if ( ixrm_sd > 0 ) then
                zt%x(k,ixrm_sd) = zt%x(k,ixrm_sd)
-     .           + ztscr03(k) * xrm(km1)
-     .           + ztscr04(k) * xrm(kp1)
+     .           + ztscr04(k) * xrm(km1)
+     .           + ztscr05(k) * xrm(k)
+     .           + ztscr06(k) * xrm(kp1)
                zt%n(k,ixrm_sd) = zt%n(k,ixrm_sd) + 1
              end if
 
              if ( ixrm_dff > 0 ) then
                zt%x(k,ixrm_dff) = zt%x(k,ixrm_dff)
-     .           + ztscr05(k) * xrm(km1)
-     .           + ztscr06(k) * xrm(k)
-     .           + ztscr07(k) * xrm(kp1)
+     .           + ztscr07(k) * xrm(km1)
+     .           + ztscr08(k) * xrm(k)
+     .           + ztscr09(k) * xrm(kp1)
                zt%n(k,ixrm_dff) = zt%n(k,ixrm_dff) + 1
              end if
 
@@ -652,156 +654,73 @@
         end if
 #endif /*STATS*/
 
+        ! Reset LHS Matrix for current timestep.
+        lhs = 0.0
+
         ! Setup LHS Matrix
-        do k = 2, gr%nnzp-1, 1
+        do k = 1, gr%nnzp, 1
           km1 = max( k-1, 1 )
           kp1 = min( k+1, gr%nnzp )
 
-          ! All diagonals
-          lhs(kp1diag:km1diag,k)
-     .    = diffusion( nu, gr%dzm(km1), gr%dzm(k), gr%dzt(k) )
-
           ! Main diagonal
-          lhs(kdiag,k) = lhs(kdiag,k) + ( 1.0 / dt ) ! Time tendency
+          ! Time Tendency
+          lhs(kdiag,k) = lhs(kdiag,k) + ( 1.0 / dt )
 
-          ! Super and sub diagonal
-          lhs((/kp1diag,km1diag/),k) 
-     .    = lhs((/kp1diag,km1diag/),k) 
-     .    + advection( wmt(k), gr%dzt(k) )
-
-          ! Super and sub diagonal
+          ! All diagonals
+          ! Diffusion
+          lhs(kp1diag:km1diag,k)
+     .    = lhs(kp1diag:km1diag,k)
+     .    + diffusion( nu, gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+          ! Mean Advection
+          lhs(kp1diag:km1diag,k)
+     .    = lhs(kp1diag:km1diag,k)
+     .    + advection( wmt(k), gr%dzt(k), k )
+          ! Sedimentation
           ! Note: originally pristine ice did not sediment, so it was
           ! setup to be disabled as needed, but now pristine ice does
           ! sediment in the COAMPS case. -dschanen 12 Feb 2007
           if ( lsed ) then
-            lhs((/kp1diag,km1diag/),k) 
-     .      = lhs((/kp1diag,km1diag/),k) 
-     .      + sedimentation( v_t(k), v_t(km1), gr%dzt(k) )
-          end if
+             lhs(kp1diag:km1diag,k)
+     .       = lhs(kp1diag:km1diag,k)
+     .       + sedimentation( v_t(k), v_t(km1), gr%dzt(k), k )
+          endif
 
          ! Implicit contributions to xrm
 #ifdef STATS
           if ( lstats_samp ) then
 
             if ( ixrm_ma > 0 ) then
-              tmp(1:2) = advection( wmt(k), gr%dzt(k) )
-              ztscr01(k) = -tmp(2)
-              ztscr02(k) = -tmp(1)
+              tmp(1:3) = advection( wmt(k), gr%dzt(k), k )
+              ztscr01(k) = -tmp(3)
+              ztscr02(k) = -tmp(2)
+              ztscr03(k) = -tmp(1)
             end if
 
             if ( ixrm_sd > 0 ) then
-              tmp(1:2) = sedimentation( v_t(k), v_t(km1), gr%dzt(k) )
-              ztscr03(k) = -tmp(2)
-              ztscr04(k) = -tmp(1)
+              tmp(1:3) = sedimentation( v_t(k), v_t(km1), gr%dzt(k), k )
+              ztscr04(k) = -tmp(3)
+              ztscr05(k) = -tmp(2)
+              ztscr06(k) = -tmp(1)
             end if
 
             if ( ixrm_dff > 0 ) then
               tmp(1:3)
-     .        = diffusion( nu, gr%dzm(km1), gr%dzm(k), gr%dzt(k) )
-              ztscr05(k) = -tmp(3)
-              ztscr06(k) = -tmp(2)
-              ztscr07(k) = -tmp(1)
+     .        = diffusion( nu, gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+              ztscr07(k) = -tmp(3)
+              ztscr08(k) = -tmp(2)
+              ztscr09(k) = -tmp(1)
             end if
 
           end if ! lstats_samp
 #endif /*STATS*/
 
-        end do ! 2..gr%nnzp-1
-
-        ! Boundary conditions
-
-        ! These have been chosen so that the column totals in the LHS matrix
-        ! of the diffusional term are equal to zero.  This leads to 
-        ! "conservative differencing" of the diffusion term for equally spaced grids.     
-        ! The ground is impermeable to diffusion of rrm, Nrm.   Brian.
-
-        ! Lower boundary conditions
-
-        ! Not referenced by solver
-        !lhs(km1diag,1) = 0.0   ! sub(1) term
-
-        lhs(kdiag,1)
-     .  =  + (1.0/dt)                      ! main(1) time tendency
-     .  - ( - nu * gr%dzt(2) * gr%dzm(1) ) ! minus sub(2) diffusion
-
-        lhs(kp1diag,1)
-     .  = + wmt(1) * (1.0/2.0) * gr%dzt(1)                 ! super(1) advection
-     .  + (1.0/4.0) * ( v_t(1) + v_t(1) ) * gr%dzt(1)      ! super(1) sediment.
-     .  - ( + nu * gr%dzt(2) * ( gr%dzm(2) + gr%dzm(1) ) ) ! minus main(2) diffusion
-     .  - ( - nu * gr%dzt(3) * gr%dzm(2) )                 ! minus sub(3) diffusion
-
-        ! Upper boundary conditions
-        lhs(km1diag,gr%nnzp)
-     .  = - ( nu*gr%dzt(gr%nnzp-1)
-     .        *( gr%dzm(gr%nnzp-1) + gr%dzm(gr%nnzp-2) ) ) ! main(gr%nnzp-1) diffusion
-     .    - ( - nu*gr%dzt(gr%nnzp-2)*gr%dzm(gr%nnzp-2) )   ! super(gr%nnzp-2) diffusion
-     .    - wmt(gr%nnzp) * (1.0/2.0) * gr%dzt(gr%nnzp)     ! sub(gr%nnzp) advection
-                                                           ! sub(gr%nnzp) sediment = 0.
-
-        lhs(kdiag,gr%nnzp)
-     .  = - ( - nu*gr%dzt(gr%nnzp-1)
-     .      *gr%dzm(gr%nnzp-1) ) ! super(gr%nnzp-1) diffusion
-     .    + (1.0/dt) ! main(gr%nnzp) time tendency
-
-        ! Not referenced
-        !lhs(kp1diag,gr%nnzp) = 0.0 ! super(gr%nnzp) term
-
-        ! Implicit contributions (as in subroutine rain)
-#ifdef STATS
-
-        if ( lstats_samp ) then
-
-         ! Lower boundary
-         if ( ixrm_ma > 0 ) then
-           ztscr01(1) = 0.0
-           ztscr02(1) = - wmt(1) * (1.0/2.0) * gr%dzt(1)
-         endif
-
-         if ( ixrm_sd > 0 ) then
-           ztscr03(1) = 0.0
-           ztscr04(1) = - (1.0/4.0) * ( v_t(1) + v_t(1) ) * gr%dzt(1)
-         endif
-
-         if ( ixrm_dff > 0 ) then
-           ztscr05(1) = 0.0
-           ztscr06(1) = - nu * gr%dzt(2) * gr%dzm(1)
-           ztscr07(1) = + nu * gr%dzt(2) * ( gr%dzm(2) + gr%dzm(1) )
-     .                  - nu * gr%dzt(3) * gr%dzm(2)
-         endif
-
-         ! Upper boundary
-         if ( ixrm_ma > 0 ) then
-           ztscr01(gr%nnzp) = + wmt(gr%nnzp) 
-     .                          * (1.0/2.0) * gr%dzt(gr%nnzp)
-           ztscr02(gr%nnzp) = 0.0
-         end if
-
-         if ( ixrm_sd > 0 ) then
-           ztscr03(gr%nnzp) = 0.0
-           ztscr04(gr%nnzp) = 0.0
-         end if
-
-         if ( ixrm_dff > 0 ) then
-           ztscr05(gr%nnzp) = 
-     .         + (   nu*gr%dzt(gr%nnzp-1)
-     .              *(gr%dzm(gr%nnzp-1) + gr%dzm(gr%nnzp-2)) )
-     .         + ( - nu*gr%dzt(gr%nnzp-2)*gr%dzm(gr%nnzp-2) )
-
-           ztscr06(gr%nnzp) 
-     .     = + ( - nu*gr%dzt(gr%nnzp-1)*gr%dzm(gr%nnzp-1) )
-
-           ztscr07(gr%nnzp) = 0.0 
-         end if
-
-        end if ! lstats_samp
-
-#endif /*STATS*/
+        end do ! 1..gr%nnzp
 
         return
         end subroutine microphys_lhs
 
 !-----------------------------------------------------------------------
-        pure function diffusion( nu, dzmm1, dzm, dzt ) 
+        pure function diffusion( nu, dzmm1, dzm, dzt, level ) 
      .  result( lhs ) 
 
 !       Description:
@@ -810,6 +729,8 @@
 !       References:
 !       None
 !-----------------------------------------------------------------------
+
+        use grid_class
 
         implicit none
 
@@ -825,18 +746,141 @@
         real, intent(in) :: 
      .  dzmm1, dzm, dzt ! Inverse of the grid spacing [m]
 
+        integer, intent(in) :: level ! thermo. level that the calc. is for.
+
         ! Output
         real, dimension(3) :: lhs
 
-        lhs(kp1diag) = - nu * dzt * dzm
-        lhs(kdiag)   = + nu * dzt * ( dzm + dzmm1 )
-        lhs(km1diag) = - nu * dzt * dzmm1
+        ! DESCRIPTION
+        !
+        ! This function handles the portion of the hydrometeor equation that
+        ! is concerned with eddy diffusion:
+        !
+        ! d(xx)/dt = ... + nu * [ d^2(xx)/(dz)^2 ] + ...
+        !
+        ! The normal discretization is to use the values of the hydrometeor, xx,
+        ! which is located on thermodynamic levels, from three levels -- the 
+        ! central level and one-level-above and one-level-below the central 
+        ! level.  These three values lead to two first derivatives centered at 
+        ! the intermediate momentum levels.  In turn, these two first 
+        ! derivatives lead to one second derivative centered at the central 
+        ! thermodynamic level.  This is illustrated in the diagram below:
+        !
+        ! ---xx(k+1)----------------------------------  t(k+1)
+        !
+        ! ===============d(xx)/dz=====================  m(k)
+        !
+        ! ---xx( k )------------------d^2(xx)/(dz)^2--  t(k)
+        !
+        ! ===============d(xx)/dz=====================  m(k-1)
+        !
+        ! ---xx(k-1)----------------------------------  t(k-1)
+        !
+        ! In equation form, this looks like:
+        !
+        ! nu * dzt(k)*[dzm(k)*(xx(k+1)-xx(k)) - dzm(k-1)*(xx(k)-xx(k-1))];
+        ! 
+        ! where dzt(k) and dzm(k) are 1/(delta z) at level k.
+        !
+        ! This is then moved to the left-hand side of the equation and 
+        ! rearranged to be placed onto a tridiagonal matrix.
+        !
+        ! However, there are special conditions at the boundaries, as any 
+        ! quantity cannot be diffused outside of the boundaries, but rather
+        ! builds up at the boundaries and then re-diffuses back into the rest of
+        ! the domain.  We define a "phantom-point" just outside the boundary to 
+        ! have the same value of the quantity as the point just inside the 
+        ! boundary.  This results in a zero derivative at the point of the 
+        ! boundary.  From a purely mathematical standpoint, any point that has a 
+        ! first derivative of zero will also have a second derivative of zero.  
+        ! Therefore, there will be no change to the quantity at the point of the 
+        ! boundary due to diffusional effects.  This is illustrated in the 
+        ! diagram of the lower boundary below:
+        !
+        ! --------------------xx(3)--------------------  t(3)
+        !
+        ! =============================================  m(2)
+        !
+        ! --------------------xx(2)--------------------  t(2)
+        !
+        ! ===SURFACE OR LOWER BOUNDARY (IMPERMEABLE)===  m(1)
+        !
+        ! ----"phantom point" xx(1) = xx(2)------------  t(1)
+        !
+        ! This is still discretized the same way as before, yielding:
+        !
+        ! nu * dzt(2)*[dzm(2)*(xx(3)-xx(2)) - dzm(1)*(xx(2)-xx(1))],
+        !
+        ! but since xx(1) = xx(2):
+        !
+        ! nu * dzt(2)*[dzm(2)*(xx(3)-xx(2))]
+        !
+        ! This is then moved to the left-hand side of the equation and 
+        ! rearranged to be placed onto a tridiagonal matrix.
+        !
+        ! The upper boundary is treated in the exact same way as the lower
+        ! boundary.  In HOC, the first thermodynamic level is below the surface,
+        ! so there are no diffusional effects at level 1.  The boundary levels
+        ! are level 2 and the top level.  Everything in between operates as 
+        ! normal.
+        !
+        ! Finally, it should be pointed out that this technique of discretizing
+        ! the equations leads to conservative differencing (for the diffusional
+        ! term), as long as the grid levels are equally spaced.  When 
+        ! conservative differencing is in place, the column totals in the LHS
+        ! matrix (for the diffusional term) should be equal to 0.  This insures
+        ! that the total amount of the quantity over the entire domain is being
+        ! conserved, meaning that nothing is lost due to diffusional effects.
+        ! This is illustrated in the matrix setup below:
+        !
+        ! Left-hand side matrix, diffusional term only; first five levels:
+        !
+        !   ----->
+        ! 0 | 0            0                     0                              0
+        !   |
+        !   | 0   +nu*dzt(k)*dzm(k)     -nu*dzt(k)*dzm(k)                       0
+        !   |
+        !   | 0   -nu*dzt(k)*dzm(k-1)   +nu*dzt(k)*(dzm(k)+dzm(k-1))   -nu*dzt(k)*dzm(k)
+        !   |
+        !   | 0            0            -nu*dzt(k)*dzm(k-1)            +nu*dzt(k)*(dzm(k)+dzm(k-1))
+        !   |
+        !   | 0            0                     0                     -nu*dzt(k)*dzm(k-1)
+        !   |
+        !  \ /
+        !
+        ! Brian Griffin.  February 27, 2007.
+
+        if ( level == 1 ) then
+           ! k = 1; below surface; no effects.
+           lhs(kp1diag) = 0.0
+           lhs(kdiag)   = 0.0
+           lhs(km1diag) = 0.0
+
+        elseif ( level == 2 ) then
+           ! k = 2; lower boundary level.
+           lhs(kp1diag) = - nu * dzt * dzm
+           lhs(kdiag)   = + nu * dzt * dzm
+           lhs(km1diag) = 0.0
+
+        elseif ( level > 2 .and. level < gr%nnzp ) then
+           ! Most of the interior model; normal conditions.
+           lhs(kp1diag) = - nu * dzt * dzm
+           lhs(kdiag)   = + nu * dzt * ( dzm + dzmm1 )
+           lhs(km1diag) = - nu * dzt * dzmm1
+
+        elseif ( level == gr%nnzp ) then
+           ! k = gr%nnzp (top level); upper boundary level.
+           lhs(kp1diag) = 0.0
+           lhs(kdiag)   = + nu * dzt * dzmm1
+           lhs(km1diag) = - nu * dzt * dzmm1
+
+        endif
 
         return
         end function diffusion
 
 !-----------------------------------------------------------------------
-        pure function advection( wmt, dzt )
+        pure function advection( wmt, dzt, level )
      .  result( lhs )
 
 !       Description:
@@ -846,28 +890,140 @@
 !       None
 !-----------------------------------------------------------------------
 
+        use grid_class
+
         implicit none
 
         ! Constant parameters
         integer, parameter ::
      .  kp1diag = 1,
-     .  km1diag = 2
+     .  kdiag   = 2,
+     .  km1diag = 3
 
         real, intent(in) ::
      .  wmt, ! w wind on t                      [m/s]
      .  dzt  ! Inverse of the grid spacing      [m] 
 
-        ! Output
-        real, dimension(2) :: lhs
+        integer, intent(in) :: level ! thermo. level that the calc. is for.
 
-        lhs(kp1diag) = + wmt * (1.0/2.0) * dzt
-        lhs(km1diag) = - wmt * (1.0/2.0) * dzt
+        ! Output
+        real, dimension(3) :: lhs
+
+        ! DESCRIPTION
+        !
+        ! This function handles the portion of the hydrometeor equation that
+        ! is concerned with mean advection in the vertical:
+        !
+        ! d(xx)/dt = ... -w * d(xx)/dz  + ...
+        !
+        ! The normal discretization is to use the values of the hydrometeor, xx,
+        ! which is located on thermodynamic levels, from three levels -- the 
+        ! central level and one-level-above and one-level-below the central 
+        ! level.  These three values lead to two averaged values centered at 
+        ! the intermediate momentum levels.  In turn, these two averaged 
+        ! values lead to one first derivative centered at the central 
+        ! thermodynamic level.  This is illustrated in the diagram below:
+        !
+        ! ---xx(k+1)----------------------------------  t(k+1)
+        !
+        ! ===============ave(xx)m=====================  m(k)
+        !
+        ! ---xx( k )------------------d(xx)/dz--------  t(k)
+        !
+        ! ===============ave(xx)m=====================  m(k-1)
+        !
+        ! ---xx(k-1)----------------------------------  t(k-1)
+        !
+        ! The value for vertical wind velocity, w, is taken from the central
+        ! thermodynamic level (w is normally a momentum-level variable, but
+        ! HOC also interpolates its value to thermodynamic levels).
+        !
+        ! In equation form, this looks like:
+        !
+        ! -w_t(k) * [dzt(k)*( (xx(k+1)+xx(k))/2 - (xx(k)+xx(k-1))/2 )];
+        !
+        ! which is reduced to:
+        ! 
+        ! -w_t(k) * [(1/2)*dzt(k)*(xx(k+1)-xx(k-1))];
+        ! 
+        ! where dzt(k) and dzm(k) are 1/(delta z) at level k.
+        !
+        ! This is then moved to the left-hand side of the equation and 
+        ! rearranged to be placed onto a tridiagonal matrix.
+        !
+        ! However, there are special conditions at the boundaries.  We need 
+        ! three points to take a centered derivative, but a boundary yields only
+        ! two points.  We define a "phantom-point" just outside the boundary to 
+        ! have the same value of the quantity as the point just inside the 
+        ! boundary.  This results in a zero derivative at the point of the 
+        ! boundary, although the level just above the boundary, which is where 
+        ! the effects are taking place, will have a derivative.  This is 
+        ! illustrated in the diagram of the lower boundary below:
+        !
+        ! --------------------xx(3)--------------------  t(3)
+        !
+        ! =============================================  m(2)
+        !
+        ! --------------------xx(2)--------------------  t(2)
+        !
+        ! ===SURFACE OR LOWER BOUNDARY (IMPERMEABLE)===  m(1)
+        !
+        ! ----"phantom point" xx(1) = xx(2)------------  t(1)
+        !
+        ! This is still discretized the same way as before, yielding:
+        !
+        ! -w_t(2) * [dzt(2)*( (xx(3)+xx(2))/2 - (xx(2)+xx(1))/2 )];
+        !
+        ! but since xx(1) = xx(2):
+        !
+        ! -w_t(2) * [(1/2)*dzt(2)*(xx(3)-xx(2))];
+        !
+        ! This is then moved to the left-hand side of the equation and 
+        ! rearranged to be placed onto a tridiagonal matrix.
+        !
+        ! The upper boundary is treated in the exact same way as the lower
+        ! boundary.  In HOC, the first thermodynamic level is below the surface,
+        ! so there are no advective effects at level 1.  The boundary levels
+        ! are level 2 and the top level.  Everything in between operates as 
+        ! normal.
+        !
+        ! Finally, it should be pointed out that this technique of discretizing
+        ! is not conservative.  Column totals at any level do not necessarily
+        ! add up to 0, as w may be different at any level.
+        !
+        ! Brian Griffin.  March 7, 2007.
+
+        if ( level == 1 ) then
+           ! k = 1; below surface; no effects.
+           lhs(kp1diag) = 0.0
+           lhs(kdiag)   = 0.0
+           lhs(km1diag) = 0.0
+
+        elseif ( level == 2 ) then
+           ! k = 2; lower boundary level.
+           lhs(kp1diag) = + wmt * (1.0/2.0) * dzt
+           lhs(kdiag)   = - wmt * (1.0/2.0) * dzt
+           lhs(km1diag) = 0.0
+
+        elseif ( level > 2 .and. level < gr%nnzp ) then
+           ! Most of the interior model; normal conditions.
+           lhs(kp1diag) = + wmt * (1.0/2.0) * dzt
+           lhs(kdiag)   = 0.0
+           lhs(km1diag) = - wmt * (1.0/2.0) * dzt
+
+        elseif ( level == gr%nnzp ) then
+           ! k = gr%nnzp (top level); upper boundary level.
+           lhs(kp1diag) = 0.0
+           lhs(kdiag)   = + wmt * (1.0/2.0) * dzt
+           lhs(km1diag) = - wmt * (1.0/2.0) * dzt
+
+        endif
 
         return
         end function advection
 
 !-----------------------------------------------------------------------
-        pure function sedimentation( v_t, v_tm1, dzt )
+        pure function sedimentation( v_t, v_tm1, dzt, level )
      .  result( lhs ) 
 
 !       Description:
@@ -884,28 +1040,152 @@
 !       velocities.
 !-----------------------------------------------------------------------
 
+        use grid_class
+
         implicit none
 
         ! Constant parameters
         integer, parameter ::
      .  kp1diag = 1,
-     .  km1diag = 2
+     .  kdiag   = 2,
+     .  km1diag = 3
 
         real, intent(in) ::
      .  v_t,   ! Terminal velocity <k>          [m/s]
      .  v_tm1, ! Terminal velocity <k-1>        [m/s]
      .  dzt    ! Inverse of the grid spacing <k>[m] 
 
+        integer, intent(in) :: level ! thermo. level that the calc. is for.
+
         ! Output
-        real, dimension(2) :: lhs
+        real, dimension(3) :: lhs
 
-        ! For a positive downward sedimentation velocity
-!       lhs(kp1diag) = - (1.0/4.0) * ( v_t + v_tm1 ) * dzt
-!       lhs(km1diag) = + (1.0/4.0) * ( v_t + v_tm1 ) * dzt
+        ! DESCRIPTION
+        !
+        ! This function handles the portion of the hydrometeor equation that
+        ! is concerned with drop or particle sedimentation:
+        !
+        ! d(xx)/dt = ... -Vxx * d(xx)/dz  + ...
+        !
+        ! The normal discretization is to use the values of the hydrometeor, xx,
+        ! which is located on thermodynamic levels, from three levels -- the 
+        ! central level and one-level-above and one-level-below the central 
+        ! level.  These three values lead to two averaged values centered at 
+        ! the intermediate momentum levels.  In turn, these two averaged 
+        ! values lead to one first derivative centered at the central 
+        ! thermodynamic level.  Meanwhile, the values for sedimentation 
+        ! velocity, Vxx, are located at the intermediate momentum levels.  
+        ! The two values lead to one averaged value centered at the central 
+        ! thermodynamic level.  This is illustrated in the diagram below:
+        !
+        ! ---xx(k+1)------------------------------------  t(k+1)
+        !
+        ! ===Vxx( k )=====ave(xx)m======================  m(k)
+        !
+        ! ---xx( k )------ave(Vxx)t-----d(xx)/dz--------  t(k)
+        !
+        ! ===Vxx(k-1)=====ave(xx)m======================  m(k-1)
+        !
+        ! ---xx(k-1)------------------------------------  t(k-1)
+        !
+        ! In equation form, this looks like:
+        !
+        ! -( (Vxx(k)+Vxx(k-1))/2 ) * 
+        !      [dzt(k)*( (xx(k+1)+xx(k))/2 - (xx(k)+xx(k-1))/2 )];
+        !
+        ! which is reduced to:
+        ! 
+        ! -( (Vxx(k)+Vxx(k-1))/2 ) * [(1/2)*dzt(k)*(xx(k+1)-xx(k-1))];
+        !
+        ! and then rearranged to:
+        !
+        ! -(1/4) * (Vxx(k)+Vxx(k-1)) * dzt(k) * (xx(k+1)-xx(k-1));
+        ! 
+        ! where dzt(k) and dzm(k) are 1/(delta z) at level k.
+        !
+        ! This is then moved to the left-hand side of the equation and 
+        ! rearranged to be placed onto a tridiagonal matrix.
+        !
+        ! However, there are special conditions at the boundaries.  We need 
+        ! three points to take a centered derivative, but a boundary yields only
+        ! two points.  We define a "phantom-point" just outside the boundary to 
+        ! have the same value of the quantity as the point just inside the 
+        ! boundary.  This is illustrated in the diagram of the lower boundary 
+        ! below:
+        !
+        ! --------------------xx(3)--------------------  t(3)
+        !
+        ! =============================================  m(2)
+        !
+        ! --------------------xx(2)--------------------  t(2)
+        !
+        ! ===SURFACE OR LOWER BOUNDARY (IMPERMEABLE)===  m(1)
+        !
+        ! ----"phantom point" xx(1) = xx(2)------------  t(1)
+        !
+        ! This is still discretized the same way as before, yielding:
+        !
+        ! -( (Vxx(2)+Vxx(1))/2 ) * 
+        !      [dzt(2)*( (xx(3)+xx(2))/2 - (xx(2)+xx(1))/2 )];
+        !
+        ! but since xx(1) = xx(2):
+        !
+        ! -(1/4) * (Vxx(2)+Vxx(1)) * dzt(2) * (xx(3)-xx(2));
+        !
+        ! This is then moved to the left-hand side of the equation and 
+        ! rearranged to be placed onto a tridiagonal matrix.
+        !
+        ! The upper boundary is treated in the exact same way as the lower
+        ! boundary.  In HOC, the first thermodynamic level is below the surface,
+        ! so there are no sedimentary effects at level 1.  The boundary levels
+        ! are level 2 and the top level.  Everything in between operates as 
+        ! normal.
+        !
+        ! Finally, it should be pointed out that this technique of discretizing
+        ! is not conservative.  Column totals at any level do not necessarily
+        ! add up to 0, as Vxx may be different at any level.  We want this, as
+        ! we should be losing some of the hydrometeor through the lower boundary
+        ! as it sediments.
+        !
+        ! Brian Griffin. March 7, 2007.
 
-        ! For a negative downward sedimentation velocity
-        lhs(kp1diag) = + (1.0/4.0) * ( v_t + v_tm1 ) * dzt
-        lhs(km1diag) = - (1.0/4.0) * ( v_t + v_tm1 ) * dzt
+        if ( level == 1 ) then
+           ! k = 1; below surface; no effects.
+           lhs(kp1diag) = 0.0
+           lhs(kdiag)   = 0.0
+           lhs(km1diag) = 0.0
+
+        elseif ( level == 2 ) then
+           ! k = 2; lower boundary level.
+           lhs(kp1diag) = + (1.0/4.0) * ( v_t + v_tm1 ) * dzt
+           lhs(kdiag)   = - (1.0/4.0) * ( v_t + v_tm1 ) * dzt
+           lhs(km1diag) = 0.0
+           ! For a positive downward sedimentation velocity
+!           lhs(kp1diag) = - (1.0/4.0) * ( v_t + v_tm1 ) * dzt
+!           lhs(kdiag)   = + (1.0/4.0) * ( v_t + v_tm1 ) * dzt
+!           lhs(km1diag) = 0.0
+
+        elseif ( level > 2 .and. level < gr%nnzp ) then
+           ! Most of the interior model; normal conditions.
+           lhs(kp1diag) = + (1.0/4.0) * ( v_t + v_tm1 ) * dzt
+           lhs(kdiag)   = 0.0
+           lhs(km1diag) = - (1.0/4.0) * ( v_t + v_tm1 ) * dzt
+           ! For a positive downward sedimentation velocity
+!           lhs(kp1diag) = - (1.0/4.0) * ( v_t + v_tm1 ) * dzt
+!           lhs(kdiag)   = 0.0
+!           lhs(km1diag) = + (1.0/4.0) * ( v_t + v_tm1 ) * dzt
+
+        elseif ( level == gr%nnzp ) then
+           ! k = gr%nnzp (top level); upper boundary level.
+           lhs(kp1diag) = 0.0
+           lhs(kdiag)   = + (1.0/4.0) * ( v_t + v_tm1 ) * dzt
+           lhs(km1diag) = - (1.0/4.0) * ( v_t + v_tm1 ) * dzt
+           ! For a positive downward sedimentation velocity
+!           lhs(kp1diag) = 0.0
+!           lhs(kdiag)   = - (1.0/4.0) * ( v_t + v_tm1 ) * dzt
+!           lhs(km1diag) = + (1.0/4.0) * ( v_t + v_tm1 ) * dzt
+
+        endif
 
         return
         end function sedimentation
