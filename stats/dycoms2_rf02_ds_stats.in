@@ -1,7 +1,7 @@
 &statsnl
 
 lstats = t
-stats_fmt = 'netcdf'
+stats_fmt = 'grads'
 stats_tsamp = 60.0
 stats_tout  = 60.0
 

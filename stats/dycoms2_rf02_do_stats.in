@@ -1,10 +1,10 @@
-! $Id: dycoms2_rf02_do_stats.in,v 1.8 2007-02-20 17:00:28 dschanen Exp $
+! $Id: dycoms2_rf02_do_stats.in,v 1.9 2007-03-08 23:51:23 dschanen Exp $
 &statsnl
 
 lstats = t
-stats_fmt = 'netcdf'
+stats_fmt = 'grads'
 stats_tsamp = 60.0
-stats_tout  = 300.0
+stats_tout  = 60.0
 
 fname_zt = 'dycoms2_rf02_do_zt'
 vars_zt = 
