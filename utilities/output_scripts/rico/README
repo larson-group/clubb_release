@@ -1,0 +1,13 @@
+These utilities are useful when dealing with the RICO case.  All of 
+these scripts are run in MATLAB.
+
+netcdf_rico_writer_x.m (where x a digit between 1 and 4 inclusive) is a 
+file used to generate the required NetCDF output for RICO files.  Each 
+one of the files generates one of the required files for submission to 
+the RICO intercomparison.  These are good files to look at for examples 
+if you want to create your own NetCDF output.
+
+rico_profile.m is a file used to take the data supplied in the RICO 
+specification (Temperature, height, specific humidity), use the 
+hydrostatic approximation and the first law of thermodynamics, and 
+convert to potential temperature, pressure, and mixing ratio.

@@ -1,0 +1,18 @@
+CVS              get_profile.m  make_gabls_files.m  
+read_grads_hoc_endian.m
+gabls_profile.m  header_read.m  make_gabls_plots.m
+
+These utilities are useful when dealing with the GABLS2 case.  All of 
+these scripts are run in MATLAB.
+
+Run gabls_profile.m to convert the initial specification of specific 
+humidity into mixing ratio (required for HOC).
+
+Run make_gabls_files.m to convert GABLS2 GrADS output into the required 
+ASCII text output files for intercomparison submission.
+
+Run make_gabls_plots.m to see a series of plots (and output them in .eps 
+format) comparing two specified GABLS2 runs (by default, two consecutive 
+runs with lKhm_aniso varying between .true. and .false.).  Because of 
+the 'keyboard' command after each plot's instructions, you must type 
+'return' at the prompt to move on to the next plot.
