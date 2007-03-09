@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.5 2007-03-07 21:08:19 griffinb Exp $
+! $Id: microphysics.F,v 1.6 2007-03-09 17:05:14 vlarson Exp $
         module microphysics
 
 !       Description:
@@ -59,7 +59,12 @@
      .  icond  = 3  ! Autoconversion; 1=Kessler, 2=Manton/Cotton, 3=K&K, 4=none
 
         logical, parameter ::
-     .  lice = .true. ! Whether to produce ice in COAMPS
+     .  lice = .true. ! Whether to produce ice in COAMPS.
+                      ! According to Jerry Schmidt of NRL,
+                      !   if lice = .true., then we should
+                      !   set ldrizzle = .false.
+                      !   because collection of drizzle by ice
+                      !   is not implemented yet.
 
         real, intent(in) :: 
      .  dt,          ! Timestep         [s]
