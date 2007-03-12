@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.11 2007-01-30 17:59:07 dschanen Exp $
+! $Id: diag_var.F,v 1.12 2007-03-12 20:13:44 dschanen Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -115,21 +115,23 @@
 
 !-----------------------------------------------------------------------
 #ifdef SINGLE_C2_SKW
-
+        ! Use a single value of C2 for all equations.
         C2rt_1d(1:gr%nnzp) 
      .  = C2b + (C2-C2b) *exp( -0.5 * (Skwm(1:gr%nnzp)/C2c)**2 )
 
-        C2thl_1d = C2rt_1d
+        C2thl_1d   = C2rt_1d
         C2rtthl_1d = C2rt_1d
 
         C2sclr_1d  = C2rt_1d
 #else
+        ! Use 3 different values of C2 for rtp2, thlp2, rtpthlp.
         C2rt_1d(1:gr%nnzp)    = C2rt
         C2thl_1d(1:gr%nnzp)   = C2thl
         C2rtthl_1d(1:gr%nnzp) = C2rtthl
 
         C2sclr_1d(1:gr%nnzp)  = C2rt  ! Use rt value for now
 #endif
+        ! Are we solving for a passive scalar as well?
 
         if ( present( sclrm ) .and. present( wpsclrp ) .and.
      .       present( sclrp2 ) .and. present( sclrprtp ) .and.
@@ -162,7 +164,8 @@
 
         end if
 #endif
-        ! Initialize to true
+        ! Initialize tridiagonal solver diagnostic to true
+
         Valid_arr(:) = .true.
 
         ! Implicit contributions to term rtp2
@@ -172,6 +175,7 @@
      .                     lhs )
 
         ! Explicit contributions to rtp2
+
         call diag_var_rhs( "rtp2", a1, wp2, wp3, 
      .                     rtm, rtm,  wprtp, wprtp, rtp2,
      .                     dt, beta, eps, liter, rhs )
@@ -193,10 +197,6 @@
      .                     thlm, thlm, wpthlp, wpthlp, thlp2,
      .                     dt, beta, eps, liter, rhs )
 
-!       rhs(:,1) = calc_dd_covar( a1, wp2, wp3, wpthlp, wpthlp,
-!    .                       thlm, thlm, thlp2,
-!    .                       dt, beta, eps, liter )
-
         ! Solve the tridiagonal system
 
         call diag_var_solve( "thlp2", 1, rhs, 
@@ -213,10 +213,6 @@
         call diag_var_rhs( "rtpthlp", a1, wp2, wp3, 
      .                     rtm, thlm, wprtp, wpthlp, rtpthlp,
      .                     dt, beta, eps, liter, rhs )
-
-!       rhs(:,1) = calc_dd_covar( a1, wp2, wp3, wprtp, wpthlp,
-!    .                       rtm, thlm, rtpthlp,
-!    .                       dt, beta, eps, liter )
 
         ! Solve the tridiagonal system
 
@@ -421,10 +417,8 @@
           lhs(kp1diag:km1diag,k)
      .    = term_dp2( nu2, gr%dzm(km1), gr%dzm(k), gr%dzt(k) ) ! dp2
 
-!         lhs(kdiag,k)
-!    .    = lhs(kdiag,k) + term_dp1( C2(k), taum(k) )  ! dp1
           lhs(kdiag,k)
-     .    = lhs(kdiag,k) + C2(k) / taum(k) ! dp1
+     .    = lhs(kdiag,k) + term_dp1( C2(k), taum(k) )  ! dp1
 
           if ( liter ) then
             lhs(kdiag,k) = lhs(kdiag,k) + ( 1.0 / dt ) ! Time tendency
@@ -444,8 +438,7 @@
          if ( lstats_samp ) then
 
            if ( irtp2_dp1 * ithlp2_dp1 * irtpthlp_dp1 > 0 ) then
-!            tmp(1) = term_dp1( C2(k), taum(k) )
-             tmp(1) = C2(k) / taum(k)
+             tmp(1) = term_dp1( C2(k), taum(k) )
              zmscr01(k) = - tmp(1)
            end if
          
@@ -494,8 +487,6 @@
           lhs(kdiag,1) = 1.0/dt
         end if
 
-
-
         return
         end subroutine diag_var_lhs
 
@@ -504,7 +495,7 @@
      .                             lhs, xapxbp, isValid )
 
 !-----------------------------------------------------------------------
-        use lapack_wrap, only: tridag_solve
+        use lapack_wrap, only: tridag_solve!, band_solve
         use grid_class
 #ifdef STATS
         use statistics
@@ -519,22 +510,24 @@
         ! Input variables
         integer, intent(in) :: nrhs  ! Number of right hand side vectors
 
-        character(len=*), intent(in) :: solve_type
+        character(len=*), intent(in) :: 
+     .  solve_type ! Variable(s) description
 
         ! Input/Ouput variables
         real, dimension(3,gr%nnzp), intent(inout) ::
-     .  lhs     ! Implicit contributions to x variance/covariance term
+     .  lhs  ! Implicit contributions to x variance/covariance term
 
         real, dimension(gr%nnzp,nrhs), intent(inout) ::
-     .  rhs   
+     .  rhs  ! Explicit contributions to x variance/covariance term
 
         ! Output variables
         real, dimension(gr%nnzp,nrhs), intent(inout) :: 
-     .  xapxbp
+     .  xapxbp ! Computed value of the variable at <t+1> [units vary]
 
         logical, intent(out) ::
      .  isValid ! Returns as false in the event of a singular matrix
 
+        ! Array indices
         integer :: k, kp1, km1
 
 #ifdef STATS
@@ -567,11 +560,17 @@
           ixapxbp_ma  = 0
         end select
 #endif
-        ! Solve the system
+        ! Solve system using tridag_solve. This uses LAPACK sgtsv,
+        ! which relies on Gaussian elimination to decompose the matrix.
         call tridag_solve
      .       ( solve_type, gr%nnzp, nrhs, lhs(kp1diag,:), lhs(kdiag,:), 
      .         lhs(km1diag,:), rhs(:,1:nrhs), xapxbp(:,1:nrhs), 
      .         isValid )
+
+        ! Alternative: Use LU decomposition instead.
+!       call band_solve
+!    .       ( solve_type, 1, 1, gr%nnzp, nrhs, 
+!    .         lhs, rhs(:,1:nrhs), xapxbp(:,1:nrhs), isValid )
 
 #ifdef STATS
         ! Compute implicit budget terms
@@ -774,6 +773,7 @@
 
         return
         end subroutine diag_var_rhs
+
 !-----------------------------------------------------------------------
         pure function term_ta_lhs( a1p1, a1, a1m1, wp3p1, wp3,
      .                             wp2p1, wp2, wp2m1, dzm, beta, eps )
@@ -899,13 +899,13 @@
 
         ! Input variables
         real, intent(in) ::
-     .  xam,  ! x(k)                            [units vary]
-     .  xamp1,! x(k+1)                          [units vary]
-     .  xbm,  ! x(k)                            [units vary]
-     .  xbmp1,! x(k+1)                          [units vary]
-     .  wpxbp,! w'x'(k)                         [m/s units]
-     .  wpxap,! w'x'(k)                         [m/s units]
-     .  dzm   ! Inverse of the grid spacing     [m]
+     .  xam,  ! x       <k>                     [units vary]
+     .  xamp1,! x       <k+1>                   [units vary]
+     .  xbm,  ! x       <k>                     [units vary]
+     .  xbmp1,! x       <k+1>                   [units vary]
+     .  wpxbp,! w'x'    <k>                     [m/s units]
+     .  wpxap,! w'x'    <k>                     [m/s units]
+     .  dzm   ! Inverse of the grid spacing <k> [m]
 
         ! Return Variable
         real :: rhs
@@ -965,9 +965,9 @@
 
         real, intent(in) ::
      .  nu2,  ! Previously determined eddy viscosity     [-]
-     .  dzt,  ! Inverse of the grid spacing              [m]
-     .  dztp1,! Inverse of the grid spacing              [m]
-     .  dzm   ! Inverse of the grid spacing              [m]
+     .  dzt,  ! Inverse of the grid spacing on t <k>     [m]
+     .  dztp1,! Inverse of the grid spacing on t <k+1>   [m]
+     .  dzm   ! Inverse of the grid spacing on m <k>     [m]
 
         ! Return Variable
         real, dimension(3) :: lhs
@@ -991,16 +991,18 @@
         implicit none
 
         ! Constant parameters
-        integer, parameter ::
-     .  kdiag = 1
+!       integer, parameter ::
+!    .  kdiag = 1
 
         real, intent(in) ::
-     .  C2, ! Coefficient      [-]
+     .  C2,  ! Coefficient      [-]
      .  taum ! Tau              [s]
 
-        real, dimension(1) :: lhs
+!       real, dimension(1) :: lhs
+        real :: lhs
 
-        lhs(kdiag) = + C2 / taum
+!       lhs(kdiag) = + C2 / taum
+        lhs = + C2 / taum
 
         return
         end function term_dp1
