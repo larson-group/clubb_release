@@ -1,11 +1,16 @@
 !----------------------------------------------------------------------
-! $Id: tau.F,v 1.2 2006-08-04 22:05:04 dschanen Exp $
+! $Id: tau.F,v 1.3 2007-03-14 23:34:47 dschanen Exp $
 
-!     SUBROUTINE tau( )
-!----------------------------------------------------------------------
       subroutine tau( thlm, thvm, rtm, rcm, cf, p, exner, taut )
 
+!     Description:
+!     ???
+!     References:
+!     None
+!----------------------------------------------------------------------
+
       use constants
+      use parameters
       use grid_class
 
       implicit none

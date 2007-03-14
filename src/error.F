@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.40 2007-02-23 01:25:47 dschanen Exp $
+! $Id: error.F,v 1.41 2007-03-14 23:34:47 dschanen Exp $
 
         module error
  
@@ -28,27 +28,12 @@
 !       the first model is used to make the namelist.
 
 !-----------------------------------------------------------------------
+        use param_index
+        use parameters, only: read_parameters, read_param_spread
       
         implicit none
 
-        ! Local Constants 
-
-        ! Dimensions of the array for amoeba
-        integer, parameter, public  :: 
-     .  ndim = 42,
-     .  mdim = ndim + 1
-
-        real, dimension(mdim,ndim) :: 
-     .  x_array ! Holds the HOC constant parameters
-
-        real, dimension(ndim) :: 
-     .  init_const, ! Initial Constant parameters
-     .  x_variance  ! Amount to vary each respec. constant by
-
-        real, dimension(mdim) :: 
-     .  err_array ! cache of differences between the LES and HOC
-
-!----------------------------------------------------------------------- 
+        integer, public :: ndim ! Size of the simplex
 
         ! isValid is an important logical used by the min_diff to 
         ! determine whether HOC has become numerically unstable
@@ -68,70 +53,25 @@
 
         real :: 
      .  ftol,       ! The precision to tune for
-     .  anneal_temp ! Used by the simulated annealing algorithm
+     .  anneal_temp ! Initial temperature for the simulated annealing algorithm
 
         integer ::
-     .  anneal_iter,
-     .  tune_type,
-     .  c_total,!  c_total: Total number of cases to tune
-     .  v_total !  v_total: Total number of variables to tune
+     .  anneal_iter,! Number of annealing iterations to perform
+     .  tune_type,  ! Toggle for downhill simplex of simulated annealing
+     .  c_total,    ! Total number of simulation cases to tune over
+     .  v_total     ! Total number of variables to tune over
 
         logical ::
-     .  results_stdout, 
+     .  results_stdout,
      .  results_file,
      .  stdout_on_invalid
 
-        ! Model constant parameters 
-        real ::
-     .  C1,         ! Low Skewness in C1 Skewness Function.
-     .  C1b,        ! High Skewness in C1 Skewness Function.
-     .  C1c,        ! Degree of Slope of C1 Skewness Function.
-     .  C2,         ! Low Skewness in C2 Skewness Function.
-     .  C2b,        ! High Skewness in C2 Skewness Function.  
-     .  C2c,        ! Degree of Slope of C2 Skewness Function.
-     .  C2rt,       ! C2 used in rtp2 diffusion term.
-     .  C2thl,      ! C2 used in thlp2 diffusion term.
-     .  C2rtthl,    ! C2 used in rtpthlp diffusion term.
-     .  C4,         ! Currently Not Used in the Model.
-     .  C5,         ! Constant from Chris Golaz.
-     .  C6rt,       ! Low Skewness in C6rt Skewness Function.
-     .  C6rtb,      ! High Skewness in C6rt Skewness Function.
-     .  C6rtc,      ! Degree of Slope of C6rt Skewness Function.
-     .  C6thl,      ! Low Skewness in C6thl Skewness Function.
-     .  C6thlb,     ! High Skewness in C6thl Skewness Function.
-     .  C6thlc,     ! Degree of Slope of C6thl Skewness Function.
-     .  C7,         ! Low Skewness in C7 Skewness Function.
-     .  C7b,        ! High Skewness in C7 Skewness Function.
-     .  C7c,        ! Degree of Slope of C7 Skewness Function.
-     .  C8,         ! Coefficient #1 in C8 Skewness Equation.
-     .  C8b,        ! Coefficient #2 in C8 Skewness Equation.  From Golaz.
-     .  C10,        ! Currently Not Used in the Model.
-     .  C11,        ! Low Skewness in C11 Skewness Function.
-     .  C11b,       ! High Skewness in C11 Skewness Function.  From Golaz.
-     .  C11c,       ! Degree of Slope of C11 Skewness Function.  From Golaz.
-     .  C12,        ! Constant from Chris Golaz.
-     .  C13,        ! Constant applied to up2_plus_vp2.
-     .  nu1,        ! Previously determined eddy viscosity.
-     .  nu2,        ! Previously determined eddy viscosity.
-     .  nu6,        ! Previously determined eddy viscosity.
-     .  nu8,        ! Previously determined eddy viscosity.
-     .  nu_r,       ! Tuned to LES from Surface Value of DYCOMS2 RF02 DS.
-     .  beta,       ! Constant from Chris Golaz.
-     .  gamma_coef, ! Low Skewness in gamma coefficient Skewness Function.
-     .  gamma_coefb,! High Skewness in gamma coefficient Skewness Function.
-     .  gamma_coefc,! Degree of Slope of gamma coefficient Skewness Function.
-     .  c_K,        ! Constant from Chris Golaz.
-     .  mu,         ! Constant from Chris Golaz.
-     .  taumin,     ! Previously determined value.
-     .  taumax,     ! Previously determined value.
-     .  lmin_coef   ! Previously determined value.
-
         character(len=10), dimension(:), allocatable :: 
-     .  hoc_v, ! variables in HOC GrADS files
-     .  les_v  ! variables in LES GrADS files
+     .  hoc_v, ! Variables in HOC GrADS files
+     .  les_v  ! Variables in LES GrADS files
 
         integer, dimension(:,:), allocatable :: 
-     .  time ! time intervals
+     .  time ! Time intervals
 
         ! Additions for using imposed weights as scaling factors
         logical :: linitialize_sigma
@@ -151,17 +91,30 @@
      .  z_f  ! Final z level for tuning purposes
 
         character(len=50), dimension(:), allocatable :: 
-     .  run_file,
-     .  hoc_stats_file,
-     .  les_stats_file
+     .  run_file,       ! Model run files
+     .  hoc_stats_file, ! Model GrADS files
+     .  les_stats_file  ! Model GrADS files
 
         ! Various Variables for returning results ----------------------
         integer :: iter ! Total number of iterations amoeba spent 
                         ! calculating optimal values
 
-        real :: 
+        real ::
      .  init_err, ! error for the initial constants
      .  min_err   ! the lowest the minimization algorithm could go
+
+        real, dimension(nparams) ::
+     .  params  ! Vector of all possible HOC parameters
+
+        integer, dimension(nparams) ::
+     .  x_index  ! Index of the params elements that are used in the simplex
+
+        real, allocatable, dimension(:,:) :: 
+     .  x_array ! Holds 2D simplex the HOC constant parameters
+
+        real, allocatable, dimension(:) ::
+     .  x_spread, ! Amount to vary each respec. constant by
+     .  err_array ! cache of differences between the LES and HOC
 
         contains
 
@@ -176,6 +129,7 @@
 !       References:
 !       None
 !-----------------------------------------------------------------------
+        use constants, only: fstdout, fstderr
 
         implicit none
 
@@ -183,6 +137,9 @@
 
         integer, parameter :: 
      .  max_times = 10 ! max number of timesteps to compare
+
+        character(len=8), parameter ::
+     .  filename = "error.in"
 
         ! Input  Variables
 
@@ -193,12 +150,12 @@
 
         ! Local Variables
 
-        real, dimension(ndim) :: 
+        real, allocatable, dimension(:) :: 
      .  rand_vect ! A vector of random reals for initializing the x array
 
-        integer :: 
-     .  i, j,          ! looping variables
-     .  AllocateStatus ! Stat var for allocatable arrays
+        real, dimension(nparams) :: rtmp ! Scratch space
+
+        integer :: i, j ! looping variables
       
 !----------------------------------------------------------------------- 
 
@@ -211,10 +168,9 @@
         integer, dimension(max_run, max_times):: time_nl 
         integer, dimension(max_run)           :: z_i_nl, z_f_nl
 
-c-->Chris Golaz addition to use imposed weights as scaling factors
+        ! Addition to use imposed weights as scaling factors
         real, dimension(max_run)       :: weight_case_nl
         real, dimension(max_variables) :: weight_var_nl
-c<--end of addition
 
         character(len=50), dimension(max_run) :: 
      .  run_file_nl,
@@ -223,44 +179,15 @@ c<--end of addition
 
         character(len=10), dimension(max_variables) :: t_variables
 
-        ! Amount to change each parameter for the initial simplex
-        real :: 
-     .  C1_var, C1b_var, C1c_var, C2_var, C2b_var, C2c_var,
-     .  C2rt_var, C2thl_var, C2rtthl_var,
-     .  C4_var, C5_var, C6rt_var, C6rtb_var, C6rtc_var,
-     .  C6thl_var, C6thlb_var, C6thlc_var,
-     .  C7_var, C7b_var, C7c_var, C8_var, C8b_var, C10_var,
-     .  C11_var, C11b_var, C11c_var, C12_var, C13_var,
-     .  nu1_var, nu2_var, nu6_var, nu8_var, nu_r_var,
-     .  beta_var, gamma_coef_var, gamma_coefb_var, gamma_coefc_var, 
-     .  c_K_var, lmin_coef_var, taumin_var, taumax_var, mu_var
-
         ! Namelists read from error.in 
-        namelist /stats/ ftol, tune_type, anneal_temp, anneal_iter,
-     .  results_stdout, results_file, stdout_on_invalid, t_variables,
-     .  weight_var_nl
+        namelist /stats/ 
+     .    ftol, tune_type, anneal_temp, anneal_iter,
+     .    results_stdout, results_file, stdout_on_invalid, t_variables,
+     .    weight_var_nl
 
-        namelist /cases/ les_stats_file_nl, hoc_stats_file_nl, 
-     .  run_file_nl, z_i_nl, z_f_nl, time_nl, weight_case_nl
-
-        namelist /initvars/ C1, C1b, C1c, C2, C2b, C2c, 
-     .  C2rt, C2thl, C2rtthl, C4, C5,
-     .  C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
-     .  C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12, C13,
-     .  nu1, nu2, nu6, nu8, nu_r, 
-     .  beta, gamma_coef, gamma_coefb, gamma_coefc,
-     .  c_K, lmin_coef, taumin, taumax, mu
-
-        namelist /variance/ C1_var, C1b_var, C1c_var,
-     .  C2_var, C2b_var, C2c_var, 
-     .  C2rt_var, C2thl_var, C2rtthl_var, C4_var, C5_var,
-     .  C6rt_var, C6rtb_var, C6rtc_var, 
-     .  C6thl_var, C6thlb_var, C6thlc_var, 
-     .  C7_var, C7b_var, C7c_var, C8_var, C8b_var, C10_var, 
-     .  C11_var, C11b_var, C11c_var, C12_var, C13_var,
-     .  nu1_var, nu2_var, nu6_var, nu8_var, nu_r_var,
-     .  beta_var, gamma_coef_var, gamma_coefb_var, gamma_coefc_var, 
-     .  c_K_var, lmin_coef_var, taumin_var, taumax_var, mu_var
+        namelist /cases/ 
+     .    les_stats_file_nl, hoc_stats_file_nl,
+     .    run_file_nl, z_i_nl, z_f_nl, time_nl, weight_case_nl
 
         ! Reset iteration counter (set by amoeba)
         iter = 0
@@ -273,10 +200,11 @@ c<--end of addition
 
           ! Initialize all compile time arrays to zero
           time_nl = 0 
-c-->Chris Golaz addition to use imposed weights as scaling factors
+
+          ! Imposed weights as scaling factors
           weight_case_nl = 0.0
           weight_var_nl  = 0.0
-c<--end of addition
+
           z_i_nl = 0 
           z_f_nl = 0
 
@@ -284,7 +212,7 @@ c<--end of addition
           t_variables(1:max_variables)  = "          "
 
           ! Open our namelist input file
-          open(unit=10, file='error.in', status='old')
+          open(unit=10, file=filename, status='old')
 
           ! Determine which files to read data from based on namelist
           read(unit=10, nml=stats)
@@ -293,10 +221,7 @@ c<--end of addition
           read(unit=10, nml=cases)
 
           ! Read in initial constant values
-          read(unit=10, nml=initvars)
-
-          ! Read in initial variance for constants
-          read(unit=10, nml=variance)
+          call read_parameters( 10, filename, params )
 
           ! Close our input namelist file
           close(unit=10)
@@ -344,35 +269,27 @@ c<--end of addition
             time(i,1:max_times) = time_nl(i,1:max_times)
           end do
 
-c-->Chris Golaz addition to use imposed weights as scaling factors
+         ! Use imposed weights as scaling factors
          weight_case(1:c_total) = weight_case_nl(1:c_total)
          weight_var(1:v_total)  = weight_var_nl(1:v_total)
-c<--end of addition
 
-          ! Initialize the HOC constant parameters
-          init_const(1:ndim) = 
-     .    (/C1, C1b, C1c, C2, C2b, C2c,
-     .      C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6rtb, C6rtc, 
-     .      C6thl, C6thlb, C6thlc, 
-     .      C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12, C13,
-     .      nu1, nu2, nu6, nu8, nu_r, beta,
-     .      gamma_coef, gamma_coefb, gamma_coefc, 
-     .      c_K, lmin_coef, taumin, taumax, mu/)
+         ! Setup the simplex
 
-          x_array(1,1:ndim) = init_const(1:ndim)
+         call read_param_spread( 10, filename, x_index, rtmp, ndim )
 
-          ! Initialize the HOC variance 
+         if ( ndim == 0 ) then
+           write(fstderr,*) "You must vary at least one parameter"
+           stop
+         end if
 
-          x_variance(1:ndim) = 
-     .    (/C1_var, C1b_var, C1c_var, C2_var, C2b_var, C2c_var, 
-     .      C2rt_var, C2thl_var, C2rtthl_var, C4_var, C5_var, 
-     .      C6rt_var, C6rtb_var, C6rtc_var, 
-     .      C6thl_var, C6thlb_var, C6thlc_var,
-     .      C7_var, C7b_var, C7c_var, C8_var, C8b_var,  
-     .      C10_var, C11_var, C11b_var, C11c_var, C12_var, C13_var,
-     .      nu1_var, nu2_var, nu6_var, nu8_var, nu_r_var, beta_var, 
-     .      gamma_coef_var, gamma_coefb_var,gamma_coefc_var,
-     .      c_K_var, lmin_coef_var, taumin_var, taumax_var, mu_var/)
+         allocate( rand_vect(ndim), x_array(ndim+1,ndim),
+     .             x_spread(ndim), err_array(ndim+1) )
+
+          ! Initialize the HOC parameter spread 
+          x_spread(1:ndim)  = rtmp(x_index(1:ndim))
+
+          ! Copy varying parameters into the first row of the simplex
+          x_array(1,1:ndim) = params(x_index(1:ndim))
       
           ! Attempt to generate a pseudo-random seed using a file 
           ! generated from /dev/random.  File is an ASCII text file 
@@ -382,20 +299,20 @@ c<--end of addition
         end if  ! read_files
 !-----------------------------------------------------------------------
 
-      ! Fill in the remaining values of the array by varying the initial
-      ! vector (i.e. the first column of the array) by a small multiple
+        ! Fill in the remaining values of the array by varying the initial
+        ! vector (i.e. the first column of the array) by a small multiple
         do j = 1, ndim
 
           call random_number( rand_vect(1:ndim) )
 
-          do i = 2, mdim
+          do i = 2, ndim+1, 1
           ! Vince Larson made entries of x_array random  10 Feb 2005
 !            x_array(i,j) = x_array(1,j)*
 !     .                     (1.0+((real(i)-1.)/real(ndim)*0.5))
             x_array(i,j) = x_array(1,j)*
-     .      ( (1.0 - x_variance(j)) + rand_vect(i-1)*x_variance(j)*2 )
+     .      ( (1.0 - x_spread(j)) + rand_vect(i-1)*x_spread(j)*2 )
           ! End of Vince Larson's change
-          end do ! i..mdim
+          end do ! i..ndim+1
 
         end do ! j..ndim
 
@@ -411,9 +328,9 @@ c<--end of addition
         ! algorithm relies on the initial vector being valid. 
 
         if ( .not. isValid ) then
-           write(0,*) "Initial variable values must be valid"
-           stop
-         endif
+          write(fstderr,*) "Initial variable values must be valid."
+          stop
+        end if
 
         ! Save initial error
 
@@ -424,12 +341,12 @@ c<--end of addition
 
         ! Initialize the 'y' vector for amoeba 
         ! This is done by calling min_les_hoc_diff with the initial vector 
-        do i = 1, mdim
-          err_array(i) = min_les_hoc_diff(x_array(i,1:ndim))
+        do i = 1, ndim+1, 1
+          err_array(i) = min_les_hoc_diff( x_array(i,1:ndim) )
         end do 
 
-        write(unit=*,fmt=*) "err_array:"
-        write(unit=*,fmt='(6e12.5)') err_array
+        write(unit=fstdout,fmt=*) "err_array:"
+        write(unit=fstdout,fmt='(6e12.5)') err_array
 
         return
         end subroutine tuner_init
@@ -448,7 +365,7 @@ c<--end of addition
  
         use hoc, only: hoc_model
         use grads_common
-        use constants, only: constants_list
+        use parameters, only: params_list
 
         implicit none
 
@@ -457,13 +374,16 @@ c<--end of addition
 
         ! Input Variables
 
-        ! The specification in the nr module prevents us from making
+        ! The interface declaration in the nr module prevents us from making
         ! this a fixed length array declaration
         real, dimension(:), intent(in) :: 
      .  x_vector ! Tuning vector(ndim dimension) contains
                  ! parameterization constants (C1, C2 etc.)
 
         ! Local Variables
+
+        real, dimension(nparams) ::
+     .  params_local ! Local copy of the HOC parameters fed into hoc_model
 
         ! These are read after each run from the GrADS control files
         integer :: 
@@ -516,7 +436,8 @@ c<--end of addition
           write(unit=*,fmt='(A12)') "Constants: "
 
           do i = 1, ndim, 1
-            write(unit=*,fmt='(A12,f12.5)') constants_list(i)//" = ",
+            j = x_index(i)
+            write(unit=*,fmt='(A12,f12.5)') params_list(j)//" = ",
      .        x_vector(i)
           end do
 
@@ -531,40 +452,41 @@ c<--end of addition
         isValid  = .true.
         run_stat(1:c_total) = .true.
 
+        ! Copy simplex into a vector of all possible HOC parameters
+        do i=1, nparams, 1
+          ! If the variable isn't in the simplex, leave it as is
+          params_local(i) = params(i)
+          do j=1, ndim, 1
+            if ( i == x_index(j) ) then
+              ! Copy variable from x_vector argument
+              params_local(i) = x_vector(j)
+              exit
+            else
+              ! Continue searching the list
+              cycle
+            end if
+          end do
+        end do
+
 !-----------------------------------------------------------------------
 
         ! Cycle through all the model cases specified for HOC
 
         ! OpenMP directives should work as expected now, assuming new
-        ! variables are declared threadprivate -dschanen 31 Jan 2007
+        ! model variables are declared threadprivate -dschanen 31 Jan 2007
 !$omp   parallel do default(none), private(c_run),
-!$omp.    shared(x_vector, run_file, run_stat, c_total)
+!$omp.    shared(params_local, run_file, run_stat, c_total)
         do c_run=1, c_total, 1
 
 !         write(unit=*,fmt=*) "Calling HOC with case "//
 !    .      trim( run_file(c_run) )
 
-          ! Run the HOC model with x_vector as input
+          ! Run the HOC model with parameters as input
 
           call hoc_model
-     .         ( x_vector(1), x_vector(2), x_vector(3),
-     .           x_vector(4), x_vector(5), x_vector(6), 
-     .           x_vector(7), x_vector(8), x_vector(9),
-     .           x_vector(10), x_vector(11), x_vector(12), 
-     .           x_vector(13), x_vector(14), x_vector(15),
-     .           x_vector(16), x_vector(17), x_vector(18), 
-     .           x_vector(19), x_vector(20), x_vector(21),
-     .           x_vector(22), x_vector(23), x_vector(24),
-     .           x_vector(25), x_vector(26), x_vector(27),
-     .           x_vector(28), x_vector(29), x_vector(30),
-     .           x_vector(31), x_vector(32), x_vector(33),
-     .           x_vector(34), x_vector(35), x_vector(36),
-     .           x_vector(37), x_vector(38), x_vector(39), 
-     .           x_vector(40), x_vector(41), x_vector(42),
-     .           run_file(c_run), run_stat(c_run), .false. )
+     .         ( params_local, run_file(c_run), run_stat(c_run), 
+     .           .false. )
 
-      ! Basic Sanity Check for negative constants (disabled)
-!     if (minval( x_vector ) < 0. ) isValid = .false.
         end do ! 1..c_run
 
 !$omp   end parallel do
@@ -711,7 +633,7 @@ c<--end of addition
 
         deallocate( err_sums )
 
-        write(*,'(a,f12.5)') "Cost function: ", min_les_hoc_diff
+        write(*,'(a,f12.5)') "Cost function= ", min_les_hoc_diff
 
         return
         end function min_les_hoc_diff
@@ -725,7 +647,7 @@ c<--end of addition
 !       References:
 !       None
 !----------------------------------------------------------------------
-        use constants, only: constants_list
+        use parameters, only: params_list
       
         implicit none
 
@@ -738,13 +660,14 @@ c<--end of addition
         write(unit=*,fmt='(3A18)') "Parameter", "Initial", "Optimal"
 
         do i = 1, ndim, 1
-          write(unit=*,fmt='(A18,2f18.5)') constants_list(i)//" = ", 
-     .      init_const(i), x_array(1,i)
+          write(unit=*,fmt='(A18,2f18.5)') 
+     .      params_list(x_index(i))//" = ", 
+     .      params(x_index(i)), x_array(1,i)
         end do
 
-        write(unit=*,fmt='(A20,e15.6)') "initial error: ", init_err
+        write(unit=*,fmt='(A20,e15.6)') "Initial cost: ", init_err
 
-        write(unit=*,fmt='(A20,e15.6)') "optimal error: ", min_err
+        write(unit=*,fmt='(A20,e15.6)') "Optimal cost: ", min_err
      
         write(unit=*,fmt=*) "Approx. percent increase in accuracy:", 
      .    ((init_err - min_err) / init_err*100.0), "%"
@@ -755,7 +678,7 @@ c<--end of addition
         subroutine output_nml_tuner( results_f, x_vector )
 
 !       Description:
-!       Output namelists to a formatted file
+!       Output namelists to a formatted text file
 
 !       References:
 !       None
@@ -764,9 +687,9 @@ c<--end of addition
 !       You can do the same thing with
 !       write(unit=<UNIT>,nml=<NAMELIST>), but at the time I wrote this
 !       I was more ambitious and didn't like that fact that it came out
-!       in all caps on pgf90. dschanen 28 July 2006
+!       in all caps on pgf90. -dschanen 28 July 2006
 !-----------------------------------------------------------------------
-        use constants, only: constants_list
+        use parameters, only: params_list
 
         implicit none
 
@@ -780,11 +703,13 @@ c<--end of addition
         character(len=*), intent(in) :: 
      .  results_f ! Name of the results file to write to
 
-        real, intent(in), dimension(ndim) :: 
-     .  x_vector ! the current constants
+        real, intent(in), dimension(:) :: 
+     .  x_vector ! The current tuning parameters
 
         ! Local Variables
-        integer :: i       ! loop variable
+        real, dimension(nparams) :: params_local
+
+        integer :: i, j    ! loop variable
 
         character :: i_c   ! loop variable in ASCII
 
@@ -819,6 +744,7 @@ c<--end of addition
           write(unit=20,fmt=*) dbqt, hoc_v(i), dbqt, ",", 
      .      dbqt, les_v(i), dbqt, "," 
         end do
+        write(unit=20,fmt=*) "weight_var_nl = ", weight_var
         write(unit=20,fmt=*) "anneal_temp = " , anneal_temp
         write(unit=20,fmt=*) "anneal_iter = " , anneal_iter
         write(unit=20,fmt=*) "tune_type   = " , tune_type
@@ -835,21 +761,42 @@ c<--end of addition
      .      dbqt, trim( run_file(i) ), dbqt
           write(unit=20,fmt=*) "z_i_nl("// i_c //")  = " , z_i(i)
           write(unit=20,fmt=*) "z_f_nl("// i_c //")  = " ,  z_f(i)
+          write(unit=20,fmt=*) "weight_case_nl("// i_c //") = " , 
+     .      weight_case(i)
           write(unit=20,fmt=*) "time_nl("// i_c //",:)  = " , time(i,:)
         end do
         write(unit=20,fmt=*) "/"
       
         write(unit=20,fmt=*) "&initvars"
-        do i = 1, ndim, 1 
-          write(unit=20,fmt='(a18,f12.5)') 
-     .      trim( constants_list(i) )//" = ", x_vector(i)
+
+        ! Copy simplex into a vector of all possible HOC parameters
+        do i=1, nparams, 1
+          ! If the variable isn't in the simplex, leave it as is
+          params_local(i) = params(i)
+          do j=1, ndim, 1
+            if ( i == x_index(j) ) then
+              ! Copy variable from x_vector argument
+              params_local(i) = x_vector(j)
+              exit
+            else
+              cycle
+            end if
+          end do
+        end do
+
+        ! Output optimal values and all possible HOC parameters
+        do i=1, nparams, 1
+          write(unit=20,fmt='(a18,f12.5)')
+     .      trim( params_list(i) )//" = ", params_local(i)
         end do
         write(unit=20,fmt=*) "/"
 
-        write(unit=20,fmt=*) "&variance"
-        do i = 1, ndim, 1 
+        ! Output the amount each variable was changed for the simplex
+        write(unit=20,fmt=*) "&initspread"
+        do i = 1, ndim, 1
+          j = x_index(i)
           write(unit=20,fmt='(a18,f12.5)') 
-     .      trim( constants_list(i) )//"_var = ", x_variance(i)
+     .      trim( params_list(j) )//" = ", x_spread(i)
         end do
         write(unit=20,fmt=*) "/"
 
@@ -858,6 +805,7 @@ c<--end of addition
 
         return
         end subroutine output_nml_tuner
+
 !-----------------------------------------------------------------------
         subroutine output_nml_standalone ( results_f, x_vector )
 
@@ -871,26 +819,28 @@ c<--end of addition
 !       See note for output_nml_tuner, above. dschanen 28 July 2006
 !-----------------------------------------------------------------------
 
-        use constants, only: constants_list
+        use parameters, only: params_list
 
         implicit none
 
         ! External
         intrinsic :: achar, trim
 
-        ! Constants Parameters
+        ! Constant Parameter
         character(len=1), parameter :: dbqt = '"'
 
-        ! Input
-        character(len=*), intent(in) :: 
+        ! Input variables
+        character(len=*), intent(in) ::
      .  results_f ! Results file to write to
 
-        real, intent(in), dimension(ndim) :: 
+        real, intent(in), dimension(ndim) ::
      .  x_vector ! the current constants
 
-        ! Internal    
-        integer i       ! loop variable
-        character i_c   ! loop variable in ASCII
+        ! Local variables
+        real, dimension(nparams) :: params_local
+
+        integer   :: i, j  ! loop variables
+        character :: i_c   ! loop variable in ASCII
 
         ! Open new file
         open(unit=20, file=results_f, 
@@ -907,10 +857,25 @@ c<--end of addition
         write(unit=20,fmt=*) "stdout   = ", ".true."
         write(unit=20,fmt=*) "/"
       
-        write(unit=20,fmt=*) "&initvars"
-        do i = 1, ndim, 1
-          write(unit=20,fmt='(A18,f12.5)') 
-     .      trim( constants_list(i) )//" = ", x_vector(i)
+        ! Copy simplex into a vector of all possible HOC parameters
+        do i=1, nparams, 1
+          ! If the variable isn't in the simplex, leave it as is
+          params_local(i) = params(i)
+          do j=1, ndim, 1
+            if ( i == x_index(j) ) then
+              ! Copy variable from x_vector argument
+              params_local(i) = x_vector(j)
+              exit
+            else
+              cycle
+            end if
+          end do
+        end do
+
+        ! Output optimal values and all possible HOC parameters
+        do i=1, nparams, 1
+          write(unit=20,fmt='(a18,f12.5)')
+     .      trim( params_list(i) )//" = ", params_local(i)
         end do
         write(unit=20,fmt=*) "/"
 
@@ -919,6 +884,7 @@ c<--end of addition
 
         return
         end subroutine output_nml_standalone
+
 !-----------------------------------------------------------------------
         real function mean_sqr_diff_zm
      .                ( hoc_nz, les_nz, hoc_zl, les_zl, norm_term )
@@ -1153,6 +1119,7 @@ c<--end of addition
 !       References:
 !       None
 !-----------------------------------------------------------------------
+        use constants, only: fstderr
 
         implicit none
 
@@ -1164,13 +1131,13 @@ c<--end of addition
      .  seed_file ! This should usually contain > 34 integers
  
         ! Local Variables
-        integer, dimension(:), allocatable :: 
-     .  rand_seed
+        integer(kind=4), dimension(:), allocatable :: 
+     .  rand_seed  ! Set of 32 bit integers for seeding the generator
 
         integer :: 
      .  AllocateStatus,
      .  InputStatus,
-     .  rand_size, ! Ror the random seed
+     .  rand_size, ! For the random seed
      .  indx       ! Loop index
 
 !-----------------------------------------------------------------------
@@ -1190,7 +1157,7 @@ c<--end of addition
 
         read(unit=30, fmt=*, iostat=InputStatus) rand_seed(indx)
         if ( InputStatus /= 0 ) then 
-          write(0,*) "Error reading "//seed_file
+          write(fstderr,*) "Error reading "//seed_file
           stop
         end if
 

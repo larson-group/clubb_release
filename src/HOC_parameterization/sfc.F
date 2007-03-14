@@ -1,4 +1,4 @@
-! $Id: sfc.F,v 1.5 2006-12-20 03:14:54 dschanen Exp $
+! $Id: sfc.F,v 1.6 2007-03-14 23:34:47 dschanen Exp $
 #define SCLR_RT 2
 #define SCLR_THETA 1
 
@@ -9,8 +9,6 @@
         private ! Default to private
 
         public ::
-c    .  sfc_momentum_fluxes,
-c    .  sfc_thermo_fluxes,
      .  sfc_var
 
         contains
@@ -27,8 +25,9 @@ c    .  sfc_thermo_fluxes,
 
 !       References:
 !       None
-!------------------------------------------------------------------------
+!------------------------------------------------------------------------S
 
+        use parameters, only: T0
         use constants
 
         implicit none

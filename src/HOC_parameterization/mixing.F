@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.11 2007-01-21 22:29:45 griffinb Exp $
+! $Id: mixing.F,v 1.12 2007-03-14 23:34:47 dschanen Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -45,7 +45,7 @@
 !       ``Equations for HOC'' Section 5:
 !       /Implicit solutions for the means and fluxes/
 !-----------------------------------------------------------------------
-
+        use parameters
         use constants
         use grid_class
 
@@ -256,6 +256,7 @@
 !       References:
 !------------------------------------------------------------------------
 
+        use parameters
         use constants
         use grid_class
 #ifdef STATS
@@ -556,6 +557,7 @@
      .                           Fcsed, sed_rcm,               ! Brian
      .                           lhs, dd, C7_Skw_fnc, isValid )
 
+        use parameters
         use constants
         use grid_class
         use lapack_wrap, only: band_solve

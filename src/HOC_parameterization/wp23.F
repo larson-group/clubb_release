@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.8 2006-09-05 22:39:04 dschanen Exp $
+! $Id: wp23.F,v 1.9 2007-03-14 23:34:47 dschanen Exp $
 
         subroutine timestep_wp23
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
@@ -21,6 +21,7 @@
 !------------------------------------------------------------------------
 
         use grid_class
+        use parameters
         use constants
         use model_flags
 #ifdef STATS
@@ -186,6 +187,7 @@
 !------------------------------------------------------------------------
 
         use grid_class
+        use parameters
         use constants
         use model_flags
         use lapack_wrap, only: band_solve

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.39 2007-02-23 01:26:14 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.40 2007-03-14 23:34:47 dschanen Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -49,7 +49,7 @@
      .            )
 
 !      Description:
-!      subroutine to advance the model one timestep
+!      Subroutine to advance the model one timestep
 
 !      References:
 !       ``A PDF-Based Model for Boundary Layer Clouds. Part I:
@@ -59,14 +59,15 @@
 
        ! Modules to be included
        use constants
+       use parameters
        use model_flags
        use grid_class
        use diagnostic_variables
-       use mixing, only: timestep_mixing
-       use diagnose_variances, only: diag_var
+       use mixing, only: timestep_mixing          ! Compute mean/flux terms
+       use diagnose_variances, only: diag_var     ! Computes variance terms
        use surface, only: sfc_var
-       use pdf_closure, only: pdf_closure_new
-       use microphysics, only: timestep_microphys
+       use pdf_closure, only: pdf_closure_new     ! Prob. density function
+       use microphysics, only: timestep_microphys ! Microphysics
 #ifdef STATS
        use statistics
 #endif /*STATS*/
@@ -809,33 +810,27 @@
         end subroutine latin_hypercube_sampling
 !-----------------------------------------------------------------------
         subroutine parameterization_setup
-     .             ( nzmax, deltaz, C1, C1b, C1c, C2, C2b, C2c, 
-     .               C2rt, C2thl, C2rtthl, C4, C5,
-     .               C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
-     .               C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, 
-     .               C12, C13,
-     .               nu1, nu2, nu6, nu8, nu_r, 
-     .               gamma_coef, gamma_coefb, gamma_coefc,
-     .               mu, c_K, beta, lmin_coef, taumin, taumax, 
-     .               fcor, T0,
+     .             ( nzmax, deltaz, fcor_in, T0_in, params,
      .               lbugsrad, kk_rain, licedfs, lcoamps_micro,
      .               cloud_sed, bottom_at_sfc,
      .               lmpace_nudge, lKhm_aniso, implemented, 
-     .               host_momentum, host_thermodynamic )
+     .               host_momentum, host_thermodynamic, isValid )
 
         use grid_class
+        use param_index, only: nparams
+        use parameters
         use diagnostic_variables
         use prognostic_variables
 
         implicit none
 
         ! External
-        external :: setup_constants, setup_model_flags
+        external :: setup_model_flags
 
         ! Input
 
         ! Grid definition
-        integer, intent(in) :: nzmax  ! Extent in levels
+        integer, intent(in) :: nzmax  ! Vertical grid levels            [#]
         real, intent(in)    :: deltaz ! Change in altitude in per level [m]
 
         ! Grid setup if part of larger (host) model.
@@ -843,24 +838,12 @@
      .  host_momentum,     !    [m]
      .  host_thermodynamic !    [m]
 
-        ! Constant parameters
+        ! Model parameters
         real, intent(in) :: 
-     .  C1, C1b, C1c,
-     .  C2, C2b, C2c,
-     .  C2rt, C2thl, C2rtthl,
-     .  C4, C5,
-     .  C6rt, C6rtb, C6rtc,
-     .  C6thl, C6thlb, C6thlc,
-     .  C7, C7b, C7c,
-     .  C8, C8b, C10,
-     .  C11, C11b, C11c,
-     .  C12, C13,
-     .  nu1, nu2, nu6, nu8, nu_r,
-     .  beta,
-     .  lmin_coef, taumin, taumax,
-     .  gamma_coef, gamma_coefb, gamma_coefc,
-     .  mu, c_K,
-     .  fcor, T0
+     .  fcor_in, T0_in
+
+        real, intent(in), dimension(nparams) ::
+     .  params  ! Including C1, nu1, nu2, etc.
 
         ! Flags
         logical, intent(in) :: 
@@ -875,6 +858,10 @@
 
         logical, intent(in) :: 
      .  implemented ! Whether this is part of larger model (T/F)
+
+        ! Output variables
+        logical, intent(out) ::
+     .  isValid   ! Diagnostic for a problem with the setup
 
         ! Setup flags
 
@@ -898,22 +885,10 @@
         call gridsetup( nzmax, deltaz, implemented,
      .                  host_momentum, host_thermodynamic )
 
-        ! Define constants
+        ! Define model constant parameters
 
-        call setup_constants
-     .       ( deltaz, C1, C1b, C1c,
-     .         C2, C2b, C2c,
-     .         C2rt, C2thl, C2rtthl,
-     .         C4, C5,
-     .         C6rt, C6rtb, C6rtc,
-     .         C6thl, C6thlb, C6thlc,
-     .         C7, C7b, C7c,
-     .         C8, C8b, C10,
-     .         C11, C11b, C11c, C12, C13,
-     .         nu1, nu2, nu6, nu8, nu_r,
-     .         gamma_coef, gamma_coefb, gamma_coefc,
-     .         mu, c_K, beta, lmin_coef,
-     .         taumin, taumax, fcor, T0 )
+        call setup_parameters
+     .       ( deltaz, fcor_in, T0_in, params, isValid )
 
         return
         end subroutine parameterization_setup

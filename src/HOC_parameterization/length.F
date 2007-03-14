@@ -1,4 +1,4 @@
-! $Id: length.F,v 1.4 2007-02-20 23:03:34 dschanen Exp $
+! $Id: length.F,v 1.5 2007-03-14 23:34:47 dschanen Exp $
 !-----------------------------------------------------------------------------
         subroutine length( thvm, thlm, rtm, rcm, em, p, exner,
      .                     Lscale, lup, ldown ) 
@@ -18,15 +18,17 @@
 !       When mu was fixed, we used the value mu = 6.e-4
 
         use constants, only: 
-     .  mu,  ! Fractional entrainment rate per unit altitude    [1/m]
      .  Cp,  ! Dry air specific heat at constant p              [J/kg/K]
      .  Rd,  ! Dry air gas constant                             [J/kg/K]
      .  ep,  ! Rd / Rv                                          [-]
      .  ep1, ! (1-ep)/ep                                        [-]
      .  ep2, ! 1/ep                                             [-]
      .  Lv,  ! Latent heat of vaporiztion                       [J/kg/K]
-     .  T0,  ! Reference temperature                            [K]
      .  grav ! Gravitational acceleration                       [m/s^2]
+
+        use parameters, only:
+     .  mu,  ! Fractional entrainment rate per unit altitude    [1/m]
+     .  T0   ! Reference temperature                            [K]
 
         use grid_class
 

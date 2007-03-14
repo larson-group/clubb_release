@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.6 2007-03-09 17:05:14 vlarson Exp $
+! $Id: microphysics.F,v 1.7 2007-03-14 23:34:47 dschanen Exp $
         module microphysics
 
 !       Description:
@@ -42,7 +42,8 @@
         use grid_class
         use rain_equations, only: kk_microphys
         use model_flags
-        use constants, only: nu_r, hydromet_dim, Lv, Cp, rho_lw
+        use parameters, only: nu_r
+        use constants, only: hydromet_dim, Lv, Cp, rho_lw
 #ifdef STATS
         use statistics
 #endif

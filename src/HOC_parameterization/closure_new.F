@@ -1,4 +1,4 @@
-! $Id: closure_new.F,v 1.7 2006-09-22 22:51:18 dschanen Exp $
+! $Id: closure_new.F,v 1.8 2007-03-14 23:34:47 dschanen Exp $
         module pdf_closure
 
         implicit none
@@ -46,16 +46,18 @@
      .  ep,      ! Rd / Rv;     ep  = 0.622            [-]
      .  ep1,     ! (1.0-ep)/ep; ep1 = 0.61             [-]
      .  ep2,     ! 1.0/ep;      ep2 = 1.61             [-]
-     .  T0,      ! Reference temperature               [K]
      .  wtol,    ! Tolerance for w                     [m/s]
      .  rttol,   ! Tolerance for r_t                   [kg/kg]
      .  thltol,  ! Tolerance for th_l                  [K]
      .  sstol,   ! Tolerance for pdf parameter         [kg/kg]
      .  sclrtol, ! Array of passive scalar tolerances  [units vary]
-     .  beta,    ! Plume widths for th_l and r_t       [-]
      .  sclr_dim ! Number of passive scalar variables
 
-        use anl_erf, only: erf
+        use parameters, only:
+     .  beta,    ! Plume widths for th_l and r_t       [-]
+     .  T0       ! Reference temperature               [K]
+
+        use anl_erf, only: erf ! The error function
 
         implicit none
 

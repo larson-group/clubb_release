@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.119 2007-02-28 00:21:09 dschanen Exp $
+! $Id: hoc.F,v 1.120 2007-03-14 23:34:47 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -82,20 +82,7 @@
 !-----------------------------------------------------------------------
 
         subroutine hoc_model_field_input
-     .             ( C1_in, C1b_in, C1c_in, 
-     .               C2_in, C2b_in, C2c_in,
-     .               C2rt_in, C2thl_in, C2rtthl_in, C4_in, C5_in, 
-     .               C6rt_in, C6rtb_in, C6rtc_in,
-     .               C6thl_in, C6thlb_in, C6thlc_in,
-     .               C7_in, C7b_in, C7c_in,
-     .               C8_in, C8b_in, C10_in, 
-     .               C11_in, C11b_in, C11c_in, C12_in, C13_in,
-     .               nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in,
-     .               beta_in, 
-     .               gamma_coef_in, gamma_coefb_in, gamma_coefc_in, 
-     .               c_K_in, lmin_coef_in,
-     .               taumin_in, taumax_in, mu_in,
-     .               runfile, isValid, stdout,
+     .             ( params, runfile, isValid, stdout,
      .               set_fields, sample_ratio )
 !       Description:
 !       Subprogram to integrate the pde equations for pdf closure
@@ -114,6 +101,7 @@
         use diagnostic_variables
         use prognostic_variables
         use grid_class
+        use param_index, only: nparams
         use numerical_check
         use hoc_parameterization_interface
         use constants, only: fstdout, fstderr
@@ -156,20 +144,8 @@
         intrinsic :: mod, real, int 
 
         ! Input Variables
-        real, intent(in) :: 
-     .  C1_in, C1b_in, C1c_in,
-     .  C2_in, C2b_in, C2c_in,
-     .  C2rt_in, C2thl_in, C2rtthl_in,
-     .  C4_in, C5_in,
-     .  C6rt_in, C6rtb_in, C6rtc_in,
-     .  C6thl_in, C6thlb_in, C6thlc_in,
-     .  C7_in, C7b_in, C7c_in,
-     .  C8_in, C8b_in, C10_in,
-     .  C11_in, C11b_in, C11c_in, C12_in, C13_in,
-     .  nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in,
-     .  beta_in,
-     .  gamma_coef_in, gamma_coefb_in, gamma_coefc_in,
-     .  c_K_in, taumin_in, taumax_in, lmin_coef_in, mu_in
+        real, intent(in), dimension(nparams) :: 
+     .  params  ! Model parameters, C1, nu2, etc.
 
         ! Subroutine Arguments (Model Setting)
         character(len=*), intent(in) :: 
@@ -237,20 +213,6 @@
        read(unit=10, nml=model_setting)
        close(unit=10)
 
-       ! Model sanity Check
-
-       ! When tuning budgets, we will allow these invalid results
-!       if (( beta_in < 0.0 ) .or. ( beta_in > 3.0 )) then
-!         print *, 'beta < 0 OR beta > 3'
-!         isValid = .false. 
-!       endif 
-
-       if ( lmin_coef_in * deltaz < 4.0 ) then
-         print *, 'lmin < 4.0'
-         isValid = .false.
-       end if
-       if ( .not. isValid ) return
-
        ! Dummy grid height arrays
        allocate( dummy_array_m(1:nzmax), dummy_array_t(1:nzmax) )
 
@@ -263,25 +225,17 @@
          lmpace_nudge = .false.
        end if
 
-       ! Allocate & initilialize variables,
+       ! Allocate & initialize variables,
        ! setup grid, setup constants, and setup flags
+
        call parameterization_setup
-     .      ( nzmax, deltaz, C1_in, C1b_in, C1c_in, 
-     .        C2_in, C2b_in, C2c_in, 
-     .        C2rt_in, C2thl_in, C2rtthl_in, C4_in, C5_in, 
-     .        C6rt_in, C6rtb_in, C6rtc_in, C6thl_in, 
-     .        C6thlb_in, C6thlc_in, C7_in, C7b_in, C7c_in, 
-     .        C8_in, C8b_in, C10_in, C11_in, C11b_in, C11c_in, 
-     .        C12_in, C13_in,
-     .        nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in, 
-     .        gamma_coef_in, gamma_coefb_in, gamma_coefc_in,
-     .        mu_in, c_K_in, beta_in, lmin_coef_in, 
-     .        taumin_in, taumax_in, 
-     .        fcor, T0,
+     .      ( nzmax, deltaz, fcor, T0, params,
      .        lbugsrad, kk_rain, licedfs, lcoamps_micro,
      .        cloud_sed, bottom_at_sfc,
      .        lmpace_nudge, lKhm_aniso, 
-     .        .false., dummy_array_m, dummy_array_t )
+     .        .false., dummy_array_m, dummy_array_t, isValid )
+
+       if ( .not. isValid ) return
 
 
        ! Dummy grid height arrays
@@ -415,20 +369,7 @@
 
 !-----------------------------------------------------------------------
         subroutine hoc_model_standard
-     .            ( C1_in, C1b_in, C1c_in,
-     .              C2_in, C2b_in, C2c_in,
-     .              C2rt_in, C2thl_in, C2rtthl_in, C4_in, C5_in,
-     .              C6rt_in, C6rtb_in, C6rtc_in,
-     .              C6thl_in, C6thlb_in, C6thlc_in,
-     .              C7_in, C7b_in, C7c_in,
-     .              C8_in, C8b_in, C10_in, 
-     .              C11_in, C11b_in, C11c_in, C12_in, C13_in,
-     .              nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in, 
-     .              beta_in, 
-     .              gamma_coef_in, gamma_coefb_in, gamma_coefc_in,
-     .              c_K_in, lmin_coef_in, 
-     .              taumin_in, taumax_in, mu_in,
-     .              runfile, isValid, stdout )
+     .            ( params, runfile, isValid, stdout )
 !       Description:
 !       Subprogram to integrate the pde equations for pdf closure.
 !       This is the standard call.
@@ -446,6 +387,7 @@
 !-----------------------------------------------------------------------
 
         use grid_class
+        use param_index, only: nparams
         use diagnostic_variables
         use prognostic_variables
         use numerical_check
@@ -467,19 +409,8 @@
         intrinsic :: mod, real, int 
 
         ! Input Variables
-        real, intent(in) :: 
-     .  C1_in, C1b_in, C1c_in,
-     .  C2_in, C2b_in, C2c_in,
-     .  C2rt_in, C2thl_in, C2rtthl_in, C4_in, C5_in,
-     .  C6rt_in, C6rtb_in, C6rtc_in,
-     .  C6thl_in, C6thlb_in, C6thlc_in,
-     .  C7_in, C7b_in, C7c_in,
-     .  C8_in, C8b_in, C10_in,
-     .  C11_in, C11b_in, C11c_in, C12_in, C13_in,
-     .  nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in,
-     .  beta_in,
-     .  gamma_coef_in, gamma_coefb_in, gamma_coefc_in,
-     .  c_K_in, taumin_in, taumax_in, lmin_coef_in, mu_in
+        real, intent(in), dimension(nparams) :: 
+     .  params  ! Model parameters, C1, nu2, etc.
 
         ! Subroutine Arguments (Model Setting)
         character(len=*), intent(in) :: 
@@ -549,19 +480,6 @@
         read(unit=iunit, nml=model_setting)
         close(unit=iunit)
 
-       ! Model sanity Check
-
-        if (( beta_in < 0.0 ) .or. ( beta_in > 3.0 )) then
-          print *, 'beta < 0 OR beta > 3'
-          isValid = .false. 
-        endif 
-
-        if ( lmin_coef_in * deltaz < 4.0 ) then
-          print *, 'lmin < 4.0'
-          isValid = .false.
-        end if
-        if ( .not. isValid ) return
-
        ! Dummy grid height arrays
        allocate( dummy_array_m(1:nzmax), dummy_array_t(1:nzmax) )
 
@@ -574,26 +492,17 @@
          lmpace_nudge = .false.
        end if
 
-       ! Allocate & initilialize variables,
+       ! Allocate & initialize variables,
        ! setup grid, setup constants, and setup flags
 
        call parameterization_setup
-     .      ( nzmax, deltaz, C1_in, C1b_in, C1c_in, 
-     .        C2_in, C2b_in, C2c_in,
-     .        C2rt_in, C2thl_in, C2rtthl_in, C4_in, C5_in, 
-     .        C6rt_in, C6rtb_in, C6rtc_in, C6thl_in, 
-     .        C6thlb_in, C6thlc_in, C7_in, C7b_in, C7c_in, 
-     .        C8_in, C8b_in, C10_in, C11_in, C11b_in, C11c_in, 
-     .        C12_in, C13_in,
-     .        nu1_in, nu2_in, nu6_in, nu8_in, nu_r_in, 
-     .        gamma_coef_in, gamma_coefb_in, gamma_coefc_in,
-     .        mu_in, c_K_in, beta_in, lmin_coef_in, 
-     .        taumin_in, taumax_in, 
-     .        fcor, T0,
+     .      ( nzmax, deltaz, fcor, T0, params,
      .        lbugsrad, kk_rain, licedfs, lcoamps_micro,
      .        cloud_sed, bottom_at_sfc,
      .        lmpace_nudge, lKhm_aniso, 
-     .        .false., dummy_array_m, dummy_array_t )
+     .        .false., dummy_array_m, dummy_array_t, isValid )
+
+       if ( .not. isValid ) return
 
 
        ! Dummy grid height arrays
@@ -746,6 +655,7 @@
 !-----------------------------------------------------------------------
 
         use constants
+        use parameters
         use grid_class
         use sounding
 #ifdef STATS
@@ -1140,6 +1050,7 @@
         ! Modules to be included
         use model_flags
         use constants
+        use parameters
         use grid_class
         use diagnostic_variables
         use prognostic_variables

@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.12 2007-03-12 20:13:44 dschanen Exp $
+! $Id: diag_var.F,v 1.13 2007-03-14 23:34:47 dschanen Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -39,6 +39,8 @@
 !-----------------------------------------------------------------------
 
         use constants
+        use parameters, 
+     .    only: C2, C2b, C2c, C2rt, C2thl, C2rtthl, nu2, beta
         use grid_class
         use lapack_wrap, only: tridag_solve
 #ifdef STATS

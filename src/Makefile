@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.78 2007-02-09 00:52:20 dschanen Exp $
+# $Id: Makefile,v 1.79 2007-03-14 23:34:47 dschanen Exp $
 #
 # This version should work with BSD, GNU make, smake and dmake.
 #
@@ -61,7 +61,7 @@ PARAMETERIZATION = \
 	sounding.o update.o wp23.o tau.o Skw_func.o \
 	numer_check.o diag_variables.o prog_variables.o \
 	parameterization_interface.o lapack_wrap.o rsati.o \
-	compute_Khm_anisotropic.o
+	compute_Khm_anisotropic.o parameters.o
 
 
 INTERFACING = gradsaverage.o inputfields.o inputgrads.o 
@@ -79,8 +79,12 @@ HOC_INPUTFIELDS	= $(MODEL) $(INTERFACING) hoc_inputfields.o
 HOC_BUDGET_TERMS= $(TUNING) budget_terms.o hoc_tuner_budget_terms.o
 
 # == Targets == ( hoc_tuner and jacobian assume statistics )
-all:	hoc_tuner int2txt hoc_tuner_budget_terms \
-	hoc_standalone hoc_inputfields compare_runs jacobian
+all:	hoc_standalone hoc_tuner int2txt hoc_inputfields  \
+	compare_runs 
+# jacobian hoc_tuner_budget_terms 
+# Note:
+# The jacobian and budget terms tuner are currently non-working, and will
+# be fixed soon -dschanen 14 March 2007
 
 # == Rules ==
 # Note: since we're using a virtual path the make command is going to use the

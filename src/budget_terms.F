@@ -1,7 +1,7 @@
 !-----------------------------------------------------------------------
-! $Id: budget_terms.F,v 1.25 2007-02-23 01:25:47 dschanen Exp $     
+! $Id: budget_terms.F,v 1.26 2007-03-14 23:34:47 dschanen Exp $     
 
-! MODULE budget_terms
+      module budget_terms
 
 ! Description:
 ! functions and subroutines for tuning for budget terms in the HOC model.
@@ -20,7 +20,6 @@
 ! subroutine output_optimal_constants( )  
 
 !-----------------------------------------------------------------------
-      module budget_terms
 
         implicit none
 

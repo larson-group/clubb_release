@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.3 2007-02-18 19:59:32 dschanen Exp $
+# $Id: make.deps,v 1.4 2007-03-14 23:34:47 dschanen Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -31,12 +31,14 @@ air.o		: cons.o air.f90
 parab.o		: air.o cons.o parab.f90
 endian.o	: endian.F
 constants.o	: constants.F
+param_index.o   : param_index.F
+parameters.o    : param_index.o parameters.F
 model_flags.o	: model_flags.F
 outputfile.o	: outputfile.F
 rain.o          : constants.o model_flags.o lapack_wrap.o parab.o statistics.o \
 	rain.F
 microphysics.o	: constants.o model_flags.o lapack_wrap.o rain.o \
-	coamps_micro_driver.o statistics.o microphysics.F
+	coamps_micro_driver.o parameters.o statistics.o microphysics.F
 outputgrads.o	: constants.o recl.F endian.o outputfile.o outputgrads.F
 outputnc.o	: outputfile.o outputnc.F
 diag_variables.o: constants.o grid.o model_flags.o diag_variables.F 
@@ -61,7 +63,7 @@ parameterization_interface.o : constants.o hydrostatic.o mixing.o \
 	length.o statistics.o sounding.o diag_var.o rsat.o \
 	grid.o sat_rcm.o update.o prog_variables.o diag_variables.o \
 	sfc.o closure_new.o latin_hyper_sample.o lh_sampler.o \
-	parameterization_interface.F 
+	parameters.o parameterization_interface.F 
 hydrostatic.o	: constants.o hydrostatic.F 
 length.o	: constants.o length.F 
 rsat.o		: constants.o rsat.F 
@@ -203,7 +205,7 @@ hoc.o		: parameterization_interface.o arm.o astex.o atex.o \
 sounding.o	: constants.o sounding.F
 inputfields.o	: grid.o inputgrads.o inputfields.F 
 gradsaverage.o	: inputgrads.o gradsaverage.F 
-error.o		: nrtype.o nr.o gradsaverage.o hoc.o error.F
+error.o		: nrtype.o nr.o gradsaverage.o hoc.o parameters.o error.F
 budget_terms.o  : amoeba.o inputfields.o gradsaverage.o hoc.o \
 	error.o budget_terms.F
 

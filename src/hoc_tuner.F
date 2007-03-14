@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: hoc_tuner.F,v 1.20 2007-02-02 22:12:44 dschanen Exp $
+! $Id: hoc_tuner.F,v 1.21 2007-03-14 23:34:47 dschanen Exp $
 
       program hoc_tuner 
 
@@ -35,25 +35,14 @@
 !                        the error vector and takes the independent variable
 !                        vector as a parameter.
 
-!   Included Common:
-!       error.mod: subroutine tuner_init, function min_les_hoc_diff, logical isValid,
-!                   integer ndim, integer mdim, real x_array, real err_array 
-!                   real init_error, results_stdout, results_file
-
-!       nr.mod 
-!         Contain interface's for: 
-!         amoeba.o : subroutine amoeba
-!         amebsa.o : subroutine amebsa
-
-!       nrtype.mod
-!           portability module from _Numerical Recipes In Fortran 90_ 
+!           Portability module from _Numerical Recipes In Fortran 90_ 
 !----------------------------------------------------------------------
       use error, only: 
      .  tuner_init, min_les_hoc_diff,                 ! Subroutines 
      .  output_results_stdout,                        ! Subroutine
      .  output_nml_standalone, output_nml_tuner,      ! Subroutines
      .  x_array, err_array, init_err, results_stdout, ! Variables
-     .  results_file, isValid, tune_type, ftol, ndim, mdim ! Variables
+     .  results_file, isValid, tune_type, ftol, ndim  ! Variables
 
       use constants, only: fstdout
 
@@ -87,12 +76,12 @@
         read *, user_response
 
         if ( trim(user_response) /= "y" .and.
-     .       trim(user_response) /= "Y"   ) then 
+     .       trim(user_response) /= "Y"   ) then
           exit 
         end if
        
-        write (fstdout,*) "Current ftol= ", ftol 
-        write (fstdout,fmt='(A)', advance='no') "Enter new ftol=   "
+        write(fstdout,*) "Current ftol= ", ftol 
+        write(fstdout,fmt='(A)', advance='no') "Enter new ftol=   "
         read *, ftol
 
         call tuner_init(read_files=.false.) 
@@ -108,7 +97,7 @@
 
         call date_and_time( current_date, current_time )
 
-        results_f = "error_" // current_date // '_' 
+        results_f = "error_" // current_date // '_'
      .              // current_time(1:4) // ".in" 
 
         ! Note:
@@ -145,9 +134,9 @@
 !------------------------------------------------------------------------
       use nr, only: amoeba
       use error, only: 
-     .  ndim, mdim,         ! Array dimensions
+     .  ndim,               ! Array dimensions
      .  x_array, err_array, ! The 'p' matrix and 'y' vector resp.
-     .  ftol,               ! Tolerance of tuning
+     .  ftol,               ! Tolerance of tuning run
      .  iter,               ! Iteration number
      .  min_les_hoc_diff,   ! Cost function
      .  min_err             ! Minimum value of the cost function
@@ -158,7 +147,7 @@
       ! External
       intrinsic :: minval
 
-      call amoeba( x_array(1:mdim,1:ndim), err_array(1:mdim), 
+      call amoeba( x_array(1:ndim+1,1:ndim), err_array(1:ndim+1), 
      .             ftol, min_les_hoc_diff, iter)
 
       ! Note:
@@ -215,7 +204,7 @@
         tmptr = tmptr * 0.8_SP
 
         call amebsa
-     .       ( x_array(1:mdim,1:ndim), err_array(1:mdim),
+     .       ( x_array(1:ndim+1,1:ndim), err_array(1:ndim+1),
      .         pb(1:ndim), yb, ftol, min_les_hoc_diff, iter, tmptr )
 
         nit = nit + iiter - iter
