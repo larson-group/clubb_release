@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.79 2007-03-14 23:34:47 dschanen Exp $
+# $Id: Makefile,v 1.80 2007-03-15 23:19:55 dschanen Exp $
 #
 # This version should work with BSD, GNU make, smake and dmake.
 #
@@ -80,11 +80,11 @@ HOC_BUDGET_TERMS= $(TUNING) budget_terms.o hoc_tuner_budget_terms.o
 
 # == Targets == ( hoc_tuner and jacobian assume statistics )
 all:	hoc_standalone hoc_tuner int2txt hoc_inputfields  \
-	compare_runs 
-# jacobian hoc_tuner_budget_terms 
+	compare_runs jacobian
+# hoc_tuner_budget_terms 
 # Note:
-# The jacobian and budget terms tuner are currently non-working, and will
-# be fixed soon -dschanen 14 March 2007
+# The budget terms tuner is currently non-working, and will
+# be fixed soon -dschanen 15 March 2007
 
 # == Rules ==
 # Note: since we're using a virtual path the make command is going to use the
