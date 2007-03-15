@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.9 2007-03-14 23:34:47 dschanen Exp $
+! $Id: wp23.F,v 1.10 2007-03-15 23:18:57 dschanen Exp $
 
         subroutine timestep_wp23
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
@@ -36,57 +36,48 @@
         intrinsic :: exp
 
         ! Input Variables
-        real, intent(in) :: dt ! Timestep       [s]
+        real, intent(in) :: dt ! Timestep               [s]
 
         real, intent(in), dimension(gr%nnzp) :: 
-     .  Lscale,! Mixing Length                  [m]
-     .  taum,  ! Tau on moment. grid            [s]
-     .  taut,  ! Tau on thermo. grid            [s]
-     .  Scm,   ! Sc on moment. grid             [-]
-     .  Skwm,  ! Skw on moment. grid            [-]
-     .  Skwt,  ! Skw on thermo. grid            [-]
-     .  a,     ! PDF parm a (13)                [-]
-     .  Kht,   ! Kh Eddy diffusivity on thermo. [m^2/s]
-     .  wmt,   ! w wind on t                    [m/s]
-     .  wmm,   ! w wind on m                    [m/s]
-     .  um,    ! u wind                         [m/s]
-     .  upwp,  ! u'w'                           [m^2/s^2]
-     .  vm,    ! v wind                         [m/s]
-     .  vpwp,  ! u'w'                           [m^2/s^2]
-     .  wpthvp,! w'th_v' Buoyancy flux          [(K m)/s]
-     .  wp2thvp! w'^2 th_v'                     [(m^2 K)/s^2]
+     .  Lscale,! Mixing Length                          [m]
+     .  taum,  ! Tau on moment. grid                    [s]
+     .  taut,  ! Tau on thermo. grid                    [s]
+     .  Scm,   ! Sc on moment. grid                     [-]
+     .  Skwm,  ! Skw on moment. grid                    [-]
+     .  Skwt,  ! Skw on thermo. grid                    [-]
+     .  a,     ! PDF parameter a (13)                   [-]
+     .  Kht,   ! Kh Eddy diffusivity on thermo. grid    [m^2/s]
+     .  wmt,   ! w wind on the thermo. grid             [m/s]
+     .  wmm,   ! w wind on the momentum grid            [m/s]
+     .  um,    ! u wind (thermo. grid)                  [m/s]
+     .  upwp,  ! u'w' (moment. grid)                    [m^2/s^2]
+     .  vm,    ! v wind (thermo. grid)                  [m/s]
+     .  vpwp,  ! u'w' (moment. grid)                    [m^2/s^2]
+     .  wpthvp,! w'th_v' Buoyancy flux                  [(K m)/s]
+     .  wp2thvp! w'^2 th_v'                             [(m^2 K)/s^2]
 
         ! Input/Output
         real, dimension(gr%nnzp), intent(inout) :: 
-     .  wp2, ! w'^2                             [m^2/s^2]
-     .  wp3  ! w'^3                             [m^3/s^3]
+     .  wp2, ! w'^2 (moment. grid)                      [m^2/s^2]
+     .  wp3  ! w'^3 (thermo. grid)                      [m^3/s^3]
 
-        logical, intent(inout) :: isValid
+        logical, intent(inout) :: isValid ! Diagnostic
 
         ! Local Variables
-        real, allocatable :: tauw3t(:), Lm(:)
-      
-        integer :: k, km1, kp1
-        real :: aa
+        real, dimension(gr%nnzp) :: 
+     .  tauw3t, ! Currently just taut           [s]
+     .  Lm      ! Length scale (moment. grid)   [m]
 
         ! Internal variables for C11 function, Vince Larson 13 Mar 2005
         ! Brian added C1 function.
-        real, dimension(:), allocatable :: 
-     .  C1_Skw_fnc, 
-     .  C11_Skw_fnc
+        real, dimension(gr%nnzp) :: 
+     .  C1_Skw_fnc, !   [-]
+     .  C11_Skw_fnc !   [-]
         ! End Vince Larson's addition.
+      
+        integer :: k, km1, kp1  ! Array indices
 
 !-----------------------------------------------------------------------
-
-        ! Allocate memory
-        allocate( tauw3t(1:gr%nnzp) )
-        allocate( Lm(1:gr%nnzp) )
-
-        ! Allocate variables for C11 function, Vince Larson 13 Mar 2005
-        ! Brian added C1 function
-        allocate( C1_Skw_fnc(1:gr%nnzp) )
-        allocate( C11_Skw_fnc(1:gr%nnzp) )
-        ! End Vince Larson's addition.
 
         ! Define L on momentum levels
         Lm = zt2zm( Lscale )
@@ -151,24 +142,6 @@
      .                   um, upwp, vm, vpwp,
      .                   Skwt, C1_Skw_fnc, C11_Skw_fnc, 
      .                   wp2, wp3, isValid )
-        
-        if ( .not. isValid ) then
-          deallocate( tauw3t, Lm)
-          deallocate( C11_Skw_fnc )
-          deallocate( C1_Skw_fnc )
-          return
-        end if
-
-        ! Free memory
-
-!        deallocate( tauw3t )
-        deallocate( tauw3t, Lm )  ! Brian
-
-        ! De-allocate variables for C11 function, Vince Larson 13 Mar 2005
-        ! Brian added C1 function.
-        deallocate( C11_Skw_fnc )
-        deallocate( C1_Skw_fnc )
-        ! End Vince Larson's addition.
 
         return
         end subroutine timestep_wp23
@@ -201,6 +174,12 @@
         ! external :: bandec, banbks
         intrinsic :: max, min, sqrt
 
+        ! Parameter Constants
+        integer, parameter ::
+     .  nsub = 2,  ! Number of subdiagonals in the LHS matrix
+     .  nsup = 2,  ! Number of superdiagonals in the LHS matrix
+     .  nrhs = 1   ! Number of RHS vectors
+
         ! Input Variables
         real, intent(in) :: 
      .  dt          ! Timestep                               [s]
@@ -232,18 +211,12 @@
         logical, intent(inout) :: isValid
 
         ! Local Variables
-        real, dimension(:,:), allocatable :: 
-     .  aa ! Band matrix
-!    .  al ! LU decomposition of the band matrix (NR)
+        real, dimension(nsup+nsub+1,2*gr%nnzp) :: 
+     .  lhs ! Implicit contributions to wp2/wp3 (band diag. matrix)
 
-        real, dimension(:), allocatable :: 
-     .  dd, ! RHS of band matrix
-     .  xx  ! Solution to band matrix
-
-        integer, allocatable :: 
-     .  indx(:) ! Index of pivots in band matrix decomposition process
-
-        real :: d ! diagnostic variable for LU decomposition
+        real, dimension(2*gr%nnzp) :: 
+     .  rhs,  ! RHS of band matrix
+     .  solut ! Solution to band diagonal system.
 
         real, dimension(gr%nnzp) :: 
      .  a1, ! a1; See eqn. 20 in `Equations for HOC'             [-]
@@ -251,9 +224,8 @@
 
         real :: atmp, ctmp
 
-        integer :: k, km1, kp1
-        integer :: k_wp2, k_wp3
-
+        ! Array indices
+        integer :: k, km1, kp1, k_wp2, k_wp3
 
 #ifdef STATS
         if (lstats_samp) then
@@ -269,34 +241,25 @@
         end if
 #endif /*STATS*/
 
-!       Allocate memory
-
-        !allocate( aa(1:2*gr%nnzp,1:5) ) ! NR
-        allocate( aa(5,2*gr%nnzp) ) ! LAPACK
-        allocate( dd(1:2*gr%nnzp) )
-        allocate( xx(1:2*gr%nnzp) )
-        !allocate( al(1:2*gr%nnzp,1:2) ) ! NR
-        allocate( indx(1:2*gr%nnzp) )
-
 !       Define a1 and a3 (both are located on momentum levels).
 
-        a1 = 1.0 / (1.0-Scm)
-        a3 = 3.0*Scm*Scm 
+        a1 = 1.0 / ( 1.0 - Scm )
+        a3 = 3.0 * Scm**2
      .       + 6.0*(1.0-Scm)*Scm 
-     .       + (1.0-Scm)*(1.0-Scm) 
+     .       + (1.0-Scm)**2
      .       - (3.0/2.0)
 
 !       Set up matrix aa and RHS dd
 
-        aa = 0.0
-        dd = 0.0
+        lhs = 0.0
+        rhs = 0.0
 
-        DO k = 1, gr%nnzp, 1
+        do k = 1, gr%nnzp, 1
 
 !         Define indices
 
-          km1 = max(k-1,1)
-          kp1 = min(k+1,gr%nnzp)
+          km1 = max( k-1, 1 )
+          kp1 = min( k+1, gr%nnzp )
 
           k_wp3 = 2*k - 1
           k_wp2 = 2*k
@@ -307,8 +270,7 @@
           ! Skewness of w limited to a magnitude of no more than 4.5
           !Skw = MIN( MAX( Skw, -4.5 ), 4.5 )
 
-
-!         wp2
+          ! wp2
 
           ! Diffusional term with Crank-Nicholson time step.
           atmp = - nu1 * (1.0/2.0) * gr%dzm(k) * gr%dzt(k)
@@ -321,19 +283,16 @@
 
 
           ! Momentum subdiagonal [ x wp2(k-1,<t+1>) ]
-          !aa(k_wp2,3-2)
-          aa(3+2,k_wp2)
+          lhs(3+2,k_wp2)
      .    = - wmm(k) * (1.0/2.0) * gr%dzm(k)
      .      + atmp
 
           ! Thermodynamic subdiagonal [ x wp3(k,<t+1>) ]
-          !aa(k_wp2,3-1)
-          aa(3+1,k_wp2)
+          lhs(3+1,k_wp2)
      .    = - gr%dzm(k)
 
           ! Momentum main diagonal [ x wp2(k,<t+1>) ]
-          !aa(k_wp2,3)
-          aa(3,k_wp2)
+          lhs(3,k_wp2)
      .    = + 1.0 / dt
      .      + ( 1.0 - C5 ) * 2.0 * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
 !     .      + C1 / tau1m(k)
@@ -341,19 +300,17 @@
      .      - atmp - ctmp
 
           ! Thermodynamic superdiagonal [ x wp3(k+1,<t+1>) ]
-          !aa(k_wp2,3+1)
-          aa(3-1,k_wp2)
+          lhs(3-1,k_wp2)
      .    = + gr%dzm(k)
 
           ! Momentum superdiagonal [ x wp2(k+1,<t+1>) ]
-          !aa(k_wp2,3+2)
-          aa(3-2,k_wp2)
+          lhs(3-2,k_wp2)
      .    = + wmm(k) * (1.0/2.0) * gr%dzm(k)
      .      + ctmp
 
 
           ! Right-hand side
-          dd(k_wp2)
+          rhs(k_wp2)
      .    = + ( 1.0 / dt ) * wp2(k) 
      .      + ( 1.0 - C5 ) * 2.0 * ( grav / T0 ) * wpthvp(k)
      .      + (2.0/3.0) * C5
@@ -455,23 +412,20 @@
 
 
           ! Thermodynamic subdiagonal [ x wp3(k-1,<t+1>) ]
-          !aa(k_wp3,3-2) = 
-          aa(3+2,k_wp3) = 
+          lhs(3+2,k_wp3) = 
      .    - wmt(k) * (1.0/2.0) * gr%dzt(k)
      .    - (1.0/2.0) * gr%dzt(k)
      .      * a1(km1) * ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), eps )
      .    + atmp
 
           ! Momentum subdiagonal [ x wp2(k-1,<t+1>) ]
-          !aa(k_wp3,3-1) = 
-          aa(3+1,k_wp3) = 
+          lhs(3+1,k_wp3) = 
 !     .    - 2.0 * gr%dzt(k) * a3(km1) * wp2(km1)   ! standard deriv.
 !     .    - 2.0 * gr%dzt(k) * a3(k) * wp2(km1)     ! Golaz's no a3 deriv.
      .    - 2.0 * gr%dzt(k) * 0.5*(a3(k)+a3(km1)) * wp2(km1)   ! Centered no a3 deriv.
 
           ! Thermodynamic main diagonal [ ( x wp3(k,<t+1>) ]
-          !aa(k_wp3,3) = 
-          aa(3,k_wp3) = 
+          lhs(3,k_wp3) = 
      .    + 1.0 / dt
      .    + (1.0/2.0) * gr%dzt(k)
      .      * (  a1(k) * ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), eps )
@@ -483,15 +437,13 @@
      .    - atmp - ctmp
 
           ! Momentum superdiagonal [ x wp2(k,<t+1>) ]
-          !aa(k_wp3,3+1) = 
-          aa(3-1,k_wp3) = 
+          lhs(3-1,k_wp3) = 
 !     .    + 2.0 * gr%dzt(k) * a3(k) * wp2(k)   ! standard deriv.
 !     .    + 2.0 * gr%dzt(k) * a3(k) * wp2(k)   ! Golaz's no a3 deriv.
      .    + 2.0 * gr%dzt(k) * 0.5*(a3(k)+a3(km1)) * wp2(k)   ! Centered no a3 deriv.
 
           ! Thermodynamic superdiagonal [ x wp3(k+1,<t+1>) ]
-          !aa(k_wp3,3+2) = 
-          aa(3-2,k_wp3) = 
+          lhs(3-2,k_wp3) = 
      .    + wmt(k) * (1.0/2.0) * gr%dzt(k)
      .    + (1.0/2.0) * gr%dzt(k)
      .      * a1(k) * ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), eps )
@@ -499,7 +451,7 @@
 
 
           ! Right-hand side
-          dd(k_wp3) = 
+          rhs(k_wp3) = 
      .    + ( 1.0 / dt ) * wp3(k)
      .    + gr%dzt(k)
 !     .      * ( ( a3(k) * wp2(k)**2 ) - ( a3(km1) * wp2(km1)**2 ) ) ! standard deriv.
@@ -647,77 +599,58 @@
           end if
 #endif /*STATS*/
 
-        END DO
+        end do
 
+        ! Boundary conditions
 
-!       Boundary conditions
-
+        ! Lower boundary
         k = 1
         k_wp3 = 2*k - 1
         k_wp2 = 2*k
 
-        !aa(k_wp2,:) = 0.0
-        !aa(k_wp2,3) = 1.0
-        aa(:,k_wp2) = 0.0
-        aa(3,k_wp2) = 1.0
-        dd(k_wp2)   = wp2(k)
+        lhs(:,k_wp2) = 0.0
+        lhs(3,k_wp2) = 1.0
+        rhs(k_wp2)   = wp2(k)
    
-        !aa(k_wp3,:) = 0.0
-        !aa(k_wp3,3) = 1.0
-        aa(:,k_wp3) = 0.0
-        aa(3,k_wp3) = 1.0
-        dd(k_wp3)   = 0.0
+        lhs(:,k_wp3) = 0.0
+        lhs(3,k_wp3) = 1.0
+        rhs(k_wp3)   = 0.0
 
+        ! Upper boundary
         k = gr%nnzp
         k_wp3 = 2*k - 1
         k_wp2 = 2*k
 
-        !aa(k_wp2,:) = 0.0
-        !aa(k_wp2,3) = 1.0
-        aa(:,k_wp2) = 0.0
-        aa(3,k_wp2) = 1.0
-        dd(k_wp2)   = 0.0
+        lhs(:,k_wp2) = 0.0
+        lhs(3,k_wp2) = 1.0
+        rhs(k_wp2)   = 0.0
    
-        !aa(k_wp3,:) = 0.0
-        !aa(k_wp3,3) = 1.0
-        aa(:,k_wp3) = 0.0
-        aa(3,k_wp3) = 1.0
-        dd(k_wp3)   = 0.0
+        lhs(:,k_wp3) = 0.0
+        lhs(3,k_wp3) = 1.0
+        rhs(k_wp3)   = 0.0
 
-
-!       Perform LU decomposition (NR)
-
-!       call bandec(aa,2*gr%nnzp,2,2,2*gr%nnzp,5,al,2,indx,d,isValid)
-!       if ( .not. isValid ) then
-!         print *, "wp23 LU decomp. failed"
-!         deallocate( aa, dd, al, indx )
-!         return
-!       end if
-
-
-!       Solve system (NR)
-
-!       call banbks(aa,2*gr%nnzp,2,2,2*gr%nnzp,5,al,2,indx,dd)
 
         ! Perform LU decomp and solve system (LAPACK)
-        call band_solve( "wp23", 2, 2, 2*gr%nnzp, 1, 
-     .                   aa, dd, xx, isValid )
+        call band_solve( "wp23", nsup, nsub, 2*gr%nnzp, nrhs,
+     .                   lhs, rhs, solut, isValid )
+
+        ! Perform LU decomp and solve system (LAPACK with diagnostics)
+!       call band_solvex( "wp23", nsup, nsub, 2*gr%nnzp, nrhs,
+!    .                    lhs, rhs, solut, isValid )
 
 
 !       Copy result into output arrays and clip
 
         do k=1,gr%nnzp
 
-          km1 = max(k-1,1)
-          kp1 = min(k+1,gr%nnzp)
+          km1 = max( k-1, 1)
+          kp1 = min( k+1, gr%nnzp )
 
           k_wp3 = 2*k - 1
           k_wp2 = 2*k
 
-          !wp2(k) = dd(k_wp2) ! (NR)
-          !wp3(k) = dd(k_wp3) ! " "
-          wp2(k) = xx(k_wp2)
-          wp3(k) = xx(k_wp3)
+          wp2(k) = solut(k_wp2)
+          wp3(k) = solut(k_wp3)
 
         end do
 
@@ -727,8 +660,8 @@
 !         Finalize implicit contributions for wp2
 
           do k=1,gr%nnzp
-            km1 = max(k-1,1)
-            kp1 = min(k+1,gr%nnzp)
+            km1 = max( k-1, 1 )
+            kp1 = min( k+1, gr%nnzp )
 
             if ( iwp2_dp1 > 0 ) then
              zm%x(k,iwp2_dp1) = zm%x(k,iwp2_dp1)
@@ -775,8 +708,8 @@
 !         Finalize implicit contributions for wp3
 
           do k=1,gr%nnzp
-            km1 = max(k-1,1)
-            kp1 = min(k+1,gr%nnzp)
+            km1 = max( k-1, 1 )
+            kp1 = min( k+1, gr%nnzp )
 
             if ( iwp3_pr1 > 0 ) then
              zt%x(k,iwp3_pr1) = zt%x(k,iwp3_pr1)
@@ -830,7 +763,7 @@
 
           end do
 
-!         Effect of clipping term
+          ! Effect of clipping term
 
           if ( iwp2_cl > 0 ) then
             zm%x(:,iwp2_cl) = zm%x(:,iwp2_cl) - wp2 / dt
@@ -874,12 +807,12 @@
            ELSE
 
               ! Clip skewness consistently with a
-              atmp = MAX(0.5*(wp2(km1)+wp2(k)),eps)
+              atmp = MAX( 0.5*(wp2(km1)+wp2(k)), eps )
               ctmp = atmp**1.5
-              IF ( wp3(k)/ctmp .gt. 4.5 ) THEN
+              IF ( wp3(k)/ctmp > 4.5 ) THEN
                  wp3(k) = 4.5 * ctmp
                  wp2(k) = atmp
-              ELSE IF ( wp3(k)/ctmp .lt. -4.5 ) THEN
+              ELSE IF ( wp3(k)/ctmp < -4.5 ) THEN
                  wp3(k) = -4.5 * ctmp
                  wp2(k) = atmp
               END IF
@@ -921,9 +854,6 @@
 
         end if
 #endif /*STATS*/
-
-        ! Free memory
-        deallocate( aa, dd, xx, indx )
 
         return
         end subroutine wp23_solve
