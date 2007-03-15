@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: lapack_wrap.F,v 1.2 2006-12-21 00:38:41 dschanen Exp $
+! $Id: lapack_wrap.F,v 1.3 2007-03-15 23:31:53 dschanen Exp $
         module lapack_wrap
 
 !       Description:
@@ -10,10 +10,9 @@
 !       LAPACK--Linear Algebra PACKage version 3.0
 !       URL: <http://netlib2.cs.utk.edu/lapack/>
 !-----------------------------------------------------------------------
+        use constants, only: fstderr
 
         implicit none
-
-        integer, parameter :: fstderr = 0
 
         ! Simple routines
         public :: tridag_solve, band_solve
@@ -28,7 +27,7 @@
 !-----------------------------------------------------------------------
         subroutine tridag_solvex
      .             ( solve_type, ndim, nrhs, supd, diag, subd, 
-     .               rhs, solution, isValid )
+     .               rhs, solution, rcond, isValid )
 
 !       Description:
 !       Solves a tridiagonal system of equations (expert routine).
@@ -67,6 +66,13 @@
         real, intent(inout), dimension(ndim,nrhs) :: 
      .  rhs ! RHS input
 
+        ! The estimate of the reciprocal condition number of the matrix.
+        ! If rcond is less than the machine precision (in
+        ! particular, if rcond = 0), the matrix is singular to working
+        ! precision.  This condition is indicated by a return code of
+        ! info > 0.
+        real, intent(out) :: rcond 
+
         logical, intent(out) :: 
      .  isValid ! Used to determine when a decomp. failed
 
@@ -93,13 +99,6 @@
 
         real, dimension(3*ndim) :: 
      .  work  ! `Scrap' array
-
-        ! The estimate of the reciprocal condition number of the matrix.
-        ! If rcond is less than the machine precision (in
-        ! particular, if rcond = 0), the matrix is singular to working
-        ! precision.  This condition is indicated by a return code of
-        ! info > 0.
-        real :: rcond 
 
         integer :: info ! Diagnostic output
 
@@ -134,7 +133,7 @@
 
         select case( info )
         case( :-1 )
-          write(fstderr,*) solve_type//
+          write(fstderr,*) trim( solve_type )//
      .      "illegal value in argument", -info
           isValid = .false.
 
@@ -144,14 +143,15 @@
 
         case( 1: )
           if ( info == ndim+1 ) then
-            write(fstderr,*) solve_type//
-     .        " matrix is singular to working precision."
-            write(fstderr,*) "rcond", rcond 
+            write(fstderr,*) trim( solve_type) //
+     .        " Warning: matrix is singular to working precision."
+            write(fstderr,'(a,e12.5)') 
+     .        "Estimate of the reciprocal of the"//
+     .        " condition number: ", rcond
             isValid = .true.
           else
             write(fstderr,*) solve_type//
      .        " singular matrix."
-            write(fstderr,*) "rcond", rcond
             isValid = .false.
           end if
 
@@ -225,7 +225,7 @@
 
         select case( info )
         case( :-1 )
-          write(fstderr,*) solve_type//
+          write(fstderr,*) trim( solve_type )//
      .      " illegal value in argument", -info
           isValid = .false.
 
@@ -236,11 +236,11 @@
 
         case( 1: )
           if ( info == ndim+1 ) then
-            write(fstderr,*) solve_type//
+            write(fstderr,*) trim( solve_type )//
      .        " matrix is singular to working precision."
             isValid = .true.
           else
-            write(fstderr,*) solve_type//
+            write(fstderr,*) trim( solve_type )//
      .        " singular matrix."
             isValid = .false.
           end if
@@ -252,7 +252,7 @@
 
 !-----------------------------------------------------------------------
         subroutine band_solvex( solve_type, nsup, nsub, ndim, nrhs, 
-     .                          lhs, rhs, solution, isValid )
+     .                          lhs, rhs, solution, rcond, isValid )
 !       Description:
 !       Restructure and then solve a band diagonal system, with
 !       diagnostic output
@@ -293,6 +293,11 @@
         ! Output Variables
         real, dimension(ndim,nrhs), intent(out) :: solution
 
+        ! The estimate of the reciprocal condition number of matrix
+        ! after equilibration (if done).
+        real, intent(out) :: 
+     .  rcond
+
         logical, intent(out) :: isValid ! Valid calculation?
 
         ! Local Variables
@@ -321,10 +326,6 @@
         character :: 
      .  equed ! Row equilibration status
 
-        ! The estimate of the reciprocal condition number of matrix
-        ! after equilibration (if done).
-        real :: 
-     .  rcond
 
 !-----------------------------------------------------------------------
 !       Reorder Matrix to use LAPACK band matrix format (5x6)
@@ -409,7 +410,7 @@
         select case( info )
 
         case( :-1 )
-          write(fstderr,*) trim(solve_type)//
+          write(fstderr,*) trim( solve_type )//
      .      " illegal value for argument", -info
           isValid = .false.
 
@@ -419,14 +420,14 @@
 
         case( 1: )
           if ( info == ndim+1 ) then
-            write(fstderr,*) trim(solve_type)//
-     .        " Warning: matrix singular to working precision"
+            write(fstderr,*) trim( solve_type )//
+     .        " Warning: matrix singular to working precision."
             write(fstderr,'(a,e12.5)') 
      .        "Estimate of the reciprocal of the"//
      .        " condition number: ", rcond
             isValid = .true.
           else
-            write(fstderr,*) trim(solve_type)//
+            write(fstderr,*) trim( solve_type )//
      .        " band solver: singular matrix"
             isValid = .false.
           end if
@@ -556,7 +557,7 @@
         select case( info )
 
         case( :-1 )
-          write(fstderr,*) trim(solve_type)//
+          write(fstderr,*) trim( solve_type )//
      .      " illegal value for argument ", -info
           isValid = .false.
 
@@ -567,11 +568,11 @@
 
         case( 1: )
           if ( info == ndim+1 ) then
-            write(fstderr,*) trim(solve_type)//
+            write(fstderr,*) trim( solve_type )//
      .        " Warning: matrix singular to working precision"
             isValid = .true.
           else
-            write(fstderr,*) trim(solve_type)//
+            write(fstderr,*) trim( solve_type )//
      .        " band solver: singular matrix"
             isValid = .false.
           end if
