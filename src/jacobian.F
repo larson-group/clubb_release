@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.35 2007-03-15 23:14:32 dschanen Exp $
+! $Id: jacobian.F,v 1.36 2007-03-15 23:29:20 dschanen Exp $
 
       program jacobian
 #ifdef STATS
@@ -14,7 +14,7 @@
 
       use hoc, only: hoc_model
       use param_index, only: nparams
-      use parameters, only: read_parameters
+      use parameters, only: read_parameters, params_list
       use constants, only: fstdout, fstderr
       use grads_common, only: grads_average_interval, grads_zlvl
       use statistics, only: fname_zt, fname_zm
