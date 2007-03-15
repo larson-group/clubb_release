@@ -1,10 +1,12 @@
 !-----------------------------------------------------------------------
-! $Id: parameters.F,v 1.1 2007-03-14 23:34:47 dschanen Exp $
+! $Id: parameters.F,v 1.2 2007-03-15 23:15:23 dschanen Exp $
         module parameters 
 
 !       Description:
-!       Contains changeable model parameters.
+!       Contains tuneable model parameters.
+
 !       References:
+!       None
 !-----------------------------------------------------------------------
 
         use param_index
@@ -35,7 +37,7 @@
      .  C2b,        ! High Skewness in C2 Skewness Function.  
      .  C2c,        ! Degree of Slope of C2 Skewness Function.
      .  C4,         ! Used only when lKhm_aniso is true.
-     .  C5,         ! Constant from Chris Golaz.
+     .  C5,         ! Coefficient in pressure terms in the w'^2 eqn.
      .  C6rt,       ! Low Skewness in C6rt Skewness Function.
      .  C6rtb,      ! High Skewness in C6rt Skewness Function.
      .  C6rtc,      ! Degree of Slope of C6rt Skewness Function.
@@ -65,7 +67,7 @@
      .  mu,         ! Fractional entrainment rate per unit altitude.
      .  taumin,     ! Previously determined value.
      .  taumax,     ! Previously determined value.
-     .  lmin        ! Previously determined value.
+     .  lmin        ! Minimum value for the length scale.
 
 !$omp   threadprivate(C1, C1b, C1c, C2, C2b, C2c)
 !$omp   threadprivate(C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6rtb, C6rtc)
@@ -183,11 +185,12 @@
 
        ! Sanity check
        if ( beta < 0.0 .or. beta > 3.0 ) then
+         ! Constraints on beta
          write(fstderr,*) "beta= ", beta
          write(fstderr,*) "beta cannot be < 0 or > 3"
          isValid = .false.
        else if ( lmin < 4.0 ) then
-        ! Constraints on mixing length
+         ! Constraints on mixing length
          write(fstderr,*) "lmin= ", lmin
          write(fstderr,*) "lmin is < 4.0"
          isValid = .false.
@@ -205,6 +208,9 @@
 
 !      Description:
 !      Read a namelist containing the model parameters
+
+!      References:
+!      None
 !-----------------------------------------------------------------------
 
        use param_index
@@ -334,8 +340,12 @@
      .              mu, c_K, beta, lmin_coef,
      .              taumin, taumax, params )
 !       Description:
+!       Takes the list of scalar variables and puts them into a 1D
+!       vector.  Here for the purposes of keeping the code generalized
+!       when new variables are added.
 
 !       References:
+!       None
 !-----------------------------------------------------------------------
 
         use param_index
@@ -422,6 +432,12 @@
      .               taumin, taumax )
 
 !       Description:
+!       Takes the 1D vector and returns the list of scalar variables.
+!       Here for the purposes of keeping the code generalized
+!       when new variables are added.
+
+!       References:
+!       None
 !-----------------------------------------------------------------------
 
         use param_index
