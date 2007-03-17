@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: hoc_tuner.F,v 1.21 2007-03-14 23:34:47 dschanen Exp $
+! $Id: hoc_tuner.F,v 1.22 2007-03-17 18:53:11 dschanen Exp $
 
       program hoc_tuner 
 
@@ -73,18 +73,18 @@
         write(fstdout,*) "Run Complete."
         write(unit=fstdout,fmt='(A)', advance='no') 
      .    "Re-run with new parameters?(y/n) "
-        read *, user_response
+        read(*,*) user_response
 
-        if ( trim(user_response) /= "y" .and.
-     .       trim(user_response) /= "Y"   ) then
+        if ( trim( user_response ) /= "y" .and.
+     .       trim( user_response ) /= "Y"   ) then
           exit 
         end if
        
         write(fstdout,*) "Current ftol= ", ftol 
         write(fstdout,fmt='(A)', advance='no') "Enter new ftol=   "
-        read *, ftol
+        read(*,*) ftol
 
-        call tuner_init(read_files=.false.) 
+        call tuner_init( read_files=.false. ) 
 
       end do ! user_response /= 'y', 'Y' or 'yes'
 

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.41 2007-03-14 23:34:47 dschanen Exp $
+! $Id: error.F,v 1.42 2007-03-17 18:53:11 dschanen Exp $
 
         module error
  
@@ -116,6 +116,9 @@
      .  x_spread, ! Amount to vary each respec. constant by
      .  err_array ! cache of differences between the LES and HOC
 
+        real, allocatable, dimension(:) :: 
+     .  rand_vect ! A vector of random reals for initializing the x array
+
         contains
 
 !-----------------------------------------------------------------------
@@ -149,9 +152,6 @@
      .  read_files 
 
         ! Local Variables
-
-        real, allocatable, dimension(:) :: 
-     .  rand_vect ! A vector of random reals for initializing the x array
 
         real, dimension(nparams) :: rtmp ! Scratch space
 
@@ -433,7 +433,7 @@
      .      .and. iter /= 0  ) then
 
           write(unit=*,fmt='(A12,I10)') "Iteration: ", iter
-          write(unit=*,fmt='(A12)') "Constants: "
+          write(unit=*,fmt='(A12)') "Parameters: "
 
           do i = 1, ndim, 1
             j = x_index(i)
@@ -651,11 +651,11 @@
       
         implicit none
 
-        ! Local Constants
+        ! Local variables
 
         integer :: i ! Loop iterator
 
-        if (tune_type == 0) print *, "Number of iterations:",  iter
+        if ( tune_type == 0 ) print *, "Number of iterations:",  iter
       
         write(unit=*,fmt='(3A18)') "Parameter", "Initial", "Optimal"
 
