@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.4 2007-03-14 23:34:47 dschanen Exp $
+# $Id: make.deps,v 1.5 2007-03-17 18:49:40 dschanen Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -8,10 +8,10 @@
 # Fortran 90 style 'USE' directive, an include directive, or a COMMON block
 # to be properly dealt with when compiling a program.
 #
-# Furthermore, the compiling of a module file creates a .mod file that contains
-# an implicitly determined F90 INTERFACE block for each of its member 
-# SUBROUTINE and FUNCTION declarations that occur after the CONTAINS statement,
-# which makes their arguments type safe.
+# This is needed because the compiling of a module file creates a .mod file 
+# that contains an implicitly determined F90 INTERFACE block for each of 
+# its member SUBROUTINE and FUNCTION declarations that occur after the CONTAINS 
+# statement, which makes their arguments type safe.
 #
 # Therefore, whenever you add a USE statement in a file you should add 
 # the corresponding object file to the dependencies list for the file being
@@ -19,6 +19,10 @@
 # E.g. when adding a "use statistics" line to fire.F, the new line should read:
 # fire.o : fire.F statistics.o
 # Plus any other files that fire.F has in a use or include.
+#
+# If this is not done, you will get unexpected errors while compiling with 
+# regard to modules that cannot be found, or when a file is updated files that
+# USE it may have compile errors or unexpected runtime behavior.
 #
 # You do not need to add a dependency for functions or subrountines called via
 # an EXTERNAL directive, because they have no .mod file and are not typesafe.
@@ -54,10 +58,10 @@ erf.o		: erf.F
 lapack_wrap.o	: lapack_wrap.F
 Skw_func.o	: Skw_func.F
 
-closure_new.o	: constants.o grid.o rsat.o erf.o closure_new.F 
-diag_var.o	: constants.o grid.o statistics.o lapack_wrap.o \
+closure_new.o	: constants.o parameters.o grid.o rsat.o erf.o closure_new.F 
+diag_var.o	: constants.o parameters.o grid.o statistics.o lapack_wrap.o \
 	diag_var.F
-mixing.o	: constants.o statistics.o lapack_wrap.o mixing.F 
+mixing.o	: constants.o parameters.o statistics.o lapack_wrap.o mixing.F 
 parameterization_interface.o : constants.o hydrostatic.o mixing.o \
 	model_flags.o numer_check.o Skw_func.o microphysics.o \
 	length.o statistics.o sounding.o diag_var.o rsat.o \
@@ -65,13 +69,13 @@ parameterization_interface.o : constants.o hydrostatic.o mixing.o \
 	sfc.o closure_new.o latin_hyper_sample.o lh_sampler.o \
 	parameters.o parameterization_interface.F 
 hydrostatic.o	: constants.o hydrostatic.F 
-length.o	: constants.o length.F 
+length.o	: constants.o parameters.o length.F 
 rsat.o		: constants.o rsat.F 
 sat_rcm.o	: constants.o sat_rcm.F 
-sfc.o		: constants.o sfc.F 
+sfc.o		: constants.o parameters.o sfc.F 
 update.o	: grid.o statistics.o lapack_wrap.o update.F
-wp23.o		: constants.o statistics.o lapack_wrap.o wp23.F 
-tau.o		: constants.o tau.F
+wp23.o		: constants.o parameters.o statistics.o lapack_wrap.o wp23.F 
+tau.o		: constants.o parameters.o tau.F
 compute_Khm_anisotropic	: grid.o compute_Khm_anisotropic.F
 
 # == Numerical Recipes dependencies (For the tuner) ==
@@ -128,20 +132,12 @@ rad_lwsw.o      : rad_lwsw.F statistics.o
 linear_interpolation.o : linear_interpolation.F
 
 # == COAMPS Microphysics dependencies ==
-adjmlt.o                : adjmlt.F
-coamps_micro_driver.o   : gamma.o adjtq.o constants.o statistics.o \
-	coamps_micro_driver.F
-adjtq.o                 : slope.o esatv.o esati.o tgqg.o tgqr.o tgqs.o \
-	frzh.o eqa22.o eqa25.o eqa28.o eqa11g.o conice.o \
-	tgqi.o eqa27r.o eqa7g.o eqa8g.o eqa9g.o eqa13g.o \
-	eqa18g.o eqa21g.o eqa22g.o adjmlt.o qsatvi.o \
-	qtadj.o slope.o eqa6.o eqa12.o eqa27.o eqa19g.o \
-	nrmtqw.o conice.o eqa15.o eqa18.o eqa26.o eqa17g.o \
-	nrmtqi.o eqa7.o eqa9.o eqa19.o eqa10g.o eqa21.o \
-	eqa5g.o eqa12g.o eqa14g.o eqa20g.o nrmcol.o adjtq.F
+adjmlt.o              : adjmlt.F
+coamps_micro_driver.o : constants.o statistics.o coamps_micro_driver.F
+adjtq.o      : adjtq.F
 conice.o     : conice.F
-eqa10g.o     : gamma.o eqa10g.F
-eqa11g.o     : gamma.o eqa11g.F
+eqa10g.o     : eqa10g.F
+eqa11g.o     : eqa11g.F
 eqa12.o      : eqa12.F
 eqa12g.o     : gamma.o eqa12.F
 eqa13g.o     : eqa13g.F
@@ -195,7 +191,7 @@ two_rt_lw_ocastrndm.o	: kinds.o two_rt_lw_ocastrndm.F90
 two_rt_sw.o		: kinds.o two_rt_sw.F
 two_rt_sw_bs.o		: kinds.o lapack_wrap.o two_rt_sw_bs.F
 two_rt_sw_ocastrndm.o	: kinds.o two_rt_sw_ocastrndm.F90
-bugsrad_hoc.o 		: kinds.o cos_solar_zen.o constants.o bugs_rad.o \
+bugsrad_hoc.o 		: kinds.o constants.o bugs_rad.o \
 	statistics.o bugsrad_hoc.F90
 
 # == Misc. program related source files  ==
