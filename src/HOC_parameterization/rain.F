@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.28 2007-02-16 20:08:44 griffinb Exp $
+! $Id: rain.F,v 1.29 2007-03-17 14:08:31 griffinb Exp $
 
       MODULE rain_equations
 
@@ -23,28 +23,28 @@
 !      REAL, PARAMETER:: corr_sNr_NL = -0.15
 !      REAL, PARAMETER:: corr_sNc_NL =  0.45
       ! Parameters for in-cloud (from RF02 DO).
-      REAL, PARAMETER:: rrp2_rrm2_cloud = 1.60
-      REAL, PARAMETER:: Nrp2_Nrm2_cloud = 1.05
-      REAL, PARAMETER:: Ncp2_Ncm2_cloud = 0.20
-      REAL, PARAMETER:: corr_rrNr_LL_cloud = 0.85
+      REAL, PARAMETER:: rrp2_rrm2_cloud = 0.75
+      REAL, PARAMETER:: Nrp2_Nrm2_cloud = 0.40
+      REAL, PARAMETER:: Ncp2_Ncm2_cloud = 0.10
+      REAL, PARAMETER:: corr_rrNr_LL_cloud = 0.80
       REAL, PARAMETER:: corr_srr_NL_cloud = 0.30
-      REAL, PARAMETER:: corr_sNr_NL_cloud = 0.30
-      REAL, PARAMETER:: corr_sNc_NL_cloud = 0.65
+      REAL, PARAMETER:: corr_sNr_NL_cloud = 0.20
+      REAL, PARAMETER:: corr_sNc_NL_cloud = 0.35
       ! Parameters for below-cloud (from RF02 DO).
-      REAL, PARAMETER:: rrp2_rrm2_below = 1.60
-      REAL, PARAMETER:: Nrp2_Nrm2_below = 1.05
+      REAL, PARAMETER:: rrp2_rrm2_below = 0.75
+      REAL, PARAMETER:: Nrp2_Nrm2_below = 0.40
       REAL, PARAMETER:: Ncp2_Ncm2_below = 0.00 ! Not applicable below cloud.
-      REAL, PARAMETER:: corr_rrNr_LL_below = 0.85
+      REAL, PARAMETER:: corr_rrNr_LL_below = 0.80
       REAL, PARAMETER:: corr_srr_NL_below = 0.30
-      REAL, PARAMETER:: corr_sNr_NL_below = 0.30
+      REAL, PARAMETER:: corr_sNr_NL_below = 0.20
       REAL, PARAMETER:: corr_sNc_NL_below = 0.00 ! Not applicable below cloud.
-      !REAL, PARAMETER:: C_evap = 0.86    ! Khairoutdinov and Kogan (2000) 
-      !                                   ! ratio of drizzle drop mean 
-      !                                   ! geometric radius to drizzle drop
-      !                                   ! mean volume radius. Khairoutdinov
-      !                                   ! and Kogan (2000); p. 233.
+      REAL, PARAMETER:: C_evap = 0.86    ! Khairoutdinov and Kogan (2000) 
+                                         ! ratio of drizzle drop mean 
+                                         ! geometric radius to drizzle drop
+                                         ! mean volume radius. Khairoutdinov
+                                         ! and Kogan (2000); p. 233.
       !REAL, PARAMETER:: C_evap = 0.86*0.2 ! COAMPS value of KK C_evap
-      REAL, PARAMETER:: C_evap = 0.55    ! KK 2000, Marshall-Palmer (1948) value.
+      !REAL, PARAMETER:: C_evap = 0.55    ! KK 2000, Marshall-Palmer (1948) value.
       ! Vince Larson set r_0=28mum to agree with COAMPS-LES formula. 15 April 2005
       REAL, PARAMETER:: r_0 = 25.0e-6   ! Assumed radius of all new drops; m.
                                         ! Value specified in KK (2000); p. 235.
