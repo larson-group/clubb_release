@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.10 2007-03-15 23:18:57 dschanen Exp $
+! $Id: wp23.F,v 1.11 2007-03-19 15:54:17 dschanen Exp $
 
         subroutine timestep_wp23
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
@@ -163,7 +163,7 @@
         use parameters
         use constants
         use model_flags
-        use lapack_wrap, only: band_solve
+        use lapack_wrap, only: band_solve, band_solvex
 #ifdef STATS
         use statistics
 #endif /*STATS*/
@@ -171,7 +171,6 @@
         implicit none
 
         ! External
-        ! external :: bandec, banbks
         intrinsic :: max, min, sqrt
 
         ! Parameter Constants
@@ -241,12 +240,15 @@
         end if
 #endif /*STATS*/
 
-!       Define a1 and a3 (both are located on momentum levels).
+        ! Define a1 and a3 (both are located on momentum levels).
+        ! Note: some compilers appear to interpret the pow function with
+        ! a positive integer exponent differently than a repeated
+        ! multiply. -dschanen 19 March 2007
 
         a1 = 1.0 / ( 1.0 - Scm )
-        a3 = 3.0 * Scm**2
+        a3 = 3.0 * Scm*Scm
      .       + 6.0*(1.0-Scm)*Scm 
-     .       + (1.0-Scm)**2
+     .       + (1.0-Scm)*(1.0-Scm)
      .       - (3.0/2.0)
 
 !       Set up matrix aa and RHS dd
@@ -636,7 +638,7 @@
 
         ! Perform LU decomp and solve system (LAPACK with diagnostics)
 !       call band_solvex( "wp23", nsup, nsub, 2*gr%nnzp, nrhs,
-!    .                    lhs, rhs, solut, isValid )
+!    .                    lhs, rhs, solut, rcond, isValid )
 
 
 !       Copy result into output arrays and clip
