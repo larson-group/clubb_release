@@ -1,10 +1,10 @@
-! $Id: all_stats.in,v 1.5 2007-03-15 23:13:24 dschanen Exp $
+! $Id: all_stats.in,v 1.6 2007-03-19 20:07:17 dschanen Exp $
 ! This file contains a comprehensive listing of all the HOC variables that 
 ! can be output to GrADS, as found in src/HOC_parameterization/statistics.F.
 ! This file, as well as the statistical files for all the other cases, needs
 ! to be updated every time a new statistical parameter is added.
 ! This file was created on January 21, 2007.
-! This file was last updated on March 15, 2007.
+! This file was last updated on March 19, 2007.
 &statsnl
 
 lstats = t
@@ -73,6 +73,6 @@ vars_zm =
 fname_sfc = 'all_sfc',
 vars_sfc = 
 'ustar', 'lh', 'sh', 'cc', 'lwp', 'zb', 'zi', 'rain', 'pflux',
+'wp23_cn', 'rtm_cn', 'thlm_cn', 'rtp2_cn', 'thlp2_cn', 'rtpthlp_cn',
 ''
-
 /
