@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.40 2007-03-14 23:34:47 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.41 2007-03-19 20:03:58 dschanen Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -870,6 +870,13 @@
      .         licedfs, lcoamps_micro, bottom_at_sfc, lmpace_nudge,
      .         lKhm_aniso )
 
+        ! Define model constant parameters
+
+        call setup_parameters
+     .       ( deltaz, fcor_in, T0_in, params, isValid )
+
+        if ( .not. isValid ) return
+
 !        if ( .not. implemented ) then
 !          call setup_diagnostic_variables( nzmax )
 !        end if
@@ -884,11 +891,6 @@
 
         call gridsetup( nzmax, deltaz, implemented,
      .                  host_momentum, host_thermodynamic )
-
-        ! Define model constant parameters
-
-        call setup_parameters
-     .       ( deltaz, fcor_in, T0_in, params, isValid )
 
         return
         end subroutine parameterization_setup
