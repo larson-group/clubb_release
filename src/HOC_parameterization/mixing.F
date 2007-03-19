@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.12 2007-03-14 23:34:47 dschanen Exp $
+! $Id: mixing.F,v 1.13 2007-03-19 20:01:23 dschanen Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -71,7 +71,7 @@
      .  thlpthvp,    ! th_l' th_v'                    [K^2]
      .  thlm_forcing ! Large scale tendency for thlm  [K/s]
 
-        ! Additions for DYCOMS_2
+        ! Additions for DYCOMS 2 RF02
         real, intent(in), dimension(gr%nnzp) ::
      .  rhot,        ! rho (density) on thermo. grid  [kg/m^3] 
      .  rhom,        ! rho (density) on moment. grid  [kg/m^3] 
@@ -108,22 +108,18 @@
      .  sclrm, wpsclrp !                                     [Units vary]
 
         ! Local variables
-        real, allocatable, dimension(:,:) :: 
-     .  lhs  ! Banded matrix in compact form 
-!    .  al  ! LU decomposition of banded matrix 
+        real, dimension(2+2+1,2*gr%nnzp) ::
+     .  lhs  ! Band diagonal sparse matrix stored in compact form 
 
-        real, allocatable, dimension(:) :: 
-     .  dd ! RHS for banded matrix
+        real, dimension(2*gr%nnzp) ::
+     .  rhs ! RHS vector for banded matrix
 
-!       integer, allocatable, dimension(:) :: 
-!    .  indx ! Index of pivots for LU decomposition
-
-        ! Constant parameters with Skw applied
-        real, allocatable, dimension(:) :: 
+        ! Constant parameters as a function of Skw.
+        real, dimension(gr%nnzp) :: 
      .  C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc
 
         ! Misc. storage
-        real, dimension(gr%nnzp) :: tmp1, tmp2
+!       real, dimension(gr%nnzp) :: tmp1, tmp2
         
         ! Indices
         integer :: i
@@ -131,17 +127,7 @@
 
 !-----------------------------------------------------------------------
 
-        ! Allocate memory
-        allocate( C6rt_Skw_fnc(1:gr%nnzp) )
-        allocate( C6thl_Skw_fnc(1:gr%nnzp) )
-        allocate( C7_Skw_fnc(1:gr%nnzp) )
-
-        !allocate( lhs(1:2*gr%nnzp,1:5) ) ! (NR)
-        allocate( lhs(1:5,1:2*gr%nnzp) )  ! (LAPACK)
-        allocate( dd(1:2*gr%nnzp) )
-        !allocate( al(1:2*gr%nnzp,1:2) )
-        !allocate( indx(1:2*gr%nnzp) )
-
+        ! Compute C6 and C7 as a function of Skw
         C6rt_Skw_fnc = C6rtb + (C6rt-C6rtb)
      .                        *EXP( -0.5 * (Skwm/C6rtc)**2 )
         C6thl_Skw_fnc = C6thlb + (C6thl-C6thlb)
@@ -155,8 +141,6 @@
 
 !       Setup and decompose matrix
 
-!        call mixing_lhs( .true., dt, taum, wmm, wmt, wp2, wp3, Scm,
-!       Prof. Larson's modified mixing_lhs 
         call mixing_lhs( "rtm", .true., dt, taum, wmm, wmt, 
      .                   wp2, wp3, Scm,
      .                   C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
@@ -168,10 +152,9 @@
      .                     rhot, rhom, exner, rcm, Ncm,  ! Brian
      .                     hm_rt_tndcy,
      .                     Fcsed, sed_rcm,               ! Brian
-     .                     lhs, dd, C7_Skw_fnc, isValid )  
+     .                     lhs, rhs, C7_Skw_fnc, isValid )  
         if ( .not. isValid ) then
-          print *, "rt mixing failed"
-          deallocate( lhs, dd, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc )
+          write(fstderr,'(a)') "rt mixing failed"
           return
         end if
 
@@ -187,10 +170,9 @@
      .                     rhot, rhom, exner, rcm, Ncm,  ! Brian
      .                     hm_thl_tndcy,
      .                     Fcsed, sed_rcm,               ! Brian
-     .                     lhs, dd, C7_Skw_fnc, isValid )
+     .                     lhs, rhs, C7_Skw_fnc, isValid )
         if ( .not. isValid ) then
-          print *, "theta mixing failed"
-          deallocate( lhs, dd, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc )
+          write(fstderr,'(a)') "thetal mixing failed"
           return
         end if
 
@@ -211,15 +193,12 @@
      .                       rhot, rhom, exner, rcm, Ncm,  ! Brian
      .                       hm_rt_tndcy,
      .                       Fcsed, sed_rcm,               ! Brian
-     .                       lhs, dd, C7_Skw_fnc, isValid )
+     .                       lhs, rhs, C7_Skw_fnc, isValid )
           if ( .not. isValid ) then
-            print *, "sclr rt mixing failed"
-            deallocate( lhs, dd, C6rt_Skw_fnc, 
-     .                  C6thl_Skw_fnc, C7_Skw_fnc )
+            write(fstderr,'(a)') "Passive scalar mixing failed"
             return
           end if
 
-          ! Prof. Larson's modified mixing_lhs 
           call mixing_lhs( "thlm",.true., dt, taum, wmm, wmt, 
      .                     wp2, wp3, Scm, 
      .                     C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
@@ -232,18 +211,13 @@
      .                       rhot, rhom, exner, rcm, Ncm,  ! Brian
      .                       hm_thl_tndcy,
      .                       Fcsed, sed_rcm,               ! Brian
-     .                       lhs, dd, C7_Skw_fnc, isValid )
+     .                       lhs, rhs, C7_Skw_fnc, isValid )
           if ( .not. isValid ) then
-            print *, "sclr theta mixing failed"
-            deallocate( lhs, dd, C6rt_Skw_fnc, 
-     .                  C6thl_Skw_fnc, C7_Skw_fnc )
+            write(fstderr,'(a)') "Passive scalar mixing failed"
             return
           end if
         end if ! passive scalars
  
-        ! Free memory
-        deallocate( lhs, dd, C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc )
-
         return
         end subroutine timestep_mixing
 
@@ -265,6 +239,9 @@
 
         implicit none
 
+        ! External
+        intrinsic :: min, max
+
         ! Input variables
 
         character(len=*), intent(in) :: solve_type  ! For new mixing scheme
@@ -280,13 +257,6 @@
      .  wp3,         ! w'^3                           [m^3/s^3]
      .  Scm          ! Sc on moment. grid             [-]
 
-        ! Output variables
-
-!       real, intent(out)      :: lhs(1:2*gr%nnzp,1:5) !(NR)
-!       real, intent(out)      :: dd(1:2*gr%nnzp)
-!       real, intent(out)      :: al(1:2*gr%nnzp,1:2)
-!       integer, intent(out)   :: indx(1:2*gr%nnzp)
-        real, intent(out)      :: lhs(1:5,1:2*gr%nnzp) !(LAPACK)
         logical, intent(in)    :: implemented
 
         real, intent(in), dimension(gr%nnzp) :: 
@@ -294,21 +264,21 @@
      .  C6thl_Skw_fnc,
      .  C7_Skw_fnc
 
+        ! Output variables
+        real, intent(out)      :: lhs(2+2+1,2*gr%nnzp) ! LHS
 
         ! Local Variables
-        ! real :: d
-
         real, dimension(gr%nnzp) :: a1
 
         ! Indices
         integer :: k, km1, kp1
         integer :: k_xm, k_wpxp
 
-!       Define a1
+        ! Define a1
 
         a1(1:gr%nnzp) = 1.0 / ( 1.0 - Scm(1:gr%nnzp) )
 
-!       Set up left hand side matrix
+        ! Set up left hand side matrix
 
         lhs = 0.0
 
@@ -504,18 +474,12 @@
 #endif
         end do ! 2..gr%nnzp-1
 
-!       Boundary condition for the flux
+        ! Boundary condition for the mean and flux
 
+        ! Lower boundary
         k      = 1
         k_xm   = 2*k - 1
         k_wpxp = 2*k
-        ! (NR)
-        !lhs(k_xm,3-1)   = 0.0
-        !lhs(k_xm,3)     = 1.0
-        !lhs(k_xm,3+1)   = 0.0
-        !lhs(k_wpxp,3-2) = 0.0
-        !lhs(k_wpxp,3)   = 1.0
-        !lhs(k_wpxp,3+2) = 0.0
         lhs(3+1,k_xm)   = 0.0
         lhs(3,k_xm)     = 1.0
         lhs(3-1,k_xm)   = 0.0
@@ -523,27 +487,16 @@
         lhs(3,k_wpxp)   = 1.0
         lhs(3-2,k_wpxp) = 0.0
 
+        ! Upper boundary
         k      = gr%nnzp
         k_xm   = 2*k - 1
         k_wpxp = 2*k
-        ! (NR)
-        !lhs(k_xm,3-1)   = 0.0
-        !lhs(k_xm,3)     = 1.0
-        !lhs(k_xm,3+1)   = 0.0
-        !lhs(k_wpxp,3-2) = 0.0
-        !lhs(k_wpxp,3)   = 1.0
-        !lhs(k_wpxp,3+2) = 0.0
         lhs(3+1,k_xm)   = 0.0
         lhs(3,k_xm)     = 1.0
         lhs(3-1,k_xm)   = 0.0
         lhs(3+2,k_wpxp) = 0.0
         lhs(3,k_wpxp)   = 1.0
         lhs(3-2,k_wpxp) = 0.0
-
-!       Perform LU decomposition (NR)
-
-!       call bandec( lhs, 2*gr%nnzp, 2, 2, 2*gr%nnzp, 5, al, 2, indx, d, 
-!    .               isValid )
 
         return
         end subroutine mixing_lhs
@@ -555,12 +508,12 @@
      .                           rhot, rhom, exner, rcm, Ncm,  ! Brian
      .                           hm_tndcy,
      .                           Fcsed, sed_rcm,               ! Brian
-     .                           lhs, dd, C7_Skw_fnc, isValid )
+     .                           lhs, rhs, C7_Skw_fnc, isValid )
 
         use parameters
         use constants
         use grid_class
-        use lapack_wrap, only: band_solve
+        use lapack_wrap, only: band_solve, band_solvex
         use model_flags, only:
      .    cloud_sed,   ! Cloud sedimentation flag -Brian
      .    kk_rain,     ! Khairoutdinov and Kogan (2000) drizzle scheme -Brian
@@ -571,6 +524,11 @@
 
         implicit none
 
+        ! Parameter Constants
+        integer, parameter ::
+     .  nsub = 2,  ! Number of subdiagonals in the LHS matrix
+     .  nsup = 2,  ! Number of superdiagonals in the LHS matrix
+     .  nrhs = 1   ! Number of RHS vectors
 
         ! Input
         character(len=*), intent(in) :: 
@@ -598,14 +556,10 @@
      .  xm,  ! Mean term                                  [units vary] 
      .  wpxp ! Flux term                                  [units vary] 
 
-        real, intent(inout), dimension(5,2*gr%nnzp) :: 
+        real, intent(inout), dimension(nsup+nsub+1,2*gr%nnzp) :: 
      .  lhs  ! Left hand side (LAPACK)
         real, intent(inout), dimension(2*gr%nnzp) :: 
-     .  dd   ! Right hand side (LAPACK)
-
-        ! These were the LU decomp. and pivot index, respectively
-        !real, intent(in)    :: al(1:2*gr%nnzp,1:2) !(NR)
-        !integer, intent(in) :: indx(1:2*gr%nnzp)   !(NR)
+     .  rhs  ! Right hand side (LAPACK)
 
         ! Output
         real, intent(out), dimension(gr%nnzp) :: 
@@ -618,10 +572,11 @@
         real, dimension(2*gr%nnzp) :: 
      .  solution ! Solution to band diagonal system
 
+        real :: rcond ! Est. of the reciprocal of the condition #
+
         ! Indices
         integer :: k, km1, kp1
         integer :: k_xm, k_wpxp
-
 
 #ifdef STATS
         integer ::
@@ -630,6 +585,7 @@
      .    ixm_ma,
      .    ixm_f,
      .    ixm_mc,
+     .    ixm_cn,
      .    iwpxp_bt,
      .    iwpxp_ma,
      .    iwpxp_ta,
@@ -641,13 +597,14 @@
      .    iwpxp_pr3,
      .    iwpxp_dp1
 
-        select case( trim( solve_type ) )
-        case( "rtm" ) ! rtm/wprtp budget terms
+        select case ( trim( solve_type ) )
+        case ( "rtm" ) ! rtm/wprtp budget terms
           ixm_bt    = irtm_bt
           ixm_ta    = irtm_ta
           ixm_ma    = irtm_ma
           ixm_f     = irtm_forcing
           ixm_mc    = irtm_mc
+          ixm_cn    = irtm_cn ! Affects both the mean and flux terms
           iwpxp_bt  = iwprtp_bt
           iwpxp_ma  = iwprtp_ma
           iwpxp_ta  = iwprtp_ta
@@ -658,12 +615,13 @@
           iwpxp_pr2 = iwprtp_pr2
           iwpxp_pr3 = iwprtp_pr3
           iwpxp_dp1 = iwprtp_dp1
-        case( "thlm" ) ! thlm/wpthlp budget terms
+        case ( "thlm" ) ! thlm/wpthlp budget terms
           ixm_bt    = ithlm_bt
           ixm_ta    = ithlm_ta
           ixm_ma    = ithlm_ma
           ixm_f     = ithlm_forcing
           ixm_mc    = ithlm_mc
+          ixm_cn    = ithlm_cn ! Affects both the mean and flux terms
           iwpxp_bt  = iwpthlp_bt
           iwpxp_ma  = iwpthlp_ma
           iwpxp_ta  = iwpthlp_ta
@@ -680,6 +638,7 @@
           ixm_ma    = 0
           ixm_f     = 0
           ixm_mc    = 0
+          ixm_cn    = 0
           iwpxp_bt  = 0
           iwpxp_ma  = 0
           iwpxp_ta  = 0
@@ -830,9 +789,9 @@
         END IF ! cloud_sed
 
 
-!       Set up RHS vector dd
+!       Set up RHS vector
 
-        dd = 0.0
+        rhs = 0.0
 
 
 !        do k=2,gr%nnzp
@@ -851,7 +810,7 @@
 !                   and evaporation of rain (rrm).  3/31/05.
 
           ! Right-hand side.
-          dd(k_xm) 
+          rhs(k_xm) 
      .    = xm(k) / dt
      .    + xm_forcing(k)
 
@@ -859,20 +818,20 @@
           ! Code addition by Brian for cloud water sedimentation.
           IF ( cloud_sed ) THEN
 
-             select case(trim( solve_type ))
+             select case ( trim( solve_type ) )
              case ( "rtm" ) 
-                dd(k_xm) = dd(k_xm) + sed_rcm(k)
+                rhs(k_xm) = rhs(k_xm) + sed_rcm(k)
              case ( "thlm" )
-                dd(k_xm) = dd(k_xm) - ( Lv / (Cp*exner(k)) )
+                rhs(k_xm) = rhs(k_xm) - ( Lv / (Cp*exner(k)) )
      .                               * sed_rcm(k)
              ! The following cases used the formulas for rt and theta in order
              ! to test the scalar code.  However, they need to be commented out
              ! because they do not apply to such things as CO2.  Cloud water
              ! sedimentation would have no effect on such a parameter.
 !             case ( "sclrm_rtm" ) 
-!                dd(k_xm) = dd(k_xm) + sed_rcm(k)
+!                rhs(k_xm) = rhs(k_xm) + sed_rcm(k)
 !             case ( "sclrm_thlm" )
-!                dd(k_xm) = dd(k_xm) - ( Lv / (Cp*exner(k)) )
+!                rhs(k_xm) = rhs(k_xm) - ( Lv / (Cp*exner(k)) )
 !     .                               * sed_rcm(k)
              end select
 
@@ -883,17 +842,17 @@
           if ( kk_rain .or. lcoamps_micro ) then
             select case(trim( solve_type ))
             case ( "rtm", "thlm" ) 
-            dd(k_xm) = dd(k_xm) + hm_tndcy(k)  ! thlm/rtm only; Brian
+            rhs(k_xm) = rhs(k_xm) + hm_tndcy(k)  ! thlm/rtm only; Brian
 
             ! The following cases used the formulas for rt and theta in order
             ! to test the scalar code.  However, they need to be commented out
             ! because they do not apply to such things as CO2.  Rain water
             ! effects would have no effect on such a parameter.
 !            case ( "sclrm_rtm" ) 
-!              dd(k_xm) = dd(k_xm) 
+!              rhs(k_xm) = rhs(k_xm) 
 !     .                 - cond_rrm(k) - auto_rrm(k) - accr_rrm(k)    ! sclrm = rtm
 !            case ( "sclrm_thlm" )
-!              dd(k_xm) = dd(k_xm) - ( Lv / (Cp*exner(k)) ) *
+!              rhs(k_xm) = rhs(k_xm) - ( Lv / (Cp*exner(k)) ) *
 !     .                    ( -cond_rrm(k) - auto_rrm(k) - accr_rrm(k) )  ! sclrm = thlm
              case default
                ! Add nothing
@@ -903,10 +862,10 @@
 !         wpxp: time tendency and buoyancy
 
           ! Right-hand side.
-          dd(k_wpxp)
+          rhs(k_wpxp)
      .    = grav/T0 * (1.0-C7_Skw_fnc(k)) * xpthvp(k)
 
-          if ( liter ) dd(k_wpxp) = dd(k_wpxp) + wpxp(k) / dt
+          if ( liter ) rhs(k_wpxp) = rhs(k_wpxp) + wpxp(k) / dt
 
         end do ! k=2..gr%nnzp-1
 
@@ -915,25 +874,36 @@
         k      = 1
         k_xm   = 2*k - 1
         k_wpxp = 2*k
-        dd(k_xm)   = xm(k)
-        dd(k_wpxp) = wpxp(k)
+        rhs(k_xm)   = xm(k)
+        rhs(k_wpxp) = wpxp(k)
 
         k      = gr%nnzp
         k_xm   = 2*k - 1
         k_wpxp = 2*k
-        dd(k_xm)   = xm(k)
-        dd(k_wpxp) = 0.0
+        rhs(k_xm)   = xm(k)
+        rhs(k_wpxp) = 0.0
 
-        ! Solve system (NR)
+#ifdef STATS
+        if ( lstats_samp .and. ixm_cn > 0 ) then
+          ! Perform LU decomp and solve system (LAPACK with diagnostics)
+          call band_solvex( solve_type, nsup, nsub, 2*gr%nnzp, nrhs,
+     .                      lhs, rhs, solution, rcond, isValid )
 
-!       call banbks( lhs, 2 * gr%nnzp, 2, 2, 
-!    .               2 * gr%nnzp, 5, al, 2, indx, dd )
+          ! Est. of the condition number of the mean/flux LHS matrix 
+          sfc%x(1,ixm_cn) = sfc%x(1,ixm_cn) + 1.0 / rcond
+          sfc%n(1,ixm_cn) = sfc%n(1,ixm_cn) + 1
 
-        ! Perform LU decomposition and solve system
-        ! Note: band_solvex has the same interface and can compute
-        ! additional diagnostics at a higher computational cost.
-        call band_solve( solve_type, 2, 2, 2*gr%nnzp, 1,
-     .                   lhs, dd, solution, isValid )
+        else
+          ! Perform LU decomp and solve system (LAPACK)
+          call band_solve( solve_type, nsup, nsub, 2*gr%nnzp, nrhs,
+     .                     lhs, rhs, solution, isValid )
+        end if
+#else
+        ! Perform LU decomp and solve system (LAPACK)
+        call band_solve( solve_type, nsup, nsub, 2*gr%nnzp, nrhs,
+     .                   lhs, rhs, solution, isValid )
+
+#endif /*STATS*/
 
         if ( .not. isValid ) return
 
@@ -944,8 +914,6 @@
           k_xm   = 2 * k - 1
           k_wpxp = 2 * k
 
-          !xm(k)   = dd(k_xm)
-          !wpxp(k) = dd(k_wpxp)
           xm(k)   = solution(k_xm)
           wpxp(k) = solution(k_wpxp)
 

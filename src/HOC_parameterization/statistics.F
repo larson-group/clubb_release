@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.21 2007-02-28 00:21:13 dschanen Exp $
+!  $Id: statistics.F,v 1.22 2007-03-19 20:01:23 dschanen Exp $
 
 #ifdef STATS
       module stats_type
@@ -491,8 +491,18 @@
      .    irain,   ! Brian
      .    ipflux   ! Brian
 
+        integer ::
+     .    iwp23_cn,
+     .    irtm_cn,
+     .    ithlm_cn,
+     .    irtp2_cn,
+     .    ithlp2_cn,
+     .    irtpthlp_cn
+
 !$omp   threadprivate(iustar, ilh, ish, icc, ilwp, izb, izi)
 !$omp   threadprivate(irain, ipflux)
+!$omp   threadprivate(iwp23_cn, irtm_cn, ithlm_cn)
+!$omp   threadprivate(irtp2_cn, ithlp2_cn, irtpthlp_cn)
 
         ! Variables that contains all the statistics
 
@@ -3275,6 +3285,14 @@
       irain  = 0   ! Brian
       ipflux = 0   ! Brian
 
+      ! These are estimates of the condition number on each implicit
+      ! matrices, and not located at the surface of the domain.
+      iwp23_cn    = 0
+      irtm_cn     = 0
+      ithlm_cn    = 0
+      irtp2_cn    = 0
+      ithlp2_cn   = 0
+      irtpthlp_cn = 0
 
       ! Assign pointers for statistics variables sfc
 
@@ -3353,6 +3371,60 @@
           sfc%f%var(ipflux)%name = "prec_flux"
           sfc%f%var(ipflux)%description = "Precipitation flux (W/m^2)"
           sfc%f%var(ipflux)%units = "W/m2"
+          k = k + 1
+
+        case ('wp23_cn')
+          iwp23_cn = k
+          sfc%f%var(iwp23_cn)%ptr => sfc%x(:,k)
+          sfc%f%var(iwp23_cn)%name = "wp23_cn"
+          sfc%f%var(iwp23_cn)%description
+     .    = "Estimate of the condition number for wp2/3"
+          sfc%f%var(iwp23_cn)%units = "count"
+          k = k + 1
+
+        case ('thlm_cn')
+          ithlm_cn = k
+          sfc%f%var(ithlm_cn)%ptr => sfc%x(:,k)
+          sfc%f%var(ithlm_cn)%name = "thlm_cn"
+          sfc%f%var(ithlm_cn)%description
+     .    = "Estimate of the condition number for thlm/wpthlp"
+          sfc%f%var(ithlm_cn)%units = "count"
+          k = k + 1
+
+        case ('rtm_cn')
+          irtm_cn = k
+          sfc%f%var(irtm_cn)%ptr => sfc%x(:,k)
+          sfc%f%var(irtm_cn)%name = "rtm_cn"
+          sfc%f%var(irtm_cn)%description
+     .    = "Estimate of the condition number for rtm/wprtp"
+          sfc%f%var(irtm_cn)%units = "count"
+          k = k + 1
+
+        case ('thlp2_cn')
+          ithlp2_cn = k
+          sfc%f%var(ithlp2_cn)%ptr => sfc%x(:,k)
+          sfc%f%var(ithlp2_cn)%name = "thlp2_cn"
+          sfc%f%var(ithlp2_cn)%description
+     .    = "Estimate of the condition number for thlp2"
+          sfc%f%var(ithlp2_cn)%units = "count"
+          k = k + 1
+
+        case ('rtp2_cn')
+          irtp2_cn = k
+          sfc%f%var(irtp2_cn)%ptr => sfc%x(:,k)
+          sfc%f%var(irtp2_cn)%name = "rtp2_cn"
+          sfc%f%var(irtp2_cn)%description
+     .    = "Estimate of the condition number for rtp2"
+          sfc%f%var(irtp2_cn)%units = "count"
+          k = k + 1
+
+        case ('rtpthlp_cn')
+          irtpthlp_cn = k
+          sfc%f%var(irtpthlp_cn)%ptr => sfc%x(:,k)
+          sfc%f%var(irtpthlp_cn)%name = "rtpthlp_cn"
+          sfc%f%var(irtpthlp_cn)%description
+     .    = "Estimate of the condition number for rtpthlp"
+          sfc%f%var(irtpthlp_cn)%units = "count"
           k = k + 1
 
         case default

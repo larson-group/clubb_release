@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.11 2007-03-19 15:54:17 dschanen Exp $
+! $Id: wp23.F,v 1.12 2007-03-19 20:01:23 dschanen Exp $
 
         subroutine timestep_wp23
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
@@ -221,7 +221,9 @@
      .  a1, ! a1; See eqn. 20 in `Equations for HOC'             [-]
      .  a3  ! a3; See eqn. 22 in `Equations for HOC'             [-]
 
-        real :: atmp, ctmp
+        real :: 
+     .  atmp, ctmp, ! Temporary variables for the LHS
+     .  rcond  ! Est. of the reciprocal of the condition #
 
         ! Array indices
         integer :: k, km1, kp1, k_wp2, k_wp3
@@ -631,14 +633,29 @@
         lhs(3,k_wp3) = 1.0
         rhs(k_wp3)   = 0.0
 
+#ifdef STATS
+        if ( lstats_samp .and. iwp23_cn > 0 ) then
+          ! Perform LU decomp and solve system (LAPACK with diagnostics)
+          call band_solvex( "wp23", nsup, nsub, 2*gr%nnzp, nrhs,
+     .                      lhs, rhs, solut, rcond, isValid )
 
+          ! Est. of the condition number of the w'^2/w^3 LHS matrix 
+          sfc%x(1,iwp23_cn) = sfc%x(1,iwp23_cn) + 1.0 / rcond
+          sfc%n(1,iwp23_cn) = sfc%n(1,iwp23_cn) + 1
+
+        else
+          ! Perform LU decomp and solve system (LAPACK)
+          call band_solve( "wp23", nsup, nsub, 2*gr%nnzp, nrhs,
+     .                     lhs, rhs, solut, isValid )
+        end if
+#else
         ! Perform LU decomp and solve system (LAPACK)
         call band_solve( "wp23", nsup, nsub, 2*gr%nnzp, nrhs,
      .                   lhs, rhs, solut, isValid )
 
-        ! Perform LU decomp and solve system (LAPACK with diagnostics)
-!       call band_solvex( "wp23", nsup, nsub, 2*gr%nnzp, nrhs,
-!    .                    lhs, rhs, solut, rcond, isValid )
+#endif /*STATS*/
+
+        if ( .not. isValid ) return
 
 
 !       Copy result into output arrays and clip

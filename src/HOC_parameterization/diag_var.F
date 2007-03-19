@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.13 2007-03-14 23:34:47 dschanen Exp $
+! $Id: diag_var.F,v 1.14 2007-03-19 20:01:23 dschanen Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -497,7 +497,7 @@
      .                             lhs, xapxbp, isValid )
 
 !-----------------------------------------------------------------------
-        use lapack_wrap, only: tridag_solve!, band_solve
+        use lapack_wrap, only: tridag_solve, tridag_solvex!, band_solve
         use grid_class
 #ifdef STATS
         use statistics
@@ -529,6 +529,9 @@
         logical, intent(out) ::
      .  isValid ! Returns as false in the event of a singular matrix
 
+        ! Local variables
+        real :: rcond  ! Est. of the reciprocal of the condition #
+
         ! Array indices
         integer :: k, kp1, km1
 
@@ -537,31 +540,55 @@
      .  ixapxbp_dp1,
      .  ixapxbp_dp2,
      .  ixapxbp_ta,
-     .  ixapxbp_ma
+     .  ixapxbp_ma,
+     .  ixapxbp_cn
 
-        select case( trim( solve_type ) )
-        case( "rtp2" )
+        select case ( trim( solve_type ) )
+        case ( "rtp2" )
+          ixapxbp_cn  = irtp2_cn
           ixapxbp_dp1 = irtp2_dp1
           ixapxbp_dp2 = irtp2_dp2
           ixapxbp_ta  = irtp2_ta
           ixapxbp_ma  = irtp2_ma
-        case( "thlp2" )
+        case ( "thlp2" )
+          ixapxbp_cn  = ithlp2_cn
           ixapxbp_dp1 = ithlp2_dp1
           ixapxbp_dp2 = ithlp2_dp2
           ixapxbp_ta  = ithlp2_ta
           ixapxbp_ma  = ithlp2_ma
-        case( "rtpthlp" )
+        case ( "rtpthlp" )
+          ixapxbp_cn  = irtpthlp_cn
           ixapxbp_dp1 = irtpthlp_dp1
           ixapxbp_dp2 = irtpthlp_dp2
           ixapxbp_ta  = irtpthlp_ta
           ixapxbp_ma  = irtpthlp_ma
         case default ! No budgets for passive scalars
+          ixapxbp_cn  = 0
           ixapxbp_dp1 = 0
           ixapxbp_dp2 = 0
           ixapxbp_ta  = 0
           ixapxbp_ma  = 0
         end select
 #endif
+
+#ifdef STATS
+        if ( lstats_samp .and. ixapxbp_cn > 0 ) then
+          call tridag_solvex
+     .         ( solve_type, gr%nnzp, nrhs, lhs(kp1diag,:), 
+     .           lhs(kdiag,:), lhs(km1diag,:), rhs(:,1:nrhs), 
+     .           xapxbp(:,1:nrhs), rcond, isValid )
+
+          ! Est. of the condition number of the variance LHS matrix 
+          sfc%x(1,ixapxbp_cn) = sfc%x(1,ixapxbp_cn) + 1.0 / rcond
+          sfc%n(1,ixapxbp_cn) = sfc%n(1,ixapxbp_cn) + 1
+
+        else 
+          call tridag_solve
+     .         ( solve_type, gr%nnzp, nrhs, lhs(kp1diag,:), 
+     .           lhs(kdiag,:), lhs(km1diag,:), rhs(:,1:nrhs), 
+     .           xapxbp(:,1:nrhs), isValid )
+        end if
+#else
         ! Solve system using tridag_solve. This uses LAPACK sgtsv,
         ! which relies on Gaussian elimination to decompose the matrix.
         call tridag_solve
@@ -573,6 +600,7 @@
 !       call band_solve
 !    .       ( solve_type, 1, 1, gr%nnzp, nrhs, 
 !    .         lhs, rhs(:,1:nrhs), xapxbp(:,1:nrhs), isValid )
+#endif
 
 #ifdef STATS
         ! Compute implicit budget terms
