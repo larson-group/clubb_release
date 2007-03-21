@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.29 2007-03-17 14:08:31 griffinb Exp $
+! $Id: rain.F,v 1.30 2007-03-21 20:57:28 griffinb Exp $
 
       MODULE rain_equations
 
@@ -851,10 +851,22 @@
            ! numerical error.
            IF ( rrm > rr_tol .AND. Nrm > Nr_tol ) THEN
 
-              cond_evap_rrm =
-     .           3.0 * C_evap * G_T_p( Temp, press )
-     .               * ( ((4.0*pi*rho_lw)/(3.0*rhot))**(2.0/3.0) )
-     .               * (rrm**(1.0/3.0)) * (Nrm**(2.0/3.0)) * Supsat
+              IF ( Supsat < 0.0 ) THEN
+              ! The air is not saturated, therefore evaporation can take place.
+
+                 cond_evap_rrm =
+     .              3.0 * C_evap * G_T_p( Temp, press )
+     .                  * ( ((4.0*pi*rho_lw)/(3.0*rhot))**(2.0/3.0) )
+     .                  * (rrm**(1.0/3.0)) * (Nrm**(2.0/3.0)) * Supsat
+
+              ELSE
+              ! The air is saturated, so there is no evaporation.
+              ! In the HOC code, any condensation is added into cloud water
+              ! instead of rain water.
+
+                 cond_evap_rrm = 0.0
+
+              ENDIF
 
            ELSE
 
