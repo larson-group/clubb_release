@@ -1,42 +1,48 @@
 !-----------------------------------------------------------------------
-! $Id: int2txt.F,v 1.2 2006-11-02 01:36:10 dschanen Exp $
+! $Id: int2txt.F,v 1.3 2007-03-21 22:28:43 dschanen Exp $
         program int2txt
 
 !       Description:
-!       Take a binary file of 34 4 byte integers and generate an ASCII 
-!       text file from it.
-!       Takes Input of  34 bytes of binary data;  "rand_seed.bin".
-!       Outputs ASCII text; "rand_seed.dat".
+!       Takes Input of 34 bytes of binary data, and outputs ASCII text.
 !       Notes:  Not very useful on machines without a /dev/random, 
-!       though any 34 bytes of pseudo-random seed data will suffice.
+!       though any 34 bytes of pseudo-random seed data would suffice.
 !-----------------------------------------------------------------------
 #include "recl.F"
 
         implicit none
 
+        ! Seems to work on most Fortran compilers, but if it doesn't,
+        ! try using the F2003 subrountine is get_command_argument() instead.
+        external :: getarg
+
+        ! As above, except the F2003 function is command_argument_count()
+        integer, external :: iargc
+
         ! Parameter Constants
         integer, parameter :: 
-     .  file1 = 10, file2 = 20, seed_dim = 34
+     .  fstderr = 0, fstdout = 6, seed_dim = 34
 
         ! Local Variables
         integer(kind=4), dimension(seed_dim) :: seed ! Our seed data
 
-        integer :: i ! Loop index
+        character(len=50) :: rand_source
 
-        open(unit=file1, file='rand_seed.bin', action='read', 
-     .       recl=F_RECL, form='unformatted', access='direct')
+        ! Test to check there is an argument given
+        if ( iargc( ) < 1 ) then
+          write(fstderr,*) "Usage: int2txt <filename>"
+          stop
+        end if
 
-        open(unit=file2, file='rand_seed.dat')
+        ! Get the source of the random data (usually /dev/random)
+        call getarg(1, rand_source)
 
-        do i = 1, seed_dim, 1
-          read(unit=file1, rec=i) seed(i)
-        end do
+        open(unit=10, file=trim( rand_source ), action='read', 
+     .       recl=F_RECL*seed_dim, form='unformatted', access='direct')
 
-        do i = 1, seed_dim, 1
-          write(unit=file2, fmt=* ) seed(i)
-        end do
+        read(unit=10, rec=1) seed(1:seed_dim)
 
-        close(unit=file1)
-        close(unit=file2)
+        close(unit=10)
+
+        write(unit=fstdout,fmt='(34I12)') seed(1:seed_dim)
 
         end program int2txt
