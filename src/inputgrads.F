@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputgrads.F,v 1.13 2006-11-02 01:36:10 dschanen Exp $
+! $Id: inputgrads.F,v 1.14 2007-03-22 23:03:20 dschanen Exp $
 
         module inputfile_class
 
@@ -299,8 +299,8 @@
           character(len=*) :: 
      .    varname ! The variable name as it occurs in the control file
           
-          integer, intent(in) :: 
-     .    itime ! Obtain variable varname at time itime 
+          integer, intent(in) ::
+     .    itime ! Obtain variable varname at time itime [m]
 
           ! Output
           real(kind=4), dimension(:), intent(out) :: 
@@ -316,8 +316,8 @@
           error = .false.
 
           ! Check time index
-
-          if ( itime < 1 .or. itime > f%ntimes ) then
+          ! Now assumes itime is in minutes
+          if ( itime < 1 .or. (itime/(f%dtwrite/60.)) > f%ntimes ) then
             error = .true.
             write(unit=fstderr,fmt=*) 
      .        "get_var: itime < 1 .or. itime > f%ntimes"
@@ -348,9 +348,14 @@
             return
           end if
 
-!         Read variable from file
+          ! Read variable from file
 
-          nrec = (itime-1)*f%nvar*(f%iz-f%ia+1) 
+          ! dschanen changed this to take into account varying dtwrite
+          ! numbers 22 March 2007
+!         nrec = (itime-1)*f%nvar*(f%iz-f%ia+1) 
+!    .         + (ivar-1)*(f%iz-f%ia+1) + 1
+
+          nrec = (itime/(f%dtwrite/60.)-1)*f%nvar*(f%iz-f%ia+1) 
      .         + (ivar-1)*(f%iz-f%ia+1) + 1
 
           do k=f%ia,f%iz
