@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.43 2007-03-22 23:05:07 dschanen Exp $
+! $Id: error.F,v 1.44 2007-03-29 20:57:56 dschanen Exp $
 
         module error
  
@@ -854,7 +854,6 @@
         real, dimension(nparams) :: params_local
 
         integer   :: i, j  ! loop variables
-        character :: i_c   ! loop variable in ASCII
 
         ! Open new file
         open(unit=20, file=results_f, 
@@ -866,8 +865,7 @@
         write(unit=20,fmt=*) "! Parameter file " // results_f
 
         write(unit=20,fmt=*) "&model"
-        write(unit=20,fmt=*) "run_file  = " // dbqt //
-     .    trim( run_file(1) ) // dbqt
+        write(unit=20,fmt=*) "run_file = "//dbqt//"hoc.in"//dbqt
         write(unit=20,fmt=*) "stdout   = ", ".true."
         write(unit=20,fmt=*) "/"
 
