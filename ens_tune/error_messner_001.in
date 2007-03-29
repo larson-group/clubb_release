@@ -1,0 +1,168 @@
+! Parameter file for subroutine tuner_init in there error module. 
+! All parameters are used by amoeba or amebsa to "tune" hoc.
+
+! ftol is the degree of accuracy in "tuning" (i.e. the # of digits)
+! results_stdout print all results of tuning to the terminal if true
+! results_file will generate a new error.in based on the new constants if true
+! anneal_temp and anneal_iter are only used in amebsa runs;  they determine
+!  the starting temperature for the algoritm, and number of times the
+!  subroutine is called, respectively.
+! tune_type is either 0 for amoeba(downhill simplex method with random restart)
+!   or any other integer for amebsa(downhill simplex with simulated annealing)
+
+! Setting t_variables:
+! Most variables are named in the same fashion in both HOC and LES, but
+!   because some are not they must be specified as an ordered pair of strings.
+
+! Known values of hoc_v and les_v for some variables are listed in the 
+! following table:
+!  Variables
+!  HOC	 | LES
+!  ------------
+!  cf	 | cf
+!  rlm   | qcm
+!  wp3	 | wp3
+!  thlm	 | thlm
+!  rtm   | qtm
+!  um    | um  
+!  vm    | vm
+!  wp2zt | wp2
+!
+!  Values of hoc_v and les_v for other variables can be found in the .ctl files.
+!
+!  Key variables for UWM: qcm/rlm, cf, rtm/qtm, thlm, um, vm, wp3
+
+&stats
+ftol              = 1.0
+results_stdout    = .true.
+results_file      = .true.
+stdout_on_invalid = .false.
+t_variables       = "cf", "cf", "rcm", "qcm"
+weight_var_nl     = 0.5, 0.5,
+anneal_temp       = 100.
+anneal_iter       = 100
+tune_type         = 0
+/
+
+! hoc_stats_file is the name of hoc zt data file;  This should be the same as 
+!   fname_zt in the statsnl namelist.
+! les_stats_file is the name of LES grads data file
+! z_i and z_f are levels to look at when tuning. This does not need
+!   to be 1 to nz if you wish to optimize for particular altitudes.
+!   Note that the first and last z-levels in hoc are not prognosed.
+! time_nl is the time interval(s) to tune for, in ordered pair form.
+
+&cases
+!  GCSS BOMEX
+hoc_stats_file_nl(1) = "bomex_zt.ctl"
+les_stats_file_nl(1) = "../les_data/bomex_coamps_sm.ctl"
+run_file_nl(1)       = "bomex_hoc.in"
+z_i_nl(1)            = 1
+z_f_nl(1)            = 75
+time_nl(1,:)         = 180, 240, 240, 300, 300, 360
+weight_case_nl(1)    = 1.0,
+
+! GCSS DYCOMS II RF01
+hoc_stats_file_nl(2) = "dycoms2_rf01_zt.ctl"
+les_stats_file_nl(2) = "../les_data/dycoms2_rf01_coamps_sm.ctl"
+run_file_nl(2)       = "dycoms2_rf01_hoc.in"
+z_i_nl(2)            = 1
+z_f_nl(2)            = 130
+time_nl(2,:)         = 120, 180, 180, 240
+weight_case_nl(2)    = 1.0,
+
+/
+
+&initvars 
+C1          = 2.500000 ! Low Skewness in C1 Skewness Function. 
+C1b         = 2.500000 ! High Skewness in C1 Skewness Function. 
+C1c         = 1.000000 ! Degree of Slope of C1 Skewness Function. 
+C2rt        = 1.000000 ! C2 constant associated with rtp2 dissipation term.
+C2thl       = 1.000000 ! C2 constant associated with thlp2 dissipation term.
+C2rtthl     = 2.000000 ! C2 constant associated with rtpthlp dissipation term.
+C2          = 1.300000 ! Low Skewness in C2 Skewness Function.
+C2b         = 1.300000 ! High Skewness in C2 Skewness Function.
+C2c         = 5.000000 ! Degree of Slope of C2 Skewness Function.
+C4          = 5.200000 ! Used it lKhm_aniso is enabled, otherwise not.
+C5          = 0.300000 ! Constant from Chris Golaz. 
+C6rt        = 6.000000 ! Low Skewness in C6rt Skewness Function. 
+C6rtb       = 6.000000 ! High Skewness in C6rt Skewness Function. 
+C6rtc       = 1.000000 ! Degree of Slope of C6rt Skewness Function. 
+C6thl       = 6.000000 ! Low Skewness in C6thl Skewness Function. 
+C6thlb      = 6.000000 ! High Skewness in C6thl Skewness Function. 
+C6thlc      = 1.000000 ! Degree of Slope of C6thl Skewness Function. 
+C7          = 0.100000 ! Low Skewness in C7 Skewness Function. 
+C7b         = 0.800000 ! High Skewness in C7 Skewness Function. 
+C7c         = 0.500000 ! Degree of Slope of C7 Skewness Function. 
+C8          = 3.000000 ! Coefficient #1 in C8 Skewness Equation. 
+C8b         = 0.005000 ! Coefficient #2 in C8 Skewness Equation.  From Golaz. 
+C10         = 3.300000 ! Currently Not Used in the Model. 
+C11         = 0.750000 ! Low Skewness in C11 Skewness Function. 
+C11b        = 0.350000 ! High Skewness in C11 Skewness Function.  From Golaz. 
+C11c        = 0.500000 ! Degree of Slope of C11 Skewness Function. From Golaz. 
+C12         = 1.000000 ! Constant applied to vertical velocity diffusion.
+C13         = 0.100000 ! Constant applied to up2_plus_vp2.
+nu1         = 20.00000 ! Previously determined eddy viscosity. 
+nu2         = 5.000000 ! Previously determined eddy viscosity. 
+nu6         = 5.000000 ! Previously determined eddy viscosity. 
+nu8         = 20.00000 ! Previously determined eddy viscosity. 
+nu_r        = 3.000000 ! Tuned to LES from Surface Value of DYCOMS2 RF02 DS. 
+beta        = 1.750000 ! Constant from Chris Golaz. 
+gamma_coef  = 0.320000 ! Low Skewness in gamma coefficient Skewness Function. 
+gamma_coefb = 0.320000 ! High Skewness in gamma coefficient Skewness Function. 
+gamma_coefc = 5.000000 ! Degree of Slope of gamma coefficient Skewness Function.
+c_K         = 0.548000 ! Constant from Chris Golaz. 
+taumin      = 90.00000 ! Previously determined value. 
+taumax      = 3600.000 ! Previously determined value. 
+lmin_coef   = 0.500000 ! Previously determined value. 
+mu          = 6.000E-4 ! Constant from Chris Golaz. 
+/
+
+! Numbers applied to the parameters are used in the equation:
+! Parameter * ( (1 - spread) + rannum * spread * 2 )
+! thus a spread of 0 will keep a constant static through the run
+
+&initspread
+C1             = 0.6
+C1b            = 0.
+C1c            = 0.
+C2rt           = 0.6667
+C2thl          = 0.6667
+C2rtthl        = 0.6667
+C2             = 0.
+C2b            = 0.
+C2c            = 0.
+C4             = 0.
+C5             = 0.6667
+C6rt           = 0.6
+C6rtb          = 0.
+C6rtc          = 0.
+C6thl          = 0.
+C6thlb         = 0.
+C6thlc         = 0.
+C7             = 0.8
+C7b            = 0.8
+C7c            = 0.75
+C8             = 0.6
+C8b            = 0.
+C10            = 0.
+C11            = 0.8
+C11b           = 0.8
+C11c           = 0.75
+C12            = 0.
+C13            = 0.
+nu1            = 0.
+nu2            = 0.
+nu6            = 0.
+nu8            = 0.
+nu_r           = 0.
+beta           = 0.6
+gamma_coef     = 0.1429
+gamma_coefb    = 0.
+gamma_coefc    = 0.
+c_K            = 0.
+taumin         = 0.
+taumax         = 0.
+lmin_coef      = 0.
+mu             = 0.3333
+/

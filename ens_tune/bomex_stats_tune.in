@@ -1,0 +1,22 @@
+! $Id: bomex_stats_tune.in,v 1.1 2007-03-29 22:54:15 dschanen Exp $
+&statsnl
+
+lstats = t
+stats_fmt = 'grads'
+stats_tsamp = 60.0
+stats_tout  = 60.0
+
+fname_zt = 'bomex_zt',
+vars_zt = 
+'cf', 'rcm',
+''
+
+fname_zm = 'bomex_zm',
+vars_zm = 
+''
+
+fname_sfc = 'bomex_sfc',
+vars_sfc = 
+''
+
+/

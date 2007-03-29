@@ -1,0 +1,60 @@
+! $Id: bomex_model.in,v 1.1 2007-03-29 22:54:15 dschanen Exp $
+! Parameter file for GCSS BOMEX tradewind Cu case
+
+&model_setting
+
+runtype = "bomex"
+
+nzmax = 75
+deltaz = 40.0
+day = 22, month = 6, year = 1969,
+rlat = 15.0, rlon = 0.0
+
+time_initial = 0.0
+time_final = 21600.0
+!time_final = 14400.0
+time_spinup = 0.0
+
+dtmain    = 15.0
+dtclosure = 15.0
+
+Tsfc = 300.375
+psfc = 1015.e2
+
+fcor = 0.376e-4
+T0   = 300.
+
+cloud_sed     = .false.
+kk_rain       = .false.
+lcoamps_micro = .false.
+licedfs       = .false.
+lbugsrad      = .false.
+bottom_at_sfc = .true.
+lKhm_aniso    = .false.
+
+/
+
+&sounding
+
+nlevels = 6
+z = 0, 520, 700, 1480, 2000, 3500
+
+theta = 298.7, 298.7, 299.39375, 302.4, 308.4, 313.675
+rt = 0.01729, 0.01657, 0.01549, 0.01082, 0.00422, 0.00241
+
+u = -8.75, -8.75, -8.75, -7.346, -6.41, -3.71
+v = 0,  0,  0,  0,  0,  0
+
+ug = -10, -9.064, -8.74, -7.336, -6.4, -3.7
+vg = 0,  0,  0,  0,  0,  0
+
+/
+
+&scalar_sounding
+sclr(:,1) = 298.7, 298.7, 299.39375, 302.4, 308.4, 313.675
+sclr(:,2) = 0.01729, 0.01657, 0.01549, 0.01082, 0.00422, 0.00241
+edsclr(:,1) = 298.7, 298.7, 299.39375, 302.4, 308.4, 313.675
+edsclr(:,2) = 0.01729, 0.01657, 0.01549, 0.01082, 0.00422, 0.00241
+
+/
+
