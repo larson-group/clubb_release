@@ -1,4 +1,4 @@
-# $Id: config.solaris_generic_ss11.in,v 1.9 2007-03-17 19:03:17 dschanen Exp $
+# $Id: config.solaris_generic_ss11.in,v 1.10 2007-04-05 15:30:10 dschanen Exp $
 # Makefile definitions for Sun Studio's Fortran compiler
 
 # == Paths ==
@@ -51,8 +51,8 @@ FCFLAGS = $(DEBUG) $(ARCH) -DSTATS -Dnooverlap -Dradoffline -M$(NC_LOC)/include
 
 
 # == NetCDF Location  ==
-NC_LOC = /usr/local/netcdf-sun32 # 32 bit libraries
-#NC_LOC = /usr/local/netcdf-sun64 # 64 bit libraries
+NC_LOC = /usr/local/netcdf-sun32
+#NC_LOC = /usr/local/netcdf-sun64
 
 # == LAPACK libraries ==
 LAPACK = -xlic_lib=sunperf
