@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.7 2007-03-14 23:34:47 dschanen Exp $
+! $Id: microphysics.F,v 1.8 2007-04-15 00:18:05 griffinb Exp $
         module microphysics
 
 !       Description:
@@ -142,6 +142,14 @@
      .  ss1, ss2,
      .  rc1, rc2
 
+        ! Variables needed to handle correction to rtm and thlm microphysics
+        ! tendency arrays, as well rrm_cond and Nrm_cond statistical
+        ! tendency arrays, due to a negative result being produced by 
+        ! over-evaporation of rain water over the course of a timestep.
+        ! Brian Griffin.  April 14, 2007.
+        real :: overevap_rrm, ! Absolute value of negative rrm [kg/kg]
+     .          overevap_Nrm  ! Absolute value of negative Nrm [count/m^3]
+
         integer :: k, km1, kp1 ! Array indices
 
 !-----------------------------------------------------------------------
@@ -250,7 +258,7 @@
          end if ! lstats_samp
 #endif /*STATS*/
         else if ( kk_rain ) then
-          ! Note that Ncm for DYCOMS II RF 02 is specified in the GCSS,
+          ! Note that Ncm for DYCOMS II RF02 is specified in the GCSS,
           ! so new cases will need this computed beforehand as well.
 
           call kk_microphys
@@ -295,31 +303,229 @@
 
         ! Compute rrm and Nrm for either case
 
-        ! Rain water mixing ratio
+        ! ----------------------------------------------------------------------
+        ! Rain water mixing ratio (rrm)
+        ! ----------------------------------------------------------------------
+
         call microphys_lhs
      .       ( "rrm", .true., dt, nu_r, wmt, Vrr, rrm, lhs )
 
         call microphys_solve
      .       ( "rrm", dt, lhs, rrm_tndcy, rrm, isValid )
 
-        ! Rain droplet number concentration
+        ! Correction for the over-evaporation of rain.
+        !
+        ! If a small amount of rain water gets diffused into an area that is
+        ! very dry (such as right above the cloud top), the rain water will
+        ! have a very high rate of evaporation and will evaporate entirely in
+        ! a short amount of time.  However, the evaporation rate is computed
+        ! instantaneously at a given moment in time.  This rate is then
+        ! projected over the entire length of the given timestep.  Therefore,
+        ! a high-enough rate of evaporation combined with a small-enough amount
+        ! of rain water and a long-enough timestep will cause the rain water
+        ! mixing ratio to be negative by the end of the timestep.  Therefore,
+        ! a correction factor needs to be imposed on the evaporation rate so 
+        ! that the amount of rain water mixing ratio does not fall below 0.
+        !
+        ! This is accomplished by adjusting the evaporation rate at any level
+        ! where the value of rain water mixing ratio has fallen below 0.  
+        ! The negative amount of rain water is divided by the timestep length
+        ! and then added back into the evaporation rate.  This is important
+        ! because the rain water mixing ratio time tendency (drr/dt) at every
+        ! level is incorporated into the total water mixing ratio (rtm) and 
+        ! liquid water potential temperature (thlm) equations.  Any artificial
+        ! excess in evaporation will artificially increase water vapor, and 
+        ! thus rtm, and artificially decrease thlm (due to evaporative 
+        ! cooling).  This may result in an artificial increase in cloud water.
+        !
+        ! rrm_mc_tndcy = rrm_cond + rrm_auto + rrm_accr
+        ! hm_rt_tndcy  = - rrm_mc_tndcy
+        ! hm_thl_tndcy = ( Lv / (Cp*exner) ) * rrm_mc_tndcy
+        !
+        ! anyplace where rrm drops below zero, there is too much evaporation
+        ! rate for the timestep, so rrm_cond is too negative.  We must add in 
+        ! the overevaporated amount of rrm/dt to make the rate accurate.  
+        ! The overevaporated amount is being defined as a positive scalar, so
+        ! that:  overevap_rrm = -rrm (where rrm < 0) 
+        ! -- this makes overevap_rrm positive.
+        !
+        ! New cond/evap rate = rrm_cond + overevap_rrm/dt
+        ! -- since rrm_cond can only be negative (we don't allow rain droplets
+        !    to grow by condensation) and overevap_rrm/dt can only be positive
+        !    (we define it that way), the new cond/evap rate will be less
+        !    negative, which is what we want.
+        !
+        ! To update the effects of microphysics on rtm and thl:
+        !
+        ! hm_rt_tndcy = hm_rt_tndcy - overevap_rrm/dt
+        ! hm_thl_tndcy = hm_thl_tndcy + ( Lv / (Cp*exner) ) * overevap_rrm/dt
+        !
+        ! Brian Griffin.  April 14, 2007.
+
+        do k = 1, gr%nnzp, 1
+           if ( rrm(k) < 0.0 ) then
+!              if ( hm_rt_tndcy(k) > 0.0 ) then
+!                 ! A positive hm_rt_tndcy means a negative rrm tendency due
+!                 ! to microphysics.  The only way this can happen is if
+!                 ! evaporation takes place.
+                 overevap_rrm = -rrm(k)
+!                 rrm(k) = 0.0
+                 hm_rt_tndcy(k) = hm_rt_tndcy(k) - (overevap_rrm/dt)
+                 hm_thl_tndcy(k) = hm_thl_tndcy(k)
+     .                + ( Lv / ( Cp*exner(k) ) ) * (overevap_rrm/dt)
+!#ifdef STATS
+!                 ! Adjustment to condensation/evaporation
+!                 if ( lstats_samp .and. irrm_cond > 0 ) then
+!                    zt%x(k,irrm_cond) = zt%x(k,irrm_cond) 
+!     .                                  + (overevap_rrm/dt)
+!                    ! This is part of the same sample that was done in rain.F.
+!                    ! Since it is only an adjustment, no new sample addition
+!                    ! is needed.
+!                 endif
+!#endif
+!              endif
+           endif
+        enddo
+
+#ifdef STATS
+          ! Store computed value before clipping
+          if (lstats_samp .and. irrm_cl > 0 ) then
+            zt%x(:,irrm_cl) = zt%x(:,irrm_cl) - rrm / dt
+          end if
+#endif
+
+          ! Value of rain water mixing ratio cannot fall below 0, 
+          ! so we clip accordingly
+          where ( rrm < 0.0 ) rrm = 0.0
+
+#ifdef STATS
+          if (lstats_samp .and. irrm_cl > 0 ) then
+            zt%x(:,irrm_cl) = zt%x(:,irrm_cl) + rrm / dt
+            zt%n(:,irrm_cl) = zt%n(:,irrm_cl) + 1
+          end if
+#endif
+
+#ifdef STATS
+        ! Finalize time tendency
+        if ( lstats_samp .and. irrm_bt > 0 ) then
+          zt%x(:,irrm_bt) = zt%x(:,irrm_bt) + ( rrm / dt )
+          zt%n(:,irrm_bt) = zt%n(:,irrm_bt) + 1
+        endif
+#endif
+
+        ! ----------------------------------------------------------------------
+        ! Rain droplet number concentration (Nrm)
+        ! ----------------------------------------------------------------------
+
         call microphys_lhs
      .       ( "Nrm", .true., dt, nu_r, wmt, VNr, Nrm, lhs )
 
         call microphys_solve
      .       ( "Nrm", dt, lhs, Nrm_tndcy, Nrm, isValid )
 
+        ! Handle over-evaporation similar to rrm.  However, in the case of Nrm
+        ! there is no effect on rtm or on thlm.  Brian Griffin.  April 14, 2007.
+
+        do k = 1, gr%nnzp, 1
+           if ( Nrm(k) < 0.0 ) then
+              overevap_Nrm = -Nrm(k)
+!              Nrm(k) = 0.0
+!#ifdef STATS
+!              ! Adjustment to condensation/evaporation
+!              if ( lstats_samp .and. iNrm_cond > 0 ) then
+!                 zt%x(k,iNrm_cond) = zt%x(k,iNrm_cond) 
+!     .                               + (overevap_Nrm/dt)
+!                 ! This is part of the same sample that was done in rain.F.
+!                 ! Since it is only an adjustment, no new sample addition
+!                 ! is needed.
+!              endif
+!#endif
+           endif
+        enddo
+
+#ifdef STATS
+          ! Store computed value before clipping
+          if (lstats_samp .and. iNrm_cl > 0 ) then
+            zt%x(:,iNrm_cl) = zt%x(:,iNrm_cl) - Nrm / dt
+          end if
+#endif
+
+          ! Value of rain water mixing ratio cannot fall below 0, 
+          ! so we clip accordingly
+          where ( Nrm < 0.0 ) Nrm = 0.0
+
+#ifdef STATS
+          if (lstats_samp .and. irrm_cl > 0 ) then
+            zt%x(:,iNrm_cl) = zt%x(:,iNrm_cl) + Nrm / dt
+            zt%n(:,iNrm_cl) = zt%n(:,iNrm_cl) + 1
+          end if
+#endif
+
+#ifdef STATS
+        ! Finalize time tendency
+        if ( lstats_samp .and. iNrm_bt > 0 ) then
+          zt%x(:,iNrm_bt) = zt%x(:,iNrm_bt) + ( Nrm / dt )
+          zt%n(:,iNrm_bt) = zt%n(:,iNrm_bt) + 1
+        endif
+#endif
+
+        ! Compute rsnowm, rgraupelm, and ricem for COAMPS microphysics only.
 
         if ( lcoamps_micro ) then
 
-          ! Snow mixing ratio
+          ! --------------------------------------------------------------------
+          ! Snow mixing ratio (rsnowm)
+          ! --------------------------------------------------------------------
+
           call microphys_lhs
      .         ( "rsnowm", .true., dt, nu_r, wmt, Vsnow, rsnowm, lhs )
 
           call microphys_solve
      .         ( "rsnowm", dt, lhs, rsnowm_tndcy, rsnowm, isValid )
 
-          ! Graupel mixing ratio
+          ! Both sublimation and/or melting can contribute to the depletion of
+          ! any frozen water particle.  In addition, any type of frozen water
+          ! particle can be depleted by turning into another type of frozen
+          ! water particle.  For example, pristine ice can turn into graupel
+          ! through heavy riming.  It can also turn into snow after combining
+          ! with more ice particles so it is heavy enough to fall.
+          !
+          ! In any place where a negative result is obtained from excess 
+          ! depletion over the course of a timestep, it isn't automatically 
+          ! clear which process is the most responsible.  Therefore, any
+          ! negative result will be clipped and the negative tendency will be
+          ! stored in the clipping array for statistical purposes.
+
+#ifdef STATS
+          ! Store computed value before clipping
+          if (lstats_samp .and. irsnowm_cl > 0 ) then
+            zt%x(:,irsnowm_cl) = zt%x(:,irsnowm_cl) - rsnowm / dt
+          end if
+#endif
+
+          ! Value of snow mixing ratio cannot fall below 0, 
+          ! so we clip accordingly
+          where ( rsnowm < 0.0 ) rsnowm = 0.0
+
+#ifdef STATS
+          if (lstats_samp .and. irsnowm_cl > 0 ) then
+            zt%x(:,irsnowm_cl) = zt%x(:,irsnowm_cl) + rsnowm / dt
+            zt%n(:,irsnowm_cl) = zt%n(:,irsnowm_cl) + 1
+          end if
+#endif
+
+#ifdef STATS
+          ! Finalize time tendency
+          if ( lstats_samp .and. irsnowm_bt > 0 ) then
+            zt%x(:,irsnowm_bt) = zt%x(:,irsnowm_bt) + ( rsnowm / dt )
+            zt%n(:,irsnowm_bt) = zt%n(:,irsnowm_bt) + 1
+          end if
+#endif
+
+          ! --------------------------------------------------------------------
+          ! Graupel mixing ratio (rgraupelm)
+          ! --------------------------------------------------------------------
+
           call microphys_lhs
      .         ( "rgraupelm", .true., dt, nu_r, wmt, Vgraupel, 
      .            rgraupelm, lhs )
@@ -328,13 +534,76 @@
      .         ( "rgraupelm", dt, lhs, rgraupelm_tndcy,
      .           rgraupelm, isValid )
 
-          ! Pristine ice mixing ratio
+          ! Handled the same as rsnowm, as listed above.
+
+#ifdef STATS
+          ! Store computed value before clipping
+          if (lstats_samp .and. irgraupelm_cl > 0 ) then
+            zt%x(:,irgraupelm_cl) = zt%x(:,irgraupelm_cl) 
+     .                              - rgraupelm / dt
+          end if
+#endif
+
+          ! Value of graupel mixing ratio cannot fall below 0, 
+          ! so we clip accordingly
+          where ( rgraupelm < 0.0 ) rgraupelm = 0.0
+
+#ifdef STATS
+          if (lstats_samp .and. irgraupelm_cl > 0 ) then
+            zt%x(:,irgraupelm_cl) = zt%x(:,irgraupelm_cl) 
+     .                              + rgraupelm / dt
+            zt%n(:,irgraupelm_cl) = zt%n(:,irgraupelm_cl) + 1
+          end if
+#endif
+
+#ifdef STATS
+          ! Finalize time tendency
+          if ( lstats_samp .and. irgraupelm_bt > 0 ) then
+            zt%x(:,irgraupelm_bt) = zt%x(:,irgraupelm_bt) 
+     .                              + ( rgraupelm / dt )
+            zt%n(:,irgraupelm_bt) = zt%n(:,irgraupelm_bt) + 1
+          end if
+#endif
+
+          ! --------------------------------------------------------------------
+          ! Pristine ice mixing ratio (ricem)
+          ! --------------------------------------------------------------------
+
           ! Note: Ice sediments in new COAMPS
+
           call microphys_lhs
      .         ( "ricem", .true., dt, nu_r, wmt, Vice, ricem, lhs )
 
           call microphys_solve
      .         ( "ricem", dt, lhs, ricem_tndcy, ricem, isValid )
+
+          ! Handled the same as rsnowm and rgraupelm, as listed above.
+
+#ifdef STATS
+          ! Store computed value before clipping
+          if (lstats_samp .and. iricem_cl > 0 ) then
+            zt%x(:,iricem_cl) = zt%x(:,iricem_cl) - ricem / dt
+          end if
+#endif
+
+          ! Value of ice mixing ratio cannot fall below 0, 
+          ! so we clip accordingly
+          where ( ricem < 0.0 ) ricem = 0.0
+
+#ifdef STATS
+          if (lstats_samp .and. iricem_cl > 0 ) then
+            zt%x(:,iricem_cl) = zt%x(:,iricem_cl) + ricem / dt
+            zt%n(:,iricem_cl) = zt%n(:,iricem_cl) + 1
+          end if
+#endif
+
+#ifdef STATS
+          ! Finalize time tendency
+          if ( lstats_samp .and. iricem_bt > 0 ) then
+            zt%x(:,iricem_bt) = zt%x(:,iricem_bt) + ( ricem / dt )
+            zt%n(:,iricem_bt) = zt%n(:,iricem_bt) + 1
+          end if
+#endif
 
         end if ! lcoamps_micro
 
@@ -430,49 +699,35 @@
 
 #ifdef STATS
         integer ::
-     .  ixrm_bt, ! Change in xrm over time stats toggle
      .  ixrm_ma, ! Mean advection budget stats toggle
      .  ixrm_sd, ! Sedimentation budget stats toggle
-     .  ixrm_dff,! Diffusion budget stats toggle
-     .  ixrm_cl  ! Clipping term stats toggle
+     .  ixrm_dff ! Diffusion budget stats toggle
 
         select case( solve_type )
         case( "rrm" )
-          ixrm_bt  = irrm_bt 
           ixrm_ma  = irrm_ma
           ixrm_sd  = irrm_sd
           ixrm_dff = irrm_dff
-          ixrm_cl  = irrm_cl
         case( "Nrm" )
-          ixrm_bt  = iNrm_bt 
           ixrm_ma  = iNrm_ma
           ixrm_sd  = iNrm_sd
           ixrm_dff = iNrm_dff
-          ixrm_cl  = iNrm_cl
         case( "ricem" )
-          ixrm_bt  = iricem_bt 
           ixrm_ma  = iricem_ma
           ixrm_sd  = iricem_sd
           ixrm_dff = iricem_dff
-          ixrm_cl  = iricem_cl
         case( "rsnowm" )
-          ixrm_bt  = irsnowm_bt 
           ixrm_ma  = irsnowm_ma
           ixrm_sd  = irsnowm_sd
           ixrm_dff = irsnowm_dff
-          ixrm_cl  = irsnowm_cl
         case( "rgraupelm" )
-          ixrm_bt  = irgraupelm_bt 
           ixrm_ma  = irgraupelm_ma
           ixrm_sd  = irgraupelm_sd
           ixrm_dff = irgraupelm_dff
-          ixrm_cl  = irgraupelm_cl
         case default
-          ixrm_bt  = 0
           ixrm_ma  = 0
           ixrm_sd  = 0
           ixrm_dff = 0
-          ixrm_cl  = 0
         end select
 
 #endif /*STATS*/
@@ -537,34 +792,9 @@
 
 #endif /*STATS*/
 
-#ifdef STATS
-        ! Store computed value before clipping
-        if (lstats_samp .and. ixrm_cl > 0 ) then
-          zt%x(:,ixrm_cl) = zt%x(:,ixrm_cl) - xrm / dt
-        end if
-#endif
-        ! Value of mixing ratios / number concentrations cannot fall
-        ! below 0, so we clip accordingly
-        where ( xrm < 0.0 ) xrm = 0.0
-
-#ifdef STATS
-        if (lstats_samp .and. ixrm_cl > 0 ) then
-          zt%x(:,ixrm_cl) = zt%x(:,ixrm_cl) + xrm / dt
-          zt%n(:,ixrm_cl) = zt%n(:,ixrm_cl) + 1
-        end if
-#endif
-
         ! Boundary conditions on results
         xrm(1) = xrm(2)
         xrm(gr%nnzp) = xrm(gr%nnzp-1)
-
-#ifdef STATS
-        ! Finalize time tendency
-        if ( lstats_samp .and. ixrm_bt > 0 ) then
-          zt%x(:,ixrm_bt) = zt%x(:,ixrm_bt) + ( xrm / dt )
-          zt%n(:,ixrm_bt) = zt%n(:,ixrm_bt) + 1
-        end if
-#endif
 
         return
         end subroutine microphys_solve
