@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------
-! $Id: rsati.F,v 1.4 2007-02-14 21:08:07 dschanen Exp $
+! $Id: rsati.F,v 1.5 2007-04-18 22:36:08 dschanen Exp $
         real function rsati( p, T )
 
 !       Description:
@@ -14,7 +14,7 @@
         implicit none
 
         ! External
-        real, external :: esati
+        real, external :: svp_ice
 
         ! Input Variables
         real, intent(in) :: p, T
@@ -23,19 +23,21 @@
         real :: esat_ice
 
         ! Compute SVP for ice
-        esat_ice = esati( T )
+
+        esat_ice = svp_ice( T )
 
         ! Formula for Saturation Mixing Ratio:
         !
         ! rs = (epsilon) * [ es / ( p - es ) ];
         ! where epsilon = R_d / R_v
+
         rsati = ep * ( esat_ice / ( p - esat_ice ) )
 
         return
         end function rsati
 
 !------------------------------------------------------------------------
-        real pure function esati( T )
+        real pure function svp_ice( T ) result ( esati )
 
 !       Description:
 
@@ -81,5 +83,5 @@
         end if
 
         return
-        end function esati
+        end function svp_ice
 !------------------------------------------------------------------------
