@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.30 2007-03-21 20:57:28 griffinb Exp $
+! $Id: rain.F,v 1.31 2007-04-19 22:52:44 griffinb Exp $
 
       MODULE rain_equations
 
@@ -22,21 +22,21 @@
 !      REAL, PARAMETER:: corr_srr_NL =  0.10
 !      REAL, PARAMETER:: corr_sNr_NL = -0.15
 !      REAL, PARAMETER:: corr_sNc_NL =  0.45
-      ! Parameters for in-cloud (from RF02 DO).
-      REAL, PARAMETER:: rrp2_rrm2_cloud = 0.75
-      REAL, PARAMETER:: Nrp2_Nrm2_cloud = 0.40
-      REAL, PARAMETER:: Ncp2_Ncm2_cloud = 0.10
-      REAL, PARAMETER:: corr_rrNr_LL_cloud = 0.80
-      REAL, PARAMETER:: corr_srr_NL_cloud = 0.30
-      REAL, PARAMETER:: corr_sNr_NL_cloud = 0.20
-      REAL, PARAMETER:: corr_sNc_NL_cloud = 0.35
-      ! Parameters for below-cloud (from RF02 DO).
-      REAL, PARAMETER:: rrp2_rrm2_below = 0.75
-      REAL, PARAMETER:: Nrp2_Nrm2_below = 0.40
+      ! Parameters for in-cloud (from SAM RF02 DO).
+      REAL, PARAMETER:: rrp2_rrm2_cloud = 0.766
+      REAL, PARAMETER:: Nrp2_Nrm2_cloud = 0.429
+      REAL, PARAMETER:: Ncp2_Ncm2_cloud = 0.003
+      REAL, PARAMETER:: corr_rrNr_LL_cloud = 0.786
+      REAL, PARAMETER:: corr_srr_NL_cloud = 0.242
+      REAL, PARAMETER:: corr_sNr_NL_cloud = 0.285
+      REAL, PARAMETER:: corr_sNc_NL_cloud = 0.433
+      ! Parameters for below-cloud (from SAM RF02 DO).
+      REAL, PARAMETER:: rrp2_rrm2_below = 8.97
+      REAL, PARAMETER:: Nrp2_Nrm2_below = 12.03
       REAL, PARAMETER:: Ncp2_Ncm2_below = 0.00 ! Not applicable below cloud.
-      REAL, PARAMETER:: corr_rrNr_LL_below = 0.80
-      REAL, PARAMETER:: corr_srr_NL_below = 0.30
-      REAL, PARAMETER:: corr_sNr_NL_below = 0.20
+      REAL, PARAMETER:: corr_rrNr_LL_below = 0.886
+      REAL, PARAMETER:: corr_srr_NL_below = 0.056
+      REAL, PARAMETER:: corr_sNr_NL_below = 0.015
       REAL, PARAMETER:: corr_sNc_NL_below = 0.00 ! Not applicable below cloud.
       REAL, PARAMETER:: C_evap = 0.86    ! Khairoutdinov and Kogan (2000) 
                                          ! ratio of drizzle drop mean 
