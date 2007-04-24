@@ -1,10 +1,10 @@
-! $Id: standalone_atex.in,v 1.25 2007-02-23 01:29:34 dschanen Exp $
+! $Id: standalone_atex.in,v 1.26 2007-04-24 22:08:16 dschanen Exp $
 ! Description:
 ! Namelists for the hoc_standalone program. 
 ! run_file is the location of the model namelist file, which contains the 
 ! statistics and sounding data. 
 ! stdout will determine if the model prints out its status over iterations 
-! C4 and C13 are only relevant when lKhm_aniso is enabled.
+! C4, C14, and nu9 are only relevant when lKhm_aniso is enabled.
 ! C2, C2b, & C2c are not used unless diag_var is compiled with -DSINGLE_C2_SKW
 
 &model
@@ -40,17 +40,19 @@ C11         = 0.750000 ! Low Skewness in C11 Skewness Function.
 C11b        = 0.350000 ! High Skewness in C11 Skewness Function.  From Golaz. 
 C11c        = 0.500000 ! Degree of Slope of C11 Skewness Function. From Golaz. 
 C12         = 1.000000 ! Constant applied to vertical velocity diffusion. 
-C13         = 0.100000 ! Constant applied to up2_plus_vp2.
+C13         = 0.100000 ! Not currently used in model.
+C14         = 1.000000 ! Constant applied to up2 and vp2.
 nu1         = 20.00000 ! Previously determined eddy viscosity. 
 nu2         = 5.000000 ! Previously determined eddy viscosity. 
 nu6         = 5.000000 ! Previously determined eddy viscosity. 
 nu8         = 20.00000 ! Previously determined eddy viscosity. 
+nu9         = 20.00000 ! Previously determined eddy viscosity. 
 nu_r        = 3.000000 ! Tuned to LES from Surface Value of DYCOMS2 RF02 DS. 
 beta        = 1.750000 ! Constant from Chris Golaz. 
 gamma_coef  = 0.320000 ! Low Skewness in gamma coefficient Skewness Function. 
 gamma_coefb = 0.320000 ! High Skewness in gamma coefficient Skewness Function. 
 gamma_coefc = 5.000000 ! Degree of Slope of gamma coefficient Skewness Function.
-c_K         = 0.548000 ! Constant from Chris Golaz. 
+c_K         = 0.548000 ! From Duynkerke and Driedonks (1987). 
 taumin      = 90.00000 ! Previously determined value. 
 taumax      = 3600.000 ! Previously determined value. 
 lmin_coef   = 0.500000 ! Previously determined value. 
