@@ -1,4 +1,4 @@
-! $Id: dycoms2_rf01_model.in,v 1.9 2007-02-09 00:55:24 dschanen Exp $
+! $Id: dycoms2_rf01_model.in,v 1.10 2007-04-24 21:59:54 dschanen Exp $
 ! Parameter file for DYCOMS II RF01 Sc case
 
 &model_setting
@@ -16,8 +16,8 @@ time_initial = 0.0
 time_final =  14400.0
 time_spinup = 200000.0
 
-dtmain    = 60.0
-dtclosure = 60.0
+dtmain    = 30.0
+dtclosure = 30.0
 
 Tsfc = 292.5
 psfc = 1017.e2
