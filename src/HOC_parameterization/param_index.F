@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: param_index.F,v 1.1 2007-03-14 23:34:47 dschanen Exp $
+! $Id: param_index.F,v 1.2 2007-04-24 21:57:41 dschanen Exp $
         module param_index
 
 !       Description:
@@ -23,7 +23,7 @@
         implicit none
 
         integer, parameter :: 
-     .  nparams = 42 ! Total tunable parameters
+     .  nparams = 44 ! Total tunable parameters
 
         integer, parameter ::
      .  iC1             =  1, 
@@ -53,13 +53,15 @@
      .  iC11b           = 25,
      .  iC11c           = 26,
      .  iC12            = 27,
-     .  iC13            = 28
+     .  iC13            = 28,
+     .  iC14            = 43
 
         integer, parameter ::
      .  inu1            = 29,
      .  inu2            = 30,
      .  inu6            = 31,
      .  inu8            = 32,
+     .  inu9            = 44,
      .  inu_r           = 33
 
         integer, parameter ::

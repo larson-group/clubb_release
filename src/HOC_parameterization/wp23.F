@@ -1,9 +1,9 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.12 2007-03-19 20:01:23 dschanen Exp $
+! $Id: wp23.F,v 1.13 2007-04-24 21:57:41 dschanen Exp $
 
         subroutine timestep_wp23
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
-     .               a, Kht, wmt, wmm,
+     .               a, Kht, wmt, wmm, up2, vp2,
      .               um, upwp, vm, vpwp, wpthvp, wp2thvp,
      .               wp2, wp3, isValid )
 !       Description:
@@ -49,6 +49,8 @@
      .  Kht,   ! Kh Eddy diffusivity on thermo. grid    [m^2/s]
      .  wmt,   ! w wind on the thermo. grid             [m/s]
      .  wmm,   ! w wind on the momentum grid            [m/s]
+     .  up2,   ! u'^2                                   [m^2/s^2]
+     .  vp2,   ! v'^2                                   [m^2/s^2]
      .  um,    ! u wind (thermo. grid)                  [m/s]
      .  upwp,  ! u'w' (moment. grid)                    [m^2/s^2]
      .  vm,    ! v wind (thermo. grid)                  [m/s]
@@ -134,12 +136,11 @@
 !        C11_Skw_fnc = C11
 !        C1_Skw_fnc = C1
 
-
 !       Solve semi-implicitly
 !       Note: Kw is defined to be 1/2 of Kht
         call wp23_solve( dt, Scm, Lscale, Lm, taum, tauw3t, 0.5*Kht,
      .                   wmt, wmm, wpthvp, wp2thvp,
-     .                   um, upwp, vm, vpwp,
+     .                   um, upwp, vm, vpwp, up2, vp2,
      .                   Skwt, C1_Skw_fnc, C11_Skw_fnc, 
      .                   wp2, wp3, isValid )
 
@@ -149,7 +150,7 @@
 !------------------------------------------------------------------------
         subroutine wp23_solve( dt, Scm, Lscale, Lm, tau1m, tauw3t, Kw,
      .                         wmt, wmm, wpthvp, wp2thvp,
-     .                         um, upwp, vm, vpwp,
+     .                         um, upwp, vm, vpwp, up2, vp2,
      .                         Skwt, C1_Skw_fnc, C11_Skw_fnc,
      .                         wp2, wp3, isValid)
 !       Description:
@@ -192,6 +193,8 @@
      .  Kw,         ! 1/2 Kht Eddy diffusivity               [m^2/s]
      .  wmt,        ! w wind on t                            [m/s]
      .  wmm,        ! w wind on m                            [m/s]
+     .  up2,        ! u'^2                                   [m^s/s^2]
+     .  vp2,        ! v'^2                                   [m^s/s^2]
      .  wpthvp,     ! w'th_v' Buoyancy flux                  [(K m)/s]
      .  wp2thvp,    ! w'^2 th_v'                             [(m^2 K)/s^2]
      .  um,         ! u wind                                 [m/s]
@@ -253,7 +256,7 @@
      .       + (1.0-Scm)*(1.0-Scm)
      .       - (3.0/2.0)
 
-!       Set up matrix aa and RHS dd
+        ! Set up matrix lhs and vector rhs
 
         lhs = 0.0
         rhs = 0.0
@@ -299,9 +302,13 @@
           lhs(3,k_wp2)
      .    = + 1.0 / dt
      .      + ( 1.0 - C5 ) * 2.0 * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
-!     .      + C1 / tau1m(k)
      .      + C1_Skw_fnc(k) / tau1m(k)
      .      - atmp - ctmp
+          if ( lKhm_aniso ) then
+            ! Add in this term if we're not assuming tke = 1.5 * wp2
+            lhs(3,k_wp2) = lhs(3,k_wp2)
+     .      + ( 2.0 * C4 ) / ( 3.0 * tau1m(k) )
+          end if
 
           ! Thermodynamic superdiagonal [ x wp3(k+1,<t+1>) ]
           lhs(3-1,k_wp2)
@@ -329,9 +336,14 @@
      .      + ( atmp + ctmp ) * wp2(k)
      .      - ctmp * wp2(kp1)
 
+          if ( lKhm_aniso ) then
+            rhs(k_wp2) = rhs(k_wp2)
+     .      + ( C4 * ( up2(k) + vp2(k) ) ) / ( 3.0 * tau1m(k) )
+          end if
+
 
 #ifdef STATS
-          if (lstats_samp) then
+          if ( lstats_samp ) then
 
 !          Explicit contributions for wp2
 
@@ -346,6 +358,11 @@
             zm%x(k,iwp2_bp) = zm%x(k,iwp2_bp) 
      .      + 1.0 * 2.0 * grav * (1.0/T0) * wpthvp(k)
             zm%n(k,iwp2_bp) = zm%n(k,iwp2_bp) + 1
+           end if
+
+           if ( iwp2_pr1 > 0 .and. lKhm_aniso ) then
+            zm%x(k,iwp2_pr1) = zm%x(k,iwp2_pr1) 
+     .      + ( C4 * ( up2(k) + vp2(k) ) ) / ( 3.0 * tau1m(k) )
            end if
 
            if ( iwp2_pr2 > 0 ) then
@@ -363,10 +380,9 @@
             zm%n(k,iwp2_pr3) = zm%n(k,iwp2_pr3) + 1
            end if
 
-!          Implicit contributions for wp2
+           ! Implicit contributions for wp2
 
            if ( iwp2_dp1 > 0 ) then
-!             zmscr01(k) = - C1/tau1m(k)
              zmscr01(k) = - C1_Skw_fnc(k) / tau1m(k)
            end if
 
@@ -394,6 +410,10 @@
            if ( iwp2_pr2 > 0 ) then
              zmscr10(k) = 
      .      + C5 * 2.0 * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
+           end if
+
+           if ( iwp2_pr1 > 0 .and. lKhm_aniso ) then
+             zmscr11(k) = - ( 2.0 * C4 ) / ( 3.0 * tau1m(k) )
            end if
 
          end if
@@ -542,51 +562,51 @@
 !         Implicit contributions for wp3
 
           if ( iwp3_ta > 0 ) then
-          ztscr05(k) =
-     .    + (1.0/2.0) * gr%dzt(k)
-     .      * a1(km1) * ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), eps )
-          ztscr06(k) =
+            ztscr05(k) =
+     .      + (1.0/2.0) * gr%dzt(k)
+     .        * a1(km1) * ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), eps )
+            ztscr06(k) =
 !     .    + 2.0 * gr%dzt(k) * ( a3(km1) + (3.0/2.0) ) * wp2(km1)  ! standard deriv.
 !     .    + 2.0 * gr%dzt(k) * ( a3(k) + (3.0/2.0) ) * wp2(km1)    ! Golaz's no a3 deriv.
-     .    + 2.0 * gr%dzt(k) * ( 0.5*(a3(k)+a3(km1)) + (3.0/2.0) ) ! Centered no a3 deriv.
-     .      * wp2(km1)                                            ! Centered no a3 deriv.
-          ztscr07(k) =
-     .    - (1.0/2.0) * gr%dzt(k)
-     .      * (  a1(k) * ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), eps )
-     .         - a1(km1) * ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), eps )
-     .        )
-          ztscr08(k) =
+     .        + 2.0 * gr%dzt(k) * ( 0.5*(a3(k)+a3(km1)) + (3.0/2.0) ) ! Centered no a3 deriv.
+     .          * wp2(km1)                                            ! Centered no a3 deriv.
+            ztscr07(k) =
+     .      - (1.0/2.0) * gr%dzt(k)
+     .        * ( a1(k) * ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), eps )
+     .           -a1(km1) * ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), eps )
+     .          )
+            ztscr08(k) =
 !     .    - 2.0 * gr%dzt(k) * ( a3(k) + (3.0/2.0) ) * wp2(k)      ! standard deriv.
 !     .    - 2.0 * gr%dzt(k) * ( a3(k) + (3.0/2.0) ) * wp2(k)      ! Golaz's no a3 deriv.
-     .    - 2.0 * gr%dzt(k) * ( 0.5*(a3(k)+a3(km1)) + (3.0/2.0) ) ! Centered a3 deriv.
-     .      * wp2(k)                                              ! Centered no a3 deriv.
-          ztscr09(k) =
-     .    - (1.0/2.0) * gr%dzt(k)
-     .      * a1(k) * ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), eps )
+     .        - 2.0 * gr%dzt(k) * ( 0.5*(a3(k)+a3(km1)) + (3.0/2.0) ) ! Centered a3 deriv.
+     .          * wp2(k)                                              ! Centered no a3 deriv.
+              ztscr09(k) =
+     .        - (1.0/2.0) * gr%dzt(k)
+     .          * a1(k) * ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), eps )
           end if
 
           if ( iwp3_tp > 0 ) then
-          ztscr10(k) = 
-     .    - 2.0 * gr%dzt(k) * (3.0/2.0) * wp2(km1)
-          ztscr11(k) = 
-     .    + 2.0 * gr%dzt(k) * (3.0/2.0) * wp2(k)
+            ztscr10(k) = 
+     .      - 2.0 * gr%dzt(k) * (3.0/2.0) * wp2(km1)
+            ztscr11(k) = 
+     .      + 2.0 * gr%dzt(k) * (3.0/2.0) * wp2(k)
           end if
 
           if ( iwp3_ma > 0 ) then
-          ztscr12(k) = 
-     .    + wmt(k) * (1.0/2.0) * gr%dzt(k)
-          ztscr13(k) = 
-     .    - wmt(k) * (1.0/2.0) * gr%dzt(k)
+            ztscr12(k) = 
+     .      + wmt(k) * (1.0/2.0) * gr%dzt(k)
+            ztscr13(k) = 
+     .      - wmt(k) * (1.0/2.0) * gr%dzt(k)
           end if
 
           if ( iwp3_ac > 0 ) then
-          ztscr14(k) = 
-     .    - 1.0 * 3.0 * gr%dzt(k) * ( wmm(k) - wmm(km1) )
+            ztscr14(k) = 
+     .      - 1.0 * 3.0 * gr%dzt(k) * ( wmm(k) - wmm(km1) )
           end if
 
           if ( iwp3_pr2 > 0 ) then
-          ztscr15(k) =
-     .    + C11_Skw_fnc(k) * 3.0 * gr%dzt(k) * ( wmm(k) - wmm(km1) )
+            ztscr15(k) =
+     .      + C11_Skw_fnc(k) * 3.0 * gr%dzt(k) * ( wmm(k) - wmm(km1) )
           end if
 
           if ( iwp3_pr1 > 0 ) then
@@ -595,9 +615,9 @@
           end if
 
           if ( iwp3_dp1 > 0 ) then
-          ztscr02(k) = - atmp
-          ztscr03(k) = atmp + ctmp
-          ztscr04(k) = - ctmp
+            ztscr02(k) = - atmp
+            ztscr03(k) = atmp + ctmp
+            ztscr04(k) = - ctmp
           end if
 
           end if
@@ -606,6 +626,13 @@
         end do
 
         ! Boundary conditions
+
+        !   wp3(1)  wp2(1) ... wp3(nz) wp2(nz)
+        ! [  0.0     0.0         0.0     0.0  ]
+        ! [  0.0     0.0         0.0     0.0  ]
+        ! [  1.0     1.0   ...   1.0     1.0  ]
+        ! [  0.0     0.0         0.0     0.0  ]
+        ! [  0.0     0.0         0.0     0.0  ]
 
         ! Lower boundary
         k = 1
@@ -714,6 +741,12 @@
              zm%x(k,iwp2_ac) = zm%x(k,iwp2_ac)
      .       + zmscr09(k) * wp2(k)
              zm%n(k,iwp2_ac) = zm%n(k,iwp2_ac) + 1
+            end if
+
+            if ( iwp2_pr1 > 0 ) then
+              zm%x(k,iwp2_pr1) = zm%x(k,iwp2_pr1)
+     .        + zmscr11(k) * wp2(k)
+              zm%n(k,iwp2_pr1) = zm%n(k,iwp2_pr1) + 1
             end if
 
             if ( iwp2_pr2 > 0 ) then

@@ -1,4 +1,4 @@
-! $Id: sfc.F,v 1.6 2007-03-14 23:34:47 dschanen Exp $
+! $Id: sfc.F,v 1.7 2007-04-24 21:57:41 dschanen Exp $
 #define SCLR_RT 2
 #define SCLR_THETA 1
 
@@ -15,7 +15,8 @@
 
 !------------------------------------------------------------------------
         subroutine sfc_var( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc,
-     .                      wp2_sfc, thlp2_sfc, rtp2_sfc, rtpthlp_sfc, 
+     .                      wp2_sfc, up2_sfc, vp2_sfc,
+     .                      thlp2_sfc, rtp2_sfc, rtpthlp_sfc, 
      .                      wpsclrp_sfc, sclrp2_sfc,
      .                      sclrprtp_sfc, sclrpthlp_sfc )
 
@@ -56,6 +57,8 @@
         ! Output Variables
         real, intent(out) :: 
      .  wp2_sfc,    ! Vertical velocity variance        [m^2/s^2]
+     .  up2_sfc,    ! u'^2                              [m^2/s^2]
+     .  vp2_sfc,    ! u'^2                              [m^2/s^2]
      .  thlp2_sfc,  ! thetal variance                   [K^2]
      .  rtp2_sfc,   ! rt variance                       [kg/kg]
      .  rtpthlp_sfc ! thetal rt covariance              [kg K]
@@ -87,12 +90,13 @@
         ! Surface friction velocity following Andre et al. 1978
 
         uf = sqrt( ustar2 + 0.3 * wstar * wstar ) 
-!        uf = sqrt( ustar2 + 0.3 * wstar**2 )  !test
         uf = max( ufmin, uf )
 
         ! Compute estimate for surface second order moments
 
         wp2_sfc     =  a * uf**2
+        up2_sfc     =  a * uf**2  ! From Andre, et al. 1978
+        vp2_sfc     =  a * uf**2  ! "  "
         thlp2_sfc   = 0.1 * a * ( wpthlp_sfc / uf )**2
         rtp2_sfc    = 0.4 * a * ( wprtp_sfc / uf )**2
         rtpthlp_sfc = a * ( wpthlp_sfc / uf ) * ( wprtp_sfc / uf )

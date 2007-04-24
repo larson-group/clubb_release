@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameters.F,v 1.2 2007-03-15 23:15:23 dschanen Exp $
+! $Id: parameters.F,v 1.3 2007-04-24 21:57:41 dschanen Exp $
         module parameters 
 
 !       Description:
@@ -54,11 +54,13 @@
      .  C11b,       ! High Skewness in C11 Skewness Function.  From Golaz.
      .  C11c,       ! Degree of Slope of C11 Skewness Function.  From Golaz.
      .  C12,        ! Constant in w'^3 Crank-Nicholson diffusional term.
-     .  C13,        ! Constant for up2_plus_vp2.
+     .  C13,        ! Not currently used in model.
+     .  C14,        ! Constant for u'^2 and v'^2 terms.
      .  nu1,        ! Previously determined eddy viscosity.
      .  nu2,        ! Previously determined eddy viscosity.
      .  nu6,        ! Previously determined eddy viscosity.
      .  nu8,        ! Previously determined eddy viscosity.
+     .  nu9,        ! Previously determined eddy viscosity.
      .  nu_r,       ! Tuned to LES from Surface Value of DYCOMS2 RF02 DS.
      .  gamma_coef, ! Low Skewness in gamma coefficient Skewness Function.
      .  gamma_coefb,! High Skewness in gamma coefficient Skewness Function.
@@ -73,8 +75,8 @@
 !$omp   threadprivate(C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6rtb, C6rtc)
 !$omp   threadprivate(C6thl, C6thlb, C6thlc)
 !$omp   threadprivate(C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12)
-!$omp   threadprivate(C13)
-!$omp   threadprivate(nu1, nu2, nu6, nu8, nu_r, beta)
+!$omp   threadprivate(C13, C14)
+!$omp   threadprivate(nu1, nu2, nu6, nu8, nu9, nu_r, beta)
 !$omp   threadprivate(gamma_coef, gamma_coefb, gamma_coefc)
 !$omp   threadprivate(c_K, taumin, taumax, mu, lmin)
 
@@ -96,7 +98,7 @@
      .    C2rt, C2thl, C2rtthl, C4, C5,
      .    C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .    C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c,
-     .    C12, C13, nu1, nu2, nu6, nu8, nu_r, beta, 
+     .    C12, C13, C14, nu1, nu2, nu6, nu8, nu9, nu_r, beta, 
      .    gamma_coef, gamma_coefb, gamma_coefc,
      .    c_K, lmin_coef, taumin, taumax, mu
 
@@ -116,7 +118,7 @@
      .    "nu1        ", "nu2        ", "nu6        ", "nu8        ",
      .    "nu_r       ", "gamma_coef ", "gamma_coefb", "gamma_coefc", 
      .    "mu         ", "c_K        ", "beta       ", "lmin_coef  ",
-     .    "taumin     ", "taumax     "/)
+     .    "taumin     ", "taumax     ", "C14        ", "nu9        "/)
 
         contains
 
@@ -141,7 +143,7 @@
      .  T0_in    ! Ref. temperature             [K]
 
         real, intent(in), dimension(nparams) :: 
-     .  params  ! Tunable model parameters      [-]
+     .  params  ! Tuneable model parameters      [-]
 
         ! Output Variables
         logical, intent(out) :: isValid ! Error condition
@@ -151,8 +153,8 @@
      .         C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl,
      .         C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .         C7, C7b, C7c, C8, C8b, C10,
-     .         C11, C11b, C11c, C12, C13,
-     .         nu1, nu2, nu6, nu8, nu_r,
+     .         C11, C11b, C11c, C12, C13, C14,
+     .         nu1, nu2, nu6, nu8, nu9, nu_r,
      .         gamma_coef, gamma_coefb, gamma_coefc,
      .         mu, c_K, beta, lmin_coef,
      .         taumin, taumax )
@@ -171,6 +173,7 @@
           nu2 = nu2 * deltaz / 40.0
           nu6 = nu6 * deltaz / 40.0
           nu8 = nu8 * deltaz / 40.0
+          nu9 = nu9 * deltaz / 40.0
         end if
 
        ! There should be a different formula for determining nu_r for
@@ -237,8 +240,8 @@
      .      ( C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl,
      .        C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .        C7, C7b, C7c, C8, C8b, C10,
-     .        C11, C11b, C11c, C12, C13,
-     .        nu1, nu2, nu6, nu8, nu_r,
+     .        C11, C11b, C11c, C12, C13, C14,
+     .        nu1, nu2, nu6, nu8, nu9, nu_r,
      .        gamma_coef, gamma_coefb, gamma_coefc,
      .        mu, c_K, beta, lmin_coef,
      .        taumin, taumax, params )
@@ -288,7 +291,7 @@
      .    C2rt, C2thl, C2rtthl, C4, C5,
      .    C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .    C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c,
-     .    C12, C13, nu1, nu2, nu6, nu8, nu_r, beta, 
+     .    C12, C13, C14, nu1, nu2, nu6, nu8, nu9, nu_r, beta, 
      .    gamma_coef, gamma_coefb, gamma_coefc,
      .    c_K, lmin_coef, taumin, taumax, mu
 
@@ -304,8 +307,8 @@
      .      ( C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl,
      .        C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .        C7, C7b, C7c, C8, C8b, C10,
-     .        C11, C11b, C11c, C12, C13,
-     .        nu1, nu2, nu6, nu8, nu_r,
+     .        C11, C11b, C11c, C12, C13, C14,
+     .        nu1, nu2, nu6, nu8, nu9, nu_r,
      .        gamma_coef, gamma_coefb, gamma_coefc,
      .        mu, c_K, beta, lmin_coef,
      .        taumin, taumax, param_spread )
@@ -334,8 +337,8 @@
      .            ( C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl,
      .              C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .              C7, C7b, C7c, C8, C8b, C10,
-     .              C11, C11b, C11c, C12, C13,
-     .              nu1, nu2, nu6, nu8, nu_r,
+     .              C11, C11b, C11c, C12, C13, C14,
+     .              nu1, nu2, nu6, nu8, nu9, nu_r,
      .              gamma_coef, gamma_coefb, gamma_coefc,
      .              mu, c_K, beta, lmin_coef,
      .              taumin, taumax, params )
@@ -357,8 +360,8 @@
      .  C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl,
      .  C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .  C7, C7b, C7c, C8, C8b, C10,
-     .  C11, C11b, C11c, C12, C13,
-     .  nu1, nu2, nu6, nu8, nu_r,
+     .  C11, C11b, C11c, C12, C13, C14,
+     .  nu1, nu2, nu6, nu8, nu9, nu_r,
      .  gamma_coef, gamma_coefb, gamma_coefc,
      .  mu, c_K, beta, lmin_coef,
      .  taumin, taumax
@@ -394,11 +397,13 @@
         params(iC11c)    = C11c
         params(iC12)     = C12
         params(iC13)     = C13
+        params(iC14)     = C14
 
         params(inu1)  = nu1
         params(inu2)  = nu2
         params(inu6)  = nu6
         params(inu8)  = nu8
+        params(inu9)  = nu9
         params(inu_r) = nu_r
 
         params(igamma_coef)  = gamma_coef
@@ -425,8 +430,8 @@
      .               C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl,
      .               C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .               C7, C7b, C7c, C8, C8b, C10,
-     .               C11, C11b, C11c, C12, C13,
-     .               nu1, nu2, nu6, nu8, nu_r,
+     .               C11, C11b, C11c, C12, C13, C14,
+     .               nu1, nu2, nu6, nu8, nu9, nu_r,
      .               gamma_coef, gamma_coefb, gamma_coefc,
      .               mu, c_K, beta, lmin_coef,
      .               taumin, taumax )
@@ -453,8 +458,8 @@
      .  C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl,
      .  C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .  C7, C7b, C7c, C8, C8b, C10,
-     .  C11, C11b, C11c, C12, C13,
-     .  nu1, nu2, nu6, nu8, nu_r,
+     .  C11, C11b, C11c, C12, C13, C14,
+     .  nu1, nu2, nu6, nu8, nu9, nu_r,
      .  gamma_coef, gamma_coefb, gamma_coefc,
      .  mu, c_K, beta, lmin_coef,
      .  taumin, taumax
@@ -487,11 +492,13 @@
         C11c    = params(iC11c)
         C12     = params(iC12)
         C13     = params(iC13)
+        C14     = params(iC14)
 
         nu1  = params(inu1)
         nu2  = params(inu2)
         nu6  = params(inu6)
         nu8  = params(inu8)
+        nu9  = params(inu9)
         nu_r = params(inu_r)
 
         gamma_coef  = params(igamma_coef)

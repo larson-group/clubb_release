@@ -1,25 +1,27 @@
-! $Id: diag_var.F,v 1.14 2007-03-19 20:01:23 dschanen Exp $
+! $Id: diag_var.F,v 1.15 2007-04-24 21:57:41 dschanen Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
       module diagnose_variances
 
 !     Description:
-!     Contains subroutine diag_var and ancillaries functions.
+!     Contains the subroutine diag_var and ancillary functions.
 !-----------------------------------------------------------------------
 
         implicit none
 
         public :: diag_var
 
-        private :: diag_var_lhs, diag_var_solve
+        private :: diag_var_lhs, diag_var_solve, 
+     .             diag_var_rhs, diag_var_uv_rhs
 
         contains
 !-----------------------------------------------------------------------
         subroutine diag_var( taum, wmm, rtm, wprtp, 
-     .                       thlm, wpthlp, 
-     .                       wp2, wp3, Scm, Skwm,
+     .                       thlm, wpthlp, wpthvp, um, vm,
+     .                       wp2, wp3, upwp, vpwp, Scm, Skwm,
      .                       rtp2, thlp2, rtpthlp,
+     .                       up2, vp2,
      .                       liter, dt, isValid,
      .                       sclrm, wpsclrp, sclrp2,        ! optional
      .                       sclrprtp, sclrpthlp )          ! optional
@@ -34,13 +36,13 @@
 
 !      See also
 !      ``Equations for HOC'', Section 4:
-!      /Steady-state solutions for the variances/ 
-
+!      /Steady-state solution for the variances/ 
 !-----------------------------------------------------------------------
 
         use constants
         use parameters, 
-     .    only: C2, C2b, C2c, C2rt, C2thl, C2rtthl, nu2, beta
+     .    only: C2, C2b, C2c, C2rt, C2thl, C2rtthl, nu2, nu9, beta, 
+     .          C4, C14, C5, T0
         use grid_class
         use lapack_wrap, only: tridag_solve
 #ifdef STATS
@@ -48,8 +50,6 @@
 #endif /*STATS*/
        
         implicit none
-
-        ! Constants parameters
 
         ! Input variables
         real, intent(in), dimension(gr%nnzp) :: 
@@ -59,8 +59,13 @@
      .  wprtp, ! w' r_t'                        [(m kg)/(s kg)]
      .  thlm,  ! Liquid potential temp.         [K]
      .  wpthlp,! w' th_l'                       [(m K)/s]
+     .  wpthvp,! w' th_v'                       [(m K)/s]
+     .  um,    ! u wind                         [m/s]
+     .  vm,    ! v wind                         [m/s]
      .  wp2,   ! w'^2                           [m^2/s^2]
      .  wp3,   ! w'^3                           [m^3/s^3]
+     .  upwp,  ! u'w'                           [m^2/s^2]
+     .  vpwp,  ! u'w'                           [m^2/s^2]
      .  Scm,   ! Sc on moment. grid             [-]
      .  Skwm   ! Skw on moment. grid            [-]
 
@@ -74,7 +79,9 @@
         real, intent(inout), dimension(gr%nnzp) :: 
      .  rtp2,   ! r_t'^2                        [(kg/kg)^2]
      .  thlp2,  ! th_l'^2                       [K^2]
-     .  rtpthlp ! r_t' th_l'                    [(kg K)/kg]
+     .  rtpthlp,! r_t' th_l'                    [(kg K)/kg]
+     .  up2,    ! u'^2                          [m^2/s^2]
+     .  vp2     ! v'^2                          [m^2/s^2]
 
         ! Output variable for singular matrices
 
@@ -90,7 +97,7 @@
 
         ! Local Variables
         real, dimension(gr%nnzp) ::
-     .  C2sclr_1d, C2rt_1d, C2thl_1d, C2rtthl_1d
+     .  C2sclr_1d, C2rt_1d, C2thl_1d, C2rtthl_1d, C4_C14_1d
 
         real, dimension(gr%nnzp) :: 
      .  a1 ! a1; See eqn. 20 in `Equations for HOC'
@@ -105,7 +112,7 @@
      .  sclr_rhs,     ! RHS of scalar tridiagonal system
      .  sclr_solution ! Solution to tridiagonal system
 
-        logical, dimension(4) ::
+        logical, dimension(5+1) ::
      .  Valid_arr
 
         logical :: scalar_calc
@@ -133,6 +140,8 @@
 
         C2sclr_1d(1:gr%nnzp)  = C2rt  ! Use rt value for now
 #endif
+        C4_C14_1d(1:gr%nnzp) = 2.0/3.0 * C4 + ( 1.0/3.0 * C14 )
+
         ! Are we solving for a passive scalar as well?
 
         if ( present( sclrm ) .and. present( wpsclrp ) .and.
@@ -164,9 +173,17 @@
             zm%x(:,irtpthlp_bt) = zm%x(:,irtpthlp_bt) - rtpthlp / dt
           end if
 
+          if ( ivp2_bt > 0 ) then
+            zm%x(:,ivp2_bt) = zm%x(:,ivp2_bt) - vp2 / dt
+          end if
+
+          if ( iup2_bt > 0 ) then
+            zm%x(:,iup2_bt) = zm%x(:,iup2_bt) - up2 / dt
+          end if
+
         end if
 #endif
-        ! Initialize tridiagonal solver diagnostic to true
+        ! Initialize tridiagonal solutions to valid
 
         Valid_arr(:) = .true.
 
@@ -178,8 +195,8 @@
 
         ! Explicit contributions to rtp2
 
-        call diag_var_rhs( "rtp2", a1, wp2, wp3, 
-     .                     rtm, rtm,  wprtp, wprtp, rtp2,
+        call diag_var_rhs( "rtp2", a1, wp2, wp3,
+     .                     rtm, rtm, wprtp, wprtp, rtp2,
      .                     dt, beta, eps, liter, rhs )
         
         ! Solve the tridiagonal system
@@ -195,7 +212,7 @@
 
         ! Explicit contributions to thlp2
 
-        call diag_var_rhs( "thlp2", a1, wp2, wp3, 
+        call diag_var_rhs( "thlp2", a1, wp2, wp3,
      .                     thlm, thlm, wpthlp, wpthlp, thlp2,
      .                     dt, beta, eps, liter, rhs )
 
@@ -212,7 +229,7 @@
 
         ! Explicit contributions to rtpthlp
 
-        call diag_var_rhs( "rtpthlp", a1, wp2, wp3, 
+        call diag_var_rhs( "rtpthlp", a1, wp2, wp3,
      .                     rtm, thlm, wprtp, wpthlp, rtpthlp,
      .                     dt, beta, eps, liter, rhs )
 
@@ -220,6 +237,43 @@
 
         call diag_var_solve( "rtpthlp", 1, rhs, 
      .                       lhs, rtpthlp, Valid_arr(3) )
+
+        ! Implicit contributions to term up2
+
+        call diag_var_lhs( a1, wp2, wp3, taum, wmm, 
+     .                     C4_C14_1d, nu9, beta, eps, dt, liter,
+     .                     lhs )
+
+        ! Explicit contributions to up2
+
+        call diag_var_uv_rhs
+     .       ( "up2", a1, wp2, wp3, wpthvp, taum,
+     .         um, vm, upwp, vpwp, up2, vp2, 
+     .         dt, C4, C5, C14, beta, T0, eps, liter, rhs )
+
+        ! Solve the tridiagonal system
+
+        call diag_var_solve( "up2", 1, rhs,
+     .                       lhs, up2, Valid_arr(4) )
+
+        ! Implicit contributions to term vp2
+
+        call diag_var_lhs( a1, wp2, wp3, taum, wmm, 
+     .                     C4_C14_1d, nu9, beta, eps, dt, liter,
+     .                     lhs )
+
+        ! Explicit contributions to vp2
+
+        call diag_var_uv_rhs
+     .       ( "vp2", a1, wp2, wp3, wpthvp, taum, 
+     .         vm, um, vpwp, upwp, vp2, up2,
+     .         dt, C4, C5, C14, beta, T0, eps, liter, rhs )
+
+
+        ! Solve the tridiagonal system
+
+        call diag_var_solve( "vp2", 1, rhs, 
+     .                       lhs, vp2, Valid_arr(5) )
 
 
 #ifdef STATS
@@ -252,6 +306,13 @@
 
         end do ! k=2..gr%nnzp
 
+        ! Clipping for up2/vp2
+        ! This appears to be unneeded for now.  If these do need to be
+        ! clipped in the future, this could be uncommented and budget
+        ! could be added. -dschanen 24 April 2007
+!       where ( vp2 < 0.0 ) vp2 = 0.0
+!       where ( up2 < 0.0 ) up2 = 0.0
+
 #ifdef STATS
         if ( lstats_samp .and. irtp2_cl > 0 ) then
           zm%x(:,irtp2_cl) = zm%x(:,irtp2_cl) + rtp2 / dt
@@ -282,6 +343,16 @@
             zm%n(:,irtpthlp_bt) = zm%n(:,irtpthlp_bt) + 1
           end if
 
+          if ( iup2_bt > 0 ) then
+            zm%x(:,iup2_bt) = zm%x(:,iup2_bt) + up2 / dt
+            zm%n(:,iup2_bt) = zm%n(:,iup2_bt) + 1
+          end if
+
+          if ( ivp2_bt > 0 ) then
+            zm%x(:,ivp2_bt) = zm%x(:,ivp2_bt) + vp2 / dt
+            zm%n(:,ivp2_bt) = zm%n(:,ivp2_bt) + 1
+          end if
+
         end if
 #endif /*STATS*/
 
@@ -297,7 +368,7 @@
           ! Explicit contributions to passive scalars
           do i = 1, sclr_dim, 1
             call diag_var_rhs
-     .           ( "sclrp2", a1, wp2, wp3, 
+     .           ( "sclrp2", a1, wp2, wp3,
      .             sclrm(:,i), sclrm(:,i), wpsclrp(:,i), wpsclrp(:,i), 
      .             sclrp2(:,i), dt, beta, eps, liter, sclr_rhs(:,i) )
 
@@ -305,7 +376,7 @@
 
           do i = 1, sclr_dim, 1
             call diag_var_rhs
-     .           ( "sclrprtp", a1, wp2, wp3, 
+     .           ( "sclrprtp", a1, wp2, wp3,
      .             sclrm(:,i), rtm, wpsclrp(:,i), wprtp, 
      .             sclrprtp(:,i), dt, beta, eps, liter, 
      .             sclr_rhs(:,i+sclr_dim) )
@@ -313,7 +384,7 @@
 
           do i = 1, sclr_dim, 1
             call diag_var_rhs
-     .           ( "sclrpthlp", a1, wp2, wp3, 
+     .           ( "sclrpthlp", a1, wp2, wp3,
      .             sclrm(:,i), thlm, wpsclrp(:,i), wpthlp, 
      .             sclrprtp(:,i), dt, beta, eps, liter, 
      .             sclr_rhs(:,i+2*sclr_dim) )
@@ -323,7 +394,7 @@
 
           call diag_var_solve
      .         ( "scalars", 3*sclr_dim, sclr_rhs, 
-     .           lhs, sclr_solution, Valid_arr(4) )
+     .           lhs, sclr_solution, Valid_arr(6) )
 
           sclrp2(:,1:sclr_dim) = sclr_solution(:,1:sclr_dim)
 
@@ -360,7 +431,7 @@
 
 !-----------------------------------------------------------------------
         subroutine diag_var_lhs( a1, wp2, wp3, taum, wmm, 
-     .                           C2, nu2, beta, eps, dt, liter,
+     .                           Cn, nu2, beta, eps, dt, liter,
      .                           lhs )
 !       Description:
 !       Compute LHS tridiagonal matrix for a variance or coveriance term
@@ -381,7 +452,6 @@
      .  kdiag   = 2,
      .  km1diag = 3
 
-
         ! Input Variables
         real, dimension(gr%nnzp), intent(in) ::
      .  a1,    ! See eqn. 20 in `Equations for HOC'     [-]
@@ -389,7 +459,7 @@
      .  wp3,   ! w'^3                                   [m^3/s^3]
      .  taum,  ! Tau on moment. grid                    [s]
      .  wmm,   ! w wind on m.                           [m/s]
-     .  C2     ! C2 coefficient                         [-]
+     .  Cn     ! Cn coefficient                         [-]
 
         real, intent(in) ::
      .  dt,    ! Timestep length                        [s]
@@ -420,7 +490,7 @@
      .    = term_dp2( nu2, gr%dzm(km1), gr%dzm(k), gr%dzt(k) ) ! dp2
 
           lhs(kdiag,k)
-     .    = lhs(kdiag,k) + term_dp1( C2(k), taum(k) )  ! dp1
+     .    = lhs(kdiag,k) + term_dp1( Cn(k), taum(k) )  ! dp1
 
           if ( liter ) then
             lhs(kdiag,k) = lhs(kdiag,k) + ( 1.0 / dt ) ! Time tendency
@@ -439,12 +509,14 @@
 #ifdef STATS
          if ( lstats_samp ) then
 
-           if ( irtp2_dp1 * ithlp2_dp1 * irtpthlp_dp1 > 0 ) then
-             tmp(1) = term_dp1( C2(k), taum(k) )
+           if ( irtp2_dp1 + ithlp2_dp1 + irtpthlp_dp1 +
+     .          iup2_dp1 + ivp2_dp1 > 0 ) then
+             tmp(1) = term_dp1( Cn(k), taum(k) )
              zmscr01(k) = - tmp(1)
            end if
          
-           if ( irtp2_dp2 * ithlp2_dp2 * irtpthlp_dp2 > 0 ) then
+           if ( irtp2_dp2 + ithlp2_dp2 + irtpthlp_dp2 + 
+     .          iup2_dp2 + ivp2_dp2 > 0 ) then
              tmp(1:3)
      .       = term_dp2( nu2, gr%dzm(km1), gr%dzm(k), gr%dzt(k) )
              zmscr02(k) = -tmp(3)
@@ -452,7 +524,8 @@
              zmscr04(k) = -tmp(1)
            end if
 
-           if ( irtp2_ta * ithlp2_ta * irtpthlp_ta > 0 ) then
+           if ( irtp2_ta + ithlp2_ta + irtpthlp_ta +
+     .          iup2_ta + ivp2_ta > 0 ) then
              tmp(1:3)
      .       = term_ta_lhs
      .         ( a1(kp1), a1(k), a1(km1), wp3(kp1), wp3(k),
@@ -462,7 +535,8 @@
              zmscr07(k) = -tmp(1)
            end if
 
-           if ( irtp2_ma * ithlp2_ma * irtpthlp_ma > 0 ) then
+           if ( irtp2_ma + ithlp2_ma + irtpthlp_ma +
+     .          iup2_ma + ivp2_ma > 0 ) then
              tmp(1:2)
      .       = term_ma( wmm(k), gr%dzm(k) )
              zmscr08(k) = -tmp(2)
@@ -484,10 +558,12 @@
         lhs(kdiag,1) = 1.0
         lhs(kdiag,gr%nnzp) = 1.0
 
-        if ( liter ) then
-          lhs(kdiag,1) = 1.0/dt
-          lhs(kdiag,1) = 1.0/dt
-        end if
+        ! This boundary condition was changed by dschanen on 24 April 2007
+        ! When we run prognostically we want to preserve the surface value.
+!       if ( liter ) then
+!         lhs(kdiag,1) = 1.0/dt
+!         lhs(kdiag,1) = 1.0/dt
+!       end if
 
         return
         end subroutine diag_var_lhs
@@ -562,6 +638,18 @@
           ixapxbp_dp2 = irtpthlp_dp2
           ixapxbp_ta  = irtpthlp_ta
           ixapxbp_ma  = irtpthlp_ma
+        case ( "up2" )
+          ixapxbp_cn  = iup2_cn
+          ixapxbp_dp1 = iup2_dp1
+          ixapxbp_dp2 = iup2_dp2
+          ixapxbp_ta  = iup2_ta
+          ixapxbp_ma  = iup2_ma
+        case ( "vp2" )
+          ixapxbp_cn  = ivp2_cn
+          ixapxbp_dp1 = ivp2_dp1
+          ixapxbp_dp2 = ivp2_dp2
+          ixapxbp_ta  = ivp2_ta
+          ixapxbp_ma  = ivp2_ma
         case default ! No budgets for passive scalars
           ixapxbp_cn  = 0
           ixapxbp_dp1 = 0
@@ -646,10 +734,174 @@
 
         return
         end subroutine diag_var_solve
+!-----------------------------------------------------------------------
+        subroutine diag_var_uv_rhs
+     .             ( solve_type, a1, wp2, wp3, wpthvp, taum,
+     .               xam, xbm, wpxap, wpxbp, xap2, xbp2,
+     .               dt, C4, C5, C14, beta, T0, eps, liter, rhs )
+!       Description:
+!       Explicit contributions to v'^2 or u'^2
+!-----------------------------------------------------------------------
+        use grid_class
+        use constants, only: grav
+#ifdef STATS
+        use statistics
+#endif
+
+        implicit none
+
+        ! Input Variables
+        character(len=*), intent(in) :: solve_type
+
+        real, dimension(gr%nnzp), intent(in) ::
+     .  a1,     ! a1            [-]
+     .  wp2,    ! w'^2          [m^2/s^2]
+     .  wp3,    ! w'^3          [m^3/s^3]
+     .  wpthvp, ! w'thv'        [m K/s]
+     .  taum    ! Tau           [s]
+
+        real, dimension(gr%nnzp), intent(in) ::
+     .  xam,    ! x(1)          [m/s]
+     .  xbm,    ! x(2)          [m/s]
+     .  wpxap,  ! w'x'(1)       [m^2/s^2]
+     .  wpxbp,  ! w'x'(2)       [m^2/s^2]
+     .  xap2,   ! x'^2(1)       [m^2/s^2]
+     .  xbp2    ! x'^2(2)       [m^2/s^2]
+
+        real, intent(in) ::
+     .  dt     ! Timestep      [s]
+
+        real, intent(in) ::
+     .  C4,    ! Model parameter                [-]
+     .  C5,    ! Model parameter                [-]
+     .  C14,   ! Model parameter                [-]
+     .  T0,    ! Reference temperature          [K]
+     .  beta,  ! Model parameter                [-]
+     .  eps    ! Small value to prevent divz    [-]
+
+        logical, intent(in) ::
+     .  liter  ! Whether x is prognostic (T/F)
+
+        real, dimension(gr%nnzp,1), intent(out) ::
+     .  rhs    ! Explicit contributions to x variance/covariance terms
+
+        ! Local Variables
+        integer :: k, kp1, km1 ! Array indices
+
+#ifdef STATS
+        integer ::
+     .  ixap2_ta,
+     .  ixap2_tp,
+     .  ixap2_pr1,
+     .  ixap2_pr2
+
+        select case ( trim( solve_type ) )
+        case ( "vp2" )
+          ixap2_ta  = ivp2_ta
+          ixap2_tp  = ivp2_tp
+          ixap2_pr1 = ivp2_pr1
+          ixap2_pr2 = ivp2_pr2
+        case ( "up2" )
+          ixap2_ta  = iup2_ta
+          ixap2_tp  = iup2_tp
+          ixap2_pr1 = iup2_pr1
+          ixap2_pr2 = iup2_pr2
+        case default ! No budgets for passive scalars
+          ixap2_ta  = 0
+          ixap2_tp  = 0
+          ixap2_pr1 = 0
+          ixap2_pr2 = 0
+        end select
+#endif
+
+        do k = 2, gr%nnzp-1, 1
+
+          km1 = max( k-1, 1 )
+          kp1 = min( k+1, gr%nnzp )
+
+          rhs(k,1)
+     .    = term_ta_rhs
+     .      ( a1(kp1), a1(k), a1(km1), wp3(kp1), wp3(k),
+     .        wp2(kp1), wp2(k), wp2(km1), 
+     .        wpxap(kp1), wpxap(k), wpxap(km1),
+     .        wpxap(kp1), wpxap(k), wpxap(km1),
+     .        gr%dzm(k), beta, eps )
+     .      + (1.0 - C5) 
+     .          * term_tp( xam(kp1), xam(k), xam(kp1), xam(k),
+     .                    wpxap(k), wpxap(k), gr%dzm(k) )
+     .      + term_pr1( C4, C14, xbp2(k), wp2(k), taum(k) )
+     .      + term_pr2
+     .        ( C5, grav, T0, wpthvp(k), wpxap(k), wpxbp(k), 
+     .          xam(kp1), xam(k), xbm(kp1), xbm(k), gr%dzm(k) ) 
+
+          if ( liter ) then 
+            rhs(k,1) = rhs(k,1) + 1.0/dt*xap2(k)  ! Time tendency
+          end if
+#ifdef STATS
+        ! Compute implicit budget terms
+          if ( lstats_samp ) then
+            if ( ixap2_ta > 0 ) then
+              zm%x(k,ixap2_ta) 
+     .          = zm%x(k,ixap2_ta)
+     .          + term_ta_rhs
+     .           ( a1(kp1), a1(k), a1(km1), wp3(kp1), wp3(k),
+     .             wp2(kp1), wp2(k), wp2(km1), 
+     .             wpxbp(kp1), wpxbp(k), wpxbp(km1),
+     .             wpxap(kp1), wpxap(k), wpxap(km1),
+     .             gr%dzm(k), beta, eps )
+
+            end if 
+
+            if ( ixap2_pr1 > 0 ) then
+              zm%x(k,ixap2_pr1)
+     .        = zm%x(k,ixap2_pr1)
+     .        + term_pr1( C4, C14, xbp2(k), wp2(k), taum(k) )
+              zm%n(k,ixap2_pr1) = zm%n(k,ixap2_pr1) + 1
+            end if
+
+            if ( ixap2_pr2 > 0 ) then
+              zm%x(k,ixap2_pr2)
+     .        = zm%x(k,ixap2_pr2)
+     .        + term_pr2
+     .          ( C5, grav, T0, wpthvp(k), wpxap(k), wpxbp(k), 
+     .            xam(kp1), xam(k), xbm(kp1), xbm(k), gr%dzm(k) ) 
+              zm%n(k,ixap2_pr2) = zm%n(k,ixap2_pr2) + 1
+            end if
+
+            if ( ixap2_tp > 0 ) then
+              zm%x(k,ixap2_tp) 
+     .          = zm%x(k,ixap2_tp)
+     .          + (1.0 - C5) 
+     .             * term_tp( xam(kp1), xam(k), xam(kp1), xam(k),
+     .                        wpxap(k), wpxap(k), gr%dzm(k) )
+              zm%n(k,ixap2_tp) = zm%n(k,ixap2_tp) + 1
+            end if
+
+          end if ! lstats_samp
+#endif /*STATS*/
+        end do ! k=2..gr%nnzp-1
+
+        ! Boundary Conditions
+        ! These are set so that the sfc_var value of rtp2, thlp2, or rtpthlp
+        ! can be used at the lowest boundary and the values of those
+        ! variables can be set to 0 at the top boundary.  Brian.  12/18/05.
+
+        ! This boundary condition was changed by dschanen on 24 April 2007
+        ! When we run prognostically we want to preserve the surface value.
+!       if ( liter ) then 
+!         rhs(1,1) = xap2(1) + 1.0/dt*xap2(1)
+!         rhs(gr%nnzp,1) = 1.0/dt*xap2(gr%nnzp)
+!       else
+        rhs(1,1) = xap2(1)
+        rhs(gr%nnzp,1) = 0.0
+!       end if
+
+        return
+        end subroutine diag_var_uv_rhs
 
 !-----------------------------------------------------------------------
-        subroutine diag_var_rhs( solve_type, a1, wp2, wp3, 
-     .                           xam, xbm,  wpxap, wpxbp, xapxbp,
+        subroutine diag_var_rhs( solve_type, a1, wp2, wp3,
+     .                           xam, xbm, wpxap, wpxbp, xapxbp,
      .                           dt, beta, eps, liter, rhs )
 !       Description:
 
@@ -700,18 +952,18 @@
      .  ixapxbp_tp1,
      .  ixapxbp_tp2
 
-        select case( trim( solve_type ) )
-        case( "rtp2" )
+        select case ( trim( solve_type ) )
+        case ( "rtp2" )
           ixapxbp_ta  = irtp2_ta
           ixapxbp_tp  = irtp2_tp
           ixapxbp_tp1 = 0
           ixapxbp_tp2 = 0
-        case( "thlp2" )
+        case ( "thlp2" )
           ixapxbp_ta  = ithlp2_ta
           ixapxbp_tp  = ithlp2_tp
           ixapxbp_tp1 = 0
           ixapxbp_tp2 = 0
-        case( "rtpthlp" )
+        case ( "rtpthlp" )
           ixapxbp_ta  = irtpthlp_ta
           ixapxbp_tp  = 0
           ixapxbp_tp1 = irtpthlp_tp1
@@ -735,8 +987,8 @@
      .        wpxbp(kp1), wpxbp(k), wpxbp(km1),
      .        wpxap(kp1), wpxap(k), wpxap(km1),
      .        gr%dzm(k), beta, eps )
-     .    + term_tp( xam(kp1), xam(k), xbm(kp1), xbm(k), 
-     .               wpxbp(k), wpxap(k), gr%dzm(k) )
+     .      + term_tp( xam(kp1), xam(k), xbm(kp1), xbm(k), 
+     .                 wpxbp(k), wpxap(k), gr%dzm(k) )
 
           if ( liter ) then 
             rhs(k,1) = rhs(k,1) + 1.0/dt*xapxbp(k)  ! Time tendency
@@ -748,13 +1000,16 @@
         ! These are set so that the sfc_var value of rtp2, thlp2, or rtpthlp
         ! can be used at the lowest boundary and the values of those
         ! variables can be set to 0 at the top boundary.  Brian.  12/18/05.
-        if ( liter ) then 
-          rhs(1,1) = xapxbp(1) + 1.0/dt*xapxbp(1)
-          rhs(gr%nnzp,1) = 1.0/dt*xapxbp(gr%nnzp)
-        else
-          rhs(1,1) = xapxbp(1)
-          rhs(gr%nnzp,1) = 0.0
-        end if
+
+        ! This boundary condition was changed by dschanen on 24 April 2007
+        ! When we run prognostically we want to preserve the surface value.
+!       if ( .false. ) then
+!         rhs(1,1) = xapxbp(1) + 1.0/dt*xapxbp(1)
+!         rhs(gr%nnzp,1) = 1.0/dt*xapxbp(gr%nnzp)
+!       else
+        rhs(1,1) = xapxbp(1)
+        rhs(gr%nnzp,1) = 0.0
+!       end if
 
 #ifdef STATS
         ! Compute implicit budget terms
@@ -994,7 +1249,7 @@
      .  km1diag = 3
 
         real, intent(in) ::
-     .  nu2,  ! Previously determined eddy viscosity     [-]
+     .  nu2,  ! Previously determined eddy viscosity     [m^2/s]
      .  dzt,  ! Inverse of the grid spacing on t <k>     [m]
      .  dztp1,! Inverse of the grid spacing on t <k+1>   [m]
      .  dzm   ! Inverse of the grid spacing on m <k>     [m]
@@ -1010,7 +1265,7 @@
         end function term_dp2
 
 !-----------------------------------------------------------------------
-        pure function term_dp1( C2, taum ) 
+        pure function term_dp1( Cn, taum ) 
      .  result( lhs )
 
 !       Description:
@@ -1025,16 +1280,77 @@
 !    .  kdiag = 1
 
         real, intent(in) ::
-     .  C2,  ! Coefficient      [-]
+     .  Cn,  ! Coefficient      [-]
      .  taum ! Tau              [s]
 
 !       real, dimension(1) :: lhs
         real :: lhs
 
 !       lhs(kdiag) = + C2 / taum
-        lhs = + C2 / taum
+        lhs = + Cn / taum
 
         return
         end function term_dp1
+
+!-----------------------------------------------------------------------
+        pure function term_pr1( C4, C14, xbp2, wp2, taum )
+     .  result( rhs )
+
+!       Description:
+
+!       References:
+!-----------------------------------------------------------------------
+
+        implicit none
+
+        real, intent(in) ::
+     .  C4,     ! C4 coefficient        [-]
+     .  C14,    ! C14 coefficient       [-]
+     .  xbp2,   ! v'^2 or u'^2 <k>      [m^2/s^2]
+     .  wp2,    ! w'^2 <k>              [m^2/s^2]
+     .  taum    ! Tau on m <k>          [s]
+
+        real :: rhs
+
+        rhs = + 1.0/3.0 * ( C4 - C14 ) * ( xbp2 + wp2 ) / taum
+
+        return
+        end function term_pr1
+
+!-----------------------------------------------------------------------
+        pure function term_pr2( C5, grav, T0, wpthvp, upwp, vpwp, 
+     .                          ump1, um, vmp1, vm, dzm ) 
+     .  result( rhs )
+
+!       Description:
+
+!       References:
+!-----------------------------------------------------------------------
+        implicit none
+
+        real, intent(in) ::
+     .  C5,    ! C5 Coefficient                 [-]
+     .  grav,  ! Gravitational acceleration     [m/s^2]
+     .  T0,    ! Reference temperature          [K]
+     .  wpthvp,! w'thv' <k>                     [m/K/s]
+     .  upwp,  ! u'w' <k>                       [m^2/s^2]
+     .  vpwp,  ! v'w' <k>                       [m^2/s^2]
+     .  ump1,  ! u <k+1>                        [m/s]
+     .  um,    ! u <k>                          [m/s]
+     .  vmp1,  ! v <k+1>                        [m/s]
+     .  vm,    ! v <k>                          [m/s]
+     .  dzm    ! Inverse of the grid spacing <k>[m]
+
+        real :: rhs
+
+        ! As applied to w'2
+        rhs = + (2.0/3.0) * C5
+     .          * ( ( grav / T0 ) * wpthvp
+     .              -upwp * dzm * ( ump1 - um )
+     .              -vpwp * dzm * ( vmp1 - vm ) )
+
+
+        return
+        end function term_pr2
 
         end module diagnose_variances

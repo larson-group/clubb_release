@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.22 2007-03-19 20:01:23 dschanen Exp $
+!  $Id: statistics.F,v 1.23 2007-04-24 21:57:41 dschanen Exp $
 
 #ifdef STATS
       module stats_type
@@ -436,17 +436,46 @@
 !$omp   threadprivate(ithlp2_dp1, ithlp2_dp2, ithlp2_cl)
 
         integer ::
-     .     irtpthlp_bt,
-     .     irtpthlp_ma,
-     .     irtpthlp_ta,
-     .     irtpthlp_tp1,
-     .     irtpthlp_tp2,
-     .     irtpthlp_dp1,
-     .     irtpthlp_dp2
+     .    irtpthlp_bt,
+     .    irtpthlp_ma,
+     .    irtpthlp_ta,
+     .    irtpthlp_tp1,
+     .    irtpthlp_tp2,
+     .    irtpthlp_dp1,
+     .    irtpthlp_dp2
 
 !$omp   threadprivate(irtpthlp_bt, irtpthlp_ma, irtpthlp_ta)
 !$omp   threadprivate(irtpthlp_tp1, irtpthlp_tp2, irtpthlp_dp1)
 !$omp   threadprivate(irtpthlp_dp2, irtpthlp_cl)
+
+        integer ::
+     .    iup2,
+     .    ivp2
+
+!$omp   threadprivate(iup2, ivp2)
+
+        integer ::
+     .    iup2_bt,
+     .    iup2_ta,
+     .    iup2_tp,
+     .    iup2_ma,
+     .    iup2_dp1,
+     .    iup2_dp2,
+     .    iup2_pr1,
+     .    iup2_pr2,
+     .    ivp2_bt,
+     .    ivp2_ta,
+     .    ivp2_tp,
+     .    ivp2_ma,
+     .    ivp2_dp1,
+     .    ivp2_dp2,
+     .    ivp2_pr1,
+     .    ivp2_pr2
+
+!$omp   threadprivate(iup2_bt, iup2_ta, iup2_tp, iup2_ma, iup2_dp1)
+!$omp   threadprivate(iup2_dp2, iup2_pr1, iup2_pr2)
+!$omp   threadprivate(ivp2_bt, ivp2_ta, ivp2_tp, ivp2_ma, ivp2_dp1)
+!$omp   threadprivate(ivp2_dp2, ivp2_pr1, ivp2_pr2)
 
 #ifdef SCALARS
 !       Passive scalars.  Note that floating point roundoff may make 
@@ -497,12 +526,15 @@
      .    ithlm_cn,
      .    irtp2_cn,
      .    ithlp2_cn,
-     .    irtpthlp_cn
+     .    irtpthlp_cn,
+     .    iup2_cn,
+     .    ivp2_cn
 
 !$omp   threadprivate(iustar, ilh, ish, icc, ilwp, izb, izi)
 !$omp   threadprivate(irain, ipflux)
 !$omp   threadprivate(iwp23_cn, irtm_cn, ithlm_cn)
 !$omp   threadprivate(irtp2_cn, ithlp2_cn, irtpthlp_cn)
+!$omp   threadprivate(iup2_cn, ivp2_cn)
 
         ! Variables that contains all the statistics
 
@@ -2236,6 +2268,27 @@
 
       iup2_plus_vp2 = 0 ! Michael
 
+      iup2 = 0
+      ivp2 = 0
+
+      iup2_bt  = 0
+      iup2_ta  = 0
+      iup2_tp  = 0
+      iup2_ma  = 0
+      iup2_dp1 = 0
+      iup2_dp2 = 0
+      iup2_pr1 = 0
+      iup2_pr2 = 0
+
+      ivp2_bt  = 0
+      ivp2_ta  = 0
+      ivp2_tp  = 0
+      ivp2_ma  = 0
+      ivp2_dp1 = 0
+      ivp2_dp2 = 0
+      ivp2_pr1 = 0
+      ivp2_pr2 = 0
+
       ! Sedimentation velocities
       iVrr      = 0  ! Brian
       iVNr      = 0  !  " "
@@ -3039,6 +3092,150 @@
           zm%f%var(iup2_plus_vp2)%units = "m^2/s^2"
           k = k + 1
 
+        case ('up2')
+          iup2 = k
+          zm%f%var(iup2)%ptr => zm%x(:,k)
+          zm%f%var(iup2)%name = "up2"
+          zm%f%var(iup2)%description = "up2"
+          zm%f%var(iup2)%units = "m^2/s^2"
+          k = k + 1
+
+        case ('vp2')
+          ivp2 = k
+          zm%f%var(ivp2)%ptr => zm%x(:,k)
+          zm%f%var(ivp2)%name = "vp2"
+          zm%f%var(ivp2)%description = "vp2"
+          zm%f%var(ivp2)%units = "m^2/s^2"
+          k = k + 1
+
+        case ('up2_bt')
+          iup2_bt = k
+          zm%f%var(iup2_bt)%ptr => zm%x(:,k)
+          zm%f%var(iup2_bt)%name = "up2_bt"
+          zm%f%var(iup2_bt)%description = "up2 time tendency"
+          zm%f%var(iup2_bt)%units = "m^2/s^2"
+          k = k + 1
+
+        case ('up2_ma')
+          iup2_ma = k
+          zm%f%var(iup2_ma)%ptr => zm%x(:,k)
+          zm%f%var(iup2_ma)%name = "up2_ma"
+          zm%f%var(iup2_ma)%description = "up2 mean advection"
+          zm%f%var(iup2_ma)%units = "m^2/s^2"
+          k = k + 1
+
+        case ('up2_ta')
+          iup2_ta = k
+          zm%f%var(iup2_ta)%ptr => zm%x(:,k)
+          zm%f%var(iup2_ta)%name = "up2_ta"
+          zm%f%var(iup2_ta)%description = "up2 turbulent advection"
+          zm%f%var(iup2_ta)%units = "m^2/s^2"
+          k = k + 1
+
+        case ('up2_tp')
+          iup2_tp = k
+          zm%f%var(iup2_tp)%ptr => zm%x(:,k)
+          zm%f%var(iup2_tp)%name = "up2_tp"
+          zm%f%var(iup2_tp)%description = "up2 turbulent production"
+          zm%f%var(iup2_tp)%units = "m^2/s^2"
+          k = k + 1
+
+        case ('up2_dp1')
+          iup2_dp1 = k
+          zm%f%var(iup2_dp1)%ptr => zm%x(:,k)
+          zm%f%var(iup2_dp1)%name = "up2_dp1"
+          zm%f%var(iup2_dp1)%description = "up2 dissipation term"
+          zm%f%var(iup2_dp1)%units = "m^2/s^2"
+          k = k + 1
+
+        case ('up2_dp2')
+          iup2_dp2 = k
+          zm%f%var(iup2_dp2)%ptr => zm%x(:,k)
+          zm%f%var(iup2_dp2)%name = "up2_dp2"
+          zm%f%var(iup2_dp2)%description = "up2 dissipation term"
+          zm%f%var(iup2_dp2)%units = "m^2/s^2"
+          k = k + 1
+
+        case ('up2_pr1')
+          iup2_pr1 = k
+          zm%f%var(iup2_pr1)%ptr => zm%x(:,k)
+          zm%f%var(iup2_pr1)%name = "up2_pr1"
+          zm%f%var(iup2_pr1)%description = "up2 pressure term 1"
+          zm%f%var(iup2_pr1)%units = "m^2/s^2"
+          k = k + 1
+
+        case ('up2_pr2')
+          iup2_pr2 = k
+          zm%f%var(iup2_pr2)%ptr => zm%x(:,k)
+          zm%f%var(iup2_pr2)%name = "up2_pr2"
+          zm%f%var(iup2_pr2)%description = "up2 pressure term 2"
+          zm%f%var(iup2_pr2)%units = "m^2/s^2"
+          k = k + 1
+
+        case ('vp2_bt')
+          ivp2_bt = k
+          zm%f%var(ivp2_bt)%ptr => zm%x(:,k)
+          zm%f%var(ivp2_bt)%name = "vp2_bt"
+          zm%f%var(ivp2_bt)%description = "vp2 time tendency"
+          zm%f%var(ivp2_bt)%units = "m^2/s^2"
+          k = k + 1
+
+        case ('vp2_ma')
+          ivp2_ma = k
+          zm%f%var(ivp2_ma)%ptr => zm%x(:,k)
+          zm%f%var(ivp2_ma)%name = "vp2_ma"
+          zm%f%var(ivp2_ma)%description = "vp2 mean advection"
+          zm%f%var(ivp2_ma)%units = "m^2/s^2"
+          k = k + 1
+
+        case ('vp2_ta')
+          ivp2_ta = k
+          zm%f%var(ivp2_ta)%ptr => zm%x(:,k)
+          zm%f%var(ivp2_ta)%name = "vp2_ta"
+          zm%f%var(ivp2_ta)%description = "vp2 turbulent advection"
+          zm%f%var(ivp2_ta)%units = "m^2/s^2"
+          k = k + 1
+
+        case ('vp2_tp')
+          ivp2_tp = k
+          zm%f%var(ivp2_tp)%ptr => zm%x(:,k)
+          zm%f%var(ivp2_tp)%name = "vp2_tp"
+          zm%f%var(ivp2_tp)%description = "vp2 turbulent production"
+          zm%f%var(ivp2_tp)%units = "m^2/s^2"
+          k = k + 1
+
+        case ('vp2_dp1')
+          ivp2_dp1 = k
+          zm%f%var(ivp2_dp1)%ptr => zm%x(:,k)
+          zm%f%var(ivp2_dp1)%name = "vp2_dp1"
+          zm%f%var(ivp2_dp1)%description = "vp2 dissipation term"
+          zm%f%var(ivp2_dp1)%units = "m^2/s^2"
+          k = k + 1
+
+        case ('vp2_dp2')
+          ivp2_dp2 = k
+          zm%f%var(ivp2_dp2)%ptr => zm%x(:,k)
+          zm%f%var(ivp2_dp2)%name = "vp2_dp2"
+          zm%f%var(ivp2_dp2)%description = "vp2 dissipation term"
+          zm%f%var(ivp2_dp2)%units = "m^2/s^2"
+          k = k + 1
+
+        case ('vp2_pr1')
+          ivp2_pr1 = k
+          zm%f%var(ivp2_pr1)%ptr => zm%x(:,k)
+          zm%f%var(ivp2_pr1)%name = "vp2_pr1"
+          zm%f%var(ivp2_pr1)%description = "vp2 pressure term 1"
+          zm%f%var(ivp2_pr1)%units = "m^2/s^2"
+          k = k + 1
+
+        case ('vp2_pr2')
+          ivp2_pr2 = k
+          zm%f%var(ivp2_pr2)%ptr => zm%x(:,k)
+          zm%f%var(ivp2_pr2)%name = "vp2_pr2"
+          zm%f%var(ivp2_pr2)%description = "vp2 pressure term 2"
+          zm%f%var(ivp2_pr2)%units = "m^2/s^2"
+          k = k + 1
+
 #ifdef SCALARS
         case ('sclraprtp')
           isclraprtp = k
@@ -3293,6 +3490,8 @@
       irtp2_cn    = 0
       ithlp2_cn   = 0
       irtpthlp_cn = 0
+      iup2_cn     = 0
+      ivp2_cn     = 0
 
       ! Assign pointers for statistics variables sfc
 
@@ -3425,6 +3624,24 @@
           sfc%f%var(irtpthlp_cn)%description
      .    = "Estimate of the condition number for rtpthlp"
           sfc%f%var(irtpthlp_cn)%units = "count"
+          k = k + 1
+
+        case ('up2_cn')
+          iup2_cn = k
+          sfc%f%var(iup2_cn)%ptr => sfc%x(:,k)
+          sfc%f%var(iup2_cn)%name = "up2_cn"
+          sfc%f%var(iup2_cn)%description
+     .    = "Estimate of the condition number for up2"
+          sfc%f%var(iup2_cn)%units = "count"
+          k = k + 1
+
+        case ('vp2_cn')
+          ivp2_cn = k
+          sfc%f%var(ivp2_cn)%ptr => sfc%x(:,k)
+          sfc%f%var(ivp2_cn)%name = "vp2_cn"
+          sfc%f%var(ivp2_cn)%description
+     .    = "Estimate of the condition number for vp2"
+          sfc%f%var(ivp2_cn)%units = "count"
           k = k + 1
 
         case default
@@ -4103,6 +4320,16 @@
         if ( ivpwp > 0 ) then
           zm%x(:,ivpwp) = zm%x(:,ivpwp) + vpwp
           zm%n(:,ivpwp) = zm%n(:,ivpwp) + 1
+        end if
+
+        if ( ivp2 > 0 ) then
+          zm%x(:,ivp2) = zm%x(:,ivp2) + vp2
+          zm%n(:,ivp2) = zm%n(:,ivp2) + 1
+        end if
+
+        if ( iup2 > 0 ) then
+          zm%x(:,iup2) = zm%x(:,iup2) + up2
+          zm%n(:,iup2) = zm%n(:,iup2) + 1
         end if
 
         if ( irhom > 0 ) then

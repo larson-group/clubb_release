@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.41 2007-03-19 20:03:58 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.42 2007-04-24 21:57:41 dschanen Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -36,7 +36,7 @@
      .              thlm_forcing, rtm_forcing, wmm, wmt,
      .              wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,
      .              p, rhom, rhot, exner,
-     .              um, vm, upwp, vpwp,
+     .              um, vm, upwp, vpwp, up2, vp2,
      .              thlm, rtm, wprtp, wpthlp, wp2, wp3,
      .              rtp2, thlp2, rtpthlp,
      .              Scm, taum, rcm, Ncm, Ncnm, Nim, 
@@ -81,10 +81,9 @@
 
        external ::
      . timestep_wp23,          ! Computes vert. vel. moments w'^2/w'^3
-     . length,                 ! Length scale
-     . compute_Khm_anisotropic ! Recomputes Khm if lKhm_aniso is true
+     . length                  ! Length scale
 #ifdef STATS
-     . ,stats_accumulate       ! Computes and average of stats
+     . ,stats_accumulate       ! Computes and averages statistics
 #endif /*STATS*/
 
        intrinsic :: sqrt, min, max, exp, mod
@@ -129,6 +128,8 @@
      . upwp,    ! u'w'.                         [m^2/s^2]
      . vm,      ! v wind.                       [m/s]
      . vpwp,    ! u'w'.                         [m^2/s^2]
+     . up2,     ! u'^2                          [m^2/s^2]
+     . vp2,     ! v'^2                          [m^2/s^2]
      . rtm,     ! r_t Total water mixing ratio. [kg/kg]
      . wprtp,   ! w' r_t'.                      [(m kg)/(s kg)]
      . thlm,    ! th_l Liquid potential temp.   [K]
@@ -178,13 +179,10 @@
        ! Local Variables
        integer :: i, j, k, km1, kp1
 
+       logical :: ltmp
+
        real, dimension(gr%nnzp) ::
-     . tmp1,
-     . gamma_Skw_fnc,
-       ! Michael Falk added these, 23 Jan 2007
-     . up2_plus_vp2,
-     . Khm_temp
-       ! eMFc
+     . tmp1, gamma_Skw_fnc
 
 #ifdef SCALARS
        real, dimension(gr%nnzp,sclr_dim) ::
@@ -264,7 +262,8 @@
 !      level is not the ground level.  Brian Griffin.  December 22, 2005.
        IF ( bottom_at_sfc ) THEN
           call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1),
-     .                  wp2(1), thlp2(1), rtp2(1), rtpthlp(1)
+     .                  wp2(1), up2(1), vp2(1), 
+     .                  thlp2(1), rtp2(1), rtpthlp(1)
 #ifdef SCALARS
      .                 ,wpsclrp(1,1:sclr_dim), sclrp2(1,1:sclr_dim),
      .                  sclrprtp(1,1:sclr_dim), sclrpthlp(1,1:sclr_dim)
@@ -274,6 +273,8 @@
           ! Variances for cases where the lowest level is not at the surface.
           ! Eliminate surface effects on lowest level variances.
           wp2(1)     = (2.0/3.0) * emin
+          up2(1)     = (2.0/3.0) * emin
+          vp2(1)     = (2.0/3.0) * emin
           thlp2(1)   = 0.0
           rtp2(1)    = 0.0
           rtpthlp(1) = 0.0
@@ -286,14 +287,21 @@
 #endif /* SCALARS */
        END IF
 
-!      Diagnose variances
-!      We found that if we call diag_var first, we can use a longer timestep.
-!      This requires us to store in memory Scm and taum between timesteps.
+       !----------------------------------------------------------------
+       ! Diagnose variances
+       !----------------------------------------------------------------
+
+       ! We also found that certain cases require a time tendency to run
+       ! at shorter timesteps.
+       ! This requires us to store in memory Scm and taum between timesteps.
+
+       ! We found that if we call diag_var first, we can use a longer timestep.
        call diag_var( taum, wmm, rtm, wprtp, 
-     .                thlm, wpthlp, 
-     .                wp2, wp3, Scm, Skwm,
+     .                thlm, wpthlp, wpthvp, um, vm,
+     .                wp2, wp3, upwp, vpwp, Scm, Skwm,
      .                rtp2, thlp2, rtpthlp,
-     .                .false., dt, isValid ! dtclosure to dt -dschanen
+     .                up2, vp2,
+     .                .true., dt, isValid
 #ifdef SCALARS
      .                ,sclrm, wpsclrp, sclrp2,    ! optional vars
      .                sclrprtp, sclrpthlp         !   "       "
@@ -301,12 +309,15 @@
      .               )
        if ( .not. isValid ) return
 
-!      Set Boundary Conditions on thlp2, rtp2, and rtpthlp output.
+       ! Set Boundary Conditions on thlp2, rtp2, and rtpthlp output.
        thlp2(gr%nnzp)   = 0.0
        rtp2(gr%nnzp)    = 0.0
        rtpthlp(gr%nnzp) = 0.0
+       ! Set this for vp2 and up2 as well. -dschanen 9 April 2007
+       up2(gr%nnzp)     = 0.0
+       vp2(gr%nnzp)     = 0.0
 #ifdef SCALARS
-!      Set Boundary Conditions for optional passive scalars
+       ! Set Boundary Conditions for optional passive scalars
        do i = 1, sclr_dim
           sclrprtp(gr%nnzp,i)  = 0.0
           sclrp2(gr%nnzp,i)    = 0.0
@@ -315,7 +326,7 @@
 #endif /* SCALARS */
 
 #ifndef DISABLE_GAMMA_SKW
-!      Compute gamma as a function of Skw  - 14 April 06 dschanen
+        ! Compute gamma as a function of Skw  - 14 April 06 dschanen
 
         gamma_Skw_fnc 
      .  = gamma_coefb + (gamma_coef-gamma_coefb)
@@ -467,13 +478,17 @@
        sclrpthvp(1,SCLR_THETA) = sclrpthlp(1,SCLR_THETA)
 #endif /* SCALARS */
 
-!      Compute thvm
+       ! Compute thvm
 
        thvm = thlm + ep1 * T0 * rtm + ( Lv/(Cp*exner) - ep2 * T0 ) * rcm
 
-!      tke is assumed to be 3/2 of wp2
-
-       em = 1.5 * wp2
+       ! Compute tke
+       if ( .not. lKhm_aniso ) then
+         ! tke is assumed to be 3/2 of wp2
+         em = 1.5 * wp2
+       else
+         em = 0.5 * ( wp2 + vp2 + up2 )
+       end if
 
 !      Compute mixing length
 
@@ -557,9 +572,9 @@
 
        ! Advance wp2/wp3 one timestep
 
-       call timestep_wp23 ! dtclosure to dt -dschanen
+       call timestep_wp23
      .      ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
-     .        pdf_parms(:, 13), Kht, wmt, wmm,
+     .        pdf_parms(:, 13), Kht, wmt, wmm, up2, vp2,
      .        um, upwp, vm, vpwp, wpthvp, wp2thvp,
      .        wp2, wp3, isValid )
 
@@ -569,20 +584,6 @@
        wp2(gr%nnzp)     = 0.0
        wp3(gr%nnzp)     = 0.0
 
-        ! Michael Falk, 2 February 2007, for new GABLS2 parameters
-       if ( lKhm_aniso ) then
-         call compute_Khm_anisotropic
-     .        ( C4, C13, c_K, time_current,
-     .          time_initial, wtol, lmin,
-     .          um, vm, Lscale,
-     .          zm2zt( wp2 ), up2_plus_vp2,
-     .          Khm_temp )
-
-        else
-          Khm_temp = Khm
-
-        end if
-
 #ifdef SCALARS
        ! Eddy-Diff. passive scalars
        do i=1, sclr_dim
@@ -590,7 +591,7 @@
          edsclrmt(1:gr%nnzp,i) = - wmt * ddzm( zt2zm( edsclrm(:,i) ) )
 
          call update_ed_var( "edsclr", edsclrm(:,i), edsclrmt(:,i), 
-     .                       wpedsclrp(1,i), Khm_temp, dt, 
+     .                       wpedsclrp(1,i), Khm, dt, 
      .                       wpedsclrp(:,i), isValid )
 
        end do
@@ -630,7 +631,7 @@
 
        ! dtmain to dt -dschanen
        call update_ed_var( "um", um, umt, upwp(1), 
-     .                     Khm_temp, dt, upwp, isValid )
+     .                     Khm, dt, upwp, isValid )
 
        if ( lmpace_nudge ) then
          do k=1,gr%nnzp
@@ -675,9 +676,8 @@
        ELSE
           vmt = 0.0
        END IF
-       ! dtmain to dt -dschanen
        call update_ed_var( "vm", vm, vmt, vpwp(1),
-     .                     Khm_temp, dt, vpwp, isValid )
+     .                     Khm, dt, vpwp, isValid )
        vm(1)       = ( ( vm(3)-vm(2) )/( gr%zt(3)-gr%zt(2) ) )
      .              * ( gr%zt(1)-gr%zt(2) ) + vm(2)
        vm(gr%nnzp) = ( ( vm(gr%nnzp-1)-vm(gr%nnzp-2) )
@@ -716,7 +716,7 @@
          end if
          ! Michael Falk added this for up2_plus_vp2, 23 Jan 2007.
          if ( iup2_plus_vp2 > 0) then
-           zm%x(:,iup2_plus_vp2) = zm%x(:,iup2_plus_vp2) + up2_plus_vp2
+           zm%x(:,iup2_plus_vp2) = zm%x(:,iup2_plus_vp2) + up2+vp2
            zm%n(:,iup2_plus_vp2) = zm%n(:,iup2_plus_vp2) + 1
          end if
          ! eMFc

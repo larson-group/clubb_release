@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: prog_variables.F,v 1.13 2007-02-09 22:13:43 dschanen Exp $
+! $Id: prog_variables.F,v 1.14 2007-04-24 21:57:41 dschanen Exp $
         module prognostic_variables
 
 !       This module contains definitions of all prognostic
@@ -20,6 +20,8 @@
      .  vm,     ! v wind                        [m/s]
      .  upwp,   ! vertical u momentum flux      [m^2/s^2]
      .  vpwp,   ! vertical v momentum flux      [m^2/s^2]
+     .  up2,    ! u'^2                          [m^2/s^2]
+     .  vp2,    ! v'^2                          [m^2/s^2]
      .  thlm,   ! liquid potential temperature  [K]
      .  rtm,    ! total water mixing ratio      [kg/kg]
      .  wprtp,  ! w'rt'                         [m kg/s kg]
@@ -30,7 +32,8 @@
      .  thlp2,  ! thl'^2                        [K^2]
      .  rtpthlp ! rt'thl'                       [kg/kg K]
 
-!$omp   threadprivate(um, vm, upwp, vpwp, thlm, rtm, wprtp, wpthlp, wp2)
+!$omp   threadprivate(um, vm, upwp, vpwp, up2, vp2)
+!$omp   threadprivate(thlm, rtm, wprtp, wpthlp, wp2)
 !$omp   threadprivate(wp3, rtp2, thlp2, rtpthlp)
 
         real, target, allocatable, dimension(:) ::
@@ -143,6 +146,9 @@
         allocate( upwp(1:nzmax) )      ! vertical u momentum flux
         allocate( vpwp(1:nzmax) )      ! vertical v momentum flux
 
+        allocate( up2(1:nzmax) )
+        allocate( vp2(1:nzmax) )
+
         allocate( thlm(1:nzmax) )      ! liquid potential temperature
         allocate( rtm(1:nzmax) )       ! total water mixing ratio
         allocate( wprtp(1:nzmax) )     ! w'rt'
@@ -205,11 +211,14 @@
         upwp(1:nzmax)    = 0.0     ! vertical u momentum flux
         vpwp(1:nzmax)    = 0.0     ! vertical v momentum flux
 
+        up2(1:nzmax)     = 2./3. * emin ! u'^2
+        vp2(1:nzmax)     = 2./3. * emin ! v'^2
+        wp2(1:nzmax)     = 2./3. * emin ! w'^2
+
         thlm(1:nzmax)    = 0.0     ! liquid potential temperature
         rtm(1:nzmax)     = 0.0     ! total water mixing ratio
         wprtp(1:nzmax)   = 0.0     ! w'rt'
         wpthlp(1:nzmax)  = 0.0     ! w'thl'
-        wp2(1:nzmax)     = 2./3. * emin  ! w'^2
         wp3(1:nzmax)     = 0.0     ! w'^3
         rtp2(1:nzmax)    = 0.0     ! rt'^2
         thlp2(1:nzmax)   = 0.0     ! thl'^2
@@ -279,6 +288,8 @@
 
         deallocate( upwp )      ! vertical u momentum flux
         deallocate( vpwp )      ! vertical v momentum flux
+
+        deallocate( up2, vp2 )
 
         deallocate( thlm )      ! liquid potential temperature
         deallocate( rtm )       ! total water mixing ratio
