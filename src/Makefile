@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.80 2007-03-15 23:19:55 dschanen Exp $
+# $Id: Makefile,v 1.81 2007-04-24 22:09:43 dschanen Exp $
 #
 # This version should work with BSD, GNU make, smake and dmake.
 #
@@ -71,12 +71,12 @@ NUM_REC	= nrtype.o nr.o nrutil.o ran_state.o ran1.o amebsa.o amoeba.o
 TUNING = $(MODEL) $(INTERFACING) $(NUM_REC) error.o
 
 INT2TXT		= int2txt.o
-HOC_TUNER	= $(TUNING) hoc_tuner.o
+HOC_TUNER	= $(MODEL) $(INTERFACING) $(NUM_REC) error.o hoc_tuner.o
 HOC_STANDALONE	= $(MODEL) $(INTERFACING) hoc_standalone.o
 COMPARE_RUNS	= $(INTERFACING) compare_runs.o
 JACOBIAN	= $(MODEL) $(INTERFACING) jacobian.o
 HOC_INPUTFIELDS	= $(MODEL) $(INTERFACING) hoc_inputfields.o
-HOC_BUDGET_TERMS= $(TUNING) budget_terms.o hoc_tuner_budget_terms.o
+HOC_BUDGET_TERMS= $(MODEL) $(INTERFACING) $(NUM_REC) error.o budget_terms.o hoc_tuner_budget_terms.o
 
 # == Targets == ( hoc_tuner and jacobian assume statistics )
 all:	hoc_standalone hoc_tuner int2txt hoc_inputfields  \
