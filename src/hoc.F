@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.120 2007-03-14 23:34:47 dschanen Exp $
+! $Id: hoc.F,v 1.121 2007-04-24 21:55:56 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -317,11 +317,11 @@
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
          do i1=1, niterlong
            call parameterization_timestep
-     .          ( i1, niterlong, time_initial, time, dt,
+     .          ( i, niterlong, time_initial, time, dt,
      .            thlm_forcing, rtm_forcing, wmm, wmt,
      .            wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,
      .            p, rhom, rhot, exner,
-     .            um, vm, upwp, vpwp,
+     .            um, vm, upwp, vpwp, up2, vp2,
      .            thlm, rtm, wprtp, wpthlp, wp2, wp3,
      .            rtp2, thlp2, rtpthlp,
      .            Scm, taum, rcm, Ncm, Ncnm, Nim,
@@ -577,11 +577,11 @@
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
          do i1=1, niterlong
            call parameterization_timestep
-     .          ( i1, niterlong, time_initial, time, dt,
+     .          ( i, niterlong, time_initial, time, dt,
      .            thlm_forcing, rtm_forcing, wmm, wmt,
      .            wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,
      .            p, rhom, rhot, exner,
-     .            um, vm, upwp, vpwp,
+     .            um, vm, upwp, vpwp, up2, vp2,
      .            thlm, rtm, wprtp, wpthlp, wp2, wp3,
      .            rtp2, thlp2, rtpthlp,
      .            Scm, taum, rcm, Ncm, Ncnm, Nim,
