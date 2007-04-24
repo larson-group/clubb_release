@@ -1,10 +1,10 @@
-! $Id: all_stats.in,v 1.6 2007-03-19 20:07:17 dschanen Exp $
+! $Id: all_stats.in,v 1.7 2007-04-24 22:15:18 dschanen Exp $
 ! This file contains a comprehensive listing of all the HOC variables that 
 ! can be output to GrADS, as found in src/HOC_parameterization/statistics.F.
 ! This file, as well as the statistical files for all the other cases, needs
 ! to be updated every time a new statistical parameter is added.
 ! This file was created on January 21, 2007.
-! This file was last updated on March 19, 2007.
+! This file was last updated on April 24, 2007.
 &statsnl
 
 lstats = t
@@ -46,13 +46,17 @@ vars_zt =
 
 fname_zm = 'all_zm',
 vars_zm = 
-'wp2', 'rtp2', 'thlp2', 'rtpthlp', 'wprtp', 'wpthlp', 'wp4',
+'wp2', 'rtp2', 'thlp2', 'rtpthlp', 'wprtp', 'wpthlp', 'wp4', 'up2', 'vp2',
 'wpthvp', 'rtpthvp', 'thlpthvp', 'taum', 'khm', 'wprcp',
 'thlprcp', 'rtprcp', 'upwp', 'vpwp', 'up2_plus_vp2', 'rhom', 'sc', 'em',
 'shear', 'Frad', 'Frad_LW', 'Frad_SW', 'Fprec', 'Fcsed',
 'Vrr', 'VNr', 'Vsnow', 'Vgraupel', 'Vice',
 'wp2_bt', 'wp2_ma', 'wp2_ta', 'wp2_ac', 'wp2_bp', 'wp2_pr1', 
 'wp2_pr2', 'wp2_pr3', 'wp2_dp1', 'wp2_dp2', 'wp2_cl',
+'vp2_bt', 'vp2_ma', 'vp2_ta', 'vp2_tp', 'vp2_dp1', 'vp2_dp2', 
+'vp2_pr1', 'vp2_pr2',
+'up2_bt', 'up2_ma', 'up2_ta', 'up2_tp', 'up2_dp1', 'up2_dp2', 
+'up2_pr1', 'up2_pr2',
 'wprtp_bt', 'wprtp_ma', 'wprtp_ta', 'wprtp_tp', 'wprtp_ac', 'wprtp_bp',
 'wprtp_pr1', 'wprtp_pr2', 'wprtp_pr3', 'wprtp_dp1',
 'wpthlp_bt', 'wpthlp_ma', 'wpthlp_ta', 'wpthlp_tp', 'wpthlp_ac', 'wpthlp_bp',
@@ -74,5 +78,6 @@ fname_sfc = 'all_sfc',
 vars_sfc = 
 'ustar', 'lh', 'sh', 'cc', 'lwp', 'zb', 'zi', 'rain', 'pflux',
 'wp23_cn', 'rtm_cn', 'thlm_cn', 'rtp2_cn', 'thlp2_cn', 'rtpthlp_cn',
+'up2_cn', 'vp2_cn',
 ''
 /
