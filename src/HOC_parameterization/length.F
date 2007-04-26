@@ -1,4 +1,4 @@
-! $Id: length.F,v 1.5 2007-03-14 23:34:47 dschanen Exp $
+! $Id: length.F,v 1.6 2007-04-26 16:17:16 dschanen Exp $
 !-----------------------------------------------------------------------------
         subroutine length( thvm, thlm, rtm, rcm, em, p, exner,
      .                     Lscale, lup, ldown ) 
@@ -28,7 +28,8 @@
 
         use parameters, only:
      .  mu,  ! Fractional entrainment rate per unit altitude    [1/m]
-     .  T0   ! Reference temperature                            [K]
+     .  T0,  ! Reference temperature                            [K]
+     .  lmin ! Minimum value for Lscale                         [m]
 
         use grid_class
 
@@ -235,13 +236,9 @@
 
         do i=2,gr%nnzp
 
-! Vince Larson changed to avoid noise above cloud top.  26 July 2005
-!          lup(i)    = max( lmin, lup(i) )
-!          ldown(i)  = max( lmin, ldown(i) )
+          lup(i)    = max( lmin, lup(i) )
+          ldown(i)  = max( lmin, ldown(i) )
 
-          lup(i)    = max( 0.0 , lup(i) )
-          ldown(i)  = max( 0.0 , ldown(i) )
-! End Vince Larson's change.
           Lscale(i) = sqrt( lup(i)*ldown(i) )
 
         end do

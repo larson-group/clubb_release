@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.42 2007-04-24 21:57:41 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.43 2007-04-26 16:17:16 dschanen Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -219,7 +219,10 @@
 
 !-----------------------------------------------------------------------
 
+       !----------------------------------------------------------------
        ! Interpolate wp2 & wp3, and then compute Skw for m & t grid
+       !----------------------------------------------------------------
+
        do k = 1, gr%nnzp, 1
          km1 = max( k-1, 1 )
          kp1 = min( k+1, gr%nnzp )
@@ -239,8 +242,10 @@
        wpsclrp(1,1:sclr_dim)   = wpsclrp_sfc(1:sclr_dim)
        wpedsclrp(1,1:sclr_dim) = wpedsclrp_sfc(1:sclr_dim)
 #endif
+       !----------------------------------------------------------------
+       ! Set Surface variances
+       !----------------------------------------------------------------
 
-!      Set Surface variances
 !      Surface variances should be set here, before the call to diag_var.
 !      The reasons that surface variances can be set here are because the
 !      only variables that are the input into surface variances are the
@@ -301,7 +306,7 @@
      .                wp2, wp3, upwp, vpwp, Scm, Skwm,
      .                rtp2, thlp2, rtpthlp,
      .                up2, vp2,
-     .                .true., dt, isValid
+     .                .false., dt, isValid
 #ifdef SCALARS
      .                ,sclrm, wpsclrp, sclrp2,    ! optional vars
      .                sclrprtp, sclrpthlp         !   "       "
@@ -326,7 +331,12 @@
 #endif /* SCALARS */
 
 #ifndef DISABLE_GAMMA_SKW
-        ! Compute gamma as a function of Skw  - 14 April 06 dschanen
+       !----------------------------------------------------------------
+       ! Compute gamma as a function of Skw  - 14 April 06 dschanen
+       !----------------------------------------------------------------
+       ! Use -DDISABLE_GAMMA_SKW with the fortran preprocessor
+       ! to bring back the use of gamma_coef the value of gamma 
+       ! without Skw dependence
 
         gamma_Skw_fnc 
      .  = gamma_coefb + (gamma_coef-gamma_coefb)
@@ -337,13 +347,10 @@
 
 #endif /* DISABLE */
 
-       ! Brian added this line of code which can be uncommented
-       ! in order to bring back the use of gamma_coef by overwriting
-       ! the value of C2_Skw_fnc before the computing the equation
-       ! below.
-!       gamma_Skw_fnc = 0.3200   ! gamma_coef
 
-!      Compute Sc with new formula from Vince
+       !----------------------------------------------------------------
+       ! Compute Sc with new formula from Vince
+       !----------------------------------------------------------------
 
        Scm = gamma_Skw_fnc * ( 1.0 - 
      .       min(
@@ -369,11 +376,12 @@
 
 !       print*, 'hoc.F: i_rmd=', i_rmd
 
-
-!      Call closure scheme
+       !----------------------------------------------------------------
+       ! Call closure scheme
+       !----------------------------------------------------------------
 
 #ifdef SCALARS
-!      Put closure scheme input on the m grid
+       ! Put passive scalar input on the m grid for the PDF
        do i = 1, sclr_dim
           sclr_tmp1(:,i) = zm2zt( wpsclrp(:,i) ) 
           sclr_tmp2(:,i) = zm2zt( sclrprtp(:,i) ) 
@@ -399,7 +407,10 @@
      .     wpsclrpthlp(k,:), sclrprcp(k,:), wp2sclrp(k,:)
 #endif /*SCALARS*/
      .   )
-!        Latin hypercube sampling.
+
+         !--------------------------------------------------------------
+         ! Latin hypercube sampling
+         !--------------------------------------------------------------
          if ( LH_on ) then 
            call latin_hypercube_sampling
      .     ( k, n_micro_call, d_variables, nt_repeat, i_rmd, 
@@ -470,7 +481,7 @@
 #endif /* SCALARS */
      .      )
 
-!      Set other specific boundary conditions.
+       ! Set other specific boundary conditions.
        wpthvp(1)         = wpthlp( 1 )
        thlpthvp(1)       = thlp2( 1 )
        wp2thvp(gr%nnzp)  = 0.0
@@ -478,11 +489,16 @@
        sclrpthvp(1,SCLR_THETA) = sclrpthlp(1,SCLR_THETA)
 #endif /* SCALARS */
 
+       !----------------------------------------------------------------
        ! Compute thvm
+       !----------------------------------------------------------------
 
        thvm = thlm + ep1 * T0 * rtm + ( Lv/(Cp*exner) - ep2 * T0 ) * rcm
 
+       !----------------------------------------------------------------
        ! Compute tke
+       !----------------------------------------------------------------
+
        if ( .not. lKhm_aniso ) then
          ! tke is assumed to be 3/2 of wp2
          em = 1.5 * wp2
@@ -490,19 +506,23 @@
          em = 0.5 * ( wp2 + vp2 + up2 )
        end if
 
-!      Compute mixing length
+       !----------------------------------------------------------------
+       ! Compute mixing length
+       !----------------------------------------------------------------
 
        call length( thvm, thlm, rtm, rcm, 
      .              em, p, exner, Lscale, lup, ldown )
 
-!      Dissipation time
+       !----------------------------------------------------------------
+       ! Dissipation time
+       !----------------------------------------------------------------
 
        tmp1 = SQRT( MAX( emin, zm2zt( em ) ) )
        taut = MIN( Lscale / tmp1, taumax )
        taum 
      . = MIN( ( zt2zm( Lscale ) / SQRT( max( em, emin ) ) ), taumax )
 
-!      Modification to damp noise in stable region
+       ! Modification to damp noise in stable region
        do k = 1, gr%nnzp
          if ( wp2(k) <= 0.005 ) then
            taut(k) = taumin
@@ -510,8 +530,10 @@
          end if
        end do
 
-!      Eddy diffusivity coefficient
-!      c_K is 0.548 usually (Duynkerke and Driedonks 1987)
+       !----------------------------------------------------------------
+       ! Eddy diffusivity coefficient
+       !----------------------------------------------------------------
+       ! c_K is 0.548 usually (Duynkerke and Driedonks 1987)
 
        Kht = c_K * Lscale * tmp1
        Khm = c_K * zt2zm( Lscale ) * sqrt( max( em, emin ) )
@@ -520,6 +542,9 @@
 !############## ADVANCE PROGNOSTIC VARIABLES ONE TIMESTEP ##############
 !#######################################################################
 
+       !----------------------------------------------------------------
+       ! Compute Microphysics
+       !----------------------------------------------------------------
        ! Call Khairoutdinov and Kogan (2000) scheme, or COAMPS
        ! for rain microphysics.
        if ( kk_rain .or. lcoamps_micro ) then
@@ -543,7 +568,9 @@
        end do
 
 
+       !----------------------------------------------------------------
        ! Advance rtm/wprtp and thlm/wpthlp one time step
+       !----------------------------------------------------------------
 
        call timestep_mixing
      .      ( dt, taum, wmm, wmt, wp2, wp3, Scm, Skwm, 
@@ -570,7 +597,9 @@
 #endif /* SCALARS */
 
 
+       !----------------------------------------------------------------
        ! Advance wp2/wp3 one timestep
+       !----------------------------------------------------------------
 
        call timestep_wp23
      .      ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
@@ -585,7 +614,10 @@
        wp3(gr%nnzp)     = 0.0
 
 #ifdef SCALARS
-       ! Eddy-Diff. passive scalars
+       !----------------------------------------------------------------
+       ! Compute Eddy-diff. Passive Scalars
+       !----------------------------------------------------------------
+
        do i=1, sclr_dim
 
          edsclrmt(1:gr%nnzp,i) = - wmt * ddzm( zt2zm( edsclrm(:,i) ) )
@@ -602,7 +634,9 @@
 #endif /*SCALARS*/
 
 
+       !----------------------------------------------------------------
        ! Update winds
+       !----------------------------------------------------------------
 
        IF ( .NOT. implemented ) THEN
           umt = - wmt * ddzm( zt2zm( um ) )
@@ -688,7 +722,7 @@
        if ( .not. isValid ) return
 
 
-!      Shear production.  Brian
+       ! Compute Shear Production  -Brian
        do k = 1, gr%nnzp-1, 1
          shear(k) = -upwp(k) * ( um(k+1) - um(k) ) * gr%dzm(k)
      .              -vpwp(k) * ( vm(k+1) - vm(k) ) * gr%dzm(k)

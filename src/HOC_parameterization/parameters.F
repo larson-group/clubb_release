@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameters.F,v 1.3 2007-04-24 21:57:41 dschanen Exp $
+! $Id: parameters.F,v 1.4 2007-04-26 16:17:16 dschanen Exp $
         module parameters 
 
 !       Description:
@@ -228,12 +228,63 @@
        ! Output variables
        real, intent(out), dimension(nparams) :: params
 
-       ! Read the namelist
-       open(unit=iunit, file=filename, status='old', action='read')
+       ! If the filename is empty, assume we're using a `working' set of
+       ! parameters that are set statically here (handy for host models).
+       if ( filename == "" ) then
+         C1          = 2.5
+         C1b         = 2.5
+         C1c         = 1.0
+         C2rt        = 1.0
+         C2thl       = 1.0
+         C2rtthl     = 2.0
+         C2          = 1.3
+         C2b         = 1.3
+         C2c         = 5.0
+         C4          = 5.2
+         C5          = 0.3 
+         C6rt        = 6.0 
+         C6rtb       = 6.0
+         C6rtc       = 1.0
+         C6thl       = 6.0 
+         C6thlb      = 6.0 
+         C6thlc      = 1.0 
+         C7          = 0.1 
+         C7b         = 0.8 
+         C7c         = 0.5 
+         C8          = 3.0  
+         C8b         = 0.005
+         C10         = 3.3
+         C11         = 0.75
+         C11b        = 0.35
+         C11c        = 0.5
+         C12         = 1.0
+         C13         = 0.1
+         C14         = 1.0
+         nu1         = 20.0
+         nu2         = 5.0
+         nu6         = 5.0
+         nu8         = 20.0
+         nu9         = 20.0
+         nu_r        = 3.0
+         beta        = 1.75
+         gamma_coef  = 0.32
+         gamma_coefb = 0.32
+         gamma_coefc = 5.0
+         c_K         = 0.548
+         taumin      = 90.0
+         taumax      = 3600.0
+         lmin_coef   = 0.5
+         mu          = 6.000E-4
 
-       read(unit=iunit, nml=initvars)
+       else
+         ! Read the namelist
+         open(unit=iunit, file=filename, status='old', action='read')
 
-       close(unit=iunit)
+         read(unit=iunit, nml=initvars)
+
+         close(unit=iunit)
+
+       end if
 
        ! Put the variables in the output array 
        call pack_parameters
