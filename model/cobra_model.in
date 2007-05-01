@@ -4,8 +4,9 @@
 
 runtype = "cobra"
 
-nzmax  = 100
-deltaz = 40.0
+nzmax   = 100
+deltaz  = 40.0
+zm_init = 0.0
 
 day = 11, month = 6, year = 2004, 
 rlat = 45.20407, rlon = -68.7402  ! Howland obs. tower
@@ -32,7 +33,6 @@ kk_rain       = .false.
 lcoamps_micro = .false.
 licedfs       = .false.
 lbugsrad      = .false.
-bottom_at_sfc = .true.
 lKhm_aniso    = .true.
 
 /

@@ -1,12 +1,13 @@
-! $Id: arm_model.in,v 1.9 2007-02-09 00:55:24 dschanen Exp $
+! $Id: arm_model.in,v 1.10 2007-05-01 23:18:52 dschanen Exp $
 ! Parameter file for GCSS ARM Cu over land case
 
 &model_setting
 
 runtype = "arm"
 
-nzmax = 110
-deltaz = 40.0
+nzmax   = 110
+deltaz  = 40.0
+zm_init = 0.0
 day = 21, month = 6, year = 1997,
 rlat = 36.62, rlon = -97.5
 
@@ -32,7 +33,6 @@ kk_rain       = .false.
 lcoamps_micro = .false.
 licedfs       = .false.
 lbugsrad      = .false.
-bottom_at_sfc = .true.
 lKhm_aniso    = .false.
 
 /

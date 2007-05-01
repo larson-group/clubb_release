@@ -1,4 +1,4 @@
-! $Id: rico_model.in,v 1.4 2007-03-05 20:12:27 mjfalk Exp $
+! $Id: rico_model.in,v 1.5 2007-05-01 23:18:53 dschanen Exp $
 ! Parameter file for GCSS RICO case
 ! Edited by Michael Falk, 12 December 2006
 
@@ -8,6 +8,8 @@ runtype = "rico"
 
 nzmax = 100
 deltaz = 40.0
+zm_init = 0.0
+
 day = 16, month = 12, year = 2004,
 rlat = 18.0, rlon = -61.5
 
@@ -34,7 +36,6 @@ kk_rain       = .true.
 lcoamps_micro = .false.
 licedfs       = .false.
 lbugsrad      = .false.
-bottom_at_sfc = .true.
 lKhm_aniso    = .false.
 
 /

@@ -1,12 +1,13 @@
-! $Id: atex_model.in,v 1.8 2007-02-09 00:55:24 dschanen Exp $
+! $Id: atex_model.in,v 1.9 2007-05-01 23:18:52 dschanen Exp $
 ! Parameter file for ATEX intermediate regime
 
 &model_setting
 
 runtype = "atex"
 
-nzmax = 150
-deltaz = 20.0
+nzmax   = 150
+deltaz  = 20.0
+zm_init = 0.0
 day = 7, month = 2, year = 1969,
 rlat = 14.9406, rlon = -35.0
 
@@ -28,7 +29,6 @@ kk_rain       = .false.
 lcoamps_micro = .false.
 licedfs       = .false.
 lbugsrad      = .false.
-bottom_at_sfc = .true.
 lKhm_aniso    = .false.
 
 /

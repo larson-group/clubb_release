@@ -1,4 +1,4 @@
-! $Id: mpace_model.in,v 1.4 2007-02-09 00:55:24 dschanen Exp $
+! $Id: mpace_model.in,v 1.5 2007-05-01 23:18:52 dschanen Exp $
 ! Parameter file for GCSS FIRE Sc case
 
 &model_setting
@@ -7,6 +7,8 @@ runtype = "mpace"
 
 nzmax = 56
 deltaz = 50.0
+zm_init = 0.0
+
 day = 9, month = 10, year = 2004,
 rlat = 71.75, rlon = -151.0
 
@@ -32,7 +34,6 @@ kk_rain       = .false.
 lcoamps_micro = .true.
 licedfs       = .false.
 lbugsrad      = .false.
-bottom_at_sfc = .true.
 lKhm_aniso    = .false.
 
 /

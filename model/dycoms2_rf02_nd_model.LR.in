@@ -7,6 +7,7 @@ runtype = "dycoms2_rf02_nd"
 
 nzmax  = 15
 deltaz = 100.0
+zm_init = 0.0
 
 day = 11, month = 7, year = 2001, 
 rlat = 31.5, rlon = -122.0
@@ -26,8 +27,9 @@ T0   = 300.
 
 cloud_sed     = .false.
 kk_rain       = .false.
+lcoamps_micro = .false.
+licedfs       = .false.
 lbugsrad      = .false.
-bottom_at_sfc = .true.
 lKhm_aniso    = .false.
 
 /

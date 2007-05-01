@@ -1,4 +1,4 @@
-! $Id: jun25_altocu_model.in,v 1.4 2007-02-09 00:55:24 dschanen Exp $
+! $Id: jun25_altocu_model.in,v 1.5 2007-05-01 23:18:52 dschanen Exp $
 ! Parameter file for June 25 altocumulus case
 
 &model_setting
@@ -7,6 +7,8 @@ runtype = "jun25_altocu"
 
 nzmax = 201
 deltaz = 12.5
+zm_init = 4808.0
+
 
 day = 25, month = 06, year = 1996,
 rlat = 38.0, rlon = -96.40
@@ -29,7 +31,6 @@ kk_rain       = .false.
 lcoamps_micro = .false.
 licedfs       = .false.
 lbugsrad      = .false.
-bottom_at_sfc = .false.
 lKhm_aniso    = .false.
 
 /
@@ -38,7 +39,9 @@ lKhm_aniso    = .false.
 
 nlevels = 14
 
-z = 0, 628.650, 757.910, 881.790, 996.840, 1154.11, 1308.28, 1504.20, 1540.44, 1559.21, 1701.93, 1901.78, 2301.76, 3002.14
+z = 4808.000,  5436.650,  5565.910,  5689.790,  5804.840,  5962.110,  
+    6116.280,  6312.200,  6348.440,  6367.210,  6509.930,  6709.780,  
+    7109.760,  7810.140
 
 theta = 317.460, 318.188, 318.355, 318.956, 319.324, 320.240, 320.913, 322.254, 323.509, 324.052, 326.289, 328.193, 332.231, 335.285
 

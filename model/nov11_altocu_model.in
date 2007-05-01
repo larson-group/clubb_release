@@ -1,4 +1,4 @@
-! $Id: nov11_altocu_model.in,v 1.7 2007-02-09 00:55:24 dschanen Exp $
+! $Id: nov11_altocu_model.in,v 1.8 2007-05-01 23:18:53 dschanen Exp $
 ! Parameter file for November 11 altocumulus case
 
 &model_setting
@@ -7,6 +7,7 @@ runtype = "nov11_altocu"
 
 nzmax = 161
 deltaz = 15.0
+zm_init = 4150.0
 
 day = 11, month = 11, year = 1999,
 rlat = 47.25, rlon = -112.0
@@ -26,10 +27,9 @@ T0   = 300.
 
 cloud_sed     = .false.
 kk_rain       = .false.
-lcoamps_micro = .false.
+lcoamps_micro = .true.
 licedfs       = .false.
 lbugsrad      = .false.
-bottom_at_sfc = .false.
 lKhm_aniso    = .false.
 
 /
@@ -38,7 +38,7 @@ lKhm_aniso    = .false.
 
 nlevels = 5
 
-z = 0.0, 851.0, 1383.0, 1408.0, 3429.0
+z = 4150.0,  5001.0,  5533.0,  5558.0,  7579.0
 
 theta = 309.15, 311.50, 311.90, 314.00, 324.66
 
