@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace.F,v 1.3 2007-02-10 16:55:58 griffinb Exp $
+! $Id: mpace.F,v 1.4 2007-05-01 22:57:30 dschanen Exp $
         module mpace
 
 !       Description:
@@ -314,6 +314,9 @@
      .    = 30.0 * (1.0 + exp(-gr%zt(1:gr%nnzp)/2000.0)) * 1.e6
 
         else if ( kk_rain ) then
+          ! Note: Khairoutdinov and Kogan microphysics has only been
+          ! tested for marine stratocumulous clouds, and does not
+          ! account for snow and ice.
           do k=1, gr%nnzp, 1
             if ( rcm(k) >= rc_tol ) then
               Ncm(k) = 30.0 * (1.0 + exp(-gr%zt(k)/2000.0)) * 1.e6

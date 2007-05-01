@@ -1,16 +1,23 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: nov11.F,v 1.2 2007-01-08 20:38:49 dschanen Exp $
+! $Id: nov11.F,v 1.3 2007-05-01 22:57:30 dschanen Exp $
         module nov11
 
 !       Description:
 !       Contains subroutines for the Nov. 11 case.
+
+!       References:
 !----------------------------------------------------------------------
 
         public :: nov11_altocu_tndcy
 
-        ! Note: bottom point not at surface
+        ! Note: bottom point not at surface, so there is no sfc
+        ! subroutine
+
+        logical, private :: tdelay_lcoamps_micro
+
+!$omp   threadprivate(tdelay_lcoamps_micro)
 
         private
 
@@ -21,7 +28,7 @@
      .             ( time, time_initial, dt, rlat, rlon,
      .               thlm, rcm, p, exner, rhot, rtm, wmt,
      .               wmm, thlm_forcing, rtm_forcing,
-     .               Frad, radht, sclrm_forcing )
+     .               Frad, radht, Ncnm, sclrm_forcing )
 
 !       Description:
 !       Compute subsidence, radiation, and large-scale tendencies.
@@ -63,7 +70,6 @@
 
         ! Toggles for activating/deactivating forcings
         logical, parameter :: 
-     .  icedfs_on = .true.,
      .  subs_on   = .true.,
      .  lw_on     = .true.
 
@@ -99,7 +105,8 @@
      .  thlm_forcing,   ! Theta_l forcing                         [K/s]
      .  rtm_forcing,    ! Total water forcing                     [kg/kg/s]
      .  Frad,           ! Radiative flux                          [W/m^2]
-     .  radht           ! Radiative heating                       [K/s]
+     .  radht,          ! Radiative heating                       [K/s]
+     .  Ncnm            ! Cloud nuclei number concentration       [num/m^3]
 
         ! Output variables (optional)
         real, intent(out), dimension(gr%nnzp,sclr_dim), optional ::
@@ -204,9 +211,9 @@
         xi_abs = 0.0
       end if
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! End of ajsmith4's Modification !!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!-----------------------------------
+! End of ajsmith4's Modification 
+!-----------------------------------
 
       if (xi_abs == 0.0 ) then
         sw_on = .false.
@@ -273,19 +280,19 @@
         ! Subsidence Parameters
         !----------------------
         wmax =  -0.03
-          zi = 1400.0
+          zi = 1400.0 + gr%zm(1)
         dazi =  400.0
         dbzi = 1000.0
          dbc =  300.0
          dac =  200.0
 
-        zsubs(1) = 0.
+        zsubs(1) = 0. + gr%zm(1)
         zsubs(2) = zi-dbzi-dbc
         zsubs(3) = zi-dbzi
         zsubs(4) = zi
         zsubs(5) = zi+dazi
         zsubs(6) = zi+dazi+dac
-        zsubs(7) = 2400.
+        zsubs(7) = 2400. + gr%zm(1)
 
           wt1(1) = 0.
           wt1(2) = 0.
@@ -308,11 +315,11 @@
         if ( time >= time_initial + 3600.0  .and.
      .       time <  time_initial + 3600.0 + dt ) then
 
-           do k = 1, gr%nnzp, 1
-             if ( gr%zt(k) > 1555.0 ) THEN
-                rtm(k) = 0.89 * rtm(k)
-             end if
-           end do
+          do k = 1, gr%nnzp, 1
+            if ( gr%zt(k) > ( 1555.0 + gr%zm(1) ) ) then
+               rtm(k) = 0.89 * rtm(k)
+            end if
+          end do
 
         end if 
 
@@ -496,19 +503,47 @@
 
         end if ! ~ lbugsrad
 
+        if ( time == time_initial ) then
+
+          if ( lcoamps_micro ) then
+            ! Turn off microphysics for now, re-enable at
+            ! time = 3600.
+            lcoamps_micro = .false.
+
+            tdelay_lcoamps_micro = .true.
+          else
+            tdelay_lcoamps_micro = .false.
+          end if
+
+        end if
+
+        if ( time >= time_initial + 3600.0 .and. licedfs ) then
         !---------------------------------------------------------------
         ! Compute the loss of total water due to diffusional
         ! growth of ice.  This is defined on thermodynamic levels.
-        !
-        ! NOTE FOR JUN.25 CASE
-        ! --------------------
-        ! Ice diffusion is generally not used in the Jun.25 case.
-        ! The code is still available here if needed.
         !---------------------------------------------------------------
-        if ( time >= time_initial + 3600.0 .and. icedfs_on ) then
 
            call altocu_icedf( dt, thlm, rcm, p, exner, rhot,
      .                        dqc_dt_icedfs )
+        
+        else if ( time == ( time_initial + 3600.0 ) 
+     .            .and. tdelay_lcoamps_micro ) then
+
+        !---------------------------------------------------------------
+        ! Start COAMPS micro after predefined time delay
+        !---------------------------------------------------------------
+
+          lcoamps_micro = .true.
+
+          ! Cloud nuclei
+          ! Note: As near as I can tell we do not need this to be
+          ! anything but zero for Nov11, since it is too cold for rrm.
+          ! -dschanen 1 May 2007
+!         Ncnm(1:gr%nnzp) 
+!    .    = 30.0 * (1.0 + exp(-gr%zt(1:gr%nnzp)/2000.0)) * 1.e6
+
+          ! Simplified ice off
+          dqc_dt_icedfs(:) = 0.0
 
         else
 
@@ -562,7 +597,7 @@
 
         do k=2,gr%nnzp
           if ( (time >= time_initial + 3600.0) .and. subs_on ) then
-            call linear_interpolation(7,zsubs,wt1,gr%zt(k),wmt(k))
+            call linear_interpolation( 7, zsubs, wt1, gr%zt(k), wmt(k) )
           else
 !           If time is not yet one hour, we have no subsidence
             wmt(k) = 0.0
@@ -584,16 +619,19 @@
 
           end if
 
-          rtm_forcing(k) = dqc_dt_icedfs(k)
+          if ( licedfs ) rtm_forcing(k) = dqc_dt_icedfs(k)
 
         end do
 
+        ! Set scalars according to rt and thetal for testing purposes
         if ( present( sclrm_forcing ) ) then
           sclrm_forcing(:,SCLR_THETA) = thlm_forcing(:)
           sclrm_forcing(:,SCLR_RT)    = rtm_forcing(:)
         end if
 
 #ifdef STATS
+        ! Save LW and SW components of radiative heating and
+        ! radiative flux based on simplified radiation.
         if ( .not.lbugsrad .and. lstats_samp ) then
 
           if ( iradht_LW > 0 ) then
