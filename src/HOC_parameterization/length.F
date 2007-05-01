@@ -1,4 +1,4 @@
-! $Id: length.F,v 1.6 2007-04-26 16:17:16 dschanen Exp $
+! $Id: length.F,v 1.7 2007-05-01 23:01:59 dschanen Exp $
 !-----------------------------------------------------------------------------
         subroutine length( thvm, thlm, rtm, rcm, em, p, exner,
      .                     Lscale, lup, ldown ) 
@@ -68,6 +68,9 @@
         real :: tke_i, CAPE_incr, dthv
 
         real :: zincr
+
+        ! Minimum value for Lscale that will taper off with height
+        real :: lminh
 
         ! Parcel quantities at grid level j
         real :: thl_par_j, rt_par_j, rc_par_j, thv_par_j
@@ -227,7 +230,8 @@
           end do
 
           ! Make ldown nonlocal
-          ldown_min_alt = max( ldown_min_alt, gr%zt(i)-ldown(i) )
+!         ldown_min_alt = max( ldown_min_alt, gr%zt(i)-ldown(i) )
+          ldown_min_alt = min( ldown_min_alt, gr%zt(i)-ldown(i) ) ! %% test
           if ( (gr%zt(i)-ldown(i)) > ldown_min_alt ) then
             ldown(i) = gr%zt(i) - ldown_min_alt
           end if
@@ -235,9 +239,13 @@
         end do
 
         do i=2,gr%nnzp
+          ! Make lminh a linear function starting at value lmin at the
+          ! bottom and going to zero at 500 meters in altitude.
+          ! -dschanen 27 April 2007
+          lminh = max( 0., 500. - gr%zt(i) ) * ( lmin / 500. )
 
-          lup(i)    = max( lmin, lup(i) )
-          ldown(i)  = max( lmin, ldown(i) )
+          lup(i)    = max( lminh, lup(i) )
+          ldown(i)  = max( lminh, ldown(i) )
 
           Lscale(i) = sqrt( lup(i)*ldown(i) )
 

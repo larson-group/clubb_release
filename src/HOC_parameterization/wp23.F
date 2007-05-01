@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.13 2007-04-24 21:57:41 dschanen Exp $
+! $Id: wp23.F,v 1.14 2007-05-01 23:01:59 dschanen Exp $
 
         subroutine timestep_wp23
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
@@ -848,7 +848,7 @@
            ! NOTE: Clipping not good; must try to get rid of.  Effects only
            !       Wangara case.
 
-           IF ( gr%zt(k) <= 100.0 .AND. bottom_at_sfc ) THEN ! Clip for 100 m. above ground.
+           IF ( gr%zt(k) <= 100.0 ) THEN ! Clip for 100 m. above ground.
 
               atmp = MAX( ( (wp2(km1)+wp2(k)) / 2.0 ) , eps )    ! wp2
               ctmp = atmp**(3.0/2.0)                             ! wp2^(3/2)

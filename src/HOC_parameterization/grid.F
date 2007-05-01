@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: grid.F,v 1.5 2007-02-02 22:05:53 dschanen Exp $
+! $Id: grid.F,v 1.6 2007-05-01 23:01:59 dschanen Exp $
 
         module grid_class
 
@@ -99,7 +99,7 @@
            contains
 
 !-----------------------------------------------------------------------
-           subroutine gridsetup( nnzp, deltaz, implemented,
+           subroutine gridsetup( nnzp, deltaz, zm_init, implemented,
      .                           host_momentum, host_thermodynamic )
 
 !          Description:
@@ -120,9 +120,11 @@
 
            ! Input Variables
            integer, intent(in) :: 
-     .     nnzp ! Number of vertical levels in grid             [count]
+     .     nnzp ! Number of vertical levels in grid     [#]
 
-           real, intent(in) :: deltaz  ! Vertical grid spacing  [m]
+           real, intent(in) :: 
+     .     deltaz,  ! Vertical grid spacing             [m]
+     .     zm_init  ! Initial grid point                [m]
 
            ! Flag to see if HOC is running on it's own or it it's part
            ! of a larger model.
@@ -159,13 +161,13 @@
               ! Define momentum grid points. The first momentum level is 
               ! at the surface
               DO k = 1, gr%nnzp, 1
-                 gr%zm(k) = (k-1) * deltaz
+                 gr%zm(k) = zm_init + (k-1) * deltaz
               END DO
 
              ! Define thermodynamic grid. For the time being, themodynamic 
              ! grid points are located in the center point between momentum 
              ! points. The first thermodynmic point is below the surface.
-              gr%zt(1) = -0.5 * deltaz
+              gr%zt(1) = zm_init - ( 0.5 * deltaz )
               DO k = 2, gr%nnzp, 1
                  gr%zt(k) = 0.5 * ( gr%zm(k) + gr%zm(k-1) )
               END DO

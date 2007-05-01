@@ -1,10 +1,13 @@
 !-----------------------------------------------------------------------
-! $Id: model_flags.F,v 1.9 2007-02-21 19:07:51 mjfalk Exp $
+! $Id: model_flags.F,v 1.10 2007-05-01 23:01:59 dschanen Exp $
 
         module model_flags
 
 !       Description:
 !       Various model options that can be toggled off and on as desired.
+
+!       References:
+!       None
 !-----------------------------------------------------------------------
 
         logical, parameter :: 
@@ -20,21 +23,16 @@
      .  lmpace_nudge, ! For wind speed nudging. - Michael Falk
      .  lKhm_aniso    ! For anisotropic Khm, as in GABLS2.
 
-       ! Flag for the lowest model level being at the surface (true)
-       ! or not at the surface (false).  Example of case where it is not
-       ! at the surface:  Nov. 11 altocumulus case.
-       logical :: bottom_at_sfc
-
 !$omp  threadprivate(lbugsrad, kk_rain, licedfs)
 !$omp  threadprivate(lcoamps_micro, cloud_sed, lmpace_nudge)
-!$omp  threadprivate(bottom_at_sfc, lKhm_aniso)
+!$omp  threadprivate(lKhm_aniso)
 
        end module model_flags
 
 !-----------------------------------------------------------------------
         subroutine setup_model_flags
      .             ( lbugsrad_in, kk_rain_in, cloud_sed_in, 
-     .               licedfs_in, lcoamps_micro_in, bottom_at_sfc_in,
+     .               licedfs_in, lcoamps_micro_in,
      .               lmpace_nudge_in, lKhm_aniso_in )
 !      Description:
 !      Setup model flags
@@ -47,13 +45,12 @@
         ! Input Variables
         logical, intent(in) :: 
      .  lbugsrad_in, kk_rain_in, cloud_sed_in,
-     .  bottom_at_sfc_in, licedfs_in, lcoamps_micro_in, lmpace_nudge_in,
+     .  licedfs_in, lcoamps_micro_in, lmpace_nudge_in,
      .  lKhm_aniso_in
 
         lbugsrad      = lbugsrad_in
         kk_rain       = kk_rain_in
         cloud_sed     = cloud_sed_in
-        bottom_at_sfc = bottom_at_sfc_in
         lcoamps_micro = lcoamps_micro_in
         licedfs       = licedfs_in
         lmpace_nudge  = lmpace_nudge_in

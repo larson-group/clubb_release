@@ -1,4 +1,4 @@
-! $Id: sounding.F,v 1.5 2007-02-02 22:09:45 dschanen Exp $
+! $Id: sounding.F,v 1.6 2007-05-01 23:01:59 dschanen Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
         module sounding
@@ -116,7 +116,11 @@
 
         ! First sounding level should be near ground value
 
-        if ( abs(z(1)) > 1.e-8 ) then
+        ! dschanen 1 May 2007
+        ! We have changed this for Nov. 11 and June 25, both of which
+        ! begin above the ground.
+!       if ( abs(z(1)) > 1.e-8 ) then
+        if ( .false. ) then
            write(fstderr,*) 'First level of input sounding must be z=0'
            stop 'STOP in sounding'
         else

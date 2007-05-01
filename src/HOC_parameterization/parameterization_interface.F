@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.43 2007-04-26 16:17:16 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.44 2007-05-01 23:01:59 dschanen Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -265,7 +265,7 @@
 
 !      Surface effects should not be included with any case where the lowest
 !      level is not the ground level.  Brian Griffin.  December 22, 2005.
-       IF ( bottom_at_sfc ) THEN
+       IF ( gr%zm(1) == 0.0 ) THEN
           call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1),
      .                  wp2(1), up2(1), vp2(1), 
      .                  thlp2(1), rtp2(1), rtpthlp(1)
@@ -844,9 +844,9 @@
         end subroutine latin_hypercube_sampling
 !-----------------------------------------------------------------------
         subroutine parameterization_setup
-     .             ( nzmax, deltaz, fcor_in, T0_in, params,
+     .             ( nzmax, deltaz, zm_init, fcor_in, T0_in, params,
      .               lbugsrad, kk_rain, licedfs, lcoamps_micro,
-     .               cloud_sed, bottom_at_sfc,
+     .               cloud_sed,
      .               lmpace_nudge, lKhm_aniso, implemented, 
      .               host_momentum, host_thermodynamic, isValid )
 
@@ -865,7 +865,10 @@
 
         ! Grid definition
         integer, intent(in) :: nzmax  ! Vertical grid levels            [#]
-        real, intent(in)    :: deltaz ! Change in altitude in per level [m]
+
+        real, intent(in) :: 
+     .  deltaz,  ! Change in altitude in per level              [m]
+     .  zm_init  ! First vertical level on m (usually 0.).      [m]
 
         ! Grid setup if part of larger (host) model.
         real, dimension(nzmax) :: 
@@ -886,7 +889,6 @@
      .  licedfs,      ! Simplified ice scheme
      .  lcoamps_micro,! COAMPS microphysics scheme
      .  cloud_sed,    ! Cloud Sedimentation
-     .  bottom_at_sfc,! Whether the lowest model level is at the surface or not
      .  lmpace_nudge, ! Wind nudging for MPACE case
      .  lKhm_aniso    ! Whether to use anisotropic Khm. - Michael Falk 2 Feb 2007
 
@@ -901,7 +903,7 @@
 
         call setup_model_flags
      .       ( lbugsrad, kk_rain, cloud_sed,
-     .         licedfs, lcoamps_micro, bottom_at_sfc, lmpace_nudge,
+     .         licedfs, lcoamps_micro, lmpace_nudge,
      .         lKhm_aniso )
 
         ! Define model constant parameters
@@ -923,7 +925,7 @@
 
         ! Setup grid
 
-        call gridsetup( nzmax, deltaz, implemented,
+        call gridsetup( nzmax, deltaz, zm_init, implemented,
      .                  host_momentum, host_thermodynamic )
 
         return
