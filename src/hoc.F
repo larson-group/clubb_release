@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.121 2007-04-24 21:55:56 dschanen Exp $
+! $Id: hoc.F,v 1.122 2007-05-01 22:55:57 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -37,11 +37,13 @@
 
         ! Grid definition
         integer, private :: 
-     .  nzmax  ! Vertical extent        [-]
-        real, private :: 
-     .  deltaz ! Change per grid level  [m]
+     .  nzmax  ! Vertical extent in levels              [#]
 
-!$omp   threadprivate(nzmax, deltaz)
+        real, private :: 
+     .  deltaz, ! Change per grid level                 [m]
+     .  zm_init ! Initial point on the momentum grid    [m]
+
+!$omp   threadprivate(nzmax, zm_init, deltaz)
 
         integer, private :: 
      .  day, month, year ! Day of start of simulation
@@ -182,12 +184,6 @@
      .  lmpace_nudge, ! Whether to adjust the winds within the timestep
      .  lKhm_aniso    ! Whether to use anisotropic Khm.  - Michael Falk 2 Feb 2007
 
-        ! Flag for the lowest model level being at the surface (true)
-        ! or not at the surface (false).  Example of case where it is not
-        ! at the surface:  Nov. 11 altocumulus case.
-        logical ::
-     .  bottom_at_sfc 
-
         ! Dummy grid height arrays
         real, dimension(:), allocatable :: 
      .  dummy_array_m, dummy_array_t
@@ -195,13 +191,14 @@
        integer :: i, i1 ! Internal Loop Variables
 
        ! Definition of namelists
-       namelist /model_setting/ runtype, nzmax, deltaz, 
+       namelist /model_setting/ 
+     .   runtype, nzmax, deltaz, zm_init,
      .   day, month, year, rlat, rlon,
      .   time_initial, time_final, time_spinup,
      .   dtmain, dtclosure,
      .   sfctype, Tsfc, psfc, SE, LE, fcor, T0,
      .   cloud_sed, kk_rain, licedfs, lcoamps_micro, 
-     .   lbugsrad, bottom_at_sfc, lKhm_aniso
+     .   lbugsrad, lKhm_aniso
 
        !  Initialize the model run 
 
@@ -229,11 +226,11 @@
        ! setup grid, setup constants, and setup flags
 
        call parameterization_setup
-     .      ( nzmax, deltaz, fcor, T0, params,
+     .      ( nzmax, deltaz, zm_init, fcor, T0, params,
      .        lbugsrad, kk_rain, licedfs, lcoamps_micro,
-     .        cloud_sed, bottom_at_sfc,
-     .        lmpace_nudge, lKhm_aniso, 
-     .        .false., dummy_array_m, dummy_array_t, isValid )
+     .        cloud_sed,
+     .        lmpace_nudge, lKhm_aniso, .false., 
+     .        dummy_array_m, dummy_array_t, isValid )
 
        if ( .not. isValid ) return
 
@@ -441,12 +438,6 @@
      .  lmpace_nudge, ! Whether to adjust the winds within the timestep
      .  lKhm_aniso    ! Whether to use anisotropic Khm.  - Michael Falk 2 Feb 2007
 
-        ! Flag for the lowest model level being at the surface (true)
-        ! or not at the surface (false).  Example of case where it is not
-        ! at the surface:  Nov. 11 altocumulus case.
-        logical ::
-     .  bottom_at_sfc 
-
         ! Dummy grid height arrays
         real, dimension(:), allocatable :: 
      .  dummy_array_m, dummy_array_t
@@ -456,13 +447,14 @@
         integer :: iunit
 
         ! Definition of namelists
-        namelist /model_setting/ runtype, nzmax, deltaz, 
+        namelist /model_setting/ 
+     .  runtype, nzmax, deltaz, zm_init,
      .  day, month, year, rlat, rlon,
      .  time_initial, time_final, time_spinup,
      .  dtmain, dtclosure,
      .  sfctype, Tsfc, psfc, SE, LE, fcor, T0,
      .  cloud_sed, kk_rain, licedfs, lcoamps_micro, 
-     .  lbugsrad, bottom_at_sfc, lKhm_aniso
+     .  lbugsrad, lKhm_aniso
 
 !-----------------------------------------------------------------------
 
@@ -496,11 +488,11 @@
        ! setup grid, setup constants, and setup flags
 
        call parameterization_setup
-     .      ( nzmax, deltaz, fcor, T0, params,
+     .      ( nzmax, deltaz, zm_init, fcor, T0, params,
      .        lbugsrad, kk_rain, licedfs, lcoamps_micro,
-     .        cloud_sed, bottom_at_sfc,
-     .        lmpace_nudge, lKhm_aniso, 
-     .        .false., dummy_array_m, dummy_array_t, isValid )
+     .        cloud_sed,
+     .        lmpace_nudge, lKhm_aniso, .false.,
+     .        dummy_array_m, dummy_array_t, isValid )
 
        if ( .not. isValid ) return
 
@@ -892,12 +884,13 @@
         ! Vince Larson reduced initial forcing.  4 Nov 2005
 !          em = 1.0
 !          em = 0.1
-          cloud_top_height = 1400. ! 1400 m is the top of the cloud in Nov11
+          ! 4150 + 1400 m is the top of the cloud in Nov11
+          cloud_top_height = 1400. + gr%zm(1)
           do k=1,gr%nnzp
             if ( gr%zm(k) < cloud_top_height ) then
-               em(k) = 0.1
+              em(k) = 0.1
             else
-               em(k) = emin
+              em(k) = emin
             end if
           end do
           em(1) = em(2)
@@ -1182,7 +1175,7 @@
            call nov11_altocu_tndcy( time, time_initial, dt, rlat, rlon,
      .                              thlm, rcm, p, exner, rhot, rtm, wmt,
      .                              wmm, thlm_forcing, rtm_forcing,
-     .                              Frad, radht
+     .                              Frad, radht, Ncnm
 #ifdef SCALARS
      .                             ,sclrm_forcing   ! optional variable
 #endif /* SCALARS */
@@ -1407,7 +1400,7 @@
           rrm   => hydromet(1:gr%nnzp,1)
           ricem => hydromet(1:gr%nnzp,4)
 
-          call bugsrad_hoc( deltaz*gr%nnzp, gr%nnzp, rlat, rlon,
+          call bugsrad_hoc( gr%zm(gr%nnzp), gr%nnzp, rlat, rlon,
      .                      day, month, year, time,
      .                      thlm, rcm, rtm, rrm, ricem, 
      .                      cf, p, exner, rhom, Tsfc,
