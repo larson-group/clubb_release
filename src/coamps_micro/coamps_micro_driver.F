@@ -295,8 +295,8 @@
 !----------------------------------------------------------------------
 
       ! Begin coamps_micro_driver code
-      ldrizzle = .TRUE.
-      lgrpl    = .TRUE.
+      ldrizzle = .false.
+      lgrpl    = .true.
       len      = kk
       icase    = 62
       eic      = 1.0
