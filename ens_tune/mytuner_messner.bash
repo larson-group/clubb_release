@@ -1,5 +1,5 @@
 #!/bin/bash
-# $Id: mytuner_messner.bash,v 1.2 2007-05-01 19:54:11 griffinb Exp $
+# $Id: mytuner_messner.bash,v 1.3 2007-05-03 19:20:55 dschanen Exp $
 ################################################################################
 #
 # Description: This is a port of Chris Golaz's ensemble tuning script to the
@@ -119,8 +119,10 @@ fi
 
 # Copy back and clean up
 for node in "${NODES[@]}"; do 
+	mkdir $ARCHIVE/$CASE
 	# Copy back results
 	$RCP -r $node:$HOC/ens_tune_* $ARCHIVE/$CASE/
 	# Remove files from nodes
 	rsh $node "rm -rf $HOC"
 done
+
