@@ -1,5 +1,5 @@
 #!/bin/bash
-# $Id: mytuner_messner.bash,v 1.3 2007-05-03 19:20:55 dschanen Exp $
+# $Id: mytuner_messner.bash,v 1.4 2007-05-04 18:08:05 dschanen Exp $
 ################################################################################
 #
 # Description: This is a port of Chris Golaz's ensemble tuning script to the
@@ -113,8 +113,8 @@ done
 if [ ! -e $ARCHIVE ]; then
 	# if not, create it
 	mkdir -p $ARCHIVE/$CASE
-	cp sortresults.bash $ARCHIVE
-	cp average.bash $ARCHIVE
+	cp sortresults.bash $ARCHIVE/$CASE
+#	cp average.bash $ARCHIVE
 fi
 
 # Copy back and clean up
