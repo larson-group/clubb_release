@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.44 2007-03-29 20:57:56 dschanen Exp $
+! $Id: error.F,v 1.45 2007-05-04 18:19:17 dschanen Exp $
 
         module error
  
@@ -648,6 +648,7 @@
 !       None
 !----------------------------------------------------------------------
         use parameters, only: params_list
+        use constants, only: fstdout
       
         implicit none
 
@@ -665,9 +666,11 @@
      .      params(x_index(i)), x_array(1,i)
         end do
 
-        write(unit=*,fmt='(A20,e15.6)') "Initial cost: ", init_err
-
-        write(unit=*,fmt='(A20,e15.6)') "Optimal cost: ", min_err
+        write(fstdout,fmt='(A20)') "Initial cost: "
+        write(fstdout,fmt='(F15.6)') init_err
+        write(fstdout,fmt='(A20)') "Optimal cost: "
+        ! The $$ is here to make it easy to find with grep
+        write(fstdout,fmt='(A3,F15.6)') "$$ ", min_err  
      
         write(unit=*,fmt=*) "Approx. percent increase in accuracy:", 
      .    ((init_err - min_err) / init_err*100.0), "%"
