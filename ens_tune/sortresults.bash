@@ -1,5 +1,5 @@
 #!/bin/bash
-# $Id: sortresults.bash,v 1.2 2007-05-04 18:08:05 dschanen Exp $
+# $Id: sortresults.bash,v 1.3 2007-05-06 21:12:45 griffinb Exp $
 ################################################################################
 # Description:
 # Search the log files in each subdirectory of an ensemble tuning run and then
@@ -14,7 +14,7 @@ for dir in $DIRS; do
 	let index=`echo $dir | tr -dc '[:digit:]'`
 
 	# Prepare the string by removing the $$ and blank spaces
-	LIST[$index]=`grep -i '\$' $dir/tune.log | tr -d '$''[:blank:]'`
+	LIST[$index]=$(grep -i '\$' $dir/tune.log | tr -d '$''[:blank:]')
 done
 
 #echo "${LIST[@]}"
