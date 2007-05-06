@@ -1,6 +1,3 @@
-%
-% $Id: compare_plots_cases.m,v 1.2 2007-03-02 20:42:34 dschanen Exp $
-%
 % Compares the time-averaged profiles between any LES, HOC Golaz
 % "best-ever", HOC 12/17/2005, HOC previous (prior CVS HOC), and HOC 
 % current files for 18 different variables fields.  It can be easily run 
@@ -8,7 +5,7 @@
 % per case (with six graphs per page).  The program outputs in single-page
 % eps files, single-page jpeg files, or three-page ps files.
 % This program was made by Brian Griffin.
-function compare_plots_cases( case_name, t1_min, t2_min, graphtop, ...
+function compare_plots_cases( case_name, t1_min, t2_min, graphbase, graphtop, ...
                               dir_LES, dir_cgbe, dir_1217, dir_prev, dir_curr, ...
                               cmp_les, les_type, cmp_cgbe, cmp_1217, cmp_prev, cmp_curr )
 
@@ -19,29 +16,30 @@ function compare_plots_cases( case_name, t1_min, t2_min, graphtop, ...
 %              beginning of the run).
 % 3rd entry:   Last time of variable comparison (in minutes since the
 %              beginning of the run).
-% 4th entry:   The height of the top of the output graphs for each case.
-% 5th entry:   The directory path that contains the LES files for
+% 4th entry:   The height of the bottom of the output graphs for each case.
+% 5th entry:   The height of the top of the output graphs for each case.
+% 6th entry:   The directory path that contains the LES files for
 %              comparison. (omit the '/' at the very end.)
-% 6th entry:   The directory path that contains the HOC "Chris Golaz
+% 7th entry:   The directory path that contains the HOC "Chris Golaz
 %              'best-ever'" files for comparison. (omit the '/' at the very
 %              end.)
-% 7th entry:   The directory path that contains the HOC December 17, 2005
+% 8th entry:   The directory path that contains the HOC December 17, 2005
 %              files for comparison. (omit the '/' at the very end.)
-% 8th entry:   The directory path that contains the HOC previous files
+% 9th entry:   The directory path that contains the HOC previous files
 %              (from the prior CVS commitment) for comparison. (omit the
 %              '/' at the very end.)
-% 9th entry:   The directory path that contains the HOC current files (from 
+% 10th entry:  The directory path that contains the HOC current files (from 
 %              the latest CVS commitment) for comparison. (omit the '/' at
 %              the very end.)
-% 10th entry:  LES file for comparison:  1 = true; 0 = false.
-% 11th entry:  LES being using for comparison (supports coamps and rams).
-% 12th entry:  Chris Golaz "best-ever" HOC file for comparison:  1 = true;
+% 11th entry:  LES file for comparison:  1 = true; 0 = false.
+% 12th entry:  LES being using for comparison (supports coamps and rams).
+% 13th entry:  Chris Golaz "best-ever" HOC file for comparison:  1 = true;
 %                                                                0 = false.
-% 13th entry:  December 17, 2005 HOC file for comparison:  1 = true;
+% 14th entry:  December 17, 2005 HOC file for comparison:  1 = true;
 %                                                         0 = false.
-% 14th entry:  Previous CVS HOC file for comparison:  1 = true; 
+% 15th entry:  Previous CVS HOC file for comparison:  1 = true; 
 %                                                    0 = false.
-% 15th entry:  Current HOC file for comparison:  1 = true; 0 = false.
+% 16th entry:  Current HOC file for comparison:  1 = true; 0 = false.
 
 % A listing of cases that have LES files:
 %
@@ -2440,7 +2438,7 @@ else
    xmin = xmedian - xrange/2;
    xmax = xmedian + xrange/2;
 end
-zmin = 0.0;
+zmin = graphbase;
 %zmax = max(z_les);
 zmax = graphtop;
 axis([ xmin xmax zmin zmax ])
@@ -2553,7 +2551,7 @@ else
    xmin = xmedian - xrange/2;
    xmax = xmedian + xrange/2;
 end
-zmin = 0.0;
+zmin = graphbase;
 %zmax = max(z_les);
 zmax = graphtop;
 axis([ xmin xmax zmin zmax ])
@@ -2666,7 +2664,7 @@ else
    xmin = xmedian - xrange/2;
    xmax = xmedian + xrange/2;
 end
-zmin = 0.0;
+zmin = graphbase;
 %zmax = max(z_les);
 zmax = graphtop;
 axis([ xmin xmax zmin zmax ])
@@ -2779,7 +2777,7 @@ else
    xmin = xmedian - xrange/2;
    xmax = xmedian + xrange/2;
 end
-zmin = 0.0;
+zmin = graphbase;
 %zmax = max(z_les);
 zmax = graphtop;
 axis([ xmin xmax zmin zmax ])
@@ -2892,7 +2890,7 @@ else
    xmin = xmedian - xrange/2;
    xmax = xmedian + xrange/2;
 end
-zmin = 0.0;
+zmin = graphbase;
 %zmax = max(z_les);
 zmax = graphtop;
 axis([ xmin xmax zmin zmax ])
@@ -3005,7 +3003,7 @@ else
    xmin = xmedian - xrange/2;
    xmax = xmedian + xrange/2;
 end
-zmin = 0.0;
+zmin = graphbase;
 %zmax = max(z_les);
 zmax = graphtop;
 axis([ xmin xmax zmin zmax ])
@@ -3137,7 +3135,7 @@ else
    xmin = xmedian - xrange/2;
    xmax = xmedian + xrange/2;
 end
-zmin = 0.0;
+zmin = graphbase;
 %zmax = max(z_les);
 zmax = graphtop;
 axis([ xmin xmax zmin zmax ])
@@ -3250,7 +3248,7 @@ else
    xmin = xmedian - xrange/2;
    xmax = xmedian + xrange/2;
 end
-zmin = 0.0;
+zmin = graphbase;
 %zmax = max(z_les);
 zmax = graphtop;
 axis([ xmin xmax zmin zmax ])
@@ -3363,7 +3361,7 @@ else
    xmin = xmedian - xrange/2;
    xmax = xmedian + xrange/2;
 end
-zmin = 0.0;
+zmin = graphbase;
 %zmax = max(z_les);
 zmax = graphtop;
 axis([ xmin xmax zmin zmax ])
@@ -3476,7 +3474,7 @@ else
    xmin = xmedian - xrange/2;
    xmax = xmedian + xrange/2;
 end
-zmin = 0.0;
+zmin = graphbase;
 %zmax = max(z_les);
 zmax = graphtop;
 axis([ xmin xmax zmin zmax ])
@@ -3591,7 +3589,7 @@ else
    xmin = xmedian - xrange/2;
    xmax = xmedian + xrange/2;
 end
-zmin = 0.0;
+zmin = graphbase;
 %zmax = max(z_les);
 zmax = graphtop;
 axis([ xmin xmax zmin zmax ])
@@ -3704,7 +3702,7 @@ else
    xmin = xmedian - xrange/2;
    xmax = xmedian + xrange/2;
 end
-zmin = 0.0;
+zmin = graphbase;
 %zmax = max(z_les);
 zmax = graphtop;
 axis([ xmin xmax zmin zmax ])
@@ -3836,7 +3834,7 @@ else
    xmin = xmedian - xrange/2;
    xmax = xmedian + xrange/2;
 end
-zmin = 0.0;
+zmin = graphbase;
 %zmax = max(z_les);
 zmax = graphtop;
 axis([ xmin xmax zmin zmax ])
@@ -3949,7 +3947,7 @@ else
    xmin = xmedian - xrange/2;
    xmax = xmedian + xrange/2;
 end
-zmin = 0.0;
+zmin = graphbase;
 %zmax = max(z_les);
 zmax = graphtop;
 axis([ xmin xmax zmin zmax ])
@@ -4070,7 +4068,7 @@ else
    xmin = xmedian - xrange/2;
    xmax = xmedian + xrange/2;
 end
-zmin = 0.0;
+zmin = graphbase;
 %zmax = max(z_les);
 zmax = graphtop;
 axis([ xmin xmax zmin zmax ])
@@ -4191,7 +4189,7 @@ else
    xmin = xmedian - xrange/2;
    xmax = xmedian + xrange/2;
 end
-zmin = 0.0;
+zmin = graphbase;
 %zmax = max(z_les);
 zmax = graphtop;
 axis([ xmin xmax zmin zmax ])
@@ -4304,7 +4302,7 @@ else
    xmin = xmedian - xrange/2;
    xmax = xmedian + xrange/2;
 end
-zmin = 0.0;
+zmin = graphbase;
 %zmax = max(z_les);
 zmax = graphtop;
 axis([ xmin xmax zmin zmax ])
@@ -4419,7 +4417,7 @@ else
    xmin = xmedian - xrange/2;
    xmax = xmedian + xrange/2;
 end
-zmin = 0.0;
+zmin = graphbase;
 %zmax = max(z_les);
 zmax = graphtop;
 axis([ xmin xmax zmin zmax ])
