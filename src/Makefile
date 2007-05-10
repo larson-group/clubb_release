@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.81 2007-04-24 22:09:43 dschanen Exp $
+# $Id: Makefile,v 1.82 2007-05-10 19:08:12 dschanen Exp $
 #
 # This version should work with BSD, GNU make, smake and dmake.
 #
@@ -61,7 +61,7 @@ PARAMETERIZATION = \
 	sounding.o update.o wp23.o tau.o Skw_func.o \
 	numer_check.o diag_variables.o prog_variables.o \
 	parameterization_interface.o lapack_wrap.o rsati.o \
-	compute_Khm_anisotropic.o parameters.o
+	parameters.o
 
 
 INTERFACING = gradsaverage.o inputfields.o inputgrads.o 

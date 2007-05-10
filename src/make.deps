@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.5 2007-03-17 18:49:40 dschanen Exp $
+# $Id: make.deps,v 1.6 2007-05-10 19:08:12 dschanen Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -76,7 +76,6 @@ sfc.o		: constants.o parameters.o sfc.F
 update.o	: grid.o statistics.o lapack_wrap.o update.F
 wp23.o		: constants.o parameters.o statistics.o lapack_wrap.o wp23.F 
 tau.o		: constants.o parameters.o tau.F
-compute_Khm_anisotropic	: grid.o compute_Khm_anisotropic.F
 
 # == Numerical Recipes dependencies (For the tuner) ==
 nrtype.o	: nrtype.f90
