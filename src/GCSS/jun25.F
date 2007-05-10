@@ -1,11 +1,11 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: jun25.F,v 1.2 2007-05-01 22:57:30 dschanen Exp $
+! $Id: jun25.F,v 1.3 2007-05-10 22:29:53 dschanen Exp $
         module jun25
 
 !       Description:
-!       Contains subroutines for the June 11 case.
+!       Contains subroutines for the June 11 Altocumulous case.
 !----------------------------------------------------------------------
 
         public :: jun25_altocu_tndcy
@@ -71,7 +71,7 @@
 
         ! Output variables (optional)
         real, optional, dimension(gr%nnzp,sclr_dim),intent(out) :: 
-     .  sclr_tndcy ! Large-scale tendency for passive scalars
+     .  sclr_tndcy ! Large-scale tendency for passive scalars      [units/s]
 
 !-----------------------------------------------------------------------
 ! LOCAL VARIABLES
