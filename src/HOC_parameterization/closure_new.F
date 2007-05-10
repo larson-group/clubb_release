@@ -1,4 +1,4 @@
-! $Id: closure_new.F,v 1.8 2007-03-14 23:34:47 dschanen Exp $
+! $Id: closure_new.F,v 1.9 2007-05-10 19:06:07 dschanen Exp $
         module pdf_closure
 
         implicit none
@@ -600,7 +600,7 @@
         ! corrected because Brian found a small negative value of
         ! rcm in the first timestep of the FIRE case.
 
-        rcm = max(0.0, rcm)
+        rcm = max( 0.0, rcm )
 
 
         ! Save pdf parameters
