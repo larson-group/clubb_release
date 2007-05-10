@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.45 2007-05-04 18:19:17 dschanen Exp $
+! $Id: error.F,v 1.46 2007-05-10 19:05:32 dschanen Exp $
 
         module error
  
@@ -341,7 +341,7 @@
 
         ! Initialize the 'y' vector for amoeba 
         ! This is done by calling min_les_hoc_diff with the initial vector 
-        do i = 1, ndim+1, 1
+        do i = 2, ndim+1, 1
           err_array(i) = min_les_hoc_diff( x_array(i,1:ndim) )
         end do 
 
