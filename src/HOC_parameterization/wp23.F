@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.14 2007-05-01 23:01:59 dschanen Exp $
+! $Id: wp23.F,v 1.15 2007-05-18 20:53:31 dschanen Exp $
 
         subroutine timestep_wp23
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
@@ -743,7 +743,7 @@
              zm%n(k,iwp2_ac) = zm%n(k,iwp2_ac) + 1
             end if
 
-            if ( iwp2_pr1 > 0 ) then
+            if ( iwp2_pr1 > 0 .and. lKhm_aniso ) then
               zm%x(k,iwp2_pr1) = zm%x(k,iwp2_pr1)
      .        + zmscr11(k) * wp2(k)
               zm%n(k,iwp2_pr1) = zm%n(k,iwp2_pr1) + 1
@@ -757,7 +757,7 @@
 
           end do
 
-!         Finalize implicit contributions for wp3
+          ! Finalize implicit contributions for wp3
 
           do k=1,gr%nnzp
             km1 = max( k-1, 1 )
