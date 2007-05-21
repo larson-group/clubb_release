@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameters.F,v 1.4 2007-04-26 16:17:16 dschanen Exp $
+! $Id: parameters.F,v 1.5 2007-05-21 21:49:18 dschanen Exp $
         module parameters 
 
 !       Description:
@@ -158,9 +158,11 @@
      .         gamma_coef, gamma_coefb, gamma_coefc,
      .         mu, c_K, beta, lmin_coef,
      .         taumin, taumax )
-
-
-        lmin = lmin_coef * deltaz
+        ! It was decided after some experimentation, that the best
+        ! way to produce grid independent results is to set lmin to be
+        ! some fixed value at the surface. -dschanen 21 May 2007
+        ! lmin = lmin_coef * deltaz  ! Old
+        lmin = lmin_coef * 40.0 ! New fixed value
 
         fcor = fcor_in
         T0   = T0_in
