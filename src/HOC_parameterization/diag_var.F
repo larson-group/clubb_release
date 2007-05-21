@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.15 2007-04-24 21:57:41 dschanen Exp $
+! $Id: diag_var.F,v 1.16 2007-05-21 20:59:39 dschanen Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -509,10 +509,9 @@
 #ifdef STATS
          if ( lstats_samp ) then
 
-           if ( irtp2_dp1 + ithlp2_dp1 + irtpthlp_dp1 +
-     .          iup2_dp1 + ivp2_dp1 > 0 ) then
+           if ( irtp2_dp1 + ithlp2_dp1 + irtpthlp_dp1  > 0 ) then
              tmp(1) = term_dp1( Cn(k), taum(k) )
-             zmscr01(k) = - tmp(1)
+             zmscr01(k) = -tmp(1)
            end if
          
            if ( irtp2_dp2 + ithlp2_dp2 + irtpthlp_dp2 + 
@@ -542,8 +541,7 @@
              zmscr08(k) = -tmp(2)
              zmscr09(k) = -tmp(1)
            end if
-
-       end if
+         end if
 #endif /*STATS*/
 
         end do ! k=2..gr%nnzp-1
@@ -617,6 +615,7 @@
      .  ixapxbp_dp2,
      .  ixapxbp_ta,
      .  ixapxbp_ma,
+     .  ixapxbp_pr1,
      .  ixapxbp_cn
 
         select case ( trim( solve_type ) )
@@ -626,36 +625,42 @@
           ixapxbp_dp2 = irtp2_dp2
           ixapxbp_ta  = irtp2_ta
           ixapxbp_ma  = irtp2_ma
+          ixapxbp_pr1 = 0
         case ( "thlp2" )
           ixapxbp_cn  = ithlp2_cn
           ixapxbp_dp1 = ithlp2_dp1
           ixapxbp_dp2 = ithlp2_dp2
           ixapxbp_ta  = ithlp2_ta
           ixapxbp_ma  = ithlp2_ma
+          ixapxbp_pr1 = 0
         case ( "rtpthlp" )
           ixapxbp_cn  = irtpthlp_cn
           ixapxbp_dp1 = irtpthlp_dp1
           ixapxbp_dp2 = irtpthlp_dp2
           ixapxbp_ta  = irtpthlp_ta
           ixapxbp_ma  = irtpthlp_ma
+          ixapxbp_pr1 = 0
         case ( "up2" )
           ixapxbp_cn  = iup2_cn
           ixapxbp_dp1 = iup2_dp1
           ixapxbp_dp2 = iup2_dp2
           ixapxbp_ta  = iup2_ta
           ixapxbp_ma  = iup2_ma
+          ixapxbp_pr1 = iup2_pr1
         case ( "vp2" )
           ixapxbp_cn  = ivp2_cn
           ixapxbp_dp1 = ivp2_dp1
           ixapxbp_dp2 = ivp2_dp2
           ixapxbp_ta  = ivp2_ta
           ixapxbp_ma  = ivp2_ma
+          ixapxbp_pr1 = ivp2_pr1
         case default ! No budgets for passive scalars
           ixapxbp_cn  = 0
           ixapxbp_dp1 = 0
           ixapxbp_dp2 = 0
           ixapxbp_ta  = 0
           ixapxbp_ma  = 0
+          ixapxbp_pr1 = 0
         end select
 #endif
 
@@ -728,6 +733,12 @@
               zm%n(k,ixapxbp_ma) = zm%n(k,ixapxbp_ma) + 1
             end if
 
+            if ( ixapxbp_pr1 > 0 ) then
+              zm%x(k,ixapxbp_pr1) = zm%x(k,ixapxbp_pr1)
+     .        + zmscr10(k) * xapxbp(k,1)
+              zm%n(k,ixapxbp_pr1) = zm%n(k,ixapxbp_pr1) + 1
+            end if
+
           end do
         end if
 #endif /*STATS*/
@@ -792,6 +803,7 @@
         integer ::
      .  ixap2_ta,
      .  ixap2_tp,
+     .  ixap2_dp1,
      .  ixap2_pr1,
      .  ixap2_pr2
 
@@ -799,16 +811,19 @@
         case ( "vp2" )
           ixap2_ta  = ivp2_ta
           ixap2_tp  = ivp2_tp
+          ixap2_dp1 = ivp2_dp1
           ixap2_pr1 = ivp2_pr1
           ixap2_pr2 = ivp2_pr2
         case ( "up2" )
           ixap2_ta  = iup2_ta
           ixap2_tp  = iup2_tp
+          ixap2_dp1 = iup2_dp1
           ixap2_pr1 = iup2_pr1
           ixap2_pr2 = iup2_pr2
         case default ! No budgets for passive scalars
           ixap2_ta  = 0
           ixap2_tp  = 0
+          ixap2_dp1 = 0
           ixap2_pr1 = 0
           ixap2_pr2 = 0
         end select
@@ -844,19 +859,27 @@
               zm%x(k,ixap2_ta) 
      .          = zm%x(k,ixap2_ta)
      .          + term_ta_rhs
-     .           ( a1(kp1), a1(k), a1(km1), wp3(kp1), wp3(k),
-     .             wp2(kp1), wp2(k), wp2(km1), 
-     .             wpxbp(kp1), wpxbp(k), wpxbp(km1),
-     .             wpxap(kp1), wpxap(k), wpxap(km1),
-     .             gr%dzm(k), beta, eps )
+     .            ( a1(kp1), a1(k), a1(km1), wp3(kp1), wp3(k),
+     .              wp2(kp1), wp2(k), wp2(km1), 
+     .              wpxbp(kp1), wpxbp(k), wpxbp(km1),
+     .              wpxap(kp1), wpxap(k), wpxap(km1),
+     .              gr%dzm(k), beta, eps )
 
             end if 
 
+            if ( ixap2_dp1 > 0 ) then
+              zmscr01(k) = - C4/taum(k)
+     .          + C4 * ( (1.0 + xbp2(k) + wp2(k)) / (3.0 * taum(k)) )
+            end if
+
             if ( ixap2_pr1 > 0 ) then
+              ! Note:
+              ! The function term_pr1 is the explicit component of a
+              ! semi-implicit solution to dp1 and pr1
               zm%x(k,ixap2_pr1)
-     .        = zm%x(k,ixap2_pr1)
-     .        + term_pr1( C4, C14, xbp2(k), wp2(k), taum(k) )
-              zm%n(k,ixap2_pr1) = zm%n(k,ixap2_pr1) + 1
+     .        = zm%x(k,ixap2_pr1) ! Explicit component
+     .        + ( C14 * (xbp2(k) + wp2(k)) ) / ( 3.0 * taum(k) )
+              zmscr10(k) = -C14 / ( 3.0 * taum(k) )
             end if
 
             if ( ixap2_pr2 > 0 ) then
