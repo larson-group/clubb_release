@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.82 2007-05-10 19:08:12 dschanen Exp $
+# $Id: Makefile,v 1.83 2007-05-21 22:46:04 dschanen Exp $
 #
 # This version should work with BSD, GNU make, smake and dmake.
 #
@@ -46,7 +46,7 @@ COAMPS_MICRO = adjmlt.o adjtq.o coamps_micro_driver.o conice.o \
         nrmtqw.o qsatvi.o qtadj.o slope.o tgqg.o \
         tgqi.o tgqr.o tgqs.o rsati.o gamma.o
 
-MODEL = hoc.o rad_lwsw.o cloud_rad.o astex.o atex.o fire.o bomex.o \
+MODEL = hoc.o sounding.o rad_lwsw.o cloud_rad.o astex.o atex.o fire.o bomex.o \
 	arm.o dycoms2_rf01.o dycoms2_rf02.o mpace.o nov11.o jun25.o wangara.o \
 	linear_interpolation.o diag_ustar.o icedfs.o cobra.o rico.o gabls2.o
 
@@ -58,7 +58,7 @@ PARAMETERIZATION = \
 	erf.o rain.o microphysics.o cons.o air.o parab.o \
 	closure_new.o diag_var.o \
         hydrostatic.o length.o mixing.o rsat.o sat_rcm.o sfc.o \
-	sounding.o update.o wp23.o tau.o Skw_func.o \
+	update.o wp23.o tau.o Skw_func.o \
 	numer_check.o diag_variables.o prog_variables.o \
 	parameterization_interface.o lapack_wrap.o rsati.o \
 	parameters.o
