@@ -1,4 +1,4 @@
-! $Id: sounding.F,v 1.6 2007-05-01 23:01:59 dschanen Exp $
+! $Id: sounding.F,v 1.14 2007-05-21 22:44:36 dschanen Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
         module sounding
