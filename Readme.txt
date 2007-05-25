@@ -1,4 +1,4 @@
-$Id: Readme.txt,v 1.23 2006-12-13 00:22:18 dschanen Exp $
+$Id: Readme.txt,v 1.24 2007-05-25 23:15:13 griffinb Exp $
 ************************************************************************
 *                           Copyright Notice
 *                         This code is (C) 2006 
@@ -288,6 +288,167 @@ Batch mode:
 5.  ./create_files.bash (you shouldn't see any errors)
 6.  ./run_batch.bash
 7.  Make coffee. Play spider solitaire. Wait an hour or two.
+
+-----------------------------------------------------------------------
+- (3.3) Executing an ensemble tuning run:
+-----------------------------------------------------------------------
+
+NOTES AND INSTRUCTIONS FOR THE HOC ENSEMBLE TUNER
+-------------------------------------------------
+
+Go to the main directory (hoc_v2.2_tuner/) and follow these instructions:
+
+1)  Copy the ens_tune directory to a new directory with a slightly different
+    name, such as ens_tune_two.  From this point on, I will refer to this new
+    directory as ens_tune_xyz.
+
+2)  Enter the new directory (ens_tune_xyz).
+
+3)  Decide which cases will be tuned for (ex. DYCOMS2 RF02 DO, DYCOMS2 RF01,
+    FIRE, ARM, BOMEX, etc.).
+
+4)  For EACH case being tuned for:
+
+     a)  Copy the <CASE>_model.in file from the model/ directory to the
+         ens_tune_xyz/ directory.  Make sure that the file is set up
+         correctly.
+
+     b)  Create/copy the <CASE>_stats_tune.in file.  A sample of this file can
+         be found in the ens_tune/ directory (and subsequently in the
+         ens_tune_xyz/ directory if it was copied from the ens_tune/ directory).
+         This file is used in the tuning process itself.  In order for this
+         process to work, stats_fmt in this file must be set to 'grads'.  The
+         tuner code reads the LES GrADS files and compares the results with the
+         HOC GrADS files (which are written according the specifications stated
+         in this file).  This file MUST also contain the names of the HOC
+         variables that are being tuned for.  During the process of tuning,
+         small GrADS files will be written that contain the results for ONLY the
+         variables that are listed here.  This makes the tuning process go
+         faster because it is not being slowed down by the writing of
+         unnecessary variables.
+
+     c)  Copy the <CASE>_stats.in file from the stats/ directory to the
+         ens_tune_xyz/ directory.  Once the tuner has found the optimal value
+         and the tuning process has finished, standalone HOC will run for
+         each case that was tuned for with the values of the constants that the
+         tuner found.  The statistics that it finally outputs will be directed
+         according to this file.  This file produces the normal statistical
+         files that one sees after a normal HOC run.  The main thing that might
+         be changed is whether the final statistical output is in GrADS or in
+         netCDF.  The user can choose either one.  The user just has to set
+         stats_fmt to either 'grads' or 'netcdf'.  Of course, if the user
+         desires, the sampling and output timesteps or the variables that are
+         output can also be changed.
+
+5)  Edit the error_messner_001.in file:
+
+         The error_messner_001.in file is the same type of file as the error.in
+         file in the regular HOC tuner.  This file must include all the relevant
+         information for EVERY case being tuned for, such as the HOC and LES
+         stats files, the HOC run file, the vertical levels and time periods
+         being tuned for, and the general weighting of each case.  This file
+         also must include other important factors such as the variable(s) being
+         tuned for and the general weighting of each variable.  Of course, the
+         initial values of the constants and the amount of deviation allowed for
+         each of the constants are also declared here.
+
+         The runscript copies any error*.in file over to the remote nodes for
+         running (as error.in).  So, the last file copied would end up being
+         the file read in the running of the tuner.  Therefore, make sure that
+         there is only ONE error*.in file in the ens_tune_xyz directory when
+         you start the ensemble tuning run.
+
+6)  Edit the mytuner_messner.bash file:
+
+         Only the Global variables section of this file needs to be edited.
+         There are 6 global variables to edit:
+
+         a) EXPERIMENTS:  List the names of the cases that you are tuning for.
+                          This should match the <CASE> model, stats, and
+                          stats_tune files that were copied or created and the
+                          listing of cases that is found in error*.in
+
+         b) ARCHIVE:  The general path to a directory to put the results in.
+                      Usually, many specific results subdirectories reside
+                      within this declared main directory.
+
+         c) CASE:  The subdirectory within ARCHIVE to put this tuning runs
+                   specific results in.
+
+         d) HOC:  The path to the HOC main level directory.  This is the
+                  directory above ens_tune_xyz, where the tuner is being run
+                  from.
+
+         e) NODES:  The nodes on the Messner cluster which are going to run
+                    these tuning iterations.
+
+         f) ITERMAX:  The total number of tuning iterations to run.  ITERMAX
+                      needs to be a multiple of the total number of nodes
+                      that are being used in the tuning run.
+
+         Whenever you are setting up a run, you need to take into account the
+         amount of disk space you will need.  You need to take into account
+         the size of all the LES data files for each case you are tuning for.
+         You also need to take into account the size of the binary
+         (executable) files that you will need.  These files include hoc_tuner,
+         hoc_standalone, and int2txt.  Finally, you need to know the size of
+         the HOC output files for each of the cases you are tuning for.  These
+         files will be generated when the individual tuning iterations are
+         done.  One set of the HOC output files will be generated for each
+         tuning iteration that you run.
+
+         For example, let's say that the executable files sum to about 25 MB.
+         You decide to tune for four cases -- ARM, BOMEX, DYCOMS2 RF02 DO, and
+         DYCOMS2 RF01.  Let's say that the LES data files for these four cases
+         sum to about 200 MB.  So, that's already 225 MB of space needed on
+         EACH NODE used in the tuning run.  Now, let's say that the netCDF
+         output files for the HOC results for these four cases sum to about
+         150 MB.  However, you are running 25 iterations of the tuner on EACH
+         NODE.  So, you will be producing those 150 MB worth of HOC files 25
+         times over.  The total space needed on the node is then:
+
+         25 MB + 200 MB + (150 MB/iteration)*(25 iterations) = 3975 MB
+
+         So, about 4 GB of available disk space would be needed on each node
+         in order to complete the run.  You would have to check the available
+         disk space in the home directory on every node that you are using in
+         order to make sure that EACH NODE has enough space.
+
+         Say that you were running the above ensemble tuning run on nodes
+         1-10.  That would yield a grand total of 250 iterations of the HOC
+         tuner.  The first 10 runs would be launched (one on each node).  When
+         ALL of them are completed, then the next set of 10 runs are launched,
+         and so on and so on.  When the last set is finally complete, all the
+         HOC results are copied back to Messner, and then deleted off the
+         remote tom nodes.  The amount of disk space you would need on Messner
+         is:
+
+         (150 MB/iteration)*(250 iterations) = 37500 MB
+
+         So, you would need almost 40 GB of available space on Messner to hold
+         all the results.
+
+7)  Starting the ensemble tuning run:
+
+         A simple ./mytuner_messner.bash would start the tuning run.  However,
+         that would require leaving a session open until the job is finished
+         (which could take days).  Therefore, the special atjob.bash script
+         has been created in order to have the job run in the background.
+         The proper command is:  at now -f ./atjob.bash
+
+8)  Sorting the results:
+
+         The script sortresults.bash will produce output to the screen that
+         orders the results by value of the cost function, from lowest value
+         (= lowest error) to highest value.  The iteration number is listed
+         along with the cost function value.  This script also produces a
+         text file called results.txt.  However, this files orders the output
+         according to iteration number, rather than from best to worst.
+
+         Usually, only the top so many values produce good results.  It is
+         best to look at the results for the top handful of tuning iterations.
+         First, to see if they look good for all the cases that were tuned for,
+         and then to see if they look good for all the cases we have in HOC.
 
 -----------------------------------------------------------------------
 - (4.1) Executing a run comparison analysis:
