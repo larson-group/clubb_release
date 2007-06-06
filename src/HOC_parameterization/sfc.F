@@ -1,8 +1,8 @@
-! $Id: sfc.F,v 1.7 2007-04-24 21:57:41 dschanen Exp $
+! $Id: sfc.F,v 1.8 2007-06-06 15:09:36 dschanen Exp $
 #define SCLR_RT 2
 #define SCLR_THETA 1
 
-        module surface
+        module surface_var
 
         implicit none
 
@@ -131,4 +131,4 @@
         return
         end subroutine sfc_var
 
-        end module surface
+        end module surface_var
