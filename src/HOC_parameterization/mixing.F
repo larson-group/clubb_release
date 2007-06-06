@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.14 2007-06-06 15:08:52 dschanen Exp $
+! $Id: mixing.F,v 1.15 2007-06-06 15:34:53 dschanen Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -916,8 +916,8 @@
           k_xm   = 2 * k - 1
           k_wpxp = 2 * k
 
-          xm(k)   = solution(k_xm)
-          wpxp(k) = solution(k_wpxp)
+          xm(k)   = solution(k_xm,1)
+          wpxp(k) = solution(k_wpxp,1)
 
         end do ! k=1..gr%nnzp
 
