@@ -1,6 +1,6 @@
 !-----------------------------------------------------------------------
-! $Id: outputfile.F,v 1.3 2007-01-02 23:27:08 dschanen Exp $
-
+! $Id: outputfile.F,v 1.4 2007-06-06 15:14:48 dschanen Exp $
+#ifdef STATS
       module outputfile_class
 
 !     Description:
@@ -74,3 +74,4 @@
          end type outputfile
 
        end module outputfile_class
+#endif

@@ -1,6 +1,6 @@
 !-----------------------------------------------------------------------
-! $Id: outputgrads.F,v 1.5 2006-11-02 22:59:50 dschanen Exp $
- 
+! $Id: outputgrads.F,v 1.6 2007-06-06 15:14:48 dschanen Exp $
+#ifdef STATS 
         module outputgrads
 
 !       Description:
@@ -608,5 +608,5 @@
           end subroutine formatdate
 
         end module outputgrads
-
+#endif /*STATS*/
 !------------------------------------------------------------------------

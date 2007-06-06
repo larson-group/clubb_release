@@ -1,6 +1,6 @@
-! $Id: outputnc.F,v 1.4 2007-01-02 23:27:08 dschanen Exp $
+! $Id: outputnc.F,v 1.5 2007-06-06 15:14:48 dschanen Exp $
 !-----------------------------------------------------------------------
-
+#ifdef STATS
        module outputnc
 
 !      Description:
@@ -578,3 +578,4 @@
        end subroutine format_date
 
        end module outputnc
+#endif /*STATS*/
