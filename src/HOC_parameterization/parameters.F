@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameters.F,v 1.5 2007-05-21 21:49:18 dschanen Exp $
+! $Id: parameters.F,v 1.6 2007-06-06 15:15:56 dschanen Exp $
         module parameters 
 
 !       Description:
@@ -20,10 +20,9 @@
 
         ! Model parameters and constraints setup in the namelists
         real, public :: 
-     .  fcor, ! Coriolis parameter                       [s^-1]
      .  T0    ! Reference temperature (usually 300)      [K]
 
-!$omp   threadprivate(fcor, T0)
+!$omp   threadprivate(T0)
 
         ! Model constant parameters 
         real, public ::
@@ -124,7 +123,7 @@
 
 !-----------------------------------------------------------------------
         subroutine setup_parameters
-     .             ( deltaz, fcor_in, T0_in, params, isValid ) 
+     .             ( deltaz, T0_in, params, isValid ) 
 !       Description:
 !       Subroutine to setup model parameters
 
@@ -139,7 +138,6 @@
         ! Input Variables
         real, intent(in) :: 
      .  deltaz,  ! Change per height level      [m]
-     .  fcor_in, ! Coriolis forcing             [s^-1]
      .  T0_in    ! Ref. temperature             [K]
 
         real, intent(in), dimension(nparams) :: 
@@ -164,7 +162,6 @@
         ! lmin = lmin_coef * deltaz  ! Old
         lmin = lmin_coef * 40.0 ! New fixed value
 
-        fcor = fcor_in
         T0   = T0_in
 
         ! The nu's are chosen for deltaz <= 40 m. Looks like they must 
