@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.13 2007-03-19 20:01:23 dschanen Exp $
+! $Id: mixing.F,v 1.14 2007-06-06 15:08:52 dschanen Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -16,6 +16,13 @@
 !-----------------------------------------------------------------------
 
         implicit none
+
+        private
+        ! Parameter Constants
+        integer, parameter ::
+     .  nsub = 2,  ! Number of subdiagonals in the LHS matrix
+     .  nsup = 2,  ! Number of superdiagonals in the LHS matrix
+     .  nrhs = 1   ! Number of RHS vectors
 
         public  :: timestep_mixing
 
@@ -111,7 +118,7 @@
         real, dimension(2+2+1,2*gr%nnzp) ::
      .  lhs  ! Band diagonal sparse matrix stored in compact form 
 
-        real, dimension(2*gr%nnzp) ::
+        real, dimension(2*gr%nnzp,nrhs) ::
      .  rhs ! RHS vector for banded matrix
 
         ! Constant parameters as a function of Skw.
@@ -524,11 +531,6 @@
 
         implicit none
 
-        ! Parameter Constants
-        integer, parameter ::
-     .  nsub = 2,  ! Number of subdiagonals in the LHS matrix
-     .  nsup = 2,  ! Number of superdiagonals in the LHS matrix
-     .  nrhs = 1   ! Number of RHS vectors
 
         ! Input
         character(len=*), intent(in) :: 
@@ -558,7 +560,7 @@
 
         real, intent(inout), dimension(nsup+nsub+1,2*gr%nnzp) :: 
      .  lhs  ! Left hand side (LAPACK)
-        real, intent(inout), dimension(2*gr%nnzp) :: 
+        real, intent(inout), dimension(2*gr%nnzp,nrhs) :: 
      .  rhs  ! Right hand side (LAPACK)
 
         ! Output
@@ -569,7 +571,7 @@
         logical, intent(out) :: isValid
 
         ! Local Variables
-        real, dimension(2*gr%nnzp) :: 
+        real, dimension(2*gr%nnzp,nrhs) :: 
      .  solution ! Solution to band diagonal system
 
         real :: rcond ! Est. of the reciprocal of the condition #
@@ -810,7 +812,7 @@
 !                   and evaporation of rain (rrm).  3/31/05.
 
           ! Right-hand side.
-          rhs(k_xm) 
+          rhs(k_xm,1) 
      .    = xm(k) / dt
      .    + xm_forcing(k)
 
@@ -820,9 +822,9 @@
 
              select case ( trim( solve_type ) )
              case ( "rtm" ) 
-                rhs(k_xm) = rhs(k_xm) + sed_rcm(k)
+                rhs(k_xm,1) = rhs(k_xm,1) + sed_rcm(k)
              case ( "thlm" )
-                rhs(k_xm) = rhs(k_xm) - ( Lv / (Cp*exner(k)) )
+                rhs(k_xm,1) = rhs(k_xm,1) - ( Lv / (Cp*exner(k)) )
      .                               * sed_rcm(k)
              ! The following cases used the formulas for rt and theta in order
              ! to test the scalar code.  However, they need to be commented out
@@ -842,7 +844,7 @@
           if ( kk_rain .or. lcoamps_micro ) then
             select case(trim( solve_type ))
             case ( "rtm", "thlm" ) 
-            rhs(k_xm) = rhs(k_xm) + hm_tndcy(k)  ! thlm/rtm only; Brian
+            rhs(k_xm,1) = rhs(k_xm,1) + hm_tndcy(k)  ! thlm/rtm only; Brian
 
             ! The following cases used the formulas for rt and theta in order
             ! to test the scalar code.  However, they need to be commented out
@@ -862,10 +864,10 @@
 !         wpxp: time tendency and buoyancy
 
           ! Right-hand side.
-          rhs(k_wpxp)
+          rhs(k_wpxp,1)
      .    = grav/T0 * (1.0-C7_Skw_fnc(k)) * xpthvp(k)
 
-          if ( liter ) rhs(k_wpxp) = rhs(k_wpxp) + wpxp(k) / dt
+          if ( liter ) rhs(k_wpxp,1) = rhs(k_wpxp,1) + wpxp(k) / dt
 
         end do ! k=2..gr%nnzp-1
 
@@ -874,14 +876,14 @@
         k      = 1
         k_xm   = 2*k - 1
         k_wpxp = 2*k
-        rhs(k_xm)   = xm(k)
-        rhs(k_wpxp) = wpxp(k)
+        rhs(k_xm,1)   = xm(k)
+        rhs(k_wpxp,1) = wpxp(k)
 
         k      = gr%nnzp
         k_xm   = 2*k - 1
         k_wpxp = 2*k
-        rhs(k_xm)   = xm(k)
-        rhs(k_wpxp) = 0.0
+        rhs(k_xm,1)   = xm(k)
+        rhs(k_wpxp,1) = 0.0
 
 #ifdef STATS
         if ( lstats_samp .and. ixm_cn > 0 ) then
