@@ -1,4 +1,4 @@
-! $Id: rsat.F,v 1.5 2007-02-14 21:08:07 dschanen Exp $
+! $Id: rsat.F,v 1.6 2007-06-06 15:06:45 dschanen Exp $
 
 !-------------------------------------------------------------------------
         real function rsat( p, T )
@@ -15,7 +15,7 @@
         implicit none
 
         ! External
-        real, external :: esat
+        real, external :: svp_liq
 
         ! Input Variables
         real, intent(in) :: 
@@ -28,7 +28,7 @@
         ! Saturation Vapor Pressure, esat, can be found to be approximated
         ! in many different ways.
 
-        esatv = esat( T )
+        esatv = svp_liq( T )
 
         ! Formula for Saturation Mixing Ratio:
         !
@@ -41,7 +41,7 @@
         end function rsat
 
 !------------------------------------------------------------------------
-        real pure function esat( T )
+        pure function svp_liq( T ) result ( esat )
 
 !       Description:
 !       Computes SVP for water vapor.
@@ -70,6 +70,9 @@
         ! Input Variables
         real, intent(in) :: T   ! Temperature   [K]
 
+        ! Output Variables
+        real :: esat
+
         ! Local Variables
         integer :: i
 
@@ -87,5 +90,5 @@
         end if
 
         return
-        end function esat
+        end function svp_liq
 !------------------------------------------------------------------------
