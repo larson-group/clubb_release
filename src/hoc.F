@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.122 2007-05-01 22:55:57 dschanen Exp $
+! $Id: hoc.F,v 1.123 2007-06-06 15:13:10 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -226,7 +226,7 @@
        ! setup grid, setup constants, and setup flags
 
        call parameterization_setup
-     .      ( nzmax, deltaz, zm_init, fcor, T0, params,
+     .      ( nzmax, deltaz, zm_init, T0, params,
      .        lbugsrad, kk_rain, licedfs, lcoamps_micro,
      .        cloud_sed,
      .        lmpace_nudge, lKhm_aniso, .false., 
@@ -314,7 +314,7 @@
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
          do i1=1, niterlong
            call parameterization_timestep
-     .          ( i, niterlong, time_initial, time, dt,
+     .          ( i, time_initial, time, dt, fcor,
      .            thlm_forcing, rtm_forcing, wmm, wmt,
      .            wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,
      .            p, rhom, rhot, exner,
@@ -488,7 +488,7 @@
        ! setup grid, setup constants, and setup flags
 
        call parameterization_setup
-     .      ( nzmax, deltaz, zm_init, fcor, T0, params,
+     .      ( nzmax, deltaz, zm_init, T0, params,
      .        lbugsrad, kk_rain, licedfs, lcoamps_micro,
      .        cloud_sed,
      .        lmpace_nudge, lKhm_aniso, .false.,
@@ -569,7 +569,7 @@
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
          do i1=1, niterlong
            call parameterization_timestep
-     .          ( i, niterlong, time_initial, time, dt,
+     .          ( i, time_initial, time, dt, fcor,
      .            thlm_forcing, rtm_forcing, wmm, wmt,
      .            wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,
      .            p, rhom, rhot, exner,

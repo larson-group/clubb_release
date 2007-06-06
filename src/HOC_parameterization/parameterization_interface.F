@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.44 2007-05-01 23:01:59 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.45 2007-06-06 15:13:10 dschanen Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -32,7 +32,7 @@
 
 !-----------------------------------------------------------------------
        subroutine parameterization_timestep
-     .            ( iter, niterlong, time_initial, time_current, dt,
+     .            ( iter, time_initial, time_current, dt, fcor,
      .              thlm_forcing, rtm_forcing, wmm, wmt,
      .              wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,
      .              p, rhom, rhot, exner,
@@ -65,7 +65,7 @@
        use diagnostic_variables
        use mixing, only: timestep_mixing          ! Compute mean/flux terms
        use diagnose_variances, only: diag_var     ! Computes variance terms
-       use surface, only: sfc_var
+       use surface_var, only: sfc_var
        use pdf_closure, only: pdf_closure_new     ! Prob. density function
        use microphysics, only: timestep_microphys ! Microphysics
 #ifdef STATS
@@ -90,8 +90,7 @@
 
        ! Input
        integer, intent(in) :: 
-     . iter,     ! Closure iteration number
-     . niterlong ! Total # of closure iterations
+     . iter      ! Closure iteration number
 
        logical, intent(in) :: 
      . implemented ! Is this part of a larger host model (T/F) ?
@@ -103,7 +102,8 @@
        real, intent(in) :: 
      . time_initial, ! Initial time             [s] 
      . time_current, ! Current time             [s]
-     . dt            ! Current timestep size    [s]
+     . dt,           ! Current timestep size    [s]
+     . fcor          ! Coriolis forcing         [s^-1]
 
        real, intent(in), dimension(gr%nnzp) :: 
      . thlm_forcing,  ! theta_l forcing.        [K/s]
@@ -306,7 +306,7 @@
      .                wp2, wp3, upwp, vpwp, Scm, Skwm,
      .                rtp2, thlp2, rtpthlp,
      .                up2, vp2,
-     .                .false., dt, isValid
+     .                .true., dt, isValid
 #ifdef SCALARS
      .                ,sclrm, wpsclrp, sclrp2,    ! optional vars
      .                sclrprtp, sclrpthlp         !   "       "
@@ -844,7 +844,7 @@
         end subroutine latin_hypercube_sampling
 !-----------------------------------------------------------------------
         subroutine parameterization_setup
-     .             ( nzmax, deltaz, zm_init, fcor_in, T0_in, params,
+     .             ( nzmax, deltaz, zm_init, T0_in, params,
      .               lbugsrad, kk_rain, licedfs, lcoamps_micro,
      .               cloud_sed,
      .               lmpace_nudge, lKhm_aniso, implemented, 
@@ -877,7 +877,7 @@
 
         ! Model parameters
         real, intent(in) :: 
-     .  fcor_in, T0_in
+     .  T0_in
 
         real, intent(in), dimension(nparams) ::
      .  params  ! Including C1, nu1, nu2, etc.
@@ -909,7 +909,7 @@
         ! Define model constant parameters
 
         call setup_parameters
-     .       ( deltaz, fcor_in, T0_in, params, isValid )
+     .       ( deltaz, T0_in, params, isValid )
 
         if ( .not. isValid ) return
 
