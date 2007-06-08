@@ -1,4 +1,4 @@
-! $Id: outputnc.F,v 1.5 2007-06-06 15:14:48 dschanen Exp $
+! $Id: outputnc.F,v 1.6 2007-06-08 14:44:18 dschanen Exp $
 !-----------------------------------------------------------------------
 #ifdef STATS
        module outputnc
@@ -74,6 +74,7 @@
        ncf%year   = year
        ncf%rlat   = rlat
        ncf%rlon   = rlon
+       ncf%time   = time
  
        ncf%dtwrite = dtwrite
        ncf%nvar    = nvar
