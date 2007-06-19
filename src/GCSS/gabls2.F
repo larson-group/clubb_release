@@ -31,7 +31,7 @@
         use constants
         use grid_class
 #ifdef STATS
-        use statistics
+        use hoc_stats
 #endif /*STATS*/
         implicit none
 

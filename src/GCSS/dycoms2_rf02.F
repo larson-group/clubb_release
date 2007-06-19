@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf02.F,v 1.5 2007-02-10 16:55:58 griffinb Exp $
+! $Id: dycoms2_rf02.F,v 1.6 2007-06-19 21:03:21 dschanen Exp $
         module dycoms2_rf02
 
 !       Description:
@@ -32,7 +32,7 @@
         USE constants
         USE model_flags, only: lbugsrad, lcoamps_micro, kk_rain
 #ifdef STATS
-        USE statistics
+        USE hoc_stats
 #endif /*STATS*/
 
         ! Constant parameters

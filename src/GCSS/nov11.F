@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: nov11.F,v 1.3 2007-05-01 22:57:30 dschanen Exp $
+! $Id: nov11.F,v 1.4 2007-06-19 21:03:21 dschanen Exp $
         module nov11
 
 !       Description:
@@ -41,7 +41,7 @@
         use model_flags
         use icedfs
 #ifdef STATS
-        use statistics
+        use hoc_stats
 #endif /*STATS*/
 
         implicit none
