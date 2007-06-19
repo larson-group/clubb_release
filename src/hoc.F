@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.123 2007-06-06 15:13:10 dschanen Exp $
+! $Id: hoc.F,v 1.124 2007-06-19 21:04:59 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -108,7 +108,7 @@
         use hoc_parameterization_interface
         use constants, only: fstdout, fstderr
 #ifdef STATS
-        use statistics
+        use hoc_stats
 #endif
 
         implicit none
@@ -391,7 +391,7 @@
         use hoc_parameterization_interface
         use constants, only: fstdout, fstderr
 #ifdef STATS
-        use statistics
+        use hoc_stats
 #endif /*STATS*/
 
         implicit none
@@ -651,7 +651,7 @@
         use grid_class
         use sounding
 #ifdef STATS
-        use statistics
+        use hoc_stats
 #endif /*STATS*/
 
         implicit none
