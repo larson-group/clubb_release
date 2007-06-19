@@ -7,6 +7,9 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 
+% Use different colors
+\usepackage{color}
+
 % bibliography style
 \usepackage{natbib}
 \bibliographystyle{ams}
@@ -2630,6 +2633,110 @@ $\overline{w^{'3}}$, $\overline{w^{'2}\theta_v'}$, $\ldots$}
 \caption{Vertical grid configuration}
 \label{grid}
 \end{figure}
+
+\pagebreak
+
+\section{Predictive equations in Conjunction with Host Model}
+
+The HOC parameterization can be used in conjunction with a larger host model.
+Some of the main predictive equations (Eqns. \ref{eq_um}, \ref{eq_vm},
+\ref{eq_qtm}, and \ref{eq_thlm}) have to be divided in the following manner:
+%
+\begin{equation}
+\ptlder{\color{red}\bar{u}}{t} 
+= {\color{magenta}- \bar{w}\ptlder{\bar{u}}{z}}
+  {\color{magenta}- f (v_g - \bar{v})}
+  - \ptlder{}{z}{\color{blue}\overline{u'w'}}
+\end{equation}
+%
+\begin{equation}
+\ptlder{\color{red}\bar{v}}{t} 
+= {\color{magenta}- \bar{w}\ptlder{\bar{v}}{z}}
+  {\color{magenta}+ f (u_g - \bar{u})}
+  - \ptlder{}{z}{\color{blue}\overline{v'w'}}
+\end{equation}
+%
+\begin{equation}
+\ptlder{\color{red}\bar{q}_t}{t}
+= {\color{magenta}- \bar{w}\ptlder{\bar{q}_t}{z}}
+  - \ptlder{}{z}{\color{blue}\overline{w'q'_t}}
+  {\color{magenta}+ \left. \ptlder{\bar{q}_t}{t} \right|_{\rm ls}}
+\end{equation}
+%
+\begin{equation}
+\ptlder{\color{red}\bar{\theta}_l}{t} 
+= {\color{magenta}- \bar{w}\ptlder{\bar{\theta}_l}{z}}
+  - \ptlder{}{z}{\color{blue}\overline{w'\theta'_l}}
+  {\color{magenta}+ \bar{R}}
+  {\color{magenta}+ \left. \ptlder{\bar{\theta}_l}{t} \right|_{\rm ls}}
+\end{equation}
+%
+{\color{red}The variables in red, $\bar{u}$, $\bar{v}$, $\bar{q}_t$, and
+$\bar{\theta}_l$, are supplied from the host model to the HOC parameterization.}
+{\color{blue}The variables in blue, $\overline{u'w'}$, $\overline{v'w'}$,
+$\overline{w'q'_t}$, and $\overline{w'\theta'_l}$, are computed in the HOC
+parameterization and then sent back to the host model.  The vertical
+derivatives of these variables are then used to effect the time tendencies of
+their related variables.}  {\color{magenta}The terms listed in magenta, which
+include the vertical mean advection terms, the coriolis terms, the radiative 
+heating term, and the large-scale moisture and temperature forcings, are terms 
+that are usually calculated in HOC when HOC does not run with any host model.
+However, in cases where a host model is involved, the host model should
+calculate all of these terms.}  As before, $\bar{R}$ is the radiative heating 
+rate, $f$ the Coriolis parameter and $u_g$, $v_g$ the geostrophic winds.
+$\left. \ptlder{\bar{q}_t}{t} \right|_{\rm ls}$ and 
+$\left. \ptlder{\bar{\theta}_l}{t} \right|_{\rm ls}$ are
+large-scale moisture and temperature forcings.
+
+The $\ptlder{\overline{w^{'2}}}{t}$ equation (eq. \ref{eq_wp2}),
+the $\ptlder{\overline{q_t^{'2}}}{t}$ equation (eq. \ref{eq_qtp2}),
+the $\ptlder{\overline{\theta_l^{'2}}}{t}$ equation (eq. \ref{eq_thlp2}),
+the $\ptlder{\overline{q'_t\theta'_l}}{t}$ equation (eq. \ref{eq_qtpthlp}),
+the $\ptlder{\overline{w'q'_t}}{t}$ equation (eq. \ref{eq_wpqtp}),
+the $\ptlder{\overline{w'\theta'_t}}{t}$ equation (eq. \ref{eq_wpthlp}),
+and the $\ptlder{\overline{w^{'3}}}{t}$ equation (eq. \ref{eq_wp3})
+all remain unchanged.  All of these variables are computed and used completely
+within the structure of the HOC parameterization.
+
+Within the structure of a computer code, the HOC parameterization requires that
+the values of certain variables be saved at all grid points for use during the
+next timestep.  Since the HOC parameterization is a one-dimensional 
+parameterization (in the vertical), or a single-column parameterization, a
+three-dimensional host model must call the HOC parameterization once for every
+grid column that it has.  Therefore, the values of all these variables must be
+saved from timestep to timestep at every grid point in the three dimensions.
+
+The variables that need to be saved as such are the following:
+\begin{center}
+\begin{tabular} {|l|c|c|}
+\hline
+\multicolumn{3}{|c|}{On the momentum (or full) levels}\\\hline
+Description&Variable&Variable name in HOC code\\\hline
+Turbulent Flux of $\theta_l$&$\overline{w'\theta'_l}$&wpthlp\\\hline
+Turbulent Flux of $q_t$&$\overline{w'q'_t}$&wprtp\\\hline
+Variance of $w$&$\overline{w^{'2}}$&wp2\\\hline
+Variance of $q_t$&$\overline{q^{'2}_t}$&rtp2\\\hline
+Variance of $\theta_l$&$\overline{\theta^{'2}_l}$&thlp2\\\hline
+Covariance of $q_t$ and $\theta_l$&$\overline{q'_t\theta'_l}$&rtpthlp\\\hline
+Covariance of $u$ and $w$&$\overline{u'w'}$&upwp\\\hline
+Covariance of $v$ and $w$&$\overline{v'w'}$&vpwp\\\hline
+Time scale&$\tau$&taum\\\hline
+Width of the individual $w$ plumes&$\tilde{\sigma}^2_w$&Scm\\\hline
+\multicolumn{3}{|c|}{On the thermodynamic (or half) levels}\\\hline
+Description&Variable&Variable name in HOC code\\\hline
+Third-order Moment of $w$&$\overline{w^{'3}}$&wp3\\\hline
+Rain water mixing ratio&$q_r$&rrm\\\hline
+Rain drop concentration&$N_r$&Nrm\\\hline
+Cloud drop concentration&$N_c$&Ncm\\\hline
+Cloud water mixing ratio&$q_c$&rcm\\\hline
+Cloud fraction&cf&cf\\\hline
+\end{tabular}
+\end{center}
+It is only necessary to save cloud water mixing ratio from timestep to timestep
+if the host model would need information on the subgrid value of that variable.
+It is also necessary to provide HOC with information on cloud water mixing
+ratio for the initial timestep of the run.  Cloud fraction is usually saved for
+output purposes only.
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 %
