@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.46 2007-06-06 15:33:24 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.47 2007-06-19 21:06:36 dschanen Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -69,7 +69,7 @@
        use pdf_closure, only: pdf_closure_new     ! Prob. density function
        use microphysics, only: timestep_microphys ! Microphysics
 #ifdef STATS
-       use statistics
+       use hoc_stats
 #endif /*STATS*/
 
        implicit none
@@ -306,7 +306,7 @@
      .                wp2, wp3, upwp, vpwp, Scm, Skwm,
      .                rtp2, thlp2, rtpthlp,
      .                up2, vp2,
-     .                .false., dt, isValid
+     .                .true., dt, isValid
 #ifdef SCALARS
      .                ,sclrm, wpsclrp, sclrp2,    ! optional vars
      .                sclrprtp, sclrpthlp         !   "       "
@@ -721,7 +721,6 @@
            
        if ( .not. isValid ) return
 
-
        ! Compute Shear Production  -Brian
        do k = 1, gr%nnzp-1, 1
          shear(k) = -upwp(k) * ( um(k+1) - um(k) ) * gr%dzm(k)
@@ -764,8 +763,11 @@
        rtp2zt    = zm2zt( rtp2 )
        rtpthlpzt = zm2zt( rtpthlp )
 
-!      call stats_accumulate( time_current + dtmain, dtmain )
-       call stats_accumulate( )
+       call stats_accumulate
+     .           ( um, vm, upwp, vpwp, up2, vp2, thlm,
+     .             rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp,
+     .             p, exner, rhot, rhom, thlm_forcing, rtm_forcing, wmm,
+     .             wmt, Scm, taum, rcm, Ncm, Ncnm, Nim, cf, hydromet )
 
 #endif /*STATS*/
 
@@ -936,7 +938,7 @@
         use diagnostic_variables
         use prognostic_variables
 #ifdef STATS
-        use statistics
+        use hoc_stats
 #endif
 
         implicit none

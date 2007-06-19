@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.23 2007-04-24 21:57:41 dschanen Exp $
+!  $Id: statistics.F,v 1.24 2007-06-19 21:06:36 dschanen Exp $
 
 #ifdef STATS
       module stats_type
@@ -38,11 +38,11 @@
       end module stats_type
 
 !-----------------------------------------------------------------------
-!  module statistics
+!  module hoc_stats
 
 !  holds pointers to variables to be written to GrADS files
 !-----------------------------------------------------------------------
-      module statistics
+      module hoc_stats
 
         use stats_type
 
@@ -566,7 +566,7 @@
 !$omp   threadprivate(zmscr06, zmscr07, zmscr08, zmscr09, zmscr10)
 !$omp   threadprivate(zmscr11, zmscr12, zmscr13)
 
-      end module statistics
+      end module hoc_stats
 
 !-----------------------------------------------------------------------
       subroutine stats_init( iunit, fnamelist, nnzp, gzt, gzm,
@@ -575,7 +575,7 @@
 !     Description: Initializes the statistics saving functionality of
 !     the HOC model.
 !-----------------------------------------------------------------------
-      use statistics
+      use hoc_stats
       use outputgrads
       use outputnc
 
@@ -3741,7 +3741,7 @@
 !     Begin sampling for the current timestep.
 !-----------------------------------------------------------------------
 
-      use statistics
+      use hoc_stats
 
       implicit none
 
@@ -3786,7 +3786,7 @@
 !     Description:
 !-----------------------------------------------------------------------
 
-      use statistics
+      use hoc_stats
       use outputgrads
       use outputnc
 
@@ -3850,8 +3850,11 @@
       end subroutine stats_end_timestep
 
 !----------------------------------------------------------------------
-!     subroutine stats_accumulate( time, delt )
-      subroutine stats_accumulate( )
+      subroutine stats_accumulate
+     .           ( um, vm, upwp, vpwp, up2, vp2, thlm,
+     .             rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp,
+     .             p, exner, rhot, rhom, thlm_forcing, rtm_forcing, wmm,
+     .             wmt, Scm, taum, rcm, Ncm, Ncnm, Nim, cf, hydromet )
 
 !     Description:
 !     Accumulate those stats variables that are preserved in HOC from
@@ -3859,9 +3862,9 @@
 !     budget terms, longwave and shortwave components, etc. )
 !----------------------------------------------------------------------
 
-      use statistics
+      use hoc_stats
       use grid_class
-      use prognostic_variables
+      !use prognostic_variables
       use diagnostic_variables
       use model_flags
       use constants
@@ -3869,8 +3872,50 @@
       implicit none
 
       ! Input Variable
+      real, intent(in), dimension(gr%nnzp) ::
+     .  um,     ! u wind                        [m/s]
+     .  vm,     ! v wind                        [m/s]
+     .  upwp,   ! vertical u momentum flux      [m^2/s^2]
+     .  vpwp,   ! vertical v momentum flux      [m^2/s^2]
+     .  up2,    ! u'^2                          [m^2/s^2]
+     .  vp2,    ! v'^2                          [m^2/s^2]
+     .  thlm,   ! liquid potential temperature  [K]
+     .  rtm,    ! total water mixing ratio      [kg/kg]
+     .  wprtp,  ! w'rt'                         [m kg/s kg]
+     .  wpthlp, ! w'thl'                        [m K /s]
+     .  wp2,    ! w'^2                          [m^2/s^2]
+     .  wp3,    ! w'^3                          [m^3/s^3]
+     .  rtp2,   ! rt'^2                         [kg/kg]
+     .  thlp2,  ! thl'^2                        [K^2]
+     .  rtpthlp ! rt'thl'                       [kg/kg K]
 
-!     real, intent(in) :: time, delt
+      real, intent(in), dimension(gr%nnzp) ::
+     .  p,           ! Pressure (Pa) on thermodynamic points    [Pa]
+     .  exner,       ! Exner function = ( p / p0 ) ** kappa     [-]
+     .  rhot,        ! Density                                  [kg/m^3]
+     .  rhom,        ! Density                                  [kg/m^3]
+     .  thlm_forcing,! thlm large-scale forcing                 [K/s]
+     .  rtm_forcing, ! rtm large-scale forcing                  [kg/kg/s]
+     .  wmm,         ! w on momentum levels                     [m/s]
+     .  wmt,         ! w on thermodynamic levels                [m/s]
+     .  Scm,         ! PDF width paramter                       [-]
+     .  taum         ! Dissipation time                         [s]
+
+      real, intent(in), dimension(gr%nnzp) ::
+     .  rcm,  ! Cloud water mixing ratio                [kg/kg]
+     .  Ncm,  ! Cloud droplet number concentration      [num/m^3]
+     .  Ncnm, ! Cloud nuclei number concentration       [num/m^3]
+     .  Nim,  ! Ice nuclei number concentration         [num/m^3]
+     .  cf    ! Cloud fraction                          [%]
+
+      ! Prognostic drizzle variable array
+      real, intent(in), dimension(gr%nnzp,hydromet_dim) :: hydromet
+      ! Contains:
+      ! 1 rrm      Rain water mixing ratio               [kg/kg]
+      ! 2 Nrm      Rain droplet number concentration     [num/m^3]
+      ! 3 rsnow    Snow water mixing ratio               [kg/kg]
+      ! 4 rice     Ice water mixing ratio                [kg/kg]
+      ! 5 rgraupel Graupel water mixing ratio            [kg/kg]
 
       ! Local Variables
 
@@ -4513,7 +4558,7 @@
 !     stats file structures.
 !-----------------------------------------------------------------------
 
-      use statistics
+      use hoc_stats
       use outputnc, only: close_nc
 
       implicit none

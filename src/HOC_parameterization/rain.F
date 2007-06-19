@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.31 2007-04-19 22:52:44 griffinb Exp $
+! $Id: rain.F,v 1.32 2007-06-19 21:06:36 dschanen Exp $
 
       MODULE rain_equations
 
@@ -90,7 +90,7 @@
         use grid_class
         use constants
 #ifdef STATS
-        use statistics
+        use hoc_stats
 #endif
 
         implicit none

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.15 2007-06-06 15:34:53 dschanen Exp $
+! $Id: mixing.F,v 1.16 2007-06-19 21:06:36 dschanen Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -241,7 +241,7 @@
         use constants
         use grid_class
 #ifdef STATS
-        use statistics
+        use hoc_stats
 #endif /*STATS*/
 
         implicit none
@@ -526,7 +526,7 @@
      .    kk_rain,     ! Khairoutdinov and Kogan (2000) drizzle scheme -Brian
      .    lcoamps_micro! COAMPS(R) microphysics
 #ifdef STATS
-        use statistics
+        use hoc_stats
 #endif /*STATS*/
 
         implicit none

@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.16 2007-05-21 20:59:39 dschanen Exp $
+! $Id: diag_var.F,v 1.17 2007-06-19 21:06:36 dschanen Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -46,7 +46,7 @@
         use grid_class
         use lapack_wrap, only: tridag_solve
 #ifdef STATS
-        use statistics
+        use hoc_stats
 #endif /*STATS*/
        
         implicit none
@@ -441,7 +441,7 @@
 !-----------------------------------------------------------------------
         use grid_class
 #ifdef STATS
-        use statistics
+        use hoc_stats
 #endif
 
         implicit none
@@ -574,7 +574,7 @@
         use lapack_wrap, only: tridag_solve, tridag_solvex!, band_solve
         use grid_class
 #ifdef STATS
-        use statistics
+        use hoc_stats
 #endif
 
         ! Constant parameters
@@ -756,7 +756,7 @@
         use grid_class
         use constants, only: grav
 #ifdef STATS
-        use statistics
+        use hoc_stats
 #endif
 
         implicit none
@@ -931,7 +931,7 @@
 !-----------------------------------------------------------------------
         use grid_class
 #ifdef STATS
-        use statistics
+        use hoc_stats
 #endif
 
         implicit none

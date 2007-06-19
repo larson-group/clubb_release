@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: update.F,v 1.6 2007-02-20 22:58:15 dschanen Exp $
+! $Id: update.F,v 1.7 2007-06-19 21:06:36 dschanen Exp $
 
         subroutine update_ed_var( solve_type, xm, xt, xw0, Khm, 
      .                            dt, xw, isValid )
@@ -16,7 +16,7 @@
         use grid_class
         use lapack_wrap, only: tridag_solve
 #ifdef STATS
-        use statistics
+        use hoc_stats
 #endif
 
         implicit none

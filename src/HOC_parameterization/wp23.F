@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.15 2007-05-18 20:53:31 dschanen Exp $
+! $Id: wp23.F,v 1.16 2007-06-19 21:06:36 dschanen Exp $
 
         subroutine timestep_wp23
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
@@ -25,7 +25,7 @@
         use constants
         use model_flags
 #ifdef STATS
-        use statistics
+        use hoc_stats
 #endif /*STATS*/
 
         implicit none
@@ -166,7 +166,7 @@
         use model_flags
         use lapack_wrap, only: band_solve, band_solvex
 #ifdef STATS
-        use statistics
+        use hoc_stats
 #endif /*STATS*/
 
         implicit none
