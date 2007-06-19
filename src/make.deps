@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.6 2007-05-10 19:08:12 dschanen Exp $
+# $Id: make.deps,v 1.7 2007-06-19 21:04:19 dschanen Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -16,7 +16,7 @@
 # Therefore, whenever you add a USE statement in a file you should add 
 # the corresponding object file to the dependencies list for the file being
 # modified.  
-# E.g. when adding a "use statistics" line to fire.F, the new line should read:
+# E.g. when adding a "use hoc_stats" line to fire.F, the new line should read:
 # fire.o : fire.F statistics.o
 # Plus any other files that fire.F has in a use or include.
 #
