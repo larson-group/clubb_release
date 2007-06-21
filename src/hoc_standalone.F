@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: hoc_standalone.F,v 1.16 2007-03-14 23:34:47 dschanen Exp $
+! $Id: hoc_standalone.F,v 1.17 2007-06-21 16:12:11 griffinb Exp $
 
         program hoc_standalone
 
@@ -11,7 +11,7 @@
         use hoc, only: hoc_model
 
         use param_index, only: nparams
-        use parameters, only: read_parameters
+        use parameters, only: read_parameters, params_list
 
         implicit none
 
@@ -34,6 +34,8 @@
         ! Internal variables
         logical :: isValid 
 
+        integer :: i ! Loop iterator
+
         ! Namelist
         namelist /model/ run_file, stdout
 
@@ -48,6 +50,17 @@
         read(unit=iunit, nml=model)
 
         close(unit=iunit)
+
+        ! If standard output (stdout) is selected, print the list of
+        ! parameters that are being used to the screen before the run.
+        if ( stdout ) then
+           write(unit=*,fmt='(4x,A9,5x,11x,A5)') "Parameter", "Value"
+           write(unit=*,fmt='(4x,A9,5x,11x,A5)') "---------", "-----"
+           do i = 1, nparams, 1
+              write(unit=*,fmt='(A18,F27.20)')
+     .           params_list(i) // " = ", params(i)
+           enddo
+        endif
 
         ! Initialize status of run 
         isValid = .true.
