@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.46 2007-05-10 19:05:32 dschanen Exp $
+! $Id: error.F,v 1.47 2007-06-23 20:20:55 griffinb Exp $
 
         module error
  
@@ -437,7 +437,7 @@
 
           do i = 1, ndim, 1
             j = x_index(i)
-            write(unit=*,fmt='(A12,f12.5)') params_list(j)//" = ",
+            write(unit=*,fmt='(A18,F27.20)') params_list(j)//" = ",
      .        x_vector(i)
           end do
 
@@ -658,10 +658,11 @@
 
         if ( tune_type == 0 ) print *, "Number of iterations:",  iter
       
-        write(unit=*,fmt='(3A18)') "Parameter", "Initial", "Optimal"
+        write(unit=*,fmt='(4x,A9,5x,10x,A7,10x,10x,A7)')
+     .      "Parameter", "Initial", "Optimal"
 
         do i = 1, ndim, 1
-          write(unit=*,fmt='(A18,2f18.5)') 
+          write(unit=*,fmt='(A18,2F27.20)') 
      .      params_list(x_index(i))//" = ", 
      .      params(x_index(i)), x_array(1,i)
         end do
@@ -789,7 +790,7 @@
 
         ! Output optimal values and all possible HOC parameters
         do i=1, nparams, 1
-          write(unit=20,fmt='(a18,f12.5)')
+          write(unit=20,fmt='(A18,F27.20)')
      .      trim( params_list(i) )//" = ", params_local(i)
         end do
         write(unit=20,fmt=*) "/"
@@ -890,7 +891,7 @@
 
         ! Output optimal values and all possible HOC parameters
         do i=1, nparams, 1
-          write(unit=20,fmt='(a18,f12.5)')
+          write(unit=20,fmt='(A18,F27.20)')
      .      trim( params_list(i) )//" = ", params_local(i)
         end do
         write(unit=20,fmt=*) "/"
