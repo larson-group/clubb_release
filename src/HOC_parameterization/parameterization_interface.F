@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.47 2007-06-19 21:06:36 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.48 2007-06-23 22:36:49 dschanen Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -306,7 +306,7 @@
      .                wp2, wp3, upwp, vpwp, Scm, Skwm,
      .                rtp2, thlp2, rtpthlp,
      .                up2, vp2,
-     .                .true., dt, isValid
+     .                .false., dt, isValid
 #ifdef SCALARS
      .                ,sclrm, wpsclrp, sclrp2,    ! optional vars
      .                sclrprtp, sclrpthlp         !   "       "
