@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.48 2007-06-23 22:36:49 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.49 2007-06-27 21:10:34 dschanen Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -767,7 +767,11 @@
      .           ( um, vm, upwp, vpwp, up2, vp2, thlm,
      .             rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp,
      .             p, exner, rhot, rhom, thlm_forcing, rtm_forcing, wmm,
-     .             wmt, Scm, taum, rcm, Ncm, Ncnm, Nim, cf, hydromet )
+     .             wmt, Scm, taum, rcm, Ncm, Ncnm, Nim, cf, hydromet
+#ifdef SCALARS
+     .             ,sclrm, edsclrm, sclrm_forcing
+#endif /*SCALARS*/
+     .            )
 
 #endif /*STATS*/
 

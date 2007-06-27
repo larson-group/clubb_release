@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.24 2007-06-19 21:06:36 dschanen Exp $
+!  $Id: statistics.F,v 1.25 2007-06-27 21:10:34 dschanen Exp $
 
 #ifdef STATS
       module stats_type
@@ -3854,7 +3854,8 @@
      .           ( um, vm, upwp, vpwp, up2, vp2, thlm,
      .             rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp,
      .             p, exner, rhot, rhom, thlm_forcing, rtm_forcing, wmm,
-     .             wmt, Scm, taum, rcm, Ncm, Ncnm, Nim, cf, hydromet )
+     .             wmt, Scm, taum, rcm, Ncm, Ncnm, Nim, cf, hydromet,
+     .             sclrm, edsclrm, sclrm_forcing )
 
 !     Description:
 !     Accumulate those stats variables that are preserved in HOC from
@@ -3907,6 +3908,11 @@
      .  Ncnm, ! Cloud nuclei number concentration       [num/m^3]
      .  Nim,  ! Ice nuclei number concentration         [num/m^3]
      .  cf    ! Cloud fraction                          [%]
+
+      real, intent(in), optional, dimension(gr%nnzp,sclr_dim) ::
+     .  sclrm,          ! High-Order Passive scalar     [units vary]
+     .  edsclrm,        ! Eddy-diff Passive scalar      [units vary] 
+     .  sclrm_forcing   ! Large-scale forcing of scalar [units/s]
 
       ! Prognostic drizzle variable array
       real, intent(in), dimension(gr%nnzp,hydromet_dim) :: hydromet
