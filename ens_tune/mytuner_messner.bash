@@ -1,5 +1,5 @@
 #!/bin/bash
-# $Id: mytuner_messner.bash,v 1.4 2007-05-04 18:08:05 dschanen Exp $
+# $Id: mytuner_messner.bash,v 1.5 2007-06-28 16:38:13 griffinb Exp $
 ################################################################################
 #
 # Description: This is a port of Chris Golaz's ensemble tuning script to the
@@ -19,8 +19,8 @@
 # Global variables
 ################################################################################
 
-# Note: ITERMAX needs to be a multiple of your total nodes!
-ITERMAX=6
+# Note: MEMBERMAX needs to be a multiple of your total nodes!
+MEMBERMAX=6
 NODES=( tom15 tom16 tom17 )
 HOC=$HOME/current/hoc_v2.2_tuner
 CASE=combined_001
@@ -35,7 +35,7 @@ RCP='/usr/bin/rcp'
 ################################################################################
 function tune ( ) {
 	local tom=$1   # 1st argument
-	local iter=$2  # 2nd argument
+	local member=$2  # 2nd argument
 
 	# Create directory & copy files
 	rsh $tom "mkdir -p $HOC/ens_tune"
@@ -51,7 +51,7 @@ function tune ( ) {
 	done
 
 	# Execute tuning run
-	echo Tuning iteration $iter on $tom
+	echo Tuning ensemble member $member on $tom
 	rsh $tom "cd $HOC/ens_tune && echo no | ../bin/hoc_tuner &> tune.log"
 
 	# Delete GrADS files from tuning run
@@ -65,12 +65,12 @@ function tune ( ) {
 	done
 
 	# Move results data
-	rsh $tom "mv $HOC/ens_tune $HOC/ens_tune_$iter";
-	rsh $tom "mv $HOC/standalone/standalone_*.in  $HOC/ens_tune_$iter";
+	rsh $tom "mv $HOC/ens_tune $HOC/ens_tune_$member";
+	rsh $tom "mv $HOC/standalone/standalone_*.in  $HOC/ens_tune_$member";
 	# for GrADS output
-	#rsh $tom "mv $HOC/standalone/*_*.???  $HOC/ens_tune_$iter";
+	#rsh $tom "mv $HOC/standalone/*_*.???  $HOC/ens_tune_$member";
 	# for NetCDF output
-	rsh $tom "mv $HOC/standalone/*_*.nc  $HOC/ens_tune_$iter";
+	rsh $tom "mv $HOC/standalone/*_*.nc  $HOC/ens_tune_$member";
 }
 
 ################################################################################
@@ -96,14 +96,14 @@ for node in "${NODES[@]}"; do
 	echo "Copy complete";
 done
 
-# Initial iteraton
-ITER=1
+# Initial ensemble member
+MEMBER=1
 # Loop over the number of times, incrementing by the total nodes
-while [  $ITER -lt $ITERMAX ]; do
+while [  $MEMBER -lt $MEMBERMAX ]; do
 
 	for node in "${NODES[@]}"; do 
-		tune $node $ITER &
-		let ITER=ITER+1
+		tune $node $MEMBER &
+		let MEMBER=MEMBER+1
 	done
 	wait
 
