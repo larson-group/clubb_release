@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.16 2007-06-19 21:06:36 dschanen Exp $
+! $Id: wp23.F,v 1.17 2007-06-30 22:42:38 griffinb Exp $
 
         subroutine timestep_wp23
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
@@ -859,14 +859,23 @@
            ELSE
 
               ! Clip skewness consistently with a
+              ! NOTE: atmp is wp2 interpolated to thermodynamic levels
+              !       (with the added insurance that it cannot be negative
+              !       or zero).  wp2 should not be set equal to atmp
+              !       because atmp is the value at a thermodynamic level,
+              !       whereas wp2 is located at a momentum level.  The
+              !       only effect of that piece of code is to mistakenly
+              !       lift the wp2 value in altitude one-half grid box
+              !       every time it is called.  The line is unnecessary,
+              !       and can be commented out.  Brian Griffin. 6/30/07.
               atmp = MAX( 0.5*(wp2(km1)+wp2(k)), eps )
               ctmp = atmp**1.5
               IF ( wp3(k)/ctmp > 4.5 ) THEN
                  wp3(k) = 4.5 * ctmp
-                 wp2(k) = atmp
+                 !wp2(k) = atmp
               ELSE IF ( wp3(k)/ctmp < -4.5 ) THEN
                  wp3(k) = -4.5 * ctmp
-                 wp2(k) = atmp
+                 !wp2(k) = atmp
               END IF
 
            END IF
