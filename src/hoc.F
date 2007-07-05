@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.124 2007-06-19 21:04:59 dschanen Exp $
+! $Id: hoc.F,v 1.125 2007-07-05 21:20:04 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -1097,6 +1097,13 @@
 
          select case ( runtype )
          case( "generic" ) ! Generic run
+           ! Configure for K&K microphysics
+           do k=1, gr%nnzp, 1
+             if ( rcm(k) >= rc_tol ) then
+               Ncm(k) = 30.0 * (1.0 + exp( -gr%zt(k)/2000.0 )) * 1.e6
+     .                  * rhot(k) 
+             end if
+           end do
 
          case( "arm" ) ! ARM Cu case
            call arm_tndcy( time, thlm_forcing, radht, rtm_forcing
