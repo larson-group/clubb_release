@@ -1,11 +1,11 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: lba.F,v 1.1 2007-07-06 23:01:39 dschanen Exp $
+! $Id: lba.F,v 1.2 2007-07-06 23:04:21 dschanen Exp $
         module lba
 
 !       Description:
-!       Contains subroutines for the GCSS BOMEX case.
+!       Contains subroutines for the LBA case.
 !----------------------------------------------------------------------
         public :: lba_tndcy, lba_sfclyr
 
