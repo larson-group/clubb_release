@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.7 2007-06-19 21:04:19 dschanen Exp $
+# $Id: make.deps,v 1.8 2007-07-06 23:01:39 dschanen Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -196,7 +196,7 @@ bugsrad_hoc.o 		: kinds.o constants.o bugs_rad.o \
 # == Misc. program related source files  ==
 hoc.o		: parameterization_interface.o arm.o astex.o atex.o \
 	bomex.o dycoms2_rf01.o dycoms2_rf02.o fire.o jun25.o mpace.o nov11.o \
-	wangara.o cobra.o rico.o gabls2.o hoc.F
+	wangara.o cobra.o rico.o gabls2.o lba.o hoc.F
 sounding.o	: constants.o sounding.F
 inputfields.o	: grid.o inputgrads.o inputfields.F 
 gradsaverage.o	: inputgrads.o gradsaverage.F 

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.125 2007-07-05 21:20:04 dschanen Exp $
+! $Id: hoc.F,v 1.126 2007-07-06 23:01:39 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -926,6 +926,10 @@
 
           wp2 = 2.0 / 3.0  * em
 
+        case ( "lba" )
+          em = 0.1
+          wp2 = 2./3. * em
+
         ! Michael Falk for MPACE Arctic Stratus case.
         case ( "mpace" )
 
@@ -951,10 +955,9 @@
 
         ! Brian Griffin for COBRA CO2 case.
         case ( "cobra" )
+          em = 0.1
 
-        em = 0.1
-
-        wp2 = 2.0 / 3.0 * em
+          wp2 = 2.0 / 3.0 * em
 
 
         ! Michael Falk for RICO tropical cumulus case, 13 Dec 2006
@@ -1058,6 +1061,7 @@
      .                  sfc_thermo_fluxes
         use gabls2, only: gabls2_tndcy, gabls2_sfclyr
         use rico, only: rico_tndcy, rico_sfclyr
+        use lba, only: lba_tndcy, lba_sfclyr
         use mpace, only: mpace_tndcy, mpace_sfclyr
         use nov11, only: nov11_altocu_tndcy ! Above surface
         use jun25, only: jun25_altocu_tndcy ! Above surface
@@ -1198,13 +1202,21 @@
 #endif /* SCALARS */
      .                            )
 
+         case ( "lba" )
+           call lba_tndcy( time, wmt, wmm, radht, 
+     .                     thlm_forcing, rtm_forcing
+#ifdef SCALARS
+     .                    ,sclrm_forcing
+#endif /* SCALARS */
+     .                    )
+
          case ( "mpace" ) ! MPACE arctic stratus case
            call mpace_tndcy( time, time_initial, dtmain, rlat, thlm,
      .                       exner, rhot, rtm, p, thvm, rcm,
      .                       wmt, wmm, thlm_forcing, rtm_forcing,
      .                       Ncnm, Ncm, Frad, radht
 #ifdef SCALARS
-     .                     ,sclrm_forcing
+     .                      ,sclrm_forcing
 #endif /* SCALARS */
      .                    )
 
@@ -1353,6 +1365,16 @@
         case( "jun25_altocu" )
           ! There are no surface momentum or heat fluxes
           ! for the Jun. 25 Altocumulus case.
+
+         case ( "lba" )
+           call lba_sfclyr( time, gr%zt(2), rhom(1),
+     .                      thlm(2), um(2), vm(2),
+     .                      upwp_sfc, vpwp_sfc, 
+     .                      wpthlp_sfc, wprtp_sfc
+#ifdef SCALARS
+     .                     ,wpsclrp_sfc, wpedsclrp_sfc
+#endif /* SCALARS */
+     .                     )
 
          case ( "mpace" )
            call mpace_sfclyr( rhom(1), um(2), vm(2), upwp_sfc, vpwp_sfc,
