@@ -1,4 +1,4 @@
-$Id: Readme.txt,v 1.24 2007-05-25 23:15:13 griffinb Exp $
+$Id: Readme.txt,v 1.25 2007-07-07 16:46:32 vlarson Exp $
 ************************************************************************
 *                           Copyright Notice
 *                         This code is (C) 2006 
@@ -583,7 +583,9 @@ passive scalar in the atmosphere.
 
 By default HOC should be setup to compile without this option.  To use 
 this option, you must modify the Makefile in the src directory so that 
-FCFLAGS includes "-DSCALARS" and do a make clean and make.
+FCFLAGS includes "-DSCALARS", and then do a make clean, and then make.  
+To output the scalar fields from a HOC simulation, be sure to include 
+them in the appropriate stats/*_stats.in file.
 
 Currently the code contains eddy-diffusivity scalar code and the more complex
 code used in diag_var(), closure_new(), and timestep_mixing().  Both use two
