@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.17 2007-06-19 21:06:36 dschanen Exp $
+! $Id: diag_var.F,v 1.18 2007-07-07 19:07:13 vlarson Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -293,11 +293,17 @@
           if ( wp2(k) >= wtol*wtol ) then
             rtp2(k) 
      .      = max( rtp2(k), 
-     .             wprtp(k)*wprtp(k)/((1.0-Scm(k))*wp2(k)) + eps,
+! Vince Larson commented out because may cause unstable feedback w/ wprtp eqn..
+!       The correlation of w and rt may now exceed 1, which would be unphysical.  7 Jul 2007 
+!     .             wprtp(k)*wprtp(k)/((1.0-Scm(k))*wp2(k)) + eps,
+! End Vince Larson's commenting
      .             rttol*rttol + eps )
             thlp2(k) 
      .      = max( thlp2(k), 
-     .             wpthlp(k)*wpthlp(k)/((1.0-Scm(k))*wp2(k)) + eps,
+! Vince Larson commented out because may cause unstable feedback w/ wpthlp eqn.. 
+!    The correlation of w and thl may now exceed 1, which would be unphysical.  7 Jul 2007 
+!     .             wpthlp(k)*wpthlp(k)/((1.0-Scm(k))*wp2(k)) + eps,
+! End Vince Larson's commenting
      .             thltol*thltol + eps )
           else
             thlp2(k) = max( thlp2(k), 0.0 )
@@ -411,7 +417,10 @@
                 sclrp2(k,i) 
      .          = max
      .            ( sclrp2(k,i), 
-     .              wpsclrp(k,i)*wpsclrp(k,i)/((1.0-Scm(k))*wp2(k))+eps,
+! Vince Larson commented out because it may cause unstable feedback with wpsclrp eqn..
+!     The correlation of w and sclr may now exceed 1, which would be unphysical.  7 Jul 2007
+!     .              wpsclrp(k,i)*wpsclrp(k,i)/((1.0-Scm(k))*wp2(k))+eps,
+! End Vince Larson's commenting
      .              sclrtol(i)*sclrtol(i) + eps )
               else
                 sclrp2(k,i) = max( sclrp2(k,i), 0.0 )
