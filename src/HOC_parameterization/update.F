@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: update.F,v 1.7 2007-06-19 21:06:36 dschanen Exp $
+! $Id: update.F,v 1.8 2007-07-07 18:08:28 vlarson Exp $
 
         subroutine update_ed_var( solve_type, xm, xt, xw0, Khm, 
      .                            dt, xw, isValid )
@@ -135,15 +135,24 @@
 
         ! Level gr%nnzp. We impose zero flux from model top
 
-        atmp = -0.5 * Khm(gr%nnzp-1) * gr%dzm(gr%nnzp) 
-     .              * gr%dzt(gr%nnzp-1)
-        ctmp = 0.
+! Vince Larson simplified the upper BC.  It still imposes
+!    zero flux. 7 Jul 2007 
+!        atmp = -0.5 * Khm(gr%nnzp-1) * gr%dzm(gr%nnzp) 
+!     .              * gr%dzt(gr%nnzp-1)
+!        ctmp = 0.
 
-        a(gr%nnzp) = atmp
-        c(gr%nnzp) = ctmp
-        b(gr%nnzp) = - atmp + 1./dt
-        r(gr%nnzp) = - atmp * xm(gr%nnzp-1)
-     .               + ( atmp + 1./dt ) * xm(gr%nnzp)
+!        a(gr%nnzp) = atmp
+!        c(gr%nnzp) = ctmp
+!        b(gr%nnzp) = - atmp + 1./dt
+!        r(gr%nnzp) = - atmp * xm(gr%nnzp-1)
+!     .               + ( atmp + 1./dt ) * xm(gr%nnzp)
+
+        a(gr%nnzp) = -1.
+        c(gr%nnzp) =  0.
+        b(gr%nnzp) =  1.
+        r(gr%nnzp) =  0.
+! End of Vince Larson's change
+
 
 #ifdef STATS
            if ( lstats_samp .and. ixm_ta > 0 ) then
