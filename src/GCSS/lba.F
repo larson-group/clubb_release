@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: lba.F,v 1.2 2007-07-06 23:04:21 dschanen Exp $
+! $Id: lba.F,v 1.3 2007-07-08 20:35:18 dschanen Exp $
         module lba
 
 !       Description:
@@ -504,21 +504,22 @@
      .                .and. k < dim_src )
             k = k + 1
           end do
-          ! If the increment leads to a level about the data, set this
+
+          ! If the increment leads to a level above the data, set this
           ! point and all those above it to zero
-          if ( k >= dim_src ) then
+          if ( k > dim_src ) then
             var_out(kint:dim_out) = 0.0
             exit
           end if
 
           km1 = max( 1, k-1 )
-          kp1 = min( k+1, dim_src )
+          !kp1 = min( k+1, dim_src )
 
           ! Interpolate
           var_out(kint) = 
-     .    ( var_src(kp1) - var_src(k) ) / 
-     .    ( grid_src(kp1) - grid_src(k) )
-     .      * ( grid_out(kint) - grid_src(k) ) + var_src(k)
+     .    ( var_src(k) - var_src(km1) ) / 
+     .    ( grid_src(k) - grid_src(km1) )
+     .      * ( grid_out(kint) - grid_src(km1) ) + var_src(km1)
 
         end do
 
