@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.16 2007-06-19 21:06:36 dschanen Exp $
+! $Id: mixing.F,v 1.17 2007-07-16 20:17:27 dschanen Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -135,22 +135,23 @@
 !-----------------------------------------------------------------------
 
         ! Compute C6 and C7 as a function of Skw
-        C6rt_Skw_fnc = C6rtb + (C6rt-C6rtb)
-     .                        *EXP( -0.5 * (Skwm/C6rtc)**2 )
-        C6thl_Skw_fnc = C6thlb + (C6thl-C6thlb)
-     .                          *EXP( -0.5 * (Skwm/C6thlc)**2 )
-        C7_Skw_fnc = C7b + (C7-C7b)
-     .                    *EXP( -0.5 * (Skwm/C7c)**2 )
+        C6rt_Skw_fnc(:) = C6rtb + (C6rt-C6rtb)
+     .                        *EXP( -0.5 * (Skwm(:)/C6rtc)**2 )
+
+        C6thl_Skw_fnc(:) = C6thlb + (C6thl-C6thlb)
+     .                          *EXP( -0.5 * (Skwm(:)/C6thlc)**2 )
+
+        C7_Skw_fnc(:) = C7b + (C7-C7b)
+     .                    *EXP( -0.5 * (Skwm(:)/C7c)**2 )
 
 !        C6rt_Skw_fnc = C6rt
 !        C6thl_Skw_fnc = C6thl
 !        C7_Skw_fnc = C7
 
-!       Setup and decompose matrix
+        ! Setup and decompose matrix
 
-        call mixing_lhs( "rtm", .true., dt, taum, wmm, wmt, 
-     .                   wp2, wp3, Scm,
-     .                   C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
+        call mixing_lhs( .true., dt, taum, wmm, wmt, 
+     .                   wp2, wp3, Scm, C6rt_Skw_fnc, C7_Skw_fnc,
      .                   lhs, implemented )
 
         ! Solve rtm / wprtp
@@ -160,16 +161,17 @@
      .                     hm_rt_tndcy,
      .                     Fcsed, sed_rcm,               ! Brian
      .                     lhs, rhs, C7_Skw_fnc, isValid )  
+
         if ( .not. isValid ) then
           write(fstderr,'(a)') "rt mixing failed"
           return
         end if
 
         ! Prof. Larson's modified mixing_lhs 
-        call mixing_lhs( "thlm",.true., dt, taum, wmm, wmt, 
-     .                   wp2, wp3, Scm,
-     .                   C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
+        call mixing_lhs( .true., dt, taum, wmm, wmt, 
+     .                   wp2, wp3, Scm, C6thl_Skw_fnc, C7_Skw_fnc,
      .                   lhs, implemented )
+
 
         ! Solve for thlm / wpthlp
         call mixing_solve( "thlm", .true., dt, taum,
@@ -178,6 +180,7 @@
      .                     hm_thl_tndcy,
      .                     Fcsed, sed_rcm,               ! Brian
      .                     lhs, rhs, C7_Skw_fnc, isValid )
+
         if ( .not. isValid ) then
           write(fstderr,'(a)') "thetal mixing failed"
           return
@@ -187,10 +190,8 @@
         if ( present( sclrm )     .and. present( wpsclrp ) .and.
      .       present( sclrpthvp ) .and. present( sclrm_forcing ) ) then
 
-          ! Prof. Larson's modified mixing_lhs 
-          call mixing_lhs( "rtm",.true., dt, taum, wmm, wmt, 
-     .                     wp2, wp3, Scm,
-     .                     C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
+          call mixing_lhs( .true., dt, taum, wmm, wmt, 
+     .                     wp2, wp3, Scm, C6rt_Skw_fnc, C7_Skw_fnc,
      .                     lhs, implemented )
 
           call mixing_solve( "sclrm_rtm", .true., dt, taum,
@@ -202,13 +203,12 @@
      .                       Fcsed, sed_rcm,               ! Brian
      .                       lhs, rhs, C7_Skw_fnc, isValid )
           if ( .not. isValid ) then
-            write(fstderr,'(a)') "Passive scalar mixing failed"
+            write(fstderr,'(a)') "Passive scalar 1 mixing failed"
             return
           end if
 
-          call mixing_lhs( "thlm",.true., dt, taum, wmm, wmt, 
-     .                     wp2, wp3, Scm, 
-     .                     C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
+          call mixing_lhs( .true., dt, taum, wmm, wmt, 
+     .                     wp2, wp3, Scm, C6thl_Skw_fnc, C7_Skw_fnc,
      .                     lhs, implemented )
 
           call mixing_solve( "sclrm_theta", .true., dt, taum,
@@ -220,7 +220,7 @@
      .                       Fcsed, sed_rcm,               ! Brian
      .                       lhs, rhs, C7_Skw_fnc, isValid )
           if ( .not. isValid ) then
-            write(fstderr,'(a)') "Passive scalar mixing failed"
+            write(fstderr,'(a)') "Passive scalar 2 mixing failed"
             return
           end if
         end if ! passive scalars
@@ -229,9 +229,8 @@
         end subroutine timestep_mixing
 
 !------------------------------------------------------------------------
-        subroutine mixing_lhs( solve_type, liter, dt, taum, wmm, wmt,
-     .                         wp2, wp3, Scm, 
-     .                         C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,
+        subroutine mixing_lhs( liter, dt, taum, wmm, wmt,
+     .                         wp2, wp3, Scm, C6x_Skw_fnc, C7_Skw_fnc,
      .                         lhs, implemented )
 !       Description:
 !       References:
@@ -250,12 +249,10 @@
         intrinsic :: min, max
 
         ! Input variables
-
-        character(len=*), intent(in) :: solve_type  ! For new mixing scheme
-
         logical, intent(in) :: liter
 
         real, intent(in) :: dt ! Timestep             [s]
+
         real, intent(in), dimension(gr%nnzp) :: 
      .  taum,        ! Tau on moment. grid            [s]
      .  wmm,         ! w wind on m                    [m/s]
@@ -267,8 +264,7 @@
         logical, intent(in)    :: implemented
 
         real, intent(in), dimension(gr%nnzp) :: 
-     .  C6rt_Skw_fnc,
-     .  C6thl_Skw_fnc,
+     .  C6x_Skw_fnc,
      .  C7_Skw_fnc
 
         ! Output variables
@@ -289,10 +285,9 @@
 
         lhs = 0.0
 
-!        do k=2,gr%nnzp
         do k=2,gr%nnzp-1
 
-!         Define indices
+          ! Define indices
 
           km1 = max( k-1, 1 )
           kp1 = min( k+1, gr%nnzp )
@@ -300,24 +295,20 @@
           k_xm   = 2*k - 1
           k_wpxp = 2*k
 
-!         xm: mean vertical advection
+          ! xm: mean vertical advection
 
           if ( .not. implemented ) then
 
             ! Thermodynamic subdiagonal [ x xm(k-1,<t+1>) ]
-            !lhs(k_xm,3-2) = - wmt(k) * (1.0/2.0) * gr%dzt(k)
             lhs(3+2,k_xm) = - wmt(k) * (1.0/2.0) * gr%dzt(k)
             ! Thermodynamic superdiagonal [ x xm(k+1,<t+1>) ]
-            !lhs(k_xm,3+2) = + wmt(k) * (1.0/2.0) * gr%dzt(k)
             lhs(3-2,k_xm) = + wmt(k) * (1.0/2.0) * gr%dzt(k)
 
           else
 
             ! Thermodynamic subdiagonal [ x xm(k-1,<t+1>) ]
-            !lhs(k_xm,3-2) = 0.0
             lhs(3+2,k_xm) = 0.0
             ! Thermodynamic superdiagonal [ x xm(k+1,<t+1>) ]
-            !lhs(k_xm,3+2) = 0.0
             lhs(3-2,k_xm) = 0.0
 
           end if
@@ -325,16 +316,13 @@
 !         xm: turbulent transport
 
           ! Momentum subdiagonal [ x wpxp(k-1,<t+1>) ]
-          !lhs(k_xm,3-1) = - gr%dzt(k)
           lhs(3+1,k_xm) = - gr%dzt(k)
           ! Momentum superdiagonal [ x wpxp(k,<t+1>) ]
-          !lhs(k_xm,3+1) = + gr%dzt(k)
           lhs(3-1,k_xm) = + gr%dzt(k)
 
 !         xm: time tendency
 
           ! Thermodynamic main diagonal [ x xm(k,<t+1>) ]
-          !lhs(k_xm,3) = 1.0 / dt
           lhs(3,k_xm) = 1.0 / dt
 
 !         wpxp: mean vertical advection, turbulent transport, time tendency, 
@@ -350,38 +338,18 @@
      .      - nu6 * gr%dzm(k) * gr%dzt(k)      
 
           ! Momentum main diagonal [ x wpxp(k,<t+1>) ]
-          select case( trim( solve_type ) )
-          case ("rtm")
-            !lhs(k_wpxp,3)
-            lhs(3,k_wpxp)
-     .      = + gr%dzm(k)
-     .          * (  (1.0/2.0) * ( a1(kp1) + a1(k) )
-     .             * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
-     .            -  (1.0/2.0) * ( a1(k) + a1(km1) )
-     .             * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*eps ) )
-     .            )
-     .        + (1.0-C7_Skw_fnc(k)) * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
-!     .        + C6rt / taum(k)
-     .        + C6rt_Skw_fnc(k) / taum(k)
-     .        + nu6 * gr%dzm(k) * ( gr%dzt(kp1) + gr%dzt(k) )
-            !if (liter) lhs(k_wpxp,3) = lhs(k_wpxp,3) + 1.0 / dt
-            if (liter) lhs(3,k_wpxp) = lhs(3,k_wpxp) + 1.0 / dt
-          case ("thlm")
-            !lhs(k_wpxp,3)
-            lhs(3,k_wpxp)
-     .      = + gr%dzm(k)
-     .          * (  (1.0/2.0) * ( a1(kp1) + a1(k) )
-     .             * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
-     .            -  (1.0/2.0) * ( a1(k) + a1(km1) )
-     .             * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*eps ) )
-     .            )
-     .        + (1.0-C7_Skw_fnc(k)) * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
-!     .        + C6thl / taum(k)
-     .        + C6thl_Skw_fnc(k) / taum(k)
-     .        + nu6 * gr%dzm(k) * ( gr%dzt(kp1) + gr%dzt(k) )
-            !if (liter) lhs(k_wpxp,3) = lhs(k_wpxp,3) + 1.0 / dt
-            if (liter) lhs(3,k_wpxp) = lhs(3,k_wpxp) + 1.0 / dt
-          end select
+          lhs(3,k_wpxp)
+     .    = + gr%dzm(k)
+     .        * (  (1.0/2.0) * ( a1(kp1) + a1(k) )
+     .           * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
+     .          -  (1.0/2.0) * ( a1(k) + a1(km1) )
+     .           * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*eps ) )
+     .          )
+     .      + (1.0-C7_Skw_fnc(k)) * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
+!     .      + C6x / taum(k)
+     .      + C6x_Skw_fnc(k) / taum(k)
+     .      + nu6 * gr%dzm(k) * ( gr%dzt(kp1) + gr%dzt(k) )
+          if (liter) lhs(3,k_wpxp) = lhs(3,k_wpxp) + 1.0 / dt
 
           ! Momentum superdiagonal [ x wpxp(k+1,<t+1>) ]
           !lhs(k_wpxp,3+2)
@@ -395,12 +363,10 @@
 !         wpxp: production
 
           ! Thermodynamic subdiagonal [ x xm(k,<t+1>) ]
-          !lhs(k_wpxp,3-1)
           lhs(3+1,k_wpxp)
      .    = - wp2(k) * gr%dzm(k)
 
           ! Thermodynamic superdiagonal [ x xm(k+1,<t+1>) ]
-          !lhs(k_wpxp,3+1)
           lhs(3-1,k_wpxp)
      .    = + wp2(k) * gr%dzm(k)
 
@@ -452,17 +418,8 @@
             end if
 
             if ( iwprtp_pr1 > 0 .or. iwpthlp_pr1 > 0 ) then
-              select case (trim( solve_type ) )
-              case("rtm")
-!               zmscr09(k) = - C6rt / taum(k)
-                zmscr09(k) = - C6rt_Skw_fnc(k) / taum(k)
-              case("thlm")
-!                zmscr09(k) = - C6thl / taum(k)
-                zmscr09(k) = - C6thl_Skw_fnc(k) / taum(k)
-              case default
-                print *, "Unknown solve_type:", solve_type
-                stop "invalid mixing_lhs call"
-              end select
+!               zmscr09(k) = - C6x / taum(k)
+                zmscr09(k) = - C6x_Skw_fnc(k) / taum(k)
             end if ! pr1
 
             if ( iwprtp_pr2 > 0 .or. iwpthlp_pr2 > 0 ) then
