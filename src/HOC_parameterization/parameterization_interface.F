@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.49 2007-06-27 21:10:34 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.50 2007-07-16 20:19:40 dschanen Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -306,7 +306,7 @@
      .                wp2, wp3, upwp, vpwp, Scm, Skwm,
      .                rtp2, thlp2, rtpthlp,
      .                up2, vp2,
-     .                .false., dt, isValid
+     .                .true., dt, isValid
 #ifdef SCALARS
      .                ,sclrm, wpsclrp, sclrp2,    ! optional vars
      .                sclrprtp, sclrpthlp         !   "       "
@@ -667,15 +667,6 @@
        call update_ed_var( "um", um, umt, upwp(1), 
      .                     Khm, dt, upwp, isValid )
 
-       if ( lmpace_nudge ) then
-         do k=1,gr%nnzp
-           ! Nudging; 3600 s is nudging timescale
-           ! Michael Falk; 8 Sep-1 Nov 2006
-            um(k) = um(k) - ((um(k) - um_init(k)) * (dt/3600.)) 
-            vm(k) = vm(k) - ((vm(k) - vm_init(k)) * (dt/3600.)) 
-         end do
-       end if
-
        um(1)       = ( ( um(3)-um(2) )/( gr%zt(3)-gr%zt(2) ) )
      .              * ( gr%zt(1)-gr%zt(2) ) + um(2)
        um(gr%nnzp) = ( ( um(gr%nnzp-1)-um(gr%nnzp-2) )
@@ -720,6 +711,13 @@
      .               + vm(gr%nnzp-1)
            
        if ( .not. isValid ) return
+
+       if ( luv_nudge ) then
+         um(1:gr%nnzp) = um(1:gr%nnzp) 
+     .      - ((um(1:gr%nnzp) - um_init(1:gr%nnzp)) * (dt/ts_nudge))
+         vm(1:gr%nnzp) = vm(1:gr%nnzp) 
+     .      - ((vm(1:gr%nnzp) - vm_init(1:gr%nnzp)) * (dt/ts_nudge))
+       end if
 
        ! Compute Shear Production  -Brian
        do k = 1, gr%nnzp-1, 1
@@ -850,10 +848,10 @@
         end subroutine latin_hypercube_sampling
 !-----------------------------------------------------------------------
         subroutine parameterization_setup
-     .             ( nzmax, deltaz, zm_init, T0_in, params,
+     .             ( nzmax, deltaz, zm_init, T0_in, ts_nudge_in, params,
      .               lbugsrad, kk_rain, licedfs, lcoamps_micro,
      .               cloud_sed,
-     .               lmpace_nudge, lKhm_aniso, implemented, 
+     .               luv_nudge, lKhm_aniso, implemented, 
      .               host_momentum, host_thermodynamic, isValid )
 
         use grid_class
@@ -883,7 +881,7 @@
 
         ! Model parameters
         real, intent(in) :: 
-     .  T0_in
+     .  T0_in, ts_nudge_in
 
         real, intent(in), dimension(nparams) ::
      .  params  ! Including C1, nu1, nu2, etc.
@@ -895,7 +893,7 @@
      .  licedfs,      ! Simplified ice scheme
      .  lcoamps_micro,! COAMPS microphysics scheme
      .  cloud_sed,    ! Cloud Sedimentation
-     .  lmpace_nudge, ! Wind nudging for MPACE case
+     .  luv_nudge, ! Wind nudging for MPACE case
      .  lKhm_aniso    ! Whether to use anisotropic Khm. - Michael Falk 2 Feb 2007
 
         logical, intent(in) :: 
@@ -909,13 +907,13 @@
 
         call setup_model_flags
      .       ( lbugsrad, kk_rain, cloud_sed,
-     .         licedfs, lcoamps_micro, lmpace_nudge,
+     .         licedfs, lcoamps_micro, luv_nudge,
      .         lKhm_aniso )
 
         ! Define model constant parameters
 
         call setup_parameters
-     .       ( deltaz, T0_in, params, isValid )
+     .       ( deltaz, T0_in, ts_nudge_in, params, isValid )
 
         if ( .not. isValid ) return
 

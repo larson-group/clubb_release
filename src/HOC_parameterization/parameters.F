@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameters.F,v 1.6 2007-06-06 15:15:56 dschanen Exp $
+! $Id: parameters.F,v 1.7 2007-07-16 20:19:40 dschanen Exp $
         module parameters 
 
 !       Description:
@@ -20,9 +20,10 @@
 
         ! Model parameters and constraints setup in the namelists
         real, public :: 
-     .  T0    ! Reference temperature (usually 300)      [K]
+     .  T0,      ! Reference temperature (usually 300)  [K]
+     .  ts_nudge ! Timescale of u/v nudging             [s]
 
-!$omp   threadprivate(T0)
+!$omp   threadprivate(T0,ts_nudge)
 
         ! Model constant parameters 
         real, public ::
@@ -123,7 +124,7 @@
 
 !-----------------------------------------------------------------------
         subroutine setup_parameters
-     .             ( deltaz, T0_in, params, isValid ) 
+     .             ( deltaz, T0_in, ts_nudge_in, params, isValid ) 
 !       Description:
 !       Subroutine to setup model parameters
 
@@ -137,8 +138,9 @@
 
         ! Input Variables
         real, intent(in) :: 
-     .  deltaz,  ! Change per height level      [m]
-     .  T0_in    ! Ref. temperature             [K]
+     .  deltaz,     ! Change per height level      [m]
+     .  T0_in,      ! Ref. temperature             [K]
+     .  ts_nudge_in ! Timescale for u/v nudging    [K]
 
         real, intent(in), dimension(nparams) :: 
      .  params  ! Tuneable model parameters      [-]
@@ -156,13 +158,15 @@
      .         gamma_coef, gamma_coefb, gamma_coefc,
      .         mu, c_K, beta, lmin_coef,
      .         taumin, taumax )
+
         ! It was decided after some experimentation, that the best
         ! way to produce grid independent results is to set lmin to be
         ! some fixed value at the surface. -dschanen 21 May 2007
         ! lmin = lmin_coef * deltaz  ! Old
         lmin = lmin_coef * 40.0 ! New fixed value
 
-        T0   = T0_in
+        T0       = T0_in
+        ts_nudge = ts_nudge_in
 
         ! The nu's are chosen for deltaz <= 40 m. Looks like they must 
         ! be adjusted for larger grid spacings (Vince Larson)

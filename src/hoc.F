@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.126 2007-07-06 23:01:39 dschanen Exp $
+! $Id: hoc.F,v 1.127 2007-07-16 20:19:40 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -172,8 +172,9 @@
      .  sample_time
 
         real :: 
-     .  fcor, ! Coriolis parameter       [s^-1]
-     .  T0    ! Reference Temperature    [K]
+     .  fcor,           ! Coriolis parameter            [s^-1]
+     .  T0,             ! Reference Temperature         [K]
+     .  ts_nudge        ! Timescale for u/v nudging     [s]
 
         logical :: 
      .  cloud_sed,    ! Flag for cloud water droplet sedimentation. - Brian
@@ -181,7 +182,7 @@
      .  licedfs,      ! Flag for simplified ice scheme
      .  lcoamps_micro,! Flag for COAMPS microphysical scheme
      .  lbugsrad,     ! Flag for BUGSrad interactive radiation scheme
-     .  lmpace_nudge, ! Whether to adjust the winds within the timestep
+     .  luv_nudge,    ! Whether to adjust the winds within the timestep
      .  lKhm_aniso    ! Whether to use anisotropic Khm.  - Michael Falk 2 Feb 2007
 
         ! Dummy grid height arrays
@@ -196,14 +197,48 @@
      .   day, month, year, rlat, rlon,
      .   time_initial, time_final, time_spinup,
      .   dtmain, dtclosure,
-     .   sfctype, Tsfc, psfc, SE, LE, fcor, T0,
+     .   sfctype, Tsfc, psfc, SE, LE, fcor, T0, ts_nudge,
      .   cloud_sed, kk_rain, licedfs, lcoamps_micro, 
-     .   lbugsrad, lKhm_aniso
+     .   lbugsrad, lKhm_aniso, luv_nudge
 
        !  Initialize the model run 
 
-       ! Initialize run to valid
-       !isValid = .true.
+        ! Pick some default values for model_setting
+        runtype  = "generic"
+        nzmax    = 100
+        deltaz   = 40.
+        zm_init  = 0.
+
+        day   = 1
+        month = 1
+        year  = 1900
+
+        rlat = 0.
+        rlon = 0.
+
+        time_initial = 0.
+        time_final   = 3600.
+        time_spinup  = 0.
+
+        dtmain    = 30.
+        dtclosure = 30.
+
+        sfctype  = 0
+        tsfc     = 288.
+        psfc     = 1000.e2
+        SE       = 0.
+        LE       = 0.
+        fcor     = 1.e-4
+        T0       = 300.
+        ts_nudge = 86400.
+
+        cloud_sed     = .false.
+        kk_rain       = .false.
+        licedfs       = .false.
+        lcoamps_micro = .false.
+        lbugsrad      = .false.
+        lKhm_aniso    = .false.
+        luv_nudge     = .false.
 
        ! Read namelist file
        open(unit=10, file=runfile, status='old')
@@ -216,20 +251,14 @@
        dummy_array_m = 0.0
        dummy_array_t = 0.0
 
-       if ( trim( runtype ) == "mpace" ) then 
-         lmpace_nudge = .true.
-       else
-         lmpace_nudge = .false.
-       end if
-
        ! Allocate & initialize variables,
        ! setup grid, setup constants, and setup flags
 
        call parameterization_setup
-     .      ( nzmax, deltaz, zm_init, T0, params,
+     .      ( nzmax, deltaz, zm_init, T0, ts_nudge, params,
      .        lbugsrad, kk_rain, licedfs, lcoamps_micro,
      .        cloud_sed,
-     .        lmpace_nudge, lKhm_aniso, .false., 
+     .        luv_nudge, lKhm_aniso, .false., 
      .        dummy_array_m, dummy_array_t, isValid )
 
        if ( .not. isValid ) return
@@ -426,8 +455,9 @@
      .  niterlong
 
         real :: 
-     .  fcor, ! Coriolis parameter [s^-1]
-     .  T0    ! Reference Temperature    [K]
+     .  fcor,           ! Coriolis parameter            [s^-1]
+     .  T0,             ! Reference Temperature         [K]
+     .  ts_nudge        ! Timescale for u/v nudging     [s]
 
         logical :: 
      .  cloud_sed,    ! Flag for cloud water droplet sedimentation. - Brian
@@ -435,7 +465,7 @@
      .  licedfs,      ! Flag for simplified ice scheme
      .  lcoamps_micro,! Flag for COAMPS microphysical scheme
      .  lbugsrad,     ! Flag for BUGsrad radiation scheme
-     .  lmpace_nudge, ! Whether to adjust the winds within the timestep
+     .  luv_nudge,    ! Whether to adjust the winds within the timestep
      .  lKhm_aniso    ! Whether to use anisotropic Khm.  - Michael Falk 2 Feb 2007
 
         ! Dummy grid height arrays
@@ -452,13 +482,50 @@
      .  day, month, year, rlat, rlon,
      .  time_initial, time_final, time_spinup,
      .  dtmain, dtclosure,
-     .  sfctype, Tsfc, psfc, SE, LE, fcor, T0,
+     .  sfctype, Tsfc, psfc, SE, LE, fcor, T0, ts_nudge,
      .  cloud_sed, kk_rain, licedfs, lcoamps_micro, 
-     .  lbugsrad, lKhm_aniso
+     .  lbugsrad, lKhm_aniso, luv_nudge
 
 !-----------------------------------------------------------------------
 
         ! Initialize the model run 
+
+        ! Pick some default values for model_setting
+        runtype  = "generic"
+        nzmax    = 100
+        deltaz   = 40.
+        zm_init  = 0.
+
+        day   = 1
+        month = 1
+        year  = 1900
+
+        rlat = 0.
+        rlon = 0.
+
+        time_initial = 0.
+        time_final   = 3600.
+        time_spinup  = 0.
+
+        dtmain    = 30.
+        dtclosure = 30.
+
+        sfctype  = 0
+        tsfc     = 288.
+        psfc     = 1000.e2
+        SE       = 0.
+        LE       = 0.
+        fcor     = 1.e-4
+        T0       = 300.
+        ts_nudge = 86400.
+
+        cloud_sed     = .false.
+        kk_rain       = .false.
+        licedfs       = .false.
+        lcoamps_micro = .false.
+        lbugsrad      = .false.
+        lKhm_aniso    = .false.
+        luv_nudge     = .false.
 
         ! Figure out which iounit to use
 #ifdef _OPENMP
@@ -478,20 +545,14 @@
        dummy_array_m = 0.0
        dummy_array_t = 0.0
 
-       if ( trim( runtype ) == "mpace" ) then 
-         lmpace_nudge = .true.
-       else
-         lmpace_nudge = .false.
-       end if
-
        ! Allocate & initialize variables,
        ! setup grid, setup constants, and setup flags
 
        call parameterization_setup
-     .      ( nzmax, deltaz, zm_init, T0, params,
+     .      ( nzmax, deltaz, zm_init, T0, ts_nudge, params,
      .        lbugsrad, kk_rain, licedfs, lcoamps_micro,
      .        cloud_sed,
-     .        lmpace_nudge, lKhm_aniso, .false.,
+     .        luv_nudge, lKhm_aniso, .false.,
      .        dummy_array_m, dummy_array_t, isValid )
 
        if ( .not. isValid ) return
