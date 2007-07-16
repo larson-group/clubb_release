@@ -1,4 +1,4 @@
-! $Id: mpace_model.in,v 1.6 2007-05-25 13:34:18 griffinb Exp $
+! $Id: mpace_model.in,v 1.7 2007-07-16 21:25:04 dschanen Exp $
 ! Parameter file for GCSS FIRE Sc case
 
 &model_setting
@@ -29,12 +29,15 @@ LE = 0.
 fcor = 1.e-4
 T0   = 300.
 
+ts_nudge = 3600.
+
 cloud_sed     = .false.
 kk_rain       = .false.
 lcoamps_micro = .false.
 licedfs       = .true.
 lbugsrad      = .false.
 lKhm_aniso    = .false.
+luv_nudge     = .true.
 
 /
 
