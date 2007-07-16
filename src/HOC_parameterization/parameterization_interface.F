@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.50 2007-07-16 20:19:40 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.51 2007-07-16 21:46:36 dschanen Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -306,7 +306,7 @@
      .                wp2, wp3, upwp, vpwp, Scm, Skwm,
      .                rtp2, thlp2, rtpthlp,
      .                up2, vp2,
-     .                .true., dt, isValid
+     .                .false., dt, isValid
 #ifdef SCALARS
      .                ,sclrm, wpsclrp, sclrp2,    ! optional vars
      .                sclrprtp, sclrpthlp         !   "       "
@@ -893,7 +893,7 @@
      .  licedfs,      ! Simplified ice scheme
      .  lcoamps_micro,! COAMPS microphysics scheme
      .  cloud_sed,    ! Cloud Sedimentation
-     .  luv_nudge, ! Wind nudging for MPACE case
+     .  luv_nudge,    ! Wind nudging for MPACE case
      .  lKhm_aniso    ! Whether to use anisotropic Khm. - Michael Falk 2 Feb 2007
 
         logical, intent(in) :: 

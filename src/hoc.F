@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.127 2007-07-16 20:19:40 dschanen Exp $
+! $Id: hoc.F,v 1.128 2007-07-16 21:46:36 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -275,7 +275,7 @@
      .                      wmt, wmm, em, exner,
      .                      taut, taum, thvm, p,
      .                      rhot, rhom, Lscale, lup,
-     .                      ldown, Kht, Khm
+     .                      ldown, Kht, Khm, um_init, vm_init
 #ifdef SCALARS
      .                      ,sclrm, edsclrm
 #endif /*SCALARS*/
@@ -569,14 +569,11 @@
      .                      wmt, wmm, em, exner,
      .                      taut, taum, thvm, p,
      .                      rhot, rhom, Lscale, lup,
-     .                      ldown, Kht, Khm
+     .                      ldown, Kht, Khm, um_init, vm_init
 #ifdef SCALARS
      .                      ,sclrm, edsclrm
 #endif /*SCALARS*/
      .                     )
-
-       um_init = um ! Michael Falk addition for nudging code.  27 Sep/1 Nov 2006
-       vm_init = vm ! ditto
 
 #ifdef STATS
 #ifdef _OPENMP
@@ -687,7 +684,7 @@
      .               ug, vg, wp2, rcm, hydromet,
      .               wmt, wmm, em, exner, taut, taum, thvm,
      .               p, rhot, rhom, Lscale, lup,
-     .               ldown, Kht, Khm
+     .               ldown, Kht, Khm, um_init, vm_init
 #ifdef SCALARS
      .               ,sclrm, edsclrm
 #endif
@@ -711,6 +708,7 @@
         use parameters
         use grid_class
         use sounding
+        use model_flags, only: luv_nudge
 #ifdef STATS
         use hoc_stats
 #endif /*STATS*/
@@ -736,6 +734,8 @@
      .  rtm,            ! Total water mixing ratio      [kg/kg]
      .  um,             ! u wind                        [m/s]
      .  vm,             ! v wind                        [m/s]
+     .  um_init,        ! Initial profile of u wind     [m/s]
+     .  vm_init,        ! Initial profile of v wind     [m/s]
      .  ug,             ! u geostrophic wind            [m/s] 
      .  vg,             ! u geostrophic wind            [m/s] 
      .  wp2,            ! w'^2                          [m^2/s^2]
@@ -1087,6 +1087,12 @@
         Kht = c_K * Lscale * tmp1
         Khm = c_K * zt2zm( Lscale ) * sqrt( em )
 !        Khm = zt2zm( Kht )
+
+       ! Moved this to be more general -dschanen July 16 2007
+       if ( luv_nudge ) then
+         um_init = um ! Michael Falk addition for nudging code.  27 Sep/1 Nov 2006
+         vm_init = vm ! ditto
+       end if
 
        return
        end subroutine hoc_initialize
