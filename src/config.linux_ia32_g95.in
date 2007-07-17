@@ -1,4 +1,4 @@
-# $Id: config.linux_ia32_g95.in,v 1.3 2006-09-05 22:38:42 dschanen Exp $
+# $Id: config.linux_ia32_g95.in,v 1.4 2007-07-17 15:58:14 vlarson Exp $
 # Configuration file for Linux machine using g95
 # An MS Windows machine with MSYS should be similar
 
@@ -22,9 +22,10 @@ DEBUG = -g -fbounds-check -mieee-fp -ftrace=full
 # == Machine specific flags ==
 # Note: some of these are 64 bit architectures, so make sure NetCDF is
 # compiled accordingly.
-ARCH = -march=pentium4 -msse2 -mfpmath=sse # Old P4's
-#ARCH = -march=nocona -msse3 -mfpmath=sse # New P4's
-#ARCH = -march=k8 -msse3 -mfpmath=sse # New Opteron's
+#ARCH = -march=pentium4 -msse2 -mfpmath=sse    # Old P4s
+ARCH = -march=nocona -msse3 -mfpmath=sse     # New P4s
+#ARCH = -march=nocona -msse3 -mfpmath=sse -r8 # New P4s, double precision
+#ARCH = -march=k8 -msse3 -mfpmath=sse         # New Opterons
 
 # == Optimization ==
 # These are all pretty conservative options. Check your compiler manual
@@ -59,6 +60,7 @@ LDFLAGS = -L$(LIBDIR) -Wl,-rpath,$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)
 # Use -I<include path> to set a module or header file directory
 
 FCFLAGS = $(ARCH) $(DEBUG) -DSTATS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
+#FCFLAGS = $(ARCH) $(DEBUG) -DSTATS -DSCALARS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
 #FCFLAGS = $(ARCH) $(OPTIMIZE) -DSTATS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
 #FCFLAGS = $(ARCH) $(OPTIMIZE) -DSTATS -DSCALARS -Dnooverlap -Dradoffline -I$(NC_LOC)/include 
 
