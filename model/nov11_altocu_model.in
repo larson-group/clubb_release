@@ -1,4 +1,4 @@
-! $Id: nov11_altocu_model.in,v 1.8 2007-05-01 23:18:53 dschanen Exp $
+! $Id: nov11_altocu_model.in,v 1.9 2007-07-19 23:20:10 dschanen Exp $
 ! Parameter file for November 11 altocumulus case
 
 &model_setting
@@ -27,8 +27,8 @@ T0   = 300.
 
 cloud_sed     = .false.
 kk_rain       = .false.
-lcoamps_micro = .true.
-licedfs       = .false.
+lcoamps_micro = .false.
+licedfs       = .true.
 lbugsrad      = .false.
 lKhm_aniso    = .false.
 
