@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.128 2007-07-16 21:46:36 dschanen Exp $
+! $Id: hoc.F,v 1.129 2007-07-19 19:06:44 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -885,6 +885,11 @@
 !         wp2 = 2.0 / 3.0 * em
 !<--- End reduction of initial sounding for stability 24 Jan 07
 
+        ! June 27 1997 ARM case
+        case ( "arm_97" )
+          em = 1.0
+          wp2 = 2.0 / 3.0 * em
+
         ! GCSS FIRE Sc
         case ( "fire" ) 
           cloud_top_height = 700. ! 700 m is the top of the cloud in FIRE
@@ -1118,6 +1123,7 @@
         use diagnostic_variables
         use prognostic_variables
         use arm, only: arm_tndcy, arm_sfclyr
+        use arm_97, only: arm_97_tndcy, arm_97_sfclyr
         use astex, only: astex_tndcy, astex_sfclyr
         use atex, only: atex_tndcy, atex_sfclyr
         use bomex, only: bomex_tndcy, bomex_sfclyr
@@ -1182,6 +1188,13 @@
      .                     ,sclrm_forcing 
 #endif /* SCALARS */
      .                   )
+
+         case( "arm_97" ) ! 27 June 1997 ARM case
+           call arm_97_tndcy( time, wmm, wmt, thlm_forcing, rtm_forcing
+#ifdef SCALARS
+     .                       ,sclrm_forcing 
+#endif /* SCALARS */
+     .                      )
 
          case( "bomex" ) ! BOMEX Cu case
            call bomex_tndcy( time, wmt, wmm, radht,
@@ -1368,6 +1381,16 @@
      .                     ,wpsclrp_sfc, wpedsclrp_sfc
 #endif /* SCALARS */
      .                    )
+
+         case ( "arm_97" )
+           call arm_97_sfclyr( time, gr%zt(2), rhom(1),
+     .                         thlm(2), um(2), vm(2),
+     .                         upwp_sfc, vpwp_sfc, 
+     .                         wpthlp_sfc, wprtp_sfc
+#ifdef SCALARS
+     .                        ,wpsclrp_sfc, wpedsclrp_sfc
+#endif /* SCALARS */
+     .                     )
 
         case( "bomex" ) 
           call bomex_sfclyr( um(2), vm(2),

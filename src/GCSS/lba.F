@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: lba.F,v 1.3 2007-07-08 20:35:18 dschanen Exp $
+! $Id: lba.F,v 1.4 2007-07-19 19:06:44 dschanen Exp $
         module lba
 
 !       Description:
@@ -24,6 +24,7 @@
         use grid_class
         use model_flags, only: lbugsrad
         use constants, only: sclr_dim
+        use zlinterp, only: zlinterp_fnc
 
         implicit none
 
@@ -341,9 +342,7 @@
             end do
           end if ! time <= times(1)
 
-          !radht(1:nzrad) = radhtz
-          !radht(nzrad:gr%nnzp) = 0.0
-          radht = zlinterp( gr%nnzp, nzrad, gr%zt, zrad, radhtz )
+          radht = zlinterp_fnc( gr%nnzp, nzrad, gr%zt, zrad, radhtz )
 
           ! Radiative theta-l tendency
 
@@ -458,74 +457,6 @@
 
         return
         end subroutine lba_sfclyr
-
-!-----------------------------------------------------------------------
-        function zlinterp( dim_out, dim_src, grid_out, 
-     .                          grid_src, var_src ) 
-     .  result( var_out )
-!       Description:
-!       Do a linear interpolation in the vertical.  Assumes values that
-!       are less than lowest source point are zero and above the highest
-!       source point are zero. Also assumes altitude increases linearly.
-
-!       References:
-!       function LIN_INT from WRF-HOC
-!-----------------------------------------------------------------------
-
-        implicit none
-
-        ! Input variables
-        integer, intent(in) :: dim_out, dim_src
-
-        real, dimension(dim_src), intent(in) :: 
-     .  grid_src, ! [m]
-     .  var_src   ! [generic units]
-
-        real, dimension(dim_out), intent(in) :: grid_out ! [m]
-
-        ! Output variable
-        real, dimension(dim_out) :: var_out ! [generic units]
-
-        ! Local variables
-        integer :: k, kint, km1, kp1
-
-        k = 1
-
-        do kint = 1, dim_out, 1
-
-          ! Set to 0 if we're below the input data's lowest point
-          if ( grid_out(kint) < grid_src(1) ) then
-            var_out(kint) = 0.0
-            cycle
-          end if
-
-          ! Increment k until the level is correct
-          do while ( grid_out(kint) > grid_src(k) 
-     .                .and. k < dim_src )
-            k = k + 1
-          end do
-
-          ! If the increment leads to a level above the data, set this
-          ! point and all those above it to zero
-          if ( k > dim_src ) then
-            var_out(kint:dim_out) = 0.0
-            exit
-          end if
-
-          km1 = max( 1, k-1 )
-          !kp1 = min( k+1, dim_src )
-
-          ! Interpolate
-          var_out(kint) = 
-     .    ( var_src(k) - var_src(km1) ) / 
-     .    ( grid_src(k) - grid_src(km1) )
-     .      * ( grid_out(kint) - grid_src(km1) ) + var_src(km1)
-
-        end do
-
-        return
-        end function zlinterp
-
 
         end module lba
 

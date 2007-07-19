@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.8 2007-07-06 23:01:39 dschanen Exp $
+# $Id: make.deps,v 1.9 2007-07-19 19:06:44 dschanen Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -111,12 +111,16 @@ truncate_gaus_mixt.o	: truncate_gaus_mixt.F
 # == GCSS dependencies ==
 diag_ustar.o: diag_ustar.F
 arm.o       : constants.o diag_ustar.o model_flags.o grid.o statistics.o arm.F
+arm_97.o    : constants.o diag_ustar.o model_flags.o grid.o statistics.o \
+	zlinterp.o arm.F
 astex.o     : constants.o model_flags.o grid.o astex.F
 atex.o      : constants.o model_flags.o grid.o cloud_rad.o statistics.o atex.F
 bomex.o     : constants.o model_flags.o grid.o bomex.F
 cobra.o     : constants.o model_flags.o grid.o cobra.F
 fire.o      : constants.o model_flags.o grid.o statistics.o cloud_rad.o fire.F
 gabls2.o    : constants.o diag_ustar.o model_flags.o grid.o statistics.o gabls2.F
+lba.o       : constants.o diag_ustar.o model_flags.o grid.o statistics.o \
+	zlinterp.o lba.F
 mpace.o     : constants.o model_flags.o grid.o icedfs.o statistics.o mpace.F
 nov11.o     : constants.o model_flags.o grid.o icedfs.o statistics.o nov11.F
 jun25.o     : constants.o model_flags.o grid.o icedfs.o statistics.o jun25.F
@@ -129,41 +133,10 @@ dycoms2_rf02.o : constants.o model_flags.o grid.o statistics.o dycoms2_rf02.F
 
 rad_lwsw.o      : rad_lwsw.F statistics.o
 linear_interpolation.o : linear_interpolation.F
+zlinterp.o	: zlinterp.F
 
 # == COAMPS Microphysics dependencies ==
-adjmlt.o              : adjmlt.F
-coamps_micro_driver.o : constants.o statistics.o coamps_micro_driver.F
-adjtq.o      : adjtq.F
-conice.o     : conice.F
-eqa10g.o     : eqa10g.F
-eqa11g.o     : eqa11g.F
-eqa12.o      : eqa12.F
-eqa12g.o     : gamma.o eqa12.F
-eqa13g.o     : eqa13g.F
-eqa14g.o     : eqa14g.F
-eqa15.o      : eqa15.F
-eqa17g.o     : eqa17g.F
-eqa18.o      : eqa18.F
-eqa18g.o     : eqa18g.F
-eqa19.o      : eqa19.F
-eqa19g.o     : eqa19g.F
-eqa20g.o     : eqa20g.F
-eqa21.o      : eqa21.F
-eqa22.o      : eqa22.F
-eqa22g.o     : eqa22g.F
-eqa25.o      : eqa25.F
-eqa26.o      : eqa26.F
-eqa27.o      : eqa27.F
-eqa27r.o     : eqa27r.F
-eqa28.o      : eqa28.F
-eqa5g.o      : eqa5g.F
-eqa6.o       : eqa6.F
-eqa7.o       : eqa7.F
-eqa7g.o      : eqa7g.F
-eqa8g.o      : eqa8g.F
-eqa9.o       : eqa9.F
-eqa9g.o      : eqa9g.F
-gamma.o      : gamma.F
+coamps_micro_driver.o : constants.o grid.o statistics.o coamps_micro_driver.F
 
 # == BUGSrad dependencies ==
 cos_solar_zen.o         : cos_solar_zen.F
@@ -196,7 +169,7 @@ bugsrad_hoc.o 		: kinds.o constants.o bugs_rad.o \
 # == Misc. program related source files  ==
 hoc.o		: parameterization_interface.o arm.o astex.o atex.o \
 	bomex.o dycoms2_rf01.o dycoms2_rf02.o fire.o jun25.o mpace.o nov11.o \
-	wangara.o cobra.o rico.o gabls2.o lba.o hoc.F
+	wangara.o cobra.o rico.o gabls2.o lba.o arm_97.o hoc.F
 sounding.o	: constants.o sounding.F
 inputfields.o	: grid.o inputgrads.o inputfields.F 
 gradsaverage.o	: inputgrads.o gradsaverage.F 
