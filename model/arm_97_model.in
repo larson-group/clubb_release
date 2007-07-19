@@ -1,4 +1,4 @@
-! ARM IOP 27 June 1997
+! ARM IOP Case A: 26-30 June 1997
 &model_setting
 
 runtype = "arm_97"
@@ -7,12 +7,12 @@ nzmax   = 100
 deltaz  = 150.0
 zm_init = 0.0
 
-day = 27, month = 7, year = 1997,
+day = 26, month = 7, year = 1997,
 rlat = 36.5, rlon = -97.5
 
-time_initial = 0.0
-time_final   = 10800.0
-time_spinup  = 100000.0
+time_initial = 84586.0
+time_final   = 419386.0
+time_spinup  = 1000000.0
 
 dtmain    = 10.0
 dtclosure = 10.0
