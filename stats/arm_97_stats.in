@@ -1,4 +1,4 @@
-! $Id: arm_97_stats.in,v 1.1 2007-07-19 19:18:01 dschanen Exp $ 
+! $Id: arm_97_stats.in,v 1.2 2007-07-19 19:23:23 dschanen Exp $ 
 &statsnl
 
 lstats = t
@@ -6,7 +6,7 @@ stats_fmt = 'grads'
 stats_tsamp = 60.0
 stats_tout  = 60.0
 
-fname_zt = 'arm_97_nort_zt',
+fname_zt = 'arm_97_zt',
 vars_zt = 
 'thlm', 'thvm', 'rtm', 'rcm', 'um', 'vm', 'wmt', 'ug', 'vg',
 'cf', 'p', 'exner', 'Lscale', 'thlm_forcing', 'thlm_mc',
@@ -38,7 +38,7 @@ vars_zt =
 !'edsclram', 'edsclrbm',
 ''
 
-fname_zm = 'arm_97_nort_zm',
+fname_zm = 'arm_97_zm',
 vars_zm = 
 'wp2', 'rtp2', 'thlp2', 'rtpthlp', 'wprtp', 'wpthlp', 'wp4',
 'wpthvp', 'rtpthvp', 'thlpthvp', 'taum', 'khm', 'wprcp',
@@ -64,7 +64,7 @@ vars_zm =
 !'wpedsclrap', 'wpedsclrbp',
 ''
 
-fname_sfc = 'arm_97_nort_sfc',
+fname_sfc = 'arm_97_sfc',
 vars_sfc = 
 'ustar', 'lh', 'sh', 'cc', 'lwp', 'zb', 'zi', !'rain', 'pflux',
 ''
