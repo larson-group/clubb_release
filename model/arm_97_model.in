@@ -15,7 +15,7 @@ time_final   = 419386.0
 time_spinup  = 1000000.0
 
 dtmain    = 30.0
-dtclosure = 6.0
+dtclosure = 30.0
 
 Tsfc = 299.27
 psfc = 971.5103e2
