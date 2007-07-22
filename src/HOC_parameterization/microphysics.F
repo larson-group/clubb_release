@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.9 2007-06-19 21:06:36 dschanen Exp $
+! $Id: microphysics.F,v 1.10 2007-07-22 23:58:58 griffinb Exp $
         module microphysics
 
 !       Description:
@@ -15,6 +15,7 @@
 
         ! Subroutines
         private :: microphys_lhs, microphys_solve
+        private :: adj_microphys_tndcy
 
         ! Functions
         private :: sedimentation, advection, diffusion
@@ -142,13 +143,12 @@
      .  ss1, ss2,
      .  rc1, rc2
 
-        ! Variables needed to handle correction to rtm and thlm microphysics
+        ! Variable needed to handle correction to rtm and thlm microphysics
         ! tendency arrays, as well rrm_cond and Nrm_cond statistical
         ! tendency arrays, due to a negative result being produced by 
         ! over-evaporation of rain water over the course of a timestep.
         ! Brian Griffin.  April 14, 2007.
-        real :: overevap_rrm, ! Absolute value of negative rrm [kg/kg]
-     .          overevap_Nrm  ! Absolute value of negative Nrm [count/m^3]
+        real :: overevap_rate ! Absolute value of negative evap. rate.
 
         integer :: k, km1, kp1 ! Array indices
 
@@ -313,77 +313,20 @@
         call microphys_solve
      .       ( "rrm", dt, lhs, rrm_tndcy, rrm, isValid )
 
-        ! Correction for the over-evaporation of rain.
-        !
-        ! If a small amount of rain water gets diffused into an area that is
-        ! very dry (such as right above the cloud top), the rain water will
-        ! have a very high rate of evaporation and will evaporate entirely in
-        ! a short amount of time.  However, the evaporation rate is computed
-        ! instantaneously at a given moment in time.  This rate is then
-        ! projected over the entire length of the given timestep.  Therefore,
-        ! a high-enough rate of evaporation combined with a small-enough amount
-        ! of rain water and a long-enough timestep will cause the rain water
-        ! mixing ratio to be negative by the end of the timestep.  Therefore,
-        ! a correction factor needs to be imposed on the evaporation rate so 
-        ! that the amount of rain water mixing ratio does not fall below 0.
-        !
-        ! This is accomplished by adjusting the evaporation rate at any level
-        ! where the value of rain water mixing ratio has fallen below 0.  
-        ! The negative amount of rain water is divided by the timestep length
-        ! and then added back into the evaporation rate.  This is important
-        ! because the rain water mixing ratio time tendency (drr/dt) at every
-        ! level is incorporated into the total water mixing ratio (rtm) and 
-        ! liquid water potential temperature (thlm) equations.  Any artificial
-        ! excess in evaporation will artificially increase water vapor, and 
-        ! thus rtm, and artificially decrease thlm (due to evaporative 
-        ! cooling).  This may result in an artificial increase in cloud water.
-        !
-        ! rrm_mc_tndcy = rrm_cond + rrm_auto + rrm_accr
-        ! hm_rt_tndcy  = - rrm_mc_tndcy
-        ! hm_thl_tndcy = ( Lv / (Cp*exner) ) * rrm_mc_tndcy
-        !
-        ! anyplace where rrm drops below zero, there is too much evaporation
-        ! rate for the timestep, so rrm_cond is too negative.  We must add in 
-        ! the overevaporated amount of rrm/dt to make the rate accurate.  
-        ! The overevaporated amount is being defined as a positive scalar, so
-        ! that:  overevap_rrm = -rrm (where rrm < 0) 
-        ! -- this makes overevap_rrm positive.
-        !
-        ! New cond/evap rate = rrm_cond + overevap_rrm/dt
-        ! -- since rrm_cond can only be negative (we don't allow rain droplets
-        !    to grow by condensation) and overevap_rrm/dt can only be positive
-        !    (we define it that way), the new cond/evap rate will be less
-        !    negative, which is what we want.
-        !
-        ! To update the effects of microphysics on rtm and thl:
-        !
-        ! hm_rt_tndcy = hm_rt_tndcy - overevap_rrm/dt
-        ! hm_thl_tndcy = hm_thl_tndcy + ( Lv / (Cp*exner) ) * overevap_rrm/dt
-        !
-        ! Brian Griffin.  April 14, 2007.
-
+        ! Handle over-evaporation of rrm and adjust rt and theta-l hydrometeor
+        ! tendency arrays accordingly.
         do k = 1, gr%nnzp, 1
            if ( rrm(k) < 0.0 ) then
-!              if ( hm_rt_tndcy(k) > 0.0 ) then
-!                 ! A positive hm_rt_tndcy means a negative rrm tendency due
-!                 ! to microphysics.  The only way this can happen is if
-!                 ! evaporation takes place.
-                 overevap_rrm = -rrm(k)
-!                 rrm(k) = 0.0
-                 hm_rt_tndcy(k) = hm_rt_tndcy(k) - (overevap_rrm/dt)
-                 hm_thl_tndcy(k) = hm_thl_tndcy(k)
-     .                + ( Lv / ( Cp*exner(k) ) ) * (overevap_rrm/dt)
-!#ifdef STATS
-!                 ! Adjustment to condensation/evaporation
-!                 if ( lstats_samp .and. irrm_cond > 0 ) then
-!                    zt%x(k,irrm_cond) = zt%x(k,irrm_cond) 
-!     .                                  + (overevap_rrm/dt)
-!                    ! This is part of the same sample that was done in rain.F.
-!                    ! Since it is only an adjustment, no new sample addition
-!                    ! is needed.
-!                 endif
-!#endif
-!              endif
+
+              call adj_microphys_tndcy( rrm_tndcy, wmt, Vrr, nu_r, dt,
+     .                                  k, .true., "rrm",
+     .                                  rrm, overevap_rate )
+
+              hm_rt_tndcy(k)  = hm_rt_tndcy(k) - overevap_rate
+
+              hm_thl_tndcy(k) = hm_thl_tndcy(k)
+     .                  + ( Lv / ( Cp*exner(k) ) ) * overevap_rate
+
            endif
         enddo
 
@@ -425,21 +368,13 @@
 
         ! Handle over-evaporation similar to rrm.  However, in the case of Nrm
         ! there is no effect on rtm or on thlm.  Brian Griffin.  April 14, 2007.
-
         do k = 1, gr%nnzp, 1
            if ( Nrm(k) < 0.0 ) then
-              overevap_Nrm = -Nrm(k)
-!              Nrm(k) = 0.0
-!#ifdef STATS
-!              ! Adjustment to condensation/evaporation
-!              if ( lstats_samp .and. iNrm_cond > 0 ) then
-!                 zt%x(k,iNrm_cond) = zt%x(k,iNrm_cond) 
-!     .                               + (overevap_Nrm/dt)
-!                 ! This is part of the same sample that was done in rain.F.
-!                 ! Since it is only an adjustment, no new sample addition
-!                 ! is needed.
-!              endif
-!#endif
+
+              call adj_microphys_tndcy( Nrm_tndcy, wmt, VNr, nu_r, dt,
+     .                                  k, .true., "Nrm",
+     .                                  Nrm, overevap_rate )
+
            endif
         enddo
 
@@ -1425,5 +1360,317 @@
 
         return
         end function sedimentation
+
+!-----------------------------------------------------------------------
+        subroutine adj_microphys_tndcy( xrm_tndcy, wmt, v_t, nu, dt, 
+     .                                  level, lsed, solve_type,
+     .                                  xrm, overevap_rate )
+
+        ! DESCRIPTION:  Correction for the over-evaporation of a hydrometeor.
+        !
+        ! If a small amount of a hydrometeor (such as rain water) gets 
+        ! diffused into an area that is very dry (such as right above the 
+        ! cloud top), the hydrometeor (rain water) will have a very high rate
+        ! of evaporation and will evaporate entirely in a short amount of time.
+        ! However, the evaporation rate is computed instantaneously at a given
+        ! moment in time.  This rate is then projected over the entire length 
+        ! of the given timestep.  Therefore, a high-enough rate of evaporation
+        ! combined with a small-enough amount of the hydrometeor (rain water)
+        ! and a long-enough timestep will cause the hydrometeor value (rain 
+        ! water mixing ratio) to be negative by the end of the timestep.  
+        ! Therefore, a correction factor needs to be imposed on the 
+        ! evaporation rate so that the amount of the hydrometeor (rain water 
+        ! mixing ratio) does not fall below 0.
+        !
+        ! Besides over-evaporation of a hydrometeor, other factors may come
+        ! into play that cause the value of a hydrometeor to fall below 0.
+        ! These factors are due to the nature of implicit discretization
+        ! and numerical errors.  In a nutshell, the eddy diffusion parameter
+        ! used currently in this model smooths out the entire hydrometeor
+        ! profile as a whole at every timestep.  This smoothing may cause
+        ! negative values at certain levels.  Also, mean advection and 
+        ! hydrometeor sedimentation can cause negative values to occur in
+        ! the hydrometeor.  This can happen in places where the profile
+        ! abruptly goes from a large positive value to 0 (such as at cloud 
+        ! top).  The nature of the discretization of taking a derivative at
+        ! these levels may cause negative values of a hydrometeor.
+        !
+        ! This subroutine is called only if a hydrometeor at a certain level 
+        ! contains a negative value.  First, this subroutine uses the same
+        ! methods that the HOC statistical code uses in computing budget terms
+        ! in order to determine what factors effected the value of the given
+        ! hydrometeor during the timestep that was just solved for.  The
+        ! mean advection, sedimentation, and diffusion budget terms are all 
+        ! computed.  These three terms are then added together to make up the
+        ! total transport and sedimentation tendency.  This tendency is then
+        ! added to the total microphysical tendency to find the overall
+        ! hydrometeor tendency.  The overall hydrometeor tendency is then
+        ! multiplied by the timestep length to find the net change in the
+        ! hydrometeor over the last timestep.  This net change is then added
+        ! to the current value of the hydrometeor in order to find the value
+        ! of the hydrometeor at the previous timestep.  This method has been
+        ! well tested and produces accurate results.
+        !
+        ! Once the value of the hydrometeor at the previous timestep has been
+        ! found, the net change in the hydrometeor due to ONLY mean advection,
+        ! diffusion, and sedimentation is calculated.  This net change is
+        ! added to the value of the hydrometeor at the previous timestep.  If
+        ! the new value is below zero, then the negative value of the
+        ! hydrometeor was caused by the mean advection, diffusion, and 
+        ! sedimentation terms.  The microphysical terms (evaporation) did not
+        ! cause the negative value.  There was no over-evaporation and the
+        ! evaporation rate can be set to 0.  However, if the new value of
+        ! the hydrometeor is greater than or equal to 0, then the microphysical
+        ! tendencies (evaporation) did cause the hydrometeor array to have
+        ! negative values.  The amount of hydrometeor evaporated is set equal
+        ! to the amount that was left-over after the transport and 
+        ! sedimentation effects were added in.  The evaporation rate is that
+        ! amount divided by the timestep.  This can be viewed as the
+        ! timestep-average evaporation rate, whereas the rate previously
+        ! calculated can be viewed as the instantaneous evaporation rate.
+        ! The amount of the hydrometeor that was over-evaporated is the amount
+        ! of the hydrometeor that is negative.  The over-evaporation rate is
+        ! that amount divided by the timestep.
+        !
+        ! It should be noted that this is important because the rain water 
+        ! mixing ratio time tendency (drr/dt) due to microphysics at every 
+        ! level is incorporated into the total water mixing ratio (rtm) and 
+        ! liquid water potential temperature (thlm) equations.  Any artificial
+        ! excess in evaporation will artificially increase water vapor, and 
+        ! thus rtm, and artificially decrease thlm (due to evaporative 
+        ! cooling).  This may result in an artificial increase in cloud water.
+        !
+        ! rrm_mc_tndcy = rrm_cond + rrm_auto + rrm_accr
+        ! hm_rt_tndcy  = - rrm_mc_tndcy
+        ! hm_thl_tndcy = ( Lv / (Cp*exner) ) * rrm_mc_tndcy
+        !
+        ! anyplace where rrm drops below zero due to microphysics, there is 
+        ! too much evaporation rate for the timestep, so rrm_cond is too 
+        ! negative.  We must add in the over-evaporated amount of rrm/dt to 
+        ! make the rate accurate.  The over-evaporated amount is being defined
+        ! as a positive scalar, so that:  overevap_rrm = -rrm (where rrm < 0)
+        ! -- this makes overevap_rrm positive.
+        !
+        ! New cond/evap rate = rrm_cond + overevap_rrm/dt
+        ! (overevap_rate = overevap_rrm/dt)
+        ! -- since rrm_cond can only be negative (we don't allow rain droplets
+        !    to grow by condensation) and overevap_rrm/dt can only be positive
+        !    (we define it that way), the new cond/evap rate will be less
+        !    negative, which is what we want.
+        !
+        ! To update the effects of microphysics on rtm and thl:
+        !
+        ! hm_rt_tndcy = hm_rt_tndcy - overevap_rate
+        ! hm_thl_tndcy = hm_thl_tndcy + ( Lv / (Cp*exner) ) * overevap_rate
+        !
+        ! This is done in the subroutine which calls this one.
+        ! 
+        ! If the hydrometeor is negative due to reasons besides 
+        ! over-evaporation, the value is clipped.  This is statistically
+        ! stored in the clipping array.  This is also done in the subroutine
+        ! which calls this one.
+        !
+        ! Brian Griffin.
+
+        use grid_class
+#ifdef STATS
+        use hoc_stats
+#endif /*STATS*/
+
+        ! Input variables.
+
+        ! Hydrometeor microphysical tendency.
+        real, dimension(gr%nnzp), intent(in) :: xrm_tndcy  ! [hm_units/s]
+        ! Vertical velocity (thermo. levels).
+        real, dimension(gr%nnzp), intent(in) :: wmt        ! [m/s]
+        ! Sedimentation velocity (interpolated to thermo. levels).
+        real, dimension(gr%nnzp), intent(in) :: v_t        ! [m/s]
+
+        real, intent(in) :: nu  ! Diffusion coefficient      [m^2/s]
+        real, intent(in) :: dt  ! Timestep                   [s]
+
+        integer, intent(in) :: level  ! Vertical grid index
+
+        logical, intent(in) :: lsed   ! Whether to add a sedimentation term
+
+        character(len=*), intent(in) :: solve_type
+
+        ! Input/output variable.
+
+        ! Hydrometeor.
+        real, dimension(gr%nnzp), intent(inout) :: xrm     ! [hm_units]
+
+        ! Output variable.
+
+        ! Excess evaporation rate.
+        real, intent(out) :: overevap_rate                 ! [hm_units/s]
+
+        ! Local variables.
+        real :: ma_subdiag   ! Term to be multiplied by xrm(k-1) in m.a. eq.
+        real :: ma_maindiag  ! Term to be multiplied by xrm(k) in m.a. eq.
+        real :: ma_supdiag   ! Term to be multiplied by xrm(k+1) in m.a. eq.
+        real :: sd_subdiag   ! Term to be multiplied by xrm(k-1) in sed. eq.
+        real :: sd_maindiag  ! Term to be multiplied by xrm(k) in sed. eq.
+        real :: sd_supdiag   ! Term to be multiplied by xrm(k+1) in sed. eq.
+        real :: df_subdiag   ! Term to be multiplied by xrm(k-1) in diff. eq.
+        real :: df_maindiag  ! Term to be multiplied by xrm(k) in diff. eq.
+        real :: df_supdiag   ! Term to be multiplied by xrm(k+1) in diff. eq.
+
+        real :: ma_tndcy     ! Mean advection tendency  [hm_units/s]
+        real :: sd_tndcy     ! Sedimentation tendency   [hm_units/s]
+        real :: df_tndcy     ! Diffusion tendency       [hm_units/s]
+
+        real :: trnsprt_sed_tndcy ! Total transport and sedimentation tendency.
+        real :: tot_tndcy         ! Overall hydrometeor total tendency.
+        real :: xrm_chge          ! Total change in hydrometeor over last t.s.
+        real :: xrm_old           ! Value of hydrometeor at previous timestep.
+        real :: xrm_chge_trsed    ! Net change in hm. due to only transport/sed.
+        real :: xrm_trsed_only    ! New hm. val. due only to transport/sed.
+
+        real :: evap_amt          ! The actual evaporation amount over the t.s.
+        real :: evap_rate         ! The time-averaged rate.
+        real :: overevap_amt      ! The amount of h.m. that was over-evap.
+
+        real, dimension(1:3) :: tmp
+
+        integer :: k, km1, kp1
+
+#ifdef STATS
+        integer ::
+     .  ixrm_cond_adj  ! Adjustment to xrm evaporation rate due to over-evap.
+
+        select case( solve_type )
+        case( "rrm" )
+          ixrm_cond_adj  = irrm_cond_adj 
+        case( "Nrm" )
+          ixrm_cond_adj  = iNrm_cond_adj 
+        end select
+#endif /*STATS*/
+
+        k = level
+        km1 = max(k-1,1)
+        kp1 = min(k+1,gr%nnzp)
+
+
+        ! Mean advection tendency component
+
+        tmp(1:3) = advection( wmt(k), gr%dzt(k), k )
+
+        ma_subdiag  = -tmp(3) ! subdiagonal
+        ma_maindiag = -tmp(2) ! main diagonal
+        ma_supdiag  = -tmp(1) ! superdiagonal
+
+        ma_tndcy =
+     .     + ma_subdiag  * xrm(km1)
+     .     + ma_maindiag * xrm(k)
+     .     + ma_supdiag  * xrm(kp1)
+
+
+        ! Sedimentation tendency component
+
+        if ( lsed ) then
+
+           tmp(1:3) = sedimentation( v_t(k), v_t(km1), gr%dzt(k), k )
+
+           sd_subdiag  = -tmp(3) ! subdiagonal
+           sd_maindiag = -tmp(2) ! main diagonal
+           sd_supdiag  = -tmp(1) ! superdiagonal
+
+           sd_tndcy = 
+     .        + sd_subdiag  * xrm(km1)
+     .        + sd_maindiag * xrm(k)
+     .        + sd_supdiag  * xrm(kp1)
+
+        else
+
+           sd_tndcy = 0.0
+
+        endif
+
+
+        ! Diffusion tendency component
+
+        tmp(1:3)
+     .     = diffusion( nu, gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+
+        df_subdiag  = -tmp(3) ! subdiagonal
+        df_maindiag = -tmp(2) ! main diagonal
+        df_supdiag  = -tmp(1) ! superdiagonal
+
+        df_tndcy = 
+     .     + df_subdiag  * xrm(km1)
+     .     + df_maindiag * xrm(k)
+     .     + df_supdiag  * xrm(kp1)
+
+
+        ! Total transport and sedimentation tendency
+        trnsprt_sed_tndcy = ma_tndcy + df_tndcy + sd_tndcy
+
+        ! Overall hydrometeor tendency
+        tot_tndcy = trnsprt_sed_tndcy + xrm_tndcy(k)
+
+        !print *, "height = ", gr%zt(k)
+        !print *, "mean advection tend. = ", ma_tndcy
+        !print *, "sedimentation tend. = ", sd_tndcy
+        !print *, "eddy diffusion tend. = ", df_tndcy
+        !print *, "total transport and sed. tend. = ", trnsprt_sed_tndcy
+        !print *, "microphysics tend. = ", xrm_tndcy(k)
+        !print *, "total tend. = ", tot_tndcy
+
+        ! The net amount of change in the hydrometeor over the last timestep.
+        xrm_chge = tot_tndcy * dt
+
+        ! The value of xrm at the previous timestep.
+        xrm_old = xrm(k) - xrm_chge
+
+        !print *, "change in xrm = ", xrm_chge
+        !print *, "calc. old val. of xrm = ", xrm_old
+
+        ! The net amount of change in the hydrometeor due to only the
+        ! transport (mean advection and diffusion) and sedimentation terms.
+        xrm_chge_trsed = trnsprt_sed_tndcy * dt
+
+        ! The new value of the hydrometeor at this timestep due to only
+        ! the transport and sedimentation terms.
+        xrm_trsed_only = xrm_old + xrm_chge_trsed
+
+        !print *, "xrm if only trns./sed. included = ", xrm_trsed_only
+ 
+        if ( xrm_trsed_only >= 0.0 ) then
+           ! Negative value of hydrometeor (xrm) is due ONLY to microphysical
+           ! tendencies, namely the over-evaporation of xrm.
+           evap_amt = -xrm_trsed_only
+           evap_rate = evap_amt / dt
+           overevap_amt = -xrm(k)
+           overevap_rate = overevap_amt / dt
+           ! Reset xrm to 0.
+           xrm(k) = 0.0
+        else
+           ! Negative value of hydrometeor (xrm) is due to transport 
+           ! (mean advection and diffusion) and sedimentation.
+           ! If there was some evaporation value as well, it should be
+           ! counterbalanced with overevap_rate.
+           evap_amt = 0.0
+           evap_rate = 0.0
+           overevap_amt = 0.0
+           overevap_rate = -xrm_tndcy(k) ! budget off
+           ! Currently reset xrm to xrm_trsed_only.
+           ! It will still be negative and will be zeroed out in clipping.
+           ! This is being done because of the net evaporation rate value
+           ! being zeroed out.  This will make the overall xrm budget balance.
+           xrm(k) = xrm_trsed_only
+        endif
+
+        !print *, "true evap. rate = ", evap_rate
+        !print *, "over evap. rate = ", overevap_rate
+ 
+#ifdef STATS
+        if ( lstats_samp .and. ixrm_cond_adj > 0 ) then
+           zt%x(k,ixrm_cond_adj) = zt%x(k,ixrm_cond_adj) + overevap_rate
+           zt%n(k,ixrm_cond_adj) = zt%n(k,ixrm_cond_adj) + 1
+        endif
+#endif /*STATS*/
+
+        end subroutine adj_microphys_tndcy
 
         end module microphysics

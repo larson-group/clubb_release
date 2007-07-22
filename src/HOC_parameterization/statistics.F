@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.26 2007-07-22 20:36:08 griffinb Exp $
+!  $Id: statistics.F,v 1.27 2007-07-22 23:58:58 griffinb Exp $
 
 #ifdef STATS
       module stats_type
@@ -181,11 +181,13 @@
      .     irrm_cond,
      .     irrm_auto,
      .     irrm_accr,
+     .     irrm_cond_adj,
      .     irrm_mc,
      .     irrm_cl
 
 !$omp   threadprivate(irrm_bt, irrm_ma, irrm_sd, irrm_dff, irrm_cond)
-!$omp   threadprivate(irrm_auto, irrm_accr, irrm_mc, irrm_cl)
+!$omp   threadprivate(irrm_auto, irrm_accr, irrm_cond_adj, irrm_mc)
+!$omp   threadprivate(irrm_cl)
 
         integer ::
      .     iNrm_bt,
@@ -194,11 +196,12 @@
      .     iNrm_dff,
      .     iNrm_cond,
      .     iNrm_auto,
+     .     iNrm_cond_adj,
      .     iNrm_mc,
      .     iNrm_cl
 
 !$omp   threadprivate(iNrm_bt, iNrm_ma, iNrm_sd, iNrm_dff, iNrm_cond)
-!$omp   threadprivate(iNrm_auto, iNrm_mc, iNrm_cl)
+!$omp   threadprivate(iNrm_auto, iNrm_cond_adj, iNrm_mc, iNrm_cl)
 
 
         ! Snow/Ice/Graupel mixing ratio budgets
@@ -836,6 +839,7 @@
       irrm_cond     = 0
       irrm_auto     = 0
       irrm_accr     = 0
+      irrm_cond_adj = 0
       irrm_mc       = 0
       irrm_cl       = 0
 
@@ -845,6 +849,7 @@
       iNrm_dff      = 0
       iNrm_cond     = 0
       iNrm_auto     = 0
+      iNrm_cond_adj = 0
       iNrm_mc       = 0
       iNrm_cl       = 0
 
@@ -1554,6 +1559,15 @@
           zt%f%var(irrm_accr)%units = "(kg/kg)/(s)"
           k = k + 1
 
+        case ('rrm_cond_adj')
+          irrm_cond_adj = k
+          zt%f%var(irrm_cond_adj)%ptr => zt%x(:,k)
+          zt%f%var(irrm_cond_adj)%name = "rrm_cond_adj"
+          zt%f%var(irrm_cond_adj)%description 
+     .    = "rrm cond/evap adjustment due to over-evaporation"
+          zt%f%var(irrm_cond_adj)%units = "(kg/kg)/(s)"
+          k = k + 1
+ 
         case ('rrm_mc')
           irrm_mc = k
           zt%f%var(irrm_mc)%ptr => zt%x(:,k)
@@ -1619,6 +1633,15 @@
           zt%f%var(iNrm_auto)%units = "(count/m^3)/s"
           k = k + 1
 
+        case ('Nrm_cond_adj')
+          iNrm_cond_adj = k
+          zt%f%var(iNrm_cond_adj)%ptr => zt%x(:,k)
+          zt%f%var(iNrm_cond_adj)%name = "Nrm_cond_adj"
+          zt%f%var(iNrm_cond_adj)%description 
+     .    = "Nrm cond/evap adjustment due to over-evaporation"
+          zt%f%var(iNrm_cond_adj)%units = "(count/m^3)/s"
+          k = k + 1
+ 
         case ('Nrm_mc')
           iNrm_mc = k
           zt%f%var(iNrm_mc)%ptr => zt%x(:,k)
