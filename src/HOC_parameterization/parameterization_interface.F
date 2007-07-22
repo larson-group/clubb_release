@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.51 2007-07-16 21:46:36 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.52 2007-07-22 19:46:39 griffinb Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -440,7 +440,7 @@
        rtprcp            = zt2zm( rtprcp )
        rtprcp(gr%nnzp)   = 0.0
        thlprcp           = zt2zm( thlprcp )
-       thlprcp           = 0.0
+       thlprcp(gr%nnzp)  = 0.0
 #ifdef SCALARS
 !      Interpolate passive scalars back onto the m grid
        do i = 1, sclr_dim
