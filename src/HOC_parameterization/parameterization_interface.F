@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.52 2007-07-22 19:46:39 griffinb Exp $
+! $Id: parameterization_interface.F,v 1.53 2007-07-22 20:36:08 griffinb Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -399,7 +399,7 @@
      .     wpthlp2(k), wp2thlp(k), wprtpthlp(k),
      .     cf(k), rcm(k), wpthvp(k), wp2thvp(k), rtpthvp(k), 
      .     thlpthvp(k), wprcp(k), wp2rcp(k), rtprcp(k), thlprcp(k),
-     .     pdf_parms(k, :), crt1, crt2, cthl1, cthl2
+     .     rcp2(k), pdf_parms(k, :), crt1, crt2, cthl1, cthl2
 #ifdef SCALARS
      .     ,sclrm(k,:), sclr_tmp1(k,:),
      .     wpsclrprtp(k,:), wpsclrp2(k,:), sclr_tmp2(k,:), 
@@ -441,6 +441,8 @@
        rtprcp(gr%nnzp)   = 0.0
        thlprcp           = zt2zm( thlprcp )
        thlprcp(gr%nnzp)  = 0.0
+       rcp2              = zt2zm( rcp2 )
+       rcp2(gr%nnzp)     = 0.0
 #ifdef SCALARS
 !      Interpolate passive scalars back onto the m grid
        do i = 1, sclr_dim
@@ -470,7 +472,7 @@
      .        wprtpthlp(1), cf(1), rcm(1),
      .        wpthvp(1), wp2thvp(1), rtpthvp(1), thlpthvp(1),
      .        wprcp(1), wp2rcp(1), rtprcp(1), thlprcp(1),
-     .        pdf_parms(1,:), crt1, crt2, cthl1, cthl2
+     .        rcp2(1), pdf_parms(1,:), crt1, crt2, cthl1, cthl2
 #ifdef SCALARS
      .        ,sclr_tmp1(1,:), wpsclrp(1,:),
      .        wpsclrprtp(1,:), wpsclrp2(1,:),

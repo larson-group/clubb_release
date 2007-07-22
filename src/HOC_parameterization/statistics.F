@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.25 2007-06-27 21:10:34 dschanen Exp $
+!  $Id: statistics.F,v 1.26 2007-07-22 20:36:08 griffinb Exp $
 
 #ifdef STATS
       module stats_type
@@ -331,6 +331,7 @@
      .     iwprcp,
      .     ithlprcp,
      .     irtprcp,
+     .     ircp2,
      .     iupwp,
      .     ivpwp,
      .     irhom,
@@ -346,9 +347,9 @@
 
 !$omp   threadprivate(iwp2, irtp2, ithlp2, irtpthlp, iwprtp, iwpthlp)
 !$omp   threadprivate(iwp4, iwpthvp, irtpthvp, ithlpthvp, itaum, iKhm)
-!$omp   threadprivate(iwprcp, ithlprcp, irtprcp, iupwp, ivpwp, irhom)
-!$omp   threadprivate(iscm, iem, ishear, iFrad, iFrad_LW, iFrad_SW)
-!$omp   threadprivate(iFprec, iFcsed, iup2_plus_vp2)
+!$omp   threadprivate(iwprcp, ithlprcp, irtprcp, ircp2, iupwp, ivpwp)
+!$omp   threadprivate(irhom, iscm, iem, ishear, iFrad, iFrad_LW)
+!$omp   threadprivate(iFrad_SW, iFprec, iFcsed, iup2_plus_vp2)
 
         ! Sedimentation velocities
         integer ::
@@ -2254,6 +2255,7 @@
       iwprcp    = 0
       ithlprcp  = 0
       irtprcp   = 0
+      ircp2     = 0
       iupwp     = 0
       ivpwp     = 0
       irhom     = 0
@@ -2508,6 +2510,14 @@
           zm%f%var(irtprcp)%name = "rtprcp"
           zm%f%var(irtprcp)%description = "rtprcp"
           zm%f%var(irtprcp)%units = "(kg^2)/(kg^2)"
+          k = k + 1
+
+        case ('rcp2')
+          ircp2 = k
+          zm%f%var(ircp2)%ptr => zm%x(:,k)
+          zm%f%var(ircp2)%name = "rcp2"
+          zm%f%var(ircp2)%description = "rcp2"
+          zm%f%var(ircp2)%units = "(kg^2)/(kg^2)"
           k = k + 1
 
         case ('upwp')
@@ -4361,6 +4371,11 @@
         if ( irtprcp > 0 ) then
           zm%x(:,irtprcp) = zm%x(:,irtprcp) + rtprcp
           zm%n(:,irtprcp) = zm%n(:,irtprcp) + 1
+        end if
+
+        if ( ircp2 > 0 ) then
+          zm%x(:,ircp2) = zm%x(:,ircp2) + rcp2
+          zm%n(:,ircp2) = zm%n(:,ircp2) + 1
         end if
 
         if ( iupwp > 0 ) then

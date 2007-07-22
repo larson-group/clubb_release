@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F,v 1.16 2007-02-09 22:13:42 dschanen Exp $
+! $Id: diag_variables.F,v 1.17 2007-07-22 20:36:08 griffinb Exp $
         module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -57,9 +57,10 @@
         real, target, allocatable, dimension(:) ::
      .  wprcp,   ! w'rc'                [m kg/s kg]
      .  thlprcp, ! thl'rc'              [K kg/kg]
-     .  rtprcp   ! rt'rc'               [kg^2/kg^2]
+     .  rtprcp,  ! rt'rc'               [kg^2/kg^2]
+     .  rcp2     ! rc'^2                [kg^2/kg^2]
 
-!$omp   threadprivate(wprcp, thlprcp, rtprcp)
+!$omp   threadprivate(wprcp, thlprcp, rtprcp, rcp2)
 
         ! Third order moments
         real, target, allocatable, dimension(:) ::
@@ -257,6 +258,7 @@
         allocate( wprcp(1:nzmax) )     ! w'rc'
         allocate( thlprcp(1:nzmax) )   ! thl'rc'
         allocate( rtprcp(1:nzmax) )    ! rt'rc'
+        allocate( rcp2(1:nzmax) )      ! rc'^2
 
         ! Third order moments
 
@@ -373,6 +375,7 @@
         wprcp   = 0.0
         thlprcp = 0.0
         rtprcp  = 0.0
+        rcp2    = 0.0
 
         ! Third order moments
         wpthlp2   = 0.0
@@ -491,6 +494,7 @@
         deallocate( wprcp )     ! w'rc'
         deallocate( thlprcp )   ! thl'rc'
         deallocate( rtprcp )    ! rt'rc'
+        deallocate( rcp2 )      ! rc'^2
 
         ! Third order moments
 

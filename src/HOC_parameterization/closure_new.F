@@ -1,4 +1,4 @@
-! $Id: closure_new.F,v 1.9 2007-05-10 19:06:07 dschanen Exp $
+! $Id: closure_new.F,v 1.10 2007-07-22 20:36:08 griffinb Exp $
         module pdf_closure
 
         implicit none
@@ -15,7 +15,7 @@
      .               wpthlp2, wp2thlp, wprtpthlp,
      .               cf, rcm, wpthvp, wp2thvp, rtpthvp, 
      .               thlpthvp, wprcp, wp2rcp, rtprcp, thlprcp,
-     .               pdf_parms, crt1, crt2, cthl1, cthl2,
+     .               rcp2, pdf_parms, crt1, crt2, cthl1, cthl2,
      .               sclrm, wpsclrp,                    !optional
      .               wpsclrprtp, wpsclrp2, sclrprtp,    ! "    "
      .               sclrp2, sclrpthlp, sclrpthvp,      ! "    "
@@ -108,6 +108,7 @@
      .  wp2rcp,         ! w'^2 r_c'             [(m^2 kg)/(s^2 kg)]
      .  rtprcp,         ! r_t' r_c'             [(kg^2)/(kg^2)]
      .  thlprcp,        ! th_l' r_c'            [(K kg)/kg]
+     .  rcp2,           ! r_c'^2                [(kg^2)/(kg^2)]
      .  wprtpthlp,      ! w' r_t' th_l'         [(m kg K)/(s kg)]
      .  crt1, crt2, 
      .  cthl1, cthl2
@@ -592,15 +593,25 @@
         cf  = a * R1 + (1-a) * R2
         rcm = a * rc1 + (1-a) * rc2
 
-        ! Note: Brian added the following line to ensure that there
-        ! are never any negative liquid water values.  According to
+        ! Note: Brian added the following lines to ensure that there
+        ! are never any negative liquid water values (or any negative
+        ! cloud fraction values, for that matter).  According to
         ! Vince Larson, the analytic formula should not produce any
         ! negative results, but such computer-induced errors such as
         ! round-off error may produce such a value.  This has been
         ! corrected because Brian found a small negative value of
         ! rcm in the first timestep of the FIRE case.
 
+        cf  = max( 0.0, cf )
         rcm = max( 0.0, rcm )
+
+        ! Compute variance of liquid water mixing ratio.
+        ! This is not needed for closure.  Statistical Analysis only.
+        rcp2 =      a    *  ( s1*rc1 + R1*ss1**2 )
+     .         + ( 1-a ) *  ( s2*rc2 + R2*ss2**2 )
+     .         -   rcm**2
+
+        rcp2 = max( 0.0, rcp2 )
 
 
         ! Save pdf parameters
