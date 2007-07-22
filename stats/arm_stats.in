@@ -1,4 +1,4 @@
-! $Id: arm_stats.in,v 1.6 2007-02-20 17:00:28 dschanen Exp $ 
+! $Id: arm_stats.in,v 1.7 2007-07-22 20:36:41 griffinb Exp $ 
 &statsnl
 
 lstats = t
@@ -42,7 +42,7 @@ fname_zm = 'arm_zm',
 vars_zm = 
 'wp2', 'rtp2', 'thlp2', 'rtpthlp', 'wprtp', 'wpthlp', 'wp4',
 'wpthvp', 'rtpthvp', 'thlpthvp', 'taum', 'khm', 'wprcp',
-'thlprcp', 'rtprcp', 'upwp', 'vpwp', 'rhom', 'sc', 'em',
+'thlprcp', 'rtprcp', 'rcp2', 'upwp', 'vpwp', 'rhom', 'sc', 'em',
 'shear', 'Frad', 'Frad_LW', 'Frad_SW', 'Fprec', 'Fcsed',
 !'Vrr', 'VNr', 'Vsnow', 'Vgraupel', 'Vice',
 'wp2_bt', 'wp2_ma', 'wp2_ta', 'wp2_ac', 'wp2_bp', 'wp2_pr1',
