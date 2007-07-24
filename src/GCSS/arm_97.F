@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_97.F,v 1.2 2007-07-19 23:17:54 dschanen Exp $
+! $Id: arm_97.F,v 1.3 2007-07-24 17:22:29 dschanen Exp $
         module arm_97
 
 !       Description:
@@ -642,6 +642,7 @@
 !----------------------------------------------------------------------
 
         use constants, only: Cp, Lv, grav, sclr_dim
+        use hoc_stats, only: iustar, sfc, lstats_samp
 
         implicit none
 
@@ -787,6 +788,13 @@
         ! Compute ustar
         ustar = diag_ustar( z, bflx, ubar, z0 )
 
+#ifdef STATS
+! Save ustar for statistics
+        if ( lstats_samp .and. iustar > 0 ) then
+          sfc%x(1,iustar) = sfc%x(1,iustar) + ustar
+          sfc%n(1,iustar) = sfc%n(1,iustar) + 1
+        end if
+#endif
         upwp_sfc = -um_sfc * ustar**2 / ubar
         vpwp_sfc = -vm_sfc * ustar**2 / ubar
 
