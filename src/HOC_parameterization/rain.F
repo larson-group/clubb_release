@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.34 2007-07-25 16:45:53 griffinb Exp $
+! $Id: rain.F,v 1.35 2007-07-25 16:57:22 griffinb Exp $
 
       MODULE rain_equations
 
@@ -614,7 +614,7 @@
         !         The factor becomes [(4*PI*rho_lw)/(3)]^(2/3).
         !
         !         For our code using the local version, we use KK(2000)
-        !         equation 22 exactly, as listed above.  We do not mess around
+        !         equation 3 exactly, as listed above.  We do not mess around
         !         with changing anything.
         !
         ! Brian Griffin.  November 14, 2006.
@@ -1049,8 +1049,14 @@
         ! Y2 is used for Nc.  It is distributed as a log-normal with a
         ! domain from zero to infinity.
         !
-        ! Notes:  For our code using the local version, we use KK(2000)
-        !         equation 33, only modifying it to express Nc in
+        ! Notes:  For our PDF-version (non-local), we turn Ncm into
+        !         concentration per mass instead of concentration per volume.
+        !         It is divided by air density (rho) in order to achieve
+        !         that value.  That also explains why rho is added to
+        !         the equation in the PDF-version.
+        !
+        !         For our code using the local version, we use KK(2000)
+        !         equation 29, only modifying it to express Ncm in
         !         concentration per m^3.  We do not mess around with 
         !         changing anything else.
         !
