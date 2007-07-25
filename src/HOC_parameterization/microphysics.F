@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.10 2007-07-22 23:58:58 griffinb Exp $
+! $Id: microphysics.F,v 1.11 2007-07-25 14:25:44 griffinb Exp $
         module microphysics
 
 !       Description:
@@ -322,6 +322,8 @@
      .                                  k, .true., "rrm",
      .                                  rrm, overevap_rate )
 
+              ! overevap_rate is defined as positive.
+              ! It is a correction factor.
               hm_rt_tndcy(k)  = hm_rt_tndcy(k) - overevap_rate
 
               hm_thl_tndcy(k) = hm_thl_tndcy(k)
@@ -1554,6 +1556,8 @@
 
         ! Mean advection tendency component
 
+        ! The implicit (LHS) value of the mean advection component of the
+        ! equation used during the timestep that was just solved for.
         tmp(1:3) = advection( wmt(k), gr%dzt(k), k )
 
         ma_subdiag  = -tmp(3) ! subdiagonal
@@ -1570,6 +1574,8 @@
 
         if ( lsed ) then
 
+           ! The implicit (LHS) value of the sedimentation component of the
+           ! equation used during the timestep that was just solved for.
            tmp(1:3) = sedimentation( v_t(k), v_t(km1), gr%dzt(k), k )
 
            sd_subdiag  = -tmp(3) ! subdiagonal
@@ -1590,6 +1596,8 @@
 
         ! Diffusion tendency component
 
+        ! The implicit (LHS) value of the diffusion component of the
+        ! equation used during the timestep that was just solved for.
         tmp(1:3)
      .     = diffusion( nu, gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
 
@@ -1609,22 +1617,11 @@
         ! Overall hydrometeor tendency
         tot_tndcy = trnsprt_sed_tndcy + xrm_tndcy(k)
 
-        !print *, "height = ", gr%zt(k)
-        !print *, "mean advection tend. = ", ma_tndcy
-        !print *, "sedimentation tend. = ", sd_tndcy
-        !print *, "eddy diffusion tend. = ", df_tndcy
-        !print *, "total transport and sed. tend. = ", trnsprt_sed_tndcy
-        !print *, "microphysics tend. = ", xrm_tndcy(k)
-        !print *, "total tend. = ", tot_tndcy
-
         ! The net amount of change in the hydrometeor over the last timestep.
         xrm_chge = tot_tndcy * dt
 
         ! The value of xrm at the previous timestep.
         xrm_old = xrm(k) - xrm_chge
-
-        !print *, "change in xrm = ", xrm_chge
-        !print *, "calc. old val. of xrm = ", xrm_old
 
         ! The net amount of change in the hydrometeor due to only the
         ! transport (mean advection and diffusion) and sedimentation terms.
@@ -1634,36 +1631,51 @@
         ! the transport and sedimentation terms.
         xrm_trsed_only = xrm_old + xrm_chge_trsed
 
-        !print *, "xrm if only trns./sed. included = ", xrm_trsed_only
- 
         if ( xrm_trsed_only >= 0.0 ) then
            ! Negative value of hydrometeor (xrm) is due ONLY to microphysical
            ! tendencies, namely the over-evaporation of xrm.
+           ! The actual amount of the hydrometeor that evaporated during
+           ! the timestep to make the value go to 0.
            evap_amt = -xrm_trsed_only
+           ! Divide by the timestep to find the actual evaporation rate.
            evap_rate = evap_amt / dt
+           ! The amount of the hydrometeor that was artificially excessively
+           ! evaporated.  Define as positive.
            overevap_amt = -xrm(k)
+           ! Divide by the timestep to find the over-evaporation rate.
+           ! Define as positive.  This rate should also be the difference
+           ! between the computed evaporation rate (xrm_tndcy) and the
+           ! actual evaporation rate (evap_rate).
            overevap_rate = overevap_amt / dt
-           ! Reset xrm to 0.
+           ! Reset the value of the hydrometeor (xrm) to 0.
            xrm(k) = 0.0
         else
            ! Negative value of hydrometeor (xrm) is due to transport 
            ! (mean advection and diffusion) and sedimentation.
-           ! If there was some evaporation value as well, it should be
-           ! counterbalanced with overevap_rate.
+           ! The actual amount of the hydrometeor that evaporated during
+           ! the timestep to make the value go to 0.  Even though the
+           ! microphysical tendency may have computed an evaporation rate,
+           ! since we figure that the transport and sedimentation terms made
+           ! the value of the hydrometeor negative, we say that the 
+           ! evaporation amount and rate is 0.
            evap_amt = 0.0
            evap_rate = 0.0
-           overevap_amt = 0.0
-           overevap_rate = -xrm_tndcy(k) ! budget off
+           ! The amount of the hydrometeor that was artificially excessively
+           ! evaporated.  Define as positive.  In this case, any evaporation
+           ! that was computed is considered to be over-evaporation.
+           ! Define as positive.
+           overevap_amt = -xrm_tndcy(k) * dt
+           overevap_rate = -xrm_tndcy(k)
            ! Currently reset xrm to xrm_trsed_only.
-           ! It will still be negative and will be zeroed out in clipping.
-           ! This is being done because of the net evaporation rate value
-           ! being zeroed out.  This will make the overall xrm budget balance.
+           ! This is done to make the statistical budget for xrm balance
+           ! correctly.  The value of xrm(k) will still be negative at this
+           ! this point.  However, it will be less negative because it has been
+           ! adjusted for over-evaporation.  The remaining negative value of
+           ! hydrometeor xrm, which is due to transport and sedimentation, will
+           ! be zeroed out in clipping in the subroutine that calls this one.
            xrm(k) = xrm_trsed_only
         endif
 
-        !print *, "true evap. rate = ", evap_rate
-        !print *, "over evap. rate = ", overevap_rate
- 
 #ifdef STATS
         if ( lstats_samp .and. ixrm_cond_adj > 0 ) then
            zt%x(k,ixrm_cond_adj) = zt%x(k,ixrm_cond_adj) + overevap_rate
@@ -1672,5 +1684,7 @@
 #endif /*STATS*/
 
         end subroutine adj_microphys_tndcy
+
+!-----------------------------------------------------------------------
 
         end module microphysics
