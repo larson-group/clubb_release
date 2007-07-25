@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.33 2007-07-25 15:37:11 griffinb Exp $
+! $Id: rain.F,v 1.34 2007-07-25 16:45:53 griffinb Exp $
 
       MODULE rain_equations
 
@@ -1839,44 +1839,46 @@
         !                                          + (1-a) P_2(X1,X2)
         !
         ! where "a" is a constant and is the relative weight of each individual
-        ! Gaussian.
+        ! Gaussian "plume".
         !
         ! P_1(X1,X2) and P_2(X1,X2) are simply the equation for a
         ! Bivariate Gaussian Distribution.  The only difference between the
         ! two is the dependence on each individual plume for the plume average
-        ! and plume variance for the X1 variable.
+        ! and plume variance for the X1 variable.  There is also a dependence
+        ! on each individual plume for the within-the-plume-correlation
+        ! (a.k.a. intra-Gaussian correlation) of X1 with any other variable.
         !
         ! The Probability Density Function for a Bivariate Normal Distribution:
         !
         ! P_i(X1,X2) = 
         !
-        ! 1 / { 2 * PI * sigmaX1i * sigmaX2 * SQRT[ 1 - corrX1X2^2 ] }
+        ! 1 / { 2 * PI * sigmaX1i * sigmaX2 * SQRT[ 1 - corrX1iX2^2 ] }
         ! * EXP{ -(1/2) * phi }
         !
         ! where,
         !
         ! phi =
         !
-        ! 1 / [ 1 - corrX1X2^2 ]
+        ! 1 / [ 1 - corrX1iX2^2 ]
         ! * {
         !       [ 1 / sigmaX1i^2 ] * ( X1i - muX1i )^2
         !     + [ 1 / sigmaX2^2 ] * ( X2 - muX2 )^2
-        !     + [ 2*corrX1X2 / (sigmaX1i*sigmaX2) ]
+        !     + [ 2*corrX1iX2 / (sigmaX1i*sigmaX2) ]
         !       * ( X1i - muX1i ) * ( X2 - muX2 )
         !   }
         !
         ! Definitions:
         !
         ! muX1i:  The plume average of the X1 (or Y1) variable.
-        ! muX2:  The average of the X2 (or ln Y2) variable.
+        ! muX2:   The average of the X2 (or ln Y2) variable.
         !
         ! sigmaX1i:  The plume standard deviation (square-root of variance)
         !            of the X1 (or Y1) variable.
-        ! sigmaX2:  The standard deviation (square-root of variance) of the
-        !           X2 (or ln Y2) variable.
+        ! sigmaX2:   The standard deviation (square-root of variance) of the
+        !            X2 (or ln Y2) variable.
         !
-        ! corrX1X2:  Intra-Gaussian correlation between X1 and X2 (or between
-        !            Y1 and ln Y2).
+        ! corrX1iX2:  Intra-Gaussian correlation between X1 and X2 (or between
+        !             Y1 and ln Y2).
         !
         ! After careful (and long) double-integration of the above equation,
         ! one gets the result for each plume of the bivariate normal
@@ -1886,11 +1888,11 @@
         !
         !   [ 1 / SQRT(2*PI) ] * ( sigmaX1i )^alpha 
         ! * EXP{    muX2*beta + (1/2)*sigmaX2^2*beta^2
-        !        - (1/4) * [ ( muX1i / sigmaX1i ) + corrX1X2*sigmaX2*beta ]^2
+        !        - (1/4) * [ ( muX1i / sigmaX1i ) + corrX1iX2*sigmaX2*beta ]^2
         !      }
         ! * GAMMA_FNC { alpha + 1 }
         ! * PARAB_CYL_FNC_[-(alpha+1)] { - [  ( muX1i / sigmaX1i )
-        !                                   + corrX1X2*sigmaX2*beta ]
+        !                                   + corrX1iX2*sigmaX2*beta ]
         !                              }
         !
         ! The sum of the weighted results for each plume give us the answer for:
@@ -1984,7 +1986,7 @@
 
 
         FUNCTION PDF_BIVAR_2G_LN ( mu_si, mu_xx, sigma_si, sigma_xx,
-     .                             corr_sxx, alpha_exp, beta_exp )
+     .                             corr_sixx, alpha_exp, beta_exp )
 
         USE constants
         USE parabolic, ONLY: gamma
@@ -1996,7 +1998,7 @@
         REAL, INTENT(IN):: mu_xx     ! Average of xx
         REAL, INTENT(IN):: sigma_si  ! Plume (i) standard deviation of s
         REAL, INTENT(IN):: sigma_xx  ! Standard deviation of Y2
-        REAL, INTENT(IN):: corr_sxx  ! Intra-Gaussian correlation between s, xx
+        REAL, INTENT(IN):: corr_sixx ! Intra-Gaussian correlation between s, xx
         REAL, INTENT(IN):: alpha_exp ! Exponent associated with "s" variable.
         REAL, INTENT(IN):: beta_exp  ! Exponent associated with xx variable.
         
@@ -2010,7 +2012,7 @@
         REAL:: mu_xxG      ! Average of xx(G)
         REAL:: sigma_siG   ! Plume (i) standard deviation of s(G)
         REAL:: sigma_xxG   ! Standard deviation of xx(G)
-        REAL:: corr_sxxG   ! Intra-Gaussian correlation between s(G), xx(G)
+        REAL:: corr_sixxG  ! Intra-Gaussian correlation between s(G), xx(G)
 
         DOUBLE PRECISION:: gamma_fnc_input
         DOUBLE PRECISION:: parab_cyl_fnc_ord
@@ -2044,10 +2046,10 @@
 
         !!! Intra-Gaussian correlation.
 
-        ! corr_sxx is a correlation between a Gaussian and a Log-normal.
-        ! It must be converted to corr_sxxG, which is a correlation between
+        ! corr_sixx is a correlation between a Gaussian and a Log-normal.
+        ! It must be converted to corr_sixxG, which is a correlation between
         ! two Gaussians.
-        corr_sxxG = corr_sxx
+        corr_sixxG = corr_sixx
      .                   * SQRT( EXP(sigma_xxG**2.0) - 1.0 ) / sigma_xxG
 
         !----- Section #2 ------------------------------------------------------
@@ -2071,7 +2073,7 @@
         ELSE
            ! Input to the parabolic cylinder function (without minus sign).
            sci =  (mu_siG/sigma_siG)
-     .          + corr_sxxG*sigma_xxG*beta_exp 
+     .          + corr_sixxG*sigma_xxG*beta_exp 
 
            ! Test to see whether the value of sigma_siG is sufficiently small
            ! enough to cause the parabolic cylinder function to produce a
@@ -2758,44 +2760,46 @@
 !        !                                          + (1-a) P_2(X1,X2)
 !        !
 !        ! where "a" is a constant and is the relative weight of each individual
-!        ! Gaussian.
+!        ! Gaussian "plume".
 !        !
 !        ! P_1(X1,X2) and P_2(X1,X2) are simply the equation for a
 !        ! Bivariate Gaussian Distribution.  The only difference between the
 !        ! two is the dependence on each individual plume for the plume average
-!        ! and plume variance for the X1 variable.
+!        ! and plume variance for the X1 variable.  There is also a dependence
+!        ! on each individual plume for the within-the-plume-correlation
+!        ! (a.k.a. intra-Gaussian correlation) of X1 with any other variable.
 !        !
 !        ! The Probability Density Function for a Bivariate Normal Distribution:
 !        !
-!        ! P_i(X1,X2) = 
+!        ! P_i(X1,X2) =
 !        !
-!        ! 1 / { 2 * PI * sigmaX1i * sigmaX2 * SQRT[ 1 - corrX1X2^2 ] }
+!        ! 1 / { 2 * PI * sigmaX1i * sigmaX2 * SQRT[ 1 - corrX1iX2^2 ] }
 !        ! * EXP{ -(1/2) * phi }
 !        !
 !        ! where,
 !        !
 !        ! phi =
 !        !
-!        ! 1 / [ 1 - corrX1X2^2 ]
+!        ! 1 / [ 1 - corrX1iX2^2 ]
 !        ! * {
 !        !       [ 1 / sigmaX1i^2 ] * ( X1i - muX1i )^2
 !        !     + [ 1 / sigmaX2^2 ] * ( X2 - muX2 )^2
-!        !     + [ 2*corrX1X2 / (sigmaX1i*sigmaX2) ]
+!        !     + [ 2*corrX1iX2 / (sigmaX1i*sigmaX2) ]
 !        !       * ( X1i - muX1i ) * ( X2 - muX2 )
 !        !   }
 !        !
 !        ! Definitions:
 !        !
 !        ! muX1i:  The plume average of the X1 (or Y1) variable.
-!        ! muX2:  The average of the X2 (or ln Y2) variable.
+!        ! muX2:   The average of the X2 (or ln Y2) variable.
 !        !
 !        ! sigmaX1i:  The plume standard deviation (square-root of variance)
 !        !            of the X1 (or Y1) variable.
-!        ! sigmaX2:  The standard deviation (square-root of variance) of the
-!        !           X2 (or ln Y2) variable.
+!        ! sigmaX2:   The standard deviation (square-root of variance) of the
+!        !            X2 (or ln Y2) variable.
 !        !
-!        ! corrX1X2:  Intra-Gaussian correlation between X1 and X2 (or between
-!        !            Y1 and ln Y2).
+!        ! corrX1iX2:  Intra-Gaussian correlation between X1 and X2 (or between
+!        !             Y1 and ln Y2).
 !        !
 !        ! After careful (and long) double-integration of the above equation,
 !        ! one gets the result for each plume of the bivariate normal
@@ -2803,13 +2807,13 @@
 !        !
 !        ! The result for each plume is (Equation #1):
 !        !
-!        !   [ 1 / SQRT(2*PI) ] * ( sigmaX1i )^alpha 
+!        !   [ 1 / SQRT(2*PI) ] * ( sigmaX1i )^alpha
 !        ! * EXP{    muX2*beta + (1/2)*sigmaX2^2*beta^2
-!        !        - (1/4) * [ ( muX1i / sigmaX1i ) + corrX1X2*sigmaX2*beta ]^2
+!        !        - (1/4) * [ ( muX1i / sigmaX1i ) + corrX1iX2*sigmaX2*beta ]^2
 !        !      }
 !        ! * GAMMA_FNC { alpha + 1 }
 !        ! * PARAB_CYL_FNC_[-(alpha+1)] { - [  ( muX1i / sigmaX1i )
-!        !                                   + corrX1X2*sigmaX2*beta ]
+!        !                                   + corrX1iX2*sigmaX2*beta ]
 !        !                              }
 !        !
 !        ! The sum of the weighted results for each plume give us the answer for:
@@ -2880,7 +2884,7 @@
 !
 !
 !        FUNCTION PDF_BIVAR_2G_LN ( muY1i, muY2, sigmaY1i, sigmaY2,
-!     .                             corrY1Y2, alpha_exp, beta_exp )
+!     .                             corrY1iY2, alpha_exp, beta_exp )
 !
 !        USE constants
 !        USE polpak_gamma, ONLY: gamma
@@ -2892,7 +2896,7 @@
 !        REAL, INTENT(IN):: muY2      ! Average of Y2
 !        REAL, INTENT(IN):: sigmaY1i  ! Plume standard deviation of Y1
 !        REAL, INTENT(IN):: sigmaY2   ! Standard deviation of Y2
-!        REAL, INTENT(IN):: corrY1Y2  ! Intra-Gaussian correlation between Y1,Y2
+!        REAL, INTENT(IN):: corrY1iY2 ! Intra-Gaussian correlation between Y1,Y2
 !        REAL, INTENT(IN):: alpha_exp ! Exponent associated with Y1 variable.
 !        REAL, INTENT(IN):: beta_exp  ! Exponent associated with Y2 variable.
 !        
@@ -2906,7 +2910,7 @@
 !        REAL:: muX2      ! Average of X2
 !        REAL:: sigmaX1i  ! Plume standard deviation of X1
 !        REAL:: sigmaX2   ! Standard deviation of X2
-!        REAL:: corrX1X2  ! Intra-Gaussian correlation between X1,X2
+!        REAL:: corrX1iX2 ! Intra-Gaussian correlation between X1,X2
 !
 !        DOUBLE PRECISION:: gamma_fnc_input
 !        DOUBLE PRECISION:: parab_cyl_fnc_ord
@@ -2940,10 +2944,10 @@
 !
 !        !!! Intra-Gaussian correlation.
 !
-!        ! corrY1Y2 is a correlation between a Gaussian and a Log-normal.
-!        ! It must be converted to corrX1X2, which is a correlation between
+!        ! corrY1iY2 is a correlation between a Gaussian and a Log-normal.
+!        ! It must be converted to corrX1iX2, which is a correlation between
 !        ! two Gaussians.
-!        corrX1X2 = corrY1Y2 
+!        corrX1iX2 = corrY1iY2 
 !     .                   * SQRT( EXP(sigmaX2**2.0) - 1.0 ) / sigmaX2
 !
 !        !----- Section #2 ------------------------------------------------------
@@ -2967,7 +2971,7 @@
 !        ELSE
 !           ! Input to the parabolic cylinder function.
 !           parab_cyl_fnc_input = - (  (muX1i/sigmaX1i)
-!     .                              + corrX1X2*sigmaX2*beta_exp )
+!     .                              + corrX1iX2*sigmaX2*beta_exp )
 !
 !           ! Test to see whether the value of sigmaX1i is sufficiently small
 !           ! enough to cause the parabolic cylinder function to produce a
@@ -2995,7 +2999,7 @@
 !     .     * EXP(   muX2*beta_exp
 !     .            + (1.0/2.0)*(sigmaX2**2.0)*(beta_exp**2.0)
 !     .            - (1.0/4.0)*(  (muX1i/sigmaX1i)
-!     .                         + corrX1X2*sigmaX2*beta_exp )**2.0
+!     .                         + corrX1iX2*sigmaX2*beta_exp )**2.0
 !     .          )
 !     .     * GAMMA( gamma_fnc_input )
 !     .     * Dv_fnc( parab_cyl_fnc_ord, parab_cyl_fnc_input )
