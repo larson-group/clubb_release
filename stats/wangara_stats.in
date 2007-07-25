@@ -1,4 +1,4 @@
-! $Id: wangara_stats.in,v 1.11 2007-07-22 20:36:42 griffinb Exp $ 
+! $Id: wangara_stats.in,v 1.12 2007-07-25 13:06:22 griffinb Exp $ 
 &statsnl
 
 lstats = t
@@ -24,8 +24,9 @@ vars_zt =
 'wp3_bt', 'wp3_ma', 'wp3_ta', 'wp3_tp', 'wp3_ac', 'wp3_bp',
 'wp3_pr1', 'wp3_pr2', 'wp3_dp1', 'wp3_cl',
 !'rrm_bt', 'rrm_ma', 'rrm_sd', 'rrm_dff', 'rrm_cond', 'rrm_auto',
-!'rrm_accr', 'rrm_mc', 'rrm_cl', 'Nrm_bt', 'Nrm_ma', 'Nrm_sd',
-!'Nrm_dff', 'Nrm_cond', 'Nrm_auto', 'Nrm_mc', 'Nrm_cl',
+!'rrm_accr', 'rrm_cond_adj', 'rrm_mc', 'rrm_cl',
+!'Nrm_bt', 'Nrm_ma', 'Nrm_sd', 'Nrm_dff', 'Nrm_cond', 'Nrm_auto',
+!'Nrm_cond_adj', 'Nrm_mc', 'Nrm_cl',
 !'rsnowm_bt', 'rsnowm_ma', 'rsnowm_sd', 'rsnowm_dff', 'rsnowm_mc',
 !'rsnowm_cl', 'ricem_bt', 'ricem_ma', 'ricem_sd', 'ricem_dff',
 !'ricem_mc', 'ricem_cl', 'rgraupelm_bt', 'rgraupelm_ma',
