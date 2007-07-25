@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.32 2007-06-19 21:06:36 dschanen Exp $
+! $Id: rain.F,v 1.33 2007-07-25 15:37:11 griffinb Exp $
 
       MODULE rain_equations
 
@@ -1410,12 +1410,14 @@
         !                                             + (1-a) P_2(X1,X2,X3)
         !
         ! where "a" is a constant and is the relative weight of each individual
-        ! Gaussian.
+        ! Gaussian "plume".
         !
         ! P_1(X1,X2,X3) and P_2(X1,X2,X3) are simply the equation for a
         ! Trivariate Gaussian Distribution.  The only difference between the
         ! two is the dependence on each individual plume for the plume average
-        ! and plume variance for the X1 variable.
+        ! and plume variance for the X1 variable.  There is also a dependence
+        ! on each individual plume for the within-the-plume-correlation 
+        ! (a.k.a. intra-Gaussian correlation) of X1 with any other variable.
         !
         ! The Probability Density Function for a Trivariate Normal Distribution:
         !
@@ -1424,8 +1426,8 @@
         ! 1 /
         !     {
         !       (2*PI)^(3/2) * sigmaX1i * sigmaX2 * sigmaX3 
-        !       * SQRT[ 1 - ( corrX1X2^2 + corrX1X3^2 + corrX2X3^2 ) 
-        !                 + 2*corrX1X2*corrX1X3*corrX2X3 ]
+        !       * SQRT[ 1 - ( corrX1iX2^2 + corrX1iX3^2 + corrX2X3^2 ) 
+        !                 + 2*corrX1iX2*corrX1iX3*corrX2X3 ]
         !     }
         ! * EXP{ -(1/2) * phi }
         !
@@ -1435,40 +1437,40 @@
         !
         ! 1 /
         !     [
-        !       1 - ( corrX1X2^2 + corrX1X3^2 + corrX2X3^2 ) 
-        !         + 2*corrX1X2*corrX1X3*corrX2X3
+        !       1 - ( corrX1iX2^2 + corrX1iX3^2 + corrX2X3^2 ) 
+        !         + 2*corrX1iX2*corrX1iX3*corrX2X3
         !     ]
         ! * {
         !       [ (1-corrX2X3^2) / sigmaX1i^2 ] * ( X1i - muX1i )^2
-        !     + [ (1-corrX1X3^2) / sigmaX2^2 ] * ( X2 - muX2 )^2
-        !     + [ (1-corrX1X2^2) / sigmaX3^2 ] * ( X3 - muX3 )^2
-        !     + [ 2*(corrX1X3*corrX2X3-corrX1X2) / (sigmaX1i*sigmaX2) ]
+        !     + [ (1-corrX1iX3^2) / sigmaX2^2 ] * ( X2 - muX2 )^2
+        !     + [ (1-corrX1iX2^2) / sigmaX3^2 ] * ( X3 - muX3 )^2
+        !     + [ 2*(corrX1iX3*corrX2X3-corrX1iX2) / (sigmaX1i*sigmaX2) ]
         !       * ( X1i - muX1i ) * ( X2 - muX2 )
-        !     + [ 2*(corrX1X2*corrX2X3-corrX1X3) / (sigmaX1i*sigmaX3) ]
+        !     + [ 2*(corrX1iX2*corrX2X3-corrX1iX3) / (sigmaX1i*sigmaX3) ]
         !       * ( X1i - muX1i ) * ( X3 - muX3 )
-        !     + [ 2*(corrX1X2*corrX1X3-corrX2X3) / (sigmaX2*sigmaX3) ]
+        !     + [ 2*(corrX1iX2*corrX1iX3-corrX2X3) / (sigmaX2*sigmaX3) ]
         !       * ( X2 - muX2 ) * ( X3 - muX3 )
         !   }
         !
         ! Definitions:
         !
         ! muX1i:  The plume average of the X1 (or Y1) variable.
-        ! muX2:  The average of the X2 (or ln Y2) variable.
-        ! muX3:  The average of the X3 (or ln Y3) variable.
+        ! muX2:   The average of the X2 (or ln Y2) variable.
+        ! muX3:   The average of the X3 (or ln Y3) variable.
         !
         ! sigmaX1i:  The plume standard deviation (square-root of variance)
         !            of the X1 (or Y1) variable.
-        ! sigmaX2:  The standard deviation (square-root of variance) of the
-        !           X2 (or ln Y2) variable.
-        ! sigmaX3:  The standard deviation (square-root of variance) of the 
-        !           X3 (or ln Y3) variable.
+        ! sigmaX2:   The standard deviation (square-root of variance) of the
+        !            X2 (or ln Y2) variable.
+        ! sigmaX3:   The standard deviation (square-root of variance) of the 
+        !            X3 (or ln Y3) variable.
         !
-        ! corrX1X2:  Intra-Gaussian correlation between X1 and X2 (or between
-        !            Y1 and ln Y2).
-        ! corrX1X3:  Intra-Gaussian correlation between X1 and X3 (or between
-        !            Y1 and ln Y3).
-        ! corrX2X3:  Intra-Gaussian correlation between X2 and X3 (or between
-        !            ln Y2 and ln Y3).
+        ! corrX1iX2:  Intra-Gaussian correlation between X1 and X2 (or between
+        !             Y1 and ln Y2).
+        ! corrX1iX3:  Intra-Gaussian correlation between X1 and X3 (or between
+        !             Y1 and ln Y3).
+        ! corrX2X3:   Intra-Gaussian correlation between X2 and X3 (or between
+        !             ln Y2 and ln Y3).
         !
         ! After careful (and long) triple-integration of the above equation,
         ! one gets the result for each plume of the trivariate normal
@@ -1478,27 +1480,27 @@
         !
         !   [ 1 / SQRT(2*PI) ] * ( -sigmaX1i )^alpha 
         ! * EXP{ muX2*beta + muX3*gamma }
-        ! * EXP{ (1/2) * [  (1-corrX1X2^2)*sigmaX2^2*beta^2 
-        !                 + (1-corrX1X3^2)*sigmaX3^2*gamma^2 
-        !                 + 2*(corrX2X3-corrX1X2*corrX1X3)
+        ! * EXP{ (1/2) * [  (1-corrX1iX2^2)*sigmaX2^2*beta^2 
+        !                 + (1-corrX1iX3^2)*sigmaX3^2*gamma^2 
+        !                 + 2*(corrX2X3-corrX1iX2*corrX1iX3)
         !                    *sigmaX2*beta*sigmaX3*gamma
         !                ]
         !      }
         ! * EXP{  (1/4) * [  ( muX1i / sigmaX1i ) 
-        !                  + corrX1X2*sigmaX2*beta
-        !                  + corrX1X3*sigmaX3*gamma
+        !                  + corrX1iX2*sigmaX2*beta
+        !                  + corrX1iX3*sigmaX3*gamma
         !                 ]^2
         !       - ( muX1i / sigmaX1i ) *
         !                 [  ( muX1i / sigmaX1i ) 
-        !                  + corrX1X2*sigmaX2*beta
-        !                  + corrX1X3*sigmaX3*gamma
+        !                  + corrX1iX2*sigmaX2*beta
+        !                  + corrX1iX3*sigmaX3*gamma
         !                 ]
         !       + (1/2) * ( muX1i^2 / sigmaX1i^2 )
         !      }
         ! * GAMMA_FNC { alpha + 1 }
         ! * PARAB_CYL_FNC_[-(alpha+1)] {  ( muX1i / sigmaX1i ) 
-        !                               + corrX1X2*sigmaX2*beta
-        !                               + corrX1X3*sigmaX3*gamma
+        !                               + corrX1iX2*sigmaX2*beta
+        !                               + corrX1iX3*sigmaX3*gamma
         !                              }
         !
         ! The sum of the weighted results for each plume give us the answer for:
@@ -1527,7 +1529,7 @@
         !
         ! However, if sigmaX1i = 0 and muX1i < 0, then the entire Gaussian
         ! lies within the domain.  A close approximation for the parabolic
-        ! cylinder function is made.
+        ! cylinder function is made.  This approximation is only valid in
         ! cases where the input into the parabolic cylinder function is
         ! extremely large in magnitude and very much greater in magnitude than
         ! the order of the parabolic cylinder function -- as it is in this case
@@ -1539,9 +1541,9 @@
         !
         !   ( muX1i )^alpha 
         ! * EXP{ muX2*beta + muX3*gamma }
-        ! * EXP{ (1/2) * [  (1-corrX1X2^2)*sigmaX2^2*beta^2 
-        !                 + (1-corrX1X3^2)*sigmaX3^2*gamma^2 
-        !                 + 2*(corrX2X3-corrX1X2*corrX1X3)
+        ! * EXP{ (1/2) * [  (1-corrX1iX2^2)*sigmaX2^2*beta^2 
+        !                 + (1-corrX1iX3^2)*sigmaX3^2*gamma^2 
+        !                 + 2*(corrX2X3-corrX1iX2*corrX1iX3)
         !                    *sigmaX2*beta*sigmaX3*gamma
         !                ]
         !      }
@@ -1602,7 +1604,7 @@
 
         FUNCTION PDF_TRIVAR_2G_LN_LN ( mu_si, mu_rr, mu_Nr,
      .                                 sigma_si, sigma_rr, sigma_Nr,
-     .                                 corr_srr, corr_sNr, corr_rrNr,
+     .                                 corr_sirr, corr_siNr, corr_rrNr,
      .                                 alpha_exp, beta_exp, gamma_exp )
 
         USE constants
@@ -1617,8 +1619,8 @@
         REAL, INTENT(IN):: sigma_si  ! Plume (i) standard deviation of s
         REAL, INTENT(IN):: sigma_rr  ! Standard deviation of rr
         REAL, INTENT(IN):: sigma_Nr  ! Standard deviation of Nr
-        REAL, INTENT(IN):: corr_srr  ! Intra-Gaussian correlation between s, rr
-        REAL, INTENT(IN):: corr_sNr  ! Intra-Gaussian correlation between s, Nr
+        REAL, INTENT(IN):: corr_sirr ! Intra-Gaussian correlation between s, rr
+        REAL, INTENT(IN):: corr_siNr ! Intra-Gaussian correlation between s, Nr
         REAL, INTENT(IN):: corr_rrNr ! Intra-Gaussian correlation between rr, Nr
         REAL, INTENT(IN):: alpha_exp ! Exponent associated with "s" variable.
         REAL, INTENT(IN):: beta_exp  ! Exponent associated with rr variable.
@@ -1636,8 +1638,8 @@
         REAL:: sigma_siG   ! Plume (i) standard deviation of s(G)
         REAL:: sigma_rrG   ! Standard deviation of rr(G)
         REAL:: sigma_NrG   ! Standard deviation of Nr(G)
-        REAL:: corr_srrG   ! Intra-Gaussian correlation between s(G), rr(G)
-        REAL:: corr_sNrG   ! Intra-Gaussian correlation between s(G), Nr(G)
+        REAL:: corr_sirrG  ! Intra-Gaussian correlation between s(G), rr(G)
+        REAL:: corr_siNrG  ! Intra-Gaussian correlation between s(G), Nr(G)
         REAL:: corr_rrNrG  ! Intra-Gaussian correlation between rr(G), Nr(G)
 
         DOUBLE PRECISION:: gamma_fnc_input
@@ -1685,15 +1687,15 @@
 
         !!! Intra-Gaussian correlations.
 
-        ! corr_srr is a correlation between a Gaussian and a Log-normal.
-        ! It must be converted to corr_srrG, which is a correlation between
+        ! corr_sirr is a correlation between a Gaussian and a Log-normal.
+        ! It must be converted to corr_sirrG, which is a correlation between
         ! two Gaussians.
-        corr_srrG = corr_srr
+        corr_sirrG = corr_sirr
      .                   * SQRT( EXP(sigma_rrG**2.0) - 1.0 ) / sigma_rrG
-        ! corr_sNr is a correlation between a Gaussian and a Log-normal.
-        ! It must be converted to corr_sNrG, which is a correlation between
+        ! corr_siNr is a correlation between a Gaussian and a Log-normal.
+        ! It must be converted to corr_siNrG, which is a correlation between
         ! two Gaussians.
-        corr_sNrG = corr_sNr
+        corr_siNrG = corr_siNr
      .                   * SQRT( EXP(sigma_NrG**2.0) - 1.0 ) / sigma_NrG
         ! corr_rrNr is a correlation between two Log-normals.  It must be 
         ! converted to corr_rrNrG, which is a correlation between two Gaussians.
@@ -1723,8 +1725,8 @@
         ELSE
            ! Input to the parabolic cylinder function.
            scci =  (mu_siG/sigma_siG)
-     .           + corr_srrG*sigma_rrG*beta_exp 
-     .           + corr_sNrG*sigma_NrG*gamma_exp
+     .           + corr_sirrG*sigma_rrG*beta_exp 
+     .           + corr_siNrG*sigma_NrG*gamma_exp
 
            ! Test to see whether the value of sigma_siG is sufficiently small
            ! enough to cause the parabolic cylinder function to produce a
@@ -1751,12 +1753,12 @@
      .       (1.0/SQRT(2.0*pi)) * (-sigma_siG)**alpha_exp 
      .     * EXP( mu_rrG*beta_exp + mu_NrG*gamma_exp )
      .     * EXP( (1.0/2.0) * (
-     .                            ( 1.0 - corr_srrG**2.0 )
+     .                            ( 1.0 - corr_sirrG**2.0 )
      .                           *(sigma_rrG**2.0)*(beta_exp**2.0)
-     .                         +  ( 1.0 - corr_sNrG**2.0 )
+     .                         +  ( 1.0 - corr_siNrG**2.0 )
      .                           *(sigma_NrG**2.0)*(gamma_exp**2.0)
      .                         + 2.0
-     .                           *( corr_rrNrG - corr_srrG*corr_sNrG )
+     .                           *( corr_rrNrG - corr_sirrG*corr_siNrG )
      .                           *sigma_rrG*beta_exp*sigma_NrG*gamma_exp
      .                        )
      .          )
@@ -1778,12 +1780,12 @@
      .       (mu_siG)**alpha_exp 
      .     * EXP( mu_rrG*beta_exp + mu_NrG*gamma_exp )
      .     * EXP( (1.0/2.0) * (
-     .                            ( 1.0 - corr_srrG**2.0 )
+     .                            ( 1.0 - corr_sirrG**2.0 )
      .                           *(sigma_rrG**2.0)*(beta_exp**2.0)
-     .                         +  ( 1.0 - corr_sNrG**2.0 )
+     .                         +  ( 1.0 - corr_siNrG**2.0 )
      .                           *(sigma_NrG**2.0)*(gamma_exp**2.0)
      .                         + 2.0
-     .                           *( corr_rrNrG - corr_srrG*corr_sNrG )
+     .                           *( corr_rrNrG - corr_sirrG*corr_siNrG )
      .                           *sigma_rrG*beta_exp*sigma_NrG*gamma_exp
      .                        )
      .          )
@@ -2346,12 +2348,14 @@
 !        !                                             + (1-a) P_2(X1,X2,X3)
 !        !
 !        ! where "a" is a constant and is the relative weight of each individual
-!        ! Gaussian.
+!        ! Gaussian "plume".
 !        !
 !        ! P_1(X1,X2,X3) and P_2(X1,X2,X3) are simply the equation for a
 !        ! Trivariate Gaussian Distribution.  The only difference between the
 !        ! two is the dependence on each individual plume for the plume average
-!        ! and plume variance for the X1 variable.
+!        ! and plume variance for the X1 variable.  There is also a dependence
+!        ! on each individual plume for the within-the-plume-correlation 
+!        ! (a.k.a. intra-Gaussian correlation) of X1 with any other variable.
 !        !
 !        ! The Probability Density Function for a Trivariate Normal Distribution:
 !        !
@@ -2360,8 +2364,8 @@
 !        ! 1 /
 !        !     {
 !        !       (2*PI)^(3/2) * sigmaX1i * sigmaX2 * sigmaX3 
-!        !       * SQRT[ 1 - ( corrX1X2^2 + corrX1X3^2 + corrX2X3^2 ) 
-!        !                 + 2*corrX1X2*corrX1X3*corrX2X3 ]
+!        !       * SQRT[ 1 - ( corrX1iX2^2 + corrX1iX3^2 + corrX2X3^2 ) 
+!        !                 + 2*corrX1iX2*corrX1iX3*corrX2X3 ]
 !        !     }
 !        ! * EXP{ -(1/2) * phi }
 !        !
@@ -2371,40 +2375,40 @@
 !        !
 !        ! 1 /
 !        !     [
-!        !       1 - ( corrX1X2^2 + corrX1X3^2 + corrX2X3^2 ) 
-!        !         + 2*corrX1X2*corrX1X3*corrX2X3
+!        !       1 - ( corrX1iX2^2 + corrX1iX3^2 + corrX2X3^2 ) 
+!        !         + 2*corrX1iX2*corrX1iX3*corrX2X3
 !        !     ]
 !        ! * {
 !        !       [ (1-corrX2X3^2) / sigmaX1i^2 ] * ( X1i - muX1i )^2
-!        !     + [ (1-corrX1X3^2) / sigmaX2^2 ] * ( X2 - muX2 )^2
-!        !     + [ (1-corrX1X2^2) / sigmaX3^2 ] * ( X3 - muX3 )^2
-!        !     + [ 2*(corrX1X3*corrX2X3-corrX1X2) / (sigmaX1i*sigmaX2) ]
+!        !     + [ (1-corrX1iX3^2) / sigmaX2^2 ] * ( X2 - muX2 )^2
+!        !     + [ (1-corrX1iX2^2) / sigmaX3^2 ] * ( X3 - muX3 )^2
+!        !     + [ 2*(corrX1iX3*corrX2X3-corrX1iX2) / (sigmaX1i*sigmaX2) ]
 !        !       * ( X1i - muX1i ) * ( X2 - muX2 )
-!        !     + [ 2*(corrX1X2*corrX2X3-corrX1X3) / (sigmaX1i*sigmaX3) ]
+!        !     + [ 2*(corrX1iX2*corrX2X3-corrX1iX3) / (sigmaX1i*sigmaX3) ]
 !        !       * ( X1i - muX1i ) * ( X3 - muX3 )
-!        !     + [ 2*(corrX1X2*corrX1X3-corrX2X3) / (sigmaX2*sigmaX3) ]
+!        !     + [ 2*(corrX1iX2*corrX1iX3-corrX2X3) / (sigmaX2*sigmaX3) ]
 !        !       * ( X2 - muX2 ) * ( X3 - muX3 )
 !        !   }
 !        !
 !        ! Definitions:
 !        !
 !        ! muX1i:  The plume average of the X1 (or Y1) variable.
-!        ! muX2:  The average of the X2 (or ln Y2) variable.
-!        ! muX3:  The average of the X3 (or ln Y3) variable.
+!        ! muX2:   The average of the X2 (or ln Y2) variable.
+!        ! muX3:   The average of the X3 (or ln Y3) variable.
 !        !
 !        ! sigmaX1i:  The plume standard deviation (square-root of variance)
 !        !            of the X1 (or Y1) variable.
-!        ! sigmaX2:  The standard deviation (square-root of variance) of the
-!        !           X2 (or ln Y2) variable.
-!        ! sigmaX3:  The standard deviation (square-root of variance) of the 
-!        !           X3 (or ln Y3) variable.
+!        ! sigmaX2:   The standard deviation (square-root of variance) of the
+!        !            X2 (or ln Y2) variable.
+!        ! sigmaX3:   The standard deviation (square-root of variance) of the 
+!        !            X3 (or ln Y3) variable.
 !        !
-!        ! corrX1X2:  Intra-Gaussian correlation between X1 and X2 (or between
-!        !            Y1 and ln Y2).
-!        ! corrX1X3:  Intra-Gaussian correlation between X1 and X3 (or between
-!        !            Y1 and ln Y3).
-!        ! corrX2X3:  Intra-Gaussian correlation between X2 and X3 (or between
-!        !            ln Y2 and ln Y3).
+!        ! corrX1iX2:  Intra-Gaussian correlation between X1 and X2 (or between
+!        !             Y1 and ln Y2).
+!        ! corrX1iX3:  Intra-Gaussian correlation between X1 and X3 (or between
+!        !             Y1 and ln Y3).
+!        ! corrX2X3:   Intra-Gaussian correlation between X2 and X3 (or between
+!        !             ln Y2 and ln Y3).
 !        !
 !        ! After careful (and long) triple-integration of the above equation,
 !        ! one gets the result for each plume of the trivariate normal
@@ -2414,27 +2418,27 @@
 !        !
 !        !   [ 1 / SQRT(2*PI) ] * ( -sigmaX1i )^alpha 
 !        ! * EXP{ muX2*beta + muX3*gamma }
-!        ! * EXP{ (1/2) * [  (1-corrX1X2^2)*sigmaX2^2*beta^2 
-!        !                 + (1-corrX1X3^2)*sigmaX3^2*gamma^2 
-!        !                 + 2*(corrX2X3-corrX1X2*corrX1X3)
+!        ! * EXP{ (1/2) * [  (1-corrX1iX2^2)*sigmaX2^2*beta^2 
+!        !                 + (1-corrX1iX3^2)*sigmaX3^2*gamma^2 
+!        !                 + 2*(corrX2X3-corrX1iX2*corrX1iX3)
 !        !                    *sigmaX2*beta*sigmaX3*gamma
 !        !                ]
 !        !      }
 !        ! * EXP{  (1/4) * [  ( muX1i / sigmaX1i ) 
-!        !                  + corrX1X2*sigmaX2*beta
-!        !                  + corrX1X3*sigmaX3*gamma
+!        !                  + corrX1iX2*sigmaX2*beta
+!        !                  + corrX1iX3*sigmaX3*gamma
 !        !                 ]^2
 !        !       - ( muX1i / sigmaX1i ) *
 !        !                 [  ( muX1i / sigmaX1i ) 
-!        !                  + corrX1X2*sigmaX2*beta
-!        !                  + corrX1X3*sigmaX3*gamma
+!        !                  + corrX1iX2*sigmaX2*beta
+!        !                  + corrX1iX3*sigmaX3*gamma
 !        !                 ]
 !        !       + (1/2) * ( muX1i^2 / sigmaX1i^2 )
 !        !      }
 !        ! * GAMMA_FNC { alpha + 1 }
 !        ! * PARAB_CYL_FNC_[-(alpha+1)] {  ( muX1i / sigmaX1i ) 
-!        !                               + corrX1X2*sigmaX2*beta
-!        !                               + corrX1X3*sigmaX3*gamma
+!        !                               + corrX1iX2*sigmaX2*beta
+!        !                               + corrX1iX3*sigmaX3*gamma
 !        !                              }
 !        !
 !        ! The sum of the weighted results for each plume give us the answer for:
@@ -2475,9 +2479,9 @@
 !        !
 !        !   ( muX1i )^alpha 
 !        ! * EXP{ muX2*beta + muX3*gamma }
-!        ! * EXP{ (1/2) * [  (1-corrX1X2^2)*sigmaX2^2*beta^2 
-!        !                 + (1-corrX1X3^2)*sigmaX3^2*gamma^2 
-!        !                 + 2*(corrX2X3-corrX1X2*corrX1X3)
+!        ! * EXP{ (1/2) * [  (1-corrX1iX2^2)*sigmaX2^2*beta^2 
+!        !                 + (1-corrX1iX3^2)*sigmaX3^2*gamma^2 
+!        !                 + 2*(corrX2X3-corrX1iX2*corrX1iX3)
 !        !                    *sigmaX2*beta*sigmaX3*gamma
 !        !                ]
 !        !      }
@@ -2517,7 +2521,7 @@
 !
 !        FUNCTION PDF_TRIVAR_2G_LN_LN ( muY1i, muY2, muY3,
 !     .                                 sigmaY1i, sigmaY2, sigmaY3,
-!     .                                 corrY1Y2, corrY1Y3, corrY2Y3,
+!     .                                 corrY1iY2, corrY1iY3, corrY2Y3,
 !     .                                 alpha_exp, beta_exp, gamma_exp )
 !
 !        USE constants
@@ -2532,8 +2536,8 @@
 !        REAL, INTENT(IN):: sigmaY1i  ! Plume standard deviation of Y1
 !        REAL, INTENT(IN):: sigmaY2   ! Standard deviation of Y2
 !        REAL, INTENT(IN):: sigmaY3   ! Standard deviation of Y3
-!        REAL, INTENT(IN):: corrY1Y2  ! Intra-Gaussian correlation between Y1,Y2
-!        REAL, INTENT(IN):: corrY1Y3  ! Intra-Gaussian correlation between Y1,Y3
+!        REAL, INTENT(IN):: corrY1iY2 ! Intra-Gaussian correlation between Y1,Y2
+!        REAL, INTENT(IN):: corrY1iY3 ! Intra-Gaussian correlation between Y1,Y3
 !        REAL, INTENT(IN):: corrY2Y3  ! Intra-Gaussian correlation between Y2,Y3
 !        REAL, INTENT(IN):: alpha_exp ! Exponent associated with Y1 variable.
 !        REAL, INTENT(IN):: beta_exp  ! Exponent associated with Y2 variable.
@@ -2551,8 +2555,8 @@
 !        REAL:: sigmaX1i  ! Plume standard deviation of X1
 !        REAL:: sigmaX2   ! Standard deviation of X2
 !        REAL:: sigmaX3   ! Standard deviation of X3
-!        REAL:: corrX1X2  ! Intra-Gaussian correlation between X1,X2
-!        REAL:: corrX1X3  ! Intra-Gaussian correlation between X1,X3
+!        REAL:: corrX1iX2 ! Intra-Gaussian correlation between X1,X2
+!        REAL:: corrX1iX3 ! Intra-Gaussian correlation between X1,X3
 !        REAL:: corrX2X3  ! Intra-Gaussian correlation between X2,X3
 !
 !        DOUBLE PRECISION:: gamma_fnc_input
@@ -2596,15 +2600,15 @@
 !
 !        !!! Intra-Gaussian correlations.
 !
-!        ! corrY1Y2 is a correlation between a Gaussian and a Log-normal.
-!        ! It must be converted to corrX1X2, which is a correlation between
+!        ! corrY1iY2 is a correlation between a Gaussian and a Log-normal.
+!        ! It must be converted to corrX1iX2, which is a correlation between
 !        ! two Gaussians.
-!        corrX1X2 = corrY1Y2 
+!        corrX1iX2 = corrY1iY2 
 !     .                   * SQRT( EXP(sigmaX2**2.0) - 1.0 ) / sigmaX2
-!        ! corrY1Y3 is a correlation between a Gaussian and a Log-normal.
-!        ! It must be converted to corrX1X3, which is a correlation between
+!        ! corrY1iY3 is a correlation between a Gaussian and a Log-normal.
+!        ! It must be converted to corrX1iX3, which is a correlation between
 !        ! two Gaussians.
-!        corrX1X3 = corrY1Y3
+!        corrX1iX3 = corrY1iY3
 !     .                   * SQRT( EXP(sigmaX3**2.0) - 1.0 ) / sigmaX3
 !        ! corrY2Y3 is a correlation between two Log-normals.  It must be 
 !        ! converted to corrX2X3, which is a correlation between two Gaussians.
@@ -2634,8 +2638,8 @@
 !        ELSE
 !           ! Input to the parabolic cylinder function.
 !           parab_cyl_fnc_input =  (muX1i/sigmaX1i)
-!     .                          + corrX1X2*sigmaX2*beta_exp 
-!     .                          + corrX1X3*sigmaX3*gamma_exp
+!     .                          + corrX1iX2*sigmaX2*beta_exp 
+!     .                          + corrX1iX3*sigmaX3*gamma_exp
 !
 !           ! Test to see whether the value of sigmaX1i is sufficiently small
 !           ! enough to cause the parabolic cylinder function to produce a
@@ -2662,23 +2666,23 @@
 !     .       (1.0/SQRT(2.0*pi)) * (-sigmaX1i)**alpha_exp 
 !     .     * EXP( muX2*beta_exp + muX3*gamma_exp )
 !     .     * EXP( (1.0/2.0) * (
-!     .                            ( 1.0 - corrX1X2**2.0 )
+!     .                            ( 1.0 - corrX1iX2**2.0 )
 !     .                           *(sigmaX2**2.0)*(beta_exp**2.0)
-!     .                         +  ( 1.0 - corrX1X3**2.0 )
+!     .                         +  ( 1.0 - corrX1iX3**2.0 )
 !     .                           *(sigmaX3**2.0)*(gamma_exp**2.0)
-!     .                         + 2.0*( corrX2X3 - corrX1X2*corrX1X3 )
+!     .                         + 2.0*( corrX2X3 - corrX1iX2*corrX1iX3 )
 !     .                              *sigmaX2*beta_exp*sigmaX3*gamma_exp
 !     .                        )
 !     .          )
 !     .     * EXP(   (1.0/4.0) * (
 !     .                             (muX1i/sigmaX1i)
-!     .                           + corrX1X2*sigmaX2*beta_exp 
-!     .                           + corrX1X3*sigmaX3*gamma_exp
+!     .                           + corrX1iX2*sigmaX2*beta_exp 
+!     .                           + corrX1iX3*sigmaX3*gamma_exp
 !     .                          )**2.0
 !     .            - (muX1i/sigmaX1i) * (
 !     .                                    (muX1i/sigmaX1i)
-!     .                                  + corrX1X2*sigmaX2*beta_exp 
-!     .                                  + corrX1X3*sigmaX3*gamma_exp
+!     .                                  + corrX1iX2*sigmaX2*beta_exp 
+!     .                                  + corrX1iX3*sigmaX3*gamma_exp
 !     .                                 )
 !     .            + (1.0/2.0) * ( (muX1i**2.0) / (sigmaX1i**2.0) )
 !     .          )
@@ -2696,11 +2700,11 @@
 !     .       (muX1i)**alpha_exp 
 !     .     * EXP( muX2*beta_exp + muX3*gamma_exp )
 !     .     * EXP( (1.0/2.0) * (
-!     .                            ( 1.0 - corrX1X2**2.0 )
+!     .                            ( 1.0 - corrX1iX2**2.0 )
 !     .                           *(sigmaX2**2.0)*(beta_exp**2.0)
-!     .                         +  ( 1.0 - corrX1X3**2.0 )
+!     .                         +  ( 1.0 - corrX1iX3**2.0 )
 !     .                           *(sigmaX3**2.0)*(gamma_exp**2.0)
-!     .                         + 2.0*( corrX2X3 - corrX1X2*corrX1X3 )
+!     .                         + 2.0*( corrX2X3 - corrX1iX2*corrX1iX3 )
 !     .                              *sigmaX2*beta_exp*sigmaX3*gamma_exp
 !     .                        )
 !     .          )
