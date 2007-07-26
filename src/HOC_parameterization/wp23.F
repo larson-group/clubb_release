@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.17 2007-06-30 22:42:38 griffinb Exp $
+! $Id: wp23.F,v 1.18 2007-07-26 14:08:39 vlarson Exp $
 
         subroutine timestep_wp23
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
@@ -834,6 +834,8 @@
 
            km1 = MAX(k-1,1)
 
+!  Vince Larson commented out the Andre et al clipping to see if we 
+!     could avoid using it.  26 Jul 2007
            ! Clipping wp3 at the first layer above ground according to 
            ! Andre et al. (1976b & 1978).
            ! According to Andre et al. (1976b & 1978), wp3 should not
@@ -845,18 +847,18 @@
            ! Therefore, the lowest level wp3 should not exceed
            ! 0.2 * SQRT(2) * wp2^(3/2).  Brian Griffin.  12/18/05.
 
-           ! NOTE: Clipping not good; must try to get rid of.  Effects only
+           ! NOTE: Clipping not good; must try to get rid of.  Affects only
            !       Wangara case.
 
-           IF ( gr%zt(k) <= 100.0 ) THEN ! Clip for 100 m. above ground.
+!           IF ( gr%zt(k) <= 100.0 ) THEN ! Clip for 100 m. above ground.
 
-              atmp = MAX( ( (wp2(km1)+wp2(k)) / 2.0 ) , eps )    ! wp2
-              ctmp = atmp**(3.0/2.0)                             ! wp2^(3/2)
-              IF ( wp3(k) >= 0.2 * SQRT(2.0) * ctmp ) THEN
-                 wp3(k) = 0.2 * SQRT(2.0) * ctmp
-              END IF
+!              atmp = MAX( ( (wp2(km1)+wp2(k)) / 2.0 ) , eps )    ! wp2
+!              ctmp = atmp**(3.0/2.0)                             ! wp2^(3/2)
+!              IF ( wp3(k) >= 0.2 * SQRT(2.0) * ctmp ) THEN
+!                 wp3(k) = 0.2 * SQRT(2.0) * ctmp
+!              END IF
 
-           ELSE
+!           ELSE
 
               ! Clip skewness consistently with a
               ! NOTE: atmp is wp2 interpolated to thermodynamic levels
@@ -878,7 +880,8 @@
                  !wp2(k) = atmp
               END IF
 
-           END IF
+!           END IF
+! End of Vince Larson's commenting of Andre et al clipping.
 
            wp2(k) = max( 2./3. * emin, wp2(k) ) 
 
