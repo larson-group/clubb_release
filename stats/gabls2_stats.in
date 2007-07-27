@@ -69,7 +69,7 @@ vars_zm =
 
 fname_sfc = 'gabls2_sfc',
 vars_sfc = 
-'ustar', 'lh', 'sh', 'cc', 'lwp', 'zb', 'zi', !'rain', 'pflux',
+'ustar', 'lh', 'sh', 'cc', 'lwp', 'zb', 'zi', !'rain', 'pflux', 'rrm_sfc',
 ''
 
 /

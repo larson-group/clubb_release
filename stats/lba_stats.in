@@ -1,4 +1,4 @@
-! $Id: lba_stats.in,v 1.3 2007-07-25 13:06:22 griffinb Exp $
+! $Id: lba_stats.in,v 1.4 2007-07-27 23:55:34 griffinb Exp $
 &statsnl
 
 lstats = t
@@ -71,7 +71,7 @@ vars_zm =
 
 fname_sfc = 'lba_sfc',
 vars_sfc = 
-'ustar', 'lh', 'sh', 'cc', 'lwp', 'zb', 'zi', 'rain', 'pflux',
+'ustar', 'lh', 'sh', 'cc', 'lwp', 'zb', 'zi', 'rain', 'pflux', 'rrm_sfc',
 !'wp23_cn', 'rtm_cn', 'thlm_cn', 'rtp2_cn', 'thlp2_cn', 'rtpthlp_cn',
 !'up2_cn', 'vp2_cn',
 ''

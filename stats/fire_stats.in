@@ -1,4 +1,4 @@
-! $Id: fire_stats.in,v 1.8 2007-07-25 13:06:22 griffinb Exp $
+! $Id: fire_stats.in,v 1.9 2007-07-27 23:55:34 griffinb Exp $
 &statsnl
 
 lstats = t
@@ -67,7 +67,7 @@ vars_zm =
 
 fname_sfc = 'fire_sfc',
 vars_sfc = 
-'ustar', 'lh', 'sh', 'cc', 'lwp', 'zb', 'zi', !'rain', 'pflux',
+'ustar', 'lh', 'sh', 'cc', 'lwp', 'zb', 'zi', !'rain', 'pflux', 'rrm_sfc',
 ''
 
 /
