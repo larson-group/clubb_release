@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.11 2007-07-25 14:25:44 griffinb Exp $
+! $Id: microphysics.F,v 1.12 2007-07-27 23:55:03 griffinb Exp $
         module microphysics
 
 !       Description:
@@ -585,6 +585,12 @@
      .      = sfc%x(1,ipflux) + ( zt2zm( rrm, 1 )
      .           * abs( Vrr(1) ) ) * ( rhom(1) / rho_lw ) * rho_lw * Lv
             sfc%n(1,ipflux) = sfc%n(1,ipflux) + 1
+          end if
+          ! Also store the value of surface rain water mixing ratio.
+          if ( irrm_sfc > 0 ) then   ! Added by Brian
+            sfc%x(1,irrm_sfc)
+     .         = sfc%x(1,irrm_sfc) + ( zt2zm( rrm, 1 ) )
+            sfc%n(1,irrm_sfc) = sfc%n(1,irrm_sfc) + 1
           end if
 
         end if ! lstats_samp

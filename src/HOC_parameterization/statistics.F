@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.27 2007-07-22 23:58:58 griffinb Exp $
+!  $Id: statistics.F,v 1.28 2007-07-27 23:55:03 griffinb Exp $
 
 #ifdef STATS
       module stats_type
@@ -522,7 +522,8 @@
      .    izb,
      .    izi,
      .    irain,   ! Brian
-     .    ipflux   ! Brian
+     .    ipflux,  ! Brian
+     .    irrm_sfc ! Brian
 
         integer ::
      .    iwp23_cn,
@@ -535,7 +536,7 @@
      .    ivp2_cn
 
 !$omp   threadprivate(iustar, ilh, ish, icc, ilwp, izb, izi)
-!$omp   threadprivate(irain, ipflux)
+!$omp   threadprivate(irain, ipflux, irrm_sfc)
 !$omp   threadprivate(iwp23_cn, irtm_cn, ithlm_cn)
 !$omp   threadprivate(irtp2_cn, ithlp2_cn, irtpthlp_cn)
 !$omp   threadprivate(iup2_cn, ivp2_cn)
@@ -3505,15 +3506,16 @@
 
       ! Default initialization for array indices for sfc
 
-      iustar = 0
-      ilh    = 0
-      ish    = 0
-      icc    = 0
-      ilwp   = 0
-      izb    = 0
-      izi    = 0
-      irain  = 0   ! Brian
-      ipflux = 0   ! Brian
+      iustar   = 0
+      ilh      = 0
+      ish      = 0
+      icc      = 0
+      ilwp     = 0
+      izb      = 0
+      izi      = 0
+      irain    = 0   ! Brian
+      ipflux   = 0   ! Brian
+      irrm_sfc = 0   ! Brian
 
       ! These are estimates of the condition number on each implicit
       ! matrices, and not located at the surface of the domain.
@@ -3603,6 +3605,15 @@
           sfc%f%var(ipflux)%name = "prec_flux"
           sfc%f%var(ipflux)%description = "Precipitation flux (W/m^2)"
           sfc%f%var(ipflux)%units = "W/m2"
+          k = k + 1
+
+        case ('rrm_sfc')       ! Brian
+          irrm_sfc = k
+          sfc%f%var(irrm_sfc)%ptr => sfc%x(:,k)
+          sfc%f%var(irrm_sfc)%name = "rrm_sfc"
+          sfc%f%var(irrm_sfc)%description 
+     .    = "Surface rain water mixing ratio"
+          sfc%f%var(irrm_sfc)%units = "kg/kg"
           k = k + 1
 
         case ('wp23_cn')
