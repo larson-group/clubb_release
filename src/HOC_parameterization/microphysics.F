@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.12 2007-07-27 23:55:03 griffinb Exp $
+! $Id: microphysics.F,v 1.13 2007-07-31 13:20:30 mjfalk Exp $
         module microphysics
 
 !       Description:
@@ -46,7 +46,7 @@
         use parameters, only: nu_r
         use constants, only: hydromet_dim, Lv, Cp, rho_lw
 #ifdef STATS
-        use hoc_stats
+        use statistics
 #endif
         implicit none
 
@@ -61,12 +61,12 @@
      .  icond  = 3  ! Autoconversion; 1=Kessler, 2=Manton/Cotton, 3=K&K, 4=none
 
         logical, parameter ::
-     .  lice = .true. ! Whether to produce ice in COAMPS.
-                      ! According to Jerry Schmidt of NRL,
-                      !   if lice = .true., then we should
-                      !   set ldrizzle = .false.
-                      !   because collection of drizzle by ice
-                      !   is not implemented yet.
+     .  lice = .true.  ! Whether to produce ice in COAMPS.
+                       ! According to Jerry Schmidt of NRL,
+                       !   if lice = .true., then we should
+                       !   set ldrizzle = .false.
+                       !   because collection of drizzle by ice
+                       !   is not implemented yet.
 
         real, intent(in) :: 
      .  dt,          ! Timestep         [s]
@@ -183,7 +183,7 @@
      .          ( gr%nnzp-1, gr%nnzp, time_current, dt,
      .            rtm, wmm, p, exner, rhot,
      .            thlm, ricem, rrm, rgraupelm, rsnowm,
-     .            1, nrdamp, 1, 1, icond, 
+     .            1, nrdamp, 1, 5, icond, 
      .            lice,
      .            rcm, Ncm, Nrm, Ncnm, Nim,
      .            cond, Vsnow, Vice, Vrr, VNr, Vgraupel,
@@ -609,7 +609,7 @@
         use grid_class
         use lapack_wrap, only: tridag_solve !,band_solve
 #ifdef STATS
-        use hoc_stats
+        use statistics
 #endif
 
         implicit none
@@ -756,7 +756,7 @@
 !-----------------------------------------------------------------------
         use grid_class
 #ifdef STATS
-        use hoc_stats
+        use statistics
 #endif
         implicit none
 
