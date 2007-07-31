@@ -14,6 +14,12 @@
 !    Description:
 !      Subroutine to compute ice, as it is done in COAMPS, using
 !      adjtq.F.
+!      This subroutine assumes the HOC convention that k=1 is at the
+!      surface rather than the top of the model domain.  adjtq.F will
+!      work whichever way it is called, since it does no advection or
+!      sedimentation, but any COAMPS code incorporated into this driver
+!      DOES need attention, since COAMPS assumes k=1 to be the top
+!      rather than the bottom.
 !
 !    References:
 !      Rutledge and Hobbs, 1984; COAMPS Users Guide.
@@ -22,7 +28,7 @@
       use constants
       use grid_class, only: zt2zm
 #ifdef STATS
-      use hoc_stats, only: zt, zm, lstats_samp,
+      use statistics, only: zt, zm, lstats_samp,
      .    imean_vol_rad_rain,
      .    imean_vol_rad_cloud
 #endif
@@ -44,9 +50,9 @@
      .  aa1 = 5150.,
      .  aa2 = -1.0225e6,
      .  aa3 = 7.55e7,
-     .  abar = 19.3,
+     .  abar = 124.1,
      .  apr = 3000.,
-     .  aprpr = 1.139,
+     .  aprpr = 2.35,
      .  bsnow = 0.11,
      .  cbeta = 0.6,
      .  cnzero = 0.01,
@@ -79,15 +85,17 @@
      .  tvr4 = 9060.,
      .  tzero = 273.16,
      .  visair = 1.718e-5,
-     .  bgrp = 0.37,
+     .  bgrp = 0.66,
      .  ex1 = 0.2,
      .  pcut = 1.0e-10 ! Lower threshold for calculation in COAMPS
 
       integer, parameter ::
      .  n1d     = 1, ! 1d graphics parameters
      .  i1dflg  = 0, ! 1d graphics parameters
-     .  maxpt1d = 0, ! 1d graphics parameters
-     .  maxvr1d = 0, ! 1d graphics parameters
+! Michael Falk, 17 May 2007
+     .  maxpt1d = 200, ! 1d graphics parameters
+     .  maxvr1d = 200, ! 1d graphics parameters
+! eMFc
      .  ipts    = 1  ! ??
 
       real, dimension(n1d), parameter ::
@@ -95,7 +103,7 @@
      .  j1d = (/0./)  ! 1d graphics parameters
 
       real, dimension(1,1), parameter ::
-     .  xland = 1.0, ! Land/Sea assumption
+     .  xland = 0.0, ! Land/Sea assumption
      .  wtm   = 1.0  ! Weighting array for mass point (never used)
 
       ! Input Variables
@@ -164,14 +172,30 @@
      .  qsatv3d, ! Saturation mr array?                 [kg/kg]
      .  temp3d,  ! Temperature on w grid                [K]
      .  qsati3d, ! Saturation mr over ice array?        [kg/kg]
-     .  th2t3d   ! Mean exner function on w grid        [-]
+     .  th2t3d,  ! Mean exner function on w grid        [-]
+! Michael Falk, 13 Jul 2007, added these.  They are flipped versions of these variables;
+! that is to say, in the following versions k=1 is the top of the domain and k=kk+1 is the
+! sub-ground ghost point.
+     .  w3_flip,
+     .  pr3d_flip,
+     .  qsatv3d_flip,
+     .  temp3d_flip,
+     .  qsati3d_flip,
+     .  th2t3d_flip
+! eMFc
 
       ! Variables on the m grid
       real, dimension(1,1,kk) ::
      .  qi3,   ! Pristine ice mixing ratio               [kg/kg]
      .  qr3,   ! Rain water mixing ratio                 [kg/kg]
      .  qg3,   ! Graupel mixing ratio                    [kg/kg]
-     .  qs3    ! Snow water mixing ratio                 [kg/kg]
+     .  qs3,   ! Snow water mixing ratio                 [kg/kg]
+! Michael Falk, 13 Jul 2007, added these; they are flipped versions, as above.
+     .  qi3_flip,
+     .  qr3_flip,
+     .  qg3_flip,
+     .  qs3_flip
+! eMFc
 
       real ::
      .  gmbov2,
@@ -256,14 +280,43 @@
      .  prhomo,     ! ???
      .  pgacs,      ! ???
      .  pmltse,     ! ???
-     .  pwacs       ! ??? end Michael Falk variables
+     .  pwacs,      ! ???
+! Michael Falk, 13 Jul 2007, added these; they are flipped versions of these variables
+     .  cond_flip,
+     .  p3_flip,
+     .  qc3_flip,
+     .  qt3_flip,
+     .  qv3_flip,
+     .  th3_flip,
+     .  exbm_flip,
+     .  rbm_flip
+! eMFc
 
       real, dimension(1,1,kk+1) ::
      .  fallr,  ! Fall speed for rain mixing ratio              [m/s]
      .  falln,  ! Fall speed for rain drop number conc.         [m/s]
      .  falli,  ! Fall speed for pristine ice mixing ratio      [m/s]
+     .  falls,  ! Fall speed for snow mixing ratio              [m/s] (Michael Falk 19 Jul 2007)
      .  snowv,  ! Fall speed for snow mixing ratio              [m/s]
-     .  fallg   ! Fall speed for graupel mixing ratio           [m/s]
+     .  fallg,  ! Fall speed for graupel mixing ratio           [m/s]
+! Michael Falk, 13 Jul 2007, added these; they are flipped versions of these variables
+     .  fallg_flip,
+     .  fallr_flip,
+     .  falln_flip,
+     .  falli_flip,
+     .  falls_flip,
+     .  snowv_flip,
+! and then added these following variables 18 Jul 2007.
+! The in_cloud versions are only assigned values (and passed to and from adjtq) within clouds.
+! They are passed to fallr, falln, falli, and falls, which are assigned 0 outside of cloud
+! and assigned the in_cloud values within cloud.
+! snowv is passed at all gridpoints, 1 to kk+1, regardless of cloud.
+     .  fallr_in_cloud,
+     .  falln_in_cloud,
+     .  falli_in_cloud,
+     .  falls_in_cloud,
+     .  fallg_in_cloud
+! eMFc
 
       real, dimension(1,1,kk) ::
      .  rvc,     ! Cloud droplet radius         [cm]
@@ -278,13 +331,11 @@
      .  len,         ! # of saturated points???
      .  icase        ! Which case?
 
-      integer, dimension(1,1) ::
+      integer, dimension(1) ::
      .  nkpts        
 
       integer, dimension(kk) ::
-     .  icomp          !
-
-      integer, dimension(1,kk) ::
+     .  icomp,         !
      .  kcomp          !
 
       logical ::
@@ -295,10 +346,9 @@
 !----------------------------------------------------------------------
 
       ! Begin coamps_micro_driver code
-      ldrizzle = .false.
-      lgrpl    = .true.
-      len      = kk
-      icase    = 62
+      ldrizzle = .FALSE.
+      lgrpl    = .FALSE.
+      icase    = 75
       eic      = 1.0
 
       ! Set up initial fields
@@ -320,8 +370,17 @@
 !       qsati3d(1,1,k) = rsati( pr3d(1,1,k), temp3d(1,1,k) )
 !     end do
 
-      ! Setup COAMPS m grid variables that for some inexplicable reason
-      ! are put in variable arrays with dimension kk+1
+      ! Setup COAMPS m (mass) grid variables that are only used from
+      ! gridpoints 1 to kk, but are nonetheless defined from 1 to kk+1
+      ! since they are defined as w (momentum) variables elsewhere 
+      ! within COAMPS.
+      ! Since values 1 to kk are the only ones used, they are the only
+      ! ones that are assigned.
+      ! When setting up COAMPS variables, we remove the sub-ground ghost
+      ! point (at k=1) from the HOC variables.  Since in HOC k=2 is the
+      ! first above-ground gridpoint and in COAMPS k=1 is the first
+      ! above-ground gridpoint, we assign the variables accordingly.
+      ! Comments by Michael Falk, David Schanen, and Vince Larson
       pr3d(1,1,1:kk)   = p(2:kk+1)
       th2t3d(1,1,1:kk) = exner(2:kk+1)
       temp3d(1,1,1:kk) = thm(2:kk+1) * exner(2:kk+1)
@@ -331,7 +390,7 @@
         qsati3d(1,1,k) = rsati( pr3d(1,1,k), temp3d(1,1,k) )
       end do
 
-      ! Setup COAMPS m grid variables
+      ! Setup COAMPS m (mass) grid variables
       qt3(1,1,1:kk)  = rtm(2:kk+1)
       qc3(1,1,1:kk)  = rcm(2:kk+1)
       qr3(1,1,1:kk)  = rrm(2:kk+1)
@@ -354,7 +413,6 @@
         ni3(1,1,k)  = Nim(k+1)
 
       end do
-
 
       call gamma(3.0,gm3)
       call gamma(4.0,gm4)
@@ -389,22 +447,83 @@
       lsocp  = Ls/Cp
 
       ary1d(1,1:kk,1) = 0. ! 1d graphics parameters
-      nkpts = kk
+      nkpts = 0
+      len = 0
+
+!!! Michael Falk, 6 July 2007
+!!! Assigning values to the "flip" variables, in which k=1 is the top of the domain
+
+      cond_flip(1,1,1:kk) = cond(1,1,kk:1:-1)
+      p3_flip(1,1,1:kk) = p3(1,1,kk:1:-1)
+      qt3_flip(1,1,1:kk) = qt3(1,1,kk:1:-1)
+      qv3_flip(1,1,1:kk) = qv3(1,1,kk:1:-1)
+      qc3_flip(1,1,1:kk) = qc3(1,1,kk:1:-1)
+      th3_flip(1,1,1:kk) = th3(1,1,kk:1:-1)
+      exbm_flip(1,1,1:kk) = exbm(1,1,kk:1:-1)
+      rbm_flip(1,1,1:kk) = rbm(1,1,kk:1:-1)
+
+      qi3_flip(1,1,1:kk) = qi3(1,1,kk:1:-1)
+      qr3_flip(1,1,1:kk) = qr3(1,1,kk:1:-1)
+      qg3_flip(1,1,1:kk) = qg3(1,1,kk:1:-1)
+      qs3_flip(1,1,1:kk) = qs3(1,1,kk:1:-1)
+
+      w3_flip(1,1,1:kk+1) = w3(1,1,kk+1:1:-1)
+      pr3d_flip(1,1,1:kk+1) = pr3d(1,1,kk+1:1:-1)
+      qsatv3d_flip(1,1,1:kk+1) = qsatv3d(1,1,kk+1:1:-1)
+      temp3d_flip(1,1,1:kk+1) = temp3d(1,1,kk+1:1:-1)
+      qsati3d_flip(1,1,1:kk+1) = qsati3d(1,1,kk+1:1:-1)
+      th2t3d_flip(1,1,1:kk+1) = th2t3d(1,1,kk+1:1:-1)
+
+      ! determination of which points are "in_cloud" are which are outside of cloud
+      do k=1,kk
+        if (
+     .      qc3_flip(1,1,k) .ge. pcut .or.
+     .      qr3_flip(1,1,k) .ge. pcut .or.
+     .      qs3_flip(1,1,k) .ge. pcut .or.
+     .      qi3_flip(1,1,k) .ge. pcut .or.
+     .      qg3_flip(1,1,k) .ge. pcut
+     .     )
+     .      then
+          nkpts = nkpts+1
+          len   = len+1
+          kcomp(nkpts) = k
+        end if
+      end do
+
       do i=1,ipts
         icomp(i) = 1
-        do k=1,kk
-          kcomp(1,k) = k
-        end do
       end do
 
       sloper = pi * rholiq * rnzero * 1.0e-8
       slopes = pi * rhosno * snzero * 1.0e-8
       slopeg = pi * rhogrp * gnzero * 1.0e-8
 
+! Michael Falk, 17 Jul 2007, is initializing fallspeed arrays
+      do k=1,kk+1
+        falli(1,1,k) = 0.
+        falls(1,1,k) = 0.
+        fallg(1,1,k) = 0.
+        fallr(1,1,k) = 0.
+        falln(1,1,k) = 0.
+        snowv(1,1,k) = 0.
+
+        falli_flip(1,1,k) = 0.
+        falls_flip(1,1,k) = 0.
+        fallg_flip(1,1,k) = 0.
+        fallr_flip(1,1,k) = 0.
+        falln_flip(1,1,k) = 0.
+      end do
+! eMFc
+
       ! Call the actual COAMPS microphysics scheme
       call adjtq
-     1       (cond,p3,qc3,qi3,qr3,qg3,qs3,qv3,th3,w3,pr3d
-     2       ,qsatv3d,temp3d,qsati3d,th2t3d,wtm,exbm,rbm
+     1       (cond_flip(1,1,1:kk),p3_flip(1,1,1:kk),qc3_flip(1,1,1:kk)
+     1       ,qi3_flip(1,1,1:kk),qr3_flip(1,1,1:kk),qg3_flip(1,1,1:kk)
+     1       ,qs3_flip(1,1,1:kk),qv3_flip(1,1,1:kk),th3_flip(1,1,1:kk)
+     1       ,w3_flip(1,1,2:kk+1),pr3d_flip(1,1,2:kk+1)
+     1       ,qsatv3d_flip(1,1,2:kk+1),temp3d_flip(1,1,2:kk+1)
+     1       ,qsati3d_flip(1,1,2:kk+1),th2t3d_flip(1,1,2:kk+1),wtm
+     2       ,exbm_flip(1,1,1:kk),rbm_flip(1,1,1:kk)
      3       ,nc3,nr3,ncn3,ni3,cp,deltf,Lf,Ls,Lv 
      4       ,pcut,p0,Rd,Rv,sloper,slopes,slopeg,timea,lice 
      5       ,nne,kk,i1d,j1d,ary1d,i1dflg,n1d,maxpt1d,maxvr1d 
@@ -417,18 +536,73 @@
      3       ,gm7,gm8,gm9,gmbp3,gmbov2,gmbov2g,bgrp,ex1,ex2
      4       ,ex2g,ex3,hlvoka,hkaolf,hlsoka,hlvorv,hlsorv 
      5       ,rvochi,lfocp,lvocp,lsocp,ex7,ex7g,ex4,ex4g,ex5 
-     6       ,ldrizzle,lgrpl,icon,icond,len,icase,snowv,snslp
-     7       ,pcond,psmlti,psacw,pgacw,piacw,pchomo,praut,pracw
-     8       ,pdepi,pint,pgdep,pconv,psaci,pgaci,praci,prevp,psdep
-     9       ,pmltge,pgmlt,psmlt,pgacrm,pgacwm,pracs,pgshr 
-     1       ,pgacr,psacr,piacr,prhomo,pgacs,pmltse,pwacs
-     2       ,falli(:,:,2:kk+1),fallg(:,:,2:kk+1)
-     3       ,fallr(:,:,2:kk+1),falln(:,:,2:kk+1)
+     6       ,ldrizzle,lgrpl,icon,icond,len,icase
+     6       ,snowv_flip(:,:,1:kk)
+     6       ,snslp(1,1,kk:1:-1),pcond(1,1,kk:1:-1)
+     7       ,psmlti(1,1,kk:1:-1),psacw(1,1,kk:1:-1),pgacw(1,1,kk:1:-1)
+     7       ,piacw(1,1,kk:1:-1),pchomo(1,1,kk:1:-1),praut(1,1,kk:1:-1)
+     7       ,pracw(1,1,kk:1:-1),pdepi(1,1,kk:1:-1),pint(1,1,kk:1:-1)
+     8       ,pgdep(1,1,kk:1:-1),pconv(1,1,kk:1:-1),psaci(1,1,kk:1:-1)
+     8       ,pgaci(1,1,kk:1:-1),praci(1,1,kk:1:-1),prevp(1,1,kk:1:-1)
+     9       ,psdep(1,1,kk:1:-1),pmltge(1,1,kk:1:-1),pgmlt(1,1,kk:1:-1)
+     9       ,psmlt(1,1,kk:1:-1),pgacrm(1,1,kk:1:-1),pgacwm(1,1,kk:1:-1)
+     1       ,pracs(1,1,kk:1:-1),pgshr(1,1,kk:1:-1),pgacr(1,1,kk:1:-1)
+     1       ,psacr(1,1,kk:1:-1),piacr(1,1,kk:1:-1),prhomo(1,1,kk:1:-1)
+     1       ,pgacs(1,1,kk:1:-1),pmltse(1,1,kk:1:-1),pwacs(1,1,kk:1:-1)
+     2       ,falli_in_cloud(:,:,1:nkpts(1))
+     2       ,fallg_in_cloud(:,:,1:nkpts(1))
+     3       ,fallr_in_cloud(:,:,1:nkpts(1))
+     3       ,falln_in_cloud(:,:,1:nkpts(1))
+     3       ,falls_in_cloud(:,:,1:nkpts(1))
      4       ,rvc,rvr)
+
+      ! reassigning flipped versions of variables to normal versions
+      cond(1,1,1:kk) = cond_flip(1,1,kk:1:-1)
+      p3(1,1,1:kk) = p3_flip(1,1,kk:1:-1)
+      qt3(1,1,1:kk) = qt3_flip(1,1,kk:1:-1)
+      qv3(1,1,1:kk) = qv3_flip(1,1,kk:1:-1)
+      qc3(1,1,1:kk) = qc3_flip(1,1,kk:1:-1)
+      th3(1,1,1:kk) = th3_flip(1,1,kk:1:-1)
+      exbm(1,1,1:kk) = exbm_flip(1,1,kk:1:-1)
+      rbm(1,1,1:kk) = rbm_flip(1,1,kk:1:-1)
+
+      qi3(1,1,1:kk) = qi3_flip(1,1,kk:1:-1)
+      qr3(1,1,1:kk) = qr3_flip(1,1,kk:1:-1)
+      qg3(1,1,1:kk) = qg3_flip(1,1,kk:1:-1)
+      qs3(1,1,1:kk) = qs3_flip(1,1,kk:1:-1)
+
+      w3(1,1,1:kk+1) = w3_flip(1,1,kk+1:1:-1)
+      pr3d(1,1,1:kk+1) = pr3d_flip(1,1,kk+1:1:-1)
+      qsatv3d(1,1,1:kk+1) = qsatv3d_flip(1,1,kk+1:1:-1)
+      temp3d(1,1,1:kk+1) = temp3d_flip(1,1,kk+1:1:-1)
+      qsati3d(1,1,1:kk+1) = qsati3d_flip(1,1,kk+1:1:-1)
+      th2t3d(1,1,1:kk+1) = th2t3d_flip(1,1,kk+1:1:-1)
+
+      ! assigning in-cloud fall speeds to _flip arrays, which are zero outside of cloud
+      do k=1,nkpts(1)
+        falli_flip(:,:,kcomp(k)) = falli_in_cloud(:,:,k)
+        falls_flip(:,:,kcomp(k)) = falls_in_cloud(:,:,k)
+        fallg_flip(:,:,kcomp(k)) = fallg_in_cloud(:,:,k)
+        fallr_flip(:,:,kcomp(k)) = fallr_in_cloud(:,:,k)
+        falln_flip(:,:,kcomp(k)) = falln_in_cloud(:,:,k)
+      end do
+
+!      falli(:,:,kk-1:1:-1) = falli_flip(:,:,2:kk)
+!      falls(:,:,kk-1:1:-1) = falls_flip(:,:,2:kk)
+!      fallg(:,:,kk-1:1:-1) = fallg_flip(:,:,2:kk)
+!      fallr(:,:,kk-1:1:-1) = fallr_flip(:,:,2:kk)
+!      falln(:,:,kk-1:1:-1) = falln_flip(:,:,2:kk)
+      falli(:,:,kk:1:-1) = falli_flip(:,:,1:kk)
+      falls(:,:,kk:1:-1) = falls_flip(:,:,1:kk)
+      fallg(:,:,kk:1:-1) = fallg_flip(:,:,1:kk)
+      fallr(:,:,kk:1:-1) = fallr_flip(:,:,1:kk)
+      falln(:,:,kk:1:-1) = falln_flip(:,:,1:kk)
+! Michael Falk made this comment to compute snowv in a consistent way with the rest of the fallspeeds and work around an error
+!      snowv(:,:,kk:1:-1) = snowv_flip(:,:,1:kk)
+      snowv(:,:,kk:1:-1) = falls_flip(:,:,1:kk)
 
       ! Assure positive definiteness in nc3/nr3/ncn3 fields
       do k=1, kk, 1
-
         if (nr3(1,1,k) < 0.) then
           ncn3(1,1,k) = ncn3(1,1,k) + nr3(1,1,k)
           nr3(1,1,k)  = 0.
@@ -444,7 +618,6 @@
         end if
       end do ! k=1..kk
 
-
       ! Transfer back to HOC arrays
       do k=1, kk, 1
         ! Convert to MKS as needed
@@ -459,13 +632,13 @@
       snowv(1,1,1) = .5 * ( snowv(1,1,2) + snowv(1,1,3) )
       falli(1,1,1) = .5 * ( falli(1,1,2) + falli(1,1,3) )
       fallg(1,1,1) = .5 * ( fallg(1,1,2) + fallg(1,1,3) )
+      falls(1,1,1) = .5 * ( falls(1,1,2) + falls(1,1,3) )
 
       Vrr      = zt2zm( fallr(1,1,:) )
       VNr      = zt2zm( falln(1,1,:) )
       Vsnow    = zt2zm( snowv(1,1,:) )
       Vice     = zt2zm( falli(1,1,:) )
       Vgraupel = zt2zm( fallg(1,1,:) )
-
 
       ! Compute tendencies
       do k=1, kk, 1
@@ -483,7 +656,7 @@
 
       rrtend(1)    = 0.0
       rgtend(1)    = 0.0
-      rgtend(1)    = 0.0
+      ritend(1)    = 0.0
       nrmtend(1)   = 0.0
       rsnowtend(1) = 0.0
       rttend(1)    = 0.0
@@ -506,7 +679,6 @@
         end if
       end if
 #endif /*STATS*/
-
 
       return
       end subroutine coamps_micro_driver
