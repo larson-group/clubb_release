@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.13 2007-07-31 13:20:30 mjfalk Exp $
+! $Id: microphysics.F,v 1.14 2007-07-31 13:39:54 mjfalk Exp $
         module microphysics
 
 !       Description:
@@ -46,7 +46,7 @@
         use parameters, only: nu_r
         use constants, only: hydromet_dim, Lv, Cp, rho_lw
 #ifdef STATS
-        use statistics
+        use hoc_stats
 #endif
         implicit none
 
@@ -609,7 +609,7 @@
         use grid_class
         use lapack_wrap, only: tridag_solve !,band_solve
 #ifdef STATS
-        use statistics
+        use hoc_stats
 #endif
 
         implicit none
@@ -756,7 +756,7 @@
 !-----------------------------------------------------------------------
         use grid_class
 #ifdef STATS
-        use statistics
+        use hoc_stats
 #endif
         implicit none
 
