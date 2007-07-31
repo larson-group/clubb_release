@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: jun25.F,v 1.4 2007-06-19 21:03:21 dschanen Exp $
+! $Id: jun25.F,v 1.5 2007-07-31 13:02:10 mjfalk Exp $
         module jun25
 
 !       Description:
@@ -19,7 +19,10 @@
      .             ( time, time_initial, rlat, dt, thlm, 
      .               rcm, p, exner, rhot, rtm, wmt,
      .               wmm, thlm_forcing, rtm_forcing, 
-     .               Frad, radht, 
+! Michael Falk, 30 Jul 2007
+!     .               Frad, radht, 
+     .               Frad, radht, rtm_mc, thlm_mc,
+! eMFc
      .               sclr_tndcy ) ! Optional
 !       Description:
 !       Computes subsidence, radiation, and LS tendencies for the June
@@ -68,6 +71,11 @@
      .  rtm_forcing, ! Change in total water due to ice diffusion  [kg/kg/s]
      .  Frad,        ! Total radiative flux (LW + SW)              [W/m^2]
      .  radht        ! Total radiative heating (LW +SW)            [K/s]
+
+! Michael Falk, 30 Jul 2007, for addition of microphysics terms
+        real, dimension(gr%nnzp), intent(out) :: 
+     .  rtm_mc,  ! Change in total water due to icedfs microphys [kg/kg/s]
+     .  thlm_mc  ! Change in theta-l due to icedfs microphys     [K/s]
 
         ! Output variables (optional)
         real, optional, dimension(gr%nnzp,sclr_dim),intent(out) :: 
@@ -654,7 +662,6 @@
 
            CALL altocu_icedf( dt, thlm, rcm, p, exner, rhot,
      .                        dqc_dt_icedfs )
-
         ELSE
 
            DO k = 1, gr%nnzp, 1
@@ -725,12 +732,24 @@
         !---------------------------------------------------------------
         DO k = 1, gr%nnzp, 1
            IF ( .not. lbugsrad ) THEN
+! Michael Falk, 30 Jul 2007
+!             thlm_forcing(k) = radht(k)
+!     .                    - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
              thlm_forcing(k) = radht(k)
-     .                    - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
+             thlm_mc(k)      = - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
+! eMFc
            ELSE
-             thlm_forcing(k) = - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
+! Michael Falk, 30 Jul 2007
+!             thlm_forcing(k) = - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
+             thlm_forcing(k) = 0.
+             thlm_mc(k)      = - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
+! eMFc
            END IF
-           rtm_forcing(k) = dqc_dt_icedfs(k)
+! Michael Falk, 30 Jul 2007
+!           rtm_forcing(k) = dqc_dt_icedfs(k)
+           rtm_mc(k)      = dqc_dt_icedfs(k)
+           rtm_forcing(k) = 0.
+! eMFc
         ENDDO
 
         if ( present( sclr_tndcy ) ) then
