@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.129 2007-07-19 19:06:44 dschanen Exp $
+! $Id: hoc.F,v 1.130 2007-07-31 13:14:52 mjfalk Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -351,7 +351,10 @@
      .            thlm, rtm, wprtp, wpthlp, wp2, wp3,
      .            rtp2, thlp2, rtpthlp,
      .            Scm, taum, rcm, Ncm, Ncnm, Nim,
-     .            hydromet, cf, isValid, .false.
+! Michael Falk, 27 Jul 2007
+!     .            hydromet, cf, isValid, .false.
+     .            hydromet, cf, isValid, .false., rtm_mc, thlm_mc
+! eMFc
 #ifdef SCALARS
      .            ,wpsclrp_sfc, wpedsclrp_sfc,
      .            sclrm, sclrm_forcing, edsclrm
@@ -635,7 +638,10 @@
      .            thlm, rtm, wprtp, wpthlp, wp2, wp3,
      .            rtp2, thlp2, rtpthlp,
      .            Scm, taum, rcm, Ncm, Ncnm, Nim,
-     .            hydromet, cf, isValid, .false.
+! Michael Falk, 27 Jul 2007
+!     .            hydromet, cf, isValid, .false.
+     .            hydromet, cf, isValid, .false., rtm_mc, thlm_mc
+! eMFc
 #ifdef SCALARS
      .            ,wpsclrp_sfc, wpedsclrp_sfc, 
      .            sclrm, sclrm_forcing, edsclrm
@@ -1001,8 +1007,8 @@
 
           cloud_top_height = 1300. ! 1300 m is the cloud top in MPACE.  Michael Falk 17 Aug 2006
           emax = 1.0
-          do k=1,gr%nnzp
 
+          do k=1,gr%nnzp
             rrm(k) = 0.
             ricem(k) = 0.
             rgraupelm(k) = 0.
@@ -1266,7 +1272,10 @@
            call nov11_altocu_tndcy( time, time_initial, dt, rlat, rlon,
      .                              thlm, rcm, p, exner, rhot, rtm, wmt,
      .                              wmm, thlm_forcing, rtm_forcing,
-     .                              Frad, radht, Ncnm
+! Michael Falk, 30 Jul 2007
+!     .                              Frad, radht, Ncnm
+     .                              Frad, radht, Ncnm, rtm_mc, thlm_mc
+! eMFc
 #ifdef SCALARS
      .                             ,sclrm_forcing   ! optional variable
 #endif /* SCALARS */
@@ -1276,7 +1285,10 @@
            call jun25_altocu_tndcy( time, time_initial, rlat, dt, thlm,
      .                              rcm, p, exner, rhot, rtm, wmt,
      .                              wmm, thlm_forcing, rtm_forcing,
-     .                              Frad, radht
+! Michael Falk, 30 Jul 2007
+!     .                              Frad, radht
+     .                              Frad, radht, rtm_mc, thlm_mc
+! eMFc
 #ifdef SCALARS
      .                             ,sclrm_forcing   ! optional variable
 #endif /* SCALARS */
@@ -1294,7 +1306,10 @@
            call mpace_tndcy( time, time_initial, dtmain, rlat, thlm,
      .                       exner, rhot, rtm, p, thvm, rcm,
      .                       wmt, wmm, thlm_forcing, rtm_forcing,
-     .                       Ncnm, Ncm, Frad, radht
+! Michael Falk added rtm_mc and thlm_mc here on 27 Jul 2007
+!     .                       Ncnm, Ncm, Frad, radht,
+     .                       Ncnm, Ncm, Frad, radht, rtm_mc, thlm_mc
+! eMFc
 #ifdef SCALARS
      .                      ,sclrm_forcing
 #endif /* SCALARS */
