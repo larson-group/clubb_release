@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: nov11.F,v 1.4 2007-06-19 21:03:21 dschanen Exp $
+! $Id: nov11.F,v 1.5 2007-07-31 13:11:36 mjfalk Exp $
         module nov11
 
 !       Description:
@@ -28,7 +28,10 @@
      .             ( time, time_initial, dt, rlat, rlon,
      .               thlm, rcm, p, exner, rhot, rtm, wmt,
      .               wmm, thlm_forcing, rtm_forcing,
-     .               Frad, radht, Ncnm, sclrm_forcing )
+! Michael Falk, 30 Jul 2007
+!     .               Frad, radht, Ncnm, sclrm_forcing )
+     .               Frad, radht, Ncnm, rtm_mc, thlm_mc, sclrm_forcing )
+! eMFc
 
 !       Description:
 !       Compute subsidence, radiation, and large-scale tendencies.
@@ -104,6 +107,10 @@
      .  wmm,            ! Mean vertical wind on the moment. grid  [m/s]
      .  thlm_forcing,   ! Theta_l forcing                         [K/s]
      .  rtm_forcing,    ! Total water forcing                     [kg/kg/s]
+! Michael Falk added rtm_mc and thlm_mc here for icedfs scheme stats.  30 Jul 2007
+     .  rtm_mc,         ! Microphyiscal rtm tendency              [kg/kg/s]
+     .  thlm_mc,        ! Microphysical theta_l tendency          [K/s]
+! eMFc
      .  Frad,           ! Radiative flux                          [W/m^2]
      .  radht,          ! Radiative heating                       [K/s]
      .  Ncnm            ! Cloud nuclei number concentration       [num/m^3]
@@ -612,14 +619,27 @@
 
         do k = 1, gr%nnzp, 1
           if ( .not. lbugsrad ) then
+! Michael Falk, 30 Jul 2007
+!            thlm_forcing(k) = radht(k)
+!     .                   - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
             thlm_forcing(k) = radht(k)
-     .                   - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
+            thlm_mc(k) = - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
           else
-            thlm_forcing(k) = - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
-
+!            thlm_forcing(k) = - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
+            thlm_forcing(k) = 0.
+            thlm_mc(k) = - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
+! eMFc
           end if
 
-          if ( licedfs ) rtm_forcing(k) = dqc_dt_icedfs(k)
+! Michael Falk, 30 Jul 2007
+!          if ( licedfs ) rtm_forcing(k) = dqc_dt_icedfs(k)
+          if ( licedfs ) then
+            rtm_forcing(k) = 0.
+            rtm_mc(k) = dqc_dt_icedfs(k)
+!          end if
+! eMFc
+
+! eMFc
 
         end do
 

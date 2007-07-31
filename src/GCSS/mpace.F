@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace.F,v 1.5 2007-06-19 21:03:21 dschanen Exp $
+! $Id: mpace.F,v 1.6 2007-07-31 13:11:12 mjfalk Exp $
         module mpace
 
 !       Description:
@@ -20,7 +20,7 @@
      .    exner, rhot, rtm, p, thvm, rcm,
      .    wmt, wmm, theta_tndcy, rt_tndcy,
      .    Ncnm, Ncm, Frad, radht,
-     .    sclrm_forcing )
+     .    rtm_mc, thlm_mc, sclrm_forcing )
 
 !        Description:
 !          Subroutine to large-scale subsidence for MPACE case (Michael
@@ -101,8 +101,12 @@
      .  Frad,        ! Total radiative flux                    [W/m^2]
      .  Ncm,         ! Cloud droplet number concentration      [count/m^3]
      .  Ncnm,        ! Cloud nuclei number concentration       [count/m^3]
-     .  radht        ! dT/dt, then d Theta/dt, due to rad.     [K/s]
-
+! Michael Falk added rtm_mc and thlm_mc here for icedfs scheme stats.  27 Jul 2007
+!     .  radht        ! dT/dt, then d Theta/dt, due to rad.     [K/s]
+     .  radht,       ! dT/dt, then d Theta/dt, due to rad.     [K/s]
+     .  rtm_mc,      ! Microphysical rtm tendency              [kg/kg/s]
+     .  thlm_mc      ! Microphysical thlm tendency             [K/s]
+! eMFc
 
         ! Output Variables (optional)
         real, optional, intent(out), dimension(gr%nnzp,sclr_dim) ::
@@ -196,7 +200,7 @@
 
         ! Compute radiation
         julday = 282
-        start_time_until_noon = 18840 + 61200
+        start_time_until_noon = 17490 + 61200
         t_since_noon   = time - start_time_until_noon
         sda_t = 2*3.14*(julday-1)/365
 
@@ -302,9 +306,13 @@
           call altocu_icedf( dt, thlm, rcm, p, exner, rhot,
      .                       dqc_dt_icedfs )
           do k=1,gr%nnzp
-            theta_tndcy(k) = theta_tndcy(k)
-     .                       - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
-            rt_tndcy(k) = rt_tndcy(k) + dqc_dt_icedfs(k)
+! Michael Falk, 27 Jul 2007
+!            theta_tndcy(k) = theta_tndcy(k)
+!     .                       - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
+!            rt_tndcy(k) = rt_tndcy(k) + dqc_dt_icedfs(k)
+            rtm_mc(k)  = dqc_dt_icedfs(k)
+            thlm_mc(k) = - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
+! eMFc
           end do
         end if
 
@@ -363,6 +371,7 @@
         ! Values of HF & LF are from the MPACE specification.
      .  HF    = 136.5, ! Sensible Heat Flux     [W m^-2] 
      .  LF    = 107.7  ! Latent Heat Flux       [W m^-2] 
+! eMFc
 
         ! Input Variables
         real, intent(in)  ::
