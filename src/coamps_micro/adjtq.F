@@ -25,8 +25,9 @@ c    08Aug2006: Added terms for microphysics source budgets
 ! Michael Falk, 3 Oct 2006
 !     1  ,pgacr3,psacr3,piacr3,prhomo3,pgacs3,pmltse3,pwacs3)
      1  ,pgacr3,psacr3,piacr3,prhomo3,pgacs3,pmltse3,pwacs3
-     2  ,falli,fallg,fallr,falln,rvc,rvr)
+     2  ,falli,fallg,fallr,falln,falls,rvc,rvr)
 ! eMFc
+
 c<--end of ajsmith4's modification
 c<--end of modification
 c                                                                      c
@@ -79,13 +80,6 @@ c
       integer nrdamp
       integer nkpts(iminf(nne):imaxf(nne))
 c
-! Michael Falk, 29 August 2006
-      real    sum1(kk)
-      real    sum2(kk)
-      real    suminit(kk)
-      real    sumfinal(kk)
-      integer inttemp
-! eMFc
       real    aa0
       real    aa1
       real    aa2
@@ -93,7 +87,7 @@ c
       real    abar
       real    apr
       real    aprpr
-      real    ary1d(maxpt1d,kmax,maxvr1d)
+      real    ary1d(maxpt1d,kmax-1,maxvr1d)
       real    bgrp
       real    bsnow
       real    cbeta
@@ -579,16 +573,6 @@ c***********************************************************************
 c
       call slope(sfrain,sfraincm,sfsnow,sfgraup,qrtemp,qstemp,qgtemp
      1          ,rbar2d,sloper,slopes,slopeg,pcut,lice,lgrpl,mkk)
-! Michael Falk, 29 August 2006, checking for balance
-      do k=1,kk
-        sum1(k) = qvtemp(k) + qctemp(k) + qitemp(k) + qstemp(k) +
-     .            qrtemp(k) + qgtemp(k)
-        suminit(k) = qvtemp(k) + qctemp(k) + qitemp(k) + qstemp(k) +
-     .            qrtemp(k) + qgtemp(k)
-        sum2(k) = qvtemp(k) + qctemp(k) + qitemp(k) + qstemp(k) +
-     .            qrtemp(k) + qgtemp(k)
-      end do
-! eMFc
 c
 c***********************************************************************
 c***********************************************************************
@@ -710,7 +694,6 @@ c
 
        call tgqs(falls,qstemp,sfsnow,pterm4,pcut,aprpr,bsnow,mkk)
 c
-
        call frzh(pchomo,tttemp,qctemp,pcut,twodt,mkk)
 c
 c***********************************************************************
@@ -718,7 +701,7 @@ c          compute psacw - collection of cloud water by snow
 c          (eq. a22, rh-1983). Limit to temperatures greater than thomo.
 c***********************************************************************
 c
-       call eqa22(psacw,qctemp,qstemp,tttemp,termb,esc
+	       call eqa22(psacw,qctemp,qstemp,tttemp,termb,esc
      1           ,pcut,twodt,tzero,mkk)
 c
 c***********************************************************************
@@ -895,7 +878,7 @@ c***********************************************************************
 c
       call slope(sfrain,sfraincm,sfsnow,sfgraup,qrtemp,qstemp,qgtemp
      1          ,rbar2d,sloper,slopes,slopeg,pcut,lice,lgrpl,mkk)
-c
+
       if(lice)then
        do i=1,mkk
         if (sfsnow(i).le.0.0) then
@@ -1014,7 +997,6 @@ c***********************************************************************
 c
       call qsatvi(tttemp,pr,qsatv,qsati,lice,mkk)
 c
-
       call slope(sfrain,sfraincm,sfsnow,sfgraup,qrtemp,qstemp,qgtemp
      1          ,rbar2d,sloper,slopes,slopeg,pcut,lice,lgrpl,mkk)
 c
