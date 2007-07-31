@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.53 2007-07-22 20:36:08 griffinb Exp $
+! $Id: parameterization_interface.F,v 1.54 2007-07-31 13:24:21 mjfalk Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -41,7 +41,10 @@
      .              rtp2, thlp2, rtpthlp,
      .              Scm, taum, rcm, Ncm, Ncnm, Nim, 
      .              hydromet, cf,
-     .              isValid, implemented
+! Michael Falk, 27 Jul 2007
+!     .              isValid, implemented
+     .              isValid, implemented, rtm_mc, thlm_mc
+! eMFc
 #ifdef SCALARS
      .              ,wpsclrp_sfc, wpedsclrp_sfc,   ! Optional
      .              sclrm, sclrm_forcing, edsclrm  ! Optional
@@ -108,6 +111,10 @@
        real, intent(in), dimension(gr%nnzp) :: 
      . thlm_forcing,  ! theta_l forcing.        [K/s]
      . rtm_forcing,   ! r_t forcing.            [(kg/kg)/s] 
+! Michael Falk, 27 Jul 2007
+     . rtm_mc,        ! r_t microphysical       [(kg/kg)/s] 
+     . thlm_mc,       ! thlm microphysical      [K/s] 
+! eMFc
      . wmm,           ! wm on moment. grid.     [m/s]
      . wmt,           ! wm on thermo. grid.     [m/s]
      . p,             ! Pressure.               [Pa] 
@@ -550,7 +557,6 @@
        ! Call Khairoutdinov and Kogan (2000) scheme, or COAMPS
        ! for rain microphysics.
        if ( kk_rain .or. lcoamps_micro ) then
-
          call timestep_microphys
      .        ( dt, time_current, time_initial,
      .          thlm, p, exner, rhot, rhom, rtm, rcm, Ncm, 
@@ -560,6 +566,13 @@
      .          hm_rt_tndcy, hm_thl_tndcy, isValid )
 
        end if
+
+! Michael Falk started adding code here, 27 Jul 2007
+       if (licedfs) then
+         hm_rt_tndcy = rtm_mc
+         hm_thl_tndcy = thlm_mc
+       end if
+! eMFc
 
        if ( .not. isValid ) return
 
