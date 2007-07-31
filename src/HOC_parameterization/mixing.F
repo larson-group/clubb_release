@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.17 2007-07-16 20:17:27 dschanen Exp $
+! $Id: mixing.F,v 1.18 2007-07-31 13:22:09 mjfalk Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -481,6 +481,9 @@
         use model_flags, only:
      .    cloud_sed,   ! Cloud sedimentation flag -Brian
      .    kk_rain,     ! Khairoutdinov and Kogan (2000) drizzle scheme -Brian
+! Michael Falk, 27 Jul 2007
+     .    licedfs,     ! Simplified ice scheme
+! eMFc
      .    lcoamps_micro! COAMPS(R) microphysics
 #ifdef STATS
         use hoc_stats
@@ -626,7 +629,11 @@
           end if
           ! Explicit contributions for xm from microphysics 
           ! (including drizzle )
-          if ( ixm_mc > 0 .and. ( kk_rain .or. lcoamps_micro ) ) then
+! Michael Falk, 27 Jul 2007
+!          if ( ixm_mc > 0 .and. ( kk_rain .or. lcoamps_micro ) ) then
+          if ( ixm_mc > 0 .and. 
+     .        ( kk_rain .or. lcoamps_micro .or. licedfs) ) then
+! eMFc
             zt%x(:,ixm_mc) = zt%x(:,ixm_mc) + hm_tndcy
             zt%n(:,ixm_mc) = zt%n(:,ixm_mc) + 1
           end if
@@ -798,7 +805,10 @@
 
           ! + xm_microphysics -- rain effects.
           ! Code addition by Brian for rain.
-          if ( kk_rain .or. lcoamps_micro ) then
+! Michael Falk, 27 Jul 2007
+!          if ( kk_rain .or. lcoamps_micro ) then
+          if ( kk_rain .or. lcoamps_micro .or. licedfs ) then
+! eMFc
             select case(trim( solve_type ))
             case ( "rtm", "thlm" ) 
             rhs(k_xm,1) = rhs(k_xm,1) + hm_tndcy(k)  ! thlm/rtm only; Brian
