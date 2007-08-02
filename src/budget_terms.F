@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: budget_terms.F,v 1.26 2007-03-14 23:34:47 dschanen Exp $     
+! $Id: budget_terms.F,v 1.27 2007-08-02 22:49:18 griffinb Exp $     
 
       module budget_terms
 
@@ -102,7 +102,7 @@
      .  C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12, C13
         real, public :: nu1, nu2, nu6, nu8, nu_r
         real, public :: beta, gamma_coef, gamma_coefb, gamma_coefc
-        real, public :: c_K, lmin_coef
+        real, public :: c_K, c_Krrm, lmin_coef
         real, public :: taumin, taumax, mu
 
         real, public :: C1_var, C1b_var, C1c_var
@@ -113,8 +113,8 @@
         real, public :: C7_var, C7b_var, C7c_var, C8_var, C8b_var
         real, public :: C10_var, C11_var, C11b_var, C11c_var, C12_var
         real, public :: nu1_var, nu2_var, nu6_var, nu8_var, nu_r_var
-        real, public :: beta_var, gamma_coef_var
-        real, public :: gamma_coefb_var, gamma_coefc_var, c_K_var
+        real, public :: beta_var, gamma_coef_var, gamma_coefb_var
+        real, public :: gamma_coefc_var, c_K_var, c_Krrm_var
         real, public :: lmin_coef_var, taumin_var, taumax_var, mu_var
 
         logical, public :: lwp2_prdp, lwp3_prdp
@@ -140,7 +140,7 @@
      .                      C10, C11, C11b, C11c, C12, C13,
      .                      nu1, nu2, nu6, nu8, nu_r, 
      .                      beta, gamma_coef, gamma_coefb, gamma_coefc,
-     .                      c_K, lmin_coef, taumin, taumax, mu
+     .                      c_K, c_Krrm, lmin_coef, taumin, taumax, mu
 
         namelist /variance/ C1_var, C1b_var, C1c_var, 
      .                      C2rt_var, C2thl_var, C2rtthl_var,
@@ -153,8 +153,8 @@
      .                      nu1_var, nu2_var, nu6_var, nu8_var, 
      .                      nu_r_var, beta_var, gamma_coef_var,
      .                      gamma_coefb_var, gamma_coefc_var, 
-     .                      c_K_var, lmin_coef_var, taumin_var, 
-     .                      taumax_var, mu_var
+     .                      c_K_var, c_Krrm_var, lmin_coef_var, 
+     .                      taumin_var, taumax_var, mu_var
 
         namelist /case_tune/ lwp2_prdp, lwp3_prdp, 
      .                       lwprtp_prdp, lwpthlp_prdp, 
@@ -772,7 +772,8 @@
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  const_vect(6), const_vect(7), ! beta and gamma_coef
      .                  gamma_coefb, gamma_coefc,
-     .                  c_K, lmin_coef, taumin, taumax, const_vect(8), ! mu
+     .                  c_K, c_Krrm, lmin_coef, taumin, taumax, 
+     .                  const_vect(8), ! mu
      .                  run_file, isValid, .false.,
      .                  grads_fields_reader, sample_ratio )
 
@@ -825,7 +826,8 @@
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  const_vect(4), const_vect(5),  ! beta and gamma_coef
      .                  gamma_coefb, gamma_coefc,
-     .                  c_K, lmin_coef, taumin, taumax, const_vect(6), ! mu
+     .                  c_K, c_Krrm, lmin_coef, taumin, taumax,
+     .                  const_vect(6), ! mu
      .                  run_file, isValid, .false.,
      .                  grads_fields_reader, sample_ratio )
 
@@ -878,7 +880,7 @@
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  const_vect(7), const_vect(8), ! beta and gamma_coef
      .                  gamma_coefb, gamma_coefc,
-     .                  c_K, lmin_coef, taumin, taumax, mu,
+     .                  c_K, c_Krrm, lmin_coef, taumin, taumax, mu,
      .                  run_file, isValid, .false.,
      .                  grads_fields_reader, sample_ratio )
 
@@ -931,7 +933,7 @@
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  const_vect(7), const_vect(8), ! beta and gamma_coef
      .                  gamma_coefb, gamma_coefc,
-     .                  c_K, lmin_coef, taumin, taumax, mu,
+     .                  c_K, c_Krrm, lmin_coef, taumin, taumax, mu,
      .                  run_file, isValid, .false.,
      .                  grads_fields_reader, sample_ratio )
 
@@ -986,7 +988,7 @@
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  beta, gamma_coef, 
      .                  gamma_coefb, gamma_coefc,
-     .                  c_K, lmin_coef, 
+     .                  c_K, c_Krrm, lmin_coef, 
      .                  taumin, taumax, const_vect(2), ! mu
      .                  run_file, isValid, .false.,
      .                  grads_fields_reader, sample_ratio )
@@ -1042,7 +1044,7 @@
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  beta, gamma_coef,
      .                  gamma_coefb, gamma_coefc,
-     .                  c_K, lmin_coef, 
+     .                  c_K, c_Krrm, lmin_coef, 
      .                  taumin, taumax, const_vect(2), ! mu
      .                  run_file, isValid, .false.,
      .                  grads_fields_reader, sample_ratio )
@@ -1097,7 +1099,7 @@
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  beta, gamma_coef,
      .                  gamma_coefb, gamma_coefc,
-     .                  c_K, lmin_coef, 
+     .                  c_K, c_Krrm, lmin_coef, 
      .                  taumin, taumax, const_vect(2), ! mu
      .                  run_file, isValid, .false.,
      .                  grads_fields_reader, sample_ratio )
@@ -1493,7 +1495,7 @@
      .                  C11, C11b, C11c, C12, C13,
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  xbeta, xgamma, gamma_coefb, gamma_coefc,
-     .                  c_K, lmin_coef, taumin, taumax, mu,
+     .                  c_K, c_Krrm, lmin_coef, taumin, taumax, mu,
      .                  run_file, isValid, .false.,
      .                  grads_fields_reader, sample_ratio )
 
@@ -2165,8 +2167,8 @@
 
         implicit none
 
-        real, dimension(36)          :: p_elements
-        character(10), dimension(36) :: p_string
+        real, dimension(37)          :: p_elements
+        character(10), dimension(37) :: p_string
 
         integer i
 
@@ -2174,7 +2176,7 @@
      .                 C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .                 C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12,
      .                 nu1, nu2, nu6, nu8, nu_r, 
-     .                 beta, gamma_coef, c_K, 
+     .                 beta, gamma_coef, c_K, c_Krrm, 
      .                 lmin_coef, taumin, taumax, mu/)
 
         p_string = (/"C1        ", "C1b       ", "C1c       ",
@@ -2188,8 +2190,9 @@
      .               "C12       ", 
      .               "nu1       ", "nu2       ", "nu6       ", 
      .               "nu8       ", "nu_r      ", "beta      ", 
-     .               "gamma_coef", "c_K       ", "lmin_coef ", 
-     .               "taumin    ", "taumax    ", "mu        "/)
+     .               "gamma_coef", "c_K       ", "c_Krrm    ",
+     .               "lmin_coef ", "taumin    ", "taumax    ", 
+     .               "mu        "/)
  
         write(*,*) "Calling HOC with optimal constants"
 
@@ -2201,7 +2204,7 @@
      .                  C11, C11b, C11c, C12, C13,
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  beta, gamma_coef, gamma_coefb, gamma_coefc,
-     .                  c_K, lmin_coef, taumin, taumax, mu,
+     .                  c_K, c_Krrm, lmin_coef, taumin, taumax, mu,
      .                  run_file, isValid, .false.,
      .                  grads_fields_reader, sample_ratio )
 
