@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: param_index.F,v 1.2 2007-04-24 21:57:41 dschanen Exp $
+! $Id: param_index.F,v 1.3 2007-08-02 22:51:40 griffinb Exp $
         module param_index
 
 !       Description:
@@ -23,7 +23,7 @@
         implicit none
 
         integer, parameter :: 
-     .  nparams = 44 ! Total tunable parameters
+     .  nparams = 45 ! Total tunable parameters
 
         integer, parameter ::
      .  iC1             =  1, 
@@ -54,14 +54,14 @@
      .  iC11c           = 26,
      .  iC12            = 27,
      .  iC13            = 28,
-     .  iC14            = 43
+     .  iC14            = 44
 
         integer, parameter ::
      .  inu1            = 29,
      .  inu2            = 30,
      .  inu6            = 31,
      .  inu8            = 32,
-     .  inu9            = 44,
+     .  inu9            = 45,
      .  inu_r           = 33
 
         integer, parameter ::
@@ -70,10 +70,11 @@
      .  igamma_coefc    = 36,
      .  imu             = 37,
      .  ic_K            = 38,
-     .  ibeta           = 39,
-     .  ilmin_coef      = 40,
-     .  itaumin         = 41,
-     .  itaumax         = 42
+     .  ic_Krrm         = 39,
+     .  ibeta           = 40,
+     .  ilmin_coef      = 41,
+     .  itaumin         = 42,
+     .  itaumax         = 43
 
         end module param_index
 !-----------------------------------------------------------------------

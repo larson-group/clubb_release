@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.54 2007-07-31 13:24:21 mjfalk Exp $
+! $Id: parameterization_interface.F,v 1.55 2007-08-02 22:51:40 griffinb Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -560,7 +560,7 @@
          call timestep_microphys
      .        ( dt, time_current, time_initial,
      .          thlm, p, exner, rhot, rhom, rtm, rcm, Ncm, 
-     .          pdf_parms, wmt, wmm, AKm_est, Akm, 
+     .          pdf_parms, wmt, wmm, Kht, AKm_est, Akm, 
      .          Ncnm, Nim,
      .          hydromet,
      .          hm_rt_tndcy, hm_thl_tndcy, isValid )

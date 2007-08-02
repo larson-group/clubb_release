@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameters.F,v 1.7 2007-07-16 20:19:40 dschanen Exp $
+! $Id: parameters.F,v 1.8 2007-08-02 22:51:40 griffinb Exp $
         module parameters 
 
 !       Description:
@@ -61,11 +61,12 @@
      .  nu6,        ! Previously determined eddy viscosity.
      .  nu8,        ! Previously determined eddy viscosity.
      .  nu9,        ! Previously determined eddy viscosity.
-     .  nu_r,       ! Tuned to LES from Surface Value of DYCOMS2 RF02 DS.
+     .  nu_r,       ! Background eddy diffusivity for hydrometeors.
      .  gamma_coef, ! Low Skewness in gamma coefficient Skewness Function.
      .  gamma_coefb,! High Skewness in gamma coefficient Skewness Function.
      .  gamma_coefc,! Degree of Slope of gamma coefficient Skewness Function.
      .  c_K,        ! Constant C_mu^(1/4) in Duynkerke & Driedonks 1987.
+     .  c_Krrm,     ! Constant for eddy diffusivity equation for hydrometeors.
      .  mu,         ! Fractional entrainment rate per unit altitude.
      .  taumin,     ! Previously determined value.
      .  taumax,     ! Previously determined value.
@@ -78,7 +79,7 @@
 !$omp   threadprivate(C13, C14)
 !$omp   threadprivate(nu1, nu2, nu6, nu8, nu9, nu_r, beta)
 !$omp   threadprivate(gamma_coef, gamma_coefb, gamma_coefc)
-!$omp   threadprivate(c_K, taumin, taumax, mu, lmin)
+!$omp   threadprivate(c_K, c_Krrm, taumin, taumax, mu, lmin)
 
 !       Vince Larson added a constant to set plume widths for theta_l and rt
 !       beta should vary between 0 and 3, with 1.5 the standard value
@@ -100,7 +101,7 @@
      .    C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c,
      .    C12, C13, C14, nu1, nu2, nu6, nu8, nu9, nu_r, beta, 
      .    gamma_coef, gamma_coefb, gamma_coefc,
-     .    c_K, lmin_coef, taumin, taumax, mu
+     .    c_K, c_Krrm, lmin_coef, taumin, taumax, mu
 
 !       These are referenced together often enough that it made sense to 
 !       make a list of them.  Note that lmin_coef is the input parameter, 
@@ -117,8 +118,9 @@
      .    "C11b       ", "C11c       ", "C12        ", "C13        ",
      .    "nu1        ", "nu2        ", "nu6        ", "nu8        ",
      .    "nu_r       ", "gamma_coef ", "gamma_coefb", "gamma_coefc", 
-     .    "mu         ", "c_K        ", "beta       ", "lmin_coef  ",
-     .    "taumin     ", "taumax     ", "C14        ", "nu9        "/)
+     .    "mu         ", "c_K        ", "c_Krrm     ", "beta       ",
+     .    "lmin_coef  ", "taumin     ", "taumax     ", "C14        ",
+     .    "nu9        "/)
 
         contains
 
@@ -156,7 +158,7 @@
      .         C11, C11b, C11c, C12, C13, C14,
      .         nu1, nu2, nu6, nu8, nu9, nu_r,
      .         gamma_coef, gamma_coefb, gamma_coefc,
-     .         mu, c_K, beta, lmin_coef,
+     .         mu, c_K, c_Krrm, beta, lmin_coef,
      .         taumin, taumax )
 
         ! It was decided after some experimentation, that the best
@@ -274,6 +276,7 @@
          gamma_coefb = 0.32
          gamma_coefc = 5.0
          c_K         = 0.548
+         c_Krrm      = 0.075
          taumin      = 90.0
          taumax      = 3600.0
          lmin_coef   = 0.5
@@ -297,7 +300,7 @@
      .        C11, C11b, C11c, C12, C13, C14,
      .        nu1, nu2, nu6, nu8, nu9, nu_r,
      .        gamma_coef, gamma_coefb, gamma_coefc,
-     .        mu, c_K, beta, lmin_coef,
+     .        mu, c_K, c_Krrm, beta, lmin_coef,
      .        taumin, taumax, params )
 
        return
@@ -347,7 +350,7 @@
      .    C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c,
      .    C12, C13, C14, nu1, nu2, nu6, nu8, nu9, nu_r, beta, 
      .    gamma_coef, gamma_coefb, gamma_coefc,
-     .    c_K, lmin_coef, taumin, taumax, mu
+     .    c_K, c_Krrm, lmin_coef, taumin, taumax, mu
 
        ! Read the namelist
        open(unit=iunit, file=filename, status='old', action='read')
@@ -364,7 +367,7 @@
      .        C11, C11b, C11c, C12, C13, C14,
      .        nu1, nu2, nu6, nu8, nu9, nu_r,
      .        gamma_coef, gamma_coefb, gamma_coefc,
-     .        mu, c_K, beta, lmin_coef,
+     .        mu, c_K, c_Krrm, beta, lmin_coef,
      .        taumin, taumax, param_spread )
 
        ! Initialize to zero
@@ -394,7 +397,7 @@
      .              C11, C11b, C11c, C12, C13, C14,
      .              nu1, nu2, nu6, nu8, nu9, nu_r,
      .              gamma_coef, gamma_coefb, gamma_coefc,
-     .              mu, c_K, beta, lmin_coef,
+     .              mu, c_K, c_Krrm, beta, lmin_coef,
      .              taumin, taumax, params )
 !       Description:
 !       Takes the list of scalar variables and puts them into a 1D
@@ -417,7 +420,7 @@
      .  C11, C11b, C11c, C12, C13, C14,
      .  nu1, nu2, nu6, nu8, nu9, nu_r,
      .  gamma_coef, gamma_coefb, gamma_coefc,
-     .  mu, c_K, beta, lmin_coef,
+     .  mu, c_K, c_Krrm, beta, lmin_coef,
      .  taumin, taumax
 
         ! Output variables
@@ -468,6 +471,8 @@
 
         params(ic_K) = c_K 
 
+        params(ic_Krrm) = c_Krrm
+
         params(ibeta) = beta
 
         params(ilmin_coef) = lmin_coef
@@ -487,7 +492,7 @@
      .               C11, C11b, C11c, C12, C13, C14,
      .               nu1, nu2, nu6, nu8, nu9, nu_r,
      .               gamma_coef, gamma_coefb, gamma_coefc,
-     .               mu, c_K, beta, lmin_coef,
+     .               mu, c_K, c_Krrm, beta, lmin_coef,
      .               taumin, taumax )
 
 !       Description:
@@ -515,7 +520,7 @@
      .  C11, C11b, C11c, C12, C13, C14,
      .  nu1, nu2, nu6, nu8, nu9, nu_r,
      .  gamma_coef, gamma_coefb, gamma_coefc,
-     .  mu, c_K, beta, lmin_coef,
+     .  mu, c_K, c_Krrm, beta, lmin_coef,
      .  taumin, taumax
 
         C1      = params(iC1)
@@ -562,6 +567,8 @@
         mu = params(imu)
 
         c_K = params(ic_K)
+
+        c_Krrm = params(ic_Krrm)
 
         beta = params(ibeta)
 

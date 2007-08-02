@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.14 2007-07-31 13:39:54 mjfalk Exp $
+! $Id: microphysics.F,v 1.15 2007-08-02 22:51:40 griffinb Exp $
         module microphysics
 
 !       Description:
@@ -28,7 +28,7 @@
         subroutine timestep_microphys
      .             ( dt, time_current, time_initial, 
      .               thlm, p, exner, rhot, rhom, rtm, rcm, Ncm, 
-     .               pdf_parms, wmt, wmm, AKm_est, AKm, 
+     .               pdf_parms, wmt, wmm, Kht, AKm_est, AKm, 
      .               Ncnm, Nim,
      .               hydromet,
      .               hm_rt_tndcy, hm_thl_tndcy, isValid )
@@ -43,7 +43,7 @@
         use grid_class
         use rain_equations, only: kk_microphys
         use model_flags
-        use parameters, only: nu_r
+        use parameters, only: c_Krrm, nu_r
         use constants, only: hydromet_dim, Lv, Cp, rho_lw
 #ifdef STATS
         use hoc_stats
@@ -74,17 +74,18 @@
      .  time_initial ! Initial time     [s]
 
         real, dimension(gr%nnzp), intent(in) ::
-     .  thlm,   ! Liquid potential temp.        [K]
-     .  p,      ! Pressure                      [Pa]
-     .  exner,  ! Exner function                [-]
-     .  rhot,   ! Density on thermo. grid       [kg/m^3]
-     .  rhom,   ! Density on moment. grid       [kg/m^3]
-     .  rtm,    ! Total water mixing ratio      [kg/kg]
-     .  rcm,    ! Liquid water mixing ratio     [kg/kg]
-     .  wmt,    ! w wind on moment. grid        [m/s]
-     .  wmm,    ! w wind on thermo. grid        [m/s]
-     .  Akm_est,! Analytic Kessler ac           [kg/kg]
-     .  Akm     ! Analytic Kessler estimate     [kg/kg]
+     .  thlm,   ! Liquid potential temp.                 [K]
+     .  p,      ! Pressure                               [Pa]
+     .  exner,  ! Exner function                         [-]
+     .  rhot,   ! Density on thermo. grid                [kg/m^3]
+     .  rhom,   ! Density on moment. grid                [kg/m^3]
+     .  rtm,    ! Total water mixing ratio               [kg/kg]
+     .  rcm,    ! Liquid water mixing ratio              [kg/kg]
+     .  wmt,    ! w wind on moment. grid                 [m/s]
+     .  wmm,    ! w wind on thermo. grid                 [m/s]
+     .  Kht,    ! Kh Eddy diffusivity on thermo. grid    [m^2/s]
+     .  Akm_est,! Analytic Kessler ac                    [kg/kg]
+     .  Akm     ! Analytic Kessler estimate              [kg/kg]
 
         ! Note:
         ! K & K only uses Ncm, while for COAMPS Ncnm is initialized
@@ -143,6 +144,11 @@
      .  ss1, ss2,
      .  rc1, rc2
 
+        ! Eddy diffusivity for rain and rain drop concentration.
+        ! It is also used for the other hydrometeor variables.
+        ! Kr = Constant * Kht; Constant is named c_Krrm.
+        real, dimension(gr%nnzp) :: Kr     ! [m^2/s]
+
         ! Variable needed to handle correction to rtm and thlm microphysics
         ! tendency arrays, as well rrm_cond and Nrm_cond statistical
         ! tendency arrays, due to a negative result being produced by 
@@ -171,6 +177,11 @@
         s2   => pdf_parms(1:gr%nnzp,21)
         ss1  => pdf_parms(1:gr%nnzp,22)
         ss2  => pdf_parms(1:gr%nnzp,23)
+
+        ! Solve for the value of Kr, the hydrometeor eddy diffusivity.
+        do k = 1, gr%nnzp, 1
+           Kr(k) = c_Krrm * Kht(k)
+        enddo
 
         ! Begin by calling either Brian Griffin's implementation of the
         ! Khairoutdinov and Kogan microphysical scheme or 
@@ -308,7 +319,7 @@
         ! ----------------------------------------------------------------------
 
         call microphys_lhs
-     .       ( "rrm", .true., dt, nu_r, wmt, Vrr, rrm, lhs )
+     .       ( "rrm", .true., dt, Kr, nu_r, wmt, Vrr, rrm, lhs )
 
         call microphys_solve
      .       ( "rrm", dt, lhs, rrm_tndcy, rrm, isValid )
@@ -318,8 +329,8 @@
         do k = 1, gr%nnzp, 1
            if ( rrm(k) < 0.0 ) then
 
-              call adj_microphys_tndcy( rrm_tndcy, wmt, Vrr, nu_r, dt,
-     .                                  k, .true., "rrm",
+              call adj_microphys_tndcy( rrm_tndcy, wmt, Vrr, Kr, nu_r, 
+     .                                  dt, k, .true., "rrm",
      .                                  rrm, overevap_rate )
 
               ! overevap_rate is defined as positive.
@@ -363,7 +374,7 @@
         ! ----------------------------------------------------------------------
 
         call microphys_lhs
-     .       ( "Nrm", .true., dt, nu_r, wmt, VNr, Nrm, lhs )
+     .       ( "Nrm", .true., dt, Kr, nu_r, wmt, VNr, Nrm, lhs )
 
         call microphys_solve
      .       ( "Nrm", dt, lhs, Nrm_tndcy, Nrm, isValid )
@@ -373,8 +384,8 @@
         do k = 1, gr%nnzp, 1
            if ( Nrm(k) < 0.0 ) then
 
-              call adj_microphys_tndcy( Nrm_tndcy, wmt, VNr, nu_r, dt,
-     .                                  k, .true., "Nrm",
+              call adj_microphys_tndcy( Nrm_tndcy, wmt, VNr, Kr, nu_r,
+     .                                  dt, k, .true., "Nrm",
      .                                  Nrm, overevap_rate )
 
            endif
@@ -415,7 +426,8 @@
           ! --------------------------------------------------------------------
 
           call microphys_lhs
-     .         ( "rsnowm", .true., dt, nu_r, wmt, Vsnow, rsnowm, lhs )
+     .         ( "rsnowm", .true., dt, Kr, nu_r, wmt, Vsnow, 
+     .           rsnowm, lhs )
 
           call microphys_solve
      .         ( "rsnowm", dt, lhs, rsnowm_tndcy, rsnowm, isValid )
@@ -464,7 +476,7 @@
           ! --------------------------------------------------------------------
 
           call microphys_lhs
-     .         ( "rgraupelm", .true., dt, nu_r, wmt, Vgraupel, 
+     .         ( "rgraupelm", .true., dt, Kr, nu_r, wmt, Vgraupel, 
      .            rgraupelm, lhs )
 
           call microphys_solve
@@ -509,7 +521,7 @@
           ! Note: Ice sediments in new COAMPS
 
           call microphys_lhs
-     .         ( "ricem", .true., dt, nu_r, wmt, Vice, ricem, lhs )
+     .         ( "ricem", .true., dt, Kr, nu_r, wmt, Vice, ricem, lhs )
 
           call microphys_solve
      .         ( "ricem", dt, lhs, ricem_tndcy, ricem, isValid )
@@ -744,7 +756,7 @@
 
 !-----------------------------------------------------------------------
         subroutine microphys_lhs
-     .             ( solve_type, lsed, dt, nu, wmt, v_t, xrm, lhs )
+     .             ( solve_type, lsed, dt, Kr, nu, wmt, v_t, xrm, lhs )
 
 !       Description:
 !       Setup the matrix of implicit contributions to a term
@@ -774,12 +786,13 @@
 
         real, intent(in) :: 
      .  dt, ! Timestep                  [s]
-     .  nu  ! Diffusion coefficient     [-]
+     .  nu  ! Diffusion coefficient     [m^2/s]
 
         real, intent(in), dimension(gr%nnzp) :: 
      .  xrm, ! Value of hydrometeor as prev. time       [units vary]
      .  wmt, ! w wind on t                              [m/s]
-     .  v_t  ! Terminal velocity                        [m/s]
+     .  v_t, ! Terminal velocity                        [m/s]
+     .  Kr   ! Eddy diffusivity for hydrometeors        [m^2/s]
 
         real, intent(out), dimension(3,gr%nnzp) ::
      .  lhs ! Left hand side of tridiagonal matrix
@@ -849,7 +862,7 @@
           ! Diffusion
           lhs(kp1diag:km1diag,k)
      .    = lhs(kp1diag:km1diag,k)
-     .    + diffusion( nu, gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+     .    + diffusion( Kr(k), nu, gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
           ! Mean Advection
           lhs(kp1diag:km1diag,k)
      .    = lhs(kp1diag:km1diag,k)
@@ -884,7 +897,8 @@
 
             if ( ixrm_dff > 0 ) then
               tmp(1:3)
-     .        = diffusion( nu, gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+     .        = diffusion( Kr(k), nu, gr%dzm(km1), gr%dzm(k), 
+     .                     gr%dzt(k), k )
               ztscr07(k) = -tmp(3)
               ztscr08(k) = -tmp(2)
               ztscr09(k) = -tmp(1)
@@ -899,7 +913,7 @@
         end subroutine microphys_lhs
 
 !-----------------------------------------------------------------------
-        pure function diffusion( nu, dzmm1, dzm, dzt, level ) 
+        pure function diffusion( Kr, nu, dzmm1, dzm, dzt, level ) 
      .  result( lhs ) 
 
 !       Description:
@@ -920,7 +934,7 @@
      .  km1diag = 3
 
         ! Input Variables
-        real, intent(in) :: nu ! Diffusion coefficient
+        real, intent(in) :: Kr, nu ! Diffusion coefficients
 
         real, intent(in) :: 
      .  dzmm1, dzm, dzt ! Inverse of the grid spacing [m]
@@ -935,7 +949,7 @@
         ! This function handles the portion of the hydrometeor equation that
         ! is concerned with eddy diffusion:
         !
-        ! d(xx)/dt = ... + nu * [ d^2(xx)/(dz)^2 ] + ...
+        ! d(xx)/dt = ... + (Kr+nu) * [ d^2(xx)/(dz)^2 ] + ...
         !
         ! The normal discretization is to use the values of the hydrometeor, xx,
         ! which is located on thermodynamic levels, from three levels -- the 
@@ -1015,15 +1029,15 @@
         ! Left-hand side matrix, diffusional term only; first five levels:
         !
         !   ----->
-        ! 0 | 0            0                     0                              0
+        ! 0 | 0              0                               0                                   0
         !   |
-        !   | 0   +nu*dzt(k)*dzm(k)     -nu*dzt(k)*dzm(k)                       0
+        !   | 0   +(Kr+nu)*dzt(k)*dzm(k)     -(Kr+nu)*dzt(k)*dzm(k)                              0
         !   |
-        !   | 0   -nu*dzt(k)*dzm(k-1)   +nu*dzt(k)*(dzm(k)+dzm(k-1))   -nu*dzt(k)*dzm(k)
+        !   | 0   -(Kr+nu)*dzt(k)*dzm(k-1)   +(Kr+nu)*dzt(k)*(dzm(k)+dzm(k-1))   -(Kr+nu)*dzt(k)*dzm(k)
         !   |
-        !   | 0            0            -nu*dzt(k)*dzm(k-1)            +nu*dzt(k)*(dzm(k)+dzm(k-1))
+        !   | 0              0               -(Kr+nu)*dzt(k)*dzm(k-1)            +(Kr+nu)*dzt(k)*(dzm(k)+dzm(k-1))
         !   |
-        !   | 0            0                     0                     -nu*dzt(k)*dzm(k-1)
+        !   | 0              0                               0                   -(Kr+nu)*dzt(k)*dzm(k-1)
         !   |
         !  \ /
         !
@@ -1037,21 +1051,21 @@
 
         elseif ( level == 2 ) then
            ! k = 2; lower boundary level.
-           lhs(kp1diag) = - nu * dzt * dzm
-           lhs(kdiag)   = + nu * dzt * dzm
+           lhs(kp1diag) = - (Kr+nu) * dzt * dzm
+           lhs(kdiag)   = + (Kr+nu) * dzt * dzm
            lhs(km1diag) = 0.0
 
         elseif ( level > 2 .and. level < gr%nnzp ) then
            ! Most of the interior model; normal conditions.
-           lhs(kp1diag) = - nu * dzt * dzm
-           lhs(kdiag)   = + nu * dzt * ( dzm + dzmm1 )
-           lhs(km1diag) = - nu * dzt * dzmm1
+           lhs(kp1diag) = - (Kr+nu) * dzt * dzm
+           lhs(kdiag)   = + (Kr+nu) * dzt * ( dzm + dzmm1 )
+           lhs(km1diag) = - (Kr+nu) * dzt * dzmm1
 
         elseif ( level == gr%nnzp ) then
            ! k = gr%nnzp (top level); upper boundary level.
            lhs(kp1diag) = 0.0
-           lhs(kdiag)   = + nu * dzt * dzmm1
-           lhs(km1diag) = - nu * dzt * dzmm1
+           lhs(kdiag)   = + (Kr+nu) * dzt * dzmm1
+           lhs(km1diag) = - (Kr+nu) * dzt * dzmm1
 
         endif
 
@@ -1370,8 +1384,8 @@
         end function sedimentation
 
 !-----------------------------------------------------------------------
-        subroutine adj_microphys_tndcy( xrm_tndcy, wmt, v_t, nu, dt, 
-     .                                  level, lsed, solve_type,
+        subroutine adj_microphys_tndcy( xrm_tndcy, wmt, v_t, Kr, nu,
+     .                                  dt, level, lsed, solve_type,
      .                                  xrm, overevap_rate )
 
         ! DESCRIPTION:  Correction for the over-evaporation of a hydrometeor.
@@ -1493,6 +1507,8 @@
         real, dimension(gr%nnzp), intent(in) :: wmt        ! [m/s]
         ! Sedimentation velocity (interpolated to thermo. levels).
         real, dimension(gr%nnzp), intent(in) :: v_t        ! [m/s]
+        ! Eddy diffusivity for hydrometeors
+        real, dimension(gr%nnzp), intent(in) :: Kr         ! [m^2/s]
 
         real, intent(in) :: nu  ! Diffusion coefficient      [m^2/s]
         real, intent(in) :: dt  ! Timestep                   [s]
@@ -1605,7 +1621,8 @@
         ! The implicit (LHS) value of the diffusion component of the
         ! equation used during the timestep that was just solved for.
         tmp(1:3)
-     .     = diffusion( nu, gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+     .     = diffusion( Kr(k), nu, gr%dzm(km1), gr%dzm(k), 
+     .                  gr%dzt(k), k )
 
         df_subdiag  = -tmp(3) ! subdiagonal
         df_maindiag = -tmp(2) ! main diagonal
