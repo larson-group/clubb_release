@@ -1,4 +1,5 @@
-$Id: Readme.txt,v 1.25 2007-07-07 16:46:32 vlarson Exp $
+$Id: Readme.txt,v 1.26 2007-08-06 17:36:15 vlarson Exp $
+
 ************************************************************************
 *                           Copyright Notice
 *                         This code is (C) 2006 
