@@ -115,7 +115,7 @@
             rt_tndcy(k) = 0.345 / 86400 +
      .        (-0.345) / (86400*(5000-4000)) * (gr%zt(k) - 4000) ! Units [g kg^-1 s^-1]
           else
-            rt_tndcy(k) = 0.  ! Units [K s^-1]
+            rt_tndcy(k) = 0.  ! Units [g kg^-1 s^-1]
           end if
           rt_tndcy(k) = rt_tndcy(k) / 1000.  ! Converts [g kg^-1 s^-1] to [kg kg^-1 s^-1]
         end do
@@ -123,7 +123,11 @@
         if ( kk_rain ) then
           do k=1,gr%nnzp
             if ( rcm(k) >= rc_tol ) then
-              Ncm(k) = 70.0 * 1.e6 * rhot(k)
+! Vince Larson removed factor of rhot so that Ncm would be in units of m^{-3}.
+! 3 Aug 2007.
+!              Ncm(k) = 70.0 * 1.e6 * rhot(k)
+              Ncm(k) = 70.0 * 1.e6
+! End Vince Larson's change.
             else
               Ncm(k) = 0.
             end if
