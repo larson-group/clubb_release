@@ -1,21 +1,21 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace.F,v 1.6 2007-07-31 13:11:12 mjfalk Exp $
-        module mpace
+! $Id: mpace_b.F,v 1.1 2007-08-09 17:32:02 mjfalk Exp $
+        module mpace_b
 
 !       Description:
-!       Contains subroutines for the MPACE intercomparison.
+!       Contains subroutines for the mpace_b intercomparison.
 !----------------------------------------------------------------------
 
-        public :: mpace_tndcy, mpace_sfclyr
+        public :: mpace_b_tndcy, mpace_b_sfclyr
 
         private
 
         contains
 
 !----------------------------------------------------------------------
-        subroutine mpace_tndcy
+        subroutine mpace_b_tndcy
      .  ( time, time_initial, dt, rlat, thlm,
      .    exner, rhot, rtm, p, thvm, rcm,
      .    wmt, wmm, theta_tndcy, rt_tndcy,
@@ -23,7 +23,7 @@
      .    rtm_mc, thlm_mc, sclrm_forcing )
 
 !        Description:
-!          Subroutine to large-scale subsidence for MPACE case (Michael
+!          Subroutine to large-scale subsidence for mpace_b case (Michael
 !          Falk, 21 July 2006).  Added ice and radiation based on Adam
 !          Smith Nov 11 case, 27 July 2006.  Comments and documentation
 !          added 31 July 2006.
@@ -341,20 +341,20 @@
         end if
 
         return
-        end subroutine mpace_tndcy
+        end subroutine mpace_b_tndcy
 
 !----------------------------------------------------------------------
-        subroutine mpace_sfclyr( rho0, um_sfc, vm_sfc,
+        subroutine mpace_b_sfclyr( rho0, um_sfc, vm_sfc,
      .                           upwp_sfc, vpwp_sfc,
      .                           wpthlp_sfc, wprtp_sfc,
      .                           wpsclrp_sfc, wpedsclrp_sfc )
 
 !        Description:
-!          Surface forcing subroutine for MPACE case.  Written July-
+!          Surface forcing subroutine for mpace_b case.  Written July-
 !          November 2006 by Michael Falk.
 !
 !        References:
-!          MPACE specification, arm.gov
+!          mpace_b specification, arm.gov
 !-----------------------------------------------------------------------
 
         use constants
@@ -368,7 +368,7 @@
         real, parameter ::
      .  ubmin = 0.25,
      .  ustar = 0.25,
-        ! Values of HF & LF are from the MPACE specification.
+        ! Values of HF & LF are from the mpace_b specification.
      .  HF    = 136.5, ! Sensible Heat Flux     [W m^-2] 
      .  LF    = 107.7  ! Latent Heat Flux       [W m^-2] 
 ! eMFc
@@ -417,6 +417,6 @@
         end if
 
         return
-        end subroutine mpace_sfclyr
+        end subroutine mpace_b_sfclyr
 
-        end module mpace
+        end module mpace_b

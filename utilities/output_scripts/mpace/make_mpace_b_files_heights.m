@@ -1,12 +1,12 @@
-function [] = make_mpace_files_heights();
+function [] = make_mpace_b_files_heights();
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% make_mpace_files_heights()
+% make_mpace_b_files_heights()
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Written by Michael Falk, September 2006-March 2007
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Input parameters: none
-% Input files: MPace GrADS files (.ctl and .dat)
+% Input files: mpace_b GrADS files (.ctl and .dat)
 % Output parameters: none
 % Output files:  
 %
@@ -17,20 +17,20 @@ function [] = make_mpace_files_heights();
 % Reference: http://science.arm.gov/workinggroup/cpm/scm/scmic5/
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % This program makes the required output for submission to ARM for the
-% MPACE (Mixed-Phase Arctic Cloud Experiment) case.  Differs from
-% make_mpace_files_heights in that it creates one more optional field (z)
+% mpace_b (Mixed-Phase Arctic Cloud Experiment) case.  Differs from
+% make_mpace_b_files_heights in that it creates one more optional field (z)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Set up input files and timestep
-scm_path = ['/home/mjfalk/hoc/hoc_mpace_0048n/'];
-smfile   = 'mpace_zt.ctl';
+scm_path = ['/home/mjfalk/hoc/hoc_mpace_b_0048n/'];
+smfile   = 'mpace_b_zt.ctl';
 
 t = 0:30:720;
 t(1) = 1;
 sizet = size(t);
 sizet = max(sizet);
 
-% Load MPACE data from mass grid files
+% Load mpace_b data from mass grid files
 [filename,nz,z,ntimesteps,numvars,list_vars] = header_read([scm_path,smfile]);
 
 for i=1:numvars
@@ -225,8 +225,8 @@ end
 
 
 
-% Load MPACE data from momentum grid files
-swfile   = 'mpace_zm.ctl';
+% Load mpace_b data from momentum grid files
+swfile   = 'mpace_b_zm.ctl';
 [filename2,nz2,z2,ntimesteps2,numvars2,list_vars2] = header_read([scm_path,swfile]);
 
 for i=1:numvars2

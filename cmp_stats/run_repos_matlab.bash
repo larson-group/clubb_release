@@ -1,6 +1,6 @@
 #!/bin/bash
 #######################################################################
-# $Id: run_repos_matlab.bash,v 1.1 2007-07-17 17:10:59 hocbrowser Exp $
+# $Id: run_repos_matlab.bash,v 1.2 2007-08-09 17:27:08 mjfalk Exp $
 #
 # Script to run the standalone hoc program for all models, with 
 # repository (non-static) constants.
@@ -15,7 +15,7 @@ EXIT_CODE=( [0]=0 [1]=0 [2]=0 [3]=0 [4]=0 [5]=0 [6]=0 [7]=0 [8]=0 [9]=0 [10]=0 [
 
 RUN_CASE=( \
  arm atex bomex cobra dycoms2_rf01 dycoms2_rf02_do dycoms2_rf02_ds\
- dycoms2_rf02_nd dycoms2_rf02_so fire gabls2 jun25_altocu mpace nov11_altocu\
+ dycoms2_rf02_nd dycoms2_rf02_so fire gabls2 jun25_altocu mpace_b nov11_altocu\
  rico wangara )
 
 mv HOC_current/*.ctl HOC_previous/

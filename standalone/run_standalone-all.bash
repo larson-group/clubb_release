@@ -1,6 +1,6 @@
 #!/bin/bash
 #######################################################################
-# $Id: run_standalone-all.bash,v 1.25 2007-03-19 22:03:27 dschanen Exp $
+# $Id: run_standalone-all.bash,v 1.26 2007-08-09 17:29:47 mjfalk Exp $
 #
 # Script to run the standalone hoc program for all models.
 # Tested with bash v2.  Might work with Ksh.
@@ -15,7 +15,7 @@ EXIT_CODE=( [0]=0 [1]=0 [2]=0 [3]=0 [4]=0 [5]=0 [6]=0 [7]=0 [8]=0 [9]=0 \
 
 RUN_CASE=( \
 	arm atex bomex dycoms2_rf01 dycoms2_rf02_do dycoms2_rf02_ds\
-	dycoms2_rf02_nd dycoms2_rf02_so fire gabls2 jun25_altocu mpace \
+	dycoms2_rf02_nd dycoms2_rf02_so fire gabls2 jun25_altocu mpace_b \
 	nov11_altocu rico wangara )
 
 # Since everyone seems to like to add new cases without adding exit codes,

@@ -5,7 +5,7 @@ stats_fmt = 'grads'
 stats_tsamp = 60.0
 stats_tout  = 60.0
 
-fname_zt = 'mpace_zt',
+fname_zt = 'mpace_b_zt',
 vars_zt = 
 'thlm', 'thvm', 'rtm', 'rcm', 'um', 'vm', 'wmt', 'ug', 'vg',
 'cf', 'p', 'exner', 'Lscale', 'thlm_forcing', 'thlm_mc',
@@ -38,7 +38,7 @@ vars_zt =
 !'edsclram', 'edsclrbm',
 ''
 
-fname_zm = 'mpace_zm',
+fname_zm = 'mpace_b_zm',
 vars_zm = 
 'wp2', 'rtp2', 'thlp2', 'rtpthlp', 'wprtp', 'wpthlp', 'wp4',
 'wpthvp', 'rtpthvp', 'thlpthvp', 'taum', 'khm', 'wprcp',
@@ -64,7 +64,7 @@ vars_zm =
 !'wpedsclrap', 'wpedsclrbp',
 ''
 
-fname_sfc = 'mpace_sfc',
+fname_sfc = 'mpace_b_sfc',
 vars_sfc = 
 'ustar', 'lh', 'sh', 'cc', 'lwp', 'zb', 'zi', 'rain', 'pflux', 'rrm_sfc',
 ''

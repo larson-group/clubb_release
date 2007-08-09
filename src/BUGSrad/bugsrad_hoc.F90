@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_hoc.F90,v 1.15 2007-06-19 21:04:59 dschanen Exp $
+! $Id: bugsrad_hoc.F90,v 1.16 2007-08-09 17:28:22 mjfalk Exp $
 
 subroutine bugsrad_hoc( alt, nz, lat_in_degrees, lon_in_degrees, &
                         day, month, year, time,                  &
@@ -198,7 +198,7 @@ use hoc_stats, only: zt, zm, lstats_samp, &
 
   slr  = 1.0d0 ! Fraction of daylight
 
-! Changed for MPACE inter comparison -dschanen 3 Nov 2006
+! Changed for mpace_b inter comparison -dschanen 3 Nov 2006
 ! rcil(1,1:(nz-1)+buffer) = 0.0d0 ! Assume no ice for HOC
   
 

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.130 2007-07-31 13:14:52 mjfalk Exp $
+! $Id: hoc.F,v 1.131 2007-08-09 17:27:51 mjfalk Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -1002,10 +1002,10 @@
           em = 0.1
           wp2 = 2./3. * em
 
-        ! Michael Falk for MPACE Arctic Stratus case.
-        case ( "mpace" )
+        ! Michael Falk for mpace_b Arctic Stratus case.
+        case ( "mpace_b" )
 
-          cloud_top_height = 1300. ! 1300 m is the cloud top in MPACE.  Michael Falk 17 Aug 2006
+          cloud_top_height = 1300. ! 1300 m is the cloud top in mpace_b.  Michael Falk 17 Aug 2006
           emax = 1.0
 
           do k=1,gr%nnzp
@@ -1141,7 +1141,7 @@
         use gabls2, only: gabls2_tndcy, gabls2_sfclyr
         use rico, only: rico_tndcy, rico_sfclyr
         use lba, only: lba_tndcy, lba_sfclyr
-        use mpace, only: mpace_tndcy, mpace_sfclyr
+        use mpace_b, only: mpace_b_tndcy, mpace_b_sfclyr
         use nov11, only: nov11_altocu_tndcy ! Above surface
         use jun25, only: jun25_altocu_tndcy ! Above surface
         use wangara, only: wangara_tndcy, wangara_sfclyr
@@ -1302,8 +1302,8 @@
 #endif /* SCALARS */
      .                    )
 
-         case ( "mpace" ) ! MPACE arctic stratus case
-           call mpace_tndcy( time, time_initial, dtmain, rlat, thlm,
+         case ( "mpace_b" ) ! mpace_b arctic stratus case
+           call mpace_b_tndcy( time, time_initial, dtmain, rlat, thlm,
      .                       exner, rhot, rtm, p, thvm, rcm,
      .                       wmt, wmm, thlm_forcing, rtm_forcing,
 ! Michael Falk added rtm_mc and thlm_mc here on 27 Jul 2007
@@ -1481,9 +1481,9 @@
 #endif /* SCALARS */
      .                     )
 
-         case ( "mpace" )
-           call mpace_sfclyr( rhom(1), um(2), vm(2), upwp_sfc, vpwp_sfc,
-     .                        wpthlp_sfc, wprtp_sfc
+         case ( "mpace_b" )
+           call mpace_b_sfclyr( rhom(1), um(2), vm(2), upwp_sfc,
+     .                        vpwp_sfc, wpthlp_sfc, wprtp_sfc
 #ifdef SCALARS
      .                        ,wpsclrp_sfc, wpedsclrp_sfc
 #endif /* SCALARS */

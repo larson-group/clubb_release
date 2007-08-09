@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.55 2007-08-02 22:51:40 griffinb Exp $
+! $Id: parameterization_interface.F,v 1.56 2007-08-09 17:29:00 mjfalk Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -908,7 +908,7 @@
      .  licedfs,      ! Simplified ice scheme
      .  lcoamps_micro,! COAMPS microphysics scheme
      .  cloud_sed,    ! Cloud Sedimentation
-     .  luv_nudge,    ! Wind nudging for MPACE case
+     .  luv_nudge,    ! Wind nudging for mpace_b case
      .  lKhm_aniso    ! Whether to use anisotropic Khm. - Michael Falk 2 Feb 2007
 
         logical, intent(in) :: 
