@@ -7,6 +7,11 @@ one of the files generates one of the required files for submission to
 the RICO intercomparison.  These are good files to look at for examples 
 if you want to create your own NetCDF output.
 
+netcdf_rico_reader.m is a file used to verify the NetCDF files written 
+in the netcdf_rico_writer files, and to plot the output it reads from 
+those files.  It is not extensively commented; it's a fairly 
+unsophisticated program.
+
 rico_profile.m is a file used to take the data supplied in the RICO 
 specification (Temperature, height, specific humidity), use the 
 hydrostatic approximation and the first law of thermodynamics, and 
