@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.15 2007-08-02 22:51:40 griffinb Exp $
+! $Id: microphysics.F,v 1.16 2007-08-09 18:59:49 mjfalk Exp $
         module microphysics
 
 !       Description:
@@ -58,7 +58,13 @@
         ! COAMPS parameters
         integer, parameter :: 
      .  nrdamp = 0, ! Number of points in the damping layer (COAMPS)
+! Michael Falk started adding code here, 9 August 2007, to remove magic numbers
+     .  nne = 1,  ! Horizontal domain parameter (always 1 for HOC)
+     .  j   = 1,  ! Horizontal grid box (always 1 for HOC)
+     .  icon = 5, ! Ice nucleation scheme; 1 = Fletcher, 2 = Meyers, 3 = Hobbs & Rangno, 4 = Cooper, 5 = Cooper/Fletcher (warm/cold)
+! eMFc
      .  icond  = 3  ! Autoconversion; 1=Kessler, 2=Manton/Cotton, 3=K&K, 4=none
+      
 
         logical, parameter ::
      .  lice = .true.  ! Whether to produce ice in COAMPS.
@@ -194,7 +200,7 @@
      .          ( gr%nnzp-1, gr%nnzp, time_current, dt,
      .            rtm, wmm, p, exner, rhot,
      .            thlm, ricem, rrm, rgraupelm, rsnowm,
-     .            1, nrdamp, 1, 5, icond, 
+     .            nne, nrdamp, j, icon, icond, 
      .            lice,
      .            rcm, Ncm, Nrm, Ncnm, Nim,
      .            cond, Vsnow, Vice, Vrr, VNr, Vgraupel,
