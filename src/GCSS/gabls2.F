@@ -129,7 +129,7 @@
         subroutine gabls2_sfclyr
      .             ( time, time_initial, lowest_level, psfc,
      .               um, vm, thlm, rtm,
-     .               uw, vw, wtp, wrp,
+     .               upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc,
      .               sclrm_sfc, wpsclrp_sfc, wpedsclrp_sfc )
 
 !----------------------------------------------------------------------
@@ -171,10 +171,10 @@
 
           ! Output variables
           real, intent(out) ::
-     .      uw,                 ! The turbulent upward flux of u-momentum         [(m/s)^2]
-     .      vw,                 ! The turbulent upward flux of v-momentum         [(m/s)^2]
-     .      wtp,                ! The turbulent upward flux of theta-l            [K m/s]
-     .      wrp                 ! The turbulent upward flux of rtm (total water)  [kg/kg m/s]
+     .      upwp_sfc,    ! The turbulent upward flux of u-momentum         [(m/s)^2]
+     .      vpwp_sfc,    ! The turbulent upward flux of v-momentum         [(m/s)^2]
+     .      wpthlp_sfc,  ! The turbulent upward flux of theta-l            [K m/s]
+     .      wprtp_sfc    ! The turbulent upward flux of rtm (total water)  [kg/kg m/s]
 
           ! Output variables (optional)
           real, optional, intent(out), dimension(sclr_dim) ::
@@ -189,7 +189,7 @@
      .      time_in_hours,      ! time in hours from 00 local on first day of experiment (experiment starts at 14)
      .      sst,                ! Sea surface temperature [K].
      .      sstheta,            ! Sea surface potential temperature [K].
-     .      bflx                ! Needed for diag_ustar; equal to wtp * (g/theta)
+     .      bflx                ! Needed for diag_ustar; equal to wpthlp_sfc * (g/theta)
 
           ! Define variable values
           ubar = max( ubmin, sqrt( um*um + vm*vm ) )
@@ -217,24 +217,24 @@
           sstheta = sst * ((p0 / psfc)**(Rd/Cp))
 
           ! Compute heat and moisture fluxes
-          wtp  = -Cz * ubar * ( thlm - sst * (p0/psfc)**kappa )    ! [K * m/s]
-          wrp  = -Cz * ubar * ( rtm - rsat(psfc,sst) ) * 0.025     ! [kg/kg * m/s]; 2.5% factor from GABLS2 specification
+          wpthlp_sfc  = -Cz * ubar * ( thlm - sst * (p0/psfc)**kappa )    ! [K * m/s]
+          wprtp_sfc  = -Cz * ubar * ( rtm - rsat(psfc,sst) ) * 0.025     ! [kg/kg * m/s]; 2.5% factor from GABLS2 specification
           ! Compute momentum fluxes
-          bflx  = wtp * grav / sstheta
+          bflx  = wpthlp_sfc * grav / sstheta
           ustar = diag_ustar(lowest_level,bflx,ubar,z0)
-          uw    = -um * ustar*ustar / ubar                         ! [(m/s)^2]
-          vw    = -vm * ustar*ustar / ubar                         ! [(m/s)^2]
+          upwp_sfc    = -um * ustar*ustar / ubar                         ! [(m/s)^2]
+          vpwp_sfc    = -vm * ustar*ustar / ubar                         ! [(m/s)^2]
 
           ! Set scalar fluxes to be equal to rt and theta
           if ( present( wpsclrp_sfc ) ) then
-            wpsclrp_sfc(SCLR_THETA) = wtp
-            wpsclrp_sfc(SCLR_RT)    = wrp
+            wpsclrp_sfc(SCLR_THETA) = wpthlp_sfc
+            wpsclrp_sfc(SCLR_RT)    = wprtp_sfc
           end if
 
           ! Set eddy-scalar fluxes to be equal to rt and theta
           if ( present( wpedsclrp_sfc ) ) then
-            wpedsclrp_sfc(SCLR_THETA) = wtp
-            wpedsclrp_sfc(SCLR_RT)    = wrp
+            wpedsclrp_sfc(SCLR_THETA) = wpthlp_sfc
+            wpedsclrp_sfc(SCLR_RT)    = wprtp_sfc
           end if
 
         return
