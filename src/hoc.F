@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.131 2007-08-09 17:27:51 mjfalk Exp $
+! $Id: hoc.F,v 1.132 2007-08-09 19:45:23 mjfalk Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -1504,7 +1504,8 @@
            call rico_sfclyr( um(2), vm(2), thlm(2), rtm(2),
      .                        gr%zt(2), 299.8, 101540., ! 299.8 K is the RICO SST; 101540 Pa is the sfc pressure.
 !     .                        gr%zt(2), Tsfc, psfc,
-     .                        upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc
+     .                        upwp_sfc, vpwp_sfc, wpthlp_sfc,
+     .                        wprtp_sfc
 #ifdef SCALARS
      .                       ,sclrm(2,:), wpsclrp_sfc, wpedsclrp_sfc
 #endif /* SCALARS */
@@ -1513,8 +1514,7 @@
          case ( "gabls2" )
           call gabls2_sfclyr(time, time_initial, gr%zt(2), 97200.,
      .                      um(2), vm(2), thlm(2), rtm(2),
-     .                      upwp_sfc, vpwp_sfc,
-     .                      wpthlp_sfc, wprtp_sfc
+     .                      upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc
 #ifdef SCALARS
      .                     ,sclrm(2,:), wpsclrp_sfc, wpedsclrp_sfc
 #endif /* SCALARS */
