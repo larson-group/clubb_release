@@ -148,10 +148,11 @@
 
 
 !----------------------------------------------------------------------
-        subroutine rico_sfclyr( um, vm, thlm, rtm,
+        subroutine rico_sfclyr( um_sfc, vm_sfc, thlm, rtm,
      .                          lowestlevel, sst, psfc,
-     .                          uw, vw, wtp, wrp,
-     .                          sclrm_sfc, wpsclrp_sfc, wpedsclrp_sfc )
+     .                          upwp_sfc, vpwp_sfc, wpthlp_sfc,
+     .                          wprtp_sfc, sclrm_sfc, wpsclrp_sfc, 
+     .                          wpedsclrp_sfc )
 
 !----------------------------------------------------------------------
 !        Description:
@@ -196,8 +197,8 @@
 
 !       Input variables
         real, intent(in) ::
-     .    um,           ! This is u at the lowest above-ground model level.  [m/s]
-     .    vm,           ! This is v at the lowest above-ground model level.  [m/s]
+     .    um_sfc,           ! This is u at the lowest above-ground model level.  [m/s]
+     .    vm_sfc,           ! This is v at the lowest above-ground model level.  [m/s]
      .    thlm,         ! This is theta-l at the lowest above-ground model level.  (DOES THIS NEED A CORRECTION FOR THETA-L TO THETA?)  [K]
      .    rtm,          ! This is rt at the lowest above-ground model level.  [kg/kg]
      .    lowestlevel,  ! This is z at the lowest above-ground model level.  [m]
@@ -210,10 +211,10 @@
 
 !       Output variables
         real, intent(out) ::
-     .    uw,          ! The upward flux of u-momentum         [(m^2 s^-2]
-     .    vw,          ! The Upward flux of v-momentum         [(m^2 s^-2]
-     .    wtp,         ! The upward flux of theta-l            [K m s^-1]
-     .    wrp          ! The upward flux of rtm (total water)  [kg kg^-1 m s^-1]
+     .    upwp_sfc,          ! The upward flux of u-momentum         [(m^2 s^-2]
+     .    vpwp_sfc,          ! The Upward flux of v-momentum         [(m^2 s^-2]
+     .    wpthlp_sfc,         ! The upward flux of theta-l            [K m s^-1]
+     .    wprtp_sfc          ! The upward flux of rtm (total water)  [kg kg^-1 m s^-1]
 
 !       Output variables (optional)
         real, dimension(sclr_dim), optional, intent(out) ::
@@ -225,7 +226,7 @@
         use_old_atex = .FALSE.
 
 !       Define variable values
-        ubar = max(ubmin, sqrt(um*um + vm*vm))
+        ubar = max(ubmin, sqrt(um_sfc*um_sfc + vm_sfc*vm_sfc))
         Cz   = C_10 * ((log(10/z0))/(log(lowestlevel/z0))) *
      .         ((log(10/z0))/(log(lowestlevel/z0)))              ! Modification in case lowest model level isn't at 10 m, from ATEX specification
         Cm   = C_m_20 * ((log(20/z0))/(log(lowestlevel/z0))) *
@@ -237,28 +238,28 @@
 
 !       Compute heat and moisture fluxes
         if (use_old_atex) then ! Use ATEX version
-          wtp  = -Cz * ubar * ( thlm - sst * (p0/psfc)**kappa )    ! [K m s^-1
-          wrp  = -Cz * ubar * ( rtm - rsat(psfc,sst) )             ! [kg kg^-1  m s^-1]
-          uw   = -um * ustar*ustar / ubar                          ! [m^2 s^-2]
-          vw   = -vm * ustar*ustar / ubar                          ! [m^2 s^-2]
+          wpthlp_sfc  = -Cz * ubar * ( thlm - sst * (p0/psfc)**kappa )    ! [K m s^-1
+          wprtp_sfc  = -Cz * ubar * ( rtm - rsat(psfc,sst) )             ! [kg kg^-1  m s^-1]
+          upwp_sfc   = -um_sfc * ustar*ustar / ubar                          ! [m^2 s^-2]
+          vpwp_sfc   = -vm_sfc * ustar*ustar / ubar                          ! [m^2 s^-2]
 
         else ! Use RICO version
-          wtp  = -Ch * ubar * ( thlm - sst * (p0/psfc)**kappa )    ! K m s^-1
-!          wrp  = -Cz * ubar * ( .01726 - rsat(psfc,sst) )          ! kg kg^-1  m s^-1
-!          wrp  = -Cz * ubar * ( .01626 - rsat(psfc,sst) )          ! kg kg^-1  m s^-1
-          wrp  = -Cq * ubar * ( rtm - rsat(psfc,sst) )             ! kg kg^-1 m s^-1
-          uw   = -um * Cm * ubar                                   ! m^2 s^-2
-          vw   = -vm * Cm * ubar                                   ! m^2 s^-2
+          wpthlp_sfc  = -Ch * ubar * ( thlm - sst * (p0/psfc)**kappa )    ! K m s^-1
+!          wprtp_sfc  = -Cz * ubar * ( .01726 - rsat(psfc,sst) )          ! kg kg^-1  m s^-1
+!          wprtp_sfc  = -Cz * ubar * ( .01626 - rsat(psfc,sst) )          ! kg kg^-1  m s^-1
+          wprtp_sfc  = -Cq * ubar * ( rtm - rsat(psfc,sst) )             ! kg kg^-1 m s^-1
+          upwp_sfc   = -um_sfc * Cm * ubar                                   ! m^2 s^-2
+          vpwp_sfc   = -vm_sfc * Cm * ubar                                   ! m^2 s^-2
         end if
 
 !       Compute scalar fluxes
         if ( present( wpsclrp_sfc ) ) then
-          wpsclrp_sfc(SCLR_THETA) = wtp
-          wpsclrp_sfc(SCLR_RT)    = wrp
+          wpsclrp_sfc(SCLR_THETA) = wpthlp_sfc
+          wpsclrp_sfc(SCLR_RT)    = wprtp_sfc
         end if
         if ( present( wpedsclrp_sfc ) ) then
-          wpedsclrp_sfc(SCLR_THETA) = wtp
-          wpedsclrp_sfc(SCLR_RT)    = wrp
+          wpedsclrp_sfc(SCLR_THETA) = wpthlp_sfc
+          wpedsclrp_sfc(SCLR_RT)    = wprtp_sfc
         end if
 
         return
