@@ -1,4 +1,4 @@
-$Id: Readme.txt,v 1.26 2007-08-06 17:36:15 vlarson Exp $
+$Id: Readme.txt,v 1.27 2007-08-09 17:11:27 faschinj Exp $
 
 ************************************************************************
 *                           Copyright Notice
@@ -144,7 +144,7 @@ such as the following:
 
 1.  cd ~/hoc_v2.2_tuner/model
 
-2. Edit <case>_model.in for each case you wish to run, or just leave 
+2. Edit <CASE>_model.in for each case you wish to run, or just leave 
    them as is.  Usually you will want to keep these the same.
    See the rain code for description of kk_rain and cloud_sed.
    See BUGSrad description below for a description of the interactive
@@ -152,18 +152,13 @@ such as the following:
    Enabling any of these flags may increase runtime considerably.
 
 3. cd ../stats
-   Edit <case>_stats.in for each case.  A complete list of all computable
+   Edit <CASE>_stats.in for each case.  A complete list of all computable
    statistics is found in statistics.F.  Note that HOC now supports GrADS or
    NetCDF, but you can only tune using GrADS.
 
 4. $ cd ../standalone.  Edit standalone_<CASE>.in or select a premade one.
 
-5a. Edit run_standalone.bash to use your standalone_*.in
-    and ./run_standalone.bash
-
-or alternatively:
-
-5b. $ ./run_standalone.bash <CASE>
+5. $ ./run_standalone.bash <CASE>
 
 -----------------------------------------------------------------------
 - (3.1) Executing a tuning run:
