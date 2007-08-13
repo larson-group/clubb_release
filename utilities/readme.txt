@@ -16,4 +16,3 @@ differ (which is useful assuming most of the fields are the same).
 There is also a script which reads NetCDF files into MATLAB, which may 
 be useful as a model for NetCDF (MexCDF/MexNC)-based programs you may 
 write.
-
