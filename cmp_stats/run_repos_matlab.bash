@@ -1,6 +1,6 @@
 #!/bin/bash
 #######################################################################
-# $Id: run_repos_matlab.bash,v 1.2 2007-08-09 17:27:08 mjfalk Exp $
+# $Id: run_repos_matlab.bash,v 1.3 2007-08-13 14:39:18 mjfalk Exp $
 #
 # Script to run the standalone hoc program for all models, with 
 # repository (non-static) constants.
@@ -29,7 +29,7 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 
  STANDALONE_IN='../standalone/standalone_'"${RUN_CASE[$x]}"'.in'
  MODEL_IN='../model/'"${RUN_CASE[$x]}"'_model.in'
- STATS_IN="${RUN_CASE[$x]}"'_stats.in'
+ STATS_IN="../stats/${RUN_CASE[$x]}"'_stats.in'
 
  if [ ! -e "$STANDALONE_IN" ] ; then
 	echo $STANDALONE_IN " does not exist"
