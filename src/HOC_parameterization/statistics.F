@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.28 2007-07-27 23:55:03 griffinb Exp $
+!  $Id: statistics.F,v 1.29 2007-08-23 16:06:38 faschinj Exp $
 
 #ifdef STATS
       module stats_type
@@ -34,7 +34,38 @@
           type (outputfile) f
 
         end type stats
+	contains
+!-----------------------------------------------------------------------
+        subroutine stat_assign( location, name, 
+     .                     description, units, grid )
 
+!     Description: Assigns pointers for statistics variables in grid
+!    
+!-----------------------------------------------------------------------
+           !input
+             integer,intent(in) :: location !
+             character(len = *), intent(in) :: name        ! Variable name
+             character(len = *), intent(in) :: description ! Variable description
+             character(len = *), intent(in) :: units       ! Variable units
+
+           !output
+             type(stats), intent(out) :: grid
+
+             grid%f%var(location)%ptr => grid%x(:,location)
+             grid%f%var(location)%name = name
+             grid%f%var(location)%description = description
+             grid%f%var(location)%units = units
+	
+             !Example of the old format 
+             !changed by Joshua Fasching 23 August 2007
+             
+             !zt%f%var(ithlm)%ptr => zt%x(:,k)
+             !zt%f%var(ithlm)%name = "thlm"
+             !zt%f%var(ithlm)%description = "thetal (K)"
+             !zt%f%var(ithlm)%units = "K"
+      
+             return
+           end subroutine stat_assign
       end module stats_type
 
 !-----------------------------------------------------------------------
@@ -937,1257 +968,1014 @@
         select case ( trim(vars_zt(i)) )
         case ('thlm')
           ithlm = k
-          zt%f%var(ithlm)%ptr => zt%x(:,k)
-          zt%f%var(ithlm)%name = "thlm"
-          zt%f%var(ithlm)%description = "thetal (K)"
-          zt%f%var(ithlm)%units = "K"
+          call stat_assign( ithlm, "thlm", 
+     .          "thetal (K)", "K", zt)
           k = k + 1
 
         case ('thvm')
           ithvm = k
-          zt%f%var(ithvm)%ptr => zt%x(:,k)
-          zt%f%var(ithvm)%name = "thvm"
-          zt%f%var(ithvm)%description 
-     .    = "virtual potential temperature (K)"
-          zt%f%var(ithvm)%units = "K"
+          call stat_assign( ithvm, "thvm",
+     .          "virtual potential temperature (K)","K",zt)
           k = k + 1
 
         case ('rtm')
           irtm = k
-          zt%f%var(irtm)%ptr => zt%x(:,k)
-          zt%f%var(irtm)%name = "rtm"
-          zt%f%var(irtm)%description 
-     .    = "total water mixing ratio (kg/kg)"
-          zt%f%var(irtm)%units = "kg/kg"
-          k = k + 1
+
+          call stat_assign( irtm, "rtm",
+     .          "total water mixing ratio (kg/kg)","kg/kg",zt)
+          
+	  !zt%f%var(irtm)%ptr => zt%x(:,k)
+          !zt%f%var(irtm)%name = "rtm"
+          !zt%f%var(irtm)%description 
+     .    != "total water mixing ratio (kg/kg)"
+          !zt%f%var(irtm)%units = "kg/kg"
+          
+	  k = k + 1
 
         case ('rcm')
           ircm = k
-          zt%f%var(ircm)%ptr => zt%x(:,k)
-          zt%f%var(ircm)%name = "rcm"
-          zt%f%var(ircm)%description 
-     .    = "liquid water mixing ratio (kg/kg)"
-          zt%f%var(ircm)%units = "kg/kg"
+          call stat_assign( ircm, "rcm",
+     .          "liquid water mixing ratio (kg/kg)","kg/kg",zt)
           k = k + 1
-
         case ('um')
           ium = k
-          zt%f%var(ium)%ptr => zt%x(:,k)
-          zt%f%var(ium)%name = "um"
-          zt%f%var(ium)%description = "u wind (m/s)"
-          zt%f%var(ium)%units = "m/s"
+          call stat_assign( ium, "um",
+     .          "u wind (m/s)","m/s",zt)
           k = k + 1
-
         case ('vm')
           ivm = k
-          zt%f%var(ivm)%ptr => zt%x(:,k)
-          zt%f%var(ivm)%name = "vm"
-          zt%f%var(ivm)%description = "v wind (m/s)"
-          zt%f%var(ivm)%units = "m/s"
+          call stat_assign( ivm,  "vm",
+     .          "v wind (m/s)","m/s",zt)
           k = k + 1
-
         case ('wmt')
           iwmt = k
-          zt%f%var(iwmt)%ptr => zt%x(:,k)
-          zt%f%var(iwmt)%name = "wm"
-          zt%f%var(iwmt)%description = "w wind (m/s)"
-          zt%f%var(iwmt)%units = "m/s"
+          call stat_assign( iwmt, "wm",
+     .          "w wind (m/s)","m/s",zt)
           k = k + 1
-
         case ('ug')
           iug = k
-          zt%f%var(iug)%ptr => zt%x(:,k)
-          zt%f%var(iug)%name = "ug"
-          zt%f%var(iug)%description = "u geostrophic wind (m/s)"
-          zt%f%var(iug)%units = "m/s"
+          call stat_assign( iug,"ug",
+     .         "u geostrophic wind (m/s)", "m/s", zt)
           k = k + 1
-
         case ('vg')
           ivg = k
-          zt%f%var(ivg)%ptr => zt%x(:,k)
-          zt%f%var(ivg)%name = "vg"
-          zt%f%var(ivg)%description = "v geostrophic wind (m/s)"
-          zt%f%var(ivg)%units = "m/s"
+          call stat_assign(ivg,"vg",
+     .         "v geostrophic wind (m/s)", "m/s",zt)
           k = k + 1
-
         case ('cf')
           icf = k
-          zt%f%var(icf)%ptr => zt%x(:,k)
-          zt%f%var(icf)%name = "cf"
-          zt%f%var(icf)%description = "cloud fraction"
-          zt%f%var(icf)%units = "count"
+          call stat_assign(icf,"cf",
+     .         "cloud fraction", "count",zt)
           k = k + 1
-
         case ('p')
           ip = k
-          zt%f%var(ip)%ptr => zt%x(:,k)
-          zt%f%var(ip)%name = "p"
-          zt%f%var(ip)%description = "pressure (Pa)"
-          zt%f%var(ip)%units = "Pa"
+          call stat_assign(ip,"p",
+     .         "pressure (Pa)","Pa",zt)
           k = k + 1
-
         case ('exner')
           iexner = k
-          zt%f%var(iexner)%ptr => zt%x(:,k)
-          zt%f%var(iexner)%name = "exner"
-          zt%f%var(iexner)%description = "Exner"
-          zt%f%var(iexner)%units = "count"
+          call stat_assign(iexner,"exner",
+     .         "Exner","count",zt)
           k = k + 1
-
         case ('Lscale')
           iLscale = k
-          zt%f%var(iLscale)%ptr => zt%x(:,k)
-          zt%f%var(iLscale)%name = "Lscale"
-          zt%f%var(iLscale)%description = "Mixing length"
-          zt%f%var(iLscale)%units = "m"
+          call stat_assign(iLscale,"Lscale",
+     .         "Mixing length","m",zt)
           k = k + 1
-
         case ('thlm_forcing')
           ithlm_forcing = k
-          zt%f%var(ithlm_forcing)%ptr => zt%x(:,k)
-          zt%f%var(ithlm_forcing)%name = "thlm_f"
-          zt%f%var(ithlm_forcing)%description = "thetal forcing"
-          zt%f%var(ithlm_forcing)%units = "K/s"
+          call stat_assign(ithlm_forcing,"thlm_f",
+     .         "thetal forcing", "K/s",zt)
           k = k + 1
-
         case ('thlm_mc')
           ithlm_mc = k
-          zt%f%var(ithlm_mc)%ptr => zt%x(:,k)
-          zt%f%var(ithlm_mc)%name = "thlm_mc"
-          zt%f%var(ithlm_mc)%description = "thetal micro"
-          zt%f%var(ithlm_mc)%units = "K/s"
+          call stat_assign(ithlm_mc,"thlm_mc",
+     .         "thetal micro", "K/s",zt)
           k = k + 1
-
         case ('rtm_forcing')
           irtm_forcing = k
-          zt%f%var(irtm_forcing)%ptr => zt%x(:,k)
-          zt%f%var(irtm_forcing)%name = "rtm_f"
-          zt%f%var(irtm_forcing)%description = "rt forcing"
-          zt%f%var(irtm_forcing)%units = "kg/(kg s)"
+	  call stat_assign(irtm_forcing,"rtm_f",
+     .         "rt forcing", "kg/(kg s)",zt)
           k = k + 1
-
         case ('rtm_mc')
           irtm_mc = k
-          zt%f%var(irtm_mc)%ptr => zt%x(:,k)
-          zt%f%var(irtm_mc)%name = "rtm_mc"
-          zt%f%var(irtm_mc)%description = "rt micro"
-          zt%f%var(irtm_mc)%units = "kg/(kg s)"
+          call stat_assign(irtm_mc,"rtm_mc",
+     .         "rt micro", "kg/(kg s)",zt)
           k = k + 1
 
         case ('wp3')
           iwp3 = k
-          zt%f%var(iwp3)%ptr => zt%x(:,k)
-          zt%f%var(iwp3)%name = "wp3"
-          zt%f%var(iwp3)%description = "w third order moment"
-          zt%f%var(iwp3)%units = "(m^3)/(s^3)"
+          call stat_assign(iwp3,"wp3",
+     .         "w third order moment", "(m^3)/(s^3)",zt)
           k = k + 1
 
         case ('wpthlp2')
           iwpthlp2 = k
-          zt%f%var(iwpthlp2)%ptr => zt%x(:,k)
-          zt%f%var(iwpthlp2)%name = "wpthlp2"
-          zt%f%var(iwpthlp2)%description = "wpthlp2 covariance"
-          zt%f%var(iwpthlp2)%units = "(m K^2)/s"
+          call stat_assign(iwpthlp2,"wpthlp2",
+     .         "wpthlp2 covariance", "(m K^2)/s",zt)
           k = k + 1
 
         case ('wp2thlp')
           iwp2thlp = k
-          zt%f%var(iwp2thlp)%ptr => zt%x(:,k)
-          zt%f%var(iwp2thlp)%name = "wp2thlp"
-          zt%f%var(iwp2thlp)%description = "wp2thlp covariance"
-          zt%f%var(iwp2thlp)%units = "(m^2 K)/(s^2)"
+          call stat_assign(iwp2thlp,"wp2thlp",
+     .         "wp2thlp covariance", "(m^2 K)/(s^2)",zt)
           k = k + 1
 
         case ('wprtp2')
           iwprtp2 = k
-          zt%f%var(iwprtp2)%ptr => zt%x(:,k)
-          zt%f%var(iwprtp2)%name = "wprtp2"
-          zt%f%var(iwprtp2)%description = "wprtp2 covariance"
-          zt%f%var(iwprtp2)%units = "(m kg^2)/(s kg^2)"
+          call stat_assign(iwprtp2,"wprtp2",
+     .         "wprtp2 covariance", "(m kg^2)/(s kg^2)",zt)
           k = k + 1
 
         case ('wp2rtp')
           iwp2rtp = k
-          zt%f%var(iwp2rtp)%ptr => zt%x(:,k)
-          zt%f%var(iwp2rtp)%name = "wp2rtp"
-          zt%f%var(iwp2rtp)%description = "wp2rtp covariance"
-          zt%f%var(iwp2rtp)%units = "(m2 kg)/(s2 kg)"
+          call stat_assign(iwp2rtp,"wp2rtp",
+     .         "wp2rtp covariance", "(m2 kg)/(s2 kg)",zt)
           k = k + 1
 
         case ('lup')
           ilup = k
-          zt%f%var(ilup)%ptr => zt%x(:,k)
-          zt%f%var(ilup)%name = "lup"
-          zt%f%var(ilup)%description = "Upward mixing length"
-          zt%f%var(ilup)%units = "m"
+          call stat_assign(ilup,"lup",
+     .         "Upward mixing length","m",zt)
           k = k + 1
 
         case ('ldown')
           ildown = k
-          zt%f%var(ildown)%ptr => zt%x(:,k)
-          zt%f%var(ildown)%name = "ldown"
-          zt%f%var(ildown)%description = "Downward mixing length"
-          zt%f%var(ildown)%units = "m"
+
+          call stat_assign(ildown,"ldown",
+     .         "Downward mixing length","m",zt)
           k = k + 1
 
         case ('taut')
           itaut = k
-          zt%f%var(itaut)%ptr => zt%x(:,k)
-          zt%f%var(itaut)%name = "taut"
-          zt%f%var(itaut)%description = "Dissipation time"
-          zt%f%var(itaut)%units = "s"
+          call stat_assign(itaut,"taut",
+     .         "Dissipation time","s",zt)
           k = k + 1
 
         case ('kht')
           iKht = k
-          zt%f%var(iKht)%ptr => zt%x(:,k)
-          zt%f%var(iKht)%name = "Kht"
-          zt%f%var(iKht)%description = "Eddy diffusivity"
-          zt%f%var(iKht)%units = "m^2/s "
+          call stat_assign(iKht,"Kht",
+     .         "Eddy diffusivity","m^2/s",zt)
           k = k + 1
 
         case ('wp2thvp')
           iwp2thvp = k
-          zt%f%var(iwp2thvp)%ptr => zt%x(:,k)
-          zt%f%var(iwp2thvp)%name = "wp2thvp"
-          zt%f%var(iwp2thvp)%description = "wp2thvp"
-          zt%f%var(iwp2thvp)%units = "(m2 K)/s2"
+          call stat_assign(iwp2thvp,"wp2thvp",
+     .         "wp2thvp","(m2 K)/s2",zt)
           k = k + 1
 
         case ('wp2rcp')
           iwp2rcp = k
-          zt%f%var(iwp2rcp)%ptr => zt%x(:,k)
-          zt%f%var(iwp2rcp)%name = "wp2rcp"
-          zt%f%var(iwp2rcp)%description = "wp2rcp"
-          zt%f%var(iwp2rcp)%units = "(m2 kg)/(s2 kg)"
+          call stat_assign(iwp2rcp,"wp2rcp",
+     .         "wp2rcp","(m2 kg)/(s2 kg)",zt)
           k = k + 1
 
         case ('wprtpthlp')
           iwprtpthlp = k
-          zt%f%var(iwprtpthlp)%ptr => zt%x(:,k)
-          zt%f%var(iwprtpthlp)%name = "wprtpthlp"
-          zt%f%var(iwprtpthlp)%description = "wprtpthlp"
-          zt%f%var(iwprtpthlp)%units = "(m kg K)/(s kg)"
+          call stat_assign(iwprtpthlp,"wprtpthlp",
+     .         "wprtpthlp","(m kg K)/(s kg)",zt)
           k = k + 1
 
         case ('sc')
           isct = k
-          zt%f%var(isct)%ptr => zt%x(:,k)
-          zt%f%var(isct)%name = "Sc"
-          zt%f%var(isct)%description = "Sc"
-          zt%f%var(isct)%units = "count"
+          call stat_assign(isct,"Sc",
+     .         "Sc","count",zt)
           k = k + 1
 
         case ('rhot')
           irhot = k
-          zt%f%var(irhot)%ptr => zt%x(:,k)
-          zt%f%var(irhot)%name = "rhot"
-          zt%f%var(irhot)%description = "density"
-          zt%f%var(irhot)%units = "kg/m^3"
+          call stat_assign(irhot,"rhot",
+     .         "density","kg/m^3",zt)
           k = k + 1
 
         case ('Ncm')           ! Brian
           iNcm = k
-          zt%f%var(iNcm)%ptr => zt%x(:,k)
-          zt%f%var(iNcm)%name = "Ncm"
-          zt%f%var(iNcm)%description
-     .    = "Cloud droplet number concentration (num/m^3)"
-          zt%f%var(iNcm)%units = "count/m^3"
+          call stat_assign(iNcm,"Ncm",
+     .         "Cloud droplet number concentration (num/m^3)",
+     .         "count/m^3",zt)
           k = k + 1
 
         case ('Ncnm')
           iNcnm = k
-          zt%f%var(iNcnm)%ptr => zt%x(:,k)
-          zt%f%var(iNcnm)%name = "Ncnm"
-          zt%f%var(iNcnm)%description
-     .    = "Cloud nuclei number concentration (num/m^3)"
-          zt%f%var(iNcnm)%units = "count/m^3"
+          call stat_assign(iNcnm,"Ncnm",
+     .         "Cloud nuclei number concentration (num/m^3)",
+     .         "count/m^3",zt)
           k = k + 1
 
         case ('Nim')           ! Brian
           iNim = k
-          zt%f%var(iNim)%ptr => zt%x(:,k)
-          zt%f%var(iNim)%name = "Nim"
-          zt%f%var(iNim)%description
-     .    = "Ice crystal number concentration (num/m^3)"
-          zt%f%var(iNim)%units = "count/m^3"
+          call stat_assign(iNim,"Nim",
+     .         "Ice crystal number concentration (num/m^3)",
+     .         "count/m^3",zt)
           k = k + 1
 
         case ('sed_rcm')       ! Brian
           ised_rcm = k
-          zt%f%var(ised_rcm)%ptr => zt%x(:,k)
-          zt%f%var(ised_rcm)%name = "sed_rcm"
-          zt%f%var(ised_rcm)%description
-     .    = "d(rcm)/dt due to cloud sedimentation (kg / [m^2 s])"
-          zt%f%var(ised_rcm)%units = "kg/(m^2 s)"
+          call stat_assign(ised_rcm,"sed_rcm",
+     .         "d(rcm)/dt due to cloud sedimentation (kg / [m^2 s])",
+     .         "kg/(m^2 s)",zt)
           k = k + 1
 
         case ('rsm')           ! Brian
           irsm = k
-          zt%f%var(irsm)%ptr => zt%x(:,k)
-          zt%f%var(irsm)%name = "rsm"
-          zt%f%var(irsm)%description
-     .    = "Saturation mixing ratio (kg/kg)"
-          zt%f%var(irsm)%units = "kg/kg"
+          call stat_assign(irsm,"rsm",
+     .         "Saturation mixing ratio (kg/kg)","kg/kg",zt)
           k = k + 1
 
         case ('rrm')           ! Brian
           irrm = k
-          zt%f%var(irrm)%ptr => zt%x(:,k)
-          zt%f%var(irrm)%name = "rrm"
-          zt%f%var(irrm)%description
-     .    = "Rain water mixing ratio (kg/kg)"
-          zt%f%var(irrm)%units = "kg/kg"
+          call stat_assign(irrm,"rrm",
+     .         "Rain water mixing ratio (kg/kg)","kg/kg",zt)
           k = k + 1
 
         case ('rsnowm')
           irsnowm = k
-          zt%f%var(irsnowm)%ptr => zt%x(:,k)
-          zt%f%var(irsnowm)%name = "rsnowm"
-          zt%f%var(irsnowm)%description
-     .    = "Snow water mixing ratio (kg/kg)"
-          zt%f%var(irsnowm)%units = "kg/kg"
+          call stat_assign(irsnowm,"rsnowm",
+     .         "Snow water mixing ratio (kg/kg)","kg/kg",zt)
           k = k + 1
 
         case ('ricem')
           iricem = k
-          zt%f%var(iricem)%ptr => zt%x(:,k)
-          zt%f%var(iricem)%name = "ricem"
-          zt%f%var(iricem)%description
-     .    = "Pristine ice water mixing ratio (kg/kg)"
-          zt%f%var(iricem)%units = "kg/kg"
+          call stat_assign(iricem,"ricem",
+     .         "Pristine ice water mixing ratio (kg/kg)","kg/kg",zt)
           k = k + 1
 
         case ('rgraupelm')
           irgraupelm = k
-          zt%f%var(irgraupelm)%ptr => zt%x(:,k)
-          zt%f%var(irgraupelm)%name = "rgraupelm"
-          zt%f%var(irgraupelm)%description
-     .    = "Graupel water mixing ratio (kg/kg)"
-          zt%f%var(irgraupelm)%units = "kg/kg"
+          call stat_assign(irgraupelm,"rgraupelm",
+     .         "Graupel water mixing ratio (kg/kg)","kg/kg",zt)
           k = k + 1
 
         case ('Nrm')           ! Brian
           iNrm = k
-          zt%f%var(iNrm)%ptr => zt%x(:,k)
-          zt%f%var(iNrm)%name = "Nrm"
-          zt%f%var(iNrm)%description
-     .    = "Rain droplet number concentration (num/m^3)"
-          zt%f%var(iNrm)%units = "count/(m^3)"
+          call stat_assign(iNrm,"Nrm",
+     .         "Rain droplet number concentration (num/m^3)",
+     .         "count/(m^3)",zt)
           k = k + 1
-
 
         case ('mean_vol_rad_rain')  ! Brian
           imean_vol_rad_rain = k
-          zt%f%var(imean_vol_rad_rain)%ptr => zt%x(:,k)
-          zt%f%var(imean_vol_rad_rain)%name = "mvrr"
-          zt%f%var(imean_vol_rad_rain)%description
-     .    = "Rain drop mean volume radius (m)"
-          zt%f%var(imean_vol_rad_rain)%units = "m"
+          call stat_assign(imean_vol_rad_rain,"mvrr",
+     .         "Rain drop mean volume radius (m)","m",zt)
           k = k + 1
 
         case ('mean_vol_rad_cloud')
           imean_vol_rad_cloud = k
-          zt%f%var(imean_vol_rad_cloud)%ptr => zt%x(:,k)
-          zt%f%var(imean_vol_rad_cloud)%name = "mvrc"
-          zt%f%var(imean_vol_rad_cloud)%description
-     .    = "Cloud drop mean volume radius (m)"
-          zt%f%var(imean_vol_rad_cloud)%units = "m"
+
+          call stat_assign(imean_vol_rad_cloud,"mvrc",
+     .         "Cloud drop mean volume radius (m)","m",zt)
           k = k + 1
 
         case ('rain_rate')     ! Brian
           irain_rate = k
-          zt%f%var(irain_rate)%ptr => zt%x(:,k)
-          zt%f%var(irain_rate)%name = "rain_rate"
-          zt%f%var(irain_rate)%description = "Rain rate (mm/day)"
-          zt%f%var(irain_rate)%units = "mm/day"
+
+          call stat_assign(irain_rate,"rain_rate",
+     .         "Rain rate (mm/day)","mm/day",zt)
           k = k + 1
  
         case ('AKm')           ! Vince Larson 22 May 2005
           iAKm = k
-          zt%f%var(iAKm)%ptr => zt%x(:,k)
-          zt%f%var(iAKm)%name = "AKm"
-          zt%f%var(iAKm)%description = "Analytic Kessler ac [kg/kg]"
-          zt%f%var(iAKm)%units = "kg/kg"
+          call stat_assign(iAKm,"AKm",
+     .         "Analytic Kessler ac [kg/kg]","kg/kg",zt)
           k = k + 1
  
         case ('AKm_est')       ! Vince Larson 22 May 2005
           iAKm_est = k
-          zt%f%var(iAKm_est)%ptr => zt%x(:,k)
-          zt%f%var(iAKm_est)%name = "AKm_est"
-          zt%f%var(iAKm_est)%description = "LH Kessler estimate [kg/kg]"
-          zt%f%var(iAKm_est)%units = "kg/kg"
+
+          call stat_assign(iAKm_est,"AKm_est",
+     .         "LH Kessler estimate [kg/kg]","kg/kg",zt)
           k = k + 1
 
         case ('radht')
           iradht = k
-          zt%f%var(iradht)%ptr => zt%x(:,k)
-          zt%f%var(iradht)%name = "radht"
-          zt%f%var(iradht)%description = "Heating rate"
-          zt%f%var(iradht)%units = "K/s"
+
+          call stat_assign(iradht,"radht",
+     .         "Heating rate","K/s",zt)
           k = k + 1
 
         case ('radht_LW')
           iradht_LW = k
-          zt%f%var(iradht_LW)%ptr => zt%x(:,k)
-          zt%f%var(iradht_LW)%name = "radht_LW"
-          zt%f%var(iradht_LW)%description = "Long-wave heating rate"
-          zt%f%var(iradht_LW)%units = "K/s"
+
+          call stat_assign(iradht_LW,"radht_LW",
+     .         "Long-wave heating rate","K/s",zt)
+
           k = k + 1
 
         case ('radht_SW')
           iradht_SW = k
-          zt%f%var(iradht_SW)%ptr => zt%x(:,k)
-          zt%f%var(iradht_SW)%name = "radht_SW"
-          zt%f%var(iradht_SW)%description = "Short-wave heating rate"
-          zt%f%var(iradht_SW)%units = "K/s"
+          call stat_assign(iradht_SW,"radht_SW",
+     .         "Short-wave heating rate","K/s",zt)
           k = k + 1
-
         case ('diam')
           idiam = k
-          zt%f%var(idiam)%ptr => zt%x(:,k)
-          zt%f%var(idiam)%name = "diam"
-          zt%f%var(idiam)%description = "Ice crystal diameter"
-          zt%f%var(idiam)%units = "m"
+
+          call stat_assign(idiam,"diam",
+     .         "Ice crystal diameter","m",zt)
           k = k + 1
 
         case ('m')
           im = k
-          zt%f%var(im)%ptr => zt%x(:,k)
-          zt%f%var(im)%name = "m"
-          zt%f%var(im)%description = "Ice crystal mass"
-          zt%f%var(im)%units = "kg"
+          call stat_assign(im,"m",
+     .         "Ice crystal mass","kg",zt)
           k = k + 1
 
         case ('dqc_dt_icedfs')
+
           idqc_dt_icedfs = k
-          zt%f%var(idqc_dt_icedfs)%ptr => zt%x(:,k)
-          zt%f%var(idqc_dt_icedfs)%name = "dqc_dt_icedfs"
-          zt%f%var(idqc_dt_icedfs)%description =
-     .    "Change in liquid due to ice"
-          zt%f%var(idqc_dt_icedfs)%units = "kg/kg/s"
+          call stat_assign(idqc_dt_icedfs,"dqc_dt_icedfs",
+     .         "Change in liquid due to ice","kg/kg/s",zt)
           k = k + 1
 
         case ('u_T_cm')
           iu_T_cm = k
-          zt%f%var(iu_T_cm)%ptr => zt%x(:,k)
-          zt%f%var(iu_T_cm)%name = "u_T_cm"
-          zt%f%var(iu_T_cm)%description = "Ice crystal fallspeed"
-          zt%f%var(iu_T_cm)%units = "cm/s"
+          call stat_assign(iu_T_cm,"u_T_cm",
+     .         "Ice crystal fallspeed","cm/s",zt)
           k = k + 1
 
         case ('rtm_bt')
           irtm_bt = k
-          zt%f%var(irtm_bt)%ptr => zt%x(:,k)
-          zt%f%var(irtm_bt)%name = "rtm_bt"
-          zt%f%var(irtm_bt)%description = "rtm budget"
-          zt%f%var(irtm_bt)%units = "kg/kg/s"
+
+          call stat_assign(irtm_bt,"rtm_bt",
+     .         "rtm budget","kg/kg/s",zt)
           k = k + 1
 
         case ('rtm_ma')
           irtm_ma = k
-          zt%f%var(irtm_ma)%ptr => zt%x(:,k)
-          zt%f%var(irtm_ma)%name = "rtm_ma"
-          zt%f%var(irtm_ma)%description = "rtm ma"
-          zt%f%var(irtm_ma)%units = "kg/kg/s"
+
+          call stat_assign(irtm_ma,"rtm_ma",
+     .         "rtm ma","kg/kg/s",zt)
           k = k + 1
 
         case ('rtm_ta')
           irtm_ta = k
-          zt%f%var(irtm_ta)%ptr => zt%x(:,k)
-          zt%f%var(irtm_ta)%name = "rtm_ta"
-          zt%f%var(irtm_ta)%description = "rtm ta"
-          zt%f%var(irtm_ta)%units = "kg/kg/s"
+
+          call stat_assign(irtm_ta,"rtm_ta",
+     .         "rtm ta","kg/kg/s",zt)
           k = k + 1
 
         case ('thlm_bt')
           ithlm_bt = k
-          zt%f%var(ithlm_bt)%ptr => zt%x(:,k)
-          zt%f%var(ithlm_bt)%name = "thlm_bt"
-          zt%f%var(ithlm_bt)%description = "thlm bt"
-          zt%f%var(ithlm_bt)%units = "kg/kg/s"
+
+          call stat_assign(ithlm_bt,"thlm_bt",
+     .         "thlm bt","kg/kg/s",zt)
           k = k + 1
 
         case ('thlm_ma')
           ithlm_ma = k
-          zt%f%var(ithlm_ma)%ptr => zt%x(:,k)
-          zt%f%var(ithlm_ma)%name = "thlm_ma"
-          zt%f%var(ithlm_ma)%description = "thlm ma"
-          zt%f%var(ithlm_ma)%units = "kg/kg/s"
+
+          call stat_assign(ithlm_ma,"thlm_ma",
+     .         "thlm ma","kg/kg/s",zt)
           k = k + 1
 
         case ('thlm_ta')
           ithlm_ta = k
-          zt%f%var(ithlm_ta)%ptr => zt%x(:,k)
-          zt%f%var(ithlm_ta)%name = "thlm_ta"
-          zt%f%var(ithlm_ta)%description = "thlm ta"
-          zt%f%var(ithlm_ta)%units = "kg/kg/s"
+
+          call stat_assign(ithlm_ta,"thlm_ta",
+     .         "thlm ta","kg/kg/s",zt)
           k = k + 1
  
         case ('wp3_bt')
           iwp3_bt = k
-          zt%f%var(iwp3_bt)%ptr => zt%x(:,k)
-          zt%f%var(iwp3_bt)%name = "wp3_bt"
-          zt%f%var(iwp3_bt)%description = "wp3 budget"
-          zt%f%var(iwp3_bt)%units = "(m^3)/(s^4)"
+
+          call stat_assign(iwp3_bt,"wp3_bt",
+     .         "wp3 budget","(m^3)/(s^4)",zt)
           k = k + 1
  
         case ('wp3_ma')
           iwp3_ma = k
-          zt%f%var(iwp3_ma)%ptr => zt%x(:,k)
-          zt%f%var(iwp3_ma)%name = "wp3_ma"
-          zt%f%var(iwp3_ma)%description = "wp3 mean advection"
-          zt%f%var(iwp3_ma)%units = "(m^3)/(s^4)"
+
+          call stat_assign(iwp3_ma,"wp3_ma",
+     .         "wp3 mean advection","(m^3)/(s^4)",zt)
           k = k + 1
  
         case ('wp3_ta')
           iwp3_ta = k
-          zt%f%var(iwp3_ta)%ptr => zt%x(:,k)
-          zt%f%var(iwp3_ta)%name = "wp3_ta"
-          zt%f%var(iwp3_ta)%description = "wp3 turbulent advection"
-          zt%f%var(iwp3_ta)%units = "(m^3)/(s^4)"
+
+          call stat_assign(iwp3_ta,"wp3_ta",
+     .         "wp3 turbulent advection","(m^3)/(s^4)",zt)
+
           k = k + 1
  
         case ('wp3_tp')
           iwp3_tp = k
-          zt%f%var(iwp3_tp)%ptr => zt%x(:,k)
-          zt%f%var(iwp3_tp)%name = "wp3_tp"
-          zt%f%var(iwp3_tp)%description = "wp3 turbulent transport"
-          zt%f%var(iwp3_tp)%units = "(m^3)/(s^4)"
+          call stat_assign(iwp3_tp,"wp3_tp",
+     .         "wp3 turbulent transport","(m^3)/(s^4)",zt)
           k = k + 1
  
         case ('wp3_ac')
           iwp3_ac = k
-          zt%f%var(iwp3_ac)%ptr => zt%x(:,k)
-          zt%f%var(iwp3_ac)%name = "wp3_ac"
-          zt%f%var(iwp3_ac)%description = "wp3 accumulation term"
-          zt%f%var(iwp3_ac)%units = "(m^3)/(s^4)"
+          call stat_assign(iwp3_ac,"wp3_ac",
+     .         "wp3 accumulation term","(m^3)/(s^4)",zt)
           k = k + 1
  
         case ('wp3_bp')
           iwp3_bp = k
-          zt%f%var(iwp3_bp)%ptr => zt%x(:,k)
-          zt%f%var(iwp3_bp)%name = "wp3_bp"
-          zt%f%var(iwp3_bp)%description = "wp3 buoyancy production"
-          zt%f%var(iwp3_bp)%units = "(m^3)/(s^4)"
+          call stat_assign(iwp3_bp,"wp3_bp",
+     .         "wp3 buoyancy production","(m^3)/(s^4)",zt)
           k = k + 1
  
         case ('wp3_pr1')
           iwp3_pr1 = k
-          zt%f%var(iwp3_pr1)%ptr => zt%x(:,k)
-          zt%f%var(iwp3_pr1)%name = "wp3_pr1"
-          zt%f%var(iwp3_pr1)%description = "wp3 pressure term 1"
-          zt%f%var(iwp3_pr1)%units = "(m^3)/(s^4)"
+          call stat_assign(iwp3_pr1,"wp3_pr1",
+     .         "wp3 pressure term 1","(m^3)/(s^4)",zt)
           k = k + 1
  
         case ('wp3_pr2')
           iwp3_pr2 = k
-          zt%f%var(iwp3_pr2)%ptr => zt%x(:,k)
-          zt%f%var(iwp3_pr2)%name = "wp3_pr2"
-          zt%f%var(iwp3_pr2)%description = "wp3 pressure term 2"
-          zt%f%var(iwp3_pr2)%units = "(m^3)/(s^4)"
+          call stat_assign(iwp3_pr2,"wp3_pr2",
+     .         "wp3 pressure term 2","(m^3)/(s^4)",zt)
+
           k = k + 1
- 
+
         case ('wp3_dp1')
           iwp3_dp1 = k
-          zt%f%var(iwp3_dp1)%ptr => zt%x(:,k)
-          zt%f%var(iwp3_dp1)%name = "wp3_dp1"
-          zt%f%var(iwp3_dp1)%description = "wp3 dissipation term 1"
-          zt%f%var(iwp3_dp1)%units = "(m^3)/(s^4)"
+          call stat_assign(iwp3_dp1,"wp3_dp1",
+     .         "wp3 dissipation term 1","(m^3)/(s^4)",zt)
           k = k + 1
  
         case ('wp3_cl')
           iwp3_cl = k
-          zt%f%var(iwp3_cl)%ptr => zt%x(:,k)
-          zt%f%var(iwp3_cl)%name = "wp3_cl"
-          zt%f%var(iwp3_cl)%description = "wp3 clipping term"
-          zt%f%var(iwp3_cl)%units = "(m^3)/(s^4)"
+          call stat_assign(iwp3_cl,"wp3_cl",
+     .         "wp3 clipping term","(m^3)/(s^4)",zt)
           k = k + 1
  
         case ('rrm_bt')
           irrm_bt = k
-          zt%f%var(irrm_bt)%ptr => zt%x(:,k)
-          zt%f%var(irrm_bt)%name = "rrm_bt"
-          zt%f%var(irrm_bt)%description = "rrm budget"
-          zt%f%var(irrm_bt)%units = "(kg/kg)/(s)"
+          call stat_assign(irrm_bt,"rrm_bt",
+     .         "rrm budget","(kg/kg)/(s)",zt)
           k = k + 1
  
         case ('rrm_ma')
           irrm_ma = k
-          zt%f%var(irrm_ma)%ptr => zt%x(:,k)
-          zt%f%var(irrm_ma)%name = "rrm_ma"
-          zt%f%var(irrm_ma)%description = "rrm mean advection"
-          zt%f%var(irrm_ma)%units = "(kg/kg)/(s)"
+
+          call stat_assign(irrm_ma,"rrm_ma",
+     .         "rrm mean advection","(kg/kg)/(s)",zt)
           k = k + 1
  
         case ('rrm_sd')
           irrm_sd = k
-          zt%f%var(irrm_sd)%ptr => zt%x(:,k)
-          zt%f%var(irrm_sd)%name = "rrm_sd"
-          zt%f%var(irrm_sd)%description = "rrm sedimentation"
-          zt%f%var(irrm_sd)%units = "(kg/kg)/(s)"
+
+          call stat_assign(irrm_sd,"rrm_sd",
+     .         "rrm sedimentation","(kg/kg)/(s)",zt)
           k = k + 1
  
         case ('rrm_dff')
           irrm_dff = k
-          zt%f%var(irrm_dff)%ptr => zt%x(:,k)
-          zt%f%var(irrm_dff)%name = "rrm_dff"
-          zt%f%var(irrm_dff)%description = "rrm diffusion"
-          zt%f%var(irrm_dff)%units = "(kg/kg)/(s)"
+
+          call stat_assign(irrm_dff,"rrm_dff",
+     .         "rrm diffusion","(kg/kg)/(s)",zt)
           k = k + 1
  
         case ('rrm_cond')
           irrm_cond = k
-          zt%f%var(irrm_cond)%ptr => zt%x(:,k)
-          zt%f%var(irrm_cond)%name = "rrm_cond"
-          zt%f%var(irrm_cond)%description = "rrm cond/evap"
-          zt%f%var(irrm_cond)%units = "(kg/kg)/(s)"
+
+          call stat_assign(irrm_cond,"rrm_cond",
+     .         "rrm cond/evap","(kg/kg)/(s)",zt)
           k = k + 1
  
         case ('rrm_auto')
           irrm_auto = k
-          zt%f%var(irrm_auto)%ptr => zt%x(:,k)
-          zt%f%var(irrm_auto)%name = "rrm_auto"
-          zt%f%var(irrm_auto)%description = "rrm autoconversion"
-          zt%f%var(irrm_auto)%units = "(kg/kg)/(s)"
+
+          call stat_assign(irrm_auto,"rrm_auto",
+     .         "rrm autoconversion","(kg/kg)/(s)",zt)
           k = k + 1
  
         case ('rrm_accr')
           irrm_accr = k
-          zt%f%var(irrm_accr)%ptr => zt%x(:,k)
-          zt%f%var(irrm_accr)%name = "rrm_accr"
-          zt%f%var(irrm_accr)%description = "rrm accretion"
-          zt%f%var(irrm_accr)%units = "(kg/kg)/(s)"
+          call stat_assign(irrm_accr,"rrm_accr",
+     .         "rrm accretion","(kg/kg)/(s)",zt)
           k = k + 1
 
         case ('rrm_cond_adj')
           irrm_cond_adj = k
-          zt%f%var(irrm_cond_adj)%ptr => zt%x(:,k)
-          zt%f%var(irrm_cond_adj)%name = "rrm_cond_adj"
-          zt%f%var(irrm_cond_adj)%description 
-     .    = "rrm cond/evap adjustment due to over-evaporation"
-          zt%f%var(irrm_cond_adj)%units = "(kg/kg)/(s)"
+
+          call stat_assign(irrm_cond_adj,"rrm_cond_adj",
+     .         "rrm cond/evap adjustment due to over-evaporation",
+     .         "(kg/kg)/(s)",zt)
           k = k + 1
  
         case ('rrm_mc')
           irrm_mc = k
-          zt%f%var(irrm_mc)%ptr => zt%x(:,k)
-          zt%f%var(irrm_mc)%name = "rrm_mc"
-          zt%f%var(irrm_mc)%description 
-     .    = "rrm total microphysical tendency"
-          zt%f%var(irrm_mc)%units = "(kg/kg)/s"
+
+          call stat_assign(irrm_mc,"rrm_mc",
+     .         "rrm total microphysical tendency","(kg/kg)/(s)",zt)
+
           k = k + 1
 
         case ('rrm_cl')
           irrm_cl = k
-          zt%f%var(irrm_cl)%ptr => zt%x(:,k)
-          zt%f%var(irrm_cl)%name = "rrm_cl"
-          zt%f%var(irrm_cl)%description = "rrm clipping term"
-          zt%f%var(irrm_cl)%units = "(kg/kg)/(s)"
+          call stat_assign(irrm_cl,"rrm_cl",
+     .         "rrm clipping term","(kg/kg)/(s)",zt)
+
           k = k + 1
  
         case ('Nrm_bt')
           iNrm_bt = k
-          zt%f%var(iNrm_bt)%ptr => zt%x(:,k)
-          zt%f%var(iNrm_bt)%name = "Nrm_bt"
-          zt%f%var(iNrm_bt)%description = "Nrm budget"
-          zt%f%var(iNrm_bt)%units = "(count/m^3)/s"
+          call stat_assign(iNrm_bt,"Nrm_bt",
+     .         "Nrm budget","(count/m^3)/s",zt)
+
           k = k + 1
  
         case ('Nrm_ma')
           iNrm_ma = k
-          zt%f%var(iNrm_ma)%ptr => zt%x(:,k)
-          zt%f%var(iNrm_ma)%name = "Nrm_ma"
-          zt%f%var(iNrm_ma)%description = "Nrm mean advection"
-          zt%f%var(iNrm_ma)%units = "(count/m^3)/s"
+
+          call stat_assign(iNrm_ma,"Nrm_ma",
+     .         "Nrm mean advection","(count/m^3)/s",zt)
           k = k + 1
  
         case ('Nrm_sd')
           iNrm_sd = k
-          zt%f%var(iNrm_sd)%ptr => zt%x(:,k)
-          zt%f%var(iNrm_sd)%name = "Nrm_sd"
-          zt%f%var(iNrm_sd)%description = "Nrm sedimentation"
-          zt%f%var(iNrm_sd)%units = "(count/m^3)/s"
+
+          call stat_assign(iNrm_sd,"Nrm_sd",
+     .         "Nrm sedimentation","(count/m^3)/s",zt)
+
           k = k + 1
  
         case ('Nrm_dff')
           iNrm_dff = k
-          zt%f%var(iNrm_dff)%ptr => zt%x(:,k)
-          zt%f%var(iNrm_dff)%name = "Nrm_dff"
-          zt%f%var(iNrm_dff)%description = "Nrm diffusion"
-          zt%f%var(iNrm_dff)%units = "(count/m^3)/s"
+          call stat_assign(iNrm_dff,"Nrm_dff",
+     .         "Nrm diffusion","(count/m^3)/s",zt)
+
           k = k + 1
  
         case ('Nrm_cond')
           iNrm_cond = k
-          zt%f%var(iNrm_cond)%ptr => zt%x(:,k)
-          zt%f%var(iNrm_cond)%name = "Nrm_cond"
-          zt%f%var(iNrm_cond)%description = "Nrm cond/evap"
-          zt%f%var(iNrm_cond)%units = "(count/m^3)/s"
+
+          call stat_assign(iNrm_cond,"Nrm_cond",
+     .         "Nrm cond/evap","(count/m^3)/s",zt)
           k = k + 1
  
         case ('Nrm_auto')
           iNrm_auto = k
-          zt%f%var(iNrm_auto)%ptr => zt%x(:,k)
-          zt%f%var(iNrm_auto)%name = "Nrm_auto"
-          zt%f%var(iNrm_auto)%description = "Nrm autoconversion"
-          zt%f%var(iNrm_auto)%units = "(count/m^3)/s"
+
+          call stat_assign(iNrm_auto,"Nrm_auto",
+     .         "Nrm autoconversion","(count/m^3)/s",zt)
+
           k = k + 1
 
         case ('Nrm_cond_adj')
           iNrm_cond_adj = k
-          zt%f%var(iNrm_cond_adj)%ptr => zt%x(:,k)
-          zt%f%var(iNrm_cond_adj)%name = "Nrm_cond_adj"
-          zt%f%var(iNrm_cond_adj)%description 
-     .    = "Nrm cond/evap adjustment due to over-evaporation"
-          zt%f%var(iNrm_cond_adj)%units = "(count/m^3)/s"
+
+          call stat_assign(iNrm_cond_adj,"Nrm_cond_adj",
+     .         "Nrm cond/evap adjustment due to over-evaporation",
+     .         "(count/m^3)/s",zt)
           k = k + 1
  
         case ('Nrm_mc')
           iNrm_mc = k
-          zt%f%var(iNrm_mc)%ptr => zt%x(:,k)
-          zt%f%var(iNrm_mc)%name = "Nrm_mc"
-          zt%f%var(iNrm_mc)%description = "Nrm micro"
-          zt%f%var(iNrm_mc)%units = "(count/m^3)/s"
+          call stat_assign(iNrm_mc,"Nrm_mc",
+     .         "Nrm micro","(count/m^3)/s",zt)
+
           k = k + 1
 
         case ('Nrm_cl')
           iNrm_cl = k
-          zt%f%var(iNrm_cl)%ptr => zt%x(:,k)
-          zt%f%var(iNrm_cl)%name = "Nrm_cl"
-          zt%f%var(iNrm_cl)%description = "Nrm clipping term"
-          zt%f%var(iNrm_cl)%units = "(kg/kg)/s"
+          call stat_assign(iNrm_cl,"Nrm_cl",
+     .         "Nrm clipping term","(count/m^3)/s",zt)
           k = k + 1
 
         case ('rsnowm_bt')
           irsnowm_bt = k
-          zt%f%var(irsnowm_bt)%ptr => zt%x(:,k)
-          zt%f%var(irsnowm_bt)%name = "rsnowm_bt"
-          zt%f%var(irsnowm_bt)%description = "rsnowm budget"
-          zt%f%var(irsnowm_bt)%units = "(kg/kg)/s"
+          call stat_assign(irsnowm_bt,"rsnowm_bt",
+     .         "rsnowm budget","(kg/kg)/s",zt)
+
           k = k + 1
  
         case ('rsnowm_ma')
           irsnowm_ma = k
-          zt%f%var(irsnowm_ma)%ptr => zt%x(:,k)
-          zt%f%var(irsnowm_ma)%name = "rsnowm_ma"
-          zt%f%var(irsnowm_ma)%description = "rsnowm mean advection"
-          zt%f%var(irsnowm_ma)%units = "(kg/kg)/s"
+
+          call stat_assign(irsnowm_ma,"rsnowm_ma",
+     .         "rsnowm mean advection","(kg/kg)/s",zt)
           k = k + 1
  
         case ('rsnowm_sd')
           irsnowm_sd = k
-          zt%f%var(irsnowm_sd)%ptr => zt%x(:,k)
-          zt%f%var(irsnowm_sd)%name = "rsnowm_sd"
-          zt%f%var(irsnowm_sd)%description = "rsnowm sedimentation"
-          zt%f%var(irsnowm_sd)%units = "(kg/kg)/s"
+          call stat_assign(irsnowm_sd,"rsnowm_sd",
+     .         "rsnowm sedimentation","(kg/kg)/s",zt)
           k = k + 1
  
         case ('rsnowm_dff')
           irsnowm_dff = k
-          zt%f%var(irsnowm_dff)%ptr => zt%x(:,k)
-          zt%f%var(irsnowm_dff)%name = "rsnowm_dff"
-          zt%f%var(irsnowm_dff)%description = "rsnowm diffusion"
-          zt%f%var(irsnowm_dff)%units = "(kg/kg)/s"
+
+          call stat_assign(irsnowm_dff,"rsnowm_dff",
+     .         "rsnowm diffusion","(kg/kg)/s",zt)
           k = k + 1
 
         case ('rsnowm_mc')
           irsnowm_mc = k
-          zt%f%var(irsnowm_mc)%ptr => zt%x(:,k)
-          zt%f%var(irsnowm_mc)%name = "rsnowm_mc"
-          zt%f%var(irsnowm_mc)%description = "rsnowm micro"
-          zt%f%var(irsnowm_mc)%units = "(kg/kg)/s"
+
+          call stat_assign(irsnowm_mc,"rsnowm_mc",
+     .         "rsnowm micro","(kg/kg)/s",zt)
           k = k + 1
 
         case ('rsnowm_cl')
           irsnowm_cl = k
-          zt%f%var(irsnowm_cl)%ptr => zt%x(:,k)
-          zt%f%var(irsnowm_cl)%name = "rsnowm_cl"
-          zt%f%var(irsnowm_cl)%description = "rsnowm clipping term"
-          zt%f%var(irsnowm_cl)%units = "(kg/kg)/s"
+
+          call stat_assign(irsnowm_cl,"rsnowm_cl",
+     .         "rsnowm clipping term","(kg/kg)/s",zt)
           k = k + 1
 
        case ('ricem_bt')
           iricem_bt = k
-          zt%f%var(iricem_bt)%ptr => zt%x(:,k)
-          zt%f%var(iricem_bt)%name = "ricem_bt"
-          zt%f%var(iricem_bt)%description = "ricem budget"
-          zt%f%var(iricem_bt)%units = "(kg/kg)/s"
+
+          call stat_assign(iricem_bt,"ricem_bt",
+     .         "ricem budget","(kg/kg)/s",zt)
+ 
           k = k + 1
  
         case ('ricem_ma')
           iricem_ma = k
-          zt%f%var(iricem_ma)%ptr => zt%x(:,k)
-          zt%f%var(iricem_ma)%name = "ricem_ma"
-          zt%f%var(iricem_ma)%description = "ricem mean advection"
-          zt%f%var(iricem_ma)%units = "(kg/kg)/s"
+
+          call stat_assign(iricem_ma,"ricem_ma",
+     .         "ricem mean advection","(kg/kg)/s",zt)
           k = k + 1
  
         case ('ricem_sd')
           iricem_sd = k
-          zt%f%var(iricem_sd)%ptr => zt%x(:,k)
-          zt%f%var(iricem_sd)%name = "ricem_sd"
-          zt%f%var(iricem_sd)%description = "ricem sedimentation"
-          zt%f%var(iricem_sd)%units = "(kg/kg)/s"
+
+          call stat_assign(iricem_sd,"ricem_sd",
+     .         "ricem sedimentation","(kg/kg)/s",zt)
           k = k + 1
  
         case ('ricem_dff')
           iricem_dff = k
-          zt%f%var(iricem_dff)%ptr => zt%x(:,k)
-          zt%f%var(iricem_dff)%name = "ricem_dff"
-          zt%f%var(iricem_dff)%description = "ricem diffusion"
-          zt%f%var(iricem_dff)%units = "(kg/kg)/s"
+
+          call stat_assign(iricem_dff,"ricem_dff",
+     .         "ricem diffusion","(kg/kg)/s",zt)
           k = k + 1
 
         case ('ricem_mc')
           iricem_mc = k
-          zt%f%var(iricem_mc)%ptr => zt%x(:,k)
-          zt%f%var(iricem_mc)%name = "ricem_mc"
-          zt%f%var(iricem_mc)%description = "ricem micro"
-          zt%f%var(iricem_mc)%units = "(kg/kg)/s"
+
+          call stat_assign(iricem_mc,"ricem_mc",
+     .         "ricem micro","(kg/kg)/s",zt)
           k = k + 1
 
         case ('ricem_cl')
           iricem_cl = k
-          zt%f%var(iricem_cl)%ptr => zt%x(:,k)
-          zt%f%var(iricem_cl)%name = "ricem_cl"
-          zt%f%var(iricem_cl)%description = "ricem clipping term"
-          zt%f%var(iricem_cl)%units = "(kg/kg)/s"
+
+          call stat_assign(iricem_cl,"ricem_cl",
+     .         "ricem clipping term","(kg/kg)/s",zt)
           k = k + 1
 
         case ('rgraupelm_bt')
           irgraupelm_bt = k
-          zt%f%var(irgraupelm_bt)%ptr => zt%x(:,k)
-          zt%f%var(irgraupelm_bt)%name = "rgraupelm_bt"
-          zt%f%var(irgraupelm_bt)%description = "rgraupelm budget"
-          zt%f%var(irgraupelm_bt)%units = "(kg/kg)/s"
+
+          call stat_assign(irgraupelm_bt,"rgraupelm_bt",
+     .         "rgraupelm budget","(kg/kg)/s",zt)
           k = k + 1
  
         case ('rgraupelm_ma')
           irgraupelm_ma = k
-          zt%f%var(irgraupelm_ma)%ptr => zt%x(:,k)
-          zt%f%var(irgraupelm_ma)%name = "rgraupelm_ma"
-          zt%f%var(irgraupelm_ma)%description = 
-     .    "rgraupelm mean advection"
-          zt%f%var(irgraupelm_ma)%units = "(kg/kg)/s"
+
+          call stat_assign(irgraupelm_ma,"rgraupelm_ma",
+     .         "rgraupelm mean advection","(kg/kg)/s",zt)
           k = k + 1
  
         case ('rgraupelm_sd')
           irgraupelm_sd = k
-          zt%f%var(irgraupelm_sd)%ptr => zt%x(:,k)
-          zt%f%var(irgraupelm_sd)%name = "rgraupelm_sd"
-          zt%f%var(irgraupelm_sd)%description 
-     .    = "rgraupelm sedimentation"
-          zt%f%var(irgraupelm_sd)%units = "(kg/kg)/s"
+
+          call stat_assign(irgraupelm_sd,"rgraupelm_sd",
+     .         "rgraupelm sedimentation","(kg/kg)/s",zt)
           k = k + 1
  
         case ('rgraupelm_dff')
           irgraupelm_dff = k
-          zt%f%var(irgraupelm_dff)%ptr => zt%x(:,k)
-          zt%f%var(irgraupelm_dff)%name = "rgraupelm_dff"
-          zt%f%var(irgraupelm_dff)%description = "rgraupelm diffusion"
-          zt%f%var(irgraupelm_dff)%units = "(kg/kg)/s"
+
+          call stat_assign(irgraupelm_dff,"rgraupelm_dff",
+     .         "rgraupelm diffusion","(kg/kg)/s",zt)
           k = k + 1
 
         case ('rgraupelm_mc')
           irgraupelm_mc = k
-          zt%f%var(irgraupelm_mc)%ptr => zt%x(:,k)
-          zt%f%var(irgraupelm_mc)%name = "rgraupelm_mc"
-          zt%f%var(irgraupelm_mc)%description = "rgraupelm micro"
-          zt%f%var(irgraupelm_mc)%units = "(kg/kg)/s"
+
+          call stat_assign(irgraupelm_mc,"rgraupelm_mc",
+     .         "rgraupelm micro","(kg/kg)/s",zt)
           k = k + 1
 
         case ('rgraupelm_cl')
           irgraupelm_cl = k
-          zt%f%var(irgraupelm_cl)%ptr => zt%x(:,k)
-          zt%f%var(irgraupelm_cl)%name = "rgraupelm_cl"
-          zt%f%var(irgraupelm_cl)%description 
-     .    = "rgraupelm clipping term"
-          zt%f%var(irgraupelm_cl)%units = "(kg/kg)/s"
+
+          call stat_assign(irgraupelm_cl,"rgraupelm_cl",
+     .         "rgraupelm clipping term","(kg/kg)/s",zt)
           k = k + 1
 
         case ('vm_bt')
           ivm_bt = k
-          zt%f%var(ivm_bt)%ptr => zt%x(:,k)
-          zt%f%var(ivm_bt)%name = "vm_bt"
-          zt%f%var(ivm_bt)%description 
-     .    = "vm time tendency(note: does not balance at zt=2)"
-          zt%f%var(ivm_bt)%units = "m/s"
+
+          call stat_assign(ivm_bt,"vm_bt",
+     .         "vm time tendency(note: does not balance at zt=2)",
+     .         "m/s",zt)
           k = k + 1
 
         case ('vm_ma')
           ivm_ma = k
-          zt%f%var(ivm_ma)%ptr => zt%x(:,k)
-          zt%f%var(ivm_ma)%name = "vm_ma"
-          zt%f%var(ivm_ma)%description 
-     .    = "vm mean advection"
-          zt%f%var(ivm_ma)%units = "m/s"
+          call stat_assign(ivm_ma,"vm_ma",
+     .         "vm mean advection","m/s",zt)
           k = k + 1
 
         case ('vm_gf')
           ivm_gf = k
-          zt%f%var(ivm_gf)%ptr => zt%x(:,k)
-          zt%f%var(ivm_gf)%name = "vm_gf"
-          zt%f%var(ivm_gf)%description 
-     .    = "vm geostrophic forcing"
-          zt%f%var(ivm_gf)%units = "m/s"
+
+          call stat_assign(ivm_gf,"vm_gf",
+     .         "vm geostrophic forcing","m/s",zt)
           k = k + 1
 
         case ('vm_cf')
           ivm_cf = k
-          zt%f%var(ivm_cf)%ptr => zt%x(:,k)
-          zt%f%var(ivm_cf)%name = "vm_cf"
-          zt%f%var(ivm_cf)%description 
-     .    = "vm coriolis forcing"
-          zt%f%var(ivm_cf)%units = "m/s"
+
+          call stat_assign(ivm_cf,"vm_cf",
+     .         "vm coriolis forcing","m/s",zt)
           k = k + 1
 
         case ('vm_ta')
           ivm_ta = k
-          zt%f%var(ivm_ta)%ptr => zt%x(:,k)
-          zt%f%var(ivm_ta)%name = "vm_ta"
-          zt%f%var(ivm_ta)%description 
-     .    = "vm turbulent transport"
-          zt%f%var(ivm_ta)%units = "m/s"
+
+          call stat_assign(ivm_ta,"vm_ta",
+     .         "vm turbulent transport","m/s",zt)
           k = k + 1
 
         case ('um_bt')
           ium_bt = k
-          zt%f%var(ium_bt)%ptr => zt%x(:,k)
-          zt%f%var(ium_bt)%name = "um_bt"
-          zt%f%var(ium_bt)%description 
-     .    = "um time tendency (note: does not balance at zt=2)"
-          zt%f%var(ium_bt)%units = "m/s"
+
+          call stat_assign(ium_bt,"um_bt",
+     .         "um time tendency (note: does not balance at zt=2)",
+     .         "m/s",zt)
           k = k + 1
 
         case ('um_ma')
           ium_ma = k
-          zt%f%var(ium_ma)%ptr => zt%x(:,k)
-          zt%f%var(ium_ma)%name = "um_ma"
-          zt%f%var(ium_ma)%description 
-     .    = "um mean advection"
-          zt%f%var(ium_ma)%units = "m/s"
+
+          call stat_assign(ium_ma,"um_ma",
+     .         "um mean advection","m/s",zt)
           k = k + 1
 
         case ('um_gf')
           ium_gf = k
-          zt%f%var(ium_gf)%ptr => zt%x(:,k)
-          zt%f%var(ium_gf)%name = "um_gf"
-          zt%f%var(ium_gf)%description 
-     .    = "um geostrophic forcing"
-          zt%f%var(ium_gf)%units = "m/s"
+          call stat_assign(ium_gf,"um_gf",
+     .         "um geostrophic forcing","m/s",zt)
           k = k + 1
 
         case ('um_cf')
           ium_cf = k
-          zt%f%var(ium_cf)%ptr => zt%x(:,k)
-          zt%f%var(ium_cf)%name = "um_cf"
-          zt%f%var(ium_cf)%description 
-     .    = "um coriolis forcing"
-          zt%f%var(ium_cf)%units = "m/s"
+          call stat_assign(ium_cf,"um_cf",
+     .         "um coriolis forcing","m/s",zt)
           k = k + 1
 
         case ('um_ta')
           ium_ta = k
-          zt%f%var(ium_ta)%ptr => zt%x(:,k)
-          zt%f%var(ium_ta)%name = "um_ta"
-          zt%f%var(ium_ta)%description 
-     .    = "um turbulent transport"
-          zt%f%var(ium_ta)%units = "m/s"
+          call stat_assign(ium_ta,"um_ta",
+     .         "um turbulent transport","m/s",zt)
           k = k + 1
  
         case ('a')
           ia = k
-          zt%f%var(ia)%ptr => zt%x(:,k)
-          zt%f%var(ia)%name = "a"
-          zt%f%var(ia)%description = "pdf parameter a"
-          zt%f%var(ia)%units = "count"
+          call stat_assign(ia,"a",
+     .         "pdf parameter a","count",zt)
           k = k + 1
  
         case ('w1')
           iw1 = k
-          zt%f%var(iw1)%ptr => zt%x(:,k)
-          zt%f%var(iw1)%name = "w1"
-          zt%f%var(iw1)%description = "pdf parameter w1"
-          zt%f%var(iw1)%units = "m/s"
+          call stat_assign(iw1,"w1",
+     .         "pdf parameter w1","m/s",zt)
+
           k = k + 1
  
         case ('w2')
           iw2 = k
-          zt%f%var(iw2)%ptr => zt%x(:,k)
-          zt%f%var(iw2)%name = "w2"
-          zt%f%var(iw2)%description = "pdf parameter w2"
-          zt%f%var(iw2)%units = "m/s"
+
+          call stat_assign(iw2,"w2",
+     .         "pdf parameter w2","m/s",zt)
           k = k + 1
  
         case ('sw1')
           isw1 = k
-          zt%f%var(isw1)%ptr => zt%x(:,k)
-          zt%f%var(isw1)%name = "sw1"
-          zt%f%var(isw1)%description = "pdf parameter sw1"
-          zt%f%var(isw1)%units = "m^2/s^2"
+          call stat_assign(isw1,"sw1",
+     .         "pdf parameter sw1","m^2/s^2",zt)
+
           k = k + 1
  
         case ('sw2')
           isw2 = k
-          zt%f%var(isw2)%ptr => zt%x(:,k)
-          zt%f%var(isw2)%name = "sw2"
-          zt%f%var(isw2)%description = "pdf parameter sw2"
-          zt%f%var(isw2)%units = "m^2/s^2"
+
+          call stat_assign(isw2,"sw2",
+     .         "pdf parameter sw2","m^2/s^2",zt)
           k = k + 1
  
         case ('thl1')
           ithl1 = k
-          zt%f%var(ithl1)%ptr => zt%x(:,k)
-          zt%f%var(ithl1)%name = "thl1"
-          zt%f%var(ithl1)%description = "pdf parameter thl1"
-          zt%f%var(ithl1)%units = "K"
+
+          call stat_assign(ithl1,"thl1",
+     .         "pdf parameter thl1","K",zt)
+
           k = k + 1
  
         case ('thl2')
           ithl2 = k
-          zt%f%var(ithl2)%ptr => zt%x(:,k)
-          zt%f%var(ithl2)%name = "thl2"
-          zt%f%var(ithl2)%description = "pdf parameter thl2"
-          zt%f%var(ithl2)%units = "K"
+
+          call stat_assign(ithl2,"thl2",
+     .         "pdf parameter thl2","K",zt)
           k = k + 1
  
         case ('sthl1')
           isthl1 = k
-          zt%f%var(isthl1)%ptr => zt%x(:,k)
-          zt%f%var(isthl1)%name = "sthl1"
-          zt%f%var(isthl1)%description = "pdf parameter sthl1"
-          zt%f%var(isthl1)%units = "K^2"
+
+          call stat_assign(isthl1,"sthl1",
+     .         "pdf parameter sthl1","K^2",zt)
+
           k = k + 1
  
         case ('sthl2')
           isthl2 = k
-          zt%f%var(isthl2)%ptr => zt%x(:,k)
-          zt%f%var(isthl2)%name = "sthl2"
-          zt%f%var(isthl2)%description = "pdf parameter sthl2"
-          zt%f%var(isthl2)%units = "K^2"
+          call stat_assign(isthl2,"sthl2",
+     .         "pdf parameter sthl2","K^2",zt)
+
           k = k + 1
  
         case ('rt1')
           irt1 = k
-          zt%f%var(irt1)%ptr => zt%x(:,k)
-          zt%f%var(irt1)%name = "rt1"
-          zt%f%var(irt1)%description = "pdf parameter rt1"
-          zt%f%var(irt1)%units = "kg/kg"
+          call stat_assign(irt1,"rt1",
+     .         "pdf parameter rt1","kg/kg",zt)
+
           k = k + 1
  
         case ('rt2')
           irt2 = k
-          zt%f%var(irt2)%ptr => zt%x(:,k)
-          zt%f%var(irt2)%name = "rt2"
-          zt%f%var(irt2)%description = "pdf parameter rt2"
-          zt%f%var(irt2)%units = "kg/kg"
+
+          call stat_assign(irt2,"rt2",
+     .         "pdf parameter rt2","kg/kg",zt)
           k = k + 1
  
         case ('srt1')
           isrt1 = k
-          zt%f%var(isrt1)%ptr => zt%x(:,k)
-          zt%f%var(isrt1)%name = "srt1"
-          zt%f%var(isrt1)%description = "pdf parameter srt1"
-          zt%f%var(isrt1)%units = "(kg^2)/(kg^2)"
+          call stat_assign(isrt1,"srt1",
+     .         "pdf parameter srt1","(kg^2)/(kg^2)",zt)
           k = k + 1
  
         case ('srt2')
           isrt2 = k
-          zt%f%var(isrt2)%ptr => zt%x(:,k)
-          zt%f%var(isrt2)%name = "srt2"
-          zt%f%var(isrt2)%description = "pdf parameter srt2"
-          zt%f%var(isrt2)%units = "(kg^2)/(kg^2)"
+
+          call stat_assign(isrt2,"srt2",
+     .         "pdf parameter srt2","(kg^2)/(kg^2)",zt)
           k = k + 1
  
         case ('rc1')
           irc1 = k
-          zt%f%var(irc1)%ptr => zt%x(:,k)
-          zt%f%var(irc1)%name = "rc1"
-          zt%f%var(irc1)%description = "pdf parameter rc1"
-          zt%f%var(irc1)%units = "kg/kg"
+
+          call stat_assign(irc1,"rc1",
+     .         "pdf parameter rc1","kg/kg",zt)
           k = k + 1
  
         case ('rc2')
           irc2 = k
-          zt%f%var(irc2)%ptr => zt%x(:,k)
-          zt%f%var(irc2)%name = "rc2"
-          zt%f%var(irc2)%description = "pdf parameter rc2"
-          zt%f%var(irc2)%units = "kg/kg"
+
+          call stat_assign(irc2,"rc2",
+     .         "pdf parameter rc2","kg/kg",zt)
           k = k + 1
  
         case ('rsl1')
           irsl1 = k
-          zt%f%var(irsl1)%ptr => zt%x(:,k)
-          zt%f%var(irsl1)%name = "rsl1"
-          zt%f%var(irsl1)%description = "pdf parameter rsl1"
-          zt%f%var(irsl1)%units = "kg/kg"
+
+          call stat_assign(irsl1,"rsl1",
+     .         "pdf parameter rsl1","kg/kg",zt)
           k = k + 1
  
         case ('rsl2')
           irsl2 = k
-          zt%f%var(irsl2)%ptr => zt%x(:,k)
-          zt%f%var(irsl2)%name = "rsl2"
-          zt%f%var(irsl2)%description = "pdf parameter rsl2"
-          zt%f%var(irsl2)%units = "kg/kg"
+
+          call stat_assign(irsl2,"rsl2",
+     .         "pdf parameter rsl2","kg/kg",zt)
           k = k + 1
  
         case ('R1')
           iR1 = k
-          zt%f%var(iR1)%ptr => zt%x(:,k)
-          zt%f%var(iR1)%name = "R1"
-          zt%f%var(iR1)%description = "pdf parameter R1"
-          zt%f%var(iR1)%units = "count"
+          call stat_assign(iR1,"R1",
+     .         "pdf parameter R1","count",zt)
           k = k + 1
  
         case ('R2')
           iR2 = k
-          zt%f%var(iR2)%ptr => zt%x(:,k)
-          zt%f%var(iR2)%name = "R2"
-          zt%f%var(iR2)%description = "pdf parameter R2"
-          zt%f%var(iR2)%units = "count"
+
+          call stat_assign(iR2,"R2",
+     .         "pdf parameter R2","count",zt)
           k = k + 1
  
         case ('s1')
           is1 = k
-          zt%f%var(is1)%ptr => zt%x(:,k)
-          zt%f%var(is1)%name = "s1"
-          zt%f%var(is1)%description = "pdf parameter s1"
-          zt%f%var(is1)%units = "kg/kg"
+
+          call stat_assign(is1,"s1",
+     .         "pdf parameter s1","kg/kg",zt)
           k = k + 1
  
         case ('s2')
           is2 = k
-          zt%f%var(is2)%ptr => zt%x(:,k)
-          zt%f%var(is2)%name = "s2"
-          zt%f%var(is2)%description = "pdf parameter s2"
-          zt%f%var(is2)%units = "kg/kg"
+
+          call stat_assign(is2,"s2",
+     .         "pdf parameter s2","kg/kg",zt)
           k = k + 1
  
         case ('ss1')
           iss1 = k
-          zt%f%var(iss1)%ptr => zt%x(:,k)
-          zt%f%var(iss1)%name = "ss1"
-          zt%f%var(iss1)%description = "pdf parameter ss1"
-          zt%f%var(iss1)%units = "kg/kg"
+
+          call stat_assign(iss1,"ss1",
+     .         "pdf parameter ss1","kg/kg",zt)
           k = k + 1
  
         case ('ss2')
           iss2 = k
-          zt%f%var(iss2)%ptr => zt%x(:,k)
-          zt%f%var(iss2)%name = "ss2"
-          zt%f%var(iss2)%description = "pdf parameter ss2"
-          zt%f%var(iss2)%units = "kg/kg"
+
+          call stat_assign(iss2,"ss2",
+     .         "pdf parameter ss2","kg/kg",zt)
           k = k + 1
  
         case ('rrtthl')
           irrtthl = k
-          zt%f%var(irrtthl)%ptr => zt%x(:,k)
-          zt%f%var(irrtthl)%name = "rrtthl"
-          zt%f%var(irrtthl)%description = "pdf parameter rrtthl"
-          zt%f%var(irrtthl)%units = "count"
+
+          call stat_assign(irrtthl,"rrtthl",
+     .         "pdf parameter rrtthl","count",zt)
           k = k + 1
 
         case('wp2zt')
           iwp2zt = k
-          zt%f%var(iwp2zt)%ptr => zt%x(:,k)
-          zt%f%var(iwp2zt)%name = "wp2zt"
-          zt%f%var(iwp2zt)%description ="wp2zt"
-          zt%f%var(iwp2zt)%units = "m^2/s^2"
+
+          call stat_assign(iwp2zt,"wp2zt",
+     .         "wp2zt","m^2/s^2",zt)
           k = k + 1
 
         case('thlp2zt')
           ithlp2zt = k
-          zt%f%var(ithlp2zt)%ptr => zt%x(:,k)
-          zt%f%var(ithlp2zt)%name = "thlp2zt"
-          zt%f%var(ithlp2zt)%description ="thlp2zt"
-          zt%f%var(ithlp2zt)%units = "K^2"
+
+          call stat_assign(ithlp2zt,"thlp2zt",
+     .         "thlp2zt","K^2",zt)
           k = k + 1
 
         case('wpthlpzt')
           iwpthlpzt = k
-          zt%f%var(iwpthlpzt)%ptr => zt%x(:,k)
-          zt%f%var(iwpthlpzt)%name = "wpthlpzt"
-          zt%f%var(iwpthlpzt)%description ="wpthlpzt"
-          zt%f%var(iwpthlpzt)%units = "(m K)/s"
+
+          call stat_assign(iwpthlpzt,"wpthlpzt",
+     .         "wpthlpzt","(m K)/s",zt)
           k = k + 1
 
         case('wprtpzt')   
           iwprtpzt = k
-          zt%f%var(iwprtpzt)%ptr => zt%x(:,k)
-          zt%f%var(iwprtpzt)%name = "wprtpzt"
-          zt%f%var(iwprtpzt)%description = "wprtpzt"
-          zt%f%var(iwprtpzt)%units = "(m kg)/(s kg)"
+
+          call stat_assign(iwprtpzt,"wprtpzt",
+     .         "wprtpzt","(m kg)/(s kg)",zt)
           k = k + 1
 
         case('rtp2zt')   
           irtp2zt = k
-          zt%f%var(irtp2zt)%ptr => zt%x(:,k)
-          zt%f%var(irtp2zt)%name = "rtp2zt"
-          zt%f%var(irtp2zt)%description = "rtp2zt"
-          zt%f%var(irtp2zt)%units = "kg/kg"
+
+          call stat_assign(irtp2zt,"rtp2zt",
+     .         "rtp2zt","kg/kg",zt)
           k = k + 1
 
         case('rtpthlpzt')   
           irtpthlpzt = k
-          zt%f%var(irtpthlpzt)%ptr => zt%x(:,k)
-          zt%f%var(irtpthlpzt)%name = "rtpthlpzt"
-          zt%f%var(irtpthlpzt)%description = "rtpthlpzt"
-          zt%f%var(irtpthlpzt)%units = "(kg K)/kg"
+
+          call stat_assign(irtpthlpzt,"rtpthlpzt",
+     .         "rtpthlpzt","(kg K)/kg",zt)
           k = k + 1
 #ifdef SCALARS 
         case ('sclram')
           isclram = k
-          zt%f%var(isclram)%ptr => zt%x(:,k)
-          zt%f%var(isclram)%name = "sclram"
-          zt%f%var(isclram)%description 
-     .    = "passive scalar (currently thlm)"
-          zt%f%var(isclram)%units = "K"
+
+          call stat_assign(isclram,"sclram",
+     .         "passive scalar (currently thlm)","K",zt)
           k = k + 1
 
         case ('sclram_f')
           isclram_f = k
-          zt%f%var(isclram_f)%ptr => zt%x(:,k)
-          zt%f%var(isclram_f)%name = "sclram_f"
-          zt%f%var(isclram_f)%description
-     .    = "passive scalar forcing (currently thlm_forcing)"
-          zt%f%var(isclram_f)%units = "K/s"
+
+          call stat_assign(isclram_f,"sclram_f",
+     .         "passive scalar (currently thlm_forcing)","K/s",zt)
           k = k + 1
 
         case ('sclrbm')
           isclrbm = k
-          zt%f%var(isclrbm)%ptr => zt%x(:,k)
-          zt%f%var(isclrbm)%name = "sclrbm"
-          zt%f%var(isclrbm)%description 
-     .    = "passive scalar (currently rtm)"
-          zt%f%var(isclrbm)%units = "kg/kg"
+
+          call stat_assign(isclrbm,"sclrbm",
+     .         "passive scalar (currently rtm)","kg/kg",zt)
           k = k + 1
 
         case ('sclrbm_f')
           isclrbm_f = k
-          zt%f%var(isclrbm_f)%ptr => zt%x(:,k)
-          zt%f%var(isclrbm_f)%name = "sclrbm_f"
-          zt%f%var(isclrbm_f)%description 
-     .    = "passive scalar forcing (currently rtm_forcing)"
-          zt%f%var(isclrbm)%units = "kg/(kg s)"
+          call stat_assign(isclrbm_f,"sclrbm_f",
+     .         "passive scalar (currently rtm_forcing)","kg/kg",zt)
           k = k + 1
 
         case ('edsclram')
           iedsclram = k
-          zt%f%var(iedsclram)%ptr => zt%x(:,k)
-          zt%f%var(iedsclram)%name = "edsclram"
-          zt%f%var(iedsclram)%description 
-     .    = "eddy-diff scalar (currently thlm)"
-          zt%f%var(iedsclram)%units = "K"
+
+          call stat_assign(iedsclram,"edsclram",
+     .         "eddy-diff scalar (currently thlm)","K",zt)
           k = k + 1
 
         case ('edsclrbm')
           iedsclrbm = k
-          zt%f%var(iedsclrbm)%ptr => zt%x(:,k)
-          zt%f%var(iedsclrbm)%name = "edsclrbm"
-          zt%f%var(iedsclrbm)%description 
-     .    = "eddy-diff scalar (currently rt)"
-          zt%f%var(iedsclrbm)%units = "kg/kg"
+
+          call stat_assign(iedsclrbm,"edsclrbm",
+     .         "eddy-diff scalar (currently rt)","kg/kg",zt)
           k = k + 1
 #endif /*SCALARS*/
 
@@ -2418,1034 +2206,768 @@
 
         case ('wp2')
           iwp2 = k
-          zm%f%var(iwp2)%ptr => zm%x(:,k)
-          zm%f%var(iwp2)%name = "wp2"
-          zm%f%var(iwp2)%description = "wp2"
-          zm%f%var(iwp2)%units = "m^2/s^2"
+          call stat_assign(iwp2,"wp2",
+     .         "wp2","m^2/s^2",zm)
           k = k + 1
 
         case ('rtp2')
           irtp2 = k
-          zm%f%var(irtp2)%ptr => zm%x(:,k)
-          zm%f%var(irtp2)%name = "rtp2"
-          zm%f%var(irtp2)%description = "rtp2"
-          zm%f%var(irtp2)%units = "(kg/kg)^2"
+          call stat_assign(irtp2,"rtp2",
+     .         "rtp2","(kg/kg)^2",zm)
           k = k + 1
 
         case ('thlp2')
           ithlp2 = k
-          zm%f%var(ithlp2)%ptr => zm%x(:,k)
-          zm%f%var(ithlp2)%name = "thlp2"
-          zm%f%var(ithlp2)%description = "thlp2"
-          zm%f%var(ithlp2)%units = "K^2"
+          call stat_assign(ithlp2,"thlp2",
+     .         "thlp2","K^2",zm)
           k = k + 1
 
         case ('rtpthlp')
           irtpthlp = k
-          zm%f%var(irtpthlp)%ptr => zm%x(:,k)
-          zm%f%var(irtpthlp)%name = "rtpthlp"
-          zm%f%var(irtpthlp)%description = "rtpthlp"
-          zm%f%var(irtpthlp)%units = "(kg K)/kg"
+          call stat_assign(irtpthlp,"rtpthlp",
+     .         "rtpthlp","(kg K)/kg",zm)
           k = k + 1
 
         case ('wprtp')
           iwprtp = k
-          zm%f%var(iwprtp)%ptr => zm%x(:,k)
-          zm%f%var(iwprtp)%name = "wprtp"
-          zm%f%var(iwprtp)%description = "wprtp"
-          zm%f%var(iwprtp)%units = "(m kg)/(s kg)"
+
+          call stat_assign(iwprtp,"wprtp",
+     .         "wprtp","(m kg)/(s kg)",zm)
           k = k + 1
 
         case ('wpthlp')
           iwpthlp = k
-          zm%f%var(iwpthlp)%ptr => zm%x(:,k)
-          zm%f%var(iwpthlp)%name = "wpthlp"
-          zm%f%var(iwpthlp)%description = "wpthlp"
-          zm%f%var(iwpthlp)%units = "(m K)/s"
+
+          call stat_assign(iwpthlp,"wpthlp",
+     .         "wpthlp","(m K)/s",zm)
           k = k + 1
 
         case ('wp4')
           iwp4 = k
-          zm%f%var(iwp4)%ptr => zm%x(:,k)
-          zm%f%var(iwp4)%name = "wp4"
-          zm%f%var(iwp4)%description = "wp4"
-          zm%f%var(iwp4)%units = "(m^4)/(s^4)"
+          call stat_assign(iwp4,"wp4",
+     .         "wp4","(m^4)/(s^4)",zm)
           k = k + 1
 
         case ('wpthvp')
           iwpthvp = k
-          zm%f%var(iwpthvp)%ptr => zm%x(:,k)
-          zm%f%var(iwpthvp)%name = "wpthvp"
-          zm%f%var(iwpthvp)%description = "Buoyancy flux (K m/s)"
-          zm%f%var(iwpthvp)%units = "(K m)/s"
+          call stat_assign(iwpthvp,"wpthvp",
+     .         "Buoyancy flux (K m/s)","(K m)/s",zm)
           k = k + 1
 
         case ('rtpthvp')
           irtpthvp = k
-          zm%f%var(irtpthvp)%ptr => zm%x(:,k)
-          zm%f%var(irtpthvp)%name = "rtpthvp"
-          zm%f%var(irtpthvp)%description = "rtpthvp"
-          zm%f%var(irtpthvp)%units = "(kg K)/kg"
+          call stat_assign(irtpthvp,"rtpthvp",
+     .         "rtpthvp","(kg K)/kg",zm)
           k = k + 1
 
         case ('thlpthvp')
           ithlpthvp = k
-          zm%f%var(ithlpthvp)%ptr => zm%x(:,k)
-          zm%f%var(ithlpthvp)%name = "thlpthvp"
-          zm%f%var(ithlpthvp)%description = "thlpthvp"
-          zm%f%var(ithlpthvp)%units = "K^2"
+          call stat_assign(ithlpthvp,"thlpthvp",
+     .         "thlpthvp","K^2",zm)
           k = k + 1
 
         case ('taum')
           itaum = k
-          zm%f%var(itaum)%ptr => zm%x(:,k)
-          zm%f%var(itaum)%name = "taum"
-          zm%f%var(itaum)%description = "Dissipation time"
-          zm%f%var(itaum)%units = "s"
+
+          call stat_assign(itaum,"taum",
+     .         "Dissipation time","s",zm)
           k = k + 1
 
         case ('khm')
           iKhm = k
-          zm%f%var(iKhm)%ptr => zm%x(:,k)
-          zm%f%var(iKhm)%name = "Khm"
-          zm%f%var(iKhm)%description = "Eddy diffusivity"
-          zm%f%var(iKhm)%units = "m^2/s"
+
+          call stat_assign(iKhm,"Khm",
+     .         "Eddy diffusivity","m^2/s",zm)
           k = k + 1
 
         case ('wprcp')
           iwprcp = k
-          zm%f%var(iwprcp)%ptr => zm%x(:,k)
-          zm%f%var(iwprcp)%name = "wprcp"
-          zm%f%var(iwprcp)%description = "wprcp"
-          zm%f%var(iwprcp)%units = "(m kg)/(s kg)"
+          call stat_assign(iwprcp,"wprcp",
+     .         "wprcp","(m kg)/(s kg)",zm)
           k = k + 1
 
         case ('thlprcp')
           ithlprcp = k
-          zm%f%var(ithlprcp)%ptr => zm%x(:,k)
-          zm%f%var(ithlprcp)%name = "thlprcp"
-          zm%f%var(ithlprcp)%description = "thlprcp"
-          zm%f%var(ithlprcp)%units = "(K kg)/(kg)"
+          call stat_assign(ithlprcp,"thlprcp",
+     .         "thlprcp","(K kg)/(kg)",zm)
           k = k + 1
 
         case ('rtprcp')
           irtprcp = k
-          zm%f%var(irtprcp)%ptr => zm%x(:,k)
-          zm%f%var(irtprcp)%name = "rtprcp"
-          zm%f%var(irtprcp)%description = "rtprcp"
-          zm%f%var(irtprcp)%units = "(kg^2)/(kg^2)"
+
+          call stat_assign(irtprcp,"rtprcp",
+     .         "rtprcp","(kg^2)/(kg^2)",zm)
           k = k + 1
 
         case ('rcp2')
           ircp2 = k
-          zm%f%var(ircp2)%ptr => zm%x(:,k)
-          zm%f%var(ircp2)%name = "rcp2"
-          zm%f%var(ircp2)%description = "rcp2"
-          zm%f%var(ircp2)%units = "(kg^2)/(kg^2)"
+          call stat_assign(ircp2,"rcp2",
+     .         "rcp2","(kg^2)/(kg^2)",zm)
           k = k + 1
-
         case ('upwp')
           iupwp = k
-          zm%f%var(iupwp)%ptr => zm%x(:,k)
-          zm%f%var(iupwp)%name = "upwp"
-          zm%f%var(iupwp)%description = "upwp"
-          zm%f%var(iupwp)%units = "m^2/s^2"
+          call stat_assign(iupwp,"upwp",
+     .         "upwp","m^2/s^2",zm)
           k = k + 1
-
         case ('vpwp')
           ivpwp = k
-          zm%f%var(ivpwp)%ptr => zm%x(:,k)
-          zm%f%var(ivpwp)%name = "vpwp"
-          zm%f%var(ivpwp)%description = "vpwp"
-          zm%f%var(ivpwp)%units = "m^2/s^2"
+          call stat_assign(ivpwp,"vpwp",
+     .         "vpwp","m^2/s^2",zm)
           k = k + 1
-
         case ('rhom')
           irhom = k
-          zm%f%var(irhom)%ptr => zm%x(:,k)
-          zm%f%var(irhom)%name = "rhom"
-          zm%f%var(irhom)%description = "density"
-          zm%f%var(irhom)%units = "kg/(m^3)"
+          call stat_assign(irhom,"rhom",
+     .         "density","kg/(m^3)",zm)
           k = k + 1
-
         case ('sc')
           iscm = k
-          zm%f%var(iscm)%ptr => zm%x(:,k)
-          zm%f%var(iscm)%name = "scm"
-          zm%f%var(iscm)%description = "scm"
-          zm%f%var(iscm)%units = "count"
+          call stat_assign(iscm,"scm",
+     .         "scm","count",zm)
           k = k + 1
-
         case ('em')
           iem = k
-          zm%f%var(iem)%ptr => zm%x(:,k)
-          zm%f%var(iem)%name = "em"
-          zm%f%var(iem)%description = "em"
-          zm%f%var(iem)%units = "m2/s2"
+          call stat_assign(iem,"em",
+     .         "em","m2/s2",zm)
           k = k + 1
-
         case ('shear')      ! Brian
           ishear = k
-          zm%f%var(ishear)%ptr => zm%x(:,k)
-          zm%f%var(ishear)%name = "shear"
-          zm%f%var(ishear)%description = "wind shear term (m^2/s^3)"
-          zm%f%var(ishear)%units = "m^2/s^3"
+          call stat_assign(ishear,"shear",
+     .         "wind shear term (m^2/s^3)","m^2/s^3",zm)
           k = k + 1
-
         case ('Frad')
           iFrad = k
-          zm%f%var(iFrad)%ptr => zm%x(:,k)
-          zm%f%var(iFrad)%name = "Frad"
-          zm%f%var(iFrad)%description = "radiative flux"
-          zm%f%var(iFrad)%units = "W/m^2"
+          call stat_assign(iFrad,"Frad",
+     .         "radiative flux","W/m^2",zm)
           k = k + 1
-
         case ('Frad_LW')    ! Brian
           iFrad_LW = k
-          zm%f%var(iFrad_LW)%ptr => zm%x(:,k)
-          zm%f%var(iFrad_LW)%name = "Frad_LW"
-          zm%f%var(iFrad_LW)%description = "Long-wave radiative flux"
-          zm%f%var(iFrad_LW)%units = "W/m^2"
+          call stat_assign(iFrad_LW,"Frad_LW",
+     .         "Long-wave radiative flux","W/m^2",zm)
           k = k + 1
-
         case ('Frad_SW')    ! Brian
           iFrad_SW = k
-          zm%f%var(iFrad_SW)%ptr => zm%x(:,k)
-          zm%f%var(iFrad_SW)%name = "Frad_SW"
-          zm%f%var(iFrad_SW)%description = "Short-wave radiative flux"
-          zm%f%var(iFrad_SW)%units = "W/m^2"
+
+          call stat_assign(iFrad_SW,"Frad_SW",
+     .         "Short-wave radiative flux","W/m^2",zm)
           k = k + 1
 
         case ('Fprec')      ! Brian
           iFprec = k
-          zm%f%var(iFprec)%ptr => zm%x(:,k)
-          zm%f%var(iFprec)%name = "Fprec"
-          zm%f%var(iFprec)%description = "precipitation flux (W/m^2)"
-          zm%f%var(iFprec)%units = "W/m^2"
+
+          call stat_assign(iFprec,"Fprec",
+     .         "precipitation flux (W/m^2)","W/m^2",zm)
           k = k + 1
  
         case ('Fcsed')      ! Brian
           iFcsed = k
-          zm%f%var(iFcsed)%ptr => zm%x(:,k)
-          zm%f%var(iFcsed)%name = "Fcsed"
-          zm%f%var(iFcsed)%description
-     .    = "cloud water sedimentation flux (kg/(s*m^2))"
-          zm%f%var(iFcsed)%units = "kg/(s m2)"
+
+          call stat_assign(iFcsed,"Fcsed",
+     .         "cloud water sedimentation flux (kg/(s*m^2))",
+     .         "kg/(s m2)",zm)
           k = k + 1
 
         case ('Vrr')           ! Brian
           iVrr = k
-          zm%f%var(iVrr)%ptr => zm%x(:,k)
-          zm%f%var(iVrr)%name = "Vrr"
-          zm%f%var(iVrr)%description
-     .    = "rrm sedimentation velocity (m/s)"
-          zm%f%var(iVrr)%units = "m/s"
+
+          call stat_assign(iVrr,"Vrr",
+     .         "rrm sedimentation velocity (m/s)","m/s",zm)
           k = k + 1
 
         case ('VNr')           ! Brian
           iVNr = k
-          zm%f%var(iVNr)%ptr => zm%x(:,k)
-          zm%f%var(iVNr)%name = "VNr"
-          zm%f%var(iVNr)%description
-     .    = "Nrm sedimentation velocity (m/s)"
-          zm%f%var(iVNr)%units = "m/s"
+
+          call stat_assign(iVNr,"VNr",
+     .         "Nrm sedimentation velocity (m/s)","m/s",zm)
           k = k + 1
 
         case ('Vsnow')
           iVsnow = k
-          zm%f%var(iVsnow)%ptr => zm%x(:,k)
-          zm%f%var(iVsnow)%name = "Vsnow"
-          zm%f%var(iVsnow)%description
-     .    = "Snow sedimentation velocity (m/s)"
-          zm%f%var(iVsnow)%units = "m/s"
+
+          call stat_assign(iVsnow,"Vsnow",
+     .         "Snow sedimentation velocity (m/s)","m/s",zm)
           k = k + 1
 
         case ('Vgraupel')
           iVgraupel = k
-          zm%f%var(iVgraupel)%ptr => zm%x(:,k)
-          zm%f%var(iVgraupel)%name = "Vgraupel"
-          zm%f%var(iVgraupel)%description
-     .    = "Graupel sedimentation velocity (m/s)"
-          zm%f%var(iVgraupel)%units = "m/s"
+
+          call stat_assign(iVgraupel,"Vgraupel",
+     .         "Graupel sedimentation velocity (m/s)","m/s",zm)
           k = k + 1
 
         case ('Vice')
           iVice = k
-          zm%f%var(iVice)%ptr => zm%x(:,k)
-          zm%f%var(iVice)%name = "Vice"
-          zm%f%var(iVice)%description
-     .    = "Pristine ice sedimentation velocity (m/s)"
-          zm%f%var(iVice)%units = "m/s"
+
+          call stat_assign(iVice,"Vice",
+     .         "Pristine ice sedimentation velocity (m/s)","m/s",zm)
           k = k + 1
  
         case ('wp2_bt')
           iwp2_bt = k
-          zm%f%var(iwp2_bt)%ptr => zm%x(:,k)
-          zm%f%var(iwp2_bt)%name = "wp2_bt"
-          zm%f%var(iwp2_bt)%description = "wp2 budget"
-          zm%f%var(iwp2_bt)%units = "m2/s3"
+
+          call stat_assign(iwp2_bt,"wp2_bt",
+     .         "wp2 budget","m2/s3",zm)
           k = k + 1
 
         case ('wp2_ma')
           iwp2_ma = k
-          zm%f%var(iwp2_ma)%ptr => zm%x(:,k)
-          zm%f%var(iwp2_ma)%name = "wp2_ma"
-          zm%f%var(iwp2_ma)%description = "wp2 mean advection"
-          zm%f%var(iwp2_ma)%units = "m2/s3"
+
+          call stat_assign(iwp2_ma,"wp2_ma",
+     .         "wp2 mean advection","m2/s3",zm)
           k = k + 1
 
         case ('wp2_ta')
           iwp2_ta = k
-          zm%f%var(iwp2_ta)%ptr => zm%x(:,k)
-          zm%f%var(iwp2_ta)%name = "wp2_ta"
-          zm%f%var(iwp2_ta)%description = "wp2 turbulent advection"
-          zm%f%var(iwp2_ta)%units = "m2/s3"
+
+          call stat_assign(iwp2_ta,"wp2_ta",
+     .         "wp2 turbulent advection","m2/s3",zm)
           k = k + 1
 
         case ('wp2_ac')
           iwp2_ac = k
-          zm%f%var(iwp2_ac)%ptr => zm%x(:,k)
-          zm%f%var(iwp2_ac)%name = "wp2_ac"
-          zm%f%var(iwp2_ac)%description = "wp2 accumulation term"
-          zm%f%var(iwp2_ac)%units = "m2/s3"
+
+          call stat_assign(iwp2_ac,"wp2_ac",
+     .         "wp2 accumulation term","m2/s3",zm)
           k = k + 1
 
         case ('wp2_bp')
           iwp2_bp = k
-          zm%f%var(iwp2_bp)%ptr => zm%x(:,k)
-          zm%f%var(iwp2_bp)%name = "wp2_bp"
-          zm%f%var(iwp2_bp)%description = "wp2 buoyancy production"
-          zm%f%var(iwp2_bp)%units = "m2/s3"
+     
+          call stat_assign(iwp2_bp,"wp2_bp",
+     .         "wp2 buoyancy production","m2/s3",zm)
           k = k + 1
 
         case ('wp2_pr1')
           iwp2_pr1 = k
-          zm%f%var(iwp2_pr1)%ptr => zm%x(:,k)
-          zm%f%var(iwp2_pr1)%name = "wp2_pr1"
-          zm%f%var(iwp2_pr1)%description = "wp2 pressure term 1"
-          zm%f%var(iwp2_pr1)%units = "m2/s3"
+
+          call stat_assign(iwp2_pr1,"wp2_pr1",
+     .         "wp2 pressure term 1","m2/s3",zm)
           k = k + 1
 
         case ('wp2_pr2')
           iwp2_pr2 = k
-          zm%f%var(iwp2_pr2)%ptr => zm%x(:,k)
-          zm%f%var(iwp2_pr2)%name = "wp2_pr2"
-          zm%f%var(iwp2_pr2)%description = "wp2 pressure term 2"
-          zm%f%var(iwp2_pr2)%units = "m2/s3"
+          call stat_assign(iwp2_pr2,"wp2_pr2",
+     .         "wp2 pressure term 2","m2/s3",zm)
           k = k + 1
 
         case ('wp2_pr3')
           iwp2_pr3 = k
-          zm%f%var(iwp2_pr3)%ptr => zm%x(:,k)
-          zm%f%var(iwp2_pr3)%name = "wp2_pr3"
-          zm%f%var(iwp2_pr3)%description = "wp2 pressure term 3"
-          zm%f%var(iwp2_pr3)%units = "m2/s3"
+          call stat_assign(iwp2_pr3,"wp2_pr3",
+     .         "wp2 pressure term 3","m2/s3",zm)
+
           k = k + 1
 
         case ('wp2_dp1')
           iwp2_dp1 = k
-          zm%f%var(iwp2_dp1)%ptr => zm%x(:,k)
-          zm%f%var(iwp2_dp1)%name = "wp2_dp1"
-          zm%f%var(iwp2_dp1)%description = "wp2 dissipation term 1"
-          zm%f%var(iwp2_dp1)%units = "m2/s3"
+          call stat_assign(iwp2_dp1,"wp2_dp1",
+     .         "wp2 dissipation term 1","m2/s3",zm)
           k = k + 1
 
         case ('wp2_dp2')
           iwp2_dp2 = k
-          zm%f%var(iwp2_dp2)%ptr => zm%x(:,k)
-          zm%f%var(iwp2_dp2)%name = "wp2_dp2"
-          zm%f%var(iwp2_dp2)%description = "wp2 dissipation term 2"
-          zm%f%var(iwp2_dp2)%units = "m2/s3"
+          call stat_assign(iwp2_dp2,"wp2_dp2",
+     .         "wp2 dissipation term 2","m2/s3",zm)
+
           k = k + 1
 
         case ('wp2_cl')
           iwp2_cl = k
-          zm%f%var(iwp2_cl)%ptr => zm%x(:,k)
-          zm%f%var(iwp2_cl)%name = "wp2_cl"
-          zm%f%var(iwp2_cl)%description = "wp2 clipping term"
-          zm%f%var(iwp2_cl)%units = "m2/s3"
+
+          call stat_assign(iwp2_cl,"wp2_cl",
+     .         "wp2 clipping term","m2/s3",zm)
+
           k = k + 1
 
         case ('wprtp_bt')
           iwprtp_bt = k
-          zm%f%var(iwprtp_bt)%ptr => zm%x(:,k)
-          zm%f%var(iwprtp_bt)%name = "wprtp_bt"
-          zm%f%var(iwprtp_bt)%description = "wprtp budget"
-          zm%f%var(iwprtp_bt)%units = "(m kg)/(s2 kg)"
+          call stat_assign(iwprtp_bt,"wprtp_bt",
+     .         "wprtp budget","(m kg)/(s2 kg)",zm)
           k = k + 1
 
         case ('wprtp_ma')
           iwprtp_ma = k
-          zm%f%var(iwprtp_ma)%ptr => zm%x(:,k)
-          zm%f%var(iwprtp_ma)%name = "wprtp_ma"
-          zm%f%var(iwprtp_ma)%description = "wprtp mean advection"
-          zm%f%var(iwprtp_ma)%units = "(m kg)/(s2 kg)"
+
+          call stat_assign(iwprtp_ma,"wprtp_ma",
+     .         "wprtp mean advection","(m kg)/(s2 kg)",zm)
           k = k + 1
 
         case ('wprtp_ta')
           iwprtp_ta = k
-          zm%f%var(iwprtp_ta)%ptr => zm%x(:,k)
-          zm%f%var(iwprtp_ta)%name = "wprtp_ta"
-          zm%f%var(iwprtp_ta)%description = "wprtp turbulent advection"
-          zm%f%var(iwprtp_ta)%units = "(m kg)/(s2 kg)"
+
+          call stat_assign(iwprtp_ta,"wprtp_ta",
+     .         "wprtp turbulent advection","(m kg)/(s2 kg)",zm)
           k = k + 1
 
         case ('wprtp_tp')
           iwprtp_tp = k
-          zm%f%var(iwprtp_tp)%ptr => zm%x(:,k)
-          zm%f%var(iwprtp_tp)%name = "wprtp_tp"
-          zm%f%var(iwprtp_tp)%description = "wprtp turbulent production"
-          zm%f%var(iwprtp_tp)%units = "(m kg)/(s2 kg)"
+
+          call stat_assign(iwprtp_tp,"wprtp_tp",
+     .         "wprtp turbulent production","(m kg)/(s2 kg)",zm)
           k = k + 1
 
         case ('wprtp_ac')
           iwprtp_ac = k
-          zm%f%var(iwprtp_ac)%ptr => zm%x(:,k)
-          zm%f%var(iwprtp_ac)%name = "wprtp_ac"
-          zm%f%var(iwprtp_ac)%description = "wprtp accumulation term"
-          zm%f%var(iwprtp_ac)%units = "(m kg)/(s2 kg)"
+
+          call stat_assign(iwprtp_ac,"wprtp_ac",
+     .         "wprtp accumulation term","(m kg)/(s2 kg)",zm)
           k = k + 1
 
         case ('wprtp_bp')
           iwprtp_bp = k
-          zm%f%var(iwprtp_bp)%ptr => zm%x(:,k)
-          zm%f%var(iwprtp_bp)%name = "wprtp_bp"
-          zm%f%var(iwprtp_bp)%description = "wprtp buoyancy production"
-          zm%f%var(iwprtp_bp)%units = "(m kg)/(s2 kg)"
+
+          call stat_assign(iwprtp_bp,"wprtp_bp",
+     .         "wprtp buoyancy production","(m kg)/(s2 kg)",zm)
           k = k + 1
 
         case ('wprtp_pr1')
           iwprtp_pr1 = k
-          zm%f%var(iwprtp_pr1)%ptr => zm%x(:,k)
-          zm%f%var(iwprtp_pr1)%name = "wprtp_pr1"
-          zm%f%var(iwprtp_pr1)%description = "wprtp pressure term 1"
-          zm%f%var(iwprtp_pr1)%units = "(m kg)/(s2 kg)"
+
+          call stat_assign(iwprtp_pr1,"wprtp_pr1",
+     .         "wprtp pressure term 1","(m kg)/(s2 kg)",zm)
           k = k + 1
 
         case ('wprtp_pr2')
           iwprtp_pr2 = k
-          zm%f%var(iwprtp_pr2)%ptr => zm%x(:,k)
-          zm%f%var(iwprtp_pr2)%name = "wprtp_pr2"
-          zm%f%var(iwprtp_pr2)%description = "wprtp pressure term 2"
-          zm%f%var(iwprtp_pr2)%units = "(m kg)/(s2 kg)"
+
+          call stat_assign(iwprtp_pr2,"wprtp_pr2",
+     .         "wprtp pressure term 2","(m kg)/(s2 kg)",zm)
           k = k + 1
 
         case ('wprtp_pr3')
           iwprtp_pr3 = k
-          zm%f%var(iwprtp_pr3)%ptr => zm%x(:,k)
-          zm%f%var(iwprtp_pr3)%name = "wprtp_pr3"
-          zm%f%var(iwprtp_pr3)%description = "wprtp pressure term 3"
-          zm%f%var(iwprtp_pr3)%units = "(m kg)/(s2 kg)"
+
+          call stat_assign(iwprtp_pr3,"wprtp_pr3",
+     .         "wprtp pressure term 3","(m kg)/(s2 kg)",zm)
           k = k + 1
 
         case ('wprtp_dp1')
           iwprtp_dp1 = k
-          zm%f%var(iwprtp_dp1)%ptr => zm%x(:,k)
-          zm%f%var(iwprtp_dp1)%name = "wprtp_dp1"
-          zm%f%var(iwprtp_dp1)%description = "wprtp dissipation term 1"
-          zm%f%var(iwprtp_dp1)%units = "(m kg)/(s2 kg)"
+
+          call stat_assign(iwprtp_dp1,"wprtp_dp1",
+     .         "wprtp dissipation term 1","(m kg)/(s2 kg)",zm)
           k = k + 1
 
         case ('wpthlp_bt')
           iwpthlp_bt = k
-          zm%f%var(iwpthlp_bt)%ptr => zm%x(:,k)
-          zm%f%var(iwpthlp_bt)%name = "wpthlp_bt"
-          zm%f%var(iwpthlp_bt)%description = "wpthlp budget"
-          zm%f%var(iwpthlp_bt)%units = "(m K)/s2"
+
+          call stat_assign(iwpthlp_bt,"wpthlp_bt",
+     .         "wpthlp budget","(m K)/s2",zm)
           k = k + 1
 
         case ('wpthlp_ma')
           iwpthlp_ma = k
-          zm%f%var(iwpthlp_ma)%ptr => zm%x(:,k)
-          zm%f%var(iwpthlp_ma)%name = "wpthlp_ma"
-          zm%f%var(iwpthlp_ma)%description = "wpthlp mean advection"
-          zm%f%var(iwpthlp_ma)%units = "(m K)/s2"
+          call stat_assign(iwpthlp_ma,"wpthlp_ma",
+     .         "wpthlp mean advection","(m K)/s2",zm)
+
           k = k + 1
 
         case ('wpthlp_ta')
           iwpthlp_ta = k
-          zm%f%var(iwpthlp_ta)%ptr => zm%x(:,k)
-          zm%f%var(iwpthlp_ta)%name = "wpthlp_ta"
-          zm%f%var(iwpthlp_ta)%description 
-     .    = "wpthlp turbulent advection"
-          zm%f%var(iwpthlp_ta)%units = "(m K)/s2"
+          call stat_assign(iwpthlp_ta,"wpthlp_ta",
+     .         "wpthlp turbulent advection","(m K)/s2",zm)
+
           k = k + 1
 
         case ('wpthlp_tp')
           iwpthlp_tp = k
-          zm%f%var(iwpthlp_tp)%ptr => zm%x(:,k)
-          zm%f%var(iwpthlp_tp)%name = "wpthlp_tp"
-          zm%f%var(iwpthlp_tp)%description
-     .    = "wpthlp turbulent production"
-          zm%f%var(iwpthlp_tp)%units = "(m K)/s2"
+          call stat_assign(iwpthlp_tp,"wpthlp_tp",
+     .         "wpthlp turbulent production","(m K)/s2",zm)
+
           k = k + 1
 
         case ('wpthlp_ac')
           iwpthlp_ac = k
-          zm%f%var(iwpthlp_ac)%ptr => zm%x(:,k)
-          zm%f%var(iwpthlp_ac)%name = "wpthlp_ac"
-          zm%f%var(iwpthlp_ac)%description
-     .    = "wpthlp accumulation term"
-          zm%f%var(iwpthlp_ac)%units = "(m K)/s2"
+          call stat_assign(iwpthlp_ac,"wpthlp_ac",
+     .         "wpthlp accumulation term","(m K)/s2",zm)
+
           k = k + 1
 
         case ('wpthlp_bp')
           iwpthlp_bp = k
-          zm%f%var(iwpthlp_bp)%ptr => zm%x(:,k)
-          zm%f%var(iwpthlp_bp)%name = "wpthlp_bp"
-          zm%f%var(iwpthlp_bp)%description
-     .    = "wpthlp buoyancy production"
-          zm%f%var(iwpthlp_bp)%units = "(m K)/s2"
+          call stat_assign(iwpthlp_bp,"wpthlp_bp",
+     .         "wpthlp buoyancy production","(m K)/s2",zm)
           k = k + 1
 
         case ('wpthlp_pr1')
           iwpthlp_pr1 = k
-          zm%f%var(iwpthlp_pr1)%ptr => zm%x(:,k)
-          zm%f%var(iwpthlp_pr1)%name = "wpthlp_pr1"
-          zm%f%var(iwpthlp_pr1)%description
-     .    = "wpthlp pressure term 1"
-          zm%f%var(iwpthlp_pr1)%units = "(m K)/s2"
+
+          call stat_assign(iwpthlp_pr1,"wpthlp_pr1",
+     .         "wpthlp pressure term 1","(m K)/s2",zm)
           k = k + 1
 
         case ('wpthlp_pr2')
           iwpthlp_pr2 = k
-          zm%f%var(iwpthlp_pr2)%ptr => zm%x(:,k)
-          zm%f%var(iwpthlp_pr2)%name = "wpthlp_pr2"
-          zm%f%var(iwpthlp_pr2)%description
-     .    = "wpthlp pressure term 2"
-          zm%f%var(iwpthlp_pr2)%units = "(m K)/s2"
+
+          call stat_assign(iwpthlp_pr2,"wpthlp_pr2",
+     .         "wpthlp pressure term 2","(m K)/s2",zm)
           k = k + 1
 
         case ('wpthlp_pr3')
           iwpthlp_pr3 = k
-          zm%f%var(iwpthlp_pr3)%ptr => zm%x(:,k)
-          zm%f%var(iwpthlp_pr3)%name = "wpthlp_pr3"
-          zm%f%var(iwpthlp_pr3)%description
-     .    = "wpthlp pressure term 3"
-          zm%f%var(iwpthlp_pr3)%units = "(m K)/s2"
+          call stat_assign(iwpthlp_pr3,"wpthlp_pr3",
+     .         "wpthlp pressure term 3","(m K)/s2",zm)
           k = k + 1
-
         case ('wpthlp_dp1')
           iwpthlp_dp1 = k
-          zm%f%var(iwpthlp_dp1)%ptr => zm%x(:,k)
-          zm%f%var(iwpthlp_dp1)%name = "wpthlp_dp1"
-          zm%f%var(iwpthlp_dp1)%description
-     .    = "wpthlp dissipation term 1"
-          zm%f%var(iwpthlp_dp1)%units = "(m K)/s2"
+          call stat_assign(iwpthlp_dp1,"wpthlp_dp1",
+     .         "wpthlp dissipation term 1","(m K)/s2",zm)
           k = k + 1
-
         ! Variance budgets
         case ('rtp2_bt')
           irtp2_bt = k
-          zm%f%var(irtp2_bt)%ptr => zm%x(:,k)
-          zm%f%var(irtp2_bt)%name = "rtp2_bt"
-          zm%f%var(irtp2_bt)%description = "rtp2 budget"
-          zm%f%var(irtp2_bt)%units = "kg/(kg s)"
+          call stat_assign(irtp2_bt,"rtp2_bt",
+     .         "rtp2 budget","kg/(kg s)",zm)
           k = k + 1
-
         case ('rtp2_ma')
           irtp2_ma = k
-          zm%f%var(irtp2_ma)%ptr => zm%x(:,k)
-          zm%f%var(irtp2_ma)%name = "rtp2_ma"
-          zm%f%var(irtp2_ma)%description = "rtp2 mean advection"
-          zm%f%var(irtp2_ma)%units = "kg/(kg s)"
+          call stat_assign(irtp2_ma,"rtp2_ma",
+     .         "rtp2 mean advection","kg/(kg s)",zm)
           k = k + 1
-
         case ('rtp2_ta')
           irtp2_ta = k
-          zm%f%var(irtp2_ta)%ptr => zm%x(:,k)
-          zm%f%var(irtp2_ta)%name = "rtp2_ta"
-          zm%f%var(irtp2_ta)%description
-     .    = "rtp2 turbulent advection"
-          zm%f%var(irtp2_ta)%units = "kg/(kg s)"
+          call stat_assign(irtp2_ta,"rtp2_ta",
+     .         "rtp2 turbulent advection","kg/(kg s)",zm)
           k = k + 1
-
         case ('rtp2_tp')
           irtp2_tp = k
-          zm%f%var(irtp2_tp)%ptr => zm%x(:,k)
-          zm%f%var(irtp2_tp)%name = "rtp2_tp"
-          zm%f%var(irtp2_tp)%description
-     .    = "rtp2 turbulent production"
-          zm%f%var(irtp2_tp)%units = "kg/(kg s)"
+          call stat_assign(irtp2_tp,"rtp2_tp",
+     .         "rtp2 turbulent production","kg/(kg s)",zm)
           k = k + 1
-
         case ('rtp2_dp1')
           irtp2_dp1 = k
-          zm%f%var(irtp2_dp1)%ptr => zm%x(:,k)
-          zm%f%var(irtp2_dp1)%name = "rtp2_dp1"
-          zm%f%var(irtp2_dp1)%description
-     .    = "rtp2 dissipation term 1"
-          zm%f%var(irtp2_dp1)%units = "kg/(kg s)"
+          call stat_assign(irtp2_dp1,"rtp2_dp1",
+     .         "rtp2 dissipation term 1","kg/(kg s)",zm)
           k = k + 1
-
         case ('rtp2_dp2')
           irtp2_dp2 = k
-          zm%f%var(irtp2_dp2)%ptr => zm%x(:,k)
-          zm%f%var(irtp2_dp2)%name = "rtp2_dp2"
-          zm%f%var(irtp2_dp2)%description
-     .    = "rtp2 dissipation term 2"
-          zm%f%var(irtp2_dp2)%units = "kg/(kg s)"
+          call stat_assign(irtp2_dp2,"rtp2_dp2",
+     .         "rtp2 dissipation term 2","kg/(kg s)",zm)
           k = k + 1
-
         case ('rtp2_cl')
           irtp2_cl = k
-          zm%f%var(irtp2_cl)%ptr => zm%x(:,k)
-          zm%f%var(irtp2_cl)%name = "rtp2_cl"
-          zm%f%var(irtp2_cl)%description
-     .    = "rtp2 clipping term"
-          zm%f%var(irtp2_cl)%units = "kg/(kg s)"
+          call stat_assign(irtp2_cl,"rtp2_cl",
+     .         "rtp2 clipping term","kg/(kg s)",zm)
           k = k + 1
-
         case ('thlp2_bt')
           ithlp2_bt = k
-          zm%f%var(ithlp2_bt)%ptr => zm%x(:,k)
-          zm%f%var(ithlp2_bt)%name = "thlp2_bt"
-          zm%f%var(ithlp2_bt)%description = "thlp2 budget"
-          zm%f%var(ithlp2_bt)%units = "(K^2)/s"
+          call stat_assign(ithlp2_bt,"thlp2_bt",
+     .         "thlp2 budget","(K^2)/s",zm)
           k = k + 1
-
         case ('thlp2_ma')
           ithlp2_ma = k
-          zm%f%var(ithlp2_ma)%ptr => zm%x(:,k)
-          zm%f%var(ithlp2_ma)%name = "thlp2_ma"
-          zm%f%var(ithlp2_ma)%description = "thlp2 mean advection"
-          zm%f%var(ithlp2_ma)%units = "(K^2)/s"
+          call stat_assign(ithlp2_ma,"thlp2_ma",
+     .         "thlp2 mean advection","(K^2)/s",zm)
           k = k + 1
-
         case ('thlp2_ta')
           ithlp2_ta = k
-          zm%f%var(ithlp2_ta)%ptr => zm%x(:,k)
-          zm%f%var(ithlp2_ta)%name = "thlp2_ta"
-          zm%f%var(ithlp2_ta)%description
-     .    = "thlp2 turbulent advection"
-          zm%f%var(ithlp2_ta)%units = "(K^2)/s"
+          call stat_assign(ithlp2_ta,"thlp2_ta",
+     .         "thlp2 turbulent advection","(K^2)/s",zm)
           k = k + 1
-
         case ('thlp2_tp')
           ithlp2_tp = k
-          zm%f%var(ithlp2_tp)%ptr => zm%x(:,k)
-          zm%f%var(ithlp2_tp)%name = "thlp2_tp"
-          zm%f%var(ithlp2_tp)%description
-     .    = "thlp2 turbulent production"
-          zm%f%var(ithlp2_tp)%units = "(K^2)/s"
+          call stat_assign(ithlp2_tp,"thlp2_tp",
+     .         "thlp2 turbulent production","(K^2)/s",zm)
           k = k + 1
-
         case ('thlp2_dp1')
           ithlp2_dp1 = k
-          zm%f%var(ithlp2_dp1)%ptr => zm%x(:,k)
-          zm%f%var(ithlp2_dp1)%name = "thlp2_dp1"
-          zm%f%var(ithlp2_dp1)%description
-     .    = "thlp2 dissipation term 1"
-          zm%f%var(ithlp2_dp1)%units = "(K^2)/s"
+          call stat_assign(ithlp2_dp1,"thlp2_dp1",
+     .         "thlp2 dissipation term 1","(K^2)/s",zm)
           k = k + 1
-
         case ('thlp2_dp2')
           ithlp2_dp2 = k
-          zm%f%var(ithlp2_dp2)%ptr => zm%x(:,k)
-          zm%f%var(ithlp2_dp2)%name = "thlp2_dp2"
-          zm%f%var(ithlp2_dp2)%description
-     .    = "thlp2 dissipation term 2"
-          zm%f%var(ithlp2_dp2)%units = "(K^2)/s"
+          call stat_assign(ithlp2_dp2,"thlp2_dp2",
+     .         "thlp2 dissipation term 2","(K^2)/s",zm)
           k = k + 1
-
         case ('thlp2_cl')
           ithlp2_cl = k
-          zm%f%var(ithlp2_cl)%ptr => zm%x(:,k)
-          zm%f%var(ithlp2_cl)%name = "thlp2_cl"
-          zm%f%var(ithlp2_cl)%description
-     .    = "thlp2 clipping term"
-          zm%f%var(ithlp2_cl)%units = "(K^2)/s"
+          call stat_assign(ithlp2_cl,"thlp2_cl",
+     .         "thlp2 clipping term","(K^2)/s",zm)
           k = k + 1
-
         case ('rtpthlp_bt')
           irtpthlp_bt = k
-          zm%f%var(irtpthlp_bt)%ptr => zm%x(:,k)
-          zm%f%var(irtpthlp_bt)%name = "rtpthlp_bt"
-          zm%f%var(irtpthlp_bt)%description = "rtpthlp budget"
-          zm%f%var(irtpthlp_bt)%units = "(kg K)/(kg s)"
+          call stat_assign(irtpthlp_bt,"rtpthlp_bt",
+     .         "rtpthlp budget","(kg K)/(kg s)",zm)
           k = k + 1
-
         case ('rtpthlp_ma')
           irtpthlp_ma = k
-          zm%f%var(irtpthlp_ma)%ptr => zm%x(:,k)
-          zm%f%var(irtpthlp_ma)%name = "rtpthlp_ma"
-          zm%f%var(irtpthlp_ma)%description = "rtpthlp mean advection"
-          zm%f%var(irtpthlp_ma)%units = "(kg K)/(kg s)"
+          call stat_assign(irtpthlp_ma,"rtpthlp_ma",
+     .         "rtpthlp mean advection","(kg K)/(kg s)",zm)
           k = k + 1
-
         case ('rtpthlp_ta')
           irtpthlp_ta = k
-          zm%f%var(irtpthlp_ta)%ptr => zm%x(:,k)
-          zm%f%var(irtpthlp_ta)%name = "rtpthlp_ta"
-          zm%f%var(irtpthlp_ta)%description
-     .    = "rtpthlp turbulent advection"
-          zm%f%var(irtpthlp_ta)%units = "(kg K)/(kg s)"
+          call stat_assign(irtpthlp_ta,"rtpthlp_ta",
+     .         "rtpthlp turbulent advection","(kg K)/(kg s)",zm)
           k = k + 1
-
         case ('rtpthlp_tp1')
           irtpthlp_tp1 = k
-          zm%f%var(irtpthlp_tp1)%ptr => zm%x(:,k)
-          zm%f%var(irtpthlp_tp1)%name = "rtpthlp_tp1"
-          zm%f%var(irtpthlp_tp1)%description
-     .    = "rtpthlp turbulent production 1"
-          zm%f%var(irtpthlp_tp1)%units = "(kg K)/(kg s)"
+          call stat_assign(irtpthlp_tp1,"rtpthlp_tp1",
+     .         "rtpthlp turbulent production 1","(kg K)/(kg s)",zm)
           k = k + 1
-
         case ('rtpthlp_tp2')
           irtpthlp_tp2 = k
-          zm%f%var(irtpthlp_tp2)%ptr => zm%x(:,k)
-          zm%f%var(irtpthlp_tp2)%name = "rtpthlp_tp2"
-          zm%f%var(irtpthlp_tp2)%description
-     .    = "rtpthlp turbulent production 2"
-          zm%f%var(irtpthlp_tp2)%units = "(kg K)/(kg s)"
+          call stat_assign(irtpthlp_tp2,"rtpthlp_tp2",
+     .         "rtpthlp turbulent production 2","(kg K)/(kg s)",zm)
           k = k + 1
-
         case ('rtpthlp_dp1')
           irtpthlp_dp1 = k
-          zm%f%var(irtpthlp_dp1)%ptr => zm%x(:,k)
-          zm%f%var(irtpthlp_dp1)%name = "rtpthlp_dp1"
-          zm%f%var(irtpthlp_dp1)%description
-     .    = "rtpthlp dissipation term 1"
-          zm%f%var(irtpthlp_dp1)%units = "(kg K)/(kg s)"
+          call stat_assign(irtpthlp_dp1,"rtpthlp_dp1",
+     .         "rtpthlp dissipation term 1","(kg K)/(kg s)",zm)
           k = k + 1
-
         case ('rtpthlp_dp2')
           irtpthlp_dp2 = k
-          zm%f%var(irtpthlp_dp2)%ptr => zm%x(:,k)
-          zm%f%var(irtpthlp_dp2)%name = "rtpthlp_dp2"
-          zm%f%var(irtpthlp_dp2)%description
-     .    = "rtpthlp dissipation term 2"
-          zm%f%var(irtpthlp_dp2)%units = "(kg K)/(kg s)"
+          call stat_assign(irtpthlp_dp2,"rtpthlp_dp2",
+     .         "rtpthlp dissipation term 2","(kg K)/(kg s)",zm)
           k = k + 1
-
         case ('up2_plus_vp2')
           iup2_plus_vp2 = k
-          zm%f%var(iup2_plus_vp2)%ptr => zm%x(:,k)
-          zm%f%var(iup2_plus_vp2)%name = "up2_plus_vp2"
-          zm%f%var(iup2_plus_vp2)%description = "up2_plus_vp2"
-          zm%f%var(iup2_plus_vp2)%units = "m^2/s^2"
+          call stat_assign(iup2_plus_vp2,"up2_plus_vp2",
+     .         "up2_plus_vp2","m^2/s^2",zm)
           k = k + 1
 
         case ('up2')
           iup2 = k
-          zm%f%var(iup2)%ptr => zm%x(:,k)
-          zm%f%var(iup2)%name = "up2"
-          zm%f%var(iup2)%description = "up2"
-          zm%f%var(iup2)%units = "m^2/s^2"
+          call stat_assign(iup2,"up2",
+     .         "up2","m^2/s^2",zm)
           k = k + 1
 
         case ('vp2')
           ivp2 = k
-          zm%f%var(ivp2)%ptr => zm%x(:,k)
-          zm%f%var(ivp2)%name = "vp2"
-          zm%f%var(ivp2)%description = "vp2"
-          zm%f%var(ivp2)%units = "m^2/s^2"
+          call stat_assign(ivp2,"vp2",
+     .         "vp2","m^2/s^2",zm)
           k = k + 1
 
         case ('up2_bt')
           iup2_bt = k
-          zm%f%var(iup2_bt)%ptr => zm%x(:,k)
-          zm%f%var(iup2_bt)%name = "up2_bt"
-          zm%f%var(iup2_bt)%description = "up2 time tendency"
-          zm%f%var(iup2_bt)%units = "m^2/s^2"
+          call stat_assign(iup2_bt,"up2_bt",
+     .         "up2 time tendency","m^2/s^2",zm)
           k = k + 1
 
         case ('up2_ma')
           iup2_ma = k
-          zm%f%var(iup2_ma)%ptr => zm%x(:,k)
-          zm%f%var(iup2_ma)%name = "up2_ma"
-          zm%f%var(iup2_ma)%description = "up2 mean advection"
-          zm%f%var(iup2_ma)%units = "m^2/s^2"
+          call stat_assign(iup2_ma,"up2_ma",
+     .         "up2 mean advection","m^2/s^2",zm)
           k = k + 1
 
         case ('up2_ta')
           iup2_ta = k
-          zm%f%var(iup2_ta)%ptr => zm%x(:,k)
-          zm%f%var(iup2_ta)%name = "up2_ta"
-          zm%f%var(iup2_ta)%description = "up2 turbulent advection"
-          zm%f%var(iup2_ta)%units = "m^2/s^2"
+          call stat_assign(iup2_ta,"up2_ta",
+     .         "up2 turbulent advection","m^2/s^2",zm)
           k = k + 1
 
         case ('up2_tp')
           iup2_tp = k
-          zm%f%var(iup2_tp)%ptr => zm%x(:,k)
-          zm%f%var(iup2_tp)%name = "up2_tp"
-          zm%f%var(iup2_tp)%description = "up2 turbulent production"
-          zm%f%var(iup2_tp)%units = "m^2/s^2"
+          call stat_assign(iup2_tp,"up2_tp",
+     .         "up2 turbulent production","m^2/s^2",zm)
           k = k + 1
 
         case ('up2_dp1')
           iup2_dp1 = k
-          zm%f%var(iup2_dp1)%ptr => zm%x(:,k)
-          zm%f%var(iup2_dp1)%name = "up2_dp1"
-          zm%f%var(iup2_dp1)%description = "up2 dissipation term"
-          zm%f%var(iup2_dp1)%units = "m^2/s^2"
+          call stat_assign(iup2_dp1,"up2_dp1",
+     .         "up2 dissipation term","m^2/s^2",zm)
           k = k + 1
 
         case ('up2_dp2')
           iup2_dp2 = k
-          zm%f%var(iup2_dp2)%ptr => zm%x(:,k)
-          zm%f%var(iup2_dp2)%name = "up2_dp2"
-          zm%f%var(iup2_dp2)%description = "up2 dissipation term"
-          zm%f%var(iup2_dp2)%units = "m^2/s^2"
+          call stat_assign(iup2_dp2,"up2_dp2",
+     .         "up2 dissipation term","m^2/s^2",zm)
           k = k + 1
 
         case ('up2_pr1')
           iup2_pr1 = k
-          zm%f%var(iup2_pr1)%ptr => zm%x(:,k)
-          zm%f%var(iup2_pr1)%name = "up2_pr1"
-          zm%f%var(iup2_pr1)%description = "up2 pressure term 1"
-          zm%f%var(iup2_pr1)%units = "m^2/s^2"
+          call stat_assign(iup2_pr1,"up2_pr1",
+     .         "up2 pressure term 1","m^2/s^2",zm)
           k = k + 1
 
         case ('up2_pr2')
           iup2_pr2 = k
-          zm%f%var(iup2_pr2)%ptr => zm%x(:,k)
-          zm%f%var(iup2_pr2)%name = "up2_pr2"
-          zm%f%var(iup2_pr2)%description = "up2 pressure term 2"
-          zm%f%var(iup2_pr2)%units = "m^2/s^2"
+
+          call stat_assign(iup2_pr2,"up2_pr2",
+     .         "up2 pressure term 2","m^2/s^2",zm)
           k = k + 1
 
         case ('vp2_bt')
           ivp2_bt = k
-          zm%f%var(ivp2_bt)%ptr => zm%x(:,k)
-          zm%f%var(ivp2_bt)%name = "vp2_bt"
-          zm%f%var(ivp2_bt)%description = "vp2 time tendency"
-          zm%f%var(ivp2_bt)%units = "m^2/s^2"
+
+          call stat_assign(ivp2_bt,"vp2_bt",
+     .         "vp2 time tendency","m^2/s^2",zm)
           k = k + 1
 
         case ('vp2_ma')
           ivp2_ma = k
-          zm%f%var(ivp2_ma)%ptr => zm%x(:,k)
-          zm%f%var(ivp2_ma)%name = "vp2_ma"
-          zm%f%var(ivp2_ma)%description = "vp2 mean advection"
-          zm%f%var(ivp2_ma)%units = "m^2/s^2"
+          call stat_assign(ivp2_ma,"vp2_ma",
+     .         "vp2 mean advection","m^2/s^2",zm)
           k = k + 1
 
         case ('vp2_ta')
           ivp2_ta = k
-          zm%f%var(ivp2_ta)%ptr => zm%x(:,k)
-          zm%f%var(ivp2_ta)%name = "vp2_ta"
-          zm%f%var(ivp2_ta)%description = "vp2 turbulent advection"
-          zm%f%var(ivp2_ta)%units = "m^2/s^2"
+
+          call stat_assign(ivp2_ta,"vp2_ta",
+     .         "vp2 turbulent advection","m^2/s^2",zm)
           k = k + 1
 
         case ('vp2_tp')
           ivp2_tp = k
-          zm%f%var(ivp2_tp)%ptr => zm%x(:,k)
-          zm%f%var(ivp2_tp)%name = "vp2_tp"
-          zm%f%var(ivp2_tp)%description = "vp2 turbulent production"
-          zm%f%var(ivp2_tp)%units = "m^2/s^2"
+
+          call stat_assign(ivp2_tp,"vp2_tp",
+     .         "vp2 turbulent production","m^2/s^2",zm)
           k = k + 1
 
         case ('vp2_dp1')
           ivp2_dp1 = k
-          zm%f%var(ivp2_dp1)%ptr => zm%x(:,k)
-          zm%f%var(ivp2_dp1)%name = "vp2_dp1"
-          zm%f%var(ivp2_dp1)%description = "vp2 dissipation term"
-          zm%f%var(ivp2_dp1)%units = "m^2/s^2"
+
+          call stat_assign(ivp2_dp1,"vp2_dp1",
+     .         "vp2 dissipating term","m^2/s^2",zm)
           k = k + 1
 
         case ('vp2_dp2')
           ivp2_dp2 = k
-          zm%f%var(ivp2_dp2)%ptr => zm%x(:,k)
-          zm%f%var(ivp2_dp2)%name = "vp2_dp2"
-          zm%f%var(ivp2_dp2)%description = "vp2 dissipation term"
-          zm%f%var(ivp2_dp2)%units = "m^2/s^2"
+
+          call stat_assign(ivp2_dp2,"vp2_dp2",
+     .         "vp2 dissipating term","m^2/s^2",zm)
           k = k + 1
 
         case ('vp2_pr1')
           ivp2_pr1 = k
-          zm%f%var(ivp2_pr1)%ptr => zm%x(:,k)
-          zm%f%var(ivp2_pr1)%name = "vp2_pr1"
-          zm%f%var(ivp2_pr1)%description = "vp2 pressure term 1"
-          zm%f%var(ivp2_pr1)%units = "m^2/s^2"
+
+          call stat_assign(ivp2_pr1,"vp2_pr1",
+     .         "vp2 pressure term 1","m^2/s^2",zm)
           k = k + 1
 
         case ('vp2_pr2')
           ivp2_pr2 = k
-          zm%f%var(ivp2_pr2)%ptr => zm%x(:,k)
-          zm%f%var(ivp2_pr2)%name = "vp2_pr2"
-          zm%f%var(ivp2_pr2)%description = "vp2 pressure term 2"
-          zm%f%var(ivp2_pr2)%units = "m^2/s^2"
+
+          call stat_assign(ivp2_pr1,"vp2_pr1",
+     .         "vp2 pressure term 1","m^2/s^2",zm)
           k = k + 1
 
 #ifdef SCALARS
         case ('sclraprtp')
           isclraprtp = k
-          zm%f%var(isclraprtp)%ptr => zm%x(:,k)
-          zm%f%var(isclraprtp)%name = "sclraprtp"
-          zm%f%var(isclraprtp)%description 
-     .    = "scalar(2)'rt'"
-          zm%f%var(isclraprtp)%units = "unknown"
+
+          call stat_assign(isclraprtp,"sclraprtp",
+     .         "scalar(2)'rt'","unknown",zm)
           k = k + 1
         case ('sclrbprtp')
           isclrbprtp = k
-          zm%f%var(isclrbprtp)%ptr => zm%x(:,k)
-          zm%f%var(isclrbprtp)%name = "sclrbprtp"
-          zm%f%var(isclrbprtp)%description
-     .    = "scalar(2)'rt'"
-          zm%f%var(isclrbprtp)%units = "unknown"
+          call stat_assign(isclrbprtp,"sclrbprtp",
+     .         "scalar(2)'rt'","unknown",zm)
+
           k = k + 1
         case ('sclrap2')
           isclrap2 = k
-          zm%f%var(isclrap2)%ptr => zm%x(:,k)
-          zm%f%var(isclrap2)%name = "sclrap2"
-          zm%f%var(isclrap2)%description 
-     .    = "scalar(1)'^2 "
-          zm%f%var(isclrap2)%units = "unknown"
+          call stat_assign(isclrap2,"sclrap2",
+     .         "scalar(1)'^2'","unknown",zm)
           k = k + 1
         case ('sclrbp2')
           isclrbp2 = k
-          zm%f%var(isclrbp2)%ptr => zm%x(:,k)
-          zm%f%var(isclrbp2)%name = "sclrbp2"
-          zm%f%var(isclrbp2)%description 
-     .    = "scalar(2)'^2"
-          zm%f%var(isclrbp2)%units = "unknown"
+          call stat_assign(isclrbp2,"sclrbp2",
+     .         "scalar(2)'^2'","unknown",zm)
           k = k + 1
         case ('sclrapthvp')
           isclrapthvp = k
-          zm%f%var(isclrapthvp)%ptr => zm%x(:,k)
-          zm%f%var(isclrapthvp)%name = "sclrapthvp"
-          zm%f%var(isclrapthvp)%description
-     .    = "scalar(1)'th_v'"
-          zm%f%var(isclrapthvp)%units = "unknown"
+
+          call stat_assign(isclrathvp,"sclrathvp",
+     .         "scalar(1)'th_v'","unknown",zm)
           k = k + 1
         case ('sclrbpthvp')
           isclrbpthvp = k
-          zm%f%var(isclrbpthvp)%ptr => zm%x(:,k)
-          zm%f%var(isclrbpthvp)%name = "sclrbpthvp"
-          zm%f%var(isclrbpthvp)%description
-     .    = "scalar(2)'th_v'"
-          zm%f%var(isclrbpthvp)%units = "unknown"
+          call stat_assign(isclrbthvp,"sclrbthvp",
+     .         "scalar(2)'th_v'","unknown",zm)
           k = k + 1
         case ('sclrapthlp')
           isclrapthlp = k
-          zm%f%var(isclrapthlp)%ptr => zm%x(:,k)
-          zm%f%var(isclrapthlp)%name = "sclrapthlp"
-          zm%f%var(isclrapthlp)%description
-     .    = "scalar(1)'th_l'"
-          zm%f%var(isclrapthlp)%units = "unknown"
+
+          call stat_assign(isclrathlp,"sclrathlp",
+     .         "scalar(1)'th_l'","unknown",zm)
           k = k + 1
         case ('sclrbpthlp')
           isclrbpthlp = k
-          zm%f%var(isclrbpthlp)%ptr => zm%x(:,k)
-          zm%f%var(isclrbpthlp)%name = "sclrbpthlp"
-          zm%f%var(isclrbpthlp)%description
-     .    = "scalar(2)'th_l'"
-          zm%f%var(isclrbpthlp)%units = "unknown"
+
+          call stat_assign(isclrbthlp,"sclrbthlp",
+     .         "scalar(2)'th_l'","unknown",zm)
           k = k + 1
         case ('sclraprcp')
           isclraprcp = k
-          zm%f%var(isclraprcp)%ptr => zm%x(:,k)
-          zm%f%var(isclraprcp)%name = "sclraprcp"
-          zm%f%var(isclraprcp)%description 
-     .    = "scalar(1)'rc'"
-          zm%f%var(isclraprcp)%units = "unknown"
+
+          call stat_assign(isclraprcp,"sclraprcp",
+     .         "scalar(1)'rc'","unknown",zm)
           k = k + 1
         case ('sclrbprcp')
           isclrbprcp = k
-          zm%f%var(isclrbprcp)%ptr => zm%x(:,k)
-          zm%f%var(isclrbprcp)%name = "sclrbprcp"
-          zm%f%var(isclrbprcp)%description
-     .    = "scalar(2)'rc'"
-          zm%f%var(isclrbprcp)%units = "unknown"
+
+          call stat_assign(isclrbprcp,"sclrbprcp",
+     .         "scalar(2)'rc'","unknown",zm)
           k = k + 1
         case ('wpsclrap')
           iwpsclrap = k
-          zm%f%var(iwpsclrap)%ptr => zm%x(:,k)
-          zm%f%var(iwpsclrap)%name = "wpsclrap"
-          zm%f%var(iwpsclrap)%description 
-     .    = "w'scalar(1)'"
-          zm%f%var(iwpsclrap)%units = "unknown"
+
+          call stat_assign(iwpsclrap,"wpsclrap",
+     .         "'w'scalar(1)","unknown",zm)
           k = k + 1
         case ('wpsclrbp')
           iwpsclrbp = k
-          zm%f%var(iwpsclrbp)%ptr => zm%x(:,k)
-          zm%f%var(iwpsclrbp)%name = "wpsclrbp"
-          zm%f%var(iwpsclrbp)%description 
-     .    = "w'scalar(2)'"
-          zm%f%var(iwpsclrbp)%units = "unknown"
+
+          call stat_assign(iwpsclrbp,"wpsclrbp",
+     .         "'w'scalar(2)","unknown",zm)
           k = k + 1
         case ('wpsclrap2')
           iwpsclrap2 = k
-          zm%f%var(iwpsclrap2)%ptr => zm%x(:,k)
-          zm%f%var(iwpsclrap2)%name = "wpsclrap2"
-          zm%f%var(iwpsclrap2)%description 
-     .    = "w'scalar(1)'^2 "
-          zm%f%var(iwpsclrap2)%units = "unknown"
+
+          call stat_assign(iwpsclrap2,"wpsclrap2",
+     .         "'w'scalar(1)'^2'","unknown",zm)
           k = k + 1
         case ('wpsclrbp2')
           iwpsclrbp2 = k
-          zm%f%var(iwpsclrbp2)%ptr => zm%x(:,k)
-          zm%f%var(iwpsclrbp2)%name = "wpsclrbp2"
-          zm%f%var(iwpsclrbp2)%description 
-     .    = "w'scalar(2)'^2 "
-          zm%f%var(iwpsclrbp2)%units = "unknown"
+
+          call stat_assign(iwpsclrbp2,"wpsclrbp2",
+     .         "'w'scalar(2)'^2'","unknown",zm)
           k = k + 1
         case ('wp2sclrap')
           iwp2sclrap = k
-          zm%f%var(iwp2sclrap)%ptr => zm%x(:,k)
-          zm%f%var(iwp2sclrap)%name = "wp2sclrap"
-          zm%f%var(iwp2sclrap)%description 
-     .    = "w'^2 scalar(1)'"
-          zm%f%var(iwp2sclrap)%units = "unknown"
+
+          call stat_assign(iwp2sclrap,"wp2sclrap",
+     .         "'w'^2 scalar(1)","unknown",zm)
           k = k + 1
         case ('wp2sclrbp')
           iwp2sclrbp = k
-          zm%f%var(iwp2sclrbp)%ptr => zm%x(:,k)
-          zm%f%var(iwp2sclrbp)%name = "wp2sclrbp"
-          zm%f%var(iwp2sclrbp)%description 
-     .    = "w'^2 scalar(2)'"
-          zm%f%var(iwp2sclrbp)%units = "unknown"
+
+          call stat_assign(iwp2sclrbp,"wp2sclrbp",
+     .         "'w'^2 scalar(2)","unknown",zm)
           k = k + 1
         case ('wpsclraprtp')
           iwpsclraprtp = k
-          zm%f%var(iwpsclraprtp)%ptr => zm%x(:,k)
-          zm%f%var(iwpsclraprtp)%name = "wpsclraprtp"
-          zm%f%var(iwpsclraprtp)%description 
-     .    = "w'scalar(1)'rt'"
-          zm%f%var(iwpsclraprtp)%units = "unknown"
+
+          call stat_assign(iwpsclraprtp,"wpsclraprtp",
+     .         "'w' scalar(1)'rt'","unknown",zm)
           k = k + 1
         case ('wpsclrbprtp')
           iwpsclrbprtp = k
-          zm%f%var(iwpsclrbprtp)%ptr => zm%x(:,k)
-          zm%f%var(iwpsclrbprtp)%name = "wpsclrbprtp"
-          zm%f%var(iwpsclrbprtp)%description
-     .    = "w'scalar(2)'rt'"
-          zm%f%var(iwpsclrbprtp)%units = "unknown"
+
+          call stat_assign(iwpsclrbprtp,"wpsclrbprtp",
+     .         "'w' scalar(2)'rt'","unknown",zm)
           k = k + 1
         case ('wpsclrapthlp')
           iwpsclrapthlp = k
-          zm%f%var(iwpsclrapthlp)%ptr => zm%x(:,k)
-          zm%f%var(iwpsclrapthlp)%name = "wpsclrapthlp"
-          zm%f%var(iwpsclrapthlp)%description 
-     .    = "w'scalar(1)'th_l'"
-          zm%f%var(iwpsclrapthlp)%units = "unknown"
+
+          call stat_assign(iwpsclrapthlp,"wpsclrapthlp",
+     .         "'w' scalar(1)'th_l'","unknown",zm)
           k = k + 1
         case ('wpsclrbpthlp')
           iwpsclrbpthlp = k
-          zm%f%var(iwpsclrbpthlp)%ptr => zm%x(:,k)
-          zm%f%var(iwpsclrbpthlp)%name = "wpsclrbpthlp"
-          zm%f%var(iwpsclrbpthlp)%description
-     .    = "w'scalar(2)'th_l'"
-          zm%f%var(iwpsclrbpthlp)%units = "unknown"
+
+          call stat_assign(iwpsclrbpthlp,"wpsclrbpthlp",
+     .         "'w' scalar(2)'th_l'","unknown",zm)
           k = k + 1
         case ('wpedsclrap')
           iwpedsclrap = k
-          zm%f%var(iwpedsclrap)%ptr => zm%x(:,k)
-          zm%f%var(iwpedsclrap)%name = "wpedsclrap"
-          zm%f%var(iwpedsclrap)%description
-     .    = "eddy scalar(1)'w'"
-          zm%f%var(iwpedsclrap)%units = "unknown"
+
+          call stat_assign(iwpedsclrap,"wpedsclrap",
+     .         "eddy scalar(1)'w'","unknown",zm)
           k = k + 1
         case ('wpedsclrbp')
           iwpedsclrbp = k
-          zm%f%var(iwpedsclrbp)%ptr => zm%x(:,k)
-          zm%f%var(iwpedsclrbp)%name = "wpedsclrbp"
-          zm%f%var(iwpedsclrbp)%description
-     .    = "eddy scalar(2)'w'"
-          zm%f%var(iwpedsclrbp)%units = "unknown"
+
+          call stat_assign(iwpedsclrbp,"wpedsclrbp",
+     .         "eddy scalar(2)'w'","unknown",zm)
           k = k + 1
 
 #endif /*SCALARS*/
@@ -3537,155 +3059,121 @@
 
         case ('ustar')
           iustar = k
-          sfc%f%var(iustar)%ptr => sfc%x(:,k)
-          sfc%f%var(iustar)%name = "ustar"
-          sfc%f%var(iustar)%description = "ustar"
-          sfc%f%var(iustar)%units = "m/s"
+
+          call stat_assign(iustar,"ustar",
+     .         "ustar","m/s",sfc)
           k = k + 1
 
         case ('lh')
           ilh = k
-          sfc%f%var(ilh)%ptr => sfc%x(:,k)
-          sfc%f%var(ilh)%name = "lh"
-          sfc%f%var(ilh)%description = "lh"
-          sfc%f%var(ilh)%units = "W/m2"
+          call stat_assign(ilh,"lh",
+     .         "lh","W/m2",sfc)
           k = k + 1
 
         case ('sh')
           ish = k
-          sfc%f%var(ish)%ptr => sfc%x(:,k)
-          sfc%f%var(ish)%name = "sh"
-          sfc%f%var(ish)%description = "sh"
-          sfc%f%var(ish)%units = "W/m2"
+          call stat_assign(ish,"sh",
+     .         "sh","W/m2",sfc)
           k = k + 1
 
         case ('cc')
           icc = k
-          sfc%f%var(icc)%ptr => sfc%x(:,k)
-          sfc%f%var(icc)%name = "cc"
-          sfc%f%var(icc)%description = "cc"
-          sfc%f%var(icc)%units = "count"
+          call stat_assign(icc,"cc",
+     .         "cc","count",sfc)
           k = k + 1
 
         case ('lwp')
           ilwp = k
-          sfc%f%var(ilwp)%ptr => sfc%x(:,k)
-          sfc%f%var(ilwp)%name = "lwp"
-          sfc%f%var(ilwp)%description = "lwp"
-          sfc%f%var(ilwp)%units = "kg/m2"
+          call stat_assign(ilwp,"lwp",
+     .         "lwp","kg/m2",sfc)
           k = k + 1
 
         case ('zb')
           izb = k
-          sfc%f%var(izb)%ptr => sfc%x(:,k)
-          sfc%f%var(izb)%name = "zb"
-          sfc%f%var(izb)%description = "zb"
-          sfc%f%var(izb)%units = "m"
+          call stat_assign(izb,"zb",
+     .         "zb","m",sfc)
           k = k + 1
 
         case ('zi')
           izi = k
-          sfc%f%var(izi)%ptr => sfc%x(:,k)
-          sfc%f%var(izi)%name = "zi"
-          sfc%f%var(izi)%description = "zi"
-          sfc%f%var(izi)%units = "m"
+          call stat_assign(izi,"zi",
+     .         "zi","m",sfc)
           k = k + 1
 
         case ('rain')          ! Brian
           irain = k
-          sfc%f%var(irain)%ptr => sfc%x(:,k)
-          sfc%f%var(irain)%name = "rain_rate"
-          sfc%f%var(irain)%description = "rainfall rate (mm/day)"
-          sfc%f%var(irain)%units = "mm/day"
+          call stat_assign(irain,"rain_rate",
+     .         "rainfall rate (mm/day)","mm/day",sfc)
           k = k + 1
 
         case ('pflux')         ! Brian
           ipflux = k
-          sfc%f%var(ipflux)%ptr => sfc%x(:,k)
-          sfc%f%var(ipflux)%name = "prec_flux"
-          sfc%f%var(ipflux)%description = "Precipitation flux (W/m^2)"
-          sfc%f%var(ipflux)%units = "W/m2"
+
+          call stat_assign(ipflux,"prec_flux",
+     .         "Precipitation flux (W/m^2)","W/m^2",sfc)
           k = k + 1
 
         case ('rrm_sfc')       ! Brian
           irrm_sfc = k
-          sfc%f%var(irrm_sfc)%ptr => sfc%x(:,k)
-          sfc%f%var(irrm_sfc)%name = "rrm_sfc"
-          sfc%f%var(irrm_sfc)%description 
-     .    = "Surface rain water mixing ratio"
-          sfc%f%var(irrm_sfc)%units = "kg/kg"
+
+          call stat_assign(irrm_sfc,"rrm_sfc",
+     .         "Surface rain water mixing ratio","kg/kg",sfc)
           k = k + 1
 
         case ('wp23_cn')
           iwp23_cn = k
-          sfc%f%var(iwp23_cn)%ptr => sfc%x(:,k)
-          sfc%f%var(iwp23_cn)%name = "wp23_cn"
-          sfc%f%var(iwp23_cn)%description
-     .    = "Estimate of the condition number for wp2/3"
-          sfc%f%var(iwp23_cn)%units = "count"
+          call stat_assign(iwp23_cn,"wp23_cn",
+     .         "Estimate of the condition number for wp2/3","count",sfc)
           k = k + 1
 
         case ('thlm_cn')
           ithlm_cn = k
-          sfc%f%var(ithlm_cn)%ptr => sfc%x(:,k)
-          sfc%f%var(ithlm_cn)%name = "thlm_cn"
-          sfc%f%var(ithlm_cn)%description
-     .    = "Estimate of the condition number for thlm/wpthlp"
-          sfc%f%var(ithlm_cn)%units = "count"
+	  call stat_assign(ithlm_cn,"thlm_cn",
+     .         "Estimate of the condition number for thlm/wpthlp",
+     .         "count",sfc)
           k = k + 1
 
         case ('rtm_cn')
           irtm_cn = k
-          sfc%f%var(irtm_cn)%ptr => sfc%x(:,k)
-          sfc%f%var(irtm_cn)%name = "rtm_cn"
-          sfc%f%var(irtm_cn)%description
-     .    = "Estimate of the condition number for rtm/wprtp"
-          sfc%f%var(irtm_cn)%units = "count"
+
+          call stat_assign(irtm_cn,"rtm_cn",
+     .         "Estimate of the condition number for rtm/wprtp",
+     .         "count",sfc)
           k = k + 1
 
         case ('thlp2_cn')
           ithlp2_cn = k
-          sfc%f%var(ithlp2_cn)%ptr => sfc%x(:,k)
-          sfc%f%var(ithlp2_cn)%name = "thlp2_cn"
-          sfc%f%var(ithlp2_cn)%description
-     .    = "Estimate of the condition number for thlp2"
-          sfc%f%var(ithlp2_cn)%units = "count"
+
+          call stat_assign(ithlp2_cn,"thlp2_cn",
+     .         "Estimate of the condition number for thlp2",
+     .         "count",sfc)
           k = k + 1
 
         case ('rtp2_cn')
           irtp2_cn = k
-          sfc%f%var(irtp2_cn)%ptr => sfc%x(:,k)
-          sfc%f%var(irtp2_cn)%name = "rtp2_cn"
-          sfc%f%var(irtp2_cn)%description
-     .    = "Estimate of the condition number for rtp2"
-          sfc%f%var(irtp2_cn)%units = "count"
+  	  call stat_assign(irtp2_cn,"rtp2_cn",
+     .         "Estimate of the condition number for rtp2",
+     .         "count",sfc)
           k = k + 1
 
         case ('rtpthlp_cn')
           irtpthlp_cn = k
-          sfc%f%var(irtpthlp_cn)%ptr => sfc%x(:,k)
-          sfc%f%var(irtpthlp_cn)%name = "rtpthlp_cn"
-          sfc%f%var(irtpthlp_cn)%description
-     .    = "Estimate of the condition number for rtpthlp"
-          sfc%f%var(irtpthlp_cn)%units = "count"
+  	  call stat_assign(irtpthlp_cn,"rtpthlp_cn",
+     .         "Estimate of the condition number for rtpthlp",
+     .         "count",sfc)
           k = k + 1
 
         case ('up2_cn')
           iup2_cn = k
-          sfc%f%var(iup2_cn)%ptr => sfc%x(:,k)
-          sfc%f%var(iup2_cn)%name = "up2_cn"
-          sfc%f%var(iup2_cn)%description
-     .    = "Estimate of the condition number for up2"
-          sfc%f%var(iup2_cn)%units = "count"
+          call stat_assign(iup2_cn,"up2_cn",
+     .         "Estimate of the condition number for up2","count",sfc)
           k = k + 1
 
         case ('vp2_cn')
-          ivp2_cn = k
-          sfc%f%var(ivp2_cn)%ptr => sfc%x(:,k)
-          sfc%f%var(ivp2_cn)%name = "vp2_cn"
-          sfc%f%var(ivp2_cn)%description
-     .    = "Estimate of the condition number for vp2"
-          sfc%f%var(ivp2_cn)%units = "count"
+          ivp2_cn = k  
+	  call stat_assign(ivp2_cn,"vp2_cn",
+     .         "Estimate of the condition number for vp2","count",sfc)
+
           k = k + 1
 
         case default
