@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.29 2007-08-23 16:06:38 faschinj Exp $
+!  $Id: statistics.F,v 1.30 2007-08-24 19:26:58 faschinj Exp $
 
 #ifdef STATS
       module stats_type
@@ -34,38 +34,6 @@
           type (outputfile) f
 
         end type stats
-	contains
-!-----------------------------------------------------------------------
-        subroutine stat_assign( location, name, 
-     .                     description, units, grid )
-
-!     Description: Assigns pointers for statistics variables in grid
-!    
-!-----------------------------------------------------------------------
-           !input
-             integer,intent(in) :: location !
-             character(len = *), intent(in) :: name        ! Variable name
-             character(len = *), intent(in) :: description ! Variable description
-             character(len = *), intent(in) :: units       ! Variable units
-
-           !output
-             type(stats), intent(out) :: grid
-
-             grid%f%var(location)%ptr => grid%x(:,location)
-             grid%f%var(location)%name = name
-             grid%f%var(location)%description = description
-             grid%f%var(location)%units = units
-	
-             !Example of the old format 
-             !changed by Joshua Fasching 23 August 2007
-             
-             !zt%f%var(ithlm)%ptr => zt%x(:,k)
-             !zt%f%var(ithlm)%name = "thlm"
-             !zt%f%var(ithlm)%description = "thetal (K)"
-             !zt%f%var(ithlm)%units = "K"
-      
-             return
-           end subroutine stat_assign
       end module stats_type
 
 !-----------------------------------------------------------------------
@@ -4176,4 +4144,39 @@
       return
       end subroutine stats_finalize
 
+!-----------------------------------------------------------------------
+      subroutine stat_assign( var_index, name, 
+     .                     description, units, grid )
+
+!     Description: Assigns pointers for statistics variables in grid
+!    
+!-----------------------------------------------------------------------
+           use stats_type
+
+           !input
+             integer,intent(in) :: var_index               ! Variable index
+             character(len = *), intent(in) :: name        ! Variable name
+             character(len = *), intent(in) :: description ! Variable description
+             character(len = *), intent(in) :: units       ! Variable units
+
+           !output
+             type(stats), intent(out) :: grid
+
+             grid%f%var(var_index)%ptr => grid%x(:,var_index)
+             grid%f%var(var_index)%name = name
+             grid%f%var(var_index)%description = description
+             grid%f%var(var_index)%units = units
+	
+             !Example of the old format 
+             !changed by Joshua Fasching 23 August 2007
+             
+             !zt%f%var(ithlm)%ptr => zt%x(:,k)
+             !zt%f%var(ithlm)%name = "thlm"
+             !zt%f%var(ithlm)%description = "thetal (K)"
+             !zt%f%var(ithlm)%units = "K"
+      
+             return
+           end subroutine stat_assign
+
 #endif /*STATS*/
+
