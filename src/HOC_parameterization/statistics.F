@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.30 2007-08-24 19:26:58 faschinj Exp $
+!  $Id: statistics.F,v 1.31 2007-09-07 16:28:58 faschinj Exp $
 
 #ifdef STATS
       module stats_type
@@ -2803,8 +2803,8 @@
         case ('vp2_pr2')
           ivp2_pr2 = k
 
-          call stat_assign(ivp2_pr1,"vp2_pr1",
-     .         "vp2 pressure term 1","m^2/s^2",zm)
+          call stat_assign(ivp2_pr2,"vp2_pr2",
+     .         "vp2 pressure term 2","m^2/s^2",zm)
           k = k + 1
 
 #ifdef SCALARS
