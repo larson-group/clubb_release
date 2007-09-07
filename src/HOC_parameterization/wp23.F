@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.19 2007-07-27 23:55:03 griffinb Exp $
+! $Id: wp23.F,v 1.20 2007-09-07 21:54:50 mjfalk Exp $
 
         subroutine timestep_wp23
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
@@ -324,11 +324,20 @@
           rhs(k_wp2)
      .    = + ( 1.0 / dt ) * wp2(k) 
      .      + ( 1.0 - C5 ) * 2.0 * ( grav / T0 ) * wpthvp(k)
+! Michael Falk, 2 August 2007
+! Use the following code for standard mixing, with c_k=0.548:
+!     .      + (2.0/3.0) * C5
+!     .                  * ( ( grav / T0 ) * wpthvp(k)
+!     .                     - upwp(k) * gr%dzm(k) * ( um(kp1) - um(k) )
+!     .                     - vpwp(k) * gr%dzm(k) * ( vm(kp1) - vm(k) )
+!     .                    )
+! Use the following code for alternate mixing, with c_k=0.1 or 0.2
      .      + (2.0/3.0) * C5
      .                  * ( ( grav / T0 ) * wpthvp(k)
-     .                     - upwp(k) * gr%dzm(k) * ( um(kp1) - um(k) )
-     .                     - vpwp(k) * gr%dzm(k) * ( vm(kp1) - vm(k) )
+     .                  - 0. * upwp(k) * gr%dzm(k) * ( um(kp1) - um(k) )
+     .                  - 0. * vpwp(k) * gr%dzm(k) * ( vm(kp1) - vm(k) )
      .                    )
+! eMFc
           ! These lines are for the diffusional term with a Crank-Nicholson 
           ! time step.  They need to be commented out for completely implicit
           ! diffusion to be used.
