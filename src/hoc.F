@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.132 2007-08-09 19:45:23 mjfalk Exp $
+! $Id: hoc.F,v 1.133 2007-09-08 20:50:37 griffinb Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -1183,8 +1183,13 @@
            ! Configure for K&K microphysics
            do k=1, gr%nnzp, 1
              if ( rcm(k) >= rc_tol ) then
+              ! Ncm is in units of kg^-1.  If the coefficient is in m^-3, then
+              ! it needs to be divided by rhot in order to get units of kg^-1.
+              ! Brian.  Sept. 8, 2007.
+!               Ncm(k) = 30.0 * (1.0 + exp( -gr%zt(k)/2000.0 )) * 1.e6
+!     .                  * rhot(k) 
                Ncm(k) = 30.0 * (1.0 + exp( -gr%zt(k)/2000.0 )) * 1.e6
-     .                  * rhot(k) 
+     .                  / rhot(k) 
              end if
            end do
 
