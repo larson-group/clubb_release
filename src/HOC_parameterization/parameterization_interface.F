@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.56 2007-08-09 17:29:00 mjfalk Exp $
+! $Id: parameterization_interface.F,v 1.57 2007-09-08 17:02:33 griffinb Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -149,14 +149,14 @@
      . rtpthlp, ! r_t' th_l'.                   [(kg K)/kg]
      . taum,    ! Tau on moment. grid.          [s]
      . rcm,     ! Liquid water mixing ratio.    [kg/kg]
-     . Ncm,     ! Cloud droplet number conc.    [num/m^3]
+     . Ncm,     ! Cloud droplet number conc.    [num/kg]
      . Ncnm,    ! Cloud nuclei number conc.     [num/m^3]
      . Nim      ! Ice crystal number conc.      [num/m^3]
 
        real, intent(inout), dimension(gr%nnzp,hydromet_dim) ::
      . hydromet  ! Hydrometer fields                     [units vary]
        ! (:,1) rrm      Rain water mixing ratio          [kg/kg]
-       ! (:,2) Nrm      Rain droplet number conc.        [num/(m^3)]
+       ! (:,2) Nrm      Rain droplet number conc.        [num/kg]
        ! (:,3) rsnow    Snow water mixing ratio          [kg/kg]
        ! (:,4) rice     Ice water mixing ratio           [kg/kg]
        ! (:,5) rgraupel Graupel water mixing ratio       [kg/kg]

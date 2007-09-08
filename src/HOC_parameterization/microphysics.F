@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.16 2007-08-09 18:59:49 mjfalk Exp $
+! $Id: microphysics.F,v 1.17 2007-09-08 17:02:33 griffinb Exp $
         module microphysics
 
 !       Description:
@@ -97,7 +97,7 @@
         ! K & K only uses Ncm, while for COAMPS Ncnm is initialized
         ! and Nim & Ncm are computed within subroutine adjtg.
         real, dimension(gr%nnzp), intent(inout) ::
-     .  Ncm,    ! Rain droplet number concentration     [count/m^3]
+     .  Ncm,    ! Cloud drop number concentration       [count/kg]
      .  Ncnm,   ! Cloud nuclei number concentration     [count/m^3]
      .  Nim     ! Ice crystal number concentration      [count/m^3]
 
@@ -127,7 +127,7 @@
 
         real, dimension(gr%nnzp) ::
      .  rrm_tndcy,      ! Rain mixing ratio tendency      [(kg/kg)/s]
-     .  Nrm_tndcy,      ! Rain number conc. tendency      [(count/m^3)/s]
+     .  Nrm_tndcy,      ! Rain number conc. tendency      [(count/kg)/s]
      .  rsnowm_tndcy,   ! Snow mixing ratio tendency      [(kg/kg)/s]
      .  ricem_tndcy,    ! Ice mixing ratio tendency       [(kg/kg)/s]
      .  rgraupelm_tndcy ! Graupel mixing ratio tendency   [(kg/kg)/s]  
@@ -137,7 +137,7 @@
 
         real, pointer, dimension(:) ::
      .  rrm,      ! Pointer for rain water mixing ratio   [kg/kg]
-     .  Nrm,      ! Pointer for rain droplet number conc. [count/m^3]
+     .  Nrm,      ! Pointer for rain droplet number conc. [count/kg]
      .  rsnowm,   ! Pointer for snow mixing ratio         [kg/kg]
      .  ricem,    ! Pointer for ice mixing ratio          [kg/kg]
      .  rgraupelm ! Pointer for graupel mixing ratio      [kg/kg]
@@ -376,7 +376,7 @@
 #endif
 
         ! ----------------------------------------------------------------------
-        ! Rain droplet number concentration (Nrm)
+        ! Rain drop number concentration (Nrm)
         ! ----------------------------------------------------------------------
 
         call microphys_lhs

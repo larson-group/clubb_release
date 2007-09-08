@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.18 2007-07-31 13:22:09 mjfalk Exp $
+! $Id: mixing.F,v 1.19 2007-09-08 17:02:33 griffinb Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -84,7 +84,7 @@
      .  rhom,        ! rho (density) on moment. grid  [kg/m^3] 
      .  exner,       ! Exner function                 [-]
      .  rcm,         ! Liquid water mixing ratio      [kg/kg]
-     .  Ncm,         ! Cloud droplet number conc.     [num/m^3]
+     .  Ncm,         ! Cloud droplet number conc.     [num/kg]
      .  hm_rt_tndcy, ! Change in rt due to microphys. [kg/kg/s]
      .  hm_thl_tndcy ! Change in thl due to microphys.[K/s]
 
@@ -507,7 +507,7 @@
      .  rhom,        ! Rho (density) on moment. grid -Brian [kg/m^3]
      .  exner,       ! Exner function -Brian                [-]
      .  rcm,         ! Liquid water mixing ratio -Brian     [kg/kg] 
-     .  Ncm,         ! Cloud droplet number conc. -Brian    [num/m^3]
+     .  Ncm,         ! Cloud droplet number conc. -Brian    [num/kg]
      .  hm_tndcy,    ! Change in r_t or theta_l due to micro[(units)/s]  
      .  xpthvp,      ! x' theta_v'                          [(units)(K)]
      .  xm_forcing,  ! xm forcing -Brian                    [(units)/s] 
@@ -535,6 +535,13 @@
      .  solution ! Solution to band diagonal system
 
         real :: rcond ! Est. of the reciprocal of the condition #
+
+        ! sigma_g is the Geometric standard deviation of cloud droplets falling
+        ! in a Stokes regime.
+        real, parameter :: sigma_g = 1.5  ! The DYCOMS2 RF02 intercomparison
+                                          ! specified value is 1.5.
+!        real, parameter :: sigma_g = 1.2  ! Bjorn Stevens suggests a value of
+!                                          ! 1.2 is more appropriate for RF02.
 
         ! Indices
         integer :: k, km1, kp1
@@ -713,11 +720,18 @@
         ! regime, in which the sedimentation flux (Fcsed) is given by:
         !
         ! Sedimentation Flux = constant
-        !                     *[(3/(4*pi*rho_lw*Nc))^(2/3)]
+        !                     *[(3/(4*pi*rho_lw*NcV))^(2/3)]
         !                     *[(rho*rc)^(5/3)]
         !                     *EXP[5*((LOG(sigma_g))^2)]
         ! constant = 1.19 x 10^8 (m^-1 s^-1)
-        ! sigma_g:  geometric standard deviation = 1.5
+        ! sigma_g:  geometric standard deviation
+        !
+        ! When written for a mass-dependent cloud droplet concentration, Nc:
+        !
+        ! Sedimentation Flux = constant
+        !                     *[(3/(4*pi*rho_lw*Nc*rho))^(2/3)]
+        !                     *[(rho*rc)^(5/3)]
+        !                     *EXP[5*((LOG(sigma_g))^2)]
         !
         ! According to the above equation, sedimentation flux
         ! is defined positive downwards.  Therefore, 
@@ -731,10 +745,11 @@
 
               IF ( zt2zm(rcm,k) > 0.0 .AND. zt2zm(Ncm,k) > 0.0 ) THEN
                  Fcsed(k) = 1.19E8
-     .                  * (  ( 3.0 / (4.0*pi*rho_lw*zt2zm(Ncm,k)) )
-     .                     **(2.0/3.0)  )
+     .                  * (   (  3.0 / ( 4.0*pi*rho_lw
+     .                                   *zt2zm(Ncm,k)*rhom(k) )  )
+     .                     **(2.0/3.0)   )
      .                  * ( ( rhom(k)*zt2zm(rcm,k) )**(5.0/3.0) )
-     .                  * EXP( 5.0*( (LOG(1.5))**(2) ) )
+     .                  * EXP( 5.0*( (LOG(sigma_g))**(2) ) )
               ELSE
                  Fcsed(k) = 0.0
               END IF

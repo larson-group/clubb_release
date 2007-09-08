@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: prog_variables.F,v 1.15 2007-07-31 13:25:26 mjfalk Exp $
+! $Id: prog_variables.F,v 1.16 2007-09-08 17:02:33 griffinb Exp $
         module prognostic_variables
 
 !       This module contains definitions of all prognostic
@@ -67,7 +67,7 @@
         ! Cloud water variables
         real, target, allocatable, dimension(:) ::
      .  rcm,  ! Cloud water mixing ratio                [kg/kg]
-     .  Ncm,  ! Cloud droplet number concentration      [num/m^3]
+     .  Ncm,  ! Cloud droplet number concentration      [num/kg]
      .  Ncnm, ! Cloud nuclei number concentration       [num/m^3]
      .  Nim,  ! Ice nuclei number concentration         [num/m^3]
      .  cf    ! Cloud fraction                          [%]
@@ -78,7 +78,7 @@
         real, target, allocatable, dimension(:,:) :: hydromet
         ! Contains:
         ! 1 rrm      Rain water mixing ratio               [kg/kg]
-        ! 2 Nrm      Rain droplet number concentration     [num/m^3]
+        ! 2 Nrm      Rain drop number concentration        [num/kg]
         ! 3 rsnow    Snow water mixing ratio               [kg/kg]
         ! 4 rice     Ice water mixing ratio                [kg/kg]
         ! 5 rgraupel Graupel water mixing ratio            [kg/kg]

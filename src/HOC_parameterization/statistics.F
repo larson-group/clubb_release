@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: statistics.F,v 1.31 2007-09-07 16:28:58 faschinj Exp $
+!  $Id: statistics.F,v 1.32 2007-09-08 17:02:33 griffinb Exp $
 
 #ifdef STATS
       module stats_type
@@ -1119,8 +1119,8 @@
         case ('Ncm')           ! Brian
           iNcm = k
           call stat_assign(iNcm,"Ncm",
-     .         "Cloud droplet number concentration (num/m^3)",
-     .         "count/m^3",zt)
+     .         "Cloud droplet number concentration (num/kg)",
+     .         "count/kg",zt)
           k = k + 1
 
         case ('Ncnm')
@@ -1177,8 +1177,8 @@
         case ('Nrm')           ! Brian
           iNrm = k
           call stat_assign(iNrm,"Nrm",
-     .         "Rain droplet number concentration (num/m^3)",
-     .         "count/(m^3)",zt)
+     .         "Rain drop number concentration (num/kg)",
+     .         "count/kg",zt)
           k = k + 1
 
         case ('mean_vol_rad_rain')  ! Brian
@@ -1440,7 +1440,7 @@
         case ('Nrm_bt')
           iNrm_bt = k
           call stat_assign(iNrm_bt,"Nrm_bt",
-     .         "Nrm budget","(count/m^3)/s",zt)
+     .         "Nrm budget","(count/kg)/s",zt)
 
           k = k + 1
  
@@ -1448,21 +1448,21 @@
           iNrm_ma = k
 
           call stat_assign(iNrm_ma,"Nrm_ma",
-     .         "Nrm mean advection","(count/m^3)/s",zt)
+     .         "Nrm mean advection","(count/kg)/s",zt)
           k = k + 1
  
         case ('Nrm_sd')
           iNrm_sd = k
 
           call stat_assign(iNrm_sd,"Nrm_sd",
-     .         "Nrm sedimentation","(count/m^3)/s",zt)
+     .         "Nrm sedimentation","(count/kg)/s",zt)
 
           k = k + 1
  
         case ('Nrm_dff')
           iNrm_dff = k
           call stat_assign(iNrm_dff,"Nrm_dff",
-     .         "Nrm diffusion","(count/m^3)/s",zt)
+     .         "Nrm diffusion","(count/kg)/s",zt)
 
           k = k + 1
  
@@ -1470,14 +1470,14 @@
           iNrm_cond = k
 
           call stat_assign(iNrm_cond,"Nrm_cond",
-     .         "Nrm cond/evap","(count/m^3)/s",zt)
+     .         "Nrm cond/evap","(count/kg)/s",zt)
           k = k + 1
  
         case ('Nrm_auto')
           iNrm_auto = k
 
           call stat_assign(iNrm_auto,"Nrm_auto",
-     .         "Nrm autoconversion","(count/m^3)/s",zt)
+     .         "Nrm autoconversion","(count/kg)/s",zt)
 
           k = k + 1
 
@@ -1486,20 +1486,20 @@
 
           call stat_assign(iNrm_cond_adj,"Nrm_cond_adj",
      .         "Nrm cond/evap adjustment due to over-evaporation",
-     .         "(count/m^3)/s",zt)
+     .         "(count/kg)/s",zt)
           k = k + 1
  
         case ('Nrm_mc')
           iNrm_mc = k
           call stat_assign(iNrm_mc,"Nrm_mc",
-     .         "Nrm micro","(count/m^3)/s",zt)
+     .         "Nrm micro","(count/kg)/s",zt)
 
           k = k + 1
 
         case ('Nrm_cl')
           iNrm_cl = k
           call stat_assign(iNrm_cl,"Nrm_cl",
-     .         "Nrm clipping term","(count/m^3)/s",zt)
+     .         "Nrm clipping term","(count/kg)/s",zt)
           k = k + 1
 
         case ('rsnowm_bt')
@@ -3404,7 +3404,7 @@
 
       real, intent(in), dimension(gr%nnzp) ::
      .  rcm,  ! Cloud water mixing ratio                [kg/kg]
-     .  Ncm,  ! Cloud droplet number concentration      [num/m^3]
+     .  Ncm,  ! Cloud droplet number concentration      [num/kg]
      .  Ncnm, ! Cloud nuclei number concentration       [num/m^3]
      .  Nim,  ! Ice nuclei number concentration         [num/m^3]
      .  cf    ! Cloud fraction                          [%]
@@ -3418,7 +3418,7 @@
       real, intent(in), dimension(gr%nnzp,hydromet_dim) :: hydromet
       ! Contains:
       ! 1 rrm      Rain water mixing ratio               [kg/kg]
-      ! 2 Nrm      Rain droplet number concentration     [num/m^3]
+      ! 2 Nrm      Rain droplet number concentration     [num/kg]
       ! 3 rsnow    Snow water mixing ratio               [kg/kg]
       ! 4 rice     Ice water mixing ratio                [kg/kg]
       ! 5 rgraupel Graupel water mixing ratio            [kg/kg]

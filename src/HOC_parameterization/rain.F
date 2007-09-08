@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.35 2007-07-25 16:57:22 griffinb Exp $
+! $Id: rain.F,v 1.36 2007-09-08 17:02:33 griffinb Exp $
 
       MODULE rain_equations
 
@@ -111,9 +111,9 @@
      .  rc1, rc2,  ! PDF parameters rc1 & rc2           [kg/kg]
      .  rtm,       ! Total water mixing ratio           [kg/kg]
      .  rcm,       ! Cloud water mixing ratio           [kg/kg]
-     .  Ncm,       ! Cloud droplet number conc.         [number/m^3]
+     .  Ncm,       ! Cloud droplet number conc.         [number/kg]
      .  rrm,       ! Rain water mixing ratio            [kg/kg]
-     .  Nrm        ! Rain droplet number conc.          [number/m^3]
+     .  Nrm        ! Rain drop number conc.             [number/kg]
 
         ! Latin hypercube variables - Vince Larson 22 May 2005
         real, intent(in), dimension(gr%nnzp) :: 
@@ -128,7 +128,7 @@
      .  Vrr,         ! Mean sedimentation velocity of rrm       [m/s]    
      .  VNr,         ! Mean sedimentation velocity of Nrm       [m/s]
      .  rrm_mc_tndcy,! Rain water microphysical tendency        [(kg/kg)/s]
-     .  Nrm_mc_tndcy,! Rain droplet number conc. micro. tend.   [(num/m^3)/s]
+     .  Nrm_mc_tndcy,! Rain drop number conc. micro. tend.      [(num/kg)/s]
      .  hm_rt_tndcy, ! Contributions to total water from micro. [(kg/kg)/s]
      .  hm_thl_tndcy ! Contributions to theta_l from micro.     [K/s]
 
@@ -137,8 +137,8 @@
      .  rrm_cond,    ! Change in rrm due to condensation        [(kg/kg)/s]
      .  rrm_auto,    ! Change in rrm due to autoconversion      [(kg/kg)/s]
      .  rrm_accr,    ! Change in rrm due to accretion           [(kg/kg)/s]
-     .  Nrm_cond,    ! Change in Nrm due to condensation        [(num/m^3)/s]
-     .  Nrm_auto,    ! Change in Nrm due to autoconversion      [(num/m^3)/s]
+     .  Nrm_cond,    ! Change in Nrm due to condensation        [(num/kg)/s]
+     .  Nrm_auto,    ! Change in Nrm due to autoconversion      [(num/kg)/s]
      .  mean_vol_rad,! Mean volume radius                       [m]
      .  rvm,         ! Water vapor mixing ratio                 [kg/kg]
      .  Temp,        ! Temperature                              [K]
@@ -150,7 +150,7 @@
      .  rrp2_rrm2,   ! rrp2/rrm^2               []
      .  Nrp2_Nrm2,   ! Nrp2/Nrm^2               []
      .  Ncp2_Ncm2,   ! Ncp2/Ncm^2               []
-     .  corr_rrNr_LL,! Correlation of rr and Nr [num/m^3 kg/kg]
+     .  corr_rrNr_LL,! Correlation of rr and Nr []
      .  corr_srr_NL, ! Correlation of s and rr  []
      .  corr_sNr_NL, ! Correlation of s and Nr  []
      .  corr_sNc_NL  ! Correlation of s and Nc  []
@@ -174,16 +174,16 @@
 ! It also computes Vrr, which is applied to the LHS of the tridiagonal
 ! system in subroutine timestep_microphys like so:
 !
-! drr/dt(implicit) = -w*(drr/dz) + Vrr*(drr/dz) + nu_r*(d2rr/dz2)
+! drr/dt(implicit) = -w*(drr/dz) + Vrr*(drr/dz) + (K+nu_r)*(d2rr/dz2)
 !
 ! where Vrr is the mean sedimentation velocity of the rain drops.  It
 ! is determined by Vrr = 0.012*rvr - 0.2, with Vrr in m/s and rvr, the
 ! rain drop mean volume radius, in um.  In turn the rain drop mean
 ! volume radius is given by the following equation:
 !
-! rvr = [(4*PI*rho_lw)/(3*rho)]^(-1/3) * rr^(1/3) * Nr^(-1/3);
+! rvr = [(4*PI*rho_lw)/(3*rho)]^(-1/3) * rr^(1/3) * NrV^(-1/3);
 !
-! where Nr is the rain drop concentration (num/m^3).  rvr is given in
+! where NrV is the rain drop concentration (num/m^3).  rvr is given in
 ! meters.
 !
 ! It is important to note that a one-sided upwind advection scheme is used
@@ -194,7 +194,7 @@
 ! For the other terms:
 !
 ! (drr/dt)cond = 
-!      3*Cevap*G(T,p)*[(4*PI*rho_lw)/(3*rho)]^(2/3) * rr^(1/3) * Nr^(2/3) * S
+!      3*Cevap*G(T,p)*[(4*PI*rho_lw)/(3*rho)]^(2/3) * rr^(1/3) * NrV^(2/3) * S
 !
 ! G(T,p) = 1/(Fk + Fd); where
 !
@@ -204,7 +204,7 @@
 ! Ka is the Coefficient of Thermal Conductivity of Air, and Dv is the
 ! Coefficient of Diffusion of Water Vapor in Air.
 !
-! (drr/dt)auto = 1350 * rc^2.47 * Nc ^ -1.79;
+! (drr/dt)auto = 1350 * rc^2.47 * NcV^-1.79;
 !
 ! with cloud drop concentration in (num/cm^3) for this particular calculation.
 !
@@ -286,15 +286,15 @@
 ! only contains terms for time tendency, condensation/evaporation, and
 ! autoconversion.
 !
-! (dNr/dt)cond = (Nr/rr) * (drr/dt)cond
+! (dNrV/dt)cond = (NrV/rr) * (drr/dt)cond
 !
-! (dNr/dt)auto = (drr/dt)auto / ( [(4*PI*rho_lw)/(3*rho)] * r_o^3 )
+! (dNrV/dt)auto = (drr/dt)auto / ( [(4*PI*rho_lw)/(3*rho)] * r_o^3 )
 !
 ! where r_o is the assumed radius of all newly-formed rain droplets (m).
 ! It is given a value of 25 um.
 !
 ! This information is plugged into the tridiagonal matrix in order to
-! solve for Nr at the next timestep.
+! solve for NrV at the next timestep.
 !
 ! Description and notes written by Brian Griffin.
 !
@@ -507,11 +507,11 @@
      .                      rrp2_rrm2(k), corr_srr_NL(k) )
 
            ! Now find the elements that make up the right-hand side of the
-           ! equation, rr, for rain droplet number concentration, Nrm.
+           ! equation, rr, for rain drop number concentration, Nrm.
 
            Nrm_cond(k) = cond_evap_Nrm( rrm_cond(k), Nrm(k), rrm(k) )
 
-           Nrm_auto(k) = autoconv_Nrm( rrm_auto(k), rhot(k) )
+           Nrm_auto(k) = autoconv_Nrm( rrm_auto(k) )
 
 #ifdef STATS
            if ( lsample .and. lstats_samp ) then
@@ -589,11 +589,11 @@
         ! This function calculates the mean volume radius of a rain drop from
         ! Khairoutdinov and Kogan (2000) equation 3. That equation is:
         !
-        ! mvr = [(4*PI*rho_lw)/(3*rho)]^(-1/3) * rr^(1/3) * Nr^(-1/3)
+        ! mvr = [(4*PI*rho_lw)/(3*rho)]^(-1/3) * rr^(1/3) * NrV^(-1/3)
         !
         ! This turns into:
         !
-        ! mvr = [(4*PI*rho_lw)/(3*rho)]^(-1/3) * rr^alpha * Nr^beta
+        ! mvr = [(4*PI*rho_lw)/(3*rho)]^(-1/3) * rr^alpha * NrV^beta
         !
         ! where alpha = 1/3 and beta = -1/3
         !
@@ -603,19 +603,15 @@
         !
         ! Y1 is used for rr.  It is distributed as a log-normal with a
         ! domain from zero to infinity.
-        ! Y2 is used for Nr.  It is distributed as a log-normal with a
+        ! Y2 is used for NrV.  It is distributed as a log-normal with a
         ! domain from zero to infinity.
         !
-        ! Notes:  For our PDF-version (non-local), we turn Nrm into
-        !         concentration per mass instead of concentration per volume.
-        !         It is divided by air density (rho) in order to achieve
-        !         that value.  That also explains why rho is removed from
-        !         the denominator of the factor [(4*PI*rho_lw)/(3*rho)]^(2/3).
-        !         The factor becomes [(4*PI*rho_lw)/(3)]^(2/3).
-        !
-        !         For our code using the local version, we use KK(2000)
-        !         equation 3 exactly, as listed above.  We do not mess around
-        !         with changing anything.
+        ! Notes:  For our model, Nrm is in concentration per mass instead of 
+        !         concentration per volume.  NrV is divided by air density 
+        !         (rho) in order to achieve that value.  That also explains why
+        !         rho is removed from the denominator of the factor 
+        !         [(4*PI*rho_lw)/(3*rho)]^(2/3).  The factor becomes 
+        !         [(4*PI*rho_lw)/(3)]^(2/3).
         !
         ! Brian Griffin.  November 14, 2006.
         !
@@ -628,28 +624,29 @@
         USE model_flags
 
         ! Input variables.
-        REAL, INTENT(IN):: rrm          ! Grid-box average rrm
-!        REAL, INTENT(IN):: rrp2         ! Grid-box rr variance
-        REAL, INTENT(IN):: Nrm          ! Grid-box average Nrm
-!        REAL, INTENT(IN):: Nrp2         ! Grid-box Nr variance
+        REAL, INTENT(IN):: rrm          ! Grid-box average rrm     [kg kg^-1]
+!        REAL, INTENT(IN):: rrp2         ! Grid-box rr variance     [kg^2 kg^-2]
+        REAL, INTENT(IN):: Nrm          ! Grid-box average Nrm     [kg^-1]
+!        REAL, INTENT(IN):: Nrp2         ! Grid-box Nr variance     [kg^-2]
         REAL, INTENT(IN):: rhot         ! Grid-box average density (t-level)
-        REAL, INTENT(IN):: rrp2_rrm2    ! rrp2/rrm^2
-        REAL, INTENT(IN):: Nrp2_Nrm2    ! Nrp2/Nrm^2
-        REAL, INTENT(IN):: corr_rrNr_LL ! Correlation of rr and Nr
+                                        !                          [kg m^-3]
+        REAL, INTENT(IN):: rrp2_rrm2    ! rrp2/rrm^2               []
+        REAL, INTENT(IN):: Nrp2_Nrm2    ! Nrp2/Nrm^2               []
+        REAL, INTENT(IN):: corr_rrNr_LL ! Correlation of rr and Nr []
 
         ! Output variables.
-        REAL:: mean_volume_radius
+        REAL:: mean_volume_radius       ! [m]
 
         ! Exponential terms.
         REAL:: alpha_exp  ! Exponent of rr
         REAL:: beta_exp   ! Exponent of Nr
 
         ! Original terms.
-        REAL:: mu_rr       ! Grid-box average of rr
-        REAL:: sigma_rr    ! Grid-box standard deviation of rr
-        REAL:: mu_Nr       ! Grid-box average of Nr
-        REAL:: sigma_Nr    ! Grid-box standard deviation of Nr
-        REAL:: corr_rrNr   ! Correlation of rr and Nr
+        REAL:: mu_rr       ! Grid-box average of rr                [kg kg^-1]
+        REAL:: sigma_rr    ! Grid-box standard deviation of rr     [kg kg^-1]
+        REAL:: mu_Nr       ! Grid-box average of Nr                [kg^-1]
+        REAL:: sigma_Nr    ! Grid-box standard deviation of Nr     [kg^-1]
+        REAL:: corr_rrNr   ! Correlation of rr and Nr              []
 
 !-------------------------------------------------------------------------------
 
@@ -660,7 +657,7 @@
            IF ( rrm > rr_tol .AND. Nrm > Nr_tol ) THEN
 
               mean_volume_radius = 
-     .           (  ((4.0*pi*rho_lw)/(3.0*rhot))**(-1.0/3.0)  )
+     .           (  ( (4.0/3.0)*pi*rho_lw )**(-1.0/3.0)  )
      .          * rrm**(1.0/3.0) * Nrm**(-1.0/3.0)
 
            ELSE
@@ -686,16 +683,16 @@
               sigma_rr = rrm * SQRT(rrp2_rrm2)
 
               ! Nr is distributed Lognormally.
-              mu_Nr = (Nrm/rhot)
+              mu_Nr = Nrm
 !              sigma_Nr = SQRT(Nrp2)
-              sigma_Nr = (Nrm/rhot) * SQRT(Nrp2_Nrm2)
+              sigma_Nr = Nrm * SQRT(Nrp2_Nrm2)
 
               ! Correlations.
               corr_rrNr = corr_rrNr_LL
 
 
               mean_volume_radius =
-     .           (  ((4.0*pi*rho_lw)/3.0)**(-1.0/3.0)  )
+     .           (  ( (4.0/3.0)*pi*rho_lw )**(-1.0/3.0)  )
      .           * PDF_BIVAR_LN_LN ( mu_rr, mu_Nr, sigma_rr, sigma_Nr,
      .                               corr_rrNr, alpha_exp, beta_exp )
 
@@ -725,7 +722,7 @@
         !
         ! (drr/dt)cond = 
         !    3 * Cevap * G(T,p) * [(4*PI*rho_lw)/(3*rho)]^(2/3) 
-        !      * rr^(1/3) * Nr^(2/3) * S
+        !      * rr^(1/3) * NrV^(2/3) * S
         !
         ! where S = (e/es) - 1
         !
@@ -737,14 +734,14 @@
         !
         ! (drr/dt)cond = 
         !    3 * Cevap * G(T,p) * [(4*PI*rho_lw)/(3*rho)]^(2/3) 
-        !      * rr^(1/3) * Nr^(2/3) * [ ( 1 + Beta_T * rs ) / rs ] * s
+        !      * rr^(1/3) * NrV^(2/3) * [ ( 1 + Beta_T * rs ) / rs ] * s
         !
         ! This turns into:
         !
         ! (drr/dt)cond = 
         !    3 * Cevap * G(T,p) * [(4*PI*rho_lw)/(3*rho)]^(2/3) 
         !      * [ ( 1 + Beta_T * rs ) / rs ]
-        !      * s^alpha * rr^beta * Nr^gamma
+        !      * s^alpha * rr^beta * NrV^gamma
         !
         ! where alpha = 1.0, beta = 1/3, and gamma = 2/3
         !
@@ -761,19 +758,15 @@
         ! condensation.
         ! Y2 is used for rr.  It is distributed as a log-normal with a
         ! domain from zero to infinity.
-        ! Y3 is used for Nr.  It is distributed as a log-normal with a
+        ! Y3 is used for NrV.  It is distributed as a log-normal with a
         ! domain from zero to infinity.
         !
-        ! Notes:  For our PDF-version (non-local), we turn Nrm into
-        !         concentration per mass instead of concentration per volume.
-        !         It is divided by air density (rho) in order to achieve
-        !         that value.  That also explains why rho is removed from
-        !         the denominator of the factor [(4*PI*rho_lw)/(3*rho)]^(2/3).
-        !         The factor becomes [(4*PI*rho_lw)/(3)]^(2/3).
-        !
-        !         For our code using the local version, we use KK(2000)
-        !         equation 22 exactly, as listed above.  We do not mess around
-        !         with changing anything.
+        ! Notes:  For our model, Nrm is in concentration per mass instead of 
+        !         concentration per volume.  NrV is divided by air density 
+        !         (rho) in order to achieve that value.  That also explains why
+        !         rho is removed from the denominator of the factor 
+        !         [(4*PI*rho_lw)/(3*rho)]^(2/3).  The factor becomes 
+        !         [(4*PI*rho_lw)/(3)]^(2/3).
         !
         ! Brian Griffin.  November 14, 2006.
         !
@@ -795,32 +788,35 @@
         external rsat
 
         ! Input variables.
-        REAL, INTENT(IN):: rrm          ! Grid-box average rrm
-!        REAL, INTENT(IN):: rrp2         ! Grid-box rr variance
-        REAL, INTENT(IN):: Nrm          ! Grid-box average Nrm
-!        REAL, INTENT(IN):: Nrp2         ! Grid-box Nr variance
-        REAL, INTENT(IN):: s1           ! Plume 1 average s
+        REAL, INTENT(IN):: rrm          ! Grid-box average rrm     [kg kg^-1]
+!        REAL, INTENT(IN):: rrp2         ! Grid-box rr variance     [kg^2 kg^-2]
+        REAL, INTENT(IN):: Nrm          ! Grid-box average Nrm     [kg^-1]
+!        REAL, INTENT(IN):: Nrp2         ! Grid-box Nr variance     [kg^-2]
+        REAL, INTENT(IN):: s1           ! Plume 1 average s        [kg kg^-1]
         REAL, INTENT(IN):: ss1          ! Plume 1 sigma s1 (not sigma^2 s1)
-        REAL, INTENT(IN):: s2           ! Plume 2 average s
+                                        !                          [kg kg^-1]
+        REAL, INTENT(IN):: s2           ! Plume 2 average s        [kg kg^-1]
         REAL, INTENT(IN):: ss2          ! Plume 2 sigma s2 (not sigma^2 s2)
-        REAL, INTENT(IN):: thl1         ! Plume 1 average theta-l
-        REAL, INTENT(IN):: thl2         ! Plume 2 average theta-l
-        REAL, INTENT(IN):: rc1          ! Plume 1 average rc
-        REAL, INTENT(IN):: rc2          ! Plume 2 average rc
+                                        !                          [kg kg^-1]
+        REAL, INTENT(IN):: thl1         ! Plume 1 average theta-l  [K]
+        REAL, INTENT(IN):: thl2         ! Plume 2 average theta-l  [K]
+        REAL, INTENT(IN):: rc1          ! Plume 1 average rc       [kg kg^-1]
+        REAL, INTENT(IN):: rc2          ! Plume 2 average rc       [kg kg^-1]
         REAL, INTENT(IN):: a            ! Relative weight of each individual
-                                        ! Gaussian "plume."
-        REAL, INTENT(IN):: press        ! Grid-box average pressure
+                                        ! Gaussian "plume."        []
+        REAL, INTENT(IN):: press        ! Grid-box average pressure [Pa]
         REAL, INTENT(IN):: rhot         ! Grid-box average density (t-level)
-        REAL, INTENT(IN):: Temp         ! Grid-box average Temperature
-        REAL, INTENT(IN):: Supsat       ! Grid-box average Supersaturation
-        REAL, INTENT(IN):: rrp2_rrm2    ! rrp2/rrm^2
-        REAL, INTENT(IN):: Nrp2_Nrm2    ! Nrp2/Nrm^2
-        REAL, INTENT(IN):: corr_srr_NL  ! Correlation of s and rr
-        REAL, INTENT(IN):: corr_sNr_NL  ! Correlation of s and Nr
-        REAL, INTENT(IN):: corr_rrNr_LL ! Correlation of rr and Nr
+                                        !                          [kg m^-3]
+        REAL, INTENT(IN):: Temp         ! Grid-box average Temperature [K]
+        REAL, INTENT(IN):: Supsat       ! Grid-box average Supersaturation []
+        REAL, INTENT(IN):: rrp2_rrm2    ! rrp2/rrm^2               []
+        REAL, INTENT(IN):: Nrp2_Nrm2    ! Nrp2/Nrm^2               []
+        REAL, INTENT(IN):: corr_srr_NL  ! Correlation of s and rr  []
+        REAL, INTENT(IN):: corr_sNr_NL  ! Correlation of s and Nr  []
+        REAL, INTENT(IN):: corr_rrNr_LL ! Correlation of rr and Nr []
 
         ! Output variables.
-        REAL:: cond_evap_rrm
+        REAL:: cond_evap_rrm  ! [kg kg^-1 s^-1]
 
         ! Exponential terms.
         REAL:: alpha_exp  ! Exponent of s
@@ -828,17 +824,17 @@
         REAL:: gamma_exp  ! Exponent of Nr
 
         ! Original terms.
-        REAL:: mu_s1       ! Plume 1 average of s
-        REAL:: sigma_s1    ! Plume 1 standard deviation of s
-        REAL:: mu_s2       ! Plume 2 average of s
-        REAL:: sigma_s2    ! Plume 2 standard deviation of s
-        REAL:: mu_rr       ! Grid-box average of rr
-        REAL:: sigma_rr    ! Grid-box standard deviation of rr
-        REAL:: mu_Nr       ! Grid-box average of Nr
-        REAL:: sigma_Nr    ! Grid-box standard deviation of Nr
-        REAL:: corr_srr    ! Correlation of s and rr
-        REAL:: corr_sNr    ! Correlation of s and Nr
-        REAL:: corr_rrNr   ! Correlation of rr and Nr
+        REAL:: mu_s1       ! Plume 1 average of s               [kg kg^-1]
+        REAL:: sigma_s1    ! Plume 1 standard deviation of s    [kg kg^-1]
+        REAL:: mu_s2       ! Plume 2 average of s               [kg kg^-1]
+        REAL:: sigma_s2    ! Plume 2 standard deviation of s    [kg kg^-1]
+        REAL:: mu_rr       ! Grid-box average of rr             [kg kg^-1]
+        REAL:: sigma_rr    ! Grid-box standard deviation of rr  [kg kg^-1]
+        REAL:: mu_Nr       ! Grid-box average of Nr             [kg^-1]
+        REAL:: sigma_Nr    ! Grid-box standard deviation of Nr  [kg^-1]
+        REAL:: corr_srr    ! Correlation of s and rr            []
+        REAL:: corr_sNr    ! Correlation of s and Nr            []
+        REAL:: corr_rrNr   ! Correlation of rr and Nr           []
 
         REAL:: Tl_1, Tl_2, T_1, T_2, rsl_1, rsl_2, Beta_T1, Beta_T2
         REAL:: plume_1_constants, plume_2_constants
@@ -856,7 +852,7 @@
 
                  cond_evap_rrm =
      .              3.0 * C_evap * G_T_p( Temp, press )
-     .                  * ( ((4.0*pi*rho_lw)/(3.0*rhot))**(2.0/3.0) )
+     .                  * ( ( (4.0/3.0)*pi*rho_lw )**(2.0/3.0) )
      .                  * (rrm**(1.0/3.0)) * (Nrm**(2.0/3.0)) * Supsat
 
               ELSE
@@ -895,7 +891,7 @@
 
               plume_1_constants = 
      .           3.0 * C_evap * G_T_p( T_1, press )
-     .               * ( ((4.0*pi*rho_lw)/3.0)**(2.0/3.0) )
+     .               * ( ( (4.0/3.0)*pi*rho_lw )**(2.0/3.0) )
      .               * ( (1.0 + Beta_T1*rsl_1) / rsl_1 )
 
               ! Gaussian "plume" 2
@@ -910,7 +906,7 @@
 
               plume_2_constants = 
      .           3.0 * C_evap * G_T_p( T_2, press )
-     .               * ( ((4.0*pi*rho_lw)/3.0)**(2.0/3.0) )
+     .               * ( ( (4.0/3.0)*pi*rho_lw )**(2.0/3.0) )
      .               * ( (1.0 + Beta_T2*rsl_2) / rsl_2 )
 
               ! Exponents on s, rr, and Nr, respectively.
@@ -930,9 +926,9 @@
               sigma_rr = rrm * SQRT(rrp2_rrm2)
 
               ! Nr is distributed Lognormally.
-              mu_Nr = (Nrm/rhot)
+              mu_Nr = Nrm
 !              sigma_Nr = SQRT(Nrp2)
-              sigma_Nr = (Nrm/rhot) * SQRT(Nrp2_Nrm2)
+              sigma_Nr = Nrm * SQRT(Nrp2_Nrm2)
 
               ! Correlations.
               corr_srr = corr_srr_NL
@@ -972,8 +968,10 @@
 
         IMPLICIT NONE
 
-        REAL, INTENT(IN):: cond_rrm, Nrm, rrm
-        REAL:: cond_evap_Nrm
+        REAL, INTENT(IN):: rrm      ! [kg kg^-1]
+        REAL, INTENT(IN):: Nrm      ! [kg^-1]
+        REAL, INTENT(IN):: cond_rrm ! [kg kg^-1 s^-1]
+        REAL:: cond_evap_Nrm        ! [kg^-1 s^-1]
 
         IF (rrm > 0.0 .AND. Nrm > 0.0) THEN
 
@@ -1000,25 +998,25 @@
         ! rain water based on Khairoutdinov and Kogan (2000) equation 29.
         ! That equation is:
         !
-        ! (drr/dt)auto = 1350 * rc^2.47 * Nc^-1.79
+        ! (drr/dt)auto = 1350 * rc^2.47 * NcV^-1.79
         !
-        ! where Nc is in concentration per cm^3.  Since there are 10^-6
+        ! where NcV is in concentration per cm^3.  Since there are 10^-6
         ! cubic meters in one cubic centimenter, the equation becomes:
         !
-        ! (drr/dt)auto = 1350 * rc^2.47 * ((10^-6)Nc)^-1.79
+        ! (drr/dt)auto = 1350 * rc^2.47 * ((10^-6)NcV)^-1.79
         !
         ! simplified:
         !
-        ! (drr/dt)auto = 1350 * (10^-6)^-1.79 * rc^2.47 * Nc^-1.79
+        ! (drr/dt)auto = 1350 * (10^-6)^-1.79 * rc^2.47 * NcV^-1.79
         !
         ! This turns into:
         !
-        ! (drr/dt)auto = 1350 * 10^10.74 * rc^2.47 * Nc^-1.79
+        ! (drr/dt)auto = 1350 * 10^10.74 * rc^2.47 * NcV^-1.79
         !
-        ! with Nc in concentration per m^3.
+        ! with NcV in concentration per m^3.
         !
-        ! For our PDF version, we want to express Nc in concentration per mass
-        ! instead of concentration per volume.  We end up with:
+        ! For our model, concentration per mass, Nc, is used instead of 
+        ! concentration per volume, NcV.  We end up with:
         !
         ! (drr/dt)auto = 1350 * 10^10.74 * rc^2.47 * (rho*Nc)^-1.79
         !
@@ -1049,17 +1047,6 @@
         ! Y2 is used for Nc.  It is distributed as a log-normal with a
         ! domain from zero to infinity.
         !
-        ! Notes:  For our PDF-version (non-local), we turn Ncm into
-        !         concentration per mass instead of concentration per volume.
-        !         It is divided by air density (rho) in order to achieve
-        !         that value.  That also explains why rho is added to
-        !         the equation in the PDF-version.
-        !
-        !         For our code using the local version, we use KK(2000)
-        !         equation 29, only modifying it to express Ncm in
-        !         concentration per m^3.  We do not mess around with 
-        !         changing anything else.
-        !
         ! Brian Griffin.  November 14, 2006.
         !
         !-----------------------------------------------------------------------
@@ -1072,35 +1059,38 @@
         USE model_flags
 
         ! Input variables.
-        REAL, INTENT(IN):: rcm         ! Grid-box average rcm
-!        REAL, INTENT(IN):: rcp2        ! Grid-box rc variance
-        REAL, INTENT(IN):: Ncm         ! Grid-box average Ncm
-!        REAL, INTENT(IN):: Ncp2        ! Grid-box Nc variance
-        REAL, INTENT(IN):: s1          ! Plume 1 average s
+        REAL, INTENT(IN):: rcm         ! Grid-box average rcm     [kg kg^-1]
+!        REAL, INTENT(IN):: rcp2        ! Grid-box rc variance     [kg^2 kg^-2]
+        REAL, INTENT(IN):: Ncm         ! Grid-box average Ncm     [kg^-1]
+!        REAL, INTENT(IN):: Ncp2        ! Grid-box Nc variance     [kg^-2]
+        REAL, INTENT(IN):: s1          ! Plume 1 average s        [kg kg^-1]
         REAL, INTENT(IN):: ss1         ! Plume 1 sigma s1 (not sigma^2 s1)
-        REAL, INTENT(IN):: s2          ! Plume 2 average s
+                                       !                          [kg kg^-1]
+        REAL, INTENT(IN):: s2          ! Plume 2 average s        [kg kg^-1]
         REAL, INTENT(IN):: ss2         ! Plume 2 sigma s2 (not sigma^2 s2)
+                                       !                          [kg kg^-1]
         REAL, INTENT(IN):: a           ! Relative weight of each individual
-                                       ! Gaussian "plume."
+                                       ! Gaussian "plume."        []
         REAL, INTENT(IN):: rhot        ! Grid-box average density (t-level)
-        REAL, INTENT(IN):: Ncp2_Ncm2   ! Ncp2/Ncm^2
-        REAL, INTENT(IN):: corr_sNc_NL ! Correlation of s and Nc
+                                       !                          [kg m^-3]
+        REAL, INTENT(IN):: Ncp2_Ncm2   ! Ncp2/Ncm^2               []
+        REAL, INTENT(IN):: corr_sNc_NL ! Correlation of s and Nc  []
 
         ! Output variables.
-        REAL:: autoconv_rrm
+        REAL:: autoconv_rrm  ! [kg kg^-1 s^-1]
 
         ! Exponential terms.
         REAL:: alpha_exp  ! Exponent of s1
         REAL:: beta_exp   ! Exponent of Nc
 
         ! Original terms.
-        REAL:: mu_s1       ! Plume 1 average of s1
-        REAL:: sigma_s1    ! Plume 1 standard deviation of s1
-        REAL:: mu_s2       ! Plume 2 average of s2
-        REAL:: sigma_s2    ! Plume 2 standard deviation of s2
-        REAL:: mu_Nc       ! Grid-box average of Nc
-        REAL:: sigma_Nc    ! Grid-box standard deviation of Nc
-        REAL:: corr_sNc    ! Correlation of s and Nc
+        REAL:: mu_s1       ! Plume 1 average of s1              [kg kg^-1]
+        REAL:: sigma_s1    ! Plume 1 standard deviation of s1   [kg kg^-1]
+        REAL:: mu_s2       ! Plume 2 average of s2              [kg kg^-1]
+        REAL:: sigma_s2    ! Plume 2 standard deviation of s2   [kg kg^-1]
+        REAL:: mu_Nc       ! Grid-box average of Nc             [kg^-1]
+        REAL:: sigma_Nc    ! Grid-box standard deviation of Nc  [kg^-1]
+        REAL:: corr_sNc    ! Correlation of s and Nc            []
 
 !-------------------------------------------------------------------------------
 
@@ -1110,7 +1100,8 @@
            ! numerical error.
            IF ( rcm > rc_tol .AND. Ncm > Nc_tol ) THEN
 
-              autoconv_rrm = 7.4188E13 * rcm**2.47 * Ncm**(-1.79)
+              autoconv_rrm = 7.4188E13 * rhot**(-1.79) 
+     .                          * rcm**2.47 * Ncm**(-1.79)
 
            ELSE
 
@@ -1136,9 +1127,9 @@
               sigma_s2 = ss2
 
               ! Nc is distributed Lognormally.
-              mu_Nc = (Ncm/rhot)
+              mu_Nc = Ncm
 !              sigma_Nc = SQRT(Ncp2)
-              sigma_Nc = (Ncm/rhot) * SQRT(Ncp2_Ncm2)
+              sigma_Nc = Ncm * SQRT(Ncp2_Ncm2)
 
               ! Correlations.
               corr_sNc = corr_sNc_NL
@@ -1168,17 +1159,17 @@
 
 !===============================================================================
 
-        FUNCTION autoconv_Nrm( auto_rrm, rhot )
+        FUNCTION autoconv_Nrm( auto_rrm )
 
         USE constants
 
         IMPLICIT NONE
 
-        REAL, INTENT(IN):: auto_rrm, rhot
-        REAL:: autoconv_Nrm
+        REAL, INTENT(IN):: auto_rrm  ! [kg kg^-1 s^-1]
+        REAL:: autoconv_Nrm          ! [kg^-1 s^-1]
 
         autoconv_Nrm = auto_rrm /
-     .                 ( ((4.0*pi*rho_lw)/(3.0*rhot)) * (r_0**3) )
+     .                 ( ( (4.0/3.0)*pi*rho_lw ) * (r_0**3) )
 
         RETURN
         END FUNCTION autoconv_Nrm
@@ -1237,34 +1228,36 @@
         USE model_flags
 
         ! Input variables.
-        REAL, INTENT(IN):: rcm         ! Grid-box average rcm
-!        REAL, INTENT(IN):: rcp2        ! Grid-box rc variance
-        REAL, INTENT(IN):: rrm         ! Grid-box average rrm
-!        REAL, INTENT(IN):: rrp2        ! Grid-box rr variance
-        REAL, INTENT(IN):: s1          ! Plume 1 average s
+        REAL, INTENT(IN):: rcm         ! Grid-box average rcm     [kg kg^-1]
+!        REAL, INTENT(IN):: rcp2        ! Grid-box rc variance     [kg^2 kg^-2]
+        REAL, INTENT(IN):: rrm         ! Grid-box average rrm     [kg kg^-1]
+!        REAL, INTENT(IN):: rrp2        ! Grid-box rr variance     [kg^2 kg^-2]
+        REAL, INTENT(IN):: s1          ! Plume 1 average s        [kg kg^-1]
         REAL, INTENT(IN):: ss1         ! Plume 1 sigma s1 (not sigma^2 s1)
-        REAL, INTENT(IN):: s2          ! Plume 2 average s
+                                       !                          [kg kg^-1]
+        REAL, INTENT(IN):: s2          ! Plume 2 average s        [kg kg^-1]
         REAL, INTENT(IN):: ss2         ! Plume 2 sigma s2 (not sigma^2 s2)
+                                       !                          [kg kg^-1]
         REAL, INTENT(IN):: a           ! Relative weight of each individual
-                                       ! Gaussian "plume."
-        REAL, INTENT(IN):: rrp2_rrm2   ! rrp2/rrm^2
-        REAL, INTENT(IN):: corr_srr_NL ! Correlation of s and rr
+                                       ! Gaussian "plume."        []
+        REAL, INTENT(IN):: rrp2_rrm2   ! rrp2/rrm^2               []
+        REAL, INTENT(IN):: corr_srr_NL ! Correlation of s and rr  []
 
         ! Output variables.
-        REAL:: accretion_rrm
+        REAL:: accretion_rrm  ! [kg kg^-1 s^-1]
 
         ! Exponential terms.
         REAL:: alpha_exp  ! Exponent of s
         REAL:: beta_exp   ! Exponent of rr
 
         ! Original terms.
-        REAL:: mu_s1       ! Plume 1 average of s
-        REAL:: sigma_s1    ! Plume 1 standard deviation of s
-        REAL:: mu_s2       ! Plume 2 average of s
-        REAL:: sigma_s2    ! Plume 2 standard deviation of s
-        REAL:: mu_rr       ! Grid-box average of rr
-        REAL:: sigma_rr    ! Grid-box standard deviation of rr
-        REAL:: corr_srr    ! Correlation of s and rr
+        REAL:: mu_s1       ! Plume 1 average of s               [kg kg^-1]
+        REAL:: sigma_s1    ! Plume 1 standard deviation of s    [kg kg^-1]
+        REAL:: mu_s2       ! Plume 2 average of s               [kg kg^-1]
+        REAL:: sigma_s2    ! Plume 2 standard deviation of s    [kg kg^-1]
+        REAL:: mu_rr       ! Grid-box average of rr             [kg kg^-1]
+        REAL:: sigma_rr    ! Grid-box standard deviation of rr  [kg kg^-1]
+        REAL:: corr_srr    ! Correlation of s and rr            []
 
 !-------------------------------------------------------------------------------
 
@@ -1347,10 +1340,11 @@
         real, external :: rsat
 
         ! Input      
-        REAL, INTENT(IN):: Temp, press
+        REAL, INTENT(IN):: Temp   ! [K]
+        REAL, INTENT(IN):: press  ! [Pa]
 
         ! Ouput
-        REAL:: G_T_p
+        REAL:: G_T_p  ! [m^2 s^-1]
 
         ! Internal
         REAL:: Ka, Dv
