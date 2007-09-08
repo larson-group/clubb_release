@@ -139,10 +139,14 @@
      .  rrm,       ! Rain water mixing ratio    [kg/kg]
      .  rgraupelm, ! Graupel water mixing ratio [kg/kg]
      .  rsnowm,    ! Snow water mixing ratio    [kg/kg]
-     .  Nrm        ! Number of rain drops       [count/m^3]
+      ! Nrm is now in kg^-1.  Brian.  Sept. 8, 2007.
+!     .  Nrm        ! Number of rain drops       [count/m^3]
+     .  Nrm        ! Number of rain drops       [count/kg]
 
       real, dimension(kk+1), intent(inout) ::
-     .  Ncm,       ! Number of cloud droplets   [count/m^3]
+      ! Ncm is now in kg^-1.  Brian.  Sept. 8, 2007.
+!     .  Ncm,       ! Number of cloud droplets   [count/m^3]
+     .  Ncm,       ! Number of cloud droplets   [count/kg]
      .  Ncnm,      ! Number of cloud nuclei     [count/m^3]
      .  Nim        ! Number of ice crystals     [count/m^3]
 
@@ -154,7 +158,9 @@
      .  rsnowtend, ! d(rsnow)/dt                [kg/kg/s]
      .  rttend,    ! d(rt)/dt                   [kg/kg/s]
      .  thlmtend,  ! d(thlm)/dt                 [K/s]
-     .  nrmtend    ! d(Nrm)/dt                  [count/m^3/s]
+      ! Nrm is now in kg^-1.  Brian.  Sept. 8, 2007.
+!     .  nrmtend    ! d(Nrm)/dt                  [count/m^3/s]
+     .  nrmtend    ! d(Nrm)/dt                  [count/kg/s]
 
       real, dimension(kk+1), intent(out) ::
      .  Vrr,     ! Rain mixing ratio fall speed   [m/s]
@@ -406,8 +412,13 @@
         p3(1,1,k)   = 0.0
 
         ! Convert from MKS units as needed
-        nc3(1,1,k)  = Ncm(k+1) * 1.e-6
-        nr3(1,1,k)  = Nrm(k+1) * 1.e-6
+        ! Nrm and Ncm, which are in kg^-1, need to be multiplied by rhot 
+        ! to be in units of m^-3, and then converted to cm^-3.
+        ! Brian.  Sept. 8, 2007.
+!        nc3(1,1,k)  = Ncm(k+1) * 1.e-6
+!        nr3(1,1,k)  = Nrm(k+1) * 1.e-6
+        nc3(1,1,k)  = ( Ncm(k+1) * rhot(k+1) ) * 1.e-6
+        nr3(1,1,k)  = ( Nrm(k+1) * rhot(k+1) ) * 1.e-6
         ncn3(1,1,k) = Ncnm(k+1) * 1.e-6
 
         ni3(1,1,k)  = Nim(k+1)
@@ -621,7 +632,10 @@
       ! Transfer back to HOC arrays
       do k=1, kk, 1
         ! Convert to MKS as needed
-        Ncm(k+1)  = nc3(1,1,k) * 1.e6
+        ! nc3, in cm^-3, needs to be converted to m^-3, and then divided by
+        ! rhot so that Ncm is in kg^-1.  Brian.  Sept. 8, 2007
+!        Ncm(k+1)  = nc3(1,1,k) * 1.e6
+        Ncm(k+1)  = ( nc3(1,1,k) * 1.e6 ) / rhot(k+1)
         Ncnm(k+1) = ncn3(1,1,k) * 1.e6
         Nim(k+1)  = ni3(1,1,k)
       end do ! k=1..kk+1
@@ -645,7 +659,13 @@
         rrtend(k+1)    = ( qr3(1,1,k) - rrm(k+1) ) / deltf
         rgtend(k+1)    = ( qg3(1,1,k) - rgraupelm(k+1) ) / deltf
         ritend(k+1)    = ( qi3(1,1,k) - ricem(k+1) ) / deltf
-        nrmtend(k+1)   = ( nr3(1,1,k)*1.e6 - Nrm(k+1) ) / deltf ! Conversion factor
+        ! Nrm is now in kg^-1, so nr3(1,1,k)*1.e6 needs to be divided by rhot
+        ! in order to be in the same units as Nrm.  This will cause nrmtend to
+        ! have units of kg^-1 s^-1, which is what we want.  
+        ! Brian.  Sept. 8, 2007.
+        !nrmtend(k+1)   = ( nr3(1,1,k)*1.e6 - Nrm(k+1) ) / deltf ! Conversion factor
+        nrmtend(k+1)   = ( (nr3(1,1,k)*1.e6)/rhot(k+1) - Nrm(k+1) ) 
+     .                   / deltf ! Conversion factor
         rsnowtend(k+1) = ( qs3(1,1,k) - rsnowm(k+1) ) / deltf
         rttend(k+1)    = ((qv3(1,1,k) - rvm(k+1)) / deltf)
      .                 + ((qc3(1,1,k) - rcm(k+1)) / deltf)
