@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_b.F,v 1.1 2007-08-09 17:32:02 mjfalk Exp $
+! $Id: mpace_b.F,v 1.2 2007-09-08 20:50:52 griffinb Exp $
         module mpace_b
 
 !       Description:
@@ -99,7 +99,7 @@
      .  theta_tndcy, ! Large-scale thlm tendency               [K/s]
      .  rt_tndcy,    ! Large-scale rtm tendency                [kg/kg/s]
      .  Frad,        ! Total radiative flux                    [W/m^2]
-     .  Ncm,         ! Cloud droplet number concentration      [count/m^3]
+     .  Ncm,         ! Cloud droplet number concentration      [count/kg]
      .  Ncnm,        ! Cloud nuclei number concentration       [count/m^3]
 ! Michael Falk added rtm_mc and thlm_mc here for icedfs scheme stats.  27 Jul 2007
 !     .  radht        ! dT/dt, then d Theta/dt, due to rad.     [K/s]
@@ -327,8 +327,13 @@
           ! account for snow and ice.
           do k=1, gr%nnzp, 1
             if ( rcm(k) >= rc_tol ) then
+              ! Ncm is in units of kg^-1.  If the coefficient is in m^-3, then
+              ! it needs to be divided by rhot in order to get units of kg^-1.
+              ! Brian.  Sept. 8, 2007.
+!              Ncm(k) = 30.0 * (1.0 + exp(-gr%zt(k)/2000.0)) * 1.e6
+!     .                 * rhot(k) 
               Ncm(k) = 30.0 * (1.0 + exp(-gr%zt(k)/2000.0)) * 1.e6
-     .                 * rhot(k) 
+     .                 / rhot(k) 
             end if
           end do
         end if

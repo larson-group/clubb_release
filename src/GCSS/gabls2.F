@@ -54,7 +54,7 @@
      .    theta_tndcy, ! Large-scale thlm tendency               [K/s]
      .    rt_tndcy,    ! Large-scale rtm tendency                [kg/kg/s]
      .    radht,       ! dT/dt, then d Theta/dt, due to rad.     [K/s]
-     .    Ncm          ! Number of cloud droplets                [#]
+     .    Ncm          ! Number of cloud droplets                [#/kg]
 
         ! Output Variables (optional)
         real, optional, intent(out), dimension(gr%nnzp,sclr_dim) ::
@@ -104,8 +104,13 @@
         if ( kk_rain ) then
           do k=1,gr%nnzp
             if ( rcm(k) >= 1.e-6 ) then
+              ! Ncm is in units of kg^-1.  If the coefficient is in m^-3, then
+              ! it needs to be divided by rhot in order to get units of kg^-1.
+              ! Brian.  Sept. 8, 2007.
+!              Ncm(k) = 30.0 * (1.0 + exp(-gr%zt(k)/2000.0)) * 1.e6
+!     .                 * rhot(k)
               Ncm(k) = 30.0 * (1.0 + exp(-gr%zt(k)/2000.0)) * 1.e6
-     .                 * rhot(k)
+     .                 / rhot(k)
             else
               Ncm(k) = 0.
             end if
