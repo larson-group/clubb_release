@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.86 2007-08-09 17:27:39 mjfalk Exp $
+# $Id: Makefile,v 1.87 2007-09-08 21:02:16 faschinj Exp $
 #
 # This version should work with BSD, GNU make, smake and dmake.
 #
@@ -55,7 +55,9 @@ PARAMETERIZATION = \
 	$(LATIN_HYP) \
 	$(COAMPS_MICRO) \
 	constants.o endian.o outputfile.o outputgrads.o \
-	outputnc.o grid.o model_flags.o statistics.o \
+	outputnc.o grid.o model_flags.o \
+        stats_type.o hoc_stats.o stats_subs.o\
+        stats_init_zt.o stats_init_zm.o stats_init_sfc.o \
 	erf.o rain.o microphysics.o cons.o air.o parab.o \
 	closure_new.o diag_var.o \
         hydrostatic.o length.o mixing.o rsat.o sat_rcm.o sfc.o \
