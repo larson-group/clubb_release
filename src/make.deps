@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.10 2007-08-09 17:29:21 mjfalk Exp $
+# $Id: make.deps,v 1.11 2007-09-08 21:04:30 faschinj Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -39,10 +39,10 @@ param_index.o   : param_index.F
 parameters.o    : param_index.o parameters.F
 model_flags.o	: model_flags.F
 outputfile.o	: outputfile.F
-rain.o          : constants.o model_flags.o lapack_wrap.o parab.o statistics.o \
+rain.o          : constants.o model_flags.o lapack_wrap.o parab.o hoc_stats.o \
 	rain.F
 microphysics.o	: constants.o model_flags.o lapack_wrap.o rain.o \
-	coamps_micro_driver.o parameters.o statistics.o microphysics.F
+	coamps_micro_driver.o parameters.o hoc_stats.o microphysics.F
 outputgrads.o	: constants.o recl.F endian.o outputfile.o outputgrads.F
 outputnc.o	: outputfile.o outputnc.F
 diag_variables.o: constants.o grid.o model_flags.o diag_variables.F 
@@ -51,20 +51,26 @@ numer_check.o	: prog_variables.o diag_variables.o constants.o model_flags.o\
 	numer_check.F
 inputgrads.o	: constants.o endian.o recl.F inputgrads.F
 grid.o		: grid.F
-statistics.o	: outputgrads.o outputnc.o prog_variables.o diag_variables.o \
-	grid.o statistics.F 
-
+stats_type.o    : outputfile.o stats_type.F
+hoc_stats.o     : stats_type.o hoc_stats.F
+stats_subs.o    : outputgrads.o outputnc.o prog_variables.o diag_variables.o \
+	hoc_stats.o grid.o stats_subs.F 
+stats_init_zt.o : hoc_stats.o stats_subs.o stats_init_zt.F
+stats_init_zm.o : hoc_stats.o stats_subs.o stats_init_zm.F
+stats_init_sfc.o: hoc_stats.o stats_subs.o stats_init_sfc.F
 erf.o		: erf.F
 lapack_wrap.o	: lapack_wrap.F
 Skw_func.o	: Skw_func.F
 
 closure_new.o	: constants.o parameters.o grid.o rsat.o erf.o closure_new.F 
-diag_var.o	: constants.o parameters.o grid.o statistics.o lapack_wrap.o \
+diag_var.o	: constants.o parameters.o grid.o hoc_stats.o lapack_wrap.o \
 	diag_var.F
-mixing.o	: constants.o parameters.o statistics.o lapack_wrap.o mixing.F 
+mixing.o	: constants.o parameters.o hoc_stats.o lapack_wrap.o mixing.F 
 parameterization_interface.o : constants.o hydrostatic.o mixing.o \
 	model_flags.o numer_check.o Skw_func.o microphysics.o \
-	length.o statistics.o sounding.o diag_var.o rsat.o \
+	length.o stats_type.o hoc_stats.o stats_subs.o \
+        stats_init_zt.o stats_init_zm.o \
+	stats_init_sfc.o sounding.o diag_var.o rsat.o \
 	grid.o sat_rcm.o update.o prog_variables.o diag_variables.o \
 	sfc.o closure_new.o latin_hyper_sample.o lh_sampler.o \
 	parameters.o parameterization_interface.F 
@@ -73,8 +79,8 @@ length.o	: constants.o parameters.o length.F
 rsat.o		: constants.o rsat.F 
 sat_rcm.o	: constants.o sat_rcm.F 
 sfc.o		: constants.o parameters.o sfc.F 
-update.o	: grid.o statistics.o lapack_wrap.o update.F
-wp23.o		: constants.o parameters.o statistics.o lapack_wrap.o wp23.F 
+update.o	: grid.o hoc_stats.o lapack_wrap.o update.F
+wp23.o		: constants.o parameters.o hoc_stats.o lapack_wrap.o wp23.F 
 tau.o		: constants.o parameters.o tau.F
 
 # == Numerical Recipes dependencies (For the tuner) ==
@@ -110,33 +116,33 @@ truncate_gaus_mixt.o	: truncate_gaus_mixt.F
 
 # == GCSS dependencies ==
 diag_ustar.o: diag_ustar.F
-arm.o       : constants.o diag_ustar.o model_flags.o grid.o statistics.o arm.F
-arm_97.o    : constants.o diag_ustar.o model_flags.o grid.o statistics.o \
+arm.o       : constants.o diag_ustar.o model_flags.o grid.o hoc_stats.o arm.F
+arm_97.o    : constants.o diag_ustar.o model_flags.o grid.o hoc_stats.o \
 	zlinterp.o arm.F
 astex.o     : constants.o model_flags.o grid.o astex.F
-atex.o      : constants.o model_flags.o grid.o cloud_rad.o statistics.o atex.F
+atex.o      : constants.o model_flags.o grid.o cloud_rad.o hoc_stats.o atex.F
 bomex.o     : constants.o model_flags.o grid.o bomex.F
 cobra.o     : constants.o model_flags.o grid.o cobra.F
-fire.o      : constants.o model_flags.o grid.o statistics.o cloud_rad.o fire.F
-gabls2.o    : constants.o diag_ustar.o model_flags.o grid.o statistics.o gabls2.F
-lba.o       : constants.o diag_ustar.o model_flags.o grid.o statistics.o \
+fire.o      : constants.o model_flags.o grid.o hoc_stats.o cloud_rad.o fire.F
+gabls2.o    : constants.o diag_ustar.o model_flags.o grid.o hoc_stats.o gabls2.F
+lba.o       : constants.o diag_ustar.o model_flags.o grid.o hoc_stats.o \
 	zlinterp.o lba.F
-mpace_b.o     : constants.o model_flags.o grid.o icedfs.o statistics.o mpace_b.F
-nov11.o     : constants.o model_flags.o grid.o icedfs.o statistics.o nov11.F
-jun25.o     : constants.o model_flags.o grid.o icedfs.o statistics.o jun25.F
-rico.o      : constants.o model_flags.o grid.o statistics.o rico.F
+mpace_b.o     : constants.o model_flags.o grid.o icedfs.o hoc_stats.o mpace_b.F
+nov11.o     : constants.o model_flags.o grid.o icedfs.o hoc_stats.o nov11.F
+jun25.o     : constants.o model_flags.o grid.o icedfs.o hoc_stats.o jun25.F
+rico.o      : constants.o model_flags.o grid.o hoc_stats.o rico.F
 wangara.o   : constants.o model_flags.o grid.o wangara.F
-icedfs.o    : constants.o grid.o statistics.o icedfs.F
+icedfs.o    : constants.o grid.o hoc_stats.o icedfs.F
 cloud_rad.o : constants.o grid.o cloud_rad.F
-dycoms2_rf01.o : constants.o model_flags.o grid.o statistics.o dycoms2_rf01.F
-dycoms2_rf02.o : constants.o model_flags.o grid.o statistics.o dycoms2_rf02.F
+dycoms2_rf01.o : constants.o model_flags.o grid.o hoc_stats.o dycoms2_rf01.F
+dycoms2_rf02.o : constants.o model_flags.o grid.o hoc_stats.o dycoms2_rf02.F
 
-rad_lwsw.o      : rad_lwsw.F statistics.o
+rad_lwsw.o      : rad_lwsw.F hoc_stats.o
 linear_interpolation.o : linear_interpolation.F
 zlinterp.o	: zlinterp.F
 
 # == COAMPS Microphysics dependencies ==
-coamps_micro_driver.o : constants.o grid.o statistics.o coamps_micro_driver.F
+coamps_micro_driver.o : constants.o grid.o hoc_stats.o coamps_micro_driver.F
 
 # == BUGSrad dependencies ==
 cos_solar_zen.o         : cos_solar_zen.F
@@ -164,7 +170,7 @@ two_rt_sw.o		: kinds.o two_rt_sw.F
 two_rt_sw_bs.o		: kinds.o lapack_wrap.o two_rt_sw_bs.F
 two_rt_sw_ocastrndm.o	: kinds.o two_rt_sw_ocastrndm.F90
 bugsrad_hoc.o 		: kinds.o constants.o bugs_rad.o \
-	statistics.o bugsrad_hoc.F90
+	hoc_stats.o bugsrad_hoc.F90
 
 # == Misc. program related source files  ==
 hoc.o		: parameterization_interface.o arm.o astex.o atex.o \
