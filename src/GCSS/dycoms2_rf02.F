@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf02.F,v 1.6 2007-06-19 21:03:21 dschanen Exp $
+! $Id: dycoms2_rf02.F,v 1.7 2007-09-08 18:14:51 griffinb Exp $
         module dycoms2_rf02
 
 !       Description:
@@ -65,7 +65,7 @@
      .  rtm_forcing,   ! r_t forcing                    [(kg/kg)/s] 
      .  Frad,          ! Radiative flux                 [W/m^2]
      .  radht,         ! Radiative heating rate         [K/s] 
-     .  Ncm,           ! Cloud droplet number conc.     [#/m^3]
+     .  Ncm,           ! Cloud droplet number conc.     [#/kg]
      .  Ncnm           ! Cloud nuclei number conc.      [#/m^3]
 
         ! Optional Output Variables
@@ -219,7 +219,10 @@
           ! K & K or no microphysics
           DO k = 1, gr%nnzp, 1
             IF ( rcm(k) > rc_tol ) THEN
-              Ncm(k) = 55000000.0
+              ! The specified cloud droplet concentration is 55 cm^-3, which
+              ! is then converted to m^-3, and then divided by rhot to get the
+              ! concentration in units of kg^-1.
+              Ncm(k) = 55000000.0 / rhot(k)
             ELSE
               Ncm(k) = 0.0
             END IF

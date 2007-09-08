@@ -53,7 +53,7 @@
      .  theta_tndcy, ! Large-scale thlm tendency               [K s^-1]
      .  rt_tndcy,    ! Large-scale rtm tendency                [kg kg^-1 s^-1]
      .  radht,       ! dT/dt, then d Theta/dt, due to rad.     [K s^-1]
-     .  Ncm          ! Initial cloud droplet concentration     [# m^-3]
+     .  Ncm          ! Initial cloud droplet concentration     [# kg^-1]
 
 
         ! Output Variables (optional)
@@ -123,10 +123,14 @@
         if ( kk_rain ) then
           do k=1,gr%nnzp
             if ( rcm(k) >= rc_tol ) then
+! Brian:  Ncm has now been changed in the model to be the concentration per 
+!         mass off air, in kg^-1.  However, in order to get that quantity, the
+!         concentration per volume of air must be divided by rhot.  9/8/07.
 ! Vince Larson removed factor of rhot so that Ncm would be in units of m^{-3}.
 ! 3 Aug 2007.
 !              Ncm(k) = 70.0 * 1.e6 * rhot(k)
-              Ncm(k) = 70.0 * 1.e6
+!              Ncm(k) = 70.0 * 1.e6
+              Ncm(k) = 70.0 * 1.e6 / rhot(k)
 ! End Vince Larson's change.
             else
               Ncm(k) = 0.
