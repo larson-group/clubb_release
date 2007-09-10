@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.17 2007-09-08 17:02:33 griffinb Exp $
+! $Id: microphysics.F,v 1.18 2007-09-10 16:15:38 mjfalk Exp $
         module microphysics
 
 !       Description:
@@ -755,7 +755,11 @@
 
         ! Boundary conditions on results
         xrm(1) = xrm(2)
+! Michael Falk, 7 Sep 2007, made this change to eliminate problems
+! with anomalous rain formation at the top boundary.
+!        xrm(gr%nnzp) = 0
         xrm(gr%nnzp) = xrm(gr%nnzp-1)
+! eMFc
 
         return
         end subroutine microphys_solve
