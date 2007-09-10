@@ -1,4 +1,4 @@
-! $Id: standalone_nov11_altocu.in,v 1.26 2007-08-02 23:10:57 griffinb Exp $
+! $Id: standalone_nov11_altocu.in,v 1.27 2007-09-10 16:05:58 mjfalk Exp $
 ! Description:
 ! Namelists for the hoc_standalone program. 
 ! run_file is the location of the model namelist file, which contains the 
@@ -52,7 +52,8 @@ beta        = 1.750000 ! Constant from Chris Golaz.
 gamma_coef  = 0.320000 ! Low Skewness in gamma coefficient Skewness Function.
 gamma_coefb = 0.320000 ! High Skewness in gamma coefficient Skewness Function.
 gamma_coefc = 5.000000 ! Degree of Slope of gamma coefficient Skewness Function.
-c_K         = 0.548000 ! From Duynkerke and Driedonks (1987).
+!c_K         = 0.548000 ! From Duynkerke and Driedonks (1987).
+c_K         = 0.200000 ! Tuned by Michael Falk for new wp2 formulation.
 c_Krrm      = 0.075000 ! Constant for eddy diffusivity equation for hydrometeors.
 taumin      = 90.00000 ! Previously determined value.
 taumax      = 3600.000 ! Previously determined value.
