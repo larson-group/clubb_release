@@ -1,3 +1,5 @@
+!-----------------------------------------------------------------------
+! $Id: Make-ketley-parallel.bash,v 1.2 2007-09-12 16:06:43 faschinj Exp $
 #!/bin/bash
 
 # This script is designed to make HOC simple 
