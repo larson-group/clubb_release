@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.87 2007-09-08 21:02:16 faschinj Exp $
+# $Id: Makefile,v 1.88 2007-09-21 16:17:45 mjfalk Exp $
 #
 # This version should work with BSD, GNU make, smake and dmake.
 #
@@ -11,11 +11,11 @@
 ################################################################################
 
 #include config.linux_ia32_pg.in
-#include config.linux_ia32_g95.in
+include config.linux_ia32_g95.in
 #include config.linux_ia64_intel.in
 #include config.solaris_generic_ss11.in
 #include config.osf1_alpha_digital.in
-include config.messner.in
+#include config.messner.in
 
 # == Object files ==
 
@@ -47,9 +47,10 @@ COAMPS_MICRO = adjmlt.o adjtq.o coamps_micro_driver.o conice.o \
         tgqi.o tgqr.o tgqs.o rsati.o gamma.o
 
 MODEL = hoc.o sounding.o rad_lwsw.o cloud_rad.o astex.o atex.o fire.o bomex.o \
-	arm.o arm_97.o dycoms2_rf01.o dycoms2_rf02.o mpace_b.o nov11.o jun25.o wangara.o \
+	arm.o arm_97.o dycoms2_rf01.o dycoms2_rf02.o mpace_a.o mpace_b.o \
+	nov11.o jun25.o wangara.o \
 	linear_interpolation.o diag_ustar.o icedfs.o cobra.o rico.o gabls2.o \
-	lba.o zlinterp.o
+	lba.o zlinterp.o file_functions.o
 
 PARAMETERIZATION = \
 	$(LATIN_HYP) \
