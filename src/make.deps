@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.11 2007-09-08 21:04:30 faschinj Exp $
+# $Id: make.deps,v 1.12 2007-09-21 16:18:59 mjfalk Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -127,6 +127,7 @@ fire.o      : constants.o model_flags.o grid.o hoc_stats.o cloud_rad.o fire.F
 gabls2.o    : constants.o diag_ustar.o model_flags.o grid.o hoc_stats.o gabls2.F
 lba.o       : constants.o diag_ustar.o model_flags.o grid.o hoc_stats.o \
 	zlinterp.o lba.F
+mpace_a.o     : constants.o model_flags.o grid.o icedfs.o hoc_stats.o mpace_a.F zlinterp.o file_functions.o
 mpace_b.o     : constants.o model_flags.o grid.o icedfs.o hoc_stats.o mpace_b.F
 nov11.o     : constants.o model_flags.o grid.o icedfs.o hoc_stats.o nov11.F
 jun25.o     : constants.o model_flags.o grid.o icedfs.o hoc_stats.o jun25.F
@@ -140,6 +141,7 @@ dycoms2_rf02.o : constants.o model_flags.o grid.o hoc_stats.o dycoms2_rf02.F
 rad_lwsw.o      : rad_lwsw.F hoc_stats.o
 linear_interpolation.o : linear_interpolation.F
 zlinterp.o	: zlinterp.F
+file_functions.o	: file_functions.F
 
 # == COAMPS Microphysics dependencies ==
 coamps_micro_driver.o : constants.o grid.o hoc_stats.o coamps_micro_driver.F
@@ -174,7 +176,7 @@ bugsrad_hoc.o 		: kinds.o constants.o bugs_rad.o \
 
 # == Misc. program related source files  ==
 hoc.o		: parameterization_interface.o arm.o astex.o atex.o \
-	bomex.o dycoms2_rf01.o dycoms2_rf02.o fire.o jun25.o mpace_b.o nov11.o \
+	bomex.o dycoms2_rf01.o dycoms2_rf02.o fire.o jun25.o mpace_a.o mpace_b.o nov11.o \
 	wangara.o cobra.o rico.o gabls2.o lba.o arm_97.o hoc.F
 sounding.o	: constants.o sounding.F
 inputfields.o	: grid.o inputgrads.o inputfields.F 
