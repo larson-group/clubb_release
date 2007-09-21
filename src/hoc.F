@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.133 2007-09-08 20:50:37 griffinb Exp $
+! $Id: hoc.F,v 1.134 2007-09-21 16:18:18 mjfalk Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -1002,6 +1002,29 @@
           em = 0.1
           wp2 = 2./3. * em
 
+        ! Michael Falk for mpace_a Arctic Stratus case.
+        case ( "mpace_a" )
+
+          cloud_top_height = 2000.
+          emax = 1.0
+
+          do k=1,gr%nnzp
+            rrm(k) = 0.
+            ricem(k) = 0.
+            rgraupelm(k) = 0.
+            rsnowm(k) = 0.
+
+            if ( gr%zm(k) < cloud_top_height ) then
+               em(k) = emax
+            else
+               em(k) = emin
+            end if
+          enddo
+          em(1) = em(2)
+          em(gr%nnzp) = em(gr%nnzp-1)
+
+          wp2 = 2.0 / 3.0 * em
+
         ! Michael Falk for mpace_b Arctic Stratus case.
         case ( "mpace_b" )
 
@@ -1141,6 +1164,7 @@
         use gabls2, only: gabls2_tndcy, gabls2_sfclyr
         use rico, only: rico_tndcy, rico_sfclyr
         use lba, only: lba_tndcy, lba_sfclyr
+        use mpace_a, only: mpace_a_tndcy, mpace_a_sfclyr
         use mpace_b, only: mpace_b_tndcy, mpace_b_sfclyr
         use nov11, only: nov11_altocu_tndcy ! Above surface
         use jun25, only: jun25_altocu_tndcy ! Above surface
@@ -1304,6 +1328,16 @@
      .                     thlm_forcing, rtm_forcing
 #ifdef SCALARS
      .                    ,sclrm_forcing
+#endif /* SCALARS */
+     .                    )
+
+         case ( "mpace_a" ) ! mpace_a arctic stratus case
+           call mpace_a_tndcy( time, time_initial, dtmain, rlat, thlm,
+     .                       exner, rhot, rtm, p, thvm, rcm,
+     .                       wmt, wmm, thlm_forcing, rtm_forcing,
+     .                       Ncnm, Ncm, Frad, radht, rtm_mc, thlm_mc
+#ifdef SCALARS
+     .                      ,sclrm_forcing
 #endif /* SCALARS */
      .                    )
 
@@ -1485,6 +1519,14 @@
      .                     ,wpsclrp_sfc, wpedsclrp_sfc
 #endif /* SCALARS */
      .                     )
+
+         case ( "mpace_a" )
+           call mpace_a_sfclyr( time, rhom(1), um(2), vm(2), upwp_sfc,
+     .                        vpwp_sfc, wpthlp_sfc, wprtp_sfc
+#ifdef SCALARS
+     .                        ,wpsclrp_sfc, wpedsclrp_sfc
+#endif /* SCALARS */
+     .                      )
 
          case ( "mpace_b" )
            call mpace_b_sfclyr( rhom(1), um(2), vm(2), upwp_sfc,
