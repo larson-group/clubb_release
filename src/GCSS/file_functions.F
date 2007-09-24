@@ -48,21 +48,21 @@
       character(*), intent(in) ::
      . file_path
 
-      real, dimension(file_dimension1*file_dimension2), intent(out) ::
+      real, dimension(file_dimension1,file_dimension2), intent(out) ::
      . variable
 
       integer i, j, k
 
       open(device,file=file_path,action='read')
 
-      do k=0,(file_dimension2-1)
-        do j=0,((file_dimension1/file_per_line)-1)
-          read(device,*) (variable((k*file_dimension1)+
-     .        (j*file_per_line)+i),i=1,file_per_line)
+!      do k=0,(file_dimension2-1)
+      do k=1,(file_dimension1)
+        do j=0,((file_dimension2/file_per_line)-1)
+          read(device,*) (variable(k,(j*file_per_line)+i),
+     .        i=1,file_per_line)
         end do
-        read (device,*) (variable((k*file_dimension1)+
-     .       (j*file_per_line)+1),
-     .        i=1,(mod(file_dimension1,file_per_line)))
+        read (device,*) (variable(k,(j*file_per_line)+i),
+     .        i=1,(mod(file_dimension2,file_per_line)))
       end do
 
       close (device)

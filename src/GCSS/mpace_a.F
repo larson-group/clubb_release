@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_a.F,v 1.1 2007-09-21 16:21:19 mjfalk Exp $
+! $Id: mpace_a.F,v 1.2 2007-09-24 21:05:10 mjfalk Exp $
         module mpace_a
 
 !       Description:
@@ -103,12 +103,9 @@
      .  Frad,        ! Total radiative flux                    [W/m^2]
      .  Ncm,         ! Cloud droplet number concentration      [count/m^3]
      .  Ncnm,        ! Cloud nuclei number concentration       [count/m^3]
-! Michael Falk added rtm_mc and thlm_mc here for icedfs scheme stats.  27 Jul 2007
-!     .  radht        ! dT/dt, then d Theta/dt, due to rad.     [K/s]
      .  radht,       ! dT/dt, then d Theta/dt, due to rad.     [K/s]
      .  rtm_mc,      ! Microphysical rtm tendency              [kg/kg/s]
      .  thlm_mc      ! Microphysical thlm tendency             [K/s]
-! eMFc
 
         ! Output Variables (optional)
         real, optional, intent(out), dimension(gr%nnzp,sclr_dim) ::
@@ -171,10 +168,11 @@
 
 ! Open external files (21 Aug 2007, Michael Falk)
        
-      integer, parameter :: file_nlevels = 38
       integer, parameter :: file_ntimes = 139
+      integer, parameter :: file_nlevels = 38
       integer, parameter :: per_line = 5
       integer left_time,right_time
+      real :: ratio
 
       character(*), parameter :: 
      . file_path = '../src/GCSS/mpace_a_files/'
@@ -182,13 +180,10 @@
       real, dimension(file_nlevels) :: file_pressure
       real, dimension(file_nlevels) :: file_heights
       real, dimension(file_ntimes) :: file_times
-      real, dimension(file_nlevels*file_ntimes) :: file_omega ! mb/s
-      real, dimension(file_nlevels*file_ntimes) :: file_dTdt  ! K/hr
-      real, dimension(file_nlevels*file_ntimes) :: file_dqdt  ! g/kg/hr
 
-      real, dimension(file_nlevels,file_ntimes) :: omega_forcing
-      real, dimension(file_nlevels,file_ntimes) :: dTdt_forcing
-      real, dimension(file_nlevels,file_ntimes) :: dqdt_forcing
+      real, dimension(file_nlevels,file_ntimes) :: omega_forcing ! mb/s
+      real, dimension(file_nlevels,file_ntimes) :: dTdt_forcing  ! K/hr
+      real, dimension(file_nlevels,file_ntimes) :: dqdt_forcing  ! g/kg/hr
 
       real, dimension(file_nlevels) :: omega_column
       real, dimension(file_nlevels) :: dTdt_column
@@ -212,22 +207,16 @@
 
       call file_read_2d(10,
      . file_path//'omega.dat',
-     . file_ntimes, file_nlevels, per_line, file_omega)
+     . file_nlevels, file_ntimes, per_line, omega_forcing)
 
       call file_read_2d(10,
      . file_path//'dTdt.dat',
-     . file_ntimes, file_nlevels, per_line, file_dTdt)
+     . file_nlevels, file_ntimes, per_line, dTdt_forcing)
 
       call file_read_2d(10,
      . file_path//'dqdt.dat',
-     . file_ntimes, file_nlevels, per_line, file_dqdt)
+     . file_nlevels, file_ntimes, per_line, dqdt_forcing)
 
-      omega_forcing = reshape(file_omega,
-     .                        shape=(/file_nlevels, file_ntimes/))
-      dTdt_forcing  = reshape(file_dTdt,
-     .                        shape=(/file_nlevels, file_ntimes/))
-      dqdt_forcing  = reshape(file_dqdt,
-     .                        shape=(/file_nlevels, file_ntimes/))
 
       ! choose which times to use
       if (time <= file_times(1)) then
@@ -248,23 +237,21 @@
         end do
       end if
 
-      print *,'File heights: ',file_heights
+      ratio = (time - file_times(left_time)) /                 ! This is the ratio "a" needed for linear interpolation in time.
+     .        (file_times(right_time) - file_times(left_time)) ! at the first time a=0; at the second time a=1.
 
       do k=1,file_nlevels
-        omega_column(k) = ((time-file_times(left_time)) / 
-     .                 (file_times(right_time)-file_times(left_time))) *
+        omega_column(k) = ratio *
      .                      (omega_forcing(k,right_time)
      .                      -omega_forcing(k,left_time))
      .                     + omega_forcing(k,left_time)        
 
-        dTdt_column(k) = ((time-file_times(left_time)) / 
-     .                 (file_times(right_time)-file_times(left_time))) *
+        dTdt_column(k) = ratio *
      .                      (dTdt_forcing(k,right_time)
      .                      -dTdt_forcing(k,left_time))
      .                     + dTdt_forcing(k,left_time)        
 
-        dqdt_column(k) = ((time-file_times(left_time)) / 
-     .                 (file_times(right_time)-file_times(left_time))) *
+        dqdt_column(k) = ratio * 
      .                      (dqdt_forcing(k,right_time)
      .                      -dqdt_forcing(k,left_time))
      .                     + dqdt_forcing(k,left_time)        
@@ -417,13 +404,8 @@
           call altocu_icedf( dt, thlm, rcm, p, exner, rhot,
      .                       dqc_dt_icedfs )
           do k=1,gr%nnzp
-! Michael Falk, 27 Jul 2007
-!            theta_tndcy(k) = theta_tndcy(k)
-!     .                       - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
-!            rt_tndcy(k) = rt_tndcy(k) + dqc_dt_icedfs(k)
             rtm_mc(k)  = dqc_dt_icedfs(k)
             thlm_mc(k) = - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
-! eMFc
           end do
         end if
 
