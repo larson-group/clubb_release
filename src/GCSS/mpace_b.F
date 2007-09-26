@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_b.F,v 1.2 2007-09-08 20:50:52 griffinb Exp $
+! $Id: mpace_b.F,v 1.3 2007-09-26 16:09:42 mjfalk Exp $
         module mpace_b
 
 !       Description:
@@ -47,7 +47,6 @@
      .  grav0 = 9.8,     ! m/s
      .  D     = 5.8e-6,  ! 1/s
      .  psfc  = 101000., ! Pa
-     .  p00   = 100000., ! Pa; for theta calcs
      .  pinv  = 85000.   ! Pa; ditto
 
         ! Local constants, LW radiation (from DYCOMS II-RF01)
@@ -247,9 +246,9 @@
             radht_LW(k) = radht_LW_out(gr%nnzp-k+1)
             radht_SW(k) = radht_SW_out(gr%nnzp-k+1)
 
-            radht_theta(k)    = radht(k) * ((p00/p(k))**(Rd/Cp))
-            radht_LW_theta(k) = radht_LW(k) * ((p00/p(k))**(Rd/Cp))
-            radht_SW_theta(k) = radht_SW(k) * ((p00/p(k))**(Rd/Cp))
+            radht_theta(k)    = radht(k) * ((p0/p(k))**(Rd/Cp))
+            radht_LW_theta(k) = radht_LW(k) * ((p0/p(k))**(Rd/Cp))
+            radht_SW_theta(k) = radht_SW(k) * ((p0/p(k))**(Rd/Cp))
           end do ! k
 
           Frad(1)    = Frad(2)

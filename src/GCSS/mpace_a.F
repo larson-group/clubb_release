@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_a.F,v 1.2 2007-09-24 21:05:10 mjfalk Exp $
+! $Id: mpace_a.F,v 1.3 2007-09-26 16:09:42 mjfalk Exp $
         module mpace_a
 
 !       Description:
@@ -23,10 +23,6 @@
      .    rtm_mc, thlm_mc, sclrm_forcing )
 
 !        Description:
-!          Subroutine to large-scale subsidence for mpace_b case (Michael
-!          Falk, 21 July 2006).  Added ice and radiation based on Adam
-!          Smith Nov 11 case, 27 July 2006.  Comments and documentation
-!          added 31 July 2006.
 !
 !        References:
 !          Liou, Wallace and Hobbs, Shettle and Weinman
@@ -49,7 +45,6 @@
      .  grav0 = 9.8,     ! m/s
      .  D     = 5.8e-6,  ! 1/s
      .  psfc  = 101000., ! Pa
-     .  p00   = 100000., ! Pa; for theta calcs
      .  pinv  = 85000.   ! Pa; ditto
 
         ! Local constants, LW radiation (from DYCOMS II-RF01)
@@ -218,7 +213,9 @@
      . file_nlevels, file_ntimes, per_line, dqdt_forcing)
 
 
-      ! choose which times to use
+      ! This code block takes the model time, finds the time before it and the time after it on the list,
+      ! and marks them left_time and right_time for interpolation.  If the time is before the first or
+      ! after the last time in the file, it just uses the first or last time without interpolation.
       if (time <= file_times(1)) then
         print *,'Time is at or before the first time in the list.'
         left_time = 1
@@ -241,25 +238,25 @@
      .        (file_times(right_time) - file_times(left_time)) ! at the first time a=0; at the second time a=1.
 
       do k=1,file_nlevels
-        omega_column(k) = ratio *
+        omega_column(k) = ratio *			       ! Do linear interpolation in time
      .                      (omega_forcing(k,right_time)
      .                      -omega_forcing(k,left_time))
      .                     + omega_forcing(k,left_time)        
 
-        dTdt_column(k) = ratio *
+        dTdt_column(k) = ratio *			       ! Do linear interpolation in time
      .                      (dTdt_forcing(k,right_time)
      .                      -dTdt_forcing(k,left_time))
      .                     + dTdt_forcing(k,left_time)        
 
-        dqdt_column(k) = ratio * 
+        dqdt_column(k) = ratio *                               ! Do linear interpolation in time
      .                      (dqdt_forcing(k,right_time)
      .                      -dqdt_forcing(k,left_time))
      .                     + dqdt_forcing(k,left_time)        
       end do
 
 
-      omega_hoc_grid = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt,
-     .                         file_heights,omega_column)
+      omega_hoc_grid = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt,    ! Do linear interpolation in space
+     .                         file_heights,omega_column)            ! using zlinterp_fnc
       dTdt_hoc_grid  = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt,
      .                         file_heights,dTdt_column)
       dqdt_hoc_grid  = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt,
@@ -281,7 +278,7 @@
           wmt(i) = -velocity_omega * Rd * thvm(i) / p(i) / grav0
         end do
         wmm = zt2zm( wmt )
-
+        print *,'grav is ', grav0
 
         ! Boundary conditions.
         wmt(1) = 0.0        ! Below surface
@@ -345,9 +342,9 @@
             radht_LW(k) = radht_LW_out(gr%nnzp-k+1)
             radht_SW(k) = radht_SW_out(gr%nnzp-k+1)
 
-            radht_theta(k)    = radht(k) * ((p00/p(k))**(Rd/Cp))
-            radht_LW_theta(k) = radht_LW(k) * ((p00/p(k))**(Rd/Cp))
-            radht_SW_theta(k) = radht_SW(k) * ((p00/p(k))**(Rd/Cp))
+            radht_theta(k)    = radht(k) * ((p0/p(k))**(Rd/Cp))
+            radht_LW_theta(k) = radht_LW(k) * ((p0/p(k))**(Rd/Cp))
+            radht_SW_theta(k) = radht_SW(k) * ((p0/p(k))**(Rd/Cp))
           end do ! k
 
           Frad(1)    = Frad(2)
@@ -451,6 +448,7 @@
 !-----------------------------------------------------------------------
 
         use constants
+        use file_functions, only: file_read_1d, file_read_2d
 
         implicit none
 
@@ -507,31 +505,44 @@
       real, dimension(file_ntimes) :: file_LH
       real, dimension(file_ntimes) :: file_SH
       integer left_time,right_time
+      integer, parameter :: per_line = 5;
       character(*), parameter :: 
      . file_path = '../src/GCSS/mpace_a_files/'
 
 !-----------------------------------------------------------------------
 
-      open(10,file=file_path//'mpace_a_times.dat',action='read')
-      do k=0,((file_ntimes/5)-1)
-        read(10,*) (file_times((k*5)+i),i=1,5)
-      end do
-      read (10,*) (file_times((k*5)+i),i=1,mod(file_ntimes,5))
-      close (10)
+      call file_read_1d(10,
+     . file_path//'mpace_a_times.dat',
+     . file_ntimes, per_line, file_times)
 
-      open(10,file=file_path//'mpace_a_lh.dat',action='read')
-      do k=0,((file_ntimes/5)-1)
-        read(10,*) (file_LH((k*5)+i),i=1,5)
-      end do
-      read (10,*) (file_LH((k*5)+i),i=1,mod(file_ntimes,5))
-      close (10)
+      call file_read_1d(10,
+     . file_path//'mpace_a_lh.dat',
+     . file_ntimes, per_line, file_LH)
 
-      open(10,file=file_path//'mpace_a_sh.dat',action='read')
-      do k=0,((file_ntimes/5)-1)
-        read(10,*) (file_SH((k*5)+i),i=1,5)
-      end do
-      read (10,*), (file_SH((k*5)+i),i=1,mod(file_ntimes,5))
-      close (10)
+      call file_read_1d(10,
+     . file_path//'mpace_a_sh.dat',
+     . file_ntimes, per_line, file_SH)
+
+!      open(10,file=file_path//'mpace_a_times.dat',action='read')
+!      do k=0,((file_ntimes/5)-1)
+!        read(10,*) (file_times((k*5)+i),i=1,5)
+!      end do
+!      read (10,*) (file_times((k*5)+i),i=1,mod(file_ntimes,5))
+!      close (10)
+
+!      open(10,file=file_path//'mpace_a_lh.dat',action='read')
+!      do k=0,((file_ntimes/5)-1)
+!        read(10,*) (file_LH((k*5)+i),i=1,5)
+!      end do
+!      read (10,*) (file_LH((k*5)+i),i=1,mod(file_ntimes,5))
+!      close (10)
+
+!      open(10,file=file_path//'mpace_a_sh.dat',action='read')
+!      do k=0,((file_ntimes/5)-1)
+!        read(10,*) (file_SH((k*5)+i),i=1,5)
+!      end do
+!      read (10,*), (file_SH((k*5)+i),i=1,mod(file_ntimes,5))
+!      close (10)
 
       ! choose which times to use
       if (time <= file_times(1)) then
