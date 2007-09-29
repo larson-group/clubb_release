@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.88 2007-09-21 16:17:45 mjfalk Exp $
+# $Id: Makefile,v 1.89 2007-09-29 15:35:59 faschinj Exp $
 #
 # This version should work with BSD, GNU make, smake and dmake.
 #
@@ -11,11 +11,11 @@
 ################################################################################
 
 #include config.linux_ia32_pg.in
-include config.linux_ia32_g95.in
+#include config.linux_ia32_g95.in
 #include config.linux_ia64_intel.in
 #include config.solaris_generic_ss11.in
 #include config.osf1_alpha_digital.in
-#include config.messner.in
+include config.messner.in
 
 # == Object files ==
 
