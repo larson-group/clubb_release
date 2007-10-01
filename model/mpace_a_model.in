@@ -16,8 +16,8 @@ time_final   = 309600.0
 !time_final   = 50460.0
 time_spinup  = 0.0
 
-dtmain    = 10.0
-dtclosure = 10.0
+dtmain    = 60.0
+dtclosure = 60.0
 
 sfctype = 0
 Tsfc = 271.7528
