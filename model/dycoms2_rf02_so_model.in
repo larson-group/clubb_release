@@ -1,4 +1,4 @@
-! $Id: dycoms2_rf02_so_model.in,v 1.7 2007-05-01 23:18:52 dschanen Exp $
+! $Id: dycoms2_rf02_so_model.in,v 1.8 2007-10-01 23:42:08 vlarson Exp $
 ! Parameter file for DYCOMS2 RF02 Sc case with no drizzle
 ! but with cloud water sedimentation.
 
@@ -17,8 +17,8 @@ time_initial = 0.0
 time_final =  21600.0
 time_spinup = 30000.0
 
-dtmain    = 30.0
-dtclosure = 30.0
+dtmain    = 60.0
+dtclosure = 60.0
 
 Tsfc = 292.0
 psfc = 1017.8e2
