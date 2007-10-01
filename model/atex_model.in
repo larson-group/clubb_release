@@ -1,4 +1,4 @@
-! $Id: atex_model.in,v 1.9 2007-05-01 23:18:52 dschanen Exp $
+! $Id: atex_model.in,v 1.10 2007-10-01 23:36:03 vlarson Exp $
 ! Parameter file for ATEX intermediate regime
 
 &model_setting
@@ -15,8 +15,8 @@ time_initial = 0.0
 time_final = 28800.0
 time_spinup = 1800.0
 
-dtmain    = 20.0
-dtclosure = 20.0
+dtmain    = 60.0
+dtclosure = 60.0
 
 Tsfc = 298.0
 psfc = 1015.e2

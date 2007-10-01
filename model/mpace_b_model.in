@@ -1,4 +1,4 @@
-! $Id: mpace_b_model.in,v 1.1 2007-08-09 17:31:03 mjfalk Exp $
+! $Id: mpace_b_model.in,v 1.2 2007-10-01 23:29:53 vlarson Exp $
 ! Parameter file for MPACE-B case
 
 &model_setting
@@ -17,8 +17,8 @@ time_final   = 104400.0
 !time_final   = 61320.0
 time_spinup  = 0.0
 
-dtmain    = 10.0
-dtclosure = 10.0
+dtmain    = 60.0
+dtclosure = 60.0
 
 sfctype = 0
 Tsfc = 274.01

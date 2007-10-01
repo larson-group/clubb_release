@@ -1,4 +1,4 @@
-! $Id: arm_model.in,v 1.10 2007-05-01 23:18:52 dschanen Exp $
+! $Id: arm_model.in,v 1.11 2007-10-01 23:36:33 vlarson Exp $
 ! Parameter file for GCSS ARM Cu over land case
 
 &model_setting
@@ -15,8 +15,8 @@ time_initial = 41400.0
 time_final = 93600.0
 time_spinup = 41400.0
 
-dtmain    = 30.0
-dtclosure = 30.0
+dtmain    = 60.0
+dtclosure = 60.0
 
 sfctype = 1
 

@@ -1,4 +1,4 @@
-! $Id: jun25_altocu_model.in,v 1.6 2007-05-02 15:46:18 dschanen Exp $
+! $Id: jun25_altocu_model.in,v 1.7 2007-10-01 23:33:09 vlarson Exp $
 ! Parameter file for June 25 altocumulus case
 
 &model_setting
@@ -17,8 +17,8 @@ time_initial = 0.0
 time_final =  36000.0
 time_spinup = 3600.0
 
-dtmain    = 20.0
-dtclosure = 6.0
+dtmain    = 60.0
+dtclosure = 60.0
 
 Tsfc = 271.07
 psfc = 574.87e2
