@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc_stats.F,v 1.1 2007-09-08 20:57:57 faschinj Exp $
+! $Id: hoc_stats.F,v 1.2 2007-10-01 23:25:47 vlarson Exp $
 #ifdef STATS
 !-----------------------------------------------------------------------
 !  module hoc_stats
@@ -355,11 +355,12 @@
      .     iwprtp_pr1,
      .     iwprtp_pr2,
      .     iwprtp_pr3,
-     .     iwprtp_dp1
+     .     iwprtp_dp1,
+     .     iwprtp_cl
 
 !$omp   threadprivate(iwprtp_bt, iwprtp_ma, iwprtp_ta, iwprtp_tp)
 !$omp   threadprivate(iwprtp_ac, iwprtp_bp, iwprtp_pr1, iwprtp_pr2)
-!$omp   threadprivate(iwprtp_pr3, iwprtp_dp1)
+!$omp   threadprivate(iwprtp_pr3, iwprtp_dp1, iwprtp_cl)
 
         integer ::
      .     iwpthlp_bt,
@@ -371,11 +372,12 @@
      .     iwpthlp_pr1,
      .     iwpthlp_pr2,
      .     iwpthlp_pr3,
-     .     iwpthlp_dp1
+     .     iwpthlp_dp1,
+     .     iwpthlp_cl
 
 !$omp   threadprivate(iwpthlp_bt, iwpthlp_ma, iwpthlp_ta, iwpthlp_tp)
 !$omp   threadprivate(iwpthlp_ac, iwpthlp_bp, iwpthlp_pr1, iwpthlp_pr2)
-!$omp   threadprivate(iwpthlp_pr3, iwpthlp_dp1)
+!$omp   threadprivate(iwpthlp_pr3, iwpthlp_dp1, iwpthlp_cl)
 
 !    Dr. Golaz's new variance budget terms
 !    qt was changed to rt to avoid confusion
