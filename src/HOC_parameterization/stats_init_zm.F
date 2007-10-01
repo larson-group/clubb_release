@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_init_zm.F,v 1.1 2007-09-08 20:57:57 faschinj Exp $
+! $Id: stats_init_zm.F,v 1.2 2007-10-01 23:19:52 vlarson Exp $
 #ifdef STATS
 
 !-----------------------------------------------------------------------
@@ -107,6 +107,7 @@
       iwprtp_pr2 = 0
       iwprtp_pr3 = 0
       iwprtp_dp1 = 0
+      iwprtp_cl  = 0
 
       iwpthlp_bt  = 0
       iwpthlp_ma  = 0
@@ -118,6 +119,7 @@
       iwpthlp_pr2 = 0
       iwpthlp_pr3 = 0
       iwpthlp_dp1 = 0
+      iwpthlp_cl  = 0
 
       ! Variance budgets
       irtp2_bt    = 0
@@ -519,6 +521,13 @@
      .         "wprtp dissipation term 1","(m kg)/(s2 kg)",zm)
           k = k + 1
 
+        case ('wprtp_cl')
+          iwprtp_cl = k
+
+          call stat_assign(iwprtp_cl,"wprtp_cl",
+     .         "wprtp clipping term","(m kg)/(s2 kg)",zm)
+          k = k + 1
+
         case ('wpthlp_bt')
           iwpthlp_bt = k
 
@@ -584,6 +593,13 @@
           call stat_assign(iwpthlp_dp1,"wpthlp_dp1",
      .         "wpthlp dissipation term 1","(m K)/s2",zm)
           k = k + 1
+
+        case ('wpthlp_cl')
+          iwpthlp_cl = k
+          call stat_assign(iwpthlp_cl,"wpthlp_cl",
+     .         "wpthlp clipping term","(m K)/s2",zm)
+          k = k + 1
+
         ! Variance budgets
         case ('rtp2_bt')
           irtp2_bt = k
