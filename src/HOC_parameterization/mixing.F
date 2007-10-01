@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.19 2007-09-08 17:02:33 griffinb Exp $
+! $Id: mixing.F,v 1.20 2007-10-01 23:24:52 vlarson Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -34,11 +34,13 @@
      .             ( dt, taum, wmm, wmt, wp2, wp3, Scm, Skwm,
      .               rtm, wprtp, rtpthvp, rtm_forcing,
      .               thlm, wpthlp, thlpthvp, thlm_forcing,
+     .               rtp2, thlp2, ! Added for clipping Vince Larson 20070929
      .               rhot, rhom, exner, rcm, Ncm, 
      .               hm_thl_tndcy, hm_rt_tndcy,
      .               Fcsed, sed_rcm,
      .               isValid, implemented,
-     .               sclrm, wpsclrp, sclrpthvp, sclrm_forcing )
+     .               sclrm, wpsclrp, sclrpthvp, sclrm_forcing,
+     .               sclrp2 )     ! Added for clipping Vince Larson 20070929
 !       Description:
 !       Advance the mean and flux terms by one timestep.
 
@@ -66,17 +68,21 @@
      .  dt           ! Timestep                       [s]
 
         real, intent(in), dimension(gr%nnzp) ::
-     .  taum,        ! Tau on moment. grid            [s]
-     .  wmm,         ! w wind on m                    [m/s]
-     .  wmt,         ! w wind on t                    [m/s]
-     .  wp2,         ! w'^2                           [m^2/s^2]
-     .  wp3,         ! w'^3                           [m^3/s^3]
-     .  Scm,         ! Sc on moment. grid             [-]
-     .  Skwm,        ! Skw on moment. grid            [-]
-     .  rtpthvp,     ! r_t'th_v'                      [(kg K)/kg]
-     .  rtm_forcing, ! rt forcing                     [(kg/kg)/s]
-     .  thlpthvp,    ! th_l' th_v'                    [K^2]
-     .  thlm_forcing ! Large scale tendency for thlm  [K/s]
+     .  taum,        ! Tau on moment. grid                [s]
+     .  wmm,         ! w wind on m                        [m/s]
+     .  wmt,         ! w wind on t                        [m/s]
+     .  wp2,         ! w'^2                               [m^2/s^2]
+     .  wp3,         ! w'^3                               [m^3/s^3]
+     .  Scm,         ! Sc on moment. grid                 [-]
+     .  Skwm,        ! Skw on moment. grid                [-]
+     .  rtpthvp,     ! r_t'th_v'                          [(kg K)/kg]
+     .  rtm_forcing, ! rt forcing                         [(kg/kg)/s]
+     .  thlpthvp,    ! th_l' th_v'                        [K^2]
+     .  thlm_forcing, ! Large scale tendency for thlm      [K/s]
+! Added for clipping by Vince Larson 29 Sep 2007
+     .  rtp2,        ! Variance of total water mix rat    [(kg/kg)^2]
+     .  thlp2       ! Variance of theta_l (liq pot temp) [K^2]
+! End of Vince Larson's addition.
 
         ! Additions for DYCOMS 2 RF02
         real, intent(in), dimension(gr%nnzp) ::
@@ -110,6 +116,7 @@
         ! Input Variables
         real, intent(in), optional, dimension(gr%nnzp,sclr_dim) :: 
      .  sclrpthvp, sclrm_forcing !                           [Units vary]
+     .  ,sclrp2                  ! For clipping Vince Larson [Units vary]
         ! Input/Output Variables
         real, intent(inout), optional, dimension(gr%nnzp,sclr_dim) :: 
      .  sclrm, wpsclrp !                                     [Units vary]
@@ -157,6 +164,7 @@
         ! Solve rtm / wprtp
         call mixing_solve( "rtm", .true., dt, taum,
      .                     rtm, wprtp, rtpthvp, rtm_forcing,
+     .                     wp2, rtp2, ! For clipping Vince Larson 20070929
      .                     rhot, rhom, exner, rcm, Ncm,  ! Brian
      .                     hm_rt_tndcy,
      .                     Fcsed, sed_rcm,               ! Brian
@@ -167,6 +175,7 @@
           return
         end if
 
+
         ! Prof. Larson's modified mixing_lhs 
         call mixing_lhs( .true., dt, taum, wmm, wmt, 
      .                   wp2, wp3, Scm, C6thl_Skw_fnc, C7_Skw_fnc,
@@ -176,6 +185,7 @@
         ! Solve for thlm / wpthlp
         call mixing_solve( "thlm", .true., dt, taum,
      .                     thlm, wpthlp, thlpthvp, thlm_forcing,
+     .                     wp2, thlp2, ! For clipping Vince Larson 20070929
      .                     rhot, rhom, exner, rcm, Ncm,  ! Brian
      .                     hm_thl_tndcy,
      .                     Fcsed, sed_rcm,               ! Brian
@@ -198,6 +208,7 @@
      .                       sclrm(:,SCLR_RT), wpsclrp(:,SCLR_RT),
      .                       sclrpthvp(:,SCLR_RT), 
      .                       sclrm_forcing(:,SCLR_RT),
+     .                       wp2, sclrp2(:,SCLR_RT), ! For clipping Vince Larson 20070929
      .                       rhot, rhom, exner, rcm, Ncm,  ! Brian
      .                       hm_rt_tndcy,
      .                       Fcsed, sed_rcm,               ! Brian
@@ -215,6 +226,7 @@
      .                       sclrm(:,SCLR_THETA), wpsclrp(:,SCLR_THETA),
      .                       sclrpthvp(:,SCLR_THETA), 
      .                       sclrm_forcing(:,SCLR_THETA),
+     .                       wp2, sclrp2(:,SCLR_THETA), ! For clipping Vince Larson 20070929
      .                       rhot, rhom, exner, rcm, Ncm,  ! Brian
      .                       hm_thl_tndcy,
      .                       Fcsed, sed_rcm,               ! Brian
@@ -469,6 +481,7 @@
         
         subroutine mixing_solve( solve_type, liter, dt, taum,
      .                           xm, wpxp, xpthvp, xm_forcing,
+     .                           wp2, xp2, ! For clipping Vince Larson 20070929
      .                           rhot, rhom, exner, rcm, Ncm,  ! Brian
      .                           hm_tndcy,
      .                           Fcsed, sed_rcm,               ! Brian
@@ -502,16 +515,20 @@
         real, intent(in) :: dt      ! Timestep              [s]
 
         real, intent(in), dimension(gr%nnzp) :: 
-     .  taum,        ! Tau on moment. grid                  [s]
-     .  rhot,        ! Rho (density) on thermo. grid -Brian [kg/m^3]
-     .  rhom,        ! Rho (density) on moment. grid -Brian [kg/m^3]
-     .  exner,       ! Exner function -Brian                [-]
-     .  rcm,         ! Liquid water mixing ratio -Brian     [kg/kg] 
-     .  Ncm,         ! Cloud droplet number conc. -Brian    [num/kg]
-     .  hm_tndcy,    ! Change in r_t or theta_l due to micro[(units)/s]  
-     .  xpthvp,      ! x' theta_v'                          [(units)(K)]
-     .  xm_forcing,  ! xm forcing -Brian                    [(units)/s] 
-     .  C7_Skw_fnc   ! C7 parameter (Skw dependent)         [-] 
+     .  taum,        ! Tau on moment. grid                    [s]
+     .  rhot,        ! Rho (density) on thermo. grid -Brian   [kg/m^3]
+     .  rhom,        ! Rho (density) on moment. grid -Brian   [kg/m^3]
+     .  exner,       ! Exner function -Brian                  [-]
+     .  rcm,         ! Liquid water mixing ratio -Brian       [kg/kg] 
+     .  Ncm,         ! Cloud droplet number conc. -Brian      [num/kg]
+     .  hm_tndcy,    ! Change in r_t or theta_l due to micro  [(units)/s]  
+     .  xpthvp,      ! x' theta_v'                            [(units)(K)]
+     .  xm_forcing,  ! xm forcing -Brian                      [(units)/s] 
+! Vince Larson added for clipping 20070929
+     .  wp2,         ! Variance of vertical velocity          [(m/s)^2]
+     .  xp2,         ! Variance of scalar (rt, thl, or sclr)  Units vary
+! End Vince Larson's addition
+     .  C7_Skw_fnc   ! C7 parameter (Skw dependent)           [-] 
 
         ! Input/Output
         real, intent(inout), dimension(gr%nnzp) :: 
@@ -564,7 +581,8 @@
      .    iwpxp_pr1,
      .    iwpxp_pr2,
      .    iwpxp_pr3,
-     .    iwpxp_dp1
+     .    iwpxp_dp1,
+     .    iwpxp_cl
 
         select case ( trim( solve_type ) )
         case ( "rtm" ) ! rtm/wprtp budget terms
@@ -584,6 +602,7 @@
           iwpxp_pr2 = iwprtp_pr2
           iwpxp_pr3 = iwprtp_pr3
           iwpxp_dp1 = iwprtp_dp1
+          iwpxp_cl  = iwprtp_cl
         case ( "thlm" ) ! thlm/wpthlp budget terms
           ixm_bt    = ithlm_bt
           ixm_ta    = ithlm_ta
@@ -601,6 +620,7 @@
           iwpxp_pr2 = iwpthlp_pr2
           iwpxp_pr3 = iwpthlp_pr3
           iwpxp_dp1 = iwpthlp_dp1
+          iwpxp_cl  = iwpthlp_cl
         case default  ! this includes the sclrm case
           ixm_bt    = 0
           ixm_ta    = 0
@@ -618,6 +638,7 @@
           iwpxp_pr2 = 0
           iwpxp_pr3 = 0
           iwpxp_dp1 = 0
+          iwpxp_cl  = 0
         end select
 #endif /*STATS*/
 
@@ -910,6 +931,7 @@
         xm(1) = xm(2)
 !        xm(gr%nnzp) = xm(gr%nnzp-1)
 
+
 #ifdef STATS
           if ( lstats_samp ) then
 
@@ -985,6 +1007,29 @@
 
           end if ! lstats_samp
 #endif /*STATS*/
+
+! Vince Larson clipped turbulent flux (wpxp) to ensure 
+!     that -1 < [correlation of w and x] < 1 .  20070929
+#ifdef STATS
+        if ( lstats_samp .and. iwpxp_cl > 0) then
+          zm%x(:,iwpxp_cl) = zm%x(:,iwpxp_cl) - wpxp / dt
+        end if
+#endif
+
+
+        ! Clip wpxp to make sure -0.99 < correlation < 0.99
+        where ( wpxp >  0.99 * sqrt( wp2 * xp2 ) )
+     .          wpxp =  0.99 * sqrt( wp2 * xp2 ) 
+        where ( wpxp < -0.99 * sqrt( wp2 * xp2 ) )
+     .          wpxp = -0.99 * sqrt( wp2 * xp2 ) 
+
+#ifdef STATS
+        if ( lstats_samp .and. iwpxp_cl > 0 ) then
+          zm%x(:,iwpxp_cl) = zm%x(:,iwpxp_cl) + wpxp / dt
+          zm%n(:,iwpxp_cl) = zm%n(:,iwpxp_cl) + 1
+        end if
+#endif
+! End of Vince Larson's clipping.
 
 #ifdef STATS
         if ( lstats_samp ) then
