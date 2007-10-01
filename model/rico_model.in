@@ -1,4 +1,4 @@
-! $Id: rico_model.in,v 1.5 2007-05-01 23:18:53 dschanen Exp $
+! $Id: rico_model.in,v 1.6 2007-10-01 23:29:08 vlarson Exp $
 ! Parameter file for GCSS RICO case
 ! Edited by Michael Falk, 12 December 2006
 
@@ -19,8 +19,8 @@ time_initial = 0.0
 time_final   = 259200.0
 time_spinup  = 0.0
 
-dtmain    = 20.0
-dtclosure = 20.0
+dtmain    = 60.0
+dtclosure = 60.0
 
 sfctype = 0
 Tsfc = 299.80
