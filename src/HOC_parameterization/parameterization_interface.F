@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.57 2007-09-08 17:02:33 griffinb Exp $
+! $Id: parameterization_interface.F,v 1.58 2007-10-01 23:24:01 vlarson Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -313,7 +313,11 @@
      .                wp2, wp3, upwp, vpwp, Scm, Skwm,
      .                rtp2, thlp2, rtpthlp,
      .                up2, vp2,
-     .                .false., dt, isValid
+! Vince Larson used prognostic timestepping of variances 
+!    in order to increase numerical stability.  17 Jul 2007
+!     .                .false., dt, isValid
+     .                .true., dt, isValid
+! End Vince Larson's change
 #ifdef SCALARS
      .                ,sclrm, wpsclrp, sclrp2,    ! optional vars
      .                sclrprtp, sclrpthlp         !   "       "
@@ -525,19 +529,29 @@
        !----------------------------------------------------------------
        ! Dissipation time
        !----------------------------------------------------------------
-
-       tmp1 = SQRT( MAX( emin, zm2zt( em ) ) )
+! Vince Larson replaced the cutoff of emin by wtol**2.  7 Jul 2007
+!     This is to prevent tau from being too large (producing little damping)
+!     in stably stratified layers with little turbulence.
+!       tmp1 = SQRT( MAX( emin, zm2zt( em ) ) )
+!       taut = MIN( Lscale / tmp1, taumax )
+!       taum 
+!     . = MIN( ( zt2zm( Lscale ) / SQRT( MAX( emin, em ) ) ), taumax )
+       tmp1 = SQRT( MAX( wtol**2, zm2zt( em ) ) )
        taut = MIN( Lscale / tmp1, taumax )
        taum 
-     . = MIN( ( zt2zm( Lscale ) / SQRT( max( em, emin ) ) ), taumax )
+     . = MIN( ( zt2zm( Lscale ) / SQRT( MAX( wtol**2, em ) ) ), taumax )
+! End Vince Larson's replacement.
 
        ! Modification to damp noise in stable region
-       do k = 1, gr%nnzp
-         if ( wp2(k) <= 0.005 ) then
-           taut(k) = taumin
-           taum(k) = taumin
-         end if
-       end do
+! Vince Larson commented out because it may prevent turbulence from 
+!    initiating in unstable regions.  7 Jul 2007
+!       do k = 1, gr%nnzp
+!         if ( wp2(k) <= 0.005 ) then
+!           taut(k) = taumin
+!           taum(k) = taumin
+!         end if
+!       end do
+! End Vince Larson's commenting.
 
        !----------------------------------------------------------------
        ! Eddy diffusivity coefficient
@@ -591,12 +605,14 @@
      .      ( dt, taum, wmm, wmt, wp2, wp3, Scm, Skwm, 
      .        rtm, wprtp, rtpthvp, rtm_forcing,
      .        thlm, wpthlp, thlpthvp, thlm_forcing, 
+     .        rtp2, thlp2, ! Added for clipping Vince Larson 29 Sep 2007
      .        rhot, rhom, exner, rcm, Ncm, 
      .        hm_thl_tndcy, hm_rt_tndcy, 
      .        Fcsed, sed_rcm,
      .        isValid, implemented  
 #ifdef SCALARS
      .       ,sclrm, wpsclrp, sclrpthvp, sclrm_forcing   ! optional
+     .       ,sclrp2  ! For clipping Vince Larson 20070929
 #endif /* SCALARS */
      .      )
        if ( .not. isValid ) return
