@@ -1,4 +1,4 @@
-! $Id: sfc.F,v 1.8 2007-06-06 15:09:36 dschanen Exp $
+! $Id: sfc.F,v 1.9 2007-10-01 23:21:03 vlarson Exp $
 #define SCLR_RT 2
 #define SCLR_THETA 1
 
@@ -40,7 +40,10 @@
         real, parameter :: 
      .  a = 1.8,
      .  z = 1.0,
-     .  ufmin = 0.0001,
+! Vince Larson increased ufmin to stabilize arm_97.  24 Jul 2007
+!     .  ufmin = 0.0001,
+     .  ufmin = 0.01,
+! End Vince Larson's change.
      .  sclr_var_coef = 0.25 ! This value is made up! - Vince Larson 12 Jul 2005
 
         ! Input Variables
