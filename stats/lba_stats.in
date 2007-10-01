@@ -1,4 +1,4 @@
-! $Id: lba_stats.in,v 1.4 2007-07-27 23:55:34 griffinb Exp $
+! $Id: lba_stats.in,v 1.5 2007-10-01 23:48:13 vlarson Exp $
 &statsnl
 
 lstats = t
@@ -53,9 +53,9 @@ vars_zm =
 'up2_bt', 'up2_ma', 'up2_ta', 'up2_tp', 'up2_dp1', 'up2_dp2', 
 'up2_pr1', 'up2_pr2',
 'wprtp_bt', 'wprtp_ma', 'wprtp_ta', 'wprtp_tp', 'wprtp_ac', 'wprtp_bp',
-'wprtp_pr1', 'wprtp_pr2', 'wprtp_pr3', 'wprtp_dp1',
+'wprtp_pr1', 'wprtp_pr2', 'wprtp_pr3', 'wprtp_dp1', 'wprtp_cl',
 'wpthlp_bt', 'wpthlp_ma', 'wpthlp_ta', 'wpthlp_tp', 'wpthlp_ac', 'wpthlp_bp',
-'wpthlp_pr1', 'wpthlp_pr2', 'wpthlp_pr3', 'wpthlp_dp1',
+'wpthlp_pr1', 'wpthlp_pr2', 'wpthlp_pr3', 'wpthlp_dp1', 'wpthlp_cl',
 'rtp2_bt', 'rtp2_ma', 'rtp2_ta', 'rtp2_tp', 'rtp2_dp1', 'rtp2_dp2', 'rtp2_cl',
 'thlp2_bt', 'thlp2_ma', 'thlp2_ta', 'thlp2_tp',
 'thlp2_dp1', 'thlp2_dp2', 'thlp2_cl',
