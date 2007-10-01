@@ -19,8 +19,8 @@ time_initial =  57600.0  ! 1600 GMT
 time_final   = 230400.0  ! 48 hour run
 time_spinup  =  57600.0
 
-dtmain    = 10.0
-dtclosure = 10.0
+dtmain    = 60.0
+dtclosure = 60.0
 
 Tsfc = 284.25
 psfc = 977.5e2
