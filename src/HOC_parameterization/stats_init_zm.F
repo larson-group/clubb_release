@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_init_zm.F,v 1.2 2007-10-01 23:19:52 vlarson Exp $
+! $Id: stats_init_zm.F,v 1.3 2007-10-05 15:48:20 faschinj Exp $
 #ifdef STATS
 
 !-----------------------------------------------------------------------
@@ -854,24 +854,24 @@
         case ('sclrapthvp')
           isclrapthvp = k
 
-          call stat_assign(isclrathvp,"sclrathvp",
+          call stat_assign(isclrapthvp,"sclrathvp",
      .         "scalar(1)'th_v'","unknown",zm)
           k = k + 1
         case ('sclrbpthvp')
           isclrbpthvp = k
-          call stat_assign(isclrbthvp,"sclrbthvp",
+          call stat_assign(isclrbpthvp,"sclrbthvp",
      .         "scalar(2)'th_v'","unknown",zm)
           k = k + 1
         case ('sclrapthlp')
           isclrapthlp = k
 
-          call stat_assign(isclrathlp,"sclrathlp",
+          call stat_assign(isclrapthlp,"sclrathlp",
      .         "scalar(1)'th_l'","unknown",zm)
           k = k + 1
         case ('sclrbpthlp')
           isclrbpthlp = k
 
-          call stat_assign(isclrbthlp,"sclrbthlp",
+          call stat_assign(isclrbpthlp,"sclrbthlp",
      .         "scalar(2)'th_l'","unknown",zm)
           k = k + 1
         case ('sclraprcp')
@@ -962,7 +962,8 @@
 #endif /*SCALARS*/
 
         case default
-          write(0,*) 'Error: unrecognized variable ', trim(vars_zm(i))
+          write(0,*) 'Error: unrecognized variable in vars_zm: ',
+     .       trim(vars_zm(i))
           lerror = .true.
 
         end select
