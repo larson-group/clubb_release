@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_init_zt.F,v 1.1 2007-09-08 20:57:57 faschinj Exp $
+! $Id: stats_init_zt.F,v 1.2 2007-10-05 15:44:34 faschinj Exp $
 #ifdef STATS
 !-----------------------------------------------------------------------
       subroutine stats_init_zt( vars_zt, lerror )
@@ -1211,7 +1211,8 @@
 #endif /*SCALARS*/
 
         case default
-          write(0,*) 'Error: unrecognized variable ',trim(vars_zt(i))
+          write(0,*) 'Error: unrecognized variable in vars_zt: ',
+     .       trim(vars_zt(i))
           lerror = .true.
 
         end select

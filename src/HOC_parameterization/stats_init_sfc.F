@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_init_sfc.F,v 1.1 2007-09-08 20:57:57 faschinj Exp $
+! $Id: stats_init_sfc.F,v 1.2 2007-10-05 15:49:27 faschinj Exp $
 #ifdef STATS
 !-----------------------------------------------------------------------
       subroutine stats_init_sfc( vars_sfc, lerror )
@@ -166,13 +166,14 @@
 
         case ('vp2_cn')
           ivp2_cn = k  
-	  call stat_assign(ivp2_cn,"vp2_cn",
+          call stat_assign(ivp2_cn,"vp2_cn",
      .         "Estimate of the condition number for vp2","count",sfc)
 
           k = k + 1
 
         case default
-          write(0,*) 'Error: unrecognized variable ',trim(vars_sfc(i))
+          write(0,*) 'Error: unrecognized variable in vars_sfc: ',
+     .          trim(vars_sfc(i))
           lerror = .true.
 
         end select
