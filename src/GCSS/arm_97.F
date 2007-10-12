@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_97.F,v 1.4 2007-10-05 17:23:37 faschinj Exp $
+! $Id: arm_97.F,v 1.5 2007-10-12 17:30:13 vlarson Exp $
         module arm_97
 
 !       Description:
@@ -163,7 +163,8 @@
 
          ! Constant Parameters
         integer, parameter :: ntimes = 32, per_line = 5
-        
+       
+         ! Directory containing large-scale forcing files 
         character(*), parameter :: 
      .   file_path = '../model/arm_97_forcings/'
 
@@ -208,13 +209,13 @@
         ! and storing them in arrays
         ! Joshua Fasching September 2007
         call file_read_1d(10,
-     .   file_path//'arm_97_times.dat',
-     .   ntimes, per_line, times)
+     .    file_path//'arm_97_times.dat',
+     .    ntimes, per_line, times)
         call file_read_1d(10,
-     .   file_path//'arm_97_LE.dat',
-     .   ntimes, per_line, LE)
+     .    file_path//'arm_97_LE.dat',
+     .    ntimes, per_line, LE)
         call file_read_1d(10,
-     .   file_path//'arm_97_SE.dat',
+     .    file_path//'arm_97_SE.dat',
      .    ntimes, per_line, SE)
 
         if ( time <= times(1) ) then
