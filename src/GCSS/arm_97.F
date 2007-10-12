@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_97.F,v 1.6 2007-10-12 17:43:39 vlarson Exp $
+! $Id: arm_97.F,v 1.7 2007-10-12 18:27:01 faschinj Exp $
         module arm_97
 
 !       Description:
@@ -62,7 +62,7 @@
         real, optional, intent(out), dimension(gr%nnzp,sclr_dim) :: 
      .  sclrm_forcing ! Passive scalar tendency [units vary]
 
-        real :: a
+        real :: time_frac
         integer :: i1, i2
 
         real, dimension(nz) :: thlm_t_interp,
@@ -98,11 +98,11 @@
         !     time at which forcing data are available (times(i1))
         !     and the next time (times(i2)).
         if ( time == times(1) ) then
-          a = 0.0
+          time_frac = 0.0
           i1 = 1
           i2 = 2
         else if ( time >= times(ntimes) ) then
-          a = 1.0
+          time_frac = 1.0
           i1 = ntimes-1
           i2 = ntimes
         else
@@ -110,7 +110,7 @@
           do while ( i1 <= ntimes-1 )
             i2 = i1 + 1
             if ( time >= times(i1) .and. time < times(i2) ) then
-              a = (time-times(i1))/(times(i2)-times(i1))
+              time_frac = (time-times(i1))/(times(i2)-times(i1))
               exit
             end if
               i1 = i2
@@ -119,14 +119,16 @@
         
         ! Interpolate LS thetal tendency to the HOC grid
         ! Time
-        thlm_t_interp = (1.-a) * thl_ls(:,i1) + a * thl_ls(:,i2)
+        thlm_t_interp = (1.-time_frac) * thl_ls(:,i1) + time_frac * 
+     .     thl_ls(:,i2)
         ! Vertical
         thlm_forcing(1:gr%nnzp) = zlinterp_fnc
      .           ( gr%nnzp, nz, gr%zt(:), z(:,i1), thlm_t_interp )
 
         ! Interpolate LS rt tendency to the HOC grid
         ! Time
-        rtm_t_interp = (1.-a) * rt_ls(:,i1) + a * rt_ls(:,i2)
+        rtm_t_interp = (1.-time_frac) * rt_ls(:,i1) + time_frac * 
+     .     rt_ls(:,i2)
         ! Vertical
         rtm_forcing(1:gr%nnzp) = zlinterp_fnc
      .           ( gr%nnzp, nz, gr%zt(:), z(:,i1), rtm_t_interp )
@@ -207,7 +209,7 @@
      .  wpedsclrp_sfc ! Passive eddy-scalar surface flux [units m/s]
 
         ! Local variables
-        real :: ubar, ustar, bflx, heat_flx, moisture_flx, a
+        real :: ubar, ustar, bflx, heat_flx, moisture_flx, time_frac
         integer :: i1, i2
 
         ! Reading files located in arm_97_files/
@@ -234,9 +236,12 @@
           do while ( i1 <= ntimes-1 )
             i2 = i1 + 1
             if ( time >= times(i1) .and. time < times(i2) ) then
-              a            = (time-times(i1))/(times(i2)-times(i1))
-              heat_flx     = ( 1. - a ) * SE(i1) + a * SE(i2)
-              moisture_flx = ( 1. - a ) * LE(i1) + a * LE(i2)
+              time_frac            = (time-times(i1))/(times(i2)
+     .           - times(i1))
+              heat_flx     = ( 1. - time_frac ) * SE(i1) + 
+     .           time_frac * SE(i2)
+              moisture_flx = ( 1. - time_frac ) * LE(i1) + 
+     .           time_frac * LE(i2)
               i1           = ntimes
             end if
               i1 = i2
