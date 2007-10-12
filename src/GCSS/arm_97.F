@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_97.F,v 1.5 2007-10-12 17:30:13 vlarson Exp $
+! $Id: arm_97.F,v 1.6 2007-10-12 17:43:39 vlarson Exp $
         module arm_97
 
 !       Description:
@@ -92,6 +92,11 @@
         ! Thetal forcing is equal to the LS tendency given here and the
         ! interactive calculation done in BUGSrad
 
+        ! Compute time_frac, where 0 < time_frac < 1.
+        !     time_frac measures the fractional time interval
+        !     between the current time (time), and the previous
+        !     time at which forcing data are available (times(i1))
+        !     and the next time (times(i2)).
         if ( time == times(1) ) then
           a = 0.0
           i1 = 1
