@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_a.F,v 1.3 2007-09-26 16:09:42 mjfalk Exp $
+! $Id: mpace_a.F,v 1.4 2007-10-18 17:36:58 vlarson Exp $
         module mpace_a
 
 !       Description:
@@ -278,7 +278,6 @@
           wmt(i) = -velocity_omega * Rd * thvm(i) / p(i) / grav0
         end do
         wmm = zt2zm( wmt )
-        print *,'grav is ', grav0
 
         ! Boundary conditions.
         wmt(1) = 0.0        ! Below surface
