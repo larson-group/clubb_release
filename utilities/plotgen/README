@@ -1,0 +1,19 @@
+
+Don't delete or modify this directory!
+It creates nightly plots for the website.
+
+Following are notes on the plotgen command:
+
+Usage: 'plotgen Output_Arg HOC_sim1 [HOC_sim2] Output_Directory \ 
+Plot_LES Plot_Best Plot_HOCDec17'
+Or: 'plotgen Output_Arg nightly Output_Directory
+
+The first generates plots comparing the specified simulations. The latter
+generates the nightly plots.
+The results will be saved in the 'Output_Directory' and can be viewed with the
+'firefox Output_Directory/index.html'
+
+Plot_LES, Plot_Best, and Plot_HOCDec17 are all boolean, with 1 being plot and 0 being do not plot.
+Output_Arg can be any ONE of the following:
+'-r' : Overwrite the files in the output directory
+'-c' : Create the output directory before outputting
