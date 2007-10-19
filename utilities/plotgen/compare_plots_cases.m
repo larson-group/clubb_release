@@ -271,8 +271,6 @@ if ( cmp_les == 1 )
       les_rrm_len     = 4;
       les_Nrm         = 'nrm ';
       les_Nrm_len     = 4;
-      les_rho         = 'dn0 ';
-      les_rho_len     = 4;
 
    elseif ( strcmp(les_type, 'rams' ) )
 
@@ -313,8 +311,6 @@ if ( cmp_les == 1 )
       les_rrm_len     = 4;
       les_Nrm         = 'nrm ';
       les_Nrm_len     = 4;
-      les_rho         = 'rho ';
-      les_rho_len     = 4;
    
     end
 
@@ -2189,99 +2185,54 @@ end
 % Rain drop concentration (var "Nrm")
 % LES
 if ( cmp_les == 1 )
-   varfnd1 = 0;
-   varfnd2 = 0;
+   varfnd = 0;
    for i = 1:1:numvars_les
       if ( strcmp( listofparams_les(i,1:les_Nrm_len), les_Nrm ) )
-         varnum1 = i;
-         varfnd1 = 1;
+         varnum = i;
+         varfnd = 1;
       end
-      if ( strcmp( listofparams_les(i,1:les_rho_len), les_rho ) )
-         varnum2 = i;
-         varfnd2 = 1;
-      end
-      if ( (i == numvars_les) & (varfnd1 == 0) )
+      if ( (i == numvars_les) & (varfnd == 0) )
          'variable Nrm not found in LES; value being set to 0.'
          avg_Nrm_les(1:nz_les) = 0.0;
-      elseif ( (i == numvars_les) & (varfnd2 == 0) )
-         'variable rho not found in LES; value being set to 0.'
-         avg_Nrm_les(1:nz_les) = 0.0;
-      elseif ( (varfnd1 == 1) & (varfnd2 == 1) )
-         avg_Nrm_cm3_les = read_grads_hoc_endian([dir_LES, '/', filename_les], ...
-                           'ieee-be', nz_les, t1_les, t2_les, varnum1, numvars_les);
-         % Adjustment:  COAMPS LES outputs Nrm in num/cm^3.  This factor 
-         %              needs to be multiplied by 10^6 in order to be 
-         %              converted to num/m^3.
-         if ( strcmp( les_type, 'coamps' ) )
-            avg_Nrm_m3_les = (10^6).*avg_Nrm_cm3_les;
-         end
-         avg_rho_les = read_grads_hoc_endian([dir_LES, '/', filename_les], ...
-                       'ieee-be', nz_les, t1_les, t2_les, varnum2, numvars_les);
-         % Adjustment:  Nrm needs to be divided by rho in order to get
-         %              units of num/kg.
-         avg_Nrm_les = avg_Nrm_m3_les ./ avg_rho_les;
+      elseif ( varfnd == 1 )
+         avg_Nrm_les = read_grads_hoc_endian([dir_LES, '/', filename_les], ...
+                       'ieee-be', nz_les, t1_les, t2_les, varnum, numvars_les);
          break
       end
    end
 end
 % HOC -- Golaz "best ever"
 if ( cmp_cgbe == 1 )
-   varfnd1 = 0;
-   varfnd2 = 0;
+   varfnd = 0;
    for i = 1:1:numvars_cgbe_zt
       if ( strcmp( listofparams_cgbe_zt(i,1:4), 'Nrm ' ) )
-         varnum1 = i;
-         varfnd1 = 1;
+         varnum = i;
+         varfnd = 1;
       end
-      if ( strcmp( listofparams_cgbe_zt(i,1:5), 'rhot ' ) )
-         varnum2 = i;
-         varfnd2 = 1;
-      end
-      if ( (i == numvars_cgbe_zt) & (varfnd1 == 0) )
+      if ( (i == numvars_cgbe_zt) & (varfnd == 0) )
          'variable Nrm not found in HOC (Golaz best-ever); value being set to 0.'
          avg_Nrm_cgbe(1:nz_cgbe_zt) = 0.0;
-      elseif ( (i == numvars_cgbe_zt) & (varfnd2 == 0) )
-         'variable rho not found in HOC (Golaz best-ever); value being set to 0.'
-         avg_Nrm_cgbe(1:nz_cgbe_zt) = 0.0;
-      elseif ( (varfnd1 == 1) & (varfnd2 == 1) )
-         avg_Nrm_m3_cgbe = read_grads_hoc_endian([dir_cgbe, '/', filename_cgbe_zt], ...
-                           'ieee-le', nz_cgbe_zt, t1_cgbe_zt, t2_cgbe_zt, varnum1, numvars_cgbe_zt);
-         avg_rho_cgbe = read_grads_hoc_endian([dir_cgbe, '/', filename_cgbe_zt], ...
-                        'ieee-le', nz_cgbe_zt, t1_cgbe_zt, t2_cgbe_zt, varnum2, numvars_cgbe_zt);
-         % Adjustment:  Nrm needs to be divided by rho in order to get
-         %              units of num/kg.
-         avg_Nrm_cgbe = avg_Nrm_m3_cgbe ./ avg_rho_cgbe;
+      elseif ( varfnd == 1 )
+         avg_Nrm_cgbe = read_grads_hoc_endian([dir_cgbe, '/', filename_cgbe_zt], ...
+                        'ieee-le', nz_cgbe_zt, t1_cgbe_zt, t2_cgbe_zt, varnum, numvars_cgbe_zt);
          break
       end
    end
 end
 % HOC -- December 17, 2005
 if ( cmp_1217 == 1 )
-   varfnd1 = 0;
-   varfnd2 = 0;
+   varfnd = 0;
    for i = 1:1:numvars_1217_zt
       if ( strcmp( listofparams_1217_zt(i,1:4), 'Nrm ' ) )
-         varnum1 = i;
-         varfnd1 = 1;
+         varnum = i;
+         varfnd = 1;
       end
-      if ( strcmp( listofparams_1217_zt(i,1:5), 'rhot ' ) )
-         varnum2 = i;
-         varfnd2 = 1;
-      end
-      if ( (i == numvars_1217_zt) & (varfnd1 == 0) )
+      if ( (i == numvars_1217_zt) & (varfnd == 0) )
          'variable Nrm not found in HOC (12/17/2005); value being set to 0.'
          avg_Nrm_1217(1:nz_1217_zt) = 0.0;
-      elseif ( (i == numvars_1217_zt) & (varfnd2 == 0) )
-         'variable rho not found in HOC (12/17/2005); value being set to 0.'
-         avg_Nrm_1217(1:nz_1217_zt) = 0.0;
-      elseif ( (varfnd1 == 1) & (varfnd2 == 1) )
-         avg_Nrm_m3_1217 = read_grads_hoc_endian([dir_1217, '/', filename_1217_zt], ...
-                           'ieee-le', nz_1217_zt, t1_1217_zt, t2_1217_zt, varnum1, numvars_1217_zt);
-         avg_rho_1217 = read_grads_hoc_endian([dir_1217, '/', filename_1217_zt], ...
-                        'ieee-le', nz_1217_zt, t1_1217_zt, t2_1217_zt, varnum2, numvars_1217_zt);
-         % Adjustment:  Nrm needs to be divided by rho in order to get
-         %              units of num/kg.
-         avg_Nrm_1217 = avg_Nrm_m3_1217 ./ avg_rho_1217;
+      elseif ( varfnd == 1 )
+         avg_Nrm_1217 = read_grads_hoc_endian([dir_1217, '/', filename_1217_zt], ...
+                        'ieee-le', nz_1217_zt, t1_1217_zt, t2_1217_zt, varnum, numvars_1217_zt);
          break
       end
    end
@@ -2323,6 +2274,13 @@ if ( cmp_curr == 1 )
    end
 end
 
+% Adjustment:  COAMPS LES outputs Nrm in num/cm^3.  This factor needs to be
+%              multiplied by 10^6 in order to be converted to num/m^3.
+if ( cmp_les == 1 )
+   if ( strcmp( les_type, 'coamps' ) )
+      avg_Nrm_les = (10^6).*avg_Nrm_les;
+   end
+end
 
 %==========================================================================
 %==========================================================================
@@ -2429,7 +2387,9 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( avg_thlm_prev, z_prev_zt, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   legend_text(i,1:24) = '\fontsize{6}HOC previous';
+   sim1_title = strcat('\fontsize{6}', dir_prev);
+   sim1_title = regexprep(sim1_title, '_', ' ');
+   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zt
@@ -2446,7 +2406,9 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( avg_thlm_curr, z_curr_zt, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   legend_text(i,1:23) = '\fontsize{6}HOC current';
+   sim2_title = strcat('\fontsize{6}', dir_curr);
+   sim2_title = regexprep(sim2_title, '_', ' ');
+   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zt
@@ -2544,7 +2506,9 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( avg_rtm_prev, z_prev_zt, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   legend_text(i,1:24) = '\fontsize{6}HOC previous';
+   sim1_title = strcat('\fontsize{6}', dir_prev);
+   sim1_title = regexprep(sim1_title, '_', ' ');
+   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zt
@@ -2561,7 +2525,9 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( avg_rtm_curr, z_curr_zt, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   legend_text(i,1:23) = '\fontsize{6}HOC current';
+   sim2_title = strcat('\fontsize{6}', dir_curr);
+   sim2_title = regexprep(sim2_title, '_', ' ');
+   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zt
@@ -2657,7 +2623,9 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( 100.*avg_cf_prev, z_prev_zt, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   legend_text(i,1:24) = '\fontsize{6}HOC previous';
+   sim1_title = strcat('\fontsize{6}', dir_prev);
+   sim1_title = regexprep(sim1_title, '_', ' ');
+   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zt
@@ -2674,7 +2642,9 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( 100.*avg_cf_curr, z_curr_zt, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   legend_text(i,1:23) = '\fontsize{6}HOC current';
+   sim2_title = strcat('\fontsize{6}', dir_curr);
+   sim2_title = regexprep(sim2_title, '_', ' ');
+   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zt
@@ -2770,7 +2740,9 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( avg_rcm_prev, z_prev_zt, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   legend_text(i,1:24) = '\fontsize{6}HOC previous';
+   sim1_title = strcat('\fontsize{6}', dir_prev);
+   sim1_title = regexprep(sim1_title, '_', ' ');
+   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zt
@@ -2787,7 +2759,9 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( avg_rcm_curr, z_curr_zt, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   legend_text(i,1:23) = '\fontsize{6}HOC current';
+   sim2_title = strcat('\fontsize{6}', dir_curr);
+   sim2_title = regexprep(sim2_title, '_', ' ');
+   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zt
@@ -2883,7 +2857,9 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( avg_wp2_prev, z_prev_zm, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   legend_text(i,1:24) = '\fontsize{6}HOC previous';
+   sim1_title = strcat('\fontsize{6}', dir_prev);
+   sim1_title = regexprep(sim1_title, '_', ' ');
+   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zm
@@ -2900,7 +2876,9 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( avg_wp2_curr, z_curr_zm, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   legend_text(i,1:23) = '\fontsize{6}HOC current';
+   sim2_title = strcat('\fontsize{6}', dir_curr);
+   sim2_title = regexprep(sim2_title, '_', ' ');
+   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zm
@@ -2996,7 +2974,9 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( avg_wp3_prev, z_prev_zt, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   legend_text(i,1:24) = '\fontsize{6}HOC previous';
+   sim1_title = strcat('\fontsize{6}', dir_prev);
+   sim1_title = regexprep(sim1_title, '_', ' ');
+   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zt
@@ -3013,7 +2993,9 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( avg_wp3_curr, z_curr_zt, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   legend_text(i,1:23) = '\fontsize{6}HOC current';
+   sim2_title = strcat('\fontsize{6}', dir_curr);
+   sim2_title = regexprep(sim2_title, '_', ' ');
+   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zt
@@ -3128,7 +3110,9 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( avg_wpthlp_prev, z_prev_zm, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   legend_text(i,1:24) = '\fontsize{6}HOC previous';
+   sim1_title = strcat('\fontsize{6}', dir_prev);
+   sim1_title = regexprep(sim1_title, '_', ' ');
+   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zm
@@ -3145,7 +3129,9 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( avg_wpthlp_curr, z_curr_zm, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   legend_text(i,1:23) = '\fontsize{6}HOC current';
+   sim2_title = strcat('\fontsize{6}', dir_curr);
+   sim2_title = regexprep(sim2_title, '_', ' ');
+   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zm
@@ -3241,7 +3227,9 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( avg_wprtp_prev, z_prev_zm, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   legend_text(i,1:24) = '\fontsize{6}HOC previous';
+   sim1_title = strcat('\fontsize{6}', dir_prev);
+   sim1_title = regexprep(sim1_title, '_', ' ');
+   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zm
@@ -3258,7 +3246,9 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( avg_wprtp_curr, z_curr_zm, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   legend_text(i,1:23) = '\fontsize{6}HOC current';
+   sim2_title = strcat('\fontsize{6}', dir_curr);
+   sim2_title = regexprep(sim2_title, '_', ' ');
+   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zm
@@ -3354,7 +3344,9 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( avg_thlp2_prev, z_prev_zm, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   legend_text(i,1:24) = '\fontsize{6}HOC previous';
+   sim1_title = strcat('\fontsize{6}', dir_prev);
+   sim1_title = regexprep(sim1_title, '_', ' ');
+   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zm
@@ -3371,7 +3363,9 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( avg_thlp2_curr, z_curr_zm, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   legend_text(i,1:23) = '\fontsize{6}HOC current';
+   sim2_title = strcat('\fontsize{6}', dir_curr);
+   sim2_title = regexprep(sim2_title, '_', ' ');
+   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zm
@@ -3467,7 +3461,9 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( avg_rtp2_prev, z_prev_zm, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   legend_text(i,1:24) = '\fontsize{6}HOC previous';
+   sim1_title = strcat('\fontsize{6}', dir_prev);
+   sim1_title = regexprep(sim1_title, '_', ' ');
+   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zm
@@ -3484,7 +3480,9 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( avg_rtp2_curr, z_curr_zm, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   legend_text(i,1:23) = '\fontsize{6}HOC current';
+   sim2_title = strcat('\fontsize{6}', dir_curr);
+   sim2_title = regexprep(sim2_title, '_', ' ');
+   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zm
@@ -3580,7 +3578,9 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( avg_rtpthlp_prev, z_prev_zm, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   legend_text(i,1:24) = '\fontsize{6}HOC previous';
+   sim1_title = strcat('\fontsize{6}', dir_prev);
+   sim1_title = regexprep(sim1_title, '_', ' ');
+   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zm
@@ -3597,7 +3597,9 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( avg_rtpthlp_curr, z_curr_zm, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   legend_text(i,1:23) = '\fontsize{6}HOC current';
+   sim2_title = strcat('\fontsize{6}', dir_curr);
+   sim2_title = regexprep(sim2_title, '_', ' ');
+   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zm
@@ -3695,7 +3697,9 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( avg_wm_prev, z_prev_zt, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   legend_text(i,1:24) = '\fontsize{6}HOC previous';
+   sim1_title = strcat('\fontsize{6}', dir_prev);
+   sim1_title = regexprep(sim1_title, '_', ' ');
+   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zt
@@ -3712,7 +3716,9 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( avg_wm_curr, z_curr_zt, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   legend_text(i,1:23) = '\fontsize{6}HOC current';
+   sim2_title = strcat('\fontsize{6}', dir_curr);
+   sim2_title = regexprep(sim2_title, '_', ' ');
+   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zt
@@ -3827,7 +3833,9 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( avg_um_prev, z_prev_zt, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   legend_text(i,1:24) = '\fontsize{6}HOC previous';
+   sim1_title = strcat('\fontsize{6}', dir_prev);
+   sim1_title = regexprep(sim1_title, '_', ' ');
+   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zt
@@ -3844,7 +3852,9 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( avg_um_curr, z_curr_zt, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   legend_text(i,1:23) = '\fontsize{6}HOC current';
+   sim2_title = strcat('\fontsize{6}', dir_curr);
+   sim2_title = regexprep(sim2_title, '_', ' ');
+   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zt
@@ -3940,7 +3950,9 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( avg_vm_prev, z_prev_zt, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   legend_text(i,1:24) = '\fontsize{6}HOC previous';
+   sim1_title = strcat('\fontsize{6}', dir_prev);
+   sim1_title = regexprep(sim1_title, '_', ' ');
+   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zt
@@ -3957,7 +3969,9 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( avg_vm_curr, z_curr_zt, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   legend_text(i,1:23) = '\fontsize{6}HOC current';
+   sim2_title = strcat('\fontsize{6}', dir_curr);
+   sim2_title = regexprep(sim2_title, '_', ' ');
+   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zt
@@ -4061,7 +4075,9 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( avg_upwp_prev, z_prev_zm, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   legend_text(i,1:24) = '\fontsize{6}HOC previous';
+   sim1_title = strcat('\fontsize{6}', dir_prev);
+   sim1_title = regexprep(sim1_title, '_', ' ');
+   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zm
@@ -4078,7 +4094,9 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( avg_upwp_curr, z_curr_zm, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   legend_text(i,1:23) = '\fontsize{6}HOC current';
+   sim2_title = strcat('\fontsize{6}', dir_curr);
+   sim2_title = regexprep(sim2_title, '_', ' ');
+   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zm
@@ -4182,7 +4200,9 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( avg_vpwp_prev, z_prev_zm, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   legend_text(i,1:24) = '\fontsize{6}HOC previous';
+   sim1_title = strcat('\fontsize{6}', dir_prev);
+   sim1_title = regexprep(sim1_title, '_', ' ');
+   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zm
@@ -4199,7 +4219,9 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( avg_vpwp_curr, z_curr_zm, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   legend_text(i,1:23) = '\fontsize{6}HOC current';
+   sim2_title = strcat('\fontsize{6}', dir_curr);
+   sim2_title = regexprep(sim2_title, '_', ' ');
+   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zm
@@ -4295,7 +4317,9 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( avg_rrm_prev, z_prev_zt, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   legend_text(i,1:24) = '\fontsize{6}HOC previous';
+   sim1_title = strcat('\fontsize{6}', dir_prev);
+   sim1_title = regexprep(sim1_title, '_', ' ');
+   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zt
@@ -4312,7 +4336,9 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( avg_rrm_curr, z_curr_zt, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   legend_text(i,1:23) = '\fontsize{6}HOC current';
+   sim2_title = strcat('\fontsize{6}', dir_curr);
+   sim2_title = regexprep(sim2_title, '_', ' ');
+   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zt
@@ -4408,7 +4434,9 @@ end
 if ( cmp_prev == 1 )
    i = i + 1;
    h(i) = plot( avg_Nrm_prev, z_prev_zt, '--', 'Color', [ 0.94, 0.50, 0.16], 'LineWidth', 2 );
-   legend_text(i,1:24) = '\fontsize{6}HOC previous';
+   sim1_title = strcat('\fontsize{6}', dir_prev);
+   sim1_title = regexprep(sim1_title, '_', ' ');
+   legend_text(i,1:length(sim1_title)) = sim1_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_prev_zt
@@ -4425,7 +4453,9 @@ end
 if ( cmp_curr == 1 )
    i = i + 1;
    h(i) = plot( avg_Nrm_curr, z_curr_zt, '-', 'Color', [ 0, 0.63, 1 ], 'LineWidth', 2 );
-   legend_text(i,1:23) = '\fontsize{6}HOC current';
+   sim2_title = strcat('\fontsize{6}', dir_curr);
+   sim2_title = regexprep(sim2_title, '_', ' ');
+   legend_text(i,1:length(sim2_title)) = sim2_title;
    hold on
    % Find vertical level index right below top of graph.
    for k = 2:1:nz_curr_zt
@@ -4443,7 +4473,7 @@ hold off
 % Brian's New Universal Legend (for output page 3).
 legend( h, legend_text, 'Location', 'NorthEast' )
 % Axis labels and graph title.
-xlabel('Nrm    [num/kg]')
+xlabel('Nrm    [num/m^3]')
 ylabel('Height    [m]')
 title('Rain Drop Concentration, N_r')
 % Extent of graph.
