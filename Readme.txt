@@ -1,4 +1,4 @@
-$Id: Readme.txt,v 1.37 2007-10-09 16:29:53 nielsenb Exp $
+$Id: Readme.txt,v 1.38 2007-10-19 13:00:06 vlarson Exp $
 
 ************************************************************************
 *                           Copyright Notice
@@ -137,6 +137,25 @@ to the HOC src code.  You can reference that with a line
 such as the following:
 
 -I/home/griffinb/hoc_v2.2_tuner/src
+
+-----------------------------------------------------------------------
+- (1.3) Making clean (or starting over)  
+-----------------------------------------------------------------------
+
+Occasionally, one needs to erase old executables or libraries and re-compile 
+the code starting with nothing.  For instance, this may be required when 
+a library or compiler is updated.  
+
+To delete old object files (*.o), libraries (*.a), and mod files,
+go to hoc_v2.2_tuner/src and type
+
+make clean
+
+If this doesn't help, then to additionally delete everything in the binary 
+and library directories, go to hoc_v2.2_tuner/src and type
+
+make distclean
+
 
 -----------------------------------------------------------------------
 - (2.1) Executing a standalone run:
