@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.134 2007-09-21 16:18:18 mjfalk Exp $
+! $Id: hoc.F,v 1.135 2007-10-26 21:29:48 mjfalk Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -275,7 +275,7 @@
      .                      wmt, wmm, em, exner,
      .                      taut, taum, thvm, p,
      .                      rhot, rhom, Lscale, lup,
-     .                      ldown, Kht, Khm, um_init, vm_init
+     .                      ldown, Kht, Khm, um_ref, vm_ref
 #ifdef SCALARS
      .                      ,sclrm, edsclrm
 #endif /*SCALARS*/
@@ -572,7 +572,7 @@
      .                      wmt, wmm, em, exner,
      .                      taut, taum, thvm, p,
      .                      rhot, rhom, Lscale, lup,
-     .                      ldown, Kht, Khm, um_init, vm_init
+     .                      ldown, Kht, Khm, um_ref, vm_ref
 #ifdef SCALARS
      .                      ,sclrm, edsclrm
 #endif /*SCALARS*/
@@ -690,7 +690,7 @@
      .               ug, vg, wp2, rcm, hydromet,
      .               wmt, wmm, em, exner, taut, taum, thvm,
      .               p, rhot, rhom, Lscale, lup,
-     .               ldown, Kht, Khm, um_init, vm_init
+     .               ldown, Kht, Khm, um_ref, vm_ref
 #ifdef SCALARS
      .               ,sclrm, edsclrm
 #endif
@@ -740,8 +740,8 @@
      .  rtm,            ! Total water mixing ratio      [kg/kg]
      .  um,             ! u wind                        [m/s]
      .  vm,             ! v wind                        [m/s]
-     .  um_init,        ! Initial profile of u wind     [m/s]
-     .  vm_init,        ! Initial profile of v wind     [m/s]
+     .  um_ref,         ! Initial profile of u wind     [m/s]
+     .  vm_ref,         ! Initial profile of v wind     [m/s]
      .  ug,             ! u geostrophic wind            [m/s] 
      .  vg,             ! u geostrophic wind            [m/s] 
      .  wp2,            ! w'^2                          [m^2/s^2]
@@ -1124,8 +1124,8 @@
 
        ! Moved this to be more general -dschanen July 16 2007
        if ( luv_nudge ) then
-         um_init = um ! Michael Falk addition for nudging code.  27 Sep/1 Nov 2006
-         vm_init = vm ! ditto
+         um_ref = um ! Michael Falk addition for nudging code.  27 Sep/1 Nov 2006
+         vm_ref = vm ! ditto
        end if
 
        return
@@ -1336,6 +1336,9 @@
      .                       exner, rhot, rtm, p, thvm, rcm,
      .                       wmt, wmm, thlm_forcing, rtm_forcing,
      .                       Ncnm, Ncm, Frad, radht, rtm_mc, thlm_mc
+! Michael Falk, 17 Oct 2007
+     .                       ,um_ref,vm_ref
+! eMFc
 #ifdef SCALARS
      .                      ,sclrm_forcing
 #endif /* SCALARS */
