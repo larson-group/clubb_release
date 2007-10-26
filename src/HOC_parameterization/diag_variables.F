@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F,v 1.17 2007-07-22 20:36:08 griffinb Exp $
+! $Id: diag_variables.F,v 1.18 2007-10-26 21:30:54 mjfalk Exp $
         module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -20,12 +20,12 @@
      .  Skwt,   ! Skw on thermo. grid                   [-]
      .  ug,     ! u geostrophic wind                    [m/s]
      .  vg,     ! v geostrophic wind                    [m/s]
-     .  um_init,! Initial u wind; Michael Falk,         [m/s]
-     .  vm_init,! Initial v wind; Michael Falk,         [m/s]
+     .  um_ref, ! Initial u wind; Michael Falk,         [m/s]
+     .  vm_ref, ! Initial v wind; Michael Falk,         [m/s]
      .  thvm,   ! Virtual potential Temperature         [K]
      .  shear   ! Wind shear production
 
-!$omp   threadprivate(Sct, Skwm, Skwt, ug, vg, um_init, vm_init)
+!$omp   threadprivate(Sct, Skwm, Skwt, ug, vg)
 !$omp   threadprivate(thvm, shear)
 
         real, target, allocatable, dimension(:) ::
@@ -228,8 +228,8 @@
         allocate( Skwt(1:nzmax) )      ! Skw
         allocate( ug(1:nzmax) )        ! u geostrophic wind
         allocate( vg(1:nzmax) )        ! v geostrophic wind
-        allocate( um_init(1:nzmax) )   ! initial u wind; Michael Falk, 1 Nov 2006
-        allocate( vm_init(1:nzmax) )   ! Initial u wind; Michael Falk, 1 Nov 2006
+        allocate( um_ref(1:nzmax) )    ! Reference u wind for nudging; Michael Falk, 17 Oct 2007
+        allocate( vm_ref(1:nzmax) )    ! Reference v wind for nudging; Michael Falk, 17 Oct 2007
         allocate( thvm(1:nzmax) )      ! Virtual potential temperature
 
         allocate( rsm(1:nzmax) )       ! Saturation mixing ratio  ! Brian
@@ -347,8 +347,8 @@
 
         ug  = 0.0      ! u geostrophic wind
         vg  = 0.0      ! v geostrophic wind
-        um_init  = 0.0 !
-        vm_init  = 0.0 !
+        um_ref   = 0.0 !
+        vm_ref   = 0.0 !
 
         ! Tendency arrays for prognostic variables
 
@@ -463,8 +463,8 @@
         deallocate( Skwt )
         deallocate( ug )        ! u geostrophic wind
         deallocate( vg )        ! v geostrophic wind
-        deallocate( um_init )   ! u initial
-        deallocate( vm_init )   ! v initial
+        deallocate( um_ref )    ! u initial
+        deallocate( vm_ref )    ! v initial
 
         ! Tendency arrays for prognostic variables
 
