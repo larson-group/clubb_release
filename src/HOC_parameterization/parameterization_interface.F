@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.58 2007-10-01 23:24:01 vlarson Exp $
+! $Id: parameterization_interface.F,v 1.59 2007-10-26 21:32:01 mjfalk Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -596,7 +596,6 @@
      .   rsat( p(k), (thlm(k)+(Lv/(Cp*exner(k)))*rcm(k))*exner(k) )
        end do
 
-
        !----------------------------------------------------------------
        ! Advance rtm/wprtp and thlm/wpthlp one time step
        !----------------------------------------------------------------
@@ -626,7 +625,6 @@
          wpsclrp(gr%nnzp,i) = 0.0
        end do ! i = 1, sclr_dim
 #endif /* SCALARS */
-
 
        !----------------------------------------------------------------
        ! Advance wp2/wp3 one timestep
@@ -745,9 +743,9 @@
 
        if ( luv_nudge ) then
          um(1:gr%nnzp) = um(1:gr%nnzp) 
-     .      - ((um(1:gr%nnzp) - um_init(1:gr%nnzp)) * (dt/ts_nudge))
+     .      - ((um(1:gr%nnzp) - um_ref(1:gr%nnzp)) * (dt/ts_nudge))
          vm(1:gr%nnzp) = vm(1:gr%nnzp) 
-     .      - ((vm(1:gr%nnzp) - vm_init(1:gr%nnzp)) * (dt/ts_nudge))
+     .      - ((vm(1:gr%nnzp) - vm_ref(1:gr%nnzp)) * (dt/ts_nudge))
        end if
 
        ! Compute Shear Production  -Brian
