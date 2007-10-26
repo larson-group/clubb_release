@@ -354,6 +354,7 @@
       ! Begin coamps_micro_driver code
       ldrizzle = .FALSE.
       lgrpl    = .FALSE.
+
       icase    = 75
       eic      = 1.0
 
@@ -523,6 +524,14 @@
         fallg_flip(1,1,k) = 0.
         fallr_flip(1,1,k) = 0.
         falln_flip(1,1,k) = 0.
+
+  ! Michael Falk added these initializations, 10 Oct 2007
+        falli_in_cloud(1,1,k) = 0.
+        falls_in_cloud(1,1,k) = 0.
+        fallg_in_cloud(1,1,k) = 0.
+        fallr_in_cloud(1,1,k) = 0.
+        falln_in_cloud(1,1,k) = 0.
+  ! eMFc
       end do
 ! eMFc
 
@@ -535,7 +544,9 @@
      1       ,qsatv3d_flip(1,1,2:kk+1),temp3d_flip(1,1,2:kk+1)
      1       ,qsati3d_flip(1,1,2:kk+1),th2t3d_flip(1,1,2:kk+1),wtm
      2       ,exbm_flip(1,1,1:kk),rbm_flip(1,1,1:kk)
-     3       ,nc3,nr3,ncn3,ni3,cp,deltf,Lf,Ls,Lv 
+!     3       ,nc3,nr3,ncn3,ni3,cp,deltf,Lf,Ls,Lv 
+     3       ,nc3(1,1,kk:1:-1),nr3(1,1,kk:1:-1),ncn3(1,1,kk:1:-1)
+     3       ,ni3(1,1,kk:1:-1),cp,deltf,Lf,Ls,Lv 
      4       ,pcut,p0,Rd,Rv,sloper,slopes,slopeg,timea,lice 
      5       ,nne,kk,i1d,j1d,ary1d,i1dflg,n1d,maxpt1d,maxvr1d 
      6       ,kmax,nrdamp,ipts,nkpts,icomp,kcomp,j
@@ -598,18 +609,11 @@
         falln_flip(:,:,kcomp(k)) = falln_in_cloud(:,:,k)
       end do
 
-!      falli(:,:,kk-1:1:-1) = falli_flip(:,:,2:kk)
-!      falls(:,:,kk-1:1:-1) = falls_flip(:,:,2:kk)
-!      fallg(:,:,kk-1:1:-1) = fallg_flip(:,:,2:kk)
-!      fallr(:,:,kk-1:1:-1) = fallr_flip(:,:,2:kk)
-!      falln(:,:,kk-1:1:-1) = falln_flip(:,:,2:kk)
       falli(:,:,kk:1:-1) = falli_flip(:,:,1:kk)
       falls(:,:,kk:1:-1) = falls_flip(:,:,1:kk)
       fallg(:,:,kk:1:-1) = fallg_flip(:,:,1:kk)
       fallr(:,:,kk:1:-1) = fallr_flip(:,:,1:kk)
       falln(:,:,kk:1:-1) = falln_flip(:,:,1:kk)
-! Michael Falk made this comment to compute snowv in a consistent way with the rest of the fallspeeds and work around an error
-!      snowv(:,:,kk:1:-1) = snowv_flip(:,:,1:kk)
       snowv(:,:,kk:1:-1) = falls_flip(:,:,1:kk)
 
       ! Assure positive definiteness in nc3/nr3/ncn3 fields
