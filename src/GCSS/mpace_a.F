@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_a.F,v 1.4 2007-10-18 17:36:58 vlarson Exp $
+! $Id: mpace_a.F,v 1.5 2007-10-26 21:36:52 mjfalk Exp $
         module mpace_a
 
 !       Description:
@@ -20,7 +20,12 @@
      .    exner, rhot, rtm, p, thvm, rcm,
      .    wmt, wmm, theta_tndcy, rt_tndcy,
      .    Ncnm, Ncm, Frad, radht,
-     .    rtm_mc, thlm_mc, sclrm_forcing )
+! Michael Falk, 17 Oct 2007
+!     .    rtm_mc, thlm_mc, sclrm_forcing )
+     .    rtm_mc, thlm_mc, 
+     .    um_hoc_grid, vm_hoc_grid,
+     .    sclrm_forcing )
+! eMFc
 
 !        Description:
 !
@@ -42,7 +47,7 @@
 
         ! Local constants, subsidence
         real, parameter ::
-     .  grav0 = 9.8,     ! m/s
+!     .  grav0 = 9.8,     ! m/s
      .  D     = 5.8e-6,  ! 1/s
      .  psfc  = 101000., ! Pa
      .  pinv  = 85000.   ! Pa; ditto
@@ -170,23 +175,41 @@
       real :: ratio
 
       character(*), parameter :: 
-     . file_path = '../src/GCSS/mpace_a_files/'
+     . file_path = '../model/mpace_a_forcings/'
 
       real, dimension(file_nlevels) :: file_pressure
       real, dimension(file_nlevels) :: file_heights
       real, dimension(file_ntimes) :: file_times
 
-      real, dimension(file_nlevels,file_ntimes) :: omega_forcing ! mb/s
+! Michael Falk is, on 28 September 2007, removing omega.  We are going to try
+! to force the model without specifying it, so we can do the temperature and
+! moisture forcings the way Steve Klein wants us to.
+
+!      real, dimension(file_nlevels,file_ntimes) :: omega_forcing ! mb/s
       real, dimension(file_nlevels,file_ntimes) :: dTdt_forcing  ! K/hr
       real, dimension(file_nlevels,file_ntimes) :: dqdt_forcing  ! g/kg/hr
+      real, dimension(file_nlevels,file_ntimes) :: vertT_forcing  ! K/hr
+      real, dimension(file_nlevels,file_ntimes) :: vertq_forcing  ! g/kg/hr
+      real, dimension(file_nlevels,file_ntimes) :: um_obs  ! m/s
+      real, dimension(file_nlevels,file_ntimes) :: vm_obs  ! m/s
 
-      real, dimension(file_nlevels) :: omega_column
+!      real, dimension(file_nlevels) :: omega_column
       real, dimension(file_nlevels) :: dTdt_column
       real, dimension(file_nlevels) :: dqdt_column
+      real, dimension(file_nlevels) :: vertT_column
+      real, dimension(file_nlevels) :: vertq_column
+      real, dimension(file_nlevels) :: um_column
+      real, dimension(file_nlevels) :: vm_column
 
-      real, dimension(gr%nnzp) :: omega_hoc_grid
+!      real, dimension(gr%nnzp) :: omega_hoc_grid
       real, dimension(gr%nnzp) :: dTdt_hoc_grid
       real, dimension(gr%nnzp) :: dqdt_hoc_grid
+      real, dimension(gr%nnzp) :: vertT_hoc_grid
+      real, dimension(gr%nnzp) :: vertq_hoc_grid
+
+        real, dimension(gr%nnzp), intent(out) :: 
+     .  um_hoc_grid,      ! Observed wind, for nudging         [m/s]
+     .  vm_hoc_grid       ! Observed wind, for nudging         [m/s]
 
       call file_read_1d(10,
      . file_path//'mpace_a_press.dat',
@@ -200,18 +223,33 @@
      . file_path//'mpace_a_times.dat',
      . file_ntimes, per_line, file_times)
 
-      call file_read_2d(10,
-     . file_path//'omega.dat',
-     . file_nlevels, file_ntimes, per_line, omega_forcing)
+!      call file_read_2d(10,
+!     . file_path//'mpace_a_omega.dat',
+!     . file_nlevels, file_ntimes, per_line, omega_forcing)
 
       call file_read_2d(10,
-     . file_path//'dTdt.dat',
+     . file_path//'mpace_a_dTdt.dat',
      . file_nlevels, file_ntimes, per_line, dTdt_forcing)
 
       call file_read_2d(10,
-     . file_path//'dqdt.dat',
+     . file_path//'mpace_a_dqdt_horiz.dat',
      . file_nlevels, file_ntimes, per_line, dqdt_forcing)
 
+      call file_read_2d(10,
+     . file_path//'mpace_a_verts.dat',
+     . file_nlevels, file_ntimes, per_line, vertT_forcing)
+
+      call file_read_2d(10,
+     . file_path//'mpace_a_vertq.dat',
+     . file_nlevels, file_ntimes, per_line, vertq_forcing)
+
+      call file_read_2d(10,
+     . file_path//'mpace_a_um_obs.dat',
+     . file_nlevels, file_ntimes, per_line, um_obs)
+
+      call file_read_2d(10,
+     . file_path//'mpace_a_vm_obs.dat',
+     . file_nlevels, file_ntimes, per_line, vm_obs)
 
       ! This code block takes the model time, finds the time before it and the time after it on the list,
       ! and marks them left_time and right_time for interpolation.  If the time is before the first or
@@ -238,10 +276,10 @@
      .        (file_times(right_time) - file_times(left_time)) ! at the first time a=0; at the second time a=1.
 
       do k=1,file_nlevels
-        omega_column(k) = ratio *			       ! Do linear interpolation in time
-     .                      (omega_forcing(k,right_time)
-     .                      -omega_forcing(k,left_time))
-     .                     + omega_forcing(k,left_time)        
+!        omega_column(k) = ratio *			       ! Do linear interpolation in time
+!     .                      (omega_forcing(k,right_time)
+!     .                      -omega_forcing(k,left_time))
+!     .                     + omega_forcing(k,left_time)        
 
         dTdt_column(k) = ratio *			       ! Do linear interpolation in time
      .                      (dTdt_forcing(k,right_time)
@@ -252,15 +290,46 @@
      .                      (dqdt_forcing(k,right_time)
      .                      -dqdt_forcing(k,left_time))
      .                     + dqdt_forcing(k,left_time)        
+
+        vertT_column(k) = ratio *                               ! Do linear interpolation in time
+     .                      (vertT_forcing(k,right_time)
+     .                      -vertT_forcing(k,left_time))
+     .                     + vertT_forcing(k,left_time)        
+
+        vertq_column(k) = ratio *                               ! Do linear interpolation in time
+     .                      (vertq_forcing(k,right_time)
+     .                      -vertq_forcing(k,left_time))
+     .                     + vertq_forcing(k,left_time)        
+
+        um_column(k) = ratio *                                  ! Do linear interpolation in time
+     .                      (um_obs(k,right_time)
+     .                      -um_obs(k,left_time))
+     .                     + um_obs(k,left_time)        
+
+        vm_column(k) = ratio *                                  ! Do linear interpolation in time
+     .                      (vm_obs(k,right_time)
+     .                      -vm_obs(k,left_time))
+     .                     + vm_obs(k,left_time)        
+
       end do
 
-
-      omega_hoc_grid = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt,    ! Do linear interpolation in space
-     .                         file_heights,omega_column)            ! using zlinterp_fnc
+!      omega_hoc_grid = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt,    ! Do linear interpolation in space
+!     .                         file_heights,omega_column)            ! using zlinterp_fnc
       dTdt_hoc_grid  = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt,
      .                         file_heights,dTdt_column)
       dqdt_hoc_grid  = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt,
      .                         file_heights,dqdt_column)
+      vertT_hoc_grid  = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt,
+     .                         file_heights,vertT_column)
+      vertq_hoc_grid  = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt,
+     .                         file_heights,vertq_column)
+      um_hoc_grid  = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt,
+     .                         file_heights,um_column)
+      vm_hoc_grid  = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt,
+     .                         file_heights,vm_column)
+
+      um_hoc_grid (1) = um_hoc_grid(2)
+      vm_hoc_grid (1) = vm_hoc_grid(2)
 
 ! eMFc
 
@@ -274,8 +343,10 @@
 
         ! Compute vertical motion
         do i=2,gr%nnzp
-          velocity_omega = omega_hoc_grid(i) * 100 / 3600 ! convering mb/hr to Pa/s
-          wmt(i) = -velocity_omega * Rd * thvm(i) / p(i) / grav0
+!          velocity_omega = omega_hoc_grid(i) * 100 / 3600 ! convering mb/hr to Pa/s
+!          wmt(i) = -velocity_omega * Rd * thvm(i) / p(i) / grav
+           wmt(i) = 0.
+! End of Michael Falk's obliteration of omega.
         end do
         wmm = zt2zm( wmt )
 
@@ -287,9 +358,11 @@
 
         ! Compute large-scale tendencies
         do i=1,gr%nnzp
-         theta_tndcy(i) = (dTdt_hoc_grid(i) * ((psfc/p(i)) ** (Rd/Cp)))
+         theta_tndcy(i) = ((dTdt_hoc_grid(i) + vertT_hoc_grid(i))
+     .                    * ((psfc/p(i)) ** (Rd/Cp)))
      .                    / 3600. ! K/s
-         rt_tndcy(i)  = dqdt_hoc_grid(i) / 1000. / 3600. ! g/kg/hr -> kg/kg/s
+         rt_tndcy(i)  = (dqdt_hoc_grid(i)+vertq_hoc_grid(i))
+     .    / 1000. / 3600. ! g/kg/hr -> kg/kg/s
         end do
 
         ! Compute radiation
@@ -439,11 +512,11 @@
      .                           wpsclrp_sfc, wpedsclrp_sfc )
 
 !        Description:
-!          Surface forcing subroutine for mpace_b case.  Written July-
-!          November 2006 by Michael Falk.
+!          Surface forcing subroutine for mpace_a case.  Written 
+!          October 2007 by Michael Falk.
 !
 !        References:
-!          mpace_b specification, arm.gov
+!          mpace_a specification from arm.gov
 !-----------------------------------------------------------------------
 
         use constants
@@ -458,16 +531,10 @@
         real, parameter ::
      .  ubmin = 0.25,
      .  ustar = 0.25
-!        ! Values of HF & LF are from the mpace_a specification.
-!     .  HF    = 136.5, ! Sensible Heat Flux     [W m^-2] 
-!     .  LF    = 107.7  ! Latent Heat Flux       [W m^-2] 
-! ! eMFc
 
         ! Input Variables
-! Michael Falk, 23 August 2007
         real, intent(in) ::
      .  time     ! current model time           [s]
-! eMFc
 
         real, intent(in)  ::
      .  rho0,    ! Air density at surface       [kg/m^3
@@ -487,8 +554,6 @@
      .  wpedsclrp_sfc  ! Passive eddy-scalar surface flux [units m/s]
 
         ! Local Variables
-! Michael Falk, 23 Aug 2007
-!        real :: ubar
          real ::
      .   ubar,
      .   LF,
@@ -496,17 +561,18 @@
 
          integer ::
      .   i,j,k
-! eMFc
 
-! Michael Falk, 23 Aug 2007
       integer, parameter :: file_ntimes = 139
+      integer, parameter :: per_line = 5
+
       real, dimension(file_ntimes) :: file_times
       real, dimension(file_ntimes) :: file_LH
       real, dimension(file_ntimes) :: file_SH
+
       integer left_time,right_time
-      integer, parameter :: per_line = 5;
+
       character(*), parameter :: 
-     . file_path = '../src/GCSS/mpace_a_files/'
+     . file_path = '../model/mpace_a_forcings/'
 
 !-----------------------------------------------------------------------
 
@@ -521,27 +587,6 @@
       call file_read_1d(10,
      . file_path//'mpace_a_sh.dat',
      . file_ntimes, per_line, file_SH)
-
-!      open(10,file=file_path//'mpace_a_times.dat',action='read')
-!      do k=0,((file_ntimes/5)-1)
-!        read(10,*) (file_times((k*5)+i),i=1,5)
-!      end do
-!      read (10,*) (file_times((k*5)+i),i=1,mod(file_ntimes,5))
-!      close (10)
-
-!      open(10,file=file_path//'mpace_a_lh.dat',action='read')
-!      do k=0,((file_ntimes/5)-1)
-!        read(10,*) (file_LH((k*5)+i),i=1,5)
-!      end do
-!      read (10,*) (file_LH((k*5)+i),i=1,mod(file_ntimes,5))
-!      close (10)
-
-!      open(10,file=file_path//'mpace_a_sh.dat',action='read')
-!      do k=0,((file_ntimes/5)-1)
-!        read(10,*) (file_SH((k*5)+i),i=1,5)
-!      end do
-!      read (10,*), (file_SH((k*5)+i),i=1,mod(file_ntimes,5))
-!      close (10)
 
       ! choose which times to use
       if (time <= file_times(1)) then
