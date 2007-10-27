@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_97.F,v 1.7 2007-10-12 18:27:01 faschinj Exp $
+! $Id: arm_97.F,v 1.8 2007-10-27 16:29:07 faschinj Exp $
         module arm_97
 
 !       Description:
@@ -37,7 +37,7 @@
         intrinsic :: present
 
         ! Constant Parameters
-        integer, parameter :: ntimes = 32, nz = 18,
+        integer, parameter :: ntimes = 169, nz = 18,
      .   per_line = 5
 
         character(*), parameter ::
@@ -169,7 +169,7 @@
         intrinsic :: max, sqrt, present
 
          ! Constant Parameters
-        integer, parameter :: ntimes = 32, per_line = 5
+        integer, parameter :: ntimes = 169, per_line = 5
        
          ! Directory containing large-scale forcing files 
         character(*), parameter :: 
