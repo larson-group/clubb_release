@@ -1,0 +1,13 @@
+
+These files contain large-scale forcing information for the 
+  ARM 1997 deep convective case.
+
+Starting time and Julian day:  23:30  177
+Ending time and Julian day:    23:30  199
+
+arm_97_dqdt.dat:     Water vapor advective tendencies    [kg kg^{-1} s^{-1}]
+arm_97_dTdt.dat:     Potential Temperature tendencies    [K s^{-1}]
+arm_97_heights.dat:  Vertical levels                     [m]
+arm_97_times.dat:    Change in time from start           [s]
+arm_97_LE.dat:       Evaporation Energy                  [W m^{-2}]
+arm_97_SE.dat:       Heat Energy                         [W m^{-2}]
