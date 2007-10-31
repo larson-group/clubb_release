@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.135 2007-10-26 21:29:48 mjfalk Exp $
+! $Id: hoc.F,v 1.136 2007-10-31 18:35:47 faschinj Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -891,6 +891,11 @@
 !         wp2 = 2.0 / 3.0 * em
 !<--- End reduction of initial sounding for stability 24 Jan 07
 
+        ! March 2000 ARM case
+        case ( "arm_0003" )
+          em = 1.0
+          wp2 = 2.0 / 3.0 * em
+         
         ! June 27 1997 ARM case
         case ( "arm_97" )
           em = 1.0
@@ -1153,6 +1158,7 @@
         use prognostic_variables
         use arm, only: arm_tndcy, arm_sfclyr
         use arm_97, only: arm_97_tndcy, arm_97_sfclyr
+        use arm_0003, only: arm_0003_tndcy, arm_0003_sfclyr
         use astex, only: astex_tndcy, astex_sfclyr
         use atex, only: atex_tndcy, atex_sfclyr
         use bomex, only: bomex_tndcy, bomex_sfclyr
@@ -1223,9 +1229,19 @@
      .                     ,sclrm_forcing 
 #endif /* SCALARS */
      .                   )
+         case( "arm_0003" ) ! ARM March 2000 case
+          call arm_0003_tndcy( time, wmm, wmt, thlm_forcing, rtm_forcing
+! Joshua Fasching, 27 Oct 2007
+     .                       ,um_ref,vm_ref
+#ifdef SCALARS
+     .                       ,sclrm_forcing 
+#endif /* SCALARS */
+     .                      )
 
          case( "arm_97" ) ! 27 June 1997 ARM case
            call arm_97_tndcy( time, wmm, wmt, thlm_forcing, rtm_forcing
+! Joshua Fasching, 27 Oct 2007
+     .                       ,um_ref,vm_ref
 #ifdef SCALARS
      .                       ,sclrm_forcing 
 #endif /* SCALARS */
@@ -1438,6 +1454,17 @@
      .                     ,wpsclrp_sfc, wpedsclrp_sfc
 #endif /* SCALARS */
      .                    )
+
+        case( "arm_0003" )
+           call arm_0003_sfclyr( time, gr%zt(2), rhom(1),
+     .                         thlm(2), um(2), vm(2),
+     .                         upwp_sfc, vpwp_sfc, 
+     .                         wpthlp_sfc, wprtp_sfc
+#ifdef SCALARS
+     .                        ,wpsclrp_sfc, wpedsclrp_sfc
+#endif /* SCALARS */
+     .                     )
+
 
          case ( "arm_97" )
            call arm_97_sfclyr( time, gr%zt(2), rhom(1),

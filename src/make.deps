@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.12 2007-09-21 16:18:59 mjfalk Exp $
+# $Id: make.deps,v 1.13 2007-10-31 18:35:47 faschinj Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -119,6 +119,8 @@ diag_ustar.o: diag_ustar.F
 arm.o       : constants.o diag_ustar.o model_flags.o grid.o hoc_stats.o arm.F
 arm_97.o    : constants.o diag_ustar.o model_flags.o grid.o hoc_stats.o \
 	zlinterp.o arm.F
+arm_0003.o   : constants.o diag_ustar.o model_flags.o grid.o hoc_stats.o \
+	arm_0003.F
 astex.o     : constants.o model_flags.o grid.o astex.F
 atex.o      : constants.o model_flags.o grid.o cloud_rad.o hoc_stats.o atex.F
 bomex.o     : constants.o model_flags.o grid.o bomex.F
@@ -177,7 +179,7 @@ bugsrad_hoc.o 		: kinds.o constants.o bugs_rad.o \
 # == Misc. program related source files  ==
 hoc.o		: parameterization_interface.o arm.o astex.o atex.o \
 	bomex.o dycoms2_rf01.o dycoms2_rf02.o fire.o jun25.o mpace_a.o mpace_b.o nov11.o \
-	wangara.o cobra.o rico.o gabls2.o lba.o arm_97.o hoc.F
+	wangara.o cobra.o rico.o gabls2.o lba.o arm_97.o arm_0003.o hoc.F
 sounding.o	: constants.o sounding.F
 inputfields.o	: grid.o inputgrads.o inputfields.F 
 gradsaverage.o	: inputgrads.o gradsaverage.F 
