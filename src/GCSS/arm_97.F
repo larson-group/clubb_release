@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_97.F,v 1.8 2007-10-27 16:29:07 faschinj Exp $
+! $Id: arm_97.F,v 1.9 2007-11-02 15:52:05 faschinj Exp $
         module arm_97
 
 !       Description:
@@ -17,6 +17,8 @@
 !----------------------------------------------------------------------
         subroutine arm_97_tndcy( time, wmt, wmm, 
      .                           thlm_forcing, rtm_forcing,
+!              Joshua Fasching Oct 27 2007 
+     .                           um_hoc_grid, vm_hoc_grid,
      .                           sclrm_forcing )
 !       Description:
 !       Subroutine to set thetal and total water tendencies for ARM 97 case
@@ -47,6 +49,9 @@
         real, dimension(nz, ntimes) :: z
         real, dimension(nz, ntimes) :: thl_ls
         real, dimension(nz, ntimes) :: rt_ls
+        real, dimension(nz,ntimes) :: um_obs  ! m/s
+        real, dimension(nz,ntimes) :: vm_obs  ! m/s
+
 
         ! Input Variables
         real, intent(in) :: time ! Model time [s]
@@ -56,7 +61,9 @@
      .  thlm_forcing, ! Liquid water potential temperature tendency  [K/s]
      .  wmm,          ! Vertical velocity on moment. grid            [m/s]
      .  wmt,          ! Vertical velocity on thermo. grid            [m/s]
-     .  rtm_forcing   ! Total water mixing ratio tendency            [kg/kg/s]
+     .  rtm_forcing,  ! Total water mixing ratio tendency            [kg/kg/s]
+     .  um_hoc_grid,  ! Observed wind, for nudging                   [m/s]
+     .  vm_hoc_grid   ! Observed wind, for nudging                   [m/s]
 
         ! Output (optional) Variables
         real, optional, intent(out), dimension(gr%nnzp,sclr_dim) :: 
@@ -66,7 +73,7 @@
         integer :: i1, i2
 
         real, dimension(nz) :: thlm_t_interp,
-     .   rtm_t_interp
+     .   rtm_t_interp, um_obs_t_interp, vm_obs_t_interp
 
         ! Reading in the files located in
         ! ../model/arm_97_forcings/ and storing them in arrays
@@ -86,6 +93,14 @@
         call file_read_2d(10,
      .    file_path//'arm_97_dqdt.dat',
      .    nz, ntimes, per_line, rt_ls)
+
+        call file_read_2d(10,
+     .    file_path//'arm_97_um_obs.dat',
+     .    nz, ntimes, per_line, um_obs)
+
+        call file_read_2d(10,
+     .    file_path//'arm_97_vm_obs.dat',
+     .    nz, ntimes, per_line, vm_obs)
 
 !-----------------------------------------------------------------------
 
@@ -134,7 +149,28 @@
      .           ( gr%nnzp, nz, gr%zt(:), z(:,i1), rtm_t_interp )
         ! Modified by Joshua Fasching (October 2007)
 
+        ! Interpolate um observed to the HOC grid
+        ! Time
+        um_obs_t_interp = (1.-time_frac) * um_obs(:,i1) + time_frac * 
+     .     um_obs(:,i2)
+        ! Vertical
+        um_hoc_grid(1:gr%nnzp) = zlinterp_fnc
+     .           ( gr%nnzp, nz, gr%zt(:), z(:,i1), um_obs_t_interp )
+        ! Added by Joshua Fasching (October 27 2007)
+
+        ! Interpolate vm observed to the HOC grid
+        ! Time
+        vm_obs_t_interp = (1.-time_frac) * vm_obs(:,i1) + time_frac * 
+     .     vm_obs(:,i2)
+        ! Vertical
+        vm_hoc_grid(1:gr%nnzp) = zlinterp_fnc
+     .           ( gr%nnzp, nz, gr%zt(:), z(:,i1), vm_obs_t_interp )
+        ! Added by Joshua Fasching (October 27 2007)
+        um_hoc_grid (1) = um_hoc_grid(2)
+        vm_hoc_grid (1) = vm_hoc_grid(2)
+
         ! The specification calls for zero imposed subsidence (always)
+
         wmm(:) = 0.
         wmt(:) = 0.
 
