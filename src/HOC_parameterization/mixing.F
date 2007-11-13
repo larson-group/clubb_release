@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.20 2007-10-01 23:24:52 vlarson Exp $
+! $Id: mixing.F,v 1.21 2007-11-13 21:36:24 vlarson Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -175,6 +175,13 @@
           return
         end if
 
+        ! The arm_0003 case produces negative rtm near the tropopause.
+        !    To avoid this, we clip rtm.  This is not a good solution,
+        !    because it renders rtm non-conserved.  We should look into 
+        !    a positive definite advection scheme.
+        !    Vince Larson.  13 Nov 2007
+        rtm = max( rtm, 0.0 ) 
+        ! End of Vince Larson's change.
 
         ! Prof. Larson's modified mixing_lhs 
         call mixing_lhs( .true., dt, taum, wmm, wmt, 
@@ -195,6 +202,7 @@
           write(fstderr,'(a)') "thetal mixing failed"
           return
         end if
+
 
         ! Solve sclrm / wpsclrp
         if ( present( sclrm )     .and. present( wpsclrp ) .and.
