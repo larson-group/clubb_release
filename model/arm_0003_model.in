@@ -1,4 +1,4 @@
-! $Id: arm_0003_model.in,v 1.1 2007-10-31 18:38:00 faschinj Exp $
+! $Id: arm_0003_model.in,v 1.2 2007-11-14 21:16:26 vlarson Exp $
 ! Parameter file for GCSS ARM 0003 deep convective case
 
 &model_setting
@@ -17,8 +17,8 @@ time_initial = 63003.0
 time_final = 1931404.0
 time_spinup = 63003.0
 
-dtmain    = 10.0
-dtclosure = 10.0
+dtmain    = 60.0
+dtclosure = 60.0
 
 sfctype = 1
 
@@ -32,9 +32,9 @@ ts_nudge = 7200
 
 cloud_sed     = .false.
 kk_rain       = .false.
-lcoamps_micro = .false.
+lcoamps_micro = .true.
 licedfs       = .false.
-lbugsrad      = .false.
+lbugsrad      = .true.
 lKhm_aniso    = .false.
 luv_nudge     = .true.
 /
