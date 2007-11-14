@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.20 2007-09-07 21:54:50 mjfalk Exp $
+! $Id: wp23.F,v 1.21 2007-11-14 21:20:44 vlarson Exp $
 
         subroutine timestep_wp23
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
@@ -138,12 +138,19 @@
 
 !       Solve semi-implicitly
 !       Note: Kw is defined to be 1/2 of Kht
+! Vince Larson increased Kw in order to run arm_0003 and arm_97 stably
+!  14 Nov 2007.
         call wp23_solve( dt, Scm, Lscale, Lm, taum, tauw3t, 0.5*Kht,
      .                   wmt, wmm, wpthvp, wp2thvp,
      .                   um, upwp, vm, vpwp, up2, vp2,
      .                   Skwt, C1_Skw_fnc, C11_Skw_fnc, 
      .                   wp2, wp3, isValid )
-
+!        call wp23_solve( dt, Scm, Lscale, Lm, taum, tauw3t, 10*0.5*Kht,
+!     .                   wmt, wmm, wpthvp, wp2thvp,
+!     .                   um, upwp, vm, vpwp, up2, vp2,
+!     .                   Skwt, C1_Skw_fnc, C11_Skw_fnc, 
+!     .                   wp2, wp3, isValid )
+! End Vince Larson's change
         return
         end subroutine timestep_wp23
 
