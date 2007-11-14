@@ -1,10 +1,10 @@
-! $Id: arm_0003_stats.in,v 1.1 2007-10-31 18:39:58 faschinj Exp $ 
+! $Id: arm_0003_stats.in,v 1.2 2007-11-14 21:14:31 vlarson Exp $ 
 &statsnl
 
 lstats = t
 stats_fmt = 'grads'
 stats_tsamp = 60.0
-stats_tout  = 60.0
+stats_tout  = 1800.0
 
 fname_zt = 'arm_0003_zt',
 vars_zt = 
@@ -16,7 +16,7 @@ vars_zt =
 'sc', 'rhot', 'radht', 'radht_LW', 'radht_SW',
 'Ncm', 'Ncnm', 'Nim', 'sed_rcm', 'rsm',
 'rrm', 'Nrm', 'mean_vol_rad_rain', 'mean_vol_rad_cloud',
-!'rain_rate', 'AKm', 'AKm_est', 'rsnowm', 'ricem', 'rgraupelm',
+'rain_rate', 'AKm', 'AKm_est', 'rsnowm', 'ricem', 'rgraupelm',
 !'diam', 'm', 'dqc_dt_icedfs', 'u_T_cm',
 'rtm_bt', 'rtm_ma', 'rtm_ta', 'thlm_bt', 'thlm_ma', 'thlm_ta',
 'um_bt', 'um_ma', 'um_gf', 'um_cf', 'um_ta',
@@ -45,7 +45,7 @@ vars_zm =
 'wpthvp', 'rtpthvp', 'thlpthvp', 'taum', 'khm', 'wprcp',
 'thlprcp', 'rtprcp', 'rcp2', 'upwp', 'vpwp', 'rhom', 'sc', 'em',
 'shear', 'Frad', 'Frad_LW', 'Frad_SW', 'Fprec', 'Fcsed',
-!'Vrr', 'VNr', 'Vsnow', 'Vgraupel', 'Vice',
+'Vrr', 'VNr', 'Vsnow', 'Vgraupel', 'Vice',
 'wp2_bt', 'wp2_ma', 'wp2_ta', 'wp2_ac', 'wp2_bp', 'wp2_pr1',
 'wp2_pr2', 'wp2_pr3', 'wp2_dp1', 'wp2_dp2', 'wp2_cl',
 'wprtp_bt', 'wprtp_ma', 'wprtp_ta', 'wprtp_tp', 'wprtp_ac', 'wprtp_bp',
@@ -67,7 +67,7 @@ vars_zm =
 
 fname_sfc = 'arm_0003_sfc',
 vars_sfc = 
-'ustar', 'lh', 'sh', 'cc', 'lwp', 'zb', 'zi', !'rain', 'pflux', 'rrm_sfc',
+'ustar', 'lh', 'sh', 'cc', 'lwp', 'zb', 'zi', 'rain', 'pflux', 'rrm_sfc',
 ''
 
 /
