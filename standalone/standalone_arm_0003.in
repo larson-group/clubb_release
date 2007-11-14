@@ -1,4 +1,4 @@
-! $Id: standalone_arm_0003.in,v 1.1 2007-10-31 18:37:09 faschinj Exp $
+! $Id: standalone_arm_0003.in,v 1.2 2007-11-14 21:18:12 vlarson Exp $
 ! Description:
 ! Namelists for the hoc_standalone program. 
 ! run_file is the location of the model namelist file, which contains the 
@@ -42,12 +42,12 @@ C11c        = 0.500000 ! Degree of Slope of C11 Skewness Function. From Golaz.
 C12         = 1.000000 ! Constant applied to vertical velocity diffusion. 
 C13         = 0.100000 ! Not currently used in model.
 C14         = 1.000000 ! Constant applied to up2 and vp2.
-nu1         = 60.00000 ! Previously determined eddy viscosity. 
-nu2         = 60.000000 ! Previously determined eddy viscosity. 
-nu6         = 40.000000 ! Previously determined eddy viscosity. 
-nu8         = 40.00000 ! Previously determined eddy viscosity. 
-nu9         = 40.00000 ! Previously determined eddy viscosity. 
-nu_r        = 3.000000 ! Tuned to LES from Surface Value of DYCOMS2 RF02 DS. 
+nu1         = 300.00000 ! Previously determined eddy viscosity. 
+nu2         = 100.000000 ! Previously determined eddy viscosity. 
+nu6         = 100.000000 ! Previously determined eddy viscosity. 
+nu8         = 200.00000 ! Previously determined eddy viscosity. 
+nu9         = 100.00000 ! Previously determined eddy viscosity. 
+nu_r        = 10.000000 ! Tuned to LES from Surface Value of DYCOMS2 RF02 DS. 
 beta        = 1.750000 ! Constant from Chris Golaz. 
 gamma_coef  = 0.320000 ! Low Skewness in gamma coefficient Skewness Function. 
 gamma_coefb = 0.320000 ! High Skewness in gamma coefficient Skewness Function. 
