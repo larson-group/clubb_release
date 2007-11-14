@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_hoc.F90,v 1.16 2007-08-09 17:28:22 mjfalk Exp $
+! $Id: bugsrad_hoc.F90,v 1.17 2007-11-14 21:12:34 vlarson Exp $
 
 subroutine bugsrad_hoc( alt, nz, lat_in_degrees, lon_in_degrees, &
                         day, month, year, time,                  &
@@ -38,7 +38,10 @@ use hoc_stats, only: zt, zm, lstats_samp, &
   slen = 1      ! Length of the sub domain
 
 ! Number of levels to take from U.S. Std. Atmos tables
-  integer, parameter :: std_atmos_buffer = 10 
+! Vince Larson customized so that we can use more levels in arm_0003
+!  integer, parameter :: std_atmos_buffer = 3 ! For high-altitude cases, e.g. arm_0003
+  integer, parameter :: std_atmos_buffer = 10 ! For typical cases
+! End Vince Larson's change
 
 ! Number of levels to interpolate from the bottom of std_atmos to the top
 ! of the HOC profile, hopefully enough to eliminate cooling spikes, etc. 
