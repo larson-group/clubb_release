@@ -1,0 +1,15 @@
+
+These files contain large-scale forcing information for the 
+  ARM 3 Year deep convective case.
+
+Starting time and Julian day:  ???  ???
+Ending time and Julian day:    ???  ???
+
+arm_3year_dqdt.dat:     Water vapor advective tendencies    [kg kg^{-1} s^{-1}]
+arm_3year_dTdt.dat:     Potential Temperature tendencies    [K s^{-1}]
+arm_3year_heights.dat:  Vertical levels                     [m]
+arm_3year_times.dat:    Change in time from start           [s]
+arm_3year_LE.dat:       Evaporation Energy                  [W m^{-2}]
+arm_3year_SE.dat:       Heat Energy                         [W m^{-2}]
+arm_3year_um_obs.dat:   Observed Wind in u direction        [m/s]
+arm_3year_um_obs.dat:   Observed Wind in v direction        [m/s]
