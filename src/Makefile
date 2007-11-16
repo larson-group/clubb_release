@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.90 2007-10-31 18:35:47 faschinj Exp $
+# $Id: Makefile,v 1.91 2007-11-16 17:02:44 faschinj Exp $
 #
 # This version should work with BSD, GNU make, smake and dmake.
 #
@@ -47,7 +47,7 @@ COAMPS_MICRO = adjmlt.o adjtq.o coamps_micro_driver.o conice.o \
         tgqi.o tgqr.o tgqs.o rsati.o gamma.o
 
 MODEL = hoc.o sounding.o rad_lwsw.o cloud_rad.o astex.o atex.o fire.o bomex.o \
-	arm.o arm_97.o arm_0003.o dycoms2_rf01.o dycoms2_rf02.o mpace_a.o mpace_b.o \
+	arm.o arm_97.o arm_0003.o arm_3year.o dycoms2_rf01.o dycoms2_rf02.o mpace_a.o mpace_b.o \
 	nov11.o jun25.o wangara.o \
 	linear_interpolation.o diag_ustar.o icedfs.o cobra.o rico.o gabls2.o \
 	lba.o zlinterp.o file_functions.o
