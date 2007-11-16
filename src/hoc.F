@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.136 2007-10-31 18:35:47 faschinj Exp $
+! $Id: hoc.F,v 1.137 2007-11-16 20:15:16 faschinj Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -895,6 +895,11 @@
         case ( "arm_0003" )
           em = 1.0
           wp2 = 2.0 / 3.0 * em
+
+        ! 3 year ARM case
+        case ( "arm_3year" )
+          em = 1.0
+          wp2 = 2.0 / 3.0 * em
          
         ! June 27 1997 ARM case
         case ( "arm_97" )
@@ -1159,6 +1164,7 @@
         use arm, only: arm_tndcy, arm_sfclyr
         use arm_97, only: arm_97_tndcy, arm_97_sfclyr
         use arm_0003, only: arm_0003_tndcy, arm_0003_sfclyr
+        use arm_3year, only: arm_3year_tndcy, arm_3year_sfclyr
         use astex, only: astex_tndcy, astex_sfclyr
         use atex, only: atex_tndcy, atex_sfclyr
         use bomex, only: bomex_tndcy, bomex_sfclyr
@@ -1233,6 +1239,14 @@
           call arm_0003_tndcy( time, wmm, wmt, thlm_forcing, rtm_forcing
 ! Joshua Fasching, 27 Oct 2007
      .                       ,um_ref,vm_ref
+#ifdef SCALARS
+     .                       ,sclrm_forcing 
+#endif /* SCALARS */
+     .                      )
+
+         case( "arm_3year" ) ! ARM 3 year case
+          call arm_3year_tndcy( time, wmm, wmt, thlm_forcing, 
+     .                       rtm_forcing,um_ref,vm_ref
 #ifdef SCALARS
      .                       ,sclrm_forcing 
 #endif /* SCALARS */
@@ -1465,6 +1479,16 @@
 #endif /* SCALARS */
      .                     )
 
+        case( "arm_3year" )
+           call arm_3year_sfclyr( time, gr%zt(2), rhom(1),
+     .                         thlm(2), um(2), vm(2),
+     .                         upwp_sfc, vpwp_sfc, 
+     .                         wpthlp_sfc, wprtp_sfc
+#ifdef SCALARS
+     .                        ,wpsclrp_sfc, wpedsclrp_sfc
+#endif /* SCALARS */
+     .                     )
+
 
          case ( "arm_97" )
            call arm_97_sfclyr( time, gr%zt(2), rhom(1),
@@ -1611,11 +1635,16 @@
           rrm   => hydromet(1:gr%nnzp,1)
           ricem => hydromet(1:gr%nnzp,4)
 
+
+
           call bugsrad_hoc( gr%zm(gr%nnzp), gr%nnzp, rlat, rlon,
      .                      day, month, year, time,
      .                      thlm, rcm, rtm, rrm, ricem, 
      .                      cf, p, exner, rhom, Tsfc,
      .                      radht, Frad, thlm_forcing )
+
+
+
 #else
           stop "Cannot call BUGSrad with these compile options."
 #endif
