@@ -1,11 +1,14 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F,v 1.4 2007-02-09 22:13:43 dschanen Exp $
+! $Id: numer_check.F,v 1.5 2007-11-17 21:53:41 faschinj Exp $
         module numerical_check
 
         implicit none
 
-        public :: invalid_model_arrays
-        private :: isnan2d
+!       Made isnan2d public so it may be used
+!       for finding code that cause NaNs
+!       Joshua Fasching November 2007
+
+        public :: invalid_model_arrays, isnan2d
 
         contains
 
@@ -227,4 +230,6 @@
         return
         end function isnan2d
 !------------------------------------------------------------------------
+
+
         end module numerical_check
