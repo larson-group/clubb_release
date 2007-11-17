@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.137 2007-11-16 20:15:16 faschinj Exp $
+! $Id: hoc.F,v 1.138 2007-11-17 21:49:33 faschinj Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -1161,6 +1161,7 @@
         use grid_class
         use diagnostic_variables
         use prognostic_variables
+        use numerical_check, only: isnan2d
         use arm, only: arm_tndcy, arm_sfclyr
         use arm_97, only: arm_97_tndcy, arm_97_sfclyr
         use arm_0003, only: arm_0003_tndcy, arm_0003_sfclyr
@@ -1635,6 +1636,50 @@
           rrm   => hydromet(1:gr%nnzp,1)
           ricem => hydromet(1:gr%nnzp,4)
 
+          ! NaN checks added to detect possible errors
+          ! with BUGSrad
+          ! Joshua Fasching November 2007
+
+          if ( isnan2d( thlm ) ) then
+            print *, "thlm before BugsRad is NaN" 
+          endif
+
+          if ( isnan2d( rcm ) ) then
+            print *, "rcm before BugsRad is NaN" 
+          endif
+
+          if ( isnan2d( rtm ) ) then
+            print *, "rtm before BugsRad is NaN" 
+          endif
+
+          if ( isnan2d( rrm ) ) then
+            print *, "rrm before BugsRad is NaN" 
+          endif
+
+          if ( isnan2d( ricem ) ) then
+            print *, "ricem before BugsRad is NaN" 
+          endif
+
+          if ( isnan2d( cf ) ) then
+            print *, "cf before BugsRad is NaN" 
+          endif
+
+          if ( isnan2d( p ) ) then
+            print *, "p before BugsRad is NaN" 
+          endif
+
+          if ( isnan2d( exner ) ) then
+            print *, "exner before BugsRad is NaN" 
+          endif
+
+          if ( isnan2d( rhom ) ) then
+            print *, "rhom before BugsRad is NaN" 
+          endif
+
+          if ( isnan2d( thlm_forcing ) ) then
+            print *, "thlm_forcing before BugsRad is NaN" 
+          endif
+
 
 
           call bugsrad_hoc( gr%zm(gr%nnzp), gr%nnzp, rlat, rlon,
@@ -1644,7 +1689,22 @@
      .                      radht, Frad, thlm_forcing )
 
 
+          if ( isnan2d( thlm_forcing ) ) then
+            print *, "thlm_forcing after BugsRad is NaN" 
+!           print *,thlm_forcing
+                                             
 
+          endif
+
+          if ( isnan2d( Frad ) ) then
+            print *, "Frad after BugsRad is NaN" 
+!	    print *, Frad
+          endif
+
+          if ( isnan2d( radht ) ) then
+            print *, "radht after BugsRad is NaN"
+!           print *,radht                                             
+          endif
 #else
           stop "Cannot call BUGSrad with these compile options."
 #endif
