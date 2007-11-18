@@ -1,4 +1,4 @@
-! $Id: standalone_dycoms2_rf02_so.in,v 1.20 2007-09-10 16:05:58 mjfalk Exp $
+! $Id: standalone_dycoms2_rf02_so.in,v 1.21 2007-11-18 17:17:46 griffinb Exp $
 ! Description:
 ! Namelists for the hoc_standalone program. 
 ! run_file is the location of the model namelist file, which contains the 
@@ -42,19 +42,23 @@ C11c        = 0.500000 ! Degree of Slope of C11 Skewness Function. From Golaz.
 C12         = 1.000000 ! Constant applied to vertical velocity diffusion.
 C13         = 0.100000 ! Not currently used in model.
 C14         = 1.000000 ! Constant applied to up2 and vp2.
-nu1         = 20.00000 ! Previously determined eddy viscosity.
-nu2         = 5.000000 ! Previously determined eddy viscosity.
-nu6         = 5.000000 ! Previously determined eddy viscosity.
-nu8         = 20.00000 ! Previously determined eddy viscosity.
-nu9         = 20.00000 ! Previously determined eddy viscosity.
-nu_r        = 3.000000 ! Background eddy diffusivity for hydrometeors.
+!c_K         = 0.548000 ! From Duynkerke and Driedonks (1987).
+c_K         = 0.200000 ! Tuned by Michael Falk for new wp2 formulation.
+c_K1        = 0.000000 ! Coefficient of Eddy Diffusion for wp2.
+nu1         = 20.00000 ! Background Coefficient of Eddy Diffusion for wp2.
+c_K2        = 0.000000 ! Coefficient of Eddy Diffusion for xp2.
+nu2         = 5.000000 ! Background Coefficient of Eddy Diffusion for xp2.
+c_K6        = 0.000000 ! Coefficient of Eddy Diffusion for wpthlp and wprtp.
+nu6         = 5.000000 ! Background Coefficient of Eddy Diffusion for wpxp.
+c_K8        = 0.500000 ! Coefficient of Eddy Diffusion for wp3.
+nu8         = 20.00000 ! Background Coefficient of Eddy Diffusion for wp3.
+nu9         = 20.00000 ! Coefficient of Eddy Diffusion for up2 and vp2.
+c_Krrm      = 0.075000 ! Coefficient of Eddy Diffusion for hydrometeors.
+nu_r        = 3.000000 ! Background Coefficient of Eddy Diffusion for hydrometeors.
 beta        = 1.750000 ! Constant from Chris Golaz.
 gamma_coef  = 0.320000 ! Low Skewness in gamma coefficient Skewness Function.
 gamma_coefb = 0.320000 ! High Skewness in gamma coefficient Skewness Function.
 gamma_coefc = 5.000000 ! Degree of Slope of gamma coefficient Skewness Function.
-!c_K         = 0.548000 ! From Duynkerke and Driedonks (1987).
-c_K         = 0.200000 ! Tuned by Michael Falk for new wp2 formulation.
-c_Krrm      = 0.075000 ! Constant for eddy diffusivity equation for hydrometeors.
 taumin      = 90.00000 ! Previously determined value.
 taumax      = 3600.000 ! Previously determined value.
 lmin_coef   = 0.500000 ! Previously determined value.
