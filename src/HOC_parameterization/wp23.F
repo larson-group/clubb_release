@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.21 2007-11-14 21:20:44 vlarson Exp $
+! $Id: wp23.F,v 1.22 2007-11-18 22:19:05 vlarson Exp $
 
         subroutine timestep_wp23
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
@@ -557,7 +557,7 @@
 
           if ( iwp3_pr2 > 0 ) then
           zt%x(k,iwp3_pr2) = zt%x(k,iwp3_pr2) 
-     .    - C11_Skw_fnc(k) * 3.0 * grav * ( grav / T0 ) * wp2thvp(k)
+     .    - C11_Skw_fnc(k) * 3.0 * ( grav / T0 ) * wp2thvp(k)
           end if
 
           if ( iwp3_pr1 > 0 ) then
