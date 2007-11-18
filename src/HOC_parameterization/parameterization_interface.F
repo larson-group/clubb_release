@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.59 2007-10-26 21:32:01 mjfalk Exp $
+! $Id: parameterization_interface.F,v 1.60 2007-11-18 17:17:27 griffinb Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -310,7 +310,7 @@
        ! We found that if we call diag_var first, we can use a longer timestep.
        call diag_var( taum, wmm, rtm, wprtp, 
      .                thlm, wpthlp, wpthvp, um, vm,
-     .                wp2, wp3, upwp, vpwp, Scm, Skwm,
+     .                wp2, wp3, upwp, vpwp, Scm, Skwm, Kht,
      .                rtp2, thlp2, rtpthlp,
      .                up2, vp2,
 ! Vince Larson used prognostic timestepping of variances 

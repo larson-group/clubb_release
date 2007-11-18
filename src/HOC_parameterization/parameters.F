@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameters.F,v 1.8 2007-08-02 22:51:40 griffinb Exp $
+! $Id: parameters.F,v 1.9 2007-11-18 17:17:27 griffinb Exp $
         module parameters 
 
 !       Description:
@@ -56,17 +56,21 @@
      .  C12,        ! Constant in w'^3 Crank-Nicholson diffusional term.
      .  C13,        ! Not currently used in model.
      .  C14,        ! Constant for u'^2 and v'^2 terms.
-     .  nu1,        ! Previously determined eddy viscosity.
-     .  nu2,        ! Previously determined eddy viscosity.
-     .  nu6,        ! Previously determined eddy viscosity.
-     .  nu8,        ! Previously determined eddy viscosity.
-     .  nu9,        ! Previously determined eddy viscosity.
-     .  nu_r,       ! Background eddy diffusivity for hydrometeors.
+     .  c_K,        ! Constant C_mu^(1/4) in Duynkerke & Driedonks 1987.
+     .  c_K1,       ! Coefficient of Eddy Diffusion for wp2.
+     .  nu1,        ! Background Coefficient of Eddy Diffusion for wp2.
+     .  c_K2,       ! Coefficient of Eddy Diffusion for xp2.
+     .  nu2,        ! Background Coefficient of Eddy Diffusion for xp2.
+     .  c_K6,       ! Coefficient of Eddy Diffusion for wpthlp and wprtp.
+     .  nu6,        ! Background Coefficient of Eddy Diffusion for wpxp.
+     .  c_K8,       ! Coefficient of Eddy Diffusion for wp3.
+     .  nu8,        ! Background Coefficient of Eddy Diffusion for wp3.
+     .  nu9,        ! Coefficient of Eddy Diffusion for up2 and vp2.
+     .  c_Krrm,     ! Coefficient of Eddy Diffusion for hydrometeors.
+     .  nu_r,       ! Background Coefficient of Eddy Diffusion for hydrometeors.
      .  gamma_coef, ! Low Skewness in gamma coefficient Skewness Function.
      .  gamma_coefb,! High Skewness in gamma coefficient Skewness Function.
      .  gamma_coefc,! Degree of Slope of gamma coefficient Skewness Function.
-     .  c_K,        ! Constant C_mu^(1/4) in Duynkerke & Driedonks 1987.
-     .  c_Krrm,     ! Constant for eddy diffusivity equation for hydrometeors.
      .  mu,         ! Fractional entrainment rate per unit altitude.
      .  taumin,     ! Previously determined value.
      .  taumax,     ! Previously determined value.
@@ -77,9 +81,10 @@
 !$omp   threadprivate(C6thl, C6thlb, C6thlc)
 !$omp   threadprivate(C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12)
 !$omp   threadprivate(C13, C14)
-!$omp   threadprivate(nu1, nu2, nu6, nu8, nu9, nu_r, beta)
+!$omp   threadprivate(c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6)
+!$omp   threadprivate(c_K8, nu8, nu9, c_Krrm, nu_r)
 !$omp   threadprivate(gamma_coef, gamma_coefb, gamma_coefc)
-!$omp   threadprivate(c_K, c_Krrm, taumin, taumax, mu, lmin)
+!$omp   threadprivate(taumin, taumax, mu, lmin)
 
 !       Vince Larson added a constant to set plume widths for theta_l and rt
 !       beta should vary between 0 and 3, with 1.5 the standard value
@@ -99,9 +104,10 @@
      .    C2rt, C2thl, C2rtthl, C4, C5,
      .    C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .    C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c,
-     .    C12, C13, C14, nu1, nu2, nu6, nu8, nu9, nu_r, beta, 
+     .    C12, C13, C14, c_K, c_K1, nu1, c_K2, nu2, 
+     .    c_K6, nu6, c_K8, nu8, nu9, c_Krrm, nu_r, beta, 
      .    gamma_coef, gamma_coefb, gamma_coefc,
-     .    c_K, c_Krrm, lmin_coef, taumin, taumax, mu
+     .    lmin_coef, taumin, taumax, mu
 
 !       These are referenced together often enough that it made sense to 
 !       make a list of them.  Note that lmin_coef is the input parameter, 
@@ -116,11 +122,12 @@
      .    "C6thlc     ", "C7         ", "C7b        ", "C7c        ", 
      .    "C8         ", "C8b        ", "C10        ", "C11        ", 
      .    "C11b       ", "C11c       ", "C12        ", "C13        ",
-     .    "nu1        ", "nu2        ", "nu6        ", "nu8        ",
-     .    "nu_r       ", "gamma_coef ", "gamma_coefb", "gamma_coefc", 
-     .    "mu         ", "c_K        ", "c_Krrm     ", "beta       ",
-     .    "lmin_coef  ", "taumin     ", "taumax     ", "C14        ",
-     .    "nu9        "/)
+     .    "C14        ", "c_K        ", "c_K1       ", "nu1        ", 
+     .    "c_K2       ", "nu2        ", "c_K6       ", "nu6        ", 
+     .    "c_K8       ", "nu8        ", "nu9        ", "c_Krrm     ",
+     .    "nu_r       ", "beta       ", "gamma_coef ", "gamma_coefb", 
+     .    "gamma_coefc", "lmin_coef  ", "taumin     ", "taumax     ", 
+     .    "mu         "/)
 
         contains
 
@@ -156,10 +163,10 @@
      .         C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .         C7, C7b, C7c, C8, C8b, C10,
      .         C11, C11b, C11c, C12, C13, C14,
-     .         nu1, nu2, nu6, nu8, nu9, nu_r,
+     .         c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, 
+     .         c_K8, nu8, nu9, c_Krrm, nu_r,
      .         gamma_coef, gamma_coefb, gamma_coefc,
-     .         mu, c_K, c_Krrm, beta, lmin_coef,
-     .         taumin, taumax )
+     .         mu, beta, lmin_coef, taumin, taumax )
 
         ! It was decided after some experimentation, that the best
         ! way to produce grid independent results is to set lmin to be
@@ -265,18 +272,22 @@
          C12         = 1.0
          C13         = 0.1
          C14         = 1.0
+         c_K         = 0.548
+         c_K1        = 0.0
          nu1         = 20.0
+         c_K2        = 0.0
          nu2         = 5.0
+         c_K6        = 0.0
          nu6         = 5.0
+         c_K8        = 0.5
          nu8         = 20.0
          nu9         = 20.0
+         c_Krrm      = 0.075
          nu_r        = 3.0
          beta        = 1.75
          gamma_coef  = 0.32
          gamma_coefb = 0.32
          gamma_coefc = 5.0
-         c_K         = 0.548
-         c_Krrm      = 0.075
          taumin      = 90.0
          taumax      = 3600.0
          lmin_coef   = 0.5
@@ -298,10 +309,10 @@
      .        C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .        C7, C7b, C7c, C8, C8b, C10,
      .        C11, C11b, C11c, C12, C13, C14,
-     .        nu1, nu2, nu6, nu8, nu9, nu_r,
+     .        c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, 
+     .        c_K8, nu8, nu9, c_Krrm, nu_r,
      .        gamma_coef, gamma_coefb, gamma_coefc,
-     .        mu, c_K, c_Krrm, beta, lmin_coef,
-     .        taumin, taumax, params )
+     .        mu, beta, lmin_coef, taumin, taumax, params )
 
        return
        end subroutine read_parameters
@@ -348,9 +359,10 @@
      .    C2rt, C2thl, C2rtthl, C4, C5,
      .    C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .    C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c,
-     .    C12, C13, C14, nu1, nu2, nu6, nu8, nu9, nu_r, beta, 
+     .    C12, C13, C14, c_K, c_K1, nu1, c_K2, nu2, 
+     .    c_K6, nu6, c_K8, nu8, nu9, c_Krrm, nu_r, beta, 
      .    gamma_coef, gamma_coefb, gamma_coefc,
-     .    c_K, c_Krrm, lmin_coef, taumin, taumax, mu
+     .    lmin_coef, taumin, taumax, mu
 
        ! Read the namelist
        open(unit=iunit, file=filename, status='old', action='read')
@@ -365,10 +377,10 @@
      .        C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .        C7, C7b, C7c, C8, C8b, C10,
      .        C11, C11b, C11c, C12, C13, C14,
-     .        nu1, nu2, nu6, nu8, nu9, nu_r,
+     .        c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, 
+     .        c_K8, nu8, nu9, c_Krrm, nu_r,
      .        gamma_coef, gamma_coefb, gamma_coefc,
-     .        mu, c_K, c_Krrm, beta, lmin_coef,
-     .        taumin, taumax, param_spread )
+     .        mu, beta, lmin_coef, taumin, taumax, param_spread )
 
        ! Initialize to zero
        nindex(1:nparams) = 0
@@ -395,10 +407,10 @@
      .              C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .              C7, C7b, C7c, C8, C8b, C10,
      .              C11, C11b, C11c, C12, C13, C14,
-     .              nu1, nu2, nu6, nu8, nu9, nu_r,
+     .              c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, 
+     .              c_K8, nu8, nu9, c_Krrm, nu_r,
      .              gamma_coef, gamma_coefb, gamma_coefc,
-     .              mu, c_K, c_Krrm, beta, lmin_coef,
-     .              taumin, taumax, params )
+     .              mu, beta, lmin_coef, taumin, taumax, params )
 !       Description:
 !       Takes the list of scalar variables and puts them into a 1D
 !       vector.  Here for the purposes of keeping the code generalized
@@ -418,10 +430,9 @@
      .  C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .  C7, C7b, C7c, C8, C8b, C10,
      .  C11, C11b, C11c, C12, C13, C14,
-     .  nu1, nu2, nu6, nu8, nu9, nu_r,
-     .  gamma_coef, gamma_coefb, gamma_coefc,
-     .  mu, c_K, c_Krrm, beta, lmin_coef,
-     .  taumin, taumax
+     .  c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8, 
+     .  nu9, c_Krrm, nu_r, gamma_coef, gamma_coefb, gamma_coefc,
+     .  mu, beta, lmin_coef, taumin, taumax
 
         ! Output variables
         real, intent(out), dimension(nparams) :: params
@@ -456,22 +467,24 @@
         params(iC13)     = C13
         params(iC14)     = C14
 
-        params(inu1)  = nu1
-        params(inu2)  = nu2
-        params(inu6)  = nu6
-        params(inu8)  = nu8
-        params(inu9)  = nu9
-        params(inu_r) = nu_r
+        params(ic_K)    = c_K 
+        params(ic_K1)   = c_K1
+        params(inu1)    = nu1
+        params(ic_K2)   = c_K2
+        params(inu2)    = nu2
+        params(ic_K6)   = c_K6
+        params(inu6)    = nu6
+        params(ic_K8)   = c_K8
+        params(inu8)    = nu8
+        params(inu9)    = nu9
+        params(ic_Krrm) = c_Krrm
+        params(inu_r)   = nu_r
 
         params(igamma_coef)  = gamma_coef
         params(igamma_coefb) = gamma_coefb
         params(igamma_coefc) = gamma_coefc
 
         params(imu) = mu
-
-        params(ic_K) = c_K 
-
-        params(ic_Krrm) = c_Krrm
 
         params(ibeta) = beta
 
@@ -485,15 +498,15 @@
 
 !-----------------------------------------------------------------------
         subroutine unpack_parameters
-     .             ( params, 
+     .             ( params,
      .               C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl,
      .               C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .               C7, C7b, C7c, C8, C8b, C10,
      .               C11, C11b, C11c, C12, C13, C14,
-     .               nu1, nu2, nu6, nu8, nu9, nu_r,
+     .               c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,
+     .               c_K8, nu8, nu9, c_Krrm, nu_r,
      .               gamma_coef, gamma_coefb, gamma_coefc,
-     .               mu, c_K, c_Krrm, beta, lmin_coef,
-     .               taumin, taumax )
+     .               mu, beta, lmin_coef, taumin, taumax )
 
 !       Description:
 !       Takes the 1D vector and returns the list of scalar variables.
@@ -518,10 +531,10 @@
      .  C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc,
      .  C7, C7b, C7c, C8, C8b, C10,
      .  C11, C11b, C11c, C12, C13, C14,
-     .  nu1, nu2, nu6, nu8, nu9, nu_r,
+     .  c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,
+     .  c_K8, nu8, nu9, c_Krrm, nu_r,
      .  gamma_coef, gamma_coefb, gamma_coefc,
-     .  mu, c_K, c_Krrm, beta, lmin_coef,
-     .  taumin, taumax
+     .  mu, beta, lmin_coef, taumin, taumax
 
         C1      = params(iC1)
         C1b     = params(iC1b)
@@ -553,22 +566,24 @@
         C13     = params(iC13)
         C14     = params(iC14)
 
-        nu1  = params(inu1)
-        nu2  = params(inu2)
-        nu6  = params(inu6)
-        nu8  = params(inu8)
-        nu9  = params(inu9)
-        nu_r = params(inu_r)
+        c_K    = params(ic_K)
+        c_K1   = params(ic_K1)
+        nu1    = params(inu1)
+        c_K2   = params(ic_K2)
+        nu2    = params(inu2)
+        c_K6   = params(ic_K6)
+        nu6    = params(inu6)
+        c_K8   = params(ic_K8)
+        nu8    = params(inu8)
+        nu9    = params(inu9)
+        c_Krrm = params(ic_Krrm)
+        nu_r   = params(inu_r)
 
         gamma_coef  = params(igamma_coef)
         gamma_coefb = params(igamma_coefb)
         gamma_coefc = params(igamma_coefc)
 
         mu = params(imu)
-
-        c_K = params(ic_K)
-
-        c_Krrm = params(ic_Krrm)
 
         beta = params(ibeta)
 

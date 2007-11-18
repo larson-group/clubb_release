@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.18 2007-07-07 19:07:13 vlarson Exp $
+! $Id: diag_var.F,v 1.19 2007-11-18 17:17:27 griffinb Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -19,7 +19,7 @@
 !-----------------------------------------------------------------------
         subroutine diag_var( taum, wmm, rtm, wprtp, 
      .                       thlm, wpthlp, wpthvp, um, vm,
-     .                       wp2, wp3, upwp, vpwp, Scm, Skwm,
+     .                       wp2, wp3, upwp, vpwp, Scm, Skwm, Kht,
      .                       rtp2, thlp2, rtpthlp,
      .                       up2, vp2,
      .                       liter, dt, isValid,
@@ -41,8 +41,8 @@
 
         use constants
         use parameters, 
-     .    only: C2, C2b, C2c, C2rt, C2thl, C2rtthl, nu2, nu9, beta, 
-     .          C4, C14, C5, T0
+     .    only: C2, C2b, C2c, C2rt, C2thl, C2rtthl, c_K2, nu2, nu9, 
+     .          beta, C4, C14, C5, T0
         use grid_class
         use lapack_wrap, only: tridag_solve
 #ifdef STATS
@@ -67,7 +67,8 @@
      .  upwp,  ! u'w'                           [m^2/s^2]
      .  vpwp,  ! u'w'                           [m^2/s^2]
      .  Scm,   ! Sc on moment. grid             [-]
-     .  Skwm   ! Skw on moment. grid            [-]
+     .  Skwm,  ! Skw on moment. grid            [-]
+     .  Kht    ! Eddy diffusivity on t-lev.     [m^2/s]
 
         logical, intent(in) :: liter ! Whether variances are prognostic
 
@@ -114,6 +115,9 @@
 
         logical, dimension(5+1) ::
      .  Valid_arr
+
+        ! Eddy Diffusion for Variances and Covariances.
+        real, dimension(gr%nnzp) :: Kw2   ! [m^2/s]
 
         logical :: scalar_calc
 
@@ -187,9 +191,19 @@
 
         Valid_arr(:) = .true.
 
+        ! Define the Coefficent of Eddy Diffusivity for the 
+        ! Variances and Covariances.
+        do k = 1, gr%nnzp, 1
+           ! Kw1 is used for all variances and covariances in subroutine
+           ! diag_var.  The variances and covariances are located on 
+           ! momentum levels.  Kw1 is located on thermodynamic levels.
+           ! Kw2 = c_K2 * Kht
+           Kw2(k) = c_K2 * Kht(k)
+        enddo
+
         ! Implicit contributions to term rtp2
 
-        call diag_var_lhs( a1, wp2, wp3, taum, wmm, 
+        call diag_var_lhs( a1, wp2, wp3, taum, wmm, Kw2, 
      .                     C2rt_1d, nu2, beta, eps, dt, liter,
      .                     lhs )
 
@@ -206,7 +220,7 @@
 
         ! Implicit contributions to term thlp2
 
-        call diag_var_lhs( a1, wp2, wp3, taum, wmm, 
+        call diag_var_lhs( a1, wp2, wp3, taum, wmm, Kw2, 
      .                     C2thl_1d, nu2, beta, eps, dt, liter,
      .                     lhs )
 
@@ -223,7 +237,7 @@
 
         ! Implicit contributions to term rtpthlp
 
-        call diag_var_lhs( a1, wp2, wp3, taum, wmm, 
+        call diag_var_lhs( a1, wp2, wp3, taum, wmm, Kw2, 
      .                     C2rtthl_1d, nu2, beta, eps, dt, liter,
      .                     lhs )
 
@@ -240,7 +254,7 @@
 
         ! Implicit contributions to term up2
 
-        call diag_var_lhs( a1, wp2, wp3, taum, wmm, 
+        call diag_var_lhs( a1, wp2, wp3, taum, wmm, Kw2, 
      .                     C4_C14_1d, nu9, beta, eps, dt, liter,
      .                     lhs )
 
@@ -258,7 +272,7 @@
 
         ! Implicit contributions to term vp2
 
-        call diag_var_lhs( a1, wp2, wp3, taum, wmm, 
+        call diag_var_lhs( a1, wp2, wp3, taum, wmm, Kw2, 
      .                     C4_C14_1d, nu9, beta, eps, dt, liter,
      .                     lhs )
 
@@ -366,7 +380,7 @@
 
         ! Implicit contributions to passive scalars
 
-          call diag_var_lhs( a1, wp2, wp3, taum, wmm, 
+          call diag_var_lhs( a1, wp2, wp3, taum, wmm, Kw2, 
      .                       C2sclr_1d, nu2, beta, eps, dt, liter,
      .                       lhs )
 
@@ -439,7 +453,7 @@
         end subroutine diag_var
 
 !-----------------------------------------------------------------------
-        subroutine diag_var_lhs( a1, wp2, wp3, taum, wmm, 
+        subroutine diag_var_lhs( a1, wp2, wp3, taum, wmm, Kw2,
      .                           Cn, nu2, beta, eps, dt, liter,
      .                           lhs )
 !       Description:
@@ -449,6 +463,7 @@
 !       None
 !-----------------------------------------------------------------------
         use grid_class
+        use diffusion, only: diffusion_mlev
 #ifdef STATS
         use hoc_stats
 #endif
@@ -468,6 +483,7 @@
      .  wp3,   ! w'^3                                   [m^3/s^3]
      .  taum,  ! Tau on moment. grid                    [s]
      .  wmm,   ! w wind on m.                           [m/s]
+     .  Kw2,   ! Eddy diff. coef. on thermo. level      [m^2/s]
      .  Cn     ! Cn coefficient                         [-]
 
         real, intent(in) ::
@@ -495,8 +511,10 @@
           km1 = max( k-1, 1 )
           kp1 = min( k+1, gr%nnzp )
 
+          ! Eddy Diffusion term (dp2)
           lhs(kp1diag:km1diag,k)
-     .    = term_dp2( nu2, gr%dzm(km1), gr%dzm(k), gr%dzt(k) ) ! dp2
+     .    = diffusion_mlev( Kw2(k), Kw2(kp1), nu2,
+     .                      gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
 
           lhs(kdiag,k)
      .    = lhs(kdiag,k) + term_dp1( Cn(k), taum(k) )  ! dp1

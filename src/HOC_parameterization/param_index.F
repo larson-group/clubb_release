@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: param_index.F,v 1.3 2007-08-02 22:51:40 griffinb Exp $
+! $Id: param_index.F,v 1.4 2007-11-18 17:17:27 griffinb Exp $
         module param_index
 
 !       Description:
@@ -23,7 +23,7 @@
         implicit none
 
         integer, parameter :: 
-     .  nparams = 45 ! Total tunable parameters
+     .  nparams = 49 ! Total tunable parameters
 
         integer, parameter ::
      .  iC1             =  1, 
@@ -54,27 +54,31 @@
      .  iC11c           = 26,
      .  iC12            = 27,
      .  iC13            = 28,
-     .  iC14            = 44
+     .  iC14            = 29
 
         integer, parameter ::
-     .  inu1            = 29,
-     .  inu2            = 30,
-     .  inu6            = 31,
-     .  inu8            = 32,
-     .  inu9            = 45,
-     .  inu_r           = 33
+     .  ic_K            = 30,
+     .  ic_K1           = 31,
+     .  inu1            = 32,
+     .  ic_K2           = 33,
+     .  inu2            = 34,
+     .  ic_K6           = 35,
+     .  inu6            = 36,
+     .  ic_K8           = 37,
+     .  inu8            = 38,
+     .  inu9            = 39,
+     .  ic_Krrm         = 40,
+     .  inu_r           = 41
 
         integer, parameter ::
-     .  igamma_coef     = 34, 
-     .  igamma_coefb    = 35,
-     .  igamma_coefc    = 36,
-     .  imu             = 37,
-     .  ic_K            = 38,
-     .  ic_Krrm         = 39,
-     .  ibeta           = 40,
-     .  ilmin_coef      = 41,
-     .  itaumin         = 42,
-     .  itaumax         = 43
+     .  igamma_coef     = 42, 
+     .  igamma_coefb    = 43,
+     .  igamma_coefc    = 44,
+     .  imu             = 45,
+     .  ibeta           = 46,
+     .  ilmin_coef      = 47,
+     .  itaumin         = 48,
+     .  itaumax         = 49
 
         end module param_index
 !-----------------------------------------------------------------------
