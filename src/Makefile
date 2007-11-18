@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.91 2007-11-16 17:02:44 faschinj Exp $
+# $Id: Makefile,v 1.92 2007-11-18 17:21:18 griffinb Exp $
 #
 # This version should work with BSD, GNU make, smake and dmake.
 #
@@ -59,7 +59,7 @@ PARAMETERIZATION = \
 	outputnc.o grid.o model_flags.o \
         stats_type.o hoc_stats.o stats_subs.o\
         stats_init_zt.o stats_init_zm.o stats_init_sfc.o \
-	erf.o rain.o microphysics.o cons.o air.o parab.o \
+	erf.o diffusion.o rain.o microphysics.o cons.o air.o parab.o \
 	closure_new.o diag_var.o \
         hydrostatic.o length.o mixing.o rsat.o sat_rcm.o sfc.o \
 	update.o wp23.o tau.o Skw_func.o \
