@@ -75,7 +75,12 @@
      .  rhosno = 100.,
      .  rhogrp = 400.,
      .  rnzero = 8.0e6,
+! Michael Falk changed this, November 2007.
+! This is the stock COAMPS value, 2e7:
      .  snzero = 2.0e7,
+! and this is the value, 2e6, which works for MPACE-A:
+!     .  snzero = 2.0e6,
+! eMFc
      .  gnzero = 4.0e6,
      .  therco = 2.43e-2,
      .  tice = 269.16,
