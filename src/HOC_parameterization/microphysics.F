@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.19 2007-11-20 17:37:59 griffinb Exp $
+! $Id: microphysics.F,v 1.20 2007-11-20 20:19:37 griffinb Exp $
         module microphysics
 
 !       Description:
@@ -186,7 +186,7 @@
 
         ! Solve for the value of Kr, the hydrometeor eddy diffusivity.
         do k = 1, gr%nnzp, 1
-           Kr(k) = c_Krrm * Kht(k)
+           Kr(k) = c_Krrm * Khm(k)
         enddo
 
         ! Begin by calling either Brian Griffin's implementation of the
