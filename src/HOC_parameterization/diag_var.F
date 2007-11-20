@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.20 2007-11-20 20:16:49 griffinb Exp $
+! $Id: diag_var.F,v 1.21 2007-11-20 23:12:13 griffinb Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -544,7 +544,8 @@
            if ( irtp2_dp2 + ithlp2_dp2 + irtpthlp_dp2 + 
      .          iup2_dp2 + ivp2_dp2 > 0 ) then
              tmp(1:3)
-     .       = term_dp2( nu2, gr%dzm(km1), gr%dzm(k), gr%dzt(k) )
+     .       = diffusion_mlev( Kw2(k), Kw2(kp1), nu2,
+     .                         gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
              zmscr02(k) = -tmp(3)
              zmscr03(k) = -tmp(2)
              zmscr04(k) = -tmp(1)

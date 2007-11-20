@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.22 2007-11-20 17:37:59 griffinb Exp $
+! $Id: mixing.F,v 1.23 2007-11-20 23:12:13 griffinb Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -135,7 +135,10 @@
 
         ! Misc. storage
 !       real, dimension(gr%nnzp) :: tmp1, tmp2
-        
+
+        ! Eddy Diffusion for wpthlp and wprtp.
+        real, dimension(gr%nnzp) :: Kw6   ! wpxp eddy diff. [m^2/s]
+
         ! Indices
         integer :: i
         integer :: k, kp1
@@ -156,9 +159,18 @@
 !        C6thl_Skw_fnc = C6thl
 !        C7_Skw_fnc = C7
 
+!       Define the Coefficent of Eddy Diffusivity for the wpthlp and wprtp.
+        do k = 1, gr%nnzp, 1
+           ! Kw6 is used for wpthlp and wprtp, which are located on 
+           ! momentum levels.
+           ! Kw6 is located on thermodynamic levels.
+           ! Kw6 = c_K6 * Kht
+           Kw6(k) = c_K6 * Kht(k)
+        enddo
+
         ! Setup and decompose matrix
 
-        call mixing_lhs( .true., dt, taum, wmm, wmt, 
+        call mixing_lhs( .true., dt, taum, wmm, wmt, Kw6, 
      .                   wp2, wp3, Scm, C6rt_Skw_fnc, C7_Skw_fnc,
      .                   lhs, implemented )
 
@@ -185,7 +197,7 @@
         ! End of Vince Larson's change.
 
         ! Prof. Larson's modified mixing_lhs 
-        call mixing_lhs( .true., dt, taum, wmm, wmt, 
+        call mixing_lhs( .true., dt, taum, wmm, wmt, Kw6,
      .                   wp2, wp3, Scm, C6thl_Skw_fnc, C7_Skw_fnc,
      .                   lhs, implemented )
 
@@ -209,7 +221,7 @@
         if ( present( sclrm )     .and. present( wpsclrp ) .and.
      .       present( sclrpthvp ) .and. present( sclrm_forcing ) ) then
 
-          call mixing_lhs( .true., dt, taum, wmm, wmt, 
+          call mixing_lhs( .true., dt, taum, wmm, wmt, Kw6,
      .                     wp2, wp3, Scm, C6rt_Skw_fnc, C7_Skw_fnc,
      .                     lhs, implemented )
 
@@ -227,7 +239,7 @@
             return
           end if
 
-          call mixing_lhs( .true., dt, taum, wmm, wmt, 
+          call mixing_lhs( .true., dt, taum, wmm, wmt, Kw6,
      .                     wp2, wp3, Scm, C6thl_Skw_fnc, C7_Skw_fnc,
      .                     lhs, implemented )
 
@@ -250,7 +262,7 @@
         end subroutine timestep_mixing
 
 !------------------------------------------------------------------------
-        subroutine mixing_lhs( liter, dt, taum, wmm, wmt,
+        subroutine mixing_lhs( liter, dt, taum, wmm, wmt, Kw6, 
      .                         wp2, wp3, Scm, C6x_Skw_fnc, C7_Skw_fnc,
      .                         lhs, implemented )
 !       Description:
@@ -260,6 +272,7 @@
         use parameters
         use constants
         use grid_class
+        use diffusion, only: diffusion_mlev
 #ifdef STATS
         use hoc_stats
 #endif /*STATS*/
@@ -278,6 +291,7 @@
      .  taum,        ! Tau on moment. grid            [s]
      .  wmm,         ! w wind on m                    [m/s]
      .  wmt,         ! w wind on t                    [m/s]
+     .  Kw6,         ! Coef. of Eddy Diffusivity      [m^2/s]
      .  wp2,         ! w'^2                           [m^2/s^2]
      .  wp3,         ! w'^3                           [m^3/s^3]
      .  Scm          ! Sc on moment. grid             [-]
@@ -293,6 +307,14 @@
 
         ! Local Variables
         real, dimension(gr%nnzp) :: a1
+
+        ! Added by Brian for eddy diffusion.
+        real, dimension(3,gr%nnzp) :: diff_lhs_imp
+        ! Constant parameters
+        integer, parameter ::
+     .  kp1diag = 1,
+     .  kdiag   = 2,
+     .  km1diag = 3
 
         ! Indices
         integer :: k, km1, kp1
@@ -346,6 +368,11 @@
           ! Thermodynamic main diagonal [ x xm(k,<t+1>) ]
           lhs(3,k_xm) = 1.0 / dt
 
+          ! Diffusion
+          diff_lhs_imp(kp1diag:km1diag,k)
+     .    = diffusion_mlev( Kw6(k), Kw6(kp1), nu6,
+     .                      gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+
 !         wpxp: mean vertical advection, turbulent transport, time tendency, 
 !         damping and diffusion
 
@@ -356,7 +383,7 @@
      .      - gr%dzm(k)
      .        * (1.0/2.0) * ( a1(k) + a1(km1) )
      .        * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*eps ) )
-     .      - nu6 * gr%dzm(k) * gr%dzt(k)      
+     .      + diff_lhs_imp(3,k)
 
           ! Momentum main diagonal [ x wpxp(k,<t+1>) ]
           lhs(3,k_wpxp)
@@ -369,7 +396,7 @@
      .      + (1.0-C7_Skw_fnc(k)) * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
 !     .      + C6x / taum(k)
      .      + C6x_Skw_fnc(k) / taum(k)
-     .      + nu6 * gr%dzm(k) * ( gr%dzt(kp1) + gr%dzt(k) )
+     .      + diff_lhs_imp(2,k)
           if (liter) lhs(3,k_wpxp) = lhs(3,k_wpxp) + 1.0 / dt
 
           ! Momentum superdiagonal [ x wpxp(k+1,<t+1>) ]
@@ -379,7 +406,7 @@
      .      + gr%dzm(k)
      .        * (1.0/2.0) * ( a1(kp1) + a1(k) )
      .        * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
-     .      - nu6 * gr%dzm(k) * gr%dzt(kp1)
+     .      + diff_lhs_imp(1,k)
 
 !         wpxp: production
 
@@ -449,10 +476,9 @@
             end if
 
             if ( iwprtp_dp1 > 0 .or. iwpthlp_dp1 > 0 ) then
-              zmscr11(k) = + nu6 * gr%dzm(k) * gr%dzt(k)
-              zmscr12(k) = - nu6 * gr%dzm(k) 
-     .                             * ( gr%dzt(kp1) + gr%dzt(k) )
-              zmscr13(k) = + nu6 * gr%dzm(k) * gr%dzt(kp1)
+              zmscr11(k) = - diff_lhs_imp(3,k)
+              zmscr12(k) = - diff_lhs_imp(2,k)
+              zmscr13(k) = - diff_lhs_imp(1,k)
             end if
 
           end if
