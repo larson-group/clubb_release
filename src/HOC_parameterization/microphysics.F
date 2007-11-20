@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.20 2007-11-20 20:19:37 griffinb Exp $
+! $Id: microphysics.F,v 1.21 2007-11-20 20:31:44 griffinb Exp $
         module microphysics
 
 !       Description:
@@ -18,7 +18,7 @@
         private :: adj_microphys_tndcy
 
         ! Functions
-        private :: sedimentation, advection, diffusion
+        private :: sedimentation, advection, diffusion_hm
 
         private ! Default
 
@@ -754,11 +754,11 @@
 #endif /*STATS*/
 
         ! Boundary conditions on results
-        xrm(1) = xrm(2)
+        !xrm(1) = xrm(2)
 ! Michael Falk, 7 Sep 2007, made this change to eliminate problems
 ! with anomalous rain formation at the top boundary.
 !        xrm(gr%nnzp) = 0
-        xrm(gr%nnzp) = xrm(gr%nnzp-1)
+        !xrm(gr%nnzp) = xrm(gr%nnzp-1)
 ! eMFc
 
         return
@@ -777,6 +777,7 @@
 !       the same as the original rain subroutine code.
 !-----------------------------------------------------------------------
         use grid_class
+        use diffusion, only: diffusion_tlev
 #ifdef STATS
         use hoc_stats
 #endif
@@ -802,7 +803,7 @@
      .  xrm, ! Value of hydrometeor as prev. time       [units vary]
      .  wmt, ! w wind on t                              [m/s]
      .  v_t, ! Terminal velocity                        [m/s]
-     .  Kr   ! Eddy diffusivity for hydrometeors        [m^2/s]
+     .  Kr   ! Eddy diffusivity for hydromet. (m-lev)   [m^2/s]
 
         real, intent(out), dimension(3,gr%nnzp) ::
      .  lhs ! Left hand side of tridiagonal matrix
@@ -872,7 +873,10 @@
           ! Diffusion
           lhs(kp1diag:km1diag,k)
      .    = lhs(kp1diag:km1diag,k)
-     .    + diffusion( Kr(k), nu, gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+!     .    + diffusion_hm( Kr(k), nu, gr%dzm(km1), gr%dzm(k), gr%dzt(k), 
+!     .                    k )
+     .    + diffusion_tlev( Kr(k), Kr(km1), nu, 
+     .                      gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
           ! Mean Advection
           lhs(kp1diag:km1diag,k)
      .    = lhs(kp1diag:km1diag,k)
@@ -907,8 +911,10 @@
 
             if ( ixrm_dff > 0 ) then
               tmp(1:3)
-     .        = diffusion( Kr(k), nu, gr%dzm(km1), gr%dzm(k), 
-     .                     gr%dzt(k), k )
+!     .        = diffusion_hm( Kr(k), nu, gr%dzm(km1), gr%dzm(k), 
+!     .                        gr%dzt(k), k )
+     .        = diffusion_tlev( Kr(k), Kr(km1), nu, 
+     .                          gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
               ztscr07(k) = -tmp(3)
               ztscr08(k) = -tmp(2)
               ztscr09(k) = -tmp(1)
@@ -923,7 +929,7 @@
         end subroutine microphys_lhs
 
 !-----------------------------------------------------------------------
-        pure function diffusion( Kr, nu, dzmm1, dzm, dzt, level ) 
+        pure function diffusion_hm( Kr, nu, dzmm1, dzm, dzt, level ) 
      .  result( lhs ) 
 
 !       Description:
@@ -1080,7 +1086,7 @@
         endif
 
         return
-        end function diffusion
+        end function diffusion_hm
 
 !-----------------------------------------------------------------------
         pure function advection( wmt, dzt, level )
@@ -1505,6 +1511,7 @@
         ! Brian Griffin.
 
         use grid_class
+        use diffusion, only: diffusion_tlev
 #ifdef STATS
         use hoc_stats
 #endif /*STATS*/
@@ -1517,7 +1524,7 @@
         real, dimension(gr%nnzp), intent(in) :: wmt        ! [m/s]
         ! Sedimentation velocity (interpolated to thermo. levels).
         real, dimension(gr%nnzp), intent(in) :: v_t        ! [m/s]
-        ! Eddy diffusivity for hydrometeors
+        ! Eddy diffusivity for hydrometeors (m-lev).
         real, dimension(gr%nnzp), intent(in) :: Kr         ! [m^2/s]
 
         real, intent(in) :: nu  ! Diffusion coefficient      [m^2/s]
@@ -1631,8 +1638,10 @@
         ! The implicit (LHS) value of the diffusion component of the
         ! equation used during the timestep that was just solved for.
         tmp(1:3)
-     .     = diffusion( Kr(k), nu, gr%dzm(km1), gr%dzm(k), 
-     .                  gr%dzt(k), k )
+!     .     = diffusion_hm( Kr(k), nu, gr%dzm(km1), gr%dzm(k), 
+!     .                     gr%dzt(k), k )
+     .     = diffusion_tlev( Kr(k), Kr(km1), nu, 
+     .                       gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
 
         df_subdiag  = -tmp(3) ! subdiagonal
         df_maindiag = -tmp(2) ! main diagonal
