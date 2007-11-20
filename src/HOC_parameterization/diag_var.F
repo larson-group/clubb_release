@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.19 2007-11-18 17:17:27 griffinb Exp $
+! $Id: diag_var.F,v 1.20 2007-11-20 20:16:49 griffinb Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -194,9 +194,9 @@
         ! Define the Coefficent of Eddy Diffusivity for the 
         ! Variances and Covariances.
         do k = 1, gr%nnzp, 1
-           ! Kw1 is used for all variances and covariances in subroutine
+           ! Kw2 is used for all variances and covariances in subroutine
            ! diag_var.  The variances and covariances are located on 
-           ! momentum levels.  Kw1 is located on thermodynamic levels.
+           ! momentum levels.  Kw2 is located on thermodynamic levels.
            ! Kw2 = c_K2 * Kht
            Kw2(k) = c_K2 * Kht(k)
         enddo
