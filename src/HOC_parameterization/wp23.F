@@ -1,9 +1,9 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.22 2007-11-18 22:19:05 vlarson Exp $
+! $Id: wp23.F,v 1.23 2007-11-20 17:37:59 griffinb Exp $
 
         subroutine timestep_wp23
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
-     .               a, Kht, wmt, wmm, up2, vp2,
+     .               a, Kht, Khm, wmt, wmm, up2, vp2,
      .               um, upwp, vm, vpwp, wpthvp, wp2thvp,
      .               wp2, wp3, isValid )
 !       Description:
@@ -47,6 +47,7 @@
      .  Skwt,  ! Skw on thermo. grid                    [-]
      .  a,     ! PDF parameter a (13)                   [-]
      .  Kht,   ! Kh Eddy diffusivity on thermo. grid    [m^2/s]
+     .  Khm,   ! Kh Eddy diffusivity on momentum grid   [m^2/s]
      .  wmt,   ! w wind on the thermo. grid             [m/s]
      .  wmm,   ! w wind on the momentum grid            [m/s]
      .  up2,   ! u'^2                                   [m^2/s^2]

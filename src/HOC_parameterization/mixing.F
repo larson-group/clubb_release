@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.21 2007-11-13 21:36:24 vlarson Exp $
+! $Id: mixing.F,v 1.22 2007-11-20 17:37:59 griffinb Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -31,7 +31,7 @@
         contains
 !-----------------------------------------------------------------------
         subroutine timestep_mixing
-     .             ( dt, taum, wmm, wmt, wp2, wp3, Scm, Skwm,
+     .             ( dt, taum, wmm, wmt, wp2, wp3, Scm, Skwm, Kht,
      .               rtm, wprtp, rtpthvp, rtm_forcing,
      .               thlm, wpthlp, thlpthvp, thlm_forcing,
      .               rtp2, thlp2, ! Added for clipping Vince Larson 20070929
@@ -75,6 +75,7 @@
      .  wp3,         ! w'^3                               [m^3/s^3]
      .  Scm,         ! Sc on moment. grid                 [-]
      .  Skwm,        ! Skw on moment. grid                [-]
+     .  Kht,         ! Coefficient of Eddy Diffusivity    [m^2/s]
      .  rtpthvp,     ! r_t'th_v'                          [(kg K)/kg]
      .  rtm_forcing, ! rt forcing                         [(kg/kg)/s]
      .  thlpthvp,    ! th_l' th_v'                        [K^2]

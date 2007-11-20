@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.60 2007-11-18 17:17:27 griffinb Exp $
+! $Id: parameterization_interface.F,v 1.61 2007-11-20 17:37:59 griffinb Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -574,7 +574,7 @@
          call timestep_microphys
      .        ( dt, time_current, time_initial,
      .          thlm, p, exner, rhot, rhom, rtm, rcm, Ncm, 
-     .          pdf_parms, wmt, wmm, Kht, AKm_est, Akm, 
+     .          pdf_parms, wmt, wmm, Khm, AKm_est, Akm, 
      .          Ncnm, Nim,
      .          hydromet,
      .          hm_rt_tndcy, hm_thl_tndcy, isValid )
@@ -601,7 +601,7 @@
        !----------------------------------------------------------------
 
        call timestep_mixing
-     .      ( dt, taum, wmm, wmt, wp2, wp3, Scm, Skwm, 
+     .      ( dt, taum, wmm, wmt, wp2, wp3, Scm, Skwm, Kht, 
      .        rtm, wprtp, rtpthvp, rtm_forcing,
      .        thlm, wpthlp, thlpthvp, thlm_forcing, 
      .        rtp2, thlp2, ! Added for clipping Vince Larson 29 Sep 2007
@@ -632,7 +632,7 @@
 
        call timestep_wp23
      .      ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
-     .        pdf_parms(:, 13), Kht, wmt, wmm, up2, vp2,
+     .        pdf_parms(:, 13), Kht, Khm, wmt, wmm, up2, vp2,
      .        um, upwp, vm, vpwp, wpthvp, wp2thvp,
      .        wp2, wp3, isValid )
 

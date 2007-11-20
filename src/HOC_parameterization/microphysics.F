@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.18 2007-09-10 16:15:38 mjfalk Exp $
+! $Id: microphysics.F,v 1.19 2007-11-20 17:37:59 griffinb Exp $
         module microphysics
 
 !       Description:
@@ -28,7 +28,7 @@
         subroutine timestep_microphys
      .             ( dt, time_current, time_initial, 
      .               thlm, p, exner, rhot, rhom, rtm, rcm, Ncm, 
-     .               pdf_parms, wmt, wmm, Kht, AKm_est, AKm, 
+     .               pdf_parms, wmt, wmm, Khm, AKm_est, AKm, 
      .               Ncnm, Nim,
      .               hydromet,
      .               hm_rt_tndcy, hm_thl_tndcy, isValid )
@@ -89,7 +89,7 @@
      .  rcm,    ! Liquid water mixing ratio              [kg/kg]
      .  wmt,    ! w wind on moment. grid                 [m/s]
      .  wmm,    ! w wind on thermo. grid                 [m/s]
-     .  Kht,    ! Kh Eddy diffusivity on thermo. grid    [m^2/s]
+     .  Khm,    ! Kh Eddy diffusivity on momentum grid   [m^2/s]
      .  Akm_est,! Analytic Kessler ac                    [kg/kg]
      .  Akm     ! Analytic Kessler estimate              [kg/kg]
 
@@ -152,8 +152,8 @@
 
         ! Eddy diffusivity for rain and rain drop concentration.
         ! It is also used for the other hydrometeor variables.
-        ! Kr = Constant * Kht; Constant is named c_Krrm.
-        real, dimension(gr%nnzp) :: Kr     ! [m^2/s]
+        ! Kr = Constant * Khm; Constant is named c_Krrm.
+        real, dimension(gr%nnzp) :: Kr   ! [m^2/s]
 
         ! Variable needed to handle correction to rtm and thlm microphysics
         ! tendency arrays, as well rrm_cond and Nrm_cond statistical
