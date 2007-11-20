@@ -85,6 +85,18 @@ c
       integer i
 c
       logical lcotton
+
+c***************************************************************`
+c Addition by Adam Smith, 06 April 2007
+c Adding icase for implementing "proper" concentration settings
+c Also adding a "fudge" factor to modify Fletcher/Cooper scheme
+c UNCOMMENT THESE TWO LINES TO RUN MPACE-A
+c***************************************************************
+c
+
+c      real fudgefactor
+c      fudgefactor = 0.01
+
 c
 c***********************************************************************
 c          end of definitions
@@ -291,7 +303,11 @@ c
        do i=1,len
         if (t(i).le.tice) then
           tmin=max(t(i),243.)
+! Michael Falk, 15 Oct 2007
+! Use the second line instead of the first for MPACE-A
           ni(i)=cnzero*exp(cbeta*(tzero-tmin))
+!          ni(i)=fudgefactor*cnzero*exp(cbeta*(tzero-tmin))
+! eMFc
         endif
        enddo
 c
@@ -299,8 +315,17 @@ c
         qsi=qv(i)/qsati(i)-1.
          if(t(i).lt.tdep.and.qsi.gt.0.)then
           tmin=max(t(i),246.)
+! Michael Falk, 15 October 2007
+! Use the second and third lines instead of the first for MPACE-A
           ni(i)=max(ni(i), .005*l2m3*exp(0.304*(tzero-tmin)) )
+!          ni(i)=max(ni(i), 
+!     .     fudgefactor*.005*l2m3*exp(0.304*(tzero-tmin)) )
+! eMFc
          endif
+! Michael Falk, 11 Oct 2007, added this per AJS and VL.
+! This fixes the issue where there could be ice particles outside of cloud.
+         if (qc(i) .le. pcut) ni(i) = 0.0
+! eMFc
        enddo
       endif
 c
