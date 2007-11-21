@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.24 2007-11-20 20:16:49 griffinb Exp $
+! $Id: wp23.F,v 1.25 2007-11-21 16:47:12 vlarson Exp $
 
         subroutine timestep_wp23
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
@@ -422,9 +422,14 @@
             zm%x(k,iwp2_pr3) = zm%x(k,iwp2_pr3) 
      .      + (2.0/3.0) * C5
      .                  * (  grav * (1.0/T0) * wpthvp(k)
-     .                     - upwp(k) * gr%dzm(k) * ( um(kp1) - um(k) )
-     .                     - vpwp(k) * gr%dzm(k) * ( vm(kp1) - vm(k) )
+! Vince Larson made budget reflect Michael Falk's zeroing of shear terms. 20 Nov 2007
+!     .                     - upwp(k) * gr%dzm(k) * ( um(kp1) - um(k) )
+!     .                     - vpwp(k) * gr%dzm(k) * ( vm(kp1) - vm(k) )
+!     .                    )
+     .                - 0. * upwp(k) * gr%dzm(k) * ( um(kp1) - um(k) )
+     .                - 0. * vpwp(k) * gr%dzm(k) * ( vm(kp1) - vm(k) )
      .                    )
+! End of Vince Larson' change.
             zm%n(k,iwp2_pr3) = zm%n(k,iwp2_pr3) + 1
            end if
 
