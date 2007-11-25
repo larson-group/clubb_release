@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.21 2007-11-20 23:12:13 griffinb Exp $
+! $Id: diag_var.F,v 1.22 2007-11-25 21:47:01 griffinb Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -578,6 +578,8 @@
         ! These are set so that the sfc_var value of rtp2, thlp2, or rtpthlp
         ! can be used at the lowest boundary and the values of those
         ! variables can be set to 0 at the top boundary.  Brian.  12/18/05.
+        ! Fixed-point boundary conditions are used for both the variances and 
+        ! the covariances.
         lhs(:,1) = 0.0
         lhs(:,gr%nnzp) = 0.0
 
@@ -936,6 +938,8 @@
         ! These are set so that the sfc_var value of rtp2, thlp2, or rtpthlp
         ! can be used at the lowest boundary and the values of those
         ! variables can be set to 0 at the top boundary.  Brian.  12/18/05.
+        ! Fixed-point boundary conditions are used for both the variances and 
+        ! the covariances.
 
         ! This boundary condition was changed by dschanen on 24 April 2007
         ! When we run prognostically we want to preserve the surface value.
@@ -1051,6 +1055,8 @@
         ! These are set so that the sfc_var value of rtp2, thlp2, or rtpthlp
         ! can be used at the lowest boundary and the values of those
         ! variables can be set to 0 at the top boundary.  Brian.  12/18/05.
+        ! Fixed-point boundary conditions are used for both the variances and 
+        ! the covariances.
 
         ! This boundary condition was changed by dschanen on 24 April 2007
         ! When we run prognostically we want to preserve the surface value.

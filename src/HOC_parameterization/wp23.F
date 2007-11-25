@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.25 2007-11-21 16:47:12 vlarson Exp $
+! $Id: wp23.F,v 1.26 2007-11-25 21:47:01 griffinb Exp $
 
         subroutine timestep_wp23
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
@@ -684,6 +684,10 @@
         end do
 
         ! Boundary conditions
+
+        ! Both wp2 and wp3 used fixed-point boundary conditions.  Therefore,
+        ! anything set in the above loop is overwritten at both the upper
+        ! and lower boundaries.
 
         !   wp3(1)  wp2(1) ... wp3(nz) wp2(nz)
         ! [  0.0     0.0         0.0     0.0  ]

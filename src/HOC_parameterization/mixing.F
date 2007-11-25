@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.23 2007-11-20 23:12:13 griffinb Exp $
+! $Id: mixing.F,v 1.24 2007-11-25 21:47:01 griffinb Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -487,6 +487,8 @@
 
         ! Boundary condition for the mean and flux
 
+        ! Fixed-point boundary conditions are used for the turbulent fluxes.
+
         ! Lower boundary
         k      = 1
         k_xm   = 2*k - 1
@@ -910,6 +912,8 @@
         end do ! k=2..gr%nnzp-1
 
         ! Boundary condition for the flux and mean
+
+        ! Fixed-point boundary conditions are used for the turbulent fluxes.
 
         k      = 1
         k_xm   = 2*k - 1
