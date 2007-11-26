@@ -7,15 +7,15 @@ nzmax   = 300
 deltaz  = 50.0
 zm_init = 0.0
 
-day = 26, month = 7, year = 1997,
+day = 26, month = 6, year = 1997,
 rlat = 36.5, rlon = -97.5
 
 time_initial = 84586.0
 time_final   = 419386.0
 time_spinup  = 1000000.0
 
-dtmain    = 10.0
-dtclosure = 10.0
+dtmain    = 60.0
+dtclosure = 60.0
 
 Tsfc = 299.27
 psfc = 971.5103e2
@@ -27,9 +27,9 @@ ts_nudge = 7200.
 
 cloud_sed     = .false.
 kk_rain       = .false.
-lcoamps_micro = .false.
+lcoamps_micro = .true.
 licedfs       = .false.
-lbugsrad      = .true.
+lbugsrad      = .false.
 lKhm_aniso    = .false.
 luv_nudge     = .true.
 
