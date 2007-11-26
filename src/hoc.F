@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.138 2007-11-17 21:49:33 faschinj Exp $
+! $Id: hoc.F,v 1.139 2007-11-26 23:03:23 faschinj Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -715,6 +715,9 @@
         use grid_class
         use sounding
         use model_flags, only: luv_nudge
+        use arm_0003, only: arm_0003_init
+        use arm_3year, only: arm_3year_init
+        use arm_97, only: arm_97_init
 #ifdef STATS
         use hoc_stats
 #endif /*STATS*/
@@ -895,16 +898,19 @@
         case ( "arm_0003" )
           em = 1.0
           wp2 = 2.0 / 3.0 * em
+          call arm_0003_init
 
         ! 3 year ARM case
         case ( "arm_3year" )
           em = 1.0
           wp2 = 2.0 / 3.0 * em
+          call arm_3year_init
          
         ! June 27 1997 ARM case
         case ( "arm_97" )
           em = 1.0
           wp2 = 2.0 / 3.0 * em
+          call arm_97_init
 
         ! GCSS FIRE Sc
         case ( "fire" ) 
@@ -1688,7 +1694,6 @@
      .                      cf, p, exner, rhom, Tsfc,
      .                      radht, Frad, thlm_forcing )
 
-
           if ( isnan2d( thlm_forcing ) ) then
             print *, "thlm_forcing after BugsRad is NaN" 
 !           print *,thlm_forcing
@@ -1705,6 +1710,7 @@
             print *, "radht after BugsRad is NaN"
 !           print *,radht                                             
           endif
+
 #else
           stop "Cannot call BUGSrad with these compile options."
 #endif
