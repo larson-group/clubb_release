@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.24 2007-11-25 21:47:01 griffinb Exp $
+! $Id: mixing.F,v 1.25 2007-11-26 00:11:36 griffinb Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -493,23 +493,19 @@
         k      = 1
         k_xm   = 2*k - 1
         k_wpxp = 2*k
-        lhs(3+1,k_xm)   = 0.0
+        lhs(:,k_xm)     = 0.0
         lhs(3,k_xm)     = 1.0
-        lhs(3-1,k_xm)   = 0.0
-        lhs(3+2,k_wpxp) = 0.0
+        lhs(:,k_wpxp)   = 0.0
         lhs(3,k_wpxp)   = 1.0
-        lhs(3-2,k_wpxp) = 0.0
 
         ! Upper boundary
         k      = gr%nnzp
         k_xm   = 2*k - 1
         k_wpxp = 2*k
-        lhs(3+1,k_xm)   = 0.0
+        lhs(:,k_xm)     = 0.0
         lhs(3,k_xm)     = 1.0
-        lhs(3-1,k_xm)   = 0.0
-        lhs(3+2,k_wpxp) = 0.0
+        lhs(:,k_wpxp)   = 0.0
         lhs(3,k_wpxp)   = 1.0
-        lhs(3-2,k_wpxp) = 0.0
 
         return
         end subroutine mixing_lhs
@@ -967,7 +963,7 @@
 
 !        xm(1) = 2. * xm(2) - xm(3)
 !        xm(gr%nnzp) = 2. * xm(gr%nnzp-1) - xm(gr%nnzp-2)
-        xm(1) = xm(2)
+         xm(1) = xm(2)
 !        xm(gr%nnzp) = xm(gr%nnzp-1)
 
 
