@@ -1,16 +1,32 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_3year.F,v 1.1 2007-11-16 16:16:10 faschinj Exp $
+! $Id: arm_3year.F,v 1.2 2007-11-26 23:06:10 faschinj Exp $
         module arm_3year
 
 !       Description:
 !       Contains subroutines for the ARM 3 Year case.
 !----------------------------------------------------------------------
 
-        public :: arm_3year_tndcy, arm_3year_sfclyr
+        public :: arm_3year_tndcy, arm_3year_sfclyr, arm_3year_init
 
         private
+        ! Constant Parameters
+        integer, parameter :: ntimes = 26304, nz = 36,
+     .   per_line = 5
+
+        character(*), parameter ::
+     .   file_path = '../model/arm_3year_forcings/'
+        
+        real, dimension(ntimes) :: times
+        real, dimension(nz) :: z
+        real, dimension(nz, ntimes) :: thl_ls
+        real, dimension(nz, ntimes) :: rt_ls
+        real, dimension(nz, ntimes) :: um_obs  ! m/s
+        real, dimension(nz, ntimes) :: vm_obs  ! m/s
+        real, dimension(ntimes) :: SE          ! Sensible heat flux  [W/m^2]
+        real, dimension(ntimes) :: LE          ! Evaporation         [W/m^2] 
+
 
         contains
 
@@ -36,20 +52,6 @@
         ! External
         intrinsic :: present
 
-        ! Constant Parameters
-        integer, parameter :: ntimes = 26304, nz = 36,
-     .   per_line = 5
-
-        character(*), parameter ::
-     .   file_path = '../model/arm_3year_forcings/'
-        
-        real, dimension(ntimes) :: times
-        real, dimension(nz) :: z
-        real, dimension(nz, ntimes) :: thl_ls
-        real, dimension(nz, ntimes) :: rt_ls
-        real, dimension(nz, ntimes) :: um_obs  ! m/s
-        real, dimension(nz, ntimes) :: vm_obs  ! m/s
-
         ! Input Variables
         real, intent(in) :: time ! Model time [s]
 
@@ -71,34 +73,6 @@
 
         real, dimension(nz) :: thlm_t_interp,
      .   rtm_t_interp, um_obs_t_interp, vm_obs_t_interp
-
-        ! Reading in the files located in
-        ! ../model/arm_3year_forcings/ and storing them in arrays
-
-
-        call file_read_1d(10,
-     .   file_path//'arm_3year_times.dat',
-     .   ntimes, per_line, times)
-
-        call file_read_1d(10,
-     .   file_path//'arm_3year_heights.dat',
-     .   nz, per_line, z)
-
-        call file_read_2d(10,
-     .   file_path//'arm_3year_dTdt.dat',
-     .   nz, ntimes, per_line, thl_ls)
-
-        call file_read_2d(10,
-     .    file_path//'arm_3year_dqdt.dat',
-     .    nz, ntimes, per_line, rt_ls)
-
-        call file_read_2d(10,
-     .    file_path//'arm_3year_um_obs.dat',
-     .    nz, ntimes, per_line, um_obs)
-
-        call file_read_2d(10,
-     .    file_path//'arm_3year_vm_obs.dat',
-     .    nz, ntimes, per_line, vm_obs)
 
 !-----------------------------------------------------------------------
 
@@ -186,7 +160,6 @@
 
         use constants, only: Cp, Lv, grav, sclr_dim
         use hoc_stats, only: iustar, sfc, lstats_samp
-        use file_functions, only: file_read_1d
         implicit none
 
         ! External
@@ -194,23 +167,9 @@
 
         intrinsic :: max, sqrt, present
 
-         ! Constant Parameters
-        integer, parameter :: ntimes = 26304, per_line = 5
-        
-        character(*), parameter :: 
-     .   file_path = '../model/arm_3year_forcings/'
-
         real, parameter :: 
      .  ubmin = 0.25,   ! Minimum value for ubar 
      .  z0    = 0.035   ! ARM Cu mom. roughness height
-
-        ! Time index [s]
-        real, dimension(ntimes) :: times 
-
-        ! Sensible heat flux  [W/m^2]
-        real, dimension(ntimes) :: SE,
-     .  ! Evaporation         [W/m^2]
-     .  LE 
 
         ! Input Variables
         real, intent(in) :: 
@@ -240,15 +199,6 @@
         ! Reading files located in /model/arm_3year_forcings/
         ! and storing them in arrays
   
-        call file_read_1d(10,
-     .   file_path//'arm_3year_times.dat',
-     .   ntimes, per_line, times)
-        call file_read_1d(10,
-     .   file_path//'arm_3year_LE.dat',
-     .   ntimes, per_line, LE)
-        call file_read_1d(10,
-     .   file_path//'arm_3year_SE.dat',
-     .    ntimes, per_line, SE)
 
         if ( time <= times(1) ) then
           heat_flx     = SE(1)
@@ -309,6 +259,46 @@
 
         return
         end subroutine arm_3year_sfclyr
+        subroutine arm_3year_init()
+           use file_functions, only: file_read_1d, file_read_2d
+           implicit none
+        ! Reading in the files located in
+        ! ../model/arm_3year_forcings/ and storing them in arrays
+        ! Joshua Fasching (October 2007)
+
+           call file_read_1d(10,
+     .      file_path//'arm_3year_times.dat',
+     .      ntimes, per_line, times)
+
+           call file_read_1d(10,
+     .      file_path//'arm_3year_heights.dat',
+     .      nz, per_line, z)
+
+           call file_read_1d(10,
+     .      file_path//'arm_3year_LE.dat',
+     .      ntimes, per_line, LE)
+
+           call file_read_1d(10,
+     .      file_path//'arm_3year_SE.dat',
+     .      ntimes, per_line, SE)
+
+           call file_read_2d(10,
+     .      file_path//'arm_3year_dTdt.dat',
+     .      nz, ntimes, per_line, thl_ls)
+
+           call file_read_2d(10,
+     .       file_path//'arm_3year_dqdt.dat',
+     .       nz, ntimes, per_line, rt_ls)
+
+           call file_read_2d(10,
+     .       file_path//'arm_3year_um_obs.dat',
+     .       nz, ntimes, per_line, um_obs)
+
+           call file_read_2d(10,
+     .       file_path//'arm_3year_vm_obs.dat',
+     .       nz, ntimes, per_line, vm_obs)
+
+        end subroutine arm_3year_init
 
         end module arm_3year
 

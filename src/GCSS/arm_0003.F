@@ -1,16 +1,32 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_0003.F,v 1.1 2007-10-31 18:32:51 faschinj Exp $
+! $Id: arm_0003.F,v 1.2 2007-11-26 23:06:10 faschinj Exp $
         module arm_0003
 
 !       Description:
 !       Contains subroutines for the March 2000 IOP ARM case.
 !----------------------------------------------------------------------
 
-        public :: arm_0003_tndcy, arm_0003_sfclyr
+        public :: arm_0003_tndcy, arm_0003_sfclyr, arm_0003_init
 
         private
+        ! Constant Parameters
+        integer, parameter :: ntimes = 167, nz = 38,
+     .   per_line = 5
+
+        character(*), parameter ::
+     .   file_path = '../model/arm_0003_forcings/'
+        
+        real, dimension(ntimes) :: times
+        real, dimension(nz) :: z
+        real, dimension(nz, ntimes) :: thl_ls
+        real, dimension(nz, ntimes) :: rt_ls
+        real, dimension(nz, ntimes) :: um_obs  ! m/s
+        real, dimension(nz, ntimes) :: vm_obs  ! m/s
+        real, dimension(ntimes) :: SE          ! Sensible heat flux  [W/m^2]
+        real, dimension(ntimes) :: LE          ! Evaporation         [W/m^2] 
+
 
         contains
 
@@ -30,26 +46,13 @@
         use grid_class
         use constants, only: sclr_dim
         use zlinterp, only: zlinterp_fnc
-        use file_functions, only: file_read_1d, file_read_2d
+
 
         implicit none
 
         ! External
         intrinsic :: present
 
-        ! Constant Parameters
-        integer, parameter :: ntimes = 167, nz = 38,
-     .   per_line = 5
-
-        character(*), parameter ::
-     .   file_path = '../model/arm_0003_forcings/'
-        
-        real, dimension(ntimes) :: times
-        real, dimension(nz) :: z
-        real, dimension(nz, ntimes) :: thl_ls
-        real, dimension(nz, ntimes) :: rt_ls
-        real, dimension(nz, ntimes) :: um_obs  ! m/s
-        real, dimension(nz, ntimes) :: vm_obs  ! m/s
 
         ! Input Variables
         real, intent(in) :: time ! Model time [s]
@@ -72,34 +75,6 @@
 
         real, dimension(nz) :: thlm_t_interp,
      .   rtm_t_interp, um_obs_t_interp, vm_obs_t_interp
-
-        ! Reading in the files located in
-        ! ../model/arm_0003_forcings/ and storing them in arrays
-        ! Joshua Fasching (October 2007)
-
-        call file_read_1d(10,
-     .   file_path//'arm_0003_times.dat',
-     .   ntimes, per_line, times)
-
-        call file_read_1d(10,
-     .   file_path//'arm_0003_heights.dat',
-     .   nz, per_line, z)
-
-        call file_read_2d(10,
-     .   file_path//'arm_0003_dTdt.dat',
-     .   nz, ntimes, per_line, thl_ls)
-
-        call file_read_2d(10,
-     .    file_path//'arm_0003_dqdt.dat',
-     .    nz, ntimes, per_line, rt_ls)
-
-        call file_read_2d(10,
-     .    file_path//'arm_0003_um_obs.dat',
-     .    nz, ntimes, per_line, um_obs)
-
-        call file_read_2d(10,
-     .    file_path//'arm_0003_vm_obs.dat',
-     .    nz, ntimes, per_line, vm_obs)
 
 !-----------------------------------------------------------------------
 
@@ -197,23 +172,9 @@
 
         intrinsic :: max, sqrt, present
 
-         ! Constant Parameters
-        integer, parameter :: ntimes = 167, per_line = 5
-        
-        character(*), parameter :: 
-     .   file_path = '../model/arm_0003_forcings/'
-
         real, parameter :: 
      .  ubmin = 0.25,   ! Minimum value for ubar 
      .  z0    = 0.035   ! ARM Cu mom. roughness height
-
-        ! Time index [s]
-        real, dimension(ntimes) :: times 
-
-        ! Sensible heat flux  [W/m^2]
-        real, dimension(ntimes) :: SE,
-     .  ! Evaporation         [W/m^2]
-     .  LE 
 
         ! Input Variables
         real, intent(in) :: 
@@ -239,20 +200,7 @@
         ! Local variables
         real :: ubar, ustar, bflx, heat_flx, moisture_flx, time_frac
         integer :: i1, i2
-
-        ! Reading files located in arm_0003_files/
-        ! and storing them in arrays
-        ! Joshua Fasching September 2007
-        call file_read_1d(10,
-     .   file_path//'arm_0003_times.dat',
-     .   ntimes, per_line, times)
-        call file_read_1d(10,
-     .   file_path//'arm_0003_LE.dat',
-     .   ntimes, per_line, LE)
-        call file_read_1d(10,
-     .   file_path//'arm_0003_SE.dat',
-     .    ntimes, per_line, SE)
-
+!----------------------------------------------------------------------
         if ( time <= times(1) ) then
           heat_flx     = SE(1)
           moisture_flx = LE(1)
@@ -312,6 +260,52 @@
 
         return
         end subroutine arm_0003_sfclyr
+!----------------------------------------------------------------------
+        subroutine arm_0003_init()
+!
+!       Description:
+!       This subroutine initializes the module by reading in forcing
+!       data used in the tndcy and sfclyr subroutines.
+!----------------------------------------------------------------------
+           use file_functions, only: file_read_1d, file_read_2d
+           implicit none
+        ! Reading in the files located in
+        ! ../model/arm_0003_forcings/ and storing them in arrays
+        ! Joshua Fasching (October 2007)
 
+           call file_read_1d(10,
+     .      file_path//'arm_0003_times.dat',
+     .      ntimes, per_line, times)
+
+           call file_read_1d(10,
+     .      file_path//'arm_0003_heights.dat',
+     .      nz, per_line, z)
+
+           call file_read_1d(10,
+     .      file_path//'arm_0003_LE.dat',
+     .      ntimes, per_line, LE)
+
+           call file_read_1d(10,
+     .      file_path//'arm_0003_SE.dat',
+     .      ntimes, per_line, SE)
+
+           call file_read_2d(10,
+     .      file_path//'arm_0003_dTdt.dat',
+     .      nz, ntimes, per_line, thl_ls)
+
+           call file_read_2d(10,
+     .       file_path//'arm_0003_dqdt.dat',
+     .       nz, ntimes, per_line, rt_ls)
+
+           call file_read_2d(10,
+     .       file_path//'arm_0003_um_obs.dat',
+     .       nz, ntimes, per_line, um_obs)
+
+           call file_read_2d(10,
+     .       file_path//'arm_0003_vm_obs.dat',
+     .       nz, ntimes, per_line, vm_obs)
+
+        end subroutine arm_0003_init
+!----------------------------------------------------------------------
         end module arm_0003
 
