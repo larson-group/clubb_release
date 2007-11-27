@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_0003.F,v 1.2 2007-11-26 23:06:10 faschinj Exp $
+! $Id: arm_0003.F,v 1.3 2007-11-27 00:10:31 faschinj Exp $
         module arm_0003
 
 !       Description:
@@ -14,16 +14,18 @@
         ! Constant Parameters
         integer, parameter :: ntimes = 167, nz = 38,
      .   per_line = 5
-
+        ! File path for the forcing files
         character(*), parameter ::
      .   file_path = '../model/arm_0003_forcings/'
         
-        real, dimension(ntimes) :: times
-        real, dimension(nz) :: z
-        real, dimension(nz, ntimes) :: thl_ls
-        real, dimension(nz, ntimes) :: rt_ls
-        real, dimension(nz, ntimes) :: um_obs  ! m/s
-        real, dimension(nz, ntimes) :: vm_obs  ! m/s
+        real, dimension(ntimes) :: times       ! Time from day0      [s]
+        real, dimension(nz) :: z               ! Height              [m]
+        real, dimension(nz, ntimes) :: thl_ls  ! Potential Temperature
+                                               ! Tendency            [K/s]
+        real, dimension(nz, ntimes) :: rt_ls   ! Water Vapor Advective
+                                               ! Tendency            [Kg/Kg/s]
+        real, dimension(nz, ntimes) :: um_obs  ! Obs. wind u         [m/s]
+        real, dimension(nz, ntimes) :: vm_obs  ! Obs. wind v         [m/s]
         real, dimension(ntimes) :: SE          ! Sensible heat flux  [W/m^2]
         real, dimension(ntimes) :: LE          ! Evaporation         [W/m^2] 
 
