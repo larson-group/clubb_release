@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.36 2007-09-08 17:02:33 griffinb Exp $
+! $Id: rain.F,v 1.37 2007-11-28 15:27:43 mjfalk Exp $
 
       MODULE rain_equations
 
@@ -14,7 +14,7 @@
       IMPLICIT NONE
 
       ! Statistical rain parameters.
-!      ! Old parameterization.
+      ! Old parameterization.
 !      REAL, PARAMETER:: rrp2_rrm2 = 1.2
 !      REAL, PARAMETER:: Nrp2_Nrm2 = 1.0
 !      REAL, PARAMETER:: Ncp2_Ncm2 = 0.07
@@ -53,6 +53,33 @@
       !REAL, PARAMETER:: r_0 = 30.0e-6   ! Assumed radius of all new drops; m.
       !                                  ! Khairoutdinov said it was okay!
       ! End Vince Larson's change.
+
+!!!!!!! COMMENTS FOR RICO MARINE CUMULUS CASE
+!!!!!!! In order to correctly run the RICO case, the parameters above
+!!!!!!! need to be changed.  You should comment these in and 
+!!!!!!! comment the above copies out.  These are the constants needed to 
+!!!!!!! run the RICO case, as I did in my case rico0206, submitted:
+!      REAL, PARAMETER:: rrp2_rrm2_cloud = 30.
+!      REAL, PARAMETER:: Nrp2_Nrm2_cloud = 10.
+!      REAL, PARAMETER:: Ncp2_Ncm2_cloud = 60.
+!      REAL, PARAMETER:: corr_rrNr_LL_cloud = 0.8
+!      REAL, PARAMETER:: corr_srr_NL_cloud = 0.25
+!      REAL, PARAMETER:: corr_sNr_NL_cloud = 0.3
+!      REAL, PARAMETER:: corr_sNc_NL_cloud = 0.24
+
+!      REAL, PARAMETER:: rrp2_rrm2_below = 20.
+!      REAL, PARAMETER:: Nrp2_Nrm2_below = 2.
+!      REAL, PARAMETER:: Ncp2_Ncm2_below = 0.
+!      REAL, PARAMETER:: corr_rrNr_LL_below = 0.78
+!      REAL, PARAMETER:: corr_srr_NL_below = 0.
+!      REAL, PARAMETER:: corr_sNr_NL_below = 0.
+!      REAL, PARAMETER:: corr_sNc_NL_below = 0.
+
+!      REAL, PARAMETER:: C_evap = 0.5
+!      REAL, PARAMETER:: r_0 = 100.0e-6
+!!!!!!! END RICO COMMENTS, Michael Falk, 27-28 November 2007
+
+
 
       PUBLIC :: kk_microphys
       PRIVATE :: mean_volume_radius, cond_evap_rrm, cond_evap_Nrm
