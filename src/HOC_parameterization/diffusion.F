@@ -126,20 +126,18 @@
         ! conserved, meaning that nothing is lost due to diffusional effects.
         ! This is illustrated in the matrix setup below:
         !
-        ! Left-hand side matrix, diffusional term only; first five levels:
+        ! Left-hand side matrix, diffusional term only; first four levels:
         !
         !   ----->
-        ! 0 | 0              0                               0                                   0
+        !   | +dzt(k)*(K(k)+nu)*dzm(k)       -dzt(k)*(K(k)+nu)*dzm(k)                        0
         !   |
-        !   | 0   +dzt(k)*(K(k)+nu)*dzm(k)       -dzt(k)*(K(k)+nu)*dzm(k)                        0
+        !   | -dzt(k)*(K(k-1)+nu)*dzm(k-1)   +dzt(k)*[ (K(k)+nu)*dzm(k)
+        !   |                                         +(K(k-1)+nu)dzm*(k-1) ]   -dzt(k)*(K(k)+nu)*dzm(k)
         !   |
-        !   | 0   -dzt(k)*(K(k-1)+nu)*dzm(k-1)   +dzt(k)*[ (K(k)+nu)*dzm(k)
-        !   |                                             +(K(k-1)+nu)dzm*(k-1) ]   -dzt(k)*(K(k)+nu)*dzm(k)
+        !   |            0                   -dzt(k)*(K(k-1)+nu)*dzm(k-1)       +dzt(k)*[ (K(k)+nu)*dzm(k)
+        !   |                                                                            +(K(k-1)+nu)*dzm(k-1) ]
         !   |
-        !   | 0              0                   -dzt(k)*(K(k-1)+nu)*dzm(k-1)       +dzt(k)*[ (K(k)+nu)*dzm(k)
-        !   |                                                                                +(K(k-1)+nu)*dzm(k-1) ]
-        !   |
-        !   | 0              0                               0                      -dzt(k)*(K(k-1)+nu)*dzm(k-1)
+        !   |            0                               0                      -dzt(k)*(K(k-1)+nu)*dzm(k-1)
         !   |
         !  \ /
         !
@@ -294,20 +292,18 @@
         ! conserved, meaning that nothing is lost due to diffusional effects.
         ! This is illustrated in the matrix setup below:
         !
-        ! Left-hand side matrix, diffusional term only; first five levels:
+        ! Left-hand side matrix, diffusional term only; first four levels:
         !
         !   ----->
-        ! 0 | 0              0                               0                                   0
+        !   | +dzm(k)*(K(k+1)+nu)*dzt(k+1)   -dzm(k)*(K(k+1)+nu)*dzt(k+1)                    0
         !   |
-        !   | 0   +dzm(k)*(K(k+1)+nu)*dzt(k+1)   -dzm(k)*(K(k+1)+nu)*dzt(k+1)                    0
+        !   | -dzm(k)*(K(k)+nu)*dzt(k)       +dzm(k)*[ (K(k+1)+nu)*dzt(k+1)
+        !   |                                         +(K(k)+nu)*dzt(k) ]       -dzm(k)*(K(k+1)+nu)*dzt(k+1)
         !   |
-        !   | 0   -dzm(k)*(K(k)+nu)*dzt(k)       +dzm(k)*[ (K(k+1)+nu)*dzt(k+1)
-        !   |                                             +(K(k)+nu)*dzt(k) ]       -dzm(k)*(K(k+1)+nu)*dzt(k+1)
+        !   |            0                   -dzm(k)*(K(k)+nu)*dzt(k)           +dzm(k)*[ (K(k+1)+nu)*dzt(k+1)
+        !   |                                                                            +(K(k)+nu)*dzt(k) ]
         !   |
-        !   | 0              0                   -dzm(k)*(K(k)+nu)*dzt(k)           +dzm(k)*[ (K(k+1)+nu)*dzt(k+1)
-        !   |                                                                                +(K(k)+nu)*dzt(k) ]
-        !   |
-        !   | 0              0                               0                      -dzm(k)*(K(k)+nu)*dzt(k)
+        !   |            0                               0                      -dzm(k)*(K(k)+nu)*dzt(k)
         !   |
         !  \ /
         !

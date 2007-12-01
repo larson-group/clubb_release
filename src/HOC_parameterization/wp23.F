@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.26 2007-11-25 21:47:01 griffinb Exp $
+! $Id: wp23.F,v 1.27 2007-12-01 15:03:33 griffinb Exp $
 
         subroutine timestep_wp23
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
@@ -258,7 +258,10 @@
         integer :: k, km1, kp1, k_wp2, k_wp3
 
         ! Added by Brian for eddy diffusion.
-        real, dimension(3,gr%nnzp) :: diff_lhs_cn
+        real, dimension(3) :: diff_lhs
+        ! Set logical to true for Crank-Nicholson diffusion scheme
+        ! or to false for completely implicit diffusion scheme.
+        logical, parameter :: diff_cn = .true.
         ! Constant parameters
         integer, parameter ::
      .  kp1diag = 1,
@@ -295,7 +298,8 @@
         lhs = 0.0
         rhs = 0.0
 
-        do k = 1, gr%nnzp, 1
+!        do k = 1, gr%nnzp, 1
+        do k = 2, gr%nnzp-1, 1
 
 !         Define indices
 
@@ -314,24 +318,31 @@
           ! wp2
 
           ! Diffusional term with Crank-Nicholson time step.
-!          atmp = - nu1 * (1.0/2.0) * gr%dzm(k) * gr%dzt(k)
+          ! atmp = - nu1 * (1.0/2.0) * gr%dzm(k) * gr%dzt(k)
           ! Completely implicit diffusional term.
-!          atmp = - nu1 * gr%dzm(k) * gr%dzt(k)
+          ! atmp = - nu1 * gr%dzm(k) * gr%dzt(k)
           ! Diffusional term with Crank-Nicholson time step.
-!          ctmp = - nu1 * (1.0/2.0) * gr%dzm(k) * gr%dzt(kp1)
+          ! ctmp = - nu1 * (1.0/2.0) * gr%dzm(k) * gr%dzt(kp1)
           ! Completely implicit diffusional term.
-!          ctmp = - nu1 * gr%dzm(k) * gr%dzt(kp1)
+          ! ctmp = - nu1 * gr%dzm(k) * gr%dzt(kp1)
 
-          ! Eddy diffusion for wp2 using a Crank-Nicholson time step. 
-          diff_lhs_cn(kp1diag:km1diag,k)
-     .    = (1.0/2.0)
-     .    * diffusion_mlev( Kw1(k), Kw1(kp1), nu1,
-     .                      gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+          if ( diff_cn ) then
+             ! Eddy diffusion for wp2 using a Crank-Nicholson time step. 
+             diff_lhs(kp1diag:km1diag)
+     .       = (1.0/2.0)
+     .       * diffusion_mlev( Kw1(k), Kw1(kp1), nu1,
+     .                         gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+          else
+             ! Eddy diffusion for wp2 using a completely implicit time step. 
+             diff_lhs(kp1diag:km1diag)
+     .       = diffusion_mlev( Kw1(k), Kw1(kp1), nu1,
+     .                         gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+          endif
 
           ! Momentum subdiagonal [ x wp2(k-1,<t+1>) ]
           lhs(3+2,k_wp2)
      .    = - wmm(k) * (1.0/2.0) * gr%dzm(k)
-     .      + diff_lhs_cn(3,k)
+     .      + diff_lhs(3)
 
           ! Thermodynamic subdiagonal [ x wp3(k,<t+1>) ]
           lhs(3+1,k_wp2)
@@ -342,7 +353,7 @@
      .    = + 1.0 / dt
      .      + ( 1.0 - C5 ) * 2.0 * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
      .      + C1_Skw_fnc(k) / tau1m(k)
-     .      + diff_lhs_cn(2,k)
+     .      + diff_lhs(2)
           if ( lKhm_aniso ) then
             ! Add in this term if we're not assuming tke = 1.5 * wp2
             lhs(3,k_wp2) = lhs(3,k_wp2)
@@ -356,7 +367,7 @@
           ! Momentum superdiagonal [ x wp2(k+1,<t+1>) ]
           lhs(3-2,k_wp2)
      .    = + wmm(k) * (1.0/2.0) * gr%dzm(k)
-     .      + diff_lhs_cn(1,k)
+     .      + diff_lhs(1)
 
 
           ! Right-hand side
@@ -377,12 +388,15 @@
      .                  - 0. * vpwp(k) * gr%dzm(k) * ( vm(kp1) - vm(k) )
      .                    )
 ! eMFc
-          ! These lines are for the diffusional term with a Crank-Nicholson 
-          ! time step.  They need to be commented out for completely implicit
-          ! diffusion to be used.
-     .      - diff_lhs_cn(3,k) * wp2(km1)
-     .      - diff_lhs_cn(2,k) * wp2(k)
-     .      - diff_lhs_cn(1,k) * wp2(kp1)
+
+          if ( diff_cn ) then
+             ! These lines are for the diffusional term with a Crank-Nicholson 
+             ! time step.  They are not used for completely implicit diffusion.
+             rhs(k_wp2)   =   rhs(k_wp2)
+     .                      - diff_lhs(3) * wp2(km1)
+     .                      - diff_lhs(2) * wp2(k)
+     .                      - diff_lhs(1) * wp2(kp1)
+          endif
 
           if ( lKhm_aniso ) then
             rhs(k_wp2) = rhs(k_wp2)
@@ -396,10 +410,12 @@
 !          Explicit contributions for wp2
 
            if ( iwp2_dp2 > 0 ) then
-            zm%x(k,iwp2_dp2) = zm%x(k,iwp2_dp2) 
-     .      - diff_lhs_cn(3,k) * wp2(km1)
-     .      - diff_lhs_cn(2,k) * wp2(k)
-     .      - diff_lhs_cn(1,k) * wp2(kp1)
+            if ( diff_cn ) then
+             zm%x(k,iwp2_dp2) = zm%x(k,iwp2_dp2) 
+     .       - diff_lhs(3) * wp2(km1)
+     .       - diff_lhs(2) * wp2(k)
+     .       - diff_lhs(1) * wp2(kp1)
+            endif
            end if
 
            if ( iwp2_bp > 0 ) then
@@ -440,9 +456,9 @@
            end if
 
            if ( iwp2_dp2 > 0 ) then
-             zmscr02(k) = - diff_lhs_cn(3,k)
-             zmscr03(k) = - diff_lhs_cn(2,k)
-             zmscr04(k) = - diff_lhs_cn(1,k)
+             zmscr02(k) = - diff_lhs(3)
+             zmscr03(k) = - diff_lhs(2)
+             zmscr04(k) = - diff_lhs(1)
            end if
 
            if ( iwp2_ta > 0 ) then
@@ -487,18 +503,26 @@
           ! Completely implicit diffusional term.
 !          ctmp = - C12 * ( Kw(k) + nu8 ) * gr%dzt(k) * gr%dzm(k)
 
-          ! Eddy diffusion for wp2 using a Crank-Nicholson time step. 
-          diff_lhs_cn(kp1diag:km1diag,k)
-     .    = C12 * (1.0/2.0)
-     .    * diffusion_tlev( Kw8(k), Kw8(km1), nu8,
-     .                      gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+          if ( diff_cn ) then
+             ! Eddy diffusion for wp2 using a Crank-Nicholson time step. 
+             diff_lhs(kp1diag:km1diag)
+     .       = C12 * (1.0/2.0)
+     .       * diffusion_tlev( Kw8(k), Kw8(km1), nu8,
+     .                         gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+          else
+             ! Eddy diffusion for wp2 using a completely implicit time step. 
+             diff_lhs(kp1diag:km1diag)
+     .       = C12 
+     .       * diffusion_tlev( Kw8(k), Kw8(km1), nu8,
+     .                         gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+          endif
 
           ! Thermodynamic subdiagonal [ x wp3(k-1,<t+1>) ]
           lhs(3+2,k_wp3) = 
      .    - wmt(k) * (1.0/2.0) * gr%dzt(k)
      .    - (1.0/2.0) * gr%dzt(k)
      .      * a1(km1) * ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), eps )
-     .    + diff_lhs_cn(3,k)
+     .    + diff_lhs(3)
 
           ! Momentum subdiagonal [ x wp2(k-1,<t+1>) ]
           lhs(3+1,k_wp3) = 
@@ -516,7 +540,7 @@
      .    + ( 1.0 - C11_Skw_fnc(k) )
      .              * 3.0 * gr%dzt(k) * ( wmm(k) - wmm(km1) )
      .    + ( C8 / tauw3t(k) ) * ( 5.0 * C8b * Skwt(k)**4 + 1.0 )
-     .    + diff_lhs_cn(2,k)
+     .    + diff_lhs(2)
 
           ! Momentum superdiagonal [ x wp2(k,<t+1>) ]
           lhs(3-1,k_wp3) = 
@@ -529,7 +553,7 @@
      .    + wmt(k) * (1.0/2.0) * gr%dzt(k)
      .    + (1.0/2.0) * gr%dzt(k)
      .      * a1(k) * ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), eps )
-     .    + diff_lhs_cn(1,k)
+     .    + diff_lhs(1)
 
 
           ! Right-hand side
@@ -548,12 +572,15 @@
      .        )
      .    + ( 1.0 - C11_Skw_fnc(k) ) * 3.0 * ( grav/T0 ) * wp2thvp(k)
      .    + ( C8 / tauw3t(k) ) * ( 4.0 * C8b * Skwt(k)**4 ) * wp3(k)
-          ! These lines are for the diffusional term with a Crank-Nicholson 
-          ! time step.  They need to be commented out for completely implicit
-          ! diffusion to be used.
-     .    - diff_lhs_cn(3,k) * wp3(km1)
-     .    - diff_lhs_cn(2,k) * wp3(k)
-     .    - diff_lhs_cn(1,k) * wp3(kp1)
+
+          if ( diff_cn ) then
+             ! These lines are for the diffusional term with a Crank-Nicholson 
+             ! time step.  They are not used for completely implicit diffusion.
+             rhs(k_wp3)   =   rhs(k_wp3)
+     .                      - diff_lhs(3) * wp3(km1)
+     .                      - diff_lhs(2) * wp3(k)
+     .                      - diff_lhs(1) * wp3(kp1)
+          endif
 
 
 #ifdef STATS
@@ -611,10 +638,12 @@
           ! time step.  They need to be commented out for completely implicit
           ! diffusion to be used.
           if ( iwp3_dp1 > 0 ) then
-          zt%x(k,iwp3_dp1) = zt%x(k,iwp3_dp1) 
-     .    - diff_lhs_cn(3,k) * wp3(km1)
-     .    - diff_lhs_cn(2,k) * wp3(k)
-     .    - diff_lhs_cn(1,k) * wp3(kp1)
+           if ( diff_cn ) then
+            zt%x(k,iwp3_dp1) = zt%x(k,iwp3_dp1) 
+     .      - diff_lhs(3) * wp3(km1)
+     .      - diff_lhs(2) * wp3(k)
+     .      - diff_lhs(1) * wp3(kp1)
+           endif
           end if
 
 !         Implicit contributions for wp3
@@ -673,9 +702,9 @@
           end if
 
           if ( iwp3_dp1 > 0 ) then
-            ztscr02(k) = - diff_lhs_cn(3,k)
-            ztscr03(k) = - diff_lhs_cn(2,k)
-            ztscr04(k) = - diff_lhs_cn(1,k)
+            ztscr02(k) = - diff_lhs(3)
+            ztscr03(k) = - diff_lhs(2)
+            ztscr04(k) = - diff_lhs(1)
           end if
 
           end if
@@ -950,9 +979,6 @@
            wp2(k) = max( 2./3. * emin, wp2(k) ) 
 
         END DO
-
-        ! wp3 below the surface is set to 0.
-        wp3(1) = 0.0
 
 #ifdef STATS
         if (lstats_samp) then
