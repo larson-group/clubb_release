@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.21 2007-11-20 20:31:44 griffinb Exp $
+! $Id: microphysics.F,v 1.22 2007-12-15 00:27:14 faschinj Exp $
         module microphysics
 
 !       Description:
@@ -346,7 +346,23 @@
               hm_thl_tndcy(k) = hm_thl_tndcy(k)
      .                  + ( Lv / ( Cp*exner(k) ) ) * overevap_rate
 
+            ! Moved from adj_microphys_tndcy  
+#ifdef STATS
+              if( lstats_samp .and. irrm_cond_adj > 0 ) then
+                   zt%x(k,irrm_cond_adj) = zt%x(k,irrm_cond_adj) 
+     .                   + overevap_rate
+              endif
+#endif /*STATS*/
+
            endif
+
+#ifdef STATS
+	   if ( lstats_samp .and. irrm_cond_adj > 0 ) then
+		zt%n(k,irrm_cond_adj) = zt%n(k,irrm_cond_adj) + 1
+           endif
+             ! Joshua Faschinj December 2007
+#endif /*STATS*/
+
         enddo
 
 #ifdef STATS
@@ -394,7 +410,22 @@
      .                                  dt, k, .true., "Nrm",
      .                                  Nrm, overevap_rate )
 
+              ! Moved from adj_microphys_tndcy
+#ifdef STATS
+              if ( lstats_samp .and. iNrm_cond_adj > 0 ) then
+                   zt%x(k,iNrm_cond_adj) = zt%x(k,iNrm_cond_adj) 
+     .                 + overevap_rate
+              endif
+#endif /*STATS*/
+
            endif
+
+#ifdef STATS
+           if ( lstats_samp .and. iNrm_cond_adj > 0 ) then
+		zt%n(k,iNrm_cond_adj) = zt%n(k,iNrm_cond_adj) + 1
+           endif
+#endif /*STATS*/
+              ! Joshua Fasching December 2007
         enddo
 
 #ifdef STATS
@@ -1512,10 +1543,10 @@
 
         use grid_class
         use diffusion, only: diffusion_tlev
-#ifdef STATS
-        use hoc_stats
-#endif /*STATS*/
-
+!#ifdef STATS
+!        use hoc_stats
+!#endif /*STATS*/
+! Joshua Fasching 2007
         ! Input variables.
 
         ! Hydrometeor microphysical tendency.
@@ -1576,17 +1607,18 @@
 
         integer :: k, km1, kp1
 
-#ifdef STATS
-        integer ::
-     .  ixrm_cond_adj  ! Adjustment to xrm evaporation rate due to over-evap.
+!#ifdef STATS
+!       integer ::
+!    .  ixrm_cond_adj  ! Adjustment to xrm evaporation rate due to over-evap.
 
-        select case( solve_type )
-        case( "rrm" )
-          ixrm_cond_adj  = irrm_cond_adj 
-        case( "Nrm" )
-          ixrm_cond_adj  = iNrm_cond_adj 
-        end select
-#endif /*STATS*/
+!       select case( solve_type )
+!       case( "rrm" )
+!         ixrm_cond_adj  = irrm_cond_adj 
+!       case( "Nrm" )
+!         ixrm_cond_adj  = iNrm_cond_adj 
+!       end select
+!#endif /*STATS*/
+! Joshua Fasching 2007
 
         k = level
         km1 = max(k-1,1)
@@ -1717,14 +1749,6 @@
            ! be zeroed out in clipping in the subroutine that calls this one.
            xrm(k) = xrm_trsed_only
         endif
-
-#ifdef STATS
-        if ( lstats_samp .and. ixrm_cond_adj > 0 ) then
-           zt%x(k,ixrm_cond_adj) = zt%x(k,ixrm_cond_adj) + overevap_rate
-           zt%n(k,ixrm_cond_adj) = zt%n(k,ixrm_cond_adj) + 1
-        endif
-#endif /*STATS*/
-
         end subroutine adj_microphys_tndcy
 
 !-----------------------------------------------------------------------
