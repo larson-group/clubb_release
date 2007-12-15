@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.28 2007-12-15 22:29:36 griffinb Exp $
+! $Id: wp23.F,v 1.29 2007-12-15 22:43:08 griffinb Exp $
 
         subroutine timestep_wp23
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
@@ -949,6 +949,11 @@
               ctmp = atmp**(3.0/2.0)                             ! wp2^(3/2)
               IF ( wp3(k) >= 0.2 * SQRT(2.0) * ctmp ) THEN
                  wp3(k) = 0.2 * SQRT(2.0) * ctmp
+              ! Vince Larson added clipping for negative wp3 
+              !     in order to stabilize arm_3year    12 Dec 2007
+              ELSE IF ( wp3(k) <= -0.2 * SQRT(2.0) * ctmp ) THEN
+                 wp3(k) = -0.2 * SQRT(2.0) * ctmp
+              ! End Vince Larson's addition
               END IF
 
            ELSE
