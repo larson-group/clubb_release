@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.27 2007-12-01 15:03:33 griffinb Exp $
+! $Id: wp23.F,v 1.28 2007-12-15 22:29:36 griffinb Exp $
 
         subroutine timestep_wp23
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
@@ -261,7 +261,7 @@
         real, dimension(3) :: diff_lhs
         ! Set logical to true for Crank-Nicholson diffusion scheme
         ! or to false for completely implicit diffusion scheme.
-        logical, parameter :: diff_cn = .true.
+        logical, parameter :: lcrank_nich_diff = .true.
         ! Constant parameters
         integer, parameter ::
      .  kp1diag = 1,
@@ -326,7 +326,7 @@
           ! Completely implicit diffusional term.
           ! ctmp = - nu1 * gr%dzm(k) * gr%dzt(kp1)
 
-          if ( diff_cn ) then
+          if ( lcrank_nich_diff ) then
              ! Eddy diffusion for wp2 using a Crank-Nicholson time step. 
              diff_lhs(kp1diag:km1diag)
      .       = (1.0/2.0)
@@ -389,7 +389,7 @@
      .                    )
 ! eMFc
 
-          if ( diff_cn ) then
+          if ( lcrank_nich_diff ) then
              ! These lines are for the diffusional term with a Crank-Nicholson 
              ! time step.  They are not used for completely implicit diffusion.
              rhs(k_wp2)   =   rhs(k_wp2)
@@ -410,7 +410,7 @@
 !          Explicit contributions for wp2
 
            if ( iwp2_dp2 > 0 ) then
-            if ( diff_cn ) then
+            if ( lcrank_nich_diff ) then
              zm%x(k,iwp2_dp2) = zm%x(k,iwp2_dp2) 
      .       - diff_lhs(3) * wp2(km1)
      .       - diff_lhs(2) * wp2(k)
@@ -503,7 +503,7 @@
           ! Completely implicit diffusional term.
 !          ctmp = - C12 * ( Kw(k) + nu8 ) * gr%dzt(k) * gr%dzm(k)
 
-          if ( diff_cn ) then
+          if ( lcrank_nich_diff ) then
              ! Eddy diffusion for wp2 using a Crank-Nicholson time step. 
              diff_lhs(kp1diag:km1diag)
      .       = C12 * (1.0/2.0)
@@ -573,7 +573,7 @@
      .    + ( 1.0 - C11_Skw_fnc(k) ) * 3.0 * ( grav/T0 ) * wp2thvp(k)
      .    + ( C8 / tauw3t(k) ) * ( 4.0 * C8b * Skwt(k)**4 ) * wp3(k)
 
-          if ( diff_cn ) then
+          if ( lcrank_nich_diff ) then
              ! These lines are for the diffusional term with a Crank-Nicholson 
              ! time step.  They are not used for completely implicit diffusion.
              rhs(k_wp3)   =   rhs(k_wp3)
@@ -638,7 +638,7 @@
           ! time step.  They need to be commented out for completely implicit
           ! diffusion to be used.
           if ( iwp3_dp1 > 0 ) then
-           if ( diff_cn ) then
+           if ( lcrank_nich_diff ) then
             zt%x(k,iwp3_dp1) = zt%x(k,iwp3_dp1) 
      .      - diff_lhs(3) * wp3(km1)
      .      - diff_lhs(2) * wp3(k)
