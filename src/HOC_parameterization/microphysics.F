@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.22 2007-12-15 00:27:14 faschinj Exp $
+! $Id: microphysics.F,v 1.23 2007-12-15 22:56:15 griffinb Exp $
         module microphysics
 
 !       Description:
@@ -1396,30 +1396,52 @@
            lhs(km1diag) = 0.0
 
         elseif ( level == 2 ) then
+! Vince Larson pulled v_t inside derivative to make conservative. 13 Dec 2007
+!           ! k = 2; lower boundary level.
+!           lhs(kp1diag) = + (1.0/4.0) * ( v_t + v_tm1 ) * dzt
+!           lhs(kdiag)   = - (1.0/4.0) * ( v_t + v_tm1 ) * dzt
+!           lhs(km1diag) = 0.0
            ! k = 2; lower boundary level.
-           lhs(kp1diag) = + (1.0/4.0) * ( v_t + v_tm1 ) * dzt
-           lhs(kdiag)   = - (1.0/4.0) * ( v_t + v_tm1 ) * dzt
-           lhs(km1diag) = 0.0
+           lhs(kp1diag) = + (1.0/2.0) * v_t * dzt
+           lhs(kdiag)   = + (1.0/2.0) * ( v_t - v_tm1 ) * dzt
+           lhs(km1diag) = - (1.0/2.0) * v_tm1 * dzt
+!  End Vince Larson change
            ! For a positive downward sedimentation velocity
 !           lhs(kp1diag) = - (1.0/4.0) * ( v_t + v_tm1 ) * dzt
 !           lhs(kdiag)   = + (1.0/4.0) * ( v_t + v_tm1 ) * dzt
 !           lhs(km1diag) = 0.0
 
         elseif ( level > 2 .and. level < gr%nnzp ) then
+
+! Vince Larson pulled v_t inside derivative to make conservative. 13 Dec 2007
+!           ! Most of the interior model; normal conditions.
+!           lhs(kp1diag) = + (1.0/4.0) * ( v_t + v_tm1 ) * dzt
+!           lhs(kdiag)   = 0.0
+!           lhs(km1diag) = - (1.0/4.0) * ( v_t + v_tm1 ) * dzt
            ! Most of the interior model; normal conditions.
-           lhs(kp1diag) = + (1.0/4.0) * ( v_t + v_tm1 ) * dzt
-           lhs(kdiag)   = 0.0
-           lhs(km1diag) = - (1.0/4.0) * ( v_t + v_tm1 ) * dzt
+           lhs(kp1diag) = + (1.0/2.0) * v_t * dzt
+           lhs(kdiag)   = + (1.0/2.0) * ( v_t - v_tm1 ) * dzt
+           lhs(km1diag) = - (1.0/2.0) * v_tm1 * dzt
+!  End Vince Larson change
+
            ! For a positive downward sedimentation velocity
 !           lhs(kp1diag) = - (1.0/4.0) * ( v_t + v_tm1 ) * dzt
 !           lhs(kdiag)   = 0.0
 !           lhs(km1diag) = + (1.0/4.0) * ( v_t + v_tm1 ) * dzt
 
         elseif ( level == gr%nnzp ) then
-           ! k = gr%nnzp (top level); upper boundary level.
-           lhs(kp1diag) = 0.0
-           lhs(kdiag)   = + (1.0/4.0) * ( v_t + v_tm1 ) * dzt
-           lhs(km1diag) = - (1.0/4.0) * ( v_t + v_tm1 ) * dzt
+
+! Vince Larson pulled v_t inside derivative to make conservative. 13 Dec 2007
+!           ! k = gr%nnzp (top level); upper boundary level.
+!           lhs(kp1diag) = 0.0
+!           lhs(kdiag)   = + (1.0/4.0) * ( v_t + v_tm1 ) * dzt
+!           lhs(km1diag) = - (1.0/4.0) * ( v_t + v_tm1 ) * dzt
+           ! k = gr%nnzp (top level); upper boundary level; no flux.
+           lhs(kp1diag) = + (1.0/2.0) * 0.0 * dzt
+           lhs(kdiag)   = + (1.0/2.0) * ( 0.0 - v_tm1 ) * dzt
+           lhs(km1diag) = - (1.0/2.0) * v_tm1 * dzt
+!  End Vince Larson change
+
            ! For a positive downward sedimentation velocity
 !           lhs(kp1diag) = 0.0
 !           lhs(kdiag)   = - (1.0/4.0) * ( v_t + v_tm1 ) * dzt
