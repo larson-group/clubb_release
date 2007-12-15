@@ -155,8 +155,8 @@
         subroutine rico_sfclyr( um_sfc, vm_sfc, thlm, rtm,
      .                          lowestlevel, sst, psfc,
      .                          upwp_sfc, vpwp_sfc, wpthlp_sfc,
-     .                          wprtp_sfc, sclrm_sfc, wpsclrp_sfc, 
-     .                          wpedsclrp_sfc )
+     .                          wprtp_sfc, ustar, sclrm_sfc, 
+     .                          wpsclrp_sfc, wpedsclrp_sfc )
 
 !----------------------------------------------------------------------
 !        Description:
@@ -181,7 +181,7 @@
 !       Constants
         real, parameter ::
      .    ubmin   = 0.25,     ! Minimum value for ubar.
-     .    ustar   = 0.3,      ! Defined by ATEX specification
+!     .    ustar   = 0.3,      ! Defined by ATEX specification
      .    C_10    = 0.0013,   ! Drag coefficient, defined by ATEX specification
      .    C_m_20  = 0.001229, ! Drag coefficient, defined by RICO 3D specification
      .    C_h_20  = 0.001094, ! Drag coefficient, defined by RICO 3D specification
@@ -217,14 +217,18 @@
         real, intent(out) ::
      .    upwp_sfc,          ! The upward flux of u-momentum         [(m^2 s^-2]
      .    vpwp_sfc,          ! The Upward flux of v-momentum         [(m^2 s^-2]
-     .    wpthlp_sfc,         ! The upward flux of theta-l            [K m s^-1]
-     .    wprtp_sfc          ! The upward flux of rtm (total water)  [kg kg^-1 m s^-1]
+     .    wpthlp_sfc,        ! The upward flux of theta-l            [K m s^-1]
+     .    wprtp_sfc,         ! The upward flux of rtm (total water)  [kg kg^-1 m s^-1]
+     .    ustar              ! surface friction velocity             [m/s]
 
 !       Output variables (optional)
         real, dimension(sclr_dim), optional, intent(out) ::
      .    wpsclrp_sfc,   ! Passive scalar surface flux      [units m s^-1]
      .    wpedsclrp_sfc  ! Passive eddy-scalar surface flux [units m s^-1]
 
+
+!       Declare the value of ustar.
+        ustar = 0.3
 
 !       Choose which scheme to use
         use_old_atex = .FALSE.

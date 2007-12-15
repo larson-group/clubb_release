@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_0003.F,v 1.3 2007-11-27 00:10:31 faschinj Exp $
+! $Id: arm_0003.F,v 1.4 2007-12-15 23:58:04 griffinb Exp $
         module arm_0003
 
 !       Description:
@@ -157,7 +157,7 @@
      .             ( time, z, rho0,
      .               thlm_sfc, um_sfc, vm_sfc, 
      .               upwp_sfc, vpwp_sfc,
-     .               wpthlp_sfc, wprtp_sfc,
+     .               wpthlp_sfc, wprtp_sfc, ustar,
      .               wpsclrp_sfc, wpedsclrp_sfc )
 !       Description:
 !       This subroutine computes surface fluxes of horizontal momentum,
@@ -192,7 +192,8 @@
      .  upwp_sfc,    ! u'w' at (1)      [m^2/s^2]
      .  vpwp_sfc,    ! v'w'at (1)       [m^2/s^2]
      .  wpthlp_sfc,  ! w'th_l' at (1)   [(m K)/s]  
-     .  wprtp_sfc    ! w'r_t'(1) at (1) [(m kg)/(s kg)]
+     .  wprtp_sfc,   ! w'r_t'(1) at (1) [(m kg)/(s kg)]
+     .  ustar        ! surface friction velocity [m/s]
 
         ! Output variables (optional)
         real, intent(out), optional, dimension(sclr_dim) :: 
@@ -200,7 +201,8 @@
      .  wpedsclrp_sfc ! Passive eddy-scalar surface flux [units m/s]
 
         ! Local variables
-        real :: ubar, ustar, bflx, heat_flx, moisture_flx, time_frac
+!        real :: ubar, ustar, bflx, heat_flx, moisture_flx, time_frac
+        real :: ubar, bflx, heat_flx, moisture_flx, time_frac
         integer :: i1, i2
 !----------------------------------------------------------------------
         if ( time <= times(1) ) then

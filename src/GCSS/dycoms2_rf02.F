@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf02.F,v 1.7 2007-09-08 18:14:51 griffinb Exp $
+! $Id: dycoms2_rf02.F,v 1.8 2007-12-15 23:58:04 griffinb Exp $
         module dycoms2_rf02
 
 !       Description:
@@ -267,7 +267,7 @@
      .  vpwp_sfc,    ! v'w'at (1)       [m^2/s^2]
      .  wpthlp_sfc,  ! w'th_l' at (1)   [(m K)/s]  
      .  wprtp_sfc,   ! w'r_t'(1) at (1) [(m kg)/(s kg)]
-     .  ustar
+     .  ustar        ! surface friction velocity [m/s]
 
         ! Output Variables (optional)
         real, intent(out), optional, dimension(sclr_dim) :: 
@@ -277,6 +277,7 @@
         ! Local Variables
         real :: wind_sfc  ! ? [m^2/s^2]?
 
+        ! Declare the value of ustar.
         ustar = 0.25
 
         wind_sfc = sqrt( um_sfc**2 + vm_sfc**2 )

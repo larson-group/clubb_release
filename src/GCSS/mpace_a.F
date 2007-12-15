@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_a.F,v 1.5 2007-10-26 21:36:52 mjfalk Exp $
+! $Id: mpace_a.F,v 1.6 2007-12-15 23:58:04 griffinb Exp $
         module mpace_a
 
 !       Description:
@@ -508,7 +508,7 @@
 !----------------------------------------------------------------------
         subroutine mpace_a_sfclyr( time, rho0, um_sfc, vm_sfc,
      .                           upwp_sfc, vpwp_sfc,
-     .                           wpthlp_sfc, wprtp_sfc,
+     .                           wpthlp_sfc, wprtp_sfc, ustar,
      .                           wpsclrp_sfc, wpedsclrp_sfc )
 
 !        Description:
@@ -529,8 +529,8 @@
 
         ! Parameter Constants
         real, parameter ::
-     .  ubmin = 0.25,
-     .  ustar = 0.25
+     .  ubmin = 0.25
+!     .  ustar = 0.25
 
         ! Input Variables
         real, intent(in) ::
@@ -546,7 +546,8 @@
      .  upwp_sfc,    ! u'w' at (1)      [m^2/s^2]
      .  vpwp_sfc,    ! v'w'at (1)       [m^2/s^2]
      .  wpthlp_sfc,  ! w'th_l' at (1)   [(m K)/s]  
-     .  wprtp_sfc    ! w'r_t'(1) at (1) [(m kg)/(s kg)]
+     .  wprtp_sfc,   ! w'r_t'(1) at (1) [(m kg)/(s kg)]
+     .  ustar        ! surface friction velocity [m/s]
 
         ! Output Variables (optional) 
         real, dimension(sclr_dim), optional, intent(out) ::
@@ -625,6 +626,9 @@
 
         ! Compute momentum fluxes
         ubar = max( ubmin, sqrt( um_sfc**2 + vm_sfc**2 ) )
+
+        ! Declare the value of ustar.
+        ustar = 0.25
 
         upwp_sfc = -um_sfc * ustar*ustar / ubar
         vpwp_sfc = -vm_sfc * ustar*ustar / ubar

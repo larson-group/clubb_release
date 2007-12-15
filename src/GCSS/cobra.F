@@ -1,7 +1,7 @@
 #define SCLR_CO2 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: cobra.F,v 1.5 2007-03-29 21:35:43 vlarson Exp $
+! $Id: cobra.F,v 1.6 2007-12-15 23:58:04 griffinb Exp $
         module cobra
 !       Description:
 !       Contains subroutines for the COBRA CO2 case.
@@ -135,14 +135,13 @@
      .  um_sfc,   ! u wind at zt(2)             [m/s]
      .  vm_sfc    ! v wind at zt(2)             [m/s]
 
-        real, intent(inout) :: ustar
-
         ! Output variables
         real, intent(out) :: 
      .  upwp_sfc,   ! u'w' at surface           [m^2/s^2]
      .  vpwp_sfc,   ! v'w' at surface           [m^2/s^2]
      .  wpthlp_sfc, ! w'theta_l' surface flux   [(m K)/s]
-     .  wprtp_sfc   ! w'rt' surface flux        [(m kg)/(kg s)]
+     .  wprtp_sfc,  ! w'rt' surface flux        [(m kg)/(kg s)]
+     .  ustar       ! surface friction velocity [m/s]
 
         ! Output variables (optional)
         real, intent(out), optional, dimension(sclr_dim) :: 

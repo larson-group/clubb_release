@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.61 2007-11-20 17:37:59 griffinb Exp $
+! $Id: parameterization_interface.F,v 1.62 2007-12-15 23:58:14 griffinb Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -273,8 +273,8 @@
 !      Surface effects should not be included with any case where the lowest
 !      level is not the ground level.  Brian Griffin.  December 22, 2005.
        IF ( gr%zm(1) == 0.0 ) THEN
-          call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1),
-     .                  wp2(1), up2(1), vp2(1), 
+          call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1), 
+     .                  ustar, wp2(1), up2(1), vp2(1), 
      .                  thlp2(1), rtp2(1), rtpthlp(1)
 #ifdef SCALARS
      .                 ,wpsclrp(1,1:sclr_dim), sclrp2(1,1:sclr_dim),

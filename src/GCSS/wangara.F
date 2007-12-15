@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: wangara.F,v 1.3 2007-02-09 22:10:11 dschanen Exp $
+! $Id: wangara.F,v 1.4 2007-12-15 23:58:04 griffinb Exp $
         module wangara
 
         public :: wangara_tndcy, wangard_sfclyr
@@ -55,7 +55,7 @@
 !----------------------------------------------------------------------
         subroutine wangara_sfclyr( time, um_sfc, vm_sfc, 
      .                             upwp_sfc, vpwp_sfc, 
-     .                             wpthlp_sfc, wprtp_sfc,
+     .                             wpthlp_sfc, wprtp_sfc, ustar,
      .                             wpsclrp_sfc, wpedsclrp_sfc )
 !       Description:
 !       This subroutine computes surface fluxes of horizontal momentum,
@@ -70,8 +70,8 @@
 
         ! Constants
         real, parameter :: 
-     .  ubmin = 0.25,
-     .  ustar = 0.13
+     .  ubmin = 0.25
+!     .  ustar = 0.13
 
         ! Input variables
         real, intent(in) :: 
@@ -84,7 +84,8 @@
      .  upwp_sfc,    ! u'w' at (1)      [m^2/s^2]
      .  vpwp_sfc,    ! v'w'at (1)       [m^2/s^2]
      .  wpthlp_sfc,  ! w'th_l' at (1)   [(m K)/s]  
-     .  wprtp_sfc    ! w'r_t'(1) at (1) [(m kg)/(s kg)]
+     .  wprtp_sfc,   ! w'r_t'(1) at (1) [(m kg)/(s kg)]
+     .  ustar        ! surface friction velocity [m/s]
 
         ! Output variables (optional)
         real, intent(out), optional, dimension(sclr_dim) :: 
@@ -94,6 +95,10 @@
         ! Local variables
 
         real :: ubar, time_utc, time_est
+
+
+        ! Declare the value of ustar.
+        ustar = 0.13
 
         ! Compute UTC time of the day in seconds
 

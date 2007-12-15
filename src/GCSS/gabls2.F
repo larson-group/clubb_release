@@ -134,7 +134,8 @@
         subroutine gabls2_sfclyr
      .             ( time, time_initial, lowest_level, psfc,
      .               um, vm, thlm, rtm,
-     .               upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc,
+     .               upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, 
+     .               ustar,
      .               sclrm_sfc, wpsclrp_sfc, wpedsclrp_sfc )
 
 !----------------------------------------------------------------------
@@ -179,7 +180,8 @@
      .      upwp_sfc,    ! The turbulent upward flux of u-momentum         [(m/s)^2]
      .      vpwp_sfc,    ! The turbulent upward flux of v-momentum         [(m/s)^2]
      .      wpthlp_sfc,  ! The turbulent upward flux of theta-l            [K m/s]
-     .      wprtp_sfc    ! The turbulent upward flux of rtm (total water)  [kg/kg m/s]
+     .      wprtp_sfc,   ! The turbulent upward flux of rtm (total water)  [kg/kg m/s]
+     .      ustar        ! surface friction velocity                       [m/s]
 
           ! Output variables (optional)
           real, optional, intent(out), dimension(sclr_dim) ::
@@ -189,7 +191,7 @@
           ! Local variables
           real ::
      .      ubar,               ! Root (u^2 + v^2), per ATEX and RICO spec.
-     .      ustar,              ! Friction velocity, computed from diag_ustar.
+!     .      ustar,              ! Friction velocity, computed from diag_ustar.
      .      Cz,                 ! C_10 scaled to the height of the lowest model level. (Per ATEX spec)
      .      time_in_hours,      ! time in hours from 00 local on first day of experiment (experiment starts at 14)
      .      sst,                ! Sea surface temperature [K].

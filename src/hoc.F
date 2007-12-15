@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.139 2007-11-26 23:03:23 faschinj Exp $
+! $Id: hoc.F,v 1.140 2007-12-15 23:57:51 griffinb Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -1435,7 +1435,7 @@
 
         case( "generic", "fire" )  ! Normal and FIRE
           call sfc_momentum_fluxes( um(2), vm(2),
-     .                              upwp_sfc, vpwp_sfc )
+     .                              upwp_sfc, vpwp_sfc, ustar )
           ! sfctype = 0  fixed sfc sensible and latent heat fluxes 
           !                   as given in hoc.in
           ! sfctype = 1  bulk formula: uses given surface temperature 
@@ -1480,7 +1480,7 @@
            call arm_0003_sfclyr( time, gr%zt(2), rhom(1),
      .                         thlm(2), um(2), vm(2),
      .                         upwp_sfc, vpwp_sfc, 
-     .                         wpthlp_sfc, wprtp_sfc
+     .                         wpthlp_sfc, wprtp_sfc, ustar
 #ifdef SCALARS
      .                        ,wpsclrp_sfc, wpedsclrp_sfc
 #endif /* SCALARS */
@@ -1490,7 +1490,7 @@
            call arm_3year_sfclyr( time, gr%zt(2), rhom(1),
      .                         thlm(2), um(2), vm(2),
      .                         upwp_sfc, vpwp_sfc, 
-     .                         wpthlp_sfc, wprtp_sfc
+     .                         wpthlp_sfc, wprtp_sfc, ustar
 #ifdef SCALARS
      .                        ,wpsclrp_sfc, wpedsclrp_sfc
 #endif /* SCALARS */
@@ -1501,7 +1501,7 @@
            call arm_97_sfclyr( time, gr%zt(2), rhom(1),
      .                         thlm(2), um(2), vm(2),
      .                         upwp_sfc, vpwp_sfc, 
-     .                         wpthlp_sfc, wprtp_sfc
+     .                         wpthlp_sfc, wprtp_sfc, ustar
 #ifdef SCALARS
      .                        ,wpsclrp_sfc, wpedsclrp_sfc
 #endif /* SCALARS */
@@ -1510,7 +1510,7 @@
         case( "bomex" ) 
           call bomex_sfclyr( um(2), vm(2),
      .                       upwp_sfc, vpwp_sfc,
-     .                       wpthlp_sfc, wprtp_sfc
+     .                       wpthlp_sfc, wprtp_sfc, ustar
 #ifdef SCALARS
      .                       ,wpsclrp_sfc, wpedsclrp_sfc
 #endif /* SCALARS */
@@ -1519,7 +1519,7 @@
         case( "wangara" )
           call wangara_sfclyr( time, um(2), vm(2),
      .                         upwp_sfc, vpwp_sfc,
-     .                         wpthlp_sfc, wprtp_sfc
+     .                         wpthlp_sfc, wprtp_sfc, ustar
 #ifdef SCALARS
      .                         ,wpsclrp_sfc, wpedsclrp_sfc
 #endif /* SCALARS */
@@ -1528,7 +1528,7 @@
         case( "atex" )
           call atex_sfclyr( um(2), vm(2), thlm(2), rtm(2),
      .                      upwp_sfc, vpwp_sfc,
-     .                      wpthlp_sfc, wprtp_sfc
+     .                      wpthlp_sfc, wprtp_sfc, ustar
 #ifdef SCALARS
      .                     ,sclrm(2,:), wpsclrp_sfc, wpedsclrp_sfc
 #endif /* SCALARS */
@@ -1539,7 +1539,7 @@
      .                              exner(1), um(2), vm(2), 
      .                              thlm(2), rtm(2), 
      .                              rhom(1), upwp_sfc, vpwp_sfc, 
-     .                              wpthlp_sfc, wprtp_sfc
+     .                              wpthlp_sfc, wprtp_sfc, ustar
 #ifdef SCALARS
      .                             ,sclrm(2,:), wpsclrp_sfc, 
      .                              wpedsclrp_sfc
@@ -1575,7 +1575,7 @@
            call lba_sfclyr( time, gr%zt(2), rhom(1),
      .                      thlm(2), um(2), vm(2),
      .                      upwp_sfc, vpwp_sfc, 
-     .                      wpthlp_sfc, wprtp_sfc
+     .                      wpthlp_sfc, wprtp_sfc, ustar
 #ifdef SCALARS
      .                     ,wpsclrp_sfc, wpedsclrp_sfc
 #endif /* SCALARS */
@@ -1583,7 +1583,7 @@
 
          case ( "mpace_a" )
            call mpace_a_sfclyr( time, rhom(1), um(2), vm(2), upwp_sfc,
-     .                        vpwp_sfc, wpthlp_sfc, wprtp_sfc
+     .                        vpwp_sfc, wpthlp_sfc, wprtp_sfc, ustar
 #ifdef SCALARS
      .                        ,wpsclrp_sfc, wpedsclrp_sfc
 #endif /* SCALARS */
@@ -1591,7 +1591,7 @@
 
          case ( "mpace_b" )
            call mpace_b_sfclyr( rhom(1), um(2), vm(2), upwp_sfc,
-     .                        vpwp_sfc, wpthlp_sfc, wprtp_sfc
+     .                        vpwp_sfc, wpthlp_sfc, wprtp_sfc, ustar
 #ifdef SCALARS
      .                        ,wpsclrp_sfc, wpedsclrp_sfc
 #endif /* SCALARS */
@@ -1613,7 +1613,7 @@
      .                        gr%zt(2), 299.8, 101540., ! 299.8 K is the RICO SST; 101540 Pa is the sfc pressure.
 !     .                        gr%zt(2), Tsfc, psfc,
      .                        upwp_sfc, vpwp_sfc, wpthlp_sfc,
-     .                        wprtp_sfc
+     .                        wprtp_sfc, ustar
 #ifdef SCALARS
      .                       ,sclrm(2,:), wpsclrp_sfc, wpedsclrp_sfc
 #endif /* SCALARS */
@@ -1622,7 +1622,8 @@
          case ( "gabls2" )
           call gabls2_sfclyr(time, time_initial, gr%zt(2), 97200.,
      .                      um(2), vm(2), thlm(2), rtm(2),
-     .                      upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc
+     .                      upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, 
+     .                      ustar
 #ifdef SCALARS
      .                     ,sclrm(2,:), wpsclrp_sfc, wpedsclrp_sfc
 #endif /* SCALARS */

@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 1
 !----------------------------------------------------------------------
-!$Id: atex.F,v 1.4 2007-06-19 21:03:21 dschanen Exp $
+!$Id: atex.F,v 1.5 2007-12-15 23:58:04 griffinb Exp $
         module atex
 
 !       Description:
@@ -170,7 +170,7 @@
 !----------------------------------------------------------------------
         subroutine atex_sfclyr( um_sfc, vm_sfc, thlm_sfc, rtm_sfc, 
      .                          upwp_sfc, vpwp_sfc, 
-     .                          wpthlp_sfc, wprtp_sfc,
+     .                          wpthlp_sfc, wprtp_sfc, ustar,
      .                          sclrm_sfc, wpsclrp_sfc, wpedsclrp_sfc )
 !       Description:
 !       This subroutine computes surface fluxes of horizontal momentum,
@@ -188,7 +188,7 @@
 
         real, parameter :: 
      .  ubmin = 0.25,
-     .  ustar = 0.3,
+!     .  ustar = 0.3,
      .  C_10  = 0.0013,
      .  SST   = 298.
 
@@ -208,7 +208,8 @@
      .  upwp_sfc,   ! u'w' at surface           [m^2/s^2]
      .  vpwp_sfc,   ! v'w' at surface           [m^2/s^2]
      .  wpthlp_sfc, ! w'theta_l' surface flux   [(m K)/s]
-     .  wprtp_sfc   ! w'rt' surface flux        [(m kg)/(kg s)]
+     .  wprtp_sfc,  ! w'rt' surface flux        [(m kg)/(kg s)]
+     .  ustar       ! surface friction velocity [m/s]
 
         ! Output variables (optional)
 
@@ -218,6 +219,9 @@
 
         ! Local Variables
         real :: ubar
+
+        ! Declare the value of ustar.
+        ustar = 0.3
 
         ! Compute heat and moisture fluxes
 

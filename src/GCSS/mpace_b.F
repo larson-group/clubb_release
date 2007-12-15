@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_b.F,v 1.3 2007-09-26 16:09:42 mjfalk Exp $
+! $Id: mpace_b.F,v 1.4 2007-12-15 23:58:04 griffinb Exp $
         module mpace_b
 
 !       Description:
@@ -350,7 +350,7 @@
 !----------------------------------------------------------------------
         subroutine mpace_b_sfclyr( rho0, um_sfc, vm_sfc,
      .                           upwp_sfc, vpwp_sfc,
-     .                           wpthlp_sfc, wprtp_sfc,
+     .                           wpthlp_sfc, wprtp_sfc, ustar,
      .                           wpsclrp_sfc, wpedsclrp_sfc )
 
 !        Description:
@@ -371,7 +371,7 @@
         ! Parameter Constants
         real, parameter ::
      .  ubmin = 0.25,
-     .  ustar = 0.25,
+!     .  ustar = 0.25,
         ! Values of HF & LF are from the mpace_b specification.
      .  HF    = 136.5, ! Sensible Heat Flux     [W m^-2] 
      .  LF    = 107.7  ! Latent Heat Flux       [W m^-2] 
@@ -388,7 +388,8 @@
      .  upwp_sfc,    ! u'w' at (1)      [m^2/s^2]
      .  vpwp_sfc,    ! v'w'at (1)       [m^2/s^2]
      .  wpthlp_sfc,  ! w'th_l' at (1)   [(m K)/s]  
-     .  wprtp_sfc    ! w'r_t'(1) at (1) [(m kg)/(s kg)]
+     .  wprtp_sfc,   ! w'r_t'(1) at (1) [(m kg)/(s kg)]
+     .  ustar        ! surface friction velocity [m/s]
 
         ! Output Variables (optional) 
         real, dimension(sclr_dim), optional, intent(out) ::
@@ -399,6 +400,9 @@
         real :: ubar
 
 !-----------------------------------------------------------------------
+
+        ! Declare the value of ustar.
+        ustar = 0.25
 
         ! Compute heat and moisture fluxes
         wpthlp_sfc = HF/(rho0*Cp)

@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: lba.F,v 1.4 2007-07-19 19:06:44 dschanen Exp $
+! $Id: lba.F,v 1.5 2007-12-15 23:58:04 griffinb Exp $
         module lba
 
 !       Description:
@@ -373,7 +373,7 @@
         subroutine lba_sfclyr( time, z, rho0,
      .                         thlm_sfc, um_sfc, vm_sfc, 
      .                         upwp_sfc, vpwp_sfc,
-     .                         wpthlp_sfc, wprtp_sfc,
+     .                         wpthlp_sfc, wprtp_sfc, ustar,
      .                         wpsclrp_sfc, wpedsclrp_sfc )
 
 !       Description:
@@ -412,7 +412,8 @@
      .  upwp_sfc,    ! u'w' at (1)      [m^2/s^2]
      .  vpwp_sfc,    ! v'w'at (1)       [m^2/s^2]
      .  wpthlp_sfc,  ! w'th_l' at (1)   [(m K)/s]  
-     .  wprtp_sfc    ! w'r_t'(1) at (1) [(m kg)/(s kg)]
+     .  wprtp_sfc,   ! w'r_t'(1) at (1) [(m kg)/(s kg)]
+     .  ustar        ! surface friction velocity [m/s]
 
         ! Output variables (optional)
         real, intent(out), optional, dimension(sclr_dim) :: 
@@ -420,7 +421,8 @@
      .  wpedsclrp_sfc ! Passive eddy-scalar surface flux [units m/s]
 
         ! Local variables
-        real :: ft, ubar, ustar, bflx
+!        real :: ft, ubar, ustar, bflx
+        real :: ft, ubar, bflx
 
         ! Compute heat and moisture fluxes
         ! From Table A.1.

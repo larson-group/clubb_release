@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: fire.F,v 1.4 2007-06-19 21:03:21 dschanen Exp $
+! $Id: fire.F,v 1.5 2007-12-15 23:58:04 griffinb Exp $
         module fire
 
 !       Description:
@@ -108,7 +108,8 @@
         end subroutine fire_tndcy
 
 !------------------------------------------------------------------------
-        subroutine sfc_momentum_fluxes( u, v, upwp_sfc, vpwp_sfc )
+        subroutine sfc_momentum_fluxes( u, v, upwp_sfc, vpwp_sfc, 
+     .                                  ustar )
 
 !       Description:
 !       This subroutine computes surface momentum fluxes using aerodynamic
@@ -124,8 +125,8 @@
         intrinsic :: sqrt
 
         ! Constant parameter
-        real, parameter :: 
-     .  ustar = 0.3
+!        real, intent(out) :: 
+!     .  ustar = 0.3
 
         ! Input variables
         real, intent(in) :: 
@@ -135,10 +136,14 @@
         ! Output Variables
         real, intent(out) :: 
      .  upwp_sfc,! sfc u momentum flux (m^2/s^2)
-     .  vpwp_sfc ! sfc v momentum flux (m^2/s^2)
+     .  vpwp_sfc,! sfc v momentum flux (m^2/s^2)
+     .  ustar    ! surface friction velocity [m/s]
 
         ! Local Variables
         real :: M ! total wind speed above ground
+
+        ! Declare the value of ustar
+        ustar = 0.3
 
         ! Computes fluxes
 

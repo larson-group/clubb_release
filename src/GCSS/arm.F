@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm.F,v 1.5 2007-06-19 21:03:21 dschanen Exp $
+! $Id: arm.F,v 1.6 2007-12-15 23:58:04 griffinb Exp $
         module arm
 
 !       Description:
@@ -177,14 +177,13 @@
      .  um_sfc,         ! um at zt(2)           [m/s]
      .  vm_sfc          ! vm at zt(2)           [m/s]
 
-        real, intent(inout) :: ustar
-
         ! Output variables
         real, intent(out) :: 
      .  upwp_sfc,   ! u'w' at surface           [m^2/s^2]
      .  vpwp_sfc,   ! v'w' at surface           [m^2/s^2]
      .  wpthlp_sfc, ! w'theta_l' surface flux   [(m K)/s]
-     .  wprtp_sfc   ! w'rt' surface flux        [(m kg)/(kg s)]
+     .  wprtp_sfc,  ! w'rt' surface flux        [(m kg)/(kg s)]
+     .  ustar       ! surface friction velocity [m/s]
 
         ! Output variables (optional)
         real,  dimension(sclr_dim), optional, intent(out) :: 

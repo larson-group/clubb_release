@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf01.F,v 1.5 2007-06-19 21:03:21 dschanen Exp $
+! $Id: dycoms2_rf01.F,v 1.6 2007-12-15 23:58:04 griffinb Exp $
         module dycoms2_rf01
 
 !       Description:
@@ -177,7 +177,7 @@
      .               exner_sfc, um_sfc, vm_sfc, 
      .               thlm_sfc, rtm_sfc, 
      .               rhom_sfc, upwp_sfc, vpwp_sfc,
-     .               wpthlp_sfc, wprtp_sfc,
+     .               wpthlp_sfc, wprtp_sfc, ustar,
      .               sclrm_sfc, wpsclrp_sfc, wpedsclrp_sfc )
 !       Description:
 !       This subroutine computes surface fluxes of horizontal momentum,
@@ -201,7 +201,7 @@
         ! Constant parameters
         real, parameter :: 
      .  ubmin = 0.25,
-     .  ustar = 0.25,
+!     .  ustar = 0.25,
      .  Cd    = 0.0011
 
         ! Input variables
@@ -226,7 +226,8 @@
      .  upwp_sfc,   ! u' w' at the surface              [m^2/s^2]
      .  vpwp_sfc,   ! v' w' at the surface              [m^2/s^2]
      .  wpthlp_sfc, ! w' thl' at the surface            [m K/s]
-     .  wprtp_sfc   ! w' rt'  at the surface            [m kg/kg]
+     .  wprtp_sfc,  ! w' rt'  at the surface            [m kg/kg]
+     .  ustar       ! surface friction velocity         [m/s]
 
         real, intent(out), optional, dimension(sclr_dim) :: 
      .  wpsclrp_sfc,  ! w' sclr' at the surface         [m units/s]
@@ -235,6 +236,9 @@
         ! Local variables
 
         real :: ubar
+
+        ! Declare the value of ustar.
+        ustar = 0.25
 
         ! Compute heat and moisture fluxes
 

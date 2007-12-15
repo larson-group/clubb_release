@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: bomex.F,v 1.4 2007-02-09 22:10:11 dschanen Exp $
+! $Id: bomex.F,v 1.5 2007-12-15 23:58:04 griffinb Exp $
         module bomex
 
 !       Description:
@@ -124,7 +124,7 @@
 !----------------------------------------------------------------------
         subroutine bomex_sfclyr( um_sfc, vm_sfc, 
      .                           upwp_sfc, vpwp_sfc,
-     .                           wpthlp_sfc, wprtp_sfc,
+     .                           wpthlp_sfc, wprtp_sfc, ustar,
      .                           wpsclrp_sfc, wpedsclrp_sfc )
 
 !       Description:
@@ -140,8 +140,8 @@
 
         ! Constant Parameters
         real, parameter :: 
-     .  ubmin = 0.25,
-     .  ustar = 0.28
+     .  ubmin = 0.25
+!     .  ustar = 0.28
 
         ! Input Variables
         real, intent(in) :: 
@@ -153,7 +153,8 @@
      .  upwp_sfc,    ! u'w' at (1)      [m^2/s^2]
      .  vpwp_sfc,    ! v'w'at (1)       [m^2/s^2]
      .  wpthlp_sfc,  ! w'th_l' at (1)   [(m K)/s]  
-     .  wprtp_sfc    ! w'r_t'(1) at (1) [(m kg)/(s kg)]
+     .  wprtp_sfc,   ! w'r_t'(1) at (1) [(m kg)/(s kg)]
+     .  ustar        ! surface friction velocity [m/s]
 
         ! Output variables (optional)
         real, intent(out), optional, dimension(sclr_dim) :: 
@@ -162,6 +163,9 @@
 
         ! Local variables
         real :: ubar
+
+        ! Declare the value of ustar.
+        ustar = 0.28
 
         ! Compute heat and moisture fluxes
 
