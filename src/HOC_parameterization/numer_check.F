@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F,v 1.5 2007-11-17 21:53:41 faschinj Exp $
+! $Id: numer_check.F,v 1.6 2007-12-21 00:04:11 faschinj Exp $
         module numerical_check
 
         implicit none
@@ -8,11 +8,80 @@
 !       for finding code that cause NaNs
 !       Joshua Fasching November 2007
 
-        public :: invalid_model_arrays, isnan2d
+        public :: invalid_model_arrays, isnan2d, radclipping
 
         contains
 
+!-----------------------------------------------------------------------
+        subroutine radclipping(nz,thlm,rcm,rtm,
+     .     ricem, 
+     .     cf,p,exner,rhom)
+!       Description:
+!       Clips radiation input variables if they are < 0 and reports
+!       its action to the console
 !------------------------------------------------------------------------
+        implicit none
+        
+        ! Input variable
+        integer, intent(in) :: nz
+        !Input/Output variables
+        real, dimension(nz), intent(inout) ::
+     .  thlm,
+     .  rcm,
+     .  rtm,
+     .  ricem,
+     .  cf,
+     .  p,
+     .  exner,
+     .  rhom
+
+       ! Local variables
+        real,dimension(nz) :: rvm
+        integer :: k 
+!-------------------------------------------------------------------------
+        rvm = rtm - rcm
+        do k = 1, nz, 1
+                if ( thlm(k) < 0.0 ) then
+                        print *, "Negative value in thlm at ", k
+                        thlm(k) = 0.0
+                endif
+                if( rcm(k) < 0.0 ) then
+                         print *, "Negative value in rcm at ", k
+                        rcm(k) = 0.0
+                endif
+                if( rtm(k) < 0.0 ) then
+                        print *, "Negative value in rtm at ", k
+                        rtm(k) = 0
+                endif
+                if( rvm(k) < 0.0 ) then
+                        print *, "Negative value in rvm at ", k
+                        rcm(k) = rtm(k)
+                endif
+                if ( ricem(k) < 0.0 ) then
+                        print *, "Negative value in ricem at ", k
+                        ricem(k) = 0.0
+                endif
+                if ( cf(k) < 0.0 ) then
+                        print *, "Negative value in cf at ", k
+                        cf(k) = 0.0
+                endif
+                if (p(k) < 0.0 ) then
+                        print *, "Negative value in p at ", k
+                        p(k) = 0.0
+                endif
+                if (exner(k) < 0.0) then
+                        print *, "Negative value in exner at ", k
+                        exner(k) = 0.0
+                endif
+                if (rhom(k) < 0.0) then
+                         print *, "Negative value in rhon at ", k
+                         rhom(k) = 0.0
+                endif
+        end do        
+        return
+        end subroutine radclipping
+
+!-----------------------------------------------------------------------
         logical function invalid_model_arrays( ) 
 
 !       Description:
