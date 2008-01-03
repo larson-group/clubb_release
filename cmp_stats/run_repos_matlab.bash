@@ -1,6 +1,6 @@
 #!/bin/bash
 #######################################################################
-# $Id: run_repos_matlab.bash,v 1.4 2007-08-16 21:13:18 hocbrowser Exp $
+# $Id: run_repos_matlab.bash,v 1.5 2008-01-03 20:48:24 nielsenb Exp $
 #
 # Script to run the standalone hoc program for all models, with 
 # repository (non-static) constants.
@@ -17,6 +17,13 @@ RUN_CASE=( \
  arm atex bomex cobra dycoms2_rf01 dycoms2_rf02_do dycoms2_rf02_ds\
  dycoms2_rf02_nd dycoms2_rf02_so fire gabls2 jun25_altocu mpace_b nov11_altocu\
  rico wangara )
+
+#start nielsenb's changes
+#eliminate the previous HOC results
+#this prevents spurious profile generation resulting from
+#previous profiles not getting overwritten
+rm -f HOC_previous/*
+#end nielsenb's changes
 
 mv HOC_current/*.ctl HOC_previous/
 mv HOC_current/*.dat HOC_previous/
