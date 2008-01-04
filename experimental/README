@@ -1,0 +1,28 @@
+Overview
+--------
+
+This directory has been made as a place of storage for experimental HOC files.
+In other words, if you have a HOC file that contains experimental pieces of 
+code that you don't want to commit to the actual HOC source code, then it 
+can be stored in this directory for safe keeping.  For example, if you have 
+a bit of new code that you have tested and you don't like the results, but 
+you want to keep it around for future use or reference, then this is the 
+directory to keep it in.  By storing it here, it will become part of the CVS
+repository, so you don't have to worry about accidentally deleting it in your
+home directory.  When you finally decide to either commit your new experimental
+code to the actual HOC source code or entirely junk it, then please remove it 
+from this directory.
+
+Naming Convention
+-----------------
+
+Different users may have many different experimental versions of the same 
+original file between them, so they can't all call it the same thing.  For 
+example, two users may try to store their own experimental versions of mixing.F.
+Obviously, they both can't call their files mixing.F, or one will overwrite the
+other one.  Therefore, all files commited to this directory must follow a 
+certain naming convention.  That convention will be the base file name 
+(ex: mixing.F), followed by a period and a brief descriptive word 
+(ex: clipping), followed by a period and the date that the file is being 
+commited (ex: 20080104).  In the previous example, the total file name would be
+mixing.F.clipping.20080104.
