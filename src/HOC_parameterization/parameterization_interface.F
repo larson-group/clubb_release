@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.62 2007-12-15 23:58:14 griffinb Exp $
+! $Id: parameterization_interface.F,v 1.63 2008-01-04 17:51:50 griffinb Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -325,22 +325,6 @@
      .               )
        if ( .not. isValid ) return
 
-       ! Set Boundary Conditions on thlp2, rtp2, and rtpthlp output.
-       thlp2(gr%nnzp)   = 0.0
-       rtp2(gr%nnzp)    = 0.0
-       rtpthlp(gr%nnzp) = 0.0
-       ! Set this for vp2 and up2 as well. -dschanen 9 April 2007
-       up2(gr%nnzp)     = 0.0
-       vp2(gr%nnzp)     = 0.0
-#ifdef SCALARS
-       ! Set Boundary Conditions for optional passive scalars
-       do i = 1, sclr_dim
-          sclrprtp(gr%nnzp,i)  = 0.0
-          sclrp2(gr%nnzp,i)    = 0.0
-          sclrpthlp(gr%nnzp,i) = 0.0
-       end do ! i = 1, sclr_dim
-#endif /* SCALARS */
-
 #ifndef DISABLE_GAMMA_SKW
        !----------------------------------------------------------------
        ! Compute gamma as a function of Skw  - 14 April 06 dschanen
@@ -358,7 +342,6 @@
 
 #endif /* DISABLE */
 
-
        !----------------------------------------------------------------
        ! Compute Sc with new formula from Vince
        !----------------------------------------------------------------
@@ -372,7 +355,6 @@
      .       1.0      ) )
 
        Sct = zm2zt( Scm )
-
 
 !    Latin hypercube sample generation
 !    Generate p_height_time, an nnzp x nt_repeat x d_variables array of random integers
@@ -392,7 +374,7 @@
        !----------------------------------------------------------------
 
 #ifdef SCALARS
-       ! Put passive scalar input on the m grid for the PDF
+       ! Put passive scalar input on the t grid for the PDF
        do i = 1, sclr_dim
           sclr_tmp1(:,i) = zm2zt( wpsclrp(:,i) ) 
           sclr_tmp2(:,i) = zm2zt( sclrprtp(:,i) ) 
@@ -462,44 +444,6 @@
           sclrprcp(:,i)        = zt2zm( sclrprcp(:,i) )
           sclrprcp(gr%nnzp,i)  = 0.0
        end do ! i=1, sclr_dim
-#endif /* SCALARS */
-
-!      Alternate approach for lower wp4 boundary condition:
-!      call pdf scheme at the 1st momentum level, zm(1)
-
-#ifdef SCALARS
-       do i = 1, sclr_dim
-          sclr_tmp1(:,i) = zt2zm( sclrm(:,i) )
-       end do
-#endif /* SCALARS */
-
-        call pdf_closure_new
-     .      ( p(1), exner(1),
-     .        wmm(1), wp2(1), zt2zm( wp3, 1 ), Scm(1),
-     .        zt2zm( rtm, 1 ), rtp2(1), wprtp(1),
-     .        zt2zm( thlm, 1 ), thlp2(1), wpthlp(1),
-     .        rtpthlp(1), wp4(1), wprtp2(1), 
-     .        wp2rtp(1), wpthlp2(1), wp2thlp(1),
-     .        wprtpthlp(1), cf(1), rcm(1),
-     .        wpthvp(1), wp2thvp(1), rtpthvp(1), thlpthvp(1),
-     .        wprcp(1), wp2rcp(1), rtprcp(1), thlprcp(1),
-     .        rcp2(1), pdf_parms(1,:), crt1, crt2, cthl1, cthl2
-#ifdef SCALARS
-     .        ,sclr_tmp1(1,:), wpsclrp(1,:),
-     .        wpsclrprtp(1,:), wpsclrp2(1,:),
-     .        sclrprtp(1,:), sclrp2(1,:),
-     .        sclrpthlp(1,:), sclrpthvp(1,:),
-     .        wpsclrpthlp(1,:), sclrprcp(1,:),
-     .        wp2sclrp(1,:)
-#endif /* SCALARS */
-     .      )
-
-       ! Set other specific boundary conditions.
-       wpthvp(1)         = wpthlp( 1 )
-       thlpthvp(1)       = thlp2( 1 )
-       wp2thvp(gr%nnzp)  = 0.0
-#ifdef SCALARS
-       sclrpthvp(1,SCLR_THETA) = sclrpthlp(1,SCLR_THETA)
 #endif /* SCALARS */
 
        !----------------------------------------------------------------
@@ -616,16 +560,6 @@
      .      )
        if ( .not. isValid ) return
 
-       ! Set Boundary Conditions on wpthlp and wprtp output.
-       wpthlp(gr%nnzp)  = 0.0
-       wprtp(gr%nnzp)   = 0.0
-#ifdef SCALARS
-       ! Set Boundary Conditions for passive scalar flux.
-       do i = 1, sclr_dim
-         wpsclrp(gr%nnzp,i) = 0.0
-       end do ! i = 1, sclr_dim
-#endif /* SCALARS */
-
        !----------------------------------------------------------------
        ! Advance wp2/wp3 one timestep
        !----------------------------------------------------------------
@@ -637,10 +571,6 @@
      .        wp2, wp3, isValid )
 
        if ( .not. isValid ) return
-
-       ! Set Boundary Conditions on wp2 and wp3 output.
-       wp2(gr%nnzp)     = 0.0
-       wp3(gr%nnzp)     = 0.0
 
 #ifdef SCALARS
        !----------------------------------------------------------------

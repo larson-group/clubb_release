@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.29 2007-12-15 22:43:08 griffinb Exp $
+! $Id: wp23.F,v 1.30 2008-01-04 17:51:50 griffinb Exp $
 
         subroutine timestep_wp23
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
@@ -250,6 +250,13 @@
      .  a1, ! a1; See eqn. 20 in `Equations for HOC'             [-]
      .  a3  ! a3; See eqn. 22 in `Equations for HOC'             [-]
 
+        ! Note:  wp2_sqd_3pt and wp3_sqd_3pt are used to help
+        !        determine the coefficients of eddy diffusivity
+        !        for wp2 and wp3, respectively.
+        real ::
+     .  wp2_sqd_3pt,  ! wp2**2, avgd over 3 points        [m^4/s^4]
+     .  wp3_sqd_3pt   ! wp3**2, avgd over 3 points        [m^6/s^6]
+
         real :: 
      .  atmp, ctmp, ! Temporary variables for the LHS
      .  rcond  ! Est. of the reciprocal of the condition #
@@ -261,7 +268,13 @@
         real, dimension(3) :: diff_lhs
         ! Set logical to true for Crank-Nicholson diffusion scheme
         ! or to false for completely implicit diffusion scheme.
-        logical, parameter :: lcrank_nich_diff = .true.
+        ! Note:  Although Crank-Nicholson diffusion has usually been
+        !        used for wp2 and wp3 in the past, we found that using
+        !        completely implicit diffusion stabilized the deep
+        !        convective cases more while having almost no effect on
+        !        the boundary layer cases.  Brian; 1/4/2008.
+!        logical, parameter :: lcrank_nich_diff = .true.
+        logical, parameter :: lcrank_nich_diff = .false.
         ! Constant parameters
         integer, parameter ::
      .  kp1diag = 1,
@@ -326,16 +339,25 @@
           ! Completely implicit diffusional term.
           ! ctmp = - nu1 * gr%dzm(k) * gr%dzt(kp1)
 
+          ! Compute the square of wp2, averaged over 3 points.  15 Dec 2007
+          wp2_sqd_3pt = ( wp2(km1)**2 + wp2(k)**2 + wp2(kp1)**2 ) / 3.0
+
           if ( lcrank_nich_diff ) then
              ! Eddy diffusion for wp2 using a Crank-Nicholson time step. 
              diff_lhs(kp1diag:km1diag)
      .       = (1.0/2.0)
-     .       * diffusion_mlev( Kw1(k), Kw1(kp1), nu1,
+! Vince Larson added extra diffusion based on wp2.  21 Dec 2007.
+!     .       * diffusion_mlev( Kw1(k), Kw1(kp1), nu1,
+     .       * diffusion_mlev( Kw1(k), Kw1(kp1), wp2_sqd_3pt + nu1,
+! End Vince Larson's addition.
      .                         gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
           else
              ! Eddy diffusion for wp2 using a completely implicit time step. 
              diff_lhs(kp1diag:km1diag)
-     .       = diffusion_mlev( Kw1(k), Kw1(kp1), nu1,
+! Vince Larson added extra diffusion based on wp2.  15 Dec 2007.
+!     .       = diffusion_mlev( Kw1(k), Kw1(kp1), nu1,
+     .       = diffusion_mlev( Kw1(k), Kw1(kp1), wp2_sqd_3pt + nu1,
+! End Vince Larson's addition.
      .                         gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
           endif
 
@@ -503,17 +525,26 @@
           ! Completely implicit diffusional term.
 !          ctmp = - C12 * ( Kw(k) + nu8 ) * gr%dzt(k) * gr%dzm(k)
 
+          ! Compute the square of wp3, averaged over 3 points.  15 Dec 2007
+          wp3_sqd_3pt = ( wp3(km1)**2 + wp3(k)**2 + wp3(kp1)**2 ) / 3.0
+
           if ( lcrank_nich_diff ) then
-             ! Eddy diffusion for wp2 using a Crank-Nicholson time step. 
+             ! Eddy diffusion for wp3 using a Crank-Nicholson time step. 
              diff_lhs(kp1diag:km1diag)
      .       = C12 * (1.0/2.0)
-     .       * diffusion_tlev( Kw8(k), Kw8(km1), nu8,
+! Vince Larson added extra diffusion based on wp3.  15 Dec 2007.
+!     .       * diffusion_tlev( Kw8(k), Kw8(km1), nu8,
+     .       * diffusion_tlev( Kw8(k), Kw8(km1), wp3_sqd_3pt + nu8,
+! End Vince Larson's addition.
      .                         gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
           else
-             ! Eddy diffusion for wp2 using a completely implicit time step. 
+             ! Eddy diffusion for wp3 using a completely implicit time step. 
              diff_lhs(kp1diag:km1diag)
      .       = C12 
-     .       * diffusion_tlev( Kw8(k), Kw8(km1), nu8,
+! Vince Larson added extra diffusion based on wp3.  15 Dec 2007.
+!     .       * diffusion_tlev( Kw8(k), Kw8(km1), nu8,
+     .       * diffusion_tlev( Kw8(k), Kw8(km1), wp3_sqd_3pt + nu8,
+! End Vince Larson's addition.
      .                         gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
           endif
 
