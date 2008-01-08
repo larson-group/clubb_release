@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.23 2007-12-15 22:56:15 griffinb Exp $
+! $Id: microphysics.F,v 1.24 2008-01-08 16:45:44 griffinb Exp $
         module microphysics
 
 !       Description:
@@ -1388,6 +1388,12 @@
         ! as it sediments.
         !
         ! Brian Griffin. March 7, 2007.
+
+        ! Note:  The code has now been changed so that Vxx has been pulled 
+        !        inside of the derivative.  The sedimentation term is now of 
+        !        the form -d(Vxx*xx)/dt, rather than of the form -Vxx d(xx)/dt.
+        !        The term has been re-discretized in a conservative manner and
+        !        the results are listed below, with the old code commented out.
 
         if ( level == 1 ) then
            ! k = 1; below surface; no effects.

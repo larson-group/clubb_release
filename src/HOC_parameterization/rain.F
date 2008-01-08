@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: rain.F,v 1.37 2007-11-28 15:27:43 mjfalk Exp $
+! $Id: rain.F,v 1.38 2008-01-08 16:45:44 griffinb Exp $
 
       MODULE rain_equations
 
@@ -188,7 +188,7 @@
      .  Beta_T  ! Beta_T                        [kg/kg]
 
         ! Array indices
-        integer :: k, km1, kp1, i, cloud_base
+        integer :: k, km1, kp1, i
 
 ! DESCRIPTION:
 !
@@ -331,36 +331,22 @@
         ! Since we currently do not have enough variables to compute the 
         ! correlations and variances directly, we have obtained these values 
         ! by analyzing LES runs of certain cases.  We have divided those 
-        ! results into an in-cloud average and a below-cloud average.
-        ! This coding leaves the software architecture in place in case we
-        ! ever have the variables in place to compute these values directly.
-        ! It also allows us to use separate in-cloud and below-cloud 
-        ! parameter values.  Brian Griffin; February 3, 2007.
+        ! results into an inside-cloud average and an outside-cloud (or 
+        ! below-cloud) average.  This coding leaves the software architecture 
+        ! in place in case we ever have the variables in place to compute 
+        ! these values directly.  It also allows us to use separate 
+        ! inside-cloud and outside-cloud parameter values.  
+        ! Brian Griffin; February 3, 2007.
         !
-        ! Find the level of the cloud base.  If there isn't any cloud, then
-        ! set it equal to the model top.
-        ! Use a value of rcm of rc_tol to determine the cloud base.
-        DO k = 1, gr%nnzp, 1
-           IF ( rcm(k) >= rc_tol ) THEN
-              cloud_base = k
-              EXIT
-           END IF
-           IF ( k == gr%nnzp ) THEN
-              cloud_base = gr%nnzp
-           END IF
-        END DO
         ! Set the value of the parameters based on whether the altitude
         ! is above or below cloud  base.
+        ! Determine whether there is cloud at any given vertical level.  In 
+        ! order for a vertical level to have cloud, the amount of cloud water
+        ! (rcm) must be greater than or equal to the tolerance level (rc_tol).
+        ! If there is cloud at a given vertical level, then the ###_cloud value
+        ! is used.  Otherwise, the ###_below value is used.
         DO k = 1, gr%nnzp, 1
-           IF ( k < cloud_base ) THEN
-              rrp2_rrm2(k)    = rrp2_rrm2_below
-              Nrp2_Nrm2(k)    = Nrp2_Nrm2_below
-              Ncp2_Ncm2(k)    = Ncp2_Ncm2_below
-              corr_rrNr_LL(k) = corr_rrNr_LL_below
-              corr_srr_NL(k)  = corr_srr_NL_below
-              corr_sNr_NL(k)  = corr_sNr_NL_below
-              corr_sNc_NL(k)  = corr_sNc_NL_below
-           ELSE
+           IF ( rcm(k) >= rc_tol ) THEN
               rrp2_rrm2(k)    = rrp2_rrm2_cloud
               Nrp2_Nrm2(k)    = Nrp2_Nrm2_cloud
               Ncp2_Ncm2(k)    = Ncp2_Ncm2_cloud
@@ -368,8 +354,16 @@
               corr_srr_NL(k)  = corr_srr_NL_cloud
               corr_sNr_NL(k)  = corr_sNr_NL_cloud
               corr_sNc_NL(k)  = corr_sNc_NL_cloud
-           END IF
-        END DO
+           ELSE
+              rrp2_rrm2(k)    = rrp2_rrm2_below
+              Nrp2_Nrm2(k)    = Nrp2_Nrm2_below
+              Ncp2_Ncm2(k)    = Ncp2_Ncm2_below
+              corr_rrNr_LL(k) = corr_rrNr_LL_below
+              corr_srr_NL(k)  = corr_srr_NL_below
+              corr_sNr_NL(k)  = corr_sNr_NL_below
+              corr_sNc_NL(k)  = corr_sNc_NL_below
+           ENDIF
+        ENDDO
 
         ! Find the drop mean volume radius.  It is calculated using
         ! the rain water mixing ratio, the rain droplet concentration,
