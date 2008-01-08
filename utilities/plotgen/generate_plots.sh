@@ -12,7 +12,7 @@ if [ "$1" == "" ]; then
 elif [ "$1" == "nightly" ]; then
 	#If we're doing the nighthy plots, just use the default settings
 	echo "Generating nightly plots."	
-	echo "quit" | (matlab -nojvm -nodisplay -r compare_plots_cases_driver"( 'HOC_current', 'HOC_previous', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 )")
+	echo "quit" | (matlab -nojvm -nodisplay -r compare_plots_cases_driver"( 'HOC_previous', 'HOC_current', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 )")
 	rm -rf /home/matlabuser/plotgen/profiles && \
 	latex2html /home/matlabuser/plotgen/profiles.tex
 	exit
