@@ -257,7 +257,7 @@ if plot_dycoms2_rf02_ds_sim1 == 1
 					compare_LES, 'coamps', compare_best, compare_HOC, 1, ...
 					compare_sim2 );
 	end;
-elseif plot_dycoms2_rf02_sim1 == 0
+elseif plot_dycoms2_rf02_ds_sim1 == 0
 	if plot_dycoms2_rf02_ds_sim2 == 0
          	'No sim data available for Dycoms_RF02_DS, not plotting Dycoms_RF02_DS.';
 	elseif plot_dycoms2_rf02_ds_sim2 == 1

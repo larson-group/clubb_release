@@ -72,12 +72,16 @@ if [ "$2" == "nightly" ]; then
 		cd $working_directory
 		exit 1
 	fi	
-	HOC_sim1='HOC_previous'
+	#HOC_sim1='HOC_previous'
+	HOC_sim1='nightly'
 	HOC_sim2='HOC_current'
 	output_dir="$3"
 	compare_LES=1
 	compare_best=1
 	compare_HOC=1
+
+	ln -s $working_directory/HOC_previous
+	ln -s $working_directory/HOC_current
 elif [ "$#" == 7 ]; then
 	HOC_sim2="$3"
 	output_dir="$4"
