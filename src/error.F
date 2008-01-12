@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.47 2007-06-23 20:20:55 griffinb Exp $
+! $Id: error.F,v 1.48 2008-01-12 17:45:32 griffinb Exp $
 
         module error
  
@@ -7,7 +7,7 @@
 
 !       subroutine tuner_init: reads in namelists /stats/, /cases/, 
 !          /initvars/, & /variance/ from 'error.in' 
-!       It then uses them to setup the initial x_array of independent 
+!       It then uses them to setup the initial param_vals_matrix of independent
 !       variables, i.e. the hoc constants, and allocate the runtime arrays
 !       for each of the model runs and each of the variables
 
@@ -107,14 +107,14 @@
      .  params  ! Vector of all possible HOC parameters
 
         integer, dimension(nparams) ::
-     .  x_index  ! Index of the params elements that are used in the simplex
+     .  params_index  ! Index of the params elements that are used in the simplex
 
         real, allocatable, dimension(:,:) :: 
-     .  x_array ! Holds 2D simplex the HOC constant parameters
+     .  param_vals_matrix ! Holds 2D simplex the HOC constant parameters
 
         real, allocatable, dimension(:) ::
-     .  x_spread, ! Amount to vary each respec. constant by
-     .  err_array ! cache of differences between the LES and HOC
+     .  param_vals_spread, ! Amount to vary each respec. constant by
+     .  cost_fnc_vector    ! cache of differences between the LES and HOC
 
         real, allocatable, dimension(:) :: 
      .  rand_vect ! A vector of random reals for initializing the x array
@@ -125,7 +125,7 @@
         subroutine tuner_init( read_files )
 
 !       Description:
-!       Initializes x_array with constants from error.in
+!       Initializes param_vals_matrix with constants from error.in
 !       Allocates arrays for cases and tuning variables 
 !       Initializes grads file names to read in 
 
@@ -275,21 +275,22 @@
 
          ! Setup the simplex
 
-         call read_param_spread( 10, filename, x_index, rtmp, ndim )
+         call read_param_spread( 10, filename, params_index, 
+     .                           rtmp, ndim )
 
          if ( ndim == 0 ) then
            write(fstderr,*) "You must vary at least one parameter"
            stop
          end if
 
-         allocate( rand_vect(ndim), x_array(ndim+1,ndim),
-     .             x_spread(ndim), err_array(ndim+1) )
+         allocate( rand_vect(ndim), param_vals_matrix(ndim+1,ndim),
+     .             param_vals_spread(ndim), cost_fnc_vector(ndim+1) )
 
           ! Initialize the HOC parameter spread 
-          x_spread(1:ndim)  = rtmp(x_index(1:ndim))
+          param_vals_spread(1:ndim)  = rtmp(params_index(1:ndim))
 
           ! Copy varying parameters into the first row of the simplex
-          x_array(1,1:ndim) = params(x_index(1:ndim))
+          param_vals_matrix(1,1:ndim) = params(params_index(1:ndim))
       
           ! Attempt to generate a pseudo-random seed using a file 
           ! generated from /dev/random.  File is an ASCII text file 
@@ -306,11 +307,12 @@
           call random_number( rand_vect(1:ndim) )
 
           do i = 2, ndim+1, 1
-          ! Vince Larson made entries of x_array random  10 Feb 2005
-!            x_array(i,j) = x_array(1,j)*
-!     .                     (1.0+((real(i)-1.)/real(ndim)*0.5))
-            x_array(i,j) = x_array(1,j)*
-     .      ( (1.0 - x_spread(j)) + rand_vect(i-1)*x_spread(j)*2 )
+          ! Vince Larson made entries of param_vals_matrix random  10 Feb 2005
+!            param_vals_matrix(i,j) = param_vals_matrix(1,j)*
+!     .                               (1.0+((real(i)-1.)/real(ndim)*0.5))
+            param_vals_matrix(i,j) = param_vals_matrix(1,j)*
+     .      ( (1.0 - param_vals_spread(j)) 
+     .       + rand_vect(i-1)*param_vals_spread(j)*2 )
           ! End of Vince Larson's change
           end do ! i..ndim+1
 
@@ -320,7 +322,8 @@
         ! First call is used to initialize weights
 
         linitialize_sigma = .true.
-        err_array(1) =  min_les_hoc_diff( x_array(1,1:ndim) )
+        cost_fnc_vector(1) = 
+     .       min_les_hoc_diff( param_vals_matrix(1,1:ndim) )
         linitialize_sigma = .false.
 
         ! Note: min_les_hoc_diff is written to deal with undefined and 
@@ -334,7 +337,7 @@
 
         ! Save initial error
 
-        init_err = err_array(1) 
+        init_err = cost_fnc_vector(1) 
         init_err_terms = err_terms
 
         ! Other initialization runs
@@ -342,17 +345,18 @@
         ! Initialize the 'y' vector for amoeba 
         ! This is done by calling min_les_hoc_diff with the initial vector 
         do i = 2, ndim+1, 1
-          err_array(i) = min_les_hoc_diff( x_array(i,1:ndim) )
+          cost_fnc_vector(i) = 
+     .         min_les_hoc_diff( param_vals_matrix(i,1:ndim) )
         end do 
 
-        write(unit=fstdout,fmt=*) "err_array:"
-        write(unit=fstdout,fmt='(6e12.5)') err_array
+        write(unit=fstdout,fmt=*) "cost_fnc_vector:"
+        write(unit=fstdout,fmt='(6e12.5)') cost_fnc_vector
 
         return
         end subroutine tuner_init
 
 !-----------------------------------------------------------------------
-        real function min_les_hoc_diff( x_vector )
+        real function min_les_hoc_diff( param_vals_vector )
 
 !       Description: 
 !       Function that returns the sum of the error between the dependent
@@ -377,8 +381,8 @@
         ! The interface declaration in the nr module prevents us from making
         ! this a fixed length array declaration
         real, dimension(:), intent(in) :: 
-     .  x_vector ! Tuning vector(ndim dimension) contains
-                 ! parameterization constants (C1, C2 etc.)
+     .  param_vals_vector ! Tuning vector(ndim dimension) contains
+                          ! parameterization constants (C1, C2 etc.)
 
         ! Local Variables
 
@@ -436,9 +440,9 @@
           write(unit=*,fmt='(A12)') "Parameters: "
 
           do i = 1, ndim, 1
-            j = x_index(i)
+            j = params_index(i)
             write(unit=*,fmt='(A18,F27.20)') params_list(j)//" = ",
-     .        x_vector(i)
+     .        param_vals_vector(i)
           end do
 
         end if
@@ -457,9 +461,9 @@
           ! If the variable isn't in the simplex, leave it as is
           params_local(i) = params(i)
           do j=1, ndim, 1
-            if ( i == x_index(j) ) then
-              ! Copy variable from x_vector argument
-              params_local(i) = x_vector(j)
+            if ( i == params_index(j) ) then
+              ! Copy variable from param_vals_vector argument
+              params_local(i) = param_vals_vector(j)
               exit
             else
               ! Continue searching the list
@@ -503,13 +507,14 @@
         ! If it has, it returns higher value than those previous to
         ! Amoeba (the downhill simplex)
         if ( .not. isValid ) then
-          min_les_hoc_diff = 2 * maxval( err_array ) 
-     .                     - minval( err_array )
+          min_les_hoc_diff = 2 * maxval( cost_fnc_vector ) 
+     .                     - minval( cost_fnc_vector )
 
           if ( stdout_on_invalid ) then
             inv_count = modulo( inv_count, 3 ) + 1 ! 1,2,3,1,2,3...
             errorfile = "error_crash_"// achar( inv_count+48 )// ".in"
-            call output_nml_tuner( errorfile, x_vector(1:ndim) )
+            call output_nml_tuner( errorfile, 
+     .                             param_vals_vector(1:ndim) )
           end if
           return
         end if
@@ -663,8 +668,8 @@
 
         do i = 1, ndim, 1
           write(unit=*,fmt='(A18,2F27.20)') 
-     .      params_list(x_index(i))//" = ", 
-     .      params(x_index(i)), x_array(1,i)
+     .      params_list(params_index(i))//" = ", 
+     .      params(params_index(i)), param_vals_matrix(1,i)
         end do
 
         write(fstdout,fmt='(A20)') "Initial cost: "
@@ -679,7 +684,7 @@
         return
         end subroutine output_results_stdout
 !-----------------------------------------------------------------------
-        subroutine output_nml_tuner( results_f, x_vector )
+        subroutine output_nml_tuner( results_f, param_vals_vector )
 
 !       Description:
 !       Output namelists to a formatted text file
@@ -708,7 +713,7 @@
      .  results_f ! Name of the results file to write to
 
         real, intent(in), dimension(:) :: 
-     .  x_vector ! The current tuning parameters
+     .  param_vals_vector ! The current tuning parameters
 
         ! Local Variables
         real, dimension(nparams) :: params_local
@@ -778,9 +783,9 @@
           ! If the variable isn't in the simplex, leave it as is
           params_local(i) = params(i)
           do j=1, ndim, 1
-            if ( i == x_index(j) ) then
-              ! Copy variable from x_vector argument
-              params_local(i) = x_vector(j)
+            if ( i == params_index(j) ) then
+              ! Copy variable from param_vals_vector argument
+              params_local(i) = param_vals_vector(j)
               exit
             else
               cycle
@@ -801,9 +806,9 @@
           ! If the variable isn't being changed, set it to zero
           params_local(i) = 0.0
           do j=1, ndim, 1
-            if ( i == x_index(j) ) then
-              ! Copy variable from x_vector argument
-              params_local(i) = x_spread(j)
+            if ( i == params_index(j) ) then
+              ! Copy variable from param_vals_vector argument
+              params_local(i) = param_vals_spread(j)
               exit
             else
               cycle
@@ -825,7 +830,8 @@
         end subroutine output_nml_tuner
 
 !-----------------------------------------------------------------------
-        subroutine output_nml_standalone ( results_f, x_vector )
+        subroutine output_nml_standalone ( results_f, 
+     .                                     param_vals_vector )
 
 !       Description:
 !       Output namelists to a formatted file 
@@ -852,7 +858,7 @@
      .  results_f ! Results file to write to
 
         real, intent(in), dimension(ndim) ::
-     .  x_vector ! the current constants
+     .  param_vals_vector ! the current constants
 
         ! Local variables
         real, dimension(nparams) :: params_local
@@ -879,9 +885,9 @@
           ! If the variable isn't in the simplex, leave it as is
           params_local(i) = params(i)
           do j=1, ndim, 1
-            if ( i == x_index(j) ) then
-              ! Copy variable from x_vector argument
-              params_local(i) = x_vector(j)
+            if ( i == params_index(j) ) then
+              ! Copy variable from param_vals_vector argument
+              params_local(i) = param_vals_vector(j)
               exit
             else
               cycle

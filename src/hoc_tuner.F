@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: hoc_tuner.F,v 1.22 2007-03-17 18:53:11 dschanen Exp $
+! $Id: hoc_tuner.F,v 1.23 2008-01-12 17:45:32 griffinb Exp $
 
       program hoc_tuner 
 
@@ -41,7 +41,8 @@
      .  tuner_init, min_les_hoc_diff,                 ! Subroutines 
      .  output_results_stdout,                        ! Subroutine
      .  output_nml_standalone, output_nml_tuner,      ! Subroutines
-     .  x_array, err_array, init_err, results_stdout, ! Variables
+     .  param_vals_matrix, cost_fnc_vector,           ! Variables
+     .  init_err, results_stdout,                     ! Variables
      .  results_file, isValid, tune_type, ftol, ndim  ! Variables
 
       use constants, only: fstdout
@@ -101,9 +102,9 @@
      .              // current_time(1:4) // ".in" 
 
         ! Note:
-        ! The first column of x_array is the optimized result, which
+        ! The first column of param_vals_matrix is the optimized result, which
         ! is swapped in by amoeba.
-        call output_nml_tuner( results_f, x_array(1,1:ndim) )
+        call output_nml_tuner( results_f, param_vals_matrix(1,1:ndim) )
         print *, "New filename is: ", results_f
 
         ! Standalone namelist
@@ -112,7 +113,8 @@
         results_f = "../standalone/standalone_" // current_date // '_' 
      .              // current_time(1:4) // ".in" 
 
-        call output_nml_standalone( results_f, x_array(1,1:ndim) )
+        call output_nml_standalone( results_f, 
+     .                              param_vals_matrix(1,1:ndim) )
         print *, "New filename is: ", results_f
 
       end if
@@ -134,12 +136,12 @@
 !------------------------------------------------------------------------
       use nr, only: amoeba
       use error, only: 
-     .  ndim,               ! Array dimensions
-     .  x_array, err_array, ! The 'p' matrix and 'y' vector resp.
-     .  ftol,               ! Tolerance of tuning run
-     .  iter,               ! Iteration number
-     .  min_les_hoc_diff,   ! Cost function
-     .  min_err             ! Minimum value of the cost function
+     .  ndim,                               ! Array dimensions
+     .  param_vals_matrix, cost_fnc_vector, ! The 'p' matrix and 'y' vector resp.
+     .  ftol,                               ! Tolerance of tuning run
+     .  iter,                               ! Iteration number
+     .  min_les_hoc_diff,                   ! Cost function
+     .  min_err                             ! Minimum value of the cost function
 
 
       implicit none
@@ -147,15 +149,17 @@
       ! External
       intrinsic :: minval
 
-      call amoeba( x_array(1:ndim+1,1:ndim), err_array(1:ndim+1), 
+      call amoeba( param_vals_matrix(1:ndim+1,1:ndim), 
+     .             cost_fnc_vector(1:ndim+1), 
      .             ftol, min_les_hoc_diff, iter)
 
       ! Note:
       ! Amoeba will make the optimal cost result the first element of
-      ! err_array and the optimal parameter set the first column of x_array, 
-      ! where x_array is 'p' in the NR subroutine and err_array is 'y'.
+      ! cost_fnc_vector and the optimal parameter set the first column of 
+      ! param_vals_matrix, where param_vals_matrix is 'p' in the NR subroutine
+      ! and cost_fnc_vector is 'y'.
 
-      min_err = err_array(1)
+      min_err = cost_fnc_vector(1)
 
       return
       end subroutine amoeba_driver
@@ -166,7 +170,7 @@
 
 !     Description:
 !     Interface for the amoeba simulated annealing minimization algorithm
-!     At the end of the subroutine, the x_array's first row gets the
+!     At the end of the subroutine, the param_vals_matrix's first row gets the
 !     optimal values assigned to it.
 !-----------------------------------------------------------------------
       use nr, only: amebsa
@@ -204,7 +208,8 @@
         tmptr = tmptr * 0.8_SP
 
         call amebsa
-     .       ( x_array(1:ndim+1,1:ndim), err_array(1:ndim+1),
+     .       ( param_vals_matrix(1:ndim+1,1:ndim), 
+     .         cost_fnc_vector(1:ndim+1),
      .         pb(1:ndim), yb, ftol, min_les_hoc_diff, iter, tmptr )
 
         nit = nit + iiter - iter
@@ -214,7 +219,7 @@
         if ( iter > 0 ) exit
       enddo
       
-      x_array(1,1:ndim) = pb(1:ndim)
+      param_vals_matrix(1,1:ndim) = pb(1:ndim)
       min_err = ybb
 
       end subroutine amebsa_driver
