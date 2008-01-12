@@ -1,6 +1,6 @@
 #!/bin/bash
 #######################################################################
-# $Id: run_repos_matlab.bash,v 1.5 2008-01-03 20:48:24 nielsenb Exp $
+# $Id: run_repos_matlab.bash,v 1.6 2008-01-12 14:35:05 griffinb Exp $
 #
 # Script to run the standalone hoc program for all models, with 
 # repository (non-static) constants.
@@ -11,12 +11,12 @@
 #export OMP_NUM_THREADS=2
 #######################################################################
 
-EXIT_CODE=( [0]=0 [1]=0 [2]=0 [3]=0 [4]=0 [5]=0 [6]=0 [7]=0 [8]=0 [9]=0 [10]=0 [11]=0 [12]=0 [13]=0 [14]=0 [15]=0 )
+EXIT_CODE=( [0]=0 [1]=0 [2]=0 [3]=0 [4]=0 [5]=0 [6]=0 [7]=0 [8]=0 [9]=0 [10]=0 [11]=0 [12]=0 [13]=0 [14]=0 [15]=0 [16]=0 )
 
 RUN_CASE=( \
  arm atex bomex cobra dycoms2_rf01 dycoms2_rf02_do dycoms2_rf02_ds\
- dycoms2_rf02_nd dycoms2_rf02_so fire gabls2 jun25_altocu mpace_b nov11_altocu\
- rico wangara )
+ dycoms2_rf02_nd dycoms2_rf02_so fire gabls2 jun25_altocu mpace_a mpace_b\
+ nov11_altocu rico wangara )
 
 #start nielsenb's changes
 #eliminate the previous HOC results
