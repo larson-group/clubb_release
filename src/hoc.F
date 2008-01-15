@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.141 2007-12-21 00:06:22 faschinj Exp $
+! $Id: hoc.F,v 1.142 2008-01-15 23:25:37 faschinj Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -1167,7 +1167,7 @@
         use grid_class
         use diagnostic_variables
         use prognostic_variables
-        use numerical_check, only: isnan2d, radclipping
+        use numerical_check, only: isnan2d, rad_clipping
         use arm, only: arm_tndcy, arm_sfclyr
         use arm_97, only: arm_97_tndcy, arm_97_sfclyr
         use arm_0003, only: arm_0003_tndcy, arm_0003_sfclyr
@@ -1693,7 +1693,7 @@
           zero = 0.0
           
           ! Clips impossible negative values
-          call radclipping( gr%nnzp, thlm, rcm, rtm, ricem,
+          call rad_clipping( gr%nnzp, thlm, rcm, rtm, ricem,
      .                       cf, p, exner, rhom)
 
 
