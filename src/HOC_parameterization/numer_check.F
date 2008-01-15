@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F,v 1.6 2007-12-21 00:04:11 faschinj Exp $
+! $Id: numer_check.F,v 1.7 2008-01-15 23:26:34 faschinj Exp $
         module numerical_check
 
         implicit none
@@ -8,12 +8,12 @@
 !       for finding code that cause NaNs
 !       Joshua Fasching November 2007
 
-        public :: invalid_model_arrays, isnan2d, radclipping
+        public :: invalid_model_arrays, isnan2d, rad_clipping
 
         contains
 
 !-----------------------------------------------------------------------
-        subroutine radclipping(nz,thlm,rcm,rtm,
+        subroutine rad_clipping(nz,thlm,rcm,rtm,
      .     ricem, 
      .     cf,p,exner,rhom)
 !       Description:
@@ -79,7 +79,7 @@
                 endif
         end do        
         return
-        end subroutine radclipping
+        end subroutine rad_clipping
 
 !-----------------------------------------------------------------------
         logical function invalid_model_arrays( ) 
