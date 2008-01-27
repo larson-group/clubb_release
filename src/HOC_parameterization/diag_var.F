@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.22 2007-11-25 21:47:01 griffinb Exp $
+! $Id: diag_var.F,v 1.23 2008-01-27 18:08:20 griffinb Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -119,6 +119,19 @@
         ! Eddy Diffusion for Variances and Covariances.
         real, dimension(gr%nnzp) :: Kw2   ! [m^2/s]
 
+        ! Variables used for adding (xapxbp)^2: 3-point average
+        ! diffusion coefficient.
+        real, dimension(gr%nnzp) ::
+     .  rtp2_zt,
+     .  thlp2_zt,
+     .  rtpthlp_zt,
+     .  rtp2_zt_sqd_3pt,
+     .  thlp2_zt_sqd_3pt,
+     .  rtpthlp_zt_sqd_3pt,
+     .  Kw2_rtp2,
+     .  Kw2_thlp2,
+     .  Kw2_rtpthlp
+
         logical :: scalar_calc
 
         ! Loop indices
@@ -191,6 +204,32 @@
 
         Valid_arr(:) = .true.
 
+        ! (xapxbp)^2: 3-point average diffusion coefficient.
+
+        rtp2_zt    = zm2zt(rtp2)
+        thlp2_zt   = zm2zt(thlp2)
+        rtpthlp_zt = zm2zt(rtpthlp)
+
+        do k = 1, gr%nnzp, 1
+
+           km1 = max( k-1, 1 )
+           kp1 = min( k+1, gr%nnzp )
+
+           ! Compute the square of rtp2_zt, averaged over 3 points.  26 Jan 2008
+           rtp2_zt_sqd_3pt(k) = ( rtp2_zt(km1)**2 + rtp2_zt(k)**2 
+     .                           + rtp2_zt(kp1)**2 ) / 3.0
+
+           ! Compute the square of thlp2_zt, averaged over 3 points.  26 Jan 2008
+           thlp2_zt_sqd_3pt(k) = ( thlp2_zt(km1)**2 + thlp2_zt(k)**2 
+     .                            + thlp2_zt(kp1)**2 ) / 3.0
+
+           ! Compute the square of rtpthlp_zt, averaged over 3 points.  26 Jan 2008
+           rtpthlp_zt_sqd_3pt(k) 
+     .          = ( rtpthlp_zt(km1)**2 + rtpthlp_zt(k)**2 
+     .             + rtpthlp_zt(kp1)**2 ) / 3.0
+
+        enddo
+
         ! Define the Coefficent of Eddy Diffusivity for the 
         ! Variances and Covariances.
         do k = 1, gr%nnzp, 1
@@ -199,11 +238,15 @@
            ! momentum levels.  Kw2 is located on thermodynamic levels.
            ! Kw2 = c_K2 * Kht
            Kw2(k) = c_K2 * Kht(k)
+           Kw2_rtp2(k)    = Kw2(k) + rtp2_zt_sqd_3pt(k)
+           Kw2_thlp2(k)   = Kw2(k) + thlp2_zt_sqd_3pt(k)
+           Kw2_rtpthlp(k) = Kw2(k) + rtpthlp_zt_sqd_3pt(k)
         enddo
 
         ! Implicit contributions to term rtp2
 
-        call diag_var_lhs( a1, wp2, wp3, taum, wmm, Kw2, 
+!        call diag_var_lhs( a1, wp2, wp3, taum, wmm, Kw2, 
+        call diag_var_lhs( a1, wp2, wp3, taum, wmm, Kw2_rtp2, 
      .                     C2rt_1d, nu2, beta, eps, dt, liter,
      .                     lhs )
 
@@ -220,7 +263,8 @@
 
         ! Implicit contributions to term thlp2
 
-        call diag_var_lhs( a1, wp2, wp3, taum, wmm, Kw2, 
+!        call diag_var_lhs( a1, wp2, wp3, taum, wmm, Kw2, 
+        call diag_var_lhs( a1, wp2, wp3, taum, wmm, Kw2_thlp2, 
      .                     C2thl_1d, nu2, beta, eps, dt, liter,
      .                     lhs )
 
@@ -237,7 +281,8 @@
 
         ! Implicit contributions to term rtpthlp
 
-        call diag_var_lhs( a1, wp2, wp3, taum, wmm, Kw2, 
+!        call diag_var_lhs( a1, wp2, wp3, taum, wmm, Kw2, 
+        call diag_var_lhs( a1, wp2, wp3, taum, wmm, Kw2_rtpthlp, 
      .                     C2rtthl_1d, nu2, beta, eps, dt, liter,
      .                     lhs )
 

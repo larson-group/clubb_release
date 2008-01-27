@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.30 2008-01-04 17:51:50 griffinb Exp $
+! $Id: wp23.F,v 1.31 2008-01-27 18:08:20 griffinb Exp $
 
         subroutine timestep_wp23
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
@@ -75,6 +75,15 @@
         real, dimension(gr%nnzp) :: Kw1   ! wp2 eddy diff. [m^2/s]
         real, dimension(gr%nnzp) :: Kw8   ! wp3 eddy diff. [m^2/s]
 
+        ! Note:  wp2_zt and wp2_zt_sqd_3pt, and wp3_zm and wp3_zm_sqd_3pt 
+        !        are used to help determine the coefficients of eddy 
+        !        diffusivity for wp2 and wp3, respectively.
+        real, dimension(gr%nnzp) ::
+     .  wp2_zt,         ! wp2 interpolated to thermo. levels [m^2/s^2]
+     .  wp3_zm,         ! wp3 interpolated to moment. levels [m^3/s^3]
+     .  wp2_zt_sqd_3pt, ! wp2**2, avgd over 3 points         [m^4/s^4]
+     .  wp3_zm_sqd_3pt  ! wp3**2, avgd over 3 points         [m^6/s^6]
+
         ! Internal variables for C11 function, Vince Larson 13 Mar 2005
         ! Brian added C1 function.
         real, dimension(gr%nnzp) :: 
@@ -141,17 +150,46 @@
 !        C11_Skw_fnc = C11
 !        C1_Skw_fnc = C1
 
+        ! Vince Larson added extra diffusion based on wp2.  21 Dec 2007.
+        ! Vince Larson added extra diffusion based on wp3.  15 Dec 2007.
+
+        wp2_zt = zm2zt(wp2)
+        wp3_zm = zt2zm(wp3)
+
+        do k = 1, gr%nnzp, 1
+
+           km1 = max( k-1, 1 )
+           kp1 = min( k+1, gr%nnzp )
+
+           ! Compute the square of wp2_zt, averaged over 3 points.  15 Dec 2007
+           wp2_zt_sqd_3pt(k) 
+     .          = ( wp2_zt(km1)**2 + wp2_zt(k)**2 + wp2_zt(kp1)**2 ) / 3.0
+
+           ! Compute the square of wp3_zm, averaged over 3 points.  15 Dec 2007
+           wp3_zm_sqd_3pt(k) 
+     .          = ( wp3_zm(km1)**2 + wp3_zm(k)**2 + wp3_zm(kp1)**2 ) / 3.0
+
+        enddo
+
+        ! End Vince Larson's addition.
+
         ! Define the Coefficent of Eddy Diffusivity for the wp2 and wp3.
         do k = 1, gr%nnzp, 1
            ! Kw1 is used for wp2, which is located on momentum levels.
            ! Kw1 is located on thermodynamic levels.
            ! Kw1 = c_K1 * Kht
            Kw1(k) = c_K1 * Kht(k)
+           ! Vince Larson added extra diffusion based on wp2.  21 Dec 2007.
+           Kw1(k) = Kw1(k) + wp2_zt_sqd_3pt(k)
+           ! End Vince Larson's addition.
            ! Kw8 is used for wp3, which is located on thermodynamic levels.
            ! Kw8 is located on momentum levels.
            ! Note: Kw8 is defined to be 1/2 of Khm.
            ! Kw8 = c_K8 * Khm
            Kw8(k) = c_K8 * Khm(k)
+           ! Vince Larson added extra diffusion based on wp3.  15 Dec 2007.
+           Kw8(k) = Kw8(k) + wp3_zm_sqd_3pt(k)
+           ! End Vince Larson's addition.
         enddo
 
 !       Solve semi-implicitly
@@ -250,13 +288,6 @@
      .  a1, ! a1; See eqn. 20 in `Equations for HOC'             [-]
      .  a3  ! a3; See eqn. 22 in `Equations for HOC'             [-]
 
-        ! Note:  wp2_sqd_3pt and wp3_sqd_3pt are used to help
-        !        determine the coefficients of eddy diffusivity
-        !        for wp2 and wp3, respectively.
-        real ::
-     .  wp2_sqd_3pt,  ! wp2**2, avgd over 3 points        [m^4/s^4]
-     .  wp3_sqd_3pt   ! wp3**2, avgd over 3 points        [m^6/s^6]
-
         real :: 
      .  atmp, ctmp, ! Temporary variables for the LHS
      .  rcond  ! Est. of the reciprocal of the condition #
@@ -339,25 +370,16 @@
           ! Completely implicit diffusional term.
           ! ctmp = - nu1 * gr%dzm(k) * gr%dzt(kp1)
 
-          ! Compute the square of wp2, averaged over 3 points.  15 Dec 2007
-          wp2_sqd_3pt = ( wp2(km1)**2 + wp2(k)**2 + wp2(kp1)**2 ) / 3.0
-
           if ( lcrank_nich_diff ) then
              ! Eddy diffusion for wp2 using a Crank-Nicholson time step. 
              diff_lhs(kp1diag:km1diag)
      .       = (1.0/2.0)
-! Vince Larson added extra diffusion based on wp2.  21 Dec 2007.
-!     .       * diffusion_mlev( Kw1(k), Kw1(kp1), nu1,
-     .       * diffusion_mlev( Kw1(k), Kw1(kp1), wp2_sqd_3pt + nu1,
-! End Vince Larson's addition.
+     .       * diffusion_mlev( Kw1(k), Kw1(kp1), nu1,
      .                         gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
           else
              ! Eddy diffusion for wp2 using a completely implicit time step. 
              diff_lhs(kp1diag:km1diag)
-! Vince Larson added extra diffusion based on wp2.  15 Dec 2007.
-!     .       = diffusion_mlev( Kw1(k), Kw1(kp1), nu1,
-     .       = diffusion_mlev( Kw1(k), Kw1(kp1), wp2_sqd_3pt + nu1,
-! End Vince Larson's addition.
+     .       = diffusion_mlev( Kw1(k), Kw1(kp1), nu1,
      .                         gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
           endif
 
@@ -525,26 +547,17 @@
           ! Completely implicit diffusional term.
 !          ctmp = - C12 * ( Kw(k) + nu8 ) * gr%dzt(k) * gr%dzm(k)
 
-          ! Compute the square of wp3, averaged over 3 points.  15 Dec 2007
-          wp3_sqd_3pt = ( wp3(km1)**2 + wp3(k)**2 + wp3(kp1)**2 ) / 3.0
-
           if ( lcrank_nich_diff ) then
              ! Eddy diffusion for wp3 using a Crank-Nicholson time step. 
              diff_lhs(kp1diag:km1diag)
      .       = C12 * (1.0/2.0)
-! Vince Larson added extra diffusion based on wp3.  15 Dec 2007.
-!     .       * diffusion_tlev( Kw8(k), Kw8(km1), nu8,
-     .       * diffusion_tlev( Kw8(k), Kw8(km1), wp3_sqd_3pt + nu8,
-! End Vince Larson's addition.
+     .       * diffusion_tlev( Kw8(k), Kw8(km1), nu8,
      .                         gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
           else
              ! Eddy diffusion for wp3 using a completely implicit time step. 
              diff_lhs(kp1diag:km1diag)
      .       = C12 
-! Vince Larson added extra diffusion based on wp3.  15 Dec 2007.
-!     .       * diffusion_tlev( Kw8(k), Kw8(km1), nu8,
-     .       * diffusion_tlev( Kw8(k), Kw8(km1), wp3_sqd_3pt + nu8,
-! End Vince Larson's addition.
+     .       * diffusion_tlev( Kw8(k), Kw8(km1), nu8,
      .                         gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
           endif
 

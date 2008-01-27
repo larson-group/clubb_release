@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.25 2007-11-26 00:11:36 griffinb Exp $
+! $Id: mixing.F,v 1.26 2008-01-27 18:08:20 griffinb Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -139,9 +139,19 @@
         ! Eddy Diffusion for wpthlp and wprtp.
         real, dimension(gr%nnzp) :: Kw6   ! wpxp eddy diff. [m^2/s]
 
+        ! Variables used for adding (wpxp)^2: 3-point average
+        ! diffusion coefficient.
+        real, dimension(gr%nnzp) ::
+     .  wprtp_zt,
+     .  wpthlp_zt,
+     .  wprtp_zt_sqd_3pt,
+     .  wpthlp_zt_sqd_3pt,
+     .  Kw6_rt,
+     .  Kw6_thl
+
         ! Indices
         integer :: i
-        integer :: k, kp1
+        integer :: k, km1, kp1
 
 !-----------------------------------------------------------------------
 
@@ -159,6 +169,26 @@
 !        C6thl_Skw_fnc = C6thl
 !        C7_Skw_fnc = C7
 
+        ! (wpxp)^2: 3-point average diffusion coefficient.
+
+        wprtp_zt  = zm2zt(wprtp)
+        wpthlp_zt = zm2zt(wpthlp)
+
+        do k = 1, gr%nnzp, 1
+
+           km1 = max( k-1, 1 )
+           kp1 = min( k+1, gr%nnzp )
+
+           ! Compute the square of wprtp_zt, averaged over 3 points.  26 Jan 2008
+           wprtp_zt_sqd_3pt(k) = ( wprtp_zt(km1)**2 + wprtp_zt(k)**2
+     .                            + wprtp_zt(kp1)**2 ) / 3.0
+
+           ! Compute the square of wpthlp_zt, averaged over 3 points.  26 Jan 2008
+           wpthlp_zt_sqd_3pt(k) = ( wpthlp_zt(km1)**2 + wpthlp_zt(k)**2
+     .                             + wpthlp_zt(kp1)**2 ) / 3.0
+
+        enddo
+
 !       Define the Coefficent of Eddy Diffusivity for the wpthlp and wprtp.
         do k = 1, gr%nnzp, 1
            ! Kw6 is used for wpthlp and wprtp, which are located on 
@@ -166,11 +196,14 @@
            ! Kw6 is located on thermodynamic levels.
            ! Kw6 = c_K6 * Kht
            Kw6(k) = c_K6 * Kht(k)
+           Kw6_rt(k)  = Kw6(k) + wprtp_zt_sqd_3pt(k)
+           Kw6_thl(k) = Kw6(k) + wpthlp_zt_sqd_3pt(k)
         enddo
 
         ! Setup and decompose matrix
 
-        call mixing_lhs( .true., dt, taum, wmm, wmt, Kw6, 
+!        call mixing_lhs( .true., dt, taum, wmm, wmt, Kw6, 
+        call mixing_lhs( .true., dt, taum, wmm, wmt, Kw6_rt, 
      .                   wp2, wp3, Scm, C6rt_Skw_fnc, C7_Skw_fnc,
      .                   lhs, implemented )
 
@@ -197,7 +230,8 @@
         ! End of Vince Larson's change.
 
         ! Prof. Larson's modified mixing_lhs 
-        call mixing_lhs( .true., dt, taum, wmm, wmt, Kw6,
+!        call mixing_lhs( .true., dt, taum, wmm, wmt, Kw6,
+        call mixing_lhs( .true., dt, taum, wmm, wmt, Kw6_thl,
      .                   wp2, wp3, Scm, C6thl_Skw_fnc, C7_Skw_fnc,
      .                   lhs, implemented )
 
