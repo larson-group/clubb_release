@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.26 2008-01-27 18:08:20 griffinb Exp $
+! $Id: mixing.F,v 1.27 2008-01-30 22:55:12 vlarson Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -182,6 +182,8 @@
            ! Compute the square of wprtp_zt, averaged over 3 points.  26 Jan 2008
            wprtp_zt_sqd_3pt(k) = ( wprtp_zt(km1)**2 + wprtp_zt(k)**2
      .                            + wprtp_zt(kp1)**2 ) / 3.0
+           ! Account for units of mix ratio (kg/kg)**2   Vince Larson 29 Jan 2008
+           wprtp_zt_sqd_3pt(k) = 1e6 * wprtp_zt_sqd_3pt(k)
 
            ! Compute the square of wpthlp_zt, averaged over 3 points.  26 Jan 2008
            wpthlp_zt_sqd_3pt(k) = ( wpthlp_zt(km1)**2 + wpthlp_zt(k)**2
@@ -196,8 +198,8 @@
            ! Kw6 is located on thermodynamic levels.
            ! Kw6 = c_K6 * Kht
            Kw6(k) = c_K6 * Kht(k)
-           Kw6_rt(k)  = Kw6(k) + wprtp_zt_sqd_3pt(k)
-           Kw6_thl(k) = Kw6(k) + wpthlp_zt_sqd_3pt(k)
+           Kw6_rt(k)  = Kw6(k) + 10 * wprtp_zt_sqd_3pt(k)  ! Vince Larson increased by 10, 29Jan2008
+           Kw6_thl(k) = Kw6(k) + 10 * wpthlp_zt_sqd_3pt(k) ! Vince Larson increased by 10, 29Jan2008
         enddo
 
         ! Setup and decompose matrix
