@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.23 2008-01-27 18:08:20 griffinb Exp $
+! $Id: diag_var.F,v 1.24 2008-01-30 22:54:10 vlarson Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -218,6 +218,8 @@
            ! Compute the square of rtp2_zt, averaged over 3 points.  26 Jan 2008
            rtp2_zt_sqd_3pt(k) = ( rtp2_zt(km1)**2 + rtp2_zt(k)**2 
      .                           + rtp2_zt(kp1)**2 ) / 3.0
+           ! Account for units (kg/kg)**4  Vince Larson 29 Jan 2008
+           rtp2_zt_sqd_3pt(k) = 1e12 * rtp2_zt_sqd_3pt(k)  
 
            ! Compute the square of thlp2_zt, averaged over 3 points.  26 Jan 2008
            thlp2_zt_sqd_3pt(k) = ( thlp2_zt(km1)**2 + thlp2_zt(k)**2 
@@ -227,6 +229,8 @@
            rtpthlp_zt_sqd_3pt(k) 
      .          = ( rtpthlp_zt(km1)**2 + rtpthlp_zt(k)**2 
      .             + rtpthlp_zt(kp1)**2 ) / 3.0
+           ! Account for units (kg/kg)**2 Vince Larson 29 Jan 2008
+           rtpthlp_zt_sqd_3pt(k) = 1e6 * rtpthlp_zt_sqd_3pt(k)
 
         enddo
 
@@ -238,9 +242,9 @@
            ! momentum levels.  Kw2 is located on thermodynamic levels.
            ! Kw2 = c_K2 * Kht
            Kw2(k) = c_K2 * Kht(k)
-           Kw2_rtp2(k)    = Kw2(k) + rtp2_zt_sqd_3pt(k)
-           Kw2_thlp2(k)   = Kw2(k) + thlp2_zt_sqd_3pt(k)
-           Kw2_rtpthlp(k) = Kw2(k) + rtpthlp_zt_sqd_3pt(k)
+           Kw2_rtp2(k)    = Kw2(k) + 10 * rtp2_zt_sqd_3pt(k) ! Vince Larson increased by 10, 29Jan2008
+           Kw2_thlp2(k)   = Kw2(k) + 10 * thlp2_zt_sqd_3pt(k) ! Vince Larson increased by 10, 29Jan2008
+           Kw2_rtpthlp(k) = Kw2(k) + 10 * rtpthlp_zt_sqd_3pt(k) ! Vince Larson increased by 10, 29Jan2008
         enddo
 
         ! Implicit contributions to term rtp2
@@ -943,8 +947,10 @@
             end if 
 
             if ( ixap2_dp1 > 0 ) then
-              zmscr01(k) = - C4/taum(k)
-     .          + C4 * ( (1.0 + xbp2(k) + wp2(k)) / (3.0 * taum(k)) )
+              zmscr01(k) = - (1.0/3.0) * C14 / taum(k)
+              zm%x(k,ixap2_dp1)
+     .        = zm%x(k,ixap2_dp1) ! Explicit component
+     .            - C14 * ( xbp2(k) + wp2(k) ) / ( 3.0 * taum(k) ) 
             end if
 
             if ( ixap2_pr1 > 0 ) then
@@ -953,8 +959,8 @@
               ! semi-implicit solution to dp1 and pr1
               zm%x(k,ixap2_pr1)
      .        = zm%x(k,ixap2_pr1) ! Explicit component
-     .        + ( C14 * (xbp2(k) + wp2(k)) ) / ( 3.0 * taum(k) )
-              zmscr10(k) = -C14 / ( 3.0 * taum(k) )
+     .        + ( C4 * (xbp2(k) + wp2(k)) ) / ( 3.0 * taum(k) )
+              zmscr10(k) = - (2.0/3.0) * C4 / taum(k)
             end if
 
             if ( ixap2_pr2 > 0 ) then
