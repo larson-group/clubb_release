@@ -1,4 +1,4 @@
-! $Id: closure_new.F,v 1.10 2007-07-22 20:36:08 griffinb Exp $
+! $Id: closure_new.F,v 1.11 2008-02-01 21:31:04 faschinj Exp $
         module pdf_closure
 
         implicit none
@@ -15,7 +15,7 @@
      .               wpthlp2, wp2thlp, wprtpthlp,
      .               cf, rcm, wpthvp, wp2thvp, rtpthvp, 
      .               thlpthvp, wprcp, wp2rcp, rtprcp, thlprcp,
-     .               rcp2, pdf_parms, crt1, crt2, cthl1, cthl2,
+     .               rcp2, pdf_parms, crt1, crt2, cthl1, cthl2,isValid,
      .               sclrm, wpsclrp,                    !optional
      .               wpsclrprtp, wpsclrp2, sclrprtp,    ! "    "
      .               sclrp2, sclrpthlp, sclrpthvp,      ! "    "
@@ -58,7 +58,8 @@
      .  T0       ! Reference temperature               [K]
 
         use anl_erf, only: erf ! The error function
-
+        
+        use numerical_check, only: pdf_closure_new_check
         implicit none
 
         ! External
@@ -115,6 +116,9 @@
 
         real, intent(out), dimension(26) ::
      .  pdf_parms       ! pdf paramters         [units vary]
+
+        logical, intent(out) ::
+     .  isValid         ! Are the outputs usable numbers?
 
         ! Output (Optional passive scalar variables)
 
@@ -642,7 +646,12 @@
         pdf_parms(24) = rrtthl
         pdf_parms(25) = alpha_thl
         pdf_parms(26) = alpha_rt
-
+        call pdf_closure_new_check( wp4, wprtp2, wp2rtp, wpthlp2,
+     .                           wp2thlp, cf, rcm, wpthvp, wp2thvp,
+     .                           rtpthvp, thlpthvp, wprcp, wp2rcp,
+     .                           rtprcp, thlprcp, rcp2, wprtpthlp,
+     .                           crt1, crt2, cthl1, cthl2, pdf_parms,
+     .                           isValid )
         return
         end subroutine pdf_closure_new
 

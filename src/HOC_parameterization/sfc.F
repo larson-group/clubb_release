@@ -1,4 +1,4 @@
-! $Id: sfc.F,v 1.10 2007-12-15 23:58:14 griffinb Exp $
+! $Id: sfc.F,v 1.11 2008-02-01 21:31:04 faschinj Exp $
 #define SCLR_RT 2
 #define SCLR_THETA 1
 
@@ -16,7 +16,7 @@
 !------------------------------------------------------------------------
         subroutine sfc_var( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc,
      .                      ustar_in, wp2_sfc, up2_sfc, vp2_sfc,
-     .                      thlp2_sfc, rtp2_sfc, rtpthlp_sfc, 
+     .                      thlp2_sfc, rtp2_sfc, rtpthlp_sfc, isValid,
      .                      wpsclrp_sfc, sclrp2_sfc,
      .                      sclrprtp_sfc, sclrpthlp_sfc )
 
@@ -30,7 +30,7 @@
 
         use parameters, only: T0
         use constants
-
+        use numerical_check, only:sfc_var_check
         implicit none
 
         ! External
@@ -66,6 +66,9 @@
      .  thlp2_sfc,  ! thetal variance                   [K^2]
      .  rtp2_sfc,   ! rt variance                       [kg/kg]
      .  rtpthlp_sfc ! thetal rt covariance              [kg K]
+
+        logical, intent(out) ::
+     .  isValid
 
         ! Output Variables (Optional) 
         real, optional, intent(out), dimension(sclr_dim) :: 
@@ -219,7 +222,10 @@
            end if
 
         ENDIF
-
+        call sfc_var_check( wp2_sfc, up2_sfc, vp2_sfc, 
+     .                     thlp2_sfc, rtp2_sfc, rtpthlp_sfc,
+     .                     isValid,
+     .                     sclrp2_sfc,sclrprtp_sfc, sclrpthlp_sfc )
         return
         end subroutine sfc_var
 

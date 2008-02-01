@@ -1,7 +1,7 @@
-! $Id: length.F,v 1.7 2007-05-01 23:01:59 dschanen Exp $
+! $Id: length.F,v 1.8 2008-02-01 21:31:04 faschinj Exp $
 !-----------------------------------------------------------------------------
         subroutine length( thvm, thlm, rtm, rcm, em, p, exner,
-     .                     Lscale, lup, ldown ) 
+     .                     Lscale, lup, ldown, isValid ) 
 !       Description:
 !       Larson's 5th moist, nonlocal length scale
 
@@ -32,6 +32,7 @@
      .  lmin ! Minimum value for Lscale                         [m]
 
         use grid_class
+        use numerical_check, only: length_check
 
         implicit none
 
@@ -60,7 +61,9 @@
      .  Lscale, ! Mixing length                 [m]
      .  lup,    ! Upward mixing length          [m]
      .  ldown   ! Downward mixing length        [m]
-
+        
+        logical, intent(out) ::
+     .  isValid
 
         ! Local Variables
         integer :: i, j
@@ -253,6 +256,8 @@
 
         Lscale(1) = Lscale(2)
         Lscale(gr%nnzp) = Lscale(gr%nnzp-1)
-
+        ! Ensure that the output from this subroutine is valid.
+        call length_check( Lscale, lup, ldown, isValid )
+        ! Joshua Fasching January 2008
         return
         end subroutine length
