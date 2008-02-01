@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.63 2008-01-04 17:51:50 griffinb Exp $
+! $Id: parameterization_interface.F,v 1.64 2008-02-01 21:30:00 faschinj Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -65,6 +65,7 @@
        use parameters
        use model_flags
        use grid_class
+       use numerical_check
        use diagnostic_variables
        use mixing, only: timestep_mixing          ! Compute mean/flux terms
        use diagnose_variances, only: diag_var     ! Computes variance terms
@@ -224,6 +225,22 @@
 
 !-------- End Latin hypercube section ----------------------------------
 
+!-------- Test input variables ----------------------------------------
+
+       call parameterization_check( thlm_forcing,rtm_forcing,
+     .                           rtm_mc, thlm_mc, wmm,wmt, p, rhom,
+     .                           rhot, exner, wpthlp_sfc, wprtp_sfc,
+     .                           upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,
+     .                           up2, vp2, rtm, wprtp, thlm,
+     .                           wpthlp, wp2, wp3, Scm, rtp2, thlp2,
+     .                           rtpthlp, taum, rcm, Ncm, Ncnm, Nim,
+     .                           hydromet, cf
+#ifdef SCALARS
+     /                           wpsclrp_sfc, wpedsclrp_sfc,
+     .                           sclrm, sclrm_forcing, edsclrm
+#endif /*SCALARS*/
+
+     .                           )
 !-----------------------------------------------------------------------
 
        !----------------------------------------------------------------
@@ -275,12 +292,15 @@
        IF ( gr%zm(1) == 0.0 ) THEN
           call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1), 
      .                  ustar, wp2(1), up2(1), vp2(1), 
-     .                  thlp2(1), rtp2(1), rtpthlp(1)
+     .                  thlp2(1), rtp2(1), rtpthlp(1),isValid
 #ifdef SCALARS
      .                 ,wpsclrp(1,1:sclr_dim), sclrp2(1,1:sclr_dim),
      .                  sclrprtp(1,1:sclr_dim), sclrpthlp(1,1:sclr_dim)
 #endif /* SCALARS */
      .                )
+          if(.not.isValid) then
+                  return
+          endif
        ELSE
           ! Variances for cases where the lowest level is not at the surface.
           ! Eliminate surface effects on lowest level variances.
@@ -392,7 +412,7 @@
      .     wpthlp2(k), wp2thlp(k), wprtpthlp(k),
      .     cf(k), rcm(k), wpthvp(k), wp2thvp(k), rtpthvp(k), 
      .     thlpthvp(k), wprcp(k), wp2rcp(k), rtprcp(k), thlprcp(k),
-     .     rcp2(k), pdf_parms(k, :), crt1, crt2, cthl1, cthl2
+     .     rcp2(k), pdf_parms(k, :), crt1, crt2, cthl1, cthl2, isValid
 #ifdef SCALARS
      .     ,sclrm(k,:), sclr_tmp1(k,:),
      .     wpsclrprtp(k,:), wpsclrp2(k,:), sclr_tmp2(k,:), 
@@ -400,7 +420,9 @@
      .     wpsclrpthlp(k,:), sclrprcp(k,:), wp2sclrp(k,:)
 #endif /*SCALARS*/
      .   )
-
+         if(.not.isValid) then
+            return
+         endif
          !--------------------------------------------------------------
          ! Latin hypercube sampling
          !--------------------------------------------------------------
@@ -468,7 +490,10 @@
        !----------------------------------------------------------------
 
        call length( thvm, thlm, rtm, rcm, 
-     .              em, p, exner, Lscale, lup, ldown )
+     .              em, p, exner, Lscale, lup, ldown, isValid )
+       if(.not. isValid) then
+          return
+       endif
 
        !----------------------------------------------------------------
        ! Dissipation time
