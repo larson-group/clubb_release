@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.142 2008-01-15 23:25:37 faschinj Exp $
+! $Id: hoc.F,v 1.143 2008-02-01 23:31:45 faschinj Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -718,6 +718,7 @@
         use arm_0003, only: arm_0003_init
         use arm_3year, only: arm_3year_init
         use arm_97, only: arm_97_init
+        use mpace_a, only: mpace_a_init
 #ifdef STATS
         use hoc_stats
 #endif /*STATS*/
@@ -1040,7 +1041,7 @@
           em(gr%nnzp) = em(gr%nnzp-1)
 
           wp2 = 2.0 / 3.0 * em
-
+          call mpace_a_init
         ! Michael Falk for mpace_b Arctic Stratus case.
         case ( "mpace_b" )
 
