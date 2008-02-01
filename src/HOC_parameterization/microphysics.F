@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.24 2008-01-08 16:45:44 griffinb Exp $
+! $Id: microphysics.F,v 1.25 2008-02-01 20:19:38 faschinj Exp $
         module microphysics
 
 !       Description:
@@ -440,7 +440,7 @@
           where ( Nrm < 0.0 ) Nrm = 0.0
 
 #ifdef STATS
-          if (lstats_samp .and. irrm_cl > 0 ) then
+          if (lstats_samp .and. iNrm_cl > 0 ) then
             zt%x(:,iNrm_cl) = zt%x(:,iNrm_cl) + Nrm / dt
             zt%n(:,iNrm_cl) = zt%n(:,iNrm_cl) + 1
           end if
