@@ -1,16 +1,48 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_a.F,v 1.6 2007-12-15 23:58:04 griffinb Exp $
+! $Id: mpace_a.F,v 1.7 2008-02-01 23:33:13 faschinj Exp $
         module mpace_a
 
 !       Description:
 !       Contains subroutines for the mpace_a intercomparison.
 !----------------------------------------------------------------------
 
-        public :: mpace_a_tndcy, mpace_a_sfclyr
+        public :: mpace_a_tndcy, mpace_a_sfclyr, mpace_a_init
 
         private
+
+    
+        ! These variables were moved here so that they could be 
+        ! accessible to all subroutines in mpace_a
+        ! Joshua Fasching December 2007
+
+        integer, parameter :: file_ntimes = 139
+        integer, parameter :: file_nlevels = 38
+        integer, parameter :: per_line = 5
+        
+        ! File path for forcing the forcing files 
+        character(*), parameter :: 
+     .     file_path = '../model/mpace_a_forcings/'
+
+        real, dimension(file_nlevels) :: file_pressure
+        real, dimension(file_nlevels) :: file_heights
+        real, dimension(file_ntimes) :: file_times
+
+
+! Michael Falk is, on 28 September 2007, removing omega.  We are going to try
+! to force the model without specifying it, so we can do the temperature and
+! moisture forcings the way Steve Klein wants us to.
+
+!       real, dimension(file_nlevels,file_ntimes) :: omega_forcing ! mb/s
+        real, dimension(file_nlevels,file_ntimes) :: dTdt_forcing  ! K/hr
+        real, dimension(file_nlevels,file_ntimes) :: dqdt_forcing  ! g/kg/hr
+        real, dimension(file_nlevels,file_ntimes) :: vertT_forcing  ! K/hr
+        real, dimension(file_nlevels,file_ntimes) :: vertq_forcing  ! g/kg/hr
+        real, dimension(file_nlevels,file_ntimes) :: um_obs  ! m/s
+        real, dimension(file_nlevels,file_ntimes) :: vm_obs  ! m/s
+        real, dimension(file_ntimes) :: file_LH
+        real, dimension(file_ntimes) :: file_SH
 
         contains
 
@@ -167,31 +199,9 @@
      .  center
 
 ! Open external files (21 Aug 2007, Michael Falk)
-       
-      integer, parameter :: file_ntimes = 139
-      integer, parameter :: file_nlevels = 38
-      integer, parameter :: per_line = 5
+
       integer left_time,right_time
       real :: ratio
-
-      character(*), parameter :: 
-     . file_path = '../model/mpace_a_forcings/'
-
-      real, dimension(file_nlevels) :: file_pressure
-      real, dimension(file_nlevels) :: file_heights
-      real, dimension(file_ntimes) :: file_times
-
-! Michael Falk is, on 28 September 2007, removing omega.  We are going to try
-! to force the model without specifying it, so we can do the temperature and
-! moisture forcings the way Steve Klein wants us to.
-
-!      real, dimension(file_nlevels,file_ntimes) :: omega_forcing ! mb/s
-      real, dimension(file_nlevels,file_ntimes) :: dTdt_forcing  ! K/hr
-      real, dimension(file_nlevels,file_ntimes) :: dqdt_forcing  ! g/kg/hr
-      real, dimension(file_nlevels,file_ntimes) :: vertT_forcing  ! K/hr
-      real, dimension(file_nlevels,file_ntimes) :: vertq_forcing  ! g/kg/hr
-      real, dimension(file_nlevels,file_ntimes) :: um_obs  ! m/s
-      real, dimension(file_nlevels,file_ntimes) :: vm_obs  ! m/s
 
 !      real, dimension(file_nlevels) :: omega_column
       real, dimension(file_nlevels) :: dTdt_column
@@ -210,46 +220,6 @@
         real, dimension(gr%nnzp), intent(out) :: 
      .  um_hoc_grid,      ! Observed wind, for nudging         [m/s]
      .  vm_hoc_grid       ! Observed wind, for nudging         [m/s]
-
-      call file_read_1d(10,
-     . file_path//'mpace_a_press.dat',
-     . file_nlevels, per_line, file_pressure)
-
-      call file_read_1d(10,
-     . file_path//'mpace_a_heights.dat',
-     . file_nlevels, per_line, file_heights)
-
-      call file_read_1d(10,
-     . file_path//'mpace_a_times.dat',
-     . file_ntimes, per_line, file_times)
-
-!      call file_read_2d(10,
-!     . file_path//'mpace_a_omega.dat',
-!     . file_nlevels, file_ntimes, per_line, omega_forcing)
-
-      call file_read_2d(10,
-     . file_path//'mpace_a_dTdt.dat',
-     . file_nlevels, file_ntimes, per_line, dTdt_forcing)
-
-      call file_read_2d(10,
-     . file_path//'mpace_a_dqdt_horiz.dat',
-     . file_nlevels, file_ntimes, per_line, dqdt_forcing)
-
-      call file_read_2d(10,
-     . file_path//'mpace_a_verts.dat',
-     . file_nlevels, file_ntimes, per_line, vertT_forcing)
-
-      call file_read_2d(10,
-     . file_path//'mpace_a_vertq.dat',
-     . file_nlevels, file_ntimes, per_line, vertq_forcing)
-
-      call file_read_2d(10,
-     . file_path//'mpace_a_um_obs.dat',
-     . file_nlevels, file_ntimes, per_line, um_obs)
-
-      call file_read_2d(10,
-     . file_path//'mpace_a_vm_obs.dat',
-     . file_nlevels, file_ntimes, per_line, vm_obs)
 
       ! This code block takes the model time, finds the time before it and the time after it on the list,
       ! and marks them left_time and right_time for interpolation.  If the time is before the first or
@@ -563,31 +533,10 @@
          integer ::
      .   i,j,k
 
-      integer, parameter :: file_ntimes = 139
-      integer, parameter :: per_line = 5
-
-      real, dimension(file_ntimes) :: file_times
-      real, dimension(file_ntimes) :: file_LH
-      real, dimension(file_ntimes) :: file_SH
 
       integer left_time,right_time
 
-      character(*), parameter :: 
-     . file_path = '../model/mpace_a_forcings/'
-
 !-----------------------------------------------------------------------
-
-      call file_read_1d(10,
-     . file_path//'mpace_a_times.dat',
-     . file_ntimes, per_line, file_times)
-
-      call file_read_1d(10,
-     . file_path//'mpace_a_lh.dat',
-     . file_ntimes, per_line, file_LH)
-
-      call file_read_1d(10,
-     . file_path//'mpace_a_sh.dat',
-     . file_ntimes, per_line, file_SH)
 
       ! choose which times to use
       if (time <= file_times(1)) then
@@ -645,5 +594,64 @@
 
         return
         end subroutine mpace_a_sfclyr
+!----------------------------------------------------------------
+        subroutine mpace_a_init()
+!
+!       Description:
+!       This subroutine initializes the module by reading in forcing
+!       data used in the tndcy and sfclyr subroutines.
+!----------------------------------------------------------------
+          use file_functions, only: file_read_1d, file_read_2d
+          implicit none
+          call file_read_1d(10,
+     .      file_path//'mpace_a_press.dat',
+     .      file_nlevels, per_line, file_pressure)
+
+          call file_read_1d(10,
+     .      file_path//'mpace_a_heights.dat',
+     .      file_nlevels, per_line, file_heights)
+
+          call file_read_1d(10,
+     .      file_path//'mpace_a_times.dat',
+     .      file_ntimes, per_line, file_times)
+
+!      call file_read_2d(10,
+!     . file_path//'mpace_a_omega.dat',
+!     . file_nlevels, file_ntimes, per_line, omega_forcing)
+
+          call file_read_2d(10,
+     .      file_path//'mpace_a_dTdt.dat',
+     .      file_nlevels, file_ntimes, per_line, dTdt_forcing)
+
+          call file_read_2d(10,
+     .      file_path//'mpace_a_dqdt_horiz.dat',
+     .      file_nlevels, file_ntimes, per_line, dqdt_forcing)
+
+          call file_read_2d(10,
+     .      file_path//'mpace_a_verts.dat',
+     .      file_nlevels, file_ntimes, per_line, vertT_forcing)
+
+          call file_read_2d(10,
+     .      file_path//'mpace_a_vertq.dat',
+     .      file_nlevels, file_ntimes, per_line, vertq_forcing)
+
+          call file_read_2d(10,
+     .      file_path//'mpace_a_um_obs.dat',
+     .      file_nlevels, file_ntimes, per_line, um_obs)
+
+          call file_read_2d(10,
+     .      file_path//'mpace_a_vm_obs.dat',
+     .      file_nlevels, file_ntimes, per_line, vm_obs)
+
+          call file_read_1d(10,
+     .      file_path//'mpace_a_lh.dat',
+     .      file_ntimes, per_line, file_LH)
+
+          call file_read_1d(10,
+     .      file_path//'mpace_a_sh.dat',
+     .      file_ntimes, per_line, file_SH)
+
+           
+        end subroutine mpace_a_init
 
         end module mpace_a
