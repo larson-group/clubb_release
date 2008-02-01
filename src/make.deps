@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.15 2008-01-17 16:59:40 griffinb Exp $
+# $Id: make.deps,v 1.16 2008-02-01 21:28:19 faschinj Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -62,7 +62,8 @@ erf.o		: erf.F
 lapack_wrap.o	: lapack_wrap.F
 Skw_func.o	: Skw_func.F
 
-closure_new.o	: constants.o parameters.o grid.o rsat.o erf.o closure_new.F 
+closure_new.o	: constants.o parameters.o grid.o rsat.o erf.o numer_check.o \
+                 closure_new.F 
 diag_var.o	: constants.o parameters.o grid.o hoc_stats.o lapack_wrap.o \
 	diag_var.F
 mixing.o	: constants.o parameters.o hoc_stats.o lapack_wrap.o mixing.F 
@@ -75,10 +76,10 @@ parameterization_interface.o : constants.o hydrostatic.o mixing.o \
 	sfc.o closure_new.o latin_hyper_sample.o lh_sampler.o \
 	parameters.o parameterization_interface.F 
 hydrostatic.o	: constants.o hydrostatic.F 
-length.o	: constants.o parameters.o length.F 
+length.o	: constants.o parameters.o numer_check.o length.F 
 rsat.o		: constants.o rsat.F 
 sat_rcm.o	: constants.o sat_rcm.F 
-sfc.o		: constants.o parameters.o sfc.F 
+sfc.o		: constants.o parameters.o numer_check.o sfc.F 
 update.o	: grid.o hoc_stats.o lapack_wrap.o update.F
 wp23.o		: constants.o parameters.o hoc_stats.o lapack_wrap.o wp23.F 
 tau.o		: constants.o parameters.o tau.F
@@ -180,7 +181,8 @@ bugsrad_hoc.o 		: kinds.o constants.o bugs_rad.o \
 # == Misc. program related source files  ==
 hoc.o		: parameterization_interface.o arm.o astex.o atex.o \
 	bomex.o dycoms2_rf01.o dycoms2_rf02.o fire.o jun25.o mpace_a.o mpace_b.o nov11.o \
-	wangara.o cobra.o rico.o gabls2.o lba.o arm_97.o arm_0003.o arm_3year.o  hoc.F
+	wangara.o cobra.o rico.o gabls2.o lba.o arm_97.o arm_0003.o arm_3year.o \
+        inputfields.o hoc.F
 sounding.o	: constants.o sounding.F
 inputfields.o	: grid.o inputgrads.o inputfields.F 
 gradsaverage.o	: inputgrads.o gradsaverage.F 
