@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F,v 1.8 2008-02-01 21:31:55 faschinj Exp $
+! $Id: numer_check.F,v 1.9 2008-02-02 20:58:09 griffinb Exp $
         module numerical_check
 
         implicit none
@@ -172,8 +172,8 @@
      .                           rtpthlp, taum, rcm, Ncm, Ncnm, Nim,
      .                           hydromet, cf 
 #ifdef SCALARS
-     /                           ,wpsclrp_sfc, wpedsclrp_sfc,
-                                 sclrm, sclrm_forcing, edsclrm
+     .                           ,wpsclrp_sfc, wpedsclrp_sfc,
+     .                           sclrm, sclrm_forcing, edsclrm
 #endif /*SCALARS*/ 
 
      .  )
