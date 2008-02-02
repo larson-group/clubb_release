@@ -1,4 +1,4 @@
-! $Id: sfc.F,v 1.11 2008-02-01 21:31:04 faschinj Exp $
+! $Id: sfc.F,v 1.12 2008-02-02 19:53:12 griffinb Exp $
 #define SCLR_RT 2
 #define SCLR_THETA 1
 
@@ -44,7 +44,12 @@
 !     .  ufmin = 0.0001,
      .  ufmin = 0.01,
 ! End Vince Larson's change.
-     .  sclr_var_coef = 0.25 ! This value is made up! - Vince Larson 12 Jul 2005
+! Vince Larson changed in order to make correlations between [-1,1].  31 Jan 2008.
+!     .  sclr_var_coef = 0.25, ! This value is made up! - Vince Larson 12 Jul 2005
+     .  sclr_var_coef = 0.4, ! This value is made up! - Vince Larson 12 Jul 2005
+! End Vince Larson's change
+! Vince Larson reduced surface spike in scalar variances associated w/ Andre et al. 1978 scheme
+     .  reduce_coef   = 0.2
 
         ! Input Variables
         real, intent(in) :: 
@@ -109,19 +114,35 @@
            zeta = z / Lngth
 
            ! Andre et al, 1978, Eq. 29.
+           ! Notes:  1) "reduce_coef" is a reduction coefficient intended to 
+           !            make the values of rtp2, thlp2, and rtpthlp smaller 
+           !            at the surface.
+           !         2) With the reduction coefficient having a value of 0.2,
+           !            the surface correlations of both w & rt and w & thl
+           !            have a value of about 0.845.  These correlations are
+           !            greater if zeta < 0.  The correlations have a value
+           !            greater than 1 if zeta <= -0.212.
+           !         3) The surface correlation of rt & thl is 1.
+           ! Brian Griffin; February 2, 2008.
            IF ( zeta < 0.0 ) THEN
-              thlp2_sfc   = ( wpthlp_sfc**2 / ustar**2 )
+              thlp2_sfc   = reduce_coef 
+     .                     * ( wpthlp_sfc**2 / ustar**2 )
      .                     * 4.0 * ( 1.0 - 8.3*zeta )**(-2.0/3.0)
-              rtp2_sfc    = ( wprtp_sfc**2 / ustar**2 )
+              rtp2_sfc    = reduce_coef 
+     .                     * ( wprtp_sfc**2 / ustar**2 )
      .                     * 4.0 * ( 1.0 - 8.3*zeta )**(-2.0/3.0)
-              rtpthlp_sfc = ( wprtp_sfc*wpthlp_sfc / ustar**2 )
+              rtpthlp_sfc = reduce_coef 
+     .                     * ( wprtp_sfc*wpthlp_sfc / ustar**2 )
      .                     * 4.0 * ( 1.0 - 8.3*zeta )**(-2.0/3.0)
               wp2_sfc     = ( ustar**2 )
      .                     * ( 1.75 + 2.0*(-zeta)**(2.0/3.0) )
            ELSE
-              thlp2_sfc   = 4.0 * ( wpthlp_sfc**2 / ustar**2 )
-              rtp2_sfc    = 4.0 * ( wprtp_sfc**2 / ustar**2 )
-              rtpthlp_sfc = 4.0 * ( wprtp_sfc*wpthlp_sfc / ustar**2 )
+              thlp2_sfc   = reduce_coef 
+     .                     * 4.0 * ( wpthlp_sfc**2 / ustar**2 )
+              rtp2_sfc    = reduce_coef 
+     .                     * 4.0 * ( wprtp_sfc**2 / ustar**2 )
+              rtpthlp_sfc = reduce_coef 
+     .                     * 4.0 * ( wprtp_sfc*wpthlp_sfc / ustar**2 )
               wp2_sfc     = 1.75 * ustar**2
            ENDIF
 
@@ -145,22 +166,39 @@
            IF ( PRESENT( wpsclrp_sfc ) .AND. PRESENT( sclrprtp_sfc )
      .          .AND. PRESENT( sclrpthlp_sfc ) ) THEN
               DO i = 1, sclr_dim
+                 ! Notes:  1) "reduce_coef" is a reduction coefficient intended 
+                 !            to make the values of sclrprtp, sclrpthlp, and 
+                 !            sclrp2 smaller at the surface.
+                 !         2) With the reduction coefficient having a value 
+                 !            of 0.2, the surface correlation of w & sclr has 
+                 !            a value of about 0.845.  The correlation is
+                 !            greater if zeta < 0.  The correlation has a value
+                 !            greater than 1 if zeta <= -0.212.
+                 !         3) The surface correlations of both rt & sclr and 
+                 !            thl & sclr are 1.
+                 ! Brian Griffin; February 2, 2008.
                  IF ( zeta < 0.0 ) THEN
                     sclrprtp_sfc(i) 
-     .              = ( wpsclrp_sfc(i)*wprtp_sfc / ustar**2 )
+     .              = reduce_coef 
+     .               * ( wpsclrp_sfc(i)*wprtp_sfc / ustar**2 )
      .               * 4.0 * ( 1.0 - 8.3*zeta )**(-2.0/3.0)
                     sclrpthlp_sfc(i) 
-     .              = ( wpsclrp_sfc(i)*wpthlp_sfc / ustar**2 )
+     .              = reduce_coef 
+     .               * ( wpsclrp_sfc(i)*wpthlp_sfc / ustar**2 )
      .               * 4.0 * ( 1.0 - 8.3*zeta )**(-2.0/3.0)
-                    sclrp2_sfc(i) = sclr_var_coef  
+                    sclrp2_sfc(i) 
+     .              = reduce_coef  
      .               * ( wpsclrp_sfc(i)**2 / ustar**2 )
      .               * 4.0 * ( 1.0 - 8.3*zeta )**(-2.0/3.0)
                  ELSE
                     sclrprtp_sfc(i) 
-     .              = 4.0 * ( wpsclrp_sfc(i)*wprtp_sfc / ustar**2 )
+     .              = reduce_coef 
+     .               * 4.0 * ( wpsclrp_sfc(i)*wprtp_sfc / ustar**2 )
                     sclrpthlp_sfc(i) 
-     .              = 4.0 * ( wpsclrp_sfc(i)*wpthlp_sfc / ustar**2 )
-                    sclrp2_sfc(i) = sclr_var_coef
+     .              = reduce_coef 
+     .               * 4.0 * ( wpsclrp_sfc(i)*wpthlp_sfc / ustar**2 )
+                    sclrp2_sfc(i) 
+     .              = reduce_coef
      .               * 4.0 * ( wpsclrp_sfc(i)**2 / ustar**2 )
                  ENDIF
               ENDDO ! 1,...sclr_dim
@@ -190,20 +228,47 @@
            wp2_sfc     =  a * uf**2
            up2_sfc     =  a * uf**2  ! From Andre, et al. 1978
            vp2_sfc     =  a * uf**2  ! "  "
-           thlp2_sfc   = 0.1 * a * ( wpthlp_sfc / uf )**2
+! Vince Larson changed to make correlations between [-1,1]  31 Jan 2008
+!           thlp2_sfc   = 0.1 * a * ( wpthlp_sfc / uf )**2
+!           rtp2_sfc    = 0.4 * a * ( wprtp_sfc / uf )**2
+!           rtpthlp_sfc = a * ( wpthlp_sfc / uf ) * ( wprtp_sfc / uf )
+           ! Notes:  1) With "a" having a value of 1.8, the surface 
+           !            correlations of both w & rt and w & thl have 
+           !            a value of about 0.878.
+           !         2) The surface correlation of rt & thl is 0.5.
+           ! Brian Griffin; February 2, 2008.
+           thlp2_sfc   = 0.4 * a * ( wpthlp_sfc / uf )**2
            rtp2_sfc    = 0.4 * a * ( wprtp_sfc / uf )**2
-           rtpthlp_sfc = a * ( wpthlp_sfc / uf ) * ( wprtp_sfc / uf )
+           rtpthlp_sfc = 0.2 * a * 
+     .                     ( wpthlp_sfc / uf ) * ( wprtp_sfc / uf )
+! End Vince Larson's change.
 
            ! Optional mixing scheme scalars
            if ( present( wpsclrp_sfc ) .and. present( sclrprtp_sfc ) 
      .          .and. present( sclrpthlp_sfc ) ) then
               do i=1, sclr_dim
+! Vince Larson changed coeffs to make correlations between [-1,1]. 31 Jan 2008
+!                 sclrprtp_sfc(i) 
+!     .           = a * (wprtp_sfc / uf) * (wpsclrp_sfc(i) / uf)
+!                 sclrpthlp_sfc(i) 
+!     .           = a * (wpthlp_sfc / uf) * (wpsclrp_sfc(i) / uf)
+!                 sclrp2_sfc(i)
+!     .           = sclr_var_coef * a * ( wpsclrp_sfc(i) / uf )**2
+                 ! Notes:  1) With "a" having a value of 1.8 and 
+                 !            "sclr_var_coef" having a value of 0.4, the 
+                 !            surface correlation of w & sclr has a value 
+                 !            of about 0.878.
+                 !         2) With "sclr_var_coef" having a value of 0.4, 
+                 !            the surface correlations of both rt & sclr and
+                 !            thl & sclr are 0.5.
+                 ! Brian Griffin; February 2, 2008.
                  sclrprtp_sfc(i) 
-     .           = a * (wprtp_sfc / uf) * (wpsclrp_sfc(i) / uf)
+     .           = 0.2 * a * (wprtp_sfc / uf) * (wpsclrp_sfc(i) / uf)
                  sclrpthlp_sfc(i) 
-     .           = a * (wpthlp_sfc / uf) * (wpsclrp_sfc(i) / uf)
+     .           = 0.2 * a * (wpthlp_sfc / uf) * (wpsclrp_sfc(i) / uf)
                  sclrp2_sfc(i)
      .           = sclr_var_coef * a * ( wpsclrp_sfc(i) / uf )**2
+! End Vince Larson's change.
 
            ! Note: I have no idea why rtp2 and thlp2 have these coefficients
            ! -dschanen 7/6/05
