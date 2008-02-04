@@ -1,4 +1,4 @@
-! $Id: gabls2_model.in,v 1.3 2007-05-01 23:18:52 dschanen Exp $
+! $Id: gabls2_model.in,v 1.4 2008-02-04 22:04:07 vlarson Exp $
 ! Parameter file for GABLS2 case
 ! Edited by Michael Falk, 28 December 2006
 
@@ -17,8 +17,8 @@ time_initial = 0.0
 time_final   = 212400.0
 time_spinup  = 0.0
 
-dtmain    = 10.0
-dtclosure = 10.0
+dtmain    = 60.0
+dtclosure = 60.0
 
 sfctype = 0
 Tsfc = 280.86
@@ -34,7 +34,7 @@ kk_rain       = .false.
 lcoamps_micro = .false.
 licedfs       = .false.
 lbugsrad      = .false.
-lKhm_aniso    = .false.
+lKhm_aniso    = .true.
 
 /
 

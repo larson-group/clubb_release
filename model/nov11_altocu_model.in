@@ -1,4 +1,4 @@
-! $Id: nov11_altocu_model.in,v 1.9 2007-07-19 23:20:10 dschanen Exp $
+! $Id: nov11_altocu_model.in,v 1.10 2008-02-04 22:06:17 vlarson Exp $
 ! Parameter file for November 11 altocumulus case
 
 &model_setting
@@ -30,7 +30,7 @@ kk_rain       = .false.
 lcoamps_micro = .false.
 licedfs       = .true.
 lbugsrad      = .false.
-lKhm_aniso    = .false.
+lKhm_aniso    = .true.
 
 /
 

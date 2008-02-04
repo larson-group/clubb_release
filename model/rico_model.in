@@ -1,4 +1,4 @@
-! $Id: rico_model.in,v 1.6 2007-10-01 23:29:08 vlarson Exp $
+! $Id: rico_model.in,v 1.7 2008-02-04 22:06:44 vlarson Exp $
 ! Parameter file for GCSS RICO case
 ! Edited by Michael Falk, 12 December 2006
 
@@ -36,7 +36,7 @@ kk_rain       = .true.
 lcoamps_micro = .false.
 licedfs       = .false.
 lbugsrad      = .false.
-lKhm_aniso    = .false.
+lKhm_aniso    = .true.
 
 /
 

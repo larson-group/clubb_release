@@ -1,4 +1,4 @@
-! $Id: bomex_model.in,v 1.15 2007-10-01 23:35:37 vlarson Exp $
+! $Id: bomex_model.in,v 1.16 2008-02-04 22:01:10 vlarson Exp $
 ! Parameter file for GCSS BOMEX tradewind Cu case
 
 &model_setting
@@ -31,7 +31,7 @@ kk_rain       = .false.
 lcoamps_micro = .false.
 licedfs       = .false.
 lbugsrad      = .false.
-lKhm_aniso    = .false.
+lKhm_aniso    = .true.
 
 /
 

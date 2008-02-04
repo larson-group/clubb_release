@@ -1,4 +1,4 @@
-! $Id: fire_model.in,v 1.7 2007-05-01 23:18:52 dschanen Exp $
+! $Id: fire_model.in,v 1.8 2008-02-04 22:03:32 vlarson Exp $
 ! Parameter file for GCSS FIRE Sc case
 
 &model_setting
@@ -33,7 +33,7 @@ kk_rain       = .false.
 lcoamps_micro = .false.
 licedfs       = .false.
 lbugsrad      = .false.
-lKhm_aniso    = .false.
+lKhm_aniso    = .true.
 
 /
 

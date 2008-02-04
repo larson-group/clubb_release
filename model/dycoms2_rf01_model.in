@@ -1,4 +1,4 @@
-! $Id: dycoms2_rf01_model.in,v 1.13 2007-10-01 23:35:00 vlarson Exp $
+! $Id: dycoms2_rf01_model.in,v 1.14 2008-02-04 22:01:38 vlarson Exp $
 ! Parameter file for DYCOMS II RF01 Sc case
 
 &model_setting
@@ -31,7 +31,7 @@ kk_rain       = .false.
 lcoamps_micro = .false.
 licedfs       = .false.
 lbugsrad      = .false.
-lKhm_aniso    = .false.
+lKhm_aniso    = .true.
 
 /
 

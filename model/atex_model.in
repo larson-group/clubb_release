@@ -1,4 +1,4 @@
-! $Id: atex_model.in,v 1.10 2007-10-01 23:36:03 vlarson Exp $
+! $Id: atex_model.in,v 1.11 2008-02-04 21:59:35 vlarson Exp $
 ! Parameter file for ATEX intermediate regime
 
 &model_setting
@@ -29,7 +29,7 @@ kk_rain       = .false.
 lcoamps_micro = .false.
 licedfs       = .false.
 lbugsrad      = .false.
-lKhm_aniso    = .false.
+lKhm_aniso    = .true.
 
 /
 
