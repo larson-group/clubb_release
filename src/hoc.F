@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.143 2008-02-01 23:31:45 faschinj Exp $
+! $Id: hoc.F,v 1.144 2008-02-04 23:16:40 faschinj Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -325,7 +325,10 @@
      .                    upwp, vpwp )           !  "   "
          isValid = .not. invalid_model_arrays( ) ! Check for bad values 
                                                  ! in the model arrays
-         if ( .not. isValid ) exit
+         if ( .not. isValid ) then
+            write(fstderr,*) "NaN found after set_fields called."
+            exit
+         endif
 
          call hoc_forcings_timestep( i, stdout, isValid )
 
@@ -612,7 +615,10 @@
 
          isValid = .not. invalid_model_arrays( ) ! Check for bad values 
                                                  ! in the model arrays
-         if ( .not. isValid ) exit
+         if ( .not. isValid ) then
+            write(fstderr,*) "NaN found at the beginning of timestep."
+            exit
+         endif
 
          call hoc_forcings_timestep( i, stdout, isValid )
 
