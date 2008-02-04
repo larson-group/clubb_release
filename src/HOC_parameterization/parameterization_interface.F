@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.64 2008-02-01 21:30:00 faschinj Exp $
+! $Id: parameterization_interface.F,v 1.65 2008-02-04 22:43:28 faschinj Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -236,7 +236,7 @@
      .                           rtpthlp, taum, rcm, Ncm, Ncnm, Nim,
      .                           hydromet, cf
 #ifdef SCALARS
-     /                           wpsclrp_sfc, wpedsclrp_sfc,
+     /                           ,wpsclrp_sfc, wpedsclrp_sfc,
      .                           sclrm, sclrm_forcing, edsclrm
 #endif /*SCALARS*/
 

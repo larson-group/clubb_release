@@ -1,4 +1,4 @@
-! $Id: closure_new.F,v 1.11 2008-02-01 21:31:04 faschinj Exp $
+! $Id: closure_new.F,v 1.12 2008-02-04 22:43:28 faschinj Exp $
         module pdf_closure
 
         implicit none
@@ -651,7 +651,13 @@
      .                           rtpthvp, thlpthvp, wprcp, wp2rcp,
      .                           rtprcp, thlprcp, rcp2, wprtpthlp,
      .                           crt1, crt2, cthl1, cthl2, pdf_parms,
-     .                           isValid )
+     .                           isValid 
+#ifdef SCALARS
+     .                           ,sclrpthvp, sclrprcp, wpsclrp2,
+     .                           wpsclrprtp, wpsclrpthlp,
+     .                           wp2sclrp 
+#endif /*SCALARS*/
+     .                           )
         return
         end subroutine pdf_closure_new
 

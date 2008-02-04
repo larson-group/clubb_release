@@ -1,4 +1,4 @@
-! $Id: sfc.F,v 1.12 2008-02-02 19:53:12 griffinb Exp $
+! $Id: sfc.F,v 1.13 2008-02-04 22:43:28 faschinj Exp $
 #define SCLR_RT 2
 #define SCLR_THETA 1
 
@@ -290,7 +290,10 @@
         call sfc_var_check( wp2_sfc, up2_sfc, vp2_sfc, 
      .                     thlp2_sfc, rtp2_sfc, rtpthlp_sfc,
      .                     isValid,
-     .                     sclrp2_sfc,sclrprtp_sfc, sclrpthlp_sfc )
+#ifdef SCALARS
+     .                     sclrp2_sfc,sclrprtp_sfc, sclrpthlp_sfc 
+#endif /*SCALARS*/
+     .      )
         return
         end subroutine sfc_var
 

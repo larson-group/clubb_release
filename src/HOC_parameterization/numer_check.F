@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F,v 1.9 2008-02-02 20:58:09 griffinb Exp $
+! $Id: numer_check.F,v 1.10 2008-02-04 22:43:28 faschinj Exp $
         module numerical_check
 
         implicit none
@@ -260,6 +260,8 @@
         character(*), parameter :: 
      .  proc_name = "parameterization timestep"
         
+        integer ::
+     .  i
 !-------- Input Nan Check ----------------------------------------------
         call nan_report( thlm_forcing, "thlm_forcing", proc_name )
         call nan_report( rtm_forcing,"rtm_forcing", proc_name )
@@ -302,9 +304,12 @@
 #ifdef SCALARS
         call nan_report( wpsclrp_sfc,"wpsclrp_sfc", proc_name )
         call nan_report( wpedsclrp_sfc,"wpedsclrp_sfc", proc_name )
-        call nan_report( sclrm,"sclrm", proc_name )
-        call nan_report( sclrm_forcing,"sclrm_forcing", proc_name ) 
-        call nan_report( edsclrm,"edsclrm", proc_name )
+        do i = 1, sclr_dim
+             call nan_report( sclrm(:,i),"sclrm", proc_name )
+             call nan_report( sclrm_forcing(:,i),"sclrm_forcing", 
+     .               proc_name ) 
+             call nan_report( edsclrm(:,i),"edsclrm", proc_name )
+        end do
 #endif /*SCALARS*/ 
 !---------------------------------------------------------------------
         call check_negative( p,"p", proc_name )
