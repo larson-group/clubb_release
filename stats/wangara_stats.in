@@ -1,4 +1,4 @@
-! $Id: wangara_stats.in,v 1.14 2007-10-01 23:46:09 vlarson Exp $ 
+! $Id: wangara_stats.in,v 1.15 2008-02-04 22:41:21 vlarson Exp $ 
 &statsnl
 
 lstats = t
@@ -42,12 +42,17 @@ vars_zt =
 fname_zm = 'wangara_zm',
 vars_zm = 
 'wp2', 'rtp2', 'thlp2', 'rtpthlp', 'wprtp', 'wpthlp', 'wp4',
+'up2', 'vp2',
 'wpthvp', 'rtpthvp', 'thlpthvp', 'taum', 'khm', 'wprcp',
 'thlprcp', 'rtprcp', 'rcp2', 'upwp', 'vpwp', 'rhom', 'sc', 'em',
 'shear', 'Frad', 'Frad_LW', 'Frad_SW', 'Fprec', 'Fcsed',
 !'Vrr', 'VNr', 'Vsnow', 'Vgraupel', 'Vice',
 'wp2_bt', 'wp2_ma', 'wp2_ta', 'wp2_ac', 'wp2_bp', 'wp2_pr1',
 'wp2_pr2', 'wp2_pr3', 'wp2_dp1', 'wp2_dp2', 'wp2_cl',
+'vp2_bt', 'vp2_ma', 'vp2_ta', 'vp2_tp', 'vp2_dp1', 'vp2_dp2',
+'vp2_pr1', 'vp2_pr2',
+'up2_bt', 'up2_ma', 'up2_ta', 'up2_tp', 'up2_dp1', 'up2_dp2',
+'up2_pr1', 'up2_pr2',
 'wprtp_bt', 'wprtp_ma', 'wprtp_ta', 'wprtp_tp', 'wprtp_ac', 'wprtp_bp',
 'wprtp_pr1', 'wprtp_pr2', 'wprtp_pr3', 'wprtp_dp1', 'wprtp_cl',
 'wpthlp_bt', 'wpthlp_ma', 'wpthlp_ta', 'wpthlp_tp', 'wpthlp_ac', 'wpthlp_bp',
