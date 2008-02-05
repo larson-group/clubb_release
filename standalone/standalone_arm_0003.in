@@ -1,4 +1,4 @@
-! $Id: standalone_arm_0003.in,v 1.3 2007-11-18 17:17:46 griffinb Exp $
+! $Id: standalone_arm_0003.in,v 1.4 2008-02-05 23:34:20 griffinb Exp $
 ! Description:
 ! Namelists for the hoc_standalone program. 
 ! run_file is the location of the model namelist file, which contains the 
@@ -16,9 +16,9 @@ stdout   = .true.
 C1          = 2.500000 ! Low Skewness in C1 Skewness Function. 
 C1b         = 2.500000 ! High Skewness in C1 Skewness Function. 
 C1c         = 1.000000 ! Degree of Slope of C1 Skewness Function. 
-C2rt        = 2.000000 ! C2 constant associated with rtp2 dissipation term.
-C2thl       = 2.000000 ! C2 constant associated with thlp2 dissipation term.
-C2rtthl     = 4.000000 ! C2 constant associated with rtpthlp dissipation term.
+C2rt        = 1.000000 ! C2 constant associated with rtp2 dissipation term.
+C2thl       = 1.000000 ! C2 constant associated with thlp2 dissipation term.
+C2rtthl     = 2.000000 ! C2 constant associated with rtpthlp dissipation term.
 C2          = 1.300000 ! Low Skewness in C2 Skewness Function.
 C2b         = 1.300000 ! High Skewness in C2 Skewness Function.
 C2c         = 5.000000 ! Degree of Slope of C2 Skewness Function.
@@ -45,16 +45,16 @@ C14         = 1.000000 ! Constant applied to up2 and vp2.
 !c_K         = 0.548000 ! From Duynkerke and Driedonks (1987).
 c_K         = 0.200000 ! Tuned by Michael Falk for new wp2 formulation.
 c_K1        = 0.000000 ! Coefficient of Eddy Diffusion for wp2.
-nu1         = 300.0000 ! Background Coefficient of Eddy Diffusion for wp2.
+nu1         = 20.00000 ! Background Coefficient of Eddy Diffusion for wp2.
 c_K2        = 0.000000 ! Coefficient of Eddy Diffusion for xp2.
-nu2         = 100.0000 ! Background Coefficient of Eddy Diffusion for xp2.
+nu2         = 5.000000 ! Background Coefficient of Eddy Diffusion for xp2.
 c_K6        = 0.000000 ! Coefficient of Eddy Diffusion for wpthlp and wprtp.
-nu6         = 100.0000 ! Background Coefficient of Eddy Diffusion for wpxp.
+nu6         = 5.000000 ! Background Coefficient of Eddy Diffusion for wpxp.
 c_K8        = 0.500000 ! Coefficient of Eddy Diffusion for wp3.
-nu8         = 200.0000 ! Background Coefficient of Eddy Diffusion for wp3.
-nu9         = 100.0000 ! Coefficient of Eddy Diffusion for up2 and vp2.
+nu8         = 20.00000 ! Background Coefficient of Eddy Diffusion for wp3.
+nu9         = 20.00000 ! Coefficient of Eddy Diffusion for up2 and vp2.
 c_Krrm      = 0.075000 ! Coefficient of Eddy Diffusion for hydrometeors.
-nu_r        = 10.00000 ! Background Coefficient of Eddy Diffusion for hydrometeors.
+nu_r        = 3.000000 ! Background Coefficient of Eddy Diffusion for hydrometeors.
 beta        = 1.750000 ! Constant from Chris Golaz. 
 gamma_coef  = 0.320000 ! Low Skewness in gamma coefficient Skewness Function. 
 gamma_coefb = 0.320000 ! High Skewness in gamma coefficient Skewness Function. 
