@@ -1,4 +1,4 @@
-! $Id: lba_model.in,v 1.4 2007-10-01 23:32:29 vlarson Exp $
+! $Id: lba_model.in,v 1.5 2008-02-05 23:32:18 griffinb Exp $
 ! Parameter file for the 23 Feb 1999 TRMM-LBA case
 
 &model_setting
@@ -30,10 +30,10 @@ ts_nudge = 7200.
 
 cloud_sed     = .false.
 kk_rain       = .false.
-lcoamps_micro = .false.
+lcoamps_micro = .true.
 licedfs       = .false.
 lbugsrad      = .false.
-lKhm_aniso    = .false.
+lKhm_aniso    = .true.
 luv_nudge     = .true.
 
 /
