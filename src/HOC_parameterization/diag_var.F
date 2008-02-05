@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.24 2008-01-30 22:54:10 vlarson Exp $
+! $Id: diag_var.F,v 1.25 2008-02-05 23:33:23 griffinb Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -346,6 +346,12 @@
         if (lstats_samp .and. ithlp2_cl > 0 ) then
           zm%x(:,ithlp2_cl) = zm%x(:,ithlp2_cl) - thlp2 / dt
         end if
+        if (lstats_samp .and. iup2_cl > 0 ) then
+          zm%x(:,iup2_cl) = zm%x(:,iup2_cl) - up2 / dt
+        end if
+        if (lstats_samp .and. ivp2_cl > 0 ) then
+          zm%x(:,ivp2_cl) = zm%x(:,ivp2_cl) - vp2 / dt
+        end if
 #endif
 
         ! Clip small and negative values
@@ -379,8 +385,8 @@
         ! This appears to be unneeded for now.  If these do need to be
         ! clipped in the future, this could be uncommented and budget
         ! could be added. -dschanen 24 April 2007
-!       where ( vp2 < 0.0 ) vp2 = 0.0
-!       where ( up2 < 0.0 ) up2 = 0.0
+       where ( vp2 < 0.0 ) vp2 = 0.0
+       where ( up2 < 0.0 ) up2 = 0.0
 
 #ifdef STATS
         if ( lstats_samp .and. irtp2_cl > 0 ) then
@@ -391,6 +397,16 @@
         if ( lstats_samp .and. ithlp2_cl > 0 ) then
           zm%x(:,ithlp2_cl) = zm%x(:,ithlp2_cl) + thlp2 / dt
           zm%n(:,ithlp2_cl) = zm%n(:,ithlp2_cl) + 1
+        end if
+
+        if ( lstats_samp .and. iup2_cl > 0 ) then
+          zm%x(:,iup2_cl) = zm%x(:,iup2_cl) + up2 / dt
+          zm%n(:,iup2_cl) = zm%n(:,iup2_cl) + 1
+        end if
+
+        if ( lstats_samp .and. ivp2_cl > 0 ) then
+          zm%x(:,ivp2_cl) = zm%x(:,ivp2_cl) + vp2 / dt
+          zm%n(:,ivp2_cl) = zm%n(:,ivp2_cl) + 1
         end if
 #endif
 

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc_stats.F,v 1.2 2007-10-01 23:25:47 vlarson Exp $
+! $Id: hoc_stats.F,v 1.3 2008-02-05 23:33:23 griffinb Exp $
 #ifdef STATS
 !-----------------------------------------------------------------------
 !  module hoc_stats
@@ -433,6 +433,7 @@
      .    iup2_dp2,
      .    iup2_pr1,
      .    iup2_pr2,
+     .    iup2_cl,
      .    ivp2_bt,
      .    ivp2_ta,
      .    ivp2_tp,
@@ -440,12 +441,13 @@
      .    ivp2_dp1,
      .    ivp2_dp2,
      .    ivp2_pr1,
-     .    ivp2_pr2
+     .    ivp2_pr2,
+     .    ivp2_cl
 
 !$omp   threadprivate(iup2_bt, iup2_ta, iup2_tp, iup2_ma, iup2_dp1)
-!$omp   threadprivate(iup2_dp2, iup2_pr1, iup2_pr2)
+!$omp   threadprivate(iup2_dp2, iup2_pr1, iup2_pr2, iup2_cl)
 !$omp   threadprivate(ivp2_bt, ivp2_ta, ivp2_tp, ivp2_ma, ivp2_dp1)
-!$omp   threadprivate(ivp2_dp2, ivp2_pr1, ivp2_pr2)
+!$omp   threadprivate(ivp2_dp2, ivp2_pr1, ivp2_pr2, ivp2_cl)
 
 #ifdef SCALARS
 !       Passive scalars.  Note that floating point roundoff may make 

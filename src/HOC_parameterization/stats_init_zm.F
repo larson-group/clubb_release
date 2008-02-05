@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_init_zm.F,v 1.3 2007-10-05 15:48:20 faschinj Exp $
+! $Id: stats_init_zm.F,v 1.4 2008-02-05 23:33:23 griffinb Exp $
 #ifdef STATS
 
 !-----------------------------------------------------------------------
@@ -66,6 +66,7 @@
       iup2_dp2 = 0
       iup2_pr1 = 0
       iup2_pr2 = 0
+      iup2_cl  = 0
 
       ivp2_bt  = 0
       ivp2_ta  = 0
@@ -75,6 +76,7 @@
       ivp2_dp2 = 0
       ivp2_pr1 = 0
       ivp2_pr2 = 0
+      ivp2_cl  = 0
 
       ! Sedimentation velocities
       iVrr      = 0  ! Brian
@@ -768,14 +770,18 @@
 
         case ('up2_pr2')
           iup2_pr2 = k
-
           call stat_assign(iup2_pr2,"up2_pr2",
      .         "up2 pressure term 2","m^2/s^2",zm)
           k = k + 1
 
+        case ('up2_cl')
+          iup2_cl = k
+          call stat_assign(iup2_cl,"up2_cl",
+     .         "up2 clipping","m^2/s^2",zm)
+          k = k + 1
+
         case ('vp2_bt')
           ivp2_bt = k
-
           call stat_assign(ivp2_bt,"vp2_bt",
      .         "vp2 time tendency","m^2/s^2",zm)
           k = k + 1
@@ -788,44 +794,44 @@
 
         case ('vp2_ta')
           ivp2_ta = k
-
           call stat_assign(ivp2_ta,"vp2_ta",
      .         "vp2 turbulent advection","m^2/s^2",zm)
           k = k + 1
 
         case ('vp2_tp')
           ivp2_tp = k
-
           call stat_assign(ivp2_tp,"vp2_tp",
      .         "vp2 turbulent production","m^2/s^2",zm)
           k = k + 1
 
         case ('vp2_dp1')
           ivp2_dp1 = k
-
           call stat_assign(ivp2_dp1,"vp2_dp1",
      .         "vp2 dissipating term","m^2/s^2",zm)
           k = k + 1
 
         case ('vp2_dp2')
           ivp2_dp2 = k
-
           call stat_assign(ivp2_dp2,"vp2_dp2",
      .         "vp2 dissipating term","m^2/s^2",zm)
           k = k + 1
 
         case ('vp2_pr1')
           ivp2_pr1 = k
-
           call stat_assign(ivp2_pr1,"vp2_pr1",
      .         "vp2 pressure term 1","m^2/s^2",zm)
           k = k + 1
 
         case ('vp2_pr2')
           ivp2_pr2 = k
-
           call stat_assign(ivp2_pr2,"vp2_pr2",
      .         "vp2 pressure term 2","m^2/s^2",zm)
+          k = k + 1
+
+        case ('vp2_cl')
+          ivp2_cl = k
+          call stat_assign(ivp2_cl,"vp2_cl",
+     .         "vp2 clipping","m^2/s^2",zm)
           k = k + 1
 
 #ifdef SCALARS
