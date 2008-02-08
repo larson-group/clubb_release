@@ -7,7 +7,7 @@ if [ "$1" == "" ]; then
 	exit 1
 elif [ "$1" == "--help" ]; then
 	echo ""
-        echo "Usage: 'plotgen Output_Arg HOC_sim1 [HOC_sim2] Output_Directory Plot_LES Plot_Best Plot_HOCDec17'"
+        echo "Usage: 'plotgen Output_Arg HOC_dir1 [HOC_dir2] Output_Directory Plot_LES Plot_Best Plot_HOCDec17'"
 	echo "Or:    'plotgen Output_Arg nightly Output_Directory'"
 	echo ""
 	echo "The first generates plots comparing the specified simulations, e.g." 
@@ -28,11 +28,11 @@ elif [ "$1" == "--help" ]; then
         echo "  GrADS output files for all cases you wish to plot."
         echo "All possible cases that plotgen recognizes"
         echo "  are listed at the end of generate_plots.sh." 
-        echo "If a case is listed but is not contained in 'HOC_sim1',"
+        echo "If a case is listed but is not contained in 'HOC_dir1',"
         echo "  then that case will not be plotted."
         echo ""
-        echo "'HOC_sim2' is optional but follows the same rules"
-        echo "  as 'HOC_sim1'."
+        echo "'HOC_dir2' is optional but follows the same rules"
+        echo "  as 'HOC_dir1'."
         echo ""
         echo "If the user chooses the 'nightly' option, then"
         echo "  the new GrADS data to be plotted are assumed to be"
