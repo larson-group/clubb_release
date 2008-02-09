@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.26 2008-02-09 16:48:30 griffinb Exp $
+! $Id: diag_var.F,v 1.27 2008-02-09 18:54:52 griffinb Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -242,9 +242,17 @@
            ! momentum levels.  Kw2 is located on thermodynamic levels.
            ! Kw2 = c_K2 * Kht
            Kw2(k) = c_K2 * Kht(k)
-           Kw2_rtp2(k)    = Kw2(k) + c_Ksqd * rtp2_zt_sqd_3pt(k) ! Vince Larson increased by 10, 29Jan2008
-           Kw2_thlp2(k)   = Kw2(k) + c_Ksqd * thlp2_zt_sqd_3pt(k) ! Vince Larson increased by 10, 29Jan2008
-           Kw2_rtpthlp(k) = Kw2(k) + c_Ksqd * rtpthlp_zt_sqd_3pt(k) ! Vince Larson increased by 10, 29Jan2008
+           ! Kw2_rtp2 must have units of m^2/s.  Since rtp2_zt_sqd_3pt has 
+           ! units of kg^2/kg^2, c_Ksqd is given units of m^2/[ s (kg^2/kg^2) ]
+           ! in this case.
+           Kw2_rtp2(k)    = Kw2(k) + c_Ksqd * rtp2_zt_sqd_3pt(k) ! Vince Larson increased by c_Ksqd, 29Jan2008
+           ! Kw2_thlp2 must have units of m^2/s.  Since thlp2_zt_sqd_3pt has 
+           ! units of K^2, c_Ksqd is given units of m^2/[ s K^2 ] in this case.
+           Kw2_thlp2(k)   = Kw2(k) + c_Ksqd * thlp2_zt_sqd_3pt(k) ! Vince Larson increased by c_Ksqd, 29Jan2008
+           ! Kw2_rtpthlp must have units of m^2/s.  Since rtpthlp_zt_sqd_3pt has
+           ! units of K (kg/kg), c_Ksqd is given units of m^2/[ s K (kg/kg) ] 
+           ! in this case.
+           Kw2_rtpthlp(k) = Kw2(k) + c_Ksqd * rtpthlp_zt_sqd_3pt(k) ! Vince Larson increased by c_Ksqd, 29Jan2008
         enddo
 
         ! Implicit contributions to term rtp2

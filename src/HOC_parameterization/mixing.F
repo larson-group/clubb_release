@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.28 2008-02-09 16:48:30 griffinb Exp $
+! $Id: mixing.F,v 1.29 2008-02-09 18:54:52 griffinb Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -198,8 +198,13 @@
            ! Kw6 is located on thermodynamic levels.
            ! Kw6 = c_K6 * Kht
            Kw6(k) = c_K6 * Kht(k)
-           Kw6_rt(k)  = Kw6(k) + c_Ksqd * wprtp_zt_sqd_3pt(k)  ! Vince Larson increased by 10, 29Jan2008
-           Kw6_thl(k) = Kw6(k) + c_Ksqd * wpthlp_zt_sqd_3pt(k) ! Vince Larson increased by 10, 29Jan2008
+           ! Kw6_rt must have units of m^2/s.  Since wprtp_zt_sqd_3pt has 
+           ! units of m/s (kg/kg), c_Ksqd is given units of m/(kg/kg) 
+           ! in this case.
+           Kw6_rt(k)  = Kw6(k) + c_Ksqd * wprtp_zt_sqd_3pt(k)  ! Vince Larson increased by c_Ksqd, 29Jan2008
+           ! Kw6_thl must have units of m^2/s.  Since wpthlp_zt_sqd_3pt has 
+           ! units of m/s K, c_Ksqd is given units of m/K in this case.
+           Kw6_thl(k) = Kw6(k) + c_Ksqd * wpthlp_zt_sqd_3pt(k) ! Vince Larson increased by c_Ksqd, 29Jan2008
         enddo
 
         ! Setup and decompose matrix
