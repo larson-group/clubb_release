@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.27 2008-01-30 22:55:12 vlarson Exp $
+! $Id: mixing.F,v 1.28 2008-02-09 16:48:30 griffinb Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -198,8 +198,8 @@
            ! Kw6 is located on thermodynamic levels.
            ! Kw6 = c_K6 * Kht
            Kw6(k) = c_K6 * Kht(k)
-           Kw6_rt(k)  = Kw6(k) + 10 * wprtp_zt_sqd_3pt(k)  ! Vince Larson increased by 10, 29Jan2008
-           Kw6_thl(k) = Kw6(k) + 10 * wpthlp_zt_sqd_3pt(k) ! Vince Larson increased by 10, 29Jan2008
+           Kw6_rt(k)  = Kw6(k) + c_Ksqd * wprtp_zt_sqd_3pt(k)  ! Vince Larson increased by 10, 29Jan2008
+           Kw6_thl(k) = Kw6(k) + c_Ksqd * wpthlp_zt_sqd_3pt(k) ! Vince Larson increased by 10, 29Jan2008
         enddo
 
         ! Setup and decompose matrix

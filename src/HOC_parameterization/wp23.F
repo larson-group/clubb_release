@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.32 2008-01-30 22:56:14 vlarson Exp $
+! $Id: wp23.F,v 1.33 2008-02-09 16:48:30 griffinb Exp $
 
         subroutine timestep_wp23
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
@@ -180,7 +180,7 @@
            ! Kw1 = c_K1 * Kht
            Kw1(k) = c_K1 * Kht(k)
            ! Vince Larson added extra diffusion based on wp2.  21 Dec 2007.
-           Kw1(k) = Kw1(k) + 10 * wp2_zt_sqd_3pt(k) ! Vince Larson increased by 10. 29Jan2008
+           Kw1(k) = Kw1(k) + c_Ksqd * wp2_zt_sqd_3pt(k) ! Vince Larson increased by 10. 29Jan2008
            ! End Vince Larson's addition.
            ! Kw8 is used for wp3, which is located on thermodynamic levels.
            ! Kw8 is located on momentum levels.
@@ -188,7 +188,7 @@
            ! Kw8 = c_K8 * Khm
            Kw8(k) = c_K8 * Khm(k)
            ! Vince Larson added extra diffusion based on wp3.  15 Dec 2007.
-           Kw8(k) = Kw8(k) + 10 * wp3_zm_sqd_3pt(k)  ! Vince Larson increased by 10. 29Jan2008
+           Kw8(k) = Kw8(k) + c_Ksqd * wp3_zm_sqd_3pt(k)  ! Vince Larson increased by 10. 29Jan2008
            ! End Vince Larson's addition.
         enddo
 

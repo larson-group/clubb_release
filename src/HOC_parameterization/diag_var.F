@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.25 2008-02-05 23:33:23 griffinb Exp $
+! $Id: diag_var.F,v 1.26 2008-02-09 16:48:30 griffinb Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -42,7 +42,7 @@
         use constants
         use parameters, 
      .    only: C2, C2b, C2c, C2rt, C2thl, C2rtthl, c_K2, nu2, nu9, 
-     .          beta, C4, C14, C5, T0
+     .          c_Ksqd, beta, C4, C14, C5, T0
         use grid_class
         use lapack_wrap, only: tridag_solve
 #ifdef STATS
@@ -242,9 +242,9 @@
            ! momentum levels.  Kw2 is located on thermodynamic levels.
            ! Kw2 = c_K2 * Kht
            Kw2(k) = c_K2 * Kht(k)
-           Kw2_rtp2(k)    = Kw2(k) + 10 * rtp2_zt_sqd_3pt(k) ! Vince Larson increased by 10, 29Jan2008
-           Kw2_thlp2(k)   = Kw2(k) + 10 * thlp2_zt_sqd_3pt(k) ! Vince Larson increased by 10, 29Jan2008
-           Kw2_rtpthlp(k) = Kw2(k) + 10 * rtpthlp_zt_sqd_3pt(k) ! Vince Larson increased by 10, 29Jan2008
+           Kw2_rtp2(k)    = Kw2(k) + c_Ksqd * rtp2_zt_sqd_3pt(k) ! Vince Larson increased by 10, 29Jan2008
+           Kw2_thlp2(k)   = Kw2(k) + c_Ksqd * thlp2_zt_sqd_3pt(k) ! Vince Larson increased by 10, 29Jan2008
+           Kw2_rtpthlp(k) = Kw2(k) + c_Ksqd * rtpthlp_zt_sqd_3pt(k) ! Vince Larson increased by 10, 29Jan2008
         enddo
 
         ! Implicit contributions to term rtp2
