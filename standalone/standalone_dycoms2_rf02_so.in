@@ -1,4 +1,4 @@
-! $Id: standalone_dycoms2_rf02_so.in,v 1.21 2007-11-18 17:17:46 griffinb Exp $
+! $Id: standalone_dycoms2_rf02_so.in,v 1.22 2008-02-09 16:49:22 griffinb Exp $
 ! Description:
 ! Namelists for the hoc_standalone program. 
 ! run_file is the location of the model namelist file, which contains the 
@@ -55,6 +55,7 @@ nu8         = 20.00000 ! Background Coefficient of Eddy Diffusion for wp3.
 nu9         = 20.00000 ! Coefficient of Eddy Diffusion for up2 and vp2.
 c_Krrm      = 0.075000 ! Coefficient of Eddy Diffusion for hydrometeors.
 nu_r        = 3.000000 ! Background Coefficient of Eddy Diffusion for hydrometeors.
+c_Ksqd      = 10.00000 ! Constant for scaling effect of value-squared diffusion.
 beta        = 1.750000 ! Constant from Chris Golaz.
 gamma_coef  = 0.320000 ! Low Skewness in gamma coefficient Skewness Function.
 gamma_coefb = 0.320000 ! High Skewness in gamma coefficient Skewness Function.
