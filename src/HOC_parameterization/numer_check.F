@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F,v 1.10 2008-02-04 22:43:28 faschinj Exp $
+! $Id: numer_check.F,v 1.11 2008-02-11 21:57:08 faschinj Exp $
         module numerical_check
 
         implicit none
@@ -437,20 +437,18 @@
         return
         end subroutine mixing_clipping
 !-----------------------------------------------------------------------
-        subroutine rad_clipping(nz,thlm,rcm,rtm,
-     .     ricem, 
-     .     cf,p,exner,rhom)
+        subroutine rad_clipping( thlm, rcm, rtm, ricem, 
+     .     cf, p, exner, rhom )
 !       Description:
 !       Clips radiation input variables if they are < 0 and reports
 !       its action to the console
 !------------------------------------------------------------------------
         use constants, only: fstderr
+        use grid_class
         implicit none
         
-        ! Input variable
-        integer, intent(in) :: nz
         !Input/Output variables
-        real, dimension(nz), intent(inout) ::
+        real, dimension(gr%nnzp), intent(inout) ::
      .  thlm,          ! Liquid Water Potential Temperature   [K/s]
      .  rcm,           ! Liquid Water Mixing Ratio            [Kg/Kg]
      .  rtm,           ! Total Water Mixing Ratio             [Kg/Kg]
@@ -461,11 +459,11 @@
      .  rhom           ! Density                              [-]
 
        ! Local variables
-        real,dimension(nz) :: rvm
+        real,dimension(gr%nnzp) :: rvm
         integer :: k 
 !-------------------------------------------------------------------------
         rvm = rtm - rcm
-        do k = 1, nz, 1
+        do k = 1, gr%nnzp, 1
                 if ( thlm(k) < 0.0 ) then
                         write(fstderr,*) "Negative value in thlm at ",k,
      .                  " before BUGSrad." 
