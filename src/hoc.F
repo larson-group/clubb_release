@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.144 2008-02-04 23:16:40 faschinj Exp $
+! $Id: hoc.F,v 1.145 2008-02-11 21:58:35 faschinj Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -1700,8 +1700,8 @@
           zero = 0.0
           
           ! Clips impossible negative values
-          call rad_clipping( gr%nnzp, thlm, rcm, rtm, ricem,
-     .                       cf, p, exner, rhom)
+          call rad_clipping( thlm, rcm, rtm, ricem,
+     .                       cf, p, exner, rhom )
 
 
           call bugsrad_hoc( gr%zm(gr%nnzp), gr%nnzp, rlat, rlon,
