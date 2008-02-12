@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.27 2008-02-09 18:54:52 griffinb Exp $
+! $Id: diag_var.F,v 1.28 2008-02-12 22:50:08 faschinj Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -522,7 +522,66 @@
           isValid = .false.
         end if
 
+!       Error Reporting
+!       Joshua Fasching February 2008
+                
+        if ( .not. isValid ) then
+                
+           write(fstderr,*) "Error in diag_var"
+           
+           write(fstderr,*) "Intent(in)"
+           
+           write(fstderr,*) "taum = ", taum
+           write(fstderr,*) "wmm = ", wmm
+           write(fstderr,*) "rtm = ", rtm
+           write(fstderr,*) "wprtp = ", wprtp
+           write(fstderr,*) "thlm = ", thlm
+           write(fstderr,*) "wpthlp = ", wpthlp
+           write(fstderr,*) "wpthvp = ", wpthvp
+           write(fstderr,*) "um = ", um
+           write(fstderr,*) "vm = ", vm
+           write(fstderr,*) "wp2 = ", wp2
+           write(fstderr,*) "wp3 = ", wp3
+           write(fstderr,*) "upwp = ", upwp
+           write(fstderr,*) "vpwp = ", vpwp
+           write(fstderr,*) "Scm = ", Scm
+           write(fstderr,*) "Skwm = ", Skwm
+           write(fstderr,*) "Kht = ", Kht
+           
+           write(fstderr,*) "Intent(In/Out)"
+           
+           write(fstderr,*) "rtp2 = ", rtp2
+           write(fstderr,*) "thlp2 = ", thlp2
+           write(fstderr,*) "rtpthlp = ", rtpthlp
+           write(fstderr,*) "up2 = ", up2
+           write(fstderr,*) "vp2 = ", vp2
+           
+           if( present( sclrp2 ) ) then 
+              write(fstderr,*) "sclrp2 = ", sclrp2
+           endif
+           
+           if( present( sclrprtp ) ) then
+             write(fstderr,*) "sclrprtp = ", sclrprtp
+           endif
+           
+           if( present( sclrpthlp ) ) then
+             write(fstderr,*) "sclrthlp = ", sclrpthlp
+           endif
+           
+           write(fstderr,*) "Intent(out)"
+           
+           if( present( sclrm ) ) then
+              write(fstderr,*) "sclrm = ", sclrm
+           endif
+           
+           if( present( wpsclrp ) ) then
+              write(fstderr,*) "wpsclrp = ", wpsclrp
+           endif
+           
+        endif
+        
         return
+        
         end subroutine diag_var
 
 !-----------------------------------------------------------------------

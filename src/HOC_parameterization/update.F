@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: update.F,v 1.8 2007-07-07 18:08:28 vlarson Exp $
+! $Id: update.F,v 1.9 2008-02-12 22:50:08 faschinj Exp $
 
         subroutine update_ed_var( solve_type, xm, xt, xw0, Khm, 
      .                            dt, xw, isValid )
@@ -18,7 +18,8 @@
 #ifdef STATS
         use hoc_stats
 #endif
-
+        use constants, only: fstderr
+        
         implicit none
 
         ! Input Variables
@@ -233,6 +234,30 @@
          end if
 #endif
 
+!       Error Report
+!       Joshua Fasching February 2008
+        if ( .not. isValid ) then
+                
+           write(fstderr,*) "Error in update_ed_var"
+           
+           write(fstderr,*) "Intent(in)"
+           
+           write(fstderr,*) "dt = ", dt
+           write(fstderr,*) "xw0 = ", xw0
+           write(fstderr,*) "xt = ", xt
+           write(fstderr,*) "Khm = ", Khm
+           
+           write(fstderr,*) "Intent(inout)"
+           
+           write(fstderr,*) "xm = ", xm
+           
+           write(fstderr,*) "Intent(out)"
+           
+           write(fstderr,*) "xw = ", xw
+           
+        endif
+
         return
+
         end subroutine update_ed_var
 !-----------------------------------------------------------------------

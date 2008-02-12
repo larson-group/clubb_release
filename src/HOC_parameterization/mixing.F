@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.29 2008-02-09 18:54:52 griffinb Exp $
+! $Id: mixing.F,v 1.30 2008-02-12 22:50:08 faschinj Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -298,8 +298,74 @@
             return
           end if
         end if ! passive scalars
+        
+!       Error Report
+!       Joshua Fasching Feb 2008          
+        if ( .not. isValid ) then
+                
+           write(fstderr,*) "Error in timestep_mixing"
+           
+           write(fstderr,*) "Intent(in)"
+           
+           write(fstderr,*) "dt = ", dt
+           write(fstderr,*) "taum = ", taum
+           write(fstderr,*) "wmm = ", wmm
+           write(fstderr,*) "wmt = ", wmt
+           write(fstderr,*) "wp2 = ", wp2
+           write(fstderr,*) "wp3 = ", wp3
+           write(fstderr,*) "Scm = ", Scm
+           write(fstderr,*) "Skwm = ", Skwm
+           write(fstderr,*) "Kht = ", Kht
+           write(fstderr,*) "rtpthvp = ", rtpthvp
+           write(fstderr,*) "rtm_forcing = ", rtm_forcing
+           write(fstderr,*) "thlpthvp = ", thlpthvp
+           write(fstderr,*) "thlm_forcing = ", thlm_forcing
+           write(fstderr,*) "rtp2 = ", rtp2
+           write(fstderr,*) "thlp2 = ", thlp2
+           write(fstderr,*) "rhot = ", rhot
+           write(fstderr,*) "rhom = ", rhom
+           write(fstderr,*) "exner = ", exner
+           write(fstderr,*) "rcm = ", rcm
+           write(fstderr,*) "Ncm = ", Ncm
+           write(fstderr,*) "hm_rt_tndcy", hm_rt_tndcy
+           write(fstderr,*) "hm_thl_tndcy", hm_thl_tndcy
+           
+           if( present( sclrpthvp ) ) then
+              write(fstderr,*) "sclrpthvp = ", sclrpthvp
+           endif
+           
+           if( present( sclrm_forcing ) ) then
+              write(fstderr,*) "sclrm_forcing = ", sclrm_forcing
+           endif
+           
+           if( present( sclrp2 ) ) then
+              write(fstderr,*) "sclrp2 = ", sclrp2
+           endif
+           
+           write(fstderr,*) "Intent(inout)"
+           
+           write(fstderr,*) "rtm = ", rtm 
+           write(fstderr,*) "wprtp = ", wprtp
+           write(fstderr,*) "thlm = ", thlm
+           write(fstderr,*) "wpthlp =", wpthlp
+           
+           if( present( sclrm ) ) then
+              write(fstderr,*) "sclrm = ", sclrm
+           endif
+           
+           if( present( wpsclrp ) ) then
+              write(fstderr,*) "wpsclrp = ", wpsclrp
+           endif
+           
+           write(fstderr,*) "Intent(out)"
+           
+           write(fstderr,*) "Fcsed = ", Fcsed
+           write(fstderr,*) "sed_rcm", sed_rcm
+           
+        endif
  
         return
+        
         end subroutine timestep_mixing
 
 !------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.65 2008-02-04 22:43:28 faschinj Exp $
+! $Id: parameterization_interface.F,v 1.66 2008-02-12 22:50:08 faschinj Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -421,6 +421,7 @@
 #endif /*SCALARS*/
      .   )
          if(.not.isValid) then
+             print *, "At level: ",k
             return
          endif
          !--------------------------------------------------------------
@@ -843,7 +844,7 @@
         use parameters
         use diagnostic_variables
         use prognostic_variables
-
+        use constants, only: fstderr
         implicit none
 
         ! External
@@ -899,7 +900,25 @@
         call setup_parameters
      .       ( deltaz, T0_in, ts_nudge_in, params, isValid )
 
-        if ( .not. isValid ) return
+!       Error Report
+!       Joshua Fasching February 2008
+        if ( .not. isValid ) then
+                
+           write(fstderr,*) "Error in parameterization_setup"
+           
+           write(fstderr,*) "Intent(in)"
+           
+           write(fstderr,*) "deltaz = ", deltaz
+           write(fstderr,*) "zm_init = ", zm_init
+           write(fstderr,*) "host_momentum = ", host_momentum
+           write(fstderr,*) "host_thermodynamic = ", host_thermodynamic 
+           write(fstderr,*) "T0_in = ", T0_in
+           write(fstderr,*) "ts_nudge_in = ", ts_nudge_in
+           write(fstderr,*) "params = ", params 
+
+           return
+
+        endif
 
 !        if ( .not. implemented ) then
 !          call setup_diagnostic_variables( nzmax )

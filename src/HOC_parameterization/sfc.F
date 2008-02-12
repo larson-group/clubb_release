@@ -1,4 +1,4 @@
-! $Id: sfc.F,v 1.14 2008-02-04 23:14:03 faschinj Exp $
+! $Id: sfc.F,v 1.15 2008-02-12 22:50:08 faschinj Exp $
 #define SCLR_RT 2
 #define SCLR_THETA 1
 
@@ -291,10 +291,54 @@
      .                     thlp2_sfc, rtp2_sfc, rtpthlp_sfc,
      .                     isValid
 #ifdef SCALARS
-     .                     ,sclrp2_sfc,sclrprtp_sfc, sclrpthlp_sfc 
+     .                     ,sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc 
 #endif /*SCALARS*/
      .      )
+        
+!       Error reporting
+!       Joshua Fasching February 2008
+        
+        if ( .not. isValid ) then
+                
+            write(fstderr,*) "Error in sfc_var"
+            
+            write(fstderr,*) "Intent(in)"
+            
+            write(fstderr,*) "upwp_sfc = ", upwp_sfc 
+            write(fstderr,*) "vpwp_sfc = ", vpwp_sfc 
+            write(fstderr,*) "wpthlp_sfc = ", wpthlp_sfc
+            write(fstderr,*) "wprtp_sfc = ", wprtp_sfc
+            write(fstderr,*) "ustar_in = ", ustar_in 
+            
+            if ( present( wpsclrp_sfc ) ) then 
+               write(fstderr,*) "wpsclrp_sfc = ", wpsclrp_sfc
+            endif
+            
+            write(fstderr,*) "Intent(out)"
+            
+            write(fstderr,*) "wp2_sfc = ", wp2_sfc  
+            write(fstderr,*) "up2_sfc = ", up2_sfc
+            write(fstderr,*) "vp2_sfc = ", vp2_sfc
+            write(fstderr,*) "thlp2_sfc = ", thlp2_sfc
+            write(fstderr,*) "rtp2_sfc = ", rtp2_sfc
+            write(fstderr,*) "rtpthlp_sfc = ", rtpthlp_sfc
+        
+           if(present(sclrp2_sfc)) then 
+              write(fstderr,*) "sclrp2_sfc = ", sclrp2_sfc
+           endif
+           
+           if(present(sclrprtp_sfc)) then
+              write(fstderr,*) "sclrprtp_sfc = ", sclrprtp_sfc
+           endif
+           
+           if(present(sclrpthlp_sfc)) then
+              write(fstderr,*) "sclrpthlp_sfc = ", sclrpthlp_sfc 
+           endif
+
+        endif
+        
         return
+
         end subroutine sfc_var
 
         end module surface_var

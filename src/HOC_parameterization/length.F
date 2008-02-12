@@ -1,4 +1,4 @@
-! $Id: length.F,v 1.8 2008-02-01 21:31:04 faschinj Exp $
+! $Id: length.F,v 1.9 2008-02-12 22:50:08 faschinj Exp $
 !-----------------------------------------------------------------------------
         subroutine length( thvm, thlm, rtm, rcm, em, p, exner,
      .                     Lscale, lup, ldown, isValid ) 
@@ -24,8 +24,8 @@
      .  ep1, ! (1-ep)/ep                                        [-]
      .  ep2, ! 1/ep                                             [-]
      .  Lv,  ! Latent heat of vaporiztion                       [J/kg/K]
-     .  grav ! Gravitational acceleration                       [m/s^2]
-
+     .  grav, ! Gravitational acceleration                       [m/s^2]
+     .  fstderr
         use parameters, only:
      .  mu,  ! Fractional entrainment rate per unit altitude    [1/m]
      .  T0,  ! Reference temperature                            [K]
@@ -259,5 +259,30 @@
         ! Ensure that the output from this subroutine is valid.
         call length_check( Lscale, lup, ldown, isValid )
         ! Joshua Fasching January 2008
+
+!       Error Reporting
+!       Joshua Fasching February 2008        
+        if ( .not. isValid ) then
+                
+           write(fstderr,*) "Errors in length subroutine"
+           
+           write(fstderr,*) "Intent(in)"
+           
+           write(fstderr,*) "thvm = ", thvm
+           write(fstderr,*) "thlm = ", thlm
+           write(fstderr,*) "rtm = ", rtm
+           write(fstderr,*) "rcm = ", rcm
+           write(fstderr,*) "em = ", em
+           write(fstderr,*) "exner = ", exner
+           write(fstderr,*) "p = ", p
+           
+           write(fstderr,*) "Intent(out)"
+
+           write(fstderr,*) "Lscale = ", Lscale
+           write(fstderr,*) "lup = ", lup
+           
+        endif
+
         return
+
         end subroutine length

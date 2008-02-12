@@ -1,4 +1,4 @@
-! $Id: closure_new.F,v 1.12 2008-02-04 22:43:28 faschinj Exp $
+! $Id: closure_new.F,v 1.13 2008-02-12 22:50:08 faschinj Exp $
         module pdf_closure
 
         implicit none
@@ -51,8 +51,8 @@
      .  thltol,  ! Tolerance for th_l                  [K]
      .  sstol,   ! Tolerance for pdf parameter         [kg/kg]
      .  sclrtol, ! Array of passive scalar tolerances  [units vary]
-     .  sclr_dim ! Number of passive scalar variables
-
+     .  sclr_dim, ! Number of passive scalar variables
+     .  fstderr
         use parameters, only:
      .  beta,    ! Plume widths for th_l and r_t       [-]
      .  T0       ! Reference temperature               [K]
@@ -658,7 +658,102 @@
      .                           wp2sclrp 
 #endif /*SCALARS*/
      .                           )
+
+!       Error Reporting
+!       Joshua Fasching February 2008
+                
+        if ( .not. isValid ) then
+                
+           write(fstderr,*) "Error in pdf_closure_new"
+           
+           write(fstderr,*) "Intent(in)"
+           
+           write(fstderr,*) "p = ", p 
+           write(fstderr,*) "exner = ", exner
+           write(fstderr,*) "wm = ", wm 
+           write(fstderr,*) "wp2 = ", wp2 
+           write(fstderr,*) "wp3 = ", wp3
+           write(fstderr,*) "Sc = ", Sc
+           write(fstderr,*) "rtm = ", rtm
+           write(fstderr,*) "rtp2 = ", rtp2
+           write(fstderr,*) "wprtp = ", wprtp
+           write(fstderr,*) "thlm = ", thlm
+           write(fstderr,*) "thlp2 = ", thlp2
+           write(fstderr,*) "wpthlp = ", wpthlp
+           write(fstderr,*) "rtpthlp = ", rtpthlp
+
+          if ( present( sclrm ) ) then
+             write(fstderr,*) "sclrm = ", sclrm
+          endif
+          
+          if ( present( wpsclrp ) ) then
+             write(fstderr,*) "wpsclrp = ", wpsclrp
+          endif
+          
+          if ( present( sclrp2 ) ) then
+             write(fstderr,*) "sclrp2 = ", sclrp2
+          endif
+          
+          if ( present( sclrprtp ) ) then
+             write(fstderr,*) "sclrprtp = ", sclrprtp
+          endif
+          
+          if ( present( sclrpthlp ) )then
+             write(fstderr,*) "sclrpthlp = ", sclrpthlp
+          endif
+
+          write(fstderr,*) "Intent(out)"
+          
+          write(fstderr,*) "wp4 = ", wp4
+          write(fstderr,*) "wprtp2 = ", wprtp2
+          write(fstderr,*) "wp2rtp = ", wp2rtp
+          write(fstderr,*) "wpthlp2 = ", wpthlp2
+          write(fstderr,*) "cf = ", cf
+          write(fstderr,*) "rcm = ", rcm
+          write(fstderr,*) "wpthvp = ", wpthvp
+          write(fstderr,*) "wp2thvp = ", wp2thvp
+          write(fstderr,*) "rtpthvp = ", rtpthvp
+          write(fstderr,*) "thlpthvp = ", thlpthvp
+          write(fstderr,*) "wprcp = ", wprcp
+          write(fstderr,*) "wp2rcp = ", wp2rcp
+          write(fstderr,*) "rtprcp = ", rtprcp
+          write(fstderr,*) "thlprcp = ", thlprcp
+          write(fstderr,*) "rcp2 = ", rcp2
+          write(fstderr,*) "wprtpthlp = ", wprtpthlp
+          write(fstderr,*) "crt1 = ", crt1
+          write(fstderr,*) "crt2 = ", crt2
+          write(fstderr,*) "cthl1 = ", cthl1
+          write(fstderr,*) "cthl2 = ", cthl2
+          write(fstderr,*) "pdf_parms = ", pdf_parms
+          
+          if ( present( sclrpthvp ) )then
+             write(fstderr,*) "sclrpthvp = ", sclrpthvp
+          endif
+          
+          if ( present( sclrprcp ) )then
+             write(fstderr,*) "sclrprcp = ", sclrprcp
+          endif
+          
+          if ( present( wpsclrp2 ) )then
+             write(fstderr,*) "wpsclrp2 = ", wpsclrp2
+          endif
+          
+          if ( present( wpsclrprtp ) )then
+             write(fstderr,*) "wpsclrprtp = ", wpsclrprtp
+          endif
+          
+          if ( present( wpsclrpthlp ) )then
+             write(fstderr,*) "wpsclrpthlp = ", wpsclrpthlp
+          endif
+
+          if ( present( wp2sclrp ) )then
+             write(fstderr,*) "wp2sclrp = ", wp2sclrp
+          endif
+          
+        endif
+        
         return
+        
         end subroutine pdf_closure_new
 
         end module pdf_closure

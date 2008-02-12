@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.25 2008-02-01 20:19:38 faschinj Exp $
+! $Id: microphysics.F,v 1.26 2008-02-12 22:50:08 faschinj Exp $
         module microphysics
 
 !       Description:
@@ -44,7 +44,7 @@
         use rain_equations, only: kk_microphys
         use model_flags
         use parameters, only: c_Krrm, nu_r
-        use constants, only: hydromet_dim, Lv, Cp, rho_lw
+        use constants, only: hydromet_dim, Lv, Cp, rho_lw, fstderr
 #ifdef STATS
         use hoc_stats
 #endif
@@ -357,8 +357,8 @@
            endif
 
 #ifdef STATS
-	   if ( lstats_samp .and. irrm_cond_adj > 0 ) then
-		zt%n(k,irrm_cond_adj) = zt%n(k,irrm_cond_adj) + 1
+           if ( lstats_samp .and. irrm_cond_adj > 0 ) then
+              zt%n(k,irrm_cond_adj) = zt%n(k,irrm_cond_adj) + 1
            endif
              ! Joshua Faschinj December 2007
 #endif /*STATS*/
@@ -422,7 +422,7 @@
 
 #ifdef STATS
            if ( lstats_samp .and. iNrm_cond_adj > 0 ) then
-		zt%n(k,iNrm_cond_adj) = zt%n(k,iNrm_cond_adj) + 1
+              zt%n(k,iNrm_cond_adj) = zt%n(k,iNrm_cond_adj) + 1
            endif
 #endif /*STATS*/
               ! Joshua Fasching December 2007
@@ -645,7 +645,43 @@
         end if ! lstats_samp
 #endif /*STATS*/
 
+!       Error Report
+!       Joshua Fasching Feb 2008
+        
+        if ( .not. isValid ) then
+                
+           write(fstderr,*) "Error in timestep_microphys"
+           
+           write(fstderr,*) "Intent(in)"
+           
+           write(fstderr,*) "thlm = ", thlm
+           write(fstderr,*) "p = ", p
+           write(fstderr,*) "exner = ", exner
+           write(fstderr,*) "rhot = ", rhot
+           write(fstderr,*) "rhom = ", rhom
+           write(fstderr,*) "rtm = ", rtm
+           write(fstderr,*) "rcm = ", rcm
+           write(fstderr,*) "wmt = ", wmt
+           write(fstderr,*) "wmm = ", wmm
+           write(fstderr,*) "Khm = ", Khm
+           write(fstderr,*) "Akm_est = ", Akm_est
+           write(fstderr,*) "Akm = ", Akm
+           write(fstderr,*) "pdf_parms = ", pdf_parms
+           
+           write(fstderr,*) "Intent(inout)"
+           
+           write(fstderr,*) "Ncm = ", Ncm
+           write(fstderr,*) "Ncnm = ", Ncnm
+           write(fstderr,*) "Nim = ", Nim
+           write(fstderr,*) "hydromet = ", hydromet
+           write(fstderr,*) "Intent(out)"
+           write(fstderr,*) "hm_rt_tndcy = ", hm_rt_tndcy
+           write(fstderr,*) "hm_thl_tndcy = ", hm_thl_tndcy
+           
+        endif
+        
         return
+
         end subroutine timestep_microphys
 !-----------------------------------------------------------------------
         subroutine microphys_solve( solve_type, dt, lhs,

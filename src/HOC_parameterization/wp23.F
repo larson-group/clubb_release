@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.34 2008-02-09 18:54:52 griffinb Exp $
+! $Id: wp23.F,v 1.35 2008-02-12 22:50:08 faschinj Exp $
 
         subroutine timestep_wp23
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
@@ -210,7 +210,44 @@
 !     .                   Skwt, C1_Skw_fnc, C11_Skw_fnc, 
 !     .                   wp2, wp3, isValid )
 ! End Vince Larson's change
+
+!       Error output
+!       Joshua Fasching Feb 2008
+        if ( .not. isValid ) then
+                
+           write(fstderr,*) "Errors in timestep_wp32"
+
+           write(fstderr,*) "Intent(in)"
+           
+           write(fstderr,*) "Lscale = ", Lscale
+           write(fstderr,*) "taum = ", taum
+           write(fstderr,*) "taut = ", taut
+           write(fstderr,*) "Scm = ", Scm
+           write(fstderr,*) "Skwm = ", Skwm
+           write(fstderr,*) "Skwt = ", Skwt
+           write(fstderr,*) "a = ", a
+           write(fstderr,*) "Kht = ", Kht
+           write(fstderr,*) "Khm = ", Khm
+           write(fstderr,*) "wmt = ", wmt
+           write(fstderr,*) "wmm = ", wmm
+           write(fstderr,*) "up2 = ", up2
+           write(fstderr,*) "vp2 = ", vp2
+           write(fstderr,*) "um = ", um
+           write(fstderr,*) "upwp = ", upwp
+           write(fstderr,*) "vm = ", vm
+           write(fstderr,*) "vpwp = ", vpwp
+           write(fstderr,*) "wpthvp = ", wpthvp
+           write(fstderr,*) "wp2thvp = ", wp2thvp
+           
+           write(fstderr,*) "Intent(in/out)"
+           
+           write(fstderr,*) "wp2 = ", wp2
+           write(fstderr,*) "wp3 = ", wp3
+           
+        endif
+        
         return
+        
         end subroutine timestep_wp23
 
 !------------------------------------------------------------------------
