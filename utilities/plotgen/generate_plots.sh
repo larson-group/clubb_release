@@ -9,17 +9,6 @@ if [ "$1" == "" ]; then
 	echo "Please specify at least one set of data."
 	#I'm using exit 1 for to exit under any error status
 	exit 1
-elif [ "$1" == "nightly" ]; then
-	#If we're doing the nighthy plots, just use the default settings
-	echo "Generating nightly plots."	
-	
-	#Get to the working directory
-	cd /home/matlabuser/plotgen	
-
-	echo "quit" | (matlab -nojvm -nodisplay -r compare_plots_cases_driver"( 'HOC_previous', 'HOC_current', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 )")
-	rm -rf /home/matlabuser/plotgen/profiles && \
-	latex2html /home/matlabuser/plotgen/profiles.tex
-	exit
 elif [ "$2" == 0 ]; then
 	#The generate_plots script expects two sets of sim data,
 	#even if we are only plotting one set, if we pass it a zero it will
