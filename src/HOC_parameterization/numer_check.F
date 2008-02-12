@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F,v 1.11 2008-02-11 21:57:08 faschinj Exp $
+! $Id: numer_check.F,v 1.12 2008-02-12 23:11:26 faschinj Exp $
         module numerical_check
 
         implicit none
@@ -16,7 +16,7 @@
      .            rad_clipping, parameterization_check,
      .            sfc_var_check, pdf_closure_new_check
         
-        private :: check_negative, nan_report, isNaN
+        private :: check_negative, nan_report, isnan
 
 
 !       Abstraction of nan_report
@@ -345,7 +345,7 @@
 !
 !       Description:This subroutine determines if any of the output
 !       variables for the sfc_var subroutine carry values that
-!       are NaNs.
+!       are nans.
 !
 !       Joshua Fasching February 2008
 !
@@ -674,10 +674,10 @@
         return
         end function invalid_model_arrays
 !------------------------------------------------------------------------
-        logical function isNaN( x2d )
+        logical function isnan( x2d )
 
 !       Description:
-!       Checks if a given real is a NaN, +inf or -inf.
+!       Checks if a given real is a nan, +inf or -inf.
 
 !       Notes: 
 !       Got a tip from Andy Vaught to use transfer( ) for portability.
@@ -708,28 +708,28 @@
         NegInf = -( transfer( nanbits, NegInf ) )
 
         ! This works on compilers with standardized floating point, 
-        ! because the IEEE 754 spec defines that subnormals and NaNs 
+        ! because the IEEE 754 spec defines that subnormals and nans 
         ! should not equal themselves.
         ! However, all compilers do not seem to follow this. 
         if (x2d /= x2d ) then
-          isNaN = .true.
+          isnan = .true.
 
         ! This a second check, assuming the above does not work as 
         ! expected.
         else if ( x2d == PosInf ) then
-          isNaN = .true.
+          isnan = .true.
 
         ! This may never be needed, it's here just in case.
         else if ( x2d == NegInf ) then
-          isNaN = .true.
+          isnan = .true.
 
         else 
-          isNaN = .false. ! Yippee, real numbers.
+          isnan = .false. ! Yippee, real numbers.
 
         end if
 
         return
-        end function isNaN
+        end function isnan
 !------------------------------------------------------------------------
 
 !------------------------------------------------------------------------
@@ -860,7 +860,7 @@
         ! Output variable
         logical, optional, intent(out) :: isValid 
 !--------------------------------------------------------------------
-        if (isNaN(var)) then
+        if (isnan(var)) then
            write(fstderr,*) varname, " is NaN in ",operation
            if (present(isValid)) isValid = .false.
         endif
