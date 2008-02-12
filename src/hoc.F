@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.145 2008-02-11 21:58:35 faschinj Exp $
+! $Id: hoc.F,v 1.146 2008-02-12 22:38:08 faschinj Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -1121,7 +1121,7 @@
         ! Compute mixing length
 
         call length( thvm, thlm, rtm, rcm, 
-     .               em, p, exner, Lscale, lup, ldown )
+     .               em, p, exner, Lscale, lup, ldown, .true. )
 
         ! Dissipation time
         tmp1 = sqrt( max( emin, zm2zt( em ) ) )
