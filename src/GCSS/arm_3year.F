@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_3year.F,v 1.4 2007-12-15 23:58:04 griffinb Exp $
+! $Id: arm_3year.F,v 1.5 2008-02-13 17:56:30 vlarson Exp $
         module arm_3year
 
 !       Description:
@@ -108,6 +108,12 @@
         ! Vertical
         thlm_forcing(1:gr%nnzp) = zlinterp_fnc
      .           ( gr%nnzp, nz, gr%zt(:), z, thlm_t_interp )
+
+
+        ! Vince Larson added in poor man's radiation. 
+        !     Do not use at the same time as BugsRad.  15 Dec 2007
+        thlm_forcing(2:gr%nnzp) = thlm_forcing(2:gr%nnzp) - 1.0e-6
+        ! End Vince Larson's addition
 
         ! Interpolate LS rt tendency to the HOC grid
         ! Time
