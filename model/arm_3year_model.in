@@ -1,4 +1,4 @@
-! $Id: arm_3year_model.in,v 1.1 2007-11-16 16:57:48 faschinj Exp $
+! $Id: arm_3year_model.in,v 1.2 2008-02-13 17:51:39 vlarson Exp $
 ! Parameter file for GCSS ARM 3 year deep convective case
 
 &model_setting
@@ -6,9 +6,9 @@
 runtype = "arm_3year"
 
 !nzmax   = 216
-nzmax 	 = 140
-deltaz  = 100.0
-zm_init = 0.0
+nzmax 	 = 80
+deltaz   = 200.0
+zm_init  = 0.0
 day = 1, month = 1, year = 2001,
 !rlat = 36.61, rlon = -97.49
 rlat = 36.5, rlon = -97.5
@@ -18,14 +18,15 @@ time_initial = 0.0
 time_final = 94690790.0
 time_spinup = 0.0
 
-dtmain    = 600.0
-dtclosure = 600.0
+dtmain    = 60.0
+dtclosure = 60.0
 
 sfctype = 1
 
 Tsfc = 286.0
 !Tsfc = 282.889
-psfc = 975.5244e2
+!psfc = 975.5244e2
+psfc = 985.5244e2
 fcor = 8.697e-5
 T0   = 300.
 
@@ -35,8 +36,8 @@ cloud_sed     = .false.
 kk_rain       = .false.
 lcoamps_micro = .true.
 licedfs       = .false.
-lbugsrad      = .true.
-lKhm_aniso    = .false.
+lbugsrad      = .false.
+lKhm_aniso    = .true.
 luv_nudge     = .true.
 /
 
