@@ -1,4 +1,4 @@
-! $Id: arm_97_stats.in,v 1.7 2008-02-09 17:06:14 griffinb Exp $ 
+! $Id: arm_97_stats.in,v 1.8 2008-02-13 16:22:59 vlarson Exp $ 
 &statsnl
 
 lstats = t
@@ -16,7 +16,7 @@ vars_zt =
 'sc', 'rhot', 'radht', 'radht_LW', 'radht_SW',
 'Ncm', 'Ncnm', 'Nim', 'sed_rcm', 'rsm',
 'rrm', 'Nrm', 'mean_vol_rad_rain', 'mean_vol_rad_cloud',
-!'rain_rate', 'AKm', 'AKm_est', 'rsnowm', 'ricem', 'rgraupelm',
+'rain_rate', 'AKm', 'AKm_est', 'rsnowm', 'ricem', 'rgraupelm',
 !'diam', 'm', 'dqc_dt_icedfs', 'u_T_cm',
 'rtm_bt', 'rtm_ma', 'rtm_ta', 'thlm_bt', 'thlm_ma', 'thlm_ta',
 'um_bt', 'um_ma', 'um_gf', 'um_cf', 'um_ta',
