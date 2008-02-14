@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F,v 1.12 2008-02-12 23:11:26 faschinj Exp $
+! $Id: numer_check.F,v 1.13 2008-02-14 20:28:38 vlarson Exp $
         module numerical_check
 
         implicit none
@@ -810,7 +810,7 @@
 
 
         if(any(var < 0.0)) then
-           write(fstderr,*) varname," is less than zero in ",operation
+           write(fstderr,*) varname, " < 0 in ", operation
            if(present(isValid)) isValid = .false.
         endif
          
