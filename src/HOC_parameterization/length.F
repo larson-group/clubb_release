@@ -1,4 +1,4 @@
-! $Id: length.F,v 1.9 2008-02-12 22:50:08 faschinj Exp $
+! $Id: length.F,v 1.10 2008-02-14 19:37:11 vlarson Exp $
 !-----------------------------------------------------------------------------
         subroutine length( thvm, thlm, rtm, rcm, em, p, exner,
      .                     Lscale, lup, ldown, isValid ) 
@@ -256,6 +256,10 @@
 
         Lscale(1) = Lscale(2)
         Lscale(gr%nnzp) = Lscale(gr%nnzp-1)
+
+        ! Vince Larson limited Lscale to allow host model to take over deep convection.  13 Feb 2008.
+        Lscale = min( Lscale, 1e5 )
+
         ! Ensure that the output from this subroutine is valid.
         call length_check( Lscale, lup, ldown, isValid )
         ! Joshua Fasching January 2008
