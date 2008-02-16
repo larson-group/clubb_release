@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F,v 1.13 2008-02-14 20:28:38 vlarson Exp $
+! $Id: numer_check.F,v 1.14 2008-02-16 22:02:10 vlarson Exp $
         module numerical_check
 
         implicit none
@@ -258,7 +258,7 @@
                                                     
         ! Name of the procedure using parameterization_check
         character(*), parameter :: 
-     .  proc_name = "parameterization timestep"
+     .  proc_name = "parameterization_timestep"
         
         integer ::
      .  i
