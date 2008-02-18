@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.30 2008-02-12 22:50:08 faschinj Exp $
+! $Id: mixing.F,v 1.31 2008-02-18 14:30:17 griffinb Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -485,6 +485,12 @@
 
           ! Momentum subdiagonal [ x wpxp(k-1,<t+1>) ]
           !lhs(k_wpxp,3-2)
+          ! Note:  The turbulent advection term, which is
+          !        -d[ a1 * (wp3/wp2) * wpxp ] / dz, still
+          !        keeps the a1 term inside the derivative,
+          !        unlike the wp3 equation and the equations
+          !        in diag_var:  rtp2, thlp2, rtpthlp, up2, 
+          !        vp2, sclrprtp, sclrpthlp, and sclrp2.  Brian.
           lhs(3+2,k_wpxp)
      .    = - wmm(k) * (1.0/2.0) * gr%dzm(k)
      .      - gr%dzm(k)

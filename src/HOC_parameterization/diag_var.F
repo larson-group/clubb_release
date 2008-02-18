@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.28 2008-02-12 22:50:08 faschinj Exp $
+! $Id: diag_var.F,v 1.29 2008-02-18 14:30:17 griffinb Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -1288,19 +1288,32 @@
         ! Return Variable
         real, dimension(3) :: lhs
 
+        ! Brian tried a new discretization for the turbulent advection term, 
+        ! which contains the term 
+        ! -d[ a1 * (1/3)*beta * (wp3/wp2) * xapxbp ] / dz.  In order to help 
+        ! stabilize xapxbp, a1 has been pulled outside the derivative.
+
         lhs(kp1diag) 
-     .  = + (1.0/3.0) * beta * (1.0/2.0) * dzm *
-     .      ( a1p1 + a1 ) * ( wp3p1 / max( wp2p1 + wp2, 2.0*eps ) )
+!     .  = + (1.0/3.0) * beta * (1.0/2.0) * dzm *
+!     .      ( a1p1 + a1 ) * ( wp3p1 / max( wp2p1 + wp2, 2.0*eps ) )
+     .  = + a1 * (1.0/3.0) * beta * dzm *
+     .      ( wp3p1 / max( wp2p1 + wp2, 2.0*eps ) )
 
         lhs(kdiag) 
-     .  = + (1.0/3.0) * beta * (1.0/2.0) * dzm *
-     .      (  ( a1p1 + a1 ) * ( wp3p1 / max( wp2p1 + wp2, 2.0*eps ) )
-     .        -( a1 + a1m1 ) * ( wp3 / max( wp2 + wp2m1, 2.0*eps ) ) 
+!     .  = + (1.0/3.0) * beta * (1.0/2.0) * dzm *
+!     .      (  ( a1p1 + a1 ) * ( wp3p1 / max( wp2p1 + wp2, 2.0*eps ) )
+!     .        -( a1 + a1m1 ) * ( wp3 / max( wp2 + wp2m1, 2.0*eps ) ) 
+!     .      )
+     .  = + a1 * (1.0/3.0) * beta * dzm *
+     .      (   ( wp3p1 / max( wp2p1 + wp2, 2.0*eps ) )
+     .        - ( wp3 / max( wp2 + wp2m1, 2.0*eps ) ) 
      .      )
 
         lhs(km1diag) 
-     .  = - (1.0/3.0) * beta * (1.0/2.0) * dzm *
-     .      ( a1 + a1m1 ) * ( wp3 / max( wp2 + wp2m1, 2.0*eps) )
+!     .  = - (1.0/3.0) * beta * (1.0/2.0) * dzm *
+!     .      ( a1 + a1m1 ) * ( wp3 / max( wp2 + wp2m1, 2.0*eps) )
+     .  = - a1 * (1.0/3.0) * beta * dzm *
+     .      ( wp3 / max( wp2 + wp2m1, 2.0*eps) )
 
 
         return
@@ -1347,14 +1360,26 @@
         ! Return Variable
         real :: rhs
 
+        ! Brian tried a new discretization for the turbulent advection term, 
+        ! which contains the term
+        ! -d[ a1^2 * (1-(1/3)*beta) * (wp3/wp2^2) * wpxap * wpxbp ] / dz.  
+        ! In order to help stabilize xapxbp, a1^2 has been pulled outside 
+        ! the derivative.
+
         rhs
-     .  = - ( 1.0 - (1.0/3.0) * beta ) * (1.0/4.0) * dzm
-     .      * (  ( a1p1 + a1 )**2 * ( wpxapp1 + wpxap ) 
-     .            * ( wpxbpp1 + wpxbp ) * wp3p1 
-     .              / ( max( wp2p1 + wp2, 2.0*eps ) )**2
-     .          - ( a1 + a1m1 )**2 * ( wpxap + wpxapm1 ) 
-     .            * ( wpxbp + wpxbpm1 ) * wp3
-     .              / ( max( wp2 + wp2m1, 2.0*eps ) )**2
+!     .  = - ( 1.0 - (1.0/3.0) * beta ) * (1.0/4.0) * dzm
+!     .      * (  ( a1p1 + a1 )**2 * ( wpxapp1 + wpxap ) 
+!     .            * ( wpxbpp1 + wpxbp ) * wp3p1 
+!     .              / ( max( wp2p1 + wp2, 2.0*eps ) )**2
+!     .          - ( a1 + a1m1 )**2 * ( wpxap + wpxapm1 ) 
+!     .            * ( wpxbp + wpxbpm1 ) * wp3
+!     .              / ( max( wp2 + wp2m1, 2.0*eps ) )**2
+!     .         )
+     .  = - (a1**2) * ( 1.0 - (1.0/3.0) * beta ) * dzm
+     .      * (   ( wpxapp1 + wpxap ) * ( wpxbpp1 + wpxbp ) 
+     .             * wp3p1 / ( max( wp2p1 + wp2, 2.0*eps ) )**2
+     .          - ( wpxap + wpxapm1 ) * ( wpxbp + wpxbpm1 ) 
+     .             * wp3 / ( max( wp2 + wp2m1, 2.0*eps ) )**2
      .         )
 
         return
