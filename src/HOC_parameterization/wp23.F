@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.36 2008-02-18 14:30:17 griffinb Exp $
+! $Id: wp23.F,v 1.37 2008-02-19 18:29:02 vlarson Exp $
 
         subroutine timestep_wp23
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
@@ -613,7 +613,7 @@
      .    - (1.0/2.0) * ( a1(k) + a1(km1) )
      .      * (1.0/2.0) * gr%dzt(k)
      .      * ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), eps )
-          ! Feb. 14, 2008.
+          ! End of Brian's a1 change.  Feb. 14, 2008.
      .    + diff_lhs(3)
 
           ! Momentum subdiagonal [ x wp2(k-1,<t+1>) ]
@@ -624,6 +624,7 @@
 !     .    - 2.0 * gr%dzt(k) * a3(km1) * wp2(km1)   ! standard deriv.
 !     .    - 2.0 * gr%dzt(k) * a3(k) * wp2(km1)     ! Golaz's no a3 deriv.
      .    - 2.0 * gr%dzt(k) * 0.5*(a3(k)+a3(km1)) * wp2(km1)   ! Centered no a3 deriv.
+          ! End of code that pulls out a3.
 
           ! Thermodynamic main diagonal [ ( x wp3(k,<t+1>) ]
           lhs(3,k_wp3) = 
@@ -639,7 +640,7 @@
      .      * (  ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), eps )
      .         - ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), eps )
      .        )
-          ! Feb. 14, 2008.
+          ! End of Brian's a1 change.  Feb. 14, 2008.
      .    + ( 1.0 - C11_Skw_fnc(k) )
      .              * 3.0 * gr%dzt(k) * ( wmm(k) - wmm(km1) )
      .    + ( C8 / tauw3t(k) ) * ( 5.0 * C8b * Skwt(k)**4 + 1.0 )
@@ -651,6 +652,7 @@
 !     .    + 2.0 * gr%dzt(k) * a3(k) * wp2(k)   ! standard deriv.
 !     .    + 2.0 * gr%dzt(k) * a3(k) * wp2(k)   ! Golaz's no a3 deriv.
      .    + 2.0 * gr%dzt(k) * 0.5*(a3(k)+a3(km1)) * wp2(k)   ! Centered no a3 deriv.
+          ! End of code that pulls out a3.
 
           ! Thermodynamic superdiagonal [ x wp3(k+1,<t+1>) ]
           lhs(3-2,k_wp3) = 
@@ -662,7 +664,7 @@
      .    + (1.0/2.0) * ( a1(k) + a1(km1) )
      .      * (1.0/2.0) * gr%dzt(k)
      .      * ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), eps )
-          ! Feb. 14, 2008.
+          ! End of Brian's a1 change. Feb. 14, 2008.
      .    + diff_lhs(1)
 
 
@@ -675,6 +677,7 @@
 !     .      * ( ( a3(k) * wp2(k)**2 ) - ( a3(k) * wp2(km1)**2 ) )   ! Golaz's no a3 deriv.
      .      * (  ( 0.5*(a3(k)+a3(km1)) * wp2(k)**2 )        ! Centered no a3 deriv.
      .         - ( 0.5*(a3(k)+a3(km1)) * wp2(km1)**2 )  )   ! Centered no a3 deriv.
+          ! End of code to pull out a3.
           ! New discretization for the turbulent advection term with a1 
           ! pulled outside of the derivative.  Brian.
 !     .    + (1.0/4.0) * gr%dzt(k)
@@ -690,7 +693,7 @@
      .           - ( wp3(k) + wp3(km1) )**2
      .             / MAX( wp2(km1), eps )
      .          )
-          ! Feb. 14, 2008.
+          ! End of Brian's a1 change. Feb. 14, 2008.
      .    + ( 1.0 - C11_Skw_fnc(k) ) * 3.0 * ( grav/T0 ) * wp2thvp(k)
      .    + ( C8 / tauw3t(k) ) * ( 4.0 * C8b * Skwt(k)**4 ) * wp3(k)
 
@@ -724,6 +727,7 @@
      .         - ( ( 0.5*(a3(k)+a3(km1)) + (3.0/2.0) )        ! Centered no a3 deriv.
      .             * wp2(km1)**2 )                          ! Centered no a3 deriv.
      .        )                                               ! Centered no a3 deriv.
+          ! End of code to pull out a3.
           ! New discretization for the turbulent advection term with a1 
           ! pulled outside of the derivative.  Brian.
 !     .    + (1.0/4.0) * gr%dzt(k)
@@ -739,7 +743,7 @@
      .           - ( wp3(k) + wp3(km1) )**2
      .             / MAX( wp2(km1), eps )
      .          )
-          ! Feb. 14, 2008.
+          ! End of Brian's a1 change. Feb. 14, 2008.
           end if
 
           if ( iwp3_tp > 0 ) then
@@ -789,13 +793,14 @@
      .        + (1.0/2.0) * ( a1(k) + a1(km1) )
      .          * (1.0/2.0) * gr%dzt(k)
      .          * ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), eps )
-            ! Feb. 14, 2008.
+            ! End of Brian's a1 change. Feb. 14, 2008.
             ztscr06(k) =
            ! Turbulent advection term with a3 outside of the derivative.
 !     .    + 2.0 * gr%dzt(k) * ( a3(km1) + (3.0/2.0) ) * wp2(km1)  ! standard deriv.
 !     .    + 2.0 * gr%dzt(k) * ( a3(k) + (3.0/2.0) ) * wp2(km1)    ! Golaz's no a3 deriv.
      .        + 2.0 * gr%dzt(k) * ( 0.5*(a3(k)+a3(km1)) + (3.0/2.0) ) ! Centered no a3 deriv.
      .          * wp2(km1)                                            ! Centered no a3 deriv.
+            ! End of code to pull out a3.
             ztscr07(k) =
             ! New discretization for the turbulent advection term with a1 
             ! pulled outside of the derivative.  Brian.
@@ -808,13 +813,14 @@
      .          * (  ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), eps )
      .             - ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), eps )
      .            )
-            ! Feb. 14, 2008.
+            ! End of Brian's a1 change. Feb. 14, 2008.
             ztscr08(k) =
             ! Turbulent advection term with a3 outside of the derivative.
 !     .    - 2.0 * gr%dzt(k) * ( a3(k) + (3.0/2.0) ) * wp2(k)      ! standard deriv.
 !     .    - 2.0 * gr%dzt(k) * ( a3(k) + (3.0/2.0) ) * wp2(k)      ! Golaz's no a3 deriv.
-     .        - 2.0 * gr%dzt(k) * ( 0.5*(a3(k)+a3(km1)) + (3.0/2.0) ) ! Centered a3 deriv.
+     .        - 2.0 * gr%dzt(k) * ( 0.5*(a3(k)+a3(km1)) + (3.0/2.0) ) ! Centered no a3 deriv.
      .          * wp2(k)                                              ! Centered no a3 deriv.
+            ! End of code to pull out a3.
             ztscr09(k) =
             ! New discretization for the turbulent advection term with a1 
             ! pulled outside of the derivative.  Brian.
@@ -823,7 +829,7 @@
      .        - (1.0/2.0) * ( a1(k) + a1(km1) )
      .          * (1.0/2.0) * gr%dzt(k)
      .          * ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), eps )
-            ! Feb. 14, 2008.
+            ! End of Brian's a1 change. Feb. 14, 2008.
           end if
 
           if ( iwp3_tp > 0 ) then
