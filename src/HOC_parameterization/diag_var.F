@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.29 2008-02-18 14:30:17 griffinb Exp $
+! $Id: diag_var.F,v 1.30 2008-02-19 18:19:11 vlarson Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -1315,6 +1315,8 @@
      .  = - a1 * (1.0/3.0) * beta * dzm *
      .      ( wp3 / max( wp2 + wp2m1, 2.0*eps) )
 
+        ! End of Brian's a1 change.  14 Feb 2008.
+
 
         return
         end function term_ta_lhs
@@ -1381,6 +1383,8 @@
      .          - ( wpxap + wpxapm1 ) * ( wpxbp + wpxbpm1 ) 
      .             * wp3 / ( max( wp2 + wp2m1, 2.0*eps ) )**2
      .         )
+
+        ! End of Brian's a1 change.  14 Feb 2008.
 
         return
         end function term_ta_rhs
