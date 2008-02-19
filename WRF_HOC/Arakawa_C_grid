@@ -1,0 +1,200 @@
+This file was made by Brian Griffin in order to provide information about the Arakawa C grid.
+The Arakawa C grid is the grid used by WRF.
+This file should provide helpful information about the grid used by WRF.
+
+The text of this file was added to module_diffusion_em.F by Brian.
+It is locate above SUBROUTINE vertical_diffusion_2 and below SUBROUTINE horzontal_diffusion_s.
+You can find this addition in the following modules in Brian's WRF directory:
+module_diffusion_em.F.cases
+module_diffusion_em.F
+
+!===========================================================================
+! BRIAN has chosen this spot in the code to make the Arakawa C grid used in
+! WRF more graphically understandable.  The grid will be shown from seven
+! views -- three two-dimensional cross-sections each shown from both full
+! and half levels of the remaining dimension that you're looking from, as
+! well as a 3D look at a small cubic sector.
+!
+! u stands for locations where only u wind and it's tendencies are calculated.
+! v stands for locations where only v wind and it's tendencies are calculated.
+! w stands for locations where w wind and it's tendencies are calculated.
+! Geopotential (phb, ph) is also calculated at w points.
+! Other variables that are calculated here have 'w' in there names;
+! examples of this are dnw, znw, dzw, z_at_w, rdzw, etc.
+! P,TH,QV stands for the locations where thermodynamic and ALL other
+! major variables are calculated, such as pressure, theta, and mixing ratio.
+!
+! Brian Griffin
+!---------------------------------------------------------------------------
+!
+!                         A Small 3-Dimensional Cube Sector
+!                         ---------------------------------
+!                      [1 unit X by 1 unit Y by (1/2) unit Z]
+!
+!                            -------------v-------------
+!                           /.           /.           /|
+!                          / .          / .          / |
+!                         u---------P,TH,QV---------u  |
+!                        /.  .        /.  .        /|  |
+!                       / .  .       / .  .       / |  |
+! half-level k = 1     -------------v-------------  |  |
+!                      |  .  .      |  .  .      |  |  |
+!    /|\               |  .  .      |  .  .      |  |  |
+!     |                |  .  .      |  .  .      |  |  |
+!     |                |  .  .......|............|..|../    __  full-lev. j = 2
+!     |  Z             |  . .       |  . .       |  | /      /|
+!     |                |  ..        |  ..        |  |/      /
+!     |                |  ..........|..w.........|../    Y / half-lev. j = 1
+!     |                | .          | .          | /      /
+!                      |.           |.           |/      /
+! full-level k = 1     ---------------------------      / full-lev. j = 1
+!
+!                                   X
+!                     ---------------------------->
+!                  full-lev.    half-lev.    full-lev.
+!                    i = 1        i = 1        i = 2
+!---------------------------------------------------------------------------
+!
+!                            Vertical vs. West-East
+!                            ----------------------
+!               [On a cross-section of an south-north (j) HALF-level]
+!
+!
+! half-level k = 2     u-------P,TH,QV-------u------P,TH,QV
+!                      |          :          |         :
+!                      |          :          |         :
+! full-level k = 2     ===========w====================w
+!                      |          :          |         :
+!                      |          :          |         :
+! half-level k = 1     u-------P,TH,QV-------u------P,TH,QV
+!                      |          :          |         :
+!                      |          :          |         :
+! full-level k = 1     ===========w====================w       model bottom
+!
+!                    i = 1      i = 1      i = 2     i = 2
+!
+!                  full-lev.  half-lev.  full-lev.  half-lev.
+!
+!                  west end
+!
+!---------------------------------------------------------------------------
+!
+!                            Vertical vs. West-East
+!                            ----------------------
+!               [On a cross-section of an south-north (j) FULL-level]
+!
+!
+! half-level k = 2     |----------v----------|---------v
+!                      |          :          |         :
+!                      |          :          |         :
+! full-level k = 2     =================================
+!                      |          :          |         :
+!                      |          :          |         :
+! half-level k = 1     |----------v----------|---------v
+!                      |          :          |         :
+!                      |          :          |         :
+! full-level k = 1     =================================       model bottom
+!
+!                    i = 1      i = 1      i = 2     i = 2
+!
+!                  full-lev.  half-lev.  full-lev.  half-lev.
+!
+!                  west end
+!
+!---------------------------------------------------------------------------
+!
+!                           Vertical vs. South-North
+!                           ------------------------
+!                [On a cross-section of an west-east (i) HALF-level]
+!
+!
+! half-level k = 2     v-------P,TH,QV-------v------P,TH,QV
+!                      |          :          |         :
+!                      |          :          |         :
+! full-level k = 2     ===========w====================w
+!                      |          :          |         :
+!                      |          :          |         :
+! half-level k = 1     v-------P,TH,QV-------v------P,TH,QV
+!                      |          :          |         :
+!                      |          :          |         :
+! full-level k = 1     ===========w====================w       model bottom
+!
+!                    j = 1      j = 1      j = 2     j = 2
+!
+!                  full-lev.  half-lev.  full-lev.  half-lev.
+!
+!                  south end
+!
+!---------------------------------------------------------------------------
+!
+!                           Vertical vs. South-North
+!                           ------------------------
+!                [On a cross-section of an west-east (i) FULL-level]
+!
+!
+! half-level k = 2     -----------u--------------------u
+!                      |          :          |         :
+!                      |          :          |         :
+! full-level k = 2     =================================
+!                      |          :          |         :
+!                      |          :          |         :
+! half-level k = 1     -----------u--------------------u
+!                      |          :          |         :
+!                      |          :          |         :
+! full-level k = 1     =================================       model bottom
+!
+!                    j = 1      j = 1      j = 2     j = 2
+!
+!                  full-lev.  half-lev.  full-lev.  half-lev.
+!
+!                  south end
+!
+!---------------------------------------------------------------------------
+!
+!                           South-North vs. West-East
+!                           -------------------------
+!                 [On a cross-section of a vertical (k) HALF-level]
+!
+!
+! half-level j = 2     u-------P,TH,QV-------u------P,TH,QV
+!                      |          :          |         :
+!                      |          :          |         :
+! full-level j = 2     ===========v====================v
+!                      |          :          |         :
+!                      |          :          |         :
+! half-level j = 1     u-------P,TH,QV-------u------P,TH,QV
+!                      |          :          |         :
+!                      |          :          |         :
+! full-level j = 1     ===========v====================v       south end
+!
+!                    i = 1      i = 1      i = 2     i = 2
+!
+!                  full-lev.  half-lev.  full-lev.  half-lev.
+!
+!                  west end
+!
+!---------------------------------------------------------------------------
+!
+!                           South-North vs. West-East
+!                           -------------------------
+!                 [On a cross-section of a vertical (k) FULL-level]
+!
+!
+! half-level j = 2     -----------w--------------------w
+!                      |          :          |         :
+!                      |          :          |         :
+! full-level j = 2     =================================
+!                      |          :          |         :
+!                      |          :          |         :
+! half-level j = 1     -----------w--------------------w
+!                      |          :          |         :
+!                      |          :          |         :
+! full-level j = 1     =================================       south end
+!
+!                    i = 1      i = 1      i = 2     i = 2
+!
+!                  full-lev.  half-lev.  full-lev.  half-lev.
+!
+!                  west end
+!
+!===========================================================================
