@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.18 2007-03-14 23:34:47 dschanen Exp $
+! $Id: constants.F,v 1.19 2008-02-19 19:57:15 griffinb Exp $
 
         module constants
 
@@ -96,5 +96,10 @@
         ! Currently it's elements are equal to rttol and thltol
         real, dimension(sclr_dim), parameter :: 
      .  sclrtol = (/thltol, rttol/)
+
+        ! Maximum allowable value for Lscale [m].
+        ! Value depends on whether the model is run by itself or as part
+        ! of a host model.
+        real :: Lscale_max
 
         end module constants

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.66 2008-02-12 22:50:08 faschinj Exp $
+! $Id: parameterization_interface.F,v 1.67 2008-02-19 19:57:15 griffinb Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -837,14 +837,15 @@
      .               lbugsrad, kk_rain, licedfs, lcoamps_micro,
      .               cloud_sed,
      .               luv_nudge, lKhm_aniso, implemented, 
-     .               host_momentum, host_thermodynamic, isValid )
+     .               host_momentum, host_thermodynamic, 
+     .               host_dx, host_dy, isValid )
 
         use grid_class
         use param_index, only: nparams
         use parameters
         use diagnostic_variables
         use prognostic_variables
-        use constants, only: fstderr
+        use constants, only: fstderr, Lscale_max
         implicit none
 
         ! External
@@ -863,6 +864,11 @@
         real, dimension(nzmax) :: 
      .  host_momentum,     !    [m]
      .  host_thermodynamic !    [m]
+
+        ! Host model horizontal grid spacing, if part of host model.
+        real, intent(in) ::
+     .  host_dx, ! East-West horizontal grid spacing     [m]
+     .  host_dy  ! North-South horizontal grid spacing   [m]
 
         ! Model parameters
         real, intent(in) :: 
@@ -934,6 +940,13 @@
 
         call gridsetup( nzmax, deltaz, zm_init, implemented,
      .                  host_momentum, host_thermodynamic )
+
+        ! Determine the maximum allowable value for Lscale.
+        if ( implemented ) then
+           Lscale_max = 0.25 * min(host_dx,host_dy)
+        else
+           Lscale_max = 1.0e5
+        endif
 
         return
         end subroutine parameterization_setup

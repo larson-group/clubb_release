@@ -1,4 +1,4 @@
-! $Id: length.F,v 1.10 2008-02-14 19:37:11 vlarson Exp $
+! $Id: length.F,v 1.11 2008-02-19 19:57:15 griffinb Exp $
 !-----------------------------------------------------------------------------
         subroutine length( thvm, thlm, rtm, rcm, em, p, exner,
      .                     Lscale, lup, ldown, isValid ) 
@@ -18,13 +18,14 @@
 !       When mu was fixed, we used the value mu = 6.e-4
 
         use constants, only: 
-     .  Cp,  ! Dry air specific heat at constant p              [J/kg/K]
-     .  Rd,  ! Dry air gas constant                             [J/kg/K]
-     .  ep,  ! Rd / Rv                                          [-]
-     .  ep1, ! (1-ep)/ep                                        [-]
-     .  ep2, ! 1/ep                                             [-]
-     .  Lv,  ! Latent heat of vaporiztion                       [J/kg/K]
+     .  Cp,   ! Dry air specific heat at constant p              [J/kg/K]
+     .  Rd,   ! Dry air gas constant                             [J/kg/K]
+     .  ep,   ! Rd / Rv                                          [-]
+     .  ep1,  ! (1-ep)/ep                                        [-]
+     .  ep2,  ! 1/ep                                             [-]
+     .  Lv,   ! Latent heat of vaporiztion                       [J/kg/K]
      .  grav, ! Gravitational acceleration                       [m/s^2]
+     .  Lscale_max, ! Maximum value for Lscale                   [m]
      .  fstderr
         use parameters, only:
      .  mu,  ! Fractional entrainment rate per unit altitude    [1/m]
@@ -258,7 +259,8 @@
         Lscale(gr%nnzp) = Lscale(gr%nnzp-1)
 
         ! Vince Larson limited Lscale to allow host model to take over deep convection.  13 Feb 2008.
-        Lscale = min( Lscale, 1e5 )
+        !Lscale = min( Lscale, 1e5 )
+        Lscale = min( Lscale, Lscale_max )
 
         ! Ensure that the output from this subroutine is valid.
         call length_check( Lscale, lup, ldown, isValid )
