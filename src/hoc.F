@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.147 2008-02-13 17:54:27 vlarson Exp $
+! $Id: hoc.F,v 1.148 2008-02-19 19:55:11 griffinb Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -259,7 +259,8 @@
      .        lbugsrad, kk_rain, licedfs, lcoamps_micro,
      .        cloud_sed,
      .        luv_nudge, lKhm_aniso, .false., 
-     .        dummy_array_m, dummy_array_t, isValid )
+     .        dummy_array_m, dummy_array_t, 
+     .        0.0, 0.0, isValid )
 
        if ( .not. isValid ) return
 
@@ -559,7 +560,8 @@
      .        lbugsrad, kk_rain, licedfs, lcoamps_micro,
      .        cloud_sed,
      .        luv_nudge, lKhm_aniso, .false.,
-     .        dummy_array_m, dummy_array_t, isValid )
+     .        dummy_array_m, dummy_array_t, 
+     .        0.0, 0.0, isValid )
 
        if ( .not. isValid ) return
 
