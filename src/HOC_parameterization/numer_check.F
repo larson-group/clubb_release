@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F,v 1.14 2008-02-16 22:02:10 vlarson Exp $
+! $Id: numer_check.F,v 1.15 2008-02-21 16:46:04 faschinj Exp $
         module numerical_check
 
         implicit none
@@ -16,12 +16,12 @@
      .            rad_clipping, parameterization_check,
      .            sfc_var_check, pdf_closure_new_check
         
-        private :: check_negative, nan_report, isnan
+        private :: check_negative, check_nan, isnan
 
 
-!       Abstraction of nan_report
-        interface nan_report
-           module procedure nan_report_sclr, nan_report_2d
+!       Abstraction of check_nan
+        interface check_nan
+           module procedure check_nan_sclr, check_nan_2d
         end interface
         
         contains
@@ -51,9 +51,9 @@
          ! Local Variables
          character(*), parameter :: proc_name = "length"
 !-----------------------------------------------------------------------------
-         call nan_report( Lscale, "Lscale", proc_name, isValid )
-         call nan_report( lup, "lup", proc_name, isValid )
-         call nan_report( ldown, "ldown", proc_name, isValid )
+         call check_nan( Lscale, "Lscale", proc_name, isValid )
+         call check_nan( lup, "lup", proc_name, isValid )
+         call check_nan( ldown, "ldown", proc_name, isValid )
 
          end subroutine length_check
 !---------------------------------------------------------------------------
@@ -114,51 +114,51 @@
         ! Local Variable
         character(*), parameter :: proc_name = "pdf_closure_new"
 !-------------------------------------------------------------------------------
-        call nan_report( wp4,"wp4", proc_name, isValid )
-        call nan_report( wprtp2,"wprtp2", proc_name, isValid )
-        call nan_report( wp2rtp,"wp2rtp", proc_name, isValid )
-        call nan_report( wpthlp2,"wpthlp2", proc_name, isValid )
-        call nan_report( wp2thlp,"wp2thlp", proc_name, isValid )
-        call nan_report( cf,"cf", proc_name, isValid )
-        call nan_report( rcm,"rcm", proc_name, isValid ) 
-        call nan_report( wpthvp, "wpthvp", proc_name, isValid )
-        call nan_report( wp2thvp, "wp2thvp", proc_name, isValid )
-        call nan_report( rtpthvp, "rtpthvp", proc_name, isValid )
-        call nan_report( thlpthvp, "thlpthvp", proc_name, isValid )
-        call nan_report( wprcp, "wprcp", proc_name, isValid )
-        call nan_report( wp2rcp, "wp2rcp", proc_name, isValid )
-        call nan_report( rtprcp, "rtprcp", proc_name, isValid )
-        call nan_report( thlprcp, "thlprcp", proc_name, isValid )
-        call nan_report( rcp2, "rcp2", proc_name, isValid)
-        call nan_report( wprtpthlp, "wprtpthlp", proc_name, isValid )
-        call nan_report( crt1, "crt1", proc_name, isValid )
-        call nan_report( crt2, "crt2", proc_name, isValid )
-        call nan_report( cthl1, "cthl1", proc_name, isValid )
-        call nan_report( cthl2, "cthl2", proc_name, isValid ) 
-        call nan_report( pdf_parms, "pdf_parms", proc_name,isValid )
+        call check_nan( wp4,"wp4", proc_name, isValid )
+        call check_nan( wprtp2,"wprtp2", proc_name, isValid )
+        call check_nan( wp2rtp,"wp2rtp", proc_name, isValid )
+        call check_nan( wpthlp2,"wpthlp2", proc_name, isValid )
+        call check_nan( wp2thlp,"wp2thlp", proc_name, isValid )
+        call check_nan( cf,"cf", proc_name, isValid )
+        call check_nan( rcm,"rcm", proc_name, isValid ) 
+        call check_nan( wpthvp, "wpthvp", proc_name, isValid )
+        call check_nan( wp2thvp, "wp2thvp", proc_name, isValid )
+        call check_nan( rtpthvp, "rtpthvp", proc_name, isValid )
+        call check_nan( thlpthvp, "thlpthvp", proc_name, isValid )
+        call check_nan( wprcp, "wprcp", proc_name, isValid )
+        call check_nan( wp2rcp, "wp2rcp", proc_name, isValid )
+        call check_nan( rtprcp, "rtprcp", proc_name, isValid )
+        call check_nan( thlprcp, "thlprcp", proc_name, isValid )
+        call check_nan( rcp2, "rcp2", proc_name, isValid)
+        call check_nan( wprtpthlp, "wprtpthlp", proc_name, isValid )
+        call check_nan( crt1, "crt1", proc_name, isValid )
+        call check_nan( crt2, "crt2", proc_name, isValid )
+        call check_nan( cthl1, "cthl1", proc_name, isValid )
+        call check_nan( cthl2, "cthl2", proc_name, isValid ) 
+        call check_nan( pdf_parms, "pdf_parms", proc_name,isValid )
         
         if( present(sclrpthvp) ) then
-            call nan_report(sclrpthvp,"sclrpthvp",
+            call check_nan(sclrpthvp,"sclrpthvp",
      .                      proc_name, isValid)
         endif
         if( present(sclrprcp) ) then
-             call nan_report(sclrprcp,"sclrprcp",
+             call check_nan(sclrprcp,"sclrprcp",
      .                    proc_name,isValid)
         endif
         if( present(wpsclrprtp) ) then
-             call nan_report(wpsclrprtp,"wpsclrprtp", 
+             call check_nan(wpsclrprtp,"wpsclrprtp", 
      .                    proc_name,isValid)
         endif   
         if( present(wpsclrp2) ) then
-             call nan_report(wpsclrp2,"wpsclrp2", 
+             call check_nan(wpsclrp2,"wpsclrp2", 
      .                    proc_name,isValid)
         endif
         if( present(wpsclrpthlp) ) then
-             call nan_report(wpsclrpthlp,"wpsclrtlp", 
+             call check_nan(wpsclrpthlp,"wpsclrtlp", 
      .                    proc_name,isValid)
         endif
         if( present(wp2sclrp) ) then
-             call nan_report(wp2sclrp,"wps2clrp", 
+             call check_nan(wp2sclrp,"wps2clrp", 
      .                    proc_name,isValid)
         endif
         end subroutine pdf_closure_new_check
@@ -263,52 +263,52 @@
         integer ::
      .  i
 !-------- Input Nan Check ----------------------------------------------
-        call nan_report( thlm_forcing, "thlm_forcing", proc_name )
-        call nan_report( rtm_forcing,"rtm_forcing", proc_name )
-        call nan_report( rtm_mc, "rtm_mc", proc_name )
-        call nan_report( thlm_mc, "thlm_mc", proc_name )
-        call nan_report( wmm,"wmm", proc_name )
-        call nan_report( wmt,"wmt", proc_name )
-        call nan_report( p,"p", proc_name )
-        call nan_report( rhom,"rhom", proc_name )
-        call nan_report( rhot,"rhot", proc_name )
-        call nan_report( exner,"exner", proc_name )
-        call nan_report( um,"um", proc_name )
-        call nan_report( upwp,"upwp", proc_name )
-        call nan_report( vm,"vm", proc_name )
-        call nan_report( vpwp,"vpwp", proc_name )
-        call nan_report( up2,"up2", proc_name )
-        call nan_report( vp2,"vp2", proc_name )
-        call nan_report( rtm,"rtm", proc_name )
-        call nan_report( wprtp,"wprtp", proc_name )
-        call nan_report( thlm,"thlm", proc_name )
-        call nan_report( wpthlp,"wpthlp", proc_name )
-        call nan_report( wp2,"wp2", proc_name )
-        call nan_report( wp3,"wp3", proc_name )
-        call nan_report( Scm,"Scm", proc_name )
-        call nan_report( rtp2,"rtp2", proc_name )
-        call nan_report( thlp2,"thlp2", proc_name )
-        call nan_report( rtpthlp, "rtpthlp", proc_name )
-        call nan_report( taum,"taum", proc_name )
-        call nan_report( rcm,"rcm", proc_name )
-        call nan_report( Ncm,"Ncm", proc_name )
-        call nan_report( Ncnm,"Ncnm", proc_name )
-        call nan_report( Nim,"Nim", proc_name )
-        call nan_report( hydromet(:,1),"rrm", proc_name )
-        call nan_report( hydromet(:,2),"Nrm", proc_name )
-        call nan_report( hydromet(:,3),"rsnowm", proc_name )
-        call nan_report( hydromet(:,4),"ricem", proc_name )
-        call nan_report( hydromet(:,5),"rgraupel", proc_name )
-        call nan_report( cf,"cf", proc_name )
+        call check_nan( thlm_forcing, "thlm_forcing", proc_name )
+        call check_nan( rtm_forcing,"rtm_forcing", proc_name )
+        call check_nan( rtm_mc, "rtm_mc", proc_name )
+        call check_nan( thlm_mc, "thlm_mc", proc_name )
+        call check_nan( wmm,"wmm", proc_name )
+        call check_nan( wmt,"wmt", proc_name )
+        call check_nan( p,"p", proc_name )
+        call check_nan( rhom,"rhom", proc_name )
+        call check_nan( rhot,"rhot", proc_name )
+        call check_nan( exner,"exner", proc_name )
+        call check_nan( um,"um", proc_name )
+        call check_nan( upwp,"upwp", proc_name )
+        call check_nan( vm,"vm", proc_name )
+        call check_nan( vpwp,"vpwp", proc_name )
+        call check_nan( up2,"up2", proc_name )
+        call check_nan( vp2,"vp2", proc_name )
+        call check_nan( rtm,"rtm", proc_name )
+        call check_nan( wprtp,"wprtp", proc_name )
+        call check_nan( thlm,"thlm", proc_name )
+        call check_nan( wpthlp,"wpthlp", proc_name )
+        call check_nan( wp2,"wp2", proc_name )
+        call check_nan( wp3,"wp3", proc_name )
+        call check_nan( Scm,"Scm", proc_name )
+        call check_nan( rtp2,"rtp2", proc_name )
+        call check_nan( thlp2,"thlp2", proc_name )
+        call check_nan( rtpthlp, "rtpthlp", proc_name )
+        call check_nan( taum,"taum", proc_name )
+        call check_nan( rcm,"rcm", proc_name )
+        call check_nan( Ncm,"Ncm", proc_name )
+        call check_nan( Ncnm,"Ncnm", proc_name )
+        call check_nan( Nim,"Nim", proc_name )
+        call check_nan( hydromet(:,1),"rrm", proc_name )
+        call check_nan( hydromet(:,2),"Nrm", proc_name )
+        call check_nan( hydromet(:,3),"rsnowm", proc_name )
+        call check_nan( hydromet(:,4),"ricem", proc_name )
+        call check_nan( hydromet(:,5),"rgraupel", proc_name )
+        call check_nan( cf,"cf", proc_name )
         
 #ifdef SCALARS
-        call nan_report( wpsclrp_sfc,"wpsclrp_sfc", proc_name )
-        call nan_report( wpedsclrp_sfc,"wpedsclrp_sfc", proc_name )
+        call check_nan( wpsclrp_sfc,"wpsclrp_sfc", proc_name )
+        call check_nan( wpedsclrp_sfc,"wpedsclrp_sfc", proc_name )
         do i = 1, sclr_dim
-             call nan_report( sclrm(:,i),"sclrm", proc_name )
-             call nan_report( sclrm_forcing(:,i),"sclrm_forcing", 
+             call check_nan( sclrm(:,i),"sclrm", proc_name )
+             call check_nan( sclrm_forcing(:,i),"sclrm_forcing", 
      .               proc_name ) 
-             call nan_report( edsclrm(:,i),"edsclrm", proc_name )
+             call check_nan( edsclrm(:,i),"edsclrm", proc_name )
         end do
 #endif /*SCALARS*/ 
 !---------------------------------------------------------------------
@@ -379,24 +379,24 @@
 
         integer :: k
 
-        call nan_report( wp2_sfc, "wp2_sfc", proc_name, isValid)
-        call nan_report( up2_sfc, "up2_sfc", proc_name, isValid)
-        call nan_report( vp2_sfc, "vp2_sfc", proc_name, isValid)
-        call nan_report( thlp2_sfc, "thlp2_sfc", proc_name, isValid)
-        call nan_report( rtp2_sfc, "rtp2_sfc", proc_name, isValid)
-        call nan_report( rtpthlp_sfc, "rtpthlp_sfc", 
+        call check_nan( wp2_sfc, "wp2_sfc", proc_name, isValid)
+        call check_nan( up2_sfc, "up2_sfc", proc_name, isValid)
+        call check_nan( vp2_sfc, "vp2_sfc", proc_name, isValid)
+        call check_nan( thlp2_sfc, "thlp2_sfc", proc_name, isValid)
+        call check_nan( rtp2_sfc, "rtp2_sfc", proc_name, isValid)
+        call check_nan( rtpthlp_sfc, "rtpthlp_sfc", 
      .                  proc_name, isValid)
         
         if( present(sclrp2_sfc) ) then
-                call nan_report(sclrp2_sfc,"sclrp2_sfc",
+                call check_nan(sclrp2_sfc,"sclrp2_sfc",
      .                      proc_name, isValid)
         endif
         if( present(sclrprtp_sfc) ) then
-             call nan_report(sclrprtp_sfc,"sclrprtp_sfc",
+             call check_nan(sclrprtp_sfc,"sclrprtp_sfc",
      .                    proc_name,isValid)
              endif
         if( present(sclrp2_sfc) ) then
-             call nan_report(sclrpthlp_sfc,"sclrpthlp_sfc", 
+             call check_nan(sclrpthlp_sfc,"sclrpthlp_sfc", 
      .                    proc_name,isValid)
         endif
  
@@ -816,7 +816,7 @@
          
         end subroutine check_negative
 !------------------------------------------------------------------------        
-        subroutine nan_report_2d( var, varname, operation, isValid )
+        subroutine check_nan_2d( var, varname, operation, isValid )
 !
 !       Description: Checks for a NaN in the var array and reports it.
 !
@@ -831,7 +831,7 @@
 
         character(len=*), intent(in):: 
      .      varname,                   ! Name of variable
-     .      operation                  ! Procedure calling nan_report
+     .      operation                  ! Procedure calling check_nan
         
         logical,optional,intent(out) :: isValid
         
@@ -839,9 +839,9 @@
            write(fstderr,*) varname, " is NaN in ",operation
            if(present(isValid)) isValid = .false.
         endif
-        end subroutine nan_report_2d
+        end subroutine check_nan_2d
 !-----------------------------------------------------------------------        
-        subroutine nan_report_sclr( var, varname, operation, isValid )
+        subroutine check_nan_sclr( var, varname, operation, isValid )
 !
 !       Description: Checks for a NaN in the scalar var then reports it.
 !
@@ -855,7 +855,7 @@
 
         character(len=*), intent(in):: 
      .      varname,                   ! Name of variable being examined
-     .      operation                  ! Procedure calling nan_report
+     .      operation                  ! Procedure calling check_nan
         
         ! Output variable
         logical, optional, intent(out) :: isValid 
@@ -864,6 +864,6 @@
            write(fstderr,*) varname, " is NaN in ",operation
            if (present(isValid)) isValid = .false.
         endif
-        end subroutine nan_report_sclr
+        end subroutine check_nan_sclr
 !-------------------------------------------------------------------------       
         end module numerical_check
