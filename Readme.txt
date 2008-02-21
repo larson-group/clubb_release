@@ -1,4 +1,4 @@
-$Id: Readme.txt,v 1.56 2008-02-20 22:31:32 nielsenb Exp $
+$Id: Readme.txt,v 1.57 2008-02-21 20:46:14 nielsenb Exp $
 
 ************************************************************************
 *                           Copyright Notice
@@ -670,4 +670,4 @@ The variables follow the convention of the a=1, and b=2, appended after the
 sclr portion of their name.  For example. the first scalar mean is 'sclram',
 and the second is 'sclrbm'.  These and their forcings are all that occurs in
 the zt file, the rest all occur in the zm file.
-******************************************************************************
+*****************************************************************************
