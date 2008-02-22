@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.148 2008-02-19 19:55:11 griffinb Exp $
+! $Id: hoc.F,v 1.149 2008-02-22 19:28:03 faschinj Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -19,6 +19,7 @@
         ! Setup hoc_model() as the sole external interface
         private :: hoc_initialize
         private :: hoc_forcings_timestep
+        private :: hoc_restart
 
         private :: hoc_model_standard, hoc_model_field_input
 
@@ -118,7 +119,19 @@
      .               ( timestep,
      .                um, vm, rtm, thlm, 
      .                wp2, wprtp, wpthlp, wp3,
-     .                rtp2, thlp2, rtpthlp, upwp, vpwp )
+     .                rtp2, thlp2, rtpthlp,
+     .                upwp, vpwp, ug, vg, rcm, 
+     .                wmt, exner, em, p, rhot, 
+     .                rhom, Lscale, lup, ldown,
+     .                Kht, Khm, taum, taut, thvm,
+     .                rrm, Nrm, rsnowm,ricem,rgraupelm, 
+     .                thlm_forcing, rtm_forcing, 
+     .                rtm_mc, thlm_mc,
+     .                up2, vp2, Scm, Ncm, Ncnm, Nim, 
+     .                cf, Sct ) 
+      
+
+
           implicit none
 
           integer, intent(in) :: 
@@ -137,8 +150,39 @@
      .    thlp2,  ! th_l'^2                             [K^2/s]
      .    rtpthlp,! r_t' th_l'                          [(kg K)/(kg s)]
      .    upwp,   ! u'w'                                [m^2/s^2]        
-     .    vpwp    ! v'w'                                [m^2/s^2]
-
+     .    vpwp,   ! v'w'                                [m^2/s^2]
+     .    ug,     ! u geostrophic wind                          [m/s] 
+     .    vg,     ! v geostrophic wind                          [m/s] 
+     .    rcm,    ! Cloud water mixing ratio                    [kg/kg]
+     .    wmt,    ! w wind                                      [m/s]
+     .    exner,  ! Exner function                              [-] 
+     .    em,     ! Turbulence kinetic energy                   [m^2/s^2]
+     .    p,      ! Pressure                                    [Pa]
+     .    rhot, rhom,  ! Density                                     [kg/m^3]
+     .    Lscale, ! Mixing length                               [m] 
+     .    lup,    ! Upward mixing length                        [m] 
+     .    ldown,  ! Downward mixing length                      [m] 
+     .    Kht, Khm, ! Eddy diffusivity                            [m^2/s]
+     .    taum, taut, ! Dissipation time                            [s]
+     .    thvm,       ! Virtual potential temperature               [K]
+     .    rrm,
+     .    Nrm,
+     .    rsnowm,
+     .    ricem,
+     .    rgraupelm, 
+     .    thlm_forcing, ! Liquid water potential temperature tendency [K/s] 
+     .    rtm_forcing,  ! Total water mixing ratio tendency           [kg/kg/s]
+     .    rtm_mc,       ! Change in total water due to icedfs microphys [kg/kg/s]
+     .    thlm_mc,      ! Change in theta-l due to icedfs microphys     [K/s]
+     .    up2,          ! u'^2                                          [m^2/s^2]
+     .    vp2,          ! v'^2                          [m^2/s^2]
+     .    Scm,          ! Sc on moment. grid.           [-]
+     .    Ncm,          ! Number of cloud droplets   [count/kg]
+     .    Ncnm,         ! Number of cloud nuclei     [count/m^3]
+     .    Nim,          ! Number of ice crystals     [count/m^3]
+     .    cf,           ! Cloud fraction        [%]
+     .    Sct           ! PDF width parameter: t point          [-]
+          
           end subroutine set_fields
         end interface
      
@@ -326,10 +370,7 @@
      .                    upwp, vpwp )           !  "   "
          isValid = .not. invalid_model_arrays( ) ! Check for bad values 
                                                  ! in the model arrays
-         if ( .not. isValid ) then
-            write(fstderr,*) "NaN found after set_fields called."
-            exit
-         endif
+         if ( .not. isValid ) exit
 
          call hoc_forcings_timestep( i, stdout, isValid )
 
@@ -464,7 +505,8 @@
         real :: 
      .  fcor,           ! Coriolis parameter            [s^-1]
      .  T0,             ! Reference Temperature         [K]
-     .  ts_nudge        ! Timescale for u/v nudging     [s]
+     .  ts_nudge,        ! Timescale for u/v nudging     [s]
+     .  time_restart    
 
         logical :: 
      .  cloud_sed,    ! Flag for cloud water droplet sedimentation. - Brian
@@ -473,14 +515,18 @@
      .  lcoamps_micro,! Flag for COAMPS microphysical scheme
      .  lbugsrad,     ! Flag for BUGsrad radiation scheme
      .  luv_nudge,    ! Whether to adjust the winds within the timestep
+     .  lrestart,     ! Flag for restarting from GrADS file
      .  lKhm_aniso    ! Whether to use anisotropic Khm.  - Michael Falk 2 Feb 2007
+
+        character(len=50) :: 
+     .  restart_path ! GRADS file used in case of restart
 
         ! Dummy grid height arrays
         real, dimension(:), allocatable :: 
      .  dummy_array_m, dummy_array_t
 
         integer :: i, i1 ! Internal Loop Variables
-
+        integer :: iinit ! initial iteration
         integer :: iunit
 
         ! Definition of namelists
@@ -491,7 +537,8 @@
      .  dtmain, dtclosure,
      .  sfctype, Tsfc, psfc, SE, LE, fcor, T0, ts_nudge,
      .  cloud_sed, kk_rain, licedfs, lcoamps_micro, 
-     .  lbugsrad, lKhm_aniso, luv_nudge
+     .  lbugsrad, lKhm_aniso, luv_nudge, lrestart, restart_path,
+     .  time_restart
 
 !-----------------------------------------------------------------------
 
@@ -533,6 +580,10 @@
         lbugsrad      = .false.
         lKhm_aniso    = .false.
         luv_nudge     = .false.
+        lrestart      = .false.
+        restart_path = "none"
+        time_restart = 0
+        
 
         ! Figure out which iounit to use
 #ifdef _OPENMP
@@ -569,20 +620,47 @@
        ! Dummy grid height arrays
        deallocate( dummy_array_m, dummy_array_t )
 
-       time = time_initial
+       
+       if ( .not. lrestart ) then
+          time = time_initial
+          iinit = 1
+          call hoc_initialize( iunit, runfile, psfc, thlm, rtm, 
+     .                         um, vm, ug, vg, wp2,
+     .                         rcm, hydromet,
+     .                         wmt, wmm, em, exner,
+     .                         taut, taum, thvm, p,
+     .                         rhot, rhom, Lscale, lup,
+     .                         ldown, Kht, Khm, um_ref, vm_ref
+#ifdef SCALARS
+     .                         ,sclrm, edsclrm
+#endif /*SCALARS*/
+     .                        )
+       else
 
-       call hoc_initialize( iunit, runfile, psfc, thlm, rtm, 
-     .                      um, vm, ug, vg, wp2,
-     .                      rcm, hydromet,
-     .                      wmt, wmm, em, exner,
-     .                      taut, taum, thvm, p,
-     .                      rhot, rhom, Lscale, lup,
-     .                      ldown, Kht, Khm, um_ref, vm_ref
+          time = time_restart
+
+          ! Determining what iteration to restart at.
+          ! Joshua Fasching February 2008
+
+          iinit = ( time_restart - time_initial ) / dtmain
+
+          call hoc_restart( iunit, runfile, restart_path, time_restart, 
+     .                      psfc, thlm, rtm, um, vm,
+     .                      ug, vg, wp2, wprtp, wpthlp, wp3,
+     .                      rtp2, thlp2, rtpthlp,
+     .                      upwp, vpwp, rcm, hydromet,
+     .                      wmt, wmm, em, exner, taut, taum, thvm,
+     .                      p, rhot, rhom, Lscale, lup,
+     .                      ldown, Kht, Khm, um_ref, vm_ref,
+     .                      thlm_forcing, rtm_forcing, rtm_mc, thlm_mc,
+     .                      up2, vp2, Scm, Ncm, Ncnm, Nim,
+     .                      wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,
+     .                      cf, Sct
 #ifdef SCALARS
      .                      ,sclrm, edsclrm
-#endif /*SCALARS*/
-     .                     )
-
+#endif
+     .                       )
+       endif
 #ifdef STATS
 #ifdef _OPENMP
        iunit = omp_get_thread_num( ) + 50
@@ -598,10 +676,10 @@
        ! Call hoc_closure_timestep once per each GrADS output time 
        ifinal  = ( time_final - time_initial ) / dtmain
 
-
+      
 !<<<<<<<<<<<<<<<<<<<<<<<< Main time stepping loop <<<<<<<<<<<<<<<<<<<<<<
 
-       do i = 1, ifinal, 1
+       do i = iinit, ifinal, 1
 
 #ifdef STATS
          ! When this time step is over, the time will be time + dtmain
@@ -617,10 +695,7 @@
 
          isValid = .not. invalid_model_arrays( ) ! Check for bad values 
                                                  ! in the model arrays
-         if ( .not. isValid ) then
-            write(fstderr,*) "NaN found at the beginning of timestep."
-            exit
-         endif
+         if ( .not. isValid ) exit
 
          call hoc_forcings_timestep( i, stdout, isValid )
 
@@ -655,7 +730,9 @@
      .            sclrm, sclrm_forcing, edsclrm
 #endif /*SCALARS*/
      .          )
-
+!           if (i == 166 .and. .not. lrestart ) then
+!                print*, "rrm(source)= ", hydromet(:,1)
+!           endif
 #ifdef STATS
            call stats_end_timestep( time + dtmain, dtmain )
 #endif /*STATS*/
@@ -791,7 +868,7 @@
 
         real :: cloud_top_height ! [m]
         real :: emax
-
+        logical :: isValid
         integer :: k
 
 !-----------------------------------------------------------------------
@@ -1123,7 +1200,7 @@
         ! Compute mixing length
 
         call length( thvm, thlm, rtm, rcm, 
-     .               em, p, exner, Lscale, lup, ldown, .true. )
+     .               em, p, exner, Lscale, lup, ldown, isValid )
 
         ! Dissipation time
         tmp1 = sqrt( max( emin, zm2zt( em ) ) )
@@ -1155,6 +1232,240 @@
 
        return
        end subroutine hoc_initialize
+!-----------------------------------------------------------------------
+       subroutine hoc_restart
+     .             ( iunit, runfile, restart_path, time_restart, 
+     .               psfc, thlm, rtm, um, vm,
+     .               ug, vg, wp2, wprtp, wpthlp, wp3,
+     .               rtp2, thlp2, rtpthlp,
+     .               upwp, vpwp, rcm, hydromet,
+     .               wmt, wmm, em, exner, taut, taum, thvm,
+     .               p, rhot, rhom, Lscale, lup,
+     .               ldown, Kht, Khm, um_ref, vm_ref,
+     .               thlm_forcing, rtm_forcing, rtm_mc, thlm_mc,
+     .               up2, vp2, Scm, Ncm, Ncnm, Nim,
+     .               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,
+     .               cf, Sct
+#ifdef SCALARS
+     .               ,sclrm, edsclrm
+#endif
+     .             )
+!       Description:
+!       Execute the necessary steps for the initialization of the 
+!       HOC model to a designated point in the submitted GrADS file. 
+!-----------------------------------------------------------------------
+        use inputfields
+        use grid_class
+        use constants
+        use parameters 
+        use sounding
+        use model_flags, only: luv_nudge
+        use arm_0003, only: arm_0003_init
+        use arm_97, only: arm_97_init
+        use arm_3year, only: arm_3year_init
+        use mpace_a, only: mpace_a_init
+
+        implicit none
+
+        ! Input
+        integer, intent(in) :: iunit
+        character(len=*), intent(in) :: runfile,  ! filename for the namelist
+     .                                  restart_path
+
+        real, intent(in) :: psfc, ! Pressure at the surface [Pa]
+     .                      time_restart
+        ! Output
+        real, dimension(gr%nnzp), intent(out) :: 
+     .  thlm,           ! Theta l mean                                [K] 
+     .  rtm,            ! Total water mixing ratio                    [kg/kg]
+     .  um,             ! u wind                                      [m/s]
+     .  vm,             ! v wind                                      [m/s]
+     .  um_ref,         ! Initial profile of u wind                   [m/s]
+     .  vm_ref,         ! Initial profile of v wind                   [m/s]
+     .  ug,             ! u geostrophic wind                          [m/s] 
+     .  vg,             ! v geostrophic wind                          [m/s] 
+     .  wp2,            ! w'^2                                        [m^2/s^2]
+     .  rcm,            ! Cloud water mixing ratio                    [kg/kg]
+     .  wmt, wmm,       ! w wind                                      [m/s]
+     .  exner,          ! Exner function                              [-] 
+     .  em,             ! Turbulence kinetic energy                   [m^2/s^2]
+     .  p,              ! Pressure                                    [Pa]
+     .  rhot, rhom,     ! Density                                     [kg/m^3]
+     .  Lscale,         ! Mixing length                               [m] 
+     .  lup,            ! Upward mixing length                        [m] 
+     .  ldown,          ! Downward mixing length                      [m] 
+     .  Kht, Khm,       ! Eddy diffusivity                            [m^2/s]
+     .  taum, taut,     ! Dissipation time                            [s]
+     .  thvm,           ! Virtual potential temperature               [K]
+     .  wprtp,          ! w' r_t'                                     [(kg m)(kg s)]
+     .  wpthlp,         ! w' th_l'                                    [(m K)/s]
+     .  wp3,            ! w'^3                                        [m^3/s^3]
+     .  rtp2,           ! Total water mixing ratio                    [kg/kg]
+     .  thlp2,          ! th_l'^2                                     [K^2]
+     ,  rtpthlp,        ! r_t' th_l'                                  [(K kg)/kg]
+     .  upwp,           ! u'w'                                        [m^2/s^2]
+     .  vpwp,           ! v'w'                                        [m^2/s^2]
+     .  thlm_forcing,   ! Liquid water potential temperature tendency [K/s]
+     .  rtm_forcing,    ! Total water mixing ratio tendency           [kg/kg/s]
+     .  rtm_mc,         ! Change in total water due to icedfs microphys [kg/kg/s]
+     .  thlm_mc,        ! Change in theta-l due to icedfs microphys     [K/s]
+     .  up2,            ! u'^2                                          [m^2/s^2]
+     .  vp2,            ! v'^2                          [m^2/s^2]
+     .  Scm,            ! Sc on moment. grid.           [-]
+     .  Ncm,            ! Number of cloud droplets   [count/kg]
+     .  Ncnm,           ! Number of cloud nuclei     [count/m^3]
+     .  Nim,            ! Number of ice crystals     [count/m^3]
+     .  cf,             ! Cloud fraction        [%]
+     .  Sct             ! PDF width parameter: t point          [-]
+
+
+        real, intent(out) ::
+     .  wpthlp_sfc,     ! w'theta_l' surface flux   [(m K)/s]
+     .  wprtp_sfc,      ! w'rt' surface flux        [(m kg)/(kg s)]
+     .  upwp_sfc,       ! u'w' at surface           [m^2/s^2] 
+     .  vpwp_sfc        ! v'w' at surface           [m^2/s^2]
+        
+        real, dimension(gr%nnzp,hydromet_dim), target, intent(out) :: 
+     .  hydromet        ! Hydrometeor types             [units vary]
+
+#ifdef SCALARS
+!       Output (optional)
+        real, dimension(gr%nnzp,sclr_dim), intent(out) :: 
+     .  sclrm,  ! Standard passive scalar [units vary]
+     .  edsclrm ! Eddy diffusivity passive scalar [units vary]
+#endif
+        ! Local Variables
+        real, dimension(gr%nnzp) :: tmp1
+
+       
+        integer :: k, timestep
+        real, dimension(:), pointer ::
+     .         rrm,
+     .         Nrm,   
+     .         rsnowm,
+     .         ricem,
+     .         rgraupelm
+
+        ! Inform inputfields module
+        datafile = restart_path
+        input_type = "hoc"
+        input_um   = .true.
+        input_vm   = .true.
+        input_rtm  = .true.
+        input_thlm = .true.
+        input_wp2  = .true.
+        input_ug   = .true.
+        input_vg   = .true.
+        input_rcm  = .true.
+        input_wmt  = .true.
+        input_exner = .true.
+        input_em = .true.
+        input_p = .true.
+        input_rhot = .true.
+        input_rhom = .true.
+        input_Lscale = .true.
+        input_lup = .true.
+        input_ldown = .true.
+        input_Kht = .true.
+        input_Khm = .true.
+        input_taum = .true.
+        input_taut = .true.
+        input_thvm = .true.
+        input_rrm = .true.
+        input_rsnowm = .true.
+        input_ricem = .true.
+        input_rgraupelm = .true.
+        input_wprtp = .true.
+        input_wpthlp = .true.
+        input_wp3 = .true.
+        input_rtp2 = .true.
+        input_thlp2 = .true.
+        input_rtpthlp = .true.
+        input_upwp = .true.
+        input_vpwp = .true. 
+        input_thlm_forcing = .true.
+        input_rtm_forcing = .true. 
+        input_rtm_mc = .true. 
+        input_thlm_mc = .true.
+        input_up2 = .true.
+        input_vp2 = .true.
+        input_Scm = .true.
+        input_Ncm = .true.
+        input_Ncnm = .true.
+        input_Nim = .true.
+        input_cf  = .true.
+        input_Nrm = .true.
+        input_Sct= .true.
+        
+        rrm       => hydromet(1:gr%nnzp,1)
+        Nrm       => hydromet(1:gr%nnzp,2)
+        rsnowm    => hydromet(1:gr%nnzp,3)
+        ricem     => hydromet(1:gr%nnzp,4)
+        rgraupelm => hydromet(1:gr%nnzp,5)
+
+        
+        ! Determine the nearest timestep in the GRADS file to the
+        ! restart time.
+        call compute_timestep(time_restart,timestep)
+        if (timestep < 0) then
+                print *, "Invalid time_restart in <case>_model.in file"
+                stop
+        endif
+
+        ! Read in sounding to get appropriate nudging information for um
+        ! and vm
+      
+        call read_sounding( iunit, thlm, rtm, um, vm, ug, vg, 
+     .                      runfile, runtype )
+        if (luv_nudge) then
+                um_ref = um
+                vm_ref = vm
+        endif
+        
+        ! Read data from GRADS files
+        call grads_fields_reader( timestep,
+     .                   um, vm, rtm, thlm,
+     .                   wp2, wprtp, wpthlp, wp3,
+     .                   rtp2, thlp2, rtpthlp,
+     .                   upwp, vpwp, ug, vg, rcm,  
+     .                   wmt, exner, em, p, rhot, 
+     .                   rhom, Lscale, lup, ldown,
+     .                   Kht, Khm, taum, taut, thvm, 
+     .                   rrm, Nrm, rsnowm, ricem,
+     .                   rgraupelm, thlm_forcing, 
+     .                   rtm_forcing, rtm_mc, thlm_mc,
+     .                   up2, vp2, Scm, Ncm, Ncnm, Nim,
+     .                   cf, Sct ) 
+        
+        ! Attempting to diagnose restart failures
+        ! print *,"Exner = ", exner
+        ! print *,"cf = ", cf
+        ! print*, "rrm = " ,rrm
+        ! print*, "hydromet = " ,hydromet(:,1)
+        ! print *, "lup = ", lup
+        ! print *, "ldown = ", ldown
+
+        
+        ! Initialize forcing files for specific cases
+        select case( trim( runtype ) )
+        case( "arm_3year" )
+            call arm_3year_init
+        case( "arm_97" )
+            call arm_97_init
+        case( "arm_0003" )
+            call arm_0003_init
+        case( "mpace_a" )
+            call mpace_a_init
+        end select
+        
+        wmm = zt2zm( wmt )
+        
+        wpthlp_sfc = wpthlp(1)
+        wprtp_sfc = wprtp(1)
+        upwp_sfc = upwp(1)
+        vpwp_sfc = vpwp(1)
+        
+        end subroutine hoc_restart
 
 !----------------------------------------------------------------------
         subroutine hoc_forcings_timestep( iteration, stdout, isValid )
@@ -1703,7 +2014,7 @@
           
           ! Clips impossible negative values
           call rad_clipping( thlm, rcm, rtm, ricem,
-     .                       cf, p, exner, rhom )
+     .                       cf, p, exner, rhom)
 
 
           call bugsrad_hoc( gr%zm(gr%nnzp), gr%nnzp, rlat, rlon,
