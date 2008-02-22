@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputfields.F,v 1.7 2005-08-26 17:02:36 dschanen Exp $
+! $Id: inputfields.F,v 1.8 2008-02-22 19:30:11 faschinj Exp $
 
 ! Module inputfields
 
@@ -20,9 +20,21 @@
         logical, public :: input_um, input_vm, input_rtm, input_thlm,
      .                     input_wp2, input_wprtp, input_wpthlp, 
      .                     input_wp3, input_rtp2, input_thlp2, 
-     .                     input_rtpthlp, input_upwp, input_vpwp
+     .                     input_rtpthlp, input_upwp, input_vpwp,
+     .                     input_ug, input_vg, input_rcm, 
+     .                     input_wmt, input_exner, input_em,
+     .                     input_p, input_rhot, input_rhom,
+     .                     input_Lscale, input_lup, input_ldown,
+     .                     input_Kht, input_Khm, input_taum, input_taut,
+     .                     input_thvm, input_rrm,input_Nrm, 
+     .                     input_rsnowm, input_ricem, input_rgraupelm, 
+     .                     input_thlm_forcing, input_rtm_forcing,
+     .                     input_rtm_mc, input_thlm_mc, 
+     .                     input_up2, input_vp2, input_Scm, input_Ncm, 
+     .                     input_Ncnm, input_Nim, input_cf, input_Sct 
 
-        public grads_fields_reader
+
+        public grads_fields_reader, compute_timestep
         private interpolate_m
 
 !-----------------------------------------------------------------------
@@ -43,7 +55,15 @@
      .                                  um, vm, rtm, thlm,
      .                                  wp2, wprtp, wpthlp, wp3,
      .                                  rtp2, thlp2, rtpthlp, 
-     .                                  upwp, vpwp )
+     .                                  upwp, vpwp, ug, vg, rcm, 
+     .                                  wmt, exner, em, p, rhot, 
+     .                                  rhom, Lscale, lup, ldown,
+     .                                  Kht, Khm, taum, taut, thvm,
+     .                                  rrm, Nrm, rsnowm, ricem, 
+     .                                  rgraupelm, thlm_forcing, 
+     .                                  rtm_forcing, rtm_mc, thlm_mc, 
+     .                                  up2, vp2, Scm, Ncm, Ncnm, Nim,
+     .                                  cf, Sct )
         use grid_class
         use inputfile_class
 
@@ -55,7 +75,16 @@
         real, optional, intent(out), 
      .        dimension(:) :: um, vm, rtm, thlm, wp2,
      .                        wprtp, wpthlp, wp3, rtp2,
-     .                        thlp2, rtpthlp, upwp, vpwp
+     .                        thlp2, rtpthlp, upwp, vpwp,
+     .                        ug, vg, rcm, 
+     .                        wmt, exner, em, p, rhot, 
+     .                        rhom, Lscale, lup, ldown,
+     .                        Kht, Khm, taum, taut, thvm,
+     .                        rrm, Nrm, rsnowm, ricem, rgraupelm, 
+     .                        thlm_forcing, rtm_forcing,
+     .                        rtm_mc, thlm_mc, 
+     .                        up2, vp2, Scm, Ncm, Ncnm, Nim,
+     .                        cf, Sct  
 
 !       Internal
         logical error
@@ -95,7 +124,119 @@
             call get_var( fread_var, "wp3", timestep,
      .                    wp3(1:gr%nnzp), error )
           endif
+          if (present( taut ) .and. input_taut) then 
+            call get_var( fread_var, "taut", timestep,
+     .                    taut(1:gr%nnzp), error )
+          endif
+          if (present( rrm ) .and. input_rrm) then 
+            call get_var( fread_var, "rrm", timestep,
+     .                    rrm(1:gr%nnzp), error )
+          endif
+          if (present( rsnowm ) .and. input_rsnowm) then 
+            call get_var( fread_var, "rsnowm", timestep,
+     .                    rsnowm(1:gr%nnzp), error )
+          endif
+          if (present( ricem ) .and. input_ricem) then 
+            call get_var( fread_var, "ricem", timestep,
+     .                    ricem(1:gr%nnzp), error )
+          endif
+          if (present( rgraupelm ) .and. input_rgraupelm) then 
+            call get_var( fread_var, "rgraupelm", timestep,
+     .                    rgraupelm(1:gr%nnzp), error )
+          endif
 
+!--------------------------------------------------------
+! Added variables for hoc_restart
+          if (present( p ) .and. input_p) then
+            call get_var( fread_var, "p", timestep,
+     .                    p(1:gr%nnzp), error )
+          endif
+          if (present( exner ) .and. input_exner) then
+            call get_var( fread_var , "exner", timestep,
+     .                    exner(1:gr%nnzp), error)
+          endif
+          if (present( ug ) .and. input_ug) then
+            call get_var( fread_var , "ug", timestep,
+     .                    ug(1:gr%nnzp), error)
+          endif
+          if (present( vg ) .and. input_vg) then
+            call get_var( fread_var , "vg", timestep,
+     .                    vg(1:gr%nnzp), error)
+          endif
+          if (present( rcm ) .and. input_rcm) then
+            call get_var( fread_var , "rcm", timestep,
+     .                    rcm(1:gr%nnzp), error)
+          endif
+          if (present( wmt ) .and. input_wmt) then
+            call get_var( fread_var , "wm", timestep,
+     .                    wmt(1:gr%nnzp), error)
+          endif
+          if (present( rhot ) .and. input_rhot) then
+            call get_var( fread_var , "rhot", timestep,
+     .                    rhot(1:gr%nnzp),error)
+          endif
+          if (present( Lscale ) .and. input_Lscale) then
+            call get_var( fread_var , "lscale", timestep,
+     .                    Lscale(1:gr%nnzp),error)
+          endif
+          if (present( lup ) .and. input_lup) then
+            call get_var( fread_var , "lup", timestep,
+     .                    lup(1:gr%nnzp),error)
+          endif
+          if (present( ldown ) .and. input_ldown) then
+            call get_var( fread_var , "ldown", timestep,
+     .                    ldown(1:gr%nnzp),error)
+          endif
+          if (present( Kht ) .and. input_Kht) then
+            call get_var( fread_var , "kht", timestep,
+     .                    Kht(1:gr%nnzp),error)
+          endif
+          if (present( thvm ) .and. input_thvm) then
+            call get_var( fread_var , "thvm", timestep,
+     .                    thvm(1:gr%nnzp),error)
+          endif
+          if (present( thlm_forcing ) .and. input_thlm_forcing ) then
+            call get_var( fread_var , "thlm_f", timestep,
+     .                    thlm_forcing(1:gr%nnzp),error)
+          endif
+          if (present( rtm_forcing ) .and. input_rtm_forcing ) then
+            call get_var( fread_var , "rtm_f", timestep,
+     .                    rtm_forcing(1:gr%nnzp),error)
+          endif
+          if (present( rtm_mc ) .and. input_rtm_mc ) then
+            call get_var( fread_var , "rtm_mc", timestep,
+     .                    rtm_mc(1:gr%nnzp),error)
+          endif
+          if (present( thlm_mc ) .and. input_thlm_mc ) then
+            call get_var( fread_var , "thlm_mc", timestep,
+     .                    thlm_mc(1:gr%nnzp),error)
+          endif
+          if (present( Ncm ) .and. input_Ncm) then
+            call get_var( fread_var , "Ncm", timestep,
+     .                    Ncm(1:gr%nnzp),error)
+          endif
+          if (present( Ncnm ) .and. input_Ncnm) then
+            call get_var( fread_var , "Ncnm", timestep,
+     .                    Ncnm(1:gr%nnzp),error)
+          endif
+          if (present( Nim ) .and. input_Nim) then
+            call get_var( fread_var , "Nim", timestep,
+     .                    Nim(1:gr%nnzp),error)
+          endif
+          if (present( cf ) .and. input_cf) then
+            call get_var( fread_var , "cf", timestep,
+     .                    cf(1:gr%nnzp),error)
+          endif
+          if (present( Nrm ) .and. input_Nrm ) then
+            call get_var( fread_var , "Nrm", timestep,
+     .                    Nrm(1:gr%nnzp),error)
+          endif
+          if (present( Sct ) .and. input_Sct ) then
+            call get_var( fread_var , "sc", timestep,
+     .                    Sct(1:gr%nnzp),error)
+          endif
+
+!--------------------------------------------------------
           call close_grads_read( fread_var )
 
 !         zm file
@@ -151,6 +292,50 @@
      .                     timestep,
      .                     vpwp(1:gr%nnzp), error )
           endif
+!-----------------------------------------------------------
+         if (present( em ) .and. input_em) then
+            call get_var( fread_var, "em",
+     .                    timestep,
+     .                    em(1:gr%nnzp), error )
+         endif
+         if (present( rhom ) .and. input_rhom) then
+            call get_var( fread_var, "rhom",
+     .                    timestep,
+     .                    rhom(1:gr%nnzp), error )
+         endif
+         if (present( Khm ) .and. input_Khm) then
+            call get_var( fread_var, "khm",
+     .                    timestep,
+     .                    Khm(1:gr%nnzp), error )
+         endif
+         if (present( taum ) .and. input_taum) then
+            call get_var( fread_var, "taum",
+     .                    timestep,
+     .                    taum(1:gr%nnzp), error )
+         endif
+         if (present( up2 ) .and. input_up2) then
+            call get_var( fread_var, "up2",
+     .                    timestep,
+     .                    up2(1:gr%nnzp), error )
+         endif
+         if (present( vp2 ) .and. input_vp2) then
+            call get_var( fread_var, "vp2",
+     .                    timestep,
+     .                    vp2(1:gr%nnzp), error )
+         endif
+         if (present( Scm ) .and. input_Scm ) then
+            call get_var( fread_var, "scm",
+     .                    timestep,
+     .                    Scm(1:gr%nnzp), error )
+         endif
+
+
+
+
+
+
+!-----------------------------------------------------------
+
 
           if ( error ) stop "oops, get_var failed in field_reader"
 
@@ -452,6 +637,51 @@
 
         return
         end subroutine interpolate_m
+!-------------------------------------------------------------------------
+        subroutine compute_timestep( current_time, nearest_timestep )
+!
+!       Description: Determines the nearest timestep stored in the GRADS
+!       file for the current_time in seconds recieved.
+!
+!-------------------------------------------------------------------------
+          use inputfile_class
+          implicit none
+          
+          ! Input Variable(s)
+          real, intent(in) :: 
+     .       current_time ! Time since start day
+          
+          ! Output Variable(s)
+          integer, intent(out) :: 
+     .       nearest_timestep ! Nearest timestep to current_time
+          
+          ! Local Variables
+          type (inputgrads) fread_var         
+          real delta_time
+          
+          call open_grads_read( 15, trim(datafile)//"_zt.ctl", 
+     .                          fread_var )
 
+          ! Difference between GrADS file start time and the restart
+          ! time
+          delta_time = current_time - fread_var%time
+          
+          ! Reporting
+          print *, "Time Initial: ", fread_var%time
+          print *, "Restart Time: ", current_time
+          print *, "Delta Time: ", delta_time
+          print *, "dt: ", fread_var%dtwrite
+      
+          ! Determines the closest recorded timestep to the restart
+          ! time.
+          nearest_timestep = nint(delta_time / 60.0)
+          
+          print *,"Nearest Timestep: ", nearest_timestep
+          
+          call close_grads_read( fread_var )
+          
+        end subroutine compute_timestep
+        
       end module inputfields
 !-----------------------------------------------------------------------
+      
