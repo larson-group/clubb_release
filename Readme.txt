@@ -1,4 +1,4 @@
-$Id: Readme.txt,v 1.57 2008-02-21 20:46:14 nielsenb Exp $
+$Id: Readme.txt,v 1.58 2008-02-23 22:17:52 vlarson Exp $
 
 ************************************************************************
 *                           Copyright Notice
@@ -178,6 +178,36 @@ make distclean
 4. $ cd ../standalone.  Edit standalone_<CASE>.in or select a premade one.
 
 5. $ ./run_standalone.bash <CASE>
+
+-----------------------------------------------------------------------
+- (2.2) Executing a restart run:
+-----------------------------------------------------------------------
+
+After a long simulation has been performed, it is sometimes convenient to 
+perform a new simulation that starts some time into the original simulation, 
+rather than wasting time by starting again from the initial time.  The new
+simulation is then called a "restart" simulation.
+
+1.  Perform the original simulation and save the GrADS output files.  These
+    data will be accessed to restart the simulation.
+
+2.  Create a subdirectory in /standalone called "restart" and move the GrADS
+    output files to that subdirectory.
+
+3.  Edit the following three variables at the end of the flag section of 
+    the model file:
+
+    lrestart = .true.
+    restart_path = restart/<CASE>
+    time_restart = initial time of restart run in seconds
+
+    Compute time_restart as (time_initial + X * stats_tout), where X is 
+    the number of output intervals before the time at which you would like
+    to restart.
+
+4.  Execute the run as usual from /standalone using 
+    
+    ./run_standalone.bash <CASE>
 
 -----------------------------------------------------------------------
 - (3.1) Executing a tuning run:
