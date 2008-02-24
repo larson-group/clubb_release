@@ -106,7 +106,10 @@
        - \overline{v'w'}\ptlder{\bar{v}}{z} 
      \right) \\
  & - \dfrac{C_1}{\tau} \overline{w^{'2}} 
-   + \nu_1 \nabla_z^2 \, \overline{w^{'2}}
+%   + \nu_1 \nabla_z^2 \, \overline{w^{'2}}
+   + \ptlder{}{z} \left[ \left( K_{w1} + \nu_1 \right)
+                         \ptlder{}{z} \overline{w^{'2}} 
+                  \right]
 \end{split}
 \end{equation}
 %
@@ -117,7 +120,10 @@
   - \ptlder{\overline{w'q_t^{'2}}}{z}
   - 2\overline{w'q'_t}\ptlder{\bar{q}_t}{z} 
   - \dfrac{C_2}{\tau} \overline{q_t^{'2}}
-  + \nu_2 \nabla_z^2 \overline{q_t^{'2}}
+%  + \nu_2 \nabla_z^2 \overline{q_t^{'2}}
+  + \ptlder{}{z} \left[ \left( K_{w2} + \nu_2 \right)
+                        \ptlder{}{z} \overline{q_t^{'2}} 
+                 \right]
 \end{equation}
 %
 \begin{equation}
@@ -127,7 +133,10 @@
   - \ptlder{\overline{w'\theta_l^{'2}}}{z}
   - 2\overline{w'\theta'_l}\ptlder{\bar{\theta}_l}{z} 
   - \dfrac{C_2}{\tau} \overline{\theta_l^{'2}}
-  + \nu_2 \nabla_z^2 \overline{\theta_l^{'2}}
+%  + \nu_2 \nabla_z^2 \overline{\theta_l^{'2}}
+  + \ptlder{}{z} \left[ \left( K_{w2} + \nu_2 \right)
+                        \ptlder{}{z} \overline{\theta_l^{'2}} 
+                 \right]
 \end{equation}
 %
 \begin{equation}
@@ -138,7 +147,10 @@
   - \overline{w'q'_t}\ptlder{\bar{\theta}_l}{z} 
   - \overline{w'\theta'_l}\ptlder{\bar{q}_t}{z}
   - \dfrac{C_2}{\tau} \overline{q_t' \theta_l'}
-  + \nu_2 \nabla_z^2 \overline{q_t^{'}\theta_l^{'}}
+%  + \nu_2 \nabla_z^2 \overline{q_t^{'}\theta_l^{'}}
+  + \ptlder{}{z} \left[ \left( K_{w2} + \nu_2 \right)
+                        \ptlder{}{z} \overline{q_t' \theta_l'} 
+                 \right]
 \end{equation}
 %
 \begin{equation}
@@ -155,7 +167,10 @@
              - \overline{w'q'_t}\ptlder{\bar{w}}{z}
              + \frac{g}{\theta_0} \overline{q'_t\theta'_v}
           \right) 
-    + \nu_6 \nabla_z^2 \overline{w^{'}q_t^{'}}
+%    + \nu_6 \nabla_z^2 \overline{w^{'}q_t^{'}}
+    + \ptlder{}{z} \left[ \left( K_{w6} + \nu_6 \right)
+                          \ptlder{}{z} \overline{w'q'_t} 
+                   \right]
 \end{split}
 \end{equation}
 %
@@ -173,7 +188,10 @@
              - \overline{w'\theta'_l}\ptlder{\bar{w}}{z}
              + \frac{g}{\theta_0} \overline{\theta'_l\theta'_v}
           \right)
-    + \nu_6 \nabla_z^2 \overline{w^{'}\theta_l^{'}}
+%    + \nu_6 \nabla_z^2 \overline{w^{'}\theta_l^{'}}
+    + \ptlder{}{z} \left[ \left( K_{w6} + \nu_6 \right)
+                          \ptlder{}{z} \overline{w'\theta'_l} 
+                   \right]
 \end{split}
 \end{equation}
 %
@@ -191,7 +209,10 @@
                 - 3 \overline{w^{'3}}\ptlder{\bar{w}}{z}
                 + \frac{3g}{\theta_0} \overline{w^{'2}\theta'_v}
              \right)
-    + \left( K_w + \nu_8 \right) \nabla_z^2 \overline{w^{'3}}
+%    + \left( K_w + \nu_8 \right) \nabla_z^2 \overline{w^{'3}}
+    + \ptlder{}{z} \left[ \left( K_{w8} + \nu_8 \right)
+                          \ptlder{}{z} \overline{w^{'3}} 
+                   \right]
 \end{split}
 \end{equation}
 %
@@ -294,13 +315,6 @@ The time scale $\tau$ is:
 Additionally, $\tau$ is set to a minimum value $\tau_{\rm min}$
 whenever $\overline{w'^2} \leqslant 0.005$ m$^2$ s$^{-2}$.
 
-The eddy diffusivity coefficient $K_w$ is
-%
-\begin{equation}
-\label{eq_Kw}
-K_w = 0.22 \, L \, \overline{e}^{\, 1/2}.
-\end{equation}
-
 The momentum fluxes are closed using a down gradient approach:
 %
 \begin{subequations}
@@ -324,11 +338,31 @@ K_m = c_K \, L \, \overline{e}^{\, 1/2}
 %
 with $c_K = c_{\mu}^{\, 1/4} = 0.548$ as in \citet{duynkerke1987a}.
 
+The eddy diffusivity coefficient $K_w$ is
+%
+\begin{equation}
+\label{eq_Kw}
+K_w = 0.22 \, L \, \overline{e}^{\, 1/2}.
+\end{equation}
+
+The eddy diffusivity coefficients in Equation~(\ref{eq_wp2}) through 
+Equation~(\ref{eq_wp3}) are as follows:
+\begin{displaymath}
+\begin{split}
+& K_{w1} = c_{K1} K_m \\
+& K_{w2} = c_{K2} K_m \\
+& K_{w6} = c_{K6} K_m \\
+& K_{w8} = c_{K8} K_m
+\end{split}
+\end{displaymath}
+
 The specific values of the constants $C_i$ and $\nu_i$
 are as follows: $C_1 = 2.5$; $C_2 = 1.0$; $C_4 = 5.2$; $C_5 = 0.3$;
 $C_6 = 6.0$; $C_7 = 0.1$; $C_8 = 3.0$; $C_{11} = 0.75$; $C_{14} = 1.0$;
 $\nu_1 = \nu_8 = \nu_9 = 20 \hbox{ (m$^2$/s)}$;
-and $\nu_2 = \nu_6 = 5 \hbox{ (m$^2$/s)}$. 
+and $\nu_2 = \nu_6 = 5 \hbox{ (m$^2$/s)}$.  In addition, the specific 
+values of the constants $c_{Ki}$ are as follows:  $c_{K1} = 0$; 
+$c_{K2} = 0$; $c_{K6} = 0$; and $c_{K8} = 0.5$.
 
 \section{PDF closure}
 
@@ -710,13 +744,13 @@ We now compute the contributions of each term in (\ref{eq_qtp2_ss}) to
 $\mathtt{lhs(3,k)}$, $\mathtt{lhs(2,k)}$, $\mathtt{lhs(1,k)}$, 
 and $\mathtt{rhs(k)}$.
 
-\subsubsection{Term 1}
+\subsubsection{Term 1:  dp1}
 
 \begin{equation}
 \mathtt{ lhs(2,k) = lhs(2,k) + \frac{C_2}{taum(k)} }
 \end{equation}
 
-\subsubsection{Term 2}
+\subsubsection{Term 2:  ma}
 
 \begin{equation}
 \begin{split}
@@ -739,7 +773,7 @@ Separating out the contributions:
 \end{split}
 \end{equation}
 
-\subsubsection{Term 3}
+\subsubsection{Term 3:  ta, implicit component}
 
 \begin{equation}
 \begin{split}
@@ -789,18 +823,31 @@ Separating out the contributions:
   }
 \end{split}
 \end{equation}
- 
-\subsubsection{Term 4}
-
+%
+In order to increase numerical stability in the model, $a_{1}$ has been brought
+outside of the derivative.  This is not mathematically correct, but it does 
+help to increase stability.  Brian Griffin.  Feb. 21, 2008.
+% 
 \begin{equation}
 \begin{split}
-& \left. - \nu_2 \nabla_z^2 \overline{q_t^{'2}} \right|_{\mathtt{zm(k)}}
-=& \mathtt{
-    \frac{\nu_2}{dzm(k)}
-    \left( \frac{qtp2(k+1)-qtp2(k)}{dzt(k+1)}
-          -\frac{qtp2(k)-qtp2(k-1)}{dzt(k)}
-    \right)
-   }
+& \left.
+  a_1
+  \frac{1}{3} \beta
+   \ptlder{}{z}
+     \left( 
+       \frac{\overline{w^{'3}}}{\overline{w^{'2}}} \,
+       \overline{q_t^{'2}}
+     \right)
+   \right|_{\mathtt{zm(k)}} \\
+&= \mathtt{
+    a1m(k)
+    \frac{\beta}{3 dzm(k)}
+    \bigg[ \frac{wp3(k+1) \left(qtp2(k)+qtp2(k+1) \right)}
+                {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)}
+          -\frac{wp3(k) \left(qtp2(k-1)+qtp2(k) \right)}
+                {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)}
+    \bigg]
+    }
 \end{split}
 \end{equation}
 %
@@ -808,14 +855,71 @@ Separating out the contributions:
 %
 \begin{equation}
 \begin{split}
-&\mathtt{lhs(3,k) = lhs(3,k) - \frac{\nu_2}{dzm(k)dzt(k)} } \\
-&\mathtt{lhs(2,k) = lhs(2,k) + \frac{\nu_2}{dzm(k)}
-                       \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right) } \\
-&\mathtt{lhs(1,k) = lhs(1,k) - \frac{\nu_2}{dzm(k)dzt(k+1)} }
+& \mathtt{ 
+   lhs(3,k) = lhs(3,k) - a1m(k)\frac{\beta}{3 dzm(k)}
+                 \frac{wp3(k)}
+                      {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)}
+  } \\
+& \mathtt{
+   lhs(2,k) = lhs(2,k) + a1m(k)\frac{\beta}{3 dzm(k)}
+                 \left(
+                   \frac{wp3(k+1)}
+                        {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)}
+                  -\frac{wp3(k)}
+                        {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)}
+                 \right)
+  } \\
+& \mathtt{
+   lhs(1,k) = lhs(1,k) + a1m(k)\frac{\beta}{3 dzm(k)}
+                 \frac{wp3(k+1)}
+                      {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)}
+  }
+\end{split}
+\end{equation}
+ 
+\subsubsection{Term 4:  dp2}
+
+\begin{equation}
+\begin{split}
+%& \left. - \nu_2 \nabla_z^2 \overline{q_t^{'2}} \right|_{\mathtt{zm(k)}}
+& - \ptlder{}{z} \left[ \left( K_{w2} + \nu_2 \right)
+                        \ptlder{}{z} \overline{q_t^{'2}}
+                 \right]  \\
+%=& \mathtt{
+%    \frac{\nu_2}{dzm(k)}
+%    \left( \frac{qtp2(k+1)-qtp2(k)}{dzt(k+1)}
+%          -\frac{qtp2(k)-qtp2(k-1)}{dzt(k)}
+%    \right)
+%   }
+ &= \mathtt{
+    -\frac{1}{dzm(k)}
+     \bigg( \frac{ \left( Kw2(k+1) + \nu_2 \right)
+                   \left( qtp2(k+1) - qtp2(k) \right)} {dzt(k+1)}  }  \\
+ &  \mathtt{ \qquad \qquad \qquad \quad
+           -\frac{ \left( Kw2(k) + \nu_2 \right)
+                   \left( qtp2(k) - qtp2(k-1) \right)} {dzt(k)}
+     \bigg)
+    }
+\end{split}
+\end{equation}
+%
+Separating out the contributions:
+%
+\begin{equation}
+\begin{split}
+%&\mathtt{lhs(3,k) = lhs(3,k) - \frac{\nu_2}{dzm(k)dzt(k)} } \\
+%&\mathtt{lhs(2,k) = lhs(2,k) + \frac{\nu_2}{dzm(k)}
+%                       \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right) } \\
+%&\mathtt{lhs(1,k) = lhs(1,k) - \frac{\nu_2}{dzm(k)dzt(k+1)} }
+&\mathtt{lhs(3,k) = lhs(3,k) - \frac{Kw2(k)+\nu_2}{dzm(k)dzt(k)} } \\
+&\mathtt{lhs(2,k) = lhs(2,k) + \frac{1}{dzm(k)}
+                               \left(   \frac{Kw2(k+1)+\nu_2}{dzt(k+1)}
+                                      + \frac{Kw2(k)+\nu_2}{dzt(k)} \right) } \\
+&\mathtt{lhs(1,k) = lhs(1,k) - \frac{Kw2(k+1)+\nu_2}{dzm(k)dzt(k+1)} }
 \end{split}
 \end{equation}
 
-\subsubsection{Term 5}
+\subsubsection{Term 5:  ta, explicit component}
 
 \begin{equation}
 \begin{split}
@@ -855,8 +959,50 @@ Separating out the contributions:
    }
 \end{split}
 \end{equation}
+%
+In order to increase numerical stability in the model, $a_{1}$ has been brought
+outside of the derivative.  This is not mathematically correct, but it does 
+help to increase stability.  Brian Griffin.  Feb. 21, 2008.
+% 
+\begin{equation}
+\begin{split}
+& - \left. a_2 \left( 1 - \frac{1}{3}\beta \right)
+       \ptlder{}{z}
+         \left( 
+           \frac{\overline{w^{'3}}}{\overline{w^{'2}}^2} \,
+           \overline{w'q_t'}^2
+         \right) \right|_{\mathtt{zm(k)}} \\
+=& \mathtt{
+   - a1m(k)^{2}\frac{1 - \frac{1}{3}\beta}{dzm(k)}
+     \bigg[ \frac{wp3(k+1) \left(wpqtp(k)+wpqtp(k+1)\right)^2}
+                 {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)^2} } \\
+ & \mathtt{ \quad \quad \quad \quad \quad \quad \quad \quad
+           -\frac{wp3(k) \left(wpqtp(k-1)+wpqtp(k)\right)^2}
+                 {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)^2}
+     \bigg]
+   }
+\end{split}
+\end{equation}
+%
+Separating out the contributions:
+%
+\begin{equation}
+\begin{split}
+&\mathtt{rhs(k)} \\
+=& \mathtt{
+   rhs(k)
+   - a1m(k)^{2}\frac{1 - \frac{1}{3}\beta}{dzm(k)}
+     \bigg[ \frac{wp3(k+1) \left(wpqtp(k)+wpqtp(k+1)\right)^2}
+                 {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)^2} } \\
+ & \mathtt{ \quad \quad \quad \quad \qquad \qquad \qquad \qquad
+           -\frac{wp3(k) \left(wpqtp(k-1)+wpqtp(k)\right)^2}
+                 {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)^2}
+     \bigg]
+   }
+\end{split}
+\end{equation}
 
-\subsubsection{Term 6}
+\subsubsection{Term 6:  tp}
 
 \begin{equation}
 \begin{split}
@@ -915,13 +1061,13 @@ We now compute the contributions of each term in (\ref{eq_qtpthlp_ss}) to
 $\mathtt{lhs(3,k)}$, $\mathtt{lhs(2,k)}$, $\mathtt{lhs(1,k)}$, 
 and $\mathtt{rhs(k)}$.
 
-\subsubsection{Term 1}
+\subsubsection{Term 1:  dp1}
 
 \begin{equation}
 \mathtt{ lhs(2,k) = lhs(2,k) + \frac{C_2}{taum(k)} }
 \end{equation}
 
-\subsubsection{Term 2}
+\subsubsection{Term 2:  ma}
 
 \begin{equation}
 \begin{split}
@@ -944,7 +1090,7 @@ Separating out the contributions:
 \end{split}
 \end{equation}
 
-\subsubsection{Term 3}
+\subsubsection{Term 3:  ta, implicit component}
 
 \begin{equation}
 \begin{split}
@@ -994,18 +1140,32 @@ Separating out the contributions:
   }
 \end{split}
 \end{equation}
- 
-\subsubsection{Term 4}
-
+%
+In order to increase numerical stability in the model, $a_{1}$ has been brought
+outside of the derivative.  This is not mathematically correct, but it does 
+help to increase stability.  Brian Griffin.  Feb. 21, 2008.
+% 
 \begin{equation}
 \begin{split}
-& \left. - \nu_2 \nabla_z^2 \overline{q_t^{'}\theta_l^{'}} \right|_{\mathtt{zm(k)}}
-=& \mathtt{
-    \frac{\nu_2}{dzm(k)}
-    \left( \frac{qptthlp(k+1)-qptthlp(k)}{dzt(k+1)}
-          -\frac{qptthlp(k)-qptthlp(k-1)}{dzt(k)}
-    \right)
-   }
+& \left.
+  a_1
+  \frac{1}{3} \beta
+   \ptlder{}{z}
+     \left( 
+       \frac{\overline{w^{'3}}}{\overline{w^{'2}}} \,
+       \overline{q_t^{'}\theta_l^{'}}
+     \right)
+   \right|_{\mathtt{zm(k)}} \\
+&= \mathtt{
+    a1m(k)
+    \frac{\beta}{3 dzm(k)}
+    \bigg[ \frac{wp3(k+1) \left(qtpthlp(k)+qtpthlp(k+1) \right)}
+                {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)} } \\
+&  \mathtt{ \quad \quad \quad \quad \quad \quad \quad \quad \quad
+          -\frac{wp3(k) \left(qtpthlp(k-1)+qtpthlp(k) \right)}
+                {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)}
+    \bigg]
+    }
 \end{split}
 \end{equation}
 %
@@ -1013,14 +1173,71 @@ Separating out the contributions:
 %
 \begin{equation}
 \begin{split}
-&\mathtt{lhs(3,k) = lhs(3,k) - \frac{\nu_2}{dzm(k)dzt(k)} } \\
-&\mathtt{lhs(2,k) = lhs(2,k) + \frac{\nu_2}{dzm(k)}
-                       \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right) } \\
-&\mathtt{lhs(1,k) = lhs(1,k) - \frac{\nu_2}{dzm(k)dzt(k+1)} }
+& \mathtt{ 
+   lhs(3,k) = lhs(3,k) - a1m(k)\frac{\beta}{3 dzm(k)}
+                 \frac{wp3(k)}
+                      {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)}
+  } \\
+& \mathtt{
+   lhs(2,k) = lhs(2,k) + a1m(k)\frac{\beta}{3 dzm(k)}
+                 \left(
+                   \frac{wp3(k+1)}
+                        {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)}
+                  -\frac{wp3(k)}
+                        {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)}
+                 \right)
+  } \\
+& \mathtt{
+   lhs(1,k) = lhs(1,k) + a1m(k)\frac{\beta}{3 dzm(k)}
+                 \frac{wp3(k+1)}
+                      {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)}
+  }
+\end{split}
+\end{equation}
+ 
+\subsubsection{Term 4:  dp2}
+
+\begin{equation}
+\begin{split}
+%& \left. - \nu_2 \nabla_z^2 \overline{q_t^{'}\theta_l^{'}} \right|_{\mathtt{zm(k)}}
+& - \ptlder{}{z} \left[ \left( K_{w2} + \nu_2 \right)
+                        \ptlder{}{z} \overline{q_t'\theta_l'}
+                 \right]  \\
+%=& \mathtt{
+%    \frac{\nu_2}{dzm(k)}
+%    \left( \frac{qptthlp(k+1)-qptthlp(k)}{dzt(k+1)}
+%          -\frac{qptthlp(k)-qptthlp(k-1)}{dzt(k)}
+%    \right)
+%   }
+ &= \mathtt{
+    -\frac{1}{dzm(k)}
+     \bigg( \frac{ \left( Kw2(k+1) + \nu_2 \right)
+                   \left( qtpthlp(k+1) - qtpthlp(k) \right)} {dzt(k+1)}  }  \\
+ &  \mathtt{ \qquad \qquad \qquad \quad
+           -\frac{ \left( Kw2(k) + \nu_2 \right)
+                   \left( qtpthlp(k) - qtpthlp(k-1) \right)} {dzt(k)}
+     \bigg)
+    }
+\end{split}
+\end{equation}
+%
+Separating out the contributions:
+%
+\begin{equation}
+\begin{split}
+%&\mathtt{lhs(3,k) = lhs(3,k) - \frac{\nu_2}{dzm(k)dzt(k)} } \\
+%&\mathtt{lhs(2,k) = lhs(2,k) + \frac{\nu_2}{dzm(k)}
+%                       \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right) } \\
+%&\mathtt{lhs(1,k) = lhs(1,k) - \frac{\nu_2}{dzm(k)dzt(k+1)} }
+&\mathtt{lhs(3,k) = lhs(3,k) - \frac{Kw2(k)+\nu_2}{dzm(k)dzt(k)} } \\
+&\mathtt{lhs(2,k) = lhs(2,k) + \frac{1}{dzm(k)}
+                               \left(   \frac{Kw2(k+1)+\nu_2}{dzt(k+1)} 
+                                      + \frac{Kw2(k)+\nu_2}{dzt(k)} \right) } \\
+&\mathtt{lhs(1,k) = lhs(1,k) - \frac{Kw2(k+1)+\nu_2}{dzm(k)dzt(k+1)} }
 \end{split}
 \end{equation}
 
-\subsubsection{Term 5}
+\subsubsection{Term 5:  ta, explicit component}
 
 \begin{equation}
 \begin{split}
@@ -1066,8 +1283,58 @@ Separating out the contributions:
    }
 \end{split}
 \end{equation}
+%
+In order to increase numerical stability in the model, $a_{1}$ has been brought
+outside of the derivative.  This is not mathematically correct, but it does 
+help to increase stability.  Brian Griffin.  Feb. 21, 2008.
+% 
+\begin{equation}
+\begin{split}
+& - \left. a_2 \left( 1 - \frac{1}{3}\beta \right)
+       \ptlder{}{z}
+         \left( 
+           \frac{\overline{w^{'3}}}{\overline{w^{'2}}^2} \,
+           \overline{w'q_t'} \; \overline{w'\theta_l'}
+         \right) \right|_{\mathtt{zm(k)}} \\
+=& \mathtt{
+   - a1m(k)^{2}\frac{1 - \frac{1}{3}\beta}{dzm(k)} } \\
+ & \mathtt{
+     \times \bigg[ \frac{wp3(k+1) 
+                         \left(wpqtp(k)+wpqtp(k+1)\right)
+                         \left(wpthlp(k)+wpthlp(k+1)\right)}
+                        {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)^2} } \\
+ & \mathtt{ \quad \quad
+                  -\frac{wp3(k) 
+                         \left(wpqtp(k-1)+wpqtp(k)\right)
+                         \left(wpthlp(k-1)+wpthlp(k)\right)}
+                        {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)^2}
+            \bigg]
+   }
+\end{split}
+\end{equation}
+%
+Separating out the contributions:
+%
+\begin{equation}
+\begin{split}
+\mathtt{rhs(k)} =& \mathtt{rhs(k)} \\
+ & \mathtt{ - a1m(k)^{2}\frac{1 - \frac{1}{3}\beta}{dzm(k)} } \\
+ & \mathtt{ \times 
+      \bigg[ \frac{wp3(k+1) 
+                   \left(wpqtp(k)+wpqtp(k+1)\right) 
+                   \left(wpthlp(k)+wpthlp(k+1)\right)}
+                  {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)^2} } \\
+ & \mathtt{ \quad \quad
+            -\frac{wp3(k) 
+                   \left(wpqtp(k-1)+wpqtp(k)\right) 
+                   \left(wpthlp(k-1)+wpthlp(k)\right)}
+                  {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)^2}
+      \bigg]
+   }
+\end{split}
+\end{equation}
 
-\subsubsection{Terms 6 and 7}
+\subsubsection{Terms 6 and 7:  tp1 and tp2, respectively}
 
 \begin{equation}
 \begin{split}
@@ -1464,7 +1731,10 @@ Start with equations (\ref{eq_wp2}) and (\ref{eq_wp3}):
        - \overline{v'w'}\ptlder{\bar{v}}{z} 
      \right) \\
  & - \dfrac{C_1}{\tau} \overline{w^{'2}} 
-   + \nu_1 \nabla_z^2 \, \overline{w^{'2}}
+%   + \nu_1 \nabla_z^2 \, \overline{w^{'2}}
+   + \ptlder{}{z} \left[ \left( K_{w1} + \nu_1 \right)
+                         \ptlder{}{z} \overline{w^{'2}} 
+                  \right]
 \end{split}
 \end{equation}
 %
@@ -1482,7 +1752,10 @@ Start with equations (\ref{eq_wp2}) and (\ref{eq_wp3}):
                 - 3 \overline{w^{'3}}\ptlder{\bar{w}}{z}
                 + \frac{3g}{\theta_0} \overline{w^{'2}\theta'_v}
              \right)
-    + \left( K_w + \nu_8 \right) \nabla_z^2 \overline{w^{'3}}
+%    + \left( K_w + \nu_8 \right) \nabla_z^2 \overline{w^{'3}}
+    + \ptlder{}{z} \left[ \left( K_{w8} + \nu_8 \right)
+                          \ptlder{}{z} \overline{w^{'3}} 
+                   \right]
 \end{split}
 \end{equation}
 %
@@ -1510,7 +1783,10 @@ Rearranging terms and making use of (\ref{eq_tke}):
 & \ptlder{\overline{w^{'2}}}{t} 
   + \ptlder{\overline{w^{'3}}}{z} 
   + \dfrac{C_1}{\tau} \overline{w^{'2}} 
-  - \nu_1 \nabla_z^2 \, \overline{w^{'2}} \\
+%  - \nu_1 \nabla_z^2 \, \overline{w^{'2}} \\
+  - \ptlder{}{z} \left[ \left( K_{w1} + \nu_1 \right)
+                        \ptlder{}{z} \overline{w^{'2}} 
+                 \right]  \\
 & =
   - \bar{w}\ptlder{\overline{w^{'2}}}{z}	 
   + ( 1 - C_5 ) \frac{2g}{\theta_0} \overline{w'\theta'_v}
@@ -1528,7 +1804,10 @@ Rearranging terms and making use of (\ref{eq_tke}):
 \label{eq_wp3c}
 \begin{split}
 & \ptlder{\overline{w^{'3}}}{t}
-  - \left( K_w + \nu_8 \right) \nabla_z^2 \overline{w^{'3}}
+%  - \left( K_w + \nu_8 \right) \nabla_z^2 \overline{w^{'3}}
+   - \ptlder{}{z} \left[ \left( K_{w8} + \nu_8 \right)
+                         \ptlder{}{z} \overline{w^{'3}} 
+                  \right]
   + \frac{C_8}{\tau}\left( C_{8b} \, Skw^4 + 1 \right) \overline{w^{'3}}
   + \ptlder{}{z} \left( a_3 \overline{w^{'2}}^2 \right)
   + \ptlder{}{z} 
@@ -1552,13 +1831,19 @@ Terms on the RHS explicitly:
 \begin{equation}
 \label{eq_wp2d}
 \begin{split}
-  \frac{\overline{w^{'2}}^{t+\Delta t}}{\Delta t} 
+& \frac{\overline{w^{'2}}^{t+\Delta t}}{\Delta t} 
   + \ptlder{\overline{w^{'3}}^{t+\Delta t}}{z} 
   + \dfrac{C_1}{\tau} \overline{w^{'2}}^{t+\Delta t} 
-  - \frac{1}{2} \nu_1 \nabla_z^2 \, \overline{w^{'2}}^{t+\Delta t}
-=
+%  - \frac{1}{2} \nu_1 \nabla_z^2 \, \overline{w^{'2}}^{t+\Delta t}
+  - \frac{1}{2} \ptlder{}{z} \left[ \left( K_{w1} + \nu_1 \right)
+                                    \ptlder{}{z} \overline{w^{'2}}^{t+\Delta t} 
+                             \right]  \\
+&=
   \frac{\overline{w^{'2}}^{t}}{\Delta t} 
-  + \frac{1}{2} \nu_1 \nabla_z^2 \, \overline{w^{'2}}^t
+%  + \frac{1}{2} \nu_1 \nabla_z^2 \, \overline{w^{'2}}^t
+  + \frac{1}{2} \ptlder{}{z} \left[ \left( K_{w1} + \nu_1 \right)
+                                    \ptlder{}{z} \overline{w^{'2}}^{t}
+                             \right]
   + \left. \overline{w^{'2}} \right|_{\rm expl}
 \end{split}
 \end{equation}
@@ -1591,26 +1876,46 @@ The next step consists of writing the finite difference equivalent to
 + \frac{wp3^{new}(k+1) - wp3^{new}(k)}{dzm(k)}
 + \frac{C_1}{taum(k)} wp2^{new}(k)
   } \\
+%& \mathtt{
+%  -\frac{\nu_1}{2 dzm(k)dzt(k)} wp2^{new}(k-1)
+%  } \\
+%& \mathtt{
+%  +\frac{\nu_1}{2 dzm(k)} \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right) wp2^{new}(k)
+%  } \\
+%& \mathtt{
+%  -\frac{\nu_1}{2 dzm(k)dzt(k+1)} wp2^{new}(k+1)
+%  } \\
 & \mathtt{
-  -\frac{\nu_1}{2 dzm(k)dzt(k)} wp2^{new}(k-1)
+  -\frac{Kw1(k)+\nu_1}{2 dzm(k)dzt(k)} wp2^{new}(k-1)
   } \\
 & \mathtt{
-  +\frac{\nu_1}{2 dzm(k)} \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right) wp2^{new}(k)
+  +\frac{1}{2 dzm(k)} \left(  \frac{Kw1(k+1)+\nu_1}{dzt(k+1)} 
+                            + \frac{Kw1(k)+\nu_1}{dzt(k)} \right) wp2^{new}(k)
   } \\
 & \mathtt{
-  -\frac{\nu_1}{2 dzm(k)dzt(k+1)} wp2^{new}(k+1)
+  -\frac{Kw1(k+1)+\nu_1}{2 dzm(k)dzt(k+1)} wp2^{new}(k+1)
   } \\
 =& \mathtt{
   \frac{wp2(k)}{dt}
   } \\
+%& \mathtt{
+%  +\frac{\nu_1}{2 dzm(k)dzt(k)} wp2(k-1)
+%  } \\
+%& \mathtt{
+%  -\frac{\nu_1}{2 dzm(k)} \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right) wp2(k)
+%  } \\
+%& \mathtt{
+%  +\frac{\nu_1}{2 dzm(k)dzt(k+1)} wp2(k+1)
+%  } \\
 & \mathtt{
-  +\frac{\nu_1}{2 dzm(k)dzt(k)} wp2(k-1)
+  +\frac{Kw1(k)+\nu_1}{2 dzm(k)dzt(k)} wp2(k-1)
   } \\
 & \mathtt{
-  -\frac{\nu_1}{2 dzm(k)} \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right) wp2(k)
+  -\frac{1}{2 dzm(k)} \left(  \frac{Kw1(k+1)+\nu_1}{dzt(k+1)} 
+                            + \frac{Kw1(k)+\nu_1}{dzt(k)} \right) wp2(k)
   } \\
 & \mathtt{
-  +\frac{\nu_1}{2 dzm(k)dzt(k+1)} wp2(k+1)
+  +\frac{Kw1(k+1)+\nu_1}{2 dzm(k)dzt(k+1)} wp2(k+1)
   } \\
 & \mathtt{
   + wp2t(k)
@@ -1799,7 +2104,10 @@ We can now assemble the time discrete equivalent to (\ref{eq_wp3c}) using
 \label{eq_wp3d}
 \begin{split}
 & \frac{\overline{w^{'3}}^{t+\Delta t}}{\Delta t} 
-- \frac{1}{2} (K_w + \nu_8) \nabla_z^2 \, \overline{w^{'3}}^{t+\Delta t}
+%- \frac{1}{2} (K_w + \nu_8) \nabla_z^2 \, \overline{w^{'3}}^{t+\Delta t}
+- \frac{1}{2}\ptlder{}{z} \left[ \left( K_{w8} + \nu_8 \right)
+                                 \ptlder{}{z} \overline{w^{'3}}^{t+\Delta t} 
+                          \right]
 + \frac{C_8}{\tau}
    \left(  5 \, C_{8b} \, {Skw^t}^4 + 1 \right)
    \overline{w^{'3}}^{t + \Delta t}
@@ -1813,7 +2121,10 @@ We can now assemble the time discrete equivalent to (\ref{eq_wp3c}) using
 \\
 &=
   \frac{\overline{w^{'3}}^{t}}{\Delta t} 
-  + \frac{1}{2} (K_w + \nu_8) \nabla_z^2 \, \overline{w^{'3}}^t
+%  + \frac{1}{2} (K_w + \nu_8) \nabla_z^2 \, \overline{w^{'3}}^t
+  + \frac{1}{2}\ptlder{}{z} \left[ \left( K_{w8} + \nu_8 \right)
+                                   \ptlder{}{z} \overline{w^{'3}}^{t} 
+                            \right]
   +  \frac{C_8}{\tau}
       \left( 4 \, C_{8b} \, {Skw^t}^4 \right) \overline{w^{'3}}^t
 \\ & \quad
@@ -1845,11 +2156,19 @@ Finally, we derive the finite difference form of (\ref{eq_wp3d}):
 \begin{split}
 & \mathtt{
   \frac{wp3^{new}(k)}{dt}
-  - \frac{Kwt(k) + \nu_8}{2dzt(k)} 
-    \left( 
-        \frac{wp3^{new}(k+1)-wp3^{new}(k)}{dzm(k)}
-      - \frac{wp3^{new}(k)-wp3^{new}(k-1)}{dzm(k-1)}
-    \right)
+%  - \frac{Kwt(k) + \nu_8}{2dzt(k)} 
+%    \left( 
+%        \frac{wp3^{new}(k+1)-wp3^{new}(k)}{dzm(k)}
+%      - \frac{wp3^{new}(k)-wp3^{new}(k-1)}{dzm(k-1)}
+%    \right)
+  - \frac{1}{2dzt(k)} 
+    \bigg( 
+            \left(Kw8(k)+\nu_8\right)
+            \frac{wp3^{new}(k+1)-wp3^{new}(k)}{dzm(k)} }  \\
+& \mathtt{ \qquad \qquad \qquad \qquad \qquad \qquad
+          - \left(Kw8(k-1)+\nu_8\right)
+            \frac{wp3^{new}(k)-wp3^{new}(k-1)}{dzm(k-1)}
+    \bigg)
   } \\
 & \mathtt{
 + \frac{C_8}{taut(k)}
@@ -1876,11 +2195,19 @@ Finally, we derive the finite difference form of (\ref{eq_wp3d}):
   } \\
 =& \mathtt{
   \frac{wp3(k)}{dt} 
-  + \frac{Kwt(k) + \nu_8}{2dzt(k)} 
-    \left( 
-        \frac{wp3(k+1)-wp3(k)}{dzm(k)}
-      - \frac{wp3(k)-wp3(k-1)}{dzm(k-1)}
-    \right)
+%  + \frac{Kwt(k) + \nu_8}{2dzt(k)} 
+%    \left( 
+%        \frac{wp3(k+1)-wp3(k)}{dzm(k)}
+%      - \frac{wp3(k)-wp3(k-1)}{dzm(k-1)}
+%    \right)
+  + \frac{1}{2dzt(k)} 
+    \bigg( 
+            \left(Kw8(k)+\nu_8\right)
+            \frac{wp3(k+1)-wp3(k)}{dzm(k)} }  \\
+& \mathtt{ \qquad \qquad \qquad \qquad \qquad
+          - \left(Kw8(k-1)+\nu_8\right)
+            \frac{wp3(k)-wp3(k-1)}{dzm(k-1)}
+    \bigg)
   } \\
 & \mathtt{
 + \frac{C_8}{taut(k)}
@@ -1909,6 +2236,80 @@ Finally, we derive the finite difference form of (\ref{eq_wp3d}):
 %
 where $\mathtt{wp3t(k)}$ is the finite difference equivalent to (\ref{eq_wp3t}) 
 at level $\mathtt{zt(k)}$.
+%
+
+In order to increase numerical stability in the model, $a_{1}$ has been brought
+outside of the derivative.  Besides $a_{1}$, $a_{3}$ has been previously brought
+outside of the derivative for the same purpose.  This is not mathematically
+correct, but it does help to increase stability.  Brian Griffin.  Feb. 21, 2008.
+% 
+\begin{equation}
+\begin{split}
+& \mathtt{
+  \frac{wp3^{new}(k)}{dt}
+  - \frac{1}{2dzt(k)} 
+    \bigg( 
+            \left(Kw8(k)+\nu_8\right)
+            \frac{wp3^{new}(k+1)-wp3^{new}(k)}{dzm(k)} }  \\
+& \mathtt{ \qquad \qquad \qquad \qquad \qquad \qquad
+          - \left(Kw8(k-1)+\nu_8\right)
+            \frac{wp3^{new}(k)-wp3^{new}(k-1)}{dzm(k-1)}
+    \bigg)
+  } \\
+& \mathtt{
++ \frac{C_8}{taut(k)}
+   \left(  5 \, C_{8b} \, {Skwt(k)}^4 + 1 \right) wp3^{new}(k)
+  } \\
+& \mathtt{
+  + \left(\frac{a3m(k)+a3m(k-1)}{2}\right) \frac{2}{dzt(k)}
+    \left(wp2(k) wp2^{new}(k) - wp2(k-1) wp2^{new}(k-1) \right)
+  } \\
+& \mathtt{
+  + \left(\frac{a1m(k)+a1m(k-1)}{2}\right) \frac{1}{2 \, dzt(k)}
+    \bigg(
+      \frac{ \left(wp3(k)+wp3(k+1)\right)
+             \left(wp3^{new}(k)+wp3^{new}(k+1)\right) }
+           { \max\left( wp2(k), \epsilon \right) }
+  } \\
+& \mathtt{ \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad
+     -\frac{ \left(wp3(k-1)+wp3(k)\right)
+             \left(wp3^{new}(k-1)+wp3^{new}(k)\right) }
+           { \max\left( wp2(k-1), \epsilon \right) }
+    \bigg)
+  } \\
+=& \mathtt{
+  \frac{wp3(k)}{dt} 
+  + \frac{1}{2dzt(k)} 
+    \bigg( 
+            \left(Kw8(k)+\nu_8\right)
+            \frac{wp3(k+1)-wp3(k)}{dzm(k)} }  \\
+& \mathtt{ \qquad \qquad \qquad \qquad \qquad
+          - \left(Kw8(k-1)+\nu_8\right)
+            \frac{wp3(k)-wp3(k-1)}{dzm(k-1)}
+    \bigg)
+  } \\
+& \mathtt{
++ \frac{C_8}{taut(k)}
+   \left( 4 \, C_{8b} \, {Skwt(k)}^4 \right) wp3(k)
+  } \\
+& \mathtt{
+  + \left(\frac{a3m(k)+a3m(k-1)}{2}\right) \frac{wp2(k)^2 - wp2(k-1)^2 }
+                                                {dzt(k)}
+  } \\
+& \mathtt{
+  + \left(\frac{a1m(k)+a1m(k-1)}{2}\right) \frac{1}{4 \, dzt(k)}
+    \bigg(
+      \frac{ \left(wp3(k)+wp3(k+1)\right)^2 }
+           { \max\left( wp2(k), \epsilon \right) }
+     -\frac{ \left(wp3(k-1)+wp3(k)\right)^2 }
+           { \max\left( wp2(k-1), \epsilon \right) }
+    \bigg)
+  } \\
+& \mathtt{
++ wp3t(k)
+  }
+\end{split}
+\end{equation}
 
 \subsection{Matrix form}
 
@@ -1995,7 +2396,8 @@ efficiently using a LU decomposition algorithm for band diagonal matrices.
 Contributions to $lhs_{\mathtt{wp23}}$ from (\ref{eq_wp2e}):
 %
 \begin{equation}
-\mathtt{ lhs(k\_wp2,5) = lhs(k\_wp2,5) -\frac{\nu_1}{2 dzm(k)dzt(k)} }
+%\mathtt{ lhs(k\_wp2,5) = lhs(k\_wp2,5) -\frac{\nu_1}{2 dzm(k)dzt(k)} }
+\mathtt{ lhs(k\_wp2,5) = lhs(k\_wp2,5) -\frac{Kw1(k)+\nu_1}{2 dzm(k)dzt(k)} }
 \end{equation}
 %
 \begin{equation}
@@ -2008,7 +2410,9 @@ Contributions to $lhs_{\mathtt{wp23}}$ from (\ref{eq_wp2e}):
  = lhs(k\_wp2,3) 
  +\frac{1}{dt}
  +\frac{C_1}{taum(k)}
- +\frac{\nu_1}{2 dzm(k)} \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right) }
+% +\frac{\nu_1}{2 dzm(k)} \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right) }
+ +\frac{1}{2 dzm(k)} \left(  \frac{Kw1(k+1)+\nu_1}{dzt(k+1)}
+                           + \frac{Kw1(k)+\nu_1}{dzt(k)} \right) }
 \end{equation}
 %
 \begin{equation}
@@ -2016,7 +2420,8 @@ Contributions to $lhs_{\mathtt{wp23}}$ from (\ref{eq_wp2e}):
 \end{equation}
 %
 \begin{equation}
-\mathtt{ lhs(k\_wp2,1) = lhs(k\_wp2,1) -\frac{\nu_1}{2 dzm(k)dzt(k+1)} }
+%\mathtt{ lhs(k\_wp2,1) = lhs(k\_wp2,1) -\frac{\nu_1}{2 dzm(k)dzt(k+1)} }
+\mathtt{ lhs(k\_wp2,1) = lhs(k\_wp2,1) -\frac{Kw1(k+1)+\nu_1}{2 dzm(k)dzt(k+1)} }
 \end{equation}
 %
 Contributions to $rhs_{\mathtt{wp23}}$ from (\ref{eq_wp2e}):
@@ -2027,14 +2432,24 @@ Contributions to $rhs_{\mathtt{wp23}}$ from (\ref{eq_wp2e}):
 & \mathtt{
   +\frac{wp2(k)}{dt}
   } \\
+%& \mathtt{
+%  +\frac{\nu_1}{2 dzm(k)dzt(k)} wp2(k-1)
+%  } \\
+%& \mathtt{
+%  -\frac{\nu_1}{2 dzm(k)} \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right) wp2(k)
+%  } \\
+%& \mathtt{
+%  +\frac{\nu_1}{2 dzm(k)dzt(k+1)} wp2(k+1)
+%  } \\
 & \mathtt{
-  +\frac{\nu_1}{2 dzm(k)dzt(k)} wp2(k-1)
+  +\frac{Kw1(k)+\nu_1}{2 dzm(k)dzt(k)} wp2(k-1)
   } \\
 & \mathtt{
-  -\frac{\nu_1}{2 dzm(k)} \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right) wp2(k)
+  -\frac{1}{2 dzm(k)} \left(  \frac{Kw1(k+1)+\nu_1}{dzt(k+1)}
+                            + \frac{Kw1(k)+\nu_1}{dzt(k)} \right) wp2(k)
   } \\
 & \mathtt{
-  +\frac{\nu_1}{2 dzm(k)dzt(k+1)} wp2(k+1)
+  +\frac{Kw1(k+1)+\nu_1}{2 dzm(k)dzt(k+1)} wp2(k+1)
   } \\
 & \mathtt{
   + wp2t(k)
@@ -2054,7 +2469,8 @@ Contributions to $lhs_{\mathtt{wp23}}$ from (\ref{eq_wp3e}):
 \begin{split}
 & \mathtt{ lhs(k\_wp3,5) = lhs(k\_wp3,5) }\\
 & \mathtt{
-- \frac{Kwt(k) + \nu_8}{2dzt(k)dzm(k-1)} 
+%- \frac{Kwt(k) + \nu_8}{2dzt(k)dzm(k-1)} 
+- \frac{Kw8(k-1)+\nu_8}{2 dzt(k)dzm(k-1)}
 - \frac{1}{2 \, dzt(k)}
   \frac{ a1m(k-1)
          \left(wp3(k-1)+wp3(k)\right) }
@@ -2078,8 +2494,10 @@ Contributions to $lhs_{\mathtt{wp23}}$ from (\ref{eq_wp3e}):
 + \frac{1}{dt}
 + \frac{C_8}{taut(k)}
    \left(  5 \, C_{8b} \, {Skwt(k)}^4 + 1 \right)
-+ \frac{Kwt(k) + \nu_8}{2dzt(k)}
-  \left( \frac{1}{dzm(k-1)} + \frac{1}{dzm(k)}  \right)
+%+ \frac{Kwt(k) + \nu_8}{2dzt(k)}
+%  \left( \frac{1}{dzm(k-1)} + \frac{1}{dzm(k)}  \right)
++ \frac{1}{2 dzt(k)} \left(  \frac{Kw8(k)+\nu_8}{dzm(k)}
+                           + \frac{Kw8(k-1)+\nu_8}{dzm(k-1)} \right)
 } \\
 & \mathtt{
 + \frac{1}{2 \, dzt(k)}
@@ -2107,7 +2525,8 @@ Contributions to $lhs_{\mathtt{wp23}}$ from (\ref{eq_wp3e}):
 \begin{split}
 & \mathtt{ lhs(k\_wp3,1) = lhs(k\_wp3,1) }\\
 & \mathtt{
-- \frac{Kwt(k) + \nu_8}{2dzt(k)dzm(k)} 
+%- \frac{Kwt(k) + \nu_8}{2dzt(k)dzm(k)} 
+- \frac{Kw8(k)+\nu_8}{2 dzt(k)dzm(k)}
 + \frac{1}{2 \, dzt(k)}
   \frac{ a1m(k) \left(wp3(k)+wp3(k+1)\right) }
        { \max\left( wp2(k), \epsilon \right) }
@@ -2122,11 +2541,19 @@ Contributions to $rhs_{\mathtt{wp23}}$ from (\ref{eq_wp3e}):
 & \mathtt{ rhs(k\_wp3) = rhs(k\_wp3) } \\
 & \mathtt{
   + \frac{wp3(k)}{dt} 
-  + \frac{Kwt(k) + \nu_8}{2dzt(k)} 
-    \left( 
-        \frac{wp3(k+1)-wp3(k)}{dzm(k)}
-      - \frac{wp3(k)-wp3(k-1)}{dzm(k-1)}
-    \right)
+%  + \frac{Kwt(k) + \nu_8}{2dzt(k)} 
+%    \left( 
+%        \frac{wp3(k+1)-wp3(k)}{dzm(k)}
+%      - \frac{wp3(k)-wp3(k-1)}{dzm(k-1)}
+%    \right)
+  + \frac{1}{2dzt(k)}
+      \bigg(
+              \left(Kw8(k)+\nu_8\right)
+              \frac{wp3(k+1)-wp3(k)}{dzm(k)} }  \\
+& \mathtt{ \qquad \qquad \qquad \qquad \qquad
+            - \left(Kw8(k-1)+\nu_8\right)
+              \frac{wp3(k)-wp3(k-1)}{dzm(k-1)}
+      \bigg)
   } \\
 & \mathtt{
 + \frac{C_8}{taut(k)}
@@ -2159,6 +2586,122 @@ where
 \mathtt{ k\_wp3 = 2 k - 1}
 \end{equation}
 %
+In order to increase numerical stability in the model, $a_{1}$ has been brought
+outside of the derivative.  Besides $a_{1}$, $a_{3}$ has been previously brought
+outside of the derivative for the same purpose.  This is not mathematically
+correct, but it does help to increase stability.  Brian Griffin.  Feb. 21, 2008.
+% 
+Contributions to $lhs_{\mathtt{wp23}}$ from (\ref{eq_wp3e}):
+%
+\begin{equation}
+\begin{split}
+& \mathtt{ lhs(k\_wp3,5) = lhs(k\_wp3,5) }\\
+& \mathtt{
+%- \frac{Kwt(k) + \nu_8}{2dzt(k)dzm(k-1)} 
+- \frac{Kw8(k-1)+\nu_8}{2 dzt(k)dzm(k-1)}
+- \left(\frac{a1m(k)+a1m(k-1)}{2}\right) \frac{1}{2 \, dzt(k)}
+  \frac{ \left(wp3(k-1)+wp3(k)\right) }
+       { \max\left( wp2(k-1), \epsilon \right) }
+}
+\end{split}
+\end{equation}
+%
+\begin{equation}
+\begin{split}
+& \mathtt{ lhs(k\_wp3,4) = lhs(k\_wp3,4) 
+  - \left(\frac{a3m(k)+a3m(k-1)}{2}\right) \frac{2 wp2(k-1)}{dzt(k)}
+  }
+\end{split}
+\end{equation}
+%
+\begin{equation}
+\begin{split}
+& \mathtt{ lhs(k\_wp3,3) = lhs(k\_wp3,3) }\\
+& \mathtt{
++ \frac{1}{dt}
++ \frac{C_8}{taut(k)}
+   \left(  5 \, C_{8b} \, {Skwt(k)}^4 + 1 \right)
+%+ \frac{Kwt(k) + \nu_8}{2dzt(k)}
+%  \left( \frac{1}{dzm(k-1)} + \frac{1}{dzm(k)}  \right)
++ \frac{1}{2 dzt(k)} \left(  \frac{Kw8(k)+\nu_8}{dzm(k)}
+                           + \frac{Kw8(k-1)+\nu_8}{dzm(k-1)} \right)
+} \\
+& \mathtt{
++ \left(\frac{a1m(k)+a1m(k-1)}{2}\right) \frac{1}{2 \, dzt(k)}
+  \bigg(
+    \frac{ \left(wp3(k)+wp3(k+1)\right) }
+         { \max\left( wp2(k), \epsilon \right) }
+  - \frac{ \left(wp3(k-1)+wp3(k)\right) }
+         { \max\left( wp2(k-1), \epsilon \right) }
+  \bigg)
+}
+\end{split}
+\end{equation}
+%
+\begin{equation}
+\begin{split}
+& \mathtt{ lhs(k\_wp3,2) = lhs(k\_wp3,2)
+  + \left(\frac{a3m(k)+a3m(k-1)}{2}\right) \frac{2 wp2(k)}{dzt(k)}
+  }
+\end{split}
+\end{equation}
+%
+\begin{equation}
+\begin{split}
+& \mathtt{ lhs(k\_wp3,1) = lhs(k\_wp3,1) }\\
+& \mathtt{
+%- \frac{Kwt(k) + \nu_8}{2dzt(k)dzm(k)} 
+- \frac{Kw8(k)+\nu_8}{2 dzt(k)dzm(k)}
++ \left(\frac{a1m(k)+a1m(k-1)}{2}\right) \frac{1}{2 \, dzt(k)}
+  \frac{ \left(wp3(k)+wp3(k+1)\right) }
+       { \max\left( wp2(k), \epsilon \right) }
+}
+\end{split}
+\end{equation}
+%
+Contributions to $rhs_{\mathtt{wp23}}$ from (\ref{eq_wp3e}):
+%
+\begin{equation}
+\begin{split}
+& \mathtt{ rhs(k\_wp3) = rhs(k\_wp3) } \\
+& \mathtt{
+  + \frac{wp3(k)}{dt} 
+%  + \frac{Kwt(k) + \nu_8}{2dzt(k)} 
+%    \left( 
+%        \frac{wp3(k+1)-wp3(k)}{dzm(k)}
+%      - \frac{wp3(k)-wp3(k-1)}{dzm(k-1)}
+%    \right)
+  + \frac{1}{2dzt(k)}
+      \bigg(
+              \left(Kw8(k)+\nu_8\right)
+              \frac{wp3(k+1)-wp3(k)}{dzm(k)} }  \\
+& \mathtt{ \qquad \qquad \qquad \qquad \qquad
+            - \left(Kw8(k-1)+\nu_8\right)
+              \frac{wp3(k)-wp3(k-1)}{dzm(k-1)}
+      \bigg)
+  } \\
+& \mathtt{
++ \frac{C_8}{taut(k)}
+   \left( 4 \, C_{8b} \, {Skwt(k)}^4 \right) wp3(k)
+  } \\
+& \mathtt{
+  + \left(\frac{a3m(k)+a3m(k-1)}{2}\right) \frac{wp2(k)^2 - wp2(k-1)^2 }
+                                                {dzt(k)}
+  } \\
+& \mathtt{
+  + \left(\frac{a1m(k)+a1m(k-1)}{2}\right) \frac{1}{4 \, dzt(k)}
+    \bigg(
+      \frac{ \left(wp3(k)+wp3(k+1)\right)^2 }
+           { \max\left( wp2(k), \epsilon \right) }
+     -\frac{ \left(wp3(k-1)+wp3(k)\right)^2 }
+           { \max\left( wp2(k-1), \epsilon \right) }
+    \bigg)
+  } \\
+& \mathtt{
++ wp3t(k)
+  }
+\end{split}
+\end{equation}
 
 \section{High-order Solution to the Horizontal Wind}
 As an alternative to assuming $\bar{e} = \frac{3}{2}\overline{w^{'2}}$, 
@@ -2338,7 +2881,6 @@ Separating out the contributions:
 \end{split}
 \end{equation}
 %
-
 Separating out the contributions:
 %
 \begin{equation}
@@ -2365,6 +2907,57 @@ Separating out the contributions:
 \end{split}
 \end{equation}
 %
+In order to increase numerical stability in the model, $a_{1}$ has been brought
+outside of the derivative.  This is not mathematically correct, but it does 
+help to increase stability.  Brian Griffin.  Feb. 21, 2008.
+% 
+\begin{equation}
+\begin{split}
+& \left.
+  a_1
+  \frac{1}{3} \beta
+   \ptlder{}{z}
+     \left( 
+       \frac{\overline{w^{'3}}}{\overline{w^{'2}}} \,
+       \overline{u^{'2}}
+     \right)
+   \right|_{\mathtt{zm(k)}} \\
+&= \mathtt{
+    a1m(k)\frac{\beta}{3 dzm(k)}
+    \bigg[ \frac{wp3(k+1) \left(up2(k)+up2(k+1) \right)}
+                {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)}
+          -\frac{wp3(k) \left(up2(k-1)+up2(k) \right)}
+                {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)}
+    \bigg]
+    }
+\end{split}
+\end{equation}
+%
+Separating out the contributions:
+%
+\begin{equation}
+\begin{split}
+& \mathtt{ 
+   lhs(3,k) = lhs(3,k) - a1m(k)\frac{\beta}{3 dzm(k)}
+                         \frac{wp3(k)}
+                              {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)}
+  } \\
+& \mathtt{
+   lhs(2,k) = lhs(2,k) + a1m(k)\frac{\beta}{3 dzm(k)}
+                         \left(
+                           \frac{wp3(k+1)}
+                                {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)}
+                          -\frac{wp3(k)}
+                                {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)}
+                         \right)
+  } \\
+& \mathtt{
+   lhs(1,k) = lhs(1,k) + a1m(k)\frac{\beta}{3 dzm(k)}
+                         \frac{wp3(k+1)}
+                              {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)}
+  }
+\end{split}
+\end{equation}
 
 \subsubsection{Term 5}
 %
@@ -2433,6 +3026,47 @@ Separating out the contributions:
 \end{split}
 \end{equation}
 %
+In order to increase numerical stability in the model, $a_{1}$ has been brought
+outside of the derivative.  This is not mathematically correct, but it does 
+help to increase stability.  Brian Griffin.  Feb. 21, 2008.
+% 
+\begin{equation}
+\begin{split}
+& - \left. a_2 \left( 1 - \frac{1}{3}\beta \right)
+       \ptlder{}{z}
+         \left( 
+           \frac{\overline{w^{'3}}}{\overline{w^{'2}}^2} \,
+           \overline{w'u'}^2
+         \right) \right|_{\mathtt{zm(k)}} \\
+=& \mathtt{
+   - a1m(k)^{2} \frac{1 - \frac{1}{3}\beta}{dzm(k)}
+     \bigg[ \frac{wp3(k+1) \left(upwp(k)+upwp(k+1)\right)^2}
+                 {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)^2} } \\
+ & \mathtt{ \quad \quad \quad \quad \qquad \qquad
+           -\frac{wp3(k) \left(upwp(k-1)+upwp(k)\right)^2}
+                 {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)^2}
+     \bigg]
+   }
+\end{split}
+\end{equation}
+%
+Separating out the contributions:
+%
+\begin{equation}
+\begin{split}
+&\mathtt{rhs(k)} \\
+=& \mathtt{
+   rhs(k)
+   - a1m(k)^{2} \frac{1 - \frac{1}{3}\beta}{dzm(k)}
+     \bigg[ \frac{wp3(k+1) \left(upwp(k)+upwp(k+1)\right)^2}
+                 {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)^2} } \\
+ & \mathtt{ \quad \quad \quad \quad \qquad \qquad \qquad \qquad
+           -\frac{wp3(k) \left(upwp(k-1)+upwp(k)\right)^2}
+                 {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)^2}
+     \bigg]
+   }
+\end{split}
+\end{equation}
 
 \subsubsection{Term 7}
 %
