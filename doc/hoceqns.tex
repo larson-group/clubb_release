@@ -356,21 +356,35 @@ Equation~(\ref{eq_wp3}) and in Equations (\ref{eq_up2}) and (\ref{eq_vp2})
 are as follows:
 \begin{displaymath}
 \begin{split}
-& K_{w1} = c_{K1} K_m \\
-& K_{w2} = c_{K2} K_m \\
-& K_{w6} = c_{K6} K_m \\
-& K_{w8} = c_{K8} K_m \\
-& K_{w9} = c_{K9} K_m
+& K_{w1} = c_{K1} K_m + \left. c_{Ksqd} \, \overline{w^{'2}}^{\, 2} 
+                        \right|_{\mathrm{3 \ pnt \ avg}} \\
+& K_{w2} = c_{K2} K_m + \left. c_{Ksqd} \, \lambda
+                        \right|_{\mathrm{3 \ pnt \ avg}} \\
+& K_{w6} = c_{K6} K_m + \left. c_{Ksqd} \, \phi
+                        \right|_{\mathrm{3 \ pnt \ avg}} \\
+& K_{w8} = c_{K8} K_m + \left. c_{Ksqd} \, \overline{w^{'3}}^{\, 2} 
+                        \right|_{\mathrm{3 \ pnt \ avg}} \\
+& K_{w9} = c_{K9} K_m + \left. c_{Ksqd} \, \eta
+                        \right|_{\mathrm{3 \ pnt \ avg}}
 \end{split}
 \end{displaymath}
-
+%
+where $\lambda$ is $10^{12} \, \overline{q_t^{'2}}^{\, 2}$ for 
+Equation~(\ref{eq_qtp2}), $\overline{\theta_l^{'2}}^{\, 2}$ for 
+Equation~(\ref{eq_thlp2}), and $10^6 \, \overline{q_t'\theta_l'}^{\, 2}$ 
+for Equation~(\ref{eq_qtpthlp});
+$\phi$ is $10^6 \, \overline{w'q_t'}^{\, 2}$ for Equation~(\ref{eq_wpqtp})
+and $\overline{w'\theta_l'}^{\, 2}$ for Equation~(\ref{eq_wpthlp}); and
+$\eta$ is $\overline{u^{'2}}^{\, 2}$ for Equation~(\ref{eq_up2}) and 
+$\overline{v^{'2}}^{\, 2}$ for Equation~(\ref{eq_vp2}).
+%
 The specific values of the constants $C_i$ and $\nu_i$
 are as follows: $C_1 = 2.5$; $C_2 = 1.0$; $C_4 = 5.2$; $C_5 = 0.3$;
 $C_6 = 6.0$; $C_7 = 0.1$; $C_8 = 3.0$; $C_{11} = 0.75$; $C_{14} = 1.0$;
 $\nu_1 = \nu_8 = \nu_9 = 20 \hbox{ (m$^2$/s)}$;
 and $\nu_2 = \nu_6 = 5 \hbox{ (m$^2$/s)}$.  In addition, the specific 
 values of the constants $c_{Ki}$ are as follows:  $c_{K1} = 0$; 
-$c_{K2} = 0$; $c_{K6} = 0$; $c_{K8} = 0.5$; and $c_{K9} = 0$.
+$c_{K2} = 0$; $c_{K6} = 0$; $c_{K8} = 0.5$; $c_{K9} = 0$; and $c_{Ksqd} = 10$.
 
 \section{PDF closure}
 
