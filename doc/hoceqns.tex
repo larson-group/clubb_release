@@ -267,7 +267,10 @@ In the second case, the horizontal wind variance terms are determined as in
         - \overline{v'w'}\ptlder{\bar{v}}{z} 
       \right) \\
   & - \dfrac{C_4}{\tau} \left( \overline{u^{'2}} - \frac{2}{3} \bar{e} \right)
-    + \nu_9 \nabla_z^2 \overline{u^{'2}}
+%    + \nu_9 \nabla_z^2 \overline{u^{'2}}
+    + \ptlder{}{z} \left[ \left( K_{w9} + \nu_9 \right)
+                          \ptlder{}{z} \overline{u^{'2}} 
+                   \right]
 \end{split}
 \end{equation}
 %
@@ -288,7 +291,10 @@ In the second case, the horizontal wind variance terms are determined as in
         - \overline{v'w'}\ptlder{\bar{v}}{z} 
       \right) \\
   & - \dfrac{C_4}{\tau} \left( \overline{v^{'2}} - \frac{2}{3} \bar{e} \right)
-    + \nu_9 \nabla_z^2 \overline{v^{'2}}
+%    + \nu_9 \nabla_z^2 \overline{v^{'2}}
+    + \ptlder{}{z} \left[ \left( K_{w9} + \nu_9 \right)
+                          \ptlder{}{z} \overline{v^{'2}} 
+                   \right]
 \end{split}
 \end{equation}
 %
@@ -346,13 +352,15 @@ K_w = 0.22 \, L \, \overline{e}^{\, 1/2}.
 \end{equation}
 
 The eddy diffusivity coefficients in Equation~(\ref{eq_wp2}) through 
-Equation~(\ref{eq_wp3}) are as follows:
+Equation~(\ref{eq_wp3}) and in Equations (\ref{eq_up2}) and (\ref{eq_vp2}) 
+are as follows:
 \begin{displaymath}
 \begin{split}
 & K_{w1} = c_{K1} K_m \\
 & K_{w2} = c_{K2} K_m \\
 & K_{w6} = c_{K6} K_m \\
-& K_{w8} = c_{K8} K_m
+& K_{w8} = c_{K8} K_m \\
+& K_{w9} = c_{K9} K_m
 \end{split}
 \end{displaymath}
 
@@ -362,7 +370,7 @@ $C_6 = 6.0$; $C_7 = 0.1$; $C_8 = 3.0$; $C_{11} = 0.75$; $C_{14} = 1.0$;
 $\nu_1 = \nu_8 = \nu_9 = 20 \hbox{ (m$^2$/s)}$;
 and $\nu_2 = \nu_6 = 5 \hbox{ (m$^2$/s)}$.  In addition, the specific 
 values of the constants $c_{Ki}$ are as follows:  $c_{K1} = 0$; 
-$c_{K2} = 0$; $c_{K6} = 0$; and $c_{K8} = 0.5$.
+$c_{K2} = 0$; $c_{K6} = 0$; $c_{K8} = 0.5$; and $c_{K9} = 0$.
 
 \section{PDF closure}
 
@@ -696,7 +704,10 @@ and rearrange:
        \frac{\overline{w^{'3}}}{\overline{w^{'2}}} \,
        \overline{q_t^{'2}}
      \right)
-- \nu_2 \nabla_z^2 \overline{q_t^{'2}} \\
+%- \nu_2 \nabla_z^2 \overline{q_t^{'2}} \\
+- \ptlder{}{z} \left[ \left( K_{w2} + \nu_2 \right)
+                      \ptlder{}{z} \overline{q_t^{'2}}
+               \right]  \\
 =& - \left( 1 - \frac{1}{3}\beta \right)
        \ptlder{}{z}
          \left( 
@@ -1036,7 +1047,10 @@ and rearrange:
        \frac{\overline{w^{'3}}}{\overline{w^{'2}}} \,
        \overline{q_t'\theta_l'}
      \right)
-- \nu_2 \nabla_z^2 \overline{q_t^{'}\theta_l^{'}} \\
+%- \nu_2 \nabla_z^2 \overline{q_t^{'}\theta_l^{'}} \\
+- \ptlder{}{z} \left[ \left( K_{w2} + \nu_2 \right)
+                      \ptlder{}{z} \overline{q_t^{'}\theta_l^{'}}
+               \right]  \\
 =& 
    - \left( 1 - \frac{1}{3}\beta \right)
       \ptlder{}{z}
@@ -1382,7 +1396,10 @@ for the transport term (\ref{eq_wp2qtp}):
     - (1-C_7) \overline{w'q'_t}\ptlder{\bar{w}}{z}
     + (1-C_7) \frac{g}{\theta_0} \overline{q'_t\theta'_v} \\
   & - \frac{C_6}{\tau}\overline{w'q'_t}
-    + \nu_6 \nabla_z^2 \overline{w^{'}q_t^{'}}
+%    + \nu_6 \nabla_z^2 \overline{w^{'}q_t^{'}}
+    + \ptlder{}{z} \left[ \left( K_{w6} + \nu_6 \right)
+                          \ptlder{}{z} \overline{w'q'_t}
+                   \right]
 \end{split}
 \end{equation}
 %
@@ -1413,7 +1430,10 @@ After discretizing the time derivative and rearranging terms:
   + \overline{w^{'2}}\ptlder{\bar{q}_t^{\, t+\Delta t}}{z} \\
 & + (1-C_7) \overline{w'q'_t}^{\, t+\Delta t}\ptlder{\bar{w}}{z}
   + \frac{C_6}{\tau}\overline{w'q'_t}^{\, t+\Delta t}
-  - \nu_6 \nabla_z^2 \overline{w^{'}q_t^{'}}^{\, t+\Delta t} \\
+%  - \nu_6 \nabla_z^2 \overline{w^{'}q_t^{'}}^{\, t+\Delta t} \\
+  - \ptlder{}{z} \left[ \left( K_{w6} + \nu_6 \right)
+                        \ptlder{}{z} \overline{w'q'_t}^{\, t+\Delta t}
+                 \right]  \\
 & = \frac{\overline{w'q'_t}^{\, t}}{\Delta t} 
     + (1-C_7) \frac{g}{\theta_0} \overline{q'_t\theta'_v}^{\, t}
 \end{split}
@@ -1611,13 +1631,17 @@ the finite difference equivalent to (\ref{eq_wpqxp2}):
   + \frac{C_6}{taum(k)} \, wpqtp^{new}(k)
   } \\
 & \mathtt{
-  -\frac{\nu_6}{dzm(k)dzt(k)} wpqtp^{new}(k-1)
+  %-\frac{\nu_6}{dzm(k)dzt(k)} wpqtp^{new}(k-1)
+  - \frac{Kw6(k)+\nu_6}{dzm(k)dzt(k)} wpqtp^{new}(k-1)
   } \\
 & \mathtt{
-  +\frac{\nu_6}{dzm(k)} \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right) wpqtp^{new}(k)
+  %+\frac{\nu_6}{dzm(k)} \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right) wpqtp^{new}(k)
+  + \frac{1}{dzm(k)} \left(   \frac{Kw6(k+1)+\nu_6}{dzt(k+1)}
+                            + \frac{Kw6(k)+\nu_6}{dzt(k)} \right) wpqtp^{new}(k)
   } \\
 & \mathtt{
-  -\frac{\nu_6}{dzm(k)dzt(k+1)} wpqtp^{new}(k+1)
+  %-\frac{\nu_6}{dzm(k)dzt(k+1)} wpqtp^{new}(k+1)
+  - \frac{Kw6(k+1)+\nu_6}{dzm(k)dzt(k+1)} wpqtp^{new}(k+1)
   } \\
 =& \mathtt{ \frac{wpqtp(k)}{dt} + (1-C_7) \frac{g}{\theta_0} qtpthvp(k) }
 \end{split}
@@ -1633,7 +1657,8 @@ Contributions to $lhs$ from (\ref{eq_wpqxp3}) are:
 - \frac{1}{2 dzm(k)}
   \frac{\left(a1m(k-1)+a1m(k)\right) wp3(k)}
        {\max\left(wp2(k-1)+wp2(k),2\epsilon\right)}
-- \frac{\nu_6}{dzm(k)dzt(k)}
+%- \frac{\nu_6}{dzm(k)dzt(k)}
+- \frac{Kw6(k)+\nu_6}{dzm(k)dzt(k)}
   }
 \end{split}
 \end{equation}
@@ -1660,7 +1685,9 @@ Contributions to $lhs$ from (\ref{eq_wpqxp3}) are:
 &  \mathtt{
 + (1-C_7) \, \frac{wmt(k+1)-wmt(k)}{dzm(k)}
 + \frac{C_6}{taum(k)}
-+\frac{\nu_6}{dzm(k)} \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right)
+%+\frac{\nu_6}{dzm(k)} \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right)
++ \frac{1}{dzm(k)} \left(   \frac{Kw6(k+1)+\nu_6}{dzt(k+1)} 
+                          + \frac{Kw6(k)+\nu_6}{dzt(k)} \right)
    }
 \end{split}
 \end{equation}
@@ -1679,7 +1706,8 @@ Contributions to $lhs$ from (\ref{eq_wpqxp3}) are:
 + \frac{1}{2 dzm(k)}
   \frac{\left(a1m(k)+a1m(k+1)\right) wp3(k+1)}
        {\max\left(wp2(k)+wp2(k+1),2\epsilon\right)}
--\frac{\nu_6}{dzm(k)dzt(k+1)}
+%-\frac{\nu_6}{dzm(k)dzt(k+1)}
+- \frac{Kw6(k+1)+\nu_6}{dzm(k)dzt(k+1)}
   }
 \end{split}
 \end{equation}
@@ -2738,7 +2766,10 @@ solution to obtain:
        \overline{u^{'2}}
      \right) }_{ta}
   \underbrace{
-- \nu_9 \nabla_z^2 \overline{u^{'2}} }_{dp2} \\
+%- \nu_9 \nabla_z^2 \overline{u^{'2}} }_{dp2} \\
+- \ptlder{}{z} \left[ \left( K_{w9} + \nu_9 \right)
+                      \ptlder{}{z} \overline{u^{'2}}
+               \right] }_{dp2}  \\
 =&   \underbrace{
    - \left( 1 - \frac{1}{3}\beta \right)
        \ptlder{}{z}
@@ -2762,7 +2793,7 @@ solution to obtain:
 As in the case of $\overline{q_t^{'2}}$ and $\overline{\theta_l^{'2}}$, the 
 horizontal wind variance terms are solved using a tridiagonal matrix.
 
-\subsubsection{Terms 1 and 2}
+\subsubsection{Terms 1 and 2:  dp1 and pr1, respectively}
 %
 \begin{equation}
 \begin{split}
@@ -2830,7 +2861,7 @@ Separating out the contributions:
 \end{equation}
 %
 
-\subsubsection{Term 3}
+\subsubsection{Term 3:  ma}
 
 %
 \begin{equation}
@@ -2856,7 +2887,7 @@ Separating out the contributions:
 \end{equation}
 %
 
-\subsubsection{Term 4}
+\subsubsection{Term 4:  ta, implicit component}
 %
 \begin{equation}
 \begin{split}
@@ -2959,17 +2990,28 @@ Separating out the contributions:
 \end{split}
 \end{equation}
 
-\subsubsection{Term 5}
+\subsubsection{Term 5:  dp2}
 %
 \begin{equation}
 \begin{split}
-& \left. - \nu_9 \nabla_z^2 \overline{u^{'2}} \right|_{\mathtt{zm(k)}}
-=& \mathtt{
-    \frac{\nu_9}{dzm(k)}
-    \left( \frac{up2(k+1)-up2(k)}{dzt(k+1)}
-          -\frac{up2(k)-up2(k-1)}{dzt(k)}
-    \right)
-   }
+%& \left. - \nu_9 \nabla_z^2 \overline{u^{'2}} \right|_{\mathtt{zm(k)}}
+& \left. - \ptlder{}{z} \left[ \left( K_{w9} + \nu_9 \right)
+                               \ptlder{}{z} \overline{u^{'2}}
+                        \right] \right|_{\mathtt{zm(k)}}  \\
+%=& \mathtt{
+%    \frac{\nu_9}{dzm(k)}
+%    \left( \frac{up2(k+1)-up2(k)}{dzt(k+1)}
+%          -\frac{up2(k)-up2(k-1)}{dzt(k)}
+%    \right)
+%   }
+ &= \mathtt{
+    -\frac{1}{dzm(k)}
+     \bigg( \frac{ \left( Kw9(k+1) + \nu_9 \right)
+                   \left( up2(k+1) - up2(k) \right)} {dzt(k+1)}
+           -\frac{ \left( Kw9(k) + \nu_9 \right)
+                   \left( up2(k) - up2(k-1) \right)} {dzt(k)}
+     \bigg)
+    }
 \end{split}
 \end{equation}
 %
@@ -2977,15 +3019,20 @@ Separating out the contributions:
 %
 \begin{equation}
 \begin{split}
-&\mathtt{lhs(3,k) = lhs(3,k) - \frac{\nu_9}{dzm(k)dzt(k)} } \\
-&\mathtt{lhs(2,k) = lhs(2,k) + \frac{\nu_9}{dzm(k)}
-                       \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right) } \\
-&\mathtt{lhs(1,k) = lhs(1,k) - \frac{\nu_9}{dzm(k)dzt(k+1)} }
+%&\mathtt{lhs(3,k) = lhs(3,k) - \frac{\nu_9}{dzm(k)dzt(k)} } \\
+%&\mathtt{lhs(2,k) = lhs(2,k) + \frac{\nu_9}{dzm(k)}
+%                       \left( \frac{1}{dzt(k+1)} + \frac{1}{dzt(k)} \right) } \\
+%&\mathtt{lhs(1,k) = lhs(1,k) - \frac{\nu_9}{dzm(k)dzt(k+1)} }
+&\mathtt{lhs(3,k) = lhs(3,k) - \frac{Kw9(k)+\nu_9}{dzm(k)dzt(k)} } \\
+&\mathtt{lhs(2,k) = lhs(2,k) + \frac{1}{dzm(k)}
+                               \left(   \frac{Kw9(k+1)+\nu_9}{dzt(k+1)}
+                                      + \frac{Kw9(k)+\nu_9}{dzt(k)} \right) } \\
+&\mathtt{lhs(1,k) = lhs(1,k) - \frac{Kw9(k+1)+\nu_9}{dzm(k)dzt(k+1)} }
 \end{split}
 \end{equation}
 %
 
-\subsubsection{Term 6}
+\subsubsection{Term 6:  ta, explicit component}
 %
 \begin{equation}
 \begin{split}
@@ -3068,7 +3115,7 @@ Separating out the contributions:
 \end{split}
 \end{equation}
 
-\subsubsection{Term 7}
+\subsubsection{Term 7:  tp}
 %
 \begin{equation}
 \begin{split}
@@ -3088,7 +3135,7 @@ Separating out the contributions:
 %
 
 
-\subsubsection{Term 8}
+\subsubsection{Term 8:  pr2}
 %
 \begin{equation}
 \begin{split}
@@ -3146,7 +3193,10 @@ semi-implicit solution to obtain:
        \frac{\overline{w^{'3}}}{\overline{w^{'2}}} \,
        \overline{v^{'2}}
      \right)
-- \nu_9 \nabla_z^2 \overline{v^{'2}} \\
+%- \nu_9 \nabla_z^2 \overline{v^{'2}} \\
+- \ptlder{}{z} \left[ \left( K_{w9} + \nu_9 \right)
+                      \ptlder{}{z} \overline{v^{'2}}
+               \right]  \\
 =& - \left( 1 - \frac{1}{3}\beta \right)
        \ptlder{}{z}
          \left( 
