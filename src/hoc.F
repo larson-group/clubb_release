@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.149 2008-02-22 19:28:03 faschinj Exp $
+! $Id: hoc.F,v 1.150 2008-02-29 16:57:56 faschinj Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -519,7 +519,7 @@
      .  lKhm_aniso    ! Whether to use anisotropic Khm.  - Michael Falk 2 Feb 2007
 
         character(len=50) :: 
-     .  restart_path ! GRADS file used in case of restart
+     .  restart_path_case ! GRADS file used in case of restart
 
         ! Dummy grid height arrays
         real, dimension(:), allocatable :: 
@@ -537,7 +537,7 @@
      .  dtmain, dtclosure,
      .  sfctype, Tsfc, psfc, SE, LE, fcor, T0, ts_nudge,
      .  cloud_sed, kk_rain, licedfs, lcoamps_micro, 
-     .  lbugsrad, lKhm_aniso, luv_nudge, lrestart, restart_path,
+     .  lbugsrad, lKhm_aniso, luv_nudge, lrestart, restart_path_case,
      .  time_restart
 
 !-----------------------------------------------------------------------
@@ -581,7 +581,7 @@
         lKhm_aniso    = .false.
         luv_nudge     = .false.
         lrestart      = .false.
-        restart_path = "none"
+        restart_path_case = "none"
         time_restart = 0
         
 
@@ -644,7 +644,7 @@
 
           iinit = ( time_restart - time_initial ) / dtmain
 
-          call hoc_restart( iunit, runfile, restart_path, time_restart, 
+          call hoc_restart( iunit, runfile, restart_path_case, time_restart, 
      .                      psfc, thlm, rtm, um, vm,
      .                      ug, vg, wp2, wprtp, wpthlp, wp3,
      .                      rtp2, thlp2, rtpthlp,
@@ -1234,7 +1234,7 @@
        end subroutine hoc_initialize
 !-----------------------------------------------------------------------
        subroutine hoc_restart
-     .             ( iunit, runfile, restart_path, time_restart, 
+     .             ( iunit, runfile, restart_path_case, time_restart, 
      .               psfc, thlm, rtm, um, vm,
      .               ug, vg, wp2, wprtp, wpthlp, wp3,
      .               rtp2, thlp2, rtpthlp,
@@ -1270,7 +1270,7 @@
         ! Input
         integer, intent(in) :: iunit
         character(len=*), intent(in) :: runfile,  ! filename for the namelist
-     .                                  restart_path
+     .                                  restart_path_case
 
         real, intent(in) :: psfc, ! Pressure at the surface [Pa]
      .                      time_restart
@@ -1347,7 +1347,7 @@
      .         rgraupelm
 
         ! Inform inputfields module
-        datafile = restart_path
+        datafile = restart_path_case
         input_type = "hoc"
         input_um   = .true.
         input_vm   = .true.
