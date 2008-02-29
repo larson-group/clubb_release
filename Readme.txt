@@ -1,4 +1,4 @@
-$Id: Readme.txt,v 1.58 2008-02-23 22:17:52 vlarson Exp $
+$Id: Readme.txt,v 1.59 2008-02-29 15:59:35 vlarson Exp $
 
 ************************************************************************
 *                           Copyright Notice
@@ -184,12 +184,12 @@ make distclean
 -----------------------------------------------------------------------
 
 After a long simulation has been performed, it is sometimes convenient to 
-perform a new simulation that starts some time into the original simulation, 
-rather than wasting time by starting again from the initial time.  The new
-simulation is then called a "restart" simulation.
+perform a new simulation that starts some time in the middle of the original 
+simulation, rather than wasting time by starting again from the initial time.  
+The new simulation is then called a "restart" simulation.
 
-1.  Perform the original simulation and save the GrADS output files.  These
-    data will be accessed to restart the simulation.
+1.  Perform the original simulation of case <CASE> and save the GrADS output 
+    files.  These data will be accessed to restart the simulation.
 
 2.  Create a subdirectory in /standalone called "restart" and move the GrADS
     output files to that subdirectory.
@@ -201,9 +201,8 @@ simulation is then called a "restart" simulation.
     restart_path = restart/<CASE>
     time_restart = initial time of restart run in seconds
 
-    Compute time_restart as (time_initial + X * stats_tout), where X is 
-    the number of output intervals before the time at which you would like
-    to restart.
+    Compute time_restart as (time_initial + n_out * stats_tout), where n_out
+    is the number of output intervals before the restart time.
 
 4.  Execute the run as usual from /standalone using 
     
