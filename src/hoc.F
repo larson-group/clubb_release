@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.150 2008-02-29 16:57:56 faschinj Exp $
+! $Id: hoc.F,v 1.151 2008-02-29 17:17:08 faschinj Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -644,8 +644,8 @@
 
           iinit = ( time_restart - time_initial ) / dtmain
 
-          call hoc_restart( iunit, runfile, restart_path_case, time_restart, 
-     .                      psfc, thlm, rtm, um, vm,
+          call hoc_restart( iunit, runfile, restart_path_case, 
+     .                      time_restart, psfc, thlm, rtm, um, vm,
      .                      ug, vg, wp2, wprtp, wpthlp, wp3,
      .                      rtp2, thlp2, rtpthlp,
      .                      upwp, vpwp, rcm, hydromet,
@@ -1234,8 +1234,8 @@
        end subroutine hoc_initialize
 !-----------------------------------------------------------------------
        subroutine hoc_restart
-     .             ( iunit, runfile, restart_path_case, time_restart, 
-     .               psfc, thlm, rtm, um, vm,
+     .             ( iunit, runfile, restart_path_case, 
+     .               time_restart, psfc, thlm, rtm, um, vm,
      .               ug, vg, wp2, wprtp, wpthlp, wp3,
      .               rtp2, thlp2, rtpthlp,
      .               upwp, vpwp, rcm, hydromet,
