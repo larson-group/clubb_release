@@ -32,7 +32,9 @@ licedfs       = .false.
 lbugsrad      = .false.
 lKhm_aniso    = .true.
 luv_nudge     = .true.
-
+lrestart = .false.
+restart_path = "restart/arm_97"
+time_restart = 0.0
 /
 
 &sounding

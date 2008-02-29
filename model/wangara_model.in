@@ -1,4 +1,4 @@
-! $Id: wangara_model.in,v 1.8 2008-02-04 22:07:00 vlarson Exp $
+! $Id: wangara_model.in,v 1.9 2008-02-29 15:31:40 faschinj Exp $
 ! Parameter file for Wangara day 33 dry convective boundary layer
 ! Observed soundings
 
@@ -37,7 +37,9 @@ lcoamps_micro = .false.
 licedfs       = .false.
 lbugsrad      = .false.
 lKhm_aniso    = .true.
-
+lrestart      = .false.
+restart_path  = "restart/wangara"
+time_restart  = 0.0
 /
 
 &sounding

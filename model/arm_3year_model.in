@@ -1,4 +1,4 @@
-! $Id: arm_3year_model.in,v 1.3 2008-02-13 18:01:08 vlarson Exp $
+! $Id: arm_3year_model.in,v 1.4 2008-02-29 15:31:40 faschinj Exp $
 ! Parameter file for GCSS ARM 3 year deep convective case
 
 &model_setting
@@ -39,6 +39,9 @@ licedfs       = .false.
 lbugsrad      = .false.  ! Use poor man's radiation instead
 lKhm_aniso    = .true.
 luv_nudge     = .true.
+lrestart      = .false.
+restart_path  = "restart/arm_3year"
+time_restart  = 0.0
 /
 
 &sounding

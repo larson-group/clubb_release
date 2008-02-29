@@ -1,4 +1,4 @@
-! $Id: bomex_model.in,v 1.16 2008-02-04 22:01:10 vlarson Exp $
+! $Id: bomex_model.in,v 1.17 2008-02-29 15:31:40 faschinj Exp $
 ! Parameter file for GCSS BOMEX tradewind Cu case
 
 &model_setting
@@ -32,6 +32,9 @@ lcoamps_micro = .false.
 licedfs       = .false.
 lbugsrad      = .false.
 lKhm_aniso    = .true.
+lrestart      = .false.
+restart_path  = "restart/bomex"
+time_restart  = 0.0
 
 /
 

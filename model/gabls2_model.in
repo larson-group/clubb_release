@@ -1,4 +1,4 @@
-! $Id: gabls2_model.in,v 1.4 2008-02-04 22:04:07 vlarson Exp $
+! $Id: gabls2_model.in,v 1.5 2008-02-29 15:31:40 faschinj Exp $
 ! Parameter file for GABLS2 case
 ! Edited by Michael Falk, 28 December 2006
 
@@ -35,6 +35,9 @@ lcoamps_micro = .false.
 licedfs       = .false.
 lbugsrad      = .false.
 lKhm_aniso    = .true.
+lrestart      = .false.
+restart_path  = "restart/gabls2"
+time_restart  = 0.0
 
 /
 

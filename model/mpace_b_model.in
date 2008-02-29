@@ -1,4 +1,4 @@
-! $Id: mpace_b_model.in,v 1.3 2008-02-04 22:05:52 vlarson Exp $
+! $Id: mpace_b_model.in,v 1.4 2008-02-29 15:31:40 faschinj Exp $
 ! Parameter file for MPACE-B case
 
 &model_setting
@@ -38,6 +38,9 @@ licedfs       = .true.
 lbugsrad      = .false.
 lKhm_aniso    = .true.
 luv_nudge     = .true.
+lrestart      = .false.
+restart_path  = "restart/mpace_b"
+time_restart  = 0.0
 
 /
 

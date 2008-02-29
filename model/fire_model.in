@@ -1,4 +1,4 @@
-! $Id: fire_model.in,v 1.8 2008-02-04 22:03:32 vlarson Exp $
+! $Id: fire_model.in,v 1.9 2008-02-29 15:31:40 faschinj Exp $
 ! Parameter file for GCSS FIRE Sc case
 
 &model_setting
@@ -34,6 +34,9 @@ lcoamps_micro = .false.
 licedfs       = .false.
 lbugsrad      = .false.
 lKhm_aniso    = .true.
+lrestart      = .false.
+restart_path  = "restart/fire"
+time_restart  = 0.0
 
 /
 
