@@ -38,7 +38,7 @@ lbugsrad      = .false.
 lKhm_aniso    = .true.
 luv_nudge     = .true.
 lrestart      = .false.
-restart_path  = "restart/mpace_a"
+restart_path_case  = "restart/mpace_a"
 time_restart  = 0.0
 
 /

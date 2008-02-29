@@ -1,4 +1,4 @@
-! $Id: dycoms2_rf02_nd_model.in,v 1.11 2008-02-29 15:31:40 faschinj Exp $
+! $Id: dycoms2_rf02_nd_model.in,v 1.12 2008-02-29 17:01:45 faschinj Exp $
 ! Parameter file for DYCOMS2 RF02 Sc case with no drizzle
 ! and no cloud water sedimentation.
 
@@ -33,7 +33,7 @@ licedfs       = .false.
 lbugsrad      = .false.
 lKhm_aniso    = .true.
 lrestart      = .false.
-restart_path  = "restart/dycoms2_rf02_nd"
+restart_path_case  = "restart/dycoms2_rf02_nd"
 time_restart  = 0.0
 /
 

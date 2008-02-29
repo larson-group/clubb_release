@@ -1,4 +1,4 @@
-! $Id: dycoms2_rf01_model.in,v 1.15 2008-02-29 15:31:40 faschinj Exp $
+! $Id: dycoms2_rf01_model.in,v 1.16 2008-02-29 17:01:45 faschinj Exp $
 ! Parameter file for DYCOMS II RF01 Sc case
 
 &model_setting
@@ -33,7 +33,7 @@ licedfs       = .false.
 lbugsrad      = .false.
 lKhm_aniso    = .true.
 lrestart      = .false.
-restart_path  = "restart/dycoms2_rf01"
+restart_path_case  = "restart/dycoms2_rf01"
 time_restart  = 0.0
 /
 

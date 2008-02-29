@@ -1,4 +1,4 @@
-! $Id: gabls2_model.in,v 1.5 2008-02-29 15:31:40 faschinj Exp $
+! $Id: gabls2_model.in,v 1.6 2008-02-29 17:01:45 faschinj Exp $
 ! Parameter file for GABLS2 case
 ! Edited by Michael Falk, 28 December 2006
 
@@ -36,7 +36,7 @@ licedfs       = .false.
 lbugsrad      = .false.
 lKhm_aniso    = .true.
 lrestart      = .false.
-restart_path  = "restart/gabls2"
+restart_path_case  = "restart/gabls2"
 time_restart  = 0.0
 
 /

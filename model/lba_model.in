@@ -1,4 +1,4 @@
-! $Id: lba_model.in,v 1.6 2008-02-29 15:31:40 faschinj Exp $
+! $Id: lba_model.in,v 1.7 2008-02-29 17:01:45 faschinj Exp $
 ! Parameter file for the 23 Feb 1999 TRMM-LBA case
 
 &model_setting
@@ -36,7 +36,7 @@ lbugsrad      = .false.
 lKhm_aniso    = .true.
 luv_nudge     = .true.
 lrestart      = .false.
-restart_path  = "restart/lba"
+restart_path_case  = "restart/lba"
 time_restart  = 0.0
 
 /
