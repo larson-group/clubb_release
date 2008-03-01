@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputgrads.F,v 1.15 2008-03-01 18:58:23 faschinj Exp $
+! $Id: inputgrads.F,v 1.16 2008-03-01 22:45:53 faschinj Exp $
 
         module inputfile_class
 
@@ -360,11 +360,17 @@
 !         nrec = (itime-1)*f%nvar*(f%iz-f%ia+1) 
 !    .         + (ivar-1)*(f%iz-f%ia+1) + 1
 
-!          print *, "Division check", itime/(f%dtwrite/60.)-1
+!          print *, "Division check", nint(itime/(f%dtwrite/60.))-1
 !          print *, "f%nvar", f%nvar
 !          print *, "varindex", ivar-1
 !          print *, "nlevels", (f%iz-f%ia+1)
-          nrec = (itime/(f%dtwrite/60.)-1)*f%nvar*(f%iz-f%ia+1) 
+
+          ! Probably not the most elegant to round but it does allow
+          ! cases like arm_3year with their default _stats.in and
+          ! _model.in to restart
+          ! Joshua Fasching March 2008
+          
+          nrec = (nint(itime/(f%dtwrite/60.))-1)*f%nvar*(f%iz-f%ia+1) 
      .         + (ivar-1)*(f%iz-f%ia+1)
           nrec = nrec + 1
           ! Debug
