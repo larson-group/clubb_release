@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputgrads.F,v 1.14 2007-03-22 23:03:20 dschanen Exp $
+! $Id: inputgrads.F,v 1.15 2008-03-01 18:58:23 faschinj Exp $
 
         module inputfile_class
 
@@ -115,9 +115,12 @@
         
                read(unit=line,fmt=*) tmp, f%fname
                if ( f%fname(1:1) == '^' ) then
+                  ! Get the name of the associated .dat file
                   f%fname = f%fname(2:len_trim(f%fname)) 
+                  ! Figure out the file path
                   i = index( fname, '/', back = .true. )
                   if ( i > 0 ) then
+                     ! Construct a path for the .date file
                      f%fname = fname(1:i) // f%fname
                   end if
                end if
@@ -161,6 +164,8 @@
                read(unit=line,fmt=*) tmp, f%iz
                f%ia = 1
                allocate( f%z(f%ia:f%iz) )
+               ! Implied Do Loop with the purpose of reading in
+               ! altitudes
                read(unit=unit,fmt=*) (f%z(i),i=f%ia,f%iz)
 
              else if ( index(line,'TDEF') > 0 ) then
@@ -203,7 +208,7 @@
                  write(unit=fstderr,fmt=*) "Unknown month: "//date(9:11)
                  error = .true.
                end select
-
+               ! Assumes minutes
                read(dt(1:len_trim(dt)-2),*) f%dtwrite
                f%dtwrite = f%dtwrite * 60.
 
@@ -326,7 +331,7 @@
 
             return
           end if
-
+                    
           ! Look up variable in list
           done = .false.
           i    = 1
@@ -355,9 +360,18 @@
 !         nrec = (itime-1)*f%nvar*(f%iz-f%ia+1) 
 !    .         + (ivar-1)*(f%iz-f%ia+1) + 1
 
+!          print *, "Division check", itime/(f%dtwrite/60.)-1
+!          print *, "f%nvar", f%nvar
+!          print *, "varindex", ivar-1
+!          print *, "nlevels", (f%iz-f%ia+1)
           nrec = (itime/(f%dtwrite/60.)-1)*f%nvar*(f%iz-f%ia+1) 
-     .         + (ivar-1)*(f%iz-f%ia+1) + 1
-
+     .         + (ivar-1)*(f%iz-f%ia+1)
+          nrec = nrec + 1
+          ! Debug
+!          print *, varname
+!          print *, "ivar = ", ivar
+!          print *, "nrec = ", nrec
+          
           do k=f%ia,f%iz
             read(unit=f%iounit,rec=nrec) x(k)
             if ( f%lbyteswapped ) call byte_order_swap( x(k) )
