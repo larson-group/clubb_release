@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zt.F,v 1.1 2008-03-05 17:16:19 faschinj Exp $
+! $Id: stats_zt.F,v 1.2 2008-03-05 23:30:55 dschanen Exp $
 #ifdef STATS
       module stats_zt
       contains
@@ -194,6 +194,8 @@
       iedsclram   = 0
       iedsclrbm   = 0
 #endif /*SCALARS*/
+
+      lerror = .false.
 
 !     Assign pointers for statistics variables zt
 
