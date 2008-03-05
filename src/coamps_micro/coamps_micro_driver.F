@@ -28,7 +28,7 @@
       use constants
       use grid_class, only: zt2zm
 #ifdef STATS
-      use hoc_stats, only: zt, zm, lstats_samp,
+      use stats_hoc, only: zt, zm, lstats_samp,
      .    imean_vol_rad_rain,
      .    imean_vol_rad_cloud
 #endif

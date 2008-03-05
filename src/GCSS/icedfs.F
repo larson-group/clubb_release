@@ -39,7 +39,7 @@
         USE grid_class
         USE constants
 #ifdef STATS
-        use hoc_stats, only: zt, lstats_samp,
+        use stats_hoc, only: zt, lstats_samp,
      .      idqc_dt_icedfs, idiam, im, iu_T_cm
 #endif
 

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.151 2008-02-29 17:17:08 faschinj Exp $
+! $Id: hoc.F,v 1.152 2008-03-05 17:22:52 faschinj Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -109,7 +109,8 @@
         use hoc_parameterization_interface
         use constants, only: fstdout, fstderr
 #ifdef STATS
-        use hoc_stats
+        use stats_hoc
+        use stats_subs
 #endif
 
         implicit none
@@ -468,7 +469,8 @@
         use hoc_parameterization_interface
         use constants, only: fstdout, fstderr
 #ifdef STATS
-        use hoc_stats
+        use stats_hoc
+        use stats_subs
 #endif /*STATS*/
 
         implicit none
@@ -785,10 +787,10 @@
 !       Execute the necessary steps for the initialization of the 
 !       HOC model run. 
 
-!       Calls: (all these are external)
+!       Calls: (all these are external except compute_length)
 !       subroutine read_sounding
 !       subroutine hydrostatic (twice)
-!       subroutine length
+!       subroutine compute_length
 
 !       function rsat
 !       function sat_rcm
@@ -804,8 +806,9 @@
         use arm_3year, only: arm_3year_init
         use arm_97, only: arm_97_init
         use mpace_a, only: mpace_a_init
+        use mixing_length
 #ifdef STATS
-        use hoc_stats
+        use stats_hoc
 #endif /*STATS*/
 
         implicit none
@@ -813,7 +816,7 @@
         ! External
         real, external :: rsat
         real, external :: sat_rcm
-        external :: length
+        
 
         intrinsic :: min, max, trim, sqrt, size
 
@@ -879,6 +882,8 @@
         ricem     => hydromet(1:gr%nnzp,4)
         rgraupelm => hydromet(1:gr%nnzp,5)
 
+        isValid = .true.
+        
         ! Read sounding information
 
         call read_sounding( iunit, thlm, rtm, um, vm, ug, vg, 
@@ -1199,7 +1204,7 @@
 
         ! Compute mixing length
 
-        call length( thvm, thlm, rtm, rcm, 
+        call compute_length( thvm, thlm, rtm, rcm, 
      .               em, p, exner, Lscale, lup, ldown, isValid )
 
         ! Dissipation time

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_hoc.F90,v 1.17 2007-11-14 21:12:34 vlarson Exp $
+! $Id: bugsrad_hoc.F90,v 1.18 2008-03-05 17:22:52 faschinj Exp $
 
 subroutine bugsrad_hoc( alt, nz, lat_in_degrees, lon_in_degrees, &
                         day, month, year, time,                  &
@@ -21,7 +21,7 @@ subroutine bugsrad_hoc( alt, nz, lat_in_degrees, lon_in_degrees, &
 
   use constants
 #ifdef STATS
-use hoc_stats, only: zt, zm, lstats_samp, &
+use stats_hoc, only: zt, zm, lstats_samp, &
     iFrad_SW, iFrad_LW, iradht_SW, iradht_LW
 #endif
 

@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm.F,v 1.6 2007-12-15 23:58:04 griffinb Exp $
+! $Id: arm.F,v 1.7 2008-03-05 17:22:52 faschinj Exp $
         module arm
 
 !       Description:
@@ -28,7 +28,7 @@
         use constants, only: sclr_dim
         use model_flags, only: lbugsrad
 #ifdef STATS
-        use hoc_stats
+        use stats_hoc
 #endif
 
         implicit none

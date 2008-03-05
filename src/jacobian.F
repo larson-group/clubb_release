@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.37 2007-06-19 21:04:59 dschanen Exp $
+! $Id: jacobian.F,v 1.38 2008-03-05 17:22:52 faschinj Exp $
 
       program jacobian
 #ifdef STATS
@@ -17,7 +17,7 @@
       use parameters, only: read_parameters, params_list
       use constants, only: fstdout, fstderr
       use grads_common, only: grads_average_interval, grads_zlvl
-      use hoc_stats, only: fname_zt, fname_zm
+      use stats_hoc, only: fname_zt, fname_zm
 
       implicit none
 

@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_b.F,v 1.4 2007-12-15 23:58:04 griffinb Exp $
+! $Id: mpace_b.F,v 1.5 2008-03-05 17:22:52 faschinj Exp $
         module mpace_b
 
 !       Description:
@@ -37,7 +37,7 @@
         use grid_class
         use icedfs
 #ifdef STATS
-        use hoc_stats
+        use stats_hoc
 #endif /*STATS*/
 
         implicit none

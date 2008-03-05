@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_97.F,v 1.12 2007-12-15 23:58:04 griffinb Exp $
+! $Id: arm_97.F,v 1.13 2008-03-05 17:22:52 faschinj Exp $
         module arm_97
 
 !       Description:
@@ -171,7 +171,7 @@
 !----------------------------------------------------------------------
 
         use constants, only: Cp, Lv, grav, sclr_dim
-        use hoc_stats, only: iustar, sfc, lstats_samp
+        use stats_hoc, only: iustar, sfc, lstats_samp
 
         implicit none
 

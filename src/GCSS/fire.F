@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: fire.F,v 1.5 2007-12-15 23:58:04 griffinb Exp $
+! $Id: fire.F,v 1.6 2008-03-05 17:22:52 faschinj Exp $
         module fire
 
 !       Description:
@@ -30,7 +30,7 @@
         use grid_class
         use atex_cloud_rad
 #ifdef STATS
-        use hoc_stats
+        use stats_hoc
 #endif
 
         implicit none
