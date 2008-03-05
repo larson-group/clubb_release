@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.31 2008-02-18 14:30:17 griffinb Exp $
+! $Id: mixing.F,v 1.32 2008-03-05 17:16:18 faschinj Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -257,6 +257,7 @@
           return
         end if
 
+        
 
         ! Solve sclrm / wpsclrp
         if ( present( sclrm )     .and. present( wpsclrp ) .and.
@@ -381,7 +382,7 @@
         use grid_class
         use diffusion, only: diffusion_mlev
 #ifdef STATS
-        use hoc_stats
+        use stats_hoc
 #endif /*STATS*/
 
         implicit none
@@ -645,7 +646,7 @@
 ! eMFc
      .    lcoamps_micro! COAMPS(R) microphysics
 #ifdef STATS
-        use hoc_stats
+        use stats_hoc
 #endif /*STATS*/
 
         implicit none

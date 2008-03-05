@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.67 2008-02-19 19:57:15 griffinb Exp $
+! $Id: parameterization_interface.F,v 1.68 2008-03-05 17:16:18 faschinj Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -72,8 +72,10 @@
        use surface_var, only: sfc_var
        use pdf_closure, only: pdf_closure_new     ! Prob. density function
        use microphysics, only: timestep_microphys ! Microphysics
+       use mixing_length
 #ifdef STATS
-       use hoc_stats
+       use stats_hoc
+       use stats_subs
 #endif /*STATS*/
 
        implicit none
@@ -84,12 +86,8 @@
      . Skw_func ! Skw function
 
        external ::
-     . timestep_wp23,          ! Computes vert. vel. moments w'^2/w'^3
-     . length                  ! Length scale
-#ifdef STATS
-     . ,stats_accumulate       ! Computes and averages statistics
-#endif /*STATS*/
-
+     . timestep_wp23          ! Computes vert. vel. moments w'^2/w'^3
+     
        intrinsic :: sqrt, min, max, exp, mod
 
        ! Input
@@ -490,7 +488,7 @@
        ! Compute mixing length
        !----------------------------------------------------------------
 
-       call length( thvm, thlm, rtm, rcm, 
+       call compute_length( thvm, thlm, rtm, rcm, 
      .              em, p, exner, Lscale, lup, ldown, isValid )
        if(.not. isValid) then
           return
@@ -956,7 +954,7 @@
         use diagnostic_variables
         use prognostic_variables
 #ifdef STATS
-        use hoc_stats
+        use stats_hoc
 #endif
 
         implicit none

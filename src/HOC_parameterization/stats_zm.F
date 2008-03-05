@@ -1,15 +1,16 @@
 !-----------------------------------------------------------------------
-! $Id: stats_init_zm.F,v 1.4 2008-02-05 23:33:23 griffinb Exp $
+! $Id: stats_zm.F,v 1.1 2008-03-05 17:16:19 faschinj Exp $
 #ifdef STATS
-
+      module stats_zm
+      contains
 !-----------------------------------------------------------------------
       subroutine stats_init_zm( vars_zm, lerror )
 
 !     Description: 
 !     Initializes array indices for zm
 !-----------------------------------------------------------------------
-      use hoc_stats
-      
+      use stats_hoc
+      use stats_type
       implicit none
       integer, parameter :: nvarmax = 250  ! Max variables
       !Input Variable
@@ -977,4 +978,5 @@
       end do
       return
       end subroutine stats_init_zm
+      end module stats_zm
 #endif /*STATS*/

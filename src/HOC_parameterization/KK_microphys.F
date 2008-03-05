@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: KK_microphys.F,v 1.1 2008-01-17 16:25:42 griffinb Exp $
+! $Id: KK_microphys.F,v 1.2 2008-03-05 17:16:18 faschinj Exp $
 
       MODULE rain_equations
 
@@ -117,7 +117,7 @@
         use grid_class
         use constants
 #ifdef STATS
-        use hoc_stats
+        use stats_hoc
 #endif
 
         implicit none

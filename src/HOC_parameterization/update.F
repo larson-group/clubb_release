@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: update.F,v 1.9 2008-02-12 22:50:08 faschinj Exp $
+! $Id: update.F,v 1.10 2008-03-05 17:16:19 faschinj Exp $
 
         subroutine update_ed_var( solve_type, xm, xt, xw0, Khm, 
      .                            dt, xw, isValid )
@@ -16,7 +16,7 @@
         use grid_class
         use lapack_wrap, only: tridag_solve
 #ifdef STATS
-        use hoc_stats
+        use stats_hoc
 #endif
         use constants, only: fstderr
         

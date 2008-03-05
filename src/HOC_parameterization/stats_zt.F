@@ -1,15 +1,19 @@
 !-----------------------------------------------------------------------
-! $Id: stats_init_zt.F,v 1.2 2007-10-05 15:44:34 faschinj Exp $
+! $Id: stats_zt.F,v 1.1 2008-03-05 17:16:19 faschinj Exp $
 #ifdef STATS
+      module stats_zt
+      contains
 !-----------------------------------------------------------------------
       subroutine stats_init_zt( vars_zt, lerror )
-
+      
 !     Description:
 !     Initializes array indices for zt 
 !-----------------------------------------------------------------------
-      use hoc_stats
-      
+      use stats_hoc
+      use stats_type
+
       implicit none
+
       integer, parameter :: nvarmax = 250
       !Input Variable
       character(len= * ), dimension(nvarmax), intent(in) :: vars_zt
@@ -215,13 +219,13 @@
           call stat_assign( irtm, "rtm",
      .          "total water mixing ratio (kg/kg)","kg/kg",zt)
           
-	  !zt%f%var(irtm)%ptr => zt%x(:,k)
+          !zt%f%var(irtm)%ptr => zt%x(:,k)
           !zt%f%var(irtm)%name = "rtm"
           !zt%f%var(irtm)%description 
      .    != "total water mixing ratio (kg/kg)"
           !zt%f%var(irtm)%units = "kg/kg"
           
-	  k = k + 1
+          k = k + 1
 
         case ('rcm')
           ircm = k
@@ -285,7 +289,7 @@
           k = k + 1
         case ('rtm_forcing')
           irtm_forcing = k
-	  call stat_assign(irtm_forcing,"rtm_f",
+          call stat_assign(irtm_forcing,"rtm_f",
      .         "rt forcing", "kg/(kg s)",zt)
           k = k + 1
         case ('rtm_mc')
@@ -1220,4 +1224,5 @@
       end do
       return
       end subroutine stats_init_zt
+      end module stats_zt
 #endif /*STATS*/

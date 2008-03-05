@@ -1,6 +1,8 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.1 2007-09-08 20:57:57 faschinj Exp $
+!  $Id: stats_subs.F,v 1.2 2008-03-05 17:16:19 faschinj Exp $
 #ifdef STATS
+      module stats_subs
+      contains
 !-----------------------------------------------------------------------
       subroutine stats_init( iunit, fnamelist, nnzp, gzt, gzm,
      .                       day, month, year, rlat, rlon, time, delt )
@@ -8,9 +10,12 @@
 !     Description: Initializes the statistics saving functionality of
 !     the HOC model.
 !-----------------------------------------------------------------------
-      use hoc_stats
+      use stats_hoc
       use outputgrads
       use outputnc
+      use stats_zm
+      use stats_zt
+      use stats_sfc
 
       implicit none
 
@@ -390,7 +395,7 @@
 !     Begin sampling for the current timestep.
 !-----------------------------------------------------------------------
 
-      use hoc_stats
+      use stats_hoc
 
       implicit none
 
@@ -435,7 +440,7 @@
 !     Description:
 !-----------------------------------------------------------------------
 
-      use hoc_stats
+      use stats_hoc
       use outputgrads
       use outputnc
 
@@ -512,7 +517,7 @@
 !     budget terms, longwave and shortwave components, etc. )
 !----------------------------------------------------------------------
 
-      use hoc_stats
+      use stats_hoc
       use grid_class
       !use prognostic_variables
       use diagnostic_variables
@@ -1218,7 +1223,7 @@
 !     stats file structures.
 !-----------------------------------------------------------------------
 
-      use hoc_stats
+      use stats_hoc
       use outputnc, only: close_nc
 
       implicit none
@@ -1293,38 +1298,7 @@
       return
       end subroutine stats_finalize
 
-!-----------------------------------------------------------------------
-      subroutine stat_assign( var_index, name, 
-     .                     description, units, grid )
 
-!     Description: Assigns pointers for statistics variables in grid
-!    
-!-----------------------------------------------------------------------
-           use stats_type
-
-           !input
-             integer,intent(in) :: var_index               ! Variable index
-             character(len = *), intent(in) :: name        ! Variable name
-             character(len = *), intent(in) :: description ! Variable description
-             character(len = *), intent(in) :: units       ! Variable units
-
-           !output
-             type(stats), intent(out) :: grid
-
-             grid%f%var(var_index)%ptr => grid%x(:,var_index)
-             grid%f%var(var_index)%name = name
-             grid%f%var(var_index)%description = description
-             grid%f%var(var_index)%units = units
-	
-             !Example of the old format 
-             !changed by Joshua Fasching 23 August 2007
-             
-             !zt%f%var(ithlm)%ptr => zt%x(:,k)
-             !zt%f%var(ithlm)%name = "thlm"
-             !zt%f%var(ithlm)%description = "thetal (K)"
-             !zt%f%var(ithlm)%units = "K"
-      
-             return
-           end subroutine stat_assign
-
+      end module stats_subs
+          
 #endif /*STATS*/

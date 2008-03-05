@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.37 2008-02-19 18:29:02 vlarson Exp $
+! $Id: wp23.F,v 1.38 2008-03-05 17:16:19 faschinj Exp $
 
         subroutine timestep_wp23
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
@@ -25,7 +25,7 @@
         use constants
         use model_flags
 #ifdef STATS
-        use hoc_stats
+        use stats_hoc
 #endif /*STATS*/
 
         implicit none
@@ -270,7 +270,7 @@
         use diffusion
         use lapack_wrap, only: band_solve, band_solvex
 #ifdef STATS
-        use hoc_stats
+        use stats_hoc
 #endif /*STATS*/
 
         implicit none

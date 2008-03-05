@@ -1,14 +1,17 @@
 !-----------------------------------------------------------------------
-! $Id: stats_init_sfc.F,v 1.2 2007-10-05 15:49:27 faschinj Exp $
+! $Id: stats_sfc.F,v 1.1 2008-03-05 17:16:19 faschinj Exp $
 #ifdef STATS
+      module stats_sfc
+      contains 
 !-----------------------------------------------------------------------
       subroutine stats_init_sfc( vars_sfc, lerror )
 
 !     Description:
 !     Initializes array indices for sfc
 !-----------------------------------------------------------------------
-      use hoc_stats
-      
+      use stats_hoc
+      use stats_type
+
       implicit none
 
       integer, parameter :: nvarmax = 250  ! Max variables
@@ -21,7 +24,7 @@
       !Local Varables
       integer :: i, k
 
- ! Default initialization for array indices for sfc
+! Default initialization for array indices for sfc
 
       iustar   = 0
       ilh      = 0
@@ -123,7 +126,7 @@
 
         case ('thlm_cn')
           ithlm_cn = k
-	  call stat_assign(ithlm_cn,"thlm_cn",
+          call stat_assign(ithlm_cn,"thlm_cn",
      .         "Estimate of the condition number for thlm/wpthlp",
      .         "count",sfc)
           k = k + 1
@@ -146,14 +149,14 @@
 
         case ('rtp2_cn')
           irtp2_cn = k
-  	  call stat_assign(irtp2_cn,"rtp2_cn",
+          call stat_assign(irtp2_cn,"rtp2_cn",
      .         "Estimate of the condition number for rtp2",
      .         "count",sfc)
           k = k + 1
 
         case ('rtpthlp_cn')
           irtpthlp_cn = k
-  	  call stat_assign(irtpthlp_cn,"rtpthlp_cn",
+           call stat_assign(irtpthlp_cn,"rtpthlp_cn",
      .         "Estimate of the condition number for rtpthlp",
      .         "count",sfc)
           k = k + 1
@@ -181,4 +184,5 @@
       end do
       return
       end subroutine stats_init_sfc
+      end module stats_sfc
 #endif /*STATS*/

@@ -1,7 +1,11 @@
-! $Id: length.F,v 1.11 2008-02-19 19:57:15 griffinb Exp $
+! $Id: mixing_length.F,v 1.1 2008-03-05 17:16:18 faschinj Exp $
 !-----------------------------------------------------------------------------
-        subroutine length( thvm, thlm, rtm, rcm, em, p, exner,
-     .                     Lscale, lup, ldown, isValid ) 
+        module mixing_length
+        
+        contains
+        
+        subroutine compute_length( thvm, thlm, rtm, rcm, em, p, 
+     .      exner, Lscale, lup, ldown, isValid ) 
 !       Description:
 !       Larson's 5th moist, nonlocal length scale
 
@@ -291,4 +295,5 @@
 
         return
 
-        end subroutine length
+        end subroutine compute_length
+        end module mixing_length

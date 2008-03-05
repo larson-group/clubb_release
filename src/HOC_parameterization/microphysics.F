@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.26 2008-02-12 22:50:08 faschinj Exp $
+! $Id: microphysics.F,v 1.27 2008-03-05 17:16:18 faschinj Exp $
         module microphysics
 
 !       Description:
@@ -46,7 +46,7 @@
         use parameters, only: c_Krrm, nu_r
         use constants, only: hydromet_dim, Lv, Cp, rho_lw, fstderr
 #ifdef STATS
-        use hoc_stats
+        use stats_hoc
 #endif
         implicit none
 
@@ -694,7 +694,7 @@
         use grid_class
         use lapack_wrap, only: tridag_solve !,band_solve
 #ifdef STATS
-        use hoc_stats
+        use stats_hoc
 #endif
 
         implicit none
@@ -846,7 +846,7 @@
         use grid_class
         use diffusion, only: diffusion_tlev
 #ifdef STATS
-        use hoc_stats
+        use stats_hoc
 #endif
         implicit none
 
@@ -1608,7 +1608,7 @@
         use grid_class
         use diffusion, only: diffusion_tlev
 !#ifdef STATS
-!        use hoc_stats
+!        use stats_hoc
 !#endif /*STATS*/
 ! Joshua Fasching 2007
         ! Input variables.
