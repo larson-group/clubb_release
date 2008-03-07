@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_hoc.F,v 1.1 2008-03-05 17:18:22 faschinj Exp $
+! $Id: stats_hoc.F,v 1.2 2008-03-07 20:21:41 faschinj Exp $
 #ifdef STATS
 !-----------------------------------------------------------------------
 !  module stats_hoc
@@ -110,15 +110,18 @@
      .    irtm_ta,      ! rtm turb. advect. term
      .    irtm_forcing, ! rtm large scale forcing term
      .    irtm_mc,      ! rtm change from microphysics
+     .    irtm_cl,      ! rtm clipping term
      .    ithlm_bt,     ! thlm total time tendency
      .    ithlm_ma,     ! thlm mean advect. term
      .    ithlm_ta,     ! thlm turb. advect. term
      .    ithlm_forcing,! thlm large scale forcing term
-     .    ithlm_mc      ! thlm change from microphysics
+     .    ithlm_mc,     ! thlm change from microphysics
+     .    ithlm_cl      ! thlm clipping term
 
-!$omp   threadprivate(irtm_bt, irtm_ma, irtm_ta, irtm_forcing, irtm_mc)
+!$omp   threadprivate(irtm_bt, irtm_ma, irtm_ta, irtm_forcing)
+!$omp   threadprivate(irtm_cl)
 !$omp   threadprivate(ithlm_bt, ithlm_ma, ithlm_ta)
-!$omp   threadprivate(ithlm_forcing, ithlm_mc)
+!$omp   threadprivate(ithlm_forcing, ithlm_mc, ithlm_cl)
 
 
         integer ::

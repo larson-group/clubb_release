@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.33 2008-03-07 15:36:56 faschinj Exp $
+! $Id: mixing.F,v 1.34 2008-03-07 20:21:41 faschinj Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -58,6 +58,10 @@
         use constants
         use grid_class
 
+#ifdef STATS
+        use stats_hoc
+#endif /*STATS*/
+        
         implicit none
 
         ! External
@@ -227,14 +231,29 @@
           write(fstderr,'(a)') "rt mixing failed"
           return
         end if
+ 
+        ! Clipping rtm
+        ! Joshua Fasching March 2008
         
+#ifdef STATS
+        ! Computed value before clipping
+        if (lstats_samp .and. irtm_cl > 0) then
+          zt%x(:,irtm_cl) = zt%x(:,irtm_cl) - rtm / dt
+        endif 
+#endif        
         ! The arm_0003 case produces negative rtm near the tropopause.
         !    To avoid this, we clip rtm.  This is not a good solution,
         !    because it renders rtm non-conserved.  We should look into 
         !    a positive definite advection scheme.
         !    Vince Larson.  13 Nov 2007
-        rtm = max( rtm, 0.0 ) 
-        ! End of Vince Larson's change.
+        
+        where( rtm < 0.0 ) rtm = 0.0
+                
+#ifdef STATS
+        if (lstats_samp .and. irtm_cl > 0) then
+          zt%x(:,irtm_cl) = zt%x(:,irtm_cl) + rtm /dt
+          zt%n(:,irtm_cl) = zt%n(:,irtm_cl) + 1
+        endif
 
         ! Prof. Larson's modified mixing_lhs 
 !        call mixing_lhs( .true., dt, taum, wmm, wmt, Kw6,
@@ -257,10 +276,28 @@
           return
         end if
         
-        ! Clipping 
+        ! Clipping thlm
         ! Joshua Fasching March 2008
-        where( thlm < 0.0 ) thlm = 0.0        
-
+        
+#ifdef STATS
+        ! Computed value before clipping
+        if (lstats_samp .and. ithlm_cl > 0) then
+          zt%x(:,ithlm_cl) = zt%x(:,ithlm_cl) - thlm / dt
+        endif 
+#endif        
+        ! The value of potential temperature cannot fall below 0,
+        ! so we clip accordingly
+        
+        where( thlm < 0.0 ) thlm = 0.0
+                
+#ifdef STATS
+        if (lstats_samp .and. ithlm_cl > 0) then
+          zt%x(:,ithlm_cl) = zt%x(:,ithlm_cl) + thlm /dt
+          zt%n(:,ithlm_cl) = zt%n(:,ithlm_cl) + 1
+        endif
+#endif
+        ! End change Joshua Fasching March 2008
+        
         ! Solve sclrm / wpsclrp
         if ( present( sclrm )     .and. present( wpsclrp ) .and.
      .       present( sclrpthvp ) .and. present( sclrm_forcing ) ) then

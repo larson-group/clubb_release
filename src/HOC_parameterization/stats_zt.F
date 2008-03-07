@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zt.F,v 1.2 2008-03-05 23:30:55 dschanen Exp $
+! $Id: stats_zt.F,v 1.3 2008-03-07 20:21:41 faschinj Exp $
 #ifdef STATS
       module stats_zt
       contains
@@ -82,12 +82,14 @@
       irtm_ta       = 0
       irtm_forcing  = 0
       irtm_mc       = 0
+      irtm_cl       = 0 ! Josh
       ithlm_bt      = 0
       ithlm_ma      = 0
       ithlm_ta      = 0
       ithlm_forcing = 0
       ithlm_mc      = 0
-
+      ithlm_cl      = 0 ! Josh
+      
       iwp3_bt       = 0
       iwp3_ma       = 0
       iwp3_ta       = 0
@@ -549,7 +551,13 @@
           call stat_assign(irtm_ta,"rtm_ta",
      .         "rtm ta","kg/kg/s",zt)
           k = k + 1
+        case ('rtm_cl')
+          irtm_cl = k
 
+          call stat_assign(irtm_cl, "rtm_cl",
+     .         "rtm clipping", "kg/kg/s", zt)
+
+          k = k + 1
         case ('thlm_bt')
           ithlm_bt = k
 
@@ -570,7 +578,12 @@
           call stat_assign(ithlm_ta,"thlm_ta",
      .         "thlm ta","kg/kg/s",zt)
           k = k + 1
- 
+        case ('thlm_cl')
+          ithlm_cl = k
+
+          call stat_assign(ithlm_cl,"thlm_cl",
+     .          "thlm_cl", "kg/kg/s",zt)
+          k = k + 1 
         case ('wp3_bt')
           iwp3_bt = k
 
