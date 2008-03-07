@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.32 2008-03-05 17:16:18 faschinj Exp $
+! $Id: mixing.F,v 1.33 2008-03-07 15:36:56 faschinj Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -227,7 +227,7 @@
           write(fstderr,'(a)') "rt mixing failed"
           return
         end if
-
+        
         ! The arm_0003 case produces negative rtm near the tropopause.
         !    To avoid this, we clip rtm.  This is not a good solution,
         !    because it renders rtm non-conserved.  We should look into 
@@ -256,8 +256,10 @@
           write(fstderr,'(a)') "thetal mixing failed"
           return
         end if
-
         
+        ! Clipping 
+        ! Joshua Fasching March 2008
+        where( thlm < 0.0 ) thlm = 0.0        
 
         ! Solve sclrm / wpsclrp
         if ( present( sclrm )     .and. present( wpsclrp ) .and.
