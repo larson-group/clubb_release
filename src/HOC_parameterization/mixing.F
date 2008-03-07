@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.34 2008-03-07 20:21:41 faschinj Exp $
+! $Id: mixing.F,v 1.35 2008-03-07 22:04:58 faschinj Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -254,7 +254,8 @@
           zt%x(:,irtm_cl) = zt%x(:,irtm_cl) + rtm /dt
           zt%n(:,irtm_cl) = zt%n(:,irtm_cl) + 1
         endif
-
+#endif
+        
         ! Prof. Larson's modified mixing_lhs 
 !        call mixing_lhs( .true., dt, taum, wmm, wmt, Kw6,
         call mixing_lhs( .true., dt, taum, wmm, wmt, Kw6_thl,
