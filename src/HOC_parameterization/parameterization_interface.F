@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.68 2008-03-05 17:16:18 faschinj Exp $
+! $Id: parameterization_interface.F,v 1.69 2008-03-07 16:46:38 faschinj Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -419,7 +419,7 @@
 #endif /*SCALARS*/
      .   )
          if(.not.isValid) then
-             print *, "At level: ",k
+             print *, "At grid level = ",k
             return
          endif
          !--------------------------------------------------------------
