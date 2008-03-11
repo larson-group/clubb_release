@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.35 2008-03-07 22:04:58 faschinj Exp $
+! $Id: mixing.F,v 1.36 2008-03-11 19:27:13 vlarson Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -458,6 +458,11 @@
 
         ! Added by Brian for eddy diffusion.
         real, dimension(3,gr%nnzp) :: diff_lhs_imp
+
+        ! wtol_sqd = the square of the minimum threshold on w,
+        !     [wtol_sqd] = m^2 s^{-2}.  Vince Larson 11 Mar 2008.
+        real :: wtol_sqd
+
         ! Constant parameters
         integer, parameter ::
      .  kp1diag = 1,
@@ -467,6 +472,10 @@
         ! Indices
         integer :: k, km1, kp1
         integer :: k_xm, k_wpxp
+
+        ! wtol_sqd = the square of the minimum threshold on w,
+        !     [wtol_sqd] = m^2 s^{-2}.  Vince Larson 11 Mar 2008.
+        wtol_sqd = wtol * wtol
 
         ! Define a1
 
@@ -536,16 +545,16 @@
      .    = - wmm(k) * (1.0/2.0) * gr%dzm(k)
      .      - gr%dzm(k)
      .        * (1.0/2.0) * ( a1(k) + a1(km1) )
-     .        * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*eps ) )
+     .        * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*wtol_sqd ) )
      .      + diff_lhs_imp(3,k)
 
           ! Momentum main diagonal [ x wpxp(k,<t+1>) ]
           lhs(3,k_wpxp)
      .    = + gr%dzm(k)
      .        * (  (1.0/2.0) * ( a1(kp1) + a1(k) )
-     .           * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
+     .           * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*wtol_sqd ) )
      .          -  (1.0/2.0) * ( a1(k) + a1(km1) )
-     .           * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*eps ) )
+     .           * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*wtol_sqd ) )
      .          )
      .      + (1.0-C7_Skw_fnc(k)) * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
 !     .      + C6x / taum(k)
@@ -559,7 +568,7 @@
      .    = + wmm(k) * (1.0/2.0) * gr%dzm(k)
      .      + gr%dzm(k)
      .        * (1.0/2.0) * ( a1(kp1) + a1(k) )
-     .        * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
+     .        * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*wtol_sqd ) )
      .      + diff_lhs_imp(1,k)
 
 !         wpxp: production
@@ -596,18 +605,18 @@
             zmscr03(k) =
      .        + gr%dzm(k)
      .          * (1.0/2.0) * ( a1(k) + a1(km1) )
-     .          * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*eps ) )
+     .          * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*wtol_sqd ) )
             zmscr04(k) = 
      .        - gr%dzm(k)
      .          * (  (1.0/2.0) * ( a1(kp1) + a1(k) )
-     .             * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
+     .           * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*wtol_sqd ) )
      .            -  (1.0/2.0) * ( a1(k) + a1(km1) )
-     .             * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*eps ) )
+     .           * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*wtol_sqd ) )
      .            )
             zmscr05(k) = 
      .        - gr%dzm(k)
      .          * (1.0/2.0) * ( a1(kp1) + a1(k) )
-     .          * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*eps ) )
+     .          * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*wtol_sqd ) )
             end if ! ta
 
             if ( iwprtp_tp > 0 .or. iwpthlp_tp > 0 ) then

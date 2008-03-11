@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.31 2008-03-05 17:16:18 faschinj Exp $
+! $Id: diag_var.F,v 1.32 2008-03-11 19:26:17 vlarson Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -132,6 +132,10 @@
      .  Kw2_thlp2,
      .  Kw2_rtpthlp
 
+        ! wtol_sqd = the square of the minimum threshold on w,
+        !     [wtol_sqd] = m^2 s^{-2}.  Vince Larson 11 Mar 2008.
+        real :: wtol_sqd
+
         logical :: scalar_calc
 
         ! Loop indices
@@ -174,6 +178,11 @@
 
         ! Define a1
         a1(1:gr%nnzp) = 1.0 / ( 1.0 - Scm(1:gr%nnzp) )
+
+
+        ! wtol_sqd = the square of the minimum threshold on w,
+        !     [wtol_sqd] = m^2 s^{-2}.  Vince Larson 11 Mar 2008.
+        wtol_sqd = wtol * wtol
 
 #ifdef STATS
         if ( lstats_samp ) then
@@ -259,14 +268,14 @@
 
 !        call diag_var_lhs( a1, wp2, wp3, taum, wmm, Kw2, 
         call diag_var_lhs( a1, wp2, wp3, taum, wmm, Kw2_rtp2, 
-     .                     C2rt_1d, nu2, beta, eps, dt, liter,
+     .                     C2rt_1d, nu2, beta, wtol_sqd, dt, liter,
      .                     lhs )
 
         ! Explicit contributions to rtp2
 
         call diag_var_rhs( "rtp2", a1, wp2, wp3,
      .                     rtm, rtm, wprtp, wprtp, rtp2,
-     .                     dt, beta, eps, liter, rhs )
+     .                     dt, beta, wtol_sqd, liter, rhs )
         
         ! Solve the tridiagonal system
 
@@ -277,14 +286,14 @@
 
 !        call diag_var_lhs( a1, wp2, wp3, taum, wmm, Kw2, 
         call diag_var_lhs( a1, wp2, wp3, taum, wmm, Kw2_thlp2, 
-     .                     C2thl_1d, nu2, beta, eps, dt, liter,
+     .                     C2thl_1d, nu2, beta, wtol_sqd, dt, liter,
      .                     lhs )
 
         ! Explicit contributions to thlp2
 
         call diag_var_rhs( "thlp2", a1, wp2, wp3,
      .                     thlm, thlm, wpthlp, wpthlp, thlp2,
-     .                     dt, beta, eps, liter, rhs )
+     .                     dt, beta, wtol_sqd, liter, rhs )
 
         ! Solve the tridiagonal system
 
@@ -295,14 +304,14 @@
 
 !        call diag_var_lhs( a1, wp2, wp3, taum, wmm, Kw2, 
         call diag_var_lhs( a1, wp2, wp3, taum, wmm, Kw2_rtpthlp, 
-     .                     C2rtthl_1d, nu2, beta, eps, dt, liter,
+     .                     C2rtthl_1d, nu2, beta, wtol_sqd, dt, liter,
      .                     lhs )
 
         ! Explicit contributions to rtpthlp
 
         call diag_var_rhs( "rtpthlp", a1, wp2, wp3,
      .                     rtm, thlm, wprtp, wpthlp, rtpthlp,
-     .                     dt, beta, eps, liter, rhs )
+     .                     dt, beta, wtol_sqd, liter, rhs )
 
         ! Solve the tridiagonal system
 
@@ -312,7 +321,7 @@
         ! Implicit contributions to term up2
 
         call diag_var_lhs( a1, wp2, wp3, taum, wmm, Kw2, 
-     .                     C4_C14_1d, nu9, beta, eps, dt, liter,
+     .                     C4_C14_1d, nu9, beta, wtol_sqd, dt, liter,
      .                     lhs )
 
         ! Explicit contributions to up2
@@ -320,7 +329,7 @@
         call diag_var_uv_rhs
      .       ( "up2", a1, wp2, wp3, wpthvp, taum,
      .         um, vm, upwp, vpwp, up2, vp2, 
-     .         dt, C4, C5, C14, beta, T0, eps, liter, rhs )
+     .         dt, C4, C5, C14, beta, T0, wtol_sqd, liter, rhs )
 
         ! Solve the tridiagonal system
 
@@ -330,7 +339,7 @@
         ! Implicit contributions to term vp2
 
         call diag_var_lhs( a1, wp2, wp3, taum, wmm, Kw2, 
-     .                     C4_C14_1d, nu9, beta, eps, dt, liter,
+     .                     C4_C14_1d, nu9, beta, wtol_sqd, dt, liter,
      .                     lhs )
 
         ! Explicit contributions to vp2
@@ -338,7 +347,7 @@
         call diag_var_uv_rhs
      .       ( "vp2", a1, wp2, wp3, wpthvp, taum, 
      .         vm, um, vpwp, upwp, vp2, up2,
-     .         dt, C4, C5, C14, beta, T0, eps, liter, rhs )
+     .         dt, C4, C5, C14, beta, T0, wtol_sqd, liter, rhs )
 
 
         ! Solve the tridiagonal system
@@ -374,14 +383,14 @@
 !       The correlation of w and rt may now exceed 1, which would be unphysical.  7 Jul 2007 
 !     .             wprtp(k)*wprtp(k)/((1.0-Scm(k))*wp2(k)) + eps,
 ! End Vince Larson's commenting
-     .             rttol*rttol + eps )
+     .             rttol*rttol )
             thlp2(k) 
      .      = max( thlp2(k), 
 ! Vince Larson commented out because may cause unstable feedback w/ wpthlp eqn.. 
 !    The correlation of w and thl may now exceed 1, which would be unphysical.  7 Jul 2007 
 !     .             wpthlp(k)*wpthlp(k)/((1.0-Scm(k))*wp2(k)) + eps,
 ! End Vince Larson's commenting
-     .             thltol*thltol + eps )
+     .             thltol*thltol )
           else
             thlp2(k) = max( thlp2(k), 0.0 )
             rtp2(k)  = max( rtp2(k), 0.0 )
@@ -454,16 +463,17 @@
         ! Implicit contributions to passive scalars
 
           call diag_var_lhs( a1, wp2, wp3, taum, wmm, Kw2, 
-     .                       C2sclr_1d, nu2, beta, eps, dt, liter,
+     .                       C2sclr_1d, nu2, beta, wtol_sqd, dt, liter,
      .                       lhs )
 
 
           ! Explicit contributions to passive scalars
           do i = 1, sclr_dim, 1
             call diag_var_rhs
-     .           ( "sclrp2", a1, wp2, wp3,
-     .             sclrm(:,i), sclrm(:,i), wpsclrp(:,i), wpsclrp(:,i), 
-     .             sclrp2(:,i), dt, beta, eps, liter, sclr_rhs(:,i) )
+     .         ( "sclrp2", a1, wp2, wp3,
+     .           sclrm(:,i), sclrm(:,i), wpsclrp(:,i), wpsclrp(:,i), 
+     .           sclrp2(:,i), dt, beta, wtol_sqd, liter, 
+     .           sclr_rhs(:,i) )
 
           end do
 
@@ -471,7 +481,7 @@
             call diag_var_rhs
      .           ( "sclrprtp", a1, wp2, wp3,
      .             sclrm(:,i), rtm, wpsclrp(:,i), wprtp, 
-     .             sclrprtp(:,i), dt, beta, eps, liter, 
+     .             sclrprtp(:,i), dt, beta, wtol_sqd, liter, 
      .             sclr_rhs(:,i+sclr_dim) )
           end do
 
@@ -479,7 +489,7 @@
             call diag_var_rhs
      .           ( "sclrpthlp", a1, wp2, wp3,
      .             sclrm(:,i), thlm, wpsclrp(:,i), wpthlp, 
-     .             sclrprtp(:,i), dt, beta, eps, liter, 
+     .             sclrprtp(:,i), dt, beta, wtol_sqd, liter, 
      .             sclr_rhs(:,i+2*sclr_dim) )
           end do
 
@@ -508,7 +518,7 @@
 !     The correlation of w and sclr may now exceed 1, which would be unphysical.  7 Jul 2007
 !     .              wpsclrp(k,i)*wpsclrp(k,i)/((1.0-Scm(k))*wp2(k))+eps,
 ! End Vince Larson's commenting
-     .              sclrtol(i)*sclrtol(i) + eps )
+     .              sclrtol(i)*sclrtol(i) )
               else
                 sclrp2(k,i) = max( sclrp2(k,i), 0.0 )
               end if ! wp2(k) >= wtol**2
