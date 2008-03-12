@@ -1,4 +1,4 @@
-! $Id: mixing_length.F,v 1.1 2008-03-05 17:16:18 faschinj Exp $
+! $Id: mixing_length.F,v 1.2 2008-03-12 20:15:33 dschanen Exp $
 !-----------------------------------------------------------------------------
         module mixing_length
         
@@ -97,6 +97,11 @@
         real :: lup_max_alt, ldown_min_alt
 
 !---------- Mixing length computation ----------------------------------
+
+        ! Avoid uninitialized memory (these values are not used in Lscale) 
+        ! -dschanen 12 March 2008
+        lup(1)   = 0.0
+        ldown(1) = 0.0
 
         ! Upwards loop
 
