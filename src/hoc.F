@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.152 2008-03-05 17:22:52 faschinj Exp $
+! $Id: hoc.F,v 1.153 2008-03-12 20:19:21 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -968,6 +968,7 @@
 
 !         wp2 = 2.0 / 3.0 * em
 !<--- End reduction of initial sounding for stability 24 Jan 07
+          em(:) = emin
 
         ! GCSS ARM
         case ( "arm" )
@@ -984,6 +985,7 @@
 
 !         wp2 = 2.0 / 3.0 * em
 !<--- End reduction of initial sounding for stability 24 Jan 07
+          em(:) = emin
 
         ! March 2000 ARM case
         case ( "arm_0003" )
@@ -1035,6 +1037,7 @@
 !         wp2 = 2.0 / 3.0 * em
 
 !<--- End reduction of initial sounding for stability 24 Jan 07
+          em(:) = emin
         ! GCSS DYCOMS II RF01
         case ( "dycoms2_rf01" ) 
           cloud_top_height = 800. ! 800 m is the top of the cloud in RF01
