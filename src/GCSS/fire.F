@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: fire.F,v 1.6 2008-03-05 17:22:52 faschinj Exp $
+! $Id: fire.F,v 1.7 2008-03-12 20:52:34 dschanen Exp $
         module fire
 
 !       Description:
@@ -70,10 +70,12 @@
 
         end do
 
+        ! Boundary condition.
+        wmt(1) = 0.0        ! Below surface
+
         wmm = zt2zm( wmt )
 
-        ! Boundary conditions.
-        wmt(1) = 0.0        ! Below surface
+        ! Boundary condition.
         wmm(1) = 0.0        ! At surface
         wmm(gr%nnzp) = 0.0  ! Model top
         
