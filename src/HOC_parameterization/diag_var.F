@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.32 2008-03-11 19:26:17 vlarson Exp $
+! $Id: diag_var.F,v 1.33 2008-03-13 18:47:24 dschanen Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -871,7 +871,7 @@
         ! Compute implicit budget terms
         if ( lstats_samp ) then
 
-          do k=1, gr%nnzp
+          do k=2, gr%nnzp-1
 
             km1 = max( k-1, 1 )
             kp1 = min( k+1, gr%nnzp )
