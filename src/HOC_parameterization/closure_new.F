@@ -1,4 +1,4 @@
-! $Id: closure_new.F,v 1.13 2008-02-12 22:50:08 faschinj Exp $
+! $Id: closure_new.F,v 1.14 2008-03-13 17:29:40 vlarson Exp $
         module pdf_closure
 
         implicit none
@@ -182,8 +182,9 @@
 
         real :: diffweight
 
-        ! alpha coefficients
-
+        ! alpha coefficients = 0.5 * ( 1 - correlations^2 ).
+        !    These are used to calculate the scalar widths 
+        ! sthl1, sthl2, srt1, and srt2 as in Eq. (34) of Larson and Golaz (2005)
         real :: alpha_thl, alpha_rt
 
 !       variables for a generalization of Chris Golaz' closure
@@ -212,26 +213,27 @@
         BD = Lv / (exner*Cp) - ep2 * T0
 
         ! If there is no velocity, then use single delta fnc. as pdf
-        ! Otherwise compute parameters explicitly.
-
+        ! Otherwise width parameters (e.g. sw1, sw2, etc.) are non-zero.
         if ( wp2 <= wtol**2 )  then
 
-          a      = 0.5
-          w1     = wm
-          w2     = wm
-          sw1    = 0.
-          sw2    = 0.
-          rt1    = rtm
-          rt2    = rtm
-          srt1   = 0.
-          srt2   = 0.
-          thl1   = thlm
-          thl2   = thlm
-          sthl1  = 0.
-          sthl2  = 0.
-          rrtthl = 0.
+          a         = 0.5
+          w1        = wm
+          w2        = wm
+          sw1       = 0.
+          sw2       = 0.
+          rt1       = rtm
+          rt2       = rtm
+          alpha_rt  = 0.5
+          srt1      = 0.
+          srt2      = 0.
+          thl1      = thlm
+          thl2      = thlm
+          alpha_thl = 0.5
+          sthl1     = 0.
+          sthl2     = 0.
+          rrtthl    = 0.
 
-        else ! Explicitly 
+        else ! Width parameters are non-zero
 
           Skw = wp3/wp2**1.5
 
@@ -412,7 +414,7 @@
             end do ! i=1, sclr_dim
           end if ! scalar_calc 
 
-        end if
+        end if  ! Widths non-zero
 
         ! Compute higher order moments
 
@@ -646,6 +648,7 @@
         pdf_parms(24) = rrtthl
         pdf_parms(25) = alpha_thl
         pdf_parms(26) = alpha_rt
+        
         call pdf_closure_new_check( wp4, wprtp2, wp2rtp, wpthlp2,
      .                           wp2thlp, cf, rcm, wpthvp, wp2thvp,
      .                           rtpthvp, thlpthvp, wprcp, wp2rcp,
@@ -664,10 +667,9 @@
                 
         if ( .not. isValid ) then
                 
-           write(fstderr,*) "Error in pdf_closure_new"
+           write(fstderr,*) "Error in pdf_closure_new" 
            
            write(fstderr,*) "Intent(in)"
-           
            write(fstderr,*) "p = ", p 
            write(fstderr,*) "exner = ", exner
            write(fstderr,*) "wm = ", wm 
