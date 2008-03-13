@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm.F,v 1.7 2008-03-05 17:22:52 faschinj Exp $
+! $Id: arm.F,v 1.8 2008-03-13 21:48:29 dschanen Exp $
         module arm
 
 !       Description:
@@ -121,9 +121,14 @@
           case default
             rtm_forcing(k)  = 0.0
             thlm_forcing(k) = 0.0
+            radht(k)        = 0.0
 
           end select
         end do ! k=2..gr%nnzp
+
+        rtm_forcing(1)  = 0.0
+        thlm_forcing(1) = 0.0
+        radht(1)        = 0.0
 
 #ifdef STATS
         if ( lstats_samp .and. .not.lbugsrad ) then
