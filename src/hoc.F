@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.154 2008-03-13 18:46:33 dschanen Exp $
+! $Id: hoc.F,v 1.155 2008-03-13 21:44:37 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -969,6 +969,7 @@
 !         wp2 = 2.0 / 3.0 * em
 !<--- End reduction of initial sounding for stability 24 Jan 07
           em(:) = emin
+          wp2 = 2.0 / 3.0 * em
 
         ! GCSS ARM
         case ( "arm" )
@@ -983,27 +984,27 @@
 !         em(1) = em(2)
 !         em(gr%nnzp) = em(gr%nnzp-1)
 
-!         wp2 = 2.0 / 3.0 * em
 !<--- End reduction of initial sounding for stability 24 Jan 07
           em(:) = emin
+          wp2 = 2.0 / 3.0 * em
 
         ! March 2000 ARM case
         case ( "arm_0003" )
           em = 1.0
           wp2 = 2.0 / 3.0 * em
-          call arm_0003_init
+          call arm_0003_init()
 
         ! 3 year ARM case
         case ( "arm_3year" )
           em = 1.0
           wp2 = 2.0 / 3.0 * em
-          call arm_3year_init
+          call arm_3year_init()
          
         ! June 27 1997 ARM case
         case ( "arm_97" )
           em = 1.0
           wp2 = 2.0 / 3.0 * em
-          call arm_97_init
+          call arm_97_init()
 
         ! GCSS FIRE Sc
         case ( "fire" ) 
@@ -1038,6 +1039,8 @@
 
 !<--- End reduction of initial sounding for stability 24 Jan 07
           em(:) = emin
+          wp2 = 2.0 / 3.0 * em
+
         ! GCSS DYCOMS II RF01
         case ( "dycoms2_rf01" ) 
           cloud_top_height = 800. ! 800 m is the top of the cloud in RF01
@@ -1217,7 +1220,6 @@
 !        taum = zt2zm( taut )
 
         ! Modification to damp noise in stable region
-
         do k=1,gr%nnzp
           if ( wp2(k) <= 0.005 ) then
             taut(k) = taumin

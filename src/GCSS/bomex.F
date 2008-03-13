@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: bomex.F,v 1.5 2007-12-15 23:58:04 griffinb Exp $
+! $Id: bomex.F,v 1.6 2008-03-13 21:44:37 dschanen Exp $
         module bomex
 
 !       Description:
@@ -61,10 +61,12 @@
 
         end do ! k=2..gr%nnzp
 
+        ! Boundary condition on subsidence (thermo grid)
+        wmt(1) = 0.0        ! Below surface
+
         wmm = zt2zm( wmt )
 
-        ! Boundary conditions.
-        wmt(1) = 0.0        ! Below surface
+        ! Boundary conditions on subsidence (mom. grid)
         wmm(1) = 0.0        ! At surface
         wmm(gr%nnzp) = 0.0  ! Model top
         
@@ -84,7 +86,10 @@
               radht(k) = 0.
             end if
 
-          end do
+          end do ! k=2..gr%nnzp
+
+          ! Boundary condition
+          radht(1) = 0.0
 
           thlm_forcing = radht
         else ! Compute radht interactively with BUGSrad
