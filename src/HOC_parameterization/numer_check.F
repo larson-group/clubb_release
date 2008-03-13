@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F,v 1.15 2008-02-21 16:46:04 faschinj Exp $
+! $Id: numer_check.F,v 1.16 2008-03-13 18:45:49 dschanen Exp $
         module numerical_check
 
         implicit none
@@ -70,7 +70,9 @@
 !
 !        Joshua Fasching February 2008
 !---------------------------------------------------------------------------
+
          use constants, only:sclr_dim
+
          implicit none
 
          ! Input Variables
@@ -137,32 +139,35 @@
         call check_nan( cthl2, "cthl2", proc_name, isValid ) 
         call check_nan( pdf_parms, "pdf_parms", proc_name,isValid )
         
-        if( present(sclrpthvp) ) then
+        if ( present( sclrpthvp ) ) then
             call check_nan(sclrpthvp,"sclrpthvp",
      .                      proc_name, isValid)
-        endif
-        if( present(sclrprcp) ) then
-             call check_nan(sclrprcp,"sclrprcp",
-     .                    proc_name,isValid)
-        endif
-        if( present(wpsclrprtp) ) then
-             call check_nan(wpsclrprtp,"wpsclrprtp", 
-     .                    proc_name,isValid)
-        endif   
-        if( present(wpsclrp2) ) then
-             call check_nan(wpsclrp2,"wpsclrp2", 
-     .                    proc_name,isValid)
-        endif
-        if( present(wpsclrpthlp) ) then
-             call check_nan(wpsclrpthlp,"wpsclrtlp", 
-     .                    proc_name,isValid)
-        endif
-        if( present(wp2sclrp) ) then
-             call check_nan(wp2sclrp,"wps2clrp", 
-     .                    proc_name,isValid)
-        endif
+        end if
+        if ( present( sclrprcp ) ) then
+             call check_nan( sclrprcp, "sclrprcp",
+     .                       proc_name, isValid )
+        end if
+        if ( present( wpsclrprtp ) ) then
+             call check_nan( wpsclrprtp, "wpsclrprtp", 
+     .                       proc_name, isValid )
+        end if   
+        if ( present( wpsclrp2 ) ) then
+             call check_nan( wpsclrp2, "wpsclrp2", 
+     .                       proc_name, isValid )
+        end if
+        if( present( wpsclrpthlp ) ) then
+             call check_nan( wpsclrpthlp, "wpsclrtlp", 
+     .                       proc_name, isValid )
+        end if
+        if( present( wp2sclrp ) ) then
+             call check_nan( wp2sclrp, "wp2sclrp", 
+     .                       proc_name, isValid )
+        end if
+
+        return
         end subroutine pdf_closure_new_check
-!-------------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
         subroutine parameterization_check( thlm_forcing, rtm_forcing,
      .                           rtm_mc, thlm_mc, wmm, wmt, p, rhom, 
      .                           rhot, exner, wpthlp_sfc, wprtp_sfc, 
@@ -178,14 +183,17 @@
 
      .  )
 !
-!       Description: This subroutine determines what input variables may have NaN values.
-!       In addition it checks to see if rhom, rhot, exner, up2, vp2, rtm, thlm, wp2, Scm,
-!       rtp2, thlp2, taum, rcm, Ncm, Ncnm, Nim, hydromet, or cf have negative values.
+!       Description: This subroutine determines what input variables may have 
+!       NaN values.
+!       In addition it checks to see if rhom, rhot, exner, up2, vp2, rtm, thlm,
+!       wp2, Scm, rtp2, thlp2, taum, rcm, Ncm, Ncnm, Nim, hydromet, or cf 
+!       have negative values.
 !
 !
-!----------------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
         use grid_class
         use constants   
+
         implicit none
 
         real, intent(in), dimension(gr%nnzp) :: 
@@ -260,8 +268,8 @@
         character(*), parameter :: 
      .  proc_name = "parameterization_timestep"
         
-        integer ::
-     .  i
+        integer :: i
+
 !-------- Input Nan Check ----------------------------------------------
         call check_nan( thlm_forcing, "thlm_forcing", proc_name )
         call check_nan( rtm_forcing,"rtm_forcing", proc_name )
@@ -335,9 +343,10 @@
         call check_negative( hydromet(:,4),"ricem", proc_name )
         call check_negative( hydromet(:,5),"rgraupelm", proc_name )
         call check_negative( cf,"cf", proc_name )
-       
-!-------------------------------------------------------------
+
+        return       
         end subroutine parameterization_check
+
 !-----------------------------------------------------------------------
         subroutine sfc_var_check( wp2_sfc, up2_sfc, vp2_sfc, thlp2_sfc,
      .           rtp2_sfc, rtpthlp_sfc, isValid,
@@ -352,7 +361,11 @@
 !
 !-----------------------------------------------------------------------
         use constants
+
         implicit none
+
+        ! External
+        intrinsic :: present
         
         ! Input Variables
         real,intent(in) :: 
@@ -375,9 +388,8 @@
         ! Local Variables
 
         ! Name of the subroutine calling the check
-        character(*),parameter :: proc_name = "sfc_var"
-
-        integer :: k
+        character(len=7),parameter :: proc_name = "sfc_var"
+!-----------------------------------------------------------------------
 
         call check_nan( wp2_sfc, "wp2_sfc", proc_name, isValid)
         call check_nan( up2_sfc, "up2_sfc", proc_name, isValid)
@@ -387,22 +399,23 @@
         call check_nan( rtpthlp_sfc, "rtpthlp_sfc", 
      .                  proc_name, isValid)
         
-        if( present(sclrp2_sfc) ) then
-                call check_nan(sclrp2_sfc,"sclrp2_sfc",
-     .                      proc_name, isValid)
-        endif
-        if( present(sclrprtp_sfc) ) then
-             call check_nan(sclrprtp_sfc,"sclrprtp_sfc",
-     .                    proc_name,isValid)
-             endif
-        if( present(sclrp2_sfc) ) then
-             call check_nan(sclrpthlp_sfc,"sclrpthlp_sfc", 
-     .                    proc_name,isValid)
-        endif
- 
+        if ( present( sclrp2_sfc ) ) then
+          call check_nan( sclrp2_sfc, "sclrp2_sfc",
+     .                    proc_name, isValid )
+        end if
+        if ( present( sclrprtp_sfc ) ) then
+          call check_nan( sclrprtp_sfc, "sclrprtp_sfc",
+     .                    proc_name, isValid )
+        end if
+        if ( present( sclrp2_sfc ) ) then
+          call check_nan( sclrpthlp_sfc, "sclrpthlp_sfc", 
+     .                    proc_name, isValid )
+        end if
+
+        return 
         end subroutine sfc_var_check 
 !-----------------------------------------------------------------------
-        subroutine mixing_clipping(rtm,thlm)
+        subroutine mixing_clipping( rtm, thlm )
 !
 !
 !       Description: This subroutine clips negative values caused by the mixing
@@ -411,6 +424,7 @@
 !------------------------------------------------------------------------
         use constants, only: fstderr
         use grid_class
+
         implicit none
         
         ! Input/Output variables
@@ -422,18 +436,19 @@
         integer :: k 
 !-------------------------------------------------------------------------
         do k = 1, gr%nnzp, 1
-                if ( thlm(k) < 0.0 ) then
-                        write(fstderr,*) "Negative value in thlm at ",k,
-     .                  " caused in mixing"              
-                        thlm(k) = 0.0
-                endif
-                if( rtm(k) < 0.0 ) then
-                        write(fstderr,*) "Negative value in rtm at ", k,
-     .                  " caused in mixing" 
-                        rtm(k) = 0
-                endif
+          if ( thlm(k) < 0.0 ) then
+            write(fstderr,*) "Negative value in thlm at ",k,
+     .        " caused in mixing"              
+            thlm(k) = 0.0
+          end if
+          if ( rtm(k) < 0.0 ) then
+            write(fstderr,*) "Negative value in rtm at ", k,
+     .        " caused in mixing" 
+            rtm(k) = 0
+          end if
 
-        end do        
+        end do ! k 
+
         return
         end subroutine mixing_clipping
 !-----------------------------------------------------------------------
@@ -797,23 +812,25 @@
         
         implicit none
 
+        ! External
+        intrinsic :: any, present
+
         ! Input Variables
         real, intent(in), dimension(:) :: var
         
         character(len=*), intent(in):: 
-     .      varname,                   ! Varible being examined
-     .      operation                  ! Procedure calling check_zero
+     .  varname,    ! Varible being examined
+     .  operation   ! Procedure calling check_zero
 
         ! Output Variable
         logical, optional, intent(inout) :: isValid
 
-
-
-        if(any(var < 0.0)) then
+        if ( any( var < 0.0 ) ) then
            write(fstderr,*) varname, " < 0 in ", operation
-           if(present(isValid)) isValid = .false.
-        endif
-         
+           if ( present( isValid ) ) isValid = .false.
+        end if
+
+        return
         end subroutine check_negative
 !------------------------------------------------------------------------        
         subroutine check_nan_2d( var, varname, operation, isValid )
@@ -826,19 +843,25 @@
         use grid_class
         
         implicit none
+
+        ! External
+        intrinsic :: present
+
         ! Input variables
         real, intent(in), dimension(:) :: var ! Variable being examined
 
         character(len=*), intent(in):: 
-     .      varname,                   ! Name of variable
-     .      operation                  ! Procedure calling check_nan
+     .  varname,    ! Name of variable
+     .  operation   ! Procedure calling check_nan
         
         logical,optional,intent(out) :: isValid
         
-        if (isnan2d(var)) then
+        if ( isnan2d( var ) ) then
            write(fstderr,*) varname, " is NaN in ",operation
-           if(present(isValid)) isValid = .false.
-        endif
+           if ( present( isValid ) ) isValid = .false.
+        end if
+
+        return
         end subroutine check_nan_2d
 !-----------------------------------------------------------------------        
         subroutine check_nan_sclr( var, varname, operation, isValid )
@@ -850,20 +873,26 @@
         use grid_class
         
         implicit none
+
+        ! External
+        intrinsic :: present
+
         ! Input Variables
         real, intent(in) :: var        ! Variable being examined
 
         character(len=*), intent(in):: 
-     .      varname,                   ! Name of variable being examined
-     .      operation                  ! Procedure calling check_nan
+     .  varname,   ! Name of variable being examined
+     .  operation  ! Procedure calling check_nan
         
         ! Output variable
         logical, optional, intent(out) :: isValid 
 !--------------------------------------------------------------------
-        if (isnan(var)) then
-           write(fstderr,*) varname, " is NaN in ",operation
-           if (present(isValid)) isValid = .false.
-        endif
+        if ( isnan( var ) ) then
+          write(fstderr,*) varname, " is NaN in ",operation
+          if ( present( isValid ) ) isValid = .false.
+        end if
+
+        return
         end subroutine check_nan_sclr
 !-------------------------------------------------------------------------       
         end module numerical_check
