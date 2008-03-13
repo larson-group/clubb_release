@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.153 2008-03-12 20:19:21 dschanen Exp $
+! $Id: hoc.F,v 1.154 2008-03-13 18:46:33 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -850,7 +850,7 @@
      .  taum, taut,     ! Dissipation time              [s]
      .  thvm            ! Virtual potential temperature [K]
 
-        real, dimension(gr%nnzp,hydromet_dim), target, intent(out) :: 
+        real, dimension(gr%nnzp,hydromet_dim), target, intent(inout) :: 
      .  hydromet        ! Hydrometeor types             [units vary]
 
 #ifdef SCALARS
