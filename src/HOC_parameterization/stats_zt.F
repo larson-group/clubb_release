@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zt.F,v 1.3 2008-03-07 20:21:41 faschinj Exp $
+! $Id: stats_zt.F,v 1.4 2008-03-13 18:44:50 dschanen Exp $
 #ifdef STATS
       module stats_zt
       contains
@@ -19,7 +19,7 @@
       character(len= * ), dimension(nvarmax), intent(in) :: vars_zt
 
       !Output Variable	
-      logical, intent(out) :: lerror
+      logical, intent(inout) :: lerror
       
       !Local Varables
       integer :: i, k
