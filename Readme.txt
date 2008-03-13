@@ -1,4 +1,4 @@
-$Id: Readme.txt,v 1.60 2008-03-06 21:34:31 nielsenb Exp $
+$Id: Readme.txt,v 1.61 2008-03-13 18:57:31 nielsenb Exp $
 
 ************************************************************************
 *                           Copyright Notice
@@ -700,4 +700,4 @@ sclr portion of their name.  For example. the first scalar mean is 'sclram',
 and the second is 'sclrbm'.  These and their forcings are all that occurs in
 the zt file, the rest all occur in the zm file.
 
-******************************************************************************
+*****************************************************************************
