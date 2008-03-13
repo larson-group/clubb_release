@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.38 2008-03-05 17:16:19 faschinj Exp $
+! $Id: wp23.F,v 1.39 2008-03-13 19:16:02 dschanen Exp $
 
         subroutine timestep_wp23
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
@@ -956,7 +956,7 @@
 
 !         Finalize implicit contributions for wp2
 
-          do k=1,gr%nnzp
+          do k=2,gr%nnzp-1
             km1 = max( k-1, 1 )
             kp1 = min( k+1, gr%nnzp )
 
@@ -1010,7 +1010,7 @@
 
           ! Finalize implicit contributions for wp3
 
-          do k=1,gr%nnzp
+          do k=2, gr%nnzp-1, 1
             km1 = max( k-1, 1 )
             kp1 = min( k+1, gr%nnzp )
 

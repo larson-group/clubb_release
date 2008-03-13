@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.36 2008-03-11 19:27:13 vlarson Exp $
+! $Id: mixing.F,v 1.37 2008-03-13 19:16:02 dschanen Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -1133,7 +1133,7 @@
 #ifdef STATS
           if ( lstats_samp ) then
 
-           do k = 1, gr%nnzp
+           do k = 2, gr%nnzp-1
              km1 = max( k-1, 1 )
              kp1 = min( k+1, gr%nnzp )
 
