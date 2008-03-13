@@ -1,14 +1,8 @@
-FOR MESSNER: Please do not delete or modify files in /home/matlabuser/plotgen
-They are used to generate the nightly plots.
 
-Usage: 'plotgen Output_Arg HOC_sim1 [HOC_sim2] Output_Directory Plot_LES Plot_Best Plot_HOCDec17'
-Or:    'plotgen Output_Arg nightly Output_Directory'
+Usage: 'plotgen Output_Arg HOC_dir1 [HOC_dir2] Output_Directory Plot_LES Plot_Best Plot_HOCDec17'
 
-The first generates plots comparing the specified simulations, e.g.
+This generates plots comparing the specified simulations, e.g.
   plotgen -c /home/vlarson/HOC_dir1 /home/vlarson/HOC_dir2 /home/vlarson/HOC_output 1 0 0
-
-The latter generates the nightly plots, e.g.
-  plotgen -r nightly /home/vlarson/HOC_output
 
 The results will be saved in 'Output_Directory' and
   can be viewed with the following command:
@@ -18,21 +12,15 @@ The results will be saved in 'Output_Directory' and
   '-r' : Overwrite the files in the output directory
   '-c' : Create the output directory before outputting
 
-'HOC_sim1' is the directory (including path) containing
+'HOC_dir1' is the directory (including path) containing
   GrADS output files for all cases you wish to plot.
 All possible cases that plotgen recognizes
   are listed at the end of generate_plots.sh.
-If a case is listed but is not contained in 'HOC_sim1',
+If a case is listed but is not contained in 'HOC_dir1',
   then that case will not be plotted.
 
-'HOC_sim2' is optional but follows the same rules
-  as 'HOC_sim1'.
-
-If the user chooses the 'nightly' option, then
-  the new GrADS data to be plotted are assumed to be
-  in local sub-directories named
-  HOC_current/ and HOC_previous/.
+'HOC_dir2' is optional but follows the same rules
+  as 'HOC_dir1'.
 
 Plot_LES, Plot_Best, and Plot_HOCDec17 are all boolean,
  with 1 being plot and 0 being do not plot.
-The 'nightly' option assumes all 3 flags are set to 1.
