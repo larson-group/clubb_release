@@ -43,17 +43,14 @@ cd /home/matlabuser/plotgen
 
 #These arguments are always in the same spot
 output_arg="$1"
-HOC_sim1="$2"
+HOC_dir1="$2"
 
 #See if we need to adjust the variables to take in to account directory relationships
-HOC_dir1=${HOC_sim1%/*}
-HOC_dir1_rel=${HOC_sim1_dir:0:1}
+HOC_dir1_rel=${HOC_dir1:0:1}
 
 if [ "$HOC_dir1_rel" != "/"  ]; then
 	HOC_dir1="$working_directory/$HOC_dir1"
 fi
-
-echo $HOC_dir1
 
 #Parse out the arguments
 if [ "$#" == 7 ]; then
@@ -64,9 +61,8 @@ if [ "$#" == 7 ]; then
 	compare_HOC="$7"
 
 	#See if we need to adjust these arguments for directory relationships
-	HOC_sim2_dir=${HOC_sim2%/*}
-	HOC_sim2_dir_rel=${HOC_sim2_dir:0:1}
-	if [ "$HOC_sim2_dir_rel" != "/"  ]; then
+	HOC_dir2_rel=${HOC_dir2:0:1}
+	if [ "$HOC_dir2_rel" != "/"  ]; then
 		HOC_dir2="$working_directory/$HOC_dir2"
 	fi
 
