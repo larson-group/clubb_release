@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.39 2008-03-13 19:16:02 dschanen Exp $
+! $Id: wp23.F,v 1.40 2008-03-14 22:09:55 dschanen Exp $
 
         subroutine timestep_wp23
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
@@ -612,7 +612,7 @@
 !     .      * a1(km1) * ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), eps )
      .    - (1.0/2.0) * ( a1(k) + a1(km1) )
      .      * (1.0/2.0) * gr%dzt(k)
-     .      * ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), eps )
+     .      * ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), wtol**2 )
           ! End of Brian's a1 change.  Feb. 14, 2008.
      .    + diff_lhs(3)
 
@@ -637,8 +637,8 @@
 !     .        )
      .    + (1.0/2.0) * ( a1(k) + a1(km1) )
      .      * (1.0/2.0) * gr%dzt(k)
-     .      * (  ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), eps )
-     .         - ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), eps )
+     .      * (  ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), wtol**2 )
+     .         - ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), wtol**2 )
      .        )
           ! End of Brian's a1 change.  Feb. 14, 2008.
      .    + ( 1.0 - C11_Skw_fnc(k) )
@@ -663,7 +663,7 @@
 !     .      * a1(k) * ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), eps )
      .    + (1.0/2.0) * ( a1(k) + a1(km1) )
      .      * (1.0/2.0) * gr%dzt(k)
-     .      * ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), eps )
+     .      * ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), wtol**2 )
           ! End of Brian's a1 change. Feb. 14, 2008.
      .    + diff_lhs(1)
 
@@ -689,9 +689,9 @@
      .    + (1.0/2.0) * ( a1(k) + a1(km1) )
      .      * (1.0/4.0) * gr%dzt(k)
      .        * (  ( wp3(kp1) + wp3(k) )**2 
-     .             / MAX( wp2(k), eps )
+     .             / MAX( wp2(k), wtol**2 )
      .           - ( wp3(k) + wp3(km1) )**2
-     .             / MAX( wp2(km1), eps )
+     .             / MAX( wp2(km1), wtol**2 )
      .          )
           ! End of Brian's a1 change. Feb. 14, 2008.
      .    + ( 1.0 - C11_Skw_fnc(k) ) * 3.0 * ( grav/T0 ) * wp2thvp(k)
@@ -739,9 +739,9 @@
      .    + (1.0/2.0) * ( a1(k) + a1(km1) )
      .      * (1.0/4.0) * gr%dzt(k)
      .        * (  ( wp3(kp1) + wp3(k) )**2 
-     .             / MAX( wp2(k), eps )
+     .             / MAX( wp2(k), wtol**2 )
      .           - ( wp3(k) + wp3(km1) )**2
-     .             / MAX( wp2(km1), eps )
+     .             / MAX( wp2(km1), wtol**2 )
      .          )
           ! End of Brian's a1 change. Feb. 14, 2008.
           end if
@@ -792,7 +792,7 @@
 !     .        * a1(km1) * ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), eps )
      .        + (1.0/2.0) * ( a1(k) + a1(km1) )
      .          * (1.0/2.0) * gr%dzt(k)
-     .          * ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), eps )
+     .          * ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), wtol**2 )
             ! End of Brian's a1 change. Feb. 14, 2008.
             ztscr06(k) =
            ! Turbulent advection term with a3 outside of the derivative.
@@ -810,8 +810,8 @@
 !     .          )
      .        - (1.0/2.0) * ( a1(k) + a1(km1) )
      .          * (1.0/2.0) * gr%dzt(k)
-     .          * (  ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), eps )
-     .             - ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), eps )
+     .          * (  ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), wtol**2 )
+     .             - ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), wtol**2 )
      .            )
             ! End of Brian's a1 change. Feb. 14, 2008.
             ztscr08(k) =
