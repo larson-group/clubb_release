@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.40 2008-03-14 22:09:55 dschanen Exp $
+! $Id: wp23.F,v 1.41 2008-03-14 22:13:58 dschanen Exp $
 
         subroutine timestep_wp23
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
@@ -828,7 +828,7 @@
 !     .        * a1(k) * ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), eps )
      .        - (1.0/2.0) * ( a1(k) + a1(km1) )
      .          * (1.0/2.0) * gr%dzt(k)
-     .          * ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), eps )
+     .          * ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), wtol**2 )
             ! End of Brian's a1 change. Feb. 14, 2008.
           end if
 
