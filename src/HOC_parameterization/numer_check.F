@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F,v 1.16 2008-03-13 18:45:49 dschanen Exp $
+! $Id: numer_check.F,v 1.17 2008-03-17 19:30:44 faschinj Exp $
         module numerical_check
 
         implicit none
@@ -12,9 +12,14 @@
 !       subroutines they are checking perform correctly
 !       Joshua Fasching February 2008
 
+!       rad_clipping has been replaced by rad_check as the new
+!       subroutine only reports if there are invalid values.
+!       Joshua Fasching March 2008
+        
         public :: invalid_model_arrays, isnan2d, 
-     .            rad_clipping, parameterization_check,
-     .            sfc_var_check, pdf_closure_new_check
+     .            rad_check, parameterization_check,
+     .            sfc_var_check, pdf_closure_new_check,
+     .            length_check
         
         private :: check_negative, check_nan, isnan
 
@@ -45,7 +50,7 @@
      .   ldown   ! Downward mixing length        [m]
          
          ! Output Variable
-         logical, intent(out) ::
+         logical, intent(inout) ::
      .   isValid
 
          ! Local Variables
@@ -64,6 +69,7 @@
      .                           crt1, crt2, cthl1, cthl2, pdf_parms,
      .                           isValid, sclrpthvp, sclrprcp, wpsclrp2,
      .                           wpsclrprtp, wpsclrpthlp, wp2sclrp )
+         
 !        Description: This subroutine determines if any of the output
 !        variables for the pdf_closure_new subroutine carry values that
 !        are NaNs.
@@ -271,6 +277,7 @@
         integer :: i
 
 !-------- Input Nan Check ----------------------------------------------
+        
         call check_nan( thlm_forcing, "thlm_forcing", proc_name )
         call check_nan( rtm_forcing,"rtm_forcing", proc_name )
         call check_nan( rtm_mc, "rtm_mc", proc_name )
@@ -312,14 +319,17 @@
 #ifdef SCALARS
         call check_nan( wpsclrp_sfc,"wpsclrp_sfc", proc_name )
         call check_nan( wpedsclrp_sfc,"wpedsclrp_sfc", proc_name )
+        
         do i = 1, sclr_dim
              call check_nan( sclrm(:,i),"sclrm", proc_name )
              call check_nan( sclrm_forcing(:,i),"sclrm_forcing", 
      .               proc_name ) 
              call check_nan( edsclrm(:,i),"edsclrm", proc_name )
         end do
-#endif /*SCALARS*/ 
+#endif /*SCALARS*/
+        
 !---------------------------------------------------------------------
+
         call check_negative( p,"p", proc_name )
         call check_negative( rhot,"rhot", proc_name )
         call check_negative( rhom,"rhom", proc_name )
@@ -382,8 +392,8 @@
      .  sclrprtp_sfc, ! Passive scalar r_t covariance           [units kg/kg]
      .  sclrpthlp_sfc ! Passive scalar theta_l covariance       [units K]
      
-        ! Output Variable
-        logical, intent(out) :: isValid    ! Are these outputs valid?
+        ! Input/Output Variable
+        logical, intent(inout) :: isValid    ! Are these outputs valid?
 
         ! Local Variables
 
@@ -403,63 +413,32 @@
           call check_nan( sclrp2_sfc, "sclrp2_sfc",
      .                    proc_name, isValid )
         end if
+        
         if ( present( sclrprtp_sfc ) ) then
           call check_nan( sclrprtp_sfc, "sclrprtp_sfc",
      .                    proc_name, isValid )
         end if
+        
         if ( present( sclrp2_sfc ) ) then
           call check_nan( sclrpthlp_sfc, "sclrpthlp_sfc", 
      .                    proc_name, isValid )
         end if
 
         return 
+
         end subroutine sfc_var_check 
+
 !-----------------------------------------------------------------------
-        subroutine mixing_clipping( rtm, thlm )
-!
-!
-!       Description: This subroutine clips negative values caused by the mixing
-!       subroutine. The clipped values are set to zero.
-!
-!------------------------------------------------------------------------
-        use constants, only: fstderr
-        use grid_class
-
-        implicit none
-        
-        ! Input/Output variables
-        real, dimension(gr%nnzp), intent(inout) ::
-     .  rtm,    ! Total Water Mixing Ration            [Kg/Kg]
-     .  thlm    ! Liquid Water Potential Temperature   [K/s]
-
-        ! Local variables
-        integer :: k 
-!-------------------------------------------------------------------------
-        do k = 1, gr%nnzp, 1
-          if ( thlm(k) < 0.0 ) then
-            write(fstderr,*) "Negative value in thlm at ",k,
-     .        " caused in mixing"              
-            thlm(k) = 0.0
-          end if
-          if ( rtm(k) < 0.0 ) then
-            write(fstderr,*) "Negative value in rtm at ", k,
-     .        " caused in mixing" 
-            rtm(k) = 0
-          end if
-
-        end do ! k 
-
-        return
-        end subroutine mixing_clipping
-!-----------------------------------------------------------------------
-        subroutine rad_clipping( thlm, rcm, rtm, ricem, 
+        subroutine rad_check( thlm, rcm, rtm, ricem, 
      .     cf, p, exner, rhom )
 !       Description:
-!       Clips radiation input variables if they are < 0 and reports
-!       its action to the console
+!       Checks radiation input variables. If they are < 0 it reports
+!       to the console.
 !------------------------------------------------------------------------
+
         use constants, only: fstderr
         use grid_class
+
         implicit none
         
         !Input/Output variables
@@ -482,53 +461,55 @@
                 if ( thlm(k) < 0.0 ) then
                         write(fstderr,*) "Negative value in thlm at ",k,
      .                  " before BUGSrad." 
-                        thlm(k) = 0.0
+                        ! thlm(k) = 0.0
                 endif
                 if( rcm(k) < 0.0 ) then
                         write(fstderr,*) "Negative value in rcm at ", k,
      .                  " before BUGSrad." 
-                        rcm(k) = 0.0
+                        ! rcm(k) = 0.0
                 endif
                 if( rtm(k) < 0.0 ) then
                         write(fstderr,*) "Negative value in rtm at ", k,
      .                  " before BUGSrad." 
-                        rtm(k) = 0
+                        ! rtm(k) = 0
                 endif
                 if( rvm(k) < 0.0 ) then
                         write(fstderr,*) "Negative value in rvm at ", k,
      .                  " before BUGSrad." 
-                        rcm(k) = rtm(k)
+                        ! rcm(k) = rtm(k)
                 endif
                 if ( ricem(k) < 0.0 ) then
                         write(fstderr,*) "Negative value",
      .                                           " in ricem at ", k,
      .                  " before BUGSrad." 
-                        ricem(k) = 0.0
+                        ! ricem(k) = 0.0
                 endif
                 if ( cf(k) < 0.0 ) then
                         write(fstderr,*) "Negative value in cf at ", k,
      .                  " before BUGSrad." 
-                        cf(k) = 0.0
+                        ! cf(k) = 0.0
                 endif
-                if (p(k) < 0.0 ) then
+                if ( p(k) < 0.0 ) then
                         write(fstderr,*) "Negative value in p at ", k,
      .                  " before BUGSrad." 
-                        p(k) = 0.0
+                        ! p(k) = 0.0
                 endif
-                if (exner(k) < 0.0) then
+                if ( exner(k) < 0.0 ) then
                         write(fstderr,*) "Negative value", 
      .                                           " in exner at ", k,
      .                  " before BUGSrad." 
-                        exner(k) = 0.0
+                        ! exner(k) = 0.0
                 endif
-                if (rhom(k) < 0.0) then
+                if ( rhom(k) < 0.0 ) then
                         write(fstderr,*) "Negative value in rhom at ",k,
      .                  " before BUGSrad." 
-                        rhom(k) = 0.0
+                        ! rhom(k) = 0.0
                 endif
         end do        
+        
         return
-        end subroutine rad_clipping
+
+        end subroutine rad_check
 
 !-----------------------------------------------------------------------
         logical function invalid_model_arrays( ) 
@@ -687,7 +668,9 @@
 #endif /*SCALARS*/
 
         return
+        
         end function invalid_model_arrays
+        
 !------------------------------------------------------------------------
         logical function isnan( x2d )
 
@@ -831,7 +814,9 @@
         end if
 
         return
+
         end subroutine check_negative
+        
 !------------------------------------------------------------------------        
         subroutine check_nan_2d( var, varname, operation, isValid )
 !
@@ -854,7 +839,8 @@
      .  varname,    ! Name of variable
      .  operation   ! Procedure calling check_nan
         
-        logical,optional,intent(out) :: isValid
+        ! Optional In/Out Variable
+        logical, optional, intent(inout) :: isValid
         
         if ( isnan2d( var ) ) then
            write(fstderr,*) varname, " is NaN in ",operation
@@ -863,6 +849,7 @@
 
         return
         end subroutine check_nan_2d
+        
 !-----------------------------------------------------------------------        
         subroutine check_nan_sclr( var, varname, operation, isValid )
 !
@@ -884,8 +871,8 @@
      .  varname,   ! Name of variable being examined
      .  operation  ! Procedure calling check_nan
         
-        ! Output variable
-        logical, optional, intent(out) :: isValid 
+        ! Optional In/Out variable
+        logical, optional, intent(inout) :: isValid 
 !--------------------------------------------------------------------
         if ( isnan( var ) ) then
           write(fstderr,*) varname, " is NaN in ",operation
