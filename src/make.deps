@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.17 2008-03-05 17:22:52 faschinj Exp $
+# $Id: make.deps,v 1.18 2008-03-17 19:20:26 faschinj Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -62,7 +62,7 @@ erf.o		: erf.F
 lapack_wrap.o	: lapack_wrap.F
 Skw_func.o	: Skw_func.F
 
-closure_new.o	: constants.o parameters.o grid.o rsat.o erf.o numer_check.o \
+closure_new.o	: constants.o parameters.o grid.o saturation.o erf.o numer_check.o \
                  closure_new.F 
 diag_var.o	: constants.o parameters.o grid.o stats_hoc.o lapack_wrap.o \
 	diag_var.F
@@ -71,14 +71,13 @@ parameterization_interface.o : constants.o hydrostatic.o mixing.o \
 	model_flags.o numer_check.o Skw_func.o microphysics.o \
 	mixing_length.o stats_type.o stats_hoc.o stats_subs.o \
         stats_zt.o stats_zm.o \
-	stats_sfc.o sounding.o diag_var.o rsat.o \
-	grid.o sat_rcm.o update.o prog_variables.o diag_variables.o \
+	stats_sfc.o sounding.o diag_var.o saturation.o \
+	grid.o saturation.o update.o prog_variables.o diag_variables.o \
 	sfc.o closure_new.o latin_hyper_sample.o lh_sampler.o \
 	parameters.o parameterization_interface.F 
 hydrostatic.o	: constants.o hydrostatic.F 
-mixing_length.o	: constants.o parameters.o numer_check.o mixing_length.F 
-rsat.o		: constants.o rsat.F 
-sat_rcm.o	: constants.o sat_rcm.F 
+mixing_length.o	: constants.o parameters.o numer_check.o mixing_length.F
+saturation.o    : constants.o saturation.F  
 sfc.o		: constants.o parameters.o numer_check.o sfc.F 
 update.o	: grid.o stats_hoc.o lapack_wrap.o update.F
 wp23.o		: constants.o parameters.o stats_hoc.o lapack_wrap.o wp23.F 

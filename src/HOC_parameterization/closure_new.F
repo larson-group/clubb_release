@@ -1,4 +1,4 @@
-! $Id: closure_new.F,v 1.14 2008-03-13 17:29:40 vlarson Exp $
+! $Id: closure_new.F,v 1.15 2008-03-17 19:20:26 faschinj Exp $
         module pdf_closure
 
         implicit none
@@ -60,10 +60,10 @@
         use anl_erf, only: erf ! The error function
         
         use numerical_check, only: pdf_closure_new_check
-        implicit none
 
-        ! External
-        real, external :: rsat
+        use saturation, only: rsat
+
+        implicit none
 
         intrinsic :: sqrt, exp, min, max, abs
 

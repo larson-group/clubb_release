@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.95 2008-03-12 17:47:14 vlarson Exp $
+# $Id: Makefile,v 1.96 2008-03-17 19:20:26 faschinj Exp $
 #
 # This version should work with BSD, GNU make, smake and dmake.
 #
@@ -44,7 +44,7 @@ COAMPS_MICRO = adjmlt.o adjtq.o coamps_micro_driver.o conice.o \
         eqa8g.o eqa9.o eqa9g.o esati.o esat_new.o \
         esatv.o frzh.o nrmcol.o nrmtqi.o \
         nrmtqw.o qsatvi.o qtadj.o slope.o tgqg.o \
-        tgqi.o tgqr.o tgqs.o rsati.o gamma.o
+        tgqi.o tgqr.o tgqs.o saturation.o gamma.o
 
 MODEL = hoc.o sounding.o rad_lwsw.o cloud_rad.o astex.o atex.o fire.o bomex.o \
 	arm.o arm_97.o arm_0003.o arm_3year.o dycoms2_rf01.o dycoms2_rf02.o mpace_a.o mpace_b.o \
@@ -61,10 +61,10 @@ PARAMETERIZATION = \
         stats_zt.o stats_zm.o stats_sfc.o \
 	erf.o diffusion.o KK_microphys.o microphysics.o cons.o air.o parab.o \
 	closure_new.o diag_var.o \
-        hydrostatic.o mixing_length.o mixing.o rsat.o sat_rcm.o sfc.o \
-	update.o wp23.o Skw_func.o \
+        hydrostatic.o mixing_length.o mixing.o saturation.o \
+	update.o wp23.o tau.o Skw_func.o \
 	numer_check.o diag_variables.o prog_variables.o \
-	parameterization_interface.o lapack_wrap.o rsati.o \
+	parameterization_interface.o lapack_wrap.o  \
 	parameters.o
 
 

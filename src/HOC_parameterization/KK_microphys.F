@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: KK_microphys.F,v 1.2 2008-03-05 17:16:18 faschinj Exp $
+! $Id: KK_microphys.F,v 1.3 2008-03-17 19:20:26 faschinj Exp $
 
       MODULE rain_equations
 
@@ -116,14 +116,14 @@
         use model_flags
         use grid_class
         use constants
+        use saturation, only: rsat
+        
 #ifdef STATS
         use stats_hoc
 #endif
 
         implicit none
 
-        ! External functions
-        real, external :: rsat
 
         ! Input
         real, intent(in), dimension(gr%nnzp) ::
@@ -802,11 +802,7 @@
 
         USE constants
         USE model_flags
-
-        ! External functions
-
-        real rsat
-        external rsat
+        USE saturation, only: rsat
 
         ! Input variables.
         REAL, INTENT(IN):: rrm          ! Grid-box average rrm     [kg kg^-1]
@@ -1349,16 +1345,16 @@
         FUNCTION G_T_p( Temp, press )
 
         USE constants
+        USE saturation
 
+        
         IMPLICIT NONE
 
 
         ! Here we compute G(T,p) as in KK (17) 
         !      and Eq. (7.17) of Rogers and Yau 1989
 
-        ! External functions
 
-        real, external :: rsat
 
         ! Input      
         REAL, INTENT(IN):: Temp   ! [K]

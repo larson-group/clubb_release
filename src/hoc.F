@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.155 2008-03-13 21:44:37 dschanen Exp $
+! $Id: hoc.F,v 1.156 2008-03-17 19:20:26 faschinj Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -638,13 +638,16 @@
 #endif /*SCALARS*/
      .                        )
        else
-
-          time = time_restart
+               
+          ! Joshua Fasching March 2008
+          time = time_restart + dtmain
+          ! time = time_restart
 
           ! Determining what iteration to restart at.
+          ! The value is increased by 1 to sychronize with restart data.
           ! Joshua Fasching February 2008
 
-          iinit = ( time_restart - time_initial ) / dtmain
+          iinit = ( time - time_initial ) / dtmain + 1
 
           call hoc_restart( iunit, runfile, restart_path_case, 
      .                      time_restart, psfc, thlm, rtm, um, vm,
@@ -687,8 +690,15 @@
          ! When this time step is over, the time will be time + dtmain
 
          ! We use elapsed time for stats_begin_step
-         call stats_begin_timestep( time-time_initial+dtmain, dtmain )
-
+         if (.not. lrestart) then    
+            call stats_begin_timestep( time-time_initial+dtmain, 
+     .                                  dtmain )
+         else
+            ! Different elapsed time for restart
+            ! Joshua Fasching March 2008     
+            call stats_begin_timestep( time-time_restart, 
+     .                                  dtmain )
+         endif
          if ( lstats_last .and. stdout ) then
            write(unit=fstdout,fmt='(a,i8,a,f10.1)') 'iteration = ', 
      .       i, '; time = ', time
@@ -732,9 +742,7 @@
      .            sclrm, sclrm_forcing, edsclrm
 #endif /*SCALARS*/
      .          )
-!           if (i == 166 .and. .not. lrestart ) then
-!                print*, "rrm(source)= ", hydromet(:,1)
-!           endif
+           
 #ifdef STATS
            call stats_end_timestep( time + dtmain, dtmain )
 #endif /*STATS*/
@@ -787,7 +795,8 @@
 !       Execute the necessary steps for the initialization of the 
 !       HOC model run. 
 
-!       Calls: (all these are external except compute_length)
+!       Calls: ( all these are external except compute_length, rsat,
+!       stat_rcm )
 !       subroutine read_sounding
 !       subroutine hydrostatic (twice)
 !       subroutine compute_length
@@ -807,16 +816,16 @@
         use arm_97, only: arm_97_init
         use mpace_a, only: mpace_a_init
         use mixing_length
+
+        ! Joshua Fasching
+        ! March 2008
+        use saturation
+        
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
 
         implicit none
-
-        ! External
-        real, external :: rsat
-        real, external :: sat_rcm
-        
 
         intrinsic :: min, max, trim, sqrt, size
 
@@ -1453,19 +1462,19 @@
         ! print*, "rrm = " ,rrm
         ! print*, "hydromet = " ,hydromet(:,1)
         ! print *, "lup = ", lup
-        ! print *, "ldown = ", ldown
-
+        ! print *, "rtm = ", rtm
+        
         
         ! Initialize forcing files for specific cases
         select case( trim( runtype ) )
         case( "arm_3year" )
-            call arm_3year_init
+            call arm_3year_init()
         case( "arm_97" )
-            call arm_97_init
+            call arm_97_init()
         case( "arm_0003" )
-            call arm_0003_init
+            call arm_0003_init()
         case( "mpace_a" )
-            call mpace_a_init
+            call mpace_a_init()
         end select
         
         wmm = zt2zm( wmt )
@@ -1497,7 +1506,7 @@
         use grid_class
         use diagnostic_variables
         use prognostic_variables
-        use numerical_check, only: isnan2d, rad_clipping
+        use numerical_check, only: isnan2d, rad_check
         use arm, only: arm_tndcy, arm_sfclyr
         use arm_97, only: arm_97_tndcy, arm_97_sfclyr
         use arm_0003, only: arm_0003_tndcy, arm_0003_sfclyr
@@ -2022,8 +2031,8 @@
           
           zero = 0.0
           
-          ! Clips impossible negative values
-          call rad_clipping( thlm, rcm, rtm, ricem,
+          ! Check for impossible negative values
+          call rad_check( thlm, rcm, rtm, ricem,
      .                       cf, p, exner, rhom)
 
 
