@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputfields.F,v 1.8 2008-02-22 19:30:11 faschinj Exp $
+! $Id: inputfields.F,v 1.9 2008-03-17 19:25:51 faschinj Exp $
 
 ! Module inputfields
 
@@ -664,7 +664,11 @@
 
           ! Difference between GrADS file start time and the restart
           ! time
-          delta_time = current_time - fread_var%time
+          delta_time = 
+     .        current_time - (fread_var%time - fread_var%dtwrite)
+          
+          !    Joshua Fasching March 2008
+!     .        current_time - fread_var%time
           
           ! Reporting
           print *, "Time Initial: ", fread_var%time
@@ -674,9 +678,14 @@
       
           ! Determines the closest recorded timestep to the restart
           ! time.
-          nearest_timestep = nint(delta_time / 60.0)
+          nearest_timestep = nint(delta_time / 60.0) 
           
-          print *,"Nearest Timestep: ", nearest_timestep
+          print *, "Nearest Timestep: ", nearest_timestep
+
+          ! Print the actual record being recalled.
+          ! Joshua Fasching March 2008
+          print *, "Nearest data point: ",
+     /       nint(nearest_timestep/(fread_var%dtwrite/60.))-1
           
           call close_grads_read( fread_var )
           
