@@ -1,7 +1,9 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zt.F,v 1.4 2008-03-13 18:44:50 dschanen Exp $
+! $Id: stats_zt.F,v 1.5 2008-03-17 19:33:35 faschinj Exp $
 #ifdef STATS
+      
       module stats_zt
+      
       contains
 !-----------------------------------------------------------------------
       subroutine stats_init_zt( vars_zt, lerror )
@@ -15,6 +17,7 @@
       implicit none
 
       integer, parameter :: nvarmax = 250
+      
       !Input Variable
       character(len= * ), dimension(nvarmax), intent(in) :: vars_zt
 
@@ -23,6 +26,7 @@
       
       !Local Varables
       integer :: i, k
+
       ! Default initialization for array indices for zt
 
       ithlm         = 0
@@ -1237,7 +1241,10 @@
         end select
 
       end do
+      
       return
+
       end subroutine stats_init_zt
+      
       end module stats_zt
 #endif /*STATS*/

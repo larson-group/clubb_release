@@ -1,7 +1,9 @@
 !-----------------------------------------------------------------------
-! $Id: stats_sfc.F,v 1.2 2008-03-13 18:44:50 dschanen Exp $
+! $Id: stats_sfc.F,v 1.3 2008-03-17 19:33:35 faschinj Exp $
 #ifdef STATS
+      
       module stats_sfc
+      
       contains 
 !-----------------------------------------------------------------------
       subroutine stats_init_sfc( vars_sfc, lerror )
@@ -182,7 +184,11 @@
         end select
 
       end do
+      
       return
+      
       end subroutine stats_init_sfc
+      
       end module stats_sfc
+
 #endif /*STATS*/

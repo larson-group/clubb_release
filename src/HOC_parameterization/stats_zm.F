@@ -1,7 +1,8 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zm.F,v 1.2 2008-03-13 18:44:50 dschanen Exp $
+! $Id: stats_zm.F,v 1.3 2008-03-17 19:33:35 faschinj Exp $
 #ifdef STATS
       module stats_zm
+      
       contains
 !-----------------------------------------------------------------------
       subroutine stats_init_zm( vars_zm, lerror )
@@ -978,5 +979,6 @@
       end do
       return
       end subroutine stats_init_zm
+
       end module stats_zm
 #endif /*STATS*/
