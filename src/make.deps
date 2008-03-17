@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.18 2008-03-17 19:20:26 faschinj Exp $
+# $Id: make.deps,v 1.19 2008-03-17 19:43:05 faschinj Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -81,8 +81,6 @@ saturation.o    : constants.o saturation.F
 sfc.o		: constants.o parameters.o numer_check.o sfc.F 
 update.o	: grid.o stats_hoc.o lapack_wrap.o update.F
 wp23.o		: constants.o parameters.o stats_hoc.o lapack_wrap.o wp23.F 
-tau.o		: constants.o parameters.o tau.F
-
 # == Numerical Recipes dependencies (For the tuner) ==
 nrtype.o	: nrtype.f90
 nr.o		: nrtype.o nr.f90 

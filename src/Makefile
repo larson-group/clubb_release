@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.96 2008-03-17 19:20:26 faschinj Exp $
+# $Id: Makefile,v 1.97 2008-03-17 19:43:05 faschinj Exp $
 #
 # This version should work with BSD, GNU make, smake and dmake.
 #
@@ -62,7 +62,7 @@ PARAMETERIZATION = \
 	erf.o diffusion.o KK_microphys.o microphysics.o cons.o air.o parab.o \
 	closure_new.o diag_var.o \
         hydrostatic.o mixing_length.o mixing.o saturation.o \
-	update.o wp23.o tau.o Skw_func.o \
+	update.o wp23.o Skw_func.o \
 	numer_check.o diag_variables.o prog_variables.o \
 	parameterization_interface.o lapack_wrap.o  \
 	parameters.o
