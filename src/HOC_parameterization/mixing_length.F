@@ -1,4 +1,4 @@
-! $Id: mixing_length.F,v 1.2 2008-03-12 20:15:33 dschanen Exp $
+! $Id: mixing_length.F,v 1.3 2008-03-17 19:28:42 faschinj Exp $
 !-----------------------------------------------------------------------------
         module mixing_length
         
@@ -38,12 +38,10 @@
 
         use grid_class
         use numerical_check, only: length_check
+        use saturation, only: rsat
 
         implicit none
-
-        ! External
-        real, external :: rsat
-
+        
         intrinsic :: max, sqrt
 
         ! Constant Parameters
@@ -301,4 +299,5 @@
         return
 
         end subroutine compute_length
+
         end module mixing_length
