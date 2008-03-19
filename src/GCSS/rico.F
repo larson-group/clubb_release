@@ -173,10 +173,9 @@
 !-----------------------------------------------------------------------
 
         use constants
+        use saturation, only: rsat
         implicit none
 
-!       External
-        real, external :: rsat
 
 !       Constants
         real, parameter ::

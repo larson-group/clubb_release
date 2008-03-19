@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: fire.F,v 1.7 2008-03-12 20:52:34 dschanen Exp $
+! $Id: fire.F,v 1.8 2008-03-19 15:07:19 faschinj Exp $
         module fire
 
 !       Description:
@@ -170,13 +170,14 @@
 !------------------------------------------------------------------------
 
         use constants
+        use saturation, only: rsat
 
         implicit none
         
         ! External
         intrinsic :: present, sqrt
 
-        real, external :: rsat
+        
 
         ! Parameter
         real, parameter :: C = 1.3e-3

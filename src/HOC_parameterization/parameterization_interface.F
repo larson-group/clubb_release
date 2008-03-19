@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.69 2008-03-07 16:46:38 faschinj Exp $
+! $Id: parameterization_interface.F,v 1.70 2008-03-19 15:07:19 faschinj Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -73,6 +73,7 @@
        use pdf_closure, only: pdf_closure_new     ! Prob. density function
        use microphysics, only: timestep_microphys ! Microphysics
        use mixing_length
+       use saturation, only: rsat ! Saturation mixing ratio
 #ifdef STATS
        use stats_hoc
        use stats_subs
@@ -82,7 +83,6 @@
 
        ! External
        real, external :: 
-     . rsat,    ! Saturation mixing ratio
      . Skw_func ! Skw function
 
        external ::

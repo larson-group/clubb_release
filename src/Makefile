@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.97 2008-03-17 19:43:05 faschinj Exp $
+# $Id: Makefile,v 1.98 2008-03-19 15:07:19 faschinj Exp $
 #
 # This version should work with BSD, GNU make, smake and dmake.
 #
@@ -58,7 +58,7 @@ PARAMETERIZATION = \
 	constants.o endian.o outputfile.o outputgrads.o \
 	outputnc.o grid.o model_flags.o \
         stats_type.o stats_hoc.o stats_subs.o\
-        stats_zt.o stats_zm.o stats_sfc.o \
+        stats_zt.o stats_zm.o stats_sfc.o sfc.o \
 	erf.o diffusion.o KK_microphys.o microphysics.o cons.o air.o parab.o \
 	closure_new.o diag_var.o \
         hydrostatic.o mixing_length.o mixing.o saturation.o \

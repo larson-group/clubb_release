@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.19 2008-03-17 19:43:05 faschinj Exp $
+# $Id: make.deps,v 1.20 2008-03-19 15:07:19 faschinj Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -145,7 +145,7 @@ zlinterp.o	: zlinterp.F
 file_functions.o	: file_functions.F
 
 # == COAMPS Microphysics dependencies ==
-coamps_micro_driver.o : constants.o grid.o stats_hoc.o coamps_micro_driver.F
+coamps_micro_driver.o : constants.o grid.o stats_hoc.o saturation.o coamps_micro_driver.F
 
 # == BUGSrad dependencies ==
 cos_solar_zen.o         : cos_solar_zen.F

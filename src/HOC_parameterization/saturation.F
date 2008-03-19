@@ -1,4 +1,4 @@
-!$Id: saturation.F,v 1.1 2008-03-17 19:20:26 faschinj Exp $
+!$Id: saturation.F,v 1.2 2008-03-19 15:07:19 faschinj Exp $
 
         module saturation
 
@@ -17,9 +17,6 @@
         use constants
 
         implicit none
-
-        ! External
-        real, external :: svp_liq
 
         ! Input Variables
         real, intent(in) :: 
@@ -110,9 +107,6 @@
 
         implicit none
 
-        ! External
-        real, external :: svp_ice
-
         ! Input Variables
         real, intent(in) :: p, T
 
@@ -191,8 +185,6 @@
         FUNCTION sat_rcm( thlm, rtm, p, exner )
 
         USE constants
-
-        real, external:: rsat
 
         REAL, INTENT(IN):: thlm
         REAL, INTENT(IN):: rtm

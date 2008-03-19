@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf01.F,v 1.7 2008-03-05 17:22:52 faschinj Exp $
+! $Id: dycoms2_rf01.F,v 1.8 2008-03-19 15:07:19 faschinj Exp $
         module dycoms2_rf01
 
 !       Description:
@@ -187,14 +187,13 @@
 !----------------------------------------------------------------------
 
         use constants
+        use saturation, only: rsat
+
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
 
         implicit none
-
-        ! External
-        real, external :: rsat
 
         intrinsic :: max, sqrt, present
 

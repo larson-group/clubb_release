@@ -27,6 +27,8 @@
                               
       use constants
       use grid_class, only: zt2zm
+      use saturation, only: rsat, rsati
+
 #ifdef STATS
       use stats_hoc, only: zt, zm, lstats_samp,
      .    imean_vol_rad_rain,
@@ -40,10 +42,7 @@
      .  gamma, ! From COAMPS, and not the same gamma approx. used in HOC
      .  adjtq  ! COAMPS microphysics subroutine
 
-      real, external ::
-     .  rsat,
-     .  rsati
-
+      
       ! Local Constants
       real, parameter ::
      .  aa0 = -0.267,  ! All of these are constants set in COAMPS and used by adjtq.

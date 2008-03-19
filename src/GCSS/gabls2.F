@@ -30,6 +30,7 @@
 
         use constants
         use grid_class
+        use saturation, only: rsat
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
@@ -147,11 +148,12 @@
 !          http://people.su.se/~gsven/gabls/
 !-----------------------------------------------------------------------
           use constants
+          use saturation, only: rsat ! Used to compute saturation mixing ratio
+
           implicit none
 
           ! External calls
           real, external ::
-     .      rsat,             ! Computes saturation mixing ratio
      .      diag_ustar
 
           ! Local constants

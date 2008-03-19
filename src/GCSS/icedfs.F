@@ -38,15 +38,13 @@
 
         USE grid_class
         USE constants
+        USE saturation, only: rsat
 #ifdef STATS
         use stats_hoc, only: zt, lstats_samp,
      .      idqc_dt_icedfs, idiam, im, iu_T_cm
 #endif
 
         implicit none
-
-        ! For function call
-        REAL, EXTERNAL :: rsat
 
         ! Input variables
         REAL, INTENT(IN):: dt
