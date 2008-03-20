@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: outputgrads.F,v 1.6 2007-06-06 15:14:48 dschanen Exp $
+! $Id: outputgrads.F,v 1.7 2008-03-20 17:30:03 griffinb Exp $
 #ifdef STATS 
         module outputgrads
 
@@ -492,7 +492,7 @@
 
           call formatdate(f%day,f%month,f%year,f%time,date)
 
-          write(unit=f%iounit,fmt='(a,i6,a,a,i3,a)') 'TDEF    ',
+          write(unit=f%iounit,fmt='(a,i6,a,a,i5,a)') 'TDEF    ',
      .      f%ntimes, ' LINEAR ', date, max(1,int(f%dtwrite/60.)),'mn'
 
           ! Variables description

@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: grid.F,v 1.6 2007-05-01 23:01:59 dschanen Exp $
+! $Id: grid.F,v 1.7 2008-03-20 17:30:03 griffinb Exp $
 
         module grid_class
 
@@ -66,6 +66,8 @@
 !   like real pointers).
               real, pointer, dimension(:) :: zm, zt
               real, pointer, dimension(:) :: dzm, dzt
+              real, pointer, dimension(:,:) :: weights_zm2zt,
+     .                                         weights_zt2zm
            end type grid
 
 !   The grid is defined here so that it is common throughout the module. 
@@ -83,8 +85,16 @@
               module procedure interpolated_azm, interpolated_azmk
            end interface
 
+           interface interp_weights_zt2zm_imp
+              module procedure interpolated_azmk_imp
+           end interface
+
            interface zm2zt
               module procedure interpolated_azt, interpolated_aztk
+           end interface
+
+           interface interp_weights_zm2zt_imp
+              module procedure interpolated_aztk_imp
            end interface
 
            ! Vertical derivative functions
@@ -150,7 +160,9 @@
            gr%nnzp = nnzp
 
            allocate( gr%zm(1:nnzp), gr%zt(1:nnzp),
-     .               gr%dzm(1:nnzp), gr%dzt(1:nnzp), stat=ierr )
+     .               gr%dzm(1:nnzp), gr%dzt(1:nnzp), 
+     .               gr%weights_zm2zt(1:nnzp,1:2), 
+     .               gr%weights_zt2zm(1:nnzp,1:2), stat=ierr )
 
            if ( ierr /= 0 ) stop "Grid allocation failed."
 
@@ -201,6 +213,18 @@
               gr%dzt(k) = 1. / ( gr%zm(k) - gr%zm(k-1) )
            end do
            gr%dzt(1) = gr%dzt(2)
+
+           ! Interpolation Weights: zm grid to zt grid.
+           ! The grid index is the index of the level on the zt grid.
+           do k = 1, gr%nnzp, 1
+              gr%weights_zm2zt(k,1:2) = interp_weights_zm2zt_imp(k)
+           enddo
+
+           ! Interpolation Weights: zt grid to zm grid.
+           ! The grid index is the index of the level on the zm grid.
+           do k = 1, gr%nnzp, 1
+              gr%weights_zt2zm(k,1:2) = interp_weights_zt2zm_imp(k)
+           enddo
 
            return
            end subroutine gridsetup
@@ -288,6 +312,67 @@
            end function interpolated_azmk
         
 !-----------------------------------------------------------------------
+           pure function interpolated_azmk_imp( m_lev )
+     .     result( azt_weight )
+
+!          Description:
+!          Function to interpolate a variable located on the
+!          thermodynamic grid (azt) to a variable on the momentum
+!          grid (azm).   This function is used in situations where
+!          the variable to be interpolated is being treating
+!          implicitly in an equation.  This function computes a
+!          weighting factor.  This function interpolates only
+!          for level k.
+
+!          Notes:
+!          Created by Brian for a non-uniform grid.
+!-----------------------------------------------------------------------
+           implicit none
+
+           ! Constant parameters
+           integer, parameter ::
+     .     t_above = 1,   ! Upper thermodynamic level.
+     .     t_below = 2    ! Lower thermodynamic level.
+
+           ! Input
+           integer, intent(in) :: m_lev  ! Momentum level index
+
+           ! Output
+           real, dimension(2) :: azt_weight  ! Weight on either
+                                             ! thermodynamic level.
+
+           ! Local Variables
+           real :: factor
+           integer :: k
+
+           k = m_lev
+
+           ! Do actual interpolation
+
+           if ( k /= gr%nnzp ) then
+              ! At most levels, the momentum level is found
+              ! in-between two thermodynamic levels.  Linear
+              ! interpolation is used.
+              factor = 
+     .             ( gr%zm(k)-gr%zt(k) ) / ( gr%zt(k+1)-gr%zt(k) )
+           else
+              ! The top model level (gr%nnzp) is formulated
+              ! differently because the top momentum level is
+              ! above the top thermodynamic level.  A linear
+              ! extension is required, rather than linear
+              ! interpolation.
+              factor = 
+     .             ( gr%zm(gr%nnzp)-gr%zt(gr%nnzp-1) ) 
+     .             /( gr%zt(gr%nnzp)-gr%zt(gr%nnzp-1) )
+           endif
+
+           azt_weight(t_above) = factor
+           azt_weight(t_below) = 1.0 - factor
+
+           return
+           end function interpolated_azmk_imp
+
+!-----------------------------------------------------------------------
            function interpolated_azt( azm )
 
 !          Description:
@@ -366,6 +451,66 @@
 
            return
            end function interpolated_aztk
+
+!-----------------------------------------------------------------------
+           pure function interpolated_aztk_imp( t_lev )
+     .     result( azm_weight )
+
+!          Description:
+!          Function to interpolate a variable located on the
+!          momentum grid (azm) to a variable on the thermodynamic
+!          grid (azt).   This function is used in situations where
+!          the variable to be interpolated is being treating
+!          implicitly in an equation.  This function computes a
+!          weighting factor.  This function interpolates only
+!          for level k.
+
+!          Notes:
+!          Created by Brian for a non-uniform grid.
+!-----------------------------------------------------------------------
+           implicit none
+
+           ! Constant parameters
+           integer, parameter ::
+     .     m_above = 1,   ! Upper momentum level.
+     .     m_below = 2    ! Lower momentum level.
+
+           ! Input
+           integer, intent(in) :: t_lev  ! Thermodynamic level index
+
+           ! Output
+           real, dimension(2) :: azm_weight  ! Weight on either
+                                             ! momentum level.
+
+           ! Local Variables
+           real :: factor
+           integer :: k
+
+           k = t_lev
+
+           ! Do actual interpolation
+
+           if ( k /= 1 ) then
+              ! At most levels, the thermodynamic level is
+              ! found in-between two momentum levels.  Linear
+              ! interpolation is used.
+              factor = 
+     .             ( gr%zt(k)-gr%zm(k-1) ) / ( gr%zm(k)-gr%zm(k-1) )
+           else
+              ! The bottom model level (1) is formulated
+              ! differently because the bottom thermodynamic level
+              ! is below the bottom momentum level.  A linear
+              ! extension is required, rather than linear
+              ! interpolation.
+              factor = 
+     .             ( gr%zt(1)-gr%zm(1) )/( gr%zm(2)-gr%zm(1) )
+           endif
+
+           azm_weight(m_above) = factor
+           azm_weight(m_below) = 1.0 - factor
+
+           return
+           end function interpolated_aztk_imp
 
 !-----------------------------------------------------------------------
            function gradzm( azm )
