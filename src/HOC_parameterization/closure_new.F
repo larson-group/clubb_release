@@ -1,4 +1,4 @@
-! $Id: closure_new.F,v 1.15 2008-03-17 19:20:26 faschinj Exp $
+! $Id: closure_new.F,v 1.16 2008-03-20 20:00:44 dschanen Exp $
         module pdf_closure
 
         implicit none
@@ -51,8 +51,9 @@
      .  thltol,  ! Tolerance for th_l                  [K]
      .  sstol,   ! Tolerance for pdf parameter         [kg/kg]
      .  sclrtol, ! Array of passive scalar tolerances  [units vary]
-     .  sclr_dim, ! Number of passive scalar variables
+     .  sclr_dim,! Number of passive scalar variables
      .  fstderr
+
         use parameters, only:
      .  beta,    ! Plume widths for th_l and r_t       [-]
      .  T0       ! Reference temperature               [K]
@@ -237,7 +238,7 @@
 
           Skw = wp3/wp2**1.5
 
-          if ( abs(Skw) <= 1e-5 ) then
+          if ( abs( Skw ) <= 1e-5 ) then
             a = 0.5
           else
             a = 0.5
@@ -404,10 +405,10 @@
      .                   + (1-a)*sqrt( ssclr2(i)*srt2 ) )
                 if ( rsclrrt(i) < -1.0 ) then
                   rsclrrt(i) = -1.0
-                endif
+                end if
                 if ( rsclrrt(i) > 1.0 ) then
                   rsclrrt(i) = 1.0
-                endif
+                end if
               else
                 rsclrrt(i) = 0.0
               end if
@@ -648,6 +649,7 @@
         pdf_parms(24) = rrtthl
         pdf_parms(25) = alpha_thl
         pdf_parms(26) = alpha_rt
+
         
         call pdf_closure_new_check( wp4, wprtp2, wp2rtp, wpthlp2,
      .                           wp2thlp, cf, rcm, wpthvp, wp2thvp,
@@ -686,23 +688,23 @@
 
           if ( present( sclrm ) ) then
              write(fstderr,*) "sclrm = ", sclrm
-          endif
+          end if
           
           if ( present( wpsclrp ) ) then
              write(fstderr,*) "wpsclrp = ", wpsclrp
-          endif
+          end if
           
           if ( present( sclrp2 ) ) then
              write(fstderr,*) "sclrp2 = ", sclrp2
-          endif
+          end if
           
           if ( present( sclrprtp ) ) then
              write(fstderr,*) "sclrprtp = ", sclrprtp
-          endif
+          end if
           
           if ( present( sclrpthlp ) )then
              write(fstderr,*) "sclrpthlp = ", sclrpthlp
-          endif
+          end if
 
           write(fstderr,*) "Intent(out)"
           
@@ -730,29 +732,29 @@
           
           if ( present( sclrpthvp ) )then
              write(fstderr,*) "sclrpthvp = ", sclrpthvp
-          endif
+          end if
           
           if ( present( sclrprcp ) )then
              write(fstderr,*) "sclrprcp = ", sclrprcp
-          endif
+          end if
           
           if ( present( wpsclrp2 ) )then
              write(fstderr,*) "wpsclrp2 = ", wpsclrp2
-          endif
+          end if
           
           if ( present( wpsclrprtp ) )then
              write(fstderr,*) "wpsclrprtp = ", wpsclrprtp
-          endif
+          end if
           
           if ( present( wpsclrpthlp ) )then
              write(fstderr,*) "wpsclrpthlp = ", wpsclrpthlp
-          endif
+          end if
 
           if ( present( wp2sclrp ) )then
              write(fstderr,*) "wp2sclrp = ", wp2sclrp
-          endif
+          end if
           
-        endif
+        end if
         
         return
         
