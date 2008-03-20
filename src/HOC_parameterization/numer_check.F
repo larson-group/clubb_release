@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F,v 1.17 2008-03-17 19:30:44 faschinj Exp $
+! $Id: numer_check.F,v 1.18 2008-03-20 18:22:09 griffinb Exp $
         module numerical_check
 
         implicit none
@@ -31,7 +31,7 @@
         
         contains
 !--------------------------------------------------------------------------------- 
-         subroutine length_check( Lscale, lup, ldown, isValid )
+         subroutine length_check( Lscale, Lup, Ldown, isValid )
 !
 !        Description: This subroutine determines if any of the output
 !        variables for the length_new subroutine carry values that
@@ -46,8 +46,8 @@
          ! Input Variables
          real, dimension(gr%nnzp), intent(in) :: 
      .   Lscale, ! Mixing length                 [m]
-     .   lup,    ! Upward mixing length          [m]
-     .   ldown   ! Downward mixing length        [m]
+     .   Lup,    ! Upward mixing length          [m]
+     .   Ldown   ! Downward mixing length        [m]
          
          ! Output Variable
          logical, intent(inout) ::
@@ -57,8 +57,8 @@
          character(*), parameter :: proc_name = "length"
 !-----------------------------------------------------------------------------
          call check_nan( Lscale, "Lscale", proc_name, isValid )
-         call check_nan( lup, "lup", proc_name, isValid )
-         call check_nan( ldown, "ldown", proc_name, isValid )
+         call check_nan( Lup, "Lup", proc_name, isValid )
+         call check_nan( Ldown, "Ldown", proc_name, isValid )
 
          end subroutine length_check
 !---------------------------------------------------------------------------

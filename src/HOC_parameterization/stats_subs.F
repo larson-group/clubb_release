@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.2 2008-03-05 17:16:19 faschinj Exp $
+!  $Id: stats_subs.F,v 1.3 2008-03-20 18:22:09 griffinb Exp $
 #ifdef STATS
       module stats_subs
       contains
@@ -661,13 +661,13 @@
           zt%x(:,iwp2rtp) = zt%x(:,iwp2rtp) + wp2rtp
           zt%n(:,iwp2rtp) = zt%n(:,iwp2rtp) + 1
         end if
-        if ( ilup > 0 ) then
-          zt%x(:,ilup) = zt%x(:,ilup) + lup
-          zt%n(:,ilup) = zt%n(:,ilup) + 1
+        if ( iLup > 0 ) then
+          zt%x(:,iLup) = zt%x(:,iLup) + Lup
+          zt%n(:,iLup) = zt%n(:,iLup) + 1
         end if
-        if ( ildown > 0 ) then
-          zt%x(:,ildown) = zt%x(:,ildown) + ldown
-          zt%n(:,ildown) = zt%n(:,ildown) + 1
+        if ( iLdown > 0 ) then
+          zt%x(:,iLdown) = zt%x(:,iLdown) + Ldown
+          zt%n(:,iLdown) = zt%n(:,iLdown) + 1
         end if
         if ( itaut > 0 ) then
           zt%x(:,itaut) = zt%x(:,itaut) + taut

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.70 2008-03-19 15:07:19 faschinj Exp $
+! $Id: parameterization_interface.F,v 1.71 2008-03-20 18:22:09 griffinb Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -489,7 +489,7 @@
        !----------------------------------------------------------------
 
        call compute_length( thvm, thlm, rtm, rcm, 
-     .              em, p, exner, Lscale, lup, ldown, isValid )
+     .              em, p, exner, Lscale, isValid )
        if(.not. isValid) then
           return
        endif

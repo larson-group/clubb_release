@@ -1,11 +1,11 @@
-! $Id: mixing_length.F,v 1.3 2008-03-17 19:28:42 faschinj Exp $
+! $Id: mixing_length.F,v 1.4 2008-03-20 18:22:09 griffinb Exp $
 !-----------------------------------------------------------------------------
         module mixing_length
         
         contains
         
         subroutine compute_length( thvm, thlm, rtm, rcm, em, p, 
-     .      exner, Lscale, lup, ldown, isValid ) 
+     .      exner, Lscale, isValid ) 
 !       Description:
 !       Larson's 5th moist, nonlocal length scale
 
@@ -39,6 +39,7 @@
         use grid_class
         use numerical_check, only: length_check
         use saturation, only: rsat
+        use diagnostic_variables, only: Lup, Ldown
 
         implicit none
         
@@ -62,8 +63,8 @@
         ! Output Variables
         real, dimension(gr%nnzp), intent(out) :: 
      .  Lscale, ! Mixing length                 [m]
-     .  lup,    ! Upward mixing length          [m]
-     .  ldown   ! Downward mixing length        [m]
+     .  Lup,    ! Upward mixing length          [m]
+     .  Ldown   ! Downward mixing length        [m]
         
         logical, intent(out) ::
      .  isValid
@@ -92,23 +93,23 @@
         real :: thl_par_j_plus_1, rt_par_j_plus_1, rc_par_j_plus_1 
 
         ! Variables to make L nonlocal
-        real :: lup_max_alt, ldown_min_alt
+        real :: Lup_max_alt, Ldown_min_alt
 
 !---------- Mixing length computation ----------------------------------
 
         ! Avoid uninitialized memory (these values are not used in Lscale) 
         ! -dschanen 12 March 2008
-        lup(1)   = 0.0
-        ldown(1) = 0.0
+        Lup(1)   = 0.0
+        Ldown(1) = 0.0
 
         ! Upwards loop
 
-        lup_max_alt = 0.
+        Lup_max_alt = 0.
         do i=2,gr%nnzp
 
           tke_i = zm2zt( em, i )                   ! tke on thermo level
 
-          lup(i) = zlmin
+          Lup(i) = zlmin
           j = i + 1
 
           thl_par_j_minus_1 = thlm(i)
@@ -125,7 +126,7 @@
             rt_par_j = ( 1 - mu/gr%dzm(j-1) ) * rt_par_j_minus_1
      .               + ( mu/gr%dzm(j-1) ) * rtm(j)
 
-!           Include effects of latent heating on lup 6/12/00
+!           Include effects of latent heating on Lup 6/12/00
 !           Use thermodynamic formula of Bougeault 1981 JAS Vol. 38, 2416
 !           Probably should use properties of bump 1 in Gaussian, not mean!!!
 
@@ -145,9 +146,9 @@
      .                  * ( thv_par_j - thvm(j) ) 
 
             if (tke_i+CAPE_incr > 0.) then
-              lup(i) = lup(i) + gr%zt(j) - gr%zt(j-1)
+              Lup(i) = Lup(i) + gr%zt(j) - gr%zt(j-1)
             else
-              lup(i) = lup(i) + ( gr%zt(j) - gr%zt(j-1) ) 
+              Lup(i) = Lup(i) + ( gr%zt(j) - gr%zt(j-1) ) 
      .                          * tke_i/max( zeps, -CAPE_incr )
             end if
 
@@ -160,11 +161,11 @@
 
           end do
 
-          ! Make lup nonlocal
+          ! Make Lup nonlocal
 
-          lup_max_alt = max( lup_max_alt, lup(i)+gr%zt(i) )
-          if ( ( gr%zt(i) + lup(i) ) < lup_max_alt ) then
-            lup(i) = lup_max_alt - gr%zt(i)
+          Lup_max_alt = max( Lup_max_alt, Lup(i)+gr%zt(i) )
+          if ( ( gr%zt(i) + Lup(i) ) < Lup_max_alt ) then
+            Lup(i) = Lup_max_alt - gr%zt(i)
           end if
 
         end do
@@ -173,14 +174,14 @@
         ! For now, do not include latent heat 
 
         ! Chris Golaz modification to include effects on latent heating
-        ! on ldown
+        ! on Ldown
 
-        ldown_min_alt = gr%zt(gr%nnzp)
+        Ldown_min_alt = gr%zt(gr%nnzp)
         do i=gr%nnzp,2,-1
 
           tke_i = zm2zt( em, i )  ! tke on thermo level
 
-          ldown(i) = zlmin
+          Ldown(i) = zlmin
           j = i - 1
 
           thl_par_j_plus_1 = thlm(i)
@@ -197,7 +198,7 @@
             rt_par_j = ( 1 - mu/gr%dzm(j) ) * rt_par_j_plus_1
      .               +  ( mu/gr%dzm(j) ) * rtm(j)
 
-           ! Include effects of latent heating on ldown
+           ! Include effects of latent heating on Ldown
            ! Use thermodynamic formula of Bougeault 1981 JAS Vol. 38, 2416
            ! Probably should use properties of bump 1 in Gaussian, not mean!!!
 
@@ -223,9 +224,9 @@
 !            CAPE_incr = - grav/thvm(j) * (thvm(i)-thvm(j)) / gr%dzm(j)
 
             if (tke_i+CAPE_incr > 0.) then
-              ldown(i) = ldown(i) + gr%zt(j+1) - gr%zt(j)
+              Ldown(i) = Ldown(i) + gr%zt(j+1) - gr%zt(j)
             else
-              ldown(i) = ldown(i) + ( gr%zt(j+1) - gr%zt(j) ) 
+              Ldown(i) = Ldown(i) + ( gr%zt(j+1) - gr%zt(j) ) 
      .                              * tke_i/max( zeps, -CAPE_incr )
             end if
 
@@ -240,11 +241,11 @@
 
           end do
 
-          ! Make ldown nonlocal
-!         ldown_min_alt = max( ldown_min_alt, gr%zt(i)-ldown(i) )
-          ldown_min_alt = min( ldown_min_alt, gr%zt(i)-ldown(i) ) ! %% test
-          if ( (gr%zt(i)-ldown(i)) > ldown_min_alt ) then
-            ldown(i) = gr%zt(i) - ldown_min_alt
+          ! Make Ldown nonlocal
+!         Ldown_min_alt = max( Ldown_min_alt, gr%zt(i)-Ldown(i) )
+          Ldown_min_alt = min( Ldown_min_alt, gr%zt(i)-Ldown(i) ) ! %% test
+          if ( (gr%zt(i)-Ldown(i)) > Ldown_min_alt ) then
+            Ldown(i) = gr%zt(i) - Ldown_min_alt
           end if
 
         end do
@@ -255,10 +256,10 @@
           ! -dschanen 27 April 2007
           lminh = max( 0., 500. - gr%zt(i) ) * ( lmin / 500. )
 
-          lup(i)    = max( lminh, lup(i) )
-          ldown(i)  = max( lminh, ldown(i) )
+          Lup(i)    = max( lminh, Lup(i) )
+          Ldown(i)  = max( lminh, Ldown(i) )
 
-          Lscale(i) = sqrt( lup(i)*ldown(i) )
+          Lscale(i) = sqrt( Lup(i)*Ldown(i) )
 
         end do
 
@@ -270,7 +271,7 @@
         Lscale = min( Lscale, Lscale_max )
 
         ! Ensure that the output from this subroutine is valid.
-        call length_check( Lscale, lup, ldown, isValid )
+        call length_check( Lscale, Lup, Ldown, isValid )
         ! Joshua Fasching January 2008
 
 !       Error Reporting
@@ -292,7 +293,7 @@
            write(fstderr,*) "Intent(out)"
 
            write(fstderr,*) "Lscale = ", Lscale
-           write(fstderr,*) "lup = ", lup
+           write(fstderr,*) "Lup = ", Lup
            
         endif
 

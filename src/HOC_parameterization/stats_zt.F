@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zt.F,v 1.5 2008-03-17 19:33:35 faschinj Exp $
+! $Id: stats_zt.F,v 1.6 2008-03-20 18:22:09 griffinb Exp $
 #ifdef STATS
       
       module stats_zt
@@ -47,8 +47,8 @@
       iwp2thlp      = 0
       iwprtp2       = 0
       iwp2rtp       = 0
-      ilup          = 0
-      ildown        = 0
+      iLup          = 0
+      iLdown        = 0
       itaut         = 0
       iKht          = 0
       iwp2thvp      = 0
@@ -336,16 +336,15 @@
      .         "wp2rtp covariance", "(m2 kg)/(s2 kg)",zt)
           k = k + 1
 
-        case ('lup')
-          ilup = k
-          call stat_assign(ilup,"lup",
+        case ('Lup')
+          iLup = k
+          call stat_assign(iLup,"Lup",
      .         "Upward mixing length","m",zt)
           k = k + 1
 
-        case ('ldown')
-          ildown = k
-
-          call stat_assign(ildown,"ldown",
+        case ('Ldown')
+          iLdown = k
+          call stat_assign(iLdown,"Ldown",
      .         "Downward mixing length","m",zt)
           k = k + 1
 

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F,v 1.18 2007-10-26 21:30:54 mjfalk Exp $
+! $Id: diag_variables.F,v 1.19 2008-03-20 18:22:09 griffinb Exp $
         module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -97,9 +97,9 @@
 
         ! Mixing lengths
         real, target, allocatable, dimension(:) ::
-     .  Lscale, lup, ldown ! [m]
+     .  Lscale, Lup, Ldown ! [m]
 
-!$omp   threadprivate(Lscale, lup, ldown)
+!$omp   threadprivate(Lscale, Lup, Ldown)
 
         real, target, allocatable, dimension(:) ::
      .  em,  ! em               [m^2/s^2]
@@ -285,8 +285,8 @@
 
         allocate( em(1:nzmax) )
         allocate( Lscale(1:nzmax) )
-        allocate( lup(1:nzmax) )
-        allocate( ldown(1:nzmax) )
+        allocate( Lup(1:nzmax) )
+        allocate( Ldown(1:nzmax) )
         allocate( taut(1:nzmax) )
 !       allocate( taum(1:nzmax) )
 
@@ -402,8 +402,8 @@
 
         ! Length scale
         Lscale   = 0.0
-        lup      = 0.0
-        ldown    = 0.0
+        Lup      = 0.0
+        Ldown    = 0.0
 
         ! Dissipation time
         taut     = 0.0
@@ -521,8 +521,8 @@
 
         deallocate( em )
         deallocate( Lscale )
-        deallocate( lup )
-        deallocate( ldown )
+        deallocate( Lup )
+        deallocate( Ldown )
         deallocate( taut )
 
 #ifdef STATS

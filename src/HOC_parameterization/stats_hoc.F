@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_hoc.F,v 1.2 2008-03-07 20:21:41 faschinj Exp $
+! $Id: stats_hoc.F,v 1.3 2008-03-20 18:22:09 griffinb Exp $
 #ifdef STATS
 !-----------------------------------------------------------------------
 !  module stats_hoc
@@ -56,8 +56,8 @@
      .     iwp2thlp,
      .     iwprtp2,
      .     iwp2rtp,
-     .     ilup,
-     .     ildown,
+     .     iLup,
+     .     iLdown,
      .     itaut,
      .     iKht,
      .     iwp2thvp,
@@ -83,7 +83,7 @@
 
 !$omp   threadprivate(ithlm, ithvm, irtm, ircm, ium, ivm, iwmt, iug)
 !$omp   threadprivate(ivg, icf, ip, iexner, iLscale, iwp3, iwpthlp2)
-!$omp   threadprivate(iwp2thlp, iwprtp2, iwp2rtp, ilup, ildown, itaut)
+!$omp   threadprivate(iwp2thlp, iwprtp2, iwp2rtp, iLup, iLdown, itaut)
 !$omp   threadprivate(iKht, iwp2thvp, iwp2rcp, iwprtpthlp, isct, irhot)
 !$omp   threadprivate(iNcm, iNcnm, iNim, ised_rcm, irsm, irrm, iNrm)
 !$omp   threadprivate(imean_vol_rad_rain, imean_vol_rad_cloud)

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.156 2008-03-17 19:20:26 faschinj Exp $
+! $Id: hoc.F,v 1.157 2008-03-20 18:21:59 griffinb Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -123,7 +123,7 @@
      .                rtp2, thlp2, rtpthlp,
      .                upwp, vpwp, ug, vg, rcm, 
      .                wmt, exner, em, p, rhot, 
-     .                rhom, Lscale, lup, ldown,
+     .                rhom, Lscale, Lup, Ldown,
      .                Kht, Khm, taum, taut, thvm,
      .                rrm, Nrm, rsnowm,ricem,rgraupelm, 
      .                thlm_forcing, rtm_forcing, 
@@ -161,8 +161,8 @@
      .    p,      ! Pressure                                    [Pa]
      .    rhot, rhom,  ! Density                                     [kg/m^3]
      .    Lscale, ! Mixing length                               [m] 
-     .    lup,    ! Upward mixing length                        [m] 
-     .    ldown,  ! Downward mixing length                      [m] 
+     .    Lup,    ! Upward mixing length                        [m] 
+     .    Ldown,  ! Downward mixing length                      [m] 
      .    Kht, Khm, ! Eddy diffusivity                            [m^2/s]
      .    taum, taut, ! Dissipation time                            [s]
      .    thvm,       ! Virtual potential temperature               [K]
@@ -320,8 +320,8 @@
      .                      rcm, hydromet,
      .                      wmt, wmm, em, exner,
      .                      taut, taum, thvm, p,
-     .                      rhot, rhom, Lscale, lup,
-     .                      ldown, Kht, Khm, um_ref, vm_ref
+     .                      rhot, rhom, Lscale, Lup,
+     .                      Ldown, Kht, Khm, um_ref, vm_ref
 #ifdef SCALARS
      .                      ,sclrm, edsclrm
 #endif /*SCALARS*/
@@ -631,8 +631,8 @@
      .                         rcm, hydromet,
      .                         wmt, wmm, em, exner,
      .                         taut, taum, thvm, p,
-     .                         rhot, rhom, Lscale, lup,
-     .                         ldown, Kht, Khm, um_ref, vm_ref
+     .                         rhot, rhom, Lscale, Lup,
+     .                         Ldown, Kht, Khm, um_ref, vm_ref
 #ifdef SCALARS
      .                         ,sclrm, edsclrm
 #endif /*SCALARS*/
@@ -655,8 +655,8 @@
      .                      rtp2, thlp2, rtpthlp,
      .                      upwp, vpwp, rcm, hydromet,
      .                      wmt, wmm, em, exner, taut, taum, thvm,
-     .                      p, rhot, rhom, Lscale, lup,
-     .                      ldown, Kht, Khm, um_ref, vm_ref,
+     .                      p, rhot, rhom, Lscale, Lup,
+     .                      Ldown, Kht, Khm, um_ref, vm_ref,
      .                      thlm_forcing, rtm_forcing, rtm_mc, thlm_mc,
      .                      up2, vp2, Scm, Ncm, Ncnm, Nim,
      .                      wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,
@@ -784,8 +784,8 @@
      .             ( iunit, runfile, psfc, thlm, rtm, um, vm,
      .               ug, vg, wp2, rcm, hydromet,
      .               wmt, wmm, em, exner, taut, taum, thvm,
-     .               p, rhot, rhom, Lscale, lup,
-     .               ldown, Kht, Khm, um_ref, vm_ref
+     .               p, rhot, rhom, Lscale, Lup,
+     .               Ldown, Kht, Khm, um_ref, vm_ref
 #ifdef SCALARS
      .               ,sclrm, edsclrm
 #endif
@@ -853,8 +853,8 @@
      .  p,              ! Pressure                      [Pa]
      .  rhot, rhom,     ! Density                       [kg/m^3]
      .  Lscale,         ! Mixing length                 [m] 
-     .  lup,            ! Upward mixing length          [m] 
-     .  ldown,          ! Downward mixing length        [m] 
+     .  Lup,            ! Upward mixing length          [m] 
+     .  Ldown,          ! Downward mixing length        [m] 
      .  Kht, Khm,       ! Eddy diffusivity              [m^2/s]
      .  taum, taut,     ! Dissipation time              [s]
      .  thvm            ! Virtual potential temperature [K]
@@ -1220,7 +1220,7 @@
         ! Compute mixing length
 
         call compute_length( thvm, thlm, rtm, rcm, 
-     .               em, p, exner, Lscale, lup, ldown, isValid )
+     .               em, p, exner, Lscale, isValid )
 
         ! Dissipation time
         tmp1 = sqrt( max( emin, zm2zt( em ) ) )
@@ -1259,8 +1259,8 @@
      .               rtp2, thlp2, rtpthlp,
      .               upwp, vpwp, rcm, hydromet,
      .               wmt, wmm, em, exner, taut, taum, thvm,
-     .               p, rhot, rhom, Lscale, lup,
-     .               ldown, Kht, Khm, um_ref, vm_ref,
+     .               p, rhot, rhom, Lscale, Lup,
+     .               Ldown, Kht, Khm, um_ref, vm_ref,
      .               thlm_forcing, rtm_forcing, rtm_mc, thlm_mc,
      .               up2, vp2, Scm, Ncm, Ncnm, Nim,
      .               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,
@@ -1311,8 +1311,8 @@
      .  p,              ! Pressure                                    [Pa]
      .  rhot, rhom,     ! Density                                     [kg/m^3]
      .  Lscale,         ! Mixing length                               [m] 
-     .  lup,            ! Upward mixing length                        [m] 
-     .  ldown,          ! Downward mixing length                      [m] 
+     .  Lup,            ! Upward mixing length                        [m] 
+     .  Ldown,          ! Downward mixing length                      [m] 
      .  Kht, Khm,       ! Eddy diffusivity                            [m^2/s]
      .  taum, taut,     ! Dissipation time                            [s]
      .  thvm,           ! Virtual potential temperature               [K]
@@ -1383,8 +1383,8 @@
         input_rhot = .true.
         input_rhom = .true.
         input_Lscale = .true.
-        input_lup = .true.
-        input_ldown = .true.
+        input_Lup = .true.
+        input_Ldown = .true.
         input_Kht = .true.
         input_Khm = .true.
         input_taum = .true.
@@ -1448,7 +1448,7 @@
      .                   rtp2, thlp2, rtpthlp,
      .                   upwp, vpwp, ug, vg, rcm,  
      .                   wmt, exner, em, p, rhot, 
-     .                   rhom, Lscale, lup, ldown,
+     .                   rhom, Lscale, Lup, Ldown,
      .                   Kht, Khm, taum, taut, thvm, 
      .                   rrm, Nrm, rsnowm, ricem,
      .                   rgraupelm, thlm_forcing, 
@@ -1461,7 +1461,7 @@
         ! print *,"cf = ", cf
         ! print*, "rrm = " ,rrm
         ! print*, "hydromet = " ,hydromet(:,1)
-        ! print *, "lup = ", lup
+        ! print *, "Lup = ", Lup
         ! print *, "rtm = ", rtm
         
         

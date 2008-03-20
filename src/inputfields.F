@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputfields.F,v 1.9 2008-03-17 19:25:51 faschinj Exp $
+! $Id: inputfields.F,v 1.10 2008-03-20 18:21:59 griffinb Exp $
 
 ! Module inputfields
 
@@ -24,7 +24,7 @@
      .                     input_ug, input_vg, input_rcm, 
      .                     input_wmt, input_exner, input_em,
      .                     input_p, input_rhot, input_rhom,
-     .                     input_Lscale, input_lup, input_ldown,
+     .                     input_Lscale, input_Lup, input_Ldown,
      .                     input_Kht, input_Khm, input_taum, input_taut,
      .                     input_thvm, input_rrm,input_Nrm, 
      .                     input_rsnowm, input_ricem, input_rgraupelm, 
@@ -57,7 +57,7 @@
      .                                  rtp2, thlp2, rtpthlp, 
      .                                  upwp, vpwp, ug, vg, rcm, 
      .                                  wmt, exner, em, p, rhot, 
-     .                                  rhom, Lscale, lup, ldown,
+     .                                  rhom, Lscale, Lup, Ldown,
      .                                  Kht, Khm, taum, taut, thvm,
      .                                  rrm, Nrm, rsnowm, ricem, 
      .                                  rgraupelm, thlm_forcing, 
@@ -78,7 +78,7 @@
      .                        thlp2, rtpthlp, upwp, vpwp,
      .                        ug, vg, rcm, 
      .                        wmt, exner, em, p, rhot, 
-     .                        rhom, Lscale, lup, ldown,
+     .                        rhom, Lscale, Lup, Ldown,
      .                        Kht, Khm, taum, taut, thvm,
      .                        rrm, Nrm, rsnowm, ricem, rgraupelm, 
      .                        thlm_forcing, rtm_forcing,
@@ -179,13 +179,13 @@
             call get_var( fread_var , "lscale", timestep,
      .                    Lscale(1:gr%nnzp),error)
           endif
-          if (present( lup ) .and. input_lup) then
-            call get_var( fread_var , "lup", timestep,
-     .                    lup(1:gr%nnzp),error)
+          if (present( Lup ) .and. input_Lup) then
+            call get_var( fread_var , "Lup", timestep,
+     .                    Lup(1:gr%nnzp),error)
           endif
-          if (present( ldown ) .and. input_ldown) then
-            call get_var( fread_var , "ldown", timestep,
-     .                    ldown(1:gr%nnzp),error)
+          if (present( Ldown ) .and. input_Ldown) then
+            call get_var( fread_var , "Ldown", timestep,
+     .                    Ldown(1:gr%nnzp),error)
           endif
           if (present( Kht ) .and. input_Kht) then
             call get_var( fread_var , "kht", timestep,
