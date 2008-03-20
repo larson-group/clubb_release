@@ -1,4 +1,4 @@
-! $Id: sounding.F,v 1.14 2007-05-21 22:44:36 dschanen Exp $
+! $Id: sounding.F,v 1.15 2008-03-20 19:59:54 dschanen Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
         module sounding
@@ -28,7 +28,7 @@
         implicit none
 
         ! Constant parameter
-        integer, parameter :: nmaxsnd = 1000
+        integer, parameter :: nmaxsnd = 600
 
 
         ! Input variables
@@ -150,7 +150,7 @@
      .          '  should be higher than highest thermodynamic point',
      .          gr%zt(gr%nnzp)
               stop 'STOP in sounding'
-            endif  ! k > nlevels
+            end if  ! k > nlevels
 
             ! Regular situation w/ linear int.
             IF (      trim( runtype ) /= "dycoms2_rf02_do" 
@@ -286,7 +286,7 @@
            write(*,*) 'nlevels = ',nlevels
            write(*,*) 'nmaxsnd = ',nmaxsnd
            stop 'STOP in sounding'
-        endif
+        end if
 
 ! Error check: if lowest themodynamic grid height is lower than the
 ! lowest value from the input sounding, then the linear interpolation
@@ -298,7 +298,7 @@
            write(*,*) ' first sounding level z(1) = ',z(1)
            write(*,*) ' first thermodynamic level gr%zt(2) = ',gr%zt(2)
            stop 'STOP in sounding'
-        endif
+        end if
 
 ! Use linear interpolation from two nearest prescribed grid points
 ! (one above and one below) to initialize mean quantities in the model
@@ -318,7 +318,7 @@
 
                 write(*,*) ' filename: ',fname
                 stop 'STOP in read_profile'
-              endif
+              end if
             x(i) = linint( gr%zt(i), z(k), z(k-1), var(k), var(k-1) )
           enddo ! while
         end do ! i=2, gr%nzzp
