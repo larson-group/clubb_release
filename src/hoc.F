@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.157 2008-03-20 18:21:59 griffinb Exp $
+! $Id: hoc.F,v 1.158 2008-03-20 20:20:33 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -665,7 +665,7 @@
      .                      ,sclrm, edsclrm
 #endif
      .                       )
-       endif
+       end if ! ~lrestart
 #ifdef STATS
 #ifdef _OPENMP
        iunit = omp_get_thread_num( ) + 50
@@ -1548,7 +1548,6 @@
 
         ! Local Variables
 
-        real, allocatable, dimension(:) :: zero  ! Field of zeros
         real, dimension(:), pointer :: 
      .    rrm,   ! Rain water mixing ratio              [kg/kg]
      .    ricem  ! Prisitine ice water mixing ratio     [kg/kg]
@@ -1988,78 +1987,72 @@
           ! Joshua Fasching November 2007
 
           if ( isnan2d( thlm ) ) then
-            print *, "thlm before BugsRad is NaN" 
+            print *, "thlm before BUGSrad is NaN" 
           endif
 
           if ( isnan2d( rcm ) ) then
-            print *, "rcm before BugsRad is NaN" 
+            print *, "rcm before BUGSrad is NaN" 
           endif
 
           if ( isnan2d( rtm ) ) then
-            print *, "rtm before BugsRad is NaN" 
+            print *, "rtm before BUGSrad is NaN" 
           endif
 
           if ( isnan2d( rrm ) ) then
-            print *, "rrm before BugsRad is NaN" 
+            print *, "rrm before BUGSrad is NaN" 
           endif
 
           if ( isnan2d( ricem ) ) then
-            print *, "ricem before BugsRad is NaN" 
+            print *, "ricem before BUGSrad is NaN" 
           endif
 
           if ( isnan2d( cf ) ) then
-            print *, "cf before BugsRad is NaN" 
-          endif
+            print *, "cf before BUGSrad is NaN" 
+          end if
 
           if ( isnan2d( p ) ) then
-            print *, "p before BugsRad is NaN" 
-          endif
+            print *, "p before BUGSrad is NaN" 
+          end if
 
           if ( isnan2d( exner ) ) then
-            print *, "exner before BugsRad is NaN" 
-          endif
+            print *, "exner before BUGSrad is NaN" 
+          end if
 
           if ( isnan2d( rhom ) ) then
-            print *, "rhom before BugsRad is NaN" 
-          endif
+            print *, "rhom before BUGSrad is NaN" 
+          end if
 
           if ( isnan2d( thlm_forcing ) ) then
-            print *, "thlm_forcing before BugsRad is NaN" 
-          endif
+            print *, "thlm_forcing before BUGSrad is NaN" 
+          end if
 
-          allocate(zero(gr%nnzp))
-          
-          zero = 0.0
-          
           ! Check for impossible negative values
           call rad_check( thlm, rcm, rtm, ricem,
-     .                       cf, p, exner, rhom)
+     .                    cf, p, exner, rhom)
 
 
-          call bugsrad_hoc( gr%zm(gr%nnzp), gr%nnzp, rlat, rlon,
-     .                      day, month, year, time,
-     .                      thlm, rcm, rtm, zero, ricem, 
-     .                      cf, p, exner, rhom, Tsfc,
-     .                      radht, Frad, thlm_forcing )
-          
-          deallocate(zero)
+          call bugsrad_hoc( gr%zm, gr%nnzp, rlat, rlon, ! In
+     .                      day, month, year, time,     ! In
+     .                      thlm, rcm, rtm, rrm, ricem, ! In
+     .                      cf, p, exner, rhom,         ! In
+     .                      radht, Frad,                ! Out
+     .                      thlm_forcing )              ! In/Out
           
           if ( isnan2d( thlm_forcing ) ) then
-            print *, "thlm_forcing after BugsRad is NaN" 
+            print *, "thlm_forcing after BUGSrad is NaN" 
 !           print *,thlm_forcing
-                                             
 
-          endif
+          end if
 
           if ( isnan2d( Frad ) ) then
-            print *, "Frad after BugsRad is NaN" 
+            print *, "Frad after BUGSrad is NaN" 
 !	    print *, Frad
-          endif
+          end if
 
           if ( isnan2d( radht ) ) then
-            print *, "radht after BugsRad is NaN"
+            print *, "radht after BUGSrad is NaN"
 !           print *,radht                                             
-          endif
+          end if
 
 #else
           stop "Cannot call BUGSrad with these compile options."

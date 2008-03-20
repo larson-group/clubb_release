@@ -1,17 +1,31 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_hoc.F90,v 1.18 2008-03-05 17:22:52 faschinj Exp $
+! $Id: bugsrad_hoc.F90,v 1.19 2008-03-20 20:20:33 dschanen Exp $
 
 subroutine bugsrad_hoc( alt, nz, lat_in_degrees, lon_in_degrees, &
                         day, month, year, time,                  &
                         thlm, rcm, rtm, rrm, rim,                & 
-                        cf, pinpa, exner, rhom, Tsfc,            &
+                        cf, pinpa, exner, rhom,                  &
                         radht, Frad, thlm_forcing )
 ! Description:
 ! Does the necessary operations to interface the HOC model with
 ! the bugsrad subprogram.
 
+! Grid Layout:
+!
+! /////////////// Layers from U.S. Standard Atmosphere   ///////////////
+! ///////////////       Dimension: std_atmos_buffer      ///////////////
+!                                  .
+!                                  .
+! ---------------         Interpolated Layers            --------------- 
+! ---------------         Dimension: lin_int_buffer      --------------- 
+!                                  .
+!                                  .
+! ///////////////          Top of HOC Grid               ///////////////
+! ///////////////          Dimension: nz                 ///////////////
+
 ! References:
 ! Stevens, et al., (2001) _Journal of Atmospheric Science_, Vol 58, p.3391-3409
+! McClatchey, et al., (1972) _Environmental Research Papers_, No. 411, p.94
 
 ! Contact for information on BUGSrad (other than this routine)
 !   Norm Wood <norm@atmos.colostate.edu>
@@ -38,10 +52,7 @@ use stats_hoc, only: zt, zm, lstats_samp, &
   slen = 1      ! Length of the sub domain
 
 ! Number of levels to take from U.S. Std. Atmos tables
-! Vince Larson customized so that we can use more levels in arm_0003
-!  integer, parameter :: std_atmos_buffer = 3 ! For high-altitude cases, e.g. arm_0003
   integer, parameter :: std_atmos_buffer = 10 ! For typical cases
-! End Vince Larson's change
 
 ! Number of levels to interpolate from the bottom of std_atmos to the top
 ! of the HOC profile, hopefully enough to eliminate cooling spikes, etc. 
@@ -50,53 +61,93 @@ use stats_hoc, only: zt, zm, lstats_samp, &
 ! The sum of the above to two buffers
   integer, parameter :: buffer = lin_int_buffer + std_atmos_buffer
 
-  integer, parameter :: std_atmos_dim = 25
+  integer, parameter :: std_atmos_dim = 50
 
 ! Parameters from U.S. Standard Atmosphere, 1976;  Starting at 1 km altitude
+
+! Altitude in meters
+  double precision, parameter, dimension(std_atmos_dim) :: &
+  std_alt = (/  &
+    1000.00,       2000.00,       3000.00,       4000.00,       5000.00,  &
+    6000.00,       7000.00,       8000.00,       9000.00,       10000.0,  &
+    11000.0,       12000.0,       13000.0,       14000.0,       15000.0,  &
+    16000.0,       17000.0,       18000.0,       19000.0,       20000.0,  &
+    21000.0,       22000.0,       23000.0,       24000.0,       25000.0,  &
+    26000.0,       27000.0,       28000.0,       29000.0,       30000.0,  &
+    31000.0,       32000.0,       33000.0,       34000.0,       35000.0,  &
+    36000.0,       37000.0,       38000.0,       39000.0,       40000.0,  &
+    41000.0,       42000.0,       43000.0,       44000.0,       45000.0,  &
+    46000.0,       47000.0,       48000.0,       49000.0,       50000.0   /)
+
 ! Pressure in millibars
-  double precision, parameter, dimension(std_atmos_dim) ::      &
-  std_pinmb = (/8.986e2, 7.950e2, 7.012e2, 6.166e2, 5.405e2,    &
-                4.722e2, 4.111e2, 3.565e2, 3.080e2, 2.650e2,    & 
-                2.270e2, 1.940e2, 1.658e2, 1.417e2, 1.211e2,    &
-                1.035e2, 8.850e1, 7.565e1, 6.467e1, 5.529e1,    &
-                4.729e1, 4.047e1, 3.467e1, 2.972e1, 2.546e1/)
+  double precision, parameter, dimension(std_atmos_dim) :: &
+  std_pinmb = (/  &
+    898.600,       795.000,       701.200,       616.600,       540.500,  &
+    472.200,       411.100,       356.500,       308.000,       265.000,  &
+    227.000,       194.000,       165.800,       141.700,       121.100,  &
+    103.500,       88.5000,       75.6500,       64.6700,       55.2900,  &
+    47.2900,       40.4700,       34.6700,       29.7200,       25.4600,  &
+    22.7620,       20.0640,       17.3660,       14.6680,       11.9700,  &
+    10.7252,       9.48040,       8.23560,       6.99080,       5.74600,  &
+    5.17100,       4.59600,       4.02100,       3.44600,       2.87100,  &
+    2.59500,       2.31900,       2.04300,       1.76700,       1.49100,  &
+    1.35236,       1.21372,       1.07508,      0.936440,      0.797800   /)
 
 ! Temperature in degrees Kelvin
   double precision, parameter, dimension(std_atmos_dim) :: &
-  std_tempk = (/281.6, 275.1, 268.7, 262.2, 255.7,         &
-                249.2, 242.7, 236.2, 229.7, 223.2,         &
-                216.8, 216.6, 216.6, 216.6, 216.6,         &
-                216.6, 216.6, 216.6, 216.6, 216.6,         &
-                217.6, 218.6, 219.6, 220.6, 221.6/)
+  std_tempk = (/  &
+    281.600,       275.100,       268.700,       262.200,       255.700,  &
+    249.200,       242.700,       236.200,       229.700,       223.200,  &
+    216.800,       216.600,       216.600,       216.600,       216.600,  &
+    216.600,       216.600,       216.600,       216.600,       216.600,  &
+    217.600,       218.600,       219.600,       220.600,       221.600,  &
+    222.580,       223.560,       224.540,       225.520,       226.500,  &
+    228.500,       230.500,       232.500,       234.500,       236.500,  &
+    239.280,       242.060,       244.840,       247.620,       250.400,  &
+    253.160,       255.920,       258.680,       261.440,       264.200,  &
+    265.480,       266.760,       268.040,       269.320,       270.600   /)
 
 ! Specific Humidity ( Water Vapor / Density )
-  double precision, parameter, dimension(std_atmos_dim) ::                &
-  std_sp_hmdty = (/0.378e-02, 0.288e-02, 0.198e-02, 0.134e-02, 0.869e-03, & 
-                   0.576e-03, 0.356e-03, 0.228e-03, 0.985e-04, 0.435e-04, &
-                   0.225e-04, 0.119e-04, 0.675e-05, 0.369e-05, 0.370e-05, &
-                   0.366e-05, 0.365e-05, 0.362e-05, 0.423e-05, 0.495e-05, &
-                   0.634e-05, 0.806e-05, 0.104e-04, 0.130e-04, 0.165e-04/)
+  double precision, parameter, dimension(std_atmos_dim) :: &
+  std_sp_hmdty = (/ &
+   0.378038E-02,  0.287984E-02,  0.197954E-02,  0.134261E-02,  0.869093E-03, &
+   0.575670E-03,  0.355932E-03,  0.228224E-03,  0.984800E-04,  0.435308E-04, &
+   0.224781E-04,  0.118628E-04,  0.675169E-05,  0.368583E-05,  0.369610E-05, &
+   0.366366E-05,  0.365425E-05,  0.361842E-05,  0.423077E-05,  0.494882E-05, &
+   0.633914E-05,  0.806077E-05,  0.103636E-04,  0.129953E-04,  0.164671E-04, &
+   0.173018E-04,  0.181366E-04,  0.189714E-04,  0.198062E-04,  0.206410E-04, & 
+   0.202939E-04,  0.199469E-04,  0.195999E-04,  0.192529E-04,  0.189058E-04, &
+   0.184780E-04,  0.180502E-04,  0.176224E-04,  0.171946E-04,  0.167668E-04, &
+   0.166688E-04,  0.165707E-04,  0.164727E-04,  0.163747E-04,  0.162767E-04, &
+   0.153583E-04,  0.144398E-04,  0.135214E-04,  0.126030E-04,  0.116845E-04  /)
+
 
 ! Ozone ( O_3 / Density )
-  double precision, parameter, dimension(std_atmos_dim) ::             &
-  std_o3l   = (/0.486e-07, 0.536e-07, 0.550e-07, 0.561e-07, 0.611e-07, &
-                0.682e-07, 0.814e-07, 0.989e-07, 0.152e-06, 0.218e-06, &
-                0.356e-06, 0.513e-06, 0.638e-06, 0.834e-06, 0.108e-05, &
-                0.138e-05, 0.197e-05, 0.263e-05, 0.337e-05, 0.427e-05, &
-                0.502e-05, 0.605e-05, 0.691e-05, 0.767e-05, 0.848e-05/)
+  double precision, parameter, dimension(std_atmos_dim) :: & 
+  std_o3l= (/ & 
+   0.486049E-07,  0.536246E-07,  0.549874E-07,  0.561455E-07,  0.611081E-07, &
+   0.681715E-07,  0.813559E-07,  0.988969E-07,  0.152002E-06,  0.217654E-06, &
+   0.356360E-06,  0.512985E-06,  0.637659E-06,  0.833699E-06,  0.107803E-05, &
+   0.138138E-05,  0.196767E-05,  0.263158E-05,  0.336538E-05,  0.427398E-05, &
+   0.501849E-05,  0.604557E-05,  0.690909E-05,  0.766937E-05,  0.848303E-05, &
+   0.895916E-05,  0.943528E-05,  0.991141E-05,  0.103875E-04,  0.108637E-04, &
+   0.112905E-04,  0.117173E-04,  0.121441E-04,  0.125709E-04,  0.129978E-04, &
+   0.128507E-04,  0.127036E-04,  0.125565E-04,  0.124094E-04,  0.122623E-04, &
+   0.115392E-04,  0.108162E-04,  0.100931E-04,  0.937005E-05,  0.864700E-05, &
+   0.769657E-05,  0.674614E-05,  0.579570E-05,  0.484527E-05,  0.389484E-05  /)
 
 ! Input Variables
   real, intent(in) :: &
-  alt,           &! Maximum altitude in the model domain [m]
-  lat_in_degrees,&! Latitude                             [Degrees North]
-  lon_in_degrees,&! Longitude                            [Degrees East]
-  time            ! Model time                           [s]
+  lat_in_degrees,&! Latitude   [Degrees North]
+  lon_in_degrees,&! Longitude  [Degrees East]
+  time            ! Model time [s]
   
   integer, intent(in) :: &
   nz,              & ! Vertical extent;  i.e. nnzp in the grid class
   day, month, year   ! Time of year
 
   real, intent(in), dimension(nz) :: &
+  alt,   & ! Altitudes of the model     [m]
   thlm,  & ! Liquid potential temp.     [K]
   rcm,   & ! Liquid water mixing ratio  [kg/kg]
   rrm,   & ! Rain water mixing ratio    [kg/kg]
@@ -106,8 +157,6 @@ use stats_hoc, only: zt, zm, lstats_samp, &
   cf,    & ! Cloud fraction             [%]
   pinpa, & ! Pressure                   [Pa]
   exner    ! Exner function             [-]
-
-  real, intent(in) :: Tsfc ! Theta at the surface [K]
 
 ! Input/Output Variables
   real, intent(inout), dimension(nz) :: &
@@ -120,10 +169,10 @@ use stats_hoc, only: zt, zm, lstats_samp, &
 
 ! Local Variables
   real, dimension(nz) :: &
-  Frad_SW, & ! SW radiative flux          [W/m^2]
-  Frad_LW, & ! LW radiative flux          [W/m^2]
-  radht_SW,& ! SW heating rate            [K/s]
-  radht_LW   ! LW heating rate            [K/s]
+  Frad_SW, & ! SW radiative flux       [W/m^2]
+  Frad_LW, & ! LW radiative flux       [W/m^2]
+  radht_SW,& ! SW heating rate         [K/s]
+  radht_LW   ! LW heating rate         [K/s]
 
 ! Altered 3 Oct 2005 to be buffer levels higher
   double precision, dimension(nlen,(nz-1)+buffer) :: &
@@ -164,7 +213,7 @@ use stats_hoc, only: zt, zm, lstats_samp, &
   ts,  & ! Surface temperature [K]
   amu0   ! Cosine of the solar zenith angle
 
-  double precision :: z1_fact, z2_fact ! Temp storage
+  double precision :: z1_fact, z2_fact, tmp ! Temp storage
 
   integer :: i, j, z, z1, z2  ! Loop indices
 
@@ -189,7 +238,15 @@ use stats_hoc, only: zt, zm, lstats_samp, &
                     + Lv*rcm(2:nz) / Cp
 
 ! Derive Specific humidity from rc & rt.
-  sp_humidity(1,1:(nz-1)) = dble( rtm(2:nz) - rcm(2:nz) ) / dble( 1+rtm(2:nz) )
+  do z = 2, nz
+    if ( rtm(z) < rcm(z) ) then
+      sp_humidity(1,z-1) = 0.0d0
+      write(fstderr,*) "rvm < 0 at ", z, " before BUGSrad, specific humidity set to 0."
+    else
+      sp_humidity(1,z-1) &
+        = dble( rtm(z) - rcm(z) ) / dble( 1.0+rtm(z) )
+     end if
+   end do
 
 ! Setup miscellaneous variables
 
@@ -201,11 +258,7 @@ use stats_hoc, only: zt, zm, lstats_samp, &
 
   slr  = 1.0d0 ! Fraction of daylight
 
-! Changed for mpace_b inter comparison -dschanen 3 Nov 2006
-! rcil(1,1:(nz-1)+buffer) = 0.0d0 ! Assume no ice for HOC
-  
-
-! Ozone = 5.4e-5 g/m^3 from U.S. Standard Atmosphere, 1976. 
+! Ozone at < 1 km = 5.4e-5 g/m^3 from U.S. Standard Atmosphere, 1976. 
 !   Convert from g to kg.
   o3l(1,1:(nz-1)) = dble( ( 5.4e-5 / rhom(1:(nz-1)) ) * 0.001 )
 
@@ -234,12 +287,21 @@ use stats_hoc, only: zt, zm, lstats_samp, &
 ! profile.  Then take the values at altitude j km on the table and use 
 ! std_atmos_buffer kilometers of it as the top of the profile fed into BUGsrad.
 
+! e.g.
+! if the HOC maximum altitude = 3200 m, then
+! the nearest layer above in the std_atmos arrays is 4000 m, so
+! the array used in BUGSrad will be:
+! HOC layers up to 3200 m (grid spacing determined by model) +
+! lin_int_buffer layers between 3200 m and 4000 m (variable grid spacing) +
+! std_atmos_buffer layers from 4000 m to 14000 m  (1 km grid spacing)
+
   j = 1 ! initial altitude
-  do while ( real( j * 1000 ) < alt )
+  do while ( ( std_alt(j) ) < alt(nz) )
     j = j + 1
     if ( (j + std_atmos_buffer ) > std_atmos_dim ) then
-      stop "bugsrad_hoc: cannot handle this altitude" ! exceeds a 25 km altitude
-    endif
+      write(fstderr,*) "j = ", j, "alt = ", alt(nz), " m"
+      stop "bugsrad_hoc: cannot handle this altitude" ! exceeds a 50 km altitude
+    end if
   end do
 
   ! Add the standard atmospheric profile above the linear interpolation
@@ -256,8 +318,8 @@ use stats_hoc, only: zt, zm, lstats_samp, &
   z1 = buffer + 1
   z2 = std_atmos_buffer
   do z = buffer, std_atmos_buffer+1, -1
-    z1_fact = dble(z2 - z) / dble(z2 - z1) 
-    z2_fact = dble(z - z1) / dble(z2 - z1) 
+    z1_fact = dble( z2 - z ) / dble( z2 - z1 ) 
+    z2_fact = dble( z - z1 ) / dble( z2 - z1 ) 
 
     tempk(1,z) = z1_fact * tempk(1,z1) + z2_fact * tempk(1,z2)
 
@@ -268,8 +330,14 @@ use stats_hoc, only: zt, zm, lstats_samp, &
     pinmb(1,z) = z1_fact * pinmb(1,z1) + z2_fact * pinmb(1,z2)
   end do
 
-  playerinmb(1,2:buffer+1) = ( pinmb(1,1:buffer) + pinmb(1,2:buffer+1) ) / 2
-  playerinmb(1,1) = 2 * playerinmb(1,2) - playerinmb(1,3)
+  playerinmb(1,2:buffer+1) = ( pinmb(1,1:buffer) + pinmb(1,2:buffer+1) ) / 2.
+
+  tmp = 2. * playerinmb(1,2) - playerinmb(1,3)
+  if ( tmp > 0. ) then
+    playerinmb(1,1) = tmp
+  else ! Assuming a linear extrapolation didn't work
+    playerinmb(1,1) = .5 * playerinmb(1,2)
+  end if
 
 ! Calculate the difference in pressure layers (including buffer levels)
   do i = 1, (nz-1)+buffer
@@ -323,27 +391,27 @@ use stats_hoc, only: zt, zm, lstats_samp, &
   thlm_forcing(1:nz) = thlm_forcing(1:nz) + radht(1:nz)
 
 #ifdef STATS
-        if ( lstats_samp ) then
+  if ( lstats_samp ) then
 
-          if ( iradht_LW > 0 ) then
-            zt%x(:,iradht_LW) = zt%x(:,iradht_LW) + radht_LW
-            zt%n(:,iradht_LW) = zt%n(:,iradht_LW) + 1
-          end if
-          if ( iradht_SW > 0 ) then
-            zt%x(:,iradht_SW) = zt%x(:,iradht_SW) + radht_SW
-            zt%n(:,iradht_SW) = zt%n(:,iradht_SW) + 1
-          end if
+    if ( iradht_LW > 0 ) then
+      zt%x(:,iradht_LW) = zt%x(:,iradht_LW) + radht_LW
+      zt%n(:,iradht_LW) = zt%n(:,iradht_LW) + 1
+    end if
+    if ( iradht_SW > 0 ) then
+      zt%x(:,iradht_SW) = zt%x(:,iradht_SW) + radht_SW
+      zt%n(:,iradht_SW) = zt%n(:,iradht_SW) + 1
+    end if
 
-          if ( iFrad_SW > 0 ) then
-            zm%x(:,iFrad_SW) = zm%x(:,iFrad_SW) + Frad_SW
-            zm%n(:,iFrad_SW) = zm%n(:,iFrad_SW) + 1
-          end if
-          if ( iFrad_LW > 0 ) then
-            zm%x(:,iFrad_LW) = zm%x(:,iFrad_LW) + Frad_LW
-            zm%n(:,iFrad_LW) = zm%n(:,iFrad_LW) + 1
-          end if
+    if ( iFrad_SW > 0 ) then
+      zm%x(:,iFrad_SW) = zm%x(:,iFrad_SW) + Frad_SW
+      zm%n(:,iFrad_SW) = zm%n(:,iFrad_SW) + 1
+    end if
+    if ( iFrad_LW > 0 ) then
+      zm%x(:,iFrad_LW) = zm%x(:,iFrad_LW) + Frad_LW
+      zm%n(:,iFrad_LW) = zm%n(:,iFrad_LW) + 1
+    end if
 
-        end if
+  end if ! lstats_samp
 #endif /*STATS*/
 
   return
