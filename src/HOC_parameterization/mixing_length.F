@@ -1,4 +1,4 @@
-! $Id: mixing_length.F,v 1.4 2008-03-20 18:22:09 griffinb Exp $
+! $Id: mixing_length.F,v 1.5 2008-03-20 18:27:02 griffinb Exp $
 !-----------------------------------------------------------------------------
         module mixing_length
         
@@ -62,9 +62,7 @@
 
         ! Output Variables
         real, dimension(gr%nnzp), intent(out) :: 
-     .  Lscale, ! Mixing length                 [m]
-     .  Lup,    ! Upward mixing length          [m]
-     .  Ldown   ! Downward mixing length        [m]
+     .  Lscale  ! Mixing length                 [m]
         
         logical, intent(out) ::
      .  isValid
