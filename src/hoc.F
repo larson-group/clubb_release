@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.158 2008-03-20 20:20:33 dschanen Exp $
+! $Id: hoc.F,v 1.159 2008-03-21 13:07:31 griffinb Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -320,8 +320,8 @@
      .                      rcm, hydromet,
      .                      wmt, wmm, em, exner,
      .                      taut, taum, thvm, p,
-     .                      rhot, rhom, Lscale, Lup,
-     .                      Ldown, Kht, Khm, um_ref, vm_ref
+     .                      rhot, rhom, Lscale,
+     .                      Kht, Khm, um_ref, vm_ref
 #ifdef SCALARS
      .                      ,sclrm, edsclrm
 #endif /*SCALARS*/
@@ -631,8 +631,8 @@
      .                         rcm, hydromet,
      .                         wmt, wmm, em, exner,
      .                         taut, taum, thvm, p,
-     .                         rhot, rhom, Lscale, Lup,
-     .                         Ldown, Kht, Khm, um_ref, vm_ref
+     .                         rhot, rhom, Lscale,
+     .                         Kht, Khm, um_ref, vm_ref
 #ifdef SCALARS
      .                         ,sclrm, edsclrm
 #endif /*SCALARS*/
@@ -784,8 +784,8 @@
      .             ( iunit, runfile, psfc, thlm, rtm, um, vm,
      .               ug, vg, wp2, rcm, hydromet,
      .               wmt, wmm, em, exner, taut, taum, thvm,
-     .               p, rhot, rhom, Lscale, Lup,
-     .               Ldown, Kht, Khm, um_ref, vm_ref
+     .               p, rhot, rhom, Lscale,
+     .               Kht, Khm, um_ref, vm_ref
 #ifdef SCALARS
      .               ,sclrm, edsclrm
 #endif
@@ -853,8 +853,6 @@
      .  p,              ! Pressure                      [Pa]
      .  rhot, rhom,     ! Density                       [kg/m^3]
      .  Lscale,         ! Mixing length                 [m] 
-     .  Lup,            ! Upward mixing length          [m] 
-     .  Ldown,          ! Downward mixing length        [m] 
      .  Kht, Khm,       ! Eddy diffusivity              [m^2/s]
      .  taum, taut,     ! Dissipation time              [s]
      .  thvm            ! Virtual potential temperature [K]
