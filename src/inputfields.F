@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputfields.F,v 1.10 2008-03-20 18:21:59 griffinb Exp $
+! $Id: inputfields.F,v 1.11 2008-03-21 14:17:29 griffinb Exp $
 
 ! Module inputfields
 
@@ -671,21 +671,25 @@
 !     .        current_time - fread_var%time
           
           ! Reporting
-          print *, "Time Initial: ", fread_var%time
-          print *, "Restart Time: ", current_time
-          print *, "Delta Time: ", delta_time
-          print *, "dt: ", fread_var%dtwrite
+          print *, "Initial time (of day) of GrADS restart file [s]: ", 
+     .             fread_var%time
+          print *, "Model restart time [s]: ", current_time
+          print *, "Elapsed time ",
+     .             "(GrADS start time to model restart time) [s]: ", 
+     .             delta_time
+          print *, "GrADS file time interval [s]: ", fread_var%dtwrite
       
           ! Determines the closest recorded timestep to the restart
           ! time.
           nearest_timestep = nint(delta_time / 60.0) 
           
-          print *, "Nearest Timestep: ", nearest_timestep
+          print *, "Nearest model timestep (time iteration) [ ]: ", 
+     .             nearest_timestep
 
           ! Print the actual record being recalled.
           ! Joshua Fasching March 2008
-          print *, "Nearest data point: ",
-     /       nint(nearest_timestep/(fread_var%dtwrite/60.))-1
+          print *, "Nearest GrADS data point (time iteration) [ ]: ",
+     .             nint(nearest_timestep/(fread_var%dtwrite/60.))-1
           
           call close_grads_read( fread_var )
           
