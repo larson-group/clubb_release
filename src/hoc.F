@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.159 2008-03-21 13:07:31 griffinb Exp $
+! $Id: hoc.F,v 1.160 2008-03-21 19:01:00 griffinb Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -637,7 +637,7 @@
      .                         ,sclrm, edsclrm
 #endif /*SCALARS*/
      .                        )
-       else
+       else  ! restart
                
           ! Joshua Fasching March 2008
           time = time_restart + dtmain
@@ -646,6 +646,17 @@
           ! Determining what iteration to restart at.
           ! The value is increased by 1 to sychronize with restart data.
           ! Joshua Fasching February 2008
+          
+          ! Ensure that iteration num, iinit, is an integer, so that model time is 
+          !   incremented correctly by iteration number at end of timestep
+          if ( mod( (time_restart-time_initial) , dtmain ) /= 0 ) then
+             print*, "Error: (time_restart-time_initial) ", 
+     .               "is not a multiple of dtmain."
+             print*, "time_restart = ", time_restart
+             print*, "time_initial = ", time_initial
+             print*, "dtmain = ", dtmain
+             stop
+          end if
 
           iinit = ( time - time_initial ) / dtmain + 1
 

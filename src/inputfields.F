@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputfields.F,v 1.11 2008-03-21 14:17:29 griffinb Exp $
+! $Id: inputfields.F,v 1.12 2008-03-21 19:01:00 griffinb Exp $
 
 ! Module inputfields
 
@@ -638,10 +638,10 @@
         return
         end subroutine interpolate_m
 !-------------------------------------------------------------------------
-        subroutine compute_timestep( current_time, nearest_timestep )
+        subroutine compute_timestep( time, nearest_timestep )
 !
-!       Description: Determines the nearest timestep stored in the GRADS
-!       file for the current_time in seconds recieved.
+!       Description: Given a time 'time', determines the closest 
+!       output time in a GrADS file
 !
 !-------------------------------------------------------------------------
           use inputfile_class
@@ -649,46 +649,67 @@
           
           ! Input Variable(s)
           real, intent(in) :: 
-     .       current_time ! Time since start day
+     .       time ! Time near which we want to find GrADS output, 
+                  !       e.g. time_restart     [s]
           
           ! Output Variable(s)
           integer, intent(out) :: 
-     .       nearest_timestep ! Nearest timestep to current_time
+     .       nearest_timestep ! Nearest GrADS output time to time [min]
           
           ! Local Variables
           type (inputgrads) fread_var         
-          real delta_time
+          real delta_time   ! In seconds
           
           call open_grads_read( 15, trim(datafile)//"_zt.ctl", 
      .                          fread_var )
 
-          ! Difference between GrADS file start time and the restart
-          ! time
+          ! (restart time) - (initial time) 
           delta_time = 
-     .        current_time - (fread_var%time - fread_var%dtwrite)
+     .        time - (fread_var%time - fread_var%dtwrite)
           
           !    Joshua Fasching March 2008
-!     .        current_time - fread_var%time
+!     .        time - fread_var%time
           
           ! Reporting
-          print *, "Initial time (of day) of GrADS restart file [s]: ", 
+          print *, "Initial time of GrADS reference file ",
+     .             "[seconds since midnight]: ", 
      .             fread_var%time
-          print *, "Model restart time [s]: ", current_time
-          print *, "Elapsed time ",
-     .             "(GrADS start time to model restart time) [s]: ", 
+          print *, "Model restart time [s]: ", time
+          print *, "Elapsed time between ",
+     .             "initial time of ref file and restart time [s]: ", 
      .             delta_time
-          print *, "GrADS file time interval [s]: ", fread_var%dtwrite
+          print *, "GrADS file output time interval [s]: ", 
+     .             fread_var%dtwrite
+
+          if ( ( mod( delta_time , fread_var%dtwrite )  > 1e-8 ) .or. 
+     .         ( mod( delta_time, fread_var%dtwrite ) < -1e-8 ) ) then
+             print*, "Error: Elapsed time is not a multiple ",
+     .               "of the reference GrADS output time interval."
+             print*, "Elapsed time [s] = ", delta_time
+             print*, "GrADS output time interval = ", fread_var%dtwrite
+             stop
+          end if
       
+          if ( mod( delta_time , 60.0 ) > 1e-8
+     .          .or. mod( delta_time, 60.0 ) < -1e-8 ) then
+             print*, "Error: Elapsed time is not a multiple ",
+     .               "of one minute."
+             print*, "Elapsed time [s] = ", delta_time
+             stop
+          end if
+
           ! Determines the closest recorded timestep to the restart
           ! time.
           nearest_timestep = nint(delta_time / 60.0) 
           
-          print *, "Nearest model timestep (time iteration) [ ]: ", 
+          print *, "Elapsed time between ",
+     .             "initial time of ref file and restart time ",
+     .             "rounded to nearest minute: ", 
      .             nearest_timestep
 
           ! Print the actual record being recalled.
           ! Joshua Fasching March 2008
-          print *, "Nearest GrADS data point (time iteration) [ ]: ",
+          print *, "Nearest GrADS output time iteration [ ]: ",
      .             nint(nearest_timestep/(fread_var%dtwrite/60.))-1
           
           call close_grads_read( fread_var )
