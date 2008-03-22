@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.33 2008-03-13 18:47:24 dschanen Exp $
+! $Id: diag_var.F,v 1.34 2008-03-22 19:17:23 griffinb Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -665,15 +665,16 @@
             lhs(kdiag,k) = lhs(kdiag,k) + ( 1.0 / dt ) ! Time tendency
           end if
 
-          lhs((/kp1diag,km1diag/),k)
-     .    = lhs((/kp1diag,km1diag/),k)
-     .    + term_ma( wmm(k), gr%dzm(k) ) ! ma
+          lhs(kp1diag:km1diag,k)
+     .    = lhs(kp1diag:km1diag,k)
+     .    + term_ma( wmm(k), gr%dzm(k), kp1, k ) ! ma
 
           lhs(kp1diag:km1diag,k)
      .    = lhs(kp1diag:km1diag,k)
      .    + term_ta_lhs
-     .      ( a1(kp1), a1(k), a1(km1), wp3(kp1), wp3(k),
-     .        wp2(kp1), wp2(k), wp2(km1), gr%dzm(k), beta, eps ) ! ta
+     .      ( zm2zt(a1,kp1), a1(k), zm2zt(a1,k), wp3(kp1), wp3(k), 
+     .        zm2zt(wp2,kp1), zm2zt(wp2,k), gr%dzm(k), beta, eps, 
+     .        kp1, k ) ! ta
 
 #ifdef STATS
          if ( lstats_samp ) then
@@ -697,8 +698,9 @@
      .          iup2_ta + ivp2_ta > 0 ) then
              tmp(1:3)
      .       = term_ta_lhs
-     .         ( a1(kp1), a1(k), a1(km1), wp3(kp1), wp3(k),
-     .           wp2(kp1), wp2(k), wp2(km1), gr%dzm(k), beta, eps )
+     .         ( zm2zt(a1,kp1), a1(k), zm2zt(a1,k), wp3(kp1), wp3(k), 
+     .           zm2zt(wp2,kp1), zm2zt(wp2,k), gr%dzm(k), beta, eps, 
+     .           kp1, k )
              zmscr05(k) = -tmp(3)
              zmscr06(k) = -tmp(2)
              zmscr07(k) = -tmp(1)
@@ -706,10 +708,11 @@
 
            if ( irtp2_ma + ithlp2_ma + irtpthlp_ma +
      .          iup2_ma + ivp2_ma > 0 ) then
-             tmp(1:2)
-     .       = term_ma( wmm(k), gr%dzm(k) )
-             zmscr08(k) = -tmp(2)
-             zmscr09(k) = -tmp(1)
+             tmp(1:3)
+     .       = term_ma( wmm(k), gr%dzm(k), kp1, k )
+             zmscr08(k) = -tmp(3)
+             zmscr09(k) = -tmp(2)
+             zmscr10(k) = -tmp(1)
            end if
          end if
 #endif /*STATS*/
@@ -901,13 +904,14 @@
             if ( ixapxbp_ma > 0 ) then
               zm%x(k,ixapxbp_ma) = zm%x(k,ixapxbp_ma)
      .        + zmscr08(k) * xapxbp(km1,1)
-     .        + zmscr09(k) * xapxbp(kp1,1)
+     .        + zmscr09(k) * xapxbp(k,1)
+     .        + zmscr10(k) * xapxbp(kp1,1)
               zm%n(k,ixapxbp_ma) = zm%n(k,ixapxbp_ma) + 1
             end if
 
             if ( ixapxbp_pr1 > 0 ) then
               zm%x(k,ixapxbp_pr1) = zm%x(k,ixapxbp_pr1)
-     .        + zmscr10(k) * xapxbp(k,1)
+     .        + zmscr11(k) * xapxbp(k,1)
               zm%n(k,ixapxbp_pr1) = zm%n(k,ixapxbp_pr1) + 1
             end if
 
@@ -1053,7 +1057,7 @@
               zm%x(k,ixap2_pr1)
      .        = zm%x(k,ixap2_pr1) ! Explicit component
      .        + ( C4 * (xbp2(k) + wp2(k)) ) / ( 3.0 * taum(k) )
-              zmscr10(k) = - (2.0/3.0) * C4 / taum(k)
+              zmscr11(k) = - (2.0/3.0) * C4 / taum(k)
             end if
 
             if ( ixap2_pr2 > 0 ) then
@@ -1261,8 +1265,9 @@
         end subroutine diag_var_rhs
 
 !-----------------------------------------------------------------------
-        pure function term_ta_lhs( a1p1, a1, a1m1, wp3p1, wp3,
-     .                             wp2p1, wp2, wp2m1, dzm, beta, eps )
+        pure function term_ta_lhs( a1_tkp1, a1, a1_tk, wp3p1, wp3, 
+     .                             wp2_tkp1, wp2_tk, dzm, beta, eps, 
+     .                             tkp1, tk )
      .  result( lhs )
 
 !       Description:
@@ -1270,6 +1275,8 @@
 
 !       References:
 !-----------------------------------------------------------------------
+        use grid_class
+
         implicit none
 
         ! External
@@ -1283,17 +1290,20 @@
 
         ! Input variables
         real, intent(in) ::
-     .  a1p1, ! a1(k+1)                         [-]
-     .  a1,   ! a(k)                            [-]
-     .  a1m1, ! a1(k-1)                         [-]
-     .  wp3p1,! w'^3(k+1)                       [m^3/s^3]
-     .  wp3,  ! w'^3(k)                         [m^3/s^3]
-     .  wp2p1,! w'^2(k+1)                       [m^2/s^2]
-     .  wp2,  ! w'^2(k)                         [m^2/s^2]
-     .  wp2m1,! w'^2(k+1)                       [m^2/s^2]
-     .  dzm,  ! Inverse of the grid spacing     [m]
-     .  beta, ! Model parameter                 [-]
-     .  eps   ! Model parameter                 [-]
+     .  a1_tkp1,  ! a1 interpolated to t-lev(k+1)   [-]
+     .  a1,       ! a1(k)                           [-]
+     .  a1_tk,    ! a1 interpolated to t-lev(k)     [-]
+     .  wp3p1,    ! w'^3(k+1)                       [m^3/s^3]
+     .  wp3,      ! w'^3(k)                         [m^3/s^3]
+     .  wp2_tkp1, ! w'^2 interpolated to t-lev(k+1) [m^2/s^2]
+     .  wp2_tk,   ! w'^2 interpolated to t-lev(k)   [m^2/s^2]
+     .  dzm,      ! Inverse of the grid spacing     [m]
+     .  beta,     ! Model parameter                 [-]
+     .  eps       ! Model parameter                 [-]
+
+        integer, intent(in) ::
+     .  tkp1,  ! Thermodynamic level k+1 index.
+     .  tk     ! Thermodynamic level k index.
 
         ! Return Variable
         real, dimension(3) :: lhs
@@ -1304,29 +1314,36 @@
         ! stabilize xapxbp, a1 has been pulled outside the derivative.
 
         lhs(kp1diag) 
-!     .  = + (1.0/3.0) * beta * (1.0/2.0) * dzm *
-!     .      ( a1p1 + a1 ) * ( wp3p1 / max( wp2p1 + wp2, 2.0*eps ) )
-     .  = + a1 * (1.0/3.0) * beta * dzm *
-     .      ( wp3p1 / max( wp2p1 + wp2, 2.0*eps ) )
+!     .  = + (1.0/3.0) * beta * dzm
+!     .      * a1_tkp1 * ( wp3p1 / max( wp2_tkp1, eps ) ) 
+!     .      * gr%weights_zm2zt(tkp1,1)
+     .  = + (1.0/3.0) * beta * a1 * dzm
+     .      * ( wp3p1 / max( wp2_tkp1, eps ) ) 
+     .      * gr%weights_zm2zt(tkp1,1)
 
         lhs(kdiag) 
-!     .  = + (1.0/3.0) * beta * (1.0/2.0) * dzm *
-!     .      (  ( a1p1 + a1 ) * ( wp3p1 / max( wp2p1 + wp2, 2.0*eps ) )
-!     .        -( a1 + a1m1 ) * ( wp3 / max( wp2 + wp2m1, 2.0*eps ) ) 
-!     .      )
-     .  = + a1 * (1.0/3.0) * beta * dzm *
-     .      (   ( wp3p1 / max( wp2p1 + wp2, 2.0*eps ) )
-     .        - ( wp3 / max( wp2 + wp2m1, 2.0*eps ) ) 
-     .      )
+!     .  = + (1.0/3.0) * beta * dzm
+!     .      * (   a1_tkp1 * ( wp3p1 / max( wp2_tkp1, eps ) ) 
+!     .            * gr%weights_zm2zt(tkp1,2)
+!     .          - a1_tk * ( wp3 / max( wp2_tk, eps ) )
+!     .            * gr%weights_zm2zt(tk,1)
+!     .        )
+     .  = + (1.0/3.0) * beta * a1 * dzm
+     .      * (   ( wp3p1 / max( wp2_tkp1, eps ) ) 
+     .            * gr%weights_zm2zt(tkp1,2)
+     .          - ( wp3 / max( wp2_tk, eps ) )
+     .            * gr%weights_zm2zt(tk,1)
+     .        )
 
         lhs(km1diag) 
-!     .  = - (1.0/3.0) * beta * (1.0/2.0) * dzm *
-!     .      ( a1 + a1m1 ) * ( wp3 / max( wp2 + wp2m1, 2.0*eps) )
-     .  = - a1 * (1.0/3.0) * beta * dzm *
-     .      ( wp3 / max( wp2 + wp2m1, 2.0*eps) )
+!     .  = - (1.0/3.0) * beta * dzm
+!     .      * a1_tk * ( wp3 / max( wp2_tk, eps ) )
+!     .      * gr%weights_zm2zt(tk,2)
+     .  = - (1.0/3.0) * beta * a1 * dzm
+     .      * ( wp3 / max( wp2_tk, eps ) )
+     .      * gr%weights_zm2zt(tk,2)
 
         ! End of Brian's a1 change.  14 Feb 2008.
-
 
         return
         end function term_ta_lhs
@@ -1433,7 +1450,7 @@
         end function term_tp
 
 !-----------------------------------------------------------------------
-        pure function term_ma( wmm, dzm ) 
+        pure function term_ma( wmm, dzm, tkp1, tk ) 
      .  result( lhs )
 
 !       Description:
@@ -1441,22 +1458,31 @@
 
 !       References:
 !-----------------------------------------------------------------------
+        use grid_class
+
         implicit none
 
         ! Constant parameters
         integer, parameter ::
      .  kp1diag = 1,
-     .  km1diag = 2
+     .  kdiag   = 2,
+     .  km1diag = 3
 
         real, intent(in) ::
      .  wmm, ! w wind on m                      [m/s]
      .  dzm  ! Inverse of the grid spacing      [m]
 
-        ! Return Variable
-        real, dimension(2) :: lhs
+        integer, intent(in) ::
+     .  tkp1,  ! Thermodynamic level k+1 index.
+     .  tk     ! Thermodynamic level k index.
 
-        lhs(kp1diag) = + wmm * 0.5 * dzm
-        lhs(km1diag) = - wmm * 0.5 * dzm
+        ! Return Variable
+        real, dimension(3) :: lhs
+
+        lhs(kp1diag) = + wmm * dzm * gr%weights_zm2zt(tkp1,1)
+        lhs(kdiag)   = + wmm * dzm * (  gr%weights_zm2zt(tkp1,2) 
+     .                                - gr%weights_zm2zt(tk,1)  )
+        lhs(km1diag) = - wmm * dzm * gr%weights_zm2zt(tk,2)
 
         return
         end function term_ma
