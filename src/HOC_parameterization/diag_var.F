@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.34 2008-03-22 19:17:23 griffinb Exp $
+! $Id: diag_var.F,v 1.35 2008-03-22 23:54:51 griffinb Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -1012,10 +1012,9 @@
 
           rhs(k,1)
      .    = term_ta_rhs
-     .      ( a1(kp1), a1(k), a1(km1), wp3(kp1), wp3(k),
-     .        wp2(kp1), wp2(k), wp2(km1), 
-     .        wpxap(kp1), wpxap(k), wpxap(km1),
-     .        wpxap(kp1), wpxap(k), wpxap(km1),
+     .      ( zm2zt(a1,kp1), a1(k), zm2zt(a1,k), wp3(kp1), wp3(k),
+     .        zm2zt(wp2,kp1), zm2zt(wp2,k), zm2zt(wpxbp,kp1),
+     .        zm2zt(wpxbp,k), zm2zt(wpxap,kp1), zm2zt(wpxap,k), 
      .        gr%dzm(k), beta, eps )
      .      + (1.0 - C5) 
      .          * term_tp( xam(kp1), xam(k), xam(kp1), xam(k),
@@ -1035,12 +1034,10 @@
               zm%x(k,ixap2_ta) 
      .          = zm%x(k,ixap2_ta)
      .          + term_ta_rhs
-     .            ( a1(kp1), a1(k), a1(km1), wp3(kp1), wp3(k),
-     .              wp2(kp1), wp2(k), wp2(km1), 
-     .              wpxbp(kp1), wpxbp(k), wpxbp(km1),
-     .              wpxap(kp1), wpxap(k), wpxap(km1),
-     .              gr%dzm(k), beta, eps )
-
+     .           ( zm2zt(a1,kp1), a1(k), zm2zt(a1,k), wp3(kp1), wp3(k),
+     .             zm2zt(wp2,kp1), zm2zt(wp2,k), zm2zt(wpxbp,kp1),
+     .             zm2zt(wpxbp,k), zm2zt(wpxap,kp1), zm2zt(wpxap,k), 
+     .             gr%dzm(k), beta, eps )
             end if 
 
             if ( ixap2_dp1 > 0 ) then
@@ -1185,10 +1182,9 @@
 
           rhs(k,1)
      .    = term_ta_rhs
-     .      ( a1(kp1), a1(k), a1(km1), wp3(kp1), wp3(k),
-     .        wp2(kp1), wp2(k), wp2(km1), 
-     .        wpxbp(kp1), wpxbp(k), wpxbp(km1),
-     .        wpxap(kp1), wpxap(k), wpxap(km1),
+     .      ( zm2zt(a1,kp1), a1(k), zm2zt(a1,k), wp3(kp1), wp3(k),
+     .        zm2zt(wp2,kp1), zm2zt(wp2,k), zm2zt(wpxbp,kp1),
+     .        zm2zt(wpxbp,k), zm2zt(wpxap,kp1), zm2zt(wpxap,k), 
      .        gr%dzm(k), beta, eps )
      .      + term_tp( xam(kp1), xam(k), xbm(kp1), xbm(k), 
      .                 wpxbp(k), wpxap(k), gr%dzm(k) )
@@ -1228,12 +1224,10 @@
               zm%x(k,ixapxbp_ta) 
      .          = zm%x(k,ixapxbp_ta)
      .          + term_ta_rhs
-     .           ( a1(kp1), a1(k), a1(km1), wp3(kp1), wp3(k),
-     .             wp2(kp1), wp2(k), wp2(km1), 
-     .             wpxbp(kp1), wpxbp(k), wpxbp(km1),
-     .             wpxap(kp1), wpxap(k), wpxap(km1),
+     .           ( zm2zt(a1,kp1), a1(k), zm2zt(a1,k), wp3(kp1), wp3(k),
+     .             zm2zt(wp2,kp1), zm2zt(wp2,k), zm2zt(wpxbp,kp1),
+     .             zm2zt(wpxbp,k), zm2zt(wpxap,kp1), zm2zt(wpxap,k), 
      .             gr%dzm(k), beta, eps )
-
             end if 
             ! rtp2/thlp2 case (1 term)
             if ( ixapxbp_tp > 0 ) then
@@ -1349,10 +1343,9 @@
         end function term_ta_lhs
 
 !-----------------------------------------------------------------------
-        pure function term_ta_rhs( a1p1, a1, a1m1, wp3p1, wp3,
-     .                             wp2p1, wp2, wp2m1,
-     .                             wpxbpp1, wpxbp, wpxbpm1, 
-     .                             wpxapp1, wpxap, wpxapm1,
+        pure function term_ta_rhs( a1_tkp1, a1, a1_tk, wp3p1, wp3, 
+     .                             wp2_tkp1, wp2_tk, wpxbp_tkp1, 
+     .                             wpxbp_tk, wpxap_tkp1, wpxap_tk, 
      .                             dzm, beta, eps )
      .  result( rhs )
 
@@ -1368,23 +1361,20 @@
 
         ! Input variables
         real, intent(in) ::
-     .  a1p1,   ! a1(k+1)                       [-]
-     .  a1,     ! a(k)                          [-]
-     .  a1m1,   ! a1(k-1)                       [-]
-     .  wp3p1,  ! w'^3(k+1)                     [m^3/s^3]
-     .  wp3,    ! w'^3(k)                       [m^3/s^3]
-     .  wp2p1,  ! w'^2(k+1)                     [m^2/s^2]
-     .  wp2,    ! w'^2(k)                       [m^2/s^2]
-     .  wp2m1,  ! w'^2(k+1)                     [m^2/s^2]
-     .  wpxbpp1,! w'x'(k+1)                     [m/s units]
-     .  wpxbp,  ! w'x'(k)                       [m/s units]
-     .  wpxbpm1,! w'x'(k-1)                     [m/s units]
-     .  wpxapp1,! w'x'(k+1)                     [m/s units]
-     .  wpxap,  ! w'x'(k)                       [m/s units]
-     .  wpxapm1,! w'x'(k-1)                     [m/s units]
-     .  dzm,    ! Inverse of the grid spacing   [m]
-     .  beta,   ! Model parameter               [-]
-     .  eps     ! Model parameter               [-]
+     .  a1_tkp1,    ! a1 interpolated to t-lev(k+1)    [-]
+     .  a1,         ! a(k)                             [-]
+     .  a1_tk,      ! a1 interpolated to t-lev(k)      [-]
+     .  wp3p1,      ! w'^3(k+1)                        [m^3/s^3]
+     .  wp3,        ! w'^3(k)                          [m^3/s^3]
+     .  wp2_tkp1,   ! w'^2 interpolated to t-lev(k+1)  [m^2/s^2]
+     .  wp2_tk,     ! w'^2 interpolated to t-lev(k)    [m^2/s^2]
+     .  wpxbp_tkp1, ! w'xb' interpolated to t-lev(k+1) [m/s units]
+     .  wpxbp_tk,   ! w'xb' interpolated to t-lev(k)   [m/s units]
+     .  wpxap_tkp1, ! w'xa' interpolated to t-lev(k+1) [m/s units]
+     .  wpxap_tk,   ! w'xa' interpolated to t-lev(k)   [m/s units]
+     .  dzm,        ! Inverse of the grid spacing      [m]
+     .  beta,       ! Model parameter                  [-]
+     .  eps         ! Model parameter                  [-]
 
         ! Return Variable
         real :: rhs
@@ -1396,20 +1386,18 @@
         ! the derivative.
 
         rhs
-!     .  = - ( 1.0 - (1.0/3.0) * beta ) * (1.0/4.0) * dzm
-!     .      * (  ( a1p1 + a1 )**2 * ( wpxapp1 + wpxap ) 
-!     .            * ( wpxbpp1 + wpxbp ) * wp3p1 
-!     .              / ( max( wp2p1 + wp2, 2.0*eps ) )**2
-!     .          - ( a1 + a1m1 )**2 * ( wpxap + wpxapm1 ) 
-!     .            * ( wpxbp + wpxbpm1 ) * wp3
-!     .              / ( max( wp2 + wp2m1, 2.0*eps ) )**2
-!     .         )
-     .  = - (a1**2) * ( 1.0 - (1.0/3.0) * beta ) * dzm
-     .      * (   ( wpxapp1 + wpxap ) * ( wpxbpp1 + wpxbp ) 
-     .             * wp3p1 / ( max( wp2p1 + wp2, 2.0*eps ) )**2
-     .          - ( wpxap + wpxapm1 ) * ( wpxbp + wpxbpm1 ) 
-     .             * wp3 / ( max( wp2 + wp2m1, 2.0*eps ) )**2
-     .         )
+!     .  = - ( 1.0 - (1.0/3.0) * beta ) * dzm
+!     .      * (   a1_tkp1**2 * wpxap_tkp1 * wpxbp_tkp1
+!     .            * ( wp3p1 / max( wp2_tkp1, eps )**2 )
+!     .          - a1_tk**2 * wpxap_tk * wpxbp_tk 
+!     .            * ( wp3 / max( wp2_tk, eps )**2 )
+!     .        )
+     .  = - ( 1.0 - (1.0/3.0) * beta ) * a1**2 * dzm
+     .      * (   wpxap_tkp1 * wpxbp_tkp1
+     .            * ( wp3p1 / max( wp2_tkp1, eps )**2 )
+     .          - wpxap_tk * wpxbp_tk 
+     .            * ( wp3 / max( wp2_tk, eps )**2 )
+     .        )
 
         ! End of Brian's a1 change.  14 Feb 2008.
 
