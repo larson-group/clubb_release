@@ -1,0 +1,681 @@
+#define SCLR_THETA 1
+#define SCLR_RT 2
+!----------------------------------------------------------------------
+! $Id: nov11.F.old,v 1.1 2008-03-24 21:37:26 ajsmith4 Exp $
+        module nov11
+
+!       Description:
+!       Contains subroutines for the Nov. 11 case.
+
+!       References:
+!----------------------------------------------------------------------
+
+        public :: nov11_altocu_tndcy
+
+        ! Note: bottom point not at surface, so there is no sfc
+        ! subroutine
+
+        logical, private :: tdelay_lcoamps_micro
+
+!$omp   threadprivate(tdelay_lcoamps_micro)
+
+        private
+
+        contains
+
+!-----------------------------------------------------------------------
+        subroutine nov11_altocu_tndcy
+     .             ( time, time_initial, dt, rlat, rlon,
+     .               thlm, rcm, p, exner, rhot, rtm, wmt,
+     .               wmm, thlm_forcing, rtm_forcing,
+! Michael Falk, 30 Jul 2007
+!     .               Frad, radht, Ncnm, sclrm_forcing )
+     .               Frad, radht, Ncnm, rtm_mc, thlm_mc, sclrm_forcing )
+! eMFc
+
+!       Description:
+!       Compute subsidence, radiation, and large-scale tendencies.
+
+!       References:
+!----------------------------------------------------------------------
+
+        use grid_class
+        use constants
+        use model_flags
+        use icedfs
+#ifdef STATS
+        use stats_hoc
+#endif /*STATS*/
+
+        implicit none
+
+        ! External
+!       double precision, external :: cos_solar_zen
+
+        ! Local constants
+
+        integer, parameter :: 
+     .  nparam = 2 ! Number of Fs0 values in the SW radiation lists
+
+        ! LW Radiative constants
+        real, parameter :: 
+     .  F0   = 104.0, ! Coefficient for cloud top heating (see Stevens) [W/m^2]
+     .  F1   = 62.0,  ! Coefficient for cloud base heating (see Stevens)[W/m^2]
+     .  kap  = 94.2   ! A "constant" according to Duynkerke eqn. 5, where his value is 130 m^2/kg [m^2/kg]
+
+        ! SW Radiative constants
+        real, parameter :: 
+     .  radius = 1.0e-5,! Effective droplet radius                      [m]
+     .  A      = 0.1,   ! Albedo -- sea surface, according to Lenderink [-]
+     .  gc     = 0.86,  ! Asymmetry parameter, "g" in Duynkerke.        [-]
+     .  omega  = 0.9965 ! Single-scattering albedo                      [-]
+
+
+        ! Toggles for activating/deactivating forcings
+        logical, parameter :: 
+     .  subs_on   = .true.,
+     .  lw_on     = .true.
+
+        ! Toggle for centered/forward differencing (in interpolations)
+        ! To use centered differencing, set the toggle to .true.
+        ! To use forward differencing, set the toggle to  .false.
+        logical, parameter ::
+     .  center = .true.
+
+        ! Input variables
+        real, intent(in) ::
+     .  time,           ! Current time          [s]
+     .  time_initial,   ! Initial time          [s]
+     .  dt,             ! Timestep              [s]
+     .  rlat,           ! Latitude              [degrees_N]
+     .  rlon            ! Longitude             [degrees_E]
+
+        real, intent(in), dimension(gr%nnzp) ::
+     .  thlm,   ! Liquid potential temperature  [K]
+     .  rcm,    ! Cloud water mixing ratio      [kg/kg]
+     .  p,      ! Pressure                      [Pa]
+     .  exner,  ! Exner function                [-]
+     .  rhot    ! Density                       [kg/m^3]
+
+        ! Input/Output variables
+        real, intent(inout), dimension(gr%nnzp) ::
+     .  rtm     ! Total water mixing ratio      [kg/kg]
+
+        ! Output variables
+        real, intent(out), dimension(gr%nnzp) ::
+     .  wmt,            ! Mean vertical wind on the thermo. grid  [m/s]
+     .  wmm,            ! Mean vertical wind on the moment. grid  [m/s]
+     .  thlm_forcing,   ! Theta_l forcing                         [K/s]
+     .  rtm_forcing,    ! Total water forcing                     [kg/kg/s]
+! Michael Falk added rtm_mc and thlm_mc here for icedfs scheme stats.  30 Jul 2007
+     .  rtm_mc,         ! Microphyiscal rtm tendency              [kg/kg/s]
+     .  thlm_mc,        ! Microphysical theta_l tendency          [K/s]
+! eMFc
+     .  Frad,           ! Radiative flux                          [W/m^2]
+     .  radht,          ! Radiative heating                       [K/s]
+     .  Ncnm            ! Cloud nuclei number concentration       [num/m^3]
+
+        ! Output variables (optional)
+        real, intent(out), dimension(gr%nnzp,sclr_dim), optional ::
+     .  sclrm_forcing   ! Passive scalar forcing                  [units/s]
+
+
+        ! Local variables
+
+        ! Local ice diffusional array
+        real, dimension(gr%nnzp) ::
+     .  dqc_dt_icedfs ! Change in liquid water due to ice diffus. growth [kg/kg/s]
+
+        ! Local radiation arrays
+        real, dimension(gr%nnzp) :: 
+     .  Frad_LW, ! Long wave radiative flux     [W/m^2]
+     .  Frad_SW, ! Short wave radiative flux    [W/m^2]
+     .  radht_LW,! Long wave radiative heating  [K/s]
+     .  radht_SW ! Short wave radiative heating [K/s]
+
+        real, dimension(gr%nnzp) :: 
+     .  LWP,      ! Liquid water path                           [kg/m^2]
+     .  thm_rad,  ! Flipped array of potential temp.            [K]
+     .  rcm_rad,  ! Flipped array of liq. water mixing ratio    [kg/kg]
+     .  rhot_rad, ! Flipped array of air density                [kg/m^3]
+     .  dsigm     ! Flipped array of grid spacing               [m]
+
+        real, dimension(gr%nnzp) :: 
+     .  frad_out,   ! Flipped array of radiaive flux            [W/m^2]
+     .  frad_lw_out,! Flipped array of LW radiative flux        [W/m^2]
+     .  frad_sw_out ! Flipped array of SW radiative flux        [W/m^2] 
+
+        real, dimension(gr%nnzp) :: 
+     .  radhtk,      ! Flipped array of radiative heating       [K/s]
+     .  radht_lw_out,! Flipped array of LW radiative heating    [K/s]
+     .  radht_sw_out ! Flipped array of SW radiative heating    [K/s]
+
+        ! Working arrays for subsidence interpolation
+        real, dimension(7) :: 
+     .  zsubs,! Heights at which wmt data is supplied (used for subsidence interpolation) [m]
+     .  wt1   ! ONLY wt1 IS NEEDED FOR NOV.11 CASE
+
+        ! Subsidence constant and variables (for Nov.11 case only)
+        real ::
+     .  wmax, ! Defines value of maximum subsidence in profile  [cm/s]
+     .  zi,   ! Defines approx. height of inversion within cloud (subsidence is equal to wmax at this height) [m]
+     .  dazi, ! Defines height above inversion (above this height subsidence linearly tapers off to zero)     [m]
+     .  dbzi, ! Defines height above inversion (below this height, subsidence linearly tapers off to zero)    [m]
+     .  dbc,  ! Defines height below cloud (at / below this height, we have NO subsidence) [m]
+     .  dac   ! Defines height above cloud (at / above this height, we have NO subsidence) [m]
+
+        ! Working arrays for SW radiation interpolation
+
+        real, dimension(nparam) :: 
+     .  xilist,! Values of cosine of solar zenith angle corresponding 
+     .         !   to the values in Fslist
+     .  Fslist ! Values of Fs0 corresponding to the values in xilist.
+
+
+        ! Additional SW radiative variables
+
+        real ::
+     .  xi_abs,! Cosine of the solar zenith angle  [-]
+     .  Fs0    ! The incident incoming SW insolation at cloud top in the
+               !   direction of the incoming beam (not the vertical) [W/m^2]
+
+        logical :: sw_on
+ 
+        ! Variable used for working within vertical arrays
+
+        integer :: k
+
+!-----------------------------------------------------------------------
+! FOR NOV.11 CASE
+! ---------------
+! The Nov.11 case uses a constant value for the cosine of the solar
+! zenith angle.  Because the simulation is only 4 hours long, and it
+! starts at 18Z (11am local time), we have rather constant sunlight
+! through the entire simulation period.  As a result, we will use a
+! constant value of xi_abs = 0.4329.  For now, the following
+! calculation of xi_abs will be commented out, then followed by the
+! manual declaration of xi_abs as a constant.  We may later decide to
+! use the code later to calculate a more accurate xi_abs.
+!
+! Comment by Adam Smith (ajsmith4) on 26 June 2006
+!-----------------------------------------------------------------------
+
+!      Replaced the calculation based on time since solar noon 
+!       etc., with a generalized function based on time and lat/lon.
+!       -dschanen 5 Jan 2007
+!      xi_abs = cos_solar_zen( 11, 11, 1999, time, rlat, rlon )
+
+       xi_abs = 0.4329
+
+!-----------------------------------------------------------------------
+! Modification by Adam Smith 26 June 2006
+! It is difficult to remember to set xi_abs = 0 when we want to shut off
+! solar radiation.  If sw_on = .FALSE. above, we will automatically set
+! xi_abs to 0 to avoid confusion or errors.
+!-----------------------------------------------------------------------
+
+      if (.not. sw_on) then
+        xi_abs = 0.0
+      end if
+
+!-----------------------------------
+! End of ajsmith4's Modification 
+!-----------------------------------
+
+      if (xi_abs == 0.0 ) then
+        sw_on = .false.
+      else
+        sw_on = .true.
+      end if
+
+
+
+!-----------------------------------------------------------------------
+! Fs0 Interpolation Parameters-- these also from Kurt Kotenberg's
+! BUGSrad output.  Fs0 changes somewhat over the range of solar zenith
+! angles, and we obtained these values by solving
+! Fs0 = F_vertical / xi_abs . 
+!
+! The linear_interpolation function returns Fs0.
+!
+! FOR NOV.11 CASE
+! ---------------
+! As explained above, the solar declination angle is presumed to be
+! constant for Nov.11 cases.  Because of this, we also use a constant
+! value of Fs0 for solar radiation.
+!
+! Because the Jun.25 case uses a linear_interpolation to calculate
+! Fs0, we will duplicate that scheme here to keep all of our group's
+! code consistent.  This means that Fslist will be a 2D array with the
+! same Fs0 at all heights.  Therefore, Fs0 will be constant over the
+! entire model run.
+!
+! Comment by Adam Smith on 26 June 2006
+!-----------------------------------------------------------------------
+
+      xilist(1) = 0.
+      xilist(2) = 1.
+
+      Fslist(1) = 1212.75
+      Fslist(2) = 1212.75
+
+      call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
+
+
+!-----------------------------------------------------------------------
+!
+! Subsidence Parameters
+!
+! FOR NOV.11 CASE
+! ---------------
+! The Nov.11 case uses a constant subsidence profile, initiated after
+! 1 hour of model runtime.  This initial hour is used to "spinup" the
+! simulation and produce a realistic cloud.
+!
+! In jun25.F (in mjfalk's /coamps/mod/consolidated5 directory on
+! condella), subsidence varies over time.  As a result, he uses a
+! number of arrays defining subsidence profiles for different times.
+! Since Nov.11's subsidence does not vary with time, we only need one
+! of these arrays, and the rest have been removed.  The array listing
+! different times for subsidence has been removed as well.
+! 
+! Comment by Adam Smith on 26 June 2006
+!
+!-----------------------------------------------------------------------
+
+        !----------------------
+        ! Subsidence Parameters
+        !----------------------
+        wmax =  -0.03
+          zi = 2500.0 + gr%zm(1)
+        dazi = 1500.0
+        dbzi = 2000.0
+         dbc =  300.0
+         dac =  200.0
+
+        zsubs(1) = 0. + gr%zm(1)
+        zsubs(2) = zi-dbzi-dbc
+        zsubs(3) = zi-dbzi
+        zsubs(4) = zi
+        zsubs(5) = zi+dazi
+        zsubs(6) = zi+dazi+dac
+        zsubs(7) = 4500. + gr%zm(1)
+
+          wt1(1) = 0.
+          wt1(2) = 0.
+          wt1(3) = wmax
+          wt1(4) = wmax
+          wt1(5) = wmax
+          wt1(6) = 0.
+          wt1(7) = 0.
+
+!-----------------------------------------------------------------------       
+! SPECIAL NOV.11 CONDITION FOR TOTAL WATER ABOVE CLOUD
+! One hour after the initial time, the total water above cloud
+! is adjusted to be 0.89 of what it previously was.
+!
+! The conditional statement here is set so that if the timestep
+! is such that there is no timestep at exactly 3600.0 seconds,
+! then the operation still happnens at the first timestep and
+! only the first timestep after 3600.0 seconds.
+!-----------------------------------------------------------------------       
+        if ( time >= time_initial + 3600.0  .and.
+     .       time <  time_initial + 3600.0 + dt ) then
+
+          do k = 1, gr%nnzp, 1
+            if ( gr%zt(k) > ( 1555.0 + gr%zm(1) ) ) then
+               rtm(k) = 0.89 * rtm(k)
+            end if
+          end do
+
+        end if 
+
+
+!-----------------------------------------------------------------------
+! SPECIAL METHOD USED TO CALCULATE RADIATION
+! Grid descriptions by Adam Smith, 27 June 2006
+!
+! In order to verify our HOC simulations are working properly, we
+! have first developed a series of 3D simulations using the COAMPS-LES
+! model.  This large-eddy simulation (LES) simulation uses specific
+! methods to calculate radiation, subsidence, and other microphysical
+! processes.  To make the two models simluate clouds as closely as
+! possible, we use the same radiation scheme in both models.
+! 
+! In COAMPS-LES, we use a separate subroutine, rad_lwsw, to implement
+! all radiation code.  This allows the subroutine to be duplicated
+! exactly in many different models.  However, the subroutine uses the
+! COAMPS vertical grid.  Therefore, for HOC to implement this code
+! correctly, we must modify some of our variable profiles before
+! calling the radiation subroutine.
+!
+! The following diagram describes the differences in model grids:
+!
+!       COAMPS-LES                                    HOC
+!
+!  k= 1   (m) ----------    <MODEL TOP>    ---------- k=kk+1      (m)
+!
+!  k= 1   (t) ----------                   ---------- k=kk+1      (t)
+!
+!  k= 2   (m) ----------                   ---------- k=kk        (m)
+!
+!  k= 2   (t) ----------                   ---------- k=kk        (t)
+!
+!            .                  .                     .
+!            .                  .                     .
+!            .                  .                     .
+!
+!  k=kk-1 (m) ----------  m = mass levels  ---------- k=3         (m)
+!
+!  k=kk-1 (t) ----------  t = thermo       ---------- k=3         (t)
+!                                  levels
+!  k=kk   (m) ----------                   ---------- k=2         (m)
+!
+!  k=kk   (t) ----------  kk = number of   ---------- k=2         (t)
+!                              vertical
+!  k=kk+1 (m) ----------       heights     ---------- k=1         (m)
+!
+! //////////////////////// MODEL SURFACE /////////////////////////////
+!                                          ---------- k=1         (t)
+!
+!
+! The major difference in the grids is that HOC uses an additional
+! thermodynamic level below the model "surface".  This means that all
+! HOC thermodynamic heights are shifted down one vertical level, and
+! HOC also has one fewer momentum level than COAMPS.  Therefore, we
+! use one additional vertical level in HOC, to make sure that the
+! vertical domain matches in both models.
+!
+! Also, the COAMPS grid indices are numbered from the top of the model
+! downward, while the HOC grid indices are numbered from the bottom
+! up.  Therefore, since we are using a COAMPS radiation scheme, we
+! flip moisture and temperature profiles that are passed into the
+! rad_lwsw subroutine.  The rad scheme will produce results in using
+! the COAMPS grid scheme, so all radiation output will be flipped
+! back to the HOC grid before being applied to the model.
+!
+! Finally, since the COAMPS scheme does not have a gridpoint below
+! model surface, we add that point to all radiative output files once
+! they are converted back to HOC setup.  This allows all averages and
+! calculations to be done correctly.
+!
+!
+! Computation of radiative fluxes on staggered grid
+! Comments by Michael Falk, 16 February 2005.
+!
+! Frad (and its components Frad_LW and Frad_SW) should be computed on
+! w points, not on mass points, which is apparent from its formulation
+! and from its location in stats_sw instead of stats_sm.  The grid
+! looks like this:
+! 
+!
+! -----Frad----------------------------------    k = 1  (w level)
+!     /    \            |-dwm
+! -LWP------radht----------------------------    k = 1  (mass level)
+!     \    /            |
+! -----Frad----------------------------------    k = 2  (w level)
+!     /    \
+! -LWP------radht----------------------------    k = 2  (mass level)
+!     \    /
+! -----Frad----------------------------------    k = 3  (w level)
+!     /    \
+! -LWP------radht----------------------------    k = 3  (mass level)
+!
+! If you consider Frad to take place on mass levels, then computing
+! LWP is a forward difference and is only first-order accurate, while
+! if Frad computed in between LWP levels, it is a centered difference
+! which is second-order accurate.
+!
+! The coding implementation requires that Frad depend on LWP(k) and
+! LWP(k-1) since the w level for a given k is at a higher altitude
+! than the mass level.  radht, back on mass levels, depends on Frad(k)
+! and Frad(k+1).
+!
+! Additionally, these computations assume that the distance between
+! mass levels (dsigma) is constant, and that the w levels (spaced by
+! dsigmw) always fall exactly halfway in between the mass levels.  If
+! this is not the case, consider dwm to be the distance between a w
+! level and the mass level below it, and dmw to be the distance
+! between a mass level and the w level below it.  Then, the
+! formulation for Frad_LW, for instance, would use a weighted average:
+!
+! (dwm/(dwm+dmw)) * lwp(k) + (dmw/(dwm+dmw)) * lwp(k-1)
+! which, for dwm always == dmw, reduces to
+! (1/2) * (lwp(k)) + (1/2) * (lwp(k-1))
+! which is identical to the current formulation.
+! ((lwp(k)+lwp(k-1))/2)
+!
+!
+!-----------------------------------------------------------------------
+
+        !---------------------------------------------------------------
+        ! We only implement this section if we choose not to use the
+        ! BUGSRAD radiation scheme
+        !---------------------------------------------------------------
+        if ( .not. lbugsrad ) then
+
+        !---------------------------------------------------------------
+        ! This code transforms these profiles from HOC grid to COAMPS
+        ! grid.  The COAMPS-grid profiles are then passed to rad_lwsw
+        ! for implementation.
+        !---------------------------------------------------------------
+          do k = 1, gr%nnzp
+            thm_rad(k) = thlm(gr%nnzp-k+1) 
+     .                 + Lv/(Cp*exner(k))*rcm(gr%nnzp-k+1)
+            rcm_rad(k) = rcm(gr%nnzp-k+1)
+            rhot_rad(k) = rhot(gr%nnzp-k+1)
+            dsigm(k) = 1.0 / gr%dzt(gr%nnzp-k+1)
+          end do
+
+        !---------------------------------------------------------------
+        ! Calling the radiation subroutine, which uses the COAMPS
+        ! grid method.  All input and output profiles use the COAMPS
+        ! grid setup.
+        !---------------------------------------------------------------
+          call rad_lwsw( thm_rad, rcm_rad, rhot_rad, dsigm,
+     .                   Frad_out, Frad_LW_out, Frad_SW_out,
+     .                   radhtk, radht_LW_out, radht_SW_out,
+     .                   gr%nnzp-1, center,
+     .                   xi_abs, F0, F1, kap, radius, A, gc, Fs0, omega,
+     .                   sw_on, lw_on )
+
+        !---------------------------------------------------------------
+        ! This code transforms the radiation results back into HOC
+        ! grid setup.  These Frad and radht arrays are actually
+        ! applied to the HOC model.
+        !
+        ! The radht results are initially calculated in terms of
+        ! standard temperature (T).  However, HOC calculates
+        ! temperature in terms of potential temperature (theta).
+        ! Therefore, we multiply all radht results by (1.0/exner)
+        ! to convert from T to theta.
+        !---------------------------------------------------------------
+          do k = 1, gr%nnzp-1
+            Frad(k)     = Frad_out(gr%nnzp-k+1)
+            Frad_LW(k)  = Frad_LW_out(gr%nnzp-k+1)
+            Frad_SW(k)  = Frad_SW_out(gr%nnzp-k+1)
+
+            radht(k)    = ( 1.0/exner(k) ) * radhtk(gr%nnzp-k+1)
+            radht_LW(k) = ( 1.0/exner(k) ) * radht_LW_out(gr%nnzp-k+1)
+            radht_SW(k) = ( 1.0/exner(k) ) * radht_SW_out(gr%nnzp-k+1)
+          end do
+
+          Frad(1) = Frad(2)
+          Frad_LW(1) = Frad_LW(2)
+          Frad_SW(1) = Frad_SW(2)
+
+          radht(1) = radht(2)
+          radht_LW(1) = radht_LW(2)
+          radht_SW(1) = radht_SW(2)
+
+        end if ! ~ lbugsrad
+
+        if ( time == time_initial ) then
+
+          if ( lcoamps_micro ) then
+            ! Turn off microphysics for now, re-enable at
+            ! time = 3600.
+            lcoamps_micro = .false.
+
+            tdelay_lcoamps_micro = .true.
+          else
+            tdelay_lcoamps_micro = .false.
+          end if
+
+        end if
+
+        if ( time >= time_initial + 3600.0 .and. licedfs ) then
+        !---------------------------------------------------------------
+        ! Compute the loss of total water due to diffusional
+        ! growth of ice.  This is defined on thermodynamic levels.
+        !---------------------------------------------------------------
+
+           call altocu_icedf( dt, thlm, rcm, p, exner, rhot,
+     .                        dqc_dt_icedfs )
+        
+        else if ( time == ( time_initial + 3600.0 ) 
+     .            .and. tdelay_lcoamps_micro ) then
+
+        !---------------------------------------------------------------
+        ! Start COAMPS micro after predefined time delay
+        !---------------------------------------------------------------
+
+          lcoamps_micro = .true.
+
+          ! Cloud nuclei
+          ! Note: As near as I can tell we do not need this to be
+          ! anything but zero for Nov11, since it is too cold for rrm.
+          ! -dschanen 1 May 2007
+!         Ncnm(1:gr%nnzp) 
+!    .    = 30.0 * (1.0 + exp(-gr%zt(1:gr%nnzp)/2000.0)) * 1.e6
+
+          ! Simplified ice off
+          dqc_dt_icedfs(:) = 0.0
+
+        else
+
+          do k = 1, gr%nnzp, 1
+            dqc_dt_icedfs(k) = 0.0
+          end do
+
+        end if
+
+
+!---------------------------------------------------------------------
+!
+! Using linear interpolation scheme to interpolate subsidence
+!
+! FOR NOV.11 CASE
+! ---------------
+! As mentioned above, we want to implement a constant subsidence
+! profile throughout the entire simulation (except for the 1 hour 
+! initial "spinup" period).  Because we do not have variations in
+! subsidence over time, all tsubs sections (used in Jun.25 case)
+! have been removed below.  Only one loop remains below, which will
+! implement the interpolation subroutine, then return the w_ls
+! value.  Unlike jun25, we use this w_ls value directly instead of
+! using interpolation to calculate a value between time steps.
+!
+! DIAGRAM OF NOV. 11 SUBSIDENCE PROFILE
+! -------------------------------------
+!       |      <- No subsidence in this region
+!       |
+!       ------------ Height = (zi + dazi + dac)
+!        \
+!         \    <- Subsidence tapers linearly in this region
+!          \
+!           -------- Height = (zi + dazi)
+!           |
+!           |  <- Subsidence equals wmax in this region
+!           |
+!           -------- Height = zi
+!           |
+!           -------- Height = (zi - dbzi)
+!          /
+!         /    <- Subsidence tapers linearly in this region
+!        /
+!       ------------ Height = (zi - dbzi - dbc)
+!       |
+!       |      <- No subsidence in this region
+!
+!
+! Comment by Adam Smith on 26 June 2006
+!-----------------------------------------------------------------------
+
+        do k=2,gr%nnzp
+          if ( (time >= time_initial + 3600.0) .and. subs_on ) then
+            call linear_interpolation( 7, zsubs, wt1, gr%zt(k), wmt(k) )
+          else
+!           If time is not yet one hour, we have no subsidence
+            wmt(k) = 0.0
+          end if
+
+          wmt(1) = wmt(2)
+        end do
+
+        wmm = zt2zm(wmt)
+
+        ! Enter the final theta-l and rtm tendencies
+
+        do k = 1, gr%nnzp, 1
+          if ( .not. lbugsrad ) then
+! Michael Falk, 30 Jul 2007
+!            thlm_forcing(k) = radht(k)
+!     .                   - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
+            thlm_forcing(k) = radht(k)
+            thlm_mc(k) = - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
+          else
+!            thlm_forcing(k) = - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
+            thlm_forcing(k) = 0.
+            thlm_mc(k) = - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
+! eMFc
+          end if
+
+! Michael Falk, 30 Jul 2007
+!          if ( licedfs ) rtm_forcing(k) = dqc_dt_icedfs(k)
+          if ( licedfs ) then
+            rtm_forcing(k) = 0.
+            rtm_mc(k) = dqc_dt_icedfs(k)
+          end if
+! eMFc
+
+! eMFc
+
+        end do
+
+        ! Set scalars according to rt and thetal for testing purposes
+        if ( present( sclrm_forcing ) ) then
+          sclrm_forcing(:,SCLR_THETA) = thlm_forcing(:)
+          sclrm_forcing(:,SCLR_RT)    = rtm_forcing(:)
+        end if
+
+#ifdef STATS
+        ! Save LW and SW components of radiative heating and
+        ! radiative flux based on simplified radiation.
+        if ( .not.lbugsrad .and. lstats_samp ) then
+
+          if ( iradht_LW > 0 ) then
+            zt%x(:,iradht_LW) = zt%x(:,iradht_LW) + radht_LW
+            zt%n(:,iradht_LW) = zt%n(:,iradht_LW) + 1
+          end if
+          if ( iradht_SW > 0 ) then
+            zt%x(:,iradht_SW) = zt%x(:,iradht_SW) + radht_SW
+            zt%n(:,iradht_SW) = zt%n(:,iradht_SW) + 1
+          end if
+
+          if ( iFrad_SW > 0 ) then
+            zm%x(:,iFrad_SW) = zm%x(:,iFrad_SW) + Frad_SW
+            zm%n(:,iFrad_SW) = zm%n(:,iFrad_SW) + 1
+          end if
+          if ( iFrad_LW > 0 ) then
+            zm%x(:,iFrad_LW) = zm%x(:,iFrad_LW) + Frad_LW
+            zm%n(:,iFrad_LW) = zm%n(:,iFrad_LW) + 1
+          end if
+
+        end if
+#endif /*STATS*/
+
+        return
+        end subroutine nov11_altocu_tndcy
+
+        end module nov11
