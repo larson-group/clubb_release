@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: nov11.F,v 1.7 2008-03-05 17:22:52 faschinj Exp $
+! $Id: nov11.F,v 1.8 2008-03-24 21:33:44 ajsmith4 Exp $
         module nov11
 
 !       Description:
@@ -80,7 +80,7 @@
         ! To use centered differencing, set the toggle to .true.
         ! To use forward differencing, set the toggle to  .false.
         logical, parameter ::
-     .  center = .true.
+     .  center = .false.
 
         ! Input variables
         real, intent(in) ::
@@ -287,9 +287,9 @@
         ! Subsidence Parameters
         !----------------------
         wmax =  -0.03
-          zi = 1400.0 + gr%zm(1)
-        dazi =  400.0
-        dbzi = 1000.0
+          zi = 2500.0 + gr%zm(1)
+        dazi = 1500.0
+        dbzi = 2000.0
          dbc =  300.0
          dac =  200.0
 
@@ -299,7 +299,7 @@
         zsubs(4) = zi
         zsubs(5) = zi+dazi
         zsubs(6) = zi+dazi+dac
-        zsubs(7) = 2400. + gr%zm(1)
+        zsubs(7) = 4500. + gr%zm(1)
 
           wt1(1) = 0.
           wt1(2) = 0.
@@ -323,7 +323,7 @@
      .       time <  time_initial + 3600.0 + dt ) then
 
           do k = 1, gr%nnzp, 1
-            if ( gr%zt(k) > ( 1555.0 + gr%zm(1) ) ) then
+            if ( gr%zt(k) > ( 2587.5 + gr%zm(1) ) ) then
                rtm(k) = 0.89 * rtm(k)
             end if
           end do
@@ -548,6 +548,8 @@
           ! -dschanen 1 May 2007
 !         Ncnm(1:gr%nnzp) 
 !    .    = 30.0 * (1.0 + exp(-gr%zt(1:gr%nnzp)/2000.0)) * 1.e6
+
+          Ncnm(1:gr%nnzp) = 0.0
 
           ! Simplified ice off
           dqc_dt_icedfs(:) = 0.0
