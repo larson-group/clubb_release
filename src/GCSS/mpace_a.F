@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_a.F,v 1.8 2008-03-05 17:22:52 faschinj Exp $
+! $Id: mpace_a.F,v 1.9 2008-03-24 15:59:49 dschanen Exp $
         module mpace_a
 
 !       Description:
@@ -318,10 +318,14 @@
            wmt(i) = 0.
 ! End of Michael Falk's obliteration of omega.
         end do
+
+        ! Boundary condition
+        wmt(1) = 0.0        ! Below surface
+
+        ! Interpolation
         wmm = zt2zm( wmt )
 
-        ! Boundary conditions.
-        wmt(1) = 0.0        ! Below surface
+        ! Boundary condition
         wmm(1) = 0.0        ! At surface
         wmm(gr%nnzp) = 0.0  ! Model top
         

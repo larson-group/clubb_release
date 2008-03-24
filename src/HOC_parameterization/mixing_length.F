@@ -1,4 +1,4 @@
-! $Id: mixing_length.F,v 1.5 2008-03-20 18:27:02 griffinb Exp $
+! $Id: mixing_length.F,v 1.6 2008-03-24 15:59:49 dschanen Exp $
 !-----------------------------------------------------------------------------
         module mixing_length
         
@@ -64,7 +64,7 @@
         real, dimension(gr%nnzp), intent(out) :: 
      .  Lscale  ! Mixing length                 [m]
         
-        logical, intent(out) ::
+        logical, intent(inout) ::
      .  isValid
 
         ! Local Variables
