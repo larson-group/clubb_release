@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.20 2008-03-19 15:07:19 faschinj Exp $
+# $Id: make.deps,v 1.21 2008-03-24 22:03:35 ajsmith4 Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -132,6 +132,8 @@ mpace_a.o     : constants.o model_flags.o grid.o icedfs.o stats_hoc.o mpace_a.F 
 mpace_b.o     : constants.o model_flags.o grid.o icedfs.o stats_hoc.o mpace_b.F
 nov11.o     : constants.o model_flags.o grid.o icedfs.o stats_hoc.o nov11.F
 jun25.o     : constants.o model_flags.o grid.o icedfs.o stats_hoc.o jun25.F
+clex9_nov02.o : constants.o model_flags.o grid.o icedfs.o stats_hoc.o clex9_nov02.F
+clex9_oct14.o : constants.o model_flags.o grid.o icedfs.o stats_hoc.o clex9_oct14.F
 rico.o      : constants.o model_flags.o grid.o stats_hoc.o rico.F
 wangara.o   : constants.o model_flags.o grid.o wangara.F
 icedfs.o    : constants.o grid.o stats_hoc.o icedfs.F
@@ -177,7 +179,7 @@ bugsrad_hoc.o 		: kinds.o constants.o bugs_rad.o \
 
 # == Misc. program related source files  ==
 hoc.o		: parameterization_interface.o arm.o astex.o atex.o \
-	bomex.o dycoms2_rf01.o dycoms2_rf02.o fire.o jun25.o mpace_a.o mpace_b.o nov11.o \
+	bomex.o clex9_nov02.o clex9_oct14.o dycoms2_rf01.o dycoms2_rf02.o fire.o jun25.o mpace_a.o mpace_b.o nov11.o \
 	wangara.o cobra.o rico.o gabls2.o lba.o arm_97.o arm_0003.o arm_3year.o \
         inputfields.o hoc.F
 sounding.o	: constants.o sounding.F

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.161 2008-03-24 22:03:35 ajsmith4 Exp $
+! $Id: hoc.F.old_before_clex9,v 1.1 2008-03-24 22:03:35 ajsmith4 Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
