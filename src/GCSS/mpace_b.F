@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_b.F,v 1.6 2008-03-25 04:58:22 dschanen Exp $
+! $Id: mpace_b.F,v 1.7 2008-03-25 18:04:09 dschanen Exp $
         module mpace_b
 
 !       Description:
@@ -172,11 +172,16 @@
           velocity_omega = min( D*(psfc-p(i)), D*(psfc-pinv) )
           wmt(i) = -velocity_omega * Rd * thvm(i) / p(i) / grav0
         end do
+
+
+
+        ! Boundary condition
+        wmt(1) = 0.0        ! Below surface
+
+        ! Interpolate
         wmm = zt2zm( wmt )
 
-
-        ! Boundary conditions.
-        wmt(1) = 0.0        ! Below surface
+        ! Boundary conditions
         wmm(1) = 0.0        ! At surface
         wmm(gr%nnzp) = 0.0  ! Model top
         
@@ -230,7 +235,7 @@
      .                  xi_abs, F0, F1, kap, radius, A, gc, Fs0, omega,
      .                  sw_on, lw_on)
 
-          do k = 1, gr%nnzp-1
+          do k = 2, gr%nnzp-1
             Frad(k)     = Frad_out(gr%nnzp-k+1)
             Frad_LW(k)  = Frad_LW_out(gr%nnzp-k+1)
             Frad_SW(k)  = Frad_SW_out(gr%nnzp-k+1)
