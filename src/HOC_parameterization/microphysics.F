@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.28 2008-03-25 04:58:22 dschanen Exp $
+! $Id: microphysics.F,v 1.29 2008-03-25 18:01:46 dschanen Exp $
         module microphysics
 
 !       Description:
@@ -603,7 +603,7 @@
 
 
 #ifdef STATS
-        if ( lstats_samp ) then
+        if ( lstats_samp .and. ( lcoamps_micro .or. kk_rain ) ) then
           ! Rainfall rate (mm/day) should be defined on thermodynamic
           ! levels.  -Brian
           ! The absolute value of Vrr is taken because rainfall rate
@@ -611,7 +611,7 @@
           if ( irain_rate > 0 ) then
             ! Rainfall rate (mm/day)
             zt%x(:,irain_rate) = zt%x(:,irain_rate) + 
-     .        ( rrm * zm2zt( abs(Vrr) ) ) * ( rhot / rho_lw )
+     .        ( rrm * zm2zt( abs( Vrr ) ) ) * ( rhot / rho_lw )
      .        * ( 86400.0 * 1000.0 )
             zt%n(:,irain_rate) = zt%n(:,irain_rate) + 1
           end if
