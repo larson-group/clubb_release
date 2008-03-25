@@ -16,7 +16,7 @@ vars_zt =
 'Ncm', 'Ncnm', 'Nim', 'sed_rcm', 'rsm',
 'rrm', 'Nrm', 'mean_vol_rad_rain', 'mean_vol_rad_cloud',
 !'rain_rate', 'AKm', 'AKm_est', 'rsnowm', 'ricem', 'rgraupelm',
-!'diam', 'm', 'dqc_dt_icedfs', 'u_T_cm',
+!'diam', 'mass_ice_cryst', 'rcm_icedfs', 'u_T_cm',
 'rtm_bt', 'rtm_ma', 'rtm_ta','rtm_cl', 'thlm_bt', 'thlm_ma', 'thlm_ta','thlm_cl',
 'um_bt', 'um_ma', 'um_gf', 'um_cf', 'um_ta',
 'vm_bt', 'vm_ma', 'vm_gf', 'vm_cf', 'vm_ta',
