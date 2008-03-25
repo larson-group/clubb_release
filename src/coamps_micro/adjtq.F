@@ -701,7 +701,7 @@ c          compute psacw - collection of cloud water by snow
 c          (eq. a22, rh-1983). Limit to temperatures greater than thomo.
 c***********************************************************************
 c
-	       call eqa22(psacw,qctemp,qstemp,tttemp,termb,esc
+       call eqa22(psacw,qctemp,qstemp,tttemp,termb,esc
      1           ,pcut,twodt,tzero,mkk)
 c
 c***********************************************************************
