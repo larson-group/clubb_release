@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F,v 1.18 2008-03-20 18:22:09 griffinb Exp $
+! $Id: numer_check.F,v 1.19 2008-03-25 04:58:22 dschanen Exp $
         module numerical_check
 
         implicit none
@@ -175,7 +175,7 @@
 
 !-------------------------------------------------------------------------------
         subroutine parameterization_check( thlm_forcing, rtm_forcing,
-     .                           rtm_mc, thlm_mc, wmm, wmt, p, rhom, 
+     .                           wmm, wmt, p, rhom, 
      .                           rhot, exner, wpthlp_sfc, wprtp_sfc, 
      .                           upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,
      .                           up2, vp2, rtm, wprtp, thlm, 
@@ -205,8 +205,6 @@
         real, intent(in), dimension(gr%nnzp) :: 
      .  thlm_forcing,  ! theta_l forcing.        [K/s]
      .  rtm_forcing,   ! r_t forcing.            [(kg/kg)/s] 
-     .  rtm_mc,        ! r_t microphysical       [(kg/kg)/s] 
-     .  thlm_mc,       ! thlm microphysical      [K/s] 
      .  wmm,           ! wm on moment. grid.     [m/s]
      .  wmt,           ! wm on thermo. grid.     [m/s]
      .  p,             ! Pressure.               [Pa] 
@@ -280,8 +278,6 @@
         
         call check_nan( thlm_forcing, "thlm_forcing", proc_name )
         call check_nan( rtm_forcing,"rtm_forcing", proc_name )
-        call check_nan( rtm_mc, "rtm_mc", proc_name )
-        call check_nan( thlm_mc, "thlm_mc", proc_name )
         call check_nan( wmm,"wmm", proc_name )
         call check_nan( wmt,"wmt", proc_name )
         call check_nan( p,"p", proc_name )

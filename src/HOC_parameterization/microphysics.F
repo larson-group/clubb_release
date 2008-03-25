@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.27 2008-03-05 17:16:18 faschinj Exp $
+! $Id: microphysics.F,v 1.28 2008-03-25 04:58:22 dschanen Exp $
         module microphysics
 
 !       Description:
@@ -31,7 +31,7 @@
      .               pdf_parms, wmt, wmm, Khm, AKm_est, AKm, 
      .               Ncnm, Nim,
      .               hydromet,
-     .               hm_rt_tndcy, hm_thl_tndcy, isValid )
+     .               rtm_mc, thlm_mc, isValid )
 
 !       Description:
 !       Compute pristine ice, snow, graupel, & rain hydrometeor fields.
@@ -42,6 +42,7 @@
 !-----------------------------------------------------------------------
         use grid_class
         use rain_equations, only: kk_microphys
+        use ice_dfsn_mod
         use model_flags
         use parameters, only: c_Krrm, nu_r
         use constants, only: hydromet_dim, Lv, Cp, rho_lw, fstderr
@@ -108,9 +109,9 @@
      .  hydromet      ! Array of rain, prist. ice, graupel, etc. [units vary]
 
         real, dimension(gr%nnzp), intent(out) ::
-     .  hm_rt_tndcy,  ! Change in total water due to hydrometeors    [(kg/kg)/s]
-     .  hm_thl_tndcy  ! Change in liquid potential temperature 
-                      ! due to hydrometeors                          [K/s]
+     .  rtm_mc,  ! Change in total water due to microphysics    [(kg/kg)/s]
+     .  thlm_mc  ! Change in liquid potential temperature 
+                 ! due to microphysics                          [K/s]
 
         logical, intent(out) :: isValid
 
@@ -206,7 +207,7 @@
      .            cond, Vsnow, Vice, Vrr, VNr, Vgraupel,
      .            ricem_tndcy, rrm_tndcy, rgraupelm_tndcy, 
      .            rsnowm_tndcy, Nrm_tndcy,
-     .            hm_rt_tndcy, hm_thl_tndcy )
+     .            rtm_mc, thlm_mc )
 
 #ifdef STATS
           if ( lstats_samp ) then
@@ -283,7 +284,7 @@
      .           s1, s2, ss1, ss2, rtm, rcm, Ncm, rrm, Nrm,
      .           .true., AKm_est, AKm,
      .           rrm_tndcy, Nrm_tndcy, 
-     .           hm_rt_tndcy, hm_thl_tndcy,
+     .           rtm_mc, thlm_mc,
      .           Vrr, VNr )
 
 #ifdef STATS
@@ -316,24 +317,24 @@
          end if ! lstats_samp
 #endif /*STATS*/
 
-        end if ! kk_rain
+        end if ! coamps micro or KK rain. 
 
         ! Compute rrm and Nrm for either case
+        if ( lcoamps_micro .or. kk_rain ) then
+          ! --------------------------------------------------------------------
+          ! Rain water mixing ratio (rrm)
+          ! --------------------------------------------------------------------
 
-        ! ----------------------------------------------------------------------
-        ! Rain water mixing ratio (rrm)
-        ! ----------------------------------------------------------------------
+          call microphys_lhs
+     .         ( "rrm", .true., dt, Kr, nu_r, wmt, Vrr, rrm, lhs )
 
-        call microphys_lhs
-     .       ( "rrm", .true., dt, Kr, nu_r, wmt, Vrr, rrm, lhs )
+          call microphys_solve
+     .         ( "rrm", dt, lhs, rrm_tndcy, rrm, isValid )
 
-        call microphys_solve
-     .       ( "rrm", dt, lhs, rrm_tndcy, rrm, isValid )
-
-        ! Handle over-evaporation of rrm and adjust rt and theta-l hydrometeor
-        ! tendency arrays accordingly.
-        do k = 1, gr%nnzp, 1
-           if ( rrm(k) < 0.0 ) then
+          ! Handle over-evaporation of rrm and adjust rt and theta-l hydrometeor
+          ! tendency arrays accordingly.
+          do k = 1, gr%nnzp, 1
+            if ( rrm(k) < 0.0 ) then
 
               call adj_microphys_tndcy( rrm_tndcy, wmt, Vrr, Kr, nu_r, 
      .                                  dt, k, .true., "rrm",
@@ -341,29 +342,29 @@
 
               ! overevap_rate is defined as positive.
               ! It is a correction factor.
-              hm_rt_tndcy(k)  = hm_rt_tndcy(k) - overevap_rate
+              rtm_mc(k)  = rtm_mc(k) - overevap_rate
 
-              hm_thl_tndcy(k) = hm_thl_tndcy(k)
+              thlm_mc(k) = thlm_mc(k)
      .                  + ( Lv / ( Cp*exner(k) ) ) * overevap_rate
 
             ! Moved from adj_microphys_tndcy  
 #ifdef STATS
               if( lstats_samp .and. irrm_cond_adj > 0 ) then
-                   zt%x(k,irrm_cond_adj) = zt%x(k,irrm_cond_adj) 
-     .                   + overevap_rate
-              endif
+                zt%x(k,irrm_cond_adj) = zt%x(k,irrm_cond_adj) 
+     .            + overevap_rate
+              end if
 #endif /*STATS*/
 
-           endif
+            end if ! rrm(k) < 0
 
 #ifdef STATS
-           if ( lstats_samp .and. irrm_cond_adj > 0 ) then
+            if ( lstats_samp .and. irrm_cond_adj > 0 ) then
               zt%n(k,irrm_cond_adj) = zt%n(k,irrm_cond_adj) + 1
-           endif
+            end if
              ! Joshua Faschinj December 2007
 #endif /*STATS*/
 
-        enddo
+          end do ! k=1..gr%nnzp
 
 #ifdef STATS
           ! Store computed value before clipping
@@ -384,27 +385,27 @@
 #endif
 
 #ifdef STATS
-        ! Finalize time tendency
-        if ( lstats_samp .and. irrm_bt > 0 ) then
-          zt%x(:,irrm_bt) = zt%x(:,irrm_bt) + ( rrm / dt )
-          zt%n(:,irrm_bt) = zt%n(:,irrm_bt) + 1
-        endif
+          ! Finalize time tendency
+          if ( lstats_samp .and. irrm_bt > 0 ) then
+            zt%x(:,irrm_bt) = zt%x(:,irrm_bt) + ( rrm / dt )
+            zt%n(:,irrm_bt) = zt%n(:,irrm_bt) + 1
+          end if
 #endif
 
-        ! ----------------------------------------------------------------------
-        ! Rain drop number concentration (Nrm)
-        ! ----------------------------------------------------------------------
+          !---------------------------------------------------------------------
+          ! Rain drop number concentration (Nrm)
+          !---------------------------------------------------------------------
 
-        call microphys_lhs
-     .       ( "Nrm", .true., dt, Kr, nu_r, wmt, VNr, Nrm, lhs )
+          call microphys_lhs
+     .         ( "Nrm", .true., dt, Kr, nu_r, wmt, VNr, Nrm, lhs )
 
-        call microphys_solve
-     .       ( "Nrm", dt, lhs, Nrm_tndcy, Nrm, isValid )
+          call microphys_solve
+     .         ( "Nrm", dt, lhs, Nrm_tndcy, Nrm, isValid )
 
-        ! Handle over-evaporation similar to rrm.  However, in the case of Nrm
-        ! there is no effect on rtm or on thlm.  Brian Griffin.  April 14, 2007.
-        do k = 1, gr%nnzp, 1
-           if ( Nrm(k) < 0.0 ) then
+          ! Handle over-evaporation similar to rrm.  However, in the case of Nrm
+          ! there is no effect on rtm or on thlm.  Brian Griffin.  April 14, 2007.
+          do k = 1, gr%nnzp, 1
+            if ( Nrm(k) < 0.0 ) then
 
               call adj_microphys_tndcy( Nrm_tndcy, wmt, VNr, Kr, nu_r,
      .                                  dt, k, .true., "Nrm",
@@ -415,18 +416,18 @@
               if ( lstats_samp .and. iNrm_cond_adj > 0 ) then
                    zt%x(k,iNrm_cond_adj) = zt%x(k,iNrm_cond_adj) 
      .                 + overevap_rate
-              endif
+              end if
 #endif /*STATS*/
 
-           endif
+            end if
 
 #ifdef STATS
-           if ( lstats_samp .and. iNrm_cond_adj > 0 ) then
+            if ( lstats_samp .and. iNrm_cond_adj > 0 ) then
               zt%n(k,iNrm_cond_adj) = zt%n(k,iNrm_cond_adj) + 1
-           endif
+            end if
 #endif /*STATS*/
               ! Joshua Fasching December 2007
-        enddo
+          end do
 
 #ifdef STATS
           ! Store computed value before clipping
@@ -447,12 +448,13 @@
 #endif
 
 #ifdef STATS
-        ! Finalize time tendency
-        if ( lstats_samp .and. iNrm_bt > 0 ) then
-          zt%x(:,iNrm_bt) = zt%x(:,iNrm_bt) + ( Nrm / dt )
-          zt%n(:,iNrm_bt) = zt%n(:,iNrm_bt) + 1
-        endif
+          ! Finalize time tendency
+          if ( lstats_samp .and. iNrm_bt > 0 ) then
+            zt%x(:,iNrm_bt) = zt%x(:,iNrm_bt) + ( Nrm / dt )
+            zt%n(:,iNrm_bt) = zt%n(:,iNrm_bt) + 1
+          end if
 #endif
+        end if ! kk_rain or lcoamps_micro
 
         ! Compute rsnowm, rgraupelm, and ricem for COAMPS microphysics only.
 
@@ -593,6 +595,13 @@
 
         end if ! lcoamps_micro
 
+        ! Call the ice diffusion scheme
+        if ( licedfs ) then
+          call ice_dfsn( dt, thlm, rcm, p, exner, rhot, rtm_mc )
+          thlm_mc = - ( Lv/(Cp*exner) ) * rtm_mc
+        end if
+
+
 #ifdef STATS
         if ( lstats_samp ) then
           ! Rainfall rate (mm/day) should be defined on thermodynamic
@@ -675,8 +684,8 @@
            write(fstderr,*) "Nim = ", Nim
            write(fstderr,*) "hydromet = ", hydromet
            write(fstderr,*) "Intent(out)"
-           write(fstderr,*) "hm_rt_tndcy = ", hm_rt_tndcy
-           write(fstderr,*) "hm_thl_tndcy = ", hm_thl_tndcy
+           write(fstderr,*) "rtm_mc = ", rtm_mc
+           write(fstderr,*) "thlm_mc = ", thlm_mc
            
         endif
         
@@ -1574,8 +1583,8 @@
         ! cooling).  This may result in an artificial increase in cloud water.
         !
         ! rrm_mc_tndcy = rrm_cond + rrm_auto + rrm_accr
-        ! hm_rt_tndcy  = - rrm_mc_tndcy
-        ! hm_thl_tndcy = ( Lv / (Cp*exner) ) * rrm_mc_tndcy
+        ! rtm_mc  = - rrm_mc_tndcy
+        ! thlm_mc = ( Lv / (Cp*exner) ) * rrm_mc_tndcy
         !
         ! anyplace where rrm drops below zero due to microphysics, there is 
         ! too much evaporation rate for the timestep, so rrm_cond is too 
@@ -1593,8 +1602,8 @@
         !
         ! To update the effects of microphysics on rtm and thl:
         !
-        ! hm_rt_tndcy = hm_rt_tndcy - overevap_rate
-        ! hm_thl_tndcy = hm_thl_tndcy + ( Lv / (Cp*exner) ) * overevap_rate
+        ! rtm_mc = rtm_mc - overevap_rate
+        ! thlm_mc = thlm_mc + ( Lv / (Cp*exner) ) * overevap_rate
         !
         ! This is done in the subroutine which calls this one.
         ! 

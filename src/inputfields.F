@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputfields.F,v 1.12 2008-03-21 19:01:00 griffinb Exp $
+! $Id: inputfields.F,v 1.13 2008-03-25 04:58:22 dschanen Exp $
 
 ! Module inputfields
 
@@ -29,7 +29,6 @@
      .                     input_thvm, input_rrm,input_Nrm, 
      .                     input_rsnowm, input_ricem, input_rgraupelm, 
      .                     input_thlm_forcing, input_rtm_forcing,
-     .                     input_rtm_mc, input_thlm_mc, 
      .                     input_up2, input_vp2, input_Scm, input_Ncm, 
      .                     input_Ncnm, input_Nim, input_cf, input_Sct 
 
@@ -61,7 +60,7 @@
      .                                  Kht, Khm, taum, taut, thvm,
      .                                  rrm, Nrm, rsnowm, ricem, 
      .                                  rgraupelm, thlm_forcing, 
-     .                                  rtm_forcing, rtm_mc, thlm_mc, 
+     .                                  rtm_forcing,
      .                                  up2, vp2, Scm, Ncm, Ncnm, Nim,
      .                                  cf, Sct )
         use grid_class
@@ -82,7 +81,6 @@
      .                        Kht, Khm, taum, taut, thvm,
      .                        rrm, Nrm, rsnowm, ricem, rgraupelm, 
      .                        thlm_forcing, rtm_forcing,
-     .                        rtm_mc, thlm_mc, 
      .                        up2, vp2, Scm, Ncm, Ncnm, Nim,
      .                        cf, Sct  
 
@@ -202,14 +200,6 @@
           if (present( rtm_forcing ) .and. input_rtm_forcing ) then
             call get_var( fread_var , "rtm_f", timestep,
      .                    rtm_forcing(1:gr%nnzp),error)
-          endif
-          if (present( rtm_mc ) .and. input_rtm_mc ) then
-            call get_var( fread_var , "rtm_mc", timestep,
-     .                    rtm_mc(1:gr%nnzp),error)
-          endif
-          if (present( thlm_mc ) .and. input_thlm_mc ) then
-            call get_var( fread_var , "thlm_mc", timestep,
-     .                    thlm_mc(1:gr%nnzp),error)
           endif
           if (present( Ncm ) .and. input_Ncm) then
             call get_var( fread_var , "Ncm", timestep,

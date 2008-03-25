@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.161 2008-03-24 22:03:35 ajsmith4 Exp $
+! $Id: hoc.F,v 1.162 2008-03-25 04:58:22 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -127,7 +127,6 @@
      .                Kht, Khm, taum, taut, thvm,
      .                rrm, Nrm, rsnowm,ricem,rgraupelm, 
      .                thlm_forcing, rtm_forcing, 
-     .                rtm_mc, thlm_mc,
      .                up2, vp2, Scm, Ncm, Ncnm, Nim, 
      .                cf, Sct ) 
       
@@ -173,8 +172,6 @@
      .    rgraupelm, 
      .    thlm_forcing, ! Liquid water potential temperature tendency [K/s] 
      .    rtm_forcing,  ! Total water mixing ratio tendency           [kg/kg/s]
-     .    rtm_mc,       ! Change in total water due to icedfs microphys [kg/kg/s]
-     .    thlm_mc,      ! Change in theta-l due to icedfs microphys     [K/s]
      .    up2,          ! u'^2                                          [m^2/s^2]
      .    vp2,          ! v'^2                          [m^2/s^2]
      .    Scm,          ! Sc on moment. grid.           [-]
@@ -397,10 +394,7 @@
      .            thlm, rtm, wprtp, wpthlp, wp2, wp3,
      .            rtp2, thlp2, rtpthlp,
      .            Scm, taum, rcm, Ncm, Ncnm, Nim,
-! Michael Falk, 27 Jul 2007
-!     .            hydromet, cf, isValid, .false.
-     .            hydromet, cf, isValid, .false., rtm_mc, thlm_mc
-! eMFc
+     .            hydromet, cf, isValid, .false.
 #ifdef SCALARS
      .            ,wpsclrp_sfc, wpedsclrp_sfc,
      .            sclrm, sclrm_forcing, edsclrm
@@ -668,7 +662,7 @@
      .                      wmt, wmm, em, exner, taut, taum, thvm,
      .                      p, rhot, rhom, Lscale, Lup,
      .                      Ldown, Kht, Khm, um_ref, vm_ref,
-     .                      thlm_forcing, rtm_forcing, rtm_mc, thlm_mc,
+     .                      thlm_forcing, rtm_forcing,
      .                      up2, vp2, Scm, Ncm, Ncnm, Nim,
      .                      wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,
      .                      cf, Sct
@@ -744,10 +738,7 @@
      .            thlm, rtm, wprtp, wpthlp, wp2, wp3,
      .            rtp2, thlp2, rtpthlp,
      .            Scm, taum, rcm, Ncm, Ncnm, Nim,
-! Michael Falk, 27 Jul 2007
-!     .            hydromet, cf, isValid, .false.
-     .            hydromet, cf, isValid, .false., rtm_mc, thlm_mc
-! eMFc
+     .            hydromet, cf, isValid, .false.
 #ifdef SCALARS
      .            ,wpsclrp_sfc, wpedsclrp_sfc, 
      .            sclrm, sclrm_forcing, edsclrm
@@ -1319,7 +1310,7 @@
      .               wmt, wmm, em, exner, taut, taum, thvm,
      .               p, rhot, rhom, Lscale, Lup,
      .               Ldown, Kht, Khm, um_ref, vm_ref,
-     .               thlm_forcing, rtm_forcing, rtm_mc, thlm_mc,
+     .               thlm_forcing, rtm_forcing,
      .               up2, vp2, Scm, Ncm, Ncnm, Nim,
      .               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,
      .               cf, Sct
@@ -1384,8 +1375,6 @@
      .  vpwp,           ! v'w'                                        [m^2/s^2]
      .  thlm_forcing,   ! Liquid water potential temperature tendency [K/s]
      .  rtm_forcing,    ! Total water mixing ratio tendency           [kg/kg/s]
-     .  rtm_mc,         ! Change in total water due to icedfs microphys [kg/kg/s]
-     .  thlm_mc,        ! Change in theta-l due to icedfs microphys     [K/s]
      .  up2,            ! u'^2                                          [m^2/s^2]
      .  vp2,            ! v'^2                          [m^2/s^2]
      .  Scm,            ! Sc on moment. grid.           [-]
@@ -1462,8 +1451,6 @@
         input_vpwp = .true. 
         input_thlm_forcing = .true.
         input_rtm_forcing = .true. 
-        input_rtm_mc = .true. 
-        input_thlm_mc = .true.
         input_up2 = .true.
         input_vp2 = .true.
         input_Scm = .true.
@@ -1510,7 +1497,7 @@
      .                   Kht, Khm, taum, taut, thvm, 
      .                   rrm, Nrm, rsnowm, ricem,
      .                   rgraupelm, thlm_forcing, 
-     .                   rtm_forcing, rtm_mc, thlm_mc,
+     .                   rtm_forcing, 
      .                   up2, vp2, Scm, Ncm, Ncnm, Nim,
      .                   cf, Sct ) 
         
@@ -1737,10 +1724,7 @@
            call nov11_altocu_tndcy( time, time_initial, dt, rlat, rlon,
      .                              thlm, rcm, p, exner, rhot, rtm, wmt,
      .                              wmm, thlm_forcing, rtm_forcing,
-! Michael Falk, 30 Jul 2007
-!     .                              Frad, radht, Ncnm
-     .                              Frad, radht, Ncnm, rtm_mc, thlm_mc
-! eMFc
+     .                              Frad, radht, Ncnm
 #ifdef SCALARS
      .                             ,sclrm_forcing   ! optional variable
 #endif /* SCALARS */
@@ -1750,10 +1734,7 @@
            call jun25_altocu_tndcy( time, time_initial, rlat, dt, thlm,
      .                              rcm, p, exner, rhot, rtm, wmt,
      .                              wmm, thlm_forcing, rtm_forcing,
-! Michael Falk, 30 Jul 2007
-!     .                              Frad, radht
-     .                              Frad, radht, rtm_mc, thlm_mc
-! eMFc
+     .                              Frad, radht
 #ifdef SCALARS
      .                             ,sclrm_forcing   ! optional variable
 #endif /* SCALARS */
@@ -1763,10 +1744,7 @@
            call clex9_nov02_tndcy( time, time_initial, dt, rlat, rlon,
      .                             thlm, rcm, p, exner, rhot, rtm, wmt,
      .                             wmm, thlm_forcing, rtm_forcing,
-! Michael Falk, 30 Jul 2007
-!     .                             Frad, radht, Ncnm
-     .                             Frad, radht, Ncnm, rtm_mc, thlm_mc
-! eMFc
+     .                             Frad, radht, Ncnm
 #ifdef SCALARS
      .                            ,sclrm_forcing   ! optional variable
 #endif /* SCALARS */
@@ -1776,10 +1754,7 @@
            call clex9_oct14_tndcy( time, time_initial, dt, rlat, rlon,
      .                             thlm, rcm, p, exner, rhot, rtm, wmt,
      .                             wmm, thlm_forcing, rtm_forcing,
-! Michael Falk, 30 Jul 2007
-!     .                             Frad, radht, Ncnm
-     .                             Frad, radht, Ncnm, rtm_mc, thlm_mc
-! eMFc
+     .                             Frad, radht, Ncnm
 #ifdef SCALARS
      .                            ,sclrm_forcing   ! optional variable
 #endif /* SCALARS */
@@ -1797,10 +1772,7 @@
            call mpace_a_tndcy( time, time_initial, dtmain, rlat, thlm,
      .                       exner, rhot, rtm, p, thvm, rcm,
      .                       wmt, wmm, thlm_forcing, rtm_forcing,
-     .                       Ncnm, Ncm, Frad, radht, rtm_mc, thlm_mc
-! Michael Falk, 17 Oct 2007
-     .                       ,um_ref,vm_ref
-! eMFc
+     .                       Ncnm, Ncm, Frad, radht, um_ref,vm_ref
 #ifdef SCALARS
      .                      ,sclrm_forcing
 #endif /* SCALARS */
@@ -1810,10 +1782,7 @@
            call mpace_b_tndcy( time, time_initial, dtmain, rlat, thlm,
      .                       exner, rhot, rtm, p, thvm, rcm,
      .                       wmt, wmm, thlm_forcing, rtm_forcing,
-! Michael Falk added rtm_mc and thlm_mc here on 27 Jul 2007
-!     .                       Ncnm, Ncm, Frad, radht,
-     .                       Ncnm, Ncm, Frad, radht, rtm_mc, thlm_mc
-! eMFc
+     .                       Ncnm, Ncm, Frad, radht
 #ifdef SCALARS
      .                      ,sclrm_forcing
 #endif /* SCALARS */

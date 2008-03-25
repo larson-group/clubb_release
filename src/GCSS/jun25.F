@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: jun25.F,v 1.6 2008-03-05 17:22:52 faschinj Exp $
+! $Id: jun25.F,v 1.7 2008-03-25 04:58:22 dschanen Exp $
         module jun25
 
 !       Description:
@@ -9,6 +9,12 @@
 !----------------------------------------------------------------------
 
         public :: jun25_altocu_tndcy
+
+        ! Used to start the microphysics after predetermined amount of time
+        logical, private :: 
+     .  tdelay_lcoamps_micro, tdelay_licedfs 
+
+!$omp   threadprivate(tdelay_lcoamps_micro, tdelay_licedfs)
 
         private
 
@@ -19,10 +25,7 @@
      .             ( time, time_initial, rlat, dt, thlm, 
      .               rcm, p, exner, rhot, rtm, wmt,
      .               wmm, thlm_forcing, rtm_forcing, 
-! Michael Falk, 30 Jul 2007
-!     .               Frad, radht, 
-     .               Frad, radht, rtm_mc, thlm_mc,
-! eMFc
+     .               Frad, radht, 
      .               sclr_tndcy ) ! Optional
 !       Description:
 !       Computes subsidence, radiation, and LS tendencies for the June
@@ -33,7 +36,7 @@
         use grid_class
         use constants
         use model_flags
-        use icedfs
+        use ice_dfsn_mod
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
@@ -71,11 +74,6 @@
      .  rtm_forcing, ! Change in total water due to ice diffusion  [kg/kg/s]
      .  Frad,        ! Total radiative flux (LW + SW)              [W/m^2]
      .  radht        ! Total radiative heating (LW +SW)            [K/s]
-
-! Michael Falk, 30 Jul 2007, for addition of microphysics terms
-        real, dimension(gr%nnzp), intent(out) :: 
-     .  rtm_mc,  ! Change in total water due to icedfs microphys [kg/kg/s]
-     .  thlm_mc  ! Change in theta-l due to icedfs microphys     [K/s]
 
         ! Output variables (optional)
         real, optional, dimension(gr%nnzp,sclr_dim),intent(out) :: 
@@ -185,13 +183,6 @@
 !                 the values in Fslist
 ! Fslist        : Values of Fs0 corresponding to the values in xilist.
 !-----------------------------------------------------------------------
-
-        !-----------------------------
-        ! Local ice diffusional arrays
-        !-----------------------------
-        real, dimension(gr%nnzp) :: 
-     .  dqc_dt_icedfs ! Change in liquid water over time, 
-                      ! due to ice diffusional growth [1/s]
 
         !------------------------
         ! Local radiation arrays
@@ -473,9 +464,9 @@
 
 
 !-----------------------------------------------------------------------
-! SPECIAL METHOD USED TO CALCULATE RADIATION                           c
-! Grid descriptions by Adam Smith, 27 June 2006                        c
-!                                                                      c
+! SPECIAL METHOD USED TO CALCULATE RADIATION
+! Grid descriptions by Adam Smith, 27 June 2006
+!
 ! In order to verify our HOC simulations are working properly, we      c
 ! have first developed a series of 3D simulations using the COAMPS-LES c
 ! model.  This large-eddy simulation (LES) simulation uses specific    c
@@ -658,17 +649,25 @@
         ! Compute the loss of total water due to diffusional
         ! growth of ice.  This is defined on thermodynamic levels.
         !-------------------------------------------------------------
-        IF (time >= time_initial + 3600.0 .and. licedfs ) THEN
 
-           CALL altocu_icedf( dt, thlm, rcm, p, exner, rhot,
-     .                        dqc_dt_icedfs )
-        ELSE
+        if ( time == time_initial ) then
 
-           DO k = 1, gr%nnzp, 1
-              dqc_dt_icedfs(k) = 0.0
-           ENDDO
+          if ( lcoamps_micro ) then
+            ! Turn off microphysics for now, re-enable at
+            ! time = 3600.
+            lcoamps_micro        = .false.
+            tdelay_lcoamps_micro = .true.
 
-        END IF
+          else if ( licedfs ) then
+            licedfs        = .false.
+            tdelay_licedfs = .true.
+
+          else
+            tdelay_lcoamps_micro = .false.
+            tdelay_licedfs       = .false.
+          end if
+
+        end if
 
 
         !---------------------------------------------------------------
@@ -731,26 +730,13 @@
         ! Enter the final theta-l and rtm tendencies
         !---------------------------------------------------------------
         DO k = 1, gr%nnzp, 1
-           IF ( .not. lbugsrad ) THEN
-! Michael Falk, 30 Jul 2007
-!             thlm_forcing(k) = radht(k)
-!     .                    - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
-             thlm_forcing(k) = radht(k)
-             thlm_mc(k)      = - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
-! eMFc
-           ELSE
-! Michael Falk, 30 Jul 2007
-!             thlm_forcing(k) = - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
-             thlm_forcing(k) = 0.
-             thlm_mc(k)      = - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
-! eMFc
-           END IF
-! Michael Falk, 30 Jul 2007
-!           rtm_forcing(k) = dqc_dt_icedfs(k)
-           rtm_mc(k)      = dqc_dt_icedfs(k)
-           rtm_forcing(k) = 0.
-! eMFc
-        ENDDO
+          IF ( .not. lbugsrad ) THEN
+            thlm_forcing(k) = radht(k)
+          ELSE
+            thlm_forcing(k) = 0.
+          END IF
+          rtm_forcing(k) = 0.
+        END DO
 
         if ( present( sclr_tndcy ) ) then
           sclr_tndcy(:,SCLR_THETA) = thlm_forcing

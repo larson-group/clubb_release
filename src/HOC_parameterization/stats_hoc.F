@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_hoc.F,v 1.3 2008-03-20 18:22:09 griffinb Exp $
+! $Id: stats_hoc.F,v 1.4 2008-03-25 04:58:22 dschanen Exp $
 #ifdef STATS
 !-----------------------------------------------------------------------
 !  module stats_hoc
@@ -94,13 +94,13 @@
      .    irsnowm,
      .    irgraupelm,
      .    iricem,
-     .    idiam,          ! Necessary for icedfs scheme.  Michael Falk
-     .    im,             ! Necessary for icedfs scheme.  Michael Falk
-     .    idqc_dt_icedfs, ! Necessary for icedfs scheme.  Michael Falk
-     .    iu_T_cm         ! Necessary for icedfs scheme.  Michael Falk
+     .    idiam,          ! Diameter of ice crystal           [m]
+     .    imass_ice_cryst,! Mass of a single ice crystal      [kg]
+     .    ircm_icedfs,    ! Change in liquid water due to ice [kg/kg/s]
+     .    iu_T_cm         ! Fallspeed of ice crystal in cm/s  [cm s^{-1}]
 
 !$omp   threadprivate(irsnowm, irgraupelm, iricem, idiam)
-!$omp   threadprivate(im, idqc_dt_icedfs, iu_T_cm)
+!$omp   threadprivate(imass_ice_cryst, ircm_icedfs, iu_T_cm)
 
 
         ! thlm/rtm budget terms

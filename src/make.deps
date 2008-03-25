@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.21 2008-03-24 22:03:35 ajsmith4 Exp $
+# $Id: make.deps,v 1.22 2008-03-25 04:58:22 dschanen Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -42,7 +42,8 @@ outputfile.o	: outputfile.F
 KK_microphys.o  : constants.o model_flags.o lapack_wrap.o parab.o stats_hoc.o \
 	KK_microphys.F
 microphysics.o	: constants.o model_flags.o lapack_wrap.o KK_microphys.o \
-	coamps_micro_driver.o parameters.o stats_hoc.o microphysics.F
+	coamps_micro_driver.o parameters.o stats_hoc.o microphysics.F \
+	ice_dfsn_mod.o
 outputgrads.o	: constants.o recl.F endian.o outputfile.o outputgrads.F
 outputnc.o	: outputfile.o outputnc.F
 diag_variables.o: constants.o grid.o model_flags.o diag_variables.F 
@@ -128,15 +129,15 @@ fire.o      : constants.o model_flags.o grid.o stats_hoc.o cloud_rad.o fire.F
 gabls2.o    : constants.o diag_ustar.o model_flags.o grid.o stats_hoc.o gabls2.F
 lba.o       : constants.o diag_ustar.o model_flags.o grid.o stats_hoc.o \
 	zlinterp.o lba.F
-mpace_a.o     : constants.o model_flags.o grid.o icedfs.o stats_hoc.o mpace_a.F zlinterp.o file_functions.o
-mpace_b.o     : constants.o model_flags.o grid.o icedfs.o stats_hoc.o mpace_b.F
-nov11.o     : constants.o model_flags.o grid.o icedfs.o stats_hoc.o nov11.F
-jun25.o     : constants.o model_flags.o grid.o icedfs.o stats_hoc.o jun25.F
-clex9_nov02.o : constants.o model_flags.o grid.o icedfs.o stats_hoc.o clex9_nov02.F
-clex9_oct14.o : constants.o model_flags.o grid.o icedfs.o stats_hoc.o clex9_oct14.F
+mpace_a.o     : constants.o model_flags.o grid.o stats_hoc.o mpace_a.F zlinterp.o file_functions.o
+mpace_b.o     : constants.o model_flags.o grid.o stats_hoc.o mpace_b.F
+nov11.o     : constants.o model_flags.o grid.o stats_hoc.o nov11.F
+jun25.o     : constants.o model_flags.o grid.o stats_hoc.o jun25.F
+clex9_nov02.o : constants.o model_flags.o grid.o stats_hoc.o clex9_nov02.F
+clex9_oct14.o : constants.o model_flags.o grid.o stats_hoc.o clex9_oct14.F
 rico.o      : constants.o model_flags.o grid.o stats_hoc.o rico.F
 wangara.o   : constants.o model_flags.o grid.o wangara.F
-icedfs.o    : constants.o grid.o stats_hoc.o icedfs.F
+ice_dfsn_mod.o    : constants.o grid.o stats_hoc.o ice_dfsn_mod.F
 cloud_rad.o : constants.o grid.o cloud_rad.F
 dycoms2_rf01.o : constants.o model_flags.o grid.o stats_hoc.o dycoms2_rf01.F
 dycoms2_rf02.o : constants.o model_flags.o grid.o stats_hoc.o dycoms2_rf02.F

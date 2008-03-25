@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: clex9_nov02.F,v 1.1 2008-03-24 21:37:26 ajsmith4 Exp $
+! $Id: clex9_nov02.F,v 1.2 2008-03-25 04:58:22 dschanen Exp $
         module clex9_nov02
 
 !       Description:
@@ -15,9 +15,11 @@
         ! Note: bottom point not at surface, so there is no sfc
         ! subroutine
 
-        logical, private :: tdelay_lcoamps_micro
+        ! Used to start the microphysics after predetermined amount of time
+        logical, private :: 
+     .  tdelay_lcoamps_micro, tdelay_licedfs 
 
-!$omp   threadprivate(tdelay_lcoamps_micro)
+!$omp   threadprivate(tdelay_lcoamps_micro, tdelay_licedfs)
 
         private
 
@@ -28,10 +30,7 @@
      .             ( time, time_initial, dt, rlat, rlon,
      .               thlm, rcm, p, exner, rhot, rtm, wmt,
      .               wmm, thlm_forcing, rtm_forcing,
-! Michael Falk, 30 Jul 2007
-!     .               Frad, radht, Ncnm, sclrm_forcing )
-     .               Frad, radht, Ncnm, rtm_mc, thlm_mc, sclrm_forcing )
-! eMFc
+     .               Frad, radht, Ncnm, sclrm_forcing )
 
 !       Description:
 !       Compute subsidence, radiation, and large-scale tendencies.
@@ -42,7 +41,6 @@
         use grid_class
         use constants
         use model_flags
-        use icedfs
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
@@ -107,10 +105,6 @@
      .  wmm,            ! Mean vertical wind on the moment. grid  [m/s]
      .  thlm_forcing,   ! Theta_l forcing                         [K/s]
      .  rtm_forcing,    ! Total water forcing                     [kg/kg/s]
-! Michael Falk added rtm_mc and thlm_mc here for icedfs scheme stats.  30 Jul 2007
-     .  rtm_mc,         ! Microphyiscal rtm tendency              [kg/kg/s]
-     .  thlm_mc,        ! Microphysical theta_l tendency          [K/s]
-! eMFc
      .  Frad,           ! Radiative flux                          [W/m^2]
      .  radht,          ! Radiative heating                       [K/s]
      .  Ncnm            ! Cloud nuclei number concentration       [num/m^3]
@@ -203,7 +197,7 @@
 !      Replaced the calculation based on time since solar noon 
 !       etc., with a generalized function based on time and lat/lon.
 !       -dschanen 5 Jan 2007
-!      xi_abs = cos_solar_zen( 11, 11, 1999, time, rlat, rlon )
+!      xi_abs = cos_solar_zen( 11, 2, 1999, time, rlat, rlon )
 
        xi_abs = 0.4329
 
@@ -530,29 +524,34 @@ c        end if
 
         end if ! ~ lbugsrad
 
-        if ( time == time_initial ) then
+       if ( time == time_initial ) then
 
           if ( lcoamps_micro ) then
             ! Turn off microphysics for now, re-enable at
             ! time = 3600.
-            lcoamps_micro = .false.
-
+            lcoamps_micro        = .false.
             tdelay_lcoamps_micro = .true.
+
+          else if ( licedfs ) then
+            licedfs        = .false.
+            tdelay_licedfs = .true.
+
           else
             tdelay_lcoamps_micro = .false.
+            tdelay_licedfs       = .false.
           end if
 
         end if
 
-        if ( time >= time_initial + 3600.0 .and. licedfs ) then
+         if ( time >= ( time_initial + 3600.0 ) 
+     .            .and. tdelay_licedfs ) then
         !---------------------------------------------------------------
         ! Compute the loss of total water due to diffusional
         ! growth of ice.  This is defined on thermodynamic levels.
         !---------------------------------------------------------------
+          licedfs = .true.
+          
 
-           call altocu_icedf( dt, thlm, rcm, p, exner, rhot,
-     .                        dqc_dt_icedfs )
-        
         else if ( time == ( time_initial + 3600.0 ) 
      .            .and. tdelay_lcoamps_micro ) then
 
@@ -561,24 +560,6 @@ c        end if
         !---------------------------------------------------------------
 
           lcoamps_micro = .true.
-
-          ! Cloud nuclei
-          ! Note: As near as I can tell we do not need this to be
-          ! anything but zero for Nov11, since it is too cold for rrm.
-          ! -dschanen 1 May 2007
-!         Ncnm(1:gr%nnzp) 
-!    .    = 30.0 * (1.0 + exp(-gr%zt(1:gr%nnzp)/2000.0)) * 1.e6
-
-          Ncnm(1:gr%nnzp) = 0.0
-
-          ! Simplified ice off
-          dqc_dt_icedfs(:) = 0.0
-
-        else
-
-          do k = 1, gr%nnzp, 1
-            dqc_dt_icedfs(k) = 0.0
-          end do
 
         end if
 
@@ -640,29 +621,14 @@ c        end if
         ! Enter the final theta-l and rtm tendencies
 
         do k = 1, gr%nnzp, 1
+
           if ( .not. lbugsrad ) then
-! Michael Falk, 30 Jul 2007
-!            thlm_forcing(k) = radht(k)
-!     .                   - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
             thlm_forcing(k) = radht(k)
-            thlm_mc(k) = - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
           else
-!            thlm_forcing(k) = - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
             thlm_forcing(k) = 0.
-            thlm_mc(k) = - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
-! eMFc
           end if
 
-! Michael Falk, 30 Jul 2007
-!          if ( licedfs ) rtm_forcing(k) = dqc_dt_icedfs(k)
-          if ( licedfs ) then
-            rtm_forcing(k) = 0.
-            rtm_mc(k) = dqc_dt_icedfs(k)
-          end if
-! eMFc
-
-! eMFc
-
+          rtm_forcing(k) = 0.
         end do
 
         ! Set scalars according to rt and thetal for testing purposes

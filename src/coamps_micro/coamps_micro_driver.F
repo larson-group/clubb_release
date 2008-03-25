@@ -226,7 +226,6 @@
      .  ex4,
      .  ex4g,
      .  ex5,
-     .  Lf,
      .  hlvoka,
      .  hlsoka,
      .  hlvorv,
@@ -450,7 +449,7 @@
       ex4g = abar/visair
       ex5  = pi*aprpr*snzero*gmbp3/4.0
 
-      Lf     = Ls - Lv   ! Latent heat of fusion
+*     Lf     = Ls - Lv   ! Latent heat of fusion
       hlvoka = Lv/therco
       hkaolf = therco/Lf
       hlsoka = Ls/therco
@@ -529,13 +528,13 @@
         fallr_flip(1,1,k) = 0.
         falln_flip(1,1,k) = 0.
 
-  ! Michael Falk added these initializations, 10 Oct 2007
+! Michael Falk added these initializations, 10 Oct 2007
         falli_in_cloud(1,1,k) = 0.
         falls_in_cloud(1,1,k) = 0.
         fallg_in_cloud(1,1,k) = 0.
         fallr_in_cloud(1,1,k) = 0.
         falln_in_cloud(1,1,k) = 0.
-  ! eMFc
+! eMFc
       end do
 ! eMFc
 

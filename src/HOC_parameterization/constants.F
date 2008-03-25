@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.19 2008-02-19 19:57:15 griffinb Exp $
+! $Id: constants.F,v 1.20 2008-03-25 04:58:22 dschanen Exp $
 
         module constants
 
@@ -27,6 +27,7 @@
      .  Cp = 1004.67, ! Dry air specific heat at constant p [J/kg/K]
      .  Lv = 2.5e6,   ! Latent heat of vaporization         [J/kg]
      .  Ls = 2.834e6, ! Latent heat of sublimation          [J/kg]
+     .  Lf = 3.33e5,  ! Latent heat of fusion               [J/kg]
      .  Rd = 287.04,  ! Dry air gas constant                [J/kg/K]
      .  Rv = 461.5    ! Water vapor gas constant            [J/kg/K]
 

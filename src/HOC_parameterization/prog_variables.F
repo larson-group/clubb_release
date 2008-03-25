@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: prog_variables.F,v 1.16 2007-09-08 17:02:33 griffinb Exp $
+! $Id: prog_variables.F,v 1.17 2008-03-25 04:58:22 dschanen Exp $
         module prognostic_variables
 
 !       This module contains definitions of all prognostic
@@ -42,12 +42,7 @@
      .  rhot,        ! Density                                  [kg/m^3]
      .  rhom,        ! Density                                  [kg/m^3]
      .  thlm_forcing,! thlm large-scale forcing                 [K/s]
-! Michael Falk started adding here 27 Jul 2007
-!     .  rtm_forcing  ! rtm large-scale forcing                  [kg/kg/s]
-     .  rtm_forcing, ! rtm large-scale forcing                  [kg/kg/s]
-     .  rtm_mc,      ! rtm microphysical contribution           [kg/kg/s]
-     .  thlm_mc      ! thlm microphysical contribution          [K/s]
-!eMFc
+     .  rtm_forcing  ! rtm large-scale forcing                  [kg/kg/s]
 
 !$omp   threadprivate(p, exner, rhot, rhom, thlm_forcing, rtm_forcing)
 
@@ -171,10 +166,6 @@
 
         allocate( thlm_forcing(1:nzmax) ) ! thlm ls forcing
         allocate( rtm_forcing(1:nzmax) )  ! rtm ls forcing
-! Michael Falk 27 Jul 2007
-        allocate( thlm_mc(1:nzmax) )      ! thlm microphysical forcing
-        allocate( rtm_mc(1:nzmax) )       ! rtm microphysical forcing
-! eMFc
 
 ! Imposed large scale w
 
@@ -240,11 +231,6 @@
 
         thlm_forcing(1:nzmax) = 0.0     ! thlm large-scale forcing
         rtm_forcing(1:nzmax)  = 0.0     ! rtm large-scale forcing
-
-! Michael Falk, 27 Jul 2007
-        thlm_mc(1:nzmax) = 0.0     ! thlm microphysical forcing
-        rtm_mc(1:nzmax)  = 0.0     ! rtm microphysical forcing
-! eMFc
 
         ! Imposed large scale w
 
@@ -322,10 +308,6 @@
 
         deallocate( thlm_forcing )
         deallocate( rtm_forcing )
-! Michael Falk, 27 Jul 2007
-        deallocate( thlm_mc )
-        deallocate( rtm_mc )
-! eMFc
 
         ! Imposed large scale w
 

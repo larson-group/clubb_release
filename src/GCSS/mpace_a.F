@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_a.F,v 1.9 2008-03-24 15:59:49 dschanen Exp $
+! $Id: mpace_a.F,v 1.10 2008-03-25 04:58:22 dschanen Exp $
         module mpace_a
 
 !       Description:
@@ -52,12 +52,8 @@
      .    exner, rhot, rtm, p, thvm, rcm,
      .    wmt, wmm, theta_tndcy, rt_tndcy,
      .    Ncnm, Ncm, Frad, radht,
-! Michael Falk, 17 Oct 2007
-!     .    rtm_mc, thlm_mc, sclrm_forcing )
-     .    rtm_mc, thlm_mc, 
      .    um_hoc_grid, vm_hoc_grid,
      .    sclrm_forcing )
-! eMFc
 
 !        Description:
 !
@@ -68,7 +64,6 @@
         use constants
         use model_flags
         use grid_class
-        use icedfs
         use zlinterp, only: zlinterp_fnc
         use file_functions, only: file_read_1d, file_read_2d
 #ifdef STATS
@@ -125,6 +120,10 @@
      .  thvm,  ! Virtual potential temperature          [K]
      .  rcm    ! Cloud water mixing ratio               [kg/kg]
 
+        ! Input/Output Variables
+        real, dimension(gr%nnzp), intent(inout) :: 
+     .  Ncm,         ! Cloud droplet number concentration      [count/m^3]
+     .  Ncnm         ! Cloud nuclei number concentration       [count/m^3]
 
         ! Output Variables
         real, dimension(gr%nnzp), intent(out) :: 
@@ -133,11 +132,8 @@
      .  theta_tndcy, ! Large-scale thlm tendency               [K/s]
      .  rt_tndcy,    ! Large-scale rtm tendency                [kg/kg/s]
      .  Frad,        ! Total radiative flux                    [W/m^2]
-     .  Ncm,         ! Cloud droplet number concentration      [count/m^3]
-     .  Ncnm,        ! Cloud nuclei number concentration       [count/m^3]
-     .  radht,       ! dT/dt, then d Theta/dt, due to rad.     [K/s]
-     .  rtm_mc,      ! Microphysical rtm tendency              [kg/kg/s]
-     .  thlm_mc      ! Microphysical thlm tendency             [K/s]
+     .  radht        ! dT/dt, then d Theta/dt, due to rad.     [K/s]
+
 
         ! Output Variables (optional)
         real, optional, intent(out), dimension(gr%nnzp,sclr_dim) ::
@@ -187,9 +183,6 @@
      .  radhtk,
      .  radht_lw_out,
      .  radht_sw_out
-
-        ! Local variables, simplified ice (icedfs) microphysics
-        real, dimension(gr%nnzp) :: dqc_dt_icedfs
 
         ! Local variables, on/off switches for individual schemes
         logical :: 
@@ -251,7 +244,7 @@
 !     .                      -omega_forcing(k,left_time))
 !     .                     + omega_forcing(k,left_time)        
 
-        dTdt_column(k) = ratio *			       ! Do linear interpolation in time
+        dTdt_column(k) = ratio *                               ! Do linear interpolation in time
      .                      (dTdt_forcing(k,right_time)
      .                      -dTdt_forcing(k,left_time))
      .                     + dTdt_forcing(k,left_time)        
@@ -372,14 +365,14 @@
             dsigm(k)    = 1.0 / gr%dzt(gr%nnzp-k+1)
           end do
 
-          call rad_lwsw(thm_rad, rcm_rad, rhot_rad, dsigm,
-     .                  Frad_out, Frad_LW_out, Frad_SW_out,
-     .                  radhtk, radht_LW_out, radht_SW_out,
-     .                  gr%nnzp-1, center,
-     .                  xi_abs, F0, F1, kap, radius, A, gc, Fs0, omega,
-     .                  sw_on, lw_on)
+          call rad_lwsw( thm_rad, rcm_rad, rhot_rad, dsigm,
+     .                   Frad_out, Frad_LW_out, Frad_SW_out,
+     .                   radhtk, radht_LW_out, radht_SW_out,
+     .                   gr%nnzp-1, center,
+     .                   xi_abs, F0, F1, kap, radius, A, gc, Fs0, omega,
+     .                   sw_on, lw_on )
 
-          do k = 1, gr%nnzp-1
+          do k = 2, gr%nnzp-1
             Frad(k)     = Frad_out(gr%nnzp-k+1)
             Frad_LW(k)  = Frad_LW_out(gr%nnzp-k+1)
             Frad_SW(k)  = Frad_SW_out(gr%nnzp-k+1)
@@ -441,20 +434,9 @@
         end if
 #endif /*STATS*/
 
-
-        ! Compute icedfs microphysics
-        if ( licedfs ) then
-          call altocu_icedf( dt, thlm, rcm, p, exner, rhot,
-     .                       dqc_dt_icedfs )
-          do k=1,gr%nnzp
-            rtm_mc(k)  = dqc_dt_icedfs(k)
-            thlm_mc(k) = - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
-          end do
-        end if
-
         ! Initialize Ncnm on first timestep
         if ( lcoamps_micro .and. time == time_initial ) then
-          Ncnm(1:gr%nnzp) 
+          Ncnm(1:gr%nnzp)
      .    = 30.0 * (1.0 + exp(-gr%zt(1:gr%nnzp)/2000.0)) * 1.e6
 
         else if ( kk_rain ) then
@@ -464,7 +446,7 @@
           do k=1, gr%nnzp, 1
             if ( rcm(k) >= rc_tol ) then
               Ncm(k) = 30.0 * (1.0 + exp(-gr%zt(k)/2000.0)) * 1.e6
-     .                 * rhot(k) 
+     .                 / rhot(k) 
             end if
           end do
         end if
@@ -481,9 +463,9 @@
 
 !----------------------------------------------------------------------
         subroutine mpace_a_sfclyr( time, rho0, um_sfc, vm_sfc,
-     .                           upwp_sfc, vpwp_sfc,
-     .                           wpthlp_sfc, wprtp_sfc, ustar,
-     .                           wpsclrp_sfc, wpedsclrp_sfc )
+     .                             upwp_sfc, vpwp_sfc,
+     .                             wpthlp_sfc, wprtp_sfc, ustar,
+     .                             wpsclrp_sfc, wpedsclrp_sfc )
 
 !        Description:
 !          Surface forcing subroutine for mpace_a case.  Written 
@@ -531,8 +513,8 @@
         ! Local Variables
          real ::
      .   ubar,
-     .   LF,
-     .   HF
+     .   latent_heat_flx,
+     .   sensible_heat_flx
 
          integer ::
      .   i,j,k
@@ -561,21 +543,21 @@
         end do
       end if
 
-      LF = ((time-file_times(left_time)) / 
+      latent_heat_flx = ((time-file_times(left_time)) / 
      .     (file_times(right_time)-file_times(left_time))) *
      .     (file_LH(right_time)
      .     -file_LH(left_time))
      .     + file_LH(left_time)        
 
-      HF = ((time-file_times(left_time)) / 
+      sensible_heat_flx = ((time-file_times(left_time)) / 
      .     (file_times(right_time)-file_times(left_time))) *
      .     (file_SH(right_time)
      .     -file_SH(left_time))
      .     + file_SH(left_time)        
 
         ! Compute heat and moisture fluxes
-        wpthlp_sfc = HF/(rho0*Cp)
-        wprtp_sfc  = LF/(rho0*Lv)
+        wpthlp_sfc = sensible_heat_flx/(rho0*Cp)
+        wprtp_sfc  = latent_heat_flx/(rho0*Lv)
 
         ! Compute momentum fluxes
         ubar = max( ubmin, sqrt( um_sfc**2 + vm_sfc**2 ) )

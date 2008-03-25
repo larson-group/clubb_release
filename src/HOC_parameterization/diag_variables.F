@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F,v 1.19 2008-03-20 18:22:09 griffinb Exp $
+! $Id: diag_variables.F,v 1.20 2008-03-25 04:58:22 dschanen Exp $
         module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -39,12 +39,6 @@
      .  radht ! SW + LW heating rate
 
 !$omp   threadprivate(Frad, radht)
-
-        real, allocatable, target, dimension(:) ::
-     .  hm_rt_tndcy,
-     .  hm_thl_tndcy
-
-!$omp   threadprivate(hm_rt_tndcy, hm_thl_tndcy)
 
         ! Tendency arrays for u and v wind
         real, target, allocatable, dimension(:) ::
@@ -239,9 +233,6 @@
         allocate( umt(1:nzmax) )       ! u wind
         allocate( vmt(1:nzmax) )       ! v wind
 
-        allocate( hm_rt_tndcy(1:nzmax) )  ! Change in r_t due to hydrometors
-        allocate( hm_thl_tndcy(1:nzmax) ) ! Change in th_l due to hydrometeors 
-
         if ( cloud_sed ) then
           allocate( sed_rcm(1:nzmax) )   ! sedimentation factor in rcm ! Brian
           allocate( Fcsed(1:nzmax) )     ! cloud water sedimentation flux (momentum point) ! Brian
@@ -358,9 +349,6 @@
         thvm = 0.0  ! Virtual potential temperature
         rsm  = 0.0  ! Saturation mixing ratio  ! Brian
 
-        hm_rt_tndcy  = 0.0
-        hm_thl_tndcy = 0.0
-
         if ( cloud_sed ) then
           sed_rcm = 0.0  ! Sedimentation factor in rcm ! Brian
           Fcsed   = 0.0  ! Cloud water sedimentation flux (momentum point) ! Brian
@@ -473,9 +461,6 @@
  
         deallocate( thvm )      ! virtual potential temperature
         deallocate( rsm )       ! saturation mixing ratio  ! Brian
-
-        deallocate( hm_rt_tndcy )
-        deallocate( hm_thl_tndcy )
 
         if ( cloud_sed ) then
           deallocate( sed_rcm )   ! sedimentation factor in rcm ! Brian

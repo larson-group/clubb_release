@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: astex.F,v 1.3 2007-02-09 22:10:10 dschanen Exp $
+! $Id: astex.F,v 1.4 2008-03-25 04:58:22 dschanen Exp $
         module astex
 
 !       Description:
@@ -54,10 +54,13 @@
 
         end do
 
+        ! Boundary condition
+        wmt(1) = 0.0        ! Below surface
+
+        ! Interpolation
         wmm = zt2zm( wmt )
 
-        ! Boundary conditions.
-        wmt(1) = 0.0        ! Below surface
+        ! Boundary condition
         wmm(1) = 0.0        ! At surface
         wmm(gr%nnzp) = 0.0  ! Model top
         
@@ -117,15 +120,16 @@
 
         ! Local variables
 
-        real :: HF, LF
+        real :: sensible_heat_flx, ! W/m^2
+     .          latent_heat_flx    ! W/m^2
 
         ! Compute heat and moisture fluxes
 
-        HF = 10.0
-        LF = 25.0
+        sensible_heat_flx = 10.0
+        latent_heat_flx = 25.0
 
-        wpthlp_sfc = HF/( rho0*Cp )
-        wprtp_sfc  = LF/( rho0*Lv )
+        wpthlp_sfc = sensible_heat_flx/( rho0*Cp )
+        wprtp_sfc  = latent_heat_flx/( rho0*Lv )
 
         ! Compute momentum fluxes
 

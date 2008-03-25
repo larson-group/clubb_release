@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zt.F,v 1.6 2008-03-20 18:22:09 griffinb Exp $
+! $Id: stats_zt.F,v 1.7 2008-03-25 04:58:22 dschanen Exp $
 #ifdef STATS
       
       module stats_zt
@@ -69,10 +69,11 @@
       iradht        = 0
       iradht_LW     = 0
       iradht_SW     = 0
-      idiam         = 0
-      im            = 0
-      idqc_dt_icedfs= 0
-      iu_T_cm       = 0
+
+      idiam           = 0
+      imass_ice_cryst = 0
+      ircm_icedfs     = 0
+      iu_T_cm         = 0
 
       imean_vol_rad_rain  = 0  ! Brian
       imean_vol_rad_cloud = 0
@@ -508,6 +509,7 @@
           call stat_assign(iradht_SW,"radht_SW",
      .         "Short-wave heating rate","K/s",zt)
           k = k + 1
+
         case ('diam')
           idiam = k
 
@@ -515,16 +517,16 @@
      .         "Ice crystal diameter","m",zt)
           k = k + 1
 
-        case ('m')
-          im = k
-          call stat_assign(im,"m",
+        case ('mass_ice_cryst')
+          imass_ice_cryst = k
+          call stat_assign(imass_ice_cryst,"mass_ice_cryst",
      .         "Ice crystal mass","kg",zt)
           k = k + 1
 
-        case ('dqc_dt_icedfs')
+        case ('rcm_icedfs')
 
-          idqc_dt_icedfs = k
-          call stat_assign(idqc_dt_icedfs,"dqc_dt_icedfs",
+          ircm_icedfs = k
+          call stat_assign(ircm_icedfs,"rcm_icedfs",
      .         "Change in liquid due to ice","kg/kg/s",zt)
           k = k + 1
 

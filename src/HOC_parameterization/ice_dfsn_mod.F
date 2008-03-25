@@ -1,16 +1,16 @@
-        module icedfs
+        module ice_dfsn_mod
 
-        public  :: altocu_icedf
+        public  :: ice_dfsn
         private :: Diff_denom
 
         contains
 !-----------------------------------------------------------------------
-        SUBROUTINE altocu_icedf( dt, thlm, rcm, p, exner, rhot,
-     .                           dqc_dt_icedfs )
+        SUBROUTINE ice_dfsn( dt, thlm, rcm, press, exner, rhot,
+     .                       rcm_icedfsn )
         ! Description:
         ! This subroutine is based on a COAMPS subroutine (nov11_icedfs)
         ! written by Adam Smith and Vince Larson to calculate the
-        ! diffusional growth of ice for the Nov. 11 altocumulus case.
+        ! depletion of cloud water by the diffusional growth of ice.
 
         !---------------Brian's comment--------------------------------------!
         ! This code does not use actual microphysics.  Diffusional growth of !
@@ -35,47 +35,67 @@
         ! why the diffusional growth of ice is being deducted from liquid    !
         ! water in this subroutine.
         !--------------------------------------------------------------------!
+        
+        !     References:
+        !       Section 4.2 of Larson et al. (2006), "What determines altocumulus
+        !         dissipation time?", J. Geophys. Res., Vol. 111, D19207.
+        !       Mitchell, D. L. (1996), "Use of mass- and area- ...", J. Atmos. Sci.
+        !         Vol. 53, 1710--1723.        
+        !       Rogers and Yau (1989), "A Short Course in Cloud Physics", 3rd. Ed. 
+        !       Fleishauer et al. (2002), "Observed microphysical structure of
+        !         midlevel, mixed-phase clouds", J. Atmos. Sci., Vol. 59, 
+        !         pp. 1779--1804.
+
 
         USE grid_class
         USE constants
         USE saturation, only: rsat
 #ifdef STATS
         use stats_hoc, only: zt, lstats_samp,
-     .      idqc_dt_icedfs, idiam, im, iu_T_cm
+     .      ircm_icedfs, idiam, imass_ice_cryst, iu_T_cm
 #endif
 
         implicit none
 
         ! Input variables
-        REAL, INTENT(IN):: dt
-        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: thlm
-        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rcm
-        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: p
-        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: exner
-        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: rhot
+        REAL, INTENT(IN):: 
+     .  dt      ! Model timestep
+
+        REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: 
+     .  thlm,   ! Mean liquid water potential temperature            [K]
+     .  rcm,    ! Cloud water mixing ratio                           [kg kg^{-1}]
+     .  press,  ! Air pressure                                       [Pa]
+     .  exner,  ! Exner function                                     []
+     .  rhot    ! Air density on thermodynamic grid                  [kg m^{-3}]
 
         ! Output variables
-        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: dqc_dt_icedfs
+        REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: 
+     .  rcm_icedfsn   ! Time tendency of rcm due to ice diffusional growth  
+     .                !                                               [kg kg^{-1} s^{-1}]
 
         ! Local variables
-        REAL, DIMENSION(1:gr%nnzp):: m
-        REAL, DIMENSION(1:gr%nnzp):: thm
-        REAL, DIMENSION(1:gr%nnzp):: TT
-        REAL, DIMENSION(1:gr%nnzp):: rs
-        REAL, DIMENSION(1:gr%nnzp):: es
-        REAL, DIMENSION(1:gr%nnzp):: ei
-        REAL, DIMENSION(1:gr%nnzp):: Si
-        REAL, DIMENSION(1:gr%nnzp):: Denom
-        REAL, DIMENSION(1:gr%nnzp):: dm
-        REAL, DIMENSION(1:gr%nnzp):: diam
-        REAL, DIMENSION(1:gr%nnzp):: u_T_cm
+        REAL, DIMENSION(1:gr%nnzp):: 
+     .  mass_ice_cryst, ! Mass of a single ice crystal      [kg]
+     .  theta,           ! Potential temperature                       [K]
+     .  temp_in_K,       ! Temperature                                 [K]
+     .  r_s,             ! Saturation mixing ratio over vapor          [kg kg^{-1}] 
+     .  e_s,             ! Saturation vapor pressure over liquid       [Pa]
+     .  e_i,             ! Saturation vapor pressure over ice          [Pa]
+     .  S_i,             ! Ratio of saturation w.r.t. liquid to that for ice []
+     .  Denom,           ! Denominator of diffusional growth equation  [m s kg^{-1}] 
+     .  dmass_ice_cryst, ! Change in ice mass over vertical grid box   [kg m^{-1}]
+     .  diam,            ! Diameter of ice crystal                     [m]
+     .  u_T_cm           ! Fallspeed of ice crystal in cm/s            [cm s^{-1}]
 
-        REAL:: a, b, k_u, q, n
-
-
-        REAL, PARAMETER:: Lf = 3.33e5
+        REAL:: 
+     .  a_coef,    ! Pre-factor for mass-diameter relationship, Mitchell (1996) [kg] 
+     .  b_expn,    ! Exponential for mass-diameter relationship, Mitchell (1996) []
+     .  k_u_coef,  ! Pre-factor for fallspeed-diameter formula                  [m s^{-1}]
+     .  q_expn,    ! Exponential of density in fallspeed-diameter formula       []   
+     .  n_expn     ! Exponential of diameter in fallspeed-diameter formula      []
+        ! Number of ice crystals per unit volume of air    [m^{-3}]
         ! Vince Larson avgd legs 2 and 7 (Fleishauer et al)  21 Jan 2005
-        REAL, PARAMETER:: Ni = 2000
+        REAL, PARAMETER:: N_i = 2000
 
         INTEGER:: k
 
@@ -86,8 +106,8 @@
         !                                                                     !
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        a = 2.05e-3
-        b = 1.8
+        a_coef = 2.05e-3
+        b_expn = 1.8
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !                                                                     !
@@ -107,9 +127,9 @@
         !                                                                     !
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        k_u = 55.
-        q   = 0.17
-        n   = 0.70
+        k_u_coef = 55.
+        q_expn   = 0.17
+        n_expn   = 0.70
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !                                                                     !
@@ -132,31 +152,31 @@
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         DO k = 1, gr%nnzp, 1
-           m(k) = 1.0e-11
-        ENDDO
+           mass_ice_cryst(k) = 1.0e-11
+        END DO
 
         DO k = gr%nnzp, 2, -1
 
           !  Compute Temperature [K]
-          thm(k) = thlm(k) + ( Lv / (Cp*exner(k)) ) * rcm(k)
-          TT(k) = thm(k) * exner(k)
+          theta(k) = thlm(k) + ( Lv / (Cp*exner(k)) ) * rcm(k)
+          temp_in_K(k) = theta(k) * exner(k)
 
           ! Check whether we're in cloud and below freezing.
           ! Note:  A value of 1.0E-5 kg/kg is used as a threshold value
           ! for rcm because the HOC model shows a small amount of liquid
           ! water all the way to the model top, which messes with the
           ! ice diffusion calculations.
-          IF ( rcm(k) >= 1.0E-5 .AND. TT(k) < 273.15 ) THEN
+          IF ( rcm(k) >= 1.0E-5 .AND. temp_in_K(k) < 273.15 ) THEN
 
           ! Find saturation mixing ratio over vapor [kg kg^{-1}]
-             rs(k) = rsat( p(k), TT(k) )
+             r_s(k) = rsat( press(k), temp_in_K(k) )
 
           ! Saturation vapor pressure over liquid in Pa
-             es(k) = ( rs(k)*p(k) ) / ( ep + rs(k) )
+             e_s(k) = ( r_s(k)*press(k) ) / ( ep + r_s(k) )
 
           ! Saturation vapor pressure over ice in Pa, Eq. 2.15 Rogers and Yau
-             ei(k) = es(k) / EXP( ( Lf/(Rv*273.16) )
-     .                           * ( 273.16/TT(k) - 1.0 ) )
+             e_i(k) = e_s(k) / EXP( ( Lf/(Rv*273.16) )
+     .                           * ( 273.16/temp_in_K(k) - 1.0 ) )
 
           ! Saturation ratio in a liquid-saturated cloud, p. 158 Rogers and Yau
           !---------------Brian's comment--------------------------------------!
@@ -165,10 +185,10 @@
           ! the atmosphere is then saturated with respect to liquid water.     !
           ! Therefore, S = 1.0, allowing Si = es/ei.                           !
           !--------------------------------------------------------------------!
-             Si(k) = es(k)/ei(k)
+             S_i(k) = e_s(k)/e_i(k)
 
           ! Denominator of diffusional growth equation, 9.4 of Rogers and Yau
-             Denom(k) = Diff_denom( TT(k), p(k), ei(k) )
+             Denom(k) = Diff_denom( temp_in_K(k), press(k), e_i(k) )
 
           ! Change in mass of a single ice crystal, m,
           ! as it falls a distance gr%dzt in meters
@@ -185,49 +205,51 @@
           ! for an individual crystal.  Multiplying that by the ice crystal    !
           ! concentration yields the overall change in mixing ratio over time. !
           !--------------------------------------------------------------------!
-             dqc_dt_icedfs(k) = - (Ni/rhot(k))
-     .          * ( 4 * (Si(k) - 1) / Denom(k) )
-     .          * (m(k)/a)**(1/b)
+             rcm_icedfsn(k) = - (N_i/rhot(k))
+     .          * ( 4 * (S_i(k) - 1) / Denom(k) )
+     .          * (mass_ice_cryst(k)/a_coef)**(1/b_expn)
 
              ! Ensure that liquid is not over-depleted
-             IF ( rcm(k) + dqc_dt_icedfs(k)*dt < 0.0 ) THEN
-                dqc_dt_icedfs(k) = -rcm(k)/dt
+             IF ( rcm(k) + rcm_icedfsn(k)*dt < 0.0 ) THEN
+               rcm_icedfsn(k) = -rcm(k)/dt
              END IF
 
              !---------------Brian's comment-----------------------------------!
              ! dm = (dm/dt)*(dt/dz)*dz                                         !
              ! dm = (dm/dt)*(1/u_T)*dz                                         !
              !-----------------------------------------------------------------!
-             dm(k) = ( 4 * (Si(k) - 1) / Denom(k) )
-     .          * (k_u**(-1.0)) * (rhot(k)**q)
-     .          * ( (m(k)/a)**((1.0-n)/b) )
+             dmass_ice_cryst(k) = ( 4 * (S_i(k) - 1) / Denom(k) )
+     .          * (k_u_coef**(-1.0)) * ( rhot(k)**q_expn )
+     .          * ( (mass_ice_cryst(k)/a_coef)**((1.0-n_expn)/b_expn) )
      .          * (1.0/gr%dzm(k-1))
-             m(k-1) = m(k) + dm(k)
+             mass_ice_cryst(k-1) = mass_ice_cryst(k) 
+     .                                    + dmass_ice_cryst(k)
 
              ! Diameter of ice crystal in meters.
-             diam(k) = (m(k)/a)**(1/b)
+             diam(k) = (mass_ice_cryst(k)/a_coef)**(1/b_expn)
 
              ! Fallspeed of ice crystal in cm/s.
-             u_T_cm(k) = 100. * k_u *
-     .                   ((m(k)/a)**(n/b)) * (rhot(k)**(-q))
+             u_T_cm(k) = 100. * k_u_coef *
+     .                   ((mass_ice_cryst(k)/a_coef)**(n_expn/b_expn)) 
+     .                         * (rhot(k)**(-q_expn))
 
           ELSE   ! There's no liquid and/or ice present; assume no ice growth
 
-             m(k-1) = m(k)
-             dqc_dt_icedfs(k) = 0.0
-             diam(k)          = 0.0  ! Set zero to remind that we don't grow ice
-             u_T_cm(k)        = 0.0  ! Set zero to remind that we don't grow ice
+             mass_ice_cryst(k-1) = mass_ice_cryst(k)
+             rcm_icedfsn(k) = 0.0
+             diam(k)        = 0.0  ! Set zero to remind that we don't grow ice
+             u_T_cm(k)      = 0.0  ! Set zero to remind that we don't grow ice
 
           END IF
 
-        ENDDO
+        END DO
 
 ! Michael Falk added boundary condx, 31 July 2006
 
-        m(1) = m(2)
-        dqc_dt_icedfs(1) = dqc_dt_icedfs(2)
-        diam(1) = diam(2)
-        u_T_cm(1) = u_T_cm(2)
+        mass_ice_cryst(1) = mass_ice_cryst(2)
+        rcm_icedfsn(1)    = rcm_icedfsn(2)
+        diam(1)           = diam(2)
+        u_T_cm(1)         = u_T_cm(2)
 
 ! eMFc
 
@@ -239,18 +261,19 @@
 !       dqc_dt_icedfs(:) ! Icedfs change in liquid; Michael Falk, 1 Nov 2006
 !       u_T_cm(:)        ! Icedfs fallspeed (cm/s); Michael Falk, 1 Nov 2006
 
-          if ( idqc_dt_icedfs > 0 ) then
-            zt%x(:,idqc_dt_icedfs) = zt%x(:,idqc_dt_icedfs)
-     .                               + dqc_dt_icedfs
-            zt%n(:,idqc_dt_icedfs) = zt%n(:,idqc_dt_icedfs) + 1
+          if ( ircm_icedfs > 0 ) then
+            zt%x(:,ircm_icedfs) = zt%x(:,ircm_icedfs)
+     .                          + rcm_icedfsn
+            zt%n(:,ircm_icedfs) = zt%n(:,ircm_icedfs) + 1
           end if
           if ( idiam > 0 ) then
             zt%x(:,idiam) = zt%x(:,idiam) + diam
             zt%n(:,idiam) = zt%n(:,idiam) + 1
           end if
-          if ( im > 0 ) then
-            zt%x(:,im) = zt%x(:,im) + m
-            zt%n(:,im) = zt%n(:,im) + 1
+          if ( imass_ice_cryst > 0 ) then
+            zt%x(:,imass_ice_cryst) = 
+     .               zt%x(:,imass_ice_cryst) + mass_ice_cryst
+            zt%n(:,imass_ice_cryst) = zt%n(:,imass_ice_cryst) + 1
           end if
           if ( iu_T_cm > 0 ) then
             zt%x(:,iu_T_cm) = zt%x(:,iu_T_cm) + u_T_cm
@@ -260,16 +283,27 @@
 #endif /*STATS*/
 
         RETURN
-        END SUBROUTINE altocu_icedf
+        END SUBROUTINE ice_dfsn
+
 !-----------------------------------------------------------------------
-        FUNCTION Diff_denom( Temp, press, ei )
+
+        FUNCTION Diff_denom( temp_in_K, press, e_i )
 
         USE constants
 
         IMPLICIT NONE
 
-        REAL, INTENT(IN):: Temp, press, ei
-        REAL:: Diff_denom
+        ! Compute denominator of diffusional growth equation
+
+        ! Reference:  Eqn. 9.4 of Rogers and Yau (1989), "A Short Course on Cloud Physics"
+
+        REAL, INTENT(IN) :: 
+     .   temp_in_K,   ! Temperature                               [K]
+     .   press,       ! Air pressure                              [Pa]
+     .   e_i          ! Vapor pressure over ice                   [Pa]
+
+        REAL :: 
+     .  Diff_denom   ! Denominator of diffusional growth equation  [m s kg^{-1}]
 
         REAL:: Ka, Dv
         REAL:: Fk, Fd
@@ -277,21 +311,21 @@
 
 !        REAL, PARAMETER:: Ls = 2.834e6
 
-        Celsius = Temp - 273.16
+        Celsius = temp_in_K - 273.16
 
         Ka = (5.69 + 0.017*Celsius)*0.00001  ! Ka in cal./(cm.*sec.*C)
         Ka = 4.1868*100.0*Ka  ! Ka in J./(m.*sec.*K)
 
-        Dv = 0.221*((Temp/273.16)**1.94)*(101325.0/press)
+        Dv = 0.221 * ( (temp_in_K/273.16)**1.94 ) * (101325.0/press)
                                 ! Dv in (cm.^2)/sec.  ! .221 is correct.
         Dv = Dv/10000.0  ! Dv in (m.^2)/sec.
 
-        Fk = (Ls/(Rv*Temp) - 1.0) * Ls/(Ka*Temp)
-        Fd = (Rv*Temp)/(Dv*ei)
+        Fk = ( Ls/(Rv*temp_in_K) - 1.0 ) * Ls / (Ka*temp_in_K)
+        Fd = (Rv*temp_in_K) / (Dv*e_i)
 
         Diff_denom = Fk + Fd
 
         RETURN
         END FUNCTION Diff_denom
 
-        end module icedfs
+        end module ice_dfsn_mod

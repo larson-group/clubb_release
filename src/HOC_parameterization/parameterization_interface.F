@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.71 2008-03-20 18:22:09 griffinb Exp $
+! $Id: parameterization_interface.F,v 1.72 2008-03-25 04:58:22 dschanen Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -41,10 +41,7 @@
      .              rtp2, thlp2, rtpthlp,
      .              Scm, taum, rcm, Ncm, Ncnm, Nim, 
      .              hydromet, cf,
-! Michael Falk, 27 Jul 2007
-!     .              isValid, implemented
-     .              isValid, implemented, rtm_mc, thlm_mc
-! eMFc
+     .              isValid, implemented
 #ifdef SCALARS
      .              ,wpsclrp_sfc, wpedsclrp_sfc,   ! Optional
      .              sclrm, sclrm_forcing, edsclrm  ! Optional
@@ -110,10 +107,6 @@
        real, intent(in), dimension(gr%nnzp) :: 
      . thlm_forcing,  ! theta_l forcing.        [K/s]
      . rtm_forcing,   ! r_t forcing.            [(kg/kg)/s] 
-! Michael Falk, 27 Jul 2007
-     . rtm_mc,        ! r_t microphysical       [(kg/kg)/s] 
-     . thlm_mc,       ! thlm microphysical      [K/s] 
-! eMFc
      . wmm,           ! wm on moment. grid.     [m/s]
      . wmt,           ! wm on thermo. grid.     [m/s]
      . p,             ! Pressure.               [Pa] 
@@ -188,7 +181,9 @@
        logical :: ltmp
 
        real, dimension(gr%nnzp) ::
-     . tmp1, gamma_Skw_fnc
+     . tmp1, gamma_Skw_fnc,
+     . rtm_mc,        ! r_t change due to microphysics          [kg/kg)/s] 
+     . thlm_mc        ! thlm change due to microphysics         [K/s] 
 
 #ifdef SCALARS
        real, dimension(gr%nnzp,sclr_dim) ::
@@ -226,7 +221,7 @@
 !-------- Test input variables ----------------------------------------
 
        call parameterization_check( thlm_forcing,rtm_forcing,
-     .                           rtm_mc, thlm_mc, wmm,wmt, p, rhom,
+     .                           wmm, wmt, p, rhom,
      .                           rhot, exner, wpthlp_sfc, wprtp_sfc,
      .                           upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,
      .                           up2, vp2, rtm, wprtp, thlm,
@@ -488,11 +483,13 @@
        ! Compute mixing length
        !----------------------------------------------------------------
 
-       call compute_length( thvm, thlm, rtm, rcm, 
-     .              em, p, exner, Lscale, isValid )
-       if(.not. isValid) then
-          return
-       endif
+       call compute_length
+     .      ( thvm, thlm, rtm, rcm, em, p, exner, ! Input
+     .        Lscale, isValid )  ! Output
+
+       if ( .not. isValid ) then
+         return
+       end if
 
        !----------------------------------------------------------------
        ! Dissipation time
@@ -538,23 +535,16 @@
        !----------------------------------------------------------------
        ! Call Khairoutdinov and Kogan (2000) scheme, or COAMPS
        ! for rain microphysics.
-       if ( kk_rain .or. lcoamps_micro ) then
+       if ( kk_rain .or. lcoamps_micro .or. licedfs ) then
          call timestep_microphys
      .        ( dt, time_current, time_initial,
      .          thlm, p, exner, rhot, rhom, rtm, rcm, Ncm, 
      .          pdf_parms, wmt, wmm, Khm, AKm_est, Akm, 
      .          Ncnm, Nim,
      .          hydromet,
-     .          hm_rt_tndcy, hm_thl_tndcy, isValid )
+     .          rtm_mc, thlm_mc, isValid )
 
        end if
-
-! Michael Falk started adding code here, 27 Jul 2007
-       if (licedfs) then
-         hm_rt_tndcy = rtm_mc
-         hm_thl_tndcy = thlm_mc
-       end if
-! eMFc
 
        if ( .not. isValid ) return
 
@@ -574,7 +564,7 @@
      .        thlm, wpthlp, thlpthvp, thlm_forcing, 
      .        rtp2, thlp2, ! Added for clipping Vince Larson 29 Sep 2007
      .        rhot, rhom, exner, rcm, Ncm, 
-     .        hm_thl_tndcy, hm_rt_tndcy, 
+     .        thlm_mc, rtm_mc, 
      .        Fcsed, sed_rcm,
      .        isValid, implemented  
 #ifdef SCALARS

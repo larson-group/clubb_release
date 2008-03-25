@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_b.F,v 1.5 2008-03-05 17:22:52 faschinj Exp $
+! $Id: mpace_b.F,v 1.6 2008-03-25 04:58:22 dschanen Exp $
         module mpace_b
 
 !       Description:
@@ -20,7 +20,7 @@
      .    exner, rhot, rtm, p, thvm, rcm,
      .    wmt, wmm, theta_tndcy, rt_tndcy,
      .    Ncnm, Ncm, Frad, radht,
-     .    rtm_mc, thlm_mc, sclrm_forcing )
+     .    sclrm_forcing )
 
 !        Description:
 !          Subroutine to large-scale subsidence for mpace_b case (Michael
@@ -35,7 +35,6 @@
         use constants
         use model_flags
         use grid_class
-        use icedfs
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
@@ -90,6 +89,10 @@
      .  thvm,  ! Virtual potential temperature          [K]
      .  rcm    ! Cloud water mixing ratio               [kg/kg]
 
+        ! Input/Output Variables
+        real, dimension(gr%nnzp), intent(inout) :: 
+     .  Ncm,         ! Cloud droplet number concentration      [count/m^3]
+     .  Ncnm         ! Cloud nuclei number concentration       [count/m^3]
 
         ! Output Variables
         real, dimension(gr%nnzp), intent(out) :: 
@@ -98,14 +101,7 @@
      .  theta_tndcy, ! Large-scale thlm tendency               [K/s]
      .  rt_tndcy,    ! Large-scale rtm tendency                [kg/kg/s]
      .  Frad,        ! Total radiative flux                    [W/m^2]
-     .  Ncm,         ! Cloud droplet number concentration      [count/kg]
-     .  Ncnm,        ! Cloud nuclei number concentration       [count/m^3]
-! Michael Falk added rtm_mc and thlm_mc here for icedfs scheme stats.  27 Jul 2007
-!     .  radht        ! dT/dt, then d Theta/dt, due to rad.     [K/s]
-     .  radht,       ! dT/dt, then d Theta/dt, due to rad.     [K/s]
-     .  rtm_mc,      ! Microphysical rtm tendency              [kg/kg/s]
-     .  thlm_mc      ! Microphysical thlm tendency             [K/s]
-! eMFc
+     .  radht        ! dT/dt, then d Theta/dt, due to rad.     [K/s]
 
         ! Output Variables (optional)
         real, optional, intent(out), dimension(gr%nnzp,sclr_dim) ::
@@ -155,9 +151,6 @@
      .  radhtk,
      .  radht_lw_out,
      .  radht_sw_out
-
-        ! Local variables, simplified ice (icedfs) microphysics
-        real, dimension(gr%nnzp) :: dqc_dt_icedfs
 
         ! Local variables, on/off switches for individual schemes
         logical :: 
@@ -299,22 +292,6 @@
         end if
 #endif /*STATS*/
 
-
-        ! Compute icedfs microphysics
-        if ( licedfs ) then
-          call altocu_icedf( dt, thlm, rcm, p, exner, rhot,
-     .                       dqc_dt_icedfs )
-          do k=1,gr%nnzp
-! Michael Falk, 27 Jul 2007
-!            theta_tndcy(k) = theta_tndcy(k)
-!     .                       - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
-!            rt_tndcy(k) = rt_tndcy(k) + dqc_dt_icedfs(k)
-            rtm_mc(k)  = dqc_dt_icedfs(k)
-            thlm_mc(k) = - ( Lv/(Cp*exner(k)) ) * dqc_dt_icedfs(k)
-! eMFc
-          end do
-        end if
-
         ! Initialize Ncnm on first timestep
         if ( lcoamps_micro .and. time == time_initial ) then
           Ncnm(1:gr%nnzp) 
@@ -329,8 +306,6 @@
               ! Ncm is in units of kg^-1.  If the coefficient is in m^-3, then
               ! it needs to be divided by rhot in order to get units of kg^-1.
               ! Brian.  Sept. 8, 2007.
-!              Ncm(k) = 30.0 * (1.0 + exp(-gr%zt(k)/2000.0)) * 1.e6
-!     .                 * rhot(k) 
               Ncm(k) = 30.0 * (1.0 + exp(-gr%zt(k)/2000.0)) * 1.e6
      .                 / rhot(k) 
             end if
@@ -372,9 +347,9 @@
         real, parameter ::
      .  ubmin = 0.25,
 !     .  ustar = 0.25,
-        ! Values of HF & LF are from the mpace_b specification.
-     .  HF    = 136.5, ! Sensible Heat Flux     [W m^-2] 
-     .  LF    = 107.7  ! Latent Heat Flux       [W m^-2] 
+        ! The values of these are from the mpace_b specification.
+     .  sensible_heat_flx  = 136.5, ! Sensible Heat Flux     [W m^-2] 
+     .  latent_heat_flx    = 107.7  ! Latent Heat Flux       [W m^-2] 
 ! eMFc
 
         ! Input Variables
@@ -405,8 +380,8 @@
         ustar = 0.25
 
         ! Compute heat and moisture fluxes
-        wpthlp_sfc = HF/(rho0*Cp)
-        wprtp_sfc  = LF/(rho0*Lv)
+        wpthlp_sfc = sensible_heat_flx/(rho0*Cp)
+        wprtp_sfc  = latent_heat_flx/(rho0*Lv)
 
         ! Compute momentum fluxes
         ubar = max( ubmin, sqrt( um_sfc**2 + vm_sfc**2 ) )
