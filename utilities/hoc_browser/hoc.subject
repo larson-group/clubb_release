@@ -1,0 +1,33 @@
+author: David Schanen 
+Note: Since I'm not a Meteorologist, these categories are limited
+
+utility;netcdf;open_nc
+utility;netcdf;write_nc
+utility;netcdf;close_nc
+utility;grads;open_grads
+utility;grads;write_grads
+utility;grads;check_grads
+
+grid;interpolate;zm2zt
+grid;interpolate;zt2zm
+grid;differentiate;ddzm
+grid;differentiate;ddzt
+
+numerics;sparse matrix solvers;tridag_solve
+numerics;sparse matrix solvers;band_solve
+
+physics;rain microphysics;rain
+physics;vertical velocity moments;timestep_wp23
+physics;mean and flux terms;timestep_mixing
+physics;variance terms;diag_var
+physics;probability density function;pdf_closure_new
+
+boundary layer;mixing length;length
+boundary layer;surface;sfc_momentum_fluxes
+boundary layer;surface;sfc_thermo_fluxes
+boundary layer;surface;sfc_var
+
+radiation;analytic;cloud_rad
+radiation;analytic;rad_lwsw 
+radiation;analytic;bomex_tndcy 
+radiation;interactive;bugsrad_hoc 
