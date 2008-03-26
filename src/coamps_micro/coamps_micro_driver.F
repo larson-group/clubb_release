@@ -355,10 +355,39 @@
 !----------------------------------------------------------------------
 
       ! Begin coamps_micro_driver code
+
+      ! Comment by Adam Smith, 25 March 2008
+      ! These variables activate rain/drizzle and graupel in the COAMPS
+      ! micro scheme.  Set these variables to .TRUE. if you need these
+      ! hydrometeors in your simulations.
       ldrizzle = .FALSE.
       lgrpl    = .FALSE.
 
-      icase    = 75
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      ! Comment by Adam Smith, 25 March 2008
+      ! The variable "icase" is used in the COAMPS namelist to identify
+      ! the simulation being run.  Normally, each icase value represents
+      ! an individual case, in order to allow the user to use specific
+      ! model settings and forcings.
+      !
+      ! Ideally, we would use the character string "runtype" to identify
+      ! a simulation, since the variable is already used in hoc.F.
+      ! However, with the current structure of CLUBB, it is not realistic
+      ! to pass the variable into this driver.  Therefore, we must hard-code
+      ! the icase value for now.  Perhaps in the future, it will be possible
+      ! to have the "icase" value set automatically based on the cloud case.
+      !
+      ! Specific icase values used in COAMPS:
+      ! icase = 75:   M-PACE period B
+      ! icase = 1000: Nov.11, 1999 altocu
+      ! icase = 1001: Jun.25 multilayered altocu
+      ! icase = 1002: CLEX-9: Oct.14, 2001 altocu
+      ! icase = 1003: CLEX-9: Nov.02, 2001 altocu
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      ! End of ajsmith4's comment
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      icase    = 1000
+
       eic      = 1.0
 
       ! Set up initial fields
