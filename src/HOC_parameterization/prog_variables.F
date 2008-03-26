@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: prog_variables.F,v 1.17 2008-03-25 04:58:22 dschanen Exp $
+! $Id: prog_variables.F,v 1.18 2008-03-26 23:53:44 dschanen Exp $
         module prognostic_variables
 
 !       This module contains definitions of all prognostic
@@ -62,23 +62,9 @@
         ! Cloud water variables
         real, target, allocatable, dimension(:) ::
      .  rcm,  ! Cloud water mixing ratio                [kg/kg]
-     .  Ncm,  ! Cloud droplet number concentration      [num/kg]
-     .  Ncnm, ! Cloud nuclei number concentration       [num/m^3]
-     .  Nim,  ! Ice nuclei number concentration         [num/m^3]
      .  cf    ! Cloud fraction                          [%]
 
-!$omp   threadprivate(rcm, Ncm, Ncnm, Nim, cf)
-
-        ! Prognostic drizzle variable array
-        real, target, allocatable, dimension(:,:) :: hydromet
-        ! Contains:
-        ! 1 rrm      Rain water mixing ratio               [kg/kg]
-        ! 2 Nrm      Rain drop number concentration        [num/kg]
-        ! 3 rsnow    Snow water mixing ratio               [kg/kg]
-        ! 4 rice     Ice water mixing ratio                [kg/kg]
-        ! 5 rgraupel Graupel water mixing ratio            [kg/kg]
-
-!$omp   threadprivate(hydromet)
+!$omp   threadprivate(rcm, cf)
 
         ! Surface fluxes
         real :: 
@@ -129,7 +115,7 @@
 !       References:
 !       None
 !-----------------------------------------------------------------------
-        use constants, only: sclr_dim, emin, hydromet_dim
+        use constants, only: sclr_dim, emin 
         use model_flags
 
         implicit none
@@ -183,12 +169,7 @@
         ! Cloud water variables
 
         allocate( rcm(1:nzmax) )
-        allocate( Ncm(1:nzmax) )
-        allocate( Ncnm(1:nzmax) )
-        allocate( Nim(1:nzmax) )
         allocate( cf(1:nzmax) )
-
-        allocate( hydromet(1:nzmax,1:hydromet_dim) ) ! All hydrometeor fields
 
 #ifdef SCALARS
 
@@ -248,13 +229,8 @@
         ! Cloud water variables
 
         rcm(1:nzmax)  = 0.0
-        Ncm(1:nzmax)  = 0.0
-        Ncnm(1:nzmax) = 0.0
-        Nim(1:nzmax)  = 0.0
         cf(1:nzmax)   = 0.0
 
-        ! Hydrometer types
-        hydromet(1:nzmax,1:hydromet_dim) = 0.0
 
         ! Surface fluxes
         wpthlp_sfc = 0.0
@@ -325,14 +301,8 @@
         ! Cloud water variables
 
         deallocate( rcm )
-        deallocate( Ncm )
-        deallocate( Ncnm )
-        deallocate( Nim )
         deallocate( cf )
 
-        ! Prognostic drizzle variables
-
-        deallocate( hydromet )  ! Hydrometeor fields
 
 #ifdef SCALARS
         ! Passive scalars

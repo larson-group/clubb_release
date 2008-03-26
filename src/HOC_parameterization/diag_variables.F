@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F,v 1.20 2008-03-25 04:58:22 dschanen Exp $
+! $Id: diag_variables.F,v 1.21 2008-03-26 23:53:44 dschanen Exp $
         module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -29,10 +29,8 @@
 !$omp   threadprivate(thvm, shear)
 
         real, target, allocatable, dimension(:) ::
-     .  sed_rcm,     ! sedimentation factor in rcm ! Brian
-     .  rsm,         ! Saturation mixing ratio  ! Brian
-     .  Fcsed ! Cloud water sedimentation flux (momentum point) [kg(cloud water)]/[s*m^2]
-!$omp   threadprivate(sed_rcm, rsm, Fcsed)
+     .  rsm ! Saturation mixing ratio  ! Brian
+!$omp   threadprivate(rsm)
 
         real, target, allocatable, dimension(:) ::
      .  Frad, ! Radiative flux (momentum point)
@@ -100,6 +98,23 @@
      .  taut ! Dissipation time [s]
 
 !$omp   threadprivate(em, taut)
+
+        ! hydrometeors variable array
+        real, target, allocatable, dimension(:,:) :: hydromet
+        ! Contains:
+        ! 1 rrm      Rain water mixing ratio               [kg/kg]
+        ! 2 Nrm      Rain drop number concentration        [num/kg]
+        ! 3 rsnow    Snow water mixing ratio               [kg/kg]
+        ! 4 rice     Ice water mixing ratio                [kg/kg]
+        ! 5 rgraupel Graupel water mixing ratio            [kg/kg]
+!$omp   threadprivate(hydromet)
+
+        real, target, allocatable, dimension(:) ::
+     .  Ncm,  ! Cloud droplet number concentration      [num/kg]
+     .  Ncnm, ! Cloud nuclei number concentration       [num/m^3]
+     .  Nim   ! Ice nuclei number concentration         [num/m^3]
+!$omp   threadprivate(Ncm, Ncnm, Nim)
+
 
         ! Surface data
         real :: ustar ! Average value of friction velocity [m/s]
@@ -202,7 +217,7 @@
 !-----------------------------------------------------------------------
         subroutine setup_diagnostic_variables( nzmax )
         use model_flags
-        use constants, only: sclr_dim, emin
+        use constants, only: sclr_dim, emin, hydromet_dim
 
         implicit none
 
@@ -232,11 +247,6 @@
 
         allocate( umt(1:nzmax) )       ! u wind
         allocate( vmt(1:nzmax) )       ! v wind
-
-        if ( cloud_sed ) then
-          allocate( sed_rcm(1:nzmax) )   ! sedimentation factor in rcm ! Brian
-          allocate( Fcsed(1:nzmax) )     ! cloud water sedimentation flux (momentum point) ! Brian
-        end if ! cloud_sed
 
         allocate( Frad(1:nzmax) )      ! radiative flux (momentum point)
 
@@ -295,6 +305,12 @@
 
         allocate( pdf_parms(1:nzmax,1:pdf_dimension) )
 
+        allocate( Ncm(1:nzmax) )
+        allocate( Ncnm(1:nzmax) )
+        allocate( Nim(1:nzmax) )
+        allocate( hydromet(1:nzmax,1:hydromet_dim) ) ! All hydrometeor fields
+
+
 ! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
         if ( LH_on ) then
           allocate( AKm_est(1:nzmax) )    ! Kessler ac estimate
@@ -349,12 +365,6 @@
         thvm = 0.0  ! Virtual potential temperature
         rsm  = 0.0  ! Saturation mixing ratio  ! Brian
 
-        if ( cloud_sed ) then
-          sed_rcm = 0.0  ! Sedimentation factor in rcm ! Brian
-          Fcsed   = 0.0  ! Cloud water sedimentation flux (momentum point) ! Brian
-                         ! Note: units are [kg(cloud water)]/[s*m^2]
-        end if ! cloud_sed
-
         Frad = 0.0
 
         shear = 0.0    ! Wind shear production
@@ -396,7 +406,13 @@
         ! Dissipation time
         taut     = 0.0
 
-        ! Array fpr pdf closure scheme
+        ! Hydrometer types
+        Ncm(1:nzmax)  = 0.0
+        Ncnm(1:nzmax) = 0.0
+        Nim(1:nzmax)  = 0.0
+        hydromet(1:nzmax,1:hydromet_dim) = 0.0
+
+        ! Array for pdf closure scheme
         pdf_parms(1:nzmax,:) = 0.0
 
         ! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
@@ -462,12 +478,6 @@
         deallocate( thvm )      ! virtual potential temperature
         deallocate( rsm )       ! saturation mixing ratio  ! Brian
 
-        if ( cloud_sed ) then
-          deallocate( sed_rcm )   ! sedimentation factor in rcm ! Brian
-          deallocate( Fcsed )     ! cloud water sedimentation flux (momentum point) ! Brian
-                                  ! Note: units are [kg(cloud water)]/[s*m^2]
-        end if ! cloud_sed
-
         deallocate( Frad )      ! radiative flux (momentum point)
 
         deallocate( radht )     ! SW + LW heating rate
@@ -509,6 +519,14 @@
         deallocate( Lup )
         deallocate( Ldown )
         deallocate( taut )
+
+        ! Cloud water variables
+
+        deallocate( Ncm )
+        deallocate( Ncnm )
+        deallocate( Nim )
+
+        deallocate( hydromet )  ! Hydrometeor fields
 
 #ifdef STATS
         ! Interpolated variables for tuning

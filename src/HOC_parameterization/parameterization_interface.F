@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.72 2008-03-25 04:58:22 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.73 2008-03-26 23:53:44 dschanen Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -32,15 +32,14 @@
 
 !-----------------------------------------------------------------------
        subroutine parameterization_timestep
-     .            ( iter, time_initial, time_current, dt, fcor,
+     .            ( iter, dt, fcor,
      .              thlm_forcing, rtm_forcing, wmm, wmt,
      .              wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,
      .              p, rhom, rhot, exner,
      .              um, vm, upwp, vpwp, up2, vp2,
      .              thlm, rtm, wprtp, wpthlp, wp2, wp3,
      .              rtp2, thlp2, rtpthlp,
-     .              Scm, taum, rcm, Ncm, Ncnm, Nim, 
-     .              hydromet, cf,
+     .              Scm, taum, rcm, cf,
      .              isValid, implemented
 #ifdef SCALARS
      .              ,wpsclrp_sfc, wpedsclrp_sfc,   ! Optional
@@ -68,7 +67,6 @@
        use diagnose_variances, only: diag_var     ! Computes variance terms
        use surface_var, only: sfc_var
        use pdf_closure, only: pdf_closure_new     ! Prob. density function
-       use microphysics, only: timestep_microphys ! Microphysics
        use mixing_length
        use saturation, only: rsat ! Saturation mixing ratio
 #ifdef STATS
@@ -99,8 +97,6 @@
        ! dt for time dependent calculations.  The old dt is noted in
        ! each section of the code -dschanen 20 April 2006 
        real, intent(in) :: 
-     . time_initial, ! Initial time             [s] 
-     . time_current, ! Current time             [s]
      . dt,           ! Current timestep size    [s]
      . fcor          ! Coriolis forcing         [s^-1]
 
@@ -140,18 +136,7 @@
      . thlp2,   ! th_l'^2.                      [K^2]
      . rtpthlp, ! r_t' th_l'.                   [(kg K)/kg]
      . taum,    ! Tau on moment. grid.          [s]
-     . rcm,     ! Liquid water mixing ratio.    [kg/kg]
-     . Ncm,     ! Cloud droplet number conc.    [num/kg]
-     . Ncnm,    ! Cloud nuclei number conc.     [num/m^3]
-     . Nim      ! Ice crystal number conc.      [num/m^3]
-
-       real, intent(inout), dimension(gr%nnzp,hydromet_dim) ::
-     . hydromet  ! Hydrometer fields                     [units vary]
-       ! (:,1) rrm      Rain water mixing ratio          [kg/kg]
-       ! (:,2) Nrm      Rain droplet number conc.        [num/kg]
-       ! (:,3) rsnow    Snow water mixing ratio          [kg/kg]
-       ! (:,4) rice     Ice water mixing ratio           [kg/kg]
-       ! (:,5) rgraupel Graupel water mixing ratio       [kg/kg]
+     . rcm      ! Liquid water mixing ratio.    [kg/kg]
 
        ! Needed for output for host models
        real, intent(inout), dimension(gr%nnzp) :: 
@@ -181,10 +166,8 @@
        logical :: ltmp
 
        real, dimension(gr%nnzp) ::
-     . tmp1, gamma_Skw_fnc,
-     . rtm_mc,        ! r_t change due to microphysics          [kg/kg)/s] 
-     . thlm_mc        ! thlm change due to microphysics         [K/s] 
-
+     . tmp1, gamma_Skw_fnc
+ 
 #ifdef SCALARS
        real, dimension(gr%nnzp,sclr_dim) ::
      . sclr_tmp1, sclr_tmp2, sclr_tmp3, sclr_tmp4 ! for PDF closure
@@ -220,17 +203,16 @@
 
 !-------- Test input variables ----------------------------------------
 
-       call parameterization_check( thlm_forcing,rtm_forcing,
-     .                           wmm, wmt, p, rhom,
-     .                           rhot, exner, wpthlp_sfc, wprtp_sfc,
-     .                           upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,
-     .                           up2, vp2, rtm, wprtp, thlm,
-     .                           wpthlp, wp2, wp3, Scm, rtp2, thlp2,
-     .                           rtpthlp, taum, rcm, Ncm, Ncnm, Nim,
-     .                           hydromet, cf
+       call parameterization_check
+     .      ( thlm_forcing, rtm_forcing, wmm, wmt, p, rhom,
+     .        rhot, exner, wpthlp_sfc, wprtp_sfc,
+     .        upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,
+     .        up2, vp2, rtm, wprtp, thlm,
+     .        wpthlp, wp2, wp3, Scm, rtp2, thlp2,
+     .        rtpthlp, taum, rcm, cf 
 #ifdef SCALARS
-     /                           ,wpsclrp_sfc, wpedsclrp_sfc,
-     .                           sclrm, sclrm_forcing, edsclrm
+     .        ,wpsclrp_sfc, wpedsclrp_sfc,
+     .        sclrm, sclrm_forcing, edsclrm
 #endif /*SCALARS*/
 
      .                           )
@@ -421,10 +403,10 @@
          ! Latin hypercube sampling
          !--------------------------------------------------------------
          if ( LH_on ) then 
-           call latin_hypercube_sampling
-     .     ( k, n_micro_call, d_variables, nt_repeat, i_rmd, 
-     .       crt1, crt2, cthl1, cthl2, hydromet(:,1), 
-     .       cf, gr%nnzp, sample_flag, p_height_time )
+!          call latin_hypercube_sampling
+!    .     ( k, n_micro_call, d_variables, nt_repeat, i_rmd, 
+!    .       crt1, crt2, cthl1, cthl2, hydromet(:,1), 
+!    .       cf, gr%nnzp, sample_flag, p_height_time )
          end if
 
        end do ! k = 2, nz-1
@@ -530,23 +512,6 @@
 !############## ADVANCE PROGNOSTIC VARIABLES ONE TIMESTEP ##############
 !#######################################################################
 
-       !----------------------------------------------------------------
-       ! Compute Microphysics
-       !----------------------------------------------------------------
-       ! Call Khairoutdinov and Kogan (2000) scheme, or COAMPS
-       ! for rain microphysics.
-       if ( kk_rain .or. lcoamps_micro .or. licedfs ) then
-         call timestep_microphys
-     .        ( dt, time_current, time_initial,
-     .          thlm, p, exner, rhot, rhom, rtm, rcm, Ncm, 
-     .          pdf_parms, wmt, wmm, Khm, AKm_est, Akm, 
-     .          Ncnm, Nim,
-     .          hydromet,
-     .          rtm_mc, thlm_mc, isValid )
-
-       end if
-
-       if ( .not. isValid ) return
 
        ! Store the saturation mixing ratio for output purposes.  Brian
        do k = 1, gr%nnzp, 1
@@ -563,9 +528,7 @@
      .        rtm, wprtp, rtpthvp, rtm_forcing,
      .        thlm, wpthlp, thlpthvp, thlm_forcing, 
      .        rtp2, thlp2, ! Added for clipping Vince Larson 29 Sep 2007
-     .        rhot, rhom, exner, rcm, Ncm, 
-     .        thlm_mc, rtm_mc, 
-     .        Fcsed, sed_rcm,
+     .        rhot, rhom, exner, 
      .        isValid, implemented  
 #ifdef SCALARS
      .       ,sclrm, wpsclrp, sclrpthvp, sclrm_forcing   ! optional
@@ -738,7 +701,7 @@
      .           ( um, vm, upwp, vpwp, up2, vp2, thlm,
      .             rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp,
      .             p, exner, rhot, rhom, thlm_forcing, rtm_forcing, wmm,
-     .             wmt, Scm, taum, rcm, Ncm, Ncnm, Nim, cf, hydromet
+     .             wmt, Scm, taum, rcm, cf
 #ifdef SCALARS
      .             ,sclrm, edsclrm, sclrm_forcing
 #endif /*SCALARS*/

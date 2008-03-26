@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.37 2008-03-13 19:16:02 dschanen Exp $
+! $Id: mixing.F,v 1.38 2008-03-26 23:53:44 dschanen Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -35,9 +35,7 @@
      .               rtm, wprtp, rtpthvp, rtm_forcing,
      .               thlm, wpthlp, thlpthvp, thlm_forcing,
      .               rtp2, thlp2, ! Added for clipping Vince Larson 20070929
-     .               rhot, rhom, exner, rcm, Ncm, 
-     .               hm_thl_tndcy, hm_rt_tndcy,
-     .               Fcsed, sed_rcm,
+     .               rhot, rhom, exner, 
      .               isValid, implemented,
      .               sclrm, wpsclrp, sclrpthvp, sclrm_forcing,
      .               sclrp2 )     ! Added for clipping Vince Larson 20070929
@@ -93,11 +91,7 @@
         real, intent(in), dimension(gr%nnzp) ::
      .  rhot,        ! rho (density) on thermo. grid  [kg/m^3] 
      .  rhom,        ! rho (density) on moment. grid  [kg/m^3] 
-     .  exner,       ! Exner function                 [-]
-     .  rcm,         ! Liquid water mixing ratio      [kg/kg]
-     .  Ncm,         ! Cloud droplet number conc.     [num/kg]
-     .  hm_rt_tndcy, ! Change in rt due to microphys. [kg/kg/s]
-     .  hm_thl_tndcy ! Change in thl due to microphys.[K/s]
+     .  exner        ! Exner function                 [-]
 
         logical, intent(in) :: 
      .  implemented  ! Flag for if HOC is implemented in a larger model or not.
@@ -110,12 +104,6 @@
      .  wpthlp       ! w' th_l'                       [(m K)/s]
 
         logical, intent(inout) :: isValid ! Model status 
-
-        ! Output Variables
-        ! Addition for DYCOMS_2
-        real, intent(out), dimension(gr%nnzp) :: 
-     .  Fcsed,       ! Cloud water sedimentation flux       [kg/(m^2 s)]
-     .  sed_rcm      ! d(rcm)/dt due to cloud sedimentation [kg/(m^2 s)]
 
         ! Additional optional variables for passive scalars
         ! Input Variables
@@ -222,9 +210,7 @@
         call mixing_solve( "rtm", .true., dt, taum,
      .                     rtm, wprtp, rtpthvp, rtm_forcing,
      .                     wp2, rtp2, ! For clipping Vince Larson 20070929
-     .                     rhot, rhom, exner, rcm, Ncm,  ! Brian
-     .                     hm_rt_tndcy,
-     .                     Fcsed, sed_rcm,               ! Brian
+     .                     rhot, rhom, exner, 
      .                     lhs, rhs, C7_Skw_fnc, isValid )  
 
         if ( .not. isValid ) then
@@ -267,9 +253,7 @@
         call mixing_solve( "thlm", .true., dt, taum,
      .                     thlm, wpthlp, thlpthvp, thlm_forcing,
      .                     wp2, thlp2, ! For clipping Vince Larson 20070929
-     .                     rhot, rhom, exner, rcm, Ncm,  ! Brian
-     .                     hm_thl_tndcy,
-     .                     Fcsed, sed_rcm,               ! Brian
+     .                     rhot, rhom, exner, 
      .                     lhs, rhs, C7_Skw_fnc, isValid )
 
         if ( .not. isValid ) then
@@ -312,9 +296,7 @@
      .                       sclrpthvp(:,SCLR_RT), 
      .                       sclrm_forcing(:,SCLR_RT),
      .                       wp2, sclrp2(:,SCLR_RT), ! For clipping Vince Larson 20070929
-     .                       rhot, rhom, exner, rcm, Ncm,  ! Brian
-     .                       hm_rt_tndcy,
-     .                       Fcsed, sed_rcm,               ! Brian
+     .                       rhot, rhom, exner, 
      .                       lhs, rhs, C7_Skw_fnc, isValid )
           if ( .not. isValid ) then
             write(fstderr,'(a)') "Passive scalar 1 mixing failed"
@@ -330,9 +312,7 @@
      .                       sclrpthvp(:,SCLR_THETA), 
      .                       sclrm_forcing(:,SCLR_THETA),
      .                       wp2, sclrp2(:,SCLR_THETA), ! For clipping Vince Larson 20070929
-     .                       rhot, rhom, exner, rcm, Ncm,  ! Brian
-     .                       hm_thl_tndcy,
-     .                       Fcsed, sed_rcm,               ! Brian
+     .                       rhot, rhom, exner, 
      .                       lhs, rhs, C7_Skw_fnc, isValid )
           if ( .not. isValid ) then
             write(fstderr,'(a)') "Passive scalar 2 mixing failed"
@@ -366,10 +346,6 @@
            write(fstderr,*) "rhot = ", rhot
            write(fstderr,*) "rhom = ", rhom
            write(fstderr,*) "exner = ", exner
-           write(fstderr,*) "rcm = ", rcm
-           write(fstderr,*) "Ncm = ", Ncm
-           write(fstderr,*) "hm_rt_tndcy", hm_rt_tndcy
-           write(fstderr,*) "hm_thl_tndcy", hm_thl_tndcy
            
            if( present( sclrpthvp ) ) then
               write(fstderr,*) "sclrpthvp = ", sclrpthvp
@@ -398,12 +374,7 @@
               write(fstderr,*) "wpsclrp = ", wpsclrp
            endif
            
-           write(fstderr,*) "Intent(out)"
-           
-           write(fstderr,*) "Fcsed = ", Fcsed
-           write(fstderr,*) "sed_rcm", sed_rcm
-           
-        endif
+        end if
  
         return
         
@@ -678,9 +649,7 @@
         subroutine mixing_solve( solve_type, liter, dt, taum,
      .                           xm, wpxp, xpthvp, xm_forcing,
      .                           wp2, xp2, ! For clipping Vince Larson 20070929
-     .                           rhot, rhom, exner, rcm, Ncm,  ! Brian
-     .                           hm_tndcy,
-     .                           Fcsed, sed_rcm,               ! Brian
+     .                           rhot, rhom, exner, 
      .                           lhs, rhs, C7_Skw_fnc, isValid )
 
         use parameters
@@ -715,9 +684,6 @@
      .  rhot,        ! Rho (density) on thermo. grid -Brian   [kg/m^3]
      .  rhom,        ! Rho (density) on moment. grid -Brian   [kg/m^3]
      .  exner,       ! Exner function -Brian                  [-]
-     .  rcm,         ! Liquid water mixing ratio -Brian       [kg/kg] 
-     .  Ncm,         ! Cloud droplet number conc. -Brian      [num/kg]
-     .  hm_tndcy,    ! Change in r_t or theta_l due to micro  [(units)/s]  
      .  xpthvp,      ! x' theta_v'                            [(units)(K)]
      .  xm_forcing,  ! xm forcing -Brian                      [(units)/s] 
 ! Vince Larson added for clipping 20070929
@@ -736,11 +702,6 @@
         real, intent(inout), dimension(2*gr%nnzp,nrhs) :: 
      .  rhs  ! Right hand side (LAPACK)
 
-        ! Output
-        real, intent(out), dimension(gr%nnzp) :: 
-     .  Fcsed,  ! Cloud water sedimentation flux.-Brian       [kg/(m^2 s)]
-     .  sed_rcm ! d(rcm)/dt due to cloud sedimentation.-Brian [kg/(m^2 s)]
-
         logical, intent(out) :: isValid
 
         ! Local Variables
@@ -748,13 +709,6 @@
      .  solution ! Solution to band diagonal system
 
         real :: rcond ! Est. of the reciprocal of the condition #
-
-        ! sigma_g is the Geometric standard deviation of cloud droplets falling
-        ! in a Stokes regime.
-        real, parameter :: sigma_g = 1.5  ! The DYCOMS2 RF02 intercomparison
-                                          ! specified value is 1.5.
-!        real, parameter :: sigma_g = 1.2  ! Bjorn Stevens suggests a value of
-!                                          ! 1.2 is more appropriate for RF02.
 
         ! Indices
         integer :: k, km1, kp1
@@ -786,7 +740,6 @@
           ixm_ta    = irtm_ta
           ixm_ma    = irtm_ma
           ixm_f     = irtm_forcing
-          ixm_mc    = irtm_mc
           ixm_cn    = irtm_cn ! Affects both the mean and flux terms
           iwpxp_bt  = iwprtp_bt
           iwpxp_ma  = iwprtp_ma
@@ -804,7 +757,6 @@
           ixm_ta    = ithlm_ta
           ixm_ma    = ithlm_ma
           ixm_f     = ithlm_forcing
-          ixm_mc    = ithlm_mc
           ixm_cn    = ithlm_cn ! Affects both the mean and flux terms
           iwpxp_bt  = iwpthlp_bt
           iwpxp_ma  = iwpthlp_ma
@@ -822,7 +774,6 @@
           ixm_ta    = 0
           ixm_ma    = 0
           ixm_f     = 0
-          ixm_mc    = 0
           ixm_cn    = 0
           iwpxp_bt  = 0
           iwpxp_ma  = 0
@@ -846,20 +797,10 @@
             zt%x(:,ixm_bt) = zt%x(:,ixm_bt) - xm / dt
           end if
 
-          ! Explicit contributions for xm (not including drizzle)
+          ! Explicit contributions for xm (including microphysics/radition)
           if ( ixm_f > 0 ) then
             zt%x(:,ixm_f) = zt%x(:,ixm_f) + xm_forcing
             zt%n(:,ixm_f) = zt%n(:,ixm_f) + 1
-          end if
-          ! Explicit contributions for xm from microphysics 
-          ! (including drizzle )
-! Michael Falk, 27 Jul 2007
-!          if ( ixm_mc > 0 .and. ( kk_rain .or. lcoamps_micro ) ) then
-          if ( ixm_mc > 0 .and. 
-     .        ( kk_rain .or. lcoamps_micro .or. licedfs) ) then
-! eMFc
-            zt%x(:,ixm_mc) = zt%x(:,ixm_mc) + hm_tndcy
-            zt%n(:,ixm_mc) = zt%n(:,ixm_mc) + 1
           end if
 
           ! wpxp total time tendency (1st calculation)
@@ -881,110 +822,6 @@
           end if
         end if ! lstats_samp
 #endif /*STATS*/
-
-        !=====================================================================
-        ! NOTE:  ADDITION OF RAIN EFFECTS AND CLOUD WATER SEDIMENTATION ON
-        !        RTM AND THLM.
-        !=====================================================================
-        !
-        ! Equations:  rtm = rvm + rcm
-        !            thlm = thm - ( Lv / (Cp*exner) ) * rcm
-        !
-        ! When water condenses, latent heat is given off and theta (thm)
-        ! increases by a factor of ( Lv / (Cp*exner) ) * rcm(condensed).
-        ! The opposite effect occurs with evaporation.
-        !
-        !=====================================================================
-        !||     Effect     |  rvm  |  rcm  |  rtm  |  rrm  |  thm  |  thlm  ||
-        !|===================================================================|
-        !|| Sedimentation  |       |       |       |       |       |        ||
-        !|| Effects of     | stays | incr. | incr. | stays | stays | decr.  ||
-        !|| Cloud Water.   | same  |       |       | same  | same  |        ||
-        !|| sed_rcm > 0    |       |       |       |       |       |        ||
-        !|===================================================================|
-        !|| Evaporation    |       |       |       |       |       |        ||
-        !|| of rain to     | incr. | stays | incr. | decr. | decr. | decr.  ||
-        !|| water vapor.   |       | same  |       |       |       |        ||
-        !|| cond_rrm < 0   |       |       |       |       |       |        ||
-        !|-------------------------------------------------------------------|
-        !|| Autoconversion |       |       |       |       |       |        ||
-        !|| of cloud water | stays | decr. | decr. | incr. | stays | incr.  ||
-        !|| to rain water. | same  |       |       |       | same  |        ||
-        !|| auto_rrm > 0   |       |       |       |       |       |        ||
-        !|-------------------------------------------------------------------|
-        !|| Accretion of   |       |       |       |       |       |        ||
-        !|| cloud water by | stays | decr. | decr. | incr. | stays | incr.  ||
-        !|| rain water.    | same  |       |       |       | same  |        ||
-        !|| accr_rrm > 0   |       |       |       |       |       |        ||
-        !=====================================================================
-        !
-        ! Note: In HOC, cond_rrm will always be either negative or zero.
-        !
-        ! Overall effects of rain and cloud water sedimentation:
-        !
-        ! (drtm/dt)t  = (drtm/dt)0 
-        !                       + sed_rcm - cond_rrm - auto_rrm - accr_rrm
-        ! (dthlm/dt)t = (dthlm/dt)0  -  ( Lv / (Cp*exner) ) 
-        !                       * ( sed_rcm - cond_rrm - auto_rrm - accr_rrm )
-        !
-        ! Note by Brian Griffin.
-        !=====================================================================
-
-        ! Code addition by Brian for cloud water sedimentation.
-        !
-        ! Sedimentation flux of cloud droplets should be treated by assuming
-        ! a log-normal size distribution of droplets falling in a Stoke's
-        ! regime, in which the sedimentation flux (Fcsed) is given by:
-        !
-        ! Sedimentation Flux = constant
-        !                     *[(3/(4*pi*rho_lw*NcV))^(2/3)]
-        !                     *[(rho*rc)^(5/3)]
-        !                     *EXP[5*((LOG(sigma_g))^2)]
-        ! constant = 1.19 x 10^8 (m^-1 s^-1)
-        ! sigma_g:  geometric standard deviation
-        !
-        ! When written for a mass-dependent cloud droplet concentration, Nc:
-        !
-        ! Sedimentation Flux = constant
-        !                     *[(3/(4*pi*rho_lw*Nc*rho))^(2/3)]
-        !                     *[(rho*rc)^(5/3)]
-        !                     *EXP[5*((LOG(sigma_g))^2)]
-        !
-        ! According to the above equation, sedimentation flux
-        ! is defined positive downwards.  Therefore, 
-        !
-        ! (drc/dt)Fcsed = (1.0/rho) * d(Fcsed)/dz
-
-        ! Define cloud water sedimentation flux on momentum levels.
-        IF ( cloud_sed ) THEN
-
-           DO k = 2, gr%nnzp-1, 1
-
-              IF ( zt2zm(rcm,k) > 0.0 .AND. zt2zm(Ncm,k) > 0.0 ) THEN
-                 Fcsed(k) = 1.19E8
-     .                  * (   (  3.0 / ( 4.0*pi*rho_lw
-     .                                   *zt2zm(Ncm,k)*rhom(k) )  )
-     .                     **(2.0/3.0)   )
-     .                  * ( ( rhom(k)*zt2zm(rcm,k) )**(5.0/3.0) )
-     .                  * EXP( 5.0*( (LOG(sigma_g))**(2) ) )
-              ELSE
-                 Fcsed(k) = 0.0
-              END IF
-
-           END DO ! k=2..gr%nnzp-1
-
-           ! Boundary conditions.
-           Fcsed(1)       = 0.0
-           Fcsed(gr%nnzp) = 0.0
-
-           ! Find drc/dt due to cloud water sedimentation flux.
-           ! This value is defined on thermodynamic levels.
-           ! Fcsed units:  kg (liquid) / [ m^2 * s ]
-           ! Multiply by Lv for units of W / m^2.
-           ! sed_rcm units:  [ kg (liquid) / kg (air) ] / s
-           sed_rcm = (1.0/rhot) * ddzm( Fcsed )
-
-        END IF ! cloud_sed
 
 
 !       Set up RHS vector
@@ -1011,54 +848,6 @@
           rhs(k_xm,1) 
      .    = xm(k) / dt
      .    + xm_forcing(k)
-
-          ! + xm_microphysics -- cloud water sedimentation.
-          ! Code addition by Brian for cloud water sedimentation.
-          IF ( cloud_sed ) THEN
-
-             select case ( trim( solve_type ) )
-             case ( "rtm" ) 
-                rhs(k_xm,1) = rhs(k_xm,1) + sed_rcm(k)
-             case ( "thlm" )
-                rhs(k_xm,1) = rhs(k_xm,1) - ( Lv / (Cp*exner(k)) )
-     .                               * sed_rcm(k)
-             ! The following cases used the formulas for rt and theta in order
-             ! to test the scalar code.  However, they need to be commented out
-             ! because they do not apply to such things as CO2.  Cloud water
-             ! sedimentation would have no effect on such a parameter.
-!             case ( "sclrm_rtm" ) 
-!                rhs(k_xm) = rhs(k_xm) + sed_rcm(k)
-!             case ( "sclrm_thlm" )
-!                rhs(k_xm) = rhs(k_xm) - ( Lv / (Cp*exner(k)) )
-!     .                               * sed_rcm(k)
-             end select
-
-          END IF ! cloud_sed
-
-          ! + xm_microphysics -- rain effects.
-          ! Code addition by Brian for rain.
-! Michael Falk, 27 Jul 2007
-!          if ( kk_rain .or. lcoamps_micro ) then
-          if ( kk_rain .or. lcoamps_micro .or. licedfs ) then
-! eMFc
-            select case(trim( solve_type ))
-            case ( "rtm", "thlm" ) 
-            rhs(k_xm,1) = rhs(k_xm,1) + hm_tndcy(k)  ! thlm/rtm only; Brian
-
-            ! The following cases used the formulas for rt and theta in order
-            ! to test the scalar code.  However, they need to be commented out
-            ! because they do not apply to such things as CO2.  Rain water
-            ! effects would have no effect on such a parameter.
-!            case ( "sclrm_rtm" ) 
-!              rhs(k_xm) = rhs(k_xm) 
-!     .                 - cond_rrm(k) - auto_rrm(k) - accr_rrm(k)    ! sclrm = rtm
-!            case ( "sclrm_thlm" )
-!              rhs(k_xm) = rhs(k_xm) - ( Lv / (Cp*exner(k)) ) *
-!     .                    ( -cond_rrm(k) - auto_rrm(k) - accr_rrm(k) )  ! sclrm = thlm
-             case default
-               ! Add nothing
-             end select
-           end if ! kk_rain .or lcoamps_micro
 
 !         wpxp: time tendency and buoyancy
 

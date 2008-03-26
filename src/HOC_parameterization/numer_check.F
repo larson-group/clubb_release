@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F,v 1.19 2008-03-25 04:58:22 dschanen Exp $
+! $Id: numer_check.F,v 1.20 2008-03-26 23:53:44 dschanen Exp $
         module numerical_check
 
         implicit none
@@ -174,17 +174,16 @@
         end subroutine pdf_closure_new_check
 
 !-------------------------------------------------------------------------------
-        subroutine parameterization_check( thlm_forcing, rtm_forcing,
-     .                           wmm, wmt, p, rhom, 
-     .                           rhot, exner, wpthlp_sfc, wprtp_sfc, 
-     .                           upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,
-     .                           up2, vp2, rtm, wprtp, thlm, 
-     .                           wpthlp, wp2, wp3, Scm, rtp2, thlp2,
-     .                           rtpthlp, taum, rcm, Ncm, Ncnm, Nim,
-     .                           hydromet, cf 
+        subroutine parameterization_check
+     .             ( thlm_forcing, rtm_forcing, wmm, wmt, p, rhom, 
+     .               rhot, exner, wpthlp_sfc, wprtp_sfc, 
+     .               upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,
+     .               up2, vp2, rtm, wprtp, thlm, 
+     .               wpthlp, wp2, wp3, Scm, rtp2, thlp2,
+     .               rtpthlp, taum, rcm, cf 
 #ifdef SCALARS
-     .                           ,wpsclrp_sfc, wpedsclrp_sfc,
-     .                           sclrm, sclrm_forcing, edsclrm
+     .               ,wpsclrp_sfc, wpedsclrp_sfc,
+     .               sclrm, sclrm_forcing, edsclrm
 #endif /*SCALARS*/ 
 
      .  )
@@ -237,13 +236,13 @@
      .  thlp2,   ! th_l'^2.                      [K^2]
      .  rtpthlp, ! r_t' th_l'.                   [(kg K)/kg]
      .  taum,    ! Tau on moment. grid.          [s]
-     .  rcm,     ! Liquid water mixing ratio.    [kg/kg]
-     .  Ncm,     ! Cloud droplet number conc.    [num/kg]
-     .  Ncnm,    ! Cloud nuclei number conc.     [num/m^3]
-     .  Nim      ! Ice crystal number conc.      [num/m^3]
+     .  rcm      ! Liquid water mixing ratio.    [kg/kg]
+!    .  Ncm,     ! Cloud droplet number conc.    [num/kg]
+!    .  Ncnm,    ! Cloud nuclei number conc.     [num/m^3]
+!    .  Nim      ! Ice crystal number conc.      [num/m^3]
 
-        real, intent(in), dimension(gr%nnzp,hydromet_dim) ::
-     .  hydromet  ! Hydrometer fields                     [units vary]
+!       real, intent(in), dimension(gr%nnzp,hydromet_dim) ::
+!    .  hydromet  ! Hydrometer fields                     [units vary]
         ! (:,1) rrm      Rain water mixing ratio          [kg/kg]
         ! (:,2) Nrm      Rain droplet number conc.        [num/kg]
         ! (:,3) rsnow    Snow water mixing ratio          [kg/kg]
@@ -269,7 +268,7 @@
         ! Local Variables
                                                     
         ! Name of the procedure using parameterization_check
-        character(*), parameter :: 
+        character(len=25), parameter :: 
      .  proc_name = "parameterization_timestep"
         
         integer :: i
@@ -302,14 +301,14 @@
         call check_nan( rtpthlp, "rtpthlp", proc_name )
         call check_nan( taum,"taum", proc_name )
         call check_nan( rcm,"rcm", proc_name )
-        call check_nan( Ncm,"Ncm", proc_name )
-        call check_nan( Ncnm,"Ncnm", proc_name )
-        call check_nan( Nim,"Nim", proc_name )
-        call check_nan( hydromet(:,1),"rrm", proc_name )
-        call check_nan( hydromet(:,2),"Nrm", proc_name )
-        call check_nan( hydromet(:,3),"rsnowm", proc_name )
-        call check_nan( hydromet(:,4),"ricem", proc_name )
-        call check_nan( hydromet(:,5),"rgraupel", proc_name )
+!       call check_nan( Ncm,"Ncm", proc_name )
+!       call check_nan( Ncnm,"Ncnm", proc_name )
+!       call check_nan( Nim,"Nim", proc_name )
+!       call check_nan( hydromet(:,1),"rrm", proc_name )
+!       call check_nan( hydromet(:,2),"Nrm", proc_name )
+!       call check_nan( hydromet(:,3),"rsnowm", proc_name )
+!       call check_nan( hydromet(:,4),"ricem", proc_name )
+!       call check_nan( hydromet(:,5),"rgraupel", proc_name )
         call check_nan( cf,"cf", proc_name )
         
 #ifdef SCALARS
@@ -340,14 +339,14 @@
         call check_negative( thlp2,"thlp2", proc_name )
         call check_negative( taum,"taum", proc_name )
         call check_negative( rcm,"rcm", proc_name )
-        call check_negative( Ncm,"Ncm", proc_name )
-        call check_negative( Ncnm,"Ncnm", proc_name )
-        call check_negative( Nim,"Nim", proc_name )
-        call check_negative( hydromet(:,1),"rrm", proc_name )
-        call check_negative( hydromet(:,2),"Nrm", proc_name )
-        call check_negative( hydromet(:,3),"rsnowm", proc_name )
-        call check_negative( hydromet(:,4),"ricem", proc_name )
-        call check_negative( hydromet(:,5),"rgraupelm", proc_name )
+!       call check_negative( Ncm,"Ncm", proc_name )
+!       call check_negative( Ncnm,"Ncnm", proc_name )
+!       call check_negative( Nim,"Nim", proc_name )
+!       call check_negative( hydromet(:,1),"rrm", proc_name )
+!       call check_negative( hydromet(:,2),"Nrm", proc_name )
+!       call check_negative( hydromet(:,3),"rsnowm", proc_name )
+!       call check_negative( hydromet(:,4),"ricem", proc_name )
+!       call check_negative( hydromet(:,5),"rgraupelm", proc_name )
         call check_negative( cf,"cf", proc_name )
 
         return       

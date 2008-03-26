@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.162 2008-03-25 04:58:22 dschanen Exp $
+! $Id: hoc.F,v 1.163 2008-03-26 23:53:44 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -370,7 +370,7 @@
                                                  ! in the model arrays
          if ( .not. isValid ) exit
 
-         call hoc_forcings_timestep( i, stdout, isValid )
+         call hoc_forcings_timestep( dtmain, i, stdout, isValid )
 
          if ( .not. isValid ) exit
 
@@ -386,15 +386,15 @@
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
          do i1=1, niterlong
            call parameterization_timestep
-     .          ( i, time_initial, time, dt, fcor,
+     .          ( i, dt, fcor,
      .            thlm_forcing, rtm_forcing, wmm, wmt,
      .            wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,
      .            p, rhom, rhot, exner,
      .            um, vm, upwp, vpwp, up2, vp2,
      .            thlm, rtm, wprtp, wpthlp, wp2, wp3,
      .            rtp2, thlp2, rtpthlp,
-     .            Scm, taum, rcm, Ncm, Ncnm, Nim,
-     .            hydromet, cf, isValid, .false.
+     .            Scm, taum, rcm, cf,
+     .            isValid, .false.
 #ifdef SCALARS
      .            ,wpsclrp_sfc, wpedsclrp_sfc,
      .            sclrm, sclrm_forcing, edsclrm
@@ -714,7 +714,7 @@
                                                  ! in the model arrays
          if ( .not. isValid ) exit
 
-         call hoc_forcings_timestep( i, stdout, isValid )
+         call hoc_forcings_timestep( dtmain, i, stdout, isValid )
 
          if ( .not. isValid ) exit
 
@@ -730,15 +730,15 @@
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
          do i1=1, niterlong
            call parameterization_timestep
-     .          ( i, time_initial, time, dt, fcor,
+     .          ( i, dt, fcor,
      .            thlm_forcing, rtm_forcing, wmm, wmt,
      .            wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,
      .            p, rhom, rhot, exner,
      .            um, vm, upwp, vpwp, up2, vp2,
      .            thlm, rtm, wprtp, wpthlp, wp2, wp3,
      .            rtp2, thlp2, rtpthlp,
-     .            Scm, taum, rcm, Ncm, Ncnm, Nim,
-     .            hydromet, cf, isValid, .false.
+     .            Scm, taum, rcm, cf, 
+     .            isValid, .false.
 #ifdef SCALARS
      .            ,wpsclrp_sfc, wpedsclrp_sfc, 
      .            sclrm, sclrm_forcing, edsclrm
@@ -1532,7 +1532,8 @@
         end subroutine hoc_restart
 
 !----------------------------------------------------------------------
-        subroutine hoc_forcings_timestep( iteration, stdout, isValid )
+        subroutine hoc_forcings_timestep
+     .             ( dt, iteration, stdout, isValid )
 
 !       Description:
 !       Calculate tendency and surface variables
@@ -1552,6 +1553,8 @@
         use diagnostic_variables
         use prognostic_variables
         use numerical_check, only: isnan2d, rad_check
+        use microphysics, only: timestep_microphys ! Microphysics
+        ! Case specific modules 
         use arm, only: arm_tndcy, arm_sfclyr
         use arm_97, only: arm_97_tndcy, arm_97_sfclyr
         use arm_0003, only: arm_0003_tndcy, arm_0003_sfclyr
@@ -1562,6 +1565,7 @@
         use cobra, only: cobra_tndcy, cobra_sfclyr
         use dycoms2_rf01, only: dycoms2_rf01_tndcy, dycoms2_rf01_sfclyr
         use dycoms2_rf02, only: dycoms2_rf02_tndcy, dycoms2_rf02_sfclyr
+        use cloud_sed_mod
         use fire, only: fire_tndcy, sfc_momentum_fluxes,
      .                  sfc_thermo_fluxes
         use gabls2, only: gabls2_tndcy, gabls2_sfclyr
@@ -1583,6 +1587,8 @@
 #endif
 
         ! Input Variables
+        real, intent(in) ::
+     .    dt    ! Timestep      [s]
         integer, intent(in) ::
      .    iteration
 
@@ -1596,8 +1602,12 @@
         ! Local Variables
 
         real, dimension(:), pointer :: 
-     .    rrm,   ! Rain water mixing ratio              [kg/kg]
-     .    ricem  ! Prisitine ice water mixing ratio     [kg/kg]
+     .    rrm,  ! Rain water mixing ratio              [kg/kg]
+     .    ricem ! Prisitine ice water mixing ratio     [kg/kg]
+
+        real, dimension(gr%nnzp) :: 
+     .    rtm_mc, ! r_t change due to microphysics     [kg/kg)/s] 
+     .    thlm_mc ! thlm change due to microphysics    [K/s] 
 
         integer :: k ! Vertical loop index variable
 
@@ -2038,8 +2048,32 @@
 
         end select ! runtype
 
+        !----------------------------------------------------------------
+        ! Compute Microphysics
+        !----------------------------------------------------------------
+        ! Call Khairoutdinov and Kogan (2000) scheme, or COAMPS
+        ! for rain microphysics.
+        if ( kk_rain .or. lcoamps_micro .or. licedfs ) then
+          call timestep_microphys
+     .         ( dt, time, time_initial,
+     .           thlm, p, exner, rhot, rhom, rtm, rcm, Ncm, 
+     .           pdf_parms, wmt, wmm, Khm, AKm_est, Akm, 
+     .           Ncnm, Nim,
+     .           hydromet,
+     .           rtm_forcing, thlm_forcing, isValid )
+
+          if ( .not. isValid ) return
+
+        end if
+
+        if ( cloud_sed ) then
+          call cloud_drop_sed( rcm, Ncm, rhom, rhot, exner,
+     .                         rtm_forcing, thlm_forcing ) 
+        end if
+
+
         if ( lbugsrad ) then
-#ifdef radoffline /*This directive is needed for this to work at all.*/
+#ifdef radoffline /*This directive is needed for BUGSrad to work with HOC.*/
 
           ! Assign pointers to rain and ice
           rrm   => hydromet(1:gr%nnzp,1)
@@ -2119,7 +2153,8 @@
 
 #else
           stop "Cannot call BUGSrad with these compile options."
-#endif
+#endif /*radoffline*/
+
         end if ! lbugsrad
 
         return

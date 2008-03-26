@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.3 2008-03-20 18:22:09 griffinb Exp $
+!  $Id: stats_subs.F,v 1.4 2008-03-26 23:53:44 dschanen Exp $
 #ifdef STATS
       module stats_subs
       contains
@@ -508,7 +508,7 @@
      .           ( um, vm, upwp, vpwp, up2, vp2, thlm,
      .             rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp,
      .             p, exner, rhot, rhom, thlm_forcing, rtm_forcing, wmm,
-     .             wmt, Scm, taum, rcm, Ncm, Ncnm, Nim, cf, hydromet,
+     .             wmt, Scm, taum, rcm, cf,
      .             sclrm, edsclrm, sclrm_forcing )
 
 !     Description:
@@ -558,9 +558,9 @@
 
       real, intent(in), dimension(gr%nnzp) ::
      .  rcm,  ! Cloud water mixing ratio                [kg/kg]
-     .  Ncm,  ! Cloud droplet number concentration      [num/kg]
-     .  Ncnm, ! Cloud nuclei number concentration       [num/m^3]
-     .  Nim,  ! Ice nuclei number concentration         [num/m^3]
+!    .  Ncm,  ! Cloud droplet number concentration      [num/kg]
+!    .  Ncnm, ! Cloud nuclei number concentration       [num/m^3]
+!    .  Nim,  ! Ice nuclei number concentration         [num/m^3]
      .  cf    ! Cloud fraction                          [%]
 
       real, intent(in), optional, dimension(gr%nnzp,sclr_dim) ::
@@ -569,7 +569,7 @@
      .  sclrm_forcing   ! Large-scale forcing of scalar [units/s]
 
       ! Prognostic drizzle variable array
-      real, intent(in), dimension(gr%nnzp,hydromet_dim) :: hydromet
+!     real, intent(in), dimension(gr%nnzp,hydromet_dim) :: hydromet
       ! Contains:
       ! 1 rrm      Rain water mixing ratio               [kg/kg]
       ! 2 Nrm      Rain droplet number concentration     [num/kg]
@@ -697,51 +697,51 @@
           zt%x(:,irhot) = zt%x(:,irhot) + rhot
           zt%n(:,irhot) = zt%n(:,irhot) + 1
         end if
-        if ( iNcm > 0 ) then           ! Brian
-          zt%x(:,iNcm) = zt%x(:,iNcm) + Ncm
-          zt%n(:,iNcm) = zt%n(:,iNcm) + 1
-        end if
-        if ( iNcnm > 0 ) then
-          zt%x(:,iNcnm) = zt%x(:,iNcnm) + Ncnm
-          zt%n(:,iNcnm) = zt%n(:,iNcnm) + 1
-        end if
-        if ( iNim > 0 ) then
-          zt%x(:,iNim) = zt%x(:,iNim) + Nim
-          zt%n(:,iNim) = zt%n(:,iNim) + 1
-        end if
-        if ( ised_rcm > 0 .and. cloud_sed ) then       ! Brian
-          zt%x(:,ised_rcm) = zt%x(:,ised_rcm) + sed_rcm
-          zt%n(:,ised_rcm) = zt%n(:,ised_rcm) + 1
-        end if
+!       if ( iNcm > 0 ) then           ! Brian
+!         zt%x(:,iNcm) = zt%x(:,iNcm) + Ncm
+!         zt%n(:,iNcm) = zt%n(:,iNcm) + 1
+!       end if
+!       if ( iNcnm > 0 ) then
+!         zt%x(:,iNcnm) = zt%x(:,iNcnm) + Ncnm
+!         zt%n(:,iNcnm) = zt%n(:,iNcnm) + 1
+!       end if
+!       if ( iNim > 0 ) then
+!         zt%x(:,iNim) = zt%x(:,iNim) + Nim
+!         zt%n(:,iNim) = zt%n(:,iNim) + 1
+!       end if
+!       if ( ised_rcm > 0 .and. cloud_sed ) then       ! Brian
+!         zt%x(:,ised_rcm) = zt%x(:,ised_rcm) + sed_rcm
+!         zt%n(:,ised_rcm) = zt%n(:,ised_rcm) + 1
+!       end if
         if ( irsm > 0 ) then           ! Brian
           zt%x(:,irsm) = zt%x(:,irsm) + rsm
           zt%n(:,irsm) = zt%n(:,irsm) + 1
         end if
 
-        if ( irrm > 0 ) then     ! Brian
-          zt%x(:,irrm) = zt%x(:,irrm) + hydromet(:,1)
-          zt%n(:,irrm) = zt%n(:,irrm) + 1
-        end if
+!       if ( irrm > 0 ) then     ! Brian
+!         zt%x(:,irrm) = zt%x(:,irrm) + hydromet(:,1)
+!         zt%n(:,irrm) = zt%n(:,irrm) + 1
+!       end if
 
-        if ( iNrm > 0 ) then     ! Brian
-          zt%x(:,iNrm) = zt%x(:,iNrm) + hydromet(:,2)
-          zt%n(:,iNrm) = zt%n(:,iNrm) + 1
-        end if
+!       if ( iNrm > 0 ) then     ! Brian
+!         zt%x(:,iNrm) = zt%x(:,iNrm) + hydromet(:,2)
+!         zt%n(:,iNrm) = zt%n(:,iNrm) + 1
+!       end if
 
-        if ( irsnowm > 0 ) then
-          zt%x(:,irsnowm) = zt%x(:,irsnowm) + hydromet(:,3)
-          zt%n(:,irsnowm) = zt%n(:,irsnowm) + 1
-        end if
+!       if ( irsnowm > 0 ) then
+!         zt%x(:,irsnowm) = zt%x(:,irsnowm) + hydromet(:,3)
+!         zt%n(:,irsnowm) = zt%n(:,irsnowm) + 1
+!       end if
 
-        if ( iricem > 0 ) then
-          zt%x(:,iricem) = zt%x(:,iricem) + hydromet(:,4)
-          zt%n(:,iricem) = zt%n(:,iricem) + 1
-        end if
+!       if ( iricem > 0 ) then
+!         zt%x(:,iricem) = zt%x(:,iricem) + hydromet(:,4)
+!         zt%n(:,iricem) = zt%n(:,iricem) + 1
+!       end if
 
-        if ( irgraupelm > 0 ) then
-          zt%x(:,irgraupelm) = zt%x(:,irgraupelm) + hydromet(:,5)
-          zt%n(:,irgraupelm) = zt%n(:,irgraupelm) + 1
-        end if
+!       if ( irgraupelm > 0 ) then
+!         zt%x(:,irgraupelm) = zt%x(:,irgraupelm) + hydromet(:,5)
+!         zt%n(:,irgraupelm) = zt%n(:,irgraupelm) + 1
+!       end if
 
         if ( iAKm > 0 .and. LH_on ) then         ! Vince Larson 22 May 2005
           zt%x(:,iAKm) = zt%x(:,iAKm) + AKm
@@ -1067,10 +1067,10 @@
           zm%n(:,iFrad) = zm%n(:,iFrad) + 1
         end if
 
-        if ( iFcsed > 0 .and. cloud_sed ) then    ! Brian
-          zm%x(:,iFcsed) = zm%x(:,iFcsed) + Fcsed
-          zm%n(:,iFcsed) = zm%n(:,iFcsed) + 1
-        end if
+!       if ( iFcsed > 0 .and. cloud_sed ) then    ! Brian
+!         zm%x(:,iFcsed) = zm%x(:,iFcsed) + Fcsed
+!         zm%n(:,iFcsed) = zm%n(:,iFcsed) + 1
+!       end if
 
 #ifdef SCALARS
         if ( isclraprtp > 0 ) then

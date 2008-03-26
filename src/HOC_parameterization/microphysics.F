@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.30 2008-03-26 23:13:53 griffinb Exp $
+! $Id: microphysics.F,v 1.31 2008-03-26 23:53:44 dschanen Exp $
         module microphysics
 
 !       Description:
@@ -31,7 +31,7 @@
      .               pdf_parms, wmt, wmm, Khm, AKm_est, AKm, 
      .               Ncnm, Nim,
      .               hydromet,
-     .               rtm_mc, thlm_mc, isValid )
+     .               rtm_forcing, thlm_forcing, isValid )
 
 !       Description:
 !       Compute pristine ice, snow, graupel, & rain hydrometeor fields.
@@ -108,10 +108,9 @@
         real, target, dimension(gr%nnzp,hydromet_dim), intent(inout) ::
      .  hydromet      ! Array of rain, prist. ice, graupel, etc. [units vary]
 
-        real, dimension(gr%nnzp), intent(out) ::
-     .  rtm_mc,  ! Change in total water due to microphysics    [(kg/kg)/s]
-     .  thlm_mc  ! Change in liquid potential temperature 
-                 ! due to microphysics                          [K/s]
+        real, dimension(gr%nnzp), intent(inout) ::
+     .  rtm_forcing, ! Imposed contributions to total water        [kg/kg/s]
+     .  thlm_forcing ! Imposed contributions to liquid potential temp. [K/s]
 
         logical, intent(out) :: isValid
 
@@ -125,6 +124,11 @@
      .  Vice,    ! Ice mixing ratio sedimentation velocity     [m/s]
      .  Vsnow,   ! Snow mixing ratio sedimentation velocity    [m/s]
      .  Vgraupel ! Graupel mixing ratio sedimentation velocity [m/s]
+
+        real, dimension(gr%nnzp) ::
+     .  rtm_mc,  ! Change in total water due to microphysics    [(kg/kg)/s]
+     .  thlm_mc  ! Change in liquid potential temperature 
+                 ! due to microphysics                          [K/s]
 
         real, dimension(gr%nnzp) ::
      .  rrm_tndcy,      ! Rain mixing ratio tendency      [(kg/kg)/s]
@@ -324,7 +328,6 @@
           ! --------------------------------------------------------------------
           ! Rain water mixing ratio (rrm)
           ! --------------------------------------------------------------------
-
           call microphys_lhs
      .         ( "rrm", .true., dt, Kr, nu_r, wmt, Vrr, rrm, lhs )
 
@@ -600,6 +603,64 @@
           call ice_dfsn( dt, thlm, rcm, p, exner, rhot, rtm_mc )
           thlm_mc = - ( Lv/(Cp*exner) ) * rtm_mc
         end if
+
+#ifdef STATS
+        if ( lstats_samp ) then
+
+          if ( iNcm > 0 ) then           ! Brian
+            zt%x(:,iNcm) = zt%x(:,iNcm) + Ncm
+            zt%n(:,iNcm) = zt%n(:,iNcm) + 1
+          end if
+          if ( iNcnm > 0 ) then
+            zt%x(:,iNcnm) = zt%x(:,iNcnm) + Ncnm
+            zt%n(:,iNcnm) = zt%n(:,iNcnm) + 1
+          end if
+          if ( iNim > 0 ) then
+            zt%x(:,iNim) = zt%x(:,iNim) + Nim
+            zt%n(:,iNim) = zt%n(:,iNim) + 1
+          end if
+
+          if ( irrm > 0 ) then     ! Brian
+            zt%x(:,irrm) = zt%x(:,irrm) + hydromet(:,1)
+            zt%n(:,irrm) = zt%n(:,irrm) + 1
+          end if
+
+          if ( iNrm > 0 ) then     ! Brian
+            zt%x(:,iNrm) = zt%x(:,iNrm) + hydromet(:,2)
+            zt%n(:,iNrm) = zt%n(:,iNrm) + 1
+          end if
+
+          if ( irsnowm > 0 ) then
+            zt%x(:,irsnowm) = zt%x(:,irsnowm) + hydromet(:,3)
+            zt%n(:,irsnowm) = zt%n(:,irsnowm) + 1
+          end if
+
+          if ( iricem > 0 ) then
+            zt%x(:,iricem) = zt%x(:,iricem) + hydromet(:,4)
+            zt%n(:,iricem) = zt%n(:,iricem) + 1
+          end if
+
+          if ( irgraupelm > 0 ) then
+            zt%x(:,irgraupelm) = zt%x(:,irgraupelm) + hydromet(:,5)
+            zt%n(:,irgraupelm) = zt%n(:,irgraupelm) + 1
+          end if
+
+          if ( ithlm_mc > 0 ) then
+            zt%x(:,ithlm_mc) 
+     .      = zt%x(:,ithlm_mc) + thlm_mc(:)
+            zt%n(:,ithlm_mc) = zt%n(:,ithlm_mc) + 1
+          end if
+
+          if ( irtm_mc > 0 ) then
+            zt%x(:,irtm_mc) 
+     .      = zt%x(:,irtm_mc) + rtm_mc(:)
+            zt%n(:,irtm_mc) = zt%n(:,irtm_mc) + 1
+          end if
+        end if
+#endif /*STATS*/
+
+        rtm_forcing  = rtm_forcing + rtm_mc
+        thlm_forcing = thlm_forcing + thlm_mc
 
 
 #ifdef STATS
