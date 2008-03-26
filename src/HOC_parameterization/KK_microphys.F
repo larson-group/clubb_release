@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: KK_microphys.F,v 1.3 2008-03-17 19:20:26 faschinj Exp $
+! $Id: KK_microphys.F,v 1.4 2008-03-26 22:38:25 griffinb Exp $
 
       MODULE rain_equations
 
@@ -427,22 +427,18 @@
         !
         ! This enters into computation in microphysics.F.  Brian Griffin.
 
-        do k = 1, gr%nnzp, 1
-
-           kp1 = min( k+1, gr%nnzp )
+        do k = 1, gr%nnzp-1, 1
 
            ! rrm sedimentation velocity.
            Vrr(k) = 0.012 
-     .             * ( 1000000.0 * (1.0/2.0) 
-     .             * ( mean_vol_rad(kp1) + mean_vol_rad(k) ) )
+     .             * ( 1.0e6 * zt2zm(mean_vol_rad,k)  )
      .             - 0.2
            ! Negative meaning a downward velocity now -dschanen 5 Dec 2006
            Vrr(k) = -max( Vrr(k), 0.0 )
 
            ! Nrm sedimentation velocity.
            VNr(k) = 0.007 
-     .             * ( 1000000.0 * (1.0/2.0) 
-     .             * ( mean_vol_rad(kp1) + mean_vol_rad(k) ) )
+     .             * ( 1.0e6 * zt2zm(mean_vol_rad,k)  )
      .             - 0.1
 
            ! Negative meaning a downward velocity now -dschanen 5 Dec 2006
@@ -450,6 +446,10 @@
 
         end do ! 1..gr%nnzp
 
+        ! The flux of rain water through the model top is 0.
+        ! Vrr and VNr are set to 0 at the highest model level.
+        Vrr(gr%nnzp) = 0.0
+        VNr(gr%nnzp) = 0.0
 
         ! Find values for other variables.
         do k = 2, gr%nnzp, 1
