@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.29 2008-03-25 18:01:46 dschanen Exp $
+! $Id: microphysics.F,v 1.30 2008-03-26 23:13:53 griffinb Exp $
         module microphysics
 
 !       Description:
@@ -964,7 +964,8 @@
           if ( lsed ) then
              lhs(kp1diag:km1diag,k)
      .       = lhs(kp1diag:km1diag,k)
-     .       + sedimentation( v_t(k), v_t(km1), gr%dzt(k), k )
+     .       + sedimentation( v_t(k), v_t(km1), zm2zt(v_t,k), 
+     .                        gr%dzt(k), k )
           endif
 
          ! Implicit contributions to xrm
@@ -979,7 +980,8 @@
             end if
 
             if ( ixrm_sd > 0 ) then
-              tmp(1:3) = sedimentation( v_t(k), v_t(km1), gr%dzt(k), k )
+              tmp(1:3) = sedimentation( v_t(k), v_t(km1), zm2zt(v_t,k), 
+     .                                  gr%dzt(k), k )
               ztscr04(k) = -tmp(3)
               ztscr05(k) = -tmp(2)
               ztscr06(k) = -tmp(1)
@@ -1308,7 +1310,8 @@
         end function advection
 
 !-----------------------------------------------------------------------
-        pure function sedimentation( v_t, v_tm1, dzt, level )
+        pure function sedimentation( v_t, v_tm1, vt_tk, 
+     .                               dzt, level )
      .  result( lhs ) 
 
 !       Description:
@@ -1338,9 +1341,14 @@
         real, intent(in) ::
      .  v_t,   ! Terminal velocity <k>          [m/s]
      .  v_tm1, ! Terminal velocity <k-1>        [m/s]
+     .  vt_tk, ! Terminal velocity at t-lev<k>  [m/s]
      .  dzt    ! Inverse of the grid spacing <k>[m] 
 
-        integer, intent(in) :: level ! thermo. level that the calc. is for.
+        integer, intent(in) :: level ! thermodynamic level of calculation.
+
+        integer :: 
+     .  mk,   ! The index of momentum level k.
+     .  mkm1  ! The index of momentum level k-1.
 
         ! Output
         real, dimension(3) :: lhs
@@ -1440,63 +1448,54 @@
         !        The term has been re-discretized in a conservative manner and
         !        the results are listed below, with the old code commented out.
 
+        ! The indices of the momentum levels that sandwich
+        ! the central thermodynamic level.
+        mk   = level
+        mkm1 = level - 1
+
         if ( level == 1 ) then
+
            ! k = 1; below surface; no effects.
+
            lhs(kp1diag) = 0.0
            lhs(kdiag)   = 0.0
            lhs(km1diag) = 0.0
 
-        elseif ( level == 2 ) then
-! Vince Larson pulled v_t inside derivative to make conservative. 13 Dec 2007
-!           ! k = 2; lower boundary level.
-!           lhs(kp1diag) = + (1.0/4.0) * ( v_t + v_tm1 ) * dzt
-!           lhs(kdiag)   = - (1.0/4.0) * ( v_t + v_tm1 ) * dzt
-!           lhs(km1diag) = 0.0
-           ! k = 2; lower boundary level.
-           lhs(kp1diag) = + (1.0/2.0) * v_t * dzt
-           lhs(kdiag)   = + (1.0/2.0) * ( v_t - v_tm1 ) * dzt
-           lhs(km1diag) = - (1.0/2.0) * v_tm1 * dzt
-!  End Vince Larson change
-           ! For a positive downward sedimentation velocity
-!           lhs(kp1diag) = - (1.0/4.0) * ( v_t + v_tm1 ) * dzt
-!           lhs(kdiag)   = + (1.0/4.0) * ( v_t + v_tm1 ) * dzt
-!           lhs(km1diag) = 0.0
+        elseif ( level > 1 .and. level < gr%nnzp ) then
 
-        elseif ( level > 2 .and. level < gr%nnzp ) then
-
-! Vince Larson pulled v_t inside derivative to make conservative. 13 Dec 2007
-!           ! Most of the interior model; normal conditions.
-!           lhs(kp1diag) = + (1.0/4.0) * ( v_t + v_tm1 ) * dzt
-!           lhs(kdiag)   = 0.0
-!           lhs(km1diag) = - (1.0/4.0) * ( v_t + v_tm1 ) * dzt
            ! Most of the interior model; normal conditions.
-           lhs(kp1diag) = + (1.0/2.0) * v_t * dzt
-           lhs(kdiag)   = + (1.0/2.0) * ( v_t - v_tm1 ) * dzt
-           lhs(km1diag) = - (1.0/2.0) * v_tm1 * dzt
-!  End Vince Larson change
 
-           ! For a positive downward sedimentation velocity
-!           lhs(kp1diag) = - (1.0/4.0) * ( v_t + v_tm1 ) * dzt
-!           lhs(kdiag)   = 0.0
-!           lhs(km1diag) = + (1.0/4.0) * ( v_t + v_tm1 ) * dzt
+        ! Vince Larson pulled v_t inside derivative to make conservative. 
+        ! 13 Dec 2007
+!           lhs(kp1diag) = + vt_tk * dzt * gr%weights_zt2zm(mk,1)
+!           lhs(kdiag)   = + vt_tk * dzt * (   gr%weights_zt2zm(mk,2)
+!     .                                      - gr%weights_zt2zm(mkm1,1) )
+!           lhs(km1diag) = - vt_tk * dzt * gr%weights_zt2zm(mkm1,2)
+
+           lhs(kp1diag) = + dzt * v_t * gr%weights_zt2zm(mk,1)
+           lhs(kdiag)   = + dzt * (   v_t * gr%weights_zm2zt(mk,2)
+     .                              - v_tm1 * gr%weights_zm2zt(mkm1,1) )
+           lhs(km1diag) = - dzt * v_tm1 * gr%weights_zm2zt(mkm1,2)
+
+        !  End Vince Larson change
 
         elseif ( level == gr%nnzp ) then
 
-! Vince Larson pulled v_t inside derivative to make conservative. 13 Dec 2007
-!           ! k = gr%nnzp (top level); upper boundary level.
-!           lhs(kp1diag) = 0.0
-!           lhs(kdiag)   = + (1.0/4.0) * ( v_t + v_tm1 ) * dzt
-!           lhs(km1diag) = - (1.0/4.0) * ( v_t + v_tm1 ) * dzt
            ! k = gr%nnzp (top level); upper boundary level; no flux.
-           lhs(kp1diag) = + (1.0/2.0) * 0.0 * dzt
-           lhs(kdiag)   = + (1.0/2.0) * ( 0.0 - v_tm1 ) * dzt
-           lhs(km1diag) = - (1.0/2.0) * v_tm1 * dzt
-!  End Vince Larson change
 
-           ! For a positive downward sedimentation velocity
-!           lhs(kp1diag) = 0.0
-!           lhs(kdiag)   = - (1.0/4.0) * ( v_t + v_tm1 ) * dzt
-!           lhs(km1diag) = + (1.0/4.0) * ( v_t + v_tm1 ) * dzt
+        ! Vince Larson pulled v_t inside derivative to make conservative. 
+        ! 13 Dec 2007
+!           lhs(kp1diag) = + vt_tk * dzt * gr%weights_zt2zm(mk,1)
+!           lhs(kdiag)   = + vt_tk * dzt * (   gr%weights_zt2zm(mk,2)
+!     .                                      - gr%weights_zt2zm(mkm1,1) )
+!           lhs(km1diag) = - vt_tk * dzt * gr%weights_zt2zm(mkm1,2)
+
+           lhs(kp1diag) = + dzt * v_t * gr%weights_zt2zm(mk,1)
+           lhs(kdiag)   = + dzt * (   v_t * gr%weights_zm2zt(mk,2)
+     .                              - v_tm1 * gr%weights_zm2zt(mkm1,1) )
+           lhs(km1diag) = - dzt * v_tm1 * gr%weights_zm2zt(mkm1,2)
+
+        !  End Vince Larson change
 
         endif
 
@@ -1720,7 +1719,8 @@
 
            ! The implicit (LHS) value of the sedimentation component of the
            ! equation used during the timestep that was just solved for.
-           tmp(1:3) = sedimentation( v_t(k), v_t(km1), gr%dzt(k), k )
+           tmp(1:3) = sedimentation( v_t(k), v_t(km1), zm2zt(v_t,k), 
+     .                               gr%dzt(k), k )
 
            sd_subdiag  = -tmp(3) ! subdiagonal
            sd_maindiag = -tmp(2) ! main diagonal
