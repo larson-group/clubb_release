@@ -174,7 +174,7 @@
         ! Code addition by Brian for cloud water sedimentation.
 
         rtm_mc  = rtm_mc + sed_rcm
-        thlm_mc = thlm_mc - ( Lv / (Cp*exner(k)) ) * sed_rcm(k)
+        thlm_mc = thlm_mc - ( Lv / (Cp*exner) ) * sed_rcm
 
         return
         end subroutine cloud_drop_sed
