@@ -378,7 +378,7 @@
       ! to have the "icase" value set automatically based on the cloud case.
       !
       ! Specific icase values used in COAMPS:
-      ! icase = 75:   M-PACE period B
+      ! icase = 75:   M-PACE: period B
       ! icase = 1000: Nov.11, 1999 altocu
       ! icase = 1001: Jun.25 multilayered altocu
       ! icase = 1002: CLEX-9: Oct.14, 2001 altocu
