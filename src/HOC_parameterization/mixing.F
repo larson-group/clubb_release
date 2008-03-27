@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.38 2008-03-26 23:53:44 dschanen Exp $
+! $Id: mixing.F,v 1.39 2008-03-27 22:24:55 dschanen Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -232,8 +232,12 @@
         !    because it renders rtm non-conserved.  We should look into 
         !    a positive definite advection scheme.
         !    Vince Larson.  13 Nov 2007
-        
-        where( rtm < 0.0 ) rtm = 0.0
+        do k = 1, gr%nnzp, 1 
+          if ( rtm(k) < 0.0 ) then
+            rtm(k) = 0.0
+            write(fstderr,*) "rtm < 0 in mixing at k= ", k 
+          end if
+        end do
                 
 #ifdef STATS
         if (lstats_samp .and. irtm_cl > 0) then
@@ -272,8 +276,13 @@
 #endif        
         ! The value of potential temperature cannot fall below 0,
         ! so we clip accordingly
+        do k = 1, gr%nnzp, 1 
+          if ( thlm(k) < 0.0 ) then
+            thlm(k) = 0.0
+            write(fstderr,*) "thlm < 0 in mixing at k= ", k 
+          end if
+        end do
         
-        where( thlm < 0.0 ) thlm = 0.0
                 
 #ifdef STATS
         if (lstats_samp .and. ithlm_cl > 0) then
