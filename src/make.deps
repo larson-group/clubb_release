@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.23 2008-03-26 23:53:44 dschanen Exp $
+# $Id: make.deps,v 1.24 2008-03-27 16:57:11 dschanen Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -191,6 +191,7 @@ gradsaverage.o	: inputgrads.o gradsaverage.F
 error.o		: nrtype.o nr.o gradsaverage.o hoc.o parameters.o error.F
 budget_terms.o  : amoeba.o inputfields.o gradsaverage.o hoc.o \
 	error.o budget_terms.F
+cloud_sed_mod.o : cloud_sed_mod.F stats_hoc.o grid.o constants.o
 
 # == Executables ==
 hoc_tuner.o		: nrtype.o nr.o hoc.o error.o hoc_tuner.F
