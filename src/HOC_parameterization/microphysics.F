@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.31 2008-03-26 23:53:44 dschanen Exp $
+! $Id: microphysics.F,v 1.32 2008-03-27 15:19:48 griffinb Exp $
         module microphysics
 
 !       Description:
@@ -1252,7 +1252,11 @@
      .  wmt, ! w wind on t                      [m/s]
      .  dzt  ! Inverse of the grid spacing      [m] 
 
-        integer, intent(in) :: level ! thermo. level that the calc. is for.
+        integer, intent(in) :: level ! thermodynamic level of calculation.
+
+        integer ::
+     .  mk,   ! The index of momentum level k.
+     .  mkm1  ! The index of momentum level k-1.
 
         ! Output
         real, dimension(3) :: lhs
@@ -1282,58 +1286,30 @@
         !
         ! ---xx(k-1)----------------------------------  t(k-1)
         !
+        ! The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1) 
+        ! correspond with altitudes zt(k+1), zm(k), zt(k), zm(k-1), 
+        ! and zt(k-1), respectively.  The letter "t" is used for 
+        ! thermodynamic levels and the letter "m" is used for momentum 
+        ! levels.
+        !
         ! The value for vertical wind velocity, w, is taken from the central
         ! thermodynamic level (w is normally a momentum-level variable, but
-        ! HOC also interpolates its value to thermodynamic levels).
+        ! the model also interpolates its value to thermodynamic levels).
         !
         ! In equation form, this looks like:
         !
-        ! -w_t(k) * [dzt(k)*( (xx(k+1)+xx(k))/2 - (xx(k)+xx(k-1))/2 )];
+        ! -w_t(k) * [dzt(k)*( (A*xx(k+1)+B*xx(k)) - (C*xx(k)+D*xx(k-1)) )];
         !
-        ! which is reduced to:
+        ! where A, B, C, and D are weights of interpolation, such that:  
+        !    A = ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ),
+        !    B = 1 - [ ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ) ],
+        !    C = ( zm(k-1) - zt(k-1) ) / ( zt(k) - zt(k-1) ), and
+        !    D = 1 - [ ( zm(k-1) - zt(k-1) ) / ( zt(k) - zt(k-1) ) ];
         ! 
-        ! -w_t(k) * [(1/2)*dzt(k)*(xx(k+1)-xx(k-1))];
-        ! 
-        ! where dzt(k) and dzm(k) are 1/(delta z) at level k.
+        ! and where dzt(k) = 1 / ( zm(k) - zm(k-1) ).
         !
         ! This is then moved to the left-hand side of the equation and 
         ! rearranged to be placed onto a tridiagonal matrix.
-        !
-        ! However, there are special conditions at the boundaries.  We need 
-        ! three points to take a centered derivative, but a boundary yields only
-        ! two points.  We define a "phantom-point" just outside the boundary to 
-        ! have the same value of the quantity as the point just inside the 
-        ! boundary.  This results in a zero derivative at the point of the 
-        ! boundary, although the level just above the boundary, which is where 
-        ! the effects are taking place, will have a derivative.  This is 
-        ! illustrated in the diagram of the lower boundary below:
-        !
-        ! --------------------xx(3)--------------------  t(3)
-        !
-        ! =============================================  m(2)
-        !
-        ! --------------------xx(2)--------------------  t(2)
-        !
-        ! ===SURFACE OR LOWER BOUNDARY (IMPERMEABLE)===  m(1)
-        !
-        ! ----"phantom point" xx(1) = xx(2)------------  t(1)
-        !
-        ! This is still discretized the same way as before, yielding:
-        !
-        ! -w_t(2) * [dzt(2)*( (xx(3)+xx(2))/2 - (xx(2)+xx(1))/2 )];
-        !
-        ! but since xx(1) = xx(2):
-        !
-        ! -w_t(2) * [(1/2)*dzt(2)*(xx(3)-xx(2))];
-        !
-        ! This is then moved to the left-hand side of the equation and 
-        ! rearranged to be placed onto a tridiagonal matrix.
-        !
-        ! The upper boundary is treated in the exact same way as the lower
-        ! boundary.  In HOC, the first thermodynamic level is below the surface,
-        ! so there are no advective effects at level 1.  The boundary levels
-        ! are level 2 and the top level.  Everything in between operates as 
-        ! normal.
         !
         ! Finally, it should be pointed out that this technique of discretizing
         ! is not conservative.  Column totals at any level do not necessarily
@@ -1341,29 +1317,36 @@
         !
         ! Brian Griffin.  March 7, 2007.
 
+        ! The indices of the momentum levels that sandwich
+        ! the central thermodynamic level.
+        mk   = level
+        mkm1 = level - 1
+
         if ( level == 1 ) then
+
            ! k = 1; below surface; no effects.
+
            lhs(kp1diag) = 0.0
            lhs(kdiag)   = 0.0
            lhs(km1diag) = 0.0
 
-        elseif ( level == 2 ) then
-           ! k = 2; lower boundary level.
-           lhs(kp1diag) = + wmt * (1.0/2.0) * dzt
-           lhs(kdiag)   = - wmt * (1.0/2.0) * dzt
-           lhs(km1diag) = 0.0
+        elseif ( level > 1 .and. level < gr%nnzp ) then
 
-        elseif ( level > 2 .and. level < gr%nnzp ) then
            ! Most of the interior model; normal conditions.
-           lhs(kp1diag) = + wmt * (1.0/2.0) * dzt
-           lhs(kdiag)   = 0.0
-           lhs(km1diag) = - wmt * (1.0/2.0) * dzt
+
+           lhs(kp1diag) = + wmt * dzt * gr%weights_zt2zm(mk,1)
+           lhs(kdiag)   = + wmt * dzt * (  gr%weights_zt2zm(mk,2)
+     .                                   - gr%weights_zt2zm(mkm1,1)  )
+           lhs(km1diag) = - wmt * dzt * gr%weights_zt2zm(mkm1,2)
 
         elseif ( level == gr%nnzp ) then
+
            ! k = gr%nnzp (top level); upper boundary level.
-           lhs(kp1diag) = 0.0
-           lhs(kdiag)   = + wmt * (1.0/2.0) * dzt
-           lhs(km1diag) = - wmt * (1.0/2.0) * dzt
+
+           lhs(kp1diag) = + wmt * dzt * gr%weights_zt2zm(mk,1)
+           lhs(kdiag)   = + wmt * dzt * (  gr%weights_zt2zm(mk,2)
+     .                                   - gr%weights_zt2zm(mkm1,1)  )
+           lhs(km1diag) = - wmt * dzt * gr%weights_zt2zm(mkm1,2)
 
         endif
 
@@ -1442,58 +1425,30 @@
         !
         ! ---xx(k-1)------------------------------------  t(k-1)
         !
+        ! The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1)
+        ! correspond with altitudes zt(k+1), zm(k), zt(k), zm(k-1),
+        ! and zt(k-1), respectively.  The letter "t" is used for
+        ! thermodynamic levels and the letter "m" is used for momentum
+        ! levels.
+        !
         ! In equation form, this looks like:
         !
-        ! -( (Vxx(k)+Vxx(k-1))/2 ) * 
-        !      [dzt(k)*( (xx(k+1)+xx(k))/2 - (xx(k)+xx(k-1))/2 )];
+        ! -zm2zt(Vxx,k) * 
+        !    [dzt(k)*( (A*xx(k+1)+B*xx(k)) - (C*xx(k)+D*xx(k-1)) )];
         !
-        ! which is reduced to:
-        ! 
-        ! -( (Vxx(k)+Vxx(k-1))/2 ) * [(1/2)*dzt(k)*(xx(k+1)-xx(k-1))];
+        ! where zm2zt(Vxx,k) interpolates momentum-level variable Vxx 
+        ! to thermodynamic level k;
         !
-        ! and then rearranged to:
+        ! where A, B, C, and D are weights of interpolation, such that:
+        !    A = ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ),
+        !    B = 1 - [ ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ) ],
+        !    C = ( zm(k-1) - zt(k-1) ) / ( zt(k) - zt(k-1) ), and
+        !    D = 1 - [ ( zm(k-1) - zt(k-1) ) / ( zt(k) - zt(k-1) ) ];
         !
-        ! -(1/4) * (Vxx(k)+Vxx(k-1)) * dzt(k) * (xx(k+1)-xx(k-1));
-        ! 
-        ! where dzt(k) and dzm(k) are 1/(delta z) at level k.
-        !
-        ! This is then moved to the left-hand side of the equation and 
-        ! rearranged to be placed onto a tridiagonal matrix.
-        !
-        ! However, there are special conditions at the boundaries.  We need 
-        ! three points to take a centered derivative, but a boundary yields only
-        ! two points.  We define a "phantom-point" just outside the boundary to 
-        ! have the same value of the quantity as the point just inside the 
-        ! boundary.  This is illustrated in the diagram of the lower boundary 
-        ! below:
-        !
-        ! --------------------xx(3)--------------------  t(3)
-        !
-        ! =============================================  m(2)
-        !
-        ! --------------------xx(2)--------------------  t(2)
-        !
-        ! ===SURFACE OR LOWER BOUNDARY (IMPERMEABLE)===  m(1)
-        !
-        ! ----"phantom point" xx(1) = xx(2)------------  t(1)
-        !
-        ! This is still discretized the same way as before, yielding:
-        !
-        ! -( (Vxx(2)+Vxx(1))/2 ) * 
-        !      [dzt(2)*( (xx(3)+xx(2))/2 - (xx(2)+xx(1))/2 )];
-        !
-        ! but since xx(1) = xx(2):
-        !
-        ! -(1/4) * (Vxx(2)+Vxx(1)) * dzt(2) * (xx(3)-xx(2));
+        ! and where dzt(k) = 1 / ( zm(k) - zm(k-1) ).
         !
         ! This is then moved to the left-hand side of the equation and 
         ! rearranged to be placed onto a tridiagonal matrix.
-        !
-        ! The upper boundary is treated in the exact same way as the lower
-        ! boundary.  In HOC, the first thermodynamic level is below the surface,
-        ! so there are no sedimentary effects at level 1.  The boundary levels
-        ! are level 2 and the top level.  Everything in between operates as 
-        ! normal.
         !
         ! Finally, it should be pointed out that this technique of discretizing
         ! is not conservative.  Column totals at any level do not necessarily
@@ -1502,7 +1457,7 @@
         ! as it sediments.
         !
         ! Brian Griffin. March 7, 2007.
-
+        !
         ! Note:  The code has now been changed so that Vxx has been pulled 
         !        inside of the derivative.  The sedimentation term is now of 
         !        the form -d(Vxx*xx)/dt, rather than of the form -Vxx d(xx)/dt.
@@ -1599,7 +1554,7 @@
         !
         ! This subroutine is called only if a hydrometeor at a certain level 
         ! contains a negative value.  First, this subroutine uses the same
-        ! methods that the HOC statistical code uses in computing budget terms
+        ! methods that the model statistical code uses in computing budget terms
         ! in order to determine what factors effected the value of the given
         ! hydrometeor during the timestep that was just solved for.  The
         ! mean advection, sedimentation, and diffusion budget terms are all 
@@ -1840,10 +1795,10 @@
         xrm_trsed_only = xrm_old + xrm_chge_trsed
 
         if ( xrm_trsed_only >= 0.0 ) then
-           ! Negative value of hydrometeor (xrm) is due ONLY to microphysical
-           ! tendencies, namely the over-evaporation of xrm.
-           ! The actual amount of the hydrometeor that evaporated during
-           ! the timestep to make the value go to 0.
+           ! The negative value of hydrometeor (xrm) is due ONLY to 
+           ! microphysical tendencies, namely the over-evaporation of xrm.
+           ! Find the actual amount of the hydrometeor that evaporated during
+           ! the timestep to make the value of xrm go to 0.
            evap_amt = -xrm_trsed_only
            ! Divide by the timestep to find the actual evaporation rate.
            evap_rate = evap_amt / dt
@@ -1858,14 +1813,14 @@
            ! Reset the value of the hydrometeor (xrm) to 0.
            xrm(k) = 0.0
         else
-           ! Negative value of hydrometeor (xrm) is due to transport 
+           ! The negative value of hydrometeor (xrm) is due to transport 
            ! (mean advection and diffusion) and sedimentation.
-           ! The actual amount of the hydrometeor that evaporated during
-           ! the timestep to make the value go to 0.  Even though the
-           ! microphysical tendency may have computed an evaporation rate,
-           ! since we figure that the transport and sedimentation terms made
-           ! the value of the hydrometeor negative, we say that the 
-           ! evaporation amount and rate is 0.
+           ! Find the actual amount of the hydrometeor that evaporated during
+           ! the timestep to make the value of xrm go to 0.  Even though the
+           ! microphysical tendency portion of the code may have computed an 
+           ! evaporation rate, we figure that the transport and sedimentation 
+           ! terms made the value of the hydrometeor negative, so we say that 
+           ! the evaporation amount and rate is 0.
            evap_amt = 0.0
            evap_rate = 0.0
            ! The amount of the hydrometeor that was artificially excessively
@@ -1883,6 +1838,7 @@
            ! be zeroed out in clipping in the subroutine that calls this one.
            xrm(k) = xrm_trsed_only
         endif
+
         end subroutine adj_microphys_tndcy
 
 !-----------------------------------------------------------------------
