@@ -1,6 +1,6 @@
       subroutine conice(ni,nuci,t,qv,qsatv,qsati,qc,qi,rho,nc
      1          ,pr,appbpp,icon,pcut,heatlv,rvap,p00,visair
-     2          ,cnzero,cbeta,delt,tice,tzero,cimass,len)
+     2          ,cnzero,cbeta,delt,tice,tzero,cimass,len,icase)
 
 c
 #include "conice.prol"
@@ -12,6 +12,8 @@ c***********************************************************************
 c
       integer len
       integer icon
+      integer icase
+      intent(in) icase
 c
       real appbpp(len)
       real cbeta
@@ -90,12 +92,10 @@ c***************************************************************`
 c Addition by Adam Smith, 06 April 2007
 c Adding icase for implementing "proper" concentration settings
 c Also adding a "fudge" factor to modify Fletcher/Cooper scheme
-c UNCOMMENT THESE TWO LINES TO RUN MPACE-A
+c Made this a if .. then instead -dschanen 27 Mar 08
 c***************************************************************
 c
-
-c      real fudgefactor
-c      fudgefactor = 0.01
+       real fudgefactor
 
 c
 c***********************************************************************
@@ -112,6 +112,14 @@ c
       lambda=6.6e-8
       aerorad=1.e-7
       kbolt=1.38e-23
+
+      if ( icase == 75 ) then
+!     if ( .false. ) then
+        ! For MPACE A
+        fudgefactor = 0.01
+      else ! or don't cheat
+        fudgefactor = 1.
+      end if
 c
 c***********************************************************************
 c aerosol conductivity (kapp) taken from value for clay (Sellers 1965)
@@ -305,8 +313,8 @@ c
           tmin=max(t(i),243.)
 ! Michael Falk, 15 Oct 2007
 ! Use the second line instead of the first for MPACE-A
-          ni(i)=cnzero*exp(cbeta*(tzero-tmin))
-!          ni(i)=fudgefactor*cnzero*exp(cbeta*(tzero-tmin))
+!         ni(i)=cnzero*exp(cbeta*(tzero-tmin))
+          ni(i)=fudgefactor*cnzero*exp(cbeta*(tzero-tmin))
 ! eMFc
         endif
        enddo
@@ -317,9 +325,9 @@ c
           tmin=max(t(i),246.)
 ! Michael Falk, 15 October 2007
 ! Use the second and third lines instead of the first for MPACE-A
-          ni(i)=max(ni(i), .005*l2m3*exp(0.304*(tzero-tmin)) )
-!          ni(i)=max(ni(i), 
-!     .     fudgefactor*.005*l2m3*exp(0.304*(tzero-tmin)) )
+!         ni(i)=max(ni(i), .005*l2m3*exp(0.304*(tzero-tmin)) )
+          ni(i)=max(ni(i), 
+     .     fudgefactor*.005*l2m3*exp(0.304*(tzero-tmin)) )
 ! eMFc
          endif
 ! Michael Falk, 11 Oct 2007, added this per AJS and VL.

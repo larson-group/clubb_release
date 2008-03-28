@@ -1,6 +1,6 @@
 !----------------------------------------------------------------------
       subroutine coamps_micro_driver
-     .       ( kk, kmax, timea, deltf,
+     .       ( runtype, kk, kmax, timea, deltf,
      .         rtm, wmm, p, exner, rhot,
      .         thlm, ricem, rrm, rgraupelm, rsnowm,
      .         nne, nrdamp, j, icon, icond,
@@ -74,12 +74,6 @@
      .  rhosno = 100.,
      .  rhogrp = 400.,
      .  rnzero = 8.0e6,
-! Michael Falk changed this, November 2007.
-! This is the stock COAMPS value, 2e7:
-     .  snzero = 2.0e7,
-! and this is the value, 2e6, which works for MPACE-A:
-!     .  snzero = 2.0e6,
-! eMFc
      .  gnzero = 4.0e6,
      .  therco = 2.43e-2,
      .  tice = 269.16,
@@ -111,6 +105,9 @@
      .  wtm   = 1.0  ! Weighting array for mass point (never used)
 
       ! Input Variables
+      character(len=*), intent(in) ::
+     .  runtype ! For case specific handling of the microphysics
+
       integer, intent(in) ::
      .  kk,    ! Number of COAMPS m gridpoints in the vertical (gr%nnzp-1)
      .  kmax   ! Maximum array size (kk + ??)
@@ -340,6 +337,9 @@
      .  len,         ! # of saturated points???
      .  icase        ! Which case?
 
+      real ::
+     .  snzero ! ???
+
       integer, dimension(1) ::
      .  nkpts        
 
@@ -386,9 +386,42 @@
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       ! End of ajsmith4's comment
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      icase    = 1000
+      ! dschanen on 27 Mar 2008 made icase as function of runtype
+      select case ( trim( runtype ) )
+      case ( "mpace_a", "mpace_b" )
+        icase = 75
 
+      case ( "nov11_altocu" )
+        icase = 1000
+
+      case ( "jun25_altocu" )
+        icase = 1001
+
+      case ( "clex9_oct14" )
+        icase = 1002
+
+      case ( "clex9_nov02" )
+        icase = 1003
+
+      case default
+        icase = -1 ! No idea what to do in this case. -dschanen
+
+      end select
+
+      ! Something related to ice.  In regular COAMPS it is a parameter but is
+      ! then set to another value, which is illegal.
       eic      = 1.0
+
+! Michael Falk changed this, November 2007.
+! This is the stock COAMPS value, 2e7:
+      if ( trim( runtype ) == "mpace_a" ) then
+!     if ( .false. ) then
+        ! and this is the value, 2e6, which works for MPACE-A:
+        snzero = 2.0e6
+      else ! don't cheat
+        snzero = 2.0e7
+      end if
+! eMFc
 
       ! Set up initial fields
 
