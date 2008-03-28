@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.74 2008-03-28 14:16:13 griffinb Exp $
+! $Id: parameterization_interface.F,v 1.75 2008-03-28 15:57:51 griffinb Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -68,6 +68,7 @@
        use surface_var, only: sfc_var
        use pdf_closure, only: pdf_closure_new     ! Prob. density function
        use mixing_length
+       use compute_um_edsclrm_mod, only: compute_um_edsclrm
        use saturation, only: rsat ! Saturation mixing ratio
 #ifdef STATS
        use stats_hoc
