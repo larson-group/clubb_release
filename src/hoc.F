@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.163 2008-03-26 23:53:44 dschanen Exp $
+! $Id: hoc.F,v 1.164 2008-03-28 04:29:28 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -2055,7 +2055,7 @@
         ! for rain microphysics.
         if ( kk_rain .or. lcoamps_micro .or. licedfs ) then
           call timestep_microphys
-     .         ( dt, time, time_initial,
+     .         ( runtype, dt, time, time_initial,
      .           thlm, p, exner, rhot, rhom, rtm, rcm, Ncm, 
      .           pdf_parms, wmt, wmm, Khm, AKm_est, Akm, 
      .           Ncnm, Nim,

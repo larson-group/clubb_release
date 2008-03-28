@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.32 2008-03-27 15:19:48 griffinb Exp $
+! $Id: microphysics.F,v 1.33 2008-03-28 04:29:28 dschanen Exp $
         module microphysics
 
 !       Description:
@@ -26,7 +26,7 @@
 
 !-----------------------------------------------------------------------
         subroutine timestep_microphys
-     .             ( dt, time_current, time_initial, 
+     .             ( runtype, dt, time_current, time_initial, 
      .               thlm, p, exner, rhot, rhom, rtm, rcm, Ncm, 
      .               pdf_parms, wmt, wmm, Khm, AKm_est, AKm, 
      .               Ncnm, Nim,
@@ -74,6 +74,9 @@
                        !   set ldrizzle = .false.
                        !   because collection of drizzle by ice
                        !   is not implemented yet.
+
+        character(len=*), intent(in) ::
+     .  runtype ! Name of the run, for case specific effects.
 
         real, intent(in) :: 
      .  dt,          ! Timestep         [s]
@@ -202,7 +205,7 @@
         if ( lcoamps_micro ) then
 
            call coamps_micro_driver
-     .          ( gr%nnzp-1, gr%nnzp, time_current, dt,
+     .          ( runtype, gr%nnzp-1, gr%nnzp, time_current, dt,
      .            rtm, wmm, p, exner, rhot,
      .            thlm, ricem, rrm, rgraupelm, rsnowm,
      .            nne, nrdamp, j, icon, icond, 
