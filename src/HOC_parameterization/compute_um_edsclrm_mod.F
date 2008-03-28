@@ -1,6 +1,13 @@
 !------------------------------------------------------------------------
-! $Id: update.F,v 1.11 2008-03-28 14:16:13 griffinb Exp $
+! $Id: compute_um_edsclrm_mod.F,v 1.1 2008-03-28 14:51:14 griffinb Exp $
+!------------------------------------------------------------------------
+        module compute_um_edsclrm_mod
 
+        public :: compute_um_edsclrm
+
+        contains
+
+!------------------------------------------------------------------------
         subroutine compute_um_edsclrm( solve_type, xpwp_sfc, xm_tndcy, 
      .                                 Khm, dt, xm, xpwp, isValid )
 !       Description:
@@ -265,3 +272,5 @@
 
         end subroutine compute_um_edsclrm
 !-----------------------------------------------------------------------
+
+        end module compute_um_edsclrm_mod
