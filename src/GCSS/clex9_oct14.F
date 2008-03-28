@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: clex9_oct14.F,v 1.2 2008-03-25 04:58:22 dschanen Exp $
+! $Id: clex9_oct14.F,v 1.3 2008-03-28 21:49:53 ajsmith4 Exp $
         module clex9_oct14
 
 !       Description:
@@ -48,7 +48,7 @@
         implicit none
 
         ! External
-!       double precision, external :: cos_solar_zen
+        double precision, external :: cos_solar_zen
 
         ! Local constants
 
@@ -193,9 +193,13 @@
 !      Replaced the calculation based on time since solar noon 
 !       etc., with a generalized function based on time and lat/lon.
 !       -dschanen 5 Jan 2007
-!      xi_abs = cos_solar_zen( 11, 11, 1999, time, rlat, rlon )
 
-       xi_abs = 0.4329
+!      NOTE: The results from this function match the xi_abs results
+!            obtained using the COAMPS xi_abs method.  Therefore, we
+!            use the "cos_solar_zen" function for this case.
+       xi_abs = cos_solar_zen( 14, 10, 2001, time, rlat, rlon )
+
+c       xi_abs = 0.4329
 
 !-----------------------------------------------------------------------
 ! Modification by Adam Smith 26 June 2006
