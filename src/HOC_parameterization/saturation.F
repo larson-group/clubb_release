@@ -1,6 +1,18 @@
-!$Id: saturation.F,v 1.2 2008-03-19 15:07:19 faschinj Exp $
+!$Id: saturation.F,v 1.3 2008-03-28 16:54:55 vlarson Exp $
 
         module saturation
+
+!       Description: 
+!         Contains functions that compute saturation with respect
+!       to liquid or ice.
+
+        implicit none
+
+        private        ! Change default so all items private
+
+        public   :: rsat, rsati, sat_rcm
+
+        private  :: svp_liq, svp_ice
 
         contains
 
