@@ -1,7 +1,18 @@
       subroutine conice(ni,nuci,t,qv,qsatv,qsati,qc,qi,rho,nc
      1          ,pr,appbpp,icon,pcut,heatlv,rvap,p00,visair
+c
+c*******************************************
+c Modification by Adam Smith, 10 April 2007
+c Adding icase to call statement
+c*******************************************
+c
+c     2          ,cnzero,cbeta,delt,tice,tzero,cimass,len)
      2          ,cnzero,cbeta,delt,tice,tzero,cimass,len,icase)
-
+c
+c********************************
+c End of ajsmith4's modification
+c********************************
+c
 c
 #include "conice.prol"
       implicit none
@@ -87,16 +98,20 @@ c
       integer i
 c
       logical lcotton
-
+c
 c***************************************************************`
 c Addition by Adam Smith, 06 April 2007
-c Adding icase for implementing "proper" concentration settings
-c Also adding a "fudge" factor to modify Fletcher/Cooper scheme
+c Adding a "fudge" factor to modify Fletcher/Cooper scheme.
+c We have found that the M-PACE and CLEX-9: Oct.14 cases produce
+c   more accurate ice when we use the fudgefactor.
 c Made this a if .. then instead -dschanen 27 Mar 08
 c***************************************************************
 c
-       real fudgefactor
-
+      real fudgefactor
+c
+c****************************
+c End of ajsmith4's addition
+c****************************
 c
 c***********************************************************************
 c          end of definitions
@@ -112,11 +127,14 @@ c
       lambda=6.6e-8
       aerorad=1.e-7
       kbolt=1.38e-23
-
+c
       if ( icase == 75 ) then
 !     if ( .false. ) then
         ! For MPACE A
         fudgefactor = 0.01
+      elseif ( icase == 1002) then
+        ! For CLEX-9: Oct.14
+        fudgefactor = 0.06
       else ! or don't cheat
         fudgefactor = 1.
       end if
@@ -259,7 +277,7 @@ c
       endif
 c
        do i=1,len
-        ni(i)=max(0.,ni(i)+nuci(i)) 
+        ni(i)=max(0.,ni(i)+nuci(i))
        enddo
 c
       if(icon.eq.3)then
@@ -311,10 +329,23 @@ c
        do i=1,len
         if (t(i).le.tice) then
           tmin=max(t(i),243.)
+!
 ! Michael Falk, 15 Oct 2007
 ! Use the second line instead of the first for MPACE-A
+c
+c********************************************************
+c Modification by Adam Smith, 28 March 2008
+c Re-commenting is no longer necessary for this section,
+c because a fudgefactor is applied to all cloud cases.
+c********************************************************
+c
 !         ni(i)=cnzero*exp(cbeta*(tzero-tmin))
           ni(i)=fudgefactor*cnzero*exp(cbeta*(tzero-tmin))
+c
+c********************************
+c End of ajsmith4's modification
+c********************************
+c
 ! eMFc
         endif
        enddo
@@ -325,9 +356,21 @@ c
           tmin=max(t(i),246.)
 ! Michael Falk, 15 October 2007
 ! Use the second and third lines instead of the first for MPACE-A
+c
+c********************************************************
+c Modification by Adam Smith, 28 March 2008
+c Re-commenting is no longer necessary for this section,
+c because a fudgefactor is applied to all cloud cases.
+c********************************************************
+c
 !         ni(i)=max(ni(i), .005*l2m3*exp(0.304*(tzero-tmin)) )
           ni(i)=max(ni(i), 
      .     fudgefactor*.005*l2m3*exp(0.304*(tzero-tmin)) )
+c
+c********************************
+c End of ajsmith4's modification
+c********************************
+c
 ! eMFc
          endif
 ! Michael Falk, 11 Oct 2007, added this per AJS and VL.

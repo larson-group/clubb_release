@@ -386,6 +386,8 @@
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       ! End of ajsmith4's comment
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!      icase    = 75
+
       ! dschanen on 27 Mar 2008 made icase as function of runtype
       select case ( trim( runtype ) )
       case ( "mpace_a", "mpace_b" )

@@ -61,24 +61,24 @@ c           parameters:
 c***********************************************************************
 c
 c-->Chris Golaz modification: added icase
-      integer icase
+      integer   icase
 c<--end of modification
-      integer nipts
-      integer nne
-      integer kk
+      integer   nipts
+      integer   nne
+      integer   kk
 c
-      integer i1dflg
-      integer icomp(nipts)
-      integer icon
-      integer icond
-      integer kcomp(iminf(nne):imaxf(nne),kk)
-      integer kmax
-      integer len
-      integer maxpt1d
-      integer maxvr1d
-      integer n1d
-      integer nrdamp
-      integer nkpts(iminf(nne):imaxf(nne))
+      integer   i1dflg
+      integer   icomp(nipts)
+      integer   icon
+      integer   icond
+      integer   kcomp(iminf(nne):imaxf(nne),kk)
+      integer   kmax
+      integer   len
+      integer   maxpt1d
+      integer   maxvr1d
+      integer   n1d
+      integer   nrdamp
+      integer   nkpts(iminf(nne):imaxf(nne))
 c
       real    aa0
       real    aa1
@@ -188,10 +188,12 @@ c
       real    wtm     (iminf(nne):imaxf(nne),jminf(nne):jmaxf(nne))
       real    xland   (iminf(nne):imaxf(nne),jminf(nne):jmaxf(nne))
 c
-
+c*************************************************************
 c Addition by Adam Smith, 08 August 2006
 c Adding output variables for snow fallspeed, slope parameter
 c Also adding microphysical parameters for qc_mc term
+c*************************************************************
+c
       real snowv (iminf(nne):imaxf(nne),jminf(nne):jmaxf(nne),kk)
       real snslp (iminf(nne):imaxf(nne),jminf(nne):jmaxf(nne),kk)
 
@@ -448,7 +450,6 @@ c
           th    (i)=0.0
           tttemp(i)=0.0
       enddo
-
 c
 c***********************************************************************
 c     compute pressure (assume cp/r=3.5)
@@ -456,7 +457,6 @@ c     convert potential temperature to temperature
 c     store temperature in temporary working array
 c***********************************************************************
 c
-
       ilen=0
       do i=1,nipts
        iindex=icomp(i)
@@ -472,7 +472,6 @@ c
         rbar2d(ilen) = pr(ilen)/(r*tttemp(ilen))
        enddo
       enddo
-
 c
 c***********************************************************************
 c initialize ccn if not using drizzle scheme
@@ -499,11 +498,10 @@ c
            nctemp(ilen)  = ccnl(kindex)
          else
            nctemp(ilen)  = ccnw(kindex)
-         endif
+         end if
         enddo
        enddo
-      endif
-
+      end if
 c
 c***********************************************************************
 c          store mixing ratios in temporary working arrays
@@ -520,7 +518,7 @@ c
         qvtemp(ilen)=qv3(iindex,j,kindex)
        enddo
       enddo
-
+c
       if(lice)then
        ilen=0
        do i=1,nipts
@@ -534,7 +532,7 @@ c
          nitemp(ilen)=ni3(iindex,j,kindex)
         enddo
        enddo
-      endif
+      end if
 c
       if(ldrizzle)then
        ilen=0
@@ -562,8 +560,7 @@ c   here.
 c<--end of modification
         enddo
        enddo
-      endif
-
+      end if
 c
 c***********************************************************************
 c          compute slope factors for rain (sfrain) and for
@@ -613,7 +610,7 @@ c
         apbp  (i)=1.0/(xb(i)*hlvoka+apbp  (i))
         appbpp(i)=1.0/(xc(i)*hlsoka+appbpp(i))
       enddo
-
+c
       if(lice)then
 c
 c***********************************************************************
@@ -626,13 +623,31 @@ c
           xa(i)=1.0
           termb(i)=1.0
         else
-          terma(i)=0.65/(sfsnow(i)*sfsnow(i))
+c
+c****************************************************************
+c Addition by Adam Smith, 27 March 2008
+c "terma" is used to calculate PSDEP and other microphysical
+c results.  For the Nov.11 and CLEX-9 cases, we use a simplified
+c formula for calculating "terma".
+c****************************************************************
+c
+!         terma(i)=0.65/(sfsnow(i)*sfsnow(i))
+          if (icase.eq.1000 .or. icase.eq.1002 .or. icase.eq.1003) then
+            terma(i)=2.70/(sfsnow(i)*sfsnow(i))
+          else
+            terma(i)=0.65/(sfsnow(i)*sfsnow(i))
+          end if
+c
+c****************************
+c End of ajsmith4's addition
+c****************************
+c
           temp=log(sfsnow(i))
           xa(i)=temp*ex2
           xa(i)=1.0/exp(xa(i))
           termb(i)=temp*ex3
           termb(i)=1.0/exp(termb(i))
-        endif
+        end if
        enddo
 c
        do i=1,mkk
@@ -642,7 +657,23 @@ c
 c
        do i=1,mkk
         xa(i)=xa(i)*sqrt(xb(i))
-        terma(i)=terma(i)+xa(i)
+c
+c****************************************************************
+c Addition by Adam Smith, 27 March 2008
+c "terma" is used to calculate PSDEP and other microphysical 
+c results.  For the Nov.11 and CLEX-9 cases, we use a simplified
+c formula for calculating "terma".  For other cases, we need to
+c modify "terma" using the standard formula.
+c****************************************************************
+c
+        if (icase.ne.1000 .and. icase.ne.1002 .and. icase.ne.1003) then
+          terma(i)=terma(i)+xa(i)
+        end if
+c
+c****************************
+c End of ajsmith4's addition
+c****************************
+c
         termb(i)=termb(i)*pterm4(i)*ex5
        enddo
 c
@@ -660,7 +691,7 @@ c
           temp=log(sfgraup(i))
           xa(i)=temp*ex2g
           xa(i)=1.0/exp(xa(i))
-         endif
+         end if
         enddo
 c
         do i=1,mkk
@@ -672,7 +703,7 @@ c
          xa(i)=xa(i)*sqrt(xb(i))
          termg(i)=2.0*pi*gnzero*(termg(i)+xa(i))
         enddo
-       endif
+       end if
 c
 c***********************************************************************
 c         We will compute the melting and fusion terms first. These terms
@@ -687,11 +718,11 @@ c***********************************************************************
 c
        if(lgrpl)then
          call tgqg(fallg,qgtemp,sfgraup,pterm4,pcut,abar,bgrp,mkk)
-       endif
+       end if
 c
        call tgqr(fallr,falln,qrtemp,sfraincm,nrtemp,rbar2d,pterm4,pcut,
      1           rvr,tvr1,tvr2,tvr3,tvr4,ldrizzle,mkk)
-
+c
        call tgqs(falls,qstemp,sfsnow,pterm4,pcut,aprpr,bsnow,mkk)
 c
        call frzh(pchomo,tttemp,qctemp,pcut,twodt,mkk)
@@ -716,7 +747,6 @@ c          compute psmlti - melting of cloud ice (eq. a28, rh-1983)
 c***********************************************************************
 c
        call eqa28(psmlti,qitemp,tttemp,pcut,twodt,tzero,mkk)
-
 c
 c***********************************************************************
 c          compute graupel interaction terms
@@ -730,18 +760,28 @@ c
        if(lgrpl)call eqa11g(pgacw,qgtemp,qctemp,tttemp,sfgraup,xa,iwx1
      1       ,pterm4,tzero,gnzero,pi,egc,twodt,pcut,abar,bgrp,mkk)
 c
-c
 c***********************************************************************
 c       update ice crystal concentration
 c***********************************************************************
 c
        call conice(nitemp,nuci,tttemp,qvtemp,qsatv,qsati,qctemp,qitemp
      1          ,rbar2d,nctemp,pr,appbpp,icon,pcut,heatlv,rvap,p00
+c
+c********************************************************************
+c Addition by Adam Smith, 27 March 2008
+c The CLEX-9 case requires a special setting for ice concentration.
+c We add icase to the call statement to allow for the customization.
+c********************************************************************
+c
+!     2          ,visair,cnzero,cbeta,twodt,tice,tzero,cimass,mkk)
      2          ,visair,cnzero,cbeta,twodt,tice,tzero,cimass,mkk,icase)
-
+c
+c****************************
+c End of ajsmith4's addition
+c****************************
 c
 c***********************************************************************
-c       compute pristince fall sppeds
+c       compute pristine ice fall speeds
 c***********************************************************************
 c
        call tgqi(falli,qitemp,rbar2d,pr,nitemp,pcut,p00,cimass
@@ -833,7 +873,7 @@ c***********************************************************************
 c
        call qsatvi(tttemp,pr,qsatv,qsati,lice,mkk)
 c
-      endif
+      end if
 c
 c***********************************************************************
 c          compute adjusted values of t and q (tadj,qadj) expected from 
@@ -864,7 +904,7 @@ c
        call qtadj(tttemp,qvtemp,pr,qsatv,qsati,qadjw,tadjw
      1   ,heatlv,heatls,cp,rvap,tzero,lice,iflag,pcut,mkk)
 c
-      endif
+      end if
       
 c
 c***********************************************************************
@@ -878,7 +918,7 @@ c***********************************************************************
 c
       call slope(sfrain,sfraincm,sfsnow,sfgraup,qrtemp,qstemp,qgtemp
      1          ,rbar2d,sloper,slopes,slopeg,pcut,lice,lgrpl,mkk)
-
+c
       if(lice)then
        do i=1,mkk
         if (sfsnow(i).le.0.0) then
@@ -886,13 +926,31 @@ c
           xa(i)=1.0
           termb(i)=1.0
         else
-          terma(i)=0.65/(sfsnow(i)*sfsnow(i))
+c
+c****************************************************************
+c Addition by Adam Smith, 27 March 2008
+c "terma" is used to calculate PSDEP and other microphysical 
+c results.  For the Nov.11 and CLEX-9 cases, we use a simplified
+c formula for calculating "terma".
+c****************************************************************
+c
+!         terma(i)=0.65/(sfsnow(i)*sfsnow(i))
+          if (icase.eq.1000 .or. icase.eq.1002 .or. icase.eq.1003) then
+            terma(i)=2.70/(sfsnow(i)*sfsnow(i))
+          else
+            terma(i)=0.65/(sfsnow(i)*sfsnow(i))
+          end if
+c
+c****************************
+c End of ajsmith4's addition
+c****************************
+c
           temp=log(sfsnow(i))
           xa(i)=temp*ex2
           xa(i)=1.0/exp(xa(i))
           termb(i)=temp*ex3
           termb(i)=1.0/exp(termb(i))
-        endif
+        end if
        enddo
 c
        do i=1,mkk
@@ -902,7 +960,23 @@ c
 c
        do i=1,mkk
         xa(i)=xa(i)*sqrt(xb(i))
-        terma(i)=terma(i)+xa(i)
+c
+c****************************************************************
+c Addition by Adam Smith, 27 March 2008
+c "terma" is used to calculate PSDEP and other microphysical 
+c results.  For the Nov.11 and CLEX-9 cases, we use a simplified
+c formula for calculating "terma".  For other cases, we need to
+c modify "terma" using the standard formula.
+c****************************************************************
+c
+        if (icase.ne.1000 .and. icase.ne.1002 .and. icase.ne.1003) then
+          terma(i)=terma(i)+xa(i)
+        end if
+c
+c****************************
+c End of ajsmith4's addition
+c****************************
+c
         termb(i)=termb(i)*pterm4(i)*ex5
        enddo
 c
@@ -920,7 +994,7 @@ c
           temp=log(sfgraup(i))
           xa(i)=temp*ex2g
           xa(i)=1.0/exp(xa(i))
-         endif
+         end if
         enddo
 c
         do i=1,mkk
@@ -933,13 +1007,14 @@ c
          termg(i)=2.0*pi*gnzero*(termg(i)+xa(i))
         enddo
 c
-       endif
-      endif
+       end if
+      end if
 c
 c***********************************************************************
 c          compute pcond - condensation and evaporation of
 c          cloud water (eq. a6, rh-1983)
 c***********************************************************************
+c
       call eqa6(pcond,tttemp,qadjw,qvtemp,qctemp,qsatv,qsati,pr
      1         ,x6,x7,iwx1,heatlv,cp,twodt,pcut,j,mkk)
 c
@@ -974,8 +1049,7 @@ c
        if(lgrpl)call eqa19g(pmltge,qgtemp,tttemp,qvtemp,qsatv
      1       ,xa,iwx1,termg,apbp,qadjw,rbar2d,tzero,twodt,pcut,mkk)
 
-      endif
-
+      end if
 c
 c***********************************************************************
 c compute weights to used to normalize microphysical rates
@@ -1007,13 +1081,31 @@ c
           xa(i)=1.0
           termb(i)=1.0
         else
-          terma(i)=0.65/(sfsnow(i)*sfsnow(i))
+c
+c****************************************************************
+c Addition by Adam Smith, 27 March 2008
+c "terma" is used to calculate PSDEP and other microphysical 
+c results.  For the Nov.11 and CLEX-9 cases, we use a simplified
+c formula for calculating "terma".
+c****************************************************************
+c
+!         terma(i)=0.65/(sfsnow(i)*sfsnow(i))
+          if (icase.eq.1000 .or. icase.eq.1002 .or. icase.eq.1003) then
+            terma(i)=2.70/(sfsnow(i)*sfsnow(i))
+          else
+            terma(i)=0.65/(sfsnow(i)*sfsnow(i))
+          end if
+c
+c****************************
+c End of ajsmith4's addition
+c****************************
+c
           temp=log(sfsnow(i))
           xa(i)=temp*ex2
           xa(i)=1.0/exp(xa(i))
           termb(i)=temp*ex3
           termb(i)=1.0/exp(termb(i))
-        endif
+        end if
        enddo
 c
        do i=1,mkk
@@ -1023,7 +1115,23 @@ c
 c
        do i=1,mkk
         xa(i)=xa(i)*sqrt(xb(i))
-        terma(i)=terma(i)+xa(i)
+c
+c****************************************************************
+c Addition by Adam Smith, 27 March 2008
+c "terma" is used to calculate PSDEP and other microphysical 
+c results.  For the Nov.11 and CLEX-9 cases, we use a simplified
+c formula for calculating "terma".  For other cases, we need to
+c modify "terma" using the standard formula.
+c****************************************************************
+c
+        if (icase.ne.1000 .and. icase.ne.1002 .and. icase.ne.1003) then
+          terma(i)=terma(i)+xa(i)
+        end if
+c
+c****************************
+c End of ajsmith4's addition
+c****************************
+c
         termb(i)=termb(i)*pterm4(i)*ex5
        enddo
 c
@@ -1041,7 +1149,7 @@ c
           temp=log(sfgraup(i))
           xa(i)=temp*ex2g
           xa(i)=1.0/exp(xa(i))
-         endif
+         end if
         enddo
 c
         do i=1,mkk
@@ -1053,15 +1161,15 @@ c
          xa(i)=xa(i)*sqrt(xb(i))
          termg(i)=2.0*pi*gnzero*(termg(i)+xa(i))
         enddo
-       endif
-      endif
+       end if
+      end if
 c
 c***********************************************************************
 c          Ice-phase Microphysics
 c***********************************************************************
 c
       if (lice) then
-
+c
 c***********************************************************************
 c          compute adjusted values of t and q (tadj,qadj) expected from 
 c          ice-phase microphysics 
@@ -1088,7 +1196,7 @@ c
       else
        call qtadj(tttemp,qvtemp,pr,qsatv,qsati,qadj,tadj,heatlv
      1   ,heatls,cp,rvap,tzero,lice,iflag,pcut,mkk)
-      endif
+      end if
 c
 c***********************************************************************
 c          compute ice concentration (eq. a13, rh-1983)
@@ -1096,7 +1204,19 @@ c***********************************************************************
 c
        call conice(nitemp,nuci,tttemp,qvtemp,qsatv,qsati,qctemp,qitemp
      1          ,rbar2d,nctemp,pr,appbpp,icon,pcut,heatlv,rvap,p00
+c
+c********************************************************************
+c Addition by Adam Smith, 27 March 2008
+c The CLEX-9 case requires a special setting for ice concentration.
+c We add icase to the call statement to allow for the customization.
+c********************************************************************
+c
+!     2          ,visair,cnzero,cbeta,twodt,tice,tzero,cimass,mkk)
      2          ,visair,cnzero,cbeta,twodt,tice,tzero,cimass,mkk,icase)
+c
+c****************************
+c End of ajsmith4's addition
+c****************************
 c
 c***********************************************************************
 c          compute pint - initiation of cloud ice (eq. a15,rh-1983)
@@ -1149,7 +1269,7 @@ c    These conversions will not impact temperature or vapor  until
 c    the next time step
 c***********************************************************************
 c
-      endif
+      end if
 c
       call slope(sfrain,sfraincm,sfsnow,sfgraup,qrtemp,qstemp,qgtemp
      1          ,rbar2d,sloper,slopes,slopeg,pcut,lice,lgrpl,mkk)
@@ -1182,13 +1302,31 @@ c
           xa(i)=1.0
           termb(i)=1.0
         else
-          terma(i)=0.65/(sfsnow(i)*sfsnow(i))
+c
+c****************************************************************
+c Addition by Adam Smith, 27 March 2008
+c "terma" is used to calculate PSDEP and other microphysical 
+c results.  For the Nov.11 and CLEX-9 cases, we use a simplified
+c formula for calculating "terma".
+c****************************************************************
+c
+!         terma(i)=0.65/(sfsnow(i)*sfsnow(i))
+          if (icase.eq.1000 .or. icase.eq.1002 .or. icase.eq.1003) then
+            terma(i)=2.70/(sfsnow(i)*sfsnow(i))
+          else
+            terma(i)=0.65/(sfsnow(i)*sfsnow(i))
+          end if
+c
+c****************************
+c End of ajsmith4's addition
+c****************************
+c
           temp=log(sfsnow(i))
           xa(i)=temp*ex2
           xa(i)=1.0/exp(xa(i))
           termb(i)=temp*ex3
           termb(i)=1.0/exp(termb(i))
-        endif
+        end if
        enddo
 c
        do i=1,mkk
@@ -1198,7 +1336,23 @@ c
 c
        do i=1,mkk
         xa(i)=xa(i)*sqrt(xb(i))
-        terma(i)=terma(i)+xa(i)
+c
+c****************************************************************
+c Addition by Adam Smith, 27 March 2008
+c "terma" is used to calculate PSDEP and other microphysical 
+c results.  For the Nov.11 and CLEX-9 cases, we use a simplified
+c formula for calculating "terma".  For other cases, we need to
+c modify "terma" using the standard formula.
+c****************************************************************
+c
+        if (icase.ne.1000 .and. icase.ne.1002 .and. icase.ne.1003) then
+          terma(i)=terma(i)+xa(i)
+        end if
+c
+c****************************
+c End of ajsmith4's addition
+c****************************
+c
         termb(i)=termb(i)*pterm4(i)*ex5
        enddo
 c
@@ -1216,7 +1370,7 @@ c
           temp=log(sfgraup(i))
           xa(i)=temp*ex2g
           xa(i)=1.0/exp(xa(i))
-         endif
+         end if
         enddo
 c
         do i=1,mkk
@@ -1228,7 +1382,7 @@ c
          xa(i)=xa(i)*sqrt(xb(i))
          termg(i)=2.0*pi*gnzero*(termg(i)+xa(i))
         enddo
-       endif
+       end if
 c
 c***********************************************************************
 c
@@ -1236,7 +1390,7 @@ c
         call tgqg(fallg,qgtemp,sfgraup,pterm4,pcut,abar,bgrp,mkk)
 c
         call tgqs(falls,qstemp,sfsnow,pterm4,pcut,aprpr,bsnow,mkk)
-       endif
+       end if
 c
 c***********************************************************************
 c          compute pconv - conversion of cloud ice to snow
@@ -1268,7 +1422,6 @@ c          compute praci - collection of cloud ice by rain
 c          (eq. a5, rh-1984)
 c***********************************************************************
 c
-        
        if(lgrpl)call eqa5g(praci,qitemp,qrtemp,tttemp,iwx1,gm3,gm4
      1       ,gm5,gm6,pterm4,rnzero,pi,eri,aa0,aa1,aa2,aa3,sfrain
      2       ,twodt,pcut,tzero,mkk)
@@ -1280,7 +1433,6 @@ c***********************************************************************
 c
        if(lgrpl)call eqa12g(pgaci,qitemp,qgtemp,tttemp,sfgraup,xa,iwx1
      1       ,pterm4,tzero,gnzero,pi,egi,twodt,pcut,abar,bgrp,mkk)
-
 c
 c***********************************************************************
 c          compute pgacs - collection of snow by graupel
@@ -1290,7 +1442,6 @@ c
        if(lgrpl)call eqa14g(pgacs,qstemp,qgtemp,tttemp,rbar2d
      1       ,falls,fallg,sfsnow,sfgraup,iwx1,xa,xb,pterm4
      2       ,snzero,gnzero,rhosno,pi,egs,twodt,pcut,tzero,mkk)
-
 c
 c***********************************************************************
 c          compute pgshr - shedding of accreted water 
@@ -1300,7 +1451,7 @@ c
        if(lgrpl)call eqa20g(pgshr,pgacr,pgacw,tttemp,rbar2d,tzero
      2                     ,twodt,pcut,mkk)
 c
-      endif
+      end if
 c
 c***********************************************************************
 c       compute collection tendencies for all terms not impacting
@@ -1354,7 +1505,7 @@ c
         qr3(iindex,j,kindex)= qrtemp(ilen)
         qs3(iindex,j,kindex)= qstemp(ilen)
         qi3(iindex,j,kindex)= qitemp(ilen)
-        if(qi3(iindex,j,kindex).eq.0.) then
+        if(qi3(iindex,j,kindex).eq.0.)then
           ni3(iindex,j,kindex)=0.
         else
           ni3(iindex,j,kindex)= nitemp(ilen)
@@ -1432,7 +1583,7 @@ c   to mixing ratio units ( x 1.e-6 #/kg ).
 c<--end of modification
         enddo
        enddo
-      endif
+      end if
 c
 c***********************************************************************
 c zero out fields in the damping layer

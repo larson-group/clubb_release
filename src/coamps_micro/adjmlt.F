@@ -226,7 +226,7 @@ c
           abs10=wgt
           abs11=wgt
           abs12=wgt
-
+c
 c***********************************************************************
 c      determine weights for snow to prevent terms 
 c      from producing negative snow mixing ratio 
