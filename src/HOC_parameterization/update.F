@@ -1,10 +1,13 @@
 !------------------------------------------------------------------------
-! $Id: update.F,v 1.10 2008-03-05 17:16:19 faschinj Exp $
+! $Id: update.F,v 1.11 2008-03-28 14:16:13 griffinb Exp $
 
-        subroutine update_ed_var( solve_type, xm, xt, xw0, Khm, 
-     .                            dt, xw, isValid )
+        subroutine compute_um_edsclrm( solve_type, xpwp_sfc, xm_tndcy, 
+     .                                 Khm, dt, xm, xpwp, isValid )
 !       Description:
-!       Computes wind or other eddy diffusivity variable.
+!         Prognoses a horizontal wind component or other 
+!         eddy diffusivity variable.
+!         Diagnoses the turbulent flux.
+!         Uses a Crank-Nicholson time-stepping algorithm.
 
 !       References:
 !       Eqn. 8 & 9 on p. 3545 of 
@@ -28,11 +31,11 @@
 
         real, intent(in) :: 
      .  dt,          ! Timestep                             [s]
-     .  xw0          ! sfc flux                             [units vary]
+     .  xpwp_sfc     ! sfc flux                             [units vary]
 
         real, dimension(gr%nnzp), intent(in) :: 
-     .  xt,     ! x tendency                                [units vary]
-     .  Khm     ! Diffusion coefficient on momentum grid    [m^2/s]
+     .  xm_tndcy, ! x tendency                              [units vary]
+     .  Khm       ! Diffusion coefficient on momentum grid  [m^2/s]
 
         ! Input/Output Variables
         real, dimension(gr%nnzp), intent(inout) :: 
@@ -40,13 +43,13 @@
         
         ! Output Variables
         real, dimension(gr%nnzp), intent(out) :: 
-     .  xw   ! Momentum flux                                [units vary]
+     .  xpwp   ! Momentum flux                              [units vary]
 
         logical, intent(out) ::
      .  isValid ! false when matrix is singular
 
         ! Local Variables
-        real,  dimension(gr%nnzp) :: a, b, c, r
+        real,  dimension(gr%nnzp) :: a, b, c, rhs
 
         real :: atmp, ctmp
 
@@ -81,24 +84,24 @@
 
         ! zt(1) is below ground, we don't have to worry about it
 
-        a(1) = 0.
-        b(1) = 1./dt
-        c(1) = 0.
-        r(1) = 1./dt
+        a(1)   = 0.
+        b(1)   = 1./dt
+        c(1)   = 0.
+        rhs(1) = 1./dt
 
         ! zt(2) is the first active model layer. We need to impose the 
-        ! surface momentum flux xw0.
+        ! surface momentum flux xpwp_sfc.
 
         atmp = 0.
         ctmp = -0.5 * Khm(2) * gr%dzm(2) * gr%dzt(2)
 
-        a(2) = atmp
-        c(2) = ctmp
-        b(2) = - ctmp + 1./dt
-        r(2) = ( ctmp + 1./dt ) * xm(2)
-     .         - ctmp * xm(3)
-     .         + xt(2)
-     .         + xw0 * gr%dzt(2)
+        a(2)   = atmp
+        c(2)   = ctmp
+        b(2)   = - ctmp + 1./dt
+        rhs(2) = ( ctmp + 1./dt ) * xm(2)
+     .           - ctmp * xm(3)
+     .           + xm_tndcy(2)
+     .           + xpwp_sfc * gr%dzt(2)
 
 #ifdef STATS
            if ( lstats_samp .and. ixm_ta > 0 ) then
@@ -118,13 +121,13 @@
            atmp = -0.5 * Khm(k-1) * gr%dzt(k) * gr%dzm(k-1)
            ctmp = -0.5 * Khm(k) * gr%dzt(k) * gr%dzm(k)
 
-           a(k) = atmp
-           c(k) = ctmp
-           b(k) = - atmp - ctmp + 1./dt
-           r(k) = - atmp * xm(k-1)
-     .            + ( atmp + ctmp + 1./dt ) * xm(k)
-     .            - ctmp * xm(k+1)
-     .            + xt(k)
+           a(k)   = atmp
+           c(k)   = ctmp
+           b(k)   = - atmp - ctmp + 1./dt
+           rhs(k) = - atmp * xm(k-1)
+     .              + ( atmp + ctmp + 1./dt ) * xm(k)
+     .              - ctmp * xm(k+1)
+     .              + xm_tndcy(k)
 #ifdef STATS
            if ( lstats_samp .and. ixm_ta > 0 ) then
              ztscr01(k) = -atmp
@@ -142,16 +145,16 @@
 !     .              * gr%dzt(gr%nnzp-1)
 !        ctmp = 0.
 
-!        a(gr%nnzp) = atmp
-!        c(gr%nnzp) = ctmp
-!        b(gr%nnzp) = - atmp + 1./dt
-!        r(gr%nnzp) = - atmp * xm(gr%nnzp-1)
+!        a(gr%nnzp)   = atmp
+!        c(gr%nnzp)   = ctmp
+!        b(gr%nnzp)   = - atmp + 1./dt
+!        rhs(gr%nnzp) = - atmp * xm(gr%nnzp-1)
 !     .               + ( atmp + 1./dt ) * xm(gr%nnzp)
 
-        a(gr%nnzp) = -1.
-        c(gr%nnzp) =  0.
-        b(gr%nnzp) =  1.
-        r(gr%nnzp) =  0.
+        a(gr%nnzp)   = -1.
+        c(gr%nnzp)   =  0.
+        b(gr%nnzp)   =  1.
+        rhs(gr%nnzp) =  0.
 ! End of Vince Larson's change
 
 
@@ -163,25 +166,25 @@
            end if
 #endif
 !    Caused problems with DYCOMS II RF02
-!     .               + xt(gr%nnzp)
+!     .               + xm_tndcy(gr%nnzp)
 
 !    Attempted to compensate for the DYCOMS problem using the code below.
 !    Doesn't actually seem to make a difference
 !       atmp = -0.5 * Khm(gr%nnzp-1) * gr%dzt(gr%nnzp) * gr%dzm(gr%nnzp-1)
 
-!       a(gr%nnzp) = atmp
-!       b(gr%nnzp) = - c(gr%nnzp-1) + 1./dt
-!       c(gr%nnzp) = UNDEFINED
-!       r(gr%nnzp) = - atmp * x(gr%nnzp-1)
-!    .               + ( atmp + 1./dt ) * x(gr%nnzp)
-!    .               + xt(gr%nnzp)
+!       a(gr%nnzp)   = atmp
+!       b(gr%nnzp)   = - c(gr%nnzp-1) + 1./dt
+!       c(gr%nnzp)   = UNDEFINED
+!       rhs(gr%nnzp) = - atmp * x(gr%nnzp-1)
+!    .                 + ( atmp + 1./dt ) * x(gr%nnzp)
+!    .                 + xm_tndcy(gr%nnzp)
 
         ! Store momentum flux (explicit component)
-        xw(1) = xw0
+        xpwp(1) = xpwp_sfc
         do k=2,gr%nnzp-1
-          xw(k) = -0.5 * Khm(k) * gr%dzm(k) * ( xm(k+1) - xm(k) ) 
+          xpwp(k) = -0.5 * Khm(k) * gr%dzm(k) * ( xm(k+1) - xm(k) ) 
         end do
-        xw(gr%nnzp) = 0.
+        xpwp(gr%nnzp) = 0.
 
 #ifdef STATS
            ! Turbulent transport (explicit component)
@@ -200,14 +203,15 @@
 
         ! Solve tridiagonal system
         call tridag_solve( solve_type, gr%nnzp, 1, c, b, a, 
-     .                     r, xm, isValid )
+     .                     rhs, xm, isValid )
         if (.not. isValid ) then
           return
         end if
 
         ! Second part of momentum (implicit component)
         do k=2, gr%nnzp-1, 1
-          xw(k) = xw(k) - 0.5 * Khm(k) * gr%dzm(k) * ( xm(k+1) - xm(k) )
+          xpwp(k) = xpwp(k) 
+     .               - 0.5 * Khm(k) * gr%dzm(k) * ( xm(k+1) - xm(k) )
         end do
 
 #ifdef STATS
@@ -238,13 +242,13 @@
 !       Joshua Fasching February 2008
         if ( .not. isValid ) then
                 
-           write(fstderr,*) "Error in update_ed_var"
+           write(fstderr,*) "Error in compute_um_edsclrm"
            
            write(fstderr,*) "Intent(in)"
            
            write(fstderr,*) "dt = ", dt
-           write(fstderr,*) "xw0 = ", xw0
-           write(fstderr,*) "xt = ", xt
+           write(fstderr,*) "xpwp_sfc = ", xpwp_sfc
+           write(fstderr,*) "xm_tndcy = ", xm_tndcy
            write(fstderr,*) "Khm = ", Khm
            
            write(fstderr,*) "Intent(inout)"
@@ -253,11 +257,11 @@
            
            write(fstderr,*) "Intent(out)"
            
-           write(fstderr,*) "xw = ", xw
+           write(fstderr,*) "xpwp = ", xpwp
            
         endif
 
         return
 
-        end subroutine update_ed_var
+        end subroutine compute_um_edsclrm
 !-----------------------------------------------------------------------

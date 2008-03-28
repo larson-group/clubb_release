@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.73 2008-03-26 23:53:44 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.74 2008-03-28 14:16:13 griffinb Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -558,9 +558,9 @@
 
          edsclrmt(1:gr%nnzp,i) = - wmt * ddzm( zt2zm( edsclrm(:,i) ) )
 
-         call update_ed_var( "edsclr", edsclrm(:,i), edsclrmt(:,i), 
-     .                       wpedsclrp(1,i), Khm, dt, 
-     .                       wpedsclrp(:,i), isValid )
+         call compute_um_edsclrm( "edsclr", wpedsclrp(1,i), 
+     .                            edsclrmt(:,i), Khm, dt, edsclrm(:,i), 
+     .                            wpedsclrp(:,i), isValid )
 
        end do
 
@@ -600,8 +600,8 @@
        END IF
 
        ! dtmain to dt -dschanen
-       call update_ed_var( "um", um, umt, upwp(1), 
-     .                     Khm, dt, upwp, isValid )
+       call compute_um_edsclrm( "um", upwp(1), umt,
+     .                          Khm, dt, um, upwp, isValid )
 
        um(1)       = ( ( um(3)-um(2) )/( gr%zt(3)-gr%zt(2) ) )
      .              * ( gr%zt(1)-gr%zt(2) ) + um(2)
@@ -637,8 +637,10 @@
        ELSE
           vmt = 0.0
        END IF
-       call update_ed_var( "vm", vm, vmt, vpwp(1),
-     .                     Khm, dt, vpwp, isValid )
+
+       call compute_um_edsclrm( "vm", vpwp(1), vmt,
+     .                          Khm, dt, vm, vpwp, isValid )
+
        vm(1)       = ( ( vm(3)-vm(2) )/( gr%zt(3)-gr%zt(2) ) )
      .              * ( gr%zt(1)-gr%zt(2) ) + vm(2)
        vm(gr%nnzp) = ( ( vm(gr%nnzp-1)-vm(gr%nnzp-2) )
