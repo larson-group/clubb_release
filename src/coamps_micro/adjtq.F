@@ -1096,7 +1096,7 @@ c***********************************************************************
 c
        call conice(nitemp,nuci,tttemp,qvtemp,qsatv,qsati,qctemp,qitemp
      1          ,rbar2d,nctemp,pr,appbpp,icon,pcut,heatlv,rvap,p00
-     2          ,visair,cnzero,cbeta,twodt,tice,tzero,cimass,mkk)
+     2          ,visair,cnzero,cbeta,twodt,tice,tzero,cimass,mkk,icase)
 c
 c***********************************************************************
 c          compute pint - initiation of cloud ice (eq. a15,rh-1983)
