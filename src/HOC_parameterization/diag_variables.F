@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F,v 1.21 2008-03-26 23:53:44 dschanen Exp $
+! $Id: diag_variables.F,v 1.22 2008-03-28 16:46:59 dschanen Exp $
         module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -27,6 +27,7 @@
 
 !$omp   threadprivate(Sct, Skwm, Skwt, ug, vg)
 !$omp   threadprivate(thvm, shear)
+!$omp   threadprivate(um_ref, vm_ref)
 
         real, target, allocatable, dimension(:) ::
      .  rsm ! Saturation mixing ratio  ! Brian
