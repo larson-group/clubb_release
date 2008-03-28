@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.24 2008-03-27 16:57:11 dschanen Exp $
+# $Id: make.deps,v 1.25 2008-03-28 14:48:22 griffinb Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -73,14 +73,14 @@ parameterization_interface.o : constants.o hydrostatic.o mixing.o \
 	mixing_length.o stats_type.o stats_hoc.o stats_subs.o \
 	stats_zt.o stats_zm.o \
 	stats_sfc.o sounding.o diag_var.o saturation.o \
-	grid.o saturation.o update.o prog_variables.o diag_variables.o \
+	grid.o saturation.o compute_um_edsclrm_mod.o prog_variables.o diag_variables.o \
 	sfc.o closure_new.o latin_hyper_sample.o lh_sampler.o \
 	parameters.o parameterization_interface.F 
 hydrostatic.o	: constants.o hydrostatic.F 
 mixing_length.o	: constants.o parameters.o numer_check.o mixing_length.F
 saturation.o    : constants.o saturation.F  
 sfc.o		: constants.o parameters.o numer_check.o sfc.F 
-update.o	: grid.o stats_hoc.o lapack_wrap.o update.F
+compute_um_edsclrm_mod.o : grid.o stats_hoc.o lapack_wrap.o compute_um_edsclrm_mod.F
 wp23.o		: constants.o parameters.o stats_hoc.o lapack_wrap.o wp23.F 
 # == Numerical Recipes dependencies (For the tuner) ==
 nrtype.o	: nrtype.f90
