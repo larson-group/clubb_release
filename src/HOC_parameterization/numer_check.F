@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F,v 1.20 2008-03-26 23:53:44 dschanen Exp $
+! $Id: numer_check.F,v 1.21 2008-03-31 18:03:37 faschinj Exp $
         module numerical_check
 
         implicit none
@@ -16,6 +16,8 @@
 !       subroutine only reports if there are invalid values.
 !       Joshua Fasching March 2008
         
+        private ! Default scope
+        
         public :: invalid_model_arrays, isnan2d, 
      .            rad_check, parameterization_check,
      .            sfc_var_check, pdf_closure_new_check,
@@ -31,14 +33,13 @@
         
         contains
 !--------------------------------------------------------------------------------- 
-         subroutine length_check( Lscale, Lup, Ldown, isValid )
+         subroutine length_check( Lscale, Lup, Ldown, code )
 !
 !        Description: This subroutine determines if any of the output
 !        variables for the length_new subroutine carry values that
 !        are NaNs.
 !
 !        Joshua Fasching February 2008
-!
 !---------------------------------------------------------------------------------
          use grid_class
          implicit none
@@ -50,24 +51,26 @@
      .   Ldown   ! Downward mixing length        [m]
          
          ! Output Variable
-         logical, intent(inout) ::
-     .   isValid
+         integer, intent(inout) ::
+     .   code
 
          ! Local Variables
-         character(*), parameter :: proc_name = "length"
+         character(*), parameter :: proc_name = "compute_length"
 !-----------------------------------------------------------------------------
-         call check_nan( Lscale, "Lscale", proc_name, isValid )
-         call check_nan( Lup, "Lup", proc_name, isValid )
-         call check_nan( Ldown, "Ldown", proc_name, isValid )
+         call check_nan( Lscale, "Lscale", proc_name, code )
+         call check_nan( Lup, "Lup", proc_name, code )
+         call check_nan( Ldown, "Ldown", proc_name, code )
 
          end subroutine length_check
+         
 !---------------------------------------------------------------------------
          subroutine pdf_closure_new_check( wp4, wprtp2, wp2rtp, wpthlp2,
      .                           wp2thlp, cf, rcm, wpthvp, wp2thvp,
      .                           rtpthvp, thlpthvp, wprcp, wp2rcp,
      .                           rtprcp, thlprcp, rcp2, wprtpthlp,
      .                           crt1, crt2, cthl1, cthl2, pdf_parms,
-     .                           isValid, sclrpthvp, sclrprcp, wpsclrp2,
+     .                           code, 
+     .                           sclrpthvp, sclrprcp, wpsclrp2,
      .                           wpsclrprtp, wpsclrpthlp, wp2sclrp )
          
 !        Description: This subroutine determines if any of the output
@@ -116,61 +119,63 @@
      .  wp2sclrp
         
         ! Output Variable        
-        logical, intent(out) :: 
-     .  isValid          ! Are the outputs usable numbers?
+        integer, intent(inout) :: 
+     .  code          ! Returns appropriate error code
         
         ! Local Variable
         character(*), parameter :: proc_name = "pdf_closure_new"
+        
 !-------------------------------------------------------------------------------
-        call check_nan( wp4,"wp4", proc_name, isValid )
-        call check_nan( wprtp2,"wprtp2", proc_name, isValid )
-        call check_nan( wp2rtp,"wp2rtp", proc_name, isValid )
-        call check_nan( wpthlp2,"wpthlp2", proc_name, isValid )
-        call check_nan( wp2thlp,"wp2thlp", proc_name, isValid )
-        call check_nan( cf,"cf", proc_name, isValid )
-        call check_nan( rcm,"rcm", proc_name, isValid ) 
-        call check_nan( wpthvp, "wpthvp", proc_name, isValid )
-        call check_nan( wp2thvp, "wp2thvp", proc_name, isValid )
-        call check_nan( rtpthvp, "rtpthvp", proc_name, isValid )
-        call check_nan( thlpthvp, "thlpthvp", proc_name, isValid )
-        call check_nan( wprcp, "wprcp", proc_name, isValid )
-        call check_nan( wp2rcp, "wp2rcp", proc_name, isValid )
-        call check_nan( rtprcp, "rtprcp", proc_name, isValid )
-        call check_nan( thlprcp, "thlprcp", proc_name, isValid )
-        call check_nan( rcp2, "rcp2", proc_name, isValid)
-        call check_nan( wprtpthlp, "wprtpthlp", proc_name, isValid )
-        call check_nan( crt1, "crt1", proc_name, isValid )
-        call check_nan( crt2, "crt2", proc_name, isValid )
-        call check_nan( cthl1, "cthl1", proc_name, isValid )
-        call check_nan( cthl2, "cthl2", proc_name, isValid ) 
-        call check_nan( pdf_parms, "pdf_parms", proc_name,isValid )
+        call check_nan( wp4,"wp4", proc_name, code )
+        call check_nan( wprtp2,"wprtp2", proc_name, code )
+        call check_nan( wp2rtp,"wp2rtp", proc_name, code )
+        call check_nan( wpthlp2,"wpthlp2", proc_name, code )
+        call check_nan( wp2thlp,"wp2thlp", proc_name, code )
+        call check_nan( cf,"cf", proc_name, code )
+        call check_nan( rcm,"rcm", proc_name, code ) 
+        call check_nan( wpthvp, "wpthvp", proc_name, code )
+        call check_nan( wp2thvp, "wp2thvp", proc_name, code )
+        call check_nan( rtpthvp, "rtpthvp", proc_name, code )
+        call check_nan( thlpthvp, "thlpthvp", proc_name, code )
+        call check_nan( wprcp, "wprcp", proc_name, code )
+        call check_nan( wp2rcp, "wp2rcp", proc_name, code )
+        call check_nan( rtprcp, "rtprcp", proc_name, code )
+        call check_nan( thlprcp, "thlprcp", proc_name, code )
+        call check_nan( rcp2, "rcp2", proc_name, code)
+        call check_nan( wprtpthlp, "wprtpthlp", proc_name, code )
+        call check_nan( crt1, "crt1", proc_name, code )
+        call check_nan( crt2, "crt2", proc_name, code )
+        call check_nan( cthl1, "cthl1", proc_name, code )
+        call check_nan( cthl2, "cthl2", proc_name, code ) 
+        call check_nan( pdf_parms, "pdf_parms", proc_name,code )
         
         if ( present( sclrpthvp ) ) then
             call check_nan(sclrpthvp,"sclrpthvp",
-     .                      proc_name, isValid)
+     .                      proc_name, code)
         end if
         if ( present( sclrprcp ) ) then
              call check_nan( sclrprcp, "sclrprcp",
-     .                       proc_name, isValid )
+     .                       proc_name, code )
         end if
         if ( present( wpsclrprtp ) ) then
              call check_nan( wpsclrprtp, "wpsclrprtp", 
-     .                       proc_name, isValid )
+     .                       proc_name, code )
         end if   
         if ( present( wpsclrp2 ) ) then
              call check_nan( wpsclrp2, "wpsclrp2", 
-     .                       proc_name, isValid )
+     .                       proc_name, code )
         end if
         if( present( wpsclrpthlp ) ) then
              call check_nan( wpsclrpthlp, "wpsclrtlp", 
-     .                       proc_name, isValid )
+     .                       proc_name, code )
         end if
         if( present( wp2sclrp ) ) then
              call check_nan( wp2sclrp, "wp2sclrp", 
-     .                       proc_name, isValid )
+     .                       proc_name, code )
         end if
 
         return
+        
         end subroutine pdf_closure_new_check
 
 !-------------------------------------------------------------------------------
@@ -180,12 +185,11 @@
      .               upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,
      .               up2, vp2, rtm, wprtp, thlm, 
      .               wpthlp, wp2, wp3, Scm, rtp2, thlp2,
-     .               rtpthlp, taum, rcm, cf 
+     .               rtpthlp, taum, rcm, cf, prefix
 #ifdef SCALARS
      .               ,wpsclrp_sfc, wpedsclrp_sfc,
      .               sclrm, sclrm_forcing, edsclrm
 #endif /*SCALARS*/ 
-
      .  )
 !
 !       Description: This subroutine determines what input variables may have 
@@ -193,13 +197,13 @@
 !       In addition it checks to see if rhom, rhot, exner, up2, vp2, rtm, thlm,
 !       wp2, Scm, rtp2, thlp2, taum, rcm, Ncm, Ncnm, Nim, hydromet, or cf 
 !       have negative values.
-!
-!
 !-------------------------------------------------------------------------------
         use grid_class
         use constants   
 
         implicit none
+        
+        ! Input variables
 
         real, intent(in), dimension(gr%nnzp) :: 
      .  thlm_forcing,  ! theta_l forcing.        [K/s]
@@ -252,6 +256,8 @@
         real, intent(in), dimension(gr%nnzp) :: 
      .  cf ! Cloud fraction.     [%]
 
+        character(len=*) :: prefix ! Location where subroutine is called
+        
 #ifdef SCALARS
         ! Optional Input Variables
          real, intent(in),  dimension(sclr_dim) ::
@@ -268,93 +274,101 @@
         ! Local Variables
                                                     
         ! Name of the procedure using parameterization_check
+
         character(len=25), parameter :: 
      .  proc_name = "parameterization_timestep"
         
         integer :: i
 
 !-------- Input Nan Check ----------------------------------------------
+
+        call check_nan( thlm_forcing, "thlm_forcing", prefix//proc_name)
+        call check_nan( rtm_forcing,"rtm_forcing", prefix//proc_name )
+!        call check_nan( rtm_mc, "rtm_mc", prefix//proc_name )
+!        call check_nan( thlm_mc, "thlm_mc", prefix//proc_name )
+        call check_nan( wmm,"wmm", prefix//proc_name )
+        call check_nan( wmt,"wmt", prefix//proc_name )
+        call check_nan( p,"p", prefix//proc_name )
+        call check_nan( rhom,"rhom", prefix//proc_name )
+        call check_nan( rhot,"rhot", prefix//proc_name )
+        call check_nan( exner,"exner", prefix//proc_name )
+        call check_nan( um,"um", prefix//proc_name )
+        call check_nan( upwp,"upwp", prefix//proc_name )
+        call check_nan( vm,"vm", prefix//proc_name )
+        call check_nan( vpwp,"vpwp", prefix//proc_name )
+        call check_nan( up2,"up2", prefix//proc_name )
+        call check_nan( vp2,"vp2", prefix//proc_name )
+        call check_nan( rtm,"rtm", prefix//proc_name )
+        call check_nan( wprtp,"wprtp", prefix//proc_name )
+        call check_nan( thlm,"thlm", prefix//proc_name )
+        call check_nan( wpthlp,"wpthlp", prefix//proc_name )
+        call check_nan( wp2,"wp2", prefix//proc_name )
+        call check_nan( wp3,"wp3", prefix//proc_name )
+        call check_nan( Scm,"Scm", prefix//proc_name )
+        call check_nan( rtp2,"rtp2", prefix//proc_name )
+        call check_nan( thlp2,"thlp2", prefix//proc_name )
+        call check_nan( rtpthlp, "rtpthlp", prefix//proc_name )
+        call check_nan( taum,"taum", prefix//proc_name )
+!        call check_nan( rcm,"rcm", prefix//proc_name )
+!        call check_nan( Ncm,"Ncm", prefix//proc_name )
+!        call check_nan( Ncnm,"Ncnm", prefix//proc_name )
+!        call check_nan( Nim,"Nim", prefix//proc_name )
+!        call check_nan( hydromet(:,1),"rrm", prefix//proc_name )
+!        call check_nan( hydromet(:,2),"Nrm", prefix//proc_name )
+!        call check_nan( hydromet(:,3),"rsnowm", prefix//proc_name )
+!        call check_nan( hydromet(:,4),"ricem", prefix//proc_name )
+!        call check_nan( hydromet(:,5),"rgraupel", prefix//proc_name )
+        call check_nan( cf,"cf", prefix//proc_name )
+
         
-        call check_nan( thlm_forcing, "thlm_forcing", proc_name )
-        call check_nan( rtm_forcing,"rtm_forcing", proc_name )
-        call check_nan( wmm,"wmm", proc_name )
-        call check_nan( wmt,"wmt", proc_name )
-        call check_nan( p,"p", proc_name )
-        call check_nan( rhom,"rhom", proc_name )
-        call check_nan( rhot,"rhot", proc_name )
-        call check_nan( exner,"exner", proc_name )
-        call check_nan( um,"um", proc_name )
-        call check_nan( upwp,"upwp", proc_name )
-        call check_nan( vm,"vm", proc_name )
-        call check_nan( vpwp,"vpwp", proc_name )
-        call check_nan( up2,"up2", proc_name )
-        call check_nan( vp2,"vp2", proc_name )
-        call check_nan( rtm,"rtm", proc_name )
-        call check_nan( wprtp,"wprtp", proc_name )
-        call check_nan( thlm,"thlm", proc_name )
-        call check_nan( wpthlp,"wpthlp", proc_name )
-        call check_nan( wp2,"wp2", proc_name )
-        call check_nan( wp3,"wp3", proc_name )
-        call check_nan( Scm,"Scm", proc_name )
-        call check_nan( rtp2,"rtp2", proc_name )
-        call check_nan( thlp2,"thlp2", proc_name )
-        call check_nan( rtpthlp, "rtpthlp", proc_name )
-        call check_nan( taum,"taum", proc_name )
-        call check_nan( rcm,"rcm", proc_name )
-!       call check_nan( Ncm,"Ncm", proc_name )
-!       call check_nan( Ncnm,"Ncnm", proc_name )
-!       call check_nan( Nim,"Nim", proc_name )
-!       call check_nan( hydromet(:,1),"rrm", proc_name )
-!       call check_nan( hydromet(:,2),"Nrm", proc_name )
-!       call check_nan( hydromet(:,3),"rsnowm", proc_name )
-!       call check_nan( hydromet(:,4),"ricem", proc_name )
-!       call check_nan( hydromet(:,5),"rgraupel", proc_name )
-        call check_nan( cf,"cf", proc_name )
+
         
 #ifdef SCALARS
-        call check_nan( wpsclrp_sfc,"wpsclrp_sfc", proc_name )
-        call check_nan( wpedsclrp_sfc,"wpedsclrp_sfc", proc_name )
-        
+        call check_nan( wpsclrp_sfc,"wpsclrp_sfc", prefix//proc_name )
+        call check_nan( wpedsclrp_sfc,"wpedsclrp_sfc", 
+     .           prefix//proc_name )
+
         do i = 1, sclr_dim
-             call check_nan( sclrm(:,i),"sclrm", proc_name )
+             call check_nan( sclrm(:,i),"sclrm", prefix//proc_name )
              call check_nan( sclrm_forcing(:,i),"sclrm_forcing", 
-     .               proc_name ) 
-             call check_nan( edsclrm(:,i),"edsclrm", proc_name )
+     .               prefix//proc_name ) 
+             call check_nan( edsclrm(:,i),"edsclrm", prefix//proc_name )
         end do
 #endif /*SCALARS*/
         
 !---------------------------------------------------------------------
 
-        call check_negative( p,"p", proc_name )
-        call check_negative( rhot,"rhot", proc_name )
-        call check_negative( rhom,"rhom", proc_name )
-        call check_negative( exner,"exner", proc_name )
-        call check_negative( up2,"up2", proc_name )
-        call check_negative( vp2,"vp2", proc_name )
-        call check_negative( wp2,"wp2", proc_name )
-        call check_negative( rtm,"rtm", proc_name )
-        call check_negative( thlm,"thlm", proc_name )
-        call check_negative( Scm,"Scm", proc_name )
-        call check_negative( rtp2,"rtp2", proc_name )
-        call check_negative( thlp2,"thlp2", proc_name )
-        call check_negative( taum,"taum", proc_name )
-        call check_negative( rcm,"rcm", proc_name )
-!       call check_negative( Ncm,"Ncm", proc_name )
-!       call check_negative( Ncnm,"Ncnm", proc_name )
-!       call check_negative( Nim,"Nim", proc_name )
-!       call check_negative( hydromet(:,1),"rrm", proc_name )
-!       call check_negative( hydromet(:,2),"Nrm", proc_name )
-!       call check_negative( hydromet(:,3),"rsnowm", proc_name )
-!       call check_negative( hydromet(:,4),"ricem", proc_name )
-!       call check_negative( hydromet(:,5),"rgraupelm", proc_name )
-        call check_negative( cf,"cf", proc_name )
+        call check_negative( p,"p", prefix//proc_name )
+        call check_negative( rhot,"rhot", prefix//proc_name )
+        call check_negative( rhom,"rhom", prefix//proc_name )
+        call check_negative( exner,"exner", prefix//proc_name )
+        call check_negative( up2,"up2", prefix//proc_name )
+        call check_negative( vp2,"vp2", prefix//proc_name )
+        call check_negative( wp2,"wp2", prefix//proc_name )
+        call check_negative( rtm,"rtm", prefix//proc_name )
+        call check_negative( thlm,"thlm", prefix//proc_name )
+        call check_negative( Scm,"Scm", prefix//proc_name )
+        call check_negative( rtp2,"rtp2", prefix//proc_name )
+        call check_negative( thlp2,"thlp2", prefix//proc_name )
+        call check_negative( taum,"taum", prefix//proc_name )
+        call check_negative( rcm,"rcm", prefix//proc_name )
+!        call check_negative( Ncm,"Ncm", prefix//proc_name )
+!        call check_negative( Ncnm,"Ncnm", prefix//proc_name )
+!        call check_negative( Nim,"Nim", prefix//proc_name )
+!        call check_negative( hydromet(:,1),"rrm", prefix//proc_name )
+!        call check_negative( hydromet(:,2),"Nrm", prefix//proc_name )
+!        call check_negative( hydromet(:,3),"rsnowm", prefix//proc_name )
+!        call check_negative( hydromet(:,4),"ricem", prefix//proc_name )
+!        call check_negative( hydromet(:,5),"rgraupelm",
+!     .          prefix//proc_name )
+        call check_negative( cf,"cf", prefix//proc_name )
 
         return       
         end subroutine parameterization_check
 
 !-----------------------------------------------------------------------
         subroutine sfc_var_check( wp2_sfc, up2_sfc, vp2_sfc, thlp2_sfc,
-     .           rtp2_sfc, rtpthlp_sfc, isValid,
+     .           rtp2_sfc, rtpthlp_sfc, code,
      .           sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc )
 !
 !       Description:This subroutine determines if any of the output
@@ -388,7 +402,7 @@
      .  sclrpthlp_sfc ! Passive scalar theta_l covariance       [units K]
      
         ! Input/Output Variable
-        logical, intent(inout) :: isValid    ! Are these outputs valid?
+        integer, intent(inout) :: code    ! Are these outputs valid?
 
         ! Local Variables
 
@@ -396,27 +410,27 @@
         character(len=7),parameter :: proc_name = "sfc_var"
 !-----------------------------------------------------------------------
 
-        call check_nan( wp2_sfc, "wp2_sfc", proc_name, isValid)
-        call check_nan( up2_sfc, "up2_sfc", proc_name, isValid)
-        call check_nan( vp2_sfc, "vp2_sfc", proc_name, isValid)
-        call check_nan( thlp2_sfc, "thlp2_sfc", proc_name, isValid)
-        call check_nan( rtp2_sfc, "rtp2_sfc", proc_name, isValid)
+        call check_nan( wp2_sfc, "wp2_sfc", proc_name, code)
+        call check_nan( up2_sfc, "up2_sfc", proc_name, code)
+        call check_nan( vp2_sfc, "vp2_sfc", proc_name, code)
+        call check_nan( thlp2_sfc, "thlp2_sfc", proc_name, code)
+        call check_nan( rtp2_sfc, "rtp2_sfc", proc_name, code)
         call check_nan( rtpthlp_sfc, "rtpthlp_sfc", 
-     .                  proc_name, isValid)
+     .                  proc_name, code)
         
         if ( present( sclrp2_sfc ) ) then
           call check_nan( sclrp2_sfc, "sclrp2_sfc",
-     .                    proc_name, isValid )
+     .                    proc_name, code )
         end if
         
         if ( present( sclrprtp_sfc ) ) then
           call check_nan( sclrprtp_sfc, "sclrprtp_sfc",
-     .                    proc_name, isValid )
+     .                    proc_name, code )
         end if
         
         if ( present( sclrp2_sfc ) ) then
           call check_nan( sclrpthlp_sfc, "sclrpthlp_sfc", 
-     .                    proc_name, isValid )
+     .                    proc_name, code )
         end if
 
         return 
@@ -777,9 +791,11 @@
         end if
 
         return
+        
         end function isnan2d
+        
 !------------------------------------------------------------------------
-        subroutine check_negative( var, varname, operation, isValid )
+        subroutine check_negative( var, varname, operation, code )
 !
 !       Description: Checks for negative values in the var array and reports
 !       them.
@@ -787,6 +803,7 @@
 !-----------------------------------------------------------------------
         use constants, only:fstderr
         use grid_class
+        use error_code
         
         implicit none
 
@@ -800,12 +817,16 @@
      .  varname,    ! Varible being examined
      .  operation   ! Procedure calling check_zero
 
-        ! Output Variable
-        logical, optional, intent(inout) :: isValid
+        ! Optional In/Out Variable
+        integer, optional, intent(inout) :: code
 
         if ( any( var < 0.0 ) ) then
            write(fstderr,*) varname, " < 0 in ", operation
-           if ( present( isValid ) ) isValid = .false.
+           if ( present( code ) ) then 
+                if (code < CLUBB_var_less_than_zero ) then
+                        code = CLUBB_var_less_than_zero
+                endif
+           endif
         end if
 
         return
@@ -813,7 +834,7 @@
         end subroutine check_negative
         
 !------------------------------------------------------------------------        
-        subroutine check_nan_2d( var, varname, operation, isValid )
+        subroutine check_nan_2d( var, varname, operation, code )
 !
 !       Description: Checks for a NaN in the var array and reports it.
 !
@@ -821,7 +842,8 @@
 !------------------------------------------------------------------------
         use constants, only:fstderr
         use grid_class
-        
+        use error_code
+
         implicit none
 
         ! External
@@ -835,25 +857,30 @@
      .  operation   ! Procedure calling check_nan
         
         ! Optional In/Out Variable
-        logical, optional, intent(inout) :: isValid
+        integer, optional, intent(inout) :: code
         
         if ( isnan2d( var ) ) then
            write(fstderr,*) varname, " is NaN in ",operation
-           if ( present( isValid ) ) isValid = .false.
+           if ( present( code ) ) then
+                if( code < CLUBB_var_equals_NaN ) then
+                        code = CLUBB_var_equals_NaN
+                endif
+           endif
         end if
 
         return
         end subroutine check_nan_2d
         
 !-----------------------------------------------------------------------        
-        subroutine check_nan_sclr( var, varname, operation, isValid )
+        subroutine check_nan_sclr( var, varname, operation, code )
 !
 !       Description: Checks for a NaN in the scalar var then reports it.
 !
 !-----------------------------------------------------------------------        
         use constants, only:fstderr
         use grid_class
-        
+        use error_code
+
         implicit none
 
         ! External
@@ -867,14 +894,20 @@
      .  operation  ! Procedure calling check_nan
         
         ! Optional In/Out variable
-        logical, optional, intent(inout) :: isValid 
+        integer, optional, intent(inout) :: code
 !--------------------------------------------------------------------
         if ( isnan( var ) ) then
           write(fstderr,*) varname, " is NaN in ",operation
-          if ( present( isValid ) ) isValid = .false.
+          if ( present( code ) ) then
+                  if( code < CLUBB_var_equals_NaN ) then
+                        code = CLUBB_var_equals_NAN
+                  endif
+          endif
         end if
 
         return
+        
         end subroutine check_nan_sclr
 !-------------------------------------------------------------------------       
+
         end module numerical_check

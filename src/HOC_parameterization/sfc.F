@@ -1,4 +1,4 @@
-! $Id: sfc.F,v 1.15 2008-02-12 22:50:08 faschinj Exp $
+! $Id: sfc.F,v 1.16 2008-03-31 18:03:37 faschinj Exp $
 #define SCLR_RT 2
 #define SCLR_THETA 1
 
@@ -16,7 +16,7 @@
 !------------------------------------------------------------------------
         subroutine sfc_var( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc,
      .                      ustar_in, wp2_sfc, up2_sfc, vp2_sfc,
-     .                      thlp2_sfc, rtp2_sfc, rtpthlp_sfc, isValid,
+     .                      thlp2_sfc, rtp2_sfc, rtpthlp_sfc, code,
      .                      wpsclrp_sfc, sclrp2_sfc,
      .                      sclrprtp_sfc, sclrpthlp_sfc )
 
@@ -31,6 +31,8 @@
         use parameters, only: T0
         use constants
         use numerical_check, only:sfc_var_check
+        use error_code
+        
         implicit none
 
         ! External
@@ -72,8 +74,8 @@
      .  rtp2_sfc,   ! rt variance                       [kg/kg]
      .  rtpthlp_sfc ! thetal rt covariance              [kg K]
 
-        logical, intent(out) ::
-     .  isValid
+        integer, intent(out) ::
+     .  code
 
         ! Output Variables (Optional) 
         real, optional, intent(out), dimension(sclr_dim) :: 
@@ -289,7 +291,7 @@
         ENDIF
         call sfc_var_check( wp2_sfc, up2_sfc, vp2_sfc, 
      .                     thlp2_sfc, rtp2_sfc, rtpthlp_sfc,
-     .                     isValid
+     .                     code
 #ifdef SCALARS
      .                     ,sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc 
 #endif /*SCALARS*/
@@ -298,7 +300,7 @@
 !       Error reporting
 !       Joshua Fasching February 2008
         
-        if ( .not. isValid ) then
+        if ( code == CLUBB_var_equals_NaN ) then
                 
             write(fstderr,*) "Error in sfc_var"
             

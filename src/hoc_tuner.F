@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: hoc_tuner.F,v 1.23 2008-01-12 17:45:32 griffinb Exp $
+! $Id: hoc_tuner.F,v 1.24 2008-03-31 18:03:37 faschinj Exp $
 
       program hoc_tuner 
 
@@ -43,7 +43,7 @@
      .  output_nml_standalone, output_nml_tuner,      ! Subroutines
      .  param_vals_matrix, cost_fnc_vector,           ! Variables
      .  init_err, results_stdout,                     ! Variables
-     .  results_file, isValid, tune_type, ftol, ndim  ! Variables
+     .  results_file, code, tune_type, ftol, ndim  ! Variables
 
       use constants, only: fstdout
 

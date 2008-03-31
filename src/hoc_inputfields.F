@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc_inputfields.F,v 1.15 2007-03-14 23:34:47 dschanen Exp $
+! $Id: hoc_inputfields.F,v 1.16 2008-03-31 18:03:37 faschinj Exp $
 
         program hoc_inputfields
 
@@ -13,6 +13,7 @@
         use inputfields
         use param_index, only: nparams
         use parameters, only: read_parameters
+        use error_code
 
         implicit none
 
@@ -31,7 +32,7 @@
 
         real :: sample_ratio ! Ratio of LES data to model timestep
 
-        logical :: isValid   ! Numerical diagnostic
+        integer :: code   ! Numerical diagnostic
 
 
         ! Namelist definitions
@@ -57,14 +58,19 @@
         close(unit=iunit)
 
         ! Initialize the status of the run
-        isValid = .true.
+        code = CLUBB_no_error
 
         ! Run the model
         call hoc_model
-     .       ( params, trim( run_file ), isValid, stdout,
+     .       ( params, trim( run_file ), code, stdout,
      .         grads_fields_reader, sample_ratio )
 
-      if ( .not. isValid ) then 
+      if ( code == CLUBB_singular_matrix .or.
+     .    code == CLUBB_var_equals_NaN .or.
+     .    code == CLUBB_var_out_of_bounds .or.
+     .    code == CLUBB_bad_lapack_arg .or.
+     .    code == CLUBB_rtm_level_not_found ) then
+       
         stop "Model wasn't valid, check your constants and field input"
       else
         stop "Program exited normally"

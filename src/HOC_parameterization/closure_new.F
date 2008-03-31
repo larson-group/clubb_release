@@ -1,8 +1,10 @@
-! $Id: closure_new.F,v 1.16 2008-03-20 20:00:44 dschanen Exp $
+! $Id: closure_new.F,v 1.17 2008-03-31 18:03:37 faschinj Exp $
         module pdf_closure
 
         implicit none
 
+        private
+        
         public :: pdf_closure_new
 
         contains 
@@ -15,7 +17,7 @@
      .               wpthlp2, wp2thlp, wprtpthlp,
      .               cf, rcm, wpthvp, wp2thvp, rtpthvp, 
      .               thlpthvp, wprcp, wp2rcp, rtprcp, thlprcp,
-     .               rcp2, pdf_parms, crt1, crt2, cthl1, cthl2,isValid,
+     .               rcp2, pdf_parms, crt1, crt2, cthl1, cthl2, code,
      .               sclrm, wpsclrp,                    !optional
      .               wpsclrprtp, wpsclrp2, sclrprtp,    ! "    "
      .               sclrp2, sclrpthlp, sclrpthvp,      ! "    "
@@ -64,6 +66,8 @@
 
         use saturation, only: rsat
 
+        use error_code
+        
         implicit none
 
         intrinsic :: sqrt, exp, min, max, abs
@@ -118,8 +122,8 @@
         real, intent(out), dimension(26) ::
      .  pdf_parms       ! pdf paramters         [units vary]
 
-        logical, intent(out) ::
-     .  isValid         ! Are the outputs usable numbers?
+        integer, intent(out) ::
+     .  code         ! Are the outputs usable numbers?
 
         ! Output (Optional passive scalar variables)
 
@@ -656,7 +660,7 @@
      .                           rtpthvp, thlpthvp, wprcp, wp2rcp,
      .                           rtprcp, thlprcp, rcp2, wprtpthlp,
      .                           crt1, crt2, cthl1, cthl2, pdf_parms,
-     .                           isValid 
+     .                           code 
 #ifdef SCALARS
      .                           ,sclrpthvp, sclrprcp, wpsclrp2,
      .                           wpsclrprtp, wpsclrpthlp,
@@ -667,7 +671,7 @@
 !       Error Reporting
 !       Joshua Fasching February 2008
                 
-        if ( .not. isValid ) then
+        if ( code == CLUBB_var_equals_NaN ) then
                 
            write(fstderr,*) "Error in pdf_closure_new" 
            

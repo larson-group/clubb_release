@@ -1,7 +1,11 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F,v 1.1 2008-03-28 14:51:14 griffinb Exp $
+! $Id: compute_um_edsclrm_mod.F,v 1.2 2008-03-31 18:03:37 faschinj Exp $
 !------------------------------------------------------------------------
         module compute_um_edsclrm_mod
+
+        implicit none
+        
+        private
 
         public :: compute_um_edsclrm
 
@@ -9,7 +13,7 @@
 
 !------------------------------------------------------------------------
         subroutine compute_um_edsclrm( solve_type, xpwp_sfc, xm_tndcy, 
-     .                                 Khm, dt, xm, xpwp, isValid )
+     .                                 Khm, dt, xm, xpwp, code )
 !       Description:
 !         Prognoses a horizontal wind component or other 
 !         eddy diffusivity variable.
@@ -29,6 +33,7 @@
         use stats_hoc
 #endif
         use constants, only: fstderr
+        use error_code
         
         implicit none
 
@@ -52,8 +57,8 @@
         real, dimension(gr%nnzp), intent(out) :: 
      .  xpwp   ! Momentum flux                              [units vary]
 
-        logical, intent(out) ::
-     .  isValid ! false when matrix is singular
+        integer, intent(out) ::
+     .  code ! CLUBB_singular_matrix when matrix is singular
 
         ! Local Variables
         real,  dimension(gr%nnzp) :: a, b, c, rhs
@@ -210,8 +215,30 @@
 
         ! Solve tridiagonal system
         call tridag_solve( solve_type, gr%nnzp, 1, c, b, a, 
-     .                     rhs, xm, isValid )
-        if (.not. isValid ) then
+     .                     rhs, xm, code )
+
+        ! Error report
+        ! Joshua Fasching February 2008
+        if ( code == CLUBB_singular_matrix .or.
+     .       code == CLUBB_bad_lapack_arg ) then
+                       
+            write(fstderr,*) "Error in compute_um_edsclrm"
+           
+            write(fstderr,*) "Intent(in)"
+           
+            write(fstderr,*) "dt = ", dt
+            write(fstderr,*) "xpwp_sfc = ", xpwp_sfc
+            write(fstderr,*) "xm_tndcy = ", xm_tndcy
+            write(fstderr,*) "Khm = ", Khm
+           
+            write(fstderr,*) "Intent(inout)"
+           
+            write(fstderr,*) "xm = ", xm
+           
+            write(fstderr,*) "Intent(out)"
+           
+            write(fstderr,*) "xpwp = ", xpwp
+                     
           return
         end if
 
@@ -244,29 +271,6 @@
 
          end if
 #endif
-
-!       Error Report
-!       Joshua Fasching February 2008
-        if ( .not. isValid ) then
-                
-           write(fstderr,*) "Error in compute_um_edsclrm"
-           
-           write(fstderr,*) "Intent(in)"
-           
-           write(fstderr,*) "dt = ", dt
-           write(fstderr,*) "xpwp_sfc = ", xpwp_sfc
-           write(fstderr,*) "xm_tndcy = ", xm_tndcy
-           write(fstderr,*) "Khm = ", Khm
-           
-           write(fstderr,*) "Intent(inout)"
-           
-           write(fstderr,*) "xm = ", xm
-           
-           write(fstderr,*) "Intent(out)"
-           
-           write(fstderr,*) "xpwp = ", xpwp
-           
-        endif
 
         return
 

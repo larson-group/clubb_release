@@ -1,11 +1,18 @@
-! $Id: mixing_length.F,v 1.6 2008-03-24 15:59:49 dschanen Exp $
+! $Id: mixing_length.F,v 1.7 2008-03-31 18:03:37 faschinj Exp $
 !-----------------------------------------------------------------------------
         module mixing_length
         
-        contains
+        implicit none 
         
+        private
+        
+        public :: compute_length
+        
+        contains
+
+!---------------------------------------------------------------------------        
         subroutine compute_length( thvm, thlm, rtm, rcm, em, p, 
-     .      exner, Lscale, isValid ) 
+     .      exner, Lscale, code ) 
 !       Description:
 !       Larson's 5th moist, nonlocal length scale
 
@@ -40,6 +47,7 @@
         use numerical_check, only: length_check
         use saturation, only: rsat
         use diagnostic_variables, only: Lup, Ldown
+        use error_code
 
         implicit none
         
@@ -64,8 +72,8 @@
         real, dimension(gr%nnzp), intent(out) :: 
      .  Lscale  ! Mixing length                 [m]
         
-        logical, intent(inout) ::
-     .  isValid
+        integer, intent(inout) ::
+     .  code
 
         ! Local Variables
         integer :: i, j
@@ -269,12 +277,15 @@
         Lscale = min( Lscale, Lscale_max )
 
         ! Ensure that the output from this subroutine is valid.
-        call length_check( Lscale, Lup, Ldown, isValid )
+        call length_check( Lscale, Lup, Ldown, code )
         ! Joshua Fasching January 2008
 
 !       Error Reporting
-!       Joshua Fasching February 2008        
-        if ( .not. isValid ) then
+!       Joshua Fasching February 2008
+        
+!       isValid replaced with error code
+!       Joshua Fasching March 2008
+        if ( code == CLUBB_var_equals_NaN ) then
                 
            write(fstderr,*) "Errors in length subroutine"
            

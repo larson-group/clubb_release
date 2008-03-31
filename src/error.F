@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.48 2008-01-12 17:45:32 griffinb Exp $
+! $Id: error.F,v 1.49 2008-03-31 18:03:37 faschinj Exp $
 
         module error
  
@@ -35,10 +35,10 @@
 
         integer, public :: ndim ! Size of the simplex
 
-        ! isValid is an important logical used by the min_diff to 
+        ! 'code' is an important integer used by the min_diff to 
         ! determine whether HOC has become numerically unstable
-        logical, public :: 
-     .  isValid 
+        integer, public :: 
+     .  code 
  
         ! inv_count is a modular counter [1-3] used to determine 
         ! which file to output to if stdout_on_invalid is true.
@@ -133,7 +133,7 @@
 !       None
 !-----------------------------------------------------------------------
         use constants, only: fstdout, fstderr
-
+        use error_code
         implicit none
 
         ! Constant Variables
@@ -330,7 +330,12 @@
         ! invalid values for variations on the initial vector, but that 
         ! algorithm relies on the initial vector being valid. 
 
-        if ( .not. isValid ) then
+        if ( code == CLUBB_var_equals_NaN  .or.
+     .       code == CLUBB_singular_matrix .or.
+     .       code == CLUBB_bad_lapack_arg  .or.
+     .       code == CLUBB_rtm_level_not_found .or.
+     .       code == CLUBB_var_out_of_bounds) then
+        
           write(fstderr,*) "Initial variable values must be valid."
           stop
         end if
@@ -370,6 +375,7 @@
         use hoc, only: hoc_model
         use grads_common
         use parameters, only: params_list
+        use error_code
 
         implicit none
 
@@ -407,7 +413,7 @@
      .  c_terms ! num of terms in err_sum (for normalization)
 
         ! LES and HOC values over nz z-levels
-        real, dimension(:), allocatable :: 
+        REAL, DIMENSIon(:), allocatable :: 
      .  hoc_zl,
      .  hoc2_zl,
      .  les_zl 
@@ -422,7 +428,7 @@
         logical :: 
      .  error ! Used to det. if reading the variable failed
 
-        logical, dimension(c_total) :: 
+        integer, dimension(c_total) :: 
      .  run_stat ! isValid over each model case
 
         integer :: i, j, c_run ! looping variables
@@ -453,8 +459,8 @@
         err_sum  = 0.0
         err_sums = 0.0
         c_terms  = 0
-        isValid  = .true.
-        run_stat(1:c_total) = .true.
+        code     = CLUBB_no_error
+        run_stat(1:c_total) = CLUBB_no_error
 
         ! Copy simplex into a vector of all possible HOC parameters
         do i=1, nparams, 1
@@ -496,7 +502,7 @@
 !$omp   end parallel do
 
         do c_run = 1, c_total, 1
-          if ( .not. run_stat(c_run) ) isValid = .false.
+          if ( code < run_stat(c_run) ) code = run_stat(c_run)
         end do
 
 !-----------------------------------------------------------------------
@@ -506,7 +512,12 @@
 
         ! If it has, it returns higher value than those previous to
         ! Amoeba (the downhill simplex)
-        if ( .not. isValid ) then
+        if ( code == CLUBB_var_equals_NaN  .or.
+     .       code == CLUBB_singular_matrix .or.
+     .       code == CLUBB_bad_lapack_arg  .or.
+     .       code == CLUBB_rtm_level_not_found .or. 
+     .       code == CLUBB_var_out_of_bounds) then
+        
           min_les_hoc_diff = 2 * maxval( cost_fnc_vector ) 
      .                     - minval( cost_fnc_vector )
 

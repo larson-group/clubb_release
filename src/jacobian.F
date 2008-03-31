@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.38 2008-03-05 17:22:52 faschinj Exp $
+! $Id: jacobian.F,v 1.39 2008-03-31 18:03:37 faschinj Exp $
 
       program jacobian
 #ifdef STATS
@@ -18,6 +18,7 @@
       use constants, only: fstdout, fstderr
       use grads_common, only: grads_average_interval, grads_zlvl
       use stats_hoc, only: fname_zt, fname_zm
+      use error_code
 
       implicit none
 
@@ -99,7 +100,7 @@
         integer :: i, j, k ! loop variables
         integer :: nanbits ! Holds a NaN value for purposes of output
 
-        logical :: isValid ! Determines whether a run went unstable
+        integer :: code ! Determines whether a run went unstable
 
         ! Namelists
         namelist /jcbn_nml/ 
@@ -112,7 +113,7 @@
 
         times(1:10) = 0
 
-        isValid = .true.
+        code = CLUBB_no_error
 
         allocate( hoc_params%value( nparams ), 
      .            hoc_params%name( nparams ),
@@ -148,10 +149,16 @@
         end do
 
         call hoc_model 
-     .       ( hoc_params%value(:), run_file, isValid, .false. )
+     .       ( hoc_params%value(:), run_file, code, .false. )
 
-        if ( .not. isValid ) stop "Initial run wasn't valid"
-
+        if ( code == CLUBB_singular_matrix .or.
+     .       code == CLUBB_var_equals_NaN .or.
+     .       code == CLUBB_var_out_of_bounds .or.
+     .       code == CLUBB_bad_lapack_arg .or.
+     .       code == CLUBB_rtm_level_not_found ) then
+        
+           stop "Initial run wasn't valid"
+        endif
         ! Obtain nz from the generated GrADS files
 
         nzt = grads_zlvl( trim( fname_zt )//".ctl" )
@@ -228,12 +235,17 @@
           hoc_params%value(i) = hoc_params%value(i) * delta_factor
 
           call hoc_model
-     .      ( hoc_params%value(:), trim( run_file ), isValid, .false. )
+     .      ( hoc_params%value(:), trim( run_file ), code, .false. )
 
           ! Print a period so the user knows something is happening
           write(unit=fstdout, fmt='(a1)', advance='no') "."
 
-          if ( .not. isValid ) then
+          if ( code == CLUBB_singular_matrix .or.
+     .         code == CLUBB_var_equals_NaN .or.
+     .         code == CLUBB_var_out_of_bounds .or.
+     .         code == CLUBB_bad_lapack_arg .or.
+     .         code == CLUBB_rtm_level_not_found ) then
+         
             ! Pos. Infinity bit pattern 
             jmatrix(i, :)
      .      = transfer( int( nanbits ), jmatrix(1,1) )

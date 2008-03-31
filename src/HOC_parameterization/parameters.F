@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameters.F,v 1.10 2008-02-09 16:48:30 griffinb Exp $
+! $Id: parameters.F,v 1.11 2008-03-31 18:03:37 faschinj Exp $
         module parameters 
 
 !       Description:
@@ -134,7 +134,7 @@
 
 !-----------------------------------------------------------------------
         subroutine setup_parameters
-     .             ( deltaz, T0_in, ts_nudge_in, params, isValid ) 
+     .             ( deltaz, T0_in, ts_nudge_in, params, code ) 
 !       Description:
 !       Subroutine to setup model parameters
 
@@ -143,6 +143,7 @@
 !-----------------------------------------------------------------------
 
         use constants, only: fstderr
+        use error_code
 
         implicit none
 
@@ -156,7 +157,7 @@
      .  params  ! Tuneable model parameters      [-]
 
         ! Output Variables
-        logical, intent(out) :: isValid ! Error condition
+        integer, intent(out) :: code ! Error condition
 
         call unpack_parameters
      .       ( params,
@@ -204,14 +205,14 @@
          ! Constraints on beta
          write(fstderr,*) "beta= ", beta
          write(fstderr,*) "beta cannot be < 0 or > 3"
-         isValid = .false.
+         code = CLUBB_var_out_of_bounds    
        else if ( lmin < 4.0 ) then
          ! Constraints on mixing length
          write(fstderr,*) "lmin= ", lmin
          write(fstderr,*) "lmin is < 4.0"
-         isValid = .false.
+         code = CLUBB_var_out_of_bounds
        else
-         isValid = .true.
+         code = CLUBB_no_error
        end if
 
 !      write(*,nml=initvars) ! %% debug

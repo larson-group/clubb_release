@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.33 2008-03-28 04:29:28 dschanen Exp $
+! $Id: microphysics.F,v 1.34 2008-03-31 18:03:37 faschinj Exp $
         module microphysics
 
 !       Description:
@@ -31,7 +31,7 @@
      .               pdf_parms, wmt, wmm, Khm, AKm_est, AKm, 
      .               Ncnm, Nim,
      .               hydromet,
-     .               rtm_forcing, thlm_forcing, isValid )
+     .               rtm_forcing, thlm_forcing, code )
 
 !       Description:
 !       Compute pristine ice, snow, graupel, & rain hydrometeor fields.
@@ -46,6 +46,7 @@
         use model_flags
         use parameters, only: c_Krrm, nu_r
         use constants, only: hydromet_dim, Lv, Cp, rho_lw, fstderr
+        use error_code
 #ifdef STATS
         use stats_hoc
 #endif
@@ -115,7 +116,7 @@
      .  rtm_forcing, ! Imposed contributions to total water        [kg/kg/s]
      .  thlm_forcing ! Imposed contributions to liquid potential temp. [K/s]
 
-        logical, intent(out) :: isValid
+        integer, intent(out) :: code
 
         ! Local Variables
         real, dimension(3,gr%nnzp) ::
@@ -334,13 +335,15 @@
           call microphys_lhs
      .         ( "rrm", .true., dt, Kr, nu_r, wmt, Vrr, rrm, lhs )
 
+       
           call microphys_solve
-     .         ( "rrm", dt, lhs, rrm_tndcy, rrm, isValid )
+     .         ( "rrm", dt, lhs, rrm_tndcy, rrm, code )
 
           ! Handle over-evaporation of rrm and adjust rt and theta-l hydrometeor
           ! tendency arrays accordingly.
           do k = 1, gr%nnzp, 1
             if ( rrm(k) < 0.0 ) then
+
 
               call adj_microphys_tndcy( rrm_tndcy, wmt, Vrr, Kr, nu_r, 
      .                                  dt, k, .true., "rrm",
@@ -406,7 +409,8 @@
      .         ( "Nrm", .true., dt, Kr, nu_r, wmt, VNr, Nrm, lhs )
 
           call microphys_solve
-     .         ( "Nrm", dt, lhs, Nrm_tndcy, Nrm, isValid )
+     .         ( "Nrm", dt, lhs, Nrm_tndcy, Nrm, code )
+
 
           ! Handle over-evaporation similar to rrm.  However, in the case of Nrm
           ! there is no effect on rtm or on thlm.  Brian Griffin.  April 14, 2007.
@@ -475,7 +479,7 @@
      .           rsnowm, lhs )
 
           call microphys_solve
-     .         ( "rsnowm", dt, lhs, rsnowm_tndcy, rsnowm, isValid )
+     .         ( "rsnowm", dt, lhs, rsnowm_tndcy, rsnowm, code )
 
           ! Both sublimation and/or melting can contribute to the depletion of
           ! any frozen water particle.  In addition, any type of frozen water
@@ -526,7 +530,7 @@
 
           call microphys_solve
      .         ( "rgraupelm", dt, lhs, rgraupelm_tndcy,
-     .           rgraupelm, isValid )
+     .           rgraupelm, code )
 
           ! Handled the same as rsnowm, as listed above.
 
@@ -569,7 +573,7 @@
      .         ( "ricem", .true., dt, Kr, nu_r, wmt, Vice, ricem, lhs )
 
           call microphys_solve
-     .         ( "ricem", dt, lhs, ricem_tndcy, ricem, isValid )
+     .         ( "ricem", dt, lhs, ricem_tndcy, ricem, code )
 
           ! Handled the same as rsnowm and rgraupelm, as listed above.
 
@@ -721,7 +725,8 @@
 !       Error Report
 !       Joshua Fasching Feb 2008
         
-        if ( .not. isValid ) then
+        if ( code == CLUBB_singular_matrix .or. 
+     .       code == CLUBB_bad_lapack_arg ) then
                 
            write(fstderr,*) "Error in timestep_microphys"
            
@@ -758,7 +763,7 @@
         end subroutine timestep_microphys
 !-----------------------------------------------------------------------
         subroutine microphys_solve( solve_type, dt, lhs,
-     .                              xrm_tndcy, xrm, isValid )
+     .                              xrm_tndcy, xrm, code )
 
 !       Description:
 
@@ -790,7 +795,7 @@
      .  xrm ! Hydrometeor being solved for              [units vary]
 
         ! Output Variables
-        logical, intent(out) :: isValid
+        integer, intent(out) :: code
 
         ! Local Variables
         real, dimension(gr%nnzp) ::
@@ -848,7 +853,7 @@
         ! which relies on Gaussian elimination to decompose the matrix.
         call tridag_solve
      .       ( solve_type, gr%nnzp, 1, lhs(1,:), lhs(2,:), lhs(3,:),
-     .         rhs, xrm, isValid )
+     .         rhs, xrm, code )
 
         ! Alternative: Use LU decomposition instead.
         ! This doesn't seem to change the answer too much.

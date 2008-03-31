@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.39 2008-03-27 22:24:55 dschanen Exp $
+! $Id: mixing.F,v 1.40 2008-03-31 18:03:37 faschinj Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -36,7 +36,7 @@
      .               thlm, wpthlp, thlpthvp, thlm_forcing,
      .               rtp2, thlp2, ! Added for clipping Vince Larson 20070929
      .               rhot, rhom, exner, 
-     .               isValid, implemented,
+     .               code, implemented,
      .               sclrm, wpsclrp, sclrpthvp, sclrm_forcing,
      .               sclrp2 )     ! Added for clipping Vince Larson 20070929
 !       Description:
@@ -55,7 +55,7 @@
         use parameters
         use constants
         use grid_class
-
+        use error_code
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
@@ -103,7 +103,7 @@
      .  thlm,        ! th_l Liquid potential temp.    [K]
      .  wpthlp       ! w' th_l'                       [(m K)/s]
 
-        logical, intent(inout) :: isValid ! Model status 
+        integer, intent(inout) :: code ! Model status 
 
         ! Additional optional variables for passive scalars
         ! Input Variables
@@ -211,9 +211,11 @@
      .                     rtm, wprtp, rtpthvp, rtm_forcing,
      .                     wp2, rtp2, ! For clipping Vince Larson 20070929
      .                     rhot, rhom, exner, 
-     .                     lhs, rhs, C7_Skw_fnc, isValid )  
+     .                     lhs, rhs, C7_Skw_fnc, code )  
 
-        if ( .not. isValid ) then
+        if ( code == CLUBB_singular_matrix .or.
+     .       code == CLUBB_bad_lapack_arg )  then
+     
           write(fstderr,'(a)') "rt mixing failed"
           return
         end if
@@ -258,9 +260,11 @@
      .                     thlm, wpthlp, thlpthvp, thlm_forcing,
      .                     wp2, thlp2, ! For clipping Vince Larson 20070929
      .                     rhot, rhom, exner, 
-     .                     lhs, rhs, C7_Skw_fnc, isValid )
+     .                     lhs, rhs, C7_Skw_fnc, code )
 
-        if ( .not. isValid ) then
+
+        if ( code == CLUBB_singular_matrix .or.
+     .       code == CLUBB_bad_lapack_arg ) then       
           write(fstderr,'(a)') "thetal mixing failed"
           return
         end if
@@ -306,8 +310,12 @@
      .                       sclrm_forcing(:,SCLR_RT),
      .                       wp2, sclrp2(:,SCLR_RT), ! For clipping Vince Larson 20070929
      .                       rhot, rhom, exner, 
-     .                       lhs, rhs, C7_Skw_fnc, isValid )
-          if ( .not. isValid ) then
+     .                       lhs, rhs, C7_Skw_fnc, code )
+
+          if ( code == CLUBB_singular_matrix .or.
+     .         code == CLUBB_bad_lapack_arg ) then
+
+    
             write(fstderr,'(a)') "Passive scalar 1 mixing failed"
             return
           end if
@@ -322,16 +330,20 @@
      .                       sclrm_forcing(:,SCLR_THETA),
      .                       wp2, sclrp2(:,SCLR_THETA), ! For clipping Vince Larson 20070929
      .                       rhot, rhom, exner, 
-     .                       lhs, rhs, C7_Skw_fnc, isValid )
-          if ( .not. isValid ) then
+     .                       lhs, rhs, C7_Skw_fnc, code )
+
+          if ( code == CLUBB_singular_matrix .or.
+     .       code == CLUBB_bad_lapack_arg ) then  
             write(fstderr,'(a)') "Passive scalar 2 mixing failed"
             return
           end if
         end if ! passive scalars
         
 !       Error Report
-!       Joshua Fasching Feb 2008          
-        if ( .not. isValid ) then
+!       Joshua Fasching Feb 2008 
+
+        if ( code == CLUBB_singular_matrix .or.
+     .       code == CLUBB_bad_lapack_arg ) then
                 
            write(fstderr,*) "Error in timestep_mixing"
            
@@ -659,7 +671,8 @@
      .                           xm, wpxp, xpthvp, xm_forcing,
      .                           wp2, xp2, ! For clipping Vince Larson 20070929
      .                           rhot, rhom, exner, 
-     .                           lhs, rhs, C7_Skw_fnc, isValid )
+     .                           lhs, rhs, C7_Skw_fnc, code )
+
 
         use parameters
         use constants
@@ -672,6 +685,8 @@
      .    licedfs,     ! Simplified ice scheme
 ! eMFc
      .    lcoamps_micro! COAMPS(R) microphysics
+
+        use error_code
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
@@ -711,7 +726,9 @@
         real, intent(inout), dimension(2*gr%nnzp,nrhs) :: 
      .  rhs  ! Right hand side (LAPACK)
 
-        logical, intent(out) :: isValid
+        ! Output
+  
+        integer, intent(out) :: code
 
         ! Local Variables
         real, dimension(2*gr%nnzp,nrhs) :: 
@@ -888,7 +905,7 @@
         if ( lstats_samp .and. ixm_cn > 0 ) then
           ! Perform LU decomp and solve system (LAPACK with diagnostics)
           call band_solvex( solve_type, nsup, nsub, 2*gr%nnzp, nrhs,
-     .                      lhs, rhs, solution, rcond, isValid )
+     .                      lhs, rhs, solution, rcond, code )
 
           ! Est. of the condition number of the mean/flux LHS matrix 
           sfc%x(1,ixm_cn) = sfc%x(1,ixm_cn) + 1.0 / rcond
@@ -897,16 +914,18 @@
         else
           ! Perform LU decomp and solve system (LAPACK)
           call band_solve( solve_type, nsup, nsub, 2*gr%nnzp, nrhs,
-     .                     lhs, rhs, solution, isValid )
+     .                     lhs, rhs, solution, code )
         end if
 #else
         ! Perform LU decomp and solve system (LAPACK)
         call band_solve( solve_type, nsup, nsub, 2*gr%nnzp, nrhs,
-     .                   lhs, rhs, solution, isValid )
+     .                   lhs, rhs, solution, code )
 
 #endif /*STATS*/
 
-        if ( .not. isValid ) return
+        if ( code == CLUBB_singular_matrix .or.
+     .       code == CLUBB_bad_lapack_arg ) return
+        
 
 !       Copy result into output arrays
 

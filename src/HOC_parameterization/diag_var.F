@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.35 2008-03-22 23:54:51 griffinb Exp $
+! $Id: diag_var.F,v 1.36 2008-03-31 18:03:37 faschinj Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -22,7 +22,7 @@
      .                       wp2, wp3, upwp, vpwp, Scm, Skwm, Kht,
      .                       rtp2, thlp2, rtpthlp,
      .                       up2, vp2,
-     .                       liter, dt, isValid,
+     .                       liter, dt, code,
      .                       sclrm, wpsclrp, sclrp2,        ! optional
      .                       sclrprtp, sclrpthlp )          ! optional
 !       Description:
@@ -45,6 +45,7 @@
      .          c_Ksqd, beta, C4, C14, C5, T0
         use grid_class
         use lapack_wrap, only: tridag_solve
+        use error_code
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
@@ -86,7 +87,7 @@
 
         ! Output variable for singular matrices
 
-        logical, intent(out) :: isValid
+        integer, intent(out) :: code
 
         ! Passive scalar input (optional)
         real, optional, intent(in), dimension(gr%nnzp, sclr_dim) :: 
@@ -113,7 +114,7 @@
      .  sclr_rhs,     ! RHS of scalar tridiagonal system
      .  sclr_solution ! Solution to tridiagonal system
 
-        logical, dimension(5+1) ::
+        integer, dimension(5+1) ::
      .  Valid_arr
 
         ! Eddy Diffusion for Variances and Covariances.
@@ -211,7 +212,7 @@
 #endif
         ! Initialize tridiagonal solutions to valid
 
-        Valid_arr(:) = .true.
+        Valid_arr(:) = CLUBB_no_error
 
         ! (xapxbp)^2: 3-point average diffusion coefficient.
 
@@ -528,14 +529,12 @@
         end if ! scalar_calc
 
         ! Check for singular matrices
-        if ( any( .not. Valid_arr(:) ) ) then
-          isValid = .false.
-        end if
-
-!       Error Reporting
-!       Joshua Fasching February 2008
-                
-        if ( .not. isValid ) then
+        do i = 1, 5+1
+                if(Valid_arr(i) > code ) code = Valid_arr(i)
+        enddo        
+        
+        if ( code == CLUBB_singular_matrix .or.
+     .       code == CLUBB_bad_lapack_arg ) then
                 
            write(fstderr,*) "Error in diag_var"
            
@@ -743,11 +742,12 @@
 
 !-----------------------------------------------------------------------
         subroutine diag_var_solve( solve_type, nrhs, rhs, 
-     .                             lhs, xapxbp, isValid )
+     .                             lhs, xapxbp, code )
 
 !-----------------------------------------------------------------------
         use lapack_wrap, only: tridag_solve, tridag_solvex!, band_solve
         use grid_class
+        use error_code
 #ifdef STATS
         use stats_hoc
 #endif
@@ -775,8 +775,8 @@
         real, dimension(gr%nnzp,nrhs), intent(inout) :: 
      .  xapxbp ! Computed value of the variable at <t+1> [units vary]
 
-        logical, intent(out) ::
-     .  isValid ! Returns as false in the event of a singular matrix
+        integer, intent(out) ::
+     .  code ! Returns an error code in the event of a singular matrix
 
         ! Local variables
         real :: rcond  ! Est. of the reciprocal of the condition #
@@ -844,7 +844,7 @@
           call tridag_solvex
      .         ( solve_type, gr%nnzp, nrhs, lhs(kp1diag,:), 
      .           lhs(kdiag,:), lhs(km1diag,:), rhs(:,1:nrhs), 
-     .           xapxbp(:,1:nrhs), rcond, isValid )
+     .           xapxbp(:,1:nrhs), rcond, code )
 
           ! Est. of the condition number of the variance LHS matrix 
           sfc%x(1,ixapxbp_cn) = sfc%x(1,ixapxbp_cn) + 1.0 / rcond
@@ -854,7 +854,7 @@
           call tridag_solve
      .         ( solve_type, gr%nnzp, nrhs, lhs(kp1diag,:), 
      .           lhs(kdiag,:), lhs(km1diag,:), rhs(:,1:nrhs), 
-     .           xapxbp(:,1:nrhs), isValid )
+     .           xapxbp(:,1:nrhs), code )
         end if
 #else
         ! Solve system using tridag_solve. This uses LAPACK sgtsv,
@@ -862,7 +862,7 @@
         call tridag_solve
      .       ( solve_type, gr%nnzp, nrhs, lhs(kp1diag,:), lhs(kdiag,:), 
      .         lhs(km1diag,:), rhs(:,1:nrhs), xapxbp(:,1:nrhs), 
-     .         isValid )
+     .         code )
 
         ! Alternative: Use LU decomposition instead.
 !       call band_solve

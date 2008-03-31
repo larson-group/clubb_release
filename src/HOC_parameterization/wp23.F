@@ -1,11 +1,23 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.41 2008-03-14 22:13:58 dschanen Exp $
-
+! $Id: wp23.F,v 1.42 2008-03-31 18:03:37 faschinj Exp $
+        
+        module wp23
+        
+        implicit none
+        
+        private 
+        
+        public :: timestep_wp23
+        
+        private :: wp23_solve
+        
+        contains
+        
         subroutine timestep_wp23
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
      .               a, Kht, Khm, wmt, wmm, up2, vp2,
      .               um, upwp, vm, vpwp, wpthvp, wp2thvp,
-     .               wp2, wp3, isValid )
+     .               wp2, wp3, code )
 !       Description:
 !       Advance wp2 and wp3 one timestep
 
@@ -24,14 +36,12 @@
         use parameters
         use constants
         use model_flags
+        use error_code
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
 
         implicit none
-
-        ! External
-        external :: wp23_solve
 
         intrinsic :: exp
 
@@ -64,7 +74,7 @@
      .  wp2, ! w'^2 (moment. grid)                      [m^2/s^2]
      .  wp3  ! w'^3 (thermo. grid)                      [m^3/s^3]
 
-        logical, intent(inout) :: isValid ! Diagnostic
+        integer, intent(inout) :: code ! Diagnostic
 
         ! Local Variables
         real, dimension(gr%nnzp) :: 
@@ -203,7 +213,7 @@
      .                   Kw8, wmt, wmm, wpthvp, wp2thvp,
      .                   um, upwp, vm, vpwp, up2, vp2,
      .                   Skwt, C1_Skw_fnc, C11_Skw_fnc, 
-     .                   wp2, wp3, isValid )
+     .                   wp2, wp3, code )
 !        call wp23_solve( dt, Scm, Lscale, Lm, taum, tauw3t, 10*0.5*Kht,
 !     .                   wmt, wmm, wpthvp, wp2thvp,
 !     .                   um, upwp, vm, vpwp, up2, vp2,
@@ -213,7 +223,8 @@
 
 !       Error output
 !       Joshua Fasching Feb 2008
-        if ( .not. isValid ) then
+        if ( code == CLUBB_singular_matrix .or.
+     .       code == CLUBB_bad_lapack_arg ) then
                 
            write(fstderr,*) "Errors in timestep_wp32"
 
@@ -255,7 +266,7 @@
      .                         Kw8, wmt, wmm, wpthvp, wp2thvp,
      .                         um, upwp, vm, vpwp, up2, vp2,
      .                         Skwt, C1_Skw_fnc, C11_Skw_fnc,
-     .                         wp2, wp3, isValid)
+     .                         wp2, wp3, code)
 !       Description:
 !       Decompose, and back substitute the matrix for wp2/wp3
 
@@ -269,6 +280,7 @@
         use model_flags
         use diffusion
         use lapack_wrap, only: band_solve, band_solvex
+        use error_code
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
@@ -315,7 +327,7 @@
      .  wp2, ! w'^2                                          [m^2/s^2]
      .  wp3  ! w'^3                                          [m^3/s^3]
 
-        logical, intent(inout) :: isValid
+        integer, intent(inout) :: code
 
         ! Local Variables
         real, dimension(nsup+nsub+1,2*gr%nnzp) :: 
@@ -915,7 +927,7 @@
         if ( lstats_samp .and. iwp23_cn > 0 ) then
           ! Perform LU decomp and solve system (LAPACK with diagnostics)
           call band_solvex( "wp23", nsup, nsub, 2*gr%nnzp, nrhs,
-     .                      lhs, rhs, solut, rcond, isValid )
+     .                      lhs, rhs, solut, rcond, code )
 
           ! Est. of the condition number of the w'^2/w^3 LHS matrix 
           sfc%x(1,iwp23_cn) = sfc%x(1,iwp23_cn) + 1.0 / rcond
@@ -924,16 +936,17 @@
         else
           ! Perform LU decomp and solve system (LAPACK)
           call band_solve( "wp23", nsup, nsub, 2*gr%nnzp, nrhs,
-     .                     lhs, rhs, solut, isValid )
+     .                     lhs, rhs, solut, code )
         end if
 #else
         ! Perform LU decomp and solve system (LAPACK)
         call band_solve( "wp23", nsup, nsub, 2*gr%nnzp, nrhs,
-     .                   lhs, rhs, solut, isValid )
+     .                   lhs, rhs, solut, code )
 
 #endif /*STATS*/
 
-        if ( .not. isValid ) return
+        if ( code == CLUBB_singular_matrix .or.
+     .        code == CLUBB_bad_lapack_arg ) return
 
 
 !       Copy result into output arrays and clip
@@ -1177,3 +1190,4 @@
         return
         end subroutine wp23_solve
 
+        end module wp23

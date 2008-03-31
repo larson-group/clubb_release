@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.164 2008-03-28 04:29:28 dschanen Exp $
+! $Id: hoc.F,v 1.165 2008-03-31 18:03:37 faschinj Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -85,7 +85,7 @@
 !-----------------------------------------------------------------------
 
         subroutine hoc_model_field_input
-     .             ( params, runfile, isValid, stdout,
+     .             ( params, runfile, code, stdout,
      .               set_fields, sample_ratio )
 !       Description:
 !       Subprogram to integrate the pde equations for pdf closure
@@ -108,6 +108,7 @@
         use numerical_check
         use hoc_parameterization_interface
         use constants, only: fstdout, fstderr
+        use error_code
 #ifdef STATS
         use stats_hoc
         use stats_subs
@@ -204,7 +205,7 @@
         real, intent(in) :: sample_ratio 
 
         ! Output Variables
-        logical, intent(inout) :: isValid    ! valid run? (T/F)
+        integer, intent(inout) :: code    ! valid run? 
 
         ! Local Variables
         ! Internal Timing Variables
@@ -302,10 +303,12 @@
      .        cloud_sed,
      .        luv_nudge, lKhm_aniso, .false., 
      .        dummy_array_m, dummy_array_t, 
-     .        0.0, 0.0, isValid )
-
-       if ( .not. isValid ) return
-
+     .        0.0, 0.0, code )
+       
+       ! Changed isValid to code for better tracking of errors caused by
+       ! procedures
+       if ( code == CLUBB_var_out_of_bounds ) return
+       ! Joshua Fasching March 2008
 
        ! Dummy grid height arrays
        deallocate( dummy_array_m, dummy_array_t )
@@ -366,13 +369,20 @@
      .                    wpthlp, wp3,           !  "   "
      .                    rtp2, thlp2, rtpthlp,  !  "   "
      .                    upwp, vpwp )           !  "   "
-         isValid = .not. invalid_model_arrays( ) ! Check for bad values 
+
+         ! Changed isValid to code for better tracking of errors caused by
+         ! procedures
+         if( invalid_model_arrays( ) ) then 
+            code = CLUBB_var_equals_NaN         ! Check for bad values 
                                                  ! in the model arrays
-         if ( .not. isValid ) exit
+         endif
 
-         call hoc_forcings_timestep( dtmain, i, stdout, isValid )
+         if ( code == CLUBB_var_equals_NaN ) exit
 
-         if ( .not. isValid ) exit
+         call hoc_forcings_timestep( dtmain, i, stdout, code )
+
+         if ( code == CLUBB_rtm_level_not_found ) exit
+         ! Joshua Fasching March 2008
 
 !      Compute number of iterations for closure loop
          if ( time > time_spinup ) then
@@ -394,7 +404,7 @@
      .            thlm, rtm, wprtp, wpthlp, wp2, wp3,
      .            rtp2, thlp2, rtpthlp,
      .            Scm, taum, rcm, cf,
-     .            isValid, .false.
+     .            code, .false.
 #ifdef SCALARS
      .            ,wpsclrp_sfc, wpedsclrp_sfc,
      .            sclrm, sclrm_forcing, edsclrm
@@ -415,12 +425,25 @@
            else if ( i1 == niterlong ) then
              time = time_initial + i * dtmain
            end if
+           
+           ! Changed isValid to code for better tracking of errors caused by
+           ! procedures
 
-           if ( .not. isValid ) exit
+           if ( code == CLUBB_singular_matrix .or.
+     .          code == CLUBB_var_equals_NaN .or.
+     .          code == CLUBB_var_out_of_bounds .or.
+     .          code == CLUBB_bad_lapack_arg .or.
+     .          code == CLUBB_rtm_level_not_found ) exit
+           
          end do ! i1=1..niterlong
 
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-         if ( .not. isValid ) exit
+         if ( code == CLUBB_singular_matrix .or.
+     .          code == CLUBB_var_equals_NaN .or.
+     .          code == CLUBB_var_out_of_bounds .or.
+     .          code == CLUBB_bad_lapack_arg .or.
+     .          code == CLUBB_rtm_level_not_found ) exit
+          
        end do ! i=1, ifinal
 
 !<<<<<<<<<<<<<<<<<<<<<<<< Main time stepping loop <<<<<<<<<<<<<<<<<<<<<<
@@ -438,7 +461,7 @@
 
 !-----------------------------------------------------------------------
         subroutine hoc_model_standard
-     .            ( params, runfile, isValid, stdout )
+     .            ( params, runfile, code, stdout )
 !       Description:
 !       Subprogram to integrate the pde equations for pdf closure.
 !       This is the standard call.
@@ -451,7 +474,8 @@
 !          subroutine set_fields (passed as a parameter) 
 
 !       Output: 
-!         isValid:  A false return value indicates something was unsound.
+!         code:  An error code is returned indicating the status of the
+!         model. See error_code.F.
 
 !-----------------------------------------------------------------------
 
@@ -462,6 +486,7 @@
         use numerical_check
         use hoc_parameterization_interface
         use constants, only: fstdout, fstderr
+        use error_code
 #ifdef STATS
         use stats_hoc
         use stats_subs
@@ -490,7 +515,7 @@
      .  stdout  ! Whether to print output per timestep
 
         ! Output Variables
-        logical, intent(inout) :: isValid    ! valid run? (T/F)
+        integer, intent(inout) :: code    ! valid run?
 
         ! Local Variables
         ! Internal Timing Variables
@@ -608,9 +633,10 @@
      .        cloud_sed,
      .        luv_nudge, lKhm_aniso, .false.,
      .        dummy_array_m, dummy_array_t, 
-     .        0.0, 0.0, isValid )
+     .        0.0, 0.0, code )
 
-       if ( .not. isValid ) return
+      
+       if ( code == CLUBB_var_out_of_bounds ) return
 
 
        ! Dummy grid height arrays
@@ -710,14 +736,17 @@
          end if
 #endif /*STATS*/
 
-         isValid = .not. invalid_model_arrays( ) ! Check for bad values 
+         if ( invalid_model_arrays( ) ) then
+             code = CLUBB_var_equals_NaN         ! Check for bad values 
                                                  ! in the model arrays
-         if ( .not. isValid ) exit
+         endif
 
-         call hoc_forcings_timestep( dtmain, i, stdout, isValid )
+         if ( code == CLUBB_var_equals_NaN ) exit
 
-         if ( .not. isValid ) exit
+         call hoc_forcings_timestep( dtmain, i, stdout, code )
 
+         if ( code == CLUBB_rtm_level_not_found ) exit
+         
          ! Compute number of iterations for closure loop
          if ( time > time_spinup ) then
            niterlong = 1
@@ -737,8 +766,8 @@
      .            um, vm, upwp, vpwp, up2, vp2,
      .            thlm, rtm, wprtp, wpthlp, wp2, wp3,
      .            rtp2, thlp2, rtpthlp,
-     .            Scm, taum, rcm, cf, 
-     .            isValid, .false.
+     .            Scm, taum, rcm, cf,
+     .            code, .false.
 #ifdef SCALARS
      .            ,wpsclrp_sfc, wpedsclrp_sfc, 
      .            sclrm, sclrm_forcing, edsclrm
@@ -760,11 +789,21 @@
              time = time_initial + i * dtmain
            end if
 
-           if ( .not. isValid ) exit
+           if ( code == CLUBB_singular_matrix .or.
+     .          code == CLUBB_var_equals_NaN .or.
+     .          code == CLUBB_var_out_of_bounds .or.
+     .          code == CLUBB_bad_lapack_arg .or.
+     .          code == CLUBB_rtm_level_not_found ) exit
+           
          end do ! i1=1..niterlong
 
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-         if ( .not. isValid ) exit
+         if ( code == CLUBB_singular_matrix .or.
+     .          code == CLUBB_var_equals_NaN .or.
+     .          code == CLUBB_var_out_of_bounds .or.
+     .          code == CLUBB_bad_lapack_arg .or.
+     .          code == CLUBB_rtm_level_not_found ) exit
+          
        end do ! i=1, ifinal
 
 !<<<<<<<<<<<<<<<<<<<<<<<< Main time stepping loop <<<<<<<<<<<<<<<<<<<<<<
@@ -880,8 +919,7 @@
 
         real :: cloud_top_height ! [m]
         real :: emax
-        logical :: isValid
-        integer :: k
+        integer :: k, code
 
 !-----------------------------------------------------------------------
 
@@ -891,7 +929,7 @@
         ricem     => hydromet(1:gr%nnzp,4)
         rgraupelm => hydromet(1:gr%nnzp,5)
 
-        isValid = .true.
+        code = 0
         
         ! Read sounding information
 
@@ -1269,7 +1307,7 @@
         ! Compute mixing length
 
         call compute_length( thvm, thlm, rtm, rcm, 
-     .               em, p, exner, Lscale, isValid )
+     .               em, p, exner, Lscale, code )
 
         ! Dissipation time
         tmp1 = sqrt( max( emin, zm2zt( em ) ) )
@@ -1375,14 +1413,14 @@
      .  vpwp,           ! v'w'                                        [m^2/s^2]
      .  thlm_forcing,   ! Liquid water potential temperature tendency [K/s]
      .  rtm_forcing,    ! Total water mixing ratio tendency           [kg/kg/s]
-     .  up2,            ! u'^2                                          [m^2/s^2]
-     .  vp2,            ! v'^2                          [m^2/s^2]
-     .  Scm,            ! Sc on moment. grid.           [-]
-     .  Ncm,            ! Number of cloud droplets   [count/kg]
-     .  Ncnm,           ! Number of cloud nuclei     [count/m^3]
-     .  Nim,            ! Number of ice crystals     [count/m^3]
-     .  cf,             ! Cloud fraction        [%]
-     .  Sct             ! PDF width parameter: t point          [-]
+     .  up2,            ! u'^2                                        [m^2/s^2]
+     .  vp2,            ! v'^2                                        [m^2/s^2]
+     .  Scm,            ! Sc on moment. grid.                         [-]
+     .  Ncm,            ! Number of cloud droplets                    [count/kg]
+     .  Ncnm,           ! Number of cloud nuclei                      [count/m^3]
+     .  Nim,            ! Number of ice crystals                      [count/m^3]
+     .  cf,             ! Cloud fraction                              [%]
+     .  Sct             ! PDF width parameter: t point                [-]
 
 
         real, intent(out) ::
@@ -1471,6 +1509,8 @@
         ! Determine the nearest timestep in the GRADS file to the
         ! restart time.
         call compute_timestep(time_restart,timestep)
+        
+        ! Sanity check for input time_restart
         if (timestep < 0) then
                 print *, "Invalid time_restart in <case>_model.in file"
                 stop
@@ -1486,7 +1526,7 @@
                 vm_ref = vm
         endif
         
-        ! Read data from GRADS files
+        ! Read data from GrADS files
         call grads_fields_reader( timestep,
      .                   um, vm, rtm, thlm,
      .                   wp2, wprtp, wpthlp, wp3,
@@ -1500,15 +1540,6 @@
      .                   rtm_forcing, 
      .                   up2, vp2, Scm, Ncm, Ncnm, Nim,
      .                   cf, Sct ) 
-        
-        ! Attempting to diagnose restart failures
-        ! print *,"Exner = ", exner
-        ! print *,"cf = ", cf
-        ! print*, "rrm = " ,rrm
-        ! print*, "hydromet = " ,hydromet(:,1)
-        ! print *, "Lup = ", Lup
-        ! print *, "rtm = ", rtm
-        
         
         ! Initialize forcing files for specific cases
         select case( trim( runtype ) )
@@ -1532,8 +1563,7 @@
         end subroutine hoc_restart
 
 !----------------------------------------------------------------------
-        subroutine hoc_forcings_timestep
-     .             ( dt, iteration, stdout, isValid )
+        subroutine hoc_forcings_timestep( dt, iteration, stdout, code )
 
 !       Description:
 !       Calculate tendency and surface variables
@@ -1554,6 +1584,8 @@
         use prognostic_variables
         use numerical_check, only: isnan2d, rad_check
         use microphysics, only: timestep_microphys ! Microphysics
+        use error_code
+        
         ! Case specific modules 
         use arm, only: arm_tndcy, arm_sfclyr
         use arm_97, only: arm_97_tndcy, arm_97_sfclyr
@@ -1596,8 +1628,8 @@
      .    stdout
 
         ! Input/Output Variables
-        logical, intent(inout) ::
-     .    isValid
+        integer, intent(inout) ::
+     .    code
 
         ! Local Variables
 
@@ -1692,7 +1724,7 @@
          case( "atex" ) ! ATEX case
            call atex_tndcy( time, time_initial, rtm, 
      .                      rhot, rcm, exner, wmt, wmm, Frad, radht,
-     .                      thlm_forcing, rtm_forcing, isValid
+     .                      thlm_forcing, rtm_forcing, code
 #ifdef SCALARS
      .                     ,sclrm_forcing   ! optional variable
 #endif /* SCALARS */
@@ -1701,7 +1733,7 @@
          case( "dycoms2_rf01" ) ! DYCOMS2 RF01 case
            call dycoms2_rf01_tndcy( time, rhot, rhom, rtm, rcm, exner,
      .                              wmt, wmm, Frad, radht, thlm_forcing,
-     .                              rtm_forcing, isValid  
+     .                              rtm_forcing, code  
 #ifdef SCALARS
      .                             ,sclrm, sclrm_forcing  ! optional variables
 #endif /* SCALARS */
@@ -1724,7 +1756,7 @@
            call dycoms2_rf02_tndcy
      .          ( time, time_initial, rhot, rhom, rtm, rcm, exner,
      .            wmt, wmm, thlm_forcing, rtm_forcing,
-     .            Frad, radht, Ncm, Ncnm, isValid
+     .            Frad, radht, Ncm, Ncnm, code
 #ifdef SCALARS
      .           ,sclrm_forcing  ! Optional variable
 #endif /* SCALARS */
@@ -2053,6 +2085,7 @@
         !----------------------------------------------------------------
         ! Call Khairoutdinov and Kogan (2000) scheme, or COAMPS
         ! for rain microphysics.
+        
         if ( kk_rain .or. lcoamps_micro .or. licedfs ) then
           call timestep_microphys
      .         ( runtype, dt, time, time_initial,
@@ -2060,9 +2093,10 @@
      .           pdf_parms, wmt, wmm, Khm, AKm_est, Akm, 
      .           Ncnm, Nim,
      .           hydromet,
-     .           rtm_forcing, thlm_forcing, isValid )
+     .           rtm_forcing, thlm_forcing, code )
 
-          if ( .not. isValid ) return
+          if ( code == CLUBB_singular_matrix .or.
+     .         code == CLUBB_bad_lapack_arg ) return
 
         end if
 
