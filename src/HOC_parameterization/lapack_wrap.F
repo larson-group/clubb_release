@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: lapack_wrap.F,v 1.3 2007-03-15 23:31:53 dschanen Exp $
+! $Id: lapack_wrap.F,v 1.4 2008-03-31 18:12:30 faschinj Exp $
         module lapack_wrap
 
 !       Description:
@@ -11,7 +11,8 @@
 !       URL: <http://netlib2.cs.utk.edu/lapack/>
 !-----------------------------------------------------------------------
         use constants, only: fstderr
-
+        use error_code
+        
         implicit none
 
         ! Simple routines
@@ -27,7 +28,7 @@
 !-----------------------------------------------------------------------
         subroutine tridag_solvex
      .             ( solve_type, ndim, nrhs, supd, diag, subd, 
-     .               rhs, solution, rcond, isValid )
+     .               rhs, solution, rcond, code )
 
 !       Description:
 !       Solves a tridiagonal system of equations (expert routine).
@@ -73,8 +74,8 @@
         ! info > 0.
         real, intent(out) :: rcond 
 
-        logical, intent(out) :: 
-     .  isValid ! Used to determine when a decomp. failed
+        integer, intent(out) :: 
+     .  code ! Used to determine when a decomp. failed
 
         ! Output variables
         real, intent(out), dimension(ndim,nrhs) :: 
@@ -135,11 +136,11 @@
         case( :-1 )
           write(fstderr,*) trim( solve_type )//
      .      "illegal value in argument", -info
-          isValid = .false.
+          code = CLUBB_bad_lapack_arg
 
         case( 0 )
         ! Success!
-        isValid = .true.
+        code = CLUBB_no_error
 
         case( 1: )
           if ( info == ndim+1 ) then
@@ -148,11 +149,11 @@
             write(fstderr,'(a,e12.5)') 
      .        "Estimate of the reciprocal of the"//
      .        " condition number: ", rcond
-            isValid = .true.
+            code = CLUBB_no_error
           else
             write(fstderr,*) solve_type//
      .        " singular matrix."
-            isValid = .false.
+            code = CLUBB_singular_matrix
           end if
 
         end select
@@ -163,7 +164,7 @@
 !-----------------------------------------------------------------------
         subroutine tridag_solve
      .             ( solve_type, ndim, nrhs, supd, diag, subd, 
-     .               rhs, solution, isValid )
+     .               rhs, solution, code )
 
 !       Description:
 !       Solves a tridiagonal system of equations (simple routine)
@@ -197,8 +198,8 @@
         real, intent(inout), dimension(ndim,nrhs) :: 
      .  rhs ! RHS input
 
-        logical, intent(out) :: 
-     .  isValid ! Used to determine when a decomp. failed
+        integer, intent(out) :: 
+     .  code ! Used to determine when a decomp. failed
 
         ! Output variables
         real, intent(out), dimension(ndim,nrhs) :: 
@@ -227,22 +228,22 @@
         case( :-1 )
           write(fstderr,*) trim( solve_type )//
      .      " illegal value in argument", -info
-          isValid = .false.
+          code = CLUBB_bad_lapack_arg
 
         case( 0 )
           ! Success!
           solution = rhs
-          isValid = .true.
+          code = CLUBB_no_error
 
         case( 1: )
           if ( info == ndim+1 ) then
             write(fstderr,*) trim( solve_type )//
      .        " matrix is singular to working precision."
-            isValid = .true.
+            code = CLUBB_no_error
           else
             write(fstderr,*) trim( solve_type )//
      .        " singular matrix."
-            isValid = .false.
+            code = CLUBB_singular_matrix
           end if
 
         end select
@@ -252,7 +253,7 @@
 
 !-----------------------------------------------------------------------
         subroutine band_solvex( solve_type, nsup, nsub, ndim, nrhs, 
-     .                          lhs, rhs, solution, rcond, isValid )
+     .                          lhs, rhs, solution, rcond, code )
 !       Description:
 !       Restructure and then solve a band diagonal system, with
 !       diagnostic output
@@ -298,7 +299,7 @@
         real, intent(out) :: 
      .  rcond
 
-        logical, intent(out) :: isValid ! Valid calculation?
+        integer, intent(out) :: code ! Valid calculation?
 
         ! Local Variables
 
@@ -412,11 +413,11 @@
         case( :-1 )
           write(fstderr,*) trim( solve_type )//
      .      " illegal value for argument", -info
-          isValid = .false.
+          code = CLUBB_bad_lapack_arg
 
         case( 0 )
         ! Success!
-        isValid = .true.
+        code = CLUBB_no_error
 
         case( 1: )
           if ( info == ndim+1 ) then
@@ -425,11 +426,11 @@
             write(fstderr,'(a,e12.5)') 
      .        "Estimate of the reciprocal of the"//
      .        " condition number: ", rcond
-            isValid = .true.
+            code = CLUBB_no_error
           else
             write(fstderr,*) trim( solve_type )//
      .        " band solver: singular matrix"
-            isValid = .false.
+            code = CLUBB_singular_matrix
           end if
 
         end select
@@ -439,7 +440,7 @@
 
 !-----------------------------------------------------------------------
         subroutine band_solve( solve_type, nsup, nsub, ndim, nrhs, 
-     .                          lhs, rhs, solution, isValid )
+     .                          lhs, rhs, solution, code )
 !       Description:
 !       Restructure and then solve a band diagonal system
 
@@ -476,7 +477,7 @@
         ! Output Variables
         real, dimension(ndim,nrhs), intent(out) :: solution
 
-        logical, intent(out) :: isValid ! Valid calculation?
+        integer, intent(out) :: code ! Valid calculation?
 
         ! Local Variables
 
@@ -559,22 +560,22 @@
         case( :-1 )
           write(fstderr,*) trim( solve_type )//
      .      " illegal value for argument ", -info
-          isValid = .false.
+          code = CLUBB_bad_lapack_arg
 
         case( 0 )
         ! Success!
         solution = rhs
-        isValid  = .true.
+        code = CLUBB_no_error
 
         case( 1: )
           if ( info == ndim+1 ) then
             write(fstderr,*) trim( solve_type )//
      .        " Warning: matrix singular to working precision"
-            isValid = .true.
+            code = CLUBB_no_error
           else
             write(fstderr,*) trim( solve_type )//
      .        " band solver: singular matrix"
-            isValid = .false.
+            code = CLUBB_singular_matrix
           end if
 
         end select
