@@ -1,9 +1,9 @@
 !-----------------------------------------------------------------------
-! $Id: stats_sfc.F,v 1.4 2008-03-31 18:13:48 faschinj Exp $
+! $Id: stats_sfc.F,v 1.5 2008-03-31 18:30:12 faschinj Exp $
 #ifdef STATS
       
       module stats_sfc
-
+ 
       implicit none
       
       private

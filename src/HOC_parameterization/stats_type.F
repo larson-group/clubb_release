@@ -1,8 +1,8 @@
 !-----------------------------------------------------------------------
-! $Id: stats_type.F,v 1.3 2008-03-31 18:13:48 faschinj Exp $
+! $Id: stats_type.F,v 1.4 2008-03-31 18:30:12 faschinj Exp $
 #ifdef STATS
       module stats_type
-
+ 
 !     Description:
 !     Contains derived data type 'stats'
 !-----------------------------------------------------------------------
