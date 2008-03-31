@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: hoc_standalone.F,v 1.17 2007-06-21 16:12:11 griffinb Exp $
+! $Id: hoc_standalone.F,v 1.18 2008-03-31 18:10:55 faschinj Exp $
 
         program hoc_standalone
 
@@ -9,7 +9,8 @@
 !----------------------------------------------------------------------
 
         use hoc, only: hoc_model
-
+        
+        use error_code
         use param_index, only: nparams
         use parameters, only: read_parameters, params_list
 
@@ -32,7 +33,7 @@
         logical :: stdout
 
         ! Internal variables
-        logical :: isValid 
+        integer :: code 
 
         integer :: i ! Loop iterator
 
@@ -63,13 +64,18 @@
         endif
 
         ! Initialize status of run 
-        isValid = .true.
+        code = CLUBB_no_error
       
         ! Run the model
         call hoc_model
-     .       ( params, trim( run_file ), isValid, stdout )
+     .       ( params, trim( run_file ), code, stdout )
 
-      if ( .not. isValid ) then 
+      if ( code == CLUBB_singular_matrix .or.
+     .     code == CLUBB_var_equals_NaN .or.
+     .     code == CLUBB_var_out_of_bounds .or.
+     .     code == CLUBB_bad_lapack_arg .or.
+     .     code == CLUBB_rtm_level_not_found ) then
+      
         stop "Model wasn't valid, check your constants"
       else
         stop "Program exited normally"
