@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf01.F,v 1.8 2008-03-19 15:07:19 faschinj Exp $
+! $Id: dycoms2_rf01.F,v 1.9 2008-03-31 18:06:22 faschinj Exp $
         module dycoms2_rf01
 
 !       Description:
@@ -15,7 +15,7 @@
         subroutine dycoms2_rf01_tndcy
      .             ( time, rhot, rhom, rtm, rcm, exner,
      .               wmt, wmm, Frad, radht, thlm_forcing,
-     .               rtm_forcing, isValid,
+     .               rtm_forcing, code,
      .               sclrm, sclrm_forcing )
 !       Description:
 !       Subroutine to set theta and water tendencies for DYCOMS RF01 case.
@@ -26,6 +26,7 @@
         use grid_class
         use constants
         use model_flags, only: lbugsrad
+        use error_code
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
@@ -51,7 +52,7 @@
      .  exner ! Exner function                  [-]
 
         ! Input/Output Variables
-        logical, intent(inout) :: isValid
+        integer, intent(inout) :: code
 
         ! Output Variables
         real, intent(out), dimension(gr%nnzp) :: 
@@ -92,7 +93,7 @@
      .      //" File: dycoms2_rf01.F"
           write(fstderr,*) "i = ",i
           write(fstderr,*) "rtm(i) = ",rtm(i)
-          isValid = .false.
+          code = CLUBB_rtm_level_not_found
           return
         end if
         zi = (gr%zt(i)-gr%zt(i-1))/(rtm(i)-rtm(i-1))*(8.0e-3-rtm(i-1))

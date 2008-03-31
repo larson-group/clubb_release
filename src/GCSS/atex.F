@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 1
 !----------------------------------------------------------------------
-!$Id: atex.F,v 1.6 2008-03-05 17:22:52 faschinj Exp $
+!$Id: atex.F,v 1.7 2008-03-31 18:06:22 faschinj Exp $
         module atex
 
 !       Description:
@@ -14,7 +14,7 @@
 !----------------------------------------------------------------------
         subroutine atex_tndcy( time, time_initial, rtm, 
      .                         rhot, rcm, exner, wmt, wmm, Frad, radht,
-     .                         thlm_forcing, rtm_forcing, isValid,
+     .                         thlm_forcing, rtm_forcing, code,
      .                         sclrm_forcing )
 !       Description:
 !       Subroutine to set theta-l and water tendencies for ATEX case
@@ -26,6 +26,8 @@
         use model_flags, only: lbugsrad
         use grid_class
         use atex_cloud_rad
+        use error_code
+
 #ifdef STATS
         use stats_hoc
 #endif
@@ -44,7 +46,7 @@
      .  exner ! Exner function                  [-]
 
         ! Input/output
-        logical, intent(inout) :: isValid ! Diagnostic 
+        integer, intent(inout) :: code ! Diagnostic 
 
         ! Output Variables
         real, intent(out), dimension(gr%nnzp) ::
@@ -85,7 +87,7 @@
              write(fstderr,*) "Subroutine: atex_tndcy. File: atex.F"
              write(fstderr,*) "i = ", i
              write(fstderr,*) "rtm(i) = ",rtm(i)
-             isValid = .false.
+             code = CLUBB_rtm_level_not_found
              return
            end if
            zi = gr%zt(i-1)
