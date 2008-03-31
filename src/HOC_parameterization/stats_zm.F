@@ -1,30 +1,41 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zm.F,v 1.3 2008-03-17 19:33:35 faschinj Exp $
+! $Id: stats_zm.F,v 1.4 2008-03-31 18:13:48 faschinj Exp $
 #ifdef STATS
       module stats_zm
       
+      implicit none
+      
+      private
+      
+      public :: stats_init_zm
+      
       contains
+
 !-----------------------------------------------------------------------
       subroutine stats_init_zm( vars_zm, lerror )
 
 !     Description: 
 !     Initializes array indices for zm
 !-----------------------------------------------------------------------
+
       use stats_hoc
       use stats_type
-      implicit none
-      integer, parameter :: nvarmax = 250  ! Max variables
-      !Input Variable
 
+      implicit none
+
+      integer, parameter :: nvarmax = 250  ! Max variables
+
+      ! Input Variable
       ! zm variable names
       
       character(len= * ), dimension(nvarmax), intent(in) :: vars_zm
 
-      !Output Variable	
+      ! Output Variable	
       logical, intent(inout) :: lerror
       
-      !Local Varables
+      ! Local Varables
       integer :: i, k
+      
 !     Default initialization for array indices for zm
 
       iwp2      = 0
@@ -977,7 +988,9 @@
         end select
 
       end do
+
       return
+      
       end subroutine stats_init_zm
 
       end module stats_zm

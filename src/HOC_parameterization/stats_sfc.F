@@ -1,16 +1,24 @@
 !-----------------------------------------------------------------------
-! $Id: stats_sfc.F,v 1.3 2008-03-17 19:33:35 faschinj Exp $
+! $Id: stats_sfc.F,v 1.4 2008-03-31 18:13:48 faschinj Exp $
 #ifdef STATS
       
       module stats_sfc
+
+      implicit none
+      
+      private
+
+      public :: stats_init_sfc
       
       contains 
+
 !-----------------------------------------------------------------------
       subroutine stats_init_sfc( vars_sfc, lerror )
 
 !     Description:
 !     Initializes array indices for sfc
 !-----------------------------------------------------------------------
+
       use stats_hoc
       use stats_type
 

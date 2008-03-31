@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_type.F,v 1.2 2008-03-05 17:16:19 faschinj Exp $
+! $Id: stats_type.F,v 1.3 2008-03-31 18:13:48 faschinj Exp $
 #ifdef STATS
       module stats_type
 
@@ -8,9 +8,13 @@
 !-----------------------------------------------------------------------
 
         use outputfile_class
+        
+        implicit none
+
+        private
+        public :: stats, stat_assign
 
         ! Derived data types to store GrADS statistics
-
         type stats 
 
           ! Number of fields to sample
@@ -33,6 +37,7 @@
           type (outputfile) f
 
         end type stats
+
         contains
 !-----------------------------------------------------------------------
          subroutine stat_assign( var_index, name, 
@@ -41,7 +46,7 @@
 !        Description: Assigns pointers for statistics variables in grid
 !    
 !-----------------------------------------------------------------------
-
+         implicit none
            !input
              integer,intent(in) :: var_index               ! Variable index
              character(len = *), intent(in) :: name        ! Variable name
@@ -65,6 +70,8 @@
              !zt%f%var(ithlm)%units = "K"
       
              return
-           end subroutine stat_assign
+
+             end subroutine stat_assign
+
       end module stats_type
 #endif /*STATS*/

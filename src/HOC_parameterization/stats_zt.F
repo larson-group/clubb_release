@@ -1,16 +1,22 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zt.F,v 1.7 2008-03-25 04:58:22 dschanen Exp $
+! $Id: stats_zt.F,v 1.8 2008-03-31 18:13:48 faschinj Exp $
 #ifdef STATS
       
       module stats_zt
       
+      private
+      
+      public :: stats_init_zt
+
       contains
+
 !-----------------------------------------------------------------------
       subroutine stats_init_zt( vars_zt, lerror )
       
 !     Description:
 !     Initializes array indices for zt 
 !-----------------------------------------------------------------------
+
       use stats_hoc
       use stats_type
 

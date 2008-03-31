@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_hoc.F,v 1.4 2008-03-25 04:58:22 dschanen Exp $
+! $Id: stats_hoc.F,v 1.5 2008-03-31 18:13:48 faschinj Exp $
 #ifdef STATS
 !-----------------------------------------------------------------------
 !  module stats_hoc
@@ -7,9 +7,13 @@
 !  holds pointers to variables to be written to GrADS files
 !-----------------------------------------------------------------------
       module stats_hoc
+        
+        use stats_type, only: stats
 
-        use stats_type
-
+        implicit none
+        
+        public ! All elements of this module are public
+        
         ! Sampling and output frequencies
         real :: stats_tsamp       ! Sampling interval   [s]
         real :: stats_tout        ! Output interval     [s]

@@ -1,8 +1,18 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.4 2008-03-26 23:53:44 dschanen Exp $
+!  $Id: stats_subs.F,v 1.5 2008-03-31 18:13:48 faschinj Exp $
 #ifdef STATS
       module stats_subs
+
+      implicit none
+      
+      private
+      
+      public :: stats_init, stats_begin_timestep, stats_end_timestep,
+     .          stats_accumulate, stats_finalize
+      
+      
       contains
+      
 !-----------------------------------------------------------------------
       subroutine stats_init( iunit, fnamelist, nnzp, gzt, gzm,
      .                       day, month, year, rlat, rlon, time, delt )
