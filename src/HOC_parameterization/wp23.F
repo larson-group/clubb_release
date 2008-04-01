@@ -1,18 +1,21 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.42 2008-03-31 18:03:37 faschinj Exp $
-        
+! $Id: wp23.F,v 1.43 2008-04-01 11:48:41 griffinb Exp $
+!------------------------------------------------------------------------
         module wp23
-        
+
         implicit none
-        
-        private 
-        
+
+        private
+
         public :: timestep_wp23
-        
-        private :: wp23_solve
-        
+
+        private :: wp23_solve,
+     .             wp3_terms_ta_tp_lhs,
+     .             wp3_terms_ta_tp_rhs
+
         contains
-        
+
+!------------------------------------------------------------------------
         subroutine timestep_wp23
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
      .               a, Kht, Khm, wmt, wmm, up2, vp2,
@@ -341,6 +344,8 @@
      .  a1, ! a1; See eqn. 20 in `Equations for HOC'             [-]
      .  a3  ! a3; See eqn. 22 in `Equations for HOC'             [-]
 
+        real, dimension(5) :: tmp
+
         real :: 
      .  atmp, ctmp, ! Temporary variables for the LHS
      .  rcond  ! Est. of the reciprocal of the condition #
@@ -617,98 +622,63 @@
           ! Thermodynamic subdiagonal [ x wp3(k-1,<t+1>) ]
           lhs(3+2,k_wp3) = 
      .    - wmt(k) * (1.0/2.0) * gr%dzt(k)
-          ! Brian tried a new discretization for the turbulent advection term, 
-          ! which contains the term -d[ a1 * wp3^2 / wp2 ] / dz.  In order to 
-          ! help stabilize wp3, a1 has been pulled outside of the derivative.
-!     .    - (1.0/2.0) * gr%dzt(k)
-!     .      * a1(km1) * ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), eps )
-     .    - (1.0/2.0) * ( a1(k) + a1(km1) )
-     .      * (1.0/2.0) * gr%dzt(k)
-     .      * ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), wtol**2 )
-          ! End of Brian's a1 change.  Feb. 14, 2008.
      .    + diff_lhs(3)
 
           ! Momentum subdiagonal [ x wp2(k-1,<t+1>) ]
-          lhs(3+1,k_wp3) = 
-          ! The discretization of the turbulent advection term containing 
-          ! the term -d[ (a3 + 3/2) * wp2^2 ] / dz has been altered to pull 
-          ! a3 outside of the derivative.
-!     .    - 2.0 * gr%dzt(k) * a3(km1) * wp2(km1)   ! standard deriv.
-!     .    - 2.0 * gr%dzt(k) * a3(k) * wp2(km1)     ! Golaz's no a3 deriv.
-     .    - 2.0 * gr%dzt(k) * 0.5*(a3(k)+a3(km1)) * wp2(km1)   ! Centered no a3 deriv.
-          ! End of code that pulls out a3.
 
           ! Thermodynamic main diagonal [ ( x wp3(k,<t+1>) ]
           lhs(3,k_wp3) = 
      .    + 1.0 / dt
-          ! New discretization for the turbulent advection term with a1 
-          ! pulled outside of the derivative.  Brian.
-!     .    + (1.0/2.0) * gr%dzt(k)
-!     .      * (  a1(k) * ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), eps )
-!     .         - a1(km1) * ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), eps )
-!     .        )
-     .    + (1.0/2.0) * ( a1(k) + a1(km1) )
-     .      * (1.0/2.0) * gr%dzt(k)
-     .      * (  ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), wtol**2 )
-     .         - ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), wtol**2 )
-     .        )
-          ! End of Brian's a1 change.  Feb. 14, 2008.
      .    + ( 1.0 - C11_Skw_fnc(k) )
      .              * 3.0 * gr%dzt(k) * ( wmm(k) - wmm(km1) )
      .    + ( C8 / tauw3t(k) ) * ( 5.0 * C8b * Skwt(k)**4 + 1.0 )
      .    + diff_lhs(2)
 
           ! Momentum superdiagonal [ x wp2(k,<t+1>) ]
-          lhs(3-1,k_wp3) = 
-          ! Turbulent advection term with a3 outside of the derivative.
-!     .    + 2.0 * gr%dzt(k) * a3(k) * wp2(k)   ! standard deriv.
-!     .    + 2.0 * gr%dzt(k) * a3(k) * wp2(k)   ! Golaz's no a3 deriv.
-     .    + 2.0 * gr%dzt(k) * 0.5*(a3(k)+a3(km1)) * wp2(k)   ! Centered no a3 deriv.
-          ! End of code that pulls out a3.
 
           ! Thermodynamic superdiagonal [ x wp3(k+1,<t+1>) ]
           lhs(3-2,k_wp3) = 
      .    + wmt(k) * (1.0/2.0) * gr%dzt(k)
-          ! New discretization for the turbulent advection term with a1 
-          ! pulled outside of the derivative.  Brian.
-!     .    + (1.0/2.0) * gr%dzt(k)
-!     .      * a1(k) * ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), eps )
-     .    + (1.0/2.0) * ( a1(k) + a1(km1) )
-     .      * (1.0/2.0) * gr%dzt(k)
-     .      * ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), wtol**2 )
-          ! End of Brian's a1 change. Feb. 14, 2008.
      .    + diff_lhs(1)
+
+          ! LHS time tendency.
+
+          ! LHS mean advection (ma) term.
+
+          ! LHS turbulent advection (ta) and turbulent production (tp) terms.
+          lhs(3-2:3+2,k_wp3)
+     .    = lhs(3-2:3+2,k_wp3)
+     .    + wp3_terms_ta_tp_lhs( wp3(kp1), wp3(k), wp3(km1), 
+     .                           wp2(k), wp2(km1), a1(k), a1(km1),
+     .                           a3(k), a3(km1), gr%dzt(k), eps, wtol )
+
+          ! LHS accumulation (ac) term and pressure term 2 (pr2).
+
+          ! LHS pressure term 1 (pr1).
+
+          ! LHS eddy diffusion term: dissipation term 1 (dp1).
 
 
           ! Right-hand side
           rhs(k_wp3) = 
      .    + ( 1.0 / dt ) * wp3(k)
-          ! Turbulent advection term with a3 outside of the derivative.
-     .    + gr%dzt(k)
-!     .      * ( ( a3(k) * wp2(k)**2 ) - ( a3(km1) * wp2(km1)**2 ) ) ! standard deriv.
-!     .      * ( ( a3(k) * wp2(k)**2 ) - ( a3(k) * wp2(km1)**2 ) )   ! Golaz's no a3 deriv.
-     .      * (  ( 0.5*(a3(k)+a3(km1)) * wp2(k)**2 )        ! Centered no a3 deriv.
-     .         - ( 0.5*(a3(k)+a3(km1)) * wp2(km1)**2 )  )   ! Centered no a3 deriv.
-          ! End of code to pull out a3.
-          ! New discretization for the turbulent advection term with a1 
-          ! pulled outside of the derivative.  Brian.
-!     .    + (1.0/4.0) * gr%dzt(k)
-!     .      * (  a1(k) * ( wp3(kp1) + wp3(k) )**2 
-!     .                   / MAX( wp2(k), eps )
-!     .         - a1(km1) * ( wp3(k) + wp3(km1) )**2
-!     .                     / MAX( wp2(km1), eps )
-!     .        )
-     .    + (1.0/2.0) * ( a1(k) + a1(km1) )
-     .      * (1.0/4.0) * gr%dzt(k)
-     .        * (  ( wp3(kp1) + wp3(k) )**2 
-     .             / MAX( wp2(k), wtol**2 )
-     .           - ( wp3(k) + wp3(km1) )**2
-     .             / MAX( wp2(km1), wtol**2 )
-     .          )
-          ! End of Brian's a1 change. Feb. 14, 2008.
      .    + ( 1.0 - C11_Skw_fnc(k) ) * 3.0 * ( grav/T0 ) * wp2thvp(k)
      .    + ( C8 / tauw3t(k) ) * ( 4.0 * C8b * Skwt(k)**4 ) * wp3(k)
 
+          ! RHS time tendency.
+
+          ! RHS turbulent advection (ta) and turbulent production (tp) terms.
+          rhs(k_wp3)
+     .    = rhs(k_wp3)
+     .    + wp3_terms_ta_tp_rhs( wp3(kp1), wp3(k), wp3(km1), 
+     .                           wp2(k), wp2(km1), a1(k), a1(km1),
+     .                           a3(k), a3(km1), gr%dzt(k), eps, wtol )
+
+          ! RHS buoyancy production (bp) term and pressure term 2 (pr2).
+
+          ! RHS pressure term 1 (pr1).
+
+          ! RHS eddy diffusion term: dissipation term 1 (dp1).
           if ( lcrank_nich_diff ) then
              ! These lines are for the diffusional term with a Crank-Nicholson 
              ! time step.  They are not used for completely implicit diffusion.
@@ -726,44 +696,18 @@
 
           if ( iwp3_ta > 0 ) then
           zt%x(k,iwp3_ta) = zt%x(k,iwp3_ta) 
-          ! Turbulent advection term with a3 outside of the derivative.
-     .    + gr%dzt(k)
-!     .      * (  ( ( a3(k) + (3.0/2.0) ) * wp2(k)**2 )      ! standard deriv.
-!     .         - ( ( a3(km1) + (3.0/2.0) ) * wp2(km1)**2 )  ! standard deriv.
-!     .        )                                               ! standard deriv.
-!     .      * (  ( ( a3(k) + (3.0/2.0) ) * wp2(k)**2 )      ! Golaz's no a3 deriv.
-!     .         - ( ( a3(k) + (3.0/2.0) ) * wp2(km1)**2 )    ! Golaz's no a3 deriv.
-!     .        )                                               ! Golaz's no a3 deriv.
-     .      * (  ( ( 0.5*(a3(k)+a3(km1)) + (3.0/2.0) )        ! Centered no a3 deriv.
-     .             * wp2(k)**2 )                            ! Centered no a3 deriv.
-     .         - ( ( 0.5*(a3(k)+a3(km1)) + (3.0/2.0) )        ! Centered no a3 deriv.
-     .             * wp2(km1)**2 )                          ! Centered no a3 deriv.
-     .        )                                               ! Centered no a3 deriv.
-          ! End of code to pull out a3.
-          ! New discretization for the turbulent advection term with a1 
-          ! pulled outside of the derivative.  Brian.
-!     .    + (1.0/4.0) * gr%dzt(k)
-!     .      * (  a1(k) * ( wp3(kp1) + wp3(k) )**2 
-!     .                   / MAX( wp2(k), eps )
-!     .         - a1(km1) * ( wp3(k) + wp3(km1) )**2 
-!     .                     / MAX( wp2(km1), eps )
-!     .        )
-     .    + (1.0/2.0) * ( a1(k) + a1(km1) )
-     .      * (1.0/4.0) * gr%dzt(k)
-     .        * (  ( wp3(kp1) + wp3(k) )**2 
-     .             / MAX( wp2(k), wtol**2 )
-     .           - ( wp3(k) + wp3(km1) )**2
-     .             / MAX( wp2(km1), wtol**2 )
-     .          )
-          ! End of Brian's a1 change. Feb. 14, 2008.
+     .    + wp3_terms_ta_tp_rhs( wp3(kp1), wp3(k), wp3(km1), 
+     .                           wp2(k), wp2(km1), a1(k), a1(km1),
+     .                           a3(k)+(3.0/2.0), a3(km1)+(3.0/2.0), 
+     .                           gr%dzt(k), eps, wtol )
           end if
 
           if ( iwp3_tp > 0 ) then
           zt%x(k,iwp3_tp) = zt%x(k,iwp3_tp) 
-     .    - gr%dzt(k)
-     .      * (  ( (3.0/2.0) * wp2(k)**2 ) 
-     .         - ( (3.0/2.0) * wp2(km1)**2 )
-     .        )
+     .    + wp3_terms_ta_tp_rhs( wp3(kp1), wp3(k), wp3(km1), 
+     .                           wp2(k), wp2(km1), 0.0, 0.0,
+     .                           0.0-(3.0/2.0), 0.0-(3.0/2.0), 
+     .                           gr%dzt(k), eps, wtol )
           end if
 
           if ( iwp3_bp > 0 ) then
@@ -797,58 +741,26 @@
 !         Implicit contributions for wp3
 
           if ( iwp3_ta > 0 ) then
-            ztscr05(k) =
-            ! New discretization for the turbulent advection term with a1 
-            ! pulled outside of the derivative.  Brian.
-!     .      + (1.0/2.0) * gr%dzt(k)
-!     .        * a1(km1) * ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), eps )
-     .        + (1.0/2.0) * ( a1(k) + a1(km1) )
-     .          * (1.0/2.0) * gr%dzt(k)
-     .          * ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), wtol**2 )
-            ! End of Brian's a1 change. Feb. 14, 2008.
-            ztscr06(k) =
-           ! Turbulent advection term with a3 outside of the derivative.
-!     .    + 2.0 * gr%dzt(k) * ( a3(km1) + (3.0/2.0) ) * wp2(km1)  ! standard deriv.
-!     .    + 2.0 * gr%dzt(k) * ( a3(k) + (3.0/2.0) ) * wp2(km1)    ! Golaz's no a3 deriv.
-     .        + 2.0 * gr%dzt(k) * ( 0.5*(a3(k)+a3(km1)) + (3.0/2.0) ) ! Centered no a3 deriv.
-     .          * wp2(km1)                                            ! Centered no a3 deriv.
-            ! End of code to pull out a3.
-            ztscr07(k) =
-            ! New discretization for the turbulent advection term with a1 
-            ! pulled outside of the derivative.  Brian.
-!     .      - (1.0/2.0) * gr%dzt(k)
-!     .        * ( a1(k) * ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), eps )
-!     .           -a1(km1) * ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), eps )
-!     .          )
-     .        - (1.0/2.0) * ( a1(k) + a1(km1) )
-     .          * (1.0/2.0) * gr%dzt(k)
-     .          * (  ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), wtol**2 )
-     .             - ( wp3(k) + wp3(km1) ) / MAX( wp2(km1), wtol**2 )
-     .            )
-            ! End of Brian's a1 change. Feb. 14, 2008.
-            ztscr08(k) =
-            ! Turbulent advection term with a3 outside of the derivative.
-!     .    - 2.0 * gr%dzt(k) * ( a3(k) + (3.0/2.0) ) * wp2(k)      ! standard deriv.
-!     .    - 2.0 * gr%dzt(k) * ( a3(k) + (3.0/2.0) ) * wp2(k)      ! Golaz's no a3 deriv.
-     .        - 2.0 * gr%dzt(k) * ( 0.5*(a3(k)+a3(km1)) + (3.0/2.0) ) ! Centered no a3 deriv.
-     .          * wp2(k)                                              ! Centered no a3 deriv.
-            ! End of code to pull out a3.
-            ztscr09(k) =
-            ! New discretization for the turbulent advection term with a1 
-            ! pulled outside of the derivative.  Brian.
-!     .      - (1.0/2.0) * gr%dzt(k)
-!     .        * a1(k) * ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), eps )
-     .        - (1.0/2.0) * ( a1(k) + a1(km1) )
-     .          * (1.0/2.0) * gr%dzt(k)
-     .          * ( wp3(kp1) + wp3(k) ) / MAX( wp2(k), wtol**2 )
-            ! End of Brian's a1 change. Feb. 14, 2008.
+            tmp(1:5) = 
+     .      wp3_terms_ta_tp_lhs( wp3(kp1), wp3(k), wp3(km1), 
+     .                           wp2(k), wp2(km1), a1(k), a1(km1),
+     .                           a3(k)+(3.0/2.0), a3(km1)+(3.0/2.0), 
+     .                           gr%dzt(k), eps, wtol )
+            ztscr05(k) = -tmp(5)
+            ztscr06(k) = -tmp(4)
+            ztscr07(k) = -tmp(3)
+            ztscr08(k) = -tmp(2)
+            ztscr09(k) = -tmp(1)
           end if
 
           if ( iwp3_tp > 0 ) then
-            ztscr10(k) = 
-     .      - 2.0 * gr%dzt(k) * (3.0/2.0) * wp2(km1)
-            ztscr11(k) = 
-     .      + 2.0 * gr%dzt(k) * (3.0/2.0) * wp2(k)
+            tmp(1:5) = 
+     .      wp3_terms_ta_tp_lhs( wp3(kp1), wp3(k), wp3(km1), 
+     .                           wp2(k), wp2(km1), 0.0, 0.0,
+     .                           0.0-(3.0/2.0), 0.0-(3.0/2.0), 
+     .                           gr%dzt(k), eps, wtol )
+            ztscr10(k) = -tmp(4)
+            ztscr11(k) = -tmp(2)
           end if
 
           if ( iwp3_ma > 0 ) then
@@ -1189,5 +1101,247 @@
 
         return
         end subroutine wp23_solve
+
+!-----------------------------------------------------------------------
+        pure function wp3_terms_ta_tp_lhs( wp3p1, wp3, wp3m1, 
+     .                                     wp2, wp2m1, a1, a1m1,
+     .                                     a3, a3m1, dzt, eps, wtol )
+     .  result( lhs )
+
+!       Description:
+!       Turbulent advection and turbulent production of wp3:  
+!       implicit portion of the code.
+!
+!       The values of w'^3 are found on the thermodynamic levels, while
+!       the values of w'^2, a_1, and a_3 are found on the momentum 
+!       levels.  The variable w'^3 is interpolated to the intermediate 
+!       momentum levels.  The values of the mathematical expressions
+!       (called X and Y here) within the dX/dz and dY/dz terms are 
+!       computed on the momentum levels.  Then, the derivatives (d/dz) 
+!       of the expressions (X and Y) are taken over the central 
+!       thermodynamic level, yielding the desired result.
+!       In this function, the values of X and Y are as follows:
+!
+!       X = a_3(ts) * 2 * w'^2(ts) * w'^2(ts+1); and
+!
+!       Y = a_1(ts) * ( 2 * w'^3(ts) * w'^3(ts+1) ) / w'^2(ts);
+!
+!       where (ts) stands for the index of the current timestep and 
+!       (ts+1) stands for the index of the timestep being advanced to.
+!       The terms with timestep index (ts+1) are being solved for 
+!       implicitly.
+!
+!       --------------------wp3p1-------------------------------- t(k+1)
+!
+!       =a3====wp2====a1=========wp3(interp)===================== m(k)
+!
+!       --------------------wp3------------------(d/dz) terms---- t(k)
+!
+!       =a3m1==wp2m1==a1m1=======wp3(interp)===================== m(k-1)
+!
+!       --------------------wp3m1-------------------------------- t(k-1)
+!
+!       The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1)
+!       correspond with altitudes zt(k+1), zm(k), zt(k), zm(k-1), 
+!       and zt(k-1), respectively.  The letter "t" is used for
+!       thermodynamic levels and the letter "m" is used for momentum
+!       levels.
+!
+!       dzt(k) = 1 / ( zm(k) - zm(k-1) )
+
+!       References:
+!-----------------------------------------------------------------------
+
+        implicit none
+
+        ! Constant parameters
+        integer, parameter ::
+     .  kp1_tdiag = 1,   ! Thermodynamic superdiagonal index.
+     .  k_mdiag   = 2,   ! Momentum superdiagonal index.
+     .  k_tdiag   = 3,   ! Thermodynamic main diagonal index.
+     .  km1_mdiag = 4,   ! Momentum subdiagonal index. 
+     .  km1_tdiag = 5    ! Thermodynamic subdiagonal index.
+
+        ! Input variables
+        real, intent(in) :: 
+     .  wp3p1,   ! w'^3(k+1)                     [m^3/s^3]
+     .  wp3,     ! w'^3(k)                       [m^3/s^3]
+     .  wp3m1,   ! w'^3(k-1)                     [m^3/s^3]
+     .  wp2,     ! w'^2(k)                       [m^2/s^2]
+     .  wp2m1,   ! w'^2(k-1)                     [m^2/s^2]
+     .  a1,      ! a1(k)                         [-]
+     .  a1m1,    ! a1(k-1)                       [-]
+     .  a3,      ! a3(k)                         [-]
+     .  a3m1,    ! a3(k-1)                       [-]
+     .  dzt,     ! Inverse of grid spacing (k)   [1/m]
+     .  eps,     ! Model parameter               [-]
+     .  wtol     ! Model parameter               [m/s]
+
+        ! Return Variable
+        real, dimension(5) :: lhs
+
+        ! Brian tried a new discretization for the turbulent advection 
+        ! term, which contains the term -d[ a_1 * (w'^3)^2 / w'^2 ] / dz.
+        ! In order to help stabilize w'^3, a_1 has been pulled outside of
+        ! the derivative.  On the left-hand side of the equation, this 
+        ! effects the thermodynamic superdiagonal (kp1_tdiag), the 
+        ! thermodynamic main diagonal (k_tdiag), and the thermodynamic 
+        ! subdiagonal (km1_tdiag).
+
+        ! Additionally, the discretization of the turbulent advection 
+        ! term containing the term -d[ (a_3 + 3/2) * (w'^2)^2 ] / dz has 
+        ! been altered to pull a3 outside of the derivative.  This was 
+        ! done in order to help stabilize w'^3.  On the left-hand side of
+        ! the equation, this effects the momentum superdiagonal (k_mdiag)
+        ! and the momentum subdiagonal (km1_mdiag).
+
+        lhs(kp1_tdiag)
+!     .  = + (1.0/2.0) * dzt
+!     .      * a1 * ( wp3p1 + wp3 ) / MAX( wp2, eps )
+     .  = + (1.0/2.0) * ( a1 + a1m1 )
+     .      * (1.0/2.0) * dzt
+     .      * ( wp3p1 + wp3 ) / MAX( wp2, wtol**2 )
+
+        lhs(k_mdiag)
+!     .  = + 2.0 * dzt * a3 * wp2
+     .  = + 2.0 * dzt * 0.5*(a3+a3m1) * wp2
+
+        lhs(k_tdiag)
+!     .  = + (1.0/2.0) * dzt
+!     .      * (  a1 * ( wp3p1 + wp3 ) / MAX( wp2, eps )
+!     .         - a1m1 * ( wp3 + wp3m1 ) / MAX( wp2m1, eps )
+!     .        )
+     .  = + (1.0/2.0) * ( a1 + a1m1 )
+     .      * (1.0/2.0) * dzt
+     .      * (  ( wp3p1 + wp3 ) / MAX( wp2, wtol**2 )
+     .         - ( wp3 + wp3m1 ) / MAX( wp2m1, wtol**2 )
+     .        )
+
+        lhs(km1_mdiag)
+!     .  = - 2.0 * dzt * a3m1 * wp2m1
+     .  = - 2.0 * dzt * 0.5*(a3+a3m1) * wp2m1
+
+        lhs(km1_tdiag)
+!     .  = - (1.0/2.0) * dzt
+!     .      * a1m1 * ( wp3 + wp3m1 ) / MAX( wp2m1, eps )
+     .  = - (1.0/2.0) * ( a1 + a1m1 )
+     .      * (1.0/2.0) * dzt
+     .      * ( wp3 + wp3m1 ) / MAX( wp2m1, wtol**2 )
+
+        ! End of code that pulls out a3.
+        ! End of Brian's a1 change.  Feb. 14, 2008.
+
+        return
+        end function wp3_terms_ta_tp_lhs
+
+!-----------------------------------------------------------------------
+        pure function wp3_terms_ta_tp_rhs( wp3p1, wp3, wp3m1, 
+     .                                     wp2, wp2m1, a1, a1m1,
+     .                                     a3, a3m1, dzt, eps, wtol )
+     .  result( rhs )
+
+!       Description:
+!       Turbulent advection and turbulent production of wp3:
+!       explicit portion of the code.
+!
+!       The values of w'^3 are found on the thermodynamic levels, while
+!       the values of w'^2, a_1, and a_3 are found on the momentum 
+!       levels.  The variable w'^3 is interpolated to the intermediate 
+!       momentum levels.  The values of the mathematical expressions
+!       (called X and Y here) within the dX/dz and dY/dz terms are 
+!       computed on the momentum levels.  Then, the derivatives (d/dz) 
+!       of the expressions (X and Y) are taken over the central 
+!       thermodynamic level, yielding the desired result.
+!       In this function, the values of X and Y are as follows:
+!
+!       X = a_3(ts) * (w'^2(ts))^2; and
+!
+!       Y = a_1(ts) * (w'^3(ts))^2 / w'^2(ts);
+!
+!       where (ts) stands for the index of the current timestep.
+!       The terms found in this function are being solved for 
+!       explicitly.
+!
+!       --------------------wp3p1-------------------------------- t(k+1)
+!
+!       =a3====wp2====a1=========wp3(interp)===================== m(k)
+!
+!       --------------------wp3------------------(d/dz) terms---- t(k)
+!
+!       =a3m1==wp2m1==a1m1=======wp3(interp)===================== m(k-1)
+!
+!       --------------------wp3m1-------------------------------- t(k-1)
+!
+!       The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1)
+!       correspond with altitudes zt(k+1), zm(k), zt(k), zm(k-1), 
+!       and zt(k-1), respectively.  The letter "t" is used for
+!       thermodynamic levels and the letter "m" is used for momentum
+!       levels.
+!
+!       dzt(k) = 1 / ( zm(k) - zm(k-1) )
+
+!       References:
+!-----------------------------------------------------------------------
+
+        implicit none
+
+        ! Input variables
+        real, intent(in) :: 
+     .  wp3p1,   ! w'^3(k+1)                     [m^3/s^3]
+     .  wp3,     ! w'^3(k)                       [m^3/s^3]
+     .  wp3m1,   ! w'^3(k-1)                     [m^3/s^3]
+     .  wp2,     ! w'^2(k)                       [m^2/s^2]
+     .  wp2m1,   ! w'^2(k-1)                     [m^2/s^2]
+     .  a1,      ! a1(k)                         [-]
+     .  a1m1,    ! a1(k-1)                       [-]
+     .  a3,      ! a3(k)                         [-]
+     .  a3m1,    ! a3(k-1)                       [-]
+     .  dzt,     ! Inverse of grid spacing (k)   [1/m]
+     .  eps,     ! Model parameter               [-]
+     .  wtol     ! Model parameter               [m/s]
+
+        ! Return Variable
+        real :: rhs
+
+        ! Brian tried a new discretization for the turbulent advection 
+        ! term, which contains the term -d[ a_1 * (w'^3)^2 / w'^2 ] / dz.
+        ! In order to help stabilize w'^3, a_1 has been pulled outside of
+        ! the derivative.  This effects the right-hand side of the 
+        ! equation, as well as the  left-hand side.
+
+        ! Additionally, the discretization of the turbulent advection 
+        ! term containing the term -d[ (a_3 + 3/2) * (w'^2)^2 ] / dz has 
+        ! been altered to pull a3 outside of the derivative.  This was 
+        ! done in order to help stabilize w'^3.  This effects the 
+        ! right-hand side of the equation, as well as the left-hand side.
+
+        rhs
+!     .  = + dzt
+!     .      * ( ( a3 * wp2**2 ) - ( a3m1 * wp2m1**2 ) )
+!     .    + (1.0/4.0) * dzt
+!     .      * (  a1 * ( wp3p1 + wp3 )**2
+!     .                   / MAX( wp2, eps )
+!     .         - a1m1 * ( wp3 + wp3m1 )**2
+!     .                     / MAX( wp2m1, eps )
+!     .        )
+     .  = + dzt
+     .      * (  ( 0.5*(a3+a3m1) * wp2**2 )
+     .         - ( 0.5*(a3+a3m1) * wp2m1**2 )  )
+     .    + (1.0/2.0) * ( a1 + a1m1 )
+     .      * (1.0/4.0) * dzt
+     .        * (  ( wp3p1 + wp3 )**2
+     .                / MAX( wp2, wtol**2 )
+     .           - ( wp3 + wp3m1 )**2
+     .                / MAX( wp2m1, wtol**2 )
+     .          )
+
+
+        ! End of code that pulls out a3.
+        ! End of Brian's a1 change.  Feb. 14, 2008.
+
+        return
+        end function wp3_terms_ta_tp_rhs
+
+!------------------------------------------------------------------------
 
         end module wp23
