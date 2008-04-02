@@ -3,8 +3,6 @@
      .       ( runtype, kk, kmax, timea, deltf,
      .         rtm, wmm, p, exner, rhot,
      .         thlm, ricem, rrm, rgraupelm, rsnowm,
-     .         nne, nrdamp, j, icon, icond,
-     .         lice,
      .         rcm, Ncm, Nrm, Ncnm, Nim,
      .         cond, Vsnow, Vice, Vrr, VNr, Vgraupel,
      .         ritend, rrtend, rgtend, 
@@ -42,7 +40,22 @@
      .  gamma, ! From COAMPS, and not the same gamma approx. used in HOC
      .  adjtq  ! COAMPS microphysics subroutine
 
+      ! COAMPS parameters
+        integer, parameter :: 
+     .  nne = 1,  ! Horizontal domain parameter (always 1 for HOC)
+     .  j   = 1,  ! Horizontal grid box (always 1 for HOC)
+     .  icon = 5, ! Ice nucleation scheme; 1 = Fletcher, 2 = Meyers, 3 = Hobbs & Rangno, 4 = Cooper, 5 = Cooper/Fletcher (warm/cold)
+     .  icond  = 3  ! Autoconversion; 1=Kessler, 2=Manton/Cotton, 3=K&K, 4=none
       
+
+        logical, parameter ::
+     .  lice = .true.  ! Whether to produce ice in COAMPS.
+                       ! According to Jerry Schmidt of NRL,
+                       !   if lice = .true., then we should
+                       !   set ldrizzle = .false.
+                       !   because collection of drizzle by ice
+                       !   is not implemented yet.
+   
       ! Local Constants
       real, parameter ::
      .  aa0 = -0.267,  ! All of these are constants set in COAMPS and used by adjtq.
@@ -105,26 +118,15 @@
      .  wtm   = 1.0  ! Weighting array for mass point (never used)
 
       ! Input Variables
-      character(len=*), intent(in) ::
-     .  runtype ! For case specific handling of the microphysics
+      character(len=*), intent(in) :: runtype
 
       integer, intent(in) ::
      .  kk,    ! Number of COAMPS m gridpoints in the vertical (gr%nnzp-1)
      .  kmax   ! Maximum array size (kk + ??)
 
       real, intent(in) ::
-     .  timea,        ! Output time             [s]
-     .  deltf         ! Timestep, I think       [s]
-
-      integer, intent(in) ::
-     .  nne,    ! Has to do with horiz domain; 1 for HOC?
-     .  nrdamp, ! Number of upper model levels in sponge layer (8?)
-     .  j,      ! j-coordinate (always 1 for HOC)
-     .  icon,   ! Ice nucleation type
-     .  icond   ! Autoconversion; 1=Kessler, 2=Manton/Cotton, 3=K&K, 4=none
-
-      logical, intent(in) ::
-     .  lice           ! Logical: is ice on?
+     .  timea,        ! Current model time                      [s]
+     .  deltf         ! Timestep (i.e. dtmain in CLUBB)         [s]
 
       real, dimension(kk+1), intent(in) ::
      .  rtm,  ! Total water mixing ratio                        [kg/kg]
@@ -236,7 +238,8 @@
      .  sloper,
      .  slopes,
      .  slopeg,
-     .  eic
+     .  eic,
+     .  sat
 
       real, dimension(kk+1) ::
      .  thm,
@@ -335,13 +338,14 @@
      .  i,
      .  k, kp1, km1, ! Loop control variables
      .  len,         ! # of saturated points???
-     .  icase        ! Which case?
+     .  icase,       ! Which case?
+     .  nrdamp       ! Number of points in the damping layer (COAMPS)
 
       real ::
      .  snzero ! ???
 
       integer, dimension(1) ::
-     .  nkpts        
+     .  nkpts
 
       integer, dimension(kk) ::
      .  icomp,         !
@@ -386,27 +390,31 @@
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       ! End of ajsmith4's comment
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!      icase    = 75
-
       ! dschanen on 27 Mar 2008 made icase as function of runtype
       select case ( trim( runtype ) )
       case ( "mpace_a", "mpace_b" )
-        icase = 75
+        icase  = 75
+        nrdamp = 15
 
       case ( "nov11_altocu" )
         icase = 1000
+        nrdamp = 15
 
       case ( "jun25_altocu" )
         icase = 1001
+        nrdamp = 15
 
       case ( "clex9_oct14" )
         icase = 1002
+        nrdamp = 15
 
       case ( "clex9_nov02" )
         icase = 1003
+        nrdamp = 15
 
       case default
         icase = -1 ! No idea what to do in this case. -dschanen
+        nrdamp = 15
 
       end select
 
@@ -429,6 +437,11 @@
 
       ! Compute quantities for computing tendencies
       rvm = rtm - rcm
+
+      if ( any( rvm < 0. ) ) then
+        write(fstderr,*) "in COAMPS (R) micro driver rvm < 0"
+        where ( rvm < 0. ) rvm = 0.
+      end if
 
       thm(1:kk+1) = thlm(1:kk+1)
      .            + ( Lv /( Cp * exner(1:kk+1) )* rcm(1:kk+1) )
@@ -455,7 +468,9 @@
       ! first above-ground gridpoint and in COAMPS k=1 is the first
       ! above-ground gridpoint, we assign the variables accordingly.
       ! Comments by Michael Falk, David Schanen, and Vince Larson
-      pr3d(1,1,1:kk)   = p(2:kk+1)
+
+      ! The top point is undefined and unreferenced in these '3d' arrays
+      pr3d(1,1,1:kk)   = p(2:kk+1) 
       th2t3d(1,1,1:kk) = exner(2:kk+1)
       temp3d(1,1,1:kk) = thm(2:kk+1) * exner(2:kk+1)
 
@@ -493,16 +508,19 @@
 
       end do
 
-      call gamma(3.0,gm3)
-      call gamma(4.0,gm4)
-      call gamma(5.0,gm5)
-      call gamma(6.0,gm6)
-      call gamma(7.0,gm7)
-      call gamma(8.0,gm8)
-      call gamma(9.0,gm9)
-      call gamma(bsnow+3.0,gmbp3)
-      call gamma(bsnow*0.5 + 2.5,gmbov2)
-      call gamma(bgrp*0.5 + 2.5,gmbov2g)
+      ! Note that this is much simpler approx. of gamma than the ANL function
+      ! used in the rest of the CLUBB code.
+      ! It is used only to have a direct comparison with COAMPS-LES -dschanen
+      call gamma( 3.0,gm3 )
+      call gamma( 4.0,gm4 )
+      call gamma( 5.0,gm5 )
+      call gamma( 6.0,gm6 )
+      call gamma( 7.0,gm7 )
+      call gamma( 8.0,gm8 )
+      call gamma( 9.0,gm9 )
+      call gamma( bsnow+3.0, gmbp3 )
+      call gamma( bsnow*0.5 + 2.5, gmbov2 )
+      call gamma( bgrp*0.5 + 2.5, gmbov2g )
 
       ex2  = bsnow * 0.5 + 2.5
       ex2g = bgrp * 0.5 + 2.5
@@ -513,7 +531,7 @@
       ex4g = abar/visair
       ex5  = pi*aprpr*snzero*gmbp3/4.0
 
-*     Lf     = Ls - Lv   ! Latent heat of fusion
+!     Lf     = Ls - Lv   ! Latent heat of fusion (occurs in constants)
       hlvoka = Lv/therco
       hkaolf = therco/Lf
       hlsoka = Ls/therco
@@ -531,31 +549,49 @@
 
 !!! Michael Falk, 6 July 2007
 !!! Assigning values to the "flip" variables, in which k=1 is the top of the domain
+      
+!     cond_flip(1,1,1:kk) = cond(1,1,kk:1:-1) ! this is uninitialized -dschanen
+      p3_flip(1,1,1:kk)  = p3(1,1,kk:1:-1)     ! Pressure
+      qt3_flip(1,1,1:kk) = qt3(1,1,kk:1:-1)   ! Total water mixing ratio
+      qv3_flip(1,1,1:kk) = qv3(1,1,kk:1:-1)   ! Vapor water mixing ratio
+      qc3_flip(1,1,1:kk) = qc3(1,1,kk:1:-1)   ! Cloud water mixing ratio
+      th3_flip(1,1,1:kk) = th3(1,1,kk:1:-1)   ! Potential temp.
+      exbm_flip(1,1,1:kk)= exbm(1,1,kk:1:-1) ! Exner function
+      rbm_flip(1,1,1:kk) = rbm(1,1,kk:1:-1)   ! Density
 
-      cond_flip(1,1,1:kk) = cond(1,1,kk:1:-1)
-      p3_flip(1,1,1:kk) = p3(1,1,kk:1:-1)
-      qt3_flip(1,1,1:kk) = qt3(1,1,kk:1:-1)
-      qv3_flip(1,1,1:kk) = qv3(1,1,kk:1:-1)
-      qc3_flip(1,1,1:kk) = qc3(1,1,kk:1:-1)
-      th3_flip(1,1,1:kk) = th3(1,1,kk:1:-1)
-      exbm_flip(1,1,1:kk) = exbm(1,1,kk:1:-1)
-      rbm_flip(1,1,1:kk) = rbm(1,1,kk:1:-1)
+      qi3_flip(1,1,1:kk) = qi3(1,1,kk:1:-1) ! Ice water mixing ratio
+      qr3_flip(1,1,1:kk) = qr3(1,1,kk:1:-1) ! Rain water mixing ratio
+      qg3_flip(1,1,1:kk) = qg3(1,1,kk:1:-1) ! Graupel water mixing ratio
+      qs3_flip(1,1,1:kk) = qs3(1,1,kk:1:-1) ! Snow water mixing ratio
 
-      qi3_flip(1,1,1:kk) = qi3(1,1,kk:1:-1)
-      qr3_flip(1,1,1:kk) = qr3(1,1,kk:1:-1)
-      qg3_flip(1,1,1:kk) = qg3(1,1,kk:1:-1)
-      qs3_flip(1,1,1:kk) = qs3(1,1,kk:1:-1)
+      w3_flip(1,1,1:kk+1) = w3(1,1,kk+1:1:-1) ! not referenced in COAMPS micro
 
-      w3_flip(1,1,1:kk+1) = w3(1,1,kk+1:1:-1)
-      pr3d_flip(1,1,1:kk+1) = pr3d(1,1,kk+1:1:-1)
-      qsatv3d_flip(1,1,1:kk+1) = qsatv3d(1,1,kk+1:1:-1)
-      temp3d_flip(1,1,1:kk+1) = temp3d(1,1,kk+1:1:-1)
-      qsati3d_flip(1,1,1:kk+1) = qsati3d(1,1,kk+1:1:-1)
-      th2t3d_flip(1,1,1:kk+1) = th2t3d(1,1,kk+1:1:-1)
+      pr3d_flip(1,1,1:kk)    = pr3d(1,1,kk:1:-1) ! top point is undefined
+      qsatv3d_flip(1,1,1:kk) = qsatv3d(1,1,kk:1:-1) ! " " 
+      temp3d_flip(1,1,1:kk)  = temp3d(1,1,kk:1:-1) ! " " 
+      qsati3d_flip(1,1,1:kk) = qsati3d(1,1,kk:1:-1) ! " " 
+      th2t3d_flip(1,1,1:kk)  = th2t3d(1,1,kk:1:-1) ! " " 
 
-      ! determination of which points are "in_cloud" are which are outside of cloud
-      do k=1,kk
-        if (
+
+
+! determination of which points are "in_cloud" are which are outside of cloud
+      do k=nrdamp,kk
+c
+c***********************************************************************
+c determine if point is saturated as in COAMPS
+c***********************************************************************
+c
+      if ( .not.lice ) then
+        sat = qv3_flip(1,1,k)/qsatv3d_flip(1,1,k)-1.0
+      else
+        if ( temp3d_flip(1,1,k) >= 273.15 ) then
+          sat = qv3_flip(1,1,k)/qsatv3d_flip(1,1,k)-1.0
+        else
+          sat = qv3_flip(1,1,k)/qsati3d_flip(1,1,k)-1.0
+        endif
+      endif
+
+        if (sat > 0.0 .or.
      .      qc3_flip(1,1,k) .ge. pcut .or.
      .      qr3_flip(1,1,k) .ge. pcut .or.
      .      qs3_flip(1,1,k) .ge. pcut .or.
@@ -603,13 +639,13 @@
 ! eMFc
 
       ! Call the actual COAMPS microphysics scheme
-      call adjtq
+      if ( len > 0 ) call adjtq
      1       (cond_flip(1,1,1:kk),p3_flip(1,1,1:kk),qc3_flip(1,1,1:kk)
      1       ,qi3_flip(1,1,1:kk),qr3_flip(1,1,1:kk),qg3_flip(1,1,1:kk)
      1       ,qs3_flip(1,1,1:kk),qv3_flip(1,1,1:kk),th3_flip(1,1,1:kk)
-     1       ,w3_flip(1,1,2:kk+1),pr3d_flip(1,1,2:kk+1)
-     1       ,qsatv3d_flip(1,1,2:kk+1),temp3d_flip(1,1,2:kk+1)
-     1       ,qsati3d_flip(1,1,2:kk+1),th2t3d_flip(1,1,2:kk+1),wtm
+     1       ,w3_flip(1,1,1:kk+1),pr3d_flip(1,1,1:kk+1)
+     1       ,qsatv3d_flip(1,1,1:kk+1),temp3d_flip(1,1,1:kk+1)
+     1       ,qsati3d_flip(1,1,1:kk+1),th2t3d_flip(1,1,1:kk+1),wtm
      2       ,exbm_flip(1,1,1:kk),rbm_flip(1,1,1:kk)
 !     3       ,nc3,nr3,ncn3,ni3,cp,deltf,Lf,Ls,Lv 
      3       ,nc3(1,1,kk:1:-1),nr3(1,1,kk:1:-1),ncn3(1,1,kk:1:-1)
@@ -660,12 +696,14 @@
       qg3(1,1,1:kk) = qg3_flip(1,1,kk:1:-1)
       qs3(1,1,1:kk) = qs3_flip(1,1,kk:1:-1)
 
-      w3(1,1,1:kk+1) = w3_flip(1,1,kk+1:1:-1)
-      pr3d(1,1,1:kk+1) = pr3d_flip(1,1,kk+1:1:-1)
-      qsatv3d(1,1,1:kk+1) = qsatv3d_flip(1,1,kk+1:1:-1)
-      temp3d(1,1,1:kk+1) = temp3d_flip(1,1,kk+1:1:-1)
-      qsati3d(1,1,1:kk+1) = qsati3d_flip(1,1,kk+1:1:-1)
-      th2t3d(1,1,1:kk+1) = th2t3d_flip(1,1,kk+1:1:-1)
+      ! This is unneeded, since these quantities do not change -dschanen
+      ! 2 April 2008
+!     w3(1,1,1:kk+1) = w3_flip(1,1,kk+1:1:-1)
+!     pr3d(1,1,1:kk+1) = pr3d_flip(1,1,kk+1:1:-1)
+!     qsatv3d(1,1,1:kk+1) = qsatv3d_flip(1,1,kk+1:1:-1)
+!     temp3d(1,1,1:kk+1) = temp3d_flip(1,1,kk+1:1:-1)
+!     qsati3d(1,1,1:kk+1) = qsati3d_flip(1,1,kk+1:1:-1)
+!     th2t3d(1,1,1:kk+1) = th2t3d_flip(1,1,kk+1:1:-1)
 
       ! assigning in-cloud fall speeds to _flip arrays, which are zero outside of cloud
       do k=1,nkpts(1)
@@ -684,6 +722,8 @@
       snowv(:,:,kk:1:-1) = falls_flip(:,:,1:kk)
 
       ! Assure positive definiteness in nc3/nr3/ncn3 fields
+
+      ! Should there be a clipping stat for these?
       do k=1, kk, 1
         if (nr3(1,1,k) < 0.) then
           ncn3(1,1,k) = ncn3(1,1,k) + nr3(1,1,k)

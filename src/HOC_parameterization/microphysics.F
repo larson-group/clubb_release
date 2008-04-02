@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.35 2008-04-02 14:27:19 faschinj Exp $
+! $Id: microphysics.F,v 1.36 2008-04-02 21:01:55 dschanen Exp $
         module microphysics
 
 !       Description:
@@ -57,24 +57,6 @@
 
         ! Constant Parameters
 
-        ! COAMPS parameters
-        integer, parameter :: 
-     .  nrdamp = 0, ! Number of points in the damping layer (COAMPS)
-! Michael Falk started adding code here, 9 August 2007, to remove magic numbers
-     .  nne = 1,  ! Horizontal domain parameter (always 1 for HOC)
-     .  j   = 1,  ! Horizontal grid box (always 1 for HOC)
-     .  icon = 5, ! Ice nucleation scheme; 1 = Fletcher, 2 = Meyers, 3 = Hobbs & Rangno, 4 = Cooper, 5 = Cooper/Fletcher (warm/cold)
-! eMFc
-     .  icond  = 3  ! Autoconversion; 1=Kessler, 2=Manton/Cotton, 3=K&K, 4=none
-      
-
-        logical, parameter ::
-     .  lice = .true.  ! Whether to produce ice in COAMPS.
-                       ! According to Jerry Schmidt of NRL,
-                       !   if lice = .true., then we should
-                       !   set ldrizzle = .false.
-                       !   because collection of drizzle by ice
-                       !   is not implemented yet.
 
         character(len=*), intent(in) ::
      .  runtype ! Name of the run, for case specific effects.
@@ -209,8 +191,6 @@
      .          ( runtype, gr%nnzp-1, gr%nnzp, time_current, dt,
      .            rtm, wmm, p, exner, rhot,
      .            thlm, ricem, rrm, rgraupelm, rsnowm,
-     .            nne, nrdamp, j, icon, icond, 
-     .            lice,
      .            rcm, Ncm, Nrm, Ncnm, Nim,
      .            cond, Vsnow, Vice, Vrr, VNr, Vgraupel,
      .            ricem_tndcy, rrm_tndcy, rgraupelm_tndcy, 
