@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.165 2008-03-31 18:03:37 faschinj Exp $
+! $Id: hoc.F,v 1.166 2008-04-02 14:27:19 faschinj Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -85,7 +85,7 @@
 !-----------------------------------------------------------------------
 
         subroutine hoc_model_field_input
-     .             ( params, runfile, code, stdout,
+     .             ( params, runfile, err_code, stdout,
      .               set_fields, sample_ratio )
 !       Description:
 !       Subprogram to integrate the pde equations for pdf closure
@@ -205,7 +205,7 @@
         real, intent(in) :: sample_ratio 
 
         ! Output Variables
-        integer, intent(inout) :: code    ! valid run? 
+        integer, intent(inout) :: err_code    ! valid run? 
 
         ! Local Variables
         ! Internal Timing Variables
@@ -303,11 +303,11 @@
      .        cloud_sed,
      .        luv_nudge, lKhm_aniso, .false., 
      .        dummy_array_m, dummy_array_t, 
-     .        0.0, 0.0, code )
+     .        0.0, 0.0, err_code )
        
-       ! Changed isValid to code for better tracking of errors caused by
+       ! Changed isValid to err_code for better tracking of errors caused by
        ! procedures
-       if ( code == CLUBB_var_out_of_bounds ) return
+       if ( err_code == CLUBB_var_out_of_bounds ) return
        ! Joshua Fasching March 2008
 
        ! Dummy grid height arrays
@@ -370,18 +370,18 @@
      .                    rtp2, thlp2, rtpthlp,  !  "   "
      .                    upwp, vpwp )           !  "   "
 
-         ! Changed isValid to code for better tracking of errors caused by
+         ! Changed isValid to err_code for better tracking of errors caused by
          ! procedures
          if( invalid_model_arrays( ) ) then 
-            code = CLUBB_var_equals_NaN         ! Check for bad values 
+            err_code = CLUBB_var_equals_NaN         ! Check for bad values 
                                                  ! in the model arrays
          endif
 
-         if ( code == CLUBB_var_equals_NaN ) exit
+         if ( err_code == CLUBB_var_equals_NaN ) exit
 
-         call hoc_forcings_timestep( dtmain, i, stdout, code )
+         call hoc_forcings_timestep( dtmain, i, stdout, err_code )
 
-         if ( code == CLUBB_rtm_level_not_found ) exit
+         if ( err_code == CLUBB_rtm_level_not_found ) exit
          ! Joshua Fasching March 2008
 
 !      Compute number of iterations for closure loop
@@ -404,7 +404,7 @@
      .            thlm, rtm, wprtp, wpthlp, wp2, wp3,
      .            rtp2, thlp2, rtpthlp,
      .            Scm, taum, rcm, cf,
-     .            code, .false.
+     .            err_code, .false.
 #ifdef SCALARS
      .            ,wpsclrp_sfc, wpedsclrp_sfc,
      .            sclrm, sclrm_forcing, edsclrm
@@ -426,23 +426,23 @@
              time = time_initial + i * dtmain
            end if
            
-           ! Changed isValid to code for better tracking of errors caused by
+           ! Changed isValid to err_code for better tracking of errors caused by
            ! procedures
 
-           if ( code == CLUBB_singular_matrix .or.
-     .          code == CLUBB_var_equals_NaN .or.
-     .          code == CLUBB_var_out_of_bounds .or.
-     .          code == CLUBB_bad_lapack_arg .or.
-     .          code == CLUBB_rtm_level_not_found ) exit
+           if ( err_code == CLUBB_singular_matrix .or.
+     .          err_code == CLUBB_var_equals_NaN .or.
+     .          err_code == CLUBB_var_out_of_bounds .or.
+     .          err_code == CLUBB_bad_lapack_arg .or.
+     .          err_code == CLUBB_rtm_level_not_found ) exit
            
          end do ! i1=1..niterlong
 
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-         if ( code == CLUBB_singular_matrix .or.
-     .          code == CLUBB_var_equals_NaN .or.
-     .          code == CLUBB_var_out_of_bounds .or.
-     .          code == CLUBB_bad_lapack_arg .or.
-     .          code == CLUBB_rtm_level_not_found ) exit
+         if ( err_code == CLUBB_singular_matrix .or.
+     .          err_code == CLUBB_var_equals_NaN .or.
+     .          err_code == CLUBB_var_out_of_bounds .or.
+     .          err_code == CLUBB_bad_lapack_arg .or.
+     .          err_code == CLUBB_rtm_level_not_found ) exit
           
        end do ! i=1, ifinal
 
@@ -461,7 +461,7 @@
 
 !-----------------------------------------------------------------------
         subroutine hoc_model_standard
-     .            ( params, runfile, code, stdout )
+     .            ( params, runfile, err_code, stdout )
 !       Description:
 !       Subprogram to integrate the pde equations for pdf closure.
 !       This is the standard call.
@@ -474,7 +474,7 @@
 !          subroutine set_fields (passed as a parameter) 
 
 !       Output: 
-!         code:  An error code is returned indicating the status of the
+!         err_code:  An error code is returned indicating the status of the
 !         model. See error_code.F.
 
 !-----------------------------------------------------------------------
@@ -515,7 +515,7 @@
      .  stdout  ! Whether to print output per timestep
 
         ! Output Variables
-        integer, intent(inout) :: code    ! valid run?
+        integer, intent(inout) :: err_code    ! valid run?
 
         ! Local Variables
         ! Internal Timing Variables
@@ -633,10 +633,10 @@
      .        cloud_sed,
      .        luv_nudge, lKhm_aniso, .false.,
      .        dummy_array_m, dummy_array_t, 
-     .        0.0, 0.0, code )
+     .        0.0, 0.0, err_code )
 
       
-       if ( code == CLUBB_var_out_of_bounds ) return
+       if ( err_code == CLUBB_var_out_of_bounds ) return
 
 
        ! Dummy grid height arrays
@@ -737,15 +737,15 @@
 #endif /*STATS*/
 
          if ( invalid_model_arrays( ) ) then
-             code = CLUBB_var_equals_NaN         ! Check for bad values 
+             err_code = CLUBB_var_equals_NaN         ! Check for bad values 
                                                  ! in the model arrays
          endif
 
-         if ( code == CLUBB_var_equals_NaN ) exit
+         if ( err_code == CLUBB_var_equals_NaN ) exit
 
-         call hoc_forcings_timestep( dtmain, i, stdout, code )
+         call hoc_forcings_timestep( dtmain, i, stdout, err_code )
 
-         if ( code == CLUBB_rtm_level_not_found ) exit
+         if ( err_code == CLUBB_rtm_level_not_found ) exit
          
          ! Compute number of iterations for closure loop
          if ( time > time_spinup ) then
@@ -767,7 +767,7 @@
      .            thlm, rtm, wprtp, wpthlp, wp2, wp3,
      .            rtp2, thlp2, rtpthlp,
      .            Scm, taum, rcm, cf,
-     .            code, .false.
+     .            err_code, .false.
 #ifdef SCALARS
      .            ,wpsclrp_sfc, wpedsclrp_sfc, 
      .            sclrm, sclrm_forcing, edsclrm
@@ -789,20 +789,20 @@
              time = time_initial + i * dtmain
            end if
 
-           if ( code == CLUBB_singular_matrix .or.
-     .          code == CLUBB_var_equals_NaN .or.
-     .          code == CLUBB_var_out_of_bounds .or.
-     .          code == CLUBB_bad_lapack_arg .or.
-     .          code == CLUBB_rtm_level_not_found ) exit
+           if ( err_code == CLUBB_singular_matrix .or.
+     .          err_code == CLUBB_var_equals_NaN .or.
+     .          err_code == CLUBB_var_out_of_bounds .or.
+     .          err_code == CLUBB_bad_lapack_arg .or.
+     .          err_code == CLUBB_rtm_level_not_found ) exit
            
          end do ! i1=1..niterlong
 
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-         if ( code == CLUBB_singular_matrix .or.
-     .          code == CLUBB_var_equals_NaN .or.
-     .          code == CLUBB_var_out_of_bounds .or.
-     .          code == CLUBB_bad_lapack_arg .or.
-     .          code == CLUBB_rtm_level_not_found ) exit
+         if ( err_code == CLUBB_singular_matrix .or.
+     .          err_code == CLUBB_var_equals_NaN .or.
+     .          err_code == CLUBB_var_out_of_bounds .or.
+     .          err_code == CLUBB_bad_lapack_arg .or.
+     .          err_code == CLUBB_rtm_level_not_found ) exit
           
        end do ! i=1, ifinal
 
@@ -919,7 +919,7 @@
 
         real :: cloud_top_height ! [m]
         real :: emax
-        integer :: k, code
+        integer :: k, err_code
 
 !-----------------------------------------------------------------------
 
@@ -929,7 +929,7 @@
         ricem     => hydromet(1:gr%nnzp,4)
         rgraupelm => hydromet(1:gr%nnzp,5)
 
-        code = 0
+        err_code = 0
         
         ! Read sounding information
 
@@ -1307,7 +1307,7 @@
         ! Compute mixing length
 
         call compute_length( thvm, thlm, rtm, rcm, 
-     .               em, p, exner, Lscale, code )
+     .               em, p, exner, Lscale, err_code )
 
         ! Dissipation time
         tmp1 = sqrt( max( emin, zm2zt( em ) ) )
@@ -1563,7 +1563,8 @@
         end subroutine hoc_restart
 
 !----------------------------------------------------------------------
-        subroutine hoc_forcings_timestep( dt, iteration, stdout, code )
+        subroutine hoc_forcings_timestep
+     .               ( dt, iteration, stdout, err_code )
 
 !       Description:
 !       Calculate tendency and surface variables
@@ -1629,7 +1630,7 @@
 
         ! Input/Output Variables
         integer, intent(inout) ::
-     .    code
+     .    err_code
 
         ! Local Variables
 
@@ -1724,7 +1725,7 @@
          case( "atex" ) ! ATEX case
            call atex_tndcy( time, time_initial, rtm, 
      .                      rhot, rcm, exner, wmt, wmm, Frad, radht,
-     .                      thlm_forcing, rtm_forcing, code
+     .                      thlm_forcing, rtm_forcing, err_code
 #ifdef SCALARS
      .                     ,sclrm_forcing   ! optional variable
 #endif /* SCALARS */
@@ -1733,7 +1734,7 @@
          case( "dycoms2_rf01" ) ! DYCOMS2 RF01 case
            call dycoms2_rf01_tndcy( time, rhot, rhom, rtm, rcm, exner,
      .                              wmt, wmm, Frad, radht, thlm_forcing,
-     .                              rtm_forcing, code  
+     .                              rtm_forcing, err_code  
 #ifdef SCALARS
      .                             ,sclrm, sclrm_forcing  ! optional variables
 #endif /* SCALARS */
@@ -1756,7 +1757,7 @@
            call dycoms2_rf02_tndcy
      .          ( time, time_initial, rhot, rhom, rtm, rcm, exner,
      .            wmt, wmm, thlm_forcing, rtm_forcing,
-     .            Frad, radht, Ncm, Ncnm, code
+     .            Frad, radht, Ncm, Ncnm, err_code
 #ifdef SCALARS
      .           ,sclrm_forcing  ! Optional variable
 #endif /* SCALARS */
@@ -2093,10 +2094,10 @@
      .           pdf_parms, wmt, wmm, Khm, AKm_est, Akm, 
      .           Ncnm, Nim,
      .           hydromet,
-     .           rtm_forcing, thlm_forcing, code )
+     .           rtm_forcing, thlm_forcing, err_code )
 
-          if ( code == CLUBB_singular_matrix .or.
-     .         code == CLUBB_bad_lapack_arg ) return
+          if ( err_code == CLUBB_singular_matrix .or.
+     .         err_code == CLUBB_bad_lapack_arg ) return
 
         end if
 

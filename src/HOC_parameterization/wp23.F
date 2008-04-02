@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.44 2008-04-01 19:31:47 griffinb Exp $
+! $Id: wp23.F,v 1.45 2008-04-02 14:27:19 faschinj Exp $
 !========================================================================
         module wp23
 
@@ -25,7 +25,7 @@
      .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
      .               a, Kht, Khm, wmt, wmm, up2, vp2,
      .               um, upwp, vm, vpwp, wpthvp, wp2thvp,
-     .               wp2, wp3, code )
+     .               wp2, wp3, err_code )
 !       Description:
 !       Advance wp2 and wp3 one timestep
 
@@ -82,7 +82,7 @@
      .  wp2, ! w'^2 (moment. grid)                      [m^2/s^2]
      .  wp3  ! w'^3 (thermo. grid)                      [m^3/s^3]
 
-        integer, intent(inout) :: code ! Diagnostic
+        integer, intent(inout) :: err_code ! Diagnostic
 
         ! Local Variables
         real, dimension(gr%nnzp) :: 
@@ -221,7 +221,7 @@
      .                   Kw8, wmt, wmm, wpthvp, wp2thvp,
      .                   um, upwp, vm, vpwp, up2, vp2,
      .                   Skwt, C1_Skw_fnc, C11_Skw_fnc, 
-     .                   wp2, wp3, code )
+     .                   wp2, wp3, err_code )
 !        call wp23_solve( dt, Scm, Lscale, Lm, taum, tauw3t, 10*0.5*Kht,
 !     .                   wmt, wmm, wpthvp, wp2thvp,
 !     .                   um, upwp, vm, vpwp, up2, vp2,
@@ -231,8 +231,8 @@
 
 !       Error output
 !       Joshua Fasching Feb 2008
-        if ( code == CLUBB_singular_matrix .or.
-     .       code == CLUBB_bad_lapack_arg ) then
+        if ( err_code == CLUBB_singular_matrix .or.
+     .       err_code == CLUBB_bad_lapack_arg ) then
                 
            write(fstderr,*) "Errors in timestep_wp32"
 
@@ -274,7 +274,7 @@
      .                         Kw8, wmt, wmm, wpthvp, wp2thvp,
      .                         um, upwp, vm, vpwp, up2, vp2,
      .                         Skwt, C1_Skw_fnc, C11_Skw_fnc,
-     .                         wp2, wp3, code)
+     .                         wp2, wp3, err_code)
 !       Description:
 !       Decompose, and back substitute the matrix for wp2/wp3
 
@@ -335,7 +335,7 @@
      .  wp2, ! w'^2                                          [m^2/s^2]
      .  wp3  ! w'^3                                          [m^3/s^3]
 
-        integer, intent(inout) :: code
+        integer, intent(inout) :: err_code
 
         ! Local Variables
         real, dimension(nsup+nsub+1,2*gr%nnzp) :: 
@@ -859,7 +859,7 @@
         if ( lstats_samp .and. iwp23_cn > 0 ) then
           ! Perform LU decomp and solve system (LAPACK with diagnostics)
           call band_solvex( "wp23", nsup, nsub, 2*gr%nnzp, nrhs,
-     .                      lhs, rhs, solut, rcond, code )
+     .                      lhs, rhs, solut, rcond, err_code )
 
           ! Est. of the condition number of the w'^2/w^3 LHS matrix 
           sfc%x(1,iwp23_cn) = sfc%x(1,iwp23_cn) + 1.0 / rcond
@@ -868,17 +868,17 @@
         else
           ! Perform LU decomp and solve system (LAPACK)
           call band_solve( "wp23", nsup, nsub, 2*gr%nnzp, nrhs,
-     .                     lhs, rhs, solut, code )
+     .                     lhs, rhs, solut, err_code )
         end if
 #else
         ! Perform LU decomp and solve system (LAPACK)
         call band_solve( "wp23", nsup, nsub, 2*gr%nnzp, nrhs,
-     .                   lhs, rhs, solut, code )
+     .                   lhs, rhs, solut, err_code )
 
 #endif /*STATS*/
 
-        if ( code == CLUBB_singular_matrix .or.
-     .        code == CLUBB_bad_lapack_arg ) return
+        if ( err_code == CLUBB_singular_matrix .or.
+     .        err_code == CLUBB_bad_lapack_arg ) return
 
 
 !       Copy result into output arrays and clip

@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.36 2008-03-31 18:03:37 faschinj Exp $
+! $Id: diag_var.F,v 1.37 2008-04-02 14:27:19 faschinj Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -22,7 +22,7 @@
      .                       wp2, wp3, upwp, vpwp, Scm, Skwm, Kht,
      .                       rtp2, thlp2, rtpthlp,
      .                       up2, vp2,
-     .                       liter, dt, code,
+     .                       liter, dt, err_code,
      .                       sclrm, wpsclrp, sclrp2,        ! optional
      .                       sclrprtp, sclrpthlp )          ! optional
 !       Description:
@@ -87,7 +87,7 @@
 
         ! Output variable for singular matrices
 
-        integer, intent(out) :: code
+        integer, intent(out) :: err_code
 
         ! Passive scalar input (optional)
         real, optional, intent(in), dimension(gr%nnzp, sclr_dim) :: 
@@ -530,11 +530,11 @@
 
         ! Check for singular matrices
         do i = 1, 5+1
-                if(Valid_arr(i) > code ) code = Valid_arr(i)
+                if(Valid_arr(i) > err_code ) err_code = Valid_arr(i)
         enddo        
         
-        if ( code == CLUBB_singular_matrix .or.
-     .       code == CLUBB_bad_lapack_arg ) then
+        if ( err_code == CLUBB_singular_matrix .or.
+     .       err_code == CLUBB_bad_lapack_arg ) then
                 
            write(fstderr,*) "Error in diag_var"
            
@@ -742,7 +742,7 @@
 
 !-----------------------------------------------------------------------
         subroutine diag_var_solve( solve_type, nrhs, rhs, 
-     .                             lhs, xapxbp, code )
+     .                             lhs, xapxbp, err_code )
 
 !-----------------------------------------------------------------------
         use lapack_wrap, only: tridag_solve, tridag_solvex!, band_solve
@@ -776,7 +776,7 @@
      .  xapxbp ! Computed value of the variable at <t+1> [units vary]
 
         integer, intent(out) ::
-     .  code ! Returns an error code in the event of a singular matrix
+     .  err_code ! Returns an error code in the event of a singular matrix
 
         ! Local variables
         real :: rcond  ! Est. of the reciprocal of the condition #
@@ -844,7 +844,7 @@
           call tridag_solvex
      .         ( solve_type, gr%nnzp, nrhs, lhs(kp1diag,:), 
      .           lhs(kdiag,:), lhs(km1diag,:), rhs(:,1:nrhs), 
-     .           xapxbp(:,1:nrhs), rcond, code )
+     .           xapxbp(:,1:nrhs), rcond, err_code )
 
           ! Est. of the condition number of the variance LHS matrix 
           sfc%x(1,ixapxbp_cn) = sfc%x(1,ixapxbp_cn) + 1.0 / rcond
@@ -854,7 +854,7 @@
           call tridag_solve
      .         ( solve_type, gr%nnzp, nrhs, lhs(kp1diag,:), 
      .           lhs(kdiag,:), lhs(km1diag,:), rhs(:,1:nrhs), 
-     .           xapxbp(:,1:nrhs), code )
+     .           xapxbp(:,1:nrhs), err_code )
         end if
 #else
         ! Solve system using tridag_solve. This uses LAPACK sgtsv,
@@ -862,7 +862,7 @@
         call tridag_solve
      .       ( solve_type, gr%nnzp, nrhs, lhs(kp1diag,:), lhs(kdiag,:), 
      .         lhs(km1diag,:), rhs(:,1:nrhs), xapxbp(:,1:nrhs), 
-     .         code )
+     .         err_code )
 
         ! Alternative: Use LU decomposition instead.
 !       call band_solve

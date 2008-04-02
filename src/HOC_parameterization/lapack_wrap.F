@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: lapack_wrap.F,v 1.4 2008-03-31 18:12:30 faschinj Exp $
+! $Id: lapack_wrap.F,v 1.5 2008-04-02 14:27:19 faschinj Exp $
         module lapack_wrap
 
 !       Description:
@@ -28,7 +28,7 @@
 !-----------------------------------------------------------------------
         subroutine tridag_solvex
      .             ( solve_type, ndim, nrhs, supd, diag, subd, 
-     .               rhs, solution, rcond, code )
+     .               rhs, solution, rcond, err_code )
 
 !       Description:
 !       Solves a tridiagonal system of equations (expert routine).
@@ -75,7 +75,7 @@
         real, intent(out) :: rcond 
 
         integer, intent(out) :: 
-     .  code ! Used to determine when a decomp. failed
+     .  err_code ! Used to determine when a decomp. failed
 
         ! Output variables
         real, intent(out), dimension(ndim,nrhs) :: 
@@ -136,11 +136,11 @@
         case( :-1 )
           write(fstderr,*) trim( solve_type )//
      .      "illegal value in argument", -info
-          code = CLUBB_bad_lapack_arg
+          err_code = CLUBB_bad_lapack_arg
 
         case( 0 )
         ! Success!
-        code = CLUBB_no_error
+        err_code = CLUBB_no_error
 
         case( 1: )
           if ( info == ndim+1 ) then
@@ -149,11 +149,11 @@
             write(fstderr,'(a,e12.5)') 
      .        "Estimate of the reciprocal of the"//
      .        " condition number: ", rcond
-            code = CLUBB_no_error
+            err_code = CLUBB_no_error
           else
             write(fstderr,*) solve_type//
      .        " singular matrix."
-            code = CLUBB_singular_matrix
+            err_code = CLUBB_singular_matrix
           end if
 
         end select
@@ -164,7 +164,7 @@
 !-----------------------------------------------------------------------
         subroutine tridag_solve
      .             ( solve_type, ndim, nrhs, supd, diag, subd, 
-     .               rhs, solution, code )
+     .               rhs, solution, err_code )
 
 !       Description:
 !       Solves a tridiagonal system of equations (simple routine)
@@ -199,7 +199,7 @@
      .  rhs ! RHS input
 
         integer, intent(out) :: 
-     .  code ! Used to determine when a decomp. failed
+     .  err_code ! Used to determine when a decomp. failed
 
         ! Output variables
         real, intent(out), dimension(ndim,nrhs) :: 
@@ -228,22 +228,22 @@
         case( :-1 )
           write(fstderr,*) trim( solve_type )//
      .      " illegal value in argument", -info
-          code = CLUBB_bad_lapack_arg
+          err_code = CLUBB_bad_lapack_arg
 
         case( 0 )
           ! Success!
           solution = rhs
-          code = CLUBB_no_error
+          err_code = CLUBB_no_error
 
         case( 1: )
           if ( info == ndim+1 ) then
             write(fstderr,*) trim( solve_type )//
      .        " matrix is singular to working precision."
-            code = CLUBB_no_error
+            err_code = CLUBB_no_error
           else
             write(fstderr,*) trim( solve_type )//
      .        " singular matrix."
-            code = CLUBB_singular_matrix
+            err_code = CLUBB_singular_matrix
           end if
 
         end select
@@ -253,7 +253,7 @@
 
 !-----------------------------------------------------------------------
         subroutine band_solvex( solve_type, nsup, nsub, ndim, nrhs, 
-     .                          lhs, rhs, solution, rcond, code )
+     .                          lhs, rhs, solution, rcond, err_code )
 !       Description:
 !       Restructure and then solve a band diagonal system, with
 !       diagnostic output
@@ -299,7 +299,7 @@
         real, intent(out) :: 
      .  rcond
 
-        integer, intent(out) :: code ! Valid calculation?
+        integer, intent(out) :: err_code ! Valid calculation?
 
         ! Local Variables
 
@@ -413,11 +413,11 @@
         case( :-1 )
           write(fstderr,*) trim( solve_type )//
      .      " illegal value for argument", -info
-          code = CLUBB_bad_lapack_arg
+          err_code = CLUBB_bad_lapack_arg
 
         case( 0 )
         ! Success!
-        code = CLUBB_no_error
+        err_code = CLUBB_no_error
 
         case( 1: )
           if ( info == ndim+1 ) then
@@ -426,11 +426,11 @@
             write(fstderr,'(a,e12.5)') 
      .        "Estimate of the reciprocal of the"//
      .        " condition number: ", rcond
-            code = CLUBB_no_error
+            err_code = CLUBB_no_error
           else
             write(fstderr,*) trim( solve_type )//
      .        " band solver: singular matrix"
-            code = CLUBB_singular_matrix
+            err_code = CLUBB_singular_matrix
           end if
 
         end select
@@ -440,7 +440,7 @@
 
 !-----------------------------------------------------------------------
         subroutine band_solve( solve_type, nsup, nsub, ndim, nrhs, 
-     .                          lhs, rhs, solution, code )
+     .                          lhs, rhs, solution, err_code )
 !       Description:
 !       Restructure and then solve a band diagonal system
 
@@ -477,7 +477,7 @@
         ! Output Variables
         real, dimension(ndim,nrhs), intent(out) :: solution
 
-        integer, intent(out) :: code ! Valid calculation?
+        integer, intent(out) :: err_code ! Valid calculation?
 
         ! Local Variables
 
@@ -560,22 +560,22 @@
         case( :-1 )
           write(fstderr,*) trim( solve_type )//
      .      " illegal value for argument ", -info
-          code = CLUBB_bad_lapack_arg
+          err_code = CLUBB_bad_lapack_arg
 
         case( 0 )
         ! Success!
         solution = rhs
-        code = CLUBB_no_error
+        err_code = CLUBB_no_error
 
         case( 1: )
           if ( info == ndim+1 ) then
             write(fstderr,*) trim( solve_type )//
      .        " Warning: matrix singular to working precision"
-            code = CLUBB_no_error
+            err_code = CLUBB_no_error
           else
             write(fstderr,*) trim( solve_type )//
      .        " band solver: singular matrix"
-            code = CLUBB_singular_matrix
+            err_code = CLUBB_singular_matrix
           end if
 
         end select

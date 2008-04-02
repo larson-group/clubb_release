@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.76 2008-03-31 18:03:37 faschinj Exp $
+! $Id: parameterization_interface.F,v 1.77 2008-04-02 14:27:19 faschinj Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -40,7 +40,7 @@
      .              thlm, rtm, wprtp, wpthlp, wp2, wp3,
      .              rtp2, thlp2, rtpthlp,
      .              Scm, taum, rcm, cf,
-     .              code, implemented
+     .              err_code, implemented
 #ifdef SCALARS
      .              ,wpsclrp_sfc, wpedsclrp_sfc,   ! Optional
      .              sclrm, sclrm_forcing, edsclrm  ! Optional
@@ -143,7 +143,7 @@
      . cf ! Cloud fraction.     [%]
 
        ! Diagnostic, for if some calculation goes amiss.
-       integer, intent(inout) :: code
+       integer, intent(inout) :: err_code
      
 #ifdef SCALARS
 
@@ -267,7 +267,7 @@
        IF ( gr%zm(1) == 0.0 ) THEN
           call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1), 
      .                  ustar, wp2(1), up2(1), vp2(1), 
-     .                  thlp2(1), rtp2(1), rtpthlp(1), code
+     .                  thlp2(1), rtp2(1), rtpthlp(1), err_code
 #ifdef SCALARS
      .                 ,wpsclrp(1,1:sclr_dim), sclrp2(1,1:sclr_dim),
      .                  sclrprtp(1,1:sclr_dim), sclrpthlp(1,1:sclr_dim)
@@ -276,7 +276,7 @@
           ! Subroutine may produce NaN values, and if so, exit
           ! gracefully.
           ! Joshua Fasching March 2008
-          if( code == CLUBB_var_equals_NaN ) return
+          if( err_code == CLUBB_var_equals_NaN ) return
     
        ELSE
           ! Variances for cases where the lowest level is not at the surface.
@@ -313,7 +313,7 @@
 ! Vince Larson used prognostic timestepping of variances 
 !    in order to increase numerical stability.  17 Jul 2007
 !     .                .false., dt, isValid
-     .                .true., dt, code
+     .                .true., dt, err_code
 ! End Vince Larson's change
 #ifdef SCALARS
      .                ,sclrm, wpsclrp, sclrp2,    ! optional vars
@@ -325,8 +325,8 @@
        ! Changed from a logical flag to an integer indicating nature of
        ! error.
        ! Joshua Fasching March 2008
-       if ( code == CLUBB_singular_matrix .or.
-     .      code == CLUBB_bad_lapack_arg ) return
+       if ( err_code == CLUBB_singular_matrix .or.
+     .      err_code == CLUBB_bad_lapack_arg ) return
 
 #ifndef DISABLE_GAMMA_SKW
        !----------------------------------------------------------------
@@ -395,7 +395,7 @@
      .     wpthlp2(k), wp2thlp(k), wprtpthlp(k),
      .     cf(k), rcm(k), wpthvp(k), wp2thvp(k), rtpthvp(k), 
      .     thlpthvp(k), wprcp(k), wp2rcp(k), rtprcp(k), thlprcp(k),
-     .     rcp2(k), pdf_parms(k, :), crt1, crt2, cthl1, cthl2, code
+     .     rcp2(k), pdf_parms(k, :), crt1, crt2, cthl1, cthl2, err_code
 #ifdef SCALARS
      .     ,sclrm(k,:), sclr_tmp1(k,:),
      .     wpsclrprtp(k,:), wpsclrp2(k,:), sclr_tmp2(k,:), 
@@ -408,7 +408,7 @@
         ! gracefully.
         ! Joshua Fasching March 2008
          
-        if( code == CLUBB_var_equals_NaN ) then
+        if( err_code == CLUBB_var_equals_NaN ) then
             print *, "At grid level = ",k
             return
          endif
@@ -481,12 +481,12 @@
 
        call compute_length
      .      ( thvm, thlm, rtm, rcm, em, p, exner, ! Input
-     .        Lscale, code )  ! Output
+     .        Lscale, err_code )  ! Output
        
        ! Subroutine may produce NaN values, and if so, exit
        ! gracefully.
        ! Joshua Fasching March 2008       
-       if( code == CLUBB_var_equals_NaN ) return
+       if( err_code == CLUBB_var_equals_NaN ) return
 
 
        !----------------------------------------------------------------
@@ -545,7 +545,7 @@
      .        thlm, wpthlp, thlpthvp, thlm_forcing, 
      .        rtp2, thlp2, ! Added for clipping Vince Larson 29 Sep 2007
      .        rhot, rhom, exner, 
-     .        code, implemented  
+     .        err_code, implemented  
 
 #ifdef SCALARS
      .       ,sclrm, wpsclrp, sclrpthvp, sclrm_forcing   ! optional
@@ -558,8 +558,8 @@
        ! gracefully.
        ! Joshua Fasching March 2008
 
-       if ( code == CLUBB_singular_matrix .or.
-     .      code == CLUBB_bad_lapack_arg ) return
+       if ( err_code == CLUBB_singular_matrix .or.
+     .      err_code == CLUBB_bad_lapack_arg ) return
 
        !----------------------------------------------------------------
        ! Advance wp2/wp3 one timestep
@@ -569,13 +569,13 @@
      .      ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
      .        pdf_parms(:, 13), Kht, Khm, wmt, wmm, up2, vp2,
      .        um, upwp, vm, vpwp, wpthvp, wp2thvp,
-     .        wp2, wp3, code )
+     .        wp2, wp3, err_code )
        
        ! Wrapped LAPACK procedures may report errors, and if so, exit
        ! gracefully.
        ! Joshua Fasching March 2008
-       if ( code == CLUBB_singular_matrix .or.
-     .       code == CLUBB_bad_lapack_arg ) return
+       if ( err_code == CLUBB_singular_matrix .or.
+     .       err_code == CLUBB_bad_lapack_arg ) return
 
 #ifdef SCALARS
        !----------------------------------------------------------------
@@ -588,15 +588,15 @@
 
          call compute_um_edsclrm( "edsclr", wpedsclrp(1,i), 
      .                            edsclrmt(:,i), Khm, dt, edsclrm(:,i), 
-     .                            wpedsclrp(:,i), code )
+     .                            wpedsclrp(:,i), err_code )
 
 
        end do
 
        ! Set boundary condition as in rt
        edsclrm(1,1:sclr_dim) = edsclrm(2,1:sclr_dim)
-       if ( code == CLUBB_singular_matrix .or.
-     .      code == CLUBB_bad_lapack_arg ) return
+       if ( err_code == CLUBB_singular_matrix .or.
+     .      err_code == CLUBB_bad_lapack_arg ) return
 #endif /*SCALARS*/
 
 
@@ -631,7 +631,7 @@
 
        ! dtmain to dt -dschanen
        call compute_um_edsclrm( "um", upwp(1), umt,
-     .                          Khm, dt, um, upwp, code )
+     .                          Khm, dt, um, upwp, err_code )
 
        um(1)       = ( ( um(3)-um(2) )/( gr%zt(3)-gr%zt(2) ) )
      .              * ( gr%zt(1)-gr%zt(2) ) + um(2)
@@ -643,8 +643,8 @@
        ! Wrapped LAPACK procedures may report errors, and if so, exit
        ! gracefully.
        ! Joshua Fasching March 2008
-       if ( code == CLUBB_singular_matrix .or.
-     .      code == CLUBB_bad_lapack_arg ) return
+       if ( err_code == CLUBB_singular_matrix .or.
+     .      err_code == CLUBB_bad_lapack_arg ) return
 
        IF ( .NOT. implemented ) THEN
           vmt = - wmt * ddzm( zt2zm( vm ) )
@@ -673,7 +673,7 @@
        END IF
 
        call compute_um_edsclrm( "vm", vpwp(1), vmt,
-     .                          Khm, dt, vm, vpwp, code )
+     .                          Khm, dt, vm, vpwp, err_code )
 
        vm(1)       = ( ( vm(3)-vm(2) )/( gr%zt(3)-gr%zt(2) ) )
      .              * ( gr%zt(1)-gr%zt(2) ) + vm(2)
@@ -685,8 +685,8 @@
        ! Wrapped LAPACK procedures may report errors, and if so, exit
        ! gracefully.
        ! Joshua Fasching March 2008    
-       if ( code == CLUBB_singular_matrix .or.
-     .      code == CLUBB_bad_lapack_arg ) return
+       if ( err_code == CLUBB_singular_matrix .or.
+     .      err_code == CLUBB_bad_lapack_arg ) return
 
        if ( luv_nudge ) then
          um(1:gr%nnzp) = um(1:gr%nnzp) 
@@ -843,7 +843,7 @@
      .               cloud_sed,
      .               luv_nudge, lKhm_aniso, implemented, 
      .               host_momentum, host_thermodynamic, 
-     .               host_dx, host_dy, code )
+     .               host_dx, host_dy, err_code )
 
         use grid_class
         use param_index, only: nparams
@@ -898,7 +898,7 @@
 
         ! Output variables
         integer, intent(out) ::
-     .  code   ! Diagnostic for a problem with the setup
+     .  err_code   ! Diagnostic for a problem with the setup
 
         ! Setup flags
 
@@ -910,11 +910,11 @@
         ! Define model constant parameters
 
         call setup_parameters
-     .       ( deltaz, T0_in, ts_nudge_in, params, code )
+     .       ( deltaz, T0_in, ts_nudge_in, params, err_code )
 
 !       Error Report
 !       Joshua Fasching February 2008
-        if ( code == CLUBB_var_out_of_bounds ) then
+        if ( err_code == CLUBB_var_out_of_bounds ) then
                 
            write(fstderr,*) "Error in parameterization_setup"
            

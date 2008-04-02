@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.34 2008-03-31 18:03:37 faschinj Exp $
+! $Id: microphysics.F,v 1.35 2008-04-02 14:27:19 faschinj Exp $
         module microphysics
 
 !       Description:
@@ -31,7 +31,7 @@
      .               pdf_parms, wmt, wmm, Khm, AKm_est, AKm, 
      .               Ncnm, Nim,
      .               hydromet,
-     .               rtm_forcing, thlm_forcing, code )
+     .               rtm_forcing, thlm_forcing, err_code )
 
 !       Description:
 !       Compute pristine ice, snow, graupel, & rain hydrometeor fields.
@@ -116,7 +116,7 @@
      .  rtm_forcing, ! Imposed contributions to total water        [kg/kg/s]
      .  thlm_forcing ! Imposed contributions to liquid potential temp. [K/s]
 
-        integer, intent(out) :: code
+        integer, intent(out) :: err_code
 
         ! Local Variables
         real, dimension(3,gr%nnzp) ::
@@ -337,7 +337,7 @@
 
        
           call microphys_solve
-     .         ( "rrm", dt, lhs, rrm_tndcy, rrm, code )
+     .         ( "rrm", dt, lhs, rrm_tndcy, rrm, err_code )
 
           ! Handle over-evaporation of rrm and adjust rt and theta-l hydrometeor
           ! tendency arrays accordingly.
@@ -409,7 +409,7 @@
      .         ( "Nrm", .true., dt, Kr, nu_r, wmt, VNr, Nrm, lhs )
 
           call microphys_solve
-     .         ( "Nrm", dt, lhs, Nrm_tndcy, Nrm, code )
+     .         ( "Nrm", dt, lhs, Nrm_tndcy, Nrm, err_code )
 
 
           ! Handle over-evaporation similar to rrm.  However, in the case of Nrm
@@ -479,7 +479,7 @@
      .           rsnowm, lhs )
 
           call microphys_solve
-     .         ( "rsnowm", dt, lhs, rsnowm_tndcy, rsnowm, code )
+     .         ( "rsnowm", dt, lhs, rsnowm_tndcy, rsnowm, err_code )
 
           ! Both sublimation and/or melting can contribute to the depletion of
           ! any frozen water particle.  In addition, any type of frozen water
@@ -530,7 +530,7 @@
 
           call microphys_solve
      .         ( "rgraupelm", dt, lhs, rgraupelm_tndcy,
-     .           rgraupelm, code )
+     .           rgraupelm, err_code )
 
           ! Handled the same as rsnowm, as listed above.
 
@@ -573,7 +573,7 @@
      .         ( "ricem", .true., dt, Kr, nu_r, wmt, Vice, ricem, lhs )
 
           call microphys_solve
-     .         ( "ricem", dt, lhs, ricem_tndcy, ricem, code )
+     .         ( "ricem", dt, lhs, ricem_tndcy, ricem, err_code )
 
           ! Handled the same as rsnowm and rgraupelm, as listed above.
 
@@ -725,8 +725,8 @@
 !       Error Report
 !       Joshua Fasching Feb 2008
         
-        if ( code == CLUBB_singular_matrix .or. 
-     .       code == CLUBB_bad_lapack_arg ) then
+        if ( err_code == CLUBB_singular_matrix .or. 
+     .       err_code == CLUBB_bad_lapack_arg ) then
                 
            write(fstderr,*) "Error in timestep_microphys"
            
@@ -763,7 +763,7 @@
         end subroutine timestep_microphys
 !-----------------------------------------------------------------------
         subroutine microphys_solve( solve_type, dt, lhs,
-     .                              xrm_tndcy, xrm, code )
+     .                              xrm_tndcy, xrm, err_code )
 
 !       Description:
 
@@ -795,7 +795,7 @@
      .  xrm ! Hydrometeor being solved for              [units vary]
 
         ! Output Variables
-        integer, intent(out) :: code
+        integer, intent(out) :: err_code
 
         ! Local Variables
         real, dimension(gr%nnzp) ::
@@ -853,7 +853,7 @@
         ! which relies on Gaussian elimination to decompose the matrix.
         call tridag_solve
      .       ( solve_type, gr%nnzp, 1, lhs(1,:), lhs(2,:), lhs(3,:),
-     .         rhs, xrm, code )
+     .         rhs, xrm, err_code )
 
         ! Alternative: Use LU decomposition instead.
         ! This doesn't seem to change the answer too much.

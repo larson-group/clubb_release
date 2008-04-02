@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error_code.F,v 1.1 2008-03-31 17:40:16 faschinj Exp $
+! $Id: error_code.F,v 1.2 2008-04-02 14:27:19 faschinj Exp $
 !-----------------------------------------------------------------------
         module error_code
 
@@ -40,7 +40,7 @@
         contains
 
 !-----------------------------------------------
-        subroutine reportError( code )
+        subroutine reportError( err_code )
 !
 !       Description: Reports meaning of error code to console.
 !
@@ -50,9 +50,9 @@
 
         implicit none
         
-        integer, intent(in) :: code
+        integer, intent(in) :: err_code
 
-        select case ( code )
+        select case ( err_code )
 
         case ( CLUBB_no_error )
                 write(fstderr,*) "No errors reported."
@@ -77,7 +77,7 @@
                 write(fstderr,*) "Input variable is out of bounds."
 
         case default
-                write(fstderr,*) "Unknown error: ", code
+                write(fstderr,*) "Unknown error: ", err_code
 
         end select
 

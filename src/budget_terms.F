@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: budget_terms.F,v 1.28 2008-03-31 18:03:37 faschinj Exp $     
+! $Id: budget_terms.F,v 1.29 2008-04-02 14:27:19 faschinj Exp $     
 
       module budget_terms
 
@@ -130,7 +130,7 @@
 
 !       Internal (misc)
 
-        integer :: code
+        integer :: err_code
 
 !       Namelists
 
@@ -220,7 +220,7 @@
 
         times = times_nl(1:size(times))
 
-        code = CLUBB_no_error
+        err_code = CLUBB_no_error
 
         return
         end subroutine setup_budget_terms
@@ -313,10 +313,10 @@
 !       Calculate Y-vector
         do i=1, mdim
           diff_array(i) = func_min( const_array(i,:) )
-          if ( code == CLUBB_singular_matrix .or.
-     .         code == CLUBB_var_equals_NaN  .or.
-     .         code == CLUBB_bad_lapack_arg     .or.
-     .         code == CLUBB_rtm_level_not_found ) then
+          if ( err_code == CLUBB_singular_matrix .or.
+     .         err_code == CLUBB_var_equals_NaN  .or.
+     .         err_code == CLUBB_bad_lapack_arg     .or.
+     .         err_code == CLUBB_rtm_level_not_found ) then
                  stop "Initial constants must be valid"
           endif
         enddo
@@ -438,10 +438,10 @@
 !       Calculate Y-vector
         do i=1, mdim
           diff_array(i) = func_min( const_array(i,:) )
-          if ( code == CLUBB_singular_matrix .or.
-     .         code == CLUBB_var_equals_NaN  .or.
-     .         code == CLUBB_bad_lapack_arg   .or.
-     .         code == CLUBB_rtm_level_not_found ) then 
+          if ( err_code == CLUBB_singular_matrix .or.
+     .         err_code == CLUBB_var_equals_NaN  .or.
+     .         err_code == CLUBB_bad_lapack_arg   .or.
+     .         err_code == CLUBB_rtm_level_not_found ) then 
              stop "Initial constants must be valid"
           endif
         enddo
@@ -566,10 +566,10 @@
 !       Calculate Y-vector
         do i=1, mdim
           diff_array(i) = func_min( const_array(i,:) )
-          if ( code == CLUBB_singular_matrix .or.
-     .         code == CLUBB_var_equals_NaN  .or.
-     .         code == CLUBB_bad_lapack_arg     .or.
-     .         code == CLUBB_rtm_level_not_found ) then
+          if ( err_code == CLUBB_singular_matrix .or.
+     .         err_code == CLUBB_var_equals_NaN  .or.
+     .         err_code == CLUBB_bad_lapack_arg     .or.
+     .         err_code == CLUBB_rtm_level_not_found ) then
           
              stop "Initial constants must be valid"
            endif
@@ -706,10 +706,10 @@
 !       Calculate Y-vector
         do i=1, mdim
           diff_array(i) = func_min( const_array(i,:) )
-          if ( code == CLUBB_singular_matrix .or.
-     .         code == CLUBB_var_equals_NaN  .or.
-     .         code == CLUBB_bad_lapack_arg     .or.
-     .         code == CLUBB_rtm_level_not_found ) then
+          if ( err_code == CLUBB_singular_matrix .or.
+     .         err_code == CLUBB_var_equals_NaN  .or.
+     .         err_code == CLUBB_bad_lapack_arg     .or.
+     .         err_code == CLUBB_rtm_level_not_found ) then
              stop "Initial constants must be valid"
           endif
         enddo
@@ -796,13 +796,13 @@
      .                  gamma_coefb, gamma_coefc,
      .                  c_K, c_Krrm, lmin_coef, taumin, taumax, 
      .                  const_vect(8), ! mu
-     .                  run_file, code, .false.,
+     .                  run_file, err_code, .false.,
      .                  grads_fields_reader, sample_ratio )
 
-        if ( code == CLUBB_var_equals_NaN  .or.
-     .       code == CLUBB_singular_matrix .or.
-     .       code == CLUBB_bad_lapack_arg  .or.
-     .       code == CLUBB_rtm_level_not_found ) then
+        if ( err_code == CLUBB_var_equals_NaN  .or.
+     .       err_code == CLUBB_singular_matrix .or.
+     .       err_code == CLUBB_bad_lapack_arg  .or.
+     .       err_code == CLUBB_rtm_level_not_found ) then
           wp2_min = 2 * maxval( diff_array ) - minval( diff_array )
           return
         endif
@@ -853,13 +853,13 @@
      .                  gamma_coefb, gamma_coefc,
      .                  c_K, c_Krrm, lmin_coef, taumin, taumax,
      .                  const_vect(6), ! mu
-     .                  run_file, code, .false.,
+     .                  run_file, err_code, .false.,
      .                  grads_fields_reader, sample_ratio )
 
-        if ( code == CLUBB_var_equals_NaN  .or.
-     .       code == CLUBB_singular_matrix .or.
-     .       code == CLUBB_bad_lapack_arg  .or.
-     .       code == CLUBB_rtm_level_not_found ) then
+        if ( err_code == CLUBB_var_equals_NaN  .or.
+     .       err_code == CLUBB_singular_matrix .or.
+     .       err_code == CLUBB_bad_lapack_arg  .or.
+     .       err_code == CLUBB_rtm_level_not_found ) then
         
           wp3_min = 2 * maxval( diff_array ) - minval( diff_array )
           return
@@ -910,13 +910,13 @@
      .                  const_vect(7), const_vect(8), ! beta and gamma_coef
      .                  gamma_coefb, gamma_coefc,
      .                  c_K, c_Krrm, lmin_coef, taumin, taumax, mu,
-     .                  run_file, code, .false.,
+     .                  run_file, err_code, .false.,
      .                  grads_fields_reader, sample_ratio )
 
-        if ( code == CLUBB_var_equals_NaN  .or.
-     .       code == CLUBB_singular_matrix .or.
-     .       code == CLUBB_bad_lapack_arg  .or.
-     .       code == CLUBB_rtm_level_not_found ) then
+        if ( err_code == CLUBB_var_equals_NaN  .or.
+     .       err_code == CLUBB_singular_matrix .or.
+     .       err_code == CLUBB_bad_lapack_arg  .or.
+     .       err_code == CLUBB_rtm_level_not_found ) then
         
           wprtp_min = 2 * maxval( diff_array ) - minval( diff_array )
           return
@@ -967,13 +967,13 @@
      .                  const_vect(7), const_vect(8), ! beta and gamma_coef
      .                  gamma_coefb, gamma_coefc,
      .                  c_K, c_Krrm, lmin_coef, taumin, taumax, mu,
-     .                  run_file, code, .false.,
+     .                  run_file, err_code, .false.,
      .                  grads_fields_reader, sample_ratio )
 
-        if ( code == CLUBB_var_equals_NaN  .or.
-     .       code == CLUBB_singular_matrix .or.
-     .       code == CLUBB_bad_lapack_arg  .or.
-     .       code == CLUBB_rtm_level_not_found ) then
+        if ( err_code == CLUBB_var_equals_NaN  .or.
+     .       err_code == CLUBB_singular_matrix .or.
+     .       err_code == CLUBB_bad_lapack_arg  .or.
+     .       err_code == CLUBB_rtm_level_not_found ) then
         
           wpthlp_min = 2 * maxval( diff_array ) - minval( diff_array )
           return
@@ -1027,13 +1027,13 @@
      .                  gamma_coefb, gamma_coefc,
      .                  c_K, c_Krrm, lmin_coef, 
      .                  taumin, taumax, const_vect(2), ! mu
-     .                  run_file, code, .false.,
+     .                  run_file, err_code, .false.,
      .                  grads_fields_reader, sample_ratio )
 
-        if ( code == CLUBB_var_equals_NaN  .or.
-     .       code == CLUBB_singular_matrix .or.
-     .       code == CLUBB_bad_lapack_arg  .or.
-     .       code == CLUBB_rtm_level_not_found ) then
+        if ( err_code == CLUBB_var_equals_NaN  .or.
+     .       err_code == CLUBB_singular_matrix .or.
+     .       err_code == CLUBB_bad_lapack_arg  .or.
+     .       err_code == CLUBB_rtm_level_not_found ) then
         
           rtp2_min = 2 * maxval( diff_array ) - minval( diff_array )
           return
@@ -1087,13 +1087,13 @@
      .                  gamma_coefb, gamma_coefc,
      .                  c_K, c_Krrm, lmin_coef, 
      .                  taumin, taumax, const_vect(2), ! mu
-     .                  run_file, code, .false.,
+     .                  run_file, err_code, .false.,
      .                  grads_fields_reader, sample_ratio )
 
-        if ( code == CLUBB_var_equals_NaN  .or.
-     .       code == CLUBB_singular_matrix .or.
-     .       code == CLUBB_bad_lapack_arg  .or.
-     .       code == CLUBB_rtm_level_not_found ) then
+        if ( err_code == CLUBB_var_equals_NaN  .or.
+     .       err_code == CLUBB_singular_matrix .or.
+     .       err_code == CLUBB_bad_lapack_arg  .or.
+     .       err_code == CLUBB_rtm_level_not_found ) then
         
           thlp2_min = 2 * maxval( diff_array ) - minval( diff_array )
           return
@@ -1146,13 +1146,13 @@
      .                  gamma_coefb, gamma_coefc,
      .                  c_K, c_Krrm, lmin_coef, 
      .                  taumin, taumax, const_vect(2), ! mu
-     .                  run_file, code, .false.,
+     .                  run_file, err_code, .false.,
      .                  grads_fields_reader, sample_ratio )
 
-        if ( code == CLUBB_var_equals_NaN  .or.
-     .       code == CLUBB_singular_matrix .or.
-     .       code == CLUBB_bad_lapack_arg  .or.
-     .       code == CLUBB_rtm_level_not_found ) then
+        if ( err_code == CLUBB_var_equals_NaN  .or.
+     .       err_code == CLUBB_singular_matrix .or.
+     .       err_code == CLUBB_bad_lapack_arg  .or.
+     .       err_code == CLUBB_rtm_level_not_found ) then
         
           rtpthlp_min = 2 * maxval( diff_array ) - minval( diff_array )
           return
@@ -1545,13 +1545,13 @@
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  xbeta, xgamma, gamma_coefb, gamma_coefc,
      .                  c_K, c_Krrm, lmin_coef, taumin, taumax, mu,
-     .                  run_file, code, .false.,
+     .                  run_file, err_code, .false.,
      .                  grads_fields_reader, sample_ratio )
 
-        if ( code == CLUBB_var_equals_NaN  .or.
-     .       code == CLUBB_singular_matrix .or.
-     .       code == CLUBB_bad_lapack_arg  .or.
-     .       code == CLUBB_rtm_level_not_found ) then
+        if ( err_code == CLUBB_var_equals_NaN  .or.
+     .       err_code == CLUBB_singular_matrix .or.
+     .       err_code == CLUBB_bad_lapack_arg  .or.
+     .       err_code == CLUBB_rtm_level_not_found ) then
         
           gen_betagamma_min = 2*maxval( diff_array )
      .                           - minval( diff_array )
@@ -2258,7 +2258,7 @@
      .                  nu1, nu2, nu6, nu8, nu_r, 
      .                  beta, gamma_coef, gamma_coefb, gamma_coefc,
      .                  c_K, c_Krrm, lmin_coef, taumin, taumax, mu,
-     .                  run_file, code, .false.,
+     .                  run_file, err_code, .false.,
      .                  grads_fields_reader, sample_ratio )
 
         do i=1, size( p_elements )

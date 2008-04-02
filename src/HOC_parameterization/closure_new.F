@@ -1,4 +1,4 @@
-! $Id: closure_new.F,v 1.17 2008-03-31 18:03:37 faschinj Exp $
+! $Id: closure_new.F,v 1.18 2008-04-02 14:27:19 faschinj Exp $
         module pdf_closure
 
         implicit none
@@ -17,7 +17,8 @@
      .               wpthlp2, wp2thlp, wprtpthlp,
      .               cf, rcm, wpthvp, wp2thvp, rtpthvp, 
      .               thlpthvp, wprcp, wp2rcp, rtprcp, thlprcp,
-     .               rcp2, pdf_parms, crt1, crt2, cthl1, cthl2, code,
+     .               rcp2, pdf_parms, crt1, crt2, cthl1, cthl2,
+     .               err_code,
      .               sclrm, wpsclrp,                    !optional
      .               wpsclrprtp, wpsclrp2, sclrprtp,    ! "    "
      .               sclrp2, sclrpthlp, sclrpthvp,      ! "    "
@@ -123,7 +124,7 @@
      .  pdf_parms       ! pdf paramters         [units vary]
 
         integer, intent(out) ::
-     .  code         ! Are the outputs usable numbers?
+     .  err_code         ! Are the outputs usable numbers?
 
         ! Output (Optional passive scalar variables)
 
@@ -660,7 +661,7 @@
      .                           rtpthvp, thlpthvp, wprcp, wp2rcp,
      .                           rtprcp, thlprcp, rcp2, wprtpthlp,
      .                           crt1, crt2, cthl1, cthl2, pdf_parms,
-     .                           code 
+     .                           err_code 
 #ifdef SCALARS
      .                           ,sclrpthvp, sclrprcp, wpsclrp2,
      .                           wpsclrprtp, wpsclrpthlp,
@@ -671,7 +672,7 @@
 !       Error Reporting
 !       Joshua Fasching February 2008
                 
-        if ( code == CLUBB_var_equals_NaN ) then
+        if ( err_code == CLUBB_var_equals_NaN ) then
                 
            write(fstderr,*) "Error in pdf_closure_new" 
            

@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F,v 1.2 2008-03-31 18:03:37 faschinj Exp $
+! $Id: compute_um_edsclrm_mod.F,v 1.3 2008-04-02 14:27:19 faschinj Exp $
 !------------------------------------------------------------------------
         module compute_um_edsclrm_mod
 
@@ -13,7 +13,7 @@
 
 !------------------------------------------------------------------------
         subroutine compute_um_edsclrm( solve_type, xpwp_sfc, xm_tndcy, 
-     .                                 Khm, dt, xm, xpwp, code )
+     .                                 Khm, dt, xm, xpwp, err_code )
 !       Description:
 !         Prognoses a horizontal wind component or other 
 !         eddy diffusivity variable.
@@ -58,7 +58,7 @@
      .  xpwp   ! Momentum flux                              [units vary]
 
         integer, intent(out) ::
-     .  code ! CLUBB_singular_matrix when matrix is singular
+     .  err_code ! CLUBB_singular_matrix when matrix is singular
 
         ! Local Variables
         real,  dimension(gr%nnzp) :: a, b, c, rhs
@@ -215,12 +215,12 @@
 
         ! Solve tridiagonal system
         call tridag_solve( solve_type, gr%nnzp, 1, c, b, a, 
-     .                     rhs, xm, code )
+     .                     rhs, xm, err_code )
 
         ! Error report
         ! Joshua Fasching February 2008
-        if ( code == CLUBB_singular_matrix .or.
-     .       code == CLUBB_bad_lapack_arg ) then
+        if ( err_code == CLUBB_singular_matrix .or.
+     .       err_code == CLUBB_bad_lapack_arg ) then
                        
             write(fstderr,*) "Error in compute_um_edsclrm"
            

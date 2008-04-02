@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.39 2008-03-31 18:03:37 faschinj Exp $
+! $Id: jacobian.F,v 1.40 2008-04-02 14:27:19 faschinj Exp $
 
       program jacobian
 #ifdef STATS
@@ -100,7 +100,7 @@
         integer :: i, j, k ! loop variables
         integer :: nanbits ! Holds a NaN value for purposes of output
 
-        integer :: code ! Determines whether a run went unstable
+        integer :: err_code ! Determines whether a run went unstable
 
         ! Namelists
         namelist /jcbn_nml/ 
@@ -113,7 +113,7 @@
 
         times(1:10) = 0
 
-        code = CLUBB_no_error
+        err_code = CLUBB_no_error
 
         allocate( hoc_params%value( nparams ), 
      .            hoc_params%name( nparams ),
@@ -149,13 +149,13 @@
         end do
 
         call hoc_model 
-     .       ( hoc_params%value(:), run_file, code, .false. )
+     .       ( hoc_params%value(:), run_file, err_code, .false. )
 
-        if ( code == CLUBB_singular_matrix .or.
-     .       code == CLUBB_var_equals_NaN .or.
-     .       code == CLUBB_var_out_of_bounds .or.
-     .       code == CLUBB_bad_lapack_arg .or.
-     .       code == CLUBB_rtm_level_not_found ) then
+        if ( err_code == CLUBB_singular_matrix .or.
+     .       err_code == CLUBB_var_equals_NaN .or.
+     .       err_code == CLUBB_var_out_of_bounds .or.
+     .       err_code == CLUBB_bad_lapack_arg .or.
+     .       err_code == CLUBB_rtm_level_not_found ) then
         
            stop "Initial run wasn't valid"
         endif
@@ -235,16 +235,16 @@
           hoc_params%value(i) = hoc_params%value(i) * delta_factor
 
           call hoc_model
-     .      ( hoc_params%value(:), trim( run_file ), code, .false. )
+     .      ( hoc_params%value(:), trim( run_file ), err_code, .false. )
 
           ! Print a period so the user knows something is happening
           write(unit=fstdout, fmt='(a1)', advance='no') "."
 
-          if ( code == CLUBB_singular_matrix .or.
-     .         code == CLUBB_var_equals_NaN .or.
-     .         code == CLUBB_var_out_of_bounds .or.
-     .         code == CLUBB_bad_lapack_arg .or.
-     .         code == CLUBB_rtm_level_not_found ) then
+          if ( err_code == CLUBB_singular_matrix .or.
+     .         err_code == CLUBB_var_equals_NaN .or.
+     .         err_code == CLUBB_var_out_of_bounds .or.
+     .         err_code == CLUBB_bad_lapack_arg .or.
+     .         err_code == CLUBB_rtm_level_not_found ) then
          
             ! Pos. Infinity bit pattern 
             jmatrix(i, :)

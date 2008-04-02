@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F,v 1.21 2008-03-31 18:03:37 faschinj Exp $
+! $Id: numer_check.F,v 1.22 2008-04-02 14:27:19 faschinj Exp $
         module numerical_check
 
         implicit none
@@ -33,7 +33,7 @@
         
         contains
 !--------------------------------------------------------------------------------- 
-         subroutine length_check( Lscale, Lup, Ldown, code )
+         subroutine length_check( Lscale, Lup, Ldown, err_code )
 !
 !        Description: This subroutine determines if any of the output
 !        variables for the length_new subroutine carry values that
@@ -52,14 +52,14 @@
          
          ! Output Variable
          integer, intent(inout) ::
-     .   code
+     .   err_code
 
          ! Local Variables
          character(*), parameter :: proc_name = "compute_length"
 !-----------------------------------------------------------------------------
-         call check_nan( Lscale, "Lscale", proc_name, code )
-         call check_nan( Lup, "Lup", proc_name, code )
-         call check_nan( Ldown, "Ldown", proc_name, code )
+         call check_nan( Lscale, "Lscale", proc_name, err_code )
+         call check_nan( Lup, "Lup", proc_name, err_code )
+         call check_nan( Ldown, "Ldown", proc_name, err_code )
 
          end subroutine length_check
          
@@ -69,7 +69,7 @@
      .                           rtpthvp, thlpthvp, wprcp, wp2rcp,
      .                           rtprcp, thlprcp, rcp2, wprtpthlp,
      .                           crt1, crt2, cthl1, cthl2, pdf_parms,
-     .                           code, 
+     .                           err_code, 
      .                           sclrpthvp, sclrprcp, wpsclrp2,
      .                           wpsclrprtp, wpsclrpthlp, wp2sclrp )
          
@@ -120,58 +120,58 @@
         
         ! Output Variable        
         integer, intent(inout) :: 
-     .  code          ! Returns appropriate error code
+     .  err_code          ! Returns appropriate error code
         
         ! Local Variable
         character(*), parameter :: proc_name = "pdf_closure_new"
         
 !-------------------------------------------------------------------------------
-        call check_nan( wp4,"wp4", proc_name, code )
-        call check_nan( wprtp2,"wprtp2", proc_name, code )
-        call check_nan( wp2rtp,"wp2rtp", proc_name, code )
-        call check_nan( wpthlp2,"wpthlp2", proc_name, code )
-        call check_nan( wp2thlp,"wp2thlp", proc_name, code )
-        call check_nan( cf,"cf", proc_name, code )
-        call check_nan( rcm,"rcm", proc_name, code ) 
-        call check_nan( wpthvp, "wpthvp", proc_name, code )
-        call check_nan( wp2thvp, "wp2thvp", proc_name, code )
-        call check_nan( rtpthvp, "rtpthvp", proc_name, code )
-        call check_nan( thlpthvp, "thlpthvp", proc_name, code )
-        call check_nan( wprcp, "wprcp", proc_name, code )
-        call check_nan( wp2rcp, "wp2rcp", proc_name, code )
-        call check_nan( rtprcp, "rtprcp", proc_name, code )
-        call check_nan( thlprcp, "thlprcp", proc_name, code )
-        call check_nan( rcp2, "rcp2", proc_name, code)
-        call check_nan( wprtpthlp, "wprtpthlp", proc_name, code )
-        call check_nan( crt1, "crt1", proc_name, code )
-        call check_nan( crt2, "crt2", proc_name, code )
-        call check_nan( cthl1, "cthl1", proc_name, code )
-        call check_nan( cthl2, "cthl2", proc_name, code ) 
-        call check_nan( pdf_parms, "pdf_parms", proc_name,code )
+        call check_nan( wp4,"wp4", proc_name, err_code )
+        call check_nan( wprtp2,"wprtp2", proc_name, err_code )
+        call check_nan( wp2rtp,"wp2rtp", proc_name, err_code )
+        call check_nan( wpthlp2,"wpthlp2", proc_name, err_code )
+        call check_nan( wp2thlp,"wp2thlp", proc_name, err_code )
+        call check_nan( cf,"cf", proc_name, err_code )
+        call check_nan( rcm,"rcm", proc_name, err_code ) 
+        call check_nan( wpthvp, "wpthvp", proc_name, err_code )
+        call check_nan( wp2thvp, "wp2thvp", proc_name, err_code )
+        call check_nan( rtpthvp, "rtpthvp", proc_name, err_code )
+        call check_nan( thlpthvp, "thlpthvp", proc_name, err_code )
+        call check_nan( wprcp, "wprcp", proc_name, err_code )
+        call check_nan( wp2rcp, "wp2rcp", proc_name, err_code )
+        call check_nan( rtprcp, "rtprcp", proc_name, err_code )
+        call check_nan( thlprcp, "thlprcp", proc_name, err_code )
+        call check_nan( rcp2, "rcp2", proc_name, err_code)
+        call check_nan( wprtpthlp, "wprtpthlp", proc_name, err_code )
+        call check_nan( crt1, "crt1", proc_name, err_code )
+        call check_nan( crt2, "crt2", proc_name, err_code )
+        call check_nan( cthl1, "cthl1", proc_name, err_code )
+        call check_nan( cthl2, "cthl2", proc_name, err_code ) 
+        call check_nan( pdf_parms, "pdf_parms", proc_name,err_code )
         
         if ( present( sclrpthvp ) ) then
             call check_nan(sclrpthvp,"sclrpthvp",
-     .                      proc_name, code)
+     .                      proc_name, err_code)
         end if
         if ( present( sclrprcp ) ) then
              call check_nan( sclrprcp, "sclrprcp",
-     .                       proc_name, code )
+     .                       proc_name, err_code )
         end if
         if ( present( wpsclrprtp ) ) then
              call check_nan( wpsclrprtp, "wpsclrprtp", 
-     .                       proc_name, code )
+     .                       proc_name, err_code )
         end if   
         if ( present( wpsclrp2 ) ) then
              call check_nan( wpsclrp2, "wpsclrp2", 
-     .                       proc_name, code )
+     .                       proc_name, err_code )
         end if
         if( present( wpsclrpthlp ) ) then
              call check_nan( wpsclrpthlp, "wpsclrtlp", 
-     .                       proc_name, code )
+     .                       proc_name, err_code )
         end if
         if( present( wp2sclrp ) ) then
              call check_nan( wp2sclrp, "wp2sclrp", 
-     .                       proc_name, code )
+     .                       proc_name, err_code )
         end if
 
         return
@@ -368,7 +368,7 @@
 
 !-----------------------------------------------------------------------
         subroutine sfc_var_check( wp2_sfc, up2_sfc, vp2_sfc, thlp2_sfc,
-     .           rtp2_sfc, rtpthlp_sfc, code,
+     .           rtp2_sfc, rtpthlp_sfc, err_code,
      .           sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc )
 !
 !       Description:This subroutine determines if any of the output
@@ -402,7 +402,7 @@
      .  sclrpthlp_sfc ! Passive scalar theta_l covariance       [units K]
      
         ! Input/Output Variable
-        integer, intent(inout) :: code    ! Are these outputs valid?
+        integer, intent(inout) :: err_code    ! Are these outputs valid?
 
         ! Local Variables
 
@@ -410,27 +410,27 @@
         character(len=7),parameter :: proc_name = "sfc_var"
 !-----------------------------------------------------------------------
 
-        call check_nan( wp2_sfc, "wp2_sfc", proc_name, code)
-        call check_nan( up2_sfc, "up2_sfc", proc_name, code)
-        call check_nan( vp2_sfc, "vp2_sfc", proc_name, code)
-        call check_nan( thlp2_sfc, "thlp2_sfc", proc_name, code)
-        call check_nan( rtp2_sfc, "rtp2_sfc", proc_name, code)
+        call check_nan( wp2_sfc, "wp2_sfc", proc_name, err_code)
+        call check_nan( up2_sfc, "up2_sfc", proc_name, err_code)
+        call check_nan( vp2_sfc, "vp2_sfc", proc_name, err_code)
+        call check_nan( thlp2_sfc, "thlp2_sfc", proc_name, err_code)
+        call check_nan( rtp2_sfc, "rtp2_sfc", proc_name, err_code)
         call check_nan( rtpthlp_sfc, "rtpthlp_sfc", 
-     .                  proc_name, code)
+     .                  proc_name, err_code)
         
         if ( present( sclrp2_sfc ) ) then
           call check_nan( sclrp2_sfc, "sclrp2_sfc",
-     .                    proc_name, code )
+     .                    proc_name, err_code )
         end if
         
         if ( present( sclrprtp_sfc ) ) then
           call check_nan( sclrprtp_sfc, "sclrprtp_sfc",
-     .                    proc_name, code )
+     .                    proc_name, err_code )
         end if
         
         if ( present( sclrp2_sfc ) ) then
           call check_nan( sclrpthlp_sfc, "sclrpthlp_sfc", 
-     .                    proc_name, code )
+     .                    proc_name, err_code )
         end if
 
         return 
@@ -795,7 +795,7 @@
         end function isnan2d
         
 !------------------------------------------------------------------------
-        subroutine check_negative( var, varname, operation, code )
+        subroutine check_negative( var, varname, operation, err_code )
 !
 !       Description: Checks for negative values in the var array and reports
 !       them.
@@ -818,13 +818,13 @@
      .  operation   ! Procedure calling check_zero
 
         ! Optional In/Out Variable
-        integer, optional, intent(inout) :: code
+        integer, optional, intent(inout) :: err_code
 
         if ( any( var < 0.0 ) ) then
            write(fstderr,*) varname, " < 0 in ", operation
-           if ( present( code ) ) then 
-                if (code < CLUBB_var_less_than_zero ) then
-                        code = CLUBB_var_less_than_zero
+           if ( present( err_code ) ) then 
+                if (err_code < CLUBB_var_less_than_zero ) then
+                        err_code = CLUBB_var_less_than_zero
                 endif
            endif
         end if
@@ -834,7 +834,7 @@
         end subroutine check_negative
         
 !------------------------------------------------------------------------        
-        subroutine check_nan_2d( var, varname, operation, code )
+        subroutine check_nan_2d( var, varname, operation, err_code )
 !
 !       Description: Checks for a NaN in the var array and reports it.
 !
@@ -857,13 +857,13 @@
      .  operation   ! Procedure calling check_nan
         
         ! Optional In/Out Variable
-        integer, optional, intent(inout) :: code
+        integer, optional, intent(inout) :: err_code
         
         if ( isnan2d( var ) ) then
            write(fstderr,*) varname, " is NaN in ",operation
-           if ( present( code ) ) then
-                if( code < CLUBB_var_equals_NaN ) then
-                        code = CLUBB_var_equals_NaN
+           if ( present( err_code ) ) then
+                if( err_code < CLUBB_var_equals_NaN ) then
+                        err_code = CLUBB_var_equals_NaN
                 endif
            endif
         end if
@@ -872,7 +872,7 @@
         end subroutine check_nan_2d
         
 !-----------------------------------------------------------------------        
-        subroutine check_nan_sclr( var, varname, operation, code )
+        subroutine check_nan_sclr( var, varname, operation, err_code )
 !
 !       Description: Checks for a NaN in the scalar var then reports it.
 !
@@ -894,13 +894,13 @@
      .  operation  ! Procedure calling check_nan
         
         ! Optional In/Out variable
-        integer, optional, intent(inout) :: code
+        integer, optional, intent(inout) :: err_code
 !--------------------------------------------------------------------
         if ( isnan( var ) ) then
           write(fstderr,*) varname, " is NaN in ",operation
-          if ( present( code ) ) then
-                  if( code < CLUBB_var_equals_NaN ) then
-                        code = CLUBB_var_equals_NAN
+          if ( present( err_code ) ) then
+                  if( err_code < CLUBB_var_equals_NaN ) then
+                        err_code = CLUBB_var_equals_NAN
                   endif
           endif
         end if

@@ -1,4 +1,4 @@
-! $Id: sfc.F,v 1.16 2008-03-31 18:03:37 faschinj Exp $
+! $Id: sfc.F,v 1.17 2008-04-02 14:27:19 faschinj Exp $
 #define SCLR_RT 2
 #define SCLR_THETA 1
 
@@ -16,7 +16,7 @@
 !------------------------------------------------------------------------
         subroutine sfc_var( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc,
      .                      ustar_in, wp2_sfc, up2_sfc, vp2_sfc,
-     .                      thlp2_sfc, rtp2_sfc, rtpthlp_sfc, code,
+     .                      thlp2_sfc, rtp2_sfc, rtpthlp_sfc, err_code,
      .                      wpsclrp_sfc, sclrp2_sfc,
      .                      sclrprtp_sfc, sclrpthlp_sfc )
 
@@ -75,7 +75,7 @@
      .  rtpthlp_sfc ! thetal rt covariance              [kg K]
 
         integer, intent(out) ::
-     .  code
+     .  err_code
 
         ! Output Variables (Optional) 
         real, optional, intent(out), dimension(sclr_dim) :: 
@@ -291,7 +291,7 @@
         ENDIF
         call sfc_var_check( wp2_sfc, up2_sfc, vp2_sfc, 
      .                     thlp2_sfc, rtp2_sfc, rtpthlp_sfc,
-     .                     code
+     .                     err_code
 #ifdef SCALARS
      .                     ,sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc 
 #endif /*SCALARS*/
@@ -300,7 +300,7 @@
 !       Error reporting
 !       Joshua Fasching February 2008
         
-        if ( code == CLUBB_var_equals_NaN ) then
+        if ( err_code == CLUBB_var_equals_NaN ) then
                 
             write(fstderr,*) "Error in sfc_var"
             

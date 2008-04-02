@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf02.F,v 1.10 2008-03-31 18:06:22 faschinj Exp $
+! $Id: dycoms2_rf02.F,v 1.11 2008-04-02 14:27:19 faschinj Exp $
         module dycoms2_rf02
 
 !       Description:
@@ -16,7 +16,7 @@
         SUBROUTINE dycoms2_rf02_tndcy
      .             ( time, time_initial, rhot, rhom, rtm, rcm, exner, 
      .               wmt, wmm, thlm_forcing, rtm_forcing, 
-     .               Frad, radht, Ncm, Ncnm, code, 
+     .               Frad, radht, Ncm, Ncnm, err_code, 
      .               sclrm_forcing )
 !       Description:
 !       Compute wm, thlm_ls, rtm_ls, radiative heating rate, and cloud
@@ -56,7 +56,7 @@
      .  exner          ! Exner function.                [-]
 
         ! Input/Output Variables
-        integer, intent(inout) :: code
+        integer, intent(inout) :: err_code
 
         ! Output Variables
         real, intent(out), dimension(gr%nnzp) :: 
@@ -119,7 +119,7 @@
      .        // "File: dycoms2_rf02.F"
             write(fstderr,*) "k = ", k
             write(fstderr,*) "rtm(k) = ", rtm(k)
-            code = CLUBB_rtm_level_not_found
+            err_code = CLUBB_rtm_level_not_found
             return
           END IF
           z_i = ( (gr%zt(k)-gr%zt(k-1))/(rtm(k)-rtm(k-1)) )
