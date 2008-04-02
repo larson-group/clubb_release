@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.77 2008-04-02 14:27:19 faschinj Exp $
+! $Id: parameterization_interface.F,v 1.78 2008-04-02 17:12:44 faschinj Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -210,7 +210,7 @@
      .        upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,
      .        up2, vp2, rtm, wprtp, thlm,
      .        wpthlp, wp2, wp3, Scm, rtp2, thlp2,
-     .        rtpthlp, taum, rcm, cf, "Beginning " 
+     .        rtpthlp, taum, rcm, cf, "beginning of " 
 #ifdef SCALARS
      .        ,wpsclrp_sfc, wpedsclrp_sfc,
      .        sclrm, sclrm_forcing, edsclrm
@@ -754,7 +754,7 @@
      .        upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,
      .        up2, vp2, rtm, wprtp, thlm,
      .        wpthlp, wp2, wp3, Scm, rtp2, thlp2,
-     .        rtpthlp, taum, rcm, cf, "End "
+     .        rtpthlp, taum, rcm, cf, "end of "
 #ifdef SCALARS
      /        ,wpsclrp_sfc, wpedsclrp_sfc,
      .        sclrm, sclrm_forcing, edsclrm
