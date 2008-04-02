@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: grid.F,v 1.7 2008-03-20 17:30:03 griffinb Exp $
+! $Id: grid.F,v 1.8 2008-04-02 20:50:10 dschanen Exp $
 
         module grid_class
 
@@ -217,14 +217,14 @@
            ! Interpolation Weights: zm grid to zt grid.
            ! The grid index is the index of the level on the zt grid.
            do k = 1, gr%nnzp, 1
-              gr%weights_zm2zt(k,1:2) = interp_weights_zm2zt_imp(k)
-           enddo
+              gr%weights_zm2zt(k,1:2) = interp_weights_zm2zt_imp( k )
+           end do
 
            ! Interpolation Weights: zt grid to zm grid.
            ! The grid index is the index of the level on the zm grid.
            do k = 1, gr%nnzp, 1
-              gr%weights_zt2zm(k,1:2) = interp_weights_zt2zm_imp(k)
-           enddo
+              gr%weights_zt2zm(k,1:2) = interp_weights_zt2zm_imp( k )
+           end do
 
            return
            end subroutine gridsetup
@@ -503,8 +503,11 @@
               ! extension is required, rather than linear
               ! interpolation.
               factor = 
-     .             ( gr%zt(1)-gr%zm(1) )/( gr%zm(2)-gr%zm(1) )
-           endif
+!    .             ( gr%zt(1)-gr%zm(1) )/( gr%zm(2)-gr%zm(1) )
+!              -dschanen changed this 2 April 2008 to make the weight
+!              non-negative at the lowest point.
+     .             ( gr%zm(1)-gr%zt(1) )/( gr%zm(2)-gr%zm(1) ) !
+           end if
 
            azm_weight(m_above) = factor
            azm_weight(m_below) = 1.0 - factor
