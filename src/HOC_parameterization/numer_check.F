@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F,v 1.22 2008-04-02 14:27:19 faschinj Exp $
+! $Id: numer_check.F,v 1.23 2008-04-02 17:10:39 faschinj Exp $
         module numerical_check
 
         implicit none
@@ -30,6 +30,12 @@
         interface check_nan
            module procedure check_nan_sclr, check_nan_2d
         end interface
+
+!       Abstraction of check_negative
+        interface check_negative
+           module procedure check_negative_total, check_negative_index
+        end interface
+
         
         contains
 !--------------------------------------------------------------------------------- 
@@ -280,6 +286,8 @@
         
         integer :: i
 
+        real, dimension(gr%nnzp) :: rvm
+
 !-------- Input Nan Check ----------------------------------------------
 
         call check_nan( thlm_forcing, "thlm_forcing", prefix//proc_name)
@@ -338,20 +346,23 @@
         
 !---------------------------------------------------------------------
 
-        call check_negative( p,"p", prefix//proc_name )
-        call check_negative( rhot,"rhot", prefix//proc_name )
-        call check_negative( rhom,"rhom", prefix//proc_name )
-        call check_negative( exner,"exner", prefix//proc_name )
-        call check_negative( up2,"up2", prefix//proc_name )
-        call check_negative( vp2,"vp2", prefix//proc_name )
-        call check_negative( wp2,"wp2", prefix//proc_name )
-        call check_negative( rtm,"rtm", prefix//proc_name )
-        call check_negative( thlm,"thlm", prefix//proc_name )
-        call check_negative( Scm,"Scm", prefix//proc_name )
-        call check_negative( rtp2,"rtp2", prefix//proc_name )
-        call check_negative( thlp2,"thlp2", prefix//proc_name )
-        call check_negative( taum,"taum", prefix//proc_name )
-        call check_negative( rcm,"rcm", prefix//proc_name )
+
+        rvm = rtm - rcm
+        call check_negative( rvm, gr%nnzp ,"rvm", prefix//proc_name )
+        call check_negative( p, gr%nnzp ,"p", prefix//proc_name )
+        call check_negative( rhot, gr%nnzp ,"rhot", prefix//proc_name )
+        call check_negative( rhom, gr%nnzp ,"rhom", prefix//proc_name )
+        call check_negative(exner, gr%nnzp ,"exner", prefix//proc_name )
+        call check_negative( up2, gr%nnzp ,"up2", prefix//proc_name )
+        call check_negative( vp2, gr%nnzp ,"vp2", prefix//proc_name )
+        call check_negative( wp2, gr%nnzp ,"wp2", prefix//proc_name )
+        call check_negative( rtm, gr%nnzp ,"rtm", prefix//proc_name )
+        call check_negative( thlm, gr%nnzp ,"thlm", prefix//proc_name )
+        call check_negative( Scm, gr%nnzp ,"Scm", prefix//proc_name )
+        call check_negative( rtp2, gr%nnzp ,"rtp2", prefix//proc_name )
+        call check_negative(thlp2, gr%nnzp ,"thlp2", prefix//proc_name )
+        call check_negative( taum, gr%nnzp ,"taum", prefix//proc_name )
+        call check_negative( rcm, gr%nnzp ,"rcm", prefix//proc_name )
 !        call check_negative( Ncm,"Ncm", prefix//proc_name )
 !        call check_negative( Ncnm,"Ncnm", prefix//proc_name )
 !        call check_negative( Nim,"Nim", prefix//proc_name )
@@ -361,7 +372,7 @@
 !        call check_negative( hydromet(:,4),"ricem", prefix//proc_name )
 !        call check_negative( hydromet(:,5),"rgraupelm",
 !     .          prefix//proc_name )
-        call check_negative( cf,"cf", prefix//proc_name )
+        call check_negative( cf, gr%nnzp ,"cf", prefix//proc_name )
 
         return       
         end subroutine parameterization_check
@@ -462,60 +473,23 @@
      .  rhom           ! Density                              [-]
 
        ! Local variables
+        character(len=*), parameter :: 
+     .  proc_name = "Before BUGSrad."
+
         real,dimension(gr%nnzp) :: rvm
         integer :: k 
 !-------------------------------------------------------------------------
         rvm = rtm - rcm
-        do k = 1, gr%nnzp, 1
-                if ( thlm(k) < 0.0 ) then
-                        write(fstderr,*) "Negative value in thlm at ",k,
-     .                  " before BUGSrad." 
-                        ! thlm(k) = 0.0
-                endif
-                if( rcm(k) < 0.0 ) then
-                        write(fstderr,*) "Negative value in rcm at ", k,
-     .                  " before BUGSrad." 
-                        ! rcm(k) = 0.0
-                endif
-                if( rtm(k) < 0.0 ) then
-                        write(fstderr,*) "Negative value in rtm at ", k,
-     .                  " before BUGSrad." 
-                        ! rtm(k) = 0
-                endif
-                if( rvm(k) < 0.0 ) then
-                        write(fstderr,*) "Negative value in rvm at ", k,
-     .                  " before BUGSrad." 
-                        ! rcm(k) = rtm(k)
-                endif
-                if ( ricem(k) < 0.0 ) then
-                        write(fstderr,*) "Negative value",
-     .                                           " in ricem at ", k,
-     .                  " before BUGSrad." 
-                        ! ricem(k) = 0.0
-                endif
-                if ( cf(k) < 0.0 ) then
-                        write(fstderr,*) "Negative value in cf at ", k,
-     .                  " before BUGSrad." 
-                        ! cf(k) = 0.0
-                endif
-                if ( p(k) < 0.0 ) then
-                        write(fstderr,*) "Negative value in p at ", k,
-     .                  " before BUGSrad." 
-                        ! p(k) = 0.0
-                endif
-                if ( exner(k) < 0.0 ) then
-                        write(fstderr,*) "Negative value", 
-     .                                           " in exner at ", k,
-     .                  " before BUGSrad." 
-                        ! exner(k) = 0.0
-                endif
-                if ( rhom(k) < 0.0 ) then
-                        write(fstderr,*) "Negative value in rhom at ",k,
-     .                  " before BUGSrad." 
-                        ! rhom(k) = 0.0
-                endif
-        end do        
-        
+        call check_negative( thlm, gr%nnzp ,"thlm", proc_name )
+        call check_negative( rcm, gr%nnzp ,"rcm", proc_name )
+        call check_negative( rtm, gr%nnzp ,"rtm", proc_name )
+        call check_negative( rvm, gr%nnzp ,"rvm", proc_name )
+        call check_negative( ricem, gr%nnzp ,"ricem", proc_name )        
+        call check_negative( cf, gr%nnzp ,"cf", proc_name )
+        call check_negative( p, gr%nnzp ,"p", proc_name )
+        call check_negative( exner, gr%nnzp ,"exner", proc_name )
+        call check_negative( rhom, gr%nnzp ,"rhom", proc_name )
+
         return
 
         end subroutine rad_check
@@ -795,7 +769,8 @@
         end function isnan2d
         
 !------------------------------------------------------------------------
-        subroutine check_negative( var, varname, operation, err_code )
+        subroutine check_negative_total
+     .            ( var, varname, operation, err_code )
 !
 !       Description: Checks for negative values in the var array and reports
 !       them.
@@ -831,7 +806,61 @@
 
         return
 
-        end subroutine check_negative
+        end subroutine check_negative_total
+
+
+!------------------------------------------------------------------------
+        subroutine check_negative_index
+     .            ( var, n, varname, operation, err_code )
+!
+!       Description: Checks for negative values in the var array and reports
+!                    the index in which the negative values occur.
+!
+!-----------------------------------------------------------------------
+        use constants, only:fstderr
+        use grid_class
+        use error_code
+        
+        implicit none
+
+        ! External
+        intrinsic :: any, present
+
+        ! Input Variables
+        real, intent(in), dimension(n) :: var
+        
+        integer, intent(in) :: n
+
+        character(len=*), intent(in):: 
+     .  varname,    ! Varible being examined
+     .  operation   ! Procedure calling check_zero
+
+        ! Optional In/Out Variable
+        integer, optional, intent(inout) :: err_code
+
+        ! Local Variable
+        integer :: k
+        
+        do k=1, n,1
+                if ( var(k) < 0.0 )  then
+                        
+                write(fstderr,*) varname, " < 0 in ", operation, 
+     .                           " at k = ", k
+                        
+                if ( present( err_code ) ) then 
+                      if (err_code < CLUBB_var_less_than_zero ) then
+                               err_code = CLUBB_var_less_than_zero
+                      endif
+                endif
+
+                endif
+
+        end do
+
+        return
+
+        end subroutine check_negative_index
+
         
 !------------------------------------------------------------------------        
         subroutine check_nan_2d( var, varname, operation, err_code )
