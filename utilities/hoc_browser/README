@@ -12,10 +12,10 @@ hoc_ls - An example of the files created by hoc_prepare.pl, use this to ensure
 hoc_prepare.pl is working correctly.
 
 hoc.f2h - This document is used by f90tohtml to actually generate the code
-browser with our desired parameters. Must be in f90tohtml's nwp_cdoes directory.
+browser with our desired parameters. Must be in f90tohtml's nwp_codes directory.
 
 hoc.subject - Used by f90tohtml to generate the subject index. Must be in
-f90tohtml's subject directory.
+f90tohtml's nwp_codes directory.
 
 browser.bash - Invokes f90tohtml to generate the code browser. Must be in the
 same home directory f90tohtml is installed in.
