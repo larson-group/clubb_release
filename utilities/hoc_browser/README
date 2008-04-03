@@ -1,0 +1,21 @@
+The files in this directory are used to generate the HOC code browser.
+
+These scripts require that f90tohtml be stored in a directory called f90tohtml
+in the home directory of the user running these scripts.
+
+hoc_prepare.pl - This perl script generates a set of .ls files that contain the
+list of all source files that will be displayed in the code browser, an index
+if you will. This will result in the creation of hoc_ls directory in 
+f90tohtml's output directory. Must be in f90tohtml's nwp_codes directory.
+
+hoc_ls - An example of the files created by hoc_prepare.pl, use this to ensure 
+hoc_prepare.pl is working correctly.
+
+hoc.f2h - This document is used by f90tohtml to actually generate the code
+browser with our desired parameters. Must be in f90tohtml's nwp_cdoes directory.
+
+hoc.subject - Used by f90tohtml to generate the subject index. Must be in
+f90tohtml's subject directory.
+
+browser.bash - Invokes f90tohtml to generate the code browser. Must be in the
+same home directory f90tohtml is installed in.
