@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: grid.F,v 1.8 2008-04-02 20:50:10 dschanen Exp $
+! $Id: grid.F,v 1.9 2008-04-03 19:36:08 griffinb Exp $
 
         module grid_class
 
@@ -503,10 +503,7 @@
               ! extension is required, rather than linear
               ! interpolation.
               factor = 
-!    .             ( gr%zt(1)-gr%zm(1) )/( gr%zm(2)-gr%zm(1) )
-!              -dschanen changed this 2 April 2008 to make the weight
-!              non-negative at the lowest point.
-     .             ( gr%zm(1)-gr%zt(1) )/( gr%zm(2)-gr%zm(1) ) !
+     .             ( gr%zt(1)-gr%zm(1) )/( gr%zm(2)-gr%zm(1) )
            end if
 
            azm_weight(m_above) = factor

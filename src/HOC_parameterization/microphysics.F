@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.36 2008-04-02 21:01:55 dschanen Exp $
+! $Id: microphysics.F,v 1.37 2008-04-03 19:36:08 griffinb Exp $
         module microphysics
 
 !       Description:
@@ -1477,9 +1477,9 @@
 !           lhs(km1diag) = - vt_tk * dzt * gr%weights_zt2zm(mkm1,2)
 
            lhs(kp1diag) = + dzt * v_t * gr%weights_zt2zm(mk,1)
-           lhs(kdiag)   = + dzt * (   v_t * gr%weights_zm2zt(mk,2)
-     .                              - v_tm1 * gr%weights_zm2zt(mkm1,1) )
-           lhs(km1diag) = - dzt * v_tm1 * gr%weights_zm2zt(mkm1,2)
+           lhs(kdiag)   = + dzt * (   v_t * gr%weights_zt2zm(mk,2)
+     .                              - v_tm1 * gr%weights_zt2zm(mkm1,1) )
+           lhs(km1diag) = - dzt * v_tm1 * gr%weights_zt2zm(mkm1,2)
 
         !  End Vince Larson change
 
@@ -1495,9 +1495,9 @@
 !           lhs(km1diag) = - vt_tk * dzt * gr%weights_zt2zm(mkm1,2)
 
            lhs(kp1diag) = + dzt * v_t * gr%weights_zt2zm(mk,1)
-           lhs(kdiag)   = + dzt * (   v_t * gr%weights_zm2zt(mk,2)
-     .                              - v_tm1 * gr%weights_zm2zt(mkm1,1) )
-           lhs(km1diag) = - dzt * v_tm1 * gr%weights_zm2zt(mkm1,2)
+           lhs(kdiag)   = + dzt * (   v_t * gr%weights_zt2zm(mk,2)
+     .                              - v_tm1 * gr%weights_zt2zm(mkm1,1) )
+           lhs(km1diag) = - dzt * v_tm1 * gr%weights_zt2zm(mkm1,2)
 
         !  End Vince Larson change
 
