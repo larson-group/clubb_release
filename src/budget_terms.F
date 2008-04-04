@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: budget_terms.F,v 1.29 2008-04-02 14:27:19 faschinj Exp $     
+! $Id: budget_terms.F,v 1.30 2008-04-04 20:12:55 faschinj Exp $     
 
       module budget_terms
 
@@ -316,7 +316,8 @@
           if ( err_code == CLUBB_singular_matrix .or.
      .         err_code == CLUBB_var_equals_NaN  .or.
      .         err_code == CLUBB_bad_lapack_arg     .or.
-     .         err_code == CLUBB_rtm_level_not_found ) then
+     .         err_code == CLUBB_rtm_level_not_found .or.
+     .         err_code == CLUBB_var_out_of_bounds ) then
                  stop "Initial constants must be valid"
           endif
         enddo
@@ -441,7 +442,8 @@
           if ( err_code == CLUBB_singular_matrix .or.
      .         err_code == CLUBB_var_equals_NaN  .or.
      .         err_code == CLUBB_bad_lapack_arg   .or.
-     .         err_code == CLUBB_rtm_level_not_found ) then 
+     .         err_code == CLUBB_rtm_level_not_found .or. 
+     .         err_code == CLUBB_var_out_of_bounds ) then 
              stop "Initial constants must be valid"
           endif
         enddo
@@ -569,7 +571,8 @@
           if ( err_code == CLUBB_singular_matrix .or.
      .         err_code == CLUBB_var_equals_NaN  .or.
      .         err_code == CLUBB_bad_lapack_arg     .or.
-     .         err_code == CLUBB_rtm_level_not_found ) then
+     .         err_code == CLUBB_rtm_level_not_found .or.
+     .         err_code == CLUBB_var_out_of_bounds ) then
           
              stop "Initial constants must be valid"
            endif
@@ -709,7 +712,8 @@
           if ( err_code == CLUBB_singular_matrix .or.
      .         err_code == CLUBB_var_equals_NaN  .or.
      .         err_code == CLUBB_bad_lapack_arg     .or.
-     .         err_code == CLUBB_rtm_level_not_found ) then
+     .         err_code == CLUBB_rtm_level_not_found .or.
+     .         err_code == CLUBB_var_out_of_bounds ) then
              stop "Initial constants must be valid"
           endif
         enddo
@@ -802,7 +806,8 @@
         if ( err_code == CLUBB_var_equals_NaN  .or.
      .       err_code == CLUBB_singular_matrix .or.
      .       err_code == CLUBB_bad_lapack_arg  .or.
-     .       err_code == CLUBB_rtm_level_not_found ) then
+     .       err_code == CLUBB_rtm_level_not_found .or.
+     .       err_code == CLUBB_var_out_of_bounds ) then
           wp2_min = 2 * maxval( diff_array ) - minval( diff_array )
           return
         endif
@@ -859,7 +864,8 @@
         if ( err_code == CLUBB_var_equals_NaN  .or.
      .       err_code == CLUBB_singular_matrix .or.
      .       err_code == CLUBB_bad_lapack_arg  .or.
-     .       err_code == CLUBB_rtm_level_not_found ) then
+     .       err_code == CLUBB_rtm_level_not_found .or.
+     .       err_code == CLUBB_var_out_of_bounds ) then
         
           wp3_min = 2 * maxval( diff_array ) - minval( diff_array )
           return
@@ -916,7 +922,8 @@
         if ( err_code == CLUBB_var_equals_NaN  .or.
      .       err_code == CLUBB_singular_matrix .or.
      .       err_code == CLUBB_bad_lapack_arg  .or.
-     .       err_code == CLUBB_rtm_level_not_found ) then
+     .       err_code == CLUBB_rtm_level_not_found .or.
+     .       err_code == CLUBB_var_out_of_bounds) then
         
           wprtp_min = 2 * maxval( diff_array ) - minval( diff_array )
           return
@@ -973,7 +980,8 @@
         if ( err_code == CLUBB_var_equals_NaN  .or.
      .       err_code == CLUBB_singular_matrix .or.
      .       err_code == CLUBB_bad_lapack_arg  .or.
-     .       err_code == CLUBB_rtm_level_not_found ) then
+     .       err_code == CLUBB_rtm_level_not_found .or.
+     .       err_code == CLUBB_var_out_of_bounds) then
         
           wpthlp_min = 2 * maxval( diff_array ) - minval( diff_array )
           return
@@ -1033,7 +1041,8 @@
         if ( err_code == CLUBB_var_equals_NaN  .or.
      .       err_code == CLUBB_singular_matrix .or.
      .       err_code == CLUBB_bad_lapack_arg  .or.
-     .       err_code == CLUBB_rtm_level_not_found ) then
+     .       err_code == CLUBB_rtm_level_not_found .or. 
+     .       err_code == CLUBB_var_out_of_bounds ) then
         
           rtp2_min = 2 * maxval( diff_array ) - minval( diff_array )
           return
@@ -1093,7 +1102,8 @@
         if ( err_code == CLUBB_var_equals_NaN  .or.
      .       err_code == CLUBB_singular_matrix .or.
      .       err_code == CLUBB_bad_lapack_arg  .or.
-     .       err_code == CLUBB_rtm_level_not_found ) then
+     .       err_code == CLUBB_rtm_level_not_found .or.
+     .       err_code == CLUBB_var_out_of_bounds ) then
         
           thlp2_min = 2 * maxval( diff_array ) - minval( diff_array )
           return
@@ -1152,7 +1162,8 @@
         if ( err_code == CLUBB_var_equals_NaN  .or.
      .       err_code == CLUBB_singular_matrix .or.
      .       err_code == CLUBB_bad_lapack_arg  .or.
-     .       err_code == CLUBB_rtm_level_not_found ) then
+     .       err_code == CLUBB_rtm_level_not_found .or.
+     .       err_code == CLUBB_var_out_of_bounds ) then
         
           rtpthlp_min = 2 * maxval( diff_array ) - minval( diff_array )
           return
@@ -1551,7 +1562,8 @@
         if ( err_code == CLUBB_var_equals_NaN  .or.
      .       err_code == CLUBB_singular_matrix .or.
      .       err_code == CLUBB_bad_lapack_arg  .or.
-     .       err_code == CLUBB_rtm_level_not_found ) then
+     .       err_code == CLUBB_rtm_level_not_found .or.
+     .       err_code == CLUBB_var_out_of_bounds ) then
         
           gen_betagamma_min = 2*maxval( diff_array )
      .                           - minval( diff_array )
