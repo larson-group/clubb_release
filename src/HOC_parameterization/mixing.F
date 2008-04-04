@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.41 2008-04-02 14:27:19 faschinj Exp $
+! $Id: mixing.F,v 1.42 2008-04-04 20:10:00 faschinj Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -55,7 +55,9 @@
         use parameters
         use constants
         use grid_class
-        use error_code
+        use error_code, only: CLUBB_singular_matrix,
+     .                        CLUBB_bad_lapack_arg
+     
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
@@ -686,7 +688,8 @@
 ! eMFc
      .    lcoamps_micro! COAMPS(R) microphysics
 
-        use error_code
+        use error_code, only: CLUBB_singular_matrix,
+     .                        CLUBB_bad_lapack_arg
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/

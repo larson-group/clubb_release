@@ -1,4 +1,4 @@
-! $Id: mixing_length.F,v 1.8 2008-04-02 14:27:19 faschinj Exp $
+! $Id: mixing_length.F,v 1.9 2008-04-04 20:10:00 faschinj Exp $
 !-----------------------------------------------------------------------------
         module mixing_length
         
@@ -47,7 +47,7 @@
         use numerical_check, only: length_check
         use saturation, only: rsat
         use diagnostic_variables, only: Lup, Ldown
-        use error_code
+        use error_code, only: CLUBB_var_equals_NaN
 
         implicit none
         

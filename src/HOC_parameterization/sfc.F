@@ -1,4 +1,4 @@
-! $Id: sfc.F,v 1.17 2008-04-02 14:27:19 faschinj Exp $
+! $Id: sfc.F,v 1.18 2008-04-04 20:10:00 faschinj Exp $
 #define SCLR_RT 2
 #define SCLR_THETA 1
 
@@ -31,7 +31,7 @@
         use parameters, only: T0
         use constants
         use numerical_check, only:sfc_var_check
-        use error_code
+        use error_code, only: CLUBB_var_equals_NaN
         
         implicit none
 

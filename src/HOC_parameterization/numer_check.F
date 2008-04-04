@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F,v 1.23 2008-04-02 17:10:39 faschinj Exp $
+! $Id: numer_check.F,v 1.24 2008-04-04 20:10:00 faschinj Exp $
         module numerical_check
 
         implicit none
@@ -778,7 +778,7 @@
 !-----------------------------------------------------------------------
         use constants, only:fstderr
         use grid_class
-        use error_code
+        use error_code, only: CLUBB_var_less_than_zero
         
         implicit none
 
@@ -818,8 +818,7 @@
 !
 !-----------------------------------------------------------------------
         use constants, only:fstderr
-        use grid_class
-        use error_code
+        use error_code, only: CLUBB_var_less_than_zero
         
         implicit none
 
@@ -869,9 +868,8 @@
 !
 !
 !------------------------------------------------------------------------
-        use constants, only:fstderr
-        use grid_class
-        use error_code
+        use constants, only: fstderr
+        use error_code, only: CLUBB_var_equals_NaN
 
         implicit none
 
@@ -906,9 +904,8 @@
 !       Description: Checks for a NaN in the scalar var then reports it.
 !
 !-----------------------------------------------------------------------        
-        use constants, only:fstderr
-        use grid_class
-        use error_code
+        use constants, only: fstderr
+        use error_code, only: CLUBB_var_equals_NaN
 
         implicit none
 

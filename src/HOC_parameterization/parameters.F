@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameters.F,v 1.12 2008-04-02 14:27:19 faschinj Exp $
+! $Id: parameters.F,v 1.13 2008-04-04 20:10:00 faschinj Exp $
         module parameters 
 
 !       Description:
@@ -143,7 +143,8 @@
 !-----------------------------------------------------------------------
 
         use constants, only: fstderr
-        use error_code
+        use error_code, only: CLUBB_var_out_of_bounds,
+     .                        CLUBB_no_error
 
         implicit none
 

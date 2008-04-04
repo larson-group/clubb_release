@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.37 2008-04-03 19:36:08 griffinb Exp $
+! $Id: microphysics.F,v 1.38 2008-04-04 20:10:00 faschinj Exp $
         module microphysics
 
 !       Description:
@@ -46,7 +46,8 @@
         use model_flags
         use parameters, only: c_Krrm, nu_r
         use constants, only: hydromet_dim, Lv, Cp, rho_lw, fstderr
-        use error_code
+        use error_code, only: CLUBB_singular_matrix,
+     .                        CLUBB_bad_lapack_arg
 #ifdef STATS
         use stats_hoc
 #endif

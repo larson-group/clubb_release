@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.78 2008-04-02 17:12:44 faschinj Exp $
+! $Id: parameterization_interface.F,v 1.79 2008-04-04 20:10:00 faschinj Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -71,7 +71,9 @@
        use compute_um_edsclrm_mod, only: compute_um_edsclrm
        use saturation, only: rsat ! Saturation mixing ratio
        use wp23, only: timestep_wp23
-       use error_code
+       use error_code, only : CLUBB_var_equals_NaN,
+     .                        CLUBB_singular_matrix,
+     .                        CLUBB_bad_lapack_arg
 #ifdef STATS
        use stats_hoc
        use stats_subs
@@ -851,7 +853,7 @@
         use diagnostic_variables
         use prognostic_variables
         use constants, only: fstderr, Lscale_max
-        use error_code
+        use error_code, only: CLUBB_var_out_of_bounds
         implicit none
 
         ! External

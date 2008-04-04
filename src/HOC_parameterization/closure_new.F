@@ -1,4 +1,4 @@
-! $Id: closure_new.F,v 1.18 2008-04-02 14:27:19 faschinj Exp $
+! $Id: closure_new.F,v 1.19 2008-04-04 20:10:00 faschinj Exp $
         module pdf_closure
 
         implicit none
@@ -67,7 +67,7 @@
 
         use saturation, only: rsat
 
-        use error_code
+        use error_code, only: CLUBB_var_equals_NaN
         
         implicit none
 

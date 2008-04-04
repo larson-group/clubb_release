@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: lapack_wrap.F,v 1.5 2008-04-02 14:27:19 faschinj Exp $
+! $Id: lapack_wrap.F,v 1.6 2008-04-04 20:10:00 faschinj Exp $
         module lapack_wrap
 
 !       Description:
@@ -11,8 +11,9 @@
 !       URL: <http://netlib2.cs.utk.edu/lapack/>
 !-----------------------------------------------------------------------
         use constants, only: fstderr
-        use error_code
-        
+        use error_code, only: CLUBB_singular_matrix,
+     l                        CLUBB_bad_lapack_arg,
+     .                        CLUBB_no_error   
         implicit none
 
         ! Simple routines

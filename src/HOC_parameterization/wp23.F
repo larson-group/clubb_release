@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.45 2008-04-02 14:27:19 faschinj Exp $
+! $Id: wp23.F,v 1.46 2008-04-04 20:10:00 faschinj Exp $
 !========================================================================
         module wp23
 
@@ -44,7 +44,8 @@
         use parameters
         use constants
         use model_flags
-        use error_code
+        use error_code, only: CLUBB_singular_matrix,
+     .                        CLUBB_bad_lapack_arg
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
@@ -288,7 +289,8 @@
         use model_flags
         use diffusion
         use lapack_wrap, only: band_solve, band_solvex
-        use error_code
+        use error_code, only: CLUBB_singular_matrix,
+     .                        CLUBB_bad_lapack_arg
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/

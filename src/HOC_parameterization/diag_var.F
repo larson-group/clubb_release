@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.37 2008-04-02 14:27:19 faschinj Exp $
+! $Id: diag_var.F,v 1.38 2008-04-04 20:10:00 faschinj Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -45,7 +45,9 @@
      .          c_Ksqd, beta, C4, C14, C5, T0
         use grid_class
         use lapack_wrap, only: tridag_solve
-        use error_code
+        use error_code, only: CLUBB_singular_matrix,
+     .                        CLUBB_bad_lapack_arg,
+     .                        CLUBB_no_error
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
@@ -747,7 +749,8 @@
 !-----------------------------------------------------------------------
         use lapack_wrap, only: tridag_solve, tridag_solvex!, band_solve
         use grid_class
-        use error_code
+        use error_code, only: CLUBB_singular_matrix,
+     .                        CLUBB_bad_lapack_arg
 #ifdef STATS
         use stats_hoc
 #endif

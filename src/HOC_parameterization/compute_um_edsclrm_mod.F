@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F,v 1.3 2008-04-02 14:27:19 faschinj Exp $
+! $Id: compute_um_edsclrm_mod.F,v 1.4 2008-04-04 20:10:00 faschinj Exp $
 !------------------------------------------------------------------------
         module compute_um_edsclrm_mod
 
@@ -33,7 +33,8 @@
         use stats_hoc
 #endif
         use constants, only: fstderr
-        use error_code
+        use error_code, only: CLUBB_singular_matrix,
+     .                        CLUBB_bad_lapack_arg
         
         implicit none
 
