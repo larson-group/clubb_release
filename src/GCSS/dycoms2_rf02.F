@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf02.F,v 1.11 2008-04-02 14:27:19 faschinj Exp $
+! $Id: dycoms2_rf02.F,v 1.12 2008-04-04 20:11:21 faschinj Exp $
         module dycoms2_rf02
 
 !       Description:
@@ -31,7 +31,7 @@
         USE grid_class
         USE constants
         USE model_flags, only: lbugsrad, lcoamps_micro, kk_rain
-        USE error_code
+        USE error_code, only: CLUBB_rtm_level_not_found
 #ifdef STATS
         USE stats_hoc
 #endif /*STATS*/

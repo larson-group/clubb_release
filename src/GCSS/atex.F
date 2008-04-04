@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 1
 !----------------------------------------------------------------------
-!$Id: atex.F,v 1.8 2008-04-02 14:27:19 faschinj Exp $
+!$Id: atex.F,v 1.9 2008-04-04 20:11:21 faschinj Exp $
         module atex
 
 !       Description:
@@ -26,7 +26,7 @@
         use model_flags, only: lbugsrad
         use grid_class
         use atex_cloud_rad
-        use error_code
+        use error_code, only: CLUBB_rtm_level_not_found
 
 #ifdef STATS
         use stats_hoc
