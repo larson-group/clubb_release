@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: clex9_nov02.F,v 1.3 2008-03-28 21:49:53 ajsmith4 Exp $
+! $Id: clex9_nov02.F,v 1.4 2008-04-04 22:02:49 dschanen Exp $
         module clex9_nov02
 
 !       Description:
@@ -41,6 +41,7 @@
         use grid_class
         use constants
         use model_flags
+        use stats_prec, only: time_prec
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
@@ -81,9 +82,11 @@
      .  center = .false.
 
         ! Input variables
-        real, intent(in) ::
+        real(kind=time_prec), intent(in) ::
      .  time,           ! Current time          [s]
-     .  time_initial,   ! Initial time          [s]
+     .  time_initial    ! Initial time          [s]
+
+        real, intent(in) ::
      .  dt,             ! Timestep              [s]
      .  rlat,           ! Latitude              [degrees_N]
      .  rlon            ! Longitude             [degrees_E]

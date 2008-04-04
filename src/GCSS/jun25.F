@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: jun25.F,v 1.7 2008-03-25 04:58:22 dschanen Exp $
+! $Id: jun25.F,v 1.8 2008-04-04 22:02:49 dschanen Exp $
         module jun25
 
 !       Description:
@@ -36,7 +36,7 @@
         use grid_class
         use constants
         use model_flags
-        use ice_dfsn_mod
+        use stats_prec, only: time_prec
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
@@ -46,9 +46,11 @@
         ! Constant parameters
 
         ! Input variables
-        real, intent(in) :: 
+        real(kind=time_prec), intent(in) :: 
      .  time,         ! Time of simulation since start        [s]
-     .  time_initial, ! Initial time of simulation            [s]
+     .  time_initial  ! Initial time of simulation            [s]
+
+        real, intent(in) :: 
      .  rlat,         ! Reference latitude should be 37.6     [Degrees North]
      .  dt            ! Length of model timestep              [s]
 

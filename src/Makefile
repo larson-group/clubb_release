@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.105 2008-03-31 18:09:03 faschinj Exp $
+# $Id: Makefile,v 1.106 2008-04-04 22:02:49 dschanen Exp $
 #
 # This version should work with BSD, GNU make, smake and dmake.
 #
@@ -58,8 +58,8 @@ PARAMETERIZATION = \
 	$(COAMPS_MICRO) \
 	constants.o endian.o outputfile.o outputgrads.o \
 	outputnc.o grid.o model_flags.o \
-        stats_type.o stats_hoc.o stats_subs.o\
-        stats_zt.o stats_zm.o stats_sfc.o sfc.o \
+        stats_type.o stats_hoc.o stats_subs.o \
+        stats_zt.o stats_zm.o stats_sfc.o stats_prec.o sfc.o \
 	erf.o diffusion.o KK_microphys.o microphysics.o cons.o air.o parab.o \
 	closure_new.o diag_var.o \
         hydrostatic.o mixing_length.o mixing.o saturation.o \

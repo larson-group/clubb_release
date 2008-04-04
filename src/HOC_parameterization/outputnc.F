@@ -1,4 +1,4 @@
-! $Id: outputnc.F,v 1.6 2007-06-08 14:44:18 dschanen Exp $
+! $Id: outputnc.F,v 1.7 2008-04-04 22:02:49 dschanen Exp $
 !-----------------------------------------------------------------------
 #ifdef STATS
        module outputnc
@@ -30,6 +30,7 @@
 !-----------------------------------------------------------------------
        use netcdf
        use outputfile_class
+       use stats_prec, only: time_prec
        use constants, only: fstderr
 
        implicit none
@@ -48,8 +49,10 @@
        real, intent(in) :: 
      .  rlat,  ! Latitude                       [degrees_E]
      .  rlon,  ! Longitude                      [degrees_N]
-     .  time,  ! Current time                   [s]
      .  dtwrite! Time between write intervals   [s]
+
+       real(kind=time_prec), intent(in) :: 
+     .  time   ! Current time                   [s]
 
        real, dimension(:), intent(in) :: 
      .  zgrid  ! The model grid                 [m]
@@ -196,6 +199,7 @@
 !      Used internally to create a definition for the NetCDF dataset
 !-----------------------------------------------------------------------
        use netcdf
+       use stats_prec, only: time_prec
        use constants, only: fstderr
 
        implicit none
@@ -212,8 +216,11 @@
      .  ia, iz,           ! First and last grid point in the z?
      .  nvar              ! Number of variables
 
+       real(kind=time_prec), intent(in) :: 
+     .  time    ! Current time   [s]
+
        real, intent(in) :: 
-     .  time, dtwrite  ! Current time & write interval   [s]
+     .  dtwrite ! Write interval [s]
 
        real, intent(in), dimension(:) :: 
      .  zgrid   ! HOC grid      [m]
@@ -550,13 +557,14 @@
 !      Adapted from the original GrADS version written by Chris Golaz.
 !      Uses Fortran `internal' files to write the string output.
 !-----------------------------------------------------------------------
+       use stats_prec, only: time_prec
        implicit none
 
        ! Input Variables
        integer, intent(in) :: 
      . iday, imonth, iyear  ! Integer for day, month and year.
 
-       real, intent(in) :: st_time ! Start time
+       real(kind=time_prec), intent(in) :: st_time ! Start time [s]
 
        ! Output Variables
        character(len=35), intent(out) :: date

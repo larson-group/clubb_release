@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: wangara.F,v 1.4 2007-12-15 23:58:04 griffinb Exp $
+! $Id: wangara.F,v 1.5 2008-04-04 22:02:49 dschanen Exp $
         module wangara
 
         public :: wangara_tndcy, wangard_sfclyr
@@ -18,11 +18,12 @@
 !----------------------------------------------------------------------
         use grid_class
         use constants, only: sclr_dim
+        use stats_prec, only: time_prec
 
         implicit none
 
         ! Input Variables
-        real, intent(in) :: time ! Model time [s]
+        real(kind=time_prec), intent(in) :: time ! Model time [s]
 
         ! Output Variables
         real, intent(out), dimension(gr%nnzp) ::
@@ -63,6 +64,7 @@
 !----------------------------------------------------------------------
 
         use constants, only: sclr_dim, pi, fstderr
+        use stats_prec, only: time_prec
 
         implicit none
 
@@ -74,8 +76,10 @@
 !     .  ustar = 0.13
 
         ! Input variables
+        real(kind=time_prec), intent(in) :: 
+     .  time    ! Current time  [s]
+
         real, intent(in) :: 
-     .  time,   ! Current time  [s]
      .  um_sfc, ! um(2)         [m/s]
      .  vm_sfc  ! vm(2)         [m/s]
 

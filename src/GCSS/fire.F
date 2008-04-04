@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: fire.F,v 1.8 2008-03-19 15:07:19 faschinj Exp $
+! $Id: fire.F,v 1.9 2008-04-04 22:02:49 dschanen Exp $
         module fire
 
 !       Description:
@@ -29,6 +29,7 @@
         use model_flags, only: lbugsrad
         use grid_class
         use atex_cloud_rad
+        use stats_prec, only: time_prec
 #ifdef STATS
         use stats_hoc
 #endif
@@ -36,7 +37,7 @@
         implicit none
 
         ! Input Variables
-        real, intent(in) :: time ! Model time [s]
+        real(kind=time_prec), intent(in) :: time ! Model time [s]
 
         real, intent(in), dimension(gr%nnzp) ::
      .  rhot, ! Density                         [kg/m^3]

@@ -27,15 +27,18 @@
 
         use constants
         use grid_class
+        use stats_prec, only: time_prec
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
         implicit none
 
         ! Input Variables
+        real(kind=time_prec), intent(in) ::
+     .  time,          ! Current time           [s]
+     .  time_initial   ! Start time             [s]
+
         real, intent(in) ::
-     .  time,          ! Current length of timestep      [s]
-     .  time_initial,  ! Current length of timestep      [s]
      .  dt             ! Current length of timestep      [s]
 
         real, dimension(gr%nnzp), intent(in) ::
@@ -174,6 +177,7 @@
 
         use constants
         use saturation, only: rsat
+
         implicit none
 
 
@@ -245,18 +249,18 @@
 
 !       Compute heat and moisture fluxes
         if (use_old_atex) then ! Use ATEX version
-          wpthlp_sfc  = -Cz * ubar * ( thlm - sst * (p0/psfc)**kappa )    ! [K m s^-1
-          wprtp_sfc  = -Cz * ubar * ( rtm - rsat(psfc,sst) )             ! [kg kg^-1  m s^-1]
-          upwp_sfc   = -um_sfc * ustar*ustar / ubar                          ! [m^2 s^-2]
-          vpwp_sfc   = -vm_sfc * ustar*ustar / ubar                          ! [m^2 s^-2]
+          wpthlp_sfc  = -Cz * ubar * ( thlm - sst * (p0/psfc)**kappa ) ! [K m s^-1
+          wprtp_sfc  = -Cz * ubar * ( rtm - rsat(psfc,sst) )           ! [kg kg^-1  m s^-1]
+          upwp_sfc   = -um_sfc * ustar*ustar / ubar                    ! [m^2 s^-2]
+          vpwp_sfc   = -vm_sfc * ustar*ustar / ubar                    ! [m^2 s^-2]
 
         else ! Use RICO version
-          wpthlp_sfc  = -Ch * ubar * ( thlm - sst * (p0/psfc)**kappa )    ! K m s^-1
-!          wprtp_sfc  = -Cz * ubar * ( .01726 - rsat(psfc,sst) )          ! kg kg^-1  m s^-1
-!          wprtp_sfc  = -Cz * ubar * ( .01626 - rsat(psfc,sst) )          ! kg kg^-1  m s^-1
-          wprtp_sfc  = -Cq * ubar * ( rtm - rsat(psfc,sst) )             ! kg kg^-1 m s^-1
-          upwp_sfc   = -um_sfc * Cm * ubar                                   ! m^2 s^-2
-          vpwp_sfc   = -vm_sfc * Cm * ubar                                   ! m^2 s^-2
+          wpthlp_sfc  = -Ch * ubar * ( thlm - sst * (p0/psfc)**kappa ) ! K m s^-1
+!          wprtp_sfc  = -Cz * ubar * ( .01726 - rsat(psfc,sst) ) ! kg kg^-1  m s^-1
+!          wprtp_sfc  = -Cz * ubar * ( .01626 - rsat(psfc,sst) ) ! kg kg^-1  m s^-1
+          wprtp_sfc  = -Cq * ubar * ( rtm - rsat(psfc,sst) ) ! kg kg^-1 m s^-1
+          upwp_sfc   = -um_sfc * Cm * ubar  ! m^2 s^-2
+          vpwp_sfc   = -vm_sfc * Cm * ubar  ! m^2 s^-2
         end if
 
 !       Compute scalar fluxes

@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: astex.F,v 1.4 2008-03-25 04:58:22 dschanen Exp $
+! $Id: astex.F,v 1.5 2008-04-04 22:02:49 dschanen Exp $
         module astex
 
 !       Description:
@@ -26,11 +26,12 @@
 
         use constants, only: sclr_dim
         use grid_class
+        use stats_prec, only: time_prec
 
         implicit none
 
         ! Input Variables
-        real, intent(in) :: time ! Current time         [s]
+        real(kind=time_prec), intent(in) :: time ! Model time [s]
 
         ! Output Variables
         real, intent(out), dimension(gr%nnzp) :: 

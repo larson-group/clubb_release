@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: nov11.F,v 1.9 2008-03-25 04:58:22 dschanen Exp $
+! $Id: nov11.F,v 1.10 2008-04-04 22:02:49 dschanen Exp $
         module nov11
 
 !       Description:
@@ -44,6 +44,7 @@
         use grid_class
         use constants
         use model_flags
+        use stats_prec, only: time_prec
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
@@ -84,9 +85,11 @@
      .  center = .false.
 
         ! Input variables
-        real, intent(in) ::
+        real(kind=time_prec), intent(in) ::
      .  time,           ! Current time          [s]
-     .  time_initial,   ! Initial time          [s]
+     .  time_initial    ! Initial time          [s]
+
+        real, intent(in) ::
      .  dt,             ! Timestep              [s]
      .  rlat,           ! Latitude              [degrees_N]
      .  rlon            ! Longitude             [degrees_E]

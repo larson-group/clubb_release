@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_type.F,v 1.4 2008-03-31 18:30:12 faschinj Exp $
+! $Id: stats_type.F,v 1.5 2008-04-04 22:02:49 dschanen Exp $
 #ifdef STATS
       module stats_type
  
@@ -8,14 +8,15 @@
 !-----------------------------------------------------------------------
 
         use outputfile_class
+        use stats_prec
         
         implicit none
 
         private
         public :: stats, stat_assign
 
-        ! Derived data types to store GrADS statistics
-        type stats 
+        ! Derived data types to store GrADS/netCDF statistics
+        type stats
 
           ! Number of fields to sample
           integer :: nn
@@ -28,9 +29,9 @@
 
 !         Array to store sampled fields
 
-          real, pointer, dimension(:,:) :: x
+          real(kind=stat_rknd), pointer, dimension(:,:) :: x
 
-          integer, pointer, dimension(:,:) :: n
+          integer(kind=stat_nknd), pointer, dimension(:,:) :: n
 
 !         Data for GrADS output
 

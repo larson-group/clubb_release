@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.38 2008-04-04 20:10:00 faschinj Exp $
+! $Id: microphysics.F,v 1.39 2008-04-04 22:02:49 dschanen Exp $
         module microphysics
 
 !       Description:
@@ -46,6 +46,8 @@
         use model_flags
         use parameters, only: c_Krrm, nu_r
         use constants, only: hydromet_dim, Lv, Cp, rho_lw, fstderr
+        use stats_prec, only: time_prec
+
         use error_code, only: CLUBB_singular_matrix,
      .                        CLUBB_bad_lapack_arg
 #ifdef STATS
@@ -63,7 +65,9 @@
      .  runtype ! Name of the run, for case specific effects.
 
         real, intent(in) :: 
-     .  dt,          ! Timestep         [s]
+     .  dt           ! Timestep         [s]
+
+        real(kind=time_prec), intent(in) :: 
      .  time_current,! Current time     [s]
      .  time_initial ! Initial time     [s]
 

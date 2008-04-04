@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: lba.F,v 1.5 2007-12-15 23:58:04 griffinb Exp $
+! $Id: lba.F,v 1.6 2008-04-04 22:02:49 dschanen Exp $
         module lba
 
 !       Description:
@@ -25,6 +25,7 @@
         use model_flags, only: lbugsrad
         use constants, only: sclr_dim
         use zlinterp, only: zlinterp_fnc
+        use stats_prec, only: time_prec
 
         implicit none
 
@@ -297,7 +298,7 @@
      .  /) )
 
         ! Input
-        real, intent(in)  :: time ! Current model time [s]
+        real(kind=time_prec), intent(in) :: time ! Model time [s]
 
         ! Output Variables
         real, intent(out), dimension(gr%nnzp) ::
@@ -385,6 +386,7 @@
 !----------------------------------------------------------------------
 
         use constants, only: sclr_dim, pi, grav, Lv, Cp
+        use stats_prec, only: time_prec
 
         implicit none
 
@@ -399,9 +401,11 @@
      .  z0    = 0.035  ! ARM mom. roughness height
 
         ! Input Variables
+        real(kind=time_prec), intent(in) :: 
+     .  time      ! Current time        [s] 
+
         real, intent(in) :: 
-     .  time,     ! Current time        [s] 
-     .  z,        ! Height at zt=2      [s] 
+     .  z,        ! Height at zt=2      [m] 
      .  rho0,     ! Density at zm=1     [kg/m^3] 
      .  um_sfc,   ! um at (2)           [m/s]
      .  vm_sfc,   ! vm at (2)           [m/s]

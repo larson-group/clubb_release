@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_a.F,v 1.10 2008-03-25 04:58:22 dschanen Exp $
+! $Id: mpace_a.F,v 1.11 2008-04-04 22:02:49 dschanen Exp $
         module mpace_a
 
 !       Description:
@@ -66,6 +66,7 @@
         use grid_class
         use zlinterp, only: zlinterp_fnc
         use file_functions, only: file_read_1d, file_read_2d
+        use stats_prec, only: time_prec
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
@@ -105,9 +106,11 @@
      .  d_3 = 0.000148
 
         ! Input Variables
-        real, intent(in) :: 
+        real(kind=time_prec), intent(in) :: 
      .  time,         ! Current time of simulation      [s]
-     .  time_initial, ! Initial time of simulation      [s]
+     .  time_initial  ! Initial time of simulation      [s]
+
+        real, intent(in) :: 
      .  dt,           ! Current length of timestep      [s]
      .  rlat          ! Latitude                        [Degrees North]
 
@@ -477,6 +480,7 @@
 
         use constants
         use file_functions, only: file_read_1d, file_read_2d
+        use stats_prec, only: time_prec
 
         implicit none
 
@@ -489,7 +493,7 @@
 !     .  ustar = 0.25
 
         ! Input Variables
-        real, intent(in) ::
+        real(kind=time_prec), intent(in) ::
      .  time     ! current model time           [s]
 
         real, intent(in)  ::

@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_3year.F,v 1.6 2008-03-05 17:22:52 faschinj Exp $
+! $Id: arm_3year.F,v 1.7 2008-04-04 22:02:49 dschanen Exp $
         module arm_3year
 
 !       Description:
@@ -48,6 +48,7 @@
         use constants, only: sclr_dim
         use zlinterp, only: zlinterp_fnc
         use file_functions, only: file_read_1d, file_read_2d
+        use stats_prec, only: time_prec
 
         implicit none
 
@@ -55,7 +56,7 @@
         intrinsic :: present
 
         ! Input Variables
-        real, intent(in) :: time ! Model time [s]
+        real(kind=time_prec), intent(in) :: time ! Model time [s]
 
         ! Output Variables
         real, intent(out), dimension(gr%nnzp) :: 
@@ -168,6 +169,8 @@
 
         use constants, only: Cp, Lv, grav, sclr_dim
         use stats_hoc, only: iustar, sfc, lstats_samp
+        use stats_prec, only: time_prec
+
         implicit none
 
         ! External
@@ -180,8 +183,10 @@
      .  z0    = 0.035   ! ARM Cu mom. roughness height
 
         ! Input Variables
+        real(kind=time_prec), intent(in) :: 
+     .  time      ! Current time        [s] 
+
         real, intent(in) :: 
-     .  time,     ! Current time        [s] 
      .  z,        ! Height at zt=2      [s] 
      .  rho0,     ! Density at zm=1     [kg/m^3] 
      .  um_sfc,   ! um at (2)           [m/s]

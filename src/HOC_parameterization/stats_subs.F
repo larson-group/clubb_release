@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.6 2008-03-31 18:30:12 faschinj Exp $
+!  $Id: stats_subs.F,v 1.7 2008-04-04 22:02:49 dschanen Exp $
 #ifdef STATS
       module stats_subs
  
@@ -15,12 +15,14 @@
       
 !-----------------------------------------------------------------------
       subroutine stats_init( iunit, fnamelist, nnzp, gzt, gzm,
-     .                       day, month, year, rlat, rlon, time, delt )
+     .                       day, month, year, rlat, rlon, 
+     .                       time_current, delt )
 
 !     Description: Initializes the statistics saving functionality of
 !     the HOC model.
 !-----------------------------------------------------------------------
       use stats_hoc
+      use stats_prec
       use outputgrads
       use outputnc
       use stats_zm
@@ -53,9 +55,11 @@
       integer, intent(in) :: day, month, year  ! Time of year
 
       real, intent(in) :: 
-     .  rlat, rlon,! Latitude and Longitude             [Degrees N/E]
-     .  time,      ! Model time                         [s]
-     .  delt       ! Timestep (dtmain in HOC)           [s]
+     .  rlat, rlon,  ! Latitude and Longitude             [Degrees N/E]
+     .  delt         ! Timestep (dtmain in HOC)           [s]
+
+      real(kind=time_prec), intent(in) :: 
+     .  time_current ! Model time                         [s]
 
       ! Local Variables
 
@@ -188,14 +192,14 @@
         call open_grads( zt%f, iunit, fdir, fname, 
      .                   1, zt%kk, zt%z,
      .                   day, month, year, rlat, rlon,
-     .                   time+stats_tout, stats_tout,
+     .                   time_current+stats_tout, stats_tout,
      .                   zt%nn )
 
       else ! Open NetCDF file
         call open_nc( zt%f, iunit, fdir, fname, 
      .                1, zt%kk, zt%z,
      .                day, month, year, rlat, rlon,
-     .                time+stats_tout, stats_tout,
+     .                time_current+stats_tout, stats_tout,
      .                zt%nn )
 
       end if
@@ -256,14 +260,14 @@
         call open_grads( zm%f, iunit, fdir, fname, 
      .                   1, zm%kk, zm%z,
      .                   day, month, year, rlat, rlon,
-     .                   time+stats_tout, stats_tout,
+     .                   time_current+stats_tout, stats_tout,
      .                   zm%nn )
 
       else ! Open NetCDF file
         call open_nc( zm%f, iunit, fdir, fname, 
      .                1, zm%kk, zm%z,
      .                day, month, year, rlat, rlon,
-     .                time+stats_tout, stats_tout,
+     .                time_current+stats_tout, stats_tout,
      .                zm%nn )
       end if
 
@@ -304,14 +308,14 @@
         call open_grads( sfc%f, iunit, fdir, fname, 
      .                   1, sfc%kk, sfc%z,
      .                   day, month, year, rlat, rlon,
-     .                   time+stats_tout, stats_tout,
+     .                   time_current+stats_tout, stats_tout,
      .                   sfc%nn )
 
       else ! Open NetCDF files
         call open_nc( sfc%f, iunit, fdir, fname, 
      .                1, sfc%kk, sfc%z,
      .                day, month, year, rlat, rlon,
-     .                time+stats_tout, stats_tout,
+     .                time_current+stats_tout, stats_tout,
      .                sfc%nn )
       end if
 
@@ -343,6 +347,7 @@
 !     Description:
 !     Initialize stats to zero
 !-----------------------------------------------------------------------
+      use stats_prec
 
       implicit none
 
@@ -350,8 +355,8 @@
       integer, intent(in) :: kk, nn
 
       ! Output
-      real, dimension(kk,nn), intent(out)    :: x
-      integer, dimension(kk,nn), intent(out) :: n
+      real(kind=stat_rknd), dimension(kk,nn), intent(out)    :: x
+      integer(kind=stat_nknd), dimension(kk,nn), intent(out) :: n
 
       ! Zero out arrays
 
@@ -369,6 +374,7 @@
 !     Description:
 !     Compute the average of stats fields
 !-----------------------------------------------------------------------
+      use stats_prec
 
       implicit none
 
@@ -376,8 +382,8 @@
       integer, intent(in) :: nn, kk
 
       ! Output
-      real, dimension(kk,nn), intent(inout)  :: x
-      integer, dimension(kk,nn), intent(in)  :: n
+      real(kind=stat_rknd), dimension(kk,nn), intent(out)    :: x
+      integer(kind=stat_nknd), dimension(kk,nn), intent(out) :: n
 
       ! Internal
 
@@ -406,13 +412,16 @@
 !-----------------------------------------------------------------------
 
       use stats_hoc
+      use stats_prec
 
       implicit none
 
       ! Input
 
+      real(kind=time_prec), intent(in) :: 
+     .  time_elapsed ! Elapsed model time       [s]
+
       real, intent(in) :: 
-     .  time_elapsed,! Elapsed model time       [s]
      .  delt         ! Model time step          [s]
 
       if ( .not. lstats ) return
@@ -445,12 +454,13 @@
       end subroutine stats_begin_timestep
 
 !-----------------------------------------------------------------------
-      subroutine stats_end_timestep( time, delt )
+      subroutine stats_end_timestep( time_elapsed, delt )
 
 !     Description:
 !-----------------------------------------------------------------------
 
       use stats_hoc
+      use stats_prec
       use outputgrads
       use outputnc
 
@@ -458,7 +468,10 @@
 
       ! Input
 
-      real, intent(in) :: time, delt
+      real(kind=time_prec), intent(in) :: 
+     .  time_elapsed ! Time elapsed             [s]
+
+      real, intent(in) :: delt ! timestep       [s]
 
       ! Local Variables
 
@@ -475,6 +488,7 @@
          if ( zt%n(k,i) /= 0 
      .        .and. zt%n(k,i) /= int(stats_tout/stats_tsamp) ) then
            write(0,*) 'Possible sampling error for zt ',i,k,zt%n(k,i)
+           pause
          end if
         end do
       end do
@@ -484,6 +498,7 @@
          if ( zm%n(k,i) /= 0 
      .        .and. zm%n(k,i) /= int(stats_tout/stats_tsamp) ) then
            write(0,*) 'Possible sampling error for zm ',i,k,zm%n(k,i)
+           pause
          end if
         end do
       end do

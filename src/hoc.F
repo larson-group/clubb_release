@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.166 2008-04-02 14:27:19 faschinj Exp $
+! $Id: hoc.F,v 1.167 2008-04-04 22:02:49 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -13,6 +13,8 @@
 !       model runs, using one of the driver programs (the simplest case
 !       being the hoc_standalone program).
 !-----------------------------------------------------------------------
+
+        use stats_prec, only: time_prec
 
         implicit none
 
@@ -68,12 +70,13 @@
         integer, private :: sfctype 
 !$omp   threadprivate(sfctype)
 
-        real, private :: 
+        real(kind=time_prec), private ::
      .  time_initial, ! Time of start of simulation     [s]
      .  time_final,   ! Time end of simulation          [s]
      .  time_spinup,  ! Time end of spin up period      [s]
-     .  time          ! Current time of simulation      [s]
-!$omp   threadprivate(time_initial, time_final, time_spinup, time)
+     .  time_current  ! Current time of simulation      [s]
+!$omp   threadprivate(time_initial, time_final, time_spinup,
+!    .                time_current)
 
         real, private :: 
      .  dtmain,     ! Main model timestep                      [s]
@@ -313,7 +316,7 @@
        ! Dummy grid height arrays
        deallocate( dummy_array_m, dummy_array_t )
 
-       time = time_initial
+       time_current = time_initial
 
        call hoc_initialize( 10, runfile, psfc, thlm, rtm, 
      .                      um, vm, ug, vg, wp2,
@@ -330,7 +333,8 @@
 #ifdef STATS
 !      Initialize statistics output
        call stats_init( 50, runfile, gr%nnzp, gr%zt, gr%zm,
-     .                  day, month, year, rlat, rlon, time, dtmain )
+     .                  day, month, year, rlat, rlon, time_current, 
+     .                  dtmain )
 #endif /*STATS*/
 
        ! Time integration
@@ -350,11 +354,12 @@
          ! When this time step is over, the time will be time + dtmain
 
          ! We use elapsed time for stats_begin_step
-         call stats_begin_timestep( time-time_initial+dtmain, dtmain )
+         call stats_begin_timestep
+     .        ( time_current-time_initial+dtmain, dtmain )
 
          if ( lstats_last .and. stdout ) then
            write(unit=fstdout,fmt='(a,i8,a,f10.1)') 'iteration = ',
-     .       i, '; time = ', time
+     .       i, '; time = ', time_current
          end if
 #endif /*STATS*/
 
@@ -385,7 +390,7 @@
          ! Joshua Fasching March 2008
 
 !      Compute number of iterations for closure loop
-         if ( time > time_spinup ) then
+         if ( time_current > time_spinup ) then
            niterlong = 1
            dt        = dtmain
          else
@@ -412,7 +417,7 @@
      .          )
 
 #ifdef STATS
-           call stats_end_timestep( time + dtmain, dtmain )
+           call stats_end_timestep( time_current + dtmain, dtmain )
 #endif /*STATS*/
 
            ! Set Time
@@ -421,9 +426,10 @@
            ! A host model, e.g. WRF, would advance time outside
            ! of hoc_closure_timestep.  Vince Larson 7 Feb 2006
            if ( i1 < niterlong ) then
-             time = time_initial + (i-1) * dtmain + i1 * dtclosure
+             time_current = time_initial + (i-1) * dtmain 
+     .                    + i1 * dtclosure
            else if ( i1 == niterlong ) then
-             time = time_initial + i * dtmain
+             time_current = time_initial + i * dtmain
            end if
            
            ! Changed isValid to err_code for better tracking of errors caused by
@@ -644,7 +650,7 @@
 
        
        if ( .not. lrestart ) then
-          time = time_initial
+          time_current = time_initial
           iinit = 1
           call hoc_initialize( iunit, runfile, psfc, thlm, rtm, 
      .                         um, vm, ug, vg, wp2,
@@ -660,8 +666,8 @@
        else  ! restart
                
           ! Joshua Fasching March 2008
-          time = time_restart + dtmain
-          ! time = time_restart
+          time_current = time_restart + dtmain
+          ! time_current = time_restart
 
           ! Determining what iteration to restart at.
           ! The value is increased by 1 to sychronize with restart data.
@@ -678,7 +684,7 @@
              stop
           end if
 
-          iinit = ( time - time_initial ) / dtmain + 1
+          iinit = ( time_current - time_initial ) / dtmain + 1
 
           call hoc_restart( iunit, runfile, restart_path_case, 
      .                      time_restart, psfc, thlm, rtm, um, vm,
@@ -705,7 +711,8 @@
 #endif
 !      Initialize statistics output
        call stats_init( iunit, runfile, gr%nnzp, gr%zt, gr%zm,
-     .                  day, month, year, rlat, rlon, time, dtmain )
+     .                  day, month, year, rlat, rlon, time_current,
+     .                  dtmain )
 #endif /*STATS*/
 
        ! Time integration
@@ -722,17 +729,18 @@
 
          ! We use elapsed time for stats_begin_step
          if (.not. lrestart) then    
-            call stats_begin_timestep( time-time_initial+dtmain, 
-     .                                  dtmain )
+            call stats_begin_timestep
+     .           ( time_current-time_initial+dtmain, dtmain )
          else
             ! Different elapsed time for restart
             ! Joshua Fasching March 2008     
-            call stats_begin_timestep( time-time_restart, 
-     .                                  dtmain )
-         endif
+            call stats_begin_timestep
+     .           ( time_current-time_restart, dtmain )
+         end if
+
          if ( lstats_last .and. stdout ) then
            write(unit=fstdout,fmt='(a,i8,a,f10.1)') 'iteration = ', 
-     .       i, '; time = ', time
+     .       i, '; time = ', time_current
          end if
 #endif /*STATS*/
 
@@ -748,7 +756,7 @@
          if ( err_code == CLUBB_rtm_level_not_found ) exit
          
          ! Compute number of iterations for closure loop
-         if ( time > time_spinup ) then
+         if ( time_current > time_spinup ) then
            niterlong = 1
            dt        = dtmain
          else
@@ -775,7 +783,7 @@
      .          )
            
 #ifdef STATS
-           call stats_end_timestep( time + dtmain, dtmain )
+           call stats_end_timestep( time_current + dtmain, dtmain )
 #endif /*STATS*/
 
            ! Set Time
@@ -784,9 +792,10 @@
            ! A host model, e.g. WRF, would advance time outside
            ! of hoc_closure_timestep.  Vince Larson 7 Feb 2006
            if ( i1 < niterlong ) then
-             time = time_initial + (i-1) * dtmain + i1 * dtclosure
+             time_current = time_initial + (i-1) * dtmain 
+     .                    + i1 * dtclosure
            else if ( i1 == niterlong ) then
-             time = time_initial + i * dtmain
+             time_current = time_initial + i * dtmain
            end if
 
            if ( err_code == CLUBB_singular_matrix .or.
@@ -1666,47 +1675,46 @@
            end do
 
          case( "arm" ) ! ARM Cu case
-           call arm_tndcy( time, thlm_forcing, radht, rtm_forcing
+           call arm_tndcy
+     .          ( time_current, thlm_forcing, radht, rtm_forcing
 #ifdef SCALARS
      .                     ,sclrm_forcing 
 #endif /* SCALARS */
      .                   )
          case( "arm_0003" ) ! ARM March 2000 case
-          call arm_0003_tndcy( time, wmm, wmt, thlm_forcing, rtm_forcing
-! Joshua Fasching, 27 Oct 2007
-     .                       ,um_ref,vm_ref
+          call arm_0003_tndcy( time_current, wmm, wmt, thlm_forcing, 
+     .                         rtm_forcing, um_ref, vm_ref
 #ifdef SCALARS
-     .                       ,sclrm_forcing 
+     .                        ,sclrm_forcing 
 #endif /* SCALARS */
      .                      )
 
          case( "arm_3year" ) ! ARM 3 year case
-          call arm_3year_tndcy( time, wmm, wmt, thlm_forcing, 
-     .                       rtm_forcing,um_ref,vm_ref
+          call arm_3year_tndcy( time_current, wmm, wmt, thlm_forcing, 
+     .                          rtm_forcing,um_ref,vm_ref
 #ifdef SCALARS
-     .                       ,sclrm_forcing 
+     .                         ,sclrm_forcing 
 #endif /* SCALARS */
      .                      )
 
          case( "arm_97" ) ! 27 June 1997 ARM case
-           call arm_97_tndcy( time, wmm, wmt, thlm_forcing, rtm_forcing
-! Joshua Fasching, 27 Oct 2007
-     .                       ,um_ref,vm_ref
+           call arm_97_tndcy( time_current, wmm, wmt, thlm_forcing, 
+     .                        rtm_forcing, um_ref, vm_ref
 #ifdef SCALARS
      .                       ,sclrm_forcing 
 #endif /* SCALARS */
      .                      )
 
          case( "bomex" ) ! BOMEX Cu case
-           call bomex_tndcy( time, wmt, wmm, radht,
+           call bomex_tndcy( time_current, wmt, wmm, radht,
      .                       thlm_forcing, rtm_forcing
 #ifdef SCALARS
-     .                       ,sclrm_forcing 
+     .                      ,sclrm_forcing 
 #endif /* SCALARS */
      .                     )
 
          case( "fire" ) ! FIRE Sc case
-           call fire_tndcy( time, rhot, rcm, exner, 
+           call fire_tndcy( time_current, rhot, rcm, exner, 
      .                      wmt, wmm, Frad, radht,
      .                      thlm_forcing, rtm_forcing
 #ifdef SCALARS
@@ -1715,7 +1723,7 @@
      .                    )
 
          case( "wangara" ) ! Wangara dry CBL
-           call wangara_tndcy( time, wmt, wmm, 
+           call wangara_tndcy( time_current, wmt, wmm, 
      .                         thlm_forcing, rtm_forcing
 #ifdef SCALARS
      .                        ,sclrm_forcing   ! optional variable
@@ -1723,7 +1731,7 @@
      .                       )
 
          case( "atex" ) ! ATEX case
-           call atex_tndcy( time, time_initial, rtm, 
+           call atex_tndcy( time_current, time_initial, rtm, 
      .                      rhot, rcm, exner, wmt, wmm, Frad, radht,
      .                      thlm_forcing, rtm_forcing, err_code
 #ifdef SCALARS
@@ -1732,16 +1740,16 @@
      .                    )
 
          case( "dycoms2_rf01" ) ! DYCOMS2 RF01 case
-           call dycoms2_rf01_tndcy( time, rhot, rhom, rtm, rcm, exner,
-     .                              wmt, wmm, Frad, radht, thlm_forcing,
-     .                              rtm_forcing, err_code  
+           call dycoms2_rf01_tndcy( time_current, rhot, rhom, rtm, rcm, 
+     .                              exner, wmt, wmm, Frad, radht, 
+     .                              thlm_forcing, rtm_forcing, err_code 
 #ifdef SCALARS
      .                             ,sclrm, sclrm_forcing  ! optional variables
 #endif /* SCALARS */
      .                            )
 
          case( "astex_a209" ) ! ASTEX Sc case for K & K
-           call astex_tndcy( time, wmt, wmm, 
+           call astex_tndcy( time_current, wmt, wmm, 
      .                       thlm_forcing, rtm_forcing
 #ifdef SCALARS
      .                      ,sclrm_forcing   ! optional variable
@@ -1752,11 +1760,9 @@
      .         "dycoms2_rf02_ds", ! DYCOMS2 RF02 case with drizzle and cloud sedimentation.
      .         "dycoms2_rf02_nd", ! DYCOMS2 RF02 case with no drizzle and no cloud sedimentation.
      .         "dycoms2_rf02_so" )! DYCOMS2 RF02 case with cloud water sedimentation only.
-           ! Added time, time_initial, and Ncnm to arguments for testing
-           ! the COAMPS microphysics with RF02 -dschanen 30 Nov 2006
            call dycoms2_rf02_tndcy
-     .          ( time, time_initial, rhot, rhom, rtm, rcm, exner,
-     .            wmt, wmm, thlm_forcing, rtm_forcing,
+     .          ( time_current, time_initial, rhot, rhom, rtm, rcm, 
+     .            exner, wmt, wmm, thlm_forcing, rtm_forcing,
      .            Frad, radht, Ncm, Ncnm, err_code
 #ifdef SCALARS
      .           ,sclrm_forcing  ! Optional variable
@@ -1764,47 +1770,51 @@
      .                            )
 
          case( "nov11_altocu" ) ! Nov. 11 Altocumulus case.
-           call nov11_altocu_tndcy( time, time_initial, dt, rlat, rlon,
-     .                              thlm, rcm, p, exner, rhot, rtm, wmt,
-     .                              wmm, thlm_forcing, rtm_forcing,
-     .                              Frad, radht, Ncnm
+           call nov11_altocu_tndcy
+     .          ( time_current, time_initial, dt, rlat, rlon,
+     .            thlm, rcm, p, exner, rhot, rtm, wmt,
+     .            wmm, thlm_forcing, rtm_forcing,
+     .            Frad, radht, Ncnm
 #ifdef SCALARS
-     .                             ,sclrm_forcing   ! optional variable
+     .           ,sclrm_forcing   ! optional variable
 #endif /* SCALARS */
      .                            )
 
          case( "jun25_altocu" ) ! June 25 Altocumulus case.
-           call jun25_altocu_tndcy( time, time_initial, rlat, dt, thlm,
-     .                              rcm, p, exner, rhot, rtm, wmt,
-     .                              wmm, thlm_forcing, rtm_forcing,
-     .                              Frad, radht
+           call jun25_altocu_tndcy
+     .          ( time_current, time_initial, rlat, dt, thlm,
+     .            rcm, p, exner, rhot, rtm, wmt,
+     .            wmm, thlm_forcing, rtm_forcing,
+     .            Frad, radht
 #ifdef SCALARS
-     .                             ,sclrm_forcing   ! optional variable
+     .           ,sclrm_forcing   ! optional variable
 #endif /* SCALARS */
      .                            )
 
          case( "clex9_nov02" ) ! CLEX-9: Nov. 02 Altocumulus case.
-           call clex9_nov02_tndcy( time, time_initial, dt, rlat, rlon,
-     .                             thlm, rcm, p, exner, rhot, rtm, wmt,
-     .                             wmm, thlm_forcing, rtm_forcing,
-     .                             Frad, radht, Ncnm
+           call clex9_nov02_tndcy
+     .          ( time_current, time_initial, dt, rlat, rlon,
+     .            thlm, rcm, p, exner, rhot, rtm, wmt,
+     .            wmm, thlm_forcing, rtm_forcing,
+     .            Frad, radht, Ncnm
 #ifdef SCALARS
-     .                            ,sclrm_forcing   ! optional variable
+     .           ,sclrm_forcing   ! optional variable
 #endif /* SCALARS */
      .                           )
 
          case( "clex9_oct14" ) ! CLEX-9: Oct. 14 Altocumulus case.
-           call clex9_oct14_tndcy( time, time_initial, dt, rlat, rlon,
-     .                             thlm, rcm, p, exner, rhot, rtm, wmt,
-     .                             wmm, thlm_forcing, rtm_forcing,
-     .                             Frad, radht, Ncnm
+           call clex9_oct14_tndcy
+     .          ( time_current, time_initial, dt, rlat, rlon,
+     .            thlm, rcm, p, exner, rhot, rtm, wmt,
+     .            wmm, thlm_forcing, rtm_forcing,
+     .            Frad, radht, Ncnm
 #ifdef SCALARS
-     .                            ,sclrm_forcing   ! optional variable
+     .           ,sclrm_forcing   ! optional variable
 #endif /* SCALARS */
      .                           )
 
          case ( "lba" )
-           call lba_tndcy( time, wmt, wmm, radht, 
+           call lba_tndcy( time_current, wmt, wmm, radht, 
      .                     thlm_forcing, rtm_forcing
 #ifdef SCALARS
      .                    ,sclrm_forcing
@@ -1812,28 +1822,30 @@
      .                    )
 
          case ( "mpace_a" ) ! mpace_a arctic stratus case
-           call mpace_a_tndcy( time, time_initial, dtmain, rlat, thlm,
-     .                       exner, rhot, rtm, p, thvm, rcm,
-     .                       wmt, wmm, thlm_forcing, rtm_forcing,
-     .                       Ncnm, Ncm, Frad, radht, um_ref,vm_ref
+           call mpace_a_tndcy
+     .          ( time_current, time_initial, dtmain, rlat, thlm,
+     .            exner, rhot, rtm, p, thvm, rcm,
+     .            wmt, wmm, thlm_forcing, rtm_forcing,
+     .            Ncnm, Ncm, Frad, radht, um_ref, vm_ref
 #ifdef SCALARS
-     .                      ,sclrm_forcing
+     .           ,sclrm_forcing
 #endif /* SCALARS */
      .                    )
 
          case ( "mpace_b" ) ! mpace_b arctic stratus case
-           call mpace_b_tndcy( time, time_initial, dtmain, rlat, thlm,
-     .                       exner, rhot, rtm, p, thvm, rcm,
-     .                       wmt, wmm, thlm_forcing, rtm_forcing,
-     .                       Ncnm, Ncm, Frad, radht
+           call mpace_b_tndcy
+     .          ( time_current, time_initial, dtmain, rlat, thlm,
+     .            exner, rhot, rtm, p, thvm, rcm,
+     .            wmt, wmm, thlm_forcing, rtm_forcing,
+     .            Ncnm, Ncm, Frad, radht
 #ifdef SCALARS
-     .                      ,sclrm_forcing
+     .           ,sclrm_forcing
 #endif /* SCALARS */
      .                    )
 
         ! Brian Griffin for COBRA CO2 case.
         case ( "cobra" )
-           call cobra_tndcy( time, wmt, wmm, 
+           call cobra_tndcy( time_current, wmt, wmm, 
      .                       thlm_forcing, rtm_forcing
 #ifdef SCALARS
      .                      ,sclrm_forcing   ! optional variable
@@ -1841,7 +1853,7 @@
      .                     )
 
          case ( "rico" ) ! RICO case
-           call rico_tndcy( time, time_initial, dtmain, exner,
+           call rico_tndcy( time_current, time_initial, dtmain, exner,
      .                      rhot, rcm, kk_rain, wmt, wmm,
      .                      thlm_forcing, rtm_forcing, radht, Ncm
 #ifdef SCALARS
@@ -1850,11 +1862,11 @@
      .                    )
 
          case ( "gabls2" ) ! GABLS 2 case
-           call gabls2_tndcy( time, time_initial, 
-     .                      rhot, rcm, kk_rain, wmt, wmm,
-     .                      thlm_forcing, rtm_forcing, radht, Ncm
+           call gabls2_tndcy( time_current, time_initial, 
+     .                        rhot, rcm, kk_rain, wmt, wmm,
+     .                        thlm_forcing, rtm_forcing, radht, Ncm
 #ifdef SCALARS
-     .                     ,sclrm_forcing
+     .                       ,sclrm_forcing
 #endif /* SCALARS */
      .                    )
 
@@ -1904,7 +1916,7 @@
           end if
 
         case( "arm" )
-          call arm_sfclyr( time, gr%zt(2), 1.1, 
+          call arm_sfclyr( time_current, gr%zt(2), 1.1, 
      .                     thlm(2), um(2), vm(2),
      .                     upwp_sfc, vpwp_sfc, 
      .                     wpthlp_sfc, wprtp_sfc, ustar
@@ -1914,7 +1926,7 @@
      .                    )
 
         case( "arm_0003" )
-           call arm_0003_sfclyr( time, gr%zt(2), rhom(1),
+           call arm_0003_sfclyr( time_current, gr%zt(2), rhom(1),
      .                         thlm(2), um(2), vm(2),
      .                         upwp_sfc, vpwp_sfc, 
      .                         wpthlp_sfc, wprtp_sfc, ustar
@@ -1924,7 +1936,7 @@
      .                     )
 
         case( "arm_3year" )
-           call arm_3year_sfclyr( time, gr%zt(2), rhom(1),
+           call arm_3year_sfclyr( time_current, gr%zt(2), rhom(1),
      .                         thlm(2), um(2), vm(2),
      .                         upwp_sfc, vpwp_sfc, 
      .                         wpthlp_sfc, wprtp_sfc, ustar
@@ -1935,7 +1947,7 @@
 
 
          case ( "arm_97" )
-           call arm_97_sfclyr( time, gr%zt(2), rhom(1),
+           call arm_97_sfclyr( time_current, gr%zt(2), rhom(1),
      .                         thlm(2), um(2), vm(2),
      .                         upwp_sfc, vpwp_sfc, 
      .                         wpthlp_sfc, wprtp_sfc, ustar
@@ -1954,7 +1966,7 @@
      .                     )
 
         case( "wangara" )
-          call wangara_sfclyr( time, um(2), vm(2),
+          call wangara_sfclyr( time_current, um(2), vm(2),
      .                         upwp_sfc, vpwp_sfc,
      .                         wpthlp_sfc, wprtp_sfc, ustar
 #ifdef SCALARS
@@ -2017,7 +2029,7 @@
           ! for the CLEX-9: Oct. 14 Altocumulus case.
 
          case ( "lba" )
-           call lba_sfclyr( time, gr%zt(2), rhom(1),
+           call lba_sfclyr( time_current, gr%zt(2), rhom(1),
      .                      thlm(2), um(2), vm(2),
      .                      upwp_sfc, vpwp_sfc, 
      .                      wpthlp_sfc, wprtp_sfc, ustar
@@ -2027,10 +2039,11 @@
      .                     )
 
          case ( "mpace_a" )
-           call mpace_a_sfclyr( time, rhom(1), um(2), vm(2), upwp_sfc,
-     .                        vpwp_sfc, wpthlp_sfc, wprtp_sfc, ustar
+           call mpace_a_sfclyr
+     .          ( time_current, rhom(1), um(2), vm(2), upwp_sfc,
+     .            vpwp_sfc, wpthlp_sfc, wprtp_sfc, ustar
 #ifdef SCALARS
-     .                        ,wpsclrp_sfc, wpedsclrp_sfc
+     .           ,wpsclrp_sfc, wpedsclrp_sfc
 #endif /* SCALARS */
      .                      )
 
@@ -2044,7 +2057,7 @@
 
         ! Brian Griffin for COBRA CO2 case.
         case ( "cobra" )
-          call cobra_sfclyr( time, gr%zt(2), rhom(1),
+          call cobra_sfclyr( time_current, gr%zt(2), rhom(1),
      .                       thlm(2), um(2), vm(2),
      .                       upwp_sfc, vpwp_sfc,
      .                       wpthlp_sfc, wprtp_sfc, ustar
@@ -2065,12 +2078,12 @@
      .                      )
 
          case ( "gabls2" )
-          call gabls2_sfclyr(time, time_initial, gr%zt(2), 97200.,
-     .                      um(2), vm(2), thlm(2), rtm(2),
-     .                      upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, 
-     .                      ustar
+          call gabls2_sfclyr
+     .         ( time_current, time_initial, gr%zt(2), 97200.,
+     .           um(2), vm(2), thlm(2), rtm(2),
+     .           upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, ustar
 #ifdef SCALARS
-     .                     ,sclrm(2,:), wpsclrp_sfc, wpedsclrp_sfc
+     .          ,sclrm(2,:), wpsclrp_sfc, wpedsclrp_sfc
 #endif /* SCALARS */
      .                    )
 
@@ -2089,7 +2102,7 @@
         
         if ( kk_rain .or. lcoamps_micro .or. licedfs ) then
           call timestep_microphys
-     .         ( runtype, dt, time, time_initial,
+     .         ( runtype, dt, time_current, time_initial,
      .           thlm, p, exner, rhot, rhom, rtm, rcm, Ncm, 
      .           pdf_parms, wmt, wmm, Khm, AKm_est, Akm, 
      .           Ncnm, Nim,
@@ -2163,12 +2176,12 @@
      .                    cf, p, exner, rhom)
 
 
-          call bugsrad_hoc( gr%zm, gr%nnzp, rlat, rlon, ! In
-     .                      day, month, year, time,     ! In
-     .                      thlm, rcm, rtm, rrm, ricem, ! In
-     .                      cf, p, exner, rhom,         ! In
-     .                      radht, Frad,                ! Out
-     .                      thlm_forcing )              ! In/Out
+          call bugsrad_hoc( gr%zm, gr%nnzp, rlat, rlon,    ! In
+     .                      day, month, year, time_current,! In
+     .                      thlm, rcm, rtm, rrm, ricem,    ! In
+     .                      cf, p, exner, rhom,            ! In
+     .                      radht, Frad,                   ! Out
+     .                      thlm_forcing )                 ! In/Out
           
           if ( isnan2d( thlm_forcing ) ) then
             print *, "thlm_forcing after BUGSrad is NaN" 

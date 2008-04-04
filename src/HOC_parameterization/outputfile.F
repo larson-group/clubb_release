@@ -1,18 +1,20 @@
 !-----------------------------------------------------------------------
-! $Id: outputfile.F,v 1.4 2007-06-06 15:14:48 dschanen Exp $
+! $Id: outputfile.F,v 1.5 2008-04-04 22:02:49 dschanen Exp $
 #ifdef STATS
       module outputfile_class
 
 !     Description:
 !     Contains two derived types for either NetCDF or GrADS files.
 !-----------------------------------------------------------------------
+         use stats_prec
        
          implicit none
 
         ! Structure to hold the description of a variable
 
          type variable
-           real, dimension(:), pointer :: ptr ! Pointer to the array
+           ! Pointer to the array
+           real(kind=stat_rknd), dimension(:), pointer :: ptr 
 
            character(len = 15) :: name        ! Variable name
            character(len = 50) :: description ! Variable description
@@ -61,8 +63,10 @@
            real :: 
      .     rlat,   ! Latitude                   [Degrees N]
      .     rlon,   ! Longitude                  [Degrees E]
-     .     time,   ! Start time                 [Seconds]
      .     dtwrite ! Interval between output    [Seconds]
+
+           real(kind=time_prec) :: 
+     .     time    ! Start time                 [Seconds]
 
         ! Statistical Variables
 

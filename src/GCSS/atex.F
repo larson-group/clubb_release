@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 1
 !----------------------------------------------------------------------
-!$Id: atex.F,v 1.9 2008-04-04 20:11:21 faschinj Exp $
+!$Id: atex.F,v 1.10 2008-04-04 22:02:49 dschanen Exp $
         module atex
 
 !       Description:
@@ -26,6 +26,7 @@
         use model_flags, only: lbugsrad
         use grid_class
         use atex_cloud_rad
+        use stats_prec, only: time_prec
         use error_code, only: CLUBB_rtm_level_not_found
 
 #ifdef STATS
@@ -35,7 +36,7 @@
         implicit none
 
         ! Input Variables
-        real, intent(in) :: 
+        real(kind=time_prec), intent(in) :: 
      .  time,        ! Current time     [s]
      .  time_initial ! Initial time     [s]
 

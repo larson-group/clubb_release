@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm.F,v 1.8 2008-03-13 21:48:29 dschanen Exp $
+! $Id: arm.F,v 1.9 2008-04-04 22:02:49 dschanen Exp $
         module arm
 
 !       Description:
@@ -27,6 +27,7 @@
         use grid_class
         use constants, only: sclr_dim
         use model_flags, only: lbugsrad
+        use stats_prec, only: time_prec
 #ifdef STATS
         use stats_hoc
 #endif
@@ -44,7 +45,7 @@
      .  art    = (/ 0.080, 0.020, -0.040, -0.100, -0.160, -0.300/)
 
         ! Input Variables
-        real, intent(in) :: time ! Model time [s]
+        real(kind=time_prec), intent(in) :: time ! Model time [s]
 
         ! Output Variables
         real, intent(out), dimension(gr%nnzp) :: 
@@ -158,6 +159,7 @@
 !----------------------------------------------------------------------
 
         use constants, only: Cp, Lv, grav, sclr_dim
+        use stats_prec, only: time_prec
 
         implicit none
 
@@ -174,8 +176,10 @@
      .  z0 = 0.035  ! momentum roughness height
 
         ! Input variables
+        real(kind=time_prec), intent(in) :: 
+     .  time            ! Current time          [s]
+
         real, intent(in) :: 
-     .  time,           ! Current time          [s]
      .  z,              ! Height at zt(2)       [m]
      .  dn0,            ! ???
      .  thlm_sfc,       ! Theta_l at zt(2)      [K]

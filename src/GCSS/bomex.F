@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: bomex.F,v 1.6 2008-03-13 21:44:37 dschanen Exp $
+! $Id: bomex.F,v 1.7 2008-04-04 22:02:49 dschanen Exp $
         module bomex
 
 !       Description:
@@ -25,11 +25,12 @@
         use grid_class
         use model_flags, only: lbugsrad
         use constants, only: sclr_dim
+        use stats_prec, only: time_prec
 
         implicit none
 
         ! Input
-        real, intent(in)  :: time ! Current model time [s]
+        real(kind=time_prec), intent(in) :: time ! Model time [s]
 
         ! Output Variables
         real, intent(out), dimension(gr%nnzp) ::

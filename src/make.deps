@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.26 2008-03-31 18:03:37 faschinj Exp $
+# $Id: make.deps,v 1.27 2008-04-04 22:02:49 dschanen Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -38,7 +38,8 @@ constants.o	: constants.F
 param_index.o   : param_index.F
 parameters.o    : param_index.o error_code.o parameters.F
 model_flags.o	: model_flags.F
-outputfile.o	: outputfile.F
+stats_prec.o	: stats_prec.F
+outputfile.o    : stats_prec.o outputfile.F
 KK_microphys.o  : constants.o model_flags.o lapack_wrap.o parab.o stats_hoc.o \
 	KK_microphys.F
 microphysics.o	: constants.o model_flags.o lapack_wrap.o KK_microphys.o \
@@ -52,7 +53,7 @@ numer_check.o	: prog_variables.o diag_variables.o constants.o model_flags.o\
 	error_code.o numer_check.F
 inputgrads.o	: constants.o endian.o recl.F inputgrads.F
 grid.o		: grid.F
-stats_type.o    : outputfile.o stats_type.F
+stats_type.o    : outputfile.o stats_prec.o stats_type.F
 stats_hoc.o     : stats_type.o stats_hoc.F
 stats_subs.o    : outputgrads.o outputnc.o prog_variables.o diag_variables.o \
 	stats_hoc.o grid.o stats_zt.o stats_zm.o stats_sfc.o stats_subs.F 

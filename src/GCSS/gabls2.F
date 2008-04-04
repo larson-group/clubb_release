@@ -31,13 +31,14 @@
         use constants
         use grid_class
         use saturation, only: rsat
+        use stats_prec, only: time_prec
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
         implicit none
 
         ! Input Variables
-        real, intent(in) ::
+        real(kind=time_prec), intent(in) ::
      .    time,          ! Current length of timestep      [s]
      .    time_initial   ! Current length of timestep      [s]
 
@@ -149,6 +150,7 @@
 !-----------------------------------------------------------------------
           use constants
           use saturation, only: rsat ! Used to compute saturation mixing ratio
+          use stats_prec, only: time_prec
 
           implicit none
 
@@ -163,9 +165,11 @@
      .      z0      = 0.03      ! Roughness length, defined by GABLS2 specification
 
           ! Input variables
-          real, intent(in) ::
+          real(kind=time_prec), intent(in) ::
      .      time,               ! Time elapsed since 0.0 s          [s]
-     .      time_initial,       ! Initial time of model integration [s]
+     .      time_initial        ! Initial time of model integration [s]
+
+          real, intent(in) ::
      .      psfc,               ! Surface pressure [Pa]
      .      lowest_level,       ! Height of lowest above-ground gridpoint [m]
      .      um,                 ! u at the lowest above-ground model level.  [m/s]

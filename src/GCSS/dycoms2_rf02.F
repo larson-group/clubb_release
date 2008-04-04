@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf02.F,v 1.12 2008-04-04 20:11:21 faschinj Exp $
+! $Id: dycoms2_rf02.F,v 1.13 2008-04-04 22:02:49 dschanen Exp $
         module dycoms2_rf02
 
 !       Description:
@@ -31,6 +31,7 @@
         USE grid_class
         USE constants
         USE model_flags, only: lbugsrad, lcoamps_micro, kk_rain
+        use stats_prec, only: time_prec
         USE error_code, only: CLUBB_rtm_level_not_found
 #ifdef STATS
         USE stats_hoc
@@ -44,7 +45,7 @@
      .  F1     = 22.0     ! [W/m^2]
 
         ! Input Variables
-        real, intent(in) ::
+        real(kind=time_prec), intent(in) ::
      .  time,         ! Current time    [s]
      .  time_initial  ! Initial time    [s]
 

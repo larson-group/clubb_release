@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: outputgrads.F,v 1.7 2008-03-20 17:30:03 griffinb Exp $
+! $Id: outputgrads.F,v 1.8 2008-04-04 22:02:49 dschanen Exp $
 #ifdef STATS 
         module outputgrads
 
@@ -50,13 +50,18 @@
 
 !         ! Input Variables
 
-          integer, intent(IN)              :: unit
+          integer, intent(IN) :: unit
           character*(*), intent(IN) :: fdir, fname
+
           integer, intent(IN) :: ia, iz
-          real, intent(IN)    :: z(:)
+          real, dimension(:), intent(IN) :: z
+
           integer, intent(IN) :: day, month, year
-          real, intent(IN)    :: rlat, rlon
-          real, intent(IN)    :: time, dtwrite
+
+          real, intent(IN) :: rlat, rlon, dtwrite
+
+          real(kind=time_prec), intent(IN) :: time 
+
           integer, intent(IN) :: nvar
 
           ! Input/Output Variables
@@ -164,6 +169,7 @@
 !         existing file.
 !-----------------------------------------------------------------------
           use outputfile_class
+          use stats_prec
           use constants, only: fstderr, fstdout
 
           implicit none
@@ -180,9 +186,11 @@
      .    fdir, fname ! File directory and name
 
           real, dimension(:), intent(in) ::
-     .    z(:) ! Altitudes
+     .    z(:) ! Altitudes              [m]
+          real(kind=time_prec), intent(in) ::
+     .    time    ! Current time        [s]
           real, intent(in) ::
-     .    time, dtwrite ! Time and time between writes interval
+     .    dtwrite ! Time interval between writes to the file    [s]
 
           ! Output Variables
           logical, intent(out) :: 
@@ -191,7 +199,7 @@
           integer, intent(out) :: 
      .    ntimes, nrecord
 
-          real, intent(out) :: time_in
+          real(kind=time_prec), intent(out) :: time_in
         
           ! Local Variables
           logical :: done
@@ -521,6 +529,7 @@
           !---------------------------------------------------------
           subroutine formatdate( day_in, month_in, year_in, 
      .                           time_in, date )
+          use stats_prec, only: time_prec
           implicit none
 
           ! Constant Parameters
@@ -538,7 +547,7 @@
           integer, intent(in) :: 
      .    day_in, month_in, year_in
 
-          real, intent(in) :: time_in
+          real(kind=time_prec), intent(in) :: time_in
 
           ! Output Variables
           character(len=15), intent(out) :: date
