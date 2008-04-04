@@ -8,8 +8,7 @@ stats_tout  = 5.0
 fname_zt = 'dycoms2_rf02_nd_zt_HR'
 vars_zt = 
 'thlm', 'thvm', 'rtm', 'rcm', 'um', 'vm', 'wmt', 'ug', 'vg',
-'cf', 'p', 'exner', 'Lscale', 'thlm_forcing', 'thlm_mc',
-'rtm_forcing', 'rtm_mc',
+'cf', 'p', 'exner', 'Lscale', 
 'wp3', 'wpthlp2', 'wp2thlp', 'wprtp2', 'wp2rtp',
 'Lup', 'Ldown', 'taut', 'kht', 'wp2thvp', 'wp2rcp', 'wprtpthlp',
 'sc', 'rhot', 'radht', 'radht_LW', 'radht_SW',
@@ -17,7 +16,8 @@ vars_zt =
 'rrm', 'Nrm', 'mean_vol_rad_rain', 'mean_vol_rad_cloud',
 'rain_rate', 'AKm', 'AKm_est', 'rsnowm', 'ricem', 'rgraupelm',
 !'diam', 'mass_ice_cryst', 'rcm_icedfs', 'u_T_cm',
-'rtm_bt', 'rtm_ma', 'rtm_ta','rtm_cl', 'thlm_bt', 'thlm_ma', 'thlm_ta','thlm_cl',
+'rtm_bt', 'rtm_ma', 'rtm_ta','rtm_cl', 'rtm_forcing', 'rtm_mc', 
+'thlm_bt', 'thlm_ma', 'thlm_ta','thlm_cl','thlm_forcing', 'thlm_mc',
 'um_bt', 'um_ma', 'um_gf', 'um_cf', 'um_ta',
 'vm_bt', 'vm_ma', 'vm_gf', 'vm_cf', 'vm_ta',
 'wp3_bt', 'wp3_ma', 'wp3_ta', 'wp3_tp', 'wp3_ac', 'wp3_bp',
