@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zt.F,v 1.9 2008-03-31 18:30:12 faschinj Exp $
+! $Id: stats_zt.F,v 1.10 2008-04-04 22:19:42 faschinj Exp $
 #ifdef STATS
        
       module stats_zt
@@ -300,7 +300,7 @@
         case ('thlm_mc')
           ithlm_mc = k
           call stat_assign(ithlm_mc,"thlm_mc",
-     .         "thetal micro", "K/s",zt)
+     .         "thetal micro (not in budget)", "K/s",zt)
           k = k + 1
         case ('rtm_forcing')
           irtm_forcing = k
@@ -310,7 +310,7 @@
         case ('rtm_mc')
           irtm_mc = k
           call stat_assign(irtm_mc,"rtm_mc",
-     .         "rt micro", "kg/(kg s)",zt)
+     .         "rt micro (not in budget)", "kg/(kg s)",zt)
           k = k + 1
 
         case ('wp3')
