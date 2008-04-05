@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: wangara.F,v 1.5 2008-04-04 22:02:49 dschanen Exp $
+! $Id: wangara.F,v 1.6 2008-04-05 19:54:20 griffinb Exp $
         module wangara
 
         public :: wangara_tndcy, wangard_sfclyr
@@ -63,7 +63,7 @@
 !       heat and moisture for Wangara day 33
 !----------------------------------------------------------------------
 
-        use constants, only: sclr_dim, pi, fstderr
+        use constants, only: sclr_dim, pi, fstderr, sec_per_day
         use stats_prec, only: time_prec
 
         implicit none
@@ -98,7 +98,8 @@
 
         ! Local variables
 
-        real :: ubar, time_utc, time_est
+        real :: ubar 
+        real(kind=time_prec) :: time_utc, time_est
 
 
         ! Declare the value of ustar.
@@ -106,11 +107,11 @@
 
         ! Compute UTC time of the day in seconds
 
-        time_utc = mod( time, 86400. )
+        time_utc = mod( time, sec_per_day )
 
         ! Now convert UTC time to Australia EST (local time)
 
-        time_est = mod( time_utc + 36000., 86400. )
+        time_est = mod( time_utc + 36000., sec_per_day )
 
         if ( time_est < 27000 .or. time_est > 63000 ) then
            write(fstderr,*) "wangara_sfclyr: error local time must"

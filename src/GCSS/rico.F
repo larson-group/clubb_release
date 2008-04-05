@@ -38,7 +38,7 @@
      .  time,          ! Current time           [s]
      .  time_initial   ! Start time             [s]
 
-        real, intent(in) ::
+        real(kind=time_prec), intent(in) ::
      .  dt             ! Current length of timestep      [s]
 
         real, dimension(gr%nnzp), intent(in) ::

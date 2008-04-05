@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: clex9_nov02.F,v 1.4 2008-04-04 22:02:49 dschanen Exp $
+! $Id: clex9_nov02.F,v 1.5 2008-04-05 19:54:20 griffinb Exp $
         module clex9_nov02
 
 !       Description:
@@ -86,8 +86,10 @@
      .  time,           ! Current time          [s]
      .  time_initial    ! Initial time          [s]
 
+        real(kind=time_prec), intent(in) ::
+     .  dt              ! Timestep              [s]
+
         real, intent(in) ::
-     .  dt,             ! Timestep              [s]
      .  rlat,           ! Latitude              [degrees_N]
      .  rlon            ! Longitude             [degrees_E]
 

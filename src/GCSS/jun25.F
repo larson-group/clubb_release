@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: jun25.F,v 1.8 2008-04-04 22:02:49 dschanen Exp $
+! $Id: jun25.F,v 1.9 2008-04-05 19:54:20 griffinb Exp $
         module jun25
 
 !       Description:
@@ -51,7 +51,9 @@
      .  time_initial  ! Initial time of simulation            [s]
 
         real, intent(in) :: 
-     .  rlat,         ! Reference latitude should be 37.6     [Degrees North]
+     .  rlat          ! Reference latitude should be 37.6     [Degrees North]
+
+        real(kind=time_prec), intent(in) :: 
      .  dt            ! Length of model timestep              [s]
 
         real, dimension(gr%nnzp), intent(in) :: 

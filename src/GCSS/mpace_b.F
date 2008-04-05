@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_b.F,v 1.8 2008-04-04 22:02:49 dschanen Exp $
+! $Id: mpace_b.F,v 1.9 2008-04-05 19:54:20 griffinb Exp $
         module mpace_b
 
 !       Description:
@@ -79,8 +79,10 @@
      .  time,         ! Current time of simulation      [s]
      .  time_initial  ! Initial time of simulation      [s]
 
+        real(kind=time_prec), intent(in) :: 
+     .  dt            ! Current length of timestep      [s]
+
         real, intent(in) :: 
-     .  dt,           ! Current length of timestep      [s]
      .  rlat          ! Latitude                        [Degrees North]
 
         real, dimension(gr%nnzp), intent(in) ::
