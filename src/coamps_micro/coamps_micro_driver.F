@@ -1,6 +1,6 @@
 !----------------------------------------------------------------------
       subroutine coamps_micro_driver
-     .       ( runtype, kk, kmax, timea, deltf,
+     .       ( runtype, kk, kmax, timea_in, deltf_in,
      .         rtm, wmm, p, exner, rhot,
      .         thlm, ricem, rrm, rgraupelm, rsnowm,
      .         rcm, Ncm, Nrm, Ncnm, Nim,
@@ -26,6 +26,7 @@
       use constants
       use grid_class, only: zt2zm
       use saturation, only: rsat, rsati
+      use stats_prec, only: time_prec
 
 #ifdef STATS
       use stats_hoc, only: zt, zm, lstats_samp,
@@ -124,9 +125,13 @@
      .  kk,    ! Number of COAMPS m gridpoints in the vertical (gr%nnzp-1)
      .  kmax   ! Maximum array size (kk + ??)
 
-      real, intent(in) ::
-     .  timea,        ! Current model time                      [s]
-     .  deltf         ! Timestep (i.e. dtmain in CLUBB)         [s]
+      ! Note: Time variables "timea_in" and "deltf_in" need to be passed in 
+      !       from CLUBB with precision "time_prec".  I have redefined 
+      !       "timea" and "deltf" below to be regular precision variables
+      !       that are passed throughout COAMPS microphysics.  Brian; 4/5/2008.
+      real(kind=time_prec), intent(in) ::
+     .  timea_in,        ! Current model time                   [s]
+     .  deltf_in         ! Timestep (i.e. dtmain in CLUBB)      [s]
 
       real, dimension(kk+1), intent(in) ::
      .  rtm,  ! Total water mixing ratio                        [kg/kg]
@@ -356,6 +361,10 @@
      .  lgrpl          ! is graupel on?
 
 
+      real :: ! Regular precision to be passed into COAMPS micro. Brian.
+     .  timea,        ! Current model time                      [s]
+     .  deltf         ! Timestep (i.e. dtmain in CLUBB)         [s]
+
 !----------------------------------------------------------------------
 
       ! Begin coamps_micro_driver code
@@ -421,6 +430,12 @@
       ! Something related to ice.  In regular COAMPS it is a parameter but is
       ! then set to another value, which is illegal.
       eic      = 1.0
+
+      ! Brian set regular precision variables "timea" and "deltf" to the values
+      ! brought in from CLUBB as precision "time_prec" variables "timea_in" and
+      ! "deltf_in".  Brian; 4/5/2008.
+      timea = timea_in
+      deltf = deltf_in
 
 ! Michael Falk changed this, November 2007.
 ! This is the stock COAMPS value, 2e7:
