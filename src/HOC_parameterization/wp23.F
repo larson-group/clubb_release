@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.46 2008-04-04 20:10:00 faschinj Exp $
+! $Id: wp23.F,v 1.47 2008-04-05 19:54:32 griffinb Exp $
 !========================================================================
         module wp23
 
@@ -44,6 +44,7 @@
         use parameters
         use constants
         use model_flags
+        use stats_prec, only: time_prec
         use error_code, only: CLUBB_singular_matrix,
      .                        CLUBB_bad_lapack_arg
 #ifdef STATS
@@ -55,7 +56,7 @@
         intrinsic :: exp
 
         ! Input Variables
-        real, intent(in) :: dt ! Timestep               [s]
+        real(kind=time_prec), intent(in) :: dt ! Timestep               [s]
 
         real, intent(in), dimension(gr%nnzp) :: 
      .  Lscale,! Mixing Length                          [m]
@@ -288,6 +289,7 @@
         use constants
         use model_flags
         use diffusion
+        use stats_prec, only: time_prec
         use lapack_wrap, only: band_solve, band_solvex
         use error_code, only: CLUBB_singular_matrix,
      .                        CLUBB_bad_lapack_arg
@@ -307,7 +309,7 @@
      .  nrhs = 1   ! Number of RHS vectors
 
         ! Input Variables
-        real, intent(in) :: 
+        real(kind=time_prec), intent(in) :: 
      .  dt          ! Timestep                               [s]
 
         real, intent(in), dimension(gr%nnzp) :: 

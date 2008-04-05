@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_hoc.F,v 1.5 2008-03-31 18:13:48 faschinj Exp $
+! $Id: stats_hoc.F,v 1.6 2008-04-05 19:54:32 griffinb Exp $
 #ifdef STATS
 !-----------------------------------------------------------------------
 !  module stats_hoc
@@ -9,14 +9,15 @@
       module stats_hoc
         
         use stats_type, only: stats
+        use stats_prec, only: time_prec
 
         implicit none
         
         public ! All elements of this module are public
         
         ! Sampling and output frequencies
-        real :: stats_tsamp       ! Sampling interval   [s]
-        real :: stats_tout        ! Output interval     [s]
+        real(kind=time_prec) :: stats_tsamp    ! Sampling interval   [s]
+        real(kind=time_prec) :: stats_tout     ! Output interval     [s]
 
         logical :: 
      .  lstats,  ! Main flag to turn statistics on/off

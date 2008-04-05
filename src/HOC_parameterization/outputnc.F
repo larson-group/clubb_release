@@ -1,4 +1,4 @@
-! $Id: outputnc.F,v 1.7 2008-04-04 22:02:49 dschanen Exp $
+! $Id: outputnc.F,v 1.8 2008-04-05 19:54:32 griffinb Exp $
 !-----------------------------------------------------------------------
 #ifdef STATS
        module outputnc
@@ -47,15 +47,17 @@
      .  nvar              ! Number of variables
 
        real, intent(in) :: 
-     .  rlat,  ! Latitude                       [degrees_E]
-     .  rlon,  ! Longitude                      [degrees_N]
-     .  dtwrite! Time between write intervals   [s]
+     .  rlat,  ! Latitude                        [degrees_E]
+     .  rlon   ! Longitude                       [degrees_N]
+
+       real(kind=time_prec), intent(in) ::
+     .  dtwrite ! Time between write intervals   [s]
 
        real(kind=time_prec), intent(in) :: 
-     .  time   ! Current time                   [s]
+     .  time   ! Current time                    [s]
 
        real, dimension(:), intent(in) :: 
-     .  zgrid  ! The model grid                 [m]
+     .  zgrid  ! The model grid                  [m]
 
        ! Input/output Variables
        type (outputfile), intent(inout) :: ncf
@@ -219,7 +221,7 @@
        real(kind=time_prec), intent(in) :: 
      .  time    ! Current time   [s]
 
-       real, intent(in) :: 
+       real(kind=time_prec), intent(in) :: 
      .  dtwrite ! Write interval [s]
 
        real, intent(in), dimension(:) :: 

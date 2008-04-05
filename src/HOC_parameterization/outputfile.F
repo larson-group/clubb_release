@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: outputfile.F,v 1.5 2008-04-04 22:02:49 dschanen Exp $
+! $Id: outputfile.F,v 1.6 2008-04-05 19:54:32 griffinb Exp $
 #ifdef STATS
       module outputfile_class
 
@@ -62,7 +62,9 @@
 
            real :: 
      .     rlat,   ! Latitude                   [Degrees N]
-     .     rlon,   ! Longitude                  [Degrees E]
+     .     rlon    ! Longitude                  [Degrees E]
+
+           real(kind=time_prec) ::
      .     dtwrite ! Interval between output    [Seconds]
 
            real(kind=time_prec) :: 

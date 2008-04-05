@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.7 2008-04-04 22:02:49 dschanen Exp $
+!  $Id: stats_subs.F,v 1.8 2008-04-05 19:54:32 griffinb Exp $
 #ifdef STATS
       module stats_subs
  
@@ -55,7 +55,9 @@
       integer, intent(in) :: day, month, year  ! Time of year
 
       real, intent(in) :: 
-     .  rlat, rlon,  ! Latitude and Longitude             [Degrees N/E]
+     .  rlat, rlon   ! Latitude and Longitude             [Degrees N/E]
+
+      real(kind=time_prec), intent(in) :: 
      .  delt         ! Timestep (dtmain in HOC)           [s]
 
       real(kind=time_prec), intent(in) :: 
@@ -380,10 +382,10 @@
 
       ! Input
       integer, intent(in) :: nn, kk
+      integer(kind=stat_nknd), dimension(kk,nn), intent(in) :: n
 
       ! Output
-      real(kind=stat_rknd), dimension(kk,nn), intent(out)    :: x
-      integer(kind=stat_nknd), dimension(kk,nn), intent(out) :: n
+      real(kind=stat_rknd), dimension(kk,nn), intent(inout)  :: x
 
       ! Internal
 
@@ -421,7 +423,7 @@
       real(kind=time_prec), intent(in) :: 
      .  time_elapsed ! Elapsed model time       [s]
 
-      real, intent(in) :: 
+      real(kind=time_prec), intent(in) :: 
      .  delt         ! Model time step          [s]
 
       if ( .not. lstats ) return
@@ -471,7 +473,8 @@
       real(kind=time_prec), intent(in) :: 
      .  time_elapsed ! Time elapsed             [s]
 
-      real, intent(in) :: delt ! timestep       [s]
+      real(kind=time_prec), intent(in) :: 
+     .  delt         ! timestep                 [s]
 
       ! Local Variables
 

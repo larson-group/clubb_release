@@ -1,4 +1,4 @@
-! $Id: ice_dfsn_mod.F,v 1.2 2008-04-03 19:00:12 vlarson Exp $        
+! $Id: ice_dfsn_mod.F,v 1.3 2008-04-05 19:54:32 griffinb Exp $        
 
         module ice_dfsn_mod
 
@@ -51,6 +51,7 @@
 
         USE grid_class
         USE constants
+        USE stats_prec, only: time_prec
         USE saturation, only: rsat
 #ifdef STATS
         use stats_hoc, only: zt, lstats_samp,
@@ -60,8 +61,8 @@
         implicit none
 
         ! Input variables
-        REAL, INTENT(IN):: 
-     .  dt      ! Model timestep
+        REAL(KIND=time_prec), INTENT(IN):: 
+     .  dt      ! Model timestep                                     [s]
 
         REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: 
      .  thlm,   ! Mean liquid water potential temperature            [K]

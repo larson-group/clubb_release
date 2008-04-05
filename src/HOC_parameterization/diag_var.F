@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.38 2008-04-04 20:10:00 faschinj Exp $
+! $Id: diag_var.F,v 1.39 2008-04-05 19:54:32 griffinb Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -44,6 +44,7 @@
      .    only: C2, C2b, C2c, C2rt, C2thl, C2rtthl, c_K2, nu2, nu9, 
      .          c_Ksqd, beta, C4, C14, C5, T0
         use grid_class
+        use stats_prec, only: time_prec
         use lapack_wrap, only: tridag_solve
         use error_code, only: CLUBB_singular_matrix,
      .                        CLUBB_bad_lapack_arg,
@@ -75,7 +76,7 @@
 
         logical, intent(in) :: liter ! Whether variances are prognostic
 
-        real, intent(in) :: dt ! Timestep       [s]
+        real(kind=time_prec), intent(in) :: dt ! Timestep       [s]
 
         ! Input/Output variables
         ! An attribute of (inout) is also needed to import the
@@ -606,6 +607,7 @@
 !       None
 !-----------------------------------------------------------------------
         use grid_class
+        use stats_prec, only: time_prec
         use diffusion, only: diffusion_mlev
 #ifdef STATS
         use stats_hoc
@@ -629,8 +631,10 @@
      .  Kw2,   ! Eddy diff. coef. on thermo. level      [m^2/s]
      .  Cn     ! Cn coefficient                         [-]
 
+        real(kind=time_prec), intent(in) ::
+     .  dt     ! Timestep length                        [s]
+
         real, intent(in) ::
-     .  dt,    ! Timestep length                        [s]
      .  nu2,   ! Previously determined eddy viscosity.  [-]
      .  beta,  ! Constant parameter                     [-]
      .  eps    ! Small value to prevent a divide by zero[-]
@@ -934,6 +938,7 @@
 !-----------------------------------------------------------------------
         use grid_class
         use constants, only: grav
+        use stats_prec, only: time_prec
 #ifdef STATS
         use stats_hoc
 #endif
@@ -958,7 +963,7 @@
      .  xap2,   ! x'^2(1)       [m^2/s^2]
      .  xbp2    ! x'^2(2)       [m^2/s^2]
 
-        real, intent(in) ::
+        real(kind=time_prec), intent(in) ::
      .  dt     ! Timestep      [s]
 
         real, intent(in) ::
@@ -1110,6 +1115,7 @@
 
 !-----------------------------------------------------------------------
         use grid_class
+        use stats_prec, only: time_prec
 #ifdef STATS
         use stats_hoc
 #endif
@@ -1132,7 +1138,7 @@
      .  xbm,    ! x(2)          [units vary]
      .  xapxbp  ! x'(1) x'(2)   [units vary]
 
-        real, intent(in) ::
+        real(kind=time_prec), intent(in) ::
      .  dt      ! Timestep      [s]
 
         real, intent(in) ::

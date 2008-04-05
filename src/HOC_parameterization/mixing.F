@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.42 2008-04-04 20:10:00 faschinj Exp $
+! $Id: mixing.F,v 1.43 2008-04-05 19:54:32 griffinb Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -55,6 +55,7 @@
         use parameters
         use constants
         use grid_class
+        use stats_prec, only: time_prec
         use error_code, only: CLUBB_singular_matrix,
      .                        CLUBB_bad_lapack_arg
      
@@ -68,7 +69,7 @@
         intrinsic :: exp, present
 
         ! Input Variables
-        real, intent(in) :: 
+        real(kind=time_prec), intent(in) :: 
      .  dt           ! Timestep                       [s]
 
         real, intent(in), dimension(gr%nnzp) ::
@@ -414,6 +415,7 @@
         use parameters
         use constants
         use grid_class
+        use stats_prec, only: time_prec
         use diffusion, only: diffusion_mlev
 #ifdef STATS
         use stats_hoc
@@ -427,7 +429,7 @@
         ! Input variables
         logical, intent(in) :: liter
 
-        real, intent(in) :: dt ! Timestep             [s]
+        real(kind=time_prec), intent(in) :: dt ! Timestep     [s]
 
         real, intent(in), dimension(gr%nnzp) :: 
      .  taum,        ! Tau on moment. grid            [s]
@@ -679,6 +681,7 @@
         use parameters
         use constants
         use grid_class
+        use stats_prec, only: time_prec
         use lapack_wrap, only: band_solve, band_solvex
         use model_flags, only:
      .    cloud_sed,   ! Cloud sedimentation flag -Brian
@@ -704,7 +707,7 @@
         logical, intent(in) :: 
      .  liter ! Whether the mean and flux terms are prognostic
 
-        real, intent(in) :: dt      ! Timestep              [s]
+        real(kind=time_prec), intent(in) :: dt      ! Timestep     [s]
 
         real, intent(in), dimension(gr%nnzp) :: 
      .  taum,        ! Tau on moment. grid                    [s]

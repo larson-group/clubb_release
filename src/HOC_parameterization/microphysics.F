@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.39 2008-04-04 22:02:49 dschanen Exp $
+! $Id: microphysics.F,v 1.40 2008-04-05 19:54:32 griffinb Exp $
         module microphysics
 
 !       Description:
@@ -64,7 +64,7 @@
         character(len=*), intent(in) ::
      .  runtype ! Name of the run, for case specific effects.
 
-        real, intent(in) :: 
+        real(kind=time_prec), intent(in) :: 
      .  dt           ! Timestep         [s]
 
         real(kind=time_prec), intent(in) :: 
@@ -755,6 +755,7 @@
 !       References:
 !-----------------------------------------------------------------------
         use grid_class
+        use stats_prec, only: time_prec
         use lapack_wrap, only: tridag_solve !,band_solve
 #ifdef STATS
         use stats_hoc
@@ -765,7 +766,7 @@
         ! Input Variables
         character(len=*), intent(in) :: solve_type
 
-        real, intent(in) :: dt ! Timestep               [s]
+        real(kind=time_prec), intent(in) :: dt ! Timestep     [s]
 
         ! Tendency computed tendency from COAMPS routine adjtq 
         ! or Brian Griffin's K & K microphysics implementation
@@ -907,6 +908,7 @@
 !       the same as the original rain subroutine code.
 !-----------------------------------------------------------------------
         use grid_class
+        use stats_prec, only: time_prec
         use diffusion, only: diffusion_tlev
 #ifdef STATS
         use stats_hoc
@@ -925,8 +927,10 @@
         logical, intent(in) :: 
      .  lsed ! Whether to add a sedimentation term
 
+        real(kind=time_prec), intent(in) :: 
+     .  dt  ! Timestep                  [s]
+
         real, intent(in) :: 
-     .  dt, ! Timestep                  [s]
      .  nu  ! Diffusion coefficient     [m^2/s]
 
         real, intent(in), dimension(gr%nnzp) :: 
@@ -1623,6 +1627,7 @@
         ! Brian Griffin.
 
         use grid_class
+        use stats_prec, only: time_prec
         use diffusion, only: diffusion_tlev
 !#ifdef STATS
 !        use stats_hoc
@@ -1640,7 +1645,8 @@
         real, dimension(gr%nnzp), intent(in) :: Kr         ! [m^2/s]
 
         real, intent(in) :: nu  ! Diffusion coefficient      [m^2/s]
-        real, intent(in) :: dt  ! Timestep                   [s]
+
+        real(kind=time_prec), intent(in) :: dt  ! Timestep   [s]
 
         integer, intent(in) :: level  ! Vertical grid index
 

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.20 2008-03-25 04:58:22 dschanen Exp $
+! $Id: constants.F,v 1.21 2008-04-05 19:54:32 griffinb Exp $
 
         module constants
 
@@ -9,6 +9,8 @@
 !       References:
 !       None
 !-----------------------------------------------------------------------
+
+        use stats_prec, only: time_prec
 
         implicit none
 
@@ -88,6 +90,15 @@
         real, parameter :: 
      .  eps = 1.0e-10 ! Small value to prevent a divide by zero
 
+        ! Useful conversion factors.
+        real(kind=time_prec), parameter :: 
+     .     sec_per_day = 86400.0 ! seconds in a day.
+        real(kind=time_prec), parameter ::
+     .     sec_per_hr  = 3600.0  ! seconds in an hour.
+        real(kind=time_prec), parameter ::
+     .     sec_per_min = 60.0    ! seconds in a minute.
+        real, parameter ::
+     .     g_per_kg = 1000.0     ! grams in a kilogram.
         
         integer, parameter :: 
      .  sclr_dim     = 2, ! Number of passive scalars. 

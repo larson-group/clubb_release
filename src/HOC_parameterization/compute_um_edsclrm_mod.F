@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F,v 1.4 2008-04-04 20:10:00 faschinj Exp $
+! $Id: compute_um_edsclrm_mod.F,v 1.5 2008-04-05 19:54:32 griffinb Exp $
 !------------------------------------------------------------------------
         module compute_um_edsclrm_mod
 
@@ -33,6 +33,7 @@
         use stats_hoc
 #endif
         use constants, only: fstderr
+        use stats_prec, only: time_prec
         use error_code, only: CLUBB_singular_matrix,
      .                        CLUBB_bad_lapack_arg
         
@@ -42,8 +43,10 @@
         character(len=*), intent(in) ::
      .  solve_type ! Desc. of what is being solved for
 
+        real(kind=time_prec), intent(in) :: 
+     .  dt           ! Timestep                             [s]
+
         real, intent(in) :: 
-     .  dt,          ! Timestep                             [s]
      .  xpwp_sfc     ! sfc flux                             [units vary]
 
         real, dimension(gr%nnzp), intent(in) :: 

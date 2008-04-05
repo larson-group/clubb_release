@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: outputgrads.F,v 1.8 2008-04-04 22:02:49 dschanen Exp $
+! $Id: outputgrads.F,v 1.9 2008-04-05 19:54:32 griffinb Exp $
 #ifdef STATS 
         module outputgrads
 
@@ -58,9 +58,9 @@
 
           integer, intent(IN) :: day, month, year
 
-          real, intent(IN) :: rlat, rlon, dtwrite
+          real, intent(IN) :: rlat, rlon
 
-          real(kind=time_prec), intent(IN) :: time 
+          real(kind=time_prec), intent(IN) :: time, dtwrite
 
           integer, intent(IN) :: nvar
 
@@ -189,7 +189,7 @@
      .    z(:) ! Altitudes              [m]
           real(kind=time_prec), intent(in) ::
      .    time    ! Current time        [s]
-          real, intent(in) ::
+          real(kind=time_prec), intent(in) ::
      .    dtwrite ! Time interval between writes to the file    [s]
 
           ! Output Variables
@@ -213,7 +213,7 @@
      .    day_in, month_in, year_in,
      .    ios
 
-          real :: dtwrite_in
+          real(kind=time_prec) :: dtwrite_in
 
           real, dimension(:), allocatable :: z_in
 

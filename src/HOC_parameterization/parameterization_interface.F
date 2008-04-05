@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.79 2008-04-04 20:10:00 faschinj Exp $
+! $Id: parameterization_interface.F,v 1.80 2008-04-05 19:54:32 griffinb Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -71,6 +71,7 @@
        use compute_um_edsclrm_mod, only: compute_um_edsclrm
        use saturation, only: rsat ! Saturation mixing ratio
        use wp23, only: timestep_wp23
+       use stats_prec, only: time_prec
        use error_code, only : CLUBB_var_equals_NaN,
      .                        CLUBB_singular_matrix,
      .                        CLUBB_bad_lapack_arg
@@ -98,8 +99,10 @@
        ! hoc.F, all subroutines within parameterization_timestep now use
        ! dt for time dependent calculations.  The old dt is noted in
        ! each section of the code -dschanen 20 April 2006 
+       real(kind=time_prec), intent(in) :: 
+     . dt            ! Current timestep size    [s]
+
        real, intent(in) :: 
-     . dt,           ! Current timestep size    [s]
      . fcor          ! Coriolis forcing         [s^-1]
 
        real, intent(in), dimension(gr%nnzp) :: 
