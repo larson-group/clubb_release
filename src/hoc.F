@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.167 2008-04-04 22:02:49 dschanen Exp $
+! $Id: hoc.F,v 1.168 2008-04-05 19:54:06 griffinb Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -78,7 +78,7 @@
 !$omp   threadprivate(time_initial, time_final, time_spinup,
 !    .                time_current)
 
-        real, private :: 
+        real(kind=time_prec), private :: 
      .  dtmain,     ! Main model timestep                      [s]
      .  dtclosure,  ! Closure model timestep                   [s]
      .  dt          ! Current model timestep (based on spinup) [s]
@@ -493,6 +493,7 @@
         use hoc_parameterization_interface
         use constants, only: fstdout, fstderr
         use error_code
+        use stats_prec, only: time_prec
 #ifdef STATS
         use stats_hoc
         use stats_subs
@@ -532,8 +533,10 @@
         real :: 
      .  fcor,           ! Coriolis parameter            [s^-1]
      .  T0,             ! Reference Temperature         [K]
-     .  ts_nudge,        ! Timescale for u/v nudging     [s]
-     .  time_restart    
+     .  ts_nudge        ! Timescale for u/v nudging     [s]
+
+        real(kind=time_prec) ::
+     .  time_restart    ! Time of model restart run     [s]
 
         logical :: 
      .  cloud_sed,    ! Flag for cloud water droplet sedimentation. - Brian
@@ -1374,6 +1377,7 @@
         use constants
         use parameters 
         use sounding
+        use stats_prec, only: time_prec
         use model_flags, only: luv_nudge
         use arm_0003, only: arm_0003_init
         use arm_97, only: arm_97_init
@@ -1387,8 +1391,11 @@
         character(len=*), intent(in) :: runfile,  ! filename for the namelist
      .                                  restart_path_case
 
-        real, intent(in) :: psfc, ! Pressure at the surface [Pa]
-     .                      time_restart
+        real, intent(in) :: psfc  ! Pressure at the surface [Pa]
+
+        real(kind=time_prec), intent(in) ::
+     .  time_restart
+
         ! Output
         real, dimension(gr%nnzp), intent(out) :: 
      .  thlm,           ! Theta l mean                                [K] 
@@ -1506,7 +1513,7 @@
         input_Nim = .true.
         input_cf  = .true.
         input_Nrm = .true.
-        input_Sct= .true.
+        input_Sct = .true.
         
         rrm       => hydromet(1:gr%nnzp,1)
         Nrm       => hydromet(1:gr%nnzp,2)
@@ -1592,6 +1599,7 @@
         use grid_class
         use diagnostic_variables
         use prognostic_variables
+        use stats_prec, only: time_prec
         use numerical_check, only: isnan2d, rad_check
         use microphysics, only: timestep_microphys ! Microphysics
         use error_code
@@ -1629,7 +1637,7 @@
 #endif
 
         ! Input Variables
-        real, intent(in) ::
+        real(kind=time_prec), intent(in) ::
      .    dt    ! Timestep      [s]
         integer, intent(in) ::
      .    iteration

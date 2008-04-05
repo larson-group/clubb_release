@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputfields.F,v 1.13 2008-03-25 04:58:22 dschanen Exp $
+! $Id: inputfields.F,v 1.14 2008-04-05 19:54:06 griffinb Exp $
 
 ! Module inputfields
 
@@ -634,11 +634,15 @@
 !       output time in a GrADS file
 !
 !-------------------------------------------------------------------------
+
           use inputfile_class
+          use constants, only: sec_per_min
+          use stats_prec, only: time_prec
+
           implicit none
           
           ! Input Variable(s)
-          real, intent(in) :: 
+          real(kind=time_prec), intent(in) :: 
      .       time ! Time near which we want to find GrADS output, 
                   !       e.g. time_restart     [s]
           
@@ -648,7 +652,7 @@
           
           ! Local Variables
           type (inputgrads) fread_var         
-          real delta_time   ! In seconds
+          real(kind=time_prec) ::  delta_time   ! In seconds
           
           call open_grads_read( 15, trim(datafile)//"_zt.ctl", 
      .                          fread_var )
@@ -680,8 +684,8 @@
              stop
           end if
       
-          if ( mod( delta_time , 60.0 ) > 1e-8
-     .          .or. mod( delta_time, 60.0 ) < -1e-8 ) then
+          if ( mod( delta_time , sec_per_min ) > 1e-8
+     .          .or. mod( delta_time, sec_per_min ) < -1e-8 ) then
              print*, "Error: Elapsed time is not a multiple ",
      .               "of one minute."
              print*, "Elapsed time [s] = ", delta_time
@@ -690,7 +694,7 @@
 
           ! Determines the closest recorded timestep to the restart
           ! time.
-          nearest_timestep = nint(delta_time / 60.0) 
+          nearest_timestep = nint( delta_time / sec_per_min ) 
           
           print *, "Elapsed time between ",
      .             "initial time of ref file and restart time ",
@@ -700,7 +704,8 @@
           ! Print the actual record being recalled.
           ! Joshua Fasching March 2008
           print *, "Nearest GrADS output time iteration [ ]: ",
-     .             nint(nearest_timestep/(fread_var%dtwrite/60.))-1
+     .             nint( nearest_timestep / 
+     .                   (fread_var%dtwrite/sec_per_min) ) - 1
           
           call close_grads_read( fread_var )
           

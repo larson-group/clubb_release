@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.27 2008-04-04 22:02:49 dschanen Exp $
+# $Id: make.deps,v 1.28 2008-04-05 19:54:06 griffinb Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -34,7 +34,7 @@ cons.o		: cons.f90
 air.o		: cons.o air.f90 
 parab.o		: air.o cons.o parab.f90
 endian.o	: endian.F
-constants.o	: constants.F
+constants.o	: stats_prec.o constants.F
 param_index.o   : param_index.F
 parameters.o    : param_index.o error_code.o parameters.F
 model_flags.o	: model_flags.F

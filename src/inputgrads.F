@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputgrads.F,v 1.16 2008-03-01 22:45:53 faschinj Exp $
+! $Id: inputgrads.F,v 1.17 2008-04-05 19:54:06 griffinb Exp $
 
         module inputfile_class
 
@@ -21,6 +21,7 @@
 #include "recl.F"
         use endian
         use constants, only: fstdout, fstderr
+        use stats_prec, only: time_prec
 
         implicit none
         ! Overloaded interface for get_var.  All GrADS files are assumed
@@ -52,7 +53,7 @@
           ! Time information
           integer day, month, year    ! date of starting time
 
-          real :: 
+          real(kind=time_prec) :: 
      .    time,    ! Start time                 [s]
      .    dtwrite  ! Interval between output    [s]
 
