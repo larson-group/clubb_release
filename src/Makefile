@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.106 2008-04-04 22:02:49 dschanen Exp $
+# $Id: Makefile,v 1.107 2008-04-07 20:37:01 dschanen Exp $
 #
 # This version should work with BSD, GNU make, smake and dmake.
 #
@@ -46,27 +46,28 @@ COAMPS_MICRO = adjmlt.o adjtq.o coamps_micro_driver.o conice.o \
         nrmtqw.o qsatvi.o qtadj.o slope.o tgqg.o \
         tgqi.o tgqr.o tgqs.o saturation.o gamma.o
 
-MODEL = hoc.o sounding.o rad_lwsw.o cloud_rad.o astex.o atex.o fire.o bomex.o \
+MODEL = $(COAMPS_MICRO) \
+	hoc.o sounding.o rad_lwsw.o cloud_rad.o astex.o atex.o fire.o bomex.o \
 	arm.o arm_97.o arm_0003.o arm_3year.o dycoms2_rf01.o \
 	dycoms2_rf02.o cloud_sed_mod.o mpace_a.o mpace_b.o \
 	nov11.o jun25.o clex9_nov02.o clex9_oct14.o wangara.o \
 	linear_interpolation.o diag_ustar.o cobra.o rico.o gabls2.o \
-	lba.o zlinterp.o file_functions.o
+	KK_microphys.o microphysics.o cons.o air.o parab.o \
+	lba.o zlinterp.o file_functions.o ice_dfsn_mod.o
 
 PARAMETERIZATION = \
 	$(LATIN_HYP) \
-	$(COAMPS_MICRO) \
 	constants.o endian.o outputfile.o outputgrads.o \
 	outputnc.o grid.o model_flags.o \
         stats_type.o stats_hoc.o stats_subs.o \
         stats_zt.o stats_zm.o stats_sfc.o stats_prec.o sfc.o \
-	erf.o diffusion.o KK_microphys.o microphysics.o cons.o air.o parab.o \
+	erf.o diffusion.o \
 	closure_new.o diag_var.o \
         hydrostatic.o mixing_length.o mixing.o saturation.o \
 	compute_um_edsclrm_mod.o wp23.o Skw_func.o error_code.o \
 	numer_check.o diag_variables.o prog_variables.o \
 	parameterization_interface.o lapack_wrap.o  \
-	parameters.o ice_dfsn_mod.o
+	parameters.o 
 
 
 INTERFACING = gradsaverage.o inputfields.o inputgrads.o 
