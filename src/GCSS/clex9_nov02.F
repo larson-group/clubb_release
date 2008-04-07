@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: clex9_nov02.F,v 1.5 2008-04-05 19:54:20 griffinb Exp $
+! $Id: clex9_nov02.F,v 1.6 2008-04-07 18:52:09 ajsmith4 Exp $
         module clex9_nov02
 
 !       Description:
@@ -154,7 +154,7 @@
      .  zsubs,! Heights at which wmt data is supplied (used for subsidence interpolation) [m]
      .  wt1   ! ONLY wt1 IS NEEDED FOR NOV.11 CASE
 
-        ! Subsidence constant and variables (for Nov.11 case only)
+        ! Subsidence constant and variables
         real ::
      .  wmax, ! Defines value of maximum subsidence in profile  [cm/s]
      .  zi,   ! Defines approx. height of inversion within cloud (subsidence is equal to wmax at this height) [m]
@@ -184,13 +184,6 @@
 
         integer :: k
 
-        ! Additional variables for calculating solar zenith angle
-        ! (COAMPS version)
-        integer :: julday, start_time_until_noon, t_since_noon
-        real    :: sda_t, sda_delta, sda_h
-        real    :: c0, c1, c2, c3, d1, d2, d3
-        real    :: xi_abs2
-
 !-----------------------------------------------------------------------
 ! FOR NOV.11 CASE
 ! ---------------
@@ -214,6 +207,17 @@
 !            obtained using the COAMPS xi_abs method.  Therefore, we
 !            use the "cos_solar_zen" function for this case.
        xi_abs = cos_solar_zen( 2, 11, 2001, time, rlat, rlon )
+
+c**********************************************************************
+c Addition by Adam Smith, 02 April 2008
+c Adding a correction to xi_abs so that it cannot be less than zero.
+c "xi_abs" must be non-zero to allow linear interpolation to calculate
+c the correct amount of solar radiative flux.
+c**********************************************************************
+       xi_abs = max(xi_abs,0.)
+c****************************
+c End of ajsmith4's addition
+c****************************
 
 c       xi_abs = 0.4329
 
@@ -290,7 +294,6 @@ c       xi_abs = 0.4329
       Fslist(12) = 1282.3994
 
       call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
-
 
 !-----------------------------------------------------------------------
 !
