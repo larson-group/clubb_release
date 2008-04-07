@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.29 2008-04-07 16:31:21 dschanen Exp $
+# $Id: make.deps,v 1.30 2008-04-07 17:28:17 dschanen Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -37,7 +37,7 @@ endian.o	: endian.F
 constants.o	: stats_prec.o constants.F
 param_index.o   : param_index.F
 parameters.o    : param_index.o error_code.o parameters.F
-model_flags.o	: model_flags.F
+model_flags.o	: constants.o model_flags.F
 stats_prec.o	: stats_prec.F
 outputfile.o    : stats_prec.o outputfile.F
 KK_microphys.o  : constants.o model_flags.o lapack_wrap.o parab.o stats_hoc.o \
@@ -46,7 +46,7 @@ microphysics.o	: constants.o model_flags.o lapack_wrap.o KK_microphys.o \
 	coamps_micro_driver.o parameters.o stats_hoc.o error_code.o \
         ice_dfsn_mod.o diffusion.o microphysics.F 
 outputgrads.o	: constants.o recl.F endian.o outputfile.o outputgrads.F
-outputnc.o	: outputfile.o outputnc.F
+outputnc.o	: constants.o outputfile.o outputnc.F
 diag_variables.o: constants.o grid.o model_flags.o diag_variables.F 
 prog_variables.o: constants.o grid.o model_flags.o prog_variables.F 
 numer_check.o	: prog_variables.o diag_variables.o constants.o model_flags.o\
@@ -190,7 +190,7 @@ hoc.o		: parameterization_interface.o arm.o astex.o atex.o \
 	wangara.o cobra.o rico.o gabls2.o lba.o arm_97.o arm_0003.o \
 	arm_3year.o cloud_sed_mod.o microphysics.o \
 	inputfields.o error_code.o hoc.F
-sounding.o	: constants.o sounding.F
+sounding.o	: grid.o constants.o sounding.F
 inputfields.o	: grid.o inputgrads.o inputfields.F 
 gradsaverage.o	: inputgrads.o gradsaverage.F 
 error.o		: nrtype.o nr.o gradsaverage.o hoc.o parameters.o error_code.o error.F
