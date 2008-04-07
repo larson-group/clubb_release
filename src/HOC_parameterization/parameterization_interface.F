@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.80 2008-04-05 19:54:32 griffinb Exp $
+! $Id: parameterization_interface.F,v 1.81 2008-04-07 20:47:40 vlarson Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -565,6 +565,15 @@
 
        if ( err_code == CLUBB_singular_matrix .or.
      .      err_code == CLUBB_bad_lapack_arg ) return
+
+        ! Vince Larson clipped rcm in order to prevent rvm < 0.  5 Apr 2008.
+        do k = 1, gr%nnzp
+           if ( rtm(k) < rcm(k) ) then
+              print*, 'rtm < rcm in timestep_mixing at k=', k, '.',
+     .                '  Clipping rcm.'
+              rcm(k) = max( 0.0, rtm(k) - eps )
+           end if
+        end do
 
        !----------------------------------------------------------------
        ! Advance wp2/wp3 one timestep
