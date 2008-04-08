@@ -1,6 +1,5 @@
-# $Id: config.linux_ia32_g95.in,v 1.5 2008-04-08 18:15:32 dschanen Exp $
-# Configuration file for Linux machine using g95
-# An MS Windows machine with MSYS should be similar
+# $Id: config.solaris_ia32_g95.in,v 1.1 2008-04-08 18:15:32 dschanen Exp $
+# Configuration file for Solaris machine using g95
 
 # == Paths ==
 # This is where the make command is going to put the resulting files
@@ -22,10 +21,9 @@ DEBUG = -g -fbounds-check -mieee-fp -ftrace=full
 # == Machine specific flags ==
 # Note: some of these are 64 bit architectures, so make sure NetCDF is
 # compiled accordingly.
-#ARCH = -march=pentium4 -msse2 -mfpmath=sse    # Old P4s
-ARCH = -march=nocona -msse3 -mfpmath=sse     # New P4s
+#ARCH = -march=nocona -msse3 -mfpmath=sse     # New P4s
 #ARCH = -march=nocona -msse3 -mfpmath=sse -r8 # New P4s, double precision
-#ARCH = -march=k8 -msse3 -mfpmath=sse         # New Opterons
+ARCH = -march=k8 -msse3 -mfpmath=sse         # New Opterons
 
 # == Optimization ==
 # These are all pretty conservative options. Check your compiler manual
@@ -43,9 +41,6 @@ LAPACK = -L/usr/local/lib -llapack -lblas
 # Use -s to strip (no debugging); 
 # Use -L<library path> -l<lib> to link in an external library
 # Use -Wl,-rpath <library path> to set a search path for shared libs
-#LDFLAGS = -L$(LIBDIR) -Wl,-rpath,$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib -lnetcdf $(LAPACK)
-#LDFLAGS = -L$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib
-#-Wl,-rpath,$(LIBDIR) 
 LDFLAGS = -L$(LIBDIR) -R$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib -lnetcdf $(LAPACK)
 
 # == Compiler flags (all) ==

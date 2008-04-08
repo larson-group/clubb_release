@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.107 2008-04-07 20:37:01 dschanen Exp $
+# $Id: Makefile,v 1.108 2008-04-08 18:15:32 dschanen Exp $
 #
 # This version should work with BSD, GNU make, smake and dmake.
 #
@@ -13,7 +13,8 @@
 #include config.linux_ia32_pg.in
 #include config.linux_ia32_g95.in
 #include config.linux_ia64_intel.in
-#include config.solaris_generic_ss11.in
+#include config.solaris_ia32_g95.in
+#include config.solaris_generic_ss12.in
 #include config.osf1_alpha_digital.in
 include config.messner.in
 
