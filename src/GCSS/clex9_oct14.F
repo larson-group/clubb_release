@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: clex9_oct14.F,v 1.5 2008-04-05 19:54:20 griffinb Exp $
+! $Id: clex9_oct14.F,v 1.6 2008-04-09 22:46:53 ajsmith4 Exp $
         module clex9_oct14
 
 !       Description:
@@ -204,7 +204,16 @@
 !            use the "cos_solar_zen" function for this case.
        xi_abs = cos_solar_zen( 14, 10, 2001, time, rlat, rlon )
 
-c       xi_abs = 0.4329
+c**********************************************************************
+c Addition by Adam Smith, 02 April 2008
+c Adding a correction to xi_abs so that it cannot be less than zero.
+c "xi_abs" must be non-zero to allow linear interpolation to calculate
+c the correct amount of solar radiative flux.
+c**********************************************************************
+       xi_abs = max(xi_abs,0.)
+c****************************
+c End of ajsmith4's addition
+c****************************
 
 !-----------------------------------------------------------------------
 ! Modification by Adam Smith 26 June 2006
@@ -279,7 +288,6 @@ c       xi_abs = 0.4329
       Fslist(12) = 1282.3994
 
       call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
-
 
 !-----------------------------------------------------------------------
 !
