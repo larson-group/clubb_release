@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.48 2008-04-10 20:46:41 griffinb Exp $
+! $Id: wp23.F,v 1.49 2008-04-10 21:48:35 griffinb Exp $
 !========================================================================
         module wp23
 
@@ -371,7 +371,7 @@
         integer :: k, km1, kp1, k_wp2, k_wp3
 
         ! Added by Brian for eddy diffusion.
-        real, dimension(3) :: rhs_diff, diff_lhs
+        real, dimension(3) :: rhs_diff
         ! Set logical to true for Crank-Nicholson diffusion scheme
         ! or to false for completely implicit diffusion scheme.
         ! Note:  Although Crank-Nicholson diffusion has usually been
@@ -381,11 +381,6 @@
         !        the boundary layer cases.  Brian; 1/4/2008.
 !        logical, parameter :: lcrank_nich_diff = .true.
         logical, parameter :: lcrank_nich_diff = .false.
-        ! Constant parameters
-        integer, parameter ::
-     .  kp1diag = 1,
-     .  kdiag   = 2,
-     .  km1diag = 3
 
 #ifdef STATS
         if (lstats_samp) then
@@ -436,28 +431,6 @@
 
 
           !!!!!***** w'^2 *****!!!!!
-
-          ! Diffusional term with Crank-Nicholson time step.
-          ! atmp = - nu1 * (1.0/2.0) * gr%dzm(k) * gr%dzt(k)
-          ! Completely implicit diffusional term.
-          ! atmp = - nu1 * gr%dzm(k) * gr%dzt(k)
-          ! Diffusional term with Crank-Nicholson time step.
-          ! ctmp = - nu1 * (1.0/2.0) * gr%dzm(k) * gr%dzt(kp1)
-          ! Completely implicit diffusional term.
-          ! ctmp = - nu1 * gr%dzm(k) * gr%dzt(kp1)
-
-          if ( lcrank_nich_diff ) then
-             ! Eddy diffusion for wp2 using a Crank-Nicholson time step. 
-             diff_lhs(kp1diag:km1diag)
-     .       = (1.0/2.0)
-     .       * diffusion_mlev( Kw1(k), Kw1(kp1), nu1,
-     .                         gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
-          else
-             ! Eddy diffusion for wp2 using a completely implicit time step. 
-             diff_lhs(kp1diag:km1diag)
-     .       = diffusion_mlev( Kw1(k), Kw1(kp1), nu1,
-     .                         gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
-          endif
 
           ! w'^2: Left-hand side (implicit w'^2 portion of the code).
           !
@@ -568,77 +541,87 @@
            if ( iwp2_dp2 > 0 ) then
             if ( lcrank_nich_diff ) then
              zm%x(k,iwp2_dp2) = zm%x(k,iwp2_dp2) 
-     .       - diff_lhs(3) * wp2(km1)
-     .       - diff_lhs(2) * wp2(k)
-     .       - diff_lhs(1) * wp2(kp1)
+     .       - rhs_diff(3) * wp2(km1)
+     .       - rhs_diff(2) * wp2(k)
+     .       - rhs_diff(1) * wp2(kp1)
             endif
            end if
 
            if ( iwp2_bp > 0 ) then
             zm%x(k,iwp2_bp) = zm%x(k,iwp2_bp) 
-     .      + 1.0 * 2.0 * grav * (1.0/T0) * wpthvp(k)
+     .      + wp2_terms_bp_pr2_rhs( 0.0, wpthvp(k) )
             zm%n(k,iwp2_bp) = zm%n(k,iwp2_bp) + 1
            end if
 
            if ( iwp2_pr1 > 0 .and. lKhm_aniso ) then
             zm%x(k,iwp2_pr1) = zm%x(k,iwp2_pr1) 
-     .      + ( C4 * ( up2(k) + vp2(k) ) ) / ( 3.0 * tau1m(k) )
+     .      + wp2_term_pr1_rhs( C4, up2(k), vp2(k), tau1m(k) )
            end if
 
            if ( iwp2_pr2 > 0 ) then
             zm%x(k,iwp2_pr2) = zm%x(k,iwp2_pr2) 
-     .      - C5 * 2.0 * grav * (1.0/T0) * wpthvp(k)
+     .      + wp2_terms_bp_pr2_rhs( (1.0+C5), wpthvp(k) )
            end if
 
            if ( iwp2_pr3 > 0 ) then
             zm%x(k,iwp2_pr3) = zm%x(k,iwp2_pr3) 
-     .      + (2.0/3.0) * C5
-     .                  * (  grav * (1.0/T0) * wpthvp(k)
-! Vince Larson made budget reflect Michael Falk's zeroing of shear terms. 20 Nov 2007
-!     .                     - upwp(k) * gr%dzm(k) * ( um(kp1) - um(k) )
-!     .                     - vpwp(k) * gr%dzm(k) * ( vm(kp1) - vm(k) )
-!     .                    )
-     .                - 0. * upwp(k) * gr%dzm(k) * ( um(kp1) - um(k) )
-     .                - 0. * vpwp(k) * gr%dzm(k) * ( vm(kp1) - vm(k) )
-     .                    )
-! End of Vince Larson' change.
+     .      + wp2_term_pr3_rhs( C5, wpthvp(k), upwp(k), um(kp1), um(k),
+     .                          vpwp(k), vm(kp1), vm(k), gr%dzm(k) )
             zm%n(k,iwp2_pr3) = zm%n(k,iwp2_pr3) + 1
            end if
 
            ! Implicit contributions for wp2
 
            if ( iwp2_dp1 > 0 ) then
-             zmscr01(k) = - C1_Skw_fnc(k) / tau1m(k)
+             zmscr01(k) =
+     .       - wp2_term_dp1_lhs( C1_Skw_fnc(k), tau1m(k) )
            end if
 
            if ( iwp2_dp2 > 0 ) then
-             zmscr02(k) = - diff_lhs(3)
-             zmscr03(k) = - diff_lhs(2)
-             zmscr04(k) = - diff_lhs(1)
+             if ( lcrank_nich_diff ) then
+                ! Eddy diffusion for wp2 using a Crank-Nicholson time step.
+                tmp(1:3)
+     .          = (1.0/2.0)
+     .          * diffusion_mlev( Kw1(k), Kw1(kp1), nu1,
+     .                            gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+             else
+                ! Eddy diffusion for wp2 using a completely implicit time step. 
+                tmp(1:3)
+     .          = diffusion_mlev( Kw1(k), Kw1(kp1), nu1,
+     .                            gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+             endif
+             zmscr02(k) = - tmp(3)
+             zmscr03(k) = - tmp(2)
+             zmscr04(k) = - tmp(1)
            end if
 
            if ( iwp2_ta > 0 ) then
-             zmscr05(k) = + gr%dzm(k)
-             zmscr06(k) = - gr%dzm(k)
+             tmp(1:2) = 
+     .       + wp2_term_ta_lhs( gr%dzm(k) )
+             zmscr05(k) = - tmp(2)
+             zmscr06(k) = - tmp(1)
            end if
 
            if ( iwp2_ma > 0 ) then
-             zmscr07(k) = + wmm(k) * (1.0/2.0) * gr%dzm(k)
-             zmscr08(k) = - wmm(k) * (1.0/2.0) * gr%dzm(k)
+             tmp(1:2) =
+     .       + wp2_term_ma_lhs( wmm(k), gr%dzm(k) )
+             zmscr07(k) = - tmp(2)
+             zmscr08(k) = - tmp(1)
            end if
 
            if ( iwp2_ac > 0 ) then
              zmscr09(k) = 
-     .       - 1.0 * 2.0 * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
+     .       - wp2_terms_ac_pr2_lhs( 0.0, wmt(kp1), wmt(k), gr%dzm(k)  )
            end if
 
            if ( iwp2_pr2 > 0 ) then
              zmscr10(k) = 
-     .      + C5 * 2.0 * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
+     .       - wp2_terms_ac_pr2_lhs( (1.0+C5), wmt(kp1), wmt(k), 
+     .                               gr%dzm(k)  )
            end if
 
            if ( iwp2_pr1 > 0 .and. lKhm_aniso ) then
-             zmscr11(k) = - ( 2.0 * C4 ) / ( 3.0 * tau1m(k) )
+             zmscr11(k) = - wp2_term_pr1_lhs( C4, tau1m(k) )
            end if
 
          end if
