@@ -7,6 +7,12 @@ rm -f ~/hoc_v2.2_tuner/hocbrowser/call_to/*.html
 rm -f ~/hoc_v2.2_tuner/hocbrowser/html_code/bugs_rad/*.html
 rm -f ~/hoc_v2.2_tuner/hocbrowser/html_code/latin_hc/*.html
 rm -f ~/hoc_v2.2_tuner/hocbrowser/html_code/main/*.html
+rm -f ~/hoc_v2.2_tuner/hocbrowser/html_code/COAMPS_Microphysics/*.html
+rm -f ~/hoc_v2.2_tuner/hocbrowser/html_code/HOC_parameterization/*.html
+rm -f ~/hoc_v2.2_tuner/hocbrowser/html_code/LH/*.html
+rm -f ~/hoc_v2.2_tuner/hocbrowser/html_code/src/*.html
+rm -f ~/hoc_v2.2_tuner/hocbrowser/html_code/BUGSrad/*.html
+rm -f ~/hoc_v2.2_tuner/hocbrowser/html_code/GCSS/*.html
 rm -f ~/hoc_v2.2_tuner/hocbrowser/ind/*.html
 rm -f ~/hoc_v2.2_tuner/hocbrowser/*.html
 #end nielsenb's changes
