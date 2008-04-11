@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.168 2008-04-05 19:54:06 griffinb Exp $
+! $Id: hoc.F,v 1.169 2008-04-11 20:55:22 ajsmith4 Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -1129,11 +1129,23 @@
         ! Vince Larson reduced initial forcing.  4 Nov 2005
 !          em = 1.0
 !          em = 0.1
-          ! 4150 + 1400 m is the top of the cloud in Nov11
-          cloud_top_height = 1400. + gr%zm(1)
+          ! 4150 + 2800 m is the top of the cloud in Nov11
+          cloud_top_height = 2800. + gr%zm(1)
           do k=1,gr%nnzp
             if ( gr%zm(k) < cloud_top_height ) then
-              em(k) = 0.1
+c
+c*********************************************************
+c Modification by Adam Smith, 08 April 2008
+c Reducing the value of em appears to reduce error in the
+c updated Nov.11 case
+c*********************************************************
+c
+              em(k) = 0.01
+c
+c********************************
+c End of ajsmith4's modification
+c********************************
+c
             else
               em(k) = emin
             end if
