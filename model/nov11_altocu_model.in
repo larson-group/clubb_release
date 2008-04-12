@@ -1,4 +1,4 @@
-! $Id: nov11_altocu_model.in,v 1.15 2008-04-11 20:32:13 ajsmith4 Exp $
+! $Id: nov11_altocu_model.in,v 1.16 2008-04-12 01:00:08 ajsmith4 Exp $
 ! Parameter file for November 11 altocumulus case
 
 &model_setting
@@ -27,10 +27,10 @@ T0   = 300.
 
 cloud_sed     = .false.
 kk_rain       = .false.
-lcoamps_micro = .true.
-licedfs       = .false.
+lcoamps_micro = .false.
+licedfs       = .true.
 lbugsrad      = .false.
-lKhm_aniso    = .true.
+lKhm_aniso    = .false.
 lrestart      = .false.
 restart_path_case  = "restart/nov11_altocu"
 time_restart  = 0.0
@@ -41,11 +41,11 @@ time_restart  = 0.0
 
 nlevels = 6
 
-z     =  3000.0,  4150.0,  5001.0,  5533.0,  5558.0,  7579.0
+z     =  3000.0,  4112.7,  4963.7,  5525.7,  5545.7,  7541.7
 
-theta =  303.83,  309.35,  311.50,  312.70,  314.00,  324.66
+theta =  303.83,  309.15,  311.50,  312.50,  314.00,  324.66
 
-rt    = 4.25e-3, 3.20e-3, 2.70e-3, 2.52e-3, 2.25e-3, 0.55e-3
+rt    = 4.25e-3, 3.20e-3, 2.70e-3, 2.53e-3, 2.25e-3, 0.55e-3
 
 u     =     0.0,     0.0,     0.0,     0.0,     0.0,     0.0
 
@@ -59,10 +59,10 @@ vg    =     0.0,     0.0,     0.0,     0.0,     0.0,     0.0
 
 &scalar_sounding
 
-sclr(:,1) = 309.15, 311.50, 311.90, 314.00, 324.66
-sclr(:,2) = 3.20e-3, 2.70e-3, 2.53e-3, 2.25e-3, 0.55e-3
+sclr(:,1) = 303.83, 309.15, 311.50, 312.50, 314.00, 324.66
+sclr(:,2) = 4.25e-3, 3.20e-3, 2.70e-3, 2.53e-3, 2.25e-3, 0.55e-3
 
-edsclr(:,1) = 309.15, 311.50, 311.90, 314.00, 324.66
-edsclr(:,2) = 3.20e-3, 2.70e-3, 2.53e-3, 2.25e-3, 0.55e-3
+edsclr(:,1) = 303.83, 309.15, 311.50, 312.50, 314.00, 324.66
+edsclr(:,2) = 4.25e-3, 3.20e-3, 2.70e-3, 2.53e-3, 2.25e-3, 0.55e-3
 
 /
