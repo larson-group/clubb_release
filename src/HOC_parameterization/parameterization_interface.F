@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.81 2008-04-07 20:47:40 vlarson Exp $
+! $Id: parameterization_interface.F,v 1.82 2008-04-12 23:47:43 griffinb Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -580,11 +580,11 @@
        !----------------------------------------------------------------
 
        call timestep_wp23
-     .      ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
-     .        pdf_parms(:, 13), Kht, Khm, wmt, wmm, up2, vp2,
-     .        um, upwp, vm, vpwp, wpthvp, wp2thvp,
+     .      ( dt, Scm, wmm, wmt, wpthvp, wp2thvp,
+     .        um, vm, upwp, vpwp, up2, vp2, Khm, Kht,
+     .        taum, taut, Skwm, Skwt, pdf_parms(:, 13),
      .        wp2, wp3, err_code )
-       
+ 
        ! Wrapped LAPACK procedures may report errors, and if so, exit
        ! gracefully.
        ! Joshua Fasching March 2008

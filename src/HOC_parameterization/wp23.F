@@ -1,6 +1,6 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.49 2008-04-10 21:48:35 griffinb Exp $
-!========================================================================
+! $Id: wp23.F,v 1.50 2008-04-12 23:47:43 griffinb Exp $
+!===============================================================================
         module wp23
 
         implicit none
@@ -10,6 +10,8 @@
         public :: timestep_wp23
 
         private :: wp23_solve,
+     .             wp23_lhs,
+     .             wp23_rhs,
      .             wp2_term_ma_lhs,
      .             wp2_term_ta_lhs,
      .             wp2_terms_ac_pr2_lhs,
@@ -24,16 +26,18 @@
      .             wp3_term_pr1_lhs,
      .             wp3_terms_ta_tp_rhs,
      .             wp3_terms_bp_pr2_rhs,
-     .             wp3_term_pr1_rhs
+     .             wp3_term_pr1_rhs,
+     .             wp23_clip
 
         contains
 
-!========================================================================
+!===============================================================================
         subroutine timestep_wp23
-     .             ( dt, Lscale, taum, taut, Scm, Skwm, Skwt,
-     .               a, Kht, Khm, wmt, wmm, up2, vp2,
-     .               um, upwp, vm, vpwp, wpthvp, wp2thvp,
+     .             ( dt, Scm, wmm, wmt, wpthvp, wp2thvp, 
+     .               um, vm, upwp, vpwp, up2, vp2, Khm, Kht,
+     .               taum, taut, Skwm, Skwt, a,
      .               wp2, wp3, err_code )
+
 !       Description:
 !       Advance wp2 and wp3 one timestep
 
@@ -64,40 +68,39 @@
         intrinsic :: exp
 
         ! Input Variables
-        real(kind=time_prec), intent(in) :: dt ! Timestep               [s]
+        real(kind=time_prec), intent(in) :: 
+     .  dt          ! Timestep                                 [s]
 
         real, intent(in), dimension(gr%nnzp) :: 
-     .  Lscale,! Mixing Length                          [m]
-     .  taum,  ! Tau on moment. grid                    [s]
-     .  taut,  ! Tau on thermo. grid                    [s]
-     .  Scm,   ! Sc on moment. grid                     [-]
-     .  Skwm,  ! Skw on moment. grid                    [-]
-     .  Skwt,  ! Skw on thermo. grid                    [-]
-     .  a,     ! PDF parameter a (13)                   [-]
-     .  Kht,   ! Kh Eddy diffusivity on thermo. grid    [m^2/s]
-     .  Khm,   ! Kh Eddy diffusivity on momentum grid   [m^2/s]
-     .  wmt,   ! w wind on the thermo. grid             [m/s]
-     .  wmm,   ! w wind on the momentum grid            [m/s]
-     .  up2,   ! u'^2                                   [m^2/s^2]
-     .  vp2,   ! v'^2                                   [m^2/s^2]
-     .  um,    ! u wind (thermo. grid)                  [m/s]
-     .  upwp,  ! u'w' (moment. grid)                    [m^2/s^2]
-     .  vm,    ! v wind (thermo. grid)                  [m/s]
-     .  vpwp,  ! u'w' (moment. grid)                    [m^2/s^2]
-     .  wpthvp,! w'th_v' Buoyancy flux                  [(K m)/s]
-     .  wp2thvp! w'^2 th_v'                             [(m^2 K)/s^2]
+     .  Scm,        ! Sc on momentum levels                    [-]
+     .  wmm,        ! w wind component on momentum levels      [m/s]
+     .  wmt,        ! w wind component on thermodynamic levels [m/s]
+     .  wpthvp,     ! w'th_v'                                  [K m/s]
+     .  wp2thvp,    ! w'^2th_v'                                [K m^2/s^2]
+     .  um,         ! u wind component                         [m/s]
+     .  vm,         ! v wind component                         [m/s]
+     .  upwp,       ! u'w'                                     [m^2/s^2]
+     .  vpwp,       ! v'w'                                     [m^2/s^2]
+     .  up2,        ! u'^2                                     [m^2/s^2]
+     .  vp2,        ! v'^2                                     [m^2/s^2]
+     .  Khm,        ! Eddy diffusivity on momentum levels      [m^2/s]
+     .  Kht,        ! Eddy diffusivity on thermodynamic levels [m^2/s]
+     .  taum,       ! Time-scale tau on momentum levels        [s]
+     .  taut,       ! Time-scale tau on thermodynamic levels   [s]
+     .  Skwm,       ! Skewness of w on momentum levels         [-]
+     .  Skwt,       ! Skewness of w on thermodynamic levels    [-]
+     .  a           ! PDF parameter "a": pdf_parms(:,13)       [-]
 
         ! Input/Output
         real, dimension(gr%nnzp), intent(inout) :: 
-     .  wp2, ! w'^2 (moment. grid)                      [m^2/s^2]
-     .  wp3  ! w'^3 (thermo. grid)                      [m^3/s^3]
+     .  wp2, ! w'^2 (momentum levels)                          [m^2/s^2]
+     .  wp3  ! w'^3 (thermodynamic levels)                     [m^3/s^3]
 
         integer, intent(inout) :: err_code ! Diagnostic
 
         ! Local Variables
         real, dimension(gr%nnzp) :: 
-     .  tauw3t, ! Currently just taut           [s]
-     .  Lm      ! Length scale (moment. grid)   [m]
+     .  tauw3t  ! Currently just taut           [s]
 
         ! Eddy Diffusion for wp2 and wp3.
         real, dimension(gr%nnzp) :: Kw1   ! wp2 eddy diff. [m^2/s]
@@ -123,10 +126,7 @@
 
 !-----------------------------------------------------------------------
 
-        ! Define L on momentum levels
-        Lm = zt2zm( Lscale )
-        Lm(1) = Lm(2)
-        Lm(gr%nnzp) = Lm(gr%nnzp-1)
+
 
 !       Define tauw
 
@@ -225,19 +225,10 @@
         enddo
 
 !       Solve semi-implicitly
-! Vince Larson increased Kw8 in order to run arm_0003 and arm_97 stably
-!  14 Nov 2007.
-        call wp23_solve( dt, Scm, Lscale, Lm, taum, tauw3t, Kw1, 
-     .                   Kw8, wmt, wmm, wpthvp, wp2thvp,
-     .                   um, upwp, vm, vpwp, up2, vp2,
-     .                   Skwt, C1_Skw_fnc, C11_Skw_fnc, 
-     .                   wp2, wp3, err_code )
-!        call wp23_solve( dt, Scm, Lscale, Lm, taum, tauw3t, 10*0.5*Kht,
-!     .                   wmt, wmm, wpthvp, wp2thvp,
-!     .                   um, upwp, vm, vpwp, up2, vp2,
-!     .                   Skwt, C1_Skw_fnc, C11_Skw_fnc, 
-!     .                   wp2, wp3, isValid )
-! End Vince Larson's change
+        call wp23_solve( dt, Scm, wmm, wmt, wpthvp, wp2thvp,
+     .                   um, vm, upwp, vpwp, up2, vp2, Kw1,
+     .                   Kw8, Skwt, taum, tauw3t, C1_Skw_fnc,
+     .                   C11_Skw_fnc, wp2, wp3, err_code )
 
 !       Error output
 !       Joshua Fasching Feb 2008
@@ -247,26 +238,26 @@
            write(fstderr,*) "Errors in timestep_wp32"
 
            write(fstderr,*) "Intent(in)"
-           
-           write(fstderr,*) "Lscale = ", Lscale
+
+           write(fstderr,*) "dt = ", dt
+           write(fstderr,*) "Scm = ", Scm
+           write(fstderr,*) "wmm = ", wmm
+           write(fstderr,*) "wmt = ", wmt
+           write(fstderr,*) "wpthvp = ", wpthvp
+           write(fstderr,*) "wp2thvp = ", wp2thvp
+           write(fstderr,*) "um = ", um
+           write(fstderr,*) "vm = ", vm
+           write(fstderr,*) "upwp = ", upwp
+           write(fstderr,*) "vpwp = ", vpwp
+           write(fstderr,*) "up2 = ", up2
+           write(fstderr,*) "vp2 = ", vp2
+           write(fstderr,*) "Khm = ", Khm
+           write(fstderr,*) "Kht = ", Kht
            write(fstderr,*) "taum = ", taum
            write(fstderr,*) "taut = ", taut
-           write(fstderr,*) "Scm = ", Scm
            write(fstderr,*) "Skwm = ", Skwm
            write(fstderr,*) "Skwt = ", Skwt
            write(fstderr,*) "a = ", a
-           write(fstderr,*) "Kht = ", Kht
-           write(fstderr,*) "Khm = ", Khm
-           write(fstderr,*) "wmt = ", wmt
-           write(fstderr,*) "wmm = ", wmm
-           write(fstderr,*) "up2 = ", up2
-           write(fstderr,*) "vp2 = ", vp2
-           write(fstderr,*) "um = ", um
-           write(fstderr,*) "upwp = ", upwp
-           write(fstderr,*) "vm = ", vm
-           write(fstderr,*) "vpwp = ", vpwp
-           write(fstderr,*) "wpthvp = ", wpthvp
-           write(fstderr,*) "wp2thvp = ", wp2thvp
            
            write(fstderr,*) "Intent(in/out)"
            
@@ -279,12 +270,12 @@
         
         end subroutine timestep_wp23
 
-!========================================================================
-        subroutine wp23_solve( dt, Scm, Lscale, Lm, tau1m, tauw3t, Kw1,
-     .                         Kw8, wmt, wmm, wpthvp, wp2thvp,
-     .                         um, upwp, vm, vpwp, up2, vp2,
-     .                         Skwt, C1_Skw_fnc, C11_Skw_fnc,
-     .                         wp2, wp3, err_code)
+!===============================================================================
+        subroutine wp23_solve( dt, Scm, wmm, wmt, wpthvp, wp2thvp,
+     .                         um, vm, upwp, vpwp, up2, vp2, Kw1,
+     .                         Kw8, Skwt, tau1m, tauw3t, C1_Skw_fnc,
+     .                         C11_Skw_fnc, wp2, wp3, err_code )
+
 !       Description:
 !       Decompose, and back substitute the matrix for wp2/wp3
 
@@ -293,10 +284,8 @@
 !------------------------------------------------------------------------
 
         use grid_class
-        use parameters
-        use constants
-        use model_flags
-        use diffusion
+        use constants, only: emin, eps
+        use model_flags, only: lKhm_aniso
         use stats_prec, only: time_prec
         use lapack_wrap, only: band_solve, band_solvex
         use error_code, only: CLUBB_singular_matrix,
@@ -318,34 +307,32 @@
 
         ! Input Variables
         real(kind=time_prec), intent(in) :: 
-     .  dt          ! Timestep                               [s]
+     .  dt          ! Timestep                                 [s]
 
         real, intent(in), dimension(gr%nnzp) :: 
-     .  Scm,        ! Sc on moment. grid                     [-]
-     .  Lscale,     ! Mixing Length                          [m]
-     .  Lm,         ! Mixing Length interp. to moment.       [m]
-     .  tau1m,      ! Tau on moment. grid                    [s]
-     .  tauw3t,     ! Tau on thermo. grid                    [s]
-     .  Kw1,        ! Eddy diffusivity                       [m^2/s]
-     .  Kw8,        ! 1/2 Khm Eddy diffusivity               [m^2/s]
-     .  wmt,        ! w wind on t                            [m/s]
-     .  wmm,        ! w wind on m                            [m/s]
-     .  up2,        ! u'^2                                   [m^s/s^2]
-     .  vp2,        ! v'^2                                   [m^s/s^2]
-     .  wpthvp,     ! w'th_v' Buoyancy flux                  [(K m)/s]
-     .  wp2thvp,    ! w'^2 th_v'                             [(m^2 K)/s^2]
-     .  um,         ! u wind                                 [m/s]
-     .  upwp,       ! u'w'                                   [m^2/s^2]
-     .  vm,         ! v wind                                 [m/s]
-     .  vpwp,       ! u'w'                                   [m^2/s^2]
-     .  Skwt,       ! Skw in thermo. grid                    [-]
-     .  C1_Skw_fnc, ! C1 parameter with Skw applied          [-]
-     .  C11_Skw_fnc ! C11 parameter with Skw applied         [-]
+     .  Scm,        ! Sc on momentum levels                    [-]
+     .  wmm,        ! w wind component on momentum levels      [m/s]
+     .  wmt,        ! w wind component on thermodynamic levels [m/s]
+     .  wpthvp,     ! w'th_v'                                  [K m/s]
+     .  wp2thvp,    ! w'^2th_v'                                [K m^2/s^2]
+     .  um,         ! u wind component                         [m/s]
+     .  vm,         ! v wind component                         [m/s]
+     .  upwp,       ! u'w'                                     [m^2/s^2]
+     .  vpwp,       ! v'w'                                     [m^2/s^2]
+     .  up2,        ! u'^2                                     [m^2/s^2]
+     .  vp2,        ! v'^2                                     [m^2/s^2]
+     .  Kw1,        ! Coefficient of eddy diffusivity for w'^2 [m^2/s]
+     .  Kw8,        ! Coefficient of eddy diffusivity for w'^3 [m^2/s]
+     .  Skwt,       ! Skewness of w on thermodynamic levels    [-]
+     .  tau1m,      ! Time-scale tau on momentum levels        [s]
+     .  tauw3t,     ! Time-scale tau on thermodynamic levels   [s]
+     .  C1_Skw_fnc, ! C_1 parameter with Sk_w applied          [-]
+     .  C11_Skw_fnc ! C_11 parameter with Sk_w applied         [-]
 
         ! Input/Output Variables
         real, dimension(gr%nnzp), intent(inout) :: 
-     .  wp2, ! w'^2                                          [m^2/s^2]
-     .  wp3  ! w'^3                                          [m^3/s^3]
+     .  wp2, ! w'^2                                            [m^2/s^2]
+     .  wp3  ! w'^3                                            [m^3/s^3]
 
         integer, intent(inout) :: err_code
 
@@ -358,20 +345,15 @@
      .  solut ! Solution to band diagonal system.
 
         real, dimension(gr%nnzp) :: 
-     .  a1, ! a1; See eqn. 20 in `Equations for HOC'             [-]
-     .  a3  ! a3; See eqn. 22 in `Equations for HOC'             [-]
-
-        real, dimension(5) :: tmp
+     .  a1, ! a1; See eqn. 24 in `Equations for HOC'           [-]
+     .  a3  ! a3; See eqn. 26 in `Equations for HOC'           [-]
 
         real :: 
-     .  atmp, ctmp, ! Temporary variables for the LHS
      .  rcond  ! Est. of the reciprocal of the condition #
 
         ! Array indices
         integer :: k, km1, kp1, k_wp2, k_wp3
 
-        ! Added by Brian for eddy diffusion.
-        real, dimension(3) :: rhs_diff
         ! Set logical to true for Crank-Nicholson diffusion scheme
         ! or to false for completely implicit diffusion scheme.
         ! Note:  Although Crank-Nicholson diffusion has usually been
@@ -407,488 +389,20 @@
      .       + (1.0-Scm)*(1.0-Scm)
      .       - (3.0/2.0)
 
-        ! Set up matrix lhs and vector rhs
-
-        lhs = 0.0
-        rhs = 0.0
-
-!        do k = 1, gr%nnzp, 1
-        do k = 2, gr%nnzp-1, 1
-
-!         Define indices
-
-          km1 = max( k-1, 1 )
-          kp1 = min( k+1, gr%nnzp )
-
-          k_wp3 = 2*k - 1
-          k_wp2 = 2*k
-
-          ! Skewness of w is needed on the thermodynamic levels 
-          ! for the wp3 equation
-          !Skw = wp3(k) / ( (1.0/2.0)*( wp2(k) + wp2(km1) ) )**(3.0/2.0)
-          ! Skewness of w limited to a magnitude of no more than 4.5
-          !Skw = MIN( MAX( Skw, -4.5 ), 4.5 )
-
-
-          !!!!!***** w'^2 *****!!!!!
-
-          ! w'^2: Left-hand side (implicit w'^2 portion of the code).
-          !
-          ! Momentum subdiagonal (lhs index: 3+2)
-          !         [ x wp2(k-1,<t+1>) ]
-          ! Thermodynamic subdiagonal (lhs index: 3+1)
-          !         [ x wp3(k,<t+1>) ]
-          ! Momentum main diagonal (lhs index: 3)
-          !         [ x wp2(k,<t+1>) ]
-          ! Thermodynamic superdiagonal (lhs index: 3-1)
-          !         [ x wp3(k+1,<t+1>) ]
-          ! Momentum superdiagonal (lhs index: 3-2)
-          !         [ x wp2(k+1,<t+1>) ]
-
-          ! LHS time tendency.
-          lhs(3,k_wp2)
-     .    = + 1.0 / dt
-
-          ! LHS mean advection (ma) term.
-          lhs((/3-2,3+2/),k_wp2)
-     .    = lhs((/3-2,3+2/),k_wp2)
-     .    + wp2_term_ma_lhs( wmm(k), gr%dzm(k) )
-
-          ! LHS turbulent advection (ta) term.
-          lhs((/3-1,3+1/),k_wp2)
-     .    = lhs((/3-1,3+1/),k_wp2)
-     .    + wp2_term_ta_lhs( gr%dzm(k) )
-
-          ! LHS accumulation (ac) term and pressure term 2 (pr2).
-          lhs(3,k_wp2)
-     .    = lhs(3,k_wp2)
-     .    + wp2_terms_ac_pr2_lhs( C5, wmt(kp1), wmt(k), gr%dzm(k)  )
-
-          ! LHS dissipation term 1 (dp1).
-          lhs(3,k_wp2)
-     .    = lhs(3,k_wp2)
-     .    + wp2_term_dp1_lhs( C1_Skw_fnc(k), tau1m(k) )
-
-          ! LHS eddy diffusion term: dissipation term 2 (dp2).
-          if ( lcrank_nich_diff ) then
-             ! Eddy diffusion for wp2 using a Crank-Nicholson time step.
-             lhs((/3-2,3,3+2/),k_wp2)
-     .       = lhs((/3-2,3,3+2/),k_wp2)
-     .       + (1.0/2.0)
-     .       * diffusion_mlev( Kw1(k), Kw1(kp1), nu1,
-     .                         gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
-          else
-             ! Eddy diffusion for wp2 using a completely implicit time step. 
-             lhs((/3-2,3,3+2/),k_wp2)
-     .       = lhs((/3-2,3,3+2/),k_wp2)
-     .       + diffusion_mlev( Kw1(k), Kw1(kp1), nu1,
-     .                         gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
-          endif
-
-          ! LHS pressure term 1 (pr1).
-          if ( lKhm_aniso ) then
-             ! Add in this term if we're not assuming tke = 1.5 * wp2
-             lhs(3,k_wp2)
-     .       = lhs(3,k_wp2)
-     .       + wp2_term_pr1_lhs( C4, tau1m(k) )
-          endif
-
-
-          ! w'^2: Right-hand side (explicit w'^2 portion of the code).
-
-          ! RHS time tendency.
-          rhs(k_wp2)
-     .    = + ( 1.0 / dt ) * wp2(k) 
-
-          ! RHS buoyancy production (bp) term and pressure term 2 (pr2).
-          rhs(k_wp2)
-     .    = rhs(k_wp2)
-     .    + wp2_terms_bp_pr2_rhs( C5, wpthvp(k) )
-
-          ! RHS pressure term 3 (pr3).
-          rhs(k_wp2)
-     .    = rhs(k_wp2)
-     .    + wp2_term_pr3_rhs( C5, wpthvp(k), upwp(k), um(kp1), um(k),
-     .                        vpwp(k), vm(kp1), vm(k), gr%dzm(k) )
-
-          ! RHS eddy diffusion term: dissipation term 2 (dp2).
-          if ( lcrank_nich_diff ) then
-             ! These lines are for the diffusional term with a Crank-Nicholson 
-             ! time step.  They are not used for completely implicit diffusion.
-             rhs_diff(1:3)
-     .       = (1.0/2.0)
-     .       * diffusion_mlev( Kw1(k), Kw1(kp1), nu1,
-     .                         gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
-             rhs(k_wp2)   =   rhs(k_wp2)
-     .                      - rhs_diff(3) * wp2(km1)
-     .                      - rhs_diff(2) * wp2(k)
-     .                      - rhs_diff(1) * wp2(kp1)
-          endif
-
-          ! RHS pressure term 1 (pr1).
-          if ( lKhm_aniso ) then
-             rhs(k_wp2)
-     .       = rhs(k_wp2)
-     .       + wp2_term_pr1_rhs( C4, up2(k), vp2(k), tau1m(k) )
-          endif
-
-
-#ifdef STATS
-          if ( lstats_samp ) then
-
-!          Explicit contributions for wp2
-
-           if ( iwp2_dp2 > 0 ) then
-            if ( lcrank_nich_diff ) then
-             zm%x(k,iwp2_dp2) = zm%x(k,iwp2_dp2) 
-     .       - rhs_diff(3) * wp2(km1)
-     .       - rhs_diff(2) * wp2(k)
-     .       - rhs_diff(1) * wp2(kp1)
-            endif
-           end if
-
-           if ( iwp2_bp > 0 ) then
-            zm%x(k,iwp2_bp) = zm%x(k,iwp2_bp) 
-     .      + wp2_terms_bp_pr2_rhs( 0.0, wpthvp(k) )
-            zm%n(k,iwp2_bp) = zm%n(k,iwp2_bp) + 1
-           end if
-
-           if ( iwp2_pr1 > 0 .and. lKhm_aniso ) then
-            zm%x(k,iwp2_pr1) = zm%x(k,iwp2_pr1) 
-     .      + wp2_term_pr1_rhs( C4, up2(k), vp2(k), tau1m(k) )
-           end if
-
-           if ( iwp2_pr2 > 0 ) then
-            zm%x(k,iwp2_pr2) = zm%x(k,iwp2_pr2) 
-     .      + wp2_terms_bp_pr2_rhs( (1.0+C5), wpthvp(k) )
-           end if
-
-           if ( iwp2_pr3 > 0 ) then
-            zm%x(k,iwp2_pr3) = zm%x(k,iwp2_pr3) 
-     .      + wp2_term_pr3_rhs( C5, wpthvp(k), upwp(k), um(kp1), um(k),
-     .                          vpwp(k), vm(kp1), vm(k), gr%dzm(k) )
-            zm%n(k,iwp2_pr3) = zm%n(k,iwp2_pr3) + 1
-           end if
-
-           ! Implicit contributions for wp2
-
-           if ( iwp2_dp1 > 0 ) then
-             zmscr01(k) =
-     .       - wp2_term_dp1_lhs( C1_Skw_fnc(k), tau1m(k) )
-           end if
-
-           if ( iwp2_dp2 > 0 ) then
-             if ( lcrank_nich_diff ) then
-                ! Eddy diffusion for wp2 using a Crank-Nicholson time step.
-                tmp(1:3)
-     .          = (1.0/2.0)
-     .          * diffusion_mlev( Kw1(k), Kw1(kp1), nu1,
-     .                            gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
-             else
-                ! Eddy diffusion for wp2 using a completely implicit time step. 
-                tmp(1:3)
-     .          = diffusion_mlev( Kw1(k), Kw1(kp1), nu1,
-     .                            gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
-             endif
-             zmscr02(k) = - tmp(3)
-             zmscr03(k) = - tmp(2)
-             zmscr04(k) = - tmp(1)
-           end if
-
-           if ( iwp2_ta > 0 ) then
-             tmp(1:2) = 
-     .       + wp2_term_ta_lhs( gr%dzm(k) )
-             zmscr05(k) = - tmp(2)
-             zmscr06(k) = - tmp(1)
-           end if
-
-           if ( iwp2_ma > 0 ) then
-             tmp(1:2) =
-     .       + wp2_term_ma_lhs( wmm(k), gr%dzm(k) )
-             zmscr07(k) = - tmp(2)
-             zmscr08(k) = - tmp(1)
-           end if
-
-           if ( iwp2_ac > 0 ) then
-             zmscr09(k) = 
-     .       - wp2_terms_ac_pr2_lhs( 0.0, wmt(kp1), wmt(k), gr%dzm(k)  )
-           end if
-
-           if ( iwp2_pr2 > 0 ) then
-             zmscr10(k) = 
-     .       - wp2_terms_ac_pr2_lhs( (1.0+C5), wmt(kp1), wmt(k), 
-     .                               gr%dzm(k)  )
-           end if
-
-           if ( iwp2_pr1 > 0 .and. lKhm_aniso ) then
-             zmscr11(k) = - wp2_term_pr1_lhs( C4, tau1m(k) )
-           end if
-
-         end if
-#endif /*STATS*/
-
-
-          !!!!!***** w'^3 *****!!!!!
-
-          ! w'^3: Left-hand side (implicit w'^3 portion of the code).
-          !
-          ! Thermodynamic subdiagonal (lhs index: 3+2) 
-          !         [ x wp3(k-1,<t+1>) ]
-          ! Momentum subdiagonal (lhs index: 3+1)
-          !         [ x wp2(k-1,<t+1>) ]
-          ! Thermodynamic main diagonal (lhs index: 3)
-          !         [ x wp3(k,<t+1>) ]
-          ! Momentum superdiagonal (lhs index: 3-1)
-          !         [ x wp2(k,<t+1>) ]
-          ! Thermodynamic superdiagonal (lhs index: 3-2) 
-          !         [ x wp3(k+1,<t+1>) ]
-
-          ! LHS time tendency.
-          lhs(3,k_wp3)
-     .    = + 1.0 / dt
-
-          ! LHS mean advection (ma) term.
-          lhs((/3-2,3+2/),k_wp3)
-     .    = lhs((/3-2,3+2/),k_wp3)
-     .    + wp3_term_ma_lhs( wmt(k), gr%dzt(k) )
-
-          ! LHS turbulent advection (ta) and turbulent production (tp) terms.
-          lhs(3-2:3+2,k_wp3)
-     .    = lhs(3-2:3+2,k_wp3)
-     .    + wp3_terms_ta_tp_lhs( wp3(kp1), wp3(k), wp3(km1), 
-     .                           wp2(k), wp2(km1), a1(k), a1(km1),
-     .                           a3(k), a3(km1), gr%dzt(k), eps, wtol )
-
-          ! LHS accumulation (ac) term and pressure term 2 (pr2).
-          lhs(3,k_wp3)
-     .    = lhs(3,k_wp3)
-     .    + wp3_terms_ac_pr2_lhs( C11_Skw_fnc(k),
-     .                            wmm(k), wmm(km1), gr%dzt(k) )
-
-          ! LHS pressure term 1 (pr1).
-          lhs(3,k_wp3)
-     .    = lhs(3,k_wp3)
-     .    + wp3_term_pr1_lhs( C8, C8b, tauw3t(k), Skwt(k) )
-
-          ! LHS eddy diffusion term: dissipation term 1 (dp1).
-          !  Added a new constant, C12.
-          !  Initially, this new constant will be set to 1.0 -dschanen 9/19/05 
-          if ( lcrank_nich_diff ) then
-             ! Eddy diffusion for wp3 using a Crank-Nicholson time step. 
-             lhs((/3-2,3,3+2/),k_wp3)
-     .       = lhs((/3-2,3,3+2/),k_wp3)
-     .       + C12 * (1.0/2.0)
-     .       * diffusion_tlev( Kw8(k), Kw8(km1), nu8,
-     .                         gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
-          else
-             ! Eddy diffusion for wp3 using a completely implicit time step. 
-             lhs((/3-2,3,3+2/),k_wp3)
-     .       = lhs((/3-2,3,3+2/),k_wp3)
-     .       + C12 
-     .       * diffusion_tlev( Kw8(k), Kw8(km1), nu8,
-     .                         gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
-          endif
-
-
-          ! w'^3: Right-hand side (explicit w'^3 portion of the code).
-
-          ! RHS time tendency.
-          rhs(k_wp3) = 
-     .    + ( 1.0 / dt ) * wp3(k)
-
-          ! RHS turbulent advection (ta) and turbulent production (tp) terms.
-          rhs(k_wp3)
-     .    = rhs(k_wp3)
-     .    + wp3_terms_ta_tp_rhs( wp3(kp1), wp3(k), wp3(km1), 
-     .                           wp2(k), wp2(km1), a1(k), a1(km1),
-     .                           a3(k), a3(km1), gr%dzt(k), eps, wtol )
-
-          ! RHS buoyancy production (bp) term and pressure term 2 (pr2).
-          rhs(k_wp3)
-     .    = rhs(k_wp3)
-     .    + wp3_terms_bp_pr2_rhs( C11_Skw_fnc(k), wp2thvp(k) )
-
-          ! RHS pressure term 1 (pr1).
-          rhs(k_wp3)
-     .    = rhs(k_wp3)
-     .    + wp3_term_pr1_rhs( C8, C8b, tauw3t(k), Skwt(k), wp3(k) )
-
-          ! RHS eddy diffusion term: dissipation term 1 (dp1).
-          if ( lcrank_nich_diff ) then
-             ! These lines are for the diffusional term with a Crank-Nicholson 
-             ! time step.  They are not used for completely implicit diffusion.
-             rhs_diff(1:3)
-     .       = C12 * (1.0/2.0)
-     .       * diffusion_tlev( Kw8(k), Kw8(km1), nu8,
-     .                         gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
-             rhs(k_wp3)   =   rhs(k_wp3)
-     .                      - rhs_diff(3) * wp3(km1)
-     .                      - rhs_diff(2) * wp3(k)
-     .                      - rhs_diff(1) * wp3(kp1)
-          endif
-
-
-#ifdef STATS
-          if (lstats_samp) then
-
-!         Explicit contributions for wp3
-
-          if ( iwp3_ta > 0 ) then
-          zt%x(k,iwp3_ta) = zt%x(k,iwp3_ta) 
-     .    + wp3_terms_ta_tp_rhs( wp3(kp1), wp3(k), wp3(km1), 
-     .                           wp2(k), wp2(km1), a1(k), a1(km1),
-     .                           a3(k)+(3.0/2.0), a3(km1)+(3.0/2.0), 
-     .                           gr%dzt(k), eps, wtol )
-          end if
-
-          if ( iwp3_tp > 0 ) then
-          zt%x(k,iwp3_tp) = zt%x(k,iwp3_tp) 
-     .    + wp3_terms_ta_tp_rhs( wp3(kp1), wp3(k), wp3(km1), 
-     .                           wp2(k), wp2(km1), 0.0, 0.0,
-     .                           0.0-(3.0/2.0), 0.0-(3.0/2.0), 
-     .                           gr%dzt(k), eps, wtol )
-          end if
-
-          if ( iwp3_bp > 0 ) then
-          zt%x(k,iwp3_bp) = zt%x(k,iwp3_bp) 
-     .    + wp3_terms_bp_pr2_rhs( 0.0, wp2thvp(k) )
-          zt%n(k,iwp3_bp) = zt%n(k,iwp3_bp) + 1
-          end if
-
-          if ( iwp3_pr2 > 0 ) then
-          zt%x(k,iwp3_pr2) = zt%x(k,iwp3_pr2) 
-     .    + wp3_terms_bp_pr2_rhs( (1.0+C11_Skw_fnc(k)), wp2thvp(k) )
-          end if
-
-          if ( iwp3_pr1 > 0 ) then
-          zt%x(k,iwp3_pr1) = zt%x(k,iwp3_pr1) 
-     .    + wp3_term_pr1_rhs( C8, C8b, tauw3t(k), Skwt(k), wp3(k) )
-          end if
-
-          ! These lines are for the diffusional term with a Crank-Nicholson 
-          ! time step.  They need to be commented out for completely implicit
-          ! diffusion to be used.
-          if ( iwp3_dp1 > 0 ) then
-           if ( lcrank_nich_diff ) then
-            zt%x(k,iwp3_dp1) = zt%x(k,iwp3_dp1) 
-     .      - rhs_diff(3) * wp3(km1)
-     .      - rhs_diff(2) * wp3(k)
-     .      - rhs_diff(1) * wp3(kp1)
-           endif
-          end if
-
-!         Implicit contributions for wp3
-
-          if ( iwp3_ta > 0 ) then
-            tmp(1:5) = 
-     .      wp3_terms_ta_tp_lhs( wp3(kp1), wp3(k), wp3(km1), 
-     .                           wp2(k), wp2(km1), a1(k), a1(km1),
-     .                           a3(k)+(3.0/2.0), a3(km1)+(3.0/2.0), 
-     .                           gr%dzt(k), eps, wtol )
-            ztscr05(k) = -tmp(5)
-            ztscr06(k) = -tmp(4)
-            ztscr07(k) = -tmp(3)
-            ztscr08(k) = -tmp(2)
-            ztscr09(k) = -tmp(1)
-          end if
-
-          if ( iwp3_tp > 0 ) then
-            tmp(1:5) = 
-     .      wp3_terms_ta_tp_lhs( wp3(kp1), wp3(k), wp3(km1), 
-     .                           wp2(k), wp2(km1), 0.0, 0.0,
-     .                           0.0-(3.0/2.0), 0.0-(3.0/2.0), 
-     .                           gr%dzt(k), eps, wtol )
-            ztscr10(k) = -tmp(4)
-            ztscr11(k) = -tmp(2)
-          end if
-
-          if ( iwp3_ma > 0 ) then
-            tmp(1:2) =
-     .      wp3_term_ma_lhs( wmt(k), gr%dzt(k) )
-            ztscr12(k) = -tmp(2)
-            ztscr13(k) = -tmp(1)
-          end if
-
-          if ( iwp3_ac > 0 ) then
-            ztscr14(k) = 
-     .      - wp3_terms_ac_pr2_lhs( 0.0,
-     .                              wmm(k), wmm(km1), gr%dzt(k) )
-          end if
-
-          if ( iwp3_pr2 > 0 ) then
-            ztscr15(k) =
-     .      - wp3_terms_ac_pr2_lhs( (1.0+C11_Skw_fnc(k)),
-     .                              wmm(k), wmm(km1), gr%dzt(k) )
-          end if
-
-          if ( iwp3_pr1 > 0 ) then
-          ztscr01(k) =
-     .    - wp3_term_pr1_lhs( C8, C8b, tauw3t(k), Skwt(k) )
-          end if
-
-          if ( iwp3_dp1 > 0 ) then
-            if ( lcrank_nich_diff ) then
-               ! Eddy diffusion for wp3 using a Crank-Nicholson time step. 
-               tmp(1:3)
-     .         = C12 * (1.0/2.0)
-     .         * diffusion_tlev( Kw8(k), Kw8(km1), nu8,
-     .                           gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
-            else
-               ! Eddy diffusion for wp3 using a completely implicit time step. 
-               tmp(1:3)
-     .         = C12 
-     .         * diffusion_tlev( Kw8(k), Kw8(km1), nu8,
-     .                           gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
-            endif
-            ztscr02(k) = - tmp(3)
-            ztscr03(k) = - tmp(2)
-            ztscr04(k) = - tmp(1)
-          end if
-
-          end if
-#endif /*STATS*/
-
-        end do
-
-        ! Boundary conditions
-
-        ! Both wp2 and wp3 used fixed-point boundary conditions.  Therefore,
-        ! anything set in the above loop is overwritten at both the upper
-        ! and lower boundaries.
-
-        !   wp3(1)  wp2(1) ... wp3(nz) wp2(nz)
-        ! [  0.0     0.0         0.0     0.0  ]
-        ! [  0.0     0.0         0.0     0.0  ]
-        ! [  1.0     1.0   ...   1.0     1.0  ]
-        ! [  0.0     0.0         0.0     0.0  ]
-        ! [  0.0     0.0         0.0     0.0  ]
-
-        ! Lower boundary
-        k = 1
-        k_wp3 = 2*k - 1
-        k_wp2 = 2*k
-
-        lhs(:,k_wp2) = 0.0
-        lhs(3,k_wp2) = 1.0
-        rhs(k_wp2)   = wp2(k)
-   
-        lhs(:,k_wp3) = 0.0
-        lhs(3,k_wp3) = 1.0
-        rhs(k_wp3)   = 0.0
-
-        ! Upper boundary
-        k = gr%nnzp
-        k_wp3 = 2*k - 1
-        k_wp2 = 2*k
-
-        lhs(:,k_wp2) = 0.0
-        lhs(3,k_wp2) = 1.0
-        rhs(k_wp2)   = 0.0
-   
-        lhs(:,k_wp3) = 0.0
-        lhs(3,k_wp3) = 1.0
-        rhs(k_wp3)   = 0.0
-
+        ! Compute the implicit portion of the w'^2 and w'^3 equations.
+        ! Build the left-hand side matrix.
+        call wp23_lhs( dt, wp2, wp3, wmm, wmt, a1, a3, Kw1, 
+     .                 Kw8, Skwt, tau1m, tauw3t, C1_Skw_fnc, 
+     .                 C11_Skw_fnc, lcrank_nich_diff, lhs )
+
+        ! Compute the explicit portion of the w'^2 and w'^3 equations.
+        ! Build the right-hand side vector.
+        call wp23_rhs( dt, wp2, wp3, a1, a3, wpthvp, wp2thvp,
+     .                 um, vm, upwp, vpwp, up2, vp2, Kw1, 
+     .                 Kw8, Skwt, tau1m, tauw3t, C11_Skw_fnc,
+     .                 lcrank_nich_diff, rhs )
+
+        ! Solve the system of equations for w'^2 and w'^3.
 #ifdef STATS
         if ( lstats_samp .and. iwp23_cn > 0 ) then
           ! Perform LU decomp and solve system (LAPACK with diagnostics)
@@ -1060,69 +574,14 @@
 
         ! Clip Skewness.
  
-        DO k = 1, gr%nnzp, 1
+        do k = 1, gr%nnzp, 1
 
-           km1 = MAX(k-1,1)
+           km1 = max(k-1,1)
 
-!  Vince Larson commented out the Andre et al clipping to see if we 
-!     could avoid using it.  26 Jul 2007
-!  Brian and Vince undid the change because Wangara case still needs 
-!  the Andre et al clipping.  27 Jul 2007.
-           ! Clipping wp3 at the first layer above ground according to 
-           ! Andre et al. (1976b & 1978).
-           ! According to Andre et al. (1976b & 1978), wp3 should not
-           ! exceed [2*(wp2^3)]^(1/2) at any level.  However, this term
-           ! should be multiplied by 0.2 close to the surface to include
-           ! surface effects.  There already is a wp3 clipping term in
-           ! place for all other altitudes, but this term will be 
-           ! included for the surface layer only.
-           ! Therefore, the lowest level wp3 should not exceed
-           ! 0.2 * SQRT(2) * wp2^(3/2).  Brian Griffin.  12/18/05.
+           call wp23_clip( wp2(km1), gr%zt(k), emin, eps, 
+     .                     wp2(k), wp3(k) )
 
-           ! NOTE: Clipping not good; must try to get rid of.  Affects only
-           !       Wangara case.
-
-           IF ( gr%zt(k) <= 100.0 ) THEN ! Clip for 100 m. above ground.
-
-              atmp = MAX( ( (wp2(km1)+wp2(k)) / 2.0 ) , eps )    ! wp2
-              ctmp = atmp**(3.0/2.0)                             ! wp2^(3/2)
-              IF ( wp3(k) >= 0.2 * SQRT(2.0) * ctmp ) THEN
-                 wp3(k) = 0.2 * SQRT(2.0) * ctmp
-              ! Vince Larson added clipping for negative wp3 
-              !     in order to stabilize arm_3year    12 Dec 2007
-              ELSE IF ( wp3(k) <= -0.2 * SQRT(2.0) * ctmp ) THEN
-                 wp3(k) = -0.2 * SQRT(2.0) * ctmp
-              ! End Vince Larson's addition
-              END IF
-
-           ELSE
-
-              ! Clip skewness consistently with a
-              ! NOTE: atmp is wp2 interpolated to thermodynamic levels
-              !       (with the added insurance that it cannot be negative
-              !       or zero).  wp2 should not be set equal to atmp
-              !       because atmp is the value at a thermodynamic level,
-              !       whereas wp2 is located at a momentum level.  The
-              !       only effect of that piece of code is to mistakenly
-              !       lift the wp2 value in altitude one-half grid box
-              !       every time it is called.  The line is unnecessary,
-              !       and can be commented out.  Brian Griffin. 6/30/07.
-              atmp = MAX( 0.5*(wp2(km1)+wp2(k)), eps )
-              ctmp = atmp**1.5
-              IF ( wp3(k)/ctmp > 4.5 ) THEN
-                 wp3(k) = 4.5 * ctmp
-                 !wp2(k) = atmp
-              ELSE IF ( wp3(k)/ctmp < -4.5 ) THEN
-                 wp3(k) = -4.5 * ctmp
-                 !wp2(k) = atmp
-              END IF
-
-           END IF
-! End of Vince Larson's commenting of Andre et al clipping.
-
-           wp2(k) = max( 2./3. * emin, wp2(k) ) 
-
-        END DO
+        enddo
 
 #ifdef STATS
         if (lstats_samp) then
@@ -1156,12 +615,698 @@
         return
         end subroutine wp23_solve
 
-!========================================================================
+!===============================================================================
+
+        subroutine wp23_lhs( dt, wp2, wp3, wmm, wmt, a1, a3, Kw1, 
+     .                       Kw8, Skwt, tau1m, tauw3t, C1_Skw_fnc, 
+     .                       C11_Skw_fnc, lcrank_nich_diff, lhs )
+
+!       Description:
+!       Compute LHS band diagonal matrix for w'^2 and w'^3.
+!       This subroutine computes the implicit portion of 
+!       the w'^2 and w'^3 equations.
+
+!       References:
+!-----------------------------------------------------------------------
+
+        use grid_class
+        use parameters, only: C4, C5, C8, C8b, C12, nu1, nu8
+        use constants, only: wtol, eps
+        use model_flags, only: lKhm_aniso
+        use diffusion
+        use stats_prec, only: time_prec
+#ifdef STATS
+        use stats_hoc
+#endif /*STATS*/
+
+        implicit none
+
+        ! Parameter Constants
+        integer, parameter ::
+     .  nsub = 2,  ! Number of subdiagonals in the LHS matrix.
+     .  nsup = 2   ! Number of superdiagonals in the LHS matrix.
+
+        ! Input Variables
+        real(kind=time_prec), intent(in) :: 
+     .  dt          ! Timestep length                          [s]
+
+        real, dimension(gr%nnzp), intent(in) :: 
+     .  wp2,        ! w'^2                                     [m^2/s^2]
+     .  wp3,        ! w'^3                                     [m^3/s^3]
+     .  wmm,        ! w wind component on momentum levels      [m/s]
+     .  wmt,        ! w wind component on thermodynamic levels [m/s]
+     .  a1,         ! Scm-related term a_1                     [-]
+     .  a3,         ! Scm-related term a_3                     [-]
+     .  Kw1,        ! Coefficient of eddy diffusivity for w'^2 [m^2/s]
+     .  Kw8,        ! Coefficient of eddy diffusivity for w'^3 [m^2/s]
+     .  Skwt,       ! Skewness of w on thermodynamic levels    [-]
+     .  tau1m,      ! Time-scale tau on momentum levels        [s]
+     .  tauw3t,     ! Time-scale tau on thermodynamic levels   [s]
+     .  C1_Skw_fnc, ! C_1 parameter with Sk_w applied          [-]
+     .  C11_Skw_fnc ! C_11 parameter with Sk_w applied         [-]
+
+        logical, intent(in) ::
+     .  lcrank_nich_diff   ! Turns on/off Crank-Nicholson diffusion.
+
+        ! Output Variable
+        real, dimension(nsup+nsub+1,2*gr%nnzp), intent(out) :: 
+     .  lhs ! Implicit contributions to wp2/wp3 (band diag. matrix)
+
+        ! Local Variables
+
+        ! Array indices
+        integer :: k, km1, kp1, k_wp2, k_wp3
+
+#ifdef STATS
+        real, dimension(5) :: tmp
+#endif /*STATS*/
+
+
+        ! Initialize the left-hand side matrix to 0.
+        lhs = 0.0
+
+        do k = 2, gr%nnzp-1, 1
+
+          ! Define indices
+
+          km1 = max( k-1, 1 )
+          kp1 = min( k+1, gr%nnzp )
+
+          k_wp3 = 2*k - 1
+          k_wp2 = 2*k
+
+
+          !!!!!***** w'^2 *****!!!!!
+
+          ! w'^2: Left-hand side (implicit w'^2 portion of the code).
+          !
+          ! Momentum subdiagonal (lhs index: 3+2)
+          !         [ x wp2(k-1,<t+1>) ]
+          ! Thermodynamic subdiagonal (lhs index: 3+1)
+          !         [ x wp3(k,<t+1>) ]
+          ! Momentum main diagonal (lhs index: 3)
+          !         [ x wp2(k,<t+1>) ]
+          ! Thermodynamic superdiagonal (lhs index: 3-1)
+          !         [ x wp3(k+1,<t+1>) ]
+          ! Momentum superdiagonal (lhs index: 3-2)
+          !         [ x wp2(k+1,<t+1>) ]
+
+          ! LHS time tendency.
+          lhs(3,k_wp2)
+     .    = + 1.0 / dt
+
+          ! LHS mean advection (ma) term.
+          lhs((/3-2,3+2/),k_wp2)
+     .    = lhs((/3-2,3+2/),k_wp2)
+     .    + wp2_term_ma_lhs( wmm(k), gr%dzm(k) )
+
+          ! LHS turbulent advection (ta) term.
+          lhs((/3-1,3+1/),k_wp2)
+     .    = lhs((/3-1,3+1/),k_wp2)
+     .    + wp2_term_ta_lhs( gr%dzm(k) )
+
+          ! LHS accumulation (ac) term and pressure term 2 (pr2).
+          lhs(3,k_wp2)
+     .    = lhs(3,k_wp2)
+     .    + wp2_terms_ac_pr2_lhs( C5, wmt(kp1), wmt(k), gr%dzm(k)  )
+
+          ! LHS dissipation term 1 (dp1).
+          lhs(3,k_wp2)
+     .    = lhs(3,k_wp2)
+     .    + wp2_term_dp1_lhs( C1_Skw_fnc(k), tau1m(k) )
+
+          ! LHS eddy diffusion term: dissipation term 2 (dp2).
+          if ( lcrank_nich_diff ) then
+             ! Eddy diffusion for wp2 using a Crank-Nicholson time step.
+             lhs((/3-2,3,3+2/),k_wp2)
+     .       = lhs((/3-2,3,3+2/),k_wp2)
+     .       + (1.0/2.0)
+     .       * diffusion_mlev( Kw1(k), Kw1(kp1), nu1,
+     .                         gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+          else
+             ! Eddy diffusion for wp2 using a completely implicit time step.
+             lhs((/3-2,3,3+2/),k_wp2)
+     .       = lhs((/3-2,3,3+2/),k_wp2)
+     .       + diffusion_mlev( Kw1(k), Kw1(kp1), nu1,
+     .                         gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+          endif
+
+          ! LHS pressure term 1 (pr1).
+          if ( lKhm_aniso ) then
+             ! Add in this term if we're not assuming tke = 1.5 * wp2
+             lhs(3,k_wp2)
+     .       = lhs(3,k_wp2)
+     .       + wp2_term_pr1_lhs( C4, tau1m(k) )
+          endif
+
+#ifdef STATS
+          if ( lstats_samp ) then
+
+           ! Statistics: implicit contributions for wp2.
+
+          if ( iwp2_dp1 > 0 ) then
+            zmscr01(k) =
+     .      - wp2_term_dp1_lhs( C1_Skw_fnc(k), tau1m(k) )
+          endif
+
+          if ( iwp2_dp2 > 0 ) then
+            if ( lcrank_nich_diff ) then
+               ! Eddy diffusion for wp2 using a Crank-Nicholson time step.
+               tmp(1:3)
+     .         = (1.0/2.0)
+     .         * diffusion_mlev( Kw1(k), Kw1(kp1), nu1,
+     .                           gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+            else
+               ! Eddy diffusion for wp2 using a completely implicit time step. 
+               tmp(1:3)
+     .         = diffusion_mlev( Kw1(k), Kw1(kp1), nu1,
+     .                           gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+            endif
+            zmscr02(k) = - tmp(3)
+            zmscr03(k) = - tmp(2)
+            zmscr04(k) = - tmp(1)
+          endif
+
+          if ( iwp2_ta > 0 ) then
+            tmp(1:2) = 
+     .      + wp2_term_ta_lhs( gr%dzm(k) )
+            zmscr05(k) = - tmp(2)
+            zmscr06(k) = - tmp(1)
+          endif
+
+          if ( iwp2_ma > 0 ) then
+            tmp(1:2) =
+     .      + wp2_term_ma_lhs( wmm(k), gr%dzm(k) )
+            zmscr07(k) = - tmp(2)
+            zmscr08(k) = - tmp(1)
+          endif
+
+          if ( iwp2_ac > 0 ) then
+            zmscr09(k) = 
+     .      - wp2_terms_ac_pr2_lhs( 0.0, wmt(kp1), wmt(k), gr%dzm(k)  )
+          endif
+
+          if ( iwp2_pr2 > 0 ) then
+            zmscr10(k) = 
+     .      - wp2_terms_ac_pr2_lhs( (1.0+C5), wmt(kp1), wmt(k), 
+     .                              gr%dzm(k)  )
+          endif
+
+          if ( iwp2_pr1 > 0 .and. lKhm_aniso ) then
+            zmscr11(k) = - wp2_term_pr1_lhs( C4, tau1m(k) )
+          endif
+
+          endif
+#endif /*STATS*/
+
+
+          !!!!!***** w'^3 *****!!!!!
+
+          ! w'^3: Left-hand side (implicit w'^3 portion of the code).
+          !
+          ! Thermodynamic subdiagonal (lhs index: 3+2) 
+          !         [ x wp3(k-1,<t+1>) ]
+          ! Momentum subdiagonal (lhs index: 3+1)
+          !         [ x wp2(k-1,<t+1>) ]
+          ! Thermodynamic main diagonal (lhs index: 3)
+          !         [ x wp3(k,<t+1>) ]
+          ! Momentum superdiagonal (lhs index: 3-1)
+          !         [ x wp2(k,<t+1>) ]
+          ! Thermodynamic superdiagonal (lhs index: 3-2) 
+          !         [ x wp3(k+1,<t+1>) ]
+
+          ! LHS time tendency.
+          lhs(3,k_wp3)
+     .    = + 1.0 / dt
+
+          ! LHS mean advection (ma) term.
+          lhs((/3-2,3+2/),k_wp3)
+     .    = lhs((/3-2,3+2/),k_wp3)
+     .    + wp3_term_ma_lhs( wmt(k), gr%dzt(k) )
+
+          ! LHS turbulent advection (ta) and turbulent production (tp) terms.
+          lhs(3-2:3+2,k_wp3)
+     .    = lhs(3-2:3+2,k_wp3)
+     .    + wp3_terms_ta_tp_lhs( wp3(kp1), wp3(k), wp3(km1), 
+     .                           wp2(k), wp2(km1), a1(k), a1(km1),
+     .                           a3(k), a3(km1), gr%dzt(k), eps, wtol )
+
+          ! LHS accumulation (ac) term and pressure term 2 (pr2).
+          lhs(3,k_wp3)
+     .    = lhs(3,k_wp3)
+     .    + wp3_terms_ac_pr2_lhs( C11_Skw_fnc(k),
+     .                            wmm(k), wmm(km1), gr%dzt(k) )
+
+          ! LHS pressure term 1 (pr1).
+          lhs(3,k_wp3)
+     .    = lhs(3,k_wp3)
+     .    + wp3_term_pr1_lhs( C8, C8b, tauw3t(k), Skwt(k) )
+
+          ! LHS eddy diffusion term: dissipation term 1 (dp1).
+          !  Added a new constant, C12.
+          !  Initially, this new constant will be set to 1.0 -dschanen 9/19/05 
+          if ( lcrank_nich_diff ) then
+             ! Eddy diffusion for wp3 using a Crank-Nicholson time step. 
+             lhs((/3-2,3,3+2/),k_wp3)
+     .       = lhs((/3-2,3,3+2/),k_wp3)
+     .       + C12 * (1.0/2.0)
+     .       * diffusion_tlev( Kw8(k), Kw8(km1), nu8,
+     .                         gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+          else
+             ! Eddy diffusion for wp3 using a completely implicit time step. 
+             lhs((/3-2,3,3+2/),k_wp3)
+     .       = lhs((/3-2,3,3+2/),k_wp3)
+     .       + C12 
+     .       * diffusion_tlev( Kw8(k), Kw8(km1), nu8,
+     .                         gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+          endif
+
+#ifdef STATS
+          if (lstats_samp) then
+
+          ! Statistics: implicit contributions for wp3.
+
+          if ( iwp3_ta > 0 ) then
+            tmp(1:5) = 
+     .      wp3_terms_ta_tp_lhs( wp3(kp1), wp3(k), wp3(km1), 
+     .                           wp2(k), wp2(km1), a1(k), a1(km1),
+     .                           a3(k)+(3.0/2.0), a3(km1)+(3.0/2.0), 
+     .                           gr%dzt(k), eps, wtol )
+            ztscr05(k) = -tmp(5)
+            ztscr06(k) = -tmp(4)
+            ztscr07(k) = -tmp(3)
+            ztscr08(k) = -tmp(2)
+            ztscr09(k) = -tmp(1)
+          endif
+
+          if ( iwp3_tp > 0 ) then
+            tmp(1:5) = 
+     .      wp3_terms_ta_tp_lhs( wp3(kp1), wp3(k), wp3(km1), 
+     .                           wp2(k), wp2(km1), 0.0, 0.0,
+     .                           0.0-(3.0/2.0), 0.0-(3.0/2.0), 
+     .                           gr%dzt(k), eps, wtol )
+            ztscr10(k) = -tmp(4)
+            ztscr11(k) = -tmp(2)
+          endif
+
+          if ( iwp3_ma > 0 ) then
+            tmp(1:2) =
+     .      wp3_term_ma_lhs( wmt(k), gr%dzt(k) )
+            ztscr12(k) = -tmp(2)
+            ztscr13(k) = -tmp(1)
+          endif
+
+          if ( iwp3_ac > 0 ) then
+            ztscr14(k) = 
+     .      - wp3_terms_ac_pr2_lhs( 0.0,
+     .                              wmm(k), wmm(km1), gr%dzt(k) )
+          endif
+
+          if ( iwp3_pr2 > 0 ) then
+            ztscr15(k) =
+     .      - wp3_terms_ac_pr2_lhs( (1.0+C11_Skw_fnc(k)),
+     .                              wmm(k), wmm(km1), gr%dzt(k) )
+          endif
+
+          if ( iwp3_pr1 > 0 ) then
+          ztscr01(k) =
+     .    - wp3_term_pr1_lhs( C8, C8b, tauw3t(k), Skwt(k) )
+          endif
+
+          if ( iwp3_dp1 > 0 ) then
+            if ( lcrank_nich_diff ) then
+               ! Eddy diffusion for wp3 using a Crank-Nicholson time step. 
+               tmp(1:3)
+     .         = C12 * (1.0/2.0)
+     .         * diffusion_tlev( Kw8(k), Kw8(km1), nu8,
+     .                           gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+            else
+               ! Eddy diffusion for wp3 using a completely implicit time step. 
+               tmp(1:3)
+     .         = C12 
+     .         * diffusion_tlev( Kw8(k), Kw8(km1), nu8,
+     .                           gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+            endif
+            ztscr02(k) = - tmp(3)
+            ztscr03(k) = - tmp(2)
+            ztscr04(k) = - tmp(1)
+          endif
+
+          endif
+#endif /*STATS*/
+
+        enddo ! k = 2, gr%nnzp-1, 1
+
+
+        ! Boundary conditions
+
+        ! Both wp2 and wp3 used fixed-point boundary conditions.  
+        ! Therefore, anything set in the above loop at both the upper 
+        ! and lower boundaries would be overwritten here.  However, the 
+        ! above loop does not extend to the boundary levels.  An array 
+        ! with a value of 1 at the main diagonal on the left-hand side 
+        ! and with values of 0 at all other diagonals on the left-hand
+        ! side will preserve the right-hand side value at that level.
+        !
+        !   wp3(1)  wp2(1) ... wp3(nz) wp2(nz)
+        ! [  0.0     0.0         0.0     0.0  ]
+        ! [  0.0     0.0         0.0     0.0  ]
+        ! [  1.0     1.0   ...   1.0     1.0  ]
+        ! [  0.0     0.0         0.0     0.0  ]
+        ! [  0.0     0.0         0.0     0.0  ]
+
+        ! Lower boundary
+        k = 1
+        k_wp3 = 2*k - 1
+        k_wp2 = 2*k
+
+        lhs(:,k_wp2) = 0.0
+        lhs(3,k_wp2) = 1.0
+
+        lhs(:,k_wp3) = 0.0
+        lhs(3,k_wp3) = 1.0
+
+        ! Upper boundary
+        k = gr%nnzp
+        k_wp3 = 2*k - 1
+        k_wp2 = 2*k
+
+        lhs(:,k_wp2) = 0.0
+        lhs(3,k_wp2) = 1.0
+
+        lhs(:,k_wp3) = 0.0
+        lhs(3,k_wp3) = 1.0
+
+
+        return
+        end subroutine wp23_lhs
+
+!===============================================================================
+        subroutine wp23_rhs( dt, wp2, wp3, a1, a3, wpthvp, wp2thvp,
+     .                       um, vm, upwp, vpwp, up2, vp2, Kw1, 
+     .                       Kw8, Skwt, tau1m, tauw3t, C11_Skw_fnc,
+     .                       lcrank_nich_diff, rhs )
+
+!       Description:
+!       Compute RHS vector for w'^2 and w'^3.
+!       This subroutine computes the explicit portion of 
+!       the w'^2 and w'^3 equations.
+
+!       References:
+!-----------------------------------------------------------------------
+
+        use grid_class
+        use parameters, only: C4, C5, C8, C8b, C12, nu1, nu8
+        use constants, only: wtol, eps
+        use model_flags, only: lKhm_aniso
+        use diffusion
+        use stats_prec, only: time_prec
+#ifdef STATS
+        use stats_hoc
+#endif /*STATS*/
+
+        ! Input Variables
+        real(kind=time_prec), intent(in) :: 
+     .  dt          ! Timestep length                          [s]
+
+        real, dimension(gr%nnzp), intent(in) :: 
+     .  wp2,        ! w'^2                                     [m^2/s^2]
+     .  wp3,        ! w'^3                                     [m^3/s^3]
+     .  a1,         ! Scm-related term a_1                     [-]
+     .  a3,         ! Scm-related term a_3                     [-]
+     .  wpthvp,     ! w'th_v'                                  [K m/s]
+     .  wp2thvp,    ! w'^2th_v'                                [K m^2/s^2]
+     .  um,         ! u wind component                         [m/s]
+     .  vm,         ! v wind component                         [m/s]
+     .  upwp,       ! u'w'                                     [m^2/s^2]
+     .  vpwp,       ! v'w'                                     [m^2/s^2]
+     .  up2,        ! u'^2                                     [m^2/s^2]
+     .  vp2,        ! v'^2                                     [m^2/s^2]
+     .  Kw1,        ! Coefficient of eddy diffusivity for w'^2 [m^2/s]
+     .  Kw8,        ! Coefficient of eddy diffusivity for w'^3 [m^2/s]
+     .  Skwt,       ! Skewness of w on thermodynamic levels    [-]
+     .  tau1m,      ! Time-scale tau on momentum levels        [s]
+     .  tauw3t,     ! Time-scale tau on thermodynamic levels   [s]
+     .  C11_Skw_fnc ! C_11 parameter with Sk_w applied         [-]
+
+        logical, intent(in) ::
+     .  lcrank_nich_diff   ! Turns on/off Crank-Nicholson diffusion.
+
+        ! Output Variable
+        real, dimension(2*gr%nnzp), intent(out) ::
+     .  rhs   ! RHS of band matrix
+
+        ! Local Variables
+
+        ! Array indices
+        integer :: k, km1, kp1, k_wp2, k_wp3
+
+        ! Holds data for use in Crank-Nicholson eddy diffusion.
+        real, dimension(3) :: rhs_diff
+
+
+        ! Initialize the right-hand side vector to 0.
+        rhs = 0.0
+
+        do k = 2, gr%nnzp-1, 1
+
+          ! Define indices
+
+          km1 = max( k-1, 1 )
+          kp1 = min( k+1, gr%nnzp )
+
+          k_wp3 = 2*k - 1
+          k_wp2 = 2*k
+
+
+          !!!!!***** w'^2 *****!!!!!
+
+          ! w'^2: Right-hand side (explicit w'^2 portion of the code).
+
+          ! RHS time tendency.
+          rhs(k_wp2)
+     .    = + ( 1.0 / dt ) * wp2(k)
+
+          ! RHS buoyancy production (bp) term and pressure term 2 (pr2).
+          rhs(k_wp2)
+     .    = rhs(k_wp2)
+     .    + wp2_terms_bp_pr2_rhs( C5, wpthvp(k) )
+
+          ! RHS pressure term 3 (pr3).
+          rhs(k_wp2)
+     .    = rhs(k_wp2)
+     .    + wp2_term_pr3_rhs( C5, wpthvp(k), upwp(k), um(kp1), um(k),
+     .                        vpwp(k), vm(kp1), vm(k), gr%dzm(k) )
+
+          ! RHS eddy diffusion term: dissipation term 2 (dp2).
+          if ( lcrank_nich_diff ) then
+             ! These lines are for the diffusional term with a Crank-Nicholson
+             ! time step.  They are not used for completely implicit diffusion.
+             rhs_diff(1:3)
+     .       = (1.0/2.0)
+     .       * diffusion_mlev( Kw1(k), Kw1(kp1), nu1,
+     .                         gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+             rhs(k_wp2)   =   rhs(k_wp2)
+     .                      - rhs_diff(3) * wp2(km1)
+     .                      - rhs_diff(2) * wp2(k)
+     .                      - rhs_diff(1) * wp2(kp1)
+          endif
+
+          ! RHS pressure term 1 (pr1).
+          if ( lKhm_aniso ) then
+             rhs(k_wp2)
+     .       = rhs(k_wp2)
+     .       + wp2_term_pr1_rhs( C4, up2(k), vp2(k), tau1m(k) )
+          endif
+
+#ifdef STATS
+          if ( lstats_samp ) then
+
+          ! Statistics: explicit contributions for wp2.
+
+          if ( iwp2_dp2 > 0 ) then
+           if ( lcrank_nich_diff ) then
+            zm%x(k,iwp2_dp2) = zm%x(k,iwp2_dp2)
+     .      - rhs_diff(3) * wp2(km1)
+     .      - rhs_diff(2) * wp2(k)
+     .      - rhs_diff(1) * wp2(kp1)
+           endif
+          endif
+
+          if ( iwp2_bp > 0 ) then
+           zm%x(k,iwp2_bp) = zm%x(k,iwp2_bp)
+     .     + wp2_terms_bp_pr2_rhs( 0.0, wpthvp(k) )
+           zm%n(k,iwp2_bp) = zm%n(k,iwp2_bp) + 1
+          endif
+
+          if ( iwp2_pr1 > 0 .and. lKhm_aniso ) then
+           zm%x(k,iwp2_pr1) = zm%x(k,iwp2_pr1)
+     .     + wp2_term_pr1_rhs( C4, up2(k), vp2(k), tau1m(k) )
+          endif
+
+          if ( iwp2_pr2 > 0 ) then
+           zm%x(k,iwp2_pr2) = zm%x(k,iwp2_pr2)
+     .     + wp2_terms_bp_pr2_rhs( (1.0+C5), wpthvp(k) )
+          endif
+
+          if ( iwp2_pr3 > 0 ) then
+           zm%x(k,iwp2_pr3) = zm%x(k,iwp2_pr3)
+     .     + wp2_term_pr3_rhs( C5, wpthvp(k), upwp(k), um(kp1), um(k),
+     .                         vpwp(k), vm(kp1), vm(k), gr%dzm(k) )
+           zm%n(k,iwp2_pr3) = zm%n(k,iwp2_pr3) + 1
+          endif
+
+          endif
+#endif /*STATS*/
+
+
+          !!!!!***** w'^3 *****!!!!!
+
+          ! w'^3: Right-hand side (explicit w'^3 portion of the code).
+
+          ! RHS time tendency.
+          rhs(k_wp3) =
+     .    + ( 1.0 / dt ) * wp3(k)
+
+          ! RHS turbulent advection (ta) and turbulent production (tp) terms.
+          rhs(k_wp3)
+     .    = rhs(k_wp3)
+     .    + wp3_terms_ta_tp_rhs( wp3(kp1), wp3(k), wp3(km1),
+     .                           wp2(k), wp2(km1), a1(k), a1(km1),
+     .                           a3(k), a3(km1), gr%dzt(k), eps, wtol )
+
+          ! RHS buoyancy production (bp) term and pressure term 2 (pr2).
+          rhs(k_wp3)
+     .    = rhs(k_wp3)
+     .    + wp3_terms_bp_pr2_rhs( C11_Skw_fnc(k), wp2thvp(k) )
+
+          ! RHS pressure term 1 (pr1).
+          rhs(k_wp3)
+     .    = rhs(k_wp3)
+     .    + wp3_term_pr1_rhs( C8, C8b, tauw3t(k), Skwt(k), wp3(k) )
+
+          ! RHS eddy diffusion term: dissipation term 1 (dp1).
+          if ( lcrank_nich_diff ) then
+             ! These lines are for the diffusional term with a Crank-Nicholson
+             ! time step.  They are not used for completely implicit diffusion.
+             rhs_diff(1:3)
+     .       = C12 * (1.0/2.0)
+     .       * diffusion_tlev( Kw8(k), Kw8(km1), nu8,
+     .                         gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+             rhs(k_wp3)   =   rhs(k_wp3)
+     .                      - rhs_diff(3) * wp3(km1)
+     .                      - rhs_diff(2) * wp3(k)
+     .                      - rhs_diff(1) * wp3(kp1)
+          endif
+
+#ifdef STATS
+          if (lstats_samp) then
+
+          ! Statistics: explicit contributions for wp3.
+
+          if ( iwp3_ta > 0 ) then
+          zt%x(k,iwp3_ta) = zt%x(k,iwp3_ta)
+     .    + wp3_terms_ta_tp_rhs( wp3(kp1), wp3(k), wp3(km1),
+     .                           wp2(k), wp2(km1), a1(k), a1(km1),
+     .                           a3(k)+(3.0/2.0), a3(km1)+(3.0/2.0),
+     .                           gr%dzt(k), eps, wtol )
+          endif
+
+          if ( iwp3_tp > 0 ) then
+          zt%x(k,iwp3_tp) = zt%x(k,iwp3_tp)
+     .    + wp3_terms_ta_tp_rhs( wp3(kp1), wp3(k), wp3(km1),
+     .                           wp2(k), wp2(km1), 0.0, 0.0,
+     .                           0.0-(3.0/2.0), 0.0-(3.0/2.0),
+     .                           gr%dzt(k), eps, wtol )
+          endif
+
+          if ( iwp3_bp > 0 ) then
+          zt%x(k,iwp3_bp) = zt%x(k,iwp3_bp)
+     .    + wp3_terms_bp_pr2_rhs( 0.0, wp2thvp(k) )
+          zt%n(k,iwp3_bp) = zt%n(k,iwp3_bp) + 1
+          endif
+
+          if ( iwp3_pr2 > 0 ) then
+          zt%x(k,iwp3_pr2) = zt%x(k,iwp3_pr2)
+     .    + wp3_terms_bp_pr2_rhs( (1.0+C11_Skw_fnc(k)), wp2thvp(k) )
+          endif
+
+          if ( iwp3_pr1 > 0 ) then
+          zt%x(k,iwp3_pr1) = zt%x(k,iwp3_pr1)
+     .    + wp3_term_pr1_rhs( C8, C8b, tauw3t(k), Skwt(k), wp3(k) )
+          endif
+
+          ! These lines are for the diffusional term with a Crank-Nicholson
+          ! time step.  They need to be commented out for completely implicit
+          ! diffusion to be used.
+          if ( iwp3_dp1 > 0 ) then
+           if ( lcrank_nich_diff ) then
+            zt%x(k,iwp3_dp1) = zt%x(k,iwp3_dp1)
+     .      - rhs_diff(3) * wp3(km1)
+     .      - rhs_diff(2) * wp3(k)
+     .      - rhs_diff(1) * wp3(kp1)
+           endif
+          endif
+
+          endif
+#endif /*STATS*/
+
+        enddo
+
+
+        ! Boundary conditions
+
+        ! Both wp2 and wp3 used fixed-point boundary conditions.  
+        ! Therefore, anything set in the above loop at both the upper 
+        ! and lower boundaries would be overwritten here.  However, the 
+        ! above loop does not extend to the boundary levels.  An array 
+        ! with a value of 1 at the main diagonal on the left-hand side 
+        ! and with values of 0 at all other diagonals on the left-hand
+        ! side will preserve the right-hand side value at that level.
+
+        ! Lower boundary
+        k = 1
+        k_wp3 = 2*k - 1
+        k_wp2 = 2*k
+
+        ! The value of w'^2 at the lower boundary will remain the same.
+        ! When the lower boundary is at the surface, the surface value of
+        ! w'^2 is set in subroutine sfc_var (sfc.F).
+        rhs(k_wp2)   = wp2(k)
+        ! The value of w'^3 at the lower boundary will be 0.
+        rhs(k_wp3)   = 0.0
+
+        ! Upper boundary
+        k = gr%nnzp
+        k_wp3 = 2*k - 1
+        k_wp2 = 2*k
+
+        ! The value of w'^2 at the upper boundary will be 0.
+        rhs(k_wp2)   = 0.0
+        ! The value of w'^3 at the upper boundary will be 0.
+        rhs(k_wp3)   = 0.0
+
+
+        return
+        end subroutine wp23_rhs
+
+!===============================================================================
         pure function wp2_term_ma_lhs( wmm, dzm )
      .  result( lhs )
 
 !       Description:
 !       Mean advection of w'^2: implicit portion of the code.
+!
+!       The d(w'^2)/dt equation contains a mean advection term:
+!
+!       - w * d(w'^2)/dz.
+!
+!       Note:  When the term is brought over to the left-hand side, the
+!              sign is reversed and the leading "-" in front of the 
+!              term is changed to a "+".
+!
+!       This term is solved for completely implicitly and is 
+!       discretized as follows:
 !
 !       The values of w'^2 are found on the momentum levels, as are the 
 !       values of wmm (mean vertical velocity on momentum levels).  
@@ -1207,29 +1352,40 @@
         ! Return Variable
         real, dimension(2) :: lhs
 
-        ! Momentum superdiagonal: [ x wp2(k+1,<ts+1>) ]
+        ! Momentum superdiagonal: [ x wp2(k+1,<t+1>) ]
         lhs(kp1_mdiag)
      .  = + wmm * (1.0/2.0) * dzm
 
-        ! Momentum subdiagonal: [ x wp2(k-1,<ts+1>) ]
+        ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
         lhs(km1_mdiag)
      .  = - wmm * (1.0/2.0) * dzm
 
         return
         end function wp2_term_ma_lhs
 
-!========================================================================
+!===============================================================================
         pure function wp2_term_ta_lhs( dzm )
      .  result( lhs )
 
 !       Description:
 !       Turbulent advection term for w'^2: implicit portion of the code.
 !
+!       The d(w'^2)/dt equation contains a turbulent advection term:
+!
+!       - d(w'^3)/dz.
+!
+!       Note:  When the term is brought over to the left-hand side, the
+!              sign is reversed and the leading "-" in front of the 
+!              term is changed to a "+".
+!
+!       This term is solved for completely implicitly and is 
+!       discretized as follows:
+!
 !       While the values of w'^2 are found on the momentum levels, the 
 !       values of w'^3 are found on the thermodynamic levels.  The 
 !       derivative of w'^3 is taken over the intermediate (central) 
 !       momentum level, yielding the desired results.  The value of 
-!       w'^3 being used is the value at timestep (ts+1), thus implicit
+!       w'^3 being used is the value at timestep (t+1), thus implicit
 !       discretization is used.
 !
 !       -------------------wp3p1--------------------------------- t(k+1)
@@ -1262,18 +1418,18 @@
         ! Return Variable
         real, dimension(2) :: lhs
 
-        ! Thermodynamic superdiagonal: [ x wp3(k+1,<ts+1>) ]
+        ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
         lhs(kp1_tdiag)
      .  = + dzm
 
-        ! Thermodynamic subdiagonal: [ x wp3(k,<ts+1>) ]
+        ! Thermodynamic subdiagonal: [ x wp3(k,<t+1>) ]
         lhs(k_tdiag)
      .  = - dzm
 
         return
         end function wp2_term_ta_lhs
 
-!========================================================================
+!===============================================================================
         pure function wp2_terms_ac_pr2_lhs( C5, wmtp1, wmt, dzm )
      .  result( lhs )
 
@@ -1281,16 +1437,32 @@
 !       Accumulation of w'^2 and w'^2 pressure term 2:
 !       implicit portion of the code.
 !
+!       The d(w'^2)/dt equation contains an accumulation term:
+!
+!       - 2 w'^2 dw/dz,
+!
+!       and pressure term 2:
+!
+!       - C_5 ( -2 w'^2 dw/dz + 2 (g/th_0) w'th_v' )
+!
 !       The w'^2 accumulation term is completely implicit, while w'^2
 !       pressure term 2 has both implicit and explicit components.  The
 !       accumulation term and the implicit portion of pressure term 2 
-!       are combined and solved together.
+!       are combined and solved together as:
+!
+!       + ( 1 - C_5 ) ( -2 w'^2 dw/dz ).
+!
+!       Note:  When the term is brought over to the left-hand side, the
+!              sign is reversed and the leading "-" in front of the "2"
+!              is changed to a "+".
+!
+!       The terms are discretized as follows:
 !
 !       The values of w'^2 are found on momentum levels, while the values
 !       of wmt (mean vertical velocity on thermodynamic levels) are found
 !       on thermodynamic levels.  The vertical derivative of wmt is 
 !       taken over the intermediate (central) momentum level.  It is then 
-!       multiplied by w^'2 (implicitly calculated at timestep (ts+1)) and 
+!       multiplied by w^'2 (implicitly calculated at timestep (t+1)) and 
 !       the coefficients to yield the desired results.
 !
 !       -------wmtp1--------------------------------------------- t(k+1)
@@ -1325,24 +1497,33 @@
         ! Return Variable
         real :: lhs
 
-        ! Momentum main diagonal: [ x wp2(k,<ts+1>) ]
+        ! Momentum main diagonal: [ x wp2(k,<t+1>) ]
         lhs
      .  = + ( 1.0 - C5 ) * 2.0 * dzm * ( wmtp1 - wmt )
 
         return
         end function wp2_terms_ac_pr2_lhs
 
-!========================================================================
+!===============================================================================
         pure function wp2_term_dp1_lhs( C1_Skw_fnc, tau1m )
      .  result( lhs )
 
 !       Description:
 !       Dissipation term 1 for w'^2: implicit portion of the code.
 !
+!       The d(w'^2)/dt equation contains dissipation term 1:
+!
+!       - ( C1_Skw_fnc / tau_1m ) w'^2
+!
+!       Note:  When the term is brought over to the left-hand side, the
+!              sign is reversed and the leading "-" in front of the
+!              term is changed to a "+".
+!
+!       This term is solved for completely implicitly.
+!
 !       The values of w'^2 are found on momentum levels.  The values of 
 !       the C_1 skewness function and time-scale tau1m are also found on
-!       momentum levels.  The w'^2 dissipation term 1 is completely 
-!       implicit.
+!       momentum levels.
 
 !       References:
 !-----------------------------------------------------------------------
@@ -1361,24 +1542,40 @@
         ! Return Variable
         real :: lhs
 
-        ! Momentum main diagonal: [ x wp2(k,<ts+1>) ]
+        ! Momentum main diagonal: [ x wp2(k,<t+1>) ]
         lhs
      .  = + C1_Skw_fnc / tau1m
 
         return
         end function wp2_term_dp1_lhs
 
-!========================================================================
+!===============================================================================
         pure function wp2_term_pr1_lhs( C4, tau1m )
      .  result( lhs )
 
 !       Description
 !       Pressure term 1 for w'^2: implicit portion of the code.
 !
+!       The d(w'^2)/dt equation contains pressure term 1:
+!
+!       - ( C4 / tau_1m ) * ( w'^2 - (2/3)*em ),
+!
+!       where em = (1/2) * ( w'^2 + u'^2 + v'^2 ).
+!
+!       This simplifies to:
+!
+!       - ( C4 / tau_1m ) * (2/3) * w'^2 
+!        + ( C4 / tau_1m ) * (1/3) * ( u'^2 + v'^2 )
+!
 !       Pressure term 1 has both implicit and explicit components.  The
-!       values of w'^2 are found on momentum levels, as are the values 
-!       of tau1m.  For this portion of the code, w'^2 is solved for 
-!       implicitly.
+!       implicit portion is computed in this function.
+!
+!       Note:  When the implicit term is brought over to the left-hand 
+!              side, the sign is reversed and the leading "-" in front 
+!              of the term is changed to a "+".
+!
+!       The values of w'^2 are found on momentum levels, as are the 
+!       values of tau1m.
 
 !       References:
 !-----------------------------------------------------------------------
@@ -1397,14 +1594,14 @@
         ! Return Variable
         real :: lhs
 
-        ! Momentum main diagonal: [ x wp2(k,<ts+1>) ]
+        ! Momentum main diagonal: [ x wp2(k,<t+1>) ]
         lhs
      .  = + ( 2.0 * C4 ) / ( 3.0 * tau1m )
 
         return
         end function wp2_term_pr1_lhs
 
-!========================================================================
+!===============================================================================
         pure function wp2_terms_bp_pr2_rhs( C5, wpthvp )
      .  result( rhs )
 
@@ -1412,10 +1609,20 @@
 !       Buoyancy production of w'^2 and w'^2 pressure term 2:
 !       explicit portion of the code.
 !
+!       The d(w'^2)/dt equation contains a buoyancy production term:
+!
+!       + 2 (g/th_0) w'th_v',
+!
+!       and pressure term 2:
+!
+!       - C_5 ( -2 w'^2 dw/dz + 2 (g/th_0) w'th_v' )
+!
 !       The w'^2 buoyancy production term is completely explicit, while 
 !       w'^2 pressure term 2 has both implicit and explicit components.  
 !       The buoyancy production term and the explicit portion of pressure
-!       term 2 are combined and solved together.
+!       term 2 are combined and solved together as:
+!
+!       + ( 1 - C_5 ) ( 2 (g/th_0) w'th_v' )
 
 !       References:
 !-----------------------------------------------------------------------
@@ -1439,13 +1646,20 @@
         return
         end function wp2_terms_bp_pr2_rhs
 
-!========================================================================
+!===============================================================================
         pure function wp2_term_pr3_rhs( C5, wpthvp, upwp, ump1, um,
      .                                  vpwp, vmp1, vm, dzm )
      .  result( rhs )
 
 !       Description:
 !       Pressure term 3 for w'^2: explicit portion of the code.
+!
+!       The d(w'^2)/dt equation contains pressure term 3:
+!
+!       + (2/3) C_5 [ (g/th_0) w'th_v' + u'w' du/dz + v'w' dv/dz ]
+!
+!       This term is solved for completely explicitly and is 
+!       discretized as follows:
 !
 !       The values of w'th_v', u'w', and v'w' are found on the momentum
 !       levels, whereas the values of um and vm are found on the 
@@ -1510,17 +1724,29 @@
         return
         end function wp2_term_pr3_rhs
 
-!========================================================================
+!===============================================================================
         pure function wp2_term_pr1_rhs( C4, up2, vp2, tau1m )
      .  result( rhs )
 
 !       Description:
 !       Pressure term 1 for w'^2: explicit portion of the code.
 !
+!       The d(w'^2)/dt equation contains pressure term 1:
+!
+!       - ( C4 / tau_1m ) * ( w'^2 - (2/3)*em ),
+!
+!       where em = (1/2) * ( w'^2 + u'^2 + v'^2 ).
+!
+!       This simplifies to:
+!
+!       - ( C4 / tau_1m ) * (2/3) * w'^2 
+!        + ( C4 / tau_1m ) * (1/3) * ( u'^2 + v'^2 )
+!
 !       Pressure term 1 has both implicit and explicit components.  The
-!       values of u'^2 and v'^2 are found on momentum levels, as are the
-!       values of tau1m.  This portion of the code contributes to the 
-!       explicit part of the w'^2 solution.
+!       explicit portion is computed in this function.
+!
+!       The values of u'^2 and v'^2 are found on momentum levels, as are
+!       the values of tau1m.
 
 !       References:
 !-----------------------------------------------------------------------
@@ -1543,12 +1769,23 @@
         return
         end function wp2_term_pr1_rhs
 
-!========================================================================
+!===============================================================================
         pure function wp3_term_ma_lhs( wmt, dzt )
      .  result( lhs )
 
 !       Description:
 !       Mean advection of w'^3: implicit portion of the code.
+!
+!       The d(w'^3)/dt equation contains a mean advection term:
+!
+!       - w * d(w'^3)/dz.
+!
+!       Note:  When the term is brought over to the left-hand side, the
+!              sign is reversed and the leading "-" in front of the 
+!              term is changed to a "+".
+!
+!       This term is solved for completely implicitly and is 
+!       discretized as follows:
 !
 !       The values of w'^3 are found on the thermodynamic levels, as 
 !       are the values of wmt (mean vertical velocity on thermodynamic 
@@ -1556,7 +1793,7 @@
 !       momentum levels.  The derivative of the interpolated values is
 !       taken over the central thermodynamic level.  The derivative 
 !       is multiplied by wmt at the central thermodynamic level to get 
-!       the desired result.  The w'^3 term is solved for implicity.
+!       the desired result.
 !
 !       ------------wp3p1---------------------------------------- t(k+1)
 !
@@ -1594,18 +1831,18 @@
         ! Return Variable
         real, dimension(2) :: lhs
 
-        ! Thermodynamic superdiagonal: [ x wp3(k+1,<ts+1>) ]
+        ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
         lhs(kp1_tdiag)
      .  = + wmt * (1.0/2.0) * dzt
 
-        ! Thermodynamic subdiagonal: [ x wp3(k-1,<ts+1>) ]
+        ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
         lhs(km1_tdiag)
      .  = - wmt * (1.0/2.0) * dzt
 
         return
         end function wp3_term_ma_lhs
 
-!========================================================================
+!===============================================================================
         pure function wp3_terms_ta_tp_lhs( wp3p1, wp3, wp3m1, 
      .                                     wp2, wp2m1, a1, a1m1,
      .                                     a3, a3m1, dzt, eps, wtol )
@@ -1615,30 +1852,62 @@
 !       Turbulent advection and turbulent production of w'^3:  
 !       implicit portion of the code.
 !
+!       The d(w'^3)/dt equation contains a turbulent advection term:
+!
+!       - d(w'^4)/dz,
+!
+!       and a turbulent production term:
+!
+!       + 3 w'^2 d(w'^2)/dz.
+!
+!       A substitution is made in order to close the turbulent advection
+!       term, such that:
+!
+!       w'^4 = (a_3 + 3/2) * (w'^2)^2  +  a_1 * ( (w'^3)^2 / w'^2 ),
+!
+!       where a_1 and a_3 are variables that are both functions of Sc.
+!       The turbulent production term is rewritten as:
+!
+!       + 3 w'^2 d(w'^2)/dz = + (3/2) d( (w'^2)^2 )/dz.
+!
+!       The turbulent advection and turbulent production terms are 
+!       combined as:
+!
+!       - d [ a_3 * (w'^2)^2 ] / dz  
+!        - d [ a_1 * ( (w'^3)^2 / w'^2 ) ] / dz.
+!
+!       The (w'^2)^2 and (w'^3)^2 terms are both linearized, such that:
+!
+!       ( w'^2(t+1) )^2 = - ( w'^2(t) )^2  +  2 * w'^2(t) * w'^2(t+1);
+!       ( w'^3(t+1) )^2 = - ( w'^3(t) )^2  +  2 * w'^3(t) * w'^3(t+1);
+!
+!       which produces implicit and explicit portions of these terms.  
+!       The implicit portion of these terms is discretized as follows:
+!
 !       The values of w'^3 are found on the thermodynamic levels, while
 !       the values of w'^2, a_1, and a_3 are found on the momentum 
 !       levels.  The variable w'^3 is interpolated to the intermediate 
 !       momentum levels.  The values of the mathematical expressions
-!       (called X and Y here) within the dX/dz and dY/dz terms are 
+!       (called X and Y here) within the (-dX/dz) and (-dY/dz) terms are
 !       computed on the momentum levels.  Then, the derivatives (d/dz) 
 !       of the expressions (X and Y) are taken over the central 
 !       thermodynamic level, yielding the desired result.
 !       In this function, the values of X and Y are as follows:
 !
-!       X = a_3(ts) * 2 * w'^2(ts) * w'^2(ts+1); and
+!       X = a_3(t) * 2 * w'^2(t) * w'^2(t+1); and
 !
-!       Y = a_1(ts) * ( 2 * w'^3(ts) * w'^3(ts+1) ) / w'^2(ts);
+!       Y = a_1(t) * ( 2 * w'^3(t) * w'^3(t+1) ) / w'^2(t);
 !
-!       where (ts) stands for the index of the current timestep and 
-!       (ts+1) stands for the index of the timestep being advanced to.
-!       The terms with timestep index (ts+1) are being solved for 
+!       where (t) stands for the index of the current timestep and 
+!       (t+1) stands for the index of the timestep being advanced to.
+!       The terms with timestep index (t+1) are being solved for 
 !       implicitly.
 !
 !       --------------------wp3p1-------------------------------- t(k+1)
 !
 !       =a3====wp2====a1=========wp3(interp)===================== m(k)
 !
-!       --------------------wp3------------------(d/dz) terms---- t(k)
+!       --------------------wp3--------------(-dX/dz)--(-dY/dz)-- t(k)
 !
 !       =a3m1==wp2m1==a1m1=======wp3(interp)===================== m(k-1)
 !
@@ -1651,6 +1920,10 @@
 !       levels.
 !
 !       dzt(k) = 1 / ( zm(k) - zm(k-1) )
+!
+!       Note:  When the term is brought over to the left-hand side, the
+!              sign is reversed and the leading "-" in front of the 
+!              dX/dz and dY/dz terms is changed to a "+".
 
 !       References:
 !-----------------------------------------------------------------------
@@ -1698,7 +1971,7 @@
         ! the equation, this effects the momentum superdiagonal (k_mdiag)
         ! and the momentum subdiagonal (km1_mdiag).
 
-        ! Thermodynamic superdiagonal: [ x wp3(k+1,<ts+1>) ]
+        ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
         lhs(kp1_tdiag)
 !     .  = + (1.0/2.0) * dzt
 !     .      * a1 * ( wp3p1 + wp3 ) / MAX( wp2, eps )
@@ -1706,12 +1979,12 @@
      .      * (1.0/2.0) * dzt
      .      * ( wp3p1 + wp3 ) / MAX( wp2, wtol**2 )
 
-        ! Momentum superdiagonal: [ x wp2(k,<ts+1>) ]
+        ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
         lhs(k_mdiag)
 !     .  = + 2.0 * dzt * a3 * wp2
      .  = + 2.0 * dzt * 0.5*(a3+a3m1) * wp2
 
-        ! Thermodynamic main diagonal: [ x wp3(k,<ts+1>) ]
+        ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
         lhs(k_tdiag)
 !     .  = + (1.0/2.0) * dzt
 !     .      * (  a1 * ( wp3p1 + wp3 ) / MAX( wp2, eps )
@@ -1723,12 +1996,12 @@
      .         - ( wp3 + wp3m1 ) / MAX( wp2m1, wtol**2 )
      .        )
 
-        ! Momentum subdiagonal: [ x wp2(k-1,<ts+1>) ]
+        ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
         lhs(km1_mdiag)
 !     .  = - 2.0 * dzt * a3m1 * wp2m1
      .  = - 2.0 * dzt * 0.5*(a3+a3m1) * wp2m1
 
-        ! Thermodynamic subdiagonal: [ x wp3(k-1,<ts+1>) ]
+        ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
         lhs(km1_tdiag)
 !     .  = - (1.0/2.0) * dzt
 !     .      * a1m1 * ( wp3 + wp3m1 ) / MAX( wp2m1, eps )
@@ -1742,7 +2015,7 @@
         return
         end function wp3_terms_ta_tp_lhs
 
-!========================================================================
+!===============================================================================
         pure function wp3_terms_ac_pr2_lhs( C11_Skw_fnc, 
      .                                      wmm, wmmm1, dzt )
      .  result( lhs )
@@ -1751,17 +2024,33 @@
 !       Accumulation of w'^3 and w'^3 pressure term 2:
 !       implicit portion of the code.
 !
+!       The d(w'^3)/dt equation contains an accumulation term:
+!
+!       - 3 w'^3 dw/dz,
+!
+!       and pressure term 2:
+!
+!       - C_11 ( -3 w'^3 dw/dz + 3 (g/th_0) w'^2th_v' )
+!
 !       The w'^3 accumulation term is completely implicit, while w'^3
 !       pressure term 2 has both implicit and explicit components.  The
 !       accumulation term and the implicit portion of pressure term 2 
-!       are combined and solved together.
+!       are combined and solved together as:
+!
+!       + ( 1 - C_11 ) ( -3 w'^3 dw/dz ).
+!
+!       Note:  When the term is brought over to the left-hand side, the
+!              sign is reversed and the leading "-" in front of the "3" 
+!              is changed to a "+".
+!
+!       The terms are discretized as follows:
 !
 !       The values of w'^3 are found on thermodynamic levels, while the
 !       values of wmm (mean vertical velocity on momentum levels) are 
 !       found on momentum levels.  The vertical derivative of wmm is 
 !       taken over the intermediate (central) thermodynamic level.  It
 !       is then multiplied by w^'3 (implicitly calculated at timestep 
-!       (ts+1)) and the coefficients to yield the desired results.
+!       (t+1)) and the coefficients to yield the desired results.
 !
 !       =======wmm=============================================== m(k)
 !
@@ -1795,7 +2084,7 @@
         ! Return Variable
         real :: lhs
 
-        ! Thermodynamic main diagonal: [ x wp3(k,<ts+1>) ]
+        ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
         lhs
      .  = + ( 1.0 - C11_Skw_fnc )
      .      * 3.0 * dzt * ( wmm - wmmm1 )
@@ -1803,7 +2092,7 @@
         return
         end function wp3_terms_ac_pr2_lhs
 
-!========================================================================
+!===============================================================================
         pure function wp3_term_pr1_lhs( C8, C8b, tauw3t, Skwt )
      .  result( lhs )
 
@@ -1811,16 +2100,24 @@
 !       Pressure term 1 for w'^3: implicit portion of the code.
 !
 !       Pressure term 1 is the term: 
+!
 !       - (C_8/tau_w3t) * ( C_8b * Sk_wt^4 + 1 ) * w'^3;
+!
 !       which has to be linearized.  After it has been linearized, it 
 !       is broken down into implicit (LHS) and explicit (RHS) 
 !       components.
 !
 !       The values of w'^3 are found on the thermodynamic levels, as are
-!       the values of tau_w3t, and Sk_wt; where 
-!       Sk_wt = w^'3 / (w'^2)^(3/2); and w'^2 is interpolated to 
-!       thermodynamic levels.  For this portion of the code, w'^3 is
-!       solved for implicitly.
+!       the values of tau_w3t and Sk_wt; where 
+!
+!       Sk_wt = w^'3 / (w'^2)^(3/2); 
+!
+!       and w'^2 is interpolated to thermodynamic levels.  For this 
+!       portion of the code, w'^3 is solved for implicitly.
+!
+!       Note:  When the term is brought over to the left-hand side, the
+!              sign is reversed and the leading "-" in front of the 
+!              term is changed to a "+".
 
 !       References:
 !-----------------------------------------------------------------------
@@ -1841,14 +2138,14 @@
         ! Return Variable
         real :: lhs
 
-        ! Thermodynamic main diagonal: [ x wp3(k,<ts+1>) ]
+        ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
         lhs
      .  = + ( C8 / tauw3t ) * ( 5.0 * C8b * Skwt**4 + 1.0 )
 
         return
         end function wp3_term_pr1_lhs
 
-!========================================================================
+!===============================================================================
         pure function wp3_terms_ta_tp_rhs( wp3p1, wp3, wp3m1, 
      .                                     wp2, wp2m1, a1, a1m1,
      .                                     a3, a3m1, dzt, eps, wtol )
@@ -1857,6 +2154,38 @@
 !       Description:
 !       Turbulent advection and turbulent production of wp3:
 !       explicit portion of the code.
+!
+!       The d(w'^3)/dt equation contains a turbulent advection term:
+!
+!       - d(w'^4)/dz,
+!
+!       and a turbulent production term:
+!
+!       + 3 w'^2 d(w'^2)/dz.
+!
+!       A substitution is made in order to close the turbulent advection
+!       term, such that:
+!
+!       w'^4 = (a_3 + 3/2) * (w'^2)^2  +  a_1 * ( (w'^3)^2 / w'^2 ),
+!
+!       where a_1 and a_3 are variables that are both functions of Sc.
+!       The turbulent production term is rewritten as:
+!
+!       + 3 w'^2 d(w'^2)/dz = + (3/2) d( (w'^2)^2 )/dz.
+!
+!       The turbulent advection and turbulent production terms are 
+!       combined as:
+!
+!       - d [ a_3 * (w'^2)^2 ] / dz  
+!        - d [ a_1 * ( (w'^3)^2 / w'^2 ) ] / dz.
+!
+!       The (w'^2)^2 and (w'^3)^2 terms are both linearized, such that:
+!
+!       ( w'^2(t+1) )^2 = - ( w'^2(t) )^2  +  2 * w'^2(t) * w'^2(t+1);
+!       ( w'^3(t+1) )^2 = - ( w'^3(t) )^2  +  2 * w'^3(t) * w'^3(t+1);
+!
+!       which produces implicit and explicit portions of these terms.  
+!       The explicit portion of these terms is discretized as follows:
 !
 !       The values of w'^3 are found on the thermodynamic levels, while
 !       the values of w'^2, a_1, and a_3 are found on the momentum 
@@ -1868,11 +2197,11 @@
 !       thermodynamic level, yielding the desired result.
 !       In this function, the values of X and Y are as follows:
 !
-!       X = a_3(ts) * (w'^2(ts))^2; and
+!       X = a_3(t) * ( w'^2(t) )^2; and
 !
-!       Y = a_1(ts) * (w'^3(ts))^2 / w'^2(ts);
+!       Y = a_1(t) * ( w'^3(t) )^2 / w'^2(t);
 !
-!       where (ts) stands for the index of the current timestep.
+!       where (t) stands for the index of the current timestep.
 !       The terms found in this function are being solved for 
 !       explicitly.
 !
@@ -1880,7 +2209,7 @@
 !
 !       =a3====wp2====a1=========wp3(interp)===================== m(k)
 !
-!       --------------------wp3------------------(d/dz) terms---- t(k)
+!       --------------------wp3----------------(dX/dz)--(dY/dz)-- t(k)
 !
 !       =a3m1==wp2m1==a1m1=======wp3(interp)===================== m(k-1)
 !
@@ -1956,7 +2285,7 @@
         return
         end function wp3_terms_ta_tp_rhs
 
-!========================================================================
+!===============================================================================
         pure function wp3_terms_bp_pr2_rhs( C11_Skw_fnc, wp2thvp )
      .  result( rhs )
 
@@ -1964,10 +2293,20 @@
 !       Buoyancy production of w'^3 and w'^3 pressure term 2:
 !       explicit portion of the code.
 !
+!       The d(w'^3)/dt equation contains a buoyancy production term:
+!
+!       + 3 (g/th_0) w'^2th_v'
+!
+!       and pressure term 2:
+!
+!       - C_11 ( -3 w'^3 dw/dz + 3 (g/th_0) w'^2th_v' )
+!
 !       The w'^3 buoyancy production term is completely explicit, while
 !       w'^3 pressure term 2 has both implicit and explicit components. 
 !       The buoyancy production term and the explicit portion of pressure
-!       term 2 are combined and solved together.
+!       term 2 are combined and solved together as:
+!
+!       + ( 1 - C_ll ) ( 3 (g/th_0) w'^2th_v' )
 
 !       References:
 !-----------------------------------------------------------------------
@@ -1980,7 +2319,7 @@
         ! Input Variables
         real, intent(in) ::
      .  C11_Skw_fnc, ! C_11 skewness function (k)    [-]
-     .  wp2thvp      ! w'^2 th_v' (k)                [K m^2/s^2]
+     .  wp2thvp      ! w'^2th_v' (k)                 [K m^2/s^2]
 
         ! Return Variable
         real :: rhs
@@ -1991,7 +2330,7 @@
         return
         end function wp3_terms_bp_pr2_rhs
 
-!========================================================================
+!===============================================================================
         pure function wp3_term_pr1_rhs( C8, C8b, tauw3t, Skwt, wp3 )
      .  result( rhs )
 
@@ -1999,16 +2338,20 @@
 !       Pressure term 1 for w'^3: explicit portion of the code.
 !
 !       Pressure term 1 is the term: 
+!
 !       - (C_8/tau_w3t) * ( C_8b * Sk_wt^4 + 1 ) * w'^3;
+!
 !       which has to be linearized.  After it has been linearized, it 
 !       is broken down into implicit (LHS) and explicit (RHS) 
 !       components.
 !
 !       The values of w'^3 are found on the thermodynamic levels, as are
-!       the values of tau_w3t, and Sk_wt; where 
-!       Sk_wt = w^'3 / (w'^2)^(3/2); and w'^2 is interpolated to 
-!       thermodynamic levels.  For this portion of the code, w'^3 is
-!       solved for explicitly.
+!       the values of tau_w3t and Sk_wt; where 
+!
+!       Sk_wt = w^'3 / (w'^2)^(3/2); 
+!
+!       and w'^2 is interpolated to thermodynamic levels.  For this 
+!       portion of the code, w'^3 is solved for explicitly.
 
 !       References:
 !-----------------------------------------------------------------------
@@ -2032,6 +2375,102 @@
         return
         end function wp3_term_pr1_rhs
 
-!========================================================================
+!===============================================================================
+        subroutine wp23_clip( wp2m1, zt, emin, eps, 
+     .                        wp2, wp3 )
+
+!       Description:
+!       This subroutine clips the value of w'^3 if the skewness of w 
+!       is greater than 4.5 or less than -4.5.  It also employs a 
+!       special surface clipping of w'^3, where w'^3 cannot be greater
+!       than 0.2 * sqrt(2) * Sk_w or less than -0.2 * sqrt(2) * Sk_w 
+!       (Andre et al., 1976b, 1978).  This subroutine also ensures that
+!       w'^2 doesn't fall below of value of (2/3) * emin.
+
+!       References:
+!-----------------------------------------------------------------------
+
+        implicit none
+
+        ! Input Variables.
+        real, intent(in) ::
+     .  wp2m1, ! w'^2 (k-1)                          [m^2/s^2]
+     .  zt,    ! Height at thermodynamic level (k)   [m]
+     .  emin,  ! Model parameter                     [m^2/s^2]
+     .  eps    ! Model parameter                     [-]
+
+        ! Input/Output Variables
+        real, intent(inout) ::
+     .  wp2,   ! w'^2 (k)                            [m^2/s^2]
+     .  wp3    ! w'^3 (k)                            [m^3/s^3]
+
+        ! Local Variables
+        real :: 
+     .  atmp,  ! w'^2 at thermodynamic level (k)     [m^2/s^2]
+     .  ctmp   ! atmp^(3/2)                          [m^3/s^3]
+
+!  Vince Larson commented out the Andre et al clipping to see if we
+!     could avoid using it.  26 Jul 2007
+!  Brian and Vince undid the change because Wangara case still needs
+!  the Andre et al clipping.  27 Jul 2007.
+        ! Clipping wp3 at the first layer above ground according to
+        ! Andre et al. (1976b & 1978).
+        ! According to Andre et al. (1976b & 1978), wp3 should not
+        ! exceed [2*(wp2^3)]^(1/2) at any level.  However, this term
+        ! should be multiplied by 0.2 close to the surface to include
+        ! surface effects.  There already is a wp3 clipping term in
+        ! place for all other altitudes, but this term will be
+        ! included for the surface layer only.
+        ! Therefore, the lowest level wp3 should not exceed
+        ! 0.2 * sqrt(2) * wp2^(3/2).  Brian Griffin.  12/18/05.
+
+        ! NOTE: Clipping not good; must try to get rid of.  Affects only
+        !       Wangara case.
+
+        if ( zt <= 100.0 ) then ! Clip for 100 m. above ground.
+
+           atmp = max( ( ( wp2m1 + wp2 ) / 2.0 ) , eps )    ! wp2
+           ctmp = atmp**(3.0/2.0)                           ! wp2^(3/2)
+           if ( wp3 >= 0.2 * sqrt(2.0) * ctmp ) then
+              wp3 = 0.2 * sqrt(2.0) * ctmp
+              ! Vince Larson added clipping for negative wp3
+              !     in order to stabilize arm_3year    12 Dec 2007
+           elseif ( wp3 <= -0.2 * sqrt(2.0) * ctmp ) then
+              wp3 = -0.2 * sqrt(2.0) * ctmp
+              ! End Vince Larson's addition
+           endif
+
+        else
+
+           ! Clip skewness consistently with a
+           ! NOTE: atmp is wp2 interpolated to thermodynamic levels
+           !       (with the added insurance that it cannot be negative
+           !       or zero).  wp2 should not be set equal to atmp
+           !       because atmp is the value at a thermodynamic level,
+           !       whereas wp2 is located at a momentum level.  The
+           !       only effect of that piece of code is to mistakenly
+           !       lift the wp2 value in altitude one-half grid box
+           !       every time it is called.  The line is unnecessary,
+           !       and can be commented out.  Brian Griffin. 6/30/07.
+           atmp = max( 0.5 * ( wp2m1 + wp2 ), eps )
+           ctmp = atmp**1.5
+           if ( wp3/ctmp > 4.5 ) then  ! Sk_w > 4.5
+              wp3 = 4.5 * ctmp         ! w'^3 = 4.5 * Sk_w
+              !wp2 = atmp
+           elseif ( wp3/ctmp < -4.5 ) then  ! Sk_w < -4.5
+              wp3 = -4.5 * ctmp             ! w'^3 = -4.5 * Sk_w
+              !wp2 = atmp
+           endif
+
+        endif
+! End of Vince Larson's commenting of Andre et al clipping.
+
+        ! Ensure that w'^2 doesn't value below (2/3)*emin.
+        wp2 = max( 2./3. * emin, wp2 )
+
+        return
+        end subroutine wp23_clip
+
+!===============================================================================
 
         end module wp23
