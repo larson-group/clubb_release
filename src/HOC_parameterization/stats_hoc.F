@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_hoc.F,v 1.6 2008-04-05 19:54:32 griffinb Exp $
+! $Id: stats_hoc.F,v 1.7 2008-04-14 16:00:29 dschanen Exp $
 #ifdef STATS
 !-----------------------------------------------------------------------
 !  module stats_hoc
@@ -116,6 +116,7 @@
      .    irtm_forcing, ! rtm large scale forcing term
      .    irtm_mc,      ! rtm change from microphysics
      .    irtm_cl,      ! rtm clipping term
+     .    irtm_pd,      ! thlm postive definite adj term
      .    ithlm_bt,     ! thlm total time tendency
      .    ithlm_ma,     ! thlm mean advect. term
      .    ithlm_ta,     ! thlm turb. advect. term
@@ -124,7 +125,7 @@
      .    ithlm_cl      ! thlm clipping term
 
 !$omp   threadprivate(irtm_bt, irtm_ma, irtm_ta, irtm_forcing)
-!$omp   threadprivate(irtm_cl)
+!$omp   threadprivate(irtm_cl, irtm_pd)
 !$omp   threadprivate(ithlm_bt, ithlm_ma, ithlm_ta)
 !$omp   threadprivate(ithlm_forcing, ithlm_mc, ithlm_cl)
 
@@ -364,11 +365,12 @@
      .     iwprtp_pr2,
      .     iwprtp_pr3,
      .     iwprtp_dp1,
-     .     iwprtp_cl
+     .     iwprtp_cl,
+     .     iwprtp_pd
 
 !$omp   threadprivate(iwprtp_bt, iwprtp_ma, iwprtp_ta, iwprtp_tp)
 !$omp   threadprivate(iwprtp_ac, iwprtp_bp, iwprtp_pr1, iwprtp_pr2)
-!$omp   threadprivate(iwprtp_pr3, iwprtp_dp1, iwprtp_cl)
+!$omp   threadprivate(iwprtp_pr3, iwprtp_dp1, iwprtp_cl, iwprtp_pd)
 
         integer ::
      .     iwpthlp_bt,

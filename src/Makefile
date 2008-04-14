@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.108 2008-04-08 18:15:32 dschanen Exp $
+# $Id: Makefile,v 1.109 2008-04-14 16:00:29 dschanen Exp $
 #
 # This version should work with BSD, GNU make, smake and dmake.
 #
@@ -68,7 +68,7 @@ PARAMETERIZATION = \
 	compute_um_edsclrm_mod.o wp23.o Skw_func.o error_code.o \
 	numer_check.o diag_variables.o prog_variables.o \
 	parameterization_interface.o lapack_wrap.o  \
-	parameters.o 
+	parameters.o pos_definite_mod.o
 
 
 INTERFACING = gradsaverage.o inputfields.o inputgrads.o 

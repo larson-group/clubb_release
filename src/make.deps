@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.30 2008-04-07 17:28:17 dschanen Exp $
+# $Id: make.deps,v 1.31 2008-04-14 16:00:29 dschanen Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -68,14 +68,15 @@ closure_new.o	: constants.o parameters.o grid.o saturation.o erf.o numer_check.o
                  error_code.o closure_new.F 
 diag_var.o	: constants.o parameters.o grid.o stats_hoc.o lapack_wrap.o \
 	error_code.o diffusion.o diag_var.F
-mixing.o	: constants.o parameters.o stats_hoc.o lapack_wrap.o \
-                 error_code.o diffusion.o mixing.F 
+mixing.o : constants.o parameters.o stats_hoc.o lapack_wrap.o \
+	pos_definite_mod.o error_code.o diffusion.o mixing.F 
 parameterization_interface.o : constants.o hydrostatic.o mixing.o \
 	model_flags.o numer_check.o Skw_func.o \
 	mixing_length.o stats_type.o stats_hoc.o stats_subs.o \
 	stats_zt.o stats_zm.o \
 	stats_sfc.o sounding.o diag_var.o saturation.o wp23.o \
-	grid.o saturation.o compute_um_edsclrm_mod.o prog_variables.o diag_variables.o \
+	grid.o saturation.o compute_um_edsclrm_mod.o prog_variables.o \
+	diag_variables.o \
 	sfc.o closure_new.o latin_hyper_sample.o lh_sampler.o \
 	parameters.o error_code.o parameterization_interface.F 
 hydrostatic.o	: constants.o hydrostatic.F 
@@ -86,6 +87,7 @@ wp23.o		: constants.o parameters.o stats_hoc.o lapack_wrap.o error_code.o wp23.F
 error_code.o    : constants.o error_code.F
 compute_um_edsclrm_mod.o : grid.o stats_hoc.o lapack_wrap.o error_code.o compute_um_edsclrm_mod.F 
 diffusion.o	: grid.o diffusion.F
+pos_definite_mod.o : grid.o stats_prec.o pos_definite_mod.F
 
 # == Numerical Recipes dependencies (For the tuner) ==
 nrtype.o	: nrtype.f90
@@ -119,7 +121,7 @@ st_2_rtthl.o		: st_2_rtthl.F
 truncate_gaus_mixt.o	: truncate_gaus_mixt.F
 
 # == GCSS dependencies ==
-diag_ustar.o: diag_ustar.F
+diag_ustar.o: constants.o diag_ustar.F
 arm.o       : constants.o diag_ustar.o model_flags.o grid.o stats_hoc.o arm.F
 arm_97.o    : constants.o diag_ustar.o model_flags.o grid.o stats_hoc.o \
 	zlinterp.o arm.F
@@ -156,7 +158,7 @@ file_functions.o	: file_functions.F
 coamps_micro_driver.o : constants.o grid.o stats_hoc.o saturation.o coamps_micro_driver.F
 
 # == BUGSrad dependencies ==
-cos_solar_zen.o         : cos_solar_zen.F
+cos_solar_zen.o         : constants.o cos_solar_zen.F
 kinds.o			: kinds.F90
 bugsrad_planck.o	: kinds.o bugsrad_planck.F90
 cloud_correlate.o	: kinds.o cloud_correlate.F90
@@ -192,7 +194,7 @@ hoc.o		: parameterization_interface.o arm.o astex.o atex.o \
 	inputfields.o error_code.o hoc.F
 sounding.o	: grid.o constants.o sounding.F
 inputfields.o	: grid.o inputgrads.o inputfields.F 
-gradsaverage.o	: inputgrads.o gradsaverage.F 
+gradsaverage.o	: grid.o inputgrads.o gradsaverage.F 
 error.o		: nrtype.o nr.o gradsaverage.o hoc.o parameters.o error_code.o error.F
 budget_terms.o  : amoeba.o inputfields.o gradsaverage.o hoc.o \
 	error.o error_code.o budget_terms.F

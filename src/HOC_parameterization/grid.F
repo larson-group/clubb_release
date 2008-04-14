@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: grid.F,v 1.9 2008-04-03 19:36:08 griffinb Exp $
+! $Id: grid.F,v 1.10 2008-04-14 16:00:29 dschanen Exp $
 
         module grid_class
 
@@ -230,7 +230,7 @@
            end subroutine gridsetup
 
 !-----------------------------------------------------------------------
-           function interpolated_azm( azt )
+           pure function interpolated_azm( azt )
 
 !          Description:
 !          Function to interpolate a variable located on the 
@@ -271,7 +271,7 @@
            end function interpolated_azm
 
 !-----------------------------------------------------------------------
-           function interpolated_azmk( azt, k )
+           pure function interpolated_azmk( azt, k )
 
 !          Description:
 !          Function to interpolate a variable located on the
@@ -373,7 +373,7 @@
            end function interpolated_azmk_imp
 
 !-----------------------------------------------------------------------
-           function interpolated_azt( azm )
+           pure function interpolated_azt( azm )
 
 !          Description:
 !          Function to interpolate a variable located on the 
@@ -414,7 +414,7 @@
            end function interpolated_azt
 
 !-----------------------------------------------------------------------
-           function interpolated_aztk( azm, k )
+           pure function interpolated_aztk( azm, k )
 
 !          Description:
 !          Function to interpolate a variable located on the 
@@ -513,7 +513,7 @@
            end function interpolated_aztk_imp
 
 !-----------------------------------------------------------------------
-           function gradzm( azm )
+           pure function gradzm( azm )
 
 !          Description:
 !          Function to compute the vertical derivative of a variable (azm)
@@ -545,7 +545,7 @@
            end function gradzm
 
 !-----------------------------------------------------------------------
-           function gradzt( azt )
+           pure function gradzt( azt )
 
 !          Description:
 !          Function to compute the vertical derivative of a variable (azt)

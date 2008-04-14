@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.43 2008-04-05 19:54:32 griffinb Exp $
+! $Id: mixing.F,v 1.44 2008-04-14 16:00:29 dschanen Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -166,8 +166,8 @@
 
         ! (wpxp)^2: 3-point average diffusion coefficient.
 
-        wprtp_zt  = zm2zt(wprtp)
-        wpthlp_zt = zm2zt(wpthlp)
+        wprtp_zt  = zm2zt( wprtp )
+        wpthlp_zt = zm2zt( wpthlp )
 
         do k = 1, gr%nnzp, 1
 
@@ -184,7 +184,7 @@
            wpthlp_zt_sqd_3pt(k) = ( wpthlp_zt(km1)**2 + wpthlp_zt(k)**2
      .                             + wpthlp_zt(kp1)**2 ) / 3.0
 
-        enddo
+        end do
 
 !       Define the Coefficent of Eddy Diffusivity for the wpthlp and wprtp.
         do k = 1, gr%nnzp, 1
@@ -423,6 +423,12 @@
 
         implicit none
 
+        ! Constant parameters
+        integer, parameter ::
+     .  kp1diag = 1,
+     .  kdiag   = 2,
+     .  km1diag = 3
+
         ! External
         intrinsic :: min, max
 
@@ -447,7 +453,7 @@
      .  C7_Skw_fnc
 
         ! Output variables
-        real, intent(out)      :: lhs(2+2+1,2*gr%nnzp) ! LHS
+        real, intent(out), dimension(2+2+1,2*gr%nnzp) :: lhs ! LHS matrix
 
         ! Local Variables
         real, dimension(gr%nnzp) :: a1
@@ -458,12 +464,6 @@
         ! wtol_sqd = the square of the minimum threshold on w,
         !     [wtol_sqd] = m^2 s^{-2}.  Vince Larson 11 Mar 2008.
         real :: wtol_sqd
-
-        ! Constant parameters
-        integer, parameter ::
-     .  kp1diag = 1,
-     .  kdiag   = 2,
-     .  km1diag = 3
 
         ! Indices
         integer :: k, km1, kp1
@@ -671,11 +671,12 @@
 
 !------------------------------------------------------------------------
         
-        subroutine mixing_solve( solve_type, liter, dt, taum,
-     .                           xm, wpxp, xpthvp, xm_forcing,
-     .                           wp2, xp2, ! For clipping Vince Larson 20070929
-     .                           rhot, rhom, exner, 
-     .                           lhs, rhs, C7_Skw_fnc, err_code )
+        subroutine mixing_solve
+     .             ( solve_type, liter, dt, taum,
+     .               xm, wpxp, xpthvp, xm_forcing,
+     .               wp2, xp2, ! For clipping Vince Larson 20070929
+     .               rhot, rhom, exner, 
+     .               lhs, rhs, C7_Skw_fnc, err_code )
 
 
         use parameters
@@ -683,16 +684,8 @@
         use grid_class
         use stats_prec, only: time_prec
         use lapack_wrap, only: band_solve, band_solvex
-        use model_flags, only:
-     .    cloud_sed,   ! Cloud sedimentation flag -Brian
-     .    kk_rain,     ! Khairoutdinov and Kogan (2000) drizzle scheme -Brian
-! Michael Falk, 27 Jul 2007
-     .    licedfs,     ! Simplified ice scheme
-! eMFc
-     .    lcoamps_micro! COAMPS(R) microphysics
-
-        use error_code, only: CLUBB_singular_matrix,
-     .                        CLUBB_bad_lapack_arg
+        use pos_definite_mod, only: pos_definite_adj
+        use error_code, only: CLUBB_no_error
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
@@ -727,8 +720,9 @@
      .  xm,  ! Mean term                                  [units vary] 
      .  wpxp ! Flux term                                  [units vary] 
 
-        real, intent(inout), dimension(nsup+nsub+1,2*gr%nnzp) :: 
+        real, target, intent(inout), dimension(nsup+nsub+1,2*gr%nnzp) ::
      .  lhs  ! Left hand side (LAPACK)
+
         real, intent(inout), dimension(2*gr%nnzp,nrhs) :: 
      .  rhs  ! Right hand side (LAPACK)
 
@@ -739,6 +733,12 @@
         ! Local Variables
         real, dimension(2*gr%nnzp,nrhs) :: 
      .  solution ! Solution to band diagonal system
+
+        real, dimension(3,gr%nnzp) ::
+     .  flux_lhs
+
+        real, dimension(gr%nnzp) ::
+     .  wpxp_pd, xm_pd ! Change in xm and wpxp due to the pos. def. scheme
 
         real :: rcond ! Est. of the reciprocal of the condition #
 
@@ -754,6 +754,7 @@
      .    ixm_f,
      .    ixm_mc,
      .    ixm_cn,
+     .    ixm_pd,
      .    iwpxp_bt,
      .    iwpxp_ma,
      .    iwpxp_ta,
@@ -764,7 +765,8 @@
      .    iwpxp_pr2,
      .    iwpxp_pr3,
      .    iwpxp_dp1,
-     .    iwpxp_cl
+     .    iwpxp_cl,
+     .    iwpxp_pd
 
         select case ( trim( solve_type ) )
         case ( "rtm" ) ! rtm/wprtp budget terms
@@ -772,7 +774,8 @@
           ixm_ta    = irtm_ta
           ixm_ma    = irtm_ma
           ixm_f     = irtm_forcing
-          ixm_cn    = irtm_cn ! Affects both the mean and flux terms
+          ixm_cn    = irtm_cn ! Applies to both the mean and flux terms
+          ixm_pd    = irtm_pd ! Applies to both the mean and flux terms
           iwpxp_bt  = iwprtp_bt
           iwpxp_ma  = iwprtp_ma
           iwpxp_ta  = iwprtp_ta
@@ -784,12 +787,14 @@
           iwpxp_pr3 = iwprtp_pr3
           iwpxp_dp1 = iwprtp_dp1
           iwpxp_cl  = iwprtp_cl
+          iwpxp_pd  = iwprtp_pd
         case ( "thlm" ) ! thlm/wpthlp budget terms
           ixm_bt    = ithlm_bt
           ixm_ta    = ithlm_ta
           ixm_ma    = ithlm_ma
           ixm_f     = ithlm_forcing
-          ixm_cn    = ithlm_cn ! Affects both the mean and flux terms
+          ixm_cn    = ithlm_cn ! Applies to both the mean and flux terms
+          ixm_pd    = 0
           iwpxp_bt  = iwpthlp_bt
           iwpxp_ma  = iwpthlp_ma
           iwpxp_ta  = iwpthlp_ta
@@ -801,12 +806,14 @@
           iwpxp_pr3 = iwpthlp_pr3
           iwpxp_dp1 = iwpthlp_dp1
           iwpxp_cl  = iwpthlp_cl
+          iwpxp_pd  = 0
         case default  ! this includes the sclrm case
           ixm_bt    = 0
           ixm_ta    = 0
           ixm_ma    = 0
           ixm_f     = 0
           ixm_cn    = 0
+          ixm_pd    = 0
           iwpxp_bt  = 0
           iwpxp_ma  = 0
           iwpxp_ta  = 0
@@ -818,6 +825,7 @@
           iwpxp_pr3 = 0
           iwpxp_dp1 = 0
           iwpxp_cl  = 0
+          iwpxp_pd  = 0
         end select
 #endif /*STATS*/
 
@@ -855,6 +863,25 @@
         end if ! lstats_samp
 #endif /*STATS*/
 
+        ! Setup matrix for positive definite advection scheme
+        if ( trim( solve_type ) == "rtm" ) then
+
+          flux_lhs = 0.0
+
+          do k = 2, gr%nnzp-1, 1
+            k_xm   = 2*k - 1
+            k_wpxp = 2*k
+
+            flux_lhs(1,k+1) = lhs(2,k_xm)
+            !flux_lhs(2,k)   = 0. !  (Already 0)
+            flux_lhs(3,k-1) = lhs(4,k_xm)
+
+            ! %%
+            !lhs(3-2,k_xm) = 0.0
+            !lhs(3+2,k_xm) = 0.0
+          end do
+
+        end if
 
 !       Set up RHS vector
 
@@ -929,11 +956,31 @@
 
 #endif /*STATS*/
 
-        if ( err_code == CLUBB_singular_matrix .or.
-     .       err_code == CLUBB_bad_lapack_arg ) return
+        ! Return if the solver has failed
+        if ( err_code /= CLUBB_no_error ) return
+
+        ! Apply a flux limiting positive definite scheme if the solution 
+        ! for the mean field is negative and we're determining total water
+        if ( trim( solve_type ) == "rtm" ) then
+
+          call pos_definite_adj( dt, flux_lhs, 
+     .                           solution(:,1), xm, xm_pd, wpxp_pd )
+#ifdef STATS
+          if ( lstats_samp ) then
+            if ( iwpxp_pd > 0 ) then
+              zm%x(:,iwpxp_pd) = zm%x(:,iwpxp_pd) + wpxp_pd(1:gr%nnzp)
+              zm%n(:,iwpxp_pd) = zm%n(:,iwpxp_pd) + 1
+            end if
+            if ( ixm_pd > 0 ) then
+              zt%x(:,ixm_pd) = zt%x(:,ixm_pd) + xm_pd(1:gr%nnzp)
+              zt%n(:,ixm_pd) = zt%n(:,ixm_pd) + 1
+            end if
+          end if
+#endif
+        end if
         
 
-!       Copy result into output arrays
+        ! Copy result into output arrays
 
         do k=1,gr%nnzp
 

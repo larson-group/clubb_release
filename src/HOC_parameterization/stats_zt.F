@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zt.F,v 1.10 2008-04-04 22:19:42 faschinj Exp $
+! $Id: stats_zt.F,v 1.11 2008-04-14 16:00:29 dschanen Exp $
 #ifdef STATS
        
       module stats_zt
@@ -94,6 +94,7 @@
       irtm_forcing  = 0
       irtm_mc       = 0
       irtm_cl       = 0 ! Josh
+      irtm_pd       = 0
       ithlm_bt      = 0
       ithlm_ma      = 0
       ithlm_ta      = 0
@@ -569,6 +570,14 @@
      .         "rtm clipping", "kg/kg/s", zt)
 
           k = k + 1
+        case ('rtm_pd')
+          irtm_pd = k
+
+          call stat_assign(irtm_pd, "rtm_pd",
+     .         "rtm positive definite adj.", "kg/kg/s", zt)
+
+          k = k + 1
+
         case ('thlm_bt')
           ithlm_bt = k
 

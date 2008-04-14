@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zm.F,v 1.5 2008-03-31 18:30:12 faschinj Exp $
+! $Id: stats_zm.F,v 1.6 2008-04-14 16:00:29 dschanen Exp $
 #ifdef STATS
       module stats_zm
        
@@ -123,6 +123,7 @@
       iwprtp_pr3 = 0
       iwprtp_dp1 = 0
       iwprtp_cl  = 0
+      iwprtp_pd  = 0
 
       iwpthlp_bt  = 0
       iwpthlp_ma  = 0
@@ -541,6 +542,13 @@
 
           call stat_assign(iwprtp_cl,"wprtp_cl",
      .         "wprtp clipping term","(m kg)/(s2 kg)",zm)
+          k = k + 1
+
+        case ('wprtp_pd')
+          iwprtp_pd = k
+
+          call stat_assign(iwprtp_pd,"wprtp_pd",
+     .         "wprtp flux corrected trans. term","(m kg)/(s2 kg)",zm)
           k = k + 1
 
         case ('wpthlp_bt')
