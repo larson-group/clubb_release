@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.169 2008-04-11 20:55:22 ajsmith4 Exp $
+! $Id: hoc.F,v 1.170 2008-04-14 02:53:06 ajsmith4 Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -1192,10 +1192,10 @@ c
 !          em = 1.0
 !          em = 0.1
           ! 4150 + 1400 m is the top of the cloud in Nov11
-          cloud_top_height = 1400. + gr%zm(1)
+          cloud_top_height = 2200. + gr%zm(1)
           do k=1,gr%nnzp
             if ( gr%zm(k) < cloud_top_height ) then
-              em(k) = 0.1
+              em(k) = 0.01
             else
               em(k) = emin
             end if
@@ -1215,10 +1215,10 @@ c
 !          em = 1.0
 !          em = 0.1
           ! 4150 + 1400 m is the top of the cloud in Nov11
-          cloud_top_height = 1400. + gr%zm(1)
+          cloud_top_height = 3500. + gr%zm(1)
           do k=1,gr%nnzp
             if ( gr%zm(k) < cloud_top_height ) then
-              em(k) = 0.1
+              em(k) = 0.01
             else
               em(k) = emin
             end if
