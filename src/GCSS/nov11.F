@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: nov11.F,v 1.11 2008-04-05 19:54:20 griffinb Exp $
+! $Id: nov11.F,v 1.12 2008-04-14 15:47:03 dschanen Exp $
         module nov11
 
 !       Description:
@@ -506,6 +506,14 @@
           radht_LW(1) = radht_LW(2)
           radht_SW(1) = radht_SW(2)
 
+          Frad(gr%nnzp)    = 0.
+          Frad_LW(gr%nnzp) = 0.
+          Frad_SW(gr%nnzp) = 0.
+
+          radht(gr%nnzp)    = 0.
+          radht_SW(gr%nnzp) = 0.
+          radht_LW(gr%nnzp) = 0.
+
         end if ! ~ lbugsrad
 
         if ( time == time_initial ) then
@@ -614,7 +622,6 @@
         wmm = zt2zm(wmt)
 
         ! Enter the final theta-l and rtm tendencies
-
         do k = 1, gr%nnzp, 1
 
           if ( .not. lbugsrad ) then
