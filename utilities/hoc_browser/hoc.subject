@@ -16,13 +16,11 @@ grid;differentiate;ddzt
 numerics;sparse matrix solvers;tridag_solve
 numerics;sparse matrix solvers;band_solve
 
-physics;rain microphysics;rain
 physics;vertical velocity moments;timestep_wp23
 physics;mean and flux terms;timestep_mixing
 physics;variance terms;diag_var
 physics;probability density function;pdf_closure_new
 
-boundary layer;mixing length;length
 boundary layer;surface;sfc_momentum_fluxes
 boundary layer;surface;sfc_thermo_fluxes
 boundary layer;surface;sfc_var
