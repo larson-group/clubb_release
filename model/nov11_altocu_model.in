@@ -1,4 +1,4 @@
-! $Id: nov11_altocu_model.in,v 1.16 2008-04-12 01:00:08 ajsmith4 Exp $
+! $Id: nov11_altocu_model.in,v 1.17 2008-04-15 20:12:36 ajsmith4 Exp $
 ! Parameter file for November 11 altocumulus case
 
 &model_setting
@@ -41,9 +41,9 @@ time_restart  = 0.0
 
 nlevels = 6
 
-z     =  3000.0,  4112.7,  4963.7,  5525.7,  5545.7,  7541.7
+z     =  3000.0,  4112.7,  4963.7,  5535.7,  5555.7,  7541.7
 
-theta =  303.83,  309.15,  311.50,  312.50,  314.00,  324.66
+theta =  303.83,  309.15,  311.50,  312.10,  314.00,  324.66
 
 rt    = 4.25e-3, 3.20e-3, 2.70e-3, 2.53e-3, 2.25e-3, 0.55e-3
 
