@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: nov11.F,v 1.12 2008-04-14 15:47:03 dschanen Exp $
+! $Id: nov11.F,v 1.13 2008-04-15 18:51:41 ajsmith4 Exp $
         module nov11
 
 !       Description:
@@ -321,7 +321,7 @@
      .       time <  time_initial + 3600.0 + dt ) then
 
           do k = 1, gr%nnzp, 1
-            if ( gr%zt(k) > ( 2587.5 + gr%zm(1) ) ) then
+            if ( gr%zt(k) > ( 2687.5 + gr%zm(1) ) ) then
                rtm(k) = 0.89 * rtm(k)
             end if
           end do
