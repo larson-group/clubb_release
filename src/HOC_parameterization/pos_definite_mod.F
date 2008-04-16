@@ -68,8 +68,9 @@
         field_np1 => solution(1:ndim:2)
         flux_np1  => solution(2:ndim:2)
 
-        ! If all the values are positive, then just return
-        if ( .not. any( field_np1 < 0. ) ) then
+        ! If all the values are positive or the values at the previous 
+        ! timestep were negative, then just return
+        if ( .not. any( field_np1 < 0. ) .or. any( field_n < 0. ) ) then
           flux_pd  = 0.
           field_pd = 0.
           return
