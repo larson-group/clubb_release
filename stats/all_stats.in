@@ -1,18 +1,15 @@
-! $Id: all_stats.in,v 1.16 2008-04-04 22:05:29 faschinj Exp $
+! $Id: all_stats.in,v 1.17 2008-04-16 23:57:47 dschanen Exp $
 ! This file contains a comprehensive listing of all the HOC variables that 
 ! can be output to GrADS, as found in src/HOC_parameterization/statistics.F.
 ! This file, as well as the statistical files for all the other cases, needs
 ! to be updated every time a new statistical parameter is added.
+! Note that the passive scalars are commented out because the model is not 
+! compiled with support for them by default, and the condition numbers are 
+! commented out because they are computationally expensive.
 ! This file was created on January 21, 2007.
-! This file was last updated on July 27, 2007.
+! This file was last updated on April 16, 2008.
 &statsnl
 
-lstats = t
-stats_fmt = 'grads'
-stats_tsamp = 60.0
-stats_tout  = 60.0
-
-fname_zt = 'all_zt',
 vars_zt = 
 'thlm', 'thvm', 'rtm', 'rcm', 'um', 'vm', 'wmt', 'ug', 'vg',
 'cf', 'p', 'exner', 'Lscale',  
@@ -23,7 +20,7 @@ vars_zt =
 'rrm', 'Nrm', 'mean_vol_rad_rain', 'mean_vol_rad_cloud',
 'rain_rate', 'AKm', 'AKm_est', 'rsnowm', 'ricem', 'rgraupelm',
 'diam', 'mass_ice_cryst', 'rcm_icedfs', 'u_T_cm',
-'rtm_bt', 'rtm_ma', 'rtm_ta','rtm_cl','rtm_forcing', 'rtm_mc', 
+'rtm_bt', 'rtm_ma', 'rtm_ta','rtm_cl','rtm_forcing', 'rtm_mc', 'rtm_pd'
 'thlm_bt', 'thlm_ma', 'thlm_ta','thlm_cl','thlm_forcing', 'thlm_mc',
 'um_bt', 'um_ma', 'um_gf', 'um_cf', 'um_ta',
 'vm_bt', 'vm_ma', 'vm_gf', 'vm_cf', 'vm_ta',
@@ -41,11 +38,10 @@ vars_zt =
 'rt1', 'rt2', 'srt1', 'srt2', 'rc1', 'rc2', 'rsl1', 'rsl2', 'R1', 'R2',
 's1', 's2', 'ss1', 'ss2', 'rrtthl',
 'wp2zt', 'thlp2zt', 'wpthlpzt', 'wprtpzt', 'rtp2zt', 'rtpthlpzt',
-'sclram', 'sclram_f', 'sclrbm', 'sclrbm_f',
-'edsclram', 'edsclrbm',
+!'sclram', 'sclram_f', 'sclrbm', 'sclrbm_f',
+!'edsclram', 'edsclrbm',
 ''
 
-fname_zm = 'all_zm',
 vars_zm = 
 'wp2', 'rtp2', 'thlp2', 'rtpthlp', 'wprtp', 'wpthlp', 'wp4', 'up2', 'vp2',
 'wpthvp', 'rtpthvp', 'thlpthvp', 'taum', 'khm', 'wprcp',
@@ -59,7 +55,7 @@ vars_zm =
 'up2_bt', 'up2_ma', 'up2_ta', 'up2_tp', 'up2_dp1', 'up2_dp2', 
 'up2_pr1', 'up2_pr2', 'up2_cl',
 'wprtp_bt', 'wprtp_ma', 'wprtp_ta', 'wprtp_tp', 'wprtp_ac', 'wprtp_bp',
-'wprtp_pr1', 'wprtp_pr2', 'wprtp_pr3', 'wprtp_dp1', 'wprtp_cl',
+'wprtp_pr1', 'wprtp_pr2', 'wprtp_pr3', 'wprtp_dp1', 'wprtp_cl', 'wprtp_pd',
 'wpthlp_bt', 'wpthlp_ma', 'wpthlp_ta', 'wpthlp_tp', 'wpthlp_ac', 'wpthlp_bp',
 'wpthlp_pr1', 'wpthlp_pr2', 'wpthlp_pr3', 'wpthlp_dp1', 'wpthlp_cl',
 'rtp2_bt', 'rtp2_ma', 'rtp2_ta', 'rtp2_tp', 'rtp2_dp1', 'rtp2_dp2', 'rtp2_cl',
@@ -67,18 +63,17 @@ vars_zm =
 'thlp2_dp1', 'thlp2_dp2', 'thlp2_cl',
 'rtpthlp_bt', 'rtpthlp_ma', 'rtpthlp_ta', 'rtpthlp_tp1', 'rtpthlp_tp2',
 'rtpthlp_dp1', 'rtpthlp_dp2',
-'sclraprtp', 'sclrbprtp', 'sclrap2', 'sclrbp2',
-'sclrapthvp', 'sclrbpthvp', 'sclrapthlp', 'sclrbpthlp', 
-'sclraprcp', 'sclrbprcp', 'wpsclrap', 'wpsclrbp', 
-'wpsclrap2', 'wpsclrbp2', 'wp2sclrap', 'wp2sclrbp',
-'wpsclraprtp', 'wpsclrbprtp', 'wpsclrapthlp', 'wpsclrbpthlp',
-'wpedsclrap', 'wpedsclrbp',
+!'sclraprtp', 'sclrbprtp', 'sclrap2', 'sclrbp2',
+!'sclrapthvp', 'sclrbpthvp', 'sclrapthlp', 'sclrbpthlp', 
+!'sclraprcp', 'sclrbprcp', 'wpsclrap', 'wpsclrbp', 
+!'wpsclrap2', 'wpsclrbp2', 'wp2sclrap', 'wp2sclrbp',
+!'wpsclraprtp', 'wpsclrbprtp', 'wpsclrapthlp', 'wpsclrbpthlp',
+!'wpedsclrap', 'wpedsclrbp',
 ''
 
-fname_sfc = 'all_sfc',
 vars_sfc = 
 'ustar', 'lh', 'sh', 'cc', 'lwp', 'zb', 'zi', 'rain', 'pflux', 'rrm_sfc',
-'wp23_cn', 'rtm_cn', 'thlm_cn', 'rtp2_cn', 'thlp2_cn', 'rtpthlp_cn',
-'up2_cn', 'vp2_cn',
+!'wp23_cn', 'rtm_cn', 'thlm_cn', 'rtp2_cn', 'thlp2_cn', 'rtpthlp_cn',
+!'up2_cn', 'vp2_cn',
 ''
 /
