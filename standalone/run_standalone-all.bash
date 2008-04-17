@@ -1,6 +1,6 @@
 #!/bin/bash
 #######################################################################
-# $Id: run_standalone-all.bash,v 1.30 2008-04-07 17:25:33 ajsmith4 Exp $
+# $Id: run_standalone-all.bash,v 1.31 2008-04-17 00:02:03 dschanen Exp $
 #
 # Script to run the standalone hoc program for all models.
 # Tested with bash v2.  Might work with Ksh.
@@ -34,7 +34,7 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 
  STANDALONE_IN='standalone_'"${RUN_CASE[$x]}"'.in'
  MODEL_IN='../model/'"${RUN_CASE[$x]}"'_model.in'
- STATS_IN='../stats/'"${RUN_CASE[$x]}"'_stats.in'
+ STATS_IN='../stats/nobudgets_stats.in'
 
  if [ ! -e "$STANDALONE_IN" ] ; then
 	echo $STANDALONE_IN " does not exist"

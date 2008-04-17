@@ -1,10 +1,10 @@
 #!/bin/bash
 #######################################################################
-# $Id: run_standalone.bash,v 1.28 2007-04-24 22:07:25 dschanen Exp $
+# $Id: run_standalone.bash,v 1.29 2008-04-17 00:02:03 dschanen Exp $
 #
 # Description:
 # Script to run the standalone hoc program.  
-# Tested with bash v2.  Might work with Ksh.
+# Tested with GNU Bash v2 & 3.  Might work with Ksh.
 #
 #######################################################################
 # Useful variable on multiprocessor machines with OpenMP capable 
@@ -16,10 +16,16 @@
 #######################################################################
 
 if [ -z $1 ]; then
-	echo "Usage: run_standalone.bash <CASE>"
+	echo "Usage: run_standalone.bash <MODEL CASE> [STATS FILE]"
 	exit
 else
 	RUN_CASE=$1
+
+	if [ -z $2 ]; then
+		STATS_FILE="all_stats.in"
+	else
+		STATS_FILE=$2
+	fi
 fi
 
 
@@ -30,7 +36,7 @@ fi
 
 STANDALONE_IN='standalone_'$RUN_CASE'.in'
 MODEL_IN='../model/'$RUN_CASE'_model.in'
-STATS_IN='../stats/'$RUN_CASE'_stats.in'
+STATS_IN='../stats/'$STATS_FILE
 
 if [ ! -e "$STANDALONE_IN" ] ; then
 	echo $STANDALONE_IN " does not exist"
