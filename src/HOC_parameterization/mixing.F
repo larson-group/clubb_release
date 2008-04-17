@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.44 2008-04-14 16:00:29 dschanen Exp $
+! $Id: mixing.F,v 1.45 2008-04-17 00:08:34 dschanen Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -237,9 +237,14 @@
         !    because it renders rtm non-conserved.  We should look into 
         !    a positive definite advection scheme.
         !    Vince Larson.  13 Nov 2007
+
+        ! The clipping of rtm causes a spurious source of moisture,
+        !   particularly in SAM-CLUBB mode, and so this code will be
+        !   disabled by default for now.
+        !   David Schanen 15 Apr 2008
         do k = 1, gr%nnzp, 1 
           if ( rtm(k) < 0.0 ) then
-            rtm(k) = 0.0
+!           rtm(k) = 0.0
             write(fstderr,*) "rtm < 0 in mixing at k= ", k 
           end if
         end do
