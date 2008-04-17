@@ -1,4 +1,4 @@
-! $Id: lba_model.in,v 1.7 2008-02-29 17:01:45 faschinj Exp $
+! $Id: lba_model.in,v 1.8 2008-04-17 00:04:37 dschanen Exp $
 ! Parameter file for the 23 Feb 1999 TRMM-LBA case
 
 &model_setting
@@ -39,6 +39,14 @@ lrestart      = .false.
 restart_path_case  = "restart/lba"
 time_restart  = 0.0
 
+/
+
+&stats_setting
+lstats       = .true.
+fname_prefix = "lba"
+stats_tsamp  = 60.
+stats_tout   = 60.
+stats_fmt    = "grads"
 /
 
 &sounding

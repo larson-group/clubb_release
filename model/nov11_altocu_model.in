@@ -1,4 +1,4 @@
-! $Id: nov11_altocu_model.in,v 1.17 2008-04-15 20:12:36 ajsmith4 Exp $
+! $Id: nov11_altocu_model.in,v 1.18 2008-04-17 00:04:37 dschanen Exp $
 ! Parameter file for November 11 altocumulus case
 
 &model_setting
@@ -35,6 +35,14 @@ lrestart      = .false.
 restart_path_case  = "restart/nov11_altocu"
 time_restart  = 0.0
 
+/
+
+&stats_setting
+lstats       = .true.
+fname_prefix = "nov11_altocu"
+stats_tsamp  = 60.
+stats_tout   = 60.
+stats_fmt    = "grads"
 /
 
 &sounding

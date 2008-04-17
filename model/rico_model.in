@@ -1,4 +1,4 @@
-! $Id: rico_model.in,v 1.9 2008-02-29 17:01:45 faschinj Exp $
+! $Id: rico_model.in,v 1.10 2008-04-17 00:04:37 dschanen Exp $
 ! Parameter file for GCSS RICO case
 ! Edited by Michael Falk, 12 December 2006
 
@@ -41,6 +41,14 @@ lrestart      = .false.
 restart_path_case  = "restart/rico"
 time_restart  = 0.0
 
+/
+
+&stats_setting
+lstats       = .true.
+fname_prefix = "rico"
+stats_tsamp  = 60.
+stats_tout   = 60.
+stats_fmt    = "grads"
 /
 
 &sounding

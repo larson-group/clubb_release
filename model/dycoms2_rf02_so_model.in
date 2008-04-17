@@ -1,4 +1,4 @@
-! $Id: dycoms2_rf02_so_model.in,v 1.11 2008-02-29 17:01:45 faschinj Exp $
+! $Id: dycoms2_rf02_so_model.in,v 1.12 2008-04-17 00:04:37 dschanen Exp $
 ! Parameter file for DYCOMS2 RF02 Sc case with no drizzle
 ! but with cloud water sedimentation.
 
@@ -36,6 +36,14 @@ lrestart      = .false.
 restart_path_case  = "restart/dycoms2_rf02_so"
 time_restart  = 0.0
 
+/
+
+&stats_setting
+lstats       = .true.
+fname_prefix = "dycoms2_rf02_so"
+stats_tsamp  = 60.
+stats_tout   = 60.
+stats_fmt    = "grads"
 /
 
 &sounding

@@ -37,6 +37,15 @@ restart_path_case = "restart/arm_97"
 time_restart = 0.0
 /
 
+&stats_setting
+lstats       = .true.
+fname_prefix = "arm_97"
+stats_tsamp  = 60.
+stats_tout   = 60.
+stats_fmt    = "grads"
+
+/
+
 &sounding
 
 nlevels = 19

@@ -34,6 +34,15 @@ lKhm_aniso    = .false.
 
 /
 
+&stats_setting
+lstats       = .true.
+fname_prefix = "dycoms2_rf02_so"
+stats_tsamp  = 5.
+stats_tout   = 5.
+stats_fmt    = "grads"
+/
+
+
 &sounding
 
 ! The DYCOMS2 RF02 soundings are hardwired in the file ../src/sounding.F   ! Brian

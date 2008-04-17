@@ -42,6 +42,13 @@ restart_path_case  = "restart/mpace_a"
 time_restart  = 0.0
 
 /
+&stats_setting
+lstats       = .true.
+fname_prefix = "mpace_a"
+stats_tsamp  = 60.
+stats_tout   = 600.
+stats_fmt    = "grads"
+/
 
 &sounding
 

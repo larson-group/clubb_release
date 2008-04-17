@@ -33,6 +33,13 @@ lbugsrad      = .false.
 lKhm_aniso    = .false.
 
 /
+&stats_setting
+lstats       = .true.
+fname_prefix = "dycoms2_rf02_ds_HR"
+stats_tsamp  = 5.
+stats_tout   = 5.
+stats_fmt    = "grads"
+/
 
 &sounding
 

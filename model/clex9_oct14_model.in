@@ -1,4 +1,4 @@
-! $Id: clex9_oct14_model.in,v 1.4 2008-04-15 22:40:59 ajsmith4 Exp $
+! $Id: clex9_oct14_model.in,v 1.5 2008-04-17 00:04:37 dschanen Exp $
 ! Parameter file for CLEX-9: October 14 altocumulus case
 
 &model_setting
@@ -34,6 +34,15 @@ lKhm_aniso    = .false.
 lrestart      = .false.
 restart_path_case  = "restart/clex9_oct14"
 time_restart  = 0.0
+
+/
+
+&stats_setting
+lstats       = .true.
+fname_prefix = "clex9_oct14"
+stats_tsamp  = 60.
+stats_tout   = 60.
+stats_fmt    = "grads"
 
 /
 

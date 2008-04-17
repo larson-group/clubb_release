@@ -1,4 +1,4 @@
-! $Id: arm_3year_model.in,v 1.5 2008-02-29 17:01:45 faschinj Exp $
+! $Id: arm_3year_model.in,v 1.6 2008-04-17 00:04:37 dschanen Exp $
 ! Parameter file for GCSS ARM 3 year deep convective case
 
 &model_setting
@@ -42,6 +42,15 @@ luv_nudge     = .true.
 lrestart      = .false.
 restart_path_case  = "restart/arm_3year"
 time_restart  = 0.0
+/
+
+&stats_setting
+lstats       = .true.
+fname_prefix = "arm_3year"
+stats_tsamp  = 60.
+stats_tout   = 60.
+stats_fmt    = "grads"
+
 /
 
 &sounding
