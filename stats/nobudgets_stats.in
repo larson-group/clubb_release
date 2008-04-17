@@ -1,0 +1,29 @@
+! $Id: nobudgets_stats.in,v 1.1 2008-04-17 17:00:02 dschanen Exp $
+! Stats for the prognostic and diagnostic variables, but omitting the 
+! budget terms and some of the microphyics stats.
+&statsnl
+
+vars_zt = 
+'thlm', 'thvm', 'rtm', 'rcm', 'um', 'vm', 'wmt', 'ug', 'vg',
+'cf', 'p', 'exner', 'Lscale',  
+'wp3', 'wpthlp2', 'wp2thlp', 'wprtp2', 'wp2rtp',
+'taut', 'kht', 'wp2thvp', 'wp2rcp', 'wprtpthlp',
+'sc', 'rhot', 'radht', 'rsm',
+'rrm', 'Nrm', 'rsnowm', 'ricem', 'rgraupelm',
+'a', 'w1', 'w2', 'sw1', 'sw2', 'thl1', 'thl2', 'sthl1', 'sthl2',
+'rt1', 'rt2', 'srt1', 'srt2', 'rc1', 'rc2', 'rsl1', 'rsl2', 'R1', 'R2',
+'s1', 's2', 'ss1', 'ss2', 'rrtthl',
+''
+
+vars_zm = 
+'wp2', 'rtp2', 'thlp2', 'rtpthlp', 'wprtp', 'wpthlp', 'wp4', 'up2', 'vp2',
+'wpthvp', 'rtpthvp', 'thlpthvp', 'taum', 'khm', 'wprcp',
+'thlprcp', 'rtprcp', 'rcp2', 'upwp', 'vpwp', 'rhom', 'sc', 'em',
+'shear', 'Frad', 
+'Vrr', 'VNr', 'Vsnow', 'Vgraupel', 'Vice',
+''
+
+vars_sfc = 
+'ustar', 'lh', 'sh', 'cc', 'lwp', 'zb', 'zi', 'rain', 'pflux', 'rrm_sfc',
+''
+/
