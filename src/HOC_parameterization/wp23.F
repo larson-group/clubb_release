@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.51 2008-04-17 14:53:20 griffinb Exp $
+! $Id: wp23.F,v 1.52 2008-04-17 15:49:42 griffinb Exp $
 !===============================================================================
         module wp23
 
@@ -1320,7 +1320,7 @@
 !       thermodynamic levels.  The derivative of the interpolated values
 !       is taken over the central momentum level.  The derivative
 !       is multiplied by wmm at the central momentum level to get
-!       the desired result.  The w'^3 term is solved for implicity.
+!       the desired result.
 !
 !       ============wp2p1======================================== m(k+1)
 !
@@ -1396,9 +1396,7 @@
 !       While the values of w'^2 are found on the momentum levels, the 
 !       values of w'^3 are found on the thermodynamic levels.  The 
 !       derivative of w'^3 is taken over the intermediate (central) 
-!       momentum level, yielding the desired results.  The value of 
-!       w'^3 being used is the value at timestep (t+1), thus implicit
-!       discretization is used.
+!       momentum level, yielding the desired results.
 !
 !       -------------------wp3p1--------------------------------- t(k+1)
 !
@@ -1540,8 +1538,6 @@
 !
 !       The timestep index (t+1) means that the value of w'^2 being used
 !       is from the timestep being advanced to.
-!
-!       This term is solved for completely implicitly.
 !
 !       The values of w'^2 are found on momentum levels.  The values of 
 !       the C_1 skewness function and time-scale tau1m are also found on
