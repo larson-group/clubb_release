@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.50 2008-04-12 23:47:43 griffinb Exp $
+! $Id: wp23.F,v 1.51 2008-04-17 14:53:20 griffinb Exp $
 !===============================================================================
         module wp23
 
@@ -1301,12 +1301,18 @@
 !
 !       - w * d(w'^2)/dz.
 !
+!       This term is solved for completely implicitly, such that:
+!
+!       - w * d( w'^2(t+1) )/dz.
+!
 !       Note:  When the term is brought over to the left-hand side, the
 !              sign is reversed and the leading "-" in front of the 
 !              term is changed to a "+".
 !
-!       This term is solved for completely implicitly and is 
-!       discretized as follows:
+!       The timestep index (t+1) means that the value of w'^2 being used
+!       is from the timestep being advanced to.
+!
+!       This term is discretized as follows:
 !
 !       The values of w'^2 are found on the momentum levels, as are the 
 !       values of wmm (mean vertical velocity on momentum levels).  
@@ -1374,12 +1380,18 @@
 !
 !       - d(w'^3)/dz.
 !
+!       The term is solved for completely implicitly, such that:
+!
+!       - d( w'^3(t+1) )/dz.
+!
 !       Note:  When the term is brought over to the left-hand side, the
 !              sign is reversed and the leading "-" in front of the 
 !              term is changed to a "+".
 !
-!       This term is solved for completely implicitly and is 
-!       discretized as follows:
+!       The timestep index (t+1) means that the value of w'^3 being used
+!       is from the timestep being advanced to.
+!
+!       This term is discretized as follows:
 !
 !       While the values of w'^2 are found on the momentum levels, the 
 !       values of w'^3 are found on the thermodynamic levels.  The 
@@ -1450,11 +1462,14 @@
 !       accumulation term and the implicit portion of pressure term 2 
 !       are combined and solved together as:
 !
-!       + ( 1 - C_5 ) ( -2 w'^2 dw/dz ).
+!       + ( 1 - C_5 ) ( -2 w'^2(t+1) dw/dz ).
 !
 !       Note:  When the term is brought over to the left-hand side, the
 !              sign is reversed and the leading "-" in front of the "2"
 !              is changed to a "+".
+!
+!       The timestep index (t+1) means that the value of w'^2 being used
+!       is from the timestep being advanced to.
 !
 !       The terms are discretized as follows:
 !
@@ -1515,9 +1530,16 @@
 !
 !       - ( C1_Skw_fnc / tau_1m ) w'^2
 !
+!       This term is solved for completely implicitly, such that:
+!
+!       - ( C1_Skw_fnc / tau_1m ) w'^2(t+1)
+!
 !       Note:  When the term is brought over to the left-hand side, the
 !              sign is reversed and the leading "-" in front of the
 !              term is changed to a "+".
+!
+!       The timestep index (t+1) means that the value of w'^2 being used
+!       is from the timestep being advanced to.
 !
 !       This term is solved for completely implicitly.
 !
@@ -1536,8 +1558,8 @@
 
         ! Input Variables
         real, intent(in) ::
-     .  C1_Skw_fnc, ! C_1 skewness function (k)            [-]
-     .  tau1m       ! Time scale at momentum levels        [s]
+     .  C1_Skw_fnc, ! C_1 parameter with Sk_w applied (k)   [-]
+     .  tau1m       ! Time-scale tau at momentum levels (k) [s]
 
         ! Return Variable
         real :: lhs
@@ -1565,14 +1587,21 @@
 !       This simplifies to:
 !
 !       - ( C4 / tau_1m ) * (2/3) * w'^2 
-!        + ( C4 / tau_1m ) * (1/3) * ( u'^2 + v'^2 )
+!          + ( C4 / tau_1m ) * (1/3) * ( u'^2 + v'^2 )
 !
 !       Pressure term 1 has both implicit and explicit components.  The
-!       implicit portion is computed in this function.
+!       implicit portion is:
+!
+!       - ( C4 / tau_1m ) * (2/3) * w'^2(t+1);
+!
+!       and is computed in this function.
 !
 !       Note:  When the implicit term is brought over to the left-hand 
 !              side, the sign is reversed and the leading "-" in front 
 !              of the term is changed to a "+".
+!
+!       The timestep index (t+1) means that the value of w'^2 being used
+!       is from the timestep being advanced to.
 !
 !       The values of w'^2 are found on momentum levels, as are the 
 !       values of tau1m.
@@ -1588,8 +1617,8 @@
 
         ! Input Variables
         real, intent(in) ::
-     .  C4,     ! Model parameter C_4                  [-]
-     .  tau1m   ! Time scale at momentum levels        [s]
+     .  C4,     ! Model parameter C_4                   [-]
+     .  tau1m   ! Time-scale tau at momentum levels (k) [s]
 
         ! Return Variable
         real :: lhs
@@ -1740,10 +1769,14 @@
 !       This simplifies to:
 !
 !       - ( C4 / tau_1m ) * (2/3) * w'^2 
-!        + ( C4 / tau_1m ) * (1/3) * ( u'^2 + v'^2 )
+!          + ( C4 / tau_1m ) * (1/3) * ( u'^2 + v'^2 )
 !
 !       Pressure term 1 has both implicit and explicit components.  The
-!       explicit portion is computed in this function.
+!       explicit portion is:
+!
+!       + ( C4 / tau_1m ) * (1/3) * ( u'^2 + v'^2 )
+!
+!       and is computed in this function.
 !
 !       The values of u'^2 and v'^2 are found on momentum levels, as are
 !       the values of tau1m.
@@ -1755,10 +1788,10 @@
 
         ! Input Variables
         real, intent(in) ::
-     .  C4,     ! Model parameter C_4                  [-]
-     .  up2,    ! u'^2(k)                              [m^2/s^2]
-     .  vp2,    ! v'^2(k)                              [m^2/s^2]
-     .  tau1m   ! Time scale at momentum levels        [s]
+     .  C4,     ! Model parameter C_4                   [-]
+     .  up2,    ! u'^2(k)                               [m^2/s^2]
+     .  vp2,    ! v'^2(k)                               [m^2/s^2]
+     .  tau1m   ! Time-scale tau at momentum levels (k) [s]
 
         ! Return Variable
         real :: rhs
@@ -1780,12 +1813,18 @@
 !
 !       - w * d(w'^3)/dz.
 !
+!       This term is solved for completely implicitly, such that:
+!
+!       - w * d( w'^3(t+1) )/dz.
+!
 !       Note:  When the term is brought over to the left-hand side, the
 !              sign is reversed and the leading "-" in front of the 
 !              term is changed to a "+".
 !
-!       This term is solved for completely implicitly and is 
-!       discretized as follows:
+!       The timestep index (t+1) means that the value of w'^3 being used
+!       is from the timestep being advanced to.
+!
+!       This term is discretized as follows:
 !
 !       The values of w'^3 are found on the thermodynamic levels, as 
 !       are the values of wmt (mean vertical velocity on thermodynamic 
@@ -1874,7 +1913,7 @@
 !       combined as:
 !
 !       - d [ a_3 * (w'^2)^2 ] / dz  
-!        - d [ a_1 * ( (w'^3)^2 / w'^2 ) ] / dz.
+!          - d [ a_1 * ( (w'^3)^2 / w'^2 ) ] / dz.
 !
 !       The (w'^2)^2 and (w'^3)^2 terms are both linearized, such that:
 !
@@ -1882,13 +1921,26 @@
 !       ( w'^3(t+1) )^2 = - ( w'^3(t) )^2  +  2 * w'^3(t) * w'^3(t+1);
 !
 !       which produces implicit and explicit portions of these terms.  
+!       The implicit portion of these terms is:
+!
+!       - d [ a_3 * 2 * w'^2(t) * w'^2(t+1) ] / dz
+!          - d [ a_1 * ( 2 * w'^3(t) * w'^3(t+1) ) / w'^2(t) ] / dz;
+!
+!       Note:  When the term is brought over to the left-hand side, the
+!              sign is reversed and the leading "-" in front of both 
+!              d[ ] / dz terms is changed to a "+".
+!
+!       Timestep index (t) stands for the index of the current timestep 
+!       and timestep index (t+1) stands for the index of the timestep 
+!       being advanced to.
+!
 !       The implicit portion of these terms is discretized as follows:
 !
 !       The values of w'^3 are found on the thermodynamic levels, while
 !       the values of w'^2, a_1, and a_3 are found on the momentum 
 !       levels.  The variable w'^3 is interpolated to the intermediate 
 !       momentum levels.  The values of the mathematical expressions
-!       (called X and Y here) within the (-dX/dz) and (-dY/dz) terms are
+!       (called X and Y here) within the dX/dz and dY/dz terms are
 !       computed on the momentum levels.  Then, the derivatives (d/dz) 
 !       of the expressions (X and Y) are taken over the central 
 !       thermodynamic level, yielding the desired result.
@@ -1896,18 +1948,14 @@
 !
 !       X = a_3(t) * 2 * w'^2(t) * w'^2(t+1); and
 !
-!       Y = a_1(t) * ( 2 * w'^3(t) * w'^3(t+1) ) / w'^2(t);
+!       Y = a_1(t) * ( 2 * w'^3(t) * w'^3(t+1) ) / w'^2(t).
 !
-!       where (t) stands for the index of the current timestep and 
-!       (t+1) stands for the index of the timestep being advanced to.
-!       The terms with timestep index (t+1) are being solved for 
-!       implicitly.
 !
 !       --------------------wp3p1-------------------------------- t(k+1)
 !
 !       =a3====wp2====a1=========wp3(interp)===================== m(k)
 !
-!       --------------------wp3--------------(-dX/dz)--(-dY/dz)-- t(k)
+!       --------------------wp3----------------dX/dz---dY/dz----- t(k)
 !
 !       =a3m1==wp2m1==a1m1=======wp3(interp)===================== m(k-1)
 !
@@ -1920,10 +1968,6 @@
 !       levels.
 !
 !       dzt(k) = 1 / ( zm(k) - zm(k-1) )
-!
-!       Note:  When the term is brought over to the left-hand side, the
-!              sign is reversed and the leading "-" in front of the 
-!              dX/dz and dY/dz terms is changed to a "+".
 
 !       References:
 !-----------------------------------------------------------------------
@@ -2037,11 +2081,14 @@
 !       accumulation term and the implicit portion of pressure term 2 
 !       are combined and solved together as:
 !
-!       + ( 1 - C_11 ) ( -3 w'^3 dw/dz ).
+!       + ( 1 - C_11 ) ( -3 w'^3(t+1) dw/dz ).
 !
 !       Note:  When the term is brought over to the left-hand side, the
 !              sign is reversed and the leading "-" in front of the "3" 
 !              is changed to a "+".
+!
+!       The timestep index (t+1) means that the value of w'^3 being used
+!       is from the timestep being advanced to.
 !
 !       The terms are discretized as follows:
 !
@@ -2076,10 +2123,10 @@
 
         ! Input Variables
         real, intent(in) ::
-     .  C11_Skw_fnc, ! C_11 skewness function (k)    [-]
-     .  wmm,         ! wmm(k)                        [m/s]
-     .  wmmm1,       ! wmm(k-1)                      [m/s]
-     .  dzt          ! Inverse of grid spacing (k)   [1/m]
+     .  C11_Skw_fnc, ! C_11 parameter with Sk_w applied (k)   [-]
+     .  wmm,         ! wmm(k)                                 [m/s]
+     .  wmmm1,       ! wmm(k-1)                               [m/s]
+     .  dzt          ! Inverse of grid spacing (k)            [1/m]
 
         ! Return Variable
         real :: lhs
@@ -2103,21 +2150,35 @@
 !
 !       - (C_8/tau_w3t) * ( C_8b * Sk_wt^4 + 1 ) * w'^3;
 !
-!       which has to be linearized.  After it has been linearized, it 
-!       is broken down into implicit (LHS) and explicit (RHS) 
-!       components.
+!       where Sk_wt = w^'3 / (w'^2)^(3/2). 
 !
-!       The values of w'^3 are found on the thermodynamic levels, as are
-!       the values of tau_w3t and Sk_wt; where 
+!       This term needs to be linearized, such that:
 !
-!       Sk_wt = w^'3 / (w'^2)^(3/2); 
+!       L(w'^3) = - (C_8/tau_w3t) * ( C_8b * (w'^3)^5 / (w'^2)^6 + w'^3 );
 !
-!       and w'^2 is interpolated to thermodynamic levels.  For this 
-!       portion of the code, w'^3 is solved for implicitly.
+!       and the term becomes:
 !
+!       + L( w'^3(t) ) 
+!          + ( d L(w'^3) / d w'^3 ) * ( w'^3(t+1) - w'^3(t) )
+!
+!       After the term has been linearized, it is broken down into 
+!       implicit (LHS) and explicit (RHS) components.
+!       The implicit portion is:
+!
+!       - (C_8/tau_w3t) * ( 5 * C_8b * Sk_wt^4 + 1 ) * w'^3(t+1);
+!       
 !       Note:  When the term is brought over to the left-hand side, the
 !              sign is reversed and the leading "-" in front of the 
 !              term is changed to a "+".
+!
+!       Timestep index (t) stands for the index of the current timestep 
+!       and timestep index (t+1) stands for the index of the timestep 
+!       being advanced to.
+!
+!       The values of w'^3 are found on the thermodynamic levels, as are
+!       the values of tau_w3t and Sk_wt (in Sk_wt, w'^3 is found on 
+!       thermodynamic levels and w'^2 is interpolated to thermodynamic 
+!       levels).
 
 !       References:
 !-----------------------------------------------------------------------
@@ -2132,7 +2193,7 @@
         real, intent(in) ::
      .  C8,     ! Model parameter C_8                        [-]
      .  C8b,    ! Model parameter C_8b                       [-]
-     .  tauw3t, ! Time scale at thermodynamic levels         [s]
+     .  tauw3t, ! Time-scale tau at thermodynamic levels (k) [s]
      .  Skwt    ! Skewness of w at thermodynamic levels (k)  [-]
 
         ! Return Variable
@@ -2177,7 +2238,7 @@
 !       combined as:
 !
 !       - d [ a_3 * (w'^2)^2 ] / dz  
-!        - d [ a_1 * ( (w'^3)^2 / w'^2 ) ] / dz.
+!          - d [ a_1 * ( (w'^3)^2 / w'^2 ) ] / dz.
 !
 !       The (w'^2)^2 and (w'^3)^2 terms are both linearized, such that:
 !
@@ -2185,6 +2246,15 @@
 !       ( w'^3(t+1) )^2 = - ( w'^3(t) )^2  +  2 * w'^3(t) * w'^3(t+1);
 !
 !       which produces implicit and explicit portions of these terms.  
+!       The explicit portion of these terms is:
+!
+!       + d [ a_3 * ( w'^2(t) )^2 ] / dz
+!          + d [ a_1 * ( w'^3(t) )^2 / w'^2(t) ] / dz;
+!
+!       Timestep index (t) stands for the index of the current timestep 
+!       and timestep index (t+1) stands for the index of the timestep 
+!       being advanced to.
+!
 !       The explicit portion of these terms is discretized as follows:
 !
 !       The values of w'^3 are found on the thermodynamic levels, while
@@ -2199,17 +2269,14 @@
 !
 !       X = a_3(t) * ( w'^2(t) )^2; and
 !
-!       Y = a_1(t) * ( w'^3(t) )^2 / w'^2(t);
+!       Y = a_1(t) * ( w'^3(t) )^2 / w'^2(t).
 !
-!       where (t) stands for the index of the current timestep.
-!       The terms found in this function are being solved for 
-!       explicitly.
 !
 !       --------------------wp3p1-------------------------------- t(k+1)
 !
 !       =a3====wp2====a1=========wp3(interp)===================== m(k)
 !
-!       --------------------wp3----------------(dX/dz)--(dY/dz)-- t(k)
+!       --------------------wp3----------------dX/dz---dY/dz----- t(k)
 !
 !       =a3m1==wp2m1==a1m1=======wp3(interp)===================== m(k-1)
 !
@@ -2318,8 +2385,8 @@
 
         ! Input Variables
         real, intent(in) ::
-     .  C11_Skw_fnc, ! C_11 skewness function (k)    [-]
-     .  wp2thvp      ! w'^2th_v' (k)                 [K m^2/s^2]
+     .  C11_Skw_fnc, ! C_11 parameter with Sk_w applied (k)   [-]
+     .  wp2thvp      ! w'^2th_v'(k)                           [K m^2/s^2]
 
         ! Return Variable
         real :: rhs
@@ -2341,17 +2408,31 @@
 !
 !       - (C_8/tau_w3t) * ( C_8b * Sk_wt^4 + 1 ) * w'^3;
 !
-!       which has to be linearized.  After it has been linearized, it 
-!       is broken down into implicit (LHS) and explicit (RHS) 
-!       components.
+!       where Sk_wt = w^'3 / (w'^2)^(3/2). 
+!
+!       This term needs to be linearized, such that:
+!
+!       L(w'^3) = - (C_8/tau_w3t) * ( C_8b * (w'^3)^5 / (w'^2)^6 + w'^3 );
+!
+!       and the term becomes:
+!
+!       + L( w'^3(t) ) 
+!          + ( d L(w'^3) / d w'^3 ) * ( w'^3(t+1) - w'^3(t) )
+!
+!       After the term has been linearized, it is broken down into 
+!       implicit (LHS) and explicit (RHS) components.
+!       The explicit portion is:
+!
+!       + (C_8/tau_w3t) * ( 4 * C_8b * Sk_wt^4 + 1 ) * w'^3(t);
+!
+!       Timestep index (t) stands for the index of the current timestep 
+!       and timestep index (t+1) stands for the index of the timestep 
+!       being advanced to.
 !
 !       The values of w'^3 are found on the thermodynamic levels, as are
-!       the values of tau_w3t and Sk_wt; where 
-!
-!       Sk_wt = w^'3 / (w'^2)^(3/2); 
-!
-!       and w'^2 is interpolated to thermodynamic levels.  For this 
-!       portion of the code, w'^3 is solved for explicitly.
+!       the values of tau_w3t and Sk_wt (in Sk_wt, w'^3 is found on 
+!       thermodynamic levels and w'^2 is interpolated to thermodynamic 
+!       levels).
 
 !       References:
 !-----------------------------------------------------------------------
@@ -2362,7 +2443,7 @@
         real, intent(in) ::
      .  C8,     ! Model parameter C_8                        [-]
      .  C8b,    ! Model parameter C_8b                       [-]
-     .  tauw3t, ! Time scale at thermodynamic levels         [s]
+     .  tauw3t, ! Time-scale tau at thermodynamic levels (k) [s]
      .  Skwt,   ! Skewness of w at thermodynamic levels (k)  [-]
      .  wp3     ! w'^3(k)                                    [m^3/s^3]
 
@@ -2380,10 +2461,11 @@
      .                        wp2, wp3 )
 
 !       Description:
-!       This subroutine clips the value of w'^3 if the skewness of w 
-!       is greater than 4.5 or less than -4.5.  It also employs a 
-!       special surface clipping of w'^3, where w'^3 cannot be greater
-!       than 0.2 * sqrt(2) * Sk_w or less than -0.2 * sqrt(2) * Sk_w 
+!       After w'^2 and w'^3 have been advanced one timestep, this 
+!       subroutine clips the value of w'^3 if the skewness of w is 
+!       greater than 4.5 or less than -4.5.  It also employs a special 
+!       surface clipping of w'^3, where w'^3 cannot be greater than 
+!       0.2 * sqrt(2) * Sk_w or less than -0.2 * sqrt(2) * Sk_w 
 !       (Andre et al., 1976b, 1978).  This subroutine also ensures that
 !       w'^2 doesn't fall below of value of (2/3) * emin.
 
