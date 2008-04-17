@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.170 2008-04-14 02:53:06 ajsmith4 Exp $
+! $Id: hoc.F,v 1.171 2008-04-17 00:06:20 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -113,7 +113,7 @@
         use constants, only: fstdout, fstderr
         use error_code
 #ifdef STATS
-        use stats_hoc
+        use stats_hoc, only: lstats_last
         use stats_subs
 #endif
 
@@ -155,34 +155,34 @@
      .    rtpthlp,! r_t' th_l'                          [(kg K)/(kg s)]
      .    upwp,   ! u'w'                                [m^2/s^2]        
      .    vpwp,   ! v'w'                                [m^2/s^2]
-     .    ug,     ! u geostrophic wind                          [m/s] 
-     .    vg,     ! v geostrophic wind                          [m/s] 
-     .    rcm,    ! Cloud water mixing ratio                    [kg/kg]
-     .    wmt,    ! w wind                                      [m/s]
-     .    exner,  ! Exner function                              [-] 
-     .    em,     ! Turbulence kinetic energy                   [m^2/s^2]
-     .    p,      ! Pressure                                    [Pa]
-     .    rhot, rhom,  ! Density                                     [kg/m^3]
-     .    Lscale, ! Mixing length                               [m] 
-     .    Lup,    ! Upward mixing length                        [m] 
-     .    Ldown,  ! Downward mixing length                      [m] 
-     .    Kht, Khm, ! Eddy diffusivity                            [m^2/s]
-     .    taum, taut, ! Dissipation time                            [s]
-     .    thvm,       ! Virtual potential temperature               [K]
-     .    rrm,
-     .    Nrm,
-     .    rsnowm,
-     .    ricem,
-     .    rgraupelm, 
+     .    ug,     ! u geostrophic wind                  [m/s] 
+     .    vg,     ! v geostrophic wind                  [m/s] 
+     .    rcm,    ! Cloud water mixing ratio            [kg/kg]
+     .    wmt,    ! w wind                              [m/s]
+     .    exner,  ! Exner function                      [-] 
+     .    em,     ! Turbulence kinetic energy           [m^2/s^2]
+     .    p,      ! Pressure                            [Pa]
+     .    rhot, rhom,  ! Density                        [kg/m^3]
+     .    Lscale, ! Mixing length                       [m] 
+     .    Lup,    ! Upward mixing length                [m] 
+     .    Ldown,  ! Downward mixing length              [m] 
+     .    Kht, Khm, ! Eddy diffusivity                  [m^2/s]
+     .    taum, taut, ! Dissipation time                [s]
+     .    thvm,       ! Virtual potential temperature   [K]
+     .    rrm,          ! Rain water mixing ratio       [kg/kg]
+     .    Nrm,          ! Rain droplet number conc.
+     .    rsnowm,       ! Snow water mixing ratio       [kg/kg]
+     .    ricem,        ! Ice water mixing ratio        [kg/kg]
+     .    rgraupelm,    ! Graupel water mixing ratio    [kg/kg]
      .    thlm_forcing, ! Liquid water potential temperature tendency [K/s] 
      .    rtm_forcing,  ! Total water mixing ratio tendency           [kg/kg/s]
-     .    up2,          ! u'^2                                          [m^2/s^2]
+     .    up2,          ! u'^2                                       [m^2/s^2]
      .    vp2,          ! v'^2                          [m^2/s^2]
      .    Scm,          ! Sc on moment. grid.           [-]
      .    Ncm,          ! Number of cloud droplets   [count/kg]
      .    Ncnm,         ! Number of cloud nuclei     [count/m^3]
      .    Nim,          ! Number of ice crystals     [count/m^3]
-     .    cf,           ! Cloud fraction        [%]
+     .    cf,           ! Cloud fraction                        [%]
      .    Sct           ! PDF width parameter: t point          [-]
           
           end subroutine set_fields
@@ -231,6 +231,19 @@
      .  luv_nudge,    ! Whether to adjust the winds within the timestep
      .  lKhm_aniso    ! Whether to use anisotropic Khm.  - Michael Falk 2 Feb 2007
 
+        logical ::
+     .  lstats ! Whether statistics are computed and output to disk
+
+        character(len=10) ::
+     .  stats_fmt  ! File format for stats; typically GrADS.
+
+        character(len=100) ::
+     .  fname_prefix ! Prefix of stats filenames, to be followed by, for example "_zt"
+
+        real(kind=time_prec) ::
+     .  stats_tsamp,  ! Stats sampling interval [s]
+     .  stats_tout    ! Stats output interval   [s]
+
         ! Dummy grid height arrays
         real, dimension(:), allocatable :: 
      .  dummy_array_m, dummy_array_t
@@ -246,6 +259,9 @@
      .   sfctype, Tsfc, psfc, SE, LE, fcor, T0, ts_nudge,
      .   cloud_sed, kk_rain, licedfs, lcoamps_micro, 
      .   lbugsrad, lKhm_aniso, luv_nudge
+
+       namelist /stats_setting/
+     .   lstats, fname_prefix, stats_tsamp, stats_tout, stats_fmt
 
        !  Initialize the model run 
 
@@ -286,9 +302,17 @@
         lKhm_aniso    = .false.
         luv_nudge     = .false.
 
+        ! Pick some default values for stats_setting
+        lstats       = .false.
+        fname_prefix = ""
+        stats_fmt    = ""
+        stats_tsamp  = 0.
+        stats_tout   = 0.
+
        ! Read namelist file
        open(unit=10, file=runfile, status='old')
        read(unit=10, nml=model_setting)
+       read(unit=10, nml=stats_setting)
        close(unit=10)
 
        ! Dummy grid height arrays
@@ -331,10 +355,13 @@
      .                     )
 
 #ifdef STATS
-!      Initialize statistics output
-       call stats_init( 50, runfile, gr%nnzp, gr%zt, gr%zm,
-     .                  day, month, year, rlat, rlon, time_current, 
-     .                  dtmain )
+       ! Initialize statistics output
+       call stats_init
+     .      ( 50, fname_prefix, 
+     .        lstats, stats_fmt, stats_tsamp, stats_tout,
+     .        runfile, gr%nnzp, gr%zt, gr%zm,
+     .        day, month, year, rlat, rlon, time_current,
+     .        dtmain )
 #endif /*STATS*/
 
        ! Time integration
@@ -495,7 +522,7 @@
         use error_code
         use stats_prec, only: time_prec
 #ifdef STATS
-        use stats_hoc
+        use stats_hoc, only: lstats_last
         use stats_subs
 #endif /*STATS*/
 
@@ -551,6 +578,19 @@
         character(len=50) :: 
      .  restart_path_case ! GRADS file used in case of restart
 
+        logical ::
+     .  lstats ! Whether statistics are computed and output to disk
+
+        character(len=10) ::
+     .  stats_fmt  ! File format for stats; typically GrADS.
+
+        character(len=100) ::
+     .  fname_prefix ! Prefix of stats filenames, to be followed by, for example "_zt"
+
+        real(kind=time_prec) ::
+     .  stats_tsamp,  ! Stats sampling interval [s]
+     .  stats_tout    ! Stats output interval   [s]
+
         ! Dummy grid height arrays
         real, dimension(:), allocatable :: 
      .  dummy_array_m, dummy_array_t
@@ -569,6 +609,9 @@
      .  cloud_sed, kk_rain, licedfs, lcoamps_micro, 
      .  lbugsrad, lKhm_aniso, luv_nudge, lrestart, restart_path_case,
      .  time_restart
+
+       namelist /stats_setting/
+     .   lstats, fname_prefix, stats_tsamp, stats_tout, stats_fmt 
 
 !-----------------------------------------------------------------------
 
@@ -613,6 +656,13 @@
         lrestart      = .false.
         restart_path_case = "none"
         time_restart = 0
+
+        ! Pick some default values for stats_setting
+        lstats       = .false.
+        fname_prefix = ""
+        stats_fmt    = ""
+        stats_tsamp  = 0.
+        stats_tout   = 0.
         
 
         ! Figure out which iounit to use
@@ -625,6 +675,7 @@
         ! Read namelist file
         open(unit=iunit, file=runfile, status='old')
         read(unit=iunit, nml=model_setting)
+        read(unit=iunit, nml=stats_setting)
         close(unit=iunit)
 
        ! Dummy grid height arrays
@@ -707,15 +758,19 @@
      .                       )
        end if ! ~lrestart
 #ifdef STATS
+
 #ifdef _OPENMP
        iunit = omp_get_thread_num( ) + 50
 #else
        iunit = 50
 #endif
-!      Initialize statistics output
-       call stats_init( iunit, runfile, gr%nnzp, gr%zt, gr%zm,
-     .                  day, month, year, rlat, rlon, time_current,
-     .                  dtmain )
+       ! Initialize statistics output
+       call stats_init
+     .      ( iunit, fname_prefix, 
+     .        lstats, stats_fmt, stats_tsamp, stats_tout,
+     .        runfile, gr%nnzp, gr%zt, gr%zm,
+     .        day, month, year, rlat, rlon, time_current,
+     .        dtmain )
 #endif /*STATS*/
 
        ! Time integration
@@ -874,10 +929,6 @@
         ! March 2008
         use saturation
         
-#ifdef STATS
-        use stats_hoc
-#endif /*STATS*/
-
         implicit none
 
         intrinsic :: min, max, trim, sqrt, size
@@ -1133,19 +1184,19 @@
           cloud_top_height = 2800. + gr%zm(1)
           do k=1,gr%nnzp
             if ( gr%zm(k) < cloud_top_height ) then
-c
-c*********************************************************
-c Modification by Adam Smith, 08 April 2008
-c Reducing the value of em appears to reduce error in the
-c updated Nov.11 case
-c*********************************************************
-c
+!
+!*********************************************************
+! Modification by Adam Smith, 08 April 2008
+! Reducing the value of em appears to reduce error in the
+! updated Nov.11 case
+!*********************************************************
+!
               em(k) = 0.01
-c
-c********************************
-c End of ajsmith4's modification
-c********************************
-c
+!
+!********************************
+! End of ajsmith4's modification
+!********************************
+!
             else
               em(k) = emin
             end if

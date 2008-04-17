@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_hoc.F,v 1.7 2008-04-14 16:00:29 dschanen Exp $
+! $Id: stats_hoc.F,v 1.8 2008-04-17 00:06:20 dschanen Exp $
 #ifdef STATS
 !-----------------------------------------------------------------------
 !  module stats_hoc
@@ -34,9 +34,10 @@
 
 !$omp   threadprivate(lstats_samp, lstats_first, lstats_last)
 
-        character(len=200) :: fname_zt
-        character(len=200) :: fname_zm
-        character(len=200) :: fname_sfc
+        character(len=200) :: 
+     .  fname_zt, ! Name of the stats file for thermodynamic grid fields
+     .  fname_zm, ! Name of the stats file for momentum grid fields
+     .  fname_sfc ! Name of the stats file for surface only fields
 
 !$omp   threadprivate(fname_zt, fname_zm, fname_sfc)
 

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.8 2008-04-05 19:54:32 griffinb Exp $
+!  $Id: stats_subs.F,v 1.9 2008-04-17 00:06:20 dschanen Exp $
 #ifdef STATS
       module stats_subs
  
@@ -14,9 +14,13 @@
       contains
       
 !-----------------------------------------------------------------------
-      subroutine stats_init( iunit, fnamelist, nnzp, gzt, gzm,
-     .                       day, month, year, rlat, rlon, 
-     .                       time_current, delt )
+      subroutine stats_init
+     .           ( iunit, fname_prefix,
+     .             lstats_in, stats_fmt_in, 
+     .             stats_tsamp_in, stats_tout_in,
+     .             fnamelist, nnzp, gzt, gzm,
+     .             day, month, year, rlat, rlon, 
+     .             time_current, delt )
 
 !     Description: Initializes the statistics saving functionality of
 !     the HOC model.
@@ -32,20 +36,23 @@
       implicit none
 
       ! Constant Parameters
-      ! Because the units are only open and closed on at a time, they can
-      ! all use the same file unit with the scope of write_grads()
-!     integer, parameter :: 
-!    .  zt_funit  = 20,
-!    .  zm_funit  = 20,
-!    .  sfc_funit = 20
-      ! dschanen changed this for threadsafe-ish I/O
-
+ 
       integer, parameter :: nvarmax = 250  ! Max variables
 
       ! Input Variables
+
       integer, intent(in) :: iunit  ! File unit for fnamelist
 
-      character(len=*) :: fnamelist ! Filename holding the &statsnl
+      character(len=*) :: 
+     .  fnamelist,   ! Filename holding the &statsnl
+     .  fname_prefix,! Start of the stats filenames
+     .  stats_fmt_in ! Format of the stats file output
+
+      logical, intent(in) :: lstats_in ! Stats on? T/F
+
+      real(kind=time_prec) :: 
+     .  stats_tsamp_in, ! Sampling interval   [s]
+     .  stats_tout_in   ! Output interval     [s]
 
       integer, intent(in) :: nnzp ! Grid points in the vertical [count]
 
@@ -75,10 +82,9 @@
      .  vars_sfc  ! Variables at the model surface
 
       namelist /statsnl/
-     .  lstats, stats_fmt, stats_tsamp, stats_tout,
-     .  fname_zt,  vars_zt,
-     .  fname_zm,  vars_zm,
-     .  fname_sfc, vars_sfc
+     .  vars_zt,
+     .  vars_zm,
+     .  vars_sfc
 
       ! Local Variables
 
@@ -91,11 +97,13 @@
       ! Initialize
       lerror = .false.
 
-      ! Read namelist
+      ! Set stats_hoc variables with inputs from calling subroutine
+      lstats = lstats_in
 
-      open(unit=iunit, file=fnamelist)
-      read(unit=iunit, nml=statsnl, end=100)
-      close(unit=iunit)
+      stats_tsamp = stats_tsamp_in
+      stats_tsamp = stats_tsamp_in
+      stats_tout  = stats_tout_in
+      stats_fmt   = trim( stats_fmt_in )
 
       if ( .not. lstats ) then
         lstats_samp  = .false.
@@ -103,6 +111,18 @@
         lstats_last  = .false.
         return
       end if
+
+      ! Read namelist
+
+      open(unit=iunit, file=fnamelist)
+      read(unit=iunit, nml=statsnl, end=100)
+      close(unit=iunit)
+
+
+      ! Determine file names for GrADS or NetCDF files
+      fname_zt  = trim( fname_prefix )//"_zt"
+      fname_zm  = trim( fname_prefix )//"_zm"
+      fname_sfc = trim( fname_prefix )//"_sfc"
 
       ! Parse the file type for stats output.  Currently only GrADS and
       ! NetCDF v3 are supported by this code.
