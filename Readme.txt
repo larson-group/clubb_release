@@ -1,4 +1,4 @@
-$Id: Readme.txt,v 1.65 2008-03-21 18:00:18 nielsenb Exp $
+$Id: Readme.txt,v 1.66 2008-04-18 17:32:53 dschanen Exp $
 
 ************************************************************************
 *                           Copyright Notice
@@ -43,12 +43,13 @@ The code is written in Fortran 90/95 and executed by a bash runscript.
 On the Microsoft Windows platform this could work using MSYS or Cygwin 
 with G95, but we have not tested this sort of configuration.
 
-We use the Portland Group compiler, version 5.2-4 on Redhat Enterprise 3.
+
+We use the G95 compiler on Intel processors running Redhat Enterprise 3.
 
 G95 <http://www.g95.org/> has been tested on SPARC & x86 Solaris,
 x64 & x86 GNU/Linux.
 
-Sun Fortran 8.1 and 8.2 on Solaris works, but has not been as rigorously 
+Sun Fortran 8.x on Solaris SPARC/x86 work, but has not been as rigorously 
 tested as pgf90.
 
 Using Intel Fortran 9 we have been able to compile on Linux x86/x64 and
@@ -62,8 +63,8 @@ Fortran 90 standard yet, and so does not work at all.
 
 It is important to note that all these compilers use *incompatible* module
 formats for the .mod files!  If you want to use different compilers on the
-same system, you will need to build a different set of mod files for each
-compiler and use -M or -I to specify their location.
+same system, you will need to build a different set of netCDF mod files for
+each compiler and use -M or -I to specify their location.
 
 In order to get similar results on differing architectures, platforms, and
 compilers, initially try a conservative optimization and enable 
@@ -79,11 +80,12 @@ using SSE or SSE2 is usually the best way to do this.
 
 Requirements:
 A. A Fortran 90/95 compiler with a complete implementation of the standard.
-B. NetCDF >= v3.5.1;  We have not tested our code with anything older.
-C. LAPACK & BLAS.  These provide the tri and band diagonal solver
+B. A POSIX compliant version of the make utility.  BSD or GNU make work fine.
+C. NetCDF >= v3.5.1;  We have not tested our code with anything older.
+D. LAPACK & BLAS.  These provide the tri and band diagonal solver
    subroutines needed by HOC.  Many vendors provide optimized versions of
    these routines, which may be much faster than the reference BLAS.
-D. GNU bash, or an equivalent POSIX compliant shell to use the run scripts.
+E. GNU bash, or an equivalent POSIX compliant shell to use the run scripts.
 
 Build:
 1. $ cd ~/hoc_v2.2_tuner/src
@@ -97,7 +99,7 @@ The executables will appear in $(PREFIX)/bin and libraries in $(PREFIX)/lib.
 The modules remain in the src directory.
 
 If you're using dmake or GNU make and have a fast parallel machine, 
-parallel builds should work as well. 
+parallel builds should work as well.
 
 E.g. for 3 threads:
 gmake -j 3
@@ -106,7 +108,7 @@ gmake -j 3
 - (1.2) Building for use in a host model:
 -----------------------------------------------------------------------
 Requirements:
-A. and C. as above.
+A. and D. as above.
 
 Build:
 1. and 2. as above.
@@ -171,13 +173,14 @@ make distclean
    Enabling any of these flags may increase runtime considerably.
 
 3. cd ../stats
-   Edit <CASE>_stats.in for each case.  A complete list of all computable
-   statistics is found in statistics.F.  Note that HOC now supports GrADS or
-   NetCDF, but you can only tune using GrADS.
+   Edit a stats file you would like to use.  A complete list of all computable
+   statistics is found in all_stats.in.  Note that HOC now supports GrADS or
+   NetCDF, but you can only use the hoc_tuner using GrADS.
 
 4. $ cd ../standalone.  Edit standalone_<CASE>.in or select a premade one.
 
-5. $ ./run_standalone.bash <CASE>
+5. $ ./run_standalone.bash <CASE> or
+   $ ./run_standalone.bash <CASE> <STATS_FILE>
 
 -----------------------------------------------------------------------
 - (2.2) Executing a restart run:
@@ -252,7 +255,7 @@ Generally:
 Linux Example
 Note that you will need ram disk support compiled into your kernel, which is
 typically the default on most systems.  Linux appears to be less flexible 
-about hen you are allowed to change the ramdisk size.
+about when you are allowed to change the ramdisk size.
 
 1. In grub.conf
    Append to 'kernel' line:
@@ -599,11 +602,7 @@ The compare_runs files:
   on 2004/07/10.
   When enabled, the analytic computation normally
   used for radiation is disabled.  BUGSrad is enabled in the 
-  model/<RUN CASE>_model.in file by setting lbugsrad=.true.
-  Currently,  all cases where bottom_at_sfc is false, including November 11,
-  will give inaccurate results due to our interface's
-  inability to add lower altitude levels.  Other cases appear to give
-  plausible results, comparable with the analytic code.
+  model/<RUN CASE>_model.in file by setting lbugsrad = .true.
 
   BUGSrad allows the output of the following variables:
 
