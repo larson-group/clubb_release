@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.45 2008-04-17 00:08:34 dschanen Exp $
+! $Id: mixing.F,v 1.46 2008-04-19 15:55:42 griffinb Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -26,7 +26,13 @@
 
         public  :: timestep_mixing
 
-        private :: mixing_solve, mixing_lhs
+        private :: mixing_solve, 
+     .             mixing_lhs,
+     .             wpxp_term_ma_lhs,
+     .             wpxp_term_ta_lhs,
+     .             wpxp_term_tp_lhs,
+     .             wpxp_terms_ac_pr2_lhs,
+     .             wpxp_term_pr1_lhs
 
         contains
 !-----------------------------------------------------------------------
@@ -463,9 +469,6 @@
         ! Local Variables
         real, dimension(gr%nnzp) :: a1
 
-        ! Added by Brian for eddy diffusion.
-        real, dimension(3,gr%nnzp) :: diff_lhs_imp
-
         ! wtol_sqd = the square of the minimum threshold on w,
         !     [wtol_sqd] = m^2 s^{-2}.  Vince Larson 11 Mar 2008.
         real :: wtol_sqd
@@ -473,6 +476,10 @@
         ! Indices
         integer :: k, km1, kp1
         integer :: k_xm, k_wpxp
+
+#ifdef STATS
+        real, dimension(3) :: tmp
+#endif /*STATS*/
 
         ! wtol_sqd = the square of the minimum threshold on w,
         !     [wtol_sqd] = m^2 s^{-2}.  Vince Larson 11 Mar 2008.
@@ -526,128 +533,136 @@
           ! Thermodynamic main diagonal [ x xm(k,<t+1>) ]
           lhs(3,k_xm) = 1.0 / dt
 
-          ! Diffusion
-          diff_lhs_imp(kp1diag:km1diag,k)
-     .    = diffusion_mlev( Kw6(k), Kw6(kp1), nu6,
+#ifdef STATS
+          if (lstats_samp) then
+
+          ! Implicit contributions for rtm or wprtp
+          if ( irtm_ma > 0 .or. ithlm_ma > 0 ) then
+            ztscr01(k) = + wmt(k) * (1.0/2.0) * gr%dzt(k)
+            ztscr02(k) = - wmt(k) * (1.0/2.0) * gr%dzt(k)
+          endif ! ma
+
+          if ( irtm_ta > 0 .or. ithlm_ta > 0 ) then
+            ztscr03(k) = + gr%dzt(k)
+            ztscr04(k) = - gr%dzt(k)
+          endif ! ta
+
+          endif
+#endif /*STATS*/
+
+
+          !!!!!***** w'x' *****!!!!!
+
+          ! w'x': Left-hand side (implicit w'x' portion of the code).
+          !
+          ! Momentum subdiagonal (lhs index: 3+2)
+          !         [ x wpxp(k-1,<t+1>) ]
+          ! Thermodynamic subdiagonal (lhs index: 3+1)
+          !         [ x xm(k,<t+1>) ]
+          ! Momentum main diagonal (lhs index: 3)
+          !         [ x wpxp(k,<t+1>) ]
+          ! Thermodynamic superdiagonal (lhs index: 3-1)
+          !         [ x xm(k+1,<t+1>) ]
+          ! Momentum superdiagonal (lhs index: 3-2)
+          !         [ x wpxp(k+1,<t+1>) ]
+
+          ! LHS mean advection (ma) term.
+          lhs((/3-2,3+2/),k_wpxp)
+     .    = lhs((/3-2,3+2/),k_wpxp)
+     .    + wpxp_term_ma_lhs( wmm(k), gr%dzm(k) )
+
+          ! LHS turbulent advection (ta) term.
+          lhs((/3-2,3,3+2/),k_wpxp)
+     .    = lhs((/3-2,3,3+2/),k_wpxp)
+     .    + wpxp_term_ta_lhs( wp2(kp1), wp2(k), wp2(km1), 
+     .                        a1(kp1), a1(k), a1(km1), 
+     .                        wp3(kp1), wp3(k), gr%dzm(k), wtol_sqd )
+
+          ! LHS turbulent production (tp) term.
+          lhs((/3-1,3+1/),k_wpxp)
+     .    = lhs((/3-1,3+1/),k_wpxp)
+     .    + wpxp_term_tp_lhs( wp2(k), gr%dzm(k) )
+
+          ! LHS accumulation (ac) term and pressure term 2 (pr2).
+          lhs(3,k_wpxp)
+     .    = lhs(3,k_wpxp)
+     .    + wpxp_terms_ac_pr2_lhs( C7_Skw_fnc(k), 
+     .                             wmt(kp1), wmt(k), gr%dzm(k) )
+
+          ! LHS pressure term 1 (pr1).
+          lhs(3,k_wpxp)
+     .    = lhs(3,k_wpxp)
+     .    + wpxp_term_pr1_lhs( C6x_Skw_fnc(k), taum(k) )
+
+          ! LHS eddy diffusion term: dissipation term 1 (dp1).
+          lhs((/3-2,3,3+2/),k_wpxp)
+     .    = lhs((/3-2,3,3+2/),k_wpxp)
+     .    + diffusion_mlev( Kw6(k), Kw6(kp1), nu6,
      .                      gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
 
-!         wpxp: mean vertical advection, turbulent transport, time tendency, 
-!         damping and diffusion
-
-          ! Momentum subdiagonal [ x wpxp(k-1,<t+1>) ]
-          !lhs(k_wpxp,3-2)
-          ! Note:  The turbulent advection term, which is
-          !        -d[ a1 * (wp3/wp2) * wpxp ] / dz, still
-          !        keeps the a1 term inside the derivative,
-          !        unlike the wp3 equation and the equations
-          !        in diag_var:  rtp2, thlp2, rtpthlp, up2, 
-          !        vp2, sclrprtp, sclrpthlp, and sclrp2.  Brian.
-          lhs(3+2,k_wpxp)
-     .    = - wmm(k) * (1.0/2.0) * gr%dzm(k)
-     .      - gr%dzm(k)
-     .        * (1.0/2.0) * ( a1(k) + a1(km1) )
-     .        * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*wtol_sqd ) )
-     .      + diff_lhs_imp(3,k)
-
-          ! Momentum main diagonal [ x wpxp(k,<t+1>) ]
-          lhs(3,k_wpxp)
-     .    = + gr%dzm(k)
-     .        * (  (1.0/2.0) * ( a1(kp1) + a1(k) )
-     .           * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*wtol_sqd ) )
-     .          -  (1.0/2.0) * ( a1(k) + a1(km1) )
-     .           * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*wtol_sqd ) )
-     .          )
-     .      + (1.0-C7_Skw_fnc(k)) * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
-!     .      + C6x / taum(k)
-     .      + C6x_Skw_fnc(k) / taum(k)
-     .      + diff_lhs_imp(2,k)
+          ! LHS time tendency.
           if (liter) lhs(3,k_wpxp) = lhs(3,k_wpxp) + 1.0 / dt
-
-          ! Momentum superdiagonal [ x wpxp(k+1,<t+1>) ]
-          !lhs(k_wpxp,3+2)
-          lhs(3-2,k_wpxp)
-     .    = + wmm(k) * (1.0/2.0) * gr%dzm(k)
-     .      + gr%dzm(k)
-     .        * (1.0/2.0) * ( a1(kp1) + a1(k) )
-     .        * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*wtol_sqd ) )
-     .      + diff_lhs_imp(1,k)
-
-!         wpxp: production
-
-          ! Thermodynamic subdiagonal [ x xm(k,<t+1>) ]
-          lhs(3+1,k_wpxp)
-     .    = - wp2(k) * gr%dzm(k)
-
-          ! Thermodynamic superdiagonal [ x xm(k+1,<t+1>) ]
-          lhs(3-1,k_wpxp)
-     .    = + wp2(k) * gr%dzm(k)
 
 #ifdef STATS
           if (lstats_samp) then
 
-            ! Implicit contributions for rtm or wprtp
-            if ( irtm_ma > 0 .or. ithlm_ma > 0 ) then
-              ztscr01(k) = + wmt(k) * (1.0/2.0) * gr%dzt(k)
-              ztscr02(k) = - wmt(k) * (1.0/2.0) * gr%dzt(k)
-            end if ! ma
+          ! Statistics: implicit contributions for wprtp or wpthlp.
 
-            if ( irtm_ta > 0 .or. ithlm_ta > 0 ) then
-              ztscr03(k) = + gr%dzt(k)
-              ztscr04(k) = - gr%dzt(k)
-            end if ! ta
+          if ( iwprtp_ma > 0 .or. iwpthlp_ma > 0 ) then
+            tmp(1:2) =
+     .      + wpxp_term_ma_lhs( wmm(k), gr%dzm(k) )
+            zmscr01(k) = - tmp(2)
+            zmscr02(k) = - tmp(1)
+          endif ! ma
 
-            ! Implicit contributions for wprtp or wpthlp
-            if ( iwprtp_ma > 0 .or. iwpthlp_ma > 0 ) then
-              zmscr01(k) = + wmm(k) * (1.0/2.0) * gr%dzm(k)
-              zmscr02(k) = - wmm(k) * (1.0/2.0) * gr%dzm(k)
-            end if ! ma
+          if ( iwprtp_ta > 0 .or. iwpthlp_ta > 0 ) then
+            tmp(1:3) =
+     .      + wpxp_term_ta_lhs( wp2(kp1), wp2(k), wp2(km1),
+     .                          a1(kp1), a1(k), a1(km1),
+     .                          wp3(kp1), wp3(k), gr%dzm(k), wtol_sqd )
+            zmscr03(k) = - tmp(3)
+            zmscr04(k) = - tmp(2)
+            zmscr05(k) = - tmp(1)
+          endif ! ta
 
-            if ( iwprtp_ta > 0 .or. iwpthlp_ta > 0 ) then
-            zmscr03(k) =
-     .        + gr%dzm(k)
-     .          * (1.0/2.0) * ( a1(k) + a1(km1) )
-     .          * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*wtol_sqd ) )
-            zmscr04(k) = 
-     .        - gr%dzm(k)
-     .          * (  (1.0/2.0) * ( a1(kp1) + a1(k) )
-     .           * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*wtol_sqd ) )
-     .            -  (1.0/2.0) * ( a1(k) + a1(km1) )
-     .           * ( wp3(k) / MAX( wp2(km1) + wp2(k), 2.0*wtol_sqd ) )
-     .            )
-            zmscr05(k) = 
-     .        - gr%dzm(k)
-     .          * (1.0/2.0) * ( a1(kp1) + a1(k) )
-     .          * ( wp3(kp1) / MAX( wp2(k) + wp2(kp1), 2.0*wtol_sqd ) )
-            end if ! ta
+          if ( iwprtp_tp > 0 .or. iwpthlp_tp > 0 ) then
+            tmp(1:2) =
+     .      + wpxp_term_tp_lhs( wp2(k), gr%dzm(k) )
+            zmscr06(k) = - tmp(2)
+            zmscr07(k) = - tmp(1)
+          endif
 
-            if ( iwprtp_tp > 0 .or. iwpthlp_tp > 0 ) then
-              zmscr06(k) = + wp2(k) * gr%dzm(k)
-              zmscr07(k) = - wp2(k) * gr%dzm(k)
-            end if
+          if ( iwprtp_ac > 0 .or. iwpthlp_ac > 0 ) then
+            zmscr08(k) = 
+     .      - wpxp_terms_ac_pr2_lhs( 0.0,
+     .                               wmt(kp1), wmt(k), gr%dzm(k) )
+          endif
 
-            if ( iwprtp_ac > 0 .or. iwpthlp_ac > 0 ) then
-              zmscr08(k) = - 1.0 * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
-            end if
+          if ( iwprtp_pr1 > 0 .or. iwpthlp_pr1 > 0 ) then
+            zmscr09(k) =
+     .      - wpxp_term_pr1_lhs( C6x_Skw_fnc(k), taum(k) )
+          endif ! pr1
 
-            if ( iwprtp_pr1 > 0 .or. iwpthlp_pr1 > 0 ) then
-!               zmscr09(k) = - C6x / taum(k)
-                zmscr09(k) = - C6x_Skw_fnc(k) / taum(k)
-            end if ! pr1
+          if ( iwprtp_pr2 > 0 .or. iwpthlp_pr2 > 0 ) then
+            zmscr10(k) =
+     .      - wpxp_terms_ac_pr2_lhs( (1.0+C7_Skw_fnc(k)),
+     .                               wmt(kp1), wmt(k), gr%dzm(k) )
+          endif
 
-            if ( iwprtp_pr2 > 0 .or. iwpthlp_pr2 > 0 ) then
-              zmscr10(k) = + C7_Skw_fnc(k) 
-     .                       * gr%dzm(k) * ( wmt(kp1) - wmt(k) )
-            end if
+          if ( iwprtp_dp1 > 0 .or. iwpthlp_dp1 > 0 ) then
+            tmp(1:3) =
+     .      + diffusion_mlev( Kw6(k), Kw6(kp1), nu6,
+     .                        gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+            zmscr11(k) = - tmp(3)
+            zmscr12(k) = - tmp(2)
+            zmscr13(k) = - tmp(1)
+          endif
 
-            if ( iwprtp_dp1 > 0 .or. iwpthlp_dp1 > 0 ) then
-              zmscr11(k) = - diff_lhs_imp(3,k)
-              zmscr12(k) = - diff_lhs_imp(2,k)
-              zmscr13(k) = - diff_lhs_imp(1,k)
-            end if
+          endif
+#endif /*STATS*/
 
-          end if
-#endif
-        end do ! 2..gr%nnzp-1
+        enddo ! 2..gr%nnzp-1
+
 
         ! Boundary condition for the mean and flux
 
@@ -1123,5 +1138,403 @@
 
         return
         end subroutine mixing_solve
+
+!===============================================================================
+        pure function wpxp_term_ma_lhs( wmm, dzm )
+     .  result( lhs )
+
+!       Description:
+!       Mean advection of w'x': implicit portion of the code.
+!
+!       The d(w'x')/dt equation contains a mean advection term:
+!
+!       - w * d(w'x')/dz.
+!
+!       This term is solved for completely implicitly, such that:
+!
+!       - w * d( w'x'(t+1) )/dz.
+!
+!       Note:  When the term is brought over to the left-hand side, the
+!              sign is reversed and the leading "-" in front of the
+!              term is changed to a "+".
+!
+!       The timestep index (t+1) means that the value of w'x' being used
+!       is from the timestep being advanced to.
+!
+!       This term is discretized as follows:
+!
+!       The values of w'x' are found on the momentum levels, as are the
+!       values of wmm (mean vertical velocity on momentum levels).
+!       The variable w'x' is interpolated to the intermediate
+!       thermodynamic levels.  The derivative of the interpolated values
+!       is taken over the central momentum level.  The derivative
+!       is multiplied by wmm at the central momentum level to get
+!       the desired result.
+!
+!       ==========wpxpp1========================================= m(k+1)
+!
+!       -------------------wpxp(interp)-------------------------- t(k+1)
+!
+!       ==========wpxp====================d(wpxp)/dz=======wmm=== m(k)
+!
+!       -------------------wpxp(interp)-------------------------- t(k)
+!
+!       ==========wpxpm1========================================= m(k-1)
+!
+!       The vertical indices m(k+1), t(k+1), m(k), t(k), and m(k-1)
+!       correspond with altitudes zm(k+1), zt(k+1), zm(k), zt(k),
+!       and zm(k-1), respectively.  The letter "t" is used for
+!       thermodynamic levels and the letter "m" is used for momentum
+!       levels.
+!
+!       dzm(k) = 1 / ( zt(k+1) - zt(k) )
+
+!       References:
+!-----------------------------------------------------------------------
+
+        implicit none
+
+        ! Constant parameters
+        integer, parameter ::
+     .  kp1_mdiag = 1,   ! Momentum superdiagonal index.
+     .  km1_mdiag = 2    ! Momentum subdiagonal index.
+
+        ! Input Variables
+        real, intent(in) ::
+     .  wmm,  ! wmm(k)                        [m/s]
+     .  dzm   ! Inverse of grid spacing (k)   [1/m]
+
+        ! Return Variable
+        real, dimension(2) :: lhs
+
+        ! Momentum superdiagonal: [ x wpxp(k+1,<t+1>) ]
+        lhs(kp1_mdiag)
+     .  = + wmm * (1.0/2.0) * dzm
+
+        ! Momentum subdiagonal: [ x wpxp(k-1,<t+1>) ]
+        lhs(km1_mdiag)
+     .  = - wmm * (1.0/2.0) * dzm
+
+        return
+        end function wpxp_term_ma_lhs
+
+!===============================================================================
+        pure function wpxp_term_ta_lhs( wp2p1, wp2, wp2m1, 
+     .                                  a1p1, a1, a1m1, 
+     .                                  wp3p1, wp3, dzm, wtol_sqd )
+     .  result( lhs )
+
+!       Description:
+!       Turbulent advection of w'x':  implicit portion of the code.
+!
+!       The d(w'x')/dt equation contains a turbulent advection term:
+!
+!       - d(w'^2x')/dz.
+!
+!       A substitution is made in order to close the turbulent advection
+!       term, such that:
+!
+!       w'^2x' = a_1 * ( w'^3 / w'^2 ) * w'x',
+!
+!       where a_1 is a variable that is a function of Sc.  The turbulent
+!       advection term becomes:
+!
+!       - d [ a_1 * ( w'^3 / w'^2 ) * w'x' ] / dz.
+!
+!       This term is solved for completely implicitly, such that:
+!
+!       - d [ a_1 * ( w'^3 / w'^2 ) * w'x'(t+1) ] / dz.
+!
+!       Note:  When the term is brought over to the left-hand side, the
+!              sign is reversed and the leading "-" in front of the
+!              term is changed to a "+".
+!
+!       The timestep index (t+1) means that the value of w'x' being used
+!       is from the timestep being advanced to.
+!
+!       This term is discretized as follows:
+!
+!       The values of w'x', w'^2, and a_1 are found on the momentum 
+!       levels, while the values of w'^3 are found on the thermodynamic 
+!       levels.  Each of the variables w'x', w'^2, and a_1 are 
+!       interpolated to the intermediate thermodynamic levels.  The 
+!       values of the mathematical expression (called Y here) within the
+!       dY/dz term are computed on the thermodynamic levels.  Then, the
+!       derivative (d/dz) of the expression (Y) is taken over the 
+!       central momentum level, yielding the desired result.
+!       In this function, the values of Y are as follows:
+!
+!       Y = a_l * ( w'^3 / w'^2 ) * w'x'(t+1).
+!
+!
+!       =a1p1========wp2p1========wpxpp1========================= m(k+1)
+!
+!       -----a1(interp)---wp2(interp)---wpxp(interp)---wp3p1----- t(k+1)
+!
+!       =a1==========wp2==========wpxp===================dY/dz=== m(k)
+!
+!       -----a1(interp)---wp2(interp)---wpxp(interp)---wp3------- t(k)
+!
+!       =a1m1========wp2m1========wpxpm1========================= m(k-1)
+!
+!       The vertical indices m(k+1), t(k+1), m(k), t(k), and m(k-1)
+!       correspond with altitudes zm(k+1), zt(k+1), zm(k), zt(k),
+!       and zm(k-1), respectively.  The letter "t" is used for
+!       thermodynamic levels and the letter "m" is used for momentum
+!       levels.
+!
+!       dzm(k) = 1 / ( zt(k+1) - zt(k) )
+
+!       References:
+!-----------------------------------------------------------------------
+
+        implicit none
+
+        ! Constant parameters
+        integer, parameter ::
+     .  kp1_mdiag = 1,   ! Momentum superdiagonal index.
+     .  k_mdiag   = 2,   ! Momentum main diagonal index.
+     .  km1_mdiag = 3    ! Momentum subdiagonal index.
+
+        ! Input Variables
+        real, intent(in) ::
+     .  wp2p1,   ! w'^2(k+1)                     [m^2/s^2]
+     .  wp2,     ! w'^2(k)                       [m^2/s^2]
+     .  wp2m1,   ! w'^2(k-1)                     [m^2/s^2]
+     .  a1p1,    ! a1(k+1)                       [-]
+     .  a1,      ! a1(k)                         [-]
+     .  a1m1,    ! a1(k-1)                       [-]
+     .  wp3p1,   ! w'^3(k+1)                     [m^3/s^3]
+     .  wp3,     ! w'^3(k)                       [m^3/s^3]
+     .  dzm,     ! Inverse of grid spacing (k)   [1/m]
+     .  wtol_sqd ! Model parameter wtol^2        [m^2/s^2]
+
+        ! Return Variable
+        real, dimension(3) :: lhs
+
+        ! Momentum superdiagonal: [ x wpxp(k+1,<t+1>) ]
+        lhs(kp1_mdiag)
+     .  = + dzm
+     .      * (1.0/2.0) * ( a1p1 + a1 )
+     .      * ( wp3p1 / MAX( wp2 + wp2p1, 2.0*wtol_sqd ) )
+
+        ! Momentum main diagonal: [ x wpxp(k,<t+1>) ]
+        lhs(k_mdiag)
+     .  = + dzm
+     .      * (   (1.0/2.0) * ( a1p1 + a1 )
+     .            * ( wp3p1 / MAX( wp2 + wp2p1, 2.0*wtol_sqd ) )
+     .          -  (1.0/2.0) * ( a1 + a1m1 )
+     .            * ( wp3 / MAX( wp2m1 + wp2, 2.0*wtol_sqd ) )
+     .        )
+
+        ! Momentum subdiagonal: [ x wpxp(k-1,<t+1>) ]
+        lhs(km1_mdiag)
+     .  = - dzm
+     .      * (1.0/2.0) * ( a1 + a1m1 )
+     .      * ( wp3 / MAX( wp2m1 + wp2, 2.0*wtol_sqd ) )
+
+        return
+        end function wpxp_term_ta_lhs
+
+!===============================================================================
+        pure function wpxp_term_tp_lhs( wp2, dzm )
+     .  result( lhs )
+
+!       Description:
+!       Turbulent production of w'x':  implicit portion of the code.
+!
+!       The d(w'x')/dt equation contains a turbulent production term:
+!
+!       - w'^2 d(x)/dz.
+!
+!       This term is solved for completely implicitly, such that:
+!
+!       - w'^2 * d( x(t+1) )/dz.
+!
+!       Note:  When the term is brought over to the left-hand side, the
+!              sign is reversed and the leading "-" in front of the
+!              term is changed to a "+".
+!
+!       The timestep index (t+1) means that the value of x being used
+!       is from the timestep being advanced to.
+!
+!       This term is discretized as follows:
+!
+!       The values of x are found on thermodynamic levels, while the
+!       values of w'^2 are found on momentum levels.  The derivative of
+!       x is taken over the intermediate (central) momentum level, where
+!       it is multiplied by w'^2, yielding the desired result.
+!
+!       ---------------------------xmp1-------------------------- t(k+1)
+!
+!       ==========wp2=====================d(xm)/dz=============== m(k)
+!
+!       ---------------------------xm---------------------------- t(k)
+!
+!       The vertical indices t(k+1), m(k), and t(k) correspond with 
+!       altitudes zt(k+1), zm(k), and zt(k), respectively.  The letter 
+!       "t" is used for thermodynamic levels and the letter "m" is used 
+!       for momentum levels.
+!
+!       dzm(k) = 1 / ( zt(k+1) - zt(k) )
+
+!       References:
+!-----------------------------------------------------------------------
+
+        implicit none
+
+        ! Constant parameters
+        integer, parameter ::
+     .  kp1_tdiag = 1,   ! Thermodynamic superdiagonal index.
+     .  k_tdiag = 2      ! Thermodynamic subdiagonal index.
+
+        ! Input Variables
+        real, intent(in) ::
+     .  wp2,   ! w'^2(k)                       [m^2/s^2]
+     .  dzm    ! Inverse of grid spacing (k)   [1/m]
+
+        ! Return Variable
+        real, dimension(2) :: lhs
+
+        ! Thermodynamic superdiagonal [ x xm(k+1,<t+1>) ]
+        lhs(kp1_tdiag)
+     .  = + wp2 * dzm
+
+        ! Thermodynamic subdiagonal [ x xm(k,<t+1>) ]
+        lhs(k_tdiag)
+     .  = - wp2 * dzm
+
+        return
+        end function wpxp_term_tp_lhs
+
+!===============================================================================
+        pure function wpxp_terms_ac_pr2_lhs( C7_Skw_fnc, 
+     .                                       wmtp1, wmt, dzm )
+     .  result( lhs )
+
+!       Description:
+!       Accumulation of w'x' and w'x' pressure term 2:
+!       implicit portion of the code.
+!
+!       The d(w'x')/dt equation contains an accumulation term:
+!
+!       - w'x' dw/dz,
+!
+!       and pressure term 2:
+!
+!       + C_7 w'x' dw/dz.
+!
+!       Both the w'x' accumulation term and pressure term 2 are 
+!       completely implicit.  The accumulation term and pressure term 2
+!       are combined and solved together as:
+!
+!       - ( 1 - C_7 ) * w'x'(t+1) * dw/dz.
+!
+!       Note:  When the term is brought over to the left-hand side, the
+!              sign is reversed and the leading "-" in front of the 
+!              term is changed to a "+".
+!
+!       The timestep index (t+1) means that the value of w'x' being used
+!       is from the timestep being advanced to.
+!
+!       The terms are discretized as follows:
+!
+!       The values of w'x' are found on momentum levels, while the values
+!       of wmt (mean vertical velocity on thermodynamic levels) are found
+!       on thermodynamic levels.  The vertical derivative of wmt is
+!       taken over the intermediate (central) momentum level.  It is then
+!       multiplied by w'x' (implicitly calculated at timestep (t+1)) and
+!       the coefficients to yield the desired results.
+!
+!       -------wmtp1--------------------------------------------- t(k+1)
+!
+!       ===============d(wmt)/dz============wpxp================= m(k)
+!
+!       -------wmt----------------------------------------------- t(k)
+!
+!       The vertical indices t(k+1), m(k), and t(k) correspond with
+!       altitudes zt(k+1), zm(k), and zt(k), respectively.  The letter
+!       "t" is used for thermodynamic levels and the letter "m" is used
+!       for momentum levels.
+!
+!       dzm(k) = 1 / ( zt(k+1) - zt(k) )
+
+!       References:
+!-----------------------------------------------------------------------
+
+        implicit none
+
+        ! Constant parameters
+        integer, parameter ::
+     .  k_mdiag   = 1    ! Momentum main diagonal index.
+
+        ! Input Variables
+        real, intent(in) ::
+     .  C7_Skw_fnc, ! C_7 parameter with Sk_w applied (k)   [-]
+     .  wmtp1,      ! wmt(k+1)                              [m/s]
+     .  wmt,        ! wmt(k)                                [m/s]
+     .  dzm         ! Inverse of grid spacing (k)           [1/m]
+
+        ! Return Variable
+        real :: lhs
+
+        ! Momentum main diagonal: [ x wpxp(k,<t+1>) ]
+        lhs
+     .  = + ( 1.0 - C7_Skw_fnc ) * dzm * ( wmtp1 - wmt )
+
+        return
+        end function wpxp_terms_ac_pr2_lhs
+
+!===============================================================================
+        pure function wpxp_term_pr1_lhs( C6x_Skw_fnc, taum )
+     .  result( lhs )
+
+!       Description
+!       Pressure term 1 for w'x': implicit portion of the code.
+!
+!       The d(w'x')/dt equation contains pressure term 1:
+!
+!       - ( C_6 / tau_m ) w'x'.
+!
+!       This term is solved for completely implicitly, such that:
+!
+!       - ( C_6 / tau_m ) w'x'(t+1)
+!
+!       Note:  When the term is brought over to the left-hand side, the
+!              sign is reversed and the leading "-" in front of the
+!              term is changed to a "+".
+!
+!       The timestep index (t+1) means that the value of w'x' being used
+!       is from the timestep being advanced to.
+!
+!       The values of w'x' are found on momentum levels.  The values of
+!       the C_6 skewness function and time-scale taum are also found on
+!       momentum levels.
+
+!       References:
+!-----------------------------------------------------------------------
+
+        implicit none
+
+        ! Constant parameters
+        integer, parameter ::
+     .  k_mdiag   = 1    ! Momentum main diagonal index.
+
+        ! Input Variables
+        real, intent(in) ::
+     .  C6x_Skw_fnc, ! C_6x parameter with Sk_w applied (k)   [-]
+     .  taum         ! Time-scale tau at momentum levels (k)  [s]
+
+        ! Return Variable
+        real :: lhs
+
+        ! Momentum main diagonal: [ x wpxp(k,<t+1>) ]
+        lhs
+     .  = + C6x_Skw_fnc / taum
+
+        return
+        end function wpxp_term_pr1_lhs
+
+!===============================================================================
 
         end module mixing
