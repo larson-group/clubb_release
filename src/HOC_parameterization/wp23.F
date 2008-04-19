@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.52 2008-04-17 15:49:42 griffinb Exp $
+! $Id: wp23.F,v 1.53 2008-04-19 23:08:19 griffinb Exp $
 !===============================================================================
         module wp23
 
@@ -345,8 +345,8 @@
      .  solut ! Solution to band diagonal system.
 
         real, dimension(gr%nnzp) :: 
-     .  a1, ! a1; See eqn. 24 in `Equations for HOC'           [-]
-     .  a3  ! a3; See eqn. 26 in `Equations for HOC'           [-]
+     .  a1, ! a_1; See eqn. 24 in `Equations for HOC'          [-]
+     .  a3  ! a_3; See eqn. 26 in `Equations for HOC'          [-]
 
         real :: 
      .  rcond  ! Est. of the reciprocal of the condition #
@@ -616,7 +616,6 @@
         end subroutine wp23_solve
 
 !===============================================================================
-
         subroutine wp23_lhs( dt, wp2, wp3, wmm, wmt, a1, a3, Kw1, 
      .                       Kw8, Skwt, tau1m, tauw3t, C1_Skw_fnc, 
      .                       C11_Skw_fnc, lcrank_nich_diff, lhs )
@@ -1453,7 +1452,7 @@
 !
 !       and pressure term 2:
 !
-!       - C_5 ( -2 w'^2 dw/dz + 2 (g/th_0) w'th_v' )
+!       - C_5 ( -2 w'^2 dw/dz + 2 (g/th_0) w'th_v' ).
 !
 !       The w'^2 accumulation term is completely implicit, while w'^2
 !       pressure term 2 has both implicit and explicit components.  The
@@ -1475,7 +1474,7 @@
 !       of wmt (mean vertical velocity on thermodynamic levels) are found
 !       on thermodynamic levels.  The vertical derivative of wmt is 
 !       taken over the intermediate (central) momentum level.  It is then 
-!       multiplied by w^'2 (implicitly calculated at timestep (t+1)) and 
+!       multiplied by w'^2 (implicitly calculated at timestep (t+1)) and 
 !       the coefficients to yield the desired results.
 !
 !       -------wmtp1--------------------------------------------- t(k+1)
@@ -1526,11 +1525,11 @@
 !
 !       The d(w'^2)/dt equation contains dissipation term 1:
 !
-!       - ( C1_Skw_fnc / tau_1m ) w'^2
+!       - ( C_1 / tau_1m ) w'^2.
 !
 !       This term is solved for completely implicitly, such that:
 !
-!       - ( C1_Skw_fnc / tau_1m ) w'^2(t+1)
+!       - ( C_1 / tau_1m ) w'^2(t+1).
 !
 !       Note:  When the term is brought over to the left-hand side, the
 !              sign is reversed and the leading "-" in front of the
@@ -1576,19 +1575,19 @@
 !
 !       The d(w'^2)/dt equation contains pressure term 1:
 !
-!       - ( C4 / tau_1m ) * ( w'^2 - (2/3)*em ),
+!       - ( C_4 / tau_1m ) * ( w'^2 - (2/3)*em ),
 !
 !       where em = (1/2) * ( w'^2 + u'^2 + v'^2 ).
 !
 !       This simplifies to:
 !
-!       - ( C4 / tau_1m ) * (2/3) * w'^2 
-!          + ( C4 / tau_1m ) * (1/3) * ( u'^2 + v'^2 )
+!       - ( C_4 / tau_1m ) * (2/3) * w'^2 
+!          + ( C_4 / tau_1m ) * (1/3) * ( u'^2 + v'^2 ).
 !
 !       Pressure term 1 has both implicit and explicit components.  The
 !       implicit portion is:
 !
-!       - ( C4 / tau_1m ) * (2/3) * w'^2(t+1);
+!       - ( C_4 / tau_1m ) * (2/3) * w'^2(t+1);
 !
 !       and is computed in this function.
 !
@@ -1640,14 +1639,14 @@
 !
 !       and pressure term 2:
 !
-!       - C_5 ( -2 w'^2 dw/dz + 2 (g/th_0) w'th_v' )
+!       - C_5 ( -2 w'^2 dw/dz + 2 (g/th_0) w'th_v' ).
 !
 !       The w'^2 buoyancy production term is completely explicit, while 
 !       w'^2 pressure term 2 has both implicit and explicit components.  
 !       The buoyancy production term and the explicit portion of pressure
 !       term 2 are combined and solved together as:
 !
-!       + ( 1 - C_5 ) ( 2 (g/th_0) w'th_v' )
+!       + ( 1 - C_5 ) ( 2 (g/th_0) w'th_v' ).
 
 !       References:
 !-----------------------------------------------------------------------
@@ -1758,19 +1757,19 @@
 !
 !       The d(w'^2)/dt equation contains pressure term 1:
 !
-!       - ( C4 / tau_1m ) * ( w'^2 - (2/3)*em ),
+!       - ( C_4 / tau_1m ) * ( w'^2 - (2/3)*em ),
 !
 !       where em = (1/2) * ( w'^2 + u'^2 + v'^2 ).
 !
 !       This simplifies to:
 !
-!       - ( C4 / tau_1m ) * (2/3) * w'^2 
-!          + ( C4 / tau_1m ) * (1/3) * ( u'^2 + v'^2 )
+!       - ( C_4 / tau_1m ) * (2/3) * w'^2 
+!          + ( C_4 / tau_1m ) * (1/3) * ( u'^2 + v'^2 ).
 !
 !       Pressure term 1 has both implicit and explicit components.  The
 !       explicit portion is:
 !
-!       + ( C4 / tau_1m ) * (1/3) * ( u'^2 + v'^2 )
+!       + ( C_4 / tau_1m ) * (1/3) * ( u'^2 + v'^2 );
 !
 !       and is computed in this function.
 !
@@ -1920,7 +1919,7 @@
 !       The implicit portion of these terms is:
 !
 !       - d [ a_3 * 2 * w'^2(t) * w'^2(t+1) ] / dz
-!          - d [ a_1 * ( 2 * w'^3(t) * w'^3(t+1) ) / w'^2(t) ] / dz;
+!          - d [ a_1 * ( 2 * w'^3(t) * w'^3(t+1) ) / w'^2(t) ] / dz.
 !
 !       Note:  When the term is brought over to the left-hand side, the
 !              sign is reversed and the leading "-" in front of both 
@@ -1985,10 +1984,10 @@
      .  wp3m1,   ! w'^3(k-1)                     [m^3/s^3]
      .  wp2,     ! w'^2(k)                       [m^2/s^2]
      .  wp2m1,   ! w'^2(k-1)                     [m^2/s^2]
-     .  a1,      ! a1(k)                         [-]
-     .  a1m1,    ! a1(k-1)                       [-]
-     .  a3,      ! a3(k)                         [-]
-     .  a3m1,    ! a3(k-1)                       [-]
+     .  a1,      ! a_1(k)                        [-]
+     .  a1m1,    ! a_1(k-1)                      [-]
+     .  a3,      ! a_3(k)                        [-]
+     .  a3m1,    ! a_3(k-1)                      [-]
      .  dzt,     ! Inverse of grid spacing (k)   [1/m]
      .  eps,     ! Model parameter               [-]
      .  wtol     ! Model parameter               [m/s]
@@ -2070,7 +2069,7 @@
 !
 !       and pressure term 2:
 !
-!       - C_11 ( -3 w'^3 dw/dz + 3 (g/th_0) w'^2th_v' )
+!       - C_11 ( -3 w'^3 dw/dz + 3 (g/th_0) w'^2th_v' ).
 !
 !       The w'^3 accumulation term is completely implicit, while w'^3
 !       pressure term 2 has both implicit and explicit components.  The
@@ -2092,7 +2091,7 @@
 !       values of wmm (mean vertical velocity on momentum levels) are 
 !       found on momentum levels.  The vertical derivative of wmm is 
 !       taken over the intermediate (central) thermodynamic level.  It
-!       is then multiplied by w^'3 (implicitly calculated at timestep 
+!       is then multiplied by w'^3 (implicitly calculated at timestep 
 !       (t+1)) and the coefficients to yield the desired results.
 !
 !       =======wmm=============================================== m(k)
@@ -2146,7 +2145,7 @@
 !
 !       - (C_8/tau_w3t) * ( C_8b * Sk_wt^4 + 1 ) * w'^3;
 !
-!       where Sk_wt = w^'3 / (w'^2)^(3/2). 
+!       where Sk_wt = w'^3 / (w'^2)^(3/2). 
 !
 !       This term needs to be linearized, such that:
 !
@@ -2155,13 +2154,13 @@
 !       and the term becomes:
 !
 !       + L( w'^3(t) ) 
-!          + ( d L(w'^3) / d w'^3 ) * ( w'^3(t+1) - w'^3(t) )
+!          + ( d L(w'^3) / d w'^3 ) * ( w'^3(t+1) - w'^3(t) ).
 !
 !       After the term has been linearized, it is broken down into 
 !       implicit (LHS) and explicit (RHS) components.
 !       The implicit portion is:
 !
-!       - (C_8/tau_w3t) * ( 5 * C_8b * Sk_wt^4 + 1 ) * w'^3(t+1);
+!       - (C_8/tau_w3t) * ( 5 * C_8b * Sk_wt^4 + 1 ) * w'^3(t+1).
 !       
 !       Note:  When the term is brought over to the left-hand side, the
 !              sign is reversed and the leading "-" in front of the 
@@ -2245,7 +2244,7 @@
 !       The explicit portion of these terms is:
 !
 !       + d [ a_3 * ( w'^2(t) )^2 ] / dz
-!          + d [ a_1 * ( w'^3(t) )^2 / w'^2(t) ] / dz;
+!          + d [ a_1 * ( w'^3(t) )^2 / w'^2(t) ] / dz.
 !
 !       Timestep index (t) stands for the index of the current timestep 
 !       and timestep index (t+1) stands for the index of the timestep 
@@ -2298,10 +2297,10 @@
      .  wp3m1,   ! w'^3(k-1)                     [m^3/s^3]
      .  wp2,     ! w'^2(k)                       [m^2/s^2]
      .  wp2m1,   ! w'^2(k-1)                     [m^2/s^2]
-     .  a1,      ! a1(k)                         [-]
-     .  a1m1,    ! a1(k-1)                       [-]
-     .  a3,      ! a3(k)                         [-]
-     .  a3m1,    ! a3(k-1)                       [-]
+     .  a1,      ! a_1(k)                        [-]
+     .  a1m1,    ! a_1(k-1)                      [-]
+     .  a3,      ! a_3(k)                        [-]
+     .  a3m1,    ! a_3(k-1)                      [-]
      .  dzt,     ! Inverse of grid spacing (k)   [1/m]
      .  eps,     ! Model parameter               [-]
      .  wtol     ! Model parameter               [m/s]
@@ -2358,18 +2357,18 @@
 !
 !       The d(w'^3)/dt equation contains a buoyancy production term:
 !
-!       + 3 (g/th_0) w'^2th_v'
+!       + 3 (g/th_0) w'^2th_v';
 !
 !       and pressure term 2:
 !
-!       - C_11 ( -3 w'^3 dw/dz + 3 (g/th_0) w'^2th_v' )
+!       - C_11 ( -3 w'^3 dw/dz + 3 (g/th_0) w'^2th_v' ).
 !
 !       The w'^3 buoyancy production term is completely explicit, while
 !       w'^3 pressure term 2 has both implicit and explicit components. 
 !       The buoyancy production term and the explicit portion of pressure
 !       term 2 are combined and solved together as:
 !
-!       + ( 1 - C_ll ) ( 3 (g/th_0) w'^2th_v' )
+!       + ( 1 - C_ll ) ( 3 (g/th_0) w'^2th_v' ).
 
 !       References:
 !-----------------------------------------------------------------------
@@ -2404,7 +2403,7 @@
 !
 !       - (C_8/tau_w3t) * ( C_8b * Sk_wt^4 + 1 ) * w'^3;
 !
-!       where Sk_wt = w^'3 / (w'^2)^(3/2). 
+!       where Sk_wt = w'^3 / (w'^2)^(3/2). 
 !
 !       This term needs to be linearized, such that:
 !
@@ -2413,13 +2412,13 @@
 !       and the term becomes:
 !
 !       + L( w'^3(t) ) 
-!          + ( d L(w'^3) / d w'^3 ) * ( w'^3(t+1) - w'^3(t) )
+!          + ( d L(w'^3) / d w'^3 ) * ( w'^3(t+1) - w'^3(t) ).
 !
 !       After the term has been linearized, it is broken down into 
 !       implicit (LHS) and explicit (RHS) components.
 !       The explicit portion is:
 !
-!       + (C_8/tau_w3t) * ( 4 * C_8b * Sk_wt^4 + 1 ) * w'^3(t);
+!       + (C_8/tau_w3t) * ( 4 * C_8b * Sk_wt^4 + 1 ) * w'^3(t).
 !
 !       Timestep index (t) stands for the index of the current timestep 
 !       and timestep index (t+1) stands for the index of the timestep 
