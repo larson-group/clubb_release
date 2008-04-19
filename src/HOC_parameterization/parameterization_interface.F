@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.82 2008-04-12 23:47:43 griffinb Exp $
+! $Id: parameterization_interface.F,v 1.83 2008-04-19 22:42:10 griffinb Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -544,20 +544,17 @@
        ! Advance rtm/wprtp and thlm/wpthlp one time step
        !----------------------------------------------------------------
 
-       call timestep_mixing
-     .      ( dt, taum, wmm, wmt, wp2, wp3, Scm, Skwm, Kht, 
-     .        rtm, wprtp, rtpthvp, rtm_forcing,
-     .        thlm, wpthlp, thlpthvp, thlm_forcing, 
-     .        rtp2, thlp2, ! Added for clipping Vince Larson 29 Sep 2007
-     .        rhot, rhom, exner, 
-     .        err_code, implemented  
-
+        call timestep_mixing( dt, Scm, wmm, wmt, wp2, wp3,
+     .                        Kht, taum, Skwm, rtpthvp,
+     .                        rtm_forcing, thlpthvp,
+     .                        thlm_forcing, rtp2, thlp2,
+     .                        rtm, wprtp, thlm, wpthlp,
+     .                        implemented, err_code
 #ifdef SCALARS
-     .       ,sclrm, wpsclrp, sclrpthvp, sclrm_forcing   ! optional
-     .       ,sclrp2  ! For clipping Vince Larson 20070929
+     .                        ,sclrpthvp, sclrm_forcing    ! optional
+     .                        ,sclrp2, sclrm, wpsclrp      ! optional 
 #endif /* SCALARS */
-     .      )
-
+     .                      )
 
        ! Wrapped LAPACK procedures may report errors, and if so, exit
        ! gracefully.

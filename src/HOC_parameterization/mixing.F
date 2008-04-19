@@ -1,11 +1,11 @@
-!-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.46 2008-04-19 15:55:42 griffinb Exp $
+!===============================================================================
+! $Id: mixing.F,v 1.47 2008-04-19 22:42:10 griffinb Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
 #define SCLR_RT 2
 
-!-----------------------------------------------------------------------
+!===============================================================================
         module mixing
 
 !       Description:
@@ -26,25 +26,30 @@
 
         public  :: timestep_mixing
 
-        private :: mixing_solve, 
-     .             mixing_lhs,
+        private :: mixing_lhs,
+     .             mixing_rhs,
+     .             mixing_solve,
+     .             xm_term_ma_lhs,
+     .             xm_term_ta_lhs,
      .             wpxp_term_ma_lhs,
      .             wpxp_term_ta_lhs,
      .             wpxp_term_tp_lhs,
      .             wpxp_terms_ac_pr2_lhs,
-     .             wpxp_term_pr1_lhs
+     .             wpxp_term_pr1_lhs,
+     .             wpxp_terms_bp_pr3_rhs
 
         contains
-!-----------------------------------------------------------------------
-        subroutine timestep_mixing
-     .             ( dt, taum, wmm, wmt, wp2, wp3, Scm, Skwm, Kht,
-     .               rtm, wprtp, rtpthvp, rtm_forcing,
-     .               thlm, wpthlp, thlpthvp, thlm_forcing,
-     .               rtp2, thlp2, ! Added for clipping Vince Larson 20070929
-     .               rhot, rhom, exner, 
-     .               err_code, implemented,
-     .               sclrm, wpsclrp, sclrpthvp, sclrm_forcing,
-     .               sclrp2 )     ! Added for clipping Vince Larson 20070929
+
+!===============================================================================
+        subroutine timestep_mixing( dt, Scm, wmm, wmt, wp2, wp3,
+     .                              Kht, taum, Skwm, rtpthvp, 
+     .                              rtm_forcing, thlpthvp, 
+     .                              thlm_forcing, rtp2, thlp2,
+     .                              rtm, wprtp, thlm, wpthlp,
+     .                              implemented, err_code,
+     .                              sclrpthvp, sclrm_forcing,
+     .                              sclrp2, sclrm, wpsclrp )
+
 !       Description:
 !       Advance the mean and flux terms by one timestep.
 
@@ -58,13 +63,15 @@
 !       ``Equations for HOC'' Section 5:
 !       /Implicit solutions for the means and fluxes/
 !-----------------------------------------------------------------------
-        use parameters
-        use constants
+
+        use parameters, only: C6rt, C6rtb, C6rtc, 
+     .                        C6thl, C6thlb, C6thlc,
+     .                        C7, C7b, C7c, c_K6, c_Ksqd
+        use constants, only: sclr_dim, fstderr
         use grid_class
         use stats_prec, only: time_prec
         use error_code, only: CLUBB_singular_matrix,
      .                        CLUBB_bad_lapack_arg
-     
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
@@ -76,41 +83,35 @@
 
         ! Input Variables
         real(kind=time_prec), intent(in) :: 
-     .  dt           ! Timestep                       [s]
+     .  dt            ! Timestep                                 [s]
 
         real, intent(in), dimension(gr%nnzp) ::
-     .  taum,        ! Tau on moment. grid                [s]
-     .  wmm,         ! w wind on m                        [m/s]
-     .  wmt,         ! w wind on t                        [m/s]
-     .  wp2,         ! w'^2                               [m^2/s^2]
-     .  wp3,         ! w'^3                               [m^3/s^3]
-     .  Scm,         ! Sc on moment. grid                 [-]
-     .  Skwm,        ! Skw on moment. grid                [-]
-     .  Kht,         ! Coefficient of Eddy Diffusivity    [m^2/s]
-     .  rtpthvp,     ! r_t'th_v'                          [(kg K)/kg]
-     .  rtm_forcing, ! rt forcing                         [(kg/kg)/s]
-     .  thlpthvp,    ! th_l' th_v'                        [K^2]
-     .  thlm_forcing, ! Large scale tendency for thlm      [K/s]
+     .  Scm,          ! Sc on momentum levels                    [-]
+     .  wmm,          ! w wind component on momentum levels      [m/s]
+     .  wmt,          ! w wind component on thermodynamic levels [m/s]
+     .  wp2,          ! w'^2                                     [m^2/s^2]
+     .  wp3,          ! w'^3                                     [m^3/s^3]
+     .  Kht,          ! Eddy diffusivity on thermodynamic levels [m^2/s]
+     .  taum,         ! Time-scale tau on momentum levels        [s]
+     .  Skwm,         ! Skewness of w on momentum levels         [-]
+     .  rtpthvp,      ! r_t'th_v'                                [(kg/kg) K]
+     .  rtm_forcing,  ! r_t forcing                              [(kg/kg)/s]
+     .  thlpthvp,     ! th_l'th_v'                               [K^2]
+     .  thlm_forcing, ! th_l forcing                             [K/s]
 ! Added for clipping by Vince Larson 29 Sep 2007
-     .  rtp2,        ! Variance of total water mix rat    [(kg/kg)^2]
-     .  thlp2       ! Variance of theta_l (liq pot temp) [K^2]
+     .  rtp2,         ! r_t'^2                                   [(kg/kg)^2]
+     .  thlp2         ! th_l'^2                                  [K^2]
 ! End of Vince Larson's addition.
 
-        ! Additions for DYCOMS 2 RF02
-        real, intent(in), dimension(gr%nnzp) ::
-     .  rhot,        ! rho (density) on thermo. grid  [kg/m^3] 
-     .  rhom,        ! rho (density) on moment. grid  [kg/m^3] 
-     .  exner        ! Exner function                 [-]
-
         logical, intent(in) :: 
-     .  implemented  ! Flag for if HOC is implemented in a larger model or not.
+     .  implemented   ! Flag for CLUBB being implemented in a larger model.
          
         ! Input/Output Variables
         real, intent(inout), dimension(gr%nnzp) :: 
-     .  rtm,         ! r_t Total water mixing ratio   [kg/kg]
-     .  wprtp,       ! w' r_t'                        [(m kg)/(s kg)]
-     .  thlm,        ! th_l Liquid potential temp.    [K]
-     .  wpthlp       ! w' th_l'                       [(m K)/s]
+     .  rtm,         ! r_t  (total water mixing ratio)           [kg/kg]
+     .  wprtp,       ! w'r_t'                                    [(kg/kg) m/s]
+     .  thlm,        ! th_l (liquid water potential temperature) [K]
+     .  wpthlp       ! w'th_l'                                   [K m/s]
 
         integer, intent(inout) :: err_code ! Model status 
 
@@ -124,18 +125,15 @@
      .  sclrm, wpsclrp !                                     [Units vary]
 
         ! Local variables
-        real, dimension(2+2+1,2*gr%nnzp) ::
-     .  lhs  ! Band diagonal sparse matrix stored in compact form 
+        real, dimension(nsup+nsub+1,2*gr%nnzp) ::
+     .  lhs  ! Implicit contributions to wpxp/xm (band diag. matrix) (LAPACK)
 
         real, dimension(2*gr%nnzp,nrhs) ::
-     .  rhs ! RHS vector for banded matrix
+     .  rhs  ! Right-hand side of band diag. matrix. (LAPACK)
 
         ! Constant parameters as a function of Skw.
         real, dimension(gr%nnzp) :: 
      .  C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc
-
-        ! Misc. storage
-!       real, dimension(gr%nnzp) :: tmp1, tmp2
 
         ! Eddy Diffusion for wpthlp and wprtp.
         real, dimension(gr%nnzp) :: Kw6   ! wpxp eddy diff. [m^2/s]
@@ -190,7 +188,7 @@
            wpthlp_zt_sqd_3pt(k) = ( wpthlp_zt(km1)**2 + wpthlp_zt(k)**2
      .                             + wpthlp_zt(kp1)**2 ) / 3.0
 
-        end do
+        enddo
 
 !       Define the Coefficent of Eddy Diffusivity for the wpthlp and wprtp.
         do k = 1, gr%nnzp, 1
@@ -210,24 +208,27 @@
 
         ! Setup and decompose matrix
 
-!        call mixing_lhs( .true., dt, taum, wmm, wmt, Kw6, 
-        call mixing_lhs( .true., dt, taum, wmm, wmt, Kw6_rt, 
-     .                   wp2, wp3, Scm, C6rt_Skw_fnc, C7_Skw_fnc,
-     .                   lhs, implemented )
+        ! Compute the implicit portion of the rtm and w'rt' equations.
+        ! Build the left-hand side matrix.
+        call mixing_lhs( .true., dt, Scm, wmm, wmt, wp2, wp3,
+     .                   Kw6_rt, taum, C7_Skw_fnc, C6rt_Skw_fnc,
+     .                   implemented, lhs )
 
-        ! Solve rtm / wprtp
-        call mixing_solve( "rtm", .true., dt, taum,
-     .                     rtm, wprtp, rtpthvp, rtm_forcing,
-     .                     wp2, rtp2, ! For clipping Vince Larson 20070929
-     .                     rhot, rhom, exner, 
-     .                     lhs, rhs, C7_Skw_fnc, err_code )  
+        ! Compute the explicit portion of the rtm and w'rt' equations.
+        ! Build the right-hand side vector.
+        call mixing_rhs( "rtm", .true., dt, rtm, wprtp,
+     .                   rtm_forcing, C7_Skw_fnc, rtpthvp, rhs )
+
+        ! Solve rtm / w'rt'
+        call mixing_solve( "rtm", dt, wp2, rtp2, lhs, rhs,
+     .                     rtm, wprtp, err_code )
 
         if ( err_code == CLUBB_singular_matrix .or.
      .       err_code == CLUBB_bad_lapack_arg )  then
      
           write(fstderr,'(a)') "rt mixing failed"
           return
-        end if
+        endif
  
         ! Clipping rtm
         ! Joshua Fasching March 2008
@@ -253,7 +254,7 @@
 !           rtm(k) = 0.0
             write(fstderr,*) "rtm < 0 in mixing at k= ", k 
           end if
-        end do
+        enddo
                 
 #ifdef STATS
         if (lstats_samp .and. irtm_cl > 0) then
@@ -261,27 +262,27 @@
           zt%n(:,irtm_cl) = zt%n(:,irtm_cl) + 1
         endif
 #endif
-        
-        ! Prof. Larson's modified mixing_lhs 
-!        call mixing_lhs( .true., dt, taum, wmm, wmt, Kw6,
-        call mixing_lhs( .true., dt, taum, wmm, wmt, Kw6_thl,
-     .                   wp2, wp3, Scm, C6thl_Skw_fnc, C7_Skw_fnc,
-     .                   lhs, implemented )
 
+        ! Compute the implicit portion of the thlm and w'thl' equations.
+        ! Build the left-hand side matrix.
+        call mixing_lhs( .true., dt, Scm, wmm, wmt, wp2, wp3,
+     .                   Kw6_thl, taum, C7_Skw_fnc, C6thl_Skw_fnc,
+     .                   implemented, lhs )
 
-        ! Solve for thlm / wpthlp
-        call mixing_solve( "thlm", .true., dt, taum,
-     .                     thlm, wpthlp, thlpthvp, thlm_forcing,
-     .                     wp2, thlp2, ! For clipping Vince Larson 20070929
-     .                     rhot, rhom, exner, 
-     .                     lhs, rhs, C7_Skw_fnc, err_code )
+        ! Compute the explicit portion of the thlm and w'thl' equations.
+        ! Build the right-hand side vector.
+        call mixing_rhs( "thlm", .true., dt, thlm, wpthlp,
+     .                   thlm_forcing, C7_Skw_fnc, thlpthvp, rhs )
 
+        ! Solve for thlm / w'thl'
+        call mixing_solve( "thlm", dt, wp2, thlp2, lhs, rhs,
+     .                     thlm, wpthlp, err_code )
 
         if ( err_code == CLUBB_singular_matrix .or.
      .       err_code == CLUBB_bad_lapack_arg ) then       
           write(fstderr,'(a)') "thetal mixing failed"
           return
-        end if
+        endif
         
         ! Clipping thlm
         ! Joshua Fasching March 2008
@@ -299,7 +300,7 @@
             thlm(k) = 0.0
             write(fstderr,*) "thlm < 0 in mixing at k= ", k 
           end if
-        end do
+        enddo
         
                 
 #ifdef STATS
@@ -314,44 +315,57 @@
         if ( present( sclrm )     .and. present( wpsclrp ) .and.
      .       present( sclrpthvp ) .and. present( sclrm_forcing ) ) then
 
-          call mixing_lhs( .true., dt, taum, wmm, wmt, Kw6,
-     .                     wp2, wp3, Scm, C6rt_Skw_fnc, C7_Skw_fnc,
-     .                     lhs, implemented )
+          ! Compute the implicit portion of the sclrm and w'sclr' equations.
+          ! Build the left-hand side matrix.
+          call mixing_lhs( .true., dt, Scm, wmm, wmt, wp2, wp3,
+     .                     Kw6, taum, C7_Skw_fnc, C6rt_Skw_fnc,
+     .                     implemented, lhs )
 
-          call mixing_solve( "sclrm_rtm", .true., dt, taum,
-     .                       sclrm(:,SCLR_RT), wpsclrp(:,SCLR_RT),
-     .                       sclrpthvp(:,SCLR_RT), 
-     .                       sclrm_forcing(:,SCLR_RT),
-     .                       wp2, sclrp2(:,SCLR_RT), ! For clipping Vince Larson 20070929
-     .                       rhot, rhom, exner, 
-     .                       lhs, rhs, C7_Skw_fnc, err_code )
+          ! Compute the explicit portion of the sclrm and w'sclr' equations.
+          ! Build the right-hand side vector.
+          call mixing_rhs( "sclrm_rtm", .true., dt, 
+     .                     sclrm(:,SCLR_RT), wpsclrp(:,SCLR_RT), 
+     .                     sclrm_forcing(:,SCLR_RT), C7_Skw_fnc, 
+     .                     sclrpthvp(:,SCLR_RT), rhs )
+
+          ! Solve for sclrm / w'sclr'
+          call mixing_solve( "sclrm_rtm", dt, wp2, 
+     .                       sclrp2(:,SCLR_RT), lhs, rhs,
+     .                       sclrm(:,SCLR_RT), wpsclrp(:,SCLR_RT), 
+     .                       err_code )
 
           if ( err_code == CLUBB_singular_matrix .or.
      .         err_code == CLUBB_bad_lapack_arg ) then
-
     
             write(fstderr,'(a)') "Passive scalar 1 mixing failed"
             return
-          end if
+          endif
 
-          call mixing_lhs( .true., dt, taum, wmm, wmt, Kw6,
-     .                     wp2, wp3, Scm, C6thl_Skw_fnc, C7_Skw_fnc,
-     .                     lhs, implemented )
+          ! Compute the implicit portion of the sclrm and w'sclr' equations.
+          ! Build the left-hand side matrix.
+          call mixing_lhs( .true., dt, Scm, wmm, wmt, wp2, wp3,
+     .                     Kw6, taum, C7_Skw_fnc, C6thl_Skw_fnc,
+     .                     implemented, lhs )
 
-          call mixing_solve( "sclrm_theta", .true., dt, taum,
-     .                       sclrm(:,SCLR_THETA), wpsclrp(:,SCLR_THETA),
-     .                       sclrpthvp(:,SCLR_THETA), 
-     .                       sclrm_forcing(:,SCLR_THETA),
-     .                       wp2, sclrp2(:,SCLR_THETA), ! For clipping Vince Larson 20070929
-     .                       rhot, rhom, exner, 
-     .                       lhs, rhs, C7_Skw_fnc, err_code )
+          ! Compute the explicit portion of the sclrm and w'sclr' equations.
+          ! Build the right-hand side vector.
+          call mixing_rhs( "sclrm_theta", .true., dt, 
+     .                     sclrm(:,SCLR_THETA), wpsclrp(:,SCLR_THETA), 
+     .                     sclrm_forcing(:,SCLR_THETA), C7_Skw_fnc, 
+     .                     sclrpthvp(:,SCLR_THETA), rhs )
+
+          ! Solve for sclrm / w'sclr'
+          call mixing_solve( "sclrm_theta", dt, wp2, 
+     .                       sclrp2(:,SCLR_THETA), lhs, rhs,
+     .                       sclrm(:,SCLR_THETA), wpsclrp(:,SCLR_THETA), 
+     .                       err_code )
 
           if ( err_code == CLUBB_singular_matrix .or.
      .       err_code == CLUBB_bad_lapack_arg ) then  
             write(fstderr,'(a)') "Passive scalar 2 mixing failed"
             return
-          end if
-        end if ! passive scalars
+          endif
+        endif ! passive scalars
         
 !       Error Report
 !       Joshua Fasching Feb 2008 
@@ -364,23 +378,20 @@
            write(fstderr,*) "Intent(in)"
            
            write(fstderr,*) "dt = ", dt
-           write(fstderr,*) "taum = ", taum
+           write(fstderr,*) "Scm = ", Scm
            write(fstderr,*) "wmm = ", wmm
            write(fstderr,*) "wmt = ", wmt
            write(fstderr,*) "wp2 = ", wp2
            write(fstderr,*) "wp3 = ", wp3
-           write(fstderr,*) "Scm = ", Scm
-           write(fstderr,*) "Skwm = ", Skwm
            write(fstderr,*) "Kht = ", Kht
+           write(fstderr,*) "taum = ", taum
+           write(fstderr,*) "Skwm = ", Skwm
            write(fstderr,*) "rtpthvp = ", rtpthvp
            write(fstderr,*) "rtm_forcing = ", rtm_forcing
            write(fstderr,*) "thlpthvp = ", thlpthvp
            write(fstderr,*) "thlm_forcing = ", thlm_forcing
            write(fstderr,*) "rtp2 = ", rtp2
            write(fstderr,*) "thlp2 = ", thlp2
-           write(fstderr,*) "rhot = ", rhot
-           write(fstderr,*) "rhom = ", rhom
-           write(fstderr,*) "exner = ", exner
            
            if( present( sclrpthvp ) ) then
               write(fstderr,*) "sclrpthvp = ", sclrpthvp
@@ -409,22 +420,27 @@
               write(fstderr,*) "wpsclrp = ", wpsclrp
            endif
            
-        end if
+        endif
  
         return
         
         end subroutine timestep_mixing
 
-!------------------------------------------------------------------------
-        subroutine mixing_lhs( liter, dt, taum, wmm, wmt, Kw6, 
-     .                         wp2, wp3, Scm, C6x_Skw_fnc, C7_Skw_fnc,
-     .                         lhs, implemented )
+!===============================================================================
+        subroutine mixing_lhs( liter, dt, Scm, wmm, wmt, wp2, wp3,
+     .                         Kw6, taum, C7_Skw_fnc, C6x_Skw_fnc,
+     .                         implemented, lhs )
+
 !       Description:
+!       Compute LHS band diagonal matrix for xm and w'x'.
+!       This subroutine computes the implicit portion of
+!       the xm and w'x' equations.
+
 !       References:
 !------------------------------------------------------------------------
 
-        use parameters
-        use constants
+        use parameters, only: nu6
+        use constants, only: wtol
         use grid_class
         use stats_prec, only: time_prec
         use diffusion, only: diffusion_mlev
@@ -434,40 +450,36 @@
 
         implicit none
 
-        ! Constant parameters
-        integer, parameter ::
-     .  kp1diag = 1,
-     .  kdiag   = 2,
-     .  km1diag = 3
-
         ! External
         intrinsic :: min, max
 
         ! Input variables
         logical, intent(in) :: liter
 
-        real(kind=time_prec), intent(in) :: dt ! Timestep     [s]
+        real(kind=time_prec), intent(in) :: 
+     .  dt          ! Timestep                                 [s]
 
         real, intent(in), dimension(gr%nnzp) :: 
-     .  taum,        ! Tau on moment. grid            [s]
-     .  wmm,         ! w wind on m                    [m/s]
-     .  wmt,         ! w wind on t                    [m/s]
-     .  Kw6,         ! Coef. of Eddy Diffusivity      [m^2/s]
-     .  wp2,         ! w'^2                           [m^2/s^2]
-     .  wp3,         ! w'^3                           [m^3/s^3]
-     .  Scm          ! Sc on moment. grid             [-]
+     .  Scm,        ! Sc on momentum levels                    [-]
+     .  wmm,        ! w wind component on momentum levels      [m/s]
+     .  wmt,        ! w wind component on thermodynamic levels [m/s]
+     .  wp2,        ! w'^2                                     [m^2/s^2]
+     .  wp3,        ! w'^3                                     [m^3/s^3]
+     .  Kw6,        ! Coefficient of eddy diffusivity for w'x' [m^2/s]
+     .  taum,       ! Time-scale tau on momentum levels        [s]
+     .  C7_Skw_fnc, ! C_7 parameter with Sk_w applied          [-]
+     .  C6x_Skw_fnc ! C_6x parameter with Sk_w applied         [-]
 
-        logical, intent(in)    :: implemented
+        logical, intent(in) :: 
+     .  implemented ! Flag for CLUBB being implemented in a larger model.
 
-        real, intent(in), dimension(gr%nnzp) :: 
-     .  C6x_Skw_fnc,
-     .  C7_Skw_fnc
-
-        ! Output variables
-        real, intent(out), dimension(2+2+1,2*gr%nnzp) :: lhs ! LHS matrix
+        ! Output Variable
+        real, intent(out), dimension(nsup+nsub+1,2*gr%nnzp) :: 
+     .  lhs ! Implicit contributions to wpxp/xm (band diag. matrix) (LAPACK)
 
         ! Local Variables
-        real, dimension(gr%nnzp) :: a1
+        real, dimension(gr%nnzp) :: 
+     .  a1  ! a1; See eqn. 24 in `Equations for HOC'           [-]
 
         ! wtol_sqd = the square of the minimum threshold on w,
         !     [wtol_sqd] = m^2 s^{-2}.  Vince Larson 11 Mar 2008.
@@ -481,19 +493,19 @@
         real, dimension(3) :: tmp
 #endif /*STATS*/
 
+
         ! wtol_sqd = the square of the minimum threshold on w,
         !     [wtol_sqd] = m^2 s^{-2}.  Vince Larson 11 Mar 2008.
         wtol_sqd = wtol * wtol
 
-        ! Define a1
+        ! Define a1 (located on momentum levels).
 
         a1(1:gr%nnzp) = 1.0 / ( 1.0 - Scm(1:gr%nnzp) )
 
-        ! Set up left hand side matrix
-
+        ! Initialize the left-hand side matrix to 0.
         lhs = 0.0
 
-        do k=2,gr%nnzp-1
+        do k = 2, gr%nnzp-1, 1
 
           ! Define indices
 
@@ -503,48 +515,67 @@
           k_xm   = 2*k - 1
           k_wpxp = 2*k
 
-          ! xm: mean vertical advection
 
+          !!!!!***** xm *****!!!!!
+
+          ! xm: Left-hand side (implicit xm portion of the code).
+          !
+          ! Thermodynamic subdiagonal (lhs index: 3+2)
+          !         [ x xm(k-1,<t+1>) ]
+          ! Momentum subdiagonal (lhs index: 3+1)
+          !         [ x wpxp(k-1,<t+1>) ]
+          ! Thermodynamic main diagonal (lhs index: 3)
+          !         [ x xm(k,<t+1>) ]
+          ! Momentum superdiagonal (lhs index: 3-1)
+          !         [ x wpxp(k,<t+1>) ]
+          ! Thermodynamic superdiagonal (lhs index: 3-2)
+          !         [ x xm(k+1,<t+1>) ]
+
+          ! LHS mean advection (ma) term.
           if ( .not. implemented ) then
 
-            ! Thermodynamic subdiagonal [ x xm(k-1,<t+1>) ]
-            lhs(3+2,k_xm) = - wmt(k) * (1.0/2.0) * gr%dzt(k)
-            ! Thermodynamic superdiagonal [ x xm(k+1,<t+1>) ]
-            lhs(3-2,k_xm) = + wmt(k) * (1.0/2.0) * gr%dzt(k)
+            lhs((/3-2,3+2/),k_xm)
+     .      = lhs((/3-2,3+2/),k_xm)
+     .      + xm_term_ma_lhs( wmt(k), gr%dzt(k) )
 
           else
 
-            ! Thermodynamic subdiagonal [ x xm(k-1,<t+1>) ]
-            lhs(3+2,k_xm) = 0.0
-            ! Thermodynamic superdiagonal [ x xm(k+1,<t+1>) ]
-            lhs(3-2,k_xm) = 0.0
+            lhs((/3-2,3+2/),k_xm)
+     .      = lhs((/3-2,3+2/),k_xm) + 0.0
 
-          end if
+          endif
 
-!         xm: turbulent transport
+          ! LHS turbulent advection (ta) term.
+          lhs((/3-1,3+1/),k_xm)
+     .    = lhs((/3-1,3+1/),k_xm)
+     .    + xm_term_ta_lhs( gr%dzt(k) )
 
-          ! Momentum subdiagonal [ x wpxp(k-1,<t+1>) ]
-          lhs(3+1,k_xm) = - gr%dzt(k)
-          ! Momentum superdiagonal [ x wpxp(k,<t+1>) ]
-          lhs(3-1,k_xm) = + gr%dzt(k)
-
-!         xm: time tendency
-
-          ! Thermodynamic main diagonal [ x xm(k,<t+1>) ]
-          lhs(3,k_xm) = 1.0 / dt
+          ! LHS time tendency.
+          lhs(3,k_xm)
+     .    = lhs(3,k_xm) + 1.0 / dt
 
 #ifdef STATS
           if (lstats_samp) then
 
-          ! Implicit contributions for rtm or wprtp
+          ! Statistics: implicit contributions for rtm or thlm.
+
           if ( irtm_ma > 0 .or. ithlm_ma > 0 ) then
-            ztscr01(k) = + wmt(k) * (1.0/2.0) * gr%dzt(k)
-            ztscr02(k) = - wmt(k) * (1.0/2.0) * gr%dzt(k)
+            if ( .not. implemented ) then
+              tmp(1:2) = 
+     .        + xm_term_ma_lhs( wmt(k), gr%dzt(k) )
+              ztscr01(k) = - tmp(2)
+              ztscr02(k) = - tmp(1)
+            else
+              ztscr01(k) = 0.0
+              ztscr02(k) = 0.0
+            endif
           endif ! ma
 
           if ( irtm_ta > 0 .or. ithlm_ta > 0 ) then
-            ztscr03(k) = + gr%dzt(k)
-            ztscr04(k) = - gr%dzt(k)
+            tmp(1:2) =
+     .      + xm_term_ta_lhs( gr%dzt(k) )
+            ztscr03(k) = - tmp(2)
+            ztscr04(k) = - tmp(1)
           endif ! ta
 
           endif
@@ -664,9 +695,22 @@
         enddo ! 2..gr%nnzp-1
 
 
-        ! Boundary condition for the mean and flux
+        ! Boundary conditions
 
-        ! Fixed-point boundary conditions are used for the turbulent fluxes.
+        ! Both the mean (xm) and the turbulent flux (wpxp) use fixed-point 
+        ! boundary conditions.  Therefore, anything set in the above loop 
+        ! at both the upper and lower boundaries would be overwritten here.
+        ! However, the above loop does not extend to the boundary levels.  
+        ! An array with a value of 1 at the main diagonal on the left-hand 
+        ! side and with values of 0 at all other diagonals on the left-hand
+        ! side will preserve the right-hand side value at that level.
+        !
+        !   xm(1)  wpxp(1) ... xm(nz) wpxp(nz)
+        ! [  0.0     0.0         0.0     0.0  ]
+        ! [  0.0     0.0         0.0     0.0  ]
+        ! [  1.0     1.0   ...   1.0     1.0  ]
+        ! [  0.0     0.0         0.0     0.0  ]
+        ! [  0.0     0.0         0.0     0.0  ]
 
         ! Lower boundary
         k      = 1
@@ -686,21 +730,199 @@
         lhs(:,k_wpxp)   = 0.0
         lhs(3,k_wpxp)   = 1.0
 
+
         return
         end subroutine mixing_lhs
 
+!===============================================================================
+        subroutine mixing_rhs( solve_type, liter, dt, xm, wpxp,
+     .                         xm_forcing, C7_Skw_fnc, xpthvp, rhs )
+
+!       Description:
+!       Compute RHS vector for xm and w'x'.
+!       This subroutine computes the explicit portion of
+!       the xm and w'x' equations.
+
+!       References:
 !------------------------------------------------------------------------
-        
-        subroutine mixing_solve
-     .             ( solve_type, liter, dt, taum,
-     .               xm, wpxp, xpthvp, xm_forcing,
-     .               wp2, xp2, ! For clipping Vince Larson 20070929
-     .               rhot, rhom, exner, 
-     .               lhs, rhs, C7_Skw_fnc, err_code )
+
+        use grid_class
+        use stats_prec, only: time_prec
+#ifdef STATS
+        use stats_hoc
+#endif /*STATS*/
+
+        implicit none
+
+        ! Input Variables
+        character(len=*), intent(in) ::
+     .  solve_type  ! Variables being solved for.
+
+        logical, intent(in) :: liter
+
+        real(kind=time_prec), intent(in) :: 
+     .  dt          ! Timestep                            [s]
+
+        real, dimension(gr%nnzp), intent(in) ::
+     .  xm,         ! xm                                  [{xm units}]
+     .  wpxp,       ! w'x'                                [{xm units} m/s]
+     .  xm_forcing, ! xm forcings                         [{xm units}/s]
+     .  C7_Skw_fnc, ! C_7 parameter with Sk_w applied     [-]
+     .  xpthvp      ! x'th_v'                             [{xm units} K]
+
+        ! Output Variable
+        real, intent(out), dimension(2*gr%nnzp,nrhs) :: 
+     .  rhs  ! Right-hand side of band diag. matrix. (LAPACK)
+
+        ! Local Variables.
+        ! Indices
+        integer :: k, k_xm, k_wpxp
+
+#ifdef STATS
+        integer ::
+     .    ixm_f,
+     .    iwpxp_bp,
+     .    iwpxp_pr3
+
+        select case ( trim( solve_type ) )
+        case ( "rtm" )  ! rtm/wprtp budget terms
+          ixm_f     = irtm_forcing
+          iwpxp_bp  = iwprtp_bp
+          iwpxp_pr3 = iwprtp_pr3
+        case ( "thlm" ) ! thlm/wpthlp budget terms
+          ixm_f     = ithlm_forcing
+          iwpxp_bp  = iwpthlp_bp
+          iwpxp_pr3 = iwpthlp_pr3
+        case default    ! this includes the sclrm case
+          ixm_f     = 0
+          iwpxp_bp  = 0
+          iwpxp_pr3 = 0
+        end select
+#endif /*STATS*/
 
 
-        use parameters
-        use constants
+        ! Initialize the right-hand side vector to 0.
+        rhs = 0.0
+
+        do k = 2, gr%nnzp-1, 1
+
+          ! Define indices
+
+          k_xm   = 2*k - 1
+          k_wpxp = 2*k
+
+
+          !!!!!***** xm *****!!!!!
+
+          ! xm: Right-hand side (explicit xm portion of the code).
+
+          ! RHS time tendency.
+          rhs(k_xm,1)
+     .    = rhs(k_xm,1) + xm(k) / dt
+
+          ! RHS xm forcings.
+          ! Note: xm forcings include the effects of microphysics,
+          !       cloud water sedimentation, radiation, and any
+          !       imposed forcings on xm.
+          rhs(k_xm,1)
+     .    = rhs(k_xm,1) + xm_forcing(k)
+
+#ifdef STATS
+          if ( lstats_samp ) then
+
+          ! Statistics: explicit contributions for xm 
+          !             (including microphysics/radiation).
+
+          if ( ixm_f > 0 ) then
+            zt%x(k,ixm_f) = zt%x(k,ixm_f) + xm_forcing(k)
+            zt%n(k,ixm_f) = zt%n(k,ixm_f) + 1
+          endif
+
+          endif ! lstats_samp
+#endif /*STATS*/
+
+
+          !!!!!***** w'x' *****!!!!!
+
+          ! w'x': Right-hand side (explicit w'x' portion of the code).
+
+          ! RHS buoyancy production (bp) term and pressure term 3 (pr3).
+          rhs(k_wpxp,1)
+     .    = rhs(k_wpxp,1)
+     .    + wpxp_terms_bp_pr3_rhs( C7_Skw_fnc(k), xpthvp(k) )
+
+          ! RHS time tendency.
+          if ( liter ) rhs(k_wpxp,1) = rhs(k_wpxp,1) + wpxp(k) / dt
+
+#ifdef STATS
+          if ( lstats_samp ) then
+
+          ! Statistics: explicit contributions for wpxp.
+
+          if ( iwpxp_bp > 0 ) then
+            zm%x(k,iwpxp_bp) = zm%x(k,iwpxp_bp)
+     .      + wpxp_terms_bp_pr3_rhs( 0.0, xpthvp(k) )
+            zm%n(k,iwpxp_bp) = zm%n(k,iwpxp_bp) + 1
+          endif
+
+          if ( iwpxp_pr3 > 0 ) then
+            zm%x(k,iwpxp_pr3) = zm%x(k,iwpxp_pr3)
+     .      + wpxp_terms_bp_pr3_rhs( (1.0+C7_Skw_fnc(k)), xpthvp(k) )
+            zm%n(k,iwpxp_pr3) = zm%n(k,iwpxp_pr3) + 1
+          endif
+
+          endif ! lstats_samp
+#endif /*STATS*/
+
+        enddo ! k=2..gr%nnzp-1
+
+
+        ! Boundary conditions.
+
+        ! Both the mean (xm) and the turbulent flux (wpxp) use fixed-point
+        ! boundary conditions.  Therefore, anything set in the above loop
+        ! at both the upper and lower boundaries would be overwritten here.
+        ! However, the above loop does not extend to the boundary levels.
+        ! An array with a value of 1 at the main diagonal on the left-hand
+        ! side and with values of 0 at all other diagonals on the left-hand
+        ! side will preserve the right-hand side value at that level.
+
+        ! Lower boundary
+        k      = 1
+        k_xm   = 2*k - 1
+        k_wpxp = 2*k
+        ! The value of xm at the lower boundary will remain the same.
+        ! However, the value of xm at the lower boundary gets overwritten
+        ! after the matrix is solved for the next timestep, such 
+        ! that xm(1) = xm(2).
+        rhs(k_xm,1)   = xm(k)
+        ! The value of w'x' at the lower boundary will remain the same.
+        ! When the lower boundary is at the surface, the surface value of
+        ! w'x' is set elsewhere (case-specific information).
+        rhs(k_wpxp,1) = wpxp(k)
+
+        ! Upper boundary
+        k      = gr%nnzp
+        k_xm   = 2*k - 1
+        k_wpxp = 2*k
+        ! The value of xm at the upper boundary will remain the same.
+        rhs(k_xm,1)   = xm(k)
+        ! The value of w'x' at the upper boundary will be 0.
+        rhs(k_wpxp,1) = 0.0
+
+
+        end subroutine mixing_rhs
+
+!===============================================================================
+        subroutine mixing_solve( solve_type, dt, wp2, xp2, lhs, rhs,
+     .                           xm, wpxp, err_code )
+
+!       Description:
+!       Solve for xm / w'x' using the band diagonal solver.
+
+!       References:
+!------------------------------------------------------------------------
+
         use grid_class
         use stats_prec, only: time_prec
         use lapack_wrap, only: band_solve, band_solvex
@@ -712,42 +934,31 @@
 
         implicit none
 
-
-        ! Input
+        ! Input Variables
         character(len=*), intent(in) :: 
-     .  solve_type ! Variables being solved for
+     .  solve_type  ! Variables being solved for.
 
-        logical, intent(in) :: 
-     .  liter ! Whether the mean and flux terms are prognostic
-
-        real(kind=time_prec), intent(in) :: dt      ! Timestep     [s]
+        real(kind=time_prec), intent(in) :: 
+     .  dt          ! Timestep                [s]
 
         real, intent(in), dimension(gr%nnzp) :: 
-     .  taum,        ! Tau on moment. grid                    [s]
-     .  rhot,        ! Rho (density) on thermo. grid -Brian   [kg/m^3]
-     .  rhom,        ! Rho (density) on moment. grid -Brian   [kg/m^3]
-     .  exner,       ! Exner function -Brian                  [-]
-     .  xpthvp,      ! x' theta_v'                            [(units)(K)]
-     .  xm_forcing,  ! xm forcing -Brian                      [(units)/s] 
 ! Vince Larson added for clipping 20070929
-     .  wp2,         ! Variance of vertical velocity          [(m/s)^2]
-     .  xp2,         ! Variance of scalar (rt, thl, or sclr)  Units vary
+     .  wp2,        ! w'^2                    [(m/s)^2]
+     .  xp2         ! x'^2                    [{xm units}^2]
 ! End Vince Larson's addition
-     .  C7_Skw_fnc   ! C7 parameter (Skw dependent)           [-] 
 
-        ! Input/Output
-        real, intent(inout), dimension(gr%nnzp) :: 
-     .  xm,  ! Mean term                                  [units vary] 
-     .  wpxp ! Flux term                                  [units vary] 
-
-        real, target, intent(inout), dimension(nsup+nsub+1,2*gr%nnzp) ::
-     .  lhs  ! Left hand side (LAPACK)
+        ! Input/Output Variables
+        real, intent(inout), dimension(nsup+nsub+1,2*gr%nnzp) ::
+     .  lhs  ! Implicit contributions to wpxp/xm (band diag. matrix) (LAPACK)
 
         real, intent(inout), dimension(2*gr%nnzp,nrhs) :: 
-     .  rhs  ! Right hand side (LAPACK)
+     .  rhs  ! Right-hand side of band diag. matrix. (LAPACK)
 
-        ! Output
-  
+        real, intent(inout), dimension(gr%nnzp) :: 
+     .  xm,  ! Mean term: xm                  [units vary] 
+     .  wpxp ! Flux term: w'x'                [{xm units} m/s]
+
+        ! Output Variable
         integer, intent(out) :: err_code
 
         ! Local Variables
@@ -771,7 +982,6 @@
      .    ixm_bt,
      .    ixm_ta,
      .    ixm_ma,
-     .    ixm_f,
      .    ixm_mc,
      .    ixm_cn,
      .    ixm_pd,
@@ -780,10 +990,8 @@
      .    iwpxp_ta,
      .    iwpxp_tp,
      .    iwpxp_ac,
-     .    iwpxp_bp,
      .    iwpxp_pr1,
      .    iwpxp_pr2,
-     .    iwpxp_pr3,
      .    iwpxp_dp1,
      .    iwpxp_cl,
      .    iwpxp_pd
@@ -793,7 +1001,6 @@
           ixm_bt    = irtm_bt
           ixm_ta    = irtm_ta
           ixm_ma    = irtm_ma
-          ixm_f     = irtm_forcing
           ixm_cn    = irtm_cn ! Applies to both the mean and flux terms
           ixm_pd    = irtm_pd ! Applies to both the mean and flux terms
           iwpxp_bt  = iwprtp_bt
@@ -801,10 +1008,8 @@
           iwpxp_ta  = iwprtp_ta
           iwpxp_tp  = iwprtp_tp
           iwpxp_ac  = iwprtp_ac
-          iwpxp_bp  = iwprtp_bp
           iwpxp_pr1 = iwprtp_pr1
           iwpxp_pr2 = iwprtp_pr2
-          iwpxp_pr3 = iwprtp_pr3
           iwpxp_dp1 = iwprtp_dp1
           iwpxp_cl  = iwprtp_cl
           iwpxp_pd  = iwprtp_pd
@@ -812,7 +1017,6 @@
           ixm_bt    = ithlm_bt
           ixm_ta    = ithlm_ta
           ixm_ma    = ithlm_ma
-          ixm_f     = ithlm_forcing
           ixm_cn    = ithlm_cn ! Applies to both the mean and flux terms
           ixm_pd    = 0
           iwpxp_bt  = iwpthlp_bt
@@ -820,10 +1024,8 @@
           iwpxp_ta  = iwpthlp_ta
           iwpxp_tp  = iwpthlp_tp
           iwpxp_ac  = iwpthlp_ac
-          iwpxp_bp  = iwpthlp_bp
           iwpxp_pr1 = iwpthlp_pr1
           iwpxp_pr2 = iwpthlp_pr2
-          iwpxp_pr3 = iwpthlp_pr3
           iwpxp_dp1 = iwpthlp_dp1
           iwpxp_cl  = iwpthlp_cl
           iwpxp_pd  = 0
@@ -831,7 +1033,6 @@
           ixm_bt    = 0
           ixm_ta    = 0
           ixm_ma    = 0
-          ixm_f     = 0
           ixm_cn    = 0
           ixm_pd    = 0
           iwpxp_bt  = 0
@@ -839,10 +1040,8 @@
           iwpxp_ta  = 0
           iwpxp_tp  = 0
           iwpxp_ac  = 0
-          iwpxp_bp  = 0
           iwpxp_pr1 = 0
           iwpxp_pr2 = 0
-          iwpxp_pr3 = 0
           iwpxp_dp1 = 0
           iwpxp_cl  = 0
           iwpxp_pd  = 0
@@ -855,32 +1054,14 @@
           ! xm total time tendency ( 1st calculation)
           if ( ixm_bt > 0 ) then
             zt%x(:,ixm_bt) = zt%x(:,ixm_bt) - xm / dt
-          end if
-
-          ! Explicit contributions for xm (including microphysics/radition)
-          if ( ixm_f > 0 ) then
-            zt%x(:,ixm_f) = zt%x(:,ixm_f) + xm_forcing
-            zt%n(:,ixm_f) = zt%n(:,ixm_f) + 1
-          end if
+          endif
 
           ! wpxp total time tendency (1st calculation)
           if ( iwpxp_bt > 0 ) then
             zm%x(:,iwpxp_bt) = zm%x(:,iwpxp_bt) - wpxp / dt
-          end if
+          endif
 
-          ! Explicit contributions for wpxp
-          if ( iwpxp_bp > 0 ) then
-            zm%x(:,iwpxp_bp) = zm%x(:,iwpxp_bp)
-     .      + grav/T0 * 1.0 * xpthvp(:)
-            zm%n(:,iwpxp_bp) = zm%n(:,iwpxp_bp) + 1
-          end if
-
-          if ( iwpxp_pr3 > 0 ) then
-            zm%x(:,iwpxp_pr3) = zm%x(:,iwpxp_pr3)
-     .      - grav/T0 * C7_Skw_fnc * xpthvp(:)
-            zm%n(:,iwpxp_pr3) = zm%n(:,iwpxp_pr3) + 1
-          end if
-        end if ! lstats_samp
+        endif ! lstats_samp
 #endif /*STATS*/
 
         ! Setup matrix for positive definite advection scheme
@@ -902,57 +1083,6 @@
           end do
 
         end if
-
-!       Set up RHS vector
-
-        rhs = 0.0
-
-
-!        do k=2,gr%nnzp
-        do k=2,gr%nnzp-1
-
-!         Define indices
-
-          k_xm   = 2*k - 1
-          k_wpxp = 2*k
-
-!         xm: time tendency and forcing
-
-!         Brian:: rtm also includes effects on rtm of production
-!                   and evaporation of rain (rrm).  3/30/05.
-!                 thlm also includes effects on thlm of production
-!                   and evaporation of rain (rrm).  3/31/05.
-
-          ! Right-hand side.
-          rhs(k_xm,1) 
-     .    = xm(k) / dt
-     .    + xm_forcing(k)
-
-!         wpxp: time tendency and buoyancy
-
-          ! Right-hand side.
-          rhs(k_wpxp,1)
-     .    = grav/T0 * (1.0-C7_Skw_fnc(k)) * xpthvp(k)
-
-          if ( liter ) rhs(k_wpxp,1) = rhs(k_wpxp,1) + wpxp(k) / dt
-
-        end do ! k=2..gr%nnzp-1
-
-        ! Boundary condition for the flux and mean
-
-        ! Fixed-point boundary conditions are used for the turbulent fluxes.
-
-        k      = 1
-        k_xm   = 2*k - 1
-        k_wpxp = 2*k
-        rhs(k_xm,1)   = xm(k)
-        rhs(k_wpxp,1) = wpxp(k)
-
-        k      = gr%nnzp
-        k_xm   = 2*k - 1
-        k_wpxp = 2*k
-        rhs(k_xm,1)   = xm(k)
-        rhs(k_wpxp,1) = 0.0
 
 #ifdef STATS
         if ( lstats_samp .and. ixm_cn > 0 ) then
@@ -1138,6 +1268,155 @@
 
         return
         end subroutine mixing_solve
+
+!===============================================================================
+        pure function xm_term_ma_lhs( wmt, dzt )
+     .  result( lhs )
+
+!       Description:
+!       Mean advection of xm: implicit portion of the code.
+!
+!       The d(xm)/dt equation contains a mean advection term:
+!
+!       - w * d(xm)/dz.
+!
+!       This term is solved for completely implicitly, such that:
+!
+!       - w * d( xm(t+1) )/dz.
+!
+!       Note:  When the term is brought over to the left-hand side, the
+!              sign is reversed and the leading "-" in front of the
+!              term is changed to a "+".
+!
+!       The timestep index (t+1) means that the value of xm being used
+!       is from the timestep being advanced to.
+!
+!       This term is discretized as follows:
+!
+!       The values of xm are found on the thermodynamic levels, as
+!       are the values of wmt (mean vertical velocity on thermodynamic
+!       levels).  The variable xm is interpolated to the intermediate
+!       momentum levels.  The derivative of the interpolated values is
+!       taken over the central thermodynamic level.  The derivative
+!       is multiplied by wmt at the central thermodynamic level to get
+!       the desired result.
+!
+!       -------------xmp1---------------------------------------- t(k+1)
+!
+!       ====================xm(interp)=========================== m(k)
+!
+!       -------------xm-------------------d(xm)/dz---------wmt--- t(k)
+!
+!       ====================xm(interp)=========================== m(k-1)
+!
+!       -------------xmm1---------------------------------------- t(k-1)
+!
+!       The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1)
+!       correspond with altitudes zt(k+1), zm(k), zt(k), zm(k-1),
+!       and zt(k-1), respectively.  The letter "t" is used for
+!       thermodynamic levels and the letter "m" is used for momentum
+!       levels.
+!
+!       dzt(k) = 1 / ( zm(k) - zm(k-1) )
+
+!       References:
+!-----------------------------------------------------------------------
+
+        implicit none
+
+        ! Constant parameters
+        integer, parameter ::
+     .  kp1_tdiag = 1,   ! Thermodynamic superdiagonal index.
+     .  km1_tdiag = 2    ! Thermodynamic subdiagonal index.
+
+        ! Input Variables
+        real, intent(in) ::
+     .  wmt,  ! wmt(k)                        [m/s]
+     .  dzt   ! Inverse of grid spacing (k)   [1/m]
+
+        ! Return Variable
+        real, dimension(2) :: lhs
+
+        ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
+        lhs(kp1_tdiag)
+     .  = + wmt * (1.0/2.0) * dzt
+
+        ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
+        lhs(km1_tdiag)
+     .  = - wmt * (1.0/2.0) * dzt
+
+        return
+        end function xm_term_ma_lhs
+
+!===============================================================================
+        pure function xm_term_ta_lhs( dzt )
+     .  result( lhs )
+
+!       Description:
+!       Turbulent advection of xm:  implicit portion of the code.
+!
+!       The d(xm)/dt equation contains a turbulent advection term:
+!
+!       - d(w'x')/dz.
+!
+!       This term is solved for completely implicitly, such that:
+!
+!       - d( w'x'(t+1) )/dz.
+!
+!       Note:  When the term is brought over to the left-hand side, the
+!              sign is reversed and the leading "-" in front of the
+!              term is changed to a "+".
+!
+!       The timestep index (t+1) means that the value of w'x' being used
+!       is from the timestep being advanced to.
+!
+!       This term is discretized as follows:
+!
+!       While the values of xm are found on the thermodynamic levels, the
+!       values of w'x' are found on the momentum levels.  The
+!       derivative of w'x' is taken over the intermediate (central)
+!       thermodynamic level, yielding the desired results.
+!
+!       ===================wpxp================================== m(k)
+!
+!       -----------------------------d(wpxp)/dz------------------ t(k)
+!
+!       ===================wpxpm1================================ m(k-1)
+!
+!       The vertical indices m(k), t(k), and m(k-1) correspond with 
+!       altitudes zm(k), zt(k), and zm(k-1), respectively.  The letter 
+!       "t" is used for thermodynamic levels and the letter "m" is used 
+!       for momentum levels.
+!
+!       dzt(k) = 1 / ( zm(k) - zm(k-1) )
+
+!       References:
+!-----------------------------------------------------------------------
+
+        implicit none
+
+        ! Constant parameters
+        integer, parameter ::
+     .  k_mdiag   = 1,   ! Momentum superdiagonal index.
+     .  km1_mdiag = 2    ! Momentum subdiagonal index.
+
+        ! Input Variables
+        real, intent(in) ::
+     .  dzt   ! Inverse of grid spacing (k)   [1/m]
+
+        ! Return Variable
+        real, dimension(2) :: lhs
+
+        ! Momentum superdiagonal [ x wpxp(k,<t+1>) ]
+        lhs(k_mdiag)
+     .  = + dzt
+
+        ! Momentum subdiagonal [ x wpxp(k-1,<t+1>) ]
+        lhs(km1_mdiag)
+     .  = - dzt
+
+        return
+        end function xm_term_ta_lhs
 
 !===============================================================================
         pure function wpxp_term_ma_lhs( wmm, dzm )
@@ -1345,24 +1624,24 @@
 !
 !       The d(w'x')/dt equation contains a turbulent production term:
 !
-!       - w'^2 d(x)/dz.
+!       - w'^2 d(xm)/dz.
 !
 !       This term is solved for completely implicitly, such that:
 !
-!       - w'^2 * d( x(t+1) )/dz.
+!       - w'^2 * d( xm(t+1) )/dz.
 !
 !       Note:  When the term is brought over to the left-hand side, the
 !              sign is reversed and the leading "-" in front of the
 !              term is changed to a "+".
 !
-!       The timestep index (t+1) means that the value of x being used
+!       The timestep index (t+1) means that the value of xm being used
 !       is from the timestep being advanced to.
 !
 !       This term is discretized as follows:
 !
-!       The values of x are found on thermodynamic levels, while the
+!       The values of xm are found on thermodynamic levels, while the
 !       values of w'^2 are found on momentum levels.  The derivative of
-!       x is taken over the intermediate (central) momentum level, where
+!       xm is taken over the intermediate (central) momentum level, where
 !       it is multiplied by w'^2, yielding the desired result.
 !
 !       ---------------------------xmp1-------------------------- t(k+1)
@@ -1534,6 +1813,50 @@
 
         return
         end function wpxp_term_pr1_lhs
+
+!===============================================================================
+        pure function wpxp_terms_bp_pr3_rhs( C7_Skw_fnc, xpthvp )
+     .  result( rhs )
+
+!       Description:
+!       Buoyancy production of w'x' and w'x' pressure term 3:
+!       explicit portion of the code.
+!
+!       The d(w'x')/dt equation contains a buoyancy production term:
+!
+!       + (g/th_0) x'th_v',
+!
+!       and pressure term 3:
+!
+!       - C_7 (g/th_0) x'th_v'.
+!
+!       Both the w'x' buoyancy production term and pressure term 3 are
+!       completely explicit.  The buoyancy production term and pressure 
+!       term 3 are combined and solved together as:
+!
+!       + ( 1 - C_7 ) * (g/th_0) * x'th_v'.
+
+!       References:
+!-----------------------------------------------------------------------
+
+        use constants, only: grav ! Gravitational acceleration [m/s^2]
+        use parameters, only: T0  ! Reference temperature      [K]
+
+        implicit none
+
+        ! Input Variables
+        real, intent(in) ::
+     .  C7_Skw_fnc, ! C_7 parameter with Sk_w applied (k)   [-]
+     .  xpthvp      ! x'th_v'(k)                            [K {xm units}]
+
+        ! Return Variable
+        real :: rhs
+
+        rhs
+     .  = grav/T0 * ( 1.0 - C7_Skw_fnc ) * xpthvp
+
+        return
+        end function wpxp_terms_bp_pr3_rhs
 
 !===============================================================================
 
