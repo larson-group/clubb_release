@@ -70,7 +70,15 @@ c            calculate fall velocity
 c***********************************************************************
 c
         else
-          falspd=exp(-bsnow*log(cm2m*sqrt(ss(i))))
+c
+c**************************************************************
+c Modification by Adam Smith, 17 April 2008
+c Updating fall speed equation to match the one used in COAMPS
+c The original version may have had an error in the units.
+c**************************************************************
+c
+!          falspd=exp(-bsnow*log(cm2m*sqrt(ss(i))))
+          falspd=exp(-bsnow*log(ss(i)))
           fallv(i)=-falspd*pterm4(i)*tvs1
         endif
       enddo
