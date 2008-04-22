@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.39 2008-04-05 19:54:32 griffinb Exp $
+! $Id: diag_var.F,v 1.40 2008-04-22 19:20:36 griffinb Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -12,8 +12,17 @@
 
         public :: diag_var
 
-        private :: diag_var_lhs, diag_var_solve, 
-     .             diag_var_rhs, diag_var_uv_rhs
+        private :: diag_var_lhs, 
+     .             diag_var_solve, 
+     .             diag_var_uv_rhs,
+     .             diag_var_rhs,
+     .             term_ta_lhs,
+     .             term_ta_rhs,
+     .             term_tp,
+     .             term_ma,
+     .             term_dp1,
+     .             term_pr1,
+     .             term_pr2
 
         contains
 !-----------------------------------------------------------------------
@@ -1267,14 +1276,86 @@
         return
         end subroutine diag_var_rhs
 
-!-----------------------------------------------------------------------
+!===============================================================================
         pure function term_ta_lhs( a1_tkp1, a1, a1_tk, wp3p1, wp3, 
      .                             wp2_tkp1, wp2_tk, dzm, beta, eps, 
      .                             tkp1, tk )
      .  result( lhs )
 
 !       Description:
-!       Turbulent advection term (implicit contributions)
+!       Turbulent advection of x_a'x_b':  implicit portion of the code.
+!
+!       The d(x_a'x_b')/dt equation contains a turbulent advection term:
+!
+!       - d(w'x_a'x_b')/dz.
+!
+!       A substitution is made in order to close the turbulent advection
+!       term, such that:
+!
+!       w'x_a'x_b' = (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'
+!                       + (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 ) 
+!                         * w'x_a' * w'x_b',
+!
+!       where a_1 is a variable that is a function of Sc.
+!       The turbulent advection term is rewritten as:
+!
+!       - d [ (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'
+!                + (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 ) 
+!                  * w'x_a' * w'x_b' ]
+!         / dz,
+!
+!       which produces an implicit and an explicit portion of this term.
+!       The implicit portion of this term is:
+!
+!       - d [ (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'(t+1) ] / dz.
+!
+!       Since (1/3)*beta is a constant, it can be pulled outside of the
+!       derivative.  The implicit portion of this term becomes:
+!
+!       - (1/3)*beta * d [ a_1 * ( w'^3 / w'^2 ) * x_a'x_b'(t+1) ] / dz.
+!
+!       Note:  When the term is brought over to the left-hand side, the
+!              sign is reversed and the leading "-" in front of the
+!              term is changed to a "+".
+!
+!       The timestep index (t+1) means that the value of x_a'x_b' being 
+!       used is from the timestep being advanced to.
+!
+!       The implicit portion of this term is discretized as follows:
+!
+!       The values of x_a'x_b' are found on the momentum levels, as are 
+!       the values of w'^2 and a_1.  The values of w'^3 are found on the
+!       thermodynamic levels.  The variables x_a'x_b', w'^2, and a_1 are 
+!       each interpolated to the intermediate thermodynamic levels.  The
+!       values of the mathematical expression (called F here) within the
+!       dF/dz term are computed on the thermodynamic levels.  Then the
+!       derivative (d/dz) of the expression (F) is taken over the 
+!       central momentum level, yielding the desired result.
+!       In this function, the values of F are as follows:
+!
+!       F = a_1(t) * ( w'^3(t) / w'^2(t) ) * x_a'x_b'(t+1),
+!
+!       where the timestep index (t) stands for the index of the current
+!       timestep.
+!
+!
+!       =a1p1========wp2p1========xapxbpp1======================= m(k+1)
+!
+!       ---a1(interp)---wp2(interp)---xapxbp(interp)---wp3p1----- t(k+1)
+!
+!       =a1==========wp2==========xapxbp=================dF/dz=== m(k)
+!
+!       ---a1(interp)---wp2(interp)---xapxbp(interp)---wp3------- t(k)
+!
+!       =a1m1========wp2m1========xapxbpm1======================= m(k-1)
+!
+!       The vertical indices m(k+1), t(k+1), m(k), t(k), and m(k-1)
+!       correspond with altitudes zm(k+1), zt(k+1), zm(k), zt(k),
+!       and zm(k-1), respectively.  The letter "t" is used for
+!       thermodynamic levels and the letter "m" is used for momentum
+!       levels.
+!
+!       dzm(k) = 1 / ( zt(k+1) - zt(k) )
 
 !       References:
 !-----------------------------------------------------------------------
@@ -1351,7 +1432,7 @@
         return
         end function term_ta_lhs
 
-!-----------------------------------------------------------------------
+!===============================================================================
         pure function term_ta_rhs( a1_tkp1, a1, a1_tk, wp3p1, wp3, 
      .                             wp2_tkp1, wp2_tk, wpxbp_tkp1, 
      .                             wpxbp_tk, wpxap_tkp1, wpxap_tk, 
@@ -1359,7 +1440,77 @@
      .  result( rhs )
 
 !       Description:
-!       Turbulent advection term (explicit contributions)
+!       Description:
+!       Turbulent advection of x_a'x_b':  explicit portion of the code.
+!
+!       The d(x_a'x_b')/dt equation contains a turbulent advection term:
+!
+!       - d(w'x_a'x_b')/dz.
+!
+!       A substitution is made in order to close the turbulent advection
+!       term, such that:
+!
+!       w'x_a'x_b' = (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'
+!                       + (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 )
+!                         * w'x_a' * w'x_b',
+!
+!       where a_1 is a variable that is a function of Sc.
+!       The turbulent advection term is rewritten as:
+!
+!       - d [ (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'
+!                + (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 )
+!                  * w'x_a' * w'x_b' ]
+!         / dz,
+!
+!       which produces an implicit and an explicit portion of this term.
+!       The explicit portion of this term is:
+!
+!       - d [ (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 ) 
+!             * w'x_a' * w'x_b' ] / dz.
+!
+!       Since (1-(1/3)*beta) is a constant, it can be pulled outside of 
+!       the derivative.  The explicit portion of this term becomes:
+!
+!       - (1-(1/3)*beta) * d [ (a_1)^2 * ( w'^3 / (w'^2)^2 ) 
+!                              * w'x_a' * w'x_b' ] / dz.
+!
+!       The explicit portion of this term is discretized as follows:
+!
+!       The values of w'x_a', w'x_b', w'^2, and a_1 are found on the 
+!       momentum levels.  The values of w'^3 are found on the 
+!       thermodynamic levels.  The variables w'x_a', w'x_b', w'^2, and 
+!       a_1 are each interpolated to the intermediate thermodynamic 
+!       levels.  The values of the mathematical expression (called F 
+!       here) within the dF/dz term are computed on the thermodynamic 
+!       levels.  Then the derivative (d/dz) of the expression (F) is 
+!       taken over the central momentum level, yielding the desired 
+!       result.
+!       In this function, the values of F are as follows:
+!
+!       F = ( a_1(t) )^2 * ( w'^3(t) / ( w'^2(t) )^2 ) 
+!           * w'x_a'(t) * w'x_b'(t),
+!
+!       where the timestep index (t) stands for the index of the current
+!       timestep.
+!
+!
+!       =a1p1=======wp2p1=======wpxapp1=======wpxbpp1============ m(k+1)
+!
+!       -a1(interp)-wp2(interp)-wpxap(interp)-wpxbp(interp)-wp3p1 t(k+1)
+!
+!       =a1=========wp2=========wpxap=========wpxbp====dF/dz===== m(k)
+!
+!       -a1(interp)-wp2(interp)-wpxap(interp)-wpxbp(interp)-wp3-- t(k)
+!
+!       =a1m1=======wp2m1=======wpxapm1=======wpxbpm1============ m(k-1)
+!
+!       The vertical indices m(k+1), t(k+1), m(k), t(k), and m(k-1)
+!       correspond with altitudes zm(k+1), zt(k+1), zm(k), zt(k),
+!       and zm(k-1), respectively.  The letter "t" is used for
+!       thermodynamic levels and the letter "m" is used for momentum
+!       levels.
+!
+!       dzm(k) = 1 / ( zt(k+1) - zt(k) )
 
 !       References:
 !-----------------------------------------------------------------------
@@ -1413,13 +1564,40 @@
         return
         end function term_ta_rhs
 
-!-----------------------------------------------------------------------
+!===============================================================================
         pure function term_tp( xamp1, xam, xbmp1, xbm, 
      .                         wpxbp, wpxap, dzm )
      .  result( rhs )
 
 !       Description:
-!       Turbulent production
+!       Turbulent production of x_a'x_b':  explicit portion of the code.
+!
+!       The d(x_a'x_b')/dt equation contains a turbulent production term:
+!
+!       - w'x_b' d(x_am)/dz - w'x_a' d(x_bm)/dz.
+!
+!       This term is solved for completely explicitly and is
+!       discretized as follows:
+!
+!       The values of w'x_a' and w'x_b' are found on the momentum levels,
+!       whereas the values of x_am and x_bm are found on the 
+!       thermodynamic levels.  The derivatives of both x_am and x_bm are
+!       taken over the intermediate (central) momentum level.  All of 
+!       the remaining mathematical operations take place at the central
+!       momentum level, yielding the desired result.
+!
+!       -------xamp1------------xbmp1---------------------------- t(k+1)
+!
+!       =wpxap======d(xam)/dz=========d(xbm)/dz===wpxbp========== m(k)
+!
+!       -------xam--------------xbm------------------------------ t(k)
+!
+!       The vertical indices t(k+1), m(k), and t(k) correspond with
+!       altitudes zt(k+1), zm(k), and zt(k), respectively.  The letter
+!       "t" is used for thermodynamic levels and the letter "m" is used
+!       for momentum levels.
+!
+!       dzm(k) = 1 / ( zt(k+1) - zt(k) )
 
 !       References:
 !-----------------------------------------------------------------------
@@ -1446,12 +1624,55 @@
         return
         end function term_tp
 
-!-----------------------------------------------------------------------
+!===============================================================================
         pure function term_ma( wmm, dzm, tkp1, tk ) 
      .  result( lhs )
 
 !       Description:
-!       Mean advection term
+!       Mean advection of x_a'x_b':  implicit portion of the code.
+!
+!       The d(x_a'x_b')/dt equation contains a mean advection term:
+!
+!       - w * d(x_a'x_b')/dz.
+!
+!       This term is solved for completely implicitly, such that:
+!
+!       - w * d( x_a'x_b'(t+1) )/dz.
+!
+!       Note:  When the term is brought over to the left-hand side, the
+!              sign is reversed and the leading "-" in front of the
+!              term is changed to a "+".
+!
+!       The timestep index (t+1) means that the value of x_a'x_b' being 
+!       used is from the timestep being advanced to.
+!
+!       This term is discretized as follows:
+!
+!       The values of x_a'x_b' are found on the momentum levels, as are 
+!       the values of wmm (mean vertical velocity on momentum levels).
+!       The variable x_a'x_b' is interpolated to the intermediate
+!       thermodynamic levels.  The derivative of the interpolated values
+!       is taken over the central momentum level.  The derivative
+!       is multiplied by wmm at the central momentum level to get
+!       the desired result.
+!
+!       =========xapxbpp1======================================== m(k+1)
+!
+!       --------------------xapxbp(interp)----------------------- t(k+1)
+!
+!       =========xapxbp======================d(xapxbp)/dz==wmm=== m(k)
+!
+!       --------------------xapxbp(interp)----------------------- t(k)
+!
+!       =========xapxbpm1======================================== m(k-1)
+!
+!       The vertical indices m(k+1), t(k+1), m(k), t(k), and m(k-1)
+!       correspond with altitudes zm(k+1), zt(k+1), zm(k), zt(k),
+!       and zm(k-1), respectively.  The letter "t" is used for
+!       thermodynamic levels and the letter "m" is used for momentum
+!       levels.
+!
+!       dzm(k) = 1 / ( zt(k+1) - zt(k) )
 
 !       References:
 !-----------------------------------------------------------------------
@@ -1484,45 +1705,34 @@
         return
         end function term_ma
 
-!-----------------------------------------------------------------------
-        pure function term_dp2( nu2, dzm, dzt, dztp1 ) 
-     .  result( lhs )
-
-!       Description:
-!       Dissipation term
-
-!       References:
-!-----------------------------------------------------------------------
-        implicit none
-
-        ! Constant parameters
-        integer, parameter ::
-     .  kp1diag = 1,
-     .  kdiag   = 2,
-     .  km1diag = 3
-
-        real, intent(in) ::
-     .  nu2,  ! Previously determined eddy viscosity     [m^2/s]
-     .  dzt,  ! Inverse of the grid spacing on t <k>     [m]
-     .  dztp1,! Inverse of the grid spacing on t <k+1>   [m]
-     .  dzm   ! Inverse of the grid spacing on m <k>     [m]
-
-        ! Return Variable
-        real, dimension(3) :: lhs
-
-        lhs(kp1diag) = - nu2 * dzm * dzt
-        lhs(kdiag)   = + nu2 * dzm * ( dztp1 + dzt )
-        lhs(km1diag) = - nu2 * dzm * dztp1
-
-        return
-        end function term_dp2
-
-!-----------------------------------------------------------------------
+!===============================================================================
         pure function term_dp1( Cn, taum ) 
      .  result( lhs )
 
 !       Description:
-!       Dissipation term
+!       Dissipation term 1 for x_a'x_b': implicit portion of the code.
+!
+!       The d(x_a'x_b')/dt equation contains dissipation term 1:
+!
+!       - ( C_n / tau_m ) x_a'x_b'.
+!
+!       This term is solved for completely implicitly, such that:
+!
+!       - ( C_n / tau_m ) x_a'x_b'(t+1).
+!
+!       Note:  When the term is brought over to the left-hand side, the
+!              sign is reversed and the leading "-" in front of the
+!              term is changed to a "+".
+!
+!       The timestep index (t+1) means that the value of x_a'x_b' being 
+!       used is from the timestep being advanced to.
+!
+!       The values of x_a'x_b' are found on momentum levels.  The values 
+!       of time-scale tau_m are also found on momentum levels.
+!
+!       Note: For equations that use pressure term 1 (such as the 
+!             equations for u'^2 and v'^2), C_n = ( 2*C_4 + C_14 ) / 3.
+!             Otherwise, C_n = C_2.
 
 !       References:
 !-----------------------------------------------------------------------
@@ -1545,11 +1755,59 @@
         return
         end function term_dp1
 
-!-----------------------------------------------------------------------
+!===============================================================================
         pure function term_pr1( C4, C14, xbp2, wp2, taum )
      .  result( rhs )
 
 !       Description:
+!       Pressure term 1 for x_a'x_b':  explicit portion of the code.
+!
+!       Note:  Pressure term 1 is only used when x_a'x_b' is either 
+!              u'^2 or v'^2.  For the following description, the 
+!              equation for u'^2 is used as the example.  The equation
+!              for v'^2 is the same as the equation for u'^2, except
+!              that the v'^2 and u'^2 terms are switched.
+!
+!       The d(u'^2)/dt equation contains dissipation term 1:
+!
+!       - ( C_4 / tau_m ) * ( u'^2 - (2/3)*em ),
+!
+!       and pressure term 1:
+!
+!       - (2/3) * ( C_14 / tau_m ) * em,
+!
+!       where em = (1/2) * ( u'^2 + v'^2 + w'^2 ).
+!
+!       This simplifies to:
+!
+!       - [ ( 2*C_4 + C_14 ) / ( 3 * tau_m ) ] * u'^2
+!          + [ ( C_4 - C_14 ) / ( 3 * tau_m ) ] * ( v'^2 + w'^2 ).
+!
+!       The combined term has both implicit and explicit components.
+!       The implicit component is:
+!
+!       - [ ( 2*C_4 + C_14 ) / ( 3 * tau_m ) ] * u'^2(t+1).
+!
+!       Note:  When the implicit term is brought over to the left-hand
+!              side, the sign is reversed and the leading "-" in front
+!              of the term is changed to a "+".
+!
+!       Timestep index (t) stands for the index of the current timestep
+!       and timestep index (t+1) stands for the index of the timestep
+!       being advanced to.
+!
+!       The implicit component is solved in function "term_dp1" above, 
+!       where "( 2*C_4 + C_14 ) / 3" is sent in as "C_n".
+!
+!       The explicit component of the combined dp1 and pr1 term is:
+!
+!       + [ ( C_4 - C_14 ) / ( 3 * tau_m ) ] * ( v'^2(t) + w'^2(t) );
+!
+!       and is discretized as follows:
+!
+!       The values for v'^2 and w'^2, as well as for tau_m, are found on
+!       the momentum levels.  The mathematical operations all take place
+!       on the momentum levels, yielding the desired result.
 
 !       References:
 !-----------------------------------------------------------------------
@@ -1570,12 +1828,46 @@
         return
         end function term_pr1
 
-!-----------------------------------------------------------------------
+!===============================================================================
         pure function term_pr2( C5, grav, T0, wpthvp, upwp, vpwp, 
      .                          ump1, um, vmp1, vm, dzm ) 
      .  result( rhs )
 
 !       Description:
+!       Pressure term 2 for x_a'x_b':  explicit portion of the code.
+!
+!       Note:  Pressure term 2 is only used when x_a'x_b' is either
+!              u'^2 or v'^2.  For the following description, the
+!              equation for u'^2 is used as the example.  The equation
+!              for v'^2 is the same as the equation for u'^2.
+!
+!       The d(u'^2)/dt equation contains pressure term 2:
+!
+!       + (2/3) C_5 [ (g/th_0) w'th_v' - u'w' du/dz - v'w' dv/dz ].
+!
+!       This term is solved for completely explicitly and is
+!       discretized as follows:
+!
+!       The values of w'th_v', u'w', and v'w' are found on the momentum
+!       levels, whereas the values of um and vm are found on the
+!       thermodynamic levels.  The derivatives of both um and vm are
+!       taken over the intermediate (central) momentum level.  All the
+!       remaining mathematical operations take place at the central
+!       momentum level, yielding the desired result.  The results
+!       contributes the explicit portion of the u'^2 solution.
+!
+!       ------ump1------------vmp1------------------------------- t(k+1)
+!
+!       =upwp======d(um)/dz========d(vm)/dz===vpwp=====wpthvp==== m(k)
+!
+!       ------um--------------vm--------------------------------- t(k)
+!
+!       The vertical indices t(k+1), m(k), and t(k) correspond with
+!       altitudes zt(k+1), zm(k), and zt(k), respectively.  The letter
+!       "t" is used for thermodynamic levels and the letter "m" is used
+!       for momentum levels.
+!
+!       dzm(k) = 1 / ( zt(k+1) - zt(k) )
 
 !       References:
 !-----------------------------------------------------------------------
@@ -1605,5 +1897,7 @@
 
         return
         end function term_pr2
+
+!===============================================================================
 
         end module diagnose_variances
