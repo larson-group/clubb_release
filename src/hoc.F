@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.172 2008-04-23 18:22:24 faschinj Exp $
+! $Id: hoc.F,v 1.173 2008-04-23 18:39:52 faschinj Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -659,7 +659,7 @@
         lrestart      = .false.
         restart_path_case = "none"
         time_restart  = 0.
-        debug_level   = 0
+        debug_level   = 2
 
         ! Pick some default values for stats_setting
         lstats       = .false.
