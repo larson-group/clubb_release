@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.111 2008-04-21 19:27:08 ajsmith4 Exp $
+# $Id: Makefile,v 1.112 2008-04-23 18:20:02 faschinj Exp $
 #
 # This version should work with BSD, GNU make, smake and dmake.
 #
@@ -29,7 +29,7 @@ LATIN_HYP = autoconv_driver.o corrcoef.o gaus_condt.o \
 	rtpthlp_2_sptp.o sample_points.o st_2_rtthl.o \
 	truncate_gaus_mixt.o
 
-BUGS_RAD = kinds.o bugsrad_planck.o bugsrad_physconst.o gases_ckd.o \
+BUGS_RAD = kinds.o std_atmosphere.o bugsrad_planck.o bugsrad_physconst.o gases_ckd.o \
 	cloud_correlate.o bugs_lwr.o bugs_swr.o bugs_rad.o \
 	cloudg.o comscp1.o comscp2.o gascon.o \
 	newexp.o rayle.o two_rt_lw.o two_rt_sw.o \
@@ -48,14 +48,15 @@ COAMPS_MICRO = adjmlt.o adjtq.o coamps_micro_driver.o conice.o \
         nrmtqw.o qsatvi.o qtadj.o slope.o tgqg.o \
         tgqi.o tgqr.o tgqs.o saturation.o gamma.o
 
+
 MODEL = $(COAMPS_MICRO) \
 	hoc.o sounding.o rad_lwsw.o cloud_rad.o astex.o atex.o fire.o bomex.o \
 	arm.o arm_97.o arm_0003.o arm_3year.o dycoms2_rf01.o \
 	dycoms2_rf02.o cloud_sed_mod.o mpace_a.o mpace_b.o \
 	nov11.o jun25.o clex9_nov02.o clex9_oct14.o wangara.o \
-	linear_interpolation.o diag_ustar.o cobra.o rico.o gabls2.o \
+	diag_ustar.o cobra.o rico.o gabls2.o \
 	KK_microphys.o microphysics.o cons.o air.o parab.o \
-	lba.o zlinterp.o file_functions.o ice_dfsn_mod.o
+	lba.o interpolation.o file_functions.o ice_dfsn_mod.o
 
 PARAMETERIZATION = \
 	$(LATIN_HYP) \
@@ -64,7 +65,7 @@ PARAMETERIZATION = \
         stats_type.o stats_hoc.o stats_subs.o \
         stats_zt.o stats_zm.o stats_sfc.o stats_prec.o sfc.o \
 	erf.o diffusion.o \
-	closure_new.o diag_var.o \
+	closure_new.o diag_var.o interpolation.o \
         hydrostatic.o mixing_length.o mixing.o saturation.o \
 	compute_um_edsclrm_mod.o wp23.o Skw_func.o error_code.o \
 	numer_check.o diag_variables.o prog_variables.o \

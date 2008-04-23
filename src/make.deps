@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.31 2008-04-14 16:00:29 dschanen Exp $
+# $Id: make.deps,v 1.32 2008-04-23 18:20:02 faschinj Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -67,9 +67,10 @@ Skw_func.o	: Skw_func.F
 closure_new.o	: constants.o parameters.o grid.o saturation.o erf.o numer_check.o \
                  error_code.o closure_new.F 
 diag_var.o	: constants.o parameters.o grid.o stats_hoc.o lapack_wrap.o \
-	error_code.o diffusion.o diag_var.F
+	          error_code.o diffusion.o diag_var.F
 mixing.o : constants.o parameters.o stats_hoc.o lapack_wrap.o \
 	pos_definite_mod.o error_code.o diffusion.o mixing.F 
+
 parameterization_interface.o : constants.o hydrostatic.o mixing.o \
 	model_flags.o numer_check.o Skw_func.o \
 	mixing_length.o stats_type.o stats_hoc.o stats_subs.o \
@@ -78,7 +79,7 @@ parameterization_interface.o : constants.o hydrostatic.o mixing.o \
 	grid.o saturation.o compute_um_edsclrm_mod.o prog_variables.o \
 	diag_variables.o \
 	sfc.o closure_new.o latin_hyper_sample.o lh_sampler.o \
-	parameters.o error_code.o parameterization_interface.F 
+	parameters.o error_code.o  parameterization_interface.F 
 hydrostatic.o	: constants.o hydrostatic.F 
 mixing_length.o	: constants.o parameters.o numer_check.o error_code.o mixing_length.F
 saturation.o    : constants.o saturation.F  
@@ -124,7 +125,7 @@ truncate_gaus_mixt.o	: truncate_gaus_mixt.F
 diag_ustar.o: constants.o diag_ustar.F
 arm.o       : constants.o diag_ustar.o model_flags.o grid.o stats_hoc.o arm.F
 arm_97.o    : constants.o diag_ustar.o model_flags.o grid.o stats_hoc.o \
-	zlinterp.o arm.F
+	interpolation.o arm.F
 arm_0003.o  : constants.o diag_ustar.o model_flags.o grid.o stats_hoc.o \
 	arm_0003.F
 arm_3year.o : constants.o diag_ustar.o model_flags.o grid.o stats_hoc.o arm_3year.F
@@ -135,8 +136,8 @@ cobra.o     : constants.o model_flags.o grid.o cobra.F
 fire.o      : constants.o model_flags.o grid.o stats_hoc.o cloud_rad.o fire.F
 gabls2.o    : constants.o diag_ustar.o model_flags.o grid.o stats_hoc.o gabls2.F
 lba.o       : constants.o diag_ustar.o model_flags.o grid.o stats_hoc.o \
-	zlinterp.o lba.F
-mpace_a.o     : constants.o model_flags.o grid.o stats_hoc.o mpace_a.F zlinterp.o file_functions.o
+	interpolation.o lba.F
+mpace_a.o     : constants.o model_flags.o grid.o stats_hoc.o mpace_a.F interpolation.o file_functions.o
 mpace_b.o     : constants.o model_flags.o grid.o stats_hoc.o mpace_b.F
 nov11.o     : constants.o model_flags.o grid.o stats_hoc.o nov11.F
 jun25.o     : constants.o model_flags.o grid.o stats_hoc.o jun25.F
@@ -150,8 +151,6 @@ dycoms2_rf01.o : constants.o model_flags.o grid.o stats_hoc.o error_code.o dycom
 dycoms2_rf02.o : constants.o model_flags.o grid.o stats_hoc.o error_code.o dycoms2_rf02.F
 
 rad_lwsw.o      : rad_lwsw.F stats_hoc.o
-linear_interpolation.o : linear_interpolation.F
-zlinterp.o	: zlinterp.F
 file_functions.o	: file_functions.F
 
 # == COAMPS Microphysics dependencies ==
@@ -183,7 +182,7 @@ two_rt_sw.o		: kinds.o two_rt_sw.F
 two_rt_sw_bs.o		: kinds.o lapack_wrap.o two_rt_sw_bs.F
 two_rt_sw_ocastrndm.o	: kinds.o two_rt_sw_ocastrndm.F90
 bugsrad_hoc.o 		: kinds.o constants.o bugs_rad.o \
-	stats_hoc.o bugsrad_hoc.F90
+	stats_hoc.o std_atmosphere.o bugsrad_hoc.F90
 
 # == Misc. program related source files  ==
 hoc.o		: parameterization_interface.o arm.o astex.o atex.o \
@@ -192,7 +191,9 @@ hoc.o		: parameterization_interface.o arm.o astex.o atex.o \
 	wangara.o cobra.o rico.o gabls2.o lba.o arm_97.o arm_0003.o \
 	arm_3year.o cloud_sed_mod.o microphysics.o \
 	inputfields.o error_code.o hoc.F
-sounding.o	: grid.o constants.o sounding.F
+sounding.o	: grid.o std_atmosphere.o interpolation.o constants.o sounding.F
+std_atmosphere.o: constants.o interpolation.o std_atmosphere.F
+interpolation.o : interpolation.F
 inputfields.o	: grid.o inputgrads.o inputfields.F 
 gradsaverage.o	: grid.o inputgrads.o gradsaverage.F 
 error.o		: nrtype.o nr.o gradsaverage.o hoc.o parameters.o error_code.o error.F
