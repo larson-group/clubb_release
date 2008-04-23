@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: clex9_oct14.F,v 1.6 2008-04-09 22:46:53 ajsmith4 Exp $
+! $Id: clex9_oct14.F,v 1.7 2008-04-23 18:05:13 faschinj Exp $
         module clex9_oct14
 
 !       Description:
@@ -42,15 +42,13 @@
         use constants
         use model_flags
         use stats_prec, only: time_prec
+        use interpolation, only: linear_interpolation
+        use cos_solar_zen_mod
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
 
         implicit none
-
-        ! External
-        double precision, external :: cos_solar_zen
-
         ! Local constants
 
         integer, parameter :: 
@@ -202,7 +200,7 @@
 !      NOTE: The results from this function match the xi_abs results
 !            obtained using the COAMPS xi_abs method.  Therefore, we
 !            use the "cos_solar_zen" function for this case.
-       xi_abs = cos_solar_zen( 14, 10, 2001, time, rlat, rlon )
+       xi_abs = cos_solar_zen( 14, 10, 2001, real(time), rlat, rlon )
 
 c**********************************************************************
 c Addition by Adam Smith, 02 April 2008
