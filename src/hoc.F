@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.171 2008-04-17 00:06:20 dschanen Exp $
+! $Id: hoc.F,v 1.172 2008-04-23 18:22:24 faschinj Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -111,7 +111,10 @@
         use numerical_check
         use hoc_parameterization_interface
         use constants, only: fstdout, fstderr
-        use error_code
+        use error_code, only: CLUBB_var_equals_NaN,
+     .                        CLUBB_var_out_of_bounds,
+     .                        CLUBB_rtm_level_not_found,
+     .                        any_error
 #ifdef STATS
         use stats_hoc, only: lstats_last
         use stats_subs
@@ -462,20 +465,12 @@
            ! Changed isValid to err_code for better tracking of errors caused by
            ! procedures
 
-           if ( err_code == CLUBB_singular_matrix .or.
-     .          err_code == CLUBB_var_equals_NaN .or.
-     .          err_code == CLUBB_var_out_of_bounds .or.
-     .          err_code == CLUBB_bad_lapack_arg .or.
-     .          err_code == CLUBB_rtm_level_not_found ) exit
+           if ( any_error( err_code ) ) exit
            
          end do ! i1=1..niterlong
 
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-         if ( err_code == CLUBB_singular_matrix .or.
-     .          err_code == CLUBB_var_equals_NaN .or.
-     .          err_code == CLUBB_var_out_of_bounds .or.
-     .          err_code == CLUBB_bad_lapack_arg .or.
-     .          err_code == CLUBB_rtm_level_not_found ) exit
+         if ( any_error( err_code ) ) exit
           
        end do ! i=1, ifinal
 
@@ -519,7 +514,12 @@
         use numerical_check
         use hoc_parameterization_interface
         use constants, only: fstdout, fstderr
-        use error_code
+        use error_code, only: CLUBB_var_out_of_bounds,
+     .                        CLUBB_var_equals_NaN,
+     .                        CLUBB_rtm_level_not_found,
+     .                        any_error,
+     .                        set_clubb_debug_level
+        
         use stats_prec, only: time_prec
 #ifdef STATS
         use stats_hoc, only: lstats_last
@@ -556,6 +556,9 @@
         integer ::
      .  ifinal,
      .  niterlong
+
+        integer ::
+     .  debug_level
 
         real :: 
      .  fcor,           ! Coriolis parameter            [s^-1]
@@ -608,7 +611,7 @@
      .  sfctype, Tsfc, psfc, SE, LE, fcor, T0, ts_nudge,
      .  cloud_sed, kk_rain, licedfs, lcoamps_micro, 
      .  lbugsrad, lKhm_aniso, luv_nudge, lrestart, restart_path_case,
-     .  time_restart
+     .  time_restart, debug_level
 
        namelist /stats_setting/
      .   lstats, fname_prefix, stats_tsamp, stats_tout, stats_fmt 
@@ -655,7 +658,8 @@
         luv_nudge     = .false.
         lrestart      = .false.
         restart_path_case = "none"
-        time_restart = 0
+        time_restart  = 0.
+        debug_level   = 0
 
         ! Pick some default values for stats_setting
         lstats       = .false.
@@ -663,6 +667,7 @@
         stats_fmt    = ""
         stats_tsamp  = 0.
         stats_tout   = 0.
+
         
 
         ! Figure out which iounit to use
@@ -678,7 +683,9 @@
         read(unit=iunit, nml=stats_setting)
         close(unit=iunit)
 
-       ! Dummy grid height arrays
+       call set_clubb_debug_level( debug_level )
+
+        ! Dummy grid height arrays
        allocate( dummy_array_m(1:nzmax), dummy_array_t(1:nzmax) )
 
        dummy_array_m = 0.0
@@ -856,20 +863,12 @@
              time_current = time_initial + i * dtmain
            end if
 
-           if ( err_code == CLUBB_singular_matrix .or.
-     .          err_code == CLUBB_var_equals_NaN .or.
-     .          err_code == CLUBB_var_out_of_bounds .or.
-     .          err_code == CLUBB_bad_lapack_arg .or.
-     .          err_code == CLUBB_rtm_level_not_found ) exit
+           if ( any_error( err_code ) ) exit
            
          end do ! i1=1..niterlong
 
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-         if ( err_code == CLUBB_singular_matrix .or.
-     .          err_code == CLUBB_var_equals_NaN .or.
-     .          err_code == CLUBB_var_out_of_bounds .or.
-     .          err_code == CLUBB_bad_lapack_arg .or.
-     .          err_code == CLUBB_rtm_level_not_found ) exit
+         if ( any_error( err_code ) ) exit
           
        end do ! i=1, ifinal
 
@@ -924,11 +923,14 @@
         use arm_97, only: arm_97_init
         use mpace_a, only: mpace_a_init
         use mixing_length
-
+        use error_code, only: CLUBB_no_error
+        
         ! Joshua Fasching
         ! March 2008
         use saturation
-        
+       
+        use hydrostatic_mod
+
         implicit none
 
         intrinsic :: min, max, trim, sqrt, size
@@ -992,7 +994,7 @@
         ricem     => hydromet(1:gr%nnzp,4)
         rgraupelm => hydromet(1:gr%nnzp,5)
 
-        err_code = 0
+        err_code = CLUBB_no_error
         
         ! Read sounding information
 
@@ -1665,8 +1667,9 @@
         use stats_prec, only: time_prec
         use numerical_check, only: isnan2d, rad_check
         use microphysics, only: timestep_microphys ! Microphysics
-        use error_code
-        
+        use error_code, only: lapack_error,
+     .                        clubb_at_debug_level
+       
         ! Case specific modules 
         use arm, only: arm_tndcy, arm_sfclyr
         use arm_97, only: arm_97_tndcy, arm_97_sfclyr
@@ -2180,8 +2183,7 @@
      .           hydromet,
      .           rtm_forcing, thlm_forcing, err_code )
 
-          if ( err_code == CLUBB_singular_matrix .or.
-     .         err_code == CLUBB_bad_lapack_arg ) return
+          if ( lapack_error(err_code) ) return
 
         end if
 
@@ -2243,8 +2245,10 @@
           end if
 
           ! Check for impossible negative values
-          call rad_check( thlm, rcm, rtm, ricem,
-     .                    cf, p, exner, rhom)
+          if (clubb_at_debug_level( 2 ) ) then
+             call rad_check( thlm, rcm, rtm, ricem,
+     .                    cf, p, exner, rhom )
+          endif
 
 
           call bugsrad_hoc( gr%zm, gr%nnzp, rlat, rlon,    ! In
