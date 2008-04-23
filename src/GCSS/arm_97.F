@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_97.F,v 1.14 2008-04-04 22:02:49 dschanen Exp $
+! $Id: arm_97.F,v 1.15 2008-04-23 18:09:57 faschinj Exp $
         module arm_97
 
 !       Description:
@@ -47,7 +47,7 @@
 
         use grid_class
         use constants, only: sclr_dim
-        use zlinterp, only: zlinterp_fnc
+        use interpolation, only: zlinterp_fnc
         use stats_prec, only: time_prec
 
         implicit none

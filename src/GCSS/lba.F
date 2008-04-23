@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: lba.F,v 1.6 2008-04-04 22:02:49 dschanen Exp $
+! $Id: lba.F,v 1.7 2008-04-23 18:09:57 faschinj Exp $
         module lba
 
 !       Description:
@@ -24,7 +24,7 @@
         use grid_class
         use model_flags, only: lbugsrad
         use constants, only: sclr_dim
-        use zlinterp, only: zlinterp_fnc
+        use interpolation, only: zlinterp_fnc
         use stats_prec, only: time_prec
 
         implicit none

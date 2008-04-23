@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_3year.F,v 1.7 2008-04-04 22:02:49 dschanen Exp $
+! $Id: arm_3year.F,v 1.8 2008-04-23 18:09:57 faschinj Exp $
         module arm_3year
 
 !       Description:
@@ -46,8 +46,7 @@
 
         use grid_class
         use constants, only: sclr_dim
-        use zlinterp, only: zlinterp_fnc
-        use file_functions, only: file_read_1d, file_read_2d
+        use interpolation, only: zlinterp_fnc
         use stats_prec, only: time_prec
 
         implicit none

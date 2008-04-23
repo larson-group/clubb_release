@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_a.F,v 1.12 2008-04-05 19:54:20 griffinb Exp $
+! $Id: mpace_a.F,v 1.13 2008-04-23 18:09:57 faschinj Exp $
         module mpace_a
 
 !       Description:
@@ -64,7 +64,7 @@
         use constants
         use model_flags
         use grid_class
-        use zlinterp, only: zlinterp_fnc
+        use interpolation, only: zlinterp_fnc
         use file_functions, only: file_read_1d, file_read_2d
         use stats_prec, only: time_prec
 #ifdef STATS
