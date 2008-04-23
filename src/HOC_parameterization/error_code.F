@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error_code.F,v 1.2 2008-04-02 14:27:19 faschinj Exp $
+! $Id: error_code.F,v 1.3 2008-04-23 17:55:07 faschinj Exp $
 !-----------------------------------------------------------------------
         module error_code
 
@@ -26,8 +26,14 @@
      .  CLUBB_bad_lapack_arg,
      .  CLUBB_rtm_level_not_found,
      .  CLUBB_var_out_of_bounds,
-     .  reportError   
-        
+     .  reportError, 
+     .  any_error,
+     .  lapack_error,    
+     .  clubb_at_debug_level, 
+     .  set_clubb_debug_level    
+
+        integer :: CLUBB_debug_level   =  0
+
         integer, parameter ::
      .  CLUBB_no_error                 =  0, 
      .  CLUBB_var_less_than_zero       =  1,
@@ -82,6 +88,85 @@
         end select
 
         end subroutine reportError
+
+        logical function lapack_error( err_code )
         
+        implicit none
+        
+        integer,intent(in) :: err_code
+        
+        lapack_error = (err_code == CLUBB_singular_matrix .or.
+     .      err_code == CLUBB_bad_lapack_arg ) 
+        
+        end function
+
+!---------------------------------------------------------------------       
+        logical function any_error( err_code )
+!---------------------------------------------------------------------        
+        implicit none
+
+        integer, intent(in) :: err_code
+
+        any_error = ( err_code == CLUBB_singular_matrix     .or.
+     .                err_code == CLUBB_bad_lapack_arg      .or.
+     .                err_code == CLUBB_var_equals_NaN      .or.
+     .                err_code == CLUBB_rtm_level_not_found .or.
+     .                err_code == CLUBB_var_out_of_bounds )
+
+
+        end function
+
+!------------------------------------------------------------------	
+        logical function clubb_at_debug_level( level )
+!       
+!       Description:
+!       Checks to see if CLUBB has been set to a specified debug level
+!
+!------------------------------------------------------------------
+        implicit none
+
+        ! Input variable
+        integer, intent(in) :: level   ! The debug level being checked against the current setting
+
+        clubb_at_debug_level = ( level <= CLUBB_debug_level )
+
+        end function clubb_at_debug_level
+
+!----------------------------------------------------------------------
+        subroutine set_clubb_debug_level( level )
+!
+!       Description:
+!       Accessor for CLUBB_debug_level
+!
+!----------------------------------------------------------------------
+        implicit none
+       
+        integer, intent(in) :: level 
+        CLUBB_debug_level = level
+
+        end subroutine set_clubb_debug_level
+
+!----------------------------------------------------------------------
+        subroutine clubb_debug( level, str )
+!
+!       Description:
+!       Prints a message to file unit fstderr if the level is greater
+!       than or equal to the current debug level.        
+!----------------------------------------------------------------------
+
+        
+        use constants, only:fstderr
+        implicit none
+        
+        character(*), intent(in) :: str
+        integer, intent(in)      :: level
+
+        if (level <= CLUBB_debug_level) then
+                write(fstderr,*) str
+        endif
+        end subroutine
+
+        
+       
         end module error_code
 !-----------------------------------------------------------------------
