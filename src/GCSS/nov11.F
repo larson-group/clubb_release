@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: nov11.F,v 1.13 2008-04-15 18:51:41 ajsmith4 Exp $
+! $Id: nov11.F,v 1.14 2008-04-23 18:07:45 faschinj Exp $
         module nov11
 
 !       Description:
@@ -45,6 +45,7 @@
         use constants
         use model_flags
         use stats_prec, only: time_prec
+        use interpolation, only: linear_interpolation
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
