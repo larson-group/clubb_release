@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.50 2008-04-02 14:27:19 faschinj Exp $
+! $Id: error.F,v 1.51 2008-04-23 17:58:52 faschinj Exp $
 
         module error
  
@@ -133,7 +133,7 @@
 !       None
 !-----------------------------------------------------------------------
         use constants, only: fstdout, fstderr
-        use error_code
+        use error_code, only: any_error
         implicit none
 
         ! Constant Variables
@@ -330,11 +330,7 @@
         ! invalid values for variations on the initial vector, but that 
         ! algorithm relies on the initial vector being valid. 
 
-        if ( err_code == CLUBB_var_equals_NaN  .or.
-     .       err_code == CLUBB_singular_matrix .or.
-     .       err_code == CLUBB_bad_lapack_arg  .or.
-     .       err_code == CLUBB_rtm_level_not_found .or.
-     .       err_code == CLUBB_var_out_of_bounds) then
+        if ( any_error(err_code) ) then
         
           write(fstderr,*) "Initial variable values must be valid."
           stop
@@ -375,7 +371,8 @@
         use hoc, only: hoc_model
         use grads_common
         use parameters, only: params_list
-        use error_code
+        use error_code, only: CLUBB_no_error,
+     .                        any_error
 
         implicit none
 
@@ -512,11 +509,7 @@
 
         ! If it has, it returns higher value than those previous to
         ! Amoeba (the downhill simplex)
-        if ( err_code == CLUBB_var_equals_NaN  .or.
-     .       err_code == CLUBB_singular_matrix .or.
-     .       err_code == CLUBB_bad_lapack_arg  .or.
-     .       err_code == CLUBB_rtm_level_not_found .or. 
-     .       err_code == CLUBB_var_out_of_bounds) then
+        if ( any_error(err_code) ) then
         
           min_les_hoc_diff = 2 * maxval( cost_fnc_vector ) 
      .                     - minval( cost_fnc_vector )

@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: hoc_standalone.F,v 1.19 2008-04-02 14:27:19 faschinj Exp $
+! $Id: hoc_standalone.F,v 1.20 2008-04-23 17:58:52 faschinj Exp $
 
         program hoc_standalone
 
@@ -10,7 +10,8 @@
 
         use hoc, only: hoc_model
         
-        use error_code
+        use error_code,  only: CLUBB_no_error,
+     .                         any_error
         use param_index, only: nparams
         use parameters, only: read_parameters, params_list
 
@@ -70,11 +71,7 @@
         call hoc_model
      .       ( params, trim( run_file ), err_code, stdout )
 
-      if ( err_code == CLUBB_singular_matrix .or.
-     .     err_code == CLUBB_var_equals_NaN .or.
-     .     err_code == CLUBB_var_out_of_bounds .or.
-     .     err_code == CLUBB_bad_lapack_arg .or.
-     .     err_code == CLUBB_rtm_level_not_found ) then
+      if ( any_error(err_code) ) then
       
         stop "Model wasn't valid, check your constants"
       else

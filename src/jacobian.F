@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.40 2008-04-02 14:27:19 faschinj Exp $
+! $Id: jacobian.F,v 1.41 2008-04-23 17:58:52 faschinj Exp $
 
       program jacobian
 #ifdef STATS
@@ -18,7 +18,8 @@
       use constants, only: fstdout, fstderr
       use grads_common, only: grads_average_interval, grads_zlvl
       use stats_hoc, only: fname_zt, fname_zm
-      use error_code
+      use error_code, only: CLUBB_no_error,
+     .                      any_error
 
       implicit none
 
@@ -151,11 +152,7 @@
         call hoc_model 
      .       ( hoc_params%value(:), run_file, err_code, .false. )
 
-        if ( err_code == CLUBB_singular_matrix .or.
-     .       err_code == CLUBB_var_equals_NaN .or.
-     .       err_code == CLUBB_var_out_of_bounds .or.
-     .       err_code == CLUBB_bad_lapack_arg .or.
-     .       err_code == CLUBB_rtm_level_not_found ) then
+        if ( any_error(err_code) ) then
         
            stop "Initial run wasn't valid"
         endif
@@ -240,11 +237,7 @@
           ! Print a period so the user knows something is happening
           write(unit=fstdout, fmt='(a1)', advance='no') "."
 
-          if ( err_code == CLUBB_singular_matrix .or.
-     .         err_code == CLUBB_var_equals_NaN .or.
-     .         err_code == CLUBB_var_out_of_bounds .or.
-     .         err_code == CLUBB_bad_lapack_arg .or.
-     .         err_code == CLUBB_rtm_level_not_found ) then
+          if ( any_error(err_code) ) then
          
             ! Pos. Infinity bit pattern 
             jmatrix(i, :)
