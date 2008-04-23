@@ -1,3 +1,13 @@
+         module skw
+         
+         implicit none
+         
+         private
+
+         public :: Skw_func
+         
+         contains
+
 !-----------------------------------------------------------------------
          function Skw_func( wp2, wp3, wtol ) 
      .   result( Skw )
@@ -35,3 +45,5 @@
          return
          end function Skw_func
 !-----------------------------------------------------------------------
+
+         end module
