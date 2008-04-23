@@ -1,6 +1,16 @@
 !------------------------------------------------------------------------
-! $Id: hydrostatic.F,v 1.3 2007-01-08 20:37:45 dschanen Exp $
+! $Id: hydrostatic.F,v 1.4 2008-04-23 18:13:54 faschinj Exp $
 
+        module hydrostatic_mod
+
+        implicit none
+
+        private
+
+        public :: hydrostatic
+
+        contains
+        
         subroutine hydrostatic( thvm, psfc, pinpa, exner, rhot, rhom )
 
 !       Description:
@@ -70,3 +80,5 @@
 
         return
         end subroutine hydrostatic
+
+        end module hydrostatic_mod

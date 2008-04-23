@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.53 2008-04-19 23:08:19 griffinb Exp $
+! $Id: wp23.F,v 1.54 2008-04-23 18:13:54 faschinj Exp $
 !===============================================================================
         module wp23
 
@@ -57,8 +57,8 @@
         use constants
         use model_flags
         use stats_prec, only: time_prec
-        use error_code, only: CLUBB_singular_matrix,
-     .                        CLUBB_bad_lapack_arg
+        use error_code, only: lapack_error,
+     .                        clubb_at_debug_level
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
@@ -232,8 +232,8 @@
 
 !       Error output
 !       Joshua Fasching Feb 2008
-        if ( err_code == CLUBB_singular_matrix .or.
-     .       err_code == CLUBB_bad_lapack_arg ) then
+        if ( lapack_error( err_code ) .and. 
+     .       clubb_at_debug_level( 1 ) ) then
                 
            write(fstderr,*) "Errors in timestep_wp32"
 
@@ -265,9 +265,9 @@
            write(fstderr,*) "wp3 = ", wp3
            
         endif
-        
+
         return
-        
+                
         end subroutine timestep_wp23
 
 !===============================================================================

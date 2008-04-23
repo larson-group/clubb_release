@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.40 2008-04-22 19:20:36 griffinb Exp $
+! $Id: diag_var.F,v 1.41 2008-04-23 18:13:54 faschinj Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -55,9 +55,9 @@
         use grid_class
         use stats_prec, only: time_prec
         use lapack_wrap, only: tridag_solve
-        use error_code, only: CLUBB_singular_matrix,
-     .                        CLUBB_bad_lapack_arg,
-     .                        CLUBB_no_error
+        use error_code, only: CLUBB_no_error, 
+     .                        lapack_error, 
+     .                        clubb_at_debug_level
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
@@ -544,9 +544,9 @@
         do i = 1, 5+1
                 if(Valid_arr(i) > err_code ) err_code = Valid_arr(i)
         enddo        
-        
-        if ( err_code == CLUBB_singular_matrix .or.
-     .       err_code == CLUBB_bad_lapack_arg ) then
+                
+        if ( lapack_error( err_code ) .and. 
+     .       clubb_at_debug_level( 1 ) ) then
                 
            write(fstderr,*) "Error in diag_var"
            
@@ -599,7 +599,7 @@
               write(fstderr,*) "wpsclrp = ", wpsclrp
            endif
            
-        endif
+        endif 
         
         return
         
@@ -762,8 +762,6 @@
 !-----------------------------------------------------------------------
         use lapack_wrap, only: tridag_solve, tridag_solvex!, band_solve
         use grid_class
-        use error_code, only: CLUBB_singular_matrix,
-     .                        CLUBB_bad_lapack_arg
 #ifdef STATS
         use stats_hoc
 #endif

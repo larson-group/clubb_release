@@ -1,4 +1,4 @@
-! $Id: sfc.F,v 1.18 2008-04-04 20:10:00 faschinj Exp $
+! $Id: sfc.F,v 1.19 2008-04-23 18:13:54 faschinj Exp $
 #define SCLR_RT 2
 #define SCLR_THETA 1
 
@@ -31,8 +31,8 @@
         use parameters, only: T0
         use constants
         use numerical_check, only:sfc_var_check
-        use error_code, only: CLUBB_var_equals_NaN
-        
+        use error_code, only: CLUBB_var_equals_NaN,
+     .                        clubb_at_debug_level        
         implicit none
 
         ! External
@@ -289,7 +289,10 @@
            end if
 
         ENDIF
-        call sfc_var_check( wp2_sfc, up2_sfc, vp2_sfc, 
+        
+        if ( clubb_at_debug_level( 2 ) ) then
+
+                call sfc_var_check( wp2_sfc, up2_sfc, vp2_sfc, 
      .                     thlp2_sfc, rtp2_sfc, rtpthlp_sfc,
      .                     err_code
 #ifdef SCALARS
@@ -300,44 +303,46 @@
 !       Error reporting
 !       Joshua Fasching February 2008
         
-        if ( err_code == CLUBB_var_equals_NaN ) then
+                if ( err_code == CLUBB_var_equals_NaN ) then
+                        
+                    write(fstderr,*) "Error in sfc_var"
+                    
+                    write(fstderr,*) "Intent(in)"
+                    
+                    write(fstderr,*) "upwp_sfc = ", upwp_sfc 
+                    write(fstderr,*) "vpwp_sfc = ", vpwp_sfc 
+                    write(fstderr,*) "wpthlp_sfc = ", wpthlp_sfc
+                    write(fstderr,*) "wprtp_sfc = ", wprtp_sfc
+                    write(fstderr,*) "ustar_in = ", ustar_in 
+                    
+                    if ( present( wpsclrp_sfc ) ) then 
+                       write(fstderr,*) "wpsclrp_sfc = ", wpsclrp_sfc
+                    endif
+                    
+                    write(fstderr,*) "Intent(out)"
+                    
+                    write(fstderr,*) "wp2_sfc = ", wp2_sfc  
+                    write(fstderr,*) "up2_sfc = ", up2_sfc
+                    write(fstderr,*) "vp2_sfc = ", vp2_sfc
+                    write(fstderr,*) "thlp2_sfc = ", thlp2_sfc
+                    write(fstderr,*) "rtp2_sfc = ", rtp2_sfc
+                    write(fstderr,*) "rtpthlp_sfc = ", rtpthlp_sfc
                 
-            write(fstderr,*) "Error in sfc_var"
-            
-            write(fstderr,*) "Intent(in)"
-            
-            write(fstderr,*) "upwp_sfc = ", upwp_sfc 
-            write(fstderr,*) "vpwp_sfc = ", vpwp_sfc 
-            write(fstderr,*) "wpthlp_sfc = ", wpthlp_sfc
-            write(fstderr,*) "wprtp_sfc = ", wprtp_sfc
-            write(fstderr,*) "ustar_in = ", ustar_in 
-            
-            if ( present( wpsclrp_sfc ) ) then 
-               write(fstderr,*) "wpsclrp_sfc = ", wpsclrp_sfc
-            endif
-            
-            write(fstderr,*) "Intent(out)"
-            
-            write(fstderr,*) "wp2_sfc = ", wp2_sfc  
-            write(fstderr,*) "up2_sfc = ", up2_sfc
-            write(fstderr,*) "vp2_sfc = ", vp2_sfc
-            write(fstderr,*) "thlp2_sfc = ", thlp2_sfc
-            write(fstderr,*) "rtp2_sfc = ", rtp2_sfc
-            write(fstderr,*) "rtpthlp_sfc = ", rtpthlp_sfc
-        
-           if(present(sclrp2_sfc)) then 
-              write(fstderr,*) "sclrp2_sfc = ", sclrp2_sfc
-           endif
-           
-           if(present(sclrprtp_sfc)) then
-              write(fstderr,*) "sclrprtp_sfc = ", sclrprtp_sfc
-           endif
-           
-           if(present(sclrpthlp_sfc)) then
-              write(fstderr,*) "sclrpthlp_sfc = ", sclrpthlp_sfc 
-           endif
+                   if(present(sclrp2_sfc)) then 
+                      write(fstderr,*) "sclrp2_sfc = ", sclrp2_sfc
+                   endif
+                   
+                   if(present(sclrprtp_sfc)) then
+                      write(fstderr,*) "sclrprtp_sfc = ", sclrprtp_sfc
+                   endif
+                   
+                   if(present(sclrpthlp_sfc)) then
+                      write(fstderr,*) "sclrpthlp_sfc = ", sclrpthlp_sfc
+                   endif
 
-        endif
+                endif ! err_code == CLUBB_var_equals_NaN
+
+        endif ! clubb_at_debug_level ( 2 )
         
         return
 

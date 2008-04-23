@@ -1,4 +1,4 @@
-! $Id: mixing_length.F,v 1.9 2008-04-04 20:10:00 faschinj Exp $
+! $Id: mixing_length.F,v 1.10 2008-04-23 18:13:54 faschinj Exp $
 !-----------------------------------------------------------------------------
         module mixing_length
         
@@ -47,8 +47,8 @@
         use numerical_check, only: length_check
         use saturation, only: rsat
         use diagnostic_variables, only: Lup, Ldown
-        use error_code, only: CLUBB_var_equals_NaN
-
+        use error_code, only: CLUBB_var_equals_NaN,
+     .                        clubb_at_debug_level
         implicit none
         
         intrinsic :: max, sqrt
@@ -275,36 +275,40 @@
         ! Vince Larson limited Lscale to allow host model to take over deep convection.  13 Feb 2008.
         !Lscale = min( Lscale, 1e5 )
         Lscale = min( Lscale, Lscale_max )
-
-        ! Ensure that the output from this subroutine is valid.
-        call length_check( Lscale, Lup, Ldown, err_code )
-        ! Joshua Fasching January 2008
-
-!       Error Reporting
-!       Joshua Fasching February 2008
         
-!       isValid replaced with err_code
-!       Joshua Fasching March 2008
-        if ( err_code == CLUBB_var_equals_NaN ) then
+        if( clubb_at_debug_level( 2 ) ) then
                 
-           write(fstderr,*) "Errors in length subroutine"
-           
-           write(fstderr,*) "Intent(in)"
-           
-           write(fstderr,*) "thvm = ", thvm
-           write(fstderr,*) "thlm = ", thlm
-           write(fstderr,*) "rtm = ", rtm
-           write(fstderr,*) "rcm = ", rcm
-           write(fstderr,*) "em = ", em
-           write(fstderr,*) "exner = ", exner
-           write(fstderr,*) "p = ", p
-           
-           write(fstderr,*) "Intent(out)"
+                ! Ensure that the output from this subroutine is valid.
+                call length_check( Lscale, Lup, Ldown, err_code )
+                ! Joshua Fasching January 2008
 
-           write(fstderr,*) "Lscale = ", Lscale
-           write(fstderr,*) "Lup = ", Lup
-           
-        endif
+        !       Error Reporting
+        !       Joshua Fasching February 2008
+                
+        !       isValid replaced with err_code
+        !       Joshua Fasching March 2008
+                if ( err_code == CLUBB_var_equals_NaN ) then
+                        
+                   write(fstderr,*) "Errors in length subroutine"
+                   
+                   write(fstderr,*) "Intent(in)"
+                   
+                   write(fstderr,*) "thvm = ", thvm
+                   write(fstderr,*) "thlm = ", thlm
+                   write(fstderr,*) "rtm = ", rtm
+                   write(fstderr,*) "rcm = ", rcm
+                   write(fstderr,*) "em = ", em
+                   write(fstderr,*) "exner = ", exner
+                   write(fstderr,*) "p = ", p
+                   
+                   write(fstderr,*) "Intent(out)"
+
+                   write(fstderr,*) "Lscale = ", Lscale
+                   write(fstderr,*) "Lup = ", Lup
+                   
+                endif ! err_code == CLUBB_var_equals_NaN
+
+        endif ! clubb_debug_level
 
         return
 

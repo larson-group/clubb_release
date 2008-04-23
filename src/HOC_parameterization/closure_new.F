@@ -1,4 +1,4 @@
-! $Id: closure_new.F,v 1.19 2008-04-04 20:10:00 faschinj Exp $
+! $Id: closure_new.F,v 1.20 2008-04-23 18:13:54 faschinj Exp $
         module pdf_closure
 
         implicit none
@@ -67,7 +67,8 @@
 
         use saturation, only: rsat
 
-        use error_code, only: CLUBB_var_equals_NaN
+        use error_code, only: CLUBB_var_equals_NaN,
+     .                        clubb_at_debug_level 
         
         implicit none
 
@@ -655,8 +656,8 @@
         pdf_parms(25) = alpha_thl
         pdf_parms(26) = alpha_rt
 
-        
-        call pdf_closure_new_check( wp4, wprtp2, wp2rtp, wpthlp2,
+        if ( clubb_at_debug_level( 2 ) ) then 
+                call pdf_closure_new_check(wp4, wprtp2, wp2rtp, wpthlp2,
      .                           wp2thlp, cf, rcm, wpthvp, wp2thvp,
      .                           rtpthvp, thlpthvp, wprcp, wp2rcp,
      .                           rtprcp, thlprcp, rcp2, wprtpthlp,
@@ -669,97 +670,104 @@
 #endif /*SCALARS*/
      .                           )
 
-!       Error Reporting
-!       Joshua Fasching February 2008
+!                Error Reporting
+!               Joshua Fasching February 2008
                 
-        if ( err_code == CLUBB_var_equals_NaN ) then
+                if ( err_code == CLUBB_var_equals_NaN ) then
                 
-           write(fstderr,*) "Error in pdf_closure_new" 
-           
-           write(fstderr,*) "Intent(in)"
-           write(fstderr,*) "p = ", p 
-           write(fstderr,*) "exner = ", exner
-           write(fstderr,*) "wm = ", wm 
-           write(fstderr,*) "wp2 = ", wp2 
-           write(fstderr,*) "wp3 = ", wp3
-           write(fstderr,*) "Sc = ", Sc
-           write(fstderr,*) "rtm = ", rtm
-           write(fstderr,*) "rtp2 = ", rtp2
-           write(fstderr,*) "wprtp = ", wprtp
-           write(fstderr,*) "thlm = ", thlm
-           write(fstderr,*) "thlp2 = ", thlp2
-           write(fstderr,*) "wpthlp = ", wpthlp
-           write(fstderr,*) "rtpthlp = ", rtpthlp
+                        write(fstderr,*) "Error in pdf_closure_new" 
+                  
+                        write(fstderr,*) "Intent(in)"
+                    
+                        write(fstderr,*) "p = ", p 
+                        write(fstderr,*) "exner = ", exner
+                        write(fstderr,*) "wm = ", wm 
+                        write(fstderr,*) "wp2 = ", wp2 
+                        write(fstderr,*) "wp3 = ", wp3
+                        write(fstderr,*) "Sc = ", Sc
+                        write(fstderr,*) "rtm = ", rtm
+                        write(fstderr,*) "rtp2 = ", rtp2
+                        write(fstderr,*) "wprtp = ", wprtp
+                        write(fstderr,*) "thlm = ", thlm
+                        write(fstderr,*) "thlp2 = ", thlp2
+                        write(fstderr,*) "wpthlp = ", wpthlp
+                        write(fstderr,*) "rtpthlp = ", rtpthlp
 
-          if ( present( sclrm ) ) then
-             write(fstderr,*) "sclrm = ", sclrm
-          end if
+                        if ( present( sclrm ) ) then
+                                write(fstderr,*) "sclrm = ", sclrm
+                        end if
           
-          if ( present( wpsclrp ) ) then
-             write(fstderr,*) "wpsclrp = ", wpsclrp
-          end if
+                        if ( present( wpsclrp ) ) then
+                                write(fstderr,*) "wpsclrp = ", wpsclrp
+                        end if
           
-          if ( present( sclrp2 ) ) then
-             write(fstderr,*) "sclrp2 = ", sclrp2
-          end if
+                        if ( present( sclrp2 ) ) then
+                                write(fstderr,*) "sclrp2 = ", sclrp2
+                        end if
           
-          if ( present( sclrprtp ) ) then
-             write(fstderr,*) "sclrprtp = ", sclrprtp
-          end if
+                        if ( present( sclrprtp ) ) then
+                                write(fstderr,*) "sclrprtp = ", sclrprtp
+                        end if
           
-          if ( present( sclrpthlp ) )then
-             write(fstderr,*) "sclrpthlp = ", sclrpthlp
-          end if
+                        if ( present( sclrpthlp ) )then
+                                write(fstderr,*) "sclrpthlp = ", 
+     .                                            sclrpthlp
+                        end if
 
-          write(fstderr,*) "Intent(out)"
+                        write(fstderr,*) "Intent(out)"
           
-          write(fstderr,*) "wp4 = ", wp4
-          write(fstderr,*) "wprtp2 = ", wprtp2
-          write(fstderr,*) "wp2rtp = ", wp2rtp
-          write(fstderr,*) "wpthlp2 = ", wpthlp2
-          write(fstderr,*) "cf = ", cf
-          write(fstderr,*) "rcm = ", rcm
-          write(fstderr,*) "wpthvp = ", wpthvp
-          write(fstderr,*) "wp2thvp = ", wp2thvp
-          write(fstderr,*) "rtpthvp = ", rtpthvp
-          write(fstderr,*) "thlpthvp = ", thlpthvp
-          write(fstderr,*) "wprcp = ", wprcp
-          write(fstderr,*) "wp2rcp = ", wp2rcp
-          write(fstderr,*) "rtprcp = ", rtprcp
-          write(fstderr,*) "thlprcp = ", thlprcp
-          write(fstderr,*) "rcp2 = ", rcp2
-          write(fstderr,*) "wprtpthlp = ", wprtpthlp
-          write(fstderr,*) "crt1 = ", crt1
-          write(fstderr,*) "crt2 = ", crt2
-          write(fstderr,*) "cthl1 = ", cthl1
-          write(fstderr,*) "cthl2 = ", cthl2
-          write(fstderr,*) "pdf_parms = ", pdf_parms
+                        write(fstderr,*) "wp4 = ", wp4
+                        write(fstderr,*) "wprtp2 = ", wprtp2
+                        write(fstderr,*) "wp2rtp = ", wp2rtp
+                        write(fstderr,*) "wpthlp2 = ", wpthlp2
+                        write(fstderr,*) "cf = ", cf
+                        write(fstderr,*) "rcm = ", rcm
+                        write(fstderr,*) "wpthvp = ", wpthvp
+                        write(fstderr,*) "wp2thvp = ", wp2thvp
+                        write(fstderr,*) "rtpthvp = ", rtpthvp
+                        write(fstderr,*) "thlpthvp = ", thlpthvp
+                        write(fstderr,*) "wprcp = ", wprcp
+                        write(fstderr,*) "wp2rcp = ", wp2rcp
+                        write(fstderr,*) "rtprcp = ", rtprcp
+                        write(fstderr,*) "thlprcp = ", thlprcp
+                        write(fstderr,*) "rcp2 = ", rcp2
+                        write(fstderr,*) "wprtpthlp = ", wprtpthlp
+                        write(fstderr,*) "crt1 = ", crt1
+                        write(fstderr,*) "crt2 = ", crt2
+                        write(fstderr,*) "cthl1 = ", cthl1
+                        write(fstderr,*) "cthl2 = ", cthl2
+                        write(fstderr,*) "pdf_parms = ", pdf_parms
           
-          if ( present( sclrpthvp ) )then
-             write(fstderr,*) "sclrpthvp = ", sclrpthvp
-          end if
+                        if ( present( sclrpthvp ) )then
+                                write(fstderr,*) "sclrpthvp = ",
+     .                                            sclrpthvp
+                        end if
           
-          if ( present( sclrprcp ) )then
-             write(fstderr,*) "sclrprcp = ", sclrprcp
-          end if
+                        if ( present( sclrprcp ) )then
+                                write(fstderr,*) "sclrprcp = ", sclrprcp
+                        end if
           
-          if ( present( wpsclrp2 ) )then
-             write(fstderr,*) "wpsclrp2 = ", wpsclrp2
-          end if
+                        if ( present( wpsclrp2 ) )then
+                                write(fstderr,*) "wpsclrp2 = ", wpsclrp2
+                        end if
           
-          if ( present( wpsclrprtp ) )then
-             write(fstderr,*) "wpsclrprtp = ", wpsclrprtp
-          end if
+                        if ( present( wpsclrprtp ) )then
+                                write(fstderr,*) "wpsclrprtp = ", 
+     .                                            wpsclrprtp
+                        end if
           
-          if ( present( wpsclrpthlp ) )then
-             write(fstderr,*) "wpsclrpthlp = ", wpsclrpthlp
-          end if
+                        if ( present( wpsclrpthlp ) )then
+                                write(fstderr,*) "wpsclrpthlp = ", 
+     .                                            wpsclrpthlp
+                        end if
 
-          if ( present( wp2sclrp ) )then
-             write(fstderr,*) "wp2sclrp = ", wp2sclrp
-          end if
+                        if ( present( wp2sclrp ) )then
+                                write(fstderr,*) "wp2sclrp = ", wp2sclrp
+                        end if
+                        
+                end if ! err_code == CLUBB_var_equals_NaN
           
-        end if
+        end if ! clubb_at_debug_level
         
         return
         

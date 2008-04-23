@@ -1,5 +1,5 @@
 !===============================================================================
-! $Id: mixing.F,v 1.47 2008-04-19 22:42:10 griffinb Exp $
+! $Id: mixing.F,v 1.48 2008-04-23 18:13:54 faschinj Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -70,8 +70,8 @@
         use constants, only: sclr_dim, fstderr
         use grid_class
         use stats_prec, only: time_prec
-        use error_code, only: CLUBB_singular_matrix,
-     .                        CLUBB_bad_lapack_arg
+        use error_code, only: lapack_error,
+     .                        clubb_at_debug_level     
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
@@ -223,8 +223,7 @@
         call mixing_solve( "rtm", dt, wp2, rtp2, lhs, rhs,
      .                     rtm, wprtp, err_code )
 
-        if ( err_code == CLUBB_singular_matrix .or.
-     .       err_code == CLUBB_bad_lapack_arg )  then
+        if ( lapack_error( err_code ) )  then
      
           write(fstderr,'(a)') "rt mixing failed"
           return
@@ -278,8 +277,7 @@
         call mixing_solve( "thlm", dt, wp2, thlp2, lhs, rhs,
      .                     thlm, wpthlp, err_code )
 
-        if ( err_code == CLUBB_singular_matrix .or.
-     .       err_code == CLUBB_bad_lapack_arg ) then       
+        if ( lapack_error( err_code ) ) then       
           write(fstderr,'(a)') "thetal mixing failed"
           return
         endif
@@ -334,9 +332,7 @@
      .                       sclrm(:,SCLR_RT), wpsclrp(:,SCLR_RT), 
      .                       err_code )
 
-          if ( err_code == CLUBB_singular_matrix .or.
-     .         err_code == CLUBB_bad_lapack_arg ) then
-    
+          if ( lapack_error( err_code ) ) then    
             write(fstderr,'(a)') "Passive scalar 1 mixing failed"
             return
           endif
@@ -360,67 +356,76 @@
      .                       sclrm(:,SCLR_THETA), wpsclrp(:,SCLR_THETA), 
      .                       err_code )
 
-          if ( err_code == CLUBB_singular_matrix .or.
-     .       err_code == CLUBB_bad_lapack_arg ) then  
+          if ( lapack_error( err_code ) ) then  
             write(fstderr,'(a)') "Passive scalar 2 mixing failed"
             return
           endif
         endif ! passive scalars
         
 !       Error Report
+!       (This code is unreachable)
 !       Joshua Fasching Feb 2008 
 
-        if ( err_code == CLUBB_singular_matrix .or.
-     .       err_code == CLUBB_bad_lapack_arg ) then
+!        if ( lapack_error( err_code ) ) then
                 
-           write(fstderr,*) "Error in timestep_mixing"
+!           write(fstderr,*) "Error in timestep_mixing"
            
-           write(fstderr,*) "Intent(in)"
+!           write(fstderr,*) "Intent(in)"
            
-           write(fstderr,*) "dt = ", dt
-           write(fstderr,*) "Scm = ", Scm
-           write(fstderr,*) "wmm = ", wmm
-           write(fstderr,*) "wmt = ", wmt
-           write(fstderr,*) "wp2 = ", wp2
-           write(fstderr,*) "wp3 = ", wp3
-           write(fstderr,*) "Kht = ", Kht
-           write(fstderr,*) "taum = ", taum
-           write(fstderr,*) "Skwm = ", Skwm
-           write(fstderr,*) "rtpthvp = ", rtpthvp
-           write(fstderr,*) "rtm_forcing = ", rtm_forcing
-           write(fstderr,*) "thlpthvp = ", thlpthvp
-           write(fstderr,*) "thlm_forcing = ", thlm_forcing
-           write(fstderr,*) "rtp2 = ", rtp2
-           write(fstderr,*) "thlp2 = ", thlp2
+
+!           write(fstderr,*) "dt = ", dt
+!           write(fstderr,*) "taum = ", taum
+!           write(fstderr,*) "wmm = ", wmm
+!           write(fstderr,*) "wmt = ", wmt
+!           write(fstderr,*) "wp2 = ", wp2
+!           write(fstderr,*) "wp3 = ", wp3
+!           write(fstderr,*) "Scm = ", Scm
+!           write(fstderr,*) "Skwm = ", Skwm
+
+           !write(fstderr,*) "dt = ", dt
+           !write(fstderr,*) "Scm = ", Scm
+           !write(fstderr,*) "wmm = ", wmm
+           !write(fstderr,*) "wmt = ", wmt
+           !write(fstderr,*) "wp2 = ", wp2
+           !write(fstderr,*) "wp3 = ", wp3
+           !write(fstderr,*) "Kht = ", Kht
+           !write(fstderr,*) "taum = ", taum
+           !write(fstderr,*) "Skwm = ", Skwm
+           !write(fstderr,*) "rtpthvp = ", rtpthvp
+           !write(fstderr,*) "rtm_forcing = ", rtm_forcing
+           !write(fstderr,*) "thlpthvp = ", thlpthvp
+           !write(fstderr,*) "thlm_forcing = ", thlm_forcing
+           !write(fstderr,*) "rtp2 = ", rtp2
+           !write(fstderr,*) "thlp2 = ", thlp2
            
-           if( present( sclrpthvp ) ) then
-              write(fstderr,*) "sclrpthvp = ", sclrpthvp
-           endif
+!           if( present( sclrpthvp ) ) then
+!              write(fstderr,*) "sclrpthvp = ", sclrpthvp
+!           endif
            
-           if( present( sclrm_forcing ) ) then
-              write(fstderr,*) "sclrm_forcing = ", sclrm_forcing
-           endif
+!           if( present( sclrm_forcing ) ) then
+!              write(fstderr,*) "sclrm_forcing = ", sclrm_forcing
+!           endif
            
-           if( present( sclrp2 ) ) then
-              write(fstderr,*) "sclrp2 = ", sclrp2
-           endif
+!           if( present( sclrp2 ) ) then
+!              write(fstderr,*) "sclrp2 = ", sclrp2
+!           endif
            
-           write(fstderr,*) "Intent(inout)"
+!           write(fstderr,*) "Intent(inout)"
            
-           write(fstderr,*) "rtm = ", rtm 
-           write(fstderr,*) "wprtp = ", wprtp
-           write(fstderr,*) "thlm = ", thlm
-           write(fstderr,*) "wpthlp =", wpthlp
+!           write(fstderr,*) "rtm = ", rtm 
+!           write(fstderr,*) "wprtp = ", wprtp
+!           write(fstderr,*) "thlm = ", thlm
+!           write(fstderr,*) "wpthlp =", wpthlp
            
-           if( present( sclrm ) ) then
-              write(fstderr,*) "sclrm = ", sclrm
-           endif
+!           if( present( sclrm ) ) then
+!              write(fstderr,*) "sclrm = ", sclrm
+!           endif
            
-           if( present( wpsclrp ) ) then
-              write(fstderr,*) "wpsclrp = ", wpsclrp
-           endif
+!           if( present( wpsclrp ) ) then
+!              write(fstderr,*) "wpsclrp = ", wpsclrp
+!           endif
            
-        endif
+!        end if
  
         return
         

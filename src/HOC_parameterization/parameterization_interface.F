@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.83 2008-04-19 22:42:10 griffinb Exp $
+! $Id: parameterization_interface.F,v 1.84 2008-04-23 18:13:54 faschinj Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -73,18 +73,15 @@
        use wp23, only: timestep_wp23
        use stats_prec, only: time_prec
        use error_code, only : CLUBB_var_equals_NaN,
-     .                        CLUBB_singular_matrix,
-     .                        CLUBB_bad_lapack_arg
+     .                        lapack_error,
+     .                        clubb_at_debug_level
+       use skw
 #ifdef STATS
        use stats_hoc
        use stats_subs
 #endif /*STATS*/
 
        implicit none
-
-       ! External
-       real, external :: 
-     . Skw_func ! Skw function
 
        intrinsic :: sqrt, min, max, exp, mod
 
@@ -208,7 +205,7 @@
 
 
 !-------- Test input variables ----------------------------------------
-
+       if ( clubb_at_debug_level( 2 ) ) then
        call parameterization_check
      .      ( thlm_forcing, rtm_forcing, wmm, wmt, p, rhom,
      .        rhot, exner, wpthlp_sfc, wprtp_sfc,
@@ -221,6 +218,7 @@
      .        sclrm, sclrm_forcing, edsclrm
 #endif /*SCALARS*/
      .       )
+       end if
 !-----------------------------------------------------------------------
 
        !----------------------------------------------------------------
@@ -330,8 +328,7 @@
        ! Changed from a logical flag to an integer indicating nature of
        ! error.
        ! Joshua Fasching March 2008
-       if ( err_code == CLUBB_singular_matrix .or.
-     .      err_code == CLUBB_bad_lapack_arg ) return
+       if ( lapack_error(err_code)) return
 
 #ifndef DISABLE_GAMMA_SKW
        !----------------------------------------------------------------
@@ -560,8 +557,7 @@
        ! gracefully.
        ! Joshua Fasching March 2008
 
-       if ( err_code == CLUBB_singular_matrix .or.
-     .      err_code == CLUBB_bad_lapack_arg ) return
+       if ( lapack_error( err_code ) ) return
 
         ! Vince Larson clipped rcm in order to prevent rvm < 0.  5 Apr 2008.
         do k = 1, gr%nnzp
@@ -585,8 +581,7 @@
        ! Wrapped LAPACK procedures may report errors, and if so, exit
        ! gracefully.
        ! Joshua Fasching March 2008
-       if ( err_code == CLUBB_singular_matrix .or.
-     .       err_code == CLUBB_bad_lapack_arg ) return
+       if ( lapack_error( err_code ) ) return
 
 #ifdef SCALARS
        !----------------------------------------------------------------
@@ -606,8 +601,7 @@
 
        ! Set boundary condition as in rt
        edsclrm(1,1:sclr_dim) = edsclrm(2,1:sclr_dim)
-       if ( err_code == CLUBB_singular_matrix .or.
-     .      err_code == CLUBB_bad_lapack_arg ) return
+       if ( lapack_error(err_code) ) return
 #endif /*SCALARS*/
 
 
@@ -654,8 +648,7 @@
        ! Wrapped LAPACK procedures may report errors, and if so, exit
        ! gracefully.
        ! Joshua Fasching March 2008
-       if ( err_code == CLUBB_singular_matrix .or.
-     .      err_code == CLUBB_bad_lapack_arg ) return
+       if ( lapack_error(err_code) ) return
 
        IF ( .NOT. implemented ) THEN
           vmt = - wmt * ddzm( zt2zm( vm ) )
@@ -696,8 +689,7 @@
        ! Wrapped LAPACK procedures may report errors, and if so, exit
        ! gracefully.
        ! Joshua Fasching March 2008    
-       if ( err_code == CLUBB_singular_matrix .or.
-     .      err_code == CLUBB_bad_lapack_arg ) return
+       if ( lapack_error( err_code ) ) return
 
        if ( luv_nudge ) then
          um(1:gr%nnzp) = um(1:gr%nnzp) 
@@ -759,6 +751,8 @@
      .            )
 
 #endif /*STATS*/
+
+       if( clubb_at_debug_level( 2 ) ) then
        call parameterization_check
      .      ( thlm_forcing, rtm_forcing, wmm, wmt, p, rhom,
      .        rhot, exner, wpthlp_sfc, wprtp_sfc,
@@ -772,6 +766,7 @@
 #endif /*SCALARS*/
 
      . )
+       endif
 !-----------------------------------------------------------------------
 
        return

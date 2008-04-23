@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F,v 1.5 2008-04-05 19:54:32 griffinb Exp $
+! $Id: compute_um_edsclrm_mod.F,v 1.6 2008-04-23 18:13:54 faschinj Exp $
 !------------------------------------------------------------------------
         module compute_um_edsclrm_mod
 
@@ -34,8 +34,8 @@
 #endif
         use constants, only: fstderr
         use stats_prec, only: time_prec
-        use error_code, only: CLUBB_singular_matrix,
-     .                        CLUBB_bad_lapack_arg
+        use error_code, only: lapack_error,
+     .                        clubb_at_debug_level
         
         implicit none
 
@@ -223,8 +223,8 @@
 
         ! Error report
         ! Joshua Fasching February 2008
-        if ( err_code == CLUBB_singular_matrix .or.
-     .       err_code == CLUBB_bad_lapack_arg ) then
+        if ( lapack_error( err_code ) .and. 
+     .       clubb_at_debug_level( 1 ) ) then
                        
             write(fstderr,*) "Error in compute_um_edsclrm"
            
