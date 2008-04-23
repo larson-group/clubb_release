@@ -1,11 +1,11 @@
-!$Id: interpolation.F,v 1.1 2008-04-23 17:47:28 faschinj Exp $
+!$Id: interpolation.F,v 1.2 2008-04-23 18:35:18 faschinj Exp $
         module interpolation
 
         implicit none
 
         private
 
-        public :: linint, binary_search, zlinterp,
+        public :: linint, binary_search, zlinterp_fnc,
      .            linear_interpolation
         
         contains
