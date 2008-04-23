@@ -1,4 +1,4 @@
-! $Id: sounding.F,v 1.15 2008-03-20 19:59:54 dschanen Exp $
+! $Id: sounding.F,v 1.16 2008-04-23 18:00:21 faschinj Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
         module sounding
@@ -8,9 +8,7 @@
         public :: 
      .  read_sounding,
      .  read_profile ! Not currently used in HOC
-
-        private :: linint
-
+       
         contains
 !------------------------------------------------------------------------
         subroutine read_sounding( iunit, 
@@ -24,9 +22,13 @@
 
         use grid_class
         use constants, only: sclr_dim, fstderr
+        use std_atmosphere, only: atmosphere
+        use interpolation, only: linint        
 
         implicit none
 
+
+        
         ! Constant parameter
         integer, parameter :: nmaxsnd = 600
 
@@ -75,10 +77,17 @@
 
         integer :: i, j, k  ! Loop indices
 
+        real, dimension(nmaxsnd) ::
+     .  dummy
+
+        ! Is this model being extended by 1976 Standard Atmosphere?
+        logical :: lstd_atmo
+        
         ! Whether this routine needs to read in data for the 
         ! passive scalars variables
         logical :: sclr_sounding 
 
+        
         ! Read sounding namelist
         if ( present( sclrm ) .and. present( edsclrm ) ) then 
           sclr_sounding = .true.
@@ -86,6 +95,7 @@
           sclr_sounding = .false.
         end if
 
+        lstd_atmo = .false.
         
         open(unit = iunit, file = runfile, status = 'old')
         read(unit = iunit, nml = sounding)
@@ -138,18 +148,22 @@
 ! (one above and one below) to initialize mean quantities in the model
 ! Modified 27 May 2005 -dschanen: eliminated the goto in favor of a do while( )
 
+        print *, "Reading in sounding information"
         do i=2, gr%nnzp
           k=1
-          do while ( z(k) < gr%zt(i) )
+          do while ( z(k) < gr%zt(i) .and. .not. lstd_atmo )
             k=k+1
             if ( k > nlevels ) then
-              write(fstderr,*) 'STOP Not enough sounding data to ',
-     .          'initialize grid:'
-              write(fstderr,'(a,f7.1,/a,f7.1)') 
-     .          '  highest sounding level', z(nlevels),
-     .          '  should be higher than highest thermodynamic point',
-     .          gr%zt(gr%nnzp)
-              stop 'STOP in sounding'
+!              write(fstderr,*) 'STOP Not enough sounding data to ',
+!     .          'initialize grid:'
+!              write(fstderr,'(a,f7.1,/a,f7.1)') 
+!     .          '  highest sounding level', z(nlevels),
+!     .          '  should be higher than highest thermodynamic point',
+!     .          gr%zt(gr%nnzp)
+!              stop 'STOP in sounding'
+
+               lstd_atmo = .true.
+               exit
             end if  ! k > nlevels
 
             ! Regular situation w/ linear int.
@@ -165,6 +179,15 @@
               thlm(i) = linint( gr%zt(i), z(k), z(k-1), 
      .                      theta(k), theta(k-1) )
               rtm(i)  = linint( gr%zt(i), z(k), z(k-1), rt(k), rt(k-1) )
+              
+              !print *, "At k = ",k            
+              !print *, "um(",i,")= ", um(i)
+              !print *, "vm(",i,")= ", vm(i)
+              !print *, "ugm(",i,")= ", ugm(i)
+              !print *, "vgm(",i,")= ", vgm(i)
+              !print *, "thlm(",i,")= ", thlm(i)
+              !print *, "rtm(",i,")= ", rtm(i)
+
               if ( sclr_sounding ) then
                 do j = 1, sclr_dim 
                   sclrm(i,j) = linint( gr%zt(i), z(k), z(k-1), 
@@ -212,32 +235,30 @@
 
           end do ! do while ( z(k) < gr%zt(i) )
 
+          ! If the grid extends beyond the sounding data, use
+          ! Standard Atmosphere
+          ! Joshua Fasching April 2009
+          if ( lstd_atmo ) then
+                  
+                  call atmosphere( gr%zt(i), thlm(i), rtm(i) )
+                  
+ 
+                  um(i) = um(i-1)
+                  vm(i) = vm(i-1)
+                  ugm(i) = um(i)
+                  vgm(i) = vm(i)
+
+          endif
+
         end do   ! i=2, gr%nnzp
+        
+        if ( lstd_atmo ) then
+                write(fstderr,*) "Warning: 1976 Standard Atmosphere ",
+     .                              "was used to complete the grid"
+        endif
 
         return
         end subroutine read_sounding
-
-!------------------------------------------------------------------------
-        real function linint( zmid, ztop, zbot, vtop, vbot )
-
-!       Description:
-!       Function to linearly interpolate quantities to a height zmid
-!       given the values vtop at a height ztop and vbot at a height
-!       zbot.
-!------------------------------------------------------------------------
-
-        implicit none
-
-        ! Input  Variables
-
-        real, intent(in) :: zmid, ztop, zbot, vtop, vbot
-
-        ! Compute linear interpolation
-
-        linint = ( (zmid-zbot)/(ztop-zbot) ) * (vtop-vbot) + vbot
-
-        return
-        end function linint
 
 !------------------------------------------------------------------------
         subroutine read_profile( fname, x )
@@ -247,7 +268,8 @@
 !------------------------------------------------------------------------
 
         use grid_class
-
+        use interpolation, only: linint
+        
         implicit none
 
         ! Constant Parameter
@@ -325,6 +347,6 @@
 
         return
         end subroutine read_profile
-
+        
         end module sounding
 !-----------------------------------------------------------------------
