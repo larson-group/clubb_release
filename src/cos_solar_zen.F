@@ -1,5 +1,12 @@
-! $Id: cos_solar_zen.F,v 1.1 2006-12-13 23:46:51 dschanen Exp $
+! $Id: cos_solar_zen.F,v 1.2 2008-04-23 17:52:52 faschinj Exp $
 !-----------------------------------------------------------------------
+        module cos_solar_zen_mod
+
+        private
+
+        public :: cos_solar_zen
+ 
+        contains
         function cos_solar_zen
      .           ( day, month, year, current_time, lat_in_degrees,
      .             lon_in_degrees ) result( amu0 )
@@ -140,3 +147,5 @@
 
         return
         end function cos_solar_zen
+
+        end module cos_solar_zen_mod
