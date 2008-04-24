@@ -1,5 +1,5 @@
-!===============================================================================
-! $Id: mixing.F,v 1.48 2008-04-23 18:13:54 faschinj Exp $
+!-----------------------------------------------------------------------
+! $Id: mixing.F,v 1.49 2008-04-24 16:18:39 griffinb Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -484,7 +484,7 @@
 
         ! Local Variables
         real, dimension(gr%nnzp) :: 
-     .  a1  ! a1; See eqn. 24 in `Equations for HOC'           [-]
+     .  a1  ! a_1; See eqn. 24 in `Equations for HOC'          [-]
 
         ! wtol_sqd = the square of the minimum threshold on w,
         !     [wtol_sqd] = m^2 s^{-2}.  Vince Larson 11 Mar 2008.
@@ -721,8 +721,11 @@
         k      = 1
         k_xm   = 2*k - 1
         k_wpxp = 2*k
+
+        ! xm
         lhs(:,k_xm)     = 0.0
         lhs(3,k_xm)     = 1.0
+        ! w'x'
         lhs(:,k_wpxp)   = 0.0
         lhs(3,k_wpxp)   = 1.0
 
@@ -730,8 +733,11 @@
         k      = gr%nnzp
         k_xm   = 2*k - 1
         k_wpxp = 2*k
+
+        ! xm
         lhs(:,k_xm)     = 0.0
         lhs(3,k_xm)     = 1.0
+        ! w'x'
         lhs(:,k_wpxp)   = 0.0
         lhs(3,k_wpxp)   = 1.0
 
@@ -902,8 +908,8 @@
         ! that xm(1) = xm(2).
         rhs(k_xm,1)   = xm(k)
         ! The value of w'x' at the lower boundary will remain the same.
-        ! When the lower boundary is at the surface, the surface value of
-        ! w'x' is set elsewhere (case-specific information).
+        ! The surface value of w'x' is set elsewhere 
+        ! (case-specific information).
         rhs(k_wpxp,1) = wpxp(k)
 
         ! Upper boundary
@@ -1542,20 +1548,23 @@
 !       levels, while the values of w'^3 are found on the thermodynamic 
 !       levels.  Each of the variables w'x', w'^2, and a_1 are 
 !       interpolated to the intermediate thermodynamic levels.  The 
-!       values of the mathematical expression (called Y here) within the
-!       dY/dz term are computed on the thermodynamic levels.  Then, the
-!       derivative (d/dz) of the expression (Y) is taken over the 
+!       values of the mathematical expression (called F here) within the
+!       dF/dz term are computed on the thermodynamic levels.  Then, the
+!       derivative (d/dz) of the expression (F) is taken over the 
 !       central momentum level, yielding the desired result.
-!       In this function, the values of Y are as follows:
+!       In this function, the values of F are as follows:
 !
-!       Y = a_l * ( w'^3 / w'^2 ) * w'x'(t+1).
+!       F = a_1(t) * ( w'^3(t) / w'^2(t) ) * w'x'(t+1),
+!
+!       where the timestep index (t) stands for the index of the current
+!       timestep.
 !
 !
 !       =a1p1========wp2p1========wpxpp1========================= m(k+1)
 !
 !       -----a1(interp)---wp2(interp)---wpxp(interp)---wp3p1----- t(k+1)
 !
-!       =a1==========wp2==========wpxp===================dY/dz=== m(k)
+!       =a1==========wp2==========wpxp===================dF/dz=== m(k)
 !
 !       -----a1(interp)---wp2(interp)---wpxp(interp)---wp3------- t(k)
 !
@@ -1585,9 +1594,9 @@
      .  wp2p1,   ! w'^2(k+1)                     [m^2/s^2]
      .  wp2,     ! w'^2(k)                       [m^2/s^2]
      .  wp2m1,   ! w'^2(k-1)                     [m^2/s^2]
-     .  a1p1,    ! a1(k+1)                       [-]
-     .  a1,      ! a1(k)                         [-]
-     .  a1m1,    ! a1(k-1)                       [-]
+     .  a1p1,    ! a_1(k+1)                      [-]
+     .  a1,      ! a_1(k)                        [-]
+     .  a1m1,    ! a_1(k-1)                      [-]
      .  wp3p1,   ! w'^3(k+1)                     [m^3/s^3]
      .  wp3,     ! w'^3(k)                       [m^3/s^3]
      .  dzm,     ! Inverse of grid spacing (k)   [1/m]
@@ -1595,6 +1604,13 @@
 
         ! Return Variable
         real, dimension(3) :: lhs
+
+        ! Note:  The w'x' turbulent advection term, which is
+        !        - d[ a_1 * ( w'^3 / w'^2 ) * w'x' ] / dz, still keeps 
+        !        the a_1 term inside the derivative, unlike the w'^3 
+        !        equation (in wp23.F) and the equations in diag_var.F 
+        !        for r_t'^2, th_l'^2, r_t'th_l', u'^2, v'^2, sclr'r_t', 
+        !        sclr'th_l', and sclr'^2.  Brian.
 
         ! Momentum superdiagonal: [ x wpxp(k+1,<t+1>) ]
         lhs(kp1_mdiag)
@@ -1791,9 +1807,9 @@
 !       The timestep index (t+1) means that the value of w'x' being used
 !       is from the timestep being advanced to.
 !
-!       The values of w'x' are found on momentum levels.  The values of
-!       the C_6 skewness function and time-scale taum are also found on
-!       momentum levels.
+!       The values of w'x' are found on the momentum levels.  The values 
+!       of the C_6 skewness function and time-scale tau_m are also found 
+!       on the momentum levels.
 
 !       References:
 !-----------------------------------------------------------------------
