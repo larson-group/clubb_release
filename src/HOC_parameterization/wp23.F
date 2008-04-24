@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.54 2008-04-23 18:13:54 faschinj Exp $
+! $Id: wp23.F,v 1.55 2008-04-24 15:03:57 griffinb Exp $
 !===============================================================================
         module wp23
 
@@ -979,9 +979,10 @@
         k_wp3 = 2*k - 1
         k_wp2 = 2*k
 
+        ! w'^2
         lhs(:,k_wp2) = 0.0
         lhs(3,k_wp2) = 1.0
-
+        ! w'^3
         lhs(:,k_wp3) = 0.0
         lhs(3,k_wp3) = 1.0
 
@@ -990,9 +991,10 @@
         k_wp3 = 2*k - 1
         k_wp2 = 2*k
 
+        ! w'^2
         lhs(:,k_wp2) = 0.0
         lhs(3,k_wp2) = 1.0
-
+        ! w'^3
         lhs(:,k_wp3) = 0.0
         lhs(3,k_wp3) = 1.0
 
@@ -1060,7 +1062,7 @@
         ! Array indices
         integer :: k, km1, kp1, k_wp2, k_wp3
 
-        ! Holds data for use in Crank-Nicholson eddy diffusion.
+        ! For use in Crank-Nicholson eddy diffusion.
         real, dimension(3) :: rhs_diff
 
 
@@ -1235,9 +1237,6 @@
      .    + wp3_term_pr1_rhs( C8, C8b, tauw3t(k), Skwt(k), wp3(k) )
           endif
 
-          ! These lines are for the diffusional term with a Crank-Nicholson
-          ! time step.  They need to be commented out for completely implicit
-          ! diffusion to be used.
           if ( iwp3_dp1 > 0 ) then
            if ( lcrank_nich_diff ) then
             zt%x(k,iwp3_dp1) = zt%x(k,iwp3_dp1)
@@ -1680,7 +1679,7 @@
 !
 !       The d(w'^2)/dt equation contains pressure term 3:
 !
-!       + (2/3) C_5 [ (g/th_0) w'th_v' + u'w' du/dz + v'w' dv/dz ]
+!       + (2/3) C_5 [ (g/th_0) w'th_v' - u'w' du/dz - v'w' dv/dz ].
 !
 !       This term is solved for completely explicitly and is 
 !       discretized as follows:
@@ -1690,8 +1689,7 @@
 !       thermodynamic levels.  The derivatives of both um and vm are 
 !       taken over the intermediate (central) momentum level.  All the
 !       remaining mathematical operations take place at the central 
-!       momentum level, yielding the desired result.  The results 
-!       contributes the explicit portion of the w'^2 solution.
+!       momentum level, yielding the desired result.
 !
 !       ------ump1------------vmp1------------------------------- t(k+1)
 !
@@ -1935,22 +1933,22 @@
 !       the values of w'^2, a_1, and a_3 are found on the momentum 
 !       levels.  The variable w'^3 is interpolated to the intermediate 
 !       momentum levels.  The values of the mathematical expressions
-!       (called X and Y here) within the dX/dz and dY/dz terms are
+!       (called F and G here) within the dF/dz and dG/dz terms are
 !       computed on the momentum levels.  Then, the derivatives (d/dz) 
-!       of the expressions (X and Y) are taken over the central 
+!       of the expressions (F and G) are taken over the central 
 !       thermodynamic level, yielding the desired result.
-!       In this function, the values of X and Y are as follows:
+!       In this function, the values of F and G are as follows:
 !
-!       X = a_3(t) * 2 * w'^2(t) * w'^2(t+1); and
+!       F = a_3(t) * 2 * w'^2(t) * w'^2(t+1); and
 !
-!       Y = a_1(t) * ( 2 * w'^3(t) * w'^3(t+1) ) / w'^2(t).
+!       G = a_1(t) * ( 2 * w'^3(t) * w'^3(t+1) ) / w'^2(t).
 !
 !
 !       --------------------wp3p1-------------------------------- t(k+1)
 !
 !       =a3====wp2====a1=========wp3(interp)===================== m(k)
 !
-!       --------------------wp3----------------dX/dz---dY/dz----- t(k)
+!       --------------------wp3----------------dF/dz---dG/dz----- t(k)
 !
 !       =a3m1==wp2m1==a1m1=======wp3(interp)===================== m(k-1)
 !
@@ -2256,22 +2254,22 @@
 !       the values of w'^2, a_1, and a_3 are found on the momentum 
 !       levels.  The variable w'^3 is interpolated to the intermediate 
 !       momentum levels.  The values of the mathematical expressions
-!       (called X and Y here) within the dX/dz and dY/dz terms are 
+!       (called F and G here) within the dF/dz and dG/dz terms are 
 !       computed on the momentum levels.  Then, the derivatives (d/dz) 
-!       of the expressions (X and Y) are taken over the central 
+!       of the expressions (F and G) are taken over the central 
 !       thermodynamic level, yielding the desired result.
-!       In this function, the values of X and Y are as follows:
+!       In this function, the values of F and G are as follows:
 !
-!       X = a_3(t) * ( w'^2(t) )^2; and
+!       F = a_3(t) * ( w'^2(t) )^2; and
 !
-!       Y = a_1(t) * ( w'^3(t) )^2 / w'^2(t).
+!       G = a_1(t) * ( w'^3(t) )^2 / w'^2(t).
 !
 !
 !       --------------------wp3p1-------------------------------- t(k+1)
 !
 !       =a3====wp2====a1=========wp3(interp)===================== m(k)
 !
-!       --------------------wp3----------------dX/dz---dY/dz----- t(k)
+!       --------------------wp3----------------dF/dz---dG/dz----- t(k)
 !
 !       =a3m1==wp2m1==a1m1=======wp3(interp)===================== m(k-1)
 !
