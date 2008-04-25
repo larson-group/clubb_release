@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.49 2008-04-24 16:18:39 griffinb Exp $
+! $Id: mixing.F,v 1.50 2008-04-25 15:48:10 griffinb Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -29,9 +29,7 @@
         private :: mixing_lhs,
      .             mixing_rhs,
      .             mixing_solve,
-     .             xm_term_ma_lhs,
      .             xm_term_ta_lhs,
-     .             wpxp_term_ma_lhs,
      .             wpxp_term_ta_lhs,
      .             wpxp_term_tp_lhs,
      .             wpxp_terms_ac_pr2_lhs,
@@ -449,6 +447,7 @@
         use grid_class
         use stats_prec, only: time_prec
         use diffusion, only: diffusion_mlev
+        use mean_adv   ! both functions
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
@@ -541,7 +540,7 @@
 
             lhs((/3-2,3+2/),k_xm)
      .      = lhs((/3-2,3+2/),k_xm)
-     .      + xm_term_ma_lhs( wmt(k), gr%dzt(k) )
+     .      + term_ma_tlev_lhs( wmt(k), gr%dzt(k) )
 
           else
 
@@ -567,7 +566,7 @@
           if ( irtm_ma > 0 .or. ithlm_ma > 0 ) then
             if ( .not. implemented ) then
               tmp(1:2) = 
-     .        + xm_term_ma_lhs( wmt(k), gr%dzt(k) )
+     .        + term_ma_tlev_lhs( wmt(k), gr%dzt(k) )
               ztscr01(k) = - tmp(2)
               ztscr02(k) = - tmp(1)
             else
@@ -605,7 +604,7 @@
           ! LHS mean advection (ma) term.
           lhs((/3-2,3+2/),k_wpxp)
      .    = lhs((/3-2,3+2/),k_wpxp)
-     .    + wpxp_term_ma_lhs( wmm(k), gr%dzm(k) )
+     .    + term_ma_mlev_lhs( wmm(k), gr%dzm(k) )
 
           ! LHS turbulent advection (ta) term.
           lhs((/3-2,3,3+2/),k_wpxp)
@@ -646,7 +645,7 @@
 
           if ( iwprtp_ma > 0 .or. iwpthlp_ma > 0 ) then
             tmp(1:2) =
-     .      + wpxp_term_ma_lhs( wmm(k), gr%dzm(k) )
+     .      + term_ma_mlev_lhs( wmm(k), gr%dzm(k) )
             zmscr01(k) = - tmp(2)
             zmscr02(k) = - tmp(1)
           endif ! ma
@@ -1281,85 +1280,6 @@
         end subroutine mixing_solve
 
 !===============================================================================
-        pure function xm_term_ma_lhs( wmt, dzt )
-     .  result( lhs )
-
-!       Description:
-!       Mean advection of xm: implicit portion of the code.
-!
-!       The d(xm)/dt equation contains a mean advection term:
-!
-!       - w * d(xm)/dz.
-!
-!       This term is solved for completely implicitly, such that:
-!
-!       - w * d( xm(t+1) )/dz.
-!
-!       Note:  When the term is brought over to the left-hand side, the
-!              sign is reversed and the leading "-" in front of the
-!              term is changed to a "+".
-!
-!       The timestep index (t+1) means that the value of xm being used
-!       is from the timestep being advanced to.
-!
-!       This term is discretized as follows:
-!
-!       The values of xm are found on the thermodynamic levels, as
-!       are the values of wmt (mean vertical velocity on thermodynamic
-!       levels).  The variable xm is interpolated to the intermediate
-!       momentum levels.  The derivative of the interpolated values is
-!       taken over the central thermodynamic level.  The derivative
-!       is multiplied by wmt at the central thermodynamic level to get
-!       the desired result.
-!
-!       -------------xmp1---------------------------------------- t(k+1)
-!
-!       ====================xm(interp)=========================== m(k)
-!
-!       -------------xm-------------------d(xm)/dz---------wmt--- t(k)
-!
-!       ====================xm(interp)=========================== m(k-1)
-!
-!       -------------xmm1---------------------------------------- t(k-1)
-!
-!       The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1)
-!       correspond with altitudes zt(k+1), zm(k), zt(k), zm(k-1),
-!       and zt(k-1), respectively.  The letter "t" is used for
-!       thermodynamic levels and the letter "m" is used for momentum
-!       levels.
-!
-!       dzt(k) = 1 / ( zm(k) - zm(k-1) )
-
-!       References:
-!-----------------------------------------------------------------------
-
-        implicit none
-
-        ! Constant parameters
-        integer, parameter ::
-     .  kp1_tdiag = 1,   ! Thermodynamic superdiagonal index.
-     .  km1_tdiag = 2    ! Thermodynamic subdiagonal index.
-
-        ! Input Variables
-        real, intent(in) ::
-     .  wmt,  ! wmt(k)                        [m/s]
-     .  dzt   ! Inverse of grid spacing (k)   [1/m]
-
-        ! Return Variable
-        real, dimension(2) :: lhs
-
-        ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
-        lhs(kp1_tdiag)
-     .  = + wmt * (1.0/2.0) * dzt
-
-        ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
-        lhs(km1_tdiag)
-     .  = - wmt * (1.0/2.0) * dzt
-
-        return
-        end function xm_term_ma_lhs
-
-!===============================================================================
         pure function xm_term_ta_lhs( dzt )
      .  result( lhs )
 
@@ -1379,7 +1299,8 @@
 !              term is changed to a "+".
 !
 !       The timestep index (t+1) means that the value of w'x' being used
-!       is from the timestep being advanced to.
+!       is from the next timestep, which is being advanced to in solving
+!       the d(xm)/dt and d(w'x')/dt equations.
 !
 !       This term is discretized as follows:
 !
@@ -1430,85 +1351,6 @@
         end function xm_term_ta_lhs
 
 !===============================================================================
-        pure function wpxp_term_ma_lhs( wmm, dzm )
-     .  result( lhs )
-
-!       Description:
-!       Mean advection of w'x': implicit portion of the code.
-!
-!       The d(w'x')/dt equation contains a mean advection term:
-!
-!       - w * d(w'x')/dz.
-!
-!       This term is solved for completely implicitly, such that:
-!
-!       - w * d( w'x'(t+1) )/dz.
-!
-!       Note:  When the term is brought over to the left-hand side, the
-!              sign is reversed and the leading "-" in front of the
-!              term is changed to a "+".
-!
-!       The timestep index (t+1) means that the value of w'x' being used
-!       is from the timestep being advanced to.
-!
-!       This term is discretized as follows:
-!
-!       The values of w'x' are found on the momentum levels, as are the
-!       values of wmm (mean vertical velocity on momentum levels).
-!       The variable w'x' is interpolated to the intermediate
-!       thermodynamic levels.  The derivative of the interpolated values
-!       is taken over the central momentum level.  The derivative
-!       is multiplied by wmm at the central momentum level to get
-!       the desired result.
-!
-!       ==========wpxpp1========================================= m(k+1)
-!
-!       -------------------wpxp(interp)-------------------------- t(k+1)
-!
-!       ==========wpxp====================d(wpxp)/dz=======wmm=== m(k)
-!
-!       -------------------wpxp(interp)-------------------------- t(k)
-!
-!       ==========wpxpm1========================================= m(k-1)
-!
-!       The vertical indices m(k+1), t(k+1), m(k), t(k), and m(k-1)
-!       correspond with altitudes zm(k+1), zt(k+1), zm(k), zt(k),
-!       and zm(k-1), respectively.  The letter "t" is used for
-!       thermodynamic levels and the letter "m" is used for momentum
-!       levels.
-!
-!       dzm(k) = 1 / ( zt(k+1) - zt(k) )
-
-!       References:
-!-----------------------------------------------------------------------
-
-        implicit none
-
-        ! Constant parameters
-        integer, parameter ::
-     .  kp1_mdiag = 1,   ! Momentum superdiagonal index.
-     .  km1_mdiag = 2    ! Momentum subdiagonal index.
-
-        ! Input Variables
-        real, intent(in) ::
-     .  wmm,  ! wmm(k)                        [m/s]
-     .  dzm   ! Inverse of grid spacing (k)   [1/m]
-
-        ! Return Variable
-        real, dimension(2) :: lhs
-
-        ! Momentum superdiagonal: [ x wpxp(k+1,<t+1>) ]
-        lhs(kp1_mdiag)
-     .  = + wmm * (1.0/2.0) * dzm
-
-        ! Momentum subdiagonal: [ x wpxp(k-1,<t+1>) ]
-        lhs(km1_mdiag)
-     .  = - wmm * (1.0/2.0) * dzm
-
-        return
-        end function wpxp_term_ma_lhs
-
-!===============================================================================
         pure function wpxp_term_ta_lhs( wp2p1, wp2, wp2m1, 
      .                                  a1p1, a1, a1m1, 
      .                                  wp3p1, wp3, dzm, wtol_sqd )
@@ -1540,7 +1382,8 @@
 !              term is changed to a "+".
 !
 !       The timestep index (t+1) means that the value of w'x' being used
-!       is from the timestep being advanced to.
+!       is from the next timestep, which is being advanced to in solving
+!       the d(w'x')/dt equation.
 !
 !       This term is discretized as follows:
 !
@@ -1591,16 +1434,16 @@
 
         ! Input Variables
         real, intent(in) ::
-     .  wp2p1,   ! w'^2(k+1)                     [m^2/s^2]
-     .  wp2,     ! w'^2(k)                       [m^2/s^2]
-     .  wp2m1,   ! w'^2(k-1)                     [m^2/s^2]
-     .  a1p1,    ! a_1(k+1)                      [-]
-     .  a1,      ! a_1(k)                        [-]
-     .  a1m1,    ! a_1(k-1)                      [-]
-     .  wp3p1,   ! w'^3(k+1)                     [m^3/s^3]
-     .  wp3,     ! w'^3(k)                       [m^3/s^3]
-     .  dzm,     ! Inverse of grid spacing (k)   [1/m]
-     .  wtol_sqd ! Model parameter wtol^2        [m^2/s^2]
+     .  wp2p1,   ! w'^2(k+1)                      [m^2/s^2]
+     .  wp2,     ! w'^2(k)                        [m^2/s^2]
+     .  wp2m1,   ! w'^2(k-1)                      [m^2/s^2]
+     .  a1p1,    ! a_1(k+1)                       [-]
+     .  a1,      ! a_1(k)                         [-]
+     .  a1m1,    ! a_1(k-1)                       [-]
+     .  wp3p1,   ! w'^3(k+1)                      [m^3/s^3]
+     .  wp3,     ! w'^3(k)                        [m^3/s^3]
+     .  dzm,     ! Inverse of grid spacing (k)    [1/m]
+     .  wtol_sqd ! w wind comp. tolerance squared [m^2/s^2]
 
         ! Return Variable
         real, dimension(3) :: lhs
@@ -1656,7 +1499,8 @@
 !              term is changed to a "+".
 !
 !       The timestep index (t+1) means that the value of xm being used
-!       is from the timestep being advanced to.
+!       is from the next timestep, which is being advanced to in solving
+!       the d(w'x')/dt and d(xm)/dt equations.
 !
 !       This term is discretized as follows:
 !
@@ -1718,7 +1562,7 @@
 !
 !       The d(w'x')/dt equation contains an accumulation term:
 !
-!       - w'x' dw/dz,
+!       - w'x' dw/dz;
 !
 !       and pressure term 2:
 !
@@ -1735,7 +1579,8 @@
 !              term is changed to a "+".
 !
 !       The timestep index (t+1) means that the value of w'x' being used
-!       is from the timestep being advanced to.
+!       is from the next timestep, which is being advanced to in solving
+!       the d(w'x')/dt equation.
 !
 !       The terms are discretized as follows:
 !
@@ -1790,7 +1635,7 @@
      .  result( lhs )
 
 !       Description
-!       Pressure term 1 for w'x': implicit portion of the code.
+!       Pressure term 1 for w'x':  implicit portion of the code.
 !
 !       The d(w'x')/dt equation contains pressure term 1:
 !
@@ -1805,7 +1650,8 @@
 !              term is changed to a "+".
 !
 !       The timestep index (t+1) means that the value of w'x' being used
-!       is from the timestep being advanced to.
+!       is from the next timestep, which is being advanced to in solving
+!       the d(w'x')/dt equation.
 !
 !       The values of w'x' are found on the momentum levels.  The values 
 !       of the C_6 skewness function and time-scale tau_m are also found 
@@ -1845,7 +1691,7 @@
 !
 !       The d(w'x')/dt equation contains a buoyancy production term:
 !
-!       + (g/th_0) x'th_v',
+!       + (g/th_0) x'th_v';
 !
 !       and pressure term 3:
 !
