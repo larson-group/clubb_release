@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.34 2008-04-25 15:46:49 griffinb Exp $
+# $Id: make.deps,v 1.35 2008-04-25 22:15:42 faschinj Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -184,7 +184,7 @@ two_rt_sw.o		: kinds.o two_rt_sw.F
 two_rt_sw_bs.o		: kinds.o lapack_wrap.o two_rt_sw_bs.F
 two_rt_sw_ocastrndm.o	: kinds.o two_rt_sw_ocastrndm.F90
 bugsrad_hoc.o 		: kinds.o constants.o bugs_rad.o \
-	stats_hoc.o std_atmosphere.o bugsrad_hoc.F90
+	stats_hoc.o std_atmosphere_mod.o bugsrad_hoc.F90
 
 # == Misc. program related source files  ==
 hoc.o		: parameterization_interface.o arm.o astex.o atex.o \
@@ -193,8 +193,8 @@ hoc.o		: parameterization_interface.o arm.o astex.o atex.o \
 	wangara.o cobra.o rico.o gabls2.o lba.o arm_97.o arm_0003.o \
 	arm_3year.o cloud_sed_mod.o microphysics.o \
 	inputfields.o error_code.o hoc.F
-sounding.o	: grid.o std_atmosphere.o interpolation.o constants.o sounding.F
-std_atmosphere.o: constants.o interpolation.o std_atmosphere.F
+sounding.o	: grid.o std_atmosphere_mod.o interpolation.o constants.o sounding.F
+std_atmosphere.o: constants.o interpolation.o std_atmosphere_mod.F
 interpolation.o : interpolation.F
 inputfields.o	: grid.o inputgrads.o inputfields.F 
 gradsaverage.o	: grid.o inputgrads.o gradsaverage.F 

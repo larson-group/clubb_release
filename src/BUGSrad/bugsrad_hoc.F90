@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_hoc.F90,v 1.20 2008-04-23 18:01:30 faschinj Exp $
+! $Id: bugsrad_hoc.F90,v 1.21 2008-04-25 22:15:42 faschinj Exp $
 
 subroutine bugsrad_hoc( alt, nz, lat_in_degrees, lon_in_degrees, &
                         day, month, year, time,                  &
@@ -34,7 +34,7 @@ subroutine bugsrad_hoc( alt, nz, lat_in_degrees, lon_in_degrees, &
 !-----------------------------------------------------------------------
 
   use constants
-  use std_atmosphere, only: std_atmos_dim, std_alt, std_pinmb, std_tempk, std_sp_hmdty, &
+  use std_atmosphere_mod, only: std_atmos_dim, std_alt, std_pinmb, std_tempk, std_sp_hmdty, &
                             std_o3l
 
   use cos_solar_zen_mod

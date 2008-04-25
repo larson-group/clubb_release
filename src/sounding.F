@@ -1,4 +1,4 @@
-! $Id: sounding.F,v 1.16 2008-04-23 18:00:21 faschinj Exp $
+! $Id: sounding.F,v 1.17 2008-04-25 22:15:42 faschinj Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
         module sounding
@@ -22,7 +22,7 @@
 
         use grid_class
         use constants, only: sclr_dim, fstderr
-        use std_atmosphere, only: atmosphere
+        use std_atmosphere_mod, only: std_atmosphere
         use interpolation, only: linint        
 
         implicit none
@@ -240,7 +240,7 @@
           ! Joshua Fasching April 2009
           if ( lstd_atmo ) then
                   
-                  call atmosphere( gr%zt(i), thlm(i), rtm(i) )
+                  call std_atmosphere( gr%zt(i), thlm(i), rtm(i) )
                   
  
                   um(i) = um(i-1)

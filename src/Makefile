@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.113 2008-04-25 14:46:59 griffinb Exp $
+# $Id: Makefile,v 1.114 2008-04-25 22:15:42 faschinj Exp $
 #
 # This version should work with BSD, GNU make, smake and dmake.
 #
@@ -11,13 +11,13 @@
 ################################################################################
 
 #include config.linux_ia32_pg.in
-#include config.linux_ia32_g95.in
+include config.linux_ia32_g95.in
 #include config.linux_ia32_ss12.in
 #include config.linux_ia64_intel.in
 #include config.solaris_ia32_g95.in
 #include config.solaris_generic_ss12.in
 #include config.osf1_alpha_digital.in
-include config.messner.in
+#include config.messner.in
 
 # == Object files ==
 
@@ -29,7 +29,7 @@ LATIN_HYP = autoconv_driver.o corrcoef.o gaus_condt.o \
 	rtpthlp_2_sptp.o sample_points.o st_2_rtthl.o \
 	truncate_gaus_mixt.o
 
-BUGS_RAD = kinds.o std_atmosphere.o bugsrad_planck.o bugsrad_physconst.o gases_ckd.o \
+BUGS_RAD = kinds.o std_atmosphere_mod.o bugsrad_planck.o bugsrad_physconst.o gases_ckd.o \
 	cloud_correlate.o bugs_lwr.o bugs_swr.o bugs_rad.o \
 	cloudg.o comscp1.o comscp2.o gascon.o \
 	newexp.o rayle.o two_rt_lw.o two_rt_sw.o \
