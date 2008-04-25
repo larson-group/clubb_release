@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_hoc.F,v 1.8 2008-04-17 00:06:20 dschanen Exp $
+! $Id: stats_hoc.F,v 1.9 2008-04-25 21:14:27 ajsmith4 Exp $
 #ifdef STATS
 !-----------------------------------------------------------------------
 !  module stats_hoc
@@ -74,6 +74,8 @@
      .     iNcm,           ! Brian
      .     iNcnm,
      .     iNim,
+     .     isnowslope,     ! Adam Smith, 22 April 2008
+     .     iNsnowm,        ! Adam Smith, 22 April 2008
      .     ised_rcm,       ! Brian
      .     irsm,           ! Brian
      .     irrm,           ! Brian
@@ -91,7 +93,7 @@
 !$omp   threadprivate(ivg, icf, ip, iexner, iLscale, iwp3, iwpthlp2)
 !$omp   threadprivate(iwp2thlp, iwprtp2, iwp2rtp, iLup, iLdown, itaut)
 !$omp   threadprivate(iKht, iwp2thvp, iwp2rcp, iwprtpthlp, isct, irhot)
-!$omp   threadprivate(iNcm, iNcnm, iNim, ised_rcm, irsm, irrm, iNrm)
+!$omp   threadprivate(iNcm, iNcnm, iNim, isnowslope, iNsnowm, ised_rcm, irsm, irrm, iNrm)
 !$omp   threadprivate(imean_vol_rad_rain, imean_vol_rad_cloud)
 !$omp   threadprivate(irain_rate, iAKm, iAKm_est)
 !$omp   threadprivate(iradht, iradht_LW, iradht_SW)
