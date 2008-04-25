@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.112 2008-04-23 18:20:02 faschinj Exp $
+# $Id: Makefile,v 1.113 2008-04-25 14:46:59 griffinb Exp $
 #
 # This version should work with BSD, GNU make, smake and dmake.
 #
@@ -64,7 +64,7 @@ PARAMETERIZATION = \
 	outputnc.o grid.o model_flags.o \
         stats_type.o stats_hoc.o stats_subs.o \
         stats_zt.o stats_zm.o stats_sfc.o stats_prec.o sfc.o \
-	erf.o diffusion.o \
+	erf.o diffusion.o mean_adv.o \
 	closure_new.o diag_var.o interpolation.o \
         hydrostatic.o mixing_length.o mixing.o saturation.o \
 	compute_um_edsclrm_mod.o wp23.o Skw_func.o error_code.o \

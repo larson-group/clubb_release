@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.32 2008-04-23 18:20:02 faschinj Exp $
+# $Id: make.deps,v 1.33 2008-04-25 14:46:59 griffinb Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -84,10 +84,12 @@ hydrostatic.o	: constants.o hydrostatic.F
 mixing_length.o	: constants.o parameters.o numer_check.o error_code.o mixing_length.F
 saturation.o    : constants.o saturation.F  
 sfc.o		: constants.o parameters.o numer_check.o error_code.o sfc.F 
-wp23.o		: constants.o parameters.o stats_hoc.o lapack_wrap.o error_code.o wp23.F
+wp23.o		: constants.o parameters.o stats_hoc.o lapack_wrap.o \
+                  error_code.o diffusion.o mean_adv.o wp23.F
 error_code.o    : constants.o error_code.F
 compute_um_edsclrm_mod.o : grid.o stats_hoc.o lapack_wrap.o error_code.o compute_um_edsclrm_mod.F 
 diffusion.o	: grid.o diffusion.F
+mean_adv.o      : mean_adv.F
 pos_definite_mod.o : grid.o stats_prec.o pos_definite_mod.F
 
 # == Numerical Recipes dependencies (For the tuner) ==
