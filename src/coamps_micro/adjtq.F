@@ -18,7 +18,7 @@ c-->Chris Golaz modification: added icase
 !     6  ,ldrizzle,lgrpl,icon,icond,len,icase)
 c-->Adam Smith modification
 c    08Aug2006: Added terms for microphysics source budgets
-     6  ,ldrizzle,lgrpl,icon,icond,len,icase,snowv,snslp
+     6  ,ldrizzle,lgrpl,icon,icond,len,icase,snowv,snowslope
      7  ,pcond3,psmlti3,psacw3,pgacw3,piacw3,pchomo3,praut3,pracw3
      8  ,pdepi3,pint3,pgdep3,pconv3,psaci3,pgaci3,praci3,prevp3,psdep3
      9  ,pmltge3,pgmlt3,psmlt3,pgacrm3,pgacwm3,pracs3,pgshr3
@@ -195,7 +195,7 @@ c Also adding microphysical parameters for qc_mc term
 c*************************************************************
 c
       real snowv (iminf(nne):imaxf(nne),jminf(nne):jmaxf(nne),kk)
-      real snslp (iminf(nne):imaxf(nne),jminf(nne):jmaxf(nne),kk)
+      real snowslope (iminf(nne):imaxf(nne),jminf(nne):jmaxf(nne),kk)
 
       real pcond3 (iminf(nne):imaxf(nne),jminf(nne):jmaxf(nne),kk)
       real psmlti3(iminf(nne):imaxf(nne),jminf(nne):jmaxf(nne),kk)
@@ -1518,7 +1518,7 @@ c Addition by Adam Smith, 08 August 2006
 c Adding snow slope factor and fall velocity to conversion
 c Also adding variables that affect mc terms in statistical budgets
 c Michael Falk started making comments here on 25 Aug 2006
-c        snslp(iindex,j,kindex) = sfsnow(ilen)
+       snowslope(iindex,j,kindex) = sfsnow(ilen)
        snowv(iindex,j,kindex) = falls(ilen)
 c        pcond3(iindex,j,kindex)  = pcond(ilen)
 c        psmlti3(iindex,j,kindex) = psmlti(ilen)
