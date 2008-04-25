@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.55 2008-04-24 15:03:57 griffinb Exp $
+! $Id: wp23.F,v 1.56 2008-04-25 14:41:20 griffinb Exp $
 !===============================================================================
         module wp23
 
@@ -12,7 +12,6 @@
         private :: wp23_solve,
      .             wp23_lhs,
      .             wp23_rhs,
-     .             wp2_term_ma_lhs,
      .             wp2_term_ta_lhs,
      .             wp2_terms_ac_pr2_lhs,
      .             wp2_term_dp1_lhs,
@@ -20,7 +19,6 @@
      .             wp2_terms_bp_pr2_rhs,
      .             wp2_term_pr3_rhs,
      .             wp2_term_pr1_rhs,
-     .             wp3_term_ma_lhs,
      .             wp3_terms_ta_tp_lhs,
      .             wp3_terms_ac_pr2_lhs,
      .             wp3_term_pr1_lhs,
@@ -632,7 +630,8 @@
         use parameters, only: C4, C5, C8, C8b, C12, nu1, nu8
         use constants, only: wtol, eps
         use model_flags, only: lKhm_aniso
-        use diffusion
+        use diffusion  ! both functions
+        use mean_adv   ! both functions
         use stats_prec, only: time_prec
 #ifdef STATS
         use stats_hoc
@@ -717,7 +716,7 @@
           ! LHS mean advection (ma) term.
           lhs((/3-2,3+2/),k_wp2)
      .    = lhs((/3-2,3+2/),k_wp2)
-     .    + wp2_term_ma_lhs( wmm(k), gr%dzm(k) )
+     .    + term_ma_mlev_lhs( wmm(k), gr%dzm(k) )
 
           ! LHS turbulent advection (ta) term.
           lhs((/3-1,3+1/),k_wp2)
@@ -795,7 +794,7 @@
 
           if ( iwp2_ma > 0 ) then
             tmp(1:2) =
-     .      + wp2_term_ma_lhs( wmm(k), gr%dzm(k) )
+     .      + term_ma_mlev_lhs( wmm(k), gr%dzm(k) )
             zmscr07(k) = - tmp(2)
             zmscr08(k) = - tmp(1)
           endif
@@ -841,7 +840,7 @@
           ! LHS mean advection (ma) term.
           lhs((/3-2,3+2/),k_wp3)
      .    = lhs((/3-2,3+2/),k_wp3)
-     .    + wp3_term_ma_lhs( wmt(k), gr%dzt(k) )
+     .    + term_ma_tlev_lhs( wmt(k), gr%dzt(k) )
 
           ! LHS turbulent advection (ta) and turbulent production (tp) terms.
           lhs(3-2:3+2,k_wp3)
@@ -910,7 +909,7 @@
 
           if ( iwp3_ma > 0 ) then
             tmp(1:2) =
-     .      wp3_term_ma_lhs( wmt(k), gr%dzt(k) )
+     .      term_ma_tlev_lhs( wmt(k), gr%dzt(k) )
             ztscr12(k) = -tmp(2)
             ztscr13(k) = -tmp(1)
           endif
@@ -1289,90 +1288,11 @@
         end subroutine wp23_rhs
 
 !===============================================================================
-        pure function wp2_term_ma_lhs( wmm, dzm )
-     .  result( lhs )
-
-!       Description:
-!       Mean advection of w'^2: implicit portion of the code.
-!
-!       The d(w'^2)/dt equation contains a mean advection term:
-!
-!       - w * d(w'^2)/dz.
-!
-!       This term is solved for completely implicitly, such that:
-!
-!       - w * d( w'^2(t+1) )/dz.
-!
-!       Note:  When the term is brought over to the left-hand side, the
-!              sign is reversed and the leading "-" in front of the 
-!              term is changed to a "+".
-!
-!       The timestep index (t+1) means that the value of w'^2 being used
-!       is from the timestep being advanced to.
-!
-!       This term is discretized as follows:
-!
-!       The values of w'^2 are found on the momentum levels, as are the 
-!       values of wmm (mean vertical velocity on momentum levels).  
-!       The variable w'^2 is interpolated to the intermediate
-!       thermodynamic levels.  The derivative of the interpolated values
-!       is taken over the central momentum level.  The derivative
-!       is multiplied by wmm at the central momentum level to get
-!       the desired result.
-!
-!       ============wp2p1======================================== m(k+1)
-!
-!       --------------------wp2(interp)-------------------------- t(k+1)
-!
-!       ============wp2===================d(wp2)/dz========wmm=== m(k)
-!
-!       --------------------wp2(interp)-------------------------- t(k)
-!
-!       ============wp2m1======================================== m(k-1)
-!
-!       The vertical indices m(k+1), t(k+1), m(k), t(k), and m(k-1)
-!       correspond with altitudes zm(k+1), zt(k+1), zm(k), zt(k),
-!       and zm(k-1), respectively.  The letter "t" is used for
-!       thermodynamic levels and the letter "m" is used for momentum
-!       levels.
-!
-!       dzm(k) = 1 / ( zt(k+1) - zt(k) )
-
-!       References:
-!-----------------------------------------------------------------------
-
-        implicit none
-
-        ! Constant parameters
-        integer, parameter ::
-     .  kp1_mdiag = 1,   ! Momentum superdiagonal index.
-     .  km1_mdiag = 2    ! Momentum subdiagonal index.
-
-        ! Input Variables
-        real, intent(in) ::
-     .  wmm,  ! wmm(k)                        [m/s]
-     .  dzm   ! Inverse of grid spacing (k)   [1/m]
-
-        ! Return Variable
-        real, dimension(2) :: lhs
-
-        ! Momentum superdiagonal: [ x wp2(k+1,<t+1>) ]
-        lhs(kp1_mdiag)
-     .  = + wmm * (1.0/2.0) * dzm
-
-        ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
-        lhs(km1_mdiag)
-     .  = - wmm * (1.0/2.0) * dzm
-
-        return
-        end function wp2_term_ma_lhs
-
-!===============================================================================
         pure function wp2_term_ta_lhs( dzm )
      .  result( lhs )
 
 !       Description:
-!       Turbulent advection term for w'^2: implicit portion of the code.
+!       Turbulent advection term for w'^2:  implicit portion of the code.
 !
 !       The d(w'^2)/dt equation contains a turbulent advection term:
 !
@@ -1387,7 +1307,8 @@
 !              term is changed to a "+".
 !
 !       The timestep index (t+1) means that the value of w'^3 being used
-!       is from the timestep being advanced to.
+!       is from the next timestep, which is being advanced to in solving
+!       the d(w'^2)/dt and d(w'^3)/dt equations.
 !
 !       This term is discretized as follows:
 !
@@ -1447,7 +1368,7 @@
 !
 !       The d(w'^2)/dt equation contains an accumulation term:
 !
-!       - 2 w'^2 dw/dz,
+!       - 2 w'^2 dw/dz;
 !
 !       and pressure term 2:
 !
@@ -1465,7 +1386,8 @@
 !              is changed to a "+".
 !
 !       The timestep index (t+1) means that the value of w'^2 being used
-!       is from the timestep being advanced to.
+!       is from the next timestep, which is being advanced to in solving
+!       the d(w'^2)/dt equation.
 !
 !       The terms are discretized as follows:
 !
@@ -1520,7 +1442,7 @@
      .  result( lhs )
 
 !       Description:
-!       Dissipation term 1 for w'^2: implicit portion of the code.
+!       Dissipation term 1 for w'^2:  implicit portion of the code.
 !
 !       The d(w'^2)/dt equation contains dissipation term 1:
 !
@@ -1535,7 +1457,8 @@
 !              term is changed to a "+".
 !
 !       The timestep index (t+1) means that the value of w'^2 being used
-!       is from the timestep being advanced to.
+!       is from the next timestep, which is being advanced to in solving
+!       the d(w'^2)/dt equation.
 !
 !       The values of w'^2 are found on momentum levels.  The values of 
 !       the C_1 skewness function and time-scale tau1m are also found on
@@ -1570,7 +1493,7 @@
      .  result( lhs )
 
 !       Description
-!       Pressure term 1 for w'^2: implicit portion of the code.
+!       Pressure term 1 for w'^2:  implicit portion of the code.
 !
 !       The d(w'^2)/dt equation contains pressure term 1:
 !
@@ -1595,7 +1518,8 @@
 !              of the term is changed to a "+".
 !
 !       The timestep index (t+1) means that the value of w'^2 being used
-!       is from the timestep being advanced to.
+!       is from the next timestep, which is being advanced to in solving
+!       the d(w'^2)/dt equation.
 !
 !       The values of w'^2 are found on momentum levels, as are the 
 !       values of tau1m.
@@ -1634,7 +1558,7 @@
 !
 !       The d(w'^2)/dt equation contains a buoyancy production term:
 !
-!       + 2 (g/th_0) w'th_v',
+!       + 2 (g/th_0) w'th_v';
 !
 !       and pressure term 2:
 !
@@ -1675,7 +1599,7 @@
      .  result( rhs )
 
 !       Description:
-!       Pressure term 3 for w'^2: explicit portion of the code.
+!       Pressure term 3 for w'^2:  explicit portion of the code.
 !
 !       The d(w'^2)/dt equation contains pressure term 3:
 !
@@ -1751,7 +1675,7 @@
      .  result( rhs )
 
 !       Description:
-!       Pressure term 1 for w'^2: explicit portion of the code.
+!       Pressure term 1 for w'^2:  explicit portion of the code.
 !
 !       The d(w'^2)/dt equation contains pressure term 1:
 !
@@ -1796,85 +1720,6 @@
         end function wp2_term_pr1_rhs
 
 !===============================================================================
-        pure function wp3_term_ma_lhs( wmt, dzt )
-     .  result( lhs )
-
-!       Description:
-!       Mean advection of w'^3: implicit portion of the code.
-!
-!       The d(w'^3)/dt equation contains a mean advection term:
-!
-!       - w * d(w'^3)/dz.
-!
-!       This term is solved for completely implicitly, such that:
-!
-!       - w * d( w'^3(t+1) )/dz.
-!
-!       Note:  When the term is brought over to the left-hand side, the
-!              sign is reversed and the leading "-" in front of the 
-!              term is changed to a "+".
-!
-!       The timestep index (t+1) means that the value of w'^3 being used
-!       is from the timestep being advanced to.
-!
-!       This term is discretized as follows:
-!
-!       The values of w'^3 are found on the thermodynamic levels, as 
-!       are the values of wmt (mean vertical velocity on thermodynamic 
-!       levels).  The variable w'^3 is interpolated to the intermediate
-!       momentum levels.  The derivative of the interpolated values is
-!       taken over the central thermodynamic level.  The derivative 
-!       is multiplied by wmt at the central thermodynamic level to get 
-!       the desired result.
-!
-!       ------------wp3p1---------------------------------------- t(k+1)
-!
-!       ====================wp3(interp)========================== m(k)
-!
-!       ------------wp3-------------------d(wp3)/dz--------wmt--- t(k)
-!
-!       ====================wp3(interp)========================== m(k-1)
-!
-!       ------------wp3m1---------------------------------------- t(k-1)
-!
-!       The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1)
-!       correspond with altitudes zt(k+1), zm(k), zt(k), zm(k-1),
-!       and zt(k-1), respectively.  The letter "t" is used for
-!       thermodynamic levels and the letter "m" is used for momentum
-!       levels.
-!
-!       dzt(k) = 1 / ( zm(k) - zm(k-1) )
-
-!       References:
-!-----------------------------------------------------------------------
-
-        implicit none
-
-        ! Constant parameters
-        integer, parameter ::
-     .  kp1_tdiag = 1,   ! Thermodynamic superdiagonal index.
-     .  km1_tdiag = 2    ! Thermodynamic subdiagonal index.
-
-        ! Input Variables
-        real, intent(in) :: 
-     .  wmt,  ! wmt(k)                        [m/s]
-     .  dzt   ! Inverse of grid spacing (k)   [1/m]
-
-        ! Return Variable
-        real, dimension(2) :: lhs
-
-        ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
-        lhs(kp1_tdiag)
-     .  = + wmt * (1.0/2.0) * dzt
-
-        ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
-        lhs(km1_tdiag)
-     .  = - wmt * (1.0/2.0) * dzt
-
-        return
-        end function wp3_term_ma_lhs
-
-!===============================================================================
         pure function wp3_terms_ta_tp_lhs( wp3p1, wp3, wp3m1, 
      .                                     wp2, wp2m1, a1, a1m1,
      .                                     a3, a3m1, dzt, eps, wtol )
@@ -1886,7 +1731,7 @@
 !
 !       The d(w'^3)/dt equation contains a turbulent advection term:
 !
-!       - d(w'^4)/dz,
+!       - d(w'^4)/dz;
 !
 !       and a turbulent production term:
 !
@@ -1923,9 +1768,10 @@
 !              sign is reversed and the leading "-" in front of both 
 !              d[ ] / dz terms is changed to a "+".
 !
-!       Timestep index (t) stands for the index of the current timestep 
-!       and timestep index (t+1) stands for the index of the timestep 
-!       being advanced to.
+!       Timestep index (t) stands for the index of the current timestep, 
+!       while timestep index (t+1) stands for the index of the next 
+!       timestep, which is being advanced to in solving the d(w'^3)/dt
+!       and d(w'^2)/dt equations.
 !
 !       The implicit portion of these terms is discretized as follows:
 !
@@ -2063,7 +1909,7 @@
 !
 !       The d(w'^3)/dt equation contains an accumulation term:
 !
-!       - 3 w'^3 dw/dz,
+!       - 3 w'^3 dw/dz;
 !
 !       and pressure term 2:
 !
@@ -2081,7 +1927,8 @@
 !              is changed to a "+".
 !
 !       The timestep index (t+1) means that the value of w'^3 being used
-!       is from the timestep being advanced to.
+!       is from the next timestep, which is being advanced to in solving
+!       the d(w'^3)/dt equation.
 !
 !       The terms are discretized as follows:
 !
@@ -2137,7 +1984,7 @@
      .  result( lhs )
 
 !       Description:
-!       Pressure term 1 for w'^3: implicit portion of the code.
+!       Pressure term 1 for w'^3:  implicit portion of the code.
 !
 !       Pressure term 1 is the term: 
 !
@@ -2164,9 +2011,10 @@
 !              sign is reversed and the leading "-" in front of the 
 !              term is changed to a "+".
 !
-!       Timestep index (t) stands for the index of the current timestep 
-!       and timestep index (t+1) stands for the index of the timestep 
-!       being advanced to.
+!       Timestep index (t) stands for the index of the current timestep,
+!       while timestep index (t+1) stands for the index of the next 
+!       timestep, which is being advanced to in solving the d(w'^3)/dt 
+!       equation.
 !
 !       The values of w'^3 are found on the thermodynamic levels, as are
 !       the values of tau_w3t and Sk_wt (in Sk_wt, w'^3 is found on 
@@ -2211,7 +2059,7 @@
 !
 !       The d(w'^3)/dt equation contains a turbulent advection term:
 !
-!       - d(w'^4)/dz,
+!       - d(w'^4)/dz;
 !
 !       and a turbulent production term:
 !
@@ -2244,9 +2092,10 @@
 !       + d [ a_3 * ( w'^2(t) )^2 ] / dz
 !          + d [ a_1 * ( w'^3(t) )^2 / w'^2(t) ] / dz.
 !
-!       Timestep index (t) stands for the index of the current timestep 
-!       and timestep index (t+1) stands for the index of the timestep 
-!       being advanced to.
+!       Timestep index (t) stands for the index of the current timestep,
+!       while timestep index (t+1) stands for the index of the next 
+!       timestep, which is being advanced to in solving the d(w'^3)/dt
+!       and d(w'^2)/dt equations.
 !
 !       The explicit portion of these terms is discretized as follows:
 !
@@ -2310,7 +2159,7 @@
         ! term, which contains the term -d[ a_1 * (w'^3)^2 / w'^2 ] / dz.
         ! In order to help stabilize w'^3, a_1 has been pulled outside of
         ! the derivative.  This effects the right-hand side of the 
-        ! equation, as well as the  left-hand side.
+        ! equation, as well as the left-hand side.
 
         ! Additionally, the discretization of the turbulent advection 
         ! term containing the term -d[ (a_3 + 3/2) * (w'^2)^2 ] / dz has 
@@ -2395,7 +2244,7 @@
      .  result( rhs )
 
 !       Description:
-!       Pressure term 1 for w'^3: explicit portion of the code.
+!       Pressure term 1 for w'^3:  explicit portion of the code.
 !
 !       Pressure term 1 is the term: 
 !
@@ -2418,9 +2267,10 @@
 !
 !       + (C_8/tau_w3t) * ( 4 * C_8b * Sk_wt^4 + 1 ) * w'^3(t).
 !
-!       Timestep index (t) stands for the index of the current timestep 
-!       and timestep index (t+1) stands for the index of the timestep 
-!       being advanced to.
+!       Timestep index (t) stands for the index of the current timestep, 
+!       while timestep index (t+1) stands for the index of the next 
+!       timestep, which is being advanced to in solving the d(w'^3)/dt
+!       equation.
 !
 !       The values of w'^3 are found on the thermodynamic levels, as are
 !       the values of tau_w3t and Sk_wt (in Sk_wt, w'^3 is found on 
