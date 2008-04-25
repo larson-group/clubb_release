@@ -1,4 +1,4 @@
-! $Id: arm_model.in,v 1.15 2008-04-17 00:04:37 dschanen Exp $
+! $Id: arm_model.in,v 1.16 2008-04-25 16:19:34 faschinj Exp $
 ! Parameter file for GCSS ARM Cu over land case
 
 &model_setting
@@ -34,9 +34,13 @@ lcoamps_micro = .false.
 licedfs       = .false.
 lbugsrad      = .false.
 lKhm_aniso    = .true.
+
 lrestart      = .false.
 restart_path_case  = "restart/arm"
 time_restart  = 0.0
+
+debug_level = 2
+
 /
 
 &stats_setting

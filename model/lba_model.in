@@ -1,4 +1,4 @@
-! $Id: lba_model.in,v 1.8 2008-04-17 00:04:37 dschanen Exp $
+! $Id: lba_model.in,v 1.9 2008-04-25 16:19:34 faschinj Exp $
 ! Parameter file for the 23 Feb 1999 TRMM-LBA case
 
 &model_setting
@@ -35,9 +35,12 @@ licedfs       = .false.
 lbugsrad      = .false.
 lKhm_aniso    = .true.
 luv_nudge     = .true.
+
 lrestart      = .false.
 restart_path_case  = "restart/lba"
 time_restart  = 0.0
+
+debug_level   = 2
 
 /
 

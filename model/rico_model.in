@@ -1,4 +1,4 @@
-! $Id: rico_model.in,v 1.10 2008-04-17 00:04:37 dschanen Exp $
+! $Id: rico_model.in,v 1.11 2008-04-25 16:19:34 faschinj Exp $
 ! Parameter file for GCSS RICO case
 ! Edited by Michael Falk, 12 December 2006
 
@@ -37,9 +37,12 @@ lcoamps_micro = .false.
 licedfs       = .false.
 lbugsrad      = .false.
 lKhm_aniso    = .true.
+
 lrestart      = .false.
 restart_path_case  = "restart/rico"
 time_restart  = 0.0
+
+debug_level   = 2
 
 /
 

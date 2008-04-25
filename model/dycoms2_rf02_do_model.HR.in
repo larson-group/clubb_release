@@ -32,6 +32,13 @@ licedfs       = .false.
 lbugsrad      = .false.
 lKhm_aniso    = .false.
 
+lrestart      = .false.
+restart_path_case  = "restart/dycoms2_rf02_do_HR"
+time_restart  = 0.0
+
+debug_level   = 2
+
+
 /
 
 &stats_setting

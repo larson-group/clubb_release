@@ -1,4 +1,4 @@
-! $Id: nov11_altocu_model.in,v 1.18 2008-04-17 00:04:37 dschanen Exp $
+! $Id: nov11_altocu_model.in,v 1.19 2008-04-25 16:19:34 faschinj Exp $
 ! Parameter file for November 11 altocumulus case
 
 &model_setting
@@ -31,9 +31,12 @@ lcoamps_micro = .false.
 licedfs       = .true.
 lbugsrad      = .false.
 lKhm_aniso    = .false.
+
 lrestart      = .false.
 restart_path_case  = "restart/nov11_altocu"
 time_restart  = 0.0
+
+debug_level   = 2
 
 /
 

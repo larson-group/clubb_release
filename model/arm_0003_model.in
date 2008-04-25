@@ -1,4 +1,4 @@
-! $Id: arm_0003_model.in,v 1.6 2008-04-17 00:04:37 dschanen Exp $
+! $Id: arm_0003_model.in,v 1.7 2008-04-25 16:19:34 faschinj Exp $
 ! Parameter file for GCSS ARM 0003 deep convective case
 
 &model_setting
@@ -37,9 +37,13 @@ licedfs       = .false.
 lbugsrad      = .false.
 lKhm_aniso    = .true.
 luv_nudge     = .true.
-lrestart = .false.
+
+lrestart      = .false.
 restart_path_case = "restart/arm_0003"
-time_restart = 0.0
+time_restart  = 0.0
+
+debug_level   = 2
+
 /
 
 &stats_setting

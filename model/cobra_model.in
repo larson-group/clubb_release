@@ -34,9 +34,13 @@ lcoamps_micro = .false.
 licedfs       = .false.
 lbugsrad      = .false.
 lKhm_aniso    = .true.
+
 lrestart      = .false.
 restart_path_case  = "restart/cobra"
 time_restart  = 0.0
+
+debug_level   = 2
+
 /
 
 &stats_setting
