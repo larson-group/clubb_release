@@ -32,6 +32,11 @@
       use stats_hoc, only: zt, zm, lstats_samp,
      .    imean_vol_rad_rain,
      .    imean_vol_rad_cloud
+c Addition by Adam Smith, 24 April 2008
+c Adding snow particle number concentration and snowslope
+     .   ,isnowslope
+     .   ,iNsnowm
+c End of ajsmith4's addition
 #endif
 
       implicit none
@@ -108,7 +113,8 @@
      .  maxpt1d = 200, ! 1d graphics parameters
      .  maxvr1d = 200, ! 1d graphics parameters
 ! eMFc
-     .  ipts    = 1  ! ??
+     .  ipts    = 1  ! Number of COAMPS points in a model height
+                     ! that contain liquid or ice (AJS)
 
       real, dimension(n1d), parameter ::
      .  i1d = (/0./), ! 1d graphics parameters
@@ -157,6 +163,11 @@
      .  Ncm,       ! Number of cloud droplets   [count/kg]
      .  Ncnm,      ! Number of cloud nuclei     [count/m^3]
      .  Nim        ! Number of ice crystals     [count/m^3]
+
+c Addition by Adam Smith, 24 April 2008
+c Adding snow particle number concentration
+      real, dimension(kk+1) :: Nsnowm
+c End of ajsmith4's addition
 
       ! Output Variables
       real, dimension(kk+1), intent(out) ::
@@ -262,7 +273,9 @@
      .  ni3,        ! Number of ice crystals
      .  exbm,       ! Mean exner function
      .  rbm,        ! Mean density
-     .  snslp,      ! These variables are the individual microphysical terms.  Michael Falk
+     .  snowslope,  ! These variables are the individual microphysical terms.  Michael Falk
+                    !  Michael Falk
+                    ! (Name modified by Adam Smith, 24 April 2008)
      .  cond,       ! condensation/evaporation of liquid water
      .  pcond,      ! condensation/evaporation of cloud water
      .  psmlti,     ! melting of cloud ice
@@ -664,7 +677,7 @@ c
      2       ,exbm_flip(1,1,1:kk),rbm_flip(1,1,1:kk)
 !     3       ,nc3,nr3,ncn3,ni3,cp,deltf,Lf,Ls,Lv 
      3       ,nc3(1,1,kk:1:-1),nr3(1,1,kk:1:-1),ncn3(1,1,kk:1:-1)
-     3       ,ni3(1,1,kk:1:-1),cp,deltf,Lf,Ls,Lv 
+     3       ,ni3(1,1,kk:1:-1),cp,deltf,Lf,Ls,Lv
      4       ,pcut,p0,Rd,Rv,sloper,slopes,slopeg,timea,lice 
      5       ,nne,kk,i1d,j1d,ary1d,i1dflg,n1d,maxpt1d,maxvr1d 
      6       ,kmax,nrdamp,ipts,nkpts,icomp,kcomp,j
@@ -678,7 +691,7 @@ c
      5       ,rvochi,lfocp,lvocp,lsocp,ex7,ex7g,ex4,ex4g,ex5 
      6       ,ldrizzle,lgrpl,icon,icond,len,icase
      6       ,snowv_flip(:,:,1:kk)
-     6       ,snslp(1,1,kk:1:-1),pcond(1,1,kk:1:-1)
+     6       ,snowslope(1,1,kk:1:-1),pcond(1,1,kk:1:-1)
      7       ,psmlti(1,1,kk:1:-1),psacw(1,1,kk:1:-1),pgacw(1,1,kk:1:-1)
      7       ,piacw(1,1,kk:1:-1),pchomo(1,1,kk:1:-1),praut(1,1,kk:1:-1)
      7       ,pracw(1,1,kk:1:-1),pdepi(1,1,kk:1:-1),pint(1,1,kk:1:-1)
@@ -766,6 +779,25 @@ c
         Nim(k+1)  = ni3(1,1,k)
       end do ! k=1..kk+1
 
+c*******************************************
+c Addition by Adam Smith, 24 April 2008
+c Adding snow particle number concentration
+c Values of snowslope < 1.0 lead to excessive and
+c unrealistic Nsnowm outside of the snow region.
+c The "if" statement prevents these results.
+c*******************************************
+      do k = 1, kk, 1
+        if (snowslope(1,1,k) < 2.0) then
+          snowslope(1,1,k) = 0.
+          Nsnowm(k+1) = 0.0
+        else
+          Nsnowm(k+1) = snzero / snowslope(1,1,k)
+        end if
+      end do
+c****************************
+c End of ajsmith4's addition
+c****************************
+
       ! Linear extrapolation for the ghost point of fall speeds
       fallr(1,1,1) = .5 * ( fallr(1,1,2) + fallr(1,1,3) )
       falln(1,1,1) = .5 * ( falln(1,1,2) + falln(1,1,3) )
@@ -823,6 +855,23 @@ c
           zt%n(2:,imean_vol_rad_cloud) 
      .    = zt%n(2:,imean_vol_rad_cloud) + 1
         end if
+
+c Addition by Adam Smith, 24 April 2008
+c Adding calculation for snow particle number concentration       
+        if (isnowslope > 0) then
+          do k = 2,kk,1
+            zt%x(k,isnowslope) = zt%x(k,isnowslope) + snowslope(1,1,k)
+          end do
+        end if
+
+c Addition by Adam Smith, 25 April 2008
+c Adding calculation for snow particle number concentration       
+        if (iNsnowm > 0) then
+          zt%x(2:,iNsnowm) = zt%x(2:,iNsnowm) + Nsnowm(:)
+          zt%n(2:,iNsnowm) = zt%n(2:,iNsnowm) + 1
+        end if
+c End of ajsmith4's additions
+
       end if
 #endif /*STATS*/
 
