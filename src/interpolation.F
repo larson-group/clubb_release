@@ -1,4 +1,4 @@
-!$Id: interpolation.F,v 1.2 2008-04-23 18:35:18 faschinj Exp $
+!$Id: interpolation.F,v 1.3 2008-04-25 22:08:52 faschinj Exp $
         module interpolation
 
         implicit none
@@ -87,7 +87,7 @@
         end function
 
 !-----------------------------------------------------------------------
-        pure function zlinterp_fnc( dim_out, dim_src, grid_out, 
+        function zlinterp_fnc( dim_out, dim_src, grid_out, 
      .                              grid_src, var_src ) 
      .  result( var_out )
 !       Description:
@@ -133,11 +133,18 @@
 !          end do
 
           ! Changed so a binary search is used instead of a sequential search
-          k = binary_search(dim_src, grid_src, grid_out(kint))
+!          tst = binary_search(dim_src, grid_src, grid_out(kint))
+          k   = binary_search(dim_src, grid_src, grid_out(kint))
           ! Joshua Fasching April 2008
 
+!          print *, "k = ", k
+!          print *, "tst = ", tst
+!          print *, "dim_src = ", dim_src
+!          print *,"------------------------------"
+          
           ! If the increment leads to a level above the data, set this
           ! point and all those above it to zero
+!          if( k > dim_src ) then
           if ( k == -1 ) then
             var_out(kint:dim_out) = 0.0
             exit
@@ -148,13 +155,13 @@
 
           ! Interpolate
           var_out(kint) = 
-!     .      linint( grid_out(kint), grid_src(k), 
-!     .      grid_src(km1), 
-!     .      var_src(k), var_src(km1) )
+     .      linint( grid_out(kint), grid_src(k), 
+     .      grid_src(km1), 
+     .      var_src(k), var_src(km1) )
           
-     .    ( var_src(k) - var_src(km1) ) / 
-     .    ( grid_src(k) - grid_src(km1) )
-     .      * ( grid_out(kint) - grid_src(km1) ) + var_src(km1)
+!     .    ( var_src(k) - var_src(km1) ) / 
+!     .    ( grid_src(k) - grid_src(km1) )
+!     .      * ( grid_out(kint) - grid_src(km1) ) + var_src(km1)
 !            Changed to use a standard function for interpolation
 
              !! Note this ends up changing the results slightly because
