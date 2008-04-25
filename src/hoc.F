@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.173 2008-04-23 18:39:52 faschinj Exp $
+! $Id: hoc.F,v 1.174 2008-04-25 21:59:19 faschinj Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -922,6 +922,7 @@
         use arm_3year, only: arm_3year_init
         use arm_97, only: arm_97_init
         use mpace_a, only: mpace_a_init
+        use lba, only: lba_init
         use mixing_length
         use error_code, only: CLUBB_no_error
         
@@ -1287,7 +1288,7 @@
         case ( "lba" )
           em = 0.1
           wp2 = 2./3. * em
-
+          call lba_init()
         ! Michael Falk for mpace_a Arctic Stratus case.
         case ( "mpace_a" )
 
