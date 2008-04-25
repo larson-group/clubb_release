@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.33 2008-04-25 14:46:59 griffinb Exp $
+# $Id: make.deps,v 1.34 2008-04-25 15:46:49 griffinb Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -69,7 +69,7 @@ closure_new.o	: constants.o parameters.o grid.o saturation.o erf.o numer_check.o
 diag_var.o	: constants.o parameters.o grid.o stats_hoc.o lapack_wrap.o \
 	          error_code.o diffusion.o diag_var.F
 mixing.o : constants.o parameters.o stats_hoc.o lapack_wrap.o \
-	pos_definite_mod.o error_code.o diffusion.o mixing.F 
+	   pos_definite_mod.o error_code.o diffusion.o mean_adv.o mixing.F 
 
 parameterization_interface.o : constants.o hydrostatic.o mixing.o \
 	model_flags.o numer_check.o Skw_func.o \
