@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.40 2008-04-05 19:54:32 griffinb Exp $
+! $Id: microphysics.F,v 1.41 2008-04-26 23:54:59 griffinb Exp $
         module microphysics
 
 !       Description:
@@ -1331,19 +1331,19 @@
 
            ! Most of the interior model; normal conditions.
 
-           lhs(kp1diag) = + wmt * dzt * gr%weights_zt2zm(mk,1)
-           lhs(kdiag)   = + wmt * dzt * (  gr%weights_zt2zm(mk,2)
-     .                                   - gr%weights_zt2zm(mkm1,1)  )
-           lhs(km1diag) = - wmt * dzt * gr%weights_zt2zm(mkm1,2)
+           lhs(kp1diag) = + wmt * dzt * gr%weights_zt2zm(1,mk)
+           lhs(kdiag)   = + wmt * dzt * (  gr%weights_zt2zm(2,mk)
+     .                                   - gr%weights_zt2zm(1,mkm1)  )
+           lhs(km1diag) = - wmt * dzt * gr%weights_zt2zm(2,mkm1)
 
         elseif ( level == gr%nnzp ) then
 
            ! k = gr%nnzp (top level); upper boundary level.
 
-           lhs(kp1diag) = + wmt * dzt * gr%weights_zt2zm(mk,1)
-           lhs(kdiag)   = + wmt * dzt * (  gr%weights_zt2zm(mk,2)
-     .                                   - gr%weights_zt2zm(mkm1,1)  )
-           lhs(km1diag) = - wmt * dzt * gr%weights_zt2zm(mkm1,2)
+           lhs(kp1diag) = + wmt * dzt * gr%weights_zt2zm(1,mk)
+           lhs(kdiag)   = + wmt * dzt * (  gr%weights_zt2zm(2,mk)
+     .                                   - gr%weights_zt2zm(1,mkm1)  )
+           lhs(km1diag) = - wmt * dzt * gr%weights_zt2zm(2,mkm1)
 
         endif
 
@@ -1480,15 +1480,15 @@
 
         ! Vince Larson pulled v_t inside derivative to make conservative. 
         ! 13 Dec 2007
-!           lhs(kp1diag) = + vt_tk * dzt * gr%weights_zt2zm(mk,1)
-!           lhs(kdiag)   = + vt_tk * dzt * (   gr%weights_zt2zm(mk,2)
-!     .                                      - gr%weights_zt2zm(mkm1,1) )
-!           lhs(km1diag) = - vt_tk * dzt * gr%weights_zt2zm(mkm1,2)
+!           lhs(kp1diag) = + vt_tk * dzt * gr%weights_zt2zm(1,mk)
+!           lhs(kdiag)   = + vt_tk * dzt * (   gr%weights_zt2zm(2,mk)
+!     .                                      - gr%weights_zt2zm(1,mkm1) )
+!           lhs(km1diag) = - vt_tk * dzt * gr%weights_zt2zm(2,mkm1)
 
-           lhs(kp1diag) = + dzt * v_t * gr%weights_zt2zm(mk,1)
-           lhs(kdiag)   = + dzt * (   v_t * gr%weights_zt2zm(mk,2)
-     .                              - v_tm1 * gr%weights_zt2zm(mkm1,1) )
-           lhs(km1diag) = - dzt * v_tm1 * gr%weights_zt2zm(mkm1,2)
+           lhs(kp1diag) = + dzt * v_t * gr%weights_zt2zm(1,mk)
+           lhs(kdiag)   = + dzt * (   v_t * gr%weights_zt2zm(2,mk)
+     .                              - v_tm1 * gr%weights_zt2zm(1,mkm1) )
+           lhs(km1diag) = - dzt * v_tm1 * gr%weights_zt2zm(2,mkm1)
 
         !  End Vince Larson change
 
@@ -1498,15 +1498,15 @@
 
         ! Vince Larson pulled v_t inside derivative to make conservative. 
         ! 13 Dec 2007
-!           lhs(kp1diag) = + vt_tk * dzt * gr%weights_zt2zm(mk,1)
-!           lhs(kdiag)   = + vt_tk * dzt * (   gr%weights_zt2zm(mk,2)
-!     .                                      - gr%weights_zt2zm(mkm1,1) )
-!           lhs(km1diag) = - vt_tk * dzt * gr%weights_zt2zm(mkm1,2)
+!           lhs(kp1diag) = + vt_tk * dzt * gr%weights_zt2zm(1,mk)
+!           lhs(kdiag)   = + vt_tk * dzt * (   gr%weights_zt2zm(2,mk)
+!     .                                      - gr%weights_zt2zm(1,mkm1) )
+!           lhs(km1diag) = - vt_tk * dzt * gr%weights_zt2zm(2,mkm1)
 
-           lhs(kp1diag) = + dzt * v_t * gr%weights_zt2zm(mk,1)
-           lhs(kdiag)   = + dzt * (   v_t * gr%weights_zt2zm(mk,2)
-     .                              - v_tm1 * gr%weights_zt2zm(mkm1,1) )
-           lhs(km1diag) = - dzt * v_tm1 * gr%weights_zt2zm(mkm1,2)
+           lhs(kp1diag) = + dzt * v_t * gr%weights_zt2zm(1,mk)
+           lhs(kdiag)   = + dzt * (   v_t * gr%weights_zt2zm(2,mk)
+     .                              - v_tm1 * gr%weights_zt2zm(1,mkm1) )
+           lhs(km1diag) = - dzt * v_tm1 * gr%weights_zt2zm(2,mkm1)
 
         !  End Vince Larson change
 

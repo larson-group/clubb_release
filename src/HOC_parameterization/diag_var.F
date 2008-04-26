@@ -1,4 +1,4 @@
-! $Id: diag_var.F,v 1.42 2008-04-24 19:11:38 griffinb Exp $
+! $Id: diag_var.F,v 1.43 2008-04-26 23:54:59 griffinb Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !-----------------------------------------------------------------------
@@ -656,39 +656,52 @@
      .  lhs ! Implicit contributions to the term
 
         ! Local Variables
+        real, dimension(gr%nnzp) ::
+     .  a1_zt,  ! a_1 interpolated to thermodynamic levels.  [-]
+     .  wp2_zt  ! w'^2 interpolated to thermodynamic levels. [m^2/s^2]
+
         real, dimension(3) ::
      .  tmp
 
         ! Array indices
         integer :: k, kp1, km1
 
+        ! Interpolate a_1 and w'^2 from momentum levels 
+        ! to thermodynamic levels.  This will be used for
+        ! the turbulent advection (ta) term.
+        a1_zt  = zm2zt( a1 )
+        wp2_zt = zm2zt( wp2 )
+
         ! Setup LHS of the tridiagonal system
         do k = 2, gr%nnzp-1, 1
           km1 = max( k-1, 1 )
           kp1 = min( k+1, gr%nnzp )
 
-          ! Eddy Diffusion term (dp2)
+          ! LHS eddy diffusion term: dissipation term 2 (dp2).
           lhs(kp1diag:km1diag,k)
      .    = diffusion_mlev( Kw2(k), Kw2(kp1), nu2,
      .                      gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
 
+          ! LHS dissipation term 1 (dp1).
           lhs(kdiag,k)
-     .    = lhs(kdiag,k) + term_dp1( Cn(k), taum(k) )  ! dp1
+     .    = lhs(kdiag,k) + term_dp1( Cn(k), taum(k) )
 
+          ! LHS time tendency.
           if ( liter ) then
-            lhs(kdiag,k) = lhs(kdiag,k) + ( 1.0 / dt ) ! Time tendency
+            lhs(kdiag,k) = lhs(kdiag,k) + ( 1.0 / dt )
           end if
 
+          ! LHS mean advection (ta) term.
           lhs(kp1diag:km1diag,k)
      .    = lhs(kp1diag:km1diag,k)
-     .    + term_ma( wmm(k), gr%dzm(k), kp1, k ) ! ma
+     .    + term_ma( wmm(k), gr%dzm(k), k ) 
 
+          ! LHS turbulent advection (ta) term.
           lhs(kp1diag:km1diag,k)
      .    = lhs(kp1diag:km1diag,k)
-     .    + term_ta_lhs
-     .      ( zm2zt(a1,kp1), a1(k), zm2zt(a1,k), wp3(kp1), wp3(k), 
-     .        zm2zt(wp2,kp1), zm2zt(wp2,k), gr%dzm(k), beta, 
-     .        wtol_sqd, kp1, k ) ! ta
+     .    + term_ta_lhs( a1_zt(kp1), a1(k), a1_zt(k), 
+     .                   wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k), 
+     .                   gr%dzm(k), beta, wtol_sqd, k )
 
 #ifdef STATS
          if ( lstats_samp ) then
@@ -696,7 +709,7 @@
            if ( irtp2_dp1 + ithlp2_dp1 + irtpthlp_dp1  > 0 ) then
              tmp(1) = term_dp1( Cn(k), taum(k) )
              zmscr01(k) = -tmp(1)
-           end if
+           endif
          
            if ( irtp2_dp2 + ithlp2_dp2 + irtpthlp_dp2 + 
      .          iup2_dp2 + ivp2_dp2 > 0 ) then
@@ -706,32 +719,31 @@
              zmscr02(k) = -tmp(3)
              zmscr03(k) = -tmp(2)
              zmscr04(k) = -tmp(1)
-           end if
+           endif
 
            if ( irtp2_ta + ithlp2_ta + irtpthlp_ta +
      .          iup2_ta + ivp2_ta > 0 ) then
              tmp(1:3)
-     .       = term_ta_lhs
-     .         ( zm2zt(a1,kp1), a1(k), zm2zt(a1,k), wp3(kp1), wp3(k), 
-     .           zm2zt(wp2,kp1), zm2zt(wp2,k), gr%dzm(k), beta, 
-     .           wtol_sqd, kp1, k )
+     .       = term_ta_lhs( a1_zt(kp1), a1(k), a1_zt(k), 
+     .                      wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k), 
+     .                      gr%dzm(k), beta, wtol_sqd, k )
              zmscr05(k) = -tmp(3)
              zmscr06(k) = -tmp(2)
              zmscr07(k) = -tmp(1)
-           end if
+           endif
 
            if ( irtp2_ma + ithlp2_ma + irtpthlp_ma +
      .          iup2_ma + ivp2_ma > 0 ) then
              tmp(1:3)
-     .       = term_ma( wmm(k), gr%dzm(k), kp1, k )
+     .       = term_ma( wmm(k), gr%dzm(k), k ) 
              zmscr08(k) = -tmp(3)
              zmscr09(k) = -tmp(2)
              zmscr10(k) = -tmp(1)
-           end if
-         end if
+           endif
+         endif
 #endif /*STATS*/
 
-        end do ! k=2..gr%nnzp-1
+        enddo ! k=2..gr%nnzp-1
 
         ! Boundary Conditions
         ! These are set so that the sfc_var value of rtp2, thlp2, or rtpthlp
@@ -988,6 +1000,12 @@
      .  rhs    ! Explicit contributions to x variance/covariance terms
 
         ! Local Variables
+        real, dimension(gr%nnzp) ::
+     .  a1_zt,    ! a_1 interpolated to thermodynamic levels.    [-]
+     .  wp2_zt,   ! w'^2 interpolated to thermodynamic levels.   [m^2/s^2]
+     .  wpxap_zt, ! w'x_a' interpolated to thermodynamic levels. [m/s {x_am units}]
+     .  wpxbp_zt  ! w'x_b' interpolated to thermodynamic levels. [m/s {x_bm units}]
+
         integer :: k, kp1, km1 ! Array indices
 
 #ifdef STATS
@@ -1020,17 +1038,25 @@
         end select
 #endif
 
+        ! Interpolate a_1, w'^2, w'x_a', and w'x_b' from 
+        ! momentum levels to thermodynamic levels.  
+        ! This will be used for the turbulent advection (ta) term.
+        a1_zt    = zm2zt( a1 )
+        wp2_zt   = zm2zt( wp2 )
+        wpxap_zt = zm2zt( wpxap )
+        wpxbp_zt = zm2zt( wpxbp )
+
         do k = 2, gr%nnzp-1, 1
 
           km1 = max( k-1, 1 )
           kp1 = min( k+1, gr%nnzp )
 
           rhs(k,1)
-     .    = term_ta_rhs
-     .      ( zm2zt(a1,kp1), a1(k), zm2zt(a1,k), wp3(kp1), wp3(k),
-     .        zm2zt(wp2,kp1), zm2zt(wp2,k), zm2zt(wpxbp,kp1),
-     .        zm2zt(wpxbp,k), zm2zt(wpxap,kp1), zm2zt(wpxap,k), 
-     .        gr%dzm(k), beta, wtol_sqd )
+     .    = term_ta_rhs( a1_zt(kp1), a1(k), a1_zt(k), 
+     .                   wp3(kp1), wp3(k), wp2_zt(kp1), 
+     .                   wp2_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), 
+     .                   wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), 
+     .                   beta, wtol_sqd )
      .      + (1.0 - C5) 
      .          * term_tp( xam(kp1), xam(k), xam(kp1), xam(k),
      .                    wpxap(k), wpxap(k), gr%dzm(k) )
@@ -1048,12 +1074,12 @@
             if ( ixap2_ta > 0 ) then
               zm%x(k,ixap2_ta) 
      .          = zm%x(k,ixap2_ta)
-     .          + term_ta_rhs
-     .           ( zm2zt(a1,kp1), a1(k), zm2zt(a1,k), wp3(kp1), wp3(k),
-     .             zm2zt(wp2,kp1), zm2zt(wp2,k), zm2zt(wpxbp,kp1),
-     .             zm2zt(wpxbp,k), zm2zt(wpxap,kp1), zm2zt(wpxap,k), 
-     .             gr%dzm(k), beta, wtol_sqd )
-            end if 
+     .          + term_ta_rhs( a1_zt(kp1), a1(k), a1_zt(k), 
+     .                         wp3(kp1), wp3(k), wp2_zt(kp1), 
+     .                         wp2_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), 
+     .                         wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), 
+     .                         beta, wtol_sqd )
+            endif 
 
             if ( ixap2_dp1 > 0 ) then
               zmscr01(k) = - (1.0/3.0) * C14 / taum(k)
@@ -1159,6 +1185,12 @@
      .  rhs     ! Explicit contributions to x variance/covariance terms
 
         ! Local Variables
+        real, dimension(gr%nnzp) ::
+     .  a1_zt,    ! a_1 interpolated to thermodynamic levels.    [-]
+     .  wp2_zt,   ! w'^2 interpolated to thermodynamic levels.   [m^2/s^2]
+     .  wpxap_zt, ! w'x_a' interpolated to thermodynamic levels. [m/s {x_am units}]
+     .  wpxbp_zt  ! w'x_b' interpolated to thermodynamic levels. [m/s {x_bm units}]
+
         integer :: k, kp1, km1 ! Array indices
 
 #ifdef STATS
@@ -1191,25 +1223,34 @@
           ixapxbp_tp2 = 0
         end select
 #endif
+
+        ! Interpolate a_1, w'^2, w'x_a', and w'x_b' from
+        ! momentum levels to thermodynamic levels.
+        ! This will be used for the turbulent advection (ta) term.
+        a1_zt    = zm2zt( a1 )
+        wp2_zt   = zm2zt( wp2 )
+        wpxap_zt = zm2zt( wpxap )
+        wpxbp_zt = zm2zt( wpxbp )
+
         do k = 2, gr%nnzp-1, 1
 
           km1 = max( k-1, 1 )
           kp1 = min( k+1, gr%nnzp )
 
           rhs(k,1)
-     .    = term_ta_rhs
-     .      ( zm2zt(a1,kp1), a1(k), zm2zt(a1,k), wp3(kp1), wp3(k),
-     .        zm2zt(wp2,kp1), zm2zt(wp2,k), zm2zt(wpxbp,kp1),
-     .        zm2zt(wpxbp,k), zm2zt(wpxap,kp1), zm2zt(wpxap,k), 
-     .        gr%dzm(k), beta, wtol_sqd )
+     .    = term_ta_rhs( a1_zt(kp1), a1(k), a1_zt(k), 
+     .                   wp3(kp1), wp3(k), wp2_zt(kp1), 
+     .                   wp2_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), 
+     .                   wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), 
+     .                   beta, wtol_sqd )
      .      + term_tp( xam(kp1), xam(k), xbm(kp1), xbm(k), 
      .                 wpxbp(k), wpxap(k), gr%dzm(k) )
 
           if ( liter ) then 
             rhs(k,1) = rhs(k,1) + 1.0/dt*xapxbp(k)  ! Time tendency
-          end if
+          endif
 
-        end do ! k=2..gr%nnzp-1
+        enddo ! k=2..gr%nnzp-1
 
         ! Boundary Conditions
         ! These are set so that the sfc_var value of rtp2, thlp2, or rtpthlp
@@ -1239,12 +1280,12 @@
             if ( ixapxbp_ta > 0 ) then
               zm%x(k,ixapxbp_ta) 
      .          = zm%x(k,ixapxbp_ta)
-     .          + term_ta_rhs
-     .           ( zm2zt(a1,kp1), a1(k), zm2zt(a1,k), wp3(kp1), wp3(k),
-     .             zm2zt(wp2,kp1), zm2zt(wp2,k), zm2zt(wpxbp,kp1),
-     .             zm2zt(wpxbp,k), zm2zt(wpxap,kp1), zm2zt(wpxap,k), 
-     .             gr%dzm(k), beta, wtol_sqd )
-            end if 
+     .          + term_ta_rhs( a1_zt(kp1), a1(k), a1_zt(k), 
+     .                         wp3(kp1), wp3(k), wp2_zt(kp1), 
+     .                         wp2_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), 
+     .                         wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), 
+     .                         beta, wtol_sqd )
+            endif 
             ! rtp2/thlp2 case (1 term)
             if ( ixapxbp_tp > 0 ) then
               zm%x(k,ixapxbp_tp) 
@@ -1275,9 +1316,9 @@
         end subroutine diag_var_rhs
 
 !===============================================================================
-        pure function term_ta_lhs( a1_tkp1, a1, a1_tk, wp3p1, wp3, 
-     .                             wp2_tkp1, wp2_tk, dzm, beta, 
-     .                             wtol_sqd, tkp1, tk )
+        pure function term_ta_lhs( a1_ztp1, a1, a1_zt, 
+     .                             wp3p1, wp3, wp2_ztp1, wp2_zt, 
+     .                             dzm, beta, wtol_sqd, level )
      .  result( lhs )
 
 !       Description:
@@ -1317,7 +1358,8 @@
 !              term is changed to a "+".
 !
 !       The timestep index (t+1) means that the value of x_a'x_b' being 
-!       used is from the timestep being advanced to.
+!       used is from the next timestep, which is being advanced to in
+!       solving the d(x_a'x_b')/dt equation.
 !
 !       The implicit portion of this term is discretized as follows:
 !
@@ -1357,7 +1399,8 @@
 
 !       References:
 !-----------------------------------------------------------------------
-        use grid_class
+
+        use grid_class ! gr%weights_zm2zt
 
         implicit none
 
@@ -1366,29 +1409,45 @@
 
         ! Constant parameters
         integer, parameter ::
-     .  kp1diag = 1,
-     .  kdiag   = 2,
-     .  km1diag = 3
+     .  kp1_mdiag = 1,   ! Momentum superdiagonal index.
+     .  k_mdiag   = 2,   ! Momentum main diagonal index.
+     .  km1_mdiag = 3    ! Momentum subdiagonal index.
 
-        ! Input variables
+        integer, parameter ::
+     .  m_above = 1,   ! Index for upper momentum level grid weight.
+     .  m_below = 2    ! Index for lower momentum level grid weight.
+
+        ! Input Variables
         real, intent(in) ::
-     .  a1_tkp1,    ! a_1 interpolated to t-lev(k+1)  [-]
-     .  a1,         ! a_1(k)                          [-]
-     .  a1_tk,      ! a_1 interpolated to t-lev(k)    [-]
-     .  wp3p1,      ! w'^3(k+1)                       [m^3/s^3]
-     .  wp3,        ! w'^3(k)                         [m^3/s^3]
-     .  wp2_tkp1,   ! w'^2 interpolated to t-lev(k+1) [m^2/s^2]
-     .  wp2_tk,     ! w'^2 interpolated to t-lev(k)   [m^2/s^2]
-     .  dzm,        ! Inverse of the grid spacing     [1/m]
-     .  beta,       ! Model parameter                 [-]
-     .  wtol_sqd    ! w wind comp. tolerance squared  [m^2/s^2]
+     .  a1_ztp1,    ! a_1 interpolated to thermo. level (k+1)  [-]
+     .  a1,         ! a_1(k)                                   [-]
+     .  a1_zt,      ! a_1 interpolated to thermo. level (k)    [-]
+     .  wp3p1,      ! w'^3(k+1)                                [m^3/s^3]
+     .  wp3,        ! w'^3(k)                                  [m^3/s^3]
+     .  wp2_ztp1,   ! w'^2 interpolated to thermo. level (k+1) [m^2/s^2]
+     .  wp2_zt,     ! w'^2 interpolated to thermo. level (k)   [m^2/s^2]
+     .  dzm,        ! Inverse of grid spacing                  [1/m]
+     .  beta,       ! Model parameter                          [-]
+     .  wtol_sqd    ! w wind component tolerance squared       [m^2/s^2]
 
         integer, intent(in) ::
-     .  tkp1,  ! Thermodynamic level k+1 index.
-     .  tk     ! Thermodynamic level k index.
+     .  level ! Central momentum level (on which calculation occurs).
 
         ! Return Variable
         real, dimension(3) :: lhs
+
+        ! Local Variables
+        integer ::
+     .  tkp1, ! Thermodynamic level directly above central momentum level.
+     .  tk    ! Thermodynamic level directly below central momentum level.
+
+        ! Thermodynamic level (k+1) is between momentum level (k+1)
+        ! and momentum level (k).
+        tkp1 = level + 1
+
+        ! Thermodynamic level (k) is between momentum level (k)
+        ! and momentum level (k-1).
+        tk = level
 
         ! Brian tried a new discretization for the turbulent advection 
         ! term, for which the implicit portion of the term is:
@@ -1396,35 +1455,38 @@
         ! In order to help stabilize x_a'x_b', a_1 has been pulled 
         ! outside the derivative.
 
-        lhs(kp1diag) 
+        ! Momentum superdiagonal: [ x xapxbp(k+1,<t+1>) ]
+        lhs(kp1_mdiag) 
 !     .  = + (1.0/3.0) * beta * dzm
-!     .      * a1_tkp1 * ( wp3p1 / max( wp2_tkp1, wtol_sqd ) ) 
-!     .      * gr%weights_zm2zt(tkp1,1)
+!     .      * a1_ztp1 * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) ) 
+!     .      * gr%weights_zm2zt(m_above,tkp1)
      .  = + (1.0/3.0) * beta * a1 * dzm
-     .      * ( wp3p1 / max( wp2_tkp1, wtol_sqd ) ) 
-     .      * gr%weights_zm2zt(tkp1,1)
+     .      * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) ) 
+     .      * gr%weights_zm2zt(m_above,tkp1)
 
-        lhs(kdiag) 
+        ! Momentum main diagonal: [ x xapxbp(k,<t+1>) ]
+        lhs(k_mdiag) 
 !     .  = + (1.0/3.0) * beta * dzm
-!     .      * (   a1_tkp1 * ( wp3p1 / max( wp2_tkp1, wtol_sqd ) ) 
-!     .            * gr%weights_zm2zt(tkp1,2)
-!     .          - a1_tk * ( wp3 / max( wp2_tk, wtol_sqd ) )
-!     .            * gr%weights_zm2zt(tk,1)
+!     .      * (   a1_ztp1 * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) ) 
+!     .            * gr%weights_zm2zt(m_below,tkp1)
+!     .          - a1_zt * ( wp3 / max( wp2_zt, wtol_sqd ) )
+!     .            * gr%weights_zm2zt(m_above,tk)
 !     .        )
      .  = + (1.0/3.0) * beta * a1 * dzm
-     .      * (   ( wp3p1 / max( wp2_tkp1, wtol_sqd ) ) 
-     .            * gr%weights_zm2zt(tkp1,2)
-     .          - ( wp3 / max( wp2_tk, wtol_sqd ) )
-     .            * gr%weights_zm2zt(tk,1)
+     .      * (   ( wp3p1 / max( wp2_ztp1, wtol_sqd ) ) 
+     .            * gr%weights_zm2zt(m_below,tkp1)
+     .          - ( wp3 / max( wp2_zt, wtol_sqd ) )
+     .            * gr%weights_zm2zt(m_above,tk)
      .        )
 
-        lhs(km1diag) 
+        ! Momentum subdiagonal: [ x xapxbp(k-1,<t+1>) ]
+        lhs(km1_mdiag) 
 !     .  = - (1.0/3.0) * beta * dzm
-!     .      * a1_tk * ( wp3 / max( wp2_tk, wtol_sqd ) )
-!     .      * gr%weights_zm2zt(tk,2)
+!     .      * a1_zt * ( wp3 / max( wp2_zt, wtol_sqd ) )
+!     .      * gr%weights_zm2zt(m_below,tk)
      .  = - (1.0/3.0) * beta * a1 * dzm
-     .      * ( wp3 / max( wp2_tk, wtol_sqd ) )
-     .      * gr%weights_zm2zt(tk,2)
+     .      * ( wp3 / max( wp2_zt, wtol_sqd ) )
+     .      * gr%weights_zm2zt(m_below,tk)
 
         ! End of Brian's a1 change.  14 Feb 2008.
 
@@ -1432,10 +1494,11 @@
         end function term_ta_lhs
 
 !===============================================================================
-        pure function term_ta_rhs( a1_tkp1, a1, a1_tk, wp3p1, wp3, 
-     .                             wp2_tkp1, wp2_tk, wpxbp_tkp1, 
-     .                             wpxbp_tk, wpxap_tkp1, wpxap_tk, 
-     .                             dzm, beta, wtol_sqd )
+        pure function term_ta_rhs( a1_ztp1, a1, a1_zt, 
+     .                             wp3p1, wp3, wp2_ztp1, 
+     .                             wp2_zt, wpxbp_ztp1, wpxbp_zt, 
+     .                             wpxap_ztp1, wpxap_zt, dzm, 
+     .                             beta, wtol_sqd )
      .  result( rhs )
 
 !       Description:
@@ -1512,6 +1575,7 @@
 
 !       References:
 !-----------------------------------------------------------------------
+
         implicit none
 
         ! External
@@ -1519,20 +1583,20 @@
 
         ! Input variables
         real, intent(in) ::
-     .  a1_tkp1,      ! a_1 interpolated to t-lev(k+1)    [-]
-     .  a1,           ! a_1(k)                            [-]
-     .  a1_tk,        ! a_1 interpolated to t-lev(k)      [-]
-     .  wp3p1,        ! w'^3(k+1)                         [m^3/s^3]
-     .  wp3,          ! w'^3(k)                           [m^3/s^3]
-     .  wp2_tkp1,     ! w'^2 interpolated to t-lev(k+1)   [m^2/s^2]
-     .  wp2_tk,       ! w'^2 interpolated to t-lev(k)     [m^2/s^2]
-     .  wpxbp_tkp1,   ! w'x_b' interpolated to t-lev(k+1) [m/s {x_bm units}]
-     .  wpxbp_tk,     ! w'x_b' interpolated to t-lev(k)   [m/s {x_bm units}]
-     .  wpxap_tkp1,   ! w'x_a' interpolated to t-lev(k+1) [m/s {x_am units}]
-     .  wpxap_tk,     ! w'x_a' interpolated to t-lev(k)   [m/s {x_am units}]
-     .  dzm,          ! Inverse of the grid spacing       [1/m]
-     .  beta,         ! Model parameter                   [-]
-     .  wtol_sqd      ! w wind comp. tolerance squared    [m^2/s^2]
+     .  a1_ztp1,      ! a_1 interpolated to thermo. level (k+1)    [-]
+     .  a1,           ! a_1(k)                                     [-]
+     .  a1_zt,        ! a_1 interpolated to thermo. level (k)      [-]
+     .  wp3p1,        ! w'^3(k+1)                                  [m^3/s^3]
+     .  wp3,          ! w'^3(k)                                    [m^3/s^3]
+     .  wp2_ztp1,     ! w'^2 interpolated to thermo. level (k+1)   [m^2/s^2]
+     .  wp2_zt,       ! w'^2 interpolated to thermo. level (k)     [m^2/s^2]
+     .  wpxbp_ztp1,   ! w'x_b' interpolated to thermo. level (k+1) [m/s {x_bm units}]
+     .  wpxbp_zt,     ! w'x_b' interpolated to thermo. level (k)   [m/s {x_bm units}]
+     .  wpxap_ztp1,   ! w'x_a' interpolated to thermo. level (k+1) [m/s {x_am units}]
+     .  wpxap_zt,     ! w'x_a' interpolated to thermo. level (k)   [m/s {x_am units}]
+     .  dzm,          ! Inverse of grid spacing                    [1/m]
+     .  beta,         ! Model parameter                            [-]
+     .  wtol_sqd      ! w wind component tolerance squared         [m^2/s^2]
 
         ! Return Variable
         real :: rhs
@@ -1546,16 +1610,16 @@
 
         rhs
 !     .  = - ( 1.0 - (1.0/3.0) * beta ) * dzm
-!     .      * (   a1_tkp1**2 * wpxap_tkp1 * wpxbp_tkp1
-!     .            * ( wp3p1 / max( wp2_tkp1, wtol_sqd )**2 )
-!     .          - a1_tk**2 * wpxap_tk * wpxbp_tk 
-!     .            * ( wp3 / max( wp2_tk, wtol_sqd )**2 )
+!     .      * (   a1_ztp1**2 * wpxap_ztp1 * wpxbp_ztp1
+!     .            * ( wp3p1 / max( wp2_ztp1, wtol_sqd )**2 )
+!     .          - a1_zt**2 * wpxap_zt * wpxbp_zt 
+!     .            * ( wp3 / max( wp2_zt, wtol_sqd )**2 )
 !     .        )
      .  = - ( 1.0 - (1.0/3.0) * beta ) * a1**2 * dzm
-     .      * (   wpxap_tkp1 * wpxbp_tkp1
-     .            * ( wp3p1 / max( wp2_tkp1, wtol_sqd )**2 )
-     .          - wpxap_tk * wpxbp_tk 
-     .            * ( wp3 / max( wp2_tk, wtol_sqd )**2 )
+     .      * (   wpxap_ztp1 * wpxbp_ztp1
+     .            * ( wp3p1 / max( wp2_ztp1, wtol_sqd )**2 )
+     .          - wpxap_zt * wpxbp_zt
+     .            * ( wp3 / max( wp2_zt, wtol_sqd )**2 )
      .        )
 
         ! End of Brian's a1 change.  14 Feb 2008.
@@ -1605,13 +1669,13 @@
 
         ! Input variables
         real, intent(in) ::
-     .  xam,     ! x_am(k)                         [{x_am units}]
-     .  xamp1,   ! x_am(k+1)                       [{x_am units}]
-     .  xbm,     ! x_bm(k)                         [{x_bm units}]
-     .  xbmp1,   ! x_bm(k+1)                       [{x_bm units}]
-     .  wpxbp,   ! w'x_b'(k)                       [m/s {x_bm units}]
-     .  wpxap,   ! w'x_a'(k)                       [m/s {x_am units}]
-     .  dzm      ! Inverse of the grid spacing (k) [1/m]
+     .  xam,     ! x_am(k)                     [{x_am units}]
+     .  xamp1,   ! x_am(k+1)                   [{x_am units}]
+     .  xbm,     ! x_bm(k)                     [{x_bm units}]
+     .  xbmp1,   ! x_bm(k+1)                   [{x_bm units}]
+     .  wpxbp,   ! w'x_b'(k)                   [m/s {x_bm units}]
+     .  wpxap,   ! w'x_a'(k)                   [m/s {x_am units}]
+     .  dzm      ! Inverse of grid spacing (k) [1/m]
 
         ! Return Variable
         real :: rhs
@@ -1624,7 +1688,7 @@
         end function term_tp
 
 !===============================================================================
-        pure function term_ma( wmm, dzm, tkp1, tk ) 
+        pure function term_ma( wmm, dzm, level ) 
      .  result( lhs )
 
 !       Description:
@@ -1675,31 +1739,57 @@
 
 !       References:
 !-----------------------------------------------------------------------
-        use grid_class
+
+        use grid_class ! gr%weights_zm2zt
 
         implicit none
 
         ! Constant parameters
         integer, parameter ::
-     .  kp1diag = 1,
-     .  kdiag   = 2,
-     .  km1diag = 3
+     .  kp1_mdiag = 1,   ! Momentum superdiagonal index.
+     .  k_mdiag   = 2,   ! Momentum main diagonal index.
+     .  km1_mdiag = 3    ! Momentum subdiagonal index.
+
+        ! Input Variables
+        integer, parameter ::
+     .  m_above = 1,   ! Index for upper momentum level grid weight.
+     .  m_below = 2    ! Index for lower momentum level grid weight.
 
         real, intent(in) ::
      .  wmm,   ! wmm(k)                           [m/s]
      .  dzm    ! Inverse of the grid spacing      [1/m]
 
         integer, intent(in) ::
-     .  tkp1,  ! Thermodynamic level k+1 index.
-     .  tk     ! Thermodynamic level k index.
+     .  level ! Central momentum level (on which calculation occurs).
 
         ! Return Variable
         real, dimension(3) :: lhs
 
-        lhs(kp1diag) = + wmm * dzm * gr%weights_zm2zt(tkp1,1)
-        lhs(kdiag)   = + wmm * dzm * (  gr%weights_zm2zt(tkp1,2) 
-     .                                - gr%weights_zm2zt(tk,1)  )
-        lhs(km1diag) = - wmm * dzm * gr%weights_zm2zt(tk,2)
+        ! Local Variables
+        integer ::
+     .  tkp1, ! Thermodynamic level directly above central momentum level.
+     .  tk    ! Thermodynamic level directly below central momentum level.
+
+        ! Thermodynamic level (k+1) is between momentum level (k+1) 
+        ! and momentum level (k).
+        tkp1 = level + 1
+
+        ! Thermodynamic level (k) is between momentum level (k) 
+        ! and momentum level (k-1).
+        tk = level
+
+        ! Momentum superdiagonal: [ x xapxbp(k+1,<t+1>) ]
+        lhs(kp1_mdiag) 
+     .  = + wmm * dzm * gr%weights_zm2zt(m_above,tkp1)
+
+        ! Momentum main diagonal: [ x xapxbp(k,<t+1>) ]
+        lhs(k_mdiag)   
+     .  = + wmm * dzm * (   gr%weights_zm2zt(m_below,tkp1) 
+     .                    - gr%weights_zm2zt(m_above,tk)  )
+
+        ! Momentum subdiagonal: [ x xapxbp(k-1,<t+1>) ]
+        lhs(km1_mdiag) 
+     .  = - wmm * dzm * gr%weights_zm2zt(m_below,tk)
 
         return
         end function term_ma
@@ -1735,21 +1825,22 @@
 
 !       References:
 !-----------------------------------------------------------------------
+
         implicit none
 
         ! Constant parameters
-!       integer, parameter ::
-!    .  kdiag = 1
+        integer, parameter ::
+     .  k_mdiag   = 1   ! Momentum main diagonal index.
 
         real, intent(in) ::
      .  Cn,    ! Coefficient C_n                       [-]
      .  taum   ! Time-scale tau at momentum levels (k) [s]
 
-!       real, dimension(1) :: lhs
         real :: lhs
 
-!       lhs(kdiag) = + C2 / taum
-        lhs = + Cn / taum
+        ! Momentum main diagonal: [ x xapxbp(k,<t+1>) ]
+        lhs 
+     .  = + Cn / taum
 
         return
         end function term_dp1
@@ -1869,6 +1960,7 @@
 
 !       References:
 !-----------------------------------------------------------------------
+
         implicit none
 
         real, intent(in) ::
