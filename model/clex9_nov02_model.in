@@ -1,4 +1,4 @@
-! $Id: clex9_nov02_model.in,v 1.5 2008-04-25 16:19:34 faschinj Exp $
+! $Id: clex9_nov02_model.in,v 1.6 2008-04-28 23:17:07 ajsmith4 Exp $
 ! Parameter file for CLEX-9: November 02 altocumulus case
 
 &model_setting
@@ -30,8 +30,7 @@ kk_rain       = .false.
 lcoamps_micro = .false.
 licedfs       = .true.
 lbugsrad      = .false.
-lKhm_aniso    = .false.
-
+lKhm_aniso    = .true.
 lrestart      = .false.
 restart_path_case  = "restart/clex9_nov02"
 time_restart  = 0.0
