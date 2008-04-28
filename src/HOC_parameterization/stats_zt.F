@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zt.F,v 1.11 2008-04-14 16:00:29 dschanen Exp $
+! $Id: stats_zt.F,v 1.12 2008-04-28 16:26:28 ajsmith4 Exp $
 #ifdef STATS
        
       module stats_zt
@@ -65,6 +65,8 @@
       iNcm          = 0  ! Brian
       iNcnm         = 0
       iNim          = 0
+      isnowslope    = 0  ! Adam Smith, 22 April 2008
+      iNsnowm       = 0  ! Adam Smith, 22 April 2008
       ised_rcm      = 0  ! Brian
       irsm          = 0  ! Brian
       irrm          = 0  ! Brian
@@ -416,6 +418,20 @@
           iNim = k
           call stat_assign(iNim,"Nim",
      .         "Ice crystal number concentration (num/m^3)",
+     .         "count/m^3",zt)
+          k = k + 1
+
+        case ('snowslope')     ! Adam Smith, 22 April 2008
+          isnowslope = k
+          call stat_assign(isnowslope,"snowslope",
+     .         "COAMPS snow slope parameter (1/m)",
+     .         "1/m",zt)
+          k = k + 1
+
+        case ('Nsnowm')        ! Adam Smith, 22 April 2008
+          iNsnowm = k
+          call stat_assign(iNsnowm,"Nsnowm",
+     .         "Snow particle number concentration (num/m^3)",
      .         "count/m^3",zt)
           k = k + 1
 
