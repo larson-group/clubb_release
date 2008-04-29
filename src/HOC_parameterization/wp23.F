@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.56 2008-04-25 14:41:20 griffinb Exp $
+! $Id: wp23.F,v 1.57 2008-04-29 21:13:29 griffinb Exp $
 !===============================================================================
         module wp23
 
@@ -37,7 +37,7 @@
      .               wp2, wp3, err_code )
 
 !       Description:
-!       Advance wp2 and wp3 one timestep
+!       Advance w'^2 and w'^3 one timestep.
 
 !       References:
 !       Eqn. 12 & 18 on p. 3545--3546 of
@@ -73,14 +73,14 @@
      .  Scm,        ! Sc on momentum levels                    [-]
      .  wmm,        ! w wind component on momentum levels      [m/s]
      .  wmt,        ! w wind component on thermodynamic levels [m/s]
-     .  wpthvp,     ! w'th_v'                                  [K m/s]
-     .  wp2thvp,    ! w'^2th_v'                                [K m^2/s^2]
-     .  um,         ! u wind component                         [m/s]
-     .  vm,         ! v wind component                         [m/s]
-     .  upwp,       ! u'w'                                     [m^2/s^2]
-     .  vpwp,       ! v'w'                                     [m^2/s^2]
-     .  up2,        ! u'^2                                     [m^2/s^2]
-     .  vp2,        ! v'^2                                     [m^2/s^2]
+     .  wpthvp,     ! w'th_v' (momentum levels)                [K m/s]
+     .  wp2thvp,    ! w'^2th_v' (thermodynamic levels)         [K m^2/s^2]
+     .  um,         ! u wind component (thermodynamic levels)  [m/s]
+     .  vm,         ! v wind component (thermodynamic levels)  [m/s]
+     .  upwp,       ! u'w' (momentum levels)                   [m^2/s^2]
+     .  vpwp,       ! v'w' (momentum levels)                   [m^2/s^2]
+     .  up2,        ! u'^2 (momentum levels)                   [m^2/s^2]
+     .  vp2,        ! v'^2 (momentum levels)                   [m^2/s^2]
      .  Khm,        ! Eddy diffusivity on momentum levels      [m^2/s]
      .  Kht,        ! Eddy diffusivity on thermodynamic levels [m^2/s]
      .  taum,       ! Time-scale tau on momentum levels        [s]
@@ -98,26 +98,26 @@
 
         ! Local Variables
         real, dimension(gr%nnzp) :: 
-     .  tauw3t  ! Currently just taut           [s]
+     .  tauw3t  ! Currently just taut                              [s]
 
-        ! Eddy Diffusion for wp2 and wp3.
-        real, dimension(gr%nnzp) :: Kw1   ! wp2 eddy diff. [m^2/s]
-        real, dimension(gr%nnzp) :: Kw8   ! wp3 eddy diff. [m^2/s]
+        ! Eddy Diffusion for w'^2 and w'^3.
+        real, dimension(gr%nnzp) :: Kw1    ! w'^2 coef. eddy diff. [m^2/s]
+        real, dimension(gr%nnzp) :: Kw8    ! w'^3 coef. eddy diff. [m^2/s]
 
         ! Note:  wp2_zt and wp2_zt_sqd_3pt, and wp3_zm and wp3_zm_sqd_3pt 
         !        are used to help determine the coefficients of eddy 
         !        diffusivity for wp2 and wp3, respectively.
         real, dimension(gr%nnzp) ::
-     .  wp2_zt,         ! wp2 interpolated to thermo. levels [m^2/s^2]
-     .  wp3_zm,         ! wp3 interpolated to moment. levels [m^3/s^3]
-     .  wp2_zt_sqd_3pt, ! wp2**2, avgd over 3 points         [m^4/s^4]
-     .  wp3_zm_sqd_3pt  ! wp3**2, avgd over 3 points         [m^6/s^6]
+     .  wp2_zt,         ! w'^2 interpolated to thermodyamic levels [m^2/s^2]
+     .  wp3_zm,         ! w'^3 interpolated to momentum levels     [m^3/s^3]
+     .  wp2_zt_sqd_3pt, ! (w'^2)^2; averaged over 3 points         [m^4/s^4]
+     .  wp3_zm_sqd_3pt  ! (w'^3)^2; averaged over 3 points         [m^6/s^6]
 
         ! Internal variables for C11 function, Vince Larson 13 Mar 2005
         ! Brian added C1 function.
         real, dimension(gr%nnzp) :: 
-     .  C1_Skw_fnc, !   [-]
-     .  C11_Skw_fnc !   [-]
+     .  C1_Skw_fnc, ! C_1 parameter with Sk_w applied              [-]
+     .  C11_Skw_fnc ! C_11 parameter with Sk_w applied             [-]
         ! End Vince Larson's addition.
       
         integer :: k, km1, kp1  ! Array indices
@@ -179,8 +179,19 @@
         ! Vince Larson added extra diffusion based on wp2.  21 Dec 2007.
         ! Vince Larson added extra diffusion based on wp3.  15 Dec 2007.
 
-        wp2_zt = zm2zt(wp2)
-        wp3_zm = zt2zm(wp3)
+        ! Interpolate w'^3 from thermodynamic levels to momentum levels.  
+        ! This will be used for the w'^3 turbulent advection (ta) and
+        ! turbulent production (tp) combined term.
+        ! This is also used for extra diffusion based on a three-point 
+        ! average of (w'^3)^2.
+        wp3_zm = zt2zm( wp3 )
+
+        ! Interpolate w'^2 from momentum levels to thermodynamic levels.
+        ! This is used for the clipping of w'^3 according to the value
+        ! of Sk_w after w'^2 and w'^3 have been advanced one timestep.
+        ! This is also used for extra diffusion based on a three-point 
+        ! average of (w'^2)^2.
+        wp2_zt = zm2zt( wp2 )
 
         do k = 1, gr%nnzp, 1
 
@@ -226,7 +237,8 @@
         call wp23_solve( dt, Scm, wmm, wmt, wpthvp, wp2thvp,
      .                   um, vm, upwp, vpwp, up2, vp2, Kw1,
      .                   Kw8, Skwt, taum, tauw3t, C1_Skw_fnc,
-     .                   C11_Skw_fnc, wp2, wp3, err_code )
+     .                   C11_Skw_fnc, wp2_zt, wp3_zm, 
+     .                   wp2, wp3, err_code )
 
 !       Error output
 !       Joshua Fasching Feb 2008
@@ -272,7 +284,8 @@
         subroutine wp23_solve( dt, Scm, wmm, wmt, wpthvp, wp2thvp,
      .                         um, vm, upwp, vpwp, up2, vp2, Kw1,
      .                         Kw8, Skwt, tau1m, tauw3t, C1_Skw_fnc,
-     .                         C11_Skw_fnc, wp2, wp3, err_code )
+     .                         C11_Skw_fnc, wp2_zt, wp3_zm, 
+     .                         wp2, wp3, err_code )
 
 !       Description:
 !       Decompose, and back substitute the matrix for wp2/wp3
@@ -305,32 +318,34 @@
 
         ! Input Variables
         real(kind=time_prec), intent(in) :: 
-     .  dt          ! Timestep                                 [s]
+     .  dt           ! Timestep                                  [s]
 
         real, intent(in), dimension(gr%nnzp) :: 
-     .  Scm,        ! Sc on momentum levels                    [-]
-     .  wmm,        ! w wind component on momentum levels      [m/s]
-     .  wmt,        ! w wind component on thermodynamic levels [m/s]
-     .  wpthvp,     ! w'th_v'                                  [K m/s]
-     .  wp2thvp,    ! w'^2th_v'                                [K m^2/s^2]
-     .  um,         ! u wind component                         [m/s]
-     .  vm,         ! v wind component                         [m/s]
-     .  upwp,       ! u'w'                                     [m^2/s^2]
-     .  vpwp,       ! v'w'                                     [m^2/s^2]
-     .  up2,        ! u'^2                                     [m^2/s^2]
-     .  vp2,        ! v'^2                                     [m^2/s^2]
-     .  Kw1,        ! Coefficient of eddy diffusivity for w'^2 [m^2/s]
-     .  Kw8,        ! Coefficient of eddy diffusivity for w'^3 [m^2/s]
-     .  Skwt,       ! Skewness of w on thermodynamic levels    [-]
-     .  tau1m,      ! Time-scale tau on momentum levels        [s]
-     .  tauw3t,     ! Time-scale tau on thermodynamic levels   [s]
-     .  C1_Skw_fnc, ! C_1 parameter with Sk_w applied          [-]
-     .  C11_Skw_fnc ! C_11 parameter with Sk_w applied         [-]
+     .  Scm,         ! Sc on momentum levels                     [-]
+     .  wmm,         ! w wind component on momentum levels       [m/s]
+     .  wmt,         ! w wind component on thermodynamic levels  [m/s]
+     .  wpthvp,      ! w'th_v' (momentum levels)                 [K m/s]
+     .  wp2thvp,     ! w'^2th_v' (thermodynamic levels)          [K m^2/s^2]
+     .  um,          ! u wind component (thermodynamic levels)   [m/s]
+     .  vm,          ! v wind component (thermodynamic levels)   [m/s]
+     .  upwp,        ! u'w' (momentum levels)                    [m^2/s^2]
+     .  vpwp,        ! v'w' (momentum levels)                    [m^2/s^2]
+     .  up2,         ! u'^2 (momentum levels)                    [m^2/s^2]
+     .  vp2,         ! v'^2 (momentum levels)                    [m^2/s^2]
+     .  Kw1,         ! Coefficient of eddy diffusivity for w'^2  [m^2/s]
+     .  Kw8,         ! Coefficient of eddy diffusivity for w'^3  [m^2/s]
+     .  Skwt,        ! Skewness of w on thermodynamic levels     [-]
+     .  tau1m,       ! Time-scale tau on momentum levels         [s]
+     .  tauw3t,      ! Time-scale tau on thermodynamic levels    [s]
+     .  C1_Skw_fnc,  ! C_1 parameter with Sk_w applied           [-]
+     .  C11_Skw_fnc, ! C_11 parameter with Sk_w applied          [-]
+     .  wp2_zt,      ! w'^2 interpolated to thermodynamic levels [m^2/s^2]
+     .  wp3_zm       ! w'^3 interpolated to momentum levels      [m^3/s^3]
 
         ! Input/Output Variables
         real, dimension(gr%nnzp), intent(inout) :: 
-     .  wp2, ! w'^2                                            [m^2/s^2]
-     .  wp3  ! w'^3                                            [m^3/s^3]
+     .  wp2, ! w'^2 (momentum levels)                            [m^2/s^2]
+     .  wp3  ! w'^3 (thermodynamic levels)                       [m^3/s^3]
 
         integer, intent(inout) :: err_code
 
@@ -343,8 +358,12 @@
      .  solut ! Solution to band diagonal system.
 
         real, dimension(gr%nnzp) :: 
-     .  a1, ! a_1; See eqn. 24 in `Equations for HOC'          [-]
-     .  a3  ! a_3; See eqn. 26 in `Equations for HOC'          [-]
+     .  a1, ! a_1 (momentum levels); See eqn. 24 in `Equations for HOC' [-]
+     .  a3  ! a_3 (momentum levels); See eqn. 26 in `Equations for HOC' [-]
+
+        real, dimension(gr%nnzp) :: 
+     .  a1_zt, ! a_1 interpolated to thermodynamic levels               [-]
+     .  a3_zt  ! a_3 interpolated to thermodynamic levels               [-]
 
         real :: 
      .  rcond  ! Est. of the reciprocal of the condition #
@@ -376,7 +395,9 @@
         end if
 #endif /*STATS*/
 
-        ! Define a1 and a3 (both are located on momentum levels).
+        ! Define a_1 and a_3 (both are located on momentum levels).
+        ! They are variables that are both functions of Sc (where Scm is
+        ! located on momentum levels).
         ! Note: some compilers appear to interpret the pow function with
         ! a positive integer exponent differently than a repeated
         ! multiply. -dschanen 19 March 2007
@@ -387,17 +408,25 @@
      .       + (1.0-Scm)*(1.0-Scm)
      .       - (3.0/2.0)
 
+        ! Interpolate a_1 and a_3 from momentum levels to thermodynamic 
+        ! levels.  This will be used for the w'^3 turbulent advection 
+        ! (ta) and turbulent production (tp) combined term.
+        a1_zt  = zm2zt( a1 )
+        a3_zt  = zm2zt( a3 )
+
         ! Compute the implicit portion of the w'^2 and w'^3 equations.
         ! Build the left-hand side matrix.
-        call wp23_lhs( dt, wp2, wp3, wmm, wmt, a1, a3, Kw1, 
-     .                 Kw8, Skwt, tau1m, tauw3t, C1_Skw_fnc, 
-     .                 C11_Skw_fnc, lcrank_nich_diff, lhs )
+        call wp23_lhs( dt, wp2, wp3, wp3_zm, wmm, wmt, a1, a1_zt, 
+     .                 a3, a3_zt, Kw1, Kw8, Skwt, tau1m, tauw3t, 
+     .                 C1_Skw_fnc, C11_Skw_fnc, lcrank_nich_diff, 
+     .                 lhs )
 
         ! Compute the explicit portion of the w'^2 and w'^3 equations.
         ! Build the right-hand side vector.
-        call wp23_rhs( dt, wp2, wp3, a1, a3, wpthvp, wp2thvp,
-     .                 um, vm, upwp, vpwp, up2, vp2, Kw1, 
-     .                 Kw8, Skwt, tau1m, tauw3t, C11_Skw_fnc,
+        call wp23_rhs( dt, wp2, wp3, wp3_zm, a1, a1_zt, 
+     .                 a3, a3_zt, wpthvp, wp2thvp, um, vm, 
+     .                 upwp, vpwp, up2, vp2, Kw1, Kw8, 
+     .                 Skwt, tau1m, tauw3t, C11_Skw_fnc, 
      .                 lcrank_nich_diff, rhs )
 
         ! Solve the system of equations for w'^2 and w'^3.
@@ -614,9 +643,10 @@
         end subroutine wp23_solve
 
 !===============================================================================
-        subroutine wp23_lhs( dt, wp2, wp3, wmm, wmt, a1, a3, Kw1, 
-     .                       Kw8, Skwt, tau1m, tauw3t, C1_Skw_fnc, 
-     .                       C11_Skw_fnc, lcrank_nich_diff, lhs )
+        subroutine wp23_lhs( dt, wp2, wp3, wp3_zm, wmm, wmt, a1, a1_zt, 
+     .                       a3, a3_zt, Kw1, Kw8, Skwt, tau1m, tauw3t, 
+     .                       C1_Skw_fnc, C11_Skw_fnc, lcrank_nich_diff, 
+     .                       lhs )
 
 !       Description:
 !       Compute LHS band diagonal matrix for w'^2 and w'^3.
@@ -649,12 +679,15 @@
      .  dt          ! Timestep length                          [s]
 
         real, dimension(gr%nnzp), intent(in) :: 
-     .  wp2,        ! w'^2                                     [m^2/s^2]
-     .  wp3,        ! w'^3                                     [m^3/s^3]
+     .  wp2,        ! w'^2 (momentum levels)                   [m^2/s^2]
+     .  wp3,        ! w'^3 (thermodynamic levels)              [m^3/s^3]
+     .  wp3_zm,     ! w'^3 interpolated to momentum levels     [m^3/s^3]
      .  wmm,        ! w wind component on momentum levels      [m/s]
      .  wmt,        ! w wind component on thermodynamic levels [m/s]
-     .  a1,         ! Scm-related term a_1                     [-]
-     .  a3,         ! Scm-related term a_3                     [-]
+     .  a1,         ! Scm-related term a_1 (momentum levels)   [-]
+     .  a1_zt,      ! a_1 interpolated to thermodynamic levels [-]
+     .  a3,         ! Scm-related term a_3 (momentum levels)   [-]
+     .  a3_zt,      ! a_3 interpolated to thermodynamic levels [-]
      .  Kw1,        ! Coefficient of eddy diffusivity for w'^2 [m^2/s]
      .  Kw8,        ! Coefficient of eddy diffusivity for w'^3 [m^2/s]
      .  Skwt,       ! Skewness of w on thermodynamic levels    [-]
@@ -845,9 +878,11 @@
           ! LHS turbulent advection (ta) and turbulent production (tp) terms.
           lhs(3-2:3+2,k_wp3)
      .    = lhs(3-2:3+2,k_wp3)
-     .    + wp3_terms_ta_tp_lhs( wp3(kp1), wp3(k), wp3(km1), 
-     .                           wp2(k), wp2(km1), a1(k), a1(km1),
-     .                           a3(k), a3(km1), gr%dzt(k), eps, wtol )
+     .    + wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1), 
+     .                           wp2(k), wp2(km1), 
+     .                           a1(k), a1_zt(k), a1(km1),
+     .                           a3(k), a3_zt(k), a3(km1),
+     .                           gr%dzt(k), eps, wtol, k ) 
 
           ! LHS accumulation (ac) term and pressure term 2 (pr2).
           lhs(3,k_wp3)
@@ -886,10 +921,12 @@
 
           if ( iwp3_ta > 0 ) then
             tmp(1:5) = 
-     .      wp3_terms_ta_tp_lhs( wp3(kp1), wp3(k), wp3(km1), 
-     .                           wp2(k), wp2(km1), a1(k), a1(km1),
-     .                           a3(k)+(3.0/2.0), a3(km1)+(3.0/2.0), 
-     .                           gr%dzt(k), eps, wtol )
+     .      wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1), 
+     .                           wp2(k), wp2(km1), 
+     .                           a1(k), a1_zt(k), a1(km1),
+     .                           a3(k)+(3.0/2.0), a3_zt(k)+(3.0/2.0),
+     .                           a3(km1)+(3.0/2.0),
+     .                           gr%dzt(k), eps, wtol, k ) 
             ztscr05(k) = -tmp(5)
             ztscr06(k) = -tmp(4)
             ztscr07(k) = -tmp(3)
@@ -899,10 +936,12 @@
 
           if ( iwp3_tp > 0 ) then
             tmp(1:5) = 
-     .      wp3_terms_ta_tp_lhs( wp3(kp1), wp3(k), wp3(km1), 
-     .                           wp2(k), wp2(km1), 0.0, 0.0,
-     .                           0.0-(3.0/2.0), 0.0-(3.0/2.0), 
-     .                           gr%dzt(k), eps, wtol )
+     .      wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1), 
+     .                           wp2(k), wp2(km1), 
+     .                           0.0, 0.0, 0.0,
+     .                           0.0-(3.0/2.0), 0.0-(3.0/2.0),
+     .                           0.0-(3.0/2.0),
+     .                           gr%dzt(k), eps, wtol, k ) 
             ztscr10(k) = -tmp(4)
             ztscr11(k) = -tmp(2)
           endif
@@ -1002,9 +1041,10 @@
         end subroutine wp23_lhs
 
 !===============================================================================
-        subroutine wp23_rhs( dt, wp2, wp3, a1, a3, wpthvp, wp2thvp,
-     .                       um, vm, upwp, vpwp, up2, vp2, Kw1, 
-     .                       Kw8, Skwt, tau1m, tauw3t, C11_Skw_fnc,
+        subroutine wp23_rhs( dt, wp2, wp3, wp3_zm, a1, a1_zt, 
+     .                       a3, a3_zt, wpthvp, wp2thvp, um, vm, 
+     .                       upwp, vpwp, up2, vp2, Kw1, Kw8, 
+     .                       Skwt, tau1m, tauw3t, C11_Skw_fnc, 
      .                       lcrank_nich_diff, rhs )
 
 !       Description:
@@ -1030,18 +1070,21 @@
      .  dt          ! Timestep length                          [s]
 
         real, dimension(gr%nnzp), intent(in) :: 
-     .  wp2,        ! w'^2                                     [m^2/s^2]
-     .  wp3,        ! w'^3                                     [m^3/s^3]
-     .  a1,         ! Scm-related term a_1                     [-]
-     .  a3,         ! Scm-related term a_3                     [-]
-     .  wpthvp,     ! w'th_v'                                  [K m/s]
-     .  wp2thvp,    ! w'^2th_v'                                [K m^2/s^2]
-     .  um,         ! u wind component                         [m/s]
-     .  vm,         ! v wind component                         [m/s]
-     .  upwp,       ! u'w'                                     [m^2/s^2]
-     .  vpwp,       ! v'w'                                     [m^2/s^2]
-     .  up2,        ! u'^2                                     [m^2/s^2]
-     .  vp2,        ! v'^2                                     [m^2/s^2]
+     .  wp2,        ! w'^2 (momentum levels)                   [m^2/s^2]
+     .  wp3,        ! w'^3 (thermodynamic levels)              [m^3/s^3]
+     .  wp3_zm,     ! w'^3 interpolated to momentum levels     [m^3/s^3]
+     .  a1,         ! Scm-related term a_1 (momentum levels)   [-]
+     .  a1_zt,      ! a_1 interpolated to thermodynamic levels [-]
+     .  a3,         ! Scm-related term a_3 (momentum levels)   [-]
+     .  a3_zt,      ! a_3 interpolated to thermodynamic levels [-]
+     .  wpthvp,     ! w'th_v' (momentum levels)                [K m/s]
+     .  wp2thvp,    ! w'^2th_v' (thermodynamic levels)         [K m^2/s^2]
+     .  um,         ! u wind component (thermodynamic levels)  [m/s]
+     .  vm,         ! v wind component (thermodynamic levels)  [m/s]
+     .  upwp,       ! u'w' (momentum levels)                   [m^2/s^2]
+     .  vpwp,       ! v'w' (momentum levels)                   [m^2/s^2]
+     .  up2,        ! u'^2 (momentum levels)                   [m^2/s^2]
+     .  vp2,        ! v'^2 (momentum levels)                   [m^2/s^2]
      .  Kw1,        ! Coefficient of eddy diffusivity for w'^2 [m^2/s]
      .  Kw8,        ! Coefficient of eddy diffusivity for w'^3 [m^2/s]
      .  Skwt,       ! Skewness of w on thermodynamic levels    [-]
@@ -1171,9 +1214,11 @@
           ! RHS turbulent advection (ta) and turbulent production (tp) terms.
           rhs(k_wp3)
      .    = rhs(k_wp3)
-     .    + wp3_terms_ta_tp_rhs( wp3(kp1), wp3(k), wp3(km1),
-     .                           wp2(k), wp2(km1), a1(k), a1(km1),
-     .                           a3(k), a3(km1), gr%dzt(k), eps, wtol )
+     .    + wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1),
+     .                           wp2(k), wp2(km1),
+     .                           a1(k), a1_zt(k), a1(km1),
+     .                           a3(k), a3_zt(k), a3(km1),
+     .                           gr%dzt(k), eps, wtol )
 
           ! RHS buoyancy production (bp) term and pressure term 2 (pr2).
           rhs(k_wp3)
@@ -1206,17 +1251,21 @@
 
           if ( iwp3_ta > 0 ) then
           zt%x(k,iwp3_ta) = zt%x(k,iwp3_ta)
-     .    + wp3_terms_ta_tp_rhs( wp3(kp1), wp3(k), wp3(km1),
-     .                           wp2(k), wp2(km1), a1(k), a1(km1),
-     .                           a3(k)+(3.0/2.0), a3(km1)+(3.0/2.0),
+     .    + wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1),
+     .                           wp2(k), wp2(km1),
+     .                           a1(k), a1_zt(k), a1(km1),
+     .                           a3(k)+(3.0/2.0), a3_zt(k)+(3.0/2.0), 
+     .                           a3(km1)+(3.0/2.0),
      .                           gr%dzt(k), eps, wtol )
           endif
 
           if ( iwp3_tp > 0 ) then
           zt%x(k,iwp3_tp) = zt%x(k,iwp3_tp)
-     .    + wp3_terms_ta_tp_rhs( wp3(kp1), wp3(k), wp3(km1),
-     .                           wp2(k), wp2(km1), 0.0, 0.0,
-     .                           0.0-(3.0/2.0), 0.0-(3.0/2.0),
+     .    + wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1),
+     .                           wp2(k), wp2(km1),
+     .                           0.0, 0.0, 0.0,
+     .                           0.0-(3.0/2.0), 0.0-(3.0/2.0), 
+     .                           0.0-(3.0/2.0),
      .                           gr%dzt(k), eps, wtol )
           endif
 
@@ -1720,9 +1769,11 @@
         end function wp2_term_pr1_rhs
 
 !===============================================================================
-        pure function wp3_terms_ta_tp_lhs( wp3p1, wp3, wp3m1, 
-     .                                     wp2, wp2m1, a1, a1m1,
-     .                                     a3, a3m1, dzt, eps, wtol )
+        pure function wp3_terms_ta_tp_lhs( wp3_zm, wp3_zmm1, 
+     .                                     wp2, wp2m1, 
+     .                                     a1, a1_zt, a1m1,
+     .                                     a3, a3_zt, a3m1,
+     .                                     dzt, eps, wtol, level ) 
      .  result( lhs )
 
 !       Description:
@@ -1811,6 +1862,8 @@
 !       References:
 !-----------------------------------------------------------------------
 
+        use grid_class ! gr%weights_zt2zm
+
         implicit none
 
         ! Constant parameters
@@ -1821,26 +1874,48 @@
      .  km1_mdiag = 4,   ! Momentum subdiagonal index. 
      .  km1_tdiag = 5    ! Thermodynamic subdiagonal index.
 
+        integer, parameter ::
+     .  t_above = 1,   ! Index for upper thermodynamic level grid weight.
+     .  t_below = 2    ! Index for lower thermodynamic level grid weight.
+
         ! Input Variables
         real, intent(in) :: 
-     .  wp3p1,   ! w'^3(k+1)                     [m^3/s^3]
-     .  wp3,     ! w'^3(k)                       [m^3/s^3]
-     .  wp3m1,   ! w'^3(k-1)                     [m^3/s^3]
-     .  wp2,     ! w'^2(k)                       [m^2/s^2]
-     .  wp2m1,   ! w'^2(k-1)                     [m^2/s^2]
-     .  a1,      ! a_1(k)                        [-]
-     .  a1m1,    ! a_1(k-1)                      [-]
-     .  a3,      ! a_3(k)                        [-]
-     .  a3m1,    ! a_3(k-1)                      [-]
-     .  dzt,     ! Inverse of grid spacing (k)   [1/m]
-     .  eps,     ! Model parameter               [-]
-     .  wtol     ! Model parameter               [m/s]
+     .  wp3_zm,     ! w'^3 interpolated to momentum level (k)     [m^3/s^3]
+     .  wp3_zmm1,   ! w'^3 interpolated to momentum level (k-1)   [m^3/s^3]
+     .  wp2,        ! w'^2(k)                                     [m^2/s^2]
+     .  wp2m1,      ! w'^2(k-1)                                   [m^2/s^2]
+     .  a1,         ! a_1(k)                                      [-]
+     .  a1_zt,      ! a_1 interpolated to thermodynamic level (k) [-]
+     .  a1m1,       ! a_1(k-1)                                    [-]
+     .  a3,         ! a_3(k)                                      [-]
+     .  a3_zt,      ! a_3 interpolated to thermodynamic level (k) [-]
+     .  a3m1,       ! a_3(k-1)                                    [-]
+     .  dzt,        ! Inverse of grid spacing (k)                 [1/m]
+     .  eps,        ! Model parameter                             [-]
+     .  wtol        ! w wind component tolerance                  [m/s]
+
+        integer, intent(in) ::
+     .  level ! Central thermodynamic level (on which calculation occurs).
 
         ! Return Variable
         real, dimension(5) :: lhs
 
+        ! Local Variables
+        integer ::
+     .  mk,   ! Momentum level directly above central thermodynamic level.
+     .  mkm1  ! Momentum level directly below central thermodynamic level.
+
+        ! Momentum level (k) is between thermodynamic level (k+1)
+        ! and thermodynamic level (k).
+        mk = level
+
+        ! Momentum level (k-1) is between thermodynamic level (k)
+        ! and thermodynamic level (k-1).
+        mkm1 = level - 1
+
         ! Brian tried a new discretization for the turbulent advection 
-        ! term, which contains the term -d[ a_1 * (w'^3)^2 / w'^2 ] / dz.
+        ! term, which contains the term:
+        ! - d [ a_1 * (w'^3)^2 / w'^2 ] / dz.
         ! In order to help stabilize w'^3, a_1 has been pulled outside of
         ! the derivative.  On the left-hand side of the equation, this 
         ! effects the thermodynamic superdiagonal (kp1_tdiag), the 
@@ -1848,49 +1923,51 @@
         ! subdiagonal (km1_tdiag).
 
         ! Additionally, the discretization of the turbulent advection 
-        ! term containing the term -d[ (a_3 + 3/2) * (w'^2)^2 ] / dz has 
-        ! been altered to pull a3 outside of the derivative.  This was 
-        ! done in order to help stabilize w'^3.  On the left-hand side of
-        ! the equation, this effects the momentum superdiagonal (k_mdiag)
-        ! and the momentum subdiagonal (km1_mdiag).
+        ! term, which contains the term:
+        ! - d [ (a_3 + 3/2) * (w'^2)^2 ] / dz,
+        ! has been altered to pull a_3 outside of the derivative.  This
+        ! was done in order to help stabilize w'^3.  On the left-hand 
+        ! side of the equation, this effects the momentum superdiagonal 
+        ! (k_mdiag) and the momentum subdiagonal (km1_mdiag).
 
         ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
         lhs(kp1_tdiag)
-!     .  = + (1.0/2.0) * dzt
-!     .      * a1 * ( wp3p1 + wp3 ) / MAX( wp2, eps )
-     .  = + (1.0/2.0) * ( a1 + a1m1 )
-     .      * (1.0/2.0) * dzt
-     .      * ( wp3p1 + wp3 ) / MAX( wp2, wtol**2 )
+!     .  = + dzt * a1 * ( 2.0 * wp3_zm / max(wp2, eps) )
+!     .          * gr%weights_zt2zm(t_above,mk)
+     .  = + a1_zt * dzt * ( 2.0 * wp3_zm / max(wp2, wtol**2) )
+     .            * gr%weights_zt2zm(t_above,mk)
 
         ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
         lhs(k_mdiag)
-!     .  = + 2.0 * dzt * a3 * wp2
-     .  = + 2.0 * dzt * 0.5*(a3+a3m1) * wp2
+!     .  = + dzt * a3 * 2.0 * wp2
+     .  = + a3_zt * dzt * 2.0 * wp2
 
         ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
         lhs(k_tdiag)
-!     .  = + (1.0/2.0) * dzt
-!     .      * (  a1 * ( wp3p1 + wp3 ) / MAX( wp2, eps )
-!     .         - a1m1 * ( wp3 + wp3m1 ) / MAX( wp2m1, eps )
+!     .  = + dzt 
+!     .      * (   a1 * ( 2.0 * wp3_zm / max(wp2, eps) ) 
+!     .            * gr%weights_zt2zm(t_below,mk)
+!     .          - a1m1 * ( 2.0 * wp3_zmm1 / max(wp2m1, eps) )
+!     .            * gr%weights_zt2zm(t_above,mkm1)
 !     .        )
-     .  = + (1.0/2.0) * ( a1 + a1m1 )
-     .      * (1.0/2.0) * dzt
-     .      * (  ( wp3p1 + wp3 ) / MAX( wp2, wtol**2 )
-     .         - ( wp3 + wp3m1 ) / MAX( wp2m1, wtol**2 )
+     .  = + a1_zt * dzt
+     .      * (   ( 2.0 * wp3_zm / max(wp2, wtol**2) )
+     .            * gr%weights_zt2zm(t_below,mk)
+     .          - ( 2.0 * wp3_zmm1 / max(wp2m1, wtol**2) )
+     .            * gr%weights_zt2zm(t_above,mkm1)
      .        )
 
         ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
         lhs(km1_mdiag)
-!     .  = - 2.0 * dzt * a3m1 * wp2m1
-     .  = - 2.0 * dzt * 0.5*(a3+a3m1) * wp2m1
+!     .  = - dzt * a3m1 * 2.0 * wp2m1
+     .  = - a3_zt * dzt * 2.0 * wp2m1
 
         ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
         lhs(km1_tdiag)
-!     .  = - (1.0/2.0) * dzt
-!     .      * a1m1 * ( wp3 + wp3m1 ) / MAX( wp2m1, eps )
-     .  = - (1.0/2.0) * ( a1 + a1m1 )
-     .      * (1.0/2.0) * dzt
-     .      * ( wp3 + wp3m1 ) / MAX( wp2m1, wtol**2 )
+!     .  = - dzt * a1m1 * ( 2.0 * wp3_zmm1 / max(wp2m1, eps) )
+!     .          * gr%weights_zt2zm(t_below,mkm1)
+     .  = - a1_zt * dzt * ( 2.0 * wp3_zmm1 / max(wp2m1, wtol**2) )
+     .            * gr%weights_zt2zm(t_below,mkm1)
 
         ! End of code that pulls out a3.
         ! End of Brian's a1 change.  Feb. 14, 2008.
@@ -2048,9 +2125,11 @@
         end function wp3_term_pr1_lhs
 
 !===============================================================================
-        pure function wp3_terms_ta_tp_rhs( wp3p1, wp3, wp3m1, 
-     .                                     wp2, wp2m1, a1, a1m1,
-     .                                     a3, a3m1, dzt, eps, wtol )
+        pure function wp3_terms_ta_tp_rhs( wp3_zm, wp3_zmm1,
+     .                                     wp2, wp2m1,
+     .                                     a1, a1_zt, a1m1,
+     .                                     a3, a3_zt, a3m1,
+     .                                     dzt, eps, wtol )
      .  result( rhs )
 
 !       Description:
@@ -2139,54 +2218,50 @@
 
         ! Input Variables
         real, intent(in) :: 
-     .  wp3p1,   ! w'^3(k+1)                     [m^3/s^3]
-     .  wp3,     ! w'^3(k)                       [m^3/s^3]
-     .  wp3m1,   ! w'^3(k-1)                     [m^3/s^3]
-     .  wp2,     ! w'^2(k)                       [m^2/s^2]
-     .  wp2m1,   ! w'^2(k-1)                     [m^2/s^2]
-     .  a1,      ! a_1(k)                        [-]
-     .  a1m1,    ! a_1(k-1)                      [-]
-     .  a3,      ! a_3(k)                        [-]
-     .  a3m1,    ! a_3(k-1)                      [-]
-     .  dzt,     ! Inverse of grid spacing (k)   [1/m]
-     .  eps,     ! Model parameter               [-]
-     .  wtol     ! Model parameter               [m/s]
+     .  wp3_zm,     ! w'^3 interpolated to momentum level (k)     [m^3/s^3]
+     .  wp3_zmm1,   ! w'^3 interpolated to momentum level (k-1)   [m^3/s^3]
+     .  wp2,        ! w'^2(k)                                     [m^2/s^2]
+     .  wp2m1,      ! w'^2(k-1)                                   [m^2/s^2]
+     .  a1,         ! a_1(k)                                      [-]
+     .  a1_zt,      ! a_1 interpolated to thermodynamic level (k) [-]
+     .  a1m1,       ! a_1(k-1)                                    [-]
+     .  a3,         ! a_3(k)                                      [-]
+     .  a3_zt,      ! a_3 interpolated to thermodynamic level (k) [-]
+     .  a3m1,       ! a_3(k-1)                                    [-]
+     .  dzt,        ! Inverse of grid spacing (k)                 [1/m]
+     .  eps,        ! Model parameter                             [-]
+     .  wtol        ! w wind component tolerance                  [m/s]
 
         ! Return Variable
         real :: rhs
 
         ! Brian tried a new discretization for the turbulent advection 
-        ! term, which contains the term -d[ a_1 * (w'^3)^2 / w'^2 ] / dz.
+        ! term, which contains the term:
+        ! - d [ a_1 * (w'^3)^2 / w'^2 ] / dz.
         ! In order to help stabilize w'^3, a_1 has been pulled outside of
         ! the derivative.  This effects the right-hand side of the 
         ! equation, as well as the left-hand side.
 
         ! Additionally, the discretization of the turbulent advection 
-        ! term containing the term -d[ (a_3 + 3/2) * (w'^2)^2 ] / dz has 
-        ! been altered to pull a3 outside of the derivative.  This was 
-        ! done in order to help stabilize w'^3.  This effects the 
+        ! term, which contains the term:
+        ! - d [ (a_3 + 3/2) * (w'^2)^2 ] / dz, 
+        ! has been altered to pull a_3 outside of the derivative.  This 
+        ! was done in order to help stabilize w'^3.  This effects the 
         ! right-hand side of the equation, as well as the left-hand side.
 
         rhs
 !     .  = + dzt
-!     .      * ( ( a3 * wp2**2 ) - ( a3m1 * wp2m1**2 ) )
-!     .    + (1.0/4.0) * dzt
-!     .      * (  a1 * ( wp3p1 + wp3 )**2
-!     .                   / MAX( wp2, eps )
-!     .         - a1m1 * ( wp3 + wp3m1 )**2
-!     .                     / MAX( wp2m1, eps )
+!     .      * ( a3 * wp2**2 - a3m1 * wp2m1**2 )
+!     .    + dzt
+!     .      * (   a1 * ( wp3_zm**2 / max(wp2, eps) )
+!     .          - a1m1 * ( wp3_zmm1**2 / max(wp2m1, eps) )
 !     .        )
-     .  = + dzt
-     .      * (  ( 0.5*(a3+a3m1) * wp2**2 )
-     .         - ( 0.5*(a3+a3m1) * wp2m1**2 )  )
-     .    + (1.0/2.0) * ( a1 + a1m1 )
-     .      * (1.0/4.0) * dzt
-     .        * (  ( wp3p1 + wp3 )**2
-     .                / MAX( wp2, wtol**2 )
-     .           - ( wp3 + wp3m1 )**2
-     .                / MAX( wp2m1, wtol**2 )
-     .          )
-
+     .  = + a3_zt * dzt
+     .      * ( wp2**2 - wp2m1**2 )
+     .    + a1_zt * dzt
+     .      * (   ( wp3_zm**2 / max(wp2, wtol**2) )
+     .          - ( wp3_zmm1**2 / max(wp2m1, wtol**2) )
+     .        )
 
         ! End of code that pulls out a3.
         ! End of Brian's a1 change.  Feb. 14, 2008.
@@ -2319,20 +2394,20 @@
 
         ! Input Variables.
         real, intent(in) ::
-     .  wp2m1, ! w'^2 (k-1)                          [m^2/s^2]
-     .  zt,    ! Height at thermodynamic level (k)   [m]
-     .  emin,  ! Model parameter                     [m^2/s^2]
-     .  eps    ! Model parameter                     [-]
+     .  wp2m1, ! w'^2 (k-1)                                [m^2/s^2]
+     .  zt,    ! Height at thermodynamic level (k)         [m]
+     .  emin,  ! Model parameter                           [m^2/s^2]
+     .  eps    ! Model parameter                           [-]
 
         ! Input/Output Variables
         real, intent(inout) ::
-     .  wp2,   ! w'^2 (k)                            [m^2/s^2]
-     .  wp3    ! w'^3 (k)                            [m^3/s^3]
+     .  wp2,   ! w'^2 (k)                                  [m^2/s^2]
+     .  wp3    ! w'^3 (k)                                  [m^3/s^3]
 
         ! Local Variables
         real :: 
-     .  atmp,  ! w'^2 at thermodynamic level (k)     [m^2/s^2]
-     .  ctmp   ! atmp^(3/2)                          [m^3/s^3]
+     .  atmp,  ! max(w'^2, eps) at thermodynamic level (k) [m^2/s^2]
+     .  ctmp   ! atmp^(3/2)                                [m^3/s^3]
 
 !  Vince Larson commented out the Andre et al clipping to see if we
 !     could avoid using it.  26 Jul 2007
@@ -2354,8 +2429,8 @@
 
         if ( zt <= 100.0 ) then ! Clip for 100 m. above ground.
 
-           atmp = max( ( ( wp2m1 + wp2 ) / 2.0 ) , eps )    ! wp2
-           ctmp = atmp**(3.0/2.0)                           ! wp2^(3/2)
+           atmp = max( ( ( wp2m1 + wp2 ) / 2.0 ) , eps )    ! w'^2 at t-levels
+           ctmp = atmp**(3.0/2.0)                           ! (w'^2)^(3/2)
            if ( wp3 >= 0.2 * sqrt(2.0) * ctmp ) then
               wp3 = 0.2 * sqrt(2.0) * ctmp
               ! Vince Larson added clipping for negative wp3
@@ -2377,8 +2452,8 @@
            !       lift the wp2 value in altitude one-half grid box
            !       every time it is called.  The line is unnecessary,
            !       and can be commented out.  Brian Griffin. 6/30/07.
-           atmp = max( 0.5 * ( wp2m1 + wp2 ), eps )
-           ctmp = atmp**1.5
+           atmp = max( 0.5 * ( wp2m1 + wp2 ), eps )        ! w'^2 at t-levels
+           ctmp = atmp**1.5                                ! (w'^2)^(3/2)
            if ( wp3/ctmp > 4.5 ) then  ! Sk_w > 4.5
               wp3 = 4.5 * ctmp         ! w'^3 = 4.5 * Sk_w
               !wp2 = atmp
