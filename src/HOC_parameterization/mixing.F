@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.50 2008-04-25 15:48:10 griffinb Exp $
+! $Id: mixing.F,v 1.51 2008-04-29 22:43:10 griffinb Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -87,18 +87,18 @@
      .  Scm,          ! Sc on momentum levels                    [-]
      .  wmm,          ! w wind component on momentum levels      [m/s]
      .  wmt,          ! w wind component on thermodynamic levels [m/s]
-     .  wp2,          ! w'^2                                     [m^2/s^2]
-     .  wp3,          ! w'^3                                     [m^3/s^3]
+     .  wp2,          ! w'^2 (momentum levels)                   [m^2/s^2]
+     .  wp3,          ! w'^3 (thermodynamic levels)              [m^3/s^3]
      .  Kht,          ! Eddy diffusivity on thermodynamic levels [m^2/s]
      .  taum,         ! Time-scale tau on momentum levels        [s]
      .  Skwm,         ! Skewness of w on momentum levels         [-]
-     .  rtpthvp,      ! r_t'th_v'                                [(kg/kg) K]
-     .  rtm_forcing,  ! r_t forcing                              [(kg/kg)/s]
-     .  thlpthvp,     ! th_l'th_v'                               [K^2]
-     .  thlm_forcing, ! th_l forcing                             [K/s]
+     .  rtpthvp,      ! r_t'th_v' (momentum levels)              [(kg/kg) K]
+     .  rtm_forcing,  ! r_t forcing (thermodynamic levels)       [(kg/kg)/s]
+     .  thlpthvp,     ! th_l'th_v' (momentum levels)             [K^2]
+     .  thlm_forcing, ! th_l forcing (thermodynamic levels)      [K/s]
 ! Added for clipping by Vince Larson 29 Sep 2007
-     .  rtp2,         ! r_t'^2                                   [(kg/kg)^2]
-     .  thlp2         ! th_l'^2                                  [K^2]
+     .  rtp2,         ! r_t'^2 (momentum levels)                 [(kg/kg)^2]
+     .  thlp2         ! th_l'^2 (momentum levels)                [K^2]
 ! End of Vince Larson's addition.
 
         logical, intent(in) :: 
@@ -168,6 +168,9 @@
 
         ! (wpxp)^2: 3-point average diffusion coefficient.
 
+        ! Interpolate w'x' (w'r_t' and w'th_l') from momentum levels 
+        ! to thermodynamic levels.  This is used for extra diffusion
+        ! based on a three-point average of (w'x')^2.
         wprtp_zt  = zm2zt( wprtp )
         wpthlp_zt = zm2zt( wpthlp )
 
@@ -467,8 +470,8 @@
      .  Scm,        ! Sc on momentum levels                    [-]
      .  wmm,        ! w wind component on momentum levels      [m/s]
      .  wmt,        ! w wind component on thermodynamic levels [m/s]
-     .  wp2,        ! w'^2                                     [m^2/s^2]
-     .  wp3,        ! w'^3                                     [m^3/s^3]
+     .  wp2,        ! w'^2 (momentum levels)                   [m^2/s^2]
+     .  wp3,        ! w'^3 (thermodynamic levels)              [m^3/s^3]
      .  Kw6,        ! Coefficient of eddy diffusivity for w'x' [m^2/s]
      .  taum,       ! Time-scale tau on momentum levels        [s]
      .  C7_Skw_fnc, ! C_7 parameter with Sk_w applied          [-]
@@ -483,7 +486,11 @@
 
         ! Local Variables
         real, dimension(gr%nnzp) :: 
-     .  a1  ! a_1; See eqn. 24 in `Equations for HOC'          [-]
+     .  a1 ! a_1 (momentum levels); See eqn. 24 in `Equations for HOC' [-]
+
+        real, dimension(gr%nnzp) ::
+     .  a1_zt, ! a_1 interpolated to thermodynamic levels              [-]
+     .  wp2_zt ! w'^2 interpolated to thermodynamic levels             [m^2/s^2]
 
         ! wtol_sqd = the square of the minimum threshold on w,
         !     [wtol_sqd] = m^2 s^{-2}.  Vince Larson 11 Mar 2008.
@@ -502,9 +509,16 @@
         !     [wtol_sqd] = m^2 s^{-2}.  Vince Larson 11 Mar 2008.
         wtol_sqd = wtol * wtol
 
-        ! Define a1 (located on momentum levels).
-
+        ! Define a_1 (located on momentum levels).
+        ! It is a variable that is a function of Sc (where Scm is
+        ! located on momentum levels).
         a1(1:gr%nnzp) = 1.0 / ( 1.0 - Scm(1:gr%nnzp) )
+
+        ! Interpolate a_1 and w'^2 from momentum levels to thermodynamic
+        ! levels.  This will be used for the w'x' turbulent advection
+        ! (ta) term.
+        a1_zt  = zm2zt( a1 )
+        wp2_zt = zm2zt( wp2 )
 
         ! Initialize the left-hand side matrix to 0.
         lhs = 0.0
@@ -609,9 +623,10 @@
           ! LHS turbulent advection (ta) term.
           lhs((/3-2,3,3+2/),k_wpxp)
      .    = lhs((/3-2,3,3+2/),k_wpxp)
-     .    + wpxp_term_ta_lhs( wp2(kp1), wp2(k), wp2(km1), 
-     .                        a1(kp1), a1(k), a1(km1), 
-     .                        wp3(kp1), wp3(k), gr%dzm(k), wtol_sqd )
+     .    + wpxp_term_ta_lhs( wp2_zt(kp1), wp2_zt(k), 
+     .                        a1_zt(kp1), a1_zt(k),
+     .                        wp3(kp1), wp3(k), gr%dzm(k), 
+     .                        wtol_sqd, k )
 
           ! LHS turbulent production (tp) term.
           lhs((/3-1,3+1/),k_wpxp)
@@ -652,9 +667,10 @@
 
           if ( iwprtp_ta > 0 .or. iwpthlp_ta > 0 ) then
             tmp(1:3) =
-     .      + wpxp_term_ta_lhs( wp2(kp1), wp2(k), wp2(km1),
-     .                          a1(kp1), a1(k), a1(km1),
-     .                          wp3(kp1), wp3(k), gr%dzm(k), wtol_sqd )
+     .      + wpxp_term_ta_lhs( wp2_zt(kp1), wp2_zt(k), 
+     .                          a1_zt(kp1), a1_zt(k),
+     .                          wp3(kp1), wp3(k), gr%dzm(k), 
+     .                          wtol_sqd, k )
             zmscr03(k) = - tmp(3)
             zmscr04(k) = - tmp(2)
             zmscr05(k) = - tmp(1)
@@ -774,11 +790,11 @@
      .  dt          ! Timestep                            [s]
 
         real, dimension(gr%nnzp), intent(in) ::
-     .  xm,         ! xm                                  [{xm units}]
-     .  wpxp,       ! w'x'                                [{xm units} m/s]
-     .  xm_forcing, ! xm forcings                         [{xm units}/s]
+     .  xm,         ! xm (thermodynamic levels)           [{xm units}]
+     .  wpxp,       ! w'x' (momentum levels)              [{xm units} m/s]
+     .  xm_forcing, ! xm forcings (thermodynamic levels)  [{xm units}/s]
      .  C7_Skw_fnc, ! C_7 parameter with Sk_w applied     [-]
-     .  xpthvp      ! x'th_v'                             [{xm units} K]
+     .  xpthvp      ! x'th_v' (momentum levels)           [{xm units} K]
 
         ! Output Variable
         real, intent(out), dimension(2*gr%nnzp,nrhs) :: 
@@ -949,12 +965,12 @@
      .  solve_type  ! Variables being solved for.
 
         real(kind=time_prec), intent(in) :: 
-     .  dt          ! Timestep                [s]
+     .  dt          ! Timestep                      [s]
 
         real, intent(in), dimension(gr%nnzp) :: 
 ! Vince Larson added for clipping 20070929
-     .  wp2,        ! w'^2                    [(m/s)^2]
-     .  xp2         ! x'^2                    [{xm units}^2]
+     .  wp2,        ! w'^2 (momentum levels)        [(m/s)^2]
+     .  xp2         ! x'^2 (momentum levels)        [{xm units}^2]
 ! End Vince Larson's addition
 
         ! Input/Output Variables
@@ -965,8 +981,8 @@
      .  rhs  ! Right-hand side of band diag. matrix. (LAPACK)
 
         real, intent(inout), dimension(gr%nnzp) :: 
-     .  xm,  ! Mean term: xm                  [units vary] 
-     .  wpxp ! Flux term: w'x'                [{xm units} m/s]
+     .  xm,  ! Mean term: xm (thermodynamic levels) [units vary] 
+     .  wpxp ! Flux term: w'x' (momentum levels)    [{xm units} m/s]
 
         ! Output Variable
         integer, intent(out) :: err_code
@@ -1351,9 +1367,10 @@
         end function xm_term_ta_lhs
 
 !===============================================================================
-        pure function wpxp_term_ta_lhs( wp2p1, wp2, wp2m1, 
-     .                                  a1p1, a1, a1m1, 
-     .                                  wp3p1, wp3, dzm, wtol_sqd )
+        pure function wpxp_term_ta_lhs( wp2_ztp1, wp2_zt, 
+     .                                  a1_ztp1, a1_zt,
+     .                                  wp3p1, wp3, dzm, 
+     .                                  wtol_sqd, level )
      .  result( lhs )
 
 !       Description:
@@ -1424,6 +1441,8 @@
 !       References:
 !-----------------------------------------------------------------------
 
+        use grid_class ! gr%weights_zm2zt
+
         implicit none
 
         ! Constant parameters
@@ -1432,24 +1451,42 @@
      .  k_mdiag   = 2,   ! Momentum main diagonal index.
      .  km1_mdiag = 3    ! Momentum subdiagonal index.
 
+        integer, parameter ::
+     .  m_above = 1,   ! Index for upper momentum level grid weight.
+     .  m_below = 2    ! Index for lower momentum level grid weight.
+
         ! Input Variables
         real, intent(in) ::
-     .  wp2p1,   ! w'^2(k+1)                      [m^2/s^2]
-     .  wp2,     ! w'^2(k)                        [m^2/s^2]
-     .  wp2m1,   ! w'^2(k-1)                      [m^2/s^2]
-     .  a1p1,    ! a_1(k+1)                       [-]
-     .  a1,      ! a_1(k)                         [-]
-     .  a1m1,    ! a_1(k-1)                       [-]
-     .  wp3p1,   ! w'^3(k+1)                      [m^3/s^3]
-     .  wp3,     ! w'^3(k)                        [m^3/s^3]
-     .  dzm,     ! Inverse of grid spacing (k)    [1/m]
-     .  wtol_sqd ! w wind comp. tolerance squared [m^2/s^2]
+     .  wp2_ztp1,   ! w'^2 interpolated to thermodynamic level (k+1) [m^2/s^2]
+     .  wp2_zt,     ! w'^2 interpolated to thermodynamic level (k)   [m^2/s^2]
+     .  a1_ztp1,    ! a_1 interpolated to thermodynamic level (k+1)  [-]
+     .  a1_zt,      ! a_1 interpolated to thermodynamic level (k)    [-]
+     .  wp3p1,      ! w'^3(k+1)                                      [m^3/s^3]
+     .  wp3,        ! w'^3(k)                                        [m^3/s^3]
+     .  dzm,        ! Inverse of grid spacing (k)                    [1/m]
+     .  wtol_sqd    ! w wind component tolerance squared             [m^2/s^2]
+
+        integer, intent(in) ::
+     .  level ! Central momentum level (on which calculation occurs).
 
         ! Return Variable
         real, dimension(3) :: lhs
 
+        ! Local Variables
+        integer ::
+     .  tkp1, ! Thermodynamic level directly above central momentum level.
+     .  tk    ! Thermodynamic level directly below central momentum level.
+
+        ! Thermodynamic level (k+1) is between momentum level (k+1)
+        ! and momentum level (k).
+        tkp1 = level + 1
+
+        ! Thermodynamic level (k) is between momentum level (k)
+        ! and momentum level (k-1).
+        tk = level
+
         ! Note:  The w'x' turbulent advection term, which is
-        !        - d[ a_1 * ( w'^3 / w'^2 ) * w'x' ] / dz, still keeps 
+        !        - d [ a_1 * ( w'^3 / w'^2 ) * w'x' ] / dz, still keeps 
         !        the a_1 term inside the derivative, unlike the w'^3 
         !        equation (in wp23.F) and the equations in diag_var.F 
         !        for r_t'^2, th_l'^2, r_t'th_l', u'^2, v'^2, sclr'r_t', 
@@ -1458,23 +1495,23 @@
         ! Momentum superdiagonal: [ x wpxp(k+1,<t+1>) ]
         lhs(kp1_mdiag)
      .  = + dzm
-     .      * (1.0/2.0) * ( a1p1 + a1 )
-     .      * ( wp3p1 / MAX( wp2 + wp2p1, 2.0*wtol_sqd ) )
+     .      * a1_ztp1 * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) )
+     .      * gr%weights_zm2zt(m_above,tkp1)
 
         ! Momentum main diagonal: [ x wpxp(k,<t+1>) ]
         lhs(k_mdiag)
      .  = + dzm
-     .      * (   (1.0/2.0) * ( a1p1 + a1 )
-     .            * ( wp3p1 / MAX( wp2 + wp2p1, 2.0*wtol_sqd ) )
-     .          -  (1.0/2.0) * ( a1 + a1m1 )
-     .            * ( wp3 / MAX( wp2m1 + wp2, 2.0*wtol_sqd ) )
+     .      * (   a1_ztp1 * ( wp3p1 / max( wp2_ztp1, wtol_sqd ) )
+     .            * gr%weights_zm2zt(m_below,tkp1)
+     .          - a1_zt * ( wp3 / max( wp2_zt, wtol_sqd ) )
+     .            * gr%weights_zm2zt(m_above,tk)
      .        )
 
         ! Momentum subdiagonal: [ x wpxp(k-1,<t+1>) ]
         lhs(km1_mdiag)
      .  = - dzm
-     .      * (1.0/2.0) * ( a1 + a1m1 )
-     .      * ( wp3 / MAX( wp2m1 + wp2, 2.0*wtol_sqd ) )
+     .      * a1_zt * ( wp3 / max( wp2_zt, wtol_sqd ) )
+     .      * gr%weights_zm2zt(m_below,tk)
 
         return
         end function wpxp_term_ta_lhs
