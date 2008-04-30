@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_hoc.F90,v 1.22 2008-04-30 20:46:34 dschanen Exp $
+! $Id: bugsrad_hoc.F90,v 1.23 2008-04-30 23:06:28 dschanen Exp $
 
 subroutine bugsrad_hoc( alt, nz, lat_in_degrees, lon_in_degrees, &
                         day, month, year, time,                  &
@@ -36,6 +36,7 @@ subroutine bugsrad_hoc( alt, nz, lat_in_degrees, lon_in_degrees, &
   use constants
   use std_atmosphere_mod, only: std_atmos_dim, std_alt, std_pinmb, &
       std_tempk, std_sp_hmdty, std_o3l
+  use stats_prec, only: time_prec
   use cos_solar_zen_mod
 
 #ifdef STATS
@@ -65,8 +66,10 @@ use stats_hoc, only: zt, zm, lstats_samp, &
 ! Input Variables
   real, intent(in) :: &
   lat_in_degrees,&! Latitude   [Degrees North]
-  lon_in_degrees,&! Longitude  [Degrees East]
-  time            ! Model time [s]
+  lon_in_degrees  ! Longitude  [Degrees East]
+
+  real(kind=time_prec) :: &
+  time ! Model time [s]
   
   integer, intent(in) :: &
   nz,              & ! Vertical extent;  i.e. nnzp in the grid class

@@ -1,4 +1,4 @@
-! $Id: cos_solar_zen.F,v 1.2 2008-04-23 17:52:52 faschinj Exp $
+! $Id: cos_solar_zen.F,v 1.3 2008-04-30 23:06:28 dschanen Exp $
 !-----------------------------------------------------------------------
         module cos_solar_zen_mod
 
@@ -24,6 +24,7 @@
 !         Table 2.2 and Eqn. 2.2.10
 !-----------------------------------------------------------------------
         use constants, only: pi_dp, fstderr
+        use stats_prec, only: time_prec
 
         implicit none
 
@@ -51,8 +52,10 @@
      .  month, ! Month of year
      .  year   ! Current year
 
+        real(kind=time_prec), intent(in) ::
+     .  current_time   ! Current time   [s]
+
         real, intent(in) ::
-     .  current_time,  ! Current time   [s]
      .  lat_in_degrees,! Latitude       [degrees_N]
      .  lon_in_degrees ! Longitude      [degrees_E]
 
