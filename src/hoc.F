@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.174 2008-04-25 21:59:19 faschinj Exp $
+! $Id: hoc.F,v 1.175 2008-04-30 20:46:34 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -2197,9 +2197,9 @@
         if ( lbugsrad ) then
 #ifdef radoffline /*This directive is needed for BUGSrad to work with HOC.*/
 
-          ! Assign pointers to rain and ice
-          rrm   => hydromet(1:gr%nnzp,1)
-          ricem => hydromet(1:gr%nnzp,4)
+          ! Assign pointers to snow and ice
+          rsnowm => hydromet(1:gr%nnzp,3)
+          ricem  => hydromet(1:gr%nnzp,4)
 
           ! NaN checks added to detect possible errors
           ! with BUGSrad
@@ -2254,7 +2254,7 @@
 
           call bugsrad_hoc( gr%zm, gr%nnzp, rlat, rlon,    ! In
      .                      day, month, year, time_current,! In
-     .                      thlm, rcm, rtm, rrm, ricem,    ! In
+     .                      thlm, rcm, rtm, rsnowm, ricem, ! In
      .                      cf, p, exner, rhom,            ! In
      .                      radht, Frad,                   ! Out
      .                      thlm_forcing )                 ! In/Out

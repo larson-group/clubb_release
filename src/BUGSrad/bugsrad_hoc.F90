@@ -1,9 +1,9 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_hoc.F90,v 1.21 2008-04-25 22:15:42 faschinj Exp $
+! $Id: bugsrad_hoc.F90,v 1.22 2008-04-30 20:46:34 dschanen Exp $
 
 subroutine bugsrad_hoc( alt, nz, lat_in_degrees, lon_in_degrees, &
                         day, month, year, time,                  &
-                        thlm, rcm, rtm, rrm, rim,                & 
+                        thlm, rcm, rtm, rsnwm, rim,              & 
                         cf, pinpa, exner, rhom,                  &
                         radht, Frad, thlm_forcing )
 ! Description:
@@ -34,10 +34,10 @@ subroutine bugsrad_hoc( alt, nz, lat_in_degrees, lon_in_degrees, &
 !-----------------------------------------------------------------------
 
   use constants
-  use std_atmosphere_mod, only: std_atmos_dim, std_alt, std_pinmb, std_tempk, std_sp_hmdty, &
-                            std_o3l
-
+  use std_atmosphere_mod, only: std_atmos_dim, std_alt, std_pinmb, &
+      std_tempk, std_sp_hmdty, std_o3l
   use cos_solar_zen_mod
+
 #ifdef STATS
 use stats_hoc, only: zt, zm, lstats_samp, &
     iFrad_SW, iFrad_LW, iradht_SW, iradht_LW
@@ -76,7 +76,7 @@ use stats_hoc, only: zt, zm, lstats_samp, &
   alt,   & ! Altitudes of the model     [m]
   thlm,  & ! Liquid potential temp.     [K]
   rcm,   & ! Liquid water mixing ratio  [kg/kg]
-  rrm,   & ! Rain water mixing ratio    [kg/kg]
+  rsnwm, & ! Snow water mixing ratio    [kg/kg]
   rim,   & ! Ice water mixing ratio     [kg/kg]
   rtm,   & ! Total water mixing ratio   [kg/kg]
   rhom,  & ! Density                    [kg/m^3]
@@ -122,7 +122,7 @@ use stats_hoc, only: zt, zm, lstats_samp, &
 
   double precision, dimension(nlen,(nz-1)+buffer) :: &
   dpl, &          ! Difference in pressure levels       [hPa]
-  rrm2, rcm2, cf2 ! Two-dimensional copies of the input parameters
+  rsnwm2, rcm2, cf2 ! Two-dimensional copies of the input parameters
 
   double precision, dimension(nlen,(nz-1)+buffer+1) :: &
   radht_SW2,&! SW Radiative heating rate        [W/m^2]
@@ -190,7 +190,7 @@ use stats_hoc, only: zt, zm, lstats_samp, &
 
 ! Convert and transpose as needed
   rcil(1,buffer+1:(nz-1)+buffer)  = flip( dble( rim(2:nz) ), nz-1 )
-  rrm2(1,buffer+1:(nz-1)+buffer)  = flip( dble( rrm(2:nz) ), nz-1 )
+  rsnwm2(1,buffer+1:(nz-1)+buffer)= flip( dble( rsnwm(2:nz) ), nz-1 )
   rcm2(1,buffer+1:(nz-1)+buffer)  = flip( dble( rcm(2:nz) ), nz-1 )
   cf2(1,buffer+1:(nz-1)+buffer)   = flip( dble( cf(2:nz) ), nz-1 ) 
 
@@ -204,10 +204,10 @@ use stats_hoc, only: zt, zm, lstats_samp, &
   o3l(1,buffer+1:(nz-1)+buffer) = flip( o3l(1,1:(nz-1)), nz-1 )
 
 ! Assume these are all zero above the HOC profile
-  rrm2(1,1:buffer) = 0.0d0
-  rcil(1,1:buffer) = 0.0d0
-  rcm2(1,1:buffer) = 0.0d0
-  cf2(1,1:buffer)  = 0.0d0
+  rsnwm2(1,1:buffer) = 0.0d0
+  rcil(1,1:buffer)   = 0.0d0
+  rcm2(1,1:buffer)   = 0.0d0
+  cf2(1,1:buffer)    = 0.0d0
 
 ! Determine the altitude of the HOC model compared to the standard atmospheric 
 ! profile.  Then take the values at altitude j km on the table and use 
@@ -285,7 +285,7 @@ use stats_hoc, only: zt, zm, lstats_samp, &
 
   call bugs_rad( nlen, slen, (nz-1)+buffer, playerinmb,          &
                  pinmb, dpl, tempk, sp_humidity,                 &
-                 rcm2, rcil, rrm2, o3l,                          &
+                 rcm2, rcil, rsnwm2, o3l,                        &
                  ts, amu0, slr, alvdf,                           &
                  alndf, alvdr, alndr, dble( sol_const ),         &
                  dble( grav ), dble( Cp ), radht_SW2, radht_LW2, &
