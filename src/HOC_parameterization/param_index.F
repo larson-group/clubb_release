@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: param_index.F,v 1.5 2008-02-09 16:48:30 griffinb Exp $
+! $Id: param_index.F,v 1.6 2008-04-30 23:03:37 dschanen Exp $
         module param_index
 
 !       Description:
@@ -24,6 +24,14 @@
 
         integer, parameter :: 
      .  nparams = 50 ! Total tunable parameters
+
+        !***************************************************************
+        !                    ***** IMPORTANT *****
+        ! If you change the order of these parameters , you will need to
+        ! change the order of params_list as well or the tuner will
+        ! break!
+        !                    ***** IMPORTANT *****
+        !***************************************************************
 
         integer, parameter ::
      .  iC1             =  1, 

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameters.F,v 1.13 2008-04-04 20:10:00 faschinj Exp $
+! $Id: parameters.F,v 1.14 2008-04-30 23:03:37 dschanen Exp $
         module parameters 
 
 !       Description:
@@ -23,7 +23,7 @@
      .  T0,      ! Reference temperature (usually 300)  [K]
      .  ts_nudge ! Timescale of u/v nudging             [s]
 
-!$omp   threadprivate(T0,ts_nudge)
+!$omp   threadprivate(T0, ts_nudge)
 
         ! Model constant parameters 
         real, public ::
@@ -110,10 +110,16 @@
      .    beta, gamma_coef, gamma_coefb, gamma_coefc,
      .    lmin_coef, taumin, taumax, mu
 
-!       These are referenced together often enough that it made sense to 
-!       make a list of them.  Note that lmin_coef is the input parameter, 
-!       while the actual lmin model constant is computed from this
-
+        ! These are referenced together often enough that it made sense to 
+        ! make a list of them.  Note that lmin_coef is the input parameter, 
+        ! while the actual lmin model constant is computed from this.
+        !***************************************************************
+        !                    ***** IMPORTANT *****
+        ! If you change the order of the parameters in the param_index,
+        ! you will need to change the order of this list as well or the
+        ! tuner will break!
+        !                    ***** IMPORTANT *****
+        !***************************************************************
         character(len=11), dimension(nparams), parameter, public :: 
      .  params_list =
      .  (/"C1         ", "C1b        ", "C1c        ", "C2         ", 
@@ -126,9 +132,9 @@
      .    "C14        ", "c_K        ", "c_K1       ", "nu1        ", 
      .    "c_K2       ", "nu2        ", "c_K6       ", "nu6        ", 
      .    "c_K8       ", "nu8        ", "nu9        ", "c_Krrm     ",
-     .    "nu_r       ", "c_Ksqd     ", "beta       ", "gamma_coef ", 
-     .    "gamma_coefb", "gamma_coefc", "lmin_coef  ", "taumin     ", 
-     .    "taumax     ", "mu         "/)
+     .    "nu_r       ", "c_Ksqd     ", "gamma_coef ", "gamma_coefb", 
+     .    "gamma_coefc", "mu         ", "beta       ", "lmin_coef  ", 
+     .    "taumin     ", "taumax     " /)
 
         contains
 
@@ -152,7 +158,7 @@
         real, intent(in) :: 
      .  deltaz,     ! Change per height level      [m]
      .  T0_in,      ! Ref. temperature             [K]
-     .  ts_nudge_in ! Timescale for u/v nudging    [K]
+     .  ts_nudge_in ! Timescale for u/v nudging    [s]
 
         real, intent(in), dimension(nparams) :: 
      .  params  ! Tuneable model parameters      [-]
@@ -357,7 +363,7 @@
        integer :: i
 
        ! Amount to change each parameter for the initial simplex
-       ! This MUST to match the initvars namelist if parameters are added!
+       ! This MUST be changed to match the initvars namelist if parameters are added!
         namelist /initspread/ 
      .    C1, C1b, C1c, C2, C2b, C2c, 
      .    C2rt, C2thl, C2rtthl, C4, C5,
@@ -417,7 +423,7 @@
      .              mu, beta, lmin_coef, taumin, taumax, params )
 !       Description:
 !       Takes the list of scalar variables and puts them into a 1D
-!       vector.  Here for the purposes of keeping the code generalized
+!       vector.  It is here for the purpose of keeping the code generalized
 !       when new variables are added.
 
 !       References:
