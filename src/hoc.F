@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.175 2008-04-30 20:46:34 dschanen Exp $
+! $Id: hoc.F,v 1.176 2008-04-30 21:31:26 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -1719,8 +1719,8 @@
         ! Local Variables
 
         real, dimension(:), pointer :: 
-     .    rrm,  ! Rain water mixing ratio              [kg/kg]
-     .    ricem ! Prisitine ice water mixing ratio     [kg/kg]
+     .    rsnowm, ! Rain water mixing ratio              [kg/kg]
+     .    ricem   ! Prisitine ice water mixing ratio     [kg/kg]
 
         real, dimension(gr%nnzp) :: 
      .    rtm_mc, ! r_t change due to microphysics     [kg/kg)/s] 
@@ -2217,8 +2217,8 @@
             print *, "rtm before BUGSrad is NaN" 
           endif
 
-          if ( isnan2d( rrm ) ) then
-            print *, "rrm before BUGSrad is NaN" 
+          if ( isnan2d( rsnowm ) ) then
+            print *, "rsnowm before BUGSrad is NaN" 
           endif
 
           if ( isnan2d( ricem ) ) then
