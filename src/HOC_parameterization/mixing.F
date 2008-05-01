@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.51 2008-04-29 22:43:10 griffinb Exp $
+! $Id: mixing.F,v 1.52 2008-05-01 13:56:08 griffinb Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -253,7 +253,7 @@
           if ( rtm(k) < 0.0 ) then
 !           rtm(k) = 0.0
             write(fstderr,*) "rtm < 0 in mixing at k= ", k 
-          end if
+          endif
         enddo
                 
 #ifdef STATS
@@ -298,7 +298,7 @@
           if ( thlm(k) < 0.0 ) then
             thlm(k) = 0.0
             write(fstderr,*) "thlm < 0 in mixing at k= ", k 
-          end if
+          endif
         enddo
         
                 
@@ -552,14 +552,14 @@
           ! LHS mean advection (ma) term.
           if ( .not. implemented ) then
 
-            lhs((/3-2,3+2/),k_xm)
-     .      = lhs((/3-2,3+2/),k_xm)
-     .      + term_ma_tlev_lhs( wmt(k), gr%dzt(k) )
+            lhs((/3-2,3,3+2/),k_xm)
+     .      = lhs((/3-2,3,3+2/),k_xm)
+     .      + term_ma_tlev_lhs( wmt(k), gr%dzt(k), k )
 
           else
 
-            lhs((/3-2,3+2/),k_xm)
-     .      = lhs((/3-2,3+2/),k_xm) + 0.0
+            lhs((/3-2,3,3+2/),k_xm)
+     .      = lhs((/3-2,3,3+2/),k_xm) + 0.0
 
           endif
 
@@ -579,22 +579,24 @@
 
           if ( irtm_ma > 0 .or. ithlm_ma > 0 ) then
             if ( .not. implemented ) then
-              tmp(1:2) = 
-     .        + term_ma_tlev_lhs( wmt(k), gr%dzt(k) )
-              ztscr01(k) = - tmp(2)
-              ztscr02(k) = - tmp(1)
+              tmp(1:3) = 
+     .        + term_ma_tlev_lhs( wmt(k), gr%dzt(k), k )
+              ztscr01(k) = - tmp(3)
+              ztscr02(k) = - tmp(2)
+              ztscr03(k) = - tmp(1)
             else
               ztscr01(k) = 0.0
               ztscr02(k) = 0.0
+              ztscr03(k) = 0.0
             endif
-          endif ! ma
+          endif
 
           if ( irtm_ta > 0 .or. ithlm_ta > 0 ) then
             tmp(1:2) =
      .      + xm_term_ta_lhs( gr%dzt(k) )
-            ztscr03(k) = - tmp(2)
-            ztscr04(k) = - tmp(1)
-          endif ! ta
+            ztscr04(k) = - tmp(2)
+            ztscr05(k) = - tmp(1)
+          endif
 
           endif
 #endif /*STATS*/
@@ -616,9 +618,9 @@
           !         [ x wpxp(k+1,<t+1>) ]
 
           ! LHS mean advection (ma) term.
-          lhs((/3-2,3+2/),k_wpxp)
-     .    = lhs((/3-2,3+2/),k_wpxp)
-     .    + term_ma_mlev_lhs( wmm(k), gr%dzm(k) )
+          lhs((/3-2,3,3+2/),k_wpxp)
+     .    = lhs((/3-2,3,3+2/),k_wpxp)
+     .    + term_ma_mlev_lhs( wmm(k), gr%dzm(k), k )
 
           ! LHS turbulent advection (ta) term.
           lhs((/3-2,3,3+2/),k_wpxp)
@@ -659,11 +661,12 @@
           ! Statistics: implicit contributions for wprtp or wpthlp.
 
           if ( iwprtp_ma > 0 .or. iwpthlp_ma > 0 ) then
-            tmp(1:2) =
-     .      + term_ma_mlev_lhs( wmm(k), gr%dzm(k) )
-            zmscr01(k) = - tmp(2)
-            zmscr02(k) = - tmp(1)
-          endif ! ma
+            tmp(1:3) =
+     .      + term_ma_mlev_lhs( wmm(k), gr%dzm(k), k )
+            zmscr01(k) = - tmp(3)
+            zmscr02(k) = - tmp(2)
+            zmscr03(k) = - tmp(1)
+          endif
 
           if ( iwprtp_ta > 0 .or. iwpthlp_ta > 0 ) then
             tmp(1:3) =
@@ -671,31 +674,31 @@
      .                          a1_zt(kp1), a1_zt(k),
      .                          wp3(kp1), wp3(k), gr%dzm(k), 
      .                          wtol_sqd, k )
-            zmscr03(k) = - tmp(3)
-            zmscr04(k) = - tmp(2)
-            zmscr05(k) = - tmp(1)
-          endif ! ta
+            zmscr04(k) = - tmp(3)
+            zmscr05(k) = - tmp(2)
+            zmscr06(k) = - tmp(1)
+          endif
 
           if ( iwprtp_tp > 0 .or. iwpthlp_tp > 0 ) then
             tmp(1:2) =
      .      + wpxp_term_tp_lhs( wp2(k), gr%dzm(k) )
-            zmscr06(k) = - tmp(2)
-            zmscr07(k) = - tmp(1)
+            zmscr07(k) = - tmp(2)
+            zmscr08(k) = - tmp(1)
           endif
 
           if ( iwprtp_ac > 0 .or. iwpthlp_ac > 0 ) then
-            zmscr08(k) = 
+            zmscr09(k) = 
      .      - wpxp_terms_ac_pr2_lhs( 0.0,
      .                               wmt(kp1), wmt(k), gr%dzm(k) )
           endif
 
           if ( iwprtp_pr1 > 0 .or. iwpthlp_pr1 > 0 ) then
-            zmscr09(k) =
+            zmscr10(k) =
      .      - wpxp_term_pr1_lhs( C6x_Skw_fnc(k), taum(k) )
-          endif ! pr1
+          endif
 
           if ( iwprtp_pr2 > 0 .or. iwpthlp_pr2 > 0 ) then
-            zmscr10(k) =
+            zmscr11(k) =
      .      - wpxp_terms_ac_pr2_lhs( (1.0+C7_Skw_fnc(k)),
      .                               wmt(kp1), wmt(k), gr%dzm(k) )
           endif
@@ -704,9 +707,9 @@
             tmp(1:3) =
      .      + diffusion_mlev( Kw6(k), Kw6(kp1), nu6,
      .                        gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
-            zmscr11(k) = - tmp(3)
-            zmscr12(k) = - tmp(2)
-            zmscr13(k) = - tmp(1)
+            zmscr12(k) = - tmp(3)
+            zmscr13(k) = - tmp(2)
+            zmscr14(k) = - tmp(1)
           endif
 
           endif
@@ -1106,9 +1109,9 @@
             ! %%
             !lhs(3-2,k_xm) = 0.0
             !lhs(3+2,k_xm) = 0.0
-          end do
+          enddo
 
-        end if
+        endif
 
 #ifdef STATS
         if ( lstats_samp .and. ixm_cn > 0 ) then
@@ -1124,7 +1127,7 @@
           ! Perform LU decomp and solve system (LAPACK)
           call band_solve( solve_type, nsup, nsub, 2*gr%nnzp, nrhs,
      .                     lhs, rhs, solution, err_code )
-        end if
+        endif
 #else
         ! Perform LU decomp and solve system (LAPACK)
         call band_solve( solve_type, nsup, nsub, 2*gr%nnzp, nrhs,
@@ -1146,14 +1149,14 @@
             if ( iwpxp_pd > 0 ) then
               zm%x(:,iwpxp_pd) = zm%x(:,iwpxp_pd) + wpxp_pd(1:gr%nnzp)
               zm%n(:,iwpxp_pd) = zm%n(:,iwpxp_pd) + 1
-            end if
+            endif
             if ( ixm_pd > 0 ) then
               zt%x(:,ixm_pd) = zt%x(:,ixm_pd) + xm_pd(1:gr%nnzp)
               zt%n(:,ixm_pd) = zt%n(:,ixm_pd) + 1
-            end if
-          end if
+            endif
+          endif
 #endif
-        end if
+        endif
         
 
         ! Copy result into output arrays
@@ -1166,7 +1169,7 @@
           xm(k)   = solution(k_xm,1)
           wpxp(k) = solution(k_wpxp,1)
 
-        end do ! k=1..gr%nnzp
+        enddo ! k=1..gr%nnzp
 
 !       Boundary condition on xm
 
@@ -1180,6 +1183,7 @@
           if ( lstats_samp ) then
 
            do k = 2, gr%nnzp-1
+
              km1 = max( k-1, 1 )
              kp1 = min( k+1, gr%nnzp )
 
@@ -1187,69 +1191,71 @@
              if ( ixm_ma > 0 ) then
                zt%x(k,ixm_ma) = zt%x(k,ixm_ma)
      .         + ztscr01(k) * xm(km1)
-     .         + ztscr02(k) * xm(kp1)
+     .         + ztscr02(k) * xm(k)
+     .         + ztscr03(k) * xm(kp1)
                zt%n(k,ixm_ma) = zt%n(k,ixm_ma) + 1
-             end if ! ma
+             endif
 
              if ( ixm_ta > 0 ) then
                zt%x(k,ixm_ta) = zt%x(k,ixm_ta)
-     .         + ztscr03(k) * wpxp(km1)
-     .         + ztscr04(k) * wpxp(k)
+     .         + ztscr04(k) * wpxp(km1)
+     .         + ztscr05(k) * wpxp(k)
                zt%n(k,ixm_ta) = zt%n(k,ixm_ta) + 1
-             end if ! ta
+             endif
 
              ! Finalize implicit contributions for wpxp
              if ( iwpxp_ma > 0 ) then
                zm%x(k,iwpxp_ma) = zm%x(k,iwpxp_ma)
      .         + zmscr01(k) * wpxp(km1)
-     .         + zmscr02(k) * wpxp(kp1)
+     .         + zmscr02(k) * wpxp(k)
+     .         + zmscr03(k) * wpxp(kp1)
                zm%n(k,iwpxp_ma) = zm%n(k,iwpxp_ma) + 1
-             end if
+             endif
 
              if ( iwpxp_ta > 0 ) then
                zm%x(k,iwpxp_ta) = zm%x(k,iwpxp_ta)
-     .         + zmscr03(k) * wpxp(km1)
-     .         + zmscr04(k) * wpxp(k)
-     .         + zmscr05(k) * wpxp(kp1)
+     .         + zmscr04(k) * wpxp(km1)
+     .         + zmscr05(k) * wpxp(k)
+     .         + zmscr06(k) * wpxp(kp1)
                zm%n(k,iwpxp_ta) = zm%n(k,iwpxp_ta) + 1
-             end if
+             endif
 
              if ( iwpxp_tp > 0 ) then
                zm%x(k,iwpxp_tp) = zm%x(k,iwpxp_tp)
-     .         + zmscr06(k) * xm(k)
-     .         + zmscr07(k) * xm(kp1)
+     .         + zmscr07(k) * xm(k)
+     .         + zmscr08(k) * xm(kp1)
                zm%n(k,iwpxp_tp) = zm%n(k,iwpxp_tp) + 1
-             end if
+             endif
 
              if ( iwpxp_ac > 0 ) then
                zm%x(k,iwpxp_ac) = zm%x(k,iwpxp_ac)
-     .         + zmscr08(k) * wpxp(k)
+     .         + zmscr09(k) * wpxp(k)
                zm%n(k,iwpxp_ac) = zm%n(k,iwpxp_ac) + 1
-             end if
+             endif
 
              if ( iwpxp_pr1 > 0 ) then
                zm%x(k,iwpxp_pr1) = zm%x(k,iwpxp_pr1)
-     .         + zmscr09(k) * wpxp(k)
+     .         + zmscr10(k) * wpxp(k)
                zm%n(k,iwpxp_pr1) = zm%n(k,iwpxp_pr1) + 1
-             end if
+             endif
 
              if ( iwpxp_pr2 > 0 ) then
                zm%x(k,iwpxp_pr2) = zm%x(k,iwpxp_pr2)
-     .         + zmscr10(k) * wpxp(k)
+     .         + zmscr11(k) * wpxp(k)
                zm%n(k,iwpxp_pr2) = zm%n(k,iwpxp_pr2) + 1
-             end if
+             endif
 
              if ( iwpxp_dp1 > 0 ) then
                zm%x(k,iwpxp_dp1) = zm%x(k,iwpxp_dp1)
-     .         + zmscr11(k) * wpxp(km1)
-     .         + zmscr12(k) * wpxp(k)
-     .         + zmscr13(k) * wpxp(kp1)
+     .         + zmscr12(k) * wpxp(km1)
+     .         + zmscr13(k) * wpxp(k)
+     .         + zmscr14(k) * wpxp(kp1)
                zm%n(k,iwpxp_dp1) = zm%n(k,iwpxp_dp1) + 1
-             end if
+             endif
 
-           end do ! 1..gr%nnzp
+           enddo ! 1..gr%nnzp
 
-          end if ! lstats_samp
+          endif ! lstats_samp
 #endif /*STATS*/
 
 ! Vince Larson clipped turbulent flux (wpxp) to ensure 
@@ -1257,7 +1263,7 @@
 #ifdef STATS
         if ( lstats_samp .and. iwpxp_cl > 0) then
           zm%x(:,iwpxp_cl) = zm%x(:,iwpxp_cl) - wpxp / dt
-        end if
+        endif
 #endif
 
 
@@ -1271,7 +1277,7 @@
         if ( lstats_samp .and. iwpxp_cl > 0 ) then
           zm%x(:,iwpxp_cl) = zm%x(:,iwpxp_cl) + wpxp / dt
           zm%n(:,iwpxp_cl) = zm%n(:,iwpxp_cl) + 1
-        end if
+        endif
 #endif
 ! End of Vince Larson's clipping.
 
@@ -1281,15 +1287,15 @@
           if ( ixm_bt > 0 ) then
             zt%x(:,ixm_bt) = zt%x(:,ixm_bt) + xm / dt
             zt%n(:,ixm_bt) = zt%n(:,ixm_bt) + 1
-          end if
+          endif
 
           ! wpxp time tendency (2nd calculation)
           if ( iwpxp_bt > 0 ) then
             zm%x(:,iwpxp_bt) = zm%x(:,iwpxp_bt) + wpxp / dt
             zm%n(:,iwpxp_bt) = zm%n(:,iwpxp_bt) + 1
-          end if
+          endif
 
-        end if
+        endif
 #endif /*STATS*/
 
         return

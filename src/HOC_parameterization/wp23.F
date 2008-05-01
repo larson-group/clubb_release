@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.57 2008-04-29 21:13:29 griffinb Exp $
+! $Id: wp23.F,v 1.58 2008-05-01 13:56:08 griffinb Exp $
 !===============================================================================
         module wp23
 
@@ -386,13 +386,13 @@
 
           if ( iwp2_bt > 0 ) then
             zm%x(:,iwp2_bt) = zm%x(:,iwp2_bt) - wp2 / dt
-          end if
+          endif
 
           if ( iwp3_bt > 0 ) then
             zt%x(:,iwp3_bt) = zt%x(:,iwp3_bt) - wp3 / dt
-          end if
+          endif
 
-        end if
+        endif
 #endif /*STATS*/
 
         ! Define a_1 and a_3 (both are located on momentum levels).
@@ -444,7 +444,7 @@
           ! Perform LU decomp and solve system (LAPACK)
           call band_solve( "wp23", nsup, nsub, 2*gr%nnzp, nrhs,
      .                     lhs, rhs, solut, err_code )
-        end if
+        endif
 #else
         ! Perform LU decomp and solve system (LAPACK)
         call band_solve( "wp23", nsup, nsub, 2*gr%nnzp, nrhs,
@@ -458,7 +458,7 @@
 
 !       Copy result into output arrays and clip
 
-        do k=1,gr%nnzp
+        do k = 1, gr%nnzp
 
           km1 = max( k-1, 1)
           kp1 = min( k+1, gr%nnzp )
@@ -469,14 +469,15 @@
           wp2(k) = solut(k_wp2)
           wp3(k) = solut(k_wp3)
 
-        end do
+        enddo
 
 #ifdef STATS
         if (lstats_samp) then
 
 !         Finalize implicit contributions for wp2
 
-          do k=2,gr%nnzp-1
+          do k = 2, gr%nnzp-1
+
             km1 = max( k-1, 1 )
             kp1 = min( k+1, gr%nnzp )
 
@@ -484,7 +485,7 @@
              zm%x(k,iwp2_dp1) = zm%x(k,iwp2_dp1)
      .       + zmscr01(k) * wp2(k)
              zm%n(k,iwp2_dp1) = zm%n(k,iwp2_dp1) + 1
-            end if
+            endif
 
             if ( iwp2_dp2 > 0 ) then
              zm%x(k,iwp2_dp2) = zm%x(k,iwp2_dp2)
@@ -492,45 +493,47 @@
      .       + zmscr03(k) * wp2(k)
      .       + zmscr04(k) * wp2(kp1)
              zm%n(k,iwp2_dp2) = zm%n(k,iwp2_dp2) + 1
-            end if
+            endif
 
             if ( iwp2_ta > 0 ) then
              zm%x(k,iwp2_ta) = zm%x(k,iwp2_ta)
      .       + zmscr05(k) * wp3(k)
      .       + zmscr06(k) * wp3(kp1)
              zm%n(k,iwp2_ta) = zm%n(k,iwp2_ta) + 1
-            end if
+            endif
 
             if ( iwp2_ma > 0 ) then
              zm%x(k,iwp2_ma) = zm%x(k,iwp2_ma)
      .       + zmscr07(k) * wp2(km1)
-     .       + zmscr08(k) * wp2(kp1)
+     .       + zmscr08(k) * wp2(k)
+     .       + zmscr09(k) * wp2(kp1)
              zm%n(k,iwp2_ma) = zm%n(k,iwp2_ma) + 1
-            end if
+            endif
 
             if ( iwp2_ac > 0 ) then
              zm%x(k,iwp2_ac) = zm%x(k,iwp2_ac)
-     .       + zmscr09(k) * wp2(k)
+     .       + zmscr10(k) * wp2(k)
              zm%n(k,iwp2_ac) = zm%n(k,iwp2_ac) + 1
-            end if
+            endif
 
             if ( iwp2_pr1 > 0 .and. lKhm_aniso ) then
               zm%x(k,iwp2_pr1) = zm%x(k,iwp2_pr1)
-     .        + zmscr11(k) * wp2(k)
+     .        + zmscr12(k) * wp2(k)
               zm%n(k,iwp2_pr1) = zm%n(k,iwp2_pr1) + 1
-            end if
+            endif
 
             if ( iwp2_pr2 > 0 ) then
              zm%x(k,iwp2_pr2) = zm%x(k,iwp2_pr2)
-     .       + zmscr10(k) * wp2(k)
+     .       + zmscr11(k) * wp2(k)
              zm%n(k,iwp2_pr2) = zm%n(k,iwp2_pr2) + 1
-            end if
+            endif
 
-          end do
+          enddo
 
           ! Finalize implicit contributions for wp3
 
-          do k=2, gr%nnzp-1, 1
+          do k = 2, gr%nnzp-1, 1
+
             km1 = max( k-1, 1 )
             kp1 = min( k+1, gr%nnzp )
 
@@ -538,7 +541,7 @@
              zt%x(k,iwp3_pr1) = zt%x(k,iwp3_pr1)
      .       + ztscr01(k) * wp3(k)
              zt%n(k,iwp3_pr1) = zt%n(k,iwp3_pr1) + 1
-            end if
+            endif
 
             if ( iwp3_dp1 > 0 ) then
              zt%x(k,iwp3_dp1) = zt%x(k,iwp3_dp1)
@@ -546,7 +549,7 @@
      .       + ztscr03(k) * wp3(k)
      .       + ztscr04(k) * wp3(kp1)
              zt%n(k,iwp3_dp1) = zt%n(k,iwp3_dp1) + 1
-            end if
+            endif
 
             if ( iwp3_ta > 0 ) then
              zt%x(k,iwp3_ta) = zt%x(k,iwp3_ta)
@@ -556,47 +559,48 @@
      .       + ztscr08(k) * wp2(k)
      .       + ztscr09(k) * wp3(kp1)
              zt%n(k,iwp3_ta) = zt%n(k,iwp3_ta) + 1
-            end if
+            endif
 
             if ( iwp3_tp > 0 ) then
              zt%x(k,iwp3_tp) = zt%x(k,iwp3_tp)
      .       + ztscr10(k) * wp2(km1)
      .       + ztscr11(k) * wp2(k)
              zt%n(k,iwp3_tp) = zt%n(k,iwp3_tp) + 1
-            end if
+            endif
 
             if ( iwp3_ma > 0 ) then
              zt%x(k,iwp3_ma) = zt%x(k,iwp3_ma)
      .       + ztscr12(k) * wp3(km1)
-     .       + ztscr13(k) * wp3(kp1)
+     .       + ztscr13(k) * wp3(k)
+     .       + ztscr14(k) * wp3(kp1)
              zt%n(k,iwp3_ma) = zt%n(k,iwp3_ma) + 1
-            end if
+            endif
 
             if ( iwp3_ac > 0 ) then
              zt%x(k,iwp3_ac) = zt%x(k,iwp3_ac)
-     .       + ztscr14(k) * wp3(k)
+     .       + ztscr15(k) * wp3(k)
              zt%n(k,iwp3_ac) = zt%n(k,iwp3_ac) + 1
-            end if
+            endif
 
             if ( iwp3_pr2 > 0 ) then
              zt%x(k,iwp3_pr2) = zt%x(k,iwp3_pr2) 
-     .       + ztscr15(k) * wp3(k)
+     .       + ztscr16(k) * wp3(k)
              zt%n(k,iwp3_pr2) = zt%n(k,iwp3_pr2) + 1
-            end if
+            endif
 
-          end do
+          enddo
 
           ! Effect of clipping term
 
           if ( iwp2_cl > 0 ) then
             zm%x(:,iwp2_cl) = zm%x(:,iwp2_cl) - wp2 / dt
-          end if
+          endif
 
           if ( iwp3_cl > 0 ) then
             zt%x(:,iwp3_cl) = zt%x(:,iwp3_cl) - wp3 / dt
-          end if
+          endif
 
-        end if
+        endif
 #endif /*STATS*/
 
         ! Clip Skewness.
@@ -615,12 +619,12 @@
           if ( iwp2_cl > 0 ) then
             zm%x(:,iwp2_cl) = zm%x(:,iwp2_cl) + wp2 / dt
             zm%n(:,iwp2_cl) = zm%n(:,iwp2_cl) + 1
-          end if
+          endif
           if ( iwp3_cl > 0 ) then
             zt%x(:,iwp3_cl) = zt%x(:,iwp3_cl) + wp3 / dt
             zt%n(:,iwp3_cl) = zt%n(:,iwp3_cl) + 1
-          end if
-        end if
+          endif
+        endif
 #endif /*STATS*/
 
 #ifdef STATS
@@ -629,14 +633,14 @@
           if ( iwp2_bt > 0 ) then
             zm%x(:,iwp2_bt) = zm%x(:,iwp2_bt) + wp2 / dt
             zm%n(:,iwp2_bt) = zm%n(:,iwp2_bt) + 1
-          end if
+          endif
 
           if ( iwp3_bt > 0 ) then
             zt%x(:,iwp3_bt) = zt%x(:,iwp3_bt) + wp3 / dt
             zt%n(:,iwp3_bt) = zt%n(:,iwp3_bt) + 1
-          end if
+          endif
 
-        end if
+        endif
 #endif /*STATS*/
 
         return
@@ -747,9 +751,9 @@
      .    = + 1.0 / dt
 
           ! LHS mean advection (ma) term.
-          lhs((/3-2,3+2/),k_wp2)
-     .    = lhs((/3-2,3+2/),k_wp2)
-     .    + term_ma_mlev_lhs( wmm(k), gr%dzm(k) )
+          lhs((/3-2,3,3+2/),k_wp2)
+     .    = lhs((/3-2,3,3+2/),k_wp2)
+     .    + term_ma_mlev_lhs( wmm(k), gr%dzm(k), k )
 
           ! LHS turbulent advection (ta) term.
           lhs((/3-1,3+1/),k_wp2)
@@ -826,25 +830,26 @@
           endif
 
           if ( iwp2_ma > 0 ) then
-            tmp(1:2) =
-     .      + term_ma_mlev_lhs( wmm(k), gr%dzm(k) )
-            zmscr07(k) = - tmp(2)
-            zmscr08(k) = - tmp(1)
+            tmp(1:3) =
+     .      + term_ma_mlev_lhs( wmm(k), gr%dzm(k), k )
+            zmscr07(k) = - tmp(3)
+            zmscr08(k) = - tmp(2)
+            zmscr09(k) = - tmp(1)
           endif
 
           if ( iwp2_ac > 0 ) then
-            zmscr09(k) = 
+            zmscr10(k) = 
      .      - wp2_terms_ac_pr2_lhs( 0.0, wmt(kp1), wmt(k), gr%dzm(k)  )
           endif
 
           if ( iwp2_pr2 > 0 ) then
-            zmscr10(k) = 
+            zmscr11(k) = 
      .      - wp2_terms_ac_pr2_lhs( (1.0+C5), wmt(kp1), wmt(k), 
      .                              gr%dzm(k)  )
           endif
 
           if ( iwp2_pr1 > 0 .and. lKhm_aniso ) then
-            zmscr11(k) = - wp2_term_pr1_lhs( C4, tau1m(k) )
+            zmscr12(k) = - wp2_term_pr1_lhs( C4, tau1m(k) )
           endif
 
           endif
@@ -871,9 +876,9 @@
      .    = + 1.0 / dt
 
           ! LHS mean advection (ma) term.
-          lhs((/3-2,3+2/),k_wp3)
-     .    = lhs((/3-2,3+2/),k_wp3)
-     .    + term_ma_tlev_lhs( wmt(k), gr%dzt(k) )
+          lhs((/3-2,3,3+2/),k_wp3)
+     .    = lhs((/3-2,3,3+2/),k_wp3)
+     .    + term_ma_tlev_lhs( wmt(k), gr%dzt(k), k )
 
           ! LHS turbulent advection (ta) and turbulent production (tp) terms.
           lhs(3-2:3+2,k_wp3)
@@ -947,20 +952,21 @@
           endif
 
           if ( iwp3_ma > 0 ) then
-            tmp(1:2) =
-     .      term_ma_tlev_lhs( wmt(k), gr%dzt(k) )
-            ztscr12(k) = -tmp(2)
-            ztscr13(k) = -tmp(1)
+            tmp(1:3) =
+     .      term_ma_tlev_lhs( wmt(k), gr%dzt(k), k )
+            ztscr12(k) = -tmp(3)
+            ztscr13(k) = -tmp(2)
+            ztscr14(k) = -tmp(1)
           endif
 
           if ( iwp3_ac > 0 ) then
-            ztscr14(k) = 
+            ztscr15(k) = 
      .      - wp3_terms_ac_pr2_lhs( 0.0,
      .                              wmm(k), wmm(km1), gr%dzt(k) )
           endif
 
           if ( iwp3_pr2 > 0 ) then
-            ztscr15(k) =
+            ztscr16(k) =
      .      - wp3_terms_ac_pr2_lhs( (1.0+C11_Skw_fnc(k)),
      .                              wmm(k), wmm(km1), gr%dzt(k) )
           endif

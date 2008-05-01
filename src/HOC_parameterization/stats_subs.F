@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.9 2008-04-17 00:06:20 dschanen Exp $
+!  $Id: stats_subs.F,v 1.10 2008-05-01 13:56:08 griffinb Exp $
 #ifdef STATS
       module stats_subs
  
@@ -204,6 +204,7 @@
       allocate ( ztscr13(zt%kk) )
       allocate ( ztscr14(zt%kk) )
       allocate ( ztscr15(zt%kk) )
+      allocate ( ztscr16(zt%kk) )
 
       fdir = "./"
       fname = trim( fname_zt )
@@ -272,6 +273,7 @@
       allocate ( zmscr11(zm%kk) )
       allocate ( zmscr12(zm%kk) )
       allocate ( zmscr13(zm%kk) )
+      allocate ( zmscr14(zm%kk) )
 
 
       fdir = "./"
@@ -1309,6 +1311,7 @@
         deallocate ( ztscr13 )
         deallocate ( ztscr14 )
         deallocate ( ztscr15 )
+        deallocate ( ztscr16 )
 
         ! De-allocate all zm variables
         deallocate( zm%z )
@@ -1332,6 +1335,7 @@
         deallocate ( zmscr11 )
         deallocate ( zmscr12 )
         deallocate ( zmscr13 )
+        deallocate ( zmscr14 )
 
         ! De-allocate all sfc variables
         deallocate( sfc%z )

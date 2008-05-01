@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_hoc.F,v 1.9 2008-04-25 21:14:27 ajsmith4 Exp $
+! $Id: stats_hoc.F,v 1.10 2008-05-01 13:56:08 griffinb Exp $
 #ifdef STATS
 !-----------------------------------------------------------------------
 !  module stats_hoc
@@ -536,21 +536,23 @@
      .                       ztscr04(:), ztscr05(:), ztscr06(:), 
      .                       ztscr07(:), ztscr08(:), ztscr09(:),
      .                       ztscr10(:), ztscr11(:), ztscr12(:),
-     .                       ztscr13(:), ztscr14(:), ztscr15(:)
+     .                       ztscr13(:), ztscr14(:), ztscr15(:),
+     .                       ztscr16(:)
 
 !$omp   threadprivate(ztscr01, ztscr02, ztscr03, ztscr04, ztscr05)
 !$omp   threadprivate(ztscr06, ztscr07, ztscr08, ztscr09, ztscr10)
 !$omp   threadprivate(ztscr11, ztscr12, ztscr13, ztscr14, ztscr15)
+!$omp   threadprivate(ztscr16)
 
         real, allocatable :: zmscr01(:), zmscr02(:), zmscr03(:), 
      .                       zmscr04(:), zmscr05(:), zmscr06(:),
      .                       zmscr07(:), zmscr08(:), zmscr09(:),
      .                       zmscr10(:), zmscr11(:), zmscr12(:),
-     .                       zmscr13(:)
+     .                       zmscr13(:), zmscr14(:)
 
 !$omp   threadprivate(zmscr01, zmscr02, zmscr03, zmscr04, zmscr05) 
 !$omp   threadprivate(zmscr06, zmscr07, zmscr08, zmscr09, zmscr10)
-!$omp   threadprivate(zmscr11, zmscr12, zmscr13)
+!$omp   threadprivate(zmscr11, zmscr12, zmscr13, zmscr14)
 
       end module stats_hoc
 

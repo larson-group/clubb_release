@@ -27,7 +27,8 @@
         contains
 
 !===============================================================================
-        pure function term_ma_tlev_lhs( wmt, dzt )
+        !pure function term_ma_tlev_lhs( wmt, dzt, level )
+        function term_ma_tlev_lhs( wmt, dzt, level )
      .  result( lhs )
 
 !       Description:
@@ -83,34 +84,62 @@
 !       References:
 !-----------------------------------------------------------------------
 
+        use grid_class ! gr%weights_zt2zm
+
         implicit none
 
         ! Constant parameters
         integer, parameter ::
      .  kp1_tdiag = 1,   ! Thermodynamic superdiagonal index.
-     .  km1_tdiag = 2    ! Thermodynamic subdiagonal index.
+     .  k_tdiag   = 2,   ! Thermodynamic main diagonal index.
+     .  km1_tdiag = 3    ! Thermodynamic subdiagonal index.
+
+        integer, parameter ::
+     .  t_above = 1,   ! Index for upper thermodynamic level grid weight.
+     .  t_below = 2    ! Index for lower thermodynamic level grid weight.
 
         ! Input Variables
         real, intent(in) ::
      .  wmt,  ! wmt(k)                        [m/s]
      .  dzt   ! Inverse of grid spacing (k)   [1/m]
 
+        integer, intent(in) ::
+     .  level ! Central thermodynamic level (on which calculation occurs).
+
         ! Return Variable
-        real, dimension(2) :: lhs
+        real, dimension(3) :: lhs
+
+        ! Local Variables
+        integer ::
+     .  mk,   ! Momentum level directly above central thermodynamic level.
+     .  mkm1  ! Momentum level directly below central thermodynamic level.
+
+        ! Momentum level (k) is between thermodynamic level (k+1)
+        ! and thermodynamic level (k).
+        mk = level
+
+        ! Momentum level (k-1) is between thermodynamic level (k)
+        ! and thermodynamic level (k-1).
+        mkm1 = level - 1
 
         ! Thermodynamic superdiagonal: [ x var_t(k+1,<t+1>) ]
         lhs(kp1_tdiag)
-     .  = + wmt * (1.0/2.0) * dzt
+     .  = + wmt * dzt * gr%weights_zt2zm(t_above,mk)
+
+        ! Thermodynamic main diagonal: [ x var_t(k,<t+1>) ]
+        lhs(k_tdiag)
+     .  = + wmt * dzt * (   gr%weights_zt2zm(t_below,mk)
+     .                    - gr%weights_zt2zm(t_above,mkm1)   )
 
         ! Thermodynamic subdiagonal: [ x var_t(k-1,<t+1>) ]
         lhs(km1_tdiag)
-     .  = - wmt * (1.0/2.0) * dzt
+     .  = - wmt * dzt * gr%weights_zt2zm(t_below,mkm1)
 
         return
         end function term_ma_tlev_lhs
 
 !===============================================================================
-        pure function term_ma_mlev_lhs( wmm, dzm )
+        pure function term_ma_mlev_lhs( wmm, dzm, level )
      .  result( lhs )
 
 !       Description:
@@ -166,28 +195,56 @@
 !       References:
 !-----------------------------------------------------------------------
 
+        use grid_class ! gr%weights_zm2zt
+
         implicit none
 
         ! Constant parameters
         integer, parameter ::
      .  kp1_mdiag = 1,   ! Momentum superdiagonal index.
-     .  km1_mdiag = 2    ! Momentum subdiagonal index.
+     .  k_mdiag   = 2,   ! Momentum main diagonal index.
+     .  km1_mdiag = 3    ! Momentum subdiagonal index.
+
+        integer, parameter ::
+     .  m_above = 1,   ! Index for upper momentum level grid weight.
+     .  m_below = 2    ! Index for lower momentum level grid weight.
 
         ! Input Variables
         real, intent(in) ::
      .  wmm,  ! wmm(k)                        [m/s]
      .  dzm   ! Inverse of grid spacing (k)   [1/m]
 
+        integer, intent(in) ::
+     .  level ! Central momentum level (on which calculation occurs).
+
         ! Return Variable
-        real, dimension(2) :: lhs
+        real, dimension(3) :: lhs
+
+        ! Local Variables
+        integer ::
+     .  tkp1, ! Thermodynamic level directly above central momentum level.
+     .  tk    ! Thermodynamic level directly below central momentum level.
+
+        ! Thermodynamic level (k+1) is between momentum level (k+1)
+        ! and momentum level (k).
+        tkp1 = level + 1
+
+        ! Thermodynamic level (k) is between momentum level (k)
+        ! and momentum level (k-1).
+        tk = level
 
         ! Momentum superdiagonal: [ x var_m(k+1,<t+1>) ]
         lhs(kp1_mdiag)
-     .  = + wmm * (1.0/2.0) * dzm
+     .  = + wmm * dzm * gr%weights_zm2zt(m_above,tkp1)
+
+        ! Momentum main diagonal: [ x var_m(k,<t+1>) ]
+        lhs(k_mdiag)
+     .  = + wmm * dzm * (   gr%weights_zm2zt(m_below,tkp1)
+     .                    - gr%weights_zm2zt(m_above,tk)  )
 
         ! Momentum subdiagonal: [ x var_m(k-1,<t+1>) ]
         lhs(km1_mdiag)
-     .  = - wmm * (1.0/2.0) * dzm
+     .  = - wmm * dzm * gr%weights_zm2zt(m_below,tk)
 
         return
         end function term_ma_mlev_lhs
