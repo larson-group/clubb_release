@@ -1,3 +1,5 @@
+!-----------------------------------------------------------------------
+! $Id: mean_adv.F,v 1.3 2008-05-01 14:18:17 griffinb Exp $
 !===============================================================================
         module mean_adv
 
@@ -27,8 +29,7 @@
         contains
 
 !===============================================================================
-        !pure function term_ma_tlev_lhs( wmt, dzt, level )
-        function term_ma_tlev_lhs( wmt, dzt, level )
+        pure function term_ma_tlev_lhs( wmt, dzt, level )
      .  result( lhs )
 
 !       Description:
