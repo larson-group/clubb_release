@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.35 2008-04-25 22:15:42 faschinj Exp $
+# $Id: make.deps,v 1.36 2008-05-01 17:01:02 dschanen Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -143,8 +143,10 @@ mpace_a.o     : constants.o model_flags.o grid.o stats_hoc.o mpace_a.F interpola
 mpace_b.o     : constants.o model_flags.o grid.o stats_hoc.o mpace_b.F
 nov11.o     : constants.o model_flags.o grid.o stats_hoc.o nov11.F
 jun25.o     : constants.o model_flags.o grid.o stats_hoc.o jun25.F
-clex9_nov02.o : constants.o model_flags.o grid.o stats_hoc.o clex9_nov02.F
-clex9_oct14.o : constants.o model_flags.o grid.o stats_hoc.o clex9_oct14.F
+clex9_nov02.o : constants.o cos_solar_zen.o model_flags.o grid.o stats_hoc.o \
+	clex9_nov02.F
+clex9_oct14.o : constants.o cos_solar_zen.o model_flags.o grid.o stats_hoc.o \
+	clex9_oct14.F
 rico.o      : constants.o model_flags.o grid.o stats_hoc.o rico.F
 wangara.o   : constants.o model_flags.o grid.o wangara.F
 ice_dfsn_mod.o    : constants.o grid.o stats_hoc.o ice_dfsn_mod.F
@@ -184,7 +186,7 @@ two_rt_sw.o		: kinds.o two_rt_sw.F
 two_rt_sw_bs.o		: kinds.o lapack_wrap.o two_rt_sw_bs.F
 two_rt_sw_ocastrndm.o	: kinds.o two_rt_sw_ocastrndm.F90
 bugsrad_hoc.o 		: kinds.o constants.o bugs_rad.o \
-	stats_hoc.o std_atmosphere_mod.o bugsrad_hoc.F90
+	stats_hoc.o cos_solar_zen.o std_atmosphere_mod.o bugsrad_hoc.F90
 
 # == Misc. program related source files  ==
 hoc.o		: parameterization_interface.o arm.o astex.o atex.o \
@@ -194,7 +196,7 @@ hoc.o		: parameterization_interface.o arm.o astex.o atex.o \
 	arm_3year.o cloud_sed_mod.o microphysics.o \
 	inputfields.o error_code.o hoc.F
 sounding.o	: grid.o std_atmosphere_mod.o interpolation.o constants.o sounding.F
-std_atmosphere.o: constants.o interpolation.o std_atmosphere_mod.F
+std_atmosphere_mod.o: constants.o interpolation.o std_atmosphere_mod.F
 interpolation.o : interpolation.F
 inputfields.o	: grid.o inputgrads.o inputfields.F 
 gradsaverage.o	: grid.o inputgrads.o gradsaverage.F 
