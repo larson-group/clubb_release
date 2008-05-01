@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: clex9_oct14.F,v 1.7 2008-04-23 18:05:13 faschinj Exp $
+! $Id: clex9_oct14.F,v 1.8 2008-05-01 02:19:32 dschanen Exp $
         module clex9_oct14
 
 !       Description:
@@ -200,7 +200,7 @@
 !      NOTE: The results from this function match the xi_abs results
 !            obtained using the COAMPS xi_abs method.  Therefore, we
 !            use the "cos_solar_zen" function for this case.
-       xi_abs = cos_solar_zen( 14, 10, 2001, real(time), rlat, rlon )
+       xi_abs = cos_solar_zen( 14, 10, 2001, time, rlat, rlon )
 
 c**********************************************************************
 c Addition by Adam Smith, 02 April 2008
@@ -208,7 +208,7 @@ c Adding a correction to xi_abs so that it cannot be less than zero.
 c "xi_abs" must be non-zero to allow linear interpolation to calculate
 c the correct amount of solar radiative flux.
 c**********************************************************************
-       xi_abs = max(xi_abs,0.)
+       xi_abs = max( xi_abs, 0. )
 c****************************
 c End of ajsmith4's addition
 c****************************
