@@ -1,4 +1,4 @@
-! $Id: std_atmosphere_mod.F,v 1.1 2008-04-25 22:10:18 faschinj Exp $
+! $Id: std_atmosphere_mod.F,v 1.2 2008-05-01 17:05:15 dschanen Exp $
         module std_atmosphere_mod
         
         implicit none
@@ -95,13 +95,17 @@
         
         contains
  
-!-------------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------
         subroutine std_atmosphere( alt, theta, rtm )
 !
-!       Description: Given a specific altitude this subroutine will
-!       return interpolated values for theta and rtm from U.S. Standard
-!       Atmosphere data.
-!-------------------------------------------------------------------------------------------
+!       Description: 
+!       Given a specific altitude this subroutine will return interpolated 
+!       values for theta and rtm from U.S. Standard Atmosphere data.
+
+!       References:
+!       McClatchey, et al., (1972) _Environmental Research Papers_, 
+!       No. 411, p.94
+!-----------------------------------------------------------------------
         use constants, only: p0, kappa
         use interpolation, only: linint, binary_search
         
@@ -125,7 +129,7 @@
      .  tabs0               ! Temperature                   [K]
         
         ! These variables are used to make the calls to linint cleaner    
-        real, dimension( std_atmos_dim ) ::
+        real, dimension(std_atmos_dim) ::
      .  tempk,
      .  pinmb,
      .  sp_hmdty,
@@ -133,10 +137,10 @@
 
         integer :: varindex
         
-        tempk = real(std_tempk)
-        pinmb  = real(std_pinmb)
-        sp_hmdty = real(std_sp_hmdty)
-        height = real(std_alt)
+        tempk    = real( std_tempk )
+        pinmb    = real( std_pinmb )
+        sp_hmdty = real( std_sp_hmdty )
+        height   = real( std_alt )
         
         varindex = binary_search( std_atmos_dim, height, alt )
 
