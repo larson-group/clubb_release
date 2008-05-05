@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_a.F,v 1.13 2008-04-23 18:09:57 faschinj Exp $
+! $Id: mpace_a.F,v 1.14 2008-05-05 18:38:27 faschinj Exp $
         module mpace_a
 
 !       Description:
@@ -67,6 +67,7 @@
         use interpolation, only: zlinterp_fnc
         use file_functions, only: file_read_1d, file_read_2d
         use stats_prec, only: time_prec
+        use rad_lwsw_mod, only: rad_lwsw
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/

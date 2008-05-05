@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_b.F,v 1.9 2008-04-05 19:54:20 griffinb Exp $
+! $Id: mpace_b.F,v 1.10 2008-05-05 18:38:27 faschinj Exp $
         module mpace_b
 
 !       Description:
@@ -36,6 +36,7 @@
         use model_flags
         use grid_class
         use stats_prec, only: time_prec
+        use rad_lwsw_mod, only: rad_lwsw
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/

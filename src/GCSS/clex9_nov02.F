@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: clex9_nov02.F,v 1.9 2008-05-01 02:19:32 dschanen Exp $
+! $Id: clex9_nov02.F,v 1.10 2008-05-05 18:38:27 faschinj Exp $
         module clex9_nov02
 
 !       Description:
@@ -44,6 +44,7 @@
         use stats_prec, only: time_prec
         use cos_solar_zen_mod
         use interpolation, only: linear_interpolation
+        use rad_lwsw_mod, only: rad_lwsw
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
