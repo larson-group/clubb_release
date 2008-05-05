@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zt.F,v 1.12 2008-04-28 16:26:28 ajsmith4 Exp $
+! $Id: stats_zt.F,v 1.13 2008-05-05 18:53:30 faschinj Exp $
 #ifdef STATS
        
       module stats_zt
@@ -523,14 +523,14 @@
           iradht_LW = k
 
           call stat_assign(iradht_LW,"radht_LW",
-     .         "Long-wave heating rate","K/s",zt)
+     .         "radht_LW, Long-wave heating rate","K/s",zt)
 
           k = k + 1
 
         case ('radht_SW')
           iradht_SW = k
           call stat_assign(iradht_SW,"radht_SW",
-     .         "Short-wave heating rate","K/s",zt)
+     .         "radht_SW, Short-wave heating rate","K/s",zt)
           k = k + 1
 
         case ('diam')
