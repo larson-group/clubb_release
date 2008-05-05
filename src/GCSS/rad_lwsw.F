@@ -1,5 +1,17 @@
-! $Id: rad_lwsw.F,v 1.3 2007-05-10 22:29:53 dschanen Exp $
+! $Id: rad_lwsw.F,v 1.4 2008-05-05 18:37:07 faschinj Exp $
 !-----------------------------------------------------------------------
+      module rad_lwsw_mod
+      
+      implicit none
+      
+      public :: rad_lwsw
+      
+      private :: sunray_sw
+
+      private
+      
+      contains
+      
       subroutine rad_lwsw( th3, qc3, rbm, dsigm,
      .                     Frad, Frad_LW, Frad_SW,
      .                     radhtk, radht_LW, radht_SW,
@@ -48,9 +60,6 @@
       use constants
 
       implicit none
-
-      ! External
-      external :: sunray_sw ! To calculate diffuse and direct shortwave fluxes
 
       ! Input Variables 
       integer, intent(in) :: kk ! Number of vertical levels   [-]
@@ -612,3 +621,5 @@
 
       return
       end subroutine sunray_sw
+
+      end module rad_lwsw_mod
