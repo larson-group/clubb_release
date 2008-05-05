@@ -1,6 +1,12 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_hoc.F90,v 1.23 2008-04-30 23:06:28 dschanen Exp $
+! $Id: bugsrad_hoc.F90,v 1.24 2008-05-05 18:24:47 faschinj Exp $
+module bugsrad_hoc_mod
 
+public :: bugsrad_hoc
+
+private
+
+contains
 subroutine bugsrad_hoc( alt, nz, lat_in_degrees, lon_in_degrees, &
                         day, month, year, time,                  &
                         thlm, rcm, rtm, rsnwm, rim,              & 
@@ -150,6 +156,7 @@ use stats_hoc, only: zt, zm, lstats_samp, &
 
 ! amu0 = 0.4329 ! Nov 11 Altocu value
 ! Calculated value
+
   amu0 = cos_solar_zen( day, month, year, time, lat_in_degrees, lon_in_degrees )
 
 ! Convert to millibars
@@ -379,3 +386,5 @@ use stats_hoc, only: zt, zm, lstats_samp, &
 !-----------------------------------------------------------------------
 
 end subroutine bugsrad_hoc
+
+end module bugsrad_hoc_mod
