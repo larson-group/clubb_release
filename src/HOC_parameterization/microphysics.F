@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.41 2008-04-26 23:54:59 griffinb Exp $
+! $Id: microphysics.F,v 1.42 2008-05-05 18:46:50 faschinj Exp $
         module microphysics
 
 !       Description:
@@ -48,15 +48,12 @@
         use constants, only: hydromet_dim, Lv, Cp, rho_lw, fstderr
         use stats_prec, only: time_prec
 
-        use error_code, only: CLUBB_singular_matrix,
-     .                        CLUBB_bad_lapack_arg
+        use error_code, only: lapack_error
+        use coamps_micro_driver_mod, only: coamps_micro_driver
 #ifdef STATS
         use stats_hoc
 #endif
         implicit none
-
-        ! External
-        external :: coamps_micro_driver
 
         ! Constant Parameters
 
@@ -710,8 +707,7 @@
 !       Error Report
 !       Joshua Fasching Feb 2008
         
-        if ( err_code == CLUBB_singular_matrix .or. 
-     .       err_code == CLUBB_bad_lapack_arg ) then
+        if ( lapack_error(err_code) ) then
                 
            write(fstderr,*) "Error in timestep_microphys"
            
