@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_3year.F,v 1.8 2008-04-23 18:09:57 faschinj Exp $
+! $Id: arm_3year.F,v 1.9 2008-05-05 18:31:19 faschinj Exp $
         module arm_3year
 
 !       Description:
@@ -112,7 +112,7 @@
 
         ! Vince Larson added in poor man's radiation. 
         !     Do not use at the same time as BugsRad.  15 Dec 2007
-        thlm_forcing(2:gr%nnzp) = thlm_forcing(2:gr%nnzp) - 1.0e-6
+        !thlm_forcing(2:gr%nnzp) = thlm_forcing(2:gr%nnzp) - 1.0e-6
         ! End Vince Larson's addition
 
         ! Interpolate LS rt tendency to the HOC grid
@@ -169,11 +169,9 @@
         use constants, only: Cp, Lv, grav, sclr_dim
         use stats_hoc, only: iustar, sfc, lstats_samp
         use stats_prec, only: time_prec
-
+        use diag_ustar_mod, only: diag_ustar
+        
         implicit none
-
-        ! External
-        real, external :: diag_ustar
 
         intrinsic :: max, sqrt, present
 
@@ -225,12 +223,12 @@
           do while ( i1 <= ntimes-1 )
             i2 = i1 + 1
             if ( time >= times(i1) .and. time < times(i2) ) then
-              time_frac            = (time-times(i1))/(times(i2)
-     .           - times(i1))
+              time_frac    = (time-times(i1))/(times(i2)
+     .                           - times(i1))
               heat_flx     = ( 1. - time_frac ) * SE(i1) + 
-     .           time_frac * SE(i2)
+     .                           time_frac * SE(i2)
               moisture_flx = ( 1. - time_frac ) * LE(i1) + 
-     .           time_frac * LE(i2)
+     .                           time_frac * LE(i2)
               i1           = ntimes
             end if
               i1 = i2
@@ -273,9 +271,17 @@
 
         return
         end subroutine arm_3year_sfclyr
+
+!----------------------------------------------------------------------------        
         subroutine arm_3year_init()
+!
+!       Description: This subroutine is used to load the forcing
+!       information into arrays.
+!---------------------------------------------------------------------------       
            use file_functions, only: file_read_1d, file_read_2d
+           
            implicit none
+           
         ! Reading in the files located in
         ! ../model/arm_3year_forcings/ and storing them in arrays
         ! Joshua Fasching (October 2007)

@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm.F,v 1.9 2008-04-04 22:02:49 dschanen Exp $
+! $Id: arm.F,v 1.10 2008-05-05 18:31:19 faschinj Exp $
         module arm
 
 !       Description:
@@ -160,11 +160,9 @@
 
         use constants, only: Cp, Lv, grav, sclr_dim
         use stats_prec, only: time_prec
-
+        use diag_ustar_mod, only: diag_ustar
+        
         implicit none
-
-        ! External
-        real, external :: diag_ustar
 
         intrinsic :: max, sqrt, present
 

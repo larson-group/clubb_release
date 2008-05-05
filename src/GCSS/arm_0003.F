@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_0003.F,v 1.7 2008-04-23 18:03:04 faschinj Exp $
+! $Id: arm_0003.F,v 1.8 2008-05-05 18:31:19 faschinj Exp $
         module arm_0003
 
 !       Description:
@@ -168,11 +168,9 @@
         use stats_hoc, only: iustar, sfc, lstats_samp
         use file_functions, only: file_read_1d
         use stats_prec, only: time_prec
-
+        use diag_ustar_mod, only: diag_ustar
+        
         implicit none
-
-        ! External
-        real, external :: diag_ustar
 
         intrinsic :: max, sqrt, present
 

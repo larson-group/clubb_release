@@ -151,12 +151,9 @@
           use constants
           use saturation, only: rsat ! Used to compute saturation mixing ratio
           use stats_prec, only: time_prec
-
+          use diag_ustar_mod, only: diag_ustar
+          
           implicit none
-
-          ! External calls
-          real, external ::
-     .      diag_ustar
 
           ! Local constants
           real, parameter ::

@@ -1,7 +1,7 @@
 #define SCLR_CO2 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: cobra.F,v 1.7 2008-04-04 22:02:49 dschanen Exp $
+! $Id: cobra.F,v 1.8 2008-05-05 18:33:41 faschinj Exp $
         module cobra
 !       Description:
 !       Contains subroutines for the COBRA CO2 case.
@@ -115,11 +115,9 @@
 
         use constants, only: Cp, Lv, grav, sclr_dim
         use stats_prec, only: time_prec
-
+        use diag_ustar_mod, only: diag_ustar
+        
         implicit none
-
-        ! External
-        real, external :: diag_ustar
 
         intrinsic :: sqrt, max, present
 

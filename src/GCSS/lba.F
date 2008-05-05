@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: lba.F,v 1.8 2008-04-25 22:00:10 faschinj Exp $
+! $Id: lba.F,v 1.9 2008-05-05 18:33:41 faschinj Exp $
         module lba
 
 !       Description:
@@ -140,11 +140,9 @@
 
         use constants, only: sclr_dim, pi, grav, Lv, Cp
         use stats_prec, only: time_prec
-
+        use diag_ustar_mod, only: diag_ustar
+        
         implicit none
-
-        ! External
-        real, external :: diag_ustar
 
         intrinsic :: max, sqrt, present
 
