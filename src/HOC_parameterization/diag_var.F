@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F,v 1.44 2008-05-01 18:42:03 griffinb Exp $
+! $Id: diag_var.F,v 1.45 2008-05-05 18:42:17 faschinj Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !===============================================================================
@@ -56,7 +56,7 @@
         use grid_class
         use stats_prec, only: time_prec
         use lapack_wrap, only: tridag_solve
-        use error_code, only: CLUBB_no_error, 
+        use error_code, only: clubb_no_error, 
      .                        lapack_error, 
      .                        clubb_at_debug_level
 #ifdef STATS
@@ -253,7 +253,7 @@
 
         ! Initialize tridiagonal solutions to valid
 
-        Valid_arr(:) = CLUBB_no_error
+        Valid_arr(:) = clubb_no_error
 
         ! (xapxbp)^2: 3-point average diffusion coefficient.
         do k = 1, gr%nnzp, 1
