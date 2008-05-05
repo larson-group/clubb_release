@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error_code.F,v 1.3 2008-04-23 17:55:07 faschinj Exp $
+! $Id: error_code.F,v 1.4 2008-05-05 18:44:00 faschinj Exp $
 !-----------------------------------------------------------------------
         module error_code
 
@@ -11,7 +11,10 @@
 !       additional codes is as simple adding an additional integer
 !       parameter. The error codes are ranked by severity, the higher
 !       number being more servere. When two errors occur, assign the
-!       most servere to the output.`
+!       most servere to the output.
+
+!       This code also handles subroutines related to debug_level. See
+!       the 'set_clubb_debug_level' description for more detail.        
 !-----------------------------------------------------------------------
 
         implicit none
@@ -19,29 +22,30 @@
         private
 
         public ::
-     .  CLUBB_no_error, 
-     .  CLUBB_var_less_than_zero,
-     .  CLUBB_var_equals_NaN, 
-     .  CLUBB_singular_matrix,
-     .  CLUBB_bad_lapack_arg,
-     .  CLUBB_rtm_level_not_found,
-     .  CLUBB_var_out_of_bounds,
+     .  clubb_no_error, 
+     .  clubb_var_less_than_zero,
+     .  clubb_var_equals_NaN, 
+     .  clubb_singular_matrix,
+     .  clubb_bad_lapack_arg,
+     .  clubb_rtm_level_not_found,
+     .  clubb_var_out_of_bounds,
      .  reportError, 
-     .  any_error,
+     .  fatal_error,
      .  lapack_error,    
      .  clubb_at_debug_level, 
-     .  set_clubb_debug_level    
+     .  set_clubb_debug_level,
+     .  clubb_debug
 
-        integer :: CLUBB_debug_level   =  0
+        integer :: clubb_debug_level   =  0
 
         integer, parameter ::
-     .  CLUBB_no_error                 =  0, 
-     .  CLUBB_var_less_than_zero       =  1,
-     .  CLUBB_var_equals_NaN           =  2, 
-     .  CLUBB_singular_matrix          =  3,
-     .  CLUBB_bad_lapack_arg           =  4,
-     .  CLUBB_rtm_level_not_found      =  5,
-     .  CLUBB_var_out_of_bounds        =  6 
+     .  clubb_no_error                 =  0, 
+     .  clubb_var_less_than_zero       =  1,
+     .  clubb_var_equals_NaN           =  2, 
+     .  clubb_singular_matrix          =  3,
+     .  clubb_bad_lapack_arg           =  4,
+     .  clubb_rtm_level_not_found      =  5,
+     .  clubb_var_out_of_bounds        =  6 
      
         contains
 
@@ -60,26 +64,26 @@
 
         select case ( err_code )
 
-        case ( CLUBB_no_error )
+        case ( clubb_no_error )
                 write(fstderr,*) "No errors reported."
 
-        case ( CLUBB_var_less_than_zero )
+        case ( clubb_var_less_than_zero )
                 write(fstderr,*) "Variable in CLUBB is less than zero."
 
-        case ( CLUBB_singular_matrix )
+        case ( clubb_singular_matrix )
                 write(fstderr,*) "Singular Matrix in CLUBB."
 
-        case ( CLUBB_var_equals_NaN )
+        case ( clubb_var_equals_NaN )
                 write(fstderr,*) "Variable in CLUBB is NaN."
 
-        case ( CLUBB_bad_lapack_arg )
+        case ( clubb_bad_lapack_arg )
                 write(fstderr,*) 
      .              "Argument used in LAPACK procedure is invalid."
                 
-        case ( CLUBB_rtm_level_not_found )
+        case ( clubb_rtm_level_not_found )
                 write(fstderr,*) "rtm level not found"
                 
-        case ( CLUBB_var_out_of_bounds )
+        case ( clubb_var_out_of_bounds )
                 write(fstderr,*) "Input variable is out of bounds."
 
         case default
@@ -88,30 +92,38 @@
         end select
 
         end subroutine reportError
-
+!---------------------------------------------------------------------
         logical function lapack_error( err_code )
-        
+!
+!       Description: Checks to see if the err_code is equal to one
+!       caused by an error encountered using lapack
+!---------------------------------------------------------------------        
         implicit none
         
-        integer,intent(in) :: err_code
+        ! Input variable
+        integer,intent(in) :: err_code ! Error Code being examined
         
-        lapack_error = (err_code == CLUBB_singular_matrix .or.
-     .      err_code == CLUBB_bad_lapack_arg ) 
+        lapack_error = (err_code == clubb_singular_matrix .or.
+     .      err_code == clubb_bad_lapack_arg ) 
         
         end function
 
 !---------------------------------------------------------------------       
-        logical function any_error( err_code )
+        logical function fatal_error( err_code )
+!
+!       Description: Checks to see if the err_code is one that usually
+!       causes an exit in other parts of CLUBB.
 !---------------------------------------------------------------------        
         implicit none
 
-        integer, intent(in) :: err_code
+        ! Input Variable
+        integer, intent(in) :: err_code ! Error Code being examined
 
-        any_error = ( err_code == CLUBB_singular_matrix     .or.
-     .                err_code == CLUBB_bad_lapack_arg      .or.
-     .                err_code == CLUBB_var_equals_NaN      .or.
-     .                err_code == CLUBB_rtm_level_not_found .or.
-     .                err_code == CLUBB_var_out_of_bounds )
+        fatal_error = ( err_code == clubb_singular_matrix     .or.
+     .                err_code == clubb_bad_lapack_arg      .or.
+     .                err_code == clubb_var_equals_NaN      .or.
+     .                err_code == clubb_rtm_level_not_found .or.
+     .                err_code == clubb_var_out_of_bounds )
 
 
         end function
@@ -120,15 +132,14 @@
         logical function clubb_at_debug_level( level )
 !       
 !       Description:
-!       Checks to see if CLUBB has been set to a specified debug level
-!
+!       Checks to see if clubb has been set to a specified debug level
 !------------------------------------------------------------------
         implicit none
 
         ! Input variable
         integer, intent(in) :: level   ! The debug level being checked against the current setting
 
-        clubb_at_debug_level = ( level <= CLUBB_debug_level )
+        clubb_at_debug_level = ( level <= clubb_debug_level )
 
         end function clubb_at_debug_level
 
@@ -136,13 +147,18 @@
         subroutine set_clubb_debug_level( level )
 !
 !       Description:
-!       Accessor for CLUBB_debug_level
+!       Accessor for clubb_debug_level
 !
+!        0 => Print no debug messages to the screen
+!        1 => Print lightweight debug messages
+!        2 => Print debug messages that require extra testing
+
 !----------------------------------------------------------------------
         implicit none
        
-        integer, intent(in) :: level 
-        CLUBB_debug_level = level
+        ! Input variable
+        integer, intent(in) :: level ! The debug level being checked against the current setting 
+        clubb_debug_level = level
 
         end subroutine set_clubb_debug_level
 
@@ -153,20 +169,20 @@
 !       Prints a message to file unit fstderr if the level is greater
 !       than or equal to the current debug level.        
 !----------------------------------------------------------------------
-
-        
         use constants, only:fstderr
-        implicit none
-        
-        character(*), intent(in) :: str
-        integer, intent(in)      :: level
 
-        if (level <= CLUBB_debug_level) then
-                write(fstderr,*) str
+        implicit none
+
+        ! Input Variables        
+        character*(*), intent(in) :: str ! The message being reported
+
+        integer, intent(in)      :: level ! The debug level being checked against the current setting
+
+        if (level <= clubb_debug_level) then
+                write(*,*) str
         endif
+        
         end subroutine
 
-        
-       
         end module error_code
 !-----------------------------------------------------------------------
