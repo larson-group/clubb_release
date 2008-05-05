@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.176 2008-04-30 21:31:26 dschanen Exp $
+! $Id: hoc.F,v 1.177 2008-05-05 18:27:00 faschinj Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -111,10 +111,10 @@
         use numerical_check
         use hoc_parameterization_interface
         use constants, only: fstdout, fstderr
-        use error_code, only: CLUBB_var_equals_NaN,
-     .                        CLUBB_var_out_of_bounds,
-     .                        CLUBB_rtm_level_not_found,
-     .                        any_error
+        use error_code, only: clubb_var_equals_NaN,
+     .                        clubb_var_out_of_bounds,
+     .                        clubb_rtm_level_not_found,
+     .                        fatal_error
 #ifdef STATS
         use stats_hoc, only: lstats_last
         use stats_subs
@@ -337,7 +337,7 @@
        
        ! Changed isValid to err_code for better tracking of errors caused by
        ! procedures
-       if ( err_code == CLUBB_var_out_of_bounds ) return
+       if ( err_code == clubb_var_out_of_bounds ) return
        ! Joshua Fasching March 2008
 
        ! Dummy grid height arrays
@@ -408,15 +408,15 @@
          ! Changed isValid to err_code for better tracking of errors caused by
          ! procedures
          if( invalid_model_arrays( ) ) then 
-            err_code = CLUBB_var_equals_NaN         ! Check for bad values 
+            err_code = clubb_var_equals_NaN         ! Check for bad values 
                                                  ! in the model arrays
          endif
 
-         if ( err_code == CLUBB_var_equals_NaN ) exit
+         if ( err_code == clubb_var_equals_NaN ) exit
 
          call hoc_forcings_timestep( dtmain, i, stdout, err_code )
 
-         if ( err_code == CLUBB_rtm_level_not_found ) exit
+         if ( err_code == clubb_rtm_level_not_found ) exit
          ! Joshua Fasching March 2008
 
 !      Compute number of iterations for closure loop
@@ -465,12 +465,12 @@
            ! Changed isValid to err_code for better tracking of errors caused by
            ! procedures
 
-           if ( any_error( err_code ) ) exit
+           if ( fatal_error( err_code ) ) exit
            
          end do ! i1=1..niterlong
 
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-         if ( any_error( err_code ) ) exit
+         if ( fatal_error( err_code ) ) exit
           
        end do ! i=1, ifinal
 
@@ -514,10 +514,10 @@
         use numerical_check
         use hoc_parameterization_interface
         use constants, only: fstdout, fstderr
-        use error_code, only: CLUBB_var_out_of_bounds,
-     .                        CLUBB_var_equals_NaN,
-     .                        CLUBB_rtm_level_not_found,
-     .                        any_error,
+        use error_code, only: clubb_var_out_of_bounds,
+     .                        clubb_var_equals_NaN,
+     .                        clubb_rtm_level_not_found,
+     .                        fatal_error,
      .                        set_clubb_debug_level
         
         use stats_prec, only: time_prec
@@ -703,7 +703,7 @@
      .        0.0, 0.0, err_code )
 
       
-       if ( err_code == CLUBB_var_out_of_bounds ) return
+       if ( err_code == clubb_var_out_of_bounds ) return
 
 
        ! Dummy grid height arrays
@@ -810,15 +810,15 @@
 #endif /*STATS*/
 
          if ( invalid_model_arrays( ) ) then
-             err_code = CLUBB_var_equals_NaN         ! Check for bad values 
+             err_code = clubb_var_equals_NaN         ! Check for bad values 
                                                  ! in the model arrays
          endif
 
-         if ( err_code == CLUBB_var_equals_NaN ) exit
+         if ( err_code == clubb_var_equals_NaN ) exit
 
          call hoc_forcings_timestep( dtmain, i, stdout, err_code )
 
-         if ( err_code == CLUBB_rtm_level_not_found ) exit
+         if ( err_code == clubb_rtm_level_not_found ) exit
          
          ! Compute number of iterations for closure loop
          if ( time_current > time_spinup ) then
@@ -863,12 +863,12 @@
              time_current = time_initial + i * dtmain
            end if
 
-           if ( any_error( err_code ) ) exit
+           if ( fatal_error( err_code ) ) exit
            
          end do ! i1=1..niterlong
 
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-         if ( any_error( err_code ) ) exit
+         if ( fatal_error( err_code ) ) exit
           
        end do ! i=1, ifinal
 
@@ -924,7 +924,7 @@
         use mpace_a, only: mpace_a_init
         use lba, only: lba_init
         use mixing_length
-        use error_code, only: CLUBB_no_error
+        use error_code, only: clubb_no_error
         
         ! Joshua Fasching
         ! March 2008
@@ -995,7 +995,7 @@
         ricem     => hydromet(1:gr%nnzp,4)
         rgraupelm => hydromet(1:gr%nnzp,5)
 
-        err_code = CLUBB_no_error
+        err_code = clubb_no_error
         
         ! Read sounding information
 
@@ -1696,13 +1696,12 @@
         use clex9_oct14, only: clex9_oct14_tndcy ! Above surface
         use wangara, only: wangara_tndcy, wangara_sfclyr
 
-        implicit none
-
-        ! External
 #ifdef radoffline
-        external :: bugsrad_hoc
+        !external :: bugsrad_hoc
+        use bugsrad_hoc_mod
 #endif
-
+        implicit none
+        
         ! Input Variables
         real(kind=time_prec), intent(in) ::
      .    dt    ! Timestep      [s]
@@ -2251,7 +2250,7 @@
      .                    cf, p, exner, rhom )
           endif
 
-
+          !print *, "Current time = ", time_current
           call bugsrad_hoc( gr%zm, gr%nnzp, rlat, rlon,    ! In
      .                      day, month, year, time_current,! In
      .                      thlm, rcm, rtm, rsnowm, ricem, ! In
