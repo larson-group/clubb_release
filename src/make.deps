@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.36 2008-05-01 17:01:02 dschanen Exp $
+# $Id: make.deps,v 1.37 2008-05-05 18:19:46 dschanen Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -89,7 +89,7 @@ wp23.o		: constants.o parameters.o stats_hoc.o lapack_wrap.o \
 error_code.o    : constants.o error_code.F
 compute_um_edsclrm_mod.o : grid.o stats_hoc.o lapack_wrap.o error_code.o compute_um_edsclrm_mod.F 
 diffusion.o	: grid.o diffusion.F
-mean_adv.o      : mean_adv.F
+mean_adv.o      : grid.o mean_adv.F
 pos_definite_mod.o : grid.o stats_prec.o pos_definite_mod.F
 
 # == Numerical Recipes dependencies (For the tuner) ==
@@ -193,7 +193,7 @@ hoc.o		: parameterization_interface.o arm.o astex.o atex.o \
 	bomex.o clex9_nov02.o clex9_oct14.o dycoms2_rf01.o dycoms2_rf02.o \
 	fire.o jun25.o mpace_a.o mpace_b.o nov11.o \
 	wangara.o cobra.o rico.o gabls2.o lba.o arm_97.o arm_0003.o \
-	arm_3year.o cloud_sed_mod.o microphysics.o \
+	arm_3year.o cloud_sed_mod.o microphysics.o bugsrad_hoc.o \
 	inputfields.o error_code.o hoc.F
 sounding.o	: grid.o std_atmosphere_mod.o interpolation.o constants.o sounding.F
 std_atmosphere_mod.o: constants.o interpolation.o std_atmosphere_mod.F
