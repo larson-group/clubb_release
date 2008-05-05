@@ -1,4 +1,4 @@
-! $Id: closure_new.F,v 1.20 2008-04-23 18:13:54 faschinj Exp $
+! $Id: closure_new.F,v 1.21 2008-05-05 18:40:32 faschinj Exp $
         module pdf_closure
 
         implicit none
@@ -67,7 +67,7 @@
 
         use saturation, only: rsat
 
-        use error_code, only: CLUBB_var_equals_NaN,
+        use error_code, only: clubb_var_equals_NaN,
      .                        clubb_at_debug_level 
         
         implicit none
@@ -673,7 +673,7 @@
 !                Error Reporting
 !               Joshua Fasching February 2008
                 
-                if ( err_code == CLUBB_var_equals_NaN ) then
+                if ( err_code == clubb_var_equals_NaN ) then
                 
                         write(fstderr,*) "Error in pdf_closure_new" 
                   
@@ -765,7 +765,7 @@
                                 write(fstderr,*) "wp2sclrp = ", wp2sclrp
                         end if
                         
-                end if ! err_code == CLUBB_var_equals_NaN
+                end if ! err_code == clubb_var_equals_NaN
           
         end if ! clubb_at_debug_level
         
