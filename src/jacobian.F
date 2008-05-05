@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.41 2008-04-23 17:58:52 faschinj Exp $
+! $Id: jacobian.F,v 1.42 2008-05-05 18:20:46 faschinj Exp $
 
       program jacobian
 #ifdef STATS
@@ -18,8 +18,8 @@
       use constants, only: fstdout, fstderr
       use grads_common, only: grads_average_interval, grads_zlvl
       use stats_hoc, only: fname_zt, fname_zm
-      use error_code, only: CLUBB_no_error,
-     .                      any_error
+      use error_code, only: clubb_no_error,
+     .                      fatal_error
 
       implicit none
 
@@ -114,7 +114,7 @@
 
         times(1:10) = 0
 
-        err_code = CLUBB_no_error
+        err_code = clubb_no_error
 
         allocate( hoc_params%value( nparams ), 
      .            hoc_params%name( nparams ),
@@ -152,7 +152,7 @@
         call hoc_model 
      .       ( hoc_params%value(:), run_file, err_code, .false. )
 
-        if ( any_error(err_code) ) then
+        if ( fatal_error(err_code) ) then
         
            stop "Initial run wasn't valid"
         endif
@@ -237,7 +237,7 @@
           ! Print a period so the user knows something is happening
           write(unit=fstdout, fmt='(a1)', advance='no') "."
 
-          if ( any_error(err_code) ) then
+          if ( fatal_error(err_code) ) then
          
             ! Pos. Infinity bit pattern 
             jmatrix(i, :)
