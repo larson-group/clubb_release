@@ -1,4 +1,4 @@
-! $Id: mixing_length.F,v 1.10 2008-04-23 18:13:54 faschinj Exp $
+! $Id: mixing_length.F,v 1.11 2008-05-05 18:50:08 faschinj Exp $
 !-----------------------------------------------------------------------------
         module mixing_length
         
@@ -47,7 +47,7 @@
         use numerical_check, only: length_check
         use saturation, only: rsat
         use diagnostic_variables, only: Lup, Ldown
-        use error_code, only: CLUBB_var_equals_NaN,
+        use error_code, only: clubb_var_equals_NaN,
      .                        clubb_at_debug_level
         implicit none
         
@@ -287,7 +287,7 @@
                 
         !       isValid replaced with err_code
         !       Joshua Fasching March 2008
-                if ( err_code == CLUBB_var_equals_NaN ) then
+                if ( err_code == clubb_var_equals_NaN ) then
                         
                    write(fstderr,*) "Errors in length subroutine"
                    
@@ -306,7 +306,7 @@
                    write(fstderr,*) "Lscale = ", Lscale
                    write(fstderr,*) "Lup = ", Lup
                    
-                endif ! err_code == CLUBB_var_equals_NaN
+                endif ! err_code == clubb_var_equals_NaN
 
         endif ! clubb_debug_level
 

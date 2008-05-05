@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameters.F,v 1.14 2008-04-30 23:03:37 dschanen Exp $
+! $Id: parameters.F,v 1.15 2008-05-05 18:51:57 faschinj Exp $
         module parameters 
 
 !       Description:
@@ -149,8 +149,8 @@
 !-----------------------------------------------------------------------
 
         use constants, only: fstderr
-        use error_code, only: CLUBB_var_out_of_bounds,
-     .                        CLUBB_no_error
+        use error_code, only: clubb_var_out_of_bounds,
+     .                        clubb_no_error
 
         implicit none
 
@@ -212,14 +212,14 @@
          ! Constraints on beta
          write(fstderr,*) "beta= ", beta
          write(fstderr,*) "beta cannot be < 0 or > 3"
-         err_code = CLUBB_var_out_of_bounds    
+         err_code = clubb_var_out_of_bounds    
        else if ( lmin < 4.0 ) then
          ! Constraints on mixing length
          write(fstderr,*) "lmin= ", lmin
          write(fstderr,*) "lmin is < 4.0"
-         err_code = CLUBB_var_out_of_bounds
+         err_code = clubb_var_out_of_bounds
        else
-         err_code = CLUBB_no_error
+         err_code = clubb_no_error
        end if
 
 !      write(*,nml=initvars) ! %% debug

@@ -1,4 +1,4 @@
-! $Id: sfc.F,v 1.19 2008-04-23 18:13:54 faschinj Exp $
+! $Id: sfc.F,v 1.20 2008-05-05 18:51:57 faschinj Exp $
 #define SCLR_RT 2
 #define SCLR_THETA 1
 
@@ -31,7 +31,7 @@
         use parameters, only: T0
         use constants
         use numerical_check, only:sfc_var_check
-        use error_code, only: CLUBB_var_equals_NaN,
+        use error_code, only: clubb_var_equals_NaN,
      .                        clubb_at_debug_level        
         implicit none
 
@@ -303,7 +303,7 @@
 !       Error reporting
 !       Joshua Fasching February 2008
         
-                if ( err_code == CLUBB_var_equals_NaN ) then
+                if ( err_code == clubb_var_equals_NaN ) then
                         
                     write(fstderr,*) "Error in sfc_var"
                     
@@ -340,7 +340,7 @@
                       write(fstderr,*) "sclrpthlp_sfc = ", sclrpthlp_sfc
                    endif
 
-                endif ! err_code == CLUBB_var_equals_NaN
+                endif ! err_code == clubb_var_equals_NaN
 
         endif ! clubb_at_debug_level ( 2 )
         

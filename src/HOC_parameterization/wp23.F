@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.58 2008-05-01 13:56:08 griffinb Exp $
+! $Id: wp23.F,v 1.59 2008-05-05 18:51:57 faschinj Exp $
 !===============================================================================
         module wp23
 
@@ -299,8 +299,8 @@
         use model_flags, only: lKhm_aniso
         use stats_prec, only: time_prec
         use lapack_wrap, only: band_solve, band_solvex
-        use error_code, only: CLUBB_singular_matrix,
-     .                        CLUBB_bad_lapack_arg
+        use error_code, only: clubb_singular_matrix,
+     .                        clubb_bad_lapack_arg
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
@@ -452,8 +452,8 @@
 
 #endif /*STATS*/
 
-        if ( err_code == CLUBB_singular_matrix .or.
-     .        err_code == CLUBB_bad_lapack_arg ) return
+        if ( err_code == clubb_singular_matrix .or.
+     .        err_code == clubb_bad_lapack_arg ) return
 
 
 !       Copy result into output arrays and clip

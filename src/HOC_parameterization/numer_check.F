@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F,v 1.24 2008-04-04 20:10:00 faschinj Exp $
+! $Id: numer_check.F,v 1.25 2008-05-05 18:50:54 faschinj Exp $
         module numerical_check
 
         implicit none
@@ -778,7 +778,7 @@
 !-----------------------------------------------------------------------
         use constants, only:fstderr
         use grid_class
-        use error_code, only: CLUBB_var_less_than_zero
+        use error_code, only: clubb_var_less_than_zero
         
         implicit none
 
@@ -798,8 +798,8 @@
         if ( any( var < 0.0 ) ) then
            write(fstderr,*) varname, " < 0 in ", operation
            if ( present( err_code ) ) then 
-                if (err_code < CLUBB_var_less_than_zero ) then
-                        err_code = CLUBB_var_less_than_zero
+                if (err_code < clubb_var_less_than_zero ) then
+                        err_code = clubb_var_less_than_zero
                 endif
            endif
         end if
@@ -818,7 +818,7 @@
 !
 !-----------------------------------------------------------------------
         use constants, only:fstderr
-        use error_code, only: CLUBB_var_less_than_zero
+        use error_code, only: clubb_var_less_than_zero
         
         implicit none
 
@@ -847,8 +847,8 @@
      .                           " at k = ", k
                         
                 if ( present( err_code ) ) then 
-                      if (err_code < CLUBB_var_less_than_zero ) then
-                               err_code = CLUBB_var_less_than_zero
+                      if (err_code < clubb_var_less_than_zero ) then
+                               err_code = clubb_var_less_than_zero
                       endif
                 endif
 
@@ -869,7 +869,7 @@
 !
 !------------------------------------------------------------------------
         use constants, only: fstderr
-        use error_code, only: CLUBB_var_equals_NaN
+        use error_code, only: clubb_var_equals_NaN
 
         implicit none
 
@@ -889,8 +889,8 @@
         if ( isnan2d( var ) ) then
            write(fstderr,*) varname, " is NaN in ",operation
            if ( present( err_code ) ) then
-                if( err_code < CLUBB_var_equals_NaN ) then
-                        err_code = CLUBB_var_equals_NaN
+                if( err_code < clubb_var_equals_NaN ) then
+                        err_code = clubb_var_equals_NaN
                 endif
            endif
         end if
@@ -905,7 +905,7 @@
 !
 !-----------------------------------------------------------------------        
         use constants, only: fstderr
-        use error_code, only: CLUBB_var_equals_NaN
+        use error_code, only: clubb_var_equals_NaN
 
         implicit none
 
@@ -925,8 +925,8 @@
         if ( isnan( var ) ) then
           write(fstderr,*) varname, " is NaN in ",operation
           if ( present( err_code ) ) then
-                  if( err_code < CLUBB_var_equals_NaN ) then
-                        err_code = CLUBB_var_equals_NAN
+                  if( err_code < clubb_var_equals_NaN ) then
+                        err_code = clubb_var_equals_NAN
                   endif
           endif
         end if

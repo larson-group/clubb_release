@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.84 2008-04-23 18:13:54 faschinj Exp $
+! $Id: parameterization_interface.F,v 1.85 2008-05-05 18:51:57 faschinj Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -72,7 +72,7 @@
        use saturation, only: rsat ! Saturation mixing ratio
        use wp23, only: timestep_wp23
        use stats_prec, only: time_prec
-       use error_code, only : CLUBB_var_equals_NaN,
+       use error_code, only : clubb_var_equals_NaN,
      .                        lapack_error,
      .                        clubb_at_debug_level
        use skw
@@ -279,7 +279,7 @@
           ! Subroutine may produce NaN values, and if so, exit
           ! gracefully.
           ! Joshua Fasching March 2008
-          if( err_code == CLUBB_var_equals_NaN ) return
+          if( err_code == clubb_var_equals_NaN ) return
     
        ELSE
           ! Variances for cases where the lowest level is not at the surface.
@@ -410,7 +410,7 @@
         ! gracefully.
         ! Joshua Fasching March 2008
          
-        if( err_code == CLUBB_var_equals_NaN ) then
+        if( err_code == clubb_var_equals_NaN ) then
             print *, "At grid level = ",k
             return
          endif
@@ -488,7 +488,7 @@
        ! Subroutine may produce NaN values, and if so, exit
        ! gracefully.
        ! Joshua Fasching March 2008       
-       if( err_code == CLUBB_var_equals_NaN ) return
+       if( err_code == clubb_var_equals_NaN ) return
 
 
        !----------------------------------------------------------------
@@ -857,7 +857,7 @@
         use diagnostic_variables
         use prognostic_variables
         use constants, only: fstderr, Lscale_max
-        use error_code, only: CLUBB_var_out_of_bounds
+        use error_code, only: clubb_var_out_of_bounds
         implicit none
 
         ! External
@@ -920,7 +920,7 @@
 
 !       Error Report
 !       Joshua Fasching February 2008
-        if ( err_code == CLUBB_var_out_of_bounds ) then
+        if ( err_code == clubb_var_out_of_bounds ) then
                 
            write(fstderr,*) "Error in parameterization_setup"
            
