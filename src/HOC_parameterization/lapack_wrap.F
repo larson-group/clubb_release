@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: lapack_wrap.F,v 1.6 2008-04-04 20:10:00 faschinj Exp $
+! $Id: lapack_wrap.F,v 1.7 2008-05-05 18:44:58 faschinj Exp $
         module lapack_wrap
 
 !       Description:
@@ -11,9 +11,9 @@
 !       URL: <http://netlib2.cs.utk.edu/lapack/>
 !-----------------------------------------------------------------------
         use constants, only: fstderr
-        use error_code, only: CLUBB_singular_matrix,
-     l                        CLUBB_bad_lapack_arg,
-     .                        CLUBB_no_error   
+        use error_code, only: clubb_singular_matrix,
+     l                        clubb_bad_lapack_arg,
+     .                        clubb_no_error   
         implicit none
 
         ! Simple routines
@@ -137,11 +137,11 @@
         case( :-1 )
           write(fstderr,*) trim( solve_type )//
      .      "illegal value in argument", -info
-          err_code = CLUBB_bad_lapack_arg
+          err_code = clubb_bad_lapack_arg
 
         case( 0 )
         ! Success!
-        err_code = CLUBB_no_error
+        err_code = clubb_no_error
 
         case( 1: )
           if ( info == ndim+1 ) then
@@ -150,11 +150,11 @@
             write(fstderr,'(a,e12.5)') 
      .        "Estimate of the reciprocal of the"//
      .        " condition number: ", rcond
-            err_code = CLUBB_no_error
+            err_code = clubb_no_error
           else
             write(fstderr,*) solve_type//
      .        " singular matrix."
-            err_code = CLUBB_singular_matrix
+            err_code = clubb_singular_matrix
           end if
 
         end select
@@ -229,22 +229,22 @@
         case( :-1 )
           write(fstderr,*) trim( solve_type )//
      .      " illegal value in argument", -info
-          err_code = CLUBB_bad_lapack_arg
+          err_code = clubb_bad_lapack_arg
 
         case( 0 )
           ! Success!
           solution = rhs
-          err_code = CLUBB_no_error
+          err_code = clubb_no_error
 
         case( 1: )
           if ( info == ndim+1 ) then
             write(fstderr,*) trim( solve_type )//
      .        " matrix is singular to working precision."
-            err_code = CLUBB_no_error
+            err_code = clubb_no_error
           else
             write(fstderr,*) trim( solve_type )//
      .        " singular matrix."
-            err_code = CLUBB_singular_matrix
+            err_code = clubb_singular_matrix
           end if
 
         end select
@@ -414,11 +414,11 @@
         case( :-1 )
           write(fstderr,*) trim( solve_type )//
      .      " illegal value for argument", -info
-          err_code = CLUBB_bad_lapack_arg
+          err_code = clubb_bad_lapack_arg
 
         case( 0 )
         ! Success!
-        err_code = CLUBB_no_error
+        err_code = clubb_no_error
 
         case( 1: )
           if ( info == ndim+1 ) then
@@ -427,11 +427,11 @@
             write(fstderr,'(a,e12.5)') 
      .        "Estimate of the reciprocal of the"//
      .        " condition number: ", rcond
-            err_code = CLUBB_no_error
+            err_code = clubb_no_error
           else
             write(fstderr,*) trim( solve_type )//
      .        " band solver: singular matrix"
-            err_code = CLUBB_singular_matrix
+            err_code = clubb_singular_matrix
           end if
 
         end select
@@ -561,22 +561,22 @@
         case( :-1 )
           write(fstderr,*) trim( solve_type )//
      .      " illegal value for argument ", -info
-          err_code = CLUBB_bad_lapack_arg
+          err_code = clubb_bad_lapack_arg
 
         case( 0 )
         ! Success!
         solution = rhs
-        err_code = CLUBB_no_error
+        err_code = clubb_no_error
 
         case( 1: )
           if ( info == ndim+1 ) then
             write(fstderr,*) trim( solve_type )//
      .        " Warning: matrix singular to working precision"
-            err_code = CLUBB_no_error
+            err_code = clubb_no_error
           else
             write(fstderr,*) trim( solve_type )//
      .        " band solver: singular matrix"
-            err_code = CLUBB_singular_matrix
+            err_code = clubb_singular_matrix
           end if
 
         end select
