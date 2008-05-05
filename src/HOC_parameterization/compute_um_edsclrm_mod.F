@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F,v 1.6 2008-04-23 18:13:54 faschinj Exp $
+! $Id: compute_um_edsclrm_mod.F,v 1.7 2008-05-05 18:41:25 faschinj Exp $
 !------------------------------------------------------------------------
         module compute_um_edsclrm_mod
 
@@ -62,7 +62,7 @@
      .  xpwp   ! Momentum flux                              [units vary]
 
         integer, intent(out) ::
-     .  err_code ! CLUBB_singular_matrix when matrix is singular
+     .  err_code ! clubb_singular_matrix when matrix is singular
 
         ! Local Variables
         real,  dimension(gr%nnzp) :: a, b, c, rhs
