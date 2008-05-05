@@ -1,4 +1,15 @@
 !----------------------------------------------------------------------
+      module coamps_micro_driver_mod
+
+      ! This module wraps the adjtq subroutine so that it may be used by
+      ! CLUBB
+
+      public :: coamps_micro_driver
+
+      private
+
+      contains      
+
       subroutine coamps_micro_driver
      .       ( runtype, kk, kmax, timea_in, deltf_in,
      .         rtm, wmm, p, exner, rhot,
@@ -27,7 +38,7 @@
       use grid_class, only: zt2zm
       use saturation, only: rsat, rsati
       use stats_prec, only: time_prec
-
+      use error_code, only: clubb_debug
 #ifdef STATS
       use stats_hoc, only: zt, zm, lstats_samp,
      .    imean_vol_rad_rain,
@@ -467,7 +478,8 @@ c End of ajsmith4's addition
       rvm = rtm - rcm
 
       if ( any( rvm < 0. ) ) then
-        write(fstderr,*) "in COAMPS (R) micro driver rvm < 0"
+!        write(fstderr,*) "in COAMPS (R) micro driver rvm < 0"
+        call clubb_debug(1, 'in COAMPS (R) micro driver rvm < 0')
         where ( rvm < 0. ) rvm = 0.
       end if
 
@@ -877,3 +889,5 @@ c End of ajsmith4's additions
 
       return
       end subroutine coamps_micro_driver
+
+      end module coamps_micro_driver_mod
