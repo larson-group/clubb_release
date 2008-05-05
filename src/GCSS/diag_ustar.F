@@ -1,3 +1,14 @@
+!$Id: diag_ustar.F,v 1.2 2008-05-05 18:37:40 faschinj Exp $
+
+      module diag_ustar_mod
+
+      implicit none
+      
+      public :: diag_ustar
+
+      private
+      
+      contains
 ! ----------------------------------------------------------------------
 !
 ! DISCLAIMER : this code appears to be correct but has not been
@@ -62,3 +73,5 @@
 
       return
       end function diag_ustar
+
+      end module diag_ustar_mod
