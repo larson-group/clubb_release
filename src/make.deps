@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.37 2008-05-05 18:19:46 dschanen Exp $
+# $Id: make.deps,v 1.38 2008-05-05 18:29:16 faschinj Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -143,9 +143,9 @@ mpace_a.o     : constants.o model_flags.o grid.o stats_hoc.o mpace_a.F interpola
 mpace_b.o     : constants.o model_flags.o grid.o stats_hoc.o mpace_b.F
 nov11.o     : constants.o model_flags.o grid.o stats_hoc.o nov11.F
 jun25.o     : constants.o model_flags.o grid.o stats_hoc.o jun25.F
-clex9_nov02.o : constants.o cos_solar_zen.o model_flags.o grid.o stats_hoc.o \
+clex9_nov02.o : constants.o cos_solar_zen.o rad_lwsw.o model_flags.o grid.o stats_hoc.o \
 	clex9_nov02.F
-clex9_oct14.o : constants.o cos_solar_zen.o model_flags.o grid.o stats_hoc.o \
+clex9_oct14.o : constants.o cos_solar_zen.o rad_lwsw.o model_flags.o grid.o stats_hoc.o \
 	clex9_oct14.F
 rico.o      : constants.o model_flags.o grid.o stats_hoc.o rico.F
 wangara.o   : constants.o model_flags.o grid.o wangara.F
