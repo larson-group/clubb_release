@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc_inputfields.F,v 1.18 2008-04-23 17:58:52 faschinj Exp $
+! $Id: hoc_inputfields.F,v 1.19 2008-05-05 18:19:36 faschinj Exp $
 
         program hoc_inputfields
 
@@ -13,8 +13,8 @@
         use inputfields
         use param_index, only: nparams
         use parameters, only: read_parameters
-        use error_code, only: CLUBB_no_error,
-     .                        any_error
+        use error_code, only: clubb_no_error,
+     .                        fatal_error
 
         implicit none
 
@@ -59,14 +59,14 @@
         close(unit=iunit)
 
         ! Initialize the status of the run
-        err_code = CLUBB_no_error
+        err_code = clubb_no_error
 
         ! Run the model
         call hoc_model
      .       ( params, trim( run_file ), err_code, stdout,
      .         grads_fields_reader, sample_ratio )
 
-      if ( any_error(err_code)) then
+      if ( fatal_error(err_code)) then
        
         stop "Model wasn't valid, check your constants and field input"
       else

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: budget_terms.F,v 1.31 2008-04-23 18:25:13 faschinj Exp $     
+! $Id: budget_terms.F,v 1.32 2008-05-05 18:19:36 faschinj Exp $     
 
       module budget_terms
 
@@ -174,7 +174,7 @@
         subroutine setup_budget_terms( budget_file, ftol )
 
         use inputfields
-        use error_code, only: any_error
+        use error_code, only: fatal_error
 
         implicit none
 
@@ -220,7 +220,7 @@
 
         times = times_nl(1:size(times))
 
-        err_code = CLUBB_no_error
+        err_code = clubb_no_error
 
         return
         end subroutine setup_budget_terms
@@ -313,7 +313,7 @@
 !       Calculate Y-vector
         do i=1, mdim
           diff_array(i) = func_min( const_array(i,:) )
-          if ( any_error( err_code ) ) then
+          if ( fatal_error( err_code ) ) then
                  stop "Initial constants must be valid"
           endif
         enddo
@@ -435,7 +435,7 @@
 !       Calculate Y-vector
         do i=1, mdim
           diff_array(i) = func_min( const_array(i,:) )
-          if ( any_error( err_code ) ) then 
+          if ( fatal_error( err_code ) ) then 
              stop "Initial constants must be valid"
           endif
         enddo
@@ -560,7 +560,7 @@
 !       Calculate Y-vector
         do i=1, mdim
           diff_array(i) = func_min( const_array(i,:) )
-          if ( any_error(err_code) ) then
+          if ( fatal_error(err_code) ) then
           
              stop "Initial constants must be valid"
            endif
@@ -697,7 +697,7 @@
 !       Calculate Y-vector
         do i=1, mdim
           diff_array(i) = func_min( const_array(i,:) )
-          if ( any_error(err_code) ) then
+          if ( fatal_error(err_code) ) then
              stop "Initial constants must be valid"
           endif
         enddo
@@ -787,7 +787,7 @@
      .                  run_file, err_code, .false.,
      .                  grads_fields_reader, sample_ratio )
 
-        if ( any_error(err_code) ) then
+        if ( fatal_error(err_code) ) then
           wp2_min = 2 * maxval( diff_array ) - minval( diff_array )
           return
         endif
@@ -841,7 +841,7 @@
      .                  run_file, err_code, .false.,
      .                  grads_fields_reader, sample_ratio )
 
-        if ( any_error(err_code) ) then
+        if ( fatal_error(err_code) ) then
         
           wp3_min = 2 * maxval( diff_array ) - minval( diff_array )
           return
@@ -895,7 +895,7 @@
      .                  run_file, err_code, .false.,
      .                  grads_fields_reader, sample_ratio )
 
-        if ( any_error(err_code)) then
+        if ( fatal_error(err_code)) then
         
           wprtp_min = 2 * maxval( diff_array ) - minval( diff_array )
           return
@@ -949,7 +949,7 @@
      .                  run_file, err_code, .false.,
      .                  grads_fields_reader, sample_ratio )
 
-        if ( any_error(err_code) ) then
+        if ( fatal_error(err_code) ) then
         
           wpthlp_min = 2 * maxval( diff_array ) - minval( diff_array )
           return
@@ -1006,7 +1006,7 @@
      .                  run_file, err_code, .false.,
      .                  grads_fields_reader, sample_ratio )
 
-        if ( any_error(err_code) ) then
+        if ( fatal_error(err_code) ) then
         
           rtp2_min = 2 * maxval( diff_array ) - minval( diff_array )
           return
@@ -1063,7 +1063,7 @@
      .                  run_file, err_code, .false.,
      .                  grads_fields_reader, sample_ratio )
 
-        if ( any_error(err_code) ) then
+        if ( fatal_error(err_code) ) then
         
           thlp2_min = 2 * maxval( diff_array ) - minval( diff_array )
           return
@@ -1119,7 +1119,7 @@
      .                  run_file, err_code, .false.,
      .                  grads_fields_reader, sample_ratio )
 
-        if( any_error(err_code) ) then
+        if( fatal_error(err_code) ) then
         
           rtpthlp_min = 2 * maxval( diff_array ) - minval( diff_array )
           return
@@ -1515,7 +1515,7 @@
      .                  run_file, err_code, .false.,
      .                  grads_fields_reader, sample_ratio )
 
-        if ( any_error(err_code) ) then
+        if ( fatal_error(err_code) ) then
         
           gen_betagamma_min = 2*maxval( diff_array )
      .                           - minval( diff_array )

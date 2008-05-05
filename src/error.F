@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.51 2008-04-23 17:58:52 faschinj Exp $
+! $Id: error.F,v 1.52 2008-05-05 18:19:36 faschinj Exp $
 
         module error
  
@@ -133,7 +133,7 @@
 !       None
 !-----------------------------------------------------------------------
         use constants, only: fstdout, fstderr
-        use error_code, only: any_error
+        use error_code, only: fatal_error
         implicit none
 
         ! Constant Variables
@@ -330,7 +330,7 @@
         ! invalid values for variations on the initial vector, but that 
         ! algorithm relies on the initial vector being valid. 
 
-        if ( any_error(err_code) ) then
+        if ( fatal_error(err_code) ) then
         
           write(fstderr,*) "Initial variable values must be valid."
           stop
@@ -371,8 +371,8 @@
         use hoc, only: hoc_model
         use grads_common
         use parameters, only: params_list
-        use error_code, only: CLUBB_no_error,
-     .                        any_error
+        use error_code, only: clubb_no_error,
+     .                        fatal_error
 
         implicit none
 
@@ -456,8 +456,8 @@
         err_sum  = 0.0
         err_sums = 0.0
         c_terms  = 0
-        err_code     = CLUBB_no_error
-        run_stat(1:c_total) = CLUBB_no_error
+        err_code     = clubb_no_error
+        run_stat(1:c_total) = clubb_no_error
 
         ! Copy simplex into a vector of all possible HOC parameters
         do i=1, nparams, 1
@@ -509,7 +509,7 @@
 
         ! If it has, it returns higher value than those previous to
         ! Amoeba (the downhill simplex)
-        if ( any_error(err_code) ) then
+        if ( fatal_error(err_code) ) then
         
           min_les_hoc_diff = 2 * maxval( cost_fnc_vector ) 
      .                     - minval( cost_fnc_vector )
