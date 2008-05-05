@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.52 2008-05-01 13:56:08 griffinb Exp $
+! $Id: mixing.F,v 1.53 2008-05-05 18:48:19 faschinj Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -69,7 +69,8 @@
         use grid_class
         use stats_prec, only: time_prec
         use error_code, only: lapack_error,
-     .                        clubb_at_debug_level     
+     .                        clubb_at_debug_level,
+     .                        clubb_debug     
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
@@ -254,6 +255,7 @@
 !           rtm(k) = 0.0
             write(fstderr,*) "rtm < 0 in mixing at k= ", k 
           endif
+
         enddo
                 
 #ifdef STATS
@@ -956,7 +958,7 @@
         use stats_prec, only: time_prec
         use lapack_wrap, only: band_solve, band_solvex
         use pos_definite_mod, only: pos_definite_adj
-        use error_code, only: CLUBB_no_error
+        use error_code, only: lapack_error
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
@@ -1136,7 +1138,7 @@
 #endif /*STATS*/
 
         ! Return if the solver has failed
-        if ( err_code /= CLUBB_no_error ) return
+        if ( lapack_error( err_code ) ) return
 
         ! Apply a flux limiting positive definite scheme if the solution 
         ! for the mean field is negative and we're determining total water
