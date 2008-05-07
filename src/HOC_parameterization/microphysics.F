@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.42 2008-05-05 18:46:50 faschinj Exp $
+! $Id: microphysics.F,v 1.43 2008-05-07 15:42:14 griffinb Exp $
         module microphysics
 
 !       Description:
@@ -18,7 +18,7 @@
         private :: adj_microphys_tndcy
 
         ! Functions
-        private :: sedimentation, advection, diffusion_hm
+        private :: sedimentation
 
         private ! Default
 
@@ -906,6 +906,7 @@
         use grid_class
         use stats_prec, only: time_prec
         use diffusion, only: diffusion_tlev
+        use mean_adv, only: term_ma_tlev_lhs
 #ifdef STATS
         use stats_hoc
 #endif
@@ -1000,17 +1001,18 @@
           lhs(kdiag,k) = lhs(kdiag,k) + ( 1.0 / dt )
 
           ! All diagonals
+
           ! Diffusion
           lhs(kp1diag:km1diag,k)
      .    = lhs(kp1diag:km1diag,k)
-!     .    + diffusion_hm( Kr(k), nu, gr%dzm(km1), gr%dzm(k), gr%dzt(k), 
-!     .                    k )
      .    + diffusion_tlev( Kr(k), Kr(km1), nu, 
      .                      gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+
           ! Mean Advection
           lhs(kp1diag:km1diag,k)
      .    = lhs(kp1diag:km1diag,k)
-     .    + advection( wmt(k), gr%dzt(k), k )
+     .    + term_ma_tlev_lhs( wmt(k), gr%dzt(k), k )
+
           ! Sedimentation
           ! Note: originally pristine ice did not sediment, so it was
           ! setup to be disabled as needed, but now pristine ice does
@@ -1027,7 +1029,7 @@
           if ( lstats_samp ) then
 
             if ( ixrm_ma > 0 ) then
-              tmp(1:3) = advection( wmt(k), gr%dzt(k), k )
+              tmp(1:3) = term_ma_tlev_lhs( wmt(k), gr%dzt(k), k )
               ztscr01(k) = -tmp(3)
               ztscr02(k) = -tmp(2)
               ztscr03(k) = -tmp(1)
@@ -1043,8 +1045,6 @@
 
             if ( ixrm_dff > 0 ) then
               tmp(1:3)
-!     .        = diffusion_hm( Kr(k), nu, gr%dzm(km1), gr%dzm(k), 
-!     .                        gr%dzt(k), k )
      .        = diffusion_tlev( Kr(k), Kr(km1), nu, 
      .                          gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
               ztscr07(k) = -tmp(3)
@@ -1059,292 +1059,6 @@
 
         return
         end subroutine microphys_lhs
-
-!-----------------------------------------------------------------------
-        pure function diffusion_hm( Kr, nu, dzmm1, dzm, dzt, level ) 
-     .  result( lhs ) 
-
-!       Description:
-!       Vertical diffusion of a hydrometeor using an implicit scheme.
-
-!       References:
-!       None
-!-----------------------------------------------------------------------
-
-        use grid_class
-
-        implicit none
-
-        ! Constant parameters
-        integer, parameter ::
-     .  kp1diag = 1,
-     .  kdiag   = 2,
-     .  km1diag = 3
-
-        ! Input Variables
-        real, intent(in) :: Kr, nu ! Diffusion coefficients
-
-        real, intent(in) :: 
-     .  dzmm1, dzm, dzt ! Inverse of the grid spacing [m]
-
-        integer, intent(in) :: level ! thermo. level that the calc. is for.
-
-        ! Output
-        real, dimension(3) :: lhs
-
-        ! DESCRIPTION
-        !
-        ! This function handles the portion of the hydrometeor equation that
-        ! is concerned with eddy diffusion:
-        !
-        ! d(xx)/dt = ... + (Kr+nu) * [ d^2(xx)/(dz)^2 ] + ...
-        !
-        ! The normal discretization is to use the values of the hydrometeor, xx,
-        ! which is located on thermodynamic levels, from three levels -- the 
-        ! central level and one-level-above and one-level-below the central 
-        ! level.  These three values lead to two first derivatives centered at 
-        ! the intermediate momentum levels.  In turn, these two first 
-        ! derivatives lead to one second derivative centered at the central 
-        ! thermodynamic level.  This is illustrated in the diagram below:
-        !
-        ! ---xx(k+1)----------------------------------  t(k+1)
-        !
-        ! ===============d(xx)/dz=====================  m(k)
-        !
-        ! ---xx( k )------------------d^2(xx)/(dz)^2--  t(k)
-        !
-        ! ===============d(xx)/dz=====================  m(k-1)
-        !
-        ! ---xx(k-1)----------------------------------  t(k-1)
-        !
-        ! In equation form, this looks like:
-        !
-        ! nu * dzt(k)*[dzm(k)*(xx(k+1)-xx(k)) - dzm(k-1)*(xx(k)-xx(k-1))];
-        ! 
-        ! where dzt(k) and dzm(k) are 1/(delta z) at level k.
-        !
-        ! This is then moved to the left-hand side of the equation and 
-        ! rearranged to be placed onto a tridiagonal matrix.
-        !
-        ! However, there are special conditions at the boundaries, as any 
-        ! quantity cannot be diffused outside of the boundaries, but rather
-        ! builds up at the boundaries and then re-diffuses back into the rest of
-        ! the domain.  We define a "phantom-point" just outside the boundary to 
-        ! have the same value of the quantity as the point just inside the 
-        ! boundary.  This results in a zero derivative at the point of the 
-        ! boundary.  From a purely mathematical standpoint, any point that has a 
-        ! first derivative of zero will also have a second derivative of zero.  
-        ! Therefore, there will be no change to the quantity at the point of the 
-        ! boundary due to diffusional effects.  This is illustrated in the 
-        ! diagram of the lower boundary below:
-        !
-        ! --------------------xx(3)--------------------  t(3)
-        !
-        ! =============================================  m(2)
-        !
-        ! --------------------xx(2)--------------------  t(2)
-        !
-        ! ===SURFACE OR LOWER BOUNDARY (IMPERMEABLE)===  m(1)
-        !
-        ! ----"phantom point" xx(1) = xx(2)------------  t(1)
-        !
-        ! This is still discretized the same way as before, yielding:
-        !
-        ! nu * dzt(2)*[dzm(2)*(xx(3)-xx(2)) - dzm(1)*(xx(2)-xx(1))],
-        !
-        ! but since xx(1) = xx(2):
-        !
-        ! nu * dzt(2)*[dzm(2)*(xx(3)-xx(2))]
-        !
-        ! This is then moved to the left-hand side of the equation and 
-        ! rearranged to be placed onto a tridiagonal matrix.
-        !
-        ! The upper boundary is treated in the exact same way as the lower
-        ! boundary.  In HOC, the first thermodynamic level is below the surface,
-        ! so there are no diffusional effects at level 1.  The boundary levels
-        ! are level 2 and the top level.  Everything in between operates as 
-        ! normal.
-        !
-        ! Finally, it should be pointed out that this technique of discretizing
-        ! the equations leads to conservative differencing (for the diffusional
-        ! term), as long as the grid levels are equally spaced.  When 
-        ! conservative differencing is in place, the column totals in the LHS
-        ! matrix (for the diffusional term) should be equal to 0.  This insures
-        ! that the total amount of the quantity over the entire domain is being
-        ! conserved, meaning that nothing is lost due to diffusional effects.
-        ! This is illustrated in the matrix setup below:
-        !
-        ! Left-hand side matrix, diffusional term only; first five levels:
-        !
-        !   ----->
-        ! 0 | 0              0                               0                                   0
-        !   |
-        !   | 0   +(Kr+nu)*dzt(k)*dzm(k)     -(Kr+nu)*dzt(k)*dzm(k)                              0
-        !   |
-        !   | 0   -(Kr+nu)*dzt(k)*dzm(k-1)   +(Kr+nu)*dzt(k)*(dzm(k)+dzm(k-1))   -(Kr+nu)*dzt(k)*dzm(k)
-        !   |
-        !   | 0              0               -(Kr+nu)*dzt(k)*dzm(k-1)            +(Kr+nu)*dzt(k)*(dzm(k)+dzm(k-1))
-        !   |
-        !   | 0              0                               0                   -(Kr+nu)*dzt(k)*dzm(k-1)
-        !   |
-        !  \ /
-        !
-        ! Brian Griffin.  February 27, 2007.
-
-        if ( level == 1 ) then
-           ! k = 1; below surface; no effects.
-           lhs(kp1diag) = 0.0
-           lhs(kdiag)   = 0.0
-           lhs(km1diag) = 0.0
-
-        elseif ( level == 2 ) then
-           ! k = 2; lower boundary level.
-           lhs(kp1diag) = - (Kr+nu) * dzt * dzm
-           lhs(kdiag)   = + (Kr+nu) * dzt * dzm
-           lhs(km1diag) = 0.0
-
-        elseif ( level > 2 .and. level < gr%nnzp ) then
-           ! Most of the interior model; normal conditions.
-           lhs(kp1diag) = - (Kr+nu) * dzt * dzm
-           lhs(kdiag)   = + (Kr+nu) * dzt * ( dzm + dzmm1 )
-           lhs(km1diag) = - (Kr+nu) * dzt * dzmm1
-
-        elseif ( level == gr%nnzp ) then
-           ! k = gr%nnzp (top level); upper boundary level.
-           lhs(kp1diag) = 0.0
-           lhs(kdiag)   = + (Kr+nu) * dzt * dzmm1
-           lhs(km1diag) = - (Kr+nu) * dzt * dzmm1
-
-        endif
-
-        return
-        end function diffusion_hm
-
-!-----------------------------------------------------------------------
-        pure function advection( wmt, dzt, level )
-     .  result( lhs )
-
-!       Description:
-!       Mean advection term
-
-!       References:
-!       None
-!-----------------------------------------------------------------------
-
-        use grid_class
-
-        implicit none
-
-        ! Constant parameters
-        integer, parameter ::
-     .  kp1diag = 1,
-     .  kdiag   = 2,
-     .  km1diag = 3
-
-        real, intent(in) ::
-     .  wmt, ! w wind on t                      [m/s]
-     .  dzt  ! Inverse of the grid spacing      [m] 
-
-        integer, intent(in) :: level ! thermodynamic level of calculation.
-
-        integer ::
-     .  mk,   ! The index of momentum level k.
-     .  mkm1  ! The index of momentum level k-1.
-
-        ! Output
-        real, dimension(3) :: lhs
-
-        ! DESCRIPTION
-        !
-        ! This function handles the portion of the hydrometeor equation that
-        ! is concerned with mean advection in the vertical:
-        !
-        ! d(xx)/dt = ... -w * d(xx)/dz  + ...
-        !
-        ! The normal discretization is to use the values of the hydrometeor, xx,
-        ! which is located on thermodynamic levels, from three levels -- the 
-        ! central level and one-level-above and one-level-below the central 
-        ! level.  These three values lead to two averaged values centered at 
-        ! the intermediate momentum levels.  In turn, these two averaged 
-        ! values lead to one first derivative centered at the central 
-        ! thermodynamic level.  This is illustrated in the diagram below:
-        !
-        ! ---xx(k+1)----------------------------------  t(k+1)
-        !
-        ! ===============ave(xx)m=====================  m(k)
-        !
-        ! ---xx( k )------------------d(xx)/dz--------  t(k)
-        !
-        ! ===============ave(xx)m=====================  m(k-1)
-        !
-        ! ---xx(k-1)----------------------------------  t(k-1)
-        !
-        ! The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1) 
-        ! correspond with altitudes zt(k+1), zm(k), zt(k), zm(k-1), 
-        ! and zt(k-1), respectively.  The letter "t" is used for 
-        ! thermodynamic levels and the letter "m" is used for momentum 
-        ! levels.
-        !
-        ! The value for vertical wind velocity, w, is taken from the central
-        ! thermodynamic level (w is normally a momentum-level variable, but
-        ! the model also interpolates its value to thermodynamic levels).
-        !
-        ! In equation form, this looks like:
-        !
-        ! -w_t(k) * [dzt(k)*( (A*xx(k+1)+B*xx(k)) - (C*xx(k)+D*xx(k-1)) )];
-        !
-        ! where A, B, C, and D are weights of interpolation, such that:  
-        !    A = ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ),
-        !    B = 1 - [ ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ) ],
-        !    C = ( zm(k-1) - zt(k-1) ) / ( zt(k) - zt(k-1) ), and
-        !    D = 1 - [ ( zm(k-1) - zt(k-1) ) / ( zt(k) - zt(k-1) ) ];
-        ! 
-        ! and where dzt(k) = 1 / ( zm(k) - zm(k-1) ).
-        !
-        ! This is then moved to the left-hand side of the equation and 
-        ! rearranged to be placed onto a tridiagonal matrix.
-        !
-        ! Finally, it should be pointed out that this technique of discretizing
-        ! is not conservative.  Column totals at any level do not necessarily
-        ! add up to 0, as w may be different at any level.
-        !
-        ! Brian Griffin.  March 7, 2007.
-
-        ! The indices of the momentum levels that sandwich
-        ! the central thermodynamic level.
-        mk   = level
-        mkm1 = level - 1
-
-        if ( level == 1 ) then
-
-           ! k = 1; below surface; no effects.
-
-           lhs(kp1diag) = 0.0
-           lhs(kdiag)   = 0.0
-           lhs(km1diag) = 0.0
-
-        elseif ( level > 1 .and. level < gr%nnzp ) then
-
-           ! Most of the interior model; normal conditions.
-
-           lhs(kp1diag) = + wmt * dzt * gr%weights_zt2zm(1,mk)
-           lhs(kdiag)   = + wmt * dzt * (  gr%weights_zt2zm(2,mk)
-     .                                   - gr%weights_zt2zm(1,mkm1)  )
-           lhs(km1diag) = - wmt * dzt * gr%weights_zt2zm(2,mkm1)
-
-        elseif ( level == gr%nnzp ) then
-
-           ! k = gr%nnzp (top level); upper boundary level.
-
-           lhs(kp1diag) = + wmt * dzt * gr%weights_zt2zm(1,mk)
-           lhs(kdiag)   = + wmt * dzt * (  gr%weights_zt2zm(2,mk)
-     .                                   - gr%weights_zt2zm(1,mkm1)  )
-           lhs(km1diag) = - wmt * dzt * gr%weights_zt2zm(2,mkm1)
-
-        endif
-
-        return
-        end function advection
 
 !-----------------------------------------------------------------------
         pure function sedimentation( v_t, v_tm1, vt_tk, 
@@ -1625,6 +1339,7 @@
         use grid_class
         use stats_prec, only: time_prec
         use diffusion, only: diffusion_tlev
+        use mean_adv, only: term_ma_tlev_lhs
 !#ifdef STATS
 !        use stats_hoc
 !#endif /*STATS*/
@@ -1712,7 +1427,7 @@
 
         ! The implicit (LHS) value of the mean advection component of the
         ! equation used during the timestep that was just solved for.
-        tmp(1:3) = advection( wmt(k), gr%dzt(k), k )
+        tmp(1:3) = term_ma_tlev_lhs( wmt(k), gr%dzt(k), k )
 
         ma_subdiag  = -tmp(3) ! subdiagonal
         ma_maindiag = -tmp(2) ! main diagonal
@@ -1754,8 +1469,6 @@
         ! The implicit (LHS) value of the diffusion component of the
         ! equation used during the timestep that was just solved for.
         tmp(1:3)
-!     .     = diffusion_hm( Kr(k), nu, gr%dzm(km1), gr%dzm(k), 
-!     .                     gr%dzt(k), k )
      .     = diffusion_tlev( Kr(k), Kr(km1), nu, 
      .                       gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
 

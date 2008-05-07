@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mean_adv.F,v 1.3 2008-05-01 14:18:17 griffinb Exp $
+! $Id: mean_adv.F,v 1.4 2008-05-07 15:42:14 griffinb Exp $
 !===============================================================================
         module mean_adv
 
@@ -85,7 +85,7 @@
 !       References:
 !-----------------------------------------------------------------------
 
-        use grid_class ! gr%weights_zt2zm
+        use grid_class ! gr%weights_zt2zm, gr%nnzp
 
         implicit none
 
@@ -123,18 +123,59 @@
         ! and thermodynamic level (k-1).
         mkm1 = level - 1
 
-        ! Thermodynamic superdiagonal: [ x var_t(k+1,<t+1>) ]
-        lhs(kp1_tdiag)
-     .  = + wmt * dzt * gr%weights_zt2zm(t_above,mk)
+        if ( level == 1 ) then
 
-        ! Thermodynamic main diagonal: [ x var_t(k,<t+1>) ]
-        lhs(k_tdiag)
-     .  = + wmt * dzt * (   gr%weights_zt2zm(t_below,mk)
-     .                    - gr%weights_zt2zm(t_above,mkm1)   )
+           ! k = 1 (bottom level); lower boundary level.
 
-        ! Thermodynamic subdiagonal: [ x var_t(k-1,<t+1>) ]
-        lhs(km1_tdiag)
-     .  = - wmt * dzt * gr%weights_zt2zm(t_below,mkm1)
+           ! Thermodynamic superdiagonal: [ x var_t(k+1,<t+1>) ]
+           lhs(kp1_tdiag)
+     .     = 0.0
+
+           ! Thermodynamic main diagonal: [ x var_t(k,<t+1>) ]
+           lhs(k_tdiag)
+     .     = 0.0
+
+           ! Thermodynamic subdiagonal: [ x var_t(k-1,<t+1>) ]
+           lhs(km1_tdiag)
+     .     = 0.0
+
+
+        elseif ( level > 1 .and. level < gr%nnzp ) then
+
+           ! Most of the interior model; normal conditions.
+
+           ! Thermodynamic superdiagonal: [ x var_t(k+1,<t+1>) ]
+           lhs(kp1_tdiag)
+     .     = + wmt * dzt * gr%weights_zt2zm(t_above,mk)
+
+           ! Thermodynamic main diagonal: [ x var_t(k,<t+1>) ]
+           lhs(k_tdiag)
+     .     = + wmt * dzt * (   gr%weights_zt2zm(t_below,mk)
+     .                       - gr%weights_zt2zm(t_above,mkm1)   )
+
+           ! Thermodynamic subdiagonal: [ x var_t(k-1,<t+1>) ]
+           lhs(km1_tdiag)
+     .     = - wmt * dzt * gr%weights_zt2zm(t_below,mkm1)
+
+
+        elseif ( level == gr%nnzp ) then
+
+           ! k = gr%nnzp (top level); upper boundary level.
+
+           ! Thermodynamic superdiagonal: [ x var_t(k+1,<t+1>) ]
+           lhs(kp1_tdiag)
+     .     = 0.0
+
+           ! Thermodynamic main diagonal: [ x var_t(k,<t+1>) ]
+           lhs(k_tdiag)
+     .     = 0.0
+
+           ! Thermodynamic subdiagonal: [ x var_t(k-1,<t+1>) ]
+           lhs(km1_tdiag)
+     .     = 0.0
+
+
+        endif
 
         return
         end function term_ma_tlev_lhs
@@ -196,7 +237,7 @@
 !       References:
 !-----------------------------------------------------------------------
 
-        use grid_class ! gr%weights_zm2zt
+        use grid_class ! gr%weights_zm2zt, gr%nnzp
 
         implicit none
 
@@ -234,18 +275,59 @@
         ! and momentum level (k-1).
         tk = level
 
-        ! Momentum superdiagonal: [ x var_m(k+1,<t+1>) ]
-        lhs(kp1_mdiag)
-     .  = + wmm * dzm * gr%weights_zm2zt(m_above,tkp1)
+        if ( level == 1 ) then
 
-        ! Momentum main diagonal: [ x var_m(k,<t+1>) ]
-        lhs(k_mdiag)
-     .  = + wmm * dzm * (   gr%weights_zm2zt(m_below,tkp1)
-     .                    - gr%weights_zm2zt(m_above,tk)  )
+           ! k = 1; lower boundery level at surface.
 
-        ! Momentum subdiagonal: [ x var_m(k-1,<t+1>) ]
-        lhs(km1_mdiag)
-     .  = - wmm * dzm * gr%weights_zm2zt(m_below,tk)
+           ! Momentum superdiagonal: [ x var_m(k+1,<t+1>) ]
+           lhs(kp1_mdiag)
+     .     = 0.0
+
+           ! Momentum main diagonal: [ x var_m(k,<t+1>) ]
+           lhs(k_mdiag)
+     .     = 0.0
+
+           ! Momentum subdiagonal: [ x var_m(k-1,<t+1>) ]
+           lhs(km1_mdiag)
+     .     = 0.0
+
+
+        elseif ( level > 1 .and. level < gr%nnzp ) then
+
+           ! Most of the interior model; normal conditions.
+
+           ! Momentum superdiagonal: [ x var_m(k+1,<t+1>) ]
+           lhs(kp1_mdiag)
+     .     = + wmm * dzm * gr%weights_zm2zt(m_above,tkp1)
+
+           ! Momentum main diagonal: [ x var_m(k,<t+1>) ]
+           lhs(k_mdiag)
+     .     = + wmm * dzm * (   gr%weights_zm2zt(m_below,tkp1)
+     .                       - gr%weights_zm2zt(m_above,tk)  )
+
+           ! Momentum subdiagonal: [ x var_m(k-1,<t+1>) ]
+           lhs(km1_mdiag)
+     .     = - wmm * dzm * gr%weights_zm2zt(m_below,tk)
+
+
+        elseif ( level == gr%nnzp ) then
+
+           ! k = gr%nnzp (top level); upper boundary level.
+
+           ! Momentum superdiagonal: [ x var_m(k+1,<t+1>) ]
+           lhs(kp1_mdiag)
+     .     = 0.0
+
+           ! Momentum main diagonal: [ x var_m(k,<t+1>) ]
+           lhs(k_mdiag)
+     .     = 0.0
+
+           ! Momentum subdiagonal: [ x var_m(k-1,<t+1>) ]
+           lhs(km1_mdiag)
+     .     = 0.0
+
+
+        endif
 
         return
         end function term_ma_mlev_lhs
