@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.59 2008-05-05 18:51:57 faschinj Exp $
+! $Id: wp23.F,v 1.60 2008-05-07 18:21:19 griffinb Exp $
 !===============================================================================
         module wp23
 
@@ -154,18 +154,7 @@
 ! If this code is used, C11 is no longer relevant, i.e. constants
 !    are hardwired.
 
-! Calculate skewness arrays
-!       DO k = 1, gr%nnzp, 1
-
-!         km1 = MAX(k-1,1)
-!         kp1 = MIN(k+1,gr%nnzp)
-
-!         Skw_arr_t(k) = wp3(k) /
-!    .    ( (1.0/2.0) * MAX( wp2(km1)+wp2(k), wtol**2 ) )**(3.0/2.0)
-!         Skw_arr_m(k) = (1.0/2.0) * ( wp3(kp1)+wp3(k) ) /
-!    .                   MAX( wp2(k), wtol**2 )**(3.0/2.0)
-
-!       END DO
+        ! Calculate C_1 and C_11 as functions of skewness of w.
 
         C11_Skw_fnc(1:gr%nnzp) = 
      .  C11b + (C11-C11b)*EXP( -(1.0/2.0) * (Skwt(1:gr%nnzp)/C11c)**2 )
@@ -187,9 +176,7 @@
         wp3_zm = zt2zm( wp3 )
 
         ! Interpolate w'^2 from momentum levels to thermodynamic levels.
-        ! This is used for the clipping of w'^3 according to the value
-        ! of Sk_w after w'^2 and w'^3 have been advanced one timestep.
-        ! This is also used for extra diffusion based on a three-point 
+        ! This is used for extra diffusion based on a three-point 
         ! average of (w'^2)^2.
         wp2_zt = zm2zt( wp2 )
 
@@ -237,8 +224,7 @@
         call wp23_solve( dt, Scm, wmm, wmt, wpthvp, wp2thvp,
      .                   um, vm, upwp, vpwp, up2, vp2, Kw1,
      .                   Kw8, Skwt, taum, tauw3t, C1_Skw_fnc,
-     .                   C11_Skw_fnc, wp2_zt, wp3_zm, 
-     .                   wp2, wp3, err_code )
+     .                   C11_Skw_fnc, wp3_zm, wp2, wp3, err_code )
 
 !       Error output
 !       Joshua Fasching Feb 2008
@@ -284,8 +270,7 @@
         subroutine wp23_solve( dt, Scm, wmm, wmt, wpthvp, wp2thvp,
      .                         um, vm, upwp, vpwp, up2, vp2, Kw1,
      .                         Kw8, Skwt, tau1m, tauw3t, C1_Skw_fnc,
-     .                         C11_Skw_fnc, wp2_zt, wp3_zm, 
-     .                         wp2, wp3, err_code )
+     .                         C11_Skw_fnc, wp3_zm, wp2, wp3, err_code )
 
 !       Description:
 !       Decompose, and back substitute the matrix for wp2/wp3
@@ -339,7 +324,6 @@
      .  tauw3t,      ! Time-scale tau on thermodynamic levels    [s]
      .  C1_Skw_fnc,  ! C_1 parameter with Sk_w applied           [-]
      .  C11_Skw_fnc, ! C_11 parameter with Sk_w applied          [-]
-     .  wp2_zt,      ! w'^2 interpolated to thermodynamic levels [m^2/s^2]
      .  wp3_zm       ! w'^3 interpolated to momentum levels      [m^3/s^3]
 
         ! Input/Output Variables
@@ -362,8 +346,9 @@
      .  a3  ! a_3 (momentum levels); See eqn. 26 in `Equations for HOC' [-]
 
         real, dimension(gr%nnzp) :: 
-     .  a1_zt, ! a_1 interpolated to thermodynamic levels               [-]
-     .  a3_zt  ! a_3 interpolated to thermodynamic levels               [-]
+     .  a1_zt, ! a_1 interpolated to thermodynamic levels        [-]
+     .  a3_zt, ! a_3 interpolated to thermodynamic levels        [-]
+     .  wp2_zt ! w'^2 interpolated to thermodyamic levels        [m^2/s^2]
 
         real :: 
      .  rcond  ! Est. of the reciprocal of the condition #
@@ -603,13 +588,16 @@
         endif
 #endif /*STATS*/
 
+        ! Interpolate w'^2 from momentum levels to thermodynamic levels.
+        ! This is used for the clipping of w'^3 according to the value
+        ! of Sk_w now that w'^2 and w'^3 have been advanced one timestep.
+        wp2_zt = zm2zt( wp2 )
+
         ! Clip Skewness.
  
         do k = 1, gr%nnzp, 1
 
-           km1 = max(k-1,1)
-
-           call wp23_clip( wp2(km1), gr%zt(k), emin, eps, 
+           call wp23_clip( wp2_zt(k), gr%zt(k), emin, eps, 
      .                     wp2(k), wp3(k) )
 
         enddo
@@ -2381,7 +2369,7 @@
         end function wp3_term_pr1_rhs
 
 !===============================================================================
-        subroutine wp23_clip( wp2m1, zt, emin, eps, 
+        subroutine wp23_clip( wp2_zt, zt, emin, eps, 
      .                        wp2, wp3 )
 
 !       Description:
@@ -2400,20 +2388,20 @@
 
         ! Input Variables.
         real, intent(in) ::
-     .  wp2m1, ! w'^2 (k-1)                                [m^2/s^2]
-     .  zt,    ! Height at thermodynamic level (k)         [m]
-     .  emin,  ! Model parameter                           [m^2/s^2]
-     .  eps    ! Model parameter                           [-]
+     .  wp2_zt,   ! w'^2 interpolated to thermodynamic levels (k) [m^2/s^2]
+     .  zt,       ! Height at thermodynamic level (k)             [m]
+     .  emin,     ! Model parameter                               [m^2/s^2]
+     .  eps       ! Model parameter                               [-]
 
         ! Input/Output Variables
         real, intent(inout) ::
-     .  wp2,   ! w'^2 (k)                                  [m^2/s^2]
-     .  wp3    ! w'^3 (k)                                  [m^3/s^3]
+     .  wp2,      ! w'^2 (k)                                      [m^2/s^2]
+     .  wp3       ! w'^3 (k)                                      [m^3/s^3]
 
         ! Local Variables
         real :: 
-     .  atmp,  ! max(w'^2, eps) at thermodynamic level (k) [m^2/s^2]
-     .  ctmp   ! atmp^(3/2)                                [m^3/s^3]
+     .  atmp,     ! max(w'^2, eps) at thermodynamic level (k)     [m^2/s^2]
+     .  ctmp      ! atmp^(3/2)                                    [m^3/s^3]
 
 !  Vince Larson commented out the Andre et al clipping to see if we
 !     could avoid using it.  26 Jul 2007
@@ -2435,8 +2423,8 @@
 
         if ( zt <= 100.0 ) then ! Clip for 100 m. above ground.
 
-           atmp = max( ( ( wp2m1 + wp2 ) / 2.0 ) , eps )    ! w'^2 at t-levels
-           ctmp = atmp**(3.0/2.0)                           ! (w'^2)^(3/2)
+           atmp = max( wp2_zt, eps )    ! w'^2 at t-levels
+           ctmp = atmp**(3.0/2.0)       ! (w'^2)^(3/2)
            if ( wp3 >= 0.2 * sqrt(2.0) * ctmp ) then
               wp3 = 0.2 * sqrt(2.0) * ctmp
               ! Vince Larson added clipping for negative wp3
@@ -2458,10 +2446,10 @@
            !       lift the wp2 value in altitude one-half grid box
            !       every time it is called.  The line is unnecessary,
            !       and can be commented out.  Brian Griffin. 6/30/07.
-           atmp = max( 0.5 * ( wp2m1 + wp2 ), eps )        ! w'^2 at t-levels
-           ctmp = atmp**1.5                                ! (w'^2)^(3/2)
-           if ( wp3/ctmp > 4.5 ) then  ! Sk_w > 4.5
-              wp3 = 4.5 * ctmp         ! w'^3 = 4.5 * Sk_w
+           atmp = max( wp2_zt, eps )    ! w'^2 at t-levels
+           ctmp = atmp**1.5             ! (w'^2)^(3/2)
+           if ( wp3/ctmp > 4.5 ) then       ! Sk_w > 4.5
+              wp3 = 4.5 * ctmp              ! w'^3 = 4.5 * Sk_w
               !wp2 = atmp
            elseif ( wp3/ctmp < -4.5 ) then  ! Sk_w < -4.5
               wp3 = -4.5 * ctmp             ! w'^3 = -4.5 * Sk_w
