@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.85 2008-05-05 18:51:57 faschinj Exp $
+! $Id: parameterization_interface.F,v 1.86 2008-05-07 18:48:24 griffinb Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -226,12 +226,11 @@
        !----------------------------------------------------------------
 
        do k = 1, gr%nnzp, 1
-         km1 = max( k-1, 1 )
-         kp1 = min( k+1, gr%nnzp )
 
-         Skwt(k) = Skw_func( 0.5*(wp2(km1)+wp2(k)), wp3(k), wtol )
-         Skwm(k) = Skw_func( wp2(k), 0.5*(wp3(k)+wp3(kp1)), wtol )
-       end do
+         Skwt(k) = Skw_func( zm2zt(wp2,k), wp3(k), wtol )
+         Skwm(k) = Skw_func( wp2(k), zt2zm(wp3,k), wtol )
+
+       enddo
 
        ! SET SURFACE VALUES OF FLUXES (BROUGHT IN)
        wpthlp(1) = wpthlp_sfc
