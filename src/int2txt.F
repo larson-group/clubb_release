@@ -1,9 +1,11 @@
 !-----------------------------------------------------------------------
-! $Id: int2txt.F,v 1.3 2007-03-21 22:28:43 dschanen Exp $
+! $Id: int2txt.F,v 1.4 2008-05-08 14:14:12 vlarson Exp $
         program int2txt
 
 !       Description:
-!       Takes Input of 34 bytes of binary data, and outputs ASCII text.
+!       Takes 34 bytes of binary data as a command-line argument,
+!           and outputs ASCII text.
+!       Used by the tuner; invoked by tune/generate_seed.bash.
 !       Notes:  Not very useful on machines without a /dev/random, 
 !       though any 34 bytes of pseudo-random seed data would suffice.
 !-----------------------------------------------------------------------
