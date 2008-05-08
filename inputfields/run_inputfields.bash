@@ -25,7 +25,7 @@
 
 INPUTFIELDS_IN=$RUN_CASE'_inputfields.in'
 MODEL_IN='../model/'$RUN_CASE'_model.in'
-STATS_IN='../stats/'$RUN_CASE'_stats.in'
+STATS_IN='../stats/nobudgets_stats.in'
 
 if [ ! -e "$INPUTFIELDS_IN" ] ; then
 	echo $INPUTFIELDS_IN " does not exist"
