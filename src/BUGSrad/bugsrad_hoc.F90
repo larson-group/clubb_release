@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_hoc.F90,v 1.24 2008-05-05 18:24:47 faschinj Exp $
+! $Id: bugsrad_hoc.F90,v 1.25 2008-05-08 17:39:46 dschanen Exp $
 module bugsrad_hoc_mod
 
 public :: bugsrad_hoc
@@ -7,11 +7,14 @@ public :: bugsrad_hoc
 private
 
 contains
-subroutine bugsrad_hoc( alt, nz, lat_in_degrees, lon_in_degrees, &
-                        day, month, year, time,                  &
-                        thlm, rcm, rtm, rsnwm, rim,              & 
-                        cf, pinpa, exner, rhom,                  &
-                        radht, Frad, thlm_forcing )
+
+subroutine bugsrad_hoc &
+           ( alt, nz, lin_int_buffer,        &
+             lat_in_degrees, lon_in_degrees, &
+             day, month, year, time,         &
+             thlm, rcm, rtm, rsnwm, rim,     & 
+             cf, pinpa, pinpam, exner, rhom, &
+             radht, Frad, thlm_forcing )
 ! Description:
 ! Does the necessary operations to interface the HOC model with
 ! the bugsrad subprogram.
@@ -62,13 +65,6 @@ use stats_hoc, only: zt, zm, lstats_samp, &
 ! Number of levels to take from U.S. Std. Atmos tables
   integer, parameter :: std_atmos_buffer = 10 ! For typical cases
 
-! Number of levels to interpolate from the bottom of std_atmos to the top
-! of the HOC profile, hopefully enough to eliminate cooling spikes, etc. 
-  integer, parameter :: lin_int_buffer = 20
-
-! The sum of the above to two buffers
-  integer, parameter :: buffer = lin_int_buffer + std_atmos_buffer
-
 ! Input Variables
   real, intent(in) :: &
   lat_in_degrees,&! Latitude   [Degrees North]
@@ -81,6 +77,10 @@ use stats_hoc, only: zt, zm, lstats_samp, &
   nz,              & ! Vertical extent;  i.e. nnzp in the grid class
   day, month, year   ! Time of year
 
+! Number of levels to interpolate from the bottom of std_atmos to the top
+! of the HOC profile, hopefully enough to eliminate cooling spikes, etc. 
+  integer, intent(in) :: lin_int_buffer
+
   real, intent(in), dimension(nz) :: &
   alt,   & ! Altitudes of the model     [m]
   thlm,  & ! Liquid potential temp.     [K]
@@ -90,7 +90,8 @@ use stats_hoc, only: zt, zm, lstats_samp, &
   rtm,   & ! Total water mixing ratio   [kg/kg]
   rhom,  & ! Density                    [kg/m^3]
   cf,    & ! Cloud fraction             [%]
-  pinpa, & ! Pressure                   [Pa]
+  pinpa, & ! Pressure on the t grid     [Pa]
+  pinpam,& ! Pressure on the m grid     [Pa]
   exner    ! Exner function             [-]
 
 ! Input/Output Variables
@@ -110,30 +111,30 @@ use stats_hoc, only: zt, zm, lstats_samp, &
   radht_LW   ! LW heating rate         [K/s]
 
 ! Altered 3 Oct 2005 to be buffer levels higher
-  double precision, dimension(nlen,(nz-1)+buffer) :: &
+  double precision, dimension(nlen,(nz-1)+lin_int_buffer+std_atmos_buffer) :: &
   tempk,& ! Temperature            [K]
   rcil, & ! Ice mixing ratio       [kg/kg]
   o3l     ! Ozone mixing ratio     [kg/kg]
 
-  double precision, dimension(nlen,(nz-1)+buffer+1) :: &
+  double precision, dimension(nlen,(nz-1)+lin_int_buffer+std_atmos_buffer+1) :: &
   Frad_uLW, & ! LW upwelling flux         [W/m^2]
   Frad_dLW, & ! LW downwelling flux       [W/m^2]
   Frad_uSW, & ! SW upwelling flux         [W/m^2]
   Frad_dSW    ! SW downwelling flux       [W/m^2]
 
-  double precision, dimension(nlen,(nz-1)+buffer) :: &
+  double precision, dimension(nlen,(nz-1)+lin_int_buffer+std_atmos_buffer) :: &
   sp_humidity, & ! Specific humidity      [kg/kg]
   pinmb          ! Pressure in millibars  [hPa]
 
 ! Pressure in millibars for layers (calculated as an average of pinmb)
-  double precision, dimension(nlen,(nz-1)+buffer+1) :: &
+  double precision, dimension(nlen,(nz-1)+lin_int_buffer+std_atmos_buffer+1) :: &
   playerinmb ! [hPa]
 
-  double precision, dimension(nlen,(nz-1)+buffer) :: &
+  double precision, dimension(nlen,(nz-1)+lin_int_buffer+std_atmos_buffer) :: &
   dpl, &          ! Difference in pressure levels       [hPa]
   rsnwm2, rcm2, cf2 ! Two-dimensional copies of the input parameters
 
-  double precision, dimension(nlen,(nz-1)+buffer+1) :: &
+  double precision, dimension(nlen,(nz-1)+lin_int_buffer+std_atmos_buffer+1) :: &
   radht_SW2,&! SW Radiative heating rate        [W/m^2]
   radht_LW2  ! LW Radiative heating rate        [W/m^2]
 
@@ -152,19 +153,20 @@ use stats_hoc, only: zt, zm, lstats_samp, &
 
   integer :: i, j, z, z1, z2  ! Loop indices
 
+  integer :: buffer ! The sum of the two buffers
 !-----------------------------------------------------------------------
 
-! amu0 = 0.4329 ! Nov 11 Altocu value
-! Calculated value
+  buffer = lin_int_buffer + std_atmos_buffer
 
+! amu0 = 0.4329 ! Nov 11 Altocu value
+
+! Calculated value of cosine of the solar zenith angle
   amu0 = cos_solar_zen( day, month, year, time, lat_in_degrees, lon_in_degrees )
 
 ! Convert to millibars
-  pinmb(1,1:(nz-1))    = dble( pinpa(2:nz) / 100.0 ) ! t grid in HOC
+  pinmb(1,1:(nz-1))  = dble( pinpa(2:nz) / 100.0 ) ! t grid in HOC
 
-  playerinmb(1,2:nz-1) = dble( (pinmb(1,1:(nz-2)) + pinmb(1,2:nz-1))/ 2 ) ! m grid in HOC
-  playerinmb(1,1)      = ( dble( pinpa(1) / 100.0 ) + pinmb(1,2) ) / 2
-  playerinmb(1,nz)     = 2 * playerinmb(1,nz-1) - playerinmb(1,nz-2)
+  playerinmb(1,1:nz) = dble( pinpam / 100.0 ) ! m grid in HOC
 
 
 ! Convert theta_l to temperature
@@ -351,40 +353,39 @@ use stats_hoc, only: zt, zm, lstats_samp, &
 #endif /*STATS*/
 
   return
+end subroutine bugsrad_hoc
 !-----------------------------------------------------------------------
-  contains
 
 !-----------------------------------------------------------------------
+function flip( x, xdim )
+! Description:
 ! Flips a single dimension array (i.e. a vector), so the first element 
 ! becomes the last and vice versa for the whole column.  This is a 
 ! necessary part of the code because BUGSrad and HOC store altitudes in
 ! reverse order
 !-----------------------------------------------------------------------
-  function flip( x, xdim )
-    implicit none
+  implicit none
 
-!   Input
-    integer, intent(in) :: xdim
+  ! Input
+  integer, intent(in) :: xdim
 
-    double precision, dimension(xdim), intent(in) :: x
+  double precision, dimension(xdim), intent(in) :: x
 
-!   Output
+  ! Output
     double precision, dimension(xdim) :: flip
 
-!   Internal
-    double precision, dimension(xdim) :: tmp
-    integer indx
+  ! Internal
+  double precision, dimension(xdim) :: tmp
+  integer :: indx
 
-    do indx = 1, xdim, 1
-      tmp(indx) = x((xdim+1) - (indx))
-    end do
+  do indx = 1, xdim, 1
+    tmp(indx) = x((xdim+1) - (indx))
+  end do
 
-    flip = tmp
+  flip = tmp
 
-    return
-  end function flip
+  return
+end function flip
 !-----------------------------------------------------------------------
-
-end subroutine bugsrad_hoc
 
 end module bugsrad_hoc_mod

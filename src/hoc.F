@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.178 2008-05-08 16:36:00 griffinb Exp $
+! $Id: hoc.F,v 1.179 2008-05-08 17:39:46 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -1714,10 +1714,8 @@
         use clex9_nov02, only: clex9_nov02_tndcy ! Above surface
         use clex9_oct14, only: clex9_oct14_tndcy ! Above surface
         use wangara, only: wangara_tndcy, wangara_sfclyr
-
 #ifdef radoffline
-        !external :: bugsrad_hoc
-        use bugsrad_hoc_mod
+        use bugsrad_hoc_mod, only: bugsrad_hoc
 #endif
         implicit none
         
@@ -1743,6 +1741,8 @@
         real, dimension(gr%nnzp) :: 
      .    rtm_mc, ! r_t change due to microphysics     [kg/kg)/s] 
      .    thlm_mc ! thlm change due to microphysics    [K/s] 
+
+        integer :: lin_int_buffer
 
         integer :: k ! Vertical loop index variable
 
@@ -2265,17 +2265,20 @@
 
           ! Check for impossible negative values
           if (clubb_at_debug_level( 2 ) ) then
-             call rad_check( thlm, rcm, rtm, ricem,
-     .                    cf, p, exner, rhom )
-          endif
+            call rad_check( thlm, rcm, rtm, ricem,
+     .                      cf, p, exner, rhom )
+          end if
 
-          !print *, "Current time = ", time_current
-          call bugsrad_hoc( gr%zm, gr%nnzp, rlat, rlon,    ! In
-     .                      day, month, year, time_current,! In
-     .                      thlm, rcm, rtm, rsnowm, ricem, ! In
-     .                      cf, p, exner, rhom,            ! In
-     .                      radht, Frad,                   ! Out
-     .                      thlm_forcing )                 ! In/Out
+          ! Initially we will set this to a constant for testing purposes
+          lin_int_buffer = 20
+
+          call bugsrad_hoc( gr%zm, gr%nnzp, lin_int_buffer, ! In
+     .                      rlat, rlon,                     ! In
+     .                      day, month, year, time_current, ! In
+     .                      thlm, rcm, rtm, rsnowm, ricem,  ! In
+     .                      cf, p, zt2zm( p ), exner, rhom, ! In
+     .                      radht, Frad,                    ! Out
+     .                      thlm_forcing )                  ! In/Out
           
           if ( isnan2d( thlm_forcing ) ) then
             print *, "thlm_forcing after BUGSrad is NaN" 
