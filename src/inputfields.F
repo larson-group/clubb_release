@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputfields.F,v 1.14 2008-04-05 19:54:06 griffinb Exp $
+! $Id: inputfields.F,v 1.15 2008-05-08 21:46:08 griffinb Exp $
 
 ! Module inputfields
 
@@ -34,7 +34,6 @@
 
 
         public grads_fields_reader, compute_timestep
-        private interpolate_m
 
 !-----------------------------------------------------------------------
 ! SUBROUTINE grads_fields_reader( ) 
@@ -378,10 +377,19 @@
             call get_var( fread_var, "wpqtp", 
      .                    timestep, tmp1(1:gr%nnzp-1),
      .                    error )
-            call interpolate_m( tmp1(1:gr%nnzp-1), wprtp(3:gr%nnzp) )
-            ! Use linear extrapolation, assuming equal grid spacing,
-            ! although the boundary flux is usually solved in LES
-            ! or hoc via a subroutine like sfc_var.
+            ! tmp1 is the value of wprtp from the LES GrADS file.  
+            ! It has been output onto thermodynamic levels starting at 
+            ! thermodynamic level 3 on the CLUBB grid for this 
+            ! particular case.  Interpolate the read-in values of 
+            ! wprtp to their appropriate places on the momentum levels.
+            wprtp(3:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-2) )
+            ! Use the values of wprtp at momentum levels 4 and 3 to 
+            ! find the value at momentum level 2 through the use of
+            ! linear extension.  Then, use the values of wprtp at
+            ! momentum levels 3 and 2 to find the value at momentum
+            ! level 1 through the use of a linear extension.  It should 
+            ! be pointed out that the boundary flux is usually solved in
+            ! LES or hoc via a subroutine like sfc_var.
             wprtp(2) = 2. * wprtp(3) - wprtp(4) 
             wprtp(1) = 2. * wprtp(2) - wprtp(3) 
           endif
@@ -390,10 +398,19 @@
             call get_var( fread_var, "wpthlp", 
      .                    timestep, tmp1(1:gr%nnzp-1), 
      .                    error )
-            call interpolate_m( tmp1(1:gr%nnzp-1), wpthlp(3:gr%nnzp) )
-            ! Use linear extrapolation, assuming equal grid spacing,
-            ! although the boundary flux is usually solved in LES
-            ! or hoc via a subroutine like sfc_var.
+            ! tmp1 is the value of wpthlp from the LES GrADS file.  
+            ! It has been output onto thermodynamic levels starting at 
+            ! thermodynamic level 3 on the CLUBB grid for this 
+            ! particular case.  Interpolate the read-in values of 
+            ! wpthlp to their appropriate places on the momentum levels.
+            wpthlp(3:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-2) )
+            ! Use the values of wpthlp at momentum levels 4 and 3 to 
+            ! find the value at momentum level 2 through the use of
+            ! linear extension.  Then, use the values of wpthlp at
+            ! momentum levels 3 and 2 to find the value at momentum
+            ! level 1 through the use of a linear extension.  It should 
+            ! be pointed out that the boundary flux is usually solved in
+            ! LES or hoc via a subroutine like sfc_var.
             wpthlp(2) = 2. * wpthlp(3) - wpthlp(4)
             wpthlp(1) = 2. * wpthlp(2) - wpthlp(3)
           endif
@@ -402,8 +419,13 @@
             call get_var( fread_var, "qtp2", 
      .                    timestep,
      .                    tmp1(1:gr%nnzp-1), error )
-            call interpolate_m( tmp1(2:gr%nnzp), rtp2(3:gr%nnzp) )
-            ! Using a linear interpolation here resulted in negatives.
+            ! tmp1 is the value of rtp2 from the LES GrADS file.  
+            ! It has been output onto thermodynamic levels starting at 
+            ! thermodynamic level 3 on the CLUBB grid for this 
+            ! particular case.  Interpolate the read-in values of 
+            ! rtp2 to their appropriate places on the momentum levels.
+            rtp2(3:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-2) )
+            ! Using a linear extension here resulted in negatives.
             rtp2(1:2) =  rtp2(3)
             if ( any (rtp2(1:gr%nnzp) < 0.0 ) ) then
 ! %% debug
@@ -418,7 +440,13 @@
           if (present( thlp2 ) .and. input_thlp2) then 
             call get_var( fread_var, "thlp2", 
      .                    timestep, tmp1(1:gr%nnzp), error )
-            ! Using a linear interpolation here resulted in negatives.
+            ! tmp1 is the value of thlp2 from the LES GrADS file.  
+            ! It has been output onto thermodynamic levels starting at 
+            ! thermodynamic level 3 on the CLUBB grid for this 
+            ! particular case.  Interpolate the read-in values of 
+            ! thlp2 to their appropriate places on the momentum levels.
+            thlp2(3:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-2) )
+            ! Using a linear extension here resulted in negatives.
             thlp2(1:2) = thlp2(3)
           endif
 
@@ -426,10 +454,19 @@
             call get_var( fread_var, "qtpthlp", 
      .                    timestep, tmp1(1:gr%nnzp-1),
      .                    error )
-            call interpolate_m( tmp1(1:gr%nnzp-1), rtpthlp(3:gr%nnzp) )
-            ! Use linear extrapolation, assuming equal grid spacing,
-            ! although the boundary flux is usually solved in LES
-            ! or hoc via a subroutine like sfc_var.
+            ! tmp1 is the value of rtpthlp from the LES GrADS file.  
+            ! It has been output onto thermodynamic levels starting at 
+            ! thermodynamic level 3 on the CLUBB grid for this 
+            ! particular case.  Interpolate the read-in values of 
+            ! rtpthlp to their appropriate places on the momentum levels.
+            rtpthlp(3:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-2) )
+            ! Use the values of rtpthlp at momentum levels 4 and 3 to 
+            ! find the value at momentum level 2 through the use of
+            ! linear extension.  Then, use the values of rtpthlp at
+            ! momentum levels 3 and 2 to find the value at momentum
+            ! level 1 through the use of a linear extension.  It should 
+            ! be pointed out that the boundary flux is usually solved in
+            ! LES or hoc via a subroutine like sfc_var.
             rtpthlp(2) = 2. * rtpthlp(3) - rtpthlp(4)
             rtpthlp(1) = 2. * rtpthlp(2) - rtpthlp(3)
           endif
@@ -482,10 +519,17 @@
 !          if (present( wp2 )) then 
 !            call get_var( fread_var, "wp2", timestep,
 !     .                    tmp1(1:gr%nnzp), error )
-!            call interpolate_m( tmp1(1:gr%nnzp), wp2(2:gr%nnzp) )
-!            ! Use linear extrapolation, assuming equal grid spacing,
-!            ! although the boundary flux is usually solved in LES
-!            ! or hoc via a subroutine like sfc_var.
+!            ! tmp1 is the value of wp2 from the LES GrADS file.  
+!            ! It has been output onto thermodynamic levels starting at 
+!            ! the first level above ground (thermodynamic level 2 on 
+!            ! the CLUBB grid).  Interpolate the read-in values of 
+!            ! wp2 to their appropriate places on the momentum levels.
+!            wp2(2:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-1) )
+!            ! Use the values of wp2 at momentum levels 3 and 2 to 
+!            ! find the value at momentum level 1 through the use of
+!            ! linear extension.  It should be pointed out that the 
+!            ! boundary flux is usually solved in LES or hoc via a 
+!            ! subroutine like sfc_var.
 !            wp2(1) = 2. * wp2(2) - wp2(3)
 !          endif
 
@@ -493,10 +537,17 @@
             call get_var( fread_var, "wpqtp", 
      .                    timestep, tmp1(1:gr%nnzp),
      .                    error )
-            call interpolate_m( tmp1(1:gr%nnzp), wprtp(2:gr%nnzp) )
-            ! Use linear extrapolation, assuming equal grid spacing,
-            ! although the boundary flux is usually solved in LES
-            ! or hoc via a subroutine like sfc_var.
+            ! tmp1 is the value of wprtp from the LES GrADS file.  
+            ! It has been output onto thermodynamic levels starting at 
+            ! the first level above ground (thermodynamic level 2 on 
+            ! the CLUBB grid).  Interpolate the read-in values of 
+            ! wprtp to their appropriate places on the momentum levels.
+            wprtp(2:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-1) )
+            ! Use the values of wprtp at momentum levels 3 and 2 to 
+            ! find the value at momentum level 1 through the use of
+            ! linear extension.  It should be pointed out that the 
+            ! boundary flux is usually solved in LES or hoc via a 
+            ! subroutine like sfc_var.
             wprtp(1) = 2. * wprtp(2) - wprtp(3) 
           endif
 
@@ -504,10 +555,17 @@
             call get_var( fread_var, "wpthlp", 
      .                    timestep, tmp1(1:gr%nnzp), 
      .                    error )
-            call interpolate_m( tmp1(1:gr%nnzp), wpthlp(2:gr%nnzp) )
-            ! Use linear extrapolation, assuming equal grid spacing,
-            ! although the boundary flux is usually solved in LES
-            ! or hoc via a subroutine like sfc_var.
+            ! tmp1 is the value of wpthlp from the LES GrADS file.  
+            ! It has been output onto thermodynamic levels starting at 
+            ! the first level above ground (thermodynamic level 2 on 
+            ! the CLUBB grid).  Interpolate the read-in values of 
+            ! wpthlp to their appropriate places on the momentum levels.
+            wpthlp(2:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-1) )
+            ! Use the values of wpthlp at momentum levels 3 and 2 to 
+            ! find the value at momentum level 1 through the use of
+            ! linear extension.  It should be pointed out that the 
+            ! boundary flux is usually solved in LES or hoc via a 
+            ! subroutine like sfc_var.
             wpthlp(1) = 2. * wpthlp(2) - wpthlp(3)
           endif
 
@@ -515,8 +573,13 @@
             call get_var( fread_var, "qtp2", 
      .                    timestep,
      .                    tmp1(1:gr%nnzp), error )
-            call interpolate_m( tmp1(1:gr%nnzp), rtp2(2:gr%nnzp) )
-            ! Using a linear interpolation here resulted in negatives.
+            ! tmp1 is the value of rtp2 from the LES GrADS file.  
+            ! It has been output onto thermodynamic levels starting at 
+            ! the first level above ground (thermodynamic level 2 on 
+            ! the CLUBB grid).  Interpolate the read-in values of 
+            ! rtp2 to their appropriate places on the momentum levels.
+            rtp2(2:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-1) )
+            ! Using a linear extension here resulted in negatives.
             rtp2(1) =  rtp2(2)
             if ( any (rtp2(1:gr%nnzp) < 0.0 ) ) then
 ! %% debug
@@ -531,7 +594,13 @@
           if (present( thlp2 ) .and. input_thlp2) then 
             call get_var( fread_var, "thlp2", 
      .                    timestep, tmp1(1:gr%nnzp), error )
-            ! Using a linear interpolation here resulted in negatives.
+            ! tmp1 is the value of thlp2 from the LES GrADS file.  
+            ! It has been output onto thermodynamic levels starting at 
+            ! the first level above ground (thermodynamic level 2 on 
+            ! the CLUBB grid).  Interpolate the read-in values of 
+            ! thlp2 to their appropriate places on the momentum levels.
+            thlp2(2:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-1) )
+            ! Using a linear extension here resulted in negatives.
             thlp2(1) = thlp2(2)
           endif
 
@@ -540,10 +609,17 @@
      .                    timestep, 
      .                    tmp1(1:gr%nnzp),
      .                    error )
-            call interpolate_m( tmp1(1:gr%nnzp), rtpthlp(2:gr%nnzp) )
-            ! Use linear extrapolation, assuming equal grid spacing,
-            ! although the boundary flux is usually solved in LES
-            ! or hoc via a subroutine like sfc_var.
+            ! tmp1 is the value of rtpthlp from the LES GrADS file.  
+            ! It has been output onto thermodynamic levels starting at 
+            ! the first level above ground (thermodynamic level 2 on 
+            ! the CLUBB grid).  Interpolate the read-in values of 
+            ! rtpthlp to their appropriate places on the momentum levels.
+            rtpthlp(2:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-1) )
+            ! Use the values of rtpthlp at momentum levels 3 and 2 to 
+            ! find the value at momentum level 1 through the use of
+            ! linear extension.  It should be pointed out that the 
+            ! boundary flux is usually solved in LES or hoc via a 
+            ! subroutine like sfc_var.
             rtpthlp(1) = 2. * rtpthlp(2) - rtpthlp(3)
           endif
 
@@ -609,24 +685,6 @@
 
         return
         end subroutine grads_fields_reader
-!-----------------------------------------------------------------------
-! Works like zt2zm with a variation to take into account the higher LES
-!-----------------------------------------------------------------------
-        subroutine interpolate_m( x_in_t, x_in_m )
-
-        implicit none
-        
-        real, intent(in), dimension(:)  :: x_in_t ! nnzp
-        real, intent(out), dimension(:) :: x_in_m ! nnzp-1
-
-        integer k
-
-        do k=1, size(x_in_t)-1, 1
-          x_in_m(k) = ( x_in_t(k) + x_in_t(k+1) ) / 2
-        enddo
-
-        return
-        end subroutine interpolate_m
 !-------------------------------------------------------------------------
         subroutine compute_timestep( time, nearest_timestep )
 !
