@@ -873,13 +873,14 @@ c Adding calculation for snow particle number concentration
         if (isnowslope > 0) then
           do k = 2,kk,1
             zt%x(k,isnowslope) = zt%x(k,isnowslope) + snowslope(1,1,k)
+            zt%n(k,isnowslope) = zt%n(k,isnowslope) + 1
           end do
         end if
 
 c Addition by Adam Smith, 25 April 2008
 c Adding calculation for snow particle number concentration       
         if (iNsnowm > 0) then
-          zt%x(2:,iNsnowm) = zt%x(2:,iNsnowm) + Nsnowm(:)
+          zt%x(2:,iNsnowm) = zt%x(2:,iNsnowm) + Nsnowm(2:kk+1)
           zt%n(2:,iNsnowm) = zt%n(2:,iNsnowm) + 1
         end if
 c End of ajsmith4's additions
