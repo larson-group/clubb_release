@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.177 2008-05-05 18:27:00 faschinj Exp $
+! $Id: hoc.F,v 1.178 2008-05-08 16:36:00 griffinb Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -114,7 +114,9 @@
         use error_code, only: clubb_var_equals_NaN,
      .                        clubb_var_out_of_bounds,
      .                        clubb_rtm_level_not_found,
-     .                        fatal_error
+     .                        fatal_error,
+     .                        set_clubb_debug_level
+        use stats_prec, only: time_prec
 #ifdef STATS
         use stats_hoc, only: lstats_last
         use stats_subs
@@ -220,10 +222,16 @@
      .  niterlong,
      .  sample_time
 
+        integer ::
+     .  debug_level
+
         real :: 
      .  fcor,           ! Coriolis parameter            [s^-1]
      .  T0,             ! Reference Temperature         [K]
      .  ts_nudge        ! Timescale for u/v nudging     [s]
+
+        real(kind=time_prec) ::
+     .  time_restart    ! Time of model restart run     [s]
 
         logical :: 
      .  cloud_sed,    ! Flag for cloud water droplet sedimentation. - Brian
@@ -232,7 +240,11 @@
      .  lcoamps_micro,! Flag for COAMPS microphysical scheme
      .  lbugsrad,     ! Flag for BUGSrad interactive radiation scheme
      .  luv_nudge,    ! Whether to adjust the winds within the timestep
+     .  lrestart,     ! Flag for restarting from GrADS file
      .  lKhm_aniso    ! Whether to use anisotropic Khm.  - Michael Falk 2 Feb 2007
+
+        character(len=50) ::
+     .  restart_path_case ! GRADS file used in case of restart
 
         logical ::
      .  lstats ! Whether statistics are computed and output to disk
@@ -261,7 +273,8 @@
      .   dtmain, dtclosure,
      .   sfctype, Tsfc, psfc, SE, LE, fcor, T0, ts_nudge,
      .   cloud_sed, kk_rain, licedfs, lcoamps_micro, 
-     .   lbugsrad, lKhm_aniso, luv_nudge
+     .   lbugsrad, lKhm_aniso, luv_nudge, lrestart, restart_path_case,
+     .   time_restart, debug_level
 
        namelist /stats_setting/
      .   lstats, fname_prefix, stats_tsamp, stats_tout, stats_fmt
@@ -304,6 +317,10 @@
         lbugsrad      = .false.
         lKhm_aniso    = .false.
         luv_nudge     = .false.
+        lrestart      = .false.
+        restart_path_case = "none"
+        time_restart  = 0.
+        debug_level   = 2
 
         ! Pick some default values for stats_setting
         lstats       = .false.
@@ -317,6 +334,8 @@
        read(unit=10, nml=model_setting)
        read(unit=10, nml=stats_setting)
        close(unit=10)
+
+       call set_clubb_debug_level( debug_level )
 
        ! Dummy grid height arrays
        allocate( dummy_array_m(1:nzmax), dummy_array_t(1:nzmax) )
