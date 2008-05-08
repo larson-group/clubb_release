@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputfields.F,v 1.15 2008-05-08 21:46:08 griffinb Exp $
+! $Id: inputfields.F,v 1.16 2008-05-08 22:52:00 griffinb Exp $
 
 ! Module inputfields
 
@@ -34,6 +34,7 @@
 
 
         public grads_fields_reader, compute_timestep
+        private lin_ext_zm_bottom
 
 !-----------------------------------------------------------------------
 ! SUBROUTINE grads_fields_reader( ) 
@@ -390,8 +391,12 @@
             ! level 1 through the use of a linear extension.  It should 
             ! be pointed out that the boundary flux is usually solved in
             ! LES or hoc via a subroutine like sfc_var.
-            wprtp(2) = 2. * wprtp(3) - wprtp(4) 
-            wprtp(1) = 2. * wprtp(2) - wprtp(3) 
+            wprtp(2) 
+     .      = lin_ext_zm_bottom( wprtp(4), wprtp(3),
+     .                           gr%zm(4), gr%zm(3), gr%zm(2) )
+            wprtp(1) 
+     .      = lin_ext_zm_bottom( wprtp(3), wprtp(2),
+     .                           gr%zm(3), gr%zm(2), gr%zm(1) )
           endif
 
           if (present( wpthlp ) .and. input_wpthlp) then 
@@ -411,8 +416,12 @@
             ! level 1 through the use of a linear extension.  It should 
             ! be pointed out that the boundary flux is usually solved in
             ! LES or hoc via a subroutine like sfc_var.
-            wpthlp(2) = 2. * wpthlp(3) - wpthlp(4)
-            wpthlp(1) = 2. * wpthlp(2) - wpthlp(3)
+            wpthlp(2) 
+     .      = lin_ext_zm_bottom( wpthlp(4), wpthlp(3),
+     .                           gr%zm(4), gr%zm(3), gr%zm(2) )
+            wpthlp(1) 
+     .      = lin_ext_zm_bottom( wpthlp(3), wpthlp(2),
+     .                           gr%zm(3), gr%zm(2), gr%zm(1) )
           endif
 
           if (present( rtp2 ) .and. input_rtp2) then 
@@ -467,8 +476,12 @@
             ! level 1 through the use of a linear extension.  It should 
             ! be pointed out that the boundary flux is usually solved in
             ! LES or hoc via a subroutine like sfc_var.
-            rtpthlp(2) = 2. * rtpthlp(3) - rtpthlp(4)
-            rtpthlp(1) = 2. * rtpthlp(2) - rtpthlp(3)
+            rtpthlp(2) 
+     .      = lin_ext_zm_bottom( rtpthlp(4), rtpthlp(3),
+     .                           gr%zm(4), gr%zm(3), gr%zm(2) )
+            rtpthlp(1) 
+     .      = lin_ext_zm_bottom( rtpthlp(3), rtpthlp(2),
+     .                           gr%zm(3), gr%zm(2), gr%zm(1) )
           endif
 
           if ( error ) stop "oops, get_var failed in field_reader"
@@ -530,7 +543,9 @@
 !            ! linear extension.  It should be pointed out that the 
 !            ! boundary flux is usually solved in LES or hoc via a 
 !            ! subroutine like sfc_var.
-!            wp2(1) = 2. * wp2(2) - wp2(3)
+!            wp2(1) 
+!     .      = lin_ext_zm_bottom( wp2(3), wp2(2),
+!     .                           gr%zm(3), gr%zm(2), gr%zm(1) )
 !          endif
 
           if (present( wprtp ) .and. input_wprtp) then
@@ -548,7 +563,9 @@
             ! linear extension.  It should be pointed out that the 
             ! boundary flux is usually solved in LES or hoc via a 
             ! subroutine like sfc_var.
-            wprtp(1) = 2. * wprtp(2) - wprtp(3) 
+            wprtp(1) 
+     .      = lin_ext_zm_bottom( wprtp(3), wprtp(2),
+     .                           gr%zm(3), gr%zm(2), gr%zm(1) )
           endif
 
           if (present( wpthlp ) .and. input_wpthlp) then 
@@ -566,7 +583,9 @@
             ! linear extension.  It should be pointed out that the 
             ! boundary flux is usually solved in LES or hoc via a 
             ! subroutine like sfc_var.
-            wpthlp(1) = 2. * wpthlp(2) - wpthlp(3)
+            wpthlp(1) 
+     .      = lin_ext_zm_bottom( wpthlp(3), wpthlp(2),
+     .                           gr%zm(3), gr%zm(2), gr%zm(1) )
           endif
 
           if (present( rtp2 ) .and. input_rtp2) then 
@@ -620,7 +639,9 @@
             ! linear extension.  It should be pointed out that the 
             ! boundary flux is usually solved in LES or hoc via a 
             ! subroutine like sfc_var.
-            rtpthlp(1) = 2. * rtpthlp(2) - rtpthlp(3)
+            rtpthlp(1) 
+     .      = lin_ext_zm_bottom( rtpthlp(3), rtpthlp(2),
+     .                           gr%zm(3), gr%zm(2), gr%zm(1) )
           endif
 
           if ( error ) stop "oops, get_var failed in field_reader"
@@ -685,7 +706,36 @@
 
         return
         end subroutine grads_fields_reader
-!-------------------------------------------------------------------------
+
+!===============================================================================
+        pure function lin_ext_zm_bottom( var_zmp2, var_zmp1,
+     .                                   zmp2, zmp1, zm )
+     .  result( var_zm )
+
+!       Description:
+!       This function computes the value of a momentum-level variable
+!       at a bottom grid level by using a linear extension of the values
+!       of the variable at the two levels immediately above the level
+!       where the result value is needed.
+
+        ! Input Variables
+        real, intent(in) ::
+     .  var_zmp2,   ! Momentum level variable at level (k+2)   [units vary]
+     .  var_zmp1,   ! Momentum level variable at level (k+1)   [units vary]
+     .  zmp2,       ! Altitude at momentum level (k+2)         [m]
+     .  zmp1,       ! Altitude at momentum level (k+1)         [m]
+     .  zm          ! Altitude at momentum level (k)           [m]
+
+        ! Return Variable
+        real :: var_zm  ! Momentum level variable at level (k) [units vary]
+
+        var_zm = ( ( var_zmp2 - var_zmp1 ) / ( zmp2 - zmp1 ) )
+     .           * ( zm - zmp1 ) + var_zmp1
+
+        return
+        end function lin_ext_zm_bottom
+
+!===============================================================================
         subroutine compute_timestep( time, nearest_timestep )
 !
 !       Description: Given a time 'time', determines the closest 
