@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: param_index.F,v 1.6 2008-04-30 23:03:37 dschanen Exp $
+! $Id: param_index.F,v 1.7 2008-05-09 16:33:07 faschinj Exp $
         module param_index
 
 !       Description:
@@ -21,6 +21,8 @@
 !-----------------------------------------------------------------------
 
         implicit none
+
+        public ! All elements in this module are public
 
         integer, parameter :: 
      .  nparams = 50 ! Total tunable parameters
