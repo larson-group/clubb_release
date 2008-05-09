@@ -1,9 +1,13 @@
-! $Id: ice_dfsn_mod.F,v 1.3 2008-04-05 19:54:32 griffinb Exp $        
+! $Id: ice_dfsn_mod.F,v 1.4 2008-05-09 16:20:57 faschinj Exp $        
 
         module ice_dfsn_mod
 
+        implicit none
+
         public  :: ice_dfsn
         private :: Diff_denom
+
+        private
 
         contains
 !-----------------------------------------------------------------------
