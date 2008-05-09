@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_sfc.F,v 1.5 2008-03-31 18:30:12 faschinj Exp $
+! $Id: stats_sfc.F,v 1.6 2008-05-09 22:32:23 faschinj Exp $
 #ifdef STATS
       
       module stats_sfc
@@ -69,31 +69,31 @@
           iustar = k
 
           call stat_assign(iustar,"ustar",
-     .         "ustar","m/s",sfc)
+     .         "ustar [m/s]","m/s",sfc)
           k = k + 1
 
         case ('lh')
           ilh = k
           call stat_assign(ilh,"lh",
-     .         "lh","W/m2",sfc)
+     .         "Surface latent heating [W/m^2]","W/m2",sfc)
           k = k + 1
 
         case ('sh')
           ish = k
           call stat_assign(ish,"sh",
-     .         "sh","W/m2",sfc)
+     .         "Surface sensible heating [W/m^2]","W/m2",sfc)
           k = k + 1
 
         case ('cc')
           icc = k
           call stat_assign(icc,"cc",
-     .         "cc","count",sfc)
+     .         "Cloud cover","count",sfc)
           k = k + 1
 
         case ('lwp')
           ilwp = k
           call stat_assign(ilwp,"lwp",
-     .         "lwp","kg/m2",sfc)
+     .         "Liquid water path [kg/m^2]","kg/m2",sfc)
           k = k + 1
 
         case ('zb')
@@ -111,14 +111,14 @@
         case ('rain')          ! Brian
           irain = k
           call stat_assign(irain,"rain_rate",
-     .         "rainfall rate (mm/day)","mm/day",sfc)
+     .         "Surface rainfall rate [mm/day]","mm/day",sfc)
           k = k + 1
 
         case ('pflux')         ! Brian
           ipflux = k
 
           call stat_assign(ipflux,"prec_flux",
-     .         "Precipitation flux (W/m^2)","W/m^2",sfc)
+     .         "Surface precipitation flux [W/m^2]","W/m^2",sfc)
           k = k + 1
 
         case ('rrm_sfc')       ! Brian
