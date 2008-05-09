@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.86 2008-05-07 18:48:24 griffinb Exp $
+! $Id: parameterization_interface.F,v 1.87 2008-05-09 16:40:19 faschinj Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -27,6 +27,8 @@
      .  parameterization_cleanup
 
         private :: latin_hypercube_sampling
+
+        private
 
         contains
 
@@ -561,8 +563,10 @@
         ! Vince Larson clipped rcm in order to prevent rvm < 0.  5 Apr 2008.
         do k = 1, gr%nnzp
            if ( rtm(k) < rcm(k) ) then
+              if ( clubb_at_debug_level(1) ) then
               print*, 'rtm < rcm in timestep_mixing at k=', k, '.',
      .                '  Clipping rcm.'
+              end if
               rcm(k) = max( 0.0, rtm(k) - eps )
            end if
         end do
