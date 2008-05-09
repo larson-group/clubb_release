@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: outputgrads.F,v 1.9 2008-04-05 19:54:32 griffinb Exp $
+! $Id: outputgrads.F,v 1.10 2008-05-09 16:31:17 faschinj Exp $
 #ifdef STATS 
         module outputgrads
 
@@ -27,11 +27,15 @@
 
           use constants, only: fstdout, fstderr
 
+          implicit none
+          
           public  :: open_grads, write_grads
           private :: formatdate, check_grads
 
           ! Undefined value
           real, private, parameter :: undef = -9.99e33
+
+          private ! Default scope
 
           contains
 
@@ -45,7 +49,8 @@
 !-----------------------------------------------------------------------
           use constants, only: fstderr, fstdout
           use outputfile_class
-
+          use stats_prec, only: time_prec
+          
           implicit none
 
 !         ! Input Variables
