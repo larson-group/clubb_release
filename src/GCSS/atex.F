@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 1
 !----------------------------------------------------------------------
-!$Id: atex.F,v 1.10 2008-04-04 22:02:49 dschanen Exp $
+!$Id: atex.F,v 1.11 2008-05-09 22:39:04 faschinj Exp $
         module atex
 
 !       Description:
@@ -27,7 +27,7 @@
         use grid_class
         use atex_cloud_rad
         use stats_prec, only: time_prec
-        use error_code, only: CLUBB_rtm_level_not_found
+        use error_code, only: clubb_rtm_level_not_found
 
 #ifdef STATS
         use stats_hoc
@@ -88,7 +88,7 @@
              write(fstderr,*) "Subroutine: atex_tndcy. File: atex.F"
              write(fstderr,*) "i = ", i
              write(fstderr,*) "rtm(i) = ",rtm(i)
-             err_code = CLUBB_rtm_level_not_found
+             err_code = clubb_rtm_level_not_found
              return
            end if
            zi = gr%zt(i-1)

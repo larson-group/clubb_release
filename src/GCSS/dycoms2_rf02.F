@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf02.F,v 1.13 2008-04-04 22:02:49 dschanen Exp $
+! $Id: dycoms2_rf02.F,v 1.14 2008-05-09 22:39:04 faschinj Exp $
         module dycoms2_rf02
 
 !       Description:
@@ -32,7 +32,7 @@
         USE constants
         USE model_flags, only: lbugsrad, lcoamps_micro, kk_rain
         use stats_prec, only: time_prec
-        USE error_code, only: CLUBB_rtm_level_not_found
+        USE error_code, only: clubb_rtm_level_not_found
 #ifdef STATS
         USE stats_hoc
 #endif /*STATS*/
@@ -120,7 +120,7 @@
      .        // "File: dycoms2_rf02.F"
             write(fstderr,*) "k = ", k
             write(fstderr,*) "rtm(k) = ", rtm(k)
-            err_code = CLUBB_rtm_level_not_found
+            err_code = clubb_rtm_level_not_found
             return
           END IF
           z_i = ( (gr%zt(k)-gr%zt(k-1))/(rtm(k)-rtm(k-1)) )
