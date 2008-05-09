@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.21 2008-04-05 19:54:32 griffinb Exp $
+! $Id: constants.F,v 1.22 2008-05-09 16:10:10 faschinj Exp $
 
         module constants
 
@@ -13,6 +13,15 @@
         use stats_prec, only: time_prec
 
         implicit none
+ 
+        public :: fstderr, fstdin, fstdout, pi_dp, pi, Cp, Lv, Ls, Lf,
+     .            Rd, Rv, ep, ep1, ep2, kappa, grav, p0, vonk, rho_lw,
+     .            sol_const, wtol, thltol, rttol, qttol, sstol, difftol,
+     .            rc_tol, Nc_tol, rr_tol, Nr_tol, emin, eps, 
+     .            sec_per_day, sec_per_hr, sec_per_min, g_per_kg, 
+     .            sclr_dim, hydromet_dim, sclrtol, Lscale_max
+
+        private ! Default scope
 
         ! Fortran file unit I/O constants
         integer, parameter :: 
