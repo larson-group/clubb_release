@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: KK_microphys.F,v 1.4 2008-03-26 22:38:25 griffinb Exp $
+! $Id: KK_microphys.F,v 1.5 2008-05-09 16:07:34 faschinj Exp $
 
       MODULE rain_equations
 
@@ -13,6 +13,15 @@
 
       IMPLICIT NONE
 
+      PUBLIC :: kk_microphys
+      PRIVATE :: mean_volume_radius, cond_evap_rrm, cond_evap_Nrm
+      PRIVATE :: autoconv_rrm, autoconv_Nrm, accretion_rrm
+      PRIVATE :: G_T_p
+!      PRIVATE :: PDF_TRIVAR_2G_LN_LN, PDF_BIVAR_2G_LN, PDF_BIVAR_LN_LN
+      PRIVATE :: Dv_fnc
+
+      PRIVATE ! Default
+    
       ! Statistical rain parameters.
       ! Old parameterization.
 !      REAL, PARAMETER:: rrp2_rrm2 = 1.2
@@ -78,17 +87,6 @@
 !      REAL, PARAMETER:: C_evap = 0.5
 !      REAL, PARAMETER:: r_0 = 100.0e-6
 !!!!!!! END RICO COMMENTS, Michael Falk, 27-28 November 2007
-
-
-
-      PUBLIC :: kk_microphys
-      PRIVATE :: mean_volume_radius, cond_evap_rrm, cond_evap_Nrm
-      PRIVATE :: autoconv_rrm, autoconv_Nrm, accretion_rrm
-      PRIVATE :: G_T_p
-!      PRIVATE :: PDF_TRIVAR_2G_LN_LN, PDF_BIVAR_2G_LN, PDF_BIVAR_LN_LN
-      PRIVATE :: Dv_fnc
-
-      PRIVATE ! Default
 
       CONTAINS
 
