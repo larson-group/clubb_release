@@ -1,4 +1,4 @@
-! $Id: outputnc.F,v 1.8 2008-04-05 19:54:32 griffinb Exp $
+! $Id: outputnc.F,v 1.9 2008-05-09 16:32:22 faschinj Exp $
 !-----------------------------------------------------------------------
 #ifdef STATS
        module outputnc
@@ -15,6 +15,8 @@
        public :: open_nc, write_nc, close_nc
 
        private :: define_nc, write_grid, first_write, format_date
+       
+       private ! Default scope
 
        contains
 !-----------------------------------------------------------------------
