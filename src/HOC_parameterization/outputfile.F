@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: outputfile.F,v 1.6 2008-04-05 19:54:32 griffinb Exp $
+! $Id: outputfile.F,v 1.7 2008-05-09 16:28:06 faschinj Exp $
 #ifdef STATS
       module outputfile_class
 
@@ -10,6 +10,10 @@
        
          implicit none
 
+         public :: variable, outputfile
+
+	 private
+         
         ! Structure to hold the description of a variable
 
          type variable
