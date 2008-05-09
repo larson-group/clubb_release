@@ -1,4 +1,4 @@
-! $Id: erf.F,v 1.2 2006-09-07 00:35:35 dschanen Exp $
+! $Id: erf.F,v 1.3 2008-05-09 16:14:11 faschinj Exp $
         module anl_erf
 
         implicit none
@@ -8,6 +8,8 @@
         interface erf
           module procedure dp_erf, sp_erf
         end interface
+
+        private :: dp_erf, sp_erf
 
         private
 
