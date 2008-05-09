@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: prog_variables.F,v 1.18 2008-03-26 23:53:44 dschanen Exp $
+! $Id: prog_variables.F,v 1.19 2008-05-09 16:33:53 faschinj Exp $
         module prognostic_variables
 
 !       This module contains definitions of all prognostic
@@ -13,6 +13,8 @@
         use constants, only: sclr_dim
 
         implicit none
+
+        public ! All variables in this module are public
 
         ! Prognostic variables
         real, target, allocatable, dimension(:) ::
