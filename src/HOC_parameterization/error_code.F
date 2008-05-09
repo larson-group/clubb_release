@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error_code.F,v 1.4 2008-05-05 18:44:00 faschinj Exp $
+! $Id: error_code.F,v 1.5 2008-05-09 16:14:59 faschinj Exp $
 !-----------------------------------------------------------------------
         module error_code
 
@@ -35,6 +35,8 @@
      .  clubb_at_debug_level, 
      .  set_clubb_debug_level,
      .  clubb_debug
+
+        private :: clubb_debug_level
 
         integer :: clubb_debug_level   =  0
 
