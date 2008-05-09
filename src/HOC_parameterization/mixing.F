@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.53 2008-05-05 18:48:19 faschinj Exp $
+! $Id: mixing.F,v 1.54 2008-05-09 16:25:43 faschinj Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -17,7 +17,8 @@
 
         implicit none
 
-        private
+        private ! Default scope
+
         ! Parameter Constants
         integer, parameter ::
      .  nsub = 2,  ! Number of subdiagonals in the LHS matrix
@@ -253,7 +254,9 @@
         do k = 1, gr%nnzp, 1 
           if ( rtm(k) < 0.0 ) then
 !           rtm(k) = 0.0
-            write(fstderr,*) "rtm < 0 in mixing at k= ", k 
+            if (clubb_at_debug_level(1)) then
+            write(fstderr,*) "rtm < 0 in mixing at k= ", k
+            endif 
           endif
 
         enddo
