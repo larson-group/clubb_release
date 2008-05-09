@@ -1,10 +1,12 @@
 !-----------------------------------------------------------------------
-! $Id: stats_prec.F,v 1.2 2008-04-07 14:37:23 dschanen Exp $
+! $Id: stats_prec.F,v 1.3 2008-05-09 16:37:43 faschinj Exp $
         module stats_prec
 
         implicit none
 
-        public
+        public :: stat_nknd, stat_rknd, time_prec
+
+        private ! Default scope
 
         ! The precisions below are arbitrary, and could be adjusted as
         ! needed for long simulations or time averaging.  Note that on
