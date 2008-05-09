@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: model_flags.F,v 1.11 2007-07-16 20:19:40 dschanen Exp $
+! $Id: model_flags.F,v 1.12 2008-05-09 16:26:32 faschinj Exp $
 
         module model_flags
 
@@ -9,6 +9,10 @@
 !       References:
 !       None
 !-----------------------------------------------------------------------
+
+        implicit none
+
+        public ! All elements of this module are public scope
 
         logical, parameter :: 
      .  LH_on    = .false., ! Latin hypercube calculation
