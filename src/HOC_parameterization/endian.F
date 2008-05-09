@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: endian.F,v 1.2 2006-09-22 22:52:07 dschanen Exp $
+! $Id: endian.F,v 1.3 2008-05-09 16:12:22 faschinj Exp $
 
 !----------------------------------------------------------------------
         module endian
@@ -21,6 +21,8 @@
 
         public  :: big_endian, little_endian, byte_order_swap
         private :: native_4byte_real, native_8byte_real
+
+        private ! Default scope
 
         contains
 !----------------------------------------------------------------------
