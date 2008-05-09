@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.10 2008-05-01 13:56:08 griffinb Exp $
+!  $Id: stats_subs.F,v 1.11 2008-05-09 16:34:42 faschinj Exp $
 #ifdef STATS
       module stats_subs
  
@@ -10,6 +10,7 @@
       public :: stats_init, stats_begin_timestep, stats_end_timestep,
      .          stats_accumulate, stats_finalize
       
+      private :: stats_zero, stats_avg
       
       contains
       
@@ -21,6 +22,7 @@
      .             fnamelist, nnzp, gzt, gzm,
      .             day, month, year, rlat, rlon, 
      .             time_current, delt )
+
 
 !     Description: Initializes the statistics saving functionality of
 !     the HOC model.
