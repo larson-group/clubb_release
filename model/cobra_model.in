@@ -39,6 +39,10 @@ lrestart      = .false.
 restart_path_case  = "restart/cobra"
 time_restart  = 0.0
 
+!        0 => Print no debug messages to the screen
+!        1 => Print lightweight debug messages, e.g. print statements
+!        2 => Print debug messages that require extra testing,
+!                e.g. checks for NaNs and spurious negative values.
 debug_level   = 2
 
 /

@@ -1,4 +1,4 @@
-! $Id: arm_model.in,v 1.16 2008-04-25 16:19:34 faschinj Exp $
+! $Id: arm_model.in,v 1.17 2008-05-09 22:48:50 faschinj Exp $
 ! Parameter file for GCSS ARM Cu over land case
 
 &model_setting
@@ -39,6 +39,10 @@ lrestart      = .false.
 restart_path_case  = "restart/arm"
 time_restart  = 0.0
 
+!        0 => Print no debug messages to the screen
+!        1 => Print lightweight debug messages, e.g. print statements
+!        2 => Print debug messages that require extra testing,
+!                e.g. checks for NaNs and spurious negative values.
 debug_level = 2
 
 /

@@ -1,4 +1,4 @@
-! $Id: clex9_nov02_model.in,v 1.6 2008-04-28 23:17:07 ajsmith4 Exp $
+! $Id: clex9_nov02_model.in,v 1.7 2008-05-09 22:48:50 faschinj Exp $
 ! Parameter file for CLEX-9: November 02 altocumulus case
 
 &model_setting
@@ -35,6 +35,10 @@ lrestart      = .false.
 restart_path_case  = "restart/clex9_nov02"
 time_restart  = 0.0
 
+!        0 => Print no debug messages to the screen
+!        1 => Print lightweight debug messages, e.g. print statements
+!        2 => Print debug messages that require extra testing,
+!                e.g. checks for NaNs and spurious negative values.
 debug_level = 2
 
 

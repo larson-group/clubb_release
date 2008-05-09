@@ -1,4 +1,4 @@
-! $Id: bomex_model.in,v 1.20 2008-04-25 16:19:34 faschinj Exp $
+! $Id: bomex_model.in,v 1.21 2008-05-09 22:48:50 faschinj Exp $
 ! Parameter file for GCSS BOMEX tradewind Cu case
 
 &model_setting
@@ -37,6 +37,10 @@ lrestart      = .false.
 restart_path_case  = "restart/bomex"
 time_restart  = 0.0
 
+!        0 => Print no debug messages to the screen
+!        1 => Print lightweight debug messages, e.g. print statements
+!        2 => Print debug messages that require extra testing,
+!                e.g. checks for NaNs and spurious negative values.
 debug_level = 2
 
 /
