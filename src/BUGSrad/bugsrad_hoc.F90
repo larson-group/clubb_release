@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_hoc.F90,v 1.25 2008-05-08 17:39:46 dschanen Exp $
+! $Id: bugsrad_hoc.F90,v 1.26 2008-05-09 16:56:37 faschinj Exp $
 module bugsrad_hoc_mod
 
 public :: bugsrad_hoc
@@ -47,6 +47,7 @@ subroutine bugsrad_hoc &
       std_tempk, std_sp_hmdty, std_o3l
   use stats_prec, only: time_prec
   use cos_solar_zen_mod
+  use error_code, only: clubb_at_debug_level
 
 #ifdef STATS
 use stats_hoc, only: zt, zm, lstats_samp, &
@@ -75,7 +76,7 @@ use stats_hoc, only: zt, zm, lstats_samp, &
   
   integer, intent(in) :: &
   nz,              & ! Vertical extent;  i.e. nnzp in the grid class
-  day, month, year   ! Time of year
+  day, month, year   ! Date of model start
 
 ! Number of levels to interpolate from the bottom of std_atmos to the top
 ! of the HOC profile, hopefully enough to eliminate cooling spikes, etc. 
@@ -174,12 +175,14 @@ use stats_hoc, only: zt, zm, lstats_samp, &
 !   Lv:    Latent heat of vaporization
   tempk(1,1:(nz-1)) = thlm(2:nz) * ( 1000.0d0 / pinmb(1,1:(nz-1)) )**(-kappa) &
                     + Lv*rcm(2:nz) / Cp
-
+  
 ! Derive Specific humidity from rc & rt.
   do z = 2, nz
     if ( rtm(z) < rcm(z) ) then
       sp_humidity(1,z-1) = 0.0d0
+      if ( clubb_at_debug_level(1) ) then
       write(fstderr,*) "rvm < 0 at ", z, " before BUGSrad, specific humidity set to 0."
+      endif
     else
       sp_humidity(1,z-1) &
         = dble( rtm(z) - rcm(z) ) / dble( 1.0+rtm(z) )
@@ -294,7 +297,7 @@ use stats_hoc, only: zt, zm, lstats_samp, &
 ! write(10,'(a4,a12,3f12.6)') "","", playerinmb(1,nz+buffer), ts(1), amu0(1)
 ! close(10)
 ! pause
-
+ 
   call bugs_rad( nlen, slen, (nz-1)+buffer, playerinmb,          &
                  pinmb, dpl, tempk, sp_humidity,                 &
                  rcm2, rcil, rsnwm2, o3l,                        &
