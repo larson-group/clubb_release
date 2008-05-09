@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mean_adv.F,v 1.4 2008-05-07 15:42:14 griffinb Exp $
+! $Id: mean_adv.F,v 1.5 2008-05-09 16:23:19 faschinj Exp $
 !===============================================================================
         module mean_adv
 
@@ -21,7 +21,7 @@
 
         implicit none
 
-        private
+        private ! Default scope
 
         public :: term_ma_tlev_lhs,
      .            term_ma_mlev_lhs
