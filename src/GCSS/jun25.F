@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: jun25.F,v 1.11 2008-05-05 18:38:27 faschinj Exp $
+! $Id: jun25.F,v 1.12 2008-05-10 21:14:46 griffinb Exp $
         module jun25
 
 !       Description:
@@ -200,12 +200,13 @@
      .  radht_SW ! Short wave radiative heating [K/s]
 
         real, dimension(gr%nnzp) :: 
-     .  LWP,      ! Liquid water path from domain top            [kg/m^2]
-     .  thm_rad,  ! "flipped" array of potential temperature     [K]
-     .  rcm_rad,  ! "flipped" array of liquid water mixing ratio [kg/kg]
-     .  rhot_rad, ! "flipped" array of air density               [kg/m^3]
-     .  dsigm     ! "flipped" array of grid spacing              [m]
-
+     .  LWP,       ! Liquid water path from domain top                [kg/m^2]
+     .  thm_rad,   ! "flipped" array of potential temperature         [K]
+     .  rcm_rad,   ! "flipped" array of liquid water mixing ratio     [kg/kg]
+     .  rhot_rad,  ! "flipped" array of air density                   [kg/m^3]
+     .  dsigm,     ! "flipped" array of grid spacing                  [m]
+     .  coamps_zm, ! "flipped" array of momentum level altitudes      [m]
+     .  coamps_zt  ! "flipped" array of thermodynamic level altitudes [m]
 
         real, dimension(gr%nnzp) :: 
      .  frad_out,
@@ -266,8 +267,8 @@
         !
         ! NOTE BY ADAM SMITH, 13 April 2006
         ! In COAMPS, these constants are called c0, c1, c2, c3, d1, d2,
-        ! and d3.  Since HOC uses these variables names elsewhere, I have
-        ! renamed them here.
+        ! and d3.  Since CLUBB uses these variables names elsewhere, I 
+        ! have renamed them here.
         !---------------------------------------------------------------
         real :: c_0, c_1, c_2, c_3, d_1, d_2, d_3,
      .  sda_t, sda_delta, sda_h, t_since_noon, julday,
@@ -473,7 +474,7 @@
 ! SPECIAL METHOD USED TO CALCULATE RADIATION
 ! Grid descriptions by Adam Smith, 27 June 2006
 !
-! In order to verify our HOC simulations are working properly, we      c
+! In order to verify our CLUBB simulations are working properly, we    c
 ! have first developed a series of 3D simulations using the COAMPS-LES c
 ! model.  This large-eddy simulation (LES) simulation uses specific    c
 ! methods to calculate radiation, subsidence, and other microphysical  c
@@ -483,13 +484,14 @@
 ! In COAMPS-LES, we use a separate subroutine, rad_lwsw, to implement  c
 ! all radiation code.  This allows the subroutine to be duplicated     c
 ! exactly in many different models.  However, the subroutine uses the  c
-! COAMPS vertical grid.  Therefore, for HOC to implement this code     c
+! COAMPS vertical grid.  Therefore, for CLUBB to implement this code   c
 ! correctly, we must modify some of our variable profiles before       c
 ! calling the radiation subroutine.                                    c
 !                                                                      c
-! The following diagram describes the differences in model grids:      c
+! The following diagram describes the differences in model grids       c
+! (see "ADDITIONAL NOTE" for important grid information):              c
 !                                                                      c
-!       COAMPS-LES                                    HOC              c
+!       COAMPS-LES                                   CLUBB             c
 !                                                                      c
 !  k= 1   (m) ----------    <MODEL TOP>    ---------- k=kk+1      (m)  c
 !                                                                      c
@@ -503,8 +505,8 @@
 !            .                  .                     .                c
 !            .                  .                     .                c
 !                                                                      c
-!  k=kk-1 (m) ----------  m = mass levels  ---------- k=3         (m)  c
-!                                                                      c
+!  k=kk-1 (m) ----------  m = momentum     ---------- k=3         (m)  c
+!                                  levels                              c
 !  k=kk-1 (t) ----------  t = thermo       ---------- k=3         (t)  c
 !                                  levels                              c
 !  k=kk   (m) ----------                   ---------- k=2         (m)  c
@@ -517,25 +519,37 @@
 !                                          ---------- k=1         (t)  c
 !                                                                      c
 !                                                                      c
-! The major difference in the grids is that HOC uses an additional     c
+! The major difference in the grids is that CLUBB uses an additional   c
 ! thermodynamic level below the model "surface".  This means that all  c
-! HOC thermodynamic heights are shifted down one vertical level, and   c
-! HOC also has one fewer momentum level than COAMPS.  Therefore, we    c
-! use one additional vertical level in HOC, to make sure that the      c
+! CLUBB thermodynamic heights are shifted down one vertical level, and c
+! CLUBB also has one fewer momentum level than COAMPS.  Therefore, we  c
+! use one additional vertical level in CLUBB, to make sure that the    c
 ! vertical domain matches in both models.                              c
 !                                                                      c
+! ADDITIONAL NOTE: In order to reconcile the COAMPS and CLUBB grids,   c
+!                  the uppermost level of the COAMPS grid is ignored,  c
+!                  eliminating the need to add level kk+1 to the CLUBB c
+!                  grid.  For the purposes of this code, the COAMPS    c
+!                  grid levels are re-indexed to start from level 1    c
+!                  at the uppermost useful COAMPS grid level (which    c
+!                  was previously referred to as level 2 in the above  c
+!                  diagram and is at the same altitude as CLUBB        c
+!                  level kk).  Likewise, the lowermost COAMPS grid     c
+!                  level is now indexed at kk (rather than kk+1 in the c
+!                  above diagram).  Brian Griffin; May 10, 2008.       c
+!                                                                      c
 ! Also, the COAMPS grid indices are numbered from the top of the model c
-! downward, while the HOC grid indices are numbered from the bottom    c
+! downward, while the CLUBB grid indices are numbered from the bottom  c
 ! up.  Therefore, since we are using a COAMPS radiation scheme, we     c
 ! flip moisture and temperature profiles that are passed into the      c
 ! rad_lwsw subroutine.  The rad scheme will produce results in using   c
 ! the COAMPS grid scheme, so all radiation output will be flipped      c
-! back to the HOC grid before being applied to the model.              c
+! back to the CLUBB grid before being applied to the model.            c
 !                                                                      c
 ! Finally, since the COAMPS scheme does not have a gridpoint below     c
 ! model surface, we add that point to all radiative output files once  c
-! they are converted back to HOC setup.  This allows all averages and  c
-! calculations to be done correctly.                                   c
+! they are converted back to CLUBB setup.  This allows all averages    c
+! and calculations to be done correctly.                               c
 !                                                                      c
 !                                                                      c
 ! Computation of radiative fluxes on staggered grid                    c
@@ -569,6 +583,12 @@
 ! than the mass level.  radht, back on mass levels, depends on Frad(k) c
 ! and Frad(k+1).                                                       c
 !                                                                      c
+! ADDITIONAL NOTE: For clarification of terminology, a w level on the  c
+!                  COAMPS grid is equivalent to a momentum (m) level   c
+!                  on the CLUBB grid, and a mass level on the COAMPS   c
+!                  grid is equivalent to a thermodynamic (t) level on  c
+!                  the CLUBB grid.  Brian Griffin; May 10, 2008.       c
+!                                                                      c
 ! Additionally, these computations assume that the distance between    c
 ! mass levels (dsigma) is constant, and that the w levels (spaced by   c
 ! dsigmw) always fall exactly halfway in between the mass levels.  If  c
@@ -583,6 +603,15 @@
 ! which is identical to the current formulation.                       c
 ! ((lwp(k)+lwp(k-1))/2)                                                c
 !                                                                      c
+! ADDITIONAL NOTE: The CLUBB parameterization is now set up to be      c
+!                  compatible with the use of a stretched              c
+!                  (or unevenly-spaced) grid, as well as with the use  c
+!                  of an evenly-spaced grid.  Interpolation functions  c
+!                  are used to compute any weighted averages, rather   c
+!                  than using general numbers such as (1/2), which is  c
+!                  compatible only with an evenly-spaced grid.         c
+!                  Brian Griffin; May 10, 2008.                        c
+!                                                                      c
 !                                                                      c
 !-----------------------------------------------------------------------
 
@@ -594,17 +623,19 @@
         if ( .not. lbugsrad ) then
 
         !----------------------------------------------------------------
-        ! This code transforms these profiles from HOC grid to COAMPS
+        ! This code transforms these profiles from CLUBB grid to COAMPS
         ! grid.  The COAMPS-grid profiles are then passed to rad_lwsw
         ! for implementation.
         !----------------------------------------------------------------
           do k = 1, gr%nnzp
             thm_rad(k) = thlm(gr%nnzp-k+1) 
-     .                 + Lv/(Cp*exner(k))*rcm(gr%nnzp-k+1)
+     .                 + Lv/(Cp*exner(gr%nnzp-k+1))*rcm(gr%nnzp-k+1)
             rcm_rad(k) = rcm(gr%nnzp-k+1)
             rhot_rad(k) = rhot(gr%nnzp-k+1)
             dsigm(k) = 1.0 / gr%dzt(gr%nnzp-k+1)
-          end do
+            coamps_zm(k) = gr%zm(gr%nnzp-k+1)
+            coamps_zt(k) = gr%zt(gr%nnzp-k+1)
+          enddo
 
         !----------------------------------------------------------------
         ! Calling the radiation subroutine, which uses the COAMPS
@@ -612,6 +643,7 @@
         ! grid setup.
         !----------------------------------------------------------------
           call rad_lwsw(thm_rad, rcm_rad, rhot_rad, dsigm,
+     .                  coamps_zm, coamps_zt,
      .                  Frad_out, Frad_LW_out, Frad_SW_out,
      .                  radhtk, radht_LW_out, radht_SW_out,
      .                  gr%nnzp-1, center,
@@ -620,12 +652,12 @@
 
 
         !-------------------------------------------------------------
-        ! This code transforms the radiation results back into HOC
+        ! This code transforms the radiation results back into CLUBB
         ! grid setup.  These Frad and radht arrays are actually
-        ! applied to the HOC model.
+        ! applied to the CLUBB model.
         !
         ! The radht results are initially calculated in terms of
-        ! standard temperature (T).  However, HOC calculates
+        ! standard temperature (T).  However, CLUBB calculates
         ! temperature in terms of potential temperature (theta).
         ! Therefore, we multiply all radht results by (1.0/exner)
         ! to convert from T to theta.

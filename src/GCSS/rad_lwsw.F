@@ -1,4 +1,4 @@
-! $Id: rad_lwsw.F,v 1.4 2008-05-05 18:37:07 faschinj Exp $
+! $Id: rad_lwsw.F,v 1.5 2008-05-10 21:14:46 griffinb Exp $
 !-----------------------------------------------------------------------
       module rad_lwsw_mod
       
@@ -13,6 +13,7 @@
       contains
       
       subroutine rad_lwsw( th3, qc3, rbm, dsigm,
+     .                     coamps_zm, coamps_zt, 
      .                     Frad, Frad_LW, Frad_SW,
      .                     radhtk, radht_LW, radht_SW,
      .                     kk, center, xi_abs, F0, F1, kay, 
@@ -22,20 +23,20 @@
 ! Description:
 ! For the Larson group altocumulus cases
 ! Written by Vince Larson, Chris Golaz, Adam Smith, Michael Falk, and
-! others for COAMPS and HOC 
+! others for COAMPS and CLUBB 
 !
 ! Subroutine to compute cloud radiation according to GCSS DYCOMS
 ! specifications.
 ! 
 !
 ! NOTE BY ADAM SMITH, 28 July 2006.
-! We are attempting to compare HOC results with the COAMPS-LES model.
+! We are attempting to compare CLUBB results with the COAMPS-LES model.
 ! To keep the two codes as similar as possible, this subroutine is a
 ! near-duplicate of the rad_lwsw subroutine  used in COAMPS_LES.  I
-! have  modified variable declarations as needed to match HOC
-! standards, and sections that do not apply to HOC have been removed.
+! have  modified variable declarations as needed to match CLUBB
+! standards, and sections that do not apply to CLUBB have been removed.
 ! 
-! For a full explanation of how this subroutine is implemented in HOC,
+! For a full explanation of how this subroutine is implemented in CLUBB,
 ! please see the nov11_altocu_tndcy or jun25_altocu_tndcy subroutines 
 ! within gcss.F.
 !
@@ -69,6 +70,10 @@
      .  qc3,  ! Cloud water mixing ratio at time t + dt       [kg/kg]
      .  rbm,  ! Density of reference state at mass levels     [kg/m^3]
      .  dsigm ! Thickness of sigma (mass) levels              [m]
+
+      real, dimension(kk+1), intent(in) ::
+     .  coamps_zm, ! Altitude of momentum levels w/ COAMPS grid indices      [m]
+     .  coamps_zt  ! Altitude of thermodynamic levels w/ COAMPS grid indices [m]
 
       real, intent(in) :: 
      .  xi_abs, ! Cosine of the solar zenith angle               [-]
@@ -204,6 +209,12 @@
 ! LWP(k-1) since the w level for a given k is at a higher altitude
 ! than the mass level.  radht, back on mass levels, depends on Frad(k)
 ! and Frad(k+1).
+!
+! ADDITIONAL NOTE: For clarification of terminology, a w level on the
+!                  COAMPS grid is equivalent to a momentum (m) level
+!                  on the CLUBB grid, and a mass level on the COAMPS
+!                  grid is equivalent to a thermodynamic (t) level on
+!                  the CLUBB grid.  Brian Griffin; May 10, 2008.
 ! 
 ! Additionally, these computations assume that the distance between
 ! mass levels (dsigma) is constant, and that the w levels (spaced by
@@ -220,6 +231,16 @@
 ! ((lwp(k)+lwp(k-1))/2)
 ! 
 ! Comments by Michael Falk, 16 February 2005. 
+!
+! ADDITIONAL NOTE: The CLUBB parameterization is now set up to be
+!                  compatible with the use of a stretched
+!                  (or unevenly-spaced) grid, as well as with the use
+!                  of an evenly-spaced grid.  Interpolation functions
+!                  are used to compute any weighted averages, rather
+!                  than using general numbers such as (1/2), which is
+!                  compatible only with an evenly-spaced grid.
+!                  Brian Griffin; May 10, 2008.
+!
 !
 !-----------------------------------------------------------------------
 
@@ -248,6 +269,7 @@
 
       if ( sw_on ) then
         call sunray_sw( qc3, rbm, xi_abs, dsigm, kk,
+     .                  coamps_zm, coamps_zt,
      .                  radius, A, gc, Fs0, omega, center,
      .                  Frad_SW )
       else
@@ -298,7 +320,8 @@
 
 !-----------------------------------------------------------------------
       subroutine sunray_sw( qc3, rbm, xi_abs, dsigm, kk,
-     .                      radius, A, gc, Fs0,omega, center,
+     .                      coamps_zm, coamps_zt,
+     .                      radius, A, gc, Fs0, omega, center,
      .                      Frad_SW )
 
 ! Description:
@@ -308,7 +331,7 @@
 ! stratocumulus case. 
 ! 
 ! Adapted by Vince Larson, Chris Golaz, Adam Smith, Michael Falk, and
-! others for COAMPS and HOC.
+! others for COAMPS and CLUBB.
 ! 
 ! Subroutine to compute shortwave radiative flux.
 ! 
@@ -327,13 +350,13 @@
 ! Comments by Michael Falk, 26 January 2005.
 !
 ! ADDITION TO COMMENT BY ADAM SMITH, 28 July 2006.
-! We are attempting to compare HOC results with the COAMPS-LES model.
+! We are attempting to compare CLUBB results with the COAMPS-LES model.
 ! To keep the two codes as similar as possible, this subroutine is a
 ! near-duplicate of the rad_lwsw subroutine  used in COAMPS_LES.  I
-! have  modified variable declarations as needed to match HOC 
-! standards, and sections that do not apply to HOC have been removed.
+! have  modified variable declarations as needed to match CLUBB 
+! standards, and sections that do not apply to CLUBB have been removed.
 ! 
-! For a full explanation of how this subroutine is implemented in HOC,
+! For a full explanation of how this subroutine is implemented in CLUBB,
 ! please see the nov11_altocu_tndcy or jun25_altocu_tndcy subroutines 
 ! within gcss.F.
 
@@ -342,6 +365,7 @@
 !-----------------------------------------------------------------------
 
       use constants, only: Cp, rho_lw, pi
+      use interpolation, only: linint
 
       implicit none
 
@@ -353,6 +377,10 @@
      .  qc3,
      .  rbm,
      .  dsigm
+
+      real, dimension(kk+1), intent(in) ::
+     .  coamps_zm, ! Altitude of momentum levels w/ COAMPS grid indices      [m]
+     .  coamps_zt  ! Altitude of thermodynamic levels w/ COAMPS grid indices [m]
 
       real, intent(in) :: 
      .  xi_abs,
@@ -576,6 +604,16 @@
 !
 ! Comments by Michael Falk, 16 February 2005.                          c
 !                                                                      c
+! ADDITIONAL NOTE: The CLUBB parameterization is now set up to be
+!                  compatible with the use of a stretched
+!                  (or unevenly-spaced) grid, as well as with the use
+!                  of an evenly-spaced grid.  Therefore, dwm is not
+!                  necessarily equal to dmw.  Interpolation functions
+!                  are used to compute any weighted averages, rather
+!                  than using general numbers such as (1/2), which is
+!                  compatible only with an evenly-spaced grid.
+!                  Brian Griffin; May 10, 2008.
+!
 !-----------------------------------------------------------------------
 
       if ( center ) then
@@ -599,7 +637,9 @@
         do k = 2, kk+1
 
           if ( center ) then
-            taupath = taupath + 0.5*(taude(k-1)+taude(k))
+            taupath = taupath 
+     .              + linint( coamps_zm(k), coamps_zt(k-1), 
+     .                        coamps_zt(k), taude(k-1), taude(k) )
           else
             taupath = taupath + taude(k)
           endif

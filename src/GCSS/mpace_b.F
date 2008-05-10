@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_b.F,v 1.10 2008-05-05 18:38:27 faschinj Exp $
+! $Id: mpace_b.F,v 1.11 2008-05-10 21:14:46 griffinb Exp $
         module mpace_b
 
 !       Description:
@@ -146,17 +146,19 @@
      .  radht_theta,
      .  radht_LW_theta,
      .  radht_SW_theta,
-     .  LWP,
-     .  thm_rad,
-     .  rcm_rad,
-     .  rhot_rad,
-     .  dsigm,
-     .  frad_out,
-     .  frad_lw_out,
-     .  frad_sw_out,
-     .  radhtk,
-     .  radht_lw_out,
-     .  radht_sw_out
+     .  LWP,            ! Liquid water path                              [kg/m^2]
+     .  thm_rad,        ! Flipped array of potential temp.               [K]
+     .  rcm_rad,        ! Flipped array of liq. water mixing ratio       [kg/kg]
+     .  rhot_rad,       ! Flipped array of air density                   [kg/m^3]
+     .  dsigm,          ! Flipped array of grid spacing                  [m]
+     .  coamps_zm,      ! Flipped array of momentum level altitudes      [m]
+     .  coamps_zt,      ! Flipped array of thermodynamic level altitudes [m]
+     .  frad_out,       ! Flipped array of radiaive flux                 [W/m^2]
+     .  frad_lw_out,    ! Flipped array of LW radiative flux             [W/m^2]
+     .  frad_sw_out,    ! Flipped array of SW radiative flux             [W/m^2]
+     .  radhtk,         ! Flipped array of radiative heating             [K/s]
+     .  radht_lw_out,   ! Flipped array of LW radiative heating          [K/s]
+     .  radht_sw_out    ! Flipped array of SW radiative heating          [K/s]
 
         ! Local variables, on/off switches for individual schemes
         logical :: 
@@ -228,13 +230,17 @@
 
         if ( .not. lbugsrad ) then
           do k = 1, gr%nnzp
-            thm_rad(k)  = thlm(gr%nnzp-k+1) + Lv/Cp*rcm(gr%nnzp-k+1)
+            thm_rad(k)  = thlm(gr%nnzp-k+1)
+     .                  + Lv/(Cp*exner(gr%nnzp-k+1))*rcm(gr%nnzp-k+1)
             rcm_rad(k)  = rcm(gr%nnzp-k+1)
             rhot_rad(k) = rhot(gr%nnzp-k+1)
             dsigm(k)    = 1.0 / gr%dzt(gr%nnzp-k+1)
-          end do
+            coamps_zm(k) = gr%zm(gr%nnzp-k+1)
+            coamps_zt(k) = gr%zt(gr%nnzp-k+1)
+          enddo
 
           call rad_lwsw(thm_rad, rcm_rad, rhot_rad, dsigm,
+     .                  coamps_zm, coamps_zt,
      .                  Frad_out, Frad_LW_out, Frad_SW_out,
      .                  radhtk, radht_LW_out, radht_SW_out,
      .                  gr%nnzp-1, center,
