@@ -1,4 +1,4 @@
-! $Id: rad_lwsw.F,v 1.5 2008-05-10 21:14:46 griffinb Exp $
+! $Id: rad_lwsw.F,v 1.6 2008-05-10 23:31:16 griffinb Exp $
 !-----------------------------------------------------------------------
       module rad_lwsw_mod
       
@@ -59,6 +59,7 @@
 !-----------------------------------------------------------------------
 
       use constants
+      use interpolation, only: linint
 
       implicit none
 
@@ -108,6 +109,9 @@
 
       ! Local Variables
       real, dimension(kk+1) :: lwp ! Liquid water path from domain top [kg/m^2]
+      real, dimension(kk+1) ::
+     .  lwp_coamps_zm   ! Liquid water path interpolated
+                        ! to COAMPS momentum (or w) levels  [kg/m^2]
 
       integer :: k
 
@@ -244,28 +248,39 @@
 !
 !-----------------------------------------------------------------------
 
+        ! Interpolate liquid water path (lwp) from COAMPS thermodynamic
+        ! (or mass) levels to COAMPS momentum (or w) levels.
+        do k = 2, kk+1, 1
+           lwp_coamps_zm(k) = linint( coamps_zm(k), coamps_zt(k-1), 
+     .                                coamps_zt(k), lwp(k-1), lwp(k) )
+        enddo
+        ! The value of liquid water path (lwp) at momentum (or w) 
+        ! level 1 (the uppermost level) is defined to be 1/2 of the
+        ! value of liquid water path at thermodynamic level 1.
+        lwp_coamps_zm(1) = lwp(1)/2
+
         if ( center ) then
-          Frad_LW(1) = F0 * exp( -kay * (lwp(1)/2))
+          Frad_LW(1) = F0 * exp( -kay * lwp_coamps_zm(1) )
      .               + F1 * exp( -kay *
-     .                    (lwp(kk+1) - (lwp(1)/2) ) )
+     .                    ( lwp(kk+1) - lwp_coamps_zm(1) ) )
 
           do k=2,kk+1
-            Frad_LW(k) = F0 * exp( -kay * ((lwp(k)+lwp(k-1))/2))
+            Frad_LW(k) = F0 * exp( -kay * lwp_coamps_zm(k) )
      .                 + F1 * exp( -kay *
-     .                      (lwp(kk+1) - ((lwp(k)+lwp(k-1))/2) ) )
-          end do
+     .                      ( lwp(kk+1) - lwp_coamps_zm(k) ) )
+          enddo
         else
           do k=1,kk+1
             Frad_LW(k) = F0 * exp( -kay * lwp(k) )
      .                 + F1 * exp( -kay * (lwp(kk+1)-lwp(k)) )
-          end do
-        end if
+          enddo
+        endif
 
       else ! this 'else' means lw_on is .FALSE.
         do k=1,kk+1
           Frad_LW(k) = 0.
-        end do
-      end if
+        enddo
+      endif
 
       if ( sw_on ) then
         call sunray_sw( qc3, rbm, xi_abs, dsigm, kk,
@@ -275,12 +290,12 @@
       else
         do k=1,kk+1
           Frad_SW(k) = 0.
-        end do
-      end if
+        enddo
+      endif
 
       do k=1,kk+1
         Frad(k) = Frad_LW(k) + Frad_SW(k)
-      end do
+      enddo
 
 
 !-----------------------------------------------------------------------
@@ -313,7 +328,7 @@
      .            * (Frad_SW(k)-Frad_SW(k+1))/dsigm(k)
         radht_LW(k) = (-1.0/(Cp*rbm(k)))
      .            * (Frad_LW(k)-Frad_LW(k+1))/dsigm(k)
-      end do
+      enddo
 
       return
       end subroutine rad_lwsw
@@ -450,7 +465,7 @@
         tau(k) = 1.5 * qc3(k) * rbm(k) * dsigm(k) !/ aoz(i,j)
      .         / radius / rho_lw
         tauc = tauc + tau(k)
-      end do
+      enddo
       tau(kk+1) = tau(kk)
 
       omegade = (1.0-ff)*omega/(1.0-omega*ff)
@@ -458,7 +473,7 @@
 
       do k=1, kk+1
         taude(k) = (1.0-omega*ff)*tau(k)
-      end do
+      enddo
 
 
 !-----------------------------------------------------------------------
@@ -620,7 +635,7 @@
         taupath = 0.5*taude(1)
       else
         taupath = 0.
-      end if
+      endif
 
           F_diff(1) = (-4.0/3.0) * Fs0
      .              * ( 
@@ -657,7 +672,7 @@
           F_dir(k) = -Fs0*xi_abs*exp( -taupath/xi_abs )
           Frad_SW(k) = F_diff(k) + F_dir(k)
 
-        end do ! k=2..kk+1
+        enddo ! k=2..kk+1
 
       return
       end subroutine sunray_sw
