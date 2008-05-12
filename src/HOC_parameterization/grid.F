@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: grid.F,v 1.12 2008-05-09 16:17:08 faschinj Exp $
+! $Id: grid.F,v 1.13 2008-05-12 18:29:26 dschanen Exp $
 
         module grid_class
 
@@ -57,11 +57,11 @@
 
            implicit none
 
-           public :: gr, zt2zm, interp_weights_zt2zm_imp, zm2zt,
+           public :: gr, grid, zt2zm, interp_weights_zt2zm_imp, zm2zt,
      .               interp_weights_zm2zt_imp, ddzm, ddzt,
      .               gridsetup
 
-           private :: grid, interpolated_azm, interpolated_azmk,
+           private :: interpolated_azm, interpolated_azmk,
      .                interpolated_azmk_imp, interpolated_azt,
      .                interpolated_aztk, interpolated_aztk_imp,
      .                gradzm, gradzt
