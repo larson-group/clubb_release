@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: budget_terms.F,v 1.32 2008-05-05 18:19:36 faschinj Exp $     
+! $Id: budget_terms.F,v 1.33 2008-05-13 17:04:14 griffinb Exp $     
 
       module budget_terms
 
@@ -1537,6 +1537,8 @@
 
         use grads_common
         use error, only: mean_sqr_diff_zm, mean_sqr_diff_zt
+        use grid_class
+        use interpolation, only: linint
 
         implicit none
 
@@ -1653,10 +1655,26 @@
 
           if (grid_type == "m" ) then
             les_total = les_total + les_zl
-          else
-            do j=1, les_nz-1
+          else  
+            ! Interpolate LES results to thermodynamic grid levels.
+            ! NOTE:  The code is not set up to compensate for 
+            !        discrepancies in level altitudes between CLUBB and 
+            !        COAMPS LES.  Therefore, CLUBB should be set up so 
+            !        that CLUBB momentum level altitudes from momentum 
+            !        level indices 1 to gr%nnzp match COAMPS momentum 
+            !        level altitudes from momentum level indices 1 to 
+            !        gr%nnzp.  Likewise, the interpolation of COAMPS LES
+            !        values from momentum levels to thermodynamic levels
+            !        should be set up so that the thermodynamic levels 
+            !        to which the values are interpolated have the same 
+            !        altitudes as CLUBB thermodynamic levels (with a 
+            !        difference in the thermodynamic level index).
+            !        Brian Griffin; May 13, 2008.
+            do j = 1, les_nz-1
               les_total(j) = les_total(j) 
-     .                     + ( les_zl(j) + les_zl(j+1) ) / 2.
+!     .                     + ( les_zl(j) + les_zl(j+1) ) / 2.
+     .                     + linint( gr%zt(j+1), gr%zm(j+1), gr%zm(j),
+     .                               les_zl(j+1), les_zl(j) )
             enddo
           endif
         enddo
