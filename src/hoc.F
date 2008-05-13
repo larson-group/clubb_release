@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.179 2008-05-08 17:39:46 dschanen Exp $
+! $Id: hoc.F,v 1.180 2008-05-13 18:10:17 griffinb Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -23,7 +23,7 @@
         private :: hoc_forcings_timestep
         private :: hoc_restart
 
-        private :: hoc_model_standard, hoc_model_field_input
+        private :: hoc_model_standard, hoc_model_inputfields
 
         public  :: hoc_model
 
@@ -31,7 +31,7 @@
         ! way to do this, but I don't know what it would be.
         ! -dschanen 21 August 2006
         interface hoc_model
-          module procedure hoc_model_field_input, hoc_model_standard
+          module procedure hoc_model_inputfields, hoc_model_standard
         end interface
 
         private ! Default to private
@@ -87,7 +87,7 @@
         contains
 !-----------------------------------------------------------------------
 
-        subroutine hoc_model_field_input
+        subroutine hoc_model_inputfields
      .             ( params, runfile, err_code, stdout,
      .               set_fields, sample_ratio )
 !       Description:
@@ -504,7 +504,7 @@
 #endif
 
         return
-        end subroutine hoc_model_field_input
+        end subroutine hoc_model_inputfields
 
 !-----------------------------------------------------------------------
         subroutine hoc_model_standard
