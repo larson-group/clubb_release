@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_hoc.F90,v 1.27 2008-05-13 14:34:21 griffinb Exp $
+! $Id: bugsrad_hoc.F90,v 1.28 2008-05-13 14:35:28 griffinb Exp $
 module bugsrad_hoc_mod
 
 public :: bugsrad_hoc
@@ -285,7 +285,7 @@ use stats_hoc, only: zt, zm, lstats_samp, &
   tmp = 2. * playerinmb(1,2) - playerinmb(1,3)
   if ( tmp > 0. ) then
     playerinmb(1,1) = tmp
-  else ! Assuming a linear extrapolation didn't work
+  else ! Assuming a linear extension didn't work
     playerinmb(1,1) = .5 * playerinmb(1,2)
   end if
 
