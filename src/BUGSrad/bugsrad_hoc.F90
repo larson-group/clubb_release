@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_hoc.F90,v 1.26 2008-05-09 16:56:37 faschinj Exp $
+! $Id: bugsrad_hoc.F90,v 1.27 2008-05-13 14:34:21 griffinb Exp $
 module bugsrad_hoc_mod
 
 public :: bugsrad_hoc
@@ -271,8 +271,17 @@ use stats_hoc, only: zt, zm, lstats_samp, &
     pinmb(1,z) = z1_fact * pinmb(1,z1) + z2_fact * pinmb(1,z2)
   end do
 
+  ! Do a linear interpolation to find playerinmb.  Since this interpolation
+  ! occurs at levels above the top of the CLUBB model, the CLUBB zt2zm function 
+  ! or CLUBB weighted averages do not apply.  The variable playerinmb is being
+  ! defined on momentum levels above the top of the CLUBB model, which are 
+  ! being defined here at points half-way inbetween the thermodynamic levels
+  ! above the top of the CLUBB model.  Brian Griffin; May 13, 2008.
   playerinmb(1,2:buffer+1) = ( pinmb(1,1:buffer) + pinmb(1,2:buffer+1) ) / 2.
 
+  ! Do a linear extension to find playerinmb at the uppermost standard 
+  ! atmosphere momentum level.  The grid is evenly-spaced at these points.
+  ! Brian Griffin; May 13, 2008.
   tmp = 2. * playerinmb(1,2) - playerinmb(1,3)
   if ( tmp > 0. ) then
     playerinmb(1,1) = tmp
