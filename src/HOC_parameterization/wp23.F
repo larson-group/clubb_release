@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.60 2008-05-07 18:21:19 griffinb Exp $
+! $Id: wp23.F,v 1.61 2008-05-14 17:57:25 ajsmith4 Exp $
 !===============================================================================
         module wp23
 
@@ -1697,17 +1697,17 @@
         rhs
 ! Michael Falk, 2 August 2007
 ! Use the following code for standard mixing, with c_k=0.548:
-!     .  = + (2.0/3.0) * C5
-!     .                * ( ( grav / T0 ) * wpthvp
-!     .                    - upwp * dzm * ( ump1 - um )
-!     .                    - vpwp * dzm * ( vmp1 - vm )
-!     .                  )
-! Use the following code for alternate mixing, with c_k=0.1 or 0.2
      .  = + (2.0/3.0) * C5
      .                * ( ( grav / T0 ) * wpthvp
-     .                    - 0. * upwp * dzm * ( ump1 - um )
-     .                    - 0. * vpwp * dzm * ( vmp1 - vm )
+     .                    - upwp * dzm * ( ump1 - um )
+     .                    - vpwp * dzm * ( vmp1 - vm )
      .                  )
+! Use the following code for alternate mixing, with c_k=0.1 or 0.2
+!     .  = + (2.0/3.0) * C5
+!     .                * ( ( grav / T0 ) * wpthvp
+!     .                    - 0. * upwp * dzm * ( ump1 - um )
+!     .                    - 0. * vpwp * dzm * ( vmp1 - vm )
+!     .                  )
 ! eMFc
 
         return
