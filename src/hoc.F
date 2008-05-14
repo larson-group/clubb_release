@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.180 2008-05-13 18:10:17 griffinb Exp $
+! $Id: hoc.F,v 1.181 2008-05-14 18:22:09 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -2270,7 +2270,18 @@
           end if
 
           ! Initially we will set this to a constant for testing purposes
-          lin_int_buffer = 20
+          ! lin_int_buffer = 20
+
+          ! Use a a new formula that creates and evenly spaced grid
+          ! between the model domain top and the standard atmosphere
+          ! table.  e.g. if the HOC model top is 3200m, and the spacing
+          ! between gr%nnzp-1 and gr%nnzp is 40m, then lin_int_buffer is
+          ! 19 and each layer of the buffer is 40m deep. -dschanen 14 May 08
+          lin_int_buffer = 
+     .    max( int( ( 1000.-mod( gr%zm(gr%nnzp), 1000. ) )
+     .           * gr%dzm(gr%nnzp) ) - 1, 0 )
+
+          ! print *, "buffer = ", lin_int_buffer !%% debug
 
           call bugsrad_hoc( gr%zm, gr%nnzp, lin_int_buffer, ! In
      .                      rlat, rlon,                     ! In
