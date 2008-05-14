@@ -62,7 +62,6 @@ mu          = 6.000E-4 ! Constant from Chris Golaz.
 
 &setfields
 datafile      = "../les_data/dycoms2_rf01"
-sample_ratio  = 1.0
 input_type    = "rf1"
 input_um      = .true.
 input_vm      = .true.

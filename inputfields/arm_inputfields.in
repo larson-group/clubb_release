@@ -1,4 +1,4 @@
-! $Id: arm_inputfields.in,v 1.12 2008-05-08 22:04:06 griffinb Exp $
+! $Id: arm_inputfields.in,v 1.13 2008-05-14 23:08:12 dschanen Exp $
 &model
 run_file  = "arm_hoc.in"
 stdout   = .true.
@@ -62,7 +62,6 @@ mu          = 6.000E-4 ! Constant from Chris Golaz.
 
 &setfields
 datafile      = "../les_data/arm"
-sample_ratio  = 2.0
 input_type    = "les"
 input_um      = .true.
 input_vm      = .true.

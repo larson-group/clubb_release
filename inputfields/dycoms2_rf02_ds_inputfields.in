@@ -1,4 +1,4 @@
-! $Id: dycoms2_rf02_ds_inputfields.in,v 1.7 2008-05-08 22:04:06 griffinb Exp $
+! $Id: dycoms2_rf02_ds_inputfields.in,v 1.8 2008-05-14 23:08:12 dschanen Exp $
 &model
 run_file  = "dycoms2_rf02_ds_hoc.in"
 stdout   = .true.
@@ -62,7 +62,6 @@ mu          = 6.000E-4 ! Constant from Chris Golaz.
 
 &setfields
 datafile     = "../les_data/dycoms2_rf02_ds"
-sample_ratio = 3.0
 input_type ="les"
 input_um      = .true.
 input_vm      = .true.

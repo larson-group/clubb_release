@@ -61,8 +61,7 @@ mu          = 6.000E-4 ! Constant from Chris Golaz.
 
 &setfields
 datafile      = "../les_data/atex"
-sample_ratio  = 3.0
-input_type    ="les"
+input_type    = "les"
 input_um      = .true.
 input_vm      = .true.
 input_rtm     = .true.
