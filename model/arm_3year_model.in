@@ -1,4 +1,4 @@
-! $Id: arm_3year_model.in,v 1.8 2008-05-09 22:48:50 faschinj Exp $
+! $Id: arm_3year_model.in,v 1.9 2008-05-14 17:05:46 faschinj Exp $
 ! Parameter file for GCSS ARM 3 year deep convective case
 
 &model_setting
@@ -6,7 +6,8 @@
 runtype = "arm_3year"
 
 !nzmax   = 216
-nzmax 	 = 80
+!nzmax 	 = 80
+nzmax    = 128
 deltaz   = 200.0
 zm_init  = 0.0
 day = 1, month = 1, year = 2001,
