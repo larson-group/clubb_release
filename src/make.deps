@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.38 2008-05-05 18:29:16 faschinj Exp $
+# $Id: make.deps,v 1.39 2008-05-14 23:14:59 dschanen Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -140,11 +140,14 @@ gabls2.o    : constants.o diag_ustar.o model_flags.o grid.o stats_hoc.o gabls2.F
 lba.o       : constants.o diag_ustar.o model_flags.o grid.o stats_hoc.o \
 	interpolation.o lba.F
 mpace_a.o     : constants.o model_flags.o grid.o stats_hoc.o mpace_a.F interpolation.o file_functions.o
-mpace_b.o     : constants.o model_flags.o grid.o stats_hoc.o mpace_b.F
-nov11.o     : constants.o model_flags.o grid.o stats_hoc.o nov11.F
-jun25.o     : constants.o model_flags.o grid.o stats_hoc.o jun25.F
-clex9_nov02.o : constants.o cos_solar_zen.o rad_lwsw.o model_flags.o grid.o stats_hoc.o \
-	clex9_nov02.F
+mpace_b.o     : constants.o model_flags.o grid.o stats_hoc.o rad_lwsw.o \
+	mpace_b.F
+nov11.o     : constants.o model_flags.o grid.o stats_hoc.o rad_lwsw.o \
+	cos_solar_zen.o nov11.F
+jun25.o     : constants.o model_flags.o grid.o stats_hoc.o rad_lwsw.o \
+	cos_solar_zen.o jun25.F
+clex9_nov02.o : constants.o cos_solar_zen.o rad_lwsw.o model_flags.o grid.o \
+	stats_hoc.o clex9_nov02.F
 clex9_oct14.o : constants.o cos_solar_zen.o rad_lwsw.o model_flags.o grid.o stats_hoc.o \
 	clex9_oct14.F
 rico.o      : constants.o model_flags.o grid.o stats_hoc.o rico.F
@@ -198,7 +201,8 @@ hoc.o		: parameterization_interface.o arm.o astex.o atex.o \
 sounding.o	: grid.o std_atmosphere_mod.o interpolation.o constants.o sounding.F
 std_atmosphere_mod.o: constants.o interpolation.o std_atmosphere_mod.F
 interpolation.o : interpolation.F
-inputfields.o	: grid.o inputgrads.o inputfields.F 
+inputfields.o	: grid.o inputgrads.o prog_variables.o diag_variables.o \
+	inputfields.F 
 gradsaverage.o	: grid.o inputgrads.o gradsaverage.F 
 error.o		: nrtype.o nr.o gradsaverage.o hoc.o parameters.o error_code.o error.F
 budget_terms.o  : amoeba.o inputfields.o gradsaverage.o hoc.o \

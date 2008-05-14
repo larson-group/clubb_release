@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.42 2008-05-05 18:20:46 faschinj Exp $
+! $Id: jacobian.F,v 1.43 2008-05-14 23:14:59 dschanen Exp $
 
       program jacobian
 #ifdef STATS
@@ -150,7 +150,8 @@
         end do
 
         call hoc_model 
-     .       ( hoc_params%value(:), run_file, err_code, .false. )
+     .       ( hoc_params%value(:), run_file, err_code, 
+     .        .false., .false. )
 
         if ( fatal_error(err_code) ) then
         
@@ -232,7 +233,8 @@
           hoc_params%value(i) = hoc_params%value(i) * delta_factor
 
           call hoc_model
-     .      ( hoc_params%value(:), trim( run_file ), err_code, .false. )
+     .      ( hoc_params%value(:), trim( run_file ), err_code,
+     .         .false., .false. )
 
           ! Print a period so the user knows something is happening
           write(unit=fstdout, fmt='(a1)', advance='no') "."

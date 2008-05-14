@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.181 2008-05-14 18:22:09 dschanen Exp $
+! $Id: hoc.F,v 1.182 2008-05-14 23:14:58 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -19,20 +19,12 @@
         implicit none
 
         ! Setup hoc_model() as the sole external interface
-        private :: hoc_initialize
-        private :: hoc_forcings_timestep
-        private :: hoc_restart
-
-        private :: hoc_model_standard, hoc_model_inputfields
+        private :: 
+     .  hoc_initialize,
+     .  hoc_forcings_timestep,
+     .  hoc_restart
 
         public  :: hoc_model
-
-        ! Overloaded interface for inputfields;  There may be a better
-        ! way to do this, but I don't know what it would be.
-        ! -dschanen 21 August 2006
-        interface hoc_model
-          module procedure hoc_model_inputfields, hoc_model_standard
-        end interface
 
         private ! Default to private
 
@@ -85,430 +77,10 @@
 !$omp   threadprivate(dtmain, dtclosure, dt)
 
         contains
-!-----------------------------------------------------------------------
-
-        subroutine hoc_model_inputfields
-     .             ( params, runfile, err_code, stdout,
-     .               set_fields, sample_ratio )
-!       Description:
-!       Subprogram to integrate the pde equations for pdf closure
-!       This version is modified to set fields from pre-calculated data
-
-!       Calls:  subroutine hoc_initialize (once)
-!          subroutine hoc_forcings_timestep (ifinal times)
-!          subroutine hoc_closure_timestep (ifinal*niterlong times)
-!          subroutine deallocate_model_arrays (once)
-!          function invalid_model_arrays
-!          subroutine set_fields (passed as a parameter) 
-
 
 !-----------------------------------------------------------------------
-
-        use diagnostic_variables
-        use prognostic_variables
-        use grid_class
-        use param_index, only: nparams
-        use numerical_check
-        use hoc_parameterization_interface
-        use constants, only: fstdout, fstderr
-        use error_code, only: clubb_var_equals_NaN,
-     .                        clubb_var_out_of_bounds,
-     .                        clubb_rtm_level_not_found,
-     .                        fatal_error,
-     .                        set_clubb_debug_level
-        use stats_prec, only: time_prec
-#ifdef STATS
-        use stats_hoc, only: lstats_last
-        use stats_subs
-#endif
-
-        implicit none
-
-        interface
-          subroutine set_fields
-     .               ( timestep,
-     .                um, vm, rtm, thlm, 
-     .                wp2, wprtp, wpthlp, wp3,
-     .                rtp2, thlp2, rtpthlp,
-     .                upwp, vpwp, ug, vg, rcm, 
-     .                wmt, exner, em, p, rhot, 
-     .                rhom, Lscale, Lup, Ldown,
-     .                Kht, Khm, taum, taut, thvm,
-     .                rrm, Nrm, rsnowm,ricem,rgraupelm, 
-     .                thlm_forcing, rtm_forcing, 
-     .                up2, vp2, Scm, Ncm, Ncnm, Nim, 
-     .                cf, Sct ) 
-      
-
-
-          implicit none
-
-          integer, intent(in) :: 
-     .    timestep
-
-          real, optional, dimension(:), intent(out) :: 
-     .    um,     ! u wind                              [m/s]
-     .    vm,     ! v wind                              [m/s]
-     .    rtm,    ! total water mixing ratio            [kg/kg]
-     .    thlm,   ! liquid potential temperature        [K]
-     .    wp2,    ! w'^2                                [m^2/s^2]
-     .    wprtp,  ! w'r_t'                              [(m kg)/(s kg)]
-     .    wpthlp, ! w'th_l'                             [(m K)/ s] 
-     .    wp3,    ! w'^3                                [m^3/s^3]
-     .    rtp2,   ! r_t'^2                              [kg/kg/s]
-     .    thlp2,  ! th_l'^2                             [K^2/s]
-     .    rtpthlp,! r_t' th_l'                          [(kg K)/(kg s)]
-     .    upwp,   ! u'w'                                [m^2/s^2]        
-     .    vpwp,   ! v'w'                                [m^2/s^2]
-     .    ug,     ! u geostrophic wind                  [m/s] 
-     .    vg,     ! v geostrophic wind                  [m/s] 
-     .    rcm,    ! Cloud water mixing ratio            [kg/kg]
-     .    wmt,    ! w wind                              [m/s]
-     .    exner,  ! Exner function                      [-] 
-     .    em,     ! Turbulence kinetic energy           [m^2/s^2]
-     .    p,      ! Pressure                            [Pa]
-     .    rhot, rhom,  ! Density                        [kg/m^3]
-     .    Lscale, ! Mixing length                       [m] 
-     .    Lup,    ! Upward mixing length                [m] 
-     .    Ldown,  ! Downward mixing length              [m] 
-     .    Kht, Khm, ! Eddy diffusivity                  [m^2/s]
-     .    taum, taut, ! Dissipation time                [s]
-     .    thvm,       ! Virtual potential temperature   [K]
-     .    rrm,          ! Rain water mixing ratio       [kg/kg]
-     .    Nrm,          ! Rain droplet number conc.
-     .    rsnowm,       ! Snow water mixing ratio       [kg/kg]
-     .    ricem,        ! Ice water mixing ratio        [kg/kg]
-     .    rgraupelm,    ! Graupel water mixing ratio    [kg/kg]
-     .    thlm_forcing, ! Liquid water potential temperature tendency [K/s] 
-     .    rtm_forcing,  ! Total water mixing ratio tendency           [kg/kg/s]
-     .    up2,          ! u'^2                                       [m^2/s^2]
-     .    vp2,          ! v'^2                          [m^2/s^2]
-     .    Scm,          ! Sc on moment. grid.           [-]
-     .    Ncm,          ! Number of cloud droplets   [count/kg]
-     .    Ncnm,         ! Number of cloud nuclei     [count/m^3]
-     .    Nim,          ! Number of ice crystals     [count/m^3]
-     .    cf,           ! Cloud fraction                        [%]
-     .    Sct           ! PDF width parameter: t point          [-]
-          
-          end subroutine set_fields
-        end interface
-     
-        ! External
-        intrinsic :: mod, real, int 
-
-        ! Input Variables
-        real, intent(in), dimension(nparams) :: 
-     .  params  ! Model parameters, C1, nu2, etc.
-
-        ! Subroutine Arguments (Model Setting)
-        character(len=*), intent(in) :: 
-     .  runfile ! Name of file containing &model_setting and &sounding
-        logical, intent(in) :: 
-     .  stdout  ! Whether to print output per timestep
-
-        ! Sample_ratio is used to determine often to sample data from the GrADS 
-        ! input per iteration of the main time stepping loop.
-        ! E.g. if dtmain is 20.0 seconds and the data was written every 60.0 sec, 
-        ! then sample ratio should be equal to 3.0.
-        real, intent(in) :: sample_ratio 
-
-        ! Output Variables
-        integer, intent(inout) :: err_code    ! valid run? 
-
-        ! Local Variables
-        ! Internal Timing Variables
-        integer ::
-     .  ifinal,
-     .  niterlong,
-     .  sample_time
-
-        integer ::
-     .  debug_level
-
-        real :: 
-     .  fcor,           ! Coriolis parameter            [s^-1]
-     .  T0,             ! Reference Temperature         [K]
-     .  ts_nudge        ! Timescale for u/v nudging     [s]
-
-        real(kind=time_prec) ::
-     .  time_restart    ! Time of model restart run     [s]
-
-        logical :: 
-     .  cloud_sed,    ! Flag for cloud water droplet sedimentation. - Brian
-     .  kk_rain,      ! Flag for Khairoutdinov and Kogan rain microphysics. - Brian
-     .  licedfs,      ! Flag for simplified ice scheme
-     .  lcoamps_micro,! Flag for COAMPS microphysical scheme
-     .  lbugsrad,     ! Flag for BUGSrad interactive radiation scheme
-     .  luv_nudge,    ! Whether to adjust the winds within the timestep
-     .  lrestart,     ! Flag for restarting from GrADS file
-     .  lKhm_aniso    ! Whether to use anisotropic Khm.  - Michael Falk 2 Feb 2007
-
-        character(len=50) ::
-     .  restart_path_case ! GRADS file used in case of restart
-
-        logical ::
-     .  lstats ! Whether statistics are computed and output to disk
-
-        character(len=10) ::
-     .  stats_fmt  ! File format for stats; typically GrADS.
-
-        character(len=100) ::
-     .  fname_prefix ! Prefix of stats filenames, to be followed by, for example "_zt"
-
-        real(kind=time_prec) ::
-     .  stats_tsamp,  ! Stats sampling interval [s]
-     .  stats_tout    ! Stats output interval   [s]
-
-        ! Dummy grid height arrays
-        real, dimension(:), allocatable :: 
-     .  dummy_array_m, dummy_array_t
-
-       integer :: i, i1 ! Internal Loop Variables
-
-       ! Definition of namelists
-       namelist /model_setting/ 
-     .   runtype, nzmax, deltaz, zm_init,
-     .   day, month, year, rlat, rlon,
-     .   time_initial, time_final, time_spinup,
-     .   dtmain, dtclosure,
-     .   sfctype, Tsfc, psfc, SE, LE, fcor, T0, ts_nudge,
-     .   cloud_sed, kk_rain, licedfs, lcoamps_micro, 
-     .   lbugsrad, lKhm_aniso, luv_nudge, lrestart, restart_path_case,
-     .   time_restart, debug_level
-
-       namelist /stats_setting/
-     .   lstats, fname_prefix, stats_tsamp, stats_tout, stats_fmt
-
-       !  Initialize the model run 
-
-        ! Pick some default values for model_setting
-        runtype  = "generic"
-        nzmax    = 100
-        deltaz   = 40.
-        zm_init  = 0.
-
-        day   = 1
-        month = 1
-        year  = 1900
-
-        rlat = 0.
-        rlon = 0.
-
-        time_initial = 0.
-        time_final   = 3600.
-        time_spinup  = 0.
-
-        dtmain    = 30.
-        dtclosure = 30.
-
-        sfctype  = 0
-        tsfc     = 288.
-        psfc     = 1000.e2
-        SE       = 0.
-        LE       = 0.
-        fcor     = 1.e-4
-        T0       = 300.
-        ts_nudge = 86400.
-
-        cloud_sed     = .false.
-        kk_rain       = .false.
-        licedfs       = .false.
-        lcoamps_micro = .false.
-        lbugsrad      = .false.
-        lKhm_aniso    = .false.
-        luv_nudge     = .false.
-        lrestart      = .false.
-        restart_path_case = "none"
-        time_restart  = 0.
-        debug_level   = 2
-
-        ! Pick some default values for stats_setting
-        lstats       = .false.
-        fname_prefix = ""
-        stats_fmt    = ""
-        stats_tsamp  = 0.
-        stats_tout   = 0.
-
-       ! Read namelist file
-       open(unit=10, file=runfile, status='old')
-       read(unit=10, nml=model_setting)
-       read(unit=10, nml=stats_setting)
-       close(unit=10)
-
-       call set_clubb_debug_level( debug_level )
-
-       ! Dummy grid height arrays
-       allocate( dummy_array_m(1:nzmax), dummy_array_t(1:nzmax) )
-
-       dummy_array_m = 0.0
-       dummy_array_t = 0.0
-
-       ! Allocate & initialize variables,
-       ! setup grid, setup constants, and setup flags
-
-       call parameterization_setup
-     .      ( nzmax, deltaz, zm_init, T0, ts_nudge, params,
-     .        lbugsrad, kk_rain, licedfs, lcoamps_micro,
-     .        cloud_sed,
-     .        luv_nudge, lKhm_aniso, .false., 
-     .        dummy_array_m, dummy_array_t, 
-     .        0.0, 0.0, err_code )
-       
-       ! Changed isValid to err_code for better tracking of errors caused by
-       ! procedures
-       if ( err_code == clubb_var_out_of_bounds ) return
-       ! Joshua Fasching March 2008
-
-       ! Dummy grid height arrays
-       deallocate( dummy_array_m, dummy_array_t )
-
-       time_current = time_initial
-
-       call hoc_initialize( 10, runfile, psfc, thlm, rtm, 
-     .                      um, vm, ug, vg, wp2,
-     .                      rcm, hydromet,
-     .                      wmt, wmm, em, exner,
-     .                      taut, taum, thvm, p,
-     .                      rhot, rhom, Lscale,
-     .                      Kht, Khm, um_ref, vm_ref
-#ifdef SCALARS
-     .                      ,sclrm, edsclrm
-#endif /*SCALARS*/
-     .                     )
-
-#ifdef STATS
-       ! Initialize statistics output
-       call stats_init
-     .      ( 50, fname_prefix, 
-     .        lstats, stats_fmt, stats_tsamp, stats_tout,
-     .        runfile, gr%nnzp, gr%zt, gr%zm,
-     .        day, month, year, rlat, rlon, time_current,
-     .        dtmain )
-#endif /*STATS*/
-
-       ! Time integration
-       ! Call hoc_closure_timestep once per each GrADS output time 
-       ifinal  = ( time_final - time_initial ) / dtmain
-
-       sample_time = 1
-
-!<<<<<<<<<<<<<<<<<<<<<<<< Main time stepping loop <<<<<<<<<<<<<<<<<<<<<<
-
-       ! Run from iteration 1 to iteration ifinal + 1 in order to output
-       ! information to the GrADS file for the final model output time.
-       ! Brian.
-       do i = 1, ifinal-1, 1
-
-#ifdef STATS
-         ! When this time step is over, the time will be time + dtmain
-
-         ! We use elapsed time for stats_begin_step
-         call stats_begin_timestep
-     .        ( time_current-time_initial+dtmain, dtmain )
-
-         if ( lstats_last .and. stdout ) then
-           write(unit=fstdout,fmt='(a,i8,a,f10.1)') 'iteration = ',
-     .       i, '; time = ', time_current
-         end if
-#endif /*STATS*/
-
-         ! Sample from the data file
-         
-         if ( mod( real( i ), sample_ratio) == 0.0 ) then
-           sample_time = int( i / sample_ratio ) + 1
-         end if
-         call set_fields( sample_time,
-     .                    um, vm, rtm,           ! optional
-     .                    thlm, wp2, wprtp,      !  "   "
-     .                    wpthlp, wp3,           !  "   "
-     .                    rtp2, thlp2, rtpthlp,  !  "   "
-     .                    upwp, vpwp )           !  "   "
-
-         ! Changed isValid to err_code for better tracking of errors caused by
-         ! procedures
-         if( invalid_model_arrays( ) ) then 
-            err_code = clubb_var_equals_NaN         ! Check for bad values 
-                                                 ! in the model arrays
-         endif
-
-         if ( err_code == clubb_var_equals_NaN ) exit
-
-         call hoc_forcings_timestep( dtmain, i, stdout, err_code )
-
-         if ( err_code == clubb_rtm_level_not_found ) exit
-         ! Joshua Fasching March 2008
-
-!      Compute number of iterations for closure loop
-         if ( time_current > time_spinup ) then
-           niterlong = 1
-           dt        = dtmain
-         else
-           niterlong = int( dtmain / dtclosure )
-           dt        = dtclosure
-         end if
-
-!<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-         do i1=1, niterlong
-           call parameterization_timestep
-     .          ( i, dt, fcor,
-     .            thlm_forcing, rtm_forcing, wmm, wmt,
-     .            wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,
-     .            p, rhom, rhot, exner,
-     .            um, vm, upwp, vpwp, up2, vp2,
-     .            thlm, rtm, wprtp, wpthlp, wp2, wp3,
-     .            rtp2, thlp2, rtpthlp,
-     .            Scm, taum, rcm, cf,
-     .            err_code, .false.
-#ifdef SCALARS
-     .            ,wpsclrp_sfc, wpedsclrp_sfc,
-     .            sclrm, sclrm_forcing, edsclrm
-#endif /*SCALARS*/
-     .          )
-
-#ifdef STATS
-           call stats_end_timestep( time_current + dtmain, dtmain )
-#endif /*STATS*/
-
-           ! Set Time
-           ! Advance time here, not in parameterization_timestep,
-           ! in order to facilitate use of stats.
-           ! A host model, e.g. WRF, would advance time outside
-           ! of hoc_closure_timestep.  Vince Larson 7 Feb 2006
-           if ( i1 < niterlong ) then
-             time_current = time_initial + (i-1) * dtmain 
-     .                    + i1 * dtclosure
-           else if ( i1 == niterlong ) then
-             time_current = time_initial + i * dtmain
-           end if
-           
-           ! Changed isValid to err_code for better tracking of errors caused by
-           ! procedures
-
-           if ( fatal_error( err_code ) ) exit
-           
-         end do ! i1=1..niterlong
-
-!<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-         if ( fatal_error( err_code ) ) exit
-          
-       end do ! i=1, ifinal
-
-!<<<<<<<<<<<<<<<<<<<<<<<< Main time stepping loop <<<<<<<<<<<<<<<<<<<<<<
-
-! Free memory
-
-        call parameterization_cleanup( .false. )
-
-#ifdef STATS
-        call stats_finalize( )
-#endif
-
-        return
-        end subroutine hoc_model_inputfields
-
-!-----------------------------------------------------------------------
-        subroutine hoc_model_standard
-     .            ( params, runfile, err_code, stdout )
+        subroutine hoc_model
+     .            ( params, runfile, err_code, stdout, linput_fields )
 !       Description:
 !       Subprogram to integrate the pde equations for pdf closure.
 !       This is the standard call.
@@ -531,6 +103,8 @@
         use diagnostic_variables
         use prognostic_variables
         use numerical_check
+        use inputfields, only: compute_timestep, grads_fields_reader,
+     .    datafilet
         use hoc_parameterization_interface
         use constants, only: fstdout, fstderr
         use error_code, only: clubb_var_out_of_bounds,
@@ -557,15 +131,16 @@
         intrinsic :: mod, real, int 
 
         ! Input Variables
+        logical, intent(in) :: 
+     .  stdout,       ! Whether to print output per timestep
+     .  linput_fields ! Whether to set model variables from a file
+
         real, intent(in), dimension(nparams) :: 
      .  params  ! Model parameters, C1, nu2, etc.
 
         ! Subroutine Arguments (Model Setting)
         character(len=*), intent(in) :: 
      .  runfile ! Name of file containing &model_setting and &sounding
-
-        logical, intent(in) :: 
-     .  stdout  ! Whether to print output per timestep
 
         ! Output Variables
         integer, intent(inout) :: err_code    ! valid run?
@@ -621,6 +196,8 @@
         integer :: iinit ! initial iteration
         integer :: iunit
 
+        integer :: itime_nearest ! Used for and inputfields run [s]
+
         ! Definition of namelists
         namelist /model_setting/ 
      .  runtype, nzmax, deltaz, zm_init,
@@ -632,7 +209,7 @@
      .  lbugsrad, lKhm_aniso, luv_nudge, lrestart, restart_path_case,
      .  time_restart, debug_level
 
-       namelist /stats_setting/
+         namelist /stats_setting/
      .   lstats, fname_prefix, stats_tsamp, stats_tout, stats_fmt 
 
 !-----------------------------------------------------------------------
@@ -767,17 +344,11 @@
           iinit = ( time_current - time_initial ) / dtmain + 1
 
           call hoc_restart( iunit, runfile, restart_path_case, 
-     .                      time_restart, psfc, thlm, rtm, um, vm,
-     .                      ug, vg, wp2, wprtp, wpthlp, wp3,
-     .                      rtp2, thlp2, rtpthlp,
-     .                      upwp, vpwp, rcm, hydromet,
-     .                      wmt, wmm, em, exner, taut, taum, thvm,
-     .                      p, rhot, rhom, Lscale, Lup,
-     .                      Ldown, Kht, Khm, um_ref, vm_ref,
-     .                      thlm_forcing, rtm_forcing,
-     .                      up2, vp2, Scm, Ncm, Ncnm, Nim,
-     .                      wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,
-     .                      cf, Sct
+     .                      fname_prefix//"_zt", time_restart, 
+     .                      thlm, rtm, um, vm,
+     .                      ug, vg, upwp, vpwp, wmt, wmm, 
+     .                      um_ref, vm_ref, wpthlp, wprtp,
+     .                      wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc
 #ifdef SCALARS
      .                      ,sclrm, edsclrm
 #endif
@@ -828,10 +399,18 @@
          end if
 #endif /*STATS*/
 
+         ! If we're doing an inputfields run, get the values for our
+         ! model arrays from a GrADS file
+         if ( linput_fields ) then
+           call compute_timestep( iunit, datafilet, .false.,
+     .                            time_current, itime_nearest )
+           call grads_fields_reader( max( itime_nearest, 1 ) )
+         end if
+
          if ( invalid_model_arrays( ) ) then
-             err_code = clubb_var_equals_NaN         ! Check for bad values 
-                                                 ! in the model arrays
-         endif
+             err_code = clubb_var_equals_NaN ! Check for bad values 
+                                             ! in the model arrays
+         end if
 
          if ( err_code == clubb_var_equals_NaN ) exit
 
@@ -902,8 +481,7 @@
 #endif
 
         return
-        end subroutine hoc_model_standard
-
+        end subroutine hoc_model
 
 !-----------------------------------------------------------------------
         subroutine hoc_initialize
@@ -1438,17 +1016,11 @@
 !-----------------------------------------------------------------------
        subroutine hoc_restart
      .             ( iunit, runfile, restart_path_case, 
-     .               time_restart, psfc, thlm, rtm, um, vm,
-     .               ug, vg, wp2, wprtp, wpthlp, wp3,
-     .               rtp2, thlp2, rtpthlp,
-     .               upwp, vpwp, rcm, hydromet,
-     .               wmt, wmm, em, exner, taut, taum, thvm,
-     .               p, rhot, rhom, Lscale, Lup,
-     .               Ldown, Kht, Khm, um_ref, vm_ref,
-     .               thlm_forcing, rtm_forcing,
-     .               up2, vp2, Scm, Ncm, Ncnm, Nim,
-     .               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,
-     .               cf, Sct
+     .               filename, time_restart, 
+     .               thlm, rtm, um, vm,
+     .               ug, vg, upwp, vpwp, wmt, wmm, 
+     .               um_ref, vm_ref, wpthlp, wprtp,
+     .               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc
 #ifdef SCALARS
      .               ,sclrm, edsclrm
 #endif
@@ -1471,58 +1043,31 @@
 
         implicit none
 
-        ! Input
+        ! Input Variables
         integer, intent(in) :: iunit
-        character(len=*), intent(in) :: runfile,  ! filename for the namelist
-     .                                  restart_path_case
-
-        real, intent(in) :: psfc  ! Pressure at the surface [Pa]
+        character(len=*), intent(in) :: 
+     .  runfile,          ! Filename for the namelist
+     .  filename,         ! GrADS file name
+     .  restart_path_case ! Path to GrADS data for restart
 
         real(kind=time_prec), intent(in) ::
      .  time_restart
 
-        ! Output
-        real, dimension(gr%nnzp), intent(out) :: 
-     .  thlm,           ! Theta l mean                                [K] 
-     .  rtm,            ! Total water mixing ratio                    [kg/kg]
-     .  um,             ! u wind                                      [m/s]
-     .  vm,             ! v wind                                      [m/s]
-     .  um_ref,         ! Initial profile of u wind                   [m/s]
-     .  vm_ref,         ! Initial profile of v wind                   [m/s]
-     .  ug,             ! u geostrophic wind                          [m/s] 
-     .  vg,             ! v geostrophic wind                          [m/s] 
-     .  wp2,            ! w'^2                                        [m^2/s^2]
-     .  rcm,            ! Cloud water mixing ratio                    [kg/kg]
-     .  wmt, wmm,       ! w wind                                      [m/s]
-     .  exner,          ! Exner function                              [-] 
-     .  em,             ! Turbulence kinetic energy                   [m^2/s^2]
-     .  p,              ! Pressure                                    [Pa]
-     .  rhot, rhom,     ! Density                                     [kg/m^3]
-     .  Lscale,         ! Mixing length                               [m] 
-     .  Lup,            ! Upward mixing length                        [m] 
-     .  Ldown,          ! Downward mixing length                      [m] 
-     .  Kht, Khm,       ! Eddy diffusivity                            [m^2/s]
-     .  taum, taut,     ! Dissipation time                            [s]
-     .  thvm,           ! Virtual potential temperature               [K]
-     .  wprtp,          ! w' r_t'                                     [(kg m)(kg s)]
-     .  wpthlp,         ! w' th_l'                                    [(m K)/s]
-     .  wp3,            ! w'^3                                        [m^3/s^3]
-     .  rtp2,           ! Total water mixing ratio                    [kg/kg]
-     .  thlp2,          ! th_l'^2                                     [K^2]
-     ,  rtpthlp,        ! r_t' th_l'                                  [(K kg)/kg]
-     .  upwp,           ! u'w'                                        [m^2/s^2]
-     .  vpwp,           ! v'w'                                        [m^2/s^2]
-     .  thlm_forcing,   ! Liquid water potential temperature tendency [K/s]
-     .  rtm_forcing,    ! Total water mixing ratio tendency           [kg/kg/s]
-     .  up2,            ! u'^2                                        [m^2/s^2]
-     .  vp2,            ! v'^2                                        [m^2/s^2]
-     .  Scm,            ! Sc on moment. grid.                         [-]
-     .  Ncm,            ! Number of cloud droplets                    [count/kg]
-     .  Ncnm,           ! Number of cloud nuclei                      [count/m^3]
-     .  Nim,            ! Number of ice crystals                      [count/m^3]
-     .  cf,             ! Cloud fraction                              [%]
-     .  Sct             ! PDF width parameter: t point                [-]
-
+        ! Output Variables
+        real, dimension(gr%nnzp), intent(inout) :: 
+     .  thlm,           ! Theta l mean                 [K] 
+     .  rtm,            ! Total water mixing ratio     [kg/kg]
+     .  um,             ! u wind                       [m/s]
+     .  vm,             ! v wind                       [m/s]
+     .  um_ref,         ! Initial profile of u wind    [m/s]
+     .  vm_ref,         ! Initial profile of v wind    [m/s]
+     .  ug,             ! u geostrophic wind           [m/s] 
+     .  vg,             ! v geostrophic wind           [m/s] 
+     .  wmt, wmm,       ! w wind                       [m/s]
+     .  wprtp,          ! w' r_t'                      [(kg m)(kg s)]
+     .  wpthlp,         ! w' th_l'                     [(m K)/s]
+     .  upwp,           ! u'w'                         [m^2/s^2]
+     .  vpwp            ! v'w'                         [m^2/s^2]
 
         real, intent(out) ::
      .  wpthlp_sfc,     ! w'theta_l' surface flux   [(m K)/s]
@@ -1530,12 +1075,9 @@
      .  upwp_sfc,       ! u'w' at surface           [m^2/s^2] 
      .  vpwp_sfc        ! v'w' at surface           [m^2/s^2]
         
-        real, dimension(gr%nnzp,hydromet_dim), target, intent(out) :: 
-     .  hydromet        ! Hydrometeor types             [units vary]
-
 #ifdef SCALARS
 !       Output (optional)
-        real, dimension(gr%nnzp,sclr_dim), intent(out) :: 
+        real, dimension(gr%nnzp,sclr_dim), intent(inout) :: 
      .  sclrm,  ! Standard passive scalar [units vary]
      .  edsclrm ! Eddy diffusivity passive scalar [units vary]
 #endif
@@ -1544,12 +1086,6 @@
 
        
         integer :: k, timestep
-        real, dimension(:), pointer ::
-     .         rrm,
-     .         Nrm,   
-     .         rsnowm,
-     .         ricem,
-     .         rgraupelm
 
         ! Inform inputfields module
         datafile = restart_path_case
@@ -1600,47 +1136,30 @@
         input_Nrm = .true.
         input_Sct = .true.
         
-        rrm       => hydromet(1:gr%nnzp,1)
-        Nrm       => hydromet(1:gr%nnzp,2)
-        rsnowm    => hydromet(1:gr%nnzp,3)
-        ricem     => hydromet(1:gr%nnzp,4)
-        rgraupelm => hydromet(1:gr%nnzp,5)
-
-        
         ! Determine the nearest timestep in the GRADS file to the
         ! restart time.
-        call compute_timestep(time_restart,timestep)
+        call compute_timestep( iunit, filename, .true.,
+     .                         time_restart, timestep )
         
         ! Sanity check for input time_restart
-        if (timestep < 0) then
-                print *, "Invalid time_restart in <case>_model.in file"
-                stop
-        endif
+        if ( timestep < 0 ) then
+          write(fstderr,*) "Invalid time_restart in "//
+     .      "file: "//trim( runfile )
+          stop
+        end if
 
         ! Read in sounding to get appropriate nudging information for um
         ! and vm
       
         call read_sounding( iunit, thlm, rtm, um, vm, ug, vg, 
      .                      runfile, runtype )
-        if (luv_nudge) then
-                um_ref = um
-                vm_ref = vm
-        endif
+        if ( luv_nudge ) then
+          um_ref = um
+          vm_ref = vm
+        end if
         
         ! Read data from GrADS files
-        call grads_fields_reader( timestep,
-     .                   um, vm, rtm, thlm,
-     .                   wp2, wprtp, wpthlp, wp3,
-     .                   rtp2, thlp2, rtpthlp,
-     .                   upwp, vpwp, ug, vg, rcm,  
-     .                   wmt, exner, em, p, rhot, 
-     .                   rhom, Lscale, Lup, Ldown,
-     .                   Kht, Khm, taum, taut, thvm, 
-     .                   rrm, Nrm, rsnowm, ricem,
-     .                   rgraupelm, thlm_forcing, 
-     .                   rtm_forcing, 
-     .                   up2, vp2, Scm, Ncm, Ncnm, Nim,
-     .                   cf, Sct ) 
+        call grads_fields_reader( timestep )
         
         ! Initialize forcing files for specific cases
         select case( trim( runtype ) )
@@ -1657,10 +1176,11 @@
         wmm = zt2zm( wmt )
         
         wpthlp_sfc = wpthlp(1)
-        wprtp_sfc = wprtp(1)
-        upwp_sfc = upwp(1)
-        vpwp_sfc = vpwp(1)
-        
+        wprtp_sfc  = wprtp(1)
+        upwp_sfc   = upwp(1)
+        vpwp_sfc   = vpwp(1)
+
+        return
         end subroutine hoc_restart
 
 !----------------------------------------------------------------------

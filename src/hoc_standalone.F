@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: hoc_standalone.F,v 1.21 2008-05-05 18:19:36 faschinj Exp $
+! $Id: hoc_standalone.F,v 1.22 2008-05-14 23:14:59 dschanen Exp $
 
         program hoc_standalone
 
@@ -69,7 +69,7 @@
       
         ! Run the model
         call hoc_model
-     .       ( params, trim( run_file ), err_code, stdout )
+     .       ( params, trim( run_file ), err_code, stdout, .false. )
 
       if ( fatal_error(err_code) ) then
       

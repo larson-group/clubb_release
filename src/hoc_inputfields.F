@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc_inputfields.F,v 1.19 2008-05-05 18:19:36 faschinj Exp $
+! $Id: hoc_inputfields.F,v 1.20 2008-05-14 23:14:59 dschanen Exp $
 
         program hoc_inputfields
 
@@ -39,7 +39,7 @@
         ! Namelist definitions
         namelist /model/ run_file, stdout
 
-        namelist /setfields/ datafile, sample_ratio, input_type,
+        namelist /setfields/ datafile, input_type,
      .    input_um, input_vm, input_rtm, input_thlm,
      .    input_wp2, input_wprtp, input_wpthlp, 
      .    input_wp3, input_rtp2, input_thlp2, 
@@ -61,10 +61,12 @@
         ! Initialize the status of the run
         err_code = clubb_no_error
 
+        ! Setup the GrADS file reader
+        call set_filenames( )
+
         ! Run the model
         call hoc_model
-     .       ( params, trim( run_file ), err_code, stdout,
-     .         grads_fields_reader, sample_ratio )
+     .       ( params, trim( run_file ), err_code, stdout, .true. )
 
       if ( fatal_error(err_code)) then
        

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputfields.F,v 1.17 2008-05-10 13:58:03 griffinb Exp $
+! $Id: inputfields.F,v 1.18 2008-05-14 23:14:59 dschanen Exp $
 
 ! Module inputfields
 
@@ -15,6 +15,10 @@
 
 !----- Run information--------------------------------------------------
         character(len=80), public :: datafile
+
+        character(len=100), public :: 
+     .  datafilet, datafilem
+
         character(3), public      :: input_type
 
         logical, public :: input_um, input_vm, input_rtm, input_thlm,
@@ -33,65 +37,88 @@
      .                     input_Ncnm, input_Nim, input_cf, input_Sct 
 
 
-        public grads_fields_reader, compute_timestep
-        private lin_ext_zm_bottom, lin_ext_zt_bottom
+        public  :: grads_fields_reader, compute_timestep, set_filenames
+        private :: lin_ext_zm_bottom, lin_ext_zt_bottom
+
+        private
 
         contains
 
 !===============================================================================
-!-----------------------------------------------------------------------
-! SUBROUTINE grads_fields_reader( ) 
 
-! Thanks to the interface feature in Fortran 90, these could really be
-! be calculated from anything.  This subroutine obtains them by reading
-! GrADS data from a specified file.
-
-! Calls:
-! subroutine open_grads_read
-! subroutine get_var
-! subroutine close_grads_read
 
 !-----------------------------------------------------------------------
-        subroutine grads_fields_reader( timestep,
-     .                                  um, vm, rtm, thlm,
-     .                                  wp2, wprtp, wpthlp, wp3,
-     .                                  rtp2, thlp2, rtpthlp, 
-     .                                  upwp, vpwp, ug, vg, rcm, 
-     .                                  wmt, exner, em, p, rhot, 
-     .                                  rhom, Lscale, Lup, Ldown,
-     .                                  Kht, Khm, taum, taut, thvm,
-     .                                  rrm, Nrm, rsnowm, ricem, 
-     .                                  rgraupelm, thlm_forcing, 
-     .                                  rtm_forcing,
-     .                                  up2, vp2, Scm, Ncm, Ncnm, Nim,
-     .                                  cf, Sct )
+        subroutine set_filenames( )
+!       Description: Set the names of the GrADS files to be used.
+!       Used by hoc_inputfields.
+!-----------------------------------------------------------------------
 
+        implicit none
+
+        select case ( input_type )
+        case ( "les", "rf1" )
+          datafilet = trim( datafile )//"_coamps_sm.ctl"
+          datafilem = trim( datafile )//"_coamps_sw.ctl"
+        case ( "hoc" )
+          datafilet = trim( datafile )//"_zt.ctl"
+          datafilem = trim( datafile )//"_zm.ctl"
+        case default
+          write(0,*) "Don't know how to handle input_type = "//
+     .      input_type
+          stop
+        end select
+
+        return
+        end subroutine set_filenames
+!-----------------------------------------------------------------------
+
+
+!-----------------------------------------------------------------------
+        subroutine grads_fields_reader( timestep )
+!       Description:
+!       Reads in variables for the model from GrADS data
+
+!       Calls:
+!       subroutine open_grads_read
+!       subroutine get_var
+!       subroutine close_grads_read
+!-----------------------------------------------------------------------
+
+        use prognostic_variables
+        use diagnostic_variables
         use grid_class
         use inputfile_class
 
         implicit none
 
-!       Arguments
-        integer, intent(in)      :: timestep
+        ! Arguments
+        integer, intent(in) :: timestep
 
-        real, optional, intent(out), 
-     .        dimension(:) :: um, vm, rtm, thlm, wp2,
-     .                        wprtp, wpthlp, wp3, rtp2,
-     .                        thlp2, rtpthlp, upwp, vpwp,
-     .                        ug, vg, rcm, 
-     .                        wmt, exner, em, p, rhot, 
-     .                        rhom, Lscale, Lup, Ldown,
-     .                        Kht, Khm, taum, taut, thvm,
-     .                        rrm, Nrm, rsnowm, ricem, rgraupelm, 
-     .                        thlm_forcing, rtm_forcing,
-     .                        up2, vp2, Scm, Ncm, Ncnm, Nim,
-     .                        cf, Sct  
+        ! Local Variables
+        logical :: lerror
+        type (inputgrads) :: fread_var
 
-!       Internal
-        logical error
-        type (inputgrads) fread_var
-        real, dimension(gr%nnzp + 1) :: tmp1
-        integer k
+        real, dimension(gr%nnzp+1) :: tmp1
+
+        ! Hydrometor pointers
+        real, dimension(:), pointer ::
+     .  rrm,        ! Rain water mixing ratio           [kg/kg]
+     .  Nrm,        ! Rain droplet number concentration [count/kg]
+     .  ricem,      ! Ice water mixing ratio            [kg/kg]
+     .  rgraupelm,  ! Graupel water mixing ratio        [kg/kg] 
+     .  rsnowm      ! Snow water mixing ratio           [kg/kg]
+
+
+
+        integer :: k
+
+        ! Assign pointers to each hydrometeor field
+        rrm       => hydromet(1:gr%nnzp,1)
+        Nrm       => hydromet(1:gr%nnzp,2)
+        rsnowm    => hydromet(1:gr%nnzp,3)
+        ricem     => hydromet(1:gr%nnzp,4)
+        rgraupelm => hydromet(1:gr%nnzp,5)
+
 
         select case( input_type )
 
@@ -106,137 +133,137 @@
           !        each grid level found in the CLUBB GrADS zt and zm
           !        files.
 
-!         zt file 
-          call open_grads_read( 15, trim(datafile)//"_zt.ctl", 
+          !  Thermo grid - zt file 
+          call open_grads_read( 15, trim( datafile )//"_zt.ctl", 
      .                          fread_var )
 
-          if (present( um ) .and. input_um) then
+          if ( input_um ) then
             call get_var( fread_var, "um", timestep,
-     .                    um(1:gr%nnzp), error )
+     .                    um(1:gr%nnzp),  lerror )
           endif
       
-          if (present( vm ) .and. input_vm) then 
+          if ( input_vm ) then 
             call get_var( fread_var, "vm", timestep,
-     .                    vm(1:gr%nnzp), error )
+     .                    vm(1:gr%nnzp),  lerror )
           endif
 
-          if (present( rtm ) .and. input_rtm) then 
+          if ( input_rtm ) then 
             call get_var( fread_var, "rtm", timestep,
-     .                    rtm(1:gr%nnzp), error )
+     .                    rtm(1:gr%nnzp),  lerror )
           endif
 
-          if (present( thlm ) .and. input_thlm) then 
+          if ( input_thlm ) then 
             call get_var( fread_var, "thlm", 
      .                    timestep,
-     .                    thlm(1:gr%nnzp), error )
+     .                    thlm(1:gr%nnzp),  lerror )
           endif
 
-          if (present( wp3 ) .and. input_wp3) then 
+          if ( input_wp3 ) then 
             call get_var( fread_var, "wp3", timestep,
-     .                    wp3(1:gr%nnzp), error )
+     .                    wp3(1:gr%nnzp),  lerror )
           endif
-          if (present( taut ) .and. input_taut) then 
+          if ( input_taut ) then 
             call get_var( fread_var, "taut", timestep,
-     .                    taut(1:gr%nnzp), error )
+     .                    taut(1:gr%nnzp),  lerror )
           endif
-          if (present( rrm ) .and. input_rrm) then 
+          if ( input_rrm ) then 
             call get_var( fread_var, "rrm", timestep,
-     .                    rrm(1:gr%nnzp), error )
+     .                    rrm(1:gr%nnzp),  lerror )
           endif
-          if (present( rsnowm ) .and. input_rsnowm) then 
+          if ( input_rsnowm ) then 
             call get_var( fread_var, "rsnowm", timestep,
-     .                    rsnowm(1:gr%nnzp), error )
+     .                    rsnowm(1:gr%nnzp),  lerror )
           endif
-          if (present( ricem ) .and. input_ricem) then 
+          if ( input_ricem ) then 
             call get_var( fread_var, "ricem", timestep,
-     .                    ricem(1:gr%nnzp), error )
+     .                    ricem(1:gr%nnzp),  lerror )
           endif
-          if (present( rgraupelm ) .and. input_rgraupelm) then 
+          if ( input_rgraupelm ) then 
             call get_var( fread_var, "rgraupelm", timestep,
-     .                    rgraupelm(1:gr%nnzp), error )
+     .                    rgraupelm(1:gr%nnzp),  lerror )
           endif
 
 !--------------------------------------------------------
 ! Added variables for hoc_restart
-          if (present( p ) .and. input_p) then
+          if ( input_p ) then
             call get_var( fread_var, "p", timestep,
-     .                    p(1:gr%nnzp), error )
+     .                    p(1:gr%nnzp),  lerror )
           endif
-          if (present( exner ) .and. input_exner) then
+          if ( input_exner) then
             call get_var( fread_var , "exner", timestep,
-     .                    exner(1:gr%nnzp), error)
+     .                    exner(1:gr%nnzp),  lerror)
           endif
-          if (present( ug ) .and. input_ug) then
+          if ( input_ug) then
             call get_var( fread_var , "ug", timestep,
-     .                    ug(1:gr%nnzp), error)
+     .                    ug(1:gr%nnzp),  lerror)
           endif
-          if (present( vg ) .and. input_vg) then
+          if ( input_vg) then
             call get_var( fread_var , "vg", timestep,
-     .                    vg(1:gr%nnzp), error)
+     .                    vg(1:gr%nnzp),  lerror)
           endif
-          if (present( rcm ) .and. input_rcm) then
+          if ( input_rcm) then
             call get_var( fread_var , "rcm", timestep,
-     .                    rcm(1:gr%nnzp), error)
+     .                    rcm(1:gr%nnzp),  lerror)
           endif
-          if (present( wmt ) .and. input_wmt) then
+          if ( input_wmt) then
             call get_var( fread_var , "wm", timestep,
-     .                    wmt(1:gr%nnzp), error)
+     .                    wmt(1:gr%nnzp),  lerror)
           endif
-          if (present( rhot ) .and. input_rhot) then
+          if ( input_rhot) then
             call get_var( fread_var , "rhot", timestep,
-     .                    rhot(1:gr%nnzp),error)
+     .                    rhot(1:gr%nnzp), lerror)
           endif
-          if (present( Lscale ) .and. input_Lscale) then
+          if ( input_Lscale) then
             call get_var( fread_var , "lscale", timestep,
-     .                    Lscale(1:gr%nnzp),error)
+     .                    Lscale(1:gr%nnzp), lerror)
           endif
-          if (present( Lup ) .and. input_Lup) then
+          if ( input_Lup) then
             call get_var( fread_var , "Lup", timestep,
-     .                    Lup(1:gr%nnzp),error)
+     .                    Lup(1:gr%nnzp), lerror)
           endif
-          if (present( Ldown ) .and. input_Ldown) then
+          if ( input_Ldown) then
             call get_var( fread_var , "Ldown", timestep,
-     .                    Ldown(1:gr%nnzp),error)
+     .                    Ldown(1:gr%nnzp), lerror)
           endif
-          if (present( Kht ) .and. input_Kht) then
+          if ( input_Kht) then
             call get_var( fread_var , "kht", timestep,
-     .                    Kht(1:gr%nnzp),error)
+     .                    Kht(1:gr%nnzp), lerror)
           endif
-          if (present( thvm ) .and. input_thvm) then
+          if ( input_thvm) then
             call get_var( fread_var , "thvm", timestep,
-     .                    thvm(1:gr%nnzp),error)
+     .                    thvm(1:gr%nnzp), lerror)
           endif
-          if (present( thlm_forcing ) .and. input_thlm_forcing ) then
+          if ( input_thlm_forcing ) then
             call get_var( fread_var , "thlm_f", timestep,
-     .                    thlm_forcing(1:gr%nnzp),error)
+     .                    thlm_forcing(1:gr%nnzp), lerror)
           endif
-          if (present( rtm_forcing ) .and. input_rtm_forcing ) then
+          if ( input_rtm_forcing ) then
             call get_var( fread_var , "rtm_f", timestep,
-     .                    rtm_forcing(1:gr%nnzp),error)
+     .                    rtm_forcing(1:gr%nnzp), lerror)
           endif
-          if (present( Ncm ) .and. input_Ncm) then
+          if ( input_Ncm) then
             call get_var( fread_var , "Ncm", timestep,
-     .                    Ncm(1:gr%nnzp),error)
+     .                    Ncm(1:gr%nnzp), lerror)
           endif
-          if (present( Ncnm ) .and. input_Ncnm) then
+          if ( input_Ncnm) then
             call get_var( fread_var , "Ncnm", timestep,
-     .                    Ncnm(1:gr%nnzp),error)
+     .                    Ncnm(1:gr%nnzp), lerror)
           endif
-          if (present( Nim ) .and. input_Nim) then
+          if ( input_Nim) then
             call get_var( fread_var , "Nim", timestep,
-     .                    Nim(1:gr%nnzp),error)
+     .                    Nim(1:gr%nnzp), lerror)
           endif
-          if (present( cf ) .and. input_cf) then
+          if ( input_cf) then
             call get_var( fread_var , "cf", timestep,
-     .                    cf(1:gr%nnzp),error)
+     .                    cf(1:gr%nnzp), lerror)
           endif
-          if (present( Nrm ) .and. input_Nrm ) then
+          if ( input_Nrm ) then
             call get_var( fread_var , "Nrm", timestep,
-     .                    Nrm(1:gr%nnzp),error)
+     .                    Nrm(1:gr%nnzp), lerror)
           endif
-          if (present( Sct ) .and. input_Sct ) then
+          if ( input_Sct ) then
             call get_var( fread_var , "sc", timestep,
-     .                    Sct(1:gr%nnzp),error)
+     .                    Sct(1:gr%nnzp), lerror)
           endif
 
 !--------------------------------------------------------
@@ -246,100 +273,94 @@
           call open_grads_read( 15, trim(datafile)//"_zm.ctl",
      .                          fread_var )
 
-          if (present( wp2 ) .and. input_wp2) then 
+          if ( input_wp2) then 
             call get_var( fread_var, "wp2", timestep,
-     .                    wp2(1:gr%nnzp), error )
+     .                    wp2(1:gr%nnzp),  lerror )
           endif
 
-          if (present( wprtp ) .and. input_wprtp) then 
+          if ( input_wprtp) then 
             call get_var( fread_var, "wprtp", 
      .                    timestep, wprtp(1:gr%nnzp),
-     .                    error )
+     .                    lerror )
           endif
 
-          if (present( wpthlp ) .and. input_wpthlp) then 
+          if ( input_wpthlp) then 
             call get_var( fread_var, "wpthlp", 
      .                    timestep, 
      .                    wpthlp(1:gr%nnzp), 
-     .                    error )
+     .                    lerror )
           endif
 
-          if (present( rtp2 ) .and. input_rtp2) then 
+          if ( input_rtp2) then 
              call get_var( fread_var, "rtp2", 
      .                     timestep,
-     .                     rtp2(1:gr%nnzp), error )
+     .                     rtp2(1:gr%nnzp), lerror )
           endif
 
-          if (present( thlp2 ) .and. input_thlp2) then 
+          if ( input_thlp2) then 
              call get_var( fread_var, "thlp2", 
      .                     timestep,
-     .                     thlp2(1:gr%nnzp), error )
+     .                     thlp2(1:gr%nnzp), lerror )
           endif
 
-          if (present( rtpthlp ) .and. input_rtpthlp) then 
+          if ( input_rtpthlp) then 
              call get_var( fread_var, "rtpthlp", 
      .                     timestep, 
      .                     rtpthlp(1:gr%nnzp),
-     .                     error )
+     .                     lerror )
           endif
 
-          if (present( upwp ) .and. input_upwp) then 
+          if ( input_upwp) then 
              call get_var( fread_var, "upwp", 
      .                     timestep,
-     .                     upwp(1:gr%nnzp), error )
+     .                     upwp(1:gr%nnzp), lerror )
           endif
 
-          if (present( vpwp ) .and. input_vpwp) then 
+          if ( input_vpwp) then 
              call get_var( fread_var, "vpwp", 
      .                     timestep,
-     .                     vpwp(1:gr%nnzp), error )
+     .                     vpwp(1:gr%nnzp), lerror )
           endif
 !-----------------------------------------------------------
-         if (present( em ) .and. input_em) then
+         if ( input_em) then
             call get_var( fread_var, "em",
      .                    timestep,
-     .                    em(1:gr%nnzp), error )
+     .                    em(1:gr%nnzp), lerror )
          endif
-         if (present( rhom ) .and. input_rhom) then
+         if ( input_rhom) then
             call get_var( fread_var, "rhom",
      .                    timestep,
-     .                    rhom(1:gr%nnzp), error )
+     .                    rhom(1:gr%nnzp), lerror )
          endif
-         if (present( Khm ) .and. input_Khm) then
+         if ( input_Khm) then
             call get_var( fread_var, "khm",
      .                    timestep,
-     .                    Khm(1:gr%nnzp), error )
+     .                    Khm(1:gr%nnzp), lerror )
          endif
-         if (present( taum ) .and. input_taum) then
+         if ( input_taum) then
             call get_var( fread_var, "taum",
      .                    timestep,
-     .                    taum(1:gr%nnzp), error )
+     .                    taum(1:gr%nnzp), lerror )
          endif
-         if (present( up2 ) .and. input_up2) then
+         if ( input_up2) then
             call get_var( fread_var, "up2",
      .                    timestep,
-     .                    up2(1:gr%nnzp), error )
+     .                    up2(1:gr%nnzp), lerror )
          endif
-         if (present( vp2 ) .and. input_vp2) then
+         if ( input_vp2) then
             call get_var( fread_var, "vp2",
      .                    timestep,
-     .                    vp2(1:gr%nnzp), error )
+     .                    vp2(1:gr%nnzp), lerror )
          endif
-         if (present( Scm ) .and. input_Scm ) then
+         if ( input_Scm ) then
             call get_var( fread_var, "scm",
      .                    timestep,
-     .                    Scm(1:gr%nnzp), error )
+     .                    Scm(1:gr%nnzp), lerror )
          endif
-
-
-
-
-
 
 !-----------------------------------------------------------
 
-
-          if ( error ) stop "oops, get_var failed in field_reader"
+          if ( lerror ) stop "oops, get_var failed in field_reader"
 
           call close_grads_read( fread_var )
 
@@ -359,9 +380,9 @@
           call open_grads_read( 15, trim(datafile)//"_coamps_sm.ctl", 
      .                          fread_var )
 
-          if (present( um ) .and. input_um) then
+          if ( input_um) then
             call get_var( fread_var, "um", timestep,
-     .                    tmp1(1:gr%nnzp-2), error )
+     .                    tmp1(1:gr%nnzp-2), lerror )
             ! tmp1 is the value of um from the LES GrADS file.  
             ! It has been output onto thermodynamic levels starting at 
             ! thermodynamic level 3 on the CLUBB grid for this 
@@ -380,9 +401,9 @@
      .                           gr%zt(3), gr%zt(2), gr%zt(1) )
           endif
 
-          if (present( vm ) .and. input_vm) then 
+          if ( input_vm ) then 
             call get_var( fread_var, "vm", timestep,
-     .                    tmp1(1:gr%nnzp-2), error )
+     .                    tmp1(1:gr%nnzp-2), lerror )
             ! tmp1 is the value of vm from the LES GrADS file.  
             ! It has been output onto thermodynamic levels starting at 
             ! thermodynamic level 3 on the CLUBB grid for this 
@@ -401,9 +422,9 @@
      .                           gr%zt(3), gr%zt(2), gr%zt(1) )
           endif
 
-          if (present( rtm ) .and. input_rtm) then 
+          if ( input_rtm) then 
             call get_var( fread_var, "qtm", timestep,
-     .                    tmp1(1:gr%nnzp-2), error )
+     .                    tmp1(1:gr%nnzp-2), lerror )
             ! tmp1 is the value of rtm from the LES GrADS file.  
             ! It has been output onto thermodynamic levels starting at 
             ! thermodynamic level 3 on the CLUBB grid for this 
@@ -414,10 +435,10 @@
             rtm(1:2) = rtm(3)
           endif
 
-          if (present( thlm ) .and. input_thlm) then
+          if ( input_thlm) then
             call get_var( fread_var, "thlm", 
      .                    timestep,
-     .                    tmp1(1:gr%nnzp-2), error )
+     .                    tmp1(1:gr%nnzp-2), lerror )
             ! tmp1 is the value of thlm from the LES GrADS file.  
             ! It has been output onto thermodynamic levels starting at 
             ! thermodynamic level 3 on the CLUBB grid for this 
@@ -428,9 +449,9 @@
             thlm(1:2) = thlm(3)
           endif
 
-          if (present( wp3 ) .and. input_wp3) then 
+          if ( input_wp3) then 
             call get_var( fread_var, "wp3", timestep,
-     .                    tmp1(1:gr%nnzp-2), error )
+     .                    tmp1(1:gr%nnzp-2), lerror )
             ! tmp1 is the value of wp3 from the LES GrADS file.  
             ! It has been output onto thermodynamic levels starting at 
             ! thermodynamic level 3 on the CLUBB grid for this 
@@ -440,10 +461,10 @@
             wp3(1:2) = 0.
           endif
 
-          if (present( wprtp ) .and. input_wprtp) then
+          if ( input_wprtp) then
             call get_var( fread_var, "wpqtp", 
      .                    timestep, tmp1(1:gr%nnzp-1),
-     .                    error )
+     .                    lerror )
             ! tmp1 is the value of wprtp from the LES GrADS file.  
             ! It has been output onto thermodynamic levels starting at 
             ! thermodynamic level 3 on the CLUBB grid for this 
@@ -465,10 +486,10 @@
      .                           gr%zm(3), gr%zm(2), gr%zm(1) )
           endif
 
-          if (present( wpthlp ) .and. input_wpthlp) then 
+          if ( input_wpthlp) then 
             call get_var( fread_var, "wpthlp", 
      .                    timestep, tmp1(1:gr%nnzp-1), 
-     .                    error )
+     .                    lerror )
             ! tmp1 is the value of wpthlp from the LES GrADS file.  
             ! It has been output onto thermodynamic levels starting at 
             ! thermodynamic level 3 on the CLUBB grid for this 
@@ -490,10 +511,10 @@
      .                           gr%zm(3), gr%zm(2), gr%zm(1) )
           endif
 
-          if (present( rtp2 ) .and. input_rtp2) then 
+          if ( input_rtp2) then 
             call get_var( fread_var, "qtp2", 
      .                    timestep,
-     .                    tmp1(1:gr%nnzp-1), error )
+     .                    tmp1(1:gr%nnzp-1), lerror )
             ! tmp1 is the value of rtp2 from the LES GrADS file.  
             ! It has been output onto thermodynamic levels starting at 
             ! thermodynamic level 3 on the CLUBB grid for this 
@@ -512,9 +533,9 @@
             endif
           endif
 
-          if (present( thlp2 ) .and. input_thlp2) then 
+          if ( input_thlp2 ) then 
             call get_var( fread_var, "thlp2", 
-     .                    timestep, tmp1(1:gr%nnzp), error )
+     .                    timestep, tmp1(1:gr%nnzp), lerror )
             ! tmp1 is the value of thlp2 from the LES GrADS file.  
             ! It has been output onto thermodynamic levels starting at 
             ! thermodynamic level 3 on the CLUBB grid for this 
@@ -525,10 +546,10 @@
             thlp2(1:2) = thlp2(3)
           endif
 
-          if (present( rtpthlp ) .and. input_rtpthlp) then 
+          if ( input_rtpthlp) then 
             call get_var( fread_var, "qtpthlp", 
      .                    timestep, tmp1(1:gr%nnzp-1),
-     .                    error )
+     .                    lerror )
             ! tmp1 is the value of rtpthlp from the LES GrADS file.  
             ! It has been output onto thermodynamic levels starting at 
             ! thermodynamic level 3 on the CLUBB grid for this 
@@ -550,7 +571,7 @@
      .                           gr%zm(3), gr%zm(2), gr%zm(1) )
           endif
 
-          if ( error ) stop "oops, get_var failed in field_reader"
+          if ( lerror ) stop "oops, get_var failed in field_reader"
 
           call close_grads_read( fread_var )
 
@@ -570,9 +591,9 @@
           call open_grads_read( 15, trim(datafile)//"_coamps_sm.ctl", 
      .                          fread_var )
 
-          if (present( um ) .and. input_um) then
+          if ( input_um) then
             call get_var( fread_var, "um", timestep,
-     .                    tmp1(1:gr%nnzp), error )
+     .                    tmp1(1:gr%nnzp), lerror )
             ! tmp1 is the value of um from the LES GrADS file.  
             ! It has been output onto thermodynamic levels starting at 
             ! the first level above ground (thermodynamic level 2 on 
@@ -586,9 +607,9 @@
      .                           gr%zt(3), gr%zt(2), gr%zt(1) )
           endif
 
-          if (present( vm ) .and. input_vm) then 
+          if ( input_vm) then 
             call get_var( fread_var, "vm", timestep,
-     .                    tmp1(1:gr%nnzp), error )
+     .                    tmp1(1:gr%nnzp), lerror )
             ! tmp1 is the value of vm from the LES GrADS file.  
             ! It has been output onto thermodynamic levels starting at 
             ! the first level above ground (thermodynamic level 2 on 
@@ -602,9 +623,9 @@
      .                           gr%zt(3), gr%zt(2), gr%zt(1) )
           endif
 
-          if (present( rtm ) .and. input_rtm) then 
+          if ( input_rtm) then 
             call get_var( fread_var, "qtm", timestep,
-     .                    tmp1(1:gr%nnzp), error )
+     .                    tmp1(1:gr%nnzp), lerror )
             ! tmp1 is the value of rtm from the LES GrADS file.  
             ! It has been output onto thermodynamic levels starting at 
             ! the first level above ground (thermodynamic level 2 on 
@@ -615,10 +636,10 @@
             rtm(1) = rtm(2)
           endif
 
-          if (present( thlm ) .and. input_thlm) then
+          if ( input_thlm) then
             call get_var( fread_var, "thlm", 
      .                    timestep,
-     .                    tmp1(1:gr%nnzp), error )
+     .                    tmp1(1:gr%nnzp), lerror )
             ! tmp1 is the value of thlm from the LES GrADS file.  
             ! It has been output onto thermodynamic levels starting at 
             ! the first level above ground (thermodynamic level 2 on 
@@ -629,9 +650,9 @@
             thlm(1) = thlm(2)
           endif
 
-          if (present( wp3 ) .and. input_wp3) then 
+          if ( input_wp3) then 
             call get_var( fread_var, "wp3", timestep,
-     .                    tmp1(1:gr%nnzp), error )
+     .                    tmp1(1:gr%nnzp), lerror )
             ! tmp1 is the value of wp3 from the LES GrADS file.  
             ! It has been output onto thermodynamic levels starting at 
             ! the first level above ground (thermodynamic level 2 on 
@@ -642,9 +663,9 @@
             wp3(1) = 0.  ! Computed as in hoc.F
           endif
 
-!          if (present( wp2 )) then 
+!          if ( ( wp2 )) then 
 !            call get_var( fread_var, "wp2", timestep,
-!     .                    tmp1(1:gr%nnzp), error )
+!     .                    tmp1(1:gr%nnzp), lerror )
 !            ! tmp1 is the value of wp2 from the LES GrADS file.  
 !            ! It has been output onto thermodynamic levels starting at 
 !            ! the first level above ground (thermodynamic level 2 on 
@@ -661,10 +682,10 @@
 !     .                           gr%zm(3), gr%zm(2), gr%zm(1) )
 !          endif
 
-          if (present( wprtp ) .and. input_wprtp) then
+          if ( input_wprtp) then
             call get_var( fread_var, "wpqtp", 
      .                    timestep, tmp1(1:gr%nnzp),
-     .                    error )
+     .                    lerror )
             ! tmp1 is the value of wprtp from the LES GrADS file.  
             ! It has been output onto thermodynamic levels starting at 
             ! the first level above ground (thermodynamic level 2 on 
@@ -681,10 +702,10 @@
      .                           gr%zm(3), gr%zm(2), gr%zm(1) )
           endif
 
-          if (present( wpthlp ) .and. input_wpthlp) then 
+          if ( input_wpthlp) then 
             call get_var( fread_var, "wpthlp", 
      .                    timestep, tmp1(1:gr%nnzp), 
-     .                    error )
+     .                    lerror )
             ! tmp1 is the value of wpthlp from the LES GrADS file.  
             ! It has been output onto thermodynamic levels starting at 
             ! the first level above ground (thermodynamic level 2 on 
@@ -701,10 +722,10 @@
      .                           gr%zm(3), gr%zm(2), gr%zm(1) )
           endif
 
-          if (present( rtp2 ) .and. input_rtp2) then 
+          if ( input_rtp2) then 
             call get_var( fread_var, "qtp2", 
      .                    timestep,
-     .                    tmp1(1:gr%nnzp), error )
+     .                    tmp1(1:gr%nnzp), lerror )
             ! tmp1 is the value of rtp2 from the LES GrADS file.  
             ! It has been output onto thermodynamic levels starting at 
             ! the first level above ground (thermodynamic level 2 on 
@@ -723,9 +744,9 @@
             endif
           endif
 
-          if (present( thlp2 ) .and. input_thlp2) then 
+          if ( input_thlp2) then 
             call get_var( fread_var, "thlp2", 
-     .                    timestep, tmp1(1:gr%nnzp), error )
+     .                    timestep, tmp1(1:gr%nnzp), lerror )
             ! tmp1 is the value of thlp2 from the LES GrADS file.  
             ! It has been output onto thermodynamic levels starting at 
             ! the first level above ground (thermodynamic level 2 on 
@@ -736,11 +757,11 @@
             thlp2(1) = thlp2(2)
           endif
 
-          if (present( rtpthlp ) .and. input_rtpthlp) then 
+          if ( input_rtpthlp) then 
             call get_var( fread_var, "qtpthlp", 
      .                    timestep, 
      .                    tmp1(1:gr%nnzp),
-     .                    error )
+     .                    lerror )
             ! tmp1 is the value of rtpthlp from the LES GrADS file.  
             ! It has been output onto thermodynamic levels starting at 
             ! the first level above ground (thermodynamic level 2 on 
@@ -757,7 +778,7 @@
      .                           gr%zm(3), gr%zm(2), gr%zm(1) )
           endif
 
-          if ( error ) stop "oops, get_var failed in field_reader"
+          if ( lerror ) stop "oops, get_var failed in field_reader"
 
           call close_grads_read( fread_var )
 
@@ -776,40 +797,41 @@
           !        1 to gr%nnzp match COAMPS momentum level altitudes 
           !        from momentum level indices 1 to gr%nnzp.
 
-!         stats_sw
+          ! stats_sw
           call open_grads_read( 15, trim(datafile)//"_coamps_sw.ctl", 
      .                          fread_var )
          ! no interpolation is required, however, the stats_sw files have
          ! an extra top z-level, and wpup_sgs must be added to make the
          ! u'w' and v'w' terms as they are in CLUBB.
 
-          if (present( upwp ) .and. input_upwp) then 
+          if ( input_upwp) then 
             call get_var( fread_var, "wpup", 
-     .                    timestep, tmp1(1:gr%nnzp+1), error )
+     .                    timestep, tmp1(1:gr%nnzp+1), lerror )
             upwp(1:gr%nnzp) = tmp1(1:gr%nnzp) 
 
             call get_var( fread_var, "wpup_sgs", 
-     .                    timestep, tmp1(1:gr%nnzp+1), error )
+     .                    timestep, tmp1(1:gr%nnzp+1), lerror )
             upwp(1:gr%nnzp) = tmp1(1:gr%nnzp) + upwp(1:gr%nnzp)
           endif
-          if ( error ) stop "get_var failed for upwp in field_reader"
 
-          if (present( vpwp ) .and. input_vpwp) then
+          if ( lerror ) stop "get_var failed for upwp in field_reader"
+
+          if ( input_vpwp) then
             call get_var( fread_var, "wpvp", 
      .                    timestep,
-     .                    tmp1(1:gr%nnzp+1), error )
+     .                    tmp1(1:gr%nnzp+1), lerror )
             vpwp(1:gr%nnzp) = tmp1(1:gr%nnzp) 
             call get_var( fread_var, "wpvp_sgs", 
      .                    timestep,
-     .                    tmp1(1:gr%nnzp+1), error )
+     .                    tmp1(1:gr%nnzp+1), lerror )
             vpwp(1:gr%nnzp) = tmp1(1:gr%nnzp) + vpwp(1:gr%nnzp)
           endif
-          if ( error ) stop "get_var failed for vpwp in field_reader"
+          if ( lerror ) stop "get_var failed for vpwp in field_reader"
 
-          if (present( wp2 ) .and. input_wp2) then 
+          if ( input_wp2 ) then 
             call get_var( fread_var, "wp2", 
      .                    timestep,
-     .                    tmp1(1:gr%nnzp+1), error )
+     .                    tmp1(1:gr%nnzp+1), lerror )
             wp2(1:gr%nnzp) = tmp1(1:gr%nnzp)
             if ( any (wp2(1:gr%nnzp) < 0.0 ) ) then
 ! %% debug
@@ -817,10 +839,10 @@
 ! %% debug
               do k=1, gr%nnzp
                 wp2(k) = max(wp2(k), 0.0)
-              enddo
-            endif
-          endif
-          if ( error ) stop "get_var failed for wp2 in field_reader"
+              end do
+            end if
+          end if
+          if ( lerror ) stop "get_var failed for wp2 in field_reader"
 
           call close_grads_read( fread_var )
 
@@ -892,7 +914,8 @@
         end function lin_ext_zt_bottom
 
 !===============================================================================
-        subroutine compute_timestep( time, nearest_timestep )
+        subroutine compute_timestep( iunit, filename, lrestart,
+     .                               time, nearest_timestep )
 !
 !       Description: Given a time 'time', determines the closest 
 !       output time in a GrADS file
@@ -906,29 +929,36 @@
           implicit none
           
           ! Input Variable(s)
+          integer, intent(in) :: iunit ! File I/O unit
+
+          character(len=*), intent(in) ::filename
+
           real(kind=time_prec), intent(in) :: 
-     .       time ! Time near which we want to find GrADS output, 
-                  !       e.g. time_restart     [s]
-          
+     .      time ! Time near which we want to find GrADS output,
+                 ! e.g. time_restart     [s]
+
+          logical, intent(in) :: lrestart ! Whether this is a restart run
+
           ! Output Variable(s)
           integer, intent(out) :: 
-     .       nearest_timestep ! Nearest GrADS output time to time [min]
+     .      nearest_timestep ! Nearest GrADS output time to time [min]
           
           ! Local Variables
-          type (inputgrads) fread_var         
-          real(kind=time_prec) ::  delta_time   ! In seconds
+          type (inputgrads) :: fread_var         
+
+          real(kind=time_prec) :: delta_time   ! In seconds
           
-          call open_grads_read( 15, trim(datafile)//"_zt.ctl", 
-     .                          fread_var )
+          call open_grads_read( iunit, trim( filename ), fread_var )
 
           ! (restart time) - (initial time) 
           delta_time = 
-     .        time - (fread_var%time - fread_var%dtwrite)
+     .      time - (fread_var%time - fread_var%dtwrite)
           
           !    Joshua Fasching March 2008
 !     .        time - fread_var%time
           
           ! Reporting
+          if ( lrestart ) then
           print *, "Initial time of GrADS reference file ",
      .             "[seconds since midnight]: ", 
      .             fread_var%time
@@ -946,7 +976,7 @@
              print*, "Elapsed time [s] = ", delta_time
              print*, "GrADS output time interval = ", fread_var%dtwrite
              stop
-          end if
+          end if 
       
           if ( mod( delta_time , sec_per_min ) > 1e-8
      .          .or. mod( delta_time, sec_per_min ) < -1e-8 ) then
@@ -956,10 +986,13 @@
              stop
           end if
 
+          end if ! lrestart
+
           ! Determines the closest recorded timestep to the restart
           ! time.
           nearest_timestep = nint( delta_time / sec_per_min ) 
-          
+
+          if ( lrestart ) then 
           print *, "Elapsed time between ",
      .             "initial time of ref file and restart time ",
      .             "rounded to nearest minute: ", 
@@ -970,6 +1003,7 @@
           print *, "Nearest GrADS output time iteration [ ]: ",
      .             nint( nearest_timestep / 
      .                   (fread_var%dtwrite/sec_per_min) ) - 1
+          end if ! lrestart
           
           call close_grads_read( fread_var )
           

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.52 2008-05-05 18:19:36 faschinj Exp $
+! $Id: error.F,v 1.53 2008-05-14 23:14:58 dschanen Exp $
 
         module error
  
@@ -492,7 +492,7 @@
 
           call hoc_model
      .         ( params_local, run_file(c_run), run_stat(c_run), 
-     .           .false. )
+     .           .false., .false. )
 
         end do ! 1..c_run
 
