@@ -1,4 +1,4 @@
-# $Id: config.linux_ia32_ss12.in,v 1.1 2008-04-16 18:38:35 dschanen Exp $
+# $Id: config.linux_ia32_ss12.in,v 1.2 2008-05-15 03:01:27 dschanen Exp $
 # Makefile definitions for Sun Studio's Fortran compiler on GNU/Linux
 
 # == Paths ==
@@ -8,7 +8,7 @@ BINDIR = $(PREFIX)/bin
 LIBDIR = $(PREFIX)/lib
 
 # == Compiler invocation ==
-FC = f95 # Sun Fortran 8.3
+FC = sunf95 # Sun Fortran 8.3
 
 # == Debugging ==
 # It is sometimes helpful to turn on floating-point trapping for the 
