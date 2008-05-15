@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_0003.F,v 1.8 2008-05-05 18:31:19 faschinj Exp $
+! $Id: arm_0003.F,v 1.9 2008-05-15 03:04:11 dschanen Exp $
         module arm_0003
 
 !       Description:
@@ -165,10 +165,12 @@
 !----------------------------------------------------------------------
 
         use constants, only: Cp, Lv, grav, sclr_dim
-        use stats_hoc, only: iustar, sfc, lstats_samp
         use file_functions, only: file_read_1d
         use stats_prec, only: time_prec
         use diag_ustar_mod, only: diag_ustar
+#ifdef STATS
+        use stats_hoc, only: iustar, sfc, lstats_samp
+#endif
         
         implicit none
 
