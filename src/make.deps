@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.40 2008-05-16 17:44:06 faschinj Exp $
+# $Id: make.deps,v 1.41 2008-05-16 20:11:00 faschinj Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -109,7 +109,6 @@ micro_calcs.o		: constants.o erf.o micro_calcs.F
 permute_height_time.o	: permute_height_time.F
 random.o		: random.F
 matrix_operations.o     : matrix_operations.F
-st_2_rtthl.o		: st_2_rtthl.F
 
 # == GCSS dependencies ==
 diag_ustar.o: constants.o diag_ustar.F
