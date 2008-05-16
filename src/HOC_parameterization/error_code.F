@@ -1,6 +1,7 @@
 !-----------------------------------------------------------------------
-! $Id: error_code.F,v 1.5 2008-05-09 16:14:59 faschinj Exp $
+! $Id: error_code.F,v 1.6 2008-05-16 17:38:46 faschinj Exp $
 !-----------------------------------------------------------------------
+
         module error_code
 
 !       Description:
@@ -37,9 +38,11 @@
      .  clubb_debug
 
         private :: clubb_debug_level
-
+        
+        ! Model-Wide Debug Level
         integer :: clubb_debug_level   =  0
 
+        ! Error Code Values
         integer, parameter ::
      .  clubb_no_error                 =  0, 
      .  clubb_var_less_than_zero       =  1,
@@ -62,7 +65,8 @@
 
         implicit none
         
-        integer, intent(in) :: err_code
+        ! Input Variable
+        integer, intent(in) :: err_code ! Error Code being examined
 
         select case ( err_code )
 
@@ -108,7 +112,7 @@
         lapack_error = (err_code == clubb_singular_matrix .or.
      .      err_code == clubb_bad_lapack_arg ) 
         
-        end function
+        end function lapack_error
 
 !---------------------------------------------------------------------       
         logical function fatal_error( err_code )
@@ -128,7 +132,7 @@
      .                err_code == clubb_var_out_of_bounds )
 
 
-        end function
+        end function fatal_error
 
 !------------------------------------------------------------------	
         logical function clubb_at_debug_level( level )
@@ -152,8 +156,9 @@
 !       Accessor for clubb_debug_level
 !
 !        0 => Print no debug messages to the screen
-!        1 => Print lightweight debug messages
-!        2 => Print debug messages that require extra testing
+!        1 => Print lightweight debug messages, e.g. print statements
+!        2 => Print debug messages that require extra testing,
+!                e.g. checks for NaNs and spurious negative values.
 
 !----------------------------------------------------------------------
         implicit none
@@ -184,7 +189,7 @@
                 write(*,*) str
         endif
         
-        end subroutine
+        end subroutine clubb_debug
 
         end module error_code
 !-----------------------------------------------------------------------
