@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.116 2008-05-13 16:49:28 dschanen Exp $
+# $Id: Makefile,v 1.117 2008-05-16 17:43:15 faschinj Exp $
 #
 # This version should work with BSD, GNU make, smake and dmake.
 #
@@ -20,20 +20,19 @@ include config.linux_ia32_g95.in
 
 # == Object files ==
 
-LATIN_HYP = autoconv_driver.o corrcoef.o gaus_condt.o \
-	gaus_mixt_points.o gaussj.o generate_k_order.o \
-	latin_hyper_sample.o lh_sampler.o ltqnorm.o \
-	matmult.o micro_calcs.o permute_height_time.o \
-	ql_estimate.o ran2.o rand_permute.o \
-	rtpthlp_2_sptp.o sample_points.o st_2_rtthl.o \
-	truncate_gaus_mixt.o
+LATIN_HYP = math_utilities.o \
+	lh_sampler.o \
+	micro_calcs.o permute_height_time.o \
+	random.o \
+	matrix_operations.o \
+        st_2_rtthl.o \
 
 BUGS_RAD = kinds.o std_atmosphere_mod.o bugsrad_planck.o bugsrad_physconst.o gases_ckd.o \
 	cloud_correlate.o bugs_lwr.o bugs_swr.o bugs_rad.o \
 	cloudg.o comscp1.o comscp2.o gascon.o \
 	newexp.o rayle.o two_rt_lw.o two_rt_sw.o \
 	two_rt_sw_ocastrndm.o two_rt_lw_ocastrndm.o \
-	two_rt_lw_sel.o two_rt_lw_iter.o cos_solar_zen.o \
+	two_rt_lw_sel.o two_rt_lw_iter.o calendar.o cos_solar_zen.o \
 	two_rt_sw_bs.o bugsrad_hoc.o
 
 COAMPS_MICRO = adjmlt.o adjtq.o coamps_micro_driver.o conice.o \
