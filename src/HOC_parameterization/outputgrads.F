@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: outputgrads.F,v 1.10 2008-05-09 16:31:17 faschinj Exp $
+! $Id: outputgrads.F,v 1.11 2008-05-16 17:40:51 faschinj Exp $
 #ifdef STATS 
         module outputgrads
 
@@ -534,7 +534,10 @@
           !---------------------------------------------------------
           subroutine formatdate( day_in, month_in, year_in, 
      .                           time_in, date )
+          
           use stats_prec, only: time_prec
+          use calendar, only: leap_year
+          
           implicit none
 
           ! Constant Parameters
@@ -589,14 +592,21 @@
 !    .                 )*12
 
 !   Alternate code:
-            if ( ( mod( iyear, 4 ) == 0)
-     .            .and. (.not.( mod( iyear, 100 ) == 0 
-     .                        .and. mod( iyear, 400 ) /= 0 ) )
-     .         ) then 
-              ileap = 12
+!            if ( ( mod( iyear, 4 ) == 0)
+!     .            .and. (.not.( mod( iyear, 100 ) == 0 
+!     .                        .and. mod( iyear, 400 ) /= 0 ) )
+!     .         ) then 
+!              ileap = 12
+!            else
+!              ileap = 0
+!            end if
+
+            if( leap_year(iyear) ) then
+               ileap = 12
             else
-              ileap = 0
-            end if
+               ileap = 0
+            endif
+
 
             if ( iday > ndays(imonth+ileap) ) then
               iday = 1
