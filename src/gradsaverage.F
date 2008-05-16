@@ -1,9 +1,9 @@
-! $Id: gradsaverage.F,v 1.8 2008-05-09 16:04:49 faschinj Exp $
+! $Id: gradsaverage.F,v 1.9 2008-05-16 17:39:45 faschinj Exp $
         module grads_common
         
-	implicit none
+        implicit none
 
-	public :: grads_average, grads_average_interval, grads_zlvl
+        public :: grads_average, grads_average_interval, grads_zlvl
 
         private
 
