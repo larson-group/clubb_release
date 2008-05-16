@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.87 2008-05-09 16:40:19 faschinj Exp $
+! $Id: parameterization_interface.F,v 1.88 2008-05-16 17:36:22 faschinj Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -78,6 +78,7 @@
      .                        lapack_error,
      .                        clubb_at_debug_level
        use skw
+       use permute_height_time_mod
 #ifdef STATS
        use stats_hoc
        use stats_subs
@@ -791,15 +792,16 @@
         use diagnostic_variables, only: pdf_parms, AKm_est, 
      .  AKm, AKstd, AKstd_cld, AKm_rcm, AKm_rcc, rcm_est
 
+        use lh_sampler_mod
+        use micro_calcs_mod
+        
         implicit none  
 
-        ! External
-        external :: lh_sampler, micro_calcs
 
         ! Input Variables 
         integer, intent(in) :: k  ! index
         integer, intent(in) :: n, dvar, i_rmd, nt, grid
-        logical, intent(in) :: sflag
+        logical, intent(out) :: sflag
 
         ! coeffs of s from pdf_closure_new
         real, intent(in) :: crt1, crt2, cthl1, cthl2
