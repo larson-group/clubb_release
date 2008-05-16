@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.39 2008-05-14 23:14:59 dschanen Exp $
+# $Id: make.deps,v 1.40 2008-05-16 17:44:06 faschinj Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -45,7 +45,7 @@ KK_microphys.o  : constants.o model_flags.o lapack_wrap.o parab.o stats_hoc.o \
 microphysics.o	: constants.o model_flags.o lapack_wrap.o KK_microphys.o \
 	coamps_micro_driver.o parameters.o stats_hoc.o error_code.o \
         ice_dfsn_mod.o diffusion.o microphysics.F 
-outputgrads.o	: constants.o recl.F endian.o outputfile.o outputgrads.F
+outputgrads.o	: constants.o recl.F endian.o outputfile.o calendar.o outputgrads.F
 outputnc.o	: constants.o outputfile.o outputnc.F
 diag_variables.o: constants.o grid.o model_flags.o diag_variables.F 
 prog_variables.o: constants.o grid.o model_flags.o prog_variables.F 
@@ -78,7 +78,7 @@ parameterization_interface.o : constants.o hydrostatic.o mixing.o \
 	stats_sfc.o sounding.o diag_var.o saturation.o wp23.o \
 	grid.o saturation.o compute_um_edsclrm_mod.o prog_variables.o \
 	diag_variables.o \
-	sfc.o closure_new.o latin_hyper_sample.o lh_sampler.o \
+	sfc.o closure_new.o lh_sampler.o \
 	parameters.o error_code.o  parameterization_interface.F 
 hydrostatic.o	: constants.o hydrostatic.F 
 mixing_length.o	: constants.o parameters.o numer_check.o error_code.o mixing_length.F
@@ -103,25 +103,13 @@ amoeba.o	: nrtype.o nr.o nrutil.o amoeba.f90
 
 
 # == Latin Hypercube dependencies  ==
-autoconv_driver.o	: autoconv_driver.F
-corrcoef.o		: corrcoef.F
-gaus_condt.o		: gaus_condt.F
-gaus_mixt_points.o	: gaus_mixt_points.F
-gaussj.o		: gaussj.F
-generate_k_order.o	: generate_k_order.F
-latin_hyper_sample.o	: latin_hyper_sample.F
-lh_sampler.o		: lh_sampler.F
-ltqnorm.o		: constants.o ltqnorm.F
-matmult.o		: matmult.F
+math_utilities.o	: math_utilities.F
+lh_sampler.o		: constants.o random.o matrix_operations.o lh_sampler.F
 micro_calcs.o		: constants.o erf.o micro_calcs.F 
 permute_height_time.o	: permute_height_time.F
-ql_estimate.o		: ql_estimate.F
-ran2.o			: ran2.F
-rand_permute.o		: rand_permute.F
-rtpthlp_2_sptp.o	: rtpthlp_2_sptp.F
-sample_points.o		: sample_points.F
+random.o		: random.F
+matrix_operations.o     : matrix_operations.F
 st_2_rtthl.o		: st_2_rtthl.F
-truncate_gaus_mixt.o	: truncate_gaus_mixt.F
 
 # == GCSS dependencies ==
 diag_ustar.o: constants.o diag_ustar.F
@@ -164,7 +152,7 @@ file_functions.o	: file_functions.F
 coamps_micro_driver.o : constants.o grid.o stats_hoc.o saturation.o coamps_micro_driver.F
 
 # == BUGSrad dependencies ==
-cos_solar_zen.o         : constants.o cos_solar_zen.F
+cos_solar_zen.o         : constants.o calendar.o cos_solar_zen.F
 kinds.o			: kinds.F90
 bugsrad_planck.o	: kinds.o bugsrad_planck.F90
 cloud_correlate.o	: kinds.o cloud_correlate.F90
@@ -201,6 +189,7 @@ hoc.o		: parameterization_interface.o arm.o astex.o atex.o \
 sounding.o	: grid.o std_atmosphere_mod.o interpolation.o constants.o sounding.F
 std_atmosphere_mod.o: constants.o interpolation.o std_atmosphere_mod.F
 interpolation.o : interpolation.F
+calendar.o      : calendar.F
 inputfields.o	: grid.o inputgrads.o prog_variables.o diag_variables.o \
 	inputfields.F 
 gradsaverage.o	: grid.o inputgrads.o gradsaverage.F 
