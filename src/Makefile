@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.117 2008-05-16 17:43:15 faschinj Exp $
+# $Id: Makefile,v 1.118 2008-05-16 20:08:57 faschinj Exp $
 #
 # This version should work with BSD, GNU make, smake and dmake.
 #
@@ -25,7 +25,6 @@ LATIN_HYP = math_utilities.o \
 	micro_calcs.o permute_height_time.o \
 	random.o \
 	matrix_operations.o \
-        st_2_rtthl.o \
 
 BUGS_RAD = kinds.o std_atmosphere_mod.o bugsrad_planck.o bugsrad_physconst.o gases_ckd.o \
 	cloud_correlate.o bugs_lwr.o bugs_swr.o bugs_rad.o \
