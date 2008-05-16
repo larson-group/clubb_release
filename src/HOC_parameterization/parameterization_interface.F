@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.89 2008-05-16 18:20:13 griffinb Exp $
+! $Id: parameterization_interface.F,v 1.90 2008-05-16 23:03:40 faschinj Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -77,8 +77,8 @@
        use error_code, only : clubb_var_equals_NaN,
      .                        lapack_error,
      .                        clubb_at_debug_level
-       use skw
-       use permute_height_time_mod
+       use Skw, only: Skw_func
+       use permute_height_time_mod, only: permute_height_time
 #ifdef STATS
        use stats_hoc
        use stats_subs
