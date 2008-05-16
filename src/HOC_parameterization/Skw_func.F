@@ -1,4 +1,4 @@
-         module skw
+         module Skw
          
          implicit none
          
@@ -46,4 +46,4 @@
          end function Skw_func
 !-----------------------------------------------------------------------
 
-         end module
+         end module Skw
