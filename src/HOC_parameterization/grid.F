@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: grid.F,v 1.14 2008-05-16 16:01:34 griffinb Exp $
+! $Id: grid.F,v 1.15 2008-05-16 18:20:12 griffinb Exp $
 !===============================================================================
         module grid_class
 
@@ -165,14 +165,14 @@
            contains
 
 !===============================================================================
-           subroutine gridsetup( nnzp, deltaz, zm_init, implemented,
-     .                           host_momentum, host_thermodynamic )
+           subroutine gridsetup( nnzp, implemented, grid_type, 
+     .                           deltaz, zm_init, momentum_heights, 
+     .                           thermodynamic_heights )
 
 !          Description:
 !          Grid Constructor
 !
-!          This subroutine sets up a uniformly spaced vertical grid 
-!          similar to the RAMS grid.
+!          This subroutine sets up the CLUBB vertical grid.
 !
 !-----------------------------------------------------------------------
 
@@ -193,21 +193,40 @@
 
            ! Input Variables
            integer, intent(in) :: 
-     .     nnzp ! Number of vertical levels in grid     [#]
+     .     nnzp     ! Number of vertical levels in grid      [#]
 
-           real, intent(in) :: 
-     .     deltaz,  ! Vertical grid spacing             [m]
-     .     zm_init  ! Initial grid point                [m]
-
-           ! Flag to see if HOC is running on it's own or it it's part
-           ! of a larger model.
+           ! Flag to see if CLUBB is running on it's own, 
+           ! or if it's implemented as part of a host model.
            logical, intent(in) :: implemented
 
-           ! If it's part of a larger model, it needs to use that models
-           ! grid heights.
+           ! If CLUBB is running on it's own, this option determines
+           ! if it is using:
+           ! 1) an evenly-spaced grid,
+           ! 2) a stretched (unevenly-spaced) grid on the 
+           !    thermodynamic grid levels, or
+           ! 3) a stretched (unevenly-spaced) grid on the
+           !    momentum grid levels.
+           integer, intent(in) :: grid_type
+         
+           ! If the CLUBB model is running by itself, and is using an
+           ! evenly-spaced grid (grid_type = 1), it needs the vertical 
+           ! grid spacing and momentum-level starting altitude as input.
+           real, intent(in) :: 
+     .     deltaz,  ! Vertical grid spacing                  [m]
+     .     zm_init  ! Initial grid altitude (momentum level) [m]
+
+           ! If the CLUBB parameterization is implemented in a host model,
+           ! it needs to use the host model's momentum level altitudes 
+           ! and thermodynamic level altitudes.
+           ! If the CLUBB model is running by itself, but is using a 
+           ! stretched grid for thermodynamic levels (grid_type = 2),
+           ! it needs to use the thermodynamic level altitudes as input.
+           ! If the CLUBB model is running by itself, but is using a 
+           ! stretched grid for momentum levels (grid_type = 3),
+           ! it needs to use the momentum level altitudes as input.
            real, intent(in), dimension(nnzp) :: 
-     .     host_momentum,     ! Host momentum grid              [m]
-     .     host_thermodynamic ! Host thermodynamic grid         [m]
+     .     momentum_heights,     ! Momentum level altitudes (input)      [m]
+     .     thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
 
            ! Local Variables
            integer :: k, ierr ! Loop index and allocation stat
@@ -230,9 +249,11 @@
 
            if ( ierr /= 0 ) stop "Grid allocation failed."
 
+
            if ( .not. implemented ) then
 
-!              if ( grid_type == 1 ) then
+
+              if ( grid_type == 1 ) then
 
                  ! Evenly-spaced grid.
                  ! Momentum level altitudes are defined based on the grid 
@@ -248,73 +269,102 @@
                  ! Define thermodynamic level altitudes.  Thermodynamic 
                  ! level altitudes are located at the central altitude 
                  ! levels, exactly halfway between momentum level 
-                 ! altitudes.  The first thermodynmic point is below 
-                 ! zm_init.
+                 ! altitudes.  The lowermost thermodynamic level is found
+                 ! by taking 1/2 the altitude difference between the
+                 ! bottom two momentum levels and subtracting that value
+                 ! from the bottom momentum level.  The first 
+                 ! thermodynamic level is below zm_init.
                  gr%zt(1) = zm_init - ( 0.5 * deltaz )
                  do k = 2, gr%nnzp, 1
                     gr%zt(k) = 0.5 * ( gr%zm(k) + gr%zm(k-1) )
                  enddo
 
-!              elseif ( grid_type == 2 ) then
-!
-!                 ! Stretched (unevenly-spaced) grid:  stretched 
-!                 ! thermodynamic levels.  Thermodynamic levels are 
-!                 ! defined according to a stretched grid that is entered 
-!                 ! through the use an input file.  This is similar to a 
-!                 ! SAM-style stretched grid.
-!
-!                 ! Define thermodynamic level altitudes.
-!                 do k = 1, gr%nnzp, 1
-!                    gr%zt(k) = thermodynamic_heights(k)
-!                 enddo
-!
-!                 ! Define momentum level altitudes.  Momentum level 
-!                 ! altitudes are located at the central altitude levels,
-!                 ! exactly halfway between thermodynamic level altitudes.
-!                 do k = 1, gr%nnzp-1, 1
-!                    gr%zm(k) = 0.5 * ( gr%zt(k+1) + gr%zt(k) )
-!                 enddo
-!                 gr%zm(gr%nnzp) = gr%zt(gr%nnzp) + 
-!     .                0.5 * ( gr%zt(gr%nnzp) - gr%zt(gr%nnzp-1) )
-!
-!              elseif ( grid_type == 3 ) then
-!
-!                 ! Stretched (unevenly-spaced) grid:  stretched 
-!                 ! momentum levels.  Momentum levels are defined 
-!                 ! according to a stretched grid that is entered through
-!                 ! the use an input file.  This is similar to a WRF-style
-!                 ! stretched grid.
-!
-!                 ! Define momentum level altitudes.
-!                 do k = 1, gr%nnzp, 1
-!                    gr%zm(k) = momentum_heights(k)
-!                 enddo
-!
-!                 ! Define thermodynamic level altitudes.  Thermodynamic
-!                 ! level altitudes are located at the central altitude
-!                 ! levels, exactly halfway between momentum level 
-!                 ! altitudes.
-!                 gr%zt(1) = gr%zm(1) - 0.5 * ( gr%zm(2) - gr%zm(1) )
-!                 do k = 2, gr%nnzp, 1
-!                    gr%zt(k) = 0.5 * ( gr%zm(k) + gr%zm(k-1) )
-!                 enddo
-!
-!              endif
+
+              elseif ( grid_type == 2 ) then
+
+                 ! Stretched (unevenly-spaced) grid:  stretched 
+                 ! thermodynamic levels.  Thermodynamic levels are 
+                 ! defined according to a stretched grid that is entered 
+                 ! through the use an input file.  This is similar to a 
+                 ! SAM-style stretched grid.
+
+                 ! Define thermodynamic level altitudes.
+                 do k = 1, gr%nnzp, 1
+                    gr%zt(k) = thermodynamic_heights(k)
+                 enddo
+
+                 ! Define momentum level altitudes.  Momentum level 
+                 ! altitudes are located at the central altitude levels,
+                 ! exactly halfway between thermodynamic level altitudes.
+                 ! The uppermost momentum level altitude is found by 
+                 ! taking 1/2 the altitude difference between the top 
+                 ! two thermodynamic levels and adding that value to the
+                 ! top thermodynamic level.
+                 do k = 1, gr%nnzp-1, 1
+                    gr%zm(k) = 0.5 * ( gr%zt(k+1) + gr%zt(k) )
+                 enddo
+                 gr%zm(gr%nnzp) = gr%zt(gr%nnzp) + 
+     .                0.5 * ( gr%zt(gr%nnzp) - gr%zt(gr%nnzp-1) )
+
+
+              elseif ( grid_type == 3 ) then
+
+                 ! Stretched (unevenly-spaced) grid:  stretched 
+                 ! momentum levels.  Momentum levels are defined 
+                 ! according to a stretched grid that is entered through
+                 ! the use an input file.  This is similar to a WRF-style
+                 ! stretched grid.
+
+                 ! Define momentum level altitudes.
+                 do k = 1, gr%nnzp, 1
+                    gr%zm(k) = momentum_heights(k)
+                 enddo
+
+                 ! Define thermodynamic level altitudes.  Thermodynamic
+                 ! level altitudes are located at the central altitude
+                 ! levels, exactly halfway between momentum level 
+                 ! altitudes.  The lowermost thermodynamic level is found
+                 ! by taking 1/2 the altitude difference between the 
+                 ! bottom two momentum levels and subtracting that value
+                 ! from the bottom momentum level.
+                 gr%zt(1) = gr%zm(1) - 0.5 * ( gr%zm(2) - gr%zm(1) )
+                 do k = 2, gr%nnzp, 1
+                    gr%zt(k) = 0.5 * ( gr%zm(k) + gr%zm(k-1) )
+                 enddo
+
+
+              else
+
+                 ! Invalid grid type.
+                 write(fstderr,*) "Invalid grid type: ", grid_type,
+     .                            ".  Valid options are 1, 2, or 3."
+                 stop
+
+
+              endif
+
 
            else
 
+              ! The CLUBB parameterization is implemented in a host 
+              ! model.  Use the host model's momentum level altitudes
+              ! and thermodynamic level altitudes to set up the CLUBB
+              ! grid.
+
               ! Momentum level altitudes from host model.
               do k = 1, gr%nnzp, 1
-                 gr%zm(k) = host_momentum(k)
+                 gr%zm(k) = momentum_heights(k)
               enddo
 
               ! Thermodynamic level altitudes from host model after 
               ! possible grid-index adjustment for CLUBB interface.
               do k = 1, gr%nnzp, 1
-                 gr%zt(k) = host_thermodynamic(k)
+                 gr%zt(k) = thermodynamic_heights(k)
               enddo
 
+
            endif
+
 
            ! Define dzm, which is the inverse spacing between 
            ! thermodynamic grid levels.
@@ -323,12 +373,14 @@
            enddo
            gr%dzm(gr%nnzp) = gr%dzm(gr%nnzp-1)
 
+
            ! Define dzt, which is the inverse spacing between 
            ! momentum grid levels.
            do k=2,gr%nnzp
               gr%dzt(k) = 1. / ( gr%zm(k) - gr%zm(k-1) )
            enddo
            gr%dzt(1) = gr%dzt(2)
+
 
            ! Interpolation Weights: zm grid to zt grid.
            ! The grid index (k) is the index of the level on the 
@@ -344,6 +396,7 @@
      .               = interp_weights_zm2zt_imp( k )
            enddo
 
+
            ! Interpolation Weights: zt grid to zm grid.
            ! The grid index (k) is the index of the level on the 
            ! momentum (zm) grid.
@@ -357,6 +410,7 @@
               gr%weights_zt2zm(t_above:t_below,k) 
      .               = interp_weights_zt2zm_imp( k )
            enddo
+
 
            return
            end subroutine gridsetup

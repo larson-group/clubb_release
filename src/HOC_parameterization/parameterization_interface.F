@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.88 2008-05-16 17:36:22 faschinj Exp $
+! $Id: parameterization_interface.F,v 1.89 2008-05-16 18:20:13 griffinb Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -849,11 +849,11 @@
         end subroutine latin_hypercube_sampling
 !-----------------------------------------------------------------------
         subroutine parameterization_setup
-     .             ( nzmax, deltaz, zm_init, T0_in, ts_nudge_in, params,
+     .             ( nzmax, T0_in, ts_nudge_in, params,
      .               lbugsrad, kk_rain, licedfs, lcoamps_micro,
-     .               cloud_sed,
-     .               luv_nudge, lKhm_aniso, implemented, 
-     .               host_momentum, host_thermodynamic, 
+     .               cloud_sed, luv_nudge, lKhm_aniso, 
+     .               implemented, grid_type, deltaz, zm_init,
+     .               momentum_heights, thermodynamic_heights, 
      .               host_dx, host_dy, err_code )
 
         use grid_class
@@ -873,14 +873,38 @@
         ! Grid definition
         integer, intent(in) :: nzmax  ! Vertical grid levels            [#]
 
-        real, intent(in) :: 
-     .  deltaz,  ! Change in altitude in per level              [m]
-     .  zm_init  ! First vertical level on m (usually 0.).      [m]
+        ! Flag to see if CLUBB is running on it's own,
+        ! or if it's implemented as part of a host model.
+        logical, intent(in) :: implemented   ! (T/F)
 
-        ! Grid setup if part of larger (host) model.
-        real, dimension(nzmax) :: 
-     .  host_momentum,     !    [m]
-     .  host_thermodynamic !    [m]
+        ! If CLUBB is running on it's own, this option determines
+        ! if it is using:
+        ! 1) an evenly-spaced grid,
+        ! 2) a stretched (unevenly-spaced) grid on the
+        !    thermodynamic grid levels, or
+        ! 3) a stretched (unevenly-spaced) grid on the
+        !    momentum grid levels.
+        integer, intent(in) :: grid_type
+
+        ! If the CLUBB model is running by itself, and is using an
+        ! evenly-spaced grid (grid_type = 1), it needs the vertical
+        ! grid spacing and momentum-level starting altitude as input.
+        real, intent(in) ::
+     .  deltaz,  ! Change in altitude per level           [m]
+     .  zm_init  ! Initial grid altitude (momentum level) [m]
+
+        ! If the CLUBB parameterization is implemented in a host model,
+        ! it needs to use the host model's momentum level altitudes
+        ! and thermodynamic level altitudes.
+        ! If the CLUBB model is running by itself, but is using a
+        ! stretched grid for thermodynamic levels (grid_type = 2),
+        ! it needs to use the thermodynamic level altitudes as input.
+        ! If the CLUBB model is running by itself, but is using a
+        ! stretched grid for momentum levels (grid_type = 3),
+        ! it needs to use the momentum level altitudes as input.
+        real, intent(in), dimension(nzmax) ::
+     .  momentum_heights,     ! Momentum level altitudes (input)      [m]
+     .  thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
 
         ! Host model horizontal grid spacing, if part of host model.
         real, intent(in) ::
@@ -903,9 +927,6 @@
      .  cloud_sed,    ! Cloud Sedimentation
      .  luv_nudge,    ! Wind nudging for mpace_b case
      .  lKhm_aniso    ! Whether to use anisotropic Khm. - Michael Falk 2 Feb 2007
-
-        logical, intent(in) :: 
-     .  implemented ! Whether this is part of larger model (T/F)
 
         ! Output variables
         integer, intent(out) ::
@@ -933,8 +954,9 @@
            
            write(fstderr,*) "deltaz = ", deltaz
            write(fstderr,*) "zm_init = ", zm_init
-           write(fstderr,*) "host_momentum = ", host_momentum
-           write(fstderr,*) "host_thermodynamic = ", host_thermodynamic 
+           write(fstderr,*) "momentum_heights = ", momentum_heights
+           write(fstderr,*) "thermodynamic_heights = ", 
+     .                       thermodynamic_heights
            write(fstderr,*) "T0_in = ", T0_in
            write(fstderr,*) "ts_nudge_in = ", ts_nudge_in
            write(fstderr,*) "params = ", params 
@@ -954,9 +976,9 @@
         call setup_diagnostic_variables( nzmax )
 
         ! Setup grid
-
-        call gridsetup( nzmax, deltaz, zm_init, implemented,
-     .                  host_momentum, host_thermodynamic )
+        call gridsetup( nzmax, implemented, grid_type,
+     .                  deltaz, zm_init, momentum_heights,
+     .                  thermodynamic_heights )
 
         ! Determine the maximum allowable value for Lscale.
         if ( implemented ) then

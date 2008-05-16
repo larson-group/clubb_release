@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.182 2008-05-14 23:14:58 dschanen Exp $
+! $Id: hoc.F,v 1.183 2008-05-16 18:20:01 griffinb Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -32,7 +32,12 @@
 
         ! Grid definition
         integer, private :: 
-     .  nzmax  ! Vertical extent in levels              [#]
+     .  nzmax,    ! Vertical extent in levels              [#]
+     .  grid_type ! 1 ==> evenly-spaced grid levels
+                  ! 2 ==> stretched (unevenly-spaced) grid
+                  !       on thermodynamic grid levels.
+                  ! 3 ==> stretched (unevenly-spaced) grid
+                  !       on momentum grid levels.
 
         real, private :: 
      .  deltaz, ! Change per grid level                 [m]
@@ -190,7 +195,10 @@
 
         ! Dummy grid height arrays
         real, dimension(:), allocatable :: 
-     .  dummy_array_m, dummy_array_t
+     .  dummy_array_zm, dummy_array_zt
+
+        ! Dummy dx and dy horizontal grid spacing.
+        real :: dummy_dx, dummy_dy
 
         integer :: i, i1 ! Internal Loop Variables
         integer :: iinit ! initial iteration
@@ -200,7 +208,7 @@
 
         ! Definition of namelists
         namelist /model_setting/ 
-     .  runtype, nzmax, deltaz, zm_init,
+     .  runtype, nzmax, grid_type, deltaz, zm_init,
      .  day, month, year, rlat, rlon,
      .  time_initial, time_final, time_spinup,
      .  dtmain, dtclosure,
@@ -217,10 +225,11 @@
         ! Initialize the model run 
 
         ! Pick some default values for model_setting
-        runtype  = "generic"
-        nzmax    = 100
-        deltaz   = 40.
-        zm_init  = 0.
+        runtype   = "generic"
+        nzmax     = 100
+        grid_type = 1
+        deltaz    = 40.
+        zm_init   = 0.
 
         day   = 1
         month = 1
@@ -281,29 +290,32 @@
 
        call set_clubb_debug_level( debug_level )
 
-        ! Dummy grid height arrays
-       allocate( dummy_array_m(1:nzmax), dummy_array_t(1:nzmax) )
+       ! Dummy grid height arrays and horizontal grid spacings.
+       allocate( dummy_array_zm(1:nzmax), dummy_array_zt(1:nzmax) )
 
-       dummy_array_m = 0.0
-       dummy_array_t = 0.0
+       dummy_array_zm = 0.0
+       dummy_array_zt = 0.0
+
+       dummy_dx = 0.0
+       dummy_dy = 0.0
 
        ! Allocate & initialize variables,
        ! setup grid, setup constants, and setup flags
 
        call parameterization_setup
-     .      ( nzmax, deltaz, zm_init, T0, ts_nudge, params,
+     .      ( nzmax, T0, ts_nudge, params,
      .        lbugsrad, kk_rain, licedfs, lcoamps_micro,
-     .        cloud_sed,
-     .        luv_nudge, lKhm_aniso, .false.,
-     .        dummy_array_m, dummy_array_t, 
-     .        0.0, 0.0, err_code )
+     .        cloud_sed, luv_nudge, lKhm_aniso,
+     .        .false., grid_type, deltaz, zm_init,
+     .        dummy_array_zm, dummy_array_zt,
+     .        dummy_dx, dummy_dy, err_code )
 
       
        if ( err_code == clubb_var_out_of_bounds ) return
 
 
        ! Dummy grid height arrays
-       deallocate( dummy_array_m, dummy_array_t )
+       deallocate( dummy_array_zm, dummy_array_zt )
 
        
        if ( .not. lrestart ) then
