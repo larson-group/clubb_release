@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.61 2008-05-14 17:57:25 ajsmith4 Exp $
+! $Id: wp23.F,v 1.62 2008-05-16 23:02:32 faschinj Exp $
 !===============================================================================
         module wp23
 
@@ -50,13 +50,14 @@
 !       /Implict solution for the vertical velocity moments/
 !------------------------------------------------------------------------
 
-        use grid_class
-        use parameters
-        use constants
-        use model_flags
-        use stats_prec, only: time_prec
-        use error_code, only: lapack_error,
-     .                        clubb_at_debug_level
+        use grid_class, only: gr, ! Variable(s)
+     .               zt2zm, zm2zt ! Procedure(s)
+        use parameters, only: C11c, C11b, C11, C1c, C1b, C1, c_K1, ! Variable(s)
+     .               c_ksqd, c_K8 
+        use constants, only: fstderr    ! Variable(s)
+        use stats_prec, only: time_prec ! Variable(s)
+        use error_code, only: lapack_error, ! Procedure(s)
+     .                        clubb_at_debug_level 
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
@@ -279,15 +280,75 @@
 !       _Equations for HOC_ section 6.3 
 !------------------------------------------------------------------------
 
-        use grid_class
-        use constants, only: emin, eps
-        use model_flags, only: lKhm_aniso
-        use stats_prec, only: time_prec
-        use lapack_wrap, only: band_solve, band_solvex
-        use error_code, only: clubb_singular_matrix,
-     .                        clubb_bad_lapack_arg
+        use grid_class, only: 
+     .      gr,        ! Variable 
+     .      zm2zt      ! Procedure
+        use constants, only:
+     .      emin,      ! Variables
+     .      eps
+        use model_flags, only: 
+     .      lKhm_aniso ! Variable
+        use stats_prec, only: 
+     .      time_prec  ! Variable
+        use lapack_wrap, only: 
+     .      band_solve, ! Procedures 
+     .      band_solvex
+        use error_code, only: 
+     .      clubb_singular_matrix, ! Variables
+     .      clubb_bad_lapack_arg
 #ifdef STATS
-        use stats_hoc
+        use stats_hoc, only: 
+     .      zm,        ! Variable(s)
+     .      zt,
+     .      sfc,
+     .      lstats_samp,
+     .      iwp2_bt,
+     .      iwp2_ta,
+     .      iwp2_ma,
+     .      iwp2_cl,
+     .      iwp2_ac,
+     .      iwp2_dp1,
+     .      iwp2_dp2,
+     .      iwp2_pr1,
+     .      iwp2_pr2,
+     .      iwp3_bt,
+     .      iwp3_ta,
+     .      iwp3_ma,
+     .      iwp3_cl,
+     .      iwp3_tp,
+     .      iwp3_ac,
+     .      iwp3_dp1,
+     .      iwp3_pr1,
+     .      iwp3_pr2,
+     .      iwp23_cn,
+     .      zmscr01,
+     .      zmscr02,
+     .      zmscr03,
+     .      zmscr04,
+     .      zmscr05,
+     .      zmscr06,
+     .      zmscr07,
+     .      zmscr08,
+     .      zmscr09,
+     .      zmscr10,
+     .      zmscr11,
+     .      zmscr12,
+     .      ztscr01,
+     .      ztscr02,
+     .      ztscr03,
+     .      ztscr04,
+     .      ztscr05,
+     .      ztscr06,
+     .      ztscr07,
+     .      ztscr08,
+     .      ztscr09,
+     .      ztscr10,
+     .      ztscr11,
+     .      ztscr12,
+     .      ztscr13,
+     .      ztscr14,
+     .      ztscr15,
+     .      ztscr16
 #endif /*STATS*/
 
         implicit none
@@ -648,12 +709,27 @@
 !       References:
 !-----------------------------------------------------------------------
 
-        use grid_class
-        use parameters, only: C4, C5, C8, C8b, C12, nu1, nu8
-        use constants, only: wtol, eps
-        use model_flags, only: lKhm_aniso
-        use diffusion  ! both functions
-        use mean_adv   ! both functions
+        use grid_class, only: 
+     .      gr ! Variable 
+        use parameters, only: 
+     .      C4, ! Variables
+     .      C5, 
+     .      C8, 
+     .      C8b,
+     .      C12,
+     .      nu1, 
+     .      nu8
+        use constants, only: 
+     .      wtol, ! Variables
+     .      eps
+        use model_flags, only:
+     .      lKhm_aniso ! Variables
+        use diffusion, only:
+     .      diffusion_mlev, ! Procedures
+     .      diffusion_tlev
+        use mean_adv, only:
+     .      term_ma_mlev_lhs, ! Procedures
+     .      term_ma_tlev_lhs
         use stats_prec, only: time_prec
 #ifdef STATS
         use stats_hoc
@@ -1049,12 +1125,26 @@
 !       References:
 !-----------------------------------------------------------------------
 
-        use grid_class
-        use parameters, only: C4, C5, C8, C8b, C12, nu1, nu8
-        use constants, only: wtol, eps
-        use model_flags, only: lKhm_aniso
-        use diffusion
-        use stats_prec, only: time_prec
+        use grid_class, only: 
+     .      gr ! Variable
+        use parameters, only: 
+     .      C4, ! Variables
+     .      C5, 
+     .      C8, 
+     .      C8b, 
+     .      C12, 
+     .      nu1,
+     .      nu8
+        use constants, only:
+     .      wtol, ! Variable(s) 
+     .      eps
+        use model_flags, only: 
+     .      lKhm_aniso ! Variable
+        use diffusion, only:
+     .      diffusion_mlev, ! Procedures
+     .      diffusion_tlev
+        use stats_prec, only: 
+     .      time_prec ! Variable
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
@@ -1674,8 +1764,10 @@
 !       References:
 !-----------------------------------------------------------------------
 
-        use constants, only: grav ! Gravitational acceleration [m/s^2]
-        use parameters, only: T0  ! Reference temperature      [K]
+        use constants, only: 
+     .      grav ! Gravitational acceleration [m/s^2]
+        use parameters, only: 
+     .      T0  ! Reference temperature      [K]
 
         implicit none
 
@@ -1856,7 +1948,8 @@
 !       References:
 !-----------------------------------------------------------------------
 
-        use grid_class ! gr%weights_zt2zm
+        use grid_class, only: 
+     .      gr ! Variable
 
         implicit none
 
