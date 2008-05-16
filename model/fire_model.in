@@ -1,4 +1,4 @@
-! $Id: fire_model.in,v 1.13 2008-05-09 22:48:50 faschinj Exp $
+! $Id: fire_model.in,v 1.14 2008-05-16 18:28:20 griffinb Exp $
 ! Parameter file for GCSS FIRE Sc case
 
 &model_setting
@@ -6,6 +6,7 @@
 runtype = "fire"
 
 nzmax = 48
+grid_type = 1
 deltaz = 25.0
 zm_init = 0.0
 

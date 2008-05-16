@@ -1,4 +1,4 @@
-! $Id: nov11_altocu_model.in,v 1.21 2008-05-09 22:48:51 faschinj Exp $
+! $Id: nov11_altocu_model.in,v 1.22 2008-05-16 18:28:21 griffinb Exp $
 ! Parameter file for November 11 altocumulus case
 
 &model_setting
@@ -6,6 +6,7 @@
 runtype = "nov11_altocu"
 
 nzmax = 176
+grid_type = 1
 deltaz = 25.0
 zm_init = 3000.0
 

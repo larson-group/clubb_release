@@ -1,4 +1,4 @@
-! $Id: jun25_altocu_model.in,v 1.13 2008-05-09 22:48:50 faschinj Exp $
+! $Id: jun25_altocu_model.in,v 1.14 2008-05-16 18:28:20 griffinb Exp $
 ! Parameter file for June 25 altocumulus case
 
 &model_setting
@@ -6,6 +6,7 @@
 runtype = "jun25_altocu"
 
 nzmax = 201
+grid_type = 1
 deltaz = 12.5
 zm_init = 4808.0
 

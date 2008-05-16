@@ -6,6 +6,7 @@
 runtype = "dycoms2_rf02_so"
 
 nzmax  = 147
+grid_type = 1
 deltaz = 10.0
 zm_init = 0.0
 

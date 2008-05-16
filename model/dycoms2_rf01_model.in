@@ -1,4 +1,4 @@
-! $Id: dycoms2_rf01_model.in,v 1.19 2008-05-09 22:48:50 faschinj Exp $
+! $Id: dycoms2_rf01_model.in,v 1.20 2008-05-16 18:28:20 griffinb Exp $
 ! Parameter file for DYCOMS II RF01 Sc case
 
 &model_setting
@@ -7,6 +7,7 @@ runtype = "dycoms2_rf01"
 sfctype = 0
 
 nzmax = 132
+grid_type = 1
 deltaz = 10.0
 zm_init = 0.0
 

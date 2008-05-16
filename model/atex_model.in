@@ -1,4 +1,4 @@
-! $Id: atex_model.in,v 1.16 2008-05-09 22:48:50 faschinj Exp $
+! $Id: atex_model.in,v 1.17 2008-05-16 18:28:20 griffinb Exp $
 ! Parameter file for ATEX intermediate regime
 
 &model_setting
@@ -6,6 +6,7 @@
 runtype = "atex"
 
 nzmax   = 150
+grid_type = 1
 deltaz  = 20.0
 zm_init = 0.0
 day = 7, month = 2, year = 1969,

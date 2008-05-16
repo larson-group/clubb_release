@@ -1,4 +1,4 @@
-! $Id: clex9_nov02_model.in,v 1.7 2008-05-09 22:48:50 faschinj Exp $
+! $Id: clex9_nov02_model.in,v 1.8 2008-05-16 18:28:20 griffinb Exp $
 ! Parameter file for CLEX-9: November 02 altocumulus case
 
 &model_setting
@@ -6,6 +6,7 @@
 runtype = "clex9_nov02"
 
 nzmax = 120
+grid_type = 1
 deltaz = 25.0
 zm_init = 3097.0
 

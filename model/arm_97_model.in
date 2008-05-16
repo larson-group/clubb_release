@@ -4,6 +4,7 @@
 runtype = "arm_97"
 
 nzmax   = 100
+grid_type = 1
 deltaz  = 150.0
 zm_init = 0.0
 

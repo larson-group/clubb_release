@@ -1,4 +1,4 @@
-! $Id: gabls2_model.in,v 1.9 2008-05-09 22:48:50 faschinj Exp $
+! $Id: gabls2_model.in,v 1.10 2008-05-16 18:28:20 griffinb Exp $
 ! Parameter file for GABLS2 case
 ! Edited by Michael Falk, 28 December 2006
 
@@ -7,6 +7,7 @@
 runtype = "gabls2"
 
 nzmax = 400
+grid_type = 1
 deltaz = 10.0
 zm_init = 0.0
 

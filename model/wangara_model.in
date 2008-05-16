@@ -1,4 +1,4 @@
-! $Id: wangara_model.in,v 1.13 2008-05-09 22:48:51 faschinj Exp $
+! $Id: wangara_model.in,v 1.14 2008-05-16 18:28:21 griffinb Exp $
 ! Parameter file for Wangara day 33 dry convective boundary layer
 ! Observed soundings
 
@@ -7,6 +7,7 @@
 runtype = "wangara"
 
 nzmax = 50
+grid_type = 1
 deltaz = 40.0
 zm_init = 0.0
 

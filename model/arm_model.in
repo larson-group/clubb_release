@@ -1,4 +1,4 @@
-! $Id: arm_model.in,v 1.17 2008-05-09 22:48:50 faschinj Exp $
+! $Id: arm_model.in,v 1.18 2008-05-16 18:28:20 griffinb Exp $
 ! Parameter file for GCSS ARM Cu over land case
 
 &model_setting
@@ -6,6 +6,7 @@
 runtype = "arm"
 
 nzmax   = 110
+grid_type = 1
 deltaz  = 40.0
 zm_init = 0.0
 day = 21, month = 6, year = 1997,
