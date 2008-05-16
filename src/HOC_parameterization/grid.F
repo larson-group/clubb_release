@@ -1,6 +1,6 @@
 !------------------------------------------------------------------------
-! $Id: grid.F,v 1.13 2008-05-12 18:29:26 dschanen Exp $
-
+! $Id: grid.F,v 1.14 2008-05-16 16:01:34 griffinb Exp $
+!===============================================================================
         module grid_class
 
 ! Description:
@@ -9,43 +9,88 @@
 !
 ! The grid specification is as follows:
 !
-!   +              ================== zm(nnzp) =========GP=======
-!   |
-!   |
-! dzt(nnzp)  +     ------------------ zt(nnzp) ---------GP-------
-!   |        |
-!   |        |
-!   +  dzm(nnzp-1) ================== zm(nnzp-1) ================
-!            |
-!            |
-!            +     ------------------ zt(nnzp-1) ----------------
+!     +                ================== zm(nnzp) =========GP=======
+!     |
+!     |
+! 1/dzt(nnzp)  +       ------------------ zt(nnzp) ---------GP-------
+!     |        |
+!     |        |
+!     +  1/dzm(nnzp-1) ================== zm(nnzp-1) ================
+!              |
+!              |
+!              +       ------------------ zt(nnzp-1) ----------------
 ! 
-!                                       .
-!                                       .
-!                                       .
-!                                       .
-! 
-!   +              ================== zm(2) =====================
-!   |
-!   |
-! dzt(2)     +     ------------------ zt(2) ---------------------
-!   |        |
-!   |        |
-!   +      dzm(1)  ================== zm(1) ============GP=======  surface
-!            |     //////////////////////////////////////////////
-!            |
-!            +     ------------------ zt(1) ------------GP-------
+!                                           .
+!                                           .
+!                                           .
+!                                           .
 !
+!                      ================== zm(k+1) ===================
+!
+!
+!              +       ------------------ zt(k+1) -------------------
+!              |
+!              |
+!     +    1/dzm(k)    ================== zm(k) =====================
+!     |        |
+!     |        |
+! 1/dzt(k)     +       ------------------ zt(k) ---------------------
+!     |
+!     |
+!     +                ================== zm(k-1) ===================
+!
+!
+!                      ------------------ zt(k-1) -------------------
+!
+!                                           .
+!                                           .
+!                                           .
+!                                           .
+! 
+!     +                ================== zm(2) =====================
+!     |
+!     |
+! 1/dzt(2)     +       ------------------ zt(2) ---------------------
+!     |        |
+!     |        |
+!     +    1/dzm(1)    ================== zm(1) ============GP=======  zm_init
+!              |       //////////////////////////////////////////////  surface
+!              |
+!              +       ------------------ zt(1) ------------GP-------
+!
+!
+! The variable zm(k) stands for the momentum level altitude at momentum 
+! level k; the variable zt(k) stands for the thermodynamic level altitude
+! at thermodynamic level k; the variable dzt(k) is the inverse distance 
+! between momentum levels (over a central thermodynamic level k); and
+! the variable dzm(k) is the inverse distance between thermodynamic 
+! levels (over a central momentum level k).
+!
+! The grid setup is compatible with a stretched (unevely-spaced) grid.
+! Thus, the distance between successive grid levels may not always be
+! constant.
+!
+! NOTE:  Any future code written for use in the CLUBB parameterization
+!        should use interpolation formulas consistent with a stretched
+!        grid.  The simplest way to do so is to call the appropriate
+!        interpolation function from this module.  Interpolations 
+!        should not be handled in the form of:
+!        ( var_zm(k) + var_zm(k-1) ) / 2; nor in the form of:
+!        0.5*( var_zt(k+1) + var_zt(k) ).  Rather, all explicit 
+!        interpolations should call zt2zm or zm2zt; while interpolations
+!        for a variable being solved for implicitly in the code should 
+!        use gr%weights_zt2zm (which refers to interp_weights_zt2zm_imp),
+!        or gr%weights_zm2zt (which refers to interp_weights_zm2zt_imp).
+!
+! Momentum level 1 is placed at altitude zm_init, which is usually at
+! the surface.  However, zm_init can be at any level defined by the 
+! user.
 !
 ! GP indicates ghost points. Variables located at those levels are
 ! not prognosed, but only used for boundary conditions.
 !
 ! Chris Golaz, 7/17/99
 ! modified 9/10/99
-!
-! modified 2/28/01 to get rid of UNDEFINED.
-! Experience has shown that the 'UNDEFINED' idea was not shuch a good idea
-! after all.
 
 !  References:
 
@@ -119,7 +164,7 @@
 
            contains
 
-!-----------------------------------------------------------------------
+!===============================================================================
            subroutine gridsetup( nnzp, deltaz, zm_init, implemented,
      .                           host_momentum, host_thermodynamic )
 
@@ -130,6 +175,7 @@
 !          similar to the RAMS grid.
 !
 !-----------------------------------------------------------------------
+
            use constants, only: fstderr
 
            implicit none
@@ -172,7 +218,7 @@
            if ( nnzp > NWARNING ) then
              write(fstderr,*) "Warning: running with vertical grid "//
      .         "which is larger than ", NWARNING
-           end if
+           endif
 
            gr%nnzp = nnzp
 
@@ -184,49 +230,101 @@
 
            if ( ierr /= 0 ) stop "Grid allocation failed."
 
-           IF ( .NOT. implemented ) THEN
+           if ( .not. implemented ) then
 
-              ! Original code
+!              if ( grid_type == 1 ) then
 
-              ! Define momentum grid points. The first momentum level is 
-              ! at the surface
-              DO k = 1, gr%nnzp, 1
-                 gr%zm(k) = zm_init + (k-1) * deltaz
-              END DO
+                 ! Evenly-spaced grid.
+                 ! Momentum level altitudes are defined based on the grid 
+                 ! starting altitude, zm_init, the constant grid-spacing, 
+                 ! deltaz, and the number of grid levels, gr%nnzp.
 
-             ! Define thermodynamic grid. For the time being, themodynamic 
-             ! grid points are located in the center point between momentum 
-             ! points. The first thermodynmic point is below the surface.
-              gr%zt(1) = zm_init - ( 0.5 * deltaz )
-              DO k = 2, gr%nnzp, 1
-                 gr%zt(k) = 0.5 * ( gr%zm(k) + gr%zm(k-1) )
-              END DO
+                 ! Define momentum level altitudes. The first momentum 
+                 ! level is at altitude zm_init.
+                 do k = 1, gr%nnzp, 1
+                    gr%zm(k) = zm_init + (k-1) * deltaz
+                 enddo
 
-           ELSE
+                 ! Define thermodynamic level altitudes.  Thermodynamic 
+                 ! level altitudes are located at the central altitude 
+                 ! levels, exactly halfway between momentum level 
+                 ! altitudes.  The first thermodynmic point is below 
+                 ! zm_init.
+                 gr%zt(1) = zm_init - ( 0.5 * deltaz )
+                 do k = 2, gr%nnzp, 1
+                    gr%zt(k) = 0.5 * ( gr%zm(k) + gr%zm(k-1) )
+                 enddo
 
-              ! Momentum levels from host model.
-              DO k = 1, gr%nnzp, 1
+!              elseif ( grid_type == 2 ) then
+!
+!                 ! Stretched (unevenly-spaced) grid:  stretched 
+!                 ! thermodynamic levels.  Thermodynamic levels are 
+!                 ! defined according to a stretched grid that is entered 
+!                 ! through the use an input file.  This is similar to a 
+!                 ! SAM-style stretched grid.
+!
+!                 ! Define thermodynamic level altitudes.
+!                 do k = 1, gr%nnzp, 1
+!                    gr%zt(k) = thermodynamic_heights(k)
+!                 enddo
+!
+!                 ! Define momentum level altitudes.  Momentum level 
+!                 ! altitudes are located at the central altitude levels,
+!                 ! exactly halfway between thermodynamic level altitudes.
+!                 do k = 1, gr%nnzp-1, 1
+!                    gr%zm(k) = 0.5 * ( gr%zt(k+1) + gr%zt(k) )
+!                 enddo
+!                 gr%zm(gr%nnzp) = gr%zt(gr%nnzp) + 
+!     .                0.5 * ( gr%zt(gr%nnzp) - gr%zt(gr%nnzp-1) )
+!
+!              elseif ( grid_type == 3 ) then
+!
+!                 ! Stretched (unevenly-spaced) grid:  stretched 
+!                 ! momentum levels.  Momentum levels are defined 
+!                 ! according to a stretched grid that is entered through
+!                 ! the use an input file.  This is similar to a WRF-style
+!                 ! stretched grid.
+!
+!                 ! Define momentum level altitudes.
+!                 do k = 1, gr%nnzp, 1
+!                    gr%zm(k) = momentum_heights(k)
+!                 enddo
+!
+!                 ! Define thermodynamic level altitudes.  Thermodynamic
+!                 ! level altitudes are located at the central altitude
+!                 ! levels, exactly halfway between momentum level 
+!                 ! altitudes.
+!                 gr%zt(1) = gr%zm(1) - 0.5 * ( gr%zm(2) - gr%zm(1) )
+!                 do k = 2, gr%nnzp, 1
+!                    gr%zt(k) = 0.5 * ( gr%zm(k) + gr%zm(k-1) )
+!                 enddo
+!
+!              endif
+
+           else
+
+              ! Momentum level altitudes from host model.
+              do k = 1, gr%nnzp, 1
                  gr%zm(k) = host_momentum(k)
-              END DO
+              enddo
 
-              ! Thermodynamic levels from host model after possible 
-              ! grid-index adjustment for HOC interface.
-              DO k = 1, gr%nnzp, 1
+              ! Thermodynamic level altitudes from host model after 
+              ! possible grid-index adjustment for CLUBB interface.
+              do k = 1, gr%nnzp, 1
                  gr%zt(k) = host_thermodynamic(k)
-              END DO
+              enddo
 
-           END IF
+           endif
 
-           ! Define dzm. dzm is the inverse spacing between 
-           ! thermodynamic points
-
+           ! Define dzm, which is the inverse spacing between 
+           ! thermodynamic grid levels.
            do k=1,gr%nnzp-1
               gr%dzm(k) = 1. / ( gr%zt(k+1) - gr%zt(k) )
            enddo
            gr%dzm(gr%nnzp) = gr%dzm(gr%nnzp-1)
 
-           ! Define dzt. dzt is the inverse spacing between momentum points
-
+           ! Define dzt, which is the inverse spacing between 
+           ! momentum grid levels.
            do k=2,gr%nnzp
               gr%dzt(k) = 1. / ( gr%zm(k) - gr%zm(k-1) )
            enddo
@@ -263,16 +361,15 @@
            return
            end subroutine gridsetup
 
-!-----------------------------------------------------------------------
+!===============================================================================
            pure function interpolated_azm( azt )
 
 !          Description:
 !          Function to interpolate a variable located on the 
-!          thermodynamic grid (azt) to a variable on the momentum 
-!          grid (azm)
-
-!          Notes:
-!          Modified by Brian for a non-uniform grid.
+!          thermodynamic grid levels (azt) to the momentum grid 
+!          levels (azm).  This function inputs the entire azt array and
+!          outputs the results as an azm array.  The formulation used is
+!          compatible with a stretched (unevenly-spaced) grid.
 !-----------------------------------------------------------------------
 
            implicit none
@@ -286,39 +383,43 @@
            ! Local Variable
            integer :: k
 
-           ! Do the actual interpolation 
-
-           do k=1, gr%nnzp-1
-!              interpolated_azm(k) = 0.5 * ( azt(k) + azt(k+1) )
+           ! Do the actual interpolation.
+           ! Use linear interpolation.
+           do k = 1, gr%nnzp-1, 1
               interpolated_azm(k) = 
-     .                ( ( azt(k+1)-azt(k) )/( gr%zt(k+1)-gr%zt(k) ) )
-     .               * ( gr%zm(k)-gr%zt(k) ) + azt(k)
-           end do
-!           interpolated_azm(gr%nnzp) = UNDEFINED
+     .             ( ( azt(k+1)-azt(k) ) / ( gr%zt(k+1)-gr%zt(k) ) )
+     .              * ( gr%zm(k)-gr%zt(k) ) + azt(k)
+           enddo
+!           ! Set the value of azm at level gr%nnzp (the uppermost level
+!           ! in the model) to the value of azt at level gr%nnzp.
 !           interpolated_azm(gr%nnzp) = azt(gr%nnzp)
+           ! Use a linear extension based on the values of azt at levels
+           ! gr%nnzp and gr%nnzp-1 to find the value of azm at level 
+           ! gr%nnzp (the uppermost level in the model).
            interpolated_azm(gr%nnzp) = 
-     .                ( ( azt(gr%nnzp)-azt(gr%nnzp-1) )
-     .                 /( gr%zt(gr%nnzp)-gr%zt(gr%nnzp-1) ) )
-     .               * ( gr%zm(gr%nnzp)-gr%zt(gr%nnzp) ) + azt(gr%nnzp)
+     .          ( ( azt(gr%nnzp)-azt(gr%nnzp-1) )
+     .           / ( gr%zt(gr%nnzp)-gr%zt(gr%nnzp-1) ) )
+     .           * ( gr%zm(gr%nnzp)-gr%zt(gr%nnzp) ) + azt(gr%nnzp)
 
            return
+
            end function interpolated_azm
 
-!-----------------------------------------------------------------------
+!===============================================================================
            pure function interpolated_azmk( azt, k )
 
 !          Description:
-!          Function to interpolate a variable located on the
-!          thermodynamic grid (azt) to a variable on the momentum
-!          grid (azm). The function interpolates only for level k
-
-!          Notes:
-!          Modified by Brian for a non-uniform grid.
+!          Function to interpolate a variable located on the 
+!          thermodynamic grid levels (azt) to the momentum grid 
+!          levels (azm).  This function outputs the value of azm at a 
+!          single grid level (k) after interpolating using values of azt
+!          at two grid levels.  The formulation used is compatible with 
+!          a stretched (unevenly-spaced) grid.
 !-----------------------------------------------------------------------
 
            implicit none
 
-           ! Input Variable
+           ! Input Variables
            real, intent(in), dimension(gr%nnzp) :: azt
 
            integer, intent(in) :: k
@@ -326,40 +427,47 @@
            ! Return Variable
            real :: interpolated_azmk
 
-           ! Do the actual interpolation
-
+           ! Do the actual interpolation.
+           ! Use linear interpolation.
            if ( k /= gr%nnzp ) then
-!              interpolated_azmk = 0.5 * ( azt(k) + azt(k+1) )
               interpolated_azmk = 
-     .                ( ( azt(k+1)-azt(k) )/( gr%zt(k+1)-gr%zt(k) ) )
-     .               * ( gr%zm(k)-gr%zt(k) ) + azt(k)
+     .             ( ( azt(k+1)-azt(k) ) / ( gr%zt(k+1)-gr%zt(k) ) )
+     .              * ( gr%zm(k)-gr%zt(k) ) + azt(k)
            else
-!              interpolated_azmk = UNDEFINED
+!              ! Set the value of azm at level gr%nnzp (the uppermost 
+!              ! level in the model) to the value of azt at level gr%nnzp.
 !              interpolated_azmk = azt(gr%nnzp)
+              ! Use a linear extension based on the values of azt at 
+              ! levels gr%nnzp and gr%nnzp-1 to find the value of azm at
+              ! level gr%nnzp (the uppermost level in the model).
               interpolated_azmk = 
-     .                ( ( azt(gr%nnzp)-azt(gr%nnzp-1) )
-     .                 /( gr%zt(gr%nnzp)-gr%zt(gr%nnzp-1) ) )
-     .               * ( gr%zm(gr%nnzp)-gr%zt(gr%nnzp) ) + azt(gr%nnzp)
-           end if
+     .             ( ( azt(gr%nnzp)-azt(gr%nnzp-1) )
+     .              / ( gr%zt(gr%nnzp)-gr%zt(gr%nnzp-1) ) )
+     .              * ( gr%zm(gr%nnzp)-gr%zt(gr%nnzp) ) + azt(gr%nnzp)
+           endif
 
            return
+
            end function interpolated_azmk
         
-!-----------------------------------------------------------------------
+!===============================================================================
            pure function interpolated_azmk_imp( m_lev )
      .     result( azt_weight )
 
 !          Description:
 !          Function used to help in an interpolation of a variable 
-!          located on the thermodynamic grid (azt) to a variable on the 
-!          momentum grid (azm).   This function is used in 
-!          situations where the variable to be interpolated is being 
-!          treated implicitly in an equation.  This function computes a
-!          weighting factor.  This function interpolates only for 
-!          level k.
-
-!          Notes:
-!          Created by Brian for a non-uniform grid.
+!          located on the thermodynamic grid levels (azt) to the 
+!          momentum grid levels (azm).   This function computes a 
+!          weighting factor for both the upper thermodynamic level (k+1)
+!          and the lower thermodynamic level (k) on the central momentum
+!          level (k).  For the uppermost momentum grid level (k=gr%nnzp),
+!          a weighting factor for both the thermodynamic level at gr%nnzp
+!          and the thermodynamic level at gr%nnzp-1 are computed based on
+!          the use of a linear extension.  This function outputs the 
+!          weighting factors at a single grid level (k).  This function 
+!          is used in situations where the variable to be interpolated is
+!          being treated implicitly in an equation.  The formulation used
+!          is compatible with a stretched (unevenly-spaced) grid.
 !-----------------------------------------------------------------------
 
            implicit none
@@ -380,9 +488,8 @@
            real :: factor
            integer :: k
 
+           ! Compute the weighting factors at momentum level k.
            k = m_lev
-
-           ! Do actual interpolation
 
            if ( k /= gr%nnzp ) then
               ! At most levels, the momentum level is found
@@ -398,7 +505,7 @@
               ! interpolation.
               factor = 
      .             ( gr%zm(gr%nnzp)-gr%zt(gr%nnzp-1) ) 
-     .             /( gr%zt(gr%nnzp)-gr%zt(gr%nnzp-1) )
+     .             / ( gr%zt(gr%nnzp)-gr%zt(gr%nnzp-1) )
            endif
 
            ! Weight of upper thermodynamic level on momentum level.
@@ -407,18 +514,18 @@
            azt_weight(t_below) = 1.0 - factor
 
            return
+
            end function interpolated_azmk_imp
 
-!-----------------------------------------------------------------------
+!===============================================================================
            pure function interpolated_azt( azm )
 
 !          Description:
-!          Function to interpolate a variable located on the 
-!          momentum grid (azm) to a variable on the thermodynamic
-!          grid (azt)
-
-!          Notes:
-!          Modified by Brian for a non-uniform grid.
+!          Function to interpolate a variable located on the
+!          momentum grid levels (azm) to the thermodynamic grid
+!          levels (azt).  This function inputs the entire azm array and
+!          outputs the results as an azt array.  The formulation used is
+!          compatible with a stretched (unevenly-spaced) grid.
 !-----------------------------------------------------------------------
 
            implicit none
@@ -432,35 +539,39 @@
            ! Local Variable
            integer :: k  ! Index
 
-           ! Do actual interpolation 
-
-           do k=gr%nnzp,2,-1
-!              interpolated_azt(k) = 0.5 * ( azm(k-1) + azm(k) )
+           ! Do actual interpolation.
+           ! Use linear interpolation.
+           do k = gr%nnzp, 2, -1
               interpolated_azt(k) =
-     .                ( ( azm(k)-azm(k-1) )/( gr%zm(k)-gr%zm(k-1) ) )
-     .               * ( gr%zt(k)-gr%zm(k-1) ) + azm(k-1)
-           end do
-
-!           interpolated_azt(1) = UNDEFINED
+     .             ( ( azm(k)-azm(k-1) ) / ( gr%zm(k)-gr%zm(k-1) ) )
+     .              * ( gr%zt(k)-gr%zm(k-1) ) + azm(k-1)
+           enddo
+!           ! Set the value of azt at level 1 (the lowermost level in the 
+!           ! model) to the value of azm at level 1.
 !           interpolated_azt(1) = azm(1)
+           ! Use a linear extension based on the values of azm at levels
+           ! 1 and 2 to find the value of azt at level 1 (the lowermost 
+           ! level in the model).
            interpolated_azt(1) =
-     .                ( ( azm(2)-azm(1) )/( gr%zm(2)-gr%zm(1) ) )
-     .               * ( gr%zt(1)-gr%zm(1) ) + azm(1)
+     .          ( ( azm(2)-azm(1) ) / ( gr%zm(2)-gr%zm(1) ) )
+     .           * ( gr%zt(1)-gr%zm(1) ) + azm(1)
 
            return
+
            end function interpolated_azt
 
-!-----------------------------------------------------------------------
+!===============================================================================
            pure function interpolated_aztk( azm, k )
 
 !          Description:
-!          Function to interpolate a variable located on the 
-!          momentum grid (azm) to a variable on the thermodynamic
-!          grid (azt). This function interpolates only for level k.
-
-!          Notes:
-!          Modified by Brian for a non-uniform grid.
+!          Function to interpolate a variable located on the
+!          momentum grid levels (azm) to the thermodynamic grid
+!          levels (azt).  This function outputs the value of azt at a
+!          single grid level (k) after interpolating using values of azm
+!          at two grid levels.  The formulation used is compatible with 
+!          a stretched (unevenly-spaced) grid.
 !-----------------------------------------------------------------------
+
            implicit none
 
            ! Input Variables
@@ -471,39 +582,46 @@
            ! Return Variables
            real :: interpolated_aztk
         
-           ! Do actual interpolation 
-
+           ! Do actual interpolation.
+           ! Use linear interpolation.
            if ( k /= 1 ) then
-!              interpolated_aztk = 0.5 * ( azm(k-1) + azm(k) )
               interpolated_aztk =
-     .                ( ( azm(k)-azm(k-1) )/( gr%zm(k)-gr%zm(k-1) ) )
-     .               * ( gr%zt(k)-gr%zm(k-1) ) + azm(k-1)
+     .             ( ( azm(k)-azm(k-1) ) / ( gr%zm(k)-gr%zm(k-1) ) )
+     .              * ( gr%zt(k)-gr%zm(k-1) ) + azm(k-1)
            else
-!              interpolated_aztk = UNDEFINED
+!              ! Set the value of azt at level 1 (the lowermost level in 
+!              ! the model) to the value of azm at level 1.
 !              interpolated_aztk = azm(1)
+              ! Use a linear extension based on the values of azm at 
+              ! levels 1 and 2 to find the value of azt at level 1 (the 
+              ! lowermost level in the model).
               interpolated_aztk =
-     .                ( ( azm(2)-azm(1) )/( gr%zm(2)-gr%zm(1) ) )
-     .               * ( gr%zt(1)-gr%zm(1) ) + azm(1)
-           end if
+     .             ( ( azm(2)-azm(1) ) / ( gr%zm(2)-gr%zm(1) ) )
+     .              * ( gr%zt(1)-gr%zm(1) ) + azm(1)
+           endif
 
            return
+
            end function interpolated_aztk
 
-!-----------------------------------------------------------------------
+!===============================================================================
            pure function interpolated_aztk_imp( t_lev )
      .     result( azm_weight )
 
 !          Description:
-!          Function used to help in an interpolation of a variable 
-!          located on the momentum grid (azm) to a variable on the 
-!          thermodynamic grid (azt).   This function is used in 
-!          situations where the variable to be interpolated is being 
-!          treated implicitly in an equation.  This function computes a
-!          weighting factor.  This function interpolates only for 
-!          level k.
-
-!          Notes:
-!          Created by Brian for a non-uniform grid.
+!          Function used to help in an interpolation of a variable
+!          located on the momentum grid levels (azm) to the 
+!          thermodynamic grid levels (azt).   This function computes a 
+!          weighting factor for both the upper momentum level (k) and 
+!          the lower momentum level (k-1) on the central thermodynamic 
+!          level (k).  For the lowermost thermodynamic grid level (k=1), 
+!          a weighting factor for both the momentum level at 1 and the 
+!          momentum level at 2 are computed based on the use of a linear 
+!          extension.  This function outputs the weighting factors at a 
+!          single grid level (k).  This function is used in situations 
+!          where the variable to be interpolated is being treated 
+!          implicitly in an equation.  The formulation used is compatible
+!          with a stretched (unevenly-spaced) grid.
 !-----------------------------------------------------------------------
 
            implicit none
@@ -524,9 +642,8 @@
            real :: factor
            integer :: k
 
+           ! Compute the weighting factors at thermodynamic level k.
            k = t_lev
-
-           ! Do actual interpolation
 
            if ( k /= 1 ) then
               ! At most levels, the thermodynamic level is
@@ -541,7 +658,7 @@
               ! extension is required, rather than linear
               ! interpolation.
               factor = 
-     .             ( gr%zt(1)-gr%zm(1) )/( gr%zm(2)-gr%zm(1) )
+     .             ( gr%zt(1)-gr%zm(1) ) / ( gr%zm(2)-gr%zm(1) )
            endif
 
            ! Weight of upper momentum level on thermodynamic level.
@@ -550,16 +667,18 @@
            azm_weight(m_below) = 1.0 - factor
 
            return
+
            end function interpolated_aztk_imp
 
-!-----------------------------------------------------------------------
+!===============================================================================
            pure function gradzm( azm )
 
 !          Description:
 !          Function to compute the vertical derivative of a variable (azm)
-!          located on the momentum grid. The results is returned in an 
+!          located on the momentum grid.  The results are returned in an 
 !          array defined on the thermodynamic grid.
 !-----------------------------------------------------------------------
+
            implicit none
 
            ! Input Variable
@@ -571,27 +690,42 @@
            ! Local Variable
            integer :: k
 
-           ! Compute vertical derivative
-
-           do k=gr%nnzp, 2, -1
+           ! Compute vertical derivatives.
+           do k = gr%nnzp, 2, -1
+              ! Take derivative of momentum-level variable azm
+              ! over the central thermodynamic level (k).
               gradzm(k) = ( azm(k) - azm(k-1) ) * gr%dzt(k)
-           end do
-
-!           gradzm(1) = UNDEFINED
+           enddo
+!           ! Thermodynamic level 1 is located below momentum level 1,
+!           ! so there is not enough information to calculate the 
+!           ! derivative over thermodynamic level 1.  Thus, the value of 
+!           ! the derivative at thermodynamic level 1 is set equal to 0. 
+!           ! This formulation is consistent with setting the value of 
+!           ! the variable azm below the model grid to the value of the
+!           ! variable azm at the lowest grid level.
 !           gradzm(1) = 0.
+           ! Thermodynamic level 1 is located below momentum level 1,
+           ! so there is not enough information to calculate the 
+           ! derivative over thermodynamic level 1.  Thus, the value of 
+           ! the derivative at thermodynamic level 1 is set equal to the 
+           ! value of the derivative at thermodynamic level 2.  This 
+           ! formulation is consistent with using a linear extension to 
+           ! find the values of the variable azm below the model grid.
            gradzm(1) = gradzm(2)
 
            return
+
            end function gradzm
 
-!-----------------------------------------------------------------------
+!===============================================================================
            pure function gradzt( azt )
 
 !          Description:
 !          Function to compute the vertical derivative of a variable (azt)
-!          located on the thermodynamic grid. The results is returned in
+!          located on the thermodynamic grid.  The results are returned in
 !          an array defined on the momentum grid.
 !-----------------------------------------------------------------------
+
            implicit none
 
            ! Input Variable
@@ -603,18 +737,33 @@
            ! Local Variable
            integer :: k
 
-           ! Compute vertical derivative
-
-           do k=1,gr%nnzp-1
+           ! Compute vertical derivative.
+           do k = 1, gr%nnzp-1, 1
+              ! Take derivative of thermodynamic-level variable azt
+              ! over the central momentum level (k).
               gradzt(k) = ( azt(k+1) - azt(k) ) * gr%dzm(k)
-           end do
-!           gradzt(gr%nnzp) = UNDEFINED
+           enddo
+!           ! Momentum level gr%nnzp is located above thermodynamic level
+!           ! gr%nnzp, so there is not enough information to calculate the
+!           ! derivative over momentum level gr%nnzp.  Thus, the value of
+!           ! the derivative at momentum level gr%nnzp is set equal to 0.
+!           ! This formulation is consistent with setting the value of
+!           ! the variable azt above the model grid to the value of the
+!           ! variable azt at the highest grid level.
 !           gradzt(gr%nnzp) = 0.
+           ! Momentum level gr%nnzp is located above thermodynamic level
+           ! gr%nnzp, so there is not enough information to calculate the
+           ! derivative over momentum level gr%nnzp.  Thus, the value of
+           ! the derivative at momentum level gr%nnzp is set equal to the
+           ! value of the derivative at momentum level gr%nnzp-1.  This
+           ! formulation is consistent with using a linear extension to
+           ! find the values of the variable azt above the model grid.
            gradzt(gr%nnzp) = gradzt(gr%nnzp-1)
 
            return
+
            end function gradzt
 
-        end module grid_class
+!===============================================================================
 
-!------------------------------------------------------------------------
+        end module grid_class
