@@ -1,4 +1,9 @@
       module random
+
+      public :: rand_permute, ran2
+
+      private 
+      
       contains
 !----------------------------------------------------------------------
 ! subroutine rand_permute( )
@@ -28,7 +33,6 @@
 ! Local
 
         integer j, k, temp, seed
-        double precision ran2
 
 ! Continue the old string of random numbers by choosing seed>0
         seed = 1;

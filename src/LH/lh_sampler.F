@@ -1,4 +1,4 @@
-!$Id: lh_sampler.F,v 1.4 2008-05-16 19:43:54 faschinj Exp $
+!$Id: lh_sampler.F,v 1.5 2008-05-16 20:12:33 faschinj Exp $
       module lh_sampler_mod
 
       implicit none
@@ -670,7 +670,7 @@
       integer j, k, sample
       double precision std_normal(1:d)
       double precision fraction_1
-      double precision ltqnorm
+
 
 ! Handle some possible errors re: proper ranges of a, C1, C2.
       if (a > 1.0d0 .or. a < 0.0d0) then
@@ -761,7 +761,7 @@
       integer sample
       double precision s_std
       double precision fraction_1
-      double precision ltqnorm
+      
 
 
 ! Handle some possible errors re: proper ranges of a, C1, C2.
@@ -841,7 +841,7 @@
 !   E-mail:      pjacklam@online.no
 !   URL:         http://home.online.no/~pjacklam
 !-----------------------------------------------------------------------
-        function ltqnorm( p )
+        double precision function ltqnorm( p )
 
         use constants, only: Pi_DP
 
@@ -850,7 +850,7 @@
         double precision a1, a2, a3, a4, a5, a6, b1, b2, b3, b4, b5,
      .                   c1, c2, c3, c4, c5, c6, d1, d2, d3, d4
         double precision p, q, r, z, z1, plow, phigh, e, u, erf_dp
-        double precision ltqnorm
+        
 !       Occurs in constants.F now.  Isn't actually used currently.
 !        double precision, parameter :: pi=3.1415926d0
 
