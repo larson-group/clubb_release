@@ -1,3 +1,4 @@
+        module math_utilities         
 !-----------------------------------------------------------------------
 ! Various mathematical utilities
 !-----------------------------------------------------------------------
@@ -7,6 +8,11 @@
 
 ! Correlation coefficient of two vectors
 !-----------------------------------------------------------------------
+
+        public ! Default scope
+
+        contains
+        
         function corrcoef( vect1, vect2, n )
 
         implicit none
@@ -113,3 +119,4 @@
         return
         end function mean
 !-----------------------------------------------------------------------
+        end module math_utilities 
