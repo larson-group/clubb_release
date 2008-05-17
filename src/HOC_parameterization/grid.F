@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: grid.F,v 1.17 2008-05-17 17:52:30 griffinb Exp $
+! $Id: grid.F,v 1.18 2008-05-17 21:33:53 griffinb Exp $
 !===============================================================================
         module grid_class
 
@@ -562,7 +562,7 @@
               if ( zt_level_count /= nzmax ) then
                  write(fstderr,*) 
      .              "The number of thermodynamic grid altitudes "
-     .              // "listed in file " // zt_grid_fname 
+     .              // "listed in file " // trim(zt_grid_fname) 
      .              // " does not match the number of CLUBB grid "
      .              // "levels specified in the model.in file."
                  write(fstderr,*)
@@ -587,12 +587,12 @@
      .                 // "altitudes are not increasing in height "
      .                 // "as grid level index increases."
                     write(fstderr,*)
-     .                 "Grid index:  ", k-1, 
-     .                 "Thermodynamic level altitude:  ",
+     .                 "Grid index:  ", k-1, ";",
+     .                 "  Thermodynamic level altitude:  ",
      .                 thermodynamic_heights(k-1)
                     write(fstderr,*)
-     .                 "Grid index:  ", k,
-     .                 "Thermodynamic level altitude:  ",
+     .                 "Grid index:  ", k, ";",
+     .                 "  Thermodynamic level altitude:  ",
      .                 thermodynamic_heights(k)
                     stop
                  endif
@@ -642,7 +642,7 @@
               if ( zm_level_count /= nzmax ) then
                  write(fstderr,*)
      .              "The number of momentum grid altitudes "
-     .              // "listed in file " // zm_grid_fname
+     .              // "listed in file " // trim(zm_grid_fname)
      .              // " does not match the number of CLUBB grid "
      .              // "levels specified in the model.in file."
                  write(fstderr,*)
@@ -667,12 +667,12 @@
      .                 // "altitudes are not increasing in height "
      .                 // "as grid level index increases."
                     write(fstderr,*)
-     .                 "Grid index:  ", k-1, 
-     .                 "Momentum level altitude:  ",
+     .                 "Grid index:  ", k-1, ";",
+     .                 "  Momentum level altitude:  ",
      .                 momentum_heights(k-1)
                     write(fstderr,*)
-     .                 "Grid index:  ", k,
-     .                 "Momentum level altitude:  ",
+     .                 "Grid index:  ", k, ";",
+     .                 "  Momentum level altitude:  ",
      .                 momentum_heights(k)
                     stop
                  endif
