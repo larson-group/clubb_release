@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.183 2008-05-16 18:20:01 griffinb Exp $
+! $Id: hoc.F,v 1.184 2008-05-17 17:44:13 griffinb Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -43,7 +43,14 @@
      .  deltaz, ! Change per grid level                 [m]
      .  zm_init ! Initial point on the momentum grid    [m]
 
-!$omp   threadprivate(nzmax, zm_init, deltaz)
+!$omp   threadprivate(nzmax, grid_type, zm_init, deltaz)
+
+        ! For grid_type 2 or 3 (stretched grid cases)
+        character(len=50), private ::
+     .  zt_grid_fname, ! Path and filename of thermodynamic level altitudes
+     .  zm_grid_fname  ! Path and filename of momentum level altitudes
+
+!$omp   threadprivate(zt_grid_fname, zm_grid_fname)
 
         integer, private :: 
      .  day, month, year ! Day of start of simulation
@@ -193,9 +200,9 @@
      .  stats_tsamp,  ! Stats sampling interval [s]
      .  stats_tout    ! Stats output interval   [s]
 
-        ! Dummy grid height arrays
+        ! Grid altitude arrays
         real, dimension(:), allocatable :: 
-     .  dummy_array_zm, dummy_array_zt
+     .  momentum_heights, thermodynamic_heights
 
         ! Dummy dx and dy horizontal grid spacing.
         real :: dummy_dx, dummy_dy
@@ -209,6 +216,7 @@
         ! Definition of namelists
         namelist /model_setting/ 
      .  runtype, nzmax, grid_type, deltaz, zm_init,
+     .  zt_grid_fname, zm_grid_fname, 
      .  day, month, year, rlat, rlon,
      .  time_initial, time_final, time_spinup,
      .  dtmain, dtclosure,
@@ -230,6 +238,8 @@
         grid_type = 1
         deltaz    = 40.
         zm_init   = 0.
+        zt_grid_fname = ''
+        zm_grid_fname = ''
 
         day   = 1
         month = 1
@@ -288,199 +298,206 @@
         read(unit=iunit, nml=stats_setting)
         close(unit=iunit)
 
-       call set_clubb_debug_level( debug_level )
+        call set_clubb_debug_level( debug_level )
 
-       ! Dummy grid height arrays and horizontal grid spacings.
-       allocate( dummy_array_zm(1:nzmax), dummy_array_zt(1:nzmax) )
+        ! Allocate stretched grid altitude arrays.
+        allocate( momentum_heights(1:nzmax), 
+     .            thermodynamic_heights(1:nzmax) )
 
-       dummy_array_zm = 0.0
-       dummy_array_zt = 0.0
+        ! Handle the reading of grid altitudes for 
+        ! stretched (unevenly-spaced) grid options.
+        ! Do some simple error checking for all grid options.
+        call read_grid_heights( nzmax, grid_type,
+     .                          zm_grid_fname, zt_grid_fname,
+     .                          momentum_heights,
+     .                          thermodynamic_heights )
 
-       dummy_dx = 0.0
-       dummy_dy = 0.0
+        ! Dummy horizontal grid spacing variables.
+        dummy_dx = 0.0
+        dummy_dy = 0.0
 
-       ! Allocate & initialize variables,
-       ! setup grid, setup constants, and setup flags
+        ! Allocate & initialize variables,
+        ! setup grid, setup constants, and setup flags
 
-       call parameterization_setup
-     .      ( nzmax, T0, ts_nudge, params,
-     .        lbugsrad, kk_rain, licedfs, lcoamps_micro,
-     .        cloud_sed, luv_nudge, lKhm_aniso,
-     .        .false., grid_type, deltaz, zm_init,
-     .        dummy_array_zm, dummy_array_zt,
-     .        dummy_dx, dummy_dy, err_code )
-
+        call parameterization_setup
+     .       ( nzmax, T0, ts_nudge, params,
+     .         lbugsrad, kk_rain, licedfs, lcoamps_micro,
+     .         cloud_sed, luv_nudge, lKhm_aniso,
+     .         .false., grid_type, deltaz, zm_init,
+     .         momentum_heights, thermodynamic_heights,
+     .         dummy_dx, dummy_dy, err_code )
       
-       if ( err_code == clubb_var_out_of_bounds ) return
+
+        if ( err_code == clubb_var_out_of_bounds ) return
 
 
-       ! Dummy grid height arrays
-       deallocate( dummy_array_zm, dummy_array_zt )
+        ! Deallocate stretched grid altitude arrays.
+        deallocate( momentum_heights, thermodynamic_heights )
 
        
-       if ( .not. lrestart ) then
-          time_current = time_initial
-          iinit = 1
-          call hoc_initialize( iunit, runfile, psfc, thlm, rtm, 
-     .                         um, vm, ug, vg, wp2,
-     .                         rcm, hydromet,
-     .                         wmt, wmm, em, exner,
-     .                         taut, taum, thvm, p,
-     .                         rhot, rhom, Lscale,
-     .                         Kht, Khm, um_ref, vm_ref
+        if ( .not. lrestart ) then
+           time_current = time_initial
+           iinit = 1
+           call hoc_initialize( iunit, runfile, psfc, thlm, rtm, 
+     .                          um, vm, ug, vg, wp2,
+     .                          rcm, hydromet,
+     .                          wmt, wmm, em, exner,
+     .                          taut, taum, thvm, p,
+     .                          rhot, rhom, Lscale,
+     .                          Kht, Khm, um_ref, vm_ref
 #ifdef SCALARS
-     .                         ,sclrm, edsclrm
+     .                          ,sclrm, edsclrm
 #endif /*SCALARS*/
-     .                        )
-       else  ! restart
+     .                         )
+        else  ! restart
                
-          ! Joshua Fasching March 2008
-          time_current = time_restart + dtmain
-          ! time_current = time_restart
+           ! Joshua Fasching March 2008
+           time_current = time_restart + dtmain
+           ! time_current = time_restart
 
-          ! Determining what iteration to restart at.
-          ! The value is increased by 1 to sychronize with restart data.
-          ! Joshua Fasching February 2008
+           ! Determining what iteration to restart at.
+           ! The value is increased by 1 to sychronize with restart data.
+           ! Joshua Fasching February 2008
           
-          ! Ensure that iteration num, iinit, is an integer, so that model time is 
-          !   incremented correctly by iteration number at end of timestep
-          if ( mod( (time_restart-time_initial) , dtmain ) /= 0 ) then
-             print*, "Error: (time_restart-time_initial) ", 
-     .               "is not a multiple of dtmain."
-             print*, "time_restart = ", time_restart
-             print*, "time_initial = ", time_initial
-             print*, "dtmain = ", dtmain
-             stop
-          end if
+           ! Ensure that iteration num, iinit, is an integer, so that model time is 
+           !   incremented correctly by iteration number at end of timestep
+           if ( mod( (time_restart-time_initial) , dtmain ) /= 0 ) then
+              print*, "Error: (time_restart-time_initial) ", 
+     .                "is not a multiple of dtmain."
+              print*, "time_restart = ", time_restart
+              print*, "time_initial = ", time_initial
+              print*, "dtmain = ", dtmain
+              stop
+           end if
 
-          iinit = ( time_current - time_initial ) / dtmain + 1
+           iinit = ( time_current - time_initial ) / dtmain + 1
 
-          call hoc_restart( iunit, runfile, restart_path_case, 
-     .                      fname_prefix//"_zt", time_restart, 
-     .                      thlm, rtm, um, vm,
-     .                      ug, vg, upwp, vpwp, wmt, wmm, 
-     .                      um_ref, vm_ref, wpthlp, wprtp,
-     .                      wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc
+           call hoc_restart( iunit, runfile, restart_path_case, 
+     .                       fname_prefix//"_zt", time_restart, 
+     .                       thlm, rtm, um, vm,
+     .                       ug, vg, upwp, vpwp, wmt, wmm, 
+     .                       um_ref, vm_ref, wpthlp, wprtp,
+     .                       wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc
 #ifdef SCALARS
-     .                      ,sclrm, edsclrm
+     .                       ,sclrm, edsclrm
 #endif
-     .                       )
-       end if ! ~lrestart
+     .                        )
+        end if ! ~lrestart
 #ifdef STATS
 
 #ifdef _OPENMP
-       iunit = omp_get_thread_num( ) + 50
+        iunit = omp_get_thread_num( ) + 50
 #else
-       iunit = 50
+        iunit = 50
 #endif
-       ! Initialize statistics output
-       call stats_init
-     .      ( iunit, fname_prefix, 
-     .        lstats, stats_fmt, stats_tsamp, stats_tout,
-     .        runfile, gr%nnzp, gr%zt, gr%zm,
-     .        day, month, year, rlat, rlon, time_current,
-     .        dtmain )
+        ! Initialize statistics output
+        call stats_init
+     .       ( iunit, fname_prefix, 
+     .         lstats, stats_fmt, stats_tsamp, stats_tout,
+     .         runfile, gr%nnzp, gr%zt, gr%zm,
+     .         day, month, year, rlat, rlon, time_current,
+     .         dtmain )
 #endif /*STATS*/
 
-       ! Time integration
-       ! Call hoc_closure_timestep once per each GrADS output time 
-       ifinal  = ( time_final - time_initial ) / dtmain
+        ! Time integration
+        ! Call hoc_closure_timestep once per each GrADS output time 
+        ifinal  = ( time_final - time_initial ) / dtmain
 
       
 !<<<<<<<<<<<<<<<<<<<<<<<< Main time stepping loop <<<<<<<<<<<<<<<<<<<<<<
 
-       do i = iinit, ifinal, 1
+        do i = iinit, ifinal, 1
 
 #ifdef STATS
-         ! When this time step is over, the time will be time + dtmain
+          ! When this time step is over, the time will be time + dtmain
 
-         ! We use elapsed time for stats_begin_step
-         if (.not. lrestart) then    
-            call stats_begin_timestep
-     .           ( time_current-time_initial+dtmain, dtmain )
-         else
-            ! Different elapsed time for restart
-            ! Joshua Fasching March 2008     
-            call stats_begin_timestep
-     .           ( time_current-time_restart, dtmain )
-         end if
+          ! We use elapsed time for stats_begin_step
+          if (.not. lrestart) then    
+             call stats_begin_timestep
+     .            ( time_current-time_initial+dtmain, dtmain )
+          else
+             ! Different elapsed time for restart
+             ! Joshua Fasching March 2008     
+             call stats_begin_timestep
+     .            ( time_current-time_restart, dtmain )
+          end if
 
-         if ( lstats_last .and. stdout ) then
-           write(unit=fstdout,fmt='(a,i8,a,f10.1)') 'iteration = ', 
-     .       i, '; time = ', time_current
-         end if
+          if ( lstats_last .and. stdout ) then
+            write(unit=fstdout,fmt='(a,i8,a,f10.1)') 'iteration = ', 
+     .        i, '; time = ', time_current
+          end if
 #endif /*STATS*/
 
-         ! If we're doing an inputfields run, get the values for our
-         ! model arrays from a GrADS file
-         if ( linput_fields ) then
-           call compute_timestep( iunit, datafilet, .false.,
-     .                            time_current, itime_nearest )
-           call grads_fields_reader( max( itime_nearest, 1 ) )
-         end if
+          ! If we're doing an inputfields run, get the values for our
+          ! model arrays from a GrADS file
+          if ( linput_fields ) then
+            call compute_timestep( iunit, datafilet, .false.,
+     .                             time_current, itime_nearest )
+            call grads_fields_reader( max( itime_nearest, 1 ) )
+          end if
 
-         if ( invalid_model_arrays( ) ) then
-             err_code = clubb_var_equals_NaN ! Check for bad values 
-                                             ! in the model arrays
-         end if
+          if ( invalid_model_arrays( ) ) then
+              err_code = clubb_var_equals_NaN ! Check for bad values 
+                                              ! in the model arrays
+          end if
 
-         if ( err_code == clubb_var_equals_NaN ) exit
+          if ( err_code == clubb_var_equals_NaN ) exit
 
-         call hoc_forcings_timestep( dtmain, i, stdout, err_code )
+          call hoc_forcings_timestep( dtmain, i, stdout, err_code )
 
-         if ( err_code == clubb_rtm_level_not_found ) exit
+          if ( err_code == clubb_rtm_level_not_found ) exit
          
-         ! Compute number of iterations for closure loop
-         if ( time_current > time_spinup ) then
-           niterlong = 1
-           dt        = dtmain
-         else
-           niterlong = int( dtmain / dtclosure )
-           dt        = dtclosure
-         end if
+          ! Compute number of iterations for closure loop
+          if ( time_current > time_spinup ) then
+            niterlong = 1
+            dt        = dtmain
+          else
+            niterlong = int( dtmain / dtclosure )
+            dt        = dtclosure
+          end if
 
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-         do i1=1, niterlong
-           call parameterization_timestep
-     .          ( i, dt, fcor,
-     .            thlm_forcing, rtm_forcing, wmm, wmt,
-     .            wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,
-     .            p, rhom, rhot, exner,
-     .            um, vm, upwp, vpwp, up2, vp2,
-     .            thlm, rtm, wprtp, wpthlp, wp2, wp3,
-     .            rtp2, thlp2, rtpthlp,
-     .            Scm, taum, rcm, cf,
-     .            err_code, .false.
+          do i1=1, niterlong
+            call parameterization_timestep
+     .           ( i, dt, fcor,
+     .             thlm_forcing, rtm_forcing, wmm, wmt,
+     .             wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,
+     .             p, rhom, rhot, exner,
+     .             um, vm, upwp, vpwp, up2, vp2,
+     .             thlm, rtm, wprtp, wpthlp, wp2, wp3,
+     .             rtp2, thlp2, rtpthlp,
+     .             Scm, taum, rcm, cf,
+     .             err_code, .false.
 #ifdef SCALARS
-     .            ,wpsclrp_sfc, wpedsclrp_sfc, 
-     .            sclrm, sclrm_forcing, edsclrm
+     .             ,wpsclrp_sfc, wpedsclrp_sfc, 
+     .             sclrm, sclrm_forcing, edsclrm
 #endif /*SCALARS*/
-     .          )
+     .           )
            
 #ifdef STATS
-           call stats_end_timestep( time_current + dtmain, dtmain )
+            call stats_end_timestep( time_current + dtmain, dtmain )
 #endif /*STATS*/
 
-           ! Set Time
-           ! Advance time here, not in parameterization_timestep,
-           ! in order to facilitate use of stats.
-           ! A host model, e.g. WRF, would advance time outside
-           ! of hoc_closure_timestep.  Vince Larson 7 Feb 2006
-           if ( i1 < niterlong ) then
-             time_current = time_initial + (i-1) * dtmain 
-     .                    + i1 * dtclosure
-           else if ( i1 == niterlong ) then
-             time_current = time_initial + i * dtmain
-           end if
+            ! Set Time
+            ! Advance time here, not in parameterization_timestep,
+            ! in order to facilitate use of stats.
+            ! A host model, e.g. WRF, would advance time outside
+            ! of hoc_closure_timestep.  Vince Larson 7 Feb 2006
+            if ( i1 < niterlong ) then
+              time_current = time_initial + (i-1) * dtmain 
+     .                     + i1 * dtclosure
+            else if ( i1 == niterlong ) then
+              time_current = time_initial + i * dtmain
+            end if
 
-           if ( fatal_error( err_code ) ) exit
+            if ( fatal_error( err_code ) ) exit
            
-         end do ! i1=1..niterlong
+          end do ! i1=1..niterlong
 
 !<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-         if ( fatal_error( err_code ) ) exit
+          if ( fatal_error( err_code ) ) exit
           
-       end do ! i=1, ifinal
+        end do ! i=1, ifinal
 
 !<<<<<<<<<<<<<<<<<<<<<<<< Main time stepping loop <<<<<<<<<<<<<<<<<<<<<<
 

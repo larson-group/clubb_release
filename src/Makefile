@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.119 2008-05-16 21:40:54 faschinj Exp $
+# $Id: Makefile,v 1.120 2008-05-17 17:44:13 griffinb Exp $
 #
 # This version should work with BSD, GNU make, smake and dmake.
 #
@@ -24,7 +24,7 @@ LATIN_HYP = math_utilities.o \
 	lh_sampler.o \
 	micro_calcs.o permute_height_time.o \
 	random.o \
-	matrix_operations.o \
+	matrix_operations.o 
 
 BUGS_RAD = kinds.o std_atmosphere_mod.o bugsrad_planck.o bugsrad_physconst.o gases_ckd.o \
 	cloud_correlate.o bugs_lwr.o bugs_swr.o bugs_rad.o \
@@ -53,12 +53,12 @@ MODEL = $(COAMPS_MICRO) \
 	nov11.o jun25.o clex9_nov02.o clex9_oct14.o wangara.o \
 	diag_ustar.o cobra.o rico.o gabls2.o \
 	KK_microphys.o microphysics.o cons.o air.o parab.o \
-	lba.o interpolation.o file_functions.o ice_dfsn_mod.o
+	lba.o interpolation.o ice_dfsn_mod.o
 
 PARAMETERIZATION = \
 	$(LATIN_HYP) \
 	constants.o endian.o outputfile.o outputgrads.o \
-	outputnc.o grid.o model_flags.o \
+	outputnc.o grid.o model_flags.o file_functions.o \
         stats_type.o stats_hoc.o stats_subs.o \
         stats_zt.o stats_zm.o stats_sfc.o stats_prec.o sfc.o \
 	erf.o diffusion.o mean_adv.o \

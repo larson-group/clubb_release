@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: grid.F,v 1.15 2008-05-16 18:20:12 griffinb Exp $
+! $Id: grid.F,v 1.16 2008-05-17 17:44:18 griffinb Exp $
 !===============================================================================
         module grid_class
 
@@ -104,7 +104,7 @@
 
            public :: gr, grid, zt2zm, interp_weights_zt2zm_imp, zm2zt,
      .               interp_weights_zm2zt_imp, ddzm, ddzt,
-     .               gridsetup
+     .               gridsetup, read_grid_heights
 
            private :: interpolated_azm, interpolated_azmk,
      .                interpolated_azmk_imp, interpolated_azt,
@@ -413,7 +413,268 @@
 
 
            return
+
            end subroutine gridsetup
+
+!===============================================================================
+           subroutine read_grid_heights( nzmax, grid_type, 
+     .                                   zm_grid_fname, zt_grid_fname,
+     .                                   momentum_heights,
+     .                                   thermodynamic_heights )
+
+           use constants, only: fstderr
+           use file_functions, only: file_read_1d
+
+           implicit none
+
+           ! Input Variables.
+
+           ! Declared number of vertical levels.
+           integer, intent(in) ::
+     .     nzmax
+
+           ! If CLUBB is running on it's own, this option determines
+           ! if it is using:
+           ! 1) an evenly-spaced grid,
+           ! 2) a stretched (unevenly-spaced) grid on the
+           !    thermodynamic grid levels, or
+           ! 3) a stretched (unevenly-spaced) grid on the
+           !    momentum grid levels.
+           integer, intent(in) ::
+     .     grid_type
+
+           character(len=50), intent(in) ::
+     .     zm_grid_fname, ! Path and filename of file for momentum level altitudes
+     .     zt_grid_fname  ! Path and filename of file for thermodynamic level altitudes
+
+           ! Output Variables.
+
+           ! If the CLUBB model is running by itself, but is using a
+           ! stretched grid for thermodynamic levels (grid_type = 2),
+           ! it needs to use the thermodynamic level altitudes as input.
+           ! If the CLUBB model is running by itself, but is using a
+           ! stretched grid for momentum levels (grid_type = 3),
+           ! it needs to use the momentum level altitudes as input.
+           real, dimension(nzmax), intent(out) ::
+     .     momentum_heights,     ! Momentum level altitudes (file input)      [m]
+     .     thermodynamic_heights ! Thermodynamic level altitudes (file input) [m]
+
+           ! Local Variables.
+
+           integer, parameter :: zt_unit = 25, ! Unit number for zt_grid_fname
+     .                           zm_unit = 35  ! Unit number for zm_grid_fname
+
+           integer :: zt_level_count, ! Number of altitudes found in zt_grid_fname
+     .                zm_level_count  ! Number of altitudes found in zm_grid_fname
+
+           integer :: input_status   ! Status of file being read: 
+                                     ! > 0 ==> error reading file.
+                                     ! = 0 ==> no error and more file to be read.
+                                     ! < 0 ==> end of file indicator.
+
+           ! Generic variable for storing file data while counting the number
+           ! of file entries.
+           real :: generic_input_item
+
+           integer :: k   ! Loop index
+
+
+           ! Declare the momentum level altitude array and the 
+           ! thermodynamic level altitude array to be 0 until overwritten.
+           momentum_heights(1:nzmax) = 0.0
+           thermodynamic_heights(1:nzmax) = 0.0
+
+
+           if ( grid_type == 1 ) then
+
+              ! Evenly-spaced grid.
+              ! Grid level altitudes are based on a constant distance 
+              ! between them and a starting point for the bottom of the
+              ! grid.
+
+              ! As a way of error checking, make sure that there isn't any
+              ! file entry for either momentum level altitudes or
+              ! thermodynamic level altitudes.
+              if ( zm_grid_fname /= '' ) then
+                 write(fstderr,*)
+     .              "An evenly-spaced grid has been selected. "
+     .              // " Please reset zm_grid_fname to ''."
+                 stop
+              endif
+              if ( zt_grid_fname /= '' ) then
+                 write(fstderr,*)
+     .              "An evenly-spaced grid has been selected. "
+     .              // " Please reset zt_grid_fname to ''."
+                 stop
+              endif
+
+
+           elseif ( grid_type == 2 ) then
+
+              ! Stretched (unevenly-spaced) grid:  stretched
+              ! thermodynamic levels.  Thermodynamic levels are
+              ! defined according to a stretched grid that is entered
+              ! through the use an input file.  This is similar to a
+              ! SAM-style stretched grid.
+
+              ! As a way of error checking, make sure that there isn't any
+              ! file entry for momentum level altitudes.
+              if ( zm_grid_fname /= '' ) then
+                 write(fstderr,*)
+     .              "Thermodynamic level altitudes have been selected "
+     .              // "for use in a stretched (unevenly-spaced) grid. "
+     .              // " Please reset zm_grid_fname to ''."
+                 stop
+              endif
+
+              ! Open the file zt_grid_fname.
+              open( unit=zt_unit, file=zt_grid_fname, 
+     .              status='old', action='read' )
+
+              ! Find the number of thermodynamic level altitudes 
+              ! listed in file zt_grid_fname.
+              zt_level_count = 0
+              do
+                 read( unit=zt_unit, fmt=*, iostat=input_status ) 
+     .              generic_input_item
+                 if ( input_status < 0 ) exit   ! end of file indicator
+                 if ( input_status > 0 ) stop   ! error reading input
+     .                "Error reading thermodynamic level input file."
+                 zt_level_count = zt_level_count + 1
+              enddo
+
+              ! Close the file zt_grid_fname.
+              close( unit=zt_unit )
+
+              ! Check that the number of thermodynamic grid altitudes
+              ! in the input file matches the declared number of CLUBB
+              ! grid levels (nzmax).
+              if ( zt_level_count /= nzmax ) then
+                 write(fstderr,*) 
+     .              "The number of thermodynamic grid altitudes "
+     .              // "listed in file " // zt_grid_fname 
+     .              // " does not match the number of CLUBB grid "
+     .              // "levels specified in the model.in file."
+                 write(fstderr,*)
+     .              "Number of thermodynamic grid altitudes listed:  ",
+     .              zt_level_count
+                 write(fstderr,*)
+     .              "Number of CLUBB grid levels specified:  ", nzmax
+                 stop
+              endif
+
+              ! Read the thermodynamic level altitudes from zt_grid_fname.
+              call file_read_1d( zt_unit, zt_grid_fname, nzmax, 1, 
+     .                           thermodynamic_heights )
+
+              ! Check that each thermodynamic level altitude increases
+              ! in height as the thermodynamic level grid index increases.
+              do k = 2, nzmax, 1
+                 if ( thermodynamic_heights(k) 
+     .                <= thermodynamic_heights(k-1) ) then
+                    write(fstderr,*) 
+     .                 "The declared thermodynamic level grid "
+     .                 // "altitudes are not increasing in height "
+     .                 // "as grid level index increases."
+                    write(fstderr,*)
+     .                 "Grid index:  ", k-1, 
+     .                 "Thermodynamic level altitude:  ",
+     .                 thermodynamic_heights(k-1)
+                    write(fstderr,*)
+     .                 "Grid index:  ", k,
+     .                 "Thermodynamic level altitude:  ",
+     .                 thermodynamic_heights(k)
+                    stop
+                 endif
+              enddo
+
+
+           elseif ( grid_type == 3 ) then
+
+              ! Stretched (unevenly-spaced) grid:  stretched
+              ! momentum levels.  Momentum levels are defined
+              ! according to a stretched grid that is entered through
+              ! the use an input file.  This is similar to a WRF-style
+              ! stretched grid.
+
+              ! As a way of error checking, make sure that there isn't any
+              ! file entry for thermodynamic level altitudes.
+              if ( zt_grid_fname /= '' ) then
+                 write(fstderr,*)
+     .              "Momentum level altitudes have been selected "
+     .              // "for use in a stretched (unevenly-spaced) grid. "
+     .              // " Please reset zt_grid_fname to ''."
+                 stop
+              endif
+
+              ! Open the file zm_grid_fname.
+              open( unit=zm_unit, file=zm_grid_fname, 
+     .              status='old', action='read' )
+
+              ! Find the number of momentum level altitudes
+              ! listed in file zm_grid_fname.
+              zm_level_count = 0
+              do
+                 read( unit=zm_unit, fmt=*, iostat=input_status )
+     .              generic_input_item
+                 if ( input_status < 0 ) exit   ! end of file indicator
+                 if ( input_status > 0 ) stop   ! error reading input
+     .                "Error reading momentum level input file."
+                 zm_level_count = zm_level_count + 1
+              enddo
+
+              ! Close the file zm_grid_fname.
+              close( unit=zm_unit )
+
+              ! Check that the number of momentum grid altitudes
+              ! in the input file matches the declared number of CLUBB
+              ! grid levels (nzmax).
+              if ( zm_level_count /= nzmax ) then
+                 write(fstderr,*)
+     .              "The number of momentum grid altitudes "
+     .              // "listed in file " // zm_grid_fname
+     .              // " does not match the number of CLUBB grid "
+     .              // "levels specified in the model.in file."
+                 write(fstderr,*)
+     .              "Number of momentum grid altitudes listed:  ",
+     .              zm_level_count
+                 write(fstderr,*)
+     .              "Number of CLUBB grid levels specified:  ", nzmax
+                 stop
+              endif
+
+              ! Read the momentum level altitudes from zm_grid_fname.
+              call file_read_1d( zm_unit, zm_grid_fname, nzmax, 1,
+     .                           momentum_heights )
+
+              ! Check that each momentum level altitude increases
+              ! in height as the momentum level grid index increases.
+              do k = 2, nzmax, 1
+                 if ( momentum_heights(k) 
+     .                <= momentum_heights(k-1) ) then
+                    write(fstderr,*) 
+     .                 "The declared momentum level grid "
+     .                 // "altitudes are not increasing in height "
+     .                 // "as grid level index increases."
+                    write(fstderr,*)
+     .                 "Grid index:  ", k-1, 
+     .                 "Momentum level altitude:  ",
+     .                 momentum_heights(k-1)
+                    write(fstderr,*)
+     .                 "Grid index:  ", k,
+     .                 "Momentum level altitude:  ",
+     .                 momentum_heights(k)
+                    stop
+                 endif
+              enddo
+
+
+           endif
+
+
+           return
+
+           end subroutine read_grid_heights
 
 !===============================================================================
            pure function interpolated_azm( azt )

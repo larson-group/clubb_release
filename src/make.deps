@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.41 2008-05-16 20:11:00 faschinj Exp $
+# $Id: make.deps,v 1.42 2008-05-17 17:44:13 griffinb Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -52,7 +52,7 @@ prog_variables.o: constants.o grid.o model_flags.o prog_variables.F
 numer_check.o	: prog_variables.o diag_variables.o constants.o model_flags.o\
 	error_code.o numer_check.F
 inputgrads.o	: constants.o endian.o recl.F inputgrads.F
-grid.o		: constants.o grid.F
+grid.o		: constants.o file_functions.o grid.F
 stats_type.o    : outputfile.o stats_prec.o stats_type.F
 stats_hoc.o     : stats_type.o stats_hoc.F
 stats_subs.o    : outputgrads.o outputnc.o prog_variables.o diag_variables.o \
