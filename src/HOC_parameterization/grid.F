@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: grid.F,v 1.16 2008-05-17 17:44:18 griffinb Exp $
+! $Id: grid.F,v 1.17 2008-05-17 17:52:30 griffinb Exp $
 !===============================================================================
         module grid_class
 
@@ -421,6 +421,16 @@
      .                                   zm_grid_fname, zt_grid_fname,
      .                                   momentum_heights,
      .                                   thermodynamic_heights )
+
+!          Description:
+!          This subroutine is used foremost in cases where the grid_type
+!          corresponds with the stretched (unevenly-spaced) grid options
+!          (either grid_type = 2 or grid_type = 3).  This subroutine 
+!          reads in the values of the stretched grid altitude levels for
+!          either the thermodynamic level grid or the momentum level 
+!          grid.  This subroutine also handles basic error checking for
+!          all three grid types.
+!------------------------------------------------------------------------
 
            use constants, only: fstderr
            use file_functions, only: file_read_1d
