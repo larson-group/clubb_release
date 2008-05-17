@@ -1,46 +1,86 @@
+!-----------------------------------------------------------------------
+! $Id: file_functions.F,v 1.4 2008-05-17 21:32:12 griffinb Exp $
+!===============================================================================
       module file_functions
+
       implicit none
 
       public :: file_read_1d, file_read_2d
+
       contains
 
-      subroutine file_read_1d (device,file_path,file_dimension1,
-     .                       file_per_line,variable)
-      
+!===============================================================================
+      subroutine file_read_1d( file_unit, path_and_filename, 
+     .                         num_datapts, entries_per_line, variable )
+
+!     Description:
+!     This subroutine reads in values from a data file with a number of 
+!     rows and a declared number of columns (entries_per_line) of data. 
+!     It reads in the data in the form of:  
+!     1 ==> (row 1, column 1); 2 ==> (row 1, column 2); etc.
+!
+!     Example:  a diagram of a data file with 18 total data points 
+!               (DP1 to DP18), with 4 data points per row.
+!
+!              i = 1     i = 2     i = 3     i = 4
+!           ---------------------------------------
+!     k = 1 |   DP1       DP2       DP3       DP4
+!           |
+!     k = 2 |   DP5       DP6       DP7       DP8
+!           |
+!     k = 3 |   DP9       DP10      DP11      DP12
+!           |
+!     k = 4 |   DP13      DP14      DP15      DP16
+!           |
+!     k = 5 |   DP17      DP18
+!
+!     See Michael Falk's comments below for more information.
+!-----------------------------------------------------------------------
+
       integer, intent(in) ::
-     . device,
-     . file_dimension1,
-     . file_per_line
+     . file_unit,         ! Unit number of file being read.
+     . num_datapts,       ! Total number of data points being read in.
+     . entries_per_line   ! Number of data points 
+                          ! on one line of the file being read.
 
       character(*), intent(in) ::
-     . file_path
+     . path_and_filename  ! Path to file and filename of file being read.
 
-      real, dimension(file_dimension1), intent(out) ::
-     . variable
+      real, dimension(num_datapts), intent(out) ::
+     . variable           ! Data values output into variable
 
-      integer i, k
+      integer :: k        ! Data file row number.
+      integer :: i        ! Data file column number.
 
-      open(device,file=file_path,action='read')
+
+      ! Open data file.
+      open( unit=file_unit, file=path_and_filename, action='read' )
 
 ! Michael Falk wrote this routine to read data files in a particular format for mpace_a.
 ! Each line has a specific number of values, until the last line in the file, which
 ! has the last few values and then ends.  This reads the correct number of values on
 ! each line.  24 September 2007
 
-      do k=0,((file_dimension1/file_per_line)-1)			 ! reads file_per_line values from each line of the input file
-        read(device,*) (variable((k*file_per_line)+i),i=1,file_per_line) ! does that for every full line
-      end do
-      read (device,*) (variable((k*file_per_line)+i),
-     .     i=1,(mod(file_dimension1,file_per_line)))                     ! reads the partial line
+      ! Loop over each full line of the input file.
+      do k = 1, (num_datapts/entries_per_line), 1
+         read(file_unit,*) ( variable( ((k-1)*entries_per_line) + i ),
+     .                                 i=1,entries_per_line )
+      enddo
+      ! Read any partial line remaining.
+      if ( mod(num_datapts,entries_per_line) /= 0 ) then
+         k = (num_datapts/entries_per_line)
+         read(file_unit,*) ( variable( (k*entries_per_line) + i ),
+     .                       i=1,(mod(num_datapts,entries_per_line)) )
+      endif
 
-      close (device)
+      ! Close data file.
+      close( file_unit )
+
+      return
 
       end subroutine file_read_1d
 
-
-
-
-
+!===============================================================================
       subroutine file_read_2d (device,file_path,file_dimension1,
      .                       file_dimension2,file_per_line,variable)
       
@@ -79,5 +119,7 @@
       close (device)
 
       end subroutine file_read_2d
+
+!===============================================================================
 
       end module file_functions
