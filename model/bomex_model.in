@@ -1,4 +1,4 @@
-! $Id: bomex_model.in,v 1.22 2008-05-16 18:28:20 griffinb Exp $
+! $Id: bomex_model.in,v 1.23 2008-05-17 22:12:07 griffinb Exp $
 ! Parameter file for GCSS BOMEX tradewind Cu case
 
 &model_setting
@@ -9,6 +9,10 @@ nzmax   = 75
 grid_type = 1
 deltaz  = 40.0
 zm_init = 0.0
+!zt_grid_fname = '../model/grid/bomex_zt_grid'
+!zm_grid_fname = '../model/grid/bomex_zm_grid'
+zt_grid_fname = ''
+zm_grid_fname = ''
 
 day = 22, month = 6, year = 1969,
 rlat = 15.0, rlon = 0.0

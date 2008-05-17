@@ -1,4 +1,4 @@
-! $Id: arm_model.in,v 1.18 2008-05-16 18:28:20 griffinb Exp $
+! $Id: arm_model.in,v 1.19 2008-05-17 22:12:07 griffinb Exp $
 ! Parameter file for GCSS ARM Cu over land case
 
 &model_setting
@@ -9,6 +9,11 @@ nzmax   = 110
 grid_type = 1
 deltaz  = 40.0
 zm_init = 0.0
+!zt_grid_fname = '../model/grid/arm_zt_grid'
+!zm_grid_fname = '../model/grid/arm_zm_grid'
+zt_grid_fname = ''
+zm_grid_fname = ''
+
 day = 21, month = 6, year = 1997,
 rlat = 36.62, rlon = -97.5
 
