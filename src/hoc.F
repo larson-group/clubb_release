@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.184 2008-05-17 17:44:13 griffinb Exp $
+! $Id: hoc.F,v 1.185 2008-05-19 20:06:55 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -422,10 +422,6 @@
      .            ( time_current-time_restart, dtmain )
           end if
 
-          if ( lstats_last .and. stdout ) then
-            write(unit=fstdout,fmt='(a,i8,a,f10.1)') 'iteration = ', 
-     .        i, '; time = ', time_current
-          end if
 #endif /*STATS*/
 
           ! If we're doing an inputfields run, get the values for our
@@ -489,6 +485,16 @@
             else if ( i1 == niterlong ) then
               time_current = time_initial + i * dtmain
             end if
+#ifdef STATS
+            ! This was moved from above to less confusing to the user,
+            ! since before it would appear as though the last timestep
+            ! was not executed. -dschanen 19 May 08
+            if ( lstats_last .and. stdout ) then
+              write(unit=fstdout,fmt='(a,i8,a,f10.1)') 'iteration = ', 
+     .          i, '; time = ', time_current
+            end if
+#endif
+
 
             if ( fatal_error( err_code ) ) exit
            
