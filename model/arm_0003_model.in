@@ -1,49 +1,90 @@
-! $Id: arm_0003_model.in,v 1.9 2008-05-16 18:28:19 griffinb Exp $
+! $Id: arm_0003_model.in,v 1.10 2008-05-21 16:23:05 griffinb Exp $
 ! Parameter file for GCSS ARM 0003 deep convective case
 
 &model_setting
 
-runtype = "arm_0003"
+! Model Settings
 
-nzmax   = 108
-grid_type = 1
-deltaz  = 200.0
-zm_init = 0.0
-day = 1, month = 3, year = 2000,
-!rlat = 36.61, rlon = -97.49
-rlat = 36.5, rlon = -97.5
+runtype = "arm_0003" ! Case name.
 
-time_initial = 63003.0
-!time_final = 322202.0
-time_final = 1931404.0
-time_spinup = 63003.0
+nzmax = 108       ! Number of vertical levels.
 
-dtmain    = 60.0
-dtclosure = 60.0
+grid_type = 1     ! Select grid type:
+                  ! 1 ==> evenly-spaced grid levels.
+                  ! 2 ==> stretched (unevenly-spaced) grid
+                  !       on thermodynamic grid levels
+                  !       (style of SAM stretched grid).
+                  ! 3 ==> stretched (unevenly-spaced) grid
+                  !       on momentum grid levels
+                  !       (style of WRF stretched grid).
 
-sfctype = 1
+! Evenly-spaced grid (grid_type = 1).
+! Note:  For this option, both zt_grid_fname and zm_grid_fname must be ''.
+deltaz  = 200.0   ! Distance between grid levels on evenly-spaced grid.      [m]
+zm_init = 0.0     ! Altitude of lowest momentum level on evenly-spaced grid. [m]
 
-Tsfc = 286.0
-!Tsfc = 282.889
-psfc = 978.9e2
-fcor = 8.697e-5
-T0   = 300.
+! Stretched grid on thermodynamic levels (grid_type = 2).
+! Path (from ../standalone/) and filename of data file that contains
+! thermodynamic level altitudes (in meters).
+! Note:  For this option, zm_grid_fname must be ''.
+!zt_grid_fname = '../model/grid/arm_0003_zt_grid.dat'
+zt_grid_fname = ''
 
-ts_nudge = 7200
+! Stretched grid on momentum levels (grid_type = 3).
+! Path (from ../standalone/) and filename to data file that contains
+! momentum level altitudes (in meters).
+! Note:  For this option, zt_grid_fname must be ''.
+!zm_grid_fname = '../model/grid/arm_0003_zm_grid.dat'
+zm_grid_fname = ''
 
-cloud_sed     = .false.
-kk_rain       = .false.
-lcoamps_micro = .true.
-licedfs       = .false.
-lbugsrad      = .false.
-lKhm_aniso    = .true.
-luv_nudge     = .true.
+day   = 1     ! Day of model start (1 to 31).
+month = 3     ! Month of model start (1 to 12).
+year  = 2000  ! Year of model start.
 
-lrestart      = .false.
+!rlat = 36.61  ! Latitude (0 to 90 for north lat.; 0 to -90 for south lat.) [degrees]
+rlat = 36.5   ! Latitude (0 to 90 for north lat.; 0 to -90 for south lat.) [degrees]
+!rlon = -97.49 ! Longitude (0 to 180 for east long.; 0 to -180 for west long.) [degrees]
+rlon = -97.5  ! Longitude (0 to 180 for east long.; 0 to -180 for west long.) [degrees]
+
+time_initial = 63003.0  ! Model start time [seconds since midnight on start date]
+!time_final = 322202.0   ! Model end time [seconds since midnight on start date]
+time_final = 1931404.0  ! Model end time [seconds since midnight on start date]
+time_spinup = 63003.0   ! Spin-up period [seconds since midnight on start date]
+
+dtmain    = 60.0   ! Model timestep [s]
+dtclosure = 60.0   ! Closure timestep [s] (must multiply evenly into dtmain).
+
+sfctype = 1      ! Select surface scheme (cases without specified surface fluxes).
+                 ! 0 ==> fixed surface sensible and latent heat fluxes,
+                 !       as defined by SE and LE, respectively.
+                 ! 1 ==> determine surface sensible and latent heat fluxes 
+                 !       through a bulk formula that uses the given surface 
+                 !       temperature (Tsfc) and assumes over ocean.
+
+Tsfc = 286.0     ! Temperature at model base           [K]
+!Tsfc = 282.889   ! Temperature at model base           [K]
+psfc = 978.9e2   ! Pressure at model base              [Pa]
+fcor = 8.697e-5  ! Coriolis parameter                  [s^-1]
+T0   = 300.      ! Reference temperature (usually 300) [K]
+
+ts_nudge = 7200  ! Timescale of u/v nudging            [s]
+
+cloud_sed     = .false.  ! Flag for cloud water sedimentation.
+kk_rain       = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
+lcoamps_micro = .true.   ! Flag for COAMPS microphysics.
+licedfs       = .false.  ! Flag for simplified ice scheme.
+lbugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
+lKhm_aniso    = .true.   ! Flag for anisotropic Khm.
+luv_nudge     = .true.   ! Flag for horizontal wind speed nudging.
+
+lrestart      = .false.  ! Flag for whether this is a restart run.
+! Path (from ../standalone/) and filename of GrADS control files
+! (without '_zt.ctl' or '_zm.ctl').
 restart_path_case = "restart/arm_0003"
-time_restart  = 0.0
+time_restart  = 0.0      ! Time of model restart.
+                         ! [seconds since start time listed in GrADS control file]
 
-
+! Select debug level:
 !        0 => Print no debug messages to the screen
 !        1 => Print lightweight debug messages, e.g. print statements
 !        2 => Print debug messages that require extra testing,
@@ -53,15 +94,21 @@ debug_level   = 2
 /
 
 &stats_setting
-lstats       = .true.
-fname_prefix = "arm_0003_clip"
-stats_tsamp  = 60.
-stats_tout   = 60.
-stats_fmt    = "grads"
+
+! Statistics Settings
+
+lstats       = .true.           ! Flag for statistical output.
+fname_prefix = "arm_0003_clip"  ! Prefix of output filename.
+stats_tsamp  = 60.              ! Frequency of statistical sampling [s]
+                                ! (must multiply evenly into stats_tout).
+stats_tout   = 60.              ! Frequency of statistical output.  [s]
+stats_fmt    = "grads"          ! Type of statistical output file (GrADS or netCDF).
 
 /
 
 &sounding
+
+! Initial Sounding
 
 nlevels = 39
 

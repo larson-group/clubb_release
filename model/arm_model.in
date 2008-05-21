@@ -1,50 +1,86 @@
-! $Id: arm_model.in,v 1.19 2008-05-17 22:12:07 griffinb Exp $
+! $Id: arm_model.in,v 1.20 2008-05-21 16:23:05 griffinb Exp $
 ! Parameter file for GCSS ARM Cu over land case
 
 &model_setting
 
-runtype = "arm"
+! Model Settings
 
-nzmax   = 110
-grid_type = 1
-deltaz  = 40.0
-zm_init = 0.0
-!zt_grid_fname = '../model/grid/arm_zt_grid'
-!zm_grid_fname = '../model/grid/arm_zm_grid'
+runtype = "arm" ! Case name.
+
+nzmax = 110       ! Number of vertical levels.
+
+grid_type = 1     ! Select grid type:
+                  ! 1 ==> evenly-spaced grid levels.
+                  ! 2 ==> stretched (unevenly-spaced) grid
+                  !       on thermodynamic grid levels
+                  !       (style of SAM stretched grid).
+                  ! 3 ==> stretched (unevenly-spaced) grid
+                  !       on momentum grid levels
+                  !       (style of WRF stretched grid).
+
+! Evenly-spaced grid (grid_type = 1).
+! Note:  For this option, both zt_grid_fname and zm_grid_fname must be ''.
+deltaz  = 40.0    ! Distance between grid levels on evenly-spaced grid.      [m]
+zm_init = 0.0     ! Altitude of lowest momentum level on evenly-spaced grid. [m]
+
+! Stretched grid on thermodynamic levels (grid_type = 2).
+! Path (from ../standalone/) and filename of data file that contains
+! thermodynamic level altitudes (in meters).
+! Note:  For this option, zm_grid_fname must be ''.
+!zt_grid_fname = '../model/grid/arm_zt_grid.dat'
 zt_grid_fname = ''
+
+ Stretched grid on momentum levels (grid_type = 3).
+! Path (from ../standalone/) and filename to data file that contains
+! momentum level altitudes (in meters).
+! Note:  For this option, zt_grid_fname must be ''.
+!zm_grid_fname = '../model/grid/arm_zm_grid.dat'
 zm_grid_fname = ''
 
-day = 21, month = 6, year = 1997,
-rlat = 36.62, rlon = -97.5
+day   = 21    ! Day of model start (1 to 31).
+month = 6     ! Month of model start (1 to 12).
+year  = 1997  ! Year of model start.
 
-time_initial = 41400.0
-time_final = 93600.0
-time_spinup = 41400.0
+rlat = 36.62  ! Latitude (0 to 90 for north lat.; 0 to -90 for south lat.) [degrees]
+rlon = -97.5  ! Longitude (0 to 180 for east long.; 0 to -180 for west long.) [degrees]
 
-dtmain    = 60.0
-dtclosure = 60.0
+time_initial = 41400.0  ! Model start time [seconds since midnight on start date]
+time_final = 93600.0    ! Model end time [seconds since midnight on start date]
+time_spinup = 41400.0   ! Spin-up period [seconds since midnight on start date]
 
-sfctype = 1
+dtmain    = 60.0   ! Model timestep [s]
+dtclosure = 60.0   ! Closure timestep [s] (must multiply evenly into dtmain).
 
-Tsfc = 315.0
-psfc = 970.e2
-SE = 0.
-LE = 0.
+sfctype = 1      ! Select surface scheme (cases without specified surface fluxes).
+                 ! 0 ==> fixed surface sensible and latent heat fluxes,
+                 !       as defined by SE and LE, respectively.
+                 ! 1 ==> determine surface sensible and latent heat fluxes
+                 !       through a bulk formula that uses the given surface
+                 !       temperature (Tsfc) and assumes over ocean.
 
-fcor = 8.5e-5
-T0   = 300.
+Tsfc = 315.0     ! Temperature at model base           [K]
+psfc = 970.e2    ! Pressure at model base              [Pa]
+SE = 0.          ! Fixed surface sensible heat flux    [K m/s]
+LE = 0.          ! Fixed surface latent heat flux      [(kg/kg) m/s]
 
-cloud_sed     = .false.
-kk_rain       = .false.
-lcoamps_micro = .false.
-licedfs       = .false.
-lbugsrad      = .false.
-lKhm_aniso    = .true.
+fcor = 8.5e-5    ! Coriolis parameter                  [s^-1]
+T0   = 300.      ! Reference temperature (usually 300) [K]
 
-lrestart      = .false.
+cloud_sed     = .false.  ! Flag for cloud water sedimentation.
+kk_rain       = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
+lcoamps_micro = .false.  ! Flag for COAMPS microphysics.
+licedfs       = .false.  ! Flag for simplified ice scheme.
+lbugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
+lKhm_aniso    = .true.   ! Flag for anisotropic Khm.
+
+lrestart      = .false.  ! Flag for whether this is a restart run.
+! Path (from ../standalone/) and filename of GrADS control files
+! (without '_zt.ctl' or '_zm.ctl').
 restart_path_case  = "restart/arm"
-time_restart  = 0.0
+time_restart  = 0.0      ! Time of model restart.
+                         ! [seconds since start time listed in GrADS control file]
 
+! Select debug level:
 !        0 => Print no debug messages to the screen
 !        1 => Print lightweight debug messages, e.g. print statements
 !        2 => Print debug messages that require extra testing,
@@ -54,15 +90,21 @@ debug_level = 2
 /
 
 &stats_setting
-lstats       = .true.
-fname_prefix = "arm"
-stats_tsamp  = 60.
-stats_tout   = 60.
-stats_fmt    = "grads"
+
+! Statistics Settings
+
+lstats       = .true.   ! Flag for statistical output.
+fname_prefix = "arm"    ! Prefix of output filename.
+stats_tsamp  = 60.      ! Frequency of statistical sampling [s]
+                        ! (must multiply evenly into stats_tout).
+stats_tout   = 60.      ! Frequency of statistical output.  [s]
+stats_fmt    = "grads"  ! Type of statistical output file (GrADS or netCDF).
 
 /
 
 &sounding
+
+! Initial Sounding
 
 nlevels = 8
 z = 0, 50, 350, 650, 700, 1300, 2500, 5500
@@ -81,6 +123,9 @@ vg = 0, 0,  0,  0,  0,  0,  0,  0
 ! Only needed if -DSCALARS is enabled
 !  sclr(:,1) = th; sclr(:,2) = rt
 &scalar_sounding
+
+! Initial Sounding for Scalar Quantities
+
 sclr(:,1) = 299.00, 301.50, 302.50, 303.53, 303.70, 307.13, 314.00, 343.20
 sclr(:,2) = 0.0152, 0.01517, 0.01498, 0.01480, 0.01470, 0.01350, 0.003, 0.003
 edsclr(:,1) = 299.00, 301.50, 302.50, 303.53, 303.70, 307.13, 314.00, 343.20

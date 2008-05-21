@@ -1,41 +1,77 @@
-! $Id: clex9_nov02_model.in,v 1.8 2008-05-16 18:28:20 griffinb Exp $
+! $Id: clex9_nov02_model.in,v 1.9 2008-05-21 16:23:05 griffinb Exp $
 ! Parameter file for CLEX-9: November 02 altocumulus case
 
 &model_setting
 
-runtype = "clex9_nov02"
+! Model Settings
 
-nzmax = 120
-grid_type = 1
-deltaz = 25.0
-zm_init = 3097.0
+runtype = "clex9_nov02" ! Case name.
 
-day = 02, month = 11, year = 2001,
-rlat = 41.0850, rlon = -100.3552
+nzmax = 120       ! Number of vertical levels.
 
-time_initial = 46800.0
-time_final =  61200.0
-time_spinup = 3600.0
+grid_type = 1     ! Select grid type:
+                  ! 1 ==> evenly-spaced grid levels.
+                  ! 2 ==> stretched (unevenly-spaced) grid
+                  !       on thermodynamic grid levels
+                  !       (style of SAM stretched grid).
+                  ! 3 ==> stretched (unevenly-spaced) grid
+                  !       on momentum grid levels
+                  !       (style of WRF stretched grid).
 
-dtmain    = 60.0
-dtclosure = 60.0
+! Evenly-spaced grid (grid_type = 1).
+! Note:  For this option, both zt_grid_fname and zm_grid_fname must be ''.
+deltaz  = 25.0    ! Distance between grid levels on evenly-spaced grid.      [m]
+zm_init = 3097.0  ! Altitude of lowest momentum level on evenly-spaced grid. [m]
 
-Tsfc = 271.05
-psfc = 700.00e2
+! Stretched grid on thermodynamic levels (grid_type = 2).
+! Path (from ../standalone/) and filename of data file that contains
+! thermodynamic level altitudes (in meters).
+! Note:  For this option, zm_grid_fname must be ''.
+!zt_grid_fname = '../model/grid/clex9_nov02_zt_grid.dat'
+zt_grid_fname = ''
 
-fcor = 0.0e-5
-T0   = 300.
+! Stretched grid on momentum levels (grid_type = 3).
+! Path (from ../standalone/) and filename to data file that contains
+! momentum level altitudes (in meters).
+! Note:  For this option, zt_grid_fname must be ''.
+!zm_grid_fname = '../model/grid/clex9_nov02_zm_grid.dat'
+zm_grid_fname = ''
 
-cloud_sed     = .false.
-kk_rain       = .false.
-lcoamps_micro = .false.
-licedfs       = .true.
-lbugsrad      = .false.
-lKhm_aniso    = .true.
-lrestart      = .false.
+day   = 02    ! Day of model start (1 to 31).
+month = 11    ! Month of model start (1 to 12).
+year  = 2001  ! Year of model start.
+
+rlat = 41.0850    ! Latitude (0 to 90 for north lat.; 0 to -90 for south lat.) [degrees]
+rlon = -100.3552  ! Longitude (0 to 180 for east long.; 0 to -180 for west long.) [degrees]
+
+time_initial = 46800.0  ! Model start time [seconds since midnight on start date]
+time_final =  61200.0   ! Model end time [seconds since midnight on start date]
+time_spinup = 3600.0    ! Spin-up period [seconds since midnight on start date]
+
+dtmain    = 60.0   ! Model timestep [s]
+dtclosure = 60.0   ! Closure timestep [s] (must multiply evenly into dtmain).
+
+Tsfc = 271.05      ! Temperature at model base           [K]
+psfc = 700.00e2    ! Pressure at model base              [Pa]
+
+fcor = 0.0e-5      ! Coriolis parameter                  [s^-1]
+T0   = 300.        ! Reference temperature (usually 300) [K]
+
+cloud_sed     = .false.  ! Flag for cloud water sedimentation.
+kk_rain       = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
+lcoamps_micro = .false.  ! Flag for COAMPS microphysics.
+licedfs       = .true.   ! Flag for simplified ice scheme.
+lbugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
+lKhm_aniso    = .true.   ! Flag for anisotropic Khm.
+
+lrestart      = .false.  ! Flag for whether this is a restart run.
+! Path (from ../standalone/) and filename of GrADS control files
+! (without '_zt.ctl' or '_zm.ctl').
 restart_path_case  = "restart/clex9_nov02"
-time_restart  = 0.0
+time_restart  = 0.0      ! Time of model restart.
+                         ! [seconds since start time listed in GrADS control file]
 
+! Select debug level:
 !        0 => Print no debug messages to the screen
 !        1 => Print lightweight debug messages, e.g. print statements
 !        2 => Print debug messages that require extra testing,
@@ -46,15 +82,21 @@ debug_level = 2
 /
 
 &stats_setting
-lstats       = .true.
-fname_prefix = "clex9_nov02"
-stats_tsamp  = 60.
-stats_tout   = 60.
-stats_fmt    = "grads"
+
+! Statistics Settings
+
+lstats       = .true.         ! Flag for statistical output.
+fname_prefix = "clex9_nov02"  ! Prefix of output filename.
+stats_tsamp  = 60.            ! Frequency of statistical sampling [s]
+                              ! (must multiply evenly into stats_tout).
+stats_tout   = 60.            ! Frequency of statistical output.  [s]
+stats_fmt    = "grads"        ! Type of statistical output file (GrADS or netCDF).
 
 /
 
 &sounding
+
+! Initial Sounding
 
 nlevels = 17
 
@@ -75,6 +117,8 @@ vg =     2.5000,  2.4714,  2.3097,  2.2949,  2.0877,  1.8115,  1.6117,  1.4502, 
 /
 
 &scalar_sounding
+
+! Initial Sounding for Scalar Quantities
 
 sclr(:,1) =  300.11,   304.62,   304.71,   304.77,   304.97,   305.15,   305.06,   305.37,   305.37,   305.00,   308.18,   307.31,   308.76,   310.04,   310.51,   314.01,   315.20
 sclr(:,2) = 2.92e-3,  2.98e-3,  2.95e-3,  2.85e-3,  2.71e-3,  2.69e-3,  2.71e-3,  2.74e-3,  2.70e-3,  2.71e-3,  2.61e-3,  2.59e-3,  2.44e-3,  2.26e-3,  1.99e-3,  1.01e-3, 0.095e-3

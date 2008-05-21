@@ -2,44 +2,80 @@
 
 &model_setting
 
-runtype = "cobra"
+! Model Settings
 
-nzmax   = 100
-grid_type = 1
-deltaz  = 40.0
-zm_init = 0.0
+runtype = "cobra" ! Case name.
 
-day = 11, month = 6, year = 2004, 
-rlat = 45.20407, rlon = -68.7402  ! Howland obs. tower
+nzmax = 100       ! Number of vertical levels.
+
+grid_type = 1     ! Select grid type:
+                  ! 1 ==> evenly-spaced grid levels.
+                  ! 2 ==> stretched (unevenly-spaced) grid
+                  !       on thermodynamic grid levels
+                  !       (style of SAM stretched grid).
+                  ! 3 ==> stretched (unevenly-spaced) grid
+                  !       on momentum grid levels
+                  !       (style of WRF stretched grid).
+
+! Evenly-spaced grid (grid_type = 1).
+! Note:  For this option, both zt_grid_fname and zm_grid_fname must be ''.
+deltaz  = 40.0    ! Distance between grid levels on evenly-spaced grid.      [m]
+zm_init = 0.0     ! Altitude of lowest momentum level on evenly-spaced grid. [m]
+
+! Stretched grid on thermodynamic levels (grid_type = 2).
+! Path (from ../standalone/) and filename of data file that contains
+! thermodynamic level altitudes (in meters).
+! Note:  For this option, zm_grid_fname must be ''.
+!zt_grid_fname = '../model/grid/cobra_zt_grid.dat'
+zt_grid_fname = ''
+
+! Stretched grid on momentum levels (grid_type = 3).
+! Path (from ../standalone/) and filename to data file that contains
+! momentum level altitudes (in meters).
+! Note:  For this option, zt_grid_fname must be ''.
+!zm_grid_fname = '../model/grid/cobra_zm_grid.dat'
+zm_grid_fname = ''
+
+day   = 11    ! Day of model start (1 to 31).
+month = 6     ! Month of model start (1 to 12).
+year  = 2004  ! Year of model start.
+
+! Howland observation tower
+rlat = 45.20407  ! Latitude (0 to 90 for north lat.; 0 to -90 for south lat.) [degrees]
+rlon = -68.7402  ! Longitude (0 to 180 for east long.; 0 to -180 for west long.) [degrees]
 
 ! The initial data is from the upwind flights, 
 ! which took place at ~1600 GMT (1200 EDT).
 ! The downwind flights took place at ~2100 GMT (1700 EDT).
-time_initial =  57600.0  ! 1600 GMT
-!time_final   =  75600.0  ! 2100 GMT
-time_final   = 230400.0  ! 48 hour run
-time_spinup  =  57600.0
+time_initial =  57600.0 ! 1600 GMT  ! Model start time [seconds since midnight on start date]
+!time_final   =  75600.0 ! 2100 GMT  ! Model end time [seconds since midnight on start date]
+time_final   = 230400.0 ! 48 hour run  ! Model end time [seconds since midnight on start date]
+time_spinup  =  57600.0                ! Spin-up period [seconds since midnight on start date]
 
-dtmain    = 60.0
-dtclosure = 60.0
+dtmain    = 60.0   ! Model timestep [s]
+dtclosure = 60.0   ! Closure timestep [s] (must multiply evenly into dtmain).
 
-Tsfc = 284.25
-psfc = 977.5e2
+Tsfc = 284.25      ! Temperature at model base           [K]
+psfc = 977.5e2     ! Pressure at model base              [Pa]
 
-fcor = 1.0349e-4
-T0   = 300.
+fcor = 1.0349e-4   ! Coriolis parameter                  [s^-1]
+T0   = 300.        ! Reference temperature (usually 300) [K]
 
-cloud_sed     = .false.
-kk_rain       = .false.
-lcoamps_micro = .false.
-licedfs       = .false.
-lbugsrad      = .false.
-lKhm_aniso    = .true.
+cloud_sed     = .false.  ! Flag for cloud water sedimentation.
+kk_rain       = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
+lcoamps_micro = .false.  ! Flag for COAMPS microphysics.
+licedfs       = .false.  ! Flag for simplified ice scheme.
+lbugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
+lKhm_aniso    = .true.   ! Flag for anisotropic Khm.
 
-lrestart      = .false.
+lrestart      = .false.  ! Flag for whether this is a restart run.
+! Path (from ../standalone/) and filename of GrADS control files
+! (without '_zt.ctl' or '_zm.ctl').
 restart_path_case  = "restart/cobra"
-time_restart  = 0.0
+time_restart  = 0.0      ! Time of model restart.
+                         ! [seconds since start time listed in GrADS control file]
 
+! Select debug level:
 !        0 => Print no debug messages to the screen
 !        1 => Print lightweight debug messages, e.g. print statements
 !        2 => Print debug messages that require extra testing,
@@ -49,15 +85,21 @@ debug_level   = 2
 /
 
 &stats_setting
-lstats       = .true.
-fname_prefix = "cobra"
-stats_tsamp  = 60.
-stats_tout   = 60.
-stats_fmt    = "grads"
+
+! Statistics Settings
+
+lstats       = .true.   ! Flag for statistical output.
+fname_prefix = "cobra"  ! Prefix of output filename.
+stats_tsamp  = 60.      ! Frequency of statistical sampling [s]
+                        ! (must multiply evenly into stats_tout).
+stats_tout   = 60.      ! Frequency of statistical output.  [s]
+stats_fmt    = "grads"  ! Type of statistical output file (GrADS or netCDF).
 
 /
 
 &sounding
+
+! Initial Sounding
 
 nlevels = 12
 
@@ -85,6 +127,9 @@ vg =  -3.000,  -3.933,  -4.633,  -6.500,  -7.167,  -7.929,
 /
 
 &scalar_sounding
+
+! Initial Sounding for Scalar Quantities
+
 ! CO2 sounding
 sclr(:,1) = 379.000, 379.053, 379.093, 379.200, 379.293, 379.400,
             379.700, 379.900, 380.200, 380.079, 379.350, 380.600
