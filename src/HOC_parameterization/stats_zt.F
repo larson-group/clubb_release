@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zt.F,v 1.13 2008-05-05 18:53:30 faschinj Exp $
+! $Id: stats_zt.F,v 1.14 2008-05-21 22:33:26 dschanen Exp $
 #ifdef STATS
        
       module stats_zt
@@ -36,6 +36,7 @@
       ! Default initialization for array indices for zt
 
       ithlm         = 0
+      itemp_in_K    = 0
       ithvm         = 0
       irtm          = 0
       ircm          = 0
@@ -223,6 +224,12 @@
           ithlm = k
           call stat_assign( ithlm, "thlm", 
      .          "thetal (K)", "K", zt)
+          k = k + 1
+
+        case ('temp_in_K')
+          itemp_in_K = k
+          call stat_assign( itemp_in_K, "temp_in_K", 
+     .          "absolute temperature in K", "K", zt )
           k = k + 1
 
         case ('thvm')

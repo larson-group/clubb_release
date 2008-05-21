@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.120 2008-05-17 17:44:13 griffinb Exp $
+# $Id: Makefile,v 1.121 2008-05-21 22:33:19 dschanen Exp $
 #
 # This version should work with BSD, GNU make, smake and dmake.
 #
@@ -26,7 +26,8 @@ LATIN_HYP = math_utilities.o \
 	random.o \
 	matrix_operations.o 
 
-BUGS_RAD = kinds.o std_atmosphere_mod.o bugsrad_planck.o bugsrad_physconst.o gases_ckd.o \
+BUGS_RAD = kinds.o std_atmosphere_mod.o bugsrad_planck.o bugsrad_physconst.o \
+	gases_ckd.o \
 	cloud_correlate.o bugs_lwr.o bugs_swr.o bugs_rad.o \
 	cloudg.o comscp1.o comscp2.o gascon.o \
 	newexp.o rayle.o two_rt_lw.o two_rt_sw.o \
@@ -61,7 +62,7 @@ PARAMETERIZATION = \
 	outputnc.o grid.o model_flags.o file_functions.o \
         stats_type.o stats_hoc.o stats_subs.o \
         stats_zt.o stats_zm.o stats_sfc.o stats_prec.o sfc.o \
-	erf.o diffusion.o mean_adv.o \
+	erf.o diffusion.o mean_adv.o temp_in_K_mod.o \
 	closure_new.o diag_var.o interpolation.o \
         hydrostatic.o mixing_length.o mixing.o saturation.o \
 	compute_um_edsclrm_mod.o wp23.o Skw_func.o error_code.o \

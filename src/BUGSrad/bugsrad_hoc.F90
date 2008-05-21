@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_hoc.F90,v 1.28 2008-05-13 14:35:28 griffinb Exp $
+! $Id: bugsrad_hoc.F90,v 1.29 2008-05-21 22:33:23 dschanen Exp $
 module bugsrad_hoc_mod
 
 public :: bugsrad_hoc
@@ -46,7 +46,8 @@ subroutine bugsrad_hoc &
   use std_atmosphere_mod, only: std_atmos_dim, std_alt, std_pinmb, &
       std_tempk, std_sp_hmdty, std_o3l
   use stats_prec, only: time_prec
-  use cos_solar_zen_mod
+  use cos_solar_zen_mod, only: cos_solar_zen
+  use temp_in_K_mod, only: thlm2temp_in_K
   use error_code, only: clubb_at_debug_level
 
 #ifdef STATS
@@ -171,10 +172,8 @@ use stats_hoc, only: zt, zm, lstats_samp, &
 
 
 ! Convert theta_l to temperature
-!   kappa: Dry air gas constant / Dry air specific heat at p
-!   Lv:    Latent heat of vaporization
-  tempk(1,1:(nz-1)) = thlm(2:nz) * ( 1000.0d0 / pinmb(1,1:(nz-1)) )**(-kappa) &
-                    + Lv*rcm(2:nz) / Cp
+  
+  tempk(1,1:(nz-1)) = thlm2temp_in_K( thlm(2:nz), exner(2:nz), rcm(2:nz) )
   
 ! Derive Specific humidity from rc & rt.
   do z = 2, nz

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.11 2008-05-09 16:34:42 faschinj Exp $
+!  $Id: stats_subs.F,v 1.12 2008-05-21 22:33:26 dschanen Exp $
 #ifdef STATS
       module stats_subs
  
@@ -574,6 +574,7 @@
       !use prognostic_variables
       use diagnostic_variables
       use model_flags
+      use temp_in_K_mod
       use constants
 
       implicit none
@@ -645,6 +646,12 @@
           zt%x(:,ithlm) = zt%x(:,ithlm) + thlm
           zt%n(:,ithlm) = zt%n(:,ithlm) + 1
         end if
+        if ( itemp_in_K > 0 ) then
+          zt%x(:,itemp_in_K) = zt%x(:,itemp_in_K) 
+     .    + thlm2temp_in_K( thlm, exner, rcm )
+          zt%n(:,itemp_in_K) = zt%n(:,itemp_in_K) + 1
+        end if
+
         if ( ithvm > 0 ) then
           zt%x(:,ithvm) = zt%x(:,ithvm) + thvm
           zt%n(:,ithvm) = zt%n(:,ithvm) + 1

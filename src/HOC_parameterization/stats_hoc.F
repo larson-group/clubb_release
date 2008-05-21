@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_hoc.F,v 1.10 2008-05-01 13:56:08 griffinb Exp $
+! $Id: stats_hoc.F,v 1.11 2008-05-21 22:33:26 dschanen Exp $
 #ifdef STATS
 !-----------------------------------------------------------------------
 !  module stats_hoc
@@ -89,14 +89,20 @@
      .     iradht_LW,      !   "           "   Long-wave
      .     iradht_SW       !   "           "   Short-wave
 
+        integer ::
+     .     itemp_in_K      ! Absolute temperature
+
+
 !$omp   threadprivate(ithlm, ithvm, irtm, ircm, ium, ivm, iwmt, iug)
 !$omp   threadprivate(ivg, icf, ip, iexner, iLscale, iwp3, iwpthlp2)
 !$omp   threadprivate(iwp2thlp, iwprtp2, iwp2rtp, iLup, iLdown, itaut)
 !$omp   threadprivate(iKht, iwp2thvp, iwp2rcp, iwprtpthlp, isct, irhot)
-!$omp   threadprivate(iNcm, iNcnm, iNim, isnowslope, iNsnowm, ised_rcm, irsm, irrm, iNrm)
+!$omp   threadprivate(iNcm, iNcnm, iNim, isnowslope, iNsnowm)
+!$omp   threadprivate(ised_rcm, irsm, irrm, iNrm)
 !$omp   threadprivate(imean_vol_rad_rain, imean_vol_rad_cloud)
 !$omp   threadprivate(irain_rate, iAKm, iAKm_est)
 !$omp   threadprivate(iradht, iradht_LW, iradht_SW)
+!$omp   threadprivate(itemp_in_K)
 
         integer ::
      .    irsnowm,

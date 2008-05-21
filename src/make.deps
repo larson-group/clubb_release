@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.42 2008-05-17 17:44:13 griffinb Exp $
+# $Id: make.deps,v 1.43 2008-05-21 22:33:19 dschanen Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -56,13 +56,15 @@ grid.o		: constants.o file_functions.o grid.F
 stats_type.o    : outputfile.o stats_prec.o stats_type.F
 stats_hoc.o     : stats_type.o stats_hoc.F
 stats_subs.o    : outputgrads.o outputnc.o prog_variables.o diag_variables.o \
-	stats_hoc.o grid.o stats_zt.o stats_zm.o stats_sfc.o stats_subs.F 
+	stats_hoc.o grid.o stats_zt.o stats_zm.o stats_sfc.o temp_in_K_mod.o \
+	stats_subs.F 
 stats_zt.o : stats_hoc.o stats_zt.F
 stats_zm.o : stats_hoc.o stats_zm.F
 stats_sfc.o: stats_hoc.o stats_sfc.F
 erf.o		: erf.F
 lapack_wrap.o	: error_code.o lapack_wrap.F
 Skw_func.o	: Skw_func.F
+temp_in_K_mod.o	: constants.o temp_in_K_mod.F
 
 closure_new.o	: constants.o parameters.o grid.o saturation.o erf.o numer_check.o \
                  error_code.o closure_new.F 
@@ -175,7 +177,7 @@ two_rt_lw_ocastrndm.o	: kinds.o two_rt_lw_ocastrndm.F90
 two_rt_sw.o		: kinds.o two_rt_sw.F
 two_rt_sw_bs.o		: kinds.o lapack_wrap.o two_rt_sw_bs.F
 two_rt_sw_ocastrndm.o	: kinds.o two_rt_sw_ocastrndm.F90
-bugsrad_hoc.o 		: kinds.o constants.o bugs_rad.o \
+bugsrad_hoc.o 		: kinds.o constants.o bugs_rad.o temp_in_K_mod.o \
 	stats_hoc.o cos_solar_zen.o std_atmosphere_mod.o bugsrad_hoc.F90
 
 # == Misc. program related source files  ==
