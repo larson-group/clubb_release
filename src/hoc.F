@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.185 2008-05-19 20:06:55 dschanen Exp $
+! $Id: hoc.F,v 1.186 2008-05-21 23:04:32 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -80,7 +80,7 @@
      .  time_spinup,  ! Time end of spin up period      [s]
      .  time_current  ! Current time of simulation      [s]
 !$omp   threadprivate(time_initial, time_final, time_spinup,
-!    .                time_current)
+!$omp.                time_current)
 
         real(kind=time_prec), private :: 
      .  dtmain,     ! Main model timestep                      [s]

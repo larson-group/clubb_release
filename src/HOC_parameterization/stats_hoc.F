@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_hoc.F,v 1.11 2008-05-21 22:33:26 dschanen Exp $
+! $Id: stats_hoc.F,v 1.12 2008-05-21 23:04:30 dschanen Exp $
 #ifdef STATS
 !-----------------------------------------------------------------------
 !  module stats_hoc
@@ -435,7 +435,7 @@
 
 !$omp   threadprivate(irtpthlp_bt, irtpthlp_ma, irtpthlp_ta)
 !$omp   threadprivate(irtpthlp_tp1, irtpthlp_tp2, irtpthlp_dp1)
-!$omp   threadprivate(irtpthlp_dp2, irtpthlp_cl)
+!$omp   threadprivate(irtpthlp_dp2)
 
         integer ::
      .    iup2,
