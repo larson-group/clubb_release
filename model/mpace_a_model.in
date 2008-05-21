@@ -2,47 +2,88 @@
 
 &model_setting
 
-runtype = "mpace_a"
+! Model Settings
 
-nzmax = 200
-grid_type = 1
-deltaz = 50.0
-zm_init = 0.0
+runtype = "mpace_a" ! Case name.
 
-day = 5, month = 10, year = 2004,
-rlat = 70.5, rlon = -154.0
+nzmax = 200       ! Number of vertical levels.
 
-time_initial = 50400.0
-time_final   = 309600.0
-!time_final   = 50460.0
-time_spinup  = 0.0
+grid_type = 1     ! Select grid type:
+                  ! 1 ==> evenly-spaced grid levels.
+                  ! 2 ==> stretched (unevenly-spaced) grid
+                  !       on thermodynamic grid levels
+                  !       (style of SAM stretched grid).
+                  ! 3 ==> stretched (unevenly-spaced) grid
+                  !       on momentum grid levels
+                  !       (style of WRF stretched grid).
 
-dtmain    = 60.0
-dtclosure = 60.0
+! Evenly-spaced grid (grid_type = 1).
+! Note:  For this option, both zt_grid_fname and zm_grid_fname must be ''.
+deltaz  = 50.0    ! Distance between grid levels on evenly-spaced grid.      [m]
+zm_init = 0.0     ! Altitude of lowest momentum level on evenly-spaced grid. [m]
 
-sfctype = 0
-Tsfc = 271.7528
-psfc = 1015.e2
-SE = 0.
-LE = 0.
+! Stretched grid on thermodynamic levels (grid_type = 2).
+! Path (from ../standalone/) and filename of data file that contains
+! thermodynamic level altitudes (in meters).
+! Note:  For this option, zm_grid_fname must be ''.
+!zt_grid_fname = '../model/grid/mpace_a_zt_grid.dat'
+zt_grid_fname = ''
 
-fcor = 1.3747e-4
-T0   = 300.
+! Stretched grid on momentum levels (grid_type = 3).
+! Path (from ../standalone/) and filename to data file that contains
+! momentum level altitudes (in meters).
+! Note:  For this option, zt_grid_fname must be ''.
+!zm_grid_fname = '../model/grid/mpace_a_zm_grid.dat'
+zm_grid_fname = ''
 
-ts_nudge = 3600.
+day   = 5     ! Day of model start (1 to 31).
+month = 10    ! Month of model start (1 to 12).
+year  = 2004  ! Year of model start.
 
-cloud_sed     = .false.
-kk_rain       = .false.
-lcoamps_micro = .true.
-licedfs       = .false.
-lbugsrad      = .false.
-lKhm_aniso    = .true.
-luv_nudge     = .true.
+rlat = 70.5    ! Latitude (0 to 90 for north lat.; 0 to -90 for south lat.) [degrees]
+rlon = -154.0  ! Longitude (0 to 180 for east long.; 0 to -180 for west long.) [degrees]
 
-lrestart      = .false.
+time_initial = 50400.0  ! Model start time [seconds since midnight on start date]
+time_final   = 309600.0 ! Model end time [seconds since midnight on start date]
+!time_final   = 50460.0  ! Model end time [seconds since midnight on start date]
+time_spinup  = 0.0      ! Spin-up period [seconds since midnight on start date]
+
+dtmain    = 60.0   ! Model timestep [s]
+dtclosure = 60.0   ! Closure timestep [s] (must multiply evenly into dtmain).
+
+sfctype = 0      ! Select surface scheme (cases without specified surface fluxes).
+                 ! 0 ==> fixed surface sensible and latent heat fluxes,
+                 !       as defined by SE and LE, respectively.
+                 ! 1 ==> determine surface sensible and latent heat fluxes
+                 !       through a bulk formula that uses the given surface
+                 !       temperature (Tsfc) and assumes over ocean.
+
+Tsfc = 271.7528   ! Temperature at model base           [K]
+psfc = 1015.e2    ! Pressure at model base              [Pa]
+SE = 0.           ! Fixed surface sensible heat flux    [K m/s]
+LE = 0.           ! Fixed surface latent heat flux      [(kg/kg) m/s]
+
+fcor = 1.3747e-4  ! Coriolis parameter                  [s^-1]
+T0   = 300.       ! Reference temperature (usually 300) [K]
+
+ts_nudge = 3600.  ! Timescale of u/v nudging            [s]
+
+cloud_sed     = .false.  ! Flag for cloud water sedimentation.
+kk_rain       = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
+lcoamps_micro = .true.   ! Flag for COAMPS microphysics.
+licedfs       = .false.  ! Flag for simplified ice scheme.
+lbugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
+lKhm_aniso    = .true.   ! Flag for anisotropic Khm.
+luv_nudge     = .true.   ! Flag for horizontal wind speed nudging.
+
+lrestart      = .false.  ! Flag for whether this is a restart run.
+! Path (from ../standalone/) and filename of GrADS control files
+! (without '_zt.ctl' or '_zm.ctl').
 restart_path_case  = "restart/mpace_a"
-time_restart  = 0.0
+time_restart  = 0.0      ! Time of model restart.
+                         ! [seconds since start time listed in GrADS control file]
 
+! Select debug level:
 !        0 => Print no debug messages to the screen
 !        1 => Print lightweight debug messages, e.g. print statements
 !        2 => Print debug messages that require extra testing,
@@ -51,14 +92,20 @@ debug_level   = 2
 
 /
 &stats_setting
-lstats       = .true.
-fname_prefix = "mpace_a"
-stats_tsamp  = 60.
-stats_tout   = 600.
-stats_fmt    = "grads"
+
+! Statistics Settings
+
+lstats       = .true.     ! Flag for statistical output.
+fname_prefix = "mpace_a"  ! Prefix of output filename.
+stats_tsamp  = 60.        ! Frequency of statistical sampling [s]
+                          ! (must multiply evenly into stats_tout).
+stats_tout   = 600.       ! Frequency of statistical output.  [s]
+stats_fmt    = "grads"    ! Type of statistical output file (GrADS or netCDF).
 /
 
 &sounding
+
+! Initial Sounding
 
 nlevels = 38
 z = 0, 112.13, 315.393, 522.889, 734.893, 952.43, 1177.27, 1410.15, 1650.44, 1897.71, 2151.88, 2413, 2681.27, 2957.09, 3241.01, 3533.7, 3835.56, 4147.36, 4470.05, 4804.37, 5151.33, 5511.77, 5886.7, 6277.53, 6686.06, 7114.3, 7564.51, 8039.59, 8543.44, 9081.27, 9660.1, 10290.5, 10989.5, 11780.7, 12692.4, 13761.3, 15045.5, 16647.1
@@ -74,6 +121,8 @@ vg = -1.5066386e+00, -1.9734499e+00, -2.7266500e+00, -2.8338599e+00, -2.6495299e
 /
 
 &scalar_sounding
+
+! Initial Sounding for Scalar Quantities
 
 sclr(:,1) = 271.747, 272.826, 273.456, 273.974, 274.823, 277.415, 282.03, 285.566, 287.777, 289.4, 290.633, 291.507, 292.299, 293.123, 294.082, 295.223, 295.811, 297.214, 298.211, 299.465, 300.619, 301.512, 302.384, 303.398, 304.614, 305.858, 307.176, 308.804, 311.012, 314.088, 318.427, 325.443, 337.288, 353.003, 370.735, 390.416, 413.9, 443.575
 sclr(:,2) = 3.3035981e-03, 3.10701e-03, 2.87584e-03, 2.78016e-03, 2.63299e-03, 2.46439e-03, 2.65533e-03, 2.14817e-03, 1.37941e-03, 1.59249e-03, 1.37624e-03, 1.41651e-03, 1.34501e-03, 1.28601e-03, 1.20035e-03, 1.09604e-03, 0.985674e-03, 0.910506e-03, 0.797439e-03, 0.6186e-03, 0.51688e-03, 0.454531e-03, 0.342019e-03, 0.271119e-03, 0.2258e-03, 0.166315e-03, 0.137037e-03, 0.0934951e-03, 0.0495966e-03, 0.0375903e-03, 0.0306994e-03, 0.0275717e-03, 0.0157555e-03, 0.00708325e-03, 0.0102087e-03, 0.0136018e-03, 0.0175294e-03, 0.0219758e-03

@@ -1,42 +1,77 @@
-! $Id: nov11_altocu_model.in,v 1.22 2008-05-16 18:28:21 griffinb Exp $
+! $Id: nov11_altocu_model.in,v 1.23 2008-05-21 18:08:05 griffinb Exp $
 ! Parameter file for November 11 altocumulus case
 
 &model_setting
 
-runtype = "nov11_altocu"
+! Model Settings
 
-nzmax = 176
-grid_type = 1
-deltaz = 25.0
-zm_init = 3000.0
+runtype = "nov11_altocu" ! Case name.
 
-day = 11, month = 11, year = 1999,
-rlat = 47.25, rlon = -112.0
+nzmax = 176       ! Number of vertical levels.
 
-time_initial = 61200.0
-time_final =  75600.0
-time_spinup = 3600.0
+grid_type = 1     ! Select grid type:
+                  ! 1 ==> evenly-spaced grid levels.
+                  ! 2 ==> stretched (unevenly-spaced) grid
+                  !       on thermodynamic grid levels
+                  !       (style of SAM stretched grid).
+                  ! 3 ==> stretched (unevenly-spaced) grid
+                  !       on momentum grid levels
+                  !       (style of WRF stretched grid).
 
-dtmain    = 60.0
-dtclosure = 60.0
+! Evenly-spaced grid (grid_type = 1).
+! Note:  For this option, both zt_grid_fname and zm_grid_fname must be ''.
+deltaz  = 25.0    ! Distance between grid levels on evenly-spaced grid.      [m]
+zm_init = 3000.0  ! Altitude of lowest momentum level on evenly-spaced grid. [m]
 
-Tsfc = 278.61
-psfc = 695.12e2
+! Stretched grid on thermodynamic levels (grid_type = 2).
+! Path (from ../standalone/) and filename of data file that contains
+! thermodynamic level altitudes (in meters).
+! Note:  For this option, zm_grid_fname must be ''.
+!zt_grid_fname = '../model/grid/nov11_altocu_zt_grid.dat'
+zt_grid_fname = ''
 
-fcor = 0.0e-5
-T0   = 300.
+! Stretched grid on momentum levels (grid_type = 3).
+! Path (from ../standalone/) and filename to data file that contains
+! momentum level altitudes (in meters).
+! Note:  For this option, zt_grid_fname must be ''.
+!zm_grid_fname = '../model/grid/nov11_altocu_zm_grid.dat'
+zm_grid_fname = ''
 
-cloud_sed     = .false.
-kk_rain       = .false.
-lcoamps_micro = .false.
-licedfs       = .true.
-lbugsrad      = .false.
-lKhm_aniso    = .true.
+day   = 11    ! Day of model start (1 to 31).
+month = 11    ! Month of model start (1 to 12).
+year  = 1999  ! Year of model start.
 
-lrestart      = .false.
+rlat = 47.25   ! Latitude (0 to 90 for north lat.; 0 to -90 for south lat.) [degrees]
+rlon = -112.0  ! Longitude (0 to 180 for east long.; 0 to -180 for west long.) [degrees]
+
+time_initial = 61200.0  ! Model start time [seconds since midnight on start date]
+time_final =  75600.0   ! Model end time [seconds since midnight on start date]
+time_spinup = 3600.0    ! Spin-up period [seconds since midnight on start date]
+
+dtmain    = 60.0   ! Model timestep [s]
+dtclosure = 60.0   ! Closure timestep [s] (must multiply evenly into dtmain).
+
+Tsfc = 278.61      ! Temperature at model base           [K]
+psfc = 695.12e2    ! Pressure at model base              [Pa]
+
+fcor = 0.0e-5      ! Coriolis parameter                  [s^-1]
+T0   = 300.        ! Reference temperature (usually 300) [K]
+
+cloud_sed     = .false.  ! Flag for cloud water sedimentation.
+kk_rain       = .false.  ! Flag for Khairoutdinov-Kogan rain microphysics.
+lcoamps_micro = .false.  ! Flag for COAMPS microphysics.
+licedfs       = .true.   ! Flag for simplified ice scheme.
+lbugsrad      = .false.  ! Flag for BUGSrad interactive radiation scheme.
+lKhm_aniso    = .true.   ! Flag for anisotropic Khm.
+
+lrestart      = .false.  ! Flag for whether this is a restart run.
+! Path (from ../standalone/) and filename of GrADS control files
+! (without '_zt.ctl' or '_zm.ctl').
 restart_path_case  = "restart/nov11_altocu"
-time_restart  = 0.0
+time_restart  = 0.0      ! Time of model restart.
+                         ! [seconds since start time listed in GrADS control file]
 
+! Select debug level:
 !        0 => Print no debug messages to the screen
 !        1 => Print lightweight debug messages, e.g. print statements
 !        2 => Print debug messages that require extra testing,
@@ -46,14 +81,20 @@ debug_level   = 2
 /
 
 &stats_setting
-lstats       = .true.
-fname_prefix = "nov11_altocu"
-stats_tsamp  = 60.
-stats_tout   = 60.
-stats_fmt    = "grads"
+
+! Statistics Settings
+
+lstats       = .true.          ! Flag for statistical output.
+fname_prefix = "nov11_altocu"  ! Prefix of output filename.
+stats_tsamp  = 60.             ! Frequency of statistical sampling [s]
+                               ! (must multiply evenly into stats_tout).
+stats_tout   = 60.             ! Frequency of statistical output.  [s]
+stats_fmt    = "grads"         ! Type of statistical output file (GrADS or netCDF).
 /
 
 &sounding
+
+! Initial Sounding
 
 nlevels = 6
 
@@ -74,6 +115,8 @@ vg    =     0.0,     0.0,     0.0,     0.0,     0.0,     0.0
 /
 
 &scalar_sounding
+
+! Initial Sounding for Scalar Quantities
 
 sclr(:,1) = 303.83, 309.15, 311.50, 312.50, 314.00, 324.66
 sclr(:,2) = 4.25e-3, 3.20e-3, 2.70e-3, 2.53e-3, 2.25e-3, 0.55e-3
