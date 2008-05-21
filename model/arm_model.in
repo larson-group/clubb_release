@@ -1,4 +1,4 @@
-! $Id: arm_model.in,v 1.20 2008-05-21 16:23:05 griffinb Exp $
+! $Id: arm_model.in,v 1.21 2008-05-21 19:14:28 griffinb Exp $
 ! Parameter file for GCSS ARM Cu over land case
 
 &model_setting
@@ -30,7 +30,7 @@ zm_init = 0.0     ! Altitude of lowest momentum level on evenly-spaced grid. [m]
 !zt_grid_fname = '../model/grid/arm_zt_grid.dat'
 zt_grid_fname = ''
 
- Stretched grid on momentum levels (grid_type = 3).
+! Stretched grid on momentum levels (grid_type = 3).
 ! Path (from ../standalone/) and filename to data file that contains
 ! momentum level altitudes (in meters).
 ! Note:  For this option, zt_grid_fname must be ''.
