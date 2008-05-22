@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.121 2008-05-21 22:33:19 dschanen Exp $
+# $Id: Makefile,v 1.122 2008-05-22 15:35:16 dschanen Exp $
 #
 # This version should work with BSD, GNU make, smake and dmake.
 #
@@ -53,7 +53,7 @@ MODEL = $(COAMPS_MICRO) \
 	dycoms2_rf02.o cloud_sed_mod.o mpace_a.o mpace_b.o \
 	nov11.o jun25.o clex9_nov02.o clex9_oct14.o wangara.o \
 	diag_ustar.o cobra.o rico.o gabls2.o \
-	KK_microphys.o microphysics.o cons.o air.o parab.o \
+	KK_microphys.o microphys_driver.o cons.o air.o parab.o \
 	lba.o interpolation.o ice_dfsn_mod.o
 
 PARAMETERIZATION = \

@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.43 2008-05-21 22:33:19 dschanen Exp $
+# $Id: make.deps,v 1.44 2008-05-22 15:35:16 dschanen Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -42,10 +42,12 @@ stats_prec.o	: stats_prec.F
 outputfile.o    : stats_prec.o outputfile.F
 KK_microphys.o  : constants.o model_flags.o lapack_wrap.o parab.o stats_hoc.o \
 	KK_microphys.F
-microphysics.o	: constants.o model_flags.o lapack_wrap.o KK_microphys.o \
-	coamps_micro_driver.o parameters.o stats_hoc.o error_code.o \
-        ice_dfsn_mod.o diffusion.o microphysics.F 
-outputgrads.o	: constants.o recl.F endian.o outputfile.o calendar.o outputgrads.F
+microphys_driver.o : constants.o model_flags.o lapack_wrap.o \
+	KK_microphys.o coamps_micro_driver.o parameters.o \
+	stats_hoc.o error_code.o \
+        ice_dfsn_mod.o diffusion.o microphys_driver.F 
+outputgrads.o	: constants.o recl.F endian.o outputfile.o calendar.o \
+	outputgrads.F
 outputnc.o	: constants.o outputfile.o outputnc.F
 diag_variables.o: constants.o grid.o model_flags.o diag_variables.F 
 prog_variables.o: constants.o grid.o model_flags.o prog_variables.F 
@@ -108,7 +110,7 @@ amoeba.o	: nrtype.o nr.o nrutil.o amoeba.f90
 math_utilities.o	: math_utilities.F
 lh_sampler.o		: constants.o random.o matrix_operations.o lh_sampler.F
 micro_calcs.o		: constants.o erf.o micro_calcs.F 
-permute_height_time.o	: permute_height_time.F
+permute_height_time.o	: random.o permute_height_time.F
 random.o		: random.F
 matrix_operations.o     : matrix_operations.F
 
@@ -185,7 +187,7 @@ hoc.o		: parameterization_interface.o arm.o astex.o atex.o \
 	bomex.o clex9_nov02.o clex9_oct14.o dycoms2_rf01.o dycoms2_rf02.o \
 	fire.o jun25.o mpace_a.o mpace_b.o nov11.o \
 	wangara.o cobra.o rico.o gabls2.o lba.o arm_97.o arm_0003.o \
-	arm_3year.o cloud_sed_mod.o microphysics.o bugsrad_hoc.o \
+	arm_3year.o cloud_sed_mod.o microphys_driver.o bugsrad_hoc.o \
 	inputfields.o error_code.o hoc.F
 sounding.o	: grid.o std_atmosphere_mod.o interpolation.o constants.o sounding.F
 std_atmosphere_mod.o: constants.o interpolation.o std_atmosphere_mod.F

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.186 2008-05-21 23:04:32 dschanen Exp $
+! $Id: hoc.F,v 1.187 2008-05-22 15:35:16 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -1241,7 +1241,7 @@
         use prognostic_variables
         use stats_prec, only: time_prec
         use numerical_check, only: isnan2d, rad_check
-        use microphysics, only: timestep_microphys ! Microphysics
+        use microphys_driver, only: advance_microphys ! Microphysics
         use error_code, only: lapack_error,
      .                        clubb_at_debug_level
        
@@ -1749,7 +1749,7 @@
         ! for rain microphysics.
         
         if ( kk_rain .or. lcoamps_micro .or. licedfs ) then
-          call timestep_microphys
+          call advance_microphys
      .         ( runtype, dt, time_current, time_initial,
      .           thlm, p, exner, rhot, rhom, rtm, rcm, Ncm, 
      .           pdf_parms, wmt, wmm, Khm, AKm_est, Akm, 

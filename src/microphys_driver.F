@@ -1,6 +1,6 @@
 !-----------------------------------------------------------------------
-! $Id: microphysics.F,v 1.43 2008-05-07 15:42:14 griffinb Exp $
-        module microphysics
+! $Id: microphys_driver.F,v 1.1 2008-05-22 15:35:16 dschanen Exp $
+        module microphys_driver
 
 !       Description:
 !       Call a microphysical scheme to compute hydrometeor species,
@@ -11,7 +11,7 @@
 !-----------------------------------------------------------------------
         implicit none
 
-        public :: timestep_microphys
+        public :: advance_microphys
 
         ! Subroutines
         private :: microphys_lhs, microphys_solve
@@ -25,7 +25,7 @@
         contains
 
 !-----------------------------------------------------------------------
-        subroutine timestep_microphys
+        subroutine advance_microphys
      .             ( runtype, dt, time_current, time_initial, 
      .               thlm, p, exner, rhot, rhom, rtm, rcm, Ncm, 
      .               pdf_parms, wmt, wmm, Khm, AKm_est, AKm, 
@@ -709,7 +709,7 @@
         
         if ( lapack_error(err_code) ) then
                 
-           write(fstderr,*) "Error in timestep_microphys"
+           write(fstderr,*) "Error in advance_microphys"
            
            write(fstderr,*) "Intent(in)"
            
@@ -741,7 +741,7 @@
         
         return
 
-        end subroutine timestep_microphys
+        end subroutine advance_microphys
 !-----------------------------------------------------------------------
         subroutine microphys_solve( solve_type, dt, lhs,
      .                              xrm_tndcy, xrm, err_code )
@@ -1551,4 +1551,4 @@
 
 !-----------------------------------------------------------------------
 
-        end module microphysics
+        end module microphys_driver
