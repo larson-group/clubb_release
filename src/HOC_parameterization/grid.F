@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: grid.F,v 1.19 2008-05-23 14:17:07 vlarson Exp $
+! $Id: grid.F,v 1.20 2008-05-23 18:52:16 griffinb Exp $
 !===============================================================================
         module grid_class
 
@@ -138,7 +138,7 @@
 
            ! Interpolation/extrapolation functions
            interface zt2zm
-              !   This performs an extrapolation at the highest grid
+              !   This performs a linear extension at the highest grid
               ! level and therefore does not guarantee, 
               ! for positive definite quantities (e.g. wp2), that the
               ! extrapolated point is indeed positive definite.
@@ -154,7 +154,7 @@
            end interface
 
            interface zm2zt
-              !   This performs an extrapolation at the lowest grid
+              !   This performs a linear extension at the lowest grid
               ! level and therefore does not guarantee,
               ! for positive definite quantities (e.g. wp2), that the
               ! extrapolated point is indeed positive definite.
@@ -218,10 +218,12 @@
            ! If CLUBB is running on it's own, this option determines
            ! if it is using:
            ! 1) an evenly-spaced grid,
-           ! 2) a stretched (unevenly-spaced) grid on the 
-           !    thermodynamic grid levels, or
-           ! 3) a stretched (unevenly-spaced) grid on the
-           !    momentum grid levels.
+           ! 2) a stretched (unevenly-spaced) grid entered on the 
+           !    thermodynamic grid levels (with momentum levels set
+           !    halfway between thermodynamic levels), or
+           ! 3) a stretched (unevenly-spaced) grid entered on the
+           !    momentum grid levels (with thermodynamic levels set
+           !    halfway between momentum levels).
            integer, intent(in) :: grid_type
          
            ! If the CLUBB model is running by itself, and is using an
@@ -235,10 +237,10 @@
            ! it needs to use the host model's momentum level altitudes 
            ! and thermodynamic level altitudes.
            ! If the CLUBB model is running by itself, but is using a 
-           ! stretched grid for thermodynamic levels (grid_type = 2),
+           ! stretched grid entered on thermodynamic levels (grid_type = 2),
            ! it needs to use the thermodynamic level altitudes as input.
            ! If the CLUBB model is running by itself, but is using a 
-           ! stretched grid for momentum levels (grid_type = 3),
+           ! stretched grid entered on momentum levels (grid_type = 3),
            ! it needs to use the momentum level altitudes as input.
            real, intent(in), dimension(nnzp) :: 
      .     momentum_heights,     ! Momentum level altitudes (input)      [m]
@@ -462,24 +464,26 @@
            ! If CLUBB is running on it's own, this option determines
            ! if it is using:
            ! 1) an evenly-spaced grid,
-           ! 2) a stretched (unevenly-spaced) grid on the
-           !    thermodynamic grid levels, or
-           ! 3) a stretched (unevenly-spaced) grid on the
-           !    momentum grid levels.
+           ! 2) a stretched (unevenly-spaced) grid entered on the 
+           !    thermodynamic grid levels (with momentum levels set
+           !    halfway between thermodynamic levels), or
+           ! 3) a stretched (unevenly-spaced) grid entered on the
+           !    momentum grid levels (with thermodynamic levels set
+           !    halfway between momentum levels).
            integer, intent(in) ::
      .     grid_type
 
-           character(len=50), intent(in) ::
+           character(len=*), intent(in) ::
      .     zm_grid_fname, ! Path and filename of file for momentum level altitudes
      .     zt_grid_fname  ! Path and filename of file for thermodynamic level altitudes
 
            ! Output Variables.
 
-           ! If the CLUBB model is running by itself, but is using a
-           ! stretched grid for thermodynamic levels (grid_type = 2),
+           ! If the CLUBB model is running by itself, but is using a 
+           ! stretched grid entered on thermodynamic levels (grid_type = 2),
            ! it needs to use the thermodynamic level altitudes as input.
-           ! If the CLUBB model is running by itself, but is using a
-           ! stretched grid for momentum levels (grid_type = 3),
+           ! If the CLUBB model is running by itself, but is using a 
+           ! stretched grid entered on momentum levels (grid_type = 3),
            ! it needs to use the momentum level altitudes as input.
            real, dimension(nzmax), intent(out) ::
      .     momentum_heights,     ! Momentum level altitudes (file input)      [m]
@@ -540,8 +544,9 @@
               ! Stretched (unevenly-spaced) grid:  stretched
               ! thermodynamic levels.  Thermodynamic levels are
               ! defined according to a stretched grid that is entered
-              ! through the use an input file.  This is similar to a
-              ! SAM-style stretched grid.
+              ! through the use an input file.  Momentum levels are
+              ! set halfway between thermodynamic levels.  This is 
+              ! similar to a SAM-style stretched grid.
 
               ! As a way of error checking, make sure that there isn't any
               ! file entry for momentum level altitudes.
@@ -620,8 +625,9 @@
               ! Stretched (unevenly-spaced) grid:  stretched
               ! momentum levels.  Momentum levels are defined
               ! according to a stretched grid that is entered through
-              ! the use an input file.  This is similar to a WRF-style
-              ! stretched grid.
+              ! the use an input file.  Thermodynamic levels are set
+              ! halfway between momentum levels.  This is similar to 
+              ! a WRF-style stretched grid.
 
               ! As a way of error checking, make sure that there isn't any
               ! file entry for thermodynamic level altitudes.

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.90 2008-05-16 23:03:40 faschinj Exp $
+! $Id: parameterization_interface.F,v 1.91 2008-05-23 18:52:16 griffinb Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -880,10 +880,12 @@
         ! If CLUBB is running on it's own, this option determines
         ! if it is using:
         ! 1) an evenly-spaced grid,
-        ! 2) a stretched (unevenly-spaced) grid on the
-        !    thermodynamic grid levels, or
-        ! 3) a stretched (unevenly-spaced) grid on the
-        !    momentum grid levels.
+        ! 2) a stretched (unevenly-spaced) grid entered on the
+        !    thermodynamic grid levels (with momentum levels set
+        !    halfway between thermodynamic levels), or
+        ! 3) a stretched (unevenly-spaced) grid entered on the
+        !    momentum grid levels (with thermodynamic levels set
+        !    halfway between momentum levels).
         integer, intent(in) :: grid_type
 
         ! If the CLUBB model is running by itself, and is using an
@@ -897,10 +899,10 @@
         ! it needs to use the host model's momentum level altitudes
         ! and thermodynamic level altitudes.
         ! If the CLUBB model is running by itself, but is using a
-        ! stretched grid for thermodynamic levels (grid_type = 2),
+        ! stretched grid entered on thermodynamic levels (grid_type = 2),
         ! it needs to use the thermodynamic level altitudes as input.
         ! If the CLUBB model is running by itself, but is using a
-        ! stretched grid for momentum levels (grid_type = 3),
+        ! stretched grid entered on momentum levels (grid_type = 3),
         ! it needs to use the momentum level altitudes as input.
         real, intent(in), dimension(nzmax) ::
      .  momentum_heights,     ! Momentum level altitudes (input)      [m]
