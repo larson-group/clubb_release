@@ -1,4 +1,4 @@
-! $Id: dycoms2_rf02_nd_model.HR.in,v 1.13 2008-05-21 19:12:01 griffinb Exp $
+! $Id: dycoms2_rf02_nd_model.HR.in,v 1.14 2008-05-23 17:03:48 griffinb Exp $
 ! Parameter file for DYCOMS2 RF02 Sc case with no drizzle
 ! and no cloud water sedimentation (high-resolution).
 
@@ -13,10 +13,12 @@ nzmax = 147       ! Number of vertical levels.
 grid_type = 1     ! Select grid type:
                   ! 1 ==> evenly-spaced grid levels.
                   ! 2 ==> stretched (unevenly-spaced) grid
-                  !       on thermodynamic grid levels
+                  !       entered on thermodynamic grid levels;
+                  !       mom. levels halfway between thermo. levels
                   !       (style of SAM stretched grid).
                   ! 3 ==> stretched (unevenly-spaced) grid
-                  !       on momentum grid levels
+                  !       entered on momentum grid levels;
+                  !       thermo. levels halfway between mom. levels
                   !       (style of WRF stretched grid).
 
 ! Evenly-spaced grid (grid_type = 1).
@@ -47,7 +49,7 @@ rlon = -122.0  ! Longitude (0 to 180 for east long.; 0 to -180 for west long.) [
 
 time_initial = 0.0     ! Model start time [seconds since midnight on start date]
 time_final =  21600.0  ! Model end time [seconds since midnight on start date]
-time_spinup = 30000.0  ! Spin-up period [seconds since midnight on start date]
+time_spinup = 30000.0  ! End of spin-up period [seconds since midnight on start date]
 
 dtmain    = 5.0    ! Model timestep [s]
 dtclosure = 5.0    ! Closure timestep [s] (must multiply evenly into dtmain).
@@ -95,34 +97,46 @@ stats_fmt    = "grads"               ! Type of statistical output file (GrADS or
 
 &sounding
 
-! Initial Sounding
+! Initial sounding
 
 ! The DYCOMS2 RF02 soundings are hardwired in the file ../src/sounding.F   ! Brian
 
+! Number of sounding points
 nlevels = 4
 
+! Altitudes at which sounding points are located   [m]
 z = 0.0, 794.0, 795.0, 1600.0
 
+! Either potential temperature or liquid water potential temperature,
+!   depending on source code in hoc_initialize.   [K]
 theta = 288.30, 288.30, 295.00, 304.30
 
+! Total water mixing ratio = vapor + cloud water, but not ice   [kg/kg]
 rt = 9.45e-3, 9.45e-3, 5.00e-3, 2.60e-3
 
+! East-west wind component   [m/s]
 u = 3.0000, 6.4142, 6.4185, 9.8800
 
+! North-south wind component   [m/s]
 v = -9.0000, -4.5336, -4.5480, -0.0400
 
+! East-west geostrophic wind component   [m/s]
 ug = 3.0000, 6.4142, 6.4185, 9.8800
 
+! North-south geostrophic wind component   [m/s]
 vg = -9.0000, -4.5336, -4.5480, -0.0400
 
 /
 
 &scalar_sounding
 
-! Initial Sounding for Scalar Quantities
+! Initial sounding for passive scalars
 
+! Passive scalars computed using higher-order closure
 sclr(:,1) = 288.30, 288.30, 295.00, 304.30
 sclr(:,2) = 9.45e-3, 9.45e-3, 5.00e-3, 2.60e-3
+
+! Passive scalars computed using eddy diffusivity
 edsclr(:,1) = 288.30, 288.30, 295.00, 304.30
 edsclr(:,2) = 9.45e-3, 9.45e-3, 5.00e-3, 2.60e-3
 
