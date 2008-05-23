@@ -1,4 +1,4 @@
-! $Id: clex9_nov02_model.in,v 1.9 2008-05-21 16:23:05 griffinb Exp $
+! $Id: clex9_nov02_model.in,v 1.10 2008-05-23 16:05:06 griffinb Exp $
 ! Parameter file for CLEX-9: November 02 altocumulus case
 
 &model_setting
@@ -12,10 +12,12 @@ nzmax = 120       ! Number of vertical levels.
 grid_type = 1     ! Select grid type:
                   ! 1 ==> evenly-spaced grid levels.
                   ! 2 ==> stretched (unevenly-spaced) grid
-                  !       on thermodynamic grid levels
+                  !       entered on thermodynamic grid levels;
+                  !       mom. levels halfway between thermo. levels
                   !       (style of SAM stretched grid).
                   ! 3 ==> stretched (unevenly-spaced) grid
-                  !       on momentum grid levels
+                  !       entered on momentum grid levels;
+                  !       thermo. levels halfway between mom. levels
                   !       (style of WRF stretched grid).
 
 ! Evenly-spaced grid (grid_type = 1).
@@ -46,7 +48,7 @@ rlon = -100.3552  ! Longitude (0 to 180 for east long.; 0 to -180 for west long.
 
 time_initial = 46800.0  ! Model start time [seconds since midnight on start date]
 time_final =  61200.0   ! Model end time [seconds since midnight on start date]
-time_spinup = 3600.0    ! Spin-up period [seconds since midnight on start date]
+time_spinup = 3600.0    ! End of spin-up period [seconds since midnight on start date]
 
 dtmain    = 60.0   ! Model timestep [s]
 dtclosure = 60.0   ! Closure timestep [s] (must multiply evenly into dtmain).
@@ -96,33 +98,44 @@ stats_fmt    = "grads"        ! Type of statistical output file (GrADS or netCDF
 
 &sounding
 
-! Initial Sounding
+! Initial sounding
 
+! Number of sounding points
 nlevels = 17
 
+! Altitudes at which sounding points are located   [m]
 z =     3097.00, 4203.00, 4286.80, 4330.40, 4393.90, 4457.90, 4532.00, 4576.40, 4597.00, 4624.00, 4661.90, 4667.80, 4703.40, 4746.70, 4799.20, 5690.00, 6601.00
 
+! Either potential temperature or liquid water potential temperature,
+!   depending on source code in hoc_initialize.   [K]
 theta =  300.11,  304.42,  304.51,  304.53,  304.67,  304.85,  304.86,  304.97,  304.97,  305.00,  307.18,  307.11,  308.56,  309.84,  310.31,  313.21,  313.00
 
+! Total water mixing ratio = vapor + cloud water, but not ice   [kg/kg]
 rt =    2.92e-3, 2.98e-3, 2.95e-3, 2.85e-3, 2.71e-3, 2.69e-3, 2.68e-3, 2.67e-3, 2.65e-3, 2.64e-3, 2.61e-3, 2.59e-3, 2.44e-3, 2.26e-3, 1.99e-3, 1.01e-3, 0.095e-3
 
+! East-west wind component   [m/s]
 u =      0.7500,  0.6100,  0.5900,  0.4205,  0.1515, -0.0245, -0.0435, -0.0665, -0.0755, -0.0835, -0.0875, -0.1025, -0.1075, -0.5685, -0.6855, -0.7200, -0.7500
 
+! North-south wind component   [m/s]
 v =      2.5000,  2.4714,  2.3097,  2.2949,  2.0877,  1.8115,  1.6117,  1.4502,  1.2453,  1.0883, -3.7451, -2.5955, -5.0376, -5.5278, -5.7292, -5.4000, -5.5000
 
+! East-west geostrophic wind component   [m/s]
 ug =     0.7500,  0.6100,  0.5900,  0.4205,  0.1515, -0.0245, -0.0435, -0.0665, -0.0755, -0.0835, -0.0875, -0.1025, -0.1075, -0.5685, -0.6855, -0.7200, -0.7500
 
+! North-south geostrophic wind component   [m/s]
 vg =     2.5000,  2.4714,  2.3097,  2.2949,  2.0877,  1.8115,  1.6117,  1.4502,  1.2453,  1.0883, -3.7451, -2.5955, -5.0376, -5.5278, -5.7292, -5.4000, -5.5000
 
 /
 
 &scalar_sounding
 
-! Initial Sounding for Scalar Quantities
+! Initial sounding for passive scalars
 
+! Passive scalars computed using higher-order closure
 sclr(:,1) =  300.11,   304.62,   304.71,   304.77,   304.97,   305.15,   305.06,   305.37,   305.37,   305.00,   308.18,   307.31,   308.76,   310.04,   310.51,   314.01,   315.20
 sclr(:,2) = 2.92e-3,  2.98e-3,  2.95e-3,  2.85e-3,  2.71e-3,  2.69e-3,  2.71e-3,  2.74e-3,  2.70e-3,  2.71e-3,  2.61e-3,  2.59e-3,  2.44e-3,  2.26e-3,  1.99e-3,  1.01e-3, 0.095e-3
 
+! Passive scalars computed using eddy diffusivity
 edsclr(:,1) =  300.11,   304.62,   304.71,   304.77,   304.97,   305.15,   305.06,   305.37,   305.37,   305.00,   308.18,   307.31,   308.76,   310.04,   310.51,   314.01,   315.20
 edsclr(:,2) = 2.92e-3,  2.98e-3,  2.95e-3,  2.85e-3,  2.71e-3,  2.69e-3,  2.71e-3,  2.74e-3,  2.70e-3,  2.71e-3,  2.61e-3,  2.59e-3,  2.44e-3,  2.26e-3,  1.99e-3,  1.01e-3, 0.095e-3
 

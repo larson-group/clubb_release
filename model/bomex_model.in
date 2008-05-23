@@ -1,4 +1,4 @@
-! $Id: bomex_model.in,v 1.25 2008-05-23 14:47:28 vlarson Exp $
+! $Id: bomex_model.in,v 1.26 2008-05-23 16:05:06 griffinb Exp $
 ! Parameter file for GCSS BOMEX tradewind Cu case
 
 &model_setting
@@ -12,12 +12,12 @@ nzmax = 75        ! Number of vertical levels.
 grid_type = 1     ! Select grid type:
                   ! 1 ==> evenly-spaced grid levels.
                   ! 2 ==> stretched (unevenly-spaced) grid
-                  !       entered on thermodynamics grid levels;
-                  !       mom levels halfway between thermo levels
+                  !       entered on thermodynamic grid levels;
+                  !       mom. levels halfway between thermo. levels
                   !       (style of SAM stretched grid).
                   ! 3 ==> stretched (unevenly-spaced) grid
                   !       entered on momentum grid levels;
-                  !       thermo levels halfway between mom levels
+                  !       thermo. levels halfway between mom. levels
                   !       (style of WRF stretched grid).
 
 ! Evenly-spaced grid (grid_type = 1).
@@ -98,27 +98,31 @@ stats_fmt    = "grads"  ! Type of statistical output file (GrADS or netCDF).
 
 &sounding
 
-! Initial Sounding
+! Initial sounding
 
 ! Number of sounding points 
 nlevels = 6
-! Altitudes at which sounding points are located [m]
+
+! Altitudes at which sounding points are located   [m]
 z = 0, 520, 700, 1480, 2000, 3500
 
 ! Either potential temperature or liquid water potential temperature,
-!   depending on source code in hoc_initialize.
+!   depending on source code in hoc_initialize.   [K]
 theta = 298.7, 298.7, 299.39375, 302.4, 308.4, 313.675
 
-! Total water mixing ratio = vapor + cloud water but not ice  [kg/kg]
+! Total water mixing ratio = vapor + cloud water, but not ice   [kg/kg]
 rt = 0.01729, 0.01657, 0.01549, 0.01082, 0.00422, 0.00241
 
-! East-west wind  [m/s]
+! East-west wind component   [m/s]
 u = -8.75, -8.75, -8.75, -7.346, -6.41, -3.71
-! North-south wind [m/s]
+
+! North-south wind component   [m/s]
 v = 0,  0,  0,  0,  0,  0
 
-! Geostrophic winds  [m/s]
+! East-west geostrophic wind component   [m/s]
 ug = -10, -9.064, -8.74, -7.336, -6.4, -3.7
+
+! North-south geostrophic wind component   [m/s]
 vg = 0,  0,  0,  0,  0,  0
 
 /

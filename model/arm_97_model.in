@@ -10,10 +10,12 @@ nzmax   = 100     ! Number of vertical levels.
 grid_type = 1     ! Select grid type:
                   ! 1 ==> evenly-spaced grid levels.
                   ! 2 ==> stretched (unevenly-spaced) grid
-                  !       on thermodynamic grid levels
+                  !       entered on thermodynamic grid levels;
+                  !       mom. levels halfway between thermo. levels
                   !       (style of SAM stretched grid).
                   ! 3 ==> stretched (unevenly-spaced) grid
-                  !       on momentum grid levels
+                  !       entered on momentum grid levels;
+                  !       thermo. levels halfway between mom. levels
                   !       (style of WRF stretched grid).
 
 ! Evenly-spaced grid (grid_type = 1).
@@ -44,7 +46,7 @@ rlon = -97.5  ! Longitude (0 to 180 for east long.; 0 to -180 for west long.) [d
 
 time_initial = 84586.0   ! Model start time [seconds since midnight on start date]
 time_final   = 419386.0  ! Model end time [seconds since midnight on start date]
-time_spinup  = 1000000.0 ! Spin-up period [seconds since midnight on start date]
+time_spinup  = 1000000.0 ! End of spin-up period [seconds since midnight on start date]
 
 dtmain    = 60.0   ! Model timestep [s]
 dtclosure = 60.0   ! Closure timestep [s] (must multiply evenly into dtmain).
@@ -96,43 +98,52 @@ stats_fmt    = "grads"   ! Type of statistical output file (GrADS or netCDF).
 
 &sounding
 
-! Initial Sounding
+! Initial sounding
 
+! Number of sounding points
 nlevels = 19
 
 ! Note: the 0 meter level is not part of the observed sounding, but according
 ! to Xue et al. 2001, the lowest model level may be set in this way.
 
+! Altitudes at which sounding points are located   [m]
 z =       0.,
           59.210,   524.304,  1008.614,  1515.234,  2047.661,  2609.434,
         3203.960,  3835.436,  4509.983,  5235.930,  6023.204,  6882.909,
         7828.958,  8881.194, 10071.930, 11458.434, 13147.343, 15385.763,
 
+! Either potential temperature or liquid water potential temperature,
+!   depending on source code in hoc_initialize.   [K]
 theta =  301.210,
          301.210,   301.889,   302.918,   304.765,   307.253,   309.806,
          311.966,   314.298,   317.195,   320.937,   324.835,   328.275,
          331.167,   333.764,   337.684,   344.935,   358.026,   389.631,
 
+! Total water mixing ratio = vapor + cloud water, but not ice   [kg/kg]
 rt =   15.307e-3,
        15.307e-3, 12.605e-3, 11.171e-3,  9.240e-3,  7.012e-3,  5.090e-3,
         3.872e-3,  2.885e-3,  2.317e-3,  1.837e-3,  1.402e-3,  0.843e-3,
         0.435e-3,  0.211e-3,  0.089e-3,  0.030e-3,  0.009e-3,  0.005e-3,
 
+! East-west wind component   [m/s]
 u =       -0.755,
           -0.755,    -0.181,     1.666,     3.575,     5.049,     5.871,
            6.479,     6.857,     7.007,     7.040,     6.878,     6.605,
            6.764,     7.833,     9.977,    11.248,    10.616,     5.381,
 
+! North-south wind component   [m/s]
 v =        0.191,
            0.191,     1.031,     1.365,     0.888,    -0.606,    -2.747,
           -4.813,    -5.579,    -4.447,    -1.882,     0.436,     1.918,
            2.630,     3.544,     4.112,     3.402,     1.967,     0.510,
 
+! East-west geostrophic wind component   [m/s]
 ug =      -0.755,
           -0.755,    -0.181,     1.666,     3.575,     5.049,     5.871,
            6.479,     6.857,     7.007,     7.040,     6.878,     6.605,
            6.764,     7.833,     9.977,    11.248,    10.616,     5.381,
 
+! North-south geostrophic wind component   [m/s]
 vg =       0.191,
            0.191,     1.031,     1.365,     0.888,    -0.606,    -2.747,
           -4.813,    -5.579,    -4.447,    -1.882,     0.436,     1.918,

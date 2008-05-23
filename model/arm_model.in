@@ -1,4 +1,4 @@
-! $Id: arm_model.in,v 1.21 2008-05-21 19:14:28 griffinb Exp $
+! $Id: arm_model.in,v 1.22 2008-05-23 16:05:06 griffinb Exp $
 ! Parameter file for GCSS ARM Cu over land case
 
 &model_setting
@@ -12,10 +12,12 @@ nzmax = 110       ! Number of vertical levels.
 grid_type = 1     ! Select grid type:
                   ! 1 ==> evenly-spaced grid levels.
                   ! 2 ==> stretched (unevenly-spaced) grid
-                  !       on thermodynamic grid levels
+                  !       entered on thermodynamic grid levels;
+                  !       mom. levels halfway between thermo. levels
                   !       (style of SAM stretched grid).
                   ! 3 ==> stretched (unevenly-spaced) grid
-                  !       on momentum grid levels
+                  !       entered on momentum grid levels;
+                  !       thermo. levels halfway between mom. levels
                   !       (style of WRF stretched grid).
 
 ! Evenly-spaced grid (grid_type = 1).
@@ -46,7 +48,7 @@ rlon = -97.5  ! Longitude (0 to 180 for east long.; 0 to -180 for west long.) [d
 
 time_initial = 41400.0  ! Model start time [seconds since midnight on start date]
 time_final = 93600.0    ! Model end time [seconds since midnight on start date]
-time_spinup = 41400.0   ! Spin-up period [seconds since midnight on start date]
+time_spinup = 41400.0   ! End of spin-up period [seconds since midnight on start date]
 
 dtmain    = 60.0   ! Model timestep [s]
 dtclosure = 60.0   ! Closure timestep [s] (must multiply evenly into dtmain).
@@ -104,18 +106,31 @@ stats_fmt    = "grads"  ! Type of statistical output file (GrADS or netCDF).
 
 &sounding
 
-! Initial Sounding
+! Initial sounding
 
+! Number of sounding points
 nlevels = 8
+
+! Altitudes at which sounding points are located   [m]
 z = 0, 50, 350, 650, 700, 1300, 2500, 5500
 
+! Either potential temperature or liquid water potential temperature,
+!   depending on source code in hoc_initialize.   [K]
 theta = 299.00, 301.50, 302.50, 303.53, 303.70, 307.13, 314.00, 343.20
+
+! Total water mixing ratio = vapor + cloud water, but not ice   [kg/kg]
 rt = 0.0152, 0.01517, 0.01498, 0.01480, 0.01470, 0.01350, 0.003, 0.003
 
+! East-west wind component   [m/s]
 u = 10, 10, 10, 10, 10, 10, 10, 10
+
+! North-south wind component   [m/s]
 v = 0, 0,  0,  0,  0,  0,  0,  0
 
+! East-west geostrophic wind component   [m/s]
 ug = 10, 10, 10, 10, 10, 10, 10, 10
+
+! North-south geostrophic wind component   [m/s]
 vg = 0, 0,  0,  0,  0,  0,  0,  0
 
 /
@@ -124,10 +139,13 @@ vg = 0, 0,  0,  0,  0,  0,  0,  0
 !  sclr(:,1) = th; sclr(:,2) = rt
 &scalar_sounding
 
-! Initial Sounding for Scalar Quantities
+! Initial sounding for passive scalars
 
+! Passive scalars computed using higher-order closure
 sclr(:,1) = 299.00, 301.50, 302.50, 303.53, 303.70, 307.13, 314.00, 343.20
 sclr(:,2) = 0.0152, 0.01517, 0.01498, 0.01480, 0.01470, 0.01350, 0.003, 0.003
+
+! Passive scalars computed using eddy diffusivity
 edsclr(:,1) = 299.00, 301.50, 302.50, 303.53, 303.70, 307.13, 314.00, 343.20
 edsclr(:,2) = 0.0152, 0.01517, 0.01498, 0.01480, 0.01470, 0.01350, 0.003, 0.003
 

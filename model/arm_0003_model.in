@@ -1,4 +1,4 @@
-! $Id: arm_0003_model.in,v 1.10 2008-05-21 16:23:05 griffinb Exp $
+! $Id: arm_0003_model.in,v 1.11 2008-05-23 16:05:06 griffinb Exp $
 ! Parameter file for GCSS ARM 0003 deep convective case
 
 &model_setting
@@ -12,10 +12,12 @@ nzmax = 108       ! Number of vertical levels.
 grid_type = 1     ! Select grid type:
                   ! 1 ==> evenly-spaced grid levels.
                   ! 2 ==> stretched (unevenly-spaced) grid
-                  !       on thermodynamic grid levels
+                  !       entered on thermodynamic grid levels;
+                  !       mom. levels halfway between thermo. levels
                   !       (style of SAM stretched grid).
                   ! 3 ==> stretched (unevenly-spaced) grid
-                  !       on momentum grid levels
+                  !       entered on momentum grid levels;
+                  !       thermo. levels halfway between mom. levels
                   !       (style of WRF stretched grid).
 
 ! Evenly-spaced grid (grid_type = 1).
@@ -49,7 +51,7 @@ rlon = -97.5  ! Longitude (0 to 180 for east long.; 0 to -180 for west long.) [d
 time_initial = 63003.0  ! Model start time [seconds since midnight on start date]
 !time_final = 322202.0   ! Model end time [seconds since midnight on start date]
 time_final = 1931404.0  ! Model end time [seconds since midnight on start date]
-time_spinup = 63003.0   ! Spin-up period [seconds since midnight on start date]
+time_spinup = 63003.0   ! End of spin-up period [seconds since midnight on start date]
 
 dtmain    = 60.0   ! Model timestep [s]
 dtclosure = 60.0   ! Closure timestep [s] (must multiply evenly into dtmain).
@@ -108,10 +110,12 @@ stats_fmt    = "grads"          ! Type of statistical output file (GrADS or netC
 
 &sounding
 
-! Initial Sounding
+! Initial sounding
 
+! Number of sounding points
 nlevels = 39
 
+! Altitudes at which sounding points are located   [m]
 z =       0.,
           119.44444, 337.60824, 560.5889,  788.8671,  1023.0391, 1263.5466, 
           1510.6641, 1764.6189, 2025.4763, 2293.4047, 2568.8073, 2852.1623, 
@@ -121,6 +125,8 @@ z =       0.,
           11105.372, 11885.818, 12778.419, 13815.486, 15046.753, 16568.223, 
           18582.188, 21596.254,
 
+! Either potential temperature or liquid water potential temperature,
+!   depending on source code in hoc_initialize.   [K]
 theta = 287.728, 
         287.728,  288.410,  289.379,  290.717,  292.545,  294.258,
         295.989,  297.442,  298.493,  299.473,  300.518,  301.570,
@@ -130,7 +136,7 @@ theta = 287.728,
         334.589,  347.220,  362.418,  377.088,  395.143,  420.739,
         462.427,  533.814,
 
-
+! Total water mixing ratio = vapor + cloud water, but not ice   [kg/kg]
 rt =    3.439E-3,
         3.439E-3, 2.823E-3, 2.473E-3, 2.357E-3, 2.276E-3, 2.275E-3, 
         2.116E-3, 1.945E-3, 1.781E-3, 1.582E-3, 1.350E-3, 1.100E-3, 
@@ -140,7 +146,7 @@ rt =    3.439E-3,
         0.030E-3, 0.019E-3, 0.006E-3, 0.005E-3, 0.005E-3, 0.005E-3,
         0.008E-3, 0.014E-3,
 
-
+! East-west wind component   [m/s]
 u = -4.596,      
     -4.596, -4.65, -5.53, -5.2,  -4.58, -3.12,
     -0.8,  1.75,  4.39,  6.45,  7.86, 9.15,
@@ -150,6 +156,7 @@ u = -4.596,
     38.85, 37.93, 33.87, 28.13, 21.53, 13.8,
     4.48,  -3.13,
 
+! North-south wind component   [m/s]
 v =     0.205,
         0.205,  0.14, -0.28, -0.81, -1.53, -1.88,
         -2.64,  -2.93,-3.34, -3.38, -2.66, -1.79,
@@ -159,6 +166,7 @@ v =     0.205,
         10.22, 9.68,  8.27, 6.92,   5,     2.88,
         0.43,-0.66,
 
+! East-west geostrophic wind component   [m/s]
 ug = -4.596,      
     -4.596,-4.65, -5.53, -5.2,  -4.58, -3.12,
     -0.8,  1.75,  4.39,  6.45,  7.86,  9.15,  
@@ -168,6 +176,7 @@ ug = -4.596,
     38.85, 37.93, 33.87, 28.13, 21.53, 13.8,
     4.48, -3.13,
 
+! North-south geostrophic wind component   [m/s]
 vg =   0.205,
         0.205,  0.14, -0.28, -0.81, -1.53, -1.88,
         -2.64,  -2.93,-3.34, -3.38, -2.66, -1.79,
