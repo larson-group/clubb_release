@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: grid.F,v 1.18 2008-05-17 21:33:53 griffinb Exp $
+! $Id: grid.F,v 1.19 2008-05-23 14:17:07 vlarson Exp $
 !===============================================================================
         module grid_class
 
@@ -136,8 +136,16 @@
 
            ! Interfaces provided for function overloading
 
-           ! Interpolation functions
+           ! Interpolation/extrapolation functions
            interface zt2zm
+              !   This performs an extrapolation at the highest grid
+              ! level and therefore does not guarantee, 
+              ! for positive definite quantities (e.g. wp2), that the
+              ! extrapolated point is indeed positive definite.
+              ! Positive definiteness can be ensured with a max statement.
+              !   In the future, we could add a flag (lposdef)
+              ! and, when needed, apply the max statement directly within
+              ! interpolated_azm and interpolated_azmk.
               module procedure interpolated_azm, interpolated_azmk
            end interface
 
@@ -146,6 +154,14 @@
            end interface
 
            interface zm2zt
+              !   This performs an extrapolation at the lowest grid
+              ! level and therefore does not guarantee,
+              ! for positive definite quantities (e.g. wp2), that the
+              ! extrapolated point is indeed positive definite.
+              ! Positive definiteness can be ensured with a max statement.
+              !   In the future, we could add a flag (lposdef)
+              ! and, when needed, apply the max statement directly within
+              ! interpolated_azt and interpolated_aztk.
               module procedure interpolated_azt, interpolated_aztk
            end interface
 
