@@ -1,4 +1,4 @@
-! $Id: jun25_altocu_model.in,v 1.16 2008-05-21 19:20:39 griffinb Exp $
+! $Id: jun25_altocu_model.in,v 1.17 2008-05-23 17:37:44 griffinb Exp $
 ! Parameter file for June 25 altocumulus case
 
 &model_setting
@@ -12,10 +12,12 @@ nzmax = 201       ! Number of vertical levels.
 grid_type = 1     ! Select grid type:
                   ! 1 ==> evenly-spaced grid levels.
                   ! 2 ==> stretched (unevenly-spaced) grid
-                  !       on thermodynamic grid levels
+                  !       entered on thermodynamic grid levels;
+                  !       mom. levels halfway between thermo. levels
                   !       (style of SAM stretched grid).
                   ! 3 ==> stretched (unevenly-spaced) grid
-                  !       on momentum grid levels
+                  !       entered on momentum grid levels;
+                  !       thermo. levels halfway between mom. levels
                   !       (style of WRF stretched grid).
 
 ! Evenly-spaced grid (grid_type = 1).
@@ -46,7 +48,7 @@ rlon = -96.40  ! Longitude (0 to 180 for east long.; 0 to -180 for west long.) [
 
 time_initial = 0.0     ! Model start time [seconds since midnight on start date]
 time_final =  36000.0  ! Model end time [seconds since midnight on start date]
-time_spinup = 3600.0   ! Spin-up period [seconds since midnight on start date]
+time_spinup = 3600.0   ! End of spin-up period [seconds since midnight on start date]
 
 dtmain    = 60.0   ! Model timestep [s]
 dtclosure = 60.0   ! Closure timestep [s] (must multiply evenly into dtmain).
@@ -94,35 +96,46 @@ stats_fmt    = "grads"         ! Type of statistical output file (GrADS or netCD
 
 &sounding
 
-! Initial Sounding
+! Initial sounding
 
+! Number of sounding points
 nlevels = 14
 
+! Altitudes at which sounding points are located   [m]
 z = 4808.000,  5436.650,  5565.910,  5689.790,  5804.840,  5962.110,  
     6116.280,  6312.200,  6348.440,  6367.210,  6509.930,  6709.780,  
     7109.760,  7810.140
 
+! Either potential temperature or liquid water potential temperature,
+!   depending on source code in hoc_initialize.   [K]
 theta = 317.460, 318.188, 318.355, 318.956, 319.324, 320.240, 320.913, 322.254, 323.509, 324.052, 326.289, 328.193, 332.231, 335.285
 
+! Total water mixing ratio = vapor + cloud water, but not ice   [kg/kg]
 rt = 2.52891e-3, 3.49561e-3, 4.04500e-3, 3.45843e-3, 2.24950e-3, 3.27895e-3, 3.18100e-3, 2.94500e-3, 2.56500e-3, 2.56600e-3, 2.42300e-3, 1.85400e-3, 1.44000e-3, 0.79900e-3
 
+! East-west wind component   [m/s]
 u = -4.8564, -.38845, -1.3088, -.26200, 1.29492, -.04398, 3.00225, 5.29700, 5.80300, 6.20700, 4.41900, 5.68900, 8.25800, 8.34600
 
+! North-south wind component   [m/s]
 v = 5.96400, 4.74191, 5.84218, 4.30227, 5.05869, 4.10923, 3.63221, 6.00700, 7.88700, 7.79500, 9.84900, 10.1430, 5.42000, 5.39900
 
+! East-west geostrophic wind component   [m/s]
 ug = -4.8564, -.38845, -1.3088, -.26200, 1.29492, -.04398, 3.00225, 5.29700, 5.80300, 6.20700, 4.41900, 5.68900, 8.25800, 8.34600
 
+! North-south geostrophic wind component   [m/s]
 vg = 5.96400, 4.74191, 5.84218, 4.30227, 5.05869, 4.10923, 3.63221, 6.00700, 7.88700, 7.79500, 9.84900, 10.1430, 5.42000, 5.39900
 
 /
 
 &scalar_sounding
 
-! Initial Sounding for Scalar Quantities
+! Initial sounding for passive scalars
 
+! Passive scalars computed using higher-order closure
 sclr(:,1) = 317.460, 318.188, 318.355, 318.956, 319.324, 320.240, 320.913, 322.254, 323.509, 324.052, 326.289, 328.193, 332.231, 335.285
 sclr(:,2) = 2.52891e-3, 3.49561e-3, 4.10000e-3, 3.45843e-3, 2.24950e-3, 3.27895e-3, 3.18600e-3, 2.94500e-3, 2.56500e-3, 2.56600e-3, 2.42300e-3, 1.85400e-3, 1.44000e-3, 0.79900e-3
 
+! Passive scalars computed using eddy diffusivity
 edsclr(:,1) = 317.460, 318.188, 318.355, 318.956, 319.324, 320.240, 320.913, 322.254, 323.509, 324.052, 326.289, 328.193, 332.231, 335.285
 edsclr(:,2) = 2.52891e-3, 3.49561e-3, 4.10000e-3, 3.45843e-3, 2.24950e-3, 3.27895e-3, 3.18600e-3, 2.94500e-3, 2.56500e-3, 2.56600e-3, 2.42300e-3, 1.85400e-3, 1.44000e-3, 0.79900e-3
 
