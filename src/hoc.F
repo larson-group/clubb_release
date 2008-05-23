@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.187 2008-05-22 15:35:16 dschanen Exp $
+! $Id: hoc.F,v 1.188 2008-05-23 18:56:49 griffinb Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -35,9 +35,13 @@
      .  nzmax,    ! Vertical extent in levels              [#]
      .  grid_type ! 1 ==> evenly-spaced grid levels
                   ! 2 ==> stretched (unevenly-spaced) grid
-                  !       on thermodynamic grid levels.
+                  !       entered on thermodynamic grid levels;
+                  !       mom. levels halfway between thermo. levels
+                  !       (style of SAM stretched grid).
                   ! 3 ==> stretched (unevenly-spaced) grid
-                  !       on momentum grid levels.
+                  !       entered on momentum grid levels;
+                  !       thermo. levels halfway between mom. levels
+                  !       (style of WRF stretched grid).
 
         real, private :: 
      .  deltaz, ! Change per grid level                 [m]
@@ -46,7 +50,7 @@
 !$omp   threadprivate(nzmax, grid_type, zm_init, deltaz)
 
         ! For grid_type 2 or 3 (stretched grid cases)
-        character(len=50), private ::
+        character(len=100), private ::
      .  zt_grid_fname, ! Path and filename of thermodynamic level altitudes
      .  zm_grid_fname  ! Path and filename of momentum level altitudes
 
