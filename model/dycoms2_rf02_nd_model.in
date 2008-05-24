@@ -1,4 +1,4 @@
-! $Id: dycoms2_rf02_nd_model.in,v 1.18 2008-05-23 17:03:48 griffinb Exp $
+! $Id: dycoms2_rf02_nd_model.in,v 1.19 2008-05-24 16:30:53 griffinb Exp $
 ! Parameter file for DYCOMS2 RF02 Sc case with no drizzle
 ! and no cloud water sedimentation.
 
@@ -8,7 +8,9 @@
 
 runtype = "dycoms2_rf02_nd" ! Case name.
 
-nzmax = 147       ! Number of vertical levels.
+nzmax = 147       ! Number of vertical levels.  ! For grid_type = 1.
+!nzmax = 148       ! Number of vertical levels.  ! For grid_type = 2.
+!nzmax = 97        ! Number of vertical levels.  ! For grid_type = 3.
 
 grid_type = 1     ! Select grid type:
                   ! 1 ==> evenly-spaced grid levels.
