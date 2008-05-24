@@ -1,4 +1,4 @@
-! $Id: dycoms2_rf02_ds_model.LR.in,v 1.13 2008-05-23 17:03:48 griffinb Exp $
+! $Id: dycoms2_rf02_ds_model.LR.in,v 1.14 2008-05-24 16:40:59 griffinb Exp $
 ! Parameter file for DYCOMS2 RF02 Sc case with drizzle
 ! and cloud water sedimentation (low-resolution).
 
@@ -30,14 +30,12 @@ zm_init = 0.0     ! Altitude of lowest momentum level on evenly-spaced grid. [m]
 ! Path (from ../standalone/) and filename of data file that contains
 ! thermodynamic level altitudes (in meters).
 ! Note:  For this option, zm_grid_fname must be ''.
-!zt_grid_fname = '../model/grid/dycoms2_rf02_ds_zt_grid.dat'
 zt_grid_fname = ''
 
 ! Stretched grid on momentum levels (grid_type = 3).
 ! Path (from ../standalone/) and filename to data file that contains
 ! momentum level altitudes (in meters).
 ! Note:  For this option, zt_grid_fname must be ''.
-!zm_grid_fname = '../model/grid/dycoms2_rf02_ds_zm_grid.dat'
 zm_grid_fname = ''
 
 day   = 11    ! Day of model start (1 to 31).
