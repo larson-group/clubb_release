@@ -5,7 +5,8 @@
 
 runtype = "arm_97" ! Case name.
 
-nzmax   = 100     ! Number of vertical levels.
+nzmax = 100       ! Number of vertical levels.  ! For grid_type = 1 (and 3).
+!nzmax = 128       ! Number of vertical levels.  ! For grid_type = 2.
 
 grid_type = 1     ! Select grid type:
                   ! 1 ==> evenly-spaced grid levels.

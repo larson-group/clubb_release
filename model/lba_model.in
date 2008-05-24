@@ -1,4 +1,4 @@
-! $Id: lba_model.in,v 1.14 2008-05-23 17:37:44 griffinb Exp $
+! $Id: lba_model.in,v 1.15 2008-05-24 20:58:12 griffinb Exp $
 ! Parameter file for the 23 Feb 1999 TRMM-LBA case
 
 &model_setting
@@ -7,7 +7,8 @@
 
 runtype = "lba"   ! Case name.
 
-nzmax   = 300     ! Number of vertical levels.
+nzmax = 300       ! Number of vertical levels.  ! For grid_type = 1 (and 3).
+!nzmax = 128       ! Number of vertical levels.  ! For grid_type = 2.
 
 grid_type = 1     ! Select grid type:
                   ! 1 ==> evenly-spaced grid levels.
