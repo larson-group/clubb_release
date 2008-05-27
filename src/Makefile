@@ -1,22 +1,24 @@
 ################################################################################
-# $Id: Makefile,v 1.122 2008-05-22 15:35:16 dschanen Exp $
+# $Id: Makefile,v 1.123 2008-05-27 21:17:58 dschanen Exp $
 #
 # This version should work with BSD, GNU make, smake and dmake.
 #
 # For HOC we edit this by hand rather than implementing imake or automake.
 #
 # Include your machine specific file here. Select the one appropriate for your
-# machine or create a custom one.
+# platform or create a customized one.
 #
 ################################################################################
 
-include config.linux_ia32_g95.in
-#include config.linux_ia32_pg.in
-#include config.linux_ia32_ss12.in
-#include config.linux_ia64_intel.in
-#include config.solaris_ia32_g95.in
-#include config.solaris_generic_ss12.in
-#include config.osf1_alpha_digital.in
+include config/linux_ia32_g95_debug.in
+#include config/linux_ia32_g95_optimize.in
+#include config/linux_ia32_pg.in
+#include config/linux_ia32_ss12.in
+#include config/linux_ia64_intel.in
+#include config/solaris_ia32_g95.in
+#include config/solaris_generic_ss12_debug.in
+#include config/solaris_generic_ss12_optimize.in
+#include config/osf1_alpha_digital.in
 
 # == Object files ==
 
