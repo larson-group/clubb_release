@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.189 2008-05-27 17:46:10 griffinb Exp $
+! $Id: hoc.F,v 1.190 2008-05-27 19:02:34 vlarson Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -340,8 +340,10 @@
 
        
         if ( .not. lrestart ) then
+
            time_current = time_initial
            iinit = 1
+
            call hoc_initialize( iunit, runfile, psfc, thlm, rtm, 
      .                          um, vm, ug, vg, wp2,
      .                          rcm, hydromet,
@@ -353,6 +355,7 @@
      .                          ,sclrm, edsclrm
 #endif /*SCALARS*/
      .                         )
+
         else  ! restart
                
            ! Joshua Fasching March 2008
@@ -490,7 +493,7 @@
               time_current = time_initial + i * dtmain
             end if
 #ifdef STATS
-            ! This was moved from above to less confusing to the user,
+            ! This was moved from above to be less confusing to the user,
             ! since before it would appear as though the last timestep
             ! was not executed. -dschanen 19 May 08
             if ( lstats_last .and. stdout ) then
