@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: grid.F,v 1.20 2008-05-23 18:52:16 griffinb Exp $
+! $Id: grid.F,v 1.21 2008-05-27 12:53:07 griffinb Exp $
 !===============================================================================
         module grid_class
 
@@ -69,6 +69,40 @@
 ! The grid setup is compatible with a stretched (unevely-spaced) grid.
 ! Thus, the distance between successive grid levels may not always be
 ! constant.
+!
+! The following diagram is an example of a stretched grid that is 
+! defined on momentum levels.  The thermodynamic levels are placed 
+! exactly halfway between the momentum levels.  However, the momentum 
+! levels do not fall halfway between the thermodynamic levels.
+!
+!        =============== zm(k+1) ===============
+!
+!
+!        --------------- zt(k+1) ---------------
+!
+!
+!        ===============  zm(k)  ===============
+!
+!        ---------------  zt(k)  ---------------
+!
+!        =============== zm(k-1) ===============
+!
+! The following diagram is an example of a stretched grid that is 
+! defined on thermodynamic levels.  The momentum levels are placed 
+! exactly halfway between the thermodynamic levels.  However, the 
+! thermodynamic levels do not fall halfway between the momentum levels.
+!
+!        --------------- zt(k+1) ---------------
+!
+!
+!        ===============  zm(k)  ===============
+!
+!
+!        ---------------  zt(k)  ---------------
+!
+!        =============== zm(k-1) ===============
+!
+!        --------------- zt(k-1) ---------------
 !
 ! NOTE:  Any future code written for use in the CLUBB parameterization
 !        should use interpolation formulas consistent with a stretched
