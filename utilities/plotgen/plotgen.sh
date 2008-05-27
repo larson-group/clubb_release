@@ -1,5 +1,12 @@
 #!/bin/bash
 
+#We need to unset the term type for this to work with Matlab 2008a
+SessionType=$DISPLAY
+unset DISPLAY
+
+#Catch any termination signals
+trap `DISPLAY=$SessionType;export DISPLAY; exit` INT TERM
+
 #Provide help if the user asks for it
 if [ "$1" == "" ]; then
 	echo "plotgen: missing necessary arguments"
@@ -123,4 +130,9 @@ fi
 
 #Take us back to where we started
 cd $working_directory
+
+#Reset the session type
+DISPLAY=$SessionType
+export DISPLAY
+
 exit
