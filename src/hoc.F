@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.188 2008-05-23 18:56:49 griffinb Exp $
+! $Id: hoc.F,v 1.189 2008-05-27 17:46:10 griffinb Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -1024,9 +1024,10 @@
      .               em, p, exner, Lscale, err_code )
 
         ! Dissipation time
-        tmp1 = sqrt( max( emin, zm2zt( em ) ) )
+        tmp1 = sqrt( max( wtol**2, zm2zt( em ) ) )
         taut = min( Lscale / tmp1, taumax )
-        taum = min( ( zt2zm( Lscale ) / sqrt( em ) ), taumax )
+        taum = min( ( max( zt2zm( Lscale ), 0.0 )
+     .               / sqrt( max( wtol**2, em ) ) ), taumax )
 !        taum = zt2zm( taut )
 
         ! Modification to damp noise in stable region
@@ -1041,7 +1042,8 @@
         ! c_K is 0.548 usually (Duynkerke and Driedonks 1987)
 
         Kht = c_K * Lscale * tmp1
-        Khm = c_K * zt2zm( Lscale ) * sqrt( em )
+        Khm = c_K * max( zt2zm( Lscale ), 0.0 ) 
+     .            * sqrt( max( em, emin ) )
 !        Khm = zt2zm( Kht )
 
        ! Moved this to be more general -dschanen July 16 2007
