@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.54 2008-05-09 16:25:43 faschinj Exp $
+! $Id: mixing.F,v 1.55 2008-05-27 15:41:05 griffinb Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -522,8 +522,8 @@
         ! Interpolate a_1 and w'^2 from momentum levels to thermodynamic
         ! levels.  This will be used for the w'x' turbulent advection
         ! (ta) term.
-        a1_zt  = zm2zt( a1 )
-        wp2_zt = zm2zt( wp2 )
+        a1_zt  = max( zm2zt( a1 ), 0.0 )   ! Positive definite quantity
+        wp2_zt = max( zm2zt( wp2 ), 0.0 )   ! Positive definite quantity
 
         ! Initialize the left-hand side matrix to 0.
         lhs = 0.0

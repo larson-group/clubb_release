@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.62 2008-05-16 23:02:32 faschinj Exp $
+! $Id: wp23.F,v 1.63 2008-05-27 15:41:05 griffinb Exp $
 !===============================================================================
         module wp23
 
@@ -179,7 +179,7 @@
         ! Interpolate w'^2 from momentum levels to thermodynamic levels.
         ! This is used for extra diffusion based on a three-point 
         ! average of (w'^2)^2.
-        wp2_zt = zm2zt( wp2 )
+        wp2_zt = max( zm2zt( wp2 ), 0.0 )   ! Positive definite quantity
 
         do k = 1, gr%nnzp, 1
 
@@ -457,7 +457,7 @@
         ! Interpolate a_1 and a_3 from momentum levels to thermodynamic 
         ! levels.  This will be used for the w'^3 turbulent advection 
         ! (ta) and turbulent production (tp) combined term.
-        a1_zt  = zm2zt( a1 )
+        a1_zt  = max( zm2zt( a1 ), 0.0 )   ! Positive definite quantity
         a3_zt  = zm2zt( a3 )
 
         ! Compute the implicit portion of the w'^2 and w'^3 equations.
@@ -652,7 +652,7 @@
         ! Interpolate w'^2 from momentum levels to thermodynamic levels.
         ! This is used for the clipping of w'^3 according to the value
         ! of Sk_w now that w'^2 and w'^3 have been advanced one timestep.
-        wp2_zt = zm2zt( wp2 )
+        wp2_zt = max( zm2zt( wp2 ), 0.0 )   ! Positive definite quantity
 
         ! Clip Skewness.
  

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.91 2008-05-23 18:52:16 griffinb Exp $
+! $Id: parameterization_interface.F,v 1.92 2008-05-27 15:41:05 griffinb Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -361,7 +361,7 @@
      .              + 0.01 * wtol * rttol ) )**2 ),
      .       1.0      ) )
 
-       Sct = zm2zt( Scm )
+       Sct = max( zm2zt( Scm ), 0.0 )   ! Positive definite quantity
 
 !    Latin hypercube sample generation
 !    Generate p_height_time, an nnzp x nt_repeat x d_variables array of random integers
@@ -385,7 +385,7 @@
        do i = 1, sclr_dim
           sclr_tmp1(:,i) = zm2zt( wpsclrp(:,i) ) 
           sclr_tmp2(:,i) = zm2zt( sclrprtp(:,i) ) 
-          sclr_tmp3(:,i) = zm2zt( sclrp2(:,i) ) 
+          sclr_tmp3(:,i) = max( zm2zt( sclrp2(:,i) ), 0.0 )   ! Pos. def. quantity
           sclr_tmp4(:,i) = zm2zt( sclrpthlp(:,i) ) 
        end do ! i = 1, sclr_dim
 #endif /* SCALARS */
@@ -436,7 +436,7 @@
 !      Since top momentum level is higher than top thermo level,
 !      set variables at top momentum level to 0.
 
-       wp4               = zt2zm( wp4 )
+       wp4               = max( zt2zm( wp4 ), 0.0 )   ! Pos. def. quantity
        wp4(gr%nnzp)      = 0.0
        wpthvp            = zt2zm( wpthvp )
        wpthvp(gr%nnzp)   = 0.0
@@ -450,7 +450,7 @@
        rtprcp(gr%nnzp)   = 0.0
        thlprcp           = zt2zm( thlprcp )
        thlprcp(gr%nnzp)  = 0.0
-       rcp2              = zt2zm( rcp2 )
+       rcp2              = max( zt2zm( rcp2 ), 0.0 )   ! Pos. def. quantity
        rcp2(gr%nnzp)     = 0.0
 #ifdef SCALARS
 !      Interpolate passive scalars back onto the m grid
@@ -506,7 +506,8 @@
        tmp1 = SQRT( MAX( wtol**2, zm2zt( em ) ) )
        taut = MIN( Lscale / tmp1, taumax )
        taum 
-     . = MIN( ( zt2zm( Lscale ) / SQRT( MAX( wtol**2, em ) ) ), taumax )
+     . = MIN( ( MAX( zt2zm( Lscale ), 0.0 ) 
+     .         / SQRT( MAX( wtol**2, em ) ) ), taumax )
 ! End Vince Larson's replacement.
 
        ! Modification to damp noise in stable region
@@ -526,7 +527,8 @@
        ! c_K is 0.548 usually (Duynkerke and Driedonks 1987)
 
        Kht = c_K * Lscale * tmp1
-       Khm = c_K * zt2zm( Lscale ) * sqrt( max( em, emin ) )
+       Khm = c_K * max( zt2zm( Lscale ), 0.0 ) 
+     .           * sqrt( max( em, emin ) )
  
 !#######################################################################
 !############## ADVANCE PROGNOSTIC VARIABLES ONE TIMESTEP ##############
@@ -737,11 +739,11 @@
        end if 
 
        ! Added to allow tuning without using the zm stats file
-       wp2zt     = zm2zt( wp2 )
-       thlp2zt   = zm2zt( thlp2 )
+       wp2zt     = max( zm2zt( wp2 ), 0.0 )   ! Positive definite quantity
+       thlp2zt   = max( zm2zt( thlp2 ), 0.0 )   ! Positive definite quantity
        wpthlpzt  = zm2zt( wpthlp )
        wprtpzt   = zm2zt( wprtp )
-       rtp2zt    = zm2zt( rtp2 )
+       rtp2zt    = max( zm2zt( rtp2 ), 0.0 )   ! Positive definite quantity
        rtpthlpzt = zm2zt( rtpthlp )
 
        call stats_accumulate

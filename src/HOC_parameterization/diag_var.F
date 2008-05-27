@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F,v 1.45 2008-05-05 18:42:17 faschinj Exp $
+! $Id: diag_var.F,v 1.46 2008-05-27 15:41:05 griffinb Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !===============================================================================
@@ -211,8 +211,8 @@
         ! Interpolate a_1, w'^2, w'r_t', w'th_l', u'w', and v'w' from 
         ! momentum levels to thermodynamic levels.  These will be used 
         ! for the turbulent advection (ta) terms in each equation.
-        a1_zt     = zm2zt( a1 )
-        wp2_zt    = zm2zt( wp2 )
+        a1_zt     = max( zm2zt( a1 ), 0.0 )   ! Positive definite quantity
+        wp2_zt    = max( zm2zt( wp2 ), 0.0 )   ! Positive definite quantity
         wprtp_zt  = zm2zt( wprtp )
         wpthlp_zt = zm2zt( wpthlp )
         upwp_zt   = zm2zt( upwp )
@@ -221,8 +221,8 @@
         ! Interpolate r_t'^2, th_l'^2, and r_t'th_l' from momentum 
         ! levels to thermodynamic levels.  These will be used for 
         ! extra diffusion based on a three-point average of (var)^2.
-        rtp2_zt    = zm2zt( rtp2 )
-        thlp2_zt   = zm2zt( thlp2 )
+        rtp2_zt    = max( zm2zt( rtp2 ), 0.0 )   ! Positive definite quantity
+        thlp2_zt   = max( zm2zt( thlp2 ), 0.0 )   ! Positive definite quantity
         rtpthlp_zt = zm2zt( rtpthlp )
 
 #ifdef STATS

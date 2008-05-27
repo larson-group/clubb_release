@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: hydrostatic.F,v 1.4 2008-04-23 18:13:54 faschinj Exp $
+! $Id: hydrostatic.F,v 1.5 2008-05-27 15:41:05 griffinb Exp $
 
         module hydrostatic_mod
 
@@ -75,7 +75,7 @@
 
         ! Interpolate density back to momentum grid
 
-        rhom = zt2zm( rhot )
+        rhom = max( zt2zm( rhot ), 0.0 )   ! Positive definite quantity
         rhom(1) = pinpa(1) / ( Rd * thvm(1) * exner(1) )
 
         return
