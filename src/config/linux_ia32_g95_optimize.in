@@ -1,0 +1,76 @@
+# $Id: linux_ia32_g95_optimize.in,v 1.1 2008-05-27 21:14:11 dschanen Exp $
+# Configuration file for Linux machine using g95
+# An MS Windows machine with MSYS should be similar
+
+# == Paths ==
+# This is where the make command is going to put the resulting files
+PREFIX = ..
+BINDIR = $(PREFIX)/bin
+LIBDIR = $(PREFIX)/lib
+
+# == Compiler invocation ==
+FC = g95 # g95 ( http://www.g95.org )
+
+# == Debugging ==
+# It is sometimes helpful to turn on floating-point trapping for the 
+#  standalone program, but this will not work when using the tuner.
+# In g95: `setenv G95_FPU_INVALID TRUE' or `export G95_FPU_INVALID=TRUE'
+# These are the options for debugging symbols, bounds checking, IEEE-754,
+# and a special g95 flag for debugging, respectively. 
+DEBUG = -g -fbounds-check -mieee-fp -ftrace=full
+
+# == Machine specific flags ==
+# Note: some of these are 64 bit architectures, so make sure NetCDF is
+# compiled accordingly.
+#ARCH = -march=pentium4 -msse2 -mfpmath=sse    # Old P4s
+#ARCH = -march=nocona -msse3 -mfpmath=sse     # New P4s
+#ARCH = -march=nocona -msse3 -mfpmath=sse -r8 # New P4s, double precision
+ARCH = -march=k8 -msse3 -mfpmath=sse         # New Opterons
+
+# == Optimization ==
+# These are all pretty conservative options. Check your compiler manual
+# for information on using more aggressive techniques (inlining, etc.)
+OPTIMIZE = -O2
+
+# == NetCDF Location ==
+#NC_LOC = $(HOME)/netcdf-3.6.1
+NC_LOC = /usr/local/netcdf-g95
+
+# === LAPACK libraries ==
+#LAPACK = -L/usr/local/lib -llapack -lblas #  The netlib reference LAPACK/BLAS
+LAPACK = -L/usr/lib64 -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas # ATLAS BLAS (faster)
+
+# == Linking Flags ==
+# Use -s to strip (no debugging); 
+# Use -L<library path> -l<lib> to link in an external library
+# Use -Wl,-rpath <library path> to set a search path for shared libs
+LDFLAGS = -L$(LIBDIR) -Wl,-rpath,$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib -lnetcdf $(LAPACK)
+#LDFLAGS = -L$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib
+#-Wl,-rpath,$(LIBDIR) 
+#LDFLAGS = -L$(LIBDIR) -R$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib -lnetcdf $(LAPACK)
+
+# == Compiler flags (all) ==
+# Preprocessing Directives:
+#   -DSTATS enables statistics
+#   -DSCALARS enables passive scalars
+#   -DBIG_ENDIAN_IO use only if compiler performs big endian file i/O
+#                   regardless of internal representation
+#   -DLITTLE_ENDIAN_IO use only if compiler performs little endian file i/O
+#                   regardless of internal representation
+#   -Dradoffline and -Dnooverlap (see bugsrad documentation)
+# You will need to `make clean' if you change these
+# Use -I<include path> to set a module or header file directory
+
+#FCFLAGS = $(ARCH) $(DEBUG) -DSTATS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
+#FCFLAGS = $(ARCH) $(DEBUG) -DSTATS -DSCALARS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
+FCFLAGS = $(ARCH) $(OPTIMIZE) -DSTATS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
+#FCFLAGS = $(ARCH) $(OPTIMIZE) -DSTATS -DSCALARS -Dnooverlap -Dradoffline -I$(NC_LOC)/include 
+
+# == Static library processing ==
+AR = ar
+ARFLAGS = cru
+RANLIB = ranlib
+
+# == Shared library processing ==
+SHARED = $(FC)
+SHAREDFLAGS = -fPIC -shared
