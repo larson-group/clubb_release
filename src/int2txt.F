@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: int2txt.F,v 1.4 2008-05-08 14:14:12 vlarson Exp $
+! $Id: int2txt.F,v 1.5 2008-05-27 21:04:26 dschanen Exp $
         program int2txt
 
 !       Description:
@@ -12,13 +12,17 @@
 #include "recl.F"
 
         implicit none
-
+#ifdef __GFORTRAN__
+#define getarg get_command_argument
+#define iargc command_argument_count
+#else
         ! Seems to work on most Fortran compilers, but if it doesn't,
         ! try using the F2003 subrountine is get_command_argument() instead.
         external :: getarg
 
         ! As above, except the F2003 function is command_argument_count()
         integer, external :: iargc
+#endif
 
         ! Parameter Constants
         integer, parameter :: 
