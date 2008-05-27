@@ -1,3 +1,5 @@
+! $Id: temp_in_K_mod.F,v 1.2 2008-05-27 18:05:00 vlarson Exp $ 
+
          module temp_in_K_mod
          
          implicit none
@@ -13,10 +15,11 @@
      .   result( temp_in_K )
 
 !        Description:
-!        Calculates absolute temperature from liquid potential
-!        temperature.
+!        Calculates absolute temperature from liquid water potential
+!        temperature.  (Does not include ice.)
 
-!        References:
+!        References:  Cotton and Anthes (1989), "Storm and Cloud Dynamics",
+!                        Eqn. (2.51). 
 !-----------------------------------------------------------------------
          use constants, only: 
      .   Cp, ! Dry air specific heat at constant p [J/kg/K]
