@@ -3230,14 +3230,14 @@ semi-implicit solution to obtain:
 
 The discretization for $v^{'2}$ follows in the same way as $u^{'2}$.
 
-\section{Grid configuration}
+\section{Grid Configuration}
 
-Figure \ref{grid} shows the vertical grid configuration for HOC.
+Figure \ref{grid} shows the vertical grid configuration for CLUBB.
 The grid consists of two types of levels: $\mathtt{zm}$ and $\mathtt{zt}$.
 Predictive mean variables and third order moments reside on the
 thermodynamic levels ($\mathtt{zt}$). Second and fourth order moments
 reside on the momentum levels ($\mathtt{zm}$).
-
+%
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 %
 \begin{figure}[htp]
@@ -3279,26 +3279,26 @@ reside on the momentum levels ($\mathtt{zm}$).
 \rput*[b]{0}(0,5.8){zm(k-2)}
 %
 %
-\psline[linewidth=2pt](-4,2)(4,2)
-\rput*[b]{0}(0,1.8){zm(2)}
-\rput*[bl]{0}(1.7,1.8){$\overline{w^{'2}}$, $\overline{w'\theta_l'}$, 
+\psline[linewidth=2pt](-4,3)(4,3)
+\rput*[b]{0}(0,2.8){zm(2)}
+\rput*[bl]{0}(1.7,2.8){$\overline{w^{'2}}$, $\overline{w'\theta_l'}$, 
 $\overline{w'q_t'}$, $\overline{w^{'4}}$, $\ldots$}
 %
-\psline[linewidth=2pt,linestyle=dotted,dotsep=2pt](-4,1)(4,1)
-\rput*[b]{0}(0,0.8){zt(2)}
-\rput*[bl]{0}(1.7,0.8){$\bar{u}$, $\bar{v}$, $\bar{\theta}_l$, $\bar{q}_t$,
+\psline[linewidth=2pt,linestyle=dotted,dotsep=2pt](-4,2)(4,2)
+\rput*[b]{0}(0,1.8){zt(2)}
+\rput*[bl]{0}(1.7,1.8){$\bar{u}$, $\bar{v}$, $\bar{\theta}_l$, $\bar{q}_t$,
 $\overline{w^{'3}}$, $\overline{w^{'2}\theta_v'}$, $\ldots$}
 %
 \pspolygon[linestyle=none,fillstyle=crosshatch,hatchwidth=0.1pt,hatchsep=3pt]
-(-4,-0.5)(4,-0.5)(4,0)(-4,0)
-\psline[linewidth=2pt](-4,0)(4,0)
-\rput*[b]{0}(0,-0.2){zm(1)}
-\rput*[bl]{0}(4.2,-0.4){Surface}
+(-4,0.5)(4,0.5)(4,1)(-4,1)
+\psline[linewidth=2pt](-4,1)(4,1)
+\rput*[b]{0}(0,0.8){zm(1)}
+\rput*[bl]{0}(4.2,0.6){Surface}
 %
-\psline[linewidth=2pt,linestyle=dotted,dotsep=2pt](-4,-1)(4,-1)
-\rput*[b]{0}(0,-1.2){zt(1)}
+\psline[linewidth=2pt,linestyle=dotted,dotsep=2pt](-4,0)(4,0)
+\rput*[b]{0}(0,-0.2){zt(1)}
 %
-\psline[linewidth=3pt,linestyle=dotted,dotsep=8pt](0,2.5)(0,5.5)
+\psline[linewidth=3pt,linestyle=dotted,dotsep=8pt](0,3.5)(0,5.5)
 \psline[linewidth=3pt,linestyle=dotted,dotsep=8pt](0,12.5)(0,14.5)
 %
 % delta zt
@@ -3327,10 +3327,200 @@ $\overline{w^{'3}}$, $\overline{w^{'2}\theta_v'}$, $\ldots$}
 \rput*[b]{0}(-5,7.8){$\Delta$zm(k-1)}
 %
 \end{center}
-\vspace*{1cm}
+%\vspace*{1cm}
 \caption{Vertical grid configuration}
 \label{grid}
 \end{figure}
+
+\pagebreak
+
+% Vertical grid configuration for stretched grid.
+\subsection{Stretched (unevenly-spaced) grid configuration}
+
+The grid setup is compatible with a stretched (unevenly-spaced) grid 
+configuration.  Thus, the distance between successive vertical grid levels may 
+not always be constant.
+
+%Stretched (unevenly-spaced) grid defined on momentum levels
+The following diagram is an example of a stretched grid that is defined on 
+momentum levels.  The thermodynamic levels are placed exactly halfway between 
+the momentum levels.  However, the momentum levels do not fall halfway between 
+the thermodynamic levels.
+% Diagram of stretched grid defined on momentum levels.
+%
+\begin{figure}[htp]
+\vspace*{6cm}
+\begin{center}
+%
+\psline[linewidth=2pt](-4,5.5)(4,5.5)
+\rput*[b]{0}(0,5.3){zm(k+1)}
+%
+\psline[linewidth=2pt,linestyle=dotted,dotsep=2pt](-4,4)(4,4)
+\rput*[b]{0}(0,3.8){zt(k+1)}
+%
+\psline[linewidth=2pt](-4,2.5)(4,2.5)
+\rput*[b]{0}(0,2.3){zm(k)}
+%
+\psline[linewidth=2pt,linestyle=dotted,dotsep=2pt](-4,1.5)(4,1.5)
+\rput*[b]{0}(0,1.3){zt(k)}
+%
+\psline[linewidth=2pt](-4,0.5)(4,0.5)
+\rput*[b]{0}(0,0.3){zm(k-1)}
+%
+\end{center}
+\end{figure}
+
+%Stretched (unevenly-spaced) grid defined on thermodynamic levels
+The following diagram is an example of a stretched grid that is defined on 
+thermodynamic levels.  The momentum levels are placed exactly halfway between 
+the thermodynamic levels.  However, the thermodynamic levels do not fall halfway
+between the momentum levels.
+% Diagram of stretched grid defined on thermodynamic levels.
+%
+\begin{figure}[htp]
+\vspace*{6cm}
+\begin{center}
+%
+\psline[linewidth=2pt,linestyle=dotted,dotsep=2pt](-4,5.5)(4,5.5)
+\rput*[b]{0}(0,5.3){zt(k+1)}
+%
+\psline[linewidth=2pt](-4,4)(4,4)
+\rput*[b]{0}(0,3.8){zm(k)}
+%
+\psline[linewidth=2pt,linestyle=dotted,dotsep=2pt](-4,2.5)(4,2.5)
+\rput*[b]{0}(0,2.3){zt(k)}
+%
+\psline[linewidth=2pt](-4,1.5)(4,1.5)
+\rput*[b]{0}(0,1.3){zm(k-1)}
+%
+\psline[linewidth=2pt,linestyle=dotted,dotsep=2pt](-4,0.5)(4,0.5)
+\rput*[b]{0}(0,0.3){zt(k-1)}
+%
+\end{center}
+\end{figure}
+
+\pagebreak
+
+% Generalized grid functions
+\subsection{Generalized grid functions}
+
+Each variable in the CLUBB parameterization resides at certain discrete points 
+in the vertical, whether the points be on momentum levels or on thermodynamic 
+levels.  The values of each variable are considered to behave in a linear 
+fashion in the sections between the levels where each variable resides.  Thus, 
+linear interpolation is used to find the values of a variable at the levels 
+where it does not reside.  Since a variable is considered to behave linearly 
+between two successive levels where it resides, the linear derivative of that 
+variable at any point in the section between two successive levels where it 
+resides is always the same.
+
+Any future computer code written for use in the CLUBB parameterization should 
+use interpolation formulas consistent with a stretched grid.  The simplest way 
+to do so is to use the appropriate equation listed below in 
+equations~\ref{eq_zm2zt} through~\ref{eq_zt2zm_imp_lower}.  
+Interpolations should not be handled in the form of:
+$( \mathtt{var_m(k)} + \mathtt{var_m(k-1)} ) / 2$; nor in the form of:
+$0.5 \times ( \mathtt{var_t(k+1)} + \mathtt{var_t(k)} )$.  Rather, all explicit
+interpolations should use the appropriate equation from 
+equations~\ref{eq_zm2zt}, \ref{eq_zm2zt_ext}, \ref{eq_zt2zm}, 
+or~\ref{eq_zt2zm_ext}; while interpolations for a variable being solved for 
+implicitly in the model code should use the appropriate equation set from 
+equations~\ref{eq_zm2zt_imp_upper} and \ref{eq_zm2zt_imp_lower}, or 
+\ref{eq_zt2zm_imp_upper} and~\ref{eq_zt2zm_imp_lower}.  The formula for a
+linear derivative is the same whether an evenly-spaced grid or stretched grid
+is in use.
+
+\subsubsection{Momentum grid levels to thermodynamic grid levels}
+
+A standard linear interpolation formula, equation~\ref{eq_zm2zt}, is used to 
+interpolate a variable that resides on momentum levels, $\mathtt{var_m}$, to 
+thermodynamic levels (as $\mathtt{var_t}$) on any type of grid configuration.
+\begin{equation}
+\label{eq_zm2zt}
+\mathtt{var_t(k)}
+   = \left( \frac{ \mathtt{var_m(k)} - \mathtt{var_m(k-1)} }
+                 { \mathtt{zm(k)} - \mathtt{zm(k-1)} } \right)
+     \Big( \mathtt{zt(k)} - \mathtt{zm(k-1)} \Big)
+     + \mathtt{var_m(k-1)}
+\end{equation}
+When converting a variable from momentum levels to thermodynamic levels, there
+is one instance on the grid, at the lowermost level ($\mathtt{k=1}$), where 
+a linear extension, equation~\ref{eq_zm2zt_ext}, is required.
+\begin{equation}
+\label{eq_zm2zt_ext}
+\mathtt{var_t(1)}
+   = \left( \frac{ \mathtt{var_m(2)} - \mathtt{var_m(1)} }
+                 { \mathtt{zm(2)} - \mathtt{zm(1)} } \right)
+     \Big( \mathtt{zt(1)} - \mathtt{zm(1)} \Big)
+     + \mathtt{var_m(1)}
+\end{equation}
+When a variable that is being solved for implicitly in an equation is also being
+interpolated from momentum levels to intermediate thermodynamic levels, the 
+interpolation formulas listed above will not work.  Rather, interpolation 
+weights are necessary.  The weight of the upper momentum level 
+(index~$\mathtt{k}$) on the intermediate thermodynamic level 
+(index~$\mathtt{k}$) is found according to equation~\ref{eq_zm2zt_imp_upper}.
+\begin{equation}
+\label{eq_zm2zt_imp_upper}
+\mathtt{weights\_zm2zt(m\_above,k)}
+   = \left( \frac{ \mathtt{zt(k)} - \mathtt{zm(k-1)} }
+                 { \mathtt{zm(k)} - \mathtt{zm(k-1)} } \right)
+\end{equation}
+The weight of the lower momentum level (index~$\mathtt{k-1}$) on the
+intermediate thermodynamic level (index~$\mathtt{k}$) is found according to
+equation~\ref{eq_zm2zt_imp_lower}.
+\begin{equation}
+\label{eq_zm2zt_imp_lower}
+\mathtt{weights\_zm2zt(m\_below,k)}
+   = 1 - \left( \frac{ \mathtt{zt(k)} - \mathtt{zm(k-1)} }
+                     { \mathtt{zm(k)} - \mathtt{zm(k-1)} } \right)
+\end{equation}
+
+\subsubsection{Thermodynamic grid levels to momentum grid levels}
+
+A standard linear interpolation formula, equation~\ref{eq_zt2zm}, is used to 
+interpolate a variable that resides on thermodynamic levels, $\mathtt{var_t}$, 
+to momentum levels (as $\mathtt{var_m}$) on any type of grid configuration.
+\begin{equation}
+\label{eq_zt2zm}
+\mathtt{var_m(k)}
+   = \left( \frac{ \mathtt{var_t(k+1)} - \mathtt{var_t(k)} }
+                 { \mathtt{zt(k+1)} - \mathtt{zt(k)} } \right)
+     \Big( \mathtt{zm(k)} - \mathtt{zt(k)} \Big)
+     + \mathtt{var_t(k)}
+\end{equation}
+When converting a variable from thermodynamic levels to momentum levels, there
+is one instance on the grid, at the uppermost level ($\mathtt{k=nnzp}$), where 
+a linear extension, equation~\ref{eq_zt2zm_ext}, is required.
+\begin{equation}
+\label{eq_zt2zm_ext}
+\mathtt{var_m(nnzp)}
+   = \left( \frac{ \mathtt{var_t(nnzp)} - \mathtt{var_t(nnzp-1)} }
+                 { \mathtt{zt(nnzp)} - \mathtt{zt(nnzp-1)} } \right)
+     \Big( \mathtt{zm(nnzp)} - \mathtt{zt(nnzp)} \Big)
+     + \mathtt{var_t(nnzp)}
+\end{equation}
+When a variable that is being solved for implicitly in an equation is also being
+interpolated from thermodynamic levels to intermediate momentum levels, the 
+interpolation formulas listed above will not work.  Rather, interpolation 
+weights are necessary.  The weight of the upper thermodynamic level 
+(index~$\mathtt{k+1}$) on the intermediate momentum level (index~$\mathtt{k}$) 
+is found according to equation~\ref{eq_zt2zm_imp_upper}.
+\begin{equation}
+\label{eq_zt2zm_imp_upper}
+\mathtt{weights\_zt2zm(t\_above,k)}
+   = \left( \frac{ \mathtt{zm(k)} - \mathtt{zt(k)} }
+                 { \mathtt{zt(k+1)} - \mathtt{zt(k)} } \right)
+\end{equation}
+The weight of the lower thermodynamic level (index~$\mathtt{k}$) on the
+intermediate momentum level (index~$\mathtt{k}$) is found according to
+equation~\ref{eq_zt2zm_imp_lower}.
+\begin{equation}
+\label{eq_zt2zm_imp_lower}
+\mathtt{weights\_zt2zm(t\_below,k)}
+   = 1 - \left( \frac{ \mathtt{zm(k)} - \mathtt{zt(k)} }
+                     { \mathtt{zt(k+1)} - \mathtt{zt(k)} } \right)
+\end{equation}
 
 \pagebreak
 
