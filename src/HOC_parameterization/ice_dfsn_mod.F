@@ -1,4 +1,4 @@
-! $Id: ice_dfsn_mod.F,v 1.4 2008-05-09 16:20:57 faschinj Exp $        
+! $Id: ice_dfsn_mod.F,v 1.5 2008-05-28 16:29:26 dschanen Exp $        
 
         module ice_dfsn_mod
 
@@ -11,7 +11,7 @@
 
         contains
 !-----------------------------------------------------------------------
-        SUBROUTINE ice_dfsn( dt, thlm, rcm, press, exner, rhot,
+        SUBROUTINE ice_dfsn( dt, T_in_K, rcm, press, exner, rhot,
      .                       rcm_icedfsn )
         ! Description:
         ! This subroutine is based on a COAMPS subroutine (nov11_icedfs)
@@ -69,11 +69,11 @@
      .  dt      ! Model timestep                                     [s]
 
         REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: 
-     .  thlm,   ! Mean liquid water potential temperature            [K]
-     .  rcm,    ! Cloud water mixing ratio                           [kg kg^{-1}]
-     .  press,  ! Air pressure                                       [Pa]
-     .  exner,  ! Exner function                                     []
-     .  rhot    ! Air density on thermodynamic grid                  [kg m^{-3}]
+     .  T_in_K, ! Temperature                           [K]
+     .  rcm,    ! Cloud water mixing ratio              [kg kg^{-1}]
+     .  press,  ! Air pressure                          [Pa]
+     .  exner,  ! Exner function                        [-]
+     .  rhot    ! Air density on thermodynamic grid     [kg m^{-3}]
 
         ! Output variables
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT):: 
@@ -83,8 +83,6 @@
         ! Local variables
         REAL, DIMENSION(1:gr%nnzp):: 
      .  mass_ice_cryst, ! Mass of a single ice crystal      [kg]
-     .  theta,           ! Potential temperature                       [K]
-     .  temp_in_K,       ! Temperature                                 [K]
      .  r_s,             ! Saturation mixing ratio over vapor          [kg kg^{-1}] 
      .  e_s,             ! Saturation vapor pressure over liquid       [Pa]
      .  e_i,             ! Saturation vapor pressure over ice          [Pa]
@@ -104,7 +102,7 @@
         ! Vince Larson avgd legs 2 and 7 (Fleishauer et al)  21 Jan 2005
         REAL, PARAMETER:: N_i = 2000
 
-        INTEGER:: k
+        INTEGER :: k
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !                                                                     !
@@ -164,26 +162,22 @@
 
         DO k = gr%nnzp, 2, -1
 
-          !  Compute Temperature [K]
-          theta(k) = thlm(k) + ( Lv / (Cp*exner(k)) ) * rcm(k)
-          temp_in_K(k) = theta(k) * exner(k)
-
           ! Check whether we're in cloud and below freezing.
           ! Note:  A value of 1.0E-5 kg/kg is used as a threshold value
           ! for rcm because the HOC model shows a small amount of liquid
           ! water all the way to the model top, which messes with the
           ! ice diffusion calculations.
-          IF ( rcm(k) >= 1.0E-5 .AND. temp_in_K(k) < 273.15 ) THEN
+          IF ( rcm(k) >= 1.0E-5 .AND. T_in_K(k) < 273.15 ) THEN
 
           ! Find saturation mixing ratio over vapor [kg kg^{-1}]
-             r_s(k) = rsat( press(k), temp_in_K(k) )
+             r_s(k) = rsat( press(k), T_in_K(k) )
 
           ! Saturation vapor pressure over liquid in Pa
              e_s(k) = ( r_s(k)*press(k) ) / ( ep + r_s(k) )
 
           ! Saturation vapor pressure over ice in Pa, Eq. 2.15 Rogers and Yau
              e_i(k) = e_s(k) / EXP( ( Lf/(Rv*273.16) )
-     .                           * ( 273.16/temp_in_K(k) - 1.0 ) )
+     .                           * ( 273.16/T_in_K(k) - 1.0 ) )
 
           ! Saturation ratio in a liquid-saturated cloud, p. 158 Rogers and Yau
           !---------------Brian's comment--------------------------------------!
@@ -195,7 +189,7 @@
              S_i(k) = e_s(k)/e_i(k)
 
           ! Denominator of diffusional growth equation, 9.4 of Rogers and Yau
-             Denom(k) = Diff_denom( temp_in_K(k), press(k), e_i(k) )
+             Denom(k) = Diff_denom( T_in_K(k), press(k), e_i(k) )
 
           ! Change in mass of a single ice crystal, m,
           ! as it falls a distance gr%dzt in meters
@@ -294,7 +288,7 @@
 
 !-----------------------------------------------------------------------
 
-        FUNCTION Diff_denom( temp_in_K, press, e_i )
+        FUNCTION Diff_denom( T_in_K, press, e_i )
 
         USE constants
 
@@ -305,7 +299,7 @@
         ! Reference:  Eqn. 9.4 of Rogers and Yau (1989), "A Short Course on Cloud Physics"
 
         REAL, INTENT(IN) :: 
-     .   temp_in_K,   ! Temperature                               [K]
+     .   T_in_K,      ! Temperature                               [K]
      .   press,       ! Air pressure                              [Pa]
      .   e_i          ! Vapor pressure over ice                   [Pa]
 
@@ -318,17 +312,17 @@
 
 !        REAL, PARAMETER:: Ls = 2.834e6
 
-        Celsius = temp_in_K - 273.16
+        Celsius = T_in_K - 273.16
 
         Ka = (5.69 + 0.017*Celsius)*0.00001  ! Ka in cal./(cm.*sec.*C)
         Ka = 4.1868*100.0*Ka  ! Ka in J./(m.*sec.*K)
 
-        Dv = 0.221 * ( (temp_in_K/273.16)**1.94 ) * (101325.0/press)
+        Dv = 0.221 * ( (T_in_K/273.16)**1.94 ) * (101325.0/press)
                                 ! Dv in (cm.^2)/sec.  ! .221 is correct.
         Dv = Dv/10000.0  ! Dv in (m.^2)/sec.
 
-        Fk = ( Ls/(Rv*temp_in_K) - 1.0 ) * Ls / (Ka*temp_in_K)
-        Fd = (Rv*temp_in_K) / (Dv*e_i)
+        Fk = ( Ls/(Rv*T_in_K) - 1.0 ) * Ls / (Ka*T_in_K)
+        Fd = (Rv*T_in_K) / (Dv*e_i)
 
         Diff_denom = Fk + Fd
 

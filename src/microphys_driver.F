@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F,v 1.1 2008-05-22 15:35:16 dschanen Exp $
+! $Id: microphys_driver.F,v 1.2 2008-05-28 16:29:24 dschanen Exp $
         module microphys_driver
 
 !       Description:
@@ -43,6 +43,7 @@
         use grid_class
         use rain_equations, only: kk_microphys
         use ice_dfsn_mod
+        use temp_in_K_mod, only: thlm2temp_in_K
         use model_flags
         use parameters, only: c_Krrm, nu_r
         use constants, only: hydromet_dim, Lv, Cp, rho_lw, fstderr
@@ -125,6 +126,9 @@
      .  ricem_tndcy,    ! Ice mixing ratio tendency       [(kg/kg)/s]
      .  rgraupelm_tndcy ! Graupel mixing ratio tendency   [(kg/kg)/s]  
 
+        real, dimension(gr%nnzp) ::
+     .  T_in_K  ! Temperature   [K]
+
         real, dimension(1,1,gr%nnzp) ::
      .  cond ! COAMPS stat for condesation/evap of rcm
 
@@ -180,7 +184,10 @@
         ! Solve for the value of Kr, the hydrometeor eddy diffusivity.
         do k = 1, gr%nnzp, 1
            Kr(k) = c_Krrm * Khm(k)
-        enddo
+        end do
+
+        ! Determine temperature in K for the microphysics
+        T_in_K = thlm2temp_in_K( thlm, exner, rcm )
 
         ! Begin by calling either Brian Griffin's implementation of the
         ! Khairoutdinov and Kogan microphysical scheme or 
@@ -191,7 +198,7 @@
 
            call coamps_micro_driver
      .          ( runtype, gr%nnzp-1, gr%nnzp, time_current, dt,
-     .            rtm, wmm, p, exner, rhot,
+     .            rtm, wmm, p, exner, rhot, T_in_K,
      .            thlm, ricem, rrm, rgraupelm, rsnowm,
      .            rcm, Ncm, Nrm, Ncnm, Nim,
      .            cond, Vsnow, Vice, Vrr, VNr, Vgraupel,
@@ -266,13 +273,15 @@
          end if ! lstats_samp
 #endif /*STATS*/
         else if ( kk_rain ) then
+
           ! Note that Ncm for DYCOMS II RF02 is specified in the GCSS,
           ! so new cases will need this computed beforehand as well.
 
           call kk_microphys
-     .         ( thlm, p, exner, rhot, thl1, thl2, a, rc1, rc2,
+     .         ( thlm, T_in_K, p, exner, rhot, 
+     .           thl1, thl2, a, rc1, rc2,
      .           s1, s2, ss1, ss2, rtm, rcm, Ncm, rrm, Nrm,
-     .           .true., AKm_est, AKm,
+     .           .true., AKm_est, AKm, 
      .           rrm_tndcy, Nrm_tndcy, 
      .           rtm_mc, thlm_mc,
      .           Vrr, VNr )
@@ -589,7 +598,7 @@
 
         ! Call the ice diffusion scheme
         if ( licedfs ) then
-          call ice_dfsn( dt, thlm, rcm, p, exner, rhot, rtm_mc )
+          call ice_dfsn( dt, T_in_K, rcm, p, exner, rhot, rtm_mc )
           thlm_mc = - ( Lv/(Cp*exner) ) * rtm_mc
         end if
 

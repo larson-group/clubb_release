@@ -12,7 +12,7 @@
 
       subroutine coamps_micro_driver
      .       ( runtype, kk, kmax, timea_in, deltf_in,
-     .         rtm, wmm, p, exner, rhot,
+     .         rtm, wmm, p, exner, rhot, T_in_K,
      .         thlm, ricem, rrm, rgraupelm, rsnowm,
      .         rcm, Ncm, Nrm, Ncnm, Nim,
      .         cond, Vsnow, Vice, Vrr, VNr, Vgraupel,
@@ -157,7 +157,8 @@ c End of ajsmith4's addition
      .  p,    ! Pressure                                        [Pa]
      .  exner,! Mean exner function                             [-]
      .  rhot, ! Mean density                                    [kg/m^3]
-     .  thlm  ! Liquid potential temperature                    [K]
+     .  thlm, ! Liquid potential temperature                    [K]
+     .  T_in_K! Temperature                                     [K]
 
       real, dimension(kk+1), intent(in) ::
      .  ricem,     ! Ice water mixing ratio     [kg/kg]
@@ -512,7 +513,7 @@ c End of ajsmith4's addition
       ! The top point is undefined and unreferenced in these '3d' arrays
       pr3d(1,1,1:kk)   = p(2:kk+1) 
       th2t3d(1,1,1:kk) = exner(2:kk+1)
-      temp3d(1,1,1:kk) = thm(2:kk+1) * exner(2:kk+1)
+      temp3d(1,1,1:kk) = T_in_K(2:kk+1)
 
       do k=1, kk, 1
         qsatv3d(1,1,k) = rsat( pr3d(1,1,k), temp3d(1,1,k) )

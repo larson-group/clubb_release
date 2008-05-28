@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: KK_microphys.F,v 1.5 2008-05-09 16:07:34 faschinj Exp $
+! $Id: KK_microphys.F,v 1.6 2008-05-28 16:29:26 dschanen Exp $
 
       MODULE rain_equations
 
@@ -91,7 +91,8 @@
       CONTAINS
 
         subroutine kk_microphys
-     .             ( thlm, p, exner, rhot, thl1, thl2, a, rc1, rc2, s1,
+     .             ( thlm, T_in_K, p, exner, rhot, 
+     .               thl1, thl2, a, rc1, rc2, s1,
      .               s2, ss1, ss2, rtm, rcm, Ncm, rrm, Nrm, 
      .               lsample, AKm_est, AKm,
      .               rrm_mc_tndcy, Nrm_mc_tndcy, 
@@ -126,6 +127,7 @@
         ! Input
         real, intent(in), dimension(gr%nnzp) ::
      .  thlm,      ! Theta-l                            [K]
+     .  T_in_K,    ! Temperature                        [K]
      .  p,         ! Pressure                           [Pa]
      .  exner,     ! Exner function                     [-]
      .  rhot,      ! Density on thermo. grid            [kg/m^3]
@@ -166,10 +168,9 @@
      .  Nrm_auto,    ! Change in Nrm due to autoconversion      [(num/kg)/s]
      .  mean_vol_rad,! Mean volume radius                       [m]
      .  rvm,         ! Water vapor mixing ratio                 [kg/kg]
-     .  Temp,        ! Temperature                              [K]
      .  es,          ! Saturation vapor pressure                [Pa]
      .  Supsat,      ! Supersaturation                          [-]
-     .  rs           ! Saturation mixing ratio                  [kg/kg]
+     .  rsm          ! Saturation mixing ratio                  [kg/kg]
 
         real, dimension(gr%nnzp) :: 
      .  rrp2_rrm2,   ! rrp2/rrm^2               []
@@ -182,7 +183,6 @@
 
         real :: 
      .  e,      ! Vapor pressure                [Pa]
-     .  thm,    ! Potential temperature         [K]
      .  Beta_T  ! Beta_T                        [kg/kg]
 
         ! Array indices
@@ -459,22 +459,17 @@
            ! Find current vapor pressure.
            e = (p(k)*rvm(k))/(ep + rvm(k))
 
-           ! Get theta from theta-l
-           thm = thlm(k) + (Lv/(Cp*exner(k)))*rcm(k)
-
            ! Saturation mixing ratio
-           rs(k) = rsat( p(k),thm*exner(k) )
+           rsm(k) = rsat( p(k), T_in_K(k) )
 
-           ! Find temperature and saturation vapor pressure.
-           Temp(k) = thm/((p0/p(k))**kappa)
-           es(k) = (p(k)*rs(k))/(ep + rs(k))
+           ! Find saturation vapor pressure.
+           es(k) = (p(k)*rsm(k))/(ep + rsm(k))
 
         end do ! 2..gr%nnzp
 
         ! Set the boundary conditions
         rvm(1)          = 0.0
-        rs(1)           = 0.0
-        Temp(1)         = 0.0
+        rsm(1)          = 0.0
         es(1)           = 0.0
         Supsat(1)       = 0.0
         Supsat(gr%nnzp) = 0.0
@@ -484,21 +479,23 @@
            ! Compute supersaturation via s1, s2. 
            !     Larson et al 2002, JAS, Vol 59, p 3534.
            ! This allows a more direct comparison of local, nonlocal formulas.
-           Beta_T = (Rd/Rv) * ( Lv/(Rd*Temp(k)) ) * ( Lv/(Cp*Temp(k)) )
+           Beta_T = (Rd/Rv) * ( Lv/(Rd*T_in_K(k)) ) 
+     .              * ( Lv/(Cp*T_in_K(k)) )
 
            Supsat(k) = ( a(k)*s1(k) + (1-a(k))*s2(k) )
-     .                 *( ( 1.0 + Beta_T*rs(k) ) / rs(k) )
+     .                 *( ( 1.0 + Beta_T*rsm(k) ) / rsm(k) )
 
            ! Now find the elements that make up the right-hand side of the
            ! equation, dd, for rain water mixing ratio, rrm.
 
            rrm_cond(k) 
-     .     = cond_evap_rrm( rrm(k), Nrm(k),
-     .                      s1(k), ss1(k), s2(k), ss2(k),
-     .                      thl1(k), thl2(k), rc1(k), rc2(k), a(k),
-     .                      p(k), rhot(k), Temp(k), Supsat(k), 
-     .                      rrp2_rrm2(k), Nrp2_Nrm2(k), corr_srr_NL(k),
-     .                      corr_sNr_NL(k), corr_rrNr_LL(k)  )
+     .     = cond_evap_rrm
+     .       ( rrm(k), Nrm(k),
+     .         s1(k), ss1(k), s2(k), ss2(k),
+     .         thl1(k), thl2(k), rc1(k), rc2(k), a(k),
+     .         p(k), exner(k), rhot(k), T_in_K(k), Supsat(k), 
+     .         rrp2_rrm2(k), Nrp2_Nrm2(k), corr_srr_NL(k),
+     .         corr_sNr_NL(k), corr_rrNr_LL(k) )
 
 
         ! Vince Larson added option to call LH sampled Kessler autoconversion.
@@ -794,7 +791,7 @@
         FUNCTION cond_evap_rrm( rrm, Nrm,
      .                          s1, ss1, s2, ss2,
      .                          thl1, thl2, rc1, rc2, a,
-     .                          press, rhot, Temp, Supsat, 
+     .                          press, exner, rhot, T_in_K, Supsat, 
      .                          rrp2_rrm2, Nrp2_Nrm2, corr_srr_NL,
      .                          corr_sNr_NL, corr_rrNr_LL  )
 
@@ -820,9 +817,10 @@
         REAL, INTENT(IN):: a            ! Relative weight of each individual
                                         ! Gaussian "plume."        []
         REAL, INTENT(IN):: press        ! Grid-box average pressure [Pa]
+        REAL, INTENT(IN):: exner        ! Grid-box average exner function [-]
         REAL, INTENT(IN):: rhot         ! Grid-box average density (t-level)
                                         !                          [kg m^-3]
-        REAL, INTENT(IN):: Temp         ! Grid-box average Temperature [K]
+        REAL, INTENT(IN):: T_in_K         ! Grid-box average Temperature [K]
         REAL, INTENT(IN):: Supsat       ! Grid-box average Supersaturation []
         REAL, INTENT(IN):: rrp2_rrm2    ! rrp2/rrm^2               []
         REAL, INTENT(IN):: Nrp2_Nrm2    ! Nrp2/Nrm^2               []
@@ -866,7 +864,7 @@
               ! The air is not saturated, therefore evaporation can take place.
 
                  cond_evap_rrm =
-     .              3.0 * C_evap * G_T_p( Temp, press )
+     .              3.0 * C_evap * G_T_p( T_in_K, press )
      .                  * ( ( (4.0/3.0)*pi*rho_lw )**(2.0/3.0) )
      .                  * (rrm**(1.0/3.0)) * (Nrm**(2.0/3.0)) * Supsat
 
@@ -895,7 +893,7 @@
               !!! Define plume constants for each plume
 
               ! Gaussian "plume" 1
-              Tl_1 = thl1 * ((press/p0)**kappa)
+              Tl_1 = thl1 * exner !((press/p0)**kappa)
 
               T_1 = Tl_1 + (Lv/Cp)*rc1
 
@@ -910,7 +908,7 @@
      .               * ( (1.0 + Beta_T1*rsl_1) / rsl_1 )
 
               ! Gaussian "plume" 2
-              Tl_2 = thl2 * ((press/p0)**kappa)
+              Tl_2 = thl2 * exner !((press/p0)**kappa)
 
               T_2 = Tl_2 + (Lv/Cp)*rc2
 
@@ -1340,7 +1338,7 @@
 
 !===============================================================================
 
-        FUNCTION G_T_p( Temp, press )
+        FUNCTION G_T_p( T_in_K, press )
 
         USE constants
         USE saturation
@@ -1355,7 +1353,7 @@
 
 
         ! Input      
-        REAL, INTENT(IN):: Temp   ! [K]
+        REAL, INTENT(IN):: T_in_K   ! [K]
         REAL, INTENT(IN):: press  ! [Pa]
 
         ! Ouput
@@ -1366,20 +1364,20 @@
         REAL:: Fk, Fd
         REAL:: es, rs, Celsius
 
-        Celsius = Temp - 273.16
+        Celsius = T_in_K - 273.16
 
         Ka = (5.69 + 0.017*Celsius)*0.00001  ! Ka in cal./(cm.*sec.*C)
         Ka = 4.1868*100.0*Ka  ! Ka in J./(m.*sec.*K)
 
-        Dv = 0.221*((Temp/273.16)**1.94)*(101325.0/press)  
+        Dv = 0.221*((T_in_K/273.16)**1.94)*(101325.0/press)  
                                 ! Dv in (cm.^2)/sec.  ! .221 is correct.
         Dv = Dv/10000.0  ! Dv in (m.^2)/sec.
 
-        rs = rsat(press, Temp)
+        rs = rsat(press, T_in_K)
         es = (press*rs)/(ep + rs)
 
-        Fk = (Lv/(Rv*Temp) - 1.0)*(Lv*rho_lw)/(Ka*Temp)
-        Fd = (rho_lw*Rv*Temp)/(Dv*es)
+        Fk = (Lv/(Rv*T_in_K) - 1.0)*(Lv*rho_lw)/(Ka*T_in_K)
+        Fd = (rho_lw*Rv*T_in_K)/(Dv*es)
 
         G_T_p = 1.0/(Fk + Fd)
 
