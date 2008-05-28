@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: grid.F,v 1.21 2008-05-27 12:53:07 griffinb Exp $
+! $Id: grid.F,v 1.22 2008-05-28 19:11:50 vlarson Exp $
 !===============================================================================
         module grid_class
 
@@ -78,7 +78,9 @@
 !        =============== zm(k+1) ===============
 !
 !
+!
 !        --------------- zt(k+1) ---------------
+!
 !
 !
 !        ===============  zm(k)  ===============
@@ -95,7 +97,9 @@
 !        --------------- zt(k+1) ---------------
 !
 !
+!
 !        ===============  zm(k)  ===============
+!
 !
 !
 !        ---------------  zt(k)  ---------------
@@ -108,8 +112,8 @@
 !        should use interpolation formulas consistent with a stretched
 !        grid.  The simplest way to do so is to call the appropriate
 !        interpolation function from this module.  Interpolations 
-!        should not be handled in the form of:
-!        ( var_zm(k) + var_zm(k-1) ) / 2; nor in the form of:
+!        should *not* be handled in the form of:
+!        ( var_zm(k) + var_zm(k-1) ) / 2; *nor* in the form of:
 !        0.5*( var_zt(k+1) + var_zt(k) ).  Rather, all explicit 
 !        interpolations should call zt2zm or zm2zt; while interpolations
 !        for a variable being solved for implicitly in the code should 
@@ -117,8 +121,8 @@
 !        or gr%weights_zm2zt (which refers to interp_weights_zm2zt_imp).
 !
 ! Momentum level 1 is placed at altitude zm_init, which is usually at
-! the surface.  However, zm_init can be at any level defined by the 
-! user.
+! the surface.  However, in general, zm_init can be at any altitude 
+! defined by the user.
 !
 ! GP indicates ghost points. Variables located at those levels are
 ! not prognosed, but only used for boundary conditions.
