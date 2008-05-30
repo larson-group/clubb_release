@@ -5,6 +5,8 @@
       public :: permute_height_time
 
       private :: generate_k_order
+
+      private ! Default Scope
       
       contains
 !-----------------------------------------------------------------------
@@ -27,7 +29,7 @@
 
         subroutine permute_height_time(nnzp,nt,dp1,p_height_time)
         
-        use random, only: rand_permute
+        use random, only: rand_permute ! Procedure(s)
         
         implicit none
 
@@ -76,7 +78,7 @@
 !----------------------------------------------------------------------
         subroutine generate_k_order( i, sequence_length, k_order )
 
-        use random, only: rand_permute
+        use random, only: rand_permute ! Procedure(s)
         
         implicit none
 
