@@ -1,4 +1,4 @@
-! $Id: erf.F,v 1.3 2008-05-09 16:14:11 faschinj Exp $
+! $Id: erf.F,v 1.4 2008-05-30 16:05:15 faschinj Exp $
         module anl_erf
 
         implicit none
@@ -11,7 +11,7 @@
 
         private :: dp_erf, sp_erf
 
-        private
+        private ! Default Scope
 
         contains
 

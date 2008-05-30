@@ -2,7 +2,7 @@
          
          implicit none
          
-         private
+         private ! Default Scope
 
          public :: Skw_func
          

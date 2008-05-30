@@ -4,7 +4,7 @@
 
         public :: gregorian2julian, julian2gregorian, leap_year
 
-        private
+        private ! Default Scope
 
         contains
 !-----------------------------------------------------------------------        
