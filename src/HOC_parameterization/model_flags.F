@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: model_flags.F,v 1.12 2008-05-09 16:26:32 faschinj Exp $
+! $Id: model_flags.F,v 1.13 2008-05-30 16:07:47 faschinj Exp $
 
         module model_flags
 
@@ -12,13 +12,13 @@
 
         implicit none
 
-        public ! All elements of this module are public scope
+        private ! Default Scope
 
-        logical, parameter :: 
+        logical, parameter, public :: 
      .  LH_on    = .false., ! Latin hypercube calculation
      .  local_kk = .false.  ! Local drizzle for rain microphysics
 
-        logical :: 
+        logical, public :: 
      .  lbugsrad,     ! BUGSrad interactive radiation scheme
      .  kk_rain,      ! Khairoutdinov and Kogan (2000) drizzle scheme. - Brian
      .  licedfs,      ! Simplified ice scheme
@@ -41,8 +41,16 @@
 !      Description:
 !      Setup model flags
 !-----------------------------------------------------------------------
-        use constants, only: fstderr
-        use model_flags
+        use constants, only: 
+     .      fstderr ! Variable(s)
+        use model_flags, only:
+     .      lbugsrad, ! Variable(s)
+     .      kk_rain,
+     .      cloud_sed,
+     .      lcoamps_micro,
+     .      licedfs,
+     .      luv_nudge,
+     .      lKhm_aniso
 
         implicit none
 
