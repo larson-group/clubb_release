@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.123 2008-05-27 21:17:58 dschanen Exp $
+# $Id: Makefile,v 1.124 2008-05-30 22:13:22 dschanen Exp $
 #
 # This version should work with BSD, GNU make, smake and dmake.
 #
@@ -21,6 +21,8 @@ include config/linux_ia32_g95_debug.in
 #include config/osf1_alpha_digital.in
 
 # == Object files ==
+
+OBJDIR = $(PREFIX)/obj
 
 LATIN_HYP = math_utilities.o \
 	lh_sampler.o \
@@ -92,14 +94,14 @@ all:	hoc_standalone hoc_tuner int2txt hoc_inputfields  \
 	compare_runs jacobian
 # hoc_tuner_budget_terms 
 # Note:
-# The budget terms tuner is currently non-working, and will
-# be fixed soon -dschanen 15 March 2007
+# The budget terms tuner is currently non-working
+# -dschanen 15 March 2007
 
 # == Rules ==
 # Note: since we're using a virtual path the make command is going to use the
 # first file it finds with that name.  Be careful when making copies of files.
  
-VPATH=.:LH:GCSS:BUGSrad:HOC_parameterization:coamps_micro
+VPATH=.:LH:GCSS:BUGSrad:HOC_parameterization:coamps_micro:$(OBJDIR)
 
 # Cancel implicit rules (e.g for modula-2 `m2c -c $@.mod')
 .SUFFIXES:
@@ -107,68 +109,68 @@ VPATH=.:LH:GCSS:BUGSrad:HOC_parameterization:coamps_micro
 .SUFFIXES: .a .o .f .F .f90 .F90 .h
 
 .f.o:
-	$(FC) $(FCFLAGS) -c $<
+	$(FC) $(FCFLAGS) -o $(OBJDIR)/$@ -c $<
 .f90.o:
-	$(FC) $(FCFLAGS) -c $<
+	$(FC) $(FCFLAGS) -o $(OBJDIR)/$@ -c $<
 .F.o:
-	$(FC) $(FCFLAGS) -c $<
+	$(FC) $(FCFLAGS) -o $(OBJDIR)/$@ -c $<
 .F90.o:
-	$(FC) $(FCFLAGS) -c $<
+	$(FC) $(FCFLAGS) -o $(OBJDIR)/$@ -c $<
 
 # == Static libraries (default) ==
 
 libhoc_param.a:	$(PARAMETERIZATION)
-	$(AR) $(ARFLAGS) $(LIBDIR)/$@ $(PARAMETERIZATION)
+	cd $(OBJDIR); $(AR) $(ARFLAGS) $(LIBDIR)/$@ $(PARAMETERIZATION)
 	$(RANLIB) $(LIBDIR)/$@
 
 libhoc_bugsrad.a:	$(BUGS_RAD)
-	$(AR) $(ARFLAGS) $(LIBDIR)/$@ $(BUGS_RAD)
+	cd $(OBJDIR); $(AR) $(ARFLAGS) $(LIBDIR)/$@ $(OBJDIR)/$(BUGS_RAD)
 	$(RANLIB) $(LIBDIR)/$@
 
 # == Shared libraries ==
 
 libhoc_param.so:	$(PARAMETERIZATION)
-	$(SHARED) $(SHAREDFLAGS) -o $(LIBDIR)/$@ $(PARAMETERIZATION)
+	cd $(OBJDIR); $(SHARED) $(SHAREDFLAGS) -o $(LIBDIR)/$@ $(OBJDIR)/$(PARAMETERIZATION)
 
 libhoc_bugsrad.so:	$(BUGS_RAD)
-	$(SHARED) $(SHAREDFLAGS) -o $(LIBDIR)/$@ $(BUGS_RAD)
+	cd $(OBJDIR); $(SHARED) $(SHAREDFLAGS) -o $(LIBDIR)/$@ $(OBJDIR)/$(BUGS_RAD)
 
 # Remove comment to use shared libs (make sure you know what you're doing)
 HOCLIBS = libhoc_param.a libhoc_bugsrad.a
 #HOCLIBS = libhoc_param.so libhoc_bugsrad.so
 
-int2txt:	$(INT2TXT)
-		$(FC) $(FCFLAGS) $@.o -o $(BINDIR)/int2txt
+int2txt: $(INT2TXT)
+		$(FC) $(FCFLAGS) $(OBJDIR)/$@.o -o $(BINDIR)/int2txt
 
-hoc_tuner:	$(HOCLIBS) $(HOC_TUNER)
-		$(FC) $(FCFLAGS) -o $(BINDIR)/hoc_tuner \
-		$(HOC_TUNER) $(LDFLAGS)
+hoc_tuner: $(HOCLIBS) $(HOC_TUNER)
+	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(BINDIR)/hoc_tuner \
+	$(HOC_TUNER) $(LDFLAGS)
 
 hoc_standalone:	$(HOCLIBS) $(HOC_STANDALONE)
-		$(FC) $(FCFLAGS) -o $(BINDIR)/hoc_standalone \
-		$(HOC_STANDALONE) $(LDFLAGS)  
+	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(BINDIR)/hoc_standalone \
+	$(HOC_STANDALONE) $(LDFLAGS)  
 
-hoc_inputfields:	$(HOCLIBS) $(HOC_INPUTFIELDS)
-			$(FC) $(FCFLAGS) -o $(BINDIR)/hoc_inputfields \
-			$(HOC_INPUTFIELDS) $(LDFLAGS)
+hoc_inputfields: $(HOCLIBS) $(HOC_INPUTFIELDS)
+	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(BINDIR)/hoc_inputfields \
+	$(HOC_INPUTFIELDS) $(LDFLAGS)
 
 hoc_tuner_budget_terms:	$(HOCLIBS) $(HOC_BUDGET_TERMS)
-			$(FC) $(FCFLAGS) -o $(BINDIR)/hoc_tuner_budget_terms \
-			$(HOC_BUDGET_TERMS) $(LDFLAGS) 
+	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(BINDIR)/hoc_tuner_budget_terms \
+	$(OBJDIR)/$(HOC_BUDGET_TERMS) $(LDFLAGS) 
 
-jacobian:	$(HOCLIBS) $(JACOBIAN)
-		$(FC) $(FCFLAGS) -o $(BINDIR)/jacobian \
-		$(JACOBIAN) $(LDFLAGS)
+jacobian: $(HOCLIBS) $(JACOBIAN)
+	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(BINDIR)/jacobian \
+	$(JACOBIAN) $(LDFLAGS)
 
 compare_runs:	$(HOCLIBS) $(COMPARE_RUNS)
-		$(FC) $(FCFLAGS) -o $(BINDIR)/compare_runs \
-		$(COMPARE_RUNS) $(LDFLAGS)
+	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(BINDIR)/compare_runs \
+	$(COMPARE_RUNS) $(LDFLAGS)
 
 clean: 
-	-rm -f *.o *.a *.mod core*
+	-rm -f $(OBJDIR)/*.o *.mod core*
 
 distclean: 
-	-rm -f *.o *.mod core* \
+	-rm -f $(OBJDIR)/*.o *.mod core* \
 	$(BINDIR)/hoc_tuner \
 	$(BINDIR)/int2txt \
 	$(BINDIR)/hoc_tuner_budget_terms \

@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.44 2008-05-22 15:35:16 dschanen Exp $
+# $Id: make.deps,v 1.45 2008-05-30 22:13:22 dschanen Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -84,7 +84,7 @@ parameterization_interface.o : constants.o hydrostatic.o mixing.o \
 	diag_variables.o \
 	sfc.o closure_new.o lh_sampler.o \
 	parameters.o error_code.o  parameterization_interface.F 
-hydrostatic.o	: constants.o hydrostatic.F 
+hydrostatic.o	: constants.o grid.o hydrostatic.F 
 mixing_length.o	: constants.o parameters.o numer_check.o error_code.o mixing_length.F
 saturation.o    : constants.o saturation.F  
 sfc.o		: constants.o parameters.o numer_check.o error_code.o sfc.F 
