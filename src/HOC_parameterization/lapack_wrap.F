@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: lapack_wrap.F,v 1.8 2008-05-30 16:24:24 faschinj Exp $
+! $Id: lapack_wrap.F,v 1.9 2008-05-30 21:45:39 faschinj Exp $
         module lapack_wrap
 
 !       Description:
@@ -24,7 +24,7 @@
         ! Expert routines
         public :: tridag_solvex, band_solvex
 
-        private
+        private ! Set Default Scope
 
         contains
 
