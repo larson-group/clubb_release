@@ -1,4 +1,4 @@
-!$Id: micro_calcs.F,v 1.4 2008-05-16 17:33:34 faschinj Exp $
+!$Id: micro_calcs.F,v 1.5 2008-05-30 16:24:26 faschinj Exp $
 
       module micro_calcs_mod
 
@@ -7,6 +7,8 @@
       public :: micro_calcs
 
       private :: autoconv_driver, ql_estimate
+
+      private ! Default Scope
       
       contains
 !------------------------------------------------------------------------
@@ -36,8 +38,9 @@
      .                        AKm_est_k, AKm_k, AKstd_k, AKstd_cld_k,
      .                        AKm_rcm_k, AKm_rcc_k, rcm_est_k )
 
-      use constants
-      use anl_erf, only: erf
+      use constants, only: pi ! Variable(s)
+
+      use anl_erf, only: erf ! Procedure(s)
 
       implicit none
 

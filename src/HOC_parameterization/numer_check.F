@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F,v 1.25 2008-05-05 18:50:54 faschinj Exp $
+! $Id: numer_check.F,v 1.26 2008-05-30 16:24:25 faschinj Exp $
         module numerical_check
 
         implicit none
@@ -47,7 +47,8 @@
 !
 !        Joshua Fasching February 2008
 !---------------------------------------------------------------------------------
-         use grid_class
+         use grid_class, only:
+     .       gr ! Variable
          implicit none
 
          ! Input Variables
@@ -86,7 +87,8 @@
 !        Joshua Fasching February 2008
 !---------------------------------------------------------------------------
 
-         use constants, only:sclr_dim
+         use constants, only:
+     .       sclr_dim ! Variable
 
          implicit none
 
@@ -204,9 +206,11 @@
 !       wp2, Scm, rtp2, thlp2, taum, rcm, Ncm, Ncnm, Nim, hydromet, or cf 
 !       have negative values.
 !-------------------------------------------------------------------------------
-        use grid_class
-        use constants   
-
+        use grid_class, only:
+     .      gr ! Variable
+        use constants, only:
+     .      sclr_dim ! Variable
+ 
         implicit none
         
         ! Input variables
@@ -390,7 +394,8 @@
 !
 !
 !-----------------------------------------------------------------------
-        use constants
+        use constants, only:
+     .      sclr_dim ! Variable
 
         implicit none
 
@@ -456,8 +461,10 @@
 !       to the console.
 !------------------------------------------------------------------------
 
-        use constants, only: fstderr
-        use grid_class
+        use constants, only: 
+     .      fstderr ! Variable
+        use grid_class, only:
+     .      gr ! Variable
 
         implicit none
         
@@ -504,10 +511,30 @@
 !       None
 !------------------------------------------------------------------------
 
-        use diagnostic_variables
-        use prognostic_variables
-        use model_flags, only: lcoamps_micro, kk_rain
-        use constants, only: sclr_dim, hydromet_dim, fstderr
+        use diagnostic_variables, only:
+     .      hydromet, ! Variable(s)
+     .      wp2thvp,
+     .      rtpthvp,
+     .      thlpthvp
+        use prognostic_variables, only:
+     .      um, ! Variable(s)
+     .      vm,
+     .      wp2,
+     .      wp3,
+     .      rtm,
+     .      thlm,
+     .      rtp2,
+     .      thlp2,
+     .      wprtp,
+     .      wpthlp,
+     .      rtpthlp
+        use model_flags, only: 
+     .      lcoamps_micro, ! Variable(s) 
+     .      kk_rain
+        use constants, only:
+     .      sclr_dim, ! Variable(s)
+     .      hydromet_dim, 
+     .      fstderr
 
         implicit none
 
@@ -730,7 +757,10 @@
 !------------------------------------------------------------------------
         
         implicit none
-        intrinsic :: any,transfer
+
+        ! External
+        intrinsic :: any, transfer
+
         ! Input Variables
         real, dimension(:), intent(in) :: x2d
         ! Local Variables
@@ -776,9 +806,12 @@
 !       them.
 !
 !-----------------------------------------------------------------------
-        use constants, only:fstderr
-        use grid_class
-        use error_code, only: clubb_var_less_than_zero
+        use constants, only:
+     .      fstderr ! Variable(s)
+        use grid_class, only:
+     .      gr ! Variable(s)
+        use error_code, only: 
+     .      clubb_var_less_than_zero ! Variable(s)
         
         implicit none
 
@@ -817,8 +850,10 @@
 !                    the index in which the negative values occur.
 !
 !-----------------------------------------------------------------------
-        use constants, only:fstderr
-        use error_code, only: clubb_var_less_than_zero
+        use constants, only:
+     .      fstderr ! Variable
+        use error_code, only: 
+     .      clubb_var_less_than_zero ! Variable
         
         implicit none
 
@@ -868,8 +903,10 @@
 !
 !
 !------------------------------------------------------------------------
-        use constants, only: fstderr
-        use error_code, only: clubb_var_equals_NaN
+        use constants, only: 
+     .      fstderr ! Variable(s)
+        use error_code, only: 
+     .      clubb_var_equals_NaN ! Variable(s)
 
         implicit none
 
@@ -904,8 +941,10 @@
 !       Description: Checks for a NaN in the scalar var then reports it.
 !
 !-----------------------------------------------------------------------        
-        use constants, only: fstderr
-        use error_code, only: clubb_var_equals_NaN
+        use constants, only: 
+     .      fstderr ! Variable
+        use error_code, only: 
+     .      clubb_var_equals_NaN ! Variable
 
         implicit none
 

@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-!  $Id: compare_runs.F,v 1.12 2006-08-10 21:09:10 vlarson Exp $
+!  $Id: compare_runs.F,v 1.13 2008-05-30 16:24:21 faschinj Exp $
 
         program compare_runs 
 
@@ -10,8 +10,8 @@
 !       None
 !----------------------------------------------------------------------
 
-        use inputfile_class
-        use grads_common        
+
+        use grads_common, only: grads_zlvl, grads_average ! Procedure(s)   
 
         implicit none
  

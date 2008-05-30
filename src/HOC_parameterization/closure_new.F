@@ -1,12 +1,12 @@
-! $Id: closure_new.F,v 1.21 2008-05-05 18:40:32 faschinj Exp $
+! $Id: closure_new.F,v 1.22 2008-05-30 16:24:24 faschinj Exp $
         module pdf_closure
 
         implicit none
-
-        private
         
         public :: pdf_closure_new
 
+        private
+        
         contains 
 !------------------------------------------------------------------------
         subroutine pdf_closure_new
@@ -40,35 +40,42 @@
 !       JAS, Vol. 59, pp. 3540--3551.
 !------------------------------------------------------------------------
 
-        use constants, only: 
-     .  pi,      ! The ratio of radii to their circumference
-     .  Cp,      ! Dry air specific heat at constant p [J/kg/K]
-     .  Lv,      ! Latent heat of vaporization         [J/kg]
-     .  Rd,      ! Dry air gas constant                [J/kg/K]
-     .  Rv,      ! Water vapor gas constant            [J/kg/K]
-     .  ep,      ! Rd / Rv;     ep  = 0.622            [-]
-     .  ep1,     ! (1.0-ep)/ep; ep1 = 0.61             [-]
-     .  ep2,     ! 1.0/ep;      ep2 = 1.61             [-]
-     .  wtol,    ! Tolerance for w                     [m/s]
-     .  rttol,   ! Tolerance for r_t                   [kg/kg]
-     .  thltol,  ! Tolerance for th_l                  [K]
-     .  sstol,   ! Tolerance for pdf parameter         [kg/kg]
-     .  sclrtol, ! Array of passive scalar tolerances  [units vary]
-     .  sclr_dim,! Number of passive scalar variables
-     .  fstderr
+        use constants, only:
+            ! Variable(s) 
+     .      pi,      ! The ratio of radii to their circumference
+     .      Cp,      ! Dry air specific heat at constant p [J/kg/K]
+     .      Lv,      ! Latent heat of vaporization         [J/kg]
+     .      Rd,      ! Dry air gas constant                [J/kg/K]
+     .      Rv,      ! Water vapor gas constant            [J/kg/K]
+     .      ep,      ! Rd / Rv;     ep  = 0.622            [-]
+     .      ep1,     ! (1.0-ep)/ep; ep1 = 0.61             [-]
+     .      ep2,     ! 1.0/ep;      ep2 = 1.61             [-]
+     .      wtol,    ! Tolerance for w                     [m/s]
+     .      rttol,   ! Tolerance for r_t                   [kg/kg]
+     .      thltol,  ! Tolerance for th_l                  [K]
+     .      sstol,   ! Tolerance for pdf parameter         [kg/kg]
+     .      sclrtol, ! Array of passive scalar tolerances  [units vary]
+     .      sclr_dim,! Number of passive scalar variables
+     .      fstderr
 
         use parameters, only:
-     .  beta,    ! Plume widths for th_l and r_t       [-]
-     .  T0       ! Reference temperature               [K]
+            ! Variable(s)
+     .      beta,    ! Plume widths for th_l and r_t       [-]
+     .      T0       ! Reference temperature               [K]
 
-        use anl_erf, only: erf ! The error function
+        use anl_erf, only: 
+            ! Procedure(s)
+     .      erf ! The error function
         
-        use numerical_check, only: pdf_closure_new_check
+        use numerical_check, only: 
+     .      pdf_closure_new_check ! Procedure(s)
 
-        use saturation, only: rsat
+        use saturation, only: 
+     .      rsat ! Procedure(s)
 
-        use error_code, only: clubb_var_equals_NaN,
-     .                        clubb_at_debug_level 
+        use error_code, only: 
+     .      clubb_var_equals_NaN, ! Variable(s)
+     .      clubb_at_debug_level ! Procedure(s)
         
         implicit none
 

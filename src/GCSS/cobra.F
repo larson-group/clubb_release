@@ -1,7 +1,7 @@
 #define SCLR_CO2 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: cobra.F,v 1.8 2008-05-05 18:33:41 faschinj Exp $
+! $Id: cobra.F,v 1.9 2008-05-30 16:24:23 faschinj Exp $
         module cobra
 !       Description:
 !       Contains subroutines for the COBRA CO2 case.
@@ -27,9 +27,14 @@
 !       References:
 !       None
 !----------------------------------------------------------------------
-        use grid_class
-        use constants, only: sclr_dim, fstderr
-        use stats_prec, only: time_prec
+
+        use grid_class, only: gr ! Variable(s)
+
+        use grid_class, only: zt2zm ! Procedure(s)
+
+        use constants, only: sclr_dim, fstderr ! Variable(s)
+
+        use stats_prec, only: time_prec ! Variable(s)
 
         implicit none
 
@@ -113,9 +118,11 @@
 !       case.
 !-----------------------------------------------------------------------
 
-        use constants, only: Cp, Lv, grav, sclr_dim
-        use stats_prec, only: time_prec
-        use diag_ustar_mod, only: diag_ustar
+        use constants, only: Cp, Lv, grav, sclr_dim ! Variable(s)
+
+        use stats_prec, only: time_prec ! Variable(s)
+
+        use diag_ustar_mod, only: diag_ustar ! Variable(s)
         
         implicit none
 

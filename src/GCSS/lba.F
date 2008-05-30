@@ -1,18 +1,18 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: lba.F,v 1.9 2008-05-05 18:33:41 faschinj Exp $
+! $Id: lba.F,v 1.10 2008-05-30 16:24:23 faschinj Exp $
         module lba
 
 !       Description:
 !       Contains subroutines for the LBA case.
 !----------------------------------------------------------------------
 
-        private
+        private ! Default Scope
 
         public :: lba_tndcy, lba_sfclyr, lba_init
 
-        private :: zrad, krad, ntimes,nzrad
+        private :: zrad, krad, ntimes, nzrad
 
         ! Constant Parameters
         integer, parameter :: ntimes = 36, nzrad = 33
@@ -42,11 +42,15 @@
 !       References:
 !----------------------------------------------------------------------
 
-        use grid_class
-        use model_flags, only: lbugsrad
-        use constants, only: sclr_dim
-        use interpolation, only: zlinterp_fnc
-        use stats_prec, only: time_prec
+        use grid_class, only: gr !  Variable(s)
+
+        use model_flags, only: lbugsrad ! Variable(s)
+
+        use constants, only: sclr_dim ! Variable(s)
+
+        use interpolation, only: zlinterp_fnc ! Procedure(s)
+
+        use stats_prec, only: time_prec ! Variable(s)
 
         implicit none
 
@@ -138,9 +142,11 @@
 !       Grabowski, et al. (2005)
 !----------------------------------------------------------------------
 
-        use constants, only: sclr_dim, pi, grav, Lv, Cp
-        use stats_prec, only: time_prec
-        use diag_ustar_mod, only: diag_ustar
+        use constants, only: sclr_dim, pi, grav, Lv, Cp ! Variable(s)
+
+        use stats_prec, only: time_prec ! Variable(s)
+
+        use diag_ustar_mod, only: diag_ustar ! Variable(s)
         
         implicit none
 

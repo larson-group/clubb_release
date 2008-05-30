@@ -9,6 +9,8 @@
 !----------------------------------------------------------------------
         public :: rico_tndcy, rico_sfclyr
 
+        private  ! Default Scope
+
         contains
 
 !----------------------------------------------------------------------
@@ -25,12 +27,18 @@
 !        References:
 !-----------------------------------------------------------------------
 
-        use constants
-        use grid_class
-        use stats_prec, only: time_prec
+        use constants, only: sclr_dim, rc_tol ! Variable(s)
+
+        use grid_class, only: gr ! Variable(s)
+
+        use grid_class, only: zt2zm ! Procedure(s)
+
+        use stats_prec, only: time_prec ! Variable(s)
+
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
+
         implicit none
 
         ! Input Variables
@@ -175,8 +183,9 @@
 !          RICO: http://www.knmi.nl/samenw/rico/setup3d.html
 !-----------------------------------------------------------------------
 
-        use constants
-        use saturation, only: rsat
+        use constants, only: sclr_dim, kappa, p0 ! Variable(s)
+  
+        use saturation, only: rsat ! Procedure(s)
 
         implicit none
 

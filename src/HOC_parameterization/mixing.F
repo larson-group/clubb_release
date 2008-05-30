@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.55 2008-05-27 15:41:05 griffinb Exp $
+! $Id: mixing.F,v 1.56 2008-05-30 16:24:24 faschinj Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -19,12 +19,6 @@
 
         private ! Default scope
 
-        ! Parameter Constants
-        integer, parameter ::
-     .  nsub = 2,  ! Number of subdiagonals in the LHS matrix
-     .  nsup = 2,  ! Number of superdiagonals in the LHS matrix
-     .  nrhs = 1   ! Number of RHS vectors
-
         public  :: timestep_mixing
 
         private :: mixing_lhs,
@@ -36,6 +30,13 @@
      .             wpxp_terms_ac_pr2_lhs,
      .             wpxp_term_pr1_lhs,
      .             wpxp_terms_bp_pr3_rhs
+
+        ! Parameter Constants
+        integer, parameter, private ::
+     .  nsub = 2,  ! Number of subdiagonals in the LHS matrix
+     .  nsup = 2,  ! Number of superdiagonals in the LHS matrix
+     .  nrhs = 1   ! Number of RHS vectors
+
 
         contains
 
@@ -63,17 +64,38 @@
 !       /Implicit solutions for the means and fluxes/
 !-----------------------------------------------------------------------
 
-        use parameters, only: C6rt, C6rtb, C6rtc, 
-     .                        C6thl, C6thlb, C6thlc,
-     .                        C7, C7b, C7c, c_K6, c_Ksqd
-        use constants, only: sclr_dim, fstderr
-        use grid_class
-        use stats_prec, only: time_prec
-        use error_code, only: lapack_error,
-     .                        clubb_at_debug_level,
-     .                        clubb_debug     
+        use parameters, only: 
+     .      C6rt, ! Variable(s)
+     .      C6rtb, 
+     .      C6rtc, 
+     .      C6thl, 
+     .      C6thlb, 
+     .      C6thlc,
+     .      C7, 
+     .      C7b, 
+     .      C7c, 
+     .      c_K6, 
+     .      c_Ksqd
+
+        use constants, only: 
+     .      sclr_dim, ! Variable(s)
+     .      fstderr
+
+        use grid_class, only:
+     .      gr, ! Variable(s)
+     .      zm2zt ! Procedure(s)
+
+        use stats_prec, only: 
+     .      time_prec ! Variable(s)
+        use error_code, only: 
+     .      lapack_error, ! Procedure(s)
+     .      clubb_at_debug_level    
 #ifdef STATS
-        use stats_hoc
+        use stats_hoc, only:
+     .      zt, ! Variable(s)
+     .      irtm_cl, 
+     .      ithlm_cl,
+     .      lstats_samp
 #endif /*STATS*/
         
         implicit none
@@ -450,14 +472,60 @@
 !       References:
 !------------------------------------------------------------------------
 
-        use parameters, only: nu6
-        use constants, only: wtol
-        use grid_class
-        use stats_prec, only: time_prec
-        use diffusion, only: diffusion_mlev
-        use mean_adv   ! both functions
+        use parameters, only: 
+     .      nu6 ! Variable(s)
+        use constants, only: 
+     .      wtol ! Variable(s)
+        use grid_class, only: 
+     .      gr, ! Variable(s)
+     .      zm2zt ! Procedure(s)
+        use stats_prec, only: 
+     .      time_prec ! Variable(s)
+        use diffusion, only: 
+     .      diffusion_mlev ! Procedure(s)
+        use mean_adv, only:
+     .      term_ma_tlev_lhs, ! Procedure(s)
+     .      term_ma_mlev_lhs
 #ifdef STATS
-        use stats_hoc
+        use stats_hoc, only:
+     .      ztscr01, ! Variable(s)
+     .      ztscr02,
+     .      ztscr03,
+     .      ztscr04,
+     .      ztscr05,
+     .      zmscr01,
+     .      zmscr02,
+     .      zmscr03,
+     .      zmscr04,
+     .      zmscr05,
+     .      zmscr06,
+     .      zmscr07,
+     .      zmscr08,
+     .      zmscr09,
+     .      zmscr10,
+     .      zmscr11,
+     .      zmscr12,
+     .      zmscr13,
+     .      zmscr14,
+     .      lstats_samp,
+     .      ithlm_ma,
+     .      ithlm_ta,
+     .      irtm_ma,
+     .      irtm_ta,
+     .      iwpthlp_ma,
+     .      iwpthlp_ta,
+     .      iwpthlp_tp,
+     .      iwpthlp_ac,
+     .      iwpthlp_pr1,
+     .      iwpthlp_pr2,
+     .      iwpthlp_dp1,
+     .      iwprtp_ma,
+     .      iwprtp_ta,
+     .      iwprtp_tp,
+     .      iwprtp_ac,
+     .      iwprtp_pr1,
+     .      iwprtp_pr2,
+     .      iwprtp_dp1
 #endif /*STATS*/
 
         implicit none
@@ -780,10 +848,22 @@
 !       References:
 !------------------------------------------------------------------------
 
-        use grid_class
-        use stats_prec, only: time_prec
+        use grid_class, only:
+     .      gr ! Variable(s)
+        use stats_prec, only: 
+     .      time_prec ! Variable(s)
 #ifdef STATS
-        use stats_hoc
+        use stats_hoc, only:
+     .      zt, ! Variable(s)
+     .      zm,
+     .      irtm_forcing,
+     .      ithlm_forcing,
+     .      iwprtp_bp,
+     .      iwprtp_pr3,
+     .      iwpthlp_bp,
+     .      iwpthlp_pr3,
+     .      lstats_samp
+
 #endif /*STATS*/
 
         implicit none
@@ -957,13 +1037,75 @@
 !       References:
 !------------------------------------------------------------------------
 
-        use grid_class
-        use stats_prec, only: time_prec
-        use lapack_wrap, only: band_solve, band_solvex
-        use pos_definite_mod, only: pos_definite_adj
-        use error_code, only: lapack_error
+        use grid_class, only:
+     .      gr ! Variable(s)
+
+        use stats_prec, only: 
+     .      time_prec ! Variable(s)
+
+        use lapack_wrap, only: 
+     .      band_solve, ! Procedure(s)
+     .      band_solvex
+
+        use pos_definite_mod, only: 
+     .      pos_definite_adj ! Procedure(s)
+
+        use error_code, only: 
+     .      lapack_error ! Procedure(s)
+
 #ifdef STATS
-        use stats_hoc
+        use stats_hoc, only:
+     .      zt, ! Variable(s)
+     .      zm,
+     .      sfc,
+     .      irtm_bt,
+     .      irtm_ta,
+     .      irtm_ma,
+     .      irtm_cn,
+     .      irtm_pd,
+     .      iwprtp_bt,
+     .      iwprtp_ma,
+     .      iwprtp_ta,
+     .      iwprtp_tp,
+     .      iwprtp_ac,
+     .      iwprtp_pr1,
+     .      iwprtp_pr2,
+     .      iwprtp_dp1,
+     .      iwprtp_cl,
+     .      iwprtp_pd,
+     .      ithlm_bt,
+     .      ithlm_ta,
+     .      ithlm_ma,
+     .      ithlm_cn,
+     .      iwpthlp_bt,
+     .      iwpthlp_ma,
+     .      iwpthlp_ta,
+     .      iwpthlp_tp,
+     .      iwpthlp_ac,
+     .      iwpthlp_pr1,
+     .      iwpthlp_pr2,
+     .      iwpthlp_dp1,
+     .      iwpthlp_cl,
+     .      lstats_samp,
+     .      ztscr01,
+     .      ztscr02,
+     .      ztscr03,
+     .      ztscr04,
+     .      ztscr05,
+     .      zmscr01,
+     .      zmscr02,
+     .      zmscr03,
+     .      zmscr04,
+     .      zmscr05,
+     .      zmscr06,
+     .      zmscr07,
+     .      zmscr08,
+     .      zmscr09,
+     .      zmscr10,
+     .      zmscr11,
+     .      zmscr12,
+     .      zmscr13,
+     .      zmscr14
 #endif /*STATS*/
 
         implicit none
@@ -1452,7 +1594,8 @@
 !       References:
 !-----------------------------------------------------------------------
 
-        use grid_class ! gr%weights_zm2zt
+        use grid_class, only:
+     .      gr ! Variable
 
         implicit none
 
@@ -1754,8 +1897,12 @@
 !       References:
 !-----------------------------------------------------------------------
 
-        use constants, only: grav ! Gravitational acceleration [m/s^2]
-        use parameters, only: T0  ! Reference temperature      [K]
+        use constants, only:
+            ! Variable(s) 
+     .      grav ! Gravitational acceleration [m/s^2]
+        use parameters, only:
+            ! Variable(s) 
+     .      T0  ! Reference temperature      [K]
 
         implicit none
 

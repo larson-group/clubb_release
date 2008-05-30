@@ -1,4 +1,4 @@
-! $Id: gradsaverage.F,v 1.9 2008-05-16 17:39:45 faschinj Exp $
+! $Id: gradsaverage.F,v 1.10 2008-05-30 16:24:21 faschinj Exp $
         module grads_common
         
         implicit none
@@ -19,9 +19,12 @@
 !       None
 !----------------------------------------------------------------------
 
-        use grid_class
-        use constants, only: fstderr
-        use inputfile_class
+        use constants, only: fstderr ! Variable(s)
+
+        use inputfile_class, only: inputgrads ! Type(s)
+
+        use inputfile_class, only: open_grads_read, get_var, ! Procedures
+     .                       close_grads_read
 
         implicit none
 
@@ -122,7 +125,7 @@
 !       The variable t is assumed size, which needs to be used with
 !       caution.
 !-------------------------------------------------------------------------
-        use constants, only: fstderr
+        use constants, only: fstderr ! Variable(s)
 
         implicit none
 
@@ -214,9 +217,10 @@
 !       Somewhat inefficient, since it reads in the entire .ctl file to
 !       determine the number of levels
 !-------------------------------------------------------------------------
+:
+        use inputfile_class, only: inputgrads ! Type(s)
 
-        use grid_class
-        use inputfile_class
+        use inputfile_class, only: open_grads_read, close_grads_read ! Procedure(s)
 
         implicit none
 

@@ -1,10 +1,12 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_hoc.F90,v 1.29 2008-05-21 22:33:23 dschanen Exp $
+! $Id: bugsrad_hoc.F90,v 1.30 2008-05-30 16:24:22 faschinj Exp $
 module bugsrad_hoc_mod
+
+implicit none
 
 public :: bugsrad_hoc
 
-private
+private ! Default Scope
 
 contains
 
@@ -42,16 +44,21 @@ subroutine bugsrad_hoc &
 ! All code external to this based on the BUGSrad source from 2004/7/10
 !-----------------------------------------------------------------------
 
-  use constants
-  use std_atmosphere_mod, only: std_atmos_dim, std_alt, std_pinmb, &
+  use constants, only: fstderr, sol_const, grav, Cp ! Variable(s)
+  
+  use std_atmosphere_mod, only: std_atmos_dim, std_alt, std_pinmb, & ! Variable(s)
       std_tempk, std_sp_hmdty, std_o3l
-  use stats_prec, only: time_prec
-  use cos_solar_zen_mod, only: cos_solar_zen
-  use temp_in_K_mod, only: thlm2temp_in_K
-  use error_code, only: clubb_at_debug_level
+      
+  use stats_prec, only: time_prec ! Variable(s)
+
+  use cos_solar_zen_mod, only: cos_solar_zen ! Procedure(s)
+
+  use temp_in_K_mod, only: thlm2temp_in_K ! Procedure(s)
+
+  use error_code, only: clubb_at_debug_level ! Procedure(s)
 
 #ifdef STATS
-use stats_hoc, only: zt, zm, lstats_samp, &
+use stats_hoc, only: zt, zm, lstats_samp, & ! Variable(s)
     iFrad_SW, iFrad_LW, iradht_SW, iradht_LW
 #endif
 

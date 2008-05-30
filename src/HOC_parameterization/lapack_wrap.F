@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: lapack_wrap.F,v 1.7 2008-05-05 18:44:58 faschinj Exp $
+! $Id: lapack_wrap.F,v 1.8 2008-05-30 16:24:24 faschinj Exp $
         module lapack_wrap
 
 !       Description:
@@ -10,10 +10,12 @@
 !       LAPACK--Linear Algebra PACKage version 3.0
 !       URL: <http://netlib2.cs.utk.edu/lapack/>
 !-----------------------------------------------------------------------
-        use constants, only: fstderr
-        use error_code, only: clubb_singular_matrix,
-     l                        clubb_bad_lapack_arg,
-     .                        clubb_no_error   
+        use constants, only: 
+     .      fstderr ! Variable(s)
+        use error_code, only: 
+     .      clubb_singular_matrix, ! Variable(s)
+     .      clubb_bad_lapack_arg,
+     .      clubb_no_error   
         implicit none
 
         ! Simple routines

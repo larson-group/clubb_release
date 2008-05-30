@@ -1,4 +1,4 @@
-!$Id: lh_sampler.F,v 1.5 2008-05-16 20:12:33 faschinj Exp $
+!$Id: lh_sampler.F,v 1.6 2008-05-30 16:24:26 faschinj Exp $
       module lh_sampler_mod
 
       implicit none
@@ -8,6 +8,9 @@
       private :: sample_points, latin_hyper_sample, gaus_mixt_points,
      .           truncate_gaus_mixt, ltqnorm, gaus_condt,
      .           st_2_rtthl
+
+
+      private ! Default scope
 
       contains
 !------------------------------------------------------------------------
@@ -491,7 +494,9 @@
 !           ordering of Sigma_stw is s, t, w, ...
 !-----------------------------------------------------------------------
       subroutine rtpthlp_2_sptp( d, Sigma_rtthlw, crt, cthl, Sigma_stw )
-      use matrix_operations, only: matmult      
+
+      use matrix_operations, only: matmult ! Procedure(s)      
+
       implicit none
 
 ! Input
@@ -583,7 +588,9 @@
 
 
         subroutine latin_hyper_sample( n, nt, dp1, p_matrix, X)
-        use random, only: ran2
+
+        use random, only: ran2 ! Procedure(s)
+
         implicit none
 ! Input
   
@@ -843,7 +850,7 @@
 !-----------------------------------------------------------------------
         double precision function ltqnorm( p )
 
-        use constants, only: Pi_DP
+        use constants, only: Pi_DP ! Variable(s)
 
         implicit none
 
@@ -966,7 +973,9 @@
 !----------------------------------------------------------------------
       subroutine gaus_condt( n, d, std_normal, mu, Sigma, s_pt,
      .                       nonstd_normal )
-      use matrix_operations 
+
+      use matrix_operations, only: gaussj, matmult ! Procedure(s)
+
       implicit none
 
 ! Input

@@ -1,19 +1,23 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_0003.F,v 1.9 2008-05-15 03:04:11 dschanen Exp $
+! $Id: arm_0003.F,v 1.10 2008-05-30 16:24:22 faschinj Exp $
         module arm_0003
 
 !       Description:
 !       Contains subroutines for the March 2000 IOP ARM case.
 !----------------------------------------------------------------------
 
+        implicit none
+
         public :: arm_0003_tndcy, arm_0003_sfclyr, arm_0003_init
 
         private
+
         ! Constant Parameters
         integer, parameter :: ntimes = 167, nz = 38,
      .   per_line = 5
+
         ! File path for the forcing files
         character(*), parameter ::
      .   file_path = '../model/arm_0003_forcings/'
@@ -45,10 +49,13 @@
 !       None
 !----------------------------------------------------------------------
 
-        use grid_class
-        use constants, only: sclr_dim
-        use interpolation, only: zlinterp_fnc
-        use stats_prec, only: time_prec
+        use grid_class, only: gr ! Variable(s)
+
+        use constants, only: sclr_dim ! Variable(s)
+
+        use interpolation, only: zlinterp_fnc ! Procedure(s)
+
+        use stats_prec, only: time_prec ! Variable(s)
 
         implicit none
 
@@ -164,12 +171,16 @@
 !       heat and moisture according to GCSS ARM specifications
 !----------------------------------------------------------------------
 
-        use constants, only: Cp, Lv, grav, sclr_dim
-        use file_functions, only: file_read_1d
-        use stats_prec, only: time_prec
-        use diag_ustar_mod, only: diag_ustar
+        use constants, only: Cp, Lv, grav, sclr_dim ! Variable(s)
+
+        use file_functions, only: file_read_1d ! Procedure(s)
+
+        use stats_prec, only: time_prec ! Variable(s)
+
+        use diag_ustar_mod, only: diag_ustar ! Variable(s)
+
 #ifdef STATS
-        use stats_hoc, only: iustar, sfc, lstats_samp
+        use stats_hoc, only: iustar, sfc, lstats_samp ! Variable(s)
 #endif
         
         implicit none
@@ -268,6 +279,7 @@
 
         return
         end subroutine arm_0003_sfclyr
+
 !----------------------------------------------------------------------
         subroutine arm_0003_init()
 !
@@ -275,8 +287,10 @@
 !       This subroutine initializes the module by reading in forcing
 !       data used in the tndcy and sfclyr subroutines.
 !----------------------------------------------------------------------
-           use file_functions, only: file_read_1d, file_read_2d
+           use file_functions, only: file_read_1d, file_read_2d ! Procedure(s)
+
            implicit none
+
         ! Reading in the files located in
         ! ../model/arm_0003_forcings/ and storing them in arrays
         ! Joshua Fasching (October 2007)

@@ -1,16 +1,18 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: astex.F,v 1.5 2008-04-04 22:02:49 dschanen Exp $
+! $Id: astex.F,v 1.6 2008-05-30 16:24:22 faschinj Exp $
         module astex
 
 !       Description:
 !       Contains subroutines for the ASTEX KK case.
 !----------------------------------------------------------------------
 
+        implicit none
+
         public :: astex_tndcy, astex_sfclyr
 
-        private
+        private ! Defualt Scope
 
         contains
 
@@ -24,9 +26,13 @@
 !       References:
 !----------------------------------------------------------------------
 
-        use constants, only: sclr_dim
-        use grid_class
-        use stats_prec, only: time_prec
+        use constants, only: sclr_dim ! Variable(s)
+
+        use grid_class, only: gr ! Variable(s)
+
+        use grid_class, only: zt2zm ! Procedure(s)
+
+        use stats_prec, only: time_prec ! Variable(s)
 
         implicit none
 
@@ -94,7 +100,7 @@
 !       References:
 !----------------------------------------------------------------------
 
-        use constants
+        use constants, only: sclr_dim, Cp, Lv ! Variable(s)
 
         implicit none
 

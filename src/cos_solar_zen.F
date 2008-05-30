@@ -1,4 +1,4 @@
-! $Id: cos_solar_zen.F,v 1.5 2008-05-16 17:38:02 faschinj Exp $
+! $Id: cos_solar_zen.F,v 1.6 2008-05-30 16:24:21 faschinj Exp $
 !-----------------------------------------------------------------------
         module cos_solar_zen_mod
 
@@ -23,9 +23,12 @@
 !       Liou ``An Introduction to Atmospheric Radiation'' 
 !         Table 2.2 and Eqn. 2.2.10
 !-----------------------------------------------------------------------
-        use constants, only: pi_dp, fstderr, sec_per_day, sec_per_hr
-        use stats_prec, only: time_prec
-        use calendar, only: gregorian2julian, julian2gregorian,leap_year
+
+        use constants, only: pi_dp, fstderr, sec_per_day, sec_per_hr ! Variable(s)
+
+        use stats_prec, only: time_prec ! Variable(s)
+
+        use calendar, only: gregorian2julian, julian2gregorian,leap_year ! Procedure(s)
         
         implicit none
 

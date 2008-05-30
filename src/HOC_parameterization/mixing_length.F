@@ -1,10 +1,10 @@
-! $Id: mixing_length.F,v 1.11 2008-05-05 18:50:08 faschinj Exp $
+! $Id: mixing_length.F,v 1.12 2008-05-30 16:24:24 faschinj Exp $
 !-----------------------------------------------------------------------------
         module mixing_length
         
         implicit none 
         
-        private
+        private ! Default Scope
         
         public :: compute_length
         
@@ -29,28 +29,44 @@
 !       When mu was fixed, we used the value mu = 6.e-4
 
         use constants, only: 
-     .  Cp,   ! Dry air specific heat at constant p              [J/kg/K]
-     .  Rd,   ! Dry air gas constant                             [J/kg/K]
-     .  ep,   ! Rd / Rv                                          [-]
-     .  ep1,  ! (1-ep)/ep                                        [-]
-     .  ep2,  ! 1/ep                                             [-]
-     .  Lv,   ! Latent heat of vaporiztion                       [J/kg/K]
-     .  grav, ! Gravitational acceleration                       [m/s^2]
-     .  Lscale_max, ! Maximum value for Lscale                   [m]
-     .  fstderr
-        use parameters, only:
-     .  mu,  ! Fractional entrainment rate per unit altitude    [1/m]
-     .  T0,  ! Reference temperature                            [K]
-     .  lmin ! Minimum value for Lscale                         [m]
+            ! Variable(s)
+     .      Cp,   ! Dry air specific heat at constant p              [J/kg/K]
+     .      Rd,   ! Dry air gas constant                             [J/kg/K]
+     .      ep,   ! Rd / Rv                                          [-]
+     .      ep1,  ! (1-ep)/ep                                        [-]
+     .      ep2,  ! 1/ep                                             [-]
+     .      Lv,   ! Latent heat of vaporiztion                       [J/kg/K]
+     .      grav, ! Gravitational acceleration                       [m/s^2]
+     .      Lscale_max, ! Maximum value for Lscale                   [m]
+     .      fstderr
 
-        use grid_class
-        use numerical_check, only: length_check
-        use saturation, only: rsat
-        use diagnostic_variables, only: Lup, Ldown
-        use error_code, only: clubb_var_equals_NaN,
-     .                        clubb_at_debug_level
+        use parameters, only:
+        ! Variable(s)
+     .      mu,  ! Fractional entrainment rate per unit altitude    [1/m]
+     .      T0,  ! Reference temperature                            [K]
+     .      lmin ! Minimum value for Lscale                         [m]
+
+        use grid_class, only:
+     .      gr, ! Variable(s)
+     .      zm2zt ! Procedure(s)
+
+        use numerical_check, only: 
+     .      length_check ! Procedure(s)
+
+        use saturation, only: 
+     .      rsat ! Procedure(s)
+
+        use diagnostic_variables, only: 
+     .      Lup, ! Variable(s)
+     .      Ldown
+
+        use error_code, only: 
+     .      clubb_var_equals_NaN, ! Variable(s)
+     .      clubb_at_debug_level ! Procedure(s)
+
         implicit none
         
+        ! External
         intrinsic :: max, sqrt
 
         ! Constant Parameters

@@ -1,13 +1,17 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf01.F,v 1.13 2008-05-09 22:39:04 faschinj Exp $
+! $Id: dycoms2_rf01.F,v 1.14 2008-05-30 16:24:23 faschinj Exp $
         module dycoms2_rf01
 
 !       Description:
 !       Contains subroutines for the DYCOMS II RF01 case.
 !----------------------------------------------------------------------
+        implicit none
+
         public :: dycoms2_rf01_tndcy, dycoms2_rf01_sfclyr
+
+        private ! Default Scope
 
         contains
 
@@ -23,17 +27,25 @@
 !       References:
 !----------------------------------------------------------------------
 
-        use grid_class
-        use constants
-        use model_flags, only: lbugsrad
-        use stats_prec, only: time_prec
-        use error_code, only: clubb_rtm_level_not_found
+        use grid_class, only: gr ! Variable(s)
+
+        use grid_class, only: zt2zm, ddzm ! Procedure(s)
+
+        use constants, only: sclr_dim, fstderr, cp ! Variable(s)
+
+        use model_flags, only: lbugsrad ! Variable(s)
+
+        use stats_prec, only: time_prec ! Variable(s)
+
+        use error_code, only: clubb_rtm_level_not_found ! Variable(s)
+
 #ifdef STATS
-        use stats_hoc
+        use stats_hoc, only: izi, iradht_LW, zt, sfc, lstats_samp ! Variable(s)
 #endif /*STATS*/
 
         implicit none
 
+	! External
         intrinsic :: exp, sqrt, present
 
         ! Constant Parameters
@@ -188,15 +200,17 @@
 !       References:
 !----------------------------------------------------------------------
 
-        use constants
-        use saturation, only: rsat
+        use constants, only: sclr_dim, Cp, fstderr, Lv ! Variable(s)
+
+        use saturation, only: rsat ! Variable(s)
 
 #ifdef STATS
-        use stats_hoc
+        use stats_hoc, only: sfc, iustar, lstats_samp ! Variable(s)
 #endif /*STATS*/
 
         implicit none
 
+        ! External
         intrinsic :: max, sqrt, present
 
         ! Constant parameters

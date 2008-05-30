@@ -1,11 +1,11 @@
 !------------------------------------------------------------------------
-! $Id: hydrostatic.F,v 1.5 2008-05-27 15:41:05 griffinb Exp $
+! $Id: hydrostatic.F,v 1.6 2008-05-30 16:24:24 faschinj Exp $
 
         module hydrostatic_mod
 
         implicit none
 
-        private
+        private ! Default Scope
 
         public :: hydrostatic
 
@@ -20,8 +20,17 @@
 !
 !------------------------------------------------------------------------
 
-        use constants
-        use grid_class
+        use constants, only:
+     .      kappa, ! Variable(s)
+     .      p0,
+     .      Cp,
+     .      grav,
+     .      Rd
+        use grid_class, only:
+     .      gr, ! Variable(s)
+     .      zm2zt, ! Procedure(s)
+     .      zt2zm
+
 
         implicit none
 

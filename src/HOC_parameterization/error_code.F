@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error_code.F,v 1.6 2008-05-16 17:38:46 faschinj Exp $
+! $Id: error_code.F,v 1.7 2008-05-30 16:24:24 faschinj Exp $
 !-----------------------------------------------------------------------
 
         module error_code
@@ -20,7 +20,7 @@
 
         implicit none
 
-        private
+        private ! Defualt Scope
 
         public ::
      .  clubb_no_error, 
@@ -61,7 +61,8 @@
 !
 !-----------------------------------------------        
 
-        use constants
+        use constants, only:
+     .      fstderr ! Variable(s)
 
         implicit none
         
@@ -176,7 +177,8 @@
 !       Prints a message to file unit fstderr if the level is greater
 !       than or equal to the current debug level.        
 !----------------------------------------------------------------------
-        use constants, only:fstderr
+        use constants, only:
+     .      fstderr ! Variable(s)
 
         implicit none
 

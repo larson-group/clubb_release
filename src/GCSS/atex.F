@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 1
 !----------------------------------------------------------------------
-!$Id: atex.F,v 1.11 2008-05-09 22:39:04 faschinj Exp $
+!$Id: atex.F,v 1.12 2008-05-30 16:24:22 faschinj Exp $
         module atex
 
 !       Description:
@@ -22,15 +22,23 @@
 !       References:
 
 !----------------------------------------------------------------------
-        use constants, only: sclr_dim, fstderr
-        use model_flags, only: lbugsrad
-        use grid_class
-        use atex_cloud_rad
-        use stats_prec, only: time_prec
-        use error_code, only: clubb_rtm_level_not_found
+
+        use constants, only: sclr_dim, fstderr ! Variable(s)
+
+        use model_flags, only: lbugsrad ! Variable(s)
+
+        use grid_class, only: gr ! Variable(s)
+
+        use grid_class, only: zt2zm ! Procedure(s)
+
+        use atex_cloud_rad, only: cloud_rad ! Procedure(s)
+
+        use stats_prec, only: time_prec ! Variable(s)
+
+        use error_code, only: clubb_rtm_level_not_found ! Variable(s)
 
 #ifdef STATS
-        use stats_hoc
+        use stats_hoc, only: iradht_LW, zt, lstats_samp ! Variable(s)
 #endif
 
         implicit none
@@ -183,7 +191,7 @@
 
 !----------------------------------------------------------------------
 
-        use constants
+        use constants, only: sclr_dim, kappa ! Variable(s)
 
         implicit none
 

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameters.F,v 1.15 2008-05-05 18:51:57 faschinj Exp $
+! $Id: parameters.F,v 1.16 2008-05-30 16:24:25 faschinj Exp $
         module parameters 
 
 !       Description:
@@ -148,9 +148,11 @@
 !       None
 !-----------------------------------------------------------------------
 
-        use constants, only: fstderr
-        use error_code, only: clubb_var_out_of_bounds,
-     .                        clubb_no_error
+        use constants, only: 
+     .      fstderr ! Variable(s)
+        use error_code, only: 
+     .      clubb_var_out_of_bounds, ! Variable(s)
+     .      clubb_no_error
 
         implicit none
 
@@ -236,8 +238,6 @@
 !      References:
 !      None
 !-----------------------------------------------------------------------
-
-       use param_index
 
        implicit none
 
@@ -339,8 +339,6 @@
 !      None
 !-----------------------------------------------------------------------
 
-       use param_index
-
        implicit none
 
        ! Input variables
@@ -430,7 +428,58 @@
 !       None
 !-----------------------------------------------------------------------
 
-        use param_index
+        use param_index, only:
+     .      iC1, ! Variable(s)
+     .      iC1b,
+     .      iC1c,
+     .      iC2,
+     .      iC2b,
+     .      iC2c,
+     .      iC2rt,
+     .      iC2thl,
+     .      iC2rtthl,
+     .      iC4,
+     .      iC5,
+     .      iC6rt,
+     .      iC6rtb,
+     .      iC6rtc,
+     .      iC6thl,
+     .      iC6thlb,
+     .      iC6thlc,
+     .      iC7,
+     .      iC7b,
+     .      iC7c,
+     .      iC8,
+     .      iC8b,
+     .      iC10,
+     .      iC11,
+     .      iC11b,
+     .      iC11c,
+     .      iC12,
+     .      iC13,
+     .      iC14,
+     .      ic_K, 
+     .      ic_K1,
+     .      inu1,
+     .      ic_K2,
+     .      inu2,
+     .      ic_K6,
+     .      inu6,
+     .      ic_K8,
+     .      inu8,
+     .      inu9,
+     .      ic_Krrm,
+     .      inu_r,
+     .      ic_Ksqd,
+     .      igamma_coef,
+     .      igamma_coefb,
+     .      igamma_coefc,
+     .      imu,
+     .      ibeta,
+     .      ilmin_coef,
+     .      itaumin,
+     .      itaumax,
+     .      nparams
 
         implicit none
 
@@ -528,8 +577,59 @@
 !       None
 !-----------------------------------------------------------------------
 
-        use param_index
 
+        use param_index, only:
+     .      iC1, ! Variable(s)
+     .      iC1b,
+     .      iC1c,
+     .      iC2,
+     .      iC2b,
+     .      iC2c,
+     .      iC2rt,
+     .      iC2thl,
+     .      iC2rtthl,
+     .      iC4,
+     .      iC5,
+     .      iC6rt,
+     .      iC6rtb,
+     .      iC6rtc,
+     .      iC6thl,
+     .      iC6thlb,
+     .      iC6thlc,
+     .      iC7,
+     .      iC7b,
+     .      iC7c,
+     .      iC8,
+     .      iC8b,
+     .      iC10,
+     .      iC11,
+     .      iC11b,
+     .      iC11c,
+     .      iC12,
+     .      iC13,
+     .      iC14,
+     .      ic_K, 
+     .      ic_K1,
+     .      inu1,
+     .      ic_K2,
+     .      inu2,
+     .      ic_K6,
+     .      inu6,
+     .      ic_K8,
+     .      inu8,
+     .      inu9,
+     .      ic_Krrm,
+     .      inu_r,
+     .      ic_Ksqd,
+     .      igamma_coef,
+     .      igamma_coefb,
+     .      igamma_coefc,
+     .      imu,
+     .      ibeta,
+     .      ilmin_coef,
+     .      itaumin,
+     .      itaumax,
+     .      nparams
         implicit none
 
 

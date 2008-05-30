@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: hoc_standalone.F,v 1.22 2008-05-14 23:14:59 dschanen Exp $
+! $Id: hoc_standalone.F,v 1.23 2008-05-30 16:24:22 faschinj Exp $
 
         program hoc_standalone
 
@@ -8,12 +8,17 @@
 !
 !----------------------------------------------------------------------
 
-        use hoc, only: hoc_model
+        use hoc, only: hoc_model ! Procedure(s)
         
-        use error_code,  only: clubb_no_error,
-     .                         fatal_error
-        use param_index, only: nparams
-        use parameters, only: read_parameters, params_list
+        use error_code, only: clubb_no_error ! Variable(s)
+
+        use error_code, only: fatal_error ! Procedure(s)
+
+        use param_index, only: nparams ! Variable(s)
+
+        use parameters, only: read_parameters ! Procedure(s)
+
+        use parameters, only: params_list ! Variable(s)
 
         implicit none
 

@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: KK_microphys.F,v 1.6 2008-05-28 16:29:26 dschanen Exp $
+! $Id: KK_microphys.F,v 1.7 2008-05-30 16:24:24 faschinj Exp $
 
       MODULE rain_equations
 
@@ -112,13 +112,33 @@
 !       Monthly Weather Review, Volume 128, Issue 1 pp. 229–-243
 !----------------------------------------------------------------------
 
-        use model_flags
-        use grid_class
-        use constants
-        use saturation, only: rsat
+        use model_flags, only:
+     .      LH_on ! Variable(s)
+        use grid_class, only:
+     .      gr, ! Variable(s)
+     .      zt2zm ! Procedure(s)
+        use constants, only:
+     .      rc_tol, ! Variable(s)
+     .      ep,
+     .      Cp,
+     .      Lv,
+     .      kappa,
+     .      p0,
+     .      Rd,
+     .      Rv
+        use saturation, only: 
+     .      rsat ! Procedure(s)
         
 #ifdef STATS
-        use stats_hoc
+        use stats_hoc, only:
+     .      zt,  ! Variable(s)
+     .      imean_vol_rad_rain,
+     .      irrm_cond,
+     .      irrm_auto,
+     .      irrm_accr,
+     .      iNrm_cond,
+     .      iNrm_auto,
+     .      lstats_samp
 #endif
 
         implicit none
@@ -636,8 +656,13 @@
         FUNCTION mean_volume_radius( rrm, Nrm, rhot, rrp2_rrm2, 
      .                               Nrp2_Nrm2, corr_rrNr_LL )
 
-        USE constants
-        USE model_flags
+        USE constants, only:
+     .      Nr_tol, ! Variable(s)
+     .      rr_tol,
+     .      rho_lw,
+     .      pi
+        USE model_flags, only:
+     .      local_kk ! Variable(s)
 
         ! Input variables.
         REAL, INTENT(IN):: rrm          ! Grid-box average rrm     [kg kg^-1]
@@ -795,9 +820,22 @@
      .                          rrp2_rrm2, Nrp2_Nrm2, corr_srr_NL,
      .                          corr_sNr_NL, corr_rrNr_LL  )
 
-        USE constants
-        USE model_flags
-        USE saturation, only: rsat
+        USE constants, only:
+     .      Nr_tol, ! Variable(s)
+     .      rr_tol,
+     .      rho_lw,
+     .      kappa,
+     .      p0,
+     .      pi,
+     .      Cp,
+     .      Lv,
+     .      Rd,
+     .      Rv
+        USE model_flags, only:
+     .      local_kk ! Variable(s)
+
+        USE saturation, only: 
+     .      rsat ! Variable(s)
 
         ! Input variables.
         REAL, INTENT(IN):: rrm          ! Grid-box average rrm     [kg kg^-1]
@@ -1068,8 +1106,12 @@
      .                         s2, ss2, a, rhot,
      ,                         Ncp2_Ncm2, corr_sNc_NL )
 
-        USE constants
-        USE model_flags
+        USE constants, only:
+     .      Nc_tol, ! Variable(s)
+     .      rc_tol
+        USE model_flags, only:
+     .      local_kk ! Variable(s)
+
 
         ! Input variables.
         REAL, INTENT(IN):: rcm         ! Grid-box average rcm     [kg kg^-1]
@@ -1174,7 +1216,9 @@
 
         FUNCTION autoconv_Nrm( auto_rrm )
 
-        USE constants
+        USE constants, only:
+     .      rho_lw, ! Variable(s)
+     .      pi
 
         IMPLICIT NONE
 
@@ -1237,8 +1281,12 @@
      .                          s2, ss2, a, 
      .                          rrp2_rrm2, corr_srr_NL )
 
-        USE constants
-        USE model_flags
+        USE constants, only:
+     .      rr_tol, ! Variable(s)
+     .      rc_tol
+
+        USE model_flags, only:
+     .      local_kk ! Variable(s)
 
         ! Input variables.
         REAL, INTENT(IN):: rcm         ! Grid-box average rcm     [kg kg^-1]
@@ -1340,8 +1388,13 @@
 
         FUNCTION G_T_p( T_in_K, press )
 
-        USE constants
-        USE saturation
+        USE constants, only:
+     .      ep, ! Variable(s)
+     .      rho_lw,
+     .      Lv,
+     .      Rv
+        USE saturation, only:
+     .      rsat ! Procedure(s)
 
         
         IMPLICIT NONE
@@ -1620,8 +1673,10 @@
      .                                 corr_sirr, corr_siNr, corr_rrNr,
      .                                 alpha_exp, beta_exp, gamma_exp )
 
-        USE constants
-        USE parabolic, ONLY: gamma
+        USE constants, only:
+     .      pi ! Variable(s)
+        USE parabolic, ONLY: 
+     .      gamma ! Variable(s)
 
         IMPLICIT NONE
 
@@ -2001,8 +2056,10 @@
         FUNCTION PDF_BIVAR_2G_LN ( mu_si, mu_xx, sigma_si, sigma_xx,
      .                             corr_sixx, alpha_exp, beta_exp )
 
-        USE constants
-        USE parabolic, ONLY: gamma
+        USE constants, only:
+     .      pi ! Variable(s)
+        USE parabolic, ONLY: 
+     .      gamma ! Variable(s)
 
         IMPLICIT NONE
 
@@ -2250,7 +2307,8 @@
         FUNCTION PDF_BIVAR_LN_LN ( mu_rr, mu_Nr, sigma_rr, sigma_Nr,
      .                             corr_rrNr, alpha_exp, beta_exp   )
 
-        USE constants
+        USE constants, only: 
+     .      pi ! Variable(s)
 
         IMPLICIT NONE
 
@@ -3216,8 +3274,11 @@
 !       ACM Transactions on Mathematical Software,
 !       Vol. 32, No. 1, March 2006 pp. 102--112
 !===============================================================================
-        use parabolic, only: gamma, parab
-        use constants, only: pi_dp
+        use parabolic, only: 
+     .      gamma, ! Variable(s) 
+     .      parab
+        use constants, only: 
+     .      pi_dp ! Variable(s)
 
         implicit none
 

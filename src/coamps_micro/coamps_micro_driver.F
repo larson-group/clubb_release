@@ -4,6 +4,8 @@
       ! This module wraps the adjtq subroutine so that it may be used by
       ! CLUBB
 
+      implicit none
+
       public :: coamps_micro_driver
 
       private
@@ -34,7 +36,7 @@
 !      Rutledge and Hobbs, 1984; COAMPS Users Guide.
 !----------------------------------------------------------------------
                               
-      use constants
+      use constants, only: Cp, Lv, pi, Lf, Ls, Rv, Rd, p0
       use grid_class, only: zt2zm
       use saturation, only: rsat, rsati
       use stats_prec, only: time_prec

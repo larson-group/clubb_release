@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: fire.F,v 1.9 2008-04-04 22:02:49 dschanen Exp $
+! $Id: fire.F,v 1.10 2008-05-30 16:24:23 faschinj Exp $
         module fire
 
 !       Description:
@@ -25,11 +25,18 @@
 !       None
 !----------------------------------------------------------------------
 
-        use constants, only: sclr_dim
-        use model_flags, only: lbugsrad
-        use grid_class
-        use atex_cloud_rad
-        use stats_prec, only: time_prec
+        use constants, only: sclr_dim ! Variable(s)
+
+        use model_flags, only: lbugsrad  ! Variable(s)
+
+        use grid_class, only: gr ! Variable(s)
+
+        use grid_class, only: zt2zm ! Procedure(s)
+
+        use atex_cloud_rad, only: cloud_rad ! Procedure(s)
+
+        use stats_prec, only: time_prec ! Variable(s)
+
 #ifdef STATS
         use stats_hoc
 #endif
@@ -170,8 +177,9 @@
 !       None
 !------------------------------------------------------------------------
 
-        use constants
-        use saturation, only: rsat
+        use constants, only: sclr_dim, kappa, p0 ! Variable(s)
+
+        use saturation, only: rsat ! Procedure(s)
 
         implicit none
         

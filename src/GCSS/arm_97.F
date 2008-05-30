@@ -1,16 +1,19 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_97.F,v 1.17 2008-05-15 03:04:11 dschanen Exp $
+! $Id: arm_97.F,v 1.18 2008-05-30 16:24:22 faschinj Exp $
         module arm_97
 
 !       Description:
 !       Contains subroutines for the July 26-30 1997 ARM IOP A case.
 !----------------------------------------------------------------------
 
+        implicit none
+
         public :: arm_97_tndcy, arm_97_sfclyr, arm_97_init
 
-        private
+        private ! Defualt Scope
+
         ! Constant Parameters
         integer, parameter :: ntimes = 169, nz = 18,
      .   per_line = 5
@@ -45,10 +48,13 @@
 !       None
 !----------------------------------------------------------------------
 
-        use grid_class
-        use constants, only: sclr_dim
-        use interpolation, only: zlinterp_fnc
-        use stats_prec, only: time_prec
+        use grid_class, only: gr ! Variable(s)
+
+        use constants, only: sclr_dim ! Variable(s)
+
+        use interpolation, only: zlinterp_fnc ! Procedure(s)
+
+        use stats_prec, only: time_prec ! Variable(s)
 
         implicit none
 
@@ -171,11 +177,14 @@
 !       heat and moisture according to GCSS ARM specifications
 !----------------------------------------------------------------------
 
-        use constants, only: Cp, Lv, grav, sclr_dim
-        use stats_prec, only: time_prec
-        use diag_ustar_mod, only: diag_ustar
+        use constants, only: Cp, Lv, grav, sclr_dim ! Variable(s)
+
+        use stats_prec, only: time_prec ! Variable(s)
+
+        use diag_ustar_mod, only: diag_ustar ! Variable(s)
+
 #ifdef STATS
-        use stats_hoc, only: iustar, sfc, lstats_samp
+        use stats_hoc, only: iustar, sfc, lstats_samp ! Variable(s)
 #endif
         
         implicit none
@@ -285,7 +294,8 @@
 !       data used in the tndcy and sfclyr subroutines.
 !----------------------------------------------------------------------
 
-           use file_functions, only: file_read_1d, file_read_2d
+           use file_functions, only: file_read_1d, file_read_2d ! Procedure(s)
+
            implicit none
 
 

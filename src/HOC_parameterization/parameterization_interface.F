@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.92 2008-05-27 15:41:05 griffinb Exp $
+! $Id: parameterization_interface.F,v 1.93 2008-05-30 16:24:25 faschinj Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -28,7 +28,7 @@
 
         private :: latin_hypercube_sampling
 
-        private
+        private ! Default Scope
 
         contains
 
@@ -59,29 +59,124 @@
 !-----------------------------------------------------------------------
 
        ! Modules to be included
-       use constants
-       use parameters
-       use model_flags
-       use grid_class
-       use numerical_check
-       use diagnostic_variables
-       use mixing, only: timestep_mixing          ! Compute mean/flux terms
-       use diagnose_variances, only: diag_var     ! Computes variance terms
-       use surface_var, only: sfc_var
-       use pdf_closure, only: pdf_closure_new     ! Prob. density function
-       use mixing_length
-       use compute_um_edsclrm_mod, only: compute_um_edsclrm
-       use saturation, only: rsat ! Saturation mixing ratio
-       use wp23, only: timestep_wp23
-       use stats_prec, only: time_prec
-       use error_code, only : clubb_var_equals_NaN,
-     .                        lapack_error,
-     .                        clubb_at_debug_level
-       use Skw, only: Skw_func
-       use permute_height_time_mod, only: permute_height_time
+       use constants, only:
+     .     wtol, ! Variable(s)
+     .     emin,
+     .     thltol,
+     .     rttol,
+     .     ep2,
+     .     Cp,
+     .     Lv,
+     .     ep1,
+     .     eps
+       use parameters, only:
+     .     gamma_coefc, ! Variable(s)
+     .     gamma_coefb,
+     .     gamma_coef,
+     .     T0,
+     .     taumax,
+     .     c_K,
+     .     ts_nudge
+       use model_flags, only:
+     .     LH_on, ! Variable(s)
+     .     lKhm_aniso,
+     .     luv_nudge
+       use grid_class, only:
+     .     gr, ! Variable(s)
+     .     zm2zt, ! Procedure
+     .     zt2zm,
+     .     ddzm
+       use numerical_check, only:
+     .     parameterization_check ! Procedure
+       use diagnostic_variables, only:
+     .     Skwt, ! Varible(s)
+     .     Skwm,
+     .     Sct,
+     .     wp4,
+     .     wpthvp,
+     .     thlpthvp,
+     .     rtpthvp,
+     .     wprcp,
+     .     rtprcp,
+     .     thlprcp,
+     .     pdf_parms,
+     .     rcp2,
+     .     rsm,
+     .     shear,
+     .     ustar,
+     .     Kht,
+     .     wprtp2,
+     .     wp2rtp,
+     .     wpthlp2,
+     .     wp2thlp,
+     .     wprtpthlp,
+     .     wp2thvp,
+     .     wp2rcp,
+     .     thvm,
+     .     em,
+     .     Lscale,
+     .     taut,
+     .     Khm,
+     .     umt,
+     .     vmt,
+     .     vg,
+     .     ug,
+     .     um_ref,
+     .     vm_ref,
+     .     wp2zt,
+     .     thlp2zt,
+     .     wpthlpzt,
+     .     wprtpzt,
+     .     rtp2zt,
+     .     rtpthlpzt
+       use mixing, only:
+           ! Variable(s) 
+     .     timestep_mixing          ! Compute mean/flux terms
+       use diagnose_variances, only:
+           ! Variable(s) 
+     .     diag_var     ! Computes variance terms
+       use surface_var, only: 
+     .     sfc_var ! Procedure
+       use pdf_closure, only: 
+           ! Procedure 
+     .     pdf_closure_new     ! Prob. density function
+       use mixing_length, only:
+     .     compute_length ! Procedure
+       use compute_um_edsclrm_mod, only: 
+     .     compute_um_edsclrm ! Procedure
+       use saturation, only: 
+           ! Procedure
+     .     rsat ! Saturation mixing ratio
+       use wp23, only: 
+     .     timestep_wp23 ! Procedure
+       use stats_prec, only: 
+     .     time_prec ! Variable(s)
+       use error_code, only : 
+     .     clubb_var_equals_NaN,! Variable(s)
+     .     lapack_error, ! Procedure(s)
+     .     clubb_at_debug_level
+       use Skw, only: 
+     .     Skw_func ! Procedure
+       use permute_height_time_mod, only: 
+     .     permute_height_time ! Procedure
 #ifdef STATS
-       use stats_hoc
-       use stats_subs
+       use stats_hoc, only:
+     .     zt, ! Variable(s)
+     .     zm,
+     .     sfc,
+     .     lstats_samp,
+     .     ium_ma,
+     .     ium_gf,
+     .     ium_cf,
+     .     ivm_ma,
+     .     ivm_gf,
+     .     ivm_cf,
+     .     ish,
+     .     ilh,
+     .     iustar,
+     .     iup2_plus_vp2
+       use stats_subs, only:
+     .     stats_accumulate ! Procedure
 #endif /*STATS*/
 
        implicit none
@@ -791,11 +886,20 @@
 !       References:
 !-----------------------------------------------------------------------
 
-        use diagnostic_variables, only: pdf_parms, AKm_est, 
-     .  AKm, AKstd, AKstd_cld, AKm_rcm, AKm_rcc, rcm_est
+        use diagnostic_variables, only: 
+     .      pdf_parms, ! Variable(s) 
+     .      AKm_est, 
+     .      AKm,
+     .      AKstd,
+     .      AKstd_cld,
+     .      AKm_rcm,
+     .      AKm_rcc,
+     .      rcm_est
 
-        use lh_sampler_mod
-        use micro_calcs_mod
+        use lh_sampler_mod, only:
+     .      lh_sampler ! Procedure
+        use micro_calcs_mod, only:
+     .      micro_calcs ! Procedure
         
         implicit none  
 
@@ -858,13 +962,21 @@
      .               momentum_heights, thermodynamic_heights, 
      .               host_dx, host_dy, err_code )
 
-        use grid_class
-        use param_index, only: nparams
-        use parameters
-        use diagnostic_variables
-        use prognostic_variables
-        use constants, only: fstderr, Lscale_max
-        use error_code, only: clubb_var_out_of_bounds
+        use grid_class, only:
+     .      gridsetup ! Procedure
+        use param_index, only: 
+     .      nparams ! Variable(s)
+        use parameters, only:
+     .      setup_parameters ! Procedure
+        use diagnostic_variables, only:
+     .      setup_diagnostic_variables ! Procedure
+        use prognostic_variables, only:
+     .      setup_prognostic_variables ! Procedure
+        use constants, only: 
+     .      fstderr, ! Variable(s)
+     .      Lscale_max
+        use error_code, only: 
+     .      clubb_var_out_of_bounds ! Variable(s)
         implicit none
 
         ! External
@@ -996,11 +1108,11 @@
 
 !-----------------------------------------------------------------------
         subroutine parameterization_cleanup( implemented )
-        use diagnostic_variables
-        use prognostic_variables
-#ifdef STATS
-        use stats_hoc
-#endif
+
+        use diagnostic_variables, only:
+     .      cleanup_diagnostic_variables ! Procedure
+        use prognostic_variables, only:
+     .      cleanup_prognostic_variables ! Procedure
 
         implicit none
 

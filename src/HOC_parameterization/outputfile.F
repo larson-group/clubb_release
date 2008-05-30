@@ -1,18 +1,20 @@
 !-----------------------------------------------------------------------
-! $Id: outputfile.F,v 1.7 2008-05-09 16:28:06 faschinj Exp $
+! $Id: outputfile.F,v 1.8 2008-05-30 16:24:25 faschinj Exp $
 #ifdef STATS
       module outputfile_class
 
 !     Description:
 !     Contains two derived types for either NetCDF or GrADS files.
 !-----------------------------------------------------------------------
-         use stats_prec
+         use stats_prec, only:
+     .       stat_rknd, ! Variable
+     .       time_prec
        
          implicit none
 
          public :: variable, outputfile
 
-	 private
+	 private ! Defualt scope
          
         ! Structure to hold the description of a variable
 

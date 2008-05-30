@@ -1,4 +1,4 @@
-! $Id: std_atmosphere_mod.F,v 1.2 2008-05-01 17:05:15 dschanen Exp $
+! $Id: std_atmosphere_mod.F,v 1.3 2008-05-30 16:24:22 faschinj Exp $
         module std_atmosphere_mod
         
         implicit none
@@ -106,8 +106,12 @@
 !       McClatchey, et al., (1972) _Environmental Research Papers_, 
 !       No. 411, p.94
 !-----------------------------------------------------------------------
-        use constants, only: p0, kappa
-        use interpolation, only: linint, binary_search
+        use constants, only: 
+     .      p0, ! Variable(s) 
+     .      kappa
+        use interpolation, only: 
+     .      linint, ! Procedure(s) 
+     .      binary_search
         
         implicit none
         

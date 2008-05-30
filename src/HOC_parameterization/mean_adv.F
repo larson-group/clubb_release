@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mean_adv.F,v 1.5 2008-05-09 16:23:19 faschinj Exp $
+! $Id: mean_adv.F,v 1.6 2008-05-30 16:24:24 faschinj Exp $
 !===============================================================================
         module mean_adv
 
@@ -85,7 +85,8 @@
 !       References:
 !-----------------------------------------------------------------------
 
-        use grid_class ! gr%weights_zt2zm, gr%nnzp
+        use grid_class, only:
+     .      gr ! Variable(s)
 
         implicit none
 
@@ -237,7 +238,8 @@
 !       References:
 !-----------------------------------------------------------------------
 
-        use grid_class ! gr%weights_zm2zt, gr%nnzp
+        use grid_class, only:
+     .      gr 
 
         implicit none
 

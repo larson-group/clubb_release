@@ -1,6 +1,12 @@
-! $Id: cloud_rad.F,v 1.2 2006-12-20 03:16:08 dschanen Exp $
+! $Id: cloud_rad.F,v 1.3 2008-05-30 16:24:23 faschinj Exp $
 !----------------------------------------------------------------------
         module atex_cloud_rad
+
+        implicit none
+
+        public :: cloud_rad
+
+        private ! Default Scope
 
         contains
 !----------------------------------------------------------------------
@@ -16,9 +22,11 @@
 !       Based on GCSS ATEX intercomparison case
 !----------------------------------------------------------------------
 
-        use grid_class
-        use model_flags
-        use constants
+        use grid_class, only: gr ! Variable(s)
+
+        use grid_class, only: ddzm ! Procedure(s)
+
+        use constants, only: Cp ! Variable(s)
 
         implicit none
 

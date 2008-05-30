@@ -1,4 +1,4 @@
-! $Id: sfc.F,v 1.20 2008-05-05 18:51:57 faschinj Exp $
+! $Id: sfc.F,v 1.21 2008-05-30 16:24:25 faschinj Exp $
 #define SCLR_RT 2
 #define SCLR_THETA 1
 
@@ -8,7 +8,7 @@
 
         private ! Default to private
 
-        public ::
+        public :: 
      .  sfc_var
 
         contains
@@ -28,11 +28,17 @@
 !       None
 !------------------------------------------------------------------------S
 
-        use parameters, only: T0
-        use constants
-        use numerical_check, only:sfc_var_check
-        use error_code, only: clubb_var_equals_NaN,
-     .                        clubb_at_debug_level        
+        use parameters, only: 
+     .      T0 ! Variable(s)
+        use constants, only:
+     .      sclr_dim, ! Variable(s)
+     .      grav,
+     .      fstderr
+        use numerical_check, only:
+     .      sfc_var_check ! Procedure
+        use error_code, only: 
+     .      clubb_var_equals_NaN, ! Variable(s)
+     .      clubb_at_debug_level        
         implicit none
 
         ! External
@@ -302,7 +308,6 @@
         
 !       Error reporting
 !       Joshua Fasching February 2008
-        
                 if ( err_code == clubb_var_equals_NaN ) then
                         
                     write(fstderr,*) "Error in sfc_var"

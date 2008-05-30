@@ -1,4 +1,4 @@
-! $Id: temp_in_K_mod.F,v 1.2 2008-05-27 18:05:00 vlarson Exp $ 
+! $Id: temp_in_K_mod.F,v 1.3 2008-05-30 16:24:25 faschinj Exp $ 
 
          module temp_in_K_mod
          
@@ -21,7 +21,8 @@
 !        References:  Cotton and Anthes (1989), "Storm and Cloud Dynamics",
 !                        Eqn. (2.51). 
 !-----------------------------------------------------------------------
-         use constants, only: 
+         use constants, only:
+         ! Variable(s) 
      .   Cp, ! Dry air specific heat at constant p [J/kg/K]
      .   Lv  ! Latent heat of vaporization         [J/kg]
 

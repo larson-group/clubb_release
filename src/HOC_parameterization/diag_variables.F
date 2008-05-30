@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F,v 1.22 2008-03-28 16:46:59 dschanen Exp $
+! $Id: diag_variables.F,v 1.23 2008-05-30 16:24:24 faschinj Exp $
         module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -217,8 +217,13 @@
 !  for the HOC model code
 !-----------------------------------------------------------------------
         subroutine setup_diagnostic_variables( nzmax )
-        use model_flags
-        use constants, only: sclr_dim, emin, hydromet_dim
+        use model_flags, only: 
+     .  LH_on ! Variable(s)
+
+        use constants, only: 
+     .      sclr_dim, ! Variable(s) 
+     .      emin, 
+     .      hydromet_dim
 
         implicit none
 
@@ -455,7 +460,8 @@
 !       Description:
 !       Subroutine to deallocate variables defined in module global
 !------------------------------------------------------------------------
-        use model_flags
+        use model_flags, only:
+     .      LH_on ! Variable(s)
 
         implicit none
 

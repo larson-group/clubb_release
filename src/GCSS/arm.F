@@ -1,16 +1,18 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm.F,v 1.10 2008-05-05 18:31:19 faschinj Exp $
+! $Id: arm.F,v 1.11 2008-05-30 16:24:22 faschinj Exp $
         module arm
 
 !       Description:
 !       Contains subroutines for the GCSS ARM case.
 !----------------------------------------------------------------------
 
+        implicit none
+
         public :: arm_tndcy, arm_sfclyr
 
-        private
+        private ! Default Scope
 
         contains
 
@@ -24,12 +26,16 @@
 !       None
 !----------------------------------------------------------------------
 
-        use grid_class
-        use constants, only: sclr_dim
-        use model_flags, only: lbugsrad
-        use stats_prec, only: time_prec
+        use grid_class, only: gr ! Variable(s)
+
+        use constants, only: sclr_dim ! Variable(s)
+
+        use model_flags, only: lbugsrad ! Variable(s)
+
+        use stats_prec, only: time_prec ! Variable(s)
+
 #ifdef STATS
-        use stats_hoc
+        use stats_hoc, only: iradht_LW, zt, lstats_samp ! Variable(s)
 #endif
 
         implicit none
@@ -158,9 +164,11 @@
 !       heat and moisture according to GCSS ARM specifications
 !----------------------------------------------------------------------
 
-        use constants, only: Cp, Lv, grav, sclr_dim
-        use stats_prec, only: time_prec
-        use diag_ustar_mod, only: diag_ustar
+        use constants, only: Cp, Lv, grav, sclr_dim ! Variable(s)
+
+        use stats_prec, only: time_prec ! Variable(s)
+
+        use diag_ustar_mod, only: diag_ustar ! Variable(s)
         
         implicit none
 

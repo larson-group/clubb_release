@@ -1,4 +1,4 @@
-!$Id: diag_ustar.F,v 1.2 2008-05-05 18:37:40 faschinj Exp $
+!$Id: diag_ustar.F,v 1.3 2008-05-30 16:24:23 faschinj Exp $
 
       module diag_ustar_mod
 
@@ -32,7 +32,7 @@
 !
       real function diag_ustar( z, bflx, wnd, z0 ) 
 
-      use constants, only: eps, grav, vonk, pi
+      use constants, only: eps, grav, vonk, pi ! Variable(s)
 
       implicit none
 

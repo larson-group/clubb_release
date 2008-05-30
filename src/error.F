@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.53 2008-05-14 23:14:58 dschanen Exp $
+! $Id: error.F,v 1.54 2008-05-30 16:24:21 faschinj Exp $
 
         module error
  
@@ -28,8 +28,8 @@
 !       the first model is used to make the namelist.
 
 !-----------------------------------------------------------------------
-        use param_index
-        use parameters, only: read_parameters, read_param_spread
+        use param_index, only: nparams ! Variable(s)
+        use parameters, only: read_parameters, read_param_spread ! Procedure(s)
       
         implicit none
 
@@ -132,8 +132,10 @@
 !       References:
 !       None
 !-----------------------------------------------------------------------
-        use constants, only: fstdout, fstderr
-        use error_code, only: fatal_error
+        use constants, only: fstdout, fstderr ! Variable(s)
+
+        use error_code, only: fatal_error ! Procedure(s)
+
         implicit none
 
         ! Constant Variables
@@ -368,11 +370,15 @@
 !       _Numerical Recipes in Fortran 90_ source code (Routine)
 !-----------------------------------------------------------------------
  
-        use hoc, only: hoc_model
-        use grads_common
-        use parameters, only: params_list
-        use error_code, only: clubb_no_error,
-     .                        fatal_error
+        use hoc, only: hoc_model ! Procedure(s)
+
+        use grads_common, only: grads_zlvl, grads_average_interval ! Procedure(s)
+
+        use parameters, only: params_list ! Variable(s)
+
+        use error_code, only: clubb_no_error ! Variable(s)
+
+        use error_code, only: fatal_error ! Procedure(s) 
 
         implicit none
 
@@ -656,8 +662,10 @@
 !       References:
 !       None
 !----------------------------------------------------------------------
-        use parameters, only: params_list
-        use constants, only: fstdout
+
+        use parameters, only: params_list ! Variable(s)
+
+        use constants, only: fstdout ! Variable(s)
       
         implicit none
 
@@ -702,7 +710,8 @@
 !       I was more ambitious and didn't like that fact that it came out
 !       in all caps on pgf90. -dschanen 28 July 2006
 !-----------------------------------------------------------------------
-        use parameters, only: params_list
+
+        use parameters, only: params_list ! Variable(s)
 
         implicit none
 
@@ -847,7 +856,7 @@
 !       See note for output_nml_tuner, above. dschanen 28 July 2006
 !-----------------------------------------------------------------------
 
-        use parameters, only: params_list
+        use parameters, only: params_list ! Variable(s)
 
         implicit none
 

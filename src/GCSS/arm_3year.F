@@ -1,19 +1,23 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_3year.F,v 1.10 2008-05-15 03:04:11 dschanen Exp $
+! $Id: arm_3year.F,v 1.11 2008-05-30 16:24:22 faschinj Exp $
         module arm_3year
 
 !       Description:
 !       Contains subroutines for the ARM 3 Year case.
 !----------------------------------------------------------------------
 
-        public :: arm_3year_tndcy, arm_3year_sfclyr, arm_3year_init
 
+        implicit none
+        
+        public :: arm_3year_tndcy, arm_3year_sfclyr, arm_3year_init
+        
         private
         ! Constant Parameters
         integer, parameter :: ntimes = 26304, nz = 36,
      .   per_line = 5
+
         ! File path for the forcing files
         character(*), parameter ::
      .   file_path = '../model/arm_3year_forcings/'
@@ -44,10 +48,13 @@
 !       None
 !----------------------------------------------------------------------
 
-        use grid_class
-        use constants, only: sclr_dim
-        use interpolation, only: zlinterp_fnc
-        use stats_prec, only: time_prec
+        use grid_class, only: gr ! Variable(s)
+
+        use constants, only: sclr_dim ! Variable(s)
+
+        use interpolation, only: zlinterp_fnc ! Procedure(s)
+
+        use stats_prec, only: time_prec ! Variable(s)
 
         implicit none
 
@@ -101,6 +108,7 @@
           end do
         end if ! time <= times(1)
         
+        
         ! Interpolate LS thetal tendency to the HOC grid
         ! Time
         thlm_t_interp = (1.-time_frac) * thl_ls(:,i1) + time_frac *
@@ -112,7 +120,7 @@
 
         ! Vince Larson added in poor man's radiation. 
         !     Do not use at the same time as BugsRad.  15 Dec 2007
-        !thlm_forcing(2:gr%nnzp) = thlm_forcing(2:gr%nnzp) - 1.0e-6
+        !thlm_forcing(2:50) = thlm_forcing(2:50) - 5.0e-6
         ! End Vince Larson's addition
 
         ! Interpolate LS rt tendency to the HOC grid
@@ -154,6 +162,8 @@
 
         return
         end subroutine arm_3year_tndcy
+
+
 !----------------------------------------------------------------------
         subroutine arm_3year_sfclyr
      .             ( time, z, rho0,
@@ -166,11 +176,14 @@
 !       heat and moisture according to GCSS ARM specifications
 !----------------------------------------------------------------------
 
-        use constants, only: Cp, Lv, grav, sclr_dim
-        use stats_prec, only: time_prec
-        use diag_ustar_mod, only: diag_ustar
+        use constants, only: Cp, Lv, grav, sclr_dim ! Variable(s)
+
+        use stats_prec, only: time_prec ! Variable(s)
+
+        use diag_ustar_mod, only: diag_ustar ! Variable(s)
+
 #ifdef STATS
-        use stats_hoc, only: iustar, sfc, lstats_samp
+        use stats_hoc, only: iustar, sfc, lstats_samp ! Variable(s)
 #endif
         
         implicit none
@@ -280,43 +293,44 @@
 !       Description: This subroutine is used to load the forcing
 !       information into arrays.
 !---------------------------------------------------------------------------       
-           use file_functions, only: file_read_1d, file_read_2d
+        
+        use file_functions, only: file_read_1d, file_read_2d ! Procedure(s)
            
-           implicit none
+        implicit none
            
         ! Reading in the files located in
         ! ../model/arm_3year_forcings/ and storing them in arrays
         ! Joshua Fasching (October 2007)
 
-           call file_read_1d(10,
+        call file_read_1d(10,
      .      file_path//'arm_3year_times.dat',
      .      ntimes, per_line, times)
 
-           call file_read_1d(10,
+        call file_read_1d(10,
      .      file_path//'arm_3year_heights.dat',
      .      nz, per_line, z)
 
-           call file_read_1d(10,
+        call file_read_1d(10,
      .      file_path//'arm_3year_LE.dat',
      .      ntimes, per_line, LE)
 
-           call file_read_1d(10,
+        call file_read_1d(10,
      .      file_path//'arm_3year_SE.dat',
      .      ntimes, per_line, SE)
 
-           call file_read_2d(10,
+        call file_read_2d(10,
      .      file_path//'arm_3year_dTdt.dat',
      .      nz, ntimes, per_line, thl_ls)
 
-           call file_read_2d(10,
+        call file_read_2d(10,
      .       file_path//'arm_3year_dqdt.dat',
      .       nz, ntimes, per_line, rt_ls)
 
-           call file_read_2d(10,
+        call file_read_2d(10,
      .       file_path//'arm_3year_um_obs.dat',
      .       nz, ntimes, per_line, um_obs)
 
-           call file_read_2d(10,
+        call file_read_2d(10,
      .       file_path//'arm_3year_vm_obs.dat',
      .       nz, ntimes, per_line, vm_obs)
 

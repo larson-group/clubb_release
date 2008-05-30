@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F,v 1.7 2008-05-05 18:41:25 faschinj Exp $
+! $Id: compute_um_edsclrm_mod.F,v 1.8 2008-05-30 16:24:24 faschinj Exp $
 !------------------------------------------------------------------------
         module compute_um_edsclrm_mod
 
@@ -27,15 +27,29 @@
 !       JAS, Vol. 59, pp. 3540--3551.
 !------------------------------------------------------------------------
 
-        use grid_class
-        use lapack_wrap, only: tridag_solve
+        use grid_class, only:
+     .      gr ! Variable(s)
+        use lapack_wrap, only: 
+     .      tridag_solve ! Procedure(s)
 #ifdef STATS
-        use stats_hoc
+        use stats_hoc, only:
+     .      ium_bt, ! Variable(s)
+     .      ium_ta,
+     .      ivm_bt,
+     .      ivm_ta,
+     .      zt,
+     .      ztscr01,
+     .      ztscr02,
+     .      ztscr03,
+     .      lstats_samp
 #endif
-        use constants, only: fstderr
-        use stats_prec, only: time_prec
-        use error_code, only: lapack_error,
-     .                        clubb_at_debug_level
+        use constants, only: 
+     .      fstderr ! Variable(s)
+        use stats_prec, only: 
+     .      time_prec ! Variable(s)
+        use error_code, only: 
+     .      lapack_error, ! Procedure(s)
+     .      clubb_at_debug_level
         
         implicit none
 

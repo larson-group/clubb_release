@@ -1,4 +1,4 @@
-! $Id: outputnc.F,v 1.9 2008-05-09 16:32:22 faschinj Exp $
+! $Id: outputnc.F,v 1.10 2008-05-30 16:24:25 faschinj Exp $
 !-----------------------------------------------------------------------
 #ifdef STATS
        module outputnc
@@ -30,10 +30,17 @@
 !      References:
 !      None
 !-----------------------------------------------------------------------
-       use netcdf
-       use outputfile_class
-       use stats_prec, only: time_prec
-       use constants, only: fstderr
+       use netcdf, only:
+     .     NF90_CLOBBER, ! Variable(s)
+     .     NF90_NOERR,
+     .     nf90_create, ! Procedure
+     .     nf90_strerror
+       use outputfile_class, only:
+     .     outputfile ! Type
+       use stats_prec, only: 
+     .     time_prec ! Variable(s)
+       use constants, only: 
+     .     fstderr ! Variable(s)
 
        implicit none
 
@@ -129,9 +136,15 @@
 !      Writes some data to the NetCDF dataset, but doesn't close it.
 !-----------------------------------------------------------------------
 
-       use netcdf
-       use outputfile_class
-       use constants, only: fstderr
+       use netcdf, only:
+     .     NF90_NOERR, ! Variable(s)
+     .     nf90_put_var, ! Procedure
+     .     nf90_strerror
+
+       use outputfile_class, only:
+     .     outputfile ! Variable
+       use constants, only: 
+     .     fstderr ! Variable
 
        implicit none
 
@@ -202,9 +215,19 @@
 !      Description:
 !      Used internally to create a definition for the NetCDF dataset
 !-----------------------------------------------------------------------
-       use netcdf
-       use stats_prec, only: time_prec
-       use constants, only: fstderr
+       use netcdf, only:
+     .     NF90_NOERR,  ! Variable
+     .     NF90_FLOAT,
+     .     NF90_DOUBLE,
+     .     NF90_UNLIMITED,
+     .     nf90_def_dim, ! Procedure(s)
+     .     nf90_strerror,
+     .     nf90_def_var,
+     .     nf90_put_att
+       use stats_prec, only: 
+     .     time_prec ! Variable(s)
+       use constants, only: 
+     .     fstderr ! Variable(s)
 
        implicit none
 
@@ -369,9 +392,15 @@
 !      details. -dschanen
 !-----------------------------------------------------------------------
 
-       use outputfile_class
-       use netcdf, only: nf90_close, nf90_strerror, NF90_NOERR
-       use constants, only: fstderr
+       use outputfile_class, only:
+     .     outputfile ! Type
+       use netcdf, only:
+     .     NF90_NOERR, ! Variable
+     .     nf90_close, ! Procedure(s)
+     .     nf90_strerror 
+
+       use constants, only: 
+     .     fstderr  ! Variable
 
        implicit none
 
@@ -399,9 +428,17 @@
 !      for the dataset, including the attributes for variable records
 !-----------------------------------------------------------------------
 
-       use netcdf
-       use outputfile_class
-       use constants, only: fstderr
+       use netcdf, only:
+     .     NF90_NOERR, ! Variable(s)
+     .     NF90_FLOAT, 
+     .     nf90_def_var, ! Procedure(s)
+     .     nf90_strerror,
+     .     nf90_put_att,
+     .     nf90_enddef
+       use outputfile_class, only:
+     .     outputfile ! Type
+       use constants, only: 
+     .     fstderr ! Variable
 
        implicit none
 
@@ -506,9 +543,14 @@
 !      Writes inforation about latitude, longitude and the grid
 !-----------------------------------------------------------------------
 
-       use netcdf
-       use outputfile_class
-       use constants, only: fstderr
+       use netcdf, only:
+     .     NF90_NOERR,  ! Variable(s)
+     .     nf90_put_var, ! Procedure(s)
+     .     nf90_strerror
+       use outputfile_class, only:
+     .     outputfile ! Type
+       use constants, only: 
+     .     fstderr ! Variable
 
        implicit none
 
@@ -561,7 +603,10 @@
 !      Adapted from the original GrADS version written by Chris Golaz.
 !      Uses Fortran `internal' files to write the string output.
 !-----------------------------------------------------------------------
-       use stats_prec, only: time_prec
+
+       use stats_prec, only: 
+     .     time_prec ! Variable(s)
+
        implicit none
 
        ! Input Variables

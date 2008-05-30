@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_b.F,v 1.11 2008-05-10 21:14:46 griffinb Exp $
+! $Id: mpace_b.F,v 1.12 2008-05-30 16:24:23 faschinj Exp $
         module mpace_b
 
 !       Description:
@@ -32,13 +32,20 @@
 !          Liou, Wallace and Hobbs, Shettle and Weinman
 !-----------------------------------------------------------------------
 
-        use constants
-        use model_flags
-        use grid_class
-        use stats_prec, only: time_prec
-        use rad_lwsw_mod, only: rad_lwsw
+        use constants, only: sclr_dim, Rd, Cp, Lv, p0, rc_tol ! Variable(s)
+
+        use model_flags, only: lbugsrad, lcoamps_micro, kk_rain ! Variable(s)
+
+        use grid_class, only: gr ! Variable(s)
+
+        use grid_class, only: zt2zm ! Procedure(s)
+
+        use stats_prec, only: time_prec ! Variable(s)
+
+        use rad_lwsw_mod, only: rad_lwsw ! Variable(s)
 #ifdef STATS
-        use stats_hoc
+        use stats_hoc, only: iFrad_LW, iFrad_SW, iradht_SW, ! Variable(s)
+     .                 iradht_LW, zt, zm, lstats_samp
 #endif /*STATS*/
 
         implicit none
@@ -353,7 +360,7 @@
 !          mpace_b specification, arm.gov
 !-----------------------------------------------------------------------
 
-        use constants
+        use constants, only: sclr_dim, Cp, Lv ! Variable(s)
 
         implicit none
 

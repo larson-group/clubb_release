@@ -1,4 +1,4 @@
-!$Id: saturation.F,v 1.3 2008-03-28 16:54:55 vlarson Exp $
+!$Id: saturation.F,v 1.4 2008-05-30 16:24:25 faschinj Exp $
 
         module saturation
 
@@ -26,7 +26,8 @@
 !       Formula from Emanuel 1994, 4.4.14
 !-------------------------------------------------------------------------
 
-        use constants
+        use constants, only:
+     .      ep ! Variable
 
         implicit none
 
@@ -115,7 +116,8 @@
 !       Formula from Emanuel 1994, 4.4.15
 !-------------------------------------------------------------------------
 
-        use constants
+        use constants, only:
+     .      ep ! Variable(s)
 
         implicit none
 
@@ -196,7 +198,9 @@
 
         FUNCTION sat_rcm( thlm, rtm, p, exner )
 
-        USE constants
+        USE constants, only:
+     .      Cp, ! Variable(s)
+     .      Lv
 
         REAL, INTENT(IN):: thlm
         REAL, INTENT(IN):: rtm

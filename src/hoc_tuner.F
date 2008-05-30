@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: hoc_tuner.F,v 1.25 2008-04-02 14:27:19 faschinj Exp $
+! $Id: hoc_tuner.F,v 1.26 2008-05-30 16:24:22 faschinj Exp $
 
       program hoc_tuner 
 
@@ -45,7 +45,8 @@
      .  init_err, results_stdout,                     ! Variables
      .  results_file, err_code, tune_type, ftol, ndim  ! Variables
 
-      use constants, only: fstdout
+      use constants, only:
+     . fstdout ! Variables
 
       implicit none
 
@@ -134,8 +135,10 @@
 !     References:
 !     _Numerical Recipes in Fortran 90_.  See full citation above.
 !------------------------------------------------------------------------
-      use nr, only: amoeba
+      use nr, only: 
+     .    amoeba ! Procedure(s)
       use error, only: 
+        ! Variable(s)
      .  ndim,                               ! Array dimensions
      .  param_vals_matrix, cost_fnc_vector, ! The 'p' matrix and 'y' vector resp.
      .  ftol,                               ! Tolerance of tuning run
@@ -173,9 +176,20 @@
 !     At the end of the subroutine, the param_vals_matrix's first row gets the
 !     optimal values assigned to it.
 !-----------------------------------------------------------------------
-      use nr, only: amebsa
-      use nrtype, only: SP
-      use error
+      use nr, only: 
+     .    amebsa ! Procedure(s)
+      use nrtype, only: 
+     .    SP ! Variable(s)
+      use error, only:
+     .    param_vals_matrix, ! Variable(s)
+     .    anneal_temp,
+     .    anneal_iter,
+     .    iter,
+     .    ndim,
+     .    cost_fnc_vector,
+     .    ftol,
+     .    min_err,
+     .    min_les_hoc_diff ! Procedure(s)
 
       implicit none
 

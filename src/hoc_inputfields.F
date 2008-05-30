@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc_inputfields.F,v 1.20 2008-05-14 23:14:59 dschanen Exp $
+! $Id: hoc_inputfields.F,v 1.21 2008-05-30 16:24:22 faschinj Exp $
 
         program hoc_inputfields
 
@@ -10,11 +10,20 @@
 !-----------------------------------------------------------------------
         use hoc, only: hoc_model
 
-        use inputfields
-        use param_index, only: nparams
-        use parameters, only: read_parameters
-        use error_code, only: clubb_no_error,
-     .                        fatal_error
+        use inputfields, only: datafile, input_rtm, input_vm, ! Variable(s)
+     .      input_um, input_thlm, input_rtpthlp, input_upwp, 
+     .      input_vpwp, input_wp3, input_rtp2, input_thlp2,
+     .      input_wp2, input_wprtp, input_wpthlp, input_type
+
+        use inputfields, only: set_filenames ! Procedure(s)
+
+        use param_index, only: nparams ! Variable(s)
+
+        use parameters, only: read_parameters ! Procedure(s)
+
+        use error_code, only: clubb_no_error ! Variable(s)
+     
+        use error_code, only: fatal_error ! Procedure(s)
 
         implicit none
 

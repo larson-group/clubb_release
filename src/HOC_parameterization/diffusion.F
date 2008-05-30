@@ -1,4 +1,4 @@
-! $Id: diffusion.F,v 1.5 2008-04-26 17:54:57 griffinb Exp $
+! $Id: diffusion.F,v 1.6 2008-05-30 16:24:24 faschinj Exp $
 !===============================================================================
         module diffusion
 
@@ -21,7 +21,7 @@
 
         implicit none
 
-        private
+        private ! Default Scope
 
         public :: diffusion_tlev,
      .            diffusion_mlev
@@ -229,7 +229,8 @@
 !       None
 !-----------------------------------------------------------------------
 
-        use grid_class
+        use grid_class, only:
+     .      gr ! Variable(s)
 
         implicit none
 

@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf02.F,v 1.14 2008-05-09 22:39:04 faschinj Exp $
+! $Id: dycoms2_rf02.F,v 1.15 2008-05-30 16:24:23 faschinj Exp $
         module dycoms2_rf02
 
 !       Description:
@@ -9,6 +9,8 @@
 !----------------------------------------------------------------------
 
         public :: dycoms2_rf02_tndcy, dycoms2_rf02_sfclyr
+
+        private ! Default Scope
 
         contains
 
@@ -28,13 +30,20 @@
 !       Bull. Amer. Meteorol. Soc., 84, 579-593.
 !----------------------------------------------------------------------
 
-        USE grid_class
-        USE constants
-        USE model_flags, only: lbugsrad, lcoamps_micro, kk_rain
-        use stats_prec, only: time_prec
-        USE error_code, only: clubb_rtm_level_not_found
+        USE grid_class, only: gr ! Variable(s)
+
+        use grid_class, only: zt2zm ! Procedure(s)
+
+        USE constants, only: sclr_dim, fstderr, Cp ! Variable(s)
+
+        USE model_flags, only: lbugsrad, lcoamps_micro, kk_rain ! Variable(s)
+
+        use stats_prec, only: time_prec ! Variable(s)
+
+        USE error_code, only: clubb_rtm_level_not_found ! Variable(s)
+
 #ifdef STATS
-        USE stats_hoc
+        USE stats_hoc, only: iradht_LW, izi, sfc, zt, lstats_samp
 #endif /*STATS*/
 
         ! Constant parameters
@@ -248,7 +257,7 @@
      .                                  wpthlp_sfc, wprtp_sfc, ustar,
      .                                  wpsclrp_sfc, wpedsclrp_sfc )
 
-        use constants
+        use constants, only: sclr_dim, Cp, Lv ! Variable(s)
 
         ! External
         intrinsic :: sqrt, present

@@ -1,4 +1,4 @@
-! $Id: rad_lwsw.F,v 1.6 2008-05-10 23:31:16 griffinb Exp $
+! $Id: rad_lwsw.F,v 1.7 2008-05-30 16:24:23 faschinj Exp $
 !-----------------------------------------------------------------------
       module rad_lwsw_mod
       
@@ -8,7 +8,7 @@
       
       private :: sunray_sw
 
-      private
+      private ! Default Scope
       
       contains
       
@@ -58,8 +58,9 @@
 !       Introductory Survey.  Academic Press, 467 pp.
 !-----------------------------------------------------------------------
 
-      use constants
-      use interpolation, only: linint
+      use constants, only: Cp ! Variable(s)
+
+      use interpolation, only: linint ! Procedure(s)
 
       implicit none
 
@@ -379,8 +380,8 @@
 ! see subroutine rad_lwsw. 
 !-----------------------------------------------------------------------
 
-      use constants, only: Cp, rho_lw, pi
-      use interpolation, only: linint
+      use constants, only: Cp, rho_lw, pi ! Variable(s)
+      use interpolation, only: linint ! Procedure(s)
 
       implicit none
 

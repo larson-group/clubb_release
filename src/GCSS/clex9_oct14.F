@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: clex9_oct14.F,v 1.10 2008-05-10 21:14:46 griffinb Exp $
+! $Id: clex9_oct14.F,v 1.11 2008-05-30 16:24:23 faschinj Exp $
         module clex9_oct14
 
 !       Description:
@@ -9,6 +9,8 @@
 
 !       References:
 !----------------------------------------------------------------------
+
+        implicit none
 
         public :: clex9_oct14_tndcy
 
@@ -21,7 +23,7 @@
 
 !$omp   threadprivate(tdelay_lcoamps_micro, tdelay_licedfs)
 
-        private
+        private ! Default Scope
 
         contains
 
@@ -38,20 +40,30 @@
 !       References:
 !----------------------------------------------------------------------
 
-        use grid_class
-        use constants
-        use model_flags
-        use stats_prec, only: time_prec
-        use interpolation, only: linear_interpolation
-        use cos_solar_zen_mod
-        use rad_lwsw_mod, only: rad_lwsw
+        use grid_class, only: gr ! Variable(s)
+
+        use grid_class, only: zt2zm ! Procedure(s)
+
+        use constants, only: sclr_dim, Cp, Lv ! Variable(s)
+
+        use model_flags, only: lbugsrad, lcoamps_micro, licedfs ! Variable(s)
+
+        use stats_prec, only: time_prec ! Variable(s)
+
+        use interpolation, only: linear_interpolation ! Procedure(s)
+
+        use cos_solar_zen_mod, only: cos_solar_zen ! Procedure(s)
+
+        use rad_lwsw_mod, only: rad_lwsw ! Procedure(s)
+
 #ifdef STATS
-        use stats_hoc
+        use stats_hoc, only: iradht_LW, iradht_SW, zt, zm, lstats_samp, ! Variable(s)
+     .                 iFrad_SW, iFrad_LW
 #endif /*STATS*/
 
         implicit none
-        ! Local constants
 
+        ! Local constants
         integer, parameter :: 
      .  nparam = 12 ! Number of Fs0 values in the SW radiation lists
 

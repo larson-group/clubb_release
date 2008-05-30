@@ -1,13 +1,18 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: bomex.F,v 1.7 2008-04-04 22:02:49 dschanen Exp $
+! $Id: bomex.F,v 1.8 2008-05-30 16:24:23 faschinj Exp $
         module bomex
 
 !       Description:
 !       Contains subroutines for the GCSS BOMEX case.
 !----------------------------------------------------------------------
+
+        implicit none
+
         public :: bomex_tndcy, bomex_sfclyr
+
+        private ! Default Scope
 
         contains
 
@@ -22,10 +27,15 @@
 !       <http://www.knmi.nl/~siebesma/gcss/bomexcomp.init.html>
 !----------------------------------------------------------------------
 
-        use grid_class
-        use model_flags, only: lbugsrad
-        use constants, only: sclr_dim
-        use stats_prec, only: time_prec
+        use grid_class, only: gr ! Variable(s)
+
+        use grid_class, only: zt2zm ! Procedure(s)
+
+        use model_flags, only: lbugsrad ! Variable(s)
+
+        use constants, only: sclr_dim ! Variable(s)
+
+        use stats_prec, only: time_prec ! Variable(s)
 
         implicit none
 
@@ -140,7 +150,7 @@
 !       References:
 !----------------------------------------------------------------------
 
-        use constants, only: sclr_dim
+        use constants, only: sclr_dim ! Variable(s)
 
         implicit none
 

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.12 2008-05-21 22:33:26 dschanen Exp $
+!  $Id: stats_subs.F,v 1.13 2008-05-30 16:24:25 faschinj Exp $
 #ifdef STATS
       module stats_subs
  
@@ -27,14 +27,63 @@
 !     Description: Initializes the statistics saving functionality of
 !     the HOC model.
 !-----------------------------------------------------------------------
-      use stats_hoc
-      use stats_prec
-      use outputgrads
-      use outputnc
-      use stats_zm
-      use stats_zt
-      use stats_sfc
-
+      use stats_hoc, only:
+     .    zt,     ! Variables
+     .    ztscr01,
+     .    ztscr02,
+     .    ztscr03,
+     .    ztscr04,
+     .    ztscr05,
+     .    ztscr06,
+     .    ztscr07,
+     .    ztscr08,
+     .    ztscr09,
+     .    ztscr10,
+     .    ztscr11,
+     .    ztscr12,
+     .    ztscr13,
+     .    ztscr14,
+     .    ztscr15,
+     .    ztscr16,
+     .    zm,
+     .    zmscr01,
+     .    zmscr02,
+     .    zmscr03,
+     .    zmscr04,
+     .    zmscr05,
+     .    zmscr06,
+     .    zmscr07,
+     .    zmscr08,
+     .    zmscr09,
+     .    zmscr10,
+     .    zmscr11,
+     .    zmscr12,
+     .    zmscr13,
+     .    zmscr14,
+     .    sfc,
+     .    lstats,
+     .    stats_tsamp,
+     .    stats_tout,
+     .    lstats_samp,
+     .    lstats_first,
+     .    lstats_last,
+     .    fname_zt,
+     .    fname_zm,
+     .    fname_sfc,
+     .    lnetcdf,
+     .    lgrads
+      use stats_prec, only:
+     .    time_prec   ! Variable(s)
+      use outputgrads, only:
+     .    open_grads  ! Procedure
+      use outputnc, only:
+     .    open_nc     ! Procedure
+      use stats_zm, only:
+     .    stats_init_zm ! Procedure
+      use stats_zt, only:
+     .    stats_init_zt ! Procedure
+      use stats_sfc, only:
+     .    stats_init_sfc ! Procedure
       implicit none
 
       ! Constant Parameters
@@ -373,7 +422,9 @@
 !     Description:
 !     Initialize stats to zero
 !-----------------------------------------------------------------------
-      use stats_prec
+      use stats_prec, only:
+     .    stat_rknd,  ! Variable(s)
+     .    stat_nknd
 
       implicit none
 
@@ -400,7 +451,9 @@
 !     Description:
 !     Compute the average of stats fields
 !-----------------------------------------------------------------------
-      use stats_prec
+      use stats_prec, only:
+     .    stat_rknd,  ! Variable(s)
+     .    stat_nknd
 
       implicit none
 
@@ -437,8 +490,15 @@
 !     Begin sampling for the current timestep.
 !-----------------------------------------------------------------------
 
-      use stats_hoc
-      use stats_prec
+      use stats_hoc, only:
+     .    lstats, ! Variable(s)
+     .    lstats_samp,
+     .    lstats_first,
+     .    lstats_last,
+     .    stats_tsamp,
+     .    stats_tout
+      use stats_prec, only:
+     .    time_prec ! Variable(s)
 
       implicit none
 
@@ -485,10 +545,20 @@
 !     Description:
 !-----------------------------------------------------------------------
 
-      use stats_hoc
-      use stats_prec
-      use outputgrads
-      use outputnc
+      use stats_hoc, only:
+     .    zt, ! Variable(s)
+     .    zm,
+     .    sfc,
+     .    lstats_last,
+     .    stats_tsamp,
+     .    stats_tout,
+     .    lgrads
+      use stats_prec, only:
+     .    time_prec ! Variable(s)
+      use outputgrads, only:
+     .    write_grads ! Procedure(s)
+      use outputnc, only:
+     .    write_nc ! Procedure(s)
 
       implicit none
 
@@ -569,13 +639,188 @@
 !     budget terms, longwave and shortwave components, etc. )
 !----------------------------------------------------------------------
 
-      use stats_hoc
-      use grid_class
+      use stats_hoc, only:
+     .    zt,     ! Variables
+     .    zm,
+     .    sfc,
+     .    lstats_samp,
+     .    ithlm,
+     .    itemp_in_K,
+     .    ithvm,
+     .    irtm,
+     .    ircm,
+     .    ium,
+     .    ivm,
+     .    iwmt,
+     .    iug,
+     .    ivg,
+     .    icf,
+     .    ip,
+     .    iexner,
+     .    iLscale,
+     .    iwp3,
+     .    iwpthlp2,
+     .    iwp2thlp, 
+     .    iwprtp2,
+     .    iwp2rtp,
+     .    iLup,
+     .    iLdown,
+     .    itaut,
+     .    iKht,
+     .    iwp2thvp,
+     .    iwp2rcp,
+     .    iwprtpthlp,
+     .    isct,         
+     .    irhot,
+     .    irsm,
+     .    iAKm,
+     .    iAKm_est,
+     .    iradht,
+     .    ia,
+     .    iw1,
+     .    iw2,
+     .    isw1,
+     .    isw2,
+     .    ithl1,
+     .    ithl2,
+     .    isthl1,
+     .    isthl2,
+     .    irt1,
+     .    irt2,
+     .    isrt1,
+     .    isrt2,
+     .    irc1,
+     .    irc2,
+     .    irsl1,
+     .    irsl2,
+     .    iR1,
+     .    iR2,
+     .    is1,
+     .    is2,
+     .    iss1,
+     .    iss2,
+     .    irrtthl,
+     .    iwp2zt,
+     .    ithlp2zt,
+     .    iwpthlpzt,
+     .    iwprtpzt,
+     .    irtp2zt,
+     .    irtpthlpzt,
+
+#ifdef SCALARS
+     .    isclram,
+     .    isclram_f,
+     .    isclrbm,
+     .    isclrbm_f,
+     .    iedsclram,
+     .    iedsclrbm,
+#endif /*SCALARS*/
+
+     .    iwp2,
+     .    irtp2,
+     .    ithlp2,
+     .    irtpthlp,
+     .    iwprtp, 
+     .    iwpthlp,
+     .    iwp4, 
+     .    iwpthvp,
+     .    irtpthvp,
+     .    irtpthvp,
+     .    ithlpthvp,
+     .    itaum,
+     .    iKhm,
+     .    iwprcp,
+     .    ithlprcp,
+     .    irtprcp,
+     .    ircp2,
+     .    iupwp,
+     .    ivpwp,
+     .    iup2,
+     .    ivp2,
+     .    irhom,
+     .    iscm,
+     .    iem,
+     .    ishear,
+     .    iFrad,
+
+#ifdef SCALARS
+     .    isclraprtp,
+     .    isclrbprtp,
+     .    isclrap2,
+     .    isclrbp2,
+     .    isclrapthvp,
+     .    isclrbpthvp,
+     .    isclrapthlp,
+     .    isclrbpthlp,
+     .    isclraprcp,
+     .    isclrbprcp,
+     .    iwpsclrap,
+     .    iwpsclrbp,
+     .    iwp2sclrap,
+     .    iwp2sclrbp,
+     .    iwpsclrap2,
+     .    iwpsclrbp2,
+     .    iwpsclraprtp,
+     .    iwpsclrbprtp,
+     .    iwpsclrapthlp,
+     .    iwpsclrbpthlp,
+     .    iwpedsclrap,
+     .    iwpedsclrbp,
+#endif /*SCALARS*/
+     .    icc,
+     .    izb,
+     .    ilwp
+
+      use grid_class, only:
+     .    gr ! Variable
       !use prognostic_variables
-      use diagnostic_variables
-      use model_flags
-      use temp_in_K_mod
-      use constants
+      use diagnostic_variables, only:
+     .    pdf_parms, ! Variable(s)
+     .    thvm,
+     .    ug,
+     .    vg,
+     .    Lscale,
+     .    wpthlp2,
+     .    wp2thlp,
+     .    wprtp2,
+     .    wp2rtp,
+     .    lup,
+     .    ldown,
+     .    taut,
+     .    Kht,
+     .    wp2thvp,
+     .    wp2rcp,
+     .    wprtpthlp,
+     .    sct,
+     .    rsm,
+     .    Akm,
+     .    Akm_est,
+     .    radht,
+     .    wp2zt,
+     .    thlp2zt,
+     .    wpthlpzt,
+     .    wprtpzt,
+     .    rtp2zt,
+     .    rtpthlpzt,
+     .    wp4,
+     .    wpthvp,
+     .    rtpthvp,
+     .    thlpthvp,
+     .    khm,
+     .    wprcp,
+     .    thlprcp,
+     .    rtprcp,
+     .    rcp2,
+     .    em,
+     .    shear,
+     .    Frad
+      use model_flags, only:
+     .    LH_on ! Variable(s)
+      use temp_in_K_mod, only:
+     .    thlm2temp_in_K ! Procedure
+      use constants, only:
+     .    sclr_dim,
+     .    rc_tol
 
       implicit none
 
@@ -1282,8 +1527,44 @@
 !     stats file structures.
 !-----------------------------------------------------------------------
 
-      use stats_hoc
-      use outputnc, only: close_nc
+      use stats_hoc, only:
+     .    zt, ! Variable(s)
+     .    zm,
+     .    sfc,
+     .    ztscr01,
+     .    ztscr02,
+     .    ztscr03,
+     .    ztscr04,
+     .    ztscr05,
+     .    ztscr06,
+     .    ztscr07,
+     .    ztscr08,
+     .    ztscr09,
+     .    ztscr10,
+     .    ztscr11,
+     .    ztscr12,
+     .    ztscr13,
+     .    ztscr14,
+     .    ztscr15,
+     .    ztscr16,
+     .    zmscr01,
+     .    zmscr02,
+     .    zmscr03,
+     .    zmscr04,
+     .    zmscr05,
+     .    zmscr06,
+     .    zmscr07,
+     .    zmscr08,
+     .    zmscr09,
+     .    zmscr10,
+     .    zmscr11,
+     .    zmscr12,
+     .    zmscr13,
+     .    zmscr14,
+     .    lnetcdf,
+     .    lstats
+      use outputnc, only: 
+     .    close_nc ! Procedure
 
       implicit none
 

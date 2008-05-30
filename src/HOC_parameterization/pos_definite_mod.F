@@ -4,7 +4,7 @@
 
         public :: pos_definite_adj, band_mult
 
-        private
+        private ! Default Scope
 
         contains
 !-----------------------------------------------------------------------
@@ -15,9 +15,12 @@
 !       Comment on ``A Positive Definite Advection Scheme Obtained by
 !       Nonlinear Renormalization of the Advective Fluxes''
 !-----------------------------------------------------------------------
-        use grid_class
-        use constants, only : eps
-        use stats_prec, only: time_prec
+        use grid_class, only:
+     .      gr ! Variable(s)
+        use constants, only : 
+     .      eps ! Variable(s)
+        use stats_prec, only: 
+     .      time_prec ! Variable(s)
 
         implicit none
 

@@ -1,4 +1,4 @@
-! $Id: sounding.F,v 1.17 2008-04-25 22:15:42 faschinj Exp $
+! $Id: sounding.F,v 1.18 2008-05-30 16:24:22 faschinj Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
         module sounding
@@ -8,6 +8,8 @@
         public :: 
      .  read_sounding,
      .  read_profile ! Not currently used in HOC
+       
+        private ! Default Scope
        
         contains
 !------------------------------------------------------------------------
@@ -20,10 +22,15 @@
 !       Subroutine to initialize model variables from a namelist file
 !------------------------------------------------------------------------
 
-        use grid_class
-        use constants, only: sclr_dim, fstderr
-        use std_atmosphere_mod, only: std_atmosphere
-        use interpolation, only: linint        
+        use grid_class, only: 
+     .      gr ! Variable(s)
+        use constants, only: 
+     .      sclr_dim, ! Variable(s)
+     .      fstderr
+        use std_atmosphere_mod, only: 
+     .      std_atmosphere ! Procedure(s)
+        use interpolation, only: 
+     .      linint ! Procedure(s)       
 
         implicit none
 
@@ -267,8 +274,10 @@
 !       Subroutine to initialize one generic model variable from file
 !------------------------------------------------------------------------
 
-        use grid_class
-        use interpolation, only: linint
+        use grid_class, only: 
+     .      gr ! Variable(s)
+        use interpolation, only: 
+     .      linint ! Procedure
         
         implicit none
 

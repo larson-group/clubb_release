@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_a.F,v 1.15 2008-05-10 21:14:46 griffinb Exp $
+! $Id: mpace_a.F,v 1.16 2008-05-30 16:24:23 faschinj Exp $
         module mpace_a
 
 !       Description:
@@ -10,7 +10,7 @@
 
         public :: mpace_a_tndcy, mpace_a_sfclyr, mpace_a_init
 
-        private
+        private ! Default Scope
 
     
         ! These variables were moved here so that they could be 
@@ -61,15 +61,25 @@
 !          Liou, Wallace and Hobbs, Shettle and Weinman
 !-----------------------------------------------------------------------
 
-        use constants
-        use model_flags
-        use grid_class
-        use interpolation, only: zlinterp_fnc
-        use file_functions, only: file_read_1d, file_read_2d
-        use stats_prec, only: time_prec
-        use rad_lwsw_mod, only: rad_lwsw
+        use constants, only: sclr_dim, Cp, Rd, Lv, p0, rc_tol ! Variable(s)
+
+        use model_flags, only: lbugsrad, lcoamps_micro, kk_rain ! Variable(s)
+
+        use grid_class, only: gr ! Variable(s)
+
+        use grid_class, only: zt2zm ! Procedure(s)
+
+        use interpolation, only: zlinterp_fnc ! Procedure(s)
+
+        use file_functions, only: file_read_1d, file_read_2d ! Procedure(s)
+
+        use stats_prec, only: time_prec ! Variable(s)
+
+        use rad_lwsw_mod, only: rad_lwsw ! Procedure(s)
+
 #ifdef STATS
-        use stats_hoc
+        use stats_hoc, only: iradht_LW, iradht_SW, iFrad_LW, ! Variable(s)
+     .                 iFrad_SW, zt, zm, lstats_samp
 #endif /*STATS*/
 
         implicit none
@@ -487,9 +497,11 @@
 !          mpace_a specification from arm.gov
 !-----------------------------------------------------------------------
 
-        use constants
-        use file_functions, only: file_read_1d, file_read_2d
-        use stats_prec, only: time_prec
+        use constants, only: sclr_dim, Cp, Lv ! Variable(s)
+
+        use file_functions, only: file_read_1d, file_read_2d ! Procedure(s)
+
+        use stats_prec, only: time_prec ! Variable(s)
 
         implicit none
 

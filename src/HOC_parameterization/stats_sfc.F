@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_sfc.F,v 1.6 2008-05-09 22:32:23 faschinj Exp $
+! $Id: stats_sfc.F,v 1.7 2008-05-30 16:24:25 faschinj Exp $
 #ifdef STATS
       
       module stats_sfc
@@ -19,8 +19,28 @@
 !     Initializes array indices for sfc
 !-----------------------------------------------------------------------
 
-      use stats_hoc
-      use stats_type
+      use stats_hoc, only:
+     .    sfc, ! Variables
+     .    iustar,
+     .    ilh,
+     .    ish,
+     .    icc,
+     .    ilwp,
+     .    izb,
+     .    izi,
+     .    irain,
+     .    ipflux,
+     .    irrm_sfc,
+     .    iwp23_cn,
+     .    irtm_cn,
+     .    ithlm_cn,
+     .    irtp2_cn,
+     .    ithlp2_cn,
+     .    irtpthlp_cn,
+     .    iup2_cn,
+     .    ivp2_cn
+      use stats_type, only:
+     .    stat_assign ! Procedure
 
       implicit none
 

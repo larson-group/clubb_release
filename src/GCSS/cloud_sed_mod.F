@@ -1,7 +1,12 @@
 !----------------------------------------------------------------------
         module cloud_sed_mod
 
+        implicit none
+
         public :: cloud_drop_sed
+
+        private ! Default Scope
+
         contains
 !----------------------------------------------------------------------
         subroutine cloud_drop_sed( rcm, Ncm, rhom, rhot, exner,
@@ -13,10 +18,15 @@
 !       References:
 !       None
 !----------------------------------------------------------------------
-        use grid_class
-        use constants
+
+        use grid_class, only: gr ! Variable(s)
+
+        use grid_class, only: zt2zm, ddzm ! Procedure(s)
+
+        use constants, only: rho_lw, pi, Cp, Lv ! Variable(s)
+
 #ifdef STATS
-        use stats_hoc
+        use stats_hoc, only: ised_rcm, iFcsed, zt, zm, lstats_samp ! Variable(s)
 #endif
 
         implicit none

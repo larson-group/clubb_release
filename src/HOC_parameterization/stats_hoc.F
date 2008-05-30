@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_hoc.F,v 1.12 2008-05-21 23:04:30 dschanen Exp $
+! $Id: stats_hoc.F,v 1.13 2008-05-30 16:24:25 faschinj Exp $
 #ifdef STATS
 !-----------------------------------------------------------------------
 !  module stats_hoc
@@ -8,8 +8,10 @@
 !-----------------------------------------------------------------------
       module stats_hoc
         
-        use stats_type, only: stats
-        use stats_prec, only: time_prec
+        use stats_type, only: 
+     .      stats ! Type
+        use stats_prec, only: 
+     .      time_prec ! Variable
 
         implicit none
         

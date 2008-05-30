@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F,v 1.2 2008-05-28 16:29:24 dschanen Exp $
+! $Id: microphys_driver.F,v 1.3 2008-05-30 16:24:22 faschinj Exp $
         module microphys_driver
 
 !       Description:
@@ -40,19 +40,89 @@
 !       References:
 !       None
 !-----------------------------------------------------------------------
-        use grid_class
-        use rain_equations, only: kk_microphys
-        use ice_dfsn_mod
-        use temp_in_K_mod, only: thlm2temp_in_K
-        use model_flags
-        use parameters, only: c_Krrm, nu_r
-        use constants, only: hydromet_dim, Lv, Cp, rho_lw, fstderr
-        use stats_prec, only: time_prec
 
-        use error_code, only: lapack_error
-        use coamps_micro_driver_mod, only: coamps_micro_driver
+        use grid_class, only:
+     .      gr, ! Variable(s)
+     .      zm2zt, ! Procedure(s)
+     .      zt2zm
+
+        use rain_equations, only:
+     .      kk_microphys ! Procedure(s)
+
+        use ice_dfsn_mod, only:
+     .      ice_dfsn ! Procedure(s)
+
+        use model_flags, only:
+     .      lcoamps_micro, ! Procedure(s)
+     .      kk_rain,
+     .      licedfs
+
+        use parameters, only:
+     .      c_Krrm, ! Procedure(s) 
+     .      nu_r
+
+        use constants, only: 
+     .      hydromet_dim, ! Variable(s)
+     .      Lv, 
+     .      Cp, 
+     .      rho_lw, 
+     .      fstderr
+
+        use stats_prec, only: 
+     .      time_prec ! Variable(s)
+
+        use error_code, only: 
+     .      lapack_error ! Procedure
+
+        use coamps_micro_driver_mod, only: 
+     .      coamps_micro_driver ! Procedure
+
 #ifdef STATS
-        use stats_hoc
+        use stats_hoc, only:
+     .      iVrr, ! Variable(s)
+     .      iVnr,
+     .      iVsnow,
+     .      iVice,
+     .      iVgraupel,
+     .      ithlm_mc,
+     .      irtm_mc,
+     .      irain_rate,
+     .      iFprec,
+     .      zm,
+     .      irrm_bt,
+     .      irrm_mc,
+     .      irrm_cond_adj,
+     .      irrm_cl,
+     .      iNrm_bt,
+     .      iNrm_mc,
+     .      iNrm_cond_adj,
+     .      iNrm_cl,
+     .      iNcm,
+     .      iNim,
+     .      iNcnm,
+     .      irrm,
+     .      iNrm,
+     .      irsnowm,
+     .      iricem,
+     .      irgraupelm,
+     .      iricem_bt,
+     .      iricem_mc,
+     .      iricem_cl,
+     .      irgraupelm_bt,
+     .      irgraupelm_mc,
+     .      irgraupelm_cl,
+     .      irsnowm_bt,
+     .      irsnowm_mc,
+     .      irsnowm_cl,
+     .      zt,
+     .      irain,
+     .      ipflux,
+     .      irrm_sfc,
+     .      sfc,
+     .      lstats_samp
+
+        use temp_in_K_mod, only: thlm2temp_in_K
+
 #endif
         implicit none
 
@@ -759,11 +829,41 @@
 
 !       References:
 !-----------------------------------------------------------------------
-        use grid_class
-        use stats_prec, only: time_prec
-        use lapack_wrap, only: tridag_solve !,band_solve
+        use grid_class, only:
+     .      gr ! Variable(s)
+        use stats_prec, only: 
+     .      time_prec ! Variable(s)
+        use lapack_wrap, only: 
+     .      tridag_solve ! Procedure(s)
+!    .     ,band_solve
 #ifdef STATS
-        use stats_hoc
+        use stats_hoc, only:
+     .      zt, ! Variable(s)
+     .      irrm_ma,
+     .      irrm_sd,
+     .      irrm_dff,
+     .      iNrm_ma,
+     .      iNrm_sd,
+     .      iNrm_dff,
+     .      iricem_ma,
+     .      iricem_sd,
+     .      iricem_dff,
+     .      irsnowm_ma,
+     .      irsnowm_sd,
+     .      irsnowm_dff,
+     .      irgraupelm_ma,
+     .      irgraupelm_sd,
+     .      irgraupelm_dff,
+     .      lstats_samp,
+     .      ztscr01,
+     .      ztscr02,
+     .      ztscr03,
+     .      ztscr04,
+     .      ztscr05,
+     .      ztscr06,
+     .      ztscr07,
+     .      ztscr08,
+     .      ztscr09
 #endif
 
         implicit none
@@ -912,12 +1012,48 @@
 !       Setup for tridiagonal system and boundary conditions should be
 !       the same as the original rain subroutine code.
 !-----------------------------------------------------------------------
-        use grid_class
-        use stats_prec, only: time_prec
-        use diffusion, only: diffusion_tlev
-        use mean_adv, only: term_ma_tlev_lhs
+        use grid_class, only: 
+     .      gr, ! Variable(s)
+     .      zm2zt ! Procedure(s)
+        use stats_prec, only: 
+     .      time_prec ! Variable(s)
+        use diffusion, only: 
+     .      diffusion_tlev ! Procedure(s)
+        use mean_adv, only: 
+     .      term_ma_tlev_lhs ! Procedure(s)
 #ifdef STATS
-        use stats_hoc
+        use stats_hoc, only:
+     .      irrm_bt,  ! Variable(s)
+     .      irrm_ma,
+     .      irrm_sd,
+     .      irrm_dff,
+     .      iNrm_bt, 
+     .      iNrm_ma,
+     .      iNrm_sd,
+     .      iNrm_dff,
+     .      iricem_bt, 
+     .      iricem_ma,
+     .      iricem_sd,
+     .      iricem_dff,
+     .      irsnowm_bt, 
+     .      irsnowm_ma,
+     .      irsnowm_sd,
+     .      irsnowm_dff,
+     .      irgraupelm_bt, 
+     .      irgraupelm_ma,
+     .      irgraupelm_sd,
+     .      irgraupelm_dff,
+     .      zt,
+     .      ztscr01,
+     .      ztscr02,
+     .      ztscr03,
+     .      ztscr04,
+     .      ztscr05,
+     .      ztscr06,
+     .      ztscr07,
+     .      ztscr08,
+     .      ztscr09,
+     .      lstats_samp
 #endif
         implicit none
 
@@ -1088,7 +1224,8 @@
 !       velocities.
 !-----------------------------------------------------------------------
 
-        use grid_class
+        use grid_class, only: 
+     .      gr ! Variable(s)
 
         implicit none
 
@@ -1345,14 +1482,21 @@
         !
         ! Brian Griffin.
 
-        use grid_class
-        use stats_prec, only: time_prec
-        use diffusion, only: diffusion_tlev
-        use mean_adv, only: term_ma_tlev_lhs
+        use grid_class, only: 
+     .      gr, ! Variable(s) 
+     .      zm2zt ! Procedure(s)
+        use stats_prec, only:
+     .      time_prec ! Variable(s)
+        use diffusion, only: 
+     .      diffusion_tlev ! Procedure(s)
+        use mean_adv, only: 
+     .      term_ma_tlev_lhs ! Procedure(s)
+
 !#ifdef STATS
 !        use stats_hoc
 !#endif /*STATS*/
 ! Joshua Fasching 2007
+
         ! Input variables.
 
         ! Hydrometeor microphysical tendency.

@@ -1,4 +1,4 @@
-! $Id: ice_dfsn_mod.F,v 1.5 2008-05-28 16:29:26 dschanen Exp $        
+! $Id: ice_dfsn_mod.F,v 1.6 2008-05-30 16:24:24 faschinj Exp $        
 
         module ice_dfsn_mod
 
@@ -7,7 +7,7 @@
         public  :: ice_dfsn
         private :: Diff_denom
 
-        private
+        private ! Default Scope
 
         contains
 !-----------------------------------------------------------------------
@@ -53,12 +53,20 @@
         !         pp. 1779--1804.
 
 
-        USE grid_class
-        USE constants
-        USE stats_prec, only: time_prec
-        USE saturation, only: rsat
+        USE grid_class, only:
+     .      gr ! Variable(s)
+        USE constants, only:
+     .      Cp, ! Variable(s)
+     .      Lv,
+     .      ep,
+     .      Rv,
+     .      Lf
+        USE stats_prec, only: 
+     .      time_prec ! Variable(s)
+        USE saturation, only: 
+     .      rsat ! Procedure(s)
 #ifdef STATS
-        use stats_hoc, only: zt, lstats_samp,
+        use stats_hoc, only: zt, lstats_samp, ! Variable(s)
      .      ircm_icedfs, idiam, imass_ice_cryst, iu_T_cm
 #endif
 
@@ -290,7 +298,9 @@
 
         FUNCTION Diff_denom( T_in_K, press, e_i )
 
-        USE constants
+        USE constants, only:
+     .      Ls, ! Variables
+     .      Rv
 
         IMPLICIT NONE
 

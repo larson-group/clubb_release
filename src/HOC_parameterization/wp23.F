@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.63 2008-05-27 15:41:05 griffinb Exp $
+! $Id: wp23.F,v 1.64 2008-05-30 16:24:26 faschinj Exp $
 !===============================================================================
         module wp23
 
@@ -50,14 +50,27 @@
 !       /Implict solution for the vertical velocity moments/
 !------------------------------------------------------------------------
 
-        use grid_class, only: gr, ! Variable(s)
-     .               zt2zm, zm2zt ! Procedure(s)
-        use parameters, only: C11c, C11b, C11, C1c, C1b, C1, c_K1, ! Variable(s)
-     .               c_ksqd, c_K8 
-        use constants, only: fstderr    ! Variable(s)
-        use stats_prec, only: time_prec ! Variable(s)
-        use error_code, only: lapack_error, ! Procedure(s)
-     .                        clubb_at_debug_level 
+        use grid_class, only: 
+     .      gr,    ! Variable(s)
+     .      zt2zm, ! Procedure(s)
+     .      zm2zt 
+        use parameters, only: 
+     .      C11c, ! Variable(s)
+     .      C11b, 
+     .      C11, 
+     .      C1c, 
+     .      C1b, 
+     .      C1, 
+     .      c_K1, 
+     .      c_ksqd, 
+     .      c_K8 
+        use constants, only: 
+     .      fstderr    ! Variable(s)
+        use stats_prec, only: 
+     .      time_prec ! Variable(s)
+        use error_code, only: 
+     .      lapack_error, ! Procedure(s)
+     .      clubb_at_debug_level 
 #ifdef STATS
         use stats_hoc
 #endif /*STATS*/
@@ -1707,8 +1720,12 @@
 !       References:
 !-----------------------------------------------------------------------
 
-        use constants, only: grav ! Gravitational acceleration [m/s^2]
-        use parameters, only: T0  ! Reference temperature      [K]
+        use constants, only: 
+	    ! Variable(s)	
+     .      grav ! Gravitational acceleration [m/s^2]
+        use parameters, only:
+	    ! Variable(s) 
+     .      T0  ! Reference temperature      [K]
 
         implicit none
 
@@ -1764,9 +1781,11 @@
 !       References:
 !-----------------------------------------------------------------------
 
-        use constants, only: 
+        use constants, only:
+            ! Variables 
      .      grav ! Gravitational acceleration [m/s^2]
-        use parameters, only: 
+        use parameters, only:
+            ! Variables 
      .      T0  ! Reference temperature      [K]
 
         implicit none

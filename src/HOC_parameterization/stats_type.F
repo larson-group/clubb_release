@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_type.F,v 1.5 2008-04-04 22:02:49 dschanen Exp $
+! $Id: stats_type.F,v 1.6 2008-05-30 16:24:25 faschinj Exp $
 #ifdef STATS
       module stats_type
  
@@ -7,8 +7,11 @@
 !     Contains derived data type 'stats'
 !-----------------------------------------------------------------------
 
-        use outputfile_class
-        use stats_prec
+        use outputfile_class, only:
+     .      outputfile ! Type
+        use stats_prec, only:
+     .      stat_rknd, ! Variable(s)
+     .      stat_nknd
         
         implicit none
 
@@ -48,19 +51,21 @@
 !    
 !-----------------------------------------------------------------------
          implicit none
-           !input
-             integer,intent(in) :: var_index               ! Variable index
-             character(len = *), intent(in) :: name        ! Variable name
-             character(len = *), intent(in) :: description ! Variable description
-             character(len = *), intent(in) :: units       ! Variable units
+           
+         ! Input Variables
+             
+         integer,intent(in) :: var_index               ! Variable index
+         character(len = *), intent(in) :: name        ! Variable name
+         character(len = *), intent(in) :: description ! Variable description
+         character(len = *), intent(in) :: units       ! Variable units
 
-           !output
-             type(stats), intent(out) :: grid
+         ! Output Variable
+         type(stats), intent(out) :: grid
 
-             grid%f%var(var_index)%ptr => grid%x(:,var_index)
-             grid%f%var(var_index)%name = name
-             grid%f%var(var_index)%description = description
-             grid%f%var(var_index)%units = units
+         grid%f%var(var_index)%ptr => grid%x(:,var_index)
+         grid%f%var(var_index)%name = name
+         grid%f%var(var_index)%description = description
+         grid%f%var(var_index)%units = units
 
              !Example of the old format 
              !changed by Joshua Fasching 23 August 2007
@@ -70,9 +75,9 @@
              !zt%f%var(ithlm)%description = "thetal (K)"
              !zt%f%var(ithlm)%units = "K"
       
-             return
+         return
 
-             end subroutine stat_assign
+         end subroutine stat_assign
 
       end module stats_type
 #endif /*STATS*/

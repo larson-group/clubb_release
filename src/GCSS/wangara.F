@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: wangara.F,v 1.6 2008-04-05 19:54:20 griffinb Exp $
+! $Id: wangara.F,v 1.7 2008-05-30 16:24:23 faschinj Exp $
         module wangara
 
         public :: wangara_tndcy, wangard_sfclyr
@@ -16,9 +16,12 @@
 !       References;
 !       None
 !----------------------------------------------------------------------
-        use grid_class
-        use constants, only: sclr_dim
-        use stats_prec, only: time_prec
+
+        use grid_class, only: gr ! Variable(s)
+
+        use constants, only: sclr_dim ! Variable(s)
+
+        use stats_prec, only: time_prec ! Variable(s)
 
         implicit none
 
@@ -63,8 +66,8 @@
 !       heat and moisture for Wangara day 33
 !----------------------------------------------------------------------
 
-        use constants, only: sclr_dim, pi, fstderr, sec_per_day
-        use stats_prec, only: time_prec
+        use constants, only: sclr_dim, pi, fstderr, sec_per_day ! Variable(s)
+        use stats_prec, only: time_prec ! Variable(s)
 
         implicit none
 

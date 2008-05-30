@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: prog_variables.F,v 1.19 2008-05-09 16:33:53 faschinj Exp $
+! $Id: prog_variables.F,v 1.20 2008-05-30 16:24:25 faschinj Exp $
         module prognostic_variables
 
 !       This module contains definitions of all prognostic
@@ -10,7 +10,8 @@
 !       thermodynamic grid and a momentum grid, and the grids have 
 !       different points.
 !-----------------------------------------------------------------------
-        use constants, only: sclr_dim
+        use constants, only: 
+     .      sclr_dim ! Variable(s)
 
         implicit none
 
@@ -117,8 +118,9 @@
 !       References:
 !       None
 !-----------------------------------------------------------------------
-        use constants, only: sclr_dim, emin 
-        use model_flags
+        use constants, only: 
+     .      sclr_dim, ! Variable(s) 
+     .      emin 
 
         implicit none
 

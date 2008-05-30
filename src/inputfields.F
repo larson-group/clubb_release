@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputfields.F,v 1.18 2008-05-14 23:14:59 dschanen Exp $
+! $Id: inputfields.F,v 1.19 2008-05-30 16:24:22 faschinj Exp $
 
 ! Module inputfields
 
@@ -84,10 +84,58 @@
 !       subroutine close_grads_read
 !-----------------------------------------------------------------------
 
-        use prognostic_variables
-        use diagnostic_variables
-        use grid_class
-        use inputfile_class
+        use prognostic_variables, only:
+     .      um, ! Variable(s)
+     .      vm,
+     .      rtm,
+     .      thlm,
+     .      wp2,
+     .      wp3,
+     .      wprtp,
+     .      wpthlp,
+     .      rtp2,
+     .      thlp2,
+     .      rtpthlp,
+     .      upwp,
+     .      vpwp,
+     .      p,
+     .      exner,
+     .      rcm,
+     .      wmt,
+     .      rhot,
+     .      rhom,
+     .      thlm_forcing,
+     .      rtm_forcing,
+     .      cf,
+     .      taum,
+     .      up2,
+     .      vp2,
+     .      Scm
+
+        use diagnostic_variables, only:
+     .      hydromet, ! Variable(s)
+     .      taut,
+     .      ug,
+     .      vg,
+     .      Lscale,
+     .      Lup,
+     .      Ldown,
+     .      Kht,
+     .      Khm,
+     .      thvm,
+     .      Ncm,
+     .      Ncnm,
+     .      Nim,
+     .      Sct,
+     .      em
+        use grid_class, only:
+     .      gr, ! Variable(s)
+     .      zt2zm ! Procedure(s)
+        use inputfile_class, only:
+     .      inputgrads, ! Type
+     .      get_var, ! Procedure(s)
+     .      open_grads_read,
+     .      close_grads_read
 
         implicit none
 
@@ -922,9 +970,15 @@
 !
 !-------------------------------------------------------------------------
 
-          use inputfile_class
-          use constants, only: sec_per_min
-          use stats_prec, only: time_prec
+          use inputfile_class, only:
+     .        inputgrads, ! Type
+     .        open_grads_read, ! Procedure(s)
+     .        close_grads_read
+          use constants, only: 
+     .        sec_per_min ! Variable(s)
+
+          use stats_prec, only: 
+     .        time_prec
 
           implicit none
           

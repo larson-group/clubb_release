@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputgrads.F,v 1.17 2008-04-05 19:54:06 griffinb Exp $
+! $Id: inputgrads.F,v 1.18 2008-05-30 16:24:22 faschinj Exp $
 
         module inputfile_class
 
@@ -19,9 +19,15 @@
 !       * Added preprocesing for RECL 
 !-----------------------------------------------------------------------
 #include "recl.F"
-        use endian
-        use constants, only: fstdout, fstderr
-        use stats_prec, only: time_prec
+        use endian, only:
+     .      little_endian, ! Procedure(s)
+     .      big_endian,
+     .      byte_order_swap
+        use constants, only: 
+     .      fstdout, ! Variable(s) 
+     .      fstderr
+        use stats_prec, only: 
+     .      time_prec ! Variable(s)
 
         implicit none
         ! Overloaded interface for get_var.  All GrADS files are assumed

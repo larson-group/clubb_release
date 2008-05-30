@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: nov11.F,v 1.16 2008-05-10 21:14:46 griffinb Exp $
+! $Id: nov11.F,v 1.17 2008-05-30 16:24:23 faschinj Exp $
         module nov11
 
 !       Description:
@@ -21,7 +21,7 @@
 
 !$omp   threadprivate(tdelay_lcoamps_micro, tdelay_licedfs)
 
-        private
+        private ! Default Scope
 
         contains
 
@@ -41,14 +41,23 @@
 !       J. Geophys. Res., 111, D19207, doi:10.1029/2005JD007002.
 !----------------------------------------------------------------------
 
-        use grid_class
-        use constants
-        use model_flags
-        use stats_prec, only: time_prec
-        use interpolation, only: linear_interpolation
-        use rad_lwsw_mod, only: rad_lwsw
+        use grid_class, only: gr ! Variable(s)
+
+        use grid_class, only: zt2zm ! Procedure(s)
+
+        use constants, only: sclr_dim, Cp, Lv ! Variable(s)
+
+        use model_flags, only: lbugsrad, lcoamps_micro, licedfs ! Variable(s)
+
+        use stats_prec, only: time_prec ! Variable(s)
+
+        use interpolation, only: linear_interpolation ! Procedure(s)
+
+        use rad_lwsw_mod, only: rad_lwsw ! Procedure(s)
+
 #ifdef STATS
-        use stats_hoc
+        use stats_hoc, only: iFrad_SW, lstats_samp, ! Variable(s)
+     .                 iFrad_LW, zt, zm, iradht_LW, iradht_SW
 #endif /*STATS*/
 
         implicit none

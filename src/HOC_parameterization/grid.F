@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: grid.F,v 1.22 2008-05-28 19:11:50 vlarson Exp $
+! $Id: grid.F,v 1.23 2008-05-30 16:24:24 faschinj Exp $
 !===============================================================================
         module grid_class
 
@@ -230,7 +230,8 @@
 !
 !-----------------------------------------------------------------------
 
-           use constants, only: fstderr
+           use constants, only: 
+     .         fstderr ! Variable(s)
 
            implicit none
 
@@ -488,8 +489,10 @@
 !          all three grid types.
 !------------------------------------------------------------------------
 
-           use constants, only: fstderr
-           use file_functions, only: file_read_1d
+           use constants, only: 
+     .         fstderr ! Variable(s)
+           use file_functions, only: 
+     .         file_read_1d ! Procedure(s)
 
            implicit none
 

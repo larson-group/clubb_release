@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: jun25.F,v 1.12 2008-05-10 21:14:46 griffinb Exp $
+! $Id: jun25.F,v 1.13 2008-05-30 16:24:23 faschinj Exp $
         module jun25
 
 !       Description:
@@ -33,14 +33,24 @@
 
 !       References:
 !-----------------------------------------------------------------------
-        use grid_class
-        use constants
-        use model_flags
-        use stats_prec, only: time_prec
-        use interpolation, only: linear_interpolation
-        use rad_lwsw_mod, only: rad_lwsw
+
+        use grid_class, only: gr ! Variable(s)
+
+        use grid_class, only: zt2zm ! Procedure(s)
+
+        use constants, only: sclr_dim, pi, Cp, Lv ! Variable(s)
+
+        use model_flags, only: lbugsrad, lcoamps_micro, licedfs ! Variable(s)
+
+        use stats_prec, only: time_prec ! Variable(s)
+
+        use interpolation, only: linear_interpolation ! Procedure(s)
+
+        use rad_lwsw_mod, only: rad_lwsw ! Procedure(s)
+
 #ifdef STATS
-        use stats_hoc
+        use stats_hoc, only: iradht_LW, iradht_SW, iFrad_LW, iFrad_SW, ! Procedure(s)
+     .                 zt, zm, lstats_samp
 #endif /*STATS*/
 
         implicit none

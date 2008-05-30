@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: hoc_tuner_budget_terms.F,v 1.9 2005-09-19 19:44:28 dschanen Exp $
+!  $Id: hoc_tuner_budget_terms.F,v 1.10 2008-05-30 16:24:22 faschinj Exp $
 
 ! PROGRAM hoc_tuner_budget_terms
 
@@ -11,8 +11,14 @@
 !-----------------------------------------------------------------------
 
       program hoc_tuner_budget_terms
-      use budget_terms
-      use error, only: read_random_seed
+
+      use budget_terms, only:
+     .    setup_budget_terms, ! Procedure(s)
+     .    generate_namelists,
+     .    output_optimal_constants
+
+      use error, only: 
+     .    read_random_seed ! Procedure(s)
 
       implicit none
 

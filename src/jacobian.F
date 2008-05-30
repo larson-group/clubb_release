@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.43 2008-05-14 23:14:59 dschanen Exp $
+! $Id: jacobian.F,v 1.44 2008-05-30 16:24:22 faschinj Exp $
 
       program jacobian
 #ifdef STATS
@@ -12,14 +12,25 @@
 !     None
 !-----------------------------------------------------------------------
 
-      use hoc, only: hoc_model
-      use param_index, only: nparams
-      use parameters, only: read_parameters, params_list
-      use constants, only: fstdout, fstderr
-      use grads_common, only: grads_average_interval, grads_zlvl
-      use stats_hoc, only: fname_zt, fname_zm
-      use error_code, only: clubb_no_error,
-     .                      fatal_error
+      use hoc, only: 
+     .    hoc_model ! Procedure(s)
+      use param_index, only: 
+     .    nparams ! Variable(s)
+      use parameters, only: 
+     .    params_list, ! Variable(s)
+     .    read_parameters ! Procedure(s) 
+      use constants, only: 
+     .    fstdout, ! Variable(s) 
+     .    fstderr
+      use grads_common, only: 
+     .    grads_average_interval, ! Procedure(s) 
+     .    grads_zlvl
+      use stats_hoc, only: 
+     .    fname_zt, ! Variable(s) 
+     .    fname_zm
+      use error_code, only: 
+     .    clubb_no_error, ! Variable(s)
+     .    fatal_error ! Procedure(s)
 
       implicit none
 

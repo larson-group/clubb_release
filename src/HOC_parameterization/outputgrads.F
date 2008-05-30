@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: outputgrads.F,v 1.11 2008-05-16 17:40:51 faschinj Exp $
+! $Id: outputgrads.F,v 1.12 2008-05-30 16:24:25 faschinj Exp $
 #ifdef STATS 
         module outputgrads
 
@@ -25,8 +25,6 @@
 !        Chris Golaz, updated 2/18/2003
 !-----------------------------------------------------------------------
 
-          use constants, only: fstdout, fstderr
-
           implicit none
           
           public  :: open_grads, write_grads
@@ -47,9 +45,13 @@
      .                           nvar )
 
 !-----------------------------------------------------------------------
-          use constants, only: fstderr, fstdout
-          use outputfile_class
-          use stats_prec, only: time_prec
+          use constants, only: 
+     .        fstderr, ! Variable 
+     .        fstdout
+          use outputfile_class, only:
+     .        outputfile ! Type
+          use stats_prec, only: 
+     .        time_prec ! Variable
           
           implicit none
 
@@ -173,9 +175,13 @@
 !         to determine whether data can be safely appended to
 !         existing file.
 !-----------------------------------------------------------------------
-          use outputfile_class
-          use stats_prec
-          use constants, only: fstderr, fstdout
+          use outputfile_class, only:
+     .        variable ! Type
+          use stats_prec, only:
+     .        time_prec ! Variable
+          use constants, only: 
+     .        fstderr, ! Variable 
+     .        fstdout
 
           implicit none
 
@@ -404,8 +410,12 @@
 !         Write part of a GrADS file to disk
 !---------------------------------------------------------
         
-          use endian
-          use outputfile_class
+          use constants, only:
+     .        fstderr ! Variable(s)
+          use endian, only:
+     .        big_endian ! Procedure
+          use outputfile_class, only:
+     .        outputfile ! Type
 
           implicit none
 
@@ -535,8 +545,10 @@
           subroutine formatdate( day_in, month_in, year_in, 
      .                           time_in, date )
           
-          use stats_prec, only: time_prec
-          use calendar, only: leap_year
+          use stats_prec, only: 
+     .        time_prec ! Variable
+          use calendar, only: 
+     .        leap_year ! Procedure
           
           implicit none
 

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.190 2008-05-27 19:02:34 vlarson Exp $
+! $Id: hoc.F,v 1.191 2008-05-30 16:24:22 faschinj Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -14,7 +14,7 @@
 !       being the hoc_standalone program).
 !-----------------------------------------------------------------------
 
-        use stats_prec, only: time_prec
+        use stats_prec, only: time_prec ! Variable(s)
 
         implicit none
 
@@ -114,25 +114,52 @@
 
 !-----------------------------------------------------------------------
 
-        use grid_class
-        use param_index, only: nparams
-        use diagnostic_variables
-        use prognostic_variables
-        use numerical_check
-        use inputfields, only: compute_timestep, grads_fields_reader,
-     .    datafilet
-        use hoc_parameterization_interface
-        use constants, only: fstdout, fstderr
-        use error_code, only: clubb_var_out_of_bounds,
+        use grid_class, only: gr ! Variable(s)
+
+        use grid_class, only: read_grid_heights ! Procedure(s)
+
+        use param_index, only: nparams ! Variable(s)
+
+        use diagnostic_variables, only: ug, vg, hydromet, em, ! Variable(s)
+     .                            taut, thvm, Lscale, Kht, Khm,
+     .                            um_ref, vm_ref
+
+        use prognostic_variables, only: Tsfc, psfc, SE, LE, thlm, rtm, ! Variable(s)
+     .                            um, vm, wp2, rcm, wmt, wmm, exner,
+     .                            taum, p, rhom, upwp, vpwp, wpthlp,
+     .                            rhot, wprtp, wpthlp_sfc, wprtp_sfc,
+     .                            upwp_sfc, vpwp_sfc, thlm_forcing,
+     .                            rtm_forcing, up2, vp2, wp3, rtp2,
+     .                            thlp2, rtpthlp, Scm, cf, rtpthlp
+
+        use numerical_check, only: invalid_model_arrays ! Procedure(s)
+
+        use inputfields, only: compute_timestep, grads_fields_reader ! Procedure(s)
+     
+        use inputfields, only: datafilet ! Variable(s)
+
+        use hoc_parameterization_interface, only:
+     .                                 parameterization_setup, ! Procedure(s) 
+     .                                 parameterization_cleanup,
+     .                                 parameterization_timestep          
+
+        use constants, only: fstdout, fstderr ! Variable(s)
+
+        use error_code, only: clubb_var_out_of_bounds, ! Variable(s)
      .                        clubb_var_equals_NaN,
-     .                        clubb_rtm_level_not_found,
-     .                        fatal_error,
+     .                        clubb_rtm_level_not_found
+
+        use error_code, only: fatal_error, ! Procedure(s)
      .                        set_clubb_debug_level
         
-        use stats_prec, only: time_prec
+        use stats_prec, only: time_prec ! Variable(s)
+
 #ifdef STATS
-        use stats_hoc, only: lstats_last
-        use stats_subs
+        use stats_hoc, only: lstats_last ! Variable(s
+
+        use stats_subs, only: stats_begin_timestep, stats_end_timestep, ! Procedure(s)
+     .                        stats_finalize, stats_init
+
 #endif /*STATS*/
 
         implicit none
@@ -550,26 +577,40 @@
 !       function rsat
 !       function sat_rcm
 !       function zt2zm (from grid_class)
+!       function zm2zt (from grid_class)
 !-----------------------------------------------------------------------
 
-        use constants
-        use parameters
-        use grid_class
-        use sounding
-        use model_flags, only: luv_nudge
-        use arm_0003, only: arm_0003_init
-        use arm_3year, only: arm_3year_init
-        use arm_97, only: arm_97_init
-        use mpace_a, only: mpace_a_init
-        use lba, only: lba_init
-        use mixing_length
-        use error_code, only: clubb_no_error
+        use constants, only: hydromet_dim, Cp, Lv, ep2, ep1, emin, wtol ! Variable(s)
+
+        use parameters, only: T0, taumax, taumin, c_K ! Variable(s)
+
+        use grid_class, only: gr ! Variable(s)
+
+        use grid_class, only: zm2zt, zt2zm ! Procedure(s)
+
+        use sounding, only: read_sounding ! Procedure(s)
+
+        use model_flags, only: luv_nudge ! Variable(s)
+
+        use arm_0003, only: arm_0003_init ! Procedure(s)
+
+        use arm_3year, only: arm_3year_init ! Procedure(s)
+
+        use arm_97, only: arm_97_init ! Procedure(s)
+
+        use mpace_a, only: mpace_a_init ! Procedure(s)
+
+        use lba, only: lba_init ! Procedure(s)
+
+        use mixing_length, only: compute_length ! Procedure(s)
+
+        use error_code, only: clubb_no_error ! Variable(s)
         
         ! Joshua Fasching
         ! March 2008
-        use saturation
+        use saturation, only: rsat, sat_rcm ! Procedure(s)
        
-        use hydrostatic_mod
+        use hydrostatic_mod, only: hydrostatic ! Procedure(s)
 
         implicit none
 
@@ -1073,17 +1114,42 @@
 !       Execute the necessary steps for the initialization of the 
 !       HOC model to a designated point in the submitted GrADS file. 
 !-----------------------------------------------------------------------
-        use inputfields
-        use grid_class
-        use constants
-        use parameters 
-        use sounding
-        use stats_prec, only: time_prec
-        use model_flags, only: luv_nudge
-        use arm_0003, only: arm_0003_init
-        use arm_97, only: arm_97_init
-        use arm_3year, only: arm_3year_init
-        use mpace_a, only: mpace_a_init
+        use inputfields,only: datafile, input_type, input_um, input_vm, ! Variable(s)
+     .                  input_rtm, input_thlm, input_wp2, input_ug,
+     .                  input_vg, input_rcm, input_wmt, input_exner,
+     .                  input_em, input_p, input_rhot, input_rhom,
+     .                  input_Lscale, input_Lup, input_Ldown, input_Kht,
+     .                  input_Khm, input_taum, input_taut, input_thvm, 
+     .                  input_rrm, input_rsnowm, input_ricem, 
+     .                  input_rgraupelm, input_wprtp, input_wpthlp,
+     .                  input_wp3, input_rtp2, input_thlp2, 
+     .                  input_rtpthlp, input_upwp, input_vpwp, 
+     .                  input_thlm_forcing, input_rtm_forcing,  
+     .                  input_up2, input_vp2, input_Scm, input_Ncm,
+     .                  input_Ncnm, input_Nim, input_cf, input_Nrm,
+     .                  input_Sct
+
+        use inputfields, only: compute_timestep, grads_fields_reader ! Procedure(s)
+
+        use grid_class, only: gr ! Variable(s)
+
+        use grid_class, only: zt2zm ! Procedure(s)
+
+        use constants, only: fstderr ! Variables(s)
+
+        use sounding, only: read_sounding ! Procedure(s)
+
+        use stats_prec, only: time_prec ! Variable(s)
+
+        use model_flags, only: luv_nudge ! Variable(s)
+
+        use arm_0003, only: arm_0003_init ! Procedure(s)
+
+        use arm_97, only: arm_97_init ! Procedure(s)
+
+        use arm_3year, only: arm_3year_init ! Procedure(s)
+
+        use mpace_a, only: mpace_a_init ! Procedure(s)
 
         implicit none
 
@@ -1242,44 +1308,82 @@
 !----------------------------------------------------------------------
 
         ! Modules to be included
-        use model_flags
-        use constants
-        use parameters
-        use grid_class
-        use diagnostic_variables
-        use prognostic_variables
-        use stats_prec, only: time_prec
-        use numerical_check, only: isnan2d, rad_check
-        use microphys_driver, only: advance_microphys ! Microphysics
-        use error_code, only: lapack_error,
+        use model_flags, only: kk_rain, licedfs, lcoamps_micro, ! Variable(s)
+     .                   cloud_sed, lbugsrad
+
+        use constants, only: rc_tol, fstderr ! Variable(s)
+
+        use grid_class, only: gr ! Variable(s)
+
+        use grid_class, only: zt2zm ! Procedure(s)
+
+        use diagnostic_variables, only: hydromet, Ncm, radht, um_ref, ! Variable(s)
+     .                            vm_ref, Frad, Ncnm, thvm, ustar,
+     .                            pdf_parms, Khm, Akm_est, Akm, Nim
+
+        use prognostic_variables, only: rtm_forcing, thlm_forcing, ! Variable(s)
+     .                            wmt, wmm, rhot, rtm, thlm, p,
+     .                            exner, rcm, rhom, um, psfc, vm,
+     .                            upwp_sfc, vpwp_sfc, Tsfc,
+     .                            wpthlp_sfc, SE, LE, wprtp_sfc, cf
+
+        use stats_prec, only: time_prec ! Variable(s)
+
+        use numerical_check, only: isnan2d, rad_check ! Procedure(s)
+
+        use microphys_driver, only: advance_microphys ! Procedure(s)
+
+        use error_code, only: lapack_error, ! Procedure(s)
      .                        clubb_at_debug_level
        
         ! Case specific modules 
-        use arm, only: arm_tndcy, arm_sfclyr
-        use arm_97, only: arm_97_tndcy, arm_97_sfclyr
-        use arm_0003, only: arm_0003_tndcy, arm_0003_sfclyr
-        use arm_3year, only: arm_3year_tndcy, arm_3year_sfclyr
-        use astex, only: astex_tndcy, astex_sfclyr
-        use atex, only: atex_tndcy, atex_sfclyr
-        use bomex, only: bomex_tndcy, bomex_sfclyr
-        use cobra, only: cobra_tndcy, cobra_sfclyr
-        use dycoms2_rf01, only: dycoms2_rf01_tndcy, dycoms2_rf01_sfclyr
-        use dycoms2_rf02, only: dycoms2_rf02_tndcy, dycoms2_rf02_sfclyr
-        use cloud_sed_mod
+        use arm, only: arm_tndcy, arm_sfclyr ! Procedure(s)
+
+        use arm_97, only: arm_97_tndcy, arm_97_sfclyr ! Procedure(s)
+
+        use arm_0003, only: arm_0003_tndcy, arm_0003_sfclyr ! Procedure(s)
+
+        use arm_3year, only: arm_3year_tndcy, arm_3year_sfclyr ! Procedure(s)
+
+        use astex, only: astex_tndcy, astex_sfclyr ! Procedure(s)
+
+        use atex, only: atex_tndcy, atex_sfclyr ! Procedure(s)
+
+        use bomex, only: bomex_tndcy, bomex_sfclyr ! Procedure(s)
+
+        use cobra, only: cobra_tndcy, cobra_sfclyr ! Procedure(s)
+
+        use dycoms2_rf01, only: dycoms2_rf01_tndcy, dycoms2_rf01_sfclyr ! Procedure(s)
+
+        use dycoms2_rf02, only: dycoms2_rf02_tndcy, dycoms2_rf02_sfclyr ! Procedure(s)
+
+        use cloud_sed_mod ! Procedure(s)
+
         use fire, only: fire_tndcy, sfc_momentum_fluxes,
-     .                  sfc_thermo_fluxes
-        use gabls2, only: gabls2_tndcy, gabls2_sfclyr
-        use rico, only: rico_tndcy, rico_sfclyr
-        use lba, only: lba_tndcy, lba_sfclyr
-        use mpace_a, only: mpace_a_tndcy, mpace_a_sfclyr
-        use mpace_b, only: mpace_b_tndcy, mpace_b_sfclyr
-        use nov11, only: nov11_altocu_tndcy ! Above surface
-        use jun25, only: jun25_altocu_tndcy ! Above surface
-        use clex9_nov02, only: clex9_nov02_tndcy ! Above surface
-        use clex9_oct14, only: clex9_oct14_tndcy ! Above surface
-        use wangara, only: wangara_tndcy, wangara_sfclyr
+     .                  sfc_thermo_fluxes ! Procedure(s)
+
+        use gabls2, only: gabls2_tndcy, gabls2_sfclyr ! Procedure(s)
+
+        use rico, only: rico_tndcy, rico_sfclyr ! Procedure(s)
+
+        use lba, only: lba_tndcy, lba_sfclyr ! Procedure(s)
+
+        use mpace_a, only: mpace_a_tndcy, mpace_a_sfclyr ! Procedure(s)
+
+        use mpace_b, only: mpace_b_tndcy, mpace_b_sfclyr ! Procedure(s)
+
+        use nov11, only: nov11_altocu_tndcy ! Procedure(s)
+
+        use jun25, only: jun25_altocu_tndcy ! Procedure(s)
+
+        use clex9_nov02, only: clex9_nov02_tndcy ! Procedure(s)
+
+        use clex9_oct14, only: clex9_oct14_tndcy ! Procedure(s)
+
+        use wangara, only: wangara_tndcy, wangara_sfclyr ! Procedure(s)
+
 #ifdef radoffline
-        use bugsrad_hoc_mod, only: bugsrad_hoc
+        use bugsrad_hoc_mod, only: bugsrad_hoc ! Procedure(s)
 #endif
         implicit none
         

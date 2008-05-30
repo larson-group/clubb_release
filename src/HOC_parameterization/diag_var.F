@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F,v 1.46 2008-05-27 15:41:05 griffinb Exp $
+! $Id: diag_var.F,v 1.47 2008-05-30 16:24:24 faschinj Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !===============================================================================
@@ -49,18 +49,40 @@
 !      /Steady-state solution for the variances/ 
 !-----------------------------------------------------------------------
 
-        use constants
+        use constants, only:
+     .      sclr_dim, ! Variable(s)
+     .      wtol,
+     .      rttol,
+     .      thltol,
+     .      sclrtol,
+     .      fstderr
         use parameters, 
-     .    only: C2, C2b, C2c, C2rt, C2thl, C2rtthl, c_K2, nu2, nu9, 
+     .    only: C2, C2b, C2c, C2rt, C2thl, C2rtthl, c_K2, nu2, nu9, ! Variable(s)
      .          c_Ksqd, beta, C4, C14, C5, T0
-        use grid_class
-        use stats_prec, only: time_prec
-        use lapack_wrap, only: tridag_solve
-        use error_code, only: clubb_no_error, 
-     .                        lapack_error, 
-     .                        clubb_at_debug_level
+        use grid_class, only:
+     .      gr, ! Variable(s)
+     .      zm2zt ! Procedure(s)
+        use stats_prec, only: 
+     .      time_prec
+        use lapack_wrap, only: 
+     .      tridag_solve
+        use error_code, only: 
+     .      clubb_no_error, ! Variable
+     .      lapack_error,   ! Procedure(s)
+     .      clubb_at_debug_level
 #ifdef STATS
-        use stats_hoc
+        use stats_hoc, only:
+     .      irtp2_bt, ! Variable(s)
+     .      irtp2_cl,
+     .      ithlp2_bt,
+     .      ithlp2_cl,
+     .      irtpthlp_bt,
+     .      ivp2_bt,
+     .      ivp2_cl,
+     .      iup2_bt,
+     .      iup2_cl,
+     .      zm,
+     .      lstats_samp
 #endif /*STATS*/
        
         implicit none
@@ -672,12 +694,50 @@
 !       None
 !-----------------------------------------------------------------------
 
-        use grid_class
-        use stats_prec, only: time_prec
-        use diffusion, only: diffusion_mlev
-        use mean_adv, only: term_ma_mlev_lhs
+        use grid_class, only:
+     .      gr ! Variable(s)
+
+        use stats_prec, only: 
+     .      time_prec ! Variable(s)
+
+        use diffusion, only: 
+     .      diffusion_mlev ! Procedure(s)
+
+        use mean_adv, only: 
+     .      term_ma_mlev_lhs ! Procedure(s)
+
 #ifdef STATS
-        use stats_hoc
+        use stats_hoc, only:
+     .      zmscr01,
+     .      zmscr02,
+     .      zmscr03,
+     .      zmscr04,
+     .      zmscr05,
+     .      zmscr06,
+     .      zmscr07,
+     .      zmscr08,
+     .      zmscr09,
+     .      zmscr10,
+     .      lstats_samp,
+     .      irtp2_ma,
+     .      irtp2_ta,
+     .      irtp2_dp1,
+     .      irtp2_dp2,
+     .      ithlp2_ma,
+     .      ithlp2_ta,
+     .      ithlp2_dp1,
+     .      ithlp2_dp2,
+     .      irtpthlp_ma,
+     .      irtpthlp_ta,
+     .      irtpthlp_dp1,
+     .      irtpthlp_dp2,
+     .      iup2_ma,
+     .      iup2_ta,
+     .      iup2_dp2,
+     .      ivp2_ma,
+     .      ivp2_ta,
+     .      ivp2_dp2
+
 #endif
 
         implicit none
@@ -832,10 +892,56 @@
      .                             lhs, xapxbp, err_code )
 
 !-----------------------------------------------------------------------
-        use lapack_wrap, only: tridag_solve, tridag_solvex!, band_solve
-        use grid_class
+        use lapack_wrap, only: 
+     .      tridag_solve, ! Variable(s)
+     .      tridag_solvex
+!    .    , band_solve
+        use grid_class, only:
+     .      gr ! Variable(s)
 #ifdef STATS
-        use stats_hoc
+        use stats_hoc, only:
+     .      zm, ! Variable(s) 
+     .      sfc,
+     .      irtp2_cn,
+     .      irtp2_dp1,
+     .      irtp2_dp2,
+     .      irtp2_ta,
+     .      irtp2_ma,
+     .      ithlp2_cn,
+     .      ithlp2_dp1,
+     .      ithlp2_dp2,
+     .      ithlp2_ta,
+     .      ithlp2_ma,
+     .      irtpthlp_cn,
+     .      irtpthlp_dp1,
+     .      irtpthlp_dp2,
+     .      irtpthlp_ta,
+     .      irtpthlp_ma,
+     .      iup2_cn,
+     .      iup2_dp1,
+     .      iup2_dp2,
+     .      iup2_ta,
+     .      iup2_ma,
+     .      iup2_pr1,
+     .      ivp2_cn,
+     .      ivp2_dp1,
+     .      ivp2_dp2,
+     .      ivp2_ta,
+     .      ivp2_ma,
+     .      ivp2_pr1,
+     .      lstats_samp,
+     .      zmscr01,
+     .      zmscr02,
+     .      zmscr03,
+     .      zmscr04,
+     .      zmscr05,
+     .      zmscr06,
+     .      zmscr07,
+     .      zmscr08,
+     .      zmscr09,
+     .      zmscr10,
+     .      zmscr11
+
 #endif
 
         ! Constant parameters
@@ -1019,11 +1125,28 @@
 !       Explicit contributions to u'^2 or v'^2
 !-----------------------------------------------------------------------
 
-        use grid_class
-        use constants, only: grav
-        use stats_prec, only: time_prec
+        use grid_class, only:
+     .      gr ! Variable(s)
+        use constants, only: 
+     .      grav ! Variable(s)
+        use stats_prec, only: 
+     .      time_prec ! Variable(s)
 #ifdef STATS
-        use stats_hoc
+        use stats_hoc, only:
+     .      ivp2_ta, ! Variable(s)
+     .      ivp2_tp,
+     .      ivp2_dp1,
+     .      ivp2_pr1,
+     .      ivp2_pr2,
+     .      iup2_ta,
+     .      iup2_tp,
+     .      iup2_dp1,
+     .      iup2_pr1,
+     .      iup2_pr2,
+     .      zm,
+     .      zmscr01,
+     .      zmscr11,
+     .      lstats_samp
 #endif
 
         implicit none
@@ -1212,10 +1335,21 @@
 !                                 sclr'r_t', sclr'th_l', or sclr'^2.
 !-----------------------------------------------------------------------
 
-        use grid_class
-        use stats_prec, only: time_prec
+        use grid_class, only:
+     .      gr ! Variable(s)
+        use stats_prec, only: 
+     .      time_prec ! Variable(s)
 #ifdef STATS
-        use stats_hoc
+        use stats_hoc, only:
+     .      irtp2_ta, ! Variable(s)
+     .      irtp2_tp,
+     .      ithlp2_ta,
+     .      ithlp2_tp,
+     .      irtpthlp_ta,
+     .      irtpthlp_tp1,
+     .      irtpthlp_tp2,
+     .      zm,
+     .      lstats_samp
 #endif
 
         implicit none
@@ -1457,7 +1591,8 @@
 !       References:
 !-----------------------------------------------------------------------
 
-        use grid_class ! gr%weights_zm2zt
+        use grid_class, only: ! gr%weights_zm2zt
+     .      gr ! Variable(s)
 
         implicit none
 
