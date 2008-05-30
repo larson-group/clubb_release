@@ -1,11 +1,11 @@
-! $Id: closure_new.F,v 1.22 2008-05-30 16:24:24 faschinj Exp $
+! $Id: closure_new.F,v 1.23 2008-05-30 21:44:04 faschinj Exp $
         module pdf_closure
 
         implicit none
         
         public :: pdf_closure_new
 
-        private
+        private ! Set Default Scope
         
         contains 
 !------------------------------------------------------------------------
