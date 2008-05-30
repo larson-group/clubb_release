@@ -1,11 +1,11 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.13 2008-05-30 16:24:25 faschinj Exp $
+!  $Id: stats_subs.F,v 1.14 2008-05-30 21:49:14 faschinj Exp $
 #ifdef STATS
       module stats_subs
  
       implicit none
       
-      private
+      private ! Set Default Scope
       
       public :: stats_init, stats_begin_timestep, stats_end_timestep,
      .          stats_accumulate, stats_finalize

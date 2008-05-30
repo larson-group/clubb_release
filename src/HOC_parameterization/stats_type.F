@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_type.F,v 1.6 2008-05-30 16:24:25 faschinj Exp $
+! $Id: stats_type.F,v 1.7 2008-05-30 21:50:12 faschinj Exp $
 #ifdef STATS
       module stats_type
  
@@ -15,7 +15,8 @@
         
         implicit none
 
-        private
+        private ! Set Default Scope
+
         public :: stats, stat_assign
 
         ! Derived data types to store GrADS/netCDF statistics
