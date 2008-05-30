@@ -1,11 +1,11 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F,v 1.8 2008-05-30 16:24:24 faschinj Exp $
+! $Id: compute_um_edsclrm_mod.F,v 1.9 2008-05-30 21:44:59 faschinj Exp $
 !------------------------------------------------------------------------
         module compute_um_edsclrm_mod
 
         implicit none
         
-        private
+        private ! Set Default Scope
 
         public :: compute_um_edsclrm
 
