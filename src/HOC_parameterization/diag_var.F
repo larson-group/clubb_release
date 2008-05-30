@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F,v 1.47 2008-05-30 16:24:24 faschinj Exp $
+! $Id: diag_var.F,v 1.48 2008-05-30 19:29:46 vlarson Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !===============================================================================
@@ -23,6 +23,8 @@
      .             term_dp1,
      .             term_pr1,
      .             term_pr2
+       
+        private    ! Set default scope
 
         contains
 
