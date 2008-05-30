@@ -1,12 +1,12 @@
 !-----------------------------------------------------------------------
-! $Id: stats_sfc.F,v 1.7 2008-05-30 16:24:25 faschinj Exp $
+! $Id: stats_sfc.F,v 1.8 2008-05-30 21:48:26 faschinj Exp $
 #ifdef STATS
       
       module stats_sfc
  
       implicit none
       
-      private
+      private ! Set Default Scope
 
       public :: stats_init_sfc
       
