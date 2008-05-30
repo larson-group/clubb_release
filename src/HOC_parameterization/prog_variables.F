@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: prog_variables.F,v 1.20 2008-05-30 16:24:25 faschinj Exp $
+! $Id: prog_variables.F,v 1.21 2008-05-30 21:46:25 faschinj Exp $
         module prognostic_variables
 
 !       This module contains definitions of all prognostic
@@ -15,10 +15,14 @@
 
         implicit none
 
-        public ! All variables in this module are public
+        private ! Set Default Scoping
+
+        public :: 
+     .  setup_prognostic_variables, 
+     .  cleanup_prognostic_variables
 
         ! Prognostic variables
-        real, target, allocatable, dimension(:) ::
+        real, target, allocatable, dimension(:), public ::
      .  um,     ! u wind                        [m/s]
      .  vm,     ! v wind                        [m/s]
      .  upwp,   ! vertical u momentum flux      [m^2/s^2]
@@ -39,7 +43,7 @@
 !$omp   threadprivate(thlm, rtm, wprtp, wpthlp, wp2)
 !$omp   threadprivate(wp3, rtp2, thlp2, rtpthlp)
 
-        real, target, allocatable, dimension(:) ::
+        real, target, allocatable, dimension(:), public ::
      .  p,           ! Pressure (Pa) on thermodynamic points    [Pa]
      .  exner,       ! Exner function = ( p / p0 ) ** kappa     [-]
      .  rhot,        ! Density                                  [kg/m^3]
@@ -50,27 +54,27 @@
 !$omp   threadprivate(p, exner, rhot, rhom, thlm_forcing, rtm_forcing)
 
         ! Imposed large scale w
-        real, target, allocatable, dimension(:) ::
+        real, target, allocatable, dimension(:), public ::
      .  wmm,! w on momentum levels              [m/s]
      .  wmt ! w on thermodynamic levels         [m/s]
 
         ! PDF width parameter: momentum levels
-        real, target, allocatable, dimension(:) :: Scm  ! [-]
+        real, target, allocatable, dimension(:), public :: Scm  ! [-]
 
         ! Mixing Lengths
-        real, target, allocatable, dimension(:) :: taum ! [s]
+        real, target, allocatable, dimension(:), public :: taum ! [s]
 
 !$omp   threadprivate(wmm, wmt, Scm, taum)
 
         ! Cloud water variables
-        real, target, allocatable, dimension(:) ::
+        real, target, allocatable, dimension(:), public ::
      .  rcm,  ! Cloud water mixing ratio                [kg/kg]
      .  cf    ! Cloud fraction                          [%]
 
 !$omp   threadprivate(rcm, cf)
 
         ! Surface fluxes
-        real :: 
+        real, public :: 
      .  wpthlp_sfc,        ! w'thl'      [m K/s]
      .  wprtp_sfc,         ! w'rt'       [m kg/kg s]
      .  upwp_sfc, vpwp_sfc ! u'w' & v'w' [m^2/s^2]
@@ -79,7 +83,7 @@
 
 #ifdef SCALARS 
         ! Surface fluxes for passive scalars
-        real, dimension(sclr_dim) ::
+        real, dimension(sclr_dim), public ::
      .  wpsclrp_sfc,    ! w'sclr' at surface    [units m/s]
      .  wpedsclrp_sfc   ! w'edsclr' at surface  [units m/s]
 
@@ -87,7 +91,7 @@
 #endif /* SCALARS */
 
         ! More surface data
-        real :: 
+        real, public :: 
      .  Tsfc, ! surface temperature     [K]
      .  psfc, ! surface pressure        [Pa]
      .  SE,   ! sensible heat flux      [K/s]
@@ -98,7 +102,7 @@
 #ifdef SCALARS
 
         ! Passive scalars 
-        real, target, allocatable, dimension(:,:) ::
+        real, target, allocatable, dimension(:,:), public ::
      .  sclrm,         ! Mean passive scalars           [units vary]
      .  sclrm_forcing, ! Scalars' forcing               [units/s]
      .  edsclrm        ! Mean eddy-diffusivity scalars  [units vary]
