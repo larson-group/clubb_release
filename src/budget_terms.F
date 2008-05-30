@@ -1,8 +1,12 @@
 !-----------------------------------------------------------------------
-! $Id: budget_terms.F,v 1.33 2008-05-13 17:04:14 griffinb Exp $     
+! $Id: budget_terms.F,v 1.34 2008-05-30 16:21:38 faschinj Exp $     
 
       module budget_terms
 
+
+      !!! Currently not compiled with make. Code Broken !!!
+      !5/30/2008
+      
 ! Description:
 ! functions and subroutines for tuning for budget terms in the HOC model.
 
@@ -173,8 +177,15 @@
 !-----------------------------------------------------------------------
         subroutine setup_budget_terms( budget_file, ftol )
 
-        use inputfields
-        use error_code, only: fatal_error
+        use error_code, only: fatal_error ! Procedure(s)
+
+        use error_code, only: clubb_no_error ! Variable(s)
+
+        use inputfields, only: datafile, input_type, ! Variable(s)
+     .                       input_um, input_vm, input_rtm, input_thlm,
+     .                       input_wp2, input_wprtp, input_wpthlp, 
+     .                       input_wp3, input_rtp2, input_thlp2, 
+     .                       input_rtpthlp, input_upwp, input_vpwp
 
         implicit none
 
@@ -231,8 +242,11 @@
 !  Minimize the error between HOC and LES budget terms for w'^n
 !-----------------------------------------------------------------------
         subroutine wpn_run( ftol, runtype, func_min, c_update )
-        use nrtype
-        use nr, only: amoeba
+
+        use nr, only: amoeba ! Procedure(s)
+
+        use error_code, only: fatal_error ! Procedure(s)
+
         implicit none
 
 !       Input 
@@ -375,8 +389,11 @@
 !  buoyancy or advection terms
 !-----------------------------------------------------------------------
         subroutine buoy_advect_run( ftol, runtype, func_min, c_update )
-        use nrtype
-        use nr, only: amoeba
+
+        use nr, only: amoeba ! Procedure(s)
+
+        use error_code, only: fatal_error ! Procedure(s)        
+
         implicit none
 
 !       Input 
@@ -481,8 +498,11 @@
 !  Minimize the error between HOC and LES budget terms for w'rt' or w'th_l
 !-----------------------------------------------------------------------
         subroutine wpxp_run( ftol, runtype, func_min, c_update )
-        use nrtype
-        use nr, only: amoeba
+
+        use error_code, only: fatal_error ! Procedure(s)
+
+        use nr, only: amoeba ! Procedure(s)
+
         implicit none
 
 !       Input 
@@ -626,8 +646,11 @@
 !  and only for dissipation, since they have no pressure terms.
 !-----------------------------------------------------------------------
         subroutine xapxbp_run(ftol, runtype, func_min, c_update)
-        use nrtype
-        use nr, only: amoeba
+
+        use nr, only: amoeba ! Procedure(s)
+
+        use error_code, only: fatal_error ! Procedure(s)
+
         implicit none
 
 !       Input 
@@ -752,8 +775,11 @@
 !-----------------------------------------------------------------------
         real function wp2_min( const_vect )
 
-        use hoc
-        use inputfields, only: grads_fields_reader
+        use hoc, only: hoc_model ! Procedure(s)
+
+        use inputfields, only: grads_fields_reader ! Procedure(s)
+
+        use error_code, only: fatal_error ! Procedure(s)
 
         implicit none
 
@@ -806,8 +832,8 @@
 !-----------------------------------------------------------------------
         real function wp3_min( const_vect )
 
-        use hoc
-        use inputfields, only: grads_fields_reader
+        use hoc, only: hoc_model ! Procedure(s)
+        use inputfields, only: grads_fields_reader ! Procedure(s)
 
         implicit none
 
@@ -862,8 +888,8 @@
 !-----------------------------------------------------------------------
         real function wprtp_min( const_vect )
 
-        use hoc
-        use inputfields, only: grads_fields_reader
+        use hoc, only: hoc_model ! Procedure(s)
+        use inputfields, only: grads_fields_reader ! Procedure(s)
 
         implicit none
 
@@ -916,8 +942,8 @@
 !-----------------------------------------------------------------------
         real function wpthlp_min( const_vect )
 
-        use hoc
-        use inputfields, only: grads_fields_reader
+        use hoc, only: hoc_model ! Procedure(s)
+        use inputfields, only: grads_fields_reader ! Procedure(s)
 
         implicit none
 
@@ -972,8 +998,8 @@
 !-----------------------------------------------------------------------
         real function rtp2_min( const_vect )
 
-        use hoc
-        use inputfields, only: grads_fields_reader
+        use hoc, only: hoc_model ! Procedure(s) 
+        use inputfields, only: grads_fields_reader ! Procedure(s)
 
         implicit none
 
@@ -1029,8 +1055,9 @@
 !-----------------------------------------------------------------------
         real function thlp2_min( const_vect )
 
-        use hoc
-        use inputfields, only: grads_fields_reader
+        use hoc, only: hoc_model ! Procedure(s)
+
+        use inputfields, only: grads_fields_reader ! Procedure(s)
 
         implicit none
 
@@ -1086,8 +1113,8 @@
 !-----------------------------------------------------------------------
         real function rtpthlp_min( const_vect )
 
-        use hoc
-        use inputfields, only: grads_fields_reader
+        use hoc, only: hoc_model ! Procedure(s)
+        use inputfields, only: grads_fields_reader ! Procedure(s)
 
         implicit none
 
@@ -1490,8 +1517,8 @@
         real function gen_betagamma_min( xvar_hoc, xvar_les, 
      .                                   xbeta, xgamma, grid )
 
-        use hoc
-        use inputfields, only: grads_fields_reader
+        use hoc, only: hoc_model ! Procedure(s)
+        use inputfields, only: grads_fields_reader ! Procedure(s)
 
         implicit none
 
@@ -1535,10 +1562,13 @@
         real function term_min( hoc_variable_names,
      .                          les_variable_names, grid_type )
 
-        use grads_common
-        use error, only: mean_sqr_diff_zm, mean_sqr_diff_zt
-        use grid_class
-        use interpolation, only: linint
+        use grads_common, only: grads_average_interval, grads_zlvl ! Procedure(s)
+
+        use error, only: mean_sqr_diff_zm, mean_sqr_diff_zt ! Procedure(s)
+
+        use grid_class, only: gr ! Variable(s)
+
+        use interpolation, only: linint ! Procedure(s)
 
         implicit none
 
