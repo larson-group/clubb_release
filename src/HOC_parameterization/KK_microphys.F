@@ -1,7 +1,7 @@
 !----------------------------------------------------------------------
-! $Id: KK_microphys.F,v 1.7 2008-05-30 16:24:24 faschinj Exp $
+! $Id: KK_microphys.F,v 1.8 2008-05-30 21:43:05 faschinj Exp $
 
-      MODULE rain_equations
+      module rain_equations
 
 !     Description:
 !     Functions and subroutines for the Khairoutdinov & Kogan
@@ -11,16 +11,16 @@
 !     None
 !----------------------------------------------------------------------
 
-      IMPLICIT NONE
+      implicit none
 
-      PUBLIC :: kk_microphys
-      PRIVATE :: mean_volume_radius, cond_evap_rrm, cond_evap_Nrm
-      PRIVATE :: autoconv_rrm, autoconv_Nrm, accretion_rrm
+      public :: kk_microphys
+      private :: mean_volume_radius, cond_evap_rrm, cond_evap_Nrm
+      private :: autoconv_rrm, autoconv_Nrm, accretion_rrm
       PRIVATE :: G_T_p
 !      PRIVATE :: PDF_TRIVAR_2G_LN_LN, PDF_BIVAR_2G_LN, PDF_BIVAR_LN_LN
       PRIVATE :: Dv_fnc
 
-      PRIVATE ! Default
+      PRIVATE ! Set default scope
     
       ! Statistical rain parameters.
       ! Old parameterization.
