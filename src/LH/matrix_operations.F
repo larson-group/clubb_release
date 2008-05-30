@@ -1,17 +1,27 @@
       module matrix_operations
 
+      implicit none
+
+      public :: gaussj, matmult
+
+      private ! Defualt scope
+
       contains
-      SUBROUTINE gaussj( a_in, n, np, a )
+
+      subroutine gaussj( a_in, n, np, a )
 
       implicit none
 
-      integer m, mp, NMAX
+      integer m, mp, nmax
 
       integer, intent(in) :: n, np
 ! Output: a = Matrix inverse
+
       double precision, intent(out) :: a(np,np)
 ! Input: a_in = Original matrix
+
       double precision, intent(in)  :: a_in(np,np)
+
       parameter (NMAX=50)
       integer :: i, icol, irow, j, k, l, ll
       integer :: indxc(NMAX), indxr(NMAX), ipiv(NMAX)

@@ -2,14 +2,16 @@
 !-----------------------------------------------------------------------
 ! Various mathematical utilities
 !-----------------------------------------------------------------------
-
+        implicit none
 !-----------------------------------------------------------------------
 !  function corrcoef( )
 
 ! Correlation coefficient of two vectors
 !-----------------------------------------------------------------------
 
-        public ! Default scope
+        public :: corrcoef, std, cov, mean
+
+        private
 
         contains
         
