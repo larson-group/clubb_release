@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_hoc.F,v 1.13 2008-05-30 16:24:25 faschinj Exp $
+! $Id: stats_hoc.F,v 1.14 2008-05-30 21:47:17 faschinj Exp $
 #ifdef STATS
 !-----------------------------------------------------------------------
 !  module stats_hoc
@@ -15,13 +15,13 @@
 
         implicit none
         
-        public ! All elements of this module are public
+        private ! Set Default Scope
         
         ! Sampling and output frequencies
-        real(kind=time_prec) :: stats_tsamp    ! Sampling interval   [s]
-        real(kind=time_prec) :: stats_tout     ! Output interval     [s]
+        real(kind=time_prec), public :: stats_tsamp    ! Sampling interval   [s]
+        real(kind=time_prec), public :: stats_tout     ! Output interval     [s]
 
-        logical :: 
+        logical, public :: 
      .  lstats,  ! Main flag to turn statistics on/off
      .  lnetcdf, ! Output to NetCDF format
      .  lgrads   ! Output to GrADS format
@@ -29,14 +29,14 @@
 !$omp   threadprivate(lstats, lnetcdf, lgrads)
 !$omp   threadprivate(stats_tsamp, stats_tout)
 
-        logical ::
+        logical, public ::
      .  lstats_samp,   ! Sample flag for current time step
      .  lstats_first,  ! First time step of output period
      .  lstats_last    ! Last time step of output period
 
 !$omp   threadprivate(lstats_samp, lstats_first, lstats_last)
 
-        character(len=200) :: 
+        character(len=200), public :: 
      .  fname_zt, ! Name of the stats file for thermodynamic grid fields
      .  fname_zm, ! Name of the stats file for momentum grid fields
      .  fname_sfc ! Name of the stats file for surface only fields
@@ -45,7 +45,7 @@
 
 !       Indices for statistics in zt file
 
-        integer ::
+        integer, public ::
      .     ithlm,
      .     ithvm,
      .     irtm,
@@ -91,7 +91,7 @@
      .     iradht_LW,      !   "           "   Long-wave
      .     iradht_SW       !   "           "   Short-wave
 
-        integer ::
+        integer, public ::
      .     itemp_in_K      ! Absolute temperature
 
 
@@ -106,7 +106,7 @@
 !$omp   threadprivate(iradht, iradht_LW, iradht_SW)
 !$omp   threadprivate(itemp_in_K)
 
-        integer ::
+        integer, public ::
      .    irsnowm,
      .    irgraupelm,
      .    iricem,
@@ -120,7 +120,7 @@
 
 
         ! thlm/rtm budget terms
-        integer ::
+        integer, public ::
      .    irtm_bt,      ! rtm total time tendency
      .    irtm_ma,      ! rtm mean advect. term
      .    irtm_ta,      ! rtm turb. advect. term
@@ -141,7 +141,7 @@
 !$omp   threadprivate(ithlm_forcing, ithlm_mc, ithlm_cl)
 
 
-        integer ::
+        integer, public ::
      .     iwp3_bt,
      .     iwp3_ma,
      .     iwp3_ta,
@@ -157,7 +157,7 @@
 !$omp   threadprivate(iwp3_bp, iwp3_pr1, iwp3_pr2, iwp3_dp1, iwp3_cl)
 
         ! Rain mixing ratio budgets
-        integer ::
+        integer, public ::
      .     irrm_bt,
      .     irrm_ma,
      .     irrm_sd,
@@ -173,7 +173,7 @@
 !$omp   threadprivate(irrm_auto, irrm_accr, irrm_cond_adj, irrm_mc)
 !$omp   threadprivate(irrm_cl)
 
-        integer ::
+        integer, public ::
      .     iNrm_bt,
      .     iNrm_ma,
      .     iNrm_sd,
@@ -189,7 +189,7 @@
 
 
         ! Snow/Ice/Graupel mixing ratio budgets
-        integer ::
+        integer, public ::
      .     irsnowm_bt,
      .     irsnowm_ma,
      .     irsnowm_sd,
@@ -200,7 +200,7 @@
 !$omp   threadprivate(irsnowm_bt, irsnowm_ma, irsnowm_sd, irsnowm_dff)
 !$omp   threadprivate(irsnowm_mc, irsnowm_cl)
 
-        integer ::
+        integer, public ::
      .     irgraupelm_bt,
      .     irgraupelm_ma,
      .     irgraupelm_sd,
@@ -211,7 +211,7 @@
 !$omp   threadprivate(irgraupelm_bt, irgraupelm_ma, irgraupelm_sd)
 !$omp   threadprivate(irgraupelm_dff, irgraupelm_mc, irgraupelm_cl)
 
-        integer ::
+        integer, public ::
      .     iricem_bt,
      .     iricem_ma,
      .     iricem_sd,
@@ -223,7 +223,7 @@
 !$omp   threadprivate(iricem_mc, iricem_cl)
 
         ! Wind budgets
-        integer ::
+        integer, public ::
      .     ivm_bt,
      .     ivm_ma,
      .     ivm_ta,
@@ -232,7 +232,7 @@
 
 !$omp   threadprivate(ivm_bt, ivm_ma, ivm_ta, ivm_gf, ivm_cf)
 
-        integer ::
+        integer, public ::
      .     ium_bt,
      .     ium_ma,
      .     ium_ta,
@@ -243,7 +243,7 @@
 
 
         ! PDF parameters
-        integer ::
+        integer, public ::
      .     ia,
      .     iw1,
      .     iw2,
@@ -274,7 +274,7 @@
 !$omp   threadprivate(irsl1, irsl2, iR1, iR2, is1, is2, iss1, iss2)
 !$omp   threadprivate(irrtthl)
 
-        integer ::
+        integer, public ::
      .     iwp2zt,
      .     ithlp2zt,
      .     iwpthlpzt,
@@ -285,13 +285,13 @@
 !$omp   threadprivate(iwp2zt, ithlp2zt, iwpthlpzt, irtp2zt, irtpthlpzt)
 
 #ifdef SCALARS
-        integer ::
+        integer, public ::
      .    isclram,   ! Passive scalar mean (currently mean thl)
      .    isclrbm,   ! Passive scalar mean (currently mean rt)
      .    isclram_f, ! Passive scalar tendency (currently mean thl forcing)
      .    isclrbm_f  ! Passive scalar tendency (currently mean rt forcing)
 
-        integer ::
+        integer, public ::
      .    iedsclram, ! Eddy-diff. scalar term (currently rt)
      .    iedsclrbm  ! Eddy-diff. scalar term (currently thl)
 
@@ -302,7 +302,7 @@
 
 !       Indices for statistics in zm file
 
-        integer ::
+        integer, public ::
      .     iwp2,
      .     irtp2,
      .     ithlp2,
@@ -339,7 +339,7 @@
 !$omp   threadprivate(iFrad_SW, iFprec, iFcsed, iup2_plus_vp2)
 
         ! Sedimentation velocities
-        integer ::
+        integer, public ::
      .    iVrr,     ! Brian
      .    iVNr,     !  " "
      .    iVsnow,   ! COAMPS
@@ -348,7 +348,7 @@
 
 !$omp   threadprivate(iVrr, iVNr, iVsnow, iVice, iVgraupel)
 
-        integer ::
+        integer, public ::
      .     iwp2_bt,
      .     iwp2_ma,
      .     iwp2_ta,
@@ -365,7 +365,7 @@
 !$omp   threadprivate(iwp2_pr1, iwp2_pr2, iwp2_pr3, iwp2_dp1, iwp2_dp2)
 !$omp   threadprivate(iwp2_cl)
 
-        integer ::
+        integer, public ::
      .     iwprtp_bt,
      .     iwprtp_ma,
      .     iwprtp_ta,
@@ -383,7 +383,7 @@
 !$omp   threadprivate(iwprtp_ac, iwprtp_bp, iwprtp_pr1, iwprtp_pr2)
 !$omp   threadprivate(iwprtp_pr3, iwprtp_dp1, iwprtp_cl, iwprtp_pd)
 
-        integer ::
+        integer, public ::
      .     iwpthlp_bt,
      .     iwpthlp_ma,
      .     iwpthlp_ta,
@@ -403,7 +403,7 @@
 !    Dr. Golaz's new variance budget terms
 !    qt was changed to rt to avoid confusion
 
-        integer ::
+        integer, public ::
      .     irtp2_bt,
      .     irtp2_ma,
      .     irtp2_ta,
@@ -414,7 +414,7 @@
 !$omp   threadprivate(irtp2_bt, irtp2_ma, irtp2_ta, irtp2_tp)
 !$omp   threadprivate(irtp2_dp1, irtp2_dp2, irtp2_cl)
 
-        integer ::
+        integer, public ::
      .     ithlp2_bt,
      .     ithlp2_ma,
      .     ithlp2_ta,
@@ -426,7 +426,7 @@
 !$omp   threadprivate(ithlp2_bt, ithlp2_ma, ithlp2_ta, ithlp2_tp)
 !$omp   threadprivate(ithlp2_dp1, ithlp2_dp2, ithlp2_cl)
 
-        integer ::
+        integer, public ::
      .    irtpthlp_bt,
      .    irtpthlp_ma,
      .    irtpthlp_ta,
@@ -439,13 +439,13 @@
 !$omp   threadprivate(irtpthlp_tp1, irtpthlp_tp2, irtpthlp_dp1)
 !$omp   threadprivate(irtpthlp_dp2)
 
-        integer ::
+        integer, public ::
      .    iup2,
      .    ivp2
 
 !$omp   threadprivate(iup2, ivp2)
 
-        integer ::
+        integer, public ::
      .    iup2_bt,
      .    iup2_ta,
      .    iup2_tp,
@@ -473,7 +473,7 @@
 #ifdef SCALARS
 !       Passive scalars.  Note that floating point roundoff may make 
 !       mathematically equivalent variables different values.
-        integer ::
+        integer, public ::
      .    isclraprtp,          ! sclr'(1)rt'     / rt'^2
      .    isclrbprtp,          ! sclr'(2)rt'     / thl'rt'
      .    isclrap2,            ! sclr'(1)^2      / rt'^2
@@ -495,14 +495,14 @@
      .    iwpsclrapthlp,       ! w'sclr'(1)th_l' / w'rt'th_l' 
      .    iwpsclrbpthlp        ! w'sclr'(2)th_l' / w'th_l'^2
 
-        integer
+        integer, public ::
      .     iwpedsclrap,  ! eddy sclr'(1)w'
      .     iwpedsclrbp   ! eddy sclr'(2)w'
 #endif /*SCALARS*/
 
         ! Indices for statistics in sfc file
 
-        integer ::
+        integer, public ::
      .    iustar,
      .    ilh,
      .    ish,
@@ -514,7 +514,7 @@
      .    ipflux,  ! Brian
      .    irrm_sfc ! Brian
 
-        integer ::
+        integer, public ::
      .    iwp23_cn,
      .    irtm_cn,
      .    ithlm_cn,
@@ -532,7 +532,7 @@
 
         ! Variables that contains all the statistics
 
-        type (stats), target :: zt,  ! zt grid
+        type (stats), target, public :: zt,  ! zt grid
      .                          zm,  ! zm grid
      .                          sfc  ! sfc
 
@@ -540,7 +540,7 @@
 
         ! Scratch space
 
-        real, allocatable :: ztscr01(:), ztscr02(:), ztscr03(:), 
+        real, allocatable, public :: ztscr01(:), ztscr02(:), ztscr03(:), 
      .                       ztscr04(:), ztscr05(:), ztscr06(:), 
      .                       ztscr07(:), ztscr08(:), ztscr09(:),
      .                       ztscr10(:), ztscr11(:), ztscr12(:),
@@ -552,7 +552,7 @@
 !$omp   threadprivate(ztscr11, ztscr12, ztscr13, ztscr14, ztscr15)
 !$omp   threadprivate(ztscr16)
 
-        real, allocatable :: zmscr01(:), zmscr02(:), zmscr03(:), 
+        real, allocatable, public :: zmscr01(:), zmscr02(:), zmscr03(:), 
      .                       zmscr04(:), zmscr05(:), zmscr06(:),
      .                       zmscr07(:), zmscr08(:), zmscr09(:),
      .                       zmscr10(:), zmscr11(:), zmscr12(:),
