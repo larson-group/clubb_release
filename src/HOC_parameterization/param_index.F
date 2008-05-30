@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: param_index.F,v 1.7 2008-05-09 16:33:07 faschinj Exp $
+! $Id: param_index.F,v 1.8 2008-05-30 16:09:35 faschinj Exp $
         module param_index
 
 !       Description:
@@ -22,9 +22,9 @@
 
         implicit none
 
-        public ! All elements in this module are public
+        private ! Default Scope
 
-        integer, parameter :: 
+        integer, parameter, public :: 
      .  nparams = 50 ! Total tunable parameters
 
         !***************************************************************
@@ -35,7 +35,7 @@
         !                    ***** IMPORTANT *****
         !***************************************************************
 
-        integer, parameter ::
+        integer, parameter, public ::
      .  iC1             =  1, 
      .  iC1b            =  2,
      .  iC1c            =  3, 
@@ -66,7 +66,7 @@
      .  iC13            = 28,
      .  iC14            = 29
 
-        integer, parameter ::
+        integer, parameter, public ::
      .  ic_K            = 30,
      .  ic_K1           = 31,
      .  inu1            = 32,
@@ -81,7 +81,7 @@
      .  inu_r           = 41,
      .  ic_Ksqd         = 42
 
-        integer, parameter ::
+        integer, parameter, public ::
      .  igamma_coef     = 43, 
      .  igamma_coefb    = 44,
      .  igamma_coefc    = 45,
