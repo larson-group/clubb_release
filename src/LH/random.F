@@ -1,8 +1,10 @@
       module random
 
+      implicit none
+
       public :: rand_permute, ran2
 
-      private 
+      private ! Defualt Scope
       
       contains
 !----------------------------------------------------------------------
