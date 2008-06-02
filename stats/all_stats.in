@@ -1,4 +1,4 @@
-! $Id: all_stats.in,v 1.19 2008-05-21 22:33:43 dschanen Exp $
+! $Id: all_stats.in,v 1.20 2008-06-02 20:38:21 dschanen Exp $
 ! This file contains a comprehensive listing of all the HOC variables that 
 ! can be output to GrADS, as found in src/HOC_parameterization/statistics.F.
 ! This file, as well as the statistical files for all the other cases, needs
@@ -7,7 +7,7 @@
 ! compiled with support for them by default, and the condition numbers are 
 ! commented out because they are computationally expensive.
 ! This file was created on January 21, 2007.
-! This file was last updated on May 21, 2008.
+! This file was last updated on June 2, 2008.
 &statsnl
 
 vars_zt = 
@@ -20,7 +20,7 @@ vars_zt =
 'rrm', 'Nrm', 'mean_vol_rad_rain', 'mean_vol_rad_cloud',
 'rain_rate', 'AKm', 'AKm_est', 'rsnowm', 'ricem', 'rgraupelm',
 'diam', 'mass_ice_cryst', 'rcm_icedfs', 'u_T_cm',
-'rtm_bt', 'rtm_ma', 'rtm_ta','rtm_cl','rtm_forcing', 'rtm_mc', 'rtm_pd'
+'rtm_bt', 'rtm_ma', 'rtm_ta','rtm_cl','rtm_forcing', 'rtm_mc', 'rtm_pd',
 'thlm_bt', 'thlm_ma', 'thlm_ta','thlm_cl','thlm_forcing', 'thlm_mc',
 'um_bt', 'um_ma', 'um_gf', 'um_cf', 'um_ta',
 'vm_bt', 'vm_ma', 'vm_gf', 'vm_cf', 'vm_ta',
