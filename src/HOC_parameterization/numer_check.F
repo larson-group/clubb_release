@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F,v 1.26 2008-05-30 16:24:25 faschinj Exp $
+! $Id: numer_check.F,v 1.27 2008-06-02 20:35:49 dschanen Exp $
         module numerical_check
 
         implicit none
@@ -861,9 +861,9 @@
         intrinsic :: any, present
 
         ! Input Variables
-        real, intent(in), dimension(n) :: var
-        
         integer, intent(in) :: n
+
+        real, intent(in), dimension(n) :: var
 
         character(len=*), intent(in):: 
      .  varname,    ! Varible being examined

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.191 2008-05-30 16:24:22 faschinj Exp $
+! $Id: hoc.F,v 1.192 2008-06-02 20:35:46 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -130,7 +130,7 @@
      .                            rhot, wprtp, wpthlp_sfc, wprtp_sfc,
      .                            upwp_sfc, vpwp_sfc, thlm_forcing,
      .                            rtm_forcing, up2, vp2, wp3, rtp2,
-     .                            thlp2, rtpthlp, Scm, cf, rtpthlp
+     .                            thlp2, rtpthlp, Scm, cf
 
         use numerical_check, only: invalid_model_arrays ! Procedure(s)
 

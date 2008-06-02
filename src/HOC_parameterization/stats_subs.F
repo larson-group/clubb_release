@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.14 2008-05-30 21:49:14 faschinj Exp $
+!  $Id: stats_subs.F,v 1.15 2008-06-02 20:35:50 dschanen Exp $
 #ifdef STATS
       module stats_subs
  
@@ -724,7 +724,6 @@
      .    iwpthlp,
      .    iwp4, 
      .    iwpthvp,
-     .    irtpthvp,
      .    irtpthvp,
      .    ithlpthvp,
      .    itaum,
