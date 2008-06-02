@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.192 2008-06-02 20:35:46 dschanen Exp $
+! $Id: hoc.F,v 1.193 2008-06-02 21:27:24 faschinj Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -132,6 +132,10 @@
      .                            rtm_forcing, up2, vp2, wp3, rtp2,
      .                            thlp2, rtpthlp, Scm, cf
 
+#ifdef SCALARS
+        use prognostic_variables, only: sclrm, edsclrm, wpsclrp_sfc,
+     .                            wpedsclrp_sfc, sclrm_forcing
+#endif /*SCALARS*/        
         use numerical_check, only: invalid_model_arrays ! Procedure(s)
 
         use inputfields, only: compute_timestep, grads_fields_reader ! Procedure(s)
@@ -580,8 +584,8 @@
 !       function zm2zt (from grid_class)
 !-----------------------------------------------------------------------
 
-        use constants, only: hydromet_dim, Cp, Lv, ep2, ep1, emin, wtol ! Variable(s)
-
+        use constants, only: hydromet_dim, Cp, Lv, ep2, ep1, emin, wtol, ! Variable(s)
+     .                       sclr_dim
         use parameters, only: T0, taumax, taumin, c_K ! Variable(s)
 
         use grid_class, only: gr ! Variable(s)
@@ -1135,7 +1139,7 @@
 
         use grid_class, only: zt2zm ! Procedure(s)
 
-        use constants, only: fstderr ! Variables(s)
+        use constants, only: fstderr, sclr_dim ! Variables(s)
 
         use sounding, only: read_sounding ! Procedure(s)
 
@@ -1321,12 +1325,23 @@
      .                            vm_ref, Frad, Ncnm, thvm, ustar,
      .                            pdf_parms, Khm, Akm_est, Akm, Nim
 
+#ifdef SCALARS
+        use diagnostic_variables, only: wpsclrp, wpedsclrp ! Scalar Variables
+#endif /*SCALARS*/
+
+        
         use prognostic_variables, only: rtm_forcing, thlm_forcing, ! Variable(s)
      .                            wmt, wmm, rhot, rtm, thlm, p,
      .                            exner, rcm, rhom, um, psfc, vm,
      .                            upwp_sfc, vpwp_sfc, Tsfc,
      .                            wpthlp_sfc, SE, LE, wprtp_sfc, cf
 
+
+#ifdef SCALARS        
+        use prognostic_variables, only: sclrm, sclrm_forcing,  ! Scalar Variables
+     .                            wpsclrp_sfc, wpedsclrp_sfc
+#endif /*SCALARS*/
+        
         use stats_prec, only: time_prec ! Variable(s)
 
         use numerical_check, only: isnan2d, rad_check ! Procedure(s)
