@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F,v 1.48 2008-05-30 19:29:46 vlarson Exp $
+! $Id: diag_var.F,v 1.49 2008-06-03 17:19:07 griffinb Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !===============================================================================
@@ -703,10 +703,10 @@
      .      time_prec ! Variable(s)
 
         use diffusion, only: 
-     .      diffusion_mlev ! Procedure(s)
+     .      diffusion_zm_lhs ! Procedure(s)
 
         use mean_adv, only: 
-     .      term_ma_mlev_lhs ! Procedure(s)
+     .      term_ma_zm_lhs ! Procedure(s)
 
 #ifdef STATS
         use stats_hoc, only:
@@ -796,8 +796,8 @@
 
           ! LHS eddy diffusion term: dissipation term 2 (dp2).
           lhs(kp1_mdiag:km1_mdiag,k)
-     .    = diffusion_mlev( Kw2(k), Kw2(kp1), nu,
-     .                      gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+     .    = diffusion_zm_lhs( Kw2(k), Kw2(kp1), nu,
+     .                        gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
 
           ! LHS dissipation term 1 (dp1).
           lhs(k_mdiag,k)
@@ -811,7 +811,7 @@
           ! LHS mean advection (ta) term.
           lhs(kp1_mdiag:km1_mdiag,k)
      .    = lhs(kp1_mdiag:km1_mdiag,k)
-     .    + term_ma_mlev_lhs( wmm(k), gr%dzm(k), k )
+     .    + term_ma_zm_lhs( wmm(k), gr%dzm(k), k )
 
           ! LHS turbulent advection (ta) term.
           lhs(kp1_mdiag:km1_mdiag,k)
@@ -834,8 +834,8 @@
            if ( irtp2_dp2 + ithlp2_dp2 + irtpthlp_dp2 + 
      .          iup2_dp2 + ivp2_dp2 > 0 ) then
              tmp(1:3)
-     .       = diffusion_mlev( Kw2(k), Kw2(kp1), nu,
-     .                         gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+     .       = diffusion_zm_lhs( Kw2(k), Kw2(kp1), nu,
+     .                           gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
              zmscr02(k) = -tmp(3)
              zmscr03(k) = -tmp(2)
              zmscr04(k) = -tmp(1)
@@ -855,7 +855,7 @@
            if ( irtp2_ma + ithlp2_ma + irtpthlp_ma +
      .          iup2_ma + ivp2_ma > 0 ) then
              tmp(1:3)
-     .       = term_ma_mlev_lhs( wmm(k), gr%dzm(k), k )
+     .       = term_ma_zm_lhs( wmm(k), gr%dzm(k), k )
              zmscr08(k) = -tmp(3)
              zmscr09(k) = -tmp(2)
              zmscr10(k) = -tmp(1)

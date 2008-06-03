@@ -1,4 +1,4 @@
-! $Id: diffusion.F,v 1.6 2008-05-30 16:24:24 faschinj Exp $
+! $Id: diffusion.F,v 1.7 2008-06-03 17:19:07 griffinb Exp $
 !===============================================================================
         module diffusion
 
@@ -10,11 +10,11 @@
 !       equations.  However, wp2 and wp3 have an option to use a Crank-Nicholson
 !       eddy diffusion scheme, which has both implicit and explicit components.
 !
-!       Function diffusion_tlev handles the eddy diffusion terms for the
+!       Function diffusion_zt_lhs handles the eddy diffusion terms for the
 !       variables located at thermodynamic grid levels.  These variables are:
 !       wp3 and all hydrometeor species.
 !
-!       Function diffusion_mlev handles the eddy diffusion terms for the
+!       Function diffusion_zm_lhs handles the eddy diffusion terms for the
 !       variables located at momentum grid levels.  The variables are:
 !       wprtp, wpthlp, wp2, rtp2, thlp2, rtpthlp, up2, vp2, wpsclrp, sclrprtp,
 !       sclrpthlp, and sclrp2.
@@ -23,14 +23,14 @@
 
         private ! Default Scope
 
-        public :: diffusion_tlev,
-     .            diffusion_mlev
+        public :: diffusion_zt_lhs,
+     .            diffusion_zm_lhs
 
         contains
 
 !===============================================================================
-        pure function diffusion_tlev( K_m, K_mm1, nu, 
-     .                                dzmm1, dzm, dzt, level )
+        pure function diffusion_zt_lhs( K_m, K_mm1, nu, 
+     .                                  dzmm1, dzm, dzt, level )
      .  result( lhs )
 
 !       Description:
@@ -301,11 +301,11 @@
 
         endif
 
-        end function diffusion_tlev
+        end function diffusion_zt_lhs
 
 !===============================================================================
-        pure function diffusion_mlev( K_t, K_tp1, nu, 
-     .                                dztp1, dzt, dzm, level )
+        pure function diffusion_zm_lhs( K_t, K_tp1, nu, 
+     .                                  dztp1, dzt, dzm, level )
      .  result( lhs )
 
 !       Description:
@@ -575,7 +575,7 @@
 
         endif
 
-        end function diffusion_mlev
+        end function diffusion_zm_lhs
 
 !===============================================================================
 

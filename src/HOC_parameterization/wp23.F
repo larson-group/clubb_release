@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.64 2008-05-30 16:24:26 faschinj Exp $
+! $Id: wp23.F,v 1.65 2008-06-03 17:19:07 griffinb Exp $
 !===============================================================================
         module wp23
 
@@ -738,11 +738,11 @@
         use model_flags, only:
      .      lKhm_aniso ! Variables
         use diffusion, only:
-     .      diffusion_mlev, ! Procedures
-     .      diffusion_tlev
+     .      diffusion_zm_lhs, ! Procedures
+     .      diffusion_zt_lhs
         use mean_adv, only:
-     .      term_ma_mlev_lhs, ! Procedures
-     .      term_ma_tlev_lhs
+     .      term_ma_zm_lhs, ! Procedures
+     .      term_ma_zt_lhs
         use stats_prec, only: time_prec
 #ifdef STATS
         use stats_hoc
@@ -830,7 +830,7 @@
           ! LHS mean advection (ma) term.
           lhs((/3-2,3,3+2/),k_wp2)
      .    = lhs((/3-2,3,3+2/),k_wp2)
-     .    + term_ma_mlev_lhs( wmm(k), gr%dzm(k), k )
+     .    + term_ma_zm_lhs( wmm(k), gr%dzm(k), k )
 
           ! LHS turbulent advection (ta) term.
           lhs((/3-1,3+1/),k_wp2)
@@ -853,14 +853,14 @@
              lhs((/3-2,3,3+2/),k_wp2)
      .       = lhs((/3-2,3,3+2/),k_wp2)
      .       + (1.0/2.0)
-     .       * diffusion_mlev( Kw1(k), Kw1(kp1), nu1,
-     .                         gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+     .       * diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1,
+     .                           gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
           else
              ! Eddy diffusion for wp2 using a completely implicit time step.
              lhs((/3-2,3,3+2/),k_wp2)
      .       = lhs((/3-2,3,3+2/),k_wp2)
-     .       + diffusion_mlev( Kw1(k), Kw1(kp1), nu1,
-     .                         gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+     .       + diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1,
+     .                           gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
           endif
 
           ! LHS pressure term 1 (pr1).
@@ -883,16 +883,16 @@
 
           if ( iwp2_dp2 > 0 ) then
             if ( lcrank_nich_diff ) then
-               ! Eddy diffusion for wp2 using a Crank-Nicholson time step.
-               tmp(1:3)
-     .         = (1.0/2.0)
-     .         * diffusion_mlev( Kw1(k), Kw1(kp1), nu1,
-     .                           gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+              ! Eddy diffusion for wp2 using a Crank-Nicholson time step.
+              tmp(1:3)
+     .        = (1.0/2.0)
+     .        * diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1,
+     .                            gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
             else
-               ! Eddy diffusion for wp2 using a completely implicit time step. 
-               tmp(1:3)
-     .         = diffusion_mlev( Kw1(k), Kw1(kp1), nu1,
-     .                           gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+              ! Eddy diffusion for wp2 using a completely implicit time step. 
+              tmp(1:3)
+     .        = diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1,
+     .                            gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
             endif
             zmscr02(k) = - tmp(3)
             zmscr03(k) = - tmp(2)
@@ -908,7 +908,7 @@
 
           if ( iwp2_ma > 0 ) then
             tmp(1:3) =
-     .      + term_ma_mlev_lhs( wmm(k), gr%dzm(k), k )
+     .      + term_ma_zm_lhs( wmm(k), gr%dzm(k), k )
             zmscr07(k) = - tmp(3)
             zmscr08(k) = - tmp(2)
             zmscr09(k) = - tmp(1)
@@ -955,7 +955,7 @@
           ! LHS mean advection (ma) term.
           lhs((/3-2,3,3+2/),k_wp3)
      .    = lhs((/3-2,3,3+2/),k_wp3)
-     .    + term_ma_tlev_lhs( wmt(k), gr%dzt(k), k )
+     .    + term_ma_zt_lhs( wmt(k), gr%dzt(k), k )
 
           ! LHS turbulent advection (ta) and turbulent production (tp) terms.
           lhs(3-2:3+2,k_wp3)
@@ -985,15 +985,15 @@
              lhs((/3-2,3,3+2/),k_wp3)
      .       = lhs((/3-2,3,3+2/),k_wp3)
      .       + C12 * (1.0/2.0)
-     .       * diffusion_tlev( Kw8(k), Kw8(km1), nu8,
-     .                         gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+     .       * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8,
+     .                           gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
           else
              ! Eddy diffusion for wp3 using a completely implicit time step. 
              lhs((/3-2,3,3+2/),k_wp3)
      .       = lhs((/3-2,3,3+2/),k_wp3)
      .       + C12 
-     .       * diffusion_tlev( Kw8(k), Kw8(km1), nu8,
-     .                         gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+     .       * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8,
+     .                           gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
           endif
 
 #ifdef STATS
@@ -1030,7 +1030,7 @@
 
           if ( iwp3_ma > 0 ) then
             tmp(1:3) =
-     .      term_ma_tlev_lhs( wmt(k), gr%dzt(k), k )
+     .      term_ma_zt_lhs( wmt(k), gr%dzt(k), k )
             ztscr12(k) = -tmp(3)
             ztscr13(k) = -tmp(2)
             ztscr14(k) = -tmp(1)
@@ -1055,17 +1055,17 @@
 
           if ( iwp3_dp1 > 0 ) then
             if ( lcrank_nich_diff ) then
-               ! Eddy diffusion for wp3 using a Crank-Nicholson time step. 
-               tmp(1:3)
-     .         = C12 * (1.0/2.0)
-     .         * diffusion_tlev( Kw8(k), Kw8(km1), nu8,
-     .                           gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+              ! Eddy diffusion for wp3 using a Crank-Nicholson time step. 
+              tmp(1:3)
+     .        = C12 * (1.0/2.0)
+     .        * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8,
+     .                            gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
             else
-               ! Eddy diffusion for wp3 using a completely implicit time step. 
-               tmp(1:3)
-     .         = C12 
-     .         * diffusion_tlev( Kw8(k), Kw8(km1), nu8,
-     .                           gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+              ! Eddy diffusion for wp3 using a completely implicit time step. 
+              tmp(1:3)
+     .        = C12 
+     .        * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8,
+     .                            gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
             endif
             ztscr02(k) = - tmp(3)
             ztscr03(k) = - tmp(2)
@@ -1154,8 +1154,8 @@
         use model_flags, only: 
      .      lKhm_aniso ! Variable
         use diffusion, only:
-     .      diffusion_mlev, ! Procedures
-     .      diffusion_tlev
+     .      diffusion_zm_lhs, ! Procedures
+     .      diffusion_zt_lhs
         use stats_prec, only: 
      .      time_prec ! Variable
 #ifdef STATS
@@ -1244,8 +1244,8 @@
              ! time step.  They are not used for completely implicit diffusion.
              rhs_diff(1:3)
      .       = (1.0/2.0)
-     .       * diffusion_mlev( Kw1(k), Kw1(kp1), nu1,
-     .                         gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+     .       * diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1,
+     .                           gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
              rhs(k_wp2)   =   rhs(k_wp2)
      .                      - rhs_diff(3) * wp2(km1)
      .                      - rhs_diff(2) * wp2(k)
@@ -1333,8 +1333,8 @@
              ! time step.  They are not used for completely implicit diffusion.
              rhs_diff(1:3)
      .       = C12 * (1.0/2.0)
-     .       * diffusion_tlev( Kw8(k), Kw8(km1), nu8,
-     .                         gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+     .       * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8,
+     .                           gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
              rhs(k_wp3)   =   rhs(k_wp3)
      .                      - rhs_diff(3) * wp3(km1)
      .                      - rhs_diff(2) * wp3(k)

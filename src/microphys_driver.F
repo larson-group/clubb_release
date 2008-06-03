@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F,v 1.3 2008-05-30 16:24:22 faschinj Exp $
+! $Id: microphys_driver.F,v 1.4 2008-06-03 17:18:59 griffinb Exp $
         module microphys_driver
 
 !       Description:
@@ -1018,9 +1018,9 @@
         use stats_prec, only: 
      .      time_prec ! Variable(s)
         use diffusion, only: 
-     .      diffusion_tlev ! Procedure(s)
+     .      diffusion_zt_lhs ! Procedure(s)
         use mean_adv, only: 
-     .      term_ma_tlev_lhs ! Procedure(s)
+     .      term_ma_zt_lhs ! Procedure(s)
 #ifdef STATS
         use stats_hoc, only:
      .      irrm_bt,  ! Variable(s)
@@ -1150,13 +1150,13 @@
           ! Diffusion
           lhs(kp1diag:km1diag,k)
      .    = lhs(kp1diag:km1diag,k)
-     .    + diffusion_tlev( Kr(k), Kr(km1), nu, 
-     .                      gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+     .    + diffusion_zt_lhs( Kr(k), Kr(km1), nu, 
+     .                        gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
 
           ! Mean Advection
           lhs(kp1diag:km1diag,k)
      .    = lhs(kp1diag:km1diag,k)
-     .    + term_ma_tlev_lhs( wmt(k), gr%dzt(k), k )
+     .    + term_ma_zt_lhs( wmt(k), gr%dzt(k), k )
 
           ! Sedimentation
           ! Note: originally pristine ice did not sediment, so it was
@@ -1174,7 +1174,7 @@
           if ( lstats_samp ) then
 
             if ( ixrm_ma > 0 ) then
-              tmp(1:3) = term_ma_tlev_lhs( wmt(k), gr%dzt(k), k )
+              tmp(1:3) = term_ma_zt_lhs( wmt(k), gr%dzt(k), k )
               ztscr01(k) = -tmp(3)
               ztscr02(k) = -tmp(2)
               ztscr03(k) = -tmp(1)
@@ -1190,8 +1190,8 @@
 
             if ( ixrm_dff > 0 ) then
               tmp(1:3)
-     .        = diffusion_tlev( Kr(k), Kr(km1), nu, 
-     .                          gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+     .        = diffusion_zt_lhs( Kr(k), Kr(km1), nu, 
+     .                            gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
               ztscr07(k) = -tmp(3)
               ztscr08(k) = -tmp(2)
               ztscr09(k) = -tmp(1)
@@ -1488,9 +1488,9 @@
         use stats_prec, only:
      .      time_prec ! Variable(s)
         use diffusion, only: 
-     .      diffusion_tlev ! Procedure(s)
+     .      diffusion_zt_lhs ! Procedure(s)
         use mean_adv, only: 
-     .      term_ma_tlev_lhs ! Procedure(s)
+     .      term_ma_zt_lhs ! Procedure(s)
 
 !#ifdef STATS
 !        use stats_hoc
@@ -1580,7 +1580,7 @@
 
         ! The implicit (LHS) value of the mean advection component of the
         ! equation used during the timestep that was just solved for.
-        tmp(1:3) = term_ma_tlev_lhs( wmt(k), gr%dzt(k), k )
+        tmp(1:3) = term_ma_zt_lhs( wmt(k), gr%dzt(k), k )
 
         ma_subdiag  = -tmp(3) ! subdiagonal
         ma_maindiag = -tmp(2) ! main diagonal
@@ -1622,8 +1622,8 @@
         ! The implicit (LHS) value of the diffusion component of the
         ! equation used during the timestep that was just solved for.
         tmp(1:3)
-     .     = diffusion_tlev( Kr(k), Kr(km1), nu, 
-     .                       gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+     .     = diffusion_zt_lhs( Kr(k), Kr(km1), nu, 
+     .                         gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
 
         df_subdiag  = -tmp(3) ! subdiagonal
         df_maindiag = -tmp(2) ! main diagonal

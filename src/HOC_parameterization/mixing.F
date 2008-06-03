@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.56 2008-05-30 16:24:24 faschinj Exp $
+! $Id: mixing.F,v 1.57 2008-06-03 17:19:07 griffinb Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -482,10 +482,10 @@
         use stats_prec, only: 
      .      time_prec ! Variable(s)
         use diffusion, only: 
-     .      diffusion_mlev ! Procedure(s)
+     .      diffusion_zm_lhs ! Procedure(s)
         use mean_adv, only:
-     .      term_ma_tlev_lhs, ! Procedure(s)
-     .      term_ma_mlev_lhs
+     .      term_ma_zt_lhs, ! Procedure(s)
+     .      term_ma_zm_lhs
 #ifdef STATS
         use stats_hoc, only:
      .      ztscr01, ! Variable(s)
@@ -627,7 +627,7 @@
 
             lhs((/3-2,3,3+2/),k_xm)
      .      = lhs((/3-2,3,3+2/),k_xm)
-     .      + term_ma_tlev_lhs( wmt(k), gr%dzt(k), k )
+     .      + term_ma_zt_lhs( wmt(k), gr%dzt(k), k )
 
           else
 
@@ -653,7 +653,7 @@
           if ( irtm_ma > 0 .or. ithlm_ma > 0 ) then
             if ( .not. implemented ) then
               tmp(1:3) = 
-     .        + term_ma_tlev_lhs( wmt(k), gr%dzt(k), k )
+     .        + term_ma_zt_lhs( wmt(k), gr%dzt(k), k )
               ztscr01(k) = - tmp(3)
               ztscr02(k) = - tmp(2)
               ztscr03(k) = - tmp(1)
@@ -693,7 +693,7 @@
           ! LHS mean advection (ma) term.
           lhs((/3-2,3,3+2/),k_wpxp)
      .    = lhs((/3-2,3,3+2/),k_wpxp)
-     .    + term_ma_mlev_lhs( wmm(k), gr%dzm(k), k )
+     .    + term_ma_zm_lhs( wmm(k), gr%dzm(k), k )
 
           ! LHS turbulent advection (ta) term.
           lhs((/3-2,3,3+2/),k_wpxp)
@@ -722,8 +722,8 @@
           ! LHS eddy diffusion term: dissipation term 1 (dp1).
           lhs((/3-2,3,3+2/),k_wpxp)
      .    = lhs((/3-2,3,3+2/),k_wpxp)
-     .    + diffusion_mlev( Kw6(k), Kw6(kp1), nu6,
-     .                      gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+     .    + diffusion_zm_lhs( Kw6(k), Kw6(kp1), nu6,
+     .                        gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
 
           ! LHS time tendency.
           if (liter) lhs(3,k_wpxp) = lhs(3,k_wpxp) + 1.0 / dt
@@ -735,7 +735,7 @@
 
           if ( iwprtp_ma > 0 .or. iwpthlp_ma > 0 ) then
             tmp(1:3) =
-     .      + term_ma_mlev_lhs( wmm(k), gr%dzm(k), k )
+     .      + term_ma_zm_lhs( wmm(k), gr%dzm(k), k )
             zmscr01(k) = - tmp(3)
             zmscr02(k) = - tmp(2)
             zmscr03(k) = - tmp(1)
@@ -778,8 +778,8 @@
 
           if ( iwprtp_dp1 > 0 .or. iwpthlp_dp1 > 0 ) then
             tmp(1:3) =
-     .      + diffusion_mlev( Kw6(k), Kw6(kp1), nu6,
-     .                        gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+     .      + diffusion_zm_lhs( Kw6(k), Kw6(kp1), nu6,
+     .                          gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
             zmscr12(k) = - tmp(3)
             zmscr13(k) = - tmp(2)
             zmscr14(k) = - tmp(1)

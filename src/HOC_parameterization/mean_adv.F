@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mean_adv.F,v 1.6 2008-05-30 16:24:24 faschinj Exp $
+! $Id: mean_adv.F,v 1.7 2008-06-03 17:19:07 griffinb Exp $
 !===============================================================================
         module mean_adv
 
@@ -10,11 +10,11 @@
 !       and therefore become part of the left-hand side of their respective 
 !       equations.
 !
-!       Function term_ma_tlev_lhs handles the mean advection terms for the 
+!       Function term_ma_zt_lhs handles the mean advection terms for the 
 !       variables located at thermodynamic grid levels.  These variables are:
 !       rtm, thlm, wp3, all hydrometeor species, and sclrm.
 !
-!       Function term_ma_mlev_lhs handles the mean advection terms for the
+!       Function term_ma_zm_lhs handles the mean advection terms for the
 !       variables located at momentum grid levels.  The variables are:
 !       wprtp, wpthlp, wp2, rtp2, thlp2, rtpthlp, up2, vp2, wpsclrp, sclrprtp, 
 !       sclrpthlp, and sclrp2.
@@ -23,13 +23,13 @@
 
         private ! Default scope
 
-        public :: term_ma_tlev_lhs,
-     .            term_ma_mlev_lhs
+        public :: term_ma_zt_lhs,
+     .            term_ma_zm_lhs
 
         contains
 
 !===============================================================================
-        pure function term_ma_tlev_lhs( wmt, dzt, level )
+        pure function term_ma_zt_lhs( wmt, dzt, level )
      .  result( lhs )
 
 !       Description:
@@ -179,10 +179,10 @@
         endif
 
         return
-        end function term_ma_tlev_lhs
+        end function term_ma_zt_lhs
 
 !===============================================================================
-        pure function term_ma_mlev_lhs( wmm, dzm, level )
+        pure function term_ma_zm_lhs( wmm, dzm, level )
      .  result( lhs )
 
 !       Description:
@@ -332,7 +332,7 @@
         endif
 
         return
-        end function term_ma_mlev_lhs
+        end function term_ma_zm_lhs
 
 !===============================================================================
 
