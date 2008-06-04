@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zm.F,v 1.8 2008-06-04 20:27:28 dschanen Exp $
+! $Id: stats_zm.F,v 1.9 2008-06-04 21:51:12 griffinb Exp $
       module stats_zm
 #ifdef STATS
        
@@ -912,13 +912,13 @@
         case ('up2_dp1')
           iup2_dp1 = k
           call stat_assign(iup2_dp1,"up2_dp1",
-     .         "up2 dissipation term","m^2/s^2",zm)
+     .         "up2 dissipation term 1","m^2/s^2",zm)
           k = k + 1
 
         case ('up2_dp2')
           iup2_dp2 = k
           call stat_assign(iup2_dp2,"up2_dp2",
-     .         "up2 dissipation term","m^2/s^2",zm)
+     .         "up2 dissipation term 2","m^2/s^2",zm)
           k = k + 1
 
         case ('up2_pr1')
@@ -966,13 +966,13 @@
         case ('vp2_dp1')
           ivp2_dp1 = k
           call stat_assign(ivp2_dp1,"vp2_dp1",
-     .         "vp2 dissipating term","m^2/s^2",zm)
+     .         "vp2 dissipation term 1","m^2/s^2",zm)
           k = k + 1
 
         case ('vp2_dp2')
           ivp2_dp2 = k
           call stat_assign(ivp2_dp2,"vp2_dp2",
-     .         "vp2 dissipating term","m^2/s^2",zm)
+     .         "vp2 dissipation term 2","m^2/s^2",zm)
           k = k + 1
 
         case ('vp2_pr1')
