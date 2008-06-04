@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: clex9_nov02.F,v 1.12 2008-05-30 16:24:23 faschinj Exp $
+! $Id: clex9_nov02.F,v 1.13 2008-06-04 22:57:41 ajsmith4 Exp $
         module clex9_nov02
 
 !       Description:
@@ -132,10 +132,6 @@
 
 
         ! Local variables
-
-        ! Local ice diffusional array
-        real, dimension(gr%nnzp) ::
-     .  dqc_dt_icedfs ! Change in liquid water due to ice diffus. growth [kg/kg/s]
 
         ! Local radiation arrays
         real, dimension(gr%nnzp) :: 
@@ -622,6 +618,8 @@ c        end if
         !---------------------------------------------------------------
 
           lcoamps_micro = .true.
+
+          Ncnm(1:gr%nnzp) = 0.0
 
         end if
 
