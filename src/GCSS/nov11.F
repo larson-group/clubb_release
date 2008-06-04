@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: nov11.F,v 1.17 2008-05-30 16:24:23 faschinj Exp $
+! $Id: nov11.F,v 1.18 2008-06-04 22:51:50 ajsmith4 Exp $
         module nov11
 
 !       Description:
@@ -61,9 +61,6 @@
 #endif /*STATS*/
 
         implicit none
-
-        ! External
-!       double precision, external :: cos_solar_zen
 
         ! Local constants
 
@@ -605,7 +602,7 @@
 !    .    = 30.0 * (1.0 + exp(-gr%zt(1:gr%nnzp)/2000.0)) * 1.e6 / rhot
 !    .    = 30.0 * (1.0 + exp(-gr%zt(1:gr%nnzp)/2000.0)) * 1.e6
 
-!         Ncnm(1:gr%nnzp) = 0.0
+          Ncnm(1:gr%nnzp) = 0.0
 
 
         end if
