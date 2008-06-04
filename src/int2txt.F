@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: int2txt.F,v 1.5 2008-05-27 21:04:26 dschanen Exp $
+! $Id: int2txt.F,v 1.6 2008-06-04 20:26:44 dschanen Exp $
         program int2txt
 
 !       Description:
@@ -11,10 +11,17 @@
 !-----------------------------------------------------------------------
 #include "recl.F"
 
+#ifdef AbsoftUNIXFortran
+        use unix_library
+#endif
         implicit none
+
 #ifdef __GFORTRAN__
 #define getarg get_command_argument
 #define iargc command_argument_count
+
+#elif AbsoftUNIXFortran
+
 #else
         ! Seems to work on most Fortran compilers, but if it doesn't,
         ! try using the F2003 subrountine is get_command_argument() instead.

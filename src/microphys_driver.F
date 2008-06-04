@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F,v 1.4 2008-06-03 17:18:59 griffinb Exp $
+! $Id: microphys_driver.F,v 1.5 2008-06-04 20:26:44 dschanen Exp $
         module microphys_driver
 
 !       Description:
@@ -77,6 +77,9 @@
         use coamps_micro_driver_mod, only: 
      .      coamps_micro_driver ! Procedure
 
+        use temp_in_K_mod, only: thlm2temp_in_K
+
+
 #ifdef STATS
         use stats_hoc, only:
      .      iVrr, ! Variable(s)
@@ -120,8 +123,6 @@
      .      irrm_sfc,
      .      sfc,
      .      lstats_samp
-
-        use temp_in_K_mod, only: thlm2temp_in_K
 
 #endif
         implicit none
