@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F,v 1.5 2008-06-04 20:26:44 dschanen Exp $
+! $Id: microphys_driver.F,v 1.6 2008-06-04 23:47:34 griffinb Exp $
         module microphys_driver
 
 !       Description:
@@ -1212,8 +1212,96 @@
      .  result( lhs ) 
 
 !       Description:
-!       Sediment a hydrometer using v_t, the calculated terminal 
-!       velocity.
+!       Sedimentation of a hydrometeor:  implicit portion of the code.
+!
+!       The variable "r_hm" stands for one of the five hydrometeor 
+!       variables currently in the code:  mean rain mixing ratio (rrm),
+!       mean rain drop concentration (Nrm), mean ice mixing ratio 
+!       (ricem), mean snow mixing ratio (rsnowm), or mean graupel mixing
+!       ratio (rgraupelm).  The variable "V_hm" stands for the 
+!       sedimentation velocity of the appropriate hydrometeor.
+!
+!       The d(r_hm)/dt equation contains a sedimentation term:
+!
+!       - d(V_hm*r_hm)/dz.
+!
+!       This term is solved for completely implicitly, such that:
+!
+!       - d( V_hm(t) * r_hm(t+1) )/dz.
+!
+!       Note:  When the term is brought over to the left-hand side, the
+!              sign is reversed and the leading "-" in front of the
+!              term is changed to a "+".
+!
+!       Timestep index (t) stands for the index of the current timestep,
+!       while timestep index (t+1) stands for the index of the next
+!       timestep, which is being advanced to in solving the d(r_hm)/dt
+!       equation.
+!
+!       This term is discretized as follows:
+!
+!       The values of r_hm are found on the thermodynamic levels, while 
+!       the values of V_hm are found on the momentum levels.  The 
+!       variable r_hm is interpolated to the intermediate momentum 
+!       levels.  At the intermediate momentum levels, the interpolated 
+!       values of r_hm are multiplied by the values of V_hm.  Then, the
+!       derivative of (r_hm*V_hm) is taken over the central thermodynamic
+!       level.
+!
+!       -----r_hmp1---------------------------------------------- t(k+1)
+!
+!       ==============r_hm(interp)====V_hm======================= m(k)
+!
+!       -----r_hm--------------------------------d(V_hm*r_hm)/dz- t(k)
+!
+!       ==============r_hm(interp)====V_hmm1===================== m(k-1)
+!
+!       -----r_hmm1---------------------------------------------- t(k-1)
+!
+!       The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1)
+!       correspond with altitudes zt(k+1), zm(k), zt(k), zm(k-1),
+!       and zt(k-1), respectively.  The letter "t" is used for
+!       thermodynamic levels and the letter "m" is used for momentum
+!       levels.
+!
+!       dzt(k) = 1 / ( zm(k) - zm(k-1) )
+!
+!
+!       Conservation Properties:
+!
+!       When a hydrometeor is sedimented to the ground (or to the lower
+!       boundary of the model), it is removed from the atmosphere (or
+!       from the model domain).  Thus, the quantity of the hydrometeor 
+!       over the entire vertical domain should not be conserved due to 
+!       the process of sedimentation.  Thus, not all of the column 
+!       totals in the left-hand side matrix should be equal to 0.
+!
+!       Left-hand side matrix contributions from eddy diffusion term;
+!       first four vertical levels:
+!
+!            ------------------------------------------------------------------------------------------>
+!       k=1 |            0                            0                                0
+!           |
+!       k=2 | -dzt(k)*V_hm(k-1)*D(k)       +dzt(k)*[ V_hm(k)*B(k)
+!           |                                       -V_hm(k-1)*C(k) ]       +dzt(k)*V_hm(k)*A(k)
+!           |
+!       k=3 |            0                 -dzt(k)*V_hm(k-1)*D(k)           +dzt(k)*[ V_hm(k)*B(k)
+!           |                                                                        -V_hm(k-1)*C(k) ]
+!           |
+!       k=4 |            0                            0                     -dzt(k)*V_hm(k-1)*D(k)
+!           |
+!          \ /
+!
+!       The variables A(k), B(k), C(k), and D(k) are weights of interpolation 
+!       around central thermodynamic level k, such that:
+!       A(k) = ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ),
+!       B(k) = 1 - [ ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ) ],
+!       C(k) = ( zm(k-1) - zt(k-1) ) / ( zt(k) - zt(k-1) ), and
+!       D(k) = 1 - [ ( zm(k-1) - zt(k-1) ) / ( zt(k) - zt(k-1) ) ].
+!
+!       Note:  The superdiagonal term from level 3 and both the main
+!              diagonal and superdiagonal terms from level 4 are not
+!              shown on this diagram.
 
 !       References:
 !       None
@@ -1251,67 +1339,6 @@
         ! Output
         real, dimension(3) :: lhs
 
-        ! DESCRIPTION
-        !
-        ! This function handles the portion of the hydrometeor equation that
-        ! is concerned with drop or particle sedimentation:
-        !
-        ! d(xx)/dt = ... -Vxx * d(xx)/dz  + ...
-        !
-        ! The normal discretization is to use the values of the hydrometeor, xx,
-        ! which is located on thermodynamic levels, from three levels -- the 
-        ! central level and one-level-above and one-level-below the central 
-        ! level.  These three values lead to two averaged values centered at 
-        ! the intermediate momentum levels.  In turn, these two averaged 
-        ! values lead to one first derivative centered at the central 
-        ! thermodynamic level.  Meanwhile, the values for sedimentation 
-        ! velocity, Vxx, are located at the intermediate momentum levels.  
-        ! The two values lead to one averaged value centered at the central 
-        ! thermodynamic level.  This is illustrated in the diagram below:
-        !
-        ! ---xx(k+1)------------------------------------  t(k+1)
-        !
-        ! ===Vxx( k )=====ave(xx)m======================  m(k)
-        !
-        ! ---xx( k )------ave(Vxx)t-----d(xx)/dz--------  t(k)
-        !
-        ! ===Vxx(k-1)=====ave(xx)m======================  m(k-1)
-        !
-        ! ---xx(k-1)------------------------------------  t(k-1)
-        !
-        ! The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1)
-        ! correspond with altitudes zt(k+1), zm(k), zt(k), zm(k-1),
-        ! and zt(k-1), respectively.  The letter "t" is used for
-        ! thermodynamic levels and the letter "m" is used for momentum
-        ! levels.
-        !
-        ! In equation form, this looks like:
-        !
-        ! -zm2zt(Vxx,k) * 
-        !    [dzt(k)*( (A*xx(k+1)+B*xx(k)) - (C*xx(k)+D*xx(k-1)) )];
-        !
-        ! where zm2zt(Vxx,k) interpolates momentum-level variable Vxx 
-        ! to thermodynamic level k;
-        !
-        ! where A, B, C, and D are weights of interpolation, such that:
-        !    A = ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ),
-        !    B = 1 - [ ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ) ],
-        !    C = ( zm(k-1) - zt(k-1) ) / ( zt(k) - zt(k-1) ), and
-        !    D = 1 - [ ( zm(k-1) - zt(k-1) ) / ( zt(k) - zt(k-1) ) ];
-        !
-        ! and where dzt(k) = 1 / ( zm(k) - zm(k-1) ).
-        !
-        ! This is then moved to the left-hand side of the equation and 
-        ! rearranged to be placed onto a tridiagonal matrix.
-        !
-        ! Finally, it should be pointed out that this technique of discretizing
-        ! is not conservative.  Column totals at any level do not necessarily
-        ! add up to 0, as Vxx may be different at any level.  We want this, as
-        ! we should be losing some of the hydrometeor through the lower boundary
-        ! as it sediments.
-        !
-        ! Brian Griffin. March 7, 2007.
-        !
         ! Note:  The code has now been changed so that Vxx has been pulled 
         !        inside of the derivative.  The sedimentation term is now of 
         !        the form -d(Vxx*xx)/dt, rather than of the form -Vxx d(xx)/dt.
