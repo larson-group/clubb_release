@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F,v 1.49 2008-06-03 17:19:07 griffinb Exp $
+! $Id: diag_var.F,v 1.50 2008-06-04 21:24:19 griffinb Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !===============================================================================
@@ -329,13 +329,13 @@
         !!!!!***** r_t'^2 *****!!!!!
 
         ! Implicit contributions to term rtp2
-        call diag_var_lhs( dt, liter, a1, a1_zt, wp2, wp2_zt, 
+        call diag_var_lhs( dt, liter, a1, a1_zt, wp2_zt, 
      .                     wp3, taum, wmm, Kw2_rtp2, C2rt_1d, 
      .                     nu2, beta, wtol_sqd, lhs )
 
         ! Explicit contributions to rtp2
         call diag_var_rhs( "rtp2", dt, liter, a1, a1_zt, 
-     .                     wp2, wp2_zt, wp3, wprtp, wprtp_zt,
+     .                     wp2_zt, wp3, wprtp, wprtp_zt,
      .                     wprtp, wprtp_zt, rtm, rtm, rtp2,
      .                     beta, wtol_sqd, rhs )
         
@@ -347,13 +347,13 @@
         !!!!!***** th_l'^2 *****!!!!!
 
         ! Implicit contributions to term thlp2
-        call diag_var_lhs( dt, liter, a1, a1_zt, wp2, wp2_zt, 
+        call diag_var_lhs( dt, liter, a1, a1_zt, wp2_zt, 
      .                     wp3, taum, wmm, Kw2_thlp2, C2thl_1d, 
      .                     nu2, beta, wtol_sqd, lhs )
 
         ! Explicit contributions to thlp2
         call diag_var_rhs( "thlp2", dt, liter, a1, a1_zt, 
-     .                     wp2, wp2_zt, wp3, wpthlp, wpthlp_zt,
+     .                     wp2_zt, wp3, wpthlp, wpthlp_zt,
      .                     wpthlp, wpthlp_zt, thlm, thlm, thlp2,
      .                     beta, wtol_sqd, rhs )
 
@@ -365,13 +365,13 @@
         !!!!!***** r_t'th_l' *****!!!!!
 
         ! Implicit contributions to term rtpthlp
-        call diag_var_lhs( dt, liter, a1, a1_zt, wp2, wp2_zt, 
+        call diag_var_lhs( dt, liter, a1, a1_zt, wp2_zt, 
      .                     wp3, taum, wmm, Kw2_rtpthlp, C2rtthl_1d, 
      .                     nu2, beta, wtol_sqd, lhs )
 
         ! Explicit contributions to rtpthlp
         call diag_var_rhs( "rtpthlp", dt, liter, a1, a1_zt, 
-     .                     wp2, wp2_zt, wp3, wprtp, wprtp_zt,
+     .                     wp2_zt, wp3, wprtp, wprtp_zt,
      .                     wpthlp, wpthlp_zt, rtm, thlm, rtpthlp,
      .                     beta, wtol_sqd, rhs )
 
@@ -383,7 +383,7 @@
         !!!!!***** u'^2 *****!!!!!
 
         ! Implicit contributions to term up2
-        call diag_var_lhs( dt, liter, a1, a1_zt, wp2, wp2_zt, 
+        call diag_var_lhs( dt, liter, a1, a1_zt, wp2_zt, 
      .                     wp3, taum, wmm, Kw2, C4_C14_1d, 
      .                     nu9, beta, wtol_sqd, lhs )
 
@@ -402,7 +402,7 @@
         !!!!!***** v'^2 *****!!!!!
 
         ! Implicit contributions to term vp2
-        call diag_var_lhs( dt, liter, a1, a1_zt, wp2, wp2_zt, 
+        call diag_var_lhs( dt, liter, a1, a1_zt, wp2_zt, 
      .                     wp3, taum, wmm, Kw2, C4_C14_1d, 
      .                     nu9, beta, wtol_sqd, lhs )
 
@@ -524,7 +524,10 @@
         if ( scalar_calc ) then
 
           ! Implicit contributions to passive scalars
-          call diag_var_lhs( dt, liter, a1, a1_zt, wp2, wp2_zt, 
+
+          !!!!!***** sclr'^2, sclr'r_t', sclr'th_l' *****!!!!!
+
+          call diag_var_lhs( dt, liter, a1, a1_zt, wp2_zt, 
      .                       wp3, taum, wmm, Kw2, C2sclr_1d, 
      .                       nu2, beta, wtol_sqd, lhs )
 
@@ -542,7 +545,7 @@
             wpsclrp_zt = zm2zt( wpsclrp(:,i) )
 
             call diag_var_rhs( "sclrp2", dt, liter, a1, a1_zt, 
-     .                         wp2, wp2_zt, wp3, wpsclrp(:,i), 
+     .                         wp2_zt, wp3, wpsclrp(:,i), 
      .                         wpsclrp_zt, wpsclrp(:,i), wpsclrp_zt, 
      .                         sclrm(:,i), sclrm(:,i), sclrp2(:,i),
      .                         beta, wtol_sqd, sclr_rhs(:,i) )
@@ -560,7 +563,7 @@
             wpsclrp_zt = zm2zt( wpsclrp(:,i) )
 
             call diag_var_rhs( "sclrprtp", dt, liter, a1, a1_zt, 
-     .                         wp2, wp2_zt, wp3, wpsclrp(:,i), 
+     .                         wp2_zt, wp3, wpsclrp(:,i), 
      .                         wpsclrp_zt, wprtp, wprtp_zt, sclrm(:,i), 
      .                         rtm, sclrprtp(:,i), beta, wtol_sqd, 
      .                         sclr_rhs(:,i+sclr_dim) )
@@ -578,7 +581,7 @@
             wpsclrp_zt = zm2zt( wpsclrp(:,i) )
 
             call diag_var_rhs( "sclrpthlp", dt, liter, a1, a1_zt, 
-     .                         wp2, wp2_zt, wp3, wpsclrp(:,i), 
+     .                         wp2_zt, wp3, wpsclrp(:,i), 
      .                         wpsclrp_zt, wpthlp, wpthlp_zt, 
      .                         sclrm(:,i), thlm, sclrpthlp(:,i), beta, 
      .                         wtol_sqd, sclr_rhs(:,i+2*sclr_dim) )
@@ -685,7 +688,7 @@
         end subroutine diag_var
 
 !===============================================================================
-        subroutine diag_var_lhs( dt, liter, a1, a1_zt, wp2, wp2_zt, 
+        subroutine diag_var_lhs( dt, liter, a1, a1_zt, wp2_zt, 
      .                           wp3, taum, wmm, Kw2, Cn, 
      .                           nu, beta, wtol_sqd, lhs )
         
@@ -760,7 +763,6 @@
         real, dimension(gr%nnzp), intent(in) ::
      .  a1,    ! Scm-related term a_1 (momentum levels)      [-]
      .  a1_zt, ! a_1 interpolated to thermodynamic levels    [-]
-     .  wp2,   ! w'^2 (momentum levels)                      [m^2/s^2]
      .  wp2_zt,! w'^2 interpolated to thermodynamic levels   [m^2/s^2]
      .  wp3,   ! w'^3 (thermodynamic levels)                 [m^3/s^3]
      .  taum,  ! Time-scale tau on momentum levels           [s]
@@ -799,7 +801,8 @@
      .    = diffusion_zm_lhs( Kw2(k), Kw2(kp1), nu,
      .                        gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
 
-          ! LHS dissipation term 1 (dp1).
+          ! LHS dissipation term 1 (dp1)
+          ! (and pressure term 1 (pr1) for u'^2 and v'^2).
           lhs(k_mdiag,k)
      .    = lhs(k_mdiag,k) + term_dp1( Cn(k), taum(k) )
 
@@ -808,7 +811,7 @@
             lhs(k_mdiag,k) = lhs(k_mdiag,k) + ( 1.0 / dt )
           endif
 
-          ! LHS mean advection (ta) term.
+          ! LHS mean advection (ma) term.
           lhs(kp1_mdiag:km1_mdiag,k)
      .    = lhs(kp1_mdiag:km1_mdiag,k)
      .    + term_ma_zm_lhs( wmm(k), gr%dzm(k), k )
@@ -823,54 +826,58 @@
 #ifdef STATS
          if ( lstats_samp ) then
 
-           ! Statistics: implicit contributions for rtp2, thlp2, 
-           !             rtpthlp, up2, or vp2.
+         ! Statistics: implicit contributions for rtp2, thlp2, 
+         !             rtpthlp, up2, or vp2.
 
-           if ( irtp2_dp1 + ithlp2_dp1 + irtpthlp_dp1  > 0 ) then
-             tmp(1) = term_dp1( Cn(k), taum(k) )
-             zmscr01(k) = -tmp(1)
-           endif
-         
-           if ( irtp2_dp2 + ithlp2_dp2 + irtpthlp_dp2 + 
-     .          iup2_dp2 + ivp2_dp2 > 0 ) then
-             tmp(1:3)
-     .       = diffusion_zm_lhs( Kw2(k), Kw2(kp1), nu,
-     .                           gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
-             zmscr02(k) = -tmp(3)
-             zmscr03(k) = -tmp(2)
-             zmscr04(k) = -tmp(1)
-           endif
-
-           if ( irtp2_ta + ithlp2_ta + irtpthlp_ta +
-     .          iup2_ta + ivp2_ta > 0 ) then
-             tmp(1:3)
-     .       = term_ta_lhs( a1_zt(kp1), a1(k), a1_zt(k), 
-     .                      wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k), 
-     .                      gr%dzm(k), beta, wtol_sqd, k )
-             zmscr05(k) = -tmp(3)
-             zmscr06(k) = -tmp(2)
-             zmscr07(k) = -tmp(1)
-           endif
-
-           if ( irtp2_ma + ithlp2_ma + irtpthlp_ma +
-     .          iup2_ma + ivp2_ma > 0 ) then
-             tmp(1:3)
-     .       = term_ma_zm_lhs( wmm(k), gr%dzm(k), k )
-             zmscr08(k) = -tmp(3)
-             zmscr09(k) = -tmp(2)
-             zmscr10(k) = -tmp(1)
-           endif
-
+         if ( irtp2_dp1 + ithlp2_dp1 + irtpthlp_dp1  > 0 ) then
+           ! Note:  The statistical implicit contribution to term dp1
+           !        (as well as to term pr1) for up2 and vp2 is recorded
+           !        in diag_var_uv_rhs because up2 and vp2 use a special
+           !        dp1/pr1 combined term.
+           tmp(1) = term_dp1( Cn(k), taum(k) )
+           zmscr01(k) = -tmp(1)
          endif
+         
+         if ( irtp2_dp2 + ithlp2_dp2 + irtpthlp_dp2 + 
+     .        iup2_dp2 + ivp2_dp2 > 0 ) then
+           tmp(1:3)
+     .     = diffusion_zm_lhs( Kw2(k), Kw2(kp1), nu,
+     .                         gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+           zmscr02(k) = -tmp(3)
+           zmscr03(k) = -tmp(2)
+           zmscr04(k) = -tmp(1)
+         endif
+
+         if ( irtp2_ta + ithlp2_ta + irtpthlp_ta +
+     .        iup2_ta + ivp2_ta > 0 ) then
+           tmp(1:3)
+     .     = term_ta_lhs( a1_zt(kp1), a1(k), a1_zt(k), 
+     .                    wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k), 
+     .                    gr%dzm(k), beta, wtol_sqd, k )
+           zmscr05(k) = -tmp(3)
+           zmscr06(k) = -tmp(2)
+           zmscr07(k) = -tmp(1)
+         endif
+
+         if ( irtp2_ma + ithlp2_ma + irtpthlp_ma +
+     .        iup2_ma + ivp2_ma > 0 ) then
+           tmp(1:3)
+     .     = term_ma_zm_lhs( wmm(k), gr%dzm(k), k )
+           zmscr08(k) = -tmp(3)
+           zmscr09(k) = -tmp(2)
+           zmscr10(k) = -tmp(1)
+         endif
+
+         endif ! lstats_samp
 #endif /*STATS*/
 
         enddo ! k=2..gr%nnzp-1
 
 
         ! Boundary Conditions
-        ! These are set so that the sfc_var value of rtp2, thlp2, or rtpthlp
-        ! can be used at the lowest boundary and the values of those
-        ! variables can be set to 0 at the top boundary.  Brian.  12/18/05.
+        ! These are set so that the sfc_var value of the variances and 
+        ! covariances can be used at the lowest boundary and the values of those
+        ! variables can be set to 0 at the top boundary.
         ! Fixed-point boundary conditions are used for both the variances and 
         ! the covariances.
         lhs(:,1) = 0.0
@@ -885,6 +892,7 @@
 !         lhs(k_mdiag,1) = 1.0/dt
 !         lhs(k_mdiag,1) = 1.0/dt
 !       end if
+
 
         return
         end subroutine diag_var_lhs
@@ -1196,12 +1204,17 @@
         integer :: k, kp1, km1
 
 #ifdef STATS
+        real :: tmp
+#endif /*STATS*/
+
+#ifdef STATS
         integer ::
      .  ixap2_ta,
      .  ixap2_tp,
      .  ixap2_dp1,
      .  ixap2_pr1,
      .  ixap2_pr2
+
 
         select case ( trim( solve_type ) )
         case ( "vp2" )
@@ -1232,86 +1245,100 @@
           kp1 = min( k+1, gr%nnzp )
 
           rhs(k,1)
+          ! RHS turbulent advection (ta) term.
      .    = term_ta_rhs( a1_zt(kp1), a1(k), a1_zt(k), 
      .                   wp3(kp1), wp3(k), wp2_zt(kp1), 
      .                   wp2_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), 
      .                   wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), 
      .                   beta, wtol_sqd )
-     .      + (1.0 - C5) 
-     .          * term_tp( xam(kp1), xam(k), xam(kp1), xam(k),
-     .                    wpxap(k), wpxap(k), gr%dzm(k) )
-     .      + term_pr1( C4, C14, xbp2(k), wp2(k), taum(k) )
-     .      + term_pr2
-     .        ( C5, grav, T0, wpthvp(k), wpxap(k), wpxbp(k), 
-     .          xam(kp1), xam(k), xbm(kp1), xbm(k), gr%dzm(k) ) 
+          ! RHS turbulent production (tp) term.
+     .    + (1.0 - C5) 
+     .       * term_tp( xam(kp1), xam(k), xam(kp1), xam(k),
+     .                  wpxap(k), wpxap(k), gr%dzm(k) )
+          ! RHS pressure term 1 (pr1) (and dissipation term 1 (dp1)).
+     .    + term_pr1( C4, C14, xbp2(k), wp2(k), taum(k) )
+          ! RHS pressure term 2 (pr2).
+     .    + term_pr2( C5, grav, T0, wpthvp(k), wpxap(k), wpxbp(k), 
+     .                xam(kp1), xam(k), xbm(kp1), xbm(k), gr%dzm(k) )
 
+          ! RHS time tendency.
           if ( liter ) then 
-            rhs(k,1) = rhs(k,1) + 1.0/dt*xap2(k)  ! Time tendency
+            rhs(k,1) = rhs(k,1) + 1.0/dt * xap2(k)
           endif
 
 #ifdef STATS
-
-          ! Compute implicit budget terms
-
           if ( lstats_samp ) then
-            if ( ixap2_ta > 0 ) then
-              zm%x(k,ixap2_ta) 
-     .          = zm%x(k,ixap2_ta)
-     .          + term_ta_rhs( a1_zt(kp1), a1(k), a1_zt(k), 
-     .                         wp3(kp1), wp3(k), wp2_zt(kp1), 
-     .                         wp2_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), 
-     .                         wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), 
-     .                         beta, wtol_sqd )
-            endif 
 
-            if ( ixap2_dp1 > 0 ) then
-              zmscr01(k) = - (1.0/3.0) * C14 / taum(k)
-              zm%x(k,ixap2_dp1)
-     .        = zm%x(k,ixap2_dp1) ! Explicit component
-     .            - C14 * ( xbp2(k) + wp2(k) ) / ( 3.0 * taum(k) ) 
-            endif
+          ! Statistics: explicit contributions for up2 or vp2.
 
-            if ( ixap2_pr1 > 0 ) then
-              ! Note:
-              ! The function term_pr1 is the explicit component of a
-              ! semi-implicit solution to dp1 and pr1
-              zm%x(k,ixap2_pr1)
-     .        = zm%x(k,ixap2_pr1) ! Explicit component
-     .        + ( C4 * (xbp2(k) + wp2(k)) ) / ( 3.0 * taum(k) )
-              zmscr11(k) = - (2.0/3.0) * C4 / taum(k)
-            endif
+          if ( ixap2_ta > 0 ) then
+            zm%x(k,ixap2_ta) 
+     .      = zm%x(k,ixap2_ta)
+     .      + term_ta_rhs( a1_zt(kp1), a1(k), a1_zt(k), 
+     .                     wp3(kp1), wp3(k), wp2_zt(kp1), 
+     .                     wp2_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), 
+     .                     wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), 
+     .                     beta, wtol_sqd )
+          endif
 
-            if ( ixap2_pr2 > 0 ) then
-              zm%x(k,ixap2_pr2)
-     .        = zm%x(k,ixap2_pr2)
-     .        + term_pr2
-     .          ( C5, grav, T0, wpthvp(k), wpxap(k), wpxbp(k), 
-     .            xam(kp1), xam(k), xbm(kp1), xbm(k), gr%dzm(k) ) 
-              zm%n(k,ixap2_pr2) = zm%n(k,ixap2_pr2) + 1
-            endif
+          if ( ixap2_dp1 > 0 ) then
+            ! Note:  The function term_pr1 is the explicit component 
+            !        of a semi-implicit solution to dp1 and pr1.
+            ! Record the statistical contribution of the implicit
+            ! component of term dp1 for up2 or vp2.  This will 
+            ! overwrite anything set statistically in diag_var_lhs 
+            ! for this term.
+            tmp = term_dp1( (2.0/3.0)*C4, taum(k) )
+            zmscr01(k) = -tmp
+            ! Statistical contribution of the explicit component
+            ! of term dp1 for up2 or vp2.
+            zm%x(k,ixap2_dp1)
+     .      = zm%x(k,ixap2_dp1)
+     .      + term_pr1( C4, 0.0, xbp2(k), wp2(k), taum(k) )
+          endif
 
-            if ( ixap2_tp > 0 ) then
-              zm%x(k,ixap2_tp) 
-     .          = zm%x(k,ixap2_tp)
-     .          + (1.0 - C5) 
-     .             * term_tp( xam(kp1), xam(k), xam(kp1), xam(k),
-     .                        wpxap(k), wpxap(k), gr%dzm(k) )
-              zm%n(k,ixap2_tp) = zm%n(k,ixap2_tp) + 1
-            endif
+          if ( ixap2_pr1 > 0 ) then
+            ! Note:  The function term_pr1 is the explicit component 
+            !        of a semi-implicit solution to dp1 and pr1.
+            ! Statistical contribution of the implicit component
+            ! of term pr1 for up2 or vp2.
+            tmp = term_dp1( (1.0/3.0)*C14, taum(k) )
+            zmscr11(k) = -tmp
+            ! Statistical contribution of the explicit component
+            ! of term pr1 for up2 or vp2.
+            zm%x(k,ixap2_pr1)
+     .      = zm%x(k,ixap2_pr1)
+     .      + term_pr1( 0.0, C14, xbp2(k), wp2(k), taum(k) )
+          endif
+
+          if ( ixap2_pr2 > 0 ) then
+            zm%x(k,ixap2_pr2)
+     .      = zm%x(k,ixap2_pr2)
+     .      + term_pr2( C5, grav, T0, wpthvp(k), wpxap(k), wpxbp(k), 
+     .                  xam(kp1), xam(k), xbm(kp1), xbm(k), gr%dzm(k) )
+            zm%n(k,ixap2_pr2) = zm%n(k,ixap2_pr2) + 1
+          endif
+
+          if ( ixap2_tp > 0 ) then
+            zm%x(k,ixap2_tp) 
+     .      = zm%x(k,ixap2_tp)
+     .      + (1.0 - C5) 
+     .         * term_tp( xam(kp1), xam(k), xam(kp1), xam(k),
+     .                    wpxap(k), wpxap(k), gr%dzm(k) )
+            zm%n(k,ixap2_tp) = zm%n(k,ixap2_tp) + 1
+          endif
 
           endif ! lstats_samp
-
 #endif /*STATS*/
 
         enddo ! k=2..gr%nnzp-1
 
 
         ! Boundary Conditions
-        ! These are set so that the sfc_var value of rtp2, thlp2, or rtpthlp
+        ! These are set so that the sfc_var value of up2 or vp2
         ! can be used at the lowest boundary and the values of those
-        ! variables can be set to 0 at the top boundary.  Brian.  12/18/05.
-        ! Fixed-point boundary conditions are used for both the variances and 
-        ! the covariances.
+        ! variables can be set to 0 at the top boundary.
+        ! Fixed-point boundary conditions are used for the variances.
 
         ! This boundary condition was changed by dschanen on 24 April 2007
         ! When we run prognostically we want to preserve the surface value.
@@ -1323,12 +1350,13 @@
         rhs(gr%nnzp,1) = 0.0
 !       end if
 
+
         return
         end subroutine diag_var_uv_rhs
 
 !===============================================================================
         subroutine diag_var_rhs( solve_type, dt, liter, a1, a1_zt, 
-     .                           wp2, wp2_zt, wp3, wpxap, wpxap_zt,
+     .                           wp2_zt, wp3, wpxap, wpxap_zt,
      .                           wpxbp, wpxbp_zt, xam, xbm, xapxbp,
      .                           beta, wtol_sqd, rhs )
 
@@ -1368,7 +1396,6 @@
         real, dimension(gr%nnzp), intent(in) ::
      .  a1,       ! Scm-related term a_1 (momentum levels)      [-]
      .  a1_zt,    ! a_1 interpolated to thermodynamic levels    [-]
-     .  wp2,      ! w'^2 (momentum levels)                      [m^2/s^2]
      .  wp2_zt,   ! w'^2 interpolated to thermodynamic levels   [m^2/s^2]
      .  wp3,      ! w'^3 (thermodynamic levels)                 [m^3/s^3]
      .  wpxap,    ! w'x_a' (momentum levels)                    [m/s {x_am units}]
@@ -1398,6 +1425,7 @@
      .  ixapxbp_tp,
      .  ixapxbp_tp1,
      .  ixapxbp_tp2
+
 
         select case ( trim( solve_type ) )
         case ( "rtp2" )
@@ -1430,25 +1458,72 @@
           kp1 = min( k+1, gr%nnzp )
 
           rhs(k,1)
+          ! RHS turbulent advection (ta) term.
      .    = term_ta_rhs( a1_zt(kp1), a1(k), a1_zt(k), 
      .                   wp3(kp1), wp3(k), wp2_zt(kp1), 
      .                   wp2_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), 
      .                   wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), 
      .                   beta, wtol_sqd )
-     .      + term_tp( xam(kp1), xam(k), xbm(kp1), xbm(k), 
-     .                 wpxbp(k), wpxap(k), gr%dzm(k) )
+          ! RHS turbulent production (tp) term.
+     .    + term_tp( xam(kp1), xam(k), xbm(kp1), xbm(k), 
+     .               wpxbp(k), wpxap(k), gr%dzm(k) )
 
+          ! RHS time tendency.
           if ( liter ) then 
-            rhs(k,1) = rhs(k,1) + 1.0/dt*xapxbp(k)  ! Time tendency
+            rhs(k,1) = rhs(k,1) + 1.0/dt * xapxbp(k)
           endif
+
+#ifdef STATS
+          if ( lstats_samp ) then
+
+          ! Statistics: explicit contributions for rtp2, thlp2, or rtpthlp.
+
+          if ( ixapxbp_ta > 0 ) then
+            zm%x(k,ixapxbp_ta)
+     .      = zm%x(k,ixapxbp_ta)
+     .      + term_ta_rhs( a1_zt(kp1), a1(k), a1_zt(k),
+     .                     wp3(kp1), wp3(k), wp2_zt(kp1),
+     .                     wp2_zt(k), wpxbp_zt(kp1), wpxbp_zt(k),
+     .                     wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k),
+     .                     beta, wtol_sqd )
+          endif
+
+          ! rtp2/thlp2 case (1 turbulent production term)
+          if ( ixapxbp_tp > 0 ) then
+            zm%x(k,ixapxbp_tp)
+     .      = zm%x(k,ixapxbp_tp)
+     .      + term_tp( xam(kp1), xam(k), xbm(kp1), xbm(k),
+     .                 wpxbp(k), wpxap(k), gr%dzm(k) )
+            zm%n(k,ixapxbp_tp) = zm%n(k,ixapxbp_tp) + 1
+          endif
+
+          ! rtpthlp case (2 turbulent production terms)
+          if ( ixapxbp_tp1 > 0 ) then
+            zm%x(k,ixapxbp_tp1) 
+     .      = zm%x(k,ixapxbp_tp1)
+     .      + term_tp( 0.0, 0.0, xbm(kp1), xbm(k),
+     .                 0.0, wpxap(k), gr%dzm(k) )
+            zm%n(k,ixapxbp_tp1) = zm%n(k,ixapxbp_tp1) + 1
+          endif
+
+          if ( ixapxbp_tp2 > 0 ) then
+            zm%x(k,ixapxbp_tp2) 
+     .      = zm%x(k,ixapxbp_tp2)
+     .      + term_tp( xam(kp1), xam(k), 0.0, 0.0,
+     .                 wpxbp(k), 0.0, gr%dzm(k) )
+            zm%n(k,ixapxbp_tp2) = zm%n(k,ixapxbp_tp2) + 1
+          endif
+
+          endif ! lstats_samp
+#endif /*STATS*/
 
         enddo ! k=2..gr%nnzp-1
 
 
         ! Boundary Conditions
         ! These are set so that the sfc_var value of rtp2, thlp2, or rtpthlp
-        ! can be used at the lowest boundary and the values of those
-        ! variables can be set to 0 at the top boundary.  Brian.  12/18/05.
+        ! (or sclrp2, sclrprtp, or sclrpthlp) can be used at the lowest boundary
+        ! and the values of those variables can be set to 0 at the top boundary.
         ! Fixed-point boundary conditions are used for both the variances and 
         ! the covariances.
 
@@ -1462,48 +1537,6 @@
         rhs(gr%nnzp,1) = 0.0
 !       end if
 
-#ifdef STATS
-        ! Compute implicit budget terms
-        if ( lstats_samp ) then
-
-          do k=1, gr%nnzp
-
-            km1 = max( k-1, 1 )
-            kp1 = min( k+1, gr%nnzp )
-            if ( ixapxbp_ta > 0 ) then
-              zm%x(k,ixapxbp_ta) 
-     .          = zm%x(k,ixapxbp_ta)
-     .          + term_ta_rhs( a1_zt(kp1), a1(k), a1_zt(k), 
-     .                         wp3(kp1), wp3(k), wp2_zt(kp1), 
-     .                         wp2_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), 
-     .                         wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), 
-     .                         beta, wtol_sqd )
-            endif 
-            ! rtp2/thlp2 case (1 term)
-            if ( ixapxbp_tp > 0 ) then
-              zm%x(k,ixapxbp_tp) 
-     .          = zm%x(k,ixapxbp_tp)
-     .          + term_tp( xam(kp1), xam(k), xbm(kp1), xbm(k), 
-     .                     wpxbp(k), wpxap(k), gr%dzm(k) )
-              zm%n(k,ixapxbp_tp) = zm%n(k,ixapxbp_tp) + 1
-            end if
-
-            ! rtpthlp case (2 terms)
-            if ( ixapxbp_tp1 > 0 ) then
-              zm%x(k,ixapxbp_tp1) = zm%x(k,ixapxbp_tp1)
-     .        - wpxap(k) * gr%dzm(k) * ( xbm(kp1) - xbm(k) )
-              zm%n(k,ixapxbp_tp1) = zm%n(k,ixapxbp_tp1) + 1
-            end if
-
-            if ( ixapxbp_tp2 > 0 ) then
-              zm%x(k,ixapxbp_tp2) = zm%x(k,ixapxbp_tp2)
-     .        - wpxbp(k) * gr%dzm(k) * ( xam(kp1) - xam(k) )
-              zm%n(k,ixapxbp_tp2) = zm%n(k,ixapxbp_tp2) + 1
-            end if
-
-          end do
-        end if
-#endif /*STATS*/
 
         return
         end subroutine diag_var_rhs
@@ -1908,7 +1941,9 @@
 !       of time-scale tau_m are also found on momentum levels.
 !
 !       Note: For equations that use pressure term 1 (such as the 
-!             equations for u'^2 and v'^2), C_n = ( 2*C_4 + C_14 ) / 3.
+!             equations for u'^2 and v'^2), C_n = ( 2*C_4 + C_14 ) / 3;
+!             which combines the implicit contributions for dissipation
+!             term 1 and pressure term 1 into one expression.
 !             Otherwise, C_n = C_2.
 
 !       References:
@@ -1975,7 +2010,8 @@
 !       timestep, which is being advanced to in solving the 
 !       d(x_a'x_b')/dt equation.
 !
-!       The implicit component is solved in function "term_dp1" above, 
+!       The implicit component of the combined dp1 and pr1 term is 
+!       solved in function "term_dp1" above, 
 !       where "( 2*C_4 + C_14 ) / 3" is sent in as "C_n".
 !
 !       The explicit component of the combined dp1 and pr1 term is:
