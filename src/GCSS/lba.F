@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: lba.F,v 1.10 2008-05-30 16:24:23 faschinj Exp $
+! $Id: lba.F,v 1.11 2008-06-04 20:26:58 dschanen Exp $
         module lba
 
 !       Description:
@@ -187,7 +187,7 @@
 
         ! Compute heat and moisture fluxes
         ! From Table A.1.
-        ft = max( 0., 
+        ft = max( 0._time_prec, 
      .               cos( 0.5 * pi * ( (5.25 - ( time/3600.)) / 5.25 ) )
      .          )
 
