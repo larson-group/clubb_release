@@ -1,5 +1,5 @@
-# $Id: solaris_ia32_g95.in,v 1.2 2008-06-04 20:28:16 dschanen Exp $
-# Configuration file for Solaris machine using g95
+# $Id: linux_ia32_absoft.in,v 1.1 2008-06-04 20:28:15 dschanen Exp $
+# Configuration file for Linux machine using Absoft Fortran
 
 # == Paths ==
 # This is where the make command is going to put the resulting files
@@ -8,44 +8,42 @@ BINDIR = $(PREFIX)/bin
 LIBDIR = $(PREFIX)/lib
 
 # == Compiler invocation ==
-FC = g95 # g95 ( http://www.g95.org )
+FC = af95 
 
 # == Debugging ==
 # It is sometimes helpful to turn on floating-point trapping for the 
 #  standalone program, but this will not work when using the tuner.
-# In g95: `setenv G95_FPU_INVALID TRUE' or `export G95_FPU_INVALID=TRUE'
-# These are the options for debugging symbols, bounds checking, IEEE-754,
-# and a special g95 flag for debugging, respectively. 
-DEBUG = -g -fbounds-check -mieee-fp -ftrace=full
+#DEBUG = -g -trap=ALL -et
+DEBUG = -g
 
 # == Machine specific flags ==
 # Note: some of these are 64 bit architectures, so make sure NetCDF is
 # compiled accordingly.
-#ARCH = -march=nocona -msse3 -mfpmath=sse     # New P4s
-#ARCH = -march=nocona -msse3 -mfpmath=sse -r8 # New P4s, double precision
-ARCH = -march=k8 -msse3 -mfpmath=sse         # New Opterons
+ARCH = -m64 -cpu:opteron # Opterons
 
 # == Optimization ==
-# These are all pretty conservative options. Check your compiler manual
-# for information on using more aggressive techniques (inlining, etc.)
-OPTIMIZE = -O2
+OPTIMIZE = -O3
 
 # == NetCDF Location ==
-#NC_LOC = $(HOME)/netcdf-3.6.1
-NC_LOC = /usr/local/netcdf-g95
+# Currently not working Absoft Fortran on Carson.  This is because I can't 
+# find any flags that work with netCDF 3.6.2 and Absoft 10.  -dschanen 4 June 08
+#NC_LOC = /usr/local/netcdf-absoft64
 
 # === LAPACK libraries ==
-LAPACK = -L/usr/local/lib -llapack -lblas
+#LAPACK = -L/usr/local/lib -llapack -lblas #  The netlib reference LAPACK/BLAS
+#LAPACK = -L/usr/lib64 -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas # ATLAS BLAS (faster)
+LAPACK = -L$(ACML_DIR)/gfortran64/lib -Wl,-rpath,$(ACML_DIR)/gfortran64/lib -lacml -lacml_mv -L/usr/lib64 -lgfortran
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
 # Use -L<library path> -l<lib> to link in an external library
 # Use -Wl,-rpath <library path> to set a search path for shared libs
-LDFLAGS = -L$(LIBDIR) -R$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib -lnetcdf $(LAPACK)
+LDFLAGS = -lU77 -L$(LIBDIR) -Wl,-rpath,$(LIBDIR) -lhoc_param -lhoc_bugsrad $(LAPACK)
 
 # == Compiler flags (all) ==
 # Preprocessing Directives:
 #   -DSTATS enables statistics
+#   -DNETCDF enables netCDF output
 #   -DSCALARS enables passive scalars
 #   -DBIG_ENDIAN_IO use only if compiler performs big endian file i/O
 #                   regardless of internal representation
@@ -55,10 +53,8 @@ LDFLAGS = -L$(LIBDIR) -R$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib -lne
 # You will need to `make clean' if you change these
 # Use -I<include path> to set a module or header file directory
 
-FCFLAGS = $(ARCH) $(DEBUG) -DSTATS -DNETCDF -Dnooverlap -Dradoffline -I$(NC_LOC)/include
-#FCFLAGS = $(ARCH) $(DEBUG) -DSTATS -DNETCDF -DSCALARS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
-#FCFLAGS = $(ARCH) $(OPTIMIZE) -DSTATS -DNETCDF -Dnooverlap -Dradoffline -I$(NC_LOC)/include
-#FCFLAGS = $(ARCH) $(OPTIMIZE) -DSTATS -DNETCDF -DSCALARS -Dnooverlap -Dradoffline -I$(NC_LOC)/include 
+FCFLAGS = $(ARCH) $(DEBUG) -DAbsoftUNIXFortran -DSTATS -Dnooverlap -Dradoffline
+#FCFLAGS = $(ARCH) $(OPTIMIZE) -DAbsoftUNIXFortran -DSTATS -Dnooverlap -Dradoffline
 
 # == Static library processing ==
 AR = ar

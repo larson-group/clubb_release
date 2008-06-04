@@ -1,4 +1,4 @@
-# $Id: osf1_alpha_digital.in,v 1.1 2008-05-27 21:14:11 dschanen Exp $
+# $Id: osf1_alpha_digital.in,v 1.2 2008-06-04 20:28:16 dschanen Exp $
 # Configuration File for HP/Compaq/DEC f95 on the UWM alpha
 
 # == Paths ==
@@ -50,8 +50,8 @@ LDFLAGS = -L$(LIBDIR) -Wl,-rpath,$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)
 #   -Dradoffline and -Dnooverlap (see bugsrad documentation)
 # You will need to `make clean' if you change these
 
-FCFLAGS = $(ARCH) $(OPTIMIZE) -DSTATS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
-#FCFLAGS = $(ARCH) $(DEBUG) -DSTATS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
+FCFLAGS = $(ARCH) $(OPTIMIZE) -DSTATS -DNETCDF -Dnooverlap -Dradoffline -I$(NC_LOC)/include
+#FCFLAGS = $(ARCH) $(DEBUG) -DSTATS -DNETCDF -Dnooverlap -Dradoffline -I$(NC_LOC)/include
 
 # == Static library processing ==
 AR = ar

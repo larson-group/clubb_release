@@ -1,4 +1,4 @@
-# $Id: solaris_generic_ss12_debug.in,v 1.1 2008-05-28 16:34:34 dschanen Exp $
+# $Id: solaris_generic_ss12_debug.in,v 1.2 2008-06-04 20:28:16 dschanen Exp $
 # Makefile definitions for Sun Studio's Fortran compiler
 
 # == Paths ==
@@ -49,8 +49,8 @@ OPTIMIZE = -g -xO3 -xvector=simd -ftrap=%none
 # Note that natively SPARC is big endian and AMD64/IA32 are little endian.
 #   -Dradoffline and -Dnooverlap (see bugsrad documentation)
 # You will need to `make clean' if you change these
-FCFLAGS = $(DEBUG) $(ARCH) -DSTATS -Dnooverlap -Dradoffline -M$(NC_LOC)/include
-#FCFLAGS = $(OPTIMIZE) $(ARCH) -DSTATS -Dnooverlap -Dradoffline -M$(NC_LOC)/include
+FCFLAGS = $(DEBUG) $(ARCH) -DSTATS -DNETCDF -Dnooverlap -Dradoffline -M$(NC_LOC)/include
+#FCFLAGS = $(OPTIMIZE) $(ARCH) -DSTATS -DNETCDF -Dnooverlap -Dradoffline -M$(NC_LOC)/include
 #FCFLAGS = $(OPTIMIZE) $(ARCH) -M$(NC_LOC)/include
 
 

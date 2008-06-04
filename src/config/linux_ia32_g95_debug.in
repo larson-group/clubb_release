@@ -1,4 +1,4 @@
-# $Id: linux_ia32_g95_debug.in,v 1.1 2008-05-27 21:14:11 dschanen Exp $
+# $Id: linux_ia32_g95_debug.in,v 1.2 2008-06-04 20:28:15 dschanen Exp $
 # Configuration file for Linux machine using g95
 # An MS Windows machine with MSYS should be similar
 
@@ -61,10 +61,10 @@ LDFLAGS = -L$(LIBDIR) -Wl,-rpath,$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)
 # You will need to `make clean' if you change these
 # Use -I<include path> to set a module or header file directory
 
-FCFLAGS = $(ARCH) $(DEBUG) -DSTATS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
-#FCFLAGS = $(ARCH) $(DEBUG) -DSTATS -DSCALARS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
-#FCFLAGS = $(ARCH) $(OPTIMIZE) -DSTATS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
-#FCFLAGS = $(ARCH) $(OPTIMIZE) -DSTATS -DSCALARS -Dnooverlap -Dradoffline -I$(NC_LOC)/include 
+FCFLAGS = $(ARCH) $(DEBUG) -DNETCDF -DSTATS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
+#FCFLAGS = $(ARCH) $(DEBUG) -DNETCDF -DSTATS -DSCALARS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
+#FCFLAGS = $(ARCH) $(OPTIMIZE) -DNETCDF -DSTATS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
+#FCFLAGS = $(ARCH) $(OPTIMIZE) -DNETCDF -DSTATS -DSCALARS -Dnooverlap -Dradoffline -I$(NC_LOC)/include 
 
 # == Static library processing ==
 AR = ar

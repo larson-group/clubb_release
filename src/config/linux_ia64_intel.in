@@ -1,4 +1,4 @@
-# $Id: linux_ia64_intel.in,v 1.1 2008-05-27 21:14:11 dschanen Exp $
+# $Id: linux_ia64_intel.in,v 1.2 2008-06-04 20:28:16 dschanen Exp $
 # Makefile definitions customized for Linux IA64 using the Intel Fortran 
 # compiler
 
@@ -46,8 +46,8 @@ LDFLAGS = -L$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib -lnetcdf $(LAPAC
 #   -Dradoffline and -Dnooverlap (see bugsrad documentation)
 # You will need to `make clean' if you change these
 
-FCFLAGS = $(ARCH) $(OPTIMIZE) -DSTATS -DBIG_ENDIAN_IO -Dnooverlap -Dradoffline -I$(NC_LOC)/include
-#FCFLAGS = $(ARCH) $(DEBUG) -DSTATS -DBIG_ENDIAN_IO -Dnooverlap -Dradoffline -I$(NC_LOC)/include
+FCFLAGS = $(ARCH) $(OPTIMIZE) -DSTATS -DNETCDF -DBIG_ENDIAN_IO -Dnooverlap -Dradoffline -I$(NC_LOC)/include
+#FCFLAGS = $(ARCH) $(DEBUG) -DSTATS -DNETCDF -DBIG_ENDIAN_IO -Dnooverlap -Dradoffline -I$(NC_LOC)/include
 
 # == Static library processing ==
 AR = ar
