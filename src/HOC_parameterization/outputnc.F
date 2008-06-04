@@ -1,7 +1,7 @@
-! $Id: outputnc.F,v 1.10 2008-05-30 16:24:25 faschinj Exp $
+! $Id: outputnc.F,v 1.11 2008-06-04 20:27:28 dschanen Exp $
 !-----------------------------------------------------------------------
-#ifdef STATS
        module outputnc
+#ifdef NETCDF
 
 !      Description:
 !      Functions and subroutines for writing NetCDF files
@@ -635,5 +635,5 @@
        return
        end subroutine format_date
 
+#endif /*NETCDF*/
        end module outputnc
-#endif /*STATS*/

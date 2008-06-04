@@ -1,7 +1,7 @@
 !-----------------------------------------------------------------------
-! $Id: stats_type.F,v 1.7 2008-05-30 21:50:12 faschinj Exp $
-#ifdef STATS
+! $Id: stats_type.F,v 1.8 2008-06-04 20:27:28 dschanen Exp $
       module stats_type
+#ifdef STATS
  
 !     Description:
 !     Contains derived data type 'stats'
@@ -80,5 +80,5 @@
 
          end subroutine stat_assign
 
-      end module stats_type
 #endif /*STATS*/
+      end module stats_type

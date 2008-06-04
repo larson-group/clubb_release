@@ -1,8 +1,8 @@
 !-----------------------------------------------------------------------
-! $Id: stats_sfc.F,v 1.8 2008-05-30 21:48:26 faschinj Exp $
-#ifdef STATS
+! $Id: stats_sfc.F,v 1.9 2008-06-04 20:27:28 dschanen Exp $
       
       module stats_sfc
+#ifdef STATS
  
       implicit none
       
@@ -217,6 +217,6 @@
       
       end subroutine stats_init_sfc
       
+#endif /*STATS*/
       end module stats_sfc
 
-#endif /*STATS*/

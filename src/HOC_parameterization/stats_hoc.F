@@ -1,12 +1,12 @@
 !-----------------------------------------------------------------------
-! $Id: stats_hoc.F,v 1.14 2008-05-30 21:47:17 faschinj Exp $
-#ifdef STATS
+! $Id: stats_hoc.F,v 1.15 2008-06-04 20:27:28 dschanen Exp $
 !-----------------------------------------------------------------------
 !  module stats_hoc
 
 !  holds pointers to variables to be written to GrADS files
 !-----------------------------------------------------------------------
       module stats_hoc
+#ifdef STATS
         
         use stats_type, only: 
      .      stats ! Type
@@ -562,6 +562,6 @@
 !$omp   threadprivate(zmscr06, zmscr07, zmscr08, zmscr09, zmscr10)
 !$omp   threadprivate(zmscr11, zmscr12, zmscr13, zmscr14)
 
+#endif /*STATS*/
       end module stats_hoc
 
-#endif /*STATS*/

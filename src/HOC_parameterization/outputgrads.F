@@ -1,7 +1,7 @@
 !-----------------------------------------------------------------------
-! $Id: outputgrads.F,v 1.12 2008-05-30 16:24:25 faschinj Exp $
-#ifdef STATS 
+! $Id: outputgrads.F,v 1.13 2008-06-04 20:27:28 dschanen Exp $
         module outputgrads
+#ifdef STATS 
 
 !       Description:
 !       This module contains structure and subroutine definitions to
@@ -643,6 +643,6 @@
           return
           end subroutine formatdate
 
-        end module outputgrads
 #endif /*STATS*/
+        end module outputgrads
 !------------------------------------------------------------------------

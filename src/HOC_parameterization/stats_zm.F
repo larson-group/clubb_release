@@ -1,7 +1,7 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zm.F,v 1.7 2008-05-30 16:24:25 faschinj Exp $
-#ifdef STATS
+! $Id: stats_zm.F,v 1.8 2008-06-04 20:27:28 dschanen Exp $
       module stats_zm
+#ifdef STATS
        
       implicit none
       
@@ -106,7 +106,9 @@
      .    iwpthlp_pr2,
      .    iwpthlp_pr3,
      .    iwpthlp_dp1,
-     .    iwpthlp_cl,
+     .    iwpthlp_cl
+
+      use stats_hoc, only:
      .    irtp2_bt,
      .    irtp2_ma,
      .    irtp2_ta,
@@ -1137,5 +1139,5 @@
       
       end subroutine stats_init_zm
 
-      end module stats_zm
 #endif /*STATS*/
+      end module stats_zm

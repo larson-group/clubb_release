@@ -1,7 +1,7 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.15 2008-06-02 20:35:50 dschanen Exp $
-#ifdef STATS
+!  $Id: stats_subs.F,v 1.16 2008-06-04 20:27:28 dschanen Exp $
       module stats_subs
+#ifdef STATS
  
       implicit none
       
@@ -76,8 +76,10 @@
      .    time_prec   ! Variable(s)
       use outputgrads, only:
      .    open_grads  ! Procedure
+#ifdef NETCDF
       use outputnc, only:
      .    open_nc     ! Procedure
+#endif
       use stats_zm, only:
      .    stats_init_zm ! Procedure
       use stats_zt, only:
@@ -270,11 +272,15 @@
      .                   zt%nn )
 
       else ! Open NetCDF file
+#ifdef NETCDF
         call open_nc( zt%f, iunit, fdir, fname, 
      .                1, zt%kk, zt%z,
      .                day, month, year, rlat, rlon,
      .                time_current+stats_tout, stats_tout,
      .                zt%nn )
+#else
+        stop "netCDF support was not compiled into this build."
+#endif
 
       end if
 
@@ -339,11 +345,16 @@
      .                   zm%nn )
 
       else ! Open NetCDF file
+#ifdef NETCDF
         call open_nc( zm%f, iunit, fdir, fname, 
      .                1, zm%kk, zm%z,
      .                day, month, year, rlat, rlon,
      .                time_current+stats_tout, stats_tout,
      .                zm%nn )
+
+#else
+        stop "netCDF support was not compiled into this build."
+#endif
       end if
 
       call stats_init_zm( vars_zm, lerror )
@@ -387,11 +398,16 @@
      .                   sfc%nn )
 
       else ! Open NetCDF files
+#ifdef NETCDF
         call open_nc( sfc%f, iunit, fdir, fname, 
      .                1, sfc%kk, sfc%z,
      .                day, month, year, rlat, rlon,
      .                time_current+stats_tout, stats_tout,
      .                sfc%nn )
+
+#else
+        stop "netCDF support was not compiled into this build."
+#endif
       end if
 
       call stats_init_sfc( vars_sfc, lerror )
@@ -557,8 +573,10 @@
      .    time_prec ! Variable(s)
       use outputgrads, only:
      .    write_grads ! Procedure(s)
+#ifdef NETCDF
       use outputnc, only:
      .    write_nc ! Procedure(s)
+#endif
 
       implicit none
 
@@ -612,9 +630,13 @@
         call write_grads( zm%f  )
         call write_grads( sfc%f  )
       else ! lnetcdf
+#ifdef NETCDF
         call write_nc( zt%f  )
         call write_nc( zm%f  )
         call write_nc( sfc%f  )
+#else 
+        stop "KABOOM!"
+#endif
       end if
 
       ! Reset sample fields
@@ -699,23 +721,15 @@
      .    is2,
      .    iss1,
      .    iss2,
-     .    irrtthl,
+     .    irrtthl
+
+      use stats_hoc, only:
      .    iwp2zt,
      .    ithlp2zt,
      .    iwpthlpzt,
      .    iwprtpzt,
      .    irtp2zt,
      .    irtpthlpzt,
-
-#ifdef SCALARS
-     .    isclram,
-     .    isclram_f,
-     .    isclrbm,
-     .    isclrbm_f,
-     .    iedsclram,
-     .    iedsclrbm,
-#endif /*SCALARS*/
-
      .    iwp2,
      .    irtp2,
      .    ithlp2,
@@ -741,8 +755,18 @@
      .    iem,
      .    ishear,
      .    iFrad,
+     .    icc,
+     .    izb,
+     .    ilwp
 
 #ifdef SCALARS
+      use stats_hoc, only:
+     .    isclram,
+     .    isclram_f,
+     .    isclrbm,
+     .    isclrbm_f,
+     .    iedsclram,
+     .    iedsclrbm,
      .    isclraprtp,
      .    isclrbprtp,
      .    isclrap2,
@@ -764,11 +788,8 @@
      .    iwpsclrapthlp,
      .    iwpsclrbpthlp,
      .    iwpedsclrap,
-     .    iwpedsclrbp,
+     .    iwpedsclrbp
 #endif /*SCALARS*/
-     .    icc,
-     .    izb,
-     .    ilwp
 
       use grid_class, only:
      .    gr ! Variable
@@ -1562,17 +1583,23 @@
      .    zmscr14,
      .    lnetcdf,
      .    lstats
+#ifdef NETCDF
       use outputnc, only: 
      .    close_nc ! Procedure
+#endif
 
       implicit none
 
       integer :: i
 
       if ( lstats .and. lnetcdf ) then
+#ifdef NETCDF
         call close_nc( zt%f )
         call close_nc( zm%f )
         call close_nc( sfc%f )
+#else
+        stop "KABOOM!"
+#endif
       end if
 
       if ( lstats ) then
@@ -1639,7 +1666,6 @@
       return
       end subroutine stats_finalize
 
+#endif /*STATS*/
 
       end module stats_subs
-          
-#endif /*STATS*/

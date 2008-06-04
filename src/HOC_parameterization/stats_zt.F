@@ -1,8 +1,8 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zt.F,v 1.15 2008-05-30 16:24:25 faschinj Exp $
-#ifdef STATS
+! $Id: stats_zt.F,v 1.16 2008-06-04 20:27:28 dschanen Exp $
        
       module stats_zt
+#ifdef STATS
       
       private
       
@@ -18,8 +18,7 @@
 !-----------------------------------------------------------------------
 
       use stats_hoc, only:
-          ! Variable(s)
-     .    ithlm,
+     .    ithlm, ! Variable(s)
      .    itemp_in_K,
      .    ithvm,
      .    irtm,
@@ -116,7 +115,9 @@
      .    irsnowm_bt,
      .    irsnowm_ma,
      .    irsnowm_sd,
-     .    irsnowm_dff,
+     .    irsnowm_dff
+
+      use stats_hoc, only:
      .    irsnowm_mc,
      .    irsnowm_cl,
      .    irgraupelm_bt,
@@ -172,7 +173,6 @@
      .    irtp2zt,
      .    irtpthlpzt,
      .    zt
-
 #ifdef SCALARS
      .    ,isclram,
      .    isclram_f,
@@ -1450,5 +1450,5 @@
 
       end subroutine stats_init_zt
       
-      end module stats_zt
 #endif /*STATS*/
+      end module stats_zt

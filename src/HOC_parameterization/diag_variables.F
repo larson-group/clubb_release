@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F,v 1.24 2008-05-30 20:48:35 faschinj Exp $
+! $Id: diag_variables.F,v 1.25 2008-06-04 20:27:28 dschanen Exp $
         module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -155,7 +155,7 @@
 #endif /*SCALARS*/
 
         ! Interpolated variables for tuning
-#ifdef STATS
+!#ifdef STATS
         real, target, allocatable, dimension(:), public ::
      .  wp2zt,    ! w'^2 on thermo. grid
      .  thlp2zt,  ! thl'^2 on thermo. grid
@@ -167,7 +167,7 @@
 !$omp   threadprivate(wp2zt, thlp2zt, wpthlpzt, wprtpzt) 
 !$omp   threadprivate(rtp2zt, rtpthlpzt)
 
-#endif /*STATS*/
+!#endif /*STATS*/
 
 ! Variables needed for the pdf closure scheme
 !

@@ -1,7 +1,7 @@
 !-----------------------------------------------------------------------
-! $Id: outputfile.F,v 1.8 2008-05-30 16:24:25 faschinj Exp $
-#ifdef STATS
+! $Id: outputfile.F,v 1.9 2008-06-04 20:27:28 dschanen Exp $
       module outputfile_class
+#ifdef STATS
 
 !     Description:
 !     Contains two derived types for either NetCDF or GrADS files.
@@ -14,7 +14,7 @@
 
          public :: variable, outputfile
 
-	 private ! Defualt scope
+         private ! Default scope
          
         ! Structure to hold the description of a variable
 
@@ -85,5 +85,5 @@
 
          end type outputfile
 
-       end module outputfile_class
 #endif
+       end module outputfile_class
