@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: clex9_oct14.F,v 1.11 2008-05-30 16:24:23 faschinj Exp $
+! $Id: clex9_oct14.F,v 1.12 2008-06-04 23:01:27 ajsmith4 Exp $
         module clex9_oct14
 
 !       Description:
@@ -31,6 +31,15 @@
         subroutine clex9_oct14_tndcy
      .             ( time, time_initial, dt, rlat, rlon,
      .               thlm, rcm, p, exner, rhot, rtm, wmt,
+c**************************************************************
+c Addition by Adam Smith, 28 April 2008
+c "wmax" is now set in the namelist and saved in parameters.F.
+c We pass the variable into the forcing subroutine here.
+c**************************************************************
+c     .               wmax,
+c****************************
+c End of ajsmith4's addition
+c****************************
      .               wmm, thlm_forcing, rtm_forcing,
      .               Frad, radht, Ncnm, sclrm_forcing )
 
@@ -617,6 +626,8 @@ c        end if
         !---------------------------------------------------------------
 
           lcoamps_micro = .true.
+
+          Ncnm(1:gr%nnzp) = 0.0
 
         end if
 
