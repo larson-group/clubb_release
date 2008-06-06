@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F,v 1.6 2008-06-04 23:47:34 griffinb Exp $
+! $Id: microphys_driver.F,v 1.7 2008-06-06 17:57:50 griffinb Exp $
         module microphys_driver
 
 !       Description:
@@ -1206,9 +1206,8 @@
         return
         end subroutine microphys_lhs
 
-!-----------------------------------------------------------------------
-        pure function sedimentation( v_t, v_tm1, vt_tk, 
-     .                               dzt, level )
+!===============================================================================
+        pure function sedimentation( V_hm, V_hmm1, V_hmzt, dzt, level )
      .  result( lhs ) 
 
 !       Description:
@@ -1293,7 +1292,7 @@
 !          \ /
 !
 !       The variables A(k), B(k), C(k), and D(k) are weights of interpolation 
-!       around central thermodynamic level k, such that:
+!       around the central thermodynamic level (k), such that:
 !       A(k) = ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ),
 !       B(k) = 1 - [ ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ) ],
 !       C(k) = ( zm(k-1) - zt(k-1) ) / ( zt(k) - zt(k-1) ), and
@@ -1320,24 +1319,38 @@
 
         ! Constant parameters
         integer, parameter ::
-     .  kp1diag = 1,
-     .  kdiag   = 2,
-     .  km1diag = 3
+     .  kp1_tdiag = 1,   ! Thermodynamic superdiagonal index.
+     .  k_tdiag   = 2,   ! Thermodynamic main diagonal index.
+     .  km1_tdiag = 3    ! Thermodynamic subdiagonal index.
 
+        integer, parameter ::
+     .  t_above = 1,   ! Index for upper thermodynamic level grid weight.
+     .  t_below = 2    ! Index for lower thermodynamic level grid weight.
+
+        ! Input Variables
         real, intent(in) ::
-     .  v_t,   ! Terminal velocity <k>          [m/s]
-     .  v_tm1, ! Terminal velocity <k-1>        [m/s]
-     .  vt_tk, ! Terminal velocity at t-lev<k>  [m/s]
-     .  dzt    ! Inverse of the grid spacing <k>[m] 
+     .  V_hm,   ! Sedimentation velocity of hydrometeor (k)                [m/s]
+     .  V_hmm1, ! Sedimentation velocity of hydrometeor (k-1)              [m/s]
+     .  V_hmzt, ! Sed. vel. of hydromet. interpolated to thermo. level (k) [m/s]
+     .  dzt     ! Inverse of grid spacing (k)                              [m] 
 
-        integer, intent(in) :: level ! thermodynamic level of calculation.
+        integer, intent(in) :: 
+     .  level ! Central thermodynamic level (on which calculation occurs).
 
-        integer :: 
-     .  mk,   ! The index of momentum level k.
-     .  mkm1  ! The index of momentum level k-1.
-
-        ! Output
+        ! Return Variable
         real, dimension(3) :: lhs
+
+        ! Local Variables
+        integer ::
+     .  mk,   ! Momentum level directly above central thermodynamic level.
+     .  mkm1  ! Momentum level directly below central thermodynamic level.
+
+        ! Momentum level (k) is between thermodynamic level (k+1)
+        ! and thermodynamic level (k).
+        mk   = level
+        ! Momentum level (k-1) is between thermodynamic level (k)
+        ! and thermodynamic level (k-1).
+        mkm1 = level - 1
 
         ! Note:  The code has now been changed so that Vxx has been pulled 
         !        inside of the derivative.  The sedimentation term is now of 
@@ -1345,18 +1358,19 @@
         !        The term has been re-discretized in a conservative manner and
         !        the results are listed below, with the old code commented out.
 
-        ! The indices of the momentum levels that sandwich
-        ! the central thermodynamic level.
-        mk   = level
-        mkm1 = level - 1
-
         if ( level == 1 ) then
 
-           ! k = 1; below surface; no effects.
+           ! k = 1 (bottom level); lower boundary level; no effects.
 
-           lhs(kp1diag) = 0.0
-           lhs(kdiag)   = 0.0
-           lhs(km1diag) = 0.0
+           ! Thermodynamic superdiagonal: [ x r_hm(k+1,<t+1>) ]
+           lhs(kp1_tdiag) = 0.0
+
+           ! Thermodynamic main diagonal: [ x r_hm(k,<t+1>) ]
+           lhs(k_tdiag)   = 0.0
+
+           ! Thermodynamic subdiagonal: [ x r_hm(k-1,<t+1>) ]
+           lhs(km1_tdiag) = 0.0
+
 
         elseif ( level > 1 .and. level < gr%nnzp ) then
 
@@ -1364,17 +1378,35 @@
 
         ! Vince Larson pulled v_t inside derivative to make conservative. 
         ! 13 Dec 2007
-!           lhs(kp1diag) = + vt_tk * dzt * gr%weights_zt2zm(1,mk)
-!           lhs(kdiag)   = + vt_tk * dzt * (   gr%weights_zt2zm(2,mk)
-!     .                                      - gr%weights_zt2zm(1,mkm1) )
-!           lhs(km1diag) = - vt_tk * dzt * gr%weights_zt2zm(2,mkm1)
+!
+!           ! Thermodynamic superdiagonal: [ x r_hm(k+1,<t+1>) ]
+!           lhs(kp1_tdiag) 
+!     .     = + V_hmzt * dzt * gr%weights_zt2zm(t_above,mk)
+!
+!           ! Thermodynamic main diagonal: [ x r_hm(k,<t+1>) ]
+!           lhs(k_tdiag) 
+!     .     = + V_hmzt * dzt * (   gr%weights_zt2zm(t_below,mk)
+!     .                          - gr%weights_zt2zm(t_above,mkm1)  )
+!
+!           ! Thermodynamic subdiagonal: [ x r_hm(k-1,<t+1>) ]
+!           lhs(km1_tdiag) 
+!     .     = - V_hmzt * dzt * gr%weights_zt2zm(t_below,mkm1)
 
-           lhs(kp1diag) = + dzt * v_t * gr%weights_zt2zm(1,mk)
-           lhs(kdiag)   = + dzt * (   v_t * gr%weights_zt2zm(2,mk)
-     .                              - v_tm1 * gr%weights_zt2zm(1,mkm1) )
-           lhs(km1diag) = - dzt * v_tm1 * gr%weights_zt2zm(2,mkm1)
+           ! Thermodynamic superdiagonal: [ x r_hm(k+1,<t+1>) ]
+           lhs(kp1_tdiag) 
+     .     = + dzt * V_hm * gr%weights_zt2zm(t_above,mk)
+
+           ! Thermodynamic main diagonal: [ x r_hm(k,<t+1>) ]
+           lhs(k_tdiag) 
+     .     = + dzt * (   V_hm * gr%weights_zt2zm(t_below,mk)
+     .                 - V_hmm1 * gr%weights_zt2zm(t_above,mkm1)  )
+
+           ! Thermodynamic subdiagonal: [ x r_hm(k-1,<t+1>) ]
+           lhs(km1_tdiag) 
+     .     = - dzt * V_hmm1 * gr%weights_zt2zm(t_below,mkm1)
 
         !  End Vince Larson change
+
 
         elseif ( level == gr%nnzp ) then
 
@@ -1382,24 +1414,42 @@
 
         ! Vince Larson pulled v_t inside derivative to make conservative. 
         ! 13 Dec 2007
-!           lhs(kp1diag) = + vt_tk * dzt * gr%weights_zt2zm(1,mk)
-!           lhs(kdiag)   = + vt_tk * dzt * (   gr%weights_zt2zm(2,mk)
-!     .                                      - gr%weights_zt2zm(1,mkm1) )
-!           lhs(km1diag) = - vt_tk * dzt * gr%weights_zt2zm(2,mkm1)
+!
+!           ! Thermodynamic superdiagonal: [ x r_hm(k+1,<t+1>) ]
+!           lhs(kp1_tdiag) 
+!     .     = + V_hmzt * dzt * gr%weights_zt2zm(t_above,mk)
+!
+!           ! Thermodynamic main diagonal: [ x r_hm(k,<t+1>) ]
+!           lhs(k_tdiag) 
+!     .     = + V_hmzt * dzt * (   gr%weights_zt2zm(t_below,mk)
+!     .                          - gr%weights_zt2zm(t_above,mkm1)  )
+!
+!           ! Thermodynamic subdiagonal: [ x r_hm(k-1,<t+1>) ]
+!           lhs(km1_tdiag) 
+!     .     = - V_hmzt * dzt * gr%weights_zt2zm(t_below,mkm1)
 
-           lhs(kp1diag) = + dzt * v_t * gr%weights_zt2zm(1,mk)
-           lhs(kdiag)   = + dzt * (   v_t * gr%weights_zt2zm(2,mk)
-     .                              - v_tm1 * gr%weights_zt2zm(1,mkm1) )
-           lhs(km1diag) = - dzt * v_tm1 * gr%weights_zt2zm(2,mkm1)
+           ! Thermodynamic superdiagonal: [ x r_hm(k+1,<t+1>) ]
+           lhs(kp1_tdiag) 
+     .     = + dzt * V_hm * gr%weights_zt2zm(t_above,mk)
+
+           ! Thermodynamic main diagonal: [ x r_hm(k,<t+1>) ]
+           lhs(k_tdiag) 
+     .     = + dzt * (   V_hm * gr%weights_zt2zm(t_below,mk)
+     .                 - V_hmm1 * gr%weights_zt2zm(t_above,mkm1)  )
+
+           ! Thermodynamic subdiagonal: [ x r_hm(k-1,<t+1>) ]
+           lhs(km1_tdiag) 
+     .     = - dzt * V_hmm1 * gr%weights_zt2zm(t_below,mkm1)
 
         !  End Vince Larson change
+
 
         endif
 
         return
         end function sedimentation
 
-!-----------------------------------------------------------------------
+!===============================================================================
         subroutine adj_microphys_tndcy( xrm_tndcy, wmt, v_t, Kr, nu,
      .                                  dt, level, lsed, solve_type,
      .                                  xrm, overevap_rate )
@@ -1730,6 +1780,6 @@
 
         end subroutine adj_microphys_tndcy
 
-!-----------------------------------------------------------------------
+!===============================================================================
 
         end module microphys_driver
