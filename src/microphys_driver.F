@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F,v 1.7 2008-06-06 17:57:50 griffinb Exp $
+! $Id: microphys_driver.F,v 1.8 2008-06-06 19:15:32 griffinb Exp $
         module microphys_driver
 
 !       Description:
@@ -1001,9 +1001,9 @@
         return
         end subroutine microphys_solve
 
-!-----------------------------------------------------------------------
+!===============================================================================
         subroutine microphys_lhs
-     .             ( solve_type, lsed, dt, Kr, nu, wmt, v_t, xrm, lhs )
+     .             ( solve_type, lsed, dt, Kr, nu, wmt, V_hm, xrm, lhs )
 
 !       Description:
 !       Setup the matrix of implicit contributions to a term
@@ -1060,9 +1060,9 @@
 
         ! Constant parameters
         integer, parameter ::
-     .  kp1diag = 1,
-     .  kdiag   = 2,
-     .  km1diag = 3
+     .  kp1_tdiag = 1,   ! Thermodynamic superdiagonal index.
+     .  k_tdiag   = 2,   ! Thermodynamic main diagonal index.
+     .  km1_tdiag = 3    ! Thermodynamic subdiagonal index.
 
         ! Input Variables
         character(len=*), intent(in) :: solve_type
@@ -1071,22 +1071,24 @@
      .  lsed ! Whether to add a sedimentation term
 
         real(kind=time_prec), intent(in) :: 
-     .  dt  ! Timestep                  [s]
+     .  dt    ! Timestep                                                 [s]
 
         real, intent(in) :: 
-     .  nu  ! Diffusion coefficient     [m^2/s]
+     .  nu    ! Background diffusion coefficient                         [m^2/s]
 
         real, intent(in), dimension(gr%nnzp) :: 
-     .  xrm, ! Value of hydrometeor as prev. time       [units vary]
-     .  wmt, ! w wind on t                              [m/s]
-     .  v_t, ! Terminal velocity                        [m/s]
-     .  Kr   ! Eddy diffusivity for hydromet. (m-lev)   [m^2/s]
+     .  xrm,  ! Hydrometeor (at current timestep) (thermodynamic levels) [units vary]
+     .  wmt,  ! w wind component on thermodynamic levels                 [m/s]
+     .  V_hm, ! Sedimentation velocity of hydrometeor (momentum levels)  [m/s]
+     .  Kr    ! Eddy diffusivity for hydrometeor on momentum levels      [m^2/s]
 
         real, intent(out), dimension(3,gr%nnzp) ::
      .  lhs ! Left hand side of tridiagonal matrix
 
         ! Local Variables
         real, dimension(3) :: tmp
+
+        ! Array indices
         integer :: k, kp1, km1
 
 #ifdef STATS
@@ -1139,24 +1141,25 @@
 
         ! Setup LHS Matrix
         do k = 1, gr%nnzp, 1
+
           km1 = max( k-1, 1 )
           kp1 = min( k+1, gr%nnzp )
 
           ! Main diagonal
           ! Time Tendency
-          lhs(kdiag,k) = lhs(kdiag,k) + ( 1.0 / dt )
+          lhs(k_tdiag,k) = lhs(k_tdiag,k) + ( 1.0 / dt )
 
           ! All diagonals
 
           ! Diffusion
-          lhs(kp1diag:km1diag,k)
-     .    = lhs(kp1diag:km1diag,k)
+          lhs(kp1_tdiag:km1_tdiag,k)
+     .    = lhs(kp1_tdiag:km1_tdiag,k)
      .    + diffusion_zt_lhs( Kr(k), Kr(km1), nu, 
      .                        gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
 
           ! Mean Advection
-          lhs(kp1diag:km1diag,k)
-     .    = lhs(kp1diag:km1diag,k)
+          lhs(kp1_tdiag:km1_tdiag,k)
+     .    = lhs(kp1_tdiag:km1_tdiag,k)
      .    + term_ma_zt_lhs( wmt(k), gr%dzt(k), k )
 
           ! Sedimentation
@@ -1164,9 +1167,9 @@
           ! setup to be disabled as needed, but now pristine ice does
           ! sediment in the COAMPS case. -dschanen 12 Feb 2007
           if ( lsed ) then
-             lhs(kp1diag:km1diag,k)
-     .       = lhs(kp1diag:km1diag,k)
-     .       + sedimentation( v_t(k), v_t(km1), zm2zt(v_t,k), 
+             lhs(kp1_tdiag:km1_tdiag,k)
+     .       = lhs(kp1_tdiag:km1_tdiag,k)
+     .       + sedimentation( V_hm(k), V_hm(km1), zm2zt(V_hm,k), 
      .                        gr%dzt(k), k )
           endif
 
@@ -1182,8 +1185,8 @@
             end if
 
             if ( ixrm_sd > 0 ) then
-              tmp(1:3) = sedimentation( v_t(k), v_t(km1), zm2zt(v_t,k), 
-     .                                  gr%dzt(k), k )
+              tmp(1:3) = sedimentation( V_hm(k), V_hm(km1), 
+     .                                  zm2zt(V_hm,k), gr%dzt(k), k )
               ztscr04(k) = -tmp(3)
               ztscr05(k) = -tmp(2)
               ztscr06(k) = -tmp(1)
@@ -1213,20 +1216,20 @@
 !       Description:
 !       Sedimentation of a hydrometeor:  implicit portion of the code.
 !
-!       The variable "r_hm" stands for one of the five hydrometeor 
+!       The variable "hm" stands for one of the five hydrometeor 
 !       variables currently in the code:  mean rain mixing ratio (rrm),
 !       mean rain drop concentration (Nrm), mean ice mixing ratio 
 !       (ricem), mean snow mixing ratio (rsnowm), or mean graupel mixing
 !       ratio (rgraupelm).  The variable "V_hm" stands for the 
 !       sedimentation velocity of the appropriate hydrometeor.
 !
-!       The d(r_hm)/dt equation contains a sedimentation term:
+!       The d(hm)/dt equation contains a sedimentation term:
 !
-!       - d(V_hm*r_hm)/dz.
+!       - d(V_hm*hm)/dz.
 !
 !       This term is solved for completely implicitly, such that:
 !
-!       - d( V_hm(t) * r_hm(t+1) )/dz.
+!       - d( V_hm(t) * hm(t+1) )/dz.
 !
 !       Note:  When the term is brought over to the left-hand side, the
 !              sign is reversed and the leading "-" in front of the
@@ -1234,28 +1237,28 @@
 !
 !       Timestep index (t) stands for the index of the current timestep,
 !       while timestep index (t+1) stands for the index of the next
-!       timestep, which is being advanced to in solving the d(r_hm)/dt
+!       timestep, which is being advanced to in solving the d(hm)/dt
 !       equation.
 !
 !       This term is discretized as follows:
 !
-!       The values of r_hm are found on the thermodynamic levels, while 
+!       The values of hm are found on the thermodynamic levels, while 
 !       the values of V_hm are found on the momentum levels.  The 
-!       variable r_hm is interpolated to the intermediate momentum 
+!       variable hm is interpolated to the intermediate momentum 
 !       levels.  At the intermediate momentum levels, the interpolated 
-!       values of r_hm are multiplied by the values of V_hm.  Then, the
-!       derivative of (r_hm*V_hm) is taken over the central thermodynamic
+!       values of hm are multiplied by the values of V_hm.  Then, the
+!       derivative of (hm*V_hm) is taken over the central thermodynamic
 !       level.
 !
-!       -----r_hmp1---------------------------------------------- t(k+1)
+!       -----hmp1------------------------------------------------ t(k+1)
 !
-!       ==============r_hm(interp)====V_hm======================= m(k)
+!       =============hm(interp)=====V_hm========================= m(k)
 !
-!       -----r_hm--------------------------------d(V_hm*r_hm)/dz- t(k)
+!       -----hm--------------------------------d(V_hm*hm)/dz----- t(k)
 !
-!       ==============r_hm(interp)====V_hmm1===================== m(k-1)
+!       =============hm(interp)=====V_hmm1======================= m(k-1)
 !
-!       -----r_hmm1---------------------------------------------- t(k-1)
+!       -----hmm1------------------------------------------------ t(k-1)
 !
 !       The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1)
 !       correspond with altitudes zt(k+1), zm(k), zt(k), zm(k-1),
@@ -1362,13 +1365,13 @@
 
            ! k = 1 (bottom level); lower boundary level; no effects.
 
-           ! Thermodynamic superdiagonal: [ x r_hm(k+1,<t+1>) ]
+           ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
            lhs(kp1_tdiag) = 0.0
 
-           ! Thermodynamic main diagonal: [ x r_hm(k,<t+1>) ]
+           ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
            lhs(k_tdiag)   = 0.0
 
-           ! Thermodynamic subdiagonal: [ x r_hm(k-1,<t+1>) ]
+           ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
            lhs(km1_tdiag) = 0.0
 
 
@@ -1376,32 +1379,32 @@
 
            ! Most of the interior model; normal conditions.
 
-        ! Vince Larson pulled v_t inside derivative to make conservative. 
+        ! Vince Larson pulled V_hm inside derivative to make conservative. 
         ! 13 Dec 2007
 !
-!           ! Thermodynamic superdiagonal: [ x r_hm(k+1,<t+1>) ]
+!           ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
 !           lhs(kp1_tdiag) 
 !     .     = + V_hmzt * dzt * gr%weights_zt2zm(t_above,mk)
 !
-!           ! Thermodynamic main diagonal: [ x r_hm(k,<t+1>) ]
+!           ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
 !           lhs(k_tdiag) 
 !     .     = + V_hmzt * dzt * (   gr%weights_zt2zm(t_below,mk)
 !     .                          - gr%weights_zt2zm(t_above,mkm1)  )
 !
-!           ! Thermodynamic subdiagonal: [ x r_hm(k-1,<t+1>) ]
+!           ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
 !           lhs(km1_tdiag) 
 !     .     = - V_hmzt * dzt * gr%weights_zt2zm(t_below,mkm1)
 
-           ! Thermodynamic superdiagonal: [ x r_hm(k+1,<t+1>) ]
+           ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
            lhs(kp1_tdiag) 
      .     = + dzt * V_hm * gr%weights_zt2zm(t_above,mk)
 
-           ! Thermodynamic main diagonal: [ x r_hm(k,<t+1>) ]
+           ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
            lhs(k_tdiag) 
      .     = + dzt * (   V_hm * gr%weights_zt2zm(t_below,mk)
      .                 - V_hmm1 * gr%weights_zt2zm(t_above,mkm1)  )
 
-           ! Thermodynamic subdiagonal: [ x r_hm(k-1,<t+1>) ]
+           ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
            lhs(km1_tdiag) 
      .     = - dzt * V_hmm1 * gr%weights_zt2zm(t_below,mkm1)
 
@@ -1412,32 +1415,32 @@
 
            ! k = gr%nnzp (top level); upper boundary level; no flux.
 
-        ! Vince Larson pulled v_t inside derivative to make conservative. 
+        ! Vince Larson pulled V_hm inside derivative to make conservative. 
         ! 13 Dec 2007
 !
-!           ! Thermodynamic superdiagonal: [ x r_hm(k+1,<t+1>) ]
+!           ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
 !           lhs(kp1_tdiag) 
 !     .     = + V_hmzt * dzt * gr%weights_zt2zm(t_above,mk)
 !
-!           ! Thermodynamic main diagonal: [ x r_hm(k,<t+1>) ]
+!           ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
 !           lhs(k_tdiag) 
 !     .     = + V_hmzt * dzt * (   gr%weights_zt2zm(t_below,mk)
 !     .                          - gr%weights_zt2zm(t_above,mkm1)  )
 !
-!           ! Thermodynamic subdiagonal: [ x r_hm(k-1,<t+1>) ]
+!           ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
 !           lhs(km1_tdiag) 
 !     .     = - V_hmzt * dzt * gr%weights_zt2zm(t_below,mkm1)
 
-           ! Thermodynamic superdiagonal: [ x r_hm(k+1,<t+1>) ]
+           ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
            lhs(kp1_tdiag) 
      .     = + dzt * V_hm * gr%weights_zt2zm(t_above,mk)
 
-           ! Thermodynamic main diagonal: [ x r_hm(k,<t+1>) ]
+           ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
            lhs(k_tdiag) 
      .     = + dzt * (   V_hm * gr%weights_zt2zm(t_below,mk)
      .                 - V_hmm1 * gr%weights_zt2zm(t_above,mkm1)  )
 
-           ! Thermodynamic subdiagonal: [ x r_hm(k-1,<t+1>) ]
+           ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
            lhs(km1_tdiag) 
      .     = - dzt * V_hmm1 * gr%weights_zt2zm(t_below,mkm1)
 
@@ -1450,7 +1453,7 @@
         end function sedimentation
 
 !===============================================================================
-        subroutine adj_microphys_tndcy( xrm_tndcy, wmt, v_t, Kr, nu,
+        subroutine adj_microphys_tndcy( xrm_tndcy, wmt, V_hm, Kr, nu,
      .                                  dt, level, lsed, solve_type,
      .                                  xrm, overevap_rate )
 
@@ -1582,7 +1585,7 @@
         ! Vertical velocity (thermo. levels).
         real, dimension(gr%nnzp), intent(in) :: wmt        ! [m/s]
         ! Sedimentation velocity (interpolated to thermo. levels).
-        real, dimension(gr%nnzp), intent(in) :: v_t        ! [m/s]
+        real, dimension(gr%nnzp), intent(in) :: V_hm       ! [m/s]
         ! Eddy diffusivity for hydrometeors (m-lev).
         real, dimension(gr%nnzp), intent(in) :: Kr         ! [m^2/s]
 
@@ -1676,7 +1679,7 @@
 
            ! The implicit (LHS) value of the sedimentation component of the
            ! equation used during the timestep that was just solved for.
-           tmp(1:3) = sedimentation( v_t(k), v_t(km1), zm2zt(v_t,k), 
+           tmp(1:3) = sedimentation( V_hm(k), V_hm(km1), zm2zt(V_hm,k),
      .                               gr%dzt(k), k )
 
            sd_subdiag  = -tmp(3) ! subdiagonal
