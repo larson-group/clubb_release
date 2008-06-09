@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F,v 1.25 2008-06-04 20:27:28 dschanen Exp $
+! $Id: diag_variables.F,v 1.26 2008-06-09 20:11:25 dschanen Exp $
         module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -324,7 +324,7 @@
 
 
 ! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
-        if ( LH_on ) then
+!       if ( LH_on ) then
           allocate( AKm_est(1:nzmax) )    ! Kessler ac estimate
           allocate( AKm(1:nzmax) )        ! Exact Kessler ac
           allocate( AKstd(1:nzmax) )      ! St dev of exact Kessler ac
@@ -332,7 +332,7 @@
           allocate( rcm_est(1:nzmax) )      ! Monte Carlo rcm estimate
           allocate( AKm_rcm(1:nzmax) )      ! Kessler ac based on rcm
           allocate( AKm_rcc(1:nzmax) )      ! Kessler ac based on rcm/cf
-        end if ! LH_on
+!       end if ! LH_on
 ! End of variables for Latin hypercube.
 
 #ifdef SCALARS
