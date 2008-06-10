@@ -1,11 +1,11 @@
-$Id: Readme.txt,v 1.1 2008-05-24 22:10:57 griffinb Exp $
+$Id: Readme.txt,v 1.2 2008-06-10 14:40:33 griffinb Exp $
 
 MODEL/GRID DIRECTORY OVERVIEW
 =============================
 
 This directory contains files that can be read in as grid altitude inputs on
-either momentum levels (*zm_grid.dat files) or thermodynamic levels 
-(*zt_grid.dat files), depending if either grid_type = 3 or grid_type = 2,
+either momentum levels (*zm_grid.grd files) or thermodynamic levels 
+(*zt_grid.grd files), depending if either grid_type = 3 or grid_type = 2,
 respectively, was selected in the appropriate model.in file.
 
 Note:  To use an evenly-spaced grid, simply select grid_type = 1 in the 
@@ -13,11 +13,11 @@ Note:  To use an evenly-spaced grid, simply select grid_type = 1 in the
        the lowest altitude level (zm_init) (found at momentum level 1) in the 
        appropriate model.in file.
 
-The number of entries in the *zm_grid.dat or *zt_grid.dat file needs to match
+The number of entries in the *zm_grid.grd or *zt_grid.grd file needs to match
 the number of vertical levels (nzmax) declared in the appropriate model.in 
 file.
 
-All *zm_grid.dat or *zt_grid.dat files need to be in written in the format of 
+All *zm_grid.grd or *zt_grid.grd files need to be in written in the format of 
 one altitude entry per line in ascending order, with the lowest grid altitude
 listed as the first entry in the file.
 
@@ -68,18 +68,18 @@ remain 250 m. apart.
 DYCOMS-II RF02 
 (dycoms2_rf02_do, dycoms2_rf02_ds, dycoms2_rf02_nd, and dycoms2_rf02_so):
 
-dycoms2_rf02_*_zm_grid.dat files:
+dycoms2_rf02_gcss_zm_grid.grd file:
 
-The DYCOMS-II RF02 zm_grid.dat files are taken from the results of running the 
-grid-generating source code found on the DYCOMS-II RF02 website.  The DYCOMS-II 
-RF02 intercomparison specifies a stretched grid that is based on 97 momentum 
-levels covering a 1500 m. vertical domain.  The thermodynamic levels are placed 
-halfway between the momentum levels.
+The DYCOMS-II RF02 GCSS zm_grid.grd file is taken from the results of running 
+the grid-generating source code found on the DYCOMS-II RF02 website.  The 
+DYCOMS-II RF02 intercomparison specifies a stretched grid that is based on 97 
+momentum levels covering a 1500 m. vertical domain.  The thermodynamic levels 
+are placed halfway between the momentum levels.
 
 
-dycoms2_rf02_*_zt_grid.dat files:
+dycoms2_rf02_sam_zt_grid.grd file:
 
-The DYCOMS-II RF02 zt_grid.dat files are based on the stretched grid that is 
+The DYCOMS-II RF02 SAM zt_grid.grd file is based on the stretched grid that is 
 found in SAM for that case.  The stretched grid found in SAM is generated from 
 the same source code found at the DYCOMS-II RF02 website as mentioned above, but
 altered so that it takes 148 momentum levels to cover the 1500 m. vertical 
