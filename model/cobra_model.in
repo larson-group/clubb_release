@@ -28,14 +28,12 @@ zm_init = 0.0     ! Altitude of lowest momentum level on evenly-spaced grid. [m]
 ! Path (from ../standalone/) and filename of data file that contains
 ! thermodynamic level altitudes (in meters).
 ! Note:  For this option, zm_grid_fname must be ''.
-!zt_grid_fname = '../model/grid/cobra_zt_grid.dat'
 zt_grid_fname = ''
 
 ! Stretched grid on momentum levels (grid_type = 3).
 ! Path (from ../standalone/) and filename to data file that contains
 ! momentum level altitudes (in meters).
 ! Note:  For this option, zt_grid_fname must be ''.
-!zm_grid_fname = '../model/grid/cobra_zm_grid.dat'
 zm_grid_fname = ''
 
 day   = 11    ! Day of model start (1 to 31).
