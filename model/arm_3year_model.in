@@ -1,4 +1,4 @@
-! $Id: arm_3year_model.in,v 1.13 2008-05-23 16:05:06 griffinb Exp $
+! $Id: arm_3year_model.in,v 1.14 2008-06-10 15:12:30 griffinb Exp $
 ! Parameter file for GCSS ARM 3 year deep convective case
 
 &model_setting
@@ -31,14 +31,13 @@ zm_init = 0.0     ! Altitude of lowest momentum level on evenly-spaced grid. [m]
 ! Path (from ../standalone/) and filename of data file that contains
 ! thermodynamic level altitudes (in meters).
 ! Note:  For this option, zm_grid_fname must be ''.
-!zt_grid_fname = '../model/grid/arm_3year_zt_grid.dat'
+!zt_grid_fname = '../model/grid/deep_convection_128lev_27km_zt_grid.grd'
 zt_grid_fname = ''
 
 ! Stretched grid on momentum levels (grid_type = 3).
 ! Path (from ../standalone/) and filename to data file that contains
 ! momentum level altitudes (in meters).
 ! Note:  For this option, zt_grid_fname must be ''.
-!zm_grid_fname = '../model/grid/arm_3year_zm_grid.dat'
 zm_grid_fname = ''
 
 day   = 1     ! Day of model start (1 to 31).

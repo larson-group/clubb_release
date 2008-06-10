@@ -1,4 +1,4 @@
-! $Id: lba_model.in,v 1.15 2008-05-24 20:58:12 griffinb Exp $
+! $Id: lba_model.in,v 1.16 2008-06-10 15:12:31 griffinb Exp $
 ! Parameter file for the 23 Feb 1999 TRMM-LBA case
 
 &model_setting
@@ -30,14 +30,13 @@ zm_init = 0.0     ! Altitude of lowest momentum level on evenly-spaced grid. [m]
 ! Path (from ../standalone/) and filename of data file that contains
 ! thermodynamic level altitudes (in meters).
 ! Note:  For this option, zm_grid_fname must be ''.
-!zt_grid_fname = '../model/grid/lba_zt_grid.dat'
+!zt_grid_fname = '../model/grid/deep_convection_128lev_27km_zt_grid.grd'
 zt_grid_fname = ''
 
 ! Stretched grid on momentum levels (grid_type = 3).
 ! Path (from ../standalone/) and filename to data file that contains
 ! momentum level altitudes (in meters).
 ! Note:  For this option, zt_grid_fname must be ''.
-!zm_grid_fname = '../model/grid/lba_zm_grid.dat'
 zm_grid_fname = ''
 
 day   = 23    ! Day of model start (1 to 31).
