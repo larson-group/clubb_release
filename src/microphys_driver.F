@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F,v 1.8 2008-06-06 19:15:32 griffinb Exp $
+! $Id: microphys_driver.F,v 1.9 2008-06-10 18:37:01 griffinb Exp $
         module microphys_driver
 
 !       Description:
@@ -1415,36 +1415,14 @@
 
            ! k = gr%nnzp (top level); upper boundary level; no flux.
 
-        ! Vince Larson pulled V_hm inside derivative to make conservative. 
-        ! 13 Dec 2007
-!
-!           ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
-!           lhs(kp1_tdiag) 
-!     .     = + V_hmzt * dzt * gr%weights_zt2zm(t_above,mk)
-!
-!           ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
-!           lhs(k_tdiag) 
-!     .     = + V_hmzt * dzt * (   gr%weights_zt2zm(t_below,mk)
-!     .                          - gr%weights_zt2zm(t_above,mkm1)  )
-!
-!           ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
-!           lhs(km1_tdiag) 
-!     .     = - V_hmzt * dzt * gr%weights_zt2zm(t_below,mkm1)
-
            ! Thermodynamic superdiagonal: [ x hm(k+1,<t+1>) ]
-           lhs(kp1_tdiag) 
-     .     = + dzt * V_hm * gr%weights_zt2zm(t_above,mk)
+           lhs(kp1_tdiag) = 0.0
 
            ! Thermodynamic main diagonal: [ x hm(k,<t+1>) ]
-           lhs(k_tdiag) 
-     .     = + dzt * (   V_hm * gr%weights_zt2zm(t_below,mk)
-     .                 - V_hmm1 * gr%weights_zt2zm(t_above,mkm1)  )
+           lhs(k_tdiag)   = 0.0
 
            ! Thermodynamic subdiagonal: [ x hm(k-1,<t+1>) ]
-           lhs(km1_tdiag) 
-     .     = - dzt * V_hmm1 * gr%weights_zt2zm(t_below,mkm1)
-
-        !  End Vince Larson change
+           lhs(km1_tdiag) = 0.0
 
 
         endif
