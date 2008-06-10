@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.125 2008-06-04 20:26:44 dschanen Exp $
+# $Id: Makefile,v 1.126 2008-06-10 21:16:03 dschanen Exp $
 #
 # This version should work with BSD, GNU make, smake and dmake.
 #
@@ -12,6 +12,7 @@
 
 include config/linux_ia32_g95_debug.in
 #include config/linux_ia32_g95_optimize.in
+#include config/linux_ia32_gfortran.in
 #include config/linux_ia32_absoft.in
 #include config/linux_ia32_pg.in
 #include config/linux_ia32_ss12.in
