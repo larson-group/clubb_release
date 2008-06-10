@@ -1,4 +1,4 @@
-$Id: Readme.txt,v 1.2 2008-06-10 14:40:33 griffinb Exp $
+$Id: Readme.txt,v 1.3 2008-06-10 15:06:08 griffinb Exp $
 
 MODEL/GRID DIRECTORY OVERVIEW
 =============================
@@ -23,45 +23,6 @@ listed as the first entry in the file.
 
 The following is a list of cases and files that have stretched grids (please
 update this list as stretched grids are changed or added):
-
---------------------------------------------------------------------------------
-
-ARM 3-year (arm_3year):
-
-arm_3year_zt_grid.dat file:
-
-The ARM 3-year zt_grid.dat file is based on the stretched grid that is found 
-in SAM for the ARM 97 case.  There are 128 grid levels that cover the 27000 m. 
-vertical domain.  The lowest grid levels are at -12 m. and 12 m.  Grid levels 
-are 38 m. to 65 m. apart near the surface and gradually increase in thickness 
-until they reach 250 m. apart at an altitude of 5750 m.  Above that level, the 
-grid levels remain 250 m. apart.
-
---------------------------------------------------------------------------------
-
-ARM 0003 (arm_0003):
-
-arm_0003_zt_grid.dat file:
-
-The ARM 0003 zt_grid.dat file is based on the stretched grid that is found 
-in SAM for the ARM 97 case.  There are 128 grid levels that cover the 27000 m. 
-vertical domain.  The lowest grid levels are at -12 m. and 12 m.  Grid levels 
-are 38 m. to 65 m. apart near the surface and gradually increase in thickness 
-until they reach 250 m. apart at an altitude of 5750 m.  Above that level, the 
-grid levels remain 250 m. apart.
-
---------------------------------------------------------------------------------
-
-ARM 97 (arm_97):
-
-arm_97_zt_grid.dat file:
-
-The ARM 97 zt_grid.dat file is based on the stretched grid that is found in SAM
-for that case.  There are 128 grid levels that cover the 27000 m. vertical 
-domain.  The lowest grid levels are at -12 m. and 12 m.  Grid levels are 38 m. 
-to 65 m. apart near the surface and gradually increase in thickness until they 
-reach 250 m. apart at an altitude of 5750 m.  Above that level, the grid levels 
-remain 250 m. apart.
 
 --------------------------------------------------------------------------------
 
@@ -92,16 +53,17 @@ than the momentum levels output by the original source code.
 
 --------------------------------------------------------------------------------
 
-LBA (lba):
+Deep Convective Cases:
+LBA (lba), ARM 97 (arm_97), ARM 0003 (arm_0003), and ARM 3-year (arm_3year):
 
-lba_zt_grid.dat file:
+deep_convection_128lev_27km_zt_grid.grd file:
 
-The LBA zt_grid.dat file is based on the stretched grid that is found in SAM
-for that case.  The same stretched grid is found in SAM for the 
-GATE_noshear_normalf case.  There are 128 grid levels that cover the 27000 m.
-vertical domain.  The lowest grid levels are at -25 m. and 25 m.  Grid levels 
-are 25 m. to 65 m. apart near the surface and gradually increase in thickness 
-until they reach 250 m. apart at an altitude of 5750 m.  Above that level, the 
-grid levels remain 250 m. apart.
+The deep convection (128 level; 27+ km) zt_grid.grd file is based on the 
+stretched grid that is found in SAM for the LBA case.  The same stretched grid 
+is found in SAM for the GATE_noshear_normalf case.  There are 128 grid levels 
+that cover the 27500 m. vertical domain.  The lowest grid levels are at -25 m. 
+and 25 m.  Grid levels are 25 m. to 65 m. apart near the surface and gradually 
+increase in thickness until they reach 250 m. apart at an altitude of 5750 m.  
+Above that level, the grid levels remain 250 m. apart.
 
 --------------------------------------------------------------------------------
