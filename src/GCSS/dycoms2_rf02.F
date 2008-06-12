@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf02.F,v 1.15 2008-05-30 16:24:23 faschinj Exp $
+! $Id: dycoms2_rf02.F,v 1.16 2008-06-12 15:41:24 faschinj Exp $
         module dycoms2_rf02
 
 !       Description:
@@ -34,7 +34,7 @@
 
         use grid_class, only: zt2zm ! Procedure(s)
 
-        USE constants, only: sclr_dim, fstderr, Cp ! Variable(s)
+        USE constants, only: sclr_dim, fstderr, Cp, rc_tol ! Variable(s)
 
         USE model_flags, only: lbugsrad, lcoamps_micro, kk_rain ! Variable(s)
 
