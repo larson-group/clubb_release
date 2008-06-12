@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: nov11.F,v 1.18 2008-06-04 22:51:50 ajsmith4 Exp $
+! $Id: nov11.F,v 1.19 2008-06-12 21:15:49 faschinj Exp $
         module nov11
 
 !       Description:
@@ -22,6 +22,8 @@
 !$omp   threadprivate(tdelay_lcoamps_micro, tdelay_licedfs)
 
         private ! Default Scope
+
+        implicit none
 
         contains
 
