@@ -1,12 +1,14 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf02.F,v 1.16 2008-06-12 15:41:24 faschinj Exp $
+! $Id: dycoms2_rf02.F,v 1.17 2008-06-12 21:21:22 faschinj Exp $
         module dycoms2_rf02
 
 !       Description:
 !       Contains subroutines for the DYCOMS II RF02 case.
 !----------------------------------------------------------------------
+
+        implicit none
 
         public :: dycoms2_rf02_tndcy, dycoms2_rf02_sfclyr
 
@@ -45,6 +47,8 @@
 #ifdef STATS
         USE stats_hoc, only: iradht_LW, izi, sfc, zt, lstats_samp
 #endif /*STATS*/
+
+        implicit none
 
         ! Constant parameters
         real, parameter :: 
@@ -258,6 +262,8 @@
      .                                  wpsclrp_sfc, wpedsclrp_sfc )
 
         use constants, only: sclr_dim, Cp, Lv ! Variable(s)
+
+        implicit none
 
         ! External
         intrinsic :: sqrt, present
