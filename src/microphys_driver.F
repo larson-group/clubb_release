@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F,v 1.9 2008-06-10 18:37:01 griffinb Exp $
+! $Id: microphys_driver.F,v 1.10 2008-06-13 16:43:28 vlarson Exp $
         module microphys_driver
 
 !       Description:
@@ -1276,16 +1276,30 @@
 !       from the model domain).  Thus, the quantity of the hydrometeor 
 !       over the entire vertical domain should not be conserved due to 
 !       the process of sedimentation.  Thus, not all of the column 
-!       totals in the left-hand side matrix should be equal to 0.
+!       totals in the left-hand side matrix should be equal to 0. Instead,
+!       they should sum to the flux of hm out the bottom (zm(1) level) of the domain,
+!       -V_hm(1) * ( D(2)*hm(1) + C(2)*hm(2) ), where the factor in parentheses
+!       is a weighted sum of hm at the zm(1) level.
 !
-!       Left-hand side matrix contributions from eddy diffusion term;
+!       To see that this modified conservation law is satisfied, compute the
+!       sedimentation of hm and integrate vertically.  In discretized matrix notation,
+!       we need
+!
+!           -V_hm(1) * ( D(2)*hm(1) + C(2)*hm(2) )
+!              =
+!           Sum_j Sum_i ( 1/dzt )_i  ( d ( V/ dz )_ij hm_j
+!
+!       The sum over i removes dzt everywhere from the matrix below.  The sum over j
+!       leaves the flux at zm(1) that we desire.
+!
+!       Left-hand side matrix contributions from the sedimentation term (only);
 !       first four vertical levels:
 !
 !            ------------------------------------------------------------------------------------------>
 !       k=1 |            0                            0                                0
 !           |
-!       k=2 | -dzt(k)*V_hm(k-1)*D(k)       +dzt(k)*[ V_hm(k)*B(k)
-!           |                                       -V_hm(k-1)*C(k) ]       +dzt(k)*V_hm(k)*A(k)
+!       k=2 | -dzt(k)*V_hm(k-1)*D(k)       +dzt(k)*[ V_hm(k)*B(k)           +dzt(k)*V_hm(k)*A(k)
+!           |                                       -V_hm(k-1)*C(k) ]       
 !           |
 !       k=3 |            0                 -dzt(k)*V_hm(k-1)*D(k)           +dzt(k)*[ V_hm(k)*B(k)
 !           |                                                                        -V_hm(k-1)*C(k) ]
@@ -1297,9 +1311,11 @@
 !       The variables A(k), B(k), C(k), and D(k) are weights of interpolation 
 !       around the central thermodynamic level (k), such that:
 !       A(k) = ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ),
-!       B(k) = 1 - [ ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ) ],
+!       B(k) = 1 - [ ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ) ]
+!            = 1 - A(k),
 !       C(k) = ( zm(k-1) - zt(k-1) ) / ( zt(k) - zt(k-1) ), and
-!       D(k) = 1 - [ ( zm(k-1) - zt(k-1) ) / ( zt(k) - zt(k-1) ) ].
+!       D(k) = 1 - [ ( zm(k-1) - zt(k-1) ) / ( zt(k) - zt(k-1) ) ]
+!            = 1 - C(k) .
 !
 !       Note:  The superdiagonal term from level 3 and both the main
 !              diagonal and superdiagonal terms from level 4 are not
