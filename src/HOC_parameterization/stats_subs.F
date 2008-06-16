@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.16 2008-06-04 20:27:28 dschanen Exp $
+!  $Id: stats_subs.F,v 1.17 2008-06-16 22:28:16 faschinj Exp $
       module stats_subs
 #ifdef STATS
  
@@ -225,7 +225,7 @@
       ntot = i - 1
       if ( ntot == nvarmax )
      .  write(0,*) 'WARNING: check nvarmax in statistics.f'
-
+      
       zt%nn = ntot
       zt%kk = nnzp
 !      write(*,*) 'Number of variables for zt ',zt%nn
@@ -235,7 +235,8 @@
 
       allocate( zt%x( zt%kk, zt%nn ) )
       allocate( zt%n( zt%kk, zt%nn ) )
-      call stats_zero( zt%kk, zt%nn, zt%x, zt%n )
+      allocate( zt%in_update( zt%kk, zt%nn ) )
+      call stats_zero( zt%kk, zt%nn, zt%x, zt%n, zt%in_update )
 
       allocate( zt%f%var( zt%nn ) )
       allocate( zt%f%z( zt%kk ) )
@@ -309,8 +310,9 @@
 
       allocate( zm%x( zm%kk, zm%nn ) )
       allocate( zm%n( zm%kk, zm%nn ) )
-
-      call stats_zero( zm%kk, zm%nn, zm%x, zm%n )
+      allocate( zm%in_update( zm%kk, zm%nn ) )
+      
+      call stats_zero( zm%kk, zm%nn, zm%x, zm%n, zm%in_update )
 
       allocate( zm%f%var( zm%nn ) )
       allocate( zm%f%z( zm%kk ) )
@@ -380,7 +382,9 @@
 
       allocate( sfc%x( sfc%kk, sfc%nn ) )
       allocate( sfc%n( sfc%kk, sfc%nn ) )
-      call stats_zero( sfc%kk, sfc%nn, sfc%x, sfc%n )
+      allocate( sfc%in_update( sfc%kk, sfc%nn ) )
+      
+      call stats_zero( sfc%kk, sfc%nn, sfc%x, sfc%n, sfc%in_update )
 
       allocate( sfc%f%var( sfc%nn ) )
       allocate( sfc%f%z( sfc%kk ) )
@@ -433,7 +437,7 @@
       return
       end subroutine stats_init
 !-----------------------------------------------------------------------
-      subroutine stats_zero( kk, nn, x, n )
+      subroutine stats_zero( kk, nn, x, n, in_update )
 
 !     Description:
 !     Initialize stats to zero
@@ -450,14 +454,16 @@
       ! Output
       real(kind=stat_rknd), dimension(kk,nn), intent(out)    :: x
       integer(kind=stat_nknd), dimension(kk,nn), intent(out) :: n
+      logical, dimension(kk,nn), intent(out)              :: in_update
 
       ! Zero out arrays
 
       if ( nn > 0 ) then
         x(:,:) = 0.0
         n(:,:) = 0
+        in_update(:,:) = .false.
       end if
-
+      
       return
       end subroutine stats_zero
 
@@ -569,10 +575,13 @@
      .    stats_tsamp,
      .    stats_tout,
      .    lgrads
+
       use stats_prec, only:
      .    time_prec ! Variable(s)
+
       use outputgrads, only:
      .    write_grads ! Procedure(s)
+
 #ifdef NETCDF
       use outputnc, only:
      .    write_nc ! Procedure(s)
@@ -640,9 +649,9 @@
       end if
 
       ! Reset sample fields
-      call stats_zero( zt%kk, zt%nn, zt%x, zt%n )
-      call stats_zero( zm%kk, zm%nn, zm%x, zm%n )
-      call stats_zero( sfc%kk, sfc%nn, sfc%x, sfc%n )
+      call stats_zero( zt%kk, zt%nn, zt%x, zt%n, zt%in_update )
+      call stats_zero( zm%kk, zm%nn, zm%x, zm%n, zt%in_update )
+      call stats_zero( sfc%kk, sfc%nn, sfc%x, sfc%n, sfc%in_update )
 
       return
       end subroutine stats_end_timestep
@@ -834,13 +843,37 @@
      .    em,
      .    shear,
      .    Frad
+#ifdef SCALARS
+     .   ,sclrprtp,
+     .    sclrp2,
+     .    sclrpthvp,
+     .    sclrpthlp,
+     .    sclrprcp,
+     .    wpsclrp,
+     .    wp2sclrp,
+     .    wpsclrp2,
+     .    wpsclrprtp,
+     .    wpsclrpthlp,
+     .    wpedsclrp   
+#endif /*SCALARS*/
+
+      
       use model_flags, only:
      .    LH_on ! Variable(s)
+
       use temp_in_K_mod, only:
      .    thlm2temp_in_K ! Procedure
+
       use constants, only:
-     .    sclr_dim,
+     .    sclr_dim, ! Variable(s)
      .    rc_tol
+
+      use stats_type, only:
+     .    stat_update_var, ! Procedure(s)
+     ,    stat_update_var_pt
+
+      use interpolation, only:
+     .    linint ! Procedure
 
       implicit none
 
@@ -906,603 +939,157 @@
       if ( lstats_samp ) then
 
         ! zt variables
+        call stat_update_var( ithlm, thlm, zt )
+        call stat_update_var( itemp_in_K, 
+     .         thlm2temp_in_K( thlm, exner, rcm), zt )
+        call stat_update_var( ithvm, thvm, zt )
+        call stat_update_var( irtm, rtm, zt )       
+        call stat_update_var( ircm, rcm, zt )
+        call stat_update_var( ium, um, zt )
+        call stat_update_var( ivm, vm, zt )
+        call stat_update_var( iwmt, wmt, zt )
+        call stat_update_var( iug, ug, zt )
+        call stat_update_var( ivg, vg, zt )
+        call stat_update_var( icf, cf, zt )
+        call stat_update_var( ip, p, zt )
+        call stat_update_var( iexner, exner, zt )
+        call stat_update_var( iLscale, Lscale, zt )
+        call stat_update_var( iwp3, wp3, zt )
+        call stat_update_var( iwpthlp2, wpthlp2, zt )
+        call stat_update_var( iwp2thlp, wp2thlp, zt )
+        call stat_update_var( iwprtp2, wprtp2, zt )
+        call stat_update_var( iwp2rtp, wp2rtp, zt )
+        call stat_update_var( iLup, Lup, zt )
+        call stat_update_var( iLdown, Ldown, zt )
+        call stat_update_var( itaut, taut, zt )
+        call stat_update_var( iKht, Kht, zt )
+        call stat_update_var( iwp2thvp, wp2thvp, zt )
+        call stat_update_var( iwp2rcp, wp2rcp, zt )
+        call stat_update_var( iwprtpthlp, wprtpthlp, zt )
+        call stat_update_var( isct, sct, zt )
+        call stat_update_var( irhot, rhot, zt )
+!        call stat_update_var( iNcm, Ncm, zt )
+!        call stat_update_var( iNcnm, Ncnm, zt )
+!        call stat_update_var( iNim, Nim, zt )
+!       if ( cloud_sed ) then
+!        call stat_update_var( ised_rcm, sed_rcm, zt )
+!       endif
+        call stat_update_var( irsm, rsm, zt )
+!        call stat_update_var( irrm, hydromet(:,1), zt )
+!        call stat_update_var( iNrm, hydromet(:,2), zt )
+!        call stat_update_var( irsnowm, hydromet(:,3), zt )
+!        call stat_update_var( iricem, hydromet(:,4), zt )
+!        call stat_update_var( irgraupelm, hydromet(:,5), zt )
 
-        if ( ithlm > 0 ) then
-          zt%x(:,ithlm) = zt%x(:,ithlm) + thlm
-          zt%n(:,ithlm) = zt%n(:,ithlm) + 1
-        end if
-        if ( itemp_in_K > 0 ) then
-          zt%x(:,itemp_in_K) = zt%x(:,itemp_in_K) 
-     .    + thlm2temp_in_K( thlm, exner, rcm )
-          zt%n(:,itemp_in_K) = zt%n(:,itemp_in_K) + 1
-        end if
+        if ( LH_on ) then
+           call stat_update_var( iAKm, AKm, zt )
+           call stat_update_var( iAkm_est, AKm_est, zt)
+        endif
 
-        if ( ithvm > 0 ) then
-          zt%x(:,ithvm) = zt%x(:,ithvm) + thvm
-          zt%n(:,ithvm) = zt%n(:,ithvm) + 1
-        end if
-        if ( irtm > 0 ) then
-          zt%x(:,irtm) = zt%x(:,irtm) + rtm
-          zt%n(:,irtm) = zt%n(:,irtm) + 1
-        end if
-        if ( ircm > 0 ) then
-          zt%x(:,ircm) = zt%x(:,ircm) + rcm
-          zt%n(:,ircm) = zt%n(:,ircm) + 1
-        end if
-        if ( ium > 0 ) then
-          zt%x(:,ium) = zt%x(:,ium) + um
-          zt%n(:,ium) = zt%n(:,ium) + 1
-        end if
-        if ( ivm > 0 ) then
-          zt%x(:,ivm) = zt%x(:,ivm) + vm
-          zt%n(:,ivm) = zt%n(:,ivm) + 1
-        end if
-        if ( iwmt > 0 ) then
-          zt%x(:,iwmt) = zt%x(:,iwmt) + wmt
-          zt%n(:,iwmt) = zt%n(:,iwmt) + 1
-        end if
-        if ( iug > 0 ) then
-          zt%x(:,iug) = zt%x(:,iug) + ug
-          zt%n(:,iug) = zt%n(:,iug) + 1
-        end if
-        if ( ivg > 0 ) then
-          zt%x(:,ivg) = zt%x(:,ivg) + vg
-          zt%n(:,ivg) = zt%n(:,ivg) + 1
-        end if
-        if ( icf > 0 ) then
-          zt%x(:,icf) = zt%x(:,icf) + cf
-          zt%n(:,icf) = zt%n(:,icf) + 1
-        end if
-        if ( ip > 0 ) then
-          zt%x(:,ip) = zt%x(:,ip) + p
-          zt%n(:,ip) = zt%n(:,ip) + 1
-        end if
-        if ( iexner > 0 ) then
-          zt%x(:,iexner) = zt%x(:,iexner) + exner
-          zt%n(:,iexner) = zt%n(:,iexner) + 1
-        end if
-        if ( iLscale > 0 ) then
-          zt%x(:,iLscale) = zt%x(:,iLscale) + Lscale
-          zt%n(:,iLscale) = zt%n(:,iLscale) + 1
-        end if
-        if ( iwp3 > 0 ) then
-          zt%x(:,iwp3) = zt%x(:,iwp3) + wp3
-          zt%n(:,iwp3) = zt%n(:,iwp3) + 1
-        end if
-        if ( iwpthlp2 > 0 ) then
-          zt%x(:,iwpthlp2) = zt%x(:,iwpthlp2) + wpthlp2
-          zt%n(:,iwpthlp2) = zt%n(:,iwpthlp2) + 1
-        end if
-        if ( iwp2thlp > 0 ) then
-          zt%x(:,iwp2thlp) = zt%x(:,iwp2thlp) + wp2thlp
-          zt%n(:,iwp2thlp) = zt%n(:,iwp2thlp) + 1
-        end if
-        if ( iwprtp2 > 0 ) then
-          zt%x(:,iwprtp2) = zt%x(:,iwprtp2) + wprtp2
-          zt%n(:,iwprtp2) = zt%n(:,iwprtp2) + 1
-        end if
-        if ( iwp2rtp > 0 ) then
-          zt%x(:,iwp2rtp) = zt%x(:,iwp2rtp) + wp2rtp
-          zt%n(:,iwp2rtp) = zt%n(:,iwp2rtp) + 1
-        end if
-        if ( iLup > 0 ) then
-          zt%x(:,iLup) = zt%x(:,iLup) + Lup
-          zt%n(:,iLup) = zt%n(:,iLup) + 1
-        end if
-        if ( iLdown > 0 ) then
-          zt%x(:,iLdown) = zt%x(:,iLdown) + Ldown
-          zt%n(:,iLdown) = zt%n(:,iLdown) + 1
-        end if
-        if ( itaut > 0 ) then
-          zt%x(:,itaut) = zt%x(:,itaut) + taut
-          zt%n(:,itaut) = zt%n(:,itaut) + 1
-        end if
-        if ( iKht > 0 ) then
-          zt%x(:,iKht) = zt%x(:,iKht) + Kht
-          zt%n(:,iKht) = zt%n(:,iKht) + 1
-        end if
-        if ( iwp2thvp > 0 ) then
-          zt%x(:,iwp2thvp) = zt%x(:,iwp2thvp) + wp2thvp
-          zt%n(:,iwp2thvp) = zt%n(:,iwp2thvp) + 1
-        end if
-        if ( iwp2rcp > 0 ) then
-          zt%x(:,iwp2rcp) = zt%x(:,iwp2rcp) + wp2rcp
-          zt%n(:,iwp2rcp) = zt%n(:,iwp2rcp) + 1
-        end if
-        if ( iwprtpthlp > 0 ) then
-          zt%x(:,iwprtpthlp) = zt%x(:,iwprtpthlp) + wprtpthlp
-          zt%n(:,iwprtpthlp) = zt%n(:,iwprtpthlp) + 1
-        end if
-        if ( isct > 0 ) then
-          zt%x(:,isct) = zt%x(:,isct) + sct
-          zt%n(:,isct) = zt%n(:,isct) + 1
-        end if
-        if ( irhot > 0 ) then
-          zt%x(:,irhot) = zt%x(:,irhot) + rhot
-          zt%n(:,irhot) = zt%n(:,irhot) + 1
-        end if
-!       if ( iNcm > 0 ) then           ! Brian
-!         zt%x(:,iNcm) = zt%x(:,iNcm) + Ncm
-!         zt%n(:,iNcm) = zt%n(:,iNcm) + 1
-!       end if
-!       if ( iNcnm > 0 ) then
-!         zt%x(:,iNcnm) = zt%x(:,iNcnm) + Ncnm
-!         zt%n(:,iNcnm) = zt%n(:,iNcnm) + 1
-!       end if
-!       if ( iNim > 0 ) then
-!         zt%x(:,iNim) = zt%x(:,iNim) + Nim
-!         zt%n(:,iNim) = zt%n(:,iNim) + 1
-!       end if
-!       if ( ised_rcm > 0 .and. cloud_sed ) then       ! Brian
-!         zt%x(:,ised_rcm) = zt%x(:,ised_rcm) + sed_rcm
-!         zt%n(:,ised_rcm) = zt%n(:,ised_rcm) + 1
-!       end if
-        if ( irsm > 0 ) then           ! Brian
-          zt%x(:,irsm) = zt%x(:,irsm) + rsm
-          zt%n(:,irsm) = zt%n(:,irsm) + 1
-        end if
+        call stat_update_var( iradht, radht, zt )
+        call stat_update_var( ia, pdf_parms(:,13), zt )
+        call stat_update_var( iw1, pdf_parms(:,1), zt )
+        call stat_update_var( iw2, pdf_parms(:,2), zt )
+        call stat_update_var( isw1, pdf_parms(:,3), zt )
+        call stat_update_var( isw2, pdf_parms(:,4), zt )
+        call stat_update_var( ithl1, pdf_parms(:,9), zt )
+        call stat_update_var( ithl2, pdf_parms(:,10), zt )
+        call stat_update_var( isthl1, pdf_parms(:,11), zt )
+        call stat_update_var( isthl2, pdf_parms(:,12), zt )
+        call stat_update_var( irt1, pdf_parms(:,5), zt )
+        call stat_update_var( irt2, pdf_parms(:,6), zt )
+        call stat_update_var( isrt1, pdf_parms(:,7), zt )
+        call stat_update_var( isrt2, pdf_parms(:,8), zt )
+        call stat_update_var( irc1, pdf_parms(:,14), zt )
+        call stat_update_var( irc2, pdf_parms(:,15), zt )
+        call stat_update_var( irsl1, pdf_parms(:,16), zt )
+        call stat_update_var( irsl2, pdf_parms(:,17), zt )
+        call stat_update_var( iR1, pdf_parms(:,18), zt )
+        call stat_update_var( iR2, pdf_parms(:,19), zt )
+        call stat_update_var( is1, pdf_parms(:,20), zt )
+        call stat_update_var( is2, pdf_parms(:,21), zt )
+        call stat_update_var( iss1, pdf_parms(:,22), zt )
+        call stat_update_var( iss2, pdf_parms(:,23), zt )
+        call stat_update_var( irrtthl, pdf_parms(:,24), zt )
+        call stat_update_var( iwp2zt, wp2zt, zt )
+        call stat_update_var( ithlp2zt, thlp2zt, zt )
+        call stat_update_var( iwpthlpzt, wpthlpzt, zt )
+        call stat_update_var( iwprtpzt, wprtpzt, zt )
+        call stat_update_var( irtp2zt, rtp2zt, zt )
+        call stat_update_var( irtpthlpzt, rtpthlpzt, zt )
 
-!       if ( irrm > 0 ) then     ! Brian
-!         zt%x(:,irrm) = zt%x(:,irrm) + hydromet(:,1)
-!         zt%n(:,irrm) = zt%n(:,irrm) + 1
-!       end if
-
-!       if ( iNrm > 0 ) then     ! Brian
-!         zt%x(:,iNrm) = zt%x(:,iNrm) + hydromet(:,2)
-!         zt%n(:,iNrm) = zt%n(:,iNrm) + 1
-!       end if
-
-!       if ( irsnowm > 0 ) then
-!         zt%x(:,irsnowm) = zt%x(:,irsnowm) + hydromet(:,3)
-!         zt%n(:,irsnowm) = zt%n(:,irsnowm) + 1
-!       end if
-
-!       if ( iricem > 0 ) then
-!         zt%x(:,iricem) = zt%x(:,iricem) + hydromet(:,4)
-!         zt%n(:,iricem) = zt%n(:,iricem) + 1
-!       end if
-
-!       if ( irgraupelm > 0 ) then
-!         zt%x(:,irgraupelm) = zt%x(:,irgraupelm) + hydromet(:,5)
-!         zt%n(:,irgraupelm) = zt%n(:,irgraupelm) + 1
-!       end if
-
-        if ( iAKm > 0 .and. LH_on ) then         ! Vince Larson 22 May 2005
-          zt%x(:,iAKm) = zt%x(:,iAKm) + AKm
-          zt%n(:,iAKm) = zt%n(:,iAKm) + 1
-        end if
-
-        if ( iAKm_est > 0 .and. LH_on ) then     ! Vince Larson 22 May 2005
-          zt%x(:,iAKm_est) = zt%x(:,iAKm_est) + AKm_est
-          zt%n(:,iAKm_est) = zt%n(:,iAKm_est) + 1
-        end if
-
-        if ( iradht > 0 ) then
-          zt%x(:,iradht) = zt%x(:,iradht) + radht
-          zt%n(:,iradht) = zt%n(:,iradht) + 1
-        end if
-
-        if ( ia > 0 ) then
-          zt%x(:,ia) = zt%x(:,ia) + pdf_parms(:,13)
-          zt%n(:,ia) = zt%n(:,ia) + 1
-        end if
-
-        if ( iw1 > 0 ) then
-          zt%x(:,iw1) = zt%x(:,iw1) + pdf_parms(:,1)
-          zt%n(:,iw1) = zt%n(:,iw1) + 1
-        end if
-
-        if ( iw2 > 0 ) then
-          zt%x(:,iw2) = zt%x(:,iw2) + pdf_parms(:,2)
-          zt%n(:,iw2) = zt%n(:,iw2) + 1
-        end if
-
-        if ( isw1 > 0 ) then
-          zt%x(:,isw1) = zt%x(:,isw1) + pdf_parms(:,3)
-          zt%n(:,isw1) = zt%n(:,isw1) + 1
-        end if
-
-        if ( isw2 > 0 ) then
-          zt%x(:,isw2) = zt%x(:,isw2) + pdf_parms(:,4)
-          zt%n(:,isw2) = zt%n(:,isw2) + 1
-        end if
-
-        if ( ithl1 > 0 ) then
-          zt%x(:,ithl1) = zt%x(:,ithl1) + pdf_parms(:,9)
-          zt%n(:,ithl1) = zt%n(:,ithl1) + 1
-        end if
-
-        if ( ithl2 > 0 ) then
-          zt%x(:,ithl2) = zt%x(:,ithl2) + pdf_parms(:,10)
-          zt%n(:,ithl2) = zt%n(:,ithl2) + 1
-        end if
-
-        if ( isthl1 > 0 ) then
-          zt%x(:,isthl1) = zt%x(:,isthl1) + pdf_parms(:,11)
-          zt%n(:,isthl1) = zt%n(:,isthl1) + 1
-        end if
-
-        if ( isthl2 > 0 ) then
-          zt%x(:,isthl2) = zt%x(:,isthl2) + pdf_parms(:,12)
-          zt%n(:,isthl2) = zt%n(:,isthl2) + 1
-        end if
-
-        if ( irt1 > 0 ) then
-          zt%x(:,irt1) = zt%x(:,irt1) + pdf_parms(:,5)
-          zt%n(:,irt1) = zt%n(:,irt1) + 1
-        end if
-
-        if ( irt2 > 0 ) then
-          zt%x(:,irt2) = zt%x(:,irt2) + pdf_parms(:,6)
-          zt%n(:,irt2) = zt%n(:,irt2) + 1
-        end if
-
-        if ( isrt1 > 0 ) then
-          zt%x(:,isrt1) = zt%x(:,isrt1) + pdf_parms(:,7)
-          zt%n(:,isrt1) = zt%n(:,isrt1) + 1
-        end if
-
-        if ( isrt2 > 0 ) then
-          zt%x(:,isrt2) = zt%x(:,isrt2) + pdf_parms(:,8)
-          zt%n(:,isrt2) = zt%n(:,isrt2) + 1
-        end if
-
-        if ( irc1 > 0 ) then
-          zt%x(:,irc1) = zt%x(:,irc1) + pdf_parms(:,14)
-          zt%n(:,irc1) = zt%n(:,irc1) + 1
-        end if
-
-        if ( irc2 > 0 ) then
-          zt%x(:,irc2) = zt%x(:,irc2) + pdf_parms(:,15)
-          zt%n(:,irc2) = zt%n(:,irc2) + 1
-        end if
-
-        if ( irsl1 > 0 ) then
-          zt%x(:,irsl1) = zt%x(:,irsl1) + pdf_parms(:,16)
-          zt%n(:,irsl1) = zt%n(:,irsl1) + 1
-        end if
-
-        if ( irsl2 > 0 ) then
-          zt%x(:,irsl2) = zt%x(:,irsl2) + pdf_parms(:,17)
-          zt%n(:,irsl2) = zt%n(:,irsl2) + 1
-        end if
-
-        if ( iR1 > 0 ) then
-          zt%x(:,iR1) = zt%x(:,iR1) + pdf_parms(:,18)
-          zt%n(:,iR1) = zt%n(:,iR1) + 1
-        end if
-
-        if ( iR2 > 0 ) then
-          zt%x(:,iR2) = zt%x(:,iR2) + pdf_parms(:,19)
-          zt%n(:,iR2) = zt%n(:,iR2) + 1
-        end if
-
-        if ( is1 > 0 ) then
-          zt%x(:,is1) = zt%x(:,is1) + pdf_parms(:,20)
-          zt%n(:,is1) = zt%n(:,is1) + 1
-        end if
-
-        if ( is2 > 0 ) then
-          zt%x(:,is2) = zt%x(:,is2) + pdf_parms(:,21)
-          zt%n(:,is2) = zt%n(:,is2) + 1
-        end if
-
-        if ( iss1 > 0 ) then
-          zt%x(:,iss1) = zt%x(:,iss1) + pdf_parms(:,22)
-          zt%n(:,iss1) = zt%n(:,iss1) + 1
-        end if
-
-        if ( iss2 > 0 ) then
-          zt%x(:,iss2) = zt%x(:,iss2) + pdf_parms(:,23)
-          zt%n(:,iss2) = zt%n(:,iss2) + 1
-        end if
-
-        if ( irrtthl > 0 ) then
-          zt%x(:,irrtthl) = zt%x(:,irrtthl) + pdf_parms(:,24)
-          zt%n(:,irrtthl) = zt%n(:,irrtthl) + 1
-        end if
-
-        if ( iwp2zt > 0 ) then
-          zt%x(:,iwp2zt) = zt%x(:,iwp2zt) + wp2zt
-          zt%n(:,iwp2zt) = zt%n(:,iwp2zt) + 1
-        end if
-
-        if ( ithlp2zt > 0 ) then
-          zt%x(:,ithlp2zt) = zt%x(:,ithlp2zt) + thlp2zt
-          zt%n(:,ithlp2zt) = zt%n(:,ithlp2zt) + 1
-        end if
-
-        if ( iwpthlpzt > 0 ) then
-          zt%x(:,iwpthlpzt) = zt%x(:,iwpthlpzt) + wpthlpzt
-          zt%n(:,iwpthlpzt) = zt%n(:,iwpthlpzt) + 1
-        end if
-
-        if ( iwprtpzt > 0 ) then
-          zt%x(:,iwprtpzt) = zt%x(:,iwprtpzt) + wprtpzt
-          zt%n(:,iwprtpzt) = zt%n(:,iwprtpzt) + 1
-        end if
-
-        if ( irtp2zt > 0 ) then
-          zt%x(:,irtp2zt) = zt%x(:,irtp2zt) + rtp2zt
-          zt%n(:,irtp2zt) = zt%n(:,irtp2zt) + 1
-        end if
-
-        if ( irtpthlpzt > 0 ) then
-          zt%x(:,irtpthlpzt) = zt%x(:,irtpthlpzt) + rtpthlpzt
-          zt%n(:,irtpthlpzt) = zt%n(:,irtpthlpzt) + 1
-        end if
 #ifdef SCALARS
-        if ( isclram > 0 ) then
-          zt%x(:,isclram) = zt%x(:,isclram) + sclrm(:,1)
-          zt%n(:,isclram) = zt%n(:,isclram) + 1
-        end if
+        call stat_update_var( isclram, sclrm(:,1), zt )
+        call stat_update_var( isclram_f, sclrm_forcing(:,1),  zt )
+        call stat_update_var( isclrbm, sclrm(:,2), zt )
+        call stat_update_var( isclrbm_f, sclrm_forcing(:,2), zt )
+        call stat_update_var( iedsclram, edsclrm(:,1), zt )
+        call stat_update_var( iedsclrbm, edsclrm(:,2), zt )
 
-        if ( isclram_f > 0 ) then
-          zt%x(:,isclram_f) = zt%x(:,isclram_f) + sclrm_forcing(:,1)
-          zt%n(:,isclram_f) = zt%n(:,isclram_f) + 1
-        end if
-
-        if ( isclrbm > 0 ) then
-          zt%x(:,isclrbm) = zt%x(:,isclrbm) + sclrm(:,2)
-          zt%n(:,isclrbm) = zt%n(:,isclrbm) + 1
-        end if
-
-        if ( isclrbm_f > 0 ) then
-          zt%x(:,isclrbm_f) = zt%x(:,isclrbm_f) + sclrm_forcing(:,2)
-          zt%n(:,isclrbm_f) = zt%n(:,isclrbm_f) + 1
-        end if
-
-        if ( iedsclram > 0 ) then
-          zt%x(:,iedsclram) = zt%x(:,iedsclram) + edsclrm(:,1)
-          zt%n(:,iedsclram) = zt%n(:,iedsclram) + 1
-        end if
-
-        if ( iedsclrbm > 0 ) then
-          zt%x(:,iedsclrbm) = zt%x(:,iedsclrbm) + edsclrm(:,2)
-          zt%n(:,iedsclrbm) = zt%n(:,iedsclrbm) + 1
-        end if
 
 #endif /*SCALARS*/
 
 !       zm variables
 
-        if ( iwp2 > 0 ) then
-          zm%x(:,iwp2) = zm%x(:,iwp2) + wp2
-          zm%n(:,iwp2) = zm%n(:,iwp2) + 1
-        end if
-
-        if ( irtp2 > 0 ) then
-          zm%x(:,irtp2) = zm%x(:,irtp2) + rtp2
-          zm%n(:,irtp2) = zm%n(:,irtp2) + 1
-        end if
-
-        if ( ithlp2 > 0 ) then
-          zm%x(:,ithlp2) = zm%x(:,ithlp2) + thlp2
-          zm%n(:,ithlp2) = zm%n(:,ithlp2) + 1
-        end if
-
-        if ( irtpthlp > 0 ) then
-          zm%x(:,irtpthlp) = zm%x(:,irtpthlp) + rtpthlp
-          zm%n(:,irtpthlp) = zm%n(:,irtpthlp) + 1
-        end if
-
-        if ( iwprtp > 0 ) then
-          zm%x(:,iwprtp) = zm%x(:,iwprtp) + wprtp
-          zm%n(:,iwprtp) = zm%n(:,iwprtp) + 1
-        end if
-
-        if ( iwpthlp > 0 ) then
-          zm%x(:,iwpthlp) = zm%x(:,iwpthlp) + wpthlp
-          zm%n(:,iwpthlp) = zm%n(:,iwpthlp) + 1
-        end if
-
-        if ( iwp4 > 0 ) then
-          zm%x(:,iwp4) = zm%x(:,iwp4) + wp4
-          zm%n(:,iwp4) = zm%n(:,iwp4) + 1
-        end if
-
-        if ( iwpthvp > 0 ) then
-          zm%x(:,iwpthvp) = zm%x(:,iwpthvp) + wpthvp
-          zm%n(:,iwpthvp) = zm%n(:,iwpthvp) + 1
-        end if
-
-        if ( irtpthvp > 0 ) then
-          zm%x(:,irtpthvp) = zm%x(:,irtpthvp) + rtpthvp
-          zm%n(:,irtpthvp) = zm%n(:,irtpthvp) + 1
-        end if
-
-        if ( ithlpthvp > 0 ) then
-          zm%x(:,ithlpthvp) = zm%x(:,ithlpthvp) + thlpthvp
-          zm%n(:,ithlpthvp) = zm%n(:,ithlpthvp) + 1
-        end if
-
-        if ( itaum > 0 ) then
-          zm%x(:,itaum) = zm%x(:,itaum) + taum
-          zm%n(:,itaum) = zm%n(:,itaum) + 1
-        end if
-
-        if ( iKhm > 0 ) then
-          zm%x(:,iKhm) = zm%x(:,iKhm) + Khm
-          zm%n(:,iKhm) = zm%n(:,iKhm) + 1
-        end if
-
-        if ( iwprcp > 0 ) then
-          zm%x(:,iwprcp) = zm%x(:,iwprcp) + wprcp
-          zm%n(:,iwprcp) = zm%n(:,iwprcp) + 1
-        end if
-
-        if ( ithlprcp > 0 ) then
-          zm%x(:,ithlprcp) = zm%x(:,ithlprcp) + thlprcp
-          zm%n(:,ithlprcp) = zm%n(:,ithlprcp) + 1
-        end if
-
-        if ( irtprcp > 0 ) then
-          zm%x(:,irtprcp) = zm%x(:,irtprcp) + rtprcp
-          zm%n(:,irtprcp) = zm%n(:,irtprcp) + 1
-        end if
-
-        if ( ircp2 > 0 ) then
-          zm%x(:,ircp2) = zm%x(:,ircp2) + rcp2
-          zm%n(:,ircp2) = zm%n(:,ircp2) + 1
-        end if
-
-        if ( iupwp > 0 ) then
-          zm%x(:,iupwp) = zm%x(:,iupwp) + upwp
-          zm%n(:,iupwp) = zm%n(:,iupwp) + 1
-        end if
-
-        if ( ivpwp > 0 ) then
-          zm%x(:,ivpwp) = zm%x(:,ivpwp) + vpwp
-          zm%n(:,ivpwp) = zm%n(:,ivpwp) + 1
-        end if
-
-        if ( ivp2 > 0 ) then
-          zm%x(:,ivp2) = zm%x(:,ivp2) + vp2
-          zm%n(:,ivp2) = zm%n(:,ivp2) + 1
-        end if
-
-        if ( iup2 > 0 ) then
-          zm%x(:,iup2) = zm%x(:,iup2) + up2
-          zm%n(:,iup2) = zm%n(:,iup2) + 1
-        end if
-
-        if ( irhom > 0 ) then
-          zm%x(:,irhom) = zm%x(:,irhom) + rhom
-          zm%n(:,irhom) = zm%n(:,irhom) + 1
-        end if
-
-        if ( iscm > 0 ) then
-          zm%x(:,iscm) = zm%x(:,iscm) + scm
-          zm%n(:,iscm) = zm%n(:,iscm) + 1
-        end if
-
-        if ( iem > 0 ) then
-          zm%x(:,iem) = zm%x(:,iem) + em
-          zm%n(:,iem) = zm%n(:,iem) + 1
-        end if
-
-        if ( ishear > 0 ) then    ! Brian
-          zm%x(:,ishear) = zm%x(:,ishear) + shear
-          zm%n(:,ishear) = zm%n(:,ishear) + 1
-        end if
-
-        if ( iFrad > 0 ) then
-          zm%x(:,iFrad) = zm%x(:,iFrad) + Frad
-          zm%n(:,iFrad) = zm%n(:,iFrad) + 1
-        end if
-
-!       if ( iFcsed > 0 .and. cloud_sed ) then    ! Brian
-!         zm%x(:,iFcsed) = zm%x(:,iFcsed) + Fcsed
-!         zm%n(:,iFcsed) = zm%n(:,iFcsed) + 1
-!       end if
+        call stat_update_var( iwp2, wp2, zm )
+        call stat_update_var( irtp2, rtp2, zm )
+        call stat_update_var( ithlp2, thlp2, zm )
+        call stat_update_var( irtpthlp, rtpthlp, zm )
+        call stat_update_var( iwprtp, wprtp, zm )
+        call stat_update_var( iwpthlp, wpthlp, zm )
+        call stat_update_var( iwp4, wp4, zm )
+        call stat_update_var( iwpthvp, wpthvp, zm )
+        call stat_update_var( irtpthvp, rtpthvp, zm )
+        call stat_update_var( ithlpthvp, thlpthvp, zm )
+        call stat_update_var( itaum, taum, zm )
+        call stat_update_var( iKhm, Khm, zm )
+        call stat_update_var( iwprcp, wprcp, zm )
+        call stat_update_var( ithlprcp, thlprcp, zm )
+        call stat_update_var( irtprcp, rtprcp, zm )
+        call stat_update_var( ircp2, rcp2, zm )
+        call stat_update_var( iupwp, upwp, zm )
+        call stat_update_var( ivpwp, vpwp, zm )
+        call stat_update_var( ivp2, vp2, zm )
+        call stat_update_var( iup2, up2, zm )
+        call stat_update_var( irhom, rhom, zm )
+        call stat_update_var( iscm, scm, zm )
+        call stat_update_var( iem, em, zm )
+        call stat_update_var( ishear, shear, zm )
+        call stat_update_var( iFrad, Frad, zm )
+!        if ( cloud_sed ) then
+!          call stat_update_var( iFcsed, Fcsed, zm )
+!        endif
 
 #ifdef SCALARS
-        if ( isclraprtp > 0 ) then
-          zm%x(:,isclraprtp) = zm%x(:,isclraprtp) + sclrprtp(:,1)
-          zm%n(:,isclraprtp) = zm%n(:,isclraprtp) + 1
-        end if
-        if ( isclrbprtp > 0 ) then
-          zm%x(:,isclrbprtp) = zm%x(:,isclrbprtp) + sclrprtp(:,2)
-          zm%n(:,isclrbprtp) = zm%n(:,isclrbprtp) + 1
-        end if
-        if ( isclrap2 > 0 ) then
-          zm%x(:,isclrap2) = zm%x(:,isclrap2) + sclrp2(:,1)
-          zm%n(:,isclrap2) = zm%n(:,isclrap2) + 1
-        end if
-        if ( isclrbp2 > 0 ) then
-          zm%x(:,isclrbp2) = zm%x(:,isclrbp2) + sclrp2(:,2)
-          zm%n(:,isclrbp2) = zm%n(:,isclrbp2) + 1
-        end if
-        if ( isclrapthvp > 0 ) then
-          zm%x(:,isclrapthvp) = zm%x(:,isclrapthvp) 
-     .                            + sclrpthvp(:,1)
-          zm%n(:,isclrapthvp) = zm%n(:,isclrapthvp) + 1
-        end if
-        if ( isclrbpthvp > 0 ) then
-          zm%x(:,isclrbpthvp) = zm%x(:,isclrbpthvp) 
-     .                            + sclrpthvp(:,2)
-          zm%n(:,isclrbpthvp) = zm%n(:,isclrbpthvp) + 1
-        end if
-        if ( isclrapthlp > 0 ) then
-          zm%x(:,isclrapthlp) = zm%x(:,isclrapthlp) 
-     .                            + sclrpthlp(:,1)
-          zm%n(:,isclrapthlp) = zm%n(:,isclrapthlp) + 1
-        end if
-        if ( isclrbpthlp > 0 ) then
-          zm%x(:,isclrbpthlp) = zm%x(:,isclrbpthlp) 
-     .                            + sclrpthlp(:,2)
-          zm%n(:,isclrbpthlp) = zm%n(:,isclrbpthlp) + 1
-        end if
-        if ( isclraprcp > 0 ) then
-          zm%x(:,isclraprcp) = zm%x(:,isclraprcp) + sclrprcp(:,1)
-          zm%n(:,isclraprcp) = zm%n(:,isclraprcp) + 1
-        end if
-        if ( isclrbprcp > 0 ) then
-          zm%x(:,isclrbprcp) = zm%x(:,isclrbprcp) + sclrprcp(:,2)
-          zm%n(:,isclrbprcp) = zm%n(:,isclrbprcp) + 1
-        end if
-        if ( iwpsclrap > 0 ) then
-          zm%x(:,iwpsclrap) = zm%x(:,iwpsclrap) + wpsclrp(:,1)
-          zm%n(:,iwpsclrap) = zm%n(:,iwpsclrap) + 1
-        end if
-        if ( iwpsclrbp > 0 ) then
-          zm%x(:,iwpsclrbp) = zm%x(:,iwpsclrbp) + wpsclrp(:,2)
-          zm%n(:,iwpsclrbp) = zm%n(:,iwpsclrbp) + 1
-        end if
-        if ( iwp2sclrap > 0 ) then
-          zm%x(:,iwp2sclrap) = zm%x(:,iwp2sclrap) + wp2sclrp(:,1)
-          zm%n(:,iwp2sclrap) = zm%n(:,iwp2sclrap) + 1
-        end if
-        if ( iwp2sclrbp > 0 ) then
-          zm%x(:,iwp2sclrbp) = zm%x(:,iwp2sclrbp) + wp2sclrp(:,2)
-          zm%n(:,iwp2sclrbp) = zm%n(:,iwp2sclrbp) + 1
-        end if
-        if ( iwpsclrap2 > 0 ) then
-          zm%x(:,iwpsclrap2) = zm%x(:,iwpsclrap2) + wpsclrp2(:,1)
-          zm%n(:,iwpsclrap2) = zm%n(:,iwpsclrap2) + 1
-        end if
-        if ( iwpsclrbp2 > 0 ) then
-          zm%x(:,iwpsclrbp2) = zm%x(:,iwpsclrbp2) + wpsclrp2(:,2)
-          zm%n(:,iwpsclrbp2) = zm%n(:,iwpsclrbp2) + 1
-        end if
-        if ( iwpsclraprtp > 0 ) then
-          zm%x(:,iwpsclraprtp) = zm%x(:,iwpsclraprtp) + wpsclrprtp(:,1)
-          zm%n(:,iwpsclraprtp) = zm%n(:,iwpsclraprtp) + 1
-        end if
-        if ( iwpsclrbprtp > 0 ) then
-          zm%x(:,iwpsclrbprtp) = zm%x(:,iwpsclrbprtp) + wpsclrprtp(:,2)
-          zm%n(:,iwpsclrbprtp) = zm%n(:,iwpsclrbprtp) + 1
-        end if
-        if ( iwpsclrapthlp > 0 ) then
-          zm%x(:,iwpsclrapthlp) = zm%x(:,iwpsclrapthlp) 
-     .                            + wpsclrpthlp(:,1)
-          zm%n(:,iwpsclrapthlp) = zm%n(:,iwpsclrapthlp) + 1
-        end if
-        if ( iwpsclrbpthlp > 0 ) then
-          zm%x(:,iwpsclrbpthlp) = zm%x(:,iwpsclrbpthlp) 
-     .                            + wpsclrpthlp(:,2)
-          zm%n(:,iwpsclrbpthlp) = zm%n(:,iwpsclrbpthlp) + 1
-        end if
-        if ( iwpedsclrap > 0 ) then
-          zm%x(:,iwpedsclrap) = zm%x(:,iwpedsclrap) 
-     .                            + wpedsclrp(:,1)
-          zm%n(:,iwpedsclrap) = zm%n(:,iwpedsclrap) + 1
-        end if
-        if ( iwpedsclrbp > 0 ) then
-          zm%x(:,iwpedsclrbp) = zm%x(:,iwpedsclrbp) 
-     .                            + wpedsclrp(:,2)
-          zm%n(:,iwpedsclrbp) = zm%n(:,iwpedsclrbp) + 1
-        end if
+        call stat_update_var( isclraprtp,sclrprtp(:,1), zm )
+        call stat_update_var( isclrbprtp, sclrprtp(:,2), zm )
+        call stat_update_var( isclrap2, sclrp2(:,1), zm )
+        call stat_update_var( isclrbp2, sclrp2(:,2), zm )
+        call stat_update_var( isclrapthvp, sclrpthvp(:,1), zm )
+        call stat_update_var( isclrbpthvp, sclrpthvp(:,2), zm )
+        call stat_update_var( isclrapthlp, sclrpthlp(:,1), zm )
+        call stat_update_var( isclrbpthlp, sclrpthlp(:,2), zm )
+        call stat_update_var( isclraprcp, sclrprcp(:,1), zm ) 
+        call stat_update_var( isclrbprcp, sclrprcp(:,2), zm )
+        call stat_update_var( iwpsclrap, wpsclrp(:,1), zm )
+        call stat_update_var( iwpsclrbp, wpsclrp(:,2), zm )
+        call stat_update_var( iwp2sclrap, wp2sclrp(:,1), zm )
+        call stat_update_var( iwp2sclrbp, wp2sclrp(:,2), zm )
+        call stat_update_var( iwpsclrap2, wpsclrp2(:,1), zm )
+        call stat_update_var( iwpsclrbp2, wpsclrp2(:,2), zm )
+        call stat_update_var( iwpsclraprtp, wpsclrprtp(:,1), zm )
+        call stat_update_var( iwpsclrbprtp, wpsclrprtp(:,2), zm )
+        call stat_update_var( iwpsclrapthlp, wpsclrpthlp(:,1), zm )
+        call stat_update_var( iwpsclrbpthlp, wpsclrpthlp(:,2), zm )
+        call stat_update_var( iwpedsclrap, wpedsclrp(:,1), zm )
+        call stat_update_var( iwpedsclrbp, wpedsclrp(:,2), zm )
         
 #endif /*SCALARS*/
 
 ! sfc variables
 
 !       Cloud cover
-        if ( icc > 0 ) then
-          sfc%x(1,icc) = sfc%x(1,icc) + maxval( cf(1:gr%nnzp) )
-          sfc%n(1,icc) = sfc%n(1,icc) + 1
-        end if
+        call stat_update_var_pt( icc, 1, maxval( cf(1:gr%nnzp) ), sfc )
 
 !       Cloud base
         if ( izb > 0 ) then
@@ -1513,15 +1100,20 @@
 
 !          if ( k < gr%nnzp) then
 !            sfc%x(1,izb) = sfc%x(1,izb) + gr%zt(k)
+
+!        pure real function linint( zmid, ztop, zbot, vtop, vbot )
+!        linint = ( (zmid-zbot)/(ztop-zbot) ) * (vtop-vbot) + vbot
+
           if ( k > 1 .AND. k < gr%nnzp) then
-            sfc%x(1,izb) = sfc%x(1,izb) + (                     ! Use linear interpolation
-     .         ( ( rc_tol - rcm(k-1) )/( rcm(k) - rcm(k-1) ) )  ! to find the exact height
-     .        * ( gr%zt(k) - gr%zt(k-1) ) + gr%zt(k-1)          ! of the rc_tol kg/kg level.
-     .                                    )                     ! Brian.
+            call stat_update_var_pt( izb, 1, linint( rc_tol,rcm(k), ! Use linear interpolation
+     .               rcm(k-1), gr%zt(k) , gr%zt(k-1) ), sfc )      ! to find the exact height
+                                                                   ! of the rc_tol kg/kg level.
+                                                                   ! Brian.
           else
-            sfc%x(1,izb) = sfc%x(1,izb) - 10
+            call stat_update_var_pt( izb, 1, -10.0 , sfc )
+
           end if
-          sfc%n(1,izb) = sfc%n(1,izb) + 1
+
         end if
 
 !       LWP
@@ -1530,8 +1122,9 @@
           do i = gr%nnzp-1, 1, -1
            xtmp = xtmp + rhot(i+1) * rcm(i+1) / gr%dzt(i+1)
           end do
-          sfc%x(1,ilwp) = sfc%x(1,ilwp) + xtmp
-          sfc%n(1,ilwp) = sfc%n(1,ilwp) + 1
+          
+          call stat_update_var_pt( ilwp, 1, xtmp, sfc )
+
         end if
 
       end if
@@ -1608,7 +1201,9 @@
 
         deallocate( zt%x, stat=i )
         deallocate( zt%n )
+        deallocate( zt%in_update )
 
+        
         deallocate( zt%f%var )
         deallocate( zt%f%z )
 
@@ -1637,7 +1232,8 @@
 
         deallocate( zm%f%var )
         deallocate( zm%f%z )
-
+        deallocate( zm%in_update )
+        
         deallocate ( zmscr01 )
         deallocate ( zmscr02 )
         deallocate ( zmscr03 )
@@ -1658,6 +1254,7 @@
 
         deallocate( sfc%x )
         deallocate( sfc%n )
+        deallocate( sfc%in_update )
 
         deallocate( sfc%f%var )
         deallocate( sfc%f%z )
