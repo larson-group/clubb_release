@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F,v 1.27 2008-06-02 20:35:49 dschanen Exp $
+! $Id: numer_check.F,v 1.28 2008-06-16 17:41:43 faschinj Exp $
         module numerical_check
 
         implicit none
@@ -528,6 +528,12 @@
      .      wprtp,
      .      wpthlp,
      .      rtpthlp
+#ifdef SCALARS
+     .     ,sclrm,
+     .     edsclrm
+#endif /*SCALARS*/
+
+        
         use model_flags, only: 
      .      lcoamps_micro, ! Variable(s) 
      .      kk_rain
