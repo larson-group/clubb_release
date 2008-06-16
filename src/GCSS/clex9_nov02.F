@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: clex9_nov02.F,v 1.13 2008-06-04 22:57:41 ajsmith4 Exp $
+! $Id: clex9_nov02.F,v 1.14 2008-06-16 22:24:46 faschinj Exp $
         module clex9_nov02
 
 !       Description:
@@ -57,6 +57,8 @@
         use rad_lwsw_mod, only: rad_lwsw ! Procedure(s)
 
 #ifdef STATS
+        use stats_type, only: stat_update_var ! Procedure(s)
+
         use stats_hoc, only: iradht_LW, iradht_SW, zt, zm, lstats_samp, ! Variable(s)
      .                 iFrad_SW, iFrad_LW
 #endif /*STATS*/
@@ -701,24 +703,13 @@ c        end if
         ! Save LW and SW components of radiative heating and
         ! radiative flux based on simplified radiation.
         if ( .not.lbugsrad .and. lstats_samp ) then
+          call stat_update_var( iradht_LW, radht_LW, zt )
 
-          if ( iradht_LW > 0 ) then
-            zt%x(:,iradht_LW) = zt%x(:,iradht_LW) + radht_LW
-            zt%n(:,iradht_LW) = zt%n(:,iradht_LW) + 1
-          end if
-          if ( iradht_SW > 0 ) then
-            zt%x(:,iradht_SW) = zt%x(:,iradht_SW) + radht_SW
-            zt%n(:,iradht_SW) = zt%n(:,iradht_SW) + 1
-          end if
+          call stat_update_var( iradht_SW, radht_SW, zt )
 
-          if ( iFrad_SW > 0 ) then
-            zm%x(:,iFrad_SW) = zm%x(:,iFrad_SW) + Frad_SW
-            zm%n(:,iFrad_SW) = zm%n(:,iFrad_SW) + 1
-          end if
-          if ( iFrad_LW > 0 ) then
-            zm%x(:,iFrad_LW) = zm%x(:,iFrad_LW) + Frad_LW
-            zm%n(:,iFrad_LW) = zm%n(:,iFrad_LW) + 1
-          end if
+          call stat_update_var( iFrad_SW, Frad_SW, zm )
+
+          call stat_update_var( iFrad_LW, Frad_LW, zm )
 
         end if
 #endif /*STATS*/

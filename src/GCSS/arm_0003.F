@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_0003.F,v 1.10 2008-05-30 16:24:22 faschinj Exp $
+! $Id: arm_0003.F,v 1.11 2008-06-16 22:22:25 faschinj Exp $
         module arm_0003
 
 !       Description:
@@ -12,7 +12,7 @@
 
         public :: arm_0003_tndcy, arm_0003_sfclyr, arm_0003_init
 
-        private
+        private ! Default Scope
 
         ! Constant Parameters
         integer, parameter :: ntimes = 167, nz = 38,
@@ -180,6 +180,8 @@
         use diag_ustar_mod, only: diag_ustar ! Variable(s)
 
 #ifdef STATS
+        use stats_type, only: stat_update_var_pt ! Variable(s)
+
         use stats_hoc, only: iustar, sfc, lstats_samp ! Variable(s)
 #endif
         
@@ -269,9 +271,8 @@
 
 #ifdef STATS
 ! Save ustar for statistics
-        if ( lstats_samp .and. iustar > 0 ) then
-          sfc%x(1,iustar) = sfc%x(1,iustar) + ustar
-          sfc%n(1,iustar) = sfc%n(1,iustar) + 1
+        if ( lstats_samp ) then
+          call stat_update_var_pt( iustar, 1, ustar, sfc )
         end if
 #endif
         upwp_sfc = -um_sfc * ustar**2 / ubar

@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_97.F,v 1.18 2008-05-30 16:24:22 faschinj Exp $
+! $Id: arm_97.F,v 1.19 2008-06-16 22:23:05 faschinj Exp $
         module arm_97
 
 !       Description:
@@ -184,6 +184,8 @@
         use diag_ustar_mod, only: diag_ustar ! Variable(s)
 
 #ifdef STATS
+        use stats_type, only: stat_update_var, stat_update_var_pt ! Procedure(s)
+
         use stats_hoc, only: iustar, sfc, lstats_samp ! Variable(s)
 #endif
         
@@ -276,10 +278,9 @@
 
 #ifdef STATS
 ! Save ustar for statistics
-        if ( lstats_samp .and. iustar > 0 ) then
-          sfc%x(1,iustar) = sfc%x(1,iustar) + ustar
-          sfc%n(1,iustar) = sfc%n(1,iustar) + 1
-        end if
+        if ( lstats_samp ) then
+          call stat_update_var_pt( iustar, 1, ustar, sfc )
+        endif
 #endif
         upwp_sfc = -um_sfc * ustar**2 / ubar
         vpwp_sfc = -vm_sfc * ustar**2 / ubar
