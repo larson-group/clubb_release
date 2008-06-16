@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputgrads.F,v 1.18 2008-05-30 16:24:22 faschinj Exp $
+! $Id: inputgrads.F,v 1.19 2008-06-16 17:19:06 faschinj Exp $
 
         module inputfile_class
 
@@ -30,6 +30,13 @@
      .      time_prec ! Variable(s)
 
         implicit none
+
+        private ! Default Scope
+
+        public :: get_var, inputgrads, open_grads_read, 
+     .            close_grads_read, variable 
+
+
         ! Overloaded interface for get_var.  All GrADS files are assumed
         ! to store variable as 4 byte IEEE floats, but the model may be
         ! using double or extended precision.
