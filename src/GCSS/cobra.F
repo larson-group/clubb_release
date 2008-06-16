@@ -1,7 +1,7 @@
 #define SCLR_CO2 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: cobra.F,v 1.9 2008-05-30 16:24:23 faschinj Exp $
+! $Id: cobra.F,v 1.10 2008-06-16 17:28:45 faschinj Exp $
         module cobra
 !       Description:
 !       Contains subroutines for the COBRA CO2 case.
@@ -9,7 +9,7 @@
 
         implicit none
 
-        private
+        private ! Default Scope
 
         public ::
      .  cobra_tndcy,

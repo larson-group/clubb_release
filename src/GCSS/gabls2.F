@@ -9,7 +9,7 @@
 !----------------------------------------------------------------------
         public :: gabls2_tndcy, gabls2_sfclyr
 
-        private
+        private ! Default Scope
 
         contains
 

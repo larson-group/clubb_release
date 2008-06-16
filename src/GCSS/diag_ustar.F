@@ -1,4 +1,5 @@
-!$Id: diag_ustar.F,v 1.3 2008-05-30 16:24:23 faschinj Exp $
+!-----------------------------------------------------------------------
+!$Id: diag_ustar.F,v 1.4 2008-06-16 17:29:44 faschinj Exp $
 
       module diag_ustar_mod
 
@@ -6,7 +7,7 @@
       
       public :: diag_ustar
 
-      private
+      private ! Default Scope
       
       contains
 ! ----------------------------------------------------------------------
