@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.54 2008-05-30 16:24:21 faschinj Exp $
+! $Id: error.F,v 1.55 2008-06-16 17:11:32 faschinj Exp $
 
         module error
  
@@ -51,72 +51,73 @@
      .  max_run = 12, ! Maximum model runs the tuner can handle at a time
      .  max_variables = 32 ! This number / 2 is maximum variables to tune for
 
-        real :: 
+        real, public :: 
      .  ftol,       ! The precision to tune for
      .  anneal_temp ! Initial temperature for the simulated annealing algorithm
 
-        integer ::
+        integer, public ::
      .  anneal_iter,! Number of annealing iterations to perform
      .  tune_type,  ! Toggle for downhill simplex of simulated annealing
      .  c_total,    ! Total number of simulation cases to tune over
      .  v_total     ! Total number of variables to tune over
 
-        logical ::
+        logical, public ::
      .  results_stdout,
      .  results_file,
      .  stdout_on_invalid
 
-        character(len=10), dimension(:), allocatable :: 
+        character(len=10), dimension(:), allocatable, private :: 
      .  hoc_v, ! Variables in HOC GrADS files
      .  les_v  ! Variables in LES GrADS files
 
-        integer, dimension(:,:), allocatable :: 
+        integer, dimension(:,:), allocatable, private :: 
      .  time ! Time intervals
 
         ! Additions for using imposed weights as scaling factors
         logical :: linitialize_sigma
 
-        real, dimension(:,:), allocatable :: 
+        real, dimension(:,:), allocatable, private :: 
      .  err_terms,
      .  invsigma2,
      .  min_err_terms,
      .  init_err_terms
 
-        real, dimension(:), allocatable :: weight_case, weight_var
+        real, dimension(:), allocatable, private :: 
+     .  weight_case, weight_var
         
         ! End additions for using imposed weights
 
-        integer, dimension(:), allocatable ::
+        integer, dimension(:), allocatable, private ::
      .  z_i, ! Initial z level for tuning purposes
      .  z_f  ! Final z level for tuning purposes
 
-        character(len=50), dimension(:), allocatable :: 
+        character(len=50), dimension(:), allocatable, private :: 
      .  run_file,       ! Model run files
      .  hoc_stats_file, ! Model GrADS files
      .  les_stats_file  ! Model GrADS files
 
         ! Various Variables for returning results ----------------------
-        integer :: iter ! Total number of iterations amoeba spent 
-                        ! calculating optimal values
+        integer, public :: iter ! Total number of iterations amoeba spent 
+                                 ! calculating optimal values
 
-        real ::
+        real, public ::
      .  init_err, ! error for the initial constants
      .  min_err   ! the lowest the minimization algorithm could go
 
-        real, dimension(nparams) ::
+        real, dimension(nparams), private ::
      .  params  ! Vector of all possible HOC parameters
 
-        integer, dimension(nparams) ::
+        integer, dimension(nparams), private ::
      .  params_index  ! Index of the params elements that are used in the simplex
 
-        real, allocatable, dimension(:,:) :: 
+        real, allocatable, dimension(:,:), public :: 
      .  param_vals_matrix ! Holds 2D simplex the HOC constant parameters
 
-        real, allocatable, dimension(:) ::
+        real, allocatable, dimension(:), public ::
      .  param_vals_spread, ! Amount to vary each respec. constant by
      .  cost_fnc_vector    ! cache of differences between the LES and HOC
 
-        real, allocatable, dimension(:) :: 
+        real, allocatable, dimension(:), private :: 
      .  rand_vect ! A vector of random reals for initializing the x array
 
         contains
