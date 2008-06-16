@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F,v 1.10 2008-06-13 16:43:28 vlarson Exp $
+! $Id: microphys_driver.F,v 1.11 2008-06-16 22:20:13 faschinj Exp $
         module microphys_driver
 
 !       Description:
@@ -20,7 +20,7 @@
         ! Functions
         private :: sedimentation
 
-        private ! Default
+        private ! Default Scope
 
         contains
 
@@ -66,7 +66,8 @@
      .      Lv, 
      .      Cp, 
      .      rho_lw, 
-     .      fstderr
+     .      fstderr,
+     .      sec_per_day
 
         use stats_prec, only: 
      .      time_prec ! Variable(s)
@@ -77,7 +78,7 @@
         use coamps_micro_driver_mod, only: 
      .      coamps_micro_driver ! Procedure
 
-        use temp_in_K_mod, only: thlm2temp_in_K
+        use temp_in_K_mod, only: thlm2temp_in_K ! Procedure(s)
 
 
 #ifdef STATS
@@ -124,6 +125,9 @@
      .      sfc,
      .      lstats_samp
 
+        use stats_type, only: stat_update_var, stat_update_var_pt, ! Procedure(s)
+     .                  stat_begin_update, stat_end_update 
+
 #endif
         implicit none
 
@@ -162,7 +166,7 @@
      .  Ncnm,   ! Cloud nuclei number concentration     [count/m^3]
      .  Nim     ! Ice crystal number concentration      [count/m^3]
 
-        real, target, dimension(gr%nnzp,26), intent(in) ::
+        real, target,dimension(gr%nnzp,26),intent(in) ::
      .  pdf_parms     ! PDF parameters
 
         real, target, dimension(gr%nnzp,hydromet_dim), intent(inout) ::
@@ -172,7 +176,7 @@
      .  rtm_forcing, ! Imposed contributions to total water        [kg/kg/s]
      .  thlm_forcing ! Imposed contributions to liquid potential temp. [K/s]
 
-        integer, intent(out) :: err_code
+        integer, intent(out) :: err_code ! Exit code returned from subroutine
 
         ! Local Variables
         real, dimension(3,gr%nnzp) ::
@@ -281,65 +285,34 @@
           if ( lstats_samp ) then
               
            ! Sedimentation velocity for rrm
-           if ( iVrr > 0 ) then
-             zm%x(:,iVrr) = zm%x(:,iVrr) + Vrr(:)
-             zm%n(:,iVrr) = zm%n(:,iVrr) + 1
-           end if
+           call stat_update_var(iVrr, Vrr(:), zm)
 
            ! Sedimentation velocity for Nrm
-           if ( iVNr > 0 ) then
-             zm%x(:,iVNr) = zm%x(:,iVNr) + VNr(:)
-             zm%n(:,iVNr) = zm%n(:,iVNr) + 1
-           end if
+           call stat_update_var(iVNr, VNr(:), zm )
 
            ! Sedimentation velocity for snow
-           if ( iVsnow > 0 ) then
-             zm%x(:,iVsnow) = zm%x(:,iVsnow) + Vsnow(:)
-             zm%n(:,iVsnow) = zm%n(:,iVsnow) + 1
-           end if
+           call stat_update_var(iVsnow, Vsnow(:), zm )
 
            ! Sedimentation velocity for pristine ice
-           if ( iVice > 0 ) then
-             zm%x(:,iVice) = zm%x(:,iVice) + Vice(:)
-             zm%n(:,iVice) = zm%n(:,iVice) + 1
-           end if
+           call stat_update_var( iVice, Vice(:), zm )
 
            ! Sedimentation velocity for graupel
-           if ( iVgraupel > 0 ) then
-             zm%x(:,iVgraupel) = zm%x(:,iVgraupel) + Vgraupel(:)
-             zm%n(:,iVgraupel) = zm%n(:,iVgraupel) + 1
-           end if
+           call stat_update_var( iVgraupel, Vgraupel(:), zm )
 
            ! Sum total of rrm microphysics
-           if ( irrm_mc > 0 ) then
-             zt%x(:,irrm_mc) = zt%x(:,irrm_mc) + rrm_tndcy(:)
-             zt%n(:,irrm_mc) = zt%n(:,irrm_mc) + 1
-           end if
+           call stat_update_var( irrm_mc, rrm_tndcy(:), zt )
 
            ! Sum total of Nrm microphysics
-           if ( iNrm_mc > 0 ) then
-             zt%x(:,iNrm_mc) = zt%x(:,iNrm_mc) + Nrm_tndcy(:)
-             zt%n(:,iNrm_mc) = zt%n(:,iNrm_mc) + 1
-           end if
-
+           call stat_update_var( iNrm_mc, Nrm_tndcy(:), zt )
+           
            ! Sum total of pristine ice microphysics
-           if ( iricem_mc > 0 ) then
-             zt%x(:,iricem_mc) = zt%x(:,iricem_mc) + ricem_tndcy(:)
-             zt%n(:,iricem_mc) = zt%n(:,iricem_mc) + 1
-           end if
+           call stat_update_var( iricem_mc, ricem_tndcy(:), zt )
 
            ! Sum total of graupel microphysics
-           if ( irgraupelm_mc > 0 ) then
-             zt%x(:,irgraupelm_mc) = zt%x(:,irgraupelm_mc) 
-     .                             + rgraupelm_tndcy(:)
-             zt%n(:,irgraupelm_mc) = zt%n(:,irgraupelm_mc) + 1
-           end if
+           call stat_update_var( irgraupelm_mc, rgraupelm_tndcy(:), zt)
 
            ! Sum total of snow microphysical processeses
-           if ( irsnowm_mc > 0 ) then
-             zt%x(:,irsnowm_mc) = zt%x(:,irsnowm_mc) + rsnowm_tndcy(:)
-             zt%n(:,irsnowm_mc) = zt%n(:,irsnowm_mc) + 1
-           end if
+           call stat_update_var( irsnowm_mc, rsnowm_tndcy(:), zt )
 
          end if ! lstats_samp
 #endif /*STATS*/
@@ -361,28 +334,16 @@
           if ( lstats_samp ) then
               
            ! Sedimentation velocity for rrm
-           if ( iVrr > 0 ) then
-             zm%x(:,iVrr) = zm%x(:,iVrr) + Vrr(:)
-             zm%n(:,iVrr) = zm%n(:,iVrr) + 1
-           end if
+           call stat_update_var( iVrr, Vrr(:), zm )          
 
            ! Sedimentation velocity for Nrm
-           if ( iVNr > 0 ) then
-             zm%x(:,iVNr) = zm%x(:,iVNr) + VNr(:)
-             zm%n(:,iVNr) = zm%n(:,iVNr) + 1
-           end if
+           call stat_update_var( iVNr, VNr(:), zm )
 
            ! Sum total of rrm microphysics (auto + accr + cond)
-           if ( irrm_mc > 0 ) then
-             zt%x(:,irrm_mc) = zt%x(:,irrm_mc) + rrm_tndcy(:)
-             zt%n(:,irrm_mc) = zt%n(:,irrm_mc) + 1
-           end if
+           call stat_update_var( irrm_mc, rrm_tndcy(:), zt )
 
            ! Sum total of Nrm microphysics (auto + cond)
-           if ( iNrm_mc > 0 ) then
-             zt%x(:,iNrm_mc) = zt%x(:,iNrm_mc) + Nrm_tndcy(:)
-             zt%n(:,iNrm_mc) = zt%n(:,iNrm_mc) + 1
-           end if
+           call stat_update_var( iNrm_mc, Nrm_tndcy(:), zt )
 
          end if ! lstats_samp
 #endif /*STATS*/
@@ -420,28 +381,40 @@
 
             ! Moved from adj_microphys_tndcy  
 #ifdef STATS
-              if( lstats_samp .and. irrm_cond_adj > 0 ) then
-                zt%x(k,irrm_cond_adj) = zt%x(k,irrm_cond_adj) 
-     .            + overevap_rate
+              if( lstats_samp 
+!     .             .and. irrm_cond_adj > 0 
+     .          ) then
+                call stat_update_var_pt( irrm_cond_adj, k, 
+     .                                   overevap_rate, zt)
+!                zt%x(k,irrm_cond_adj) = zt%x(k,irrm_cond_adj) 
+!     .            + overevap_rate
               end if
+
+            else
 #endif /*STATS*/
 
-            end if ! rrm(k) < 0
+!            end if ! rrm(k) < 0
 
 #ifdef STATS
-            if ( lstats_samp .and. irrm_cond_adj > 0 ) then
-              zt%n(k,irrm_cond_adj) = zt%n(k,irrm_cond_adj) + 1
+  
+            if ( lstats_samp
+!     .           .and. irrm_cond_adj > 0 
+     .         ) then
+              call stat_update_var_pt( irrm_cond_adj, k, 
+     .                                0.0, zt )
+!              zt%n(k,irrm_cond_adj) = zt%n(k,irrm_cond_adj) + 1
             end if
              ! Joshua Faschinj December 2007
 #endif /*STATS*/
 
+            end if 
           end do ! k=1..gr%nnzp
 
 #ifdef STATS
           ! Store computed value before clipping
-          if (lstats_samp .and. irrm_cl > 0 ) then
-            zt%x(:,irrm_cl) = zt%x(:,irrm_cl) - rrm / dt
-          end if
+          if( lstats_samp ) then
+            call stat_begin_update( irrm_cl, real(rrm / dt), zt )
+          endif
 #endif
 
           ! Value of rain water mixing ratio cannot fall below 0, 
@@ -449,18 +422,16 @@
           where ( rrm < 0.0 ) rrm = 0.0
 
 #ifdef STATS
-          if (lstats_samp .and. irrm_cl > 0 ) then
-            zt%x(:,irrm_cl) = zt%x(:,irrm_cl) + rrm / dt
-            zt%n(:,irrm_cl) = zt%n(:,irrm_cl) + 1
+          if ( lstats_samp ) then
+            call stat_end_update( irrm_cl, real(rrm / dt), zt )
           end if
 #endif
 
 #ifdef STATS
           ! Finalize time tendency
-          if ( lstats_samp .and. irrm_bt > 0 ) then
-            zt%x(:,irrm_bt) = zt%x(:,irrm_bt) + ( rrm / dt )
-            zt%n(:,irrm_bt) = zt%n(:,irrm_bt) + 1
-          end if
+          if ( lstats_samp ) then
+            call stat_end_update( irrm_bt, real(rrm / dt), zt )
+          endif
 #endif
 
           !---------------------------------------------------------------------
@@ -485,27 +456,35 @@
 
               ! Moved from adj_microphys_tndcy
 #ifdef STATS
-              if ( lstats_samp .and. iNrm_cond_adj > 0 ) then
-                   zt%x(k,iNrm_cond_adj) = zt%x(k,iNrm_cond_adj) 
-     .                 + overevap_rate
-              end if
+              call stat_update_var_pt( iNrm_cond_adj, k, 
+     .                                 overevap_rate,zt )
+!              if ( lstats_samp .and. iNrm_cond_adj > 0 ) then
+!                   zt%x(k,iNrm_cond_adj) = zt%x(k,iNrm_cond_adj) 
+!     .                 + overevap_rate
+!              end if
+
 #endif /*STATS*/
 
-            end if
+!            end if
 
 #ifdef STATS
-            if ( lstats_samp .and. iNrm_cond_adj > 0 ) then
-              zt%n(k,iNrm_cond_adj) = zt%n(k,iNrm_cond_adj) + 1
-            end if
+            else
+              if( lstats_samp ) then      
+               call stat_update_var_pt( iNrm_cond_adj,k, 0.0, zt )
+              endif
+!             if ( lstats_samp .and. iNrm_cond_adj > 0 ) then
+!               zt%n(k,iNrm_cond_adj) = zt%n(k,iNrm_cond_adj) + 1
+!             end if
 #endif /*STATS*/
+            endif
               ! Joshua Fasching December 2007
           end do
 
 #ifdef STATS
           ! Store computed value before clipping
-          if (lstats_samp .and. iNrm_cl > 0 ) then
-            zt%x(:,iNrm_cl) = zt%x(:,iNrm_cl) - Nrm / dt
-          end if
+          if ( lstats_samp ) then
+            call stat_begin_update( iNrm_cl, real(Nrm / dt), zt )
+          endif
 #endif
 
           ! Value of rain water mixing ratio cannot fall below 0, 
@@ -513,18 +492,19 @@
           where ( Nrm < 0.0 ) Nrm = 0.0
 
 #ifdef STATS
-          if (lstats_samp .and. iNrm_cl > 0 ) then
-            zt%x(:,iNrm_cl) = zt%x(:,iNrm_cl) + Nrm / dt
-            zt%n(:,iNrm_cl) = zt%n(:,iNrm_cl) + 1
-          end if
+
+          if ( lstats_samp ) then
+            call stat_end_update( iNrm_cl, real(Nrm / dt), zt )
+          endif
+
 #endif
 
 #ifdef STATS
           ! Finalize time tendency
-          if ( lstats_samp .and. iNrm_bt > 0 ) then
-            zt%x(:,iNrm_bt) = zt%x(:,iNrm_bt) + ( Nrm / dt )
-            zt%n(:,iNrm_bt) = zt%n(:,iNrm_bt) + 1
-          end if
+          if ( lstats_samp ) then
+            call stat_end_update( iNrm_bt, real(Nrm / dt), zt )
+          endif
+
 #endif
         end if ! kk_rain or lcoamps_micro
 
@@ -558,9 +538,9 @@
 
 #ifdef STATS
           ! Store computed value before clipping
-          if (lstats_samp .and. irsnowm_cl > 0 ) then
-            zt%x(:,irsnowm_cl) = zt%x(:,irsnowm_cl) - rsnowm / dt
-          end if
+          if ( lstats_samp ) then
+            call stat_begin_update( irsnowm_cl, real(rsnowm / dt), zt )
+          endif
 #endif
 
           ! Value of snow mixing ratio cannot fall below 0, 
@@ -568,18 +548,17 @@
           where ( rsnowm < 0.0 ) rsnowm = 0.0
 
 #ifdef STATS
-          if (lstats_samp .and. irsnowm_cl > 0 ) then
-            zt%x(:,irsnowm_cl) = zt%x(:,irsnowm_cl) + rsnowm / dt
-            zt%n(:,irsnowm_cl) = zt%n(:,irsnowm_cl) + 1
-          end if
+          if ( lstats_samp ) then
+            call stat_end_update( irsnowm_cl, real(rsnowm / dt), zt )
+          endif
 #endif
 
 #ifdef STATS
           ! Finalize time tendency
-          if ( lstats_samp .and. irsnowm_bt > 0 ) then
-            zt%x(:,irsnowm_bt) = zt%x(:,irsnowm_bt) + ( rsnowm / dt )
-            zt%n(:,irsnowm_bt) = zt%n(:,irsnowm_bt) + 1
-          end if
+          if ( lstats_samp ) then
+            call stat_end_update( irsnowm_bt, real(rsnowm / dt), zt )
+          endif
+          
 #endif
 
           ! --------------------------------------------------------------------
@@ -598,10 +577,11 @@
 
 #ifdef STATS
           ! Store computed value before clipping
-          if (lstats_samp .and. irgraupelm_cl > 0 ) then
-            zt%x(:,irgraupelm_cl) = zt%x(:,irgraupelm_cl) 
-     .                              - rgraupelm / dt
-          end if
+          if ( lstats_samp ) then
+            call stat_begin_update( irgraupelm_cl, 
+     .                              real(rgraupelm / dt), zt )
+          endif
+
 #endif
 
           ! Value of graupel mixing ratio cannot fall below 0, 
@@ -609,20 +589,20 @@
           where ( rgraupelm < 0.0 ) rgraupelm = 0.0
 
 #ifdef STATS
-          if (lstats_samp .and. irgraupelm_cl > 0 ) then
-            zt%x(:,irgraupelm_cl) = zt%x(:,irgraupelm_cl) 
-     .                              + rgraupelm / dt
-            zt%n(:,irgraupelm_cl) = zt%n(:,irgraupelm_cl) + 1
-          end if
+          if ( lstats_samp ) then
+            call stat_end_update( irgraupelm_cl, 
+     .                            real(rgraupelm / dt), zt )
+          endif
+
 #endif
 
 #ifdef STATS
           ! Finalize time tendency
-          if ( lstats_samp .and. irgraupelm_bt > 0 ) then
-            zt%x(:,irgraupelm_bt) = zt%x(:,irgraupelm_bt) 
-     .                              + ( rgraupelm / dt )
-            zt%n(:,irgraupelm_bt) = zt%n(:,irgraupelm_bt) + 1
-          end if
+          if ( lstats_samp ) then
+            call stat_end_update( irgraupelm_bt,
+     .                               real(rgraupelm / dt), zt )
+          endif
+
 #endif
 
           ! --------------------------------------------------------------------
@@ -641,9 +621,11 @@
 
 #ifdef STATS
           ! Store computed value before clipping
-          if (lstats_samp .and. iricem_cl > 0 ) then
-            zt%x(:,iricem_cl) = zt%x(:,iricem_cl) - ricem / dt
-          end if
+
+          if ( lstats_samp ) then
+            call stat_begin_update( iricem_cl, real(ricem / dt), zt )
+          endif
+
 #endif
 
           ! Value of ice mixing ratio cannot fall below 0, 
@@ -651,18 +633,17 @@
           where ( ricem < 0.0 ) ricem = 0.0
 
 #ifdef STATS
-          if (lstats_samp .and. iricem_cl > 0 ) then
-            zt%x(:,iricem_cl) = zt%x(:,iricem_cl) + ricem / dt
-            zt%n(:,iricem_cl) = zt%n(:,iricem_cl) + 1
-          end if
+          if ( lstats_samp ) then
+            call stat_end_update( iricem_cl, real(ricem / dt), zt )
+          endif
 #endif
 
 #ifdef STATS
           ! Finalize time tendency
-          if ( lstats_samp .and. iricem_bt > 0 ) then
-            zt%x(:,iricem_bt) = zt%x(:,iricem_bt) + ( ricem / dt )
-            zt%n(:,iricem_bt) = zt%n(:,iricem_bt) + 1
-          end if
+          if ( lstats_samp ) then
+            call stat_end_update( iricem_bt, real(ricem / dt), zt )
+          endif
+          
 #endif
 
         end if ! lcoamps_micro
@@ -676,55 +657,26 @@
 #ifdef STATS
         if ( lstats_samp ) then
 
-          if ( iNcm > 0 ) then           ! Brian
-            zt%x(:,iNcm) = zt%x(:,iNcm) + Ncm
-            zt%n(:,iNcm) = zt%n(:,iNcm) + 1
-          end if
-          if ( iNcnm > 0 ) then
-            zt%x(:,iNcnm) = zt%x(:,iNcnm) + Ncnm
-            zt%n(:,iNcnm) = zt%n(:,iNcnm) + 1
-          end if
-          if ( iNim > 0 ) then
-            zt%x(:,iNim) = zt%x(:,iNim) + Nim
-            zt%n(:,iNim) = zt%n(:,iNim) + 1
-          end if
+          call stat_update_var( iNcm, Ncm, zt )
 
-          if ( irrm > 0 ) then     ! Brian
-            zt%x(:,irrm) = zt%x(:,irrm) + hydromet(:,1)
-            zt%n(:,irrm) = zt%n(:,irrm) + 1
-          end if
+          call stat_update_var( iNcnm, Ncnm, zt )
 
-          if ( iNrm > 0 ) then     ! Brian
-            zt%x(:,iNrm) = zt%x(:,iNrm) + hydromet(:,2)
-            zt%n(:,iNrm) = zt%n(:,iNrm) + 1
-          end if
+          call stat_update_var( iNim, Nim, zt )
 
-          if ( irsnowm > 0 ) then
-            zt%x(:,irsnowm) = zt%x(:,irsnowm) + hydromet(:,3)
-            zt%n(:,irsnowm) = zt%n(:,irsnowm) + 1
-          end if
+          call stat_update_var( irrm, hydromet(:,1), zt )
 
-          if ( iricem > 0 ) then
-            zt%x(:,iricem) = zt%x(:,iricem) + hydromet(:,4)
-            zt%n(:,iricem) = zt%n(:,iricem) + 1
-          end if
+          call stat_update_var( iNrm, hydromet(:,2), zt )
+          
+          call stat_update_var( irsnowm, hydromet(:,3), zt )
 
-          if ( irgraupelm > 0 ) then
-            zt%x(:,irgraupelm) = zt%x(:,irgraupelm) + hydromet(:,5)
-            zt%n(:,irgraupelm) = zt%n(:,irgraupelm) + 1
-          end if
+          call stat_update_var( iricem, hydromet(:,4), zt )
 
-          if ( ithlm_mc > 0 ) then
-            zt%x(:,ithlm_mc) 
-     .      = zt%x(:,ithlm_mc) + thlm_mc(:)
-            zt%n(:,ithlm_mc) = zt%n(:,ithlm_mc) + 1
-          end if
+          call stat_update_var( irgraupelm, hydromet(:,5), zt )
 
-          if ( irtm_mc > 0 ) then
-            zt%x(:,irtm_mc) 
-     .      = zt%x(:,irtm_mc) + rtm_mc(:)
-            zt%n(:,irtm_mc) = zt%n(:,irtm_mc) + 1
-          end if
+          call stat_update_var( ithlm_mc, thlm_mc(:), zt )
+
+          call stat_update_var( irtm_mc, rtm_mc(:), zt )
+
         end if
 #endif /*STATS*/
 
@@ -738,13 +690,10 @@
           ! levels.  -Brian
           ! The absolute value of Vrr is taken because rainfall rate
           ! is a scalar quantity, and is therefore positive.
-          if ( irain_rate > 0 ) then
-            ! Rainfall rate (mm/day)
-            zt%x(:,irain_rate) = zt%x(:,irain_rate) + 
+          call stat_update_var( irain_rate, 
      .        ( rrm * zm2zt( abs( Vrr ) ) ) * ( rhot / rho_lw )
-     .        * ( 86400.0 * 1000.0 )
-            zt%n(:,irain_rate) = zt%n(:,irain_rate) + 1
-          end if
+     .        * real( sec_per_day * 1000.0 ), zt )
+
 
           ! Precipitation Flux (W/m^2) should be defined on
           ! momentum levels.  -Brian
@@ -753,33 +702,23 @@
           ! However, it is generally a convention in meteorology to show
           ! Precipitation Flux as a positive downward quantity.  Thus, the
           ! absolute value of vrr is taken.
-          if ( iFprec > 0 ) then    ! Brian
-            zm%x(:,iFprec) = zm%x(:,iFprec) +
+          call stat_update_var( iFprec, 
      .      ( zt2zm( rrm ) * abs( Vrr ) ) 
-     .      * ( rhom / rho_lw ) * rho_lw * Lv
-            zm%n(:,iFprec) = zm%n(:,iFprec) + 1
-          end if
+     .      * ( rhom / rho_lw ) * rho_lw * Lv, zm )
 
           ! Store values of surface fluxes for statistics
           ! See notes above.
-          if ( irain > 0 ) then   ! Added by Brian
-            sfc%x(1,irain) = sfc%x(1,irain) +
+          call stat_update_var_pt( irain, 1, 
      .        ( rrm(2) * abs( zm2zt( Vrr, 2 ) ) ) * ( rhot(2) / rho_lw )
-     .        * ( 86400.0 * 1000.0 ) ! Rainfall rate (mm/day)
-            sfc%n(1,irain) = sfc%n(1,irain) + 1
-          end if
-          if ( ipflux > 0 ) then   ! Added by Brian
-            sfc%x(1,ipflux) 
-     .      = sfc%x(1,ipflux) + ( zt2zm( rrm, 1 )
-     .           * abs( Vrr(1) ) ) * ( rhom(1) / rho_lw ) * rho_lw * Lv
-            sfc%n(1,ipflux) = sfc%n(1,ipflux) + 1
-          end if
+     .        * real( sec_per_day * 1000.0 ), sfc )
+
+          call stat_update_var_pt( ipflux, 1,
+     .       ( zt2zm( rrm, 1 )* abs( Vrr(1) ) ) * ( rhom(1) / rho_lw ) 
+     .         * rho_lw * Lv, sfc )
+
           ! Also store the value of surface rain water mixing ratio.
-          if ( irrm_sfc > 0 ) then   ! Added by Brian
-            sfc%x(1,irrm_sfc)
-     .         = sfc%x(1,irrm_sfc) + ( zt2zm( rrm, 1 ) )
-            sfc%n(1,irrm_sfc) = sfc%n(1,irrm_sfc) + 1
-          end if
+          call stat_update_var_pt( irrm_sfc, 1, 
+     .                             ( zt2zm( rrm, 1 ) ), sfc )
 
         end if ! lstats_samp
 #endif /*STATS*/
@@ -818,7 +757,7 @@
            write(fstderr,*) "thlm_mc = ", thlm_mc
            
         endif
-        
+       
         return
 
         end subroutine advance_microphys
@@ -832,11 +771,14 @@
 !-----------------------------------------------------------------------
         use grid_class, only:
      .      gr ! Variable(s)
+
         use stats_prec, only: 
      .      time_prec ! Variable(s)
+
         use lapack_wrap, only: 
      .      tridag_solve ! Procedure(s)
 !    .     ,band_solve
+
 #ifdef STATS
         use stats_hoc, only:
      .      zt, ! Variable(s)
@@ -865,6 +807,8 @@
      .      ztscr07,
      .      ztscr08,
      .      ztscr09
+
+        use stats_type, only: stat_update_var_pt ! Procedure(s)
 #endif
 
         implicit none
@@ -961,29 +905,20 @@
              kp1 = min( k+1, gr%nnzp )
 
              ! Finalize implicit contributions
-             if ( ixrm_ma > 0 ) then
-               zt%x(k,ixrm_ma) = zt%x(k,ixrm_ma)
-     .           + ztscr01(k) * xrm(km1)
+             call stat_update_var_pt( ixrm_ma, k,
+     .             ztscr01(k) * xrm(km1)
      .           + ztscr02(k) * xrm(k)
-     .           + ztscr03(k) * xrm(kp1)
-               zt%n(k,ixrm_ma) = zt%n(k,ixrm_ma) + 1
-             end if
-
-             if ( ixrm_sd > 0 ) then
-               zt%x(k,ixrm_sd) = zt%x(k,ixrm_sd)
-     .           + ztscr04(k) * xrm(km1)
+     .           + ztscr03(k) * xrm(kp1), zt)
+             
+             call stat_update_var_pt( ixrm_sd, k,
+     .             ztscr04(k) * xrm(km1)
      .           + ztscr05(k) * xrm(k)
-     .           + ztscr06(k) * xrm(kp1)
-               zt%n(k,ixrm_sd) = zt%n(k,ixrm_sd) + 1
-             end if
-
-             if ( ixrm_dff > 0 ) then
-               zt%x(k,ixrm_dff) = zt%x(k,ixrm_dff)
-     .           + ztscr07(k) * xrm(km1)
+     .           + ztscr06(k) * xrm(kp1), zt )
+             
+             call stat_update_var_pt( ixrm_dff, k,
+     .             ztscr07(k) * xrm(km1)
      .           + ztscr08(k) * xrm(k)
-     .           + ztscr09(k) * xrm(kp1)
-               zt%n(k,ixrm_dff) = zt%n(k,ixrm_dff) + 1
-             end if
+     .           + ztscr09(k) * xrm(kp1), zt )
 
            end do ! 1..gr%nnzp
         end if ! lstats_samp
@@ -1016,13 +951,20 @@
         use grid_class, only: 
      .      gr, ! Variable(s)
      .      zm2zt ! Procedure(s)
+        
         use stats_prec, only: 
      .      time_prec ! Variable(s)
+        
         use diffusion, only: 
      .      diffusion_zt_lhs ! Procedure(s)
+        
         use mean_adv, only: 
      .      term_ma_zt_lhs ! Procedure(s)
 #ifdef STATS
+        use stats_type, only: stat_begin_update ! Procedure(s)
+      
+        use constants, only: sec_per_day ! Variable(s)
+      
         use stats_hoc, only:
      .      irrm_bt,  ! Variable(s)
      .      irrm_ma,
@@ -1131,9 +1073,10 @@
           ixrm_dff = 0
         end select
 
-        if ( lstats_samp .and. ixrm_bt > 0 ) then
-          zt%x(:,ixrm_bt) = zt%x(:,ixrm_bt) - ( xrm / dt )
-        end if
+        if ( lstats_samp ) then
+          call stat_begin_update( ixrm_bt, real(xrm / dt), zt )
+        endif
+        
 #endif /*STATS*/
 
         ! Reset LHS Matrix for current timestep.
@@ -1560,10 +1503,13 @@
         use grid_class, only: 
      .      gr, ! Variable(s) 
      .      zm2zt ! Procedure(s)
+        
         use stats_prec, only:
      .      time_prec ! Variable(s)
+        
         use diffusion, only: 
      .      diffusion_zt_lhs ! Procedure(s)
+        
         use mean_adv, only: 
      .      term_ma_zt_lhs ! Procedure(s)
 
