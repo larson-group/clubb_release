@@ -1,9 +1,10 @@
-!$Id: interpolation.F,v 1.3 2008-04-25 22:08:52 faschinj Exp $
+!-----------------------------------------------------------------------
+!$Id: interpolation.F,v 1.4 2008-06-16 17:19:55 faschinj Exp $
         module interpolation
 
         implicit none
 
-        private
+        private ! Default Scope
 
         public :: linint, binary_search, zlinterp_fnc,
      .            linear_interpolation
@@ -81,9 +82,9 @@
                    low = i + 1
                 endif              
         end do
-        
-        
+                
         if ( .not. found ) i = -1 
+
         end function
 
 !-----------------------------------------------------------------------
