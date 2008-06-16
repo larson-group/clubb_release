@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 1
 !----------------------------------------------------------------------
-!$Id: atex.F,v 1.14 2008-06-16 17:56:47 faschinj Exp $
+!$Id: atex.F,v 1.15 2008-06-16 22:24:12 faschinj Exp $
         module atex
 
 !       Description:
@@ -38,6 +38,8 @@
         use error_code, only: clubb_rtm_level_not_found ! Variable(s)
 
 #ifdef STATS
+        use stats_type, only: stat_update_var ! Procedure(s)
+
         use stats_hoc, only: iradht_LW, zt, lstats_samp ! Variable(s)
 #endif
 
@@ -164,10 +166,11 @@
 
 #ifdef STATS
         if ( .not. lbugsrad .and. lstats_samp ) then
-          if ( iradht_LW > 0 ) then
-            zt%x(:,iradht_LW) = zt%x(:,iradht_LW) + radht
-            zt%n(:,iradht_LW) = zt%n(:,iradht_LW) + 1
-          end if
+           call stat_update_var( iradht_LW, radht, zt )
+!          if ( iradht_LW > 0 ) then
+!            zt%x(:,iradht_LW) = zt%x(:,iradht_LW) + radht
+!            zt%n(:,iradht_LW) = zt%n(:,iradht_LW) + 1
+!          end if
         end if
 #endif
         if ( present( sclrm_forcing ) ) then

@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf02.F,v 1.17 2008-06-12 21:21:22 faschinj Exp $
+! $Id: dycoms2_rf02.F,v 1.18 2008-06-16 22:26:11 faschinj Exp $
         module dycoms2_rf02
 
 !       Description:
@@ -45,7 +45,9 @@
         USE error_code, only: clubb_rtm_level_not_found ! Variable(s)
 
 #ifdef STATS
-        USE stats_hoc, only: iradht_LW, izi, sfc, zt, lstats_samp
+        use stats_type, only: stat_update_var, stat_update_var_pt ! Procedure(s)
+
+        USE stats_hoc, only: iradht_LW, izi, sfc, zt, lstats_samp ! Variable(s)
 #endif /*STATS*/
 
         implicit none
@@ -178,10 +180,9 @@
           radht(1) = radht(2)
 
 #ifdef STATS
-          if ( lstats_samp .and. iradht_LW > 0 ) then
-            zt%x(:,iradht_LW) = zt%x(:,iradht_LW) + radht
-            zt%n(:,iradht_LW) = zt%n(:,iradht_LW) + 1
-          end if
+          if ( lstats_samp ) then
+            call stat_update_var( iradht_LW, radht, zt )
+          endif
 #endif
         END IF ! ~ lbugsrad
 
@@ -197,10 +198,9 @@
 
         ! Update surface statistics
 #ifdef STATS
-        if ( lstats_samp .and. izi > 0 ) then
-          sfc%x(1,izi) = sfc%x(1,izi) + z_i
-          sfc%n(1,izi) = sfc%n(1,izi) + 1
-        end if
+        if ( lstats_samp ) then
+           call stat_update_var_pt( izi, 1, z_i, sfc )
+        endif
 #endif /*STATS*/
 
         ! The following lines of code specify cloud droplet

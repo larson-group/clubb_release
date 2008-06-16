@@ -1,13 +1,15 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: fire.F,v 1.10 2008-05-30 16:24:23 faschinj Exp $
+! $Id: fire.F,v 1.11 2008-06-16 22:26:11 faschinj Exp $
         module fire
 
 !       Description:
 !       Contains subroutines for the GCSS FIRE case.
 !----------------------------------------------------------------------
         public :: fire_tndcy, sfc_momentum_fluxes, sfc_thermo_fluxes
+
+        private ! Default Scope
 
         contains
 
@@ -38,7 +40,9 @@
         use stats_prec, only: time_prec ! Variable(s)
 
 #ifdef STATS
-        use stats_hoc
+        use stats_type, only: stat_update_var ! Procedure(s)
+
+        use stats_hoc, only: zt, iradht_LW, lstats_samp ! Variable(s)
 #endif
 
         implicit none
@@ -102,10 +106,7 @@
 
 #ifdef STATS
         if ( .not. lbugsrad .and. lstats_samp ) then
-          if ( iradht_LW > 0 ) then
-            zt%x(:,iradht_LW) = zt%x(:,iradht_LW) + radht
-            zt%n(:,iradht_LW) = zt%n(:,iradht_LW) + 1
-          end if
+          call stat_update_var( iradht_LW, radht, zt )
         end if
 #endif
         ! Testing for scalars

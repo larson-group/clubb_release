@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf01.F,v 1.14 2008-05-30 16:24:23 faschinj Exp $
+! $Id: dycoms2_rf01.F,v 1.15 2008-06-16 22:26:11 faschinj Exp $
         module dycoms2_rf01
 
 !       Description:
@@ -40,12 +40,14 @@
         use error_code, only: clubb_rtm_level_not_found ! Variable(s)
 
 #ifdef STATS
+        use stats_type, only: stat_update_var, stat_update_var_pt ! Procedure(s)
+
         use stats_hoc, only: izi, iradht_LW, zt, sfc, lstats_samp ! Variable(s)
 #endif /*STATS*/
 
         implicit none
 
-	! External
+        ! External
         intrinsic :: exp, sqrt, present
 
         ! Constant Parameters
@@ -113,10 +115,11 @@
      .     + gr%zt(i-1)
 !        x_sfc(1,izi) = zi
 #ifdef STATS
-        if ( lstats_samp .and. izi > 0 ) then
-          sfc%x(1,izi) = sfc%x(1,izi) + zi
-          sfc%n(1,izi) = sfc%n(1,izi) + 1
+
+        if ( lstats_samp ) then
+          call stat_update_var_pt( izi, 1, real(zi), sfc )
         end if
+
 #endif /*STATS*/
 
 !       Large scale subsidence
@@ -166,9 +169,8 @@
           radht(gr%nnzp) = 0.
 
 #ifdef STATS
-          if ( lstats_samp .and. iradht_LW > 0 ) then
-            zt%x(:,iradht_LW) = zt%x(:,iradht_LW) + radht
-            zt%n(:,iradht_LW) = zt%n(:,iradht_LW) + 1
+          if ( lstats_samp ) then
+            call stat_update_var( iradht_LW, radht, zt )
           end if
 #endif
         end if ! ~ lbugsrad
@@ -205,6 +207,8 @@
         use saturation, only: rsat ! Variable(s)
 
 #ifdef STATS
+        use stats_type, only: stat_update_var_pt ! Procedure(s)
+
         use stats_hoc, only: sfc, iustar, lstats_samp ! Variable(s)
 #endif /*STATS*/
 
@@ -295,9 +299,8 @@
 #ifdef STATS
 ! Save ustar for statistics
 !        x_sfc(1,iustar) = ustar
-        if ( lstats_samp .and. iustar > 0 ) then
-          sfc%x(1,iustar) = sfc%x(1,iustar) + ustar
-          sfc%n(1,iustar) = sfc%n(1,iustar) + 1
+        if ( lstats_samp ) then
+          call stat_update_var_pt( iustar, 1, ustar, sfc )
         end if
 #endif /*STATS*/
 

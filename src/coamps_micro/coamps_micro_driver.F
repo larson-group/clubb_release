@@ -36,13 +36,15 @@
 !      Rutledge and Hobbs, 1984; COAMPS Users Guide.
 !----------------------------------------------------------------------
                               
-      use constants, only: Cp, Lv, pi, Lf, Ls, Rv, Rd, p0
-      use grid_class, only: zt2zm
-      use saturation, only: rsat, rsati
-      use stats_prec, only: time_prec
-      use error_code, only: clubb_debug
+      use constants, only: Cp, Lv, pi, Lf, Ls, Rv, Rd, p0 ! Variable(s)
+      use grid_class, only: zt2zm ! Procedure(s)
+      use saturation, only: rsat, rsati ! Procedure(s)
+      use stats_prec, only: time_prec ! Variable(s)
+      use error_code, only: clubb_debug ! Procedure(s)
 #ifdef STATS
-      use stats_hoc, only: zt, zm, lstats_samp,
+      use stats_type, only: stat_update_var_pt ! Procedure(s)
+      
+      use stats_hoc, only: zt, zm, lstats_samp, ! Variable(s)
      .    imean_vol_rad_rain,
      .    imean_vol_rad_cloud
 c Addition by Adam Smith, 24 April 2008
@@ -857,35 +859,44 @@ c****************************
 
 #ifdef STATS
       if ( lstats_samp ) then
-        if ( imean_vol_rad_rain > 0 ) then
-          zt%x(2:,imean_vol_rad_rain) 
-     .    = zt%x(2:,imean_vol_rad_rain) + rvr(1,1,:) / 100.0
-          zt%n(2:,imean_vol_rad_rain) 
-     .    = zt%n(2:,imean_vol_rad_rain) + 1
-        end if
-
-        if ( imean_vol_rad_cloud > 0 ) then
-          zt%x(2:,imean_vol_rad_cloud) 
-     .    = zt%x(2:,imean_vol_rad_cloud) + rvc(1,1,:) / 100.0
-          zt%n(2:,imean_vol_rad_cloud) 
-     .    = zt%n(2:,imean_vol_rad_cloud) + 1
-        end if
+        do k=2,kk+1
+           call stat_update_var_pt( imean_vol_rad_rain, k,
+     .          rvr(1,1,k-1) / 100.0, zt )
+!        if ( imean_vol_rad_rain > 0 ) then
+!          zt%x(2:,imean_vol_rad_rain) 
+!     .    = zt%x(2:,imean_vol_rad_rain) + rvr(1,1,:) / 100.0
+!          zt%n(2:,imean_vol_rad_rain) 
+!     .    = zt%n(2:,imean_vol_rad_rain) + 1
+!        end if
+           call stat_update_var_pt( imean_vol_rad_cloud, k,
+     .          rvc(1,1,k-1) / 100.0, zt )
+        end do
+!        if ( imean_vol_rad_cloud > 0 ) then
+!          zt%x(2:,imean_vol_rad_cloud) 
+!     .    = zt%x(2:,imean_vol_rad_cloud) + rvc(1,1,:) / 100.0
+!          zt%n(2:,imean_vol_rad_cloud) 
+!     .    = zt%n(2:,imean_vol_rad_cloud) + 1
+!        end if
 
 c Addition by Adam Smith, 24 April 2008
 c Adding calculation for snow particle number concentration       
-        if (isnowslope > 0) then
+!        if (isnowslope > 0) then
           do k = 2,kk,1
-            zt%x(k,isnowslope) = zt%x(k,isnowslope) + snowslope(1,1,k)
-            zt%n(k,isnowslope) = zt%n(k,isnowslope) + 1
+           call stat_update_var_pt( isnowslope, k, snowslope(1,1,k), zt)
+!            zt%x(k,isnowslope) = zt%x(k,isnowslope) + snowslope(1,1,k)
+!            zt%n(k,isnowslope) = zt%n(k,isnowslope) + 1
           end do
-        end if
+!        end if
 
 c Addition by Adam Smith, 25 April 2008
-c Adding calculation for snow particle number concentration       
-        if (iNsnowm > 0) then
-          zt%x(2:,iNsnowm) = zt%x(2:,iNsnowm) + Nsnowm(2:kk+1)
-          zt%n(2:,iNsnowm) = zt%n(2:,iNsnowm) + 1
-        end if
+c Adding calculation for snow particle number concentration
+        do k=2, kk+1 
+        call stat_update_var_pt( iNsnowm, k, Nsnowm(k) ,zt )
+        end do      
+!        if (iNsnowm > 0) then
+!          zt%x(2:,iNsnowm) = zt%x(2:,iNsnowm) + Nsnowm(2:kk+1)
+!          zt%n(2:,iNsnowm) = zt%n(2:,iNsnowm) + 1
+!        end if
 c End of ajsmith4's additions
 
       end if

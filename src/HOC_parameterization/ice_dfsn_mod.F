@@ -1,4 +1,4 @@
-! $Id: ice_dfsn_mod.F,v 1.6 2008-05-30 16:24:24 faschinj Exp $        
+! $Id: ice_dfsn_mod.F,v 1.7 2008-06-16 22:35:29 faschinj Exp $        
 
         module ice_dfsn_mod
 
@@ -66,6 +66,9 @@
         USE saturation, only: 
      .      rsat ! Procedure(s)
 #ifdef STATS
+        use stats_type, only:
+     .      stat_update_var
+
         use stats_hoc, only: zt, lstats_samp, ! Variable(s)
      .      ircm_icedfs, idiam, imass_ice_cryst, iu_T_cm
 #endif
@@ -269,25 +272,14 @@
 !       m(:)    ! Icedfs mass; Michael Falk, 1 Nov 2006
 !       dqc_dt_icedfs(:) ! Icedfs change in liquid; Michael Falk, 1 Nov 2006
 !       u_T_cm(:)        ! Icedfs fallspeed (cm/s); Michael Falk, 1 Nov 2006
+          call stat_update_var( ircm_icedfs, rcm_icedfsn, zt )
 
-          if ( ircm_icedfs > 0 ) then
-            zt%x(:,ircm_icedfs) = zt%x(:,ircm_icedfs)
-     .                          + rcm_icedfsn
-            zt%n(:,ircm_icedfs) = zt%n(:,ircm_icedfs) + 1
-          end if
-          if ( idiam > 0 ) then
-            zt%x(:,idiam) = zt%x(:,idiam) + diam
-            zt%n(:,idiam) = zt%n(:,idiam) + 1
-          end if
-          if ( imass_ice_cryst > 0 ) then
-            zt%x(:,imass_ice_cryst) = 
-     .               zt%x(:,imass_ice_cryst) + mass_ice_cryst
-            zt%n(:,imass_ice_cryst) = zt%n(:,imass_ice_cryst) + 1
-          end if
-          if ( iu_T_cm > 0 ) then
-            zt%x(:,iu_T_cm) = zt%x(:,iu_T_cm) + u_T_cm
-            zt%n(:,iu_T_cm) = zt%n(:,iu_T_cm) + 1
-          end if
+          call stat_update_var( idiam, diam, zt )
+
+          call stat_update_var( imass_ice_cryst, mass_ice_cryst, zt )
+
+          call stat_update_var( iu_T_cm, u_T_cm, zt )
+
         end if
 #endif /*STATS*/
 

@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_a.F,v 1.16 2008-05-30 16:24:23 faschinj Exp $
+! $Id: mpace_a.F,v 1.17 2008-06-16 22:26:11 faschinj Exp $
         module mpace_a
 
 !       Description:
@@ -78,6 +78,8 @@
         use rad_lwsw_mod, only: rad_lwsw ! Procedure(s)
 
 #ifdef STATS
+        use stats_type, only: stat_update_var ! Procedure(s)
+
         use stats_hoc, only: iradht_LW, iradht_SW, iFrad_LW, ! Variable(s)
      .                 iFrad_SW, zt, zm, lstats_samp
 #endif /*STATS*/
@@ -434,24 +436,13 @@
 
 #ifdef STATS
         if ( .not.lbugsrad .and. lstats_samp ) then
+          call stat_update_var( iradht_LW, radht_LW, zt )
 
-          if ( iradht_LW > 0 ) then
-            zt%x(:,iradht_LW) = zt%x(:,iradht_LW) + radht_LW
-            zt%n(:,iradht_LW) = zt%n(:,iradht_LW) + 1
-          end if
-          if ( iradht_SW > 0 ) then
-            zt%x(:,iradht_SW) = zt%x(:,iradht_SW) + radht_SW
-            zt%n(:,iradht_SW) = zt%n(:,iradht_SW) + 1
-          end if
+          call stat_update_var( iradht_SW, radht_SW, zt )
 
-          if ( iFrad_SW > 0 ) then
-            zm%x(:,iFrad_SW) = zm%x(:,iFrad_SW) + Frad_SW
-            zm%n(:,iFrad_SW) = zm%n(:,iFrad_SW) + 1
-          end if
-          if ( iFrad_LW > 0 ) then
-            zm%x(:,iFrad_LW) = zm%x(:,iFrad_LW) + Frad_LW
-            zm%n(:,iFrad_LW) = zm%n(:,iFrad_LW) + 1
-          end if
+          call stat_update_var( iFrad_SW, Frad_SW, zm )
+
+          call stat_update_var( iFrad_LW, Frad_LW, zm )
 
         end if
 #endif /*STATS*/
@@ -498,8 +489,6 @@
 !-----------------------------------------------------------------------
 
         use constants, only: sclr_dim, Cp, Lv ! Variable(s)
-
-        use file_functions, only: file_read_1d, file_read_2d ! Procedure(s)
 
         use stats_prec, only: time_prec ! Variable(s)
 

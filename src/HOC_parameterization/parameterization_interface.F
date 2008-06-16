@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.93 2008-05-30 16:24:25 faschinj Exp $
+! $Id: parameterization_interface.F,v 1.94 2008-06-16 22:26:58 faschinj Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -83,11 +83,11 @@
      .     luv_nudge
        use grid_class, only:
      .     gr, ! Variable(s)
-     .     zm2zt, ! Procedure
+     .     zm2zt, ! Procedure(s)
      .     zt2zm,
      .     ddzm
        use numerical_check, only:
-     .     parameterization_check ! Procedure
+     .     parameterization_check ! Procedure(s)
        use diagnostic_variables, only:
      .     Skwt, ! Varible(s)
      .     Skwm,
@@ -177,6 +177,8 @@
      .     iup2_plus_vp2
        use stats_subs, only:
      .     stats_accumulate ! Procedure
+       use stats_type, only:
+     .     stat_update_var, stat_update_var_pt ! Procedure(s)
 #endif /*STATS*/
 
        implicit none
@@ -715,19 +717,12 @@
      .          + fcor * ( vm - vg )
 #ifdef STATS
          if ( lstats_samp ) then
-           if ( ium_ma > 0 ) then
-             zt%x(:,ium_ma)
-     .       = zt%x(:,ium_ma) - wmt * ddzm( zt2zm( um ) )
-             zt%n(:,ium_ma) = zt%n(:,ium_ma) + 1
-           end if
-           if ( ium_gf > 0 ) then
-             zt%x(:,ium_gf) = zt%x(:,ium_gf) - fcor * vg
-             zt%n(:,ium_gf) = zt%n(:,ium_gf) + 1
-           end if
-           if ( ium_cf > 0 ) then
-             zt%x(:,ium_cf) = zt%x(:,ium_cf) + fcor * vm
-             zt%n(:,ium_cf) = zt%n(:,ium_cf) + 1
-           end if
+           call stat_update_var( ium_ma, -wmt*ddzm( zt2zm( um ) ), zt )
+
+           call stat_update_var( ium_gf, -fcor*vg, zt )
+
+           call stat_update_var( ium_cf, fcor*vm, zt )
+
          end if
 #endif
 
@@ -757,19 +752,12 @@
 
 #ifdef STATS
          if ( lstats_samp ) then
-           if ( ivm_ma > 0 ) then
-             zt%x(:,ivm_ma)
-     .       = zt%x(:,ivm_ma) - wmt * ddzm( zt2zm( vm ) )
-             zt%n(:,ivm_ma) = zt%n(:,ivm_ma) + 1
-           end if
-           if ( ivm_gf > 0 ) then
-             zt%x(:,ivm_gf) = zt%x(:,ivm_gf) + fcor * ug
-             zt%n(:,ivm_gf) = zt%n(:,ivm_gf) + 1
-           end if
-           if ( ivm_cf > 0 ) then
-             zt%x(:,ivm_cf) = zt%x(:,ivm_cf) - fcor * um
-             zt%n(:,ivm_cf) = zt%n(:,ivm_cf) + 1
-           end if
+           call stat_update_var( ivm_ma, -wmt*ddzm( zt2zm( vm ) ), zt )
+
+           call stat_update_var( ivm_gf, fcor*ug, zt )
+
+           call stat_update_var( ivm_cf,-fcor*um,zt )
+
          end if
 #endif
 
@@ -813,23 +801,14 @@
 #ifdef STATS
 !      Store values of surface fluxes for statistics
        if (lstats_samp) then
-         if ( ish > 0 ) then
-           sfc%x(1,ish) = sfc%x(1,ish) + wpthlp(1) * rhom(1) * Cp
-           sfc%n(1,ish) = sfc%n(1,ish) + 1
-         end if
-         if ( ilh > 0 ) then
-           sfc%x(1,ilh) = sfc%x(1,ilh) + wprtp(1) * rhom(1) * Lv
-           sfc%n(1,ilh) = sfc%n(1,ilh) + 1
-         end if
-         if ( iustar > 0 ) then   ! Added by Brian
-           sfc%x(1,iustar) = sfc%x(1,iustar) + ustar
-           sfc%n(1,iustar) = sfc%n(1,iustar) + 1
-         end if
+         call stat_update_var_pt( ish, 1, wpthlp(1)*rhom(1)*Cp, sfc )
+
+         call stat_update_var_pt( ilh, 1, wprtp(1)*rhom(1)*Lv, sfc )
+
+         call stat_update_var_pt( iustar, 1, ustar, sfc )
+
          ! Michael Falk added this for up2_plus_vp2, 23 Jan 2007.
-         if ( iup2_plus_vp2 > 0) then
-           zm%x(:,iup2_plus_vp2) = zm%x(:,iup2_plus_vp2) + up2+vp2
-           zm%n(:,iup2_plus_vp2) = zm%n(:,iup2_plus_vp2) + 1
-         end if
+         call stat_update_var( iup2_plus_vp2, up2+vp2, zm )
          ! eMFc
        end if 
 
@@ -862,10 +841,9 @@
      .        wpthlp, wp2, wp3, Scm, rtp2, thlp2,
      .        rtpthlp, taum, rcm, cf, "end of "
 #ifdef SCALARS
-     /        ,wpsclrp_sfc, wpedsclrp_sfc,
+     .        ,wpsclrp_sfc, wpedsclrp_sfc,
      .        sclrm, sclrm_forcing, edsclrm
 #endif /*SCALARS*/
-
      . )
        endif
 !-----------------------------------------------------------------------

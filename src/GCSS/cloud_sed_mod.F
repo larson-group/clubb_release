@@ -1,4 +1,5 @@
 !----------------------------------------------------------------------
+!$Id: cloud_sed_mod.F,v 1.4 2008-06-16 22:26:11 faschinj Exp $
         module cloud_sed_mod
 
         implicit none
@@ -26,6 +27,8 @@
         use constants, only: rho_lw, pi, Cp, Lv ! Variable(s)
 
 #ifdef STATS
+        use stats_type, only: stat_update_var ! Procedure(s)
+
         use stats_hoc, only: ised_rcm, iFcsed, zt, zm, lstats_samp ! Variable(s)
 #endif
 
@@ -168,14 +171,9 @@
 
 #ifdef STATS
         if ( lstats_samp ) then
-          if ( ised_rcm > 0 ) then       ! Brian
-            zt%x(:,ised_rcm) = zt%x(:,ised_rcm) + sed_rcm
-            zt%n(:,ised_rcm) = zt%n(:,ised_rcm) + 1
-          end if
-          if ( iFcsed > 0 ) then       ! Brian
-            zm%x(:,iFcsed) = zm%x(:,iFcsed) + Fcsed
-            zm%n(:,iFcsed) = zm%n(:,iFcsed) + 1
-          end if
+          call stat_update_var( ised_rcm, sed_rcm, zt )
+
+          call stat_update_var( iFcsed, Fcsed, zm ) 
         end if
 #endif
 

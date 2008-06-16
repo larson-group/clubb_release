@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F,v 1.9 2008-05-30 21:44:59 faschinj Exp $
+! $Id: compute_um_edsclrm_mod.F,v 1.10 2008-06-16 22:34:00 faschinj Exp $
 !------------------------------------------------------------------------
         module compute_um_edsclrm_mod
 
@@ -29,6 +29,7 @@
 
         use grid_class, only:
      .      gr ! Variable(s)
+
         use lapack_wrap, only: 
      .      tridag_solve ! Procedure(s)
 #ifdef STATS
@@ -42,6 +43,9 @@
      .      ztscr02,
      .      ztscr03,
      .      lstats_samp
+
+        use stats_type, only: stat_update_var_pt, stat_modify_pt, 
+     .                  stat_begin_update, stat_end_update_pt
 #endif
         use constants, only: 
      .      fstderr ! Variable(s)
@@ -104,9 +108,7 @@
 #ifdef STATS
         if ( lstats_samp ) then
           ! xm total time tendency ( 1st calculation)
-          if ( ixm_bt > 0 ) then
-            zt%x(:,ixm_bt) = zt%x(:,ixm_bt) - xm / dt
-          end if
+          call stat_begin_update( ixm_bt, real( xm / dt ), zt )
         end if
 #endif /*STATS*/
 
@@ -223,10 +225,11 @@
                km1 = max( k-1, 1 )
                kp1 = min( k+1, gr%nnzp )
 
-               zt%x(k,ixm_ta) = zt%x(k,ixm_ta)
-     .         + ztscr01(k) * xm(km1)
+               call stat_modify_pt( ixm_ta, k,
+     .           ztscr01(k) * xm(km1)
      .         + ztscr02(k) * xm(k)
-     .         + ztscr03(k) * xm(kp1)
+     .         + ztscr03(k) * xm(kp1), zt )
+
              end do
            end if
 #endif
@@ -273,18 +276,14 @@
             kp1 = min( k+1, gr%nnzp )
 
             ! x time tendency (2nd calculation)
-            if ( ixm_bt > 0 ) then
-              zt%x(k,ixm_bt) = zt%x(k,ixm_bt) + xm(k) / dt
-              zt%n(k,ixm_bt) = zt%n(k,ixm_bt) + 1
-            end if
+            call stat_end_update_pt( ixm_bt, k, real( xm(k) / dt), zt )
+
             ! x turbulent transport (implicit component)
-            if ( ixm_ta > 0 ) then
-              zt%x(k,ixm_ta) = zt%x(k,ixm_ta)
-     .        + ztscr01(k) * xm(km1)
+            call stat_update_var_pt( ixm_ta, k,
+     .          ztscr01(k) * xm(km1)
      .        + ztscr02(k) * xm(k)
-     .        + ztscr03(k) * xm(kp1)
-              zt%n(k,ixm_ta) = zt%n(k,ixm_ta) + 1
-             end if
+     .        + ztscr03(k) * xm(kp1), zt )
+            
            end do
 
          end if

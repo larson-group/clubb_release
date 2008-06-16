@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.57 2008-06-03 17:19:07 griffinb Exp $
+! $Id: mixing.F,v 1.58 2008-06-16 22:35:51 faschinj Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -91,6 +91,9 @@
      .      lapack_error, ! Procedure(s)
      .      clubb_at_debug_level    
 #ifdef STATS
+        use stats_type, only:
+     .      stat_begin_update, stat_end_update ! Procedure(s)
+        
         use stats_hoc, only:
      .      zt, ! Variable(s)
      .      irtm_cl, 
@@ -259,9 +262,9 @@
         
 #ifdef STATS
         ! Computed value before clipping
-        if (lstats_samp .and. irtm_cl > 0) then
-          zt%x(:,irtm_cl) = zt%x(:,irtm_cl) - rtm / dt
-        endif 
+        if ( lstats_samp ) then
+           call stat_begin_update( irtm_cl, real( rtm / dt ), zt )
+        end if 
 #endif        
         ! The arm_0003 case produces negative rtm near the tropopause.
         !    To avoid this, we clip rtm.  This is not a good solution,
@@ -276,7 +279,7 @@
         do k = 1, gr%nnzp, 1 
           if ( rtm(k) < 0.0 ) then
 !           rtm(k) = 0.0
-            if (clubb_at_debug_level(1)) then
+            if ( clubb_at_debug_level( 1 ) ) then
             write(fstderr,*) "rtm < 0 in mixing at k= ", k
             endif 
           endif
@@ -284,10 +287,9 @@
         enddo
                 
 #ifdef STATS
-        if (lstats_samp .and. irtm_cl > 0) then
-          zt%x(:,irtm_cl) = zt%x(:,irtm_cl) + rtm /dt
-          zt%n(:,irtm_cl) = zt%n(:,irtm_cl) + 1
-        endif
+         if ( lstats_samp ) then
+            call stat_end_update( irtm_cl, real( rtm / dt ) , zt )      
+         endif
 #endif
 
         ! Compute the implicit portion of the thlm and w'thl' equations.
@@ -315,10 +317,11 @@
         
 #ifdef STATS
         ! Computed value before clipping
-        if (lstats_samp .and. ithlm_cl > 0) then
-          zt%x(:,ithlm_cl) = zt%x(:,ithlm_cl) - thlm / dt
-        endif 
+        if ( lstats_samp ) then
+           call stat_begin_update( ithlm_cl, real(thlm / dt ), zt)
+         endif 
 #endif        
+
         ! The value of potential temperature cannot fall below 0,
         ! so we clip accordingly
         do k = 1, gr%nnzp, 1 
@@ -330,10 +333,9 @@
         
                 
 #ifdef STATS
-        if (lstats_samp .and. ithlm_cl > 0) then
-          zt%x(:,ithlm_cl) = zt%x(:,ithlm_cl) + thlm /dt
-          zt%n(:,ithlm_cl) = zt%n(:,ithlm_cl) + 1
-        endif
+         if ( lstats_samp ) then
+            call stat_end_update( ithlm_cl, real( thlm/dt ), zt )
+         end if
 #endif
         ! End change Joshua Fasching March 2008
         
@@ -474,15 +476,20 @@
 
         use parameters, only: 
      .      nu6 ! Variable(s)
+        
         use constants, only: 
      .      wtol ! Variable(s)
+
         use grid_class, only: 
      .      gr, ! Variable(s)
      .      zm2zt ! Procedure(s)
+
         use stats_prec, only: 
      .      time_prec ! Variable(s)
+
         use diffusion, only: 
      .      diffusion_zm_lhs ! Procedure(s)
+
         use mean_adv, only:
      .      term_ma_zt_lhs, ! Procedure(s)
      .      term_ma_zm_lhs
@@ -850,9 +857,14 @@
 
         use grid_class, only:
      .      gr ! Variable(s)
+
         use stats_prec, only: 
      .      time_prec ! Variable(s)
+
 #ifdef STATS
+        use stats_type, only:
+     .      stat_update_var_pt
+        
         use stats_hoc, only:
      .      zt, ! Variable(s)
      .      zm,
@@ -946,12 +958,7 @@
 
           ! Statistics: explicit contributions for xm 
           !             (including microphysics/radiation).
-
-          if ( ixm_f > 0 ) then
-            zt%x(k,ixm_f) = zt%x(k,ixm_f) + xm_forcing(k)
-            zt%n(k,ixm_f) = zt%n(k,ixm_f) + 1
-          endif
-
+           call stat_update_var_pt( ixm_f, k, xm_forcing(k), zt )
           endif ! lstats_samp
 #endif /*STATS*/
 
@@ -972,18 +979,11 @@
           if ( lstats_samp ) then
 
           ! Statistics: explicit contributions for wpxp.
+          call stat_update_var_pt( iwpxp_bp, k,
+     .        wpxp_terms_bp_pr3_rhs( 0.0, xpthvp(k) ), zm )
 
-          if ( iwpxp_bp > 0 ) then
-            zm%x(k,iwpxp_bp) = zm%x(k,iwpxp_bp)
-     .      + wpxp_terms_bp_pr3_rhs( 0.0, xpthvp(k) )
-            zm%n(k,iwpxp_bp) = zm%n(k,iwpxp_bp) + 1
-          endif
-
-          if ( iwpxp_pr3 > 0 ) then
-            zm%x(k,iwpxp_pr3) = zm%x(k,iwpxp_pr3)
-     .      + wpxp_terms_bp_pr3_rhs( (1.0+C7_Skw_fnc(k)), xpthvp(k) )
-            zm%n(k,iwpxp_pr3) = zm%n(k,iwpxp_pr3) + 1
-          endif
+          call stat_update_var_pt( iwpxp_pr3, k,
+     .        wpxp_terms_bp_pr3_rhs( (1.0+C7_Skw_fnc(k)),xpthvp(k)), zm)
 
           endif ! lstats_samp
 #endif /*STATS*/
@@ -1054,6 +1054,10 @@
      .      lapack_error ! Procedure(s)
 
 #ifdef STATS
+        use stats_type, only:
+     .      stat_begin_update, stat_update_var_pt, ! Procedure(s)
+     .      stat_end_update, stat_update_var
+        
         use stats_hoc, only:
      .      zt, ! Variable(s)
      .      zm,
@@ -1228,14 +1232,10 @@
         if ( lstats_samp ) then
 
           ! xm total time tendency ( 1st calculation)
-          if ( ixm_bt > 0 ) then
-            zt%x(:,ixm_bt) = zt%x(:,ixm_bt) - xm / dt
-          endif
+          call stat_begin_update( ixm_bt, real( xm /dt ), zt )
 
           ! wpxp total time tendency (1st calculation)
-          if ( iwpxp_bt > 0 ) then
-            zm%x(:,iwpxp_bt) = zm%x(:,iwpxp_bt) - wpxp / dt
-          endif
+          call stat_begin_update( iwpxp_bt, real( wpxp / dt ), zm )
 
         endif ! lstats_samp
 #endif /*STATS*/
@@ -1267,8 +1267,7 @@
      .                      lhs, rhs, solution, rcond, err_code )
 
           ! Est. of the condition number of the mean/flux LHS matrix 
-          sfc%x(1,ixm_cn) = sfc%x(1,ixm_cn) + 1.0 / rcond
-          sfc%n(1,ixm_cn) = sfc%n(1,ixm_cn) + 1
+          call stat_update_var_pt( ixm_cn, 1, 1.0 / rcond, sfc )
 
         else
           ! Perform LU decomp and solve system (LAPACK)
@@ -1293,14 +1292,11 @@
      .                           solution(:,1), xm, xm_pd, wpxp_pd )
 #ifdef STATS
           if ( lstats_samp ) then
-            if ( iwpxp_pd > 0 ) then
-              zm%x(:,iwpxp_pd) = zm%x(:,iwpxp_pd) + wpxp_pd(1:gr%nnzp)
-              zm%n(:,iwpxp_pd) = zm%n(:,iwpxp_pd) + 1
-            endif
-            if ( ixm_pd > 0 ) then
-              zt%x(:,ixm_pd) = zt%x(:,ixm_pd) + xm_pd(1:gr%nnzp)
-              zt%n(:,ixm_pd) = zt%n(:,ixm_pd) + 1
-            endif
+
+            call stat_update_var( iwpxp_pd, wpxp_pd(1:gr%nnzp), zm )
+
+            call stat_update_var( ixm_pd, xm_pd(1:gr%nnzp), zt )
+
           endif
 #endif
         endif
@@ -1335,71 +1331,45 @@
              kp1 = min( k+1, gr%nnzp )
 
              ! Finalize implicit contributions for xm
-             if ( ixm_ma > 0 ) then
-               zt%x(k,ixm_ma) = zt%x(k,ixm_ma)
-     .         + ztscr01(k) * xm(km1)
+             call stat_update_var_pt( ixm_ma, k,
+     .           ztscr01(k) * xm(km1)
      .         + ztscr02(k) * xm(k)
-     .         + ztscr03(k) * xm(kp1)
-               zt%n(k,ixm_ma) = zt%n(k,ixm_ma) + 1
-             endif
-
-             if ( ixm_ta > 0 ) then
-               zt%x(k,ixm_ta) = zt%x(k,ixm_ta)
-     .         + ztscr04(k) * wpxp(km1)
-     .         + ztscr05(k) * wpxp(k)
-               zt%n(k,ixm_ta) = zt%n(k,ixm_ta) + 1
-             endif
+     .         + ztscr03(k) * xm(kp1), zt )
+             
+             call stat_update_var_pt( ixm_ta, k,
+     .           ztscr04(k) * wpxp(km1)
+     .         + ztscr05(k) * wpxp(k), zt )
 
              ! Finalize implicit contributions for wpxp
-             if ( iwpxp_ma > 0 ) then
-               zm%x(k,iwpxp_ma) = zm%x(k,iwpxp_ma)
-     .         + zmscr01(k) * wpxp(km1)
+             call stat_update_var_pt( iwpxp_ma, k,
+     .           zmscr01(k) * wpxp(km1)
      .         + zmscr02(k) * wpxp(k)
-     .         + zmscr03(k) * wpxp(kp1)
-               zm%n(k,iwpxp_ma) = zm%n(k,iwpxp_ma) + 1
-             endif
+     .         + zmscr03(k) * wpxp(kp1), zm )
 
-             if ( iwpxp_ta > 0 ) then
-               zm%x(k,iwpxp_ta) = zm%x(k,iwpxp_ta)
-     .         + zmscr04(k) * wpxp(km1)
+
+             call stat_update_var_pt( iwpxp_ta, k,
+     .           zmscr04(k) * wpxp(km1)
      .         + zmscr05(k) * wpxp(k)
-     .         + zmscr06(k) * wpxp(kp1)
-               zm%n(k,iwpxp_ta) = zm%n(k,iwpxp_ta) + 1
-             endif
+     .         + zmscr06(k) * wpxp(kp1), zm )
+             
+             call stat_update_var_pt( iwpxp_tp, k,
+     .           zmscr07(k) * xm(k)
+     .         + zmscr08(k) * xm(kp1), zm )
 
-             if ( iwpxp_tp > 0 ) then
-               zm%x(k,iwpxp_tp) = zm%x(k,iwpxp_tp)
-     .         + zmscr07(k) * xm(k)
-     .         + zmscr08(k) * xm(kp1)
-               zm%n(k,iwpxp_tp) = zm%n(k,iwpxp_tp) + 1
-             endif
+             call stat_update_var_pt( iwpxp_ac, k,
+     .           zmscr09(k) * wpxp(k), zm )
 
-             if ( iwpxp_ac > 0 ) then
-               zm%x(k,iwpxp_ac) = zm%x(k,iwpxp_ac)
-     .         + zmscr09(k) * wpxp(k)
-               zm%n(k,iwpxp_ac) = zm%n(k,iwpxp_ac) + 1
-             endif
+             call stat_update_var_pt( iwpxp_pr1, k,
+     .           zmscr10(k) * wpxp(k), zm )
 
-             if ( iwpxp_pr1 > 0 ) then
-               zm%x(k,iwpxp_pr1) = zm%x(k,iwpxp_pr1)
-     .         + zmscr10(k) * wpxp(k)
-               zm%n(k,iwpxp_pr1) = zm%n(k,iwpxp_pr1) + 1
-             endif
-
-             if ( iwpxp_pr2 > 0 ) then
-               zm%x(k,iwpxp_pr2) = zm%x(k,iwpxp_pr2)
-     .         + zmscr11(k) * wpxp(k)
-               zm%n(k,iwpxp_pr2) = zm%n(k,iwpxp_pr2) + 1
-             endif
-
-             if ( iwpxp_dp1 > 0 ) then
-               zm%x(k,iwpxp_dp1) = zm%x(k,iwpxp_dp1)
-     .         + zmscr12(k) * wpxp(km1)
+             call stat_update_var_pt( iwpxp_pr2, k,
+     .           zmscr11(k) * wpxp(k), zm )
+             
+             call stat_update_var_pt( iwpxp_dp1, k,
+     .           zmscr12(k) * wpxp(km1)
      .         + zmscr13(k) * wpxp(k)
-     .         + zmscr14(k) * wpxp(kp1)
-               zm%n(k,iwpxp_dp1) = zm%n(k,iwpxp_dp1) + 1
-             endif
-
+     .         + zmscr14(k) * wpxp(kp1), zm )
+             
            enddo ! 1..gr%nnzp
 
           endif ! lstats_samp
@@ -1408,9 +1378,9 @@
 ! Vince Larson clipped turbulent flux (wpxp) to ensure 
 !     that -1 < [correlation of w and x] < 1 .  20070929
 #ifdef STATS
-        if ( lstats_samp .and. iwpxp_cl > 0) then
-          zm%x(:,iwpxp_cl) = zm%x(:,iwpxp_cl) - wpxp / dt
-        endif
+        if ( lstats_samp ) then
+           call stat_begin_update( iwpxp_cl, real( wpxp / dt ), zm )
+        end if 
 #endif
 
 
@@ -1421,26 +1391,19 @@
      .          wpxp = -0.99 * sqrt( wp2 * xp2 ) 
 
 #ifdef STATS
-        if ( lstats_samp .and. iwpxp_cl > 0 ) then
-          zm%x(:,iwpxp_cl) = zm%x(:,iwpxp_cl) + wpxp / dt
-          zm%n(:,iwpxp_cl) = zm%n(:,iwpxp_cl) + 1
-        endif
+        if ( lstats_samp ) then
+           call stat_end_update( iwpxp_cl, real( wpxp / dt ), zm )
+        end if
 #endif
 ! End of Vince Larson's clipping.
 
 #ifdef STATS
         if ( lstats_samp ) then
           ! xm time tendency (2nd calculation)
-          if ( ixm_bt > 0 ) then
-            zt%x(:,ixm_bt) = zt%x(:,ixm_bt) + xm / dt
-            zt%n(:,ixm_bt) = zt%n(:,ixm_bt) + 1
-          endif
+          call stat_end_update( ixm_bt, real( xm / dt ), zt )
 
           ! wpxp time tendency (2nd calculation)
-          if ( iwpxp_bt > 0 ) then
-            zm%x(:,iwpxp_bt) = zm%x(:,iwpxp_bt) + wpxp / dt
-            zm%n(:,iwpxp_bt) = zm%n(:,iwpxp_bt) + 1
-          endif
+          call stat_end_update( iwpxp_bt, real( wpxp / dt ), zm )
 
         endif
 #endif /*STATS*/

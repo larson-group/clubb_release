@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: KK_microphys.F,v 1.8 2008-05-30 21:43:05 faschinj Exp $
+! $Id: KK_microphys.F,v 1.9 2008-06-16 22:33:09 faschinj Exp $
 
       module rain_equations
 
@@ -114,9 +114,11 @@
 
         use model_flags, only:
      .      LH_on ! Variable(s)
+
         use grid_class, only:
      .      gr, ! Variable(s)
      .      zt2zm ! Procedure(s)
+
         use constants, only:
      .      rc_tol, ! Variable(s)
      .      ep,
@@ -126,10 +128,14 @@
      .      p0,
      .      Rd,
      .      Rv
+
         use saturation, only: 
      .      rsat ! Procedure(s)
         
 #ifdef STATS
+        use stats_type, only:
+     .      stat_update_var, stat_update_var_pt ! Procedure(s)
+
         use stats_hoc, only:
      .      zt,  ! Variable(s)
      .      imean_vol_rad_rain,
@@ -398,14 +404,8 @@
 #ifdef STATS
         ! Save mean volume radius for stats purposes
         ! Note: added lsample for latin hypercube sampling -dschanen
-
-        if ( lsample .and. lstats_samp 
-     .       .and. imean_vol_rad_rain > 0 ) then ! Brian
-
-          zt%x(:,imean_vol_rad_rain) 
-     .    = zt%x(:,imean_vol_rad_rain) + mean_vol_rad
-          zt%n(:,imean_vol_rad_rain) = zt%n(:,imean_vol_rad_rain) + 1
-
+        if ( lsample .and. lstats_samp ) then
+          call stat_update_var(imean_vol_rad_rain, mean_vol_rad, zt )
         end if
 
 #endif /*STATS*/
@@ -551,32 +551,17 @@
 
 #ifdef STATS
            if ( lsample .and. lstats_samp ) then
-              ! Explicit contributions to rrm.
-              if ( irrm_cond > 0 ) then
-                zt%x(k,irrm_cond) = zt%x(k,irrm_cond) + rrm_cond(k)
-                zt%n(k,irrm_cond) = zt%n(k,irrm_cond) + 1
-              end if
+             ! Explicit contributions to rrm.
+             call stat_update_var_pt( irrm_cond, k, rrm_cond(k), zt )
 
-              if ( irrm_auto > 0 ) then
-                zt%x(k,irrm_auto) = zt%x(k,irrm_auto) + rrm_auto(k)
-                zt%n(k,irrm_auto) = zt%n(k,irrm_auto) + 1
-              end if
+             call stat_update_var_pt( irrm_auto, k, rrm_auto(k), zt )
 
-              if ( irrm_accr > 0 ) then
-                zt%x(k,irrm_accr) = zt%x(k,irrm_accr) + rrm_accr(k)
-                zt%n(k,irrm_accr) = zt%n(k,irrm_accr) + 1
-              end if
+             call stat_update_var_pt( irrm_accr, k, rrm_accr(k), zt )
 
              ! Explicit contributions to Nrm.
-             if ( iNrm_cond > 0 ) then
-               zt%x(k,iNrm_cond) = zt%x(k,iNrm_cond) + Nrm_cond(k)
-               zt%n(k,iNrm_cond) = zt%n(k,iNrm_cond) + 1
-             end if
+             call stat_update_var_pt( iNrm_cond, k, Nrm_cond(k), zt )
 
-             if ( iNrm_auto > 0 ) then
-               zt%x(k,iNrm_auto) = zt%x(k,iNrm_auto) + Nrm_auto(k)
-               zt%n(k,iNrm_auto) = zt%n(k,iNrm_auto) + 1
-             end if
+             call stat_update_var_pt( iNrm_auto, k, Nrm_auto(k), zt )
 
            end if ! lstats_samp and lsample
 #endif /*STATS*/
@@ -661,6 +646,7 @@
      .      rr_tol,
      .      rho_lw,
      .      pi
+        
         USE model_flags, only:
      .      local_kk ! Variable(s)
 
@@ -831,6 +817,7 @@
      .      Lv,
      .      Rd,
      .      Rv
+        
         USE model_flags, only:
      .      local_kk ! Variable(s)
 
@@ -1675,6 +1662,7 @@
 
         USE constants, only:
      .      pi ! Variable(s)
+        
         USE parabolic, ONLY: 
      .      gamma ! Variable(s)
 
@@ -3277,6 +3265,7 @@
         use parabolic, only: 
      .      gamma, ! Variable(s) 
      .      parab
+
         use constants, only: 
      .      pi_dp ! Variable(s)
 
