@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputfields.F,v 1.19 2008-05-30 16:24:22 faschinj Exp $
+! $Id: inputfields.F,v 1.20 2008-06-16 17:16:00 faschinj Exp $
 
 ! Module inputfields
 
@@ -38,9 +38,10 @@
 
 
         public  :: grads_fields_reader, compute_timestep, set_filenames
+
         private :: lin_ext_zm_bottom, lin_ext_zt_bottom
 
-        private
+        private ! Default Scope
 
         contains
 
