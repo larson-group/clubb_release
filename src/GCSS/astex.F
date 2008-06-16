@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: astex.F,v 1.6 2008-05-30 16:24:22 faschinj Exp $
+! $Id: astex.F,v 1.7 2008-06-16 22:23:43 faschinj Exp $
         module astex
 
 !       Description:
@@ -12,7 +12,7 @@
 
         public :: astex_tndcy, astex_sfclyr
 
-        private ! Defualt Scope
+        private ! Default Scope
 
         contains
 
