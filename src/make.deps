@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.45 2008-05-30 22:13:22 dschanen Exp $
+# $Id: make.deps,v 1.46 2008-06-16 22:17:41 faschinj Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -44,7 +44,7 @@ KK_microphys.o  : constants.o model_flags.o lapack_wrap.o parab.o stats_hoc.o \
 	KK_microphys.F
 microphys_driver.o : constants.o model_flags.o lapack_wrap.o \
 	KK_microphys.o coamps_micro_driver.o parameters.o \
-	stats_hoc.o error_code.o \
+	stats_hoc.o stats_type.o error_code.o \
         ice_dfsn_mod.o diffusion.o microphys_driver.F 
 outputgrads.o	: constants.o recl.F endian.o outputfile.o calendar.o \
 	outputgrads.F
@@ -55,11 +55,11 @@ numer_check.o	: prog_variables.o diag_variables.o constants.o model_flags.o\
 	error_code.o numer_check.F
 inputgrads.o	: constants.o endian.o recl.F inputgrads.F
 grid.o		: constants.o file_functions.o grid.F
-stats_type.o    : outputfile.o stats_prec.o stats_type.F
+stats_type.o    : outputfile.o stats_prec.o error_code.o stats_type.F
 stats_hoc.o     : stats_type.o stats_hoc.F
 stats_subs.o    : outputgrads.o outputnc.o prog_variables.o diag_variables.o \
-	stats_hoc.o grid.o stats_zt.o stats_zm.o stats_sfc.o temp_in_K_mod.o \
-	stats_subs.F 
+	stats_hoc.o stats_type.o grid.o stats_zt.o stats_zm.o stats_sfc.o temp_in_K_mod.o \
+	interpolation.o stats_subs.F 
 stats_zt.o : stats_hoc.o stats_zt.F
 stats_zm.o : stats_hoc.o stats_zm.F
 stats_sfc.o: stats_hoc.o stats_sfc.F
@@ -70,7 +70,7 @@ temp_in_K_mod.o	: constants.o temp_in_K_mod.F
 
 closure_new.o	: constants.o parameters.o grid.o saturation.o erf.o numer_check.o \
                  error_code.o closure_new.F 
-diag_var.o	: constants.o parameters.o grid.o stats_hoc.o lapack_wrap.o \
+diag_var.o	: constants.o parameters.o grid.o stats_type.o stats_hoc.o lapack_wrap.o \
 	          error_code.o diffusion.o diag_var.F
 mixing.o : constants.o parameters.o stats_hoc.o lapack_wrap.o \
 	   pos_definite_mod.o error_code.o diffusion.o mean_adv.o mixing.F 
@@ -79,7 +79,7 @@ parameterization_interface.o : constants.o hydrostatic.o mixing.o \
 	model_flags.o numer_check.o Skw_func.o \
 	mixing_length.o stats_type.o stats_hoc.o stats_subs.o \
 	stats_zt.o stats_zm.o \
-	stats_sfc.o sounding.o diag_var.o saturation.o wp23.o \
+	stats_sfc.o stats_type.o sounding.o diag_var.o saturation.o wp23.o \
 	grid.o saturation.o compute_um_edsclrm_mod.o prog_variables.o \
 	diag_variables.o \
 	sfc.o closure_new.o lh_sampler.o \
@@ -134,7 +134,7 @@ mpace_a.o     : constants.o model_flags.o grid.o stats_hoc.o mpace_a.F interpola
 mpace_b.o     : constants.o model_flags.o grid.o stats_hoc.o rad_lwsw.o \
 	mpace_b.F
 nov11.o     : constants.o model_flags.o grid.o stats_hoc.o rad_lwsw.o \
-	cos_solar_zen.o nov11.F
+        nov11.F
 jun25.o     : constants.o model_flags.o grid.o stats_hoc.o rad_lwsw.o \
 	cos_solar_zen.o jun25.F
 clex9_nov02.o : constants.o cos_solar_zen.o rad_lwsw.o model_flags.o grid.o \
