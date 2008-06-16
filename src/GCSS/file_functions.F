@@ -1,11 +1,13 @@
 !-----------------------------------------------------------------------
-! $Id: file_functions.F,v 1.4 2008-05-17 21:32:12 griffinb Exp $
+! $Id: file_functions.F,v 1.5 2008-06-16 17:30:51 faschinj Exp $
 !===============================================================================
       module file_functions
 
       implicit none
 
       public :: file_read_1d, file_read_2d
+
+      private ! Default Scope
 
       contains
 
