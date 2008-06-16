@@ -1,4 +1,4 @@
-! $Id: sounding.F,v 1.18 2008-05-30 16:24:22 faschinj Exp $
+! $Id: sounding.F,v 1.19 2008-06-16 17:25:10 faschinj Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
         module sounding
@@ -33,7 +33,6 @@
      .      linint ! Procedure(s)       
 
         implicit none
-
 
         
         ! Constant parameter
@@ -187,14 +186,6 @@
      .                      theta(k), theta(k-1) )
               rtm(i)  = linint( gr%zt(i), z(k), z(k-1), rt(k), rt(k-1) )
               
-              !print *, "At k = ",k            
-              !print *, "um(",i,")= ", um(i)
-              !print *, "vm(",i,")= ", vm(i)
-              !print *, "ugm(",i,")= ", ugm(i)
-              !print *, "vgm(",i,")= ", vgm(i)
-              !print *, "thlm(",i,")= ", thlm(i)
-              !print *, "rtm(",i,")= ", rtm(i)
-
               if ( sclr_sounding ) then
                 do j = 1, sclr_dim 
                   sclrm(i,j) = linint( gr%zt(i), z(k), z(k-1), 
@@ -249,7 +240,6 @@
                   
                   call std_atmosphere( gr%zt(i), thlm(i), rtm(i) )
                   
- 
                   um(i) = um(i-1)
                   vm(i) = vm(i-1)
                   ugm(i) = um(i)
