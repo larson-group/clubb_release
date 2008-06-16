@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F,v 1.50 2008-06-04 21:24:19 griffinb Exp $
+! $Id: diag_var.F,v 1.51 2008-06-16 22:34:46 faschinj Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !===============================================================================
@@ -58,21 +58,30 @@
      .      thltol,
      .      sclrtol,
      .      fstderr
+        
         use parameters, 
      .    only: C2, C2b, C2c, C2rt, C2thl, C2rtthl, c_K2, nu2, nu9, ! Variable(s)
      .          c_Ksqd, beta, C4, C14, C5, T0
+        
         use grid_class, only:
      .      gr, ! Variable(s)
      .      zm2zt ! Procedure(s)
+        
         use stats_prec, only: 
-     .      time_prec
+     .      time_prec ! Variable(s)
+        
         use lapack_wrap, only: 
-     .      tridag_solve
+     .      tridag_solve ! Procedure(s)
+        
         use error_code, only: 
-     .      clubb_no_error, ! Variable
+     .      clubb_no_error, ! Variable(s)
      .      lapack_error,   ! Procedure(s)
      .      clubb_at_debug_level
+        
 #ifdef STATS
+        use stats_type, only:
+     .      stat_begin_update, stat_end_update ! Procedure(s) 
+        
         use stats_hoc, only:
      .      irtp2_bt, ! Variable(s)
      .      irtp2_cl,
@@ -189,7 +198,6 @@
         integer :: i
         integer :: k, km1, kp1
 
-
 !-----------------------------------------------------------------------
 #ifdef SINGLE_C2_SKW
         ! Use a single value of C2 for all equations.
@@ -252,25 +260,15 @@
 #ifdef STATS
         if ( lstats_samp ) then
 
-          if ( irtp2_bt > 0 ) then
-            zm%x(:,irtp2_bt) = zm%x(:,irtp2_bt) - rtp2 / dt
-          end if
+          call stat_begin_update( irtp2_bt, real(rtp2 / dt), zm )
 
-          if ( ithlp2_bt > 0 ) then
-            zm%x(:,ithlp2_bt) = zm%x(:,ithlp2_bt) - thlp2 / dt
-          end if
+          call stat_begin_update( ithlp2_bt, real(thlp2 / dt), zm )
 
-          if ( irtpthlp_bt > 0 ) then
-            zm%x(:,irtpthlp_bt) = zm%x(:,irtpthlp_bt) - rtpthlp / dt
-          end if
+          call stat_begin_update( irtpthlp_bt, real(rtpthlp / dt), zm )
 
-          if ( ivp2_bt > 0 ) then
-            zm%x(:,ivp2_bt) = zm%x(:,ivp2_bt) - vp2 / dt
-          end if
+          call stat_begin_update( ivp2_bt, real(vp2 / dt), zm )
 
-          if ( iup2_bt > 0 ) then
-            zm%x(:,iup2_bt) = zm%x(:,iup2_bt) - up2 / dt
-          end if
+          call stat_begin_update( iup2_bt, real(up2 / dt), zm )
 
         end if
 #endif
@@ -327,6 +325,7 @@
 
 
         !!!!!***** r_t'^2 *****!!!!!
+        ! Implicit contributions to term rtp2
 
         ! Implicit contributions to term rtp2
         call diag_var_lhs( dt, liter, a1, a1_zt, wp2_zt, 
@@ -345,6 +344,7 @@
 
 
         !!!!!***** th_l'^2 *****!!!!!
+        ! Implicit contributions to term thlp2
 
         ! Implicit contributions to term thlp2
         call diag_var_lhs( dt, liter, a1, a1_zt, wp2_zt, 
@@ -363,8 +363,8 @@
 
 
         !!!!!***** r_t'th_l' *****!!!!!
-
         ! Implicit contributions to term rtpthlp
+
         call diag_var_lhs( dt, liter, a1, a1_zt, wp2_zt, 
      .                     wp3, taum, wmm, Kw2_rtpthlp, C2rtthl_1d, 
      .                     nu2, beta, wtol_sqd, lhs )
@@ -381,8 +381,8 @@
 
 
         !!!!!***** u'^2 *****!!!!!
-
         ! Implicit contributions to term up2
+
         call diag_var_lhs( dt, liter, a1, a1_zt, wp2_zt, 
      .                     wp3, taum, wmm, Kw2, C4_C14_1d, 
      .                     nu9, beta, wtol_sqd, lhs )
@@ -400,8 +400,8 @@
 
 
         !!!!!***** v'^2 *****!!!!!
-
         ! Implicit contributions to term vp2
+
         call diag_var_lhs( dt, liter, a1, a1_zt, wp2_zt, 
      .                     wp3, taum, wmm, Kw2, C4_C14_1d, 
      .                     nu9, beta, wtol_sqd, lhs )
@@ -413,24 +413,19 @@
      .                        upwp_zt, vp2, up2, C4, C5, C14,
      .                        T0, beta, wtol_sqd, rhs )
 
-
         ! Solve the tridiagonal system
         call diag_var_solve( "vp2", 1, rhs, 
      .                       lhs, vp2, Valid_arr(5) )
 
-
 #ifdef STATS
-        if (lstats_samp .and. irtp2_cl > 0 ) then
-          zm%x(:,irtp2_cl) = zm%x(:,irtp2_cl) - rtp2 / dt
-        end if
-        if (lstats_samp .and. ithlp2_cl > 0 ) then
-          zm%x(:,ithlp2_cl) = zm%x(:,ithlp2_cl) - thlp2 / dt
-        end if
-        if (lstats_samp .and. iup2_cl > 0 ) then
-          zm%x(:,iup2_cl) = zm%x(:,iup2_cl) - up2 / dt
-        end if
-        if (lstats_samp .and. ivp2_cl > 0 ) then
-          zm%x(:,ivp2_cl) = zm%x(:,ivp2_cl) - vp2 / dt
+        if( lstats_samp ) then
+          call stat_begin_update( irtp2_cl, real( rtp2 / dt), zm )      
+
+          call stat_begin_update( ithlp2_cl, real( thlp2 / dt), zm )
+
+          call stat_begin_update( iup2_cl, real( up2 / dt ), zm )
+
+          call stat_begin_update( ivp2_cl, real( vp2 / dt ), zm )
         end if
 #endif
 
@@ -469,55 +464,28 @@
        where ( up2 < 0.0 ) up2 = 0.0
 
 #ifdef STATS
-        if ( lstats_samp .and. irtp2_cl > 0 ) then
-          zm%x(:,irtp2_cl) = zm%x(:,irtp2_cl) + rtp2 / dt
-          zm%n(:,irtp2_cl) = zm%n(:,irtp2_cl) + 1
-        end if
+        if ( lstats_samp ) then
+           call stat_end_update( irtp2_cl, real( rtp2 / dt ), zm )
+           
+           call stat_end_update( ithlp2_cl, real( thlp2 / dt ), zm )
 
-        if ( lstats_samp .and. ithlp2_cl > 0 ) then
-          zm%x(:,ithlp2_cl) = zm%x(:,ithlp2_cl) + thlp2 / dt
-          zm%n(:,ithlp2_cl) = zm%n(:,ithlp2_cl) + 1
-        end if
-
-        if ( lstats_samp .and. iup2_cl > 0 ) then
-          zm%x(:,iup2_cl) = zm%x(:,iup2_cl) + up2 / dt
-          zm%n(:,iup2_cl) = zm%n(:,iup2_cl) + 1
-        end if
-
-        if ( lstats_samp .and. ivp2_cl > 0 ) then
-          zm%x(:,ivp2_cl) = zm%x(:,ivp2_cl) + vp2 / dt
-          zm%n(:,ivp2_cl) = zm%n(:,ivp2_cl) + 1
-        end if
+           call stat_end_update( iup2_cl, real( up2 / dt ), zm )
+           
+           call stat_end_update( ivp2_cl, real( vp2 / dt ), zm )
+        endif
 #endif
 
 #ifdef STATS
         if ( lstats_samp ) then
+          call stat_end_update( irtp2_bt, real( rtp2 / dt), zm )
 
-          if ( irtp2_bt > 0 ) then
-            zm%x(:,irtp2_bt) = zm%x(:,irtp2_bt) + rtp2 / dt
-            zm%n(:,irtp2_bt) = zm%n(:,irtp2_bt) + 1
-          end if
+          call stat_end_update( ithlp2_bt, real( thlp2 / dt), zm )
 
-          if ( ithlp2_bt > 0 ) then
-            zm%x(:,ithlp2_bt) = zm%x(:,ithlp2_bt) + thlp2 / dt
-            zm%n(:,ithlp2_bt) = zm%n(:,ithlp2_bt) + 1
-          end if
+          call stat_end_update( irtpthlp_bt, real( rtpthlp / dt), zm )
+          
+          call stat_end_update( iup2_bt, real( up2 / dt), zm )
 
-          if ( irtpthlp_bt > 0 ) then
-            zm%x(:,irtpthlp_bt) = zm%x(:,irtpthlp_bt) + rtpthlp / dt
-            zm%n(:,irtpthlp_bt) = zm%n(:,irtpthlp_bt) + 1
-          end if
-
-          if ( iup2_bt > 0 ) then
-            zm%x(:,iup2_bt) = zm%x(:,iup2_bt) + up2 / dt
-            zm%n(:,iup2_bt) = zm%n(:,iup2_bt) + 1
-          end if
-
-          if ( ivp2_bt > 0 ) then
-            zm%x(:,ivp2_bt) = zm%x(:,ivp2_bt) + vp2 / dt
-            zm%n(:,ivp2_bt) = zm%n(:,ivp2_bt) + 1
-          end if
-
+          call stat_end_update( ivp2_bt, real( vp2 / dt), zm )
         end if
 #endif /*STATS*/
 
@@ -902,13 +870,19 @@
      .                             lhs, xapxbp, err_code )
 
 !-----------------------------------------------------------------------
+
         use lapack_wrap, only: 
      .      tridag_solve, ! Variable(s)
      .      tridag_solvex
 !    .    , band_solve
+        
         use grid_class, only:
      .      gr ! Variable(s)
+        
 #ifdef STATS
+        use stats_type, only:
+     .      stat_update_var_pt ! Procedure(s)
+        
         use stats_hoc, only:
      .      zm, ! Variable(s) 
      .      sfc,
@@ -1041,16 +1015,15 @@
         end select
 #endif
 
-#ifdef STATS
-        if ( lstats_samp .and. ixapxbp_cn > 0 ) then
+#ifdef STATS 
+       if ( lstats_samp .and. ixapxbp_cn > 0 ) then
           call tridag_solvex
      .         ( solve_type, gr%nnzp, nrhs, lhs(kp1_mdiag,:), 
      .           lhs(k_mdiag,:), lhs(km1_mdiag,:), rhs(:,1:nrhs), 
      .           xapxbp(:,1:nrhs), rcond, err_code )
 
           ! Est. of the condition number of the variance LHS matrix 
-          sfc%x(1,ixapxbp_cn) = sfc%x(1,ixapxbp_cn) + 1.0 / rcond
-          sfc%n(1,ixapxbp_cn) = sfc%n(1,ixapxbp_cn) + 1
+         call stat_update_var_pt( ixapxbp_cn, 1, 1.0 / rcond, sfc )
 
         else 
           call tridag_solve
@@ -1081,41 +1054,26 @@
             km1 = max( k-1, 1 )
             kp1 = min( k+1, gr%nnzp )
 
-            if ( ixapxbp_dp1 > 0 ) then
-              zm%x(k,ixapxbp_dp1) = zm%x(k,ixapxbp_dp1)
-     .        + zmscr01(k) * xapxbp(k,1)
-              zm%n(k,ixapxbp_dp1) = zm%n(k,ixapxbp_dp1) + 1
-            end if
- 
-            if ( ixapxbp_dp2 > 0 ) then
-              zm%x(k,ixapxbp_dp2) = zm%x(k,ixapxbp_dp2)
-     .        + zmscr02(k) * xapxbp(km1,1)
+            call stat_update_var_pt( ixapxbp_dp1, k,
+     .          zmscr01(k) * xapxbp(k,1), zm )
+
+            call stat_update_var_pt( ixapxbp_dp2, k,
+     .         zmscr02(k) * xapxbp(km1,1)
      .        + zmscr03(k) * xapxbp(k,1)
-     .        + zmscr04(k) * xapxbp(kp1,1)
-              zm%n(k,ixapxbp_dp2) = zm%n(k,ixapxbp_dp2) + 1
-            end if
- 
-            if ( ixapxbp_ta > 0 ) then
-              zm%x(k,ixapxbp_ta) = zm%x(k,ixapxbp_ta)
-     .        + zmscr05(k) * xapxbp(km1,1)
+     .        + zmscr04(k) * xapxbp(kp1,1), zm )
+           
+            call stat_update_var_pt( ixapxbp_ta, k,
+     .          zmscr05(k) * xapxbp(km1,1)
      .        + zmscr06(k) * xapxbp(k,1)
-     .        + zmscr07(k) * xapxbp(kp1,1)
-              zm%n(k,ixapxbp_ta) = zm%n(k,ixapxbp_ta) + 1
-            end if
+     .        + zmscr07(k) * xapxbp(kp1,1), zm )
 
-            if ( ixapxbp_ma > 0 ) then
-              zm%x(k,ixapxbp_ma) = zm%x(k,ixapxbp_ma)
-     .        + zmscr08(k) * xapxbp(km1,1)
+            call stat_update_var_pt( ixapxbp_ma, k,
+     .          zmscr08(k) * xapxbp(km1,1)
      .        + zmscr09(k) * xapxbp(k,1)
-     .        + zmscr10(k) * xapxbp(kp1,1)
-              zm%n(k,ixapxbp_ma) = zm%n(k,ixapxbp_ma) + 1
-            end if
+     .        + zmscr10(k) * xapxbp(kp1,1), zm )
 
-            if ( ixapxbp_pr1 > 0 ) then
-              zm%x(k,ixapxbp_pr1) = zm%x(k,ixapxbp_pr1)
-     .        + zmscr11(k) * xapxbp(k,1)
-              zm%n(k,ixapxbp_pr1) = zm%n(k,ixapxbp_pr1) + 1
-            end if
+            call stat_update_var_pt( ixapxbp_pr1, k,
+     .          zmscr11(k) * xapxbp(k,1), zm )
 
           end do
         end if
@@ -1137,11 +1095,17 @@
 
         use grid_class, only:
      .      gr ! Variable(s)
+        
         use constants, only: 
      .      grav ! Variable(s)
+        
         use stats_prec, only: 
      .      time_prec ! Variable(s)
+        
 #ifdef STATS
+        use stats_type, only:
+     .      stat_modify_pt, stat_update_var_pt ! Procedure(s)
+
         use stats_hoc, only:
      .      ivp2_ta, ! Variable(s)
      .      ivp2_tp,
@@ -1270,63 +1234,54 @@
           if ( lstats_samp ) then
 
           ! Statistics: explicit contributions for up2 or vp2.
+               
+            call stat_modify_pt( ixap2_ta, k,
+     .             term_ta_rhs( a1_zt(kp1), a1(k), a1_zt(k), 
+     .                         wp3(kp1), wp3(k), wp2_zt(kp1), 
+     .                         wp2_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), 
+     .                         wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), 
+     .                         beta, wtol_sqd ), zm )
+            
+            if ( ixap2_dp1 > 0 ) then
+              ! Note:  The function term_pr1 is the explicit component 
+              !        of a semi-implicit solution to dp1 and pr1.
+              ! Record the statistical contribution of the implicit
+              ! component of term dp1 for up2 or vp2.  This will 
+              ! overwrite anything set statistically in diag_var_lhs 
+              ! for this term.
+              tmp = term_dp1( (2.0/3.0)*C4, taum(k) )
+              zmscr01(k) = -tmp
+              ! Statistical contribution of the explicit component
+              ! of term dp1 for up2 or vp2.
+            endif
 
-          if ( ixap2_ta > 0 ) then
-            zm%x(k,ixap2_ta) 
-     .      = zm%x(k,ixap2_ta)
-     .      + term_ta_rhs( a1_zt(kp1), a1(k), a1_zt(k), 
-     .                     wp3(kp1), wp3(k), wp2_zt(kp1), 
-     .                     wp2_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), 
-     .                     wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), 
-     .                     beta, wtol_sqd )
-          endif
+            call stat_modify_pt( ixap2_dp1, k, 
+     .              term_pr1( C4, 0.0, xbp2(k), wp2(k), taum(k) ), zm )
 
-          if ( ixap2_dp1 > 0 ) then
-            ! Note:  The function term_pr1 is the explicit component 
-            !        of a semi-implicit solution to dp1 and pr1.
-            ! Record the statistical contribution of the implicit
-            ! component of term dp1 for up2 or vp2.  This will 
-            ! overwrite anything set statistically in diag_var_lhs 
-            ! for this term.
-            tmp = term_dp1( (2.0/3.0)*C4, taum(k) )
-            zmscr01(k) = -tmp
-            ! Statistical contribution of the explicit component
-            ! of term dp1 for up2 or vp2.
-            zm%x(k,ixap2_dp1)
-     .      = zm%x(k,ixap2_dp1)
-     .      + term_pr1( C4, 0.0, xbp2(k), wp2(k), taum(k) )
-          endif
 
-          if ( ixap2_pr1 > 0 ) then
-            ! Note:  The function term_pr1 is the explicit component 
-            !        of a semi-implicit solution to dp1 and pr1.
-            ! Statistical contribution of the implicit component
-            ! of term pr1 for up2 or vp2.
-            tmp = term_dp1( (1.0/3.0)*C14, taum(k) )
-            zmscr11(k) = -tmp
-            ! Statistical contribution of the explicit component
-            ! of term pr1 for up2 or vp2.
-            zm%x(k,ixap2_pr1)
-     .      = zm%x(k,ixap2_pr1)
-     .      + term_pr1( 0.0, C14, xbp2(k), wp2(k), taum(k) )
-          endif
+            if ( ixap2_pr1 > 0 ) then
+              ! Note:  The function term_pr1 is the explicit component 
+              !        of a semi-implicit solution to dp1 and pr1.
+              ! Statistical contribution of the implicit component
+              ! of term pr1 for up2 or vp2.
+              tmp = term_dp1( (1.0/3.0)*C14, taum(k) )
+              zmscr11(k) = -tmp
+              ! Statistical contribution of the explicit component
+              ! of term pr1 for up2 or vp2.
+            endif
 
-          if ( ixap2_pr2 > 0 ) then
-            zm%x(k,ixap2_pr2)
-     .      = zm%x(k,ixap2_pr2)
-     .      + term_pr2( C5, grav, T0, wpthvp(k), wpxap(k), wpxbp(k), 
-     .                  xam(kp1), xam(k), xbm(kp1), xbm(k), gr%dzm(k) )
-            zm%n(k,ixap2_pr2) = zm%n(k,ixap2_pr2) + 1
-          endif
+            call stat_modify_pt( ixap2_pr1, k,
+     .              term_pr1( 0.0, C14, xbp2(k), wp2(k), taum(k) ), zm )
 
-          if ( ixap2_tp > 0 ) then
-            zm%x(k,ixap2_tp) 
-     .      = zm%x(k,ixap2_tp)
-     .      + (1.0 - C5) 
-     .         * term_tp( xam(kp1), xam(k), xam(kp1), xam(k),
-     .                    wpxap(k), wpxap(k), gr%dzm(k) )
-            zm%n(k,ixap2_tp) = zm%n(k,ixap2_tp) + 1
-          endif
+            call stat_update_var_pt( ixap2_pr2, k,
+     .          term_pr2
+     .          ( C5, grav, T0, wpthvp(k), wpxap(k), wpxbp(k), 
+     .            xam(kp1), xam(k), xbm(kp1), xbm(k), gr%dzm(k) ), zm )
+
+            call stat_update_var_pt( ixap2_tp, k,
+     .            (1.0 - C5) 
+     .             * term_tp( xam(kp1), xam(k), xam(kp1), xam(k),
+     .                        wpxap(k), wpxap(k), gr%dzm(k) ), zm )
 
           endif ! lstats_samp
 #endif /*STATS*/
@@ -1367,9 +1322,14 @@
 
         use grid_class, only:
      .      gr ! Variable(s)
+        
         use stats_prec, only: 
      .      time_prec ! Variable(s)
+        
 #ifdef STATS
+        use stats_type, only:
+     .      stat_modify_pt, stat_update_var_pt ! Procedure(s)
+        
         use stats_hoc, only:
      .      irtp2_ta, ! Variable(s)
      .      irtp2_tp,
@@ -1478,42 +1438,27 @@
 
           ! Statistics: explicit contributions for rtp2, thlp2, or rtpthlp.
 
-          if ( ixapxbp_ta > 0 ) then
-            zm%x(k,ixapxbp_ta)
-     .      = zm%x(k,ixapxbp_ta)
-     .      + term_ta_rhs( a1_zt(kp1), a1(k), a1_zt(k),
+          call stat_modify_pt( ixapxbp_ta, k,
+     .        term_ta_rhs( a1_zt(kp1), a1(k), a1_zt(k),
      .                     wp3(kp1), wp3(k), wp2_zt(kp1),
      .                     wp2_zt(k), wpxbp_zt(kp1), wpxbp_zt(k),
      .                     wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k),
-     .                     beta, wtol_sqd )
-          endif
+     .                     beta, wtol_sqd ), zm )
 
           ! rtp2/thlp2 case (1 turbulent production term)
-          if ( ixapxbp_tp > 0 ) then
-            zm%x(k,ixapxbp_tp)
-     .      = zm%x(k,ixapxbp_tp)
-     .      + term_tp( xam(kp1), xam(k), xbm(kp1), xbm(k),
-     .                 wpxbp(k), wpxap(k), gr%dzm(k) )
-            zm%n(k,ixapxbp_tp) = zm%n(k,ixapxbp_tp) + 1
-          endif
-
+          call stat_update_var_pt( ixapxbp_tp, k,
+     .        term_tp( xam(kp1), xam(k), xbm(kp1), xbm(k),
+     .                 wpxbp(k), wpxap(k), gr%dzm(k) ), zm )
+          
           ! rtpthlp case (2 turbulent production terms)
-          if ( ixapxbp_tp1 > 0 ) then
-            zm%x(k,ixapxbp_tp1) 
-     .      = zm%x(k,ixapxbp_tp1)
-     .      + term_tp( 0.0, 0.0, xbm(kp1), xbm(k),
-     .                 0.0, wpxap(k), gr%dzm(k) )
-            zm%n(k,ixapxbp_tp1) = zm%n(k,ixapxbp_tp1) + 1
-          endif
-
-          if ( ixapxbp_tp2 > 0 ) then
-            zm%x(k,ixapxbp_tp2) 
-     .      = zm%x(k,ixapxbp_tp2)
-     .      + term_tp( xam(kp1), xam(k), 0.0, 0.0,
-     .                 wpxbp(k), 0.0, gr%dzm(k) )
-            zm%n(k,ixapxbp_tp2) = zm%n(k,ixapxbp_tp2) + 1
-          endif
-
+          call stat_update_var_pt( ixapxbp_tp1, k,
+     .        term_tp( 0.0, 0.0, xbm(kp1), xbm(k),
+     .                 0.0, wpxap(k), gr%dzm(k) ), zm )
+          
+          call stat_update_var_pt( ixapxbp_tp2, k,
+     .        term_tp( xam(kp1), xam(k), 0.0, 0.0,
+     .                 wpxbp(k), 0.0, gr%dzm(k) ), zm )
+          
           endif ! lstats_samp
 #endif /*STATS*/
 
@@ -1536,7 +1481,6 @@
         rhs(1,1) = xapxbp(1)
         rhs(gr%nnzp,1) = 0.0
 !       end if
-
 
         return
         end subroutine diag_var_rhs
