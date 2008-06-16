@@ -1,11 +1,11 @@
-! $Id: gradsaverage.F,v 1.11 2008-05-30 16:58:24 faschinj Exp $
+! $Id: gradsaverage.F,v 1.12 2008-06-16 17:12:46 faschinj Exp $
         module grads_common
         
         implicit none
 
         public :: grads_average, grads_average_interval, grads_zlvl
 
-        private
+        private ! Default Scope
 
         contains
 
