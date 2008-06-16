@@ -1,10 +1,10 @@
-! $Id: temp_in_K_mod.F,v 1.3 2008-05-30 16:24:25 faschinj Exp $ 
+! $Id: temp_in_K_mod.F,v 1.4 2008-06-16 17:44:05 faschinj Exp $ 
 
          module temp_in_K_mod
          
          implicit none
          
-         private
+         private ! Default scope
 
          public :: thlm2temp_in_K
          
