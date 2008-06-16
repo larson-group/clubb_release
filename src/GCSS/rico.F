@@ -35,9 +35,9 @@
 
         use stats_prec, only: time_prec ! Variable(s)
 
-#ifdef STATS
-        use stats_hoc
-#endif /*STATS*/
+!#ifdef STATS
+!        use stats_hoc
+!#endif /*STATS*/
 
         implicit none
 
