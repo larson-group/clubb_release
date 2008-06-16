@@ -1,10 +1,12 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: wangara.F,v 1.7 2008-05-30 16:24:23 faschinj Exp $
+! $Id: wangara.F,v 1.8 2008-06-16 17:36:20 faschinj Exp $
         module wangara
 
-        public :: wangara_tndcy, wangard_sfclyr
+        public :: wangara_tndcy, wangara_sfclyr
+
+        private ! Default Scope
 
         contains
 !----------------------------------------------------------------------
