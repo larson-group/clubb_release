@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.193 2008-06-02 21:27:24 faschinj Exp $
+! $Id: hoc.F,v 1.194 2008-06-16 17:14:47 faschinj Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -1155,6 +1155,9 @@
 
         use mpace_a, only: mpace_a_init ! Procedure(s)
 
+        use lba, only: lba_init ! Procedure(s)
+
+
         implicit none
 
         ! Input Variables
@@ -1283,6 +1286,8 @@
             call arm_97_init()
         case( "arm_0003" )
             call arm_0003_init()
+        case( "lba" )
+            call lba_init()
         case( "mpace_a" )
             call mpace_a_init()
         end select
@@ -1372,7 +1377,7 @@
 
         use dycoms2_rf02, only: dycoms2_rf02_tndcy, dycoms2_rf02_sfclyr ! Procedure(s)
 
-        use cloud_sed_mod ! Procedure(s)
+        use cloud_sed_mod, only: cloud_drop_sed ! Procedure(s)
 
         use fire, only: fire_tndcy, sfc_momentum_fluxes,
      .                  sfc_thermo_fluxes ! Procedure(s)
