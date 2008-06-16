@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: lba.F,v 1.11 2008-06-04 20:26:58 dschanen Exp $
+! $Id: lba.F,v 1.12 2008-06-16 17:32:47 faschinj Exp $
         module lba
 
 !       Description:
@@ -229,14 +229,13 @@
 !       data used in the tndcy subroutine.
 !----------------------------------------------------------------
 
-          use file_functions, only: file_read_1d, file_read_2d
+          use file_functions, only: file_read_1d, file_read_2d ! Procedure(s)
 
           implicit none
 
           call file_read_1d(10,
      .      file_path//'lba_heights.dat',
      .      nzrad, per_line, zrad)
-
 
           call file_read_2d(10,
      .      file_path//'lba_rad.dat',
