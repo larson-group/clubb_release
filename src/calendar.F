@@ -1,4 +1,5 @@
-        module calendar
+!$Id: calendar.F,v 1.3 2008-06-16 17:09:44 faschinj Exp $
+      module calendar
 
         implicit none
 
@@ -93,4 +94,4 @@
   
         end function leap_year
         
-        end module calendar
+      end module calendar
