@@ -1,9 +1,10 @@
-! $Id: std_atmosphere_mod.F,v 1.3 2008-05-30 16:24:22 faschinj Exp $
-        module std_atmosphere_mod
+!----------------------------------------------------------------------------
+! $Id: std_atmosphere_mod.F,v 1.4 2008-06-16 17:26:40 faschinj Exp $
+      module std_atmosphere_mod
         
         implicit none
         
-        private
+        private ! Default Scope
 
         public :: std_alt, std_tempk, std_sp_hmdty, std_pinmb, 
      .            std_o3l, std_atmos_dim, std_atmosphere
@@ -174,6 +175,7 @@
 
 
         return
+
         end subroutine std_atmosphere
 
-        end module std_atmosphere_mod
+      end module std_atmosphere_mod
