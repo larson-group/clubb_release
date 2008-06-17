@@ -7,6 +7,9 @@
 !       Description:
 !       Contains subroutines for the GABLS2 case.
 !----------------------------------------------------------------------
+
+        implicit none
+
         public :: gabls2_tndcy, gabls2_sfclyr
 
         private ! Default Scope

@@ -1,12 +1,15 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: fire.F,v 1.11 2008-06-16 22:26:11 faschinj Exp $
+! $Id: fire.F,v 1.12 2008-06-17 16:35:03 faschinj Exp $
         module fire
 
 !       Description:
 !       Contains subroutines for the GCSS FIRE case.
 !----------------------------------------------------------------------
+
+        implicit none
+
         public :: fire_tndcy, sfc_momentum_fluxes, sfc_thermo_fluxes
 
         private ! Default Scope
