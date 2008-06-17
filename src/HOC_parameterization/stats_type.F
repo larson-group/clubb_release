@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_type.F,v 1.9 2008-06-16 22:19:11 faschinj Exp $
+! $Id: stats_type.F,v 1.10 2008-06-17 15:06:23 vlarson Exp $
       module stats_type
 #ifdef STATS
  
@@ -191,7 +191,7 @@
 
 !---------------------------------------------------------------------
          subroutine stat_begin_update_pt
-     .             ( var_index, i, value, grid )
+     .             ( var_index, grd_level, value, grid )
 !
 !        Description: This begins an update of the value of a 
 !        statistics variable located at var_index in the grid 
@@ -212,18 +212,18 @@
          real, intent(in) ::
      .   value ! The value being stored
 
-         integer, intent(in) :: i
+         integer, intent(in) :: 
+     .   grd_level   ! Grid level index
          
          ! Input/Output Variable(s)
          type(stats), intent(inout) :: grid
         
-         if ( var_index > 0 ) then
-             if ( .not. grid%in_update(i,var_index) ) then  
-               grid%x(i,var_index) = 
-     .                 grid%x(i,var_index) - value
-               grid%in_update(i,var_index) = .true.
+         if ( var_index > 0 ) then  ! If 
+             if ( .not. grid%in_update(grd_level, var_index) ) then  
+               grid%x(grd_level, var_index) = 
+     .                 grid%x(grd_level, var_index) - value
+               grid%in_update(grd_level, var_index) = .true.
              else
-               print *, var_index
               call clubb_debug( 2,
      .        "Warning! Beginning an update before finishing previous")
              end if
