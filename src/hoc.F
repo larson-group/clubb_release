@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.194 2008-06-16 17:14:47 faschinj Exp $
+! $Id: hoc.F,v 1.195 2008-06-17 20:52:05 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -411,7 +411,7 @@
            iinit = ( time_current - time_initial ) / dtmain + 1
 
            call hoc_restart( iunit, runfile, restart_path_case, 
-     .                       fname_prefix//"_zt", time_restart, 
+     .                       trim( fname_prefix )//"_zt", time_restart, 
      .                       thlm, rtm, um, vm,
      .                       ug, vg, upwp, vpwp, wmt, wmm, 
      .                       um_ref, vm_ref, wpthlp, wprtp,
@@ -1205,7 +1205,7 @@
         integer :: k, timestep
 
         ! Inform inputfields module
-        datafile = restart_path_case
+        datafile = "../"//trim( restart_path_case )
         input_type = "hoc"
         input_um   = .true.
         input_vm   = .true.
@@ -1255,8 +1255,9 @@
         
         ! Determine the nearest timestep in the GRADS file to the
         ! restart time.
-        call compute_timestep( iunit, filename, .true.,
-     .                         time_restart, timestep )
+        call compute_timestep
+     .       ( iunit, "../"//trim( restart_path_case )//"_zt.ctl", 
+     .         .true., time_restart, timestep )
         
         ! Sanity check for input time_restart
         if ( timestep < 0 ) then
