@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F,v 1.11 2008-06-16 22:20:13 faschinj Exp $
+! $Id: microphys_driver.F,v 1.12 2008-06-17 13:08:07 griffinb Exp $
         module microphys_driver
 
 !       Description:
@@ -1214,29 +1214,36 @@
 !
 !       Conservation Properties:
 !
-!       When a hydrometeor is sedimented to the ground (or to the lower
+!       When a hydrometeor is sedimented to the ground (or out the lower
 !       boundary of the model), it is removed from the atmosphere (or
 !       from the model domain).  Thus, the quantity of the hydrometeor 
 !       over the entire vertical domain should not be conserved due to 
 !       the process of sedimentation.  Thus, not all of the column 
-!       totals in the left-hand side matrix should be equal to 0. Instead,
-!       they should sum to the flux of hm out the bottom (zm(1) level) of the domain,
-!       -V_hm(1) * ( D(2)*hm(1) + C(2)*hm(2) ), where the factor in parentheses
-!       is a weighted sum of hm at the zm(1) level.
+!       totals in the left-hand side matrix should be equal to 0. 
+!       Instead, the sum of all the column totals should equal the flux 
+!       of hm out the bottom (zm(1) level) of the domain,
+!       -V_hm(1) * ( D(2)*hm(1) + C(2)*hm(2) ), where the factor in 
+!       parentheses is the interpolated value of hm at the zm(1) level.
+!       Furthermore, most of the individual column totals should sum 
+!       to 0, but the 1st and 2nd (from the left) columns should combine
+!       to sum to the flux out the bottom of the domain.
 !
-!       To see that this modified conservation law is satisfied, compute the
-!       sedimentation of hm and integrate vertically.  In discretized matrix notation,
-!       we need
+!       To see that this modified conservation law is satisfied, 
+!       compute the sedimentation of hm and integrate vertically.  In 
+!       discretized matrix notation (where "i" stands for the matrix 
+!       column and "j" stands for the matrix row):
 !
-!           -V_hm(1) * ( D(2)*hm(1) + C(2)*hm(2) )
-!              =
-!           Sum_j Sum_i ( 1/dzt )_i  ( d ( V/ dz )_ij hm_j
+!        -V_hm(1) * ( D(2)*hm(1) + C(2)*hm(2) )
+!           =
+!        Sum_j Sum_i ( 1/dzt )_i ( d (V_hm * weights_hm) / dz )_ij hm_j.
 !
-!       The sum over i removes dzt everywhere from the matrix below.  The sum over j
-!       leaves the flux at zm(1) that we desire.
+!       The left-hand side matrix, ( d (V_hm * weights_hm) / dz )_ij, is
+!       partially written below.  The sum over i in the above equation 
+!       removes dzt everywhere from the matrix below.  The sum over j
+!       leaves the column totals and the flux at zm(1) that are desired.
 !
-!       Left-hand side matrix contributions from the sedimentation term (only);
-!       first four vertical levels:
+!       Left-hand side matrix contributions from the sedimentation term
+!       (only); first four vertical levels:
 !
 !            ------------------------------------------------------------------------------------------>
 !       k=1 |            0                            0                                0
@@ -1255,10 +1262,10 @@
 !       around the central thermodynamic level (k), such that:
 !       A(k) = ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ),
 !       B(k) = 1 - [ ( zm(k) - zt(k) ) / ( zt(k+1) - zt(k) ) ]
-!            = 1 - A(k),
+!            = 1 - A(k);
 !       C(k) = ( zm(k-1) - zt(k-1) ) / ( zt(k) - zt(k-1) ), and
 !       D(k) = 1 - [ ( zm(k-1) - zt(k-1) ) / ( zt(k) - zt(k-1) ) ]
-!            = 1 - C(k) .
+!            = 1 - C(k).
 !
 !       Note:  The superdiagonal term from level 3 and both the main
 !              diagonal and superdiagonal terms from level 4 are not
@@ -1314,11 +1321,12 @@
         ! and thermodynamic level (k-1).
         mkm1 = level - 1
 
-        ! Note:  The code has now been changed so that Vxx has been pulled 
-        !        inside of the derivative.  The sedimentation term is now of 
-        !        the form -d(Vxx*xx)/dt, rather than of the form -Vxx d(xx)/dt.
-        !        The term has been re-discretized in a conservative manner and
-        !        the results are listed below, with the old code commented out.
+        ! Note:  The code is now written so that V_hm has been pulled 
+        !        inside of the derivative.  The sedimentation term is 
+        !        now of the form -d(V_hm*hm)/dz, rather than of the form
+        !        -V_hm d(hm)/dz.  The term has been re-discretized in a 
+        !        conservative manner and the results are listed below, 
+        !        with the old code commented out.
 
         if ( level == 1 ) then
 
