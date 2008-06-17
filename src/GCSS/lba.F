@@ -1,12 +1,14 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: lba.F,v 1.12 2008-06-16 17:32:47 faschinj Exp $
+! $Id: lba.F,v 1.13 2008-06-17 16:33:39 faschinj Exp $
         module lba
 
 !       Description:
 !       Contains subroutines for the LBA case.
 !----------------------------------------------------------------------
+
+        implicit none
 
         private ! Default Scope
 

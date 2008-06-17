@@ -7,6 +7,9 @@
 !       Description:
 !       Contains subroutines for the RICO case.
 !----------------------------------------------------------------------
+
+        implicit none
+
         public :: rico_tndcy, rico_sfclyr
 
         private  ! Default Scope

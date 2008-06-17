@@ -1,12 +1,14 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: jun25.F,v 1.14 2008-06-16 22:26:11 faschinj Exp $
+! $Id: jun25.F,v 1.15 2008-06-17 16:33:39 faschinj Exp $
         module jun25
 
 !       Description:
 !       Contains subroutines for the June 11 Altocumulous case.
 !----------------------------------------------------------------------
+
+        implicit none
 
         public :: jun25_altocu_tndcy
 

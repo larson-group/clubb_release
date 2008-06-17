@@ -1,8 +1,10 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: wangara.F,v 1.8 2008-06-16 17:36:20 faschinj Exp $
+! $Id: wangara.F,v 1.9 2008-06-17 16:30:20 faschinj Exp $
         module wangara
+
+        implicit none
 
         public :: wangara_tndcy, wangara_sfclyr
 

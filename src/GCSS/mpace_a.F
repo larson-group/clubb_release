@@ -1,12 +1,14 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_a.F,v 1.17 2008-06-16 22:26:11 faschinj Exp $
+! $Id: mpace_a.F,v 1.18 2008-06-17 16:33:38 faschinj Exp $
         module mpace_a
 
 !       Description:
 !       Contains subroutines for the mpace_a intercomparison.
 !----------------------------------------------------------------------
+
+        implicit none
 
         public :: mpace_a_tndcy, mpace_a_sfclyr, mpace_a_init
 
