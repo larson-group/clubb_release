@@ -1,4 +1,4 @@
-! $Id: diffusion.F,v 1.7 2008-06-03 17:19:07 griffinb Exp $
+! $Id: diffusion.F,v 1.8 2008-06-17 13:58:32 griffinb Exp $
 !===============================================================================
         module diffusion
 
@@ -105,7 +105,8 @@
 !              (explicit) component needs to be computed by multiplying 
 !              the left-hand side results by (1/2), reversing the sign
 !              on each left-hand side element, and then multiplying 
-!              each element by the appropriate var_t(t) value.
+!              each element by the appropriate var_t(t) value from the
+!              appropriate vertical level.
 !
 !
 !       Boundary Conditions:
@@ -168,9 +169,9 @@
 !             vertical levels and then overwrite the results at the 
 !             boundary levels.
 !
-!          Either way, at the boundary levels, an array with a value of 1
-!          at the main diagonal on the left-hand side and with values 
-!          of 0 at all other diagonals on the left-hand side will 
+!          Either way, at the boundary levels, an array with a value 
+!          of 1 at the main diagonal on the left-hand side and with 
+!          values of 0 at all other diagonals on the left-hand side will
 !          preserve the right-hand side value at that level, thus 
 !          satisfying the fixed-point boundary conditions.
 !
@@ -184,9 +185,20 @@
 !       (for the eddy diffusion term) should be equal to 0.  This 
 !       ensures that the total amount of the quantity var_t over the 
 !       entire vertical domain is being conserved, meaning that 
-!       nothing is lost due to diffusional effects.  In the matrix
-!       below, as long as the grid is evenly-spaced (dzt(k) is the same
-!       at every level), the sum of each column will add up to 0.
+!       nothing is lost due to diffusional effects.
+!
+!       To see that this conservation law is satisfied, compute the 
+!       eddy diffusion of var_t and integrate vertically.  In 
+!       discretized matrix notation (where "i" stands for the matrix 
+!       column and "j" stands for the matrix row):
+!
+!        0 =
+!        Sum_j Sum_i ( 1/dzt )_i ( dzt * ((K_m+nu)*dzm) )_ij (var_t)_j.
+!
+!       The left-hand side matrix, ( dzt * ((K_m+nu)*dzm) )_ij, is
+!       partially written below.  The sum over i in the above equation 
+!       removes dzt everywhere from the matrix below.  The sum over j
+!       leaves the column totals that are desired.
 !
 !       Left-hand side matrix contributions from eddy diffusion term;
 !       first four vertical levels:
@@ -194,8 +206,8 @@
 !            ------------------------------------------------------------------------------------------------->
 !       k=1 | +dzt(k)*(K_m(k)+nu)*dzm(k)       -dzt(k)*(K_m(k)+nu)*dzm(k)                        0
 !           |
-!       k=2 | -dzt(k)*(K_m(k-1)+nu)*dzm(k-1)   +dzt(k)*[ (K_m(k)+nu)*dzm(k)
-!           |                                           +(K_m(k-1)+nu)*dzm(k-1) ]   -dzt(k)*(K_m(k)+nu)*dzm(k)
+!       k=2 | -dzt(k)*(K_m(k-1)+nu)*dzm(k-1)   +dzt(k)*[ (K_m(k)+nu)*dzm(k)         -dzt(k)*(K_m(k)+nu)*dzm(k)
+!           |                                           +(K_m(k-1)+nu)*dzm(k-1) ]
 !           |
 !       k=3 |              0                   -dzt(k)*(K_m(k-1)+nu)*dzm(k-1)       +dzt(k)*[ (K_m(k)+nu)*dzm(k)
 !           |                                                                                +(K_m(k-1)+nu)*dzm(k-1) ]
@@ -380,7 +392,8 @@
 !              (explicit) component needs to be computed by multiplying 
 !              the left-hand side results by (1/2), reversing the sign
 !              on each left-hand side element, and then multiplying 
-!              each element by the appropriate var_m(t) value.
+!              each element by the appropriate var_m(t) value from the
+!              appropriate vertical level.
 !
 !
 !       Boundary Conditions:
@@ -443,9 +456,9 @@
 !             vertical levels and then overwrite the results at the
 !             boundary levels.
 !
-!          Either way, at the boundary levels, an array with a value of 1
-!          at the main diagonal on the left-hand side and with values
-!          of 0 at all other diagonals on the left-hand side will
+!          Either way, at the boundary levels, an array with a value 
+!          of 1 at the main diagonal on the left-hand side and with 
+!          values of 0 at all other diagonals on the left-hand side will
 !          preserve the right-hand side value at that level, thus
 !          satisfying the fixed-point boundary conditions.
 !
@@ -459,9 +472,20 @@
 !       (for the eddy diffusion term) should be equal to 0.  This
 !       ensures that the total amount of the quantity var_m over the
 !       entire vertical domain is being conserved, meaning that
-!       nothing is lost due to diffusional effects.  In the matrix
-!       below, as long as the grid is evenly-spaced (dzm(k) is the same
-!       at every level), the sum of each column will add up to 0.
+!       nothing is lost due to diffusional effects.
+!
+!       To see that this conservation law is satisfied, compute the 
+!       eddy diffusion of var_m and integrate vertically.  In 
+!       discretized matrix notation (where "i" stands for the matrix 
+!       column and "j" stands for the matrix row):
+!
+!        0 =
+!        Sum_j Sum_i ( 1/dzm )_i ( dzm * ((K_t+nu)*dzt) )_ij (var_m)_j.
+!
+!       The left-hand side matrix, ( dzm * ((K_t+nu)*dzt) )_ij, is
+!       partially written below.  The sum over i in the above equation 
+!       removes dzm everywhere from the matrix below.  The sum over j
+!       leaves the column totals that are desired.
 !
 !       Left-hand side matrix contributions from eddy diffusion term;
 !       first four vertical levels:
@@ -469,8 +493,8 @@
 !            ------------------------------------------------------------------------------------------------->
 !       k=1 | +dzm(k)*(K_t(k+1)+nu)*dzt(k+1)   -dzm(k)*(K_t(k+1)+nu)*dzt(k+1)                    0
 !           |
-!       k=2 | -dzm(k)*(K_t(k)+nu)*dzt(k)       +dzm(k)*[ (K_t(k+1)+nu)*dzt(k+1)
-!           |                                           +(K_t(k)+nu)*dzt(k) ]       -dzm(k)*(K_t(k+1)+nu)*dzt(k+1)
+!       k=2 | -dzm(k)*(K_t(k)+nu)*dzt(k)       +dzm(k)*[ (K_t(k+1)+nu)*dzt(k+1)     -dzm(k)*(K_t(k+1)+nu)*dzt(k+1)
+!           |                                           +(K_t(k)+nu)*dzt(k) ]
 !           |
 !       k=3 |              0                   -dzm(k)*(K_t(k)+nu)*dzt(k)           +dzm(k)*[ (K_t(k+1)+nu)*dzt(k+1)
 !           |                                                                                +(K_t(k)+nu)*dzt(k) ]
