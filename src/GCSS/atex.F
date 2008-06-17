@@ -1,13 +1,18 @@
 #define SCLR_THETA 1
 #define SCLR_RT 1
 !----------------------------------------------------------------------
-!$Id: atex.F,v 1.15 2008-06-16 22:24:12 faschinj Exp $
+!$Id: atex.F,v 1.16 2008-06-17 16:36:23 faschinj Exp $
         module atex
 
 !       Description:
 !       Contains subroutines for the GCSS ATEX case.
 !----------------------------------------------------------------------
+
+        implicit none
+
         public :: atex_tndcy, atex_sfclyr
+
+        private ! Default Scope
 
         contains
 
