@@ -2,21 +2,37 @@
 
         implicit none
 
-        public :: pos_definite_adj, band_mult
+        public :: pos_definite_adj
 
         private ! Default Scope
 
         contains
 !-----------------------------------------------------------------------
         subroutine pos_definite_adj
-     .            ( dt, flux_lhs, solution, field_n, field_pd, flux_pd )
+     .            ( dt, field_grid, field_np1, 
+     .              flux_np1, field_n, field_pd, flux_pd )
 !       Description:
+!       Applies a  flux conservative positive definite scheme to a variable
+
+!       There are two possible grids:       
+!       (1) flux on zt  field on zm
+!       then
+!       flux_zm(k) = ( flux_zt(k+1) + flux_zt(k) ) / 2
+         
+!       (1) flux on zm field on zt
+!       then
+!       flux_zt(k) = ( flux_zm(k) + flux_zm(k-1) ) / 2
+!       
+
 !       References:
-!       Comment on ``A Positive Definite Advection Scheme Obtained by
-!       Nonlinear Renormalization of the Advective Fluxes''
+!       ``A Positive Definite Advection Scheme Obtained by
+!       Nonlinear Renormalization of the Advective Fluxes'' Smolarkiewicz (1989)
+!       Monthly Weather Review, Vol. 117, pp. 2626--2632
 !-----------------------------------------------------------------------
         use grid_class, only:
-     .      gr ! Variable(s)
+     .      gr,! Variable(s)
+     .      ddzt, ! Function
+     .      ddzm  ! Function
         use constants, only : 
      .      eps ! Variable(s)
         use stats_prec, only: 
@@ -25,15 +41,17 @@
         implicit none
 
         ! Constant parameters
-        real, parameter :: beta = 1.0 ! Coefficient of 'Y' (i.e. field_np1)
+!       real, parameter :: beta = 1.0 ! Coefficient of 'Y' (i.e. field_np1)
 
+        ! External
         intrinsic :: eoshift, kind, any, min, max
 
+        ! Input variables
         real(kind=time_prec), intent(in) ::
      .  dt ! Timestep    [s]
 
-        real, dimension(3,gr%nnzp), intent(inout) :: 
-     .  flux_lhs ! The matrix 'A' in sgbmv
+        character(len=2), intent(in) ::
+     .  field_grid ! The grid of the field, either zt or zm
 
         real, dimension(gr%nnzp), intent(in) :: 
      .  field_n ! The field (e.g. rtm) at n, prior to n+1
@@ -43,19 +61,21 @@
      .  field_pd ! Budget of the change in the mean term due to the scheme
 
         ! Output Variables
-        real, target, dimension(2*gr%nnzp), intent(inout) :: solution
 
-        ! Local Variables
-
-        real :: alpha ! Coefficient for matrix 'A'
-
-        integer :: 
-     .  ndim,  ! Dimension of solution vector
-     .  k, km1, kp1 ! Loop indices
-
-        real, pointer, dimension(:) ::
+        real, intent(inout), dimension(gr%nnzp) ::
      .  field_np1,  ! Field at n+1 (e.g. rtm in [kg/kg])
      .  flux_np1    ! Flux applied to field
+
+        ! Local Variables
+        integer ::
+     .  kabove,  ! # of vertical levels the flux higher point resides
+     .  kbelow   ! # of vertical levels the flux lower point resides
+
+!       real :: alpha ! Coefficient for matrix 'A'
+
+        integer :: 
+     .  k, km1, kmhalf, kp1, kphalf ! Loop indices
+
 
         real, dimension(gr%nnzp) ::
      .  flux_plus, flux_minus,! [F_i+1/2]^+ [F_i+1/2]^- in Smolarkiewicz 
@@ -63,13 +83,11 @@
      .  flux_lim,             ! Correction applied to flux at n+1
      .  field_nonlim          ! Temporary variable for calculation
 
+        real, dimension(gr%nnzp) :: 
+     .  dz_over_dt ! Conversion factor  [m/s]
+
+
 !-----------------------------------------------------------------------
-
-        ndim = 2*gr%nnzp
-
-        ! Odd indices contain the mean field & even indices contain the flux
-        field_np1 => solution(1:ndim:2)
-        flux_np1  => solution(2:ndim:2)
 
         ! If all the values are positive or the values at the previous 
         ! timestep were negative, then just return
@@ -79,111 +97,116 @@
           return
         end if
 
-        !print *, "Correcting flux"
+        if ( field_grid == "zm" ) then
+          kabove = 0
+          kbelow = 1
+        else if ( field_grid == "zt" ) then
+          kabove = 1
+          kbelow = 0
+        else
+          stop "Error in pos_def_adj"
+        end if
+
+        print *, "Correcting flux"
 
         do k = 1, gr%nnzp, 1
-          km1 = max( k-1, 1 )
-          kp1 = min( k+1, gr%nnzp )
-        
-          flux_plus(k)  =  max( 0., flux_np1(k) )
-          flux_minus(k) = -min( 0., flux_np1(k) )
 
-          ! We place a limiter of eps to prevent a divide by zero
-          fout(k) = max( flux_plus(k) + flux_minus(km1), eps )
+          ! Def. of F+ and F- from eqn 2 Smolarkowicz
+          flux_plus(k)  =  max( 0., flux_np1(k) ) ! defined on flux levels
+          flux_minus(k) = -min( 0., flux_np1(k) ) ! defined on flux levels
+
+          if ( field_grid == "zm" ) then
+            dz_over_dt(k) = ( 1./gr%dzm(k) ) / dt
+
+          else if ( field_grid == "zt" ) then
+            dz_over_dt(k) = ( 1./gr%dzt(k) ) / dt
+
+          end if
+
         end do 
 
-        do k = 2, gr%nnzp, 1
-          kp1 = min( k+1, gr%nnzp )
+        do k = 1, gr%nnzp, 1
+          ! If the scalar variable is on the kth t-level, then
+          ! Smolarkowicz's k+1/2 flux level is the kth m-level in CLUBB.
+
+          ! If the scalar variable is on the kth m-level, then
+          ! Smolarkowicz's k+1/2 flux level is the k+1 t-level in CLUBB.
+
+          kphalf = min( k+kabove, gr%nnzp ) ! k+1/2 flux level
+          kmhalf = max( k-kbelow, 1 )       ! k-1/2 flux level
+
+          ! Eqn A4 from Smolarkowicz
+          ! We place a limiter of eps to prevent a divide by zero, and
+          !   after this calculation fout is on the scalar level, and
+          !   fout is the total outward flux for the scalar level k.
+
+          fout(k) = max( flux_plus(kphalf) + flux_minus(kmhalf), eps )
+
+        end do 
+
+
+        do k = 1, gr%nnzp, 1
+          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+          ! FIXME:
+          ! We haven't tested this for negative values at the gr%nnzp level
+          ! -dschanen 13 June 2008
+          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+          kphalf = min( k+kabove, gr%nnzp ) ! k+1/2 flux level
+          kp1    = min( k+1, gr%nnzp )      ! k+1 scalar level
 
           ! Eqn 10 from Smolarkowicz (1989)
 
-          flux_lim(k)
-     .    = max( min( flux_np1(k),
-     .                ( flux_plus(k)/fout(k) ) * field_n(k)
+          flux_lim(kphalf)
+     .    = max( min( flux_np1(kphalf),
+     .                ( flux_plus(kphalf)/fout(k) ) * field_n(k)
+     .                  * dz_over_dt(k)
      .              ),
-     .           -( ( flux_minus(k)/fout(kp1) ) * field_n(kp1) )
+     .           -( ( flux_minus(kphalf)/fout(kp1) ) * field_n(kp1)
+     .                * dz_over_dt(k) )
      .         )
         end do
 
-        flux_lim(1) = flux_np1(1)
+        ! Boundary conditions
+        flux_lim(1) = flux_np1(1) 
+        flux_lim(gr%nnzp) = flux_np1(gr%nnzp)
 
-        flux_pd = flux_lim - flux_np1
+        flux_pd = ( flux_lim - flux_np1 ) / dt
 
         field_nonlim = field_np1
 
-        alpha = -dt
-        ! Appy change to field at n+1
-        call band_mult( 'N', gr%nnzp, gr%nnzp, 1, 1, 1, 1,
-     .                  alpha, beta, flux_lhs, flux_pd, 
-     .                  field_np1 ) 
+        !alpha = -dt
 
-        ! Total change in field due to this calculation
-        field_pd = field_nonlim - field_np1
+        print *, "Flux_lim"
+        write(6,'(10g12.4)') flux_lim
+        print *, "Flux_unl"
+        write(6,'(10g12.4)') flux_np1
+        pause
+        
+        ! Apply change to field at n+1
+        if ( field_grid == "zt" ) then
+
+          field_np1 = -dt * ddzm( flux_lim - flux_np1 ) + field_np1
+
+        else if ( field_grid == "zm" ) then
+
+          field_np1 = -dt * ddzt( flux_lim - flux_np1 ) + field_np1
+
+        end if
+
+        ! Removed in favor of calling ddzt and ddzm.  It turns out this
+        ! isn't quite generalized for use with either grid.
+!       call band_mult( 'N', gr%nnzp, gr%nnzp, 1, 1, 1, 1,
+!    .                  alpha, beta, flux_lhs, flux_pd, 
+!    .                  field_np1 ) 
+
+        ! Determine the total time tendency in field due to this calculation
+        ! (for diagnostic purposes)
+        field_pd = ( field_np1 - field_nonlim ) / dt
 
         ! Replace the non-limited flux with the limited flux
         flux_np1 = flux_lim
 
         return
         end subroutine pos_definite_adj
-!-----------------------------------------------------------------------
-
-        subroutine band_mult( trans, ndim, mdim, nsup, nsub, yinc, xinc,
-     .                        alpha, beta, lhs, xvec, yvec )
-!       Description:
-!       Wrapper subroutine for banded matrix by vector multiplication in
-!       the level 2 BLAS library.
-
-!       References:
-!       <http://www.netlib.org/blas/>
-!-----------------------------------------------------------------------
-
-        implicit none
-
-        ! External
-        ! Level 2 BLAS to multiply a vector by a band diagonal matrix
-        external :: sgbmv, dgbmv
-
-        character(len=1) :: 
-     .  trans  ! Whether to use the transposition of the lhs matrix
-
-        integer, intent(in) ::
-     .  ndim, mdim,  ! Dimensions of the matrix when not compact
-     .  nsup, nsub,  ! Super and Sub diagonals
-     .  yinc, xinc   ! Increments of y and x vector
-
-        real, intent(in) ::
-     .  alpha,       ! Coefficient of the matrix lhs
-     .  beta         ! Coefficient of Y vector
-
-        real, dimension(nsup+nsub+1, ndim), intent(in) ::
-     .  lhs          ! The matrix 'A' in the blas subroutine
-
-        real, dimension(ndim), intent(in) ::
-     .  xvec ! The vector X
-
-        real, dimension(ndim), intent(inout) ::
-     .  yvec ! The vector Y
-
-
-!-----------------------------------------------------------------------
-!       *** BLAS 2 routine ***
-!       SUBROUTINE DGBMV(TRANS,M,N,KL,KU,ALPHA,A,LDA,X,INCX,BETA,Y,INCY)
-!-----------------------------------------------------------------------
-        ! Multiply so that Y := alpha*A*X + beta*Y
-
-        if ( kind( lhs(1,1) ) == 4 ) then
-          call sgbmv( trans, ndim, mdim, nsub, nsup, 
-     .                alpha, lhs, nsup+nsub+1, 
-     .                xvec, xinc, beta, yvec, yinc )
-
-        else if ( kind( lhs(1,1) ) == 8 ) then
-          call dgbmv( trans, ndim, mdim, nsub, nsup, 
-     .                alpha, lhs, nsup+nsub+1, 
-     .                xvec, xinc, beta, yvec, yinc )
-        end if
-
-        return
-        end subroutine band_mult
-!-----------------------------------------------------------------------
 
         end module pos_definite_mod

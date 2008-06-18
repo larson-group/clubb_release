@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.58 2008-06-16 22:35:51 faschinj Exp $
+! $Id: mixing.F,v 1.59 2008-06-18 16:43:56 dschanen Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -1142,11 +1142,11 @@
         integer, intent(out) :: err_code
 
         ! Local Variables
-        real, dimension(2*gr%nnzp,nrhs) :: 
+        real, target, dimension(2*gr%nnzp,nrhs) :: 
      .  solution ! Solution to band diagonal system
 
-        real, dimension(3,gr%nnzp) ::
-     .  flux_lhs
+        real, dimension(gr%nnzp) ::
+     .  xm_n ! Old value of xm for positive definite scheme     [units vary] 
 
         real, dimension(gr%nnzp) ::
      .  wpxp_pd, xm_pd ! Change in xm and wpxp due to the pos. def. scheme
@@ -1182,7 +1182,7 @@
           ixm_ta    = irtm_ta
           ixm_ma    = irtm_ma
           ixm_cn    = irtm_cn ! Applies to both the mean and flux terms
-          ixm_pd    = irtm_pd ! Applies to both the mean and flux terms
+          ixm_pd    = irtm_pd
           iwpxp_bt  = iwprtp_bt
           iwpxp_ma  = iwprtp_ma
           iwpxp_ta  = iwprtp_ta
@@ -1237,28 +1237,9 @@
           ! wpxp total time tendency (1st calculation)
           call stat_begin_update( iwpxp_bt, real( wpxp / dt ), zm )
 
-        endif ! lstats_samp
+        end if ! lstats_samp
 #endif /*STATS*/
 
-        ! Setup matrix for positive definite advection scheme
-        if ( trim( solve_type ) == "rtm" ) then
-
-          flux_lhs = 0.0
-
-          do k = 2, gr%nnzp-1, 1
-            k_xm   = 2*k - 1
-            k_wpxp = 2*k
-
-            flux_lhs(1,k+1) = lhs(2,k_xm)
-            !flux_lhs(2,k)   = 0. !  (Already 0)
-            flux_lhs(3,k-1) = lhs(4,k_xm)
-
-            ! %%
-            !lhs(3-2,k_xm) = 0.0
-            !lhs(3+2,k_xm) = 0.0
-          enddo
-
-        endif
 
 #ifdef STATS
         if ( lstats_samp .and. ixm_cn > 0 ) then
@@ -1273,7 +1254,7 @@
           ! Perform LU decomp and solve system (LAPACK)
           call band_solve( solve_type, nsup, nsub, 2*gr%nnzp, nrhs,
      .                     lhs, rhs, solution, err_code )
-        endif
+        end if
 #else
         ! Perform LU decomp and solve system (LAPACK)
         call band_solve( solve_type, nsup, nsub, 2*gr%nnzp, nrhs,
@@ -1284,23 +1265,6 @@
         ! Return if the solver has failed
         if ( lapack_error( err_code ) ) return
 
-        ! Apply a flux limiting positive definite scheme if the solution 
-        ! for the mean field is negative and we're determining total water
-        if ( trim( solve_type ) == "rtm" ) then
-
-          call pos_definite_adj( dt, flux_lhs, 
-     .                           solution(:,1), xm, xm_pd, wpxp_pd )
-#ifdef STATS
-          if ( lstats_samp ) then
-
-            call stat_update_var( iwpxp_pd, wpxp_pd(1:gr%nnzp), zm )
-
-            call stat_update_var( ixm_pd, xm_pd(1:gr%nnzp), zt )
-
-          endif
-#endif
-        endif
-        
 
         ! Copy result into output arrays
 
@@ -1308,11 +1272,13 @@
 
           k_xm   = 2 * k - 1
           k_wpxp = 2 * k
+          
+          xm_n(k) = xm(k)
 
           xm(k)   = solution(k_xm,1)
           wpxp(k) = solution(k_wpxp,1)
 
-        enddo ! k=1..gr%nnzp
+        end do ! k=1..gr%nnzp
 
 !       Boundary condition on xm
 
@@ -1374,6 +1340,33 @@
 
           endif ! lstats_samp
 #endif /*STATS*/
+
+        ! Apply a flux limiting positive definite scheme if the solution 
+        ! for the mean field is negative and we're determining total water
+        if ( trim( solve_type ) == "rtm" .and. 
+     .       any( xm < 0.0 ) ) then
+
+           call pos_definite_adj( dt, "zt", xm, wpxp,
+     .                            xm_n, xm_pd, wpxp_pd )
+
+        else
+          ! For stats purposes
+          xm_pd   = 0.0
+          wpxp_pd = 0.0
+
+        end if ! solve_type == "rtm" and rtm <n+1> less than 0
+
+#ifdef STATS
+        if ( lstats_samp ) then
+
+          call stat_update_var( iwpxp_pd, wpxp_pd(1:gr%nnzp), zm )
+
+          call stat_update_var( ixm_pd, xm_pd(1:gr%nnzp), zt )
+
+        end if
+#endif
+       
+
 
 ! Vince Larson clipped turbulent flux (wpxp) to ensure 
 !     that -1 < [correlation of w and x] < 1 .  20070929
