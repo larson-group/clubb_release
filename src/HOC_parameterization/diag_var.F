@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F,v 1.51 2008-06-16 22:34:46 faschinj Exp $
+! $Id: diag_var.F,v 1.52 2008-06-18 18:20:49 faschinj Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !===============================================================================
@@ -1173,32 +1173,32 @@
 
 #ifdef STATS
         integer ::
-     .  ixap2_ta,
-     .  ixap2_tp,
-     .  ixap2_dp1,
-     .  ixap2_pr1,
-     .  ixap2_pr2
+     .  ixapxbp_ta,
+     .  ixapxbp_tp,
+     .  ixapxbp_dp1,
+     .  ixapxbp_pr1,
+     .  ixapxbp_pr2
 
 
         select case ( trim( solve_type ) )
         case ( "vp2" )
-          ixap2_ta  = ivp2_ta
-          ixap2_tp  = ivp2_tp
-          ixap2_dp1 = ivp2_dp1
-          ixap2_pr1 = ivp2_pr1
-          ixap2_pr2 = ivp2_pr2
+          ixapxbp_ta  = ivp2_ta
+          ixapxbp_tp  = ivp2_tp
+          ixapxbp_dp1 = ivp2_dp1
+          ixapxbp_pr1 = ivp2_pr1
+          ixapxbp_pr2 = ivp2_pr2
         case ( "up2" )
-          ixap2_ta  = iup2_ta
-          ixap2_tp  = iup2_tp
-          ixap2_dp1 = iup2_dp1
-          ixap2_pr1 = iup2_pr1
-          ixap2_pr2 = iup2_pr2
+          ixapxbp_ta  = iup2_ta
+          ixapxbp_tp  = iup2_tp
+          ixapxbp_dp1 = iup2_dp1
+          ixapxbp_pr1 = iup2_pr1
+          ixapxbp_pr2 = iup2_pr2
         case default ! No budgets for passive scalars
-          ixap2_ta  = 0
-          ixap2_tp  = 0
-          ixap2_dp1 = 0
-          ixap2_pr1 = 0
-          ixap2_pr2 = 0
+          ixapxbp_ta  = 0
+          ixapxbp_tp  = 0
+          ixapxbp_dp1 = 0
+          ixapxbp_pr1 = 0
+          ixapxbp_pr2 = 0
         end select
 #endif
 
@@ -1235,14 +1235,14 @@
 
           ! Statistics: explicit contributions for up2 or vp2.
                
-            call stat_modify_pt( ixap2_ta, k,
+            call stat_modify_pt( ixapxbp_ta, k,
      .             term_ta_rhs( a1_zt(kp1), a1(k), a1_zt(k), 
      .                         wp3(kp1), wp3(k), wp2_zt(kp1), 
      .                         wp2_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), 
      .                         wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), 
      .                         beta, wtol_sqd ), zm )
             
-            if ( ixap2_dp1 > 0 ) then
+            if ( ixapxbp_dp1 > 0 ) then
               ! Note:  The function term_pr1 is the explicit component 
               !        of a semi-implicit solution to dp1 and pr1.
               ! Record the statistical contribution of the implicit
@@ -1255,11 +1255,11 @@
               ! of term dp1 for up2 or vp2.
             endif
 
-            call stat_modify_pt( ixap2_dp1, k, 
+            call stat_modify_pt( ixapxbp_dp1, k, 
      .              term_pr1( C4, 0.0, xbp2(k), wp2(k), taum(k) ), zm )
 
 
-            if ( ixap2_pr1 > 0 ) then
+            if ( ixapxbp_pr1 > 0 ) then
               ! Note:  The function term_pr1 is the explicit component 
               !        of a semi-implicit solution to dp1 and pr1.
               ! Statistical contribution of the implicit component
@@ -1270,15 +1270,15 @@
               ! of term pr1 for up2 or vp2.
             endif
 
-            call stat_modify_pt( ixap2_pr1, k,
+            call stat_modify_pt( ixapxbp_pr1, k,
      .              term_pr1( 0.0, C14, xbp2(k), wp2(k), taum(k) ), zm )
 
-            call stat_update_var_pt( ixap2_pr2, k,
+            call stat_update_var_pt( ixapxbp_pr2, k,
      .          term_pr2
      .          ( C5, grav, T0, wpthvp(k), wpxap(k), wpxbp(k), 
      .            xam(kp1), xam(k), xbm(kp1), xbm(k), gr%dzm(k) ), zm )
 
-            call stat_update_var_pt( ixap2_tp, k,
+            call stat_update_var_pt( ixapxbp_tp, k,
      .            (1.0 - C5) 
      .             * term_tp( xam(kp1), xam(k), xam(kp1), xam(k),
      .                        wpxap(k), wpxap(k), gr%dzm(k) ), zm )
