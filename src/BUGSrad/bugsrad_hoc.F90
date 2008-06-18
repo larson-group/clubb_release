@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_hoc.F90,v 1.30 2008-05-30 16:24:22 faschinj Exp $
+! $Id: bugsrad_hoc.F90,v 1.31 2008-06-18 17:55:31 faschinj Exp $
 module bugsrad_hoc_mod
 
 implicit none
@@ -58,7 +58,9 @@ subroutine bugsrad_hoc &
   use error_code, only: clubb_at_debug_level ! Procedure(s)
 
 #ifdef STATS
-use stats_hoc, only: zt, zm, lstats_samp, & ! Variable(s)
+  use stats_type, only: stat_update_var ! Procedure(s)
+
+  use stats_hoc, only: zt, zm, lstats_samp, & ! Variable(s)
     iFrad_SW, iFrad_LW, iradht_SW, iradht_LW
 #endif
 
@@ -348,24 +350,14 @@ use stats_hoc, only: zt, zm, lstats_samp, & ! Variable(s)
 
 #ifdef STATS
   if ( lstats_samp ) then
+ 
+    call stat_update_var( iradht_LW, radht_LW, zt )   
 
-    if ( iradht_LW > 0 ) then
-      zt%x(:,iradht_LW) = zt%x(:,iradht_LW) + radht_LW
-      zt%n(:,iradht_LW) = zt%n(:,iradht_LW) + 1
-    end if
-    if ( iradht_SW > 0 ) then
-      zt%x(:,iradht_SW) = zt%x(:,iradht_SW) + radht_SW
-      zt%n(:,iradht_SW) = zt%n(:,iradht_SW) + 1
-    end if
+    call stat_update_var( iradht_SW, radht_SW, zt )
 
-    if ( iFrad_SW > 0 ) then
-      zm%x(:,iFrad_SW) = zm%x(:,iFrad_SW) + Frad_SW
-      zm%n(:,iFrad_SW) = zm%n(:,iFrad_SW) + 1
-    end if
-    if ( iFrad_LW > 0 ) then
-      zm%x(:,iFrad_LW) = zm%x(:,iFrad_LW) + Frad_LW
-      zm%n(:,iFrad_LW) = zm%n(:,iFrad_LW) + 1
-    end if
+    call stat_update_var( iFrad_SW, Frad_SW, zm )
+
+    call stat_update_var( iFrad_LW, Frad_LW, zm )
 
   end if ! lstats_samp
 #endif /*STATS*/
