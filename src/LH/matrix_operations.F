@@ -108,6 +108,10 @@
 !         rowsbp,colsbp = physical (maximum declared) dimensions of B
 
 ! Output: C = product matrix with size rowsa x colsb
+
+!     Note: Could we just use f90 intrinsic function matmul?  Is this a
+!     legacy Fortran 77 subroutine?
+!     -dschanen 14 June 2008
 !----------------------------------------------------------------------
         subroutine matmult( A, rowsa, colsa, rowsap, colsap,
      .                      B, rowsb, colsb, rowsbp, colsbp, C )
@@ -147,4 +151,68 @@
 
        return
        end subroutine matmult
+
+!-----------------------------------------------------------------------
+
+        subroutine band_mult( trans, ndim, mdim, nsup, nsub, yinc, xinc,
+     .                        alpha, beta, lhs, xvec, yvec )
+!       Description:
+!       Wrapper subroutine for banded matrix by vector multiplication in
+!       the level 2 BLAS library.
+
+!       References:
+!       <http://www.netlib.org/blas/>
+!-----------------------------------------------------------------------
+
+        implicit none
+
+        ! External
+        ! Level 2 BLAS to multiply a vector by a band diagonal matrix
+        external :: sgbmv, dgbmv
+
+        character(len=1) :: 
+     .  trans  ! Whether to use the transposition of the lhs matrix
+
+        integer, intent(in) ::
+     .  ndim, mdim,  ! Dimensions of the matrix when not compact
+     .  nsup, nsub,  ! Super and Sub diagonals
+     .  yinc, xinc   ! Increments of y and x vector
+
+        real, intent(in) ::
+     .  alpha,       ! Coefficient of the matrix lhs
+     .  beta         ! Coefficient of Y vector
+
+        real, dimension(nsup+nsub+1, ndim), intent(in) ::
+     .  lhs          ! The matrix 'A' in the blas subroutine
+
+        real, dimension(ndim), intent(in) ::
+     .  xvec ! The vector X
+
+        real, dimension(ndim), intent(inout) ::
+     .  yvec ! The vector Y
+
+
+!-----------------------------------------------------------------------
+!       *** BLAS 2 routine ***
+!       SUBROUTINE DGBMV(TRANS,M,N,KL,KU,ALPHA,A,LDA,X,INCX,BETA,Y,INCY)
+!-----------------------------------------------------------------------
+        ! Multiply so that Y := alpha*A*X + beta*Y
+
+        if ( kind( lhs(1,1) ) == 4 ) then
+          call sgbmv( trans, ndim, mdim, nsub, nsup, 
+     .                alpha, lhs, nsup+nsub+1, 
+     .                xvec, xinc, beta, yvec, yinc )
+
+        else if ( kind( lhs(1,1) ) == 8 ) then
+          call dgbmv( trans, ndim, mdim, nsub, nsup, 
+     .                alpha, lhs, nsup+nsub+1, 
+     .                xvec, xinc, beta, yvec, yinc )
+        else
+          stop "Cannot multiply this precision"
+        end if
+
+        return
+        end subroutine band_mult
+!-----------------------------------------------------------------------
+
       end module matrix_operations
