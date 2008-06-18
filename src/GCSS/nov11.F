@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: nov11.F,v 1.21 2008-06-16 22:26:11 faschinj Exp $
+! $Id: nov11.F,v 1.22 2008-06-18 15:22:14 faschinj Exp $
         module nov11
 
 !       Description:
@@ -197,6 +197,9 @@
 
         integer :: k
 
+        sw_on = .true. ! This is necessay to use the xi_abs value above
+                       ! Joshua Fasching June 2008
+
 !-----------------------------------------------------------------------
 ! FOR NOV.11 CASE
 ! ---------------
@@ -225,6 +228,7 @@
 ! solar radiation.  If sw_on = .FALSE. above, we will automatically set
 ! xi_abs to 0 to avoid confusion or errors.
 !-----------------------------------------------------------------------
+
 
       if (.not. sw_on) then
         xi_abs = 0.0
