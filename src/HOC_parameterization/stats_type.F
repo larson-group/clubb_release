@@ -1,10 +1,11 @@
 !-----------------------------------------------------------------------
-! $Id: stats_type.F,v 1.10 2008-06-17 15:06:23 vlarson Exp $
+! $Id: stats_type.F,v 1.11 2008-06-18 16:35:51 faschinj Exp $
       module stats_type
 #ifdef STATS
  
 !     Description:
-!     Contains derived data type 'stats'
+!     Contains derived data type 'stats'.
+!     Used for storing output statistics to disk.
 !-----------------------------------------------------------------------
 
         use outputfile_class, only:
@@ -53,9 +54,11 @@
 
 
         contains
+
+
 !-----------------------------------------------------------------------
-         subroutine stat_assign( var_index, name, 
-     .                     description, units, grid )
+         subroutine stat_assign( var_index, var_name, 
+     .                     var_description, var_units, grid_kind )
 
 !        Description: Assigns pointers for statistics variables in grid
 !    
@@ -64,18 +67,18 @@
            
          ! Input Variables
              
-         integer,intent(in) :: var_index               ! Variable index
-         character(len = *), intent(in) :: name        ! Variable name
-         character(len = *), intent(in) :: description ! Variable description
-         character(len = *), intent(in) :: units       ! Variable units
+         integer,intent(in) :: var_index                   ! Variable index       [#]
+         character(len = *), intent(in) :: var_name        ! Variable name        []
+         character(len = *), intent(in) :: var_description ! Variable description []
+         character(len = *), intent(in) :: var_units       ! Variable units       []
 
          ! Output Variable
-         type(stats), intent(out) :: grid
+         type(stats), intent(out) :: grid_kind
 
-         grid%f%var(var_index)%ptr => grid%x(:,var_index)
-         grid%f%var(var_index)%name = name
-         grid%f%var(var_index)%description = description
-         grid%f%var(var_index)%units = units
+         grid_kind%f%var(var_index)%ptr => grid_kind%x(:,var_index)
+         grid_kind%f%var(var_index)%name = var_name
+         grid_kind%f%var(var_index)%description = var_description
+         grid_kind%f%var(var_index)%units = var_units
 
              !Example of the old format 
              !changed by Joshua Fasching 23 August 2007
@@ -90,10 +93,11 @@
          end subroutine stat_assign
 
 !---------------------------------------------------------------------
-         subroutine stat_update_var( var_index, value, grid )
+         subroutine stat_update_var( var_index, value, grid_kind )
 !
 !        Description: This updates the value of a statistics variable 
-!        located at var_index in the grid
+!         located at var_index associated with grid type 'grid_kind'
+!         at a specific level.
 !
 !---------------------------------------------------------------------            
          use grid_class, only: gr ! Variable(s)
@@ -103,27 +107,31 @@
          ! Input Variables(s)
 
          integer, intent(in) :: 
-     .   var_index ! The index at which the variable is stored
+     .   var_index ! The index at which the variable is stored  []
                   
          real, dimension(gr%nnzp), intent(in) ::
-     .   value ! The value being stored
+     .   value ! Value of field being added to the statistic    [Units Vary]
 
          ! Input/Output Variable(s)
-         type(stats), intent(inout) :: grid
+         type(stats), intent(inout) :: 
+     .   grid_kind ! Which grid the variable is located on (zt, zm, or sfc )
 
          if ( var_index > 0 ) then
-            grid%x(:,var_index) = grid%x(:,var_index) + value
-            grid%n(:,var_index) = grid%n(:,var_index) + 1
+            grid_kind%x(:,var_index) = 
+     .           grid_kind%x(:,var_index) + value
+            grid_kind%n(:,var_index) = 
+     .           grid_kind%n(:,var_index) + 1
          end if
 
          end subroutine stat_update_var
          
 !---------------------------------------------------------------------
          subroutine stat_update_var_pt
-     .             ( var_index, point, value, grid )
+     .             ( var_index, grid_level, value, grid_kind )
 !
 !        Description: This updates the value of a statistics variable 
-!        located at var_index in the grid at a specific point.
+!         located at var_index associated with grid type 'grid_kind' 
+!         at a specific grid_level.
 !
 !---------------------------------------------------------------------            
         
@@ -132,38 +140,44 @@
          ! Input Variables(s)
 
          integer, intent(in) :: 
-     .   var_index, ! The index at which the variable is stored
-     .   point      ! The level the variable is to be modified at
+     .   var_index,      ! The index at which the variable is stored           []
+     .   grid_level      ! The level at which the variable is to be modified   []
          
          real, intent(in) ::
-     .   value ! The value being stored
+     .   value ! Value of field being added to the statistic         [Units Vary]
 
          ! Input/Output Variable(s)
-         type(stats), intent(inout) :: grid
+         type(stats), intent(inout) :: 
+     .   grid_kind ! Which grid the variable is located on (zt, zm, or sfc).
         
          if ( var_index > 0 ) then
-            grid%x( point, var_index ) = 
-     .        grid%x( point ,var_index) + value
-            grid%n( point, var_index ) = 
-     .         grid%n( point, var_index ) + 1
+            grid_kind%x( grid_level, var_index ) = 
+     .        grid_kind%x( grid_level, var_index ) + value
+
+            grid_kind%n( grid_level, var_index ) = 
+     .         grid_kind%n( grid_level, var_index ) + 1
          end if
 
          end subroutine stat_update_var_pt
              
 !---------------------------------------------------------------------
-         subroutine stat_begin_update( var_index, value, grid )
+         subroutine stat_begin_update( var_index, value, grid_kind )
+!
 !
 !        Description: This begins an update of the value of a 
-!        statistics variable located at var_index in the grid.
-!        Commonly this is used for beginning a budget. 
-!       
-!         Ex.
+!        statistics variable located at var_index on the (zt, zm, or sfc) grid.
+!        Commonly this is used for beginning a budget term calculation. 
+!           In this type of stats calculation, we first subtract the field
+!        (e.g. rtm) from the statistic, then update rtm by a term (e.g. clip rtm), 
+!        and then re-add rtm to the statistic. 
+!            
+!        Example:
 !          call stat_begin_update( irtm_bt, real(rtm / dt), zt ) 
 !
-!          !!! Perform clipping of statistic !!!
+!          !!! Perform clipping of rtm !!!
 !          
 !          call stat_end_update( irtm_bt, real(rtm / dt), zt )
-!---------------------------------------------------------------------            
+!---------------------------------------------------------------------                    
          use grid_class, only: gr          
 
          implicit none
@@ -171,71 +185,84 @@
          ! Input Variables(s)
 
          integer, intent(in) :: 
-     .   var_index ! The index at which the variable is stored
+     .   var_index      ! The index at which the variable is stored           []
          
          real, dimension(gr%nnzp), intent(in) ::
-     .   value ! The value being stored
+     .   value          ! Value of field being added to the statistic         [Units Vary]
 
          ! Input/Output Variable(s)
-         type(stats), intent(inout) :: grid
+         type(stats), intent(inout) :: 
+     .   grid_kind ! Which grid the variable is located on (zt, zm, or sfc).
 
          integer :: i
 
          do i = 1, gr%nnzp 
 
-           call stat_begin_update_pt( var_index, i, value(i), grid )
+           call stat_begin_update_pt
+     .             ( var_index, i, value(i), grid_kind )
 
          enddo
 
          end subroutine stat_begin_update
 
+
+
 !---------------------------------------------------------------------
          subroutine stat_begin_update_pt
-     .             ( var_index, grd_level, value, grid )
+     .             ( var_index, grid_level, value, grid_kind )
 !
 !        Description: This begins an update of the value of a 
-!        statistics variable located at var_index in the grid 
-!        at a specific point i.
-!        Commonly this is used for beginning a budget. See stat_begin_update 
+!         statistics variable located at var_index associated with the grid type (grid_kind) 
+!         at a specific grid_level.
+!
+!         Commonly this is used for beginning a budget. See stat_begin_update 
 !---------------------------------------------------------------------            
  
-         use error_code, only: clubb_debug
+         use error_code, only: clubb_debug ! Procedure(s)
 
          implicit none
 
          ! Input Variables(s)
 
          integer, intent(in) :: 
-     .   var_index ! The index at which the variable is stored
-         
+     .   var_index,   ! The index at which the variable is stored           []
+     .   grid_level   ! The level at which the variable is to be modified   []
          
          real, intent(in) ::
-     .   value ! The value being stored
+     .   value ! Value of field being added to the statistic                [Units Vary]
 
-         integer, intent(in) :: 
-     .   grd_level   ! Grid level index
-         
          ! Input/Output Variable(s)
-         type(stats), intent(inout) :: grid
+         type(stats), intent(inout) :: 
+     .   grid_kind ! Which grid the variable is located on (zt, zm, or sfc).
         
-         if ( var_index > 0 ) then  ! If 
-             if ( .not. grid%in_update(grd_level, var_index) ) then  
-               grid%x(grd_level, var_index) = 
-     .                 grid%x(grd_level, var_index) - value
-               grid%in_update(grd_level, var_index) = .true.
+         if ( var_index > 0 ) then  ! Are we storing this variable?
+
+             if ( .not. grid_kind%in_update( grid_level, var_index ) )
+     .         then ! Can we begin an update?  
+
+               grid_kind%x(grid_level, var_index) = 
+     .                 grid_kind%x(grid_level, var_index) - value
+
+               grid_kind%in_update(grid_level, var_index) = .true.  ! Start Record
+
              else
-              call clubb_debug( 2,
-     .        "Warning! Beginning an update before finishing previous")
+
+              call clubb_debug( 1,
+     .        "Beginning an update before finishing previous." )
+
              end if
+
          end if
+
          end subroutine stat_begin_update_pt
 
 !---------------------------------------------------------------------
-         subroutine stat_end_update( var_index, value, grid )
+         subroutine stat_end_update( var_index, value, grid_kind )
 !
 !        Description: This ends the update of a statistics variable 
-!        located at var_index in the grid. Commoly used to end the
-!        storage of a budget term. See stat_begin_update
+!         located at var_index associated with the grid type (grid_kind). 
+!
+!         Commoly used to end the storage of a budget term. See stat_begin_update
 !
 !---------------------------------------------------------------------            
 
@@ -248,32 +275,34 @@
          ! Input Variables(s)
 
          integer, intent(in) :: 
-     .   var_index ! The index at which the variable is stored
-         
-         
+     .   var_index ! The index at which the variable is stored           []
+                 
          real, dimension(gr%nnzp), intent(in) ::
-     .   value ! The value being stored
+     .   value ! Value of field being added to the statistic             [Units Vary]
 
          ! Input/Output Variable(s)
-         type(stats), intent(inout) :: grid
+         type(stats), intent(inout) :: 
+     .   grid_kind ! Which grid the variable is located on (zt, zm, or sfc).
 
          integer :: i 
                  
-         do i = 1, gr%nnzp            
-              call stat_end_update_pt( var_index, i, value(i), grid )
+         do i = 1,gr%nnzp             
+              call stat_end_update_pt
+     .                 ( var_index, i, value(i), grid_kind )
          end do
 
 
          end subroutine stat_end_update
 
 !---------------------------------------------------------------------
-         subroutine stat_end_update_pt( var_index, i, value, grid )
+         subroutine stat_end_update_pt
+     .                ( var_index, grid_level, value, grid_kind )
 !
 !        Description: This ends an update of the value of a 
-!        statistics variable located at var_index in the grid 
-!        at a specific point i.
-!        Commonly this is used for ending a budget. See stat_begin_update 
+!         statistics variable located at var_index associated with the grid type (grid_kind) 
+!         at a specific grid_level.
 !
+!         Commonly this is used for beginning a budget. See stat_begin_update 
 !---------------------------------------------------------------------            
 
          use error_code, only: clubb_debug ! Procedure(s)
@@ -283,28 +312,28 @@
          ! Input Variables(s)
 
          integer, intent(in) :: 
-     .   var_index ! The index at which the variable is stored
-         
+     .   var_index,  ! The index at which the variable is stored           []
+     .   grid_level   ! The level at which the variable is to be modified   []     
          
          real, intent(in) ::
-     .   value ! The value being stored
+     .   value       ! Value of field being added to the statistic         [Units Vary]
 
          ! Input/Output Variable(s)
-         type(stats), intent(inout) :: grid
+         type(stats), intent(inout) :: 
+     .   grid_kind ! Which grid the variable is located on (zt, zm, or sfc).
 
-         integer, intent(in) :: i 
-
-         if ( var_index > 0 ) then
+         if ( var_index > 0 ) then ! Are we storing this variable?
                  
-             if ( grid%in_update(i, var_index) ) then
+             if ( grid_kind%in_update(grid_level, var_index) ) then ! Can we end an update? 
                      
-                call stat_update_var_pt( var_index, i, value, grid )
+                call stat_update_var_pt
+     .                   ( var_index, grid_level, value, grid_kind ) 
               
-                grid%in_update( i, var_index ) = .false.
+                grid_kind%in_update( grid_level, var_index ) = .false. ! End Record
 
               else
 
-                call clubb_debug(2,"Ending before beginning update")
+                call clubb_debug( 1, "Ending before beginning update." )
 
               endif
 
@@ -313,7 +342,7 @@
          end subroutine stat_end_update_pt
          
 !---------------------------------------------------------------------
-         subroutine stat_modify( var_index, value, grid )
+         subroutine stat_modify( var_index, value, grid_kind )
 !
 !        Description: This modifies the value of a statistics variable 
 !        located at var_index in the grid. It does not increment the
@@ -328,19 +357,21 @@
          ! Input Variables(s)
 
          integer, intent(in) :: 
-     .   var_index ! The index at which the variable is stored
+     .   var_index ! The index at which the variable is stored           []
          
          real, dimension(gr%nnzp), intent(in) ::
-     .   value ! The value being stored
+     .   value     ! Value of field being added to the statistic         [Units Vary]
+
 
          ! Input/Output Variable(s)
-         type(stats), intent(inout) :: grid
+         type(stats), intent(inout) :: 
+     .   grid_kind ! Which grid the variable is located on (zt, zm, or sfc).
 
          integer :: i
 
          do i = 1, gr%nnzp 
 
-          call stat_modify_pt( var_index, i, value(i), grid )
+          call stat_modify_pt( var_index, i, value(i), grid_kind )
 
          enddo
 
@@ -348,7 +379,7 @@
 
 !---------------------------------------------------------------------
          subroutine stat_modify_pt
-     .             ( var_index, i, value, grid )
+     .             ( var_index, grid_level, value, grid_kind )
 !
 !        Description: This modifies the value of a statistics variable 
 !        located at var_index in the grid at a specific point. It does
@@ -361,19 +392,24 @@
          ! Input Variables(s)
 
          integer, intent(in) :: 
-     .   var_index ! The index at which the variable is stored
+     .   var_index ! The index at which the variable is stored            []
          
          
          real, intent(in) ::
-     .   value ! The value being stored
+     .   value      ! Value of field being added to the statistic         [Units Vary]
 
-         integer, intent(in) :: i
+         integer, intent(in) :: 
+     .   grid_level ! The level at which the variable is to be modified   []
          
          ! Input/Output Variable(s)
-         type(stats), intent(inout) :: grid
+         type(stats), intent(inout) :: 
+     .   grid_kind ! Which grid the variable is located on (zt, zm, or sfc).
         
          if ( var_index > 0 ) then 
-           grid%x(i,var_index) = grid%x(i,var_index) + value
+
+           grid_kind%x( grid_level, var_index ) 
+     .         = grid_kind%x( grid_level ,var_index ) + value
+
          end if
         
          end subroutine stat_modify_pt
