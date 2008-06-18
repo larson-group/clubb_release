@@ -176,12 +176,6 @@
 
         !alpha = -dt
 
-        print *, "Flux_lim"
-        write(6,'(10g12.4)') flux_lim
-        print *, "Flux_unl"
-        write(6,'(10g12.4)') flux_np1
-        pause
-        
         ! Apply change to field at n+1
         if ( field_grid == "zt" ) then
 
