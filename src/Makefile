@@ -1,7 +1,7 @@
 ################################################################################
-# $Id: Makefile,v 1.126 2008-06-10 21:16:03 dschanen Exp $
+# $Id: Makefile,v 1.127 2008-06-19 18:39:53 dschanen Exp $
 #
-# This version should work with BSD, GNU make, smake and dmake.
+# This version should work with GNU make and Sun's dmake.
 #
 # For HOC we edit this by hand rather than implementing imake or automake.
 #
@@ -74,7 +74,8 @@ PARAMETERIZATION = \
 	compute_um_edsclrm_mod.o wp23.o Skw_func.o error_code.o \
 	numer_check.o diag_variables.o prog_variables.o \
 	parameterization_interface.o lapack_wrap.o  \
-	parameters.o pos_definite_mod.o calendar.o
+	parameters.o pos_definite_mod.o calendar.o \
+	fill_holes_mult.o
 
 
 INTERFACING = gradsaverage.o inputfields.o inputgrads.o 
@@ -94,7 +95,7 @@ HOC_BUDGET_TERMS= $(MODEL) $(INTERFACING) $(NUM_REC) error.o budget_terms.o hoc_
 # == Targets == ( hoc_tuner and jacobian assume statistics )
 all:	hoc_standalone hoc_tuner int2txt hoc_inputfields  \
 	compare_runs jacobian
-# hoc_tuner_budget_terms 
+# hoc_tuner_budget_terms
 # Note:
 # The budget terms tuner is currently non-working
 # -dschanen 15 March 2007

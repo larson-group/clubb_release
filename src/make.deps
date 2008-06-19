@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.46 2008-06-16 22:17:41 faschinj Exp $
+# $Id: make.deps,v 1.47 2008-06-19 18:39:53 dschanen Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -70,8 +70,9 @@ temp_in_K_mod.o	: constants.o temp_in_K_mod.F
 
 closure_new.o	: constants.o parameters.o grid.o saturation.o erf.o numer_check.o \
                  error_code.o closure_new.F 
-diag_var.o	: constants.o parameters.o grid.o stats_type.o stats_hoc.o lapack_wrap.o \
-	          error_code.o diffusion.o diag_var.F
+diag_var.o	: constants.o parameters.o grid.o stats_type.o stats_hoc.o \
+	lapack_wrap.o fill_holes_mult.o \
+	error_code.o diffusion.o diag_var.F
 mixing.o : constants.o parameters.o stats_hoc.o lapack_wrap.o \
 	   pos_definite_mod.o error_code.o diffusion.o mean_adv.o mixing.F 
 
@@ -89,12 +90,13 @@ mixing_length.o	: constants.o parameters.o numer_check.o error_code.o mixing_len
 saturation.o    : constants.o saturation.F  
 sfc.o		: constants.o parameters.o numer_check.o error_code.o sfc.F 
 wp23.o		: constants.o parameters.o stats_hoc.o lapack_wrap.o \
-                  error_code.o diffusion.o mean_adv.o wp23.F
+                  error_code.o diffusion.o mean_adv.o fill_holes_mult.o wp23.F
 error_code.o    : constants.o error_code.F
 compute_um_edsclrm_mod.o : grid.o stats_hoc.o lapack_wrap.o error_code.o compute_um_edsclrm_mod.F 
 diffusion.o	: grid.o diffusion.F
 mean_adv.o      : grid.o mean_adv.F
 pos_definite_mod.o : grid.o stats_prec.o pos_definite_mod.F
+fill_holes_mult.o : fill_holes_mult.F grid.o
 
 # == Numerical Recipes dependencies (For the tuner) ==
 nrtype.o	: nrtype.f90
