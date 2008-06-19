@@ -5,10 +5,10 @@
 
 runtype = "arm_97" ! Case name.
 
-nzmax = 100       ! Number of vertical levels.  ! For grid_type = 1 (and 3).
-!nzmax = 128       ! Number of vertical levels.  ! For grid_type = 2.
+!nzmax = 150       ! Number of vertical levels.  ! For grid_type = 1 (and 3).
+nzmax = 128       ! Number of vertical levels.  ! For grid_type = 2.
 
-grid_type = 1     ! Select grid type:
+grid_type = 2     ! Select grid type:
                   ! 1 ==> evenly-spaced grid levels.
                   ! 2 ==> stretched (unevenly-spaced) grid
                   !       entered on thermodynamic grid levels;
@@ -28,8 +28,8 @@ zm_init = 0.0     ! Altitude of lowest momentum level on evenly-spaced grid. [m]
 ! Path (from ../standalone/) and filename of data file that contains
 ! thermodynamic level altitudes (in meters).
 ! Note:  For this option, zm_grid_fname must be ''.
-!zt_grid_fname = '../model/grid/deep_convection_128lev_27km_zt_grid.grd'
-zt_grid_fname = ''
+zt_grid_fname = '../model/grid/deep_convection_128lev_27km_zt_grid.grd'
+!zt_grid_fname = ''
 
 ! Stretched grid on momentum levels (grid_type = 3).
 ! Path (from ../standalone/) and filename to data file that contains
