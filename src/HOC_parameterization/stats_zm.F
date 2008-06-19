@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zm.F,v 1.9 2008-06-04 21:51:12 griffinb Exp $
+! $Id: stats_zm.F,v 1.10 2008-06-19 18:41:42 dschanen Exp $
       module stats_zm
 #ifdef STATS
        
@@ -59,6 +59,7 @@
      .    iup2_pr1,
      .    iup2_pr2,
      .    iup2_cl,
+     .    iup2_pd,
      .    ivp2_bt,
      .    ivp2_ta,
      .    ivp2_tp,
@@ -68,6 +69,7 @@
      .    ivp2_pr1,
      .    ivp2_pr2,
      .    ivp2_cl,
+     .    ivp2_pd,
      .    iVrr,
      .    iVNr,
      .    iVice,
@@ -84,6 +86,7 @@
      .    iwp2_dp1,
      .    iwp2_dp2,
      .    iwp2_cl,
+     .    iwp2_pd,
      .    iwprtp_bt,
      .    iwprtp_ma,
      .    iwprtp_ta,
@@ -95,7 +98,7 @@
      .    iwprtp_pr3,
      .    iwprtp_dp1,
      .    iwprtp_cl,
-     .    iwp rtp_pd,
+     .    iwprtp_pd,
      .    iwpthlp_bt,
      .    iwpthlp_ma,
      .    iwpthlp_ta,
@@ -116,6 +119,7 @@
      .    irtp2_dp1,
      .    irtp2_dp2,
      .    irtp2_cl,
+     .    irtp2_pd,
      .    ithlp2_bt,
      .    ithlp2_ma,
      .    ithlp2_ta,
@@ -123,6 +127,7 @@
      .    ithlp2_dp1,
      .    ithlp2_dp2,
      .    ithlp2_cl,
+     .    ithlp2_pd,
      .    irtpthlp_bt,
      .    irtpthlp_ma,
      .    irtpthlp_ta,
@@ -248,6 +253,7 @@
       iwp2_dp1  = 0
       iwp2_dp2  = 0
       iwp2_cl   = 0
+      iwp2_pd   = 0
 
       ! Flux budgets
       iwprtp_bt  = 0
@@ -283,6 +289,7 @@
       irtp2_dp1   = 0
       irtp2_dp2   = 0
       irtp2_cl    = 0
+      irtp2_pd    = 0
 
       ithlp2_bt    = 0
       ithlp2_ma    = 0
@@ -291,6 +298,7 @@
       ithlp2_dp1   = 0
       ithlp2_dp2   = 0
       ithlp2_cl    = 0
+      ithlp2_pd    = 0
 
       irtpthlp_bt  = 0
       irtpthlp_ma  = 0
@@ -606,6 +614,14 @@
 
           k = k + 1
 
+        case ('wp2_pd')
+          iwp2_pd = k
+
+          call stat_assign(iwp2_pd,"wp2_pd",
+     .         "wp2 positive definite adjustment","m2/s3",zm)
+
+          k = k + 1
+
         case ('wprtp_bt')
           iwprtp_bt = k
           call stat_assign(iwprtp_bt,"wprtp_bt",
@@ -797,6 +813,13 @@
           call stat_assign(irtp2_cl,"rtp2_cl",
      .         "rtp2 clipping term","kg/(kg s)",zm)
           k = k + 1
+
+        case ('rtp2_pd')
+          irtp2_pd = k
+          call stat_assign( irtp2_pd, "rtp2_pd",
+     .         "rtp2 positive definite adjustment", "m^2/s^2", zm )
+          k = k + 1
+
         case ('thlp2_bt')
           ithlp2_bt = k
           call stat_assign(ithlp2_bt,"thlp2_bt",
@@ -832,6 +855,13 @@
           call stat_assign(ithlp2_cl,"thlp2_cl",
      .         "thlp2 clipping term","(K^2)/s",zm)
           k = k + 1
+
+        case ('thlp2_pd')
+          ithlp2_pd = k
+          call stat_assign( ithlp2_pd, "thlp2_pd",
+     .         "thlp2 positive definite adjustment", "m^2/s^2", zm )
+          k = k + 1
+
         case ('rtpthlp_bt')
           irtpthlp_bt = k
           call stat_assign(irtpthlp_bt,"rtpthlp_bt",
@@ -939,6 +969,12 @@
      .         "up2 clipping","m^2/s^2",zm)
           k = k + 1
 
+        case ('up2_pd')
+          iup2_pd = k
+          call stat_assign( iup2_pd, "up2_pd",
+     .         "up2 positive definite adjustment", "m^2/s^2", zm )
+          k = k + 1
+
         case ('vp2_bt')
           ivp2_bt = k
           call stat_assign(ivp2_bt,"vp2_bt",
@@ -992,6 +1028,13 @@
           call stat_assign(ivp2_cl,"vp2_cl",
      .         "vp2 clipping","m^2/s^2",zm)
           k = k + 1
+
+        case ('vp2_pd')
+          ivp2_pd = k
+          call stat_assign( ivp2_pd, "vp2_pd",
+     .         "vp2 positive definite adjustment", "m^2/s^2", zm )
+          k = k + 1
+
 
 #ifdef SCALARS
         case ('sclraprtp')

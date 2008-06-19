@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.59 2008-06-18 16:43:56 dschanen Exp $
+! $Id: mixing.F,v 1.60 2008-06-19 18:41:41 dschanen Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -1052,6 +1052,9 @@
 
         use error_code, only: 
      .      lapack_error ! Procedure(s)
+        use model_flags, only:
+     .      lpos_def  ! Logical for whether to apply the positive
+                      !  definite scheme to rtm
 
 #ifdef STATS
         use stats_type, only:
@@ -1343,7 +1346,7 @@
 
         ! Apply a flux limiting positive definite scheme if the solution 
         ! for the mean field is negative and we're determining total water
-        if ( trim( solve_type ) == "rtm" .and. 
+        if ( trim( solve_type ) == "rtm" .and. lpos_def .and.
      .       any( xm < 0.0 ) ) then
 
            call pos_definite_adj( dt, "zt", xm, wpxp,

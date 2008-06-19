@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F,v 1.52 2008-06-18 18:20:49 faschinj Exp $
+! $Id: diag_var.F,v 1.53 2008-06-19 18:41:41 dschanen Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !===============================================================================
@@ -57,10 +57,14 @@
      .      rttol,
      .      thltol,
      .      sclrtol,
+     .      emin,
      .      fstderr
+
+        use model_flags, only:
+     .      lhole_fill ! logical constant
         
         use parameters, 
-     .    only: C2, C2b, C2c, C2rt, C2thl, C2rtthl, c_K2, nu2, nu9, ! Variable(s)
+     .    only: C2, C2b, C2c, C2rt, C2thl, C2rtthl, c_K2, nu2, nu9,! Variable(s)
      .          c_Ksqd, beta, C4, C14, C5, T0
         
         use grid_class, only:
@@ -417,6 +421,15 @@
         call diag_var_solve( "vp2", 1, rhs, 
      .                       lhs, vp2, Valid_arr(5) )
 
+        ! Apply the positive definite scheme to variances
+        if ( lhole_fill ) then
+          call pos_definite_variances( "rtp2", dt, rttol**2, rtp2 )
+          call pos_definite_variances( "thlp2", dt, thltol**2, thlp2 )
+          call pos_definite_variances( "up2", dt, 2./3.*emin, up2 )
+          call pos_definite_variances( "vp2", dt, 2./3.*emin, vp2 )
+        end if
+
+
 #ifdef STATS
         if( lstats_samp ) then
           call stat_begin_update( irtp2_cl, real( rtp2 / dt), zm )      
@@ -569,6 +582,15 @@
 
           sclrpthlp(:,1:sclr_dim) 
      .    = sclr_solution(:,2*sclr_dim+1:3*sclr_dim)
+
+          ! Apply hole filling algorithm to the scalar variance terms
+          if ( lhole_fill ) then
+            do i=1, sclr_dim, 1
+              call pos_definite_variances( "sclrp2", dt, sclrtol(i),
+     .                                     sclrp2(:,i) )
+            end do
+          end if
+
 
           ! Clip scalar variance terms
           do i =1, sclr_dim, 1
@@ -2055,6 +2077,80 @@
 
         return
         end function term_pr2
+!-----------------------------------------------------------------------
+        subroutine pos_definite_variances( solve_type, dt, tolerance,
+     .                                     xp2_np1 )
+
+        use fill_holes_mult
+        use grid_class
+        use stats_prec, only: time_prec
+#ifdef STATS
+        use stats_hoc, only: 
+     .      zm, lstats_samp,
+     .      irtp2_pd, ithlp2_pd, iup2_pd, ivp2_pd ! variables
+        use stats_type, only: 
+     .      stat_begin_update, stat_end_update ! subroutines
+#endif /*STATS*/
+
+        implicit none
+
+        ! External
+        intrinsic :: any, real, trim
+
+        ! Input variables
+        character(len=*), intent(in) ::
+     .  solve_type
+        real(kind=time_prec), intent(in) ::
+     .  dt ! Timestep   [s]
+
+        real, intent(in) ::
+     .  tolerance ! Threshold for xp2_np1       [units vary]
+
+        ! Input/Output variables
+        real, intent(inout), dimension(gr%nnzp) :: 
+     .  xp2_np1  ! Variance for <n+1>           [units vary]
+
+#ifdef STATS
+        integer ::
+     .  ixp2_pd
+
+        select case( trim( solve_type ) )
+        case ( "rtp2" )
+          ixp2_pd = irtp2_pd
+        case ( "thlp2" )
+          ixp2_pd = ithlp2_pd
+        case ( "up2" )
+          ixp2_pd = iup2_pd
+        case ( "vp2" )
+          ixp2_pd = ivp2_pd
+        case default
+          ixp2_pd = 0.0 ! This includes the passive scalars
+        end select
+
+        if ( lstats_samp ) then
+          ! Store previous value for effect of the positive definite scheme
+          call stat_begin_update( ixp2_pd, real( xp2_np1 / dt ), zm )
+        end if 
+#endif /*STATS*/
+     
+
+        if ( any( xp2_np1 < tolerance ) ) then
+
+          call fill_holes_multiplicative( tolerance, "zm", xp2_np1 )
+
+        end if
+
+#ifdef STATS
+        if ( lstats_samp ) then
+          ! Store previous value for effect of the positive definite scheme
+          call stat_end_update( ixp2_pd, real( xp2_np1 / dt ), zm )
+        end if 
+#endif /*STATS*/
+
+
+        return
+        end subroutine pos_definite_variances
+!-----------------------------------------------------------------------
 
 !===============================================================================
 

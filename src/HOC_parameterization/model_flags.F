@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: model_flags.F,v 1.13 2008-05-30 16:07:47 faschinj Exp $
+! $Id: model_flags.F,v 1.14 2008-06-19 18:41:41 dschanen Exp $
 
         module model_flags
 
@@ -15,8 +15,10 @@
         private ! Default Scope
 
         logical, parameter, public :: 
-     .  LH_on    = .false., ! Latin hypercube calculation
-     .  local_kk = .false.  ! Local drizzle for rain microphysics
+     .  LH_on      = .false.,! Latin hypercube calculation
+     .  local_kk   = .false.,! Local drizzle for rain microphysics
+     .  lpos_def   = .true., ! Flux limiting pos. def. scheme on rtm
+     .  lhole_fill = .true.  ! Hole filling pos. def. scheme on wp2,up2,rtp2,etc
 
         logical, public :: 
      .  lbugsrad,     ! BUGSrad interactive radiation scheme

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_hoc.F,v 1.15 2008-06-04 20:27:28 dschanen Exp $
+! $Id: stats_hoc.F,v 1.16 2008-06-19 18:41:41 dschanen Exp $
 !-----------------------------------------------------------------------
 !  module stats_hoc
 
@@ -359,11 +359,12 @@
      .     iwp2_pr3,
      .     iwp2_dp1,
      .     iwp2_dp2,
+     .     iwp2_pd,
      .     iwp2_cl
 
 !$omp   threadprivate(iwp2_bt, iwp2_ma, iwp2_ta, iwp2_ac, iwp2_bp)
 !$omp   threadprivate(iwp2_pr1, iwp2_pr2, iwp2_pr3, iwp2_dp1, iwp2_dp2)
-!$omp   threadprivate(iwp2_cl)
+!$omp   threadprivate(iwp2_pd, iwp2_cl)
 
         integer, public ::
      .     iwprtp_bt,
@@ -410,9 +411,10 @@
      .     irtp2_tp,
      .     irtp2_dp1,
      .     irtp2_dp2,
+     .     irtp2_pd,
      .     irtp2_cl
 !$omp   threadprivate(irtp2_bt, irtp2_ma, irtp2_ta, irtp2_tp)
-!$omp   threadprivate(irtp2_dp1, irtp2_dp2, irtp2_cl)
+!$omp   threadprivate(irtp2_dp1, irtp2_dp2, irtp2_pd, irtp2_cl)
 
         integer, public ::
      .     ithlp2_bt,
@@ -421,10 +423,11 @@
      .     ithlp2_tp,
      .     ithlp2_dp1,
      .     ithlp2_dp2,
+     .     ithlp2_pd,
      .     ithlp2_cl
 
 !$omp   threadprivate(ithlp2_bt, ithlp2_ma, ithlp2_ta, ithlp2_tp)
-!$omp   threadprivate(ithlp2_dp1, ithlp2_dp2, ithlp2_cl)
+!$omp   threadprivate(ithlp2_dp1, ithlp2_dp2, ithlp2_pd, ithlp2_cl)
 
         integer, public ::
      .    irtpthlp_bt,
@@ -454,6 +457,7 @@
      .    iup2_dp2,
      .    iup2_pr1,
      .    iup2_pr2,
+     .    iup2_pd,
      .    iup2_cl,
      .    ivp2_bt,
      .    ivp2_ta,
@@ -463,12 +467,14 @@
      .    ivp2_dp2,
      .    ivp2_pr1,
      .    ivp2_pr2,
+     .    ivp2_pd,
      .    ivp2_cl
 
 !$omp   threadprivate(iup2_bt, iup2_ta, iup2_tp, iup2_ma, iup2_dp1)
 !$omp   threadprivate(iup2_dp2, iup2_pr1, iup2_pr2, iup2_cl)
 !$omp   threadprivate(ivp2_bt, ivp2_ta, ivp2_tp, ivp2_ma, ivp2_dp1)
 !$omp   threadprivate(ivp2_dp2, ivp2_pr1, ivp2_pr2, ivp2_cl)
+!$omp   threadprivate(iup2_pd, ivp2_pd)
 
 #ifdef SCALARS
 !       Passive scalars.  Note that floating point roundoff may make 
@@ -540,7 +546,7 @@
 
         ! Scratch space
 
-        real, allocatable, public :: ztscr01(:), ztscr02(:), ztscr03(:), 
+        real, allocatable, public :: ztscr01(:), ztscr02(:), ztscr03(:),
      .                       ztscr04(:), ztscr05(:), ztscr06(:), 
      .                       ztscr07(:), ztscr08(:), ztscr09(:),
      .                       ztscr10(:), ztscr11(:), ztscr12(:),
@@ -552,7 +558,7 @@
 !$omp   threadprivate(ztscr11, ztscr12, ztscr13, ztscr14, ztscr15)
 !$omp   threadprivate(ztscr16)
 
-        real, allocatable, public :: zmscr01(:), zmscr02(:), zmscr03(:), 
+        real, allocatable, public :: zmscr01(:), zmscr02(:), zmscr03(:),
      .                       zmscr04(:), zmscr05(:), zmscr06(:),
      .                       zmscr07(:), zmscr08(:), zmscr09(:),
      .                       zmscr10(:), zmscr11(:), zmscr12(:),

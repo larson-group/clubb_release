@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.66 2008-06-16 22:29:32 faschinj Exp $
+! $Id: wp23.F,v 1.67 2008-06-19 18:41:42 dschanen Exp $
 !===============================================================================
         module wp23
 
@@ -297,14 +297,16 @@
 
         use grid_class, only: 
      .      gr,        ! Variable(s) 
-     .      zm2zt      ! Procedure(s)
+     .      zm2zt,     ! Procedure(s)
+     .      ddzt       ! Function
 
         use constants, only:
      .      emin,      ! Variables(s)
      .      eps
 
         use model_flags, only: 
-     .      lKhm_aniso ! Variable(s)
+     .      lKhm_aniso, ! Variable(s)
+     .      lhole_fill
 
         use stats_prec, only: 
      .      time_prec  ! Variable(s)
@@ -313,13 +315,21 @@
      .      band_solve, ! Procedure(s) 
      .      band_solvex
 
+        use pos_definite_mod, only:
+     .      pos_definite_adj ! Subroutine
+
+        use fill_holes_mult, only:
+     .      fill_holes_multiplicative
+
+
         use error_code, only: 
      .      lapack_error ! Procedure(s)
 
 #ifdef STATS
         use stats_type, only:
-     .      stat_begin_update, stat_update_var_pt, stat_end_update, ! Procedure(s)
-     .      stat_end_update_pt
+     .      stat_begin_update, ! Procedure(s)
+     .      stat_update_var_pt, stat_end_update, ! Procedure(s)
+     .      stat_end_update_pt, stat_update_var  ! Procedure(s)
 
         use stats_hoc, only: 
      .      zm,        ! Variable(s)
@@ -330,6 +340,7 @@
      .      iwp2_ta,
      .      iwp2_ma,
      .      iwp2_cl,
+     .      iwp2_pd,
      .      iwp2_ac,
      .      iwp2_dp1,
      .      iwp2_dp2,
@@ -423,7 +434,9 @@
      .  lhs ! Implicit contributions to wp2/wp3 (band diag. matrix)
 
         real, dimension(2*gr%nnzp) :: 
-     .  rhs,  ! RHS of band matrix
+     .  rhs   ! RHS of band matrix
+
+        real, target, dimension(2*gr%nnzp) :: 
      .  solut ! Solution to band diagonal system.
 
         real, dimension(gr%nnzp) :: 
@@ -434,6 +447,15 @@
      .  a1_zt, ! a_1 interpolated to thermodynamic levels        [-]
      .  a3_zt, ! a_3 interpolated to thermodynamic levels        [-]
      .  wp2_zt ! w'^2 interpolated to thermodyamic levels        [m^2/s^2]
+
+        real, dimension(gr%nnzp) ::
+     .  wp2_pd,   ! Change in wp2 due to pos def scheme [m^2/s^3]
+     .  flux_wp2  ! Integrated flux for wp2             []
+
+
+        real, dimension(gr%nnzp) ::
+     .  wp2_n,! w'^2 at the previous timestep           [m^2/s^2]
+     .  tmp   ! Temporary variable
 
         real :: 
      .  rcond  ! Est. of the reciprocal of the condition #
@@ -507,7 +529,7 @@
           ! Perform LU decomp and solve system (LAPACK)
           call band_solve( "wp23", nsup, nsub, 2*gr%nnzp, nrhs,
      .                     lhs, rhs, solut, err_code )
-        endif
+        end if
 #else
         ! Perform LU decomp and solve system (LAPACK)
         call band_solve( "wp23", nsup, nsub, 2*gr%nnzp, nrhs,
@@ -517,7 +539,7 @@
 
         if ( lapack_error( err_code ) ) return
 
-
+ 
 !       Copy result into output arrays and clip
 
         do k = 1, gr%nnzp
@@ -528,10 +550,12 @@
           k_wp3 = 2*k - 1
           k_wp2 = 2*k
 
+          wp2_n(k) = wp2(k) ! For the positive definite scheme
+
           wp2(k) = solut(k_wp2)
           wp3(k) = solut(k_wp3)
 
-        enddo
+        end do
 
 #ifdef STATS
         if (lstats_samp) then
@@ -612,13 +636,38 @@
      .         ztscr16(k) * wp3(k), zt )
 
           enddo
+       end if ! lstats_samp
+#endif /*STATS*/
 
-          ! Effect of clipping term
+#ifdef STATS
+        if ( lstats_samp ) then
+          ! Store previous value for effect of the positive definite scheme
+          call stat_begin_update( iwp2_pd, real( wp2 / dt ), zm )
+       end if 
+#endif /*STATS*/
+
+       if ( lhole_fill .and. any( wp2 < 2./3*emin ) ) then
+
+         ! Use a simple hole filling algorithm
+         call fill_holes_multiplicative( 2./3.*emin, "zm", wp2 )
+       end if ! wp2
+
+#ifdef STATS
+        if ( lstats_samp ) then
+          ! Store previous value for effect of the positive definite scheme
+          call stat_end_update( iwp2_pd, real( wp2 / dt ), zm )
+        end if
+#endif /*STATS*/
+
+#ifdef STATS
+        if ( lstats_samp ) then
+
+          ! Store previous value of wp2 for the effect of the clipping term
           call stat_begin_update( iwp2_cl, real( wp2 / dt ), zm )
 
           call stat_begin_update( iwp3_cl, real( wp3 / dt ), zt )
 
-        endif
+        end if
 #endif /*STATS*/
 
         ! Interpolate w'^2 from momentum levels to thermodynamic levels.
@@ -633,7 +682,7 @@
            call wp23_clip( wp2_zt(k), gr%zt(k), emin, eps, 
      .                     wp2(k), wp3(k) )
 
-        enddo
+        end do
 
 #ifdef STATS
         if (lstats_samp) then           

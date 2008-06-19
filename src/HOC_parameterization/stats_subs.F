@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.17 2008-06-16 22:28:16 faschinj Exp $
+!  $Id: stats_subs.F,v 1.18 2008-06-19 18:41:41 dschanen Exp $
       module stats_subs
 #ifdef STATS
  
@@ -612,7 +612,7 @@
          if ( zt%n(k,i) /= 0 
      .        .and. zt%n(k,i) /= int(stats_tout/stats_tsamp) ) then
            write(0,*) 'Possible sampling error for zt ',i,k,zt%n(k,i)
-           pause
+           !pause
          end if
         end do
       end do
@@ -622,7 +622,7 @@
          if ( zm%n(k,i) /= 0 
      .        .and. zm%n(k,i) /= int(stats_tout/stats_tsamp) ) then
            write(0,*) 'Possible sampling error for zm ',i,k,zm%n(k,i)
-           pause
+           !pause
          end if
         end do
       end do
@@ -644,7 +644,7 @@
         call write_nc( zm%f  )
         call write_nc( sfc%f  )
 #else 
-        stop "KABOOM!"
+        stop "This program was not compiled with netCDF support"
 #endif
       end if
 
@@ -1191,7 +1191,7 @@
         call close_nc( zm%f )
         call close_nc( sfc%f )
 #else
-        stop "KABOOM!"
+        stop "This program was not compiled with netCDF support"
 #endif
       end if
 
