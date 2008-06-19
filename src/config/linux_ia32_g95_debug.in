@@ -1,4 +1,4 @@
-# $Id: linux_ia32_g95_debug.in,v 1.2 2008-06-04 20:28:15 dschanen Exp $
+# $Id: linux_ia32_g95_debug.in,v 1.3 2008-06-19 18:39:05 dschanen Exp $
 # Configuration file for Linux machine using g95
 # An MS Windows machine with MSYS should be similar
 
@@ -37,8 +37,8 @@ OPTIMIZE = -O2
 NC_LOC = /usr/local/netcdf-g95
 
 # === LAPACK libraries ==
-LAPACK = -L/usr/local/lib -llapack -lblas #  The netlib reference LAPACK/BLAS
-#LAPACK = -L/usr/lib64 -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas # ATLAS BLAS (faster)
+#LAPACK = -L/usr/local/lib -llapack -lblas #  The netlib reference LAPACK/BLAS
+LAPACK = -L/usr/lib64 -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas # ATLAS BLAS (faster)
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
