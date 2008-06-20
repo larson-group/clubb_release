@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameters.F,v 1.16 2008-05-30 16:24:25 faschinj Exp $
+! $Id: parameters.F,v 1.17 2008-06-20 17:55:45 faschinj Exp $
         module parameters 
 
 !       Description:
@@ -9,7 +9,7 @@
 !       None
 !-----------------------------------------------------------------------
 
-        use param_index
+        use param_index, only: nparams ! Variable(s)
 
         implicit none
 
@@ -630,6 +630,7 @@
      .      itaumin,
      .      itaumax,
      .      nparams
+
         implicit none
 
 
