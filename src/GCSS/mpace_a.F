@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_a.F,v 1.18 2008-06-17 16:33:38 faschinj Exp $
+! $Id: mpace_a.F,v 1.19 2008-06-20 14:02:49 faschinj Exp $
         module mpace_a
 
 !       Description:
@@ -72,8 +72,6 @@
         use grid_class, only: zt2zm ! Procedure(s)
 
         use interpolation, only: zlinterp_fnc ! Procedure(s)
-
-        use file_functions, only: file_read_1d, file_read_2d ! Procedure(s)
 
         use stats_prec, only: time_prec ! Variable(s)
 
