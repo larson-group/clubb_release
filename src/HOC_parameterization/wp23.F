@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.68 2008-06-20 14:05:47 griffinb Exp $
+! $Id: wp23.F,v 1.69 2008-06-20 14:58:26 faschinj Exp $
 !===============================================================================
         module wp23
 
@@ -315,12 +315,8 @@
      .      band_solve, ! Procedure(s) 
      .      band_solvex
 
-        use pos_definite_mod, only:
-     .      pos_definite_adj ! Subroutine
-
         use fill_holes_mult, only:
      .      fill_holes_multiplicative
-
 
         use error_code, only: 
      .      lapack_error ! Procedure(s)
@@ -329,7 +325,7 @@
         use stats_type, only:
      .      stat_begin_update, ! Procedure(s)
      .      stat_update_var_pt, stat_end_update, ! Procedure(s)
-     .      stat_end_update_pt, stat_update_var  ! Procedure(s)
+     .      stat_end_update_pt  ! Procedure(s)
 
         use stats_hoc, only: 
      .      zm,        ! Variable(s)
@@ -427,7 +423,7 @@
      .  wp2, ! w'^2 (momentum levels)                            [m^2/s^2]
      .  wp3  ! w'^3 (thermodynamic levels)                       [m^3/s^3]
 
-        integer, intent(inout) :: err_code
+        integer, intent(inout) :: err_code ! Have any errors occured?
 
         ! Local Variables
         real, dimension(nsup+nsub+1,2*gr%nnzp) :: 
@@ -470,7 +466,7 @@
         !        completely implicit diffusion stabilized the deep
         !        convective cases more while having almost no effect on
         !        the boundary layer cases.  Brian; 1/4/2008.
-!        logical, parameter :: lcrank_nich_diff = .true.
+        !        logical, parameter :: lcrank_nich_diff = .true.
         logical, parameter :: lcrank_nich_diff = .false.
 
 #ifdef STATS
@@ -636,21 +632,21 @@
      .         ztscr16(k) * wp3(k), zt )
 
           enddo
-       end if ! lstats_samp
+        end if ! lstats_samp
 #endif /*STATS*/
 
 #ifdef STATS
         if ( lstats_samp ) then
-          ! Store previous value for effect of the positive definite scheme
-          call stat_begin_update( iwp2_pd, real( wp2 / dt ), zm )
-       end if 
+           ! Store previous value for effect of the positive definite scheme
+           call stat_begin_update( iwp2_pd, real( wp2 / dt ), zm )
+        end if 
 #endif /*STATS*/
 
-       if ( lhole_fill .and. any( wp2 < 2./3*emin ) ) then
+        if ( lhole_fill .and. any( wp2 < 2./3*emin ) ) then
 
-         ! Use a simple hole filling algorithm
-         call fill_holes_multiplicative( 2./3.*emin, "zm", wp2 )
-       end if ! wp2
+          ! Use a simple hole filling algorithm
+          call fill_holes_multiplicative( 2./3.*emin, "zm", wp2 )
+        end if ! wp2
 
 #ifdef STATS
         if ( lstats_samp ) then
