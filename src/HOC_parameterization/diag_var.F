@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F,v 1.53 2008-06-19 18:41:41 dschanen Exp $
+! $Id: diag_var.F,v 1.54 2008-06-20 14:07:50 faschinj Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !===============================================================================
@@ -64,7 +64,7 @@
      .      lhole_fill ! logical constant
         
         use parameters, 
-     .    only: C2, C2b, C2c, C2rt, C2thl, C2rtthl, c_K2, nu2, nu9,! Variable(s)
+     .    only: C2rt, C2thl, C2rtthl, c_K2, nu2, nu9, ! Variable(s)
      .          c_Ksqd, beta, C4, C14, C5, T0
         
         use grid_class, only:
@@ -73,9 +73,6 @@
         
         use stats_prec, only: 
      .      time_prec ! Variable(s)
-        
-        use lapack_wrap, only: 
-     .      tridag_solve ! Procedure(s)
         
         use error_code, only: 
      .      clubb_no_error, ! Variable(s)
@@ -2081,8 +2078,8 @@
         subroutine pos_definite_variances( solve_type, dt, tolerance,
      .                                     xp2_np1 )
 
-        use fill_holes_mult
-        use grid_class
+        use fill_holes_mult, only: fill_holes_multiplicative
+        use grid_class, only: gr
         use stats_prec, only: time_prec
 #ifdef STATS
         use stats_hoc, only: 
