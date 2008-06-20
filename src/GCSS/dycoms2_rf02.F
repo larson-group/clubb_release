@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf02.F,v 1.18 2008-06-16 22:26:11 faschinj Exp $
+! $Id: dycoms2_rf02.F,v 1.19 2008-06-20 14:01:09 faschinj Exp $
         module dycoms2_rf02
 
 !       Description:
@@ -38,7 +38,7 @@
 
         USE constants, only: sclr_dim, fstderr, Cp, rc_tol ! Variable(s)
 
-        USE model_flags, only: lbugsrad, lcoamps_micro, kk_rain ! Variable(s)
+        USE model_flags, only: lbugsrad, lcoamps_micro ! Variable(s)
 
         use stats_prec, only: time_prec ! Variable(s)
 
