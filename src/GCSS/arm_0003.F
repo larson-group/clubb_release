@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_0003.F,v 1.11 2008-06-16 22:22:25 faschinj Exp $
+! $Id: arm_0003.F,v 1.12 2008-06-20 13:57:26 faschinj Exp $
         module arm_0003
 
 !       Description:
@@ -172,8 +172,6 @@
 !----------------------------------------------------------------------
 
         use constants, only: Cp, Lv, grav, sclr_dim ! Variable(s)
-
-        use file_functions, only: file_read_1d ! Procedure(s)
 
         use stats_prec, only: time_prec ! Variable(s)
 
