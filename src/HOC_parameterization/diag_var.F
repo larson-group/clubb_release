@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F,v 1.54 2008-06-20 14:07:50 faschinj Exp $
+! $Id: diag_var.F,v 1.55 2008-06-20 17:58:01 faschinj Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !===============================================================================
@@ -946,6 +946,8 @@
      .      zmscr11
 
 #endif
+
+        implicit none
 
         ! Constant parameters
         integer, parameter ::
