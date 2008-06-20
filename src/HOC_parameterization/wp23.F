@@ -1,11 +1,11 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.69 2008-06-20 14:58:26 faschinj Exp $
+! $Id: wp23.F,v 1.70 2008-06-20 17:53:00 faschinj Exp $
 !===============================================================================
         module wp23
 
         implicit none
 
-        private
+        private ! Default Scope
 
         public :: timestep_wp23
 
@@ -1212,6 +1212,8 @@
 
         use stats_type, only: stat_update_var_pt, stat_begin_update_pt ! Procedure(s)
 #endif /*STATS*/
+
+        implicit none
 
         ! Input Variables
         real(kind=time_prec), intent(in) :: 

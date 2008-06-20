@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: lapack_wrap.F,v 1.9 2008-05-30 21:45:39 faschinj Exp $
+! $Id: lapack_wrap.F,v 1.10 2008-06-20 17:56:21 faschinj Exp $
         module lapack_wrap
 
 !       Description:
@@ -15,7 +15,8 @@
         use error_code, only: 
      .      clubb_singular_matrix, ! Variable(s)
      .      clubb_bad_lapack_arg,
-     .      clubb_no_error   
+     .      clubb_no_error
+   
         implicit none
 
         ! Simple routines
