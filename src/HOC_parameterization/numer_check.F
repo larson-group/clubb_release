@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F,v 1.28 2008-06-16 17:41:43 faschinj Exp $
+! $Id: numer_check.F,v 1.29 2008-06-20 14:11:57 faschinj Exp $
         module numerical_check
 
         implicit none
@@ -814,8 +814,7 @@
 !-----------------------------------------------------------------------
         use constants, only:
      .      fstderr ! Variable(s)
-        use grid_class, only:
-     .      gr ! Variable(s)
+
         use error_code, only: 
      .      clubb_var_less_than_zero ! Variable(s)
         
