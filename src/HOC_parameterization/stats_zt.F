@@ -1,10 +1,12 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zt.F,v 1.16 2008-06-04 20:27:28 dschanen Exp $
+! $Id: stats_zt.F,v 1.17 2008-06-20 17:53:31 faschinj Exp $
        
       module stats_zt
 #ifdef STATS
       
-      private
+      implicit none
+
+      private ! Default Scope
       
       public :: stats_init_zt
 
