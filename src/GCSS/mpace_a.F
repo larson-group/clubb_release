@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_a.F,v 1.19 2008-06-20 14:02:49 faschinj Exp $
+! $Id: mpace_a.F,v 1.20 2008-06-20 17:24:07 faschinj Exp $
         module mpace_a
 
 !       Description:
@@ -601,8 +601,10 @@
 !       This subroutine initializes the module by reading in forcing
 !       data used in the tndcy and sfclyr subroutines.
 !----------------------------------------------------------------
-          use file_functions, only: file_read_1d, file_read_2d
+          use file_functions, only: file_read_1d, file_read_2d ! Procedure(s)
+
           implicit none
+
           call file_read_1d(10,
      .      file_path//'mpace_a_press.dat',
      .      file_nlevels, per_line, file_pressure)
