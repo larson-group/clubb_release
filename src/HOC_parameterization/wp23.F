@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.67 2008-06-19 18:41:42 dschanen Exp $
+! $Id: wp23.F,v 1.68 2008-06-20 14:05:47 griffinb Exp $
 !===============================================================================
         module wp23
 
@@ -2215,17 +2215,22 @@
 !
 !       where Sk_wt = w'^3 / (w'^2)^(3/2). 
 !
-!       This term needs to be linearized, such that:
+!       This term needs to be linearized, so function L(w'^3) is defined
+!       to be equal to this term (pressure term 1), such that:
 !
-!       L(w'^3) = - (C_8/tau_w3t) * ( C_8b * (w'^3)^5 / (w'^2)^6 + w'^3 );
+!       L(w'^3) = - (C_8/tau_w3t) * ( C_8b * (w'^3)^5 / (w'^2)^6 + w'^3 ).
 !
-!       and the term becomes:
+!       A Taylor Series expansion (truncated after the first derivative
+!       term) of L(w'^3) around w'^3 = w'^3(t) is used to linearize 
+!       pressure term 1.  Evaluating L(w'^3) at w'^3(t+1):
 !
-!       + L( w'^3(t) ) 
-!          + ( d L(w'^3) / d w'^3 ) * ( w'^3(t+1) - w'^3(t) ).
+!       L( w'^3(t+1) ) = L( w'^3(t) ) 
+!                        + ( d L(w'^3) / d w'^3 )|_(w'^3=w'^3(t))
+!                          * ( w'^3(t+1) - w'^3(t) ).
 !
-!       After the term has been linearized, it is broken down into 
-!       implicit (LHS) and explicit (RHS) components.
+!       After evaluating the expression above, the term has become 
+!       linearized.  It is broken down into implicit (LHS) and 
+!       explicit (RHS) components.
 !       The implicit portion is:
 !
 !       - (C_8/tau_w3t) * ( 5 * C_8b * Sk_wt^4 + 1 ) * w'^3(t+1).
@@ -2477,17 +2482,22 @@
 !
 !       where Sk_wt = w'^3 / (w'^2)^(3/2). 
 !
-!       This term needs to be linearized, such that:
+!       This term needs to be linearized, so function L(w'^3) is defined
+!       to be equal to this term (pressure term 1), such that:
 !
-!       L(w'^3) = - (C_8/tau_w3t) * ( C_8b * (w'^3)^5 / (w'^2)^6 + w'^3 );
+!       L(w'^3) = - (C_8/tau_w3t) * ( C_8b * (w'^3)^5 / (w'^2)^6 + w'^3 ).
 !
-!       and the term becomes:
+!       A Taylor Series expansion (truncated after the first derivative
+!       term) of L(w'^3) around w'^3 = w'^3(t) is used to linearize 
+!       pressure term 1.  Evaluating L(w'^3) at w'^3(t+1):
 !
-!       + L( w'^3(t) ) 
-!          + ( d L(w'^3) / d w'^3 ) * ( w'^3(t+1) - w'^3(t) ).
+!       L( w'^3(t+1) ) = L( w'^3(t) ) 
+!                        + ( d L(w'^3) / d w'^3 )|_(w'^3=w'^3(t))
+!                          * ( w'^3(t+1) - w'^3(t) ).
 !
-!       After the term has been linearized, it is broken down into 
-!       implicit (LHS) and explicit (RHS) components.
+!       After evaluating the expression above, the term has become 
+!       linearized.  It is broken down into implicit (LHS) and 
+!       explicit (RHS) components.
 !       The explicit portion is:
 !
 !       + (C_8/tau_w3t) * ( 4 * C_8b * Sk_wt^4 + 1 ) * w'^3(t).
