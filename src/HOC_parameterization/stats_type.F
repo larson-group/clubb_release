@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_type.F,v 1.11 2008-06-18 16:35:51 faschinj Exp $
+! $Id: stats_type.F,v 1.12 2008-06-20 14:14:13 faschinj Exp $
       module stats_type
 #ifdef STATS
  
@@ -267,8 +267,6 @@
 !---------------------------------------------------------------------            
 
          use grid_class, only: gr ! Variable(s)
-
-         use error_code, only: clubb_debug ! Procedure(s)
 
          implicit none
 
