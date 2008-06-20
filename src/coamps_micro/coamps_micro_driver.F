@@ -44,7 +44,7 @@
 #ifdef STATS
       use stats_type, only: stat_update_var_pt ! Procedure(s)
       
-      use stats_hoc, only: zt, zm, lstats_samp, ! Variable(s)
+      use stats_hoc, only: zt, lstats_samp, ! Variable(s)
      .    imean_vol_rad_rain,
      .    imean_vol_rad_cloud
 c Addition by Adam Smith, 24 April 2008
