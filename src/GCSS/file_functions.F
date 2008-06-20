@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: file_functions.F,v 1.5 2008-06-16 17:30:51 faschinj Exp $
+! $Id: file_functions.F,v 1.6 2008-06-20 17:23:01 faschinj Exp $
 !===============================================================================
       module file_functions
 
@@ -38,6 +38,8 @@
 !
 !     See Michael Falk's comments below for more information.
 !-----------------------------------------------------------------------
+
+      implicit none
 
       integer, intent(in) ::
      . file_unit,         ! Unit number of file being read.
@@ -86,6 +88,8 @@
       subroutine file_read_2d (device,file_path,file_dimension1,
      .                       file_dimension2,file_per_line,variable)
       
+      implicit none
+
       integer, intent(in) ::
      . device,
      . file_dimension1,
