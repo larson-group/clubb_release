@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F,v 1.12 2008-06-17 13:08:07 griffinb Exp $
+! $Id: microphys_driver.F,v 1.13 2008-06-20 15:27:10 faschinj Exp $
         module microphys_driver
 
 !       Description:
@@ -1521,6 +1521,7 @@
         use mean_adv, only: 
      .      term_ma_zt_lhs ! Procedure(s)
 
+        implicit none
 !#ifdef STATS
 !        use stats_hoc
 !#endif /*STATS*/
