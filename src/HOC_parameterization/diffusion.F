@@ -1,4 +1,4 @@
-! $Id: diffusion.F,v 1.8 2008-06-17 13:58:32 griffinb Exp $
+! $Id: diffusion.F,v 1.9 2008-06-20 14:10:51 faschinj Exp $
 !===============================================================================
         module diffusion
 
@@ -528,7 +528,8 @@
 !       None
 !-----------------------------------------------------------------------
 
-        use grid_class
+        use grid_class, only:
+     .  gr       ! Variable(s)
 
         implicit none
 
