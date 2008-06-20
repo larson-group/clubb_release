@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_97.F,v 1.19 2008-06-16 22:23:05 faschinj Exp $
+! $Id: arm_97.F,v 1.20 2008-06-20 13:58:56 faschinj Exp $
         module arm_97
 
 !       Description:
@@ -184,7 +184,7 @@
         use diag_ustar_mod, only: diag_ustar ! Variable(s)
 
 #ifdef STATS
-        use stats_type, only: stat_update_var, stat_update_var_pt ! Procedure(s)
+        use stats_type, only: stat_update_var_pt ! Procedure(s)
 
         use stats_hoc, only: iustar, sfc, lstats_samp ! Variable(s)
 #endif
