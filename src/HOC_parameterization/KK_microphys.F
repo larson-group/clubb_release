@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: KK_microphys.F,v 1.9 2008-06-16 22:33:09 faschinj Exp $
+! $Id: KK_microphys.F,v 1.10 2008-06-20 17:25:11 faschinj Exp $
 
       module rain_equations
 
@@ -1099,6 +1099,7 @@
         USE model_flags, only:
      .      local_kk ! Variable(s)
 
+        implicit none
 
         ! Input variables.
         REAL, INTENT(IN):: rcm         ! Grid-box average rcm     [kg kg^-1]
@@ -1274,6 +1275,8 @@
 
         USE model_flags, only:
      .      local_kk ! Variable(s)
+
+        implicit none
 
         ! Input variables.
         REAL, INTENT(IN):: rcm         ! Grid-box average rcm     [kg kg^-1]
