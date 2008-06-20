@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_type.F,v 1.12 2008-06-20 14:14:13 faschinj Exp $
+! $Id: stats_type.F,v 1.13 2008-06-20 17:54:11 faschinj Exp $
       module stats_type
 #ifdef STATS
  
@@ -73,7 +73,7 @@
          character(len = *), intent(in) :: var_units       ! Variable units       []
 
          ! Output Variable
-         type(stats), intent(out) :: grid_kind
+         type(stats), intent(out) :: grid_kind ! Which grid the variable is located on (zt, zm, or sfc )
 
          grid_kind%f%var(var_index)%ptr => grid_kind%x(:,var_index)
          grid_kind%f%var(var_index)%name = var_name
@@ -178,7 +178,8 @@
 !          
 !          call stat_end_update( irtm_bt, real(rtm / dt), zt )
 !---------------------------------------------------------------------                    
-         use grid_class, only: gr          
+
+         use grid_class, only: gr  ! Variable(s)        
 
          implicit none
 
