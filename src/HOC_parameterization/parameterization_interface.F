@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.94 2008-06-16 22:26:58 faschinj Exp $
+! $Id: parameterization_interface.F,v 1.95 2008-06-21 18:44:45 vlarson Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -661,6 +661,7 @@
        if ( lapack_error( err_code ) ) return
 
         ! Vince Larson clipped rcm in order to prevent rvm < 0.  5 Apr 2008.
+        ! This code won't work unless rtm >= 0 !!!
         do k = 1, gr%nnzp
            if ( rtm(k) < rcm(k) ) then
               if ( clubb_at_debug_level(1) ) then
