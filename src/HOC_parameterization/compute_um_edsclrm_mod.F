@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F,v 1.10 2008-06-16 22:34:00 faschinj Exp $
+! $Id: compute_um_edsclrm_mod.F,v 1.11 2008-06-23 15:59:51 faschinj Exp $
 !------------------------------------------------------------------------
         module compute_um_edsclrm_mod
 
@@ -7,7 +7,7 @@
         
         private ! Set Default Scope
 
-        public :: compute_um_edsclrm
+        public :: compute_um_edsclrm, compute_uv_tndcy
 
         contains
 
@@ -292,6 +292,110 @@
         return
 
         end subroutine compute_um_edsclrm
+
 !-----------------------------------------------------------------------
+        subroutine compute_uv_tndcy
+     .     ( solve_type, xm, wmt, fcor, perp_wind_m, perp_wind_g, 
+     .       implemented, xmt )
+!
+!       Description: Computes the tendency for the u/v wind components.
+!
+!
+!-----------------------------------------------------------------------
+          use grid_class, only:
+     .      gr
+
+          use grid_class, only:
+     .      zt2zm,
+     .      ddzm         
+
+#ifdef STATS
+          use stats_type, only:
+     .      stat_update_var
+
+          use stats_hoc, only:
+     .      ium_ma, ! Variable(s)
+     .      ium_gf,
+     .      ium_cf,
+     .      ivm_ma,
+     .      ivm_gf,
+     .      ivm_cf,
+     .      zt
+#endif
+          implicit none
+
+          ! Input Variables
+          character(len=*), intent(in) :: solve_type
+
+          real, dimension(gr%nnzp), intent(in) :: 
+     .    xm, ! u/v wind                                       [m/s]   
+     .    wmt ! wm on thermodynaming grid                     [m/s]
+
+          real :: 
+     .    fcor ! Coriolis forcing                             [s^-1]
+
+          real, dimension(gr%nnzp), intent(in) ::
+     .    perp_wind_m, ! Perpendicular component of the mean wind (e.g. v, for the u-eqn) [m/s]
+     .    perp_wind_g  ! Perpendicular component of the geostropic wind (e.g. vg)         [m/s]
+
+          logical, intent(in) ::
+     .    implemented
+
+          ! Output Variables
+          real, dimension(gr%nnzp), intent(out) :: xmt ! xm tendency  [m/s^2]
+
+          ! Local Variables
+          integer ::
+     .    ixm_ma,
+     .    ixm_gf,
+     .    ixm_cf
+
+          real, dimension(gr%nnzp) ::
+     .    xm_ma,
+     .    xm_gf,
+     .    xm_cf
+
+
+        if (.not. implemented) then
+          select case (trim(solve_type))
+          case("um")
+            ixm_ma = ium_ma
+            ixm_gf = ium_gf
+            ixm_cf = ium_cf
+           
+            xm_ma = - wmt * ddzm( zt2zm( xm ) )
+
+            xm_gf = - fcor * perp_wind_g
+
+            xm_cf = fcor * perp_wind_m
+
+          case("vm") 
+            ixm_ma = ivm_ma
+            ixm_gf = ivm_gf
+            ixm_cf = ivm_cf
+
+            xm_ma = - wmt * ddzm( zt2zm( xm ) )
+
+            xm_gf = fcor * perp_wind_g
+
+            xm_cf = -fcor * perp_wind_m
+
+          end select
+
+          xmt = xm_ma + xm_gf + xm_cf 
+
+#ifdef STATS
+          call stat_update_var( ixm_ma, xm_ma, zt )
+
+          call stat_update_var( ixm_gf, xm_gf, zt )
+          
+          call stat_update_var( ixm_cf, xm_cf, zt )
+#endif
+        else
+          xmt = 0.0
+        endif
+
+        end subroutine compute_uv_tndcy
+
 
         end module compute_um_edsclrm_mod

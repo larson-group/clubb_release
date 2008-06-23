@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.96 2008-06-23 14:26:30 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.97 2008-06-23 15:59:50 faschinj Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -159,7 +159,8 @@
        use mixing_length, only:
      .     compute_length ! Procedure
        use compute_um_edsclrm_mod, only: 
-     .     compute_um_edsclrm ! Procedure
+     .     compute_um_edsclrm, ! Procedure(s)
+     .     compute_uv_tndcy
        use saturation, only: 
            ! Procedure
      .     rsat ! Saturation mixing ratio
@@ -177,16 +178,9 @@
      .     permute_height_time ! Procedure
 #ifdef STATS
        use stats_hoc, only:
-     .     zt, ! Variable(s)
-     .     zm,
+     .     zm, ! Variable(s)
      .     sfc,
      .     lstats_samp,
-     .     ium_ma,
-     .     ium_gf,
-     .     ium_cf,
-     .     ivm_ma,
-     .     ivm_gf,
-     .     ivm_cf,
      .     ish,
      .     ilh,
      .     iustar,
@@ -730,23 +724,8 @@
        ! Update winds
        !----------------------------------------------------------------
 
-       IF ( .NOT. implemented ) THEN
-          umt = - wmt * ddzm( zt2zm( um ) )
-     .          + fcor * ( vm - vg )
-#ifdef STATS
-         if ( lstats_samp ) then
-           call stat_update_var( ium_ma, -wmt*ddzm( zt2zm( um ) ), zt )
-
-           call stat_update_var( ium_gf, -fcor*vg, zt )
-
-           call stat_update_var( ium_cf, fcor*vm, zt )
-
-         end if
-#endif
-
-       ELSE
-          umt = 0.0
-       END IF
+       call compute_uv_tndcy
+     .    ( "um", um, wmt, fcor, vm, vg, implemented, umt )
 
        ! dtmain to dt -dschanen
        call compute_um_edsclrm( "um", upwp(1), umt,
@@ -764,24 +743,8 @@
        ! Joshua Fasching March 2008
        if ( lapack_error(err_code) ) return
 
-       IF ( .NOT. implemented ) THEN
-          vmt = - wmt * ddzm( zt2zm( vm ) )
-     .          - fcor * ( um - ug )
-
-#ifdef STATS
-         if ( lstats_samp ) then
-           call stat_update_var( ivm_ma, -wmt*ddzm( zt2zm( vm ) ), zt )
-
-           call stat_update_var( ivm_gf, fcor*ug, zt )
-
-           call stat_update_var( ivm_cf,-fcor*um,zt )
-
-         end if
-#endif
-
-       ELSE
-          vmt = 0.0
-       END IF
+       call compute_uv_tndcy
+     .    ("vm", vm, wmt, fcor, um, ug, implemented, vmt )
 
        call compute_um_edsclrm( "vm", vpwp(1), vmt,
      .                          Khm, dt, vm, vpwp, err_code )
