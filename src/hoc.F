@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.195 2008-06-17 20:52:05 dschanen Exp $
+! $Id: hoc.F,v 1.196 2008-06-23 14:26:30 dschanen Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -124,18 +124,21 @@
      .                            taut, thvm, Lscale, Kht, Khm,
      .                            um_ref, vm_ref
 
-        use prognostic_variables, only: Tsfc, psfc, SE, LE, thlm, rtm, ! Variable(s)
-     .                            um, vm, wp2, rcm, wmt, wmm, exner,
-     .                            taum, p, rhom, upwp, vpwp, wpthlp,
-     .                            rhot, wprtp, wpthlp_sfc, wprtp_sfc,
-     .                            upwp_sfc, vpwp_sfc, thlm_forcing,
-     .                            rtm_forcing, up2, vp2, wp3, rtp2,
-     .                            thlp2, rtpthlp, Scm, cf
+        use prognostic_variables, only: 
+     .      Tsfc, psfc, SE, LE, thlm, rtm,    ! Variable(s)
+     .      um, vm, wp2, rcm, wmt, wmm, exner,
+     .      taum, p, rhom, upwp, vpwp, wpthlp,
+     .      rhot, wprtp, wpthlp_sfc, wprtp_sfc,
+     .      upwp_sfc, vpwp_sfc, thlm_forcing,
+     .      rtm_forcing, up2, vp2, wp3, rtp2,
+     .      thlp2, rtpthlp, Scm, cf
 
 #ifdef SCALARS
-        use prognostic_variables, only: sclrm, edsclrm, wpsclrp_sfc,
-     .                            wpedsclrp_sfc, sclrm_forcing
-#endif /*SCALARS*/        
+        use prognostic_variables, only: 
+     .      sclrm, edsclrm, wpsclrp_sfc,
+     .      wpedsclrp_sfc, sclrm_forcing, wpsclrp
+#endif /*SCALARS*/
+
         use numerical_check, only: invalid_model_arrays ! Procedure(s)
 
         use inputfields, only: compute_timestep, grads_fields_reader ! Procedure(s)
@@ -145,7 +148,7 @@
         use hoc_parameterization_interface, only:
      .                                 parameterization_setup, ! Procedure(s) 
      .                                 parameterization_cleanup,
-     .                                 parameterization_timestep          
+     .                                 parameterization_timestep
 
         use constants, only: fstdout, fstderr ! Variable(s)
 
@@ -504,7 +507,8 @@
      .             err_code, .false.
 #ifdef SCALARS
      .             ,wpsclrp_sfc, wpedsclrp_sfc, 
-     .             sclrm, sclrm_forcing, edsclrm
+     .             sclrm, sclrm_forcing, edsclrm,
+     .             wpsclrp
 #endif /*SCALARS*/
      .           )
            
@@ -1332,7 +1336,7 @@
      .                            pdf_parms, Khm, Akm_est, Akm, Nim
 
 #ifdef SCALARS
-        use diagnostic_variables, only: wpsclrp, wpedsclrp ! Scalar Variables
+        use diagnostic_variables, only: wpedsclrp ! Scalar Variables
 #endif /*SCALARS*/
 
         
@@ -1344,8 +1348,10 @@
 
 
 #ifdef SCALARS        
-        use prognostic_variables, only: sclrm, sclrm_forcing,  ! Scalar Variables
-     .                            wpsclrp_sfc, wpedsclrp_sfc
+        use prognostic_variables, only: 
+     .      sclrm, sclrm_forcing,  ! Scalar Variables
+     .      wpsclrp,
+     .      wpsclrp_sfc, wpedsclrp_sfc
 #endif /*SCALARS*/
         
         use stats_prec, only: time_prec ! Variable(s)

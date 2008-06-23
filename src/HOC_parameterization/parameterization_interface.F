@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.95 2008-06-21 18:44:45 vlarson Exp $
+! $Id: parameterization_interface.F,v 1.96 2008-06-23 14:26:30 dschanen Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -45,7 +45,8 @@
      .              err_code, implemented
 #ifdef SCALARS
      .              ,wpsclrp_sfc, wpedsclrp_sfc,   ! Optional
-     .              sclrm, sclrm_forcing, edsclrm  ! Optional
+     .              sclrm, sclrm_forcing, edsclrm, ! Optional
+     .              wpsclrp
 #endif
      .            )
 
@@ -68,7 +69,8 @@
      .     Cp,
      .     Lv,
      .     ep1,
-     .     eps
+     .     eps,
+     .     sclr_dim
        use parameters, only:
      .     gamma_coefc, ! Variable(s)
      .     gamma_coefb,
@@ -129,6 +131,20 @@
      .     wprtpzt,
      .     rtp2zt,
      .     rtpthlpzt
+#ifdef SCALARS
+     .    ,edsclrmt,
+     .     wpedsclrp,
+     .     sclrpthvp,  ! sclr'th_v'
+     .     sclrprtp,   ! sclr'rt'
+     .     sclrp2,     ! sclr'^2
+     .     sclrpthlp,  ! sclr'th_l'
+     .     sclrprcp,   ! sclr'rc'
+     .     wp2sclrp,   ! w'^2 sclr'
+     .     wpsclrp2,   ! w'sclr'^2
+     .     wpsclrprtp, ! w'sclr'rt'
+     .     wpsclrpthlp ! w'sclr'thl'
+#endif
+
        use mixing, only:
            ! Variable(s) 
      .     timestep_mixing          ! Compute mean/flux terms
@@ -256,9 +272,10 @@
 
        ! Optional Input/Output Variables
        real, intent(inout), dimension(gr%nnzp,sclr_dim) ::
-     . sclrm,          ! Passive scalar mean.
-     . sclrm_forcing,  ! Passive scalar forcing.
-     . edsclrm         ! Eddy passive scalar mean.
+     . sclrm,          ! Passive scalar mean.           [units vary]
+     . sclrm_forcing,  ! Passive scalar forcing.        [units vary/s]
+     . edsclrm,        ! Eddy passive scalar mean.      [units vary]
+     . wpsclrp         ! w'sclr'                        [units vary m/s]
 
 #endif /*SCALARS*/
 
@@ -827,7 +844,7 @@
      .             p, exner, rhot, rhom, thlm_forcing, rtm_forcing, wmm,
      .             wmt, Scm, taum, rcm, cf
 #ifdef SCALARS
-     .             ,sclrm, edsclrm, sclrm_forcing
+     .             ,sclrm, edsclrm, sclrm_forcing, wpsclrp
 #endif /*SCALARS*/
      .            )
 

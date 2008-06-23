@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: prog_variables.F,v 1.21 2008-05-30 21:46:25 faschinj Exp $
+! $Id: prog_variables.F,v 1.22 2008-06-23 14:26:30 dschanen Exp $
         module prognostic_variables
 
 !       This module contains definitions of all prognostic
@@ -105,9 +105,10 @@
         real, target, allocatable, dimension(:,:), public ::
      .  sclrm,         ! Mean passive scalars           [units vary]
      .  sclrm_forcing, ! Scalars' forcing               [units/s]
-     .  edsclrm        ! Mean eddy-diffusivity scalars  [units vary]
+     .  edsclrm,       ! Mean eddy-diffusivity scalars  [units vary]
+     .  wpsclrp        ! w'sclr'                        [units vary m/s]
 
-!$omp   threadprivate(sclrm, sclrm_forcing, edsclrm)
+!$omp   threadprivate(sclrm, sclrm_forcing, edsclrm, wpsclrp)
 
 #endif /*SCALARS*/
 
@@ -187,6 +188,7 @@
         allocate( sclrm_forcing(1:nzmax, 1:sclr_dim) )
 
         allocate( edsclrm(1:nzmax, 1:sclr_dim) )
+        allocate( wpsclrp(1:nzmax, 1:sclr_dim) )
 
 #endif /*SCALARS*/
 
@@ -255,6 +257,7 @@
         sclrm_forcing(1:nzmax,1:sclr_dim) = 0.0
 
         edsclrm(1:nzmax,1:sclr_dim)       = 0.0
+        wpsclrp(1:nzmax,1:sclr_dim)       = 0.0
 #endif /*SCALARS*/
 !$omp   end parallel
 
@@ -319,6 +322,7 @@
         deallocate( sclrm_forcing )
 
         deallocate( edsclrm )
+        deallocate( wpsclrp )
 
 #endif /*SCALARS*/
 !$omp   end parallel

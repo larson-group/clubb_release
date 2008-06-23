@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F,v 1.26 2008-06-09 20:11:25 dschanen Exp $
+! $Id: diag_variables.F,v 1.27 2008-06-23 14:26:30 dschanen Exp $
         module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -141,7 +141,6 @@
      .  sclrp2,     ! sclr'^2
      .  sclrpthlp,  ! sclr'th_l'
      .  sclrprcp,   ! sclr'rc'
-     .  wpsclrp,    ! w'sclr'
      .  wp2sclrp,   ! w'^2 sclr'
      .  wpsclrp2,   ! w'sclr'^2
      .  wpsclrprtp, ! w'sclr'rt'
@@ -150,7 +149,7 @@
 !$omp   threadprivate(edsclrmt)
 !$omp   threadprivate(wpedsclrp)
 !$omp   threadprivate(sclrpthvp, sclrprtp, sclrp2, sclrpthlp)
-!$omp   threadprivate(wpsclrp, wp2sclrp, wpsclrprtp, wpsclrpthlp)
+!$omp   threadprivate(wp2sclrp, wpsclrprtp, wpsclrpthlp)
 
 #endif /*SCALARS*/
 
@@ -344,7 +343,6 @@
         allocate( sclrpthlp(1:nzmax, 1:sclr_dim) )
         allocate( sclrprcp(1:nzmax, 1:sclr_dim) )
 
-        allocate( wpsclrp(1:nzmax, 1:sclr_dim) )
         allocate( wp2sclrp(1:nzmax, 1:sclr_dim) )
         allocate( wpsclrp2(1:nzmax, 1:sclr_dim) )
         allocate( wpsclrprtp(1:nzmax, 1:sclr_dim) )
@@ -446,7 +444,6 @@
         sclrpthlp(:,:)     = 0.0
         sclrprcp(:,:)      = 0.0
 
-        wpsclrp(:,:)       = 0.0
         wp2sclrp(:,:)      = 0.0
         wpsclrp2(:,:)      = 0.0
         wpsclrprtp(:,:)    = 0.0
@@ -575,7 +572,6 @@
         deallocate( sclrpthlp )
         deallocate( sclrprcp )
 
-        deallocate( wpsclrp )
         deallocate( wp2sclrp )
         deallocate( wpsclrp2 )
         deallocate( wpsclrprtp )

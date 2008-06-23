@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.18 2008-06-19 18:41:41 dschanen Exp $
+!  $Id: stats_subs.F,v 1.19 2008-06-23 14:26:30 dschanen Exp $
       module stats_subs
 #ifdef STATS
  
@@ -662,7 +662,7 @@
      .             rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp,
      .             p, exner, rhot, rhom, thlm_forcing, rtm_forcing, wmm,
      .             wmt, Scm, taum, rcm, cf,
-     .             sclrm, edsclrm, sclrm_forcing )
+     .             sclrm, edsclrm, sclrm_forcing, wpsclrp )
 
 !     Description:
 !     Accumulate those stats variables that are preserved in HOC from
@@ -849,7 +849,6 @@
      .    sclrpthvp,
      .    sclrpthlp,
      .    sclrprcp,
-     .    wpsclrp,
      .    wp2sclrp,
      .    wpsclrp2,
      .    wpsclrprtp,
@@ -917,7 +916,8 @@
       real, intent(in), optional, dimension(gr%nnzp,sclr_dim) ::
      .  sclrm,          ! High-Order Passive scalar     [units vary]
      .  edsclrm,        ! Eddy-diff Passive scalar      [units vary] 
-     .  sclrm_forcing   ! Large-scale forcing of scalar [units/s]
+     .  sclrm_forcing,  ! Large-scale forcing of scalar [units/s]
+     .  wpsclrp         ! w'sclr'                       [units m/s]
 
       ! Prognostic drizzle variable array
 !     real, intent(in), dimension(gr%nnzp,hydromet_dim) :: hydromet
