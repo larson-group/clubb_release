@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.127 2008-06-19 18:39:53 dschanen Exp $
+# $Id: Makefile,v 1.128 2008-06-23 18:11:26 dschanen Exp $
 #
 # This version should work with GNU make and Sun's dmake.
 #
@@ -25,6 +25,7 @@ include config/linux_ia32_g95_debug.in
 # == Object files ==
 
 OBJDIR = $(PREFIX)/obj
+SRCDIR = $(PREFIX)/src
 
 LATIN_HYP = math_utilities.o \
 	lh_sampler.o \
@@ -112,13 +113,13 @@ VPATH=.:LH:GCSS:BUGSrad:HOC_parameterization:coamps_micro:$(OBJDIR)
 .SUFFIXES: .a .o .f .F .f90 .F90 .h
 
 .f.o:
-	$(FC) $(FCFLAGS) -o $(OBJDIR)/$@ -c $<
+	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(OBJDIR)/$@ -c $(SRCDIR)/$<
 .f90.o:
-	$(FC) $(FCFLAGS) -o $(OBJDIR)/$@ -c $<
+	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(OBJDIR)/$@ -c $(SRCDIR)/$<
 .F.o:
-	$(FC) $(FCFLAGS) -o $(OBJDIR)/$@ -c $<
+	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(OBJDIR)/$@ -c $(SRCDIR)/$<
 .F90.o:
-	$(FC) $(FCFLAGS) -o $(OBJDIR)/$@ -c $<
+	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(OBJDIR)/$@ -c $(SRCDIR)/$<
 
 # == Static libraries (default) ==
 
@@ -170,10 +171,10 @@ compare_runs:	$(HOCLIBS) $(COMPARE_RUNS)
 	$(COMPARE_RUNS) $(LDFLAGS)
 
 clean: 
-	-rm -f $(OBJDIR)/*.o *.mod core*
+	-rm -f $(OBJDIR)/*.o $(OBJDIR)/*.mod $(OBJDIR)/core*
 
 distclean: 
-	-rm -f $(OBJDIR)/*.o *.mod core* \
+	-rm -f $(OBJDIR)/*.o $(OBJDIR)/*.mod $(OBJDIR)/core* \
 	$(BINDIR)/hoc_tuner \
 	$(BINDIR)/int2txt \
 	$(BINDIR)/hoc_tuner_budget_terms \
