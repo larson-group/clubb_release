@@ -1,4 +1,4 @@
-# $Id: linux_ia32_ss12.in,v 1.2 2008-06-04 20:28:16 dschanen Exp $
+# $Id: linux_ia32_ss12.in,v 1.3 2008-06-24 18:13:58 faschinj Exp $
 # Makefile definitions for Sun Studio's Fortran compiler on GNU/Linux
 
 # == Paths ==
@@ -14,7 +14,7 @@ FC = sunf95 # Sun Fortran 8.3
 # It is sometimes helpful to turn on floating-point trapping for the 
 #  standalone program, but this will not work when using the tuner.
 # In Sun f95: remove the reference to ftrap, or use -ftrap=common
-DEBUG = -g -C -fns=no -ftrap=%none #-stackvar -xcheck=init_local -ftrap=common
+DEBUG = -g -C -fns=no -ftrap=%none -w4 #-stackvar -xcheck=init_local -ftrap=common
 
 # == Machine specific flags ==
 # Note that when linking to sunperf (for LAPACK) you must use -dalign

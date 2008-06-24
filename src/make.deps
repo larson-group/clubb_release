@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.47 2008-06-19 18:39:53 dschanen Exp $
+# $Id: make.deps,v 1.48 2008-06-24 18:13:34 faschinj Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -16,8 +16,8 @@
 # Therefore, whenever you add a USE statement in a file you should add 
 # the corresponding object file to the dependencies list for the file being
 # modified.  
-# E.g. when adding a "use stats_hoc" line to fire.F, the new line should read:
-# fire.o : fire.F stats_hoc.o
+# E.g. when adding a "use stats_variables" line to fire.F, the new line should read:
+# fire.o : fire.F stats_variables.o
 # Plus any other files that fire.F has in a use or include.
 #
 # If this is not done, you will get unexpected errors while compiling with 
@@ -40,11 +40,11 @@ parameters.o    : param_index.o error_code.o parameters.F
 model_flags.o	: constants.o model_flags.F
 stats_prec.o	: stats_prec.F
 outputfile.o    : stats_prec.o outputfile.F
-KK_microphys.o  : constants.o model_flags.o lapack_wrap.o parab.o stats_hoc.o \
+KK_microphys.o  : constants.o model_flags.o lapack_wrap.o parab.o stats_variables.o \
 	KK_microphys.F
 microphys_driver.o : constants.o model_flags.o lapack_wrap.o \
 	KK_microphys.o coamps_micro_driver.o parameters.o \
-	stats_hoc.o stats_type.o error_code.o \
+	stats_variables.o stats_type.o error_code.o \
         ice_dfsn_mod.o diffusion.o microphys_driver.F 
 outputgrads.o	: constants.o recl.F endian.o outputfile.o calendar.o \
 	outputgrads.F
@@ -56,13 +56,13 @@ numer_check.o	: prog_variables.o diag_variables.o constants.o model_flags.o\
 inputgrads.o	: constants.o endian.o recl.F inputgrads.F
 grid.o		: constants.o file_functions.o grid.F
 stats_type.o    : outputfile.o stats_prec.o error_code.o stats_type.F
-stats_hoc.o     : stats_type.o stats_hoc.F
+stats_variables.o     : stats_type.o stats_variables.F
 stats_subs.o    : outputgrads.o outputnc.o prog_variables.o diag_variables.o \
-	stats_hoc.o stats_type.o grid.o stats_zt.o stats_zm.o stats_sfc.o temp_in_K_mod.o \
+	stats_variables.o stats_type.o grid.o stats_zt.o stats_zm.o stats_sfc.o temp_in_K_mod.o \
 	interpolation.o stats_subs.F 
-stats_zt.o : stats_hoc.o stats_zt.F
-stats_zm.o : stats_hoc.o stats_zm.F
-stats_sfc.o: stats_hoc.o stats_sfc.F
+stats_zt.o : stats_variables.o stats_zt.F
+stats_zm.o : stats_variables.o stats_zm.F
+stats_sfc.o: stats_variables.o stats_sfc.F
 erf.o		: erf.F
 lapack_wrap.o	: error_code.o lapack_wrap.F
 Skw_func.o	: Skw_func.F
@@ -70,15 +70,15 @@ temp_in_K_mod.o	: constants.o temp_in_K_mod.F
 
 closure_new.o	: constants.o parameters.o grid.o saturation.o erf.o numer_check.o \
                  error_code.o closure_new.F 
-diag_var.o	: constants.o parameters.o grid.o stats_type.o stats_hoc.o \
+diag_var.o	: constants.o parameters.o grid.o stats_type.o stats_variables.o \
 	lapack_wrap.o fill_holes_mult.o \
 	error_code.o diffusion.o diag_var.F
-mixing.o : constants.o parameters.o stats_hoc.o lapack_wrap.o \
+mixing.o : constants.o parameters.o stats_variables.o lapack_wrap.o \
 	   pos_definite_mod.o error_code.o diffusion.o mean_adv.o mixing.F 
 
 parameterization_interface.o : constants.o hydrostatic.o mixing.o \
 	model_flags.o numer_check.o Skw_func.o \
-	mixing_length.o stats_type.o stats_hoc.o stats_subs.o \
+	mixing_length.o stats_type.o stats_variables.o stats_subs.o \
 	stats_zt.o stats_zm.o \
 	stats_sfc.o stats_type.o sounding.o diag_var.o saturation.o wp23.o \
 	grid.o saturation.o compute_um_edsclrm_mod.o prog_variables.o \
@@ -89,10 +89,10 @@ hydrostatic.o	: constants.o grid.o hydrostatic.F
 mixing_length.o	: constants.o parameters.o numer_check.o error_code.o mixing_length.F
 saturation.o    : constants.o saturation.F  
 sfc.o		: constants.o parameters.o numer_check.o error_code.o sfc.F 
-wp23.o		: constants.o parameters.o stats_hoc.o lapack_wrap.o \
+wp23.o		: constants.o parameters.o stats_variables.o lapack_wrap.o \
                   error_code.o diffusion.o mean_adv.o fill_holes_mult.o wp23.F
 error_code.o    : constants.o error_code.F
-compute_um_edsclrm_mod.o : grid.o stats_hoc.o lapack_wrap.o error_code.o compute_um_edsclrm_mod.F 
+compute_um_edsclrm_mod.o : grid.o stats_variables.o lapack_wrap.o error_code.o compute_um_edsclrm_mod.F 
 diffusion.o	: grid.o diffusion.F
 mean_adv.o      : grid.o mean_adv.F
 pos_definite_mod.o : grid.o stats_prec.o pos_definite_mod.F
@@ -118,43 +118,43 @@ matrix_operations.o     : matrix_operations.F
 
 # == GCSS dependencies ==
 diag_ustar.o: constants.o diag_ustar.F
-arm.o       : constants.o diag_ustar.o model_flags.o grid.o stats_hoc.o arm.F
-arm_97.o    : constants.o diag_ustar.o model_flags.o grid.o stats_hoc.o \
+arm.o       : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o arm.F
+arm_97.o    : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o \
 	interpolation.o arm.F
-arm_0003.o  : constants.o diag_ustar.o model_flags.o grid.o stats_hoc.o \
+arm_0003.o  : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o \
 	arm_0003.F
-arm_3year.o : constants.o diag_ustar.o model_flags.o grid.o stats_hoc.o arm_3year.F
+arm_3year.o : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o arm_3year.F
 astex.o     : constants.o model_flags.o grid.o astex.F
-atex.o      : constants.o model_flags.o grid.o cloud_rad.o stats_hoc.o error_code.o atex.F
+atex.o      : constants.o model_flags.o grid.o cloud_rad.o stats_variables.o error_code.o atex.F
 bomex.o     : constants.o model_flags.o grid.o bomex.F
 cobra.o     : constants.o model_flags.o grid.o cobra.F
-fire.o      : constants.o model_flags.o grid.o stats_hoc.o cloud_rad.o fire.F
-gabls2.o    : constants.o diag_ustar.o model_flags.o grid.o stats_hoc.o gabls2.F
-lba.o       : constants.o diag_ustar.o model_flags.o grid.o stats_hoc.o \
+fire.o      : constants.o model_flags.o grid.o stats_variables.o cloud_rad.o fire.F
+gabls2.o    : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o gabls2.F
+lba.o       : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o \
 	interpolation.o lba.F
-mpace_a.o     : constants.o model_flags.o grid.o stats_hoc.o mpace_a.F interpolation.o file_functions.o
-mpace_b.o     : constants.o model_flags.o grid.o stats_hoc.o rad_lwsw.o \
+mpace_a.o     : constants.o model_flags.o grid.o stats_variables.o mpace_a.F interpolation.o file_functions.o
+mpace_b.o     : constants.o model_flags.o grid.o stats_variables.o rad_lwsw.o \
 	mpace_b.F
-nov11.o     : constants.o model_flags.o grid.o stats_hoc.o rad_lwsw.o \
+nov11.o     : constants.o model_flags.o grid.o stats_variables.o rad_lwsw.o \
         nov11.F
-jun25.o     : constants.o model_flags.o grid.o stats_hoc.o rad_lwsw.o \
+jun25.o     : constants.o model_flags.o grid.o stats_variables.o rad_lwsw.o \
 	cos_solar_zen.o jun25.F
 clex9_nov02.o : constants.o cos_solar_zen.o rad_lwsw.o model_flags.o grid.o \
-	stats_hoc.o clex9_nov02.F
-clex9_oct14.o : constants.o cos_solar_zen.o rad_lwsw.o model_flags.o grid.o stats_hoc.o \
+	stats_variables.o clex9_nov02.F
+clex9_oct14.o : constants.o cos_solar_zen.o rad_lwsw.o model_flags.o grid.o stats_variables.o \
 	clex9_oct14.F
-rico.o      : constants.o model_flags.o grid.o stats_hoc.o rico.F
+rico.o      : constants.o model_flags.o grid.o stats_variables.o rico.F
 wangara.o   : constants.o model_flags.o grid.o wangara.F
-ice_dfsn_mod.o    : constants.o grid.o stats_hoc.o ice_dfsn_mod.F
+ice_dfsn_mod.o    : constants.o grid.o stats_variables.o ice_dfsn_mod.F
 cloud_rad.o : constants.o grid.o cloud_rad.F
-dycoms2_rf01.o : constants.o model_flags.o grid.o stats_hoc.o error_code.o dycoms2_rf01.F
-dycoms2_rf02.o : constants.o model_flags.o grid.o stats_hoc.o error_code.o dycoms2_rf02.F
+dycoms2_rf01.o : constants.o model_flags.o grid.o stats_variables.o error_code.o dycoms2_rf01.F
+dycoms2_rf02.o : constants.o model_flags.o grid.o stats_variables.o error_code.o dycoms2_rf02.F
 
-rad_lwsw.o      : rad_lwsw.F stats_hoc.o
+rad_lwsw.o      : rad_lwsw.F stats_variables.o
 file_functions.o	: file_functions.F
 
 # == COAMPS Microphysics dependencies ==
-coamps_micro_driver.o : constants.o grid.o stats_hoc.o saturation.o coamps_micro_driver.F
+coamps_micro_driver.o : constants.o grid.o stats_variables.o saturation.o coamps_micro_driver.F
 
 # == BUGSrad dependencies ==
 cos_solar_zen.o         : constants.o calendar.o cos_solar_zen.F
@@ -182,7 +182,7 @@ two_rt_sw.o		: kinds.o two_rt_sw.F
 two_rt_sw_bs.o		: kinds.o lapack_wrap.o two_rt_sw_bs.F
 two_rt_sw_ocastrndm.o	: kinds.o two_rt_sw_ocastrndm.F90
 bugsrad_hoc.o 		: kinds.o constants.o bugs_rad.o temp_in_K_mod.o \
-	stats_hoc.o cos_solar_zen.o std_atmosphere_mod.o bugsrad_hoc.F90
+	stats_variables.o cos_solar_zen.o std_atmosphere_mod.o bugsrad_hoc.F90
 
 # == Misc. program related source files  ==
 hoc.o		: parameterization_interface.o arm.o astex.o atex.o \
@@ -201,7 +201,7 @@ gradsaverage.o	: grid.o inputgrads.o gradsaverage.F
 error.o		: nrtype.o nr.o gradsaverage.o hoc.o parameters.o error_code.o error.F
 budget_terms.o  : amoeba.o inputfields.o gradsaverage.o hoc.o \
 	error.o error_code.o budget_terms.F
-cloud_sed_mod.o : cloud_sed_mod.F stats_hoc.o grid.o constants.o
+cloud_sed_mod.o : cloud_sed_mod.F stats_variables.o grid.o constants.o
 
 # == Executables ==
 hoc_tuner.o		: nrtype.o nr.o hoc.o error.o hoc_tuner.F

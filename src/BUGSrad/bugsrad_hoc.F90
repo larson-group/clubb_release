@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_hoc.F90,v 1.31 2008-06-18 17:55:31 faschinj Exp $
+! $Id: bugsrad_hoc.F90,v 1.32 2008-06-24 18:13:56 faschinj Exp $
 module bugsrad_hoc_mod
 
 implicit none
@@ -60,7 +60,7 @@ subroutine bugsrad_hoc &
 #ifdef STATS
   use stats_type, only: stat_update_var ! Procedure(s)
 
-  use stats_hoc, only: zt, zm, lstats_samp, & ! Variable(s)
+  use stats_variables, only: zt, zm, lstats_samp, & ! Variable(s)
     iFrad_SW, iFrad_LW, iradht_SW, iradht_LW
 #endif
 

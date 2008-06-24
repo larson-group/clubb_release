@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zm.F,v 1.11 2008-06-20 17:54:50 faschinj Exp $
+! $Id: stats_zm.F,v 1.12 2008-06-24 18:13:58 faschinj Exp $
       module stats_zm
 #ifdef STATS
        
@@ -18,7 +18,7 @@
 !     Initializes array indices for zm
 !-----------------------------------------------------------------------
 
-      use stats_hoc, only:
+      use stats_variables, only:
      .    zm,
      .    iwp2,
      .    irtp2,
@@ -111,7 +111,7 @@
      .    iwpthlp_dp1,
      .    iwpthlp_cl
 
-      use stats_hoc, only:
+      use stats_variables, only:
      .    irtp2_bt,
      .    irtp2_ma,
      .    irtp2_ta,

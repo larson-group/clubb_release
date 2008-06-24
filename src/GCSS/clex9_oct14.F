@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: clex9_oct14.F,v 1.13 2008-06-16 22:26:11 faschinj Exp $
+! $Id: clex9_oct14.F,v 1.14 2008-06-24 18:13:57 faschinj Exp $
         module clex9_oct14
 
 !       Description:
@@ -68,8 +68,9 @@ c****************************
 #ifdef STATS
         use stats_type, only: stat_update_var ! Procedure(s)
 
-        use stats_hoc, only: iradht_LW, iradht_SW, zt, zm, lstats_samp, ! Variable(s)
-     .                 iFrad_SW, iFrad_LW
+        use stats_variables, only: 
+     .      iradht_LW, iradht_SW, zt, zm, lstats_samp, ! Variable(s)
+     .      iFrad_SW, iFrad_LW
 #endif /*STATS*/
 
         implicit none

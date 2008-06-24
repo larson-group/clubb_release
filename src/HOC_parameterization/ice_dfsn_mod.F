@@ -1,4 +1,4 @@
-! $Id: ice_dfsn_mod.F,v 1.7 2008-06-16 22:35:29 faschinj Exp $        
+! $Id: ice_dfsn_mod.F,v 1.8 2008-06-24 18:13:57 faschinj Exp $        
 
         module ice_dfsn_mod
 
@@ -69,7 +69,7 @@
         use stats_type, only:
      .      stat_update_var
 
-        use stats_hoc, only: zt, lstats_samp, ! Variable(s)
+        use stats_variables, only: zt, lstats_samp, ! Variable(s)
      .      ircm_icedfs, idiam, imass_ice_cryst, iu_T_cm
 #endif
 

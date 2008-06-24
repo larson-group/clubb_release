@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.70 2008-06-20 17:53:00 faschinj Exp $
+! $Id: wp23.F,v 1.71 2008-06-24 18:13:58 faschinj Exp $
 !===============================================================================
         module wp23
 
@@ -327,7 +327,7 @@
      .      stat_update_var_pt, stat_end_update, ! Procedure(s)
      .      stat_end_update_pt  ! Procedure(s)
 
-        use stats_hoc, only: 
+        use stats_variables, only: 
      .      zm,        ! Variable(s)
      .      zt,
      .      sfc,
@@ -743,7 +743,7 @@
         use stats_prec, only: time_prec
         
 #ifdef STATS
-        use stats_hoc, only:      
+        use stats_variables, only:      
      .      zmscr01,
      .      zmscr02,   
      .      zmscr03,   
@@ -1206,7 +1206,7 @@
      .      time_prec ! Variable
 
 #ifdef STATS
-        use stats_hoc, only: lstats_samp, iwp2_dp2, zm, iwp2_bp,  ! Variable(s)
+        use stats_variables, only: lstats_samp, iwp2_dp2, zm, iwp2_bp,  ! Variable(s)
      .                 iwp2_pr1, iwp2_pr2, iwp2_pr3, iwp3_ta, zt,
      .                 iwp3_tp, iwp3_bp, iwp3_pr2, iwp3_pr1, iwp3_dp1
 

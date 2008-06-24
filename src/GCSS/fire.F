@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: fire.F,v 1.12 2008-06-17 16:35:03 faschinj Exp $
+! $Id: fire.F,v 1.13 2008-06-24 18:13:57 faschinj Exp $
         module fire
 
 !       Description:
@@ -45,7 +45,7 @@
 #ifdef STATS
         use stats_type, only: stat_update_var ! Procedure(s)
 
-        use stats_hoc, only: zt, iradht_LW, lstats_samp ! Variable(s)
+        use stats_variables, only: zt, iradht_LW, lstats_samp ! Variable(s)
 #endif
 
         implicit none

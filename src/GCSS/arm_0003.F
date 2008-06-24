@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_0003.F,v 1.12 2008-06-20 13:57:26 faschinj Exp $
+! $Id: arm_0003.F,v 1.13 2008-06-24 18:13:56 faschinj Exp $
         module arm_0003
 
 !       Description:
@@ -180,7 +180,7 @@
 #ifdef STATS
         use stats_type, only: stat_update_var_pt ! Variable(s)
 
-        use stats_hoc, only: iustar, sfc, lstats_samp ! Variable(s)
+        use stats_variables, only: iustar, sfc, lstats_samp ! Variable(s)
 #endif
         
         implicit none

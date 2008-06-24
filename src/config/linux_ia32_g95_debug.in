@@ -1,4 +1,4 @@
-# $Id: linux_ia32_g95_debug.in,v 1.3 2008-06-19 18:39:05 dschanen Exp $
+# $Id: linux_ia32_g95_debug.in,v 1.4 2008-06-24 18:13:58 faschinj Exp $
 # Configuration file for Linux machine using g95
 # An MS Windows machine with MSYS should be similar
 
@@ -17,7 +17,7 @@ FC = g95 # g95 ( http://www.g95.org )
 # In g95: `setenv G95_FPU_INVALID TRUE' or `export G95_FPU_INVALID=TRUE'
 # These are the options for debugging symbols, bounds checking, IEEE-754,
 # and a special g95 flag for debugging, respectively. 
-DEBUG = -g -fbounds-check -mieee-fp -ftrace=full
+DEBUG = -g -fbounds-check -mieee-fp -ftrace=full -Wunused-module-vars -Wunused-module-procs -Wuninitialized -Wno=167 -Wimplicit-none
 
 # == Machine specific flags ==
 # Note: some of these are 64 bit architectures, so make sure NetCDF is
@@ -61,7 +61,7 @@ LDFLAGS = -L$(LIBDIR) -Wl,-rpath,$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)
 # You will need to `make clean' if you change these
 # Use -I<include path> to set a module or header file directory
 
-FCFLAGS = $(ARCH) $(DEBUG) -DNETCDF -DSTATS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
+FCFLAGS = $(ARCH) $(DEBUG) $(OPTIMIZE) -DNETCDF -DSTATS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
 #FCFLAGS = $(ARCH) $(DEBUG) -DNETCDF -DSTATS -DSCALARS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
 #FCFLAGS = $(ARCH) $(OPTIMIZE) -DNETCDF -DSTATS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
 #FCFLAGS = $(ARCH) $(OPTIMIZE) -DNETCDF -DSTATS -DSCALARS -Dnooverlap -Dradoffline -I$(NC_LOC)/include 

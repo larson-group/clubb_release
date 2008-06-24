@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: KK_microphys.F,v 1.10 2008-06-20 17:25:11 faschinj Exp $
+! $Id: KK_microphys.F,v 1.11 2008-06-24 18:13:57 faschinj Exp $
 
       module rain_equations
 
@@ -136,7 +136,7 @@
         use stats_type, only:
      .      stat_update_var, stat_update_var_pt ! Procedure(s)
 
-        use stats_hoc, only:
+        use stats_variables, only:
      .      zt,  ! Variable(s)
      .      imean_vol_rad_rain,
      .      irrm_cond,

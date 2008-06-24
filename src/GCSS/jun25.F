@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: jun25.F,v 1.15 2008-06-17 16:33:39 faschinj Exp $
+! $Id: jun25.F,v 1.16 2008-06-24 18:13:57 faschinj Exp $
         module jun25
 
 !       Description:
@@ -53,8 +53,9 @@
 #ifdef STATS
         use stats_type, only: stat_update_var ! Procedure(s)
 
-        use stats_hoc, only: iradht_LW, iradht_SW, iFrad_LW, iFrad_SW, ! Procedure(s)
-     .                 zt, zm, lstats_samp
+        use stats_variables, only: 
+     .      iradht_LW, iradht_SW, iFrad_LW, iFrad_SW, ! Procedure(s)
+     .      zt, zm, lstats_samp
 #endif /*STATS*/
 
         implicit none

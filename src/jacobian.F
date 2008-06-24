@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F,v 1.44 2008-05-30 16:24:22 faschinj Exp $
+! $Id: jacobian.F,v 1.45 2008-06-24 18:13:34 faschinj Exp $
 
       program jacobian
 #ifdef STATS
@@ -25,7 +25,7 @@
       use grads_common, only: 
      .    grads_average_interval, ! Procedure(s) 
      .    grads_zlvl
-      use stats_hoc, only: 
+      use stats_variables, only: 
      .    fname_zt, ! Variable(s) 
      .    fname_zm
       use error_code, only: 

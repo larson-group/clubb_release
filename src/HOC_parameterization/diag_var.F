@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F,v 1.55 2008-06-20 17:58:01 faschinj Exp $
+! $Id: diag_var.F,v 1.56 2008-06-24 18:13:57 faschinj Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !===============================================================================
@@ -83,7 +83,7 @@
         use stats_type, only:
      .      stat_begin_update, stat_end_update ! Procedure(s) 
         
-        use stats_hoc, only:
+        use stats_variables, only:
      .      irtp2_bt, ! Variable(s)
      .      irtp2_cl,
      .      ithlp2_bt,
@@ -699,7 +699,7 @@
      .      term_ma_zm_lhs ! Procedure(s)
 
 #ifdef STATS
-        use stats_hoc, only:
+        use stats_variables, only:
      .      zmscr01,
      .      zmscr02,
      .      zmscr03,
@@ -902,7 +902,7 @@
         use stats_type, only:
      .      stat_update_var_pt ! Procedure(s)
         
-        use stats_hoc, only:
+        use stats_variables, only:
      .      zm, ! Variable(s) 
      .      sfc,
      .      irtp2_cn,
@@ -1127,7 +1127,7 @@
         use stats_type, only:
      .      stat_modify_pt, stat_update_var_pt ! Procedure(s)
 
-        use stats_hoc, only:
+        use stats_variables, only:
      .      ivp2_ta, ! Variable(s)
      .      ivp2_tp,
      .      ivp2_dp1,
@@ -1351,7 +1351,7 @@
         use stats_type, only:
      .      stat_modify_pt, stat_update_var_pt ! Procedure(s)
         
-        use stats_hoc, only:
+        use stats_variables, only:
      .      irtp2_ta, ! Variable(s)
      .      irtp2_tp,
      .      ithlp2_ta,
@@ -2084,7 +2084,7 @@
         use grid_class, only: gr
         use stats_prec, only: time_prec
 #ifdef STATS
-        use stats_hoc, only: 
+        use stats_variables, only: 
      .      zm, lstats_samp,
      .      irtp2_pd, ithlp2_pd, iup2_pd, ivp2_pd ! variables
         use stats_type, only: 

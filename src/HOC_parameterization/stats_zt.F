@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zt.F,v 1.17 2008-06-20 17:53:31 faschinj Exp $
+! $Id: stats_zt.F,v 1.18 2008-06-24 18:13:58 faschinj Exp $
        
       module stats_zt
 #ifdef STATS
@@ -19,7 +19,7 @@
 !     Initializes array indices for zt 
 !-----------------------------------------------------------------------
 
-      use stats_hoc, only:
+      use stats_variables, only:
      .    ithlm, ! Variable(s)
      .    itemp_in_K,
      .    ithvm,
@@ -119,7 +119,7 @@
      .    irsnowm_sd,
      .    irsnowm_dff
 
-      use stats_hoc, only:
+      use stats_variables, only:
      .    irsnowm_mc,
      .    irsnowm_cl,
      .    irgraupelm_bt,

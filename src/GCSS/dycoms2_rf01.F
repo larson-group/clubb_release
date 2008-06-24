@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf01.F,v 1.15 2008-06-16 22:26:11 faschinj Exp $
+! $Id: dycoms2_rf01.F,v 1.16 2008-06-24 18:13:57 faschinj Exp $
         module dycoms2_rf01
 
 !       Description:
@@ -42,7 +42,7 @@
 #ifdef STATS
         use stats_type, only: stat_update_var, stat_update_var_pt ! Procedure(s)
 
-        use stats_hoc, only: izi, iradht_LW, zt, sfc, lstats_samp ! Variable(s)
+        use stats_variables, only: izi, iradht_LW, zt, sfc, lstats_samp ! Variable(s)
 #endif /*STATS*/
 
         implicit none
@@ -209,7 +209,7 @@
 #ifdef STATS
         use stats_type, only: stat_update_var_pt ! Procedure(s)
 
-        use stats_hoc, only: sfc, iustar, lstats_samp ! Variable(s)
+        use stats_variables, only: sfc, iustar, lstats_samp ! Variable(s)
 #endif /*STATS*/
 
         implicit none

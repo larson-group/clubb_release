@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_sfc.F,v 1.9 2008-06-04 20:27:28 dschanen Exp $
+! $Id: stats_sfc.F,v 1.10 2008-06-24 18:13:58 faschinj Exp $
       
       module stats_sfc
 #ifdef STATS
@@ -19,7 +19,7 @@
 !     Initializes array indices for sfc
 !-----------------------------------------------------------------------
 
-      use stats_hoc, only:
+      use stats_variables, only:
      .    sfc, ! Variables
      .    iustar,
      .    ilh,

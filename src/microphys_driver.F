@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F,v 1.13 2008-06-20 15:27:10 faschinj Exp $
+! $Id: microphys_driver.F,v 1.14 2008-06-24 18:13:35 faschinj Exp $
         module microphys_driver
 
 !       Description:
@@ -82,7 +82,7 @@
 
 
 #ifdef STATS
-        use stats_hoc, only:
+        use stats_variables, only:
      .      iVrr, ! Variable(s)
      .      iVnr,
      .      iVsnow,
@@ -780,7 +780,7 @@
 !    .     ,band_solve
 
 #ifdef STATS
-        use stats_hoc, only:
+        use stats_variables, only:
      .      zt, ! Variable(s)
      .      irrm_ma,
      .      irrm_sd,
@@ -965,7 +965,7 @@
       
         use constants, only: sec_per_day ! Variable(s)
       
-        use stats_hoc, only:
+        use stats_variables, only:
      .      irrm_bt,  ! Variable(s)
      .      irrm_ma,
      .      irrm_sd,
@@ -1523,7 +1523,7 @@
 
         implicit none
 !#ifdef STATS
-!        use stats_hoc
+!        use stats_variables
 !#endif /*STATS*/
 ! Joshua Fasching 2007
 

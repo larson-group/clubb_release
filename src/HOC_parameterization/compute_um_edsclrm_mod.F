@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F,v 1.11 2008-06-23 15:59:51 faschinj Exp $
+! $Id: compute_um_edsclrm_mod.F,v 1.12 2008-06-24 18:13:57 faschinj Exp $
 !------------------------------------------------------------------------
         module compute_um_edsclrm_mod
 
@@ -33,7 +33,7 @@
         use lapack_wrap, only: 
      .      tridag_solve ! Procedure(s)
 #ifdef STATS
-        use stats_hoc, only:
+        use stats_variables, only:
      .      ium_bt, ! Variable(s)
      .      ium_ta,
      .      ivm_bt,
@@ -313,7 +313,7 @@
           use stats_type, only:
      .      stat_update_var
 
-          use stats_hoc, only:
+          use stats_variables, only:
      .      ium_ma, ! Variable(s)
      .      ium_gf,
      .      ium_cf,

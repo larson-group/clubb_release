@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.19 2008-06-23 14:26:30 dschanen Exp $
+!  $Id: stats_subs.F,v 1.20 2008-06-24 18:13:58 faschinj Exp $
       module stats_subs
 #ifdef STATS
  
@@ -27,7 +27,7 @@
 !     Description: Initializes the statistics saving functionality of
 !     the HOC model.
 !-----------------------------------------------------------------------
-      use stats_hoc, only:
+      use stats_variables, only:
      .    zt,     ! Variables
      .    ztscr01,
      .    ztscr02,
@@ -150,7 +150,7 @@
       ! Initialize
       lerror = .false.
 
-      ! Set stats_hoc variables with inputs from calling subroutine
+      ! Set stats_variables variables with inputs from calling subroutine
       lstats = lstats_in
 
       stats_tsamp = stats_tsamp_in
@@ -512,7 +512,7 @@
 !     Begin sampling for the current timestep.
 !-----------------------------------------------------------------------
 
-      use stats_hoc, only:
+      use stats_variables, only:
      .    lstats, ! Variable(s)
      .    lstats_samp,
      .    lstats_first,
@@ -567,7 +567,7 @@
 !     Description:
 !-----------------------------------------------------------------------
 
-      use stats_hoc, only:
+      use stats_variables, only:
      .    zt, ! Variable(s)
      .    zm,
      .    sfc,
@@ -670,7 +670,7 @@
 !     budget terms, longwave and shortwave components, etc. )
 !----------------------------------------------------------------------
 
-      use stats_hoc, only:
+      use stats_variables, only:
      .    zt,     ! Variables
      .    zm,
      .    sfc,
@@ -732,7 +732,7 @@
      .    iss2,
      .    irrtthl
 
-      use stats_hoc, only:
+      use stats_variables, only:
      .    iwp2zt,
      .    ithlp2zt,
      .    iwpthlpzt,
@@ -769,7 +769,7 @@
      .    ilwp
 
 #ifdef SCALARS
-      use stats_hoc, only:
+      use stats_variables, only:
      .    isclram,
      .    isclram_f,
      .    isclrbm,
@@ -1140,7 +1140,7 @@
 !     stats file structures.
 !-----------------------------------------------------------------------
 
-      use stats_hoc, only:
+      use stats_variables, only:
      .    zt, ! Variable(s)
      .    zm,
      .    sfc,

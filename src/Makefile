@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.128 2008-06-23 18:11:26 dschanen Exp $
+# $Id: Makefile,v 1.129 2008-06-24 18:13:34 faschinj Exp $
 #
 # This version should work with GNU make and Sun's dmake.
 #
@@ -67,7 +67,7 @@ PARAMETERIZATION = \
 	$(LATIN_HYP) \
 	constants.o endian.o outputfile.o outputgrads.o \
 	outputnc.o grid.o model_flags.o file_functions.o \
-        stats_type.o stats_hoc.o stats_subs.o \
+        stats_type.o stats_variables.o stats_subs.o \
         stats_zt.o stats_zm.o stats_sfc.o stats_prec.o sfc.o \
 	erf.o diffusion.o mean_adv.o temp_in_K_mod.o \
 	closure_new.o diag_var.o interpolation.o \

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.196 2008-06-23 14:26:30 dschanen Exp $
+! $Id: hoc.F,v 1.197 2008-06-24 18:13:34 faschinj Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -162,7 +162,7 @@
         use stats_prec, only: time_prec ! Variable(s)
 
 #ifdef STATS
-        use stats_hoc, only: lstats_last ! Variable(s
+        use stats_variables, only: lstats_last ! Variable(s
 
         use stats_subs, only: stats_begin_timestep, stats_end_timestep, ! Procedure(s)
      .                        stats_finalize, stats_init

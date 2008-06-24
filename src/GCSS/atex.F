@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 1
 !----------------------------------------------------------------------
-!$Id: atex.F,v 1.16 2008-06-17 16:36:23 faschinj Exp $
+!$Id: atex.F,v 1.17 2008-06-24 18:13:57 faschinj Exp $
         module atex
 
 !       Description:
@@ -45,7 +45,7 @@
 #ifdef STATS
         use stats_type, only: stat_update_var ! Procedure(s)
 
-        use stats_hoc, only: iradht_LW, zt, lstats_samp ! Variable(s)
+        use stats_variables, only: iradht_LW, zt, lstats_samp ! Variable(s)
 #endif
 
         implicit none

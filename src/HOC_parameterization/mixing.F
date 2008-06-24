@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.60 2008-06-19 18:41:41 dschanen Exp $
+! $Id: mixing.F,v 1.61 2008-06-24 18:13:57 faschinj Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -94,7 +94,7 @@
         use stats_type, only:
      .      stat_begin_update, stat_end_update ! Procedure(s)
         
-        use stats_hoc, only:
+        use stats_variables, only:
      .      zt, ! Variable(s)
      .      irtm_cl, 
      .      ithlm_cl,
@@ -494,7 +494,7 @@
      .      term_ma_zt_lhs, ! Procedure(s)
      .      term_ma_zm_lhs
 #ifdef STATS
-        use stats_hoc, only:
+        use stats_variables, only:
      .      ztscr01, ! Variable(s)
      .      ztscr02,
      .      ztscr03,
@@ -865,7 +865,7 @@
         use stats_type, only:
      .      stat_update_var_pt
         
-        use stats_hoc, only:
+        use stats_variables, only:
      .      zt, ! Variable(s)
      .      zm,
      .      irtm_forcing,
@@ -1061,7 +1061,7 @@
      .      stat_begin_update, stat_update_var_pt, ! Procedure(s)
      .      stat_end_update, stat_update_var
         
-        use stats_hoc, only:
+        use stats_variables, only:
      .      zt, ! Variable(s)
      .      zm,
      .      sfc,

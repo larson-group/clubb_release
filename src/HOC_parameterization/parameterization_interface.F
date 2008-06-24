@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.97 2008-06-23 15:59:50 faschinj Exp $
+! $Id: parameterization_interface.F,v 1.98 2008-06-24 18:13:58 faschinj Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -177,7 +177,7 @@
        use permute_height_time_mod, only: 
      .     permute_height_time ! Procedure
 #ifdef STATS
-       use stats_hoc, only:
+       use stats_variables, only:
      .     zm, ! Variable(s)
      .     sfc,
      .     lstats_samp,

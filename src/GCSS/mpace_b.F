@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_b.F,v 1.14 2008-06-17 16:33:38 faschinj Exp $
+! $Id: mpace_b.F,v 1.15 2008-06-24 18:13:57 faschinj Exp $
         module mpace_b
 
 !       Description:
@@ -48,7 +48,7 @@
 #ifdef STATS
         use stats_type, only: stat_update_var
 
-        use stats_hoc, only: iFrad_LW, iFrad_SW, iradht_SW, ! Variable(s)
+        use stats_variables, only: iFrad_LW, iFrad_SW, iradht_SW, ! Variable(s)
      .                 iradht_LW, zt, zm, lstats_samp
 #endif /*STATS*/
 
