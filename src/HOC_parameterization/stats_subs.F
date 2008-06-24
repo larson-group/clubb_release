@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.21 2008-06-24 18:50:54 faschinj Exp $
+!  $Id: stats_subs.F,v 1.22 2008-06-24 19:44:02 faschinj Exp $
       module stats_subs
 #ifdef STATS
  
@@ -73,7 +73,7 @@
      .    lnetcdf,
      .    lgrads
       use stats_precision, only:
-     .    time_prec   ! Variable(s)
+     .    time_precision   ! Variable(s)
       use outputgrads, only:
      .    open_grads  ! Procedure
 #ifdef NETCDF
@@ -103,7 +103,7 @@
 
       logical, intent(in) :: lstats_in ! Stats on? T/F
 
-      real(kind=time_prec) :: 
+      real(kind=time_precision) :: 
      .  stats_tsamp_in, ! Sampling interval   [s]
      .  stats_tout_in   ! Output interval     [s]
 
@@ -117,10 +117,10 @@
       real, intent(in) :: 
      .  rlat, rlon   ! Latitude and Longitude             [Degrees N/E]
 
-      real(kind=time_prec), intent(in) :: 
+      real(kind=time_precision), intent(in) :: 
      .  delt         ! Timestep (dtmain in HOC)           [s]
 
-      real(kind=time_prec), intent(in) :: 
+      real(kind=time_precision), intent(in) :: 
      .  time_current ! Model time                         [s]
 
       ! Local Variables
@@ -520,16 +520,16 @@
      .    stats_tsamp,
      .    stats_tout
       use stats_precision, only:
-     .    time_prec ! Variable(s)
+     .    time_precision ! Variable(s)
 
       implicit none
 
       ! Input
 
-      real(kind=time_prec), intent(in) :: 
+      real(kind=time_precision), intent(in) :: 
      .  time_elapsed ! Elapsed model time       [s]
 
-      real(kind=time_prec), intent(in) :: 
+      real(kind=time_precision), intent(in) :: 
      .  delt         ! Model time step          [s]
 
       if ( .not. lstats ) return
@@ -577,7 +577,7 @@
      .    lgrads
 
       use stats_precision, only:
-     .    time_prec ! Variable(s)
+     .    time_precision ! Variable(s)
 
       use outputgrads, only:
      .    write_grads ! Procedure(s)
@@ -591,10 +591,10 @@
 
       ! Input
 
-      real(kind=time_prec), intent(in) :: 
+      real(kind=time_precision), intent(in) :: 
      .  time_elapsed ! Time elapsed             [s]
 
-      real(kind=time_prec), intent(in) :: 
+      real(kind=time_precision), intent(in) :: 
      .  delt         ! timestep                 [s]
 
       ! Local Variables

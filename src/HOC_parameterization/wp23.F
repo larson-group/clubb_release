@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.72 2008-06-24 18:50:54 faschinj Exp $
+! $Id: wp23.F,v 1.73 2008-06-24 19:44:02 faschinj Exp $
 !===============================================================================
         module wp23
 
@@ -70,7 +70,7 @@
      .      fstderr    ! Variable(s)
 
         use stats_precision, only: 
-     .      time_prec ! Variable(s)
+     .      time_precision ! Variable(s)
 
         use error_code, only: 
      .      lapack_error, ! Procedure(s)
@@ -81,7 +81,7 @@
         intrinsic :: exp
 
         ! Input Variables
-        real(kind=time_prec), intent(in) :: 
+        real(kind=time_precision), intent(in) :: 
      .  dt          ! Timestep                                 [s]
 
         real, intent(in), dimension(gr%nnzp) :: 
@@ -309,7 +309,7 @@
      .      lhole_fill
 
         use stats_precision, only: 
-     .      time_prec  ! Variable(s)
+     .      time_precision  ! Variable(s)
 
         use lapack_wrap, only: 
      .      band_solve, ! Procedure(s) 
@@ -394,7 +394,7 @@
      .  nrhs = 1   ! Number of RHS vectors
 
         ! Input Variables
-        real(kind=time_prec), intent(in) :: 
+        real(kind=time_precision), intent(in) :: 
      .  dt           ! Timestep                                  [s]
 
         real, intent(in), dimension(gr%nnzp) :: 
@@ -740,7 +740,7 @@
      .      term_ma_zm_lhs, ! Procedures
      .      term_ma_zt_lhs
         
-        use stats_precision, only: time_prec
+        use stats_precision, only: time_precision
         
 #ifdef STATS
         use stats_variables, only:      
@@ -797,7 +797,7 @@
      .  nsup = 2   ! Number of superdiagonals in the LHS matrix.
 
         ! Input Variables
-        real(kind=time_prec), intent(in) :: 
+        real(kind=time_precision), intent(in) :: 
      .  dt          ! Timestep length                          [s]
 
         real, dimension(gr%nnzp), intent(in) :: 
@@ -1203,7 +1203,7 @@
      .      diffusion_zt_lhs
 
         use stats_precision, only: 
-     .      time_prec ! Variable
+     .      time_precision ! Variable
 
 #ifdef STATS
         use stats_variables, only: lstats_samp, iwp2_dp2, zm, iwp2_bp,  ! Variable(s)
@@ -1216,7 +1216,7 @@
         implicit none
 
         ! Input Variables
-        real(kind=time_prec), intent(in) :: 
+        real(kind=time_precision), intent(in) :: 
      .  dt          ! Timestep length                          [s]
 
         real, dimension(gr%nnzp), intent(in) :: 

@@ -1,10 +1,10 @@
 !-----------------------------------------------------------------------
-! $Id: stats_precision.F,v 1.1 2008-06-24 18:50:54 faschinj Exp $
+! $Id: stats_precision.F,v 1.2 2008-06-24 19:44:02 faschinj Exp $
         module stats_precision
 
         implicit none
 
-        public :: stat_nknd, stat_rknd, time_prec
+        public :: stat_nknd, stat_rknd, time_precision
 
         private ! Default scope
 
@@ -15,7 +15,7 @@
         integer, parameter :: 
      .    stat_nknd = selected_int_kind( 8 ),
      .    stat_rknd = selected_real_kind( p=12 ),
-     .    time_prec = selected_real_kind( p=12 )
+     .    time_precision = selected_real_kind( p=12 )
 
         end module stats_precision
 !-----------------------------------------------------------------------

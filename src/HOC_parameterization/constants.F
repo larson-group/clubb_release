@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.24 2008-06-24 18:50:53 faschinj Exp $
+! $Id: constants.F,v 1.25 2008-06-24 19:44:01 faschinj Exp $
 
         module constants
 
@@ -11,7 +11,7 @@
 !-----------------------------------------------------------------------
 
         use stats_precision, only: 
-     .      time_prec ! Variable(s)
+     .      time_precision ! Variable(s)
 
         implicit none
  
@@ -101,11 +101,11 @@
      .  eps = 1.0e-10 ! Small value to prevent a divide by zero
 
         ! Useful conversion factors.
-        real(kind=time_prec), parameter :: 
+        real(kind=time_precision), parameter :: 
      .     sec_per_day = 86400.0 ! seconds in a day.
-        real(kind=time_prec), parameter ::
+        real(kind=time_precision), parameter ::
      .     sec_per_hr  = 3600.0  ! seconds in an hour.
-        real(kind=time_prec), parameter ::
+        real(kind=time_precision), parameter ::
      .     sec_per_min = 60.0    ! seconds in a minute.
         real, parameter ::
      .     g_per_kg = 1000.0     ! grams in a kilogram.

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.99 2008-06-24 18:50:54 faschinj Exp $
+! $Id: parameterization_interface.F,v 1.100 2008-06-24 19:44:01 faschinj Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -148,34 +148,46 @@
        use mixing, only:
            ! Variable(s) 
      .     timestep_mixing          ! Compute mean/flux terms
+
        use diagnose_variances, only:
            ! Variable(s) 
      .     diag_var     ! Computes variance terms
+
        use surface_var, only: 
      .     sfc_var ! Procedure
+
        use pdf_closure, only: 
            ! Procedure 
      .     pdf_closure_new     ! Prob. density function
+
        use mixing_length, only:
      .     compute_length ! Procedure
+
        use compute_um_edsclrm_mod, only: 
      .     compute_um_edsclrm, ! Procedure(s)
      .     compute_uv_tndcy
+
        use saturation, only: 
            ! Procedure
      .     rsat ! Saturation mixing ratio
+
        use wp23, only: 
      .     timestep_wp23 ! Procedure
+
        use stats_precision, only: 
-     .     time_prec ! Variable(s)
+     .     time_precision ! Variable(s)
+
        use error_code, only : 
      .     clubb_var_equals_NaN,! Variable(s)
      .     lapack_error, ! Procedure(s)
      .     clubb_at_debug_level
+
        use Skw, only: 
      .     Skw_func ! Procedure
+
        use permute_height_time_mod, only: 
      .     permute_height_time ! Procedure
+
 #ifdef STATS
        use stats_variables, only:
      .     zm, ! Variable(s)
@@ -185,8 +197,10 @@
      .     ilh,
      .     iustar,
      .     iup2_plus_vp2
+
        use stats_subs, only:
      .     stats_accumulate ! Procedure
+
        use stats_type, only:
      .     stat_update_var, stat_update_var_pt ! Procedure(s)
 #endif /*STATS*/
@@ -206,7 +220,7 @@
        ! hoc.F, all subroutines within parameterization_timestep now use
        ! dt for time dependent calculations.  The old dt is noted in
        ! each section of the code -dschanen 20 April 2006 
-       real(kind=time_prec), intent(in) :: 
+       real(kind=time_precision), intent(in) :: 
      . dt            ! Current timestep size    [s]
 
        real, intent(in) :: 
@@ -857,6 +871,7 @@
 
         use lh_sampler_mod, only:
      .      lh_sampler ! Procedure
+
         use micro_calcs_mod, only:
      .      micro_calcs ! Procedure
         
@@ -912,6 +927,7 @@
 
         return
         end subroutine latin_hypercube_sampling
+
 !-----------------------------------------------------------------------
         subroutine parameterization_setup
      .             ( nzmax, T0_in, ts_nudge_in, params,

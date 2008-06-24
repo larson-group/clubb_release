@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: outputfile.F,v 1.10 2008-06-24 18:50:53 faschinj Exp $
+! $Id: outputfile.F,v 1.11 2008-06-24 19:44:01 faschinj Exp $
       module outputfile_class
 #ifdef STATS
 
@@ -8,7 +8,7 @@
 !-----------------------------------------------------------------------
          use stats_precision, only:
      .       stat_rknd, ! Variable
-     .       time_prec
+     .       time_precision
        
          implicit none
 
@@ -70,10 +70,10 @@
      .     rlat,   ! Latitude                   [Degrees N]
      .     rlon    ! Longitude                  [Degrees E]
 
-           real(kind=time_prec) ::
+           real(kind=time_precision) ::
      .     dtwrite ! Interval between output    [Seconds]
 
-           real(kind=time_prec) :: 
+           real(kind=time_precision) :: 
      .     time    ! Start time                 [Seconds]
 
         ! Statistical Variables

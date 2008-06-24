@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.62 2008-06-24 18:50:53 faschinj Exp $
+! $Id: mixing.F,v 1.63 2008-06-24 19:44:01 faschinj Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -86,7 +86,7 @@
      .      zm2zt ! Procedure(s)
 
         use stats_precision, only: 
-     .      time_prec ! Variable(s)
+     .      time_precision ! Variable(s)
         use error_code, only: 
      .      lapack_error, ! Procedure(s)
      .      clubb_at_debug_level    
@@ -107,7 +107,7 @@
         intrinsic :: exp, present
 
         ! Input Variables
-        real(kind=time_prec), intent(in) :: 
+        real(kind=time_precision), intent(in) :: 
      .  dt            ! Timestep                                 [s]
 
         real, intent(in), dimension(gr%nnzp) ::
@@ -485,7 +485,7 @@
      .      zm2zt ! Procedure(s)
 
         use stats_precision, only: 
-     .      time_prec ! Variable(s)
+     .      time_precision ! Variable(s)
 
         use diffusion, only: 
      .      diffusion_zm_lhs ! Procedure(s)
@@ -543,7 +543,7 @@
         ! Input variables
         logical, intent(in) :: liter
 
-        real(kind=time_prec), intent(in) :: 
+        real(kind=time_precision), intent(in) :: 
      .  dt          ! Timestep                                 [s]
 
         real, intent(in), dimension(gr%nnzp) :: 
@@ -859,7 +859,7 @@
      .      gr ! Variable(s)
 
         use stats_precision, only: 
-     .      time_prec ! Variable(s)
+     .      time_precision ! Variable(s)
 
 #ifdef STATS
         use stats_type, only:
@@ -886,7 +886,7 @@
 
         logical, intent(in) :: liter
 
-        real(kind=time_prec), intent(in) :: 
+        real(kind=time_precision), intent(in) :: 
      .  dt          ! Timestep                            [s]
 
         real, dimension(gr%nnzp), intent(in) ::
@@ -1041,7 +1041,7 @@
      .      gr ! Variable(s)
 
         use stats_precision, only: 
-     .      time_prec ! Variable(s)
+     .      time_precision ! Variable(s)
 
         use lapack_wrap, only: 
      .      band_solve, ! Procedure(s)
@@ -1121,7 +1121,7 @@
         character(len=*), intent(in) :: 
      .  solve_type  ! Variables being solved for.
 
-        real(kind=time_prec), intent(in) :: 
+        real(kind=time_precision), intent(in) :: 
      .  dt          ! Timestep                      [s]
 
         real, intent(in), dimension(gr%nnzp) :: 

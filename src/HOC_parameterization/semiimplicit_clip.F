@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: semiimplicit_clip.F,v 1.2 2008-06-24 18:50:54 faschinj Exp $
+! $Id: semiimplicit_clip.F,v 1.3 2008-06-24 19:44:02 faschinj Exp $
 !===============================================================================
         module semiimplicit_clip
 
@@ -190,12 +190,12 @@
 !-----------------------------------------------------------------------
 
         use stats_precision, only: 
-     .      time_prec ! Variable(s)
+     .      time_precision ! Variable(s)
 
         implicit none
 
         ! Input Variables
-        real(kind=time_prec), intent(in) :: 
+        real(kind=time_precision), intent(in) :: 
      .  dt_clip            ! Time scale for semi-implicit clipping term.   [s]
 
         real, intent(in) ::
@@ -298,12 +298,12 @@
 !-----------------------------------------------------------------------
 
         use stats_precision, only: 
-     .      time_prec ! Variable(s)
+     .      time_precision ! Variable(s)
 
         implicit none
 
         ! Input Variables
-        real(kind=time_prec), intent(in) :: 
+        real(kind=time_precision), intent(in) :: 
      .  dt_clip ! Time scale for semi-implicit clipping term.   [s]
 
         real, intent(in) ::
@@ -355,12 +355,12 @@
 !-----------------------------------------------------------------------
 
         use stats_precision, only: 
-     .      time_prec ! Variable(s)
+     .      time_precision ! Variable(s)
 
         implicit none
 
         ! Input Variables
-        real(kind=time_prec), intent(in) :: 
+        real(kind=time_precision), intent(in) :: 
      .  dt_clip            ! Time scale for semi-implicit clipping term.   [s]
 
         real, intent(in) ::

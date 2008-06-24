@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: outputgrads.F,v 1.14 2008-06-24 18:50:53 faschinj Exp $
+! $Id: outputgrads.F,v 1.15 2008-06-24 19:44:01 faschinj Exp $
         module outputgrads
 #ifdef STATS 
 
@@ -51,7 +51,7 @@
           use outputfile_class, only:
      .        outputfile ! Type
           use stats_precision, only: 
-     .        time_prec ! Variable
+     .        time_precision ! Variable
           
           implicit none
 
@@ -67,7 +67,7 @@
 
           real, intent(IN) :: rlat, rlon
 
-          real(kind=time_prec), intent(IN) :: time, dtwrite
+          real(kind=time_precision), intent(IN) :: time, dtwrite
 
           integer, intent(IN) :: nvar
 
@@ -178,7 +178,7 @@
           use outputfile_class, only:
      .        variable ! Type
           use stats_precision, only:
-     .        time_prec ! Variable
+     .        time_precision ! Variable
           use constants, only: 
      .        fstderr, ! Variable 
      .        fstdout
@@ -198,9 +198,9 @@
 
           real, dimension(:), intent(in) ::
      .    z(:) ! Altitudes              [m]
-          real(kind=time_prec), intent(in) ::
+          real(kind=time_precision), intent(in) ::
      .    time    ! Current time        [s]
-          real(kind=time_prec), intent(in) ::
+          real(kind=time_precision), intent(in) ::
      .    dtwrite ! Time interval between writes to the file    [s]
 
           ! Output Variables
@@ -210,7 +210,7 @@
           integer, intent(out) :: 
      .    ntimes, nrecord
 
-          real(kind=time_prec), intent(out) :: time_in
+          real(kind=time_precision), intent(out) :: time_in
         
           ! Local Variables
           logical :: done
@@ -224,7 +224,7 @@
      .    day_in, month_in, year_in,
      .    ios
 
-          real(kind=time_prec) :: dtwrite_in
+          real(kind=time_precision) :: dtwrite_in
 
           real, dimension(:), allocatable :: z_in
 
@@ -546,7 +546,7 @@
      .                           time_in, date )
           
           use stats_precision, only: 
-     .        time_prec ! Variable
+     .        time_precision ! Variable
           use calendar, only: 
      .        leap_year ! Procedure
           
@@ -567,7 +567,7 @@
           integer, intent(in) :: 
      .    day_in, month_in, year_in
 
-          real(kind=time_prec), intent(in) :: time_in
+          real(kind=time_precision), intent(in) :: time_in
 
           ! Output Variables
           character(len=15), intent(out) :: date

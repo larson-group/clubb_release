@@ -39,7 +39,7 @@
       use constants, only: Cp, Lv, pi, Lf, Ls, Rv, Rd, p0 ! Variable(s)
       use grid_class, only: zt2zm ! Procedure(s)
       use saturation, only: rsat, rsati ! Procedure(s)
-      use stats_precision, only: time_prec ! Variable(s)
+      use stats_precision, only: time_precision ! Variable(s)
       use error_code, only: clubb_debug ! Procedure(s)
 #ifdef STATS
       use stats_type, only: stat_update_var_pt ! Procedure(s)
@@ -147,10 +147,10 @@ c End of ajsmith4's addition
      .  kmax   ! Maximum array size (kk + ??)
 
       ! Note: Time variables "timea_in" and "deltf_in" need to be passed in 
-      !       from CLUBB with precision "time_prec".  I have redefined 
+      !       from CLUBB with precision "time_precision".  I have redefined 
       !       "timea" and "deltf" below to be regular precision variables
       !       that are passed throughout COAMPS microphysics.  Brian; 4/5/2008.
-      real(kind=time_prec), intent(in) ::
+      real(kind=time_precision), intent(in) ::
      .  timea_in,        ! Current model time                   [s]
      .  deltf_in         ! Timestep (i.e. dtmain in CLUBB)      [s]
 
@@ -461,7 +461,7 @@ c End of ajsmith4's addition
       eic      = 1.0
 
       ! Brian set regular precision variables "timea" and "deltf" to the values
-      ! brought in from CLUBB as precision "time_prec" variables "timea_in" and
+      ! brought in from CLUBB as precision "time_precision" variables "timea_in" and
       ! "deltf_in".  Brian; 4/5/2008.
       timea = timea_in
       deltf = deltf_in

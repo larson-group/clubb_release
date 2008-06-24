@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F,v 1.57 2008-06-24 18:50:53 faschinj Exp $
+! $Id: diag_var.F,v 1.58 2008-06-24 19:44:01 faschinj Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !===============================================================================
@@ -72,7 +72,7 @@
      .      zm2zt ! Procedure(s)
         
         use stats_precision, only: 
-     .      time_prec ! Variable(s)
+     .      time_precision ! Variable(s)
         
         use error_code, only: 
      .      clubb_no_error, ! Variable(s)
@@ -120,7 +120,7 @@
 
         logical, intent(in) :: liter ! Whether variances are prognostic
 
-        real(kind=time_prec), intent(in) :: dt ! Timestep       [s]
+        real(kind=time_precision), intent(in) :: dt ! Timestep       [s]
 
         ! Input/Output variables
         ! An attribute of (inout) is also needed to import the
@@ -690,7 +690,7 @@
      .      gr ! Variable(s)
 
         use stats_precision, only: 
-     .      time_prec ! Variable(s)
+     .      time_precision ! Variable(s)
 
         use diffusion, only: 
      .      diffusion_zm_lhs ! Procedure(s)
@@ -740,7 +740,7 @@
      .  k_mdiag   = 2,   ! Momentum main diagonal index.
      .  km1_mdiag = 3    ! Momentum subdiagonal index.
 
-        real(kind=time_prec), intent(in) ::
+        real(kind=time_precision), intent(in) ::
      .  dt     ! Timestep length                             [s]
 
         logical, intent(in) ::
@@ -1121,7 +1121,7 @@
      .      grav ! Variable(s)
         
         use stats_precision, only: 
-     .      time_prec ! Variable(s)
+     .      time_precision ! Variable(s)
         
 #ifdef STATS
         use stats_type, only:
@@ -1149,7 +1149,7 @@
         ! Input Variables
         character(len=*), intent(in) :: solve_type
 
-        real(kind=time_prec), intent(in) ::
+        real(kind=time_precision), intent(in) ::
      .  dt        ! Timestep                                    [s]
 
         logical, intent(in) ::
@@ -1345,7 +1345,7 @@
      .      gr ! Variable(s)
         
         use stats_precision, only: 
-     .      time_prec ! Variable(s)
+     .      time_precision ! Variable(s)
         
 #ifdef STATS
         use stats_type, only:
@@ -1368,7 +1368,7 @@
         ! Input Variables
         character(len=*), intent(in) :: solve_type
 
-        real(kind=time_prec), intent(in) ::
+        real(kind=time_precision), intent(in) ::
      .  dt        ! Timestep                                    [s]
 
         logical, intent(in) ::
@@ -2082,7 +2082,7 @@
 
         use fill_holes_mult, only: fill_holes_multiplicative
         use grid_class, only: gr
-        use stats_precision, only: time_prec
+        use stats_precision, only: time_precision
 #ifdef STATS
         use stats_variables, only: 
      .      zm, lstats_samp,
@@ -2099,7 +2099,7 @@
         ! Input variables
         character(len=*), intent(in) ::
      .  solve_type
-        real(kind=time_prec), intent(in) ::
+        real(kind=time_precision), intent(in) ::
      .  dt ! Timestep   [s]
 
         real, intent(in) ::

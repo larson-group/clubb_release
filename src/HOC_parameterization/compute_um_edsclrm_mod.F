@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F,v 1.13 2008-06-24 18:50:53 faschinj Exp $
+! $Id: compute_um_edsclrm_mod.F,v 1.14 2008-06-24 19:44:01 faschinj Exp $
 !------------------------------------------------------------------------
         module compute_um_edsclrm_mod
 
@@ -50,7 +50,7 @@
         use constants, only: 
      .      fstderr ! Variable(s)
         use stats_precision, only: 
-     .      time_prec ! Variable(s)
+     .      time_precision ! Variable(s)
         use error_code, only: 
      .      lapack_error, ! Procedure(s)
      .      clubb_at_debug_level
@@ -61,7 +61,7 @@
         character(len=*), intent(in) ::
      .  solve_type ! Desc. of what is being solved for
 
-        real(kind=time_prec), intent(in) :: 
+        real(kind=time_precision), intent(in) :: 
      .  dt           ! Timestep                             [s]
 
         real, intent(in) :: 

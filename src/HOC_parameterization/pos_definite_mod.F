@@ -46,7 +46,7 @@
         use constants, only : 
      .      eps ! Variable(s)
         use stats_precision, only: 
-     .      time_prec ! Variable(s)
+     .      time_precision ! Variable(s)
 
         implicit none
 
@@ -57,7 +57,7 @@
         intrinsic :: eoshift, kind, any, min, max
 
         ! Input variables
-        real(kind=time_prec), intent(in) ::
+        real(kind=time_precision), intent(in) ::
      .  dt ! Timestep    [s]
 
         character(len=2), intent(in) ::

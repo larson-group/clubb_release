@@ -1,4 +1,4 @@
-! $Id: ice_dfsn_mod.F,v 1.9 2008-06-24 18:50:53 faschinj Exp $        
+! $Id: ice_dfsn_mod.F,v 1.10 2008-06-24 19:44:01 faschinj Exp $        
 
         module ice_dfsn_mod
 
@@ -62,7 +62,7 @@
      .      Rv,
      .      Lf
         USE stats_precision, only: 
-     .      time_prec ! Variable(s)
+     .      time_precision ! Variable(s)
         USE saturation, only: 
      .      rsat ! Procedure(s)
 #ifdef STATS
@@ -76,7 +76,7 @@
         implicit none
 
         ! Input variables
-        REAL(KIND=time_prec), INTENT(IN):: 
+        REAL(KIND=time_precision), INTENT(IN):: 
      .  dt      ! Model timestep                                     [s]
 
         REAL, DIMENSION(1:gr%nnzp), INTENT(IN):: 

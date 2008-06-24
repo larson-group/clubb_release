@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_variables.F,v 1.2 2008-06-24 18:50:54 faschinj Exp $
+! $Id: stats_variables.F,v 1.3 2008-06-24 19:44:02 faschinj Exp $
 !-----------------------------------------------------------------------
 !  module stats_variables
 
@@ -11,15 +11,15 @@
         use stats_type, only: 
      .      stats ! Type
         use stats_precision, only: 
-     .      time_prec ! Variable
+     .      time_precision ! Variable
 
         implicit none
         
         private ! Set Default Scope
         
         ! Sampling and output frequencies
-        real(kind=time_prec), public :: stats_tsamp    ! Sampling interval   [s]
-        real(kind=time_prec), public :: stats_tout     ! Output interval     [s]
+        real(kind=time_precision), public :: stats_tsamp    ! Sampling interval   [s]
+        real(kind=time_precision), public :: stats_tout     ! Output interval     [s]
 
         logical, public :: 
      .  lstats,  ! Main flag to turn statistics on/off

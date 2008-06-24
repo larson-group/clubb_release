@@ -1,4 +1,4 @@
-! $Id: outputnc.F,v 1.12 2008-06-24 18:50:53 faschinj Exp $
+! $Id: outputnc.F,v 1.13 2008-06-24 19:44:01 faschinj Exp $
 !-----------------------------------------------------------------------
        module outputnc
 #ifdef NETCDF
@@ -38,7 +38,7 @@
        use outputfile_class, only:
      .     outputfile ! Type
        use stats_precision, only: 
-     .     time_prec ! Variable(s)
+     .     time_precision ! Variable(s)
        use constants, only: 
      .     fstderr ! Variable(s)
 
@@ -59,10 +59,10 @@
      .  rlat,  ! Latitude                        [degrees_E]
      .  rlon   ! Longitude                       [degrees_N]
 
-       real(kind=time_prec), intent(in) ::
+       real(kind=time_precision), intent(in) ::
      .  dtwrite ! Time between write intervals   [s]
 
-       real(kind=time_prec), intent(in) :: 
+       real(kind=time_precision), intent(in) :: 
      .  time   ! Current time                    [s]
 
        real, dimension(:), intent(in) :: 
@@ -225,7 +225,7 @@
      .     nf90_def_var,
      .     nf90_put_att
        use stats_precision, only: 
-     .     time_prec ! Variable(s)
+     .     time_precision ! Variable(s)
        use constants, only: 
      .     fstderr ! Variable(s)
 
@@ -243,10 +243,10 @@
      .  ia, iz,           ! First and last grid point in the z?
      .  nvar              ! Number of variables
 
-       real(kind=time_prec), intent(in) :: 
+       real(kind=time_precision), intent(in) :: 
      .  time    ! Current time   [s]
 
-       real(kind=time_prec), intent(in) :: 
+       real(kind=time_precision), intent(in) :: 
      .  dtwrite ! Write interval [s]
 
        real, intent(in), dimension(:) :: 
@@ -605,7 +605,7 @@
 !-----------------------------------------------------------------------
 
        use stats_precision, only: 
-     .     time_prec ! Variable(s)
+     .     time_precision ! Variable(s)
 
        implicit none
 
@@ -613,7 +613,7 @@
        integer, intent(in) :: 
      . iday, imonth, iyear  ! Integer for day, month and year.
 
-       real(kind=time_prec), intent(in) :: st_time ! Start time [s]
+       real(kind=time_precision), intent(in) :: st_time ! Start time [s]
 
        ! Output Variables
        character(len=35), intent(out) :: date
