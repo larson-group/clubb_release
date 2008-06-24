@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.197 2008-06-24 18:13:34 faschinj Exp $
+! $Id: hoc.F,v 1.198 2008-06-24 18:49:51 faschinj Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -14,7 +14,7 @@
 !       being the hoc_standalone program).
 !-----------------------------------------------------------------------
 
-        use stats_prec, only: time_prec ! Variable(s)
+        use stats_precision, only: time_prec ! Variable(s)
 
         implicit none
 
@@ -159,7 +159,7 @@
         use error_code, only: fatal_error, ! Procedure(s)
      .                        set_clubb_debug_level
         
-        use stats_prec, only: time_prec ! Variable(s)
+        use stats_precision, only: time_prec ! Variable(s)
 
 #ifdef STATS
         use stats_variables, only: lstats_last ! Variable(s
@@ -1147,7 +1147,7 @@
 
         use sounding, only: read_sounding ! Procedure(s)
 
-        use stats_prec, only: time_prec ! Variable(s)
+        use stats_precision, only: time_prec ! Variable(s)
 
         use model_flags, only: luv_nudge ! Variable(s)
 
@@ -1354,7 +1354,7 @@
      .      wpsclrp_sfc, wpedsclrp_sfc
 #endif /*SCALARS*/
         
-        use stats_prec, only: time_prec ! Variable(s)
+        use stats_precision, only: time_prec ! Variable(s)
 
         use numerical_check, only: isnan2d, rad_check ! Procedure(s)
 

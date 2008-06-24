@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: bomex.F,v 1.8 2008-05-30 16:24:23 faschinj Exp $
+! $Id: bomex.F,v 1.9 2008-06-24 18:50:18 faschinj Exp $
         module bomex
 
 !       Description:
@@ -35,7 +35,7 @@
 
         use constants, only: sclr_dim ! Variable(s)
 
-        use stats_prec, only: time_prec ! Variable(s)
+        use stats_precision, only: time_prec ! Variable(s)
 
         implicit none
 

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputgrads.F,v 1.19 2008-06-16 17:19:06 faschinj Exp $
+! $Id: inputgrads.F,v 1.20 2008-06-24 18:49:51 faschinj Exp $
 
         module inputfile_class
 
@@ -26,7 +26,7 @@
         use constants, only: 
      .      fstdout, ! Variable(s) 
      .      fstderr
-        use stats_prec, only: 
+        use stats_precision, only: 
      .      time_prec ! Variable(s)
 
         implicit none

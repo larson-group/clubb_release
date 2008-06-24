@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_hoc.F90,v 1.32 2008-06-24 18:13:56 faschinj Exp $
+! $Id: bugsrad_hoc.F90,v 1.33 2008-06-24 18:50:03 faschinj Exp $
 module bugsrad_hoc_mod
 
 implicit none
@@ -49,7 +49,7 @@ subroutine bugsrad_hoc &
   use std_atmosphere_mod, only: std_atmos_dim, std_alt, std_pinmb, & ! Variable(s)
       std_tempk, std_sp_hmdty, std_o3l
       
-  use stats_prec, only: time_prec ! Variable(s)
+  use stats_precision, only: time_prec ! Variable(s)
 
   use cos_solar_zen_mod, only: cos_solar_zen ! Procedure(s)
 

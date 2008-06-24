@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: astex.F,v 1.7 2008-06-16 22:23:43 faschinj Exp $
+! $Id: astex.F,v 1.8 2008-06-24 18:50:18 faschinj Exp $
         module astex
 
 !       Description:
@@ -32,7 +32,7 @@
 
         use grid_class, only: zt2zm ! Procedure(s)
 
-        use stats_prec, only: time_prec ! Variable(s)
+        use stats_precision, only: time_prec ! Variable(s)
 
         implicit none
 

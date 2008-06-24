@@ -39,7 +39,7 @@
 
         use saturation, only: rsat ! Procedure(s)
 
-        use stats_prec, only: time_prec ! Variable(s)
+        use stats_precision, only: time_prec ! Variable(s)
 
         implicit none
 
@@ -159,7 +159,7 @@
 
           use saturation, only: rsat ! Procedure(s)
 
-          use stats_prec, only: time_prec ! Variable(s)
+          use stats_precision, only: time_prec ! Variable(s)
 
           use diag_ustar_mod, only: diag_ustar ! Variable(s)
           

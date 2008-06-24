@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: wangara.F,v 1.9 2008-06-17 16:30:20 faschinj Exp $
+! $Id: wangara.F,v 1.10 2008-06-24 18:50:19 faschinj Exp $
         module wangara
 
         implicit none
@@ -25,7 +25,7 @@
 
         use constants, only: sclr_dim ! Variable(s)
 
-        use stats_prec, only: time_prec ! Variable(s)
+        use stats_precision, only: time_prec ! Variable(s)
 
         implicit none
 
@@ -71,7 +71,7 @@
 !----------------------------------------------------------------------
 
         use constants, only: sclr_dim, pi, fstderr, sec_per_day ! Variable(s)
-        use stats_prec, only: time_prec ! Variable(s)
+        use stats_precision, only: time_prec ! Variable(s)
 
         implicit none
 

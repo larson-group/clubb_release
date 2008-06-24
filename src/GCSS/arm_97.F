@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_97.F,v 1.21 2008-06-24 18:13:56 faschinj Exp $
+! $Id: arm_97.F,v 1.22 2008-06-24 18:50:18 faschinj Exp $
         module arm_97
 
 !       Description:
@@ -54,7 +54,7 @@
 
         use interpolation, only: zlinterp_fnc ! Procedure(s)
 
-        use stats_prec, only: time_prec ! Variable(s)
+        use stats_precision, only: time_prec ! Variable(s)
 
         implicit none
 
@@ -179,7 +179,7 @@
 
         use constants, only: Cp, Lv, grav, sclr_dim ! Variable(s)
 
-        use stats_prec, only: time_prec ! Variable(s)
+        use stats_precision, only: time_prec ! Variable(s)
 
         use diag_ustar_mod, only: diag_ustar ! Variable(s)
 

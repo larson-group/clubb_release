@@ -36,7 +36,7 @@
 
         use grid_class, only: zt2zm ! Procedure(s)
 
-        use stats_prec, only: time_prec ! Variable(s)
+        use stats_precision, only: time_prec ! Variable(s)
 
 !#ifdef STATS
 !        use stats_variables

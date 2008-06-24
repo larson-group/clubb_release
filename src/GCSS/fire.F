@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: fire.F,v 1.13 2008-06-24 18:13:57 faschinj Exp $
+! $Id: fire.F,v 1.14 2008-06-24 18:50:19 faschinj Exp $
         module fire
 
 !       Description:
@@ -40,7 +40,7 @@
 
         use atex_cloud_rad, only: cloud_rad ! Procedure(s)
 
-        use stats_prec, only: time_prec ! Variable(s)
+        use stats_precision, only: time_prec ! Variable(s)
 
 #ifdef STATS
         use stats_type, only: stat_update_var ! Procedure(s)

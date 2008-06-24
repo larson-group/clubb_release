@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: lba.F,v 1.13 2008-06-17 16:33:39 faschinj Exp $
+! $Id: lba.F,v 1.14 2008-06-24 18:50:19 faschinj Exp $
         module lba
 
 !       Description:
@@ -52,7 +52,7 @@
 
         use interpolation, only: zlinterp_fnc ! Procedure(s)
 
-        use stats_prec, only: time_prec ! Variable(s)
+        use stats_precision, only: time_prec ! Variable(s)
 
         implicit none
 
@@ -146,7 +146,7 @@
 
         use constants, only: sclr_dim, pi, grav, Lv, Cp ! Variable(s)
 
-        use stats_prec, only: time_prec ! Variable(s)
+        use stats_precision, only: time_prec ! Variable(s)
 
         use diag_ustar_mod, only: diag_ustar ! Variable(s)
         

@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 1
 !----------------------------------------------------------------------
-!$Id: atex.F,v 1.17 2008-06-24 18:13:57 faschinj Exp $
+!$Id: atex.F,v 1.18 2008-06-24 18:50:18 faschinj Exp $
         module atex
 
 !       Description:
@@ -38,7 +38,7 @@
 
         use atex_cloud_rad, only: cloud_rad ! Procedure(s)
 
-        use stats_prec, only: time_prec ! Variable(s)
+        use stats_precision, only: time_prec ! Variable(s)
 
         use error_code, only: clubb_rtm_level_not_found ! Variable(s)
 

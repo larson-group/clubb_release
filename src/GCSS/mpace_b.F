@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_b.F,v 1.15 2008-06-24 18:13:57 faschinj Exp $
+! $Id: mpace_b.F,v 1.16 2008-06-24 18:50:19 faschinj Exp $
         module mpace_b
 
 !       Description:
@@ -42,7 +42,7 @@
 
         use grid_class, only: zt2zm ! Procedure(s)
 
-        use stats_prec, only: time_prec ! Variable(s)
+        use stats_precision, only: time_prec ! Variable(s)
 
         use rad_lwsw_mod, only: rad_lwsw ! Variable(s)
 #ifdef STATS

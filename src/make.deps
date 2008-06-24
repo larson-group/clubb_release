@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.48 2008-06-24 18:13:34 faschinj Exp $
+# $Id: make.deps,v 1.49 2008-06-24 18:49:51 faschinj Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -34,12 +34,12 @@ cons.o		: cons.f90
 air.o		: cons.o air.f90 
 parab.o		: air.o cons.o parab.f90
 endian.o	: endian.F
-constants.o	: stats_prec.o constants.F
+constants.o	: stats_precision.o constants.F
 param_index.o   : param_index.F
 parameters.o    : param_index.o error_code.o parameters.F
 model_flags.o	: constants.o model_flags.F
-stats_prec.o	: stats_prec.F
-outputfile.o    : stats_prec.o outputfile.F
+stats_precision.o	: stats_precision.F
+outputfile.o    : stats_precision.o outputfile.F
 KK_microphys.o  : constants.o model_flags.o lapack_wrap.o parab.o stats_variables.o \
 	KK_microphys.F
 microphys_driver.o : constants.o model_flags.o lapack_wrap.o \
@@ -55,7 +55,7 @@ numer_check.o	: prog_variables.o diag_variables.o constants.o model_flags.o\
 	error_code.o numer_check.F
 inputgrads.o	: constants.o endian.o recl.F inputgrads.F
 grid.o		: constants.o file_functions.o grid.F
-stats_type.o    : outputfile.o stats_prec.o error_code.o stats_type.F
+stats_type.o    : outputfile.o stats_precision.o error_code.o stats_type.F
 stats_variables.o     : stats_type.o stats_variables.F
 stats_subs.o    : outputgrads.o outputnc.o prog_variables.o diag_variables.o \
 	stats_variables.o stats_type.o grid.o stats_zt.o stats_zm.o stats_sfc.o temp_in_K_mod.o \
@@ -95,7 +95,7 @@ error_code.o    : constants.o error_code.F
 compute_um_edsclrm_mod.o : grid.o stats_variables.o lapack_wrap.o error_code.o compute_um_edsclrm_mod.F 
 diffusion.o	: grid.o diffusion.F
 mean_adv.o      : grid.o mean_adv.F
-pos_definite_mod.o : grid.o stats_prec.o pos_definite_mod.F
+pos_definite_mod.o : grid.o stats_precision.o pos_definite_mod.F
 fill_holes_mult.o : fill_holes_mult.F grid.o
 
 # == Numerical Recipes dependencies (For the tuner) ==

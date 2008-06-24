@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: clex9_oct14.F,v 1.14 2008-06-24 18:13:57 faschinj Exp $
+! $Id: clex9_oct14.F,v 1.15 2008-06-24 18:50:18 faschinj Exp $
         module clex9_oct14
 
 !       Description:
@@ -57,7 +57,7 @@ c****************************
 
         use model_flags, only: lbugsrad, lcoamps_micro, licedfs ! Variable(s)
 
-        use stats_prec, only: time_prec ! Variable(s)
+        use stats_precision, only: time_prec ! Variable(s)
 
         use interpolation, only: linear_interpolation ! Procedure(s)
 

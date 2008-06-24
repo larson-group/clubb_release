@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F,v 1.14 2008-06-24 18:13:35 faschinj Exp $
+! $Id: microphys_driver.F,v 1.15 2008-06-24 18:49:51 faschinj Exp $
         module microphys_driver
 
 !       Description:
@@ -69,7 +69,7 @@
      .      fstderr,
      .      sec_per_day
 
-        use stats_prec, only: 
+        use stats_precision, only: 
      .      time_prec ! Variable(s)
 
         use error_code, only: 
@@ -772,7 +772,7 @@
         use grid_class, only:
      .      gr ! Variable(s)
 
-        use stats_prec, only: 
+        use stats_precision, only: 
      .      time_prec ! Variable(s)
 
         use lapack_wrap, only: 
@@ -952,7 +952,7 @@
      .      gr, ! Variable(s)
      .      zm2zt ! Procedure(s)
         
-        use stats_prec, only: 
+        use stats_precision, only: 
      .      time_prec ! Variable(s)
         
         use diffusion, only: 
@@ -1512,7 +1512,7 @@
      .      gr, ! Variable(s) 
      .      zm2zt ! Procedure(s)
         
-        use stats_prec, only:
+        use stats_precision, only:
      .      time_prec ! Variable(s)
         
         use diffusion, only: 

@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm.F,v 1.13 2008-06-24 18:13:56 faschinj Exp $
+! $Id: arm.F,v 1.14 2008-06-24 18:50:18 faschinj Exp $
         module arm
 
 !       Description:
@@ -32,7 +32,7 @@
 
         use model_flags, only: lbugsrad ! Variable(s)
 
-        use stats_prec, only: time_prec ! Variable(s)
+        use stats_precision, only: time_prec ! Variable(s)
 
 #ifdef STATS
         use stats_type, only: stat_update_var ! Procedure(s)
@@ -165,7 +165,7 @@
 
         use constants, only: Cp, Lv, grav, sclr_dim ! Variable(s)
 
-        use stats_prec, only: time_prec ! Variable(s)
+        use stats_precision, only: time_prec ! Variable(s)
 
         use diag_ustar_mod, only: diag_ustar ! Variable(s)
         

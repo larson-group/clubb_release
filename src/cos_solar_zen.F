@@ -1,4 +1,4 @@
-! $Id: cos_solar_zen.F,v 1.6 2008-05-30 16:24:21 faschinj Exp $
+! $Id: cos_solar_zen.F,v 1.7 2008-06-24 18:49:51 faschinj Exp $
 !-----------------------------------------------------------------------
         module cos_solar_zen_mod
 
@@ -26,7 +26,7 @@
 
         use constants, only: pi_dp, fstderr, sec_per_day, sec_per_hr ! Variable(s)
 
-        use stats_prec, only: time_prec ! Variable(s)
+        use stats_precision, only: time_prec ! Variable(s)
 
         use calendar, only: gregorian2julian, julian2gregorian,leap_year ! Procedure(s)
         

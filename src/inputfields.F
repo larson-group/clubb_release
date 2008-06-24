@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputfields.F,v 1.20 2008-06-16 17:16:00 faschinj Exp $
+! $Id: inputfields.F,v 1.21 2008-06-24 18:49:51 faschinj Exp $
 
 ! Module inputfields
 
@@ -978,7 +978,7 @@
           use constants, only: 
      .        sec_per_min ! Variable(s)
 
-          use stats_prec, only: 
+          use stats_precision, only: 
      .        time_prec
 
           implicit none

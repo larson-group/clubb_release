@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: nov11.F,v 1.24 2008-06-24 18:13:57 faschinj Exp $
+! $Id: nov11.F,v 1.25 2008-06-24 18:50:19 faschinj Exp $
         module nov11
 
 !       Description:
@@ -51,7 +51,7 @@
 
         use model_flags, only: lbugsrad, lcoamps_micro, licedfs ! Variable(s)
 
-        use stats_prec, only: time_prec ! Variable(s)
+        use stats_precision, only: time_prec ! Variable(s)
 
         use interpolation, only: linear_interpolation ! Procedure(s)
 

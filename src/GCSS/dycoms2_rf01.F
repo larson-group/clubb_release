@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf01.F,v 1.16 2008-06-24 18:13:57 faschinj Exp $
+! $Id: dycoms2_rf01.F,v 1.17 2008-06-24 18:50:19 faschinj Exp $
         module dycoms2_rf01
 
 !       Description:
@@ -35,7 +35,7 @@
 
         use model_flags, only: lbugsrad ! Variable(s)
 
-        use stats_prec, only: time_prec ! Variable(s)
+        use stats_precision, only: time_prec ! Variable(s)
 
         use error_code, only: clubb_rtm_level_not_found ! Variable(s)
 
