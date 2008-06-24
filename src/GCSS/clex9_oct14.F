@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: clex9_oct14.F,v 1.16 2008-06-24 19:43:37 faschinj Exp $
+! $Id: clex9_oct14.F,v 1.17 2008-06-24 20:14:02 ajsmith4 Exp $
         module clex9_oct14
 
 !       Description:
@@ -204,6 +204,9 @@ c****************************
         ! Variable used for working within vertical arrays
 
         integer :: k
+
+        sw_on = .true. ! This is necessay to use the xi_abs value below
+                       ! Joshua Fasching June 2008
 
 !-----------------------------------------------------------------------
 ! FOR NOV.11 CASE
