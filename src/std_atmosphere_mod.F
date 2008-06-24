@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------------
-! $Id: std_atmosphere_mod.F,v 1.4 2008-06-16 17:26:40 faschinj Exp $
+! $Id: std_atmosphere_mod.F,v 1.5 2008-06-24 19:41:17 faschinj Exp $
       module std_atmosphere_mod
         
         implicit none
@@ -110,6 +110,7 @@
         use constants, only: 
      .      p0, ! Variable(s) 
      .      kappa
+
         use interpolation, only: 
      .      linint, ! Procedure(s) 
      .      binary_search
