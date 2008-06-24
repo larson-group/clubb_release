@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm.F,v 1.14 2008-06-24 18:50:18 faschinj Exp $
+! $Id: arm.F,v 1.15 2008-06-24 19:43:36 faschinj Exp $
         module arm
 
 !       Description:
@@ -32,7 +32,7 @@
 
         use model_flags, only: lbugsrad ! Variable(s)
 
-        use stats_precision, only: time_prec ! Variable(s)
+        use stats_precision, only: time_precision ! Variable(s)
 
 #ifdef STATS
         use stats_type, only: stat_update_var ! Procedure(s)
@@ -53,7 +53,7 @@
      .  art    = (/ 0.080, 0.020, -0.040, -0.100, -0.160, -0.300/)
 
         ! Input Variables
-        real(kind=time_prec), intent(in) :: time ! Model time [s]
+        real(kind=time_precision), intent(in) :: time ! Model time [s]
 
         ! Output Variables
         real, intent(out), dimension(gr%nnzp) :: 
@@ -165,7 +165,7 @@
 
         use constants, only: Cp, Lv, grav, sclr_dim ! Variable(s)
 
-        use stats_precision, only: time_prec ! Variable(s)
+        use stats_precision, only: time_precision ! Variable(s)
 
         use diag_ustar_mod, only: diag_ustar ! Variable(s)
         
@@ -181,7 +181,7 @@
      .  z0 = 0.035  ! momentum roughness height
 
         ! Input variables
-        real(kind=time_prec), intent(in) :: 
+        real(kind=time_precision), intent(in) :: 
      .  time            ! Current time          [s]
 
         real, intent(in) :: 

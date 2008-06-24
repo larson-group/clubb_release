@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: nov11.F,v 1.25 2008-06-24 18:50:19 faschinj Exp $
+! $Id: nov11.F,v 1.26 2008-06-24 19:43:37 faschinj Exp $
         module nov11
 
 !       Description:
@@ -51,7 +51,7 @@
 
         use model_flags, only: lbugsrad, lcoamps_micro, licedfs ! Variable(s)
 
-        use stats_precision, only: time_prec ! Variable(s)
+        use stats_precision, only: time_precision ! Variable(s)
 
         use interpolation, only: linear_interpolation ! Procedure(s)
 
@@ -97,11 +97,11 @@
      .  center = .false.
 
         ! Input variables
-        real(kind=time_prec), intent(in) ::
+        real(kind=time_precision), intent(in) ::
      .  time,           ! Current time          [s]
      .  time_initial    ! Initial time          [s]
 
-        real(kind=time_prec), intent(in) ::
+        real(kind=time_precision), intent(in) ::
      .  dt              ! Timestep              [s]
 
         real, intent(in) ::

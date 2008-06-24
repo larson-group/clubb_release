@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_0003.F,v 1.14 2008-06-24 18:50:18 faschinj Exp $
+! $Id: arm_0003.F,v 1.15 2008-06-24 19:43:36 faschinj Exp $
         module arm_0003
 
 !       Description:
@@ -55,7 +55,7 @@
 
         use interpolation, only: zlinterp_fnc ! Procedure(s)
 
-        use stats_precision, only: time_prec ! Variable(s)
+        use stats_precision, only: time_precision ! Variable(s)
 
         implicit none
 
@@ -64,7 +64,7 @@
 
 
         ! Input Variables
-        real(kind=time_prec), intent(in) :: time ! Model time [s]
+        real(kind=time_precision), intent(in) :: time ! Model time [s]
 
         ! Output Variables
         real, intent(out), dimension(gr%nnzp) :: 
@@ -173,7 +173,7 @@
 
         use constants, only: Cp, Lv, grav, sclr_dim ! Variable(s)
 
-        use stats_precision, only: time_prec ! Variable(s)
+        use stats_precision, only: time_precision ! Variable(s)
 
         use diag_ustar_mod, only: diag_ustar ! Variable(s)
 
@@ -192,7 +192,7 @@
      .  z0    = 0.035   ! ARM Cu mom. roughness height
 
         ! Input Variables
-        real(kind=time_prec), intent(in) :: 
+        real(kind=time_precision), intent(in) :: 
      .  time      ! Current time        [s] 
 
         real, intent(in) :: 

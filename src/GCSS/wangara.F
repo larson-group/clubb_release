@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: wangara.F,v 1.10 2008-06-24 18:50:19 faschinj Exp $
+! $Id: wangara.F,v 1.11 2008-06-24 19:43:37 faschinj Exp $
         module wangara
 
         implicit none
@@ -25,12 +25,12 @@
 
         use constants, only: sclr_dim ! Variable(s)
 
-        use stats_precision, only: time_prec ! Variable(s)
+        use stats_precision, only: time_precision ! Variable(s)
 
         implicit none
 
         ! Input Variables
-        real(kind=time_prec), intent(in) :: time ! Model time [s]
+        real(kind=time_precision), intent(in) :: time ! Model time [s]
 
         ! Output Variables
         real, intent(out), dimension(gr%nnzp) ::
@@ -71,7 +71,7 @@
 !----------------------------------------------------------------------
 
         use constants, only: sclr_dim, pi, fstderr, sec_per_day ! Variable(s)
-        use stats_precision, only: time_prec ! Variable(s)
+        use stats_precision, only: time_precision ! Variable(s)
 
         implicit none
 
@@ -83,7 +83,7 @@
 !     .  ustar = 0.13
 
         ! Input variables
-        real(kind=time_prec), intent(in) :: 
+        real(kind=time_precision), intent(in) :: 
      .  time    ! Current time  [s]
 
         real, intent(in) :: 
@@ -106,7 +106,7 @@
         ! Local variables
 
         real :: ubar 
-        real(kind=time_prec) :: time_utc, time_est
+        real(kind=time_precision) :: time_utc, time_est
 
 
         ! Declare the value of ustar.

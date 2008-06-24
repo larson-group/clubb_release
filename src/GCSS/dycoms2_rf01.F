@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf01.F,v 1.17 2008-06-24 18:50:19 faschinj Exp $
+! $Id: dycoms2_rf01.F,v 1.18 2008-06-24 19:43:37 faschinj Exp $
         module dycoms2_rf01
 
 !       Description:
@@ -35,7 +35,7 @@
 
         use model_flags, only: lbugsrad ! Variable(s)
 
-        use stats_precision, only: time_prec ! Variable(s)
+        use stats_precision, only: time_precision ! Variable(s)
 
         use error_code, only: clubb_rtm_level_not_found ! Variable(s)
 
@@ -57,7 +57,7 @@
      .  kay = 85.0
 
         ! Input Variables
-        real(kind=time_prec), intent(in) :: time ! Model time [s]
+        real(kind=time_precision), intent(in) :: time ! Model time [s]
 
         real, dimension(gr%nnzp), intent(in) :: 
      .  rhom, ! Density on moment. grid         [kg/m^3]

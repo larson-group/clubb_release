@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_a.F,v 1.22 2008-06-24 18:50:19 faschinj Exp $
+! $Id: mpace_a.F,v 1.23 2008-06-24 19:43:37 faschinj Exp $
         module mpace_a
 
 !       Description:
@@ -73,7 +73,7 @@
 
         use interpolation, only: zlinterp_fnc ! Procedure(s)
 
-        use stats_precision, only: time_prec ! Variable(s)
+        use stats_precision, only: time_precision ! Variable(s)
 
         use rad_lwsw_mod, only: rad_lwsw ! Procedure(s)
 
@@ -119,11 +119,11 @@
      .  d_3 = 0.000148
 
         ! Input Variables
-        real(kind=time_prec), intent(in) :: 
+        real(kind=time_precision), intent(in) :: 
      .  time,         ! Current time of simulation      [s]
      .  time_initial  ! Initial time of simulation      [s]
 
-        real(kind=time_prec), intent(in) :: 
+        real(kind=time_precision), intent(in) :: 
      .  dt            ! Current length of timestep      [s]
 
         real, intent(in) :: 
@@ -490,7 +490,7 @@
 
         use constants, only: sclr_dim, Cp, Lv ! Variable(s)
 
-        use stats_precision, only: time_prec ! Variable(s)
+        use stats_precision, only: time_precision ! Variable(s)
 
         implicit none
 
@@ -503,7 +503,7 @@
 !     .  ustar = 0.25
 
         ! Input Variables
-        real(kind=time_prec), intent(in) ::
+        real(kind=time_precision), intent(in) ::
      .  time     ! current model time           [s]
 
         real, intent(in)  ::

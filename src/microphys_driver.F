@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F,v 1.15 2008-06-24 18:49:51 faschinj Exp $
+! $Id: microphys_driver.F,v 1.16 2008-06-24 19:43:26 faschinj Exp $
         module microphys_driver
 
 !       Description:
@@ -70,7 +70,7 @@
      .      sec_per_day
 
         use stats_precision, only: 
-     .      time_prec ! Variable(s)
+     .      time_precision ! Variable(s)
 
         use error_code, only: 
      .      lapack_error ! Procedure
@@ -137,10 +137,10 @@
         character(len=*), intent(in) ::
      .  runtype ! Name of the run, for case specific effects.
 
-        real(kind=time_prec), intent(in) :: 
+        real(kind=time_precision), intent(in) :: 
      .  dt           ! Timestep         [s]
 
-        real(kind=time_prec), intent(in) :: 
+        real(kind=time_precision), intent(in) :: 
      .  time_current,! Current time     [s]
      .  time_initial ! Initial time     [s]
 
@@ -773,7 +773,7 @@
      .      gr ! Variable(s)
 
         use stats_precision, only: 
-     .      time_prec ! Variable(s)
+     .      time_precision ! Variable(s)
 
         use lapack_wrap, only: 
      .      tridag_solve ! Procedure(s)
@@ -816,7 +816,7 @@
         ! Input Variables
         character(len=*), intent(in) :: solve_type
 
-        real(kind=time_prec), intent(in) :: dt ! Timestep     [s]
+        real(kind=time_precision), intent(in) :: dt ! Timestep     [s]
 
         ! Tendency computed tendency from COAMPS routine adjtq 
         ! or Brian Griffin's K & K microphysics implementation
@@ -953,7 +953,7 @@
      .      zm2zt ! Procedure(s)
         
         use stats_precision, only: 
-     .      time_prec ! Variable(s)
+     .      time_precision ! Variable(s)
         
         use diffusion, only: 
      .      diffusion_zt_lhs ! Procedure(s)
@@ -1012,7 +1012,7 @@
         logical, intent(in) :: 
      .  lsed ! Whether to add a sedimentation term
 
-        real(kind=time_prec), intent(in) :: 
+        real(kind=time_precision), intent(in) :: 
      .  dt    ! Timestep                                                 [s]
 
         real, intent(in) :: 
@@ -1513,7 +1513,7 @@
      .      zm2zt ! Procedure(s)
         
         use stats_precision, only:
-     .      time_prec ! Variable(s)
+     .      time_precision ! Variable(s)
         
         use diffusion, only: 
      .      diffusion_zt_lhs ! Procedure(s)
@@ -1540,7 +1540,7 @@
 
         real, intent(in) :: nu  ! Diffusion coefficient      [m^2/s]
 
-        real(kind=time_prec), intent(in) :: dt  ! Timestep   [s]
+        real(kind=time_precision), intent(in) :: dt  ! Timestep   [s]
 
         integer, intent(in) :: level  ! Vertical grid index
 

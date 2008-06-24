@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputgrads.F,v 1.20 2008-06-24 18:49:51 faschinj Exp $
+! $Id: inputgrads.F,v 1.21 2008-06-24 19:43:26 faschinj Exp $
 
         module inputfile_class
 
@@ -27,7 +27,7 @@
      .      fstdout, ! Variable(s) 
      .      fstderr
         use stats_precision, only: 
-     .      time_prec ! Variable(s)
+     .      time_precision ! Variable(s)
 
         implicit none
 
@@ -66,7 +66,7 @@
           ! Time information
           integer day, month, year    ! date of starting time
 
-          real(kind=time_prec) :: 
+          real(kind=time_precision) :: 
      .    time,    ! Start time                 [s]
      .    dtwrite  ! Interval between output    [s]
 

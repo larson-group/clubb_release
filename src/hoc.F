@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.198 2008-06-24 18:49:51 faschinj Exp $
+! $Id: hoc.F,v 1.199 2008-06-24 19:43:26 faschinj Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -14,7 +14,7 @@
 !       being the hoc_standalone program).
 !-----------------------------------------------------------------------
 
-        use stats_precision, only: time_prec ! Variable(s)
+        use stats_precision, only: time_precision ! Variable(s)
 
         implicit none
 
@@ -78,7 +78,7 @@
         integer, private :: sfctype 
 !$omp   threadprivate(sfctype)
 
-        real(kind=time_prec), private ::
+        real(kind=time_precision), private ::
      .  time_initial, ! Time of start of simulation     [s]
      .  time_final,   ! Time end of simulation          [s]
      .  time_spinup,  ! Time end of spin up period      [s]
@@ -86,7 +86,7 @@
 !$omp   threadprivate(time_initial, time_final, time_spinup,
 !$omp.                time_current)
 
-        real(kind=time_prec), private :: 
+        real(kind=time_precision), private :: 
      .  dtmain,     ! Main model timestep                      [s]
      .  dtclosure,  ! Closure model timestep                   [s]
      .  dt          ! Current model timestep (based on spinup) [s]
@@ -159,7 +159,7 @@
         use error_code, only: fatal_error, ! Procedure(s)
      .                        set_clubb_debug_level
         
-        use stats_precision, only: time_prec ! Variable(s)
+        use stats_precision, only: time_precision ! Variable(s)
 
 #ifdef STATS
         use stats_variables, only: lstats_last ! Variable(s
@@ -209,7 +209,7 @@
      .  T0,             ! Reference Temperature         [K]
      .  ts_nudge        ! Timescale for u/v nudging     [s]
 
-        real(kind=time_prec) ::
+        real(kind=time_precision) ::
      .  time_restart    ! Time of model restart run     [s]
 
         logical :: 
@@ -234,7 +234,7 @@
         character(len=100) ::
      .  fname_prefix ! Prefix of stats filenames, to be followed by, for example "_zt"
 
-        real(kind=time_prec) ::
+        real(kind=time_precision) ::
      .  stats_tsamp,  ! Stats sampling interval [s]
      .  stats_tout    ! Stats output interval   [s]
 
@@ -1147,7 +1147,7 @@
 
         use sounding, only: read_sounding ! Procedure(s)
 
-        use stats_precision, only: time_prec ! Variable(s)
+        use stats_precision, only: time_precision ! Variable(s)
 
         use model_flags, only: luv_nudge ! Variable(s)
 
@@ -1171,7 +1171,7 @@
      .  filename,         ! GrADS file name
      .  restart_path_case ! Path to GrADS data for restart
 
-        real(kind=time_prec), intent(in) ::
+        real(kind=time_precision), intent(in) ::
      .  time_restart
 
         ! Output Variables
@@ -1354,7 +1354,7 @@
      .      wpsclrp_sfc, wpedsclrp_sfc
 #endif /*SCALARS*/
         
-        use stats_precision, only: time_prec ! Variable(s)
+        use stats_precision, only: time_precision ! Variable(s)
 
         use numerical_check, only: isnan2d, rad_check ! Procedure(s)
 
@@ -1415,7 +1415,7 @@
         implicit none
         
         ! Input Variables
-        real(kind=time_prec), intent(in) ::
+        real(kind=time_precision), intent(in) ::
      .    dt    ! Timestep      [s]
         integer, intent(in) ::
      .    iteration

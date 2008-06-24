@@ -1,7 +1,7 @@
 #define SCLR_CO2 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: cobra.F,v 1.11 2008-06-24 18:50:18 faschinj Exp $
+! $Id: cobra.F,v 1.12 2008-06-24 19:43:37 faschinj Exp $
         module cobra
 !       Description:
 !       Contains subroutines for the COBRA CO2 case.
@@ -34,12 +34,12 @@
 
         use constants, only: sclr_dim, fstderr ! Variable(s)
 
-        use stats_precision, only: time_prec ! Variable(s)
+        use stats_precision, only: time_precision ! Variable(s)
 
         implicit none
 
         ! Input Variables
-        real(kind=time_prec), intent(in) :: time ! Model time [s]
+        real(kind=time_precision), intent(in) :: time ! Model time [s]
 
         ! Output Variables
         real, intent(out), dimension(gr%nnzp) ::
@@ -120,7 +120,7 @@
 
         use constants, only: Cp, Lv, grav, sclr_dim ! Variable(s)
 
-        use stats_precision, only: time_prec ! Variable(s)
+        use stats_precision, only: time_precision ! Variable(s)
 
         use diag_ustar_mod, only: diag_ustar ! Variable(s)
         
@@ -134,7 +134,7 @@
      .  M_da  = 0.02897  ! Molecular weight of dry air.
 
         ! Input variables
-        real(kind=time_prec), intent(in) :: 
+        real(kind=time_precision), intent(in) :: 
      .  time      ! Current time                [s]
 
         real, intent(in) ::

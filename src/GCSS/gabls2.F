@@ -39,12 +39,12 @@
 
         use saturation, only: rsat ! Procedure(s)
 
-        use stats_precision, only: time_prec ! Variable(s)
+        use stats_precision, only: time_precision ! Variable(s)
 
         implicit none
 
         ! Input Variables
-        real(kind=time_prec), intent(in) ::
+        real(kind=time_precision), intent(in) ::
      .    time,          ! Current length of timestep      [s]
      .    time_initial   ! Current length of timestep      [s]
 
@@ -159,7 +159,7 @@
 
           use saturation, only: rsat ! Procedure(s)
 
-          use stats_precision, only: time_prec ! Variable(s)
+          use stats_precision, only: time_precision ! Variable(s)
 
           use diag_ustar_mod, only: diag_ustar ! Variable(s)
           
@@ -172,7 +172,7 @@
      .      z0      = 0.03      ! Roughness length, defined by GABLS2 specification
 
           ! Input variables
-          real(kind=time_prec), intent(in) ::
+          real(kind=time_precision), intent(in) ::
      .      time,               ! Time elapsed since 0.0 s          [s]
      .      time_initial        ! Initial time of model integration [s]
 

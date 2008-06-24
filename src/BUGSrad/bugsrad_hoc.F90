@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_hoc.F90,v 1.33 2008-06-24 18:50:03 faschinj Exp $
+! $Id: bugsrad_hoc.F90,v 1.34 2008-06-24 19:43:30 faschinj Exp $
 module bugsrad_hoc_mod
 
 implicit none
@@ -49,7 +49,7 @@ subroutine bugsrad_hoc &
   use std_atmosphere_mod, only: std_atmos_dim, std_alt, std_pinmb, & ! Variable(s)
       std_tempk, std_sp_hmdty, std_o3l
       
-  use stats_precision, only: time_prec ! Variable(s)
+  use stats_precision, only: time_precision ! Variable(s)
 
   use cos_solar_zen_mod, only: cos_solar_zen ! Procedure(s)
 
@@ -81,7 +81,7 @@ subroutine bugsrad_hoc &
   lat_in_degrees,&! Latitude   [Degrees North]
   lon_in_degrees  ! Longitude  [Degrees East]
 
-  real(kind=time_prec) :: &
+  real(kind=time_precision) :: &
   time ! Model time [s]
   
   integer, intent(in) :: &

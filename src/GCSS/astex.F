@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: astex.F,v 1.8 2008-06-24 18:50:18 faschinj Exp $
+! $Id: astex.F,v 1.9 2008-06-24 19:43:37 faschinj Exp $
         module astex
 
 !       Description:
@@ -32,12 +32,12 @@
 
         use grid_class, only: zt2zm ! Procedure(s)
 
-        use stats_precision, only: time_prec ! Variable(s)
+        use stats_precision, only: time_precision ! Variable(s)
 
         implicit none
 
         ! Input Variables
-        real(kind=time_prec), intent(in) :: time ! Model time [s]
+        real(kind=time_precision), intent(in) :: time ! Model time [s]
 
         ! Output Variables
         real, intent(out), dimension(gr%nnzp) :: 

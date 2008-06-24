@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputfields.F,v 1.21 2008-06-24 18:49:51 faschinj Exp $
+! $Id: inputfields.F,v 1.22 2008-06-24 19:43:26 faschinj Exp $
 
 ! Module inputfields
 
@@ -979,7 +979,7 @@
      .        sec_per_min ! Variable(s)
 
           use stats_precision, only: 
-     .        time_prec
+     .        time_precision
 
           implicit none
           
@@ -988,7 +988,7 @@
 
           character(len=*), intent(in) ::filename
 
-          real(kind=time_prec), intent(in) :: 
+          real(kind=time_precision), intent(in) :: 
      .      time ! Time near which we want to find GrADS output,
                  ! e.g. time_restart     [s]
 
@@ -1001,7 +1001,7 @@
           ! Local Variables
           type (inputgrads) :: fread_var         
 
-          real(kind=time_prec) :: delta_time   ! In seconds
+          real(kind=time_precision) :: delta_time   ! In seconds
           
           call open_grads_read( iunit, trim( filename ), fread_var )
 

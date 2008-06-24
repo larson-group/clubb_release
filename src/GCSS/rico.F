@@ -36,7 +36,7 @@
 
         use grid_class, only: zt2zm ! Procedure(s)
 
-        use stats_precision, only: time_prec ! Variable(s)
+        use stats_precision, only: time_precision ! Variable(s)
 
 !#ifdef STATS
 !        use stats_variables
@@ -45,11 +45,11 @@
         implicit none
 
         ! Input Variables
-        real(kind=time_prec), intent(in) ::
+        real(kind=time_precision), intent(in) ::
      .  time,          ! Current time           [s]
      .  time_initial   ! Start time             [s]
 
-        real(kind=time_prec), intent(in) ::
+        real(kind=time_precision), intent(in) ::
      .  dt             ! Current length of timestep      [s]
 
         real, dimension(gr%nnzp), intent(in) ::

@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: clex9_nov02.F,v 1.16 2008-06-24 18:50:18 faschinj Exp $
+! $Id: clex9_nov02.F,v 1.17 2008-06-24 19:43:37 faschinj Exp $
         module clex9_nov02
 
 !       Description:
@@ -48,7 +48,7 @@
 
         use model_flags, only: lbugsrad, lcoamps_micro, licedfs ! Variable(s)
 
-        use stats_precision, only: time_prec ! Variable(s)
+        use stats_precision, only: time_precision ! Variable(s)
 
         use cos_solar_zen_mod, only: cos_solar_zen ! Procedure(s)
 
@@ -97,11 +97,11 @@
      .  center = .false.
 
         ! Input variables
-        real(kind=time_prec), intent(in) ::
+        real(kind=time_precision), intent(in) ::
      .  time,           ! Current time          [s]
      .  time_initial    ! Initial time          [s]
 
-        real(kind=time_prec), intent(in) ::
+        real(kind=time_precision), intent(in) ::
      .  dt              ! Timestep              [s]
 
         real, intent(in) ::

@@ -1,4 +1,4 @@
-! $Id: cos_solar_zen.F,v 1.7 2008-06-24 18:49:51 faschinj Exp $
+! $Id: cos_solar_zen.F,v 1.8 2008-06-24 19:43:26 faschinj Exp $
 !-----------------------------------------------------------------------
         module cos_solar_zen_mod
 
@@ -26,7 +26,7 @@
 
         use constants, only: pi_dp, fstderr, sec_per_day, sec_per_hr ! Variable(s)
 
-        use stats_precision, only: time_prec ! Variable(s)
+        use stats_precision, only: time_precision ! Variable(s)
 
         use calendar, only: gregorian2julian, julian2gregorian,leap_year ! Procedure(s)
         
@@ -56,7 +56,7 @@
      .  month, ! Month of year at model start
      .  year   ! Year at model start
 
-        real(kind=time_prec), intent(in) ::
+        real(kind=time_precision), intent(in) ::
      .  current_time   ! Current time since start date [s]
 
         real, intent(in) ::

@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: jun25.F,v 1.17 2008-06-24 18:50:19 faschinj Exp $
+! $Id: jun25.F,v 1.18 2008-06-24 19:43:37 faschinj Exp $
         module jun25
 
 !       Description:
@@ -44,7 +44,7 @@
 
         use model_flags, only: lbugsrad, lcoamps_micro, licedfs ! Variable(s)
 
-        use stats_precision, only: time_prec ! Variable(s)
+        use stats_precision, only: time_precision ! Variable(s)
 
         use interpolation, only: linear_interpolation ! Procedure(s)
 
@@ -63,14 +63,14 @@
         ! Constant parameters
 
         ! Input variables
-        real(kind=time_prec), intent(in) :: 
+        real(kind=time_precision), intent(in) :: 
      .  time,         ! Time of simulation since start        [s]
      .  time_initial  ! Initial time of simulation            [s]
 
         real, intent(in) :: 
      .  rlat          ! Reference latitude should be 37.6     [Degrees North]
 
-        real(kind=time_prec), intent(in) :: 
+        real(kind=time_precision), intent(in) :: 
      .  dt            ! Length of model timestep              [s]
 
         real, dimension(gr%nnzp), intent(in) :: 

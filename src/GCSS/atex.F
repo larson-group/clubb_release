@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 1
 !----------------------------------------------------------------------
-!$Id: atex.F,v 1.18 2008-06-24 18:50:18 faschinj Exp $
+!$Id: atex.F,v 1.19 2008-06-24 19:43:37 faschinj Exp $
         module atex
 
 !       Description:
@@ -38,7 +38,7 @@
 
         use atex_cloud_rad, only: cloud_rad ! Procedure(s)
 
-        use stats_precision, only: time_prec ! Variable(s)
+        use stats_precision, only: time_precision ! Variable(s)
 
         use error_code, only: clubb_rtm_level_not_found ! Variable(s)
 
@@ -51,7 +51,7 @@
         implicit none
 
         ! Input Variables
-        real(kind=time_prec), intent(in) :: 
+        real(kind=time_precision), intent(in) :: 
      .  time,        ! Current time     [s]
      .  time_initial ! Initial time     [s]
 

@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf02.F,v 1.21 2008-06-24 18:50:19 faschinj Exp $
+! $Id: dycoms2_rf02.F,v 1.22 2008-06-24 19:43:37 faschinj Exp $
         module dycoms2_rf02
 
 !       Description:
@@ -40,7 +40,7 @@
 
         USE model_flags, only: lbugsrad, lcoamps_micro ! Variable(s)
 
-        use stats_precision, only: time_prec ! Variable(s)
+        use stats_precision, only: time_precision ! Variable(s)
 
         USE error_code, only: clubb_rtm_level_not_found ! Variable(s)
 
@@ -60,7 +60,7 @@
      .  F1     = 22.0     ! [W/m^2]
 
         ! Input Variables
-        real(kind=time_prec), intent(in) ::
+        real(kind=time_precision), intent(in) ::
      .  time,         ! Current time    [s]
      .  time_initial  ! Initial time    [s]
 

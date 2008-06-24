@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: fire.F,v 1.14 2008-06-24 18:50:19 faschinj Exp $
+! $Id: fire.F,v 1.15 2008-06-24 19:43:37 faschinj Exp $
         module fire
 
 !       Description:
@@ -40,7 +40,7 @@
 
         use atex_cloud_rad, only: cloud_rad ! Procedure(s)
 
-        use stats_precision, only: time_prec ! Variable(s)
+        use stats_precision, only: time_precision ! Variable(s)
 
 #ifdef STATS
         use stats_type, only: stat_update_var ! Procedure(s)
@@ -51,7 +51,7 @@
         implicit none
 
         ! Input Variables
-        real(kind=time_prec), intent(in) :: time ! Model time [s]
+        real(kind=time_precision), intent(in) :: time ! Model time [s]
 
         real, intent(in), dimension(gr%nnzp) ::
      .  rhot, ! Density                         [kg/m^3]
