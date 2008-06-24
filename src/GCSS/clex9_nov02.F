@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: clex9_nov02.F,v 1.17 2008-06-24 19:43:37 faschinj Exp $
+! $Id: clex9_nov02.F,v 1.18 2008-06-24 20:13:45 ajsmith4 Exp $
         module clex9_nov02
 
 !       Description:
@@ -196,6 +196,9 @@
         ! Variable used for working within vertical arrays
 
         integer :: k
+
+        sw_on = .true. ! This is necessay to use the xi_abs value below
+                       ! Joshua Fasching June 2008
 
 !-----------------------------------------------------------------------
 ! FOR NOV.11 CASE
@@ -585,7 +588,7 @@ c        end if
 
         end if ! ~ lbugsrad
 
-       if ( time == time_initial ) then
+        if ( time == time_initial ) then
 
           if ( lcoamps_micro ) then
             ! Turn off microphysics for now, re-enable at
@@ -604,7 +607,7 @@ c        end if
 
         end if
 
-         if ( time >= ( time_initial + 3600.0 ) 
+        if ( time >= ( time_initial + 3600.0 ) 
      .            .and. tdelay_licedfs ) then
         !---------------------------------------------------------------
         ! Compute the loss of total water due to diffusional
@@ -682,7 +685,6 @@ c        end if
         wmm = zt2zm(wmt)
 
         ! Enter the final theta-l and rtm tendencies
-
         do k = 1, gr%nnzp, 1
 
           if ( .not. lbugsrad ) then
