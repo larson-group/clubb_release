@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_type.F,v 1.13 2008-06-20 17:54:11 faschinj Exp $
+! $Id: stats_type.F,v 1.14 2008-06-24 18:50:54 faschinj Exp $
       module stats_type
 #ifdef STATS
  
@@ -11,7 +11,7 @@
         use outputfile_class, only:
      .      outputfile ! Type
 
-        use stats_prec, only:
+        use stats_precision, only:
      .      stat_rknd, ! Variable(s)
      .      stat_nknd
         

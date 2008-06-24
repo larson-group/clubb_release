@@ -1,4 +1,4 @@
-! $Id: ice_dfsn_mod.F,v 1.8 2008-06-24 18:13:57 faschinj Exp $        
+! $Id: ice_dfsn_mod.F,v 1.9 2008-06-24 18:50:53 faschinj Exp $        
 
         module ice_dfsn_mod
 
@@ -61,7 +61,7 @@
      .      ep,
      .      Rv,
      .      Lf
-        USE stats_prec, only: 
+        USE stats_precision, only: 
      .      time_prec ! Variable(s)
         USE saturation, only: 
      .      rsat ! Procedure(s)

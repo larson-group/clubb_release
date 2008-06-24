@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_variables.F,v 1.1 2008-06-24 18:13:58 faschinj Exp $
+! $Id: stats_variables.F,v 1.2 2008-06-24 18:50:54 faschinj Exp $
 !-----------------------------------------------------------------------
 !  module stats_variables
 
@@ -10,7 +10,7 @@
         
         use stats_type, only: 
      .      stats ! Type
-        use stats_prec, only: 
+        use stats_precision, only: 
      .      time_prec ! Variable
 
         implicit none

@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F,v 1.12 2008-06-24 18:13:57 faschinj Exp $
+! $Id: compute_um_edsclrm_mod.F,v 1.13 2008-06-24 18:50:53 faschinj Exp $
 !------------------------------------------------------------------------
         module compute_um_edsclrm_mod
 
@@ -49,7 +49,7 @@
 #endif
         use constants, only: 
      .      fstderr ! Variable(s)
-        use stats_prec, only: 
+        use stats_precision, only: 
      .      time_prec ! Variable(s)
         use error_code, only: 
      .      lapack_error, ! Procedure(s)

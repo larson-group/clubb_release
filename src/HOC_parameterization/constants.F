@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.23 2008-05-30 16:24:24 faschinj Exp $
+! $Id: constants.F,v 1.24 2008-06-24 18:50:53 faschinj Exp $
 
         module constants
 
@@ -10,7 +10,7 @@
 !       None
 !-----------------------------------------------------------------------
 
-        use stats_prec, only: 
+        use stats_precision, only: 
      .      time_prec ! Variable(s)
 
         implicit none

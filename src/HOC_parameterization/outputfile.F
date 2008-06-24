@@ -1,12 +1,12 @@
 !-----------------------------------------------------------------------
-! $Id: outputfile.F,v 1.9 2008-06-04 20:27:28 dschanen Exp $
+! $Id: outputfile.F,v 1.10 2008-06-24 18:50:53 faschinj Exp $
       module outputfile_class
 #ifdef STATS
 
 !     Description:
 !     Contains two derived types for either NetCDF or GrADS files.
 !-----------------------------------------------------------------------
-         use stats_prec, only:
+         use stats_precision, only:
      .       stat_rknd, ! Variable
      .       time_prec
        

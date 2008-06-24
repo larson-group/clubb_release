@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: outputgrads.F,v 1.13 2008-06-04 20:27:28 dschanen Exp $
+! $Id: outputgrads.F,v 1.14 2008-06-24 18:50:53 faschinj Exp $
         module outputgrads
 #ifdef STATS 
 
@@ -50,7 +50,7 @@
      .        fstdout
           use outputfile_class, only:
      .        outputfile ! Type
-          use stats_prec, only: 
+          use stats_precision, only: 
      .        time_prec ! Variable
           
           implicit none
@@ -177,7 +177,7 @@
 !-----------------------------------------------------------------------
           use outputfile_class, only:
      .        variable ! Type
-          use stats_prec, only:
+          use stats_precision, only:
      .        time_prec ! Variable
           use constants, only: 
      .        fstderr, ! Variable 
@@ -545,7 +545,7 @@
           subroutine formatdate( day_in, month_in, year_in, 
      .                           time_in, date )
           
-          use stats_prec, only: 
+          use stats_precision, only: 
      .        time_prec ! Variable
           use calendar, only: 
      .        leap_year ! Procedure

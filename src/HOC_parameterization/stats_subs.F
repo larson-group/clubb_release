@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.20 2008-06-24 18:13:58 faschinj Exp $
+!  $Id: stats_subs.F,v 1.21 2008-06-24 18:50:54 faschinj Exp $
       module stats_subs
 #ifdef STATS
  
@@ -72,7 +72,7 @@
      .    fname_sfc,
      .    lnetcdf,
      .    lgrads
-      use stats_prec, only:
+      use stats_precision, only:
      .    time_prec   ! Variable(s)
       use outputgrads, only:
      .    open_grads  ! Procedure
@@ -442,7 +442,7 @@
 !     Description:
 !     Initialize stats to zero
 !-----------------------------------------------------------------------
-      use stats_prec, only:
+      use stats_precision, only:
      .    stat_rknd,  ! Variable(s)
      .    stat_nknd
 
@@ -473,7 +473,7 @@
 !     Description:
 !     Compute the average of stats fields
 !-----------------------------------------------------------------------
-      use stats_prec, only:
+      use stats_precision, only:
      .    stat_rknd,  ! Variable(s)
      .    stat_nknd
 
@@ -519,7 +519,7 @@
      .    lstats_last,
      .    stats_tsamp,
      .    stats_tout
-      use stats_prec, only:
+      use stats_precision, only:
      .    time_prec ! Variable(s)
 
       implicit none
@@ -576,7 +576,7 @@
      .    stats_tout,
      .    lgrads
 
-      use stats_prec, only:
+      use stats_precision, only:
      .    time_prec ! Variable(s)
 
       use outputgrads, only:

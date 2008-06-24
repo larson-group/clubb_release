@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.71 2008-06-24 18:13:58 faschinj Exp $
+! $Id: wp23.F,v 1.72 2008-06-24 18:50:54 faschinj Exp $
 !===============================================================================
         module wp23
 
@@ -69,7 +69,7 @@
         use constants, only: 
      .      fstderr    ! Variable(s)
 
-        use stats_prec, only: 
+        use stats_precision, only: 
      .      time_prec ! Variable(s)
 
         use error_code, only: 
@@ -308,7 +308,7 @@
      .      lKhm_aniso, ! Variable(s)
      .      lhole_fill
 
-        use stats_prec, only: 
+        use stats_precision, only: 
      .      time_prec  ! Variable(s)
 
         use lapack_wrap, only: 
@@ -740,7 +740,7 @@
      .      term_ma_zm_lhs, ! Procedures
      .      term_ma_zt_lhs
         
-        use stats_prec, only: time_prec
+        use stats_precision, only: time_prec
         
 #ifdef STATS
         use stats_variables, only:      
@@ -1202,7 +1202,7 @@
      .      diffusion_zm_lhs, ! Procedures
      .      diffusion_zt_lhs
 
-        use stats_prec, only: 
+        use stats_precision, only: 
      .      time_prec ! Variable
 
 #ifdef STATS

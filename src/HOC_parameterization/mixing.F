@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.61 2008-06-24 18:13:57 faschinj Exp $
+! $Id: mixing.F,v 1.62 2008-06-24 18:50:53 faschinj Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -85,7 +85,7 @@
      .      gr, ! Variable(s)
      .      zm2zt ! Procedure(s)
 
-        use stats_prec, only: 
+        use stats_precision, only: 
      .      time_prec ! Variable(s)
         use error_code, only: 
      .      lapack_error, ! Procedure(s)
@@ -484,7 +484,7 @@
      .      gr, ! Variable(s)
      .      zm2zt ! Procedure(s)
 
-        use stats_prec, only: 
+        use stats_precision, only: 
      .      time_prec ! Variable(s)
 
         use diffusion, only: 
@@ -858,7 +858,7 @@
         use grid_class, only:
      .      gr ! Variable(s)
 
-        use stats_prec, only: 
+        use stats_precision, only: 
      .      time_prec ! Variable(s)
 
 #ifdef STATS
@@ -1040,7 +1040,7 @@
         use grid_class, only:
      .      gr ! Variable(s)
 
-        use stats_prec, only: 
+        use stats_precision, only: 
      .      time_prec ! Variable(s)
 
         use lapack_wrap, only: 

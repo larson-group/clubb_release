@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.98 2008-06-24 18:13:58 faschinj Exp $
+! $Id: parameterization_interface.F,v 1.99 2008-06-24 18:50:54 faschinj Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -166,7 +166,7 @@
      .     rsat ! Saturation mixing ratio
        use wp23, only: 
      .     timestep_wp23 ! Procedure
-       use stats_prec, only: 
+       use stats_precision, only: 
      .     time_prec ! Variable(s)
        use error_code, only : 
      .     clubb_var_equals_NaN,! Variable(s)

@@ -39,7 +39,7 @@
       use constants, only: Cp, Lv, pi, Lf, Ls, Rv, Rd, p0 ! Variable(s)
       use grid_class, only: zt2zm ! Procedure(s)
       use saturation, only: rsat, rsati ! Procedure(s)
-      use stats_prec, only: time_prec ! Variable(s)
+      use stats_precision, only: time_prec ! Variable(s)
       use error_code, only: clubb_debug ! Procedure(s)
 #ifdef STATS
       use stats_type, only: stat_update_var_pt ! Procedure(s)

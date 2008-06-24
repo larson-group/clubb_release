@@ -1,4 +1,4 @@
-! $Id: outputnc.F,v 1.11 2008-06-04 20:27:28 dschanen Exp $
+! $Id: outputnc.F,v 1.12 2008-06-24 18:50:53 faschinj Exp $
 !-----------------------------------------------------------------------
        module outputnc
 #ifdef NETCDF
@@ -37,7 +37,7 @@
      .     nf90_strerror
        use outputfile_class, only:
      .     outputfile ! Type
-       use stats_prec, only: 
+       use stats_precision, only: 
      .     time_prec ! Variable(s)
        use constants, only: 
      .     fstderr ! Variable(s)
@@ -224,7 +224,7 @@
      .     nf90_strerror,
      .     nf90_def_var,
      .     nf90_put_att
-       use stats_prec, only: 
+       use stats_precision, only: 
      .     time_prec ! Variable(s)
        use constants, only: 
      .     fstderr ! Variable(s)
@@ -604,7 +604,7 @@
 !      Uses Fortran `internal' files to write the string output.
 !-----------------------------------------------------------------------
 
-       use stats_prec, only: 
+       use stats_precision, only: 
      .     time_prec ! Variable(s)
 
        implicit none

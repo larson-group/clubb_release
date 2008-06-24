@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: semiimplicit_clip.F,v 1.1 2008-06-21 22:04:06 griffinb Exp $
+! $Id: semiimplicit_clip.F,v 1.2 2008-06-24 18:50:54 faschinj Exp $
 !===============================================================================
         module semiimplicit_clip
 
@@ -189,7 +189,7 @@
 !       References:
 !-----------------------------------------------------------------------
 
-        use stats_prec, only: 
+        use stats_precision, only: 
      .      time_prec ! Variable(s)
 
         implicit none
@@ -297,7 +297,7 @@
 !       References:
 !-----------------------------------------------------------------------
 
-        use stats_prec, only: 
+        use stats_precision, only: 
      .      time_prec ! Variable(s)
 
         implicit none
@@ -354,7 +354,7 @@
 !       References:
 !-----------------------------------------------------------------------
 
-        use stats_prec, only: 
+        use stats_precision, only: 
      .      time_prec ! Variable(s)
 
         implicit none

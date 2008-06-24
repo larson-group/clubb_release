@@ -45,7 +45,7 @@
      .      ddzm  ! Function
         use constants, only : 
      .      eps ! Variable(s)
-        use stats_prec, only: 
+        use stats_precision, only: 
      .      time_prec ! Variable(s)
 
         implicit none

@@ -1,6 +1,6 @@
 !-----------------------------------------------------------------------
-! $Id: stats_prec.F,v 1.3 2008-05-09 16:37:43 faschinj Exp $
-        module stats_prec
+! $Id: stats_precision.F,v 1.1 2008-06-24 18:50:54 faschinj Exp $
+        module stats_precision
 
         implicit none
 
@@ -17,5 +17,5 @@
      .    stat_rknd = selected_real_kind( p=12 ),
      .    time_prec = selected_real_kind( p=12 )
 
-        end module stats_prec
+        end module stats_precision
 !-----------------------------------------------------------------------

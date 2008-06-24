@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F,v 1.56 2008-06-24 18:13:57 faschinj Exp $
+! $Id: diag_var.F,v 1.57 2008-06-24 18:50:53 faschinj Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !===============================================================================
@@ -71,7 +71,7 @@
      .      gr, ! Variable(s)
      .      zm2zt ! Procedure(s)
         
-        use stats_prec, only: 
+        use stats_precision, only: 
      .      time_prec ! Variable(s)
         
         use error_code, only: 
@@ -689,7 +689,7 @@
         use grid_class, only:
      .      gr ! Variable(s)
 
-        use stats_prec, only: 
+        use stats_precision, only: 
      .      time_prec ! Variable(s)
 
         use diffusion, only: 
@@ -1120,7 +1120,7 @@
         use constants, only: 
      .      grav ! Variable(s)
         
-        use stats_prec, only: 
+        use stats_precision, only: 
      .      time_prec ! Variable(s)
         
 #ifdef STATS
@@ -1344,7 +1344,7 @@
         use grid_class, only:
      .      gr ! Variable(s)
         
-        use stats_prec, only: 
+        use stats_precision, only: 
      .      time_prec ! Variable(s)
         
 #ifdef STATS
@@ -2082,7 +2082,7 @@
 
         use fill_holes_mult, only: fill_holes_multiplicative
         use grid_class, only: gr
-        use stats_prec, only: time_prec
+        use stats_precision, only: time_prec
 #ifdef STATS
         use stats_variables, only: 
      .      zm, lstats_samp,
