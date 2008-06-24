@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: nov11.F,v 1.22 2008-06-18 15:22:14 faschinj Exp $
+! $Id: nov11.F,v 1.23 2008-06-24 16:48:52 faschinj Exp $
         module nov11
 
 !       Description:
@@ -197,7 +197,7 @@
 
         integer :: k
 
-        sw_on = .true. ! This is necessay to use the xi_abs value above
+        sw_on = .true. ! This is necessay to use the xi_abs value below
                        ! Joshua Fasching June 2008
 
 !-----------------------------------------------------------------------
