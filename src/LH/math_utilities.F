@@ -19,9 +19,6 @@
 
         implicit none
 
-        ! External
-        double precision, external :: cov
-
         ! Input
         integer, intent(in)          :: n
         double precision, intent(in) :: vect1(1:n), vect2(1:n)
@@ -41,9 +38,6 @@
         function std( vector, n ) 
 
         implicit none
-
-        ! External
-        double precision, external :: cov
 
         ! Input
         integer, intent(in)          :: n
@@ -65,9 +59,6 @@
         function cov( vect1, vect2, n )
 
         implicit none
-
-!       External
-        double precision, external   :: mean
 
 !       Input
         integer, intent(in)          :: n
