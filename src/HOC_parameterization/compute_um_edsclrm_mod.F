@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F,v 1.14 2008-06-24 19:44:01 faschinj Exp $
+! $Id: compute_um_edsclrm_mod.F,v 1.15 2008-06-25 21:56:00 dschanen Exp $
 !------------------------------------------------------------------------
         module compute_um_edsclrm_mod
 
@@ -359,10 +359,11 @@
         if (.not. implemented) then
           select case (trim(solve_type))
           case("um")
+#ifdef STATS
             ixm_ma = ium_ma
             ixm_gf = ium_gf
             ixm_cf = ium_cf
-           
+#endif
             xm_ma = - wmt * ddzm( zt2zm( xm ) )
 
             xm_gf = - fcor * perp_wind_g
@@ -370,10 +371,11 @@
             xm_cf = fcor * perp_wind_m
 
           case("vm") 
+#ifdef STATS
             ixm_ma = ivm_ma
             ixm_gf = ivm_gf
             ixm_cf = ivm_cf
-
+#endif
             xm_ma = - wmt * ddzm( zt2zm( xm ) )
 
             xm_gf = fcor * perp_wind_g
