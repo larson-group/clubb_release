@@ -15,23 +15,25 @@
 !       Applies a  flux conservative positive definite scheme to a variable
 
 !       There are two possible grids:       
-!       (1) flux on zt  field on zm
-!       then
-!       flux_zm(k) = ( flux_zt(k+1) + flux_zt(k) ) / 2
-         
-!       m +-- flux   (k)  --+
-!       t +-- field  (k)  --+
-!       m +-- flux  (k-1) --+
-!       t +-- field (k-1) --+
-
-!       (1) flux on zm field on zt
+!       (1) flux on zm  field on zt
 !       then
 !       flux_zt(k) = ( flux_zm(k) + flux_zm(k-1) ) / 2
 
-!       m +-- field  (k)  --+
-!       t +-- flux   (k)  --+
-!       m +-- field (k-1) --+
-!       t +-- flux  (k-1) --+
+!             CLUBB grid                  Smolarkiewicz grid      
+!       m +-- flux  zm(k)  --+               flux        k + 1/2
+!       t +-- field zt(k)  --+               field, fout k
+!       m +-- flux  zm(k-1) --+              flux        k - 1/2
+!       t +-- field zt(k-1) --+
+
+!       (1) flux on zt field on zm
+!       then
+!       flux_zm(k) = ( flux_zt(k) + flux_zt(k+1) ) / 2
+
+!             CLUBB grid                  Smolarkiewicz grid      
+!       m +-- field  (k+1)  --+               
+!       t +-- flux   (k+1)  --+               flux        k + 1/2
+!       m +-- field  (k)    --+               field, fout k 
+!       t +-- flux   (k)    --+               flux        k - 1/2
 
 
 !       References:
