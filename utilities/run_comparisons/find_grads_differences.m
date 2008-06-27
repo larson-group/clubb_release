@@ -1,3 +1,5 @@
+%$Id: find_grads_differences.m,v 1.3 2008-06-27 21:23:04 vlarson Exp $
+
 function [] = find_grads_differences( ctl_file, t1, t2, tol )
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
