@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.130 2008-06-24 18:49:51 faschinj Exp $
+# $Id: Makefile,v 1.131 2008-06-27 11:58:57 griffinb Exp $
 #
 # This version should work with GNU make and Sun's dmake.
 #
@@ -76,7 +76,7 @@ PARAMETERIZATION = \
 	numer_check.o diag_variables.o prog_variables.o \
 	parameterization_interface.o lapack_wrap.o  \
 	parameters.o pos_definite_mod.o calendar.o \
-	fill_holes_mult.o
+	fill_holes_mult.o semiimplicit_clip.o
 
 
 INTERFACING = gradsaverage.o inputfields.o inputgrads.o 
