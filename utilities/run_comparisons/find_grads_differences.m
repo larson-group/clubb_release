@@ -1,10 +1,10 @@
-%$Id: find_grads_differences.m,v 1.3 2008-06-27 21:23:04 vlarson Exp $
+%$Id: find_grads_differences.m,v 1.4 2008-06-27 21:47:48 vlarson Exp $
 
 function [] = find_grads_differences( ctl_file, t1, t2, tol )
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % find_grads_differences( string, integer, integer, integer )
-% Example: find_grads_differences( 'nov11_altocu.ctl', 1, 240, 2 )
+% Example: find_grads_differences( 'nov11_altocu.ctl', 1, 240, 4 )
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Written by Michael Falk, December 2006-March 2007
 % Modified by Joshua Fasching, June 2008
@@ -59,24 +59,26 @@ for var=1:numvars3
     sim_profile3 = get_profile(path3,filename3, ...
         numvars3,list_vars3,nz3,t1,t2,var1,1);
 
-    % Determine the mean difference between profiles
-    diff1 = abs( mean(sim_profile2 - sim_profile1) );
-    diff2 = abs( mean(sim_profile3 - sim_profile2) );
-    diff3 = abs( mean(sim_profile3 - sim_profile1) );
+    % Determine the mean difference between profiles.
+    % diff1, diff2, and diff3 are vectors, not scalars.
+    diff1 = abs( sim_profile2 - sim_profile1 );
+    diff2 = abs( sim_profile3 - sim_profile2 );
+    diff3 = abs( sim_profile3 - sim_profile1 );
     
-    % Determine the tolerance between profiles
-    tolerance1 = abs( mean( [sim_profile2 ; sim_profile1] ) * 1.0*10^(-tol) );
-    tolerance2 = abs( mean( [sim_profile3 ; sim_profile2] ) * 1.0*10^(-tol) );
-    tolerance3 = abs( mean( [sim_profile3 ; sim_profile1] ) * 1.0*10^(-tol) );
+    % Determine the tolerance between profiles.
+    % This tolerance will be undesirably reduced for domains with very high tops.
+    tolerance1 = mean( abs( [sim_profile2 ; sim_profile1] ) * 1.0*10^(-tol) );
+    tolerance2 = mean( abs( [sim_profile3 ; sim_profile2] ) * 1.0*10^(-tol) );
+    tolerance3 = mean( abs( [sim_profile3 ; sim_profile1] ) * 1.0*10^(-tol) );
     
 % Print results, if differences exist
-    if ( diff1 > tolerance1 )
+    if ( any( diff1 > tolerance1 ) )
         disp ( ['File 1 and File 2 disagree in field ', var1] );
     end
-    if ( diff2 > tolerance2 )
+    if ( any( diff2 > tolerance2 ) )
         disp ( ['File 2 and File 3 disagree in field ', var1] );
     end
-    if ( diff3 > tolerance3 )
+    if ( any( diff3 > tolerance3 ) )
         disp ( ['File 1 and File 3 disagree in field ', var1] );
     end
 end
