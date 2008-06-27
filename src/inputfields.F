@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputfields.F,v 1.22 2008-06-24 19:43:26 faschinj Exp $
+! $Id: inputfields.F,v 1.23 2008-06-27 17:02:22 faschinj Exp $
 
 ! Module inputfields
 
@@ -915,6 +915,9 @@
 
 !-------------------------------------------------------------------------
 
+        implicit none
+
+
         ! Input Variables
         real, intent(in) ::
      .  var_zmp2,   ! Momentum level variable at level (k+2)   [units vary]
@@ -944,6 +947,8 @@
 !       the level where the result value is needed.
 
 !-------------------------------------------------------------------------
+
+        implicit none
 
         ! Input Variables
         real, intent(in) ::
