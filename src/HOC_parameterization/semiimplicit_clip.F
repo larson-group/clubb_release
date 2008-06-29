@@ -1,10 +1,10 @@
 !-----------------------------------------------------------------------
-! $Id: semiimplicit_clip.F,v 1.3 2008-06-24 19:44:02 faschinj Exp $
+! $Id: semiimplicit_clip.F,v 1.4 2008-06-29 00:05:39 griffinb Exp $
 !===============================================================================
         module semiimplicit_clip
 
 !       Description of the semi-implicit clipping code:
-!       The semi-implicit clipping code based on an upper threshold
+!       The semi-implicit clipping code is based on an upper threshold
 !       and/or a lower threshold value for variable f.
 !
 !       The semi-implicit clipping code is used when the value of 
@@ -17,7 +17,7 @@
 !       When there is an upper threshold to be applied, the equation for
 !       the clipped value of the variable, f_clipped, is:
 !
-!       f_clipped(t+1) = min(f_unclipped(t+1),upper_threshold)
+!       f_clipped(t+1) = MIN( f_unclipped(t+1), upper_threshold )
 !                      = ( f_unclipped(t+1) - upper_threshold )
 !                          * H(upper_threshold-f_unclipped(t+1))
 !                        + upper_threshold;
@@ -27,42 +27,87 @@
 !       Heaviside Step function.  The clipping term is turned into a 
 !       time tendency term, such that:
 !
-!       (df/dt)_clipping = (1/dt_clip) * f_diff(t+1) 
-!                                      * [ 1 - H(f_diff(t+1)) ];
+!       (df/dt)_clipping = (1/dt_clip) 
+!                          * ( f_clipped(t+1) - f_unclipped(t+1) );
 !
-!       where dt_clip is the time scale for the clipping term, and 
-!       f_diff is defined as:
+!       where dt_clip is the time scale for the clipping term.  The 
+!       difference between the threshold value and f_unclipped is 
+!       defined as f_diff:
 !
 !       f_diff = upper_threshold - f_unclipped.
+!
+!       The clipping time tendency is now simplified as:
+!
+!       (df/dt)_clipping = + (1/dt_clip) 
+!                            * { f_diff(t+1) * [ 1 - H(f_diff(t+1)) ] }.
+!
+!       Function R(f_diff) is defined as:
+!
+!       R(f_diff) = { f_diff * [ 1 - H(f_diff) ] }.
+!
+!       The clipping time tendency is now written as:
+!		
+!       (df/dt)_clipping = + (1/dt_clip) * R(f_diff(t+1)).
 !
 !       In order to solve for f_unclipped (and f_diff) at timestep 
 !       index (t+1), the clipping term must be linearized.  A Taylor
 !       Series expansion (truncated after the first derivative term) of
-!       H(f_diff) around f_diff = f_diff(t) is used to linearize the
+!       R(f_diff) around f_diff = f_diff(t) is used to linearize the
 !       term.  However, the Heaviside Step function, H(f_diff), is not 
-!       differentiable at all points.  Therefore, it is approximated by
-!       a sigmoidal function, A_fnc, (which has first derivative B_fnc),
-!       resulting in:
+!       differentiable when f_diff(t) = 0.  Likewise, the function 
+!       R(f_diff) is not differentiable when f_diff(t) = 0, as the 
+!       function has a corner at that point.  Therefore, a new function,
+!       F_R(f_diff) is used as an approximation of R(f_diff).  Function
+!       F_R(f_diff) is a three-piece function that has the exact same
+!       value as R(f_diff) when f_diff <= -sigma or f_diff >= sigma 
+!       (sigma is an arbitrarily declared value).  However, when 
+!       -sigma < f_diff < sigma, a parabolic function is used to 
+!       approximate the corner found in R(f_diff).  The parabolic 
+!       function needs to have the same values at f_diff = -sigma and
+!       f_diff = sigma as does R(f_diff).  Furthermore, the derivative
+!       of the parabolic function (with respect to f_diff) needs to have
+!       the same values at f_diff = -sigma and f_diff = sigma as does 
+!       d(R)/d(f_diff).  The parabolic function that satisfies these
+!       properities is:  f_diff - (sigma/4) * [ 1 + (f_diff/sigma) ]^2.
+!       Therefore:
 !
-!       H(f_diff(t+1)) approx.= A_fnc(f_diff(t+1))
-!          = A_fnc(f_diff(t)) 
-!            + B_fnc(f_diff(t)) * ( f_diff(t+1) - f_diff(t) ).
+!                     | f_diff;   where f_diff <= -sigma
+!                     |
+!       F_R(f_diff) = | f_diff - (sigma/4) * [ 1 + (f_diff/sigma) ]^2; 
+!                     |    where -sigma < f_diff < sigma
+!                     |
+!                     | 0;   where f_diff >= sigma;   and
+!
+!                              | 1;   where f_diff <= -sigma
+!                              |
+!       ( d F_R / d f_diff ) = | 1 - (1/2) * [ 1 + (f_diff/sigma) ];
+!                              |    where -sigma < f_diff < sigma
+!                              |
+!                              | 0;   where f_diff >= sigma.
+!       
+!       Since, R(f_diff(t+1)) approx.= F_R(f_diff(t+1)), the Taylor 
+!       Series expansion is done for F_R(f_diff) around 
+!       f_diff = f_diff(t) in order to linearize the term:
+!
+!       F_R(f_diff(t+1)) approx.= 
+!          A_fnc + B_fnc * ( f_diff(t+1) - f_diff(t) );
+!
+!       where A_fnc is defined as F_R(f_diff(t)) and B_fnc is defined 
+!       as ( d F_R / d f_diff )|_(f_diff=f_diff(t)).
 !       
 !       The approximation is substituted into the (df/dt)_clipping 
 !       equation.  The rate of change of variable f due to clipping with
 !       the upper threshold is:
 !
 !       (df/dt)_clipping
-!       = (1/dt_clip)
-!        * {   B_fnc * f_diff(t) * f_diff(t)
-!            + [ ( 1 - A_fnc ) - B_fnc * f_diff(t) ] * upper_threshold
-!            - [ ( 1 - A_fnc ) - B_fnc * f_diff(t) ] * f_unclipped(t+1) }.
+!       = + (1/dt_clip)
+!           * {   A_fnc - B_fnc * f_diff(t) 
+!               + B_fnc * upper_threshold - B_fnc * f_unclipped(t+1) }.
 !
 !       The implicit (LHS) portion of the equation for clipping with the
 !       upper threshold is:
 !
-!       - (1/dt_clip)
-!        * [ ( 1 - A_fnc ) - B_fnc * f_diff(t) ] * f_unclipped(t+1).
+!       - (1/dt_clip) * B_fnc * f_unclipped(t+1).
 !
 !       Note:  When the term is brought over to the left-hand side, the
 !              sign is reversed and the leading "-" in front of the 
@@ -72,8 +117,7 @@
 !       upper threshold is:
 !
 !       + (1/dt_clip)
-!        * {   B_fnc * f_diff(t) * f_diff(t)
-!            + [ ( 1 - A_fnc ) - B_fnc * f_diff(t) ] * upper_threshold }.
+!         * { A_fnc - B_fnc * f_diff(t) + B_fnc * upper_threshold }.
 !       
 !       Timestep index (t) stands for the index of the current timestep,
 !       while timestep index (t+1) stands for the index of the next 
@@ -86,20 +130,37 @@
 !       When there is a lower threshold to be applied, the equation for
 !       the clipped value of the variable, f_clipped, is:
 !
-!       f_clipped(t+1) = max(f_unclipped(t+1),lower_threshold)
+!       f_clipped(t+1) = MAX( f_unclipped(t+1), lower_threshold )
 !                      = ( f_unclipped(t+1) - lower_threshold )
 !                          * H(f_unclipped(t+1)-lower_threshold)
-!                        + lower_threshold.
+!                        + lower_threshold;
 !
-!       The clipping term is turned into a time tendency term, such that:
+!       where f_unclipped is the value of the variable without 
+!       clipping, and H(f_unclipped(t+1)-lower_threshold) is the 
+!       Heaviside Step function.  The clipping term is turned into a 
+!       time tendency term, such that:
 !
-!       (df/dt)_clipping = - (1/dt_clip) * f_diff(t+1) 
-!                                        * [ 1 - H(f_diff(t+1)) ];
+!       (df/dt)_clipping = (1/dt_clip) 
+!                          * ( f_clipped(t+1) - f_unclipped(t+1) );
 !
-!       where dt_clip is the time scale for the clipping term, and 
-!       f_diff is defined as:
+!       where dt_clip is the time scale for the clipping term.  The 
+!       difference between f_unclipped and the threshold value is 
+!       defined as f_diff:
 !
 !       f_diff = f_unclipped - lower_threshold.
+!
+!       The clipping time tendency is now simplified as:
+!
+!       (df/dt)_clipping = - (1/dt_clip) 
+!                            * { f_diff(t+1) * [ 1 - H(f_diff(t+1)) ] }.
+!
+!       Function R(f_diff) is defined as:
+!
+!       R(f_diff) = { f_diff * [ 1 - H(f_diff) ] }.
+!
+!       The clipping time tendency is now written as:
+!               
+!       (df/dt)_clipping = - (1/dt_clip) * R(f_diff(t+1)).
 !
 !       The linearization process is the same for the lower threshold as
 !       it is for the upper threshold.  The formulas for A_fnc and B_fnc
@@ -109,15 +170,13 @@
 !
 !       (df/dt)_clipping
 !       = - (1/dt_clip)
-!        * {   B_fnc * f_diff(t) * f_diff(t)
-!            - [ ( 1 - A_fnc ) - B_fnc * f_diff(t) ] * lower_threshold
-!            + [ ( 1 - A_fnc ) - B_fnc * f_diff(t) ] * f_unclipped(t+1) }.
+!           * {   A_fnc - B_fnc * f_diff(t) 
+!               - B_fnc * lower_threshold + B_fnc * f_unclipped(t+1) }.
 !
 !       The implicit (LHS) portion of the equation for clipping with the
 !       lower threshold is:
 !
-!       - (1/dt_clip)
-!        * [ ( 1 - A_fnc ) - B_fnc * f_diff(t) ] * f_unclipped(t+1).
+!       - (1/dt_clip) * B_fnc * f_unclipped(t+1).
 !
 !       Note:  When the term is brought over to the left-hand side, the
 !              sign is reversed and the leading "-" in front of the 
@@ -127,11 +186,27 @@
 !       lower threshold is:
 !
 !       - (1/dt_clip)
-!        * {   B_fnc * f_diff(t) * f_diff(t)
-!            - [ ( 1 - A_fnc ) - B_fnc * f_diff(t) ] * lower_threshold }.
+!         * { A_fnc - B_fnc * f_diff(t) - B_fnc * lower_threshold }.
 !
-!       All variables in these equations are on the same levels as the
-!       variable f.
+!       All variables in these equations are on the same vertical levels
+!       as the variable f.
+!
+!
+!       Tunable parameters:
+!
+!       sigma:  sigma is the amount of space on either side of the 
+!               threshold value to which the parabolic function portion
+!               of F_R(f_diff) is applied.  The value of sigma must be
+!               greater than 0.  A proportionally larger value of sigma
+!               can be used to effect values of f that are near the 
+!               threshold, but not to it or over it.  The 
+!               close-to-threshold values will be nudged away from the
+!               threshold.
+!
+!      dt_clip:  dt_clip is the clipping time scale.  It can be set 
+!                equal to the model timestep, dt, but it doesn't have to
+!                be.  Smaller values of dt_clip produce a greater effect
+!                on the clipping term.
 
 !       References:
 !-----------------------------------------------------------------------
@@ -160,14 +235,12 @@
 !       The implicit (LHS) portion of the equation for clipping with the
 !       upper threshold is:
 !
-!       - (1/dt_clip)
-!        * [ ( 1 - A_fnc ) - B_fnc * f_diff(t) ] * f_unclipped(t+1).
+!       - (1/dt_clip) * B_fnc(t) * f_unclipped(t+1).
 !       
 !       The implicit (LHS) portion of the equation for clipping with the
 !       lower threshold is:
 !
-!       - (1/dt_clip)
-!        * [ ( 1 - A_fnc ) - B_fnc * f_diff(t) ] * f_unclipped(t+1).
+!       - (1/dt_clip) * B_fnc(t) * f_unclipped(t+1).
 !
 !       Note:  When either term is brought over to the left-hand side, 
 !              the sign is reversed and the leading "-" in front of 
@@ -196,12 +269,12 @@
 
         ! Input Variables
         real(kind=time_precision), intent(in) :: 
-     .  dt_clip            ! Time scale for semi-implicit clipping term.   [s]
+     .  dt_clip            ! Time scale for semi-implicit clipping term.        [s]
 
         real, intent(in) ::
-     .  f_unclipped,       ! The unclipped value of variable f at timestep (t).
-     .  upper_threshold,   ! Greatest allowable value of variable f.
-     .  lower_threshold    ! Smallest allowable value of variable f.
+     .  f_unclipped,       ! The unclipped value of variable f at timestep (t). [f units]
+     .  upper_threshold,   ! Greatest allowable value of variable f.            [f units]
+     .  lower_threshold    ! Smallest allowable value of variable f.            [f units]
 
         logical, intent(in) ::
      .  lupper_thresh,   ! Flag for having an upper threshold value.
@@ -212,11 +285,11 @@
 
         ! Local Variables
         real ::
-     .  f_diff,    ! Difference between the threshold value and f_unclipped.
-     .  A_fnc,     ! Sigmoidal function approximation to Heaviside Step function.
-     .  B_fnc,     ! Derivative w/ respect to f_diff of sigmoidal function, A_fnc.
-     .  lhs_upper, ! Contribution of upper threshold to implicit portion (LHS).
-     .  lhs_lower  ! Contribution of lower threshold to implicit portion (LHS).
+     .  f_diff,    ! Difference between the threshold value and f_unclipped.    [f units]
+     .  A_fnc,     ! Function that approximates { f_diff * [ 1 - H(f_diff) ] }. [f units]
+     .  B_fnc,     ! Derivative w/ respect to f_diff of function A_fnc.         []
+     .  lhs_upper, ! Contribution of upper threshold to implicit portion (LHS). [s^-1]
+     .  lhs_lower  ! Contribution of lower threshold to implicit portion (LHS). [s^-1]
 
 
         ! Upper Threshold
@@ -233,7 +306,7 @@
 
            ! Compute the implicit (LHS) contribution from clipping for 
            ! the upper threshold. 
-           lhs_upper = compute_clip_lhs( dt_clip, f_diff, A_fnc, B_fnc )
+           lhs_upper = compute_clip_lhs( dt_clip, B_fnc )
 
         else
 
@@ -256,7 +329,7 @@
 
            ! Compute the implicit (LHS) contribution from clipping for 
            ! the lower threshold. 
-           lhs_lower = compute_clip_lhs( dt_clip, f_diff, A_fnc, B_fnc )
+           lhs_lower = compute_clip_lhs( dt_clip, B_fnc )
 
         else
 
@@ -273,7 +346,7 @@
         end function semiimp_clip_lhs
 
 !===============================================================================
-        pure function compute_clip_lhs( dt_clip, f_diff, A_fnc, B_fnc )
+        pure function compute_clip_lhs( dt_clip, B_fnc )
      .  result( lhs_contribution )
 
 !       Description:
@@ -282,8 +355,7 @@
 !
 !       The implicit portion of the semi-implicit clipping term is:
 !
-!       - (1/dt_clip) * [ ( 1 - A_fnc ) - B_fnc * f_diff(t) ] 
-!                     * f_unclipped(t+1).
+!       - (1/dt_clip) * B_fnc(t) * f_unclipped(t+1).
 !
 !       Note:  When the term is brought over to the left-hand side, the
 !              sign is reversed and the leading "-" in front of the 
@@ -304,12 +376,10 @@
 
         ! Input Variables
         real(kind=time_precision), intent(in) :: 
-     .  dt_clip ! Time scale for semi-implicit clipping term.   [s]
+     .  dt_clip ! Time scale for semi-implicit clipping term.        [s]
 
         real, intent(in) ::
-     .  f_diff, ! Difference between the threshold value and f_unclipped.
-     .  A_fnc,  ! Sigmoidal function approximation to Heaviside Step function.
-     .  B_fnc   ! Derivative w/ respect to f_diff of sigmoidal function, A_fnc.
+     .  B_fnc   ! Derivative w/ respect to f_diff of function A_fnc. []
 
         ! Return Variable
         real :: lhs_contribution
@@ -317,7 +387,7 @@
 
         ! Main diagonal: [ x f_unclipped(k,<t+1>) ]
         lhs_contribution
-     .  = + (1.0/dt_clip) * ( ( 1.0 - A_fnc ) - B_fnc * f_diff )
+     .  = + (1.0/dt_clip) * B_fnc
 
 
         end function compute_clip_lhs
@@ -335,15 +405,13 @@
 !       upper threshold is:
 !
 !       + (1/dt_clip)
-!        * {   B_fnc * f_diff(t) * f_diff(t)
-!            + [ ( 1 - A_fnc ) - B_fnc * f_diff(t) ] * upper_threshold }.
-!       
+!         * { A_fnc - B_fnc * f_diff(t) + B_fnc * upper_threshold }.
+!
 !       The explicit (RHS) portion of the equation for clipping with the
 !       lower threshold is:
 !
 !       - (1/dt_clip)
-!        * {   B_fnc * f_diff(t) * f_diff(t)
-!            - [ ( 1 - A_fnc ) - B_fnc * f_diff(t) ] * lower_threshold }.
+!         * { A_fnc - B_fnc * f_diff(t) - B_fnc * lower_threshold }.
 !
 !       Timestep index (t) stands for the index of the current timestep.
 !
@@ -361,12 +429,12 @@
 
         ! Input Variables
         real(kind=time_precision), intent(in) :: 
-     .  dt_clip            ! Time scale for semi-implicit clipping term.   [s]
+     .  dt_clip            ! Time scale for semi-implicit clipping term.        [s]
 
         real, intent(in) ::
-     .  f_unclipped,       ! The unclipped value of variable f at timestep (t).
-     .  upper_threshold,   ! Greatest allowable value of variable f.
-     .  lower_threshold    ! Smallest allowable value of variable f.
+     .  f_unclipped,       ! The unclipped value of variable f at timestep (t). [f units]
+     .  upper_threshold,   ! Greatest allowable value of variable f.            [f units]
+     .  lower_threshold    ! Smallest allowable value of variable f.            [f units]
 
         logical, intent(in) ::
      .  lupper_thresh,   ! Flag for having an upper threshold value.
@@ -377,11 +445,11 @@
 
         ! Local Variables
         real ::
-     .  f_diff,    ! Difference between the threshold value and f_unclipped.
-     .  A_fnc,     ! Sigmoidal function approximation to Heaviside Step function.
-     .  B_fnc,     ! Derivative w/ respect to f_diff of sigmoidal function, A_fnc.
-     .  rhs_upper, ! Contribution of upper threshold to explicit portion (RHS).
-     .  rhs_lower  ! Contribution of lower threshold to explicit portion (RHS).
+     .  f_diff,    ! Difference between the threshold value and f_unclipped.    [f units]
+     .  A_fnc,     ! Function that approximates { f_diff * [ 1 - H(f_diff) ] }. [f units]
+     .  B_fnc,     ! Derivative w/ respect to f_diff of function A_fnc.         []
+     .  rhs_upper, ! Contribution of upper threshold to explicit portion (RHS). [s^-1]
+     .  rhs_lower  ! Contribution of lower threshold to explicit portion (RHS). [s^-1]
 
 
         ! Upper Threshold
@@ -400,9 +468,7 @@
            ! the upper threshold. 
            rhs_upper 
      .     = + (1.0/dt_clip) 
-     .        * (   B_fnc * f_diff * f_diff
-     .            + ( ( 1.0 - A_fnc ) - B_fnc * f_diff )
-     .              * upper_threshold   )
+     .         * ( A_fnc - B_fnc * f_diff + B_fnc * upper_threshold )
 
         else
 
@@ -427,9 +493,7 @@
            ! the lower threshold. 
            rhs_lower 
      .     = - (1.0/dt_clip) 
-     .        * (   B_fnc * f_diff * f_diff
-     .            - ( ( 1.0 - A_fnc ) - B_fnc * f_diff )
-     .              * lower_threshold   )
+     .         * ( A_fnc - B_fnc * f_diff - B_fnc * lower_threshold )
 
         else
 
@@ -475,30 +539,46 @@
         implicit none
 
         ! Constant parameter
-        real, parameter :: alpha_clip = 10.0
+        real, parameter :: sigma_coef = 0.04
 
         ! Input Variable
         real, intent(in) ::
-     .  f_diff   ! Difference between the threshold value and f_unclipped.
+     .  f_diff   ! Difference between the threshold value and f_unclipped.   [f units]
 
         ! Output Variables
         real, intent(out) ::
-     .  A_fnc,  ! Sigmoidal function approximation to Heaviside Step function.
-     .  B_fnc   ! Derivative w/ respect to f_diff of sigmoidal function, A_fnc.
+     .  A_fnc,  ! Function that approximates { f_diff * [ 1 - H(f_diff) ] }. [f units]
+     .  B_fnc   ! Derivative w/ respect to f_diff of function A_fnc.         []
 
+        real :: sigma_val
 
-        ! A_fnc is a sigmoidal function that approximates the Heaviside 
-        ! Step function.  This is needed because the Heaviside Step 
-        ! function is not differentiable at point f_diff = 0.  The 
-        ! sigmoidal function is differentiable at all points.  It is
+        ! NOTE BY BRIAN:  THIS FUNCTION STILL NEEDS TO BE COMPLETED PROPERLY.
+
+        sigma_val = sigma_coef
+
+        ! A_fnc is a three-piece function that approximates function 
+        ! R(f_diff) = { f_diff * [ 1 - H(f_diff) ] }.  This is needed 
+        ! because the R(f_diff) is not differentiable at point 
+        ! f_diff = 0, as the function has a corner at that point.
+        ! Function A_fnc is differentiable at all points.  It is 
         ! evaluated for f_diff at timestep index (t).
-        A_fnc = 1.0 / ( 1.0 + exp( -alpha_clip * f_diff ) )
+        if ( f_diff <= -sigma_val ) then
+           A_fnc = f_diff
+        elseif ( f_diff >= sigma_val ) then
+           A_fnc = 0.0
+        else ! -sigma_val < f_diff < sigma_val
+           A_fnc = 0.0
+        endif
 
-        ! B_fnc is the derivative with respect to f_diff of sigmoidal 
-        ! function A_fnc.  It is evaluated for f_diff at timestep 
-        ! index (t).
-        B_fnc = ( alpha_clip * exp( -alpha_clip * f_diff ) )
-     .          / ( 1.0 + exp( -alpha_clip * f_diff ) )**2
+        ! B_fnc is the derivative with respect to f_diff of function 
+        ! A_fnc.  It is evaluated for f_diff at timestep index (t).
+        if ( f_diff <= -sigma_val ) then
+           B_fnc = 1.0
+        elseif ( f_diff >= sigma_val ) then
+           B_fnc = 0.0
+        else ! -sigma_val < f_diff < sigma_val
+           B_fnc = 0.0
+        endif
 
 
         end subroutine compute_functions_A_B
