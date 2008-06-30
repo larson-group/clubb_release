@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: lba.F,v 1.15 2008-06-24 19:43:37 faschinj Exp $
+! $Id: lba.F,v 1.16 2008-06-30 19:23:06 faschinj Exp $
         module lba
 
 !       Description:
@@ -74,7 +74,7 @@
         ! Local Variables
         real, dimension(nzrad) :: radhtz
         real :: a
-        integer :: k, i1, i2
+        integer :: i1, i2
 
         ! Large scale subsidence
         wmt(1:gr%nnzp) = 0.0
