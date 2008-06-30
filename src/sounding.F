@@ -1,4 +1,4 @@
-! $Id: sounding.F,v 1.19 2008-06-16 17:25:10 faschinj Exp $
+! $Id: sounding.F,v 1.20 2008-06-30 18:16:32 faschinj Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
         module sounding
@@ -82,9 +82,6 @@
         namelist /scalar_sounding/ sclr, edsclr
 
         integer :: i, j, k  ! Loop indices
-
-        real, dimension(nmaxsnd) ::
-     .  dummy
 
         ! Is this model being extended by 1976 Standard Atmosphere?
         logical :: lstd_atmo
@@ -277,11 +274,11 @@
 
         ! Input Variables
 
-        character*(*) fname
+        character*(*), intent(in) :: fname
 
         ! Output
 
-        real, dimension(gr%nnzp) :: x
+        real, dimension(gr%nnzp), intent(out) :: x
 
         ! Local variables
 
