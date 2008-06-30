@@ -75,7 +75,7 @@
      .  sclr_tndcy ! Passive scalar LS tendency            [units/s]
 
         ! Local Variables, general
-        integer :: i, k ! Loop indices
+        integer :: k ! Loop index
         real    :: t_tendency ! Temperature (not potential temperature) tendency [K s^-1]
 
         ! Compute vertical motion
