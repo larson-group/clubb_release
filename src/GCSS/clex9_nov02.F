@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: clex9_nov02.F,v 1.18 2008-06-24 20:13:45 ajsmith4 Exp $
+! $Id: clex9_nov02.F,v 1.19 2008-06-30 18:27:25 faschinj Exp $
         module clex9_nov02
 
 !       Description:
@@ -144,7 +144,7 @@
      .  radht_SW ! Short wave radiative heating [K/s]
 
         real, dimension(gr%nnzp) :: 
-     .  LWP,       ! Liquid water path                              [kg/m^2]
+!     .  LWP,       ! Liquid water path                              [kg/m^2]
      .  thm_rad,   ! Flipped array of potential temp.               [K]
      .  rcm_rad,   ! Flipped array of liq. water mixing ratio       [kg/kg]
      .  rhot_rad,  ! Flipped array of air density                   [kg/m^3]
