@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: lapack_wrap.F,v 1.10 2008-06-20 17:56:21 faschinj Exp $
+! $Id: lapack_wrap.F,v 1.11 2008-06-30 19:52:44 faschinj Exp $
         module lapack_wrap
 
 !       Description:
@@ -59,7 +59,7 @@
         character(len=*), intent(in) :: 
      .  solve_type ! Used to write a message if this fails
 
-        integer :: 
+        integer, intent(in) :: 
      .  ndim, ! N-dimension of matrix
      .  nrhs  ! # of right hand sides to back subst. after LU-decomp.
 
@@ -190,7 +190,7 @@
         character(len=*), intent(in) :: 
      .  solve_type ! Used to write a message if this fails
 
-        integer :: 
+        integer, intent(in) :: 
      .  ndim, ! N-dimension of matrix
      .  nrhs  ! # of right hand sides to back subst. after LU-decomp.
 
