@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: outputgrads.F,v 1.15 2008-06-24 19:44:01 faschinj Exp $
+! $Id: outputgrads.F,v 1.16 2008-06-30 19:14:17 faschinj Exp $
         module outputgrads
 #ifdef STATS 
 
@@ -221,8 +221,7 @@
      .    i, nx, ny, nz,
      .    ihour, imin,
      .    ia_in, iz_in, ntimes_in, nvar_in,
-     .    day_in, month_in, year_in,
-     .    ios
+     .    day_in, month_in, year_in
 
           real(kind=time_precision) :: dtwrite_in
 
@@ -400,6 +399,13 @@
 
           deallocate ( z_in ) 
 
+          ! The purpose of this statement is to avoid a compiler warning
+          ! for tmp
+          if (tmp =="") then
+          endif
+          ! Joshua Fasching June 2008
+
+
           return
           end subroutine check_grads
 
@@ -424,7 +430,7 @@
 
           ! Local Variables
           integer :: 
-     .    i, k, ! Loop indices
+     .    i,    ! Loop indices
      .    ios   ! I/O status
 
           character(len=15) :: date
