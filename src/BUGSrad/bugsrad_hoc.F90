@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_hoc.F90,v 1.34 2008-06-24 19:43:30 faschinj Exp $
+! $Id: bugsrad_hoc.F90,v 1.35 2008-06-30 18:19:40 faschinj Exp $
 module bugsrad_hoc_mod
 
 implicit none
@@ -81,7 +81,7 @@ subroutine bugsrad_hoc &
   lat_in_degrees,&! Latitude   [Degrees North]
   lon_in_degrees  ! Longitude  [Degrees East]
 
-  real(kind=time_precision) :: &
+  real(kind=time_precision), intent(in) :: &
   time ! Model time [s]
   
   integer, intent(in) :: &
