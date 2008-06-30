@@ -1,4 +1,4 @@
-!$Id: saturation.F,v 1.4 2008-05-30 16:24:25 faschinj Exp $
+!$Id: saturation.F,v 1.5 2008-06-30 18:57:38 faschinj Exp $
 
         module saturation
 
@@ -202,6 +202,8 @@
      .      Cp, ! Variable(s)
      .      Lv
 
+        implicit none
+
         REAL, INTENT(IN):: thlm
         REAL, INTENT(IN):: rtm
         REAL, INTENT(IN):: p
@@ -216,9 +218,11 @@
 
         REAL, PARAMETER:: tolerance = 0.001
 
-
+        ! Default initialization
         theta = thlm
         iteration = 0
+        too_high = 0.0
+        too_low = 0.0
 
         DO
 
