@@ -1,7 +1,7 @@
 #define SCLR_CO2 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: cobra.F,v 1.12 2008-06-24 19:43:37 faschinj Exp $
+! $Id: cobra.F,v 1.13 2008-06-30 18:41:22 faschinj Exp $
         module cobra
 !       Description:
 !       Contains subroutines for the COBRA CO2 case.
@@ -130,8 +130,8 @@
 
         ! Parameter Constants
         real, parameter ::
-     .  ubmin = 0.25,
-     .  M_da  = 0.02897  ! Molecular weight of dry air.
+     .  ubmin = 0.25
+!     .  M_da  = 0.02897  ! Molecular weight of dry air.
 
         ! Input variables
         real(kind=time_precision), intent(in) :: 
@@ -158,8 +158,6 @@
      .  wpedsclrp_sfc ! w' edsclr' surface flux       [units m/s]
 
         ! Local variables
-        integer :: i, j
-
         real :: 
      .  usfc, vsfc, ubar,
      .  true_time,
@@ -167,13 +165,20 @@
      .  heat_flx2, moisture_flx2,
      .  bflx
 
-        real :: CO2_flx, CO2_flx2
+#ifdef SCALARS
+        real :: CO2_flx
+#endif /* SCALARS */
+
+        real :: CO2_flx2
+
 
 !       COBRA roughness height
 !        real, parameter :: z0 = 0.035  ! ARM momentum roughness height
         real, parameter :: z0 = 1.75   ! momentum roughness height
 
 ! Compute heat and moisture fluxes from ARM data in (W/m2)
+
+        CO2_flx2 = 0.0 ! Default initialization 
 
         true_time = time
         call cobra_sfcflx( true_time, heat_flx, moisture_flx
