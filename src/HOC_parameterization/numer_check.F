@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F,v 1.29 2008-06-20 14:11:57 faschinj Exp $
+! $Id: numer_check.F,v 1.30 2008-06-30 19:19:56 faschinj Exp $
         module numerical_check
 
         implicit none
@@ -266,7 +266,7 @@
         real, intent(in), dimension(gr%nnzp) :: 
      .  cf ! Cloud fraction.     [%]
 
-        character(len=*) :: prefix ! Location where subroutine is called
+        character(len=*), intent(in) :: prefix ! Location where subroutine is called
         
 #ifdef SCALARS
         ! Optional Input Variables
@@ -287,8 +287,10 @@
 
         character(len=25), parameter :: 
      .  proc_name = "parameterization_timestep"
-        
+
+#ifdef SCALARS        
         integer :: i
+#endif /*SCALARS*/
 
         real, dimension(gr%nnzp) :: rvm
 
@@ -484,14 +486,14 @@
      .  proc_name = "Before BUGSrad."
 
         real,dimension(gr%nnzp) :: rvm
-        integer :: k 
+ 
 !-------------------------------------------------------------------------
         rvm = rtm - rcm
         call check_negative( thlm, gr%nnzp ,"thlm", proc_name )
         call check_negative( rcm, gr%nnzp ,"rcm", proc_name )
         call check_negative( rtm, gr%nnzp ,"rtm", proc_name )
         call check_negative( rvm, gr%nnzp ,"rvm", proc_name )
-        call check_negative( ricem, gr%nnzp ,"ricem", proc_name )        
+        call check_negative( ricem, gr%nnzp ,"ricem", proc_name )
         call check_negative( cf, gr%nnzp ,"cf", proc_name )
         call check_negative( p, gr%nnzp ,"p", proc_name )
         call check_negative( exner, gr%nnzp ,"exner", proc_name )
