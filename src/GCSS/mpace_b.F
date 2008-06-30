@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_b.F,v 1.17 2008-06-24 19:43:37 faschinj Exp $
+! $Id: mpace_b.F,v 1.18 2008-06-30 19:28:05 faschinj Exp $
         module mpace_b
 
 !       Description:
@@ -157,7 +157,7 @@
      .  radht_theta,
      .  radht_LW_theta,
      .  radht_SW_theta,
-     .  LWP,            ! Liquid water path                              [kg/m^2]
+!     .  LWP,            ! Liquid water path                              [kg/m^2]
      .  thm_rad,        ! Flipped array of potential temp.               [K]
      .  rcm_rad,        ! Flipped array of liq. water mixing ratio       [kg/kg]
      .  rhot_rad,       ! Flipped array of air density                   [kg/m^3]
@@ -173,17 +173,17 @@
 
         ! Local variables, on/off switches for individual schemes
         logical :: 
-     .  subs_on,
      .  lw_on,
      .  sw_on,
+!     .  subs_on,
      .  center
 
 !-----------------------------------------------------------------------
 
         ! Set which schemes to use
-        subs_on         = .TRUE.
         lw_on           = .TRUE.
         sw_on           = .TRUE.
+!        subs_on         = .TRUE.
         center          = .TRUE.
 
         ! Compute vertical motion
