@@ -1,4 +1,4 @@
-! $Id: rad_lwsw.F,v 1.7 2008-05-30 16:24:23 faschinj Exp $
+! $Id: rad_lwsw.F,v 1.8 2008-06-30 19:32:29 faschinj Exp $
 !-----------------------------------------------------------------------
       module rad_lwsw_mod
       
@@ -423,9 +423,9 @@
 
       real :: taupath, tauc, t1, t2, t3, c1, c2, omegade,
      .     x1, x2, x3, rk, rk2, xi_abs2, rp, alpha, beta, rtt,
-     .     exmu0, expk, exmk, xp23p, xm23p, ap23b, am23b, taucde
+     .     exmu0, expk, exmk, xp23p, xm23p, ap23b, taucde
 
-      integer :: i, j, k
+      integer :: k
 
       real :: ff, gcde
 
