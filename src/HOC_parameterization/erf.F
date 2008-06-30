@@ -1,4 +1,4 @@
-! $Id: erf.F,v 1.4 2008-05-30 16:05:15 faschinj Exp $
+! $Id: erf.F,v 1.5 2008-06-30 19:51:27 faschinj Exp $
         module anl_erf
 
         implicit none
@@ -49,6 +49,9 @@
 !-----------------------------------------------------------------------
 
         implicit none
+
+        ! Input Variables(s)
+        double precision, intent(in) :: x 
 
         ! External
         intrinsic :: epsilon, exp, aint
@@ -110,7 +113,6 @@
         ! Local variables
         real( kind = 8 ) :: 
      .  del,
-     .  x,
      .  xabs,
      .  xden,
      .  xnum,
@@ -220,7 +222,7 @@
         intrinsic :: real
 
         ! Input Variables
-        real( kind=4 ) :: x
+        real( kind=4 ), intent(in) :: x
 
         ! Return type
         real( kind=4 ) :: erfx
