@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_0003.F,v 1.15 2008-06-24 19:43:36 faschinj Exp $
+! $Id: arm_0003.F,v 1.16 2008-06-30 18:24:22 faschinj Exp $
         module arm_0003
 
 !       Description:
@@ -57,6 +57,8 @@
 
         use stats_precision, only: time_precision ! Variable(s)
 
+        use error_code, only: clubb_debug ! Procedure(s)
+
         implicit none
 
         ! External
@@ -90,6 +92,8 @@
         ! Thetal forcing is equal to the LS tendency given here and the
         ! interactive calculation done in BUGSrad
 
+        time_frac = -1.0 ! Default initialization
+
         if ( time == times(1) ) then
           time_frac = 0.0
           i1 = 1
@@ -109,6 +113,11 @@
               i1 = i2
           end do
         end if ! time <= times(1)
+
+        if (time_frac == -1.0) then
+                call clubb_debug
+     .             (1,"times not sorted in arm_0003_tndcy")
+        endif
         
         ! Interpolate LS thetal tendency to the HOC grid
         ! Time
@@ -220,6 +229,11 @@
         real :: ubar, bflx, heat_flx, moisture_flx, time_frac
         integer :: i1, i2
 !----------------------------------------------------------------------
+
+        ! Default Initialization
+        heat_flx = 0.0
+        moisture_flx = 0.0
+
         if ( time <= times(1) ) then
           heat_flx     = SE(1)
           moisture_flx = LE(1)
