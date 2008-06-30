@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.23 2008-06-30 13:53:07 faschinj Exp $
+!  $Id: stats_subs.F,v 1.24 2008-06-30 19:54:11 faschinj Exp $
       module stats_subs
 #ifdef STATS
  
@@ -96,14 +96,14 @@
 
       integer, intent(in) :: iunit  ! File unit for fnamelist
 
-      character(len=*) :: 
+      character(len=*), intent(in) :: 
      .  fnamelist,   ! Filename holding the &statsnl
      .  fname_prefix,! Start of the stats filenames
      .  stats_fmt_in ! Format of the stats file output
 
       logical, intent(in) :: lstats_in ! Stats on? T/F
 
-      real(kind=time_precision) :: 
+      real(kind=time_precision), intent(in) :: 
      .  stats_tsamp_in, ! Sampling interval   [s]
      .  stats_tout_in   ! Output interval     [s]
 
@@ -145,7 +145,7 @@
 
       character(len=200) :: fdir, fname
 
-      integer :: i, k, ntot
+      integer :: i, ntot
 
       ! Initialize
       lerror = .false.
@@ -652,6 +652,7 @@
       call stats_zero( zt%kk, zt%nn, zt%x, zt%n, zt%in_update )
       call stats_zero( zm%kk, zm%nn, zm%x, zm%n, zm%in_update )
       call stats_zero( sfc%kk, sfc%nn, sfc%x, sfc%n, sfc%in_update )
+
 
       return
       end subroutine stats_end_timestep
@@ -1200,6 +1201,12 @@
         deallocate( zt%z )
 
         deallocate( zt%x, stat=i )
+
+        if ( i > 0 ) print *,"Deallocate failure"
+
+
+
+
         deallocate( zt%n )
         deallocate( zt%in_update )
 
