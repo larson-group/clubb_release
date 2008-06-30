@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.100 2008-06-24 19:44:01 faschinj Exp $
+! $Id: parameterization_interface.F,v 1.101 2008-06-30 19:06:53 faschinj Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -288,9 +288,7 @@
 #endif /*SCALARS*/
 
        ! Local Variables
-       integer :: i, j, k, km1, kp1
-
-       logical :: ltmp
+       integer :: k
 
        real, dimension(gr%nnzp) ::
      . tmp1, gamma_Skw_fnc
@@ -318,7 +316,7 @@
 
 ! A true/false flag that determines whether
 !     the PDF allows us to construct a sample
-       logical sample_flag
+!       logical sample_flag
 
        integer, dimension(gr%nnzp, nt_repeat, d_variables+1) 
      . :: p_height_time ! matrix of rand ints
@@ -327,7 +325,6 @@
        real :: crt1, crt2, cthl1, cthl2   
 
 !-------- End Latin hypercube section ----------------------------------
-
 
 !-------- Test input variables ----------------------------------------
        if ( clubb_at_debug_level( 2 ) ) then
@@ -842,6 +839,8 @@
      . )
        endif
 !-----------------------------------------------------------------------
+
+
 
        return
        end subroutine parameterization_timestep
