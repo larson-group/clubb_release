@@ -86,8 +86,7 @@
 !       real :: alpha ! Coefficient for matrix 'A'
 
         integer :: 
-     .  k, km1, kmhalf, kp1, kphalf ! Loop indices
-
+     .  k, kmhalf, kp1, kphalf ! Loop indices
 
         real, dimension(gr%nnzp) ::
      .  flux_plus, flux_minus,! [F_i+1/2]^+ [F_i+1/2]^- in Smolarkiewicz 
@@ -116,6 +115,11 @@
           kabove = 1
           kbelow = 0
         else
+          ! This is only necessary to avoid a compiler warning in g95
+          kabove = -1
+          kbelow = -1
+          ! Joshua Fasching June 2008
+
           stop "Error in pos_def_adj"
         end if
 
