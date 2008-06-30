@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F,v 1.15 2008-06-25 21:56:00 dschanen Exp $
+! $Id: compute_um_edsclrm_mod.F,v 1.16 2008-06-30 19:50:25 faschinj Exp $
 !------------------------------------------------------------------------
         module compute_um_edsclrm_mod
 
@@ -331,7 +331,7 @@
      .    xm, ! u/v wind                                       [m/s]   
      .    wmt ! wm on thermodynaming grid                     [m/s]
 
-          real :: 
+          real, intent(in) :: 
      .    fcor ! Coriolis forcing                             [s^-1]
 
           real, dimension(gr%nnzp), intent(in) ::
