@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: KK_microphys.F,v 1.11 2008-06-24 18:13:57 faschinj Exp $
+! $Id: KK_microphys.F,v 1.12 2008-06-30 19:46:41 faschinj Exp $
 
       module rain_equations
 
@@ -193,8 +193,8 @@
      .  Nrm_cond,    ! Change in Nrm due to condensation        [(num/kg)/s]
      .  Nrm_auto,    ! Change in Nrm due to autoconversion      [(num/kg)/s]
      .  mean_vol_rad,! Mean volume radius                       [m]
-     .  rvm,         ! Water vapor mixing ratio                 [kg/kg]
-     .  es,          ! Saturation vapor pressure                [Pa]
+!     .  rvm,         ! Water vapor mixing ratio                 [kg/kg]
+!     .  es,          ! Saturation vapor pressure                [Pa]
      .  Supsat,      ! Supersaturation                          [-]
      .  rsm          ! Saturation mixing ratio                  [kg/kg]
 
@@ -208,11 +208,11 @@
      .  corr_sNc_NL  ! Correlation of s and Nc  []
 
         real :: 
-     .  e,      ! Vapor pressure                [Pa]
+!     .  e,      ! Vapor pressure                [Pa]
      .  Beta_T  ! Beta_T                        [kg/kg]
 
         ! Array indices
-        integer :: k, km1, kp1, i
+        integer :: k
 
 ! DESCRIPTION:
 !
@@ -474,23 +474,23 @@
 
            ! Find the important conditions
 
-           rvm(k) = rtm(k) - rcm(k)   ! rvm is water vapor mixing ratio.
+!           rvm(k) = rtm(k) - rcm(k)   ! rvm is water vapor mixing ratio.
 
            ! Find current vapor pressure.
-           e = (p(k)*rvm(k))/(ep + rvm(k))
+!           e = (p(k)*rvm(k))/(ep + rvm(k))
 
            ! Saturation mixing ratio
            rsm(k) = rsat( p(k), T_in_K(k) )
 
            ! Find saturation vapor pressure.
-           es(k) = (p(k)*rsm(k))/(ep + rsm(k))
+!           es(k) = (p(k)*rsm(k))/(ep + rsm(k))
 
         end do ! 2..gr%nnzp
 
         ! Set the boundary conditions
-        rvm(1)          = 0.0
+!        rvm(1)          = 0.0
         rsm(1)          = 0.0
-        es(1)           = 0.0
+!        es(1)           = 0.0
         Supsat(1)       = 0.0
         Supsat(gr%nnzp) = 0.0
 
@@ -649,6 +649,8 @@
         
         USE model_flags, only:
      .      local_kk ! Variable(s)
+
+        implicit none
 
         ! Input variables.
         REAL, INTENT(IN):: rrm          ! Grid-box average rrm     [kg kg^-1]
@@ -823,6 +825,8 @@
 
         USE saturation, only: 
      .      rsat ! Variable(s)
+
+        implicit none
 
         ! Input variables.
         REAL, INTENT(IN):: rrm          ! Grid-box average rrm     [kg kg^-1]
@@ -1848,8 +1852,9 @@
      .                           *sigma_rrG*beta_exp*sigma_NrG*gamma_exp
      .                        )
      .          )
+         ELSE
+!        ELSEIF ( .not. use_eq_1 .AND. mu_siG >=  0.0 ) THEN
 
-        ELSEIF ( .not. use_eq_1 .AND. mu_siG >=  0.0 ) THEN
            ! Case where sigma_siG is equal to 0 (or sigma_siG is sufficiently
            ! small enough to cause the parabolic cylinder function to produce a
            ! result greater than what the computer can represent numerically)
@@ -2083,6 +2088,9 @@
         DOUBLE PRECISION, PARAMETER:: limit = 10.0d0**308
         REAL, PARAMETER:: sigs_tol = 10.0**(-18)
 
+        sci = 0.0 ! Arbitrary default value
+        ! Joshua Fasching June 2008
+
         !----- Section #1 ------------------------------------------------------
 
         !!!!!!!!!! Convert all means, standard deviations, and correlations
@@ -2178,7 +2186,8 @@
      .     * EXP(   mu_xxG*beta_exp
      .            + (1.0/2.0)*(sigma_xxG**2.0)*(beta_exp**2.0) )
 
-        ELSEIF ( .not. use_eq_1 .AND. mu_siG <=  0.0 ) THEN
+!        ELSEIF ( .not. use_eq_1 .AND. mu_siG <=  0.0 ) THEN
+         ELSE
            ! Case where sigma_siG is equal to 0 (or sigma_siG is sufficiently
            ! small enough to cause the parabolic cylinder function to produce a
            ! result greater than what the computer can represent numerically)
