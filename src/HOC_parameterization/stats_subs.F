@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.22 2008-06-24 19:44:02 faschinj Exp $
+!  $Id: stats_subs.F,v 1.23 2008-06-30 13:53:07 faschinj Exp $
       module stats_subs
 #ifdef STATS
  
@@ -650,7 +650,7 @@
 
       ! Reset sample fields
       call stats_zero( zt%kk, zt%nn, zt%x, zt%n, zt%in_update )
-      call stats_zero( zm%kk, zm%nn, zm%x, zm%n, zt%in_update )
+      call stats_zero( zm%kk, zm%nn, zm%x, zm%n, zm%in_update )
       call stats_zero( sfc%kk, sfc%nn, sfc%x, sfc%n, sfc%in_update )
 
       return
