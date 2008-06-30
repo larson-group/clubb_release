@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: grid.F,v 1.23 2008-05-30 16:24:24 faschinj Exp $
+! $Id: grid.F,v 1.24 2008-06-30 19:52:10 faschinj Exp $
 !===============================================================================
         module grid_class
 
@@ -743,6 +743,13 @@
 
 
            endif
+
+
+           ! The purpose of this if statement is to avoid a compiler
+           ! warning.
+           if ( generic_input_item > 0 ) then
+           end if
+           ! Joshua Fasching  June 2008
 
 
            return
