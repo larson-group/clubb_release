@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-!$Id: cloud_sed_mod.F,v 1.5 2008-06-24 18:13:57 faschinj Exp $
+!$Id: cloud_sed_mod.F,v 1.6 2008-06-30 18:34:37 faschinj Exp $
         module cloud_sed_mod
 
         implicit none
@@ -29,7 +29,8 @@
 #ifdef STATS
         use stats_type, only: stat_update_var ! Procedure(s)
 
-        use stats_variables, only: ised_rcm, iFcsed, zt, zm, lstats_samp ! Variable(s)
+        use stats_variables, only: 
+     .      ised_rcm, iFcsed, zt, zm, lstats_samp ! Variable(s)
 #endif
 
         implicit none
