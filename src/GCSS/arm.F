@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm.F,v 1.15 2008-06-24 19:43:36 faschinj Exp $
+! $Id: arm.F,v 1.16 2008-06-30 18:22:09 faschinj Exp $
         module arm
 
 !       Description:
@@ -205,9 +205,6 @@
      .  wpedsclrp_sfc   ! Passive eddy-scalar surface flux [units m/s]
 
         ! Internal variables
-
-        integer :: i, j ! Loop indices
-
         real :: 
      .  usfc, 
      .  vsfc, 
