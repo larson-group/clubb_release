@@ -1,4 +1,4 @@
-! $Id: cloud_rad.F,v 1.3 2008-05-30 16:24:23 faschinj Exp $
+! $Id: cloud_rad.F,v 1.4 2008-06-30 18:31:28 faschinj Exp $
 !----------------------------------------------------------------------
         module atex_cloud_rad
 
@@ -53,7 +53,7 @@
         ! Local Variables
         real, dimension(1:gr%nnzp) :: LWP        ! Liquid Water Path
 
-        integer :: k, km1, kp1
+        integer :: k
 
 
         ! Compute liquid water path from top of the model
