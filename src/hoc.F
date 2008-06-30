@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.199 2008-06-24 19:43:26 faschinj Exp $
+! $Id: hoc.F,v 1.200 2008-06-30 17:53:14 faschinj Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -164,8 +164,9 @@
 #ifdef STATS
         use stats_variables, only: lstats_last ! Variable(s
 
-        use stats_subs, only: stats_begin_timestep, stats_end_timestep, ! Procedure(s)
-     .                        stats_finalize, stats_init
+        use stats_subs, only: 
+     .      stats_begin_timestep, stats_end_timestep, ! Procedure(s)
+     .      stats_finalize, stats_init
 
 #endif /*STATS*/
 
@@ -588,8 +589,9 @@
 !       function zm2zt (from grid_class)
 !-----------------------------------------------------------------------
 
-        use constants, only: hydromet_dim, Cp, Lv, ep2, ep1, emin, wtol, ! Variable(s)
-     .                       sclr_dim
+        use constants, only: 
+     .      hydromet_dim, Cp, Lv, ep2, ep1, emin, wtol, ! Variable(s)
+     .      sclr_dim
         use parameters, only: T0, taumax, taumin, c_K ! Variable(s)
 
         use grid_class, only: gr ! Variable(s)
@@ -1122,20 +1124,21 @@
 !       Execute the necessary steps for the initialization of the 
 !       HOC model to a designated point in the submitted GrADS file. 
 !-----------------------------------------------------------------------
-        use inputfields,only: datafile, input_type, input_um, input_vm, ! Variable(s)
-     .                  input_rtm, input_thlm, input_wp2, input_ug,
-     .                  input_vg, input_rcm, input_wmt, input_exner,
-     .                  input_em, input_p, input_rhot, input_rhom,
-     .                  input_Lscale, input_Lup, input_Ldown, input_Kht,
-     .                  input_Khm, input_taum, input_taut, input_thvm, 
-     .                  input_rrm, input_rsnowm, input_ricem, 
-     .                  input_rgraupelm, input_wprtp, input_wpthlp,
-     .                  input_wp3, input_rtp2, input_thlp2, 
-     .                  input_rtpthlp, input_upwp, input_vpwp, 
-     .                  input_thlm_forcing, input_rtm_forcing,  
-     .                  input_up2, input_vp2, input_Scm, input_Ncm,
-     .                  input_Ncnm, input_Nim, input_cf, input_Nrm,
-     .                  input_Sct
+        use inputfields,only: 
+     .      datafile, input_type, input_um, input_vm, ! Variable(s)
+     .      input_rtm, input_thlm, input_wp2, input_ug,
+     .      input_vg, input_rcm, input_wmt, input_exner,
+     .      input_em, input_p, input_rhot, input_rhom,
+     .      input_Lscale, input_Lup, input_Ldown, input_Kht,
+     .      input_Khm, input_taum, input_taut, input_thvm, 
+     .      input_rrm, input_rsnowm, input_ricem, 
+     .      input_rgraupelm, input_wprtp, input_wpthlp,
+     .      input_wp3, input_rtp2, input_thlp2, 
+     .      input_rtpthlp, input_upwp, input_vpwp, 
+     .      input_thlm_forcing, input_rtm_forcing,  
+     .      input_up2, input_vp2, input_Scm, input_Ncm,
+     .      input_Ncnm, input_Nim, input_cf, input_Nrm,
+     .      input_Sct
 
         use inputfields, only: compute_timestep, grads_fields_reader ! Procedure(s)
 
@@ -1202,11 +1205,8 @@
      .  sclrm,  ! Standard passive scalar [units vary]
      .  edsclrm ! Eddy diffusivity passive scalar [units vary]
 #endif
-        ! Local Variables
-        real, dimension(gr%nnzp) :: tmp1
-
        
-        integer :: k, timestep
+        integer :: timestep
 
         ! Inform inputfields module
         datafile = "../"//trim( restart_path_case )
@@ -1380,9 +1380,11 @@
 
         use cobra, only: cobra_tndcy, cobra_sfclyr ! Procedure(s)
 
-        use dycoms2_rf01, only: dycoms2_rf01_tndcy, dycoms2_rf01_sfclyr ! Procedure(s)
+        use dycoms2_rf01, only: 
+     .      dycoms2_rf01_tndcy, dycoms2_rf01_sfclyr ! Procedure(s)
 
-        use dycoms2_rf02, only: dycoms2_rf02_tndcy, dycoms2_rf02_sfclyr ! Procedure(s)
+        use dycoms2_rf02, only: 
+     .      dycoms2_rf02_tndcy, dycoms2_rf02_sfclyr ! Procedure(s)
 
         use cloud_sed_mod, only: cloud_drop_sed ! Procedure(s)
 
@@ -1412,6 +1414,8 @@
 #ifdef radoffline
         use bugsrad_hoc_mod, only: bugsrad_hoc ! Procedure(s)
 #endif
+
+
         implicit none
         
         ! Input Variables
@@ -1433,13 +1437,10 @@
      .    rsnowm, ! Rain water mixing ratio              [kg/kg]
      .    ricem   ! Prisitine ice water mixing ratio     [kg/kg]
 
-        real, dimension(gr%nnzp) :: 
-     .    rtm_mc, ! r_t change due to microphysics     [kg/kg)/s] 
-     .    thlm_mc ! thlm change due to microphysics    [K/s] 
-
         integer :: lin_int_buffer
 
         integer :: k ! Vertical loop index variable
+
 
 !-----------------------------------------------------------------------
 
