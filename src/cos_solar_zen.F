@@ -1,11 +1,14 @@
-! $Id: cos_solar_zen.F,v 1.8 2008-06-24 19:43:26 faschinj Exp $
+! $Id: cos_solar_zen.F,v 1.9 2008-06-30 17:40:11 faschinj Exp $
 !-----------------------------------------------------------------------
         module cos_solar_zen_mod
+
+        implicit none
 
         public :: cos_solar_zen
 
         private ! Default Scope
-        
+
+
         contains
         double precision function cos_solar_zen
      .           ( day, month, year, current_time, lat_in_degrees,
@@ -28,7 +31,8 @@
 
         use stats_precision, only: time_precision ! Variable(s)
 
-        use calendar, only: gregorian2julian, julian2gregorian,leap_year ! Procedure(s)
+        use calendar, only: 
+     .      gregorian2julian, julian2gregorian,leap_year ! Procedure(s)
         
         implicit none
 
@@ -69,7 +73,8 @@
 
         ! Local Variables
         double precision ::
-     .  t, h, 
+     .  t, 
+!     .  h,
      .  delta,
      .  zln,
      .  longang,
@@ -160,6 +165,7 @@
         case( 12:23 )
           zln = 540.00 - hour*15.00
         case default
+          zln = 0.0
           write(unit=fstderr,fmt=*) "Hour=", hour
           stop " > 24 hours in cosine solar zenith code"
         end select
