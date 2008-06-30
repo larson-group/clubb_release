@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F,v 1.16 2008-06-24 19:43:26 faschinj Exp $
+! $Id: microphys_driver.F,v 1.17 2008-06-30 18:11:19 faschinj Exp $
         module microphys_driver
 
 !       Description:
@@ -234,7 +234,7 @@
         ! Brian Griffin.  April 14, 2007.
         real :: overevap_rate ! Absolute value of negative evap. rate.
 
-        integer :: k, km1, kp1 ! Array indices
+        integer :: k ! Array index
 
 !-----------------------------------------------------------------------
 
@@ -1031,7 +1031,9 @@
         real, dimension(3) :: tmp
 
         ! Array indices
-        integer :: k, kp1, km1
+        integer :: k, km1
+
+!       integer kp1
 
 #ifdef STATS
         integer ::
@@ -1086,7 +1088,7 @@
         do k = 1, gr%nnzp, 1
 
           km1 = max( k-1, 1 )
-          kp1 = min( k+1, gr%nnzp )
+!          kp1 = min( k+1, gr%nnzp )
 
           ! Main diagonal
           ! Time Tendency
@@ -1580,8 +1582,8 @@
         real :: xrm_chge_trsed    ! Net change in hm. due to only transport/sed.
         real :: xrm_trsed_only    ! New hm. val. due only to transport/sed.
 
-        real :: evap_amt          ! The actual evaporation amount over the t.s.
-        real :: evap_rate         ! The time-averaged rate.
+!        real :: evap_amt          ! The actual evaporation amount over the t.s.
+!        real :: evap_rate         ! The time-averaged rate.
         real :: overevap_amt      ! The amount of h.m. that was over-evap.
 
         real, dimension(1:3) :: tmp
@@ -1690,9 +1692,9 @@
            ! microphysical tendencies, namely the over-evaporation of xrm.
            ! Find the actual amount of the hydrometeor that evaporated during
            ! the timestep to make the value of xrm go to 0.
-           evap_amt = -xrm_trsed_only
+!           evap_amt = -xrm_trsed_only
            ! Divide by the timestep to find the actual evaporation rate.
-           evap_rate = evap_amt / dt
+!           evap_rate = evap_amt / dt
            ! The amount of the hydrometeor that was artificially excessively
            ! evaporated.  Define as positive.
            overevap_amt = -xrm(k)
@@ -1712,8 +1714,8 @@
            ! evaporation rate, we figure that the transport and sedimentation 
            ! terms made the value of the hydrometeor negative, so we say that 
            ! the evaporation amount and rate is 0.
-           evap_amt = 0.0
-           evap_rate = 0.0
+!           evap_amt = 0.0
+!           evap_rate = 0.0
            ! The amount of the hydrometeor that was artificially excessively
            ! evaporated.  Define as positive.  In this case, any evaporation
            ! that was computed is considered to be over-evaporation.
