@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!$Id: interpolation.F,v 1.4 2008-06-16 17:19:55 faschinj Exp $
+!$Id: interpolation.F,v 1.5 2008-06-30 18:01:10 faschinj Exp $
         module interpolation
 
         implicit none
@@ -70,6 +70,8 @@
 
         high = n 
 
+        i = (low + high) / 2
+
         do while( .not. found .and. low <= high )
                 
                 i = (low + high) / 2
@@ -115,7 +117,8 @@
         real, dimension(dim_out) :: var_out ! [generic units]
 
         ! Local variables
-        integer :: k, kint, km1, kp1,tst
+        integer :: k, kint, km1
+!        integer :: tst, kp1
 
         k = 1
 
@@ -189,6 +192,8 @@
 
 !     Author: Michael Falk for COAMPS.
 !-----------------------------------------------------------------------
+        
+        use error_code, only: clubb_debug ! Procedure
 
         implicit none
 
@@ -262,12 +267,22 @@
 !
 !-----------------------------------------------------------------------
 
+        topbound = -1
+        bottombound = -1
+
         do i=2,nparam
           if ( (xvalue >= xlist(i-1)) .and. (xvalue <= xlist(i)) ) then
             bottombound = i-1
             topbound    = i
           end if
         end do
+
+        if(topbound == -1 .or. bottombound == -1) then
+           call clubb_debug(1, 
+     .         "Sanity check failed! xlist is not properly sorted" )
+           call clubb_debug(1,
+     .         "in linear_interpolation.")
+        endif
 
         tvalue = 
      .   linint( xvalue, xlist(topbound), xlist(bottombound), 
