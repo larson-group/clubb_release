@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: semiimplicit_clip.F,v 1.4 2008-06-29 00:05:39 griffinb Exp $
+! $Id: semiimplicit_clip.F,v 1.5 2008-07-01 15:47:19 griffinb Exp $
 !===============================================================================
         module semiimplicit_clip
 
@@ -15,14 +15,14 @@
 !       Clipping at an Upper Threshold:
 !
 !       When there is an upper threshold to be applied, the equation for
-!       the clipped value of the variable, f_clipped, is:
+!       the clipped value of the variable f, f_clipped, is:
 !
 !       f_clipped(t+1) = MIN( f_unclipped(t+1), upper_threshold )
 !                      = ( f_unclipped(t+1) - upper_threshold )
 !                          * H(upper_threshold-f_unclipped(t+1))
 !                        + upper_threshold;
 !
-!       where f_unclipped is the value of the variable without 
+!       where f_unclipped is the value of the variable f without 
 !       clipping, and H(upper_threshold-f_unclipped(t+1)) is the 
 !       Heaviside Step function.  The clipping term is turned into a 
 !       time tendency term, such that:
@@ -54,13 +54,14 @@
 !       Series expansion (truncated after the first derivative term) of
 !       R(f_diff) around f_diff = f_diff(t) is used to linearize the
 !       term.  However, the Heaviside Step function, H(f_diff), is not 
-!       differentiable when f_diff(t) = 0.  Likewise, the function 
-!       R(f_diff) is not differentiable when f_diff(t) = 0, as the 
-!       function has a corner at that point.  Therefore, a new function,
-!       F_R(f_diff) is used as an approximation of R(f_diff).  Function
-!       F_R(f_diff) is a three-piece function that has the exact same
-!       value as R(f_diff) when f_diff <= -sigma or f_diff >= sigma 
-!       (sigma is an arbitrarily declared value).  However, when 
+!       differentiable when f_diff(t) = 0, as the function jumps at that
+!       point.  Likewise, the function R(f_diff) is not differentiable 
+!       when f_diff(t) = 0, as the function has a corner at that point. 
+!       Therefore, a new function, F_R(f_diff) is used as an 
+!       approximation of R(f_diff).  Function F_R(f_diff) is a 
+!       three-piece function that has the exact same value as R(f_diff) 
+!       when f_diff <= -sigma or f_diff >= sigma (sigma is an 
+!       arbitrarily declared value).  However, when 
 !       -sigma < f_diff < sigma, a parabolic function is used to 
 !       approximate the corner found in R(f_diff).  The parabolic 
 !       function needs to have the same values at f_diff = -sigma and
@@ -128,14 +129,14 @@
 !       Clipping at a Lower Threshold:
 !
 !       When there is a lower threshold to be applied, the equation for
-!       the clipped value of the variable, f_clipped, is:
+!       the clipped value of the variable f, f_clipped, is:
 !
 !       f_clipped(t+1) = MAX( f_unclipped(t+1), lower_threshold )
 !                      = ( f_unclipped(t+1) - lower_threshold )
 !                          * H(f_unclipped(t+1)-lower_threshold)
 !                        + lower_threshold;
 !
-!       where f_unclipped is the value of the variable without 
+!       where f_unclipped is the value of the variable f without 
 !       clipping, and H(f_unclipped(t+1)-lower_threshold) is the 
 !       Heaviside Step function.  The clipping term is turned into a 
 !       time tendency term, such that:
@@ -164,9 +165,9 @@
 !
 !       The linearization process is the same for the lower threshold as
 !       it is for the upper threshold.  The formulas for A_fnc and B_fnc
-!       are the same, but the values (based on f_diff) are different.  
-!       The rate of change of variable f due to clipping with the lower 
-!       threshold is:
+!       are the same, but the values (based on a different f_diff) are 
+!       different.  The rate of change of variable f due to clipping 
+!       with the lower threshold is:
 !
 !       (df/dt)_clipping
 !       = - (1/dt_clip)
@@ -192,10 +193,10 @@
 !       as the variable f.
 !
 !
-!       Tunable parameters:
+!       Adjustable parameters:
 !
-!       sigma:  sigma is the amount of space on either side of the 
-!               threshold value to which the parabolic function portion
+!       sigma:  sigma is the amount on either side of the threshold 
+!               value to which the parabolic function portion 
 !               of F_R(f_diff) is applied.  The value of sigma must be
 !               greater than 0.  A proportionally larger value of sigma
 !               can be used to effect values of f that are near the 
@@ -219,7 +220,7 @@
      .            semiimp_clip_rhs
 
         private :: compute_clip_lhs,
-     .             compute_functions_A_B
+     .             compute_fncts_A_B
 
         contains
 
@@ -235,21 +236,20 @@
 !       The implicit (LHS) portion of the equation for clipping with the
 !       upper threshold is:
 !
-!       - (1/dt_clip) * B_fnc(t) * f_unclipped(t+1).
+!       - (1/dt_clip) * B_fnc * f_unclipped(t+1).
 !       
 !       The implicit (LHS) portion of the equation for clipping with the
 !       lower threshold is:
 !
-!       - (1/dt_clip) * B_fnc(t) * f_unclipped(t+1).
+!       - (1/dt_clip) * B_fnc * f_unclipped(t+1).
 !
 !       Note:  When either term is brought over to the left-hand side, 
 !              the sign is reversed and the leading "-" in front of 
 !              either term is changed to a "+".
 !
-!       Timestep index (t) stands for the index of the current timestep, 
-!       while timestep index (t+1) stands for the index of the next 
-!       timestep, which is being advanced to in solving the d(f)/dt 
-!       equation.
+!       The timestep index (t+1) means that the value of f being used
+!       is from the next timestep, which is being advanced to in solving
+!       the d(f)/dt equation.
 !
 !       While the formulas are the same for both the upper threshold
 !       and the lower threshold, the values of A_fnc, B_fnc, and f_diff
@@ -302,7 +302,9 @@
 
            ! Compute the values of functions A_fnc and B_fnc evaluated 
            ! at f_diff(t) for the upper threshold.
-           call compute_functions_A_B( f_diff, A_fnc, B_fnc )
+           call compute_fncts_A_B( lupper_thresh, upper_threshold, 
+     .                             llower_thresh, lower_threshold, 
+     .                             f_diff, A_fnc, B_fnc )
 
            ! Compute the implicit (LHS) contribution from clipping for 
            ! the upper threshold. 
@@ -325,7 +327,9 @@
 
            ! Compute the values of functions A_fnc and B_fnc evaluated 
            ! at f_diff(t) for the lower threshold.
-           call compute_functions_A_B( f_diff, A_fnc, B_fnc )
+           call compute_fncts_A_B( lupper_thresh, upper_threshold, 
+     .                             llower_thresh, lower_threshold, 
+     .                             f_diff, A_fnc, B_fnc )
 
            ! Compute the implicit (LHS) contribution from clipping for 
            ! the lower threshold. 
@@ -355,16 +359,15 @@
 !
 !       The implicit portion of the semi-implicit clipping term is:
 !
-!       - (1/dt_clip) * B_fnc(t) * f_unclipped(t+1).
+!       - (1/dt_clip) * B_fnc * f_unclipped(t+1).
 !
 !       Note:  When the term is brought over to the left-hand side, the
 !              sign is reversed and the leading "-" in front of the 
 !              term is changed to a "+".
 !
-!       Timestep index (t) stands for the index of the current timestep, 
-!       while timestep index (t+1) stands for the index of the next 
-!       timestep, which is being advanced to in solving the d(f)/dt 
-!       equation.
+!       The timestep index (t+1) means that the value of f being used
+!       is from the next timestep, which is being advanced to in solving
+!       the d(f)/dt equation.
 
 !       References:
 !-----------------------------------------------------------------------
@@ -415,6 +418,9 @@
 !
 !       Timestep index (t) stands for the index of the current timestep.
 !
+!       The values of A_fnc, B_fnc, and f_diff will differ between the 
+!       two thresholds.
+!
 !       The overall explicit (RHS) portion for the clipping term is the
 !       sum of the explicit portion from the upper threshold and the 
 !       explicit portion from the lower threshold.
@@ -462,7 +468,9 @@
 
            ! Compute the values of functions A_fnc and B_fnc evaluated 
            ! at f_diff(t) for the upper threshold.
-           call compute_functions_A_B( f_diff, A_fnc, B_fnc )
+           call compute_fncts_A_B( lupper_thresh, upper_threshold, 
+     .                             llower_thresh, lower_threshold, 
+     .                             f_diff, A_fnc, B_fnc )
 
            ! Compute the explicit (RHS) contribution from clipping for 
            ! the upper threshold. 
@@ -487,7 +495,9 @@
 
            ! Compute the values of functions A_fnc and B_fnc evaluated 
            ! at f_diff(t) for the lower threshold.
-           call compute_functions_A_B( f_diff, A_fnc, B_fnc )
+           call compute_fncts_A_B( lupper_thresh, upper_threshold, 
+     .                             llower_thresh, lower_threshold, 
+     .                             f_diff, A_fnc, B_fnc )
 
            ! Compute the explicit (RHS) contribution from clipping for 
            ! the lower threshold. 
@@ -509,32 +519,46 @@
         end function semiimp_clip_rhs
 
 !===============================================================================
-        subroutine compute_functions_A_B( f_diff, A_fnc, B_fnc )
+        subroutine compute_fncts_A_B( lupper_thresh, upper_threshold, 
+     .                                llower_thresh, lower_threshold, 
+     .                                f_diff, A_fnc, B_fnc )
 
 !       Description:
 !       This subroutine computes the values of two functions used in
-!       semi-implicit clipping.  Both of the functions are based on the 
-!       values of f_diff(t) and the constant parameter alpha_clip.  One 
-!       function is A_fnc, a sigmoidal function that is used to 
-!       approximate the Heaviside Step function.  The other function is 
-!       B_fnc, the derivative with respect to f_diff of the sigmoidal 
-!       function A_fnc.
+!       semi-implicit clipping.  Both of the functions are based on the
+!       values of f_diff(t) and the parameter sigma.  One function is 
+!       A_fnc, which is F_R(f_diff) evaluated at f_diff = f_diff(t).  
+!       F_R(f_diff) is a three-piece function that is used to 
+!       approximate function R(f_diff).  The other function is 
+!       B_fnc, the derivative with respect to f_diff of function A_fnc.
+!       In other words, B_fnc is ( d F_R / d f_diff ) evaluated at 
+!       f_diff = f_diff(t).
 !
 !       The equation for A_fnc is:
 !
-!       A(alpha_clip,f_diff(t)) = 1 / [ 1 + e^(-alpha_clip*f_diff(t)) ];
+!               | f_diff(t);   where f_diff(t) <= -sigma
+!               |
+!       A_fnc = | f_diff(t) - (sigma/4) * [ 1 + (f_diff(t)/sigma) ]^2;
+!               |    where -sigma < f_diff(t) < sigma
+!               |
+!               | 0;   where f_diff(t) >= sigma; 
 !
 !       while the equation for B_fnc is:
 !
-!       B(alpha_clip,f_diff(t)) 
-!            = [ alpha_clip * e^(-alpha_clip*f_diff(t)) ]
-!              / [ 1 + e^(-alpha_clip*f_diff(t)) ]^2;
+!               | 1;   where f_diff(t) <= -sigma
+!               |
+!       B_fnc = | 1 - (1/2) * [ 1 + (f_diff(t)/sigma) ];
+!               |    where -sigma < f_diff(t) < sigma
+!               |
+!               | 0;   where f_diff(t) >= sigma;
 !
 !       where timestep index (t) stands for the index of the current 
 !       timestep.
 
 !       References:
 !-----------------------------------------------------------------------
+
+        use constants, only: eps ! Variable(s)
 
         implicit none
 
@@ -543,23 +567,54 @@
 
         ! Input Variable
         real, intent(in) ::
-     .  f_diff   ! Difference between the threshold value and f_unclipped.   [f units]
+     .  f_diff,   ! Difference between the threshold value and f_unclipped.  [f units]
+     .  upper_threshold,   ! Greatest allowable value of variable f.         [f units]
+     .  lower_threshold    ! Smallest allowable value of variable f.         [f units]
+
+        logical, intent(in) ::
+     .  lupper_thresh,   ! Flag for having an upper threshold value.
+     .  llower_thresh    ! Flag for having a lower threshold value.
 
         ! Output Variables
         real, intent(out) ::
      .  A_fnc,  ! Function that approximates { f_diff * [ 1 - H(f_diff) ] }. [f units]
      .  B_fnc   ! Derivative w/ respect to f_diff of function A_fnc.         []
 
-        real :: sigma_val
+        ! Local Variables
+        real :: sigma_val,      ! Value of parameter sigma.                  [f units]
+     .          thresh_avg_mag  ! Average magnitude of threshold(s).         [f units]
 
-        ! NOTE BY BRIAN:  THIS FUNCTION STILL NEEDS TO BE COMPLETED PROPERLY.
 
-        sigma_val = sigma_coef
+        ! Find the average magnitude of the threshold.  
+        ! In cases where only one threshold applies, the average 
+        ! magnitude of the threshold must be greater than 0.
+        ! Note:  The constant eps is there in case only one threshold
+        !        applies, and it has a value of 0 (or very close to 0).
+        !        However, eps is a very small number, and therefore it 
+        !        will not start curbing values until they get extremely
+        !        close to the threshold.  A larger constant value may 
+        !        work better.
+        if ( lupper_thresh .and. llower_thresh ) then
+           ! Both thresholds apply.
+           thresh_avg_mag = 0.5 * (   abs(upper_threshold) 
+     .                              + abs(lower_threshold)   )
+        elseif ( lupper_thresh ) then
+           ! Only the upper threshold applies.
+           thresh_avg_mag = max( abs(upper_threshold), eps )
+        elseif ( llower_thresh ) then
+           ! Only the lower threshold applies.
+           thresh_avg_mag = max( abs(lower_threshold), eps )
+        endif
+
+        ! Compute the value of sigma based on the magnitude of the 
+        ! threshold(s) for variable f and the sigma coefficient.
+        ! The value of sigma must always be positive.
+        sigma_val = sigma_coef * thresh_avg_mag
 
         ! A_fnc is a three-piece function that approximates function 
-        ! R(f_diff) = { f_diff * [ 1 - H(f_diff) ] }.  This is needed 
-        ! because the R(f_diff) is not differentiable at point 
-        ! f_diff = 0, as the function has a corner at that point.
+        ! R(f_diff(t)) = { f_diff(t) * [ 1 - H(f_diff(t)) ] }.  This is 
+        ! needed because the R(f_diff(t)) is not differentiable at point
+        ! f_diff(t) = 0, as the function has a corner at that point.
         ! Function A_fnc is differentiable at all points.  It is 
         ! evaluated for f_diff at timestep index (t).
         if ( f_diff <= -sigma_val ) then
@@ -567,7 +622,8 @@
         elseif ( f_diff >= sigma_val ) then
            A_fnc = 0.0
         else ! -sigma_val < f_diff < sigma_val
-           A_fnc = 0.0
+           A_fnc = f_diff - ( (sigma_val/4.0) 
+     .                        * ( 1.0 + f_diff/sigma_val )**2 )
         endif
 
         ! B_fnc is the derivative with respect to f_diff of function 
@@ -577,11 +633,11 @@
         elseif ( f_diff >= sigma_val ) then
            B_fnc = 0.0
         else ! -sigma_val < f_diff < sigma_val
-           B_fnc = 0.0
+           B_fnc = 1.0 - (1.0/2.0)*( 1.0 + f_diff/sigma_val )
         endif
 
 
-        end subroutine compute_functions_A_B
+        end subroutine compute_fncts_A_B
 
 !===============================================================================
 
