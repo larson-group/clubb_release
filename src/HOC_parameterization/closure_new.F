@@ -1,4 +1,4 @@
-! $Id: closure_new.F,v 1.23 2008-05-30 21:44:04 faschinj Exp $
+! $Id: closure_new.F,v 1.24 2008-07-01 16:02:13 faschinj Exp $
         module pdf_closure
 
         implicit none
@@ -153,16 +153,16 @@
      .  sthl1, sthl2,           ! pdf parameters
      .  rt1, rt2,               ! pdf parameters
      .  srt1, srt2,             ! pdf parameters 
-     .  w1_n, w2_n, 
-     .  thl1_n, thl2_n, 
-     .  rt1_n, rt2_n
+     .  w1_n, w2_n 
+!     .  thl1_n, thl2_n, 
+!     .  rt1_n, rt2_n
 
         ! Passive scalar variables
         real, dimension(sclr_dim) :: 
      .  sclr1, sclr2, 
      .  ssclr1, ssclr2,
      .  alpha_sclr, 
-     .  sclr1_n, sclr2_n,
+!     .  sclr1_n, sclr2_n,
      .  rsclrthl, rsclrrt
  
         logical :: scalar_calc
@@ -171,8 +171,7 @@
         real :: 
      .  tl1, tl2, 
      .  beta1, beta2, 
-     .  rsl1, rsl2, 
-     .  es1, es2,
+     .  rsl1, rsl2,
      .  ss1, ss2,
      .  s1, s2, 
      .  zeta1, zeta2,
@@ -191,10 +190,6 @@
         ! Skewness of w
 
         real :: Skw 
-
-        ! weighting factor for interpolation of srt1,2, sthl1,2
-
-        real :: diffweight
 
         ! alpha coefficients = 0.5 * ( 1 - correlations^2 ).
         !    These are used to calculate the scalar widths 
@@ -290,8 +285,8 @@
             sthl2     = 0.0
             alpha_thl = 0.5
           else
-            thl1_n = - (wpthlp/(sqrt( wp2 )*sqrt( thlp2 )))/w2_n
-            thl2_n = - (wpthlp/(sqrt( wp2 )*sqrt( thlp2 )))/w1_n
+!            thl1_n = - (wpthlp/(sqrt( wp2 )*sqrt( thlp2 )))/w2_n
+!            thl2_n = - (wpthlp/(sqrt( wp2 )*sqrt( thlp2 )))/w1_n
 
             thl1   = thlm - ( wpthlp/sqrt( wp2 ) )/w2_n
             thl2   = thlm - ( wpthlp/sqrt( wp2 ) )/w1_n
@@ -315,8 +310,8 @@
             srt2     = 0.0
             alpha_rt = 0.5
           else
-            rt1_n = -( wprtp / ( sqrt( wp2 )*sqrt( rtp2 ) ) ) / w2_n
-            rt2_n = -( wprtp / ( sqrt( wp2 )*sqrt( rtp2 ) ) ) / w1_n
+!            rt1_n = -( wprtp / ( sqrt( wp2 )*sqrt( rtp2 ) ) ) / w2_n
+!            rt2_n = -( wprtp / ( sqrt( wp2 )*sqrt( rtp2 ) ) ) / w1_n
 
             rt1 = rtm - ( wprtp / sqrt( wp2 ) ) / w2_n
             rt2 = rtm - ( wprtp / sqrt( wp2 ) ) / w1_n
@@ -343,10 +338,10 @@
                 ssclr2(i)     = 0.0
                 alpha_sclr(i) = 0.5
               else
-                sclr1_n(i) = - ( wpsclrp(i) / (sqrt( wp2 ) 
-     .                           * sqrt( sclrp2(i) )) )/w2_n
-                sclr2_n(i) = - ( wpsclrp(i) / (sqrt( wp2 ) 
-     .                           * sqrt( sclrp2(i) )) )/w1_n
+!                sclr1_n(i) = - ( wpsclrp(i) / (sqrt( wp2 ) 
+!     .                           * sqrt( sclrp2(i) )) )/w2_n
+!                sclr2_n(i) = - ( wpsclrp(i) / (sqrt( wp2 ) 
+!     .                           * sqrt( sclrp2(i) )) )/w1_n
   
                 sclr1(i) = sclrm(i) 
      .                   - ( wpsclrp(i) / sqrt( wp2 ) ) / w2_n
