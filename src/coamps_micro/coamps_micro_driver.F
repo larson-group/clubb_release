@@ -8,7 +8,7 @@
 
       public :: coamps_micro_driver
 
-      private
+      private ! Set Default Scope
 
       contains      
 
@@ -37,10 +37,10 @@
 !----------------------------------------------------------------------
                               
       use constants, only: Cp, Lv, pi, Lf, Ls, Rv, Rd, p0 ! Variable(s)
-      use grid_class, only: zt2zm ! Procedure(s)
       use saturation, only: rsat, rsati ! Procedure(s)
       use stats_precision, only: time_precision ! Variable(s)
       use error_code, only: clubb_debug ! Procedure(s)
+      use grid_class, only: zt2zm ! Procedure(s)
 #ifdef STATS
       use stats_type, only: stat_update_var_pt ! Procedure(s)
       
@@ -180,6 +180,9 @@ c End of ajsmith4's addition
      .  Ncnm,      ! Number of cloud nuclei     [count/m^3]
      .  Nim        ! Number of ice crystals     [count/m^3]
 
+
+      real, dimension(1,1,kk), intent(inout) :: cond ! condensation/evaporation of liquid water
+
 c Addition by Adam Smith, 24 April 2008
 c Adding snow particle number concentration
       real, dimension(kk+1) :: Nsnowm
@@ -292,7 +295,6 @@ c End of ajsmith4's addition
      .  snowslope,  ! These variables are the individual microphysical terms.  Michael Falk
                     !  Michael Falk
                     ! (Name modified by Adam Smith, 24 April 2008)
-     .  cond,       ! condensation/evaporation of liquid water
      .  pcond,      ! condensation/evaporation of cloud water
      .  psmlti,     ! melting of cloud ice
      .  psacw,      ! collection of cloud water by snow
@@ -370,10 +372,10 @@ c End of ajsmith4's addition
 
       integer ::
      .  i,
-     .  k, kp1, km1, ! Loop control variables
+     .  k,            ! Loop control variables
      .  len,         ! # of saturated points???
      .  icase,       ! Which case?
-     .  nrdamp       ! Number of points in the damping layer (COAMPS)
+     .  nrdamp       ! Number of points in the damping layer (COAMPS) 
 
       real ::
      .  snzero ! ???
