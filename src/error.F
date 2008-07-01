@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error.F,v 1.55 2008-06-16 17:11:32 faschinj Exp $
+! $Id: error.F,v 1.56 2008-07-01 21:58:35 faschinj Exp $
 
         module error
  
@@ -119,6 +119,11 @@
 
         real, allocatable, dimension(:), private :: 
      .  rand_vect ! A vector of random reals for initializing the x array
+
+        public :: tuner_init, min_les_hoc_diff, output_results_stdout,
+     .          output_nml_standalone, output_nml_tuner
+
+        private ! Default Scope !
 
         contains
 
