@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.64 2008-06-27 11:54:39 griffinb Exp $
+! $Id: mixing.F,v 1.65 2008-07-01 20:21:07 faschinj Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -179,7 +179,7 @@
      .  corr_lower_lim    ! Keeps correlations from becoming less than -1.
 
         ! Indices
-        integer :: i
+!        integer :: i
         integer :: k, km1, kp1
 
 !-----------------------------------------------------------------------
@@ -543,9 +543,6 @@
      .      term_ma_zt_lhs, ! Procedure(s)
      .      term_ma_zm_lhs
 
-        use semiimplicit_clip, only:
-     .      semiimp_clip_lhs ! Procedure(s)
-
 #ifdef STATS
         use stats_variables, only:
      .      ztscr01, ! Variable(s)
@@ -633,7 +630,8 @@
         real :: wtol_sqd
 
         ! Indices
-        integer :: k, km1, kp1
+!        integer :: km1
+        integer :: k, kp1
         integer :: k_xm, k_wpxp
 
 #ifdef STATS
@@ -663,7 +661,7 @@
 
           ! Define indices
 
-          km1 = max( k-1, 1 )
+!          km1 = max( k-1, 1 )
           kp1 = min( k+1, gr%nnzp )
 
           k_xm   = 2*k - 1
@@ -925,8 +923,6 @@
         use stats_precision, only: 
      .      time_precision ! Variable(s)
 
-        use semiimplicit_clip, only:
-     .      semiimp_clip_rhs ! Procedure(s)
 
 #ifdef STATS
         use stats_type, only:
@@ -1223,7 +1219,8 @@
         integer, intent(out) :: err_code
 
         ! Local Variables
-        real, target, dimension(2*gr%nnzp,nrhs) :: 
+!        real, target, dimension(2*gr%nnzp, nrhs) ::        
+        real, dimension(2*gr%nnzp,nrhs) :: 
      .  solution ! Solution to band diagonal system
 
         real, dimension(gr%nnzp) ::
@@ -1243,7 +1240,6 @@
      .    ixm_bt,
      .    ixm_ta,
      .    ixm_ma,
-     .    ixm_mc,
      .    ixm_cn,
      .    ixm_pd,
      .    iwpxp_bt,
@@ -1837,10 +1833,6 @@
 
         implicit none
 
-        ! Constant parameters
-        integer, parameter ::
-     .  k_mdiag   = 1    ! Momentum main diagonal index.
-
         ! Input Variables
         real, intent(in) ::
      .  C7_Skw_fnc, ! C_7 parameter with Sk_w applied (k)   [-]
@@ -1889,10 +1881,6 @@
 !-----------------------------------------------------------------------
 
         implicit none
-
-        ! Constant parameters
-        integer, parameter ::
-     .  k_mdiag   = 1    ! Momentum main diagonal index.
 
         ! Input Variables
         real, intent(in) ::
