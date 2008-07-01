@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F,v 1.58 2008-06-24 19:44:01 faschinj Exp $
+! $Id: diag_var.F,v 1.59 2008-07-01 16:08:27 faschinj Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !===============================================================================
@@ -769,7 +769,8 @@
         ! Local Variables
 
         ! Array indices
-        integer :: k, kp1, km1
+        integer :: k, kp1 
+!        integer :: km1
 
 #ifdef STATS
         real, dimension(3) ::
@@ -780,7 +781,7 @@
         ! Setup LHS of the tridiagonal system
         do k = 2, gr%nnzp-1, 1
 
-          km1 = max( k-1, 1 )
+!          km1 = max( k-1, 1 )
           kp1 = min( k+1, gr%nnzp )
 
           ! LHS eddy diffusion term: dissipation term 2 (dp2).
@@ -1186,7 +1187,8 @@
         ! Local Variables
 
         ! Array indices
-        integer :: k, kp1, km1
+        integer :: k, kp1 
+!        integer :: km1
 
 #ifdef STATS
         real :: tmp
@@ -1226,7 +1228,7 @@
 
         do k = 2, gr%nnzp-1, 1
 
-          km1 = max( k-1, 1 )
+!          km1 = max( k-1, 1 )
           kp1 = min( k+1, gr%nnzp )
 
           rhs(k,1)
@@ -1398,7 +1400,8 @@
         ! Local Variables
 
         ! Array indices
-        integer :: k, kp1, km1
+        integer :: k, kp1 
+!        integer :: km1
 
 #ifdef STATS
         integer ::
@@ -1435,7 +1438,7 @@
 
         do k = 2, gr%nnzp-1, 1
 
-          km1 = max( k-1, 1 )
+!          km1 = max( k-1, 1 )
           kp1 = min( k+1, gr%nnzp )
 
           rhs(k,1)
@@ -1915,10 +1918,6 @@
 !-----------------------------------------------------------------------
 
         implicit none
-
-        ! Constant parameters
-        integer, parameter ::
-     .  k_mdiag   = 1   ! Momentum main diagonal index.
 
         real, intent(in) ::
      .  Cn,    ! Coefficient C_n                       [-]
