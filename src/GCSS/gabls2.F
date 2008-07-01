@@ -69,9 +69,7 @@
      .    sclr_tndcy ! Passive scalar LS tendency            [units/s]
 
         ! Local Variables, general
-        real    :: 
-     .    t_tendency ! Temperature (not potential temperature) tendency
-        integer :: i, k ! Loop indices
+        integer :: k ! Loop index
 
         ! Compute vertical motion
         if (time > (time_initial + 93600.)) then ! That is, after 26 hours of model time; per GABLS2 specification
@@ -237,13 +235,13 @@
           sstheta = sst * ((p0 / psfc)**(Rd/Cp))
 
           ! Compute heat and moisture fluxes
-          wpthlp_sfc  = -Cz * ubar * ( thlm - sst * (p0/psfc)**kappa )    ! [K * m/s]
-          wprtp_sfc  = -Cz * ubar * ( rtm - rsat(psfc,sst) ) * 0.025     ! [kg/kg * m/s]; 2.5% factor from GABLS2 specification
+          wpthlp_sfc  = -Cz * ubar * ( thlm - sst * (p0/psfc)**kappa ) ! [K * m/s]
+          wprtp_sfc  = -Cz * ubar * ( rtm - rsat(psfc,sst) ) * 0.025   ! [kg/kg * m/s]; 2.5% factor from GABLS2 specification
           ! Compute momentum fluxes
           bflx  = wpthlp_sfc * grav / sstheta
           ustar = diag_ustar(lowest_level,bflx,ubar,z0)
-          upwp_sfc    = -um * ustar*ustar / ubar                         ! [(m/s)^2]
-          vpwp_sfc    = -vm * ustar*ustar / ubar                         ! [(m/s)^2]
+          upwp_sfc    = -um * ustar*ustar / ubar                       ! [(m/s)^2]
+          vpwp_sfc    = -vm * ustar*ustar / ubar                       ! [(m/s)^2]
 
           ! Set scalar fluxes to be equal to rt and theta
           if ( present( wpsclrp_sfc ) ) then
