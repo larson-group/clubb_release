@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_a.F,v 1.23 2008-06-24 19:43:37 faschinj Exp $
+! $Id: mpace_a.F,v 1.24 2008-07-01 15:41:02 faschinj Exp $
         module mpace_a
 
 !       Description:
@@ -77,6 +77,8 @@
 
         use rad_lwsw_mod, only: rad_lwsw ! Procedure(s)
 
+        use error_code, only: clubb_debug ! Procedure(s)
+
 #ifdef STATS
         use stats_type, only: stat_update_var ! Procedure(s)
 
@@ -89,9 +91,9 @@
         ! Local constants, subsidence
         real, parameter ::
 !     .  grav0 = 9.8,     ! m/s
-     .  D     = 5.8e-6,  ! 1/s
-     .  psfc  = 101000., ! Pa
-     .  pinv  = 85000.   ! Pa; ditto
+!     .  D     = 5.8e-6,  ! 1/s
+     .  psfc  = 101000.   ! Pa
+!     .  pinv  = 85000.   ! Pa; ditto
 
         ! Local constants, LW radiation (from DYCOMS II-RF01)
         real, parameter ::
@@ -167,12 +169,12 @@
 
 
         ! Local Variables, general
-        integer :: i, j, k ! Loop indices
+        integer :: i, k ! Loop indices
 
 
         ! Local Variables, subsidence scheme
-        real ::
-     .  velocity_omega
+!        real ::
+!     .  velocity_omega
 
 
         ! Local Variables, radiation scheme
@@ -183,14 +185,13 @@
      .  sda_h,
      .  t_since_noon,
      .  julday,
-     .  start_time_until_noon,
-     .  t_tendency
+     .  start_time_until_noon
 
         real, dimension(gr%nnzp) ::
      .  radht_theta,
      .  radht_LW_theta,
      .  radht_SW_theta, 
-     .  LWP,            ! Liquid water path                              [kg/m^2]
+!     .  LWP,            ! Liquid water path                              [kg/m^2]
      .  thm_rad,        ! Flipped array of potential temp.               [K]
      .  rcm_rad,        ! Flipped array of liq. water mixing ratio       [kg/kg]
      .  rhot_rad,       ! Flipped array of air density                   [kg/m^3]
@@ -206,9 +207,9 @@
 
         ! Local variables, on/off switches for individual schemes
         logical :: 
-     .  subs_on,
      .  lw_on,
      .  sw_on,
+!     .  subs_on,
      .  center
 
 ! Open external files (21 Aug 2007, Michael Falk)
@@ -237,6 +238,10 @@
       ! This code block takes the model time, finds the time before it and the time after it on the list,
       ! and marks them left_time and right_time for interpolation.  If the time is before the first or
       ! after the last time in the file, it just uses the first or last time without interpolation.
+
+      left_time = -1
+      right_time = -1
+
       if (time <= file_times(1)) then
         print *,'Time is at or before the first time in the list.'
         left_time = 1
@@ -254,6 +259,10 @@
           end if
         end do
       end if
+
+      if( left_time == -1 .or. right_time == -1 ) then
+        call clubb_debug(1, "file_times not sorted in mpace_a_tndcy.")
+      endif
 
       ratio = (time - file_times(left_time)) /                 ! This is the ratio "a" needed for linear interpolation in time.
      .        (file_times(right_time) - file_times(left_time)) ! at the first time a=0; at the second time a=1.
@@ -319,9 +328,9 @@
 !-----------------------------------------------------------------------
 
         ! Set which schemes to use
-        subs_on         = .TRUE.
         lw_on           = .TRUE.
         sw_on           = .TRUE.
+!        subs_on         = .TRUE.
         center          = .TRUE.
 
         ! Compute vertical motion
@@ -492,6 +501,8 @@
 
         use stats_precision, only: time_precision ! Variable(s)
 
+        use error_code, only: clubb_debug ! Procedure(s)
+
         implicit none
 
         ! External
@@ -530,13 +541,15 @@
      .   latent_heat_flx,
      .   sensible_heat_flx
 
-         integer ::
-     .   i,j,k
+         integer :: k
 
 
       integer left_time,right_time
 
 !-----------------------------------------------------------------------
+
+      left_time = -1
+      right_time = -1
 
       ! choose which times to use
       if (time <= file_times(1)) then
@@ -550,12 +563,19 @@
       else
         do k=1,file_ntimes-1
           if ((time > file_times(k)) .AND.
-     .        (time <=file_times(k+1))) then
+     .        (time <= file_times(k+1))) then
             left_time = k
             right_time = k+1
           end if
         end do
       end if
+
+      ! Sanity check to make certain that the values read into
+      ! file_times are sorted. Joshua Fasching June 2008
+      if ( left_time == -1 .or. right_time == -1 ) then
+              call clubb_debug(1, "file_times not sorted in MPACE_A")
+      endif
+
 
       latent_heat_flx = ((time-file_times(left_time)) / 
      .     (file_times(right_time)-file_times(left_time))) *
