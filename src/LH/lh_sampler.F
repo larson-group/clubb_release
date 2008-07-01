@@ -1,4 +1,4 @@
-!$Id: lh_sampler.F,v 1.6 2008-05-30 16:24:26 faschinj Exp $
+!$Id: lh_sampler.F,v 1.7 2008-07-01 18:32:56 faschinj Exp $
       module lh_sampler_mod
 
       implicit none
@@ -55,6 +55,9 @@
       integer, intent(in) :: p_matrix( 1:n , 1:(d+1) )
       real, intent(in)    :: pdf_parms(26)
 
+!     quantities needed to predict higher order moments
+      real, intent(in) :: crt1, crt2, cthl1, cthl2
+
 ! Output
 
 ! Sample drawn from uniform distribution
@@ -77,9 +80,6 @@
 !        varies between -1 < rrtthl < 1
       real :: rrtthl
 
-!        quantities needed to predict higher order moments
-
-      real :: crt1, crt2, cthl1, cthl2
       real :: s1, s2
       real :: R1, R2
 
@@ -357,6 +357,11 @@
      .                          C1, C2,
      .                          X_u, X_nl )
 
+!      use math_utilities, only:
+!     .    corrcoef,     ! Procedures
+!     .    mean,
+!     .    std
+
       implicit none
 
 ! Input variables  ---------------------------------------
@@ -401,10 +406,7 @@
       double precision s_pts(1:n)
 
 ! Total water, theta_l: mean plus perturbations
-      double precision rt(1:n), thl(1:n)
-
-      double precision mean, std, corrcoef
-
+!      double precision rt(1:n), thl(1:n)
 
 ! Beginning of code -----------------------------------------
 
@@ -674,7 +676,7 @@
 
 ! Local
 
-      integer j, k, sample
+      integer j, sample
       double precision std_normal(1:d)
       double precision fraction_1
 
@@ -854,10 +856,21 @@
 
         implicit none
 
+
+        ! Input Variable(s)
+
+        double precision, intent(in) :: p
+
+
+        ! Local Variable(s)
+
         double precision a1, a2, a3, a4, a5, a6, b1, b2, b3, b4, b5,
      .                   c1, c2, c3, c4, c5, c6, d1, d2, d3, d4
-        double precision p, q, r, z, z1, plow, phigh, e, u, erf_dp
-        
+
+        double precision q, r, z, z1, plow, phigh 
+       
+!       double preciseion e, erf_dp, u
+
 !       Occurs in constants.F now.  Isn't actually used currently.
 !        double precision, parameter :: pi=3.1415926d0
 
@@ -886,6 +899,8 @@
      .             d3 =  2.445134137142996d+00, 
      .             d4 =  3.754408661907416d+00)
 
+        ! Default initialization
+        z = 0.0
 
 !  Define break-points.
         plow  = 0.02425d0
@@ -993,7 +1008,9 @@
 
 ! Local
 
-        integer v, j
+        integer v
+!       integer j
+
         double precision mu_one(1:d,1), mu_two, mu_condt_const
         double precision Sigma_oneone(1:d,1:d), 
      .                   Sigma_oneone_inv(1:d,1:d)
@@ -1117,7 +1134,6 @@
 
       integer sample
       double precision fraction_1
-      double precision mean
 
 ! Handle some possible errors re: proper ranges of a, C1, C2.
       if (a > 1.0d0 .or. a < 0.0d0) then
