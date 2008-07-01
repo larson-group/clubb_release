@@ -1,4 +1,4 @@
-! $Id: mixing_length.F,v 1.12 2008-05-30 16:24:24 faschinj Exp $
+! $Id: mixing_length.F,v 1.13 2008-07-01 17:10:16 faschinj Exp $
 !-----------------------------------------------------------------------------
         module mixing_length
         
@@ -94,9 +94,7 @@
         ! Local Variables
         integer :: i, j
 
-        real :: tke_i, CAPE_incr, dthv
-
-        real :: zincr
+        real :: tke_i, CAPE_incr
 
         ! Minimum value for Lscale that will taper off with height
         real :: lminh
@@ -106,13 +104,15 @@
 
         ! Used in latent heating calculation
         real :: tl_par_j, rsl_par_j, beta_par_j,
-     .    s_par_j, rsat_j
+     .    s_par_j
 
         ! Parcel quantities at grid level j-1
-        real :: thl_par_j_minus_1, rt_par_j_minus_1, rc_par_j_minus_1 
+        real :: thl_par_j_minus_1, rt_par_j_minus_1 
+!        real :: rc_par_j_minus_1 
 
         ! Parcel quantities at grid level j+1
-        real :: thl_par_j_plus_1, rt_par_j_plus_1, rc_par_j_plus_1 
+        real :: thl_par_j_plus_1, rt_par_j_plus_1 
+!        real :: rc_par_j_plus_1 
 
         ! Variables to make L nonlocal
         real :: Lup_max_alt, Ldown_min_alt
@@ -136,7 +136,7 @@
 
           thl_par_j_minus_1 = thlm(i)
           rt_par_j_minus_1  = rtm(i)
-          rc_par_j_minus_1  = rcm(i)
+!          rc_par_j_minus_1  = rcm(i)
 
           do while ((tke_i > 0.) .and. (j < gr%nnzp))
 
@@ -176,7 +176,7 @@
 
             thl_par_j_minus_1 = thl_par_j
             rt_par_j_minus_1 = rt_par_j
-            rc_par_j_minus_1 = rc_par_j
+!            rc_par_j_minus_1 = rc_par_j
 
             tke_i = tke_i + CAPE_incr
             j = j + 1
@@ -208,7 +208,7 @@
 
           thl_par_j_plus_1 = thlm(i)
           rt_par_j_plus_1 = rtm(i)
-          rc_par_j_plus_1 = rcm(i)
+!          rc_par_j_plus_1 = rcm(i)
 
           do while ( (tke_i > 0.) .and. (j >= 2) )
 
@@ -256,7 +256,7 @@
 
             thl_par_j_plus_1 = thl_par_j
             rt_par_j_plus_1  = rt_par_j
-            rc_par_j_plus_1  = rc_par_j
+!            rc_par_j_plus_1  = rc_par_j
 
             tke_i = tke_i + CAPE_incr
             j = j - 1
