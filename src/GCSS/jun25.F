@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: jun25.F,v 1.18 2008-06-24 19:43:37 faschinj Exp $
+! $Id: jun25.F,v 1.19 2008-07-01 15:04:56 faschinj Exp $
         module jun25
 
 !       Description:
@@ -13,8 +13,8 @@
         public :: jun25_altocu_tndcy
 
         ! Used to start the microphysics after predetermined amount of time
-        logical, private :: 
-     .  tdelay_lcoamps_micro, tdelay_licedfs 
+!        logical, private :: 
+!     .  tdelay_lcoamps_micro, tdelay_licedfs 
 
 !$omp   threadprivate(tdelay_lcoamps_micro, tdelay_licedfs)
 
@@ -42,7 +42,9 @@
 
         use constants, only: sclr_dim, pi, Cp, Lv ! Variable(s)
 
-        use model_flags, only: lbugsrad, lcoamps_micro, licedfs ! Variable(s)
+        use model_flags, only: lbugsrad ! Variable(s)
+
+!        use model_flags, only: lcoamps_micro, licedfs ! Variables(s)
 
         use stats_precision, only: time_precision ! Variable(s)
 
@@ -215,7 +217,7 @@
      .  radht_SW ! Short wave radiative heating [K/s]
 
         real, dimension(gr%nnzp) :: 
-     .  LWP,       ! Liquid water path from domain top                [kg/m^2]
+!     .  LWP,       ! Liquid water path from domain top                [kg/m^2]
      .  thm_rad,   ! "flipped" array of potential temperature         [K]
      .  rcm_rad,   ! "flipped" array of liquid water mixing ratio     [kg/kg]
      .  rhot_rad,  ! "flipped" array of air density                   [kg/m^3]
@@ -297,8 +299,9 @@
         !---------------------------------------------------------------
         ! Toggles for activating/deactivating forcings
         !---------------------------------------------------------------
-        logical :: subs_on, lw_on, sw_on
+        logical :: lw_on, sw_on
 
+!        logical :: subs_on
         !---------------------------------------------------------------
         ! Variable used for working within vertical arrays
         !---------------------------------------------------------------
@@ -313,7 +316,7 @@
 ! Toggles for activating/deactivating forcings
 ! To turn off a specific forcing, set the corresponding toggle to .FALSE.
 !-----------------------------------------------------------------------
-         subs_on   = .TRUE.
+!         subs_on   = .TRUE.
          lw_on     = .TRUE.
          sw_on     = .TRUE.
 
@@ -703,24 +706,24 @@
         ! growth of ice.  This is defined on thermodynamic levels.
         !-------------------------------------------------------------
 
-        if ( time == time_initial ) then
+!        if ( time == time_initial ) then
 
-          if ( lcoamps_micro ) then
+!          if ( lcoamps_micro ) then
             ! Turn off microphysics for now, re-enable at
             ! time = 3600.
-            lcoamps_micro        = .false.
-            tdelay_lcoamps_micro = .true.
+!            lcoamps_micro        = .false.
+!            tdelay_lcoamps_micro = .true.
 
-          else if ( licedfs ) then
-            licedfs        = .false.
-            tdelay_licedfs = .true.
+!          else if ( licedfs ) then
+!            licedfs        = .false.
+!            tdelay_licedfs = .true.
 
-          else
-            tdelay_lcoamps_micro = .false.
-            tdelay_licedfs       = .false.
-          end if
+!          else
+!            tdelay_lcoamps_micro = .false.
+!            tdelay_licedfs       = .false.
+!          end if
 
-        end if
+!        end if
 
 
         !---------------------------------------------------------------
