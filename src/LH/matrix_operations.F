@@ -12,7 +12,9 @@
 
       implicit none
 
-      integer m, mp, nmax
+!     integer m, mp
+
+      integer nmax
 
       integer, intent(in) :: n, np
 ! Output: a = Matrix inverse
@@ -26,6 +28,11 @@
       integer :: i, icol, irow, j, k, l, ll
       integer :: indxc(NMAX), indxr(NMAX), ipiv(NMAX)
       double precision big, dum, pivinv
+
+      ! Default Initialization
+      irow = 0 
+      icol = 0
+
       a = a_in
       do 11 j=1,n
         ipiv(j)=0
@@ -170,7 +177,7 @@
         ! Level 2 BLAS to multiply a vector by a band diagonal matrix
         external :: sgbmv, dgbmv
 
-        character(len=1) :: 
+        character(len=1), intent(in) :: 
      .  trans  ! Whether to use the transposition of the lhs matrix
 
         integer, intent(in) ::
