@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F,v 1.16 2008-06-30 19:50:25 faschinj Exp $
+! $Id: compute_um_edsclrm_mod.F,v 1.17 2008-07-01 13:36:57 faschinj Exp $
 !------------------------------------------------------------------------
         module compute_um_edsclrm_mod
 
@@ -313,14 +313,15 @@
           use stats_type, only:
      .      stat_update_var
 
-          use stats_variables, only:
+          use stats_variables, only:     
      .      ium_ma, ! Variable(s)
      .      ium_gf,
      .      ium_cf,
      .      ivm_ma,
      .      ivm_gf,
      .      ivm_cf,
-     .      zt
+     .      zt,
+     .      lstats_samp
 #endif
           implicit none
 
@@ -387,11 +388,13 @@
           xmt = xm_ma + xm_gf + xm_cf 
 
 #ifdef STATS
-          call stat_update_var( ixm_ma, xm_ma, zt )
+          if ( lstats_samp ) then
+            call stat_update_var( ixm_ma, xm_ma, zt )
 
-          call stat_update_var( ixm_gf, xm_gf, zt )
+            call stat_update_var( ixm_gf, xm_gf, zt )
           
-          call stat_update_var( ixm_cf, xm_cf, zt )
+            call stat_update_var( ixm_cf, xm_cf, zt )
+          endif
 #endif
         else
           xmt = 0.0
