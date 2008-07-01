@@ -1,4 +1,4 @@
-!$Id: micro_calcs.F,v 1.5 2008-05-30 16:24:26 faschinj Exp $
+!$Id: micro_calcs.F,v 1.6 2008-07-01 18:33:37 faschinj Exp $
 
       module micro_calcs_mod
 
@@ -86,10 +86,11 @@
 
 ! PDF parameters
       real :: a
-      real :: w1, w2, sw1, sw2
-      real :: thl1, thl2, sthl1, sthl2
-      real :: rt1, rt2, srt1, srt2
-      real :: crt1, crt2, cthl1, cthl2
+!      real :: w1, w2 
+!      real :: sw1, sw2
+!      real :: thl1, thl2, sthl1, sthl2
+!      real :: rt1,rt2
+!      real :: srt1, srt2
       real :: ss1, ss2, s1, s2
       real :: R1, R2
       real :: rc1, rc2
@@ -112,25 +113,25 @@
       real AK1var, AK2var 
 
 ! For comparison, compute within-cloud vertical velocity analytically.
-      real C_w_cld1, C_w_cld2, w_cld_avg
+!      real C_w_cld1, C_w_cld2, w_cld_avg
 
 ! Code begins -------------------------------------------
 
 
 !       save pdf parameters
 
-      w1    = pdf_parms(1)
-      w2    = pdf_parms(2)
-      sw1   = pdf_parms(3)
-      sw2   = pdf_parms(4)
-      rt1   = pdf_parms(5)
-      rt2   = pdf_parms(6)
-      srt1  = pdf_parms(7)
-      srt2  = pdf_parms(8)
-      thl1  = pdf_parms(9)
-      thl2  = pdf_parms(10)
-      sthl1 = pdf_parms(11)
-      sthl2 = pdf_parms(12)
+!      w1    = pdf_parms(1)
+!      w2    = pdf_parms(2)
+!      sw1   = pdf_parms(3)
+!      sw2   = pdf_parms(4)
+!      rt1   = pdf_parms(5)
+!      rt2   = pdf_parms(6)
+!      srt1  = pdf_parms(7)
+!      srt2  = pdf_parms(8)
+!      thl1  = pdf_parms(9)
+!      thl2  = pdf_parms(10)
+!      sthl1 = pdf_parms(11)
+!      sthl2 = pdf_parms(12)
       a     = pdf_parms(13)
       rc1   = pdf_parms(14) 
       rc2   = pdf_parms(15) 
@@ -322,7 +323,8 @@
         integer sample
         integer n1, n2
         double precision ac_m1, ac_m2
-        double precision coeff, expn, q_crit
+        double precision coeff, q_crit
+!        double precision expn
         double precision fraction_1
 
 
@@ -355,7 +357,7 @@
 ! Autoconversion formula prefactor and exponent.
 ! These are for Kessler autoconversion in (g/kg)/s.
         coeff  = 1.d-3
-        expn   = 1.d0
+!        expn   = 1.d0
 !       q_crit = 0.3d0
 !       q_crit = 0.7d0
         q_crit = 0.2d0
