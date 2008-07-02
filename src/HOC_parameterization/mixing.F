@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.67 2008-07-02 20:45:43 griffinb Exp $
+! $Id: mixing.F,v 1.68 2008-07-02 21:06:01 griffinb Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -867,7 +867,7 @@
 !     .      - semiimp_clip_lhs( dt, wpxp(k), 
 !     .                          .true., wpxp_upper_lim(k), 
 !     .                          .true., wpxp_lower_lim(k) )
-          endif
+!          endif
 
           endif
 #endif /*STATS*/
