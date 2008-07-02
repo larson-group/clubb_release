@@ -16,3 +16,8 @@ differ (which is useful assuming most of the fields are the same).
 There is also a script which reads NetCDF files into MATLAB, which may 
 be useful as a model for NetCDF (MexCDF/MexNC)-based programs you may 
 write.
+
+The CLUBBStandardsCheck.pl perl script can be used to check source files
+to determine if they follow certain coding practices which are meant to 
+be enforced for CLUBB source files. This script was written by Joshua
+Fasching.
