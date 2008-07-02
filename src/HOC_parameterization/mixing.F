@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.65 2008-07-01 20:21:07 faschinj Exp $
+! $Id: mixing.F,v 1.66 2008-07-02 18:37:47 griffinb Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -173,10 +173,13 @@
      .  Kw6_rt,
      .  Kw6_thl
 
-        ! Variables used for clipping of w'x' due to correlations.
+        ! Variables used for clipping of w'x' due to correlation 
+        ! of w with x, such that: 
+        ! corr_(w,x) = w'x' / [ sqrt(w'^2) * sqrt(x'^2) ];
+        ! -1 <= corr_(w,x) <= 1.
         real, dimension(gr%nnzp) ::
-     .  corr_upper_lim,   ! Keeps correlations from becoming greater than 1.
-     .  corr_lower_lim    ! Keeps correlations from becoming less than -1.
+     .  wpxp_upper_lim,   ! Keeps correlations from becoming greater than 1.
+     .  wpxp_lower_lim    ! Keeps correlations from becoming less than -1.
 
         ! Indices
 !        integer :: i
@@ -241,29 +244,29 @@
 
         ! Setup and decompose matrix
 
-        ! Compute the upper and lower limits of w'rt' at every level,
-        ! based on the correlations of w'^2 and r_t'^2.
-        do k = 1, gr%nnzp, 1
-           corr_upper_lim(k) =  0.99 * sqrt( wp2(k) * rtp2(k) )
-           corr_lower_lim(k) = -0.99 * sqrt( wp2(k) * rtp2(k) )
-        enddo
+        ! Compute the upper and lower limits of w'r_t' at every level,
+        ! based on the correlation of w and r_t, such that:
+        ! corr_(w,r_t) = w'r_t' / [ sqrt(w'^2) * sqrt(r_t'^2) ];
+        ! -1 <= corr_(w,r_t) <= 1.
+        wpxp_upper_lim =  0.99 * sqrt( wp2 * rtp2 )
+        wpxp_lower_lim = -0.99 * sqrt( wp2 * rtp2 )
 
-        ! Compute the implicit portion of the rtm and w'rt' equations.
+        ! Compute the implicit portion of the r_t and w'r_t' equations.
         ! Build the left-hand side matrix.
         call mixing_lhs( .true., dt, wprtp, Scm, wmm, wmt, wp2, 
      .                   wp3, Kw6_rt, taum, C7_Skw_fnc, C6rt_Skw_fnc,
-     .                   corr_upper_lim, corr_lower_lim, 
+     .                   wpxp_upper_lim, wpxp_lower_lim, 
      .                   implemented, lhs )
 
-        ! Compute the explicit portion of the rtm and w'rt' equations.
+        ! Compute the explicit portion of the r_t and w'r_t' equations.
         ! Build the right-hand side vector.
         call mixing_rhs( "rtm", .true., dt, rtm, wprtp,
      .                   rtm_forcing, C7_Skw_fnc, rtpthvp, 
-     .                   corr_upper_lim, corr_lower_lim, rhs )
+     .                   wpxp_upper_lim, wpxp_lower_lim, rhs )
 
-        ! Solve rtm / w'rt'
-        call mixing_solve( "rtm", dt, corr_upper_lim, 
-     .                     corr_lower_lim, lhs, rhs,
+        ! Solve r_t / w'r_t'
+        call mixing_solve( "rtm", dt, wpxp_upper_lim, 
+     .                     wpxp_lower_lim, lhs, rhs,
      .                     rtm, wprtp, err_code )
 
         if ( lapack_error( err_code ) )  then
@@ -308,29 +311,29 @@
 #endif
 
 
-        ! Compute the upper and lower limits of w'thl' at every level,
-        ! based on the correlations of w'^2 and th_l'^2.
-        do k = 1, gr%nnzp, 1
-           corr_upper_lim(k) =  0.99 * sqrt( wp2(k) * thlp2(k) )
-           corr_lower_lim(k) = -0.99 * sqrt( wp2(k) * thlp2(k) )
-        enddo
+        ! Compute the upper and lower limits of w'th_l' at every level,
+        ! based on the correlation of w and th_l, such that:
+        ! corr_(w,th_l) = w'th_l' / [ sqrt(w'^2) * sqrt(th_l'^2) ];
+        ! -1 <= corr_(w,th_l) <= 1.
+        wpxp_upper_lim =  0.99 * sqrt( wp2 * thlp2 )
+        wpxp_lower_lim = -0.99 * sqrt( wp2 * thlp2 )
 
-        ! Compute the implicit portion of the thlm and w'thl' equations.
+        ! Compute the implicit portion of the th_l and w'th_l' equations.
         ! Build the left-hand side matrix.
         call mixing_lhs( .true., dt, wpthlp, Scm, wmm, wmt, wp2, 
      .                   wp3, Kw6_thl, taum, C7_Skw_fnc, C6thl_Skw_fnc,
-     .                   corr_upper_lim, corr_lower_lim, 
+     .                   wpxp_upper_lim, wpxp_lower_lim, 
      .                   implemented, lhs )
 
-        ! Compute the explicit portion of the thlm and w'thl' equations.
+        ! Compute the explicit portion of the th_l and w'th_l' equations.
         ! Build the right-hand side vector.
         call mixing_rhs( "thlm", .true., dt, thlm, wpthlp,
      .                   thlm_forcing, C7_Skw_fnc, thlpthvp, 
-     .                   corr_upper_lim, corr_lower_lim, rhs )
+     .                   wpxp_upper_lim, wpxp_lower_lim, rhs )
 
-        ! Solve for thlm / w'thl'
-        call mixing_solve( "thlm", dt, corr_upper_lim, 
-     .                     corr_lower_lim, lhs, rhs,
+        ! Solve for th_l / w'th_l'
+        call mixing_solve( "thlm", dt, wpxp_upper_lim, 
+     .                     wpxp_lower_lim, lhs, rhs,
      .                     thlm, wpthlp, err_code )
 
         if ( lapack_error( err_code ) ) then       
@@ -370,32 +373,32 @@
      .       present( sclrpthvp ) .and. present( sclrm_forcing ) ) then
 
           ! Compute the upper and lower limits of w'sclr' at every level,
-          ! based on the correlations of w'^2 and sclr'^2.
-          do k = 1, gr%nnzp, 1
-             corr_upper_lim(k) =  0.99 * sqrt( wp2(k) 
-     .                                        * sclrp2(k,SCLR_RT) )
-             corr_lower_lim(k) = -0.99 * sqrt( wp2(k) 
-     .                                        * sclrp2(k,SCLR_RT) )
-          enddo
+          ! based on the correlation of w and sclr, such that:
+          ! corr_(w,sclr) = w'sclr' / [ sqrt(w'^2) * sqrt(sclr'^2) ];
+          ! -1 <= corr_(w,sclr) <= 1.
+          wpxp_upper_lim(:) =  0.99 * sqrt( wp2(:) 
+     .                                     * sclrp2(:,SCLR_RT) )
+          wpxp_lower_lim(:) = -0.99 * sqrt( wp2(:) 
+     .                                     * sclrp2(:,SCLR_RT) )
 
-          ! Compute the implicit portion of the sclrm and w'sclr' equations.
+          ! Compute the implicit portion of the sclr and w'sclr' equations.
           ! Build the left-hand side matrix.
           call mixing_lhs( .true., dt, wpsclrp(:,SCLR_RT), Scm, wmm, 
      .                     wmt, wp2, wp3, Kw6, taum, C7_Skw_fnc,
-     .                     C6rt_Skw_fnc, corr_upper_lim, corr_lower_lim,
+     .                     C6rt_Skw_fnc, wpxp_upper_lim, wpxp_lower_lim,
      .                     implemented, lhs )
 
-          ! Compute the explicit portion of the sclrm and w'sclr' equations.
+          ! Compute the explicit portion of the sclr and w'sclr' equations.
           ! Build the right-hand side vector.
           call mixing_rhs( "sclrm_rtm", .true., dt, 
      .                     sclrm(:,SCLR_RT), wpsclrp(:,SCLR_RT), 
      .                     sclrm_forcing(:,SCLR_RT), C7_Skw_fnc, 
-     .                     sclrpthvp(:,SCLR_RT), corr_upper_lim,
-     .                     corr_lower_lim, rhs )
+     .                     sclrpthvp(:,SCLR_RT), wpxp_upper_lim,
+     .                     wpxp_lower_lim, rhs )
 
-          ! Solve for sclrm / w'sclr'
-          call mixing_solve( "sclrm_rtm", dt, corr_upper_lim, 
-     .                       corr_lower_lim, lhs, rhs,
+          ! Solve for sclr / w'sclr'
+          call mixing_solve( "sclrm_rtm", dt, wpxp_upper_lim, 
+     .                       wpxp_lower_lim, lhs, rhs,
      .                       sclrm(:,SCLR_RT), wpsclrp(:,SCLR_RT), 
      .                       err_code )
 
@@ -405,33 +408,33 @@
           endif
 
           ! Compute the upper and lower limits of w'sclr' at every level,
-          ! based on the correlations of w'^2 and sclr'^2.
-          do k = 1, gr%nnzp, 1
-             corr_upper_lim(k) =  0.99 * sqrt( wp2(k) 
-     .                                        * sclrp2(k,SCLR_THETA) )
-             corr_lower_lim(k) = -0.99 * sqrt( wp2(k) 
-     .                                        * sclrp2(k,SCLR_THETA) )
-          enddo
+          ! based on the correlation of w and sclr, such that:
+          ! corr_(w,sclr) = w'sclr' / [ sqrt(w'^2) * sqrt(sclr'^2) ];
+          ! -1 <= corr_(w,sclr) <= 1.
+          wpxp_upper_lim(:) =  0.99 * sqrt( wp2(:) 
+     .                                     * sclrp2(:,SCLR_THETA) )
+          wpxp_lower_lim(:) = -0.99 * sqrt( wp2(:) 
+     .                                     * sclrp2(:,SCLR_THETA) )
 
-          ! Compute the implicit portion of the sclrm and w'sclr' equations.
+          ! Compute the implicit portion of the sclr and w'sclr' equations.
           ! Build the left-hand side matrix.
           call mixing_lhs( .true., dt, wpsclrp(:,SCLR_THETA), Scm, wmm,
      .                     wmt, wp2, wp3, Kw6, taum, C7_Skw_fnc,
-     .                     C6thl_Skw_fnc, corr_upper_lim, 
-     .                     corr_lower_lim, implemented, lhs )
+     .                     C6thl_Skw_fnc, wpxp_upper_lim, 
+     .                     wpxp_lower_lim, implemented, lhs )
 
-          ! Compute the explicit portion of the sclrm and w'sclr' equations.
+          ! Compute the explicit portion of the sclr and w'sclr' equations.
           ! Build the right-hand side vector.
           call mixing_rhs( "sclrm_theta", .true., dt, 
      .                     sclrm(:,SCLR_THETA), wpsclrp(:,SCLR_THETA), 
      .                     sclrm_forcing(:,SCLR_THETA), C7_Skw_fnc, 
-     .                     sclrpthvp(:,SCLR_THETA), corr_upper_lim, 
-     .                     corr_lower_lim, rhs )
+     .                     sclrpthvp(:,SCLR_THETA), wpxp_upper_lim, 
+     .                     wpxp_lower_lim, rhs )
 
-          ! Solve for sclrm / w'sclr'
-          call mixing_solve( "sclrm_theta", dt, corr_upper_lim, 
-     .                       corr_lower_lim, lhs, rhs,
-     .                       sclrm(:,SCLR_THETA), wpsclrp(:,SCLR_THETA), 
+          ! Solve for sclr / w'sclr'
+          call mixing_solve( "sclrm_theta", dt, wpxp_upper_lim, 
+     .                       wpxp_lower_lim, lhs, rhs,
+     .                       sclrm(:,SCLR_THETA), wpsclrp(:,SCLR_THETA),
      .                       err_code )
 
           if ( lapack_error( err_code ) ) then  
@@ -512,7 +515,7 @@
 !===============================================================================
         subroutine mixing_lhs( liter, dt, wpxp, Scm, wmm, wmt, wp2, 
      .                         wp3, Kw6, taum, C7_Skw_fnc, C6x_Skw_fnc,
-     .                         corr_upper_lim, corr_lower_lim, 
+     .                         wpxp_upper_lim, wpxp_lower_lim, 
      .                         implemented, lhs )
 
 !       Description:
@@ -607,8 +610,8 @@
      .  taum,           ! Time-scale tau on momentum levels        [s]
      .  C7_Skw_fnc,     ! C_7 parameter with Sk_w applied          [-]
      .  C6x_Skw_fnc,    ! C_6x parameter with Sk_w applied         [-]
-     .  corr_upper_lim, ! Keeps correlations from becoming > 1.    [units vary]
-     .  corr_lower_lim  ! Keeps correlations from becoming < -1.   [units vary]
+     .  wpxp_upper_lim, ! Keeps correlations from becoming > 1.    [units vary]
+     .  wpxp_lower_lim  ! Keeps correlations from becoming < -1.   [units vary]
 
         logical, intent(in) :: 
      .  implemented ! Flag for CLUBB being implemented in a larger model.
@@ -793,8 +796,8 @@
 !          lhs(3,k_wpxp)
 !     .    = lhs(3,k_wpxp)
 !     .    + semiimp_clip_lhs( dt, wpxp(k), 
-!     .                        .true., corr_upper_lim(k), 
-!     .                        .true., corr_lower_lim(k) )
+!     .                        .true., wpxp_upper_lim(k), 
+!     .                        .true., wpxp_lower_lim(k) )
 
 #ifdef STATS
           if (lstats_samp) then
@@ -907,7 +910,7 @@
 !===============================================================================
         subroutine mixing_rhs( solve_type, liter, dt, xm, wpxp,
      .                         xm_forcing, C7_Skw_fnc, xpthvp, 
-     .                         corr_upper_lim, corr_lower_lim, rhs )
+     .                         wpxp_upper_lim, wpxp_lower_lim, rhs )
 
 !       Description:
 !       Compute RHS vector for xm and w'x'.
@@ -958,8 +961,8 @@
      .  xm_forcing,     ! xm forcings (thermodynamic levels)     [{xm units}/s]
      .  C7_Skw_fnc,     ! C_7 parameter with Sk_w applied        [-]
      .  xpthvp,         ! x'th_v' (momentum levels)              [{xm units} K]
-     .  corr_upper_lim, ! Keeps correlations from becoming > 1.  [units vary]
-     .  corr_lower_lim  ! Keeps correlations from becoming < -1. [units vary]
+     .  wpxp_upper_lim, ! Keeps correlations from becoming > 1.  [units vary]
+     .  wpxp_lower_lim  ! Keeps correlations from becoming < -1. [units vary]
 
         ! Output Variable
         real, intent(out), dimension(2*gr%nnzp,nrhs) :: 
@@ -1046,8 +1049,8 @@
 !          rhs(k_wpxp,1)
 !     .    = rhs(k_wpxp,1)
 !     .    + semiimp_clip_rhs( dt, wpxp(k),
-!     .                        .true., corr_upper_lim(k),
-!     .                        .true., corr_lower_lim(k) )
+!     .                        .true., wpxp_upper_lim(k),
+!     .                        .true., wpxp_lower_lim(k) )
 
 #ifdef STATS
           if ( lstats_samp ) then
@@ -1103,8 +1106,8 @@
         end subroutine mixing_rhs
 
 !===============================================================================
-        subroutine mixing_solve( solve_type, dt, corr_upper_lim, 
-     .                           corr_lower_lim, lhs, rhs,
+        subroutine mixing_solve( solve_type, dt, wpxp_upper_lim, 
+     .                           wpxp_lower_lim, lhs, rhs,
      .                           xm, wpxp, err_code )
 
 !       Description:
@@ -1201,8 +1204,8 @@
      .  dt          ! Timestep                      [s]
 
         real, intent(in), dimension(gr%nnzp) :: 
-     .  corr_upper_lim, ! Keeps correlations from becoming > 1.  [units vary]
-     .  corr_lower_lim  ! Keeps correlations from becoming < -1. [units vary]
+     .  wpxp_upper_lim, ! Keeps correlations from becoming > 1.  [units vary]
+     .  wpxp_lower_lim  ! Keeps correlations from becoming < -1. [units vary]
 
         ! Input/Output Variables
         real, intent(inout), dimension(nsup+nsub+1,2*gr%nnzp) ::
@@ -1455,10 +1458,10 @@
 
 
         ! Clip wpxp after solving to make sure -0.99 < correlation < 0.99
-        where ( wpxp > corr_upper_lim )
-     .          wpxp = corr_upper_lim
-        where ( wpxp < corr_lower_lim )
-     .          wpxp = corr_lower_lim
+        where ( wpxp > wpxp_upper_lim )
+     .          wpxp = wpxp_upper_lim
+        where ( wpxp < wpxp_lower_lim )
+     .          wpxp = wpxp_lower_lim
 
 #ifdef STATS
         if ( lstats_samp ) then

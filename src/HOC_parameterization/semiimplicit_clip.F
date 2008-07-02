@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: semiimplicit_clip.F,v 1.5 2008-07-01 15:47:19 griffinb Exp $
+! $Id: semiimplicit_clip.F,v 1.6 2008-07-02 18:37:48 griffinb Exp $
 !===============================================================================
         module semiimplicit_clip
 
@@ -204,10 +204,10 @@
 !               close-to-threshold values will be nudged away from the
 !               threshold.
 !
-!      dt_clip:  dt_clip is the clipping time scale.  It can be set 
-!                equal to the model timestep, dt, but it doesn't have to
-!                be.  Smaller values of dt_clip produce a greater effect
-!                on the clipping term.
+!       dt_clip:  dt_clip is the clipping time scale.  It can be set 
+!                 equal to the model timestep, dt, but it doesn't have 
+!                 to be.  Smaller values of dt_clip produce a greater 
+!                 effect on the clipping term.
 
 !       References:
 !-----------------------------------------------------------------------
@@ -222,10 +222,32 @@
         private :: compute_clip_lhs,
      .             compute_fncts_A_B
 
+        ! Constant parameters.
+
+        ! sigma coefficient:  A coefficient with dimensionless units 
+        !                     that must have a value greater than 0.
+        !                     The value should be kept below 1.  The
+        !                     larger the value of sigma_coef, the larger
+        !                     the value of sigma, and the larger the 
+        !                     range of close-to-threshold values that 
+        !                     will be effected (nudged away from the 
+        !                     threshold) by the semi-implicit clipping.
+        real, parameter :: sigma_coef = 0.04
+
+        ! dt_clip coefficient:  A coefficient with dimensionless units
+        !                       that must have a value greater than 0.
+        !                       A value of 1 will set the clipping time 
+        !                       scale, dt_clip, equal to the model 
+        !                       timestep, dt.  The smaller the value of
+        !                       dt_clip_coef, the smaller the value of 
+        !                       dt_clip, and the larger the magnitude
+        !                       of (df/dt)_clipping.
+        real, parameter :: dt_clip_coef = 1.0
+
         contains
 
 !===============================================================================
-        function semiimp_clip_lhs( dt_clip, f_unclipped, 
+        function semiimp_clip_lhs( dt, f_unclipped, 
      .                             lupper_thresh, upper_threshold, 
      .                             llower_thresh, lower_threshold )
      .  result( lhs )
@@ -269,7 +291,7 @@
 
         ! Input Variables
         real(kind=time_precision), intent(in) :: 
-     .  dt_clip            ! Time scale for semi-implicit clipping term.        [s]
+     .  dt                 ! Model timestep.                                    [s]
 
         real, intent(in) ::
      .  f_unclipped,       ! The unclipped value of variable f at timestep (t). [f units]
@@ -284,12 +306,19 @@
         real :: lhs
 
         ! Local Variables
+        real(kind=time_precision) :: 
+     .  dt_clip    ! Time scale for semi-implicit clipping term.                [s]
+
         real ::
      .  f_diff,    ! Difference between the threshold value and f_unclipped.    [f units]
      .  A_fnc,     ! Function that approximates { f_diff * [ 1 - H(f_diff) ] }. [f units]
      .  B_fnc,     ! Derivative w/ respect to f_diff of function A_fnc.         []
      .  lhs_upper, ! Contribution of upper threshold to implicit portion (LHS). [s^-1]
      .  lhs_lower  ! Contribution of lower threshold to implicit portion (LHS). [s^-1]
+
+
+        ! Compute the clipping time scale, dt_clip.
+        dt_clip = dt_clip_coef * dt
 
 
         ! Upper Threshold
@@ -396,7 +425,7 @@
         end function compute_clip_lhs
 
 !===============================================================================
-        function semiimp_clip_rhs( dt_clip, f_unclipped, 
+        function semiimp_clip_rhs( dt, f_unclipped, 
      .                             lupper_thresh, upper_threshold, 
      .                             llower_thresh, lower_threshold )
      .  result( rhs )
@@ -435,7 +464,7 @@
 
         ! Input Variables
         real(kind=time_precision), intent(in) :: 
-     .  dt_clip            ! Time scale for semi-implicit clipping term.        [s]
+     .  dt                 ! Model timestep.                                    [s]
 
         real, intent(in) ::
      .  f_unclipped,       ! The unclipped value of variable f at timestep (t). [f units]
@@ -450,12 +479,19 @@
         real :: rhs
 
         ! Local Variables
+        real(kind=time_precision) :: 
+     .  dt_clip    ! Time scale for semi-implicit clipping term.                [s]
+
         real ::
      .  f_diff,    ! Difference between the threshold value and f_unclipped.    [f units]
      .  A_fnc,     ! Function that approximates { f_diff * [ 1 - H(f_diff) ] }. [f units]
      .  B_fnc,     ! Derivative w/ respect to f_diff of function A_fnc.         []
      .  rhs_upper, ! Contribution of upper threshold to explicit portion (RHS). [s^-1]
      .  rhs_lower  ! Contribution of lower threshold to explicit portion (RHS). [s^-1]
+
+
+        ! Compute the clipping time scale, dt_clip.
+        dt_clip = dt_clip_coef * dt
 
 
         ! Upper Threshold
@@ -561,9 +597,6 @@
         use constants, only: eps ! Variable(s)
 
         implicit none
-
-        ! Constant parameter
-        real, parameter :: sigma_coef = 0.04
 
         ! Input Variable
         real, intent(in) ::
