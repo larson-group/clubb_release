@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.73 2008-06-24 19:44:02 faschinj Exp $
+! $Id: wp23.F,v 1.74 2008-07-02 20:38:58 faschinj Exp $
 !===============================================================================
         module wp23
 
@@ -203,11 +203,11 @@
 
            ! Compute the square of wp2_zt, averaged over 3 points.  15 Dec 2007
            wp2_zt_sqd_3pt(k) 
-     .          = ( wp2_zt(km1)**2 + wp2_zt(k)**2 + wp2_zt(kp1)**2 ) / 3.0
+     .        = ( wp2_zt(km1)**2 + wp2_zt(k)**2 + wp2_zt(kp1)**2 ) / 3.0
 
            ! Compute the square of wp3_zm, averaged over 3 points.  15 Dec 2007
            wp3_zm_sqd_3pt(k) 
-     .          = ( wp3_zm(km1)**2 + wp3_zm(k)**2 + wp3_zm(kp1)**2 ) / 3.0
+     .        = ( wp3_zm(km1)**2 + wp3_zm(k)**2 + wp3_zm(kp1)**2 ) / 3.0
 
         enddo
 
@@ -432,7 +432,8 @@
         real, dimension(2*gr%nnzp) :: 
      .  rhs   ! RHS of band matrix
 
-        real, target, dimension(2*gr%nnzp) :: 
+!        real, target, dimension(2*gr%nnzp) ::
+        real, dimension(2*gr%nnzp) :: 
      .  solut ! Solution to band diagonal system.
 
         real, dimension(gr%nnzp) :: 
@@ -442,16 +443,10 @@
         real, dimension(gr%nnzp) :: 
      .  a1_zt, ! a_1 interpolated to thermodynamic levels        [-]
      .  a3_zt, ! a_3 interpolated to thermodynamic levels        [-]
-     .  wp2_zt ! w'^2 interpolated to thermodyamic levels        [m^2/s^2]
+     .  wp2_zt ! w'^2 interpolated to thermodyamic levels        [m^2/s^2
 
-        real, dimension(gr%nnzp) ::
-     .  wp2_pd,   ! Change in wp2 due to pos def scheme [m^2/s^3]
-     .  flux_wp2  ! Integrated flux for wp2             []
-
-
-        real, dimension(gr%nnzp) ::
-     .  wp2_n,! w'^2 at the previous timestep           [m^2/s^2]
-     .  tmp   ! Temporary variable
+!        real, dimension(gr%nnzp) ::
+!     .  wp2_n ! w'^2 at the previous timestep           [m^2/s^2]
 
         real :: 
      .  rcond  ! Est. of the reciprocal of the condition #
@@ -546,7 +541,7 @@
           k_wp3 = 2*k - 1
           k_wp2 = 2*k
 
-          wp2_n(k) = wp2(k) ! For the positive definite scheme
+!          wp2_n(k) = wp2(k) ! For the positive definite scheme
 
           wp2(k) = solut(k_wp2)
           wp3(k) = solut(k_wp3)
@@ -1206,9 +1201,10 @@
      .      time_precision ! Variable
 
 #ifdef STATS
-        use stats_variables, only: lstats_samp, iwp2_dp2, zm, iwp2_bp,  ! Variable(s)
-     .                 iwp2_pr1, iwp2_pr2, iwp2_pr3, iwp3_ta, zt,
-     .                 iwp3_tp, iwp3_bp, iwp3_pr2, iwp3_pr1, iwp3_dp1
+        use stats_variables, only: 
+     .      lstats_samp, iwp2_dp2, zm, iwp2_bp,  ! Variable(s)
+     .      iwp2_pr1, iwp2_pr2, iwp2_pr3, iwp3_ta, zt,
+     .      iwp3_tp, iwp3_bp, iwp3_pr2, iwp3_pr1, iwp3_dp1
 
         use stats_type, only: stat_update_var_pt, stat_begin_update_pt ! Procedure(s)
 #endif /*STATS*/
@@ -1597,10 +1593,6 @@
 
         implicit none
 
-        ! Constant parameters
-        integer, parameter ::
-     .  k_mdiag   = 1    ! Momentum main diagonal index.
-
         ! Input Variables
         real, intent(in) ::
      .  C5,     ! Model parameter C_5           [-]
@@ -1650,10 +1642,6 @@
 !-----------------------------------------------------------------------
 
         implicit none
-
-        ! Constant parameters
-        integer, parameter ::
-     .  k_mdiag   = 1    ! Momentum main diagonal index.
 
         ! Input Variables
         real, intent(in) ::
@@ -1710,10 +1698,6 @@
 !-----------------------------------------------------------------------
 
         implicit none
-
-        ! Constant parameters
-        integer, parameter ::
-     .  k_mdiag   = 1    ! Momentum main diagonal index.
 
         ! Input Variables
         real, intent(in) ::
@@ -2178,10 +2162,6 @@
 
         implicit none
 
-        ! Constant parameters
-        integer, parameter ::
-     .  k_tdiag   = 1    ! Thermodynamic main diagonal index.
-
         ! Input Variables
         real, intent(in) ::
      .  C11_Skw_fnc, ! C_11 parameter with Sk_w applied (k)   [-]
@@ -2251,10 +2231,6 @@
 !-----------------------------------------------------------------------
 
         implicit none
-
-        ! Constant parameters
-        integer, parameter ::
-     .  k_tdiag   = 1    ! Thermodynamic main diagonal index.
 
         ! Input Variables
         real, intent(in) ::
