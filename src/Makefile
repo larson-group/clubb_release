@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.131 2008-06-27 11:58:57 griffinb Exp $
+# $Id: Makefile,v 1.132 2008-07-02 18:28:54 faschinj Exp $
 #
 # This version should work with GNU make and Sun's dmake.
 #
@@ -93,6 +93,12 @@ JACOBIAN	= $(MODEL) $(INTERFACING) jacobian.o
 HOC_INPUTFIELDS	= $(MODEL) $(INTERFACING) hoc_inputfields.o
 HOC_BUDGET_TERMS= $(MODEL) $(INTERFACING) $(NUM_REC) error.o budget_terms.o hoc_tuner_budget_terms.o
 
+# List of files to check for compiler warnings
+WARNABLE = $(filter std_atmosphere_mod.o calendar.o cos_solar_zen.o bugsrad_hoc.o, $(BUGS_RAD) ) \
+	$(filter coamps_micro_driver.o saturation.o, $(COAMPS_MICRO) ) \
+	$(filter-out air.o parab.o $(COAMPS_MICRO), $(MODEL) ) \
+	$(PARAMETERIZATION) 
+
 # == Targets == ( hoc_tuner and jacobian assume statistics )
 all:	hoc_standalone hoc_tuner int2txt hoc_inputfields  \
 	compare_runs jacobian
@@ -113,13 +119,14 @@ VPATH=.:LH:GCSS:BUGSrad:HOC_parameterization:coamps_micro:$(OBJDIR)
 .SUFFIXES: .a .o .f .F .f90 .F90 .h
 
 .f.o:
-	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(OBJDIR)/$@ -c $(SRCDIR)/$<
+	cd $(OBJDIR); $(FC) $(FCFLAGS) $(if $(findstring $@, $(WARNABLE) ), $(WARNINGS) ) -o $(OBJDIR)/$@ -c $(SRCDIR)/$<  
 .f90.o:
-	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(OBJDIR)/$@ -c $(SRCDIR)/$<
+	cd $(OBJDIR); $(FC) $(FCFLAGS) $(if $(findstring $@, $(WARNABLE) ), $(WARNINGS) ) -o $(OBJDIR)/$@ -c $(SRCDIR)/$<  
 .F.o:
-	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(OBJDIR)/$@ -c $(SRCDIR)/$<
+	cd $(OBJDIR); $(FC) $(FCFLAGS) $(if $(findstring $@, $(WARNABLE) ), $(WARNINGS) ) -o $(OBJDIR)/$@ -c $(SRCDIR)/$<  
 .F90.o:
-	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(OBJDIR)/$@ -c $(SRCDIR)/$<
+	cd $(OBJDIR); $(FC) $(FCFLAGS) $(if $(findstring $@, $(WARNABLE) ), $(WARNINGS) ) -o $(OBJDIR)/$@ -c $(SRCDIR)/$<  
+	
 
 # == Static libraries (default) ==
 
