@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_variables.F,v 1.3 2008-06-24 19:44:02 faschinj Exp $
+! $Id: stats_variables.F,v 1.4 2008-07-02 20:45:44 griffinb Exp $
 !-----------------------------------------------------------------------
 !  module stats_variables
 
@@ -378,11 +378,13 @@
      .     iwprtp_pr3,
      .     iwprtp_dp1,
      .     iwprtp_cl,
+     .     iwprtp_sicl,
      .     iwprtp_pd
 
 !$omp   threadprivate(iwprtp_bt, iwprtp_ma, iwprtp_ta, iwprtp_tp)
 !$omp   threadprivate(iwprtp_ac, iwprtp_bp, iwprtp_pr1, iwprtp_pr2)
-!$omp   threadprivate(iwprtp_pr3, iwprtp_dp1, iwprtp_cl, iwprtp_pd)
+!$omp   threadprivate(iwprtp_pr3, iwprtp_dp1, iwprtp_cl, iwprtp_sicl)
+!$omp   threadprivate(iwprtp_pd)
 
         integer, public ::
      .     iwpthlp_bt,
@@ -395,11 +397,12 @@
      .     iwpthlp_pr2,
      .     iwpthlp_pr3,
      .     iwpthlp_dp1,
-     .     iwpthlp_cl
+     .     iwpthlp_cl,
+     .     iwpthlp_sicl
 
 !$omp   threadprivate(iwpthlp_bt, iwpthlp_ma, iwpthlp_ta, iwpthlp_tp)
 !$omp   threadprivate(iwpthlp_ac, iwpthlp_bp, iwpthlp_pr1, iwpthlp_pr2)
-!$omp   threadprivate(iwpthlp_pr3, iwpthlp_dp1, iwpthlp_cl)
+!$omp   threadprivate(iwpthlp_pr3, iwpthlp_dp1, iwpthlp_cl, iwpthlp_sicl)
 
 !    Dr. Golaz's new variance budget terms
 !    qt was changed to rt to avoid confusion
@@ -562,11 +565,11 @@
      .                       zmscr04(:), zmscr05(:), zmscr06(:),
      .                       zmscr07(:), zmscr08(:), zmscr09(:),
      .                       zmscr10(:), zmscr11(:), zmscr12(:),
-     .                       zmscr13(:), zmscr14(:)
+     .                       zmscr13(:), zmscr14(:), zmscr15(:)
 
 !$omp   threadprivate(zmscr01, zmscr02, zmscr03, zmscr04, zmscr05) 
 !$omp   threadprivate(zmscr06, zmscr07, zmscr08, zmscr09, zmscr10)
-!$omp   threadprivate(zmscr11, zmscr12, zmscr13, zmscr14)
+!$omp   threadprivate(zmscr11, zmscr12, zmscr13, zmscr14, zmscr15)
 
 #endif /*STATS*/
       end module stats_variables

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zm.F,v 1.12 2008-06-24 18:13:58 faschinj Exp $
+! $Id: stats_zm.F,v 1.13 2008-07-02 20:45:44 griffinb Exp $
       module stats_zm
 #ifdef STATS
        
@@ -98,6 +98,7 @@
      .    iwprtp_pr3,
      .    iwprtp_dp1,
      .    iwprtp_cl,
+     .    iwprtp_sicl,
      .    iwprtp_pd,
      .    iwpthlp_bt,
      .    iwpthlp_ma,
@@ -109,7 +110,8 @@
      .    iwpthlp_pr2,
      .    iwpthlp_pr3,
      .    iwpthlp_dp1,
-     .    iwpthlp_cl
+     .    iwpthlp_cl,
+     .    iwpthlp_sicl
 
       use stats_variables, only:
      .    irtp2_bt,
@@ -256,30 +258,32 @@
       iwp2_pd   = 0
 
       ! Flux budgets
-      iwprtp_bt  = 0
-      iwprtp_ma  = 0
-      iwprtp_ta  = 0
-      iwprtp_tp  = 0
-      iwprtp_ac  = 0
-      iwprtp_bp  = 0
-      iwprtp_pr1 = 0
-      iwprtp_pr2 = 0
-      iwprtp_pr3 = 0
-      iwprtp_dp1 = 0
-      iwprtp_cl  = 0
-      iwprtp_pd  = 0
+      iwprtp_bt   = 0
+      iwprtp_ma   = 0
+      iwprtp_ta   = 0
+      iwprtp_tp   = 0
+      iwprtp_ac   = 0
+      iwprtp_bp   = 0
+      iwprtp_pr1  = 0
+      iwprtp_pr2  = 0
+      iwprtp_pr3  = 0
+      iwprtp_dp1  = 0
+      iwprtp_cl   = 0
+      iwprtp_sicl = 0
+      iwprtp_pd   = 0
 
-      iwpthlp_bt  = 0
-      iwpthlp_ma  = 0
-      iwpthlp_ta  = 0
-      iwpthlp_tp  = 0
-      iwpthlp_ac  = 0
-      iwpthlp_bp  = 0
-      iwpthlp_pr1 = 0
-      iwpthlp_pr2 = 0
-      iwpthlp_pr3 = 0
-      iwpthlp_dp1 = 0
-      iwpthlp_cl  = 0
+      iwpthlp_bt   = 0
+      iwpthlp_ma   = 0
+      iwpthlp_ta   = 0
+      iwpthlp_tp   = 0
+      iwpthlp_ac   = 0
+      iwpthlp_bp   = 0
+      iwpthlp_pr1  = 0
+      iwpthlp_pr2  = 0
+      iwpthlp_pr3  = 0
+      iwpthlp_dp1  = 0
+      iwpthlp_cl   = 0
+      iwpthlp_sicl = 0
 
       ! Variance budgets
       irtp2_bt    = 0
@@ -698,6 +702,13 @@
      .         "wprtp clipping term","(m kg)/(s2 kg)",zm)
           k = k + 1
 
+        case ('wprtp_sicl')
+          iwprtp_sicl = k
+
+          call stat_assign(iwprtp_sicl,"wprtp_sicl",
+     .         "wprtp semi-implicit clipping term","(m kg)/(s2 kg)",zm)
+          k = k + 1
+
         case ('wprtp_pd')
           iwprtp_pd = k
 
@@ -765,6 +776,7 @@
           call stat_assign(iwpthlp_pr3,"wpthlp_pr3",
      .         "wpthlp pressure term 3","(m K)/s2",zm)
           k = k + 1
+
         case ('wpthlp_dp1')
           iwpthlp_dp1 = k
           call stat_assign(iwpthlp_dp1,"wpthlp_dp1",
@@ -775,6 +787,12 @@
           iwpthlp_cl = k
           call stat_assign(iwpthlp_cl,"wpthlp_cl",
      .         "wpthlp clipping term","(m K)/s2",zm)
+          k = k + 1
+
+        case ('wpthlp_sicl')
+          iwpthlp_sicl = k
+          call stat_assign(iwpthlp_sicl,"wpthlp_sicl",
+     .         "wpthlp semi-implicit clipping term","(m K)/s2",zm)
           k = k + 1
 
         ! Variance budgets

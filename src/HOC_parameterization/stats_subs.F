@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.24 2008-06-30 19:54:11 faschinj Exp $
+!  $Id: stats_subs.F,v 1.25 2008-07-02 20:45:44 griffinb Exp $
       module stats_subs
 #ifdef STATS
  
@@ -60,6 +60,7 @@
      .    zmscr12,
      .    zmscr13,
      .    zmscr14,
+     .    zmscr15,
      .    sfc,
      .    lstats,
      .    stats_tsamp,
@@ -333,6 +334,7 @@
       allocate ( zmscr12(zm%kk) )
       allocate ( zmscr13(zm%kk) )
       allocate ( zmscr14(zm%kk) )
+      allocate ( zmscr15(zm%kk) )
 
 
       fdir = "./"
@@ -1175,6 +1177,7 @@
      .    zmscr12,
      .    zmscr13,
      .    zmscr14,
+     .    zmscr15,
      .    lnetcdf,
      .    lstats
 #ifdef NETCDF
@@ -1255,6 +1258,7 @@
         deallocate ( zmscr12 )
         deallocate ( zmscr13 )
         deallocate ( zmscr14 )
+        deallocate ( zmscr15 )
 
         ! De-allocate all sfc variables
         deallocate( sfc%z )

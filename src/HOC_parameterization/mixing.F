@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.66 2008-07-02 18:37:47 griffinb Exp $
+! $Id: mixing.F,v 1.67 2008-07-02 20:45:43 griffinb Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -546,6 +546,9 @@
      .      term_ma_zt_lhs, ! Procedure(s)
      .      term_ma_zm_lhs
 
+        use semiimplicit_clip, only:
+     .      semiimp_clip_lhs ! Procedure(s)
+
 #ifdef STATS
         use stats_variables, only:
      .      ztscr01, ! Variable(s)
@@ -567,6 +570,7 @@
      .      zmscr12,
      .      zmscr13,
      .      zmscr14,
+     .      zmscr15,
      .      lstats_samp,
      .      ithlm_ma,
      .      ithlm_ta,
@@ -579,13 +583,15 @@
      .      iwpthlp_pr1,
      .      iwpthlp_pr2,
      .      iwpthlp_dp1,
+     .      iwpthlp_sicl,
      .      iwprtp_ma,
      .      iwprtp_ta,
      .      iwprtp_tp,
      .      iwprtp_ac,
      .      iwprtp_pr1,
      .      iwprtp_pr2,
-     .      iwprtp_dp1
+     .      iwprtp_dp1,
+     .      iwprtp_sicl
 #endif /*STATS*/
 
         implicit none
@@ -856,6 +862,13 @@
             zmscr14(k) = - tmp(1)
           endif
 
+!          if ( iwprtp_sicl > 0 .or. iwpthlp_sicl > 0 ) then
+!            zmscr15(k) =
+!     .      - semiimp_clip_lhs( dt, wpxp(k), 
+!     .                          .true., wpxp_upper_lim(k), 
+!     .                          .true., wpxp_lower_lim(k) )
+          endif
+
           endif
 #endif /*STATS*/
 
@@ -926,10 +939,13 @@
         use stats_precision, only: 
      .      time_precision ! Variable(s)
 
+        use semiimplicit_clip, only:
+     .      semiimp_clip_rhs ! Procedure(s)
 
 #ifdef STATS
         use stats_type, only:
-     .      stat_update_var_pt
+     .      stat_update_var_pt,
+     .      stat_begin_update_pt
         
         use stats_variables, only:
      .      zt, ! Variable(s)
@@ -938,8 +954,10 @@
      .      ithlm_forcing,
      .      iwprtp_bp,
      .      iwprtp_pr3,
+     .      iwprtp_sicl,
      .      iwpthlp_bp,
      .      iwpthlp_pr3,
+     .      iwpthlp_sicl,
      .      lstats_samp
 
 #endif /*STATS*/
@@ -976,21 +994,25 @@
         integer ::
      .    ixm_f,
      .    iwpxp_bp,
-     .    iwpxp_pr3
+     .    iwpxp_pr3,
+     .    iwpxp_sicl
 
         select case ( trim( solve_type ) )
         case ( "rtm" )  ! rtm/wprtp budget terms
-          ixm_f     = irtm_forcing
-          iwpxp_bp  = iwprtp_bp
-          iwpxp_pr3 = iwprtp_pr3
+          ixm_f      = irtm_forcing
+          iwpxp_bp   = iwprtp_bp
+          iwpxp_pr3  = iwprtp_pr3
+          iwpxp_sicl = iwprtp_sicl
         case ( "thlm" ) ! thlm/wpthlp budget terms
-          ixm_f     = ithlm_forcing
-          iwpxp_bp  = iwpthlp_bp
-          iwpxp_pr3 = iwpthlp_pr3
+          ixm_f      = ithlm_forcing
+          iwpxp_bp   = iwpthlp_bp
+          iwpxp_pr3  = iwpthlp_pr3
+          iwpxp_sicl = iwpthlp_sicl
         case default    ! this includes the sclrm case
-          ixm_f     = 0
-          iwpxp_bp  = 0
-          iwpxp_pr3 = 0
+          ixm_f      = 0
+          iwpxp_bp   = 0
+          iwpxp_pr3  = 0
+          iwpxp_sicl = 0
         end select
 #endif /*STATS*/
 
@@ -1062,6 +1084,11 @@
 
           call stat_update_var_pt( iwpxp_pr3, k,
      .        wpxp_terms_bp_pr3_rhs( (1.0+C7_Skw_fnc(k)),xpthvp(k)), zm)
+
+!          call stat_begin_update_pt( iwpxp_sicl, k,
+!     .       -semiimp_clip_rhs( dt, wpxp(k),
+!     .                          .true., wpxp_upper_lim(k),
+!     .                          .true., wpxp_lower_lim(k) ), zm )
 
           endif ! lstats_samp
 #endif /*STATS*/
@@ -1137,8 +1164,11 @@
 
 #ifdef STATS
         use stats_type, only:
-     .      stat_begin_update, stat_update_var_pt, ! Procedure(s)
-     .      stat_end_update, stat_update_var
+     .      stat_begin_update, ! Procedure(s)
+     .      stat_update_var_pt,
+     .      stat_end_update_pt,
+     .      stat_end_update, 
+     .      stat_update_var
         
         use stats_variables, only:
      .      zt, ! Variable(s)
@@ -1159,6 +1189,7 @@
      .      iwprtp_dp1,
      .      iwprtp_cl,
      .      iwprtp_pd,
+     .      iwprtp_sicl,
      .      ithlm_bt,
      .      ithlm_ta,
      .      ithlm_ma,
@@ -1172,6 +1203,7 @@
      .      iwpthlp_pr2,
      .      iwpthlp_dp1,
      .      iwpthlp_cl,
+     .      iwpthlp_sicl,
      .      lstats_samp,
      .      ztscr01,
      .      ztscr02,
@@ -1191,7 +1223,8 @@
      .      zmscr11,
      .      zmscr12,
      .      zmscr13,
-     .      zmscr14
+     .      zmscr14,
+     .      zmscr15
 #endif /*STATS*/
 
         implicit none
@@ -1254,57 +1287,61 @@
      .    iwpxp_pr2,
      .    iwpxp_dp1,
      .    iwpxp_cl,
-     .    iwpxp_pd
+     .    iwpxp_pd,
+     .    iwpxp_sicl
 
         select case ( trim( solve_type ) )
         case ( "rtm" ) ! rtm/wprtp budget terms
-          ixm_bt    = irtm_bt
-          ixm_ta    = irtm_ta
-          ixm_ma    = irtm_ma
-          ixm_cn    = irtm_cn ! Applies to both the mean and flux terms
-          ixm_pd    = irtm_pd
-          iwpxp_bt  = iwprtp_bt
-          iwpxp_ma  = iwprtp_ma
-          iwpxp_ta  = iwprtp_ta
-          iwpxp_tp  = iwprtp_tp
-          iwpxp_ac  = iwprtp_ac
-          iwpxp_pr1 = iwprtp_pr1
-          iwpxp_pr2 = iwprtp_pr2
-          iwpxp_dp1 = iwprtp_dp1
-          iwpxp_cl  = iwprtp_cl
-          iwpxp_pd  = iwprtp_pd
+          ixm_bt     = irtm_bt
+          ixm_ta     = irtm_ta
+          ixm_ma     = irtm_ma
+          ixm_cn     = irtm_cn ! Applies to both the mean and flux terms
+          ixm_pd     = irtm_pd
+          iwpxp_bt   = iwprtp_bt
+          iwpxp_ma   = iwprtp_ma
+          iwpxp_ta   = iwprtp_ta
+          iwpxp_tp   = iwprtp_tp
+          iwpxp_ac   = iwprtp_ac
+          iwpxp_pr1  = iwprtp_pr1
+          iwpxp_pr2  = iwprtp_pr2
+          iwpxp_dp1  = iwprtp_dp1
+          iwpxp_cl   = iwprtp_cl
+          iwpxp_pd   = iwprtp_pd
+          iwpxp_sicl = iwprtp_sicl
         case ( "thlm" ) ! thlm/wpthlp budget terms
-          ixm_bt    = ithlm_bt
-          ixm_ta    = ithlm_ta
-          ixm_ma    = ithlm_ma
-          ixm_cn    = ithlm_cn ! Applies to both the mean and flux terms
-          ixm_pd    = 0
-          iwpxp_bt  = iwpthlp_bt
-          iwpxp_ma  = iwpthlp_ma
-          iwpxp_ta  = iwpthlp_ta
-          iwpxp_tp  = iwpthlp_tp
-          iwpxp_ac  = iwpthlp_ac
-          iwpxp_pr1 = iwpthlp_pr1
-          iwpxp_pr2 = iwpthlp_pr2
-          iwpxp_dp1 = iwpthlp_dp1
-          iwpxp_cl  = iwpthlp_cl
-          iwpxp_pd  = 0
+          ixm_bt     = ithlm_bt
+          ixm_ta     = ithlm_ta
+          ixm_ma     = ithlm_ma
+          ixm_cn     = ithlm_cn ! Applies to both the mean and flux terms
+          ixm_pd     = 0
+          iwpxp_bt   = iwpthlp_bt
+          iwpxp_ma   = iwpthlp_ma
+          iwpxp_ta   = iwpthlp_ta
+          iwpxp_tp   = iwpthlp_tp
+          iwpxp_ac   = iwpthlp_ac
+          iwpxp_pr1  = iwpthlp_pr1
+          iwpxp_pr2  = iwpthlp_pr2
+          iwpxp_dp1  = iwpthlp_dp1
+          iwpxp_cl   = iwpthlp_cl
+          iwpxp_pd   = 0
+          iwpxp_sicl = iwpthlp_sicl
         case default  ! this includes the sclrm case
-          ixm_bt    = 0
-          ixm_ta    = 0
-          ixm_ma    = 0
-          ixm_cn    = 0
-          ixm_pd    = 0
-          iwpxp_bt  = 0
-          iwpxp_ma  = 0
-          iwpxp_ta  = 0
-          iwpxp_tp  = 0
-          iwpxp_ac  = 0
-          iwpxp_pr1 = 0
-          iwpxp_pr2 = 0
-          iwpxp_dp1 = 0
-          iwpxp_cl  = 0
-          iwpxp_pd  = 0
+          ixm_bt     = 0
+          ixm_ta     = 0
+          ixm_ma     = 0
+          ixm_cn     = 0
+          ixm_pd     = 0
+          iwpxp_bt   = 0
+          iwpxp_ma   = 0
+          iwpxp_ta   = 0
+          iwpxp_tp   = 0
+          iwpxp_ac   = 0
+          iwpxp_pr1  = 0
+          iwpxp_pr2  = 0
+          iwpxp_dp1  = 0
+          iwpxp_cl   = 0
+          iwpxp_pd   = 0
+          iwpxp_sicl = 0
         end select
 #endif /*STATS*/
 
@@ -1415,6 +1452,9 @@
      .           zmscr12(k) * wpxp(km1)
      .         + zmscr13(k) * wpxp(k)
      .         + zmscr14(k) * wpxp(kp1), zm )
+
+!             call stat_end_update_pt( iwpxp_sicl, k,
+!     .           zmscr15(k) * wpxp(k), zm )
              
            enddo ! 1..gr%nnzp
 
