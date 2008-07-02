@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: semiimplicit_clip.F,v 1.6 2008-07-02 18:37:48 griffinb Exp $
+! $Id: semiimplicit_clip.F,v 1.7 2008-07-02 22:35:57 griffinb Exp $
 !===============================================================================
         module semiimplicit_clip
 
@@ -232,7 +232,7 @@
         !                     range of close-to-threshold values that 
         !                     will be effected (nudged away from the 
         !                     threshold) by the semi-implicit clipping.
-        real, parameter :: sigma_coef = 0.04
+        real, parameter :: sigma_coef = 0.15
 
         ! dt_clip coefficient:  A coefficient with dimensionless units
         !                       that must have a value greater than 0.
