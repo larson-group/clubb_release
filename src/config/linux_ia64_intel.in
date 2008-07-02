@@ -1,4 +1,4 @@
-# $Id: linux_ia64_intel.in,v 1.2 2008-06-04 20:28:16 dschanen Exp $
+# $Id: linux_ia64_intel.in,v 1.3 2008-07-02 20:00:19 faschinj Exp $
 # Makefile definitions customized for Linux IA64 using the Intel Fortran 
 # compiler
 
@@ -13,6 +13,9 @@ FC = ifort
 
 # == Debugging ==
 DEBUG = -g -check bounds
+
+# == Warnings ++
+WARNINGS = -warn
 
 # == Machine specific options ==
 ARCH = -tp p1 # Itanium
