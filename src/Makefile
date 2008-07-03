@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.133 2008-07-03 16:08:04 faschinj Exp $
+# $Id: Makefile,v 1.134 2008-07-03 16:16:52 faschinj Exp $
 #
 # This version should work with GNU make and Sun's dmake.
 #
@@ -106,6 +106,13 @@ all:	hoc_standalone hoc_tuner int2txt hoc_inputfields  \
 # Note:
 # The budget terms tuner is currently non-working
 # -dschanen 15 March 2007
+	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/*.F
+	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/HOC_parameterization/*.F
+	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/GCSS/*.F
+	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/LH/*.F
+	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/coamps_micro/coamps_micro_driver.F
+	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/BUGSrad/bugsrad_hoc.F90
+
 
 # == Rules ==
 # Note: since we're using a virtual path the make command is going to use the
