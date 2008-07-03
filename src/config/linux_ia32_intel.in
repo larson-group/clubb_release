@@ -1,0 +1,63 @@
+# $Id: linux_ia32_intel.in,v 1.1 2008-07-03 13:35:49 dschanen Exp $
+# Makefile definitions customized for Linux x86_64 using the Intel Fortran 
+# compiler 
+
+# == Paths ==
+# This is where the make command is going to put the resulting files
+PREFIX = ..
+BINDIR = $(PREFIX)/bin
+LIBDIR = $(PREFIX)/lib
+
+# == Compiler invocation ==
+FC = ifort
+
+# == Debugging ==
+DEBUG = -g -check bounds
+
+# == Warnings ++
+WARNINGS = -warn
+
+# == Machine specific options ==
+ARCH = -xW # This should work on carson/steele
+#ARCH = -xT # Core2 Duo (overlie)
+
+# == Optimization ==
+OPTIMIZE = -O2
+
+# == NetCDF Location ==
+#NC_LOC = $(HOME)/netcdf-3.6.0-p1
+
+# == LAPACK libraries ==
+# Intel Math Kernel Library (v8)
+#LAPACK = -L/opt/intel/mkl/8.1/lib/64 -Wl,-rpath,/opt/intel/mkl/8.1/lib/64 -lmkl_lapack64 -lmkl_i2p -lmkl -lmkl_vml_i2p -lmkl_vml -lvml -lguide -lpthread
+# Generic library
+#LAPACK = -llapack -lblas -lgfortran
+LAPACK = -L/usr/lib64 -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas # ATLAS BLAS (faster)
+
+# == Linking Flags ==
+# Use -s to strip (no debugging); 
+# Use -L<library path> -l<lib> to link in an external library
+LDFLAGS = -L$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib $(LAPACK)
+
+# == Compiler flags (all) ==
+# Preprocessing:
+#   -DSTATS enables statistics
+#   -DSCALARS enables passive scalars
+#   -DBIG_ENDIAN_IO use only if compiler performs big endian file i/O
+#                   regardless of internal representation
+#   -DLITTLE_ENDIAN_IO use only if compiler performs little endian file i/O
+#                   regardless of internal representation
+#   -Dradoffline and -Dnooverlap (see bugsrad documentation)
+# You will need to `make clean' if you change these
+
+#FCFLAGS = $(ARCH) $(OPTIMIZE) -DSTATS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
+FCFLAGS = $(ARCH) $(DEBUG) -DSTATS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
+
+# == Static library processing ==
+AR = ar
+ARFLAGS = cru
+RANLIB = ranlib
+
+# == Shared library processing ==
+SHARED = $(FC)
+SHAREDFLAGS = -fPIC -shared
