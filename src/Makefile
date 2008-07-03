@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.132 2008-07-02 18:28:54 faschinj Exp $
+# $Id: Makefile,v 1.133 2008-07-03 16:08:04 faschinj Exp $
 #
 # This version should work with GNU make and Sun's dmake.
 #
@@ -96,7 +96,7 @@ HOC_BUDGET_TERMS= $(MODEL) $(INTERFACING) $(NUM_REC) error.o budget_terms.o hoc_
 # List of files to check for compiler warnings
 WARNABLE = $(filter std_atmosphere_mod.o calendar.o cos_solar_zen.o bugsrad_hoc.o, $(BUGS_RAD) ) \
 	$(filter coamps_micro_driver.o saturation.o, $(COAMPS_MICRO) ) \
-	$(filter-out air.o parab.o $(COAMPS_MICRO), $(MODEL) ) \
+	$(filter-out air.o parab.o cons.o $(COAMPS_MICRO), $(MODEL) ) \
 	$(PARAMETERIZATION) 
 
 # == Targets == ( hoc_tuner and jacobian assume statistics )
