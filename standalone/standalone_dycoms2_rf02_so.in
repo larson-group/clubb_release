@@ -1,4 +1,4 @@
-! $Id: standalone_dycoms2_rf02_so.in,v 1.22 2008-02-09 16:49:22 griffinb Exp $
+! $Id: standalone_dycoms2_rf02_so.in,v 1.23 2008-07-03 14:19:39 griffinb Exp $
 ! Description:
 ! Namelists for the hoc_standalone program. 
 ! run_file is the location of the model namelist file, which contains the 
@@ -52,7 +52,8 @@ c_K6        = 0.000000 ! Coefficient of Eddy Diffusion for wpthlp and wprtp.
 nu6         = 5.000000 ! Background Coefficient of Eddy Diffusion for wpxp.
 c_K8        = 0.500000 ! Coefficient of Eddy Diffusion for wp3.
 nu8         = 20.00000 ! Background Coefficient of Eddy Diffusion for wp3.
-nu9         = 20.00000 ! Coefficient of Eddy Diffusion for up2 and vp2.
+c_K9        = 0.000000 ! Coefficient of Eddy Diffusion for up2 and vp2.
+nu9         = 20.00000 ! Background Coefficient of Eddy Diffusion for up2 and vp2.
 c_Krrm      = 0.075000 ! Coefficient of Eddy Diffusion for hydrometeors.
 nu_r        = 3.000000 ! Background Coefficient of Eddy Diffusion for hydrometeors.
 c_Ksqd      = 10.00000 ! Constant for scaling effect of value-squared diffusion.
