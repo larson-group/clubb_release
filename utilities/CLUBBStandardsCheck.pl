@@ -1,4 +1,4 @@
-#$Id: CLUBBStandardsCheck.pl,v 1.2 2008-07-03 15:18:42 faschinj Exp $
+#$Id: CLUBBStandardsCheck.pl,v 1.3 2008-07-03 17:59:45 faschinj Exp $
 
 #!/usr/bin/perl
 
@@ -16,11 +16,15 @@
 #		"use" statement occurs on.  
 #		
 #		(3) Default Private declarations in modules
+#		Warns if "private" is missing from modules.
 #
 #               This perl script assumes that 
 #               the Fortran code compiles!!
 #
 ##################################################################
+
+# Enforce strict checking
+use strict;
 
 # Includes
 use Getopt::Long;
@@ -28,15 +32,15 @@ use Getopt::Long;
 # Global Variables
 
 # Print verbose messages?
-$verbose = 0;
+our $verbose = 0;
 
 # Name of the program
-$programName = "CLUBBStandardsCheck.pl";
+our $programName = "CLUBBStandardsCheck.pl";
 
 # Regular Expressions for Fortran statements
 # See http://perldoc.perl.org/perlre.html for more information
 
-$implicitNoneRegEx = 	qr/^				# Bind to beginning of line
+our $implicitNoneRegEx = qr/^				# Bind to beginning of line
 	      		\s*?				# Zero or more spaces before statement
 			\b				# Bind to front of statement
 			implicit\snone			# Implicit None
@@ -44,7 +48,7 @@ $implicitNoneRegEx = 	qr/^				# Bind to beginning of line
 			\s*?				# Zero or more spaces after statement
 			/ix;				# Whole expression is case insensitive
 
-$functionRegEx = 	qr/^				# Bind to beginning of line
+our $functionRegEx = 	qr/^				# Bind to beginning of line
         		\s*? 				# Zero or more spaces before statement
           	 	(real|double\sprecision|complex|
 			logical|character|integer|pure|
@@ -59,7 +63,7 @@ $functionRegEx = 	qr/^				# Bind to beginning of line
 			\b				# Bind to back of statement
 			/ix;				# Whole expression is case insensitive
 
-$subroutineRegEx = 	qr/^				# Bind to beginning of line
+our $subroutineRegEx = 	qr/^				# Bind to beginning of line
 	      		\s*?				# Zero or more spaces before statement
 	           	(pure|elemental|recursive|\s*?)*?	# Zero or more Specifications
 		        \s?				# Zero or One Space before statement
@@ -68,7 +72,7 @@ $subroutineRegEx = 	qr/^				# Bind to beginning of line
 			\b				# Bind to end of statement
 			/ix;				# Whole expression is case insensitive
 
-$moduleRegEx =		qr/^				# Bind to beginning of line
+our $moduleRegEx =	qr/^				# Bind to beginning of line
 	      		\s*?				# Zero or more spaces before statement
 			\b				# Bind to front of statement
 			module				# Module
@@ -80,14 +84,14 @@ $moduleRegEx =		qr/^				# Bind to beginning of line
 			$				# Bind to end of line
 			/ix;				# Whole expression is case insensitive
 		
-$programRegEx =		qr/^			# Bind to beginning of line
+our $programRegEx =	qr/^				# Bind to beginning of line
 	      		\s*?				# Zero or more spaces before statement
 			\b				# Bind to beginning of statement
 			program				# Program
 			\b				# Bind to end of statement
 			/ix;				# Whole expression is case insensitve
 
-$useRegEx =		qr/^				# Bind to beginning of line 
+our $useRegEx =		qr/^				# Bind to beginning of line 
 			\s*?				# Zero or more spaces before statement
 			use				# Use
 			\s+?				# One or more spaces after statement
@@ -97,13 +101,14 @@ $useRegEx =		qr/^				# Bind to beginning of line
 			$				# Bind to end of line 
 			/ix;				# Whole expression is case insensitive
 
-$privateRegEx =		qr/^			# Bind to beginning of line
+our $privateRegEx =	qr/^				# Bind to beginning of line
 	      		\s*?				# Zero or more spaces before statement
 			\bprivate\b			# Private
 			\s*? 				# Zero or more spaces after statement
 			(!.*?)*?			# Accepts only comments after statement
 			$				# Bind to end of line
 			/ix;				# Whole expression is case insensitive
+
 
 # Captures verbose command switch.
 GetOptions ('v|verbose' => \$verbose);
@@ -115,6 +120,10 @@ if(@ARGV < 1 )
 }
 #### BEGIN MAIN PROGRAM ####
 else{
+	# Declare Local Variables
+	our $file;
+	our @input;
+	
 	# For Every File
 	foreach $file (@ARGV)
 	{
@@ -371,8 +380,7 @@ sub privateCheck
 				print "$programName comment: Private found\n$line";
 			}
 			$privateCount++;
-		}
-		
+		}		
 	}
 	if($privateCount == $moduleCount )
 	{
