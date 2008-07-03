@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: param_index.F,v 1.8 2008-05-30 16:09:35 faschinj Exp $
+! $Id: param_index.F,v 1.9 2008-07-03 13:27:28 griffinb Exp $
         module param_index
 
 !       Description:
@@ -25,7 +25,7 @@
         private ! Default Scope
 
         integer, parameter, public :: 
-     .  nparams = 50 ! Total tunable parameters
+     .  nparams = 51 ! Total tunable parameters
 
         !***************************************************************
         !                    ***** IMPORTANT *****
@@ -76,20 +76,21 @@
      .  inu6            = 36,
      .  ic_K8           = 37,
      .  inu8            = 38,
-     .  inu9            = 39,
-     .  ic_Krrm         = 40,
-     .  inu_r           = 41,
-     .  ic_Ksqd         = 42
+     .  ic_K9           = 39,
+     .  inu9            = 40,
+     .  ic_Krrm         = 41,
+     .  inu_r           = 42,
+     .  ic_Ksqd         = 43
 
         integer, parameter, public ::
-     .  igamma_coef     = 43, 
-     .  igamma_coefb    = 44,
-     .  igamma_coefc    = 45,
-     .  imu             = 46,
-     .  ibeta           = 47,
-     .  ilmin_coef      = 48,
-     .  itaumin         = 49,
-     .  itaumax         = 50
+     .  igamma_coef     = 44, 
+     .  igamma_coefb    = 45,
+     .  igamma_coefc    = 46,
+     .  imu             = 47,
+     .  ibeta           = 48,
+     .  ilmin_coef      = 49,
+     .  itaumin         = 50,
+     .  itaumax         = 51
 
         end module param_index
 !-----------------------------------------------------------------------

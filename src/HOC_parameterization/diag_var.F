@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F,v 1.59 2008-07-01 16:08:27 faschinj Exp $
+! $Id: diag_var.F,v 1.60 2008-07-03 13:27:27 griffinb Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !===============================================================================
@@ -64,7 +64,7 @@
      .      lhole_fill ! logical constant
         
         use parameters, 
-     .    only: C2rt, C2thl, C2rtthl, c_K2, nu2, nu9, ! Variable(s)
+     .    only: C2rt, C2thl, C2rtthl, c_K2, nu2, c_K9, nu9, ! Variable(s)
      .          c_Ksqd, beta, C4, C14, C5, T0
         
         use grid_class, only:
@@ -174,7 +174,9 @@
      .  Valid_arr
 
         ! Eddy Diffusion for Variances and Covariances.
-        real, dimension(gr%nnzp) :: Kw2   ! [m^2/s]
+        real, dimension(gr%nnzp) :: 
+     .  Kw2,        ! For rtp2, thlp2, rtpthlp, and passive scalars  [m^2/s]
+     .  Kw9         ! For up2 and vp2                                [m^2/s]
 
         ! Variables used for adding (xapxbp)^2: 3-point average
         ! diffusion coefficient.
@@ -306,8 +308,8 @@
         ! Define the Coefficent of Eddy Diffusivity for the 
         ! Variances and Covariances.
         do k = 1, gr%nnzp, 1
-           ! Kw2 is used for all variances and covariances in subroutine
-           ! diag_var.  The variances and covariances are located on 
+           ! Kw2 is used for variances and covariances rtp2, thlp2, rtpthlp,
+           ! and passive scalars.  The variances and covariances are located on 
            ! momentum levels.  Kw2 is located on thermodynamic levels.
            ! Kw2 = c_K2 * Kht
            Kw2(k) = c_K2 * Kht(k)
@@ -322,6 +324,10 @@
            ! units of K (kg/kg), c_Ksqd is given units of m^2/[ s K (kg/kg) ] 
            ! in this case.
            Kw2_rtpthlp(k) = Kw2(k) + c_Ksqd * rtpthlp_zt_sqd_3pt(k) ! Vince Larson increased by c_Ksqd, 29Jan2008
+           ! Kw9 is used for variances up2 and vp2.  The variances are located 
+           ! on momentum levels.  Kw9 is located on thermodynamic levels.
+           ! Kw9 = c_K9 * Kht
+           Kw9(k) = c_K9 * Kht(k)
         enddo
 
 
@@ -385,7 +391,7 @@
         ! Implicit contributions to term up2
 
         call diag_var_lhs( dt, liter, a1, a1_zt, wp2_zt, 
-     .                     wp3, taum, wmm, Kw2, C4_C14_1d, 
+     .                     wp3, taum, wmm, Kw9, C4_C14_1d, 
      .                     nu9, beta, wtol_sqd, lhs )
 
         ! Explicit contributions to up2
@@ -404,7 +410,7 @@
         ! Implicit contributions to term vp2
 
         call diag_var_lhs( dt, liter, a1, a1_zt, wp2_zt, 
-     .                     wp3, taum, wmm, Kw2, C4_C14_1d, 
+     .                     wp3, taum, wmm, Kw9, C4_C14_1d, 
      .                     nu9, beta, wtol_sqd, lhs )
 
         ! Explicit contributions to vp2
@@ -676,7 +682,7 @@
 
 !===============================================================================
         subroutine diag_var_lhs( dt, liter, a1, a1_zt, wp2_zt, 
-     .                           wp3, taum, wmm, Kw2, Cn, 
+     .                           wp3, taum, wmm, Kw, Cn, 
      .                           nu, beta, wtol_sqd, lhs )
         
 !       Description:
@@ -754,7 +760,7 @@
      .  wp3,   ! w'^3 (thermodynamic levels)                 [m^3/s^3]
      .  taum,  ! Time-scale tau on momentum levels           [s]
      .  wmm,   ! w wind component on momentum levels         [m/s]
-     .  Kw2,   ! Coefficient of eddy diffusivity (all vars.) [m^2/s]
+     .  Kw,    ! Coefficient of eddy diffusivity (all vars.) [m^2/s]
      .  Cn     ! Coefficient C_n                             [-]
 
         real, intent(in) ::
@@ -786,7 +792,7 @@
 
           ! LHS eddy diffusion term: dissipation term 2 (dp2).
           lhs(kp1_mdiag:km1_mdiag,k)
-     .    = diffusion_zm_lhs( Kw2(k), Kw2(kp1), nu,
+     .    = diffusion_zm_lhs( Kw(k), Kw(kp1), nu,
      .                        gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
 
           ! LHS dissipation term 1 (dp1)
@@ -829,7 +835,7 @@
          if ( irtp2_dp2 + ithlp2_dp2 + irtpthlp_dp2 + 
      .        iup2_dp2 + ivp2_dp2 > 0 ) then
            tmp(1:3)
-     .     = diffusion_zm_lhs( Kw2(k), Kw2(kp1), nu,
+     .     = diffusion_zm_lhs( Kw(k), Kw(kp1), nu,
      .                         gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
            zmscr02(k) = -tmp(3)
            zmscr03(k) = -tmp(2)
