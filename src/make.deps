@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.50 2008-06-27 11:58:57 griffinb Exp $
+# $Id: make.deps,v 1.51 2008-07-03 13:34:59 dschanen Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -98,7 +98,7 @@ diffusion.o	: grid.o diffusion.F
 mean_adv.o      : grid.o mean_adv.F
 pos_definite_mod.o : grid.o stats_precision.o pos_definite_mod.F
 fill_holes_mult.o : fill_holes_mult.F grid.o
-semiimplicit_clip.o : stats_precision.o semiimplicit_clip.F
+semiimplicit_clip.o : constants.o stats_precision.o semiimplicit_clip.F
 
 # == Numerical Recipes dependencies (For the tuner) ==
 nrtype.o	: nrtype.f90
@@ -195,7 +195,7 @@ hoc.o		: parameterization_interface.o arm.o astex.o atex.o \
 	inputfields.o error_code.o hoc.F
 sounding.o	: grid.o std_atmosphere_mod.o interpolation.o constants.o sounding.F
 std_atmosphere_mod.o: constants.o interpolation.o std_atmosphere_mod.F
-interpolation.o : interpolation.F
+interpolation.o : error_code.o interpolation.F
 calendar.o      : calendar.F
 inputfields.o	: grid.o inputgrads.o prog_variables.o diag_variables.o \
 	inputfields.F 
