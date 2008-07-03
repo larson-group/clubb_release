@@ -1,4 +1,4 @@
-#$Id: CLUBBStandardsCheck.pl,v 1.1 2008-07-02 21:38:16 faschinj Exp $
+#$Id: CLUBBStandardsCheck.pl,v 1.2 2008-07-03 15:18:42 faschinj Exp $
 
 #!/usr/bin/perl
 
@@ -30,7 +30,80 @@ use Getopt::Long;
 # Print verbose messages?
 $verbose = 0;
 
+# Name of the program
 $programName = "CLUBBStandardsCheck.pl";
+
+# Regular Expressions for Fortran statements
+# See http://perldoc.perl.org/perlre.html for more information
+
+$implicitNoneRegEx = 	qr/^				# Bind to beginning of line
+	      		\s*?				# Zero or more spaces before statement
+			\b				# Bind to front of statement
+			implicit\snone			# Implicit None
+			\b				# Bind to end of statement
+			\s*?				# Zero or more spaces after statement
+			/ix;				# Whole expression is case insensitive
+
+$functionRegEx = 	qr/^				# Bind to beginning of line
+        		\s*? 				# Zero or more spaces before statement
+          	 	(real|double\sprecision|complex|
+			logical|character|integer|pure|
+			elemental|recursive|\s*?)*?	# Zero or more specifications.
+							# Note the expression does not fit	
+							# Fortran syntax exactly but we can
+							# rely on the compiler to verify 
+							# appropriate uses of specifications.
+	        	\s?				# Zero or One space before statement
+                	\b				# Bind to front of statement
+			function			# Function
+			\b				# Bind to back of statement
+			/ix;				# Whole expression is case insensitive
+
+$subroutineRegEx = 	qr/^				# Bind to beginning of line
+	      		\s*?				# Zero or more spaces before statement
+	           	(pure|elemental|recursive|\s*?)*?	# Zero or more Specifications
+		        \s?				# Zero or One Space before statement
+			\b				# Bind to front of statement
+			subroutine			# Subroutine
+			\b				# Bind to end of statement
+			/ix;				# Whole expression is case insensitive
+
+$moduleRegEx =		qr/^				# Bind to beginning of line
+	      		\s*?				# Zero or more spaces before statement
+			\b				# Bind to front of statement
+			module				# Module
+			\b				# Bind to end of statement
+			\s+?				# One or more spaces
+			\w+?				# One or more word characters 
+			\s*?				# Zero or more spaces after statement
+			(!.*?)*?			# After statement, accept comments and nothing else
+			$				# Bind to end of line
+			/ix;				# Whole expression is case insensitive
+		
+$programRegEx =		qr/^			# Bind to beginning of line
+	      		\s*?				# Zero or more spaces before statement
+			\b				# Bind to beginning of statement
+			program				# Program
+			\b				# Bind to end of statement
+			/ix;				# Whole expression is case insensitve
+
+$useRegEx =		qr/^				# Bind to beginning of line 
+			\s*?				# Zero or more spaces before statement
+			use				# Use
+			\s+?				# One or more spaces after statement
+			\w+?				# One or more word characters
+			\s*?				# Zero or more spaces
+			(!.*?)*?			# After statement, accept comments and nothing else
+			$				# Bind to end of line 
+			/ix;				# Whole expression is case insensitive
+
+$privateRegEx =		qr/^			# Bind to beginning of line
+	      		\s*?				# Zero or more spaces before statement
+			\bprivate\b			# Private
+			\s*? 				# Zero or more spaces after statement
+			(!.*?)*?			# Accepts only comments after statement
+			$				# Bind to end of line
+			/ix;				# Whole expression is case insensitive
 
 # Captures verbose command switch.
 GetOptions ('v|verbose' => \$verbose);
@@ -119,21 +192,7 @@ sub implicitCheck
 	foreach $line (@input)
 	{
 		# Is it a function declaration?
-	        if($line =~ /^				# Bind to beginning of line
-        		\s*? 				# Zero or more spaces before statement
-          	 	(real|double\sprecision|complex|
-			logical|character|integer|pure|
-			elemental|recursive|\s*?)*?	# Zero or more specifications.
-							# Note the expression does not fit	
-							# Fortran syntax exactly but we can
-							# rely on the compiler to verify 
-							# appropriate uses of specifications.
-	        	\s?				# Zero or One space before statement
-                	\b				# Bind to front of statement
-			function			# Function
-			\b				# Bind to back of statement
-			/ix				# Whole expression is case insensitive
-		)		
+	        if( $line =~ $functionRegEx )		
 		{
 			# Print if verbose
 			if( $verbose )
@@ -143,15 +202,7 @@ sub implicitCheck
 			$statementCount++;
 		}
 		# Is it a subroutine declaration?	
-		elsif($line =~/^			# Bind to beginning of line
-	      		\s*?				# Zero or more spaces before statement
-	           	(pure|elemental|recursive|\s*?)*?	# Zero or more Specifications
-		        \s?				# Zero or One Space before statement
-			\b				# Bind to front of statement
-			subroutine			# Subroutine
-			\b				# Bind to end of statement
-			/ix				# Whole expression is case insensitive
-		)
+		elsif($line =~ $subroutineRegEx)
 		{	
 			# Print if verbose
 			if( $verbose )
@@ -162,18 +213,7 @@ sub implicitCheck
 			
 		}
 		# Is it a module declaration?
-		elsif($line =~/^			# Bind to beginning of line
-	      		\s*?				# Zero or more spaces before statement
-			\b				# Bind to front of statement
-			module				# Module
-			\b				# Bind to end of statement
-			\s+?				# One or more spaces
-			\w+?				# One or more word characters 
-			\s*?				# Zero or more spaces after statement
-			(!.*?)*?			# After statement, accept comments and nothing else
-			$				# Bind to end of line
-			/ix				# Whole expression is case insensitive
-		)           	
+		elsif($line =~ $moduleRegEx)           	
 		{
 			# Print if verbose	
 			if( $verbose )
@@ -183,13 +223,7 @@ sub implicitCheck
 			$statementCount++;
 		}
 		# Is it a program declaration?
-		elsif($line =~/^			# Bind to beginning of line
-	      		\s*?				# Zero or more spaces before statement
-			\b				# Bind to beginning of statement
-			program				# Program
-			\b				# Bind to end of statement
-			/ix				# Whole expression is case insensitve
-		)
+		elsif( $line =~ $programRegEx )
 		{	
 			if( $verbose )
 			{
@@ -198,14 +232,7 @@ sub implicitCheck
 			$statementCount++;
 		}
 		# Is it an implicit none declaration?	
-		elsif($line =~/^			# Bind to beginning of line
-	      		\s*?				# Zero or more spaces before statement
-			\b				# Bind to front of statement
-			implicit\snone			# Implicit None
-			\b				# Bind to end of statement
-			\s*?				# Zero or more spaces after statement
-			/ix				# Whole expression is case insensitive
-		)
+		elsif( $line =~ $implicitNoneRegEx )
 		{
 			# Print if verbose	
 			if($verbose)
@@ -271,16 +298,7 @@ sub useCheck
 	# Check whether (true if) each line matches the format described in the comments below.
 	foreach $line ( @input )
 	{
-		if($line =~ /^				# Bind to beginning of line 
-			\s*?				# Zero or more spaces before statement
-			use				# Use
-			\s+?				# One or more spaces after statement
-			\w+?				# One or more word characters
-			\s*?				# Zero or more spaces
-			(!.*?)*?			# After statement, accept comments and nothing else
-			$				# Bind to end of line 
-			/ix				# Whole expression is case insensitive
-		)
+		if( $line =~ $useRegEx )
 		{       # If the above is true, execute the statements below (i.e. return an error):
 			warn " $programName warning: 'use' statement w/o 'only' found in the following line:\n";
 			warn "$lineNumber : $line";
@@ -335,16 +353,7 @@ sub privateCheck
 	foreach $line (	@input )
 	{
 		# Does the line contain a module declaration?
-		if($line =~/^				# Bind to beginning of line
-	      		\s*?				# Zero or more spaces before statement
-			\bmodule\b 			# Module
-			\s 				# One space
-			\w+? 				# One or more word characters
-			\s*?				# Zero or more spaces after statement
-			(!.*?)*?			# Accepts only comments after statement
-			$				# Bind to end of line
-			/ix				# Whole expression is case insensitive
-		)                           
+		if( $line =~ $moduleRegEx )                           
 		{
 			# Print if verbose
 			if($verbose)
@@ -354,14 +363,7 @@ sub privateCheck
 			$moduleCount++;	
 		}
 		# Does the line contain a private declaration?
-		elsif($line =~/^			# Bind to beginning of line
-	      		\s*?				# Zero or more spaces before statement
-			\bprivate\b			# Private
-			\s*? 				# Zero or more spaces after statement
-			(!.*?)*?			# Accepts only comments after statement
-			$				# Bind to end of line
-			/ix				# Whole expression is case insensitive
-		)
+		elsif($line =~ $privateRegEx )
 		{	
 			# Print if verbose
 			if($verbose)
