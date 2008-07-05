@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F,v 1.61 2008-07-05 16:26:47 griffinb Exp $
+! $Id: diag_var.F,v 1.62 2008-07-05 16:48:01 griffinb Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !===============================================================================
@@ -627,33 +627,33 @@
             end do ! k
           end do ! i
 
-        end if ! scalar_calc
+          ! Clipping for sclr'r_t'
+          ! Clipping sclr'r_t' at each vertical level, based on the 
+          ! correlation of sclr and r_t at each vertical level, such that:
+          ! corr_(sclr,r_t) = sclr'r_t' / [ sqrt(sclr'^2) * sqrt(r_t'^2) ];
+          ! -1 <= corr_(sclr,r_t) <= 1.
+          ! Since sclr'^2, r_t'^2, and sclr'r_t' are all computed in the
+          ! same place, clipping for sclr'r_t' only has to be done once.
+          do i = 1, sclr_dim, 1
+             call covariance_clip( "sclrprtp", .true., 
+     .                             .true., dt, sclrp2(:,i), rtp2(:),
+     .                             sclrprtp(:,i) )
+          enddo
 
-        ! Clipping for sclr'r_t'
-        ! Clipping sclr'r_t' at each vertical level, based on the 
-        ! correlation of sclr and r_t at each vertical level, such that:
-        ! corr_(sclr,r_t) = sclr'r_t' / [ sqrt(sclr'^2) * sqrt(r_t'^2) ];
-        ! -1 <= corr_(sclr,r_t) <= 1.
-        ! Since sclr'^2, r_t'^2, and sclr'r_t' are all computed in the
-        ! same place, clipping for sclr'r_t' only has to be done once.
-        do i = 1, sclr_dim, 1
-           call covariance_clip( "sclrprtp", .true., 
-     .                           .true., dt, sclrp2(:,i), rtp2(:), 
-     .                           sclrprtp(:,i) )
-        enddo
+          ! Clipping for sclr'th_l'
+          ! Clipping sclr'th_l' at each vertical level, based on the 
+          ! correlation of sclr and th_l at each vertical level, such that:
+          ! corr_(sclr,th_l) = sclr'th_l' / [ sqrt(sclr'^2) * sqrt(th_l'^2) ];
+          ! -1 <= corr_(sclr,th_l) <= 1.
+          ! Since sclr'^2, th_l'^2, and sclr'th_l' are all computed in the
+          ! same place, clipping for sclr'th_l' only has to be done once.
+          do i = 1, sclr_dim, 1
+             call covariance_clip( "sclrpthlp", .true., 
+     .                             .true., dt, sclrp2(:,i), thlp2(:),
+     .                             sclrpthlp(:,i) )
+          enddo
 
-        ! Clipping for sclr'th_l'
-        ! Clipping sclr'th_l' at each vertical level, based on the 
-        ! correlation of sclr and th_l at each vertical level, such that:
-        ! corr_(sclr,th_l) = sclr'th_l' / [ sqrt(sclr'^2) * sqrt(th_l'^2) ];
-        ! -1 <= corr_(sclr,th_l) <= 1.
-        ! Since sclr'^2, th_l'^2, and sclr'th_l' are all computed in the
-        ! same place, clipping for sclr'th_l' only has to be done once.
-        do i = 1, sclr_dim, 1
-           call covariance_clip( "sclrpthlp", .true., 
-     .                           .true., dt, sclrp2(:,i), thlp2(:), 
-     .                           sclrpthlp(:,i) )
-        enddo
+        endif ! scalar_calc
 
         ! Check for singular matrices
         do i = 1, 5+1
