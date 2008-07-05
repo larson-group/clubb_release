@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_type.F,v 1.14 2008-06-24 18:50:54 faschinj Exp $
+! $Id: stats_type.F,v 1.15 2008-07-05 16:26:47 griffinb Exp $
       module stats_type
 #ifdef STATS
  
@@ -22,7 +22,7 @@
         public :: stats, stat_assign, stat_update_var,
      .            stat_update_var_pt, stat_begin_update,
      .            stat_end_update, stat_begin_update_pt,
-     .            stat_end_update_pt, stat_modify_pt
+     .            stat_end_update_pt, stat_modify, stat_modify_pt
 
 
         ! Derived data types to store GrADS/netCDF statistics

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F,v 1.60 2008-07-03 13:27:27 griffinb Exp $
+! $Id: diag_var.F,v 1.61 2008-07-05 16:26:47 griffinb Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !===============================================================================
@@ -73,6 +73,9 @@
         
         use stats_precision, only: 
      .      time_precision ! Variable(s)
+
+        use explicit_clip, only:
+     .      covariance_clip ! Procedure(s)
         
         use error_code, only: 
      .      clubb_no_error, ! Variable(s)
@@ -472,12 +475,23 @@
 
         end do ! k=2..gr%nnzp
 
+        ! Clipping for r_t'th_l'
+        ! Clipping r_t'th_l' at each vertical level, based on the 
+        ! correlation of r_t and th_l at each vertical level, such that:
+        ! corr_(r_t,th_l) = r_t'th_l' / [ sqrt(r_t'^2) * sqrt(th_l'^2) ];
+        ! -1 <= corr_(r_t,th_l) <= 1.
+        ! Since r_t'^2, th_l'^2, and r_t'th_l' are all computed in the
+        ! same place, clipping for r_t'th_l' only has to be done once.
+        call covariance_clip( "rtpthlp", .true., 
+     .                        .true., dt, rtp2, thlp2, 
+     .                        rtpthlp )
+
         ! Clipping for up2/vp2
         ! This appears to be unneeded for now.  If these do need to be
         ! clipped in the future, this could be uncommented and budget
         ! could be added. -dschanen 24 April 2007
-       where ( vp2 < 0.0 ) vp2 = 0.0
-       where ( up2 < 0.0 ) up2 = 0.0
+        where ( vp2 < 0.0 ) vp2 = 0.0
+        where ( up2 < 0.0 ) up2 = 0.0
 
 #ifdef STATS
         if ( lstats_samp ) then
@@ -614,6 +628,32 @@
           end do ! i
 
         end if ! scalar_calc
+
+        ! Clipping for sclr'r_t'
+        ! Clipping sclr'r_t' at each vertical level, based on the 
+        ! correlation of sclr and r_t at each vertical level, such that:
+        ! corr_(sclr,r_t) = sclr'r_t' / [ sqrt(sclr'^2) * sqrt(r_t'^2) ];
+        ! -1 <= corr_(sclr,r_t) <= 1.
+        ! Since sclr'^2, r_t'^2, and sclr'r_t' are all computed in the
+        ! same place, clipping for sclr'r_t' only has to be done once.
+        do i = 1, sclr_dim, 1
+           call covariance_clip( "sclrprtp", .true., 
+     .                           .true., dt, sclrp2(:,i), rtp2(:), 
+     .                           sclrprtp(:,i) )
+        enddo
+
+        ! Clipping for sclr'th_l'
+        ! Clipping sclr'th_l' at each vertical level, based on the 
+        ! correlation of sclr and th_l at each vertical level, such that:
+        ! corr_(sclr,th_l) = sclr'th_l' / [ sqrt(sclr'^2) * sqrt(th_l'^2) ];
+        ! -1 <= corr_(sclr,th_l) <= 1.
+        ! Since sclr'^2, th_l'^2, and sclr'th_l' are all computed in the
+        ! same place, clipping for sclr'th_l' only has to be done once.
+        do i = 1, sclr_dim, 1
+           call covariance_clip( "sclrpthlp", .true., 
+     .                           .true., dt, sclrp2(:,i), thlp2(:), 
+     .                           sclrpthlp(:,i) )
+        enddo
 
         ! Check for singular matrices
         do i = 1, 5+1
