@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zm.F,v 1.13 2008-07-02 20:45:44 griffinb Exp $
+! $Id: stats_zm.F,v 1.14 2008-07-05 14:39:42 griffinb Exp $
       module stats_zm
 #ifdef STATS
        
@@ -136,7 +136,8 @@
      .    irtpthlp_tp1,
      .    irtpthlp_tp2,
      .    irtpthlp_dp1,
-     .    irtpthlp_dp2
+     .    irtpthlp_dp2,
+     .    irtpthlp_cl
 
 #ifdef SCALARS
      .    ,isclraprtp,
@@ -311,6 +312,7 @@
       irtpthlp_tp2 = 0
       irtpthlp_dp1 = 0
       irtpthlp_dp2 = 0
+      irtpthlp_cl  = 0
 
 #ifdef SCALARS
       isclraprtp    = 0
@@ -915,6 +917,12 @@
           call stat_assign(irtpthlp_dp2,"rtpthlp_dp2",
      .         "rtpthlp dissipation term 2","(kg K)/(kg s)",zm)
           k = k + 1
+        case ('rtpthlp_cl')
+          irtpthlp_cl = k
+          call stat_assign(irtpthlp_cl,"rtpthlp_cl",
+     .         "rtpthlp clipping term","(kg K)/(kg s)",zm)
+          k = k + 1
+
         case ('up2_plus_vp2')
           iup2_plus_vp2 = k
           call stat_assign(iup2_plus_vp2,"up2_plus_vp2",

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_variables.F,v 1.4 2008-07-02 20:45:44 griffinb Exp $
+! $Id: stats_variables.F,v 1.5 2008-07-05 14:39:42 griffinb Exp $
 !-----------------------------------------------------------------------
 !  module stats_variables
 
@@ -439,11 +439,12 @@
      .    irtpthlp_tp1,
      .    irtpthlp_tp2,
      .    irtpthlp_dp1,
-     .    irtpthlp_dp2
+     .    irtpthlp_dp2,
+     .    irtpthlp_cl
 
 !$omp   threadprivate(irtpthlp_bt, irtpthlp_ma, irtpthlp_ta)
 !$omp   threadprivate(irtpthlp_tp1, irtpthlp_tp2, irtpthlp_dp1)
-!$omp   threadprivate(irtpthlp_dp2)
+!$omp   threadprivate(irtpthlp_dp2, irtpthlp_cl)
 
         integer, public ::
      .    iup2,
