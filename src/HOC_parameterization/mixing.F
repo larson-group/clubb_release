@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.69 2008-07-05 18:19:44 griffinb Exp $
+! $Id: mixing.F,v 1.70 2008-07-05 23:13:49 griffinb Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -796,12 +796,12 @@
           ! LHS time tendency.
           if (liter) lhs(3,k_wpxp) = lhs(3,k_wpxp) + 1.0 / dt
 
-!          ! LHS portion of semi-implicit clipping term.
-!          lhs(3,k_wpxp)
-!     .    = lhs(3,k_wpxp)
-!     .    + semiimp_clip_lhs( dt, wpxp(k), 
-!     .                        .true., wpxp_upper_lim(k), 
-!     .                        .true., wpxp_lower_lim(k) )
+          ! LHS portion of semi-implicit clipping term.
+          lhs(3,k_wpxp)
+     .    = lhs(3,k_wpxp)
+     .    + semiimp_clip_lhs( dt, wpxp(k), 
+     .                        .true., wpxp_upper_lim(k), 
+     .                        .true., wpxp_lower_lim(k) )
 
 #ifdef STATS
           if (lstats_samp) then
@@ -860,12 +860,12 @@
             zmscr14(k) = - tmp(1)
           endif
 
-!          if ( iwprtp_sicl > 0 .or. iwpthlp_sicl > 0 ) then
-!            zmscr15(k) =
-!     .      - semiimp_clip_lhs( dt, wpxp(k), 
-!     .                          .true., wpxp_upper_lim(k), 
-!     .                          .true., wpxp_lower_lim(k) )
-!          endif
+          if ( iwprtp_sicl > 0 .or. iwpthlp_sicl > 0 ) then
+            zmscr15(k) =
+     .      - semiimp_clip_lhs( dt, wpxp(k), 
+     .                          .true., wpxp_upper_lim(k), 
+     .                          .true., wpxp_lower_lim(k) )
+          endif
 
           endif
 #endif /*STATS*/
@@ -1065,12 +1065,12 @@
           ! RHS time tendency.
           if ( liter ) rhs(k_wpxp,1) = rhs(k_wpxp,1) + wpxp(k) / dt
 
-!          ! RHS portion of semi-implicit clipping term.
-!          rhs(k_wpxp,1)
-!     .    = rhs(k_wpxp,1)
-!     .    + semiimp_clip_rhs( dt, wpxp(k),
-!     .                        .true., wpxp_upper_lim(k),
-!     .                        .true., wpxp_lower_lim(k) )
+          ! RHS portion of semi-implicit clipping term.
+          rhs(k_wpxp,1)
+     .    = rhs(k_wpxp,1)
+     .    + semiimp_clip_rhs( dt, wpxp(k),
+     .                        .true., wpxp_upper_lim(k),
+     .                        .true., wpxp_lower_lim(k) )
 
 #ifdef STATS
           if ( lstats_samp ) then
@@ -1083,10 +1083,10 @@
           call stat_update_var_pt( iwpxp_pr3, k,
      .        wpxp_terms_bp_pr3_rhs( (1.0+C7_Skw_fnc(k)),xpthvp(k)), zm)
 
-!          call stat_begin_update_pt( iwpxp_sicl, k,
-!     .       -semiimp_clip_rhs( dt, wpxp(k),
-!     .                          .true., wpxp_upper_lim(k),
-!     .                          .true., wpxp_lower_lim(k) ), zm )
+          call stat_begin_update_pt( iwpxp_sicl, k,
+     .       -semiimp_clip_rhs( dt, wpxp(k),
+     .                          .true., wpxp_upper_lim(k),
+     .                          .true., wpxp_lower_lim(k) ), zm )
 
           endif ! lstats_samp
 #endif /*STATS*/
@@ -1169,7 +1169,8 @@
      .      stat_update_var_pt,
      .      stat_end_update_pt,
      .      stat_end_update, 
-     .      stat_update_var
+     .      stat_update_var,
+     .      stat_modify
         
         use stats_variables, only:
      .      zt, ! Variable(s)
@@ -1188,7 +1189,6 @@
      .      iwprtp_pr1,
      .      iwprtp_pr2,
      .      iwprtp_dp1,
-     .      iwprtp_cl,
      .      iwprtp_pd,
      .      iwprtp_sicl,
      .      ithlm_bt,
@@ -1203,7 +1203,6 @@
      .      iwpthlp_pr1,
      .      iwpthlp_pr2,
      .      iwpthlp_dp1,
-     .      iwpthlp_cl,
      .      iwpthlp_sicl,
      .      lstats_samp,
      .      ztscr01,
@@ -1290,7 +1289,6 @@
      .    iwpxp_pr1,
      .    iwpxp_pr2,
      .    iwpxp_dp1,
-     .    iwpxp_cl,
      .    iwpxp_pd,
      .    iwpxp_sicl
 
@@ -1309,7 +1307,6 @@
           iwpxp_pr1  = iwprtp_pr1
           iwpxp_pr2  = iwprtp_pr2
           iwpxp_dp1  = iwprtp_dp1
-          iwpxp_cl   = iwprtp_cl
           iwpxp_pd   = iwprtp_pd
           iwpxp_sicl = iwprtp_sicl
         case ( "thlm" ) ! thlm/wpthlp budget terms
@@ -1326,7 +1323,6 @@
           iwpxp_pr1  = iwpthlp_pr1
           iwpxp_pr2  = iwpthlp_pr2
           iwpxp_dp1  = iwpthlp_dp1
-          iwpxp_cl   = iwpthlp_cl
           iwpxp_pd   = 0
           iwpxp_sicl = iwpthlp_sicl
         case default  ! this includes the sclrm case
@@ -1343,7 +1339,6 @@
           iwpxp_pr1  = 0
           iwpxp_pr2  = 0
           iwpxp_dp1  = 0
-          iwpxp_cl   = 0
           iwpxp_pd   = 0
           iwpxp_sicl = 0
         end select
@@ -1355,8 +1350,16 @@
           ! xm total time tendency ( 1st calculation)
           call stat_begin_update( ixm_bt, real( xm /dt ), zt )
 
-          ! wpxp total time tendency (1st calculation)
-          call stat_begin_update( iwpxp_bt, real( wpxp / dt ), zm )
+          ! wpxp is clipped after subroutine diag_var and after 
+          ! subroutine wp23.  The overall time tendency must include
+          ! the effects of those clippings, as well.  Therefore, the 
+          ! wpxp total time tendency term is only being modified in 
+          ! mixing.F, rather than being entirely contained in mixing.F.
+!          ! wpxp total time tendency (1st calculation)
+!          call stat_begin_update( iwpxp_bt, real( wpxp / dt ), zm )
+          ! wpxp total time tendency (1st calculation in mixing.F)
+          call stat_modify( iwpxp_bt, real( -wpxp / dt ), zm )
+          ! Brian Griffin; July 5, 2008.
 
         end if ! lstats_samp
 #endif /*STATS*/
@@ -1457,8 +1460,8 @@
      .         + zmscr13(k) * wpxp(k)
      .         + zmscr14(k) * wpxp(kp1), zm )
 
-!             call stat_end_update_pt( iwpxp_sicl, k,
-!     .           zmscr15(k) * wpxp(k), zm )
+             call stat_end_update_pt( iwpxp_sicl, k,
+     .           zmscr15(k) * wpxp(k), zm )
              
            enddo ! 1..gr%nnzp
 
@@ -1510,8 +1513,8 @@
         ! from each other, clipping for w'x' has to be done three times
         ! (three times each for w'r_t', w'th_l', and w'sclr').  This is
         ! the second instance of w'x' clipping.
-        call covariance_clip( solve_type_cl, .true., 
-     .                        .true., dt, wp2, xp2, 
+        call covariance_clip( solve_type_cl, .false., 
+     .                        .false., dt, wp2, xp2, 
      .                        wpxp )
 
 #ifdef STATS
@@ -1519,8 +1522,16 @@
           ! xm time tendency (2nd calculation)
           call stat_end_update( ixm_bt, real( xm / dt ), zt )
 
-          ! wpxp time tendency (2nd calculation)
-          call stat_end_update( iwpxp_bt, real( wpxp / dt ), zm )
+          ! wpxp is clipped after subroutine diag_var and after 
+          ! subroutine wp23.  The overall time tendency must include
+          ! the effects of those clippings, as well.  Therefore, the 
+          ! wpxp total time tendency term is only being modified in 
+          ! mixing.F, rather than being entirely contained in mixing.F.
+!          ! wpxp time tendency (2nd calculation)
+!          call stat_end_update( iwpxp_bt, real( wpxp / dt ), zm )
+          ! wpxp time tendency (2nd calculation in mixing.F)
+          call stat_modify( iwpxp_bt, real( wpxp / dt ), zm )
+          ! Brian Griffin; July 5, 2008.
 
         endif
 #endif /*STATS*/

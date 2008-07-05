@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.101 2008-06-30 19:06:53 faschinj Exp $
+! $Id: parameterization_interface.F,v 1.102 2008-07-05 23:13:50 griffinb Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -185,6 +185,9 @@
        use Skw, only: 
      .     Skw_func ! Procedure
 
+       use explicit_clip, only:
+     .     covariance_clip ! Procedure(s)
+
        use permute_height_time_mod, only: 
      .     permute_height_time ! Procedure
 
@@ -196,13 +199,19 @@
      .     ish,
      .     ilh,
      .     iustar,
-     .     iup2_plus_vp2
+     .     iup2_plus_vp2,
+     .     iwprtp_bt,
+     .     iwpthlp_bt
 
        use stats_subs, only:
      .     stats_accumulate ! Procedure
 
        use stats_type, only:
-     .     stat_update_var, stat_update_var_pt ! Procedure(s)
+     .     stat_update_var, ! Procedure(s)
+     .     stat_update_var_pt,
+     .     stat_begin_update,
+     .     stat_modify,
+     .     stat_end_update
 #endif /*STATS*/
 
        implicit none
@@ -444,6 +453,89 @@
      .                sclrprtp, sclrpthlp         !   "       "
 #endif /* SCALARS */
      .               )
+
+       !----------------------------------------------------------------
+       ! Covariance clipping for wprtp, wpthlp, and wpsclrp after 
+       ! subroutine diag_var updated rtp2, thlp2, and sclrp2.
+       !----------------------------------------------------------------
+
+       ! Clipping for w'r_t'
+       !
+       ! Clipping w'r_t' at each vertical level, based on the 
+       ! correlation of w and r_t at each vertical level, such that:
+       ! corr_(w,r_t) = w'r_t' / [ sqrt(w'^2) * sqrt(r_t'^2) ];
+       ! -1 <= corr_(w,r_t) <= 1.
+       ! Since w'^2, r_t'^2, and w'r_t' are updated in different 
+       ! places from each other, clipping for w'r_t' has to be done 
+       ! three times.  This is the first instance of w'r_t' clipping.
+
+#ifdef STATS
+       ! Include effect of clipping in wprtp time tendency budget term.
+       if ( lstats_samp ) then
+          ! wprtp total time tendency (effect of clipping)
+          call stat_begin_update( iwprtp_bt, real( wprtp / dt ), zm )
+       endif
+#endif /*STATS*/
+
+       call covariance_clip( "wprtp", .true., 
+     .                       .false., dt, wp2, rtp2, 
+     .                       wprtp )
+
+#ifdef STATS
+       if ( lstats_samp ) then
+          ! wprtp total time tendency (effect of clipping)
+          call stat_modify( iwprtp_bt, real( wprtp / dt ), zm )
+       endif
+#endif /*STATS*/
+
+
+       ! Clipping for w'th_l'
+       !
+       ! Clipping w'th_l' at each vertical level, based on the 
+       ! correlation of w and th_l at each vertical level, such that:
+       ! corr_(w,th_l) = w'th_l' / [ sqrt(w'^2) * sqrt(th_l'^2) ];
+       ! -1 <= corr_(w,th_l) <= 1.
+       ! Since w'^2, th_l'^2, and w'th_l' are updated in different 
+       ! places from each other, clipping for w'th_l' has to be done 
+       ! three times.  This is the first instance of w'th_l' clipping.
+
+#ifdef STATS
+       ! Include effect of clipping in wpthlp time tendency budget term.
+       if ( lstats_samp ) then
+          ! wpthlp total time tendency (effect of clipping)
+          call stat_begin_update( iwpthlp_bt, real( wpthlp / dt ), zm )
+       endif
+#endif /*STATS*/
+
+       call covariance_clip( "wpthlp", .true., 
+     .                       .false., dt, wp2, thlp2, 
+     .                       wpthlp )
+
+#ifdef STATS
+       if ( lstats_samp ) then
+          ! wpthlp total time tendency (effect of clipping)
+          call stat_modify( iwpthlp_bt, real( wpthlp / dt ), zm )
+       endif
+#endif /*STATS*/
+
+
+#ifdef SCALARS
+       ! Clipping for w'sclr'
+       !
+       ! Clipping w'sclr' at each vertical level, based on the 
+       ! correlation of w and sclr at each vertical level, such that:
+       ! corr_(w,sclr) = w'sclr' / [ sqrt(w'^2) * sqrt(sclr'^2) ];
+       ! -1 <= corr_(w,sclr) <= 1.
+       ! Since w'^2, sclr'^2, and w'sclr' are updated in different 
+       ! places from each other, clipping for w'sclr' has to be done 
+       ! three times.  This is the first instance of w'sclr' clipping.
+       do i = 1, sclr_dim, 1
+          call covariance_clip( "wpsclrp", .true., 
+     .                          .false., dt, wp2(:), sclrp2(:,i),
+     .                          wpsclrp(:,i) )
+       enddo
+#endif /* SCALARS */
+
 
        ! Check stability
        ! Changed from a logical flag to an integer indicating nature of
@@ -703,7 +795,90 @@
      .        um, vm, upwp, vpwp, up2, vp2, Khm, Kht,
      .        taum, taut, Skwm, Skwt, pdf_parms(:, 13),
      .        wp2, wp3, err_code )
- 
+
+       !----------------------------------------------------------------
+       ! Covariance clipping for wprtp, wpthlp, and wpsclrp after
+       ! subroutine wp23 updated wp2.
+       !----------------------------------------------------------------
+
+       ! Clipping for w'r_t'
+       !
+       ! Clipping w'r_t' at each vertical level, based on the
+       ! correlation of w and r_t at each vertical level, such that:
+       ! corr_(w,r_t) = w'r_t' / [ sqrt(w'^2) * sqrt(r_t'^2) ];
+       ! -1 <= corr_(w,r_t) <= 1.
+       ! Since w'^2, r_t'^2, and w'r_t' are updated in different
+       ! places from each other, clipping for w'r_t' has to be done
+       ! three times.  This is the third instance of w'r_t' clipping.
+
+#ifdef STATS
+       ! Include effect of clipping in wprtp time tendency budget term.
+       if ( lstats_samp ) then
+          ! wprtp total time tendency (effect of clipping)
+          call stat_modify( iwprtp_bt, real( -wprtp / dt ), zm )
+       endif
+#endif /*STATS*/
+
+       call covariance_clip( "wprtp", .false.,
+     .                       .true., dt, wp2, rtp2,
+     .                       wprtp )
+
+#ifdef STATS
+       if ( lstats_samp ) then
+          ! wprtp total time tendency (effect of clipping)
+          call stat_end_update( iwprtp_bt, real( wprtp / dt ), zm )
+       endif
+#endif /*STATS*/
+
+
+       ! Clipping for w'th_l'
+       !
+       ! Clipping w'th_l' at each vertical level, based on the
+       ! correlation of w and th_l at each vertical level, such that:
+       ! corr_(w,th_l) = w'th_l' / [ sqrt(w'^2) * sqrt(th_l'^2) ];
+       ! -1 <= corr_(w,th_l) <= 1.
+       ! Since w'^2, th_l'^2, and w'th_l' are updated in different
+       ! places from each other, clipping for w'th_l' has to be done
+       ! three times.  This is the third instance of w'th_l' clipping.
+
+#ifdef STATS
+       ! Include effect of clipping in wpthlp time tendency budget term.
+       if ( lstats_samp ) then
+          ! wpthlp total time tendency (effect of clipping)
+          call stat_modify( iwpthlp_bt, real( -wpthlp / dt ), zm )
+       endif
+#endif /*STATS*/
+
+       call covariance_clip( "wpthlp", .false.,
+     .                       .true., dt, wp2, thlp2,
+     .                       wpthlp )
+
+#ifdef STATS
+       if ( lstats_samp ) then
+          ! wpthlp total time tendency (effect of clipping)
+          call stat_end_update( iwpthlp_bt, real( wpthlp / dt ), zm )
+       endif
+#endif /*STATS*/
+
+
+#ifdef SCALARS
+       ! Clipping for w'sclr'
+       !
+       ! Clipping w'sclr' at each vertical level, based on the
+       ! correlation of w and sclr at each vertical level, such that:
+       ! corr_(w,sclr) = w'sclr' / [ sqrt(w'^2) * sqrt(sclr'^2) ];
+       ! -1 <= corr_(w,sclr) <= 1.
+       ! Since w'^2, sclr'^2, and w'sclr' are updated in different
+       ! places from each other, clipping for w'sclr' has to be done
+       ! three times.  This is the third instance of w'sclr' clipping.
+       do i = 1, sclr_dim, 1
+          call covariance_clip( "wpsclrp", .false.,
+     .                          .true., dt, wp2(:), sclrp2(:,i),
+     .                          wpsclrp(:,i) )
+       enddo
+#endif /* SCALARS */
+
+
        ! Wrapped LAPACK procedures may report errors, and if so, exit
        ! gracefully.
        ! Joshua Fasching March 2008
