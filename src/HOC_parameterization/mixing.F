@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.68 2008-07-02 21:06:01 griffinb Exp $
+! $Id: mixing.F,v 1.69 2008-07-05 18:19:44 griffinb Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -265,9 +265,8 @@
      .                   wpxp_upper_lim, wpxp_lower_lim, rhs )
 
         ! Solve r_t / w'r_t'
-        call mixing_solve( "rtm", dt, wpxp_upper_lim, 
-     .                     wpxp_lower_lim, lhs, rhs,
-     .                     rtm, wprtp, err_code )
+        call mixing_solve( "rtm", dt, wp2, rtp2,
+     .                     lhs, rhs, rtm, wprtp, err_code )
 
         if ( lapack_error( err_code ) )  then
      
@@ -332,9 +331,8 @@
      .                   wpxp_upper_lim, wpxp_lower_lim, rhs )
 
         ! Solve for th_l / w'th_l'
-        call mixing_solve( "thlm", dt, wpxp_upper_lim, 
-     .                     wpxp_lower_lim, lhs, rhs,
-     .                     thlm, wpthlp, err_code )
+        call mixing_solve( "thlm", dt, wp2, thlp2,
+     .                     lhs, rhs, thlm, wpthlp, err_code )
 
         if ( lapack_error( err_code ) ) then       
           write(fstderr,'(a)') "thetal mixing failed"
@@ -397,8 +395,8 @@
      .                     wpxp_lower_lim, rhs )
 
           ! Solve for sclr / w'sclr'
-          call mixing_solve( "sclrm_rtm", dt, wpxp_upper_lim, 
-     .                       wpxp_lower_lim, lhs, rhs,
+          call mixing_solve( "sclrm_rtm", dt, wp2,
+     .                       sclrp2(:,SCLR_RT), lhs, rhs, 
      .                       sclrm(:,SCLR_RT), wpsclrp(:,SCLR_RT), 
      .                       err_code )
 
@@ -432,8 +430,8 @@
      .                     wpxp_lower_lim, rhs )
 
           ! Solve for sclr / w'sclr'
-          call mixing_solve( "sclrm_theta", dt, wpxp_upper_lim, 
-     .                       wpxp_lower_lim, lhs, rhs,
+          call mixing_solve( "sclrm_theta", dt, wp2, 
+     .                       sclrp2(:,SCLR_THETA), lhs, rhs,
      .                       sclrm(:,SCLR_THETA), wpsclrp(:,SCLR_THETA),
      .                       err_code )
 
@@ -1133,9 +1131,8 @@
         end subroutine mixing_rhs
 
 !===============================================================================
-        subroutine mixing_solve( solve_type, dt, wpxp_upper_lim, 
-     .                           wpxp_lower_lim, lhs, rhs,
-     .                           xm, wpxp, err_code )
+        subroutine mixing_solve( solve_type, dt, wp2, xp2,
+     .                           lhs, rhs, xm, wpxp, err_code )
 
 !       Description:
 !       Solve for xm / w'x' using the band diagonal solver.
@@ -1156,8 +1153,12 @@
         use pos_definite_mod, only: 
      .      pos_definite_adj ! Procedure(s)
 
+        use explicit_clip, only:
+     .      covariance_clip ! Procedure(s)
+
         use error_code, only: 
      .      lapack_error ! Procedure(s)
+
         use model_flags, only:
      .      lpos_def  ! Logical for whether to apply the positive
                       !  definite scheme to rtm
@@ -1237,8 +1238,8 @@
      .  dt          ! Timestep                      [s]
 
         real, intent(in), dimension(gr%nnzp) :: 
-     .  wpxp_upper_lim, ! Keeps correlations from becoming > 1.  [units vary]
-     .  wpxp_lower_lim  ! Keeps correlations from becoming < -1. [units vary]
+     .  wp2,        ! w'^2 (momentum levels)        [m^2/s^2]
+     .  xp2         ! x'^2 (momentum levels)        [{xm units}^2]
 
         ! Input/Output Variables
         real, intent(inout), dimension(nsup+nsub+1,2*gr%nnzp) ::
@@ -1266,6 +1267,9 @@
      .  wpxp_pd, xm_pd ! Change in xm and wpxp due to the pos. def. scheme
 
         real :: rcond ! Est. of the reciprocal of the condition #
+
+        character(len=25) ::
+     .  solve_type_cl ! solve_type used for clipping statistics.
 
         ! Indices
         integer :: k, km1, kp1
@@ -1485,30 +1489,30 @@
 
         end if
 #endif
-       
 
+        ! Use solve_type to find solve_type_cl, which is used
+        ! in subroutine covariance_clip.
+        select case ( trim( solve_type ) )
+        case ( "rtm" )
+           solve_type_cl = "wprtp"
+        case ( "thlm" )
+           solve_type_cl = "wpthlp"
+        case default
+           solve_type_cl = "wpsclrp"
+        end select
 
-! Vince Larson clipped turbulent flux (wpxp) to ensure 
-!     that -1 < [correlation of w and x] < 1 .  20070929
-#ifdef STATS
-        if ( lstats_samp ) then
-           call stat_begin_update( iwpxp_cl, real( wpxp / dt ), zm )
-        end if 
-#endif
-
-
-        ! Clip wpxp after solving to make sure -0.99 < correlation < 0.99
-        where ( wpxp > wpxp_upper_lim )
-     .          wpxp = wpxp_upper_lim
-        where ( wpxp < wpxp_lower_lim )
-     .          wpxp = wpxp_lower_lim
-
-#ifdef STATS
-        if ( lstats_samp ) then
-           call stat_end_update( iwpxp_cl, real( wpxp / dt ), zm )
-        end if
-#endif
-! End of Vince Larson's clipping.
+        ! Clipping for w'x'
+        ! Clipping w'x' at each vertical level, based on the 
+        ! correlation of w and x at each vertical level, such that:
+        ! corr_(w,x) = w'x' / [ sqrt(w'^2) * sqrt(x'^2) ];
+        ! -1 <= corr_(w,x) <= 1.
+        ! Since w'^2, x'^2, and w'x' are updated in different places
+        ! from each other, clipping for w'x' has to be done three times
+        ! (three times each for w'r_t', w'th_l', and w'sclr').  This is
+        ! the second instance of w'x' clipping.
+        call covariance_clip( solve_type_cl, .true., 
+     .                        .true., dt, wp2, xp2, 
+     .                        wpxp )
 
 #ifdef STATS
         if ( lstats_samp ) then
