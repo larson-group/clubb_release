@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.51 2008-07-03 13:34:59 dschanen Exp $
+# $Id: make.deps,v 1.52 2008-07-05 16:24:23 griffinb Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -71,7 +71,7 @@ temp_in_K_mod.o	: constants.o temp_in_K_mod.F
 closure_new.o	: constants.o parameters.o grid.o saturation.o erf.o numer_check.o \
                  error_code.o closure_new.F 
 diag_var.o	: constants.o parameters.o grid.o stats_type.o stats_variables.o \
-	lapack_wrap.o fill_holes_mult.o \
+	lapack_wrap.o fill_holes_mult.o explicit_clip.o \
 	error_code.o diffusion.o diag_var.F
 mixing.o : constants.o parameters.o stats_variables.o lapack_wrap.o \
 	   pos_definite_mod.o error_code.o diffusion.o mean_adv.o semiimplicit_clip.o \
@@ -99,6 +99,7 @@ mean_adv.o      : grid.o mean_adv.F
 pos_definite_mod.o : grid.o stats_precision.o pos_definite_mod.F
 fill_holes_mult.o : fill_holes_mult.F grid.o
 semiimplicit_clip.o : constants.o stats_precision.o semiimplicit_clip.F
+explicit_clip.o : stats_precision.o explicit_clip.F
 
 # == Numerical Recipes dependencies (For the tuner) ==
 nrtype.o	: nrtype.f90
