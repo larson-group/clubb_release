@@ -1,4 +1,4 @@
-! $Id: outputnc.F,v 1.13 2008-06-24 19:44:01 faschinj Exp $
+! $Id: outputnc.F,v 1.14 2008-07-07 21:56:13 faschinj Exp $
 !-----------------------------------------------------------------------
        module outputnc
 #ifdef NETCDF
@@ -167,7 +167,7 @@
 
        allocate( stat( ncf%nvar ) )
 
-       time = int( ncf%ntimes * dble( ncf%dtwrite / 60.0 ) ) !  minutes(rounded)
+       time = nint( ncf%ntimes * dble( ncf%dtwrite / 60.0 ) ) !  minutes(rounded)
 !      time = dble( ncf%ntimes ) * ncf%dtwrite ! seconds
 
        stat(1) = nf90_put_var( ncid=ncf%iounit, varid=ncf%TimeVarId, 
@@ -627,9 +627,9 @@
 !      write(date(22),'(a1)') '-'
        write(date(23:24),'(i2.2)') iday
 !      write(date(25),'(a1)') ' '
-       write(date(26:27),'(i2.2)') int(st_time/3600.)
+       write(date(26:27),'(i2.2)') floor(st_time/3600)
 !      write(date(28),'(a1)') ":"
-       write(date(29:30),'(i2.2)') int( mod(int(st_time),3600) / 60. )
+       write(date(29:30),'(i2.2)') int( mod(nint(st_time),3600) / 60 )
 !      write(date(30:35),'(a5)') ":00.0"
 
        return

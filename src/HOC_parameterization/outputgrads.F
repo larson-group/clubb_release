@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: outputgrads.F,v 1.16 2008-06-30 19:14:17 faschinj Exp $
+! $Id: outputgrads.F,v 1.17 2008-07-07 21:56:03 faschinj Exp $
         module outputgrads
 #ifdef STATS 
 
@@ -522,7 +522,7 @@
           call formatdate(f%day,f%month,f%year,f%time,date)
 
           write(unit=f%iounit,fmt='(a,i6,a,a,i5,a)') 'TDEF    ',
-     .      f%ntimes, ' LINEAR ', date, max(1,int(f%dtwrite/60.)),'mn'
+     .      f%ntimes, ' LINEAR ', date, max(1,floor(f%dtwrite/60.)),'mn'
 
           ! Variables description
           write(unit=f%iounit,fmt='(a,i5)') 'VARS', f%nvar
@@ -642,9 +642,9 @@
           write(unit=date(7:8),fmt='(i2.2)') iday
           write(unit=date(9:11),fmt='(a3)') month(imonth)
           write(unit=date(12:15),fmt='(i4.4)') iyear
-          write(unit=date(1:2),fmt='(i2.2)') int( time/3600. )
+          write(unit=date(1:2),fmt='(i2.2)') floor( time/3600 )
           write(unit=date(4:5),fmt='(i2.2)') 
-     .      int( mod( int( time ),3600 ) / 60. )
+     .      int( mod( nint( time ),3600 ) / 60 )
 
           return
           end subroutine formatdate

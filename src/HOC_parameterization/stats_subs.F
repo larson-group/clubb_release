@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.25 2008-07-02 20:45:44 griffinb Exp $
+!  $Id: stats_subs.F,v 1.26 2008-07-07 21:56:28 faschinj Exp $
       module stats_subs
 #ifdef STATS
  
@@ -198,7 +198,7 @@
 
       ! Check sampling and output frequencies
 
-      if ( abs( stats_tsamp/delt - int(stats_tsamp/delt) ) 
+      if ( abs( stats_tsamp/delt - floor(stats_tsamp/delt) ) 
      .     > 1.e-8 ) then
          lerror = .true.
          write(0,*) 'Error: stats_tsamp should be a multiple of delt'
@@ -206,7 +206,7 @@
          write(0,*) 'delt = ',delt
       end if
 
-      if ( abs( stats_tout/stats_tsamp - int(stats_tout/stats_tsamp) ) 
+      if ( abs( stats_tout/stats_tsamp - floor(stats_tout/stats_tsamp) )
      .     > 1.e-8 ) then
          lerror = .true.
          write(0,*) 
@@ -612,7 +612,7 @@
       do i=1,zt%nn
        do k=1,zt%kk
          if ( zt%n(k,i) /= 0 
-     .        .and. zt%n(k,i) /= int(stats_tout/stats_tsamp) ) then
+     .        .and. zt%n(k,i) /= floor(stats_tout/stats_tsamp) ) then
            write(0,*) 'Possible sampling error for zt ',i,k,zt%n(k,i)
            !pause
          end if
@@ -622,7 +622,7 @@
       do i=1,zm%nn
        do k=1,zm%kk
          if ( zm%n(k,i) /= 0 
-     .        .and. zm%n(k,i) /= int(stats_tout/stats_tsamp) ) then
+     .        .and. zm%n(k,i) /= floor(stats_tout/stats_tsamp) ) then
            write(0,*) 'Possible sampling error for zm ',i,k,zm%n(k,i)
            !pause
          end if

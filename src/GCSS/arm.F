@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm.F,v 1.16 2008-06-30 18:22:09 faschinj Exp $
+! $Id: arm.F,v 1.17 2008-07-07 21:55:38 faschinj Exp $
         module arm
 
 !       Description:
@@ -80,7 +80,7 @@
 
         ! Interpolate in time to get theta and rt tendency
 
-        i1 = int( ( true_time - 41400. ) / 10800. ) + 1
+        i1 = floor( ( true_time - 41400. ) / 10800. ) + 1
         i1 = min( max( i1, 1 ), 5 )
         i2 = i1 + 1
 
