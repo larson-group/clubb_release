@@ -1,4 +1,4 @@
-#$Id: CLUBBStandardsCheck.pl,v 1.3 2008-07-03 17:59:45 faschinj Exp $
+#$Id: CLUBBStandardsCheck.pl,v 1.4 2008-07-07 14:58:39 faschinj Exp $
 
 #!/usr/bin/perl
 
@@ -17,6 +17,9 @@
 #		
 #		(3) Default Private declarations in modules
 #		Warns if "private" is missing from modules.
+#
+#		(4) $Id: CLUBBStandardsCheck.pl,v 1.4 2008-07-07 14:58:39 faschinj Exp $ comment tags at the top of the file.
+#		Warns if the file does not contain one.
 #
 #               This perl script assumes that 
 #               the Fortran code compiles!!
@@ -109,6 +112,16 @@ our $privateRegEx =	qr/^				# Bind to beginning of line
 			$				# Bind to end of line
 			/ix;				# Whole expression is case insensitive
 
+our $IdTagRegEx =	qr/^				# Bind to beginning of line
+			\s*?				# Zero or More spaces
+			!				# Comment Character
+			\s*?				# Zero or More spaces
+			\$Id				# $Id
+			.*?				# Zero or More of any character
+			\$				# Ending Dollar Sign
+			\s*?				# Zero or more spaces
+			$				# Bind to end of line
+			/ix;				# Whole Expression is case insensitve
 
 # Captures verbose command switch.
 GetOptions ('v|verbose' => \$verbose);
@@ -151,6 +164,12 @@ else{
 			warn "$file\n";
 		}
 		
+		# Check for missing $Id: CLUBBStandardsCheck.pl,v 1.4 2008-07-07 14:58:39 faschinj Exp $ tags
+		if( ! &idCheck( $verbose, @input ) )
+		{
+			warn "$file\n";
+		}	
+
 		# Close File
 		close FILE;
 	}
@@ -392,6 +411,66 @@ sub privateCheck
 		warn "$programName warning: Private Test failed!\n";
 		$result = 0; # Check failed
 	}	
+
+	return $result;
+}
+####################################################################
+sub idCheck
+#
+#     &idCheck( $verbose, @input ) 
+#
+#     Description: This subroutine verifies that an $Id: CLUBBStandardsCheck.pl,v 1.4 2008-07-07 14:58:39 faschinj Exp $ comment 
+#     exists somewhere in the file. 
+#
+#        This subroutine works by testing each line for the presence
+#        of a line containing a $Id: CLUBBStandardsCheck.pl,v 1.4 2008-07-07 14:58:39 faschinj Exp $.
+#     
+#     Arguments:
+#     	Sverbose - Prints verbose messages when true.
+#     	@input   - Lines of a Fortran source file.
+#
+#     Returns
+#     	True if the file has an $Id: CLUBBStandardsCheck.pl,v 1.4 2008-07-07 14:58:39 faschinj Exp $ comment in it.
+#####################################################################
+{
+	# Grab first argument
+	my( $verbose ) = shift(@_);
+	
+	# Grab Second argument
+	my( @input ) = @_;
+
+	# Local Variables
+	my( $line, $result );
+
+	# Default initialization to false
+	$result = 0;
+
+	# Print if verbose
+	if( $verbose )
+	{
+		print "---------------- \$Id\$ Check  ----------------\n";	
+	}
+
+	# For every line of the file
+	foreach $line (@input)
+	{
+		# If it contains an $Id: CLUBBStandardsCheck.pl,v 1.4 2008-07-07 14:58:39 faschinj Exp $ comment
+		if( $line =~ $IdTagRegEx )
+		{	
+			if( $verbose )
+			{
+				print "$programName comment: Id tag found\n$line";
+			}
+			$result = 1; # Remember an $Id: CLUBBStandardsCheck.pl,v 1.4 2008-07-07 14:58:39 faschinj Exp $ tag was found
+		}
+	}
+
+	# If no $Id: CLUBBStandardsCheck.pl,v 1.4 2008-07-07 14:58:39 faschinj Exp $ tags were found
+	if( ! $result )
+	{
+		warn "$programName warning: Missing \$Id\$ Tag\n";
+		warn "Add ! \$Id\$ to top of file.\n"
+	}
 
 	return $result;
 }
