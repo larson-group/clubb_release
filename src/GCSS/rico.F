@@ -1,3 +1,4 @@
+!$Id: rico.F,v 1.22 2008-07-07 14:53:09 faschinj Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 

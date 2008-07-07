@@ -1,3 +1,4 @@
+!$Id: Skw_func.F,v 1.7 2008-07-07 14:53:09 faschinj Exp $
          module Skw
          
          implicit none

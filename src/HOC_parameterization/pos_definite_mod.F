@@ -1,4 +1,5 @@
-        module pos_definite_mod
+!$Id: pos_definite_mod.F,v 1.11 2008-07-07 14:53:09 faschinj Exp $
+      module pos_definite_mod
 
         implicit none
 
