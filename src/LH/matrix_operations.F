@@ -1,3 +1,4 @@
+! $Id: matrix_operations.F,v 1.5 2008-07-07 19:54:29 faschinj Exp $
       module matrix_operations
 
       implicit none
