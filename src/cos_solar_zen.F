@@ -1,4 +1,4 @@
-! $Id: cos_solar_zen.F,v 1.9 2008-06-30 17:40:11 faschinj Exp $
+! $Id: cos_solar_zen.F,v 1.10 2008-07-07 21:53:33 faschinj Exp $
 !-----------------------------------------------------------------------
         module cos_solar_zen_mod
 
@@ -95,7 +95,7 @@
         days_since_1jan4713bc = gregorian2julian( year, month, day )
         
         ! Determine the amount of days that have passed since start date
-        days_since_start = int( current_time / sec_per_day )
+        days_since_start = floor( current_time / sec_per_day )
 
         ! Set days_since_1jan4713 to the present Julian date
         days_since_1jan4713bc = days_since_1jan4713bc + days_since_start
