@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.200 2008-06-30 17:53:14 faschinj Exp $
+! $Id: hoc.F,v 1.201 2008-07-07 21:54:33 faschinj Exp $
 
 #ifdef SCALARS /* Test scalars for theta and rt */
 #define SCLR_THETA 1
@@ -411,8 +411,8 @@
               print*, "dtmain = ", dtmain
               stop
            end if
-
-           iinit = ( time_current - time_initial ) / dtmain + 1
+ 
+           iinit = floor( ( time_current - time_initial ) / dtmain ) + 1
 
            call hoc_restart( iunit, runfile, restart_path_case, 
      .                       trim( fname_prefix )//"_zt", time_restart, 
@@ -443,7 +443,7 @@
 
         ! Time integration
         ! Call hoc_closure_timestep once per each GrADS output time 
-        ifinal  = ( time_final - time_initial ) / dtmain
+        ifinal  = floor(( time_final - time_initial ) / dtmain)
 
       
 !<<<<<<<<<<<<<<<<<<<<<<<< Main time stepping loop <<<<<<<<<<<<<<<<<<<<<<
@@ -490,7 +490,7 @@
             niterlong = 1
             dt        = dtmain
           else
-            niterlong = int( dtmain / dtclosure )
+            niterlong = floor( dtmain / dtclosure )
             dt        = dtclosure
           end if
 
