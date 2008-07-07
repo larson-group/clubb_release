@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.102 2008-07-05 23:13:50 griffinb Exp $
+! $Id: parameterization_interface.F,v 1.103 2008-07-07 20:00:14 faschinj Exp $
 
 !  Directives for scalars;  
 !  Theta and rt are arbitrary and used to test the code.
@@ -338,15 +338,15 @@
 !-------- Test input variables ----------------------------------------
        if ( clubb_at_debug_level( 2 ) ) then
        call parameterization_check
-     .      ( thlm_forcing, rtm_forcing, wmm, wmt, p, rhom,
-     .        rhot, exner, wpthlp_sfc, wprtp_sfc,
-     .        upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,
-     .        up2, vp2, rtm, wprtp, thlm,
-     .        wpthlp, wp2, wp3, Scm, rtp2, thlp2,
-     .        rtpthlp, taum, rcm, cf, "beginning of " 
+     .      ( thlm_forcing, rtm_forcing, wmm, wmt, p, rhom,     ! intent(in)
+     .        rhot, exner, wpthlp_sfc, wprtp_sfc,               ! intent(in)
+     .        upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,           ! intent(in)
+     .        up2, vp2, rtm, wprtp, thlm,                       ! intent(in)
+     .        wpthlp, wp2, wp3, Scm, rtp2, thlp2,               ! intent(in)
+     .        rtpthlp, taum, rcm, cf, "beginning of "           ! intent(in)
 #ifdef SCALARS
-     .        ,wpsclrp_sfc, wpedsclrp_sfc,
-     .        sclrm, sclrm_forcing, edsclrm
+     .        ,wpsclrp_sfc, wpedsclrp_sfc,                      ! intent(in)
+     .        sclrm, sclrm_forcing, edsclrm                     ! intent(in)
 #endif /*SCALARS*/
      .       )
        end if
@@ -398,12 +398,13 @@
 !      Surface effects should not be included with any case where the lowest
 !      level is not the ground level.  Brian Griffin.  December 22, 2005.
        IF ( gr%zm(1) == 0.0 ) THEN
-          call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1), 
-     .                  ustar, wp2(1), up2(1), vp2(1), 
-     .                  thlp2(1), rtp2(1), rtpthlp(1), err_code
+          call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1), ustar, ! intent(in)
+     ,                  wp2(1), up2(1), vp2(1),                       ! intent(out)
+     .                  thlp2(1), rtp2(1), rtpthlp(1), err_code       ! intent(out)
 #ifdef SCALARS
-     .                 ,wpsclrp(1,1:sclr_dim), sclrp2(1,1:sclr_dim),
-     .                  sclrprtp(1,1:sclr_dim), sclrpthlp(1,1:sclr_dim)
+     .                 ,wpsclrp(1,1:sclr_dim),                        ! intent(in)
+     .                  sclrp2(1,1:sclr_dim),                         ! intent(out)
+     .                  sclrprtp(1,1:sclr_dim), sclrpthlp(1,1:sclr_dim)! intent(out)
 #endif /* SCALARS */
      .                )
           ! Subroutine may produce NaN values, and if so, exit
@@ -438,19 +439,20 @@
        ! This requires us to store in memory Scm and taum between timesteps.
 
        ! We found that if we call diag_var first, we can use a longer timestep.
-       call diag_var( taum, wmm, rtm, wprtp, 
-     .                thlm, wpthlp, wpthvp, um, vm,
-     .                wp2, wp3, upwp, vpwp, Scm, Skwm, Kht,
-     .                rtp2, thlp2, rtpthlp,
-     .                up2, vp2,
+       call diag_var( taum, wmm, rtm, wprtp,                    ! intent(in)
+     .                thlm, wpthlp, wpthvp, um, vm,             ! intent(in)
+     .                wp2, wp3, upwp, vpwp, Scm, Skwm, Kht,     ! intent(in)
 ! Vince Larson used prognostic timestepping of variances 
 !    in order to increase numerical stability.  17 Jul 2007
 !     .                .false., dt, isValid
-     .                .true., dt, err_code
+     .                .true., dt,                               ! intent(in)
+     .                rtp2, thlp2, rtpthlp,                     ! intent(inout)
+     .                up2, vp2,                                 ! intentt(inout)
+     .                err_code                                  ! intent(out)
 ! End Vince Larson's change
 #ifdef SCALARS
-     .                ,sclrm, wpsclrp, sclrp2,    ! optional vars
-     .                sclrprtp, sclrpthlp         !   "       "
+     .                ,sclrm, wpsclrp,                    ! intent(in) optional vars
+     .                sclrp2, sclrprtp, sclrpthlp         ! intent(out)  "       "
 #endif /* SCALARS */
      .               )
 
@@ -473,18 +475,20 @@
        ! Include effect of clipping in wprtp time tendency budget term.
        if ( lstats_samp ) then
           ! wprtp total time tendency (effect of clipping)
-          call stat_begin_update( iwprtp_bt, real( wprtp / dt ), zm )
+          call stat_begin_update( iwprtp_bt, real( wprtp / dt ), ! intent(in)
+     .             zm )                                          ! intent(inout)
        endif
 #endif /*STATS*/
 
-       call covariance_clip( "wprtp", .true., 
-     .                       .false., dt, wp2, rtp2, 
-     .                       wprtp )
+       call covariance_clip( "wprtp", .true.,           ! intent(in) 
+     .                       .false., dt, wp2, rtp2,    ! intent(in)
+     .                       wprtp )                    ! intent(inout)
 
 #ifdef STATS
        if ( lstats_samp ) then
           ! wprtp total time tendency (effect of clipping)
-          call stat_modify( iwprtp_bt, real( wprtp / dt ), zm )
+          call stat_modify( iwprtp_bt, real( wprtp / dt ), ! intent(in)
+     .                      zm )                           ! intent(inout)
        endif
 #endif /*STATS*/
 
@@ -503,18 +507,20 @@
        ! Include effect of clipping in wpthlp time tendency budget term.
        if ( lstats_samp ) then
           ! wpthlp total time tendency (effect of clipping)
-          call stat_begin_update( iwpthlp_bt, real( wpthlp / dt ), zm )
+          call stat_begin_update( iwpthlp_bt, real( wpthlp / dt ), ! intent(in)
+     .                            zm )                             ! intent(inout)
        endif
 #endif /*STATS*/
 
-       call covariance_clip( "wpthlp", .true., 
-     .                       .false., dt, wp2, thlp2, 
-     .                       wpthlp )
+       call covariance_clip( "wpthlp", .true.,                     ! intent(in)
+     .                       .false., dt, wp2, thlp2,              ! intent(in)
+     .                       wpthlp )                              ! intent(inout)
 
 #ifdef STATS
        if ( lstats_samp ) then
           ! wpthlp total time tendency (effect of clipping)
-          call stat_modify( iwpthlp_bt, real( wpthlp / dt ), zm )
+          call stat_modify( iwpthlp_bt, real( wpthlp / dt ),       ! intent(in)
+     .                      zm )                                   ! intent(inout)
        endif
 #endif /*STATS*/
 
@@ -530,9 +536,9 @@
        ! places from each other, clipping for w'sclr' has to be done 
        ! three times.  This is the first instance of w'sclr' clipping.
        do i = 1, sclr_dim, 1
-          call covariance_clip( "wpsclrp", .true., 
-     .                          .false., dt, wp2(:), sclrp2(:,i),
-     .                          wpsclrp(:,i) )
+          call covariance_clip( "wpsclrp", .true.,                 ! intent(in)
+     .                          .false., dt, wp2(:), sclrp2(:,i),  ! intent(in)
+     .                          wpsclrp(:,i) )                     ! intent(inout)
        enddo
 #endif /* SCALARS */
 
@@ -579,8 +585,8 @@
        if ( LH_on ) then
          i_rmd = mod( iter-1, sequence_length )
          if ( i_rmd == 0) then
-           call permute_height_time( gr%nnzp, nt_repeat, 
-     .                               d_variables+1, p_height_time )
+           call permute_height_time( gr%nnzp, nt_repeat, d_variables+1, ! intent(in)
+     .                               p_height_time )                    ! intent(out)
          end if
        end if
 !    End Latin hypercube sample generation
@@ -603,19 +609,20 @@
 
        do k = 2, gr%nnzp, 1
          call pdf_closure_new
-     .   ( p(k), exner(k), wmt(k), zm2zt(wp2, k), wp3(k), Sct(k),
-     .     rtm(k), zm2zt(rtp2, k), zm2zt( wprtp, k ),
-     .     thlm(k), zm2zt( thlp2, k ), zm2zt( wpthlp, k ),
-     .     zm2zt(rtpthlp, k), wp4(k), wprtp2(k), wp2rtp(k),
-     .     wpthlp2(k), wp2thlp(k), wprtpthlp(k),
-     .     cf(k), rcm(k), wpthvp(k), wp2thvp(k), rtpthvp(k), 
-     .     thlpthvp(k), wprcp(k), wp2rcp(k), rtprcp(k), thlprcp(k),
-     .     rcp2(k), pdf_parms(k, :), crt1, crt2, cthl1, cthl2, err_code
+     .   ( p(k), exner(k), wmt(k), zm2zt(wp2, k), wp3(k), Sct(k),       ! intent(in)
+     .     rtm(k), zm2zt(rtp2, k), zm2zt( wprtp, k ),                   ! intent(in)
+     .     thlm(k), zm2zt( thlp2, k ), zm2zt( wpthlp, k ),              ! intent(in)
+     .     zm2zt(rtpthlp, k),                                           ! intent(in)
+     .     wp4(k), wprtp2(k), wp2rtp(k),                                ! intent(out)
+     .     wpthlp2(k), wp2thlp(k), wprtpthlp(k),                        ! intent(out)
+     .     cf(k), rcm(k), wpthvp(k), wp2thvp(k), rtpthvp(k),            ! intent(out)
+     .     thlpthvp(k), wprcp(k), wp2rcp(k), rtprcp(k), thlprcp(k),     ! intent(out)
+     .     rcp2(k), pdf_parms(k, :), crt1, crt2, cthl1, cthl2, err_code ! intent(out)
 #ifdef SCALARS
-     .     ,sclrm(k,:), sclr_tmp1(k,:),
-     .     wpsclrprtp(k,:), wpsclrp2(k,:), sclr_tmp2(k,:), 
-     .     sclr_tmp3(k,:), sclr_tmp4(k,:), sclrpthvp(k,:), 
-     .     wpsclrpthlp(k,:), sclrprcp(k,:), wp2sclrp(k,:)
+     .     ,sclrm(k,:), sclr_tmp1(k,:),                                 ! intent(in)
+     .     sclr_tmp3(k,:),sclr_tmp2(k,:), sclr_tmp4(k,:)                ! intent(in)
+     .     wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp(k,:),              ! intent(out)
+     .     wpsclrpthlp(k,:), sclrprcp(k,:), wp2sclrp(k,:)               ! intent(out)
 #endif /*SCALARS*/
      .   )
 
@@ -695,8 +702,8 @@
        !----------------------------------------------------------------
 
        call compute_length
-     .      ( thvm, thlm, rtm, rcm, em, p, exner, ! Input
-     .        Lscale, err_code )  ! Output
+     .      ( thvm, thlm, rtm, rcm, em, p, exner, ! intent(in)
+     .        Lscale, err_code )                  ! intent(out)
        
        ! Subroutine may produce NaN values, and if so, exit
        ! gracefully.
@@ -756,15 +763,16 @@
        ! Advance rtm/wprtp and thlm/wpthlp one time step
        !----------------------------------------------------------------
 
-        call timestep_mixing( dt, Scm, wmm, wmt, wp2, wp3,
-     .                        Kht, taum, Skwm, rtpthvp,
-     .                        rtm_forcing, thlpthvp,
-     .                        thlm_forcing, rtp2, thlp2,
-     .                        rtm, wprtp, thlm, wpthlp,
-     .                        implemented, err_code
+        call timestep_mixing( dt, Scm, wmm, wmt, wp2, wp3, ! intent(in)
+     .                        Kht, taum, Skwm, rtpthvp,    ! intent(in)
+     .                        rtm_forcing, thlpthvp,       ! intent(in)
+     .                        thlm_forcing, rtp2, thlp2,   ! intent(in)
+     .                        implemented,                 ! intent(in)
+     .                        rtm, wprtp, thlm, wpthlp,    ! intent(out)
+     .                        err_code                     ! intent(out)
 #ifdef SCALARS
-     .                        ,sclrpthvp, sclrm_forcing    ! optional
-     .                        ,sclrp2, sclrm, wpsclrp      ! optional 
+     .                        ,sclrpthvp, sclrm_forcing, sclrp2, ! intent(in)
+     .                        sclrm, wpsclrp                     ! intent(out)
 #endif /* SCALARS */
      .                      )
 
@@ -791,10 +799,10 @@
        !----------------------------------------------------------------
 
        call timestep_wp23
-     .      ( dt, Scm, wmm, wmt, wpthvp, wp2thvp,
-     .        um, vm, upwp, vpwp, up2, vp2, Khm, Kht,
-     .        taum, taut, Skwm, Skwt, pdf_parms(:, 13),
-     .        wp2, wp3, err_code )
+     .      ( dt, Scm, wmm, wmt, wpthvp, wp2thvp,       ! intent(in)
+     .        um, vm, upwp, vpwp, up2, vp2, Khm, Kht,   ! intent(in)
+     .        taum, taut, Skwm, Skwt, pdf_parms(:, 13), ! intent(in)
+     .        wp2, wp3, err_code )                      ! intent(inout)
 
        !----------------------------------------------------------------
        ! Covariance clipping for wprtp, wpthlp, and wpsclrp after
@@ -815,18 +823,20 @@
        ! Include effect of clipping in wprtp time tendency budget term.
        if ( lstats_samp ) then
           ! wprtp total time tendency (effect of clipping)
-          call stat_modify( iwprtp_bt, real( -wprtp / dt ), zm )
+          call stat_modify( iwprtp_bt, real( -wprtp / dt ), ! intent(in)
+     .                      zm )                            ! intent(inout)
        endif
 #endif /*STATS*/
 
-       call covariance_clip( "wprtp", .false.,
-     .                       .true., dt, wp2, rtp2,
-     .                       wprtp )
+       call covariance_clip( "wprtp", .false.,             ! intent(in)
+     .                       .true., dt, wp2, rtp2,        ! intent(in)
+     .                       wprtp )                       ! intent(inout)
 
 #ifdef STATS
        if ( lstats_samp ) then
           ! wprtp total time tendency (effect of clipping)
-          call stat_end_update( iwprtp_bt, real( wprtp / dt ), zm )
+          call stat_end_update( iwprtp_bt, real( wprtp / dt ), ! intent(in)
+     .                          zm )                           ! intent(inout)
        endif
 #endif /*STATS*/
 
@@ -845,18 +855,20 @@
        ! Include effect of clipping in wpthlp time tendency budget term.
        if ( lstats_samp ) then
           ! wpthlp total time tendency (effect of clipping)
-          call stat_modify( iwpthlp_bt, real( -wpthlp / dt ), zm )
+          call stat_modify( iwpthlp_bt, real( -wpthlp / dt ), ! intent(in)
+     .                      zm )                              ! intent(inout)
        endif
 #endif /*STATS*/
 
-       call covariance_clip( "wpthlp", .false.,
-     .                       .true., dt, wp2, thlp2,
-     .                       wpthlp )
+       call covariance_clip( "wpthlp", .false.,               ! intent(in)
+     .                       .true., dt, wp2, thlp2,          ! intent(in) 
+     .                       wpthlp )                         ! intent(inout)
 
 #ifdef STATS
        if ( lstats_samp ) then
           ! wpthlp total time tendency (effect of clipping)
-          call stat_end_update( iwpthlp_bt, real( wpthlp / dt ), zm )
+          call stat_end_update( iwpthlp_bt, real( wpthlp / dt ), ! intent(in)
+     .                          zm )                             ! intent(inout)
        endif
 #endif /*STATS*/
 
@@ -872,9 +884,9 @@
        ! places from each other, clipping for w'sclr' has to be done
        ! three times.  This is the third instance of w'sclr' clipping.
        do i = 1, sclr_dim, 1
-          call covariance_clip( "wpsclrp", .false.,
-     .                          .true., dt, wp2(:), sclrp2(:,i),
-     .                          wpsclrp(:,i) )
+          call covariance_clip( "wpsclrp", .false.,                ! intent(in)
+     .                          .true., dt, wp2(:), sclrp2(:,i),   ! intent(in)
+     .                          wpsclrp(:,i) )                     ! intent(inout)
        enddo
 #endif /* SCALARS */
 
@@ -893,9 +905,10 @@
 
          edsclrmt(1:gr%nnzp,i) = - wmt * ddzm( zt2zm( edsclrm(:,i) ) )
 
-         call compute_um_edsclrm( "edsclr", wpedsclrp(1,i), 
-     .                            edsclrmt(:,i), Khm, dt, edsclrm(:,i), 
-     .                            wpedsclrp(:,i), err_code )
+         call compute_um_edsclrm( "edsclr", wpedsclrp(1,i),             ! intent(in)
+     .                            edsclrmt(:,i), Khm, dt,               ! intent(in)
+     .                            edsclrm(:,i),                         ! intent(inout)
+     .                            wpedsclrp(:,i), err_code )            ! intent(out)
 
 
        end do
@@ -911,11 +924,13 @@
        !----------------------------------------------------------------
 
        call compute_uv_tndcy
-     .    ( "um", um, wmt, fcor, vm, vg, implemented, umt )
+     .    ( "um", um, wmt, fcor, vm, vg, implemented,      ! intent(in)
+     .       umt )                                         ! intent(out)
 
        ! dtmain to dt -dschanen
-       call compute_um_edsclrm( "um", upwp(1), umt,
-     .                          Khm, dt, um, upwp, err_code )
+       call compute_um_edsclrm( "um", upwp(1), umt, Khm, dt, ! intent(in)
+     .                          um,                          ! intent(inout)
+     .                          upwp, err_code )             ! intent(out)
 
        um(1)       = ( ( um(3)-um(2) )/( gr%zt(3)-gr%zt(2) ) )
      .              * ( gr%zt(1)-gr%zt(2) ) + um(2)
@@ -930,7 +945,8 @@
        if ( lapack_error(err_code) ) return
 
        call compute_uv_tndcy
-     .    ("vm", vm, wmt, fcor, um, ug, implemented, vmt )
+     .    ( "vm", vm, wmt, fcor, um, ug, implemented, ! intent(in)
+     .      vmt )                                     ! intent(out)
 
        call compute_um_edsclrm( "vm", vpwp(1), vmt,
      .                          Khm, dt, vm, vpwp, err_code )
@@ -968,14 +984,18 @@
 #ifdef STATS
 !      Store values of surface fluxes for statistics
        if (lstats_samp) then
-         call stat_update_var_pt( ish, 1, wpthlp(1)*rhom(1)*Cp, sfc )
+         call stat_update_var_pt( ish, 1, wpthlp(1)*rhom(1)*Cp, ! intent(in)
+     .                            sfc )                         ! intent(inout)
 
-         call stat_update_var_pt( ilh, 1, wprtp(1)*rhom(1)*Lv, sfc )
+         call stat_update_var_pt( ilh, 1, wprtp(1)*rhom(1)*Lv,  ! intent(in)
+     .                            sfc )                         ! intent(inout)
 
-         call stat_update_var_pt( iustar, 1, ustar, sfc )
+         call stat_update_var_pt( iustar, 1, ustar,             ! intent(in)
+     .                            sfc )                         ! intent(inout)
 
          ! Michael Falk added this for up2_plus_vp2, 23 Jan 2007.
-         call stat_update_var( iup2_plus_vp2, up2+vp2, zm )
+         call stat_update_var( iup2_plus_vp2, up2+vp2,          ! intent(in)
+     .                         zm )                             ! intent(inout)
          ! eMFc
        end if 
 
@@ -988,12 +1008,12 @@
        rtpthlpzt = zm2zt( rtpthlp )
 
        call stats_accumulate
-     .           ( um, vm, upwp, vpwp, up2, vp2, thlm,
-     .             rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp,
-     .             p, exner, rhot, rhom, thlm_forcing, rtm_forcing, wmm,
-     .             wmt, Scm, taum, rcm, cf
+     .           ( um, vm, upwp, vpwp, up2, vp2, thlm,                  ! intent(in)
+     .             rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp,  ! intent(in)
+     .             p, exner, rhot, rhom, thlm_forcing, rtm_forcing, wmm,! intent(in)
+     .             wmt, Scm, taum, rcm, cf                              ! intent(in)
 #ifdef SCALARS
-     .             ,sclrm, edsclrm, sclrm_forcing, wpsclrp
+     .             ,sclrm, edsclrm, sclrm_forcing, wpsclrp              ! intent(in)
 #endif /*SCALARS*/
      .            )
 
@@ -1001,15 +1021,15 @@
 
        if( clubb_at_debug_level( 2 ) ) then
        call parameterization_check
-     .      ( thlm_forcing, rtm_forcing, wmm, wmt, p, rhom,
-     .        rhot, exner, wpthlp_sfc, wprtp_sfc,
-     .        upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,
-     .        up2, vp2, rtm, wprtp, thlm,
-     .        wpthlp, wp2, wp3, Scm, rtp2, thlp2,
-     .        rtpthlp, taum, rcm, cf, "end of "
+     .      ( thlm_forcing, rtm_forcing, wmm, wmt, p, rhom,             ! intent(in)
+     .        rhot, exner, wpthlp_sfc, wprtp_sfc,                       ! intent(in)
+     .        upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,                   ! intent(in)
+     .        up2, vp2, rtm, wprtp, thlm,                               ! intent(in)
+     .        wpthlp, wp2, wp3, Scm, rtp2, thlp2,                       ! intent(in)
+     .        rtpthlp, taum, rcm, cf, "end of "                         ! intent(in)
 #ifdef SCALARS
-     .        ,wpsclrp_sfc, wpedsclrp_sfc,
-     .        sclrm, sclrm_forcing, edsclrm
+     .        ,wpsclrp_sfc, wpedsclrp_sfc,                              ! intent(in)
+     .        sclrm, sclrm_forcing, edsclrm                             ! intent(in)
 #endif /*SCALARS*/
      . )
        endif
@@ -1083,18 +1103,19 @@
 !       print*, 'hoc.F: got past p_matrix'
 
         ! Generate LH sample, represented by X_u and X_nl, for level k
-        call lh_sampler( n, nt, dvar, p_matrix,
-     .                   cf(k), pdf_parms(k, :),
-     .                   crt1, crt2, cthl1, cthl2,
-     .                   rrm(k), X_u, X_nl, sflag )
+        call lh_sampler( n, nt, dvar, p_matrix,      ! intent(in)
+     .                   cf(k), pdf_parms(k, :),     ! intent(in)
+     .                   crt1, crt2, cthl1, cthl2,   ! intent(in)
+     .                   rrm(k),                     ! intent(in)
+     .                   X_u, X_nl, sflag )          ! intent(out)
 
 !       print *, 'hoc.F: got past lh_sampler'
 
         ! Perform LH and analytic microphysical calculations
-        call micro_calcs( n, dvar, X_u, X_nl, sflag,
-     .                    pdf_parms(k,:),
-     .                    AKm_est(k), AKm(k), AKstd(k), AKstd_cld(k),
-     .                    AKm_rcm(k), AKm_rcc(k), rcm_est(k) )
+        call micro_calcs( n, dvar, X_u, X_nl, sflag,                 ! intent(in)
+     .                    pdf_parms(k,:),                            ! intent(in)
+     .                    AKm_est(k), AKm(k), AKstd(k), AKstd_cld(k),! intent(out)
+     .                    AKm_rcm(k), AKm_rcc(k), rcm_est(k) )       ! intent(out)
 
 !       print*, 'k, AKm_est=', k, AKm_est(k)
 !       print*, 'k, AKm=', k, AKm(k)
@@ -1126,6 +1147,7 @@
      .      Lscale_max
         use error_code, only: 
      .      clubb_var_out_of_bounds ! Variable(s)
+
         implicit none
 
         ! External
@@ -1200,14 +1222,15 @@
         ! Setup flags
 
         call setup_model_flags
-     .       ( lbugsrad, kk_rain, cloud_sed,
-     .         licedfs, lcoamps_micro, luv_nudge,
-     .         lKhm_aniso )
+     .       ( lbugsrad, kk_rain, cloud_sed,            ! intent(in)
+     .         licedfs, lcoamps_micro, luv_nudge,       ! intent(in)
+     .         lKhm_aniso )                             ! intent(in)
 
         ! Define model constant parameters
 
         call setup_parameters
-     .       ( deltaz, T0_in, ts_nudge_in, params, err_code )
+     .       ( deltaz, T0_in, ts_nudge_in, params,      ! intent(in)
+     .         err_code )                               ! intent(out)
 
 !       Error Report
 !       Joshua Fasching February 2008
@@ -1237,13 +1260,13 @@
         ! Both prognostic variables and diagnostic variables need to be
         ! declared, allocated, initialized, and deallocated whether HOC
         ! is part of a larger model or not.
-        call setup_prognostic_variables( nzmax )
-        call setup_diagnostic_variables( nzmax )
+        call setup_prognostic_variables( nzmax )        ! intent(in)
+        call setup_diagnostic_variables( nzmax )        ! intent(in)
 
         ! Setup grid
-        call gridsetup( nzmax, implemented, grid_type,
-     .                  deltaz, zm_init, momentum_heights,
-     .                  thermodynamic_heights )
+        call gridsetup( nzmax, implemented, grid_type,          ! intent(in)
+     .                  deltaz, zm_init, momentum_heights,      ! intent(in)
+     .                  thermodynamic_heights )                 ! intent(in)
 
         ! Determine the maximum allowable value for Lscale.
         if ( implemented ) then

@@ -1,4 +1,4 @@
-!$Id: permute_height_time.F,v 1.5 2008-07-07 14:53:09 faschinj Exp $
+!$Id: permute_height_time.F,v 1.6 2008-07-07 20:00:14 faschinj Exp $
       module permute_height_time_mod
 
       implicit none
@@ -28,7 +28,8 @@
 !-----------------------------------------------------------------------
 
 
-        subroutine permute_height_time(nnzp,nt,dp1,p_height_time)
+        subroutine permute_height_time( nnzp, nt, dp1, 
+     .                                  p_height_time )
         
         use random, only: rand_permute ! Procedure(s)
         

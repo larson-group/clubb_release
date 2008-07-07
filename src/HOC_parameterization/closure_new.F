@@ -1,4 +1,4 @@
-! $Id: closure_new.F,v 1.24 2008-07-01 16:02:13 faschinj Exp $
+! $Id: closure_new.F,v 1.25 2008-07-07 20:00:14 faschinj Exp $
         module pdf_closure
 
         implicit none
@@ -19,9 +19,9 @@
      .               thlpthvp, wprcp, wp2rcp, rtprcp, thlprcp,
      .               rcp2, pdf_parms, crt1, crt2, cthl1, cthl2,
      .               err_code,
-     .               sclrm, wpsclrp,                    !optional
-     .               wpsclrprtp, wpsclrp2, sclrprtp,    ! "    "
-     .               sclrp2, sclrpthlp, sclrpthvp,      ! "    "
+     .               sclrm, wpsclrp,                    ! optional
+     .               sclrp2, sclrprtp, sclrpthlp,        ! "    "
+     .               wpsclrprtp, wpsclrp2, sclrpthvp,   ! "    "
      .               wpsclrpthlp, sclrprcp, wp2sclrp )  ! "    "
 
 !       Description:

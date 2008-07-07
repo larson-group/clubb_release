@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F,v 1.62 2008-07-05 16:48:01 griffinb Exp $
+! $Id: diag_var.F,v 1.63 2008-07-07 20:00:14 faschinj Exp $
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !===============================================================================
@@ -32,11 +32,12 @@
         subroutine diag_var( taum, wmm, rtm, wprtp, 
      .                       thlm, wpthlp, wpthvp, um, vm,
      .                       wp2, wp3, upwp, vpwp, Scm, Skwm, Kht,
+     .                       liter, dt,
      .                       rtp2, thlp2, rtpthlp,
-     .                       up2, vp2,
-     .                       liter, dt, err_code,
-     .                       sclrm, wpsclrp, sclrp2,        ! optional
-     .                       sclrprtp, sclrpthlp )          ! optional
+     .                       up2, vp2, 
+     .                       err_code,
+     .                       sclrm, wpsclrp,                        ! optional
+     .                       sclrp2, sclrprtp, sclrpthlp )          ! optional
 !       Description:
 !       Subprogram to diagnose variances by solving steady-state equations
 

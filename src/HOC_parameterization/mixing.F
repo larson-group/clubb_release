@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.70 2008-07-05 23:13:49 griffinb Exp $
+! $Id: mixing.F,v 1.71 2008-07-07 20:00:14 faschinj Exp $
 
         ! Passive scalars
 #define SCLR_THETA 1
@@ -45,10 +45,11 @@
      .                              Kht, taum, Skwm, rtpthvp, 
      .                              rtm_forcing, thlpthvp, 
      .                              thlm_forcing, rtp2, thlp2,
+     .                              implemented,
      .                              rtm, wprtp, thlm, wpthlp,
-     .                              implemented, err_code,
-     .                              sclrpthvp, sclrm_forcing,
-     .                              sclrp2, sclrm, wpsclrp )
+     .                              err_code,
+     .                              sclrpthvp, sclrm_forcing, sclrp2, 
+     .                              sclrm, wpsclrp )
 
 !       Description:
 !       Advance the mean and flux terms by one timestep.

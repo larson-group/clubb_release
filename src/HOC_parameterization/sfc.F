@@ -1,4 +1,4 @@
-! $Id: sfc.F,v 1.21 2008-05-30 16:24:25 faschinj Exp $
+! $Id: sfc.F,v 1.22 2008-07-07 20:00:14 faschinj Exp $
 #define SCLR_RT 2
 #define SCLR_THETA 1
 
@@ -17,7 +17,8 @@
         subroutine sfc_var( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc,
      .                      ustar_in, wp2_sfc, up2_sfc, vp2_sfc,
      .                      thlp2_sfc, rtp2_sfc, rtpthlp_sfc, err_code,
-     .                      wpsclrp_sfc, sclrp2_sfc,
+     .                      wpsclrp_sfc, 
+     .                      sclrp2_sfc,
      .                      sclrprtp_sfc, sclrpthlp_sfc )
 
 !       Description:
