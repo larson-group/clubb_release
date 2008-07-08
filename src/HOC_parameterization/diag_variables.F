@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F,v 1.27 2008-06-23 14:26:30 dschanen Exp $
+! $Id: diag_variables.F,v 1.28 2008-07-08 04:44:24 dschanen Exp $
         module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -107,8 +107,8 @@
 !$omp   threadprivate(em, taut)
 
         ! hydrometeors variable array
-        real, target, allocatable, dimension(:,:), public :: hydromet
-        ! Contains:
+        real, allocatable, dimension(:,:), public :: hydromet
+        ! When running with COAMPS microphysics this contains:
         ! 1 rrm      Rain water mixing ratio               [kg/kg]
         ! 2 Nrm      Rain drop number concentration        [num/kg]
         ! 3 rsnow    Snow water mixing ratio               [kg/kg]
@@ -128,7 +128,6 @@
 
 !$omp   threadprivate(ustar)
 
-#ifdef SCALARS
         ! Passive scalar variables
 
         real, target, allocatable, dimension(:,:), public ::
@@ -150,8 +149,6 @@
 !$omp   threadprivate(wpedsclrp)
 !$omp   threadprivate(sclrpthvp, sclrprtp, sclrp2, sclrpthlp)
 !$omp   threadprivate(wp2sclrp, wpsclrprtp, wpsclrpthlp)
-
-#endif /*SCALARS*/
 
         ! Interpolated variables for tuning
 !#ifdef STATS
@@ -226,9 +223,11 @@
      .  LH_on ! Variable(s)
 
         use constants, only: 
-     .      sclr_dim, ! Variable(s) 
-     .      emin, 
-     .      hydromet_dim
+     .      emin ! Variables
+
+        use parameters, only:
+     .      hydromet_dim,
+     .      sclr_dim
 
         implicit none
 
@@ -237,6 +236,9 @@
 
         ! Input Variables
         integer, intent(in) :: nzmax
+
+        ! Local Variables
+        integer :: i
 
 !$omp   parallel
         !   --- Allocation ---
@@ -334,8 +336,6 @@
 !       end if ! LH_on
 ! End of variables for Latin hypercube.
 
-#ifdef SCALARS
-
 ! Variables for new mixing scheme
         allocate( sclrprtp(1:nzmax, 1:sclr_dim) )
         allocate( sclrp2(1:nzmax, 1:sclr_dim) )
@@ -351,7 +351,6 @@
         ! Eddy Diff. Scalars
         allocate( edsclrmt(1:nzmax, 1:sclr_dim) )
         allocate( wpedsclrp(1:nzmax, 1:sclr_dim) )
-#endif /*SCALARS*/
 
 !   --- Initializaton ---
 
@@ -420,7 +419,10 @@
         Ncm(1:nzmax)  = 0.0
         Ncnm(1:nzmax) = 0.0
         Nim(1:nzmax)  = 0.0
-        hydromet(1:nzmax,1:hydromet_dim) = 0.0
+
+        do i = 1, hydromet_dim, 1
+          hydromet(1:nzmax,i) = 0.0
+        end do
 
         ! Array for pdf closure scheme
         pdf_parms(1:nzmax,:) = 0.0
@@ -436,22 +438,22 @@
           AKm_rcc   = 0.0  ! Kessler ac based on rcm/cf
         end if ! LH_on
 
-#ifdef SCALARS
         ! Passive scalars
-        sclrprtp(:,:)      = 0.0
-        sclrp2(:,:)        = 0.0
-        sclrpthvp(:,:)     = 0.0
-        sclrpthlp(:,:)     = 0.0
-        sclrprcp(:,:)      = 0.0
+        if ( sclr_dim > 0 ) then
+          sclrprtp(:,:)      = 0.0
+          sclrp2(:,:)        = 0.0
+          sclrpthvp(:,:)     = 0.0
+          sclrpthlp(:,:)     = 0.0
+          sclrprcp(:,:)      = 0.0
 
-        wp2sclrp(:,:)      = 0.0
-        wpsclrp2(:,:)      = 0.0
-        wpsclrprtp(:,:)    = 0.0
-        wpsclrpthlp(:,:)   = 0.0
+          wp2sclrp(:,:)      = 0.0
+          wpsclrp2(:,:)      = 0.0
+          wpsclrprtp(:,:)    = 0.0
+          wpsclrpthlp(:,:)   = 0.0
 
-        edsclrmt(:,:)      = 0.0
-        wpedsclrp(:,:)     = 0.0
-#endif /*SCALARS*/
+          edsclrmt(:,:)      = 0.0
+          wpedsclrp(:,:)     = 0.0
+        end if
 !$omp   end parallel
 
         return
@@ -564,7 +566,6 @@
           deallocate( AKm_rcc )   ! Kessler ac based on rcm/cf
         end if ! LH_on
 
-#ifdef SCALARS
         ! Passive scalars
         deallocate( sclrprtp )
         deallocate( sclrp2 )
@@ -579,7 +580,6 @@
 
         deallocate( edsclrmt )
         deallocate( wpedsclrp )
-#endif /*SCALARS*/
 !$omp   end parallel
 
         return

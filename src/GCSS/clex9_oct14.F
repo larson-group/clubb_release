@@ -1,7 +1,5 @@
-#define SCLR_THETA 1
-#define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: clex9_oct14.F,v 1.18 2008-06-30 18:27:56 faschinj Exp $
+! $Id: clex9_oct14.F,v 1.19 2008-07-08 04:44:09 dschanen Exp $
         module clex9_oct14
 
 !       Description:
@@ -31,15 +29,15 @@
         subroutine clex9_oct14_tndcy
      .             ( time, time_initial, dt, rlat, rlon,
      .               thlm, rcm, p, exner, rhot, rtm, wmt,
-c**************************************************************
-c Addition by Adam Smith, 28 April 2008
-c "wmax" is now set in the namelist and saved in parameters.F.
-c We pass the variable into the forcing subroutine here.
-c**************************************************************
-c     .               wmax,
-c****************************
-c End of ajsmith4's addition
-c****************************
+!**************************************************************
+! Addition by Adam Smith, 28 April 2008
+! "wmax" is now set in the namelist and saved in parameters.F.
+! We pass the variable into the forcing subroutine here.
+!**************************************************************
+!     .               wmax,
+!****************************
+! End of ajsmith4's addition
+!****************************
      .               wmm, thlm_forcing, rtm_forcing,
      .               Frad, radht, Ncnm, sclrm_forcing )
 
@@ -53,7 +51,9 @@ c****************************
 
         use grid_class, only: zt2zm ! Procedure(s)
 
-        use constants, only: sclr_dim, Cp, Lv ! Variable(s)
+        use constants, only: Cp, Lv ! Variable(s)
+
+        use parameters, only: sclr_dim
 
         use model_flags, only: lbugsrad, lcoamps_micro, licedfs ! Variable(s)
 
@@ -64,6 +64,8 @@ c****************************
         use cos_solar_zen_mod, only: cos_solar_zen ! Procedure(s)
 
         use rad_lwsw_mod, only: rad_lwsw ! Procedure(s)
+
+        use array_index, only: iisclr_rt, iisclr_thl ! Variable(s)
 
 #ifdef STATS
         use stats_type, only: stat_update_var ! Procedure(s)
@@ -138,7 +140,7 @@ c****************************
      .  Ncnm            ! Cloud nuclei number concentration       [num/m^3]
 
         ! Output variables (optional)
-        real, intent(out), dimension(gr%nnzp,sclr_dim), optional ::
+        real, intent(out), dimension(gr%nnzp,sclr_dim) ::
      .  sclrm_forcing   ! Passive scalar forcing                  [units/s]
 
 
@@ -705,11 +707,9 @@ c        end if
           rtm_forcing(k) = 0.
         end do
 
-        ! Set scalars according to rt and thetal for testing purposes
-        if ( present( sclrm_forcing ) ) then
-          sclrm_forcing(:,SCLR_THETA) = thlm_forcing(:)
-          sclrm_forcing(:,SCLR_RT)    = rtm_forcing(:)
-        end if
+        ! Test scalars with thetal and rt if desired
+        if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
+        if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
 #ifdef STATS
         ! Save LW and SW components of radiative heating and

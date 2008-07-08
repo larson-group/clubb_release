@@ -1,7 +1,5 @@
-#define SCLR_THETA 1
-#define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: clex9_nov02.F,v 1.19 2008-06-30 18:27:25 faschinj Exp $
+! $Id: clex9_nov02.F,v 1.20 2008-07-08 04:44:09 dschanen Exp $
         module clex9_nov02
 
 !       Description:
@@ -44,7 +42,9 @@
 
         use grid_class, only: zt2zm ! Procedure(s)
 
-        use constants, only: sclr_dim, Lv, Cp ! Variable(s)
+        use constants, only: Lv, Cp ! Variable(s)
+
+        use parameters, only: sclr_dim ! Variable(s)
 
         use model_flags, only: lbugsrad, lcoamps_micro, licedfs ! Variable(s)
 
@@ -55,6 +55,8 @@
         use interpolation, only: linear_interpolation ! Procedure(s)
 
         use rad_lwsw_mod, only: rad_lwsw ! Procedure(s)
+
+        use array_index, only: iisclr_thl, iisclr_rt
 
 #ifdef STATS
         use stats_type, only: stat_update_var ! Procedure(s)
@@ -130,7 +132,7 @@
      .  Ncnm            ! Cloud nuclei number concentration       [num/m^3]
 
         ! Output variables (optional)
-        real, intent(out), dimension(gr%nnzp,sclr_dim), optional ::
+        real, intent(out), dimension(gr%nnzp,sclr_dim) ::
      .  sclrm_forcing   ! Passive scalar forcing                  [units/s]
 
 
@@ -224,16 +226,16 @@
 !            use the "cos_solar_zen" function for this case.
        xi_abs = cos_solar_zen( 2, 11, 2001, time, rlat, rlon )
 
-c**********************************************************************
-c Addition by Adam Smith, 02 April 2008
-c Adding a correction to xi_abs so that it cannot be less than zero.
-c "xi_abs" must be non-zero to allow linear interpolation to calculate
-c the correct amount of solar radiative flux.
-c**********************************************************************
+!**********************************************************************
+! Addition by Adam Smith, 02 April 2008
+! Adding a correction to xi_abs so that it cannot be less than zero.
+! "xi_abs" must be non-zero to allow linear interpolation to calculate
+! the correct amount of solar radiative flux.
+!**********************************************************************
        xi_abs = max( xi_abs, 0. )
-c****************************
-c End of ajsmith4's addition
-c****************************
+!****************************
+! End of ajsmith4's addition
+!****************************
 
 !-----------------------------------------------------------------------
 ! Modification by Adam Smith 26 June 2006
@@ -696,11 +698,9 @@ c        end if
           rtm_forcing(k) = 0.
         end do
 
-        ! Set scalars according to rt and thetal for testing purposes
-        if ( present( sclrm_forcing ) ) then
-          sclrm_forcing(:,SCLR_THETA) = thlm_forcing(:)
-          sclrm_forcing(:,SCLR_RT)    = rtm_forcing(:)
-        end if
+        ! Test scalars with thetal and rt if desired
+        if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
+        if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
 #ifdef STATS
         ! Save LW and SW components of radiative heating and

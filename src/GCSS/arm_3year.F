@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_3year.F,v 1.16 2008-06-30 18:25:16 faschinj Exp $
+! $Id: arm_3year.F,v 1.17 2008-07-08 04:44:09 dschanen Exp $
         module arm_3year
 
 !       Description:
@@ -51,7 +51,7 @@
 
         use grid_class, only: gr ! Variable(s)
 
-        use constants, only: sclr_dim ! Variable(s)
+        use parameters, only: sclr_dim ! Variable(s)
 
         use interpolation, only: zlinterp_fnc ! Procedure(s)
 
@@ -59,10 +59,9 @@
 
         use error_code, only: clubb_debug ! Procedure(s)
 
-        implicit none
+        use array_index, only: iisclr_rt, iisclr_thl
 
-        ! External
-        intrinsic :: present
+        implicit none
 
         ! Input Variables
         real(kind=time_precision), intent(in) :: time ! Model time [s]
@@ -76,8 +75,8 @@
      .  um_hoc_grid,  ! Observed wind, for nudging                   [m/s]
      .  vm_hoc_grid   ! Observed wind, for nudging                   [m/s]
 
-        ! Output (optional) Variables
-        real, optional, intent(out), dimension(gr%nnzp,sclr_dim) :: 
+        ! Output  Variables
+        real, intent(out), dimension(gr%nnzp,sclr_dim) :: 
      .  sclrm_forcing ! Passive scalar tendency [units vary]
 
         real :: time_frac
@@ -163,11 +162,8 @@
         wmm(:) = 0.
         wmt(:) = 0.
 
-        if ( present( sclrm_forcing ) ) then 
-          ! Test scalars with thetal and rt if desired
-          sclrm_forcing(1:gr%nnzp,SCLR_THETA) = thlm_forcing(1:gr%nnzp)
-          sclrm_forcing(1:gr%nnzp,SCLR_RT)    = rtm_forcing(1:gr%nnzp)
-        end if
+        if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
+        if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt) = rtm_forcing
 
         return
         end subroutine arm_3year_tndcy
@@ -185,7 +181,11 @@
 !       heat and moisture according to GCSS ARM specifications
 !----------------------------------------------------------------------
 
-        use constants, only: Cp, Lv, grav, sclr_dim ! Variable(s)
+        use constants, only: Cp, Lv, grav ! Variable(s)
+        
+        use parameters, only: sclr_dim
+
+        use array_index, only: iisclr_rt, iisclr_thl
 
         use stats_precision, only: time_precision ! Variable(s)
 
@@ -224,8 +224,8 @@
      .  wprtp_sfc,   ! w'r_t'(1) at (1) [(m kg)/(s kg)]
      .  ustar        ! surface friction velocity [m/s]
 
-        ! Output variables (optional)
-        real, intent(out), optional, dimension(sclr_dim) :: 
+        ! Output variables 
+        real, intent(out), dimension(sclr_dim) :: 
      .  wpsclrp_sfc,  ! Passive scalar surface flux      [units m/s] 
      .  wpedsclrp_sfc ! Passive eddy-scalar surface flux [units m/s]
 
@@ -267,16 +267,12 @@
         wpthlp_sfc = heat_flx / ( Cp * rho0 )     ! (K m/s)
         wprtp_sfc  = moisture_flx / ( Lv * rho0 ) ! (kg m/ kg s)
 
-        ! Let passive scalars be equal to rt and theta_l for now 
-        if ( present( wpsclrp_sfc ) ) then 
-          wpsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-          wpsclrp_sfc(SCLR_RT)    = wprtp_sfc
-        end if
+        ! Set passive scalars to theta_l and rt for testing purposes
+        if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
+        if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
-        if ( present( wpsclrp_sfc ) ) then 
-          wpedsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-          wpedsclrp_sfc(SCLR_RT)    = wprtp_sfc
-        end if
+        if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
+        if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
         ! Compute momentum fluxes using ARM Cu formulae
 

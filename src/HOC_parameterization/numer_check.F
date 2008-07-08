@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F,v 1.30 2008-06-30 19:19:56 faschinj Exp $
+! $Id: numer_check.F,v 1.31 2008-07-08 04:44:25 dschanen Exp $
         module numerical_check
 
         implicit none
@@ -28,12 +28,12 @@
 
 !       Abstraction of check_nan
         interface check_nan
-           module procedure check_nan_sclr, check_nan_2d
+          module procedure check_nan_sclr, check_nan_2d
         end interface
 
 !       Abstraction of check_negative
         interface check_negative
-           module procedure check_negative_total, check_negative_index
+          module procedure check_negative_total, check_negative_index
         end interface
 
         
@@ -87,7 +87,7 @@
 !        Joshua Fasching February 2008
 !---------------------------------------------------------------------------
 
-         use constants, only:
+         use parameters, only:
      .       sclr_dim ! Variable
 
          implicit none
@@ -118,7 +118,7 @@
      .  pdf_parms        ! pdf paramters         [units vary]
    
         ! Input (Optional passive scalar variables)  
-        real, optional, dimension(sclr_dim),intent(in) :: 
+        real, dimension(sclr_dim), intent(in) :: 
      .  sclrpthvp, 
      .  sclrprcp, 
      .  wpsclrp2,
@@ -156,34 +156,23 @@
         call check_nan( cthl1, "cthl1", proc_name, err_code )
         call check_nan( cthl2, "cthl2", proc_name, err_code ) 
         call check_nan( pdf_parms, "pdf_parms", proc_name,err_code )
-        
-        if ( present( sclrpthvp ) ) then
-            call check_nan(sclrpthvp,"sclrpthvp",
-     .                      proc_name, err_code)
-        end if
-        if ( present( sclrprcp ) ) then
-             call check_nan( sclrprcp, "sclrprcp",
-     .                       proc_name, err_code )
-        end if
-        if ( present( wpsclrprtp ) ) then
-             call check_nan( wpsclrprtp, "wpsclrprtp", 
-     .                       proc_name, err_code )
-        end if   
-        if ( present( wpsclrp2 ) ) then
-             call check_nan( wpsclrp2, "wpsclrp2", 
-     .                       proc_name, err_code )
-        end if
-        if( present( wpsclrpthlp ) ) then
-             call check_nan( wpsclrpthlp, "wpsclrtlp", 
-     .                       proc_name, err_code )
-        end if
-        if( present( wp2sclrp ) ) then
-             call check_nan( wp2sclrp, "wp2sclrp", 
-     .                       proc_name, err_code )
+
+        if ( sclr_dim > 0 ) then 
+          call check_nan( sclrpthvp,"sclrpthvp",
+     .                    proc_name, err_code)
+          call check_nan( sclrprcp, "sclrprcp",
+     .                    proc_name, err_code )
+          call check_nan( wpsclrprtp, "wpsclrprtp", 
+     .                    proc_name, err_code )
+          call check_nan( wpsclrp2, "wpsclrp2", 
+     .                    proc_name, err_code )
+          call check_nan( wpsclrpthlp, "wpsclrtlp", 
+     .                    proc_name, err_code )
+          call check_nan( wp2sclrp, "wp2sclrp", 
+     .                    proc_name, err_code )
         end if
 
         return
-        
         end subroutine pdf_closure_new_check
 
 !-------------------------------------------------------------------------------
@@ -193,11 +182,9 @@
      .               upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,
      .               up2, vp2, rtm, wprtp, thlm, 
      .               wpthlp, wp2, wp3, Scm, rtp2, thlp2,
-     .               rtpthlp, taum, rcm, cf, prefix
-#ifdef SCALARS
-     .               ,wpsclrp_sfc, wpedsclrp_sfc,
+     .               rtpthlp, taum, rcm, cf, prefix,
+     .               wpsclrp_sfc, wpedsclrp_sfc,
      .               sclrm, sclrm_forcing, edsclrm
-#endif /*SCALARS*/ 
      .  )
 !
 !       Description: This subroutine determines what input variables may have 
@@ -208,7 +195,8 @@
 !-------------------------------------------------------------------------------
         use grid_class, only:
      .      gr ! Variable
-        use constants, only:
+
+        use parameters, only:
      .      sclr_dim ! Variable
  
         implicit none
@@ -255,32 +243,22 @@
 !    .  Ncnm,    ! Cloud nuclei number conc.     [num/m^3]
 !    .  Nim      ! Ice crystal number conc.      [num/m^3]
 
-!       real, intent(in), dimension(gr%nnzp,hydromet_dim) ::
-!    .  hydromet  ! Hydrometer fields                     [units vary]
-        ! (:,1) rrm      Rain water mixing ratio          [kg/kg]
-        ! (:,2) Nrm      Rain droplet number conc.        [num/kg]
-        ! (:,3) rsnow    Snow water mixing ratio          [kg/kg]
-        ! (:,4) rice     Ice water mixing ratio           [kg/kg]
-        ! (:,5) rgraupel Graupel water mixing ratio       [kg/kg]
-
         real, intent(in), dimension(gr%nnzp) :: 
      .  cf ! Cloud fraction.     [%]
 
         character(len=*), intent(in) :: prefix ! Location where subroutine is called
         
-#ifdef SCALARS
-        ! Optional Input Variables
-         real, intent(in),  dimension(sclr_dim) ::
-     .   wpsclrp_sfc,  ! Scalar flux at surface [units m/s]
-     .   wpedsclrp_sfc ! Eddy-Scalar flux at surface      [units m/s]
+        ! Input Variables
+        real, intent(in), dimension(sclr_dim) ::
+     .  wpsclrp_sfc,  ! Scalar flux at surface [units m/s]
+     .  wpedsclrp_sfc ! Eddy-Scalar flux at surface      [units m/s]
 
-        ! Optional Input/Output Variables
+        ! Input/Output Variables
         real, intent(in),dimension(gr%nnzp,sclr_dim) ::
      .  sclrm,          ! Passive scalar mean.
      .  sclrm_forcing,  ! Passive scalar forcing.
      .  edsclrm         !Eddy passive scalar mean.
 
-#endif /*SCALARS*/
         ! Local Variables
                                                     
         ! Name of the procedure using parameterization_check
@@ -288,9 +266,7 @@
         character(len=25), parameter :: 
      .  proc_name = "parameterization_timestep"
 
-#ifdef SCALARS        
         integer :: i
-#endif /*SCALARS*/
 
         real, dimension(gr%nnzp) :: rvm
 
@@ -336,19 +312,19 @@
 
         
 
-        
-#ifdef SCALARS
-        call check_nan( wpsclrp_sfc,"wpsclrp_sfc", prefix//proc_name )
-        call check_nan( wpedsclrp_sfc,"wpedsclrp_sfc", 
-     .           prefix//proc_name )
-
         do i = 1, sclr_dim
-             call check_nan( sclrm(:,i),"sclrm", prefix//proc_name )
-             call check_nan( sclrm_forcing(:,i),"sclrm_forcing", 
-     .               prefix//proc_name ) 
-             call check_nan( edsclrm(:,i),"edsclrm", prefix//proc_name )
+        
+          call check_nan( wpsclrp_sfc(i),"wpsclrp_sfc", 
+     .                    prefix//proc_name )
+          call check_nan( wpedsclrp_sfc(i),"wpedsclrp_sfc", 
+     .                    prefix//proc_name )
+
+          call check_nan( sclrm(:,i),"sclrm", prefix//proc_name )
+          call check_nan( sclrm_forcing(:,i),"sclrm_forcing", 
+     .                    prefix//proc_name ) 
+          call check_nan( edsclrm(:,i),"edsclrm", prefix//proc_name )
+
         end do
-#endif /*SCALARS*/
         
 !---------------------------------------------------------------------
 
@@ -396,13 +372,11 @@
 !
 !
 !-----------------------------------------------------------------------
-        use constants, only:
+        use parameters, only:
      .      sclr_dim ! Variable
 
         implicit none
 
-        ! External
-        intrinsic :: present
         
         ! Input Variables
         real,intent(in) :: 
@@ -414,7 +388,7 @@
      .  rtpthlp_sfc ! thetal rt covariance              [kg K]
   
 
-        real, optional, dimension(sclr_dim), intent(in) ::
+        real, dimension(sclr_dim), intent(in) ::
      .  sclrp2_sfc,   ! Passive scalar variance                 [units^2]
      .  sclrprtp_sfc, ! Passive scalar r_t covariance           [units kg/kg]
      .  sclrpthlp_sfc ! Passive scalar theta_l covariance       [units K]
@@ -435,29 +409,24 @@
         call check_nan( rtp2_sfc, "rtp2_sfc", proc_name, err_code)
         call check_nan( rtpthlp_sfc, "rtpthlp_sfc", 
      .                  proc_name, err_code)
-        
-        if ( present( sclrp2_sfc ) ) then
+
+        if ( sclr_dim > 0 ) then 
           call check_nan( sclrp2_sfc, "sclrp2_sfc",
      .                    proc_name, err_code )
-        end if
         
-        if ( present( sclrprtp_sfc ) ) then
           call check_nan( sclrprtp_sfc, "sclrprtp_sfc",
      .                    proc_name, err_code )
-        end if
         
-        if ( present( sclrp2_sfc ) ) then
           call check_nan( sclrpthlp_sfc, "sclrpthlp_sfc", 
      .                    proc_name, err_code )
         end if
 
         return 
-
         end subroutine sfc_var_check 
 
 !-----------------------------------------------------------------------
         subroutine rad_check( thlm, rcm, rtm, ricem, 
-     .     cf, p, exner, rhom )
+     .                        cf, p, exner, rhom )
 !       Description:
 !       Checks radiation input variables. If they are < 0 it reports
 !       to the console.
@@ -529,20 +498,21 @@
      .      thlp2,
      .      wprtp,
      .      wpthlp,
-     .      rtpthlp
-#ifdef SCALARS
-     .     ,sclrm,
-     .     edsclrm
-#endif /*SCALARS*/
+     .      rtpthlp,
+     .      sclrm,
+     .      edsclrm
 
         
         use model_flags, only: 
      .      lcoamps_micro, ! Variable(s) 
      .      kk_rain
+
         use constants, only:
+     .      fstderr   ! Constant(s)
+
+        use parameters, only:
      .      sclr_dim, ! Variable(s)
-     .      hydromet_dim, 
-     .      fstderr
+     .      hydromet_dim 
 
         implicit none
 
@@ -668,7 +638,6 @@
           invalid_model_arrays = .true.
         end if
 
-#ifdef SCALARS
         do i = 1, sclr_dim, 1
           if ( isnan2d( sclrm(:,i) ) ) then
             write(fstderr,*) "NaN in sclrm", i, "model array"
@@ -683,10 +652,8 @@
             invalid_model_arrays = .true.
           end if
         end do
-#endif /*SCALARS*/
 
         return
-        
         end function invalid_model_arrays
         
 !------------------------------------------------------------------------
@@ -981,5 +948,4 @@
         
         end subroutine check_nan_sclr
 !-------------------------------------------------------------------------       
-
         end module numerical_check

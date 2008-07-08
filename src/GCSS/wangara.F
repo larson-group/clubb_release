@@ -1,7 +1,5 @@
-#define SCLR_THETA 1
-#define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: wangara.F,v 1.11 2008-06-24 19:43:37 faschinj Exp $
+! $Id: wangara.F,v 1.12 2008-07-08 04:44:10 dschanen Exp $
         module wangara
 
         implicit none
@@ -14,7 +12,7 @@
 !----------------------------------------------------------------------
         subroutine wangara_tndcy( time, wmt, wmm, 
      .                            thlm_forcing, rtm_forcing,
-     .                            sclr_tndcy )
+     .                            sclrm_forcing )
 !       Description:
 !       Subroutine to set theta and water tendencies for Wangara case
 !       References;
@@ -23,9 +21,12 @@
 
         use grid_class, only: gr ! Variable(s)
 
-        use constants, only: sclr_dim ! Variable(s)
+        use parameters, only: sclr_dim ! Variable(s)
 
         use stats_precision, only: time_precision ! Variable(s)
+
+        use array_index, only: 
+     .      iisclr_thl, iisclr_rt ! Variable(s)
 
         implicit none
 
@@ -40,8 +41,8 @@
      .  rtm_forcing  ! Total water mixing ratio tendency           [kg/kg/s]
 
         ! Output Variables (optional)
-        real, optional, intent(out), dimension(gr%nnzp,sclr_dim) ::
-     .  sclr_tndcy ! Passive scalar tendency [units vary]
+        real, intent(out), dimension(gr%nnzp,sclr_dim) ::
+     .  sclrm_forcing ! Passive scalar tendency [units vary]
 
         ! No large-scale subsidence for now
         wmt = 0.0
@@ -52,10 +53,9 @@
         rtm_forcing  = 0.0
         thlm_forcing = 0.0
 
-        if ( present( sclr_tndcy ) ) then
-          sclr_tndcy(1:gr%nnzp,SCLR_THETA) = thlm_forcing(1:gr%nnzp)
-          sclr_tndcy(1:gr%nnzp,SCLR_RT)    = rtm_forcing(1:gr%nnzp)
-        end if
+        ! Test scalars with thetal and rt if desired
+        if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
+        if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
         return
         end subroutine wangara_tndcy
@@ -70,8 +70,14 @@
 !       heat and moisture for Wangara day 33
 !----------------------------------------------------------------------
 
-        use constants, only: sclr_dim, pi, fstderr, sec_per_day ! Variable(s)
+        use constants, only: pi, fstderr, sec_per_day ! Variable(s)
+
+        use parameters, only: sclr_dim ! Variable(s)
+
         use stats_precision, only: time_precision ! Variable(s)
+
+        use array_index, only: 
+     .      iisclr_thl, iisclr_rt ! Variable(s)
 
         implicit none
 
@@ -133,14 +139,13 @@
         wprtp_sfc  = 1.3e-4 * wpthlp_sfc
 
         ! Let the passive scalars be equal to rt and theta_l for now
-        if ( present( wpsclrp_sfc ) ) then
-          wpsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-          wpsclrp_sfc(SCLR_RT)    = wprtp_sfc
-        end if
-        if ( present( wpedsclrp_sfc  ) ) then
-          wpedsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-          wpedsclrp_sfc(SCLR_RT)    = wprtp_sfc
-        end if
+
+        ! Let passive scalars be equal to rt and theta_l for now
+        if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
+        if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
+
+        if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
+        if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
         ! Compute momentum fluxes
 

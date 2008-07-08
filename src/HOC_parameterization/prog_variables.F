@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: prog_variables.F,v 1.22 2008-06-23 14:26:30 dschanen Exp $
+! $Id: prog_variables.F,v 1.23 2008-07-08 04:44:25 dschanen Exp $
         module prognostic_variables
 
 !       This module contains definitions of all prognostic
@@ -10,8 +10,6 @@
 !       thermodynamic grid and a momentum grid, and the grids have 
 !       different points.
 !-----------------------------------------------------------------------
-        use constants, only: 
-     .      sclr_dim ! Variable(s)
 
         implicit none
 
@@ -81,14 +79,12 @@
 
 !$omp   threadprivate(wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc)
 
-#ifdef SCALARS 
         ! Surface fluxes for passive scalars
-        real, dimension(sclr_dim), public ::
+        real, dimension(:), allocatable, public ::
      .  wpsclrp_sfc,    ! w'sclr' at surface    [units m/s]
      .  wpedsclrp_sfc   ! w'edsclr' at surface  [units m/s]
 
 !$omp   threadprivate(wpsclrp_sfc, wpedsclrp_sfc)
-#endif /* SCALARS */
 
         ! More surface data
         real, public :: 
@@ -99,8 +95,6 @@
 
 !$omp   threadprivate(Tsfc, psfc, SE, LE)
 
-#ifdef SCALARS
-
         ! Passive scalars 
         real, target, allocatable, dimension(:,:), public ::
      .  sclrm,         ! Mean passive scalars           [units vary]
@@ -109,8 +103,6 @@
      .  wpsclrp        ! w'sclr'                        [units vary m/s]
 
 !$omp   threadprivate(sclrm, sclrm_forcing, edsclrm, wpsclrp)
-
-#endif /*SCALARS*/
 
         contains
 !-----------------------------------------------------------------------
@@ -124,12 +116,16 @@
 !       None
 !-----------------------------------------------------------------------
         use constants, only: 
-     .      sclr_dim, ! Variable(s) 
-     .      emin 
+     .      emin
+
+        use parameters, only:
+     .      sclr_dim ! Variable(s) 
 
         implicit none
 
         integer, intent(in) :: nzmax
+
+        integer :: i
 !$omp   parallel
 !   --- Allocation ---
 
@@ -155,23 +151,23 @@
         allocate( rtpthlp(1:nzmax) )   ! rt'thlp'
 
         allocate( p(1:nzmax) )         ! pressure (pascals)
-        allocate( exner(1:nzmax) )     ! exner
+        allocate( exner(1:nzmax) )     ! exner function
         allocate( rhot(1:nzmax) )      ! density: t points
         allocate( rhom(1:nzmax) )      ! density: m points
 
         allocate( thlm_forcing(1:nzmax) ) ! thlm ls forcing
         allocate( rtm_forcing(1:nzmax) )  ! rtm ls forcing
 
-! Imposed large scale w
+        ! Imposed large scale w
 
         allocate( wmm(1:nzmax) )       ! momentum levels
         allocate( wmt(1:nzmax) )       ! thermodynamic levels
 
-! PDF width parameter: momentum levels
+        ! PDF width parameter: momentum levels
 
         allocate( Scm(1:nzmax) ) 
 
-! Mixing lengths
+        ! Mixing lengths
 
         allocate( taum(1:nzmax) ) 
 
@@ -180,17 +176,15 @@
         allocate( rcm(1:nzmax) )
         allocate( cf(1:nzmax) )
 
-#ifdef SCALARS
-
         ! Passive scalar variables 
-
+        ! Note that sclr_dim can be 0
+        allocate( wpsclrp_sfc(1:sclr_dim), wpedsclrp_sfc(1:sclr_dim) )
         allocate( sclrm(1:nzmax, 1:sclr_dim) )
         allocate( sclrm_forcing(1:nzmax, 1:sclr_dim) )
 
         allocate( edsclrm(1:nzmax, 1:sclr_dim) )
         allocate( wpsclrp(1:nzmax, 1:sclr_dim) )
 
-#endif /*SCALARS*/
 
 !--------- Set initial values for array variables ---------
 
@@ -248,17 +242,18 @@
         upwp_sfc   = 0.0
         vpwp_sfc   = 0.0
 
-#ifdef SCALARS
         ! Passive scalars 
-        wpsclrp_sfc(1:sclr_dim)   = 0.0
-        wpedsclrp_sfc(1:sclr_dim) = 0.0
+        do i = 1, sclr_dim, 1
+          wpsclrp_sfc(i)   = 0.0
+          wpedsclrp_sfc(i) = 0.0
 
-        sclrm(1:nzmax,1:sclr_dim)         = 0.0
-        sclrm_forcing(1:nzmax,1:sclr_dim) = 0.0
+          sclrm(1:nzmax,i)         = 0.0
+          sclrm_forcing(1:nzmax,i) = 0.0
 
-        edsclrm(1:nzmax,1:sclr_dim)       = 0.0
-        wpsclrp(1:nzmax,1:sclr_dim)       = 0.0
-#endif /*SCALARS*/
+          edsclrm(1:nzmax,i) = 0.0
+          wpsclrp(1:nzmax,i) = 0.0
+        end do
+
 !$omp   end parallel
 
         return
@@ -315,7 +310,6 @@
         deallocate( cf )
 
 
-#ifdef SCALARS
         ! Passive scalars
 
         deallocate( sclrm )
@@ -324,7 +318,6 @@
         deallocate( edsclrm )
         deallocate( wpsclrp )
 
-#endif /*SCALARS*/
 !$omp   end parallel
 
         return

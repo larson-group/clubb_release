@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zt.F,v 1.18 2008-06-24 18:13:58 faschinj Exp $
+! $Id: stats_zt.F,v 1.19 2008-07-08 04:44:25 dschanen Exp $
        
       module stats_zt
 #ifdef STATS
@@ -174,15 +174,13 @@
      .    iwprtpzt,
      .    irtp2zt,
      .    irtpthlpzt,
-     .    zt
-#ifdef SCALARS
-     .    ,isclram,
+     .    zt,
+     .    isclram,
      .    isclram_f,
      .    isclrbm,
      .    isclrbm_f,
      .    iedsclram,
      .    iedsclrbm
-#endif /*SCALARS*/
       
       use stats_type, only:
      .    stat_assign ! Procedure
@@ -369,7 +367,6 @@
       irtp2zt    = 0
       irtpthlpzt = 0
 
-#ifdef SCALARS
       isclram     = 0
       isclram_f   = 0
       isclrbm     = 0
@@ -377,7 +374,6 @@
 
       iedsclram   = 0
       iedsclrbm   = 0
-#endif /*SCALARS*/
 
       lerror = .false.
 
@@ -1396,7 +1392,7 @@
           call stat_assign(irtpthlpzt,"rtpthlpzt",
      .         "rtpthlpzt","(kg K)/kg",zt)
           k = k + 1
-#ifdef SCALARS 
+
         case ('sclram')
           isclram = k
 
@@ -1437,7 +1433,6 @@
           call stat_assign(iedsclrbm,"edsclrbm",
      .         "eddy-diff scalar (currently rt)","kg/kg",zt)
           k = k + 1
-#endif /*SCALARS*/
 
         case default
           write(0,*) 'Error: unrecognized variable in vars_zt: ',

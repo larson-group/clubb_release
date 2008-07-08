@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameters.F,v 1.18 2008-07-03 13:27:28 griffinb Exp $
+! $Id: parameters.F,v 1.19 2008-07-08 04:44:25 dschanen Exp $
         module parameters 
 
 !       Description:
@@ -24,6 +24,17 @@
      .  ts_nudge ! Timescale of u/v nudging             [s]
 
 !$omp   threadprivate(T0, ts_nudge)
+
+        integer, public ::
+     .  sclr_dim,       ! Number of passive scalars
+     .  hydromet_dim    ! Number of hydrometeor species
+
+!$omp   threadprivate(sclr_dim, hydromet_dim)
+
+        real, dimension(:), allocatable, public ::
+     .  sclrtol ! Threshold(s) on the passive scalars  [units vary]
+
+!$omp   threadprivate(sclrtol)
 
         ! Model constant parameters 
         real, public ::
@@ -141,7 +152,8 @@
 
 !-----------------------------------------------------------------------
         subroutine setup_parameters
-     .             ( deltaz, T0_in, ts_nudge_in, params, err_code ) 
+     .             ( deltaz, T0_in, ts_nudge_in, hydromet_dim_in,
+     .               sclr_dim_in, sclrtol_in, params, err_code ) 
 !       Description:
 !       Subroutine to setup model parameters
 
@@ -162,6 +174,13 @@
      .  deltaz,     ! Change per height level      [m]
      .  T0_in,      ! Ref. temperature             [K]
      .  ts_nudge_in ! Timescale for u/v nudging    [s]
+
+        integer, intent(in) ::
+     .  hydromet_dim_in, ! Number of hydrometeor species
+     .  sclr_dim_in      ! Number of passive scalars
+
+        real, intent(in), dimension(sclr_dim_in) ::
+     .  sclrtol_in     ! Threshold on passive scalars
 
         real, intent(in), dimension(nparams) :: 
      .  params  ! Tuneable model parameters      [-]
@@ -188,6 +207,13 @@
 
         T0       = T0_in
         ts_nudge = ts_nudge_in
+
+        hydromet_dim = hydromet_dim_in
+        sclr_dim     = sclr_dim_in
+
+        allocate( sclrtol(1:sclr_dim) )
+
+        sclrtol(1:sclr_dim) = sclrtol_in(1:sclr_dim)
 
         ! The nu's are chosen for deltaz <= 40 m. Looks like they must 
         ! be adjusted for larger grid spacings (Vince Larson)

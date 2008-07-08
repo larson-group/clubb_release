@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_variables.F,v 1.5 2008-07-05 14:39:42 griffinb Exp $
+! $Id: stats_variables.F,v 1.6 2008-07-08 04:44:25 dschanen Exp $
 !-----------------------------------------------------------------------
 !  module stats_variables
 
@@ -284,7 +284,6 @@
 
 !$omp   threadprivate(iwp2zt, ithlp2zt, iwpthlpzt, irtp2zt, irtpthlpzt)
 
-#ifdef SCALARS
         integer, public ::
      .    isclram,   ! Passive scalar mean (currently mean thl)
      .    isclrbm,   ! Passive scalar mean (currently mean rt)
@@ -297,8 +296,6 @@
 
 !$omp   threadprivate(isclram, isclrbm, isclram_f, isclrbm_f)
 !$omp   threadprivate(iedsclram, iedsclrbm)
-
-#endif /*SCALARS*/
 
 !       Indices for statistics in zm file
 
@@ -480,7 +477,6 @@
 !$omp   threadprivate(ivp2_dp2, ivp2_pr1, ivp2_pr2, ivp2_cl)
 !$omp   threadprivate(iup2_pd, ivp2_pd)
 
-#ifdef SCALARS
 !       Passive scalars.  Note that floating point roundoff may make 
 !       mathematically equivalent variables different values.
         integer, public ::
@@ -508,7 +504,6 @@
         integer, public ::
      .     iwpedsclrap,  ! eddy sclr'(1)w'
      .     iwpedsclrbp   ! eddy sclr'(2)w'
-#endif /*SCALARS*/
 
         ! Indices for statistics in sfc file
 

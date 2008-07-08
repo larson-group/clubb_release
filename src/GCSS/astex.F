@@ -1,7 +1,5 @@
-#define SCLR_THETA 1
-#define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: astex.F,v 1.9 2008-06-24 19:43:37 faschinj Exp $
+! $Id: astex.F,v 1.10 2008-07-08 04:44:09 dschanen Exp $
         module astex
 
 !       Description:
@@ -26,7 +24,7 @@
 !       References:
 !----------------------------------------------------------------------
 
-        use constants, only: sclr_dim ! Variable(s)
+        use parameters, only: sclr_dim ! Variable(s)
 
         use grid_class, only: gr ! Variable(s)
 
@@ -46,7 +44,7 @@
      .  thlm_forcing, ! Liquid potential temperature tendency   [K/s]
      .  rtm_forcing   ! Total water mixing ratio tendency       [kg/kg/s]
 
-        real, intent(out), optional, dimension(gr%nnzp,sclr_dim) :: 
+        real, intent(out), dimension(gr%nnzp,sclr_dim) :: 
      .  sclrm_forcing ! Passive scalar forcing  [units/s]
 
         ! Local variables
@@ -81,7 +79,9 @@
 
         ! Passive scalar testing
 
-        if ( present( sclrm_forcing ) ) sclrm_forcing(:,:) = 0.0
+        if ( sclr_dim > 0 ) then
+          sclrm_forcing(:,:) = 0.0
+        end if
 
         return
         end subroutine astex_tndcy
@@ -100,7 +100,11 @@
 !       References:
 !----------------------------------------------------------------------
 
-        use constants, only: sclr_dim, Cp, Lv ! Variable(s)
+        use constants, only: Cp, Lv ! Variable(s)
+
+        use parameters, only: sclr_dim ! Variable(s)
+        
+        use array_index, only: iisclr_rt, iisclr_thl ! Variable(s)
 
         implicit none
 
@@ -119,9 +123,7 @@
      .  wpthlp_sfc,  ! w'th_l' at (1)   [(m K)/s]  
      .  wprtp_sfc    ! w'r_t'(1) at (1) [(m kg)/(s kg)]
 
-        ! Output variables (optional) 
-
-        real, intent(out), optional, dimension(sclr_dim) :: 
+        real, intent(out), dimension(sclr_dim) :: 
      .  wpsclrp_sfc,  ! w' scalar at surface [units m/s]
      .  wpedsclrp_sfc ! w' scalar at surface [units m/s]
 
@@ -144,13 +146,13 @@
         vpwp_sfc = 0.09
 
         ! Test scalars
-        if ( present( wpsclrp_sfc ) ) then
-          wpsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-          wpsclrp_sfc(SCLR_RT)    = wprtp_sfc
+        if ( iisclr_rt > 0 ) then
+          wpsclrp_sfc(iisclr_rt)    = wprtp_sfc
+          wpedsclrp_sfc(iisclr_thl) = wprtp_sfc
         end if
-        if ( present( wpedsclrp_sfc ) ) then
-          wpedsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-          wpedsclrp_sfc(SCLR_RT)    = wprtp_sfc
+        if ( iisclr_thl > 0 ) then
+          wpsclrp_sfc(iisclr_thl)   = wpthlp_sfc
+          wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
         end if
 
         return

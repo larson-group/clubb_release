@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_type.F,v 1.15 2008-07-05 16:26:47 griffinb Exp $
+! $Id: stats_type.F,v 1.16 2008-07-08 04:44:25 dschanen Exp $
       module stats_type
 #ifdef STATS
  
@@ -235,6 +235,9 @@
          ! Input/Output Variable(s)
          type(stats), intent(inout) :: 
      .   grid_kind ! Which grid the variable is located on (zt, zm, or sfc).
+
+         ! Local Variable
+         character(len=3) :: char_index
         
          if ( var_index > 0 ) then  ! Are we storing this variable?
 
@@ -247,9 +250,10 @@
                grid_kind%in_update(grid_level, var_index) = .true.  ! Start Record
 
              else
-
+              write(char_index(1:3),'(i3.3)') var_index
               call clubb_debug( 1,
-     .        "Beginning an update before finishing previous." )
+     .        "Beginning an update before finishing previous.  "//
+     .        "Var index = "// char_index   )
 
              end if
 

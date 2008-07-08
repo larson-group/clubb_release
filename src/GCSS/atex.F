@@ -1,7 +1,5 @@
-#define SCLR_THETA 1
-#define SCLR_RT 1
 !----------------------------------------------------------------------
-!$Id: atex.F,v 1.19 2008-06-24 19:43:37 faschinj Exp $
+!$Id: atex.F,v 1.20 2008-07-08 04:44:09 dschanen Exp $
         module atex
 
 !       Description:
@@ -28,7 +26,9 @@
 
 !----------------------------------------------------------------------
 
-        use constants, only: sclr_dim, fstderr ! Variable(s)
+        use constants, only: fstderr ! Constant(s)
+
+        use parameters, only: sclr_dim ! Variable(s)
 
         use model_flags, only: lbugsrad ! Variable(s)
 
@@ -41,6 +41,9 @@
         use stats_precision, only: time_precision ! Variable(s)
 
         use error_code, only: clubb_rtm_level_not_found ! Variable(s)
+
+        use array_index, only: 
+     .      iisclr_thl, iisclr_rt, iiCO2 ! Variable(s)
 
 #ifdef STATS
         use stats_type, only: stat_update_var ! Procedure(s)
@@ -75,7 +78,7 @@
 
 
         ! Output (optional)
-        real, optional, intent(out), dimension(gr%nnzp, sclr_dim) ::
+        real, intent(out), dimension(gr%nnzp, sclr_dim) ::
      .  sclrm_forcing ! Passive scalar tendency         [units/s]
 
 
@@ -178,10 +181,9 @@
 !          end if
         end if
 #endif
-        if ( present( sclrm_forcing ) ) then
-          sclrm_forcing(1:gr%nnzp,SCLR_THETA) = thlm_forcing(1:gr%nnzp)
-          sclrm_forcing(1:gr%nnzp,SCLR_RT)    = rtm_forcing(1:gr%nnzp)
-        end if
+        ! Test scalars with thetal and rt if desired
+        if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
+        if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
         return
         end subroutine atex_tndcy
@@ -199,7 +201,11 @@
 
 !----------------------------------------------------------------------
 
-        use constants, only: sclr_dim, kappa ! Variable(s)
+        use constants, only: kappa ! Variable(s)
+
+        use parameters, only: sclr_dim ! Variable(s)
+
+        use array_index, only: iisclr_rt, iisclr_thl
 
         implicit none
 
@@ -219,7 +225,7 @@
      .  rtm_sfc         ! rt at zt(2)           [kg/kg]
 
         ! Input variables (optional)
-        real, intent(in), optional, dimension(sclr_dim) :: 
+        real, intent(in), dimension(sclr_dim) :: 
      .  sclrm_sfc       ! Sclr at zt(2)         [units vary]
 
         ! Output variables
@@ -232,7 +238,7 @@
 
         ! Output variables (optional)
 
-        real, optional, dimension(sclr_dim), intent(out) :: 
+        real, dimension(sclr_dim), intent(out) :: 
      .  wpsclrp_sfc,   ! Passive scalar surface flux      [units m/s]
      .  wpedsclrp_sfc  ! Passive eddy-scalar surface flux [units m/s]
 
@@ -250,17 +256,12 @@
      .  = -C_10 * ubar * ( thlm_sfc - SST * (1000./1015.)**kappa )
         wprtp_sfc  = -C_10 * ubar * ( rtm_sfc - 0.0198293 )
 
-        ! Let passive scalars be equal to rt and theta for now
+        ! Let passive scalars be equal to rt and theta_l for now
+        if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
+        if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
-        if ( present( wpsclrp_sfc ) ) then
-          wpsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-          wpsclrp_sfc(SCLR_RT)    = wprtp_sfc
-        end if
-
-        if ( present( wpedsclrp_sfc ) ) then
-          wpedsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-          wpedsclrp_sfc(SCLR_RT)    = wprtp_sfc
-        end if
+        if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
+        if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
         ! Compute momentum fluxes
 

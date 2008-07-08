@@ -1,7 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F,v 1.63 2008-07-07 20:00:14 faschinj Exp $
-#define SCLR_THETA 1
-#define SCLR_RT 2
+! $Id: diag_var.F,v 1.64 2008-07-08 04:44:24 dschanen Exp $
 !===============================================================================
       module diagnose_variances
 
@@ -53,11 +51,9 @@
 !-----------------------------------------------------------------------
 
         use constants, only:
-     .      sclr_dim, ! Variable(s)
-     .      wtol,
+     .      wtol, ! Variable(s)
      .      rttol,
      .      thltol,
-     .      sclrtol,
      .      emin,
      .      fstderr
 
@@ -66,7 +62,7 @@
         
         use parameters, 
      .    only: C2rt, C2thl, C2rtthl, c_K2, nu2, c_K9, nu9, ! Variable(s)
-     .          c_Ksqd, beta, C4, C14, C5, T0
+     .          c_Ksqd, beta, C4, C14, C5, T0, sclr_dim, sclrtol
         
         use grid_class, only:
      .      gr, ! Variable(s)
@@ -226,11 +222,7 @@
         C4_C14_1d(1:gr%nnzp) = 2.0/3.0 * C4 + ( 1.0/3.0 * C14 )
 
         ! Are we solving for a passive scalar as well?
-
-        if ( present( sclrm ) .and. present( wpsclrp ) .and.
-     .       present( sclrp2 ) .and. present( sclrprtp ) .and.
-     .       present( sclrpthlp ) ) then
-
+        if ( sclr_dim > 0 ) then
           scalar_calc = .true.
 
         else
@@ -549,7 +541,7 @@
      .                         sclrm(:,i), sclrm(:,i), sclrp2(:,i),
      .                         beta, wtol_sqd, sclr_rhs(:,i) )
 
-          enddo
+          end do
 
 
           !!!!!***** sclr'r_t' *****!!!!!
@@ -567,7 +559,7 @@
      .                         rtm, sclrprtp(:,i), beta, wtol_sqd, 
      .                         sclr_rhs(:,i+sclr_dim) )
 
-          enddo
+          end do
 
 
           !!!!!***** sclr'th_l' *****!!!!!
@@ -585,7 +577,7 @@
      .                         sclrm(:,i), thlm, sclrpthlp(:,i), beta, 
      .                         wtol_sqd, sclr_rhs(:,i+2*sclr_dim) )
 
-          enddo
+          end do
 
           ! Solve the tridiagonal system
 
@@ -658,8 +650,8 @@
 
         ! Check for singular matrices
         do i = 1, 5+1
-                if(Valid_arr(i) > err_code ) err_code = Valid_arr(i)
-        enddo        
+          if( Valid_arr(i) > err_code ) err_code = Valid_arr(i)
+        end do        
                 
         if ( lapack_error( err_code ) .and. 
      .       clubb_at_debug_level( 1 ) ) then
@@ -684,7 +676,12 @@
            write(fstderr,*) "Scm = ", Scm
            write(fstderr,*) "Skwm = ", Skwm
            write(fstderr,*) "Kht = ", Kht
-           
+
+           do i = 1, sclr_dim 
+             write(fstderr,*) "sclrm = ", i, sclrm(:,i)
+             write(fstderr,*) "wpsclrp = ", i, wpsclrp(:,i)
+           end do
+
            write(fstderr,*) "Intent(In/Out)"
            
            write(fstderr,*) "rtp2 = ", rtp2
@@ -692,30 +689,14 @@
            write(fstderr,*) "rtpthlp = ", rtpthlp
            write(fstderr,*) "up2 = ", up2
            write(fstderr,*) "vp2 = ", vp2
+
+           do i = 1, sclr_dim 
+             write(fstderr,*) "sclrp2 = ", i, sclrp2(:,i)
+             write(fstderr,*) "sclrprtp = ", i, sclrprtp(:,i)
+             write(fstderr,*) "sclrthlp = ", i, sclrpthlp(:,i)
+           end do
            
-           if( present( sclrp2 ) ) then 
-              write(fstderr,*) "sclrp2 = ", sclrp2
-           endif
-           
-           if( present( sclrprtp ) ) then
-             write(fstderr,*) "sclrprtp = ", sclrprtp
-           endif
-           
-           if( present( sclrpthlp ) ) then
-             write(fstderr,*) "sclrthlp = ", sclrpthlp
-           endif
-           
-           write(fstderr,*) "Intent(out)"
-           
-           if( present( sclrm ) ) then
-              write(fstderr,*) "sclrm = ", sclrm
-           endif
-           
-           if( present( wpsclrp ) ) then
-              write(fstderr,*) "wpsclrp = ", wpsclrp
-           endif
-           
-        endif 
+        end if 
         
         return
         

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zm.F,v 1.14 2008-07-05 14:39:42 griffinb Exp $
+! $Id: stats_zm.F,v 1.15 2008-07-08 04:44:25 dschanen Exp $
       module stats_zm
 #ifdef STATS
        
@@ -137,10 +137,9 @@
      .    irtpthlp_tp2,
      .    irtpthlp_dp1,
      .    irtpthlp_dp2,
-     .    irtpthlp_cl
-
-#ifdef SCALARS
-     .    ,isclraprtp,
+     .    irtpthlp_dp2,
+     .    irtpthlp_cl,
+     .    isclraprtp,
      .    isclrbprtp,
      .    isclrap2,
      .    isclrbp2,
@@ -162,7 +161,6 @@
      .    iwpsclrbpthlp,
      .    iwpedsclrap,
      .    iwpedsclrbp
-#endif /*SCALARS*/
 
       use stats_type, only:
      .    stat_assign ! Procedure
@@ -314,7 +312,6 @@
       irtpthlp_dp2 = 0
       irtpthlp_cl  = 0
 
-#ifdef SCALARS
       isclraprtp    = 0
       isclrbprtp    = 0
       isclrap2      = 0
@@ -338,7 +335,6 @@
 
       iwpedsclrap   = 0
       iwpedsclrbp   = 0
-#endif /*SCALARS*/
 
 !     Assign pointers for statistics variables zm
 
@@ -1061,8 +1057,6 @@
      .         "vp2 positive definite adjustment", "m^2/s^2", zm )
           k = k + 1
 
-
-#ifdef SCALARS
         case ('sclraprtp')
           isclraprtp = k
 
@@ -1192,8 +1186,6 @@
           call stat_assign(iwpedsclrbp,"wpedsclrbp",
      .         "eddy scalar(2)'w'","unknown",zm)
           k = k + 1
-
-#endif /*SCALARS*/
 
         case default
           write(0,*) 'Error: unrecognized variable in vars_zm: ',

@@ -1,7 +1,5 @@
-#define SCLR_THETA 1
-#define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: bomex.F,v 1.10 2008-06-24 19:43:37 faschinj Exp $
+! $Id: bomex.F,v 1.11 2008-07-08 04:44:09 dschanen Exp $
         module bomex
 
 !       Description:
@@ -33,9 +31,12 @@
 
         use model_flags, only: lbugsrad ! Variable(s)
 
-        use constants, only: sclr_dim ! Variable(s)
+        use parameters, only: sclr_dim ! Variable(s)
 
         use stats_precision, only: time_precision ! Variable(s)
+
+        use array_index, only: 
+     .      iisclr_thl, iisclr_rt, iiCO2 ! Variable(s)
 
         implicit none
 
@@ -51,7 +52,7 @@
      .  rtm_forcing   ! Total water mixing ratio tendency            [kg/kg/s]
 
         ! Output Variables (optional)
-        real, optional, intent(out), dimension(gr%nnzp,sclr_dim) ::
+        real, intent(out), dimension(gr%nnzp,sclr_dim) ::
      .  sclrm_forcing ! Passive scalar forcing [units vary]
 
         ! Local Variables
@@ -129,10 +130,9 @@
         thlm_forcing(1) = 0.0  ! Below surface
         rtm_forcing(1)  = 0.0  ! Below surface
 
-        if ( present( sclrm_forcing ) ) then 
-          sclrm_forcing(1:gr%nnzp,SCLR_THETA) = thlm_forcing(1:gr%nnzp)
-          sclrm_forcing(1:gr%nnzp,SCLR_RT)    = rtm_forcing(1:gr%nnzp)
-        end if
+        ! Test scalars with thetal and rt if desired
+        if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
+        if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
         return
         end subroutine bomex_tndcy
@@ -150,7 +150,9 @@
 !       References:
 !----------------------------------------------------------------------
 
-        use constants, only: sclr_dim ! Variable(s)
+        use parameters, only: sclr_dim ! Variable(s)
+
+        use array_index, only: iisclr_rt, iisclr_thl
 
         implicit none
 
@@ -173,7 +175,7 @@
      .  ustar        ! surface friction velocity [m/s]
 
         ! Output variables (optional)
-        real, intent(out), optional, dimension(sclr_dim) :: 
+        real, intent(out), dimension(sclr_dim) :: 
      .  wpsclrp_sfc,  ! Passive scalar surface flux      [units m/s] 
      .  wpedsclrp_sfc ! Passive eddy-scalar surface flux [units m/s]
 
@@ -188,16 +190,12 @@
         wpthlp_sfc = 8.e-3
         wprtp_sfc  = 5.2e-5
 
-        ! Let passive scalars be equal to rt and theta_l for now 
-        if ( present( wpsclrp_sfc ) ) then 
-          wpsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-          wpsclrp_sfc(SCLR_RT)    = wprtp_sfc
-        end if
+        ! Let passive scalars be equal to rt and theta_l for now
+        if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
+        if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
-        if ( present( wpsclrp_sfc ) ) then 
-          wpedsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-          wpedsclrp_sfc(SCLR_RT)    = wprtp_sfc
-        end if
+        if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
+        if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
         ! Compute momentum fluxes
 

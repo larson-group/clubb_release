@@ -1,7 +1,5 @@
-#define SCLR_THETA 1
-#define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: nov11.F,v 1.27 2008-06-30 19:28:52 faschinj Exp $
+! $Id: nov11.F,v 1.28 2008-07-08 04:44:10 dschanen Exp $
         module nov11
 
 !       Description:
@@ -47,7 +45,9 @@
 
         use grid_class, only: zt2zm ! Procedure(s)
 
-        use constants, only: sclr_dim, Cp, Lv ! Variable(s)
+        use constants, only: Cp, Lv ! Variable(s)
+
+        use parameters, only: sclr_dim ! Variable(s)
 
         use model_flags, only: lbugsrad, lcoamps_micro, licedfs ! Variable(s)
 
@@ -56,6 +56,9 @@
         use interpolation, only: linear_interpolation ! Procedure(s)
 
         use rad_lwsw_mod, only: rad_lwsw ! Procedure(s)
+
+        use array_index, only: 
+     .      iisclr_thl, iisclr_rt ! Variable(s)
 
 #ifdef STATS
         use stats_type, only: stat_update_var ! Procedure(s)
@@ -129,8 +132,8 @@
      .  radht,          ! Radiative heating                       [K/s]
      .  Ncnm            ! Cloud nuclei number concentration       [num/m^3]
 
-        ! Output variables (optional)
-        real, intent(out), dimension(gr%nnzp,sclr_dim), optional ::
+        ! Output variables
+        real, intent(out), dimension(gr%nnzp,sclr_dim) ::
      .  sclrm_forcing   ! Passive scalar forcing                  [units/s]
 
 
@@ -682,11 +685,9 @@
           rtm_forcing(k) = 0.
         end do
 
-        ! Set scalars according to rt and thetal for testing purposes
-        if ( present( sclrm_forcing ) ) then
-          sclrm_forcing(:,SCLR_THETA) = thlm_forcing(:)
-          sclrm_forcing(:,SCLR_RT)    = rtm_forcing(:)
-        end if
+        ! Test scalars with thetal and rt if desired
+        if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
+        if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
 #ifdef STATS
         ! Save LW and SW components of radiative heating and

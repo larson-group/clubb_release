@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.26 2008-07-07 21:56:28 faschinj Exp $
+!  $Id: stats_subs.F,v 1.27 2008-07-08 04:44:25 dschanen Exp $
       module stats_subs
 #ifdef STATS
  
@@ -166,11 +166,23 @@
         return
       end if
 
+      ! Initialize namelist variables
+
+      vars_zt  = ''
+      vars_zm  = ''
+      vars_sfc = ''
+
       ! Read namelist
 
       open(unit=iunit, file=fnamelist)
       read(unit=iunit, nml=statsnl, end=100)
       close(unit=iunit)
+
+      ! %% debug
+!     do while ( vars_zt(i) /= '' )
+!       i = i + 1
+!       print *, i, vars_zt(i)
+!     end do
 
 
       ! Determine file names for GrADS or NetCDF files
@@ -771,7 +783,6 @@
      .    izb,
      .    ilwp
 
-#ifdef SCALARS
       use stats_variables, only:
      .    isclram,
      .    isclram_f,
@@ -801,11 +812,10 @@
      .    iwpsclrbpthlp,
      .    iwpedsclrap,
      .    iwpedsclrbp
-#endif /*SCALARS*/
 
       use grid_class, only:
      .    gr ! Variable
-      !use prognostic_variables
+
       use diagnostic_variables, only:
      .    pdf_parms, ! Variable(s)
      .    thvm,
@@ -845,9 +855,8 @@
      .    rcp2,
      .    em,
      .    shear,
-     .    Frad
-#ifdef SCALARS
-     .   ,sclrprtp,
+     .    Frad,
+     .    sclrprtp,
      .    sclrp2,
      .    sclrpthvp,
      .    sclrpthlp,
@@ -857,7 +866,6 @@
      .    wpsclrprtp,
      .    wpsclrpthlp,
      .    wpedsclrp   
-#endif /*SCALARS*/
 
       
       use model_flags, only:
@@ -867,8 +875,10 @@
      .    thlm2temp_in_K ! Procedure
 
       use constants, only:
-     .    sclr_dim, ! Variable(s)
      .    rc_tol
+
+      use parameters, only:
+     .    sclr_dim  ! Variable(s)
 
       use stats_type, only:
      .    stat_update_var, ! Procedure(s)
@@ -916,7 +926,7 @@
 !    .  Nim,  ! Ice nuclei number concentration         [num/m^3]
      .  cf    ! Cloud fraction                          [%]
 
-      real, intent(in), optional, dimension(gr%nnzp,sclr_dim) ::
+      real, intent(in), dimension(gr%nnzp,sclr_dim) ::
      .  sclrm,          ! High-Order Passive scalar     [units vary]
      .  edsclrm,        ! Eddy-diff Passive scalar      [units vary] 
      .  sclrm_forcing,  ! Large-scale forcing of scalar [units/s]
@@ -1021,16 +1031,19 @@
         call stat_update_var( irtp2zt, rtp2zt, zt )
         call stat_update_var( irtpthlpzt, rtpthlpzt, zt )
 
-#ifdef SCALARS
-        call stat_update_var( isclram, sclrm(:,1), zt )
-        call stat_update_var( isclram_f, sclrm_forcing(:,1),  zt )
-        call stat_update_var( isclrbm, sclrm(:,2), zt )
-        call stat_update_var( isclrbm_f, sclrm_forcing(:,2), zt )
-        call stat_update_var( iedsclram, edsclrm(:,1), zt )
-        call stat_update_var( iedsclrbm, edsclrm(:,2), zt )
+        if ( sclr_dim > 0 ) then
+          call stat_update_var( isclram, sclrm(:,1), zt )
+          call stat_update_var( isclram_f, sclrm_forcing(:,1),  zt )
+          call stat_update_var( iedsclram, edsclrm(:,1), zt )
+        end if
+
+        if ( sclr_dim > 1 ) then
+          call stat_update_var( isclrbm, sclrm(:,2), zt )
+          call stat_update_var( isclrbm_f, sclrm_forcing(:,2), zt )
+          call stat_update_var( iedsclrbm, edsclrm(:,2), zt )
+        end if
 
 
-#endif /*SCALARS*/
 
 !       zm variables
 
@@ -1063,31 +1076,34 @@
 !          call stat_update_var( iFcsed, Fcsed, zm )
 !        endif
 
-#ifdef SCALARS
-        call stat_update_var( isclraprtp,sclrprtp(:,1), zm )
-        call stat_update_var( isclrbprtp, sclrprtp(:,2), zm )
-        call stat_update_var( isclrap2, sclrp2(:,1), zm )
-        call stat_update_var( isclrbp2, sclrp2(:,2), zm )
-        call stat_update_var( isclrapthvp, sclrpthvp(:,1), zm )
-        call stat_update_var( isclrbpthvp, sclrpthvp(:,2), zm )
-        call stat_update_var( isclrapthlp, sclrpthlp(:,1), zm )
-        call stat_update_var( isclrbpthlp, sclrpthlp(:,2), zm )
-        call stat_update_var( isclraprcp, sclrprcp(:,1), zm ) 
-        call stat_update_var( isclrbprcp, sclrprcp(:,2), zm )
-        call stat_update_var( iwpsclrap, wpsclrp(:,1), zm )
-        call stat_update_var( iwpsclrbp, wpsclrp(:,2), zm )
-        call stat_update_var( iwp2sclrap, wp2sclrp(:,1), zm )
-        call stat_update_var( iwp2sclrbp, wp2sclrp(:,2), zm )
-        call stat_update_var( iwpsclrap2, wpsclrp2(:,1), zm )
-        call stat_update_var( iwpsclrbp2, wpsclrp2(:,2), zm )
-        call stat_update_var( iwpsclraprtp, wpsclrprtp(:,1), zm )
-        call stat_update_var( iwpsclrbprtp, wpsclrprtp(:,2), zm )
-        call stat_update_var( iwpsclrapthlp, wpsclrpthlp(:,1), zm )
-        call stat_update_var( iwpsclrbpthlp, wpsclrpthlp(:,2), zm )
-        call stat_update_var( iwpedsclrap, wpedsclrp(:,1), zm )
-        call stat_update_var( iwpedsclrbp, wpedsclrp(:,2), zm )
+        if ( sclr_dim > 0 ) then
+          call stat_update_var( isclraprtp, sclrprtp(:,1), zm )
+          call stat_update_var( isclrap2, sclrp2(:,1), zm )
+          call stat_update_var( isclrapthvp, sclrpthvp(:,1), zm )
+          call stat_update_var( isclrapthlp, sclrpthlp(:,1), zm )
+          call stat_update_var( isclraprcp, sclrprcp(:,1), zm ) 
+          call stat_update_var( iwpsclrap, wpsclrp(:,1), zm )
+          call stat_update_var( iwp2sclrap, wp2sclrp(:,1), zm )
+          call stat_update_var( iwpsclrap2, wpsclrp2(:,1), zm )
+          call stat_update_var( iwpsclraprtp, wpsclrprtp(:,1), zm )
+          call stat_update_var( iwpsclrapthlp, wpsclrpthlp(:,1), zm )
+          call stat_update_var( iwpedsclrap, wpedsclrp(:,1), zm )
+        end if 
+
+        if ( sclr_dim > 1 ) then
+          call stat_update_var( isclrbprtp, sclrprtp(:,2), zm )
+          call stat_update_var( isclrbp2, sclrp2(:,2), zm )
+          call stat_update_var( isclrbpthvp, sclrpthvp(:,2), zm )
+          call stat_update_var( isclrbpthlp, sclrpthlp(:,2), zm )
+          call stat_update_var( isclrbprcp, sclrprcp(:,2), zm )
+          call stat_update_var( iwpsclrbp, wpsclrp(:,2), zm )
+          call stat_update_var( iwp2sclrbp, wp2sclrp(:,2), zm )
+          call stat_update_var( iwpsclrbp2, wpsclrp2(:,2), zm )
+          call stat_update_var( iwpsclrbprtp, wpsclrprtp(:,2), zm )
+          call stat_update_var( iwpsclrbpthlp, wpsclrpthlp(:,2), zm )
+          call stat_update_var( iwpedsclrbp, wpedsclrp(:,2), zm )
+        end if 
         
-#endif /*SCALARS*/
 
 ! sfc variables
 

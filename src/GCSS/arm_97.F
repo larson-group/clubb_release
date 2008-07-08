@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_97.F,v 1.24 2008-06-30 18:26:41 faschinj Exp $
+! $Id: arm_97.F,v 1.25 2008-07-08 04:44:09 dschanen Exp $
         module arm_97
 
 !       Description:
@@ -50,13 +50,16 @@
 
         use grid_class, only: gr ! Variable(s)
 
-        use constants, only: sclr_dim ! Variable(s)
+        use parameters, only: sclr_dim ! Variable(s)
 
         use interpolation, only: zlinterp_fnc ! Procedure(s)
 
         use stats_precision, only: time_precision ! Variable(s)
 
         use error_code, only: clubb_debug ! Procedure(s)
+
+        use array_index, only: 
+     .      iisclr_thl, iisclr_rt ! Variable(s)
 
         implicit none
 
@@ -77,7 +80,7 @@
      .  vm_hoc_grid   ! Observed wind, for nudging                   [m/s]
 
         ! Output (optional) Variables
-        real, optional, intent(out), dimension(gr%nnzp,sclr_dim) :: 
+        real, intent(out), dimension(gr%nnzp,sclr_dim) :: 
      .  sclrm_forcing ! Passive scalar tendency [units vary]
 
         real :: time_frac
@@ -166,11 +169,9 @@
         wmm(:) = 0.
         wmt(:) = 0.
 
-        if ( present( sclrm_forcing ) ) then 
-          ! Test scalars with thetal and rt if desired
-          sclrm_forcing(1:gr%nnzp,SCLR_THETA) = thlm_forcing(1:gr%nnzp)
-          sclrm_forcing(1:gr%nnzp,SCLR_RT)    = rtm_forcing(1:gr%nnzp)
-        end if
+        ! Test scalars with thetal and rt if desired
+        if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
+        if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
         return
         end subroutine arm_97_tndcy
@@ -186,11 +187,15 @@
 !       heat and moisture according to GCSS ARM specifications
 !----------------------------------------------------------------------
 
-        use constants, only: Cp, Lv, grav, sclr_dim ! Variable(s)
+        use constants, only: Cp, Lv, grav ! Variable(s)
+
+        use parameters, only: sclr_dim ! Variable(s)
 
         use stats_precision, only: time_precision ! Variable(s)
 
         use diag_ustar_mod, only: diag_ustar ! Variable(s)
+
+        use array_index, only: iisclr_rt, iisclr_thl
 
 #ifdef STATS
         use stats_type, only: stat_update_var_pt ! Procedure(s)
@@ -269,16 +274,12 @@
         wpthlp_sfc = heat_flx / ( Cp * rho0 )     ! (K m/s)
         wprtp_sfc  = moisture_flx / ( Lv * rho0 ) ! (kg m/ kg s)
 
-        ! Let passive scalars be equal to rt and theta_l for now 
-        if ( present( wpsclrp_sfc ) ) then 
-          wpsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-          wpsclrp_sfc(SCLR_RT)    = wprtp_sfc
-        end if
+        ! Let passive scalars be equal to rt and theta_l for now
+        if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
+        if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
-        if ( present( wpsclrp_sfc ) ) then 
-          wpedsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-          wpedsclrp_sfc(SCLR_RT)    = wprtp_sfc
-        end if
+        if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
+        if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
         ! Compute momentum fluxes using ARM Cu formulae
 

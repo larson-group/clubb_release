@@ -1,7 +1,4 @@
-!$Id: gabls2.F,v 1.19 2008-07-07 14:53:09 faschinj Exp $
-#define SCLR_THETA 1
-#define SCLR_RT 2
-
+!$Id: gabls2.F,v 1.20 2008-07-08 04:44:10 dschanen Exp $
 !----------------------------------------------------------------------
         module gabls2
 
@@ -21,8 +18,8 @@
         subroutine gabls2_tndcy
      .  ( time, time_initial,
      .    rhot, rcm, kk_rain, wmt, wmm,
-     .    theta_tndcy, rt_tndcy, radht, Ncm,
-     .    sclr_tndcy )
+     .    thlm_forcing, rtm_forcing, radht, Ncm,
+     .    sclrm_forcing )
 
 !        Description:
 !          Subroutine to apply case-specific forcings to GABLS2 case
@@ -32,7 +29,7 @@
 !          http://people.su.se/~gsven/gabls/
 !-----------------------------------------------------------------------
 
-        use constants, only: sclr_dim ! Variable(s)
+        use parameters, only: sclr_dim ! Variable(s)
 
         use grid_class, only: gr ! Variable(s)
 
@@ -41,6 +38,8 @@
         use saturation, only: rsat ! Procedure(s)
 
         use stats_precision, only: time_precision ! Variable(s)
+
+        use array_index, only: iisclr_rt, iisclr_thl
 
         implicit none
 
@@ -60,14 +59,14 @@
         real, dimension(gr%nnzp), intent(out) ::
      .    wmt,         ! Large-scale vertical motion on t grid   [m/s]
      .    wmm,         ! Large-scale vertical motion on m grid   [m/s]
-     .    theta_tndcy, ! Large-scale thlm tendency               [K/s]
-     .    rt_tndcy,    ! Large-scale rtm tendency                [kg/kg/s]
+     .    thlm_forcing,! Large-scale thlm tendency               [K/s]
+     .    rtm_forcing, ! Large-scale rtm tendency                [kg/kg/s]
      .    radht,       ! dT/dt, then d Theta/dt, due to rad.     [K/s]
      .    Ncm          ! Number of cloud droplets                [#/kg]
 
         ! Output Variables (optional)
-        real, optional, intent(out), dimension(gr%nnzp,sclr_dim) ::
-     .    sclr_tndcy ! Passive scalar LS tendency            [units/s]
+        real, intent(out), dimension(gr%nnzp,sclr_dim) ::
+     .    sclrm_forcing ! Passive scalar LS tendency            [units/s]
 
         ! Local Variables, general
         integer :: k ! Loop index
@@ -97,14 +96,14 @@
 
         ! Compute large-scale horizontal temperature advection
         do k=1,gr%nnzp
-          theta_tndcy(k) = 0.
+          thlm_forcing(k) = 0.
           radht(k) = 0.
         end do
 
 
         ! Compute large-scale horizontal moisture advection [g/kg/s]
-       do k=1,gr%nnzp
-          rt_tndcy(k) = 0.
+        do k=1,gr%nnzp
+          rtm_forcing(k) = 0.
         end do
 
         ! Compute initial cloud droplet concentration
@@ -124,11 +123,9 @@
           end do
         end if
 
-        ! Set scalar tendencies
-        if ( present( sclr_tndcy ) ) then
-          sclr_tndcy(:,SCLR_THETA) = theta_tndcy
-          sclr_tndcy(:,SCLR_RT)    = rt_tndcy
-        end if
+        ! Test scalars with thetal and rt if desired
+        if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
+        if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
         return
         end subroutine gabls2_tndcy
@@ -154,7 +151,9 @@
 !          http://people.su.se/~gsven/gabls/
 !-----------------------------------------------------------------------
 
-          use constants, only: sclr_dim, Cp, Rd, p0, kappa, grav ! Variable(s)
+          use constants, only: Cp, Rd, p0, kappa, grav ! Variable(s)
+
+          use parameters, only: sclr_dim ! Variable(s)
 
           use saturation, only: rsat ! Procedure(s)
 
@@ -162,6 +161,8 @@
 
           use diag_ustar_mod, only: diag_ustar ! Variable(s)
           
+          use array_index, only: iisclr_rt, iisclr_thl
+
           implicit none
 
           ! Local constants
@@ -244,17 +245,12 @@
           upwp_sfc    = -um * ustar*ustar / ubar                       ! [(m/s)^2]
           vpwp_sfc    = -vm * ustar*ustar / ubar                       ! [(m/s)^2]
 
-          ! Set scalar fluxes to be equal to rt and theta
-          if ( present( wpsclrp_sfc ) ) then
-            wpsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-            wpsclrp_sfc(SCLR_RT)    = wprtp_sfc
-          end if
+          ! Let passive scalars be equal to rt and theta_l for now
+          if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
+          if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
-          ! Set eddy-scalar fluxes to be equal to rt and theta
-          if ( present( wpedsclrp_sfc ) ) then
-            wpedsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-            wpedsclrp_sfc(SCLR_RT)    = wprtp_sfc
-          end if
+          if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
+          if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
         return
         end subroutine gabls2_sfclyr

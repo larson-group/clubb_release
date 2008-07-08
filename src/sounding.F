@@ -1,6 +1,4 @@
-! $Id: sounding.F,v 1.20 2008-06-30 18:16:32 faschinj Exp $
-#define SCLR_THETA 1
-#define SCLR_RT 2
+! $Id: sounding.F,v 1.21 2008-07-08 04:44:03 dschanen Exp $
         module sounding
 
         implicit none
@@ -16,28 +14,36 @@
         subroutine read_sounding( iunit, 
      .                            thlm, rtm, um, vm, ugm, vgm, runfile, 
      .                            runtype, 
-     .                            sclrm, edsclrm ) ! optional
+     .                            sclrm, edsclrm )
 
 !       Description:
 !       Subroutine to initialize model variables from a namelist file
+!       References:
+!       None
 !------------------------------------------------------------------------
 
         use grid_class, only: 
      .      gr ! Variable(s)
         use constants, only: 
-     .      sclr_dim, ! Variable(s)
-     .      fstderr
+     .      fstderr ! Constant
+        use parameters, only:
+     .      sclr_dim ! Variable(s)
         use std_atmosphere_mod, only: 
      .      std_atmosphere ! Procedure(s)
         use interpolation, only: 
      .      linint ! Procedure(s)       
+        use parameters, only: sclr_dim
+        use array_index, only:
+     .      iisclr_rt,
+     .      iisclr_thl
+!           ,iisclr_CO2
 
         implicit none
 
         
         ! Constant parameter
         integer, parameter :: nmaxsnd = 600
-
+        integer, parameter :: sclr_max = 10
 
         ! Input variables
         integer, intent(in) :: iunit ! File unit to use for namelist
@@ -56,7 +62,7 @@
      .  vgm   ! v geostrophic wind              [m/s]
 
         ! Optional output variables
-        real, optional, intent(out), dimension(gr%nnzp, sclr_dim) :: 
+        real, intent(out), dimension(gr%nnzp, sclr_dim) :: 
      .  sclrm, edsclrm ! Passive scalar input   [units vary] 
 
         ! Local variables
@@ -73,7 +79,7 @@
      .  ug,    ! u geostrophic wind sounding            [m/s]
      .  vg     ! v geostrophic wind sounding            [m/s]
 
-        real, dimension(nmaxsnd, sclr_dim) :: 
+        real, dimension(nmaxsnd, sclr_max) :: 
      .  sclr, edsclr ! Passive scalar input sounding    [units vary]
 
         ! Namelists
@@ -86,24 +92,17 @@
         ! Is this model being extended by 1976 Standard Atmosphere?
         logical :: lstd_atmo
         
-        ! Whether this routine needs to read in data for the 
-        ! passive scalars variables
-        logical :: sclr_sounding 
-
-        
         ! Read sounding namelist
-        if ( present( sclrm ) .and. present( edsclrm ) ) then 
-          sclr_sounding = .true.
-        else
-          sclr_sounding = .false.
-        end if
 
         lstd_atmo = .false.
         
         open(unit = iunit, file = runfile, status = 'old')
         read(unit = iunit, nml = sounding)
 
-        if ( sclr_sounding ) read(unit = iunit, nml = scalar_sounding)
+        ! Read in a passive scalar sounding, if enabled
+        if ( sclr_dim > 0 ) then
+          read(unit = iunit, nml = scalar_sounding)
+        end if
 
         close(unit=iunit)
 
@@ -143,8 +142,10 @@
           vgm(1)  = vg(1)
           thlm(1) = theta(1)
           rtm(1)  = rt(1)
-          if ( sclr_sounding ) sclrm(1,:)   = sclr(1,:)
-          if ( sclr_sounding ) edsclrm(1,:) = edsclr(1,:)
+          if ( sclr_dim > 0 ) then
+            sclrm(1,1:sclr_dim)   = sclr(1,1:sclr_dim)
+            edsclrm(1,1:sclr_dim) = edsclr(1,1:sclr_dim)
+          end if
         end if
 
 ! Use linear interpolation from two nearest prescribed grid points
@@ -183,7 +184,7 @@
      .                      theta(k), theta(k-1) )
               rtm(i)  = linint( gr%zt(i), z(k), z(k-1), rt(k), rt(k-1) )
               
-              if ( sclr_sounding ) then
+              if ( sclr_dim > 0 ) then
                 do j = 1, sclr_dim 
                   sclrm(i,j) = linint( gr%zt(i), z(k), z(k-1), 
      .                                 sclr(k,j), sclr(k-1,j) )
@@ -202,12 +203,15 @@
                 vgm(i)  = vm(i)
                 thlm(i) = 288.3
                 rtm(i)  = (9.45)/1000.0
-!               Scalars; change if not equal to th and rt
-                if ( sclr_sounding ) then
-                  sclrm(i, SCLR_THETA)   = thlm(i)
-                  sclrm(i, SCLR_RT)      = rtm(i)
-                  edsclrm(i, SCLR_THETA) = thlm(i)
-                  edsclrm(i, SCLR_RT)    = rtm(i)
+                ! Passive Scalars
+                ! Change this if they are not equal to theta_l and rt in RF02
+                if ( iisclr_thl > 0  ) then
+                  sclrm(i, iisclr_thl)   = thlm(i)
+                  edsclrm(i, iisclr_thl) = thlm(i)
+                end if
+                if ( iisclr_rt > 0 ) then
+                  sclrm(i, iisclr_rt)    = rtm(i)
+                  edsclrm(i, iisclr_rt)  = rtm(i)
                 end if
               ELSE
                 um(i)   =  3.0 + (4.3*gr%zt(i))/1000.0
@@ -217,12 +221,15 @@
                 thlm(i) = 295.0 + ( (gr%zt(i) - 795.0)**(1.0/3.0) )
                 rtm(i)  = (  5.0 - 3.0 
      .          * ( 1.0 - EXP( (795.0 - gr%zt(i))/500.0 ) )  )/1000.0
+                ! Passive Scalars
                 ! Same as above
-                if ( sclr_sounding ) then
-                  sclrm(i, SCLR_THETA)   = thlm(i)
-                  sclrm(i, SCLR_RT)      = rtm(i)
-                  edsclrm(i, SCLR_THETA) = thlm(i)
-                  edsclrm(i, SCLR_RT)    = rtm(i)
+                if ( iisclr_thl > 0  ) then
+                  sclrm(i, iisclr_thl)   = thlm(i)
+                  edsclrm(i, iisclr_thl) = thlm(i)
+                end if
+                if ( iisclr_rt > 0 ) then
+                  sclrm(i, iisclr_rt)    = rtm(i)
+                  edsclrm(i, iisclr_rt)  = rtm(i)
                 end if
               END IF
 
@@ -234,22 +241,21 @@
           ! Standard Atmosphere
           ! Joshua Fasching April 2009
           if ( lstd_atmo ) then
+            call std_atmosphere( gr%zt(i), thlm(i), rtm(i) )
                   
-                  call std_atmosphere( gr%zt(i), thlm(i), rtm(i) )
-                  
-                  um(i) = um(i-1)
-                  vm(i) = vm(i-1)
-                  ugm(i) = um(i)
-                  vgm(i) = vm(i)
+            um(i) = um(i-1)
+            vm(i) = vm(i-1)
+            ugm(i) = um(i)
+            vgm(i) = vm(i)
 
-          endif
+          end if
 
         end do   ! i=2, gr%nnzp
         
         if ( lstd_atmo ) then
-                write(fstderr,*) "Warning: 1976 Standard Atmosphere ",
-     .                              "was used to complete the grid"
-        endif
+          write(fstderr,*) "Warning: 1976 Standard Atmosphere "//
+     .      "was used to complete the grid."
+        end if
 
         return
         end subroutine read_sounding

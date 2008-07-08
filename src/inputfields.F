@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputfields.F,v 1.23 2008-06-27 17:02:22 faschinj Exp $
+! $Id: inputfields.F,v 1.24 2008-07-08 04:44:03 dschanen Exp $
 
 ! Module inputfields
 
@@ -129,9 +129,14 @@
      .      Nim,
      .      Sct,
      .      em
+
         use grid_class, only:
      .      gr, ! Variable(s)
      .      zt2zm ! Procedure(s)
+
+        use array_index, only: 
+     .      iirrm, iiNrm, iirsnowm, iiricem, iirgraupelm
+
         use inputfile_class, only:
      .      inputgrads, ! Type
      .      get_var, ! Procedure(s)
@@ -149,24 +154,7 @@
 
         real, dimension(gr%nnzp+1) :: tmp1
 
-        ! Hydrometor pointers
-        real, dimension(:), pointer ::
-     .  rrm,        ! Rain water mixing ratio           [kg/kg]
-     .  Nrm,        ! Rain droplet number concentration [count/kg]
-     .  ricem,      ! Ice water mixing ratio            [kg/kg]
-     .  rgraupelm,  ! Graupel water mixing ratio        [kg/kg] 
-     .  rsnowm      ! Snow water mixing ratio           [kg/kg]
-
-
-
         integer :: k
-
-        ! Assign pointers to each hydrometeor field
-        rrm       => hydromet(1:gr%nnzp,1)
-        Nrm       => hydromet(1:gr%nnzp,2)
-        rsnowm    => hydromet(1:gr%nnzp,3)
-        ricem     => hydromet(1:gr%nnzp,4)
-        rgraupelm => hydromet(1:gr%nnzp,5)
 
 
         select case( input_type )
@@ -217,19 +205,19 @@
           endif
           if ( input_rrm ) then 
             call get_var( fread_var, "rrm", timestep,
-     .                    rrm(1:gr%nnzp),  lerror )
+     .                    hydromet(1:gr%nnzp,iirrm),  lerror )
           endif
           if ( input_rsnowm ) then 
             call get_var( fread_var, "rsnowm", timestep,
-     .                    rsnowm(1:gr%nnzp),  lerror )
+     .                    hydromet(1:gr%nnzp,iirsnowm),  lerror )
           endif
           if ( input_ricem ) then 
             call get_var( fread_var, "ricem", timestep,
-     .                    ricem(1:gr%nnzp),  lerror )
+     .                    hydromet(1:gr%nnzp,iiricem),  lerror )
           endif
           if ( input_rgraupelm ) then 
             call get_var( fread_var, "rgraupelm", timestep,
-     .                    rgraupelm(1:gr%nnzp),  lerror )
+     .                    hydromet(1:gr%nnzp,iirgraupelm),  lerror )
           endif
 
 !--------------------------------------------------------
@@ -308,7 +296,7 @@
           endif
           if ( input_Nrm ) then
             call get_var( fread_var , "Nrm", timestep,
-     .                    Nrm(1:gr%nnzp), lerror)
+     .                    hydromet(1:gr%nnzp,iiNrm), lerror)
           endif
           if ( input_Sct ) then
             call get_var( fread_var , "sc", timestep,

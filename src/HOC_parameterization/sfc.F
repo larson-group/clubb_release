@@ -1,4 +1,4 @@
-! $Id: sfc.F,v 1.22 2008-07-07 20:00:14 faschinj Exp $
+! $Id: sfc.F,v 1.23 2008-07-08 04:44:25 dschanen Exp $
 #define SCLR_RT 2
 #define SCLR_THETA 1
 
@@ -32,9 +32,10 @@
         use parameters, only: 
      .      T0 ! Variable(s)
         use constants, only:
-     .      sclr_dim, ! Variable(s)
-     .      grav,
+     .      grav, ! Variable(s)
      .      fstderr
+        use parameters, only:
+     .      sclr_dim  ! Variable(s)
         use numerical_check, only:
      .      sfc_var_check ! Procedure
         use error_code, only: 
@@ -43,7 +44,7 @@
         implicit none
 
         ! External
-        intrinsic :: sqrt, present, max
+        intrinsic :: sqrt, max
 
         ! Constant Parameters
         real, parameter :: 
@@ -69,7 +70,7 @@
      .  ustar_in     ! Surface friction velocity [m/s]
 
         ! Input (Optional) 
-        real, optional, intent(in), dimension(sclr_dim) :: 
+        real, intent(in), dimension(sclr_dim) :: 
      .  wpsclrp_sfc ! Passive scalar flux       [units m/s]
 
         ! Output Variables
@@ -85,7 +86,7 @@
      .  err_code
 
         ! Output Variables (Optional) 
-        real, optional, intent(out), dimension(sclr_dim) :: 
+        real, intent(out), dimension(sclr_dim) :: 
      .  sclrp2_sfc,   ! Passive scalar variance                 [units^2]
      .  sclrprtp_sfc, ! Passive scalar r_t covariance           [units kg/kg]
      .  sclrpthlp_sfc ! Passive scalar theta_l covariance       [units K]
@@ -171,9 +172,8 @@
               vp2_sfc = 1.75 * ustar**2
            ENDIF
 
-           ! Optional mixing scheme scalars
-           IF ( PRESENT( wpsclrp_sfc ) .AND. PRESENT( sclrprtp_sfc )
-     .          .AND. PRESENT( sclrpthlp_sfc ) ) THEN
+           ! Passive scalars
+           IF ( sclr_dim > 0 ) THEN
               DO i = 1, sclr_dim
                  ! Notes:  1) "reduce_coef" is a reduction coefficient intended 
                  !            to make the values of sclrprtp, sclrpthlp, and 
@@ -252,9 +252,8 @@
      .                     ( wpthlp_sfc / uf ) * ( wprtp_sfc / uf )
 ! End Vince Larson's change.
 
-           ! Optional mixing scheme scalars
-           if ( present( wpsclrp_sfc ) .and. present( sclrprtp_sfc ) 
-     .          .and. present( sclrpthlp_sfc ) ) then
+           ! Passive scalars
+           if ( sclr_dim > 0 ) then
               do i=1, sclr_dim
 ! Vince Larson changed coeffs to make correlations between [-1,1]. 31 Jan 2008
 !                 sclrprtp_sfc(i) 
@@ -295,60 +294,50 @@
               end do ! 1,...sclr_dim
            end if
 
-        ENDIF
+        END IF
         
         if ( clubb_at_debug_level( 2 ) ) then
 
-                call sfc_var_check( wp2_sfc, up2_sfc, vp2_sfc, 
-     .                     thlp2_sfc, rtp2_sfc, rtpthlp_sfc,
-     .                     err_code
-#ifdef SCALARS
-     .                     ,sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc 
-#endif /*SCALARS*/
-     .      )
+          call sfc_var_check( wp2_sfc, up2_sfc, vp2_sfc, 
+     .                        thlp2_sfc, rtp2_sfc, rtpthlp_sfc,
+     .                        err_code,
+     .                        sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc )
         
 !       Error reporting
 !       Joshua Fasching February 2008
-                if ( err_code == clubb_var_equals_NaN ) then
-                        
-                    write(fstderr,*) "Error in sfc_var"
+          if ( err_code == clubb_var_equals_NaN ) then
+
+            write(fstderr,*) "Error in sfc_var"
+            write(fstderr,*) "Intent(in)"
                     
-                    write(fstderr,*) "Intent(in)"
+            write(fstderr,*) "upwp_sfc = ", upwp_sfc 
+            write(fstderr,*) "vpwp_sfc = ", vpwp_sfc 
+            write(fstderr,*) "wpthlp_sfc = ", wpthlp_sfc
+            write(fstderr,*) "wprtp_sfc = ", wprtp_sfc
+            write(fstderr,*) "ustar_in = ", ustar_in 
                     
-                    write(fstderr,*) "upwp_sfc = ", upwp_sfc 
-                    write(fstderr,*) "vpwp_sfc = ", vpwp_sfc 
-                    write(fstderr,*) "wpthlp_sfc = ", wpthlp_sfc
-                    write(fstderr,*) "wprtp_sfc = ", wprtp_sfc
-                    write(fstderr,*) "ustar_in = ", ustar_in 
+            if ( sclr_dim > 0 ) then 
+              write(fstderr,*) "wpsclrp_sfc = ", wpsclrp_sfc
+            end if
                     
-                    if ( present( wpsclrp_sfc ) ) then 
-                       write(fstderr,*) "wpsclrp_sfc = ", wpsclrp_sfc
-                    endif
+            write(fstderr,*) "Intent(out)"
                     
-                    write(fstderr,*) "Intent(out)"
-                    
-                    write(fstderr,*) "wp2_sfc = ", wp2_sfc  
-                    write(fstderr,*) "up2_sfc = ", up2_sfc
-                    write(fstderr,*) "vp2_sfc = ", vp2_sfc
-                    write(fstderr,*) "thlp2_sfc = ", thlp2_sfc
-                    write(fstderr,*) "rtp2_sfc = ", rtp2_sfc
-                    write(fstderr,*) "rtpthlp_sfc = ", rtpthlp_sfc
+            write(fstderr,*) "wp2_sfc = ", wp2_sfc  
+            write(fstderr,*) "up2_sfc = ", up2_sfc
+            write(fstderr,*) "vp2_sfc = ", vp2_sfc
+            write(fstderr,*) "thlp2_sfc = ", thlp2_sfc
+            write(fstderr,*) "rtp2_sfc = ", rtp2_sfc
+            write(fstderr,*) "rtpthlp_sfc = ", rtpthlp_sfc
                 
-                   if(present(sclrp2_sfc)) then 
-                      write(fstderr,*) "sclrp2_sfc = ", sclrp2_sfc
-                   endif
-                   
-                   if(present(sclrprtp_sfc)) then
-                      write(fstderr,*) "sclrprtp_sfc = ", sclrprtp_sfc
-                   endif
-                   
-                   if(present(sclrpthlp_sfc)) then
-                      write(fstderr,*) "sclrpthlp_sfc = ", sclrpthlp_sfc
-                   endif
+            if ( sclr_dim > 0 ) then 
+              write(fstderr,*) "sclrp2_sfc = ", sclrp2_sfc
+              write(fstderr,*) "sclrprtp_sfc = ", sclrprtp_sfc
+              write(fstderr,*) "sclrpthlp_sfc = ", sclrpthlp_sfc
+            end if
 
-                endif ! err_code == clubb_var_equals_NaN
+          end if ! err_code == clubb_var_equals_NaN
 
-        endif ! clubb_at_debug_level ( 2 )
+        end if ! clubb_at_debug_level ( 2 )
         
         return
 

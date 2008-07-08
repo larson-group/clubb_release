@@ -1,7 +1,5 @@
-#define SCLR_THETA 1
-#define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: fire.F,v 1.15 2008-06-24 19:43:37 faschinj Exp $
+! $Id: fire.F,v 1.16 2008-07-08 04:44:10 dschanen Exp $
         module fire
 
 !       Description:
@@ -30,7 +28,7 @@
 !       None
 !----------------------------------------------------------------------
 
-        use constants, only: sclr_dim ! Variable(s)
+        use parameters, only: sclr_dim ! Variable(s)
 
         use model_flags, only: lbugsrad  ! Variable(s)
 
@@ -41,6 +39,8 @@
         use atex_cloud_rad, only: cloud_rad ! Procedure(s)
 
         use stats_precision, only: time_precision ! Variable(s)
+
+        use array_index, only: iisclr_rt, iisclr_thl
 
 #ifdef STATS
         use stats_type, only: stat_update_var ! Procedure(s)
@@ -68,7 +68,7 @@
      .  rtm_forcing  ! Total water mixing ratio tendency [kg/kg/s]
 
         ! Output Variables (optional)
-        real, optional, intent(out), dimension(gr%nnzp,sclr_dim) ::
+        real, intent(out), dimension(gr%nnzp,sclr_dim) ::
      .  sclrm_forcing ! Passive scalar tendency [units vary]
 
 !       Internal variables
@@ -112,11 +112,10 @@
           call stat_update_var( iradht_LW, radht, zt )
         end if
 #endif
-        ! Testing for scalars
-        if ( present( sclrm_forcing ) ) then
-          sclrm_forcing(1:gr%nnzp,SCLR_THETA) = thlm_forcing(1:gr%nnzp)
-          sclrm_forcing(1:gr%nnzp,SCLR_RT)    = rtm_forcing(1:gr%nnzp)
-        end if
+
+        ! Test scalars with thetal and rt if desired
+        if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
+        if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
         return
         end subroutine fire_tndcy
@@ -181,9 +180,13 @@
 !       None
 !------------------------------------------------------------------------
 
-        use constants, only: sclr_dim, kappa, p0 ! Variable(s)
+        use constants, only: kappa, p0 ! Variable(s)
+
+        use parameters, only: sclr_dim ! Variable(s)
 
         use saturation, only: rsat ! Procedure(s)
+
+        use array_index, only: iisclr_rt, iisclr_thl
 
         implicit none
         
@@ -227,16 +230,12 @@
         wpthlp_sfc = -C * M * ( thlair - Tsfc * (psfc/p0)**kappa )
         wprtp_sfc  = -C * M * ( rtair - rsat( psfc, Tsfc ) )
 
-        ! Compute passive scalar as == to wprtp & wpthlp for now
-        if ( present( wpsclrp_sfc ) ) then
-          wpsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-          wpsclrp_sfc(SCLR_RT)    = wprtp_sfc
-        endif
+        ! Let passive scalars be equal to rt and theta_l for now
+        if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
+        if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
-        if ( present( wpedsclrp_sfc ) ) then
-          wpedsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-          wpedsclrp_sfc(SCLR_RT)    = wprtp_sfc
-        endif
+        if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
+        if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
         return
         end subroutine sfc_thermo_fluxes

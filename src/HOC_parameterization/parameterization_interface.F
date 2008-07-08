@@ -1,14 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.103 2008-07-07 20:00:14 faschinj Exp $
-
-!  Directives for scalars;  
-!  Theta and rt are arbitrary and used to test the code.
-
-#ifdef SCALARS
-#define SCLR_THETA 1
-#define SCLR_RT 2
-#endif
-
+! $Id: parameterization_interface.F,v 1.104 2008-07-08 04:44:25 dschanen Exp $
 !-----------------------------------------------------------------------
         module hoc_parameterization_interface
 
@@ -42,12 +33,10 @@
      .              thlm, rtm, wprtp, wpthlp, wp2, wp3,
      .              rtp2, thlp2, rtpthlp,
      .              Scm, taum, rcm, cf,
-     .              err_code, implemented
-#ifdef SCALARS
-     .              ,wpsclrp_sfc, wpedsclrp_sfc,   ! Optional
+     .              err_code, implemented,
+     .              wpsclrp_sfc, wpedsclrp_sfc,   ! Optional
      .              sclrm, sclrm_forcing, edsclrm, ! Optional
      .              wpsclrp
-#endif
      .            )
 
 !      Description:
@@ -69,8 +58,7 @@
      .     Cp,
      .     Lv,
      .     ep1,
-     .     eps,
-     .     sclr_dim
+     .     eps 
        use parameters, only:
      .     gamma_coefc, ! Variable(s)
      .     gamma_coefb,
@@ -78,7 +66,8 @@
      .     T0,
      .     taumax,
      .     c_K,
-     .     ts_nudge
+     .     ts_nudge,
+     .     sclr_dim
        use model_flags, only:
      .     LH_on, ! Variable(s)
      .     lKhm_aniso,
@@ -130,9 +119,8 @@
      .     wpthlpzt,
      .     wprtpzt,
      .     rtp2zt,
-     .     rtpthlpzt
-#ifdef SCALARS
-     .    ,edsclrmt,
+     .     rtpthlpzt,
+     .     edsclrmt,
      .     wpedsclrp,
      .     sclrpthvp,  ! sclr'th_v'
      .     sclrprtp,   ! sclr'rt'
@@ -143,7 +131,6 @@
      .     wpsclrp2,   ! w'sclr'^2
      .     wpsclrprtp, ! w'sclr'rt'
      .     wpsclrpthlp ! w'sclr'thl'
-#endif
 
        use mixing, only:
            ! Variable(s) 
@@ -280,8 +267,6 @@
        ! Diagnostic, for if some calculation goes amiss.
        integer, intent(inout) :: err_code
      
-#ifdef SCALARS
-
        ! Optional Input Variables
        real, intent(in),  dimension(sclr_dim) :: 
      . wpsclrp_sfc,  ! Scalar flux at surface           [units m/s]
@@ -294,18 +279,15 @@
      . edsclrm,        ! Eddy passive scalar mean.      [units vary]
      . wpsclrp         ! w'sclr'                        [units vary m/s]
 
-#endif /*SCALARS*/
 
        ! Local Variables
-       integer :: k
+       integer :: i, k
 
        real, dimension(gr%nnzp) ::
      . tmp1, gamma_Skw_fnc
  
-#ifdef SCALARS
        real, dimension(gr%nnzp,sclr_dim) ::
      . sclr_tmp1, sclr_tmp2, sclr_tmp3, sclr_tmp4 ! for PDF closure
-#endif /* SCALARS */
 
 !------- Local variables for Latin Hypercube sampling ------------------
 
@@ -343,12 +325,9 @@
      .        upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,           ! intent(in)
      .        up2, vp2, rtm, wprtp, thlm,                       ! intent(in)
      .        wpthlp, wp2, wp3, Scm, rtp2, thlp2,               ! intent(in)
-     .        rtpthlp, taum, rcm, cf, "beginning of "           ! intent(in)
-#ifdef SCALARS
-     .        ,wpsclrp_sfc, wpedsclrp_sfc,                      ! intent(in)
-     .        sclrm, sclrm_forcing, edsclrm                     ! intent(in)
-#endif /*SCALARS*/
-     .       )
+     .        rtpthlp, taum, rcm, cf, "beginning of ",          ! intent(in)
+     .        wpsclrp_sfc, wpedsclrp_sfc,                      ! intent(in)
+     .        sclrm, sclrm_forcing, edsclrm )                   ! intent(in)
        end if
 !-----------------------------------------------------------------------
 
@@ -369,11 +348,12 @@
        upwp(1)   = upwp_sfc
        vpwp(1)   = vpwp_sfc
 
-#ifdef SCALARS
        ! Set fluxes for passive scalars (if enabled)
-       wpsclrp(1,1:sclr_dim)   = wpsclrp_sfc(1:sclr_dim)
-       wpedsclrp(1,1:sclr_dim) = wpedsclrp_sfc(1:sclr_dim)
-#endif
+       if ( sclr_dim > 0 ) then
+         wpsclrp(1,1:sclr_dim)   = wpsclrp_sfc(1:sclr_dim)
+         wpedsclrp(1,1:sclr_dim) = wpedsclrp_sfc(1:sclr_dim)
+       end if
+
        !----------------------------------------------------------------
        ! Set Surface variances
        !----------------------------------------------------------------
@@ -398,15 +378,13 @@
 !      Surface effects should not be included with any case where the lowest
 !      level is not the ground level.  Brian Griffin.  December 22, 2005.
        IF ( gr%zm(1) == 0.0 ) THEN
-          call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1), ustar, ! intent(in)
-     ,                  wp2(1), up2(1), vp2(1),                       ! intent(out)
-     .                  thlp2(1), rtp2(1), rtpthlp(1), err_code       ! intent(out)
-#ifdef SCALARS
-     .                 ,wpsclrp(1,1:sclr_dim),                        ! intent(in)
-     .                  sclrp2(1,1:sclr_dim),                         ! intent(out)
-     .                  sclrprtp(1,1:sclr_dim), sclrpthlp(1,1:sclr_dim)! intent(out)
-#endif /* SCALARS */
-     .                )
+          call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1),    ! intent(in)
+     ,                  ustar, wp2(1), up2(1), vp2(1),            ! intent(out)
+     .                  thlp2(1), rtp2(1), rtpthlp(1), err_code,  ! intent(out)
+     .                  wpsclrp(1,1:sclr_dim),                    ! intent(in)
+     .                  sclrp2(1,1:sclr_dim),                     ! intent(out)
+     .                  sclrprtp(1,1:sclr_dim),                   ! intent(out) 
+     .                  sclrpthlp(1,1:sclr_dim) )                 ! intent(out)
           ! Subroutine may produce NaN values, and if so, exit
           ! gracefully.
           ! Joshua Fasching March 2008
@@ -421,13 +399,11 @@
           thlp2(1)   = 0.0
           rtp2(1)    = 0.0
           rtpthlp(1) = 0.0
-#ifdef SCALARS
           DO i = 1, sclr_dim, 1
-             sclrp2(1,i)    = 0.0
-             sclrprtp(1,i)  = 0.0
-             sclrpthlp(1,i) = 0.0
+            sclrp2(1,i)    = 0.0
+            sclrprtp(1,i)  = 0.0
+            sclrpthlp(1,i) = 0.0
           END DO
-#endif /* SCALARS */
        END IF
 
        !----------------------------------------------------------------
@@ -445,16 +421,12 @@
 ! Vince Larson used prognostic timestepping of variances 
 !    in order to increase numerical stability.  17 Jul 2007
 !     .                .false., dt, isValid
-     .                .true., dt,                               ! intent(in)
-     .                rtp2, thlp2, rtpthlp,                     ! intent(inout)
-     .                up2, vp2,                                 ! intentt(inout)
-     .                err_code                                  ! intent(out)
-! End Vince Larson's change
-#ifdef SCALARS
-     .                ,sclrm, wpsclrp,                    ! intent(in) optional vars
-     .                sclrp2, sclrprtp, sclrpthlp         ! intent(out)  "       "
-#endif /* SCALARS */
-     .               )
+     .                .true., dt,                   ! intent(in)
+     .                rtp2, thlp2, rtpthlp,         ! intent(inout)
+     .                up2, vp2,                     ! intent(inout)
+     .                err_code,                     ! intent(out)
+     .                sclrm, wpsclrp,               ! intent(in) 
+     .                sclrp2, sclrprtp, sclrpthlp  )! intent(out)
 
        !----------------------------------------------------------------
        ! Covariance clipping for wprtp, wpthlp, and wpsclrp after 
@@ -525,7 +497,6 @@
 #endif /*STATS*/
 
 
-#ifdef SCALARS
        ! Clipping for w'sclr'
        !
        ! Clipping w'sclr' at each vertical level, based on the 
@@ -539,8 +510,7 @@
           call covariance_clip( "wpsclrp", .true.,                 ! intent(in)
      .                          .false., dt, wp2(:), sclrp2(:,i),  ! intent(in)
      .                          wpsclrp(:,i) )                     ! intent(inout)
-       enddo
-#endif /* SCALARS */
+       end do
 
 
        ! Check stability
@@ -597,15 +567,13 @@
        ! Call closure scheme
        !----------------------------------------------------------------
 
-#ifdef SCALARS
        ! Put passive scalar input on the t grid for the PDF
-       do i = 1, sclr_dim
-          sclr_tmp1(:,i) = zm2zt( wpsclrp(:,i) ) 
-          sclr_tmp2(:,i) = zm2zt( sclrprtp(:,i) ) 
-          sclr_tmp3(:,i) = max( zm2zt( sclrp2(:,i) ), 0.0 )   ! Pos. def. quantity
-          sclr_tmp4(:,i) = zm2zt( sclrpthlp(:,i) ) 
+       do i = 1, sclr_dim, 1
+         sclr_tmp1(:,i) = zm2zt( wpsclrp(:,i) )
+         sclr_tmp2(:,i) = zm2zt( sclrprtp(:,i) )
+         sclr_tmp3(:,i) = max( zm2zt( sclrp2(:,i) ), 0.0 ) ! Pos. def. quantity
+         sclr_tmp4(:,i) = zm2zt( sclrpthlp(:,i) )
        end do ! i = 1, sclr_dim
-#endif /* SCALARS */
 
        do k = 2, gr%nnzp, 1
          call pdf_closure_new
@@ -617,23 +585,20 @@
      .     wpthlp2(k), wp2thlp(k), wprtpthlp(k),                        ! intent(out)
      .     cf(k), rcm(k), wpthvp(k), wp2thvp(k), rtpthvp(k),            ! intent(out)
      .     thlpthvp(k), wprcp(k), wp2rcp(k), rtprcp(k), thlprcp(k),     ! intent(out)
-     .     rcp2(k), pdf_parms(k, :), crt1, crt2, cthl1, cthl2, err_code ! intent(out)
-#ifdef SCALARS
-     .     ,sclrm(k,:), sclr_tmp1(k,:),                                 ! intent(in)
-     .     sclr_tmp3(k,:),sclr_tmp2(k,:), sclr_tmp4(k,:)                ! intent(in)
+     .     rcp2(k), pdf_parms(k, :), crt1, crt2, cthl1, cthl2, err_code,! intent(out)
+     .     sclrm(k,:), sclr_tmp1(k,:),                                  ! intent(in)
+     .     sclr_tmp3(k,:),sclr_tmp2(k,:), sclr_tmp4(k,:),               ! intent(in)
      .     wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp(k,:),              ! intent(out)
-     .     wpsclrpthlp(k,:), sclrprcp(k,:), wp2sclrp(k,:)               ! intent(out)
-#endif /*SCALARS*/
-     .   )
+     .     wpsclrpthlp(k,:), sclrprcp(k,:), wp2sclrp(k,:) )             ! intent(out)
 
         ! Subroutine may produce NaN values, and if so, exit
         ! gracefully.
         ! Joshua Fasching March 2008
          
-        if( err_code == clubb_var_equals_NaN ) then
-            print *, "At grid level = ",k
-            return
-         endif
+        if ( err_code == clubb_var_equals_NaN ) then
+          write(0,*) "At grid level = ",k
+          return
+        end if
          
          !--------------------------------------------------------------
          ! Latin hypercube sampling
@@ -670,15 +635,14 @@
        thlprcp(gr%nnzp)  = 0.0
        rcp2              = max( zt2zm( rcp2 ), 0.0 )   ! Pos. def. quantity
        rcp2(gr%nnzp)     = 0.0
-#ifdef SCALARS
-!      Interpolate passive scalars back onto the m grid
+
+       ! Interpolate passive scalars back onto the m grid
        do i = 1, sclr_dim
-          sclrpthvp(:,i)       = zt2zm( sclrpthvp(:,i) )
-          sclrpthvp(gr%nnzp,i) = 0.0
-          sclrprcp(:,i)        = zt2zm( sclrprcp(:,i) )
-          sclrprcp(gr%nnzp,i)  = 0.0
+         sclrpthvp(:,i)       = zt2zm( sclrpthvp(:,i) )
+         sclrpthvp(gr%nnzp,i) = 0.0
+         sclrprcp(:,i)        = zt2zm( sclrprcp(:,i) )
+         sclrprcp(gr%nnzp,i)  = 0.0
        end do ! i=1, sclr_dim
-#endif /* SCALARS */
 
        !----------------------------------------------------------------
        ! Compute thvm
@@ -762,19 +726,15 @@
        !----------------------------------------------------------------
        ! Advance rtm/wprtp and thlm/wpthlp one time step
        !----------------------------------------------------------------
-
         call timestep_mixing( dt, Scm, wmm, wmt, wp2, wp3, ! intent(in)
      .                        Kht, taum, Skwm, rtpthvp,    ! intent(in)
      .                        rtm_forcing, thlpthvp,       ! intent(in)
      .                        thlm_forcing, rtp2, thlp2,   ! intent(in)
      .                        implemented,                 ! intent(in)
      .                        rtm, wprtp, thlm, wpthlp,    ! intent(out)
-     .                        err_code                     ! intent(out)
-#ifdef SCALARS
-     .                        ,sclrpthvp, sclrm_forcing, sclrp2, ! intent(in)
-     .                        sclrm, wpsclrp                     ! intent(out)
-#endif /* SCALARS */
-     .                      )
+     .                        err_code,                    ! intent(out)
+     .                        sclrpthvp, sclrm_forcing, sclrp2, ! intent(in)
+     .                        sclrm, wpsclrp )                   ! intent(out)
 
        ! Wrapped LAPACK procedures may report errors, and if so, exit
        ! gracefully.
@@ -785,14 +745,18 @@
         ! Vince Larson clipped rcm in order to prevent rvm < 0.  5 Apr 2008.
         ! This code won't work unless rtm >= 0 !!!
         do k = 1, gr%nnzp
-           if ( rtm(k) < rcm(k) ) then
-              if ( clubb_at_debug_level(1) ) then
-              print*, 'rtm < rcm in timestep_mixing at k=', k, '.',
+          if ( rtm(k) < rcm(k) ) then
+
+            if ( clubb_at_debug_level(1) ) then
+              print *, 'rtm < rcm in timestep_mixing at k=', k, '.',
      .                '  Clipping rcm.'
-              end if
-              rcm(k) = max( 0.0, rtm(k) - eps )
-           end if
-        end do
+            end if ! clubb_at_debug_level(1)
+
+            rcm(k) = max( 0.0, rtm(k) - eps )
+
+          end if ! rtm(k) < rcm(k)
+
+        end do ! k=1..gr%nnzp
 
        !----------------------------------------------------------------
        ! Advance wp2/wp3 one timestep
@@ -873,7 +837,6 @@
 #endif /*STATS*/
 
 
-#ifdef SCALARS
        ! Clipping for w'sclr'
        !
        ! Clipping w'sclr' at each vertical level, based on the
@@ -887,8 +850,7 @@
           call covariance_clip( "wpsclrp", .false.,                ! intent(in)
      .                          .true., dt, wp2(:), sclrp2(:,i),   ! intent(in)
      .                          wpsclrp(:,i) )                     ! intent(inout)
-       enddo
-#endif /* SCALARS */
+       end do
 
 
        ! Wrapped LAPACK procedures may report errors, and if so, exit
@@ -896,27 +858,26 @@
        ! Joshua Fasching March 2008
        if ( lapack_error( err_code ) ) return
 
-#ifdef SCALARS
        !----------------------------------------------------------------
        ! Compute Eddy-diff. Passive Scalars
        !----------------------------------------------------------------
+       if ( sclr_dim > 0 ) then
+         do i=1, sclr_dim
 
-       do i=1, sclr_dim
+           edsclrmt(1:gr%nnzp,i) = - wmt * ddzm( zt2zm( edsclrm(:,i) ) )
 
-         edsclrmt(1:gr%nnzp,i) = - wmt * ddzm( zt2zm( edsclrm(:,i) ) )
-
-         call compute_um_edsclrm( "edsclr", wpedsclrp(1,i),             ! intent(in)
-     .                            edsclrmt(:,i), Khm, dt,               ! intent(in)
-     .                            edsclrm(:,i),                         ! intent(inout)
-     .                            wpedsclrp(:,i), err_code )            ! intent(out)
+           call compute_um_edsclrm( "edsclr", wpedsclrp(1,i),    ! intent(in)
+     .                              edsclrmt(:,i), Khm, dt,      ! intent(in)
+     .                              edsclrm(:,i),                ! intent(inout)
+     .                              wpedsclrp(:,i), err_code )   ! intent(out)
 
 
-       end do
+         end do
 
-       ! Set boundary condition as in rt
-       edsclrm(1,1:sclr_dim) = edsclrm(2,1:sclr_dim)
-       if ( lapack_error(err_code) ) return
-#endif /*SCALARS*/
+         ! Set boundary condition as in rt
+         edsclrm(1,1:sclr_dim) = edsclrm(2,1:sclr_dim)
+         if ( lapack_error(err_code) ) return
+       end if ! sclr_dim > 0
 
 
        !----------------------------------------------------------------
@@ -1008,34 +969,27 @@
        rtpthlpzt = zm2zt( rtpthlp )
 
        call stats_accumulate
-     .           ( um, vm, upwp, vpwp, up2, vp2, thlm,                  ! intent(in)
-     .             rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp,  ! intent(in)
-     .             p, exner, rhot, rhom, thlm_forcing, rtm_forcing, wmm,! intent(in)
-     .             wmt, Scm, taum, rcm, cf                              ! intent(in)
-#ifdef SCALARS
-     .             ,sclrm, edsclrm, sclrm_forcing, wpsclrp              ! intent(in)
-#endif /*SCALARS*/
-     .            )
+     .      ( um, vm, upwp, vpwp, up2, vp2, thlm,                  ! intent(in)
+     .        rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp,  ! intent(in)
+     .        p, exner, rhot, rhom, thlm_forcing, rtm_forcing, wmm,! intent(in)
+     .        wmt, Scm, taum, rcm, cf,                             ! intent(in)
+     .        sclrm, edsclrm, sclrm_forcing, wpsclrp )             ! intent(in)
 
 #endif /*STATS*/
 
-       if( clubb_at_debug_level( 2 ) ) then
-       call parameterization_check
-     .      ( thlm_forcing, rtm_forcing, wmm, wmt, p, rhom,             ! intent(in)
-     .        rhot, exner, wpthlp_sfc, wprtp_sfc,                       ! intent(in)
-     .        upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,                   ! intent(in)
-     .        up2, vp2, rtm, wprtp, thlm,                               ! intent(in)
-     .        wpthlp, wp2, wp3, Scm, rtp2, thlp2,                       ! intent(in)
-     .        rtpthlp, taum, rcm, cf, "end of "                         ! intent(in)
-#ifdef SCALARS
-     .        ,wpsclrp_sfc, wpedsclrp_sfc,                              ! intent(in)
-     .        sclrm, sclrm_forcing, edsclrm                             ! intent(in)
-#endif /*SCALARS*/
-     . )
-       endif
+       if ( clubb_at_debug_level( 2 ) ) then
+         call parameterization_check
+     .        ( thlm_forcing, rtm_forcing, wmm, wmt, p, rhom,             ! intent(in)
+     .          rhot, exner, wpthlp_sfc, wprtp_sfc,                       ! intent(in)
+     .          upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,                   ! intent(in)
+     .          up2, vp2, rtm, wprtp, thlm,                               ! intent(in)
+     .          wpthlp, wp2, wp3, Scm, rtp2, thlp2,                       ! intent(in)
+     .          rtpthlp, taum, rcm, cf, "end of ",                        ! intent(in)
+     .          wpsclrp_sfc, wpedsclrp_sfc,                              ! intent(in)
+     .          sclrm, sclrm_forcing, edsclrm )                           ! intent(in)
+       end if
+
 !-----------------------------------------------------------------------
-
-
 
        return
        end subroutine parameterization_timestep
@@ -1125,7 +1079,8 @@
 
 !-----------------------------------------------------------------------
         subroutine parameterization_setup
-     .             ( nzmax, T0_in, ts_nudge_in, params,
+     .             ( nzmax, T0_in, ts_nudge_in, hydromet_dim_in, 
+     .               sclr_dim_in, sclrtol_in, params, 
      .               lbugsrad, kk_rain, licedfs, lcoamps_micro,
      .               cloud_sed, luv_nudge, lKhm_aniso, 
      .               implemented, grid_type, deltaz, zm_init,
@@ -1202,6 +1157,13 @@
         real, intent(in) :: 
      .  T0_in, ts_nudge_in
 
+        integer, intent(in) ::
+     .  hydromet_dim_in, ! Number of hydrometeor species
+     .  sclr_dim_in      ! Number of passive scalars
+
+        real, intent(in), dimension(sclr_dim_in) ::
+     .  sclrtol_in    ! Thresholds for passive scalars
+
         real, intent(in), dimension(nparams) ::
      .  params  ! Including C1, nu1, nu2, etc.
 
@@ -1229,8 +1191,9 @@
         ! Define model constant parameters
 
         call setup_parameters
-     .       ( deltaz, T0_in, ts_nudge_in, params,      ! intent(in)
-     .         err_code )                               ! intent(out)
+     .       ( deltaz, T0_in, ts_nudge_in, hydromet_dim_in, sclr_dim_in, ! In
+     .         sclrtol_in, params,  ! In
+     .         err_code ) ! Out
 
 !       Error Report
 !       Joshua Fasching February 2008
@@ -1251,7 +1214,7 @@
 
            return
 
-        endif
+        end if
 
 !        if ( .not. implemented ) then
 !          call setup_diagnostic_variables( nzmax )
@@ -1270,10 +1233,10 @@
 
         ! Determine the maximum allowable value for Lscale.
         if ( implemented ) then
-           Lscale_max = 0.25 * min(host_dx,host_dy)
+          Lscale_max = 0.25 * min( host_dx, host_dy )
         else
-           Lscale_max = 1.0e5
-        endif
+          Lscale_max = 1.0e5
+        end if
 
         return
         end subroutine parameterization_setup

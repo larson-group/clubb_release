@@ -1,7 +1,5 @@
-#define SCLR_THETA 1
-#define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf01.F,v 1.19 2008-06-30 18:42:08 faschinj Exp $
+! $Id: dycoms2_rf01.F,v 1.20 2008-07-08 04:44:10 dschanen Exp $
         module dycoms2_rf01
 
 !       Description:
@@ -31,13 +29,17 @@
 
         use grid_class, only: zt2zm, ddzm ! Procedure(s)
 
-        use constants, only: sclr_dim, fstderr, cp ! Variable(s)
+        use constants, only: fstderr, Cp ! Constant(s)
+
+        use parameters, only: sclr_dim ! Variable(s)
 
         use model_flags, only: lbugsrad ! Variable(s)
 
         use stats_precision, only: time_precision ! Variable(s)
 
         use error_code, only: clubb_rtm_level_not_found ! Variable(s)
+
+        use array_index, only: iisclr_rt, iisclr_thl
 
 #ifdef STATS
         use stats_type, only: stat_update_var, stat_update_var_pt ! Procedure(s)
@@ -80,11 +82,11 @@
      .  Frad          ! Radiative flux                               [W/m^2]
 
         ! Input (optional)
-        real, optional, intent(in) :: 
-     .  sclrm(gr%nnzp, sclr_dim)
+        real, dimension(gr%nnzp,sclr_dim), intent(in) :: 
+     .  sclrm
 
         ! Output (optional)
-        real, optional, intent(out), dimension(gr%nnzp, sclr_dim) :: 
+        real, intent(out), dimension(gr%nnzp, sclr_dim) :: 
      .  sclrm_forcing
 
         ! Internal variables
@@ -180,10 +182,9 @@
 
         if ( .not. lbugsrad ) thlm_forcing = thlm_forcing + radht
         
-        if (present( sclrm_forcing )) sclrm_forcing(:,SCLR_THETA)
-     .  = thlm_forcing(:)
-        if (present( sclrm_forcing )) sclrm_forcing(:,SCLR_RT)
-     .  = rtm_forcing(:)
+        ! Test scalars with thetal and rt if desired
+        if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
+        if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
         return
         end subroutine dycoms2_rf01_tndcy
@@ -203,9 +204,13 @@
 !       References:
 !----------------------------------------------------------------------
 
-        use constants, only: sclr_dim, Cp, fstderr, Lv ! Variable(s)
+        use constants, only: Cp, fstderr, Lv ! Variable(s)
+
+        use parameters, only: sclr_dim ! Variable(s)
 
         use saturation, only: rsat ! Variable(s)
+
+        use array_index, only: iisclr_rt, iisclr_thl
 
 #ifdef STATS
         use stats_type, only: stat_update_var_pt ! Procedure(s)
@@ -238,7 +243,7 @@
      .  rhom_sfc   ! Density at the surface             [kg/m^3]
 
         ! Optional input variables
-        real, intent(in), optional, dimension(sclr_dim) :: 
+        real, intent(in), dimension(sclr_dim) :: 
      .  sclrm_sfc  ! Passive scalar at the surface      [units vary]
 
         ! Output variables
@@ -249,7 +254,7 @@
      .  wprtp_sfc,  ! w' rt'  at the surface            [m kg/kg]
      .  ustar       ! surface friction velocity         [m/s]
 
-        real, intent(out), optional, dimension(sclr_dim) :: 
+        real, intent(out), dimension(sclr_dim) :: 
      .  wpsclrp_sfc,  ! w' sclr' at the surface         [m units/s]
      .  wpedsclrp_sfc ! w' edsclr' at the surface       [m units/s]
 
@@ -286,16 +291,12 @@
 
         end if
 
-        ! Let passive scalars be rt and theta for now
-        if ( present( wpsclrp_sfc ) ) then
-          wpsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-          wpsclrp_sfc(SCLR_RT)    = wprtp_sfc
-        end if
+        ! Let passive scalars be equal to rt and theta_l for now
+        if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
+        if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
-        if ( present( wpedsclrp_sfc ) ) then
-          wpedsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-          wpedsclrp_sfc(SCLR_RT)    = wprtp_sfc
-        end if
+        if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
+        if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
 #ifdef STATS
 ! Save ustar for statistics

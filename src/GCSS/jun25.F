@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: jun25.F,v 1.19 2008-07-01 15:04:56 faschinj Exp $
+! $Id: jun25.F,v 1.20 2008-07-08 04:44:10 dschanen Exp $
         module jun25
 
 !       Description:
@@ -28,7 +28,7 @@
      .               rcm, p, exner, rhot, rtm, wmt,
      .               wmm, thlm_forcing, rtm_forcing, 
      .               Frad, radht, 
-     .               sclr_tndcy ) ! Optional
+     .               sclrm_forcing ) ! Optional
 !       Description:
 !       Computes subsidence, radiation, and LS tendencies for the June
 !       25th Altocumulous case.
@@ -40,7 +40,9 @@
 
         use grid_class, only: zt2zm ! Procedure(s)
 
-        use constants, only: sclr_dim, pi, Cp, Lv ! Variable(s)
+        use constants, only: pi, Cp, Lv ! Variable(s)
+
+        use parameters, only: sclr_dim ! Variable(s)
 
         use model_flags, only: lbugsrad ! Variable(s)
 
@@ -51,6 +53,8 @@
         use interpolation, only: linear_interpolation ! Procedure(s)
 
         use rad_lwsw_mod, only: rad_lwsw ! Procedure(s)
+
+        use array_index, only: iisclr_rt, iisclr_thl
 
 #ifdef STATS
         use stats_type, only: stat_update_var ! Procedure(s)
@@ -98,9 +102,9 @@
      .  Frad,        ! Total radiative flux (LW + SW)              [W/m^2]
      .  radht        ! Total radiative heating (LW +SW)            [K/s]
 
-        ! Output variables (optional)
-        real, optional, dimension(gr%nnzp,sclr_dim),intent(out) :: 
-     .  sclr_tndcy ! Large-scale tendency for passive scalars      [units/s]
+        ! Output variables
+        real, dimension(gr%nnzp,sclr_dim),intent(out) :: 
+     .  sclrm_forcing ! Large-scale tendency for passive scalars      [units/s]
 
 !-----------------------------------------------------------------------
 ! LOCAL VARIABLES
@@ -794,10 +798,9 @@
           rtm_forcing(k) = 0.
         END DO
 
-        if ( present( sclr_tndcy ) ) then
-          sclr_tndcy(:,SCLR_THETA) = thlm_forcing
-          sclr_tndcy(:,SCLR_RT)    = rtm_forcing
-        end if 
+        ! Test scalars with thetal and rt if desired
+        if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
+        if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
 #ifdef STATS
         if ( .not.lbugsrad .and. lstats_samp ) then

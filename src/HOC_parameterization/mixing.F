@@ -1,15 +1,10 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.71 2008-07-07 20:00:14 faschinj Exp $
-
-        ! Passive scalars
-#define SCLR_THETA 1
-#define SCLR_RT 2
-
+! $Id: mixing.F,v 1.72 2008-07-08 04:44:25 dschanen Exp $
 !===============================================================================
         module mixing
 
 !       Description:
-!       Contains the HOC mixing scheme.  Allows for optional variables.
+!       Contains the HOC mixing scheme.
 
 !       References:
 !       None
@@ -79,8 +74,10 @@
      .      c_Ksqd
 
         use constants, only: 
-     .      sclr_dim, ! Variable(s)
-     .      fstderr
+     .      fstderr  ! Constant
+
+        use parameters, only:
+     .      sclr_dim  ! Variable(s)
 
         use grid_class, only:
      .      gr, ! Variable(s)
@@ -105,7 +102,7 @@
         implicit none
 
         ! External
-        intrinsic :: exp, present
+        intrinsic :: exp
 
         ! Input Variables
         real(kind=time_precision), intent(in) :: 
@@ -141,13 +138,13 @@
 
         integer, intent(inout) :: err_code ! Model status 
 
-        ! Additional optional variables for passive scalars
+        ! Additional variables for passive scalars
         ! Input Variables
-        real, intent(in), optional, dimension(gr%nnzp,sclr_dim) :: 
-     .  sclrpthvp, sclrm_forcing !                           [Units vary]
-     .  ,sclrp2                  ! For clipping Vince Larson [Units vary]
+        real, intent(in), dimension(gr%nnzp,sclr_dim) :: 
+     .  sclrpthvp, sclrm_forcing, !                           [Units vary]
+     .  sclrp2                    ! For clipping Vince Larson [Units vary]
         ! Input/Output Variables
-        real, intent(inout), optional, dimension(gr%nnzp,sclr_dim) :: 
+        real, intent(inout), dimension(gr%nnzp,sclr_dim) :: 
      .  sclrm, wpsclrp !                                     [Units vary]
 
         ! Local variables
@@ -183,7 +180,7 @@
      .  wpxp_lower_lim    ! Keeps correlations from becoming less than -1.
 
         ! Indices
-!        integer :: i
+        integer :: i
         integer :: k, km1, kp1
 
 !-----------------------------------------------------------------------
@@ -368,79 +365,46 @@
         ! End change Joshua Fasching March 2008
         
         ! Solve sclrm / wpsclrp
-        if ( present( sclrm )     .and. present( wpsclrp ) .and.
-     .       present( sclrpthvp ) .and. present( sclrm_forcing ) ) then
+        ! If sclr_dim is 0, then this loop will execute 0 times.
+        do i = 1, sclr_dim, 1 
 
           ! Compute the upper and lower limits of w'sclr' at every level,
           ! based on the correlation of w and sclr, such that:
           ! corr_(w,sclr) = w'sclr' / [ sqrt(w'^2) * sqrt(sclr'^2) ];
           ! -1 <= corr_(w,sclr) <= 1.
           wpxp_upper_lim(:) =  0.99 * sqrt( wp2(:) 
-     .                                     * sclrp2(:,SCLR_RT) )
+     .                                     * sclrp2(:,i) )
           wpxp_lower_lim(:) = -0.99 * sqrt( wp2(:) 
-     .                                     * sclrp2(:,SCLR_RT) )
+     .                                     * sclrp2(:,i) )
 
           ! Compute the implicit portion of the sclr and w'sclr' equations.
           ! Build the left-hand side matrix.
-          call mixing_lhs( .true., dt, wpsclrp(:,SCLR_RT), Scm, wmm, 
+          call mixing_lhs( .true., dt, wpsclrp(:,i), Scm, wmm, 
      .                     wmt, wp2, wp3, Kw6, taum, C7_Skw_fnc,
      .                     C6rt_Skw_fnc, wpxp_upper_lim, wpxp_lower_lim,
      .                     implemented, lhs )
 
-          ! Compute the explicit portion of the sclr and w'sclr' equations.
+          ! Compute the explicit portion of the sclrm and w'sclr' equations.
           ! Build the right-hand side vector.
-          call mixing_rhs( "sclrm_rtm", .true., dt, 
-     .                     sclrm(:,SCLR_RT), wpsclrp(:,SCLR_RT), 
-     .                     sclrm_forcing(:,SCLR_RT), C7_Skw_fnc, 
-     .                     sclrpthvp(:,SCLR_RT), wpxp_upper_lim,
+          call mixing_rhs( "scalars", .true., dt, 
+     .                     sclrm(:,i), wpsclrp(:,i), 
+     .                     sclrm_forcing(:,i), C7_Skw_fnc, 
+     .                     sclrpthvp(:,i), wpxp_upper_lim,
      .                     wpxp_lower_lim, rhs )
 
-          ! Solve for sclr / w'sclr'
-          call mixing_solve( "sclrm_rtm", dt, wp2,
-     .                       sclrp2(:,SCLR_RT), lhs, rhs, 
-     .                       sclrm(:,SCLR_RT), wpsclrp(:,SCLR_RT), 
+          ! Solve for sclrm / w'sclr'
+          call mixing_solve( "scalars", dt, wp2,
+     .                       sclrp2(:,i), lhs, rhs, 
+     .                       sclrm(:,i), wpsclrp(:,i), 
      .                       err_code )
 
           if ( lapack_error( err_code ) ) then    
-            write(fstderr,'(a)') "Passive scalar 1 mixing failed"
+            write(fstderr,'(a)') "Passive scalar ", i, " mixing failed."
             return
-          endif
+          end if
 
-          ! Compute the upper and lower limits of w'sclr' at every level,
-          ! based on the correlation of w and sclr, such that:
-          ! corr_(w,sclr) = w'sclr' / [ sqrt(w'^2) * sqrt(sclr'^2) ];
-          ! -1 <= corr_(w,sclr) <= 1.
-          wpxp_upper_lim(:) =  0.99 * sqrt( wp2(:) 
-     .                                     * sclrp2(:,SCLR_THETA) )
-          wpxp_lower_lim(:) = -0.99 * sqrt( wp2(:) 
-     .                                     * sclrp2(:,SCLR_THETA) )
+        end do ! passive scalars
 
-          ! Compute the implicit portion of the sclr and w'sclr' equations.
-          ! Build the left-hand side matrix.
-          call mixing_lhs( .true., dt, wpsclrp(:,SCLR_THETA), Scm, wmm,
-     .                     wmt, wp2, wp3, Kw6, taum, C7_Skw_fnc,
-     .                     C6thl_Skw_fnc, wpxp_upper_lim, 
-     .                     wpxp_lower_lim, implemented, lhs )
-
-          ! Compute the explicit portion of the sclr and w'sclr' equations.
-          ! Build the right-hand side vector.
-          call mixing_rhs( "sclrm_theta", .true., dt, 
-     .                     sclrm(:,SCLR_THETA), wpsclrp(:,SCLR_THETA), 
-     .                     sclrm_forcing(:,SCLR_THETA), C7_Skw_fnc, 
-     .                     sclrpthvp(:,SCLR_THETA), wpxp_upper_lim, 
-     .                     wpxp_lower_lim, rhs )
-
-          ! Solve for sclr / w'sclr'
-          call mixing_solve( "sclrm_theta", dt, wp2, 
-     .                       sclrp2(:,SCLR_THETA), lhs, rhs,
-     .                       sclrm(:,SCLR_THETA), wpsclrp(:,SCLR_THETA),
-     .                       err_code )
-
-          if ( lapack_error( err_code ) ) then  
-            write(fstderr,'(a)') "Passive scalar 2 mixing failed"
-            return
-          endif
-        endif ! passive scalars
         
 !       Error Report
 !       (This code is unreachable)

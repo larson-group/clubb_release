@@ -1,7 +1,5 @@
-#define SCLR_THETA 1
-#define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: lba.F,v 1.16 2008-06-30 19:23:06 faschinj Exp $
+! $Id: lba.F,v 1.17 2008-07-08 04:44:10 dschanen Exp $
         module lba
 
 !       Description:
@@ -48,11 +46,14 @@
 
         use model_flags, only: lbugsrad ! Variable(s)
 
-        use constants, only: sclr_dim ! Variable(s)
+        use parameters, only: sclr_dim ! Variable(s)
 
         use interpolation, only: zlinterp_fnc ! Procedure(s)
 
         use stats_precision, only: time_precision ! Variable(s)
+
+        use array_index, only: 
+     .      iisclr_thl, iisclr_rt ! Variable(s)
 
         implicit none
 
@@ -120,11 +121,9 @@
         ! Large scale advective moisture tendency
         rtm_forcing(:) = 0.0
 
-
-        if ( present( sclrm_forcing ) ) then 
-          sclrm_forcing(1:gr%nnzp,SCLR_THETA) = thlm_forcing(1:gr%nnzp)
-          sclrm_forcing(1:gr%nnzp,SCLR_RT)    = rtm_forcing(1:gr%nnzp)
-        end if
+        ! Test scalars with thetal and rt if desired
+        if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
+        if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
         return
         end subroutine lba_tndcy
@@ -144,15 +143,20 @@
 !       Grabowski, et al. (2005)
 !----------------------------------------------------------------------
 
-        use constants, only: sclr_dim, pi, grav, Lv, Cp ! Variable(s)
+        use constants, only: pi, grav, Lv, Cp ! Variable(s)
+
+        use parameters, only: sclr_dim ! Variable(s)
 
         use stats_precision, only: time_precision ! Variable(s)
 
         use diag_ustar_mod, only: diag_ustar ! Variable(s)
         
+        use array_index, only: 
+     .      iisclr_thl, iisclr_rt ! Variable(s)
+
         implicit none
 
-        intrinsic :: max, sqrt, present
+        intrinsic :: max, sqrt
 
         ! Constant Parameters
         real, parameter :: 
@@ -197,16 +201,12 @@
         wprtp_sfc  =  ( 554. * ft**1.3 ) / ( rho0 * Lv )
 
 
-        ! Let passive scalars be equal to rt and theta_l for now 
-        if ( present( wpsclrp_sfc ) ) then 
-          wpsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-          wpsclrp_sfc(SCLR_RT)    = wprtp_sfc
-        end if
+        ! Let passive scalars be equal to rt and theta_l for now
+        if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
+        if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
-        if ( present( wpsclrp_sfc ) ) then 
-          wpedsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-          wpedsclrp_sfc(SCLR_RT)    = wprtp_sfc
-        end if
+        if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
+        if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
         ! Compute momentum fluxes using ARM formulae
 

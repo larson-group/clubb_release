@@ -1,10 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.201 2008-07-07 21:54:33 faschinj Exp $
-
-#ifdef SCALARS /* Test scalars for theta and rt */
-#define SCLR_THETA 1
-#define SCLR_RT 2
-#endif /*SCALARS*/
+! $Id: hoc.F,v 1.202 2008-07-08 04:44:03 dschanen Exp $
 
         module hoc
 
@@ -120,6 +115,8 @@
 
         use param_index, only: nparams ! Variable(s)
 
+        use array_index, only: iisclr_rt, iisclr_thl, iiCO2 ! Variables
+
         use diagnostic_variables, only: ug, vg, hydromet, em, ! Variable(s)
      .                            taut, thvm, Lscale, Kht, Khm,
      .                            um_ref, vm_ref
@@ -133,11 +130,9 @@
      .      rtm_forcing, up2, vp2, wp3, rtp2,
      .      thlp2, rtpthlp, Scm, cf
 
-#ifdef SCALARS
         use prognostic_variables, only: 
      .      sclrm, edsclrm, wpsclrp_sfc,
      .      wpedsclrp_sfc, sclrm_forcing, wpsclrp
-#endif /*SCALARS*/
 
         use numerical_check, only: invalid_model_arrays ! Procedure(s)
 
@@ -161,6 +156,10 @@
         
         use stats_precision, only: time_precision ! Variable(s)
 
+        use array_index, only: iisclr_rt, iisclr_thl, iiCO2
+
+        use microphys_driver, only: init_microphys
+
 #ifdef STATS
         use stats_variables, only: lstats_last ! Variable(s
 
@@ -180,6 +179,9 @@
 #endif
         ! External
         intrinsic :: mod, real, int 
+
+        ! Constant parameters
+        integer, parameter :: sclr_max = 10
 
         ! Input Variables
         logical, intent(in) :: 
@@ -203,12 +205,15 @@
      .  niterlong
 
         integer ::
-     .  debug_level
+     .  debug_level     ! Amount of debugging information
 
         real :: 
      .  fcor,           ! Coriolis parameter            [s^-1]
      .  T0,             ! Reference Temperature         [K]
      .  ts_nudge        ! Timescale for u/v nudging     [s]
+
+        real, dimension(sclr_max) ::
+     .  sclr_tol        ! Thresholds on the passive scalars     [units vary]
 
         real(kind=time_precision) ::
      .  time_restart    ! Time of model restart run     [s]
@@ -248,7 +253,11 @@
 
         integer :: i, i1 ! Internal Loop Variables
         integer :: iinit ! initial iteration
-        integer :: iunit
+
+        integer :: 
+     .  iunit,          ! File unit used for I/O
+     .  hydromet_dim,   ! Number of hydrometeor species
+     .  sclr_dim        ! Number of passive scalars
 
         integer :: itime_nearest ! Used for and inputfields run [s]
 
@@ -262,7 +271,9 @@
      .  sfctype, Tsfc, psfc, SE, LE, fcor, T0, ts_nudge,
      .  cloud_sed, kk_rain, licedfs, lcoamps_micro, 
      .  lbugsrad, lKhm_aniso, luv_nudge, lrestart, restart_path_case,
-     .  time_restart, debug_level
+     .  time_restart, debug_level,
+     .  sclr_tol,
+     .  sclr_dim, iisclr_thl, iisclr_rt, iiCO2 
 
          namelist /stats_setting/
      .   lstats, fname_prefix, stats_tsamp, stats_tout, stats_fmt 
@@ -315,14 +326,19 @@
         time_restart  = 0.
         debug_level   = 2
 
+        sclr_dim  = 0
+        iisclr_thl = -1
+        iisclr_rt  = -1
+        iiCO2 = -1
+
+        sclr_tol(1:sclr_max) = 1.e-2
+
         ! Pick some default values for stats_setting
         lstats       = .false.
         fname_prefix = ""
         stats_fmt    = ""
         stats_tsamp  = 0.
         stats_tout   = 0.
-
-        
 
         ! Figure out which iounit to use
 #ifdef _OPENMP
@@ -355,11 +371,16 @@
         dummy_dx = 0.0
         dummy_dy = 0.0
 
+        ! Setup microphysical fields
+        call init_microphys
+     .       ( kk_rain, lcoamps_micro, licedfs, hydromet_dim )
+
         ! Allocate & initialize variables,
         ! setup grid, setup constants, and setup flags
 
         call parameterization_setup
-     .       ( nzmax, T0, ts_nudge, params,
+     .       ( nzmax, T0, ts_nudge, hydromet_dim, sclr_dim, 
+     .         sclr_tol(1:sclr_dim), params,
      .         lbugsrad, kk_rain, licedfs, lcoamps_micro,
      .         cloud_sed, luv_nudge, lKhm_aniso,
      .         .false., grid_type, deltaz, zm_init,
@@ -370,10 +391,9 @@
         if ( err_code == clubb_var_out_of_bounds ) return
 
 
-        ! Deallocate stretched grid altitude arrays.
+        ! Deallocate stretched grid altitude arrays
         deallocate( momentum_heights, thermodynamic_heights )
 
-       
         if ( .not. lrestart ) then
 
            time_current = time_initial
@@ -385,11 +405,8 @@
      .                          wmt, wmm, em, exner,
      .                          taut, taum, thvm, p,
      .                          rhot, rhom, Lscale,
-     .                          Kht, Khm, um_ref, vm_ref
-#ifdef SCALARS
-     .                          ,sclrm, edsclrm
-#endif /*SCALARS*/
-     .                         )
+     .                          Kht, Khm, um_ref, vm_ref,
+     .                          sclrm, edsclrm )
 
         else  ! restart
                
@@ -419,11 +436,8 @@
      .                       thlm, rtm, um, vm,
      .                       ug, vg, upwp, vpwp, wmt, wmm, 
      .                       um_ref, vm_ref, wpthlp, wprtp,
-     .                       wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc
-#ifdef SCALARS
-     .                       ,sclrm, edsclrm
-#endif
-     .                        )
+     .                       wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,
+     .                       sclrm, edsclrm )
         end if ! ~lrestart
 #ifdef STATS
 
@@ -505,13 +519,10 @@
      .             thlm, rtm, wprtp, wpthlp, wp2, wp3,
      .             rtp2, thlp2, rtpthlp,
      .             Scm, taum, rcm, cf,
-     .             err_code, .false.
-#ifdef SCALARS
-     .             ,wpsclrp_sfc, wpedsclrp_sfc, 
+     .             err_code, .false.,
+     .             wpsclrp_sfc, wpedsclrp_sfc, 
      .             sclrm, sclrm_forcing, edsclrm,
-     .             wpsclrp
-#endif /*SCALARS*/
-     .           )
+     .             wpsclrp )
            
 #ifdef STATS
             call stats_end_timestep( time_current + dtmain, dtmain )
@@ -567,11 +578,8 @@
      .               ug, vg, wp2, rcm, hydromet,
      .               wmt, wmm, em, exner, taut, taum, thvm,
      .               p, rhot, rhom, Lscale,
-     .               Kht, Khm, um_ref, vm_ref
-#ifdef SCALARS
-     .               ,sclrm, edsclrm
-#endif
-     .             )
+     .               Kht, Khm, um_ref, vm_ref,
+     .               sclrm, edsclrm )
 
 !       Description:
 !       Execute the necessary steps for the initialization of the 
@@ -590,9 +598,10 @@
 !-----------------------------------------------------------------------
 
         use constants, only: 
-     .      hydromet_dim, Cp, Lv, ep2, ep1, emin, wtol, ! Variable(s)
-     .      sclr_dim
-        use parameters, only: T0, taumax, taumin, c_K ! Variable(s)
+     .      Cp, Lv, ep2, ep1, emin, wtol ! Variable(s)
+
+        use parameters, only: 
+     .      T0, taumax, taumin, c_K, sclr_dim, hydromet_dim  ! Variable(s)
 
         use grid_class, only: gr ! Variable(s)
 
@@ -615,6 +624,8 @@
         use mixing_length, only: compute_length ! Procedure(s)
 
         use error_code, only: clubb_no_error ! Variable(s)
+
+        use array_index, only: iisclr_thl, iisclr_rt
         
         ! Joshua Fasching
         ! March 2008
@@ -654,24 +665,16 @@
      .  taum, taut,     ! Dissipation time              [s]
      .  thvm            ! Virtual potential temperature [K]
 
-        real, dimension(gr%nnzp,hydromet_dim), target, intent(inout) :: 
+        real, dimension(gr%nnzp,hydromet_dim), intent(inout) :: 
      .  hydromet        ! Hydrometeor types             [units vary]
 
-#ifdef SCALARS
-!       Output (optional)
+        ! Output (optional)
         real, dimension(gr%nnzp,sclr_dim), intent(out) :: 
      .  sclrm,  ! Standard passive scalar [units vary]
      .  edsclrm ! Eddy diffusivity passive scalar [units vary]
-#endif
 
         ! Local Variables
         real, dimension(gr%nnzp) :: tmp1
-
-        real, dimension(:), pointer ::
-     .  rrm,        ! Rain water mixing ratio           [kg/kg]
-     .  ricem,      ! Ice water mixing ratio            [kg/kg]
-     .  rgraupelm,  ! Graupel water mixing ratio        [kg/kg] 
-     .  rsnowm      ! Snow water mixing ratio           [kg/kg]
 
         real :: cloud_top_height ! [m]
         real :: emax
@@ -679,22 +682,13 @@
 
 !-----------------------------------------------------------------------
 
-        ! Assign pointers to each hydrometeor field
-        rrm       => hydromet(1:gr%nnzp,1)
-        rsnowm    => hydromet(1:gr%nnzp,3)
-        ricem     => hydromet(1:gr%nnzp,4)
-        rgraupelm => hydromet(1:gr%nnzp,5)
-
         err_code = clubb_no_error
         
         ! Read sounding information
 
         call read_sounding( iunit, thlm, rtm, um, vm, ug, vg, 
-     .                      runfile, runtype
-#ifdef SCALARS               
-     .                      ,sclrm, edsclrm ! optional
-#endif /*SCALARS*/
-     .                    )
+     .                      runfile, runtype,
+     .                      sclrm, edsclrm )
 
 
         ! At this point, thlm actually contains theta (except for DYCOMS). 
@@ -728,12 +722,13 @@
         case default
           ! Initial profile is non-saturated thlm or any type of theta.
           thlm = thlm - Lv/(Cp*exner) * rcm
-#ifdef SCALARS
-          ! The following case used the formulas for theta in order to test
-          ! the scalar code.  However, it needs to be commented out because
-          ! it does not apply to such things as CO2.
-!          sclrm(:,SCLR_THETA) = sclrm(:,SCLR_THETA) - Lv/(Cp*exner)*rcm
-#endif
+
+          ! Testing of passive scalars
+          if ( iisclr_thl > 0 ) then
+            sclrm(:,iisclr_thl) = sclrm(:,iisclr_thl) 
+     .                          - Lv/(Cp*exner)*rcm
+          end if
+
         end select
 
         ! Now, compute initial thetav
@@ -877,19 +872,13 @@
           cloud_top_height = 2800. + gr%zm(1)
           do k=1,gr%nnzp
             if ( gr%zm(k) < cloud_top_height ) then
-!
-!*********************************************************
-! Modification by Adam Smith, 08 April 2008
-! Reducing the value of em appears to reduce error in the
-! updated Nov.11 case
-!*********************************************************
-!
+
+        ! Modification by Adam Smith, 08 April 2008
+        ! Reducing the value of em appears to reduce error in the
+        ! updated Nov.11 case
               em(k) = 0.01
-!
-!********************************
-! End of ajsmith4's modification
-!********************************
-!
+        ! End of ajsmith4's modification
+
             else
               em(k) = emin
             end if
@@ -986,17 +975,12 @@
           emax = 1.0
 
           do k=1,gr%nnzp
-            rrm(k) = 0.
-            ricem(k) = 0.
-            rgraupelm(k) = 0.
-            rsnowm(k) = 0.
-
             if ( gr%zm(k) < cloud_top_height ) then
                em(k) = emax
             else
                em(k) = emin
             end if
-          enddo
+          end do
           em(1) = em(2)
           em(gr%nnzp) = em(gr%nnzp-1)
 
@@ -1009,10 +993,6 @@
           emax = 1.0
 
           do k=1,gr%nnzp
-            rrm(k) = 0.
-            ricem(k) = 0.
-            rgraupelm(k) = 0.
-            rsnowm(k) = 0.
 
             if ( gr%zm(k) < cloud_top_height ) then
                em(k) = emax
@@ -1115,10 +1095,8 @@
      .               thlm, rtm, um, vm,
      .               ug, vg, upwp, vpwp, wmt, wmm, 
      .               um_ref, vm_ref, wpthlp, wprtp,
-     .               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc
-#ifdef SCALARS
-     .               ,sclrm, edsclrm
-#endif
+     .               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,
+     .               sclrm, edsclrm
      .             )
 !       Description:
 !       Execute the necessary steps for the initialization of the 
@@ -1146,7 +1124,9 @@
 
         use grid_class, only: zt2zm ! Procedure(s)
 
-        use constants, only: fstderr, sclr_dim ! Variables(s)
+        use constants, only: fstderr ! Variables(s)
+
+        use parameters, only: sclr_dim ! Variables(s)
 
         use sounding, only: read_sounding ! Procedure(s)
 
@@ -1199,12 +1179,13 @@
      .  upwp_sfc,       ! u'w' at surface           [m^2/s^2] 
      .  vpwp_sfc        ! v'w' at surface           [m^2/s^2]
         
-#ifdef SCALARS
-!       Output (optional)
+        ! Output (optional)
         real, dimension(gr%nnzp,sclr_dim), intent(inout) :: 
      .  sclrm,  ! Standard passive scalar [units vary]
      .  edsclrm ! Eddy diffusivity passive scalar [units vary]
-#endif
+
+        ! Local Variables
+        real, dimension(gr%nnzp) :: tmp1
        
         integer :: timestep
 
@@ -1274,7 +1255,9 @@
         ! and vm
       
         call read_sounding( iunit, thlm, rtm, um, vm, ug, vg, 
-     .                      runfile, runtype )
+     .                      runfile, runtype,
+     .                      sclrm, edsclrm )
+
         if ( luv_nudge ) then
           um_ref = um
           vm_ref = vm
@@ -1335,10 +1318,7 @@
      .                            vm_ref, Frad, Ncnm, thvm, ustar,
      .                            pdf_parms, Khm, Akm_est, Akm, Nim
 
-#ifdef SCALARS
-        use diagnostic_variables, only: wpedsclrp ! Scalar Variables
-#endif /*SCALARS*/
-
+        use diagnostic_variables, only: wpedsclrp ! Passive scalar variables
         
         use prognostic_variables, only: rtm_forcing, thlm_forcing, ! Variable(s)
      .                            wmt, wmm, rhot, rtm, thlm, p,
@@ -1347,12 +1327,10 @@
      .                            wpthlp_sfc, SE, LE, wprtp_sfc, cf
 
 
-#ifdef SCALARS        
         use prognostic_variables, only: 
-     .      sclrm, sclrm_forcing,  ! Scalar Variables
+     .      sclrm, sclrm_forcing,  ! Passive scalar variables
      .      wpsclrp,
      .      wpsclrp_sfc, wpedsclrp_sfc
-#endif /*SCALARS*/
         
         use stats_precision, only: time_precision ! Variable(s)
 
@@ -1362,6 +1340,9 @@
 
         use error_code, only: lapack_error, ! Procedure(s)
      .                        clubb_at_debug_level
+        use array_index, only:
+     .      iirrm, iiNrm, iirsnowm, iiricem, iirgraupelm,
+     .      iisclr_rt, iisclr_thl
        
         ! Case specific modules 
         use arm, only: arm_tndcy, arm_sfclyr ! Procedure(s)
@@ -1417,15 +1398,16 @@
 
 
         implicit none
-        
+
         ! Input Variables
         real(kind=time_precision), intent(in) ::
      .    dt    ! Timestep      [s]
+
         integer, intent(in) ::
-     .    iteration
+     .    iteration ! The iteration number
 
         logical, intent(in) ::
-     .    stdout
+     .    stdout ! Whether to print messages to stdout
 
         ! Input/Output Variables
         integer, intent(inout) ::
@@ -1433,7 +1415,7 @@
 
         ! Local Variables
 
-        real, dimension(:), pointer :: 
+        real, dimension(gr%nnzp) :: 
      .    rsnowm, ! Rain water mixing ratio              [kg/kg]
      .    ricem   ! Prisitine ice water mixing ratio     [kg/kg]
 
@@ -1465,85 +1447,56 @@
 
          case( "arm" ) ! ARM Cu case
            call arm_tndcy
-     .          ( time_current, thlm_forcing, radht, rtm_forcing
-#ifdef SCALARS
-     .                     ,sclrm_forcing 
-#endif /* SCALARS */
-     .                   )
+     .          ( time_current, thlm_forcing, radht, rtm_forcing,
+     .            sclrm_forcing )
+
          case( "arm_0003" ) ! ARM March 2000 case
           call arm_0003_tndcy( time_current, wmm, wmt, thlm_forcing, 
-     .                         rtm_forcing, um_ref, vm_ref
-#ifdef SCALARS
-     .                        ,sclrm_forcing 
-#endif /* SCALARS */
-     .                      )
+     .                         rtm_forcing, um_ref, vm_ref,
+     .                         sclrm_forcing )
 
          case( "arm_3year" ) ! ARM 3 year case
           call arm_3year_tndcy( time_current, wmm, wmt, thlm_forcing, 
-     .                          rtm_forcing,um_ref,vm_ref
-#ifdef SCALARS
-     .                         ,sclrm_forcing 
-#endif /* SCALARS */
-     .                      )
+     .                          rtm_forcing, um_ref, vm_ref,
+     .                          sclrm_forcing )
 
          case( "arm_97" ) ! 27 June 1997 ARM case
            call arm_97_tndcy( time_current, wmm, wmt, thlm_forcing, 
-     .                        rtm_forcing, um_ref, vm_ref
-#ifdef SCALARS
-     .                       ,sclrm_forcing 
-#endif /* SCALARS */
-     .                      )
+     .                        rtm_forcing, um_ref, vm_ref,
+     .                        sclrm_forcing )
 
          case( "bomex" ) ! BOMEX Cu case
            call bomex_tndcy( time_current, wmt, wmm, radht,
-     .                       thlm_forcing, rtm_forcing
-#ifdef SCALARS
-     .                      ,sclrm_forcing 
-#endif /* SCALARS */
-     .                     )
+     .                       thlm_forcing, rtm_forcing,
+     .                       sclrm_forcing )
 
          case( "fire" ) ! FIRE Sc case
            call fire_tndcy( time_current, rhot, rcm, exner, 
      .                      wmt, wmm, Frad, radht,
-     .                      thlm_forcing, rtm_forcing
-#ifdef SCALARS
-     .                     ,sclrm_forcing 
-#endif /* SCALARS */
-     .                    )
+     .                      thlm_forcing, rtm_forcing,
+     .                      sclrm_forcing )
 
          case( "wangara" ) ! Wangara dry CBL
            call wangara_tndcy( time_current, wmt, wmm, 
-     .                         thlm_forcing, rtm_forcing
-#ifdef SCALARS
-     .                        ,sclrm_forcing   ! optional variable
-#endif /* SCALARS */
-     .                       )
+     .                         thlm_forcing, rtm_forcing,
+     .                         sclrm_forcing )
 
          case( "atex" ) ! ATEX case
            call atex_tndcy( time_current, time_initial, rtm, 
      .                      rhot, rcm, exner, wmt, wmm, Frad, radht,
-     .                      thlm_forcing, rtm_forcing, err_code
-#ifdef SCALARS
-     .                     ,sclrm_forcing   ! optional variable
-#endif /* SCALARS */
-     .                    )
+     .                      thlm_forcing, rtm_forcing, err_code,
+     .                      sclrm_forcing )
 
          case( "dycoms2_rf01" ) ! DYCOMS2 RF01 case
            call dycoms2_rf01_tndcy( time_current, rhot, rhom, rtm, rcm, 
      .                              exner, wmt, wmm, Frad, radht, 
-     .                              thlm_forcing, rtm_forcing, err_code 
-#ifdef SCALARS
-     .                             ,sclrm, sclrm_forcing  ! optional variables
-#endif /* SCALARS */
-     .                            )
+     .                              thlm_forcing, rtm_forcing, err_code,
+     .                              sclrm, sclrm_forcing )
 
          case( "astex_a209" ) ! ASTEX Sc case for K & K
            call astex_tndcy( time_current, wmt, wmm, 
-     .                       thlm_forcing, rtm_forcing
-#ifdef SCALARS
-     .                      ,sclrm_forcing   ! optional variable
-#endif /* SCALARS */
-     .                     )
+     .                       thlm_forcing, rtm_forcing,
+     .                       sclrm_forcing )
 
          case( "dycoms2_rf02_do", ! DYCOMS2 RF02 case with drizzle only.
      .         "dycoms2_rf02_ds", ! DYCOMS2 RF02 case with drizzle and cloud sedimentation.
@@ -1552,112 +1505,76 @@
            call dycoms2_rf02_tndcy
      .          ( time_current, time_initial, rhot, rhom, rtm, rcm, 
      .            exner, wmt, wmm, thlm_forcing, rtm_forcing,
-     .            Frad, radht, Ncm, Ncnm, err_code
-#ifdef SCALARS
-     .           ,sclrm_forcing  ! Optional variable
-#endif /* SCALARS */
-     .                            )
+     .            Frad, radht, Ncm, Ncnm, err_code,
+     .            sclrm_forcing  )
 
          case( "nov11_altocu" ) ! Nov. 11 Altocumulus case.
            call nov11_altocu_tndcy
      .          ( time_current, time_initial, dt, rlat, rlon,
      .            thlm, rcm, p, exner, rhot, rtm, wmt,
      .            wmm, thlm_forcing, rtm_forcing,
-     .            Frad, radht, Ncnm
-#ifdef SCALARS
-     .           ,sclrm_forcing   ! optional variable
-#endif /* SCALARS */
-     .                            )
+     .            Frad, radht, Ncnm,
+     .            sclrm_forcing )
 
          case( "jun25_altocu" ) ! June 25 Altocumulus case.
            call jun25_altocu_tndcy
      .          ( time_current, time_initial, rlat, dt, thlm,
      .            rcm, p, exner, rhot, rtm, wmt,
      .            wmm, thlm_forcing, rtm_forcing,
-     .            Frad, radht
-#ifdef SCALARS
-     .           ,sclrm_forcing   ! optional variable
-#endif /* SCALARS */
-     .                            )
+     .            Frad, radht, sclrm_forcing )
 
          case( "clex9_nov02" ) ! CLEX-9: Nov. 02 Altocumulus case.
            call clex9_nov02_tndcy
      .          ( time_current, time_initial, dt, rlat, rlon,
      .            thlm, rcm, p, exner, rhot, rtm, wmt,
      .            wmm, thlm_forcing, rtm_forcing,
-     .            Frad, radht, Ncnm
-#ifdef SCALARS
-     .           ,sclrm_forcing   ! optional variable
-#endif /* SCALARS */
-     .                           )
+     .            Frad, radht, Ncnm, sclrm_forcing )
 
          case( "clex9_oct14" ) ! CLEX-9: Oct. 14 Altocumulus case.
            call clex9_oct14_tndcy
      .          ( time_current, time_initial, dt, rlat, rlon,
      .            thlm, rcm, p, exner, rhot, rtm, wmt,
      .            wmm, thlm_forcing, rtm_forcing,
-     .            Frad, radht, Ncnm
-#ifdef SCALARS
-     .           ,sclrm_forcing   ! optional variable
-#endif /* SCALARS */
-     .                           )
+     .            Frad, radht, Ncnm ,sclrm_forcing )
 
          case ( "lba" )
            call lba_tndcy( time_current, wmt, wmm, radht, 
-     .                     thlm_forcing, rtm_forcing
-#ifdef SCALARS
-     .                    ,sclrm_forcing
-#endif /* SCALARS */
-     .                    )
+     .                     thlm_forcing, rtm_forcing,
+     .                     sclrm_forcing )
 
          case ( "mpace_a" ) ! mpace_a arctic stratus case
            call mpace_a_tndcy
      .          ( time_current, time_initial, dtmain, rlat, thlm,
      .            exner, rhot, rtm, p, thvm, rcm,
      .            wmt, wmm, thlm_forcing, rtm_forcing,
-     .            Ncnm, Ncm, Frad, radht, um_ref, vm_ref
-#ifdef SCALARS
-     .           ,sclrm_forcing
-#endif /* SCALARS */
-     .                    )
+     .            Ncnm, Ncm, Frad, radht, um_ref, vm_ref,
+     .            sclrm_forcing )
 
          case ( "mpace_b" ) ! mpace_b arctic stratus case
            call mpace_b_tndcy
      .          ( time_current, time_initial, dtmain, rlat, thlm,
      .            exner, rhot, rtm, p, thvm, rcm,
      .            wmt, wmm, thlm_forcing, rtm_forcing,
-     .            Ncnm, Ncm, Frad, radht
-#ifdef SCALARS
-     .           ,sclrm_forcing
-#endif /* SCALARS */
-     .                    )
+     .            Ncnm, Ncm, Frad, radht,
+     .            sclrm_forcing )
 
         ! Brian Griffin for COBRA CO2 case.
         case ( "cobra" )
            call cobra_tndcy( time_current, wmt, wmm, 
-     .                       thlm_forcing, rtm_forcing
-#ifdef SCALARS
-     .                      ,sclrm_forcing   ! optional variable
-#endif /* SCALARS */
-     .                     )
+     .                       thlm_forcing, rtm_forcing,
+     .                       sclrm_forcing )
 
          case ( "rico" ) ! RICO case
            call rico_tndcy( time_current, time_initial, dtmain, exner,
      .                      rhot, rcm, kk_rain, wmt, wmm,
-     .                      thlm_forcing, rtm_forcing, radht, Ncm
-#ifdef SCALARS
-     .                     ,sclrm_forcing
-#endif /* SCALARS */
-     .                    )
+     .                      thlm_forcing, rtm_forcing, radht, Ncm,
+     .                      sclrm_forcing )
 
          case ( "gabls2" ) ! GABLS 2 case
            call gabls2_tndcy( time_current, time_initial, 
      .                        rhot, rcm, kk_rain, wmt, wmm,
-     .                        thlm_forcing, rtm_forcing, radht, Ncm
-#ifdef SCALARS
-     .                       ,sclrm_forcing
-#endif /* SCALARS */
-     .                    )
+     .                        thlm_forcing, rtm_forcing, radht, Ncm,
+     .                        sclrm_forcing )
 
          case default
            write(unit=fstderr,fmt=*) 
@@ -1681,20 +1598,16 @@
           if ( sfctype == 0 ) then
             wpthlp_sfc = SE
             wprtp_sfc  = LE
-#ifdef SCALARS
-            wpsclrp(:,SCLR_THETA) = SE
-            wpsclrp(:,SCLR_RT)    = LE
-            wpedsclrp(:,SCLR_THETA) = SE
-            wpedsclrp(:,SCLR_RT)    = LE
-#endif /* SCALARS */
+            if ( iisclr_thl > 0 ) wpsclrp(:,iisclr_thl) = SE
+            if ( iisclr_rt > 0 ) wpsclrp(:,iisclr_rt)   = LE
+            if ( iisclr_thl > 0 ) wpedsclrp(:,iisclr_thl) = SE
+            if ( iisclr_rt > 0 ) wpedsclrp(:,iisclr_rt)   = LE
           else if ( sfctype == 1 ) then
             call sfc_thermo_fluxes( um(2), vm(2),
      .                              Tsfc, psfc, 
      .                              thlm(2), rtm(2),
-     .                              wpthlp_sfc, wprtp_sfc
-#ifdef SCALARS
-     .                              ,sclrm(2,:), wpsclrp(1,:)
-#endif /* SCALARS */
+     .                              wpthlp_sfc, wprtp_sfc,
+     .                              sclrm(2,:), wpsclrp(1,:)
      .                            )
 
           else
@@ -1708,98 +1621,67 @@
           call arm_sfclyr( time_current, gr%zt(2), 1.1, 
      .                     thlm(2), um(2), vm(2),
      .                     upwp_sfc, vpwp_sfc, 
-     .                     wpthlp_sfc, wprtp_sfc, ustar
-#ifdef SCALARS
-     .                     ,wpsclrp_sfc, wpedsclrp_sfc
-#endif /* SCALARS */
-     .                    )
+     .                     wpthlp_sfc, wprtp_sfc, ustar,
+     .                     wpsclrp_sfc, wpedsclrp_sfc )
 
         case( "arm_0003" )
            call arm_0003_sfclyr( time_current, gr%zt(2), rhom(1),
      .                         thlm(2), um(2), vm(2),
      .                         upwp_sfc, vpwp_sfc, 
-     .                         wpthlp_sfc, wprtp_sfc, ustar
-#ifdef SCALARS
-     .                        ,wpsclrp_sfc, wpedsclrp_sfc
-#endif /* SCALARS */
-     .                     )
+     .                         wpthlp_sfc, wprtp_sfc, ustar,
+     .                         wpsclrp_sfc, wpedsclrp_sfc )
 
         case( "arm_3year" )
            call arm_3year_sfclyr( time_current, gr%zt(2), rhom(1),
-     .                         thlm(2), um(2), vm(2),
-     .                         upwp_sfc, vpwp_sfc, 
-     .                         wpthlp_sfc, wprtp_sfc, ustar
-#ifdef SCALARS
-     .                        ,wpsclrp_sfc, wpedsclrp_sfc
-#endif /* SCALARS */
-     .                     )
+     .                            thlm(2), um(2), vm(2),
+     .                            upwp_sfc, vpwp_sfc, 
+     .                            wpthlp_sfc, wprtp_sfc, ustar,
+     .                            wpsclrp_sfc, wpedsclrp_sfc )
 
 
          case ( "arm_97" )
            call arm_97_sfclyr( time_current, gr%zt(2), rhom(1),
      .                         thlm(2), um(2), vm(2),
      .                         upwp_sfc, vpwp_sfc, 
-     .                         wpthlp_sfc, wprtp_sfc, ustar
-#ifdef SCALARS
-     .                        ,wpsclrp_sfc, wpedsclrp_sfc
-#endif /* SCALARS */
-     .                     )
-
+     .                         wpthlp_sfc, wprtp_sfc, ustar,
+     .                         wpsclrp_sfc, wpedsclrp_sfc ) 
         case( "bomex" ) 
           call bomex_sfclyr( um(2), vm(2),
      .                       upwp_sfc, vpwp_sfc,
-     .                       wpthlp_sfc, wprtp_sfc, ustar
-#ifdef SCALARS
-     .                       ,wpsclrp_sfc, wpedsclrp_sfc
-#endif /* SCALARS */
-     .                     )
+     .                       wpthlp_sfc, wprtp_sfc, ustar,
+     .                       wpsclrp_sfc, wpedsclrp_sfc )
 
         case( "wangara" )
           call wangara_sfclyr( time_current, um(2), vm(2),
      .                         upwp_sfc, vpwp_sfc,
-     .                         wpthlp_sfc, wprtp_sfc, ustar
-#ifdef SCALARS
-     .                         ,wpsclrp_sfc, wpedsclrp_sfc
-#endif /* SCALARS */
-     .                       )
+     .                         wpthlp_sfc, wprtp_sfc, ustar,
+     .                         wpsclrp_sfc, wpedsclrp_sfc )
 
         case( "atex" )
           call atex_sfclyr( um(2), vm(2), thlm(2), rtm(2),
      .                      upwp_sfc, vpwp_sfc,
-     .                      wpthlp_sfc, wprtp_sfc, ustar
-#ifdef SCALARS
-     .                     ,sclrm(2,:), wpsclrp_sfc, wpedsclrp_sfc
-#endif /* SCALARS */
-     .                    )
+     .                      wpthlp_sfc, wprtp_sfc, ustar,
+     .                      sclrm(2,:), wpsclrp_sfc, wpedsclrp_sfc )
 
         case( "dycoms2_rf01" ) 
           call dycoms2_rf01_sfclyr( sfctype, Tsfc, psfc, 
      .                              exner(1), um(2), vm(2), 
      .                              thlm(2), rtm(2), 
      .                              rhom(1), upwp_sfc, vpwp_sfc, 
-     .                              wpthlp_sfc, wprtp_sfc, ustar
-#ifdef SCALARS
-     .                             ,sclrm(2,:), wpsclrp_sfc, 
-     .                              wpedsclrp_sfc
-#endif /* SCALARS */
-     .                             )
+     .                              wpthlp_sfc, wprtp_sfc, ustar,
+     .                              sclrm(2,:), wpsclrp_sfc, 
+     .                              wpedsclrp_sfc )
         case( "astex_a209" )
           call astex_sfclyr( rhom(1), um(2), vm(2),
      .                       upwp_sfc, vpwp_sfc, wpthlp_sfc, 
-     .                       wprtp_sfc
-#ifdef SCALARS
-     .                       ,wpsclrp_sfc, wpedsclrp_sfc
-#endif /* SCALARS */
-     .                     )
+     .                       wprtp_sfc ,wpsclrp_sfc, wpedsclrp_sfc )
+
         case( "dycoms2_rf02_do", "dycoms2_rf02_ds",
      .        "dycoms2_rf02_nd", "dycoms2_rf02_so" )
           call dycoms2_rf02_sfclyr( um(2), vm(2),
      .                              upwp_sfc, vpwp_sfc,
-     .                              wpthlp_sfc, wprtp_sfc, ustar
-#ifdef SCALARS
-     .                              ,wpsclrp_sfc, wpedsclrp_sfc
-#endif /* SCALARS */
-     .                             )
+     .                              wpthlp_sfc, wprtp_sfc, ustar,
+     .                              wpsclrp_sfc, wpedsclrp_sfc )
 
         case( "nov11_altocu" )
           ! There are no surface momentum or heat fluxes
@@ -1821,60 +1703,42 @@
            call lba_sfclyr( time_current, gr%zt(2), rhom(1),
      .                      thlm(2), um(2), vm(2),
      .                      upwp_sfc, vpwp_sfc, 
-     .                      wpthlp_sfc, wprtp_sfc, ustar
-#ifdef SCALARS
-     .                     ,wpsclrp_sfc, wpedsclrp_sfc
-#endif /* SCALARS */
-     .                     )
+     .                      wpthlp_sfc, wprtp_sfc, ustar,
+     .                      wpsclrp_sfc, wpedsclrp_sfc )
 
          case ( "mpace_a" )
            call mpace_a_sfclyr
      .          ( time_current, rhom(1), um(2), vm(2), upwp_sfc,
-     .            vpwp_sfc, wpthlp_sfc, wprtp_sfc, ustar
-#ifdef SCALARS
-     .           ,wpsclrp_sfc, wpedsclrp_sfc
-#endif /* SCALARS */
-     .                      )
+     .            vpwp_sfc, wpthlp_sfc, wprtp_sfc, ustar,
+     .            wpsclrp_sfc, wpedsclrp_sfc )
 
          case ( "mpace_b" )
            call mpace_b_sfclyr( rhom(1), um(2), vm(2), upwp_sfc,
-     .                        vpwp_sfc, wpthlp_sfc, wprtp_sfc, ustar
-#ifdef SCALARS
-     .                        ,wpsclrp_sfc, wpedsclrp_sfc
-#endif /* SCALARS */
-     .                      )
+     .                          vpwp_sfc, wpthlp_sfc, wprtp_sfc, ustar,
+     .                          wpsclrp_sfc, wpedsclrp_sfc )
 
         ! Brian Griffin for COBRA CO2 case.
         case ( "cobra" )
           call cobra_sfclyr( time_current, gr%zt(2), rhom(1),
      .                       thlm(2), um(2), vm(2),
      .                       upwp_sfc, vpwp_sfc,
-     .                       wpthlp_sfc, wprtp_sfc, ustar
-#ifdef SCALARS
-     .                      ,wpsclrp_sfc, wpedsclrp_sfc
-#endif /* SCALARS */
-     .                     )
+     .                       wpthlp_sfc, wprtp_sfc, ustar,
+     .                       wpsclrp_sfc, wpedsclrp_sfc )
 
          case ( "rico" )
            call rico_sfclyr( um(2), vm(2), thlm(2), rtm(2),
      .                        gr%zt(2), 299.8, 101540., ! 299.8 K is the RICO SST; 101540 Pa is the sfc pressure.
 !     .                        gr%zt(2), Tsfc, psfc,
      .                        upwp_sfc, vpwp_sfc, wpthlp_sfc,
-     .                        wprtp_sfc, ustar
-#ifdef SCALARS
-     .                       ,sclrm(2,:), wpsclrp_sfc, wpedsclrp_sfc
-#endif /* SCALARS */
-     .                      )
+     .                        wprtp_sfc, ustar,
+     .                        sclrm(2,:), wpsclrp_sfc, wpedsclrp_sfc )
 
          case ( "gabls2" )
           call gabls2_sfclyr
      .         ( time_current, time_initial, gr%zt(2), 97200.,
      .           um(2), vm(2), thlm(2), rtm(2),
-     .           upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, ustar
-#ifdef SCALARS
-     .          ,sclrm(2,:), wpsclrp_sfc, wpedsclrp_sfc
-#endif /* SCALARS */
-     .                    )
+     .           upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, ustar,
+     .           sclrm(2,:), wpsclrp_sfc, wpedsclrp_sfc )
 
         case default
           write(unit=fstderr,fmt=*) 
@@ -1912,8 +1776,17 @@
 #ifdef radoffline /*This directive is needed for BUGSrad to work with HOC.*/
 
           ! Assign pointers to snow and ice
-          rsnowm => hydromet(1:gr%nnzp,3)
-          ricem  => hydromet(1:gr%nnzp,4)
+          if ( iirsnowm > 0 ) then
+            rsnowm = hydromet(1:gr%nnzp,iirsnowm)
+          else
+            rsnowm = 0.0
+          end if
+
+          if ( iiricem > 0 ) then
+            ricem = hydromet(1:gr%nnzp,iiricem)
+          else
+            ricem = 0.0
+          end if
 
           ! NaN checks added to detect possible errors
           ! with BUGSrad
@@ -1960,7 +1833,7 @@
           end if
 
           ! Check for impossible negative values
-          if (clubb_at_debug_level( 2 ) ) then
+          if ( clubb_at_debug_level( 2 ) ) then
             call rad_check( thlm, rcm, rtm, ricem,
      .                      cf, p, exner, rhom )
           end if

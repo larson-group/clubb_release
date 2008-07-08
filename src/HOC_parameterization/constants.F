@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F,v 1.25 2008-06-24 19:44:01 faschinj Exp $
+! $Id: constants.F,v 1.26 2008-07-08 04:44:24 dschanen Exp $
 
         module constants
 
@@ -20,7 +20,8 @@
      .            sol_const, wtol, thltol, rttol, qttol, sstol, difftol,
      .            rc_tol, Nc_tol, rr_tol, Nr_tol, emin, eps, 
      .            sec_per_day, sec_per_hr, sec_per_min, g_per_kg, 
-     .            sclr_dim, hydromet_dim, sclrtol, Lscale_max
+     .            Lscale_max
+!    .            sclr_dim, hydromet_dim, sclrtol, 
 
         private ! Default scope
 
@@ -102,22 +103,21 @@
 
         ! Useful conversion factors.
         real(kind=time_precision), parameter :: 
-     .     sec_per_day = 86400.0 ! seconds in a day.
-        real(kind=time_precision), parameter ::
-     .     sec_per_hr  = 3600.0  ! seconds in an hour.
-        real(kind=time_precision), parameter ::
-     .     sec_per_min = 60.0    ! seconds in a minute.
+     .  sec_per_day = 86400.0,! Seconds in a day.
+     .  sec_per_hr  = 3600.0, ! Seconds in an hour.
+     .  sec_per_min = 60.0    ! Seconds in a minute.
+
         real, parameter ::
-     .     g_per_kg = 1000.0     ! grams in a kilogram.
+     .  g_per_kg = 1000.0     ! Grams in a kilogram.
         
-        integer, parameter :: 
-     .  sclr_dim     = 2, ! Number of passive scalars. 
-     .  hydromet_dim = 5  ! Number of hydrometeor fields.
+!       integer, parameter :: 
+!    .  sclr_dim     = 2, ! Number of passive scalars. 
+!    .  hydromet_dim = 5  ! Number of hydrometeor fields.
 
         ! Tolerance for new mixing scheme
         ! Currently it's elements are equal to rttol and thltol
-        real, dimension(sclr_dim), parameter :: 
-     .  sclrtol = (/thltol, rttol/)
+!       real, dimension(sclr_dim), parameter :: 
+!    .  sclrtol = (/thltol, rttol/)
 
         ! Maximum allowable value for Lscale [m].
         ! Value depends on whether the model is run by itself or as part

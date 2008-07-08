@@ -1,7 +1,4 @@
-!$Id: rico.F,v 1.22 2008-07-07 14:53:09 faschinj Exp $
-#define SCLR_THETA 1
-#define SCLR_RT 2
-
+!$Id: rico.F,v 1.23 2008-07-08 04:44:10 dschanen Exp $
 !----------------------------------------------------------------------
       module rico
 
@@ -21,8 +18,8 @@
         subroutine rico_tndcy
      .  ( time, time_initial, dt, exner,
      .    rhot, rcm, kk_rain, wmt, wmm,
-     .    theta_tndcy, rt_tndcy, radht, Ncm,
-     .    sclr_tndcy )
+     .    thlm_forcing, rtm_forcing, radht, Ncm,
+     .    sclrm_forcing )
 
 !        Description:
 !          Subroutine to apply case-specific forcings to RICO case
@@ -31,13 +28,17 @@
 !        References:
 !-----------------------------------------------------------------------
 
-        use constants, only: sclr_dim, rc_tol ! Variable(s)
+        use constants, only: rc_tol ! Variable(s)
+
+        use parameters, only: sclr_dim ! Variable(s)
 
         use grid_class, only: gr ! Variable(s)
 
         use grid_class, only: zt2zm ! Procedure(s)
 
         use stats_precision, only: time_precision ! Variable(s)
+
+        use array_index, only: iisclr_rt, iisclr_thl
 
 !#ifdef STATS
 !        use stats_variables
@@ -65,15 +66,15 @@
         real, dimension(gr%nnzp), intent(out) ::
      .  wmt,         ! Large-scale vertical motion on t grid   [m s^-1]
      .  wmm,         ! Large-scale vertical motion on m grid   [m s^-1]
-     .  theta_tndcy, ! Large-scale thlm tendency               [K s^-1]
-     .  rt_tndcy,    ! Large-scale rtm tendency                [kg kg^-1 s^-1]
+     .  thlm_forcing, ! Large-scale thlm tendency               [K s^-1]
+     .  rtm_forcing,    ! Large-scale rtm tendency                [kg kg^-1 s^-1]
      .  radht,       ! dT/dt, then d Theta/dt, due to rad.     [K s^-1]
      .  Ncm          ! Initial cloud droplet concentration     [# kg^-1]
 
 
         ! Output Variables (optional)
         real, optional, intent(out), dimension(gr%nnzp,sclr_dim) ::
-     .  sclr_tndcy ! Passive scalar LS tendency            [units/s]
+     .  sclrm_forcing ! Passive scalar LS tendency            [units/s]
 
         ! Local Variables, general
         integer :: k ! Loop index
@@ -113,8 +114,8 @@
             t_tendency = 0.  ! Units [K s^-1]
           end if
           ! Convert to units of [K s^-1] but potential T instead of T
-!          theta_tndcy(k) = (t_tendency * ((psfc/p(k)) ** (Rd/Cp)))
-          theta_tndcy(k) = (t_tendency / exner(k))
+!          thlm_forcing(k) = (t_tendency * ((psfc/p(k)) ** (Rd/Cp)))
+          thlm_forcing(k) = (t_tendency / exner(k))
           radht(k) = 0.  !  So we don't have undefined numbers in the radht stats.  Radht is actually rolled into t_tendency.
         end do
 
@@ -122,17 +123,17 @@
         ! Compute large-scale horizontal moisture advection [g kg^-1 s^-1]
         do k=1,gr%nnzp
           if (gr%zt(k) < 3000) then
-            rt_tndcy(k) = - 1.0 / 86400 +
+            rtm_forcing(k) = - 1.0 / 86400 +
      .        (0.345+1.0) / (86400 * 3000) * gr%zt(k)  ! Units [g kg^-1 s^-1]
           else if (gr%zt(k) < 4000) then
-            rt_tndcy(k) = 0.345 / 86400  ! Units [g kg^-1 s^-1]
+            rtm_forcing(k) = 0.345 / 86400  ! Units [g kg^-1 s^-1]
           else if (gr%zt(k) < 5000) then
-            rt_tndcy(k) = 0.345 / 86400 +
+            rtm_forcing(k) = 0.345 / 86400 +
      .        (-0.345) / (86400*(5000-4000)) * (gr%zt(k) - 4000) ! Units [g kg^-1 s^-1]
           else
-            rt_tndcy(k) = 0.  ! Units [g kg^-1 s^-1]
+            rtm_forcing(k) = 0.  ! Units [g kg^-1 s^-1]
           end if
-          rt_tndcy(k) = rt_tndcy(k) / 1000.  ! Converts [g kg^-1 s^-1] to [kg kg^-1 s^-1]
+          rtm_forcing(k) = rtm_forcing(k) / 1000.  ! Converts [g kg^-1 s^-1] to [kg kg^-1 s^-1]
         end do
 
         if ( kk_rain ) then
@@ -153,11 +154,9 @@
           end do
         end if
 
-        ! Set scalar tendencies
-        if ( present( sclr_tndcy ) ) then
-          sclr_tndcy(:,SCLR_THETA) = theta_tndcy
-          sclr_tndcy(:,SCLR_RT)    = rt_tndcy
-        end if
+        ! Test scalars with thetal and rt if desired
+        if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
+        if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
         return
         end subroutine rico_tndcy
@@ -187,12 +186,17 @@
 !          RICO: http://www.knmi.nl/samenw/rico/setup3d.html
 !-----------------------------------------------------------------------
 
-        use constants, only: sclr_dim, kappa, p0 ! Variable(s)
+        use constants, only: kappa, p0 ! Variable(s)
+
+        use parameters, only: sclr_dim ! Variable(s)
   
         use saturation, only: rsat ! Procedure(s)
 
+        use array_index, only: iisclr_rt, iisclr_thl
+
         implicit none
 
+        intrinsic :: max, log, sqrt
 
 !       Constants
         real, parameter ::
@@ -276,15 +280,12 @@
           vpwp_sfc   = -vm_sfc * Cm * ubar  ! m^2 s^-2
         end if
 
-!       Compute scalar fluxes
-        if ( present( wpsclrp_sfc ) ) then
-          wpsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-          wpsclrp_sfc(SCLR_RT)    = wprtp_sfc
-        end if
-        if ( present( wpedsclrp_sfc ) ) then
-          wpedsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-          wpedsclrp_sfc(SCLR_RT)    = wprtp_sfc
-        end if
+        ! Let passive scalars be equal to rt and theta_l for now
+        if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
+        if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
+
+        if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
+        if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
         return
         end subroutine rico_sfclyr

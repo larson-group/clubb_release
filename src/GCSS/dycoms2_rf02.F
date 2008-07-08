@@ -1,7 +1,5 @@
-#define SCLR_THETA 1
-#define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf02.F,v 1.23 2008-06-30 18:44:16 faschinj Exp $
+! $Id: dycoms2_rf02.F,v 1.24 2008-07-08 04:44:10 dschanen Exp $
         module dycoms2_rf02
 
 !       Description:
@@ -32,17 +30,22 @@
 !       Bull. Amer. Meteorol. Soc., 84, 579-593.
 !----------------------------------------------------------------------
 
-        USE grid_class, only: gr ! Variable(s)
+        use grid_class, only: gr ! Variable(s)
 
         use grid_class, only: zt2zm ! Procedure(s)
 
-        USE constants, only: sclr_dim, fstderr, Cp, rc_tol ! Variable(s)
+        use constants, only: fstderr, Cp, rc_tol ! Variable(s)
 
-        USE model_flags, only: lbugsrad, lcoamps_micro ! Variable(s)
+        use parameters, only: sclr_dim ! Variable(s)
+
+        use model_flags, only: lbugsrad, lcoamps_micro ! Variable(s)
 
         use stats_precision, only: time_precision ! Variable(s)
 
-        USE error_code, only: clubb_rtm_level_not_found ! Variable(s)
+        use error_code, only: clubb_rtm_level_not_found ! Variable(s)
+
+        use array_index, only: 
+     .      iisclr_thl, iisclr_rt, iiCO2 ! Variable(s)
 
 #ifdef STATS
         use stats_type, only: stat_update_var, stat_update_var_pt ! Procedure(s)
@@ -87,7 +90,7 @@
      .  Ncnm           ! Cloud nuclei number conc.      [#/m^3]
 
         ! Optional Output Variables
-        real, intent(out), optional, dimension(gr%nnzp,sclr_dim) ::
+        real, intent(out), dimension(gr%nnzp,sclr_dim) ::
      .  sclrm_forcing  ! Passive scalar tendency        [units/s]
 
         ! Local Variables
@@ -246,10 +249,9 @@
 
         end if
 
-        if ( present( sclrm_forcing ) )  then
-          sclrm_forcing(:,SCLR_THETA) = thlm_forcing(:) 
-          sclrm_forcing(:,SCLR_RT)    = rtm_forcing(:)
-        end if
+        ! Test scalars with thetal and rt if desired
+        if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
+        if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
         RETURN
         END SUBROUTINE dycoms2_rf02_tndcy
@@ -262,12 +264,17 @@
      .                                  wpthlp_sfc, wprtp_sfc, ustar,
      .                                  wpsclrp_sfc, wpedsclrp_sfc )
 
-        use constants, only: sclr_dim, Cp, Lv ! Variable(s)
+        use constants, only: Cp, Lv ! Variable(s)
+
+        use parameters, only: sclr_dim ! Variable(s)
+
+        use array_index, only: 
+     .      iisclr_thl, iisclr_rt ! Variable(s)
 
         implicit none
 
         ! External
-        intrinsic :: sqrt, present
+        intrinsic :: sqrt
 
         ! Constant parameters
         real, parameter :: 
@@ -288,7 +295,7 @@
      .  ustar        ! surface friction velocity [m/s]
 
         ! Output Variables (optional)
-        real, intent(out), optional, dimension(sclr_dim) :: 
+        real, intent(out), dimension(sclr_dim) :: 
      .  wpsclrp_sfc,   ! w' scalar at surface [units m/s]
      .  wpedsclrp_sfc  ! w' scalar at surface [units m/s]
 
@@ -314,15 +321,11 @@
         wprtp_sfc  = LH / (1.21 * Lv)
 
         ! Let passive scalars be equal to rt and theta_l for now
-        if ( present( wpsclrp_sfc ) ) then
-          wpsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-          wpsclrp_sfc(SCLR_RT)    = wprtp_sfc
-        end if
+        if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
+        if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
-        if ( present( wpedsclrp_sfc ) ) then
-          wpedsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-          wpedsclrp_sfc(SCLR_RT)    = wprtp_sfc
-        end if
+        if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
+        if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
         return
         end subroutine dycoms2_rf02_sfclyr

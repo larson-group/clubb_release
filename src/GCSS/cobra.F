@@ -1,7 +1,5 @@
-#define SCLR_CO2 1
-#define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: cobra.F,v 1.13 2008-06-30 18:41:22 faschinj Exp $
+! $Id: cobra.F,v 1.14 2008-07-08 04:44:10 dschanen Exp $
         module cobra
 !       Description:
 !       Contains subroutines for the COBRA CO2 case.
@@ -32,14 +30,20 @@
 
         use grid_class, only: zt2zm ! Procedure(s)
 
-        use constants, only: sclr_dim, fstderr ! Variable(s)
+        use constants, only: fstderr ! Variable(s)
+
+        use parameters, only: sclr_dim ! Variable(s)
 
         use stats_precision, only: time_precision ! Variable(s)
+
+        use array_index, only: 
+     .      iisclr_thl, iisclr_rt, iiCO2 ! Variable(s)
 
         implicit none
 
         ! Input Variables
-        real(kind=time_precision), intent(in) :: time ! Model time [s]
+        real(kind=time_precision), intent(in) :: 
+     .  time ! Model time [s]
 
         ! Output Variables
         real, intent(out), dimension(gr%nnzp) ::
@@ -48,8 +52,8 @@
      .  thlm_forcing,! Liquid water potential temperature tendency  [K/s]
      .  rtm_forcing  ! Total water mixing ratio tendency            [kg/kg/s]
 
-        ! Output Variables (optional)
-        real, optional, intent(out), dimension(gr%nnzp,sclr_dim) ::
+        ! Output Variables
+        real, intent(out), dimension(gr%nnzp,sclr_dim) ::
      .  sclrm_forcing ! Passive scalar tendency [units vary]
 
         ! Local Variables
@@ -80,24 +84,24 @@
 
         END DO
 
+        ! Boundary condition.
+        wmt(1) = 0.0        ! Below surface
+
+        ! Interpolation
         wmm = zt2zm( wmt )
 
         ! Boundary conditions.
-        wmt(1) = 0.0        ! Below surface
         wmm(1) = 0.0        ! At surface
         wmm(gr%nnzp) = 0.0  ! Model top
         
-!       No large-scale water tendency or cooling
-
+        ! No large-scale water tendency or cooling
         rtm_forcing  = 0.0
         thlm_forcing = 0.0
 
-        if ( present( sclrm_forcing ) ) then
-!          sclr_tndcy(1:gr%nnzp,SCLR_THETA) = theta_tndcy(1:gr%nnzp)
-          sclrm_forcing(1:gr%nnzp,SCLR_CO2) = 0.0
-          sclrm_forcing(1:gr%nnzp,SCLR_RT) 
-     .    = rtm_forcing(1:gr%nnzp)
-        end if
+        ! Setup passive scalars, if they're enabled
+        if ( iiCO2 > 0 ) sclrm_forcing(:,iiCO2) = 0.0
+        if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
+        if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt) = rtm_forcing
 
         return
         end subroutine cobra_tndcy
@@ -118,20 +122,24 @@
 !       case.
 !-----------------------------------------------------------------------
 
-        use constants, only: Cp, Lv, grav, sclr_dim ! Variable(s)
+        use constants, only: Cp, Lv, grav ! Variable(s)
+
+        use parameters, only: sclr_dim ! Variable(s)
 
         use stats_precision, only: time_precision ! Variable(s)
 
         use diag_ustar_mod, only: diag_ustar ! Variable(s)
+
+        use array_index, only: iisclr_rt, iisclr_thl, iiCO2
         
         implicit none
 
-        intrinsic :: sqrt, max, present
+        intrinsic :: sqrt, max
 
         ! Parameter Constants
         real, parameter ::
-     .  ubmin = 0.25
-!     .  M_da  = 0.02897  ! Molecular weight of dry air.
+     .  ubmin = 0.25,
+     .  M_da  = 0.02897  ! Molecular weight of dry air.
 
         ! Input variables
         real(kind=time_precision), intent(in) :: 
@@ -152,8 +160,8 @@
      .  wprtp_sfc,  ! w'rt' surface flux        [(m kg)/(kg s)]
      .  ustar       ! surface friction velocity [m/s]
 
-        ! Output variables (optional)
-        real, intent(out), optional, dimension(sclr_dim) :: 
+        ! Output variables
+        real, intent(out), dimension(sclr_dim) :: 
      .  wpsclrp_sfc,  ! w'sclr' surface flux          [units m/s]
      .  wpedsclrp_sfc ! w' edsclr' surface flux       [units m/s]
 
@@ -165,9 +173,7 @@
      .  heat_flx2, moisture_flx2,
      .  bflx
 
-#ifdef SCALARS
         real :: CO2_flx
-#endif /* SCALARS */
 
         real :: CO2_flx2
 
@@ -181,10 +187,8 @@
         CO2_flx2 = 0.0 ! Default initialization 
 
         true_time = time
-        call cobra_sfcflx( true_time, heat_flx, moisture_flx
-#ifdef SCALARS
-     .                    ,CO2_flx
-#endif /* SCALARS */
+        call cobra_sfcflx( true_time, heat_flx, moisture_flx,
+     .                    CO2_flx
      .                   )
 
         ! Compute momentum fluxes
@@ -193,7 +197,6 @@
         heat_flx2     = heat_flx / ( Cp * dn0 )    ! (K m/s)
         moisture_flx2 = moisture_flx / ( Lv * dn0 )! (m/s)
 
-#ifdef SCALARS
 !       Convert CO2 surface flux to natural units.
 !       The CO2 flux has been given in units of:  umol/(m^2 s).
 !       umol stands for micromoles.  The CO2 concentration in
@@ -203,7 +206,6 @@
 !       w'CO2' = (Flux) * [ M (dry air) / rho (dry air) ];
 !       where M is the molecular weight of dry air.
         CO2_flx2 = CO2_flx * ( M_da / dn0 )
-#endif /* SCALARS */
 
         ! Heat flux in units of (m2/s3) (needed by diag_ustar)
         bflx = grav/thlm_sfc * heat_flx2
@@ -222,17 +224,13 @@
         wpthlp_sfc = heat_flx2
         wprtp_sfc  = moisture_flx2
 
-        if ( present( wpsclrp_sfc ) ) then
-!         wpsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-          wpsclrp_sfc(SCLR_CO2) = CO2_flx2
-          wpsclrp_sfc(SCLR_RT)  = wprtp_sfc
-        end if
+        if ( iiCO2 > 0 ) wpsclrp_sfc(iiCO2) = CO2_flx2
+        if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
+        if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
-        if ( present( wpedsclrp_sfc ) ) then
-!         wpsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-          wpedsclrp_sfc(SCLR_CO2) = CO2_flx2
-          wpedsclrp_sfc(SCLR_RT)  = wprtp_sfc
-        end if
+        if ( iiCO2 > 0 ) wpedsclrp_sfc(iiCO2) = CO2_flx2
+        if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
+        if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
         return
         end subroutine cobra_sfclyr
@@ -250,9 +248,6 @@
 !-----------------------------------------------------------------------
 
         implicit none
-
-        ! External
-        intrinsic :: present
 
         ! Constant parameters
         integer, parameter :: ntimes = 49
@@ -408,9 +403,7 @@
               heat_flx     = ( 1. - a ) * H(i1) + a * H(i2)
               moisture_flx = ( 1. - a ) * LE(i1) + a * LE(i2)
 
-              if ( present( CO2_flx ) ) then
-                CO2_flx = ( 1. - a ) * CO2(i1) + a * CO2(i2)
-              end if ! present
+              CO2_flx = ( 1. - a ) * CO2(i1) + a * CO2(i2)
 
               i1           = ntimes
             end if ! time >= times(i1) & time < times(i2)

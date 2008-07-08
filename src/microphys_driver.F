@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F,v 1.17 2008-06-30 18:11:19 faschinj Exp $
+! $Id: microphys_driver.F,v 1.18 2008-07-08 04:44:03 dschanen Exp $
         module microphys_driver
 
 !       Description:
@@ -11,7 +11,7 @@
 !-----------------------------------------------------------------------
         implicit none
 
-        public :: advance_microphys
+        public :: advance_microphys, init_microphys
 
         ! Subroutines
         private :: microphys_lhs, microphys_solve
@@ -22,7 +22,91 @@
 
         private ! Default Scope
 
+        character(len=10), dimension(:), allocatable ::
+     .  hydromet_list
+
         contains
+
+!-----------------------------------------------------------------------
+        subroutine init_microphys
+     .             ( kk_rain, lcoamps_micro, licedfs, hydromet_dim )
+
+!       Description:
+!       Set indices to the various hydrometeor species and define
+!       hydromet_dim for the purposes of allocating memory.
+
+!       References:
+!       None
+!-----------------------------------------------------------------------
+        use array_index, only: 
+     .      iirrm, iiNrm, iirsnowm, iiricem, iirgraupelm
+
+        implicit none
+
+        logical, intent(in) ::
+     .  kk_rain,        ! K&K microphysics
+     .  lcoamps_micro,  ! COAMPS microphysics
+     .  licedfs         ! Simplified ice
+
+        integer, intent(out) ::
+     .  hydromet_dim ! Number of hydrometeor fields.
+
+        ! The location of the fields in the hydromet array are arbitrary,
+        ! and don't need to be set consistently among schemes so long as
+        ! the 'i' indices point to the correct parts of the array.
+        if ( lcoamps_micro ) then
+          iirrm       = 1
+          iiNrm       = 2
+          iirsnowm    = 3
+          iiricem     = 4
+          iirgraupelm = 5
+
+          hydromet_dim = 5
+
+          allocate( hydromet_list(hydromet_dim) )
+
+          hydromet_list(iirrm)       = "rrm"
+          hydromet_list(iiNrm)       = "Nrm"
+          hydromet_list(iirsnowm)    = "rsnowm"
+          hydromet_list(iiricem)     = "ricem"
+          hydromet_list(iirgraupelm) = "rgraupelm"
+
+        else if ( kk_rain ) then
+          iirrm       = 1
+          iiNrm       = 2
+          iirsnowm    = -1
+          iiricem     = -1
+          iirgraupelm = -1
+
+          hydromet_dim = 2
+
+          allocate( hydromet_list(hydromet_dim) )
+
+          hydromet_list(iirrm) = "rrm"
+          hydromet_list(iiNrm) = "Nrm"
+
+        else if ( licedfs ) then
+          iirrm       = -1
+          iiNrm       = -1
+          iirsnowm    = -1
+          iiricem     = -1
+          iirgraupelm = -1
+
+          hydromet_dim = 0
+
+        else
+          iirrm       = -1
+          iiNrm       = -1
+          iirsnowm    = -1
+          iiricem     = -1
+          iirgraupelm = -1
+
+          hydromet_dim = 0
+
+        end if
+
+        return
+        end subroutine init_microphys
 
 !-----------------------------------------------------------------------
         subroutine advance_microphys
@@ -58,12 +142,12 @@
      .      licedfs
 
         use parameters, only:
-     .      c_Krrm, ! Procedure(s) 
+     .      c_Krrm, ! Variable(s) 
+     .      hydromet_dim, 
      .      nu_r
 
         use constants, only: 
-     .      hydromet_dim, ! Variable(s)
-     .      Lv, 
+     .      Lv,  ! Constant(s)
      .      Cp, 
      .      rho_lw, 
      .      fstderr,
@@ -79,6 +163,9 @@
      .      coamps_micro_driver ! Procedure
 
         use temp_in_K_mod, only: thlm2temp_in_K ! Procedure(s)
+
+        use array_index, only: 
+     .      iirrm, iiNrm, iirsnowm, iiricem, iirgraupelm
 
 
 #ifdef STATS
@@ -125,14 +212,15 @@
      .      sfc,
      .      lstats_samp
 
-        use stats_type, only: stat_update_var, stat_update_var_pt, ! Procedure(s)
-     .                  stat_begin_update, stat_end_update 
+        use stats_type, only: 
+     .      stat_update_var, stat_update_var_pt, ! Procedure(s)
+     .      stat_begin_update, stat_end_update 
 
 #endif
         implicit none
 
         ! Constant Parameters
-
+        logical, parameter :: lsed = .true.
 
         character(len=*), intent(in) ::
      .  runtype ! Name of the run, for case specific effects.
@@ -169,7 +257,7 @@
         real, target,dimension(gr%nnzp,26),intent(in) ::
      .  pdf_parms     ! PDF parameters
 
-        real, target, dimension(gr%nnzp,hydromet_dim), intent(inout) ::
+        real, dimension(gr%nnzp,hydromet_dim), intent(inout) ::
      .  hydromet      ! Array of rain, prist. ice, graupel, etc. [units vary]
 
         real, dimension(gr%nnzp), intent(inout) ::
@@ -182,24 +270,27 @@
         real, dimension(3,gr%nnzp) ::
      .  lhs ! Left hand side of tridiagonal matrix
 
-        real, dimension(gr%nnzp) ::
-     .  Vrr,     ! Rain mixing ratio sedimentation velocity    [m/s]
-     .  VNr,     ! Rain number conc. sedimentation velocity    [m/s]
-     .  Vice,    ! Ice mixing ratio sedimentation velocity     [m/s]
-     .  Vsnow,   ! Snow mixing ratio sedimentation velocity    [m/s]
-     .  Vgraupel ! Graupel mixing ratio sedimentation velocity [m/s]
+        real, dimension(gr%nnzp,hydromet_dim) ::
+     .  hydromet_vel ! Contains vel. of the hydrometeors        [m/s]
+        !  Can contain:
+        !  Vrr      ! Rain mixing ratio sedimentation velocity     [m/s]
+        !  VNr      ! Rain number conc. sedimentation velocity     [m/s]
+        !  Vice     ! Ice mixing ratio sedimentation velocity      [m/s]
+        !  Vsnow    ! Snow mixing ratio sedimentation velocity     [m/s]
+        !  Vgraupel ! Graupel mixing ratio sedimentation velocity  [m/s]
 
         real, dimension(gr%nnzp) ::
      .  rtm_mc,  ! Change in total water due to microphysics    [(kg/kg)/s]
      .  thlm_mc  ! Change in liquid potential temperature 
                  ! due to microphysics                          [K/s]
 
-        real, dimension(gr%nnzp) ::
-     .  rrm_tndcy,      ! Rain mixing ratio tendency      [(kg/kg)/s]
-     .  Nrm_tndcy,      ! Rain number conc. tendency      [(count/kg)/s]
-     .  rsnowm_tndcy,   ! Snow mixing ratio tendency      [(kg/kg)/s]
-     .  ricem_tndcy,    ! Ice mixing ratio tendency       [(kg/kg)/s]
-     .  rgraupelm_tndcy ! Graupel mixing ratio tendency   [(kg/kg)/s]  
+        real, dimension(gr%nnzp,hydromet_dim) ::
+     .  hydromet_mc
+     .  ! Rain mixing ratio tendency      [(kg/kg)/s]
+     .  ! Rain number conc. tendency      [(count/kg)/s]
+     .  ! Snow mixing ratio tendency      [(kg/kg)/s]
+     .  ! Ice mixing ratio tendency       [(kg/kg)/s]
+     .  ! Graupel mixing ratio tendency   [(kg/kg)/s]  
 
         real, dimension(gr%nnzp) ::
      .  T_in_K  ! Temperature   [K]
@@ -207,12 +298,12 @@
         real, dimension(1,1,gr%nnzp) ::
      .  cond ! COAMPS stat for condesation/evap of rcm
 
-        real, pointer, dimension(:) ::
-     .  rrm,      ! Pointer for rain water mixing ratio   [kg/kg]
-     .  Nrm,      ! Pointer for rain droplet number conc. [count/kg]
-     .  rsnowm,   ! Pointer for snow mixing ratio         [kg/kg]
-     .  ricem,    ! Pointer for ice mixing ratio          [kg/kg]
-     .  rgraupelm ! Pointer for graupel mixing ratio      [kg/kg]
+!       real, pointer, dimension(:) ::
+!    .  rrm,      ! Pointer for rain water mixing ratio   [kg/kg]
+!    .  Nrm,      ! Pointer for rain droplet number conc. [count/kg]
+!    .  rsnowm,   ! Pointer for snow mixing ratio         [kg/kg]
+!    .  ricem,    ! Pointer for ice mixing ratio          [kg/kg]
+!    .  rgraupelm ! Pointer for graupel mixing ratio      [kg/kg]
 
         ! Various PDF parameters needed for Brian's K&K microphysics
         real, pointer, dimension(:) ::
@@ -234,16 +325,12 @@
         ! Brian Griffin.  April 14, 2007.
         real :: overevap_rate ! Absolute value of negative evap. rate.
 
-        integer :: k ! Array index
+        integer :: i, k ! Array index
+#ifdef STATS
+        integer :: ixrm_cl, ixrm_bt
+#endif
 
 !-----------------------------------------------------------------------
-
-        ! Assign pointers to each field
-        rrm       => hydromet(1:gr%nnzp,1)
-        Nrm       => hydromet(1:gr%nnzp,2)
-        rsnowm    => hydromet(1:gr%nnzp,3)
-        ricem     => hydromet(1:gr%nnzp,4)
-        rgraupelm => hydromet(1:gr%nnzp,5)
 
         ! Assign pointers to pdf_parms
         thl1 => pdf_parms(1:gr%nnzp,9)
@@ -274,103 +361,139 @@
            call coamps_micro_driver
      .          ( runtype, gr%nnzp-1, gr%nnzp, time_current, dt,
      .            rtm, wmm, p, exner, rhot, T_in_K,
-     .            thlm, ricem, rrm, rgraupelm, rsnowm,
-     .            rcm, Ncm, Nrm, Ncnm, Nim,
-     .            cond, Vsnow, Vice, Vrr, VNr, Vgraupel,
-     .            ricem_tndcy, rrm_tndcy, rgraupelm_tndcy, 
-     .            rsnowm_tndcy, Nrm_tndcy,
+     .            thlm, hydromet(:,iiricem), hydromet(:,iirrm), 
+     .            hydromet(:,iirgraupelm), hydromet(:,iirsnowm),
+     .            rcm, Ncm, hydromet(:,iiNrm), Ncnm, Nim, cond,
+     .            hydromet_vel(:,iirsnowm), hydromet_vel(:,iiricem),
+     .            hydromet_vel(:,iirrm), hydromet_vel(:,iiNrm), 
+     .            hydromet_vel(:,iirgraupelm),
+     .            hydromet_mc(:,iiricem), hydromet_mc(:,iirrm),
+     .            hydromet_mc(:,iirgraupelm), hydromet_mc(:,iirsnowm),
+     .            hydromet_mc(:,iiNrm),
      .            rtm_mc, thlm_mc )
 
 #ifdef STATS
           if ( lstats_samp ) then
               
            ! Sedimentation velocity for rrm
-           call stat_update_var(iVrr, Vrr(:), zm)
+           call stat_update_var(iVrr, hydromet_vel(:,iirrm), zm)
 
            ! Sedimentation velocity for Nrm
-           call stat_update_var(iVNr, VNr(:), zm )
+           call stat_update_var(iVNr, hydromet_vel(:,iiNrm), zm )
 
            ! Sedimentation velocity for snow
-           call stat_update_var(iVsnow, Vsnow(:), zm )
+           call stat_update_var(iVsnow, hydromet_vel(:,iirsnowm), zm )
 
            ! Sedimentation velocity for pristine ice
-           call stat_update_var( iVice, Vice(:), zm )
+           call stat_update_var( iVice, hydromet_vel(:,iiricem), zm )
 
            ! Sedimentation velocity for graupel
-           call stat_update_var( iVgraupel, Vgraupel(:), zm )
+           call stat_update_var( iVgraupel, 
+     .                           hydromet_vel(:,iirgraupelm), zm )
 
            ! Sum total of rrm microphysics
-           call stat_update_var( irrm_mc, rrm_tndcy(:), zt )
+           call stat_update_var( irrm_mc, hydromet_mc(:,iirrm), zt )
 
            ! Sum total of Nrm microphysics
-           call stat_update_var( iNrm_mc, Nrm_tndcy(:), zt )
+           call stat_update_var( iNrm_mc, hydromet_mc(:,iiNrm), zt )
            
            ! Sum total of pristine ice microphysics
-           call stat_update_var( iricem_mc, ricem_tndcy(:), zt )
+           call stat_update_var( iricem_mc, hydromet_mc(:,iiricem), zt )
 
            ! Sum total of graupel microphysics
-           call stat_update_var( irgraupelm_mc, rgraupelm_tndcy(:), zt)
+           call stat_update_var( irgraupelm_mc,
+     .                           hydromet_mc(:,iirgraupelm), zt )
 
            ! Sum total of snow microphysical processeses
-           call stat_update_var( irsnowm_mc, rsnowm_tndcy(:), zt )
+           call stat_update_var( irsnowm_mc, 
+     .                           hydromet_mc(:,iirsnowm), zt )
 
          end if ! lstats_samp
 #endif /*STATS*/
         else if ( kk_rain ) then
 
-          ! Note that Ncm for DYCOMS II RF02 is specified in the GCSS,
-          ! so new cases will need this computed beforehand as well.
+          ! Note that Ncm for DYCOMS II RF02 is specified in the
+          ! dycoms_rf02_tndcy subroutine, so new cases will need 
+          ! Ncm computed beforehand as well.
 
           call kk_microphys
      .         ( thlm, T_in_K, p, exner, rhot, 
-     .           thl1, thl2, a, rc1, rc2,
-     .           s1, s2, ss1, ss2, rtm, rcm, Ncm, rrm, Nrm,
+     .           thl1, thl2, a, rc1, rc2, s1, 
+     .           s2, ss1, ss2, rtm, rcm, Ncm, 
+     .           hydromet(:,iirrm), hydromet(:,iiNrm),
      .           .true., AKm_est, AKm, 
-     .           rrm_tndcy, Nrm_tndcy, 
+     .           hydromet_mc(:,iirrm), hydromet_mc(:,iiNrm), 
      .           rtm_mc, thlm_mc,
-     .           Vrr, VNr )
+     .           hydromet_vel(:,iirrm), hydromet_vel(:,iiNrm) )
 
 #ifdef STATS
           if ( lstats_samp ) then
               
            ! Sedimentation velocity for rrm
-           call stat_update_var( iVrr, Vrr(:), zm )          
+           call stat_update_var( iVrr, hydromet_vel(:,iirrm), zm )
 
            ! Sedimentation velocity for Nrm
-           call stat_update_var( iVNr, VNr(:), zm )
+           call stat_update_var( iVNr, hydromet_vel(:,iiNrm), zm )
 
            ! Sum total of rrm microphysics (auto + accr + cond)
-           call stat_update_var( irrm_mc, rrm_tndcy(:), zt )
+           call stat_update_var( irrm_mc, hydromet_mc(:,iirrm), zt )
 
            ! Sum total of Nrm microphysics (auto + cond)
-           call stat_update_var( iNrm_mc, Nrm_tndcy(:), zt )
+           call stat_update_var( iNrm_mc, hydromet_mc(:,iiNrm), zt )
 
          end if ! lstats_samp
 #endif /*STATS*/
 
-        end if ! coamps micro or KK rain. 
+        end if ! coamps micro or KK rain.
 
-        ! Compute rrm and Nrm for either case
-        if ( lcoamps_micro .or. kk_rain ) then
-          ! --------------------------------------------------------------------
-          ! Rain water mixing ratio (rrm)
-          ! --------------------------------------------------------------------
-          call microphys_lhs
-     .         ( "rrm", .true., dt, Kr, nu_r, wmt, Vrr, rrm, lhs )
+!-----------------------------------------------------------------------
+!       Loop over all hydrometeor species and apply sedimentation,
+!       advection and diffusion.
+!-----------------------------------------------------------------------
+        if ( hydromet_dim > 0 ) then
 
-       
-          call microphys_solve
-     .         ( "rrm", dt, lhs, rrm_tndcy, rrm, err_code )
+          do i = 1, hydromet_dim
+#ifdef STATS
+            select case( trim( hydromet_list(i) ) )
+            case( "rrm" )
+              ixrm_cl = irrm_cl
+            case( "Nrm" )
+              ixrm_cl  = iNrm_cl
+            case( "ricem" )
+              ixrm_cl = iricem_cl
+            case( "rsnowm" )
+              ixrm_cl = irsnowm_cl
+            case( "rgraupelm" )
+              ixrm_cl = irgraupelm_cl
+            case default
+              ixrm_cl  = 0
+            end select
 
-          ! Handle over-evaporation of rrm and adjust rt and theta-l hydrometeor
-          ! tendency arrays accordingly.
-          do k = 1, gr%nnzp, 1
-            if ( rrm(k) < 0.0 ) then
+           if ( lstats_samp ) then
+            call stat_begin_update
+     .           ( ixrm_bt, real(hydromet(:,i) / dt), zt )
+           end if
+        
+#endif /*STATS*/
 
+            call microphys_lhs
+     .           ( trim( hydromet_list(i) ), lsed, dt, Kr, nu_r, wmt,
+     .             hydromet_vel(:,i), hydromet(:,i), lhs )
 
-              call adj_microphys_tndcy( rrm_tndcy, wmt, Vrr, Kr, nu_r, 
-     .                                  dt, k, .true., "rrm",
-     .                                  rrm, overevap_rate )
+            call microphys_solve
+     .           ( trim( hydromet_list(i) ), dt, lhs, hydromet_mc(:,i), 
+     .             hydromet(:,i), err_code )
+
+            if ( i == iirrm ) then
+            ! Handle over-evaporation of rrm and adjust rt and theta-l 
+            ! hydrometeor tendency arrays accordingly.
+              do k = 1, gr%nnzp, 1
+                if ( hydromet(k,i) < 0.0 ) then
+
+                call adj_microphys_tndcy
+     .               ( hydromet_mc(:,i), wmt, hydromet_vel(:,i), 
+     .                 Kr, nu_r, dt, k, .true., "rrm",
+     .                 hydromet(:,i), overevap_rate )
 
               ! overevap_rate is defined as positive.
               ! It is a correction factor.
@@ -379,274 +502,83 @@
               thlm_mc(k) = thlm_mc(k)
      .                  + ( Lv / ( Cp*exner(k) ) ) * overevap_rate
 
-            ! Moved from adj_microphys_tndcy  
+              ! Moved from adj_microphys_tndcy  
 #ifdef STATS
-              if( lstats_samp 
-!     .             .and. irrm_cond_adj > 0 
-     .          ) then
+              if ( lstats_samp ) then
                 call stat_update_var_pt( irrm_cond_adj, k, 
-     .                                   overevap_rate, zt)
-!                zt%x(k,irrm_cond_adj) = zt%x(k,irrm_cond_adj) 
-!     .            + overevap_rate
+     .                                   overevap_rate, zt )
               end if
 
-            else
+              else
 #endif /*STATS*/
 
-!            end if ! rrm(k) < 0
-
 #ifdef STATS
-  
-            if ( lstats_samp
-!     .           .and. irrm_cond_adj > 0 
-     .         ) then
-              call stat_update_var_pt( irrm_cond_adj, k, 
-     .                                0.0, zt )
-!              zt%n(k,irrm_cond_adj) = zt%n(k,irrm_cond_adj) + 1
-            end if
+              if ( lstats_samp ) then
+                call stat_update_var_pt( irrm_cond_adj, k, 
+     .                                  0.0, zt )
+              end if
              ! Joshua Faschinj December 2007
 #endif /*STATS*/
 
-            end if 
-          end do ! k=1..gr%nnzp
+              end if 
+            end do ! k=1..gr%nnzp
 
-#ifdef STATS
-          ! Store computed value before clipping
-          if( lstats_samp ) then
-            call stat_begin_update( irrm_cl, real(rrm / dt), zt )
-          endif
-#endif
+            else if ( i == iiNrm ) then
+            ! Handle over-evaporation similar to rrm.  However, in the case 
+            ! of Nrm there is no effect on rtm or on thlm.  
+            ! Brian Griffin.  April 14, 2007.
+              do k = 1, gr%nnzp, 1
+                if ( hydromet(k,i) < 0.0 ) then
 
-          ! Value of rain water mixing ratio cannot fall below 0, 
-          ! so we clip accordingly
-          where ( rrm < 0.0 ) rrm = 0.0
-
-#ifdef STATS
-          if ( lstats_samp ) then
-            call stat_end_update( irrm_cl, real(rrm / dt), zt )
-          end if
-#endif
-
-#ifdef STATS
-          ! Finalize time tendency
-          if ( lstats_samp ) then
-            call stat_end_update( irrm_bt, real(rrm / dt), zt )
-          endif
-#endif
-
-          !---------------------------------------------------------------------
-          ! Rain drop number concentration (Nrm)
-          !---------------------------------------------------------------------
-
-          call microphys_lhs
-     .         ( "Nrm", .true., dt, Kr, nu_r, wmt, VNr, Nrm, lhs )
-
-          call microphys_solve
-     .         ( "Nrm", dt, lhs, Nrm_tndcy, Nrm, err_code )
-
-
-          ! Handle over-evaporation similar to rrm.  However, in the case of Nrm
-          ! there is no effect on rtm or on thlm.  Brian Griffin.  April 14, 2007.
-          do k = 1, gr%nnzp, 1
-            if ( Nrm(k) < 0.0 ) then
-
-              call adj_microphys_tndcy( Nrm_tndcy, wmt, VNr, Kr, nu_r,
-     .                                  dt, k, .true., "Nrm",
-     .                                  Nrm, overevap_rate )
+                  call adj_microphys_tndcy
+     .               ( hydromet_mc(:,i), wmt, hydromet_vel(:,i), 
+     .                 Kr, nu_r, dt, k, .true., "Nrm",
+     .                 hydromet(:,i), overevap_rate )
 
               ! Moved from adj_microphys_tndcy
 #ifdef STATS
               call stat_update_var_pt( iNrm_cond_adj, k, 
-     .                                 overevap_rate,zt )
-!              if ( lstats_samp .and. iNrm_cond_adj > 0 ) then
-!                   zt%x(k,iNrm_cond_adj) = zt%x(k,iNrm_cond_adj) 
-!     .                 + overevap_rate
-!              end if
+     .                                 overevap_rate, zt )
 
 #endif /*STATS*/
-
-!            end if
 
 #ifdef STATS
-            else
-              if( lstats_samp ) then      
-               call stat_update_var_pt( iNrm_cond_adj,k, 0.0, zt )
-              endif
-!             if ( lstats_samp .and. iNrm_cond_adj > 0 ) then
-!               zt%n(k,iNrm_cond_adj) = zt%n(k,iNrm_cond_adj) + 1
-!             end if
+               else
+                 if( lstats_samp ) then      
+                   call stat_update_var_pt( iNrm_cond_adj,k, 0.0, zt )
+                 end if
 #endif /*STATS*/
-            endif
+              end if ! ! Nrm(k) < 0
               ! Joshua Fasching December 2007
-          end do
+            end do
 
+            end if
 #ifdef STATS
-          ! Store computed value before clipping
           if ( lstats_samp ) then
-            call stat_begin_update( iNrm_cl, real(Nrm / dt), zt )
-          endif
-#endif
-
-          ! Value of rain water mixing ratio cannot fall below 0, 
-          ! so we clip accordingly
-          where ( Nrm < 0.0 ) Nrm = 0.0
-
-#ifdef STATS
-
-          if ( lstats_samp ) then
-            call stat_end_update( iNrm_cl, real(Nrm / dt), zt )
-          endif
-
-#endif
-
-#ifdef STATS
-          ! Finalize time tendency
-          if ( lstats_samp ) then
-            call stat_end_update( iNrm_bt, real(Nrm / dt), zt )
-          endif
-
-#endif
-        end if ! kk_rain or lcoamps_micro
-
-        ! Compute rsnowm, rgraupelm, and ricem for COAMPS microphysics only.
-
-        if ( lcoamps_micro ) then
-
-          ! --------------------------------------------------------------------
-          ! Snow mixing ratio (rsnowm)
-          ! --------------------------------------------------------------------
-
-          call microphys_lhs
-     .         ( "rsnowm", .true., dt, Kr, nu_r, wmt, Vsnow, 
-     .           rsnowm, lhs )
-
-          call microphys_solve
-     .         ( "rsnowm", dt, lhs, rsnowm_tndcy, rsnowm, err_code )
-
-          ! Both sublimation and/or melting can contribute to the depletion of
-          ! any frozen water particle.  In addition, any type of frozen water
-          ! particle can be depleted by turning into another type of frozen
-          ! water particle.  For example, pristine ice can turn into graupel
-          ! through heavy riming.  It can also turn into snow after combining
-          ! with more ice particles so it is heavy enough to fall.
-          !
-          ! In any place where a negative result is obtained from excess 
-          ! depletion over the course of a timestep, it isn't automatically 
-          ! clear which process is the most responsible.  Therefore, any
-          ! negative result will be clipped and the negative tendency will be
-          ! stored in the clipping array for statistical purposes.
-
-#ifdef STATS
-          ! Store computed value before clipping
-          if ( lstats_samp ) then
-            call stat_begin_update( irsnowm_cl, real(rsnowm / dt), zt )
-          endif
-#endif
-
-          ! Value of snow mixing ratio cannot fall below 0, 
-          ! so we clip accordingly
-          where ( rsnowm < 0.0 ) rsnowm = 0.0
+            call stat_begin_update
+     .           ( ixrm_cl, real( hydromet(:,i) / dt ), zt )
+          end if
+#endif /*STATS*/
+          ! Clip to zero
+          where ( hydromet(:,i) < 0.0 ) hydromet(:,i) = 0.0
 
 #ifdef STATS
           if ( lstats_samp ) then
-            call stat_end_update( irsnowm_cl, real(rsnowm / dt), zt )
-          endif
-#endif
 
-#ifdef STATS
-          ! Finalize time tendency
-          if ( lstats_samp ) then
-            call stat_end_update( irsnowm_bt, real(rsnowm / dt), zt )
-          endif
-          
-#endif
+            ! Effects of clipping
+            call stat_end_update
+     .           ( ixrm_cl, real( hydromet(:,i) / dt ), zt )
 
-          ! --------------------------------------------------------------------
-          ! Graupel mixing ratio (rgraupelm)
-          ! --------------------------------------------------------------------
+           ! Total time tendency
+            call stat_end_update
+     .           ( ixrm_bt, real(hydromet(:,i) / dt), zt )
 
-          call microphys_lhs
-     .         ( "rgraupelm", .true., dt, Kr, nu_r, wmt, Vgraupel, 
-     .            rgraupelm, lhs )
+          end if ! lstats_samp
+#endif /*STATS*/
 
-          call microphys_solve
-     .         ( "rgraupelm", dt, lhs, rgraupelm_tndcy,
-     .           rgraupelm, err_code )
+          end do ! i=1..hydromet_dim
+        end if ! hydromet_dim > 0
 
-          ! Handled the same as rsnowm, as listed above.
-
-#ifdef STATS
-          ! Store computed value before clipping
-          if ( lstats_samp ) then
-            call stat_begin_update( irgraupelm_cl, 
-     .                              real(rgraupelm / dt), zt )
-          endif
-
-#endif
-
-          ! Value of graupel mixing ratio cannot fall below 0, 
-          ! so we clip accordingly
-          where ( rgraupelm < 0.0 ) rgraupelm = 0.0
-
-#ifdef STATS
-          if ( lstats_samp ) then
-            call stat_end_update( irgraupelm_cl, 
-     .                            real(rgraupelm / dt), zt )
-          endif
-
-#endif
-
-#ifdef STATS
-          ! Finalize time tendency
-          if ( lstats_samp ) then
-            call stat_end_update( irgraupelm_bt,
-     .                               real(rgraupelm / dt), zt )
-          endif
-
-#endif
-
-          ! --------------------------------------------------------------------
-          ! Pristine ice mixing ratio (ricem)
-          ! --------------------------------------------------------------------
-
-          ! Note: Ice sediments in new COAMPS
-
-          call microphys_lhs
-     .         ( "ricem", .true., dt, Kr, nu_r, wmt, Vice, ricem, lhs )
-
-          call microphys_solve
-     .         ( "ricem", dt, lhs, ricem_tndcy, ricem, err_code )
-
-          ! Handled the same as rsnowm and rgraupelm, as listed above.
-
-#ifdef STATS
-          ! Store computed value before clipping
-
-          if ( lstats_samp ) then
-            call stat_begin_update( iricem_cl, real(ricem / dt), zt )
-          endif
-
-#endif
-
-          ! Value of ice mixing ratio cannot fall below 0, 
-          ! so we clip accordingly
-          where ( ricem < 0.0 ) ricem = 0.0
-
-#ifdef STATS
-          if ( lstats_samp ) then
-            call stat_end_update( iricem_cl, real(ricem / dt), zt )
-          endif
-#endif
-
-#ifdef STATS
-          ! Finalize time tendency
-          if ( lstats_samp ) then
-            call stat_end_update( iricem_bt, real(ricem / dt), zt )
-          endif
-          
-#endif
-
-        end if ! lcoamps_micro
 
         ! Call the ice diffusion scheme
         if ( licedfs ) then
@@ -656,22 +588,32 @@
 
 #ifdef STATS
         if ( lstats_samp ) then
-
           call stat_update_var( iNcm, Ncm, zt )
 
           call stat_update_var( iNcnm, Ncnm, zt )
 
           call stat_update_var( iNim, Nim, zt )
 
-          call stat_update_var( irrm, hydromet(:,1), zt )
+          if ( iirrm > 0 ) then
+            call stat_update_var( irrm, hydromet(:,iirrm), zt )
+          end if
 
-          call stat_update_var( iNrm, hydromet(:,2), zt )
+          if ( iiNrm > 0 ) then
+            call stat_update_var( iNrm, hydromet(:,iiNrm), zt )
+          end if
           
-          call stat_update_var( irsnowm, hydromet(:,3), zt )
+          if ( iirsnowm > 0 ) then
+            call stat_update_var( irsnowm, hydromet(:,iirsnowm), zt )
+          end if
 
-          call stat_update_var( iricem, hydromet(:,4), zt )
+          if ( iiricem > 0 ) then
+            call stat_update_var( iricem, hydromet(:,iiricem), zt )
+          end if
 
-          call stat_update_var( irgraupelm, hydromet(:,5), zt )
+          if ( iirgraupelm > 0 ) then
+            call stat_update_var( irgraupelm, 
+     .                            hydromet(:,iirgraupelm), zt )
+          end if
 
           call stat_update_var( ithlm_mc, thlm_mc(:), zt )
 
@@ -691,9 +633,10 @@
           ! The absolute value of Vrr is taken because rainfall rate
           ! is a scalar quantity, and is therefore positive.
           call stat_update_var( irain_rate, 
-     .        ( rrm * zm2zt( abs( Vrr ) ) ) * ( rhot / rho_lw )
+     .       ( hydromet(:,iirrm) 
+     .         * zm2zt( abs( hydromet_vel(:,iirrm) ) ) )
+     .          * ( rhot / rho_lw )
      .        * real( sec_per_day * 1000.0 ), zt )
-
 
           ! Precipitation Flux (W/m^2) should be defined on
           ! momentum levels.  -Brian
@@ -703,22 +646,26 @@
           ! Precipitation Flux as a positive downward quantity.  Thus, the
           ! absolute value of vrr is taken.
           call stat_update_var( iFprec, 
-     .      ( zt2zm( rrm ) * abs( Vrr ) ) 
+     .      ( zt2zm( hydromet(:,iirrm) ) 
+     .        * abs( hydromet_vel(:,iirrm) ) )
      .      * ( rhom / rho_lw ) * rho_lw * Lv, zm )
 
           ! Store values of surface fluxes for statistics
           ! See notes above.
           call stat_update_var_pt( irain, 1, 
-     .        ( rrm(2) * abs( zm2zt( Vrr, 2 ) ) ) * ( rhot(2) / rho_lw )
+     .        ( hydromet(2,iirrm)
+     .          * abs( zm2zt( hydromet_vel(:,iirrm), 2 ) ) )
+     .            * ( rhot(2) / rho_lw )
      .        * real( sec_per_day * 1000.0 ), sfc )
 
           call stat_update_var_pt( ipflux, 1,
-     .       ( zt2zm( rrm, 1 )* abs( Vrr(1) ) ) * ( rhom(1) / rho_lw ) 
+     .       ( zt2zm( hydromet(:,iirrm), 1 ) 
+     .         * abs( hydromet_vel(1,iirrm) ) ) * ( rhom(1) / rho_lw ) 
      .         * rho_lw * Lv, sfc )
 
           ! Also store the value of surface rain water mixing ratio.
           call stat_update_var_pt( irrm_sfc, 1, 
-     .                             ( zt2zm( rrm, 1 ) ), sfc )
+     .           ( zt2zm( hydromet(:,iirrm), 1 ) ), sfc )
 
         end if ! lstats_samp
 #endif /*STATS*/
@@ -1037,48 +984,36 @@
 
 #ifdef STATS
         integer ::
-     .  ixrm_bt, ! Change in xrm over time stats toggle
      .  ixrm_ma, ! Mean advection budget stats toggle
      .  ixrm_sd, ! Sedimentation budget stats toggle
      .  ixrm_dff ! Diffusion budget stats toggle
 
         select case( solve_type )
         case( "rrm" )
-          ixrm_bt  = irrm_bt 
           ixrm_ma  = irrm_ma
           ixrm_sd  = irrm_sd
           ixrm_dff = irrm_dff
         case( "Nrm" )
-          ixrm_bt  = iNrm_bt 
           ixrm_ma  = iNrm_ma
           ixrm_sd  = iNrm_sd
           ixrm_dff = iNrm_dff
         case( "ricem" )
-          ixrm_bt  = iricem_bt 
           ixrm_ma  = iricem_ma
           ixrm_sd  = iricem_sd
           ixrm_dff = iricem_dff
         case( "rsnowm" )
-          ixrm_bt  = irsnowm_bt 
           ixrm_ma  = irsnowm_ma
           ixrm_sd  = irsnowm_sd
           ixrm_dff = irsnowm_dff
         case( "rgraupelm" )
-          ixrm_bt  = irgraupelm_bt 
           ixrm_ma  = irgraupelm_ma
           ixrm_sd  = irgraupelm_sd
           ixrm_dff = irgraupelm_dff
         case default
-          ixrm_bt  = 0
           ixrm_ma  = 0
           ixrm_sd  = 0
           ixrm_dff = 0
         end select
-
-        if ( lstats_samp ) then
-          call stat_begin_update( ixrm_bt, real(xrm / dt), zt )
-        endif
-        
 #endif /*STATS*/
 
         ! Reset LHS Matrix for current timestep.

@@ -1,7 +1,5 @@
-#define SCLR_THETA 1
-#define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: mpace_b.F,v 1.18 2008-06-30 19:28:05 faschinj Exp $
+! $Id: mpace_b.F,v 1.19 2008-07-08 04:44:10 dschanen Exp $
         module mpace_b
 
 !       Description:
@@ -20,7 +18,7 @@
         subroutine mpace_b_tndcy
      .  ( time, time_initial, dt, rlat, thlm,
      .    exner, rhot, rtm, p, thvm, rcm,
-     .    wmt, wmm, theta_tndcy, rt_tndcy,
+     .    wmt, wmm, thlm_forcing, rtm_forcing,
      .    Ncnm, Ncm, Frad, radht,
      .    sclrm_forcing )
 
@@ -34,7 +32,9 @@
 !          Liou, Wallace and Hobbs, Shettle and Weinman
 !-----------------------------------------------------------------------
 
-        use constants, only: sclr_dim, Rd, Cp, Lv, p0, rc_tol ! Variable(s)
+        use constants, only: Rd, Cp, Lv, p0, rc_tol ! Variable(s)
+
+        use parameters, only: sclr_dim ! Variable(s)
 
         use model_flags, only: lbugsrad, lcoamps_micro, kk_rain ! Variable(s)
 
@@ -45,6 +45,9 @@
         use stats_precision, only: time_precision ! Variable(s)
 
         use rad_lwsw_mod, only: rad_lwsw ! Variable(s)
+
+        use array_index, only: iisclr_rt, iisclr_thl
+
 #ifdef STATS
         use stats_type, only: stat_update_var
 
@@ -115,8 +118,8 @@
         real, dimension(gr%nnzp), intent(out) :: 
      .  wmt,         ! Large-scale vertical motion on t grid   [m/s]
      .  wmm,         ! Large-scale vertical motion on m grid   [m/s]
-     .  theta_tndcy, ! Large-scale thlm tendency               [K/s]
-     .  rt_tndcy,    ! Large-scale rtm tendency                [kg/kg/s]
+     .  thlm_forcing, ! Large-scale thlm tendency               [K/s]
+     .  rtm_forcing,    ! Large-scale rtm tendency                [kg/kg/s]
      .  Frad,        ! Total radiative flux                    [W/m^2]
      .  radht        ! dT/dt, then d Theta/dt, due to rad.     [K/s]
 
@@ -208,9 +211,9 @@
         ! Compute large-scale tendencies
         do i=1,gr%nnzp
          t_tendency = min( -4.,-15.*(1.-((psfc-p(i))/21818.)) ) ! K/day
-         theta_tndcy(i) = (t_tendency * ((psfc/p(i)) ** (Rd/Cp))) 
+         thlm_forcing(i) = (t_tendency * ((psfc/p(i)) ** (Rd/Cp))) 
      .                    / 86400. ! K/s
-         rt_tndcy(i)  = min( 0.164,-3*(1-((psfc-p(i))/15171.)) ) / 
+         rtm_forcing(i)  = min( 0.164,-3*(1-((psfc-p(i))/15171.)) ) / 
      .                 1000. / 86400. ! g/kg/day -> kg/kg/s
         end do
 
@@ -291,7 +294,7 @@
           radht_SW(1:gr%nnzp) = radht_SW_theta(1:gr%nnzp)
 
           do k = 1, gr%nnzp
-            theta_tndcy(k) = theta_tndcy(k) + radht_theta(k)
+            thlm_forcing(k) = thlm_forcing(k) + radht_theta(k)
           end do
 
         end if ! ~ lbugsrad
@@ -331,11 +334,9 @@
         end if
 
 
-        ! Set scalar tendencies
-        if ( present( sclrm_forcing ) ) then
-          sclrm_forcing(:,SCLR_THETA) = theta_tndcy
-          sclrm_forcing(:,SCLR_RT)    = rt_tndcy
-        end if
+        ! Test scalars with thetal and rt if desired
+        if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
+        if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
         return
         end subroutine mpace_b_tndcy
@@ -354,12 +355,16 @@
 !          mpace_b specification, arm.gov
 !-----------------------------------------------------------------------
 
-        use constants, only: sclr_dim, Cp, Lv ! Variable(s)
+        use constants, only: Cp, Lv ! Variable(s)
+
+        use parameters, only: sclr_dim ! Variable(s)
+
+        use array_index, only: iisclr_rt, iisclr_thl
 
         implicit none
 
         ! External
-        intrinsic :: max, sqrt, present
+        intrinsic :: max, sqrt
 
         ! Parameter Constants
         real, parameter ::
@@ -385,7 +390,7 @@
      .  ustar        ! surface friction velocity [m/s]
 
         ! Output Variables (optional) 
-        real, dimension(sclr_dim), optional, intent(out) ::
+        real, dimension(sclr_dim), intent(out) ::
      .  wpsclrp_sfc,   ! Passive scalar surface flux      [units m/s]
      .  wpedsclrp_sfc  ! Passive eddy-scalar surface flux [units m/s]
 
@@ -407,15 +412,12 @@
         upwp_sfc = -um_sfc * ustar*ustar / ubar
         vpwp_sfc = -vm_sfc * ustar*ustar / ubar
 
-        ! Compute passive scalar fluxes (set to rt and theta for now)
-        if ( present( wpsclrp_sfc ) ) then
-          wpsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-          wpsclrp_sfc(SCLR_RT)    = wprtp_sfc
-        end if
-        if ( present( wpedsclrp_sfc ) ) then
-          wpedsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-          wpedsclrp_sfc(SCLR_RT)    = wprtp_sfc
-        end if
+        ! Let passive scalars be equal to rt and theta_l for now
+        if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
+        if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
+
+        if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
+        if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
         return
         end subroutine mpace_b_sfclyr

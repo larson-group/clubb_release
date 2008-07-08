@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm.F,v 1.17 2008-07-07 21:55:38 faschinj Exp $
+! $Id: arm.F,v 1.18 2008-07-08 04:44:09 dschanen Exp $
         module arm
 
 !       Description:
@@ -18,7 +18,7 @@
 
 !----------------------------------------------------------------------
         subroutine arm_tndcy( time, thlm_forcing, radht, rtm_forcing,
-     .                        sclr_tndcy )
+     .                        sclrm_forcing )
 !       Description:
 !       Subroutine to set theta and water tendencies for ARM case
 
@@ -28,11 +28,14 @@
 
         use grid_class, only: gr ! Variable(s)
 
-        use constants, only: sclr_dim ! Variable(s)
+        use parameters, only: sclr_dim ! Variable(s)
 
         use model_flags, only: lbugsrad ! Variable(s)
 
         use stats_precision, only: time_precision ! Variable(s)
+
+        use array_index, only: 
+     .      iisclr_thl, iisclr_rt ! Variable(s)
 
 #ifdef STATS
         use stats_type, only: stat_update_var ! Procedure(s)
@@ -62,8 +65,8 @@
      .  rtm_forcing   ! Total water mixing ratio tendency           [kg/kg/s]
 
         ! Output (optional) Variables
-        real, optional, intent(out), dimension(gr%nnzp,sclr_dim) :: 
-     .  sclr_tndcy ! Passive scalar tendency [units vary]
+        real, intent(out), dimension(gr%nnzp,sclr_dim) :: 
+     .  sclrm_forcing ! Passive scalar tendency [units vary]
 
         ! Local variables
         integer :: k, i1, i2 ! Loop indices
@@ -145,10 +148,9 @@
         end if
 #endif
 
-        if ( present( sclr_tndcy ) ) then
-          sclr_tndcy(1:gr%nnzp,SCLR_THETA) = thlm_forcing(1:gr%nnzp)
-          sclr_tndcy(1:gr%nnzp,SCLR_RT)    = rtm_forcing(1:gr%nnzp)
-        end if
+        ! Test scalars with thetal and rt if desired
+        if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
+        if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
         return
         end subroutine arm_tndcy
@@ -163,15 +165,19 @@
 !       heat and moisture according to GCSS ARM specifications
 !----------------------------------------------------------------------
 
-        use constants, only: Cp, Lv, grav, sclr_dim ! Variable(s)
+        use constants, only: Cp, Lv, grav ! Variable(s)
+
+        use parameters, only: sclr_dim ! Variable(s)
 
         use stats_precision, only: time_precision ! Variable(s)
 
         use diag_ustar_mod, only: diag_ustar ! Variable(s)
+
+        use array_index, only: iisclr_rt, iisclr_thl
         
         implicit none
 
-        intrinsic :: max, sqrt, present
+        intrinsic :: max, sqrt
 
         ! Parameter Constants
         real, parameter ::
@@ -243,15 +249,11 @@
         wprtp_sfc  = moisture_flx2
 
         ! Let passive scalars be equal to rt and theta_l for now
-        if ( present( wpsclrp_sfc ) ) then
-          wpsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-          wpsclrp_sfc(SCLR_RT)    = wprtp_sfc
-        end if
+        if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
+        if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
-        if ( present( wpedsclrp_sfc ) ) then
-          wpedsclrp_sfc(SCLR_THETA) = wpthlp_sfc
-          wpedsclrp_sfc(SCLR_RT)    = wprtp_sfc
-        end if
+        if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
+        if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
         return
         end subroutine arm_sfclyr
