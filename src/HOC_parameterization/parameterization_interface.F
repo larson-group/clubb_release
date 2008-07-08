@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.104 2008-07-08 04:44:25 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.105 2008-07-08 15:00:17 faschinj Exp $
 !-----------------------------------------------------------------------
         module hoc_parameterization_interface
 
@@ -909,8 +909,9 @@
      .    ( "vm", vm, wmt, fcor, um, ug, implemented, ! intent(in)
      .      vmt )                                     ! intent(out)
 
-       call compute_um_edsclrm( "vm", vpwp(1), vmt,
-     .                          Khm, dt, vm, vpwp, err_code )
+       call compute_um_edsclrm( "vm", vpwp(1), vmt, Khm, dt, ! intent(in)
+     .                          vm,                          ! intent(inout)
+     .                          vpwp, err_code )             ! intent(out)
 
        vm(1)       = ( ( vm(3)-vm(2) )/( gr%zt(3)-gr%zt(2) ) )
      .              * ( gr%zt(1)-gr%zt(2) ) + vm(2)
