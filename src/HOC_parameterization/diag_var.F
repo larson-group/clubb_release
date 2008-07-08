@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F,v 1.64 2008-07-08 04:44:24 dschanen Exp $
+! $Id: diag_var.F,v 1.65 2008-07-08 04:49:11 dschanen Exp $
 !===============================================================================
       module diagnose_variances
 
@@ -34,8 +34,8 @@
      .                       rtp2, thlp2, rtpthlp,
      .                       up2, vp2, 
      .                       err_code,
-     .                       sclrm, wpsclrp,                        ! optional
-     .                       sclrp2, sclrprtp, sclrpthlp )          ! optional
+     .                       sclrm, wpsclrp,
+     .                       sclrp2, sclrprtp, sclrpthlp )
 !       Description:
 !       Subprogram to diagnose variances by solving steady-state equations
 
@@ -136,12 +136,12 @@
 
         integer, intent(out) :: err_code
 
-        ! Passive scalar input (optional)
-        real, optional, intent(in), dimension(gr%nnzp, sclr_dim) :: 
+        ! Passive scalar input 
+        real, intent(in), dimension(gr%nnzp, sclr_dim) :: 
      .  sclrm, wpsclrp
 
-        ! Passive scalar output (optional)
-        real, optional, intent(out), dimension(gr%nnzp, sclr_dim) :: 
+        ! Passive scalar output
+        real, intent(out), dimension(gr%nnzp, sclr_dim) :: 
      .  sclrp2, sclrprtp, sclrpthlp
 
         ! Local Variables

@@ -1,4 +1,4 @@
-! $Id: closure_new.F,v 1.26 2008-07-08 04:44:24 dschanen Exp $
+! $Id: closure_new.F,v 1.27 2008-07-08 04:49:11 dschanen Exp $
         module pdf_closure
 
         implicit none
@@ -19,10 +19,10 @@
      .               thlpthvp, wprcp, wp2rcp, rtprcp, thlprcp,
      .               rcp2, pdf_parms, crt1, crt2, cthl1, cthl2,
      .               err_code,
-     .               sclrm, wpsclrp,                    ! optional
-     .               sclrp2, sclrprtp, sclrpthlp,        ! "    "
-     .               wpsclrprtp, wpsclrp2, sclrpthvp,   ! "    "
-     .               wpsclrpthlp, sclrprcp, wp2sclrp )  ! "    "
+     .               sclrm, wpsclrp,
+     .               sclrp2, sclrprtp, sclrpthlp,
+     .               wpsclrprtp, wpsclrp2, sclrpthvp,
+     .               wpsclrpthlp, sclrprcp, wp2sclrp )
 
 !       Description:
 !       Subroutine that computes pdf parameters analytically.
@@ -100,7 +100,7 @@
      .  rtpthlp ! r_t' th_l'                    [(K kg)/kg]
 
         ! Input (Optional mixing scheme variables)
-        real, optional,  dimension(sclr_dim), intent(in) :: 
+        real, dimension(sclr_dim), intent(in) :: 
      .  sclrm,     ! Mean passive scalar        [units vary]
      .  wpsclrp,   ! w' sclr'                   [units vary]
      .  sclrp2,    ! sclr'^2                    [units vary]
@@ -138,7 +138,7 @@
 
         ! Output (Optional passive scalar variables)
 
-        real, optional, intent(out), dimension(sclr_dim) :: 
+        real, intent(out), dimension(sclr_dim) :: 
      .  sclrpthvp,
      .  sclrprcp,
      .  wpsclrp2,
@@ -206,9 +206,7 @@
 
 !------------------------ Code begins ----------------------------------
 
-        ! Check whether the optional scalars are present.
-        ! Rather than test this on an equation to variable basis
-        ! as in mixing, this uses an all or nothing test.
+        ! Check whether the passive scalars are present.
 
         if ( sclr_dim > 0 ) then
           scalar_calc = .true.
