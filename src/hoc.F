@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.202 2008-07-08 04:44:03 dschanen Exp $
+! $Id: hoc.F,v 1.203 2008-07-08 04:50:27 dschanen Exp $
 
         module hoc
 
@@ -131,7 +131,7 @@
      .      thlp2, rtpthlp, Scm, cf
 
         use prognostic_variables, only: 
-     .      sclrm, edsclrm, wpsclrp_sfc,
+     .      sclrm, edsclrm, wpsclrp_sfc, ! Variables
      .      wpedsclrp_sfc, sclrm_forcing, wpsclrp
 
         use numerical_check, only: invalid_model_arrays ! Procedure(s)
@@ -156,9 +156,9 @@
         
         use stats_precision, only: time_precision ! Variable(s)
 
-        use array_index, only: iisclr_rt, iisclr_thl, iiCO2
+        use array_index, only: iisclr_rt, iisclr_thl, iiCO2 ! Variables
 
-        use microphys_driver, only: init_microphys
+        use microphys_driver, only: init_microphys ! Subroutine
 
 #ifdef STATS
         use stats_variables, only: lstats_last ! Variable(s
@@ -665,10 +665,11 @@
      .  taum, taut,     ! Dissipation time              [s]
      .  thvm            ! Virtual potential temperature [K]
 
+        ! Input/Output
         real, dimension(gr%nnzp,hydromet_dim), intent(inout) :: 
      .  hydromet        ! Hydrometeor types             [units vary]
 
-        ! Output (optional)
+        ! Output
         real, dimension(gr%nnzp,sclr_dim), intent(out) :: 
      .  sclrm,  ! Standard passive scalar [units vary]
      .  edsclrm ! Eddy diffusivity passive scalar [units vary]
@@ -1179,7 +1180,7 @@
      .  upwp_sfc,       ! u'w' at surface           [m^2/s^2] 
      .  vpwp_sfc        ! v'w' at surface           [m^2/s^2]
         
-        ! Output (optional)
+        ! Input/Output
         real, dimension(gr%nnzp,sclr_dim), intent(inout) :: 
      .  sclrm,  ! Standard passive scalar [units vary]
      .  edsclrm ! Eddy diffusivity passive scalar [units vary]
