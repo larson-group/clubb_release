@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-!$Id: atex.F,v 1.20 2008-07-08 04:44:09 dschanen Exp $
+!$Id: atex.F,v 1.21 2008-07-08 17:37:52 faschinj Exp $
         module atex
 
 !       Description:
@@ -43,7 +43,7 @@
         use error_code, only: clubb_rtm_level_not_found ! Variable(s)
 
         use array_index, only: 
-     .      iisclr_thl, iisclr_rt, iiCO2 ! Variable(s)
+     .      iisclr_thl, iisclr_rt ! Variable(s)
 
 #ifdef STATS
         use stats_type, only: stat_update_var ! Procedure(s)

@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf02.F,v 1.24 2008-07-08 04:44:10 dschanen Exp $
+! $Id: dycoms2_rf02.F,v 1.25 2008-07-08 17:39:19 faschinj Exp $
         module dycoms2_rf02
 
 !       Description:
@@ -45,7 +45,7 @@
         use error_code, only: clubb_rtm_level_not_found ! Variable(s)
 
         use array_index, only: 
-     .      iisclr_thl, iisclr_rt, iiCO2 ! Variable(s)
+     .      iisclr_thl, iisclr_rt ! Variable(s)
 
 #ifdef STATS
         use stats_type, only: stat_update_var, stat_update_var_pt ! Procedure(s)
