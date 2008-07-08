@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.203 2008-07-08 04:50:27 dschanen Exp $
+! $Id: hoc.F,v 1.204 2008-07-08 17:36:00 faschinj Exp $
 
         module hoc
 
@@ -625,7 +625,7 @@
 
         use error_code, only: clubb_no_error ! Variable(s)
 
-        use array_index, only: iisclr_thl, iisclr_rt
+        use array_index, only: iisclr_thl ! Variable(s)
         
         ! Joshua Fasching
         ! March 2008
@@ -1184,9 +1184,6 @@
         real, dimension(gr%nnzp,sclr_dim), intent(inout) :: 
      .  sclrm,  ! Standard passive scalar [units vary]
      .  edsclrm ! Eddy diffusivity passive scalar [units vary]
-
-        ! Local Variables
-        real, dimension(gr%nnzp) :: tmp1
        
         integer :: timestep
 
@@ -1341,8 +1338,9 @@
 
         use error_code, only: lapack_error, ! Procedure(s)
      .                        clubb_at_debug_level
+
         use array_index, only:
-     .      iirrm, iiNrm, iirsnowm, iiricem, iirgraupelm,
+     .      iirsnowm, iiricem,
      .      iisclr_rt, iisclr_thl
        
         ! Case specific modules 
