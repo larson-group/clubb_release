@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F,v 1.19 2008-07-08 15:02:33 faschinj Exp $
+! $Id: microphys_driver.F,v 1.20 2008-07-08 17:36:22 faschinj Exp $
         module microphys_driver
 
 !       Description:
@@ -913,33 +913,25 @@
         
         use mean_adv, only: 
      .      term_ma_zt_lhs ! Procedure(s)
-#ifdef STATS
-        use stats_type, only: stat_begin_update ! Procedure(s)
-      
+#ifdef STATS 
         use constants, only: sec_per_day ! Variable(s)
       
         use stats_variables, only:
-     .      irrm_bt,  ! Variable(s)
-     .      irrm_ma,
+     .      irrm_ma,  ! Variable(s)
      .      irrm_sd,
      .      irrm_dff,
-     .      iNrm_bt, 
      .      iNrm_ma,
      .      iNrm_sd,
      .      iNrm_dff,
-     .      iricem_bt, 
      .      iricem_ma,
      .      iricem_sd,
      .      iricem_dff,
-     .      irsnowm_bt, 
      .      irsnowm_ma,
      .      irsnowm_sd,
      .      irsnowm_dff,
-     .      irgraupelm_bt, 
      .      irgraupelm_ma,
      .      irgraupelm_sd,
      .      irgraupelm_dff,
-     .      zt,
      .      ztscr01,
      .      ztscr02,
      .      ztscr03,

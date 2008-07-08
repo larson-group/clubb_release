@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: bomex.F,v 1.11 2008-07-08 04:44:09 dschanen Exp $
+! $Id: bomex.F,v 1.12 2008-07-08 17:38:38 faschinj Exp $
         module bomex
 
 !       Description:
@@ -36,7 +36,7 @@
         use stats_precision, only: time_precision ! Variable(s)
 
         use array_index, only: 
-     .      iisclr_thl, iisclr_rt, iiCO2 ! Variable(s)
+     .      iisclr_thl, iisclr_rt ! Variable(s)
 
         implicit none
 
