@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.105 2008-07-08 15:00:17 faschinj Exp $
+! $Id: parameterization_interface.F,v 1.106 2008-07-08 17:42:04 faschinj Exp $
 !-----------------------------------------------------------------------
         module hoc_parameterization_interface
 
@@ -555,8 +555,8 @@
        if ( LH_on ) then
          i_rmd = mod( iter-1, sequence_length )
          if ( i_rmd == 0) then
-           call permute_height_time( gr%nnzp, nt_repeat, d_variables+1, ! intent(in)
-     .                               p_height_time )                    ! intent(out)
+           call permute_height_time( gr%nnzp, nt_repeat, d_variables+1,! intent(in)
+     .                               p_height_time )                   ! intent(out)
          end if
        end if
 !    End Latin hypercube sample generation
@@ -577,19 +577,20 @@
 
        do k = 2, gr%nnzp, 1
          call pdf_closure_new
-     .   ( p(k), exner(k), wmt(k), zm2zt(wp2, k), wp3(k), Sct(k),       ! intent(in)
-     .     rtm(k), zm2zt(rtp2, k), zm2zt( wprtp, k ),                   ! intent(in)
-     .     thlm(k), zm2zt( thlp2, k ), zm2zt( wpthlp, k ),              ! intent(in)
-     .     zm2zt(rtpthlp, k),                                           ! intent(in)
-     .     wp4(k), wprtp2(k), wp2rtp(k),                                ! intent(out)
-     .     wpthlp2(k), wp2thlp(k), wprtpthlp(k),                        ! intent(out)
-     .     cf(k), rcm(k), wpthvp(k), wp2thvp(k), rtpthvp(k),            ! intent(out)
-     .     thlpthvp(k), wprcp(k), wp2rcp(k), rtprcp(k), thlprcp(k),     ! intent(out)
-     .     rcp2(k), pdf_parms(k, :), crt1, crt2, cthl1, cthl2, err_code,! intent(out)
-     .     sclrm(k,:), sclr_tmp1(k,:),                                  ! intent(in)
-     .     sclr_tmp3(k,:),sclr_tmp2(k,:), sclr_tmp4(k,:),               ! intent(in)
-     .     wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp(k,:),              ! intent(out)
-     .     wpsclrpthlp(k,:), sclrprcp(k,:), wp2sclrp(k,:) )             ! intent(out)
+     .   ( p(k), exner(k), wmt(k), zm2zt(wp2, k), wp3(k), Sct(k),      ! intent(in)
+     .     rtm(k), zm2zt(rtp2, k), zm2zt( wprtp, k ),                  ! intent(in)
+     .     thlm(k), zm2zt( thlp2, k ), zm2zt( wpthlp, k ),             ! intent(in)
+     .     zm2zt(rtpthlp, k),                                          ! intent(in)
+     .     wp4(k), wprtp2(k), wp2rtp(k),                               ! intent(out)
+     .     wpthlp2(k), wp2thlp(k), wprtpthlp(k),                       ! intent(out)
+     .     cf(k), rcm(k), wpthvp(k), wp2thvp(k), rtpthvp(k),           ! intent(out)
+     .     thlpthvp(k), wprcp(k), wp2rcp(k), rtprcp(k), thlprcp(k),    ! intent(out)
+     .     rcp2(k), pdf_parms(k, :), crt1,                             ! intent(out)
+     .     crt2, cthl1, cthl2, err_code,                               ! intent(out)
+     .     sclrm(k,:), sclr_tmp1(k,:),                                 ! intent(in)
+     .     sclr_tmp3(k,:),sclr_tmp2(k,:), sclr_tmp4(k,:),              ! intent(in)
+     .     wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp(k,:),             ! intent(out)
+     .     wpsclrpthlp(k,:), sclrprcp(k,:), wp2sclrp(k,:) )            ! intent(out)
 
         ! Subroutine may produce NaN values, and if so, exit
         ! gracefully.
@@ -980,14 +981,14 @@
 
        if ( clubb_at_debug_level( 2 ) ) then
          call parameterization_check
-     .        ( thlm_forcing, rtm_forcing, wmm, wmt, p, rhom,             ! intent(in)
-     .          rhot, exner, wpthlp_sfc, wprtp_sfc,                       ! intent(in)
-     .          upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,                   ! intent(in)
-     .          up2, vp2, rtm, wprtp, thlm,                               ! intent(in)
-     .          wpthlp, wp2, wp3, Scm, rtp2, thlp2,                       ! intent(in)
-     .          rtpthlp, taum, rcm, cf, "end of ",                        ! intent(in)
-     .          wpsclrp_sfc, wpedsclrp_sfc,                              ! intent(in)
-     .          sclrm, sclrm_forcing, edsclrm )                           ! intent(in)
+     .        ( thlm_forcing, rtm_forcing, wmm, wmt, p, rhom,          ! intent(in)
+     .          rhot, exner, wpthlp_sfc, wprtp_sfc,                    ! intent(in)
+     .          upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,                ! intent(in)
+     .          up2, vp2, rtm, wprtp, thlm,                            ! intent(in)
+     .          wpthlp, wp2, wp3, Scm, rtp2, thlp2,                    ! intent(in)
+     .          rtpthlp, taum, rcm, cf, "end of ",                     ! intent(in)
+     .          wpsclrp_sfc, wpedsclrp_sfc,                            ! intent(in)
+     .          sclrm, sclrm_forcing, edsclrm )                        ! intent(in)
        end if
 
 !-----------------------------------------------------------------------
@@ -1192,9 +1193,10 @@
         ! Define model constant parameters
 
         call setup_parameters
-     .       ( deltaz, T0_in, ts_nudge_in, hydromet_dim_in, sclr_dim_in, ! In
-     .         sclrtol_in, params,  ! In
-     .         err_code ) ! Out
+     .       ( deltaz, T0_in, ts_nudge_in,  ! intent(in)
+     .         hydromet_dim_in, sclr_dim_in,! intent(in)
+     .         sclrtol_in, params,          ! intent(in)
+     .         err_code )                   ! intent(out)
 
 !       Error Report
 !       Joshua Fasching February 2008
