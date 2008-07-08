@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: explicit_clip.F,v 1.1 2008-07-05 16:26:47 griffinb Exp $
+! $Id: explicit_clip.F,v 1.2 2008-07-08 18:15:06 griffinb Exp $
 !===============================================================================
         module explicit_clip
 
@@ -99,6 +99,7 @@
      .  xpyp   ! Covariance of x and y, x'y' (momentum levels) [{x units}*{y units}]
 
 #ifdef STATS
+        ! Local Variable
         integer ::
      .  ixpyp_cl
 
@@ -149,14 +150,97 @@
         end subroutine covariance_clip
 
 !===============================================================================
-        subroutine variance_clip
+        subroutine variance_clip( solve_type, dt, threshold, xp2 )
 
 !       Description:
+!       Clipping the value of variance x'^2 based on a minimum threshold
+!       value.  The threshold value must be greater than or equal to 0.
+!
+!       The values of x'^2 are found on the momentum levels.
+!
+!       The following variances are found in the code:  
+!
+!       r_t'^2, th_l'^2, u'^2, v'^2, sclr'^2, (computed in diag_var.F);
+!       w'^2 (computed in wp23.F).
 
 !       References:
 !-----------------------------------------------------------------------
 
+        use grid_class, only:
+     .      gr ! Variable(s)
+
+        use stats_precision, only:
+     .      time_precision ! Variable(s)
+
+#ifdef STATS
+        use stats_type, only:
+     .      stat_begin_update, ! Procedure(s)
+     .      stat_end_update
+
+        use stats_variables, only:
+     .      zm, ! Variable(s)
+     .      iwp2_cl,
+     .      irtp2_cl,
+     .      ithlp2_cl,
+     .      iup2_cl,
+     .      ivp2_cl,
+     .      lstats_samp
+#endif /*STATS*/
+
         implicit none
+
+        ! Input Variables
+        character(len=*), intent(in) ::
+     .  solve_type  ! Variable being solved; used for STATS.
+
+        real(kind=time_precision), intent(in) ::
+     .  dt          ! Model timestep; used here for STATS     [s]
+
+        real, dimension(gr%nnzp), intent(in) ::
+     .  threshold   ! Minimum value of x'^2                   [{x units}^2]
+
+        ! Output Variable
+        real, dimension(gr%nnzp), intent(inout) ::
+     .  xp2         ! Variance of x, x'^2 (momentum levels)   [{x units}^2]
+
+
+#ifdef STATS
+        ! Local Variable
+        integer ::
+     .  ixp2_cl
+
+
+        select case ( trim( solve_type ) )
+        case ( "wp2" )   ! wp2 clipping budget term
+           ixp2_cl = iwp2_cl
+        case ( "rtp2" )   ! rtp2 clipping budget term
+           ixp2_cl = irtp2_cl
+        case ( "thlp2" )   ! thlp2 clipping budget term
+           ixp2_cl = ithlp2_cl
+        case ( "up2" )   ! up2 clipping budget term
+           ixp2_cl = iup2_cl
+        case ( "vp2" )   ! vp2 clipping budget term
+           ixp2_cl = ivp2_cl
+        case default   ! scalars are involved
+           ixp2_cl = 0
+        end select
+#endif /*STATS*/
+
+
+#ifdef STATS
+        if ( lstats_samp ) then
+           call stat_begin_update( ixp2_cl, real( xp2 / dt ), zm )
+        endif
+#endif /*STATS*/
+
+        where ( xp2 < threshold )
+     .     xp2 = threshold
+
+#ifdef STATS
+        if ( lstats_samp ) then
+           call stat_end_update( ixp2_cl, real( xp2 / dt ), zm )
+        endif
+#endif /*STATS*/
 
 
         end subroutine variance_clip
