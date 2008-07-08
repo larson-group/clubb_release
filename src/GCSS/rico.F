@@ -1,4 +1,4 @@
-!$Id: rico.F,v 1.23 2008-07-08 04:44:10 dschanen Exp $
+!$Id: rico.F,v 1.24 2008-07-08 04:47:06 dschanen Exp $
 !----------------------------------------------------------------------
       module rico
 
@@ -72,8 +72,8 @@
      .  Ncm          ! Initial cloud droplet concentration     [# kg^-1]
 
 
-        ! Output Variables (optional)
-        real, optional, intent(out), dimension(gr%nnzp,sclr_dim) ::
+        ! Output Variables
+        real, intent(out), dimension(gr%nnzp,sclr_dim) ::
      .  sclrm_forcing ! Passive scalar LS tendency            [units/s]
 
         ! Local Variables, general
@@ -229,8 +229,8 @@
      .    sst,          ! This is the sea surface temperature [K].
      .    psfc          ! This is the surface pressure [Pa].
 
-!       Input variables (optional)
-        real, optional, intent(in) ::
+!       Input variables
+        real, intent(in) ::
      .    sclrm_sfc(sclr_dim)
 
 !       Output variables
@@ -241,8 +241,8 @@
      .    wprtp_sfc,         ! The upward flux of rtm (total water)  [kg kg^-1 m s^-1]
      .    ustar              ! surface friction velocity             [m/s]
 
-!       Output variables (optional)
-        real, dimension(sclr_dim), optional, intent(out) ::
+!       Output variables
+        real, dimension(sclr_dim), intent(out) ::
      .    wpsclrp_sfc,   ! Passive scalar surface flux      [units m s^-1]
      .    wpedsclrp_sfc  ! Passive eddy-scalar surface flux [units m s^-1]
 

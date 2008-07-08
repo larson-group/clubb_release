@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: wangara.F,v 1.12 2008-07-08 04:44:10 dschanen Exp $
+! $Id: wangara.F,v 1.13 2008-07-08 04:47:06 dschanen Exp $
         module wangara
 
         implicit none
@@ -40,7 +40,7 @@
      .  thlm_forcing,! Liquid water potential temperature tendency [K/s]
      .  rtm_forcing  ! Total water mixing ratio tendency           [kg/kg/s]
 
-        ! Output Variables (optional)
+        ! Output Variables
         real, intent(out), dimension(gr%nnzp,sclr_dim) ::
      .  sclrm_forcing ! Passive scalar tendency [units vary]
 
@@ -104,8 +104,8 @@
      .  wprtp_sfc,   ! w'r_t'(1) at (1) [(m kg)/(s kg)]
      .  ustar        ! surface friction velocity [m/s]
 
-        ! Output variables (optional)
-        real, intent(out), optional, dimension(sclr_dim) :: 
+        ! Output variables
+        real, intent(out), dimension(sclr_dim) :: 
      .  wpsclrp_sfc,  ! Passive scalar surface flux      [units m/s]
      .  wpedsclrp_sfc ! Passive eddy-scalar surface flux [units m/s]
 
