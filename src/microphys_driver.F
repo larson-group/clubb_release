@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F,v 1.18 2008-07-08 04:44:03 dschanen Exp $
+! $Id: microphys_driver.F,v 1.19 2008-07-08 15:02:33 faschinj Exp $
         module microphys_driver
 
 !       Description:
@@ -456,17 +456,23 @@
 #ifdef STATS
             select case( trim( hydromet_list(i) ) )
             case( "rrm" )
+              ixrm_bt = irrm_bt
               ixrm_cl = irrm_cl
             case( "Nrm" )
-              ixrm_cl  = iNrm_cl
+              ixrm_bt = iNrm_bt
+              ixrm_cl = iNrm_cl
             case( "ricem" )
+              ixrm_bt = iricem_bt
               ixrm_cl = iricem_cl
             case( "rsnowm" )
+              ixrm_bt = irsnowm_bt
               ixrm_cl = irsnowm_cl
             case( "rgraupelm" )
+              ixrm_bt = irgraupelm_bt
               ixrm_cl = irgraupelm_cl
             case default
-              ixrm_cl  = 0
+              ixrm_bt = 0
+              ixrm_cl = 0
             end select
 
            if ( lstats_samp ) then
