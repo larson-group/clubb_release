@@ -1,4 +1,4 @@
-! $Id: rad_lwsw.F,v 1.8 2008-06-30 19:32:29 faschinj Exp $
+! $Id: rad_lwsw.F,v 1.9 2008-07-08 17:40:22 faschinj Exp $
 !-----------------------------------------------------------------------
       module rad_lwsw_mod
       
@@ -609,7 +609,7 @@
 ! -taude----------------------radht----------    k = 1  (mass level)
 !        \                   /        |-dmw
 ! --------taupath-->--Frad_SW----------------    k = 2  (w level)
-!        /                   \ 
+!        /                   \
 ! -taude----------------------radht----------    k = 2  (mass level)
 ! 
 ! Vince Larson changed the F variables to w levels  03 Feb 2005
