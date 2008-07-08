@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: int2txt.F,v 1.6 2008-06-04 20:26:44 dschanen Exp $
+! $Id: int2txt.F,v 1.7 2008-07-08 04:38:41 dschanen Exp $
         program int2txt
 
 !       Description:
@@ -12,7 +12,7 @@
 #include "recl.F"
 
 #ifdef AbsoftUNIXFortran
-        use unix_library
+        use unix_library, only: iargc, getarg
 #endif
         implicit none
 
