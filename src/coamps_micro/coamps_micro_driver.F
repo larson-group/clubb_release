@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: coamps_micro_driver.F,v 1.33 2008-07-07 14:53:09 faschinj Exp $
+! $Id: coamps_micro_driver.F,v 1.34 2008-07-09 18:47:32 faschinj Exp $
       module coamps_micro_driver_mod
 
       ! This module wraps the adjtq subroutine so that it may be used by
@@ -14,7 +14,7 @@
       contains      
 
       subroutine coamps_micro_driver
-     .       ( runtype, kk, kmax, timea_in, deltf_in,
+     .       ( runtype, timea_in, deltf_in,
      .         rtm, wmm, p, exner, rhot, T_in_K,
      .         thlm, ricem, rrm, rgraupelm, rsnowm,
      .         rcm, Ncm, Nrm, Ncnm, Nim,
@@ -42,6 +42,7 @@
       use stats_precision, only: time_precision ! Variable(s)
       use error_code, only: clubb_debug ! Procedure(s)
       use grid_class, only: zt2zm ! Procedure(s)
+      use grid_class, only: gr ! Variable(s)
 #ifdef STATS
       use stats_type, only: stat_update_var_pt ! Procedure(s)
       
@@ -121,6 +122,7 @@ c End of ajsmith4's addition
      .  bgrp = 0.66,
      .  ex1 = 0.2,
      .  pcut = 1.0e-10 ! Lower threshold for calculation in COAMPS
+     
 
       integer, parameter ::
      .  n1d     = 1, ! 1d graphics parameters
@@ -143,10 +145,6 @@ c End of ajsmith4's addition
       ! Input Variables
       character(len=*), intent(in) :: runtype
 
-      integer, intent(in) ::
-     .  kk,    ! Number of COAMPS m gridpoints in the vertical (gr%nnzp-1)
-     .  kmax   ! Maximum array size (kk + ??)
-
       ! Note: Time variables "timea_in" and "deltf_in" need to be passed in 
       !       from CLUBB with precision "time_precision".  I have redefined 
       !       "timea" and "deltf" below to be regular precision variables
@@ -155,7 +153,7 @@ c End of ajsmith4's addition
      .  timea_in,        ! Current model time                   [s]
      .  deltf_in         ! Timestep (i.e. dtmain in CLUBB)      [s]
 
-      real, dimension(kk+1), intent(in) ::
+      real, dimension(gr%nnzp), intent(in) ::
      .  rtm,  ! Total water mixing ratio                        [kg/kg]
      .  rcm,  ! Cloud water mixing ratio                        [kg/kg]
      .  wmm,  ! Vertical wind                                   [m/s]
@@ -165,7 +163,7 @@ c End of ajsmith4's addition
      .  thlm, ! Liquid potential temperature                    [K]
      .  T_in_K! Temperature                                     [K]
 
-      real, dimension(kk+1), intent(in) ::
+      real, dimension(gr%nnzp), intent(in) ::
      .  ricem,     ! Ice water mixing ratio     [kg/kg]
      .  rrm,       ! Rain water mixing ratio    [kg/kg]
      .  rgraupelm, ! Graupel water mixing ratio [kg/kg]
@@ -174,7 +172,7 @@ c End of ajsmith4's addition
 !     .  Nrm        ! Number of rain drops       [count/m^3]
      .  Nrm        ! Number of rain drops       [count/kg]
 
-      real, dimension(kk+1), intent(inout) ::
+      real, dimension(gr%nnzp), intent(inout) ::
       ! Ncm is now in kg^-1.  Brian.  Sept. 8, 2007.
 !     .  Ncm,       ! Number of cloud droplets   [count/m^3]
      .  Ncm,       ! Number of cloud droplets   [count/kg]
@@ -182,15 +180,15 @@ c End of ajsmith4's addition
      .  Nim        ! Number of ice crystals     [count/m^3]
 
 
-      real, dimension(1,1,kk), intent(inout) :: cond ! condensation/evaporation of liquid water
+      real, dimension(1,1,gr%nnzp-1), intent(inout) :: cond ! condensation/evaporation of liquid water
 
 c Addition by Adam Smith, 24 April 2008
 c Adding snow particle number concentration
-      real, dimension(kk+1) :: Nsnowm
+      real, dimension(gr%nnzp) :: Nsnowm
 c End of ajsmith4's addition
 
       ! Output Variables
-      real, dimension(kk+1), intent(out) ::
+      real, dimension(gr%nnzp), intent(out) ::
      .  ritend,    ! d(ri)/dt                   [kg/kg/s]
      .  rrtend,    ! d(rr)/dt                   [kg/kg/s]
      .  rgtend,    ! d(rg)/dt                   [kg/kg/s]
@@ -201,7 +199,7 @@ c End of ajsmith4's addition
 !     .  nrmtend    ! d(Nrm)/dt                  [count/m^3/s]
      .  nrmtend    ! d(Nrm)/dt                  [count/kg/s]
 
-      real, dimension(kk+1), intent(out) ::
+      real, dimension(gr%nnzp), intent(out) ::
      .  Vrr,     ! Rain mixing ratio fall speed   [m/s]
      .  VNr,     ! Rain conc. fall speed          [m/s]
      .  Vsnow,   ! Snow fall speed                [m/s]
@@ -211,7 +209,7 @@ c End of ajsmith4's addition
       ! Local Variables
 
       ! Variables on the w grid 
-      real, dimension(1,1,kk+1) ::
+      real, dimension(1,1,gr%nnzp) ::
      .  w3,      ! Vertical wind on the w grid          [m/s]
      .  pr3d,    ! Pressure on w grid                   [Pa]
      .  qsatv3d, ! Saturation mr array?                 [kg/kg]
@@ -230,7 +228,7 @@ c End of ajsmith4's addition
 ! eMFc
 
       ! Variables on the m grid
-      real, dimension(1,1,kk) ::
+      real, dimension(1,1,gr%nnzp-1) ::
      .  qi3,   ! Pristine ice mixing ratio               [kg/kg]
      .  qr3,   ! Rain water mixing ratio                 [kg/kg]
      .  qg3,   ! Graupel mixing ratio                    [kg/kg]
@@ -277,11 +275,11 @@ c End of ajsmith4's addition
      .  eic,
      .  sat
 
-      real, dimension(kk+1) ::
+      real, dimension(gr%nnzp) ::
      .  thm,
      .  rvm
 
-      real, dimension(1,1,kk) ::
+      real, dimension(1,1,gr%nnzp-1) ::
      .  qt3,        ! Total water mixing ratio
      .  qv3,        ! Water vapor mixing ratio
      .  qc3,        ! Cloud water mixing ratio
@@ -338,7 +336,7 @@ c End of ajsmith4's addition
      .  rbm_flip
 ! eMFc
 
-      real, dimension(1,1,kk+1) ::
+      real, dimension(1,1,gr%nnzp) ::
      .  fallr,  ! Fall speed for rain mixing ratio              [m/s]
      .  falln,  ! Fall speed for rain drop number conc.         [m/s]
      .  falli,  ! Fall speed for pristine ice mixing ratio      [m/s]
@@ -364,11 +362,11 @@ c End of ajsmith4's addition
      .  fallg_in_cloud
 ! eMFc
 
-      real, dimension(1,1,kk) ::
+      real, dimension(1,1,gr%nnzp-1) ::
      .  rvc,     ! Cloud droplet radius         [cm]
      .  rvr      ! Rain droplet radius          [cm]
 
-      real, dimension(1,kk,1) ::
+      real, dimension(1,gr%nnzp-1,1) ::
      .  ary1d        ! 1d graphics parameters
 
       integer ::
@@ -384,7 +382,7 @@ c End of ajsmith4's addition
       integer, dimension(1) ::
      .  nkpts
 
-      integer, dimension(kk) ::
+      integer, dimension(gr%nnzp-1) ::
      .  icomp,         !
      .  kcomp          !
 
@@ -397,6 +395,13 @@ c End of ajsmith4's addition
      .  timea,        ! Current model time                      [s]
      .  deltf         ! Timestep (i.e. dtmain in CLUBB)         [s]
 
+      integer ::
+     .  kk    ! Number of COAMPS m gridpoints in the vertical (gr%nnzp-1)
+     .  kmax  ! Maximum array size (kk + ??)
+
+
+      kk = gr%nnzp-1
+      kmax = gr%nnzp
 !----------------------------------------------------------------------
 
       ! Begin coamps_micro_driver code

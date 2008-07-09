@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F,v 1.20 2008-07-08 17:36:22 faschinj Exp $
+! $Id: microphys_driver.F,v 1.21 2008-07-09 18:47:32 faschinj Exp $
         module microphys_driver
 
 !       Description:
@@ -359,7 +359,7 @@
         if ( lcoamps_micro ) then
 
            call coamps_micro_driver
-     .          ( runtype, gr%nnzp-1, gr%nnzp, time_current, dt,
+     .          ( runtype, time_current, dt,
      .            rtm, wmm, p, exner, rhot, T_in_K,
      .            thlm, hydromet(:,iiricem), hydromet(:,iirrm), 
      .            hydromet(:,iirgraupelm), hydromet(:,iirsnowm),
