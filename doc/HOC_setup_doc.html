@@ -1,0 +1,588 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+  <meta http-equiv="CONTENT-TYPE" content="text/html; charset=utf-8">
+  <title>Setting up and running the HOC standalone model</title>
+  <meta name="GENERATOR" content="OpenOffice.org 2.0  (Linux)">
+  <meta name="CREATED" content="20060717;15274500">
+  <meta name="CHANGEDBY" content="David Schanen">
+  <meta name="CHANGED" content="20060810;17070100">
+  <style type="text/css">
+	<!--
+		@page { size: 8.5in 11in; margin: 0.79in }
+		P { margin-bottom: 0.08in }
+		H3 { margin-bottom: 0.08in }
+	-->
+	</style>
+  <meta content="Adam Smith" name="author">
+</head>
+<body dir="ltr" lang="en-US">
+<p style="text-decoration: none;" align="center"><b><span
+ style="font-style: normal;"><font size="4">Setting
+up and running the HOC standalone model</font></span><i><br>
+</i></b><br>
+<br>
+</p>
+<p style="font-style: normal; text-decoration: none;">
+Written by Adam Smith<br>
+18 July 2006</p>
+<p
+ style="margin-bottom: 0in; font-style: normal; text-decoration: none;">
+Additions by David Schanen</p>
+<p
+ style="margin-bottom: 0in; font-style: normal; text-decoration: none;">
+10 August 2006</p>
+<p
+ style="margin-bottom: 0in; font-style: normal; text-decoration: none;">
+Corrections by Joshua Fasching</p>
+<p
+ style="margin-bottom: 0in; font-style: normal; text-decoration: none;">9
+August 2007<br>
+</p>
+<p style="margin-bottom: 0in;">For questions on HOC and this
+documentation, please contact:<br>
+Professor Vince Larson (vlarson at
+uwm dot edu)<br>
+David Schanen (dschanen at uwm dot edu)<br>
+Brian
+Griffin (griffinb at uwm dot edu)<br>
+Adam Smith (ajsmith4 at uwm dot
+edu)</p>
+<p style="margin-bottom: 0in;">Please visit
+<a href="http://www.larson-group.com/">http://www.larson-group.com</a>
+for more information on our group's research projects.</p>
+<p style="margin-bottom: 0in;"><br>
+</p>
+<p style="margin-bottom: 0in;">HOC is a single column model written in
+Fortran 77, 90 and 95 code. A more detailed description can be found
+in the Readme.txt file.<br>
+See also: <i>A PDF-Based Model For
+Boundary Layer Clouds. Part I: Method and Model Description </i>JAS
+vol. 59 by Golaz, et al.</p>
+<p style="margin-bottom: 0in;"><br>
+This documentation is written to
+provide a means of setting up the HOC standalone model, and how to
+prepare the model for a new test case. The documentation does not
+describe any of the HOC model specifications or physical schemes. If
+you would like information on the science behind HOC, please contact
+Vince Larson.</p>
+<p style="margin-bottom: 0in;">In this document, all text in <font
+ face="Courier 10 Pitch"><font color="#ff0000">red</font></font>
+will be used to denote directory names, variable names, or text that
+will appear on your screen during a step. </p>
+<p style="margin-bottom: 0in;"><br>
+</p>
+<p style="margin-bottom: 0in;"> <i><b>Obtaining the complete
+repository for HOC:</b></i></p>
+<ol>
+  <li>
+    <p style="margin-bottom: 0in; font-style: normal;">On Messner, in
+your home directory, type the following command:</p>
+    <p style="margin-bottom: 0in; font-style: normal;"><font
+ color="#ff0000"><font face="Courier 10 Pitch">cvs -d /cvsroot checkout
+hoc_v2.2_tuner</font></font></p>
+    <p style="font-style: normal;"><font face="Courier 10 Pitch"><font
+ color="#ff0000"><br>
+    </font><font face="Nimbus Roman No9 L, serif"><font color="#000000">Or
+remotely:</font></font><br>
+    <font color="#ff0000">export CVS_RSH=ssh<br>
+cvs -z 9 -d messner.math.uwm.edu:/cvsroot checkout \ hoc_v2.2_tuner</font></font></p>
+    <p style="margin-bottom: 0in; font-style: normal;">This command
+will copy all standard HOC files to the directory hoc_v2.2_tuner.</p>
+    <p style="margin-bottom: 0in; font-style: normal;"><br>
+Note that there are two aliases for HOC in the repository</p>
+    <ol>
+      <li>
+        <p style="margin-bottom: 0in; font-style: normal;"><font
+ face="Courier 10 Pitch"><font color="#ff0000">hoc_minimal</font></font><font
+ face="Nimbus Roman No9 L, serif"><font color="#000000"> : HOC without
+the f90tohtml, LES files for tuning, or past results.</font></font></p>
+      </li>
+      <li>
+        <p style="margin-bottom: 0in; font-style: normal;"><font
+ face="Courier 10 Pitch"><font color="#ff0000">hoc</font></font><font
+ face="Nimbus Roman No9 L, serif"><font color="#000000"> : HOC without
+the results files.</font></font></p>
+      </li>
+    </ol>
+    <p style="margin-bottom: 0in; font-style: normal;"><font
+ color="#000000"><font face="Nimbus Roman No9 L, serif">Replace <font
+ face="Courier 10 Pitch"><font color="#ff0000">hoc_v2.2_tuner</font></font>
+with these aliases if desired.</font></font></p>
+  </li>
+  <li>
+    <p style="margin-bottom: 0in; font-style: normal;">Adam strongly
+suggests creating a second copy of HOC to use as a working copy. This
+way, you can keep an original version of HOC in case there are
+problems. (In the rest of this documentation, I will refer to the
+working HOC directory as hoc_v2.2_tuner_WORK. If necessary, substitute
+the directory name of your choice.)</p>
+    <p style="margin-bottom: 0in; font-style: normal;"></p>
+    <p style="margin-bottom: 0in; font-style: normal;">To create a
+working copy, I used the following command in my home directory.</p>
+    <p style="margin-bottom: 0in; font-style: normal;"><font
+ face="Courier 10 Pitch"><font color="#ff0000">cp -r hoc_v2.2_tuner
+hoc_v2.2_tuner_WORK</font></font>.</p>
+    <p style="margin-bottom: 0in; font-style: normal;"></p>
+  </li>
+</ol>
+<p style="margin-left: 0.33in; margin-bottom: 0in;"><b>Getting the
+latest version:</b><br>
+<font color="#ff0000"><font face="Courier 10 Pitch">cd
+hoc_v2.2_tuner<br>
+cvs update<br>
+</font><font face="monospace"><br>
+</font></font><font color="#000000">Use
+the </font><font face="Courier 10 Pitch"><font color="#ff0000">-d</font></font><font
+ color="#000000">
+option to fetch and add any new directories in the repository, or add
+</font><font color="#ff0000"><font face="monospace"><br>
+</font><font face="Courier 10 Pitch">cvs
+update -d</font></font><font face="Courier 10 Pitch"><font
+ color="#000000">
+</font></font><font color="#000000"><br>
+to your </font><font face="Courier 10 Pitch"><font color="#ff0000">~/.cvsrc</font></font><font
+ color="#000000">
+to do this by default.<br>
+<br>
+Note that in most cases omitting the
+filename in the cases below with preform the command on all files in
+the directory.<br>
+Thus, </font><font face="Courier 10 Pitch"><font color="#ff0000">cvs
+update -d</font></font><font color="#000000"> in the </font><font
+ face="Courier 10 Pitch"><font color="#ff0000">hoc_v2.2_tuner</font></font><font
+ color="#000000">
+directory will update all the files in your local version with the
+repository version.</font></p>
+<p style="margin-left: 0.33in; margin-bottom: 0in;"><font
+ color="#000000">If
+the is a conflict, you will need to resolve it. Note that your
+conflicting file is backed up as </font><font face="Courier 10 Pitch"><font
+ color="#ff0000">.#&lt;filename&gt;.revision</font></font><font
+ color="#000000">.<br>
+</font><font face="monospace"><font color="#ff0000"><br>
+</font></font><b>Examining
+the status of a file:</b><br>
+<font color="#ff0000"><font face="Courier 10 Pitch">cvs
+status -v <i>filename</i></font><i><font face="monospace"><br>
+<br>
+</font></i></font><b>Examining
+what has been done to a file:</b><font color="#ff0000"><i><font
+ face="monospace"><br>
+</font></i><font face="Courier 10 Pitch">cvs
+log <i>filename<br>
+</i>cvs diff <i>filename</i></font><i><font face="monospace"><br>
+<br>
+</font></i></font><b>Checking
+out a file:</b><br>
+<font face="Courier 10 Pitch"><font color="#ff0000">cvs
+checkout <i>filename</i></font></font><br>
+<br>
+<b>Adding a new file to
+the repository</b> (it will not officially be added until the next
+time 'cvs commit' is run)<b>:</b><br>
+<font face="Courier 10 Pitch"><font color="#ff0000">cvs
+add <i>filename</i></font></font><br>
+<br>
+<b>Removing a file from the
+repository</b> (it will not officially be removed until the next time
+'cvs commit' is run)<b>:</b><br>
+<font face="Courier 10 Pitch"><font color="#ff0000">cvs
+remove <i>filename</i></font></font><br>
+<br>
+<b>Commiting your changes
+to the repository</b> (Don't forget to t<span
+ style="font-style: normal;"><span style="">est
+your code rigorously first!)</span><b>:</b></span><br>
+<font color="#ff0000"><font face="Courier 10 Pitch">cvs
+commit <i>filename(s) </i></font><i><font face="monospace"><br>
+</font></i></font><br>
+</p>
+<p style="margin-left: 0.33in; margin-bottom: 0in;">An editor (as
+determined by your <font face="Courier 10 Pitch"><font color="#ff0000">EDITOR</font></font>
+environmental variable) will then pop up. You may then enter your
+comments on multiple lines, and then can save and exit (<font
+ color="#000000">e.g.</font><font color="#ff0000">
+<font face="Courier 10 Pitch">:wq</font></font> in vi) in the editor
+when you are finished. If you've made a mistake, exit the editor
+without saving, and you will then be given the option by CVS to abort
+your commit.<i><font face="monospace"><font color="#ff0000"><br>
+<br>
+</font></font></i><b>Retrieving
+an older version</b> ( to check for instance, if a bug was
+introduced) :<br>
+<font color="#ff0000"><font face="Courier 10 Pitch">cvs
+checkout -D &lt;DATE&gt; <i>filename/Directory</i></font><i><font
+ face="monospace"><br>
+</font></i></font><font color="#000000">E.g.
+</font><font face="Courier 10 Pitch"><font color="#ff0000">cvs
+checkout -D yesterday hoc_v2.2_tuner/src</font></font> <b><br>
+</b>There
+are a number of valid syntaxes for specifying the date; see the CVS
+manual for further details.</p>
+<h3><font size="3"><i><b>Rules for commiting changes to HOC/HOC_tuner</b></i></font></h3>
+<ol>
+  <li>
+    <p style="margin-bottom: 0in;">Update your project tree, this will
+ensure no other user has added changes since you checked it out. </p>
+  </li>
+  <li>
+    <p style="margin-bottom: 0in;">Re-compile the source code. Make
+sure there are not any new warnings or errors. </p>
+  </li>
+  <li>
+    <p style="margin-bottom: 0in;">Run <font face="Courier 10 Pitch"><font
+ color="#ff0000">standalone/standalone-all.bash</font></font>; Make
+sure there are no new errors or warning messages. </p>
+  </li>
+  <li>
+    <p style="margin-bottom: 0in;">Run compare_runs on a few sample
+cases, like bomex, fire, and dycoms2_rf02. Look at the output in GRaDS,
+particularly those variables affected by your changes. </p>
+  </li>
+  <li>
+    <p style="font-style: normal;">Finally, commit your changes, and
+when prompted, be sure to add a several-sentence comment describing
+what changes you made.</p>
+  </li>
+</ol>
+<p style="margin-bottom: 0in; font-style: normal;">
+<br>
+</p>
+<p style="margin-bottom: 0in;"><i><b>Directory structure of HOC:</b></i></p>
+<p style="margin-bottom: 0in; font-style: normal;">You will work with
+files in the following directories...</p>
+<p style="margin-bottom: 0in;"><span style="font-style: normal;"><font
+ face="Courier 10 Pitch"><font color="#ff0000">model/</font></font></span><i>
+–</i><span style="font-style: normal;"> This directory contains the
+“namelists” for each individual case. Initial sounding and grid setup
+is entered in the namelists. Example file:
+<font face="Courier 10 Pitch"><font color="#ff0000">nov11_altocu_model.in</font></font></span></p>
+<p style="margin-bottom: 0in;"><br>
+</p>
+<p style="margin-bottom: 0in;"><span style="font-style: normal;"><font
+ face="Courier 10 Pitch"><font color="#ff0000">src/</font></font>
+– This directory contains the source code for the model. The main
+file to be modified here is <font face="Courier 10 Pitch"><font
+ color="#ff0000">hoc.F</font></font>. Most files that may need to be
+modified are in
+<font face="Courier 10 Pitch"><font color="#ff0000">src/HOC_parameterization</font></font>.
+Compiling is controlled by the file <font face="Courier 10 Pitch"><font
+ color="#ff0000">config.messner.in</font></font></span></p>
+<p style="margin-bottom: 0in;"><br>
+</p>
+<p style="margin-bottom: 0in; font-style: normal;"><font
+ face="Courier 10 Pitch"><font color="#ff0000">src/HOC_parameterization/</font></font>
+– For test case purposes, we will need to modify <font
+ face="Courier 10 Pitch"><font color="#ff0000">gcss.F</font></font>,
+which holds all “tendencies” (forcings) for the GCSS cases,
+Nov.11 and Jun.25. <font face="Courier 10 Pitch"><font color="#ff0000">linearinterpolation.F</font></font>
+and <font face="Courier 10 Pitch"><font color="#ff0000">rad_lwsw.F</font></font>
+are schemes ported directly from COAMPS-LES by Adam Smith, and used
+for both the Nov.11 and Jun.25 cases. Most of the other model
+calculations are performed in subroutines within this directory.</p>
+<p style="margin-bottom: 0in; font-style: normal;"><br>
+</p>
+<p style="margin-bottom: 0in;"><span style="font-style: normal;"><font
+ face="Courier 10 Pitch"><font color="#ff0000">standalone/</font></font>
+– This directory contains the “executable” program for the HOC
+model. Case- specific files containing model constants are also
+present here.</span></p>
+<p style="margin-bottom: 0in; font-style: normal;"><br>
+</p>
+<p style="margin-bottom: 0in;"><span style="font-style: normal;"><font
+ face="Courier 10 Pitch"><font color="#ff0000">stats/</font></font></span><i>
+– </i><span style="font-style: normal;">This directory contains the
+files that dictate which statistics variables should be saved to GrADS
+output. Each test case has its own stats file. Example file: <font
+ face="Courier 10 Pitch"><font color="#ff0000">nov11_altocu_stats.in</font></font></span></p>
+<p style="page-break-before: always;"><i><b>Compiling and running a
+HOC test case:</b></i></p>
+<ol>
+  <li>
+    <p style="margin-bottom: 0in; font-style: normal;">cd to <font
+ size="3"><font face="Courier 10 Pitch"><font color="#ff0000">~/hoc_v2.2_tuner_WORK/src</font></font></font></p>
+  </li>
+  <li>
+    <p style="margin-bottom: 0in; font-style: normal;">Edit the
+following two lines in <font size="3"><font face="Courier 10 Pitch"><font
+ color="#ff0000">config.messner.in</font></font></font> as follows:<br>
+    <br>
+If necessary, modify the line starting with "<font size="3"><font
+ face="Courier 10 Pitch"><font color="#ff0000">PREFIX = </font></font></font>"
+so it reads <font size="3"><font face="Courier 10 Pitch"><font
+ color="#ff0000">PREFIX = ..</font></font></font>&nbsp; THIS STEP WILL
+LIKELY BE COMPLETED ALREADY. We do this command so that the compiler
+operates with your working HOC directory, and not the original version.<br>
+    <br>
+If necessary, modify the line "<font color="#ff0000"><font size="4"><font
+ face="monospace">FC =</font></font></font>" so it
+reads <font color="#ff0000"><font size="4"><font face="monospace">FC =
+    </font></font><font size="3"><font face="Courier 10 Pitch">/usr/pgi/linux86/5.2/bin/pgf90</font></font></font>.&nbsp;
+This provides the correct working path to pgf90 on Messner.&nbsp; THIS
+STEP WILL LIKELY BE COMPLETED ALREADY.</p>
+  </li>
+  <li>
+    <p style="margin-bottom: 0in; font-style: normal;">Type <font
+ size="3"><font face="Courier 10 Pitch"><font color="#ff0000">make</font></font></font>
+to compile the model.&nbsp;&nbsp;</p>
+  </li>
+  <li>
+    <p style="margin-bottom: 0in; font-style: normal;">Next, go to the
+directory <font size="3"><font face="Courier 10 Pitch"><font
+ color="#ff0000">~/hoc_v2.2_tuner/standalone</font></font></font>.
+Here, run the program <font size="3"><font face="Courier 10 Pitch"><font
+ color="#ff0000">./run_standalone.bash jun25_altocu</font></font></font>.
+This will execute the HOC model for the Jun.25 test case. The model
+will run only on Messner, and all output will be displayed to the
+screen. If the model runs successfully, you are ready to create a new
+test case.<br>
+    <br>
+NOTE: Hitting <font size="3"><font face="Courier 10 Pitch"><font
+ color="#ff0000">CTRL-C</font></font></font> will stop the model run
+entirely. DO NOT use this keystroke unless you wish to stop the run.</p>
+  </li>
+</ol>
+<p style="margin-bottom: 0in; font-style: normal;"><br>
+</p>
+<p style="margin-bottom: 0in; font-style: normal;"><br>
+</p>
+<p style="margin-bottom: 0in;"><i><b>Files/subroutines that need to be
+created for a new test case:</b></i></p>
+<p style="margin-bottom: 0in; font-style: normal;">When I added the
+Jun.25 case to HOC, I first created duplicates of Nov.11 files and
+subroutines. These duplicates used the jun25 case name, but the code
+and namelist was exactly the same as the Nov.11 case. This was done
+to verify I added the code correctly.</p>
+<p style="margin-bottom: 0in;"><br>
+</p>
+<p style="margin-bottom: 0in; font-style: normal;">I strongly suggest
+following this same method (as listed below) before making
+case-specific changes.</p>
+<ol>
+  <li>
+    <p style="margin-bottom: 0in; font-style: normal;"><span style="">In
+    <font face="Courier 10 Pitch"><font color="#ff0000">standalone/</font></font>,
+create a new constants file by copying from <font
+ face="Courier 10 Pitch"><font color="#ff0000">standalone_jun25_altocu.in</font></font>:</span></p>
+    <p style="margin-bottom: 0in; font-style: normal;"><span style=""><font
+ face="Courier 10 Pitch"><font color="#ff0000">cp
+standalone_jun25_altocu.in standalone_</font></font><font
+ color="#008000">&lt;TESTNAME&gt;</font><font face="Courier 10 Pitch"><font
+ color="#ff0000">.in</font></font></span><span style=""> (where </span><span
+ style=""><font color="#008000">&lt;TESTNAME&gt;</font> is the name of
+your new test case)<br>
+    </span></p>
+    <p style="margin-bottom: 0in; font-style: normal;"> </p>
+    <p style="margin-bottom: 0in; font-style: normal;">In this new
+file, modify the variable <font face="Courier 10 Pitch"><font
+ color="#ff0000">run_file</font></font> so that it reads <font
+ color="#008000">&lt;TESTNAME&gt;</font>_hoc.in.</p>
+    <p style="margin-bottom: 0in; font-style: normal;"></p>
+  </li>
+  <li>
+    <p style="margin-bottom: 0in; font-style: normal;">In <font
+ face="Courier 10 Pitch"><font color="#ff0000">model/</font></font>,
+create a new namelist file by copying from <font
+ face="Courier 10 Pitch"><font color="#ff0000">jun25_altocu_model.in</font></font>:</p>
+    <p style="margin-bottom: 0in; font-style: normal;"><font
+ color="#ff0000"><font face="Courier 10 Pitch">cp jun25_altocu_model.in</font><font
+ face="Courier, monospace"> </font></font><font color="#008000">&lt;TESTNAME&gt;</font><font
+ face="Courier 10 Pitch"><font color="#ff0000">_model.in</font></font></p>
+    <p style="margin-bottom: 0in; font-style: normal;"></p>
+    <p style="margin-bottom: 0in; font-style: normal;"><font
+ color="#000000"><font face="Nimbus Roman No9 L">Replace the line <font
+ face="Courier 10 Pitch"><font color="#ff0000">runtype = “jun25_altocu”</font></font>
+with<font face="Courier 10 Pitch"> <font color="#ff0000">runtype = “</font></font><font
+ color="#008000">&lt;TESTNAME&gt;</font><font face="Courier 10 Pitch"><font
+ color="#ff0000">”</font></font></font></font></p>
+  </li>
+  <li>
+    <p
+ style="margin-bottom: 0in; font-style: normal; page-break-before: always;">
+    <font color="#000000"><font face="Nimbus Roman No9 L">In <font
+ face="Courier 10 Pitch"><font color="#ff0000">stats/</font></font>,
+create a new statistics output file by copying from <font
+ color="#ff0000"><font face="Courier, monospace">j</font><font
+ face="Courier 10 Pitch">un25_altocu_stats.in</font></font>:</font></font></p>
+    <p style="margin-bottom: 0in; font-style: normal;"><font
+ color="#000000"><font face="Nimbus Roman No9 L"><font color="#ff0000"><font
+ face="Courier 10 Pitch">cp jun25_altocu_stats.in</font><font
+ face="Courier, monospace"> </font></font><font color="#008000">&lt;TESTNAME&gt;</font><font
+ face="Courier 10 Pitch"><font color="#ff0000">_model.in</font></font></font></font></p>
+    <p style="margin-bottom: 0in; font-style: normal;"></p>
+    <p style="margin-bottom: 0in; font-style: normal;"><font
+ color="#000000"><font face="Nimbus Roman No9 L">Replace all cases of <font
+ face="Courier 10 Pitch"><font color="#ff0000">jun25_altocu</font></font>
+with <font color="#008000">&lt;TESTNAME&gt;</font>.</font></font></p>
+    <p style="margin-bottom: 0in; font-style: normal;"></p>
+  </li>
+  <li>
+    <p style="margin-bottom: 0in; font-style: normal;"><font
+ color="#000000"><font face="Nimbus Roman No9 L">In <font
+ face="Courier 10 Pitch"><font color="#ff0000">src/</font></font>, edit
+the file <font face="Courier 10 Pitch"><font color="#ff0000">hoc.F</font></font>
+as follows. If necessary, search for “<font face="Courier 10 Pitch"><font
+ color="#ff0000">nov11</font></font>” for guidelines:</font></font></p>
+  </li>
+</ol>
+<ul>
+  <li>
+    <p style="margin-bottom: 0in; font-style: normal;"><font
+ color="#000000"><font face="Nimbus Roman No9 L">If your new case is
+initially saturated, add <font color="#008000">&lt;TESTNAME&gt;</font>
+to the case statement in the “<font color="#ff0000"><font
+ face="Courier, monospace">C</font><font face="Courier 10 Pitch">ompute
+initial theta-l</font></font>” section. This case statement is used to
+determine the calculation of the initial thlm profile.</font></font></p>
+  </li>
+  <li>
+    <p style="margin-bottom: 0in; font-style: normal;"><font
+ color="#000000"><font face="Nimbus Roman No9 L">In the “<font
+ face="Courier 10 Pitch"><font color="#ff0000">Initialize TKE and other
+fields as needed</font></font>” section, add a section for the new test
+case. Duplicate the code used for the Nov.11 case for now. (Consult
+with VL for the correct modifications to this section.)</font></font></p>
+  </li>
+  <li>
+    <p style="margin-bottom: 0in; font-style: normal;"><font
+ color="#000000"><font face="Nimbus Roman No9 L">Below the call to <font
+ face="Courier 10 Pitch"><font color="#ff0000">jun25_altocu_tndcy</font></font>,
+duplicate a new case/call statement for the new test case using the
+Jun.25 or Nov.11 code. The subroutine should be called <font
+ color="#008000">&lt;TESTNAME&gt;</font><font face="Courier 10 Pitch"><font
+ color="#ff0000">_tndcy</font></font>. This subroutine will be created
+shortly.</font></font></p>
+    <p style="margin-bottom: 0in; font-style: normal;"><font
+ color="#000000"><font face="Nimbus Roman No9 L">NOTE: The arguments
+are the same for both the Jun.25 and Nov.11 cases.</font></font></p>
+  </li>
+  <li>
+    <p style="margin-bottom: 0in; font-style: normal;"><font
+ color="#000000"><font face="Nimbus Roman No9 L">Create a new surface
+momentum/heat flux case statement based on the Nov.11 or Jun.25 code.
+Currently, the Nov.11 and Jun.25 cases do not have surface fluxes, but
+you may need to use this section for boundary layer cases.</font></font></p>
+    <p style="margin-bottom: 0in; font-style: normal;"></p>
+  </li>
+</ul>
+<ol start="6">
+  <li>
+    <p style="margin-bottom: 0in; font-style: normal;"><font
+ color="#000000"><font face="Nimbus Roman No9 L">In <font
+ face="Courier 10 Pitch"><font color="#ff0000">src/HOC_parameterization/</font></font>,
+edit the file <font face="Courier 10 Pitch"><font color="#ff0000">gcss.F</font></font>
+as follows (if necessary, search for “nov11”):</font></font></p>
+  </li>
+</ol>
+<ul>
+  <li>
+    <p style="margin-bottom: 0in; font-style: normal;"><font
+ color="#000000"><font face="Nimbus Roman No9 L">Add a new subroutine </font></font><font
+ color="#000000"><font face="Nimbus Roman No9 L"><font color="#008000">&lt;TESTNAME&gt;</font></font></font><font
+ color="#000000"><font face="Nimbus Roman No9 L"><font
+ face="Courier 10 Pitch"><font color="#ff0000">_tndcy</font></font>,
+using duplicate code from the Jun.25 case.</font></font></p>
+    <p style="margin-bottom: 0in; font-style: normal;"></p>
+  </li>
+</ul>
+<ol start="6">
+  <li>
+    <p style="margin-bottom: 0in; font-style: normal;"><font
+ color="#000000"><font face="Nimbus Roman No9 L">Run your new test case
+by executing <font face="Courier 10 Pitch"><font color="#ff0000">standalone/run_standalone.bash</font></font>
+    </font></font><font color="#000000"><font face="Nimbus Roman No9 L"><font
+ color="#008000">&lt;TESTNAME&gt;</font></font></font><font
+ color="#000000"><font face="Nimbus Roman No9 L">.</font></font></p>
+  </li>
+  <li>
+    <p style="margin-bottom: 0in; font-style: normal;"><font
+ color="#000000"><font face="Nimbus Roman No9 L">If everything is
+implemented correctly, the model will run to completion. GrADS output
+will be saved as <font color="#008000">&lt;TESTNAME&gt;</font><font
+ face="Courier 10 Pitch"><font color="#ff0000">_zt.*</font></font>, <font
+ color="#008000">&lt;TESTNAME&gt;</font><font face="Courier 10 Pitch"><font
+ color="#ff0000">_zm.*</font></font>, and <font color="#008000">&lt;TESTNAME&gt;</font><font
+ face="Courier 10 Pitch"><font color="#ff0000">_sfc.*</font></font> in <font
+ face="Courier 10 Pitch"><font color="#ff0000">standalone/</font></font>.
+    </font></font> </p>
+  </li>
+</ol>
+<p style="margin-bottom: 0in; font-style: normal;"><br>
+</p>
+<p style="margin-bottom: 0in; font-style: normal;"><font color="#000000"><font
+ face="Nimbus Roman No9 L">Once
+the initial test case is running correctly, begin modifying the
+namelist and forcings.</font></font></p>
+<p style="margin-bottom: 0in; font-style: normal;"><br>
+</p>
+<p style="margin-bottom: 0in;"><font color="#000000"><font
+ face="Nimbus Roman No9 L"><i><b>Variables:</b></i></font></font></p>
+<p style="margin-bottom: 0in;"><font color="#000000"><font
+ face="Nimbus Roman No9 L"><i>These
+variables are not detailed in documentation yet. Other variables are
+detailed in gcss.F. Most of the prognostic and diagnostic variables
+use standard names in the code (thlm, rtm, rcm, rhot, etc.)</i></font></font></p>
+<p style="margin-bottom: 0in; font-style: normal;">
+<font color="#000000"><font face="Nimbus Roman No9 L"><font
+ face="Courier 10 Pitch"><font color="#ff0000">time</font></font>
+– model time in seconds</font></font></p>
+<p style="margin-bottom: 0in; font-style: normal;">
+<font color="#000000"><font face="Nimbus Roman No9 L"><font
+ face="Courier 10 Pitch"><font color="#ff0000">time_initial</font></font>
+– initial time of the model run</font></font></p>
+<p style="margin-bottom: 0in; font-style: normal;">
+<font color="#000000"><font face="Nimbus Roman No9 L"><font
+ face="Courier 10 Pitch"><font color="#ff0000">gr%nnzp</font></font>
+– maximum number of vertical heights in the grid (same as <font
+ face="Courier 10 Pitch"><font color="#ff0000">kka</font></font>
+in COAMPS)</font></font></p>
+<p style="margin-bottom: 0in; font-style: normal;">
+<font color="#000000"><font face="Nimbus Roman No9 L"><font
+ face="Courier 10 Pitch"><font color="#ff0000">gr%dzt</font></font>
+– grid spacing between height levels on the zt grid (thermodynamic
+levels)</font></font></p>
+<p style="margin-bottom: 0in; font-style: normal;">
+<font color="#000000"><font face="Nimbus Roman No9 L"><font
+ face="Courier 10 Pitch"><font color="#ff0000">gr%dzm</font></font>
+– grid spacing between height levels on the zm grid (momentum
+levels)</font></font></p>
+<p style="margin-bottom: 0in; font-style: normal;">
+<font color="#000000"><font face="Nimbus Roman No9 L"><font
+ face="Courier 10 Pitch"><font color="#ff0000">gr%zt</font></font>
+– model height according to zt grid (momentum levels)</font></font></p>
+<p style="margin-bottom: 0in; font-style: normal;">
+<font color="#000000"><font face="Nimbus Roman No9 L"><font
+ face="Courier 10 Pitch"><font color="#ff0000">gr%zm</font></font>
+– model height according to zm grid (momentum levels)</font></font></p>
+<p style="margin-bottom: 0in; page-break-before: always;"><font
+ color="#000000"><font face="Nimbus Roman No9 L"><i><b>Statistics
+variables:</b></i></font></font></p>
+<p style="margin-bottom: 0in; font-style: normal;"><font color="#000000"><font
+ face="Nimbus Roman No9 L">To
+add variables, do the following:</font></font></p>
+<p style="margin-bottom: 0in; font-style: normal;"><font color="#000000"><font
+ face="Nimbus Roman No9 L">(NOTE:
+This section is not completed yet. Ask Dave Schanen or Brian Griffin
+for more information on adding statistics variables.)</font></font></p>
+<ol>
+  <li>
+    <p style="margin-bottom: 0in; font-style: normal;"><font
+ color="#000000"><font face="Nimbus Roman No9 L">Add the variable to <font
+ face="Courier 10 Pitch"><font color="#ff0000">src/HOC_parameterization/statistics.F</font></font>,
+duplicating the method used for other statistics. (This step is very
+similar to methods used in COAMPS.)</font></font></p>
+  </li>
+  <li>
+    <p style="margin-bottom: 0in; font-style: normal;"><font
+ color="#000000"><font face="Nimbus Roman No9 L">Under the “Sample
+fields” section, add the appropriate addition for your new variable.</font></font></p>
+  </li>
+  <li>
+    <p style="margin-bottom: 0in; font-style: normal;"><font
+ color="#000000"><font face="Nimbus Roman No9 L">Add appropriate source
+code for your variable as necessary.</font></font></p>
+  </li>
+</ol>
+</body>
+</html>
