@@ -1,4 +1,4 @@
-#$Id: CLUBBStandardsCheck.pl,v 1.4 2008-07-07 14:58:39 faschinj Exp $
+#$Id: CLUBBStandardsCheck.pl,v 1.5 2008-07-09 18:51:10 faschinj Exp $
 
 #!/usr/bin/perl
 
@@ -18,7 +18,7 @@
 #		(3) Default Private declarations in modules
 #		Warns if "private" is missing from modules.
 #
-#		(4) $Id: CLUBBStandardsCheck.pl,v 1.4 2008-07-07 14:58:39 faschinj Exp $ comment tags at the top of the file.
+#		(4) $Id: CLUBBStandardsCheck.pl,v 1.5 2008-07-09 18:51:10 faschinj Exp $ comment tags at the top of the file.
 #		Warns if the file does not contain one.
 #
 #               This perl script assumes that 
@@ -164,7 +164,7 @@ else{
 			warn "$file\n";
 		}
 		
-		# Check for missing $Id: CLUBBStandardsCheck.pl,v 1.4 2008-07-07 14:58:39 faschinj Exp $ tags
+		# Check for missing $Id: CLUBBStandardsCheck.pl,v 1.5 2008-07-09 18:51:10 faschinj Exp $ tags
 		if( ! &idCheck( $verbose, @input ) )
 		{
 			warn "$file\n";
@@ -278,7 +278,7 @@ sub implicitCheck
 	}
 	else
 	{
-		warn "$programName warning: Missing 'implicit none' statements.\n";  
+		warn "$programName WARNING: Missing 'implicit none' statements. 'Implicit None' check FAILED! \n";  
 		warn "$programName Add a line containing 'implicit none' to each program, module, subroutine, and function.\n";
 		$result = 0; # Failed check
 	}
@@ -328,7 +328,7 @@ sub useCheck
 	{
 		if( $line =~ $useRegEx )
 		{       # If the above is true, execute the statements below (i.e. return an error):
-			warn " $programName warning: 'use' statement w/o 'only' found in the following line:\n";
+			warn "$programName WARNING: 'use' statement w/o 'only' found in the following line:\n";
 			warn "$lineNumber : $line";
 			$result = 0; # Failed check
 		}
@@ -336,8 +336,8 @@ sub useCheck
 	}
 	if ( ! $result )
 	{
-		warn "$programName warning: CLUBBStandardsCheck.pl error: Use check failed!\n";
-		warn "$programName warning: Check that comma is on same line as 'use', as CLUBB requires.\n";
+		warn "$programName WARNING: Use check FAILED!\n";
+		warn "$programName WARNING: Check that comma is on same line as 'use', as CLUBB requires.\n";
 	}
 	return $result;
 }
@@ -407,8 +407,8 @@ sub privateCheck
 	}
 	else
 	{
-		warn "$programName warning: Number of \"private\" statements does not not match number of modules.\n";
-		warn "$programName warning: Private Test failed!\n";
+		warn "$programName WARNING: Number of \"private\" statements does not not match number of modules.\n";
+		warn "$programName WARNING: Private Test failed!\n";
 		$result = 0; # Check failed
 	}	
 
@@ -419,18 +419,18 @@ sub idCheck
 #
 #     &idCheck( $verbose, @input ) 
 #
-#     Description: This subroutine verifies that an $Id: CLUBBStandardsCheck.pl,v 1.4 2008-07-07 14:58:39 faschinj Exp $ comment 
+#     Description: This subroutine verifies that an $Id: CLUBBStandardsCheck.pl,v 1.5 2008-07-09 18:51:10 faschinj Exp $ comment 
 #     exists somewhere in the file. 
 #
 #        This subroutine works by testing each line for the presence
-#        of a line containing a $Id: CLUBBStandardsCheck.pl,v 1.4 2008-07-07 14:58:39 faschinj Exp $.
+#        of a line containing a $Id: CLUBBStandardsCheck.pl,v 1.5 2008-07-09 18:51:10 faschinj Exp $.
 #     
 #     Arguments:
 #     	Sverbose - Prints verbose messages when true.
 #     	@input   - Lines of a Fortran source file.
 #
 #     Returns
-#     	True if the file has an $Id: CLUBBStandardsCheck.pl,v 1.4 2008-07-07 14:58:39 faschinj Exp $ comment in it.
+#     	True if the file has an $Id: CLUBBStandardsCheck.pl,v 1.5 2008-07-09 18:51:10 faschinj Exp $ comment in it.
 #####################################################################
 {
 	# Grab first argument
@@ -454,21 +454,21 @@ sub idCheck
 	# For every line of the file
 	foreach $line (@input)
 	{
-		# If it contains an $Id: CLUBBStandardsCheck.pl,v 1.4 2008-07-07 14:58:39 faschinj Exp $ comment
+		# If it contains an $Id: CLUBBStandardsCheck.pl,v 1.5 2008-07-09 18:51:10 faschinj Exp $ comment
 		if( $line =~ $IdTagRegEx )
 		{	
 			if( $verbose )
 			{
 				print "$programName comment: Id tag found\n$line";
 			}
-			$result = 1; # Remember an $Id: CLUBBStandardsCheck.pl,v 1.4 2008-07-07 14:58:39 faschinj Exp $ tag was found
+			$result = 1; # Remember an $ Id $ tag was found
 		}
 	}
 
-	# If no $Id: CLUBBStandardsCheck.pl,v 1.4 2008-07-07 14:58:39 faschinj Exp $ tags were found
+	# If no $ Id $ tags were found
 	if( ! $result )
 	{
-		warn "$programName warning: Missing \$Id\$ Tag\n";
+		warn "$programName WARNING: Missing \$Id\$ Tag\n. \$Id\$ check FAILED!";
 		warn "Add ! \$Id\$ to top of file.\n"
 	}
 
