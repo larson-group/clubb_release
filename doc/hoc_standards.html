@@ -1,0 +1,814 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Coding Standards and Practices for HOC</TITLE>
+<META NAME="description" CONTENT="Coding Standards and Practices for HOC">
+<META NAME="keywords" CONTENT="hoc_standards">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="hoc_standards.css">
+
+<LINK REL="next" HREF="node1.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html2"
+  HREF="node1.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="file:/usr/share/latex2html/icons/next.png"></A> 
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="file:/usr/share/latex2html/icons/up_g.png"> 
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="file:/usr/share/latex2html/icons/prev_g.png">   
+<BR>
+<B> Next:</B> <A NAME="tex2html3"
+  HREF="node1.html">About this document ...</A>
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<P>
+
+<P>
+<H1 ALIGN="CENTER"><B>Coding Standards and Practices for HOC</B></H1>
+<DIV>
+
+</DIV>
+
+<P>
+<DIV ALIGN="LEFT">
+
+<P>
+<B> <FONT SIZE="+1">Coding Standards </FONT></B>
+
+<P>
+
+<OL>
+<LI>All files in the repository should have a standard header with a CVS 
+<TT>$Id: hoc_standards.html,v 1.1 2008-07-09 20:15:09 senkbeir Exp $</TT> tag at the top.
+<BR>
+When initially checking in a new source file, enter the Id tag as 
+the string <TT>$Id: hoc_standards.html,v 1.1 2008-07-09 20:15:09 senkbeir Exp $</TT> on a commented line at the top of the source file
+ (CVS will expand this after checking it in).
+E.g. <BR>
+
+<P>
+Before checking in the file, enter:
+<PRE>
+!-----------------------------------------------------------------------
+! $Id: hoc_standards.html,v 1.1 2008-07-09 20:15:09 senkbeir Exp $
+</PRE>
+
+<P>
+
+<P><P>
+<BR>
+
+<P>
+After checking in the file, something like the following will appear:
+<PRE>
+!-----------------------------------------------------------------------
+! $Id: hoc_standards.html,v 1.1 2008-07-09 20:15:09 senkbeir Exp $
+</PRE>
+
+<P>
+</LI>
+<LI>When adding functions and subroutines create a header with a short 
+description of their purpose.  In the header, list the units and a description of 
+each parameter and each intent(in), intent(out), and intent(inout) variable.  Use the following standardized
+layout: 
+
+<P>
+<PRE>
+!-----------------------------------------------------------------------
+        function xyzzy( etherx, ethery, etherz )
+
+!       Description:
+!         Evaluates the xyzzy function. 
+
+!       References:
+!         Eqn. 33 on p. 4551 of  
+!         Tweedle-dee and Tweedle-dum (1842), J. Imaginary Atmospheric 
+!         Sci., Vol. 23, pp. 4550--4556
+!-----------------------------------------------------------------------
+
+        ! Included Modules
+        use grid_dimensions, only: ndim
+ 
+        implicit none
+
+        ! External Calls
+        complex, external ::
+     .    xyxy_fnc ! (Description of function goes here)
+
+        external ::
+     .    zyzy_sub ! (Description of subroutine goes here)
+
+        ! It is a good idea to declare intrinsics, in case another 
+        ! function or variable is accidentally given the same name.
+        intrinsic :: 
+     .    matmul, exp, log, dble
+
+        ! If we had any derived types to declare, then 
+        ! we would put them here before the constants.
+
+        ! Local Constants
+        real, parameter :: 
+     .    local_tol = 1.0e-6 ! Local tolerance [no units]
+
+        ! Input Variables
+        complex, dimension(ndim), intent(in) :: 
+     .    etherx,  ! Ether in the x dimension  [kg/kg]
+     .    ethery,  ! Ether in the y dimension  [kg/kg]
+     .    etherz   ! Ether in the z dimension  [kg/kg]
+
+        ! Output Variables
+        complex, dimension(ndim,ndim,ndim) ::
+     .    xyzzy    ! Ether in the xyyzy dimension  [kg/kg]
+
+        ! Local Variables
+        integer :: i, j, k
+
+!-----------------------------------------------------------------------
+
+        ! Begin xyzzy code
+
+        ...
+
+        return
+        end function xyzzy
+!-----------------------------------------------------------------------
+</PRE>
+
+<P>
+</LI>
+<LI>Write lots of code comments.  Make sure your code is understandable to an outsider 
+looking at it for the first time.  When writing a code comment, leave your name 
+at the end of the comment.
+This will allow other users to contact you with any questions about the section of code.
+Use the same name identifier, e.g. dschanen or Vince Larson, everywhere.
+Then everyone can use <TT>grep</TT> to search for all code comments you've made.
+
+<P>
+</LI>
+<LI>When writing new source code, use fixed format rather than free format.  However, 
+this convention is not always followed in code from external contributors such as BUGSRad, 
+Numerical Recipes, and so forth.  We do not usually modify such external code because it is
+less familiar, and we might introduce bugs.
+<BR>
+
+<P>
+</LI>
+<LI>Minimize the number of variables or amount of data made available to any 
+subroutine in either 
+passed arguments or <TT>use</TT> statements.  Always specify <TT>intent</TT> 
+attributes on your arguments, and use <TT>intent(in)</TT> 
+and <TT>intent(out)</TT> rather than <TT>intent(inout)</TT> whenever possible.
+This makes the code more clear to new users by allowing them to trace where a 
+given variable is changed in the code and spot at a glance what are the inputs and
+outputs of each subroutine.  Furthermore,
+this makes it easier for the compiler to optimize, because modern computers can 
+vectorize floating point instructions, thereby providing some 
+parallelization when your calculation does not rely on previous results.
+When using modules with public variables, limit 
+the number of variables with an <TT>only:</TT> statement.  This makes code 
+easier to read, because it is then obvious which variables from the module are being 
+used.
+<BR>
+E.g.
+<PRE>
+!-----------------------------------------------------------------------
+         subroutine mulmul( x, y, z )
+
+!        Description:
+!          Bogus example
+
+!        References:
+!          None
+!-----------------------------------------------------------------------
+
+         ! Here we limit our use statement to just the needed variables
+         use constants, only: pi, euler_const 
+
+         implicit none
+
+         ! Input
+         real, dimension(5), intent(in)  ::
+     .     x, ! First factor   [no units]
+     .     y  ! Second factor  [no units]
+
+         ! Output 
+         real, dimension(5), intent(out) :: 
+     .     z  ! output         [no units]
+!-----------------------------------------------------------------------
+
+         ! Note that every element of z could be calculated 
+         ! independently of other elements of the subroutine
+         ! allowing for parallelism if possible.
+
+         z(1:5) = ( x(1:5) / pi ) * ( y(1:5) / euler_const )
+
+         return
+         end subroutine mulmul
+!-----------------------------------------------------------------------
+</PRE>
+
+<P>
+</LI>
+<LI>The general convention in HOC is to have the dummy arguments of a subroutine 
+ordered with input first, input/output second, and output arguments third. 
+The exception to this is optional variables, which must occur last.  In that case,
+standard variables should be ordered as above; below this, the optional variables should
+be listed with input first, then input/output, and then output variables.
+<BR>
+E.g.
+<PRE>
+
+         ! The wrong way
+         subroutine sub( input_variable_1, output_variable_1, 
+     .                   input_variable_2, input_output_variable_1 )
+
+         ! The right way
+         subroutine sub( input_variable_1, input_variable_2, 
+     .                   input_output_variable_1, output_variable_1 )
+</PRE>
+
+<P>
+</LI>
+<LI>Keep on the same lines the arguments of both the originating call and its 
+corresponding subroutine declaration.  This makes it easier to check the 
+consistency of arguments of subroutines and functions with long argument lists.
+<BR>
+E.g.
+<PRE>
+
+         ! The wrong way
+         call sub( roast_beef, ham, tomato, cheese,
+     .             lettuce, onion, mayo )
+
+         subroutine sub( roast_beef, ham, 
+     .                   tomato, cheese,
+     .                   lettuce, onion, mayo )
+
+         ! The right way
+         call sub( roast_beef, ham, tomato, cheese,
+     .             lettuce, onion, mayo )
+
+         subroutine sub( roast_beef, ham, tomato, cheese,
+     .                   lettuce, onion, mayo )
+</PRE>
+
+<P>
+</LI>
+<LI>When breaking up an arithmetic expression over multiple lines, do so according to 
+operator precedence.  This makes things more readable at a glance. <BR>
+E.g. Do this: 
+<PRE>
+        x = t + y*x 
+     .    + g*v + t*h
+</PRE>
+
+<P>
+Not this:
+<PRE>
+        x = t + y*x + g
+     .    *v + t*h
+</PRE>
+
+<P>
+</LI>
+<LI>Do not use assumed size or assumed shape arrays in HOC.  
+Generally speaking, the grid class defines the length of model arrays, 
+and the use of assumed size arrays introduces 
+another level of complexity that can cause bugs.  An exception may occur
+if you need to interface with code developed by external contributors that
+contains assumed shape arrays.
+<BR>
+
+<P>
+</LI>
+<LI>When a logical expression or a do loop extends more than ten lines, put a
+small comment after the end statement with the name of the loop or logical
+variable.
+E.g. <BR>
+<PRE>
+        if ( lcode_enabled ) then
+
+          ...many lines of code...
+
+        end if ! lcode_enabled
+</PRE>
+
+<P>
+or 
+
+<P>
+<PRE>
+        if ( .not. lcode_enabled ) then
+
+          ...many lines of code...
+
+        end if ! ~lcode_enabled
+</PRE>
+
+<P>
+A long do statement
+
+<P>
+<PRE>
+        do i = 1, 100, 1
+
+        ...many lines of code...
+
+        end do ! i = 1..100
+</PRE>
+
+<P>
+</LI>
+<LI>When making a logical expression, leave spaces between the 
+logical operators and use the Fortran 90 style logical operators. <BR>
+E.g.
+<PRE>
+        ! Like this
+        if ( x == y ) .and. ( y &gt;= z ) .or. ( z /= 0.0 ) then
+
+          ...
+
+        end if
+
+        ! Not like this
+        if ( x.eq.y.and.y.ge.z.or.z.ne.0.0 ) then
+
+          ...
+
+        end if
+</PRE>
+
+<P>
+The F90 style operators are:
+<BR>
+
+<P>
+<PRE>
+== instead of .eq.
+/= instead of .ne.
+&gt;  instead of .gt.
+&gt;= instead of .ge.
+&lt;  instead of .lt.
+&lt;= instead of .le.
+</PRE>
+
+<P>
+</LI>
+<LI>When writing flow control statements 
+( <TT> if, elseif, select case </TT> ), keep the logic as straightforward and
+clear as possible.  If a set of <TT>if...then</TT> expressions grows to more
+than three cases, then rewrite the logic as a <TT>select...case</TT> expression
+instead. E.g.
+
+<P>
+<PRE>
+        ! Rewrite this:
+        if ( trim( run ) == "BOMEX" ) then
+          execute_stuff( )
+
+        else if ( trim( run ) == "FIRE" ) then
+          execute_other_stuff( )
+
+        else if ( trim( run ) == "ARM" ) then
+          execute_other_other_stuff( ) 
+
+        else if ( trim( run ) == "DAVE'S_CAMPING_TRIP" ) then
+          execute_other_other_other_stuff( ) 
+
+        else
+          write(unit=*,fmt=*) "Cannot determine what to do for "
+            //trim( run )
+
+        end if ! run
+
+        ! Like this:
+        select case( trim( run ) )
+        case( "BOMEX" )
+          execute_stuff( )
+
+        case( "FIRE" )
+          execute_other_stuff( )
+
+        case( "ARM" )
+          execute_other_other_stuff( )
+ 
+        case ( "DAVE'S_CAMPING_TRIP" ) 
+          execute_other_other_other_stuff( ) 
+
+        case default
+          write(unit=*,fmt=*) "Cannot determine what to do for "
+            //trim( run )
+
+        end select ! run
+</PRE>
+
+<P>
+</LI>
+<LI>When mixing scalar variables with array variables in a single
+mathematical statement, it is often clearer to use indices, even
+though Fortran 90 allows you to omit them. <BR>
+E.g. Do this:
+
+<P>
+<PRE>
+       xyzzy(1:gr%nnzp) = variable_arr1(1:gr%nnzp) * variable_scl1
+     .                    * variable_arr2(1:gr%nnzp)**2
+</PRE>
+
+<P>
+Not this:
+<PRE>
+       xyzzy = variable_arr1 * variable_scl1 
+     .         * variable_arr2**2
+</PRE>
+
+<P>
+</LI>
+<LI>Use a consistent character case for variables names. 
+E.g. if you use <TT>thlm</TT> in function a, then do not use <TT>Thlm</TT> in function b. 
+This makes the code easier to read and search using your text editor and the 
+<TT>grep</TT> command.
+<BR>
+
+<P>
+</LI>
+<LI>Always use <TT>implicit none</TT> in your code.  It will make 
+debugging much easier, because it prevents the accidental use of 
+variables of the wrong type.
+<BR>
+
+<P>
+</LI>
+<LI>When adding a variable that isn't a loop iterator and occurs in more 
+than one context, use a variable name that is in some way unique. 
+This will make searching for the variable in the code much easier. 
+There several ways to do this:
+
+<OL>
+<LI>Use mixed case.  E.g. <TT>Rd</TT> for the Dry air gas constant 
+	rather than <TT>R</TT> or <TT>rd</TT>
+</LI>
+<LI>Use of a number in the name when the mathematical equations 
+	contain them. 
+	 E.g. <TT>p0</TT> for <IMG
+ WIDTH="24" HEIGHT="35" ALIGN="MIDDLE" BORDER="0"
+ SRC="img1.png"
+ ALT="$P_0$">.
+</LI>
+<LI>Use 3 or more characters in the variable name.
+	E.g. HOC uses <TT>grav</TT> 
+	rather than <TT>g</TT> or <TT>gr</TT> for the gravitational constant.
+	
+</LI>
+</OL>
+Avoid using a variable name that overlaps with the text of a reserved word or
+Fortran directive as well.
+Try using a command
+like <TT>grep</TT> if you're uncertain if your variable is a semi-unique string.
+<BR>
+
+<P>
+</LI>
+<LI>Make variable, function, and subroutine names easier to read by using underscores or capital letters.  For instance, write
+
+<P>
+<TT>a_several_word_variable_name</TT>
+
+<P>
+or
+
+<P>
+<TT>ASeveralWordVariableName</TT>
+
+<P>
+but not
+
+<P>
+<TT>aseveralwordvariablename</TT>.
+<BR>
+
+<P>
+</LI>
+<LI>Do not use the prognostic or diagnostic variable modules anywhere they
+are not used already.  Currently prognostic_variables is used in statistics.F
+and hoc.F, while diagnostic_variables is used in hoc.F, statistics.F, and 
+parameterization_interface.F.  Global variables like these make debugging 
+the code more difficult.  The proper way to use these variables in a new 
+section of code is to pass them as an argument.
+<BR>
+
+<P>
+</LI>
+<LI>Put all subroutines and functions inside modules.  This allows Fortran to check the argument lists.
+
+<P>
+</LI>
+<LI>The standard header style for modules requires only a description and private/public statements.  When putting several subroutines or functions in a module, limit the
+ number of public interfaces. Then declare private subroutines and functions, and finally list ``private" on its own line in order to cause new subroutines and functions to be treated as private by default.  This prevents subroutines or functions from being made public inadvertently, possibly causing name conflicts.
+E.g. 
+<PRE>
+        module gcss
+
+             ..
+!       Description:
+!           This module contains set-up for test (GCSS) cases.
+!           Note that all these are subroutines called from 
+!         hoc_forcings_timestep.
+
+        implicit none
+
+        public ::
+     .    cloud_rad, atex_tndcy, atex_sfclyr, fire_tndcy,
+     .    wangara_tndcy, wangara_sfclyr,
+     .    astex_tndcy, astex_sfclyr,
+     .    arm_tndcy, arm_sfclyr,
+     .    bomex_tndcy, bomex_sfclyr,
+     .    dycoms2_rf01_tndcy, dycoms2_rf01_sfclyr,
+     .    dycoms2_rf02_tndcy, dycoms2_rf02_sfclyr,
+     .    nov11_altocu_tndcy 
+
+        ! Note that all these are called from 
+        ! subroutines within gcss;  This declaration
+        ! makes them unavailable to outside routines
+
+        private ::   ! Declaring these provides useful documentation
+     .    diag_ustar, arm_sfcflx, Diff_denom,
+     .    altocu_icedf
+
+        private   !  Change default so that all undeclared items are private
+
+           ...
+</PRE>
+
+<P>
+</LI>
+<LI>HOC has the facility to turn off warning or error messages.  When you want to print a warning or error message, don't use the print statement; instead use the subroutine ``clubb_debug" located in error_code.F.
+
+<P>
+</LI>
+<LI>Re-use code whenever possible.  Specifically, if a job needs to be done twice, write a subroutine and call it twice, rather than re-writing the same
+block of code twice.  Therefore, if you are about to write a new block of code to do a common task, and you have a hunch similar code might already be 
+included in CLUBB, search for it and re-use it.  For instance, CLUBB includes subroutines to print warning messages, diffuse and advect fields, compute 
+clipping, interpolate fields, and compute skewness, solar zenith angle, simplified radiation (rad_lw_sw), julian day, and output statistics.   
+
+<P>
+</LI>
+<LI>When using a C preprocessor directive, it should be setup to behave in a way that makes it obvious to the user when code is removed by the directive.
+E.g.
+
+<P>
+<PRE>
+
+       if ( lget_thread ) then
+#ifdef _OPENMP
+         nthread = omp_get_thread_num()
+
+#else /* Clause for when then this is undefined */
+         stop "This program does not use OpenMP"
+
+#endif
+       end if
+</PRE>
+
+<P>
+</LI>
+<LI>CLUBB is now entirely compatible with the use of a stretched (unevenly spaced) grid.  Therefore, when writing new code, please use interpolation functions -- such as zm2zt, zt2zm, or even linint -- rather than hard-wired numbers.  For example:
+
+<P>
+<PRE>
+
+    ! The right way
+    wp2_zt(k) = zm2zt( wp2, k )
+    var_zt(k) = linint( gr%zt(k), gr%zm(k), gr%zm(k-1), var_zm(k), var_zm(k-1) )
+
+    ! NO-NO-NOs:
+    wp2_zt(k) = 0.5 * ( wp2(k) + wp2(k-1) )
+    wp3_zm(k) = ( wp3(k+1) + wp3(k) ) / 2
+</PRE>
+
+<P>
+</LI>
+<LI>Good use of whitespace can make code easier to read and debug.  
+One simple convention used in HOC is to put an extra space between 
+parenthesis for functions and subroutines to differentiate them from 
+array variables. <BR>
+E.g.
+<PRE>
+         ! Choosing less obscure names for arrays and functions 
+         ! will also help with this problem.
+
+         f( x ) ! This is the function f evaluated with argument x.
+         f(x)   ! This is the one dimensional array f indexed at x.
+</PRE>
+
+<P>
+This applies to intrinsic functions as well. <BR>
+E.g.
+<PRE>
+         mycalc = exp( x ) * log( y ) 
+     .          + dble( g ) * mod( f, 5 )
+</PRE>
+
+<P>
+</LI>
+<LI>Code should not make use of explicit precision variables unless there is 
+an unique reason for it (e.g. writing 4 byte records to disk).  This allows for 
+compile time promotion of real and double datatypes on different computer 
+architectures.
+Furthermore, do not use the asterisk notation to specify precision, because
+it is an extension of the Fortran standard.  E.g.
+<PRE>
+        ! This does not allow for compile time promotion.
+        real(kind=8) :: x
+
+        ! This is not standard Fortran and may break.
+        real*8 :: x
+
+        ! Everyone will be happy if you keep it like this.
+        real :: x
+</PRE>
+
+<P>
+</LI>
+<LI>For clarity, functions, subroutines, and programs should end with 
+their proper Fortran 90 style end statement. <BR>
+E.g.
+<PRE>
+        ! Like this
+        subroutine foo
+
+            ...
+
+        end subroutine foo
+
+        ! Not like this
+        subroutine foo
+
+         ...
+
+        end
+</PRE>
+
+<P>
+</LI>
+<LI>Separate all end statements with a single space. <BR>
+E.g.
+<PRE>
+        subroutine sub( )
+
+           ...
+
+        do k = 1, gr%nnzp, 1
+           ...
+        end do ! not 'enddo'
+
+           ...
+
+        where ( rtm &lt; rttol )
+           ...
+        end where ! not 'endwhere'
+
+           ...
+
+        return
+        end subroutine sub ! not 'endsubroutine'
+</PRE>
+
+<P>
+</LI>
+<LI>A convention of HOC is to use the exclamation point character <TT>!</TT> for a comment, rather than a <TT>C</TT> or a <TT>*</TT>.  Consistent coding style makes comments easier to spot at a glance.
+
+<P>
+</LI>
+<LI>A convention of HOC is to use the period ( <TT>.</TT> ) as the 
+continuation character.  This gives the code a clean and consistent look.
+e.g.
+<PRE>
+        function calc_stuff( stuff1, stuff2,
+     .                       stuff3, stuff4 )
+</PRE>
+
+<P>
+</LI>
+<LI>Use lowercase letters for Fortran keywords. <BR>
+E.g.
+<PRE>
+        program HAL ! lowercase program
+
+           ... 
+
+        if ( lTurnOff ) then ! lowercase if, lowercase then
+          write(unit=*,fmt=*) "I know that you and Frank were "
+     .      //"trying to turn me off Dave." ! lowercase write
+          stop "Daisy, Daisy..." ! lowercase stop
+        end if ! lowercase end, lowercase if
+
+           ...
+
+        end program HAL ! lowercase end, lowercase program
+</PRE>
+
+<P>
+</LI>
+</OL>
+
+<P>
+<B> Coding Practices </B>
+
+<P>
+
+<OL>
+<LI>Wiscombe's Law:  ``One should spend about as much time writing code comments as writing lines of code themselves.''  Abiding by this is more bearable if you write the comments before and as you write the lines of code.
+
+<P>
+</LI>
+<LI>Tips to avoid the introduction of bugs in code:  It is usually easiest to write only small chunks of code before checking the results for bugs.  Otherwise, any new bugs may be located anywhere in the large region of new code.  Often, the code changes should not produce any change whatsoever in output.  In these cases, diff the binary output files produced by HOC before and after the code changes were made.  In other cases, e.g. when the order of mathematical operations is changed, the results will change, at least due to differences in floating point roundoff.  Then, use plotgen to compare output visually.
+
+<P>
+</LI>
+<LI>Rules for commiting changes to HOC/HOC_tuner:
+
+<P>
+
+<OL>
+<LI>Update your HOC files using cvs update; this will incorporate any other user's changes since you checked it out.
+
+<P>
+</LI>
+<LI>Re-compile the source code using g95 (other compilers are more permissive).  Make sure there are no new warnings or errors.
+
+<P>
+</LI>
+<LI>Run standalone/standalone-all.bash.  Make sure there are no new warnings or errors.
+
+<P>
+</LI>
+<LI>Run plotgen.  See if any of the cases produce significantly worse results than the most recent nightly plots that are posted on our website.
+
+<P>
+</LI>
+<LI>If your changes affect the call from SAM to HOC, then modify SAM (e.g. scm.F90) to make it consistent.  If you're not sure whether your change to HOC will affect SAM, re-compile libhoc_param.a and then SAM.
+
+<P>
+</LI>
+<LI>Commit your changes and when prompted, be sure to add a several-sentence comment describing what changes you made.  That way we can use the cvs log command to see the history of changes.
+
+<P>
+</LI>
+<LI>The next day, check that the new nightly plots posted on the web look as you expect.  If no new plots have been generated, email messneradmin@uwm.edu.
+
+<P>
+</LI>
+</OL>
+
+<P>
+</LI>
+</OL>
+
+<P>
+<BR><HR>
+<!--Table of Child-Links-->
+<A NAME="CHILD_LINKS"></A>
+
+<UL>
+<LI><A NAME="tex2html4"
+  HREF="node1.html">About this document ...</A>
+</UL>
+<!--End of Table of Child-Links-->
+<HR>
+<!--Navigation Panel-->
+<A NAME="tex2html2"
+  HREF="node1.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="file:/usr/share/latex2html/icons/next.png"></A> 
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="file:/usr/share/latex2html/icons/up_g.png"> 
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="file:/usr/share/latex2html/icons/prev_g.png">   
+<BR>
+<B> Next:</B> <A NAME="tex2html3"
+  HREF="node1.html">About this document ...</A>
+<!--End of Navigation Panel-->
+<ADDRESS>
+
+2008-07-03
+</ADDRESS>
+</BODY>
+</HTML>
