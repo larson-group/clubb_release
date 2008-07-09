@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: model_flags.F,v 1.14 2008-06-19 18:41:41 dschanen Exp $
+! $Id: model_flags.F,v 1.15 2008-07-09 19:43:30 faschinj Exp $
 
         module model_flags
 
@@ -12,6 +12,7 @@
 
         implicit none
 
+        public :: setup_model_flags
         private ! Default Scope
 
         logical, parameter, public :: 
@@ -33,8 +34,7 @@
 !$omp  threadprivate(lcoamps_micro, cloud_sed, luv_nudge)
 !$omp  threadprivate(lKhm_aniso)
 
-       end module model_flags
-
+        contains
 !-----------------------------------------------------------------------
         subroutine setup_model_flags
      .             ( lbugsrad_in, kk_rain_in, cloud_sed_in, 
@@ -45,14 +45,6 @@
 !-----------------------------------------------------------------------
         use constants, only: 
      .      fstderr ! Variable(s)
-        use model_flags, only:
-     .      lbugsrad, ! Variable(s)
-     .      kk_rain,
-     .      cloud_sed,
-     .      lcoamps_micro,
-     .      licedfs,
-     .      luv_nudge,
-     .      lKhm_aniso
 
         implicit none
 
@@ -86,3 +78,5 @@
 
         return
         end subroutine setup_model_flags
+       end module model_flags
+

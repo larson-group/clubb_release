@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.106 2008-07-08 17:42:04 faschinj Exp $
+! $Id: parameterization_interface.F,v 1.107 2008-07-09 19:43:30 faschinj Exp $
 !-----------------------------------------------------------------------
         module hoc_parameterization_interface
 
@@ -1104,11 +1104,10 @@
      .      Lscale_max
         use error_code, only: 
      .      clubb_var_out_of_bounds ! Variable(s)
+        use model_flags, only:
+     .      setup_model_flags
 
         implicit none
-
-        ! External
-        external :: setup_model_flags
 
         ! Input
 
