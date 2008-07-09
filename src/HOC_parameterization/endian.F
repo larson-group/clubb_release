@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: endian.F,v 1.3 2008-05-09 16:12:22 faschinj Exp $
+! $Id: endian.F,v 1.4 2008-07-09 18:36:40 faschinj Exp $
 
 !----------------------------------------------------------------------
         module endian
@@ -211,7 +211,7 @@
 !----------------------------------------------------------------------
         implicit none
 
-        character(len=4) :: i
+        character(len=4),intent(in) :: i
 
         ! Try to determine big vs little endian status. Override internal
         ! determination if BIG_ENDIAN_IO or LITTLE_ENDIAN_IO are defined
