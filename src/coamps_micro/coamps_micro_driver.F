@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: coamps_micro_driver.F,v 1.34 2008-07-09 18:47:32 faschinj Exp $
+! $Id: coamps_micro_driver.F,v 1.35 2008-07-09 18:56:33 faschinj Exp $
       module coamps_micro_driver_mod
 
       ! This module wraps the adjtq subroutine so that it may be used by
@@ -396,7 +396,7 @@ c End of ajsmith4's addition
      .  deltf         ! Timestep (i.e. dtmain in CLUBB)         [s]
 
       integer ::
-     .  kk    ! Number of COAMPS m gridpoints in the vertical (gr%nnzp-1)
+     .  kk,    ! Number of COAMPS m gridpoints in the vertical (gr%nnzp-1)
      .  kmax  ! Maximum array size (kk + ??)
 
 
