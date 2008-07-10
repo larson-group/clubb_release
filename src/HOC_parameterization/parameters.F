@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameters.F,v 1.19 2008-07-08 04:44:25 dschanen Exp $
+! $Id: parameters.F,v 1.20 2008-07-10 20:12:49 faschinj Exp $
         module parameters 
 
 !       Description:
@@ -435,8 +435,6 @@
        return
        end subroutine read_param_spread
 
-       end module parameters
-
 !-----------------------------------------------------------------------
        subroutine pack_parameters
      .            ( C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl,
@@ -739,3 +737,5 @@
 
         return
         end subroutine unpack_parameters
+
+        end module parameters
