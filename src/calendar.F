@@ -1,9 +1,10 @@
-!$Id: calendar.F,v 1.3 2008-06-16 17:09:44 faschinj Exp $
+!$Id: calendar.F,v 1.4 2008-07-10 20:19:40 faschinj Exp $
       module calendar
 
         implicit none
 
-        public :: gregorian2julian, julian2gregorian, leap_year
+        public :: gregorian2julian, julian2gregorian, leap_year,
+     .            compute_current_date
 
         private ! Default Scope
 
@@ -93,5 +94,71 @@
      .       (.not.(  mod(year,100) == 0 .and. mod(year,400) /= 0 ) ) )
   
         end function leap_year
-        
+
+!----------------------------------------------------------------------------
+        subroutine compute_current_date( previous_day, previous_month,
+     .                           previous_year, 
+     .                           seconds_since_previous_date,
+     .                           current_day, current_month,
+     .                           current_year,
+     .                           seconds_since_current_date )
+!
+!       Description: Compuntes the current Gregorian date from a previous date and
+!       the seconds that have transpired since that date.
+!
+!----------------------------------------------------------------------------
+        use stats_precision, only:
+     .  time_precision  ! Variable(s)
+
+        use constants, only:
+     .  sec_per_day     ! Variable(s)
+
+        implicit none
+
+        integer, intent(in) ::
+     .  previous_day,   ! Day of the month
+     .  previous_month, ! Month of the year
+     .  previous_year   ! Year
+
+        real(kind=time_precision), intent(in) ::
+     .  seconds_since_previous_date ! [s]
+
+        integer, intent(out) ::
+     .  current_day, 
+     .  current_month,
+     .  current_year
+
+        real(kind=time_precision), intent(out) ::
+     .  seconds_since_current_date
+
+        integer ::
+     .  days_since_1jan4713bc,
+     .  days_since_start
+
+        ! Using Julian dates we are able to add the days that the model
+        ! has been running
+
+        ! Determine the Julian Date of the starting date, 
+        !    written in Gregorian (year, month, day) form
+        days_since_1jan4713bc = gregorian2julian( previous_year, 
+     .                                    previous_month, previous_day )
+
+        ! Determine the amount of days that have passed since start date
+        days_since_start = 
+     .        floor( seconds_since_previous_date / sec_per_day )
+
+        ! Set days_since_1jan4713 to the present Julian date
+        days_since_1jan4713bc = days_since_1jan4713bc + days_since_start
+
+        ! Set Present time to be seconds since the Julian date
+        seconds_since_current_date = 
+     .  seconds_since_previous_date - ( days_since_start * sec_per_day )
+
+        call julian2gregorian
+     .         ( days_since_1jan4713bc,
+     .           current_year, current_month, current_day)
+
+      
+        end subroutine compute_current_date       
+
       end module calendar
