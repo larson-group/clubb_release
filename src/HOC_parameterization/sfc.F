@@ -1,4 +1,4 @@
-! $Id: sfc.F,v 1.23 2008-07-08 04:44:25 dschanen Exp $
+! $Id: sfc.F,v 1.24 2008-07-10 16:14:21 faschinj Exp $
 #define SCLR_RT 2
 #define SCLR_THETA 1
 
@@ -15,11 +15,12 @@
 
 !------------------------------------------------------------------------
         subroutine sfc_var( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc,
-     .                      ustar_in, wp2_sfc, up2_sfc, vp2_sfc,
+     .                      ustar_in, wpsclrp_sfc, 
+     .                      wp2_sfc, up2_sfc, vp2_sfc,
      .                      thlp2_sfc, rtp2_sfc, rtpthlp_sfc, err_code,
-     .                      wpsclrp_sfc, 
      .                      sclrp2_sfc,
-     .                      sclrprtp_sfc, sclrpthlp_sfc )
+     .                      sclrprtp_sfc, 
+     .                      sclrpthlp_sfc )
 
 !       Description:
 !       This subroutine computes estimate of the surface thermodynamic 

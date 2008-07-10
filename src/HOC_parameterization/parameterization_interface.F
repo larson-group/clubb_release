@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.107 2008-07-09 19:43:30 faschinj Exp $
+! $Id: parameterization_interface.F,v 1.108 2008-07-10 16:14:21 faschinj Exp $
 !-----------------------------------------------------------------------
         module hoc_parameterization_interface
 
@@ -326,7 +326,7 @@
      .        up2, vp2, rtm, wprtp, thlm,                       ! intent(in)
      .        wpthlp, wp2, wp3, Scm, rtp2, thlp2,               ! intent(in)
      .        rtpthlp, taum, rcm, cf, "beginning of ",          ! intent(in)
-     .        wpsclrp_sfc, wpedsclrp_sfc,                      ! intent(in)
+     .        wpsclrp_sfc, wpedsclrp_sfc,                       ! intent(in)
      .        sclrm, sclrm_forcing, edsclrm )                   ! intent(in)
        end if
 !-----------------------------------------------------------------------
@@ -379,9 +379,9 @@
 !      level is not the ground level.  Brian Griffin.  December 22, 2005.
        IF ( gr%zm(1) == 0.0 ) THEN
           call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1),    ! intent(in)
-     ,                  ustar, wp2(1), up2(1), vp2(1),            ! intent(out)
+     .                  ustar, wpsclrp(1,1:sclr_dim),             ! intent(in)
+     ,                  wp2(1), up2(1), vp2(1),                   ! intent(out)
      .                  thlp2(1), rtp2(1), rtpthlp(1), err_code,  ! intent(out)
-     .                  wpsclrp(1,1:sclr_dim),                    ! intent(in)
      .                  sclrp2(1,1:sclr_dim),                     ! intent(out)
      .                  sclrprtp(1,1:sclr_dim),                   ! intent(out) 
      .                  sclrpthlp(1,1:sclr_dim) )                 ! intent(out)
@@ -421,12 +421,12 @@
 ! Vince Larson used prognostic timestepping of variances 
 !    in order to increase numerical stability.  17 Jul 2007
 !     .                .false., dt, isValid
-     .                .true., dt,                   ! intent(in)
-     .                rtp2, thlp2, rtpthlp,         ! intent(inout)
-     .                up2, vp2,                     ! intent(inout)
-     .                err_code,                     ! intent(out)
-     .                sclrm, wpsclrp,               ! intent(in) 
-     .                sclrp2, sclrprtp, sclrpthlp  )! intent(out)
+     .                .true., dt,                               ! intent(in)
+     .                sclrm, wpsclrp,                           ! intent(in) 
+     .                rtp2, thlp2, rtpthlp,                     ! intent(inout)
+     .                up2, vp2,                                 ! intent(inout)
+     .                err_code,                                 ! intent(out)
+     .                sclrp2, sclrprtp, sclrpthlp  )            ! intent(out)
 
        !----------------------------------------------------------------
        ! Covariance clipping for wprtp, wpthlp, and wpsclrp after 
@@ -580,15 +580,14 @@
      .   ( p(k), exner(k), wmt(k), zm2zt(wp2, k), wp3(k), Sct(k),      ! intent(in)
      .     rtm(k), zm2zt(rtp2, k), zm2zt( wprtp, k ),                  ! intent(in)
      .     thlm(k), zm2zt( thlp2, k ), zm2zt( wpthlp, k ),             ! intent(in)
-     .     zm2zt(rtpthlp, k),                                          ! intent(in)
+     .     zm2zt(rtpthlp, k), sclrm(k,:), sclr_tmp1(k,:),              ! intent(in)
+     .     sclr_tmp3(k,:),sclr_tmp2(k,:), sclr_tmp4(k,:),              ! intent(in)
      .     wp4(k), wprtp2(k), wp2rtp(k),                               ! intent(out)
      .     wpthlp2(k), wp2thlp(k), wprtpthlp(k),                       ! intent(out)
      .     cf(k), rcm(k), wpthvp(k), wp2thvp(k), rtpthvp(k),           ! intent(out)
      .     thlpthvp(k), wprcp(k), wp2rcp(k), rtprcp(k), thlprcp(k),    ! intent(out)
      .     rcp2(k), pdf_parms(k, :), crt1,                             ! intent(out)
      .     crt2, cthl1, cthl2, err_code,                               ! intent(out)
-     .     sclrm(k,:), sclr_tmp1(k,:),                                 ! intent(in)
-     .     sclr_tmp3(k,:),sclr_tmp2(k,:), sclr_tmp4(k,:),              ! intent(in)
      .     wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp(k,:),             ! intent(out)
      .     wpsclrpthlp(k,:), sclrprcp(k,:), wp2sclrp(k,:) )            ! intent(out)
 
@@ -727,15 +726,15 @@
        !----------------------------------------------------------------
        ! Advance rtm/wprtp and thlm/wpthlp one time step
        !----------------------------------------------------------------
-        call timestep_mixing( dt, Scm, wmm, wmt, wp2, wp3, ! intent(in)
-     .                        Kht, taum, Skwm, rtpthvp,    ! intent(in)
-     .                        rtm_forcing, thlpthvp,       ! intent(in)
-     .                        thlm_forcing, rtp2, thlp2,   ! intent(in)
-     .                        implemented,                 ! intent(in)
-     .                        rtm, wprtp, thlm, wpthlp,    ! intent(out)
-     .                        err_code,                    ! intent(out)
+        call timestep_mixing( dt, Scm, wmm, wmt, wp2, wp3,      ! intent(in)
+     .                        Kht, taum, Skwm, rtpthvp,         ! intent(in)
+     .                        rtm_forcing, thlpthvp,            ! intent(in)
+     .                        thlm_forcing, rtp2, thlp2,        ! intent(in)
+     .                        implemented,                      ! intent(in)
      .                        sclrpthvp, sclrm_forcing, sclrp2, ! intent(in)
-     .                        sclrm, wpsclrp )                   ! intent(out)
+     .                        rtm, wprtp, thlm, wpthlp,         ! intent(inout)
+     .                        err_code,                         ! intent(inout)
+     .                        sclrm, wpsclrp )                  ! intent(inout)
 
        ! Wrapped LAPACK procedures may report errors, and if so, exit
        ! gracefully.

@@ -1,4 +1,4 @@
-! $Id: closure_new.F,v 1.27 2008-07-08 04:49:11 dschanen Exp $
+! $Id: closure_new.F,v 1.28 2008-07-10 16:14:21 faschinj Exp $
         module pdf_closure
 
         implicit none
@@ -13,14 +13,14 @@
      .             ( p, exner, wm, wp2, wp3, Sc,
      .               rtm, rtp2, wprtp,
      .               thlm, thlp2, wpthlp,
-     .               rtpthlp, wp4, wprtp2, wp2rtp,
+     .               rtpthlp, sclrm, wpsclrp,
+     .               sclrp2, sclrprtp, sclrpthlp,
+     .               wp4, wprtp2, wp2rtp,
      .               wpthlp2, wp2thlp, wprtpthlp,
      .               cf, rcm, wpthvp, wp2thvp, rtpthvp, 
      .               thlpthvp, wprcp, wp2rcp, rtprcp, thlprcp,
-     .               rcp2, pdf_parms, crt1, crt2, cthl1, cthl2,
-     .               err_code,
-     .               sclrm, wpsclrp,
-     .               sclrp2, sclrprtp, sclrpthlp,
+     .               rcp2, pdf_parms, crt1, 
+     .               crt2, cthl1, cthl2, err_code,
      .               wpsclrprtp, wpsclrp2, sclrpthvp,
      .               wpsclrpthlp, sclrprcp, wp2sclrp )
 

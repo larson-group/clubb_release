@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.72 2008-07-08 04:44:25 dschanen Exp $
+! $Id: mixing.F,v 1.73 2008-07-10 16:14:21 faschinj Exp $
 !===============================================================================
         module mixing
 
@@ -41,9 +41,9 @@
      .                              rtm_forcing, thlpthvp, 
      .                              thlm_forcing, rtp2, thlp2,
      .                              implemented,
+     .                              sclrpthvp, sclrm_forcing, sclrp2, 
      .                              rtm, wprtp, thlm, wpthlp,
      .                              err_code,
-     .                              sclrpthvp, sclrm_forcing, sclrp2, 
      .                              sclrm, wpsclrp )
 
 !       Description:
@@ -129,6 +129,13 @@
         logical, intent(in) :: 
      .  implemented   ! Flag for CLUBB being implemented in a larger model.
          
+     
+        ! Additional variables for passive scalars
+        ! Input Variables
+        real, intent(in), dimension(gr%nnzp,sclr_dim) :: 
+     .  sclrpthvp, sclrm_forcing, !                           [Units vary]
+     .  sclrp2                    ! For clipping Vince Larson [Units vary]
+
         ! Input/Output Variables
         real, intent(inout), dimension(gr%nnzp) :: 
      .  rtm,         ! r_t  (total water mixing ratio)           [kg/kg]
@@ -138,11 +145,6 @@
 
         integer, intent(inout) :: err_code ! Model status 
 
-        ! Additional variables for passive scalars
-        ! Input Variables
-        real, intent(in), dimension(gr%nnzp,sclr_dim) :: 
-     .  sclrpthvp, sclrm_forcing, !                           [Units vary]
-     .  sclrp2                    ! For clipping Vince Larson [Units vary]
         ! Input/Output Variables
         real, intent(inout), dimension(gr%nnzp,sclr_dim) :: 
      .  sclrm, wpsclrp !                                     [Units vary]

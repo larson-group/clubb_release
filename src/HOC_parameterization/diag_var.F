@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F,v 1.65 2008-07-08 04:49:11 dschanen Exp $
+! $Id: diag_var.F,v 1.66 2008-07-10 16:14:21 faschinj Exp $
 !===============================================================================
       module diagnose_variances
 
@@ -31,10 +31,10 @@
      .                       thlm, wpthlp, wpthvp, um, vm,
      .                       wp2, wp3, upwp, vpwp, Scm, Skwm, Kht,
      .                       liter, dt,
+     .                       sclrm, wpsclrp,
      .                       rtp2, thlp2, rtpthlp,
      .                       up2, vp2, 
      .                       err_code,
-     .                       sclrm, wpsclrp,
      .                       sclrp2, sclrprtp, sclrpthlp )
 !       Description:
 !       Subprogram to diagnose variances by solving steady-state equations
@@ -121,6 +121,10 @@
         logical, intent(in) :: liter ! Whether variances are prognostic
 
         real(kind=time_precision), intent(in) :: dt ! Timestep       [s]
+        
+        ! Passive scalar input 
+        real, intent(in), dimension(gr%nnzp, sclr_dim) :: 
+     .  sclrm, wpsclrp
 
         ! Input/Output variables
         ! An attribute of (inout) is also needed to import the
@@ -136,9 +140,6 @@
 
         integer, intent(out) :: err_code
 
-        ! Passive scalar input 
-        real, intent(in), dimension(gr%nnzp, sclr_dim) :: 
-     .  sclrm, wpsclrp
 
         ! Passive scalar output
         real, intent(out), dimension(gr%nnzp, sclr_dim) :: 
