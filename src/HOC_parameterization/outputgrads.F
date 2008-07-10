@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: outputgrads.F,v 1.17 2008-07-07 21:56:03 faschinj Exp $
+! $Id: outputgrads.F,v 1.18 2008-07-10 20:11:22 faschinj Exp $
         module outputgrads
 #ifdef STATS 
 
@@ -580,7 +580,7 @@
 
           ! Local Variables
           integer :: iday, imonth, iyear, ileap
-          real :: time
+          real(kind=time_precision) :: time
 
 
 !         Copy input arguments into internal variables
