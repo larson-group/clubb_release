@@ -1,4 +1,4 @@
-! $Id: cos_solar_zen.F,v 1.10 2008-07-07 21:53:33 faschinj Exp $
+! $Id: cos_solar_zen.F,v 1.11 2008-07-10 20:24:48 faschinj Exp $
 !-----------------------------------------------------------------------
         module cos_solar_zen_mod
 
@@ -32,7 +32,7 @@
         use stats_precision, only: time_precision ! Variable(s)
 
         use calendar, only: 
-     .      gregorian2julian, julian2gregorian,leap_year ! Procedure(s)
+     .      compute_current_date, leap_year ! Procedure(s)
         
         implicit none
 
@@ -84,33 +84,15 @@
 
         integer ::
      .  jul_day, j, days_in_year,
-     .  present_year, present_month, present_day, days_since_start,
-     .  days_since_1jan4713bc  
+     .  present_year, present_month, present_day 
         
-        ! Using Julian dates we are able to add the days that the model
-        ! has been running
-        
-        ! Determine the Julian Date of the starting date, 
-        !    written in Gregorian (year, month, day) form
-        days_since_1jan4713bc = gregorian2julian( year, month, day )
-        
-        ! Determine the amount of days that have passed since start date
-        days_since_start = floor( current_time / sec_per_day )
+        call compute_current_date( day, month,
+     .                             year,
+     .                             current_time,
+     .                             present_day, present_month,
+     .                             present_year,
+     .                             present_time )
 
-        ! Set days_since_1jan4713 to the present Julian date
-        days_since_1jan4713bc = days_since_1jan4713bc + days_since_start
-
-        ! Set Present time to be seconds since the Julian date
-        present_time = current_time - ( days_since_start * sec_per_day )
-
-        call julian2gregorian 
-     .         ( days_since_1jan4713bc,                  
-     .           present_year, present_month, present_day)
-        
-        ! Now the current Gregorian Date of the model should now be in
-        ! the variables present_year, present_month, and present_day
-        ! Joshua Fasching May 2008
-        
         if ( leap_year (present_year) ) then 
                  days_in_year = 366
         else
