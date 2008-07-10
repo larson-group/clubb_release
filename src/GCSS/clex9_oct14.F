@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: clex9_oct14.F,v 1.19 2008-07-08 04:44:09 dschanen Exp $
+! $Id: clex9_oct14.F,v 1.20 2008-07-10 23:07:10 ajsmith4 Exp $
         module clex9_oct14
 
 !       Description:
@@ -29,15 +29,6 @@
         subroutine clex9_oct14_tndcy
      .             ( time, time_initial, dt, rlat, rlon,
      .               thlm, rcm, p, exner, rhot, rtm, wmt,
-!**************************************************************
-! Addition by Adam Smith, 28 April 2008
-! "wmax" is now set in the namelist and saved in parameters.F.
-! We pass the variable into the forcing subroutine here.
-!**************************************************************
-!     .               wmax,
-!****************************
-! End of ajsmith4's addition
-!****************************
      .               wmm, thlm_forcing, rtm_forcing,
      .               Frad, radht, Ncnm, sclrm_forcing )
 
