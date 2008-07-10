@@ -1,4 +1,4 @@
-$Id: Readme.txt,v 1.69 2008-06-25 13:34:25 nielsenb Exp $
+$Id: Readme.txt,v 1.70 2008-07-10 18:51:00 vlarson Exp $
 
 ************************************************************************
 *                           Copyright Notice
@@ -96,7 +96,7 @@ Build:
 3. $ make
 
 The executables will appear in $(PREFIX)/bin and libraries in $(PREFIX)/lib.
-The modules remain in the src directory.
+The object (.o) and module (.mod) files will appear in $(PREFIX)/obj.
 
 If you're using dmake or GNU make and have a fast parallel machine, 
 parallel builds should work as well.
