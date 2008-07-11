@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F,v 1.66 2008-07-10 16:14:21 faschinj Exp $
+! $Id: diag_var.F,v 1.67 2008-07-11 14:52:37 griffinb Exp $
 !===============================================================================
       module diagnose_variances
 
@@ -72,8 +72,9 @@
      .      time_precision ! Variable(s)
 
         use explicit_clip, only:
-     .      covariance_clip ! Procedure(s)
-        
+     .      covariance_clip, ! Procedure(s)
+     .      variance_clip
+
         use error_code, only: 
      .      clubb_no_error, ! Variable(s)
      .      lapack_error,   ! Procedure(s)
@@ -160,6 +161,9 @@
      .  upwp_zt,   ! u'w' interpolated to thermodynamic levels     [m^2/s^2]
      .  vpwp_zt,   ! v'w' interpolated to thermodynamic levels     [m^2/s^2]
      .  wpsclrp_zt ! w'sclr' interpolated to thermodynamic levels  [m/s {sclrm units}]
+
+        real, dimension(gr%nnzp) ::
+     .  threshold  ! Minimum value for variances                   [units vary]
 
         real, dimension(3,gr%nnzp) :: 
      .  lhs ! Tridiagonal matrix
@@ -430,44 +434,39 @@
         end if
 
 
-#ifdef STATS
-        if( lstats_samp ) then
-          call stat_begin_update( irtp2_cl, real( rtp2 / dt), zm )      
+        ! Clipping for r_t'^2
 
-          call stat_begin_update( ithlp2_cl, real( thlp2 / dt), zm )
+        threshold = 0.0
 
-          call stat_begin_update( iup2_cl, real( up2 / dt ), zm )
+        where ( wp2 >= wtol*wtol )
+     .     threshold = rttol*rttol
 
-          call stat_begin_update( ivp2_cl, real( vp2 / dt ), zm )
-        end if
-#endif
+        call variance_clip( "rtp2", dt, threshold, rtp2 )
 
-        ! Clip small and negative values
-        ! The surface variances are set elsewhere.  They do not need to be
-        ! clipped at the lowest level.  Brian Griffin.  12/18/05.
-        do k = 2, gr%nnzp, 1
 
-          if ( wp2(k) >= wtol*wtol ) then
-            rtp2(k) 
-     .      = max( rtp2(k), 
-! Vince Larson commented out because may cause unstable feedback w/ wprtp eqn..
-!       The correlation of w and rt may now exceed 1, which would be unphysical.  7 Jul 2007 
-!     .             wprtp(k)*wprtp(k)/((1.0-Scm(k))*wp2(k)) + eps,
-! End Vince Larson's commenting
-     .             rttol*rttol )
-            thlp2(k) 
-     .      = max( thlp2(k), 
-! Vince Larson commented out because may cause unstable feedback w/ wpthlp eqn.. 
-!    The correlation of w and thl may now exceed 1, which would be unphysical.  7 Jul 2007 
-!     .             wpthlp(k)*wpthlp(k)/((1.0-Scm(k))*wp2(k)) + eps,
-! End Vince Larson's commenting
-     .             thltol*thltol )
-          else
-            thlp2(k) = max( thlp2(k), 0.0 )
-            rtp2(k)  = max( rtp2(k), 0.0 )
-          end if
+        ! Clipping for th_l'^2
 
-        end do ! k=2..gr%nnzp
+        threshold = 0.0
+
+        where ( wp2 >= wtol*wtol )
+     .     threshold = thltol*thltol
+
+        call variance_clip( "thlp2", dt, threshold, thlp2 )
+
+
+        ! Clipping for u'^2
+
+        threshold = 0.0
+
+        call variance_clip( "up2", dt, threshold, up2 )
+
+
+        ! Clipping for v'^2
+
+        threshold = 0.0
+
+        call variance_clip( "vp2", dt, threshold, vp2 )
+
 
         ! Clipping for r_t'th_l'
         ! Clipping r_t'th_l' at each vertical level, based on the 
@@ -480,24 +479,6 @@
      .                        .true., dt, rtp2, thlp2, 
      .                        rtpthlp )
 
-        ! Clipping for up2/vp2
-        ! This appears to be unneeded for now.  If these do need to be
-        ! clipped in the future, this could be uncommented and budget
-        ! could be added. -dschanen 24 April 2007
-        where ( vp2 < 0.0 ) vp2 = 0.0
-        where ( up2 < 0.0 ) up2 = 0.0
-
-#ifdef STATS
-        if ( lstats_samp ) then
-           call stat_end_update( irtp2_cl, real( rtp2 / dt ), zm )
-           
-           call stat_end_update( ithlp2_cl, real( thlp2 / dt ), zm )
-
-           call stat_end_update( iup2_cl, real( up2 / dt ), zm )
-           
-           call stat_end_update( ivp2_cl, real( vp2 / dt ), zm )
-        endif
-#endif
 
 #ifdef STATS
         if ( lstats_samp ) then
@@ -603,23 +584,18 @@
           end if
 
 
-          ! Clip scalar variance terms
-          do i =1, sclr_dim, 1
-            do k = 2, gr%nnzp, 1
-              if ( wp2(k) >= wtol*wtol ) then
-                sclrp2(k,i) 
-     .          = max
-     .            ( sclrp2(k,i), 
-! Vince Larson commented out because it may cause unstable feedback with wpsclrp eqn..
-!     The correlation of w and sclr may now exceed 1, which would be unphysical.  7 Jul 2007
-!     .              wpsclrp(k,i)*wpsclrp(k,i)/((1.0-Scm(k))*wp2(k))+eps,
-! End Vince Larson's commenting
-     .              sclrtol(i)*sclrtol(i) )
-              else
-                sclrp2(k,i) = max( sclrp2(k,i), 0.0 )
-              end if ! wp2(k) >= wtol**2
-            end do ! k
-          end do ! i
+          ! Clipping for sclr'^2
+          do i = 1, sclr_dim, 1
+
+             threshold = 0.0
+
+             where ( wp2 >= wtol*wtol )
+     .          threshold = sclrtol(i)*sclrtol(i)
+
+             call variance_clip( "sclrp2", dt, threshold, sclrp2(:,i) )
+
+          enddo
+
 
           ! Clipping for sclr'r_t'
           ! Clipping sclr'r_t' at each vertical level, based on the 
@@ -633,6 +609,7 @@
      .                             .true., dt, sclrp2(:,i), rtp2(:),
      .                             sclrprtp(:,i) )
           enddo
+
 
           ! Clipping for sclr'th_l'
           ! Clipping sclr'th_l' at each vertical level, based on the 
@@ -648,6 +625,7 @@
           enddo
 
         endif ! scalar_calc
+
 
         ! Check for singular matrices
         do i = 1, 5+1
