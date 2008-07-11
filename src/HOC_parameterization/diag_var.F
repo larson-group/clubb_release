@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F,v 1.67 2008-07-11 14:52:37 griffinb Exp $
+! $Id: diag_var.F,v 1.68 2008-07-11 15:03:18 griffinb Exp $
 !===============================================================================
       module diagnose_variances
 
@@ -86,14 +86,10 @@
         
         use stats_variables, only:
      .      irtp2_bt, ! Variable(s)
-     .      irtp2_cl,
      .      ithlp2_bt,
-     .      ithlp2_cl,
      .      irtpthlp_bt,
      .      ivp2_bt,
-     .      ivp2_cl,
      .      iup2_bt,
-     .      iup2_cl,
      .      zm,
      .      lstats_samp
 #endif /*STATS*/
