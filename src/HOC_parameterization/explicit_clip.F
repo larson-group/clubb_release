@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: explicit_clip.F,v 1.2 2008-07-08 18:15:06 griffinb Exp $
+! $Id: explicit_clip.F,v 1.3 2008-07-11 14:56:40 griffinb Exp $
 !===============================================================================
         module explicit_clip
 
@@ -203,9 +203,10 @@
         real, dimension(gr%nnzp), intent(inout) ::
      .  xp2         ! Variance of x, x'^2 (momentum levels)   [{x units}^2]
 
+        ! Local Variables
+        integer :: k   ! Array index
 
 #ifdef STATS
-        ! Local Variable
         integer ::
      .  ixp2_cl
 
@@ -233,8 +234,12 @@
         endif
 #endif /*STATS*/
 
-        where ( xp2 < threshold )
-     .     xp2 = threshold
+        ! Limit the value of x'^2 at threshold.
+        do k = 2, gr%nnzp, 1
+           if ( xp2(k) < threshold(k) ) then
+              xp2(k) = threshold(k)
+           endif
+        enddo
 
 #ifdef STATS
         if ( lstats_samp ) then
