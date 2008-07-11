@@ -1,4 +1,4 @@
-$Id: Readme.txt,v 1.70 2008-07-10 18:51:00 vlarson Exp $
+$Id: Readme.txt,v 1.71 2008-07-11 14:38:00 vlarson Exp $
 
 ************************************************************************
 *                           Copyright Notice
@@ -616,6 +616,18 @@ The compare_runs files:
 
   Note that for most cases SW and LW components are not calculated 
   without using BUGSrad.
+
+------------------------------------------------------------------------
+- (2.2) The COAMPS microphysics scheme
+------------------------------------------------------------------------
+
+     COAMPS microphysics is a single-moment scheme that includes
+  the following hydrometeor categories: cloud water, rain, cloud ice,
+  snow, and graupel.  It is based on Rutledge and Hobbs (1983).
+
+     COAMPS was developed by the Naval Research Laboratory,
+  Monterey, California.  COAMPS is a registered trademark of the
+  Naval Research Laboratory.
 
 ------------------------------------------------------------------------
 - (3.1) The new scalar code ( HOC with -DSCALARS enabled )
