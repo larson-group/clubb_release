@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: outputgrads.F,v 1.18 2008-07-10 20:11:22 faschinj Exp $
+! $Id: outputgrads.F,v 1.19 2008-07-11 15:59:38 faschinj Exp $
         module outputgrads
 #ifdef STATS 
 
@@ -552,22 +552,13 @@
      .                           time_in, date )
           
           use stats_precision, only: 
-     .        time_precision ! Variable
+     .        time_precision ! Variable(s)
           use calendar, only: 
-     .        leap_year ! Procedure
+     .        compute_current_date ! Procedure(s)
+          use calendar, only:
+     .        month
           
           implicit none
-
-          ! Constant Parameters
-          character(len=3), dimension(12), parameter ::
-     .    month = (/'JAN','FEB','MAR','APR','MAY','JUN',
-     .              'JUL','AUG','SEP','OCT','NOV','DEC'/)
-
-          integer, dimension(24), parameter ::
-     .    ndays = (/31, 28, 31, 30, 31, 30,
-     .              31, 31, 30, 31, 30, 31,
-     .              31, 29, 31, 30, 31, 30,
-     .              31, 31, 30, 31, 30, 31 /)
 
           ! Input Variables
           integer, intent(in) :: 
@@ -579,9 +570,8 @@
           character(len=15), intent(out) :: date
 
           ! Local Variables
-          integer :: iday, imonth, iyear, ileap
+          integer :: iday, imonth, iyear
           real(kind=time_precision) :: time
-
 
 !         Copy input arguments into internal variables
 
@@ -590,53 +580,12 @@
           iyear  = year_in
           time   = time_in
 
-!         If starting time is greater than 24 hours, update
-!         date accordingly
-
-          do while ( int(time) >= 86400 )
-
-            time = time - 86400.0
-            iday = iday + 1
-
-!           determine if current year is leap year
-!           no:  ileap = 0
-!           yes: ileap = 12
-
-!  Picky compilers will crap out on the code below
-!  Something to do with logical .true./.false. not always being 1/0?
-!           ileap = abs( (mod(iyear,4).eq.0)
-!    .                    .and. (.not.(  mod(iyear,100).eq.0
-!    .                                   .and. mod(iyear,400).ne.0 )) 
-!    .                 )*12
-
-!   Alternate code:
-!            if ( ( mod( iyear, 4 ) == 0)
-!     .            .and. (.not.( mod( iyear, 100 ) == 0 
-!     .                        .and. mod( iyear, 400 ) /= 0 ) )
-!     .         ) then 
-!              ileap = 12
-!            else
-!              ileap = 0
-!            end if
-
-            if( leap_year(iyear) ) then
-               ileap = 12
-            else
-               ileap = 0
-            endif
-
-
-            if ( iday > ndays(imonth+ileap) ) then
-              iday = 1
-              imonth = imonth + 1
-            end if
-
-            if ( imonth > 12 ) then
-              imonth = 1
-              iyear = iyear + 1
-            end if
-
-          end do
+          call compute_current_date( day_in, month_in,
+     .                               year_in,
+     .                               time_in,
+     .                               iday, imonth,
+     .                               iyear,
+     .                               time )
 
           date = 'hh:mmZddmmmyyyy'
           write(unit=date(7:8),fmt='(i2.2)') iday

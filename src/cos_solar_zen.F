@@ -1,4 +1,4 @@
-! $Id: cos_solar_zen.F,v 1.11 2008-07-10 20:24:48 faschinj Exp $
+! $Id: cos_solar_zen.F,v 1.12 2008-07-11 15:59:38 faschinj Exp $
 !-----------------------------------------------------------------------
         module cos_solar_zen_mod
 
@@ -8,8 +8,8 @@
 
         private ! Default Scope
 
-
         contains
+
         double precision function cos_solar_zen
      .           ( day, month, year, current_time, lat_in_degrees,
      .             lon_in_degrees )
@@ -32,7 +32,7 @@
         use stats_precision, only: time_precision ! Variable(s)
 
         use calendar, only: 
-     .      compute_current_date, leap_year ! Procedure(s)
+     .      gregorian2julian_day, compute_current_date, leap_year ! Procedure(s)
         
         implicit none
 
@@ -40,9 +40,6 @@
         intrinsic :: sin, cos, mod, abs, int
 
         ! Constant Parameters
-        integer, dimension(12), parameter ::
-     .  ndays = (/31, 28, 31, 30, 31, 30,
-     .            31, 31, 30, 31, 30, 31/)  ! Days per month (Jan..Dec)
 
         ! Liou's coefficients
         double precision, parameter ::
@@ -93,23 +90,15 @@
      .                             present_year,
      .                             present_time )
 
-        if ( leap_year (present_year) ) then 
-                 days_in_year = 366
+        call gregorian2julian_day( present_day, present_month,
+     .                             present_year,
+     .                             jul_day )
+
+        if( leap_year(present_year) )then
+                days_in_year = 366
         else
-                 days_in_year = 365
-        end if
-
-        jul_day = present_day
-
-        ! Add the days from the previous months
-        do j = 1, present_month-1, 1
-          jul_day = jul_day + ndays(j)
-        end do
-        
-        ! Kluge for a leap year
-        if ( days_in_year == 366 .and. present_month > 2 ) then
-            jul_day = jul_day + 1
-        end if
+                days_in_year = 365
+        endif
 
         !delta_in_degrees = delta*(180/pi_dp)
 
@@ -125,11 +114,6 @@
      .        + c1*cos( t ) + d1*sin( t )
      .        + c2*cos( 2*t ) + d2*sin( 2*t )
      .        + c3*cos( 3*t ) + d3*sin( 3*t )
-
-        ! Just in case
-        if ( jul_day > days_in_year ) then 
-          stop "Problem with days solar zenith code."
-        end if
 
         ! The angle  longang  is equivalent to the
         ! hour angle in the formula for cosZ .
