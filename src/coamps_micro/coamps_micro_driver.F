@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: coamps_micro_driver.F,v 1.35 2008-07-09 18:56:33 faschinj Exp $
+! $Id: coamps_micro_driver.F,v 1.36 2008-07-11 14:50:59 vlarson Exp $
       module coamps_micro_driver_mod
 
       ! This module wraps the adjtq subroutine so that it may be used by
@@ -24,8 +24,13 @@
      .         rttend, thlmtend )
 
 !    Description:
-!      Subroutine to compute ice, as it is done in COAMPS, using
-!      adjtq.F.
+!      Subroutine to compute ice, as it is done in NRL's COAMPS 
+!      mesoscale model, using adjtq.F.  
+
+!      COAMPS was developed by the Naval Research Laboratory, 
+!      Monterey, California.  COAMPS is a registered trademark of the 
+!      Naval Research Laboratory.
+
 !      This subroutine assumes the HOC convention that k=1 is at the
 !      surface rather than the top of the model domain.  adjtq.F will
 !      work whichever way it is called, since it does no advection or
