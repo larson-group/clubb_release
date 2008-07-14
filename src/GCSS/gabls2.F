@@ -1,4 +1,4 @@
-!$Id: gabls2.F,v 1.20 2008-07-08 04:44:10 dschanen Exp $
+!$Id: gabls2.F,v 1.21 2008-07-14 20:44:26 faschinj Exp $
 !----------------------------------------------------------------------
         module gabls2
 
@@ -215,7 +215,7 @@
           ubar = max( ubmin, sqrt( um*um + vm*vm ) )
           Cz   = C_10 * ((log( 10/z0 ))/(log( lowest_level/z0 ))) *
      .           ((log( 10/z0 ))/(log( lowest_level/z0 )))             ! Modification in case lowest model level isn't at 10 m, from ATEX specification
-          time_in_hours = (time - time_initial) / 3600. + 14.      ! at initial time, time_in_hours = 14 (14 local; 19 UTC)
+          time_in_hours = real((time - time_initial) / 3600. + 14.)    ! at initial time, time_in_hours = 14 (14 local; 19 UTC)
 
 
           ! Compute sea surface temperature

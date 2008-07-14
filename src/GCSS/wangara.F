@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: wangara.F,v 1.13 2008-07-08 04:47:06 dschanen Exp $
+! $Id: wangara.F,v 1.14 2008-07-14 20:44:26 faschinj Exp $
         module wangara
 
         implicit none
@@ -135,7 +135,7 @@
 
         ! Compute heat and moisture fluxes
 
-        wpthlp_sfc = 0.18 * cos( (time_est-45000.0)/36000.0 * pi )
+        wpthlp_sfc = real(0.18 * cos( (time_est-45000.0)/36000.0 * pi ))
         wprtp_sfc  = 1.3e-4 * wpthlp_sfc
 
         ! Let the passive scalars be equal to rt and theta_l for now
