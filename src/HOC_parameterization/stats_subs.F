@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.29 2008-07-14 17:26:10 faschinj Exp $
+!  $Id: stats_subs.F,v 1.30 2008-07-14 20:46:47 faschinj Exp $
       module stats_subs
 #ifdef STATS
  
@@ -625,7 +625,10 @@
        do k=1,zt%kk
          if ( zt%n(k,i) /= 0 
      .        .and. zt%n(k,i) /= floor(stats_tout/stats_tsamp) ) then
-           write(0,*) 'Possible sampling error for zt ',i,k,zt%n(k,i)
+           write(0,*) 'Possible sampling error for variable ',
+     .                     trim(zt%f%var(i)%name),' in zt ','at k =',k,
+     .                     ' zt%n(',k,',',i,')=',zt%n(k,i)
+!           write(0,*) 'Possible sampling error for zt ',i,k,zt%n(k,i)
            !pause
          end if
         end do
@@ -635,7 +638,13 @@
        do k=1,zm%kk
          if ( zm%n(k,i) /= 0 
      .        .and. zm%n(k,i) /= floor(stats_tout/stats_tsamp) ) then
-           write(0,*) 'Possible sampling error for zm ',i,k,zm%n(k,i)
+           write(0,*) 'Possible sampling error for variable ',
+     .                     trim(zm%f%var(i)%name),' in zm ','at k =',k,
+     .                     ' zm%n(',k,',',i,')=',zm%n(k,i)
+!           write(0,*) 'Possible sampling error for zm ',i,k,zm%n(k,i)
+!           Made error message more descriptive
+!           Joshua Fasching July 2008
+
            !pause
          end if
         end do
