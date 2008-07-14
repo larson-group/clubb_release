@@ -1,4 +1,4 @@
-! $Id: cos_solar_zen.F,v 1.12 2008-07-11 15:59:38 faschinj Exp $
+! $Id: cos_solar_zen.F,v 1.13 2008-07-14 19:47:52 faschinj Exp $
 !-----------------------------------------------------------------------
         module cos_solar_zen_mod
 
@@ -80,7 +80,7 @@
      .  present_time
 
         integer ::
-     .  jul_day, j, days_in_year,
+     .  jul_day, days_in_year,
      .  present_year, present_month, present_day 
         
         call compute_current_date( day, month,
