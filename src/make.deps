@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.54 2008-07-14 14:37:44 faschinj Exp $
+# $Id: make.deps,v 1.55 2008-07-14 15:03:26 dschanen Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -200,7 +200,7 @@ sounding.o	: grid.o std_atmosphere_mod.o interpolation.o constants.o \
 	parameters.o array_index.o sounding.F
 std_atmosphere_mod.o: constants.o interpolation.o std_atmosphere_mod.F
 interpolation.o : error_code.o interpolation.F
-calendar.o      : calendar.F
+calendar.o      : constants.o calendar.F
 inputfields.o	: grid.o inputgrads.o prog_variables.o diag_variables.o \
 	inputfields.F 
 gradsaverage.o	: grid.o inputgrads.o gradsaverage.F 
