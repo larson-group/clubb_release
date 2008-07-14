@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.28 2008-07-14 14:37:44 faschinj Exp $
+!  $Id: stats_subs.F,v 1.29 2008-07-14 17:26:10 faschinj Exp $
       module stats_subs
 #ifdef STATS
  
@@ -78,8 +78,8 @@
       use output_grads, only:
      .    open_grads  ! Procedure
 #ifdef NETCDF
-      use outputnc, only:
-     .    open_nc     ! Procedure
+      use output_netcdf, only:
+     .    open_netcdf     ! Procedure
 #endif
       use stats_zm, only:
      .    stats_init_zm ! Procedure
@@ -287,11 +287,11 @@
 
       else ! Open NetCDF file
 #ifdef NETCDF
-        call open_nc( zt%f, iunit, fdir, fname, 
+        call open_netcdf( iunit, fdir, fname, 
      .                1, zt%kk, zt%z,
      .                day, month, year, rlat, rlon,
      .                time_current+stats_tout, stats_tout,
-     .                zt%nn )
+     .                zt%nn, zt%f )
 #else
         stop "netCDF support was not compiled into this build."
 #endif
@@ -362,11 +362,11 @@
 
       else ! Open NetCDF file
 #ifdef NETCDF
-        call open_nc( zm%f, iunit, fdir, fname, 
+        call open_netcdf( iunit, fdir, fname, 
      .                1, zm%kk, zm%z,
      .                day, month, year, rlat, rlon,
      .                time_current+stats_tout, stats_tout,
-     .                zm%nn )
+     .                zm%nn, zm%f )
 
 #else
         stop "netCDF support was not compiled into this build."
@@ -417,11 +417,11 @@
 
       else ! Open NetCDF files
 #ifdef NETCDF
-        call open_nc( sfc%f, iunit, fdir, fname, 
+        call open_netcdf( iunit, fdir, fname, 
      .                1, sfc%kk, sfc%z,
      .                day, month, year, rlat, rlon,
      .                time_current+stats_tout, stats_tout,
-     .                sfc%nn )
+     .                sfc%nn, sfc%f )
 
 #else
         stop "netCDF support was not compiled into this build."
@@ -597,8 +597,8 @@
      .    write_grads ! Procedure(s)
 
 #ifdef NETCDF
-      use outputnc, only:
-     .    write_nc ! Procedure(s)
+      use output_netcdf, only:
+     .    write_netcdf ! Procedure(s)
 #endif
 
       implicit none
@@ -654,9 +654,9 @@
         call write_grads( sfc%f  )
       else ! lnetcdf
 #ifdef NETCDF
-        call write_nc( zt%f  )
-        call write_nc( zm%f  )
-        call write_nc( sfc%f  )
+        call write_netcdf( zt%f  )
+        call write_netcdf( zm%f  )
+        call write_netcdf( sfc%f  )
 #else 
         stop "This program was not compiled with netCDF support"
 #endif
@@ -1197,8 +1197,8 @@
      .    lnetcdf,
      .    lstats
 #ifdef NETCDF
-      use outputnc, only: 
-     .    close_nc ! Procedure
+      use output_netcdf, only: 
+     .    close_netcdf ! Procedure
 #endif
 
       implicit none
@@ -1207,9 +1207,9 @@
 
       if ( lstats .and. lnetcdf ) then
 #ifdef NETCDF
-        call close_nc( zt%f )
-        call close_nc( zm%f )
-        call close_nc( sfc%f )
+        call close_netcdf( zt%f )
+        call close_netcdf( zm%f )
+        call close_netcdf( sfc%f )
 #else
         stop "This program was not compiled with netCDF support"
 #endif

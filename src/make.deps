@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.55 2008-07-14 15:03:26 dschanen Exp $
+# $Id: make.deps,v 1.56 2008-07-14 17:26:10 faschinj Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -48,7 +48,7 @@ microphys_driver.o : constants.o model_flags.o lapack_wrap.o \
         ice_dfsn_mod.o diffusion.o array_index.o microphys_driver.F 
 output_grads.o	: constants.o recl.F endian.o outputfile.o calendar.o \
 	output_grads.F
-outputnc.o	: constants.o outputfile.o outputnc.F
+output_netcdf.o	: constants.o outputfile.o output_netcdf.F
 diag_variables.o: constants.o parameters.o grid.o model_flags.o diag_variables.F
 prog_variables.o: constants.o parameters.o grid.o model_flags.o prog_variables.F 
 numer_check.o	: prog_variables.o diag_variables.o constants.o model_flags.o\
@@ -57,7 +57,7 @@ inputgrads.o	: constants.o endian.o recl.F inputgrads.F
 grid.o		: constants.o file_functions.o grid.F
 stats_type.o    : outputfile.o stats_precision.o error_code.o stats_type.F
 stats_variables.o     : stats_type.o stats_variables.F
-stats_subs.o    : output_grads.o outputnc.o prog_variables.o diag_variables.o \
+stats_subs.o    : output_grads.o output_netcdf.o prog_variables.o diag_variables.o \
 	stats_variables.o stats_type.o grid.o stats_zt.o stats_zm.o stats_sfc.o temp_in_K_mod.o \
 	interpolation.o stats_subs.F 
 stats_zt.o : stats_variables.o stats_zt.F

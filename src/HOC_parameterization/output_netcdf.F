@@ -1,6 +1,6 @@
-! $Id: outputnc.F,v 1.14 2008-07-07 21:56:13 faschinj Exp $
+! $Id: output_netcdf.F,v 1.1 2008-07-14 17:26:10 faschinj Exp $
 !-----------------------------------------------------------------------
-       module outputnc
+       module output_netcdf
 #ifdef NETCDF
 
 !      Description:
@@ -12,17 +12,17 @@
 
        implicit none
 
-       public :: open_nc, write_nc, close_nc
+       public :: open_netcdf, write_netcdf, close_netcdf
 
-       private :: define_nc, write_grid, first_write, format_date
+       private :: define_netcdf, write_grid, first_write, format_date
        
        private ! Default scope
 
        contains
 !-----------------------------------------------------------------------
-       subroutine open_nc( ncf, unit, fdir, fname, ia, iz, zgrid, 
+       subroutine open_netcdf( unit, fdir, fname, ia, iz, zgrid, 
      .                     day, month, year, rlat, rlon,
-     .                     time, dtwrite, nvar )
+     .                     time, dtwrite, nvar, ncf )
 
 !      Description:
 !      Defines the structure used to reference the file `ncf'
@@ -116,7 +116,7 @@
          stop
        endif
 
-       call define_nc( ncf%iounit, ncf%ia, ncf%iz, ncf%z,
+       call define_netcdf( ncf%iounit, ncf%ia, ncf%iz, ncf%z,
      .                 ncf%day, ncf%month, ncf%year, ncf%time,
      .                 ncf%dtwrite, ncf%nvar, ncf%LatDimId, 
      .                 ncf%LongDimId, ncf%AltDimId, ncf%TimeDimId,
@@ -126,11 +126,11 @@
 
 
        return
-       end subroutine open_nc
+       end subroutine open_netcdf
 
 !-----------------------------------------------------------------------
 
-       subroutine write_nc( ncf )
+       subroutine write_netcdf( ncf )
 
 !      Description:
 !      Writes some data to the NetCDF dataset, but doesn't close it.
@@ -204,10 +204,10 @@
        deallocate( stat )
 
        return 
-       end subroutine write_nc
+       end subroutine write_netcdf
 
 !-----------------------------------------------------------------------
-       subroutine define_nc( ncid, ia, iz, zgrid, day, month, 
+       subroutine define_netcdf( ncid, ia, iz, zgrid, day, month, 
      .                       year, time, dtwrite, nvar,
      .                       LatDimId, LongDimId, AltDimId, TimeDimId,
      .                       LatVarId, LongVarId, AltVarId, TimeVarId )
@@ -378,10 +378,10 @@
      .         1 )
 
        return
-       end subroutine define_nc
+       end subroutine define_netcdf
 
 !-----------------------------------------------------------------------
-       subroutine close_nc( ncf )
+       subroutine close_netcdf( ncf )
 
 !      Description:
 !      Close a previously opened stats file.
@@ -418,7 +418,7 @@
        endif
 
        return
-       end subroutine close_nc
+       end subroutine close_netcdf
 
 !-----------------------------------------------------------------------
        subroutine first_write( ncf )
@@ -636,4 +636,4 @@
        end subroutine format_date
 
 #endif /*NETCDF*/
-       end module outputnc
+       end module output_netcdf
