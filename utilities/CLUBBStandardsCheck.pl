@@ -1,4 +1,4 @@
-#$Id: CLUBBStandardsCheck.pl,v 1.6 2008-07-14 20:35:43 faschinj Exp $
+#$Id: CLUBBStandardsCheck.pl,v 1.7 2008-07-14 20:41:14 faschinj Exp $
 
 #!/usr/bin/perl
 
@@ -18,7 +18,7 @@
 #		(3) Default Private declarations in modules
 #		Warns if "private" is missing from modules.
 #
-#		(4) $Id: CLUBBStandardsCheck.pl,v 1.6 2008-07-14 20:35:43 faschinj Exp $ comment tags at the top of the file.
+#		(4) $ Id $ comment tags at the top of the file.
 #		Warns if the file does not contain one.
 #
 #               This perl script assumes that 
