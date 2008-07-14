@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: semiimplicit_clip.F,v 1.7 2008-07-02 22:35:57 griffinb Exp $
+! $Id: semiimplicit_clip.F,v 1.8 2008-07-14 19:54:35 faschinj Exp $
 !===============================================================================
         module semiimplicit_clip
 
@@ -419,7 +419,7 @@
 
         ! Main diagonal: [ x f_unclipped(k,<t+1>) ]
         lhs_contribution
-     .  = + (1.0/dt_clip) * B_fnc
+     .  = real( + (1.0/dt_clip) * B_fnc )
 
 
         end function compute_clip_lhs
@@ -511,8 +511,8 @@
            ! Compute the explicit (RHS) contribution from clipping for 
            ! the upper threshold. 
            rhs_upper 
-     .     = + (1.0/dt_clip) 
-     .         * ( A_fnc - B_fnc * f_diff + B_fnc * upper_threshold )
+     .     = real( + (1.0/dt_clip) 
+     .         * ( A_fnc - B_fnc * f_diff + B_fnc * upper_threshold ) )
 
         else
 
@@ -538,8 +538,8 @@
            ! Compute the explicit (RHS) contribution from clipping for 
            ! the lower threshold. 
            rhs_lower 
-     .     = - (1.0/dt_clip) 
-     .         * ( A_fnc - B_fnc * f_diff - B_fnc * lower_threshold )
+     .     = real( - (1.0/dt_clip) 
+     .         * ( A_fnc - B_fnc * f_diff - B_fnc * lower_threshold ) )
 
         else
 
@@ -617,6 +617,7 @@
         real :: sigma_val,      ! Value of parameter sigma.                  [f units]
      .          thresh_avg_mag  ! Average magnitude of threshold(s).         [f units]
 
+        thresh_avg_mag = 0.0 ! Default Initialization
 
         ! Find the average magnitude of the threshold.  
         ! In cases where only one threshold applies, the average 

@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf01.F,v 1.20 2008-07-08 04:44:10 dschanen Exp $
+! $Id: dycoms2_rf01.F,v 1.21 2008-07-14 19:54:34 faschinj Exp $
         module dycoms2_rf01
 
 !       Description:
@@ -114,8 +114,9 @@
           err_code = clubb_rtm_level_not_found
           return
         end if
-        zi = (gr%zt(i)-gr%zt(i-1))/(rtm(i)-rtm(i-1))*(8.0e-3-rtm(i-1))
-     .     + gr%zt(i-1)
+        zi = real(
+     .    (gr%zt(i)-gr%zt(i-1))/(rtm(i)-rtm(i-1))*(8.0e-3-rtm(i-1))
+     .     + gr%zt(i-1) )
 !        x_sfc(1,izi) = zi
 #ifdef STATS
 

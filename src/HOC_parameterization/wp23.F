@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F,v 1.74 2008-07-02 20:38:58 faschinj Exp $
+! $Id: wp23.F,v 1.75 2008-07-14 19:54:35 faschinj Exp $
 !===============================================================================
         module wp23
 
@@ -861,7 +861,7 @@
 
           ! LHS time tendency.
           lhs(3,k_wp2)
-     .    = + 1.0 / dt
+     .    = real( + 1.0 / dt )
 
           ! LHS mean advection (ma) term.
           lhs((/3-2,3,3+2/),k_wp2)
@@ -986,7 +986,7 @@
 
           ! LHS time tendency.
           lhs(3,k_wp3)
-     .    = + 1.0 / dt
+     .    = real( + 1.0 / dt )
 
           ! LHS mean advection (ma) term.
           lhs((/3-2,3,3+2/),k_wp3)
@@ -1274,7 +1274,7 @@
 
           ! RHS time tendency.
           rhs(k_wp2)
-     .    = + ( 1.0 / dt ) * wp2(k)
+     .    = real( + ( 1.0 / dt ) * wp2(k) )
 
           ! RHS buoyancy production (bp) term and pressure term 2 (pr2).
           rhs(k_wp2)
@@ -1348,7 +1348,7 @@
 
           ! RHS time tendency.
           rhs(k_wp3) =
-     .    + ( 1.0 / dt ) * wp3(k)
+     .    real( + ( 1.0 / dt ) * wp3(k) )
 
           ! RHS turbulent advection (ta) and turbulent production (tp) terms.
           rhs(k_wp3)

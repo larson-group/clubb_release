@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_3year.F,v 1.17 2008-07-08 04:44:09 dschanen Exp $
+! $Id: arm_3year.F,v 1.18 2008-07-14 19:54:34 faschinj Exp $
         module arm_3year
 
 !       Description:
@@ -105,7 +105,7 @@
           do while ( i1 <= ntimes-1 )
             i2 = i1 + 1
             if ( time >= times(i1) .and. time < times(i2) ) then
-              time_frac = (time-times(i1))/(times(i2)-times(i1))
+              time_frac = real((time-times(i1))/(times(i2)-times(i1)))
               exit
             end if
               i1 = i2
@@ -251,8 +251,8 @@
           do while ( i1 <= ntimes-1 )
             i2 = i1 + 1
             if ( time >= times(i1) .and. time < times(i2) ) then
-              time_frac    = (time-times(i1))/(times(i2)
-     .                           - times(i1))
+              time_frac    = real((time-times(i1))/(times(i2)
+     .                           - times(i1)))
               heat_flx     = ( 1. - time_frac ) * SE(i1) + 
      .                           time_frac * SE(i2)
               moisture_flx = ( 1. - time_frac ) * LE(i1) + 

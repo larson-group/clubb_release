@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: clex9_oct14.F,v 1.20 2008-07-10 23:07:10 ajsmith4 Exp $
+! $Id: clex9_oct14.F,v 1.21 2008-07-14 19:54:34 faschinj Exp $
         module clex9_oct14
 
 !       Description:
@@ -223,7 +223,7 @@
 !      NOTE: The results from this function match the xi_abs results
 !            obtained using the COAMPS xi_abs method.  Therefore, we
 !            use the "cos_solar_zen" function for this case.
-       xi_abs = cos_solar_zen( 14, 10, 2001, time, rlat, rlon )
+       xi_abs = real( cos_solar_zen( 14, 10, 2001, time, rlat, rlon ) )
 
 c**********************************************************************
 c Addition by Adam Smith, 02 April 2008

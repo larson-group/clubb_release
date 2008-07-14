@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: lba.F,v 1.17 2008-07-08 04:44:10 dschanen Exp $
+! $Id: lba.F,v 1.18 2008-07-14 19:54:34 faschinj Exp $
         module lba
 
 !       Description:
@@ -95,7 +95,7 @@
             do while ( i1 <= ntimes-1 )
               i2 = i1 + 1
               if ( time >= 600. * i1 .and. time < 600. * i2  ) then
-                a      = ( time - 600. * i1 )/( 600. * i2 - 600. * i1)
+                a  = real(( time - 600. * i1 )/( 600. * i2 - 600. * i1))
                 radhtz(:) = ( 1. - a ) * krad(:,i1) + a * krad(:,i2)
                 i1     = ntimes
               end if
@@ -193,9 +193,9 @@
 
         ! Compute heat and moisture fluxes
         ! From Table A.1.
-        ft = max( 0._time_precision, 
+        ft = real( max( 0._time_precision, 
      .               cos( 0.5 * pi * ( (5.25 - ( time/3600.)) / 5.25 ) )
-     .          )
+     .          ) )
 
         wpthlp_sfc =  ( 270. * ft**1.5 ) / ( rho0 * Cp )
         wprtp_sfc  =  ( 554. * ft**1.3 ) / ( rho0 * Lv )

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.108 2008-07-10 16:14:21 faschinj Exp $
+! $Id: parameterization_interface.F,v 1.109 2008-07-14 19:54:35 faschinj Exp $
 !-----------------------------------------------------------------------
         module hoc_parameterization_interface
 
@@ -926,10 +926,10 @@
        if ( lapack_error( err_code ) ) return
 
        if ( luv_nudge ) then
-         um(1:gr%nnzp) = um(1:gr%nnzp) 
-     .      - ((um(1:gr%nnzp) - um_ref(1:gr%nnzp)) * (dt/ts_nudge))
-         vm(1:gr%nnzp) = vm(1:gr%nnzp) 
-     .      - ((vm(1:gr%nnzp) - vm_ref(1:gr%nnzp)) * (dt/ts_nudge))
+         um(1:gr%nnzp) = real( um(1:gr%nnzp) 
+     .      - ((um(1:gr%nnzp) - um_ref(1:gr%nnzp)) * (dt/ts_nudge)) )
+         vm(1:gr%nnzp) = real( vm(1:gr%nnzp) 
+     .      - ((vm(1:gr%nnzp) - vm_ref(1:gr%nnzp)) * (dt/ts_nudge)) )
        end if
 
        ! Compute Shear Production  -Brian

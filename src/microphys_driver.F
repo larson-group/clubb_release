@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F,v 1.21 2008-07-09 18:47:32 faschinj Exp $
+! $Id: microphys_driver.F,v 1.22 2008-07-14 19:54:34 faschinj Exp $
         module microphys_driver
 
 !       Description:
@@ -831,12 +831,13 @@
         ! RHS of equation, following Brian's method from 
         ! the rain subroutine
         rhs(2:gr%nnzp-1) 
-     .  = (xrm(2:gr%nnzp-1) / dt ) ! Time tendency
-     .  + xrm_tndcy(2:gr%nnzp-1)
+     .  = real((xrm(2:gr%nnzp-1) / dt ) ! Time tendency
+     .  + xrm_tndcy(2:gr%nnzp-1))
 
         ! Boundary condition on the RHS
-        rhs(1) = xrm(1) / dt
-        rhs(gr%nnzp) = ( xrm(gr%nnzp) / dt ) + xrm_tndcy(gr%nnzp-1)
+        rhs(1) = real( xrm(1) / dt )
+        rhs(gr%nnzp) = 
+     .     real( ( xrm(gr%nnzp) / dt ) + xrm_tndcy(gr%nnzp-1) )
 
         ! Solve system using tridag_solve. This uses LAPACK sgtsv,
         ! which relies on Gaussian elimination to decompose the matrix.
@@ -1025,7 +1026,7 @@
 
           ! Main diagonal
           ! Time Tendency
-          lhs(k_tdiag,k) = lhs(k_tdiag,k) + ( 1.0 / dt )
+          lhs(k_tdiag,k) = real( lhs(k_tdiag,k) + ( 1.0 / dt ) )
 
           ! All diagonals
 
@@ -1607,14 +1608,14 @@
         tot_tndcy = trnsprt_sed_tndcy + xrm_tndcy(k)
 
         ! The net amount of change in the hydrometeor over the last timestep.
-        xrm_chge = tot_tndcy * dt
+        xrm_chge = real( tot_tndcy * dt )
 
         ! The value of xrm at the previous timestep.
         xrm_old = xrm(k) - xrm_chge
 
         ! The net amount of change in the hydrometeor due to only the
         ! transport (mean advection and diffusion) and sedimentation terms.
-        xrm_chge_trsed = trnsprt_sed_tndcy * dt
+        xrm_chge_trsed = real( trnsprt_sed_tndcy * dt )
 
         ! The new value of the hydrometeor at this timestep due to only
         ! the transport and sedimentation terms.
@@ -1635,7 +1636,7 @@
            ! Define as positive.  This rate should also be the difference
            ! between the computed evaporation rate (xrm_tndcy) and the
            ! actual evaporation rate (evap_rate).
-           overevap_rate = overevap_amt / dt
+           overevap_rate = real( overevap_amt / dt )
            ! Reset the value of the hydrometeor (xrm) to 0.
            xrm(k) = 0.0
         else
@@ -1653,7 +1654,7 @@
            ! evaporated.  Define as positive.  In this case, any evaporation
            ! that was computed is considered to be over-evaporation.
            ! Define as positive.
-           overevap_amt = -xrm_tndcy(k) * dt
+           overevap_amt = real( -xrm_tndcy(k) * dt )
            overevap_rate = -xrm_tndcy(k)
            ! Currently reset xrm to xrm_trsed_only.
            ! This is done to make the statistical budget for xrm balance

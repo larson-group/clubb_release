@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: mpace_a.F,v 1.25 2008-07-08 04:44:10 dschanen Exp $
+! $Id: mpace_a.F,v 1.26 2008-07-14 19:54:34 faschinj Exp $
         module mpace_a
 
 !       Description:
@@ -266,8 +266,8 @@
         call clubb_debug(1, "file_times not sorted in mpace_a_tndcy.")
       endif
 
-      ratio = (time - file_times(left_time)) /                 ! This is the ratio "a" needed for linear interpolation in time.
-     .        (file_times(right_time) - file_times(left_time)) ! at the first time a=0; at the second time a=1.
+      ratio = real((time - file_times(left_time)) /             ! This is the ratio "a" needed for linear interpolation in time.
+     .        (file_times(right_time) - file_times(left_time))) ! at the first time a=0; at the second time a=1.
 
       do k=1,file_nlevels
 !        omega_column(k) = ratio *			       ! Do linear interpolation in time
@@ -366,7 +366,7 @@
         ! Compute radiation
         julday = 282
         start_time_until_noon = 29051 + 50400
-        t_since_noon   = time - start_time_until_noon
+        t_since_noon   = real( time - start_time_until_noon )
         sda_t = 2*3.14*(julday-1)/365
 
         sda_delta = c_0 + c_1*cos(sda_t) + d_1*sin(sda_t) +
@@ -581,19 +581,19 @@
       endif
 
 
-      latent_heat_flx = ((time-file_times(left_time)) / 
+      latent_heat_flx = real(((time-file_times(left_time)) / 
      .     (file_times(right_time)-file_times(left_time))) *
      .     (file_LH(right_time)
      .     -file_LH(left_time))
-     .     + file_LH(left_time)        
+     .     + file_LH(left_time))        
 
-      sensible_heat_flx = ((time-file_times(left_time)) / 
+      sensible_heat_flx = real(((time-file_times(left_time)) / 
      .     (file_times(right_time)-file_times(left_time))) *
      .     (file_SH(right_time)
      .     -file_SH(left_time))
-     .     + file_SH(left_time)        
+     .     + file_SH(left_time))
 
-        ! Compute heat and moisture fluxes
+       ! Compute heat and moisture fluxes
         wpthlp_sfc = sensible_heat_flx/(rho0*Cp)
         wprtp_sfc  = latent_heat_flx/(rho0*Lv)
 

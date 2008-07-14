@@ -1,4 +1,4 @@
-!$Id: pos_definite_mod.F,v 1.11 2008-07-07 14:53:09 faschinj Exp $
+!$Id: pos_definite_mod.F,v 1.12 2008-07-14 19:54:35 faschinj Exp $
       module pos_definite_mod
 
         implicit none
@@ -133,10 +133,10 @@
           flux_minus(k) = -min( 0., flux_np1(k) ) ! defined on flux levels
 
           if ( field_grid == "zm" ) then
-            dz_over_dt(k) = ( 1./gr%dzm(k) ) / dt
+            dz_over_dt(k) = real( ( 1./gr%dzm(k) ) / dt )
 
           else if ( field_grid == "zt" ) then
-            dz_over_dt(k) = ( 1./gr%dzt(k) ) / dt
+            dz_over_dt(k) = real( ( 1./gr%dzt(k) ) / dt )
 
           end if
 
@@ -187,7 +187,7 @@
         flux_lim(1) = flux_np1(1) 
         flux_lim(gr%nnzp) = flux_np1(gr%nnzp)
 
-        flux_pd = ( flux_lim - flux_np1 ) / dt
+        flux_pd = real( ( flux_lim - flux_np1 ) / dt )
 
         field_nonlim = field_np1
 
@@ -196,11 +196,13 @@
         ! Apply change to field at n+1
         if ( field_grid == "zt" ) then
 
-          field_np1 = -dt * ddzm( flux_lim - flux_np1 ) + field_np1
+          field_np1 = 
+     .        real( -dt * ddzm( flux_lim - flux_np1 ) + field_np1 )
 
         else if ( field_grid == "zm" ) then
 
-          field_np1 = -dt * ddzt( flux_lim - flux_np1 ) + field_np1
+          field_np1 = 
+     .        real( -dt * ddzt( flux_lim - flux_np1 ) + field_np1 )
 
         end if
 
@@ -212,7 +214,7 @@
 
         ! Determine the total time tendency in field due to this calculation
         ! (for diagnostic purposes)
-        field_pd = ( field_np1 - field_nonlim ) / dt
+        field_pd = real( ( field_np1 - field_nonlim ) / dt )
 
         ! Replace the non-limited flux with the limited flux
         flux_np1 = flux_lim

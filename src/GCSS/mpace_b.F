@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: mpace_b.F,v 1.19 2008-07-08 04:44:10 dschanen Exp $
+! $Id: mpace_b.F,v 1.20 2008-07-14 19:54:34 faschinj Exp $
         module mpace_b
 
 !       Description:
@@ -220,7 +220,7 @@
         ! Compute radiation
         julday = 282
         start_time_until_noon = 17490 + 61200
-        t_since_noon   = time - start_time_until_noon
+        t_since_noon   = real(time - start_time_until_noon)
         sda_t = 2*3.14*(julday-1)/365
 
         sda_delta = c_0 + c_1*cos(sda_t) + d_1*sin(sda_t) +

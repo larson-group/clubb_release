@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F,v 1.17 2008-07-01 13:36:57 faschinj Exp $
+! $Id: compute_um_edsclrm_mod.F,v 1.18 2008-07-14 19:54:34 faschinj Exp $
 !------------------------------------------------------------------------
         module compute_um_edsclrm_mod
 
@@ -117,9 +117,9 @@
         ! zt(1) is below ground, we don't have to worry about it
 
         a(1)   = 0.
-        b(1)   = 1./dt
+        b(1)   = real( 1./dt )
         c(1)   = 0.
-        rhs(1) = 1./dt
+        rhs(1) = real( 1./dt )
 
         ! zt(2) is the first active model layer. We need to impose the 
         ! surface momentum flux xpwp_sfc.
@@ -129,11 +129,11 @@
 
         a(2)   = atmp
         c(2)   = ctmp
-        b(2)   = - ctmp + 1./dt
-        rhs(2) = ( ctmp + 1./dt ) * xm(2)
+        b(2)   = real( - ctmp + 1./dt )
+        rhs(2) = real( ( ctmp + 1./dt ) * xm(2)
      .           - ctmp * xm(3)
      .           + xm_tndcy(2)
-     .           + xpwp_sfc * gr%dzt(2)
+     .           + xpwp_sfc * gr%dzt(2) )
 
 #ifdef STATS
            if ( lstats_samp .and. ixm_ta > 0 ) then
@@ -155,11 +155,11 @@
 
            a(k)   = atmp
            c(k)   = ctmp
-           b(k)   = - atmp - ctmp + 1./dt
-           rhs(k) = - atmp * xm(k-1)
+           b(k)   = real( - atmp - ctmp + 1./dt )
+           rhs(k) = real( - atmp * xm(k-1)
      .              + ( atmp + ctmp + 1./dt ) * xm(k)
      .              - ctmp * xm(k+1)
-     .              + xm_tndcy(k)
+     .              + xm_tndcy(k) )
 #ifdef STATS
            if ( lstats_samp .and. ixm_ta > 0 ) then
              ztscr01(k) = -atmp

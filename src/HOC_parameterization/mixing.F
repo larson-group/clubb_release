@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F,v 1.73 2008-07-10 16:14:21 faschinj Exp $
+! $Id: mixing.F,v 1.74 2008-07-14 19:54:35 faschinj Exp $
 !===============================================================================
         module mixing
 
@@ -678,7 +678,7 @@
 
           ! LHS time tendency.
           lhs(3,k_xm)
-     .    = lhs(3,k_xm) + 1.0 / dt
+     .    = real( lhs(3,k_xm) + 1.0 / dt )
 
 #ifdef STATS
           if (lstats_samp) then
@@ -761,7 +761,7 @@
      .                        gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
 
           ! LHS time tendency.
-          if (liter) lhs(3,k_wpxp) = lhs(3,k_wpxp) + 1.0 / dt
+          if (liter) lhs(3,k_wpxp) = real( lhs(3,k_wpxp) + 1.0 / dt )
 
           ! LHS portion of semi-implicit clipping term.
           lhs(3,k_wpxp)
@@ -999,7 +999,7 @@
 
           ! RHS time tendency.
           rhs(k_xm,1)
-     .    = rhs(k_xm,1) + xm(k) / dt
+     .    = real( rhs(k_xm,1) + xm(k) / dt )
 
           ! RHS xm forcings.
           ! Note: xm forcings include the effects of microphysics,
@@ -1030,7 +1030,8 @@
      .    + wpxp_terms_bp_pr3_rhs( C7_Skw_fnc(k), xpthvp(k) )
 
           ! RHS time tendency.
-          if ( liter ) rhs(k_wpxp,1) = rhs(k_wpxp,1) + wpxp(k) / dt
+          if ( liter ) rhs(k_wpxp,1) = 
+     .         real( rhs(k_wpxp,1) + wpxp(k) / dt )
 
           ! RHS portion of semi-implicit clipping term.
           rhs(k_wpxp,1)

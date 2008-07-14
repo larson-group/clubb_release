@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: jun25.F,v 1.20 2008-07-08 04:44:10 dschanen Exp $
+! $Id: jun25.F,v 1.21 2008-07-14 19:54:34 faschinj Exp $
         module jun25
 
 !       Description:
@@ -348,7 +348,7 @@
 
         julday = 176
         start_time_until_noon = 30540
-        t_since_noon   = time - start_time_until_noon
+        t_since_noon   = real( time - start_time_until_noon )
         sda_t = 2.0*pi*(julday-1)/365
 
         c_0 = 0.006918
@@ -744,35 +744,40 @@
         do k=2,gr%nnzp
           call linear_interpolation(5,zsubs,wt1,gr%zt(k),w1(k))
           call linear_interpolation(5,zsubs,wt2,gr%zt(k),w2(k))
-        wmt(k) = (time-tsubs(1))/(tsubs(2)-tsubs(1))*(w2(k)-w1(k))+w1(k)
+        wmt(k) = 
+     .    real((time-tsubs(1))/(tsubs(2)-tsubs(1))*(w2(k)-w1(k))+w1(k))
         end do
  
         else if (time < tsubs(3)) then
         do k=2,gr%nnzp
           call linear_interpolation(5,zsubs,wt2,gr%zt(k),w1(k))
           call linear_interpolation(5,zsubs,wt3,gr%zt(k),w2(k))
-        wmt(k) = (time-tsubs(2))/(tsubs(3)-tsubs(2))*(w2(k)-w1(k))+w1(k)
+        wmt(k) = 
+     .    real((time-tsubs(2))/(tsubs(3)-tsubs(2))*(w2(k)-w1(k))+w1(k))
         end do
  
         else if (time < tsubs(4)) then
         do k=2,gr%nnzp
           call linear_interpolation(5,zsubs,wt3,gr%zt(k),w1(k))
           call linear_interpolation(5,zsubs,wt4,gr%zt(k),w2(k))
-        wmt(k) = (time-tsubs(3))/(tsubs(4)-tsubs(3))*(w2(k)-w1(k))+w1(k)
+        wmt(k) = 
+     .    real((time-tsubs(3))/(tsubs(4)-tsubs(3))*(w2(k)-w1(k))+w1(k))
         end do
  
         else if (time < tsubs(5)) then
         do k=2,gr%nnzp
           call linear_interpolation(5,zsubs,wt4,gr%zt(k),w1(k))
           call linear_interpolation(5,zsubs,wt5,gr%zt(k),w2(k))
-        wmt(k) = (time-tsubs(4))/(tsubs(5)-tsubs(4))*(w2(k)-w1(k))+w1(k)
+        wmt(k) = 
+     .    real((time-tsubs(4))/(tsubs(5)-tsubs(4))*(w2(k)-w1(k))+w1(k))
         end do
  
         else if (time < tsubs(6)) then
         do k=2,gr%nnzp
           call linear_interpolation(5,zsubs,wt5,gr%zt(k),w1(k))
           call linear_interpolation(5,zsubs,wt6,gr%zt(k),w2(k))
-        wmt(k) = (time-tsubs(5))/(tsubs(6)-tsubs(5))*(w2(k)-w1(k))+w1(k)
+        wmt(k) = 
+     .    real((time-tsubs(5))/(tsubs(6)-tsubs(5))*(w2(k)-w1(k))+w1(k))
         end do
  
         else if (time >= tsubs(6)) then

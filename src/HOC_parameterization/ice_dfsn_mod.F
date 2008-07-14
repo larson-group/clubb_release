@@ -1,4 +1,4 @@
-! $Id: ice_dfsn_mod.F,v 1.10 2008-06-24 19:44:01 faschinj Exp $        
+! $Id: ice_dfsn_mod.F,v 1.11 2008-07-14 19:54:35 faschinj Exp $        
 
         module ice_dfsn_mod
 
@@ -223,7 +223,7 @@
 
              ! Ensure that liquid is not over-depleted
              IF ( rcm(k) + rcm_icedfsn(k)*dt < 0.0 ) THEN
-               rcm_icedfsn(k) = -rcm(k)/dt
+               rcm_icedfsn(k) = real(-rcm(k)/dt)
              END IF
 
              !---------------Brian's comment-----------------------------------!

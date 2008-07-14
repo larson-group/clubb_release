@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: KK_microphys.F,v 1.12 2008-06-30 19:46:41 faschinj Exp $
+! $Id: KK_microphys.F,v 1.13 2008-07-14 19:54:34 faschinj Exp $
 
       module rain_equations
 
@@ -1812,7 +1812,7 @@
            ! to produce a result greater than what the computer can represent 
            ! numerically).
 
-           PDF_TRIVAR_2G_LN_LN =
+           PDF_TRIVAR_2G_LN_LN = real(
      .       (1.0/SQRT(2.0*pi)) * (-sigma_siG)**alpha_exp 
      .     * EXP( mu_rrG*beta_exp + mu_NrG*gamma_exp )
      .     * EXP( (1.0/2.0) * (
@@ -1830,7 +1830,7 @@
      .            + (1.0/2.0) * ( (mu_siG**2.0) / (sigma_siG**2.0) )
      .          )
      .     * GAMMA( gamma_fnc_input )
-     .     * Dv_fnc( parab_cyl_fnc_ord, scci )
+     .     * Dv_fnc( parab_cyl_fnc_ord, scci ))
 
         ELSEIF ( .not. use_eq_1 .AND. mu_siG < 0.0 ) THEN
 
@@ -2165,14 +2165,14 @@
            ! to produce a result greater than what the computer can represent 
            ! numerically).
 
-           PDF_BIVAR_2G_LN =
+           PDF_BIVAR_2G_LN = real(
      .       (1.0/SQRT(2.0*pi)) * (sigma_siG)**alpha_exp 
      .     * EXP(   mu_xxG*beta_exp
      .            + (1.0/2.0)*(sigma_xxG**2.0)*(beta_exp**2.0)
      .            - (1.0/4.0)*( sci )**2.0
      .          )
      .     * GAMMA( gamma_fnc_input )
-     .     * Dv_fnc( parab_cyl_fnc_ord, -sci )
+     .     * Dv_fnc( parab_cyl_fnc_ord, -sci ))
 
         ELSEIF ( .not. use_eq_1 .AND. mu_siG > 0.0 ) THEN
 

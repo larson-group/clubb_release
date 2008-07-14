@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: cobra.F,v 1.14 2008-07-08 04:44:10 dschanen Exp $
+! $Id: cobra.F,v 1.15 2008-07-14 19:54:34 faschinj Exp $
         module cobra
 !       Description:
 !       Contains subroutines for the COBRA CO2 case.
@@ -186,7 +186,7 @@
 
         CO2_flx2 = 0.0 ! Default initialization 
 
-        true_time = time
+        true_time = real( time )
         call cobra_sfcflx( true_time, heat_flx, moisture_flx,
      .                    CO2_flx
      .                   )

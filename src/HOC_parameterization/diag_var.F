@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F,v 1.68 2008-07-11 15:03:18 griffinb Exp $
+! $Id: diag_var.F,v 1.69 2008-07-14 19:54:34 faschinj Exp $
 !===============================================================================
       module diagnose_variances
 
@@ -799,7 +799,7 @@
 
           ! LHS time tendency.
           if ( liter ) then
-            lhs(k_mdiag,k) = lhs(k_mdiag,k) + ( 1.0 / dt )
+            lhs(k_mdiag,k) = real( lhs(k_mdiag,k) + ( 1.0 / dt ) )
           endif
 
           ! LHS mean advection (ma) term.
@@ -1253,7 +1253,7 @@
 
           ! RHS time tendency.
           if ( liter ) then 
-            rhs(k,1) = rhs(k,1) + 1.0/dt * xap2(k)
+            rhs(k,1) = real( rhs(k,1) + 1.0/dt * xap2(k) )
           endif
 
 #ifdef STATS
@@ -1457,7 +1457,7 @@
 
           ! RHS time tendency.
           if ( liter ) then 
-            rhs(k,1) = rhs(k,1) + 1.0/dt * xapxbp(k)
+            rhs(k,1) = real( rhs(k,1) + 1.0/dt * xapxbp(k) )
           endif
 
 #ifdef STATS

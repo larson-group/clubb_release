@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: coamps_micro_driver.F,v 1.36 2008-07-11 14:50:59 vlarson Exp $
+! $Id: coamps_micro_driver.F,v 1.37 2008-07-14 19:54:35 faschinj Exp $
       module coamps_micro_driver_mod
 
       ! This module wraps the adjtq subroutine so that it may be used by
@@ -476,8 +476,8 @@ c End of ajsmith4's addition
       ! Brian set regular precision variables "timea" and "deltf" to the values
       ! brought in from CLUBB as precision "time_precision" variables "timea_in" and
       ! "deltf_in".  Brian; 4/5/2008.
-      timea = timea_in
-      deltf = deltf_in
+      timea = real(timea_in)
+      deltf = real(deltf_in)
 
 ! Michael Falk changed this, November 2007.
 ! This is the stock COAMPS value, 2e7:

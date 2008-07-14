@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm.F,v 1.18 2008-07-08 04:44:09 dschanen Exp $
+! $Id: arm.F,v 1.19 2008-07-14 19:54:34 faschinj Exp $
         module arm
 
 !       Description:
@@ -79,7 +79,7 @@
 
 !-----------------------------------------------------------------------
 
-        true_time = time
+        true_time = real( time )
 
         ! Interpolate in time to get theta and rt tendency
 
@@ -221,7 +221,7 @@
      .  bflx
 
         ! Compute heat and moisture fluxes from ARM data in (W/m2)
-        true_time = time
+        true_time = real( time )
 
         call arm_sfcflx( true_time, heat_flx, moisture_flx )
 
