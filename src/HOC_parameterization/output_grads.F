@@ -1,6 +1,6 @@
 !-----------------------------------------------------------------------
-! $Id: outputgrads.F,v 1.19 2008-07-11 15:59:38 faschinj Exp $
-        module outputgrads
+! $Id: output_grads.F,v 1.1 2008-07-14 14:37:44 faschinj Exp $
+        module output_grads
 #ifdef STATS 
 
 !       Description:
@@ -28,7 +28,7 @@
           implicit none
           
           public  :: open_grads, write_grads
-          private :: formatdate, check_grads
+          private :: format_date, check_grads
 
           ! Undefined value
           real, private, parameter :: undef = -9.99e33
@@ -38,18 +38,20 @@
           contains
 
 !-----------------------------------------------------------------------
-          subroutine open_grads( f, unit, fdir, fname, 
+          subroutine open_grads( unit, fdir, fname, 
      .                           ia, iz, z,
      .                           day, month, year, rlat, rlon,
      .                           time, dtwrite,
-     .                           nvar )
+     .                           nvar, f )
 
 !-----------------------------------------------------------------------
           use constants, only: 
      .        fstderr, ! Variable 
      .        fstdout
+
           use outputfile_class, only:
      .        outputfile ! Type
+
           use stats_precision, only: 
      .        time_precision ! Variable
           
@@ -57,22 +59,34 @@
 
 !         ! Input Variables
 
-          integer, intent(IN) :: unit
-          character*(*), intent(IN) :: fdir, fname
+          integer, intent(IN) :: unit   ! File unit being written to            [-]
 
-          integer, intent(IN) :: ia, iz
+          character*(*), intent(IN) :: 
+     .    fdir,                         ! Directory where file is stored        [-]
+     .    fname                         ! Name of file                          [-]
+
+          integer, intent(IN) :: 
+     .    ia,                   ! Lower Bound of z      [-]
+     .    iz                    ! Upper Bound of z      [-]
+
           real, dimension(:), intent(IN) :: z
 
-          integer, intent(IN) :: day, month, year
+          integer, intent(IN) :: 
+     .    day,          ! Day of Month at Model Start    [##]
+     .    month,        ! Month of Year at Model start   [##]
+     .    year          ! Year at Model Start            [##]
 
-          real, intent(IN) :: rlat, rlon
+          real, intent(IN) :: rlat, rlon ! Latitude and Longitude [Degrees N/E]
 
-          real(kind=time_precision), intent(IN) :: time, dtwrite
+          real(kind=time_precision), intent(IN) :: 
+     .    time,         ! Time since Model start          [s]
+     .    dtwrite       ! Time interval                   [s]
 
+          ! Number of variables to store                  [#]
           integer, intent(IN) :: nvar
 
           ! Input/Output Variables
-          type (outputfile), intent(INOUT) :: f
+          type (outputfile), intent(INOUT) :: f ! File data [-]
         
           ! Local Variables
 
@@ -519,7 +533,7 @@
             write(f%iounit,'(8f8.1)') (f%z(f%ia-i+1),i=f%ia,f%iz,-1)
           end if
 
-          call formatdate(f%day,f%month,f%year,f%time,date)
+          call format_date(f%day,f%month,f%year,f%time,date)
 
           write(unit=f%iounit,fmt='(a,i6,a,a,i5,a)') 'TDEF    ',
      .      f%ntimes, ' LINEAR ', date, max(1,floor(f%dtwrite/60.)),'mn'
@@ -547,28 +561,37 @@
           return
           end subroutine write_grads
 
-          !---------------------------------------------------------
-          subroutine formatdate( day_in, month_in, year_in, 
+!---------------------------------------------------------
+          subroutine format_date( day_in, month_in, year_in, 
      .                           time_in, date )
-          
+!
+!         Description: This subroutine formats the current
+!         time of the model to a date usable as GrADS output.
+!
+!---------------------------------------------------------          
           use stats_precision, only: 
      .        time_precision ! Variable(s)
+
           use calendar, only: 
      .        compute_current_date ! Procedure(s)
+
           use calendar, only:
-     .        month
+     .        month         ! Variable(s)
           
           implicit none
 
           ! Input Variables
           integer, intent(in) :: 
-     .    day_in, month_in, year_in
+     .    day_in,               ! Day of the Month at Model Start  [##]
+     .    month_in,             ! Month of the Year at Model Start [##]
+     .    year_in               ! Year at Model Start            [####]
 
-          real(kind=time_precision), intent(in) :: time_in
+          real(kind=time_precision), intent(in) :: 
+     .    time_in               ! Time since Model Start            [s]
 
           ! Output Variables
-          character(len=15), intent(out) :: date
-
+          character(len=15), intent(out) :: 
+     .    date                  ! Current Date in format 'hh:mmZddmmmyyyy'
           ! Local Variables
           integer :: iday, imonth, iyear
           real(kind=time_precision) :: time
@@ -596,8 +619,8 @@
      .      int( mod( nint( time ),3600 ) / 60 )
 
           return
-          end subroutine formatdate
+          end subroutine format_date
 
 #endif /*STATS*/
-        end module outputgrads
+        end module output_grads
 !------------------------------------------------------------------------

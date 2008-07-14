@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.136 2008-07-08 04:44:03 dschanen Exp $
+# $Id: Makefile,v 1.137 2008-07-14 14:37:44 faschinj Exp $
 #
 # This version should work with GNU make and Sun's dmake.
 #
@@ -65,7 +65,7 @@ MODEL = $(COAMPS_MICRO) \
 
 PARAMETERIZATION = \
 	$(LATIN_HYP) \
-	constants.o endian.o outputfile.o outputgrads.o \
+	constants.o endian.o outputfile.o output_grads.o \
 	outputnc.o grid.o model_flags.o file_functions.o \
         stats_type.o stats_variables.o stats_subs.o \
         stats_zt.o stats_zm.o stats_sfc.o stats_precision.o sfc.o \

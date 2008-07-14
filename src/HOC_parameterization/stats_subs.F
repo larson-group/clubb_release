@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.27 2008-07-08 04:44:25 dschanen Exp $
+!  $Id: stats_subs.F,v 1.28 2008-07-14 14:37:44 faschinj Exp $
       module stats_subs
 #ifdef STATS
  
@@ -75,7 +75,7 @@
      .    lgrads
       use stats_precision, only:
      .    time_precision   ! Variable(s)
-      use outputgrads, only:
+      use output_grads, only:
      .    open_grads  ! Procedure
 #ifdef NETCDF
       use outputnc, only:
@@ -279,11 +279,11 @@
       if ( lgrads ) then
 
         ! Open GrADS file
-        call open_grads( zt%f, iunit, fdir, fname, 
+        call open_grads( iunit, fdir, fname, 
      .                   1, zt%kk, zt%z,
      .                   day, month, year, rlat, rlon,
      .                   time_current+stats_tout, stats_tout,
-     .                   zt%nn )
+     .                   zt%nn,zt%f )
 
       else ! Open NetCDF file
 #ifdef NETCDF
@@ -354,11 +354,11 @@
       if ( lgrads ) then
 
         ! Open GrADS files
-        call open_grads( zm%f, iunit, fdir, fname, 
+        call open_grads( iunit, fdir, fname, 
      .                   1, zm%kk, zm%z,
      .                   day, month, year, rlat, rlon,
      .                   time_current+stats_tout, stats_tout,
-     .                   zm%nn )
+     .                   zm%nn, zm%f )
 
       else ! Open NetCDF file
 #ifdef NETCDF
@@ -409,11 +409,11 @@
       if ( lgrads ) then
 
         ! Open GrADS files
-        call open_grads( sfc%f, iunit, fdir, fname, 
+        call open_grads( iunit, fdir, fname, 
      .                   1, sfc%kk, sfc%z,
      .                   day, month, year, rlat, rlon,
      .                   time_current+stats_tout, stats_tout,
-     .                   sfc%nn )
+     .                   sfc%nn, sfc%f )
 
       else ! Open NetCDF files
 #ifdef NETCDF
@@ -593,7 +593,7 @@
       use stats_precision, only:
      .    time_precision ! Variable(s)
 
-      use outputgrads, only:
+      use output_grads, only:
      .    write_grads ! Procedure(s)
 
 #ifdef NETCDF
