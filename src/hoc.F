@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.204 2008-07-08 17:36:00 faschinj Exp $
+! $Id: hoc.F,v 1.205 2008-07-15 01:30:22 ajsmith4 Exp $
 
         module hoc
 
@@ -1517,10 +1517,10 @@
 
          case( "jun25_altocu" ) ! June 25 Altocumulus case.
            call jun25_altocu_tndcy
-     .          ( time_current, time_initial, rlat, dt, thlm,
-     .            rcm, p, exner, rhot, rtm, wmt,
+     .          ( time_current, time_initial, dt, rlat, rlon, 
+     .            thlm, rcm, p, exner, rhot, rtm, wmt,
      .            wmm, thlm_forcing, rtm_forcing,
-     .            Frad, radht, sclrm_forcing )
+     .            Frad, radht, Ncnm, sclrm_forcing )
 
          case( "clex9_nov02" ) ! CLEX-9: Nov. 02 Altocumulus case.
            call clex9_nov02_tndcy
