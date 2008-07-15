@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: jun25.F,v 1.22 2008-07-15 01:22:12 ajsmith4 Exp $
+! $Id: jun25.F,v 1.23 2008-07-15 20:48:25 ajsmith4 Exp $
         module jun25
 
 !       Description:
@@ -80,7 +80,7 @@
 
         real, intent(in) ::
      .  rlat,         ! Reference latitude should be 37.6     [Degrees North]
-     .  rlon            ! Longitude             [degrees_E]
+     .  rlon          ! Longitude             [degrees_E]
 
         real, dimension(gr%nnzp), intent(in) :: 
      .  thlm,  ! Liquid potential temperature           [K]
@@ -100,10 +100,9 @@
      .  thlm_forcing, ! Change in liq. water potential temperature 
                       ! due to radiative heating and ice diffusion  [K/s]
      .  rtm_forcing,  ! Change in total water due to ice diffusion  [kg/kg/s]
-     .  Frad,        ! Total radiative flux (LW + SW)              [W/m^2]
-     .  radht,       ! Total radiative heating (LW +SW)            [K/s]
-     .  Ncnm            ! Cloud nuclei number concentration       [num/m^3]
-
+     .  Frad,         ! Total radiative flux (LW + SW)              [W/m^2]
+     .  radht,        ! Total radiative heating (LW +SW)            [K/s]
+     .  Ncnm          ! Cloud nuclei number concentration       [num/m^3]
 
         ! Output variables
         real, dimension(gr%nnzp,sclr_dim),intent(out) :: 
@@ -697,20 +696,20 @@
         ! Original code by Michael Falk
         ! Added for Jun.25 case by Adam Smith, 13 April 2006
         !---------------------------------------------------------------
-        if ( time < tsubs(1) ) then
+        if ( (time - time_initial) < tsubs(1) ) then
         do k=1,gr%nnzp
           call linear_interpolation(5,zsubs,wt1,gr%zt(k),wmt(k))
         end do
  
-        else if (time < tsubs(2)) then
+        else if ( (time - time_initial) < tsubs(2)) then
         do k=2,gr%nnzp
           call linear_interpolation(5,zsubs,wt1,gr%zt(k),w1(k))
           call linear_interpolation(5,zsubs,wt2,gr%zt(k),w2(k))
-        wmt(k) = 
+        wmt(k) =
      .    real((time-tsubs(1))/(tsubs(2)-tsubs(1))*(w2(k)-w1(k))+w1(k))
         end do
  
-        else if (time < tsubs(3)) then
+        else if ( (time - time_initial) < tsubs(3)) then
         do k=2,gr%nnzp
           call linear_interpolation(5,zsubs,wt2,gr%zt(k),w1(k))
           call linear_interpolation(5,zsubs,wt3,gr%zt(k),w2(k))
@@ -718,7 +717,7 @@
      .    real((time-tsubs(2))/(tsubs(3)-tsubs(2))*(w2(k)-w1(k))+w1(k))
         end do
  
-        else if (time < tsubs(4)) then
+        else if ( (time - time_initial) < tsubs(4)) then
         do k=2,gr%nnzp
           call linear_interpolation(5,zsubs,wt3,gr%zt(k),w1(k))
           call linear_interpolation(5,zsubs,wt4,gr%zt(k),w2(k))
@@ -726,7 +725,7 @@
      .    real((time-tsubs(3))/(tsubs(4)-tsubs(3))*(w2(k)-w1(k))+w1(k))
         end do
  
-        else if (time < tsubs(5)) then
+        else if ( (time - time_initial) < tsubs(5)) then
         do k=2,gr%nnzp
           call linear_interpolation(5,zsubs,wt4,gr%zt(k),w1(k))
           call linear_interpolation(5,zsubs,wt5,gr%zt(k),w2(k))
@@ -734,15 +733,15 @@
      .    real((time-tsubs(4))/(tsubs(5)-tsubs(4))*(w2(k)-w1(k))+w1(k))
         end do
  
-        else if (time < tsubs(6)) then
+        else if ( (time - time_initial) < tsubs(6)) then
         do k=2,gr%nnzp
           call linear_interpolation(5,zsubs,wt5,gr%zt(k),w1(k))
           call linear_interpolation(5,zsubs,wt6,gr%zt(k),w2(k))
-        wmt(k) = 
+        wmt(k) =
      .    real((time-tsubs(5))/(tsubs(6)-tsubs(5))*(w2(k)-w1(k))+w1(k))
         end do
  
-        else if (time >= tsubs(6)) then
+        else if ( (time - time_initial) >= tsubs(6)) then
         do k=2,gr%nnzp
           call linear_interpolation(5,zsubs,wt6,gr%zt(k),wmt(k))
         end do
