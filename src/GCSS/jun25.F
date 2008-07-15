@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: jun25.F,v 1.21 2008-07-14 19:54:34 faschinj Exp $
+! $Id: jun25.F,v 1.22 2008-07-15 01:22:12 ajsmith4 Exp $
         module jun25
 
 !       Description:
@@ -24,11 +24,11 @@
 
 !-----------------------------------------------------------------------
         subroutine jun25_altocu_tndcy
-     .             ( time, time_initial, rlat, dt, thlm, 
-     .               rcm, p, exner, rhot, rtm, wmt,
-     .               wmm, thlm_forcing, rtm_forcing, 
-     .               Frad, radht, 
-     .               sclrm_forcing ) ! Optional
+     .             ( time, time_initial, dt, rlat, rlon,
+     .               thlm, rcm, p, exner, rhot, rtm, wmt,
+     .               wmm, thlm_forcing, rtm_forcing,
+     .               Frad, radht, Ncnm, sclrm_forcing )
+
 !       Description:
 !       Computes subsidence, radiation, and LS tendencies for the June
 !       25th Altocumulous case.
@@ -50,6 +50,8 @@
 
         use stats_precision, only: time_precision ! Variable(s)
 
+        use cos_solar_zen_mod, only: cos_solar_zen ! Procedure(s)
+
         use interpolation, only: linear_interpolation ! Procedure(s)
 
         use rad_lwsw_mod, only: rad_lwsw ! Procedure(s)
@@ -69,15 +71,16 @@
         ! Constant parameters
 
         ! Input variables
-        real(kind=time_precision), intent(in) :: 
+        real(kind=time_precision), intent(in) ::
      .  time,         ! Time of simulation since start        [s]
      .  time_initial  ! Initial time of simulation            [s]
 
-        real, intent(in) :: 
-     .  rlat          ! Reference latitude should be 37.6     [Degrees North]
-
-        real(kind=time_precision), intent(in) :: 
+        real(kind=time_precision), intent(in) ::
      .  dt            ! Length of model timestep              [s]
+
+        real, intent(in) ::
+     .  rlat,         ! Reference latitude should be 37.6     [Degrees North]
+     .  rlon            ! Longitude             [degrees_E]
 
         real, dimension(gr%nnzp), intent(in) :: 
      .  thlm,  ! Liquid potential temperature           [K]
@@ -92,15 +95,15 @@
 
         ! Output variables
         real, dimension(gr%nnzp), intent(inout) :: 
-     .  wmt,         ! Vertical ascent/descent on therm. grid      [m/s]
-     .  wmm,         ! Vertical ascent/descent on moment. grid     [m/s]
-     .  thlm_forcing ! Change in liq. water potential temperature 
-                     ! due to radiative heating and ice diffusion  [K/s]
-
-        real, dimension(gr%nnzp), intent(inout) :: 
-     .  rtm_forcing, ! Change in total water due to ice diffusion  [kg/kg/s]
+     .  wmt,          ! Vertical ascent/descent on therm. grid      [m/s]
+     .  wmm,          ! Vertical ascent/descent on moment. grid     [m/s]
+     .  thlm_forcing, ! Change in liq. water potential temperature 
+                      ! due to radiative heating and ice diffusion  [K/s]
+     .  rtm_forcing,  ! Change in total water due to ice diffusion  [kg/kg/s]
      .  Frad,        ! Total radiative flux (LW + SW)              [W/m^2]
-     .  radht        ! Total radiative heating (LW +SW)            [K/s]
+     .  radht,       ! Total radiative heating (LW +SW)            [K/s]
+     .  Ncnm            ! Cloud nuclei number concentration       [num/m^3]
+
 
         ! Output variables
         real, dimension(gr%nnzp,sclr_dim),intent(out) :: 
@@ -283,19 +286,6 @@
         real :: xi_abs, Fs0
 
         !---------------------------------------------------------------
-        ! Variables used for calculating solar zenith angle
-        ! (Currently not used in Nov.11 case)
-        !
-        ! NOTE BY ADAM SMITH, 13 April 2006
-        ! In COAMPS, these constants are called c0, c1, c2, c3, d1, d2,
-        ! and d3.  Since CLUBB uses these variables names elsewhere, I 
-        ! have renamed them here.
-        !---------------------------------------------------------------
-        real :: c_0, c_1, c_2, c_3, d_1, d_2, d_3,
-     .  sda_t, sda_delta, sda_h, t_since_noon, julday,
-     .  start_time_until_noon
-
-        !---------------------------------------------------------------
         ! Toggle for implementing differencing method in interpolations
         !---------------------------------------------------------------
         logical :: center
@@ -331,44 +321,16 @@
 !-----------------------------------------------------------------------
          center    = .TRUE.
 
-!-----------------------------------------------------------------------
-! Calculation of Solar Declination Angle
-!
-! This section of code calculates the solar declination angle based
-! on the simulaiton's time, date, and latitude.  These parameters are
-! applied in the scheme, and a value of xi_abs is calculated.
-! 
-! If xi_abs <= 0.0 at any time step, we shut off shortwave radiation
-! for that time step (by setting sw_on = .FALSE.).  If xi_abs > 0.0,
-! we reactivate solar radiation by setting sw_on = .TRUE.
-!
-! This version is based on solar_declin.m, written by Dr. Vince Larson
-! and based on Liou 2.2.10.
-!-----------------------------------------------------------------------
+!      Replaced the calculation based on time since solar noon 
+!       etc., with a generalized function based on time and lat/lon.
+!       -dschanen 5 Jan 2007
 
-        julday = 176
-        start_time_until_noon = 30540
-        t_since_noon   = real( time - start_time_until_noon )
-        sda_t = 2.0*pi*(julday-1)/365
+!      NOTE: The results from this function match the xi_abs results
+!            obtained using the COAMPS xi_abs method.  Therefore, we
+!            use the "cos_solar_zen" function for this case.
+       xi_abs = real( cos_solar_zen(25, 06, 1996, time, rlat, rlon ) )
 
-        c_0 = 0.006918
-        c_1 = -0.399912
-        c_2 = -0.006758
-        c_3 = -0.002697
-        d_1 = 0.070257
-        d_2 = 0.000907
-        d_3 = 0.000148
-
-        sda_delta = c_0 + c_1*cos(sda_t)   + d_1*sin(sda_t)   +
-     .                    c_2*cos(2*sda_t) + d_2*sin(2*sda_t) +
-     .                    c_3*cos(3*sda_t) + d_3*sin(3*sda_t)
-
-        sda_h = 2.0*pi*t_since_noon/86400.0
-
-        xi_abs = sin(rlat*pi/180) * sin(sda_delta) +
-     .           cos(rlat*pi/180) * cos(sda_delta) * cos(sda_h)
-
-        xi_abs = max(xi_abs,0.)
+       xi_abs = max(xi_abs,0.)
 
 !-----------------------------------------------------------------------
 ! Modification by Adam Smith 26 June 2006
