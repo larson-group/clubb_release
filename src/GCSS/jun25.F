@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: jun25.F,v 1.23 2008-07-15 20:48:25 ajsmith4 Exp $
+! $Id: jun25.F,v 1.24 2008-07-15 22:05:45 ajsmith4 Exp $
         module jun25
 
 !       Description:
@@ -706,7 +706,8 @@
           call linear_interpolation(5,zsubs,wt1,gr%zt(k),w1(k))
           call linear_interpolation(5,zsubs,wt2,gr%zt(k),w2(k))
         wmt(k) =
-     .    real((time-tsubs(1))/(tsubs(2)-tsubs(1))*(w2(k)-w1(k))+w1(k))
+     .    real(((time-time_initial)-tsubs(1))
+     .           /(tsubs(2)-tsubs(1))*(w2(k)-w1(k))+w1(k))
         end do
  
         else if ( (time - time_initial) < tsubs(3)) then
@@ -714,7 +715,8 @@
           call linear_interpolation(5,zsubs,wt2,gr%zt(k),w1(k))
           call linear_interpolation(5,zsubs,wt3,gr%zt(k),w2(k))
         wmt(k) = 
-     .    real((time-tsubs(2))/(tsubs(3)-tsubs(2))*(w2(k)-w1(k))+w1(k))
+     .    real(((time-time_initial)-tsubs(2))
+     .           /(tsubs(3)-tsubs(2))*(w2(k)-w1(k))+w1(k))
         end do
  
         else if ( (time - time_initial) < tsubs(4)) then
@@ -722,7 +724,8 @@
           call linear_interpolation(5,zsubs,wt3,gr%zt(k),w1(k))
           call linear_interpolation(5,zsubs,wt4,gr%zt(k),w2(k))
         wmt(k) = 
-     .    real((time-tsubs(3))/(tsubs(4)-tsubs(3))*(w2(k)-w1(k))+w1(k))
+     .    real(((time-time_initial)-tsubs(3))
+     .           /(tsubs(4)-tsubs(3))*(w2(k)-w1(k))+w1(k))
         end do
  
         else if ( (time - time_initial) < tsubs(5)) then
@@ -730,7 +733,8 @@
           call linear_interpolation(5,zsubs,wt4,gr%zt(k),w1(k))
           call linear_interpolation(5,zsubs,wt5,gr%zt(k),w2(k))
         wmt(k) = 
-     .    real((time-tsubs(4))/(tsubs(5)-tsubs(4))*(w2(k)-w1(k))+w1(k))
+     .    real(((time-time_initial)-tsubs(4))
+     .           /(tsubs(5)-tsubs(4))*(w2(k)-w1(k))+w1(k))
         end do
  
         else if ( (time - time_initial) < tsubs(6)) then
@@ -738,7 +742,8 @@
           call linear_interpolation(5,zsubs,wt5,gr%zt(k),w1(k))
           call linear_interpolation(5,zsubs,wt6,gr%zt(k),w2(k))
         wmt(k) =
-     .    real((time-tsubs(5))/(tsubs(6)-tsubs(5))*(w2(k)-w1(k))+w1(k))
+     .    real(((time-time_initial)-tsubs(5))
+     .           /(tsubs(6)-tsubs(5))*(w2(k)-w1(k))+w1(k))
         end do
  
         else if ( (time - time_initial) >= tsubs(6)) then
