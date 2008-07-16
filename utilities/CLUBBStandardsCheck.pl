@@ -1,4 +1,4 @@
-#$Id: CLUBBStandardsCheck.pl,v 1.7 2008-07-14 20:41:14 faschinj Exp $
+#$Id: CLUBBStandardsCheck.pl,v 1.8 2008-07-16 18:20:16 faschinj Exp $
 
 #!/usr/bin/perl
 
@@ -21,6 +21,8 @@
 #		(4) $ Id $ comment tags at the top of the file.
 #		Warns if the file does not contain one.
 #
+#		(5) Lines that are longer than a specified size.
+#
 #               This perl script assumes that 
 #               the Fortran code compiles!!
 #
@@ -41,7 +43,7 @@ our $verbose = 0;
 our $programName = "CLUBBStandardsCheck.pl";
 
 # Line Separator
-our $horizontal = "-----------------------------------------------------------------------------------------------------------------------\n";
+our $horizontal = "--------------------------------------------------------------------------------\n";
 
 # Regular Expressions for Fortran statements
 # See http://perldoc.perl.org/perlre.html for more information
@@ -179,7 +181,12 @@ else{
 			warn $horizontal;
 			
 		}	
-
+		# Check for long lines
+#		if( ! &lineCheck( $verbose, @input ) )
+#		{
+#			warn "$file\n";
+#			warn $horizontal;
+#		}
 		# Close File
 		close FILE;
 	}
@@ -346,14 +353,14 @@ sub useCheck
 		}
 		$lineNumber++;
 	}
+
 	if ( ! $result )
 	{
 		push (@warnings, "$programName WARNING: Use check FAILED!\n");
 		push (@warnings, "$programName WARNING: Check that comma is on same line as 'use', as CLUBB requires.\n");
-	}
-	if( (scalar @warnings) > 1 )
-	{
+
 		warn $horizontal;
+
 		warn @warnings;
 	}
 	return $result;
@@ -418,6 +425,7 @@ sub privateCheck
 			$privateCount++;
 		}		
 	}
+
 	if($privateCount == $moduleCount )
 	{
 		$result = 1; # Check passed
@@ -489,6 +497,72 @@ sub idCheck
 		warn $horizontal;
 		warn "$programName WARNING: Missing \$Id\$ Tag. \$Id\$ check FAILED!\n";
 		warn "Add ! \$Id\$ to top of file.\n"
+	}
+
+	return $result;
+}
+#####################################################################
+sub lineCheck
+#
+#     &lineCheck( $verbose, @input ) 
+#
+#     Description: This subroutine  verifies that no line in the file
+#     is longer than the maxLength. 
+#
+#        This subroutine works by comparing the length of each line
+#        to the maxLength
+#     
+#     Arguments:
+#     	Sverbose - Prints verbose messages when true.
+#     	@input   - Lines of a Fortran source file.
+#
+#     Returns
+#     	True if no line in the file is greater than the maxLength.
+#####################################################################
+{
+	
+	# Grab first argument
+	my( $verbose ) = shift(@_);
+	
+	# Grab Second argument
+	my( @input ) = @_;
+
+	# Local Variables
+	my( $line, $result, $lineNumber, $maxLength, @warnings);
+
+	# The maximum character length a line is allowed to be.
+	$maxLength = 100;
+	
+	# Default initialization
+	$lineNumber = 0;
+
+	$result = 1;
+
+	# For every line of the file
+	for $line (@input)
+	{
+		# Keep track of the line number
+		$lineNumber++;
+
+		# If the number of characters in the line is greater than the max length.
+		if( length($line) > $maxLength )
+		{
+			# Start building the warning message
+			push(@warnings,"$programName WARNING: Line has exceeded $maxLength characters.\n");
+			push(@warnings, "$lineNumber : $line");
+
+			$result = 0; # Check Failed!
+		}
+	}
+
+	# Did the check fail?
+	if( ! $result )
+	{
+		push(@warnings, "$programName WARNING: File has lines that exceed $maxLength characters.\n");
+		
+		# Show the warning messages	
+		warn $horizontal;
+		warn @warnings;
 	}
 
 	return $result;
