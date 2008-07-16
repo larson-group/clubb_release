@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.139 2008-07-16 13:43:50 nielsenb Exp $
+# $Id: Makefile,v 1.140 2008-07-16 13:51:07 nielsenb Exp $
 #
 # This version should work with GNU make and Sun's dmake.
 #
@@ -16,7 +16,7 @@ include config/linux_ia32_g95_optimize.in
 #include config/linux_ia32_absoft.in
 #include config/linux_ia32_pg.in
 #include config/linux_ia32_ss12.in
-#inlcude config/linux_ia32_intel.in
+#include config/linux_ia32_intel.in
 #include config/linux_ia64_intel.in
 #include config/solaris_ia32_g95.in
 #include config/solaris_generic_ss12_debug.in
