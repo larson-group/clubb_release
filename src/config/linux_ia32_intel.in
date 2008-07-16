@@ -1,4 +1,4 @@
-# $Id: linux_ia32_intel.in,v 1.1 2008-07-03 13:35:49 dschanen Exp $
+# $Id: linux_ia32_intel.in,v 1.2 2008-07-16 16:50:15 faschinj Exp $
 # Makefile definitions customized for Linux x86_64 using the Intel Fortran 
 # compiler 
 
@@ -15,7 +15,7 @@ FC = ifort
 DEBUG = -g -check bounds
 
 # == Warnings ++
-WARNINGS = -warn
+WARNINGS = -warn -warn notruncated_source
 
 # == Machine specific options ==
 ARCH = -xW # This should work on carson/steele
