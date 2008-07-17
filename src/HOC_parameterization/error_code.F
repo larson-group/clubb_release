@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error_code.F,v 1.7 2008-05-30 16:24:24 faschinj Exp $
+! $Id: error_code.F,v 1.8 2008-07-17 04:03:38 dschanen Exp $
 !-----------------------------------------------------------------------
 
         module error_code
@@ -20,7 +20,7 @@
 
         implicit none
 
-        private ! Defualt Scope
+        private ! Default Scope
 
         public ::
      .  clubb_no_error, 
