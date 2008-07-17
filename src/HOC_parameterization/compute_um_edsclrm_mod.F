@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F,v 1.18 2008-07-14 19:54:34 faschinj Exp $
+! $Id: compute_um_edsclrm_mod.F,v 1.19 2008-07-17 16:20:24 dschanen Exp $
 !------------------------------------------------------------------------
         module compute_um_edsclrm_mod
 
@@ -76,7 +76,7 @@
      .  xm ! Prognostic array on the thermodynamic grid     [units vary]
         
         ! Output Variables
-        real, dimension(gr%nnzp), intent(out) :: 
+        real, dimension(gr%nnzp), intent(inout) :: 
      .  xpwp   ! Momentum flux                              [units vary]
 
         integer, intent(out) ::
