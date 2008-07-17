@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: KK_microphys.F,v 1.13 2008-07-14 19:54:34 faschinj Exp $
+! $Id: KK_microphys.F,v 1.14 2008-07-17 20:33:10 faschinj Exp $
 
       module rain_equations
 
@@ -532,7 +532,7 @@
               rrm_auto(k) 
      .        = autoconv_rrm( rcm(k), Ncm(k), s1(k), ss1(k), 
      .                        s2(k), ss2(k), a(k), rhot(k),
-     ,                        Ncp2_Ncm2(k), corr_sNc_NL(k) )
+     .                        Ncp2_Ncm2(k), corr_sNc_NL(k) )
 
            end if ! LH_on
         ! End Vince Larson's addition
