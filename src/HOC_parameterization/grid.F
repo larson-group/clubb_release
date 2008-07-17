@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: grid.F,v 1.24 2008-06-30 19:52:10 faschinj Exp $
+! $Id: grid.F,v 1.25 2008-07-17 16:21:59 dschanen Exp $
 !===============================================================================
         module grid_class
 
@@ -555,6 +555,9 @@
            momentum_heights(1:nzmax) = 0.0
            thermodynamic_heights(1:nzmax) = 0.0
 
+           ! Avoid uninitialized memory
+           generic_input_item = 0.0
+
 
            if ( grid_type == 1 ) then
 
@@ -613,7 +616,7 @@
                  if ( input_status > 0 ) stop   ! error reading input
      .                "Error reading thermodynamic level input file."
                  zt_level_count = zt_level_count + 1
-              enddo
+              end do
 
               ! Close the file zt_grid_fname.
               close( unit=zt_unit )
@@ -747,7 +750,8 @@
 
            ! The purpose of this if statement is to avoid a compiler
            ! warning.
-           if ( generic_input_item > 0 ) then
+           if ( generic_input_item > 0.0 ) then
+             ! Do nothing
            end if
            ! Joshua Fasching  June 2008
 
