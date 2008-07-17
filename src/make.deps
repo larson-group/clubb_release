@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.56 2008-07-14 17:26:10 faschinj Exp $
+# $Id: make.deps,v 1.57 2008-07-17 18:47:24 faschinj Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -99,7 +99,7 @@ mean_adv.o      : grid.o mean_adv.F
 pos_definite_mod.o : grid.o stats_precision.o pos_definite_mod.F
 fill_holes_mult.o : fill_holes_mult.F grid.o
 semiimplicit_clip.o : constants.o stats_precision.o semiimplicit_clip.F
-explicit_clip.o : grid.o stats_precision.o stats_type.o explicit_clip.F
+explicit_clip.o : grid.o stats_precision.o stats_type.o stats_variables.o explicit_clip.F
 
 # == Numerical Recipes dependencies (For the tuner) ==
 nrtype.o	: nrtype.f90
@@ -130,7 +130,7 @@ arm_0003.o  : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o \
 arm_3year.o : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o arm_3year.F
 astex.o     : constants.o model_flags.o grid.o astex.F
 atex.o      : constants.o model_flags.o grid.o cloud_rad.o stats_variables.o error_code.o atex.F
-bomex.o     : constants.o model_flags.o grid.o bomex.F
+bomex.o     : constants.o model_flags.o grid.o parameters.o bomex.F
 cobra.o     : constants.o model_flags.o grid.o cobra.F
 fire.o      : constants.o model_flags.o grid.o stats_variables.o cloud_rad.o fire.F
 gabls2.o    : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o gabls2.F
