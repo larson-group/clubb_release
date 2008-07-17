@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: KK_microphys.F,v 1.14 2008-07-17 20:33:10 faschinj Exp $
+! $Id: KK_microphys.F,v 1.15 2008-07-17 20:38:25 faschinj Exp $
 
       module rain_equations
 
@@ -1095,7 +1095,7 @@
         
         FUNCTION autoconv_rrm( rcm, Ncm, s1, ss1, 
      .                         s2, ss2, a, rhot,
-     ,                         Ncp2_Ncm2, corr_sNc_NL )
+     .                         Ncp2_Ncm2, corr_sNc_NL )
 
         USE constants, only:
      .      Nc_tol, ! Variable(s)
