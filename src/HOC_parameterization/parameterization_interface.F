@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.109 2008-07-14 19:54:35 faschinj Exp $
+! $Id: parameterization_interface.F,v 1.110 2008-07-17 20:26:53 faschinj Exp $
 !-----------------------------------------------------------------------
         module hoc_parameterization_interface
 
@@ -380,7 +380,7 @@
        IF ( gr%zm(1) == 0.0 ) THEN
           call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1),    ! intent(in)
      .                  ustar, wpsclrp(1,1:sclr_dim),             ! intent(in)
-     ,                  wp2(1), up2(1), vp2(1),                   ! intent(out)
+     .                  wp2(1), up2(1), vp2(1),                   ! intent(out)
      .                  thlp2(1), rtp2(1), rtpthlp(1), err_code,  ! intent(out)
      .                  sclrp2(1,1:sclr_dim),                     ! intent(out)
      .                  sclrprtp(1,1:sclr_dim),                   ! intent(out) 
