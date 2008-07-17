@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.205 2008-07-15 01:30:22 ajsmith4 Exp $
+! $Id: hoc.F,v 1.206 2008-07-17 04:04:46 dschanen Exp $
 
         module hoc
 
@@ -352,6 +352,17 @@
         read(unit=iunit, nml=model_setting)
         read(unit=iunit, nml=stats_setting)
         close(unit=iunit)
+
+        ! Sanity check on passive scalars
+        ! When adding new 'ii' scalar indices, add them to this list.
+        if ( max( iiCO2, iisclr_rt, iisclr_thl ) > sclr_dim ) then
+          write(fstderr,*) "Passive scalar index exceeds sclr_dim ",
+     .      "iiCO2 = ", iiCO2, "iisclr_rt = ", iisclr_rt, 
+     .      "sclr_thl = ", iisclr_thl, "sclr_dim = ", sclr_dim
+
+          err_code = clubb_var_out_of_bounds
+          return
+        end if
 
         call set_clubb_debug_level( debug_level )
 
