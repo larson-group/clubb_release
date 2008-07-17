@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.30 2008-07-14 20:46:47 faschinj Exp $
+!  $Id: stats_subs.F,v 1.31 2008-07-17 16:21:06 faschinj Exp $
       module stats_subs
 #ifdef STATS
  
@@ -891,7 +891,7 @@
 
       use stats_type, only:
      .    stat_update_var, ! Procedure(s)
-     ,    stat_update_var_pt
+     .    stat_update_var_pt
 
       use interpolation, only:
      .    linint ! Procedure
