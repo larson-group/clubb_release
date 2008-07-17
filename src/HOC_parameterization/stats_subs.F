@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.31 2008-07-17 16:21:06 faschinj Exp $
+!  $Id: stats_subs.F,v 1.32 2008-07-17 16:25:44 dschanen Exp $
       module stats_subs
 #ifdef STATS
  
@@ -347,6 +347,22 @@
       allocate ( zmscr13(zm%kk) )
       allocate ( zmscr14(zm%kk) )
       allocate ( zmscr15(zm%kk) )
+
+      zmscr01 = 0.0
+      zmscr02 = 0.0
+      zmscr03 = 0.0
+      zmscr04 = 0.0
+      zmscr05 = 0.0
+      zmscr06 = 0.0
+      zmscr07 = 0.0
+      zmscr08 = 0.0
+      zmscr09 = 0.0
+      zmscr10 = 0.0
+      zmscr11 = 0.0
+      zmscr12 = 0.0
+      zmscr13 = 0.0
+      zmscr14 = 0.0
+      zmscr15 = 0.0
 
 
       fdir = "./"
