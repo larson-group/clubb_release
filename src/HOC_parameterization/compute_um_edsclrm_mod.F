@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F,v 1.20 2008-07-18 16:14:25 dschanen Exp $
+! $Id: compute_um_edsclrm_mod.F,v 1.21 2008-07-18 17:25:13 faschinj Exp $
 !------------------------------------------------------------------------
         module compute_um_edsclrm_mod
 
@@ -389,7 +389,13 @@
             xm_gf = fcor * perp_wind_g
 
             xm_cf = -fcor * perp_wind_m
-
+          case default
+            ixm_ma = 0
+            ixm_gf = 0
+            ixm_cf = 0
+            xm_ma = 0.
+            xm_gf = 0.
+            xm_cf = 0.
           end select
 
           xmt = xm_ma + xm_gf + xm_cf 
