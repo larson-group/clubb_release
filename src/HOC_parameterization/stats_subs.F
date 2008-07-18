@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.32 2008-07-17 16:25:44 dschanen Exp $
+!  $Id: stats_subs.F,v 1.33 2008-07-18 20:27:14 faschinj Exp $
       module stats_subs
 #ifdef STATS
  
@@ -658,6 +658,22 @@
      .                     trim(zm%f%var(i)%name),' in zm ','at k =',k,
      .                     ' zm%n(',k,',',i,')=',zm%n(k,i)
 !           write(0,*) 'Possible sampling error for zm ',i,k,zm%n(k,i)
+!           Made error message more descriptive
+!           Joshua Fasching July 2008
+
+           !pause
+         end if
+        end do
+      end do
+      
+      do i=1,sfc%nn
+       do k=1,sfc%kk
+         if ( sfc%n(k,i) /= 0 
+     .        .and. sfc%n(k,i) /= floor(stats_tout/stats_tsamp) ) then
+           write(0,*) 'Possible sampling error for variable ',
+     .                    trim(sfc%f%var(i)%name),' in sfc ','at k =',k,
+     .                     ' sfc%n(',k,',',i,')=',sfc%n(k,i)
+!           write(0,*) 'Possible sampling error for sfc ',i,k,sfc%n(k,i)
 !           Made error message more descriptive
 !           Joshua Fasching July 2008
 
