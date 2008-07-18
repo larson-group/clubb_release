@@ -1,4 +1,4 @@
-! $Id: sounding.F,v 1.21 2008-07-08 04:44:03 dschanen Exp $
+! $Id: sounding.F,v 1.22 2008-07-18 17:36:22 faschinj Exp $
         module sounding
 
         implicit none
@@ -153,6 +153,19 @@
 ! Modified 27 May 2005 -dschanen: eliminated the goto in favor of a do while( )
 
         print *, "Reading in sounding information"
+!------------------Printing Model Inputs-------------------------------
+        print *, "u = ",u(1:nlevels)
+        print *, "v = ",v(1:nlevels)
+        print *, "ug = ",ug(1:nlevels)
+        print *, "vg = ",vg(1:nlevels)
+        print *, "theta = ",theta(1:nlevels)
+        print *, "rt = ",rt(1:nlevels)
+        if ( sclr_dim > 0 ) then
+          print *, "sclr = ", sclr(1:nlevels,1:sclr_dim)
+          print *, "edsclr = ", edsclr(1:nlevels,1:sclr_dim)
+        end if
+!----------------------------------------------------------------------
+
         do i=2, gr%nnzp
           k=1
           do while ( z(k) < gr%zt(i) .and. .not. lstd_atmo )
