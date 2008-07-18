@@ -1,4 +1,4 @@
-# $Id: linux_ia32_g95_debug.in,v 1.6 2008-07-02 18:32:07 faschinj Exp $
+# $Id: linux_ia32_g95_debug.in,v 1.7 2008-07-18 17:49:31 faschinj Exp $
 # Configuration file for Linux machine using g95
 # An MS Windows machine with MSYS should be similar
 
@@ -22,11 +22,10 @@ DEBUG = -g -fbounds-check -mieee-fp -ftrace=full
 # == Warnings ==
 # This is the set of preferred warnings to use when compiling CLUBB with g95.
 # Warnings ignored are:
-# 	140 - Implicit conversion is causing precision loss
 # 	142 - Nonblock DO statement is obsolescent 
 # 	165 - Implicit interface is called
 # 	167 - PRIVATE module procedure is never invoked
-WARNINGS = -Wall -Wextra -Wno=140,142,165,167 -pedantic
+WARNINGS = -Wall -Wextra -Wno=142,165,167 -pedantic
 
 # == Machine specific flags ==
 # Note: some of these are 64 bit architectures, so make sure NetCDF is
