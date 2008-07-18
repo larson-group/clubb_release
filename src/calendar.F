@@ -1,4 +1,4 @@
-!$Id: calendar.F,v 1.5 2008-07-11 15:59:38 faschinj Exp $
+!$Id: calendar.F,v 1.6 2008-07-18 17:31:04 faschinj Exp $
       module calendar
 
         implicit none
@@ -23,30 +23,31 @@
   
         contains
 !-----------------------------------------------------------------------        
-        integer function gregorian2julian_date(year, month, day)
+        integer function gregorian2julian_date( day, month, year )
 !
 !       Description:
 !       Computes the Julian Date (gregorian2julian), or the number of days since 
-!       1 January 4713 BC, given a Gregorian Calender date (year, month, day).
+!       1 January 4713 BC, given a Gregorian Calender date (day, month, year).
 !
 !       Reference: 
 !       Fliegel, H. F. and van Flandern, T. C., 
 !       Communications of the ACM, Vol. 11, No. 10 (October, 1968)
 !----------------------------------------------------------------------
+
         implicit none
         
-        ! Output Variables
+        ! Input Variables
         INTEGER,intent(in) :: 
-     .  YEAR,   ! Gregorian Calendar Year
-     .  MONTH,  ! Gregorian Calendar Month
-     .  DAY     ! Gregorian Calendar Day
-        
+     .  day,       ! Gregorian Calendar Day for given Month        [##]
+     .  month,     ! Gregorian Calendar Month for given Year       [##]
+     .  year       ! Gregorian Calendar Year                       [####]
+
         ! Local Variables
         integer :: I,J,K
 
-        I= YEAR
-        J= MONTH
-        K= DAY
+        I = year
+        J = month
+        K = day
 
         gregorian2julian_date = K-32075+1461*(I+4800+(J-14)/12)/4+367*
      .         (J-2-(J-14)/12*12)/12-3*((I+4900+(J-14)/12)/100)/4
@@ -55,11 +56,12 @@
         end function gregorian2julian_date
         
 !------------------------------------------------------------------
-        subroutine julian2gregorian_date(julian_date, year, month, day)
+        subroutine julian2gregorian_date
+     .               ( julian_date, day, month, year )
 !
 !       Description:
-!       Computes the Gregorina Calendar date (year, month, day) 
-!       given the Julian date (jd).
+!       Computes the Gregorina Calendar date (day, month, year) 
+!       given the Julian date (julian_date).
 !
 !       Reference: 
 !       Fliegel, H. F. and van Flandern, T. C., 
@@ -67,36 +69,37 @@
 !------------------------------------------------------------------
         implicit none
 
-        ! Input Variable
-        integer,intent(in) :: julian_date ! Julian date being converted from
+        ! Input Variable(s)
+        integer, intent(in) :: julian_date ! Julian date being converted from
 
-        ! Output Variable
-        integer,intent(out):: 
-     .  year,   ! Gregorian calender year       [####]
-     .  month,  ! Gregorian calender month      [##]
-     .  day     ! Gregorian calender day        [##]
-        
+        ! Output Variable(s)
+        integer, intent(out):: 
+     .  day,    ! Gregorian calender day for given Month       [##]
+     .  month,  ! Gregorian calender month for given Year      [##]
+     .  year    ! Gregorian calender year                      [####]
+
         ! Local Variables
         integer :: i, j, k, n, l
 
-        L= julian_date+68569
-        N= 4*L/146097
-        L= L-(146097*N+3)/4
-        I= 4000*(L+1)/1461001
-        L= L-1461*I/4+31
-        J= 80*L/2447
-        K= L-2447*J/80
-        L= J/11
-        J= J+2-12*L
-        I= 100*(N-49)+I+L
+        L = julian_date+68569
+        N = 4*L/146097
+        L = L-(146097*N+3)/4
+        I = 4000*(L+1)/1461001
+        L = L-1461*I/4+31
+        J = 80*L/2447
+        K = L-2447*J/80
+        L = J/11
+        J = J+2-12*L
+        I = 100*(N-49)+I+L
 
-        YEAR= I
-        MONTH= J
-        DAY= K
+        year = I
+        month = J
+        day = K
 
         RETURN
         
         end subroutine julian2gregorian_date
+
 !-----------------------------------------------------------------------------
         logical function leap_year( year )
 !
@@ -131,6 +134,9 @@
 
         implicit none
 
+        ! Input Variable(s)
+
+        ! Previous date
         integer, intent(in) ::
      .  previous_day,   ! Day of the month      [##]
      .  previous_month, ! Month of the year     [##]
@@ -139,10 +145,13 @@
         real(kind=time_precision), intent(in) ::
      .  seconds_since_previous_date ! [s]
 
+        ! Output Variable(s) 
+
+        ! Current date
         integer, intent(out) ::
-     .  current_day, 
-     .  current_month,
-     .  current_year
+     .  current_day,    ! Day of the month      [##] 
+     .  current_month,  ! Month of the year     [##]
+     .  current_year    ! Year                  [####]
 
         real(kind=time_precision), intent(out) ::
      .  seconds_since_current_date
@@ -155,9 +164,9 @@
         ! has been running
 
         ! Determine the Julian Date of the starting date, 
-        !    written in Gregorian (year, month, day) form
-        days_since_1jan4713bc = gregorian2julian_date( previous_year, 
-     .                                    previous_month, previous_day )
+        !    written in Gregorian (day, month, year) form
+        days_since_1jan4713bc = gregorian2julian_date( previous_day, 
+     .                                   previous_month, previous_year )
 
         ! Determine the amount of days that have passed since start date
         days_since_start = 
@@ -172,16 +181,16 @@
 
         call julian2gregorian_date
      .         ( days_since_1jan4713bc,
-     .           current_year, current_month, current_day)
+     .           current_day, current_month, current_year )
 
       
         end subroutine compute_current_date       
 
 !-------------------------------------------------------------------------------------
-        subroutine gregorian2julian_day( day, month, year, julian_day )
+        integer function gregorian2julian_day( day, month, year )
 !
 !       Description: This subroutine determines the Julian day (1-366)
-!       for a given Gregorian calendar date.
+!       for a given Gregorian calendar date(e.g. July 1, 2008).
 !
 !-------------------------------------------------------------------------------------
         
@@ -194,34 +203,25 @@
      .   month,          ! Month of the Year     [##]
      .   year            ! Year                  [####]
 
-        ! Output Variable(s)
-
-        integer, intent(out) ::
-     .  julian_day      ! Julian Day (1-366)
-
-
-        ! Local Variable
-        integer :: j
-
-        julian_day = day
-
+        gregorian2julian_day = day + sum(days_per_month(1:month-1)) 
         ! Add the days from the previous months
-        do j = 1, month-1, 1
-          julian_day = julian_day + days_per_month(j)
-        end do
+!        do j = 1, month-1, 1
+!          julian_day = julian_day + days_per_month(j)
+!        end do
 
         ! Kluge for a leap year
         ! If the date were 29 Feb 2000 this would not increment julian_day
         ! However 01 March 2000 would need the 1 day bump
         if ( leap_year(year) .and. month > 2 ) then
-            julian_day = julian_day + 1
+            gregorian2julian_day = gregorian2julian_day + 1
         end if
 
-        if ( ( leap_year( year ) .and. julian_day > 366 ) .or.
-     .       ( .not. leap_year( year ) .and. julian_day > 365 ) ) then
+        if ( ( leap_year( year ) .and. gregorian2julian_day > 366 ) .or.
+     .       ( .not. leap_year( year ) 
+     .                  .and. gregorian2julian_day > 365 ) ) then
                 stop "Problem with Julian day conversion."
         endif
 
-        end subroutine gregorian2julian_day
+        end function gregorian2julian_day
 
       end module calendar
