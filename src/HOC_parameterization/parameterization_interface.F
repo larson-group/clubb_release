@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.110 2008-07-17 20:26:53 faschinj Exp $
+! $Id: parameterization_interface.F,v 1.111 2008-07-18 16:02:15 dschanen Exp $
 !-----------------------------------------------------------------------
         module hoc_parameterization_interface
 
@@ -868,8 +868,8 @@
 
            call compute_um_edsclrm( "edsclr", wpedsclrp(1,i),    ! intent(in)
      .                              edsclrmt(:,i), Khm, dt,      ! intent(in)
-     .                              edsclrm(:,i),                ! intent(inout)
-     .                              wpedsclrp(:,i), err_code )   ! intent(out)
+     .                              edsclrm(:,i), wpedsclrp(:,i),! intent(inout)
+     .                              err_code )   ! intent(out)
 
 
          end do
@@ -890,8 +890,8 @@
 
        ! dtmain to dt -dschanen
        call compute_um_edsclrm( "um", upwp(1), umt, Khm, dt, ! intent(in)
-     .                          um,                          ! intent(inout)
-     .                          upwp, err_code )             ! intent(out)
+     .                          um, upwp,                    ! intent(inout)
+     .                          err_code )             ! intent(out)
 
        um(1)       = ( ( um(3)-um(2) )/( gr%zt(3)-gr%zt(2) ) )
      .              * ( gr%zt(1)-gr%zt(2) ) + um(2)
@@ -910,8 +910,8 @@
      .      vmt )                                     ! intent(out)
 
        call compute_um_edsclrm( "vm", vpwp(1), vmt, Khm, dt, ! intent(in)
-     .                          vm,                          ! intent(inout)
-     .                          vpwp, err_code )             ! intent(out)
+     .                          vm, vpwp,                    ! intent(inout)
+     .                          err_code )             ! intent(out)
 
        vm(1)       = ( ( vm(3)-vm(2) )/( gr%zt(3)-gr%zt(2) ) )
      .              * ( gr%zt(1)-gr%zt(2) ) + vm(2)
@@ -980,14 +980,14 @@
 
        if ( clubb_at_debug_level( 2 ) ) then
          call parameterization_check
-     .        ( thlm_forcing, rtm_forcing, wmm, wmt, p, rhom,          ! intent(in)
-     .          rhot, exner, wpthlp_sfc, wprtp_sfc,                    ! intent(in)
-     .          upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,                ! intent(in)
-     .          up2, vp2, rtm, wprtp, thlm,                            ! intent(in)
-     .          wpthlp, wp2, wp3, Scm, rtp2, thlp2,                    ! intent(in)
-     .          rtpthlp, taum, rcm, cf, "end of ",                     ! intent(in)
-     .          wpsclrp_sfc, wpedsclrp_sfc,                            ! intent(in)
-     .          sclrm, sclrm_forcing, edsclrm )                        ! intent(in)
+     .        ( thlm_forcing, rtm_forcing, wmm, wmt, p, rhom,  ! intent(in)
+     .          rhot, exner, wpthlp_sfc, wprtp_sfc,            ! intent(in)
+     .          upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,        ! intent(in)
+     .          up2, vp2, rtm, wprtp, thlm,                    ! intent(in)
+     .          wpthlp, wp2, wp3, Scm, rtp2, thlp2,            ! intent(in)
+     .          rtpthlp, taum, rcm, cf, "end of ",             ! intent(in)
+     .          wpsclrp_sfc, wpedsclrp_sfc,                    ! intent(in)
+     .          sclrm, sclrm_forcing, edsclrm )                ! intent(in)
        end if
 
 !-----------------------------------------------------------------------
