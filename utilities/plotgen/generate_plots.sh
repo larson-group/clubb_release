@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# This variable holds the path to the directory where plotgen.sh is located
+# The readlink -f is necessary so if running from the symlink, it gets the 
+# full path to plotgen.sh, and dirname $0 gets the directory.
+PLOTGEN_DIR=$(readlink -f $(dirname "$0"))
+
 #Tell the user what we're doing
 echo "This script will generate matlab plots comparing two sets of input data."
 echo ""
@@ -35,9 +40,9 @@ fi
 
 #Clean up the output directories, if we don't do this, we can't
 #pick and choose what cases will be shown in the final product
-rm -rf /home/matlabuser/plotgen/output/eps/*
-rm -rf /home/matlabuser/plotgen/output/jpg/*
-rm -rf /home/matlabuser/plotgen/output/ps/*
+rm -rf $PLOTGEN_DIR/output/eps/*
+rm -rf $PLOTGEN_DIR/output/jpg/*
+rm -rf $PLOTGEN_DIR/output/ps/*
 
 #Set the flag that determines if the plots are compared to the LES data
 if [ "$3" == "1" ]; then
@@ -527,7 +532,7 @@ fi
 #data files have actually been produced
 run_success=0
 
-cd /home/matlabuser/plotgen
+cd $PLOTGEN_DIR
 
 #Actually run the script with the arguments we've parsed out
 if [ "$HOC_sim2" == 0 ]; then
@@ -540,8 +545,10 @@ fi
 
 #Generate the plots
 if [ "$run_success" == 1 ]; then
-	rm -rf /home/matlabuser/plotgen/profiles
-	latex2html /home/matlabuser/plotgen/profiles.tex
+	rm -rf $PLOTGEN_DIR/profiles
+	# senkbeir remove the $PLOTGEN_DIR in the following line because latex2html doesn't like '.' in the path
+#	latex2html $PLOTGEN_DIR/profiles.tex
+	latex2html profiles.tex
 	exit
 else
 	exit 1

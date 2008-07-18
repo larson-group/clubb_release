@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# senkbeir changed the PLOTGEN_DIR variable to automatically figure out where it is
+# This variable holds the path to the directory where plotgen.sh is located
+# The readlink -f is necessary so if running from the symlink, it gets the 
+# full path to plotgen.sh, and dirname $0 gets the directory.
+PLOTGEN_DIR=$(readlink -f $(dirname "$0"))
+
 #We need to unset the term type for this to work with Matlab 2008a
 SessionType=$DISPLAY
 unset DISPLAY
@@ -46,7 +52,7 @@ fi
 working_directory=`pwd`
 
 #Move to a directory that its easier to work in
-cd /home/matlabuser/plotgen
+cd $PLOTGEN_DIR
 
 #These arguments are always in the same spot
 output_arg="$1"
@@ -90,6 +96,54 @@ else
 	exit 1
 fi
 
+# senkbeir added checks to see if data directories exist if needed
+# If we are plotting LES, check for LES_files directory
+if [ $compare_LES == 1 ]
+then
+	# If the "LES_files" directory does not exist
+	if [ ! -d "LES_files" ]
+	then
+		# Try to create a symbolic link to the directory.
+		# We will assume it is being run from the repository, but
+		# still check to see if the directory exists first
+		if [ -d "../../les_data" ]
+		then
+			# It probably is being run from the repository... Let's create a symbolic link
+			ln -s ../../les_data LES_files
+		else
+			# We cannot find the LES data, exit
+			echo "No LES data available to plot! Create the LES_files directory first,"
+			echo "or don't plot the LES data."
+			exit 1
+		fi
+	fi
+fi
+
+# If we are plotting the best ever, check for Chris_Golaz_best_ever directory
+if [ $compare_best == 1 ]
+then
+	if [ ! -d "Chris_Golaz_best_ever" ]
+	then
+		# The directory doesn't exist, warn and exit
+		echo "No best ever data available to plot! Create the Chris_Golaz_best_ever directory first,"
+		echo "or don't plot the best ever data."
+		exit 1
+	fi
+fi
+
+# If we are plotting HOC Dec 17, check for HOC_20051217 directory
+if [ $compare_HOC == 1 ]
+then
+	if [ ! -d "HOC_20051217" ]
+	then
+		# The directory doesn't exist, warn and exit
+		echo "No HOC Dec 17 data available to plot! Create the HOC_20051217 directory first,"
+		echo "of don't plot the HOC Dec 17 data"
+		exit 1
+	fi
+fi
+# end senkbeir's changes
+
 #Strip the directory information from the sim name
 HOC_dir1=${HOC_dir1##/*/}
 HOC_dir2=${HOC_dir2##/*/}
@@ -104,10 +158,10 @@ if [ "$output_dir_rel" != "/"  ]; then
 fi
 
 if [ "$output_arg" == "-r"  ]; then
-	sudo -u matlabuser /home/matlabuser/plotgen/generate_plots.sh $HOC_dir1 $HOC_dir2 $compare_LES $compare_best $compare_HOC && \
+	sudo -u matlabuser $PLOTGEN_DIR/generate_plots.sh $HOC_dir1 $HOC_dir2 $compare_LES $compare_best $compare_HOC && \
 	rm -rf "$output_dir"
 	mkdir "$output_dir"
-	cp -rf /home/matlabuser/plotgen/profiles/* "$output_dir"
+	cp -rf $PLOTGEN_DIR/profiles/* "$output_dir"
 elif [ "$output_arg" == "-c" ]; then
 	if [ -e "$output_dir" ]; then
 		echo "Directory exists, use '-r' to overwrite." 
@@ -115,12 +169,12 @@ elif [ "$output_arg" == "-c" ]; then
 		exit 1
 	fi
 	mkdir -p "$output_dir" && \
-	sudo -u matlabuser /home/matlabuser/plotgen/generate_plots.sh $HOC_dir1 $HOC_dir2 $compare_LES $compare_best $compare_HOC && \
-	cp -rf /home/matlabuser/plotgen/profiles/* "$output_dir"
+	sudo -u matlabuser $PLOTGEN_DIR/generate_plots.sh $HOC_dir1 $HOC_dir2 $compare_LES $compare_best $compare_HOC && \
+	cp -rf $PLOTGEN_DIR/profiles/* "$output_dir"
 else
-	sudo -u matlabuser /home/matlabuser/plotgen/generate_plots.sh $HOC_dir1 $HOC_dir2 $compare_LES $compare_best $compare_HOC
+	sudo -u matlabuser $PLOTGEN_DIR/generate_plots.sh $HOC_dir1 $HOC_dir2 $compare_LES $compare_best $compare_HOC
 	echo "Invalid output argument."
-	echo "Results stored in /home/matlabuser/plotgen/profiles"
+	echo "Results stored in $PLOTGEN_DIR/profiles"
 fi
 
 #Remove the symlinks, but not if we're doing nightly plots
