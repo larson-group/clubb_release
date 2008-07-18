@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.206 2008-07-17 04:04:46 dschanen Exp $
+! $Id: hoc.F,v 1.207 2008-07-18 17:19:43 faschinj Exp $
 
         module hoc
 
@@ -352,6 +352,72 @@
         read(unit=iunit, nml=model_setting)
         read(unit=iunit, nml=stats_setting)
         close(unit=iunit)
+
+!---------------Printing Model Inputs--------------------------------------
+        print *, "--------------------------------------------------"
+        print *, "Model Settings"
+        print *, "--------------------------------------------------"
+
+        ! Pick some default values for model_setting
+        print *,"runtype = ", runtype
+        print *,"nzmax = ", nzmax
+        print *, "grid_type = ", grid_type
+        print *, "deltaz = ", deltaz
+        print *, "zm_init = ", zm_init
+        print *, "zt_grid_fname = ", zt_grid_fname
+        print *, "zm_grid_fname = ", zm_grid_fname
+
+        print *, "day = ", day
+        print *, "month = ", month
+        print *, "year = ", year
+
+        print *, "rlat = ", rlat
+        print *, "rlon = ", rlon
+
+        print *, "time_initial = ", time_initial
+        print *, "time_final = ", time_final
+        print *, "time_spinup = ", time_spinup
+
+        print *, "dtmain = ", dtmain
+        print *, "dtclosure = ", dtclosure
+
+        print *, "sfctype = ", sfctype
+        print *, "tsfc = ", tsfc
+        print *, "psfc = ", psfc
+        print *, "SE = ", SE
+        print *, "LE = ", LE
+        print *, "fcor = ", fcor
+        print *, "T0 = ", T0
+        print *, "ts_nudge = ", ts_nudge
+
+        print *, "cloud_sed = ", cloud_sed
+        print *, "kk_rain = ", kk_rain
+        print *, "licedfs = ", licedfs
+        print *, "lcoamps_micro = ", lcoamps_micro
+        print *, "lbugsrad = ", lbugsrad
+        print *, "lKhm_aniso = ", lKhm_aniso
+        print *, "luv_nudge = ", luv_nudge
+        print *, "lrestart = ", lrestart
+        print *, "restart_path_case = ", restart_path_case
+        print *, "time_restart = ", time_restart
+        print *, "debug_level = ", debug_level
+
+        print *, "sclr_dim = ", sclr_dim
+        print *, "iisclr_thl = ", iisclr_thl
+        print *, "iisclr_rt = ", iisclr_rt
+        print *, "iiC02 = ", iiCO2
+
+        print *, "sclr_tol = ", sclr_tol(1:sclr_max)
+
+        ! Pick some default values for stats_setting
+        print *, "lstats = ", lstats
+        print *, "fname_prefix = ", fname_prefix
+        print *, "stats_fmt = ", stats_fmt
+        print *, "stats_tsamp = ", stats_tsamp
+        print *, "stats_tout = ", stats_tout
+
+        print *, "--------------------------------------------------"
+!----------------------------------------------------------------------
 
         ! Sanity check on passive scalars
         ! When adding new 'ii' scalar indices, add them to this list.
