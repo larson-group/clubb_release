@@ -1,4 +1,4 @@
-! $Id: cos_solar_zen.F,v 1.13 2008-07-14 19:47:52 faschinj Exp $
+! $Id: cos_solar_zen.F,v 1.14 2008-07-18 17:33:14 faschinj Exp $
 !-----------------------------------------------------------------------
         module cos_solar_zen_mod
 
@@ -90,11 +90,10 @@
      .                             present_year,
      .                             present_time )
 
-        call gregorian2julian_day( present_day, present_month,
-     .                             present_year,
-     .                             jul_day )
+        jul_day = gregorian2julian_day( present_day, present_month,
+     .                             present_year )
 
-        if( leap_year(present_year) )then
+        if( leap_year( present_year ) )then
                 days_in_year = 366
         else
                 days_in_year = 365
