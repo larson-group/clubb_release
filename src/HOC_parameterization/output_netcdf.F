@@ -1,4 +1,4 @@
-! $Id: output_netcdf.F,v 1.1 2008-07-14 17:26:10 faschinj Exp $
+! $Id: output_netcdf.F,v 1.2 2008-07-18 17:08:15 faschinj Exp $
 !-----------------------------------------------------------------------
        module output_netcdf
 #ifdef NETCDF
@@ -592,7 +592,8 @@
 
 !-----------------------------------------------------------------------
 
-       subroutine format_date( iday, imonth, iyear, st_time, date )
+       subroutine format_date
+     .            ( day_in, month_in, year_in, time_in, date )
 
 !      Description:
 !      Put the model date in a format that udunits and NetCDF can easily
@@ -604,6 +605,8 @@
 !      Uses Fortran `internal' files to write the string output.
 !-----------------------------------------------------------------------
 
+       use calendar, only: compute_current_date
+
        use stats_precision, only: 
      .     time_precision ! Variable(s)
 
@@ -611,12 +614,26 @@
 
        ! Input Variables
        integer, intent(in) :: 
-     . iday, imonth, iyear  ! Integer for day, month and year.
+     . day_in,          ! Day of Month at Model Start [##]
+     . month_in,        ! Month of Year at Model Start[##]
+     . year_in          ! Year at Model Start       [####]
 
-       real(kind=time_precision), intent(in) :: st_time ! Start time [s]
+       real(kind=time_precision), intent(in) :: time_in ! Start time [s]
 
        ! Output Variables
        character(len=35), intent(out) :: date
+
+       integer:: 
+     . iday, imonth, iyear  ! Integer for day, month and year.
+      
+       real(kind=time_precision) :: st_time ! Start time [s]
+
+       call compute_current_date( day_in, month_in, 
+     .                            year_in,
+     .                            time_in,
+     .                            iday, imonth,
+     .                            iyear,
+     .                            st_time )
 
 !      date(1:14) = "minutes since "
        date = "minutes since YYYY-MM-DD HH:MM:00.0"
