@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F,v 1.19 2008-07-17 16:20:24 dschanen Exp $
+! $Id: compute_um_edsclrm_mod.F,v 1.20 2008-07-18 16:14:25 dschanen Exp $
 !------------------------------------------------------------------------
         module compute_um_edsclrm_mod
 
@@ -182,20 +182,27 @@
 !        b(gr%nnzp)   = - atmp + 1./dt
 !        rhs(gr%nnzp) = - atmp * xm(gr%nnzp-1)
 !     .               + ( atmp + 1./dt ) * xm(gr%nnzp)
-
-        a(gr%nnzp)   = -1.
-        c(gr%nnzp)   =  0.
-        b(gr%nnzp)   =  1.
+        atmp = -1.
+        ctmp = 0.
+        
+        a(gr%nnzp)   =  atmp
+        c(gr%nnzp)   =  ctmp
+        b(gr%nnzp)   =  -atmp
         rhs(gr%nnzp) =  0.
 ! End of Vince Larson's change
 
 
 #ifdef STATS
+           ! Zero flux
+           ! This new code should make the budget balance at nnzp
+           ! -dschanen 18 Jul 2008
            if ( lstats_samp .and. ixm_ta > 0 ) then
              ztscr01(gr%nnzp) = -atmp
-             ztscr02(gr%nnzp) =  atmp
-             ztscr03(gr%nnzp) = -ctmp
+             ztscr02(gr%nnzp) =  ctmp
+             ztscr03(gr%nnzp) =  atmp
            end if
+
+           
 #endif
 !    Caused problems with DYCOMS II RF02
 !     .               + xm_tndcy(gr%nnzp)
