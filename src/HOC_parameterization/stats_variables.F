@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_variables.F,v 1.6 2008-07-08 04:44:25 dschanen Exp $
+! $Id: stats_variables.F,v 1.7 2008-07-21 20:35:59 faschinj Exp $
 !-----------------------------------------------------------------------
 !  module stats_variables
 
@@ -79,7 +79,7 @@
      .     isnowslope,     ! Adam Smith, 22 April 2008
      .     iNsnowm,        ! Adam Smith, 22 April 2008
      .     ised_rcm,       ! Brian
-     .     irsm,           ! Brian
+     .     irsat,           ! Brian
      .     irrm,           ! Brian
      .     iNrm,           ! Brian
      .     imean_vol_rad_rain,  ! Brian
@@ -92,7 +92,7 @@
      .     iradht_SW       !   "           "   Short-wave
 
         integer, public ::
-     .     itemp_in_K      ! Absolute temperature
+     .     iT_in_K      ! Absolute temperature
 
 
 !$omp   threadprivate(ithlm, ithvm, irtm, ircm, ium, ivm, iwmt, iug)
@@ -100,11 +100,11 @@
 !$omp   threadprivate(iwp2thlp, iwprtp2, iwp2rtp, iLup, iLdown, itaut)
 !$omp   threadprivate(iKht, iwp2thvp, iwp2rcp, iwprtpthlp, isct, irhot)
 !$omp   threadprivate(iNcm, iNcnm, iNim, isnowslope, iNsnowm)
-!$omp   threadprivate(ised_rcm, irsm, irrm, iNrm)
+!$omp   threadprivate(ised_rcm, irsat, irrm, iNrm)
 !$omp   threadprivate(imean_vol_rad_rain, imean_vol_rad_cloud)
 !$omp   threadprivate(irain_rate, iAKm, iAKm_est)
 !$omp   threadprivate(iradht, iradht_LW, iradht_SW)
-!$omp   threadprivate(itemp_in_K)
+!$omp   threadprivate(iT_in_K)
 
         integer, public ::
      .    irsnowm,
