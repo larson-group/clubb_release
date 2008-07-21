@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.33 2008-07-18 20:27:14 faschinj Exp $
+!  $Id: stats_subs.F,v 1.34 2008-07-21 14:42:16 faschinj Exp $
       module stats_subs
 #ifdef STATS
  
@@ -178,13 +178,34 @@
       read(unit=iunit, nml=statsnl, end=100)
       close(unit=iunit)
 
-      ! %% debug
-!     do while ( vars_zt(i) /= '' )
-!       i = i + 1
-!       print *, i, vars_zt(i)
-!     end do
 
+      write(0,*) "--------------------------------------------------"
 
+      write(0,*) "Statistics"
+
+      write(0,*) "--------------------------------------------------"
+      write(0,*) "vars_zt = "
+      i = 1
+      do while ( vars_zt(i) /= '' )
+        i = i + 1
+        write(0,*) vars_zt(i)
+      end do
+ 
+      write(0,*) "vars_zm = "
+      i = 1
+      do while ( vars_zm(i) /= '' )
+        i = i + 1
+        write(0,*) vars_zm(i)
+      end do
+
+      write(0,*) "vars_sfc = "
+      i = 1
+      do while ( vars_sfc(i) /= '' )
+        i = i + 1
+        write(0,*) vars_sfc(i)
+      end do
+
+      write(0,*) "--------------------------------------------------"
       ! Determine file names for GrADS or NetCDF files
       fname_zt  = trim( fname_prefix )//"_zt"
       fname_zm  = trim( fname_prefix )//"_zm"
