@@ -1,4 +1,4 @@
-! $Id: ice_dfsn_mod.F,v 1.12 2008-07-21 20:24:02 faschinj Exp $        
+! $Id: ice_dfsn_mod.F,v 1.13 2008-07-21 21:47:31 faschinj Exp $        
 
         module ice_dfsn_mod
 
@@ -192,10 +192,10 @@
 
           ! Saturation ratio in a liquid-saturated cloud, p. 158 Rogers and Yau
           !---------------Brian's comment--------------------------------------!
-          ! The actual formula is:  Si = e/ei = (e/es)*(es/ei) = S*(es/ei)     !
+          ! The actual formula is:  Si = e/ei = (e/esat)*(esat/ei) = S*(esat/ei)     !
           ! It is assumed that any supersaturation forms liquid water and that !
           ! the atmosphere is then saturated with respect to liquid water.     !
-          ! Therefore, S = 1.0, allowing Si = es/ei.                           !
+          ! Therefore, S = 1.0, allowing Si = esat/ei.                           !
           !--------------------------------------------------------------------!
              S_i(k) = e_s(k)/e_i(k)
 

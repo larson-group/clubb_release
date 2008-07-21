@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: KK_microphys.F,v 1.16 2008-07-21 20:30:22 faschinj Exp $
+! $Id: KK_microphys.F,v 1.17 2008-07-21 21:47:31 faschinj Exp $
 
       module rain_equations
 
@@ -194,7 +194,7 @@
      .  Nrm_auto,    ! Change in Nrm due to autoconversion      [(num/kg)/s]
      .  mean_vol_rad,! Mean volume radius                       [m]
 !     .  rvm,         ! Water vapor mixing ratio                 [kg/kg]
-!     .  es,          ! Saturation vapor pressure                [Pa]
+!     .  esat,          ! Saturation vapor pressure                [Pa]
      .  Supsat,      ! Supersaturation                          [-]
      .  rsat          ! Saturation mixing ratio                  [kg/kg]
 
@@ -250,7 +250,7 @@
 ! G(T,p) = 1/(Fk + Fd); where
 !
 ! Fk = [Lv/(Rv*T) - 1]*(Lv*rho_lw)/(Ka*T)
-! Fd = (rho_lw*Rv*T)/(Dv*es(T))
+! Fd = (rho_lw*Rv*T)/(Dv*esat(T))
 !
 ! Ka is the Coefficient of Thermal Conductivity of Air, and Dv is the
 ! Coefficient of Diffusion of Water Vapor in Air.
@@ -484,14 +484,14 @@
            rsat(k) = sat_mixrat_liq( p(k), T_in_K(k) )
 
            ! Find saturation vapor pressure.
-!           es(k) = (p(k)*rsat(k))/(ep + rsat(k))
+!           esat(k) = (p(k)*rsat(k))/(ep + rsat(k))
 
         end do ! 2..gr%nnzp
 
         ! Set the boundary conditions
 !        rvm(1)          = 0.0
         rsat(1)          = 0.0
-!        es(1)           = 0.0
+!        esat(1)           = 0.0
         Supsat(1)       = 0.0
         Supsat(gr%nnzp) = 0.0
 
@@ -754,7 +754,7 @@
         !    3 * Cevap * G(T,p) * [(4*PI*rho_lw)/(3*rho)]^(2/3) 
         !      * rr^(1/3) * NrV^(2/3) * S
         !
-        ! where S = (e/es) - 1
+        ! where S = (e/esat) - 1
         !
         ! since S = [ ( 1 + Beta_T * rs ) / rs ] * s
         !
@@ -1410,7 +1410,7 @@
         ! Internal
         REAL:: Ka, Dv
         REAL:: Fk, Fd
-        REAL:: es, rs, Celsius
+        REAL:: esat, rs, Celsius
 
         Celsius = T_in_K - 273.16
 
@@ -1422,10 +1422,10 @@
         Dv = Dv/10000.0  ! Dv in (m.^2)/sec.
 
         rs = sat_mixrat_liq(press, T_in_K)
-        es = (press*rs)/(ep + rs)
+        esat = (press*rs)/(ep + rs)
 
         Fk = (Lv/(Rv*T_in_K) - 1.0)*(Lv*rho_lw)/(Ka*T_in_K)
-        Fd = (rho_lw*Rv*T_in_K)/(Dv*es)
+        Fd = (rho_lw*Rv*T_in_K)/(Dv*esat)
 
         G_T_p = 1.0/(Fk + Fd)
 

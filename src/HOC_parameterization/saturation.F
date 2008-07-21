@@ -1,4 +1,4 @@
-!$Id: saturation.F,v 1.6 2008-07-21 20:24:50 faschinj Exp $
+!$Id: saturation.F,v 1.7 2008-07-21 21:47:31 faschinj Exp $
 
         module saturation
 
@@ -46,7 +46,7 @@
 
         ! Formula for Saturation Mixing Ratio:
         !
-        ! rs = (epsilon) * [ es / ( p - es ) ];
+        ! rs = (epsilon) * [ esat / ( p - esat ) ];
         ! where epsilon = R_d / R_v
        
         sat_mixrat_liq = ep * ( esatv / ( p - esatv ) )
@@ -133,7 +133,7 @@
 
         ! Formula for Saturation Mixing Ratio:
         !
-        ! rs = (epsilon) * [ es / ( p - es ) ];
+        ! rs = (epsilon) * [ esat / ( p - esat ) ];
         ! where epsilon = R_d / R_v
 
         sat_mixrat_ice = ep * ( esat_ice / ( p - esat_ice ) )
