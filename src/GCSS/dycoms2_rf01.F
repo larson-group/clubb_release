@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf01.F,v 1.22 2008-07-14 21:31:26 faschinj Exp $
+! $Id: dycoms2_rf01.F,v 1.23 2008-07-21 15:11:54 faschinj Exp $
         module dycoms2_rf01
 
 !       Description:
@@ -213,12 +213,6 @@
 
         use array_index, only: iisclr_rt, iisclr_thl
 
-#ifdef STATS
-        use stats_type, only: stat_update_var_pt ! Procedure(s)
-
-        use stats_variables, only: sfc, iustar, lstats_samp ! Variable(s)
-#endif /*STATS*/
-
         implicit none
 
         ! External
@@ -299,13 +293,6 @@
         if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
         if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
-#ifdef STATS
-! Save ustar for statistics
-!        x_sfc(1,iustar) = ustar
-        if ( lstats_samp ) then
-          call stat_update_var_pt( iustar, 1, ustar, sfc )
-        end if
-#endif /*STATS*/
 
         return
         end subroutine dycoms2_rf01_sfclyr

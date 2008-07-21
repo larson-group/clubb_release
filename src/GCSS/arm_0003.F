@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: arm_0003.F,v 1.18 2008-07-14 19:54:34 faschinj Exp $
+! $Id: arm_0003.F,v 1.19 2008-07-21 15:11:54 faschinj Exp $
         module arm_0003
 
 !       Description:
@@ -187,12 +187,6 @@
 
         use array_index, only: iisclr_rt, iisclr_thl
 
-#ifdef STATS
-        use stats_type, only: stat_update_var_pt ! Variable(s)
-
-        use stats_variables, only: iustar, sfc, lstats_samp ! Variable(s)
-#endif
-        
         implicit none
 
         intrinsic :: max, sqrt
@@ -278,12 +272,6 @@
         ! Compute ustar
         ustar = diag_ustar( z, bflx, ubar, z0 )
 
-#ifdef STATS
-! Save ustar for statistics
-        if ( lstats_samp ) then
-          call stat_update_var_pt( iustar, 1, ustar, sfc )
-        end if
-#endif
         upwp_sfc = -um_sfc * ustar**2 / ubar
         vpwp_sfc = -vm_sfc * ustar**2 / ubar
 
