@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.34 2008-07-21 14:42:16 faschinj Exp $
+!  $Id: stats_subs.F,v 1.35 2008-07-21 16:20:07 dschanen Exp $
       module stats_subs
 #ifdef STATS
  
@@ -277,22 +277,39 @@
 
       ! Allocate scratch space
 
-      allocate ( ztscr01(zt%kk) )
-      allocate ( ztscr02(zt%kk) )
-      allocate ( ztscr03(zt%kk) )
-      allocate ( ztscr04(zt%kk) )
-      allocate ( ztscr05(zt%kk) )
-      allocate ( ztscr06(zt%kk) )
-      allocate ( ztscr07(zt%kk) )
-      allocate ( ztscr08(zt%kk) )
-      allocate ( ztscr09(zt%kk) )
-      allocate ( ztscr10(zt%kk) )
-      allocate ( ztscr11(zt%kk) )
-      allocate ( ztscr12(zt%kk) )
-      allocate ( ztscr13(zt%kk) )
-      allocate ( ztscr14(zt%kk) )
-      allocate ( ztscr15(zt%kk) )
-      allocate ( ztscr16(zt%kk) )
+      allocate( ztscr01(zt%kk) )
+      allocate( ztscr02(zt%kk) )
+      allocate( ztscr03(zt%kk) )
+      allocate( ztscr04(zt%kk) )
+      allocate( ztscr05(zt%kk) )
+      allocate( ztscr06(zt%kk) )
+      allocate( ztscr07(zt%kk) )
+      allocate( ztscr08(zt%kk) )
+      allocate( ztscr09(zt%kk) )
+      allocate( ztscr10(zt%kk) )
+      allocate( ztscr11(zt%kk) )
+      allocate( ztscr12(zt%kk) )
+      allocate( ztscr13(zt%kk) )
+      allocate( ztscr14(zt%kk) )
+      allocate( ztscr15(zt%kk) )
+      allocate( ztscr16(zt%kk) )
+
+      ztscr01 = 0.0
+      ztscr02 = 0.0
+      ztscr03 = 0.0
+      ztscr04 = 0.0
+      ztscr05 = 0.0
+      ztscr06 = 0.0
+      ztscr07 = 0.0
+      ztscr08 = 0.0
+      ztscr09 = 0.0
+      ztscr10 = 0.0
+      ztscr11 = 0.0
+      ztscr12 = 0.0
+      ztscr13 = 0.0
+      ztscr14 = 0.0
+      ztscr15 = 0.0
+      ztscr16 = 0.0
 
       fdir = "./"
       fname = trim( fname_zt )
@@ -353,21 +370,21 @@
 
       ! Allocate scratch space
 
-      allocate ( zmscr01(zm%kk) )
-      allocate ( zmscr02(zm%kk) )
-      allocate ( zmscr03(zm%kk) )
-      allocate ( zmscr04(zm%kk) )
-      allocate ( zmscr05(zm%kk) )
-      allocate ( zmscr06(zm%kk) )
-      allocate ( zmscr07(zm%kk) )
-      allocate ( zmscr08(zm%kk) )
-      allocate ( zmscr09(zm%kk) )
-      allocate ( zmscr10(zm%kk) )
-      allocate ( zmscr11(zm%kk) )
-      allocate ( zmscr12(zm%kk) )
-      allocate ( zmscr13(zm%kk) )
-      allocate ( zmscr14(zm%kk) )
-      allocate ( zmscr15(zm%kk) )
+      allocate( zmscr01(zm%kk) )
+      allocate( zmscr02(zm%kk) )
+      allocate( zmscr03(zm%kk) )
+      allocate( zmscr04(zm%kk) )
+      allocate( zmscr05(zm%kk) )
+      allocate( zmscr06(zm%kk) )
+      allocate( zmscr07(zm%kk) )
+      allocate( zmscr08(zm%kk) )
+      allocate( zmscr09(zm%kk) )
+      allocate( zmscr10(zm%kk) )
+      allocate( zmscr11(zm%kk) )
+      allocate( zmscr12(zm%kk) )
+      allocate( zmscr13(zm%kk) )
+      allocate( zmscr14(zm%kk) )
+      allocate( zmscr15(zm%kk) )
 
       zmscr01 = 0.0
       zmscr02 = 0.0

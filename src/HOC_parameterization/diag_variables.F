@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F,v 1.28 2008-07-08 04:44:24 dschanen Exp $
+! $Id: diag_variables.F,v 1.29 2008-07-21 16:20:07 dschanen Exp $
         module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -374,7 +374,8 @@
         thvm = 0.0  ! Virtual potential temperature
         rsm  = 0.0  ! Saturation mixing ratio  ! Brian
 
-        Frad = 0.0
+        radht = 0.0 ! Heating rate
+        Frad  = 0.0 ! Radiative flux
 
         shear = 0.0    ! Wind shear production
 

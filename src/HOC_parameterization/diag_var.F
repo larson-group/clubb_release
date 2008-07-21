@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F,v 1.69 2008-07-14 19:54:34 faschinj Exp $
+! $Id: diag_var.F,v 1.70 2008-07-21 16:20:07 dschanen Exp $
 !===============================================================================
       module diagnose_variances
 
@@ -139,7 +139,7 @@
 
 
         ! Passive scalar output
-        real, intent(out), dimension(gr%nnzp, sclr_dim) :: 
+        real, intent(inout), dimension(gr%nnzp, sclr_dim) :: 
      .  sclrp2, sclrprtp, sclrpthlp
 
         ! Local Variables

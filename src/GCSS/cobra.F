@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: cobra.F,v 1.15 2008-07-14 19:54:34 faschinj Exp $
+! $Id: cobra.F,v 1.16 2008-07-21 16:20:07 dschanen Exp $
         module cobra
 !       Description:
 !       Contains subroutines for the COBRA CO2 case.
@@ -188,8 +188,7 @@
 
         true_time = real( time )
         call cobra_sfcflx( true_time, heat_flx, moisture_flx,
-     .                    CO2_flx
-     .                   )
+     .                     CO2_flx )
 
         ! Compute momentum fluxes
 
@@ -372,11 +371,8 @@
         ! Output variables
         real, intent(out) ::
      .  heat_flx,       ! Heat flux             [W/m^2]
-     .  moisture_flx    ! Moisture flux         [W/m^2]
-
-        ! Output variables (optional)
-        real, optional, intent(out) :: 
-     .  CO2_flx  ! Carbon dioxide flux  [umol/(m^2 s)]
+     .  moisture_flx,   ! Moisture flux         [W/m^2]
+     .  CO2_flx         ! Carbon dioxide flux   [umol/(m^2 s)]
 
         ! Local variables
         integer :: i1, i2
@@ -386,10 +382,12 @@
         if ( time <= times(1) ) then
            heat_flx     = H(1)
            moisture_flx = LE(1)
+           CO2_flx      = CO2(1)
 
         else if ( time >= times(ntimes) ) then
            heat_flx     = H(ntimes)
            moisture_flx = LE(ntimes)
+           CO2_flx      = CO2(ntimes)
 
         else  ! time > times(1) and time < times(ntimes)
           i1 = 1

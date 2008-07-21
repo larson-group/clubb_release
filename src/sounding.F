@@ -1,4 +1,4 @@
-! $Id: sounding.F,v 1.22 2008-07-18 17:36:22 faschinj Exp $
+! $Id: sounding.F,v 1.23 2008-07-21 16:20:07 dschanen Exp $
         module sounding
 
         implicit none
@@ -101,6 +101,10 @@
 
         ! Read in a passive scalar sounding, if enabled
         if ( sclr_dim > 0 ) then
+          ! Initialize to zero
+          sclr   = 0.0
+          edsclr = 0.0
+          ! Read values from namelist
           read(unit = iunit, nml = scalar_sounding)
         end if
 

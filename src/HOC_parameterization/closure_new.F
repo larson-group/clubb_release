@@ -1,4 +1,4 @@
-! $Id: closure_new.F,v 1.28 2008-07-10 16:14:21 faschinj Exp $
+! $Id: closure_new.F,v 1.29 2008-07-21 16:20:07 dschanen Exp $
         module pdf_closure
 
         implicit none
@@ -236,6 +236,18 @@
           sthl1     = 0.
           sthl2     = 0.
           rrtthl    = 0.
+
+          if ( scalar_calc ) then
+            do i = 1, sclr_dim, 1
+              sclr1(i)      = sclrm(i)
+              sclr2(i)      = sclrm(i)
+              ssclr1(i)     = 0.0
+              ssclr2(i)     = 0.0
+              alpha_sclr(i) = 0.5
+              rsclrrt(i)    = 0.0
+              rsclrthl(i)   = 0.0
+            end do ! 1..sclr_dim
+          end if
 
         else ! Width parameters are non-zero
 
