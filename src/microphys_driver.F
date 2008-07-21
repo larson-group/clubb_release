@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F,v 1.22 2008-07-14 19:54:34 faschinj Exp $
+! $Id: microphys_driver.F,v 1.23 2008-07-21 20:16:18 faschinj Exp $
         module microphys_driver
 
 !       Description:
@@ -162,7 +162,7 @@
         use coamps_micro_driver_mod, only: 
      .      coamps_micro_driver ! Procedure
 
-        use temp_in_K_mod, only: thlm2temp_in_K ! Procedure(s)
+        use T_in_K_mod, only: thlm2T_in_K ! Procedure(s)
 
         use array_index, only: 
      .      iirrm, iiNrm, iirsnowm, iiricem, iirgraupelm
@@ -349,7 +349,7 @@
         end do
 
         ! Determine temperature in K for the microphysics
-        T_in_K = thlm2temp_in_K( thlm, exner, rcm )
+        T_in_K = thlm2T_in_K( thlm, exner, rcm )
 
         ! Begin by calling either Brian Griffin's implementation of the
         ! Khairoutdinov and Kogan microphysical scheme or 

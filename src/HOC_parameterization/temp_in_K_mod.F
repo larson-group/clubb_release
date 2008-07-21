@@ -1,18 +1,18 @@
-! $Id: temp_in_K_mod.F,v 1.4 2008-06-16 17:44:05 faschinj Exp $ 
+! $Id: temp_in_K_mod.F,v 1.5 2008-07-21 20:16:18 faschinj Exp $ 
 
-         module temp_in_K_mod
+         module T_in_K_mod
          
          implicit none
          
          private ! Default scope
 
-         public :: thlm2temp_in_K
+         public :: thlm2T_in_K
          
          contains
 
 !-----------------------------------------------------------------------
-         elemental function thlm2temp_in_K( thlm, exner, rcm ) 
-     .   result( temp_in_K )
+         elemental function thlm2T_in_K( thlm, exner, rcm ) 
+     .   result( T_in_K )
 
 !        Description:
 !        Calculates absolute temperature from liquid water potential
@@ -35,12 +35,12 @@
      .   rcm    ! Liquid water mixing ratio     [kg/kg]
 
          real ::
-     .   temp_in_K ! Result temperature [K]
+     .   T_in_K ! Result temperature [K]
 
-         temp_in_K = thlm * exner + Lv * rcm / Cp
+         T_in_K = thlm * exner + Lv * rcm / Cp
 
          return
-         end function thlm2temp_in_K
+         end function thlm2T_in_K
 !-----------------------------------------------------------------------
 
-         end module temp_in_K_mod
+         end module T_in_K_mod

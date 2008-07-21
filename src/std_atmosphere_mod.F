@@ -1,12 +1,12 @@
 !----------------------------------------------------------------------------
-! $Id: std_atmosphere_mod.F,v 1.5 2008-06-24 19:41:17 faschinj Exp $
+! $Id: std_atmosphere_mod.F,v 1.6 2008-07-21 20:16:18 faschinj Exp $
       module std_atmosphere_mod
         
         implicit none
         
         private ! Default Scope
 
-        public :: std_alt, std_tempk, std_sp_hmdty, std_pinmb, 
+        public :: std_alt, std_T_in_K, std_sp_hmdty, std_pinmb, 
      .            std_o3l, std_atmos_dim, std_atmosphere
      
         ! Size of U.S. Standard Atmo. data
@@ -32,7 +32,7 @@
 
         ! Temperature in degrees Kelvin
         double precision, parameter, dimension(std_atmos_dim) :: 
-     .   std_tempk = (/  
+     .   std_T_in_K = (/  
      .     281.600,  275.100,  268.700,  262.200,  255.700,  
      .     249.200,  242.700,  236.200,  229.700,  223.200,  
      .     216.800,  216.600,  216.600,  216.600,  216.600,  
@@ -136,14 +136,14 @@
         
         ! These variables are used to make the calls to linint cleaner    
         real, dimension(std_atmos_dim) ::
-     .  tempk,
+     .  T_in_K,
      .  pinmb,
      .  sp_hmdty,
      .  height
 
         integer :: varindex
         
-        tempk    = real( std_tempk )
+        T_in_K    = real( std_T_in_K )
         pinmb    = real( std_pinmb )
         sp_hmdty = real( std_sp_hmdty )
         height   = real( std_alt )
@@ -157,7 +157,7 @@
         ! Compute thlm from Standard Atmosphere
 
         tabs0 = linint( alt, height(varindex), height(varindex-1), 
-     .                  tempk(varindex), tempk(varindex-1) )
+     .                  T_in_K(varindex), T_in_K(varindex-1) )
         
         press = 100. * 
      .          linint( alt, height(varindex), height(varindex-1),
