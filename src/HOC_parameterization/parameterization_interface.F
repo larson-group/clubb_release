@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.112 2008-07-21 14:18:18 faschinj Exp $
+! $Id: parameterization_interface.F,v 1.113 2008-07-21 20:33:28 faschinj Exp $
 !-----------------------------------------------------------------------
         module hoc_parameterization_interface
 
@@ -92,7 +92,7 @@
      .     thlprcp,
      .     pdf_parms,
      .     rcp2,
-     .     rsm,
+     .     rsat,
      .     shear,
      .     ustar,
      .     Kht,
@@ -156,7 +156,7 @@
 
        use saturation, only: 
            ! Procedure
-     .     rsat ! Saturation mixing ratio
+     .     sat_mixrat_liq ! Saturation mixing ratio
 
        use wp23, only: 
      .     timestep_wp23 ! Procedure
@@ -715,8 +715,9 @@
 
        ! Store the saturation mixing ratio for output purposes.  Brian
        do k = 1, gr%nnzp, 1
-         rsm(k) =
-     .   rsat( p(k), (thlm(k)+(Lv/(Cp*exner(k)))*rcm(k))*exner(k) )
+         rsat(k) =
+     .   sat_mixrat_liq( p(k), 
+     .        (thlm(k)+(Lv/(Cp*exner(k)))*rcm(k))*exner(k) )
        end do
 
        !----------------------------------------------------------------
