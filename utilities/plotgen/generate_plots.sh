@@ -79,6 +79,8 @@ fi
 plot_arm_sim1=0
 plot_atex_sim1=0
 plot_bomex_sim1=0
+plot_clex9_nov02_sim1=0
+plot_clex9_oct14_sim1=0
 plot_cobra_sim1=0
 plot_dycoms2_rf01_sim1=0
 plot_dycoms2_rf02_do_sim1=0
@@ -97,6 +99,8 @@ plot_wangara_sim1=0
 plot_arm_sim2=0
 plot_atex_sim2=0
 plot_bomex_sim2=0
+plot_clex9_nov02_sim2=0
+plot_clex9_oct14_sim2=0
 plot_cobra_sim2=0
 plot_dycoms2_rf01_sim2=0
 plot_dycoms2_rf02_do_sim2=0
@@ -111,7 +115,6 @@ plot_mpace_b_sim2=0
 plot_nov11_altocu_sim2=0
 plot_rico_sim2=0
 plot_wangara_sim2=0
-
 
 #If the Arm files exist, plot Arm
 if [ -r "$HOC_sim1/arm_zm.ctl" ]; then
@@ -144,6 +147,30 @@ if [ -r "$HOC_sim1/bomex_zm.ctl" ]; then
 			if [ -r "$HOC_sim1/bomex_zt.dat" ]; then
 				echo "Plotting Bomex for HOC_sim1"
 				plot_bomex_sim1=1
+			fi
+		fi
+	fi
+fi
+
+#If the CLEX-9: Nov.02 files exist, plot CLEX-9: Nov.02
+if [ -r "$HOC_sim1/clex9_nov02_zm.ctl" ]; then
+	if [ -r "$HOC_sim1/clex9_nov02_zm.dat" ]; then
+		if [ -r "$HOC_sim1/clex9_nov02_zt.ctl" ]; then
+			if [ -r "$HOC_sim1/clex9_nov02_zt.dat" ]; then
+				echo "Plotting CLEX-9: Nov.02 for HOC_sim1"
+				plot_clex9_nov02_sim1=1
+			fi
+		fi
+	fi
+fi
+
+#If the CLEX-9: Oct.14 files exist, plot CLEX-9: Oct.14
+if [ -r "$HOC_sim1/clex9_oct14_zm.ctl" ]; then
+	if [ -r "$HOC_sim1/clex9_oct14_zm.dat" ]; then
+		if [ -r "$HOC_sim1/clex9_oct14_zt.ctl" ]; then
+			if [ -r "$HOC_sim1/clex9_oct14_zt.dat" ]; then
+				echo "Plotting CLEX-9: Oct.14 for HOC_sim1"
+				plot_clex9_oct14_sim1=1
 			fi
 		fi
 	fi
@@ -356,6 +383,30 @@ if [ "$HOC_sim2" != 0 ]; then
 			fi
 		fi
 	fi
+
+#If the CLEX-9: Nov.02 files exist, plot CLEX-9: Nov.02
+if [ -r "$HOC_sim2/clex9_nov02_zm.ctl" ]; then
+	if [ -r "$HOC_sim2/clex9_nov02_zm.dat" ]; then
+		if [ -r "$HOC_sim2/clex9_nov02_zt.ctl" ]; then
+			if [ -r "$HOC_sim2/clex9_nov02_zt.dat" ]; then
+				echo "Plotting CLEX-9: Nov.02 for HOC_sim2"
+				plot_clex9_nov02_sim2=1
+			fi
+		fi
+	fi
+fi
+
+#If the CLEX-9: Oct.14 files exist, plot CLEX-9: Oct.14
+if [ -r "$HOC_sim2/clex9_oct14_zm.ctl" ]; then
+	if [ -r "$HOC_sim2/clex9_oct14_zm.dat" ]; then
+		if [ -r "$HOC_sim2/clex9_oct14_zt.ctl" ]; then
+			if [ -r "$HOC_sim2/clex9_oct14_zt.dat" ]; then
+				echo "Plotting CLEX-9: Oct.14 for HOC_sim2"
+				plot_clex9_oct14_sim2=1
+			fi
+		fi
+	fi
+fi
 
 	#If the Cobra files exist, plot Cobra
 	if [ -r "$HOC_sim2/cobra_zm.ctl" ]; then
