@@ -1,4 +1,4 @@
-! $Id: all_stats.in,v 1.23 2008-07-05 14:40:06 griffinb Exp $
+! $Id: all_stats.in,v 1.24 2008-07-21 20:53:38 faschinj Exp $
 ! This file contains a comprehensive listing of all the HOC variables that 
 ! can be output to GrADS, as found in src/HOC_parameterization/statistics.F.
 ! This file, as well as the statistical files for all the other cases, needs
@@ -12,11 +12,11 @@
 
 vars_zt = 
 'thlm', 'thvm', 'rtm', 'rcm', 'um', 'vm', 'wmt', 'ug', 'vg',
-'cf', 'p', 'exner', 'Lscale', 'temp_in_K',
+'cf', 'p', 'exner', 'Lscale', 'T_in_K',
 'wp3', 'wpthlp2', 'wp2thlp', 'wprtp2', 'wp2rtp',
 'Lup', 'Ldown', 'taut', 'kht', 'wp2thvp', 'wp2rcp', 'wprtpthlp',
 'sc', 'rhot', 'radht', 'radht_LW', 'radht_SW',
-'Ncm', 'Ncnm', 'Nim', 'snowslope', 'Nsnowm', 'sed_rcm', 'rsm',
+'Ncm', 'Ncnm', 'Nim', 'snowslope', 'Nsnowm', 'sed_rcm', 'rsat',
 'rrm', 'Nrm', 'mean_vol_rad_rain', 'mean_vol_rad_cloud',
 'rain_rate', 'AKm', 'AKm_est', 'rsnowm', 'ricem', 'rgraupelm',
 'diam', 'mass_ice_cryst', 'rcm_icedfs', 'u_T_cm',
