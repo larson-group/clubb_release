@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F,v 1.29 2008-07-21 16:20:07 dschanen Exp $
+! $Id: diag_variables.F,v 1.30 2008-07-21 20:31:09 faschinj Exp $
         module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -36,8 +36,8 @@
 !$omp   threadprivate(um_ref, vm_ref)
 
         real, target, allocatable, dimension(:), public ::
-     .  rsm ! Saturation mixing ratio  ! Brian
-!$omp   threadprivate(rsm)
+     .  rsat ! Saturation mixing ratio  ! Brian
+!$omp   threadprivate(rsat)
 
         real, target, allocatable, dimension(:), public ::
      .  Frad, ! Radiative flux (momentum point)
@@ -254,7 +254,7 @@
         allocate( vm_ref(1:nzmax) )    ! Reference v wind for nudging; Michael Falk, 17 Oct 2007
         allocate( thvm(1:nzmax) )      ! Virtual potential temperature
 
-        allocate( rsm(1:nzmax) )       ! Saturation mixing ratio  ! Brian
+        allocate( rsat(1:nzmax) )       ! Saturation mixing ratio  ! Brian
 
 ! Tendency arrays for prognostic variables
 
@@ -372,7 +372,7 @@
         vmt = 0.0  ! v wind
  
         thvm = 0.0  ! Virtual potential temperature
-        rsm  = 0.0  ! Saturation mixing ratio  ! Brian
+        rsat  = 0.0  ! Saturation mixing ratio  ! Brian
 
         radht = 0.0 ! Heating rate
         Frad  = 0.0 ! Radiative flux
@@ -489,7 +489,7 @@
         deallocate( vmt )       ! v wind
  
         deallocate( thvm )      ! virtual potential temperature
-        deallocate( rsm )       ! saturation mixing ratio  ! Brian
+        deallocate( rsat )       ! saturation mixing ratio  ! Brian
 
         deallocate( Frad )      ! radiative flux (momentum point)
 
