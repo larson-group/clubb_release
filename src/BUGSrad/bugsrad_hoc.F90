@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_hoc.F90,v 1.35 2008-06-30 18:19:40 faschinj Exp $
+! $Id: bugsrad_hoc.F90,v 1.36 2008-07-21 20:29:00 faschinj Exp $
 module bugsrad_hoc_mod
 
 implicit none
@@ -15,7 +15,7 @@ subroutine bugsrad_hoc &
              lat_in_degrees, lon_in_degrees, &
              day, month, year, time,         &
              thlm, rcm, rtm, rsnwm, rim,     & 
-             cf, pinpa, pinpam, exner, rhom, &
+             cf, p_in_Pa, p_in_Pam, exner, rhom, &
              radht, Frad, thlm_forcing )
 ! Description:
 ! Does the necessary operations to interface the HOC model with
@@ -47,13 +47,13 @@ subroutine bugsrad_hoc &
   use constants, only: fstderr, sol_const, grav, Cp ! Variable(s)
   
   use std_atmosphere_mod, only: std_atmos_dim, std_alt, std_pinmb, & ! Variable(s)
-      std_tempk, std_sp_hmdty, std_o3l
+      std_T_in_K, std_sp_hmdty, std_o3l
       
   use stats_precision, only: time_precision ! Variable(s)
 
   use cos_solar_zen_mod, only: cos_solar_zen ! Procedure(s)
 
-  use temp_in_K_mod, only: thlm2temp_in_K ! Procedure(s)
+  use T_in_K_mod, only: thlm2T_in_K ! Procedure(s)
 
   use error_code, only: clubb_at_debug_level ! Procedure(s)
 
@@ -101,8 +101,8 @@ subroutine bugsrad_hoc &
   rtm,   & ! Total water mixing ratio   [kg/kg]
   rhom,  & ! Density                    [kg/m^3]
   cf,    & ! Cloud fraction             [%]
-  pinpa, & ! Pressure on the t grid     [Pa]
-  pinpam,& ! Pressure on the m grid     [Pa]
+  p_in_Pa, & ! Pressure on the t grid     [Pa]
+  p_in_Pam,& ! Pressure on the m grid     [Pa]
   exner    ! Exner function             [-]
 
 ! Input/Output Variables
@@ -123,7 +123,7 @@ subroutine bugsrad_hoc &
 
 ! Altered 3 Oct 2005 to be buffer levels higher
   double precision, dimension(nlen,(nz-1)+lin_int_buffer+std_atmos_buffer) :: &
-  tempk,& ! Temperature            [K]
+  T_in_K,& ! Temperature            [K]
   rcil, & ! Ice mixing ratio       [kg/kg]
   o3l     ! Ozone mixing ratio     [kg/kg]
 
@@ -175,14 +175,14 @@ subroutine bugsrad_hoc &
   amu0 = cos_solar_zen( day, month, year, time, lat_in_degrees, lon_in_degrees )
 
 ! Convert to millibars
-  pinmb(1,1:(nz-1))  = dble( pinpa(2:nz) / 100.0 ) ! t grid in HOC
+  pinmb(1,1:(nz-1))  = dble( p_in_Pa(2:nz) / 100.0 ) ! t grid in HOC
 
-  playerinmb(1,1:nz) = dble( pinpam / 100.0 ) ! m grid in HOC
+  playerinmb(1,1:nz) = dble( p_in_Pam / 100.0 ) ! m grid in HOC
 
 
 ! Convert theta_l to temperature
   
-  tempk(1,1:(nz-1)) = thlm2temp_in_K( thlm(2:nz), exner(2:nz), rcm(2:nz) )
+  T_in_K(1,1:(nz-1)) = thlm2T_in_K( thlm(2:nz), exner(2:nz), rcm(2:nz) )
   
 ! Derive Specific humidity from rc & rt.
   do z = 2, nz
@@ -217,7 +217,7 @@ subroutine bugsrad_hoc &
   rcm2(1,buffer+1:(nz-1)+buffer)  = flip( dble( rcm(2:nz) ), nz-1 )
   cf2(1,buffer+1:(nz-1)+buffer)   = flip( dble( cf(2:nz) ), nz-1 ) 
 
-  tempk(1,buffer+1:(nz-1)+buffer) = flip( tempk(1,1:(nz-1)), nz-1 )
+  T_in_K(1,buffer+1:(nz-1)+buffer) = flip( T_in_K(1,1:(nz-1)), nz-1 )
 
   sp_humidity(1,buffer+1:(nz-1)+buffer) = flip( sp_humidity(1,1:(nz-1)), nz-1 )
 
@@ -255,7 +255,7 @@ subroutine bugsrad_hoc &
 
   ! Add the standard atmospheric profile above the linear interpolation
   do i = 1, std_atmos_buffer, 1
-    tempk(1,i)       = std_tempk((std_atmos_buffer+j)-(i-1)) 
+    T_in_K(1,i)       = std_T_in_K((std_atmos_buffer+j)-(i-1)) 
     sp_humidity(1,i) = std_sp_hmdty((std_atmos_buffer+j)-(i-1))
     o3l(1,i)         = std_o3l((std_atmos_buffer+j)-(i-1)) 
     pinmb(1,i)       = std_pinmb((std_atmos_buffer+j)-(i-1)) 
@@ -270,7 +270,7 @@ subroutine bugsrad_hoc &
     z1_fact = dble( z2 - z ) / dble( z2 - z1 ) 
     z2_fact = dble( z - z1 ) / dble( z2 - z1 ) 
 
-    tempk(1,z) = z1_fact * tempk(1,z1) + z2_fact * tempk(1,z2)
+    T_in_K(1,z) = z1_fact * T_in_K(1,z1) + z2_fact * T_in_K(1,z2)
 
     sp_humidity(1,z) = z1_fact * sp_humidity(1,z1) + z2_fact * sp_humidity(1,z2)
 
@@ -302,13 +302,13 @@ subroutine bugsrad_hoc &
     dpl(1,i) = playerinmb(1,i+1) - playerinmb(1,i)
   end do
 
-  ts(1) = tempk(1,(nz-1)+buffer)
+  ts(1) = T_in_K(1,(nz-1)+buffer)
 
 !  Write a profile for Kurt's driver program for debugging purposes
 ! open(10, file="profile.dat")
 ! write(10,'(2i4,a10)') nlen, (nz-1)+buffer, "TROPICAL"
 ! do i=1, (nz-1)+buffer
-!   write(10,'(i4,9f12.6)') i, pinmb(1,i), playerinmb(1,i),tempk(1,i),         &
+!   write(10,'(i4,9f12.6)') i, pinmb(1,i), playerinmb(1,i),T_in_K(1,i),         &
 !   sp_humidity(1,i), 100000.0*o3l(1,i), rcm2(1,i), rcil(1,i),cf2(1,i),dpl(1,i)
 ! enddo
 ! write(10,'(a4,a12,3f12.6)') "","", playerinmb(1,nz+buffer), ts(1), amu0(1)
@@ -316,7 +316,7 @@ subroutine bugsrad_hoc &
 ! pause
  
   call bugs_rad( nlen, slen, (nz-1)+buffer, playerinmb,          &
-                 pinmb, dpl, tempk, sp_humidity,                 &
+                 pinmb, dpl, T_in_K, sp_humidity,                 &
                  rcm2, rcil, rsnwm2, o3l,                        &
                  ts, amu0, slr, alvdf,                           &
                  alndf, alvdr, alndr, dble( sol_const ),         &
