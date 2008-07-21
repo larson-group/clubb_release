@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.208 2008-07-21 14:18:18 faschinj Exp $
+! $Id: hoc.F,v 1.209 2008-07-21 18:26:07 dschanen Exp $
 
         module hoc
 
@@ -405,7 +405,7 @@
         print *, "sclr_dim = ", sclr_dim
         print *, "iisclr_thl = ", iisclr_thl
         print *, "iisclr_rt = ", iisclr_rt
-        print *, "iiC02 = ", iiCO2
+        print *, "iiCO2 = ", iiCO2
 
         print *, "sclr_tol = ", sclr_tol(1:sclr_max)
 
