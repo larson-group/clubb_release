@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zt.F,v 1.19 2008-07-08 04:44:25 dschanen Exp $
+! $Id: stats_zt.F,v 1.20 2008-07-21 20:49:36 faschinj Exp $
        
       module stats_zt
 #ifdef STATS
@@ -21,7 +21,7 @@
 
       use stats_variables, only:
      .    ithlm, ! Variable(s)
-     .    itemp_in_K,
+     .    iT_in_K,
      .    ithvm,
      .    irtm,
      .    ircm,
@@ -54,7 +54,7 @@
      .    isnowslope,
      .    iNsnowm,
      .    ised_rcm,
-     .    irsm,
+     .    irsat,
      .    irrm,
      .    iNrm,
      .    irain_rate,
@@ -201,7 +201,7 @@
       ! Default initialization for array indices for zt
 
       ithlm         = 0
-      itemp_in_K    = 0
+      iT_in_K    = 0
       ithvm         = 0
       irtm          = 0
       ircm          = 0
@@ -234,7 +234,7 @@
       isnowslope    = 0  ! Adam Smith, 22 April 2008
       iNsnowm       = 0  ! Adam Smith, 22 April 2008
       ised_rcm      = 0  ! Brian
-      irsm          = 0  ! Brian
+      irsat          = 0  ! Brian
       irrm          = 0  ! Brian
       iNrm          = 0  ! Brian
       irain_rate    = 0  ! Brian
@@ -389,9 +389,9 @@
      .          "thetal (K)", "K", zt)
           k = k + 1
 
-        case ('temp_in_K')
-          itemp_in_K = k
-          call stat_assign( itemp_in_K, "temp_in_K", 
+        case ('T_in_K')
+          iT_in_K = k
+          call stat_assign( iT_in_K, "T_in_K", 
      .          "absolute temperature in K", "K", zt )
           k = k + 1
 
@@ -612,9 +612,9 @@
      .         "kg/(m^2 s)",zt)
           k = k + 1
 
-        case ('rsm')           ! Brian
-          irsm = k
-          call stat_assign(irsm,"rsm",
+        case ('rsat')           ! Brian
+          irsat = k
+          call stat_assign(irsat,"rsat",
      .         "Saturation mixing ratio (kg/kg)","kg/kg",zt)
           k = k + 1
 
