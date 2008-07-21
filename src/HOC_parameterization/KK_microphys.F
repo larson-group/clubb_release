@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: KK_microphys.F,v 1.15 2008-07-17 20:38:25 faschinj Exp $
+! $Id: KK_microphys.F,v 1.16 2008-07-21 20:30:22 faschinj Exp $
 
       module rain_equations
 
@@ -130,7 +130,7 @@
      .      Rv
 
         use saturation, only: 
-     .      rsat ! Procedure(s)
+     .      sat_mixrat_liq ! Procedure(s)
         
 #ifdef STATS
         use stats_type, only:
@@ -196,7 +196,7 @@
 !     .  rvm,         ! Water vapor mixing ratio                 [kg/kg]
 !     .  es,          ! Saturation vapor pressure                [Pa]
      .  Supsat,      ! Supersaturation                          [-]
-     .  rsm          ! Saturation mixing ratio                  [kg/kg]
+     .  rsat          ! Saturation mixing ratio                  [kg/kg]
 
         real, dimension(gr%nnzp) :: 
      .  rrp2_rrm2,   ! rrp2/rrm^2               []
@@ -396,7 +396,8 @@
         do k = 1, gr%nnzp, 1
 
            mean_vol_rad(k) 
-     .     = mean_volume_radius( rrm(k), Nrm(k), rhot(k), rrp2_rrm2(k), 
+     .     = mean_volume_radius
+     .              ( rrm(k), Nrm(k), rhot(k), rrp2_rrm2(k), 
      .                           Nrp2_Nrm2(k), corr_rrNr_LL(k) )
 
         end do
@@ -480,16 +481,16 @@
 !           e = (p(k)*rvm(k))/(ep + rvm(k))
 
            ! Saturation mixing ratio
-           rsm(k) = rsat( p(k), T_in_K(k) )
+           rsat(k) = sat_mixrat_liq( p(k), T_in_K(k) )
 
            ! Find saturation vapor pressure.
-!           es(k) = (p(k)*rsm(k))/(ep + rsm(k))
+!           es(k) = (p(k)*rsat(k))/(ep + rsat(k))
 
         end do ! 2..gr%nnzp
 
         ! Set the boundary conditions
 !        rvm(1)          = 0.0
-        rsm(1)          = 0.0
+        rsat(1)          = 0.0
 !        es(1)           = 0.0
         Supsat(1)       = 0.0
         Supsat(gr%nnzp) = 0.0
@@ -503,7 +504,7 @@
      .              * ( Lv/(Cp*T_in_K(k)) )
 
            Supsat(k) = ( a(k)*s1(k) + (1-a(k))*s2(k) )
-     .                 *( ( 1.0 + Beta_T*rsm(k) ) / rsm(k) )
+     .                 *( ( 1.0 + Beta_T*rsat(k) ) / rsat(k) )
 
            ! Now find the elements that make up the right-hand side of the
            ! equation, dd, for rain water mixing ratio, rrm.
@@ -824,7 +825,7 @@
      .      local_kk ! Variable(s)
 
         USE saturation, only: 
-     .      rsat ! Variable(s)
+     .      sat_mixrat_liq ! Variable(s)
 
         implicit none
 
@@ -893,9 +894,9 @@
               ! The air is not saturated, therefore evaporation can take place.
 
                  cond_evap_rrm =
-     .              3.0 * C_evap * G_T_p( T_in_K, press )
-     .                  * ( ( (4.0/3.0)*pi*rho_lw )**(2.0/3.0) )
-     .                  * (rrm**(1.0/3.0)) * (Nrm**(2.0/3.0)) * Supsat
+     .            3.0 * C_evap * G_T_p( T_in_K, press )
+     .                * ( ( (4.0/3.0)*pi*rho_lw )**(2.0/3.0) )
+     .                * (rrm**(1.0/3.0)) * (Nrm**(2.0/3.0)) * Supsat
 
               ELSE
               ! The air is saturated, so there is no evaporation.
@@ -926,7 +927,7 @@
 
               T_1 = Tl_1 + (Lv/Cp)*rc1
 
-              rsl_1 = rsat(press, Tl_1)
+              rsl_1 = sat_mixrat_liq(press, Tl_1)
 
               Beta_T1 = (Rd/Rv) * ( Lv/(Rd*Tl_1) ) 
      .                          * ( Lv/(Cp*Tl_1) )
@@ -941,7 +942,7 @@
 
               T_2 = Tl_2 + (Lv/Cp)*rc2
 
-              rsl_2 = rsat(press, Tl_2)
+              rsl_2 = sat_mixrat_liq(press, Tl_2)
 
               Beta_T2 = (Rd/Rv) * ( Lv/(Rd*Tl_2) ) 
      .                          * ( Lv/(Cp*Tl_2) )
@@ -1388,7 +1389,7 @@
      .      Lv,
      .      Rv
         USE saturation, only:
-     .      rsat ! Procedure(s)
+     .      sat_mixrat_liq ! Procedure(s)
 
         
         IMPLICIT NONE
@@ -1420,7 +1421,7 @@
                                 ! Dv in (cm.^2)/sec.  ! .221 is correct.
         Dv = Dv/10000.0  ! Dv in (m.^2)/sec.
 
-        rs = rsat(press, T_in_K)
+        rs = sat_mixrat_liq(press, T_in_K)
         es = (press*rs)/(ep + rs)
 
         Fk = (Lv/(Rv*T_in_K) - 1.0)*(Lv*rho_lw)/(Ka*T_in_K)
