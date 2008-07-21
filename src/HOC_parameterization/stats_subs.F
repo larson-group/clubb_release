@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F,v 1.35 2008-07-21 16:20:07 dschanen Exp $
+!  $Id: stats_subs.F,v 1.36 2008-07-21 20:34:48 faschinj Exp $
       module stats_subs
 #ifdef STATS
  
@@ -770,7 +770,7 @@
      .    sfc,
      .    lstats_samp,
      .    ithlm,
-     .    itemp_in_K,
+     .    iT_in_K,
      .    ithvm,
      .    irtm,
      .    ircm,
@@ -797,7 +797,7 @@
      .    iwprtpthlp,
      .    isct,         
      .    irhot,
-     .    irsm,
+     .    irsat,
      .    iAKm,
      .    iAKm_est,
      .    iradht,
@@ -913,7 +913,7 @@
      .    wp2rcp,
      .    wprtpthlp,
      .    sct,
-     .    rsm,
+     .    rsat,
      .    Akm,
      .    Akm_est,
      .    radht,
@@ -950,8 +950,8 @@
       use model_flags, only:
      .    LH_on ! Variable(s)
 
-      use temp_in_K_mod, only:
-     .    thlm2temp_in_K ! Procedure
+      use T_in_K_mod, only:
+     .    thlm2T_in_K ! Procedure
 
       use constants, only:
      .    rc_tol
@@ -1032,8 +1032,8 @@
 
         ! zt variables
         call stat_update_var( ithlm, thlm, zt )
-        call stat_update_var( itemp_in_K, 
-     .         thlm2temp_in_K( thlm, exner, rcm), zt )
+        call stat_update_var( iT_in_K, 
+     .         thlm2T_in_K( thlm, exner, rcm), zt )
         call stat_update_var( ithvm, thvm, zt )
         call stat_update_var( irtm, rtm, zt )       
         call stat_update_var( ircm, rcm, zt )
@@ -1066,7 +1066,7 @@
 !       if ( cloud_sed ) then
 !        call stat_update_var( ised_rcm, sed_rcm, zt )
 !       endif
-        call stat_update_var( irsm, rsm, zt )
+        call stat_update_var( irsat, rsat, zt )
 !        call stat_update_var( irrm, hydromet(:,1), zt )
 !        call stat_update_var( iNrm, hydromet(:,2), zt )
 !        call stat_update_var( irsnowm, hydromet(:,3), zt )
