@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!$Id: interpolation.F,v 1.5 2008-06-30 18:01:10 faschinj Exp $
+!$Id: interpolation.F,v 1.6 2008-07-21 20:26:04 faschinj Exp $
         module interpolation
 
         implicit none
@@ -12,7 +12,7 @@
         contains
 
 !------------------------------------------------------------------------
-        pure real function linint( zmid, ztop, zbot, vtop, vbot )
+        elemental real function linint( zmid, ztop, zbot, vtop, vbot )
 
 !       Description:
 !       Function to linearly interpolate quantities to a height zmid
