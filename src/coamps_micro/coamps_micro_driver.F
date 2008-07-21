@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: coamps_micro_driver.F,v 1.37 2008-07-14 19:54:35 faschinj Exp $
+! $Id: coamps_micro_driver.F,v 1.38 2008-07-21 20:36:39 faschinj Exp $
       module coamps_micro_driver_mod
 
       ! This module wraps the adjtq subroutine so that it may be used by
@@ -43,7 +43,7 @@
 !----------------------------------------------------------------------
                               
       use constants, only: Cp, Lv, pi, Lf, Ls, Rv, Rd, p0 ! Variable(s)
-      use saturation, only: rsat, rsati ! Procedure(s)
+      use saturation, only: sat_mixrat_liq, sat_mixrat_ice ! Procedure(s)
       use stats_precision, only: time_precision ! Variable(s)
       use error_code, only: clubb_debug ! Procedure(s)
       use grid_class, only: zt2zm ! Procedure(s)
@@ -511,8 +511,8 @@ c End of ajsmith4's addition
 !       pr3d(1,1,k)    = zt2zm( p, k )
 !       th2t3d(1,1,k)  = zt2zm( exner, k )
 !       temp3d(1,1,k)  = zt2zm( thm, k ) * th2t3d(1,1,k)
-!       qsatv3d(1,1,k) = rsat( pr3d(1,1,k), temp3d(1,1,k) )
-!       qsati3d(1,1,k) = rsati( pr3d(1,1,k), temp3d(1,1,k) )
+!       qsatv3d(1,1,k) = sat_mixrat_liq( pr3d(1,1,k), temp3d(1,1,k) )
+!       qsati3d(1,1,k) = sat_mixrat_ice( pr3d(1,1,k), temp3d(1,1,k) )
 !     end do
 
       ! Setup COAMPS m (mass) grid variables that are only used from
@@ -533,8 +533,8 @@ c End of ajsmith4's addition
       temp3d(1,1,1:kk) = T_in_K(2:kk+1)
 
       do k=1, kk, 1
-        qsatv3d(1,1,k) = rsat( pr3d(1,1,k), temp3d(1,1,k) )
-        qsati3d(1,1,k) = rsati( pr3d(1,1,k), temp3d(1,1,k) )
+        qsatv3d(1,1,k) = sat_mixrat_liq( pr3d(1,1,k), temp3d(1,1,k) )
+        qsati3d(1,1,k) = sat_mixrat_ice( pr3d(1,1,k), temp3d(1,1,k) )
       end do
 
       ! Setup COAMPS m (mass) grid variables
