@@ -1,4 +1,4 @@
-! $Id: mixing_length.F,v 1.13 2008-07-01 17:10:16 faschinj Exp $
+! $Id: mixing_length.F,v 1.14 2008-07-21 20:24:02 faschinj Exp $
 !-----------------------------------------------------------------------------
         module mixing_length
         
@@ -54,7 +54,7 @@
      .      length_check ! Procedure(s)
 
         use saturation, only: 
-     .      rsat ! Procedure(s)
+     .      sat_mixrat_liq ! Procedure(s)
 
         use diagnostic_variables, only: 
      .      Lup, ! Variable(s)
@@ -153,7 +153,7 @@
 !           Probably should use properties of bump 1 in Gaussian, not mean!!!
 
             tl_par_j = thl_par_j*exner(j)
-            rsl_par_j = rsat(p(j),tl_par_j)
+            rsl_par_j = sat_mixrat_liq(p(j),tl_par_j)
             ! SD's beta (eqn. 8)
             beta_par_j = ep*(Lv/(Rd*tl_par_j))*(Lv/(cp*tl_par_j))
             ! s from Lewellen and Yoh 1993 (LY) eqn. 1
@@ -225,7 +225,7 @@
            ! Probably should use properties of bump 1 in Gaussian, not mean!!!
 
             tl_par_j = thl_par_j*exner(j)
-            rsl_par_j = rsat(p(j),tl_par_j)
+            rsl_par_j = sat_mixrat_liq(p(j),tl_par_j)
             ! SD's beta (eqn. 8)
             beta_par_j = ep*(Lv/(Rd*tl_par_j))*(Lv/(cp*tl_par_j))
             ! s from Lewellen and Yoh 1993 (LY) eqn. 1

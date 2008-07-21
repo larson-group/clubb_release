@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.209 2008-07-21 18:26:07 dschanen Exp $
+! $Id: hoc.F,v 1.210 2008-07-21 20:24:01 faschinj Exp $
 
         module hoc
 
@@ -662,13 +662,13 @@
 !       Execute the necessary steps for the initialization of the 
 !       HOC model run. 
 
-!       Calls: ( all these are external except compute_length, rsat,
+!       Calls: ( all these are external except compute_length, sat_mixrat_liq,
 !       stat_rcm )
 !       subroutine read_sounding
 !       subroutine hydrostatic (twice)
 !       subroutine compute_length
 
-!       function rsat
+!       function sat_mixrat_liq
 !       function sat_rcm
 !       function zt2zm (from grid_class)
 !       function zm2zt (from grid_class)
@@ -706,7 +706,7 @@
         
         ! Joshua Fasching
         ! March 2008
-        use saturation, only: rsat, sat_rcm ! Procedure(s)
+        use saturation, only: sat_mixrat_liq, sat_rcm ! Procedure(s)
        
         use hydrostatic_mod, only: hydrostatic ! Procedure(s)
 
@@ -779,7 +779,7 @@
         ! from excess saturation
 
         do k = 1,gr%nnzp
-           rcm(k) = max( rtm(k) - rsat(p(k),
+           rcm(k) = max( rtm(k) - sat_mixrat_liq(p(k),
      .                   thlm(k) * exner(k)), 0.0 )
         end do
 
@@ -1402,7 +1402,7 @@
      .                            wpthlp_sfc, SE, LE, wprtp_sfc, cf
 #ifdef STATS
         use stats_variables, only: ish, ilh, iustar, lstats_samp, sfc ! Variable(s)
-        use stats_type, only: stat_update_var, stat_update_var_pt ! Procedure(s)
+        use stats_type, only: stat_update_var_pt ! Procedure(s)
         use constants, only: Cp, Lv     ! Variable(s) 
 #endif /*STATS*/
 

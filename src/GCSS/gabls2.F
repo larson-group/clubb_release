@@ -1,4 +1,4 @@
-!$Id: gabls2.F,v 1.21 2008-07-14 20:44:26 faschinj Exp $
+!$Id: gabls2.F,v 1.22 2008-07-21 20:24:02 faschinj Exp $
 !----------------------------------------------------------------------
         module gabls2
 
@@ -35,7 +35,7 @@
 
         use grid_class, only: zt2zm ! Procedure(s)
 
-        use saturation, only: rsat ! Procedure(s)
+        use saturation, only: sat_mixrat_liq ! Procedure(s)
 
         use stats_precision, only: time_precision ! Variable(s)
 
@@ -155,7 +155,7 @@
 
           use parameters, only: sclr_dim ! Variable(s)
 
-          use saturation, only: rsat ! Procedure(s)
+          use saturation, only: sat_mixrat_liq ! Procedure(s)
 
           use stats_precision, only: time_precision ! Variable(s)
 
@@ -238,7 +238,8 @@
 
           ! Compute heat and moisture fluxes
           wpthlp_sfc  = -Cz * ubar * ( thlm - sst * (p0/psfc)**kappa ) ! [K * m/s]
-          wprtp_sfc  = -Cz * ubar * ( rtm - rsat(psfc,sst) ) * 0.025   ! [kg/kg * m/s]; 2.5% factor from GABLS2 specification
+          wprtp_sfc  = -Cz * ubar * 
+     .                  ( rtm - sat_mixrat_liq(psfc,sst) ) * 0.025   ! [kg/kg * m/s]; 2.5% factor from GABLS2 specification
           ! Compute momentum fluxes
           bflx  = wpthlp_sfc * grav / sstheta
           ustar = diag_ustar(lowest_level,bflx,ubar,z0)

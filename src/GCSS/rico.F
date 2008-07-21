@@ -1,4 +1,4 @@
-!$Id: rico.F,v 1.24 2008-07-08 04:47:06 dschanen Exp $
+!$Id: rico.F,v 1.25 2008-07-21 20:24:02 faschinj Exp $
 !----------------------------------------------------------------------
       module rico
 
@@ -190,7 +190,7 @@
 
         use parameters, only: sclr_dim ! Variable(s)
   
-        use saturation, only: rsat ! Procedure(s)
+        use saturation, only: sat_mixrat_liq ! Procedure(s)
 
         use array_index, only: iisclr_rt, iisclr_thl
 
@@ -267,15 +267,15 @@
 !       Compute heat and moisture fluxes
         if (use_old_atex) then ! Use ATEX version
           wpthlp_sfc  = -Cz * ubar * ( thlm - sst * (p0/psfc)**kappa ) ! [K m s^-1
-          wprtp_sfc  = -Cz * ubar * ( rtm - rsat(psfc,sst) )           ! [kg kg^-1  m s^-1]
+          wprtp_sfc  = -Cz * ubar * ( rtm - sat_mixrat_liq(psfc,sst) )           ! [kg kg^-1  m s^-1]
           upwp_sfc   = -um_sfc * ustar*ustar / ubar                    ! [m^2 s^-2]
           vpwp_sfc   = -vm_sfc * ustar*ustar / ubar                    ! [m^2 s^-2]
 
         else ! Use RICO version
           wpthlp_sfc  = -Ch * ubar * ( thlm - sst * (p0/psfc)**kappa ) ! K m s^-1
-!          wprtp_sfc  = -Cz * ubar * ( .01726 - rsat(psfc,sst) ) ! kg kg^-1  m s^-1
-!          wprtp_sfc  = -Cz * ubar * ( .01626 - rsat(psfc,sst) ) ! kg kg^-1  m s^-1
-          wprtp_sfc  = -Cq * ubar * ( rtm - rsat(psfc,sst) ) ! kg kg^-1 m s^-1
+!          wprtp_sfc  = -Cz * ubar * ( .01726 - sat_mixrat_liq(psfc,sst) ) ! kg kg^-1  m s^-1
+!          wprtp_sfc  = -Cz * ubar * ( .01626 - sat_mixrat_liq(psfc,sst) ) ! kg kg^-1  m s^-1
+          wprtp_sfc  = -Cq * ubar * ( rtm - sat_mixrat_liq(psfc,sst) ) ! kg kg^-1 m s^-1
           upwp_sfc   = -um_sfc * Cm * ubar  ! m^2 s^-2
           vpwp_sfc   = -vm_sfc * Cm * ubar  ! m^2 s^-2
         end if

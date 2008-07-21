@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf01.F,v 1.23 2008-07-21 15:11:54 faschinj Exp $
+! $Id: dycoms2_rf01.F,v 1.24 2008-07-21 20:24:01 faschinj Exp $
         module dycoms2_rf01
 
 !       Description:
@@ -209,7 +209,7 @@
 
         use parameters, only: sclr_dim ! Variable(s)
 
-        use saturation, only: rsat ! Variable(s)
+        use saturation, only: sat_mixrat_liq ! Variable(s)
 
         use array_index, only: iisclr_rt, iisclr_thl
 
@@ -277,7 +277,8 @@
         else if ( sfctype == 1 ) then
 
           wpthlp_sfc = -Cd * ubar * ( thlm_sfc - Tsfc/exner_sfc )
-          wprtp_sfc  = -Cd * ubar * ( rtm_sfc  - rsat( psfc, Tsfc ) )
+          wprtp_sfc  = -Cd * ubar * 
+     .                  ( rtm_sfc  - sat_mixrat_liq( psfc, Tsfc ) )
 
         else  ! Undefined value for sfctype
 

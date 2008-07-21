@@ -1,4 +1,4 @@
-! $Id: closure_new.F,v 1.29 2008-07-21 16:20:07 dschanen Exp $
+! $Id: closure_new.F,v 1.30 2008-07-21 20:24:02 faschinj Exp $
         module pdf_closure
 
         implicit none
@@ -73,7 +73,7 @@
      .      pdf_closure_new_check ! Procedure(s)
 
         use saturation, only: 
-     .      rsat ! Procedure(s)
+     .      sat_mixrat_liq ! Procedure(s)
 
         use error_code, only: 
      .      clubb_var_equals_NaN, ! Variable(s)
@@ -493,8 +493,8 @@
         tl1  = thl1*exner
         tl2  = thl2*exner
 
-        rsl1 = rsat(p,tl1)
-        rsl2 = rsat(p,tl2)
+        rsl1 = sat_mixrat_liq(p,tl1)
+        rsl2 = sat_mixrat_liq(p,tl2)
 
         ! SD's beta (eqn. 8)
         beta1 = ep * ( Lv/(Rd*tl1) ) * ( Lv/(Cp*tl1) )

@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: fire.F,v 1.16 2008-07-08 04:44:10 dschanen Exp $
+! $Id: fire.F,v 1.17 2008-07-21 20:24:02 faschinj Exp $
         module fire
 
 !       Description:
@@ -184,7 +184,7 @@
 
         use parameters, only: sclr_dim ! Variable(s)
 
-        use saturation, only: rsat ! Procedure(s)
+        use saturation, only: sat_mixrat_liq ! Procedure(s)
 
         use array_index, only: iisclr_rt, iisclr_thl
 
@@ -228,7 +228,7 @@
         ! Compute fluxes
         M = sqrt( u*u + v*v )
         wpthlp_sfc = -C * M * ( thlair - Tsfc * (psfc/p0)**kappa )
-        wprtp_sfc  = -C * M * ( rtair - rsat( psfc, Tsfc ) )
+        wprtp_sfc  = -C * M * ( rtair - sat_mixrat_liq( psfc, Tsfc ) )
 
         ! Let passive scalars be equal to rt and theta_l for now
         if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc

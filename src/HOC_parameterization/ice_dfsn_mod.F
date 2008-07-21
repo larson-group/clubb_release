@@ -1,4 +1,4 @@
-! $Id: ice_dfsn_mod.F,v 1.11 2008-07-14 19:54:35 faschinj Exp $        
+! $Id: ice_dfsn_mod.F,v 1.12 2008-07-21 20:24:02 faschinj Exp $        
 
         module ice_dfsn_mod
 
@@ -64,7 +64,7 @@
         USE stats_precision, only: 
      .      time_precision ! Variable(s)
         USE saturation, only: 
-     .      rsat ! Procedure(s)
+     .      sat_mixrat_liq ! Procedure(s)
 #ifdef STATS
         use stats_type, only:
      .      stat_update_var
@@ -181,7 +181,7 @@
           IF ( rcm(k) >= 1.0E-5 .AND. T_in_K(k) < 273.15 ) THEN
 
           ! Find saturation mixing ratio over vapor [kg kg^{-1}]
-             r_s(k) = rsat( press(k), T_in_K(k) )
+             r_s(k) = sat_mixrat_liq( press(k), T_in_K(k) )
 
           ! Saturation vapor pressure over liquid in Pa
              e_s(k) = ( r_s(k)*press(k) ) / ( ep + r_s(k) )
