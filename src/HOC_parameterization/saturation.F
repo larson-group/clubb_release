@@ -1,4 +1,4 @@
-!$Id: saturation.F,v 1.5 2008-06-30 18:57:38 faschinj Exp $
+!$Id: saturation.F,v 1.6 2008-07-21 20:24:50 faschinj Exp $
 
         module saturation
 
@@ -10,14 +10,14 @@
 
         private        ! Change default so all items private
 
-        public   :: rsat, rsati, sat_rcm
+        public   :: sat_mixrat_liq, sat_mixrat_ice, sat_rcm
 
-        private  :: svp_liq, svp_ice
+        private  :: sat_vapor_press_liq, sat_vapor_press_ice
 
         contains
 
 !-------------------------------------------------------------------------
-        real function rsat( p, T )
+        elemental real function sat_mixrat_liq( p, T )
 
 !       Description:
 !       Used to compute the saturation mixing ratio.
@@ -42,20 +42,20 @@
         ! Saturation Vapor Pressure, esat, can be found to be approximated
         ! in many different ways.
 
-        esatv = svp_liq( T )
+        esatv = sat_vapor_press_liq( T )
 
         ! Formula for Saturation Mixing Ratio:
         !
         ! rs = (epsilon) * [ es / ( p - es ) ];
         ! where epsilon = R_d / R_v
        
-        rsat = ep * ( esatv / ( p - esatv ) )
+        sat_mixrat_liq = ep * ( esatv / ( p - esatv ) )
 
         return
-        end function rsat
+        end function sat_mixrat_liq
 
 !------------------------------------------------------------------------
-        pure function svp_liq( T ) result ( esat )
+        pure function sat_vapor_press_liq( T ) result ( esat )
 
 !       Description:
 !       Computes SVP for water vapor.
@@ -104,10 +104,10 @@
         end if
 
         return
-        end function svp_liq
+        end function sat_vapor_press_liq
 
 !------------------------------------------------------------------------
-        real function rsati( p, T )
+        real function sat_mixrat_ice( p, T )
 
 !       Description:
 !       Used to compute the saturation mixing ratio. 
@@ -129,20 +129,20 @@
 
         ! Compute SVP for ice
 
-        esat_ice = svp_ice( T )
+        esat_ice = sat_vapor_press_ice( T )
 
         ! Formula for Saturation Mixing Ratio:
         !
         ! rs = (epsilon) * [ es / ( p - es ) ];
         ! where epsilon = R_d / R_v
 
-        rsati = ep * ( esat_ice / ( p - esat_ice ) )
+        sat_mixrat_ice = ep * ( esat_ice / ( p - esat_ice ) )
 
         return
-        end function rsati
+        end function sat_mixrat_ice
 
 !------------------------------------------------------------------------
-        real pure function svp_ice( T ) result ( esati )
+        real pure function sat_vapor_press_ice( T ) result ( esati )
 
 !       Description:
 
@@ -188,7 +188,7 @@
         end if
 
         return
-        end function svp_ice
+        end function sat_vapor_press_ice
 
 !------------------------------------------------------------------------
         ! This function was created by Brian Griffin.
@@ -229,7 +229,7 @@
            iteration = iteration + 1
 
            answer = theta - (Lv/(Cp*exner))
-     .                     *(MAX( rtm - rsat(p,theta*exner), 0.0 ))
+     .                *(MAX( rtm - sat_mixrat_liq(p,theta*exner), 0.0 ))
 
            IF ( ABS(answer - thlm) <= tolerance ) THEN
               EXIT
@@ -249,7 +249,7 @@
 
         ENDDO
 
-        sat_rcm = MAX( rtm - rsat(p,theta*exner), 0.0 )
+        sat_rcm = MAX( rtm - sat_mixrat_liq(p,theta*exner), 0.0 )
 
         END FUNCTION sat_rcm
         
