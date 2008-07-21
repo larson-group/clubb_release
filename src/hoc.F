@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F,v 1.207 2008-07-18 17:19:43 faschinj Exp $
+! $Id: hoc.F,v 1.208 2008-07-21 14:18:18 faschinj Exp $
 
         module hoc
 
@@ -1400,7 +1400,11 @@
      .                            exner, rcm, rhom, um, psfc, vm,
      .                            upwp_sfc, vpwp_sfc, Tsfc,
      .                            wpthlp_sfc, SE, LE, wprtp_sfc, cf
-
+#ifdef STATS
+        use stats_variables, only: ish, ilh, iustar, lstats_samp, sfc ! Variable(s)
+        use stats_type, only: stat_update_var, stat_update_var_pt ! Procedure(s)
+        use constants, only: Cp, Lv     ! Variable(s) 
+#endif /*STATS*/
 
         use prognostic_variables, only: 
      .      sclrm, sclrm_forcing,  ! Passive scalar variables
@@ -1958,7 +1962,23 @@
 
         end if ! lbugsrad
 
+
+#ifdef STATS
+!      Store values of surface fluxes for statistics
+        if (lstats_samp) then
+           call stat_update_var_pt( ish, 1, wpthlp_sfc*rhom(1)*Cp, ! intent(in)
+     .                              sfc )                         ! intent(inout)
+
+           call stat_update_var_pt( ilh, 1, wprtp_sfc*rhom(1)*Lv,  ! intent(in)
+     .                              sfc )                         ! intent(inout)
+
+           call stat_update_var_pt( iustar, 1, ustar,             ! intent(in)
+     .                              sfc )                         ! intent(inout)
+        endif
+#endif /*STATS*/
+
         return
+
         end subroutine hoc_forcings_timestep
 
         end module hoc

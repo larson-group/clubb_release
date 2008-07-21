@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F,v 1.111 2008-07-18 16:02:15 dschanen Exp $
+! $Id: parameterization_interface.F,v 1.112 2008-07-21 14:18:18 faschinj Exp $
 !-----------------------------------------------------------------------
         module hoc_parameterization_interface
 
@@ -181,11 +181,7 @@
 #ifdef STATS
        use stats_variables, only:
      .     zm, ! Variable(s)
-     .     sfc,
      .     lstats_samp,
-     .     ish,
-     .     ilh,
-     .     iustar,
      .     iup2_plus_vp2,
      .     iwprtp_bt,
      .     iwpthlp_bt
@@ -946,15 +942,6 @@
 #ifdef STATS
 !      Store values of surface fluxes for statistics
        if (lstats_samp) then
-         call stat_update_var_pt( ish, 1, wpthlp(1)*rhom(1)*Cp, ! intent(in)
-     .                            sfc )                         ! intent(inout)
-
-         call stat_update_var_pt( ilh, 1, wprtp(1)*rhom(1)*Lv,  ! intent(in)
-     .                            sfc )                         ! intent(inout)
-
-         call stat_update_var_pt( iustar, 1, ustar,             ! intent(in)
-     .                            sfc )                         ! intent(inout)
-
          ! Michael Falk added this for up2_plus_vp2, 23 Jan 2007.
          call stat_update_var( iup2_plus_vp2, up2+vp2,          ! intent(in)
      .                         zm )                             ! intent(inout)
