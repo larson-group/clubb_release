@@ -1,20 +1,20 @@
 !-----------------------------------------------------------------------
-! $Id: int2txt.F90,v 1.1 2008-07-22 16:04:14 faschinj Exp $
-        program int2txt
+! $Id: int2txt.F90,v 1.2 2008-07-22 16:36:06 dschanen Exp $
+program int2txt
 
-!       Description:
-!       Takes 34 bytes of binary data as a command-line argument,
-!           and outputs ASCII text.
-!       Used by the tuner; invoked by tune/generate_seed.bash.
-!       Notes:  Not very useful on machines without a /dev/random, 
-!       though any 34 bytes of pseudo-random seed data would suffice.
+! Description:
+! Takes 34 bytes of binary data as a command-line argument,
+!   and outputs ASCII text.
+! Used by the tuner; invoked by tune/generate_seed.bash.
+! Notes:  Not very useful on machines without a /dev/random, 
+!   though any 34 bytes of pseudo-random seed data would suffice.
 !-----------------------------------------------------------------------
 #include "recl.F90"
 
 #ifdef AbsoftUNIXFortran
-        use unix_library, only: iargc, getarg
+  use unix_library, only: iargc, getarg
 #endif
-        implicit none
+  implicit none
 
 #ifdef __GFORTRAN__
 #define getarg get_command_argument
@@ -23,39 +23,42 @@
 #elif AbsoftUNIXFortran
 
 #else
-        ! Seems to work on most Fortran compilers, but if it doesn't,
-        ! try using the F2003 subrountine is get_command_argument() instead.
-        external :: getarg
+  ! Seems to work on most Fortran compilers, but if it doesn't,
+  ! try using the F2003 subrountine is get_command_argument() instead.
+  external :: getarg
 
-        ! As above, except the F2003 function is command_argument_count()
-        integer, external :: iargc
+  ! As above, except the F2003 function is command_argument_count()
+  integer, external :: iargc
 #endif
 
-        ! Parameter Constants
-        integer, parameter ::  & 
-        fstderr = 0, fstdout = 6, seed_dim = 34
+  ! Parameter Constants
+  integer, parameter ::  & 
+  fstderr = 0, fstdout = 6, seed_dim = 34
 
-        ! Local Variables
-        integer(kind=4), dimension(seed_dim) :: seed ! Our seed data
+  ! Local Variables
+  integer(kind=4), dimension(seed_dim) :: seed ! Our seed data
 
-        character(len=50) :: rand_source
+  character(len=50) :: rand_source
 
-        ! Test to check there is an argument given
-        if ( iargc( ) < 1 ) then
-          write(fstderr,*) "Usage: int2txt <filename>"
-          stop
-        end if
+!-----------------------------------------------------------------------
 
-        ! Get the source of the random data (usually /dev/random)
-        call getarg(1, rand_source)
+  ! Test to check there is an argument given
+  if ( iargc( ) < 1 ) then
+    write(fstderr,*) "Usage: int2txt <filename>"
+    stop
+  end if
 
-        open(unit=10, file=trim( rand_source ), action='read',  & 
-             recl=F_RECL*seed_dim, form='unformatted', access='direct')
+  ! Get the source of the random data (usually /dev/random)
+  call getarg(1, rand_source)
 
-        read(unit=10, rec=1) seed(1:seed_dim)
+  open(unit=10, file=trim( rand_source ), action='read',  & 
+    recl=F_RECL*seed_dim, form='unformatted', access='direct')
 
-        close(unit=10)
+  read(unit=10, rec=1) seed(1:seed_dim)
 
-        write(unit=fstdout,fmt='(34I12)') seed(1:seed_dim)
+  close(unit=10)
 
-        end program int2txt
+  write(unit=fstdout,fmt='(34I12)') seed(1:seed_dim)
+
+end program int2txt
+!-----------------------------------------------------------------------
