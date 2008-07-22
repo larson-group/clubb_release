@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.140 2008-07-16 13:51:07 nielsenb Exp $
+# $Id: Makefile,v 1.141 2008-07-22 16:04:10 faschinj Exp $
 #
 # This version should work with GNU make and Sun's dmake.
 #
@@ -108,11 +108,11 @@ all:	hoc_standalone hoc_tuner int2txt hoc_inputfields  \
 # Note:
 # The budget terms tuner is currently non-working
 # -dschanen 15 March 2007
-	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/*.F
-	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/HOC_parameterization/*.F
-	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/GCSS/*.F
-	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/LH/*.F
-	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/coamps_micro/coamps_micro_driver.F
+	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/*.F90
+	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/HOC_parameterization/*.F90
+	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/GCSS/*.F90
+	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/LH/*.F90
+	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/coamps_micro/coamps_micro_driver.F90
 	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/BUGSrad/bugsrad_hoc.F90
 
 
