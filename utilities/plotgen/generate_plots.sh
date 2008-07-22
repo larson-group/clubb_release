@@ -3,7 +3,9 @@
 # This variable holds the path to the directory where plotgen.sh is located
 # The readlink -f is necessary so if running from the symlink, it gets the 
 # full path to plotgen.sh, and dirname $0 gets the directory.
-PLOTGEN_DIR=$(readlink -f $(dirname "$0"))
+#PLOTGEN_DIR=$(readlink -f $(dirname "$0"))
+PLOTGEN_DIR=`readlink -f $0`
+PLOTGEN_DIR=`dirname $PLOTGEN_DIR`
 
 #Tell the user what we're doing
 echo "This script will generate matlab plots comparing two sets of input data."
