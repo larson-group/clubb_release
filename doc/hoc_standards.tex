@@ -1,0 +1,555 @@
+%
+%  Last modified 27 July 2006
+%
+
+\documentclass[letterpaper,12pt]{article}
+%\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{amsfonts}
+\addtolength{\textheight}{2in}\addtolength{\topmargin}{-1in}
+\addtolength{\textwidth}{1.25in} \addtolength{\oddsidemargin}{-.75in}
+\addtolength{\evensidemargin}{-.75in}
+
+\pagestyle{empty}
+
+\begin{document}
+
+\title{\textbf{Standards and Coding Practices for HOC}}
+\author{}
+
+\maketitle
+
+\flushleft
+\begin{enumerate}
+\item All files in the repository should have a standard header with a CVS 
+\texttt{\$Id\$} tag at the top.
+\newline
+When initially checking in a new source file, enter the Id tag as 
+the string \texttt{\$Id\$} on a commented line at the top of the source file
+ (CVS will expand this after checking it in).
+E.g. \newline
+
+Before checking in the file, enter:
+\begin{verbatim}
+!-----------------------------------------------------------------------
+! $Id: hoc_standards.tex,v 1.1 2008-07-22 14:28:28 senkbeir Exp $
+
+\end{verbatim}
+
+\bigskip
+
+After checking in the file, something like the following will appear:
+\begin{verbatim}
+!-----------------------------------------------------------------------
+! $Id: hoc_standards.tex,v 1.1 2008-07-22 14:28:28 senkbeir Exp $
+
+\end{verbatim}
+
+\item When adding functions and subroutines create a header with a short 
+description of their purpose.  Include in the header a description of 
+each variable and its respective units.  Use the following standardized
+layout: 
+
+\begin{verbatim}
+!-----------------------------------------------------------------------
+        function xyzzy( etherx, ethery, etherz )
+
+!       Description:
+!         Evaluates the xyzzy function. 
+
+!       References:
+!         Eqn. 33 on p. 4551 of  
+!         Tweedle-dee and Tweedle-dum (1842), J. Imaginary Atmospheric 
+!         Sci., Vol. 23, pp. 4550--4556
+!-----------------------------------------------------------------------
+
+        ! Included Modules
+        use grid_dimensions, only: ndim
+ 
+        implicit none
+
+        ! External Calls
+        complex, external ::
+     .    xyxy_fnc ! (Description of function goes here)
+
+        external ::
+     .    zyzy_sub ! (Description of subroutine goes here)
+
+        ! It is a good idea to declare intrinsics, in case another 
+        ! function or variable is accidentally given the same name.
+        intrinsic :: 
+     .    matmul, exp, log, dble
+
+        ! If we had any derived types to declare, then 
+        ! we would put them here before the constants.
+
+        ! Local Constants
+        real, parameter :: 
+     .    local_tol = 1.0e-6 ! Local tolerance [no units]
+
+        ! Input Variables
+        complex, dimension(ndim), intent(in) :: 
+     .    etherx,  ! Ether in the x dimension  [kg/kg]
+     .    ethery,  ! Ether in the y dimension  [kg/kg]
+     .    etherz   ! Ether in the z dimension  [kg/kg]
+
+        ! Output Variables
+        complex, dimension(ndim,ndim,ndim) ::
+     .    xyzzy    ! Ether in the xyyzy dimension  [kg/kg]
+
+        ! Local Variables
+        integer :: i, j, k
+
+!-----------------------------------------------------------------------
+
+        ! Begin xyzzy code
+
+        ...
+
+        return
+        end function xyzzy
+!-----------------------------------------------------------------------
+\end{verbatim}
+
+\item Write lots of code comments.  Make sure your code is understandable to an outsider 
+looking at it for the first time.  When writing a code comment, leave your name 
+at the end of the comment.
+This will allow other users to contact you with any questions about the section of code.
+Use the same name identifier, e.g. dschanen or Vince Larson, everywhere.
+Then everyone can use \texttt{grep} to search for all code comments you've made.
+
+\item When writing new source code, use fixed format rather than free format.  However, 
+this convention is not always followed in code from external contributors such as BUGSRad, 
+Numerical Recipes, and so forth.  We do not usually modify such external code because it is
+less familiar, and we might introduce bugs.
+\newline
+
+\item Minimize the number of variables or amount of data made available to any 
+subroutine in either 
+passed arguments or \texttt{use} statements.  Always specify \texttt{intent} 
+attributes on your arguments, and use \texttt{intent(in)} 
+and \texttt{intent(out)} rather than \texttt{intent(inout)} whenever possible.
+This makes the code more clear to new users by allowing them to trace where a 
+given variable is changed in the code and spot at a glance what are the inputs and
+outputs of each subroutine.  Furthermore,
+this makes it easier for the compiler to optimize, because modern computers can 
+vectorize floating point instructions, thereby providing some 
+parallelization when your calculation does not rely on previous results.
+When using modules with public variables, limit 
+the number of variables with an \texttt{only:} statement.  This makes code 
+easier to read, because it is then obvious which variables from the module are being 
+used.\newline
+E.g.
+\begin{verbatim}
+!-----------------------------------------------------------------------
+         subroutine mulmul( x, y, z )
+
+!        Description:
+!          Bogus example
+
+!        References:
+!          None
+!-----------------------------------------------------------------------
+
+         ! Here we limit our use statement to just the needed variables
+         use constants, only: pi, euler_const 
+
+         implicit none
+
+         ! Input
+         real, dimension(5), intent(in)  ::
+     .     x, ! First factor   [no units]
+     .     y  ! Second factor  [no units]
+
+         ! Output 
+         real, dimension(5), intent(out) :: 
+     .     z  ! output         [no units]
+!-----------------------------------------------------------------------
+
+         ! Note that every element of z could be calculated 
+         ! independently of other elements of the subroutine
+         ! allowing for parallelism if possible.
+
+         z(1:5) = ( x(1:5) / pi ) * ( y(1:5) / euler_const )
+
+         return
+         end subroutine mulmul
+!-----------------------------------------------------------------------
+\end{verbatim}
+
+\item The general convention in HOC is to have the dummy arguments of a subroutine 
+ordered with input first, input/output second, and output arguments third. 
+The exception to this is optional variables, which must occur last.  In that case,
+standard variables should be ordered as above; below this, the optional variables should
+be listed with input first, then input/output, and then output variables.
+\newline
+E.g.
+\begin{verbatim}
+
+         ! The wrong way
+         subroutine sub( input_variable_1, output_variable_1, 
+     .                   input_variable_2, input_output_variable_1 )
+
+         ! The right way
+         subroutine sub( input_variable_1, input_variable_2, 
+     .                   input_output_variable_1, output_variable_1 )
+
+\end{verbatim}
+
+\item Keep on the same lines the arguments of both the originating call and its 
+corresponding subroutine declaration.  This makes it easier to check the 
+consistency of arguments of subroutines and functions with long argument lists.
+\newline 
+E.g.
+\begin{verbatim}
+
+         ! The wrong way
+         call sub( roast_beef, ham, tomato, cheese,
+     .             lettuce, onion, mayo )
+
+         subroutine sub( roast_beef, ham, 
+     .                   tomato, cheese,
+     .                   lettuce, onion, mayo )
+
+         ! The right way
+         call sub( roast_beef, ham, tomato, cheese,
+     .             lettuce, onion, mayo )
+
+         subroutine sub( roast_beef, ham, tomato, cheese,
+     .                   lettuce, onion, mayo )
+
+\end{verbatim}
+
+\item When breaking up an arithmetic expression over multiple lines, do so according to 
+operator precedence.  This makes things more readable at a glance. \newline
+E.g. Do this: 
+\begin{verbatim}
+        x = t + y*x 
+     .    + g*v + t*h
+\end{verbatim}
+
+Not this:
+\begin{verbatim}
+        x = t + y*x + g
+     .    *v + t*h
+\end{verbatim}
+
+\item Do not use assumed size or assumed shape arrays in HOC.  
+Generally speaking, the grid class defines the length of model arrays, 
+and the use of assumed size arrays introduces 
+another level of complexity that can cause bugs.  An exception may occur
+if you need to interface with code developed by external contributors that
+contains assumed shape arrays.
+\newline
+
+\item When a logical expression or a do loop extends more than ten lines, put a
+small comment after the end statement with the name of the loop or logical
+variable.
+E.g. \newline
+\begin{verbatim}
+        if ( lcode_enabled ) then
+
+          ...many lines of code...
+
+        end if ! lcode_enabled
+\end{verbatim}
+
+or 
+
+\begin{verbatim}
+        if ( .not. lcode_enabled ) then
+
+          ...many lines of code...
+
+        end if ! ~lcode_enabled
+\end{verbatim}
+
+A long do statement
+
+\begin{verbatim}
+        do i = 1, 100, 1
+
+        ...many lines of code...
+
+        end do ! i = 1..100
+\end{verbatim}
+
+\item When making a logical expression, leave spaces between the 
+logical operators and use the Fortran 90 style logical operators. \newline
+ E.g.
+\begin{verbatim}
+        ! Like this
+        if ( x == y ) .and. ( y >= z ) .or. ( z /= 0.0 ) then
+
+          ...
+
+        end if
+
+        ! Not like this
+        if ( x.eq.y.and.y.ge.z.or.z.ne.0.0 ) then
+
+          ...
+
+        end if
+
+\end{verbatim}
+
+The F90 style operators are:
+\newline
+
+\begin{verbatim}
+== instead of .eq.
+/= instead of .ne.
+>  instead of .gt.
+>= instead of .ge.
+<  instead of .lt.
+<= instead of .le.
+\end{verbatim}
+
+
+\item When writing flow control statements 
+( \texttt{ if, elseif, select case } ), keep the logic as straightforward and
+clear as possible.  If a set of \texttt{if...then} expressions grows to more
+than three cases, then rewrite the logic as a \texttt{select...case} expression
+instead. E.g.
+
+\begin{verbatim}
+        ! Rewrite this:
+        if ( trim( run ) == "BOMEX" ) then
+          execute_stuff( )
+
+        else if ( trim( run ) == "FIRE" ) then
+          execute_other_stuff( )
+
+        else if ( trim( run ) == "ARM" ) then
+          execute_other_other_stuff( ) 
+
+        else if ( trim( run ) == "DAVE'S_CAMPING_TRIP" ) then
+          execute_other_other_other_stuff( ) 
+
+        else
+          write(unit=*,fmt=*) "Cannot determine what to do for "
+            //trim( run )
+
+        end if ! run
+
+        ! Like this:
+        select case( trim( run ) )
+        case( "BOMEX" )
+          execute_stuff( )
+
+        case( "FIRE" )
+          execute_other_stuff( )
+
+        case( "ARM" )
+          execute_other_other_stuff( )
+ 
+        case ( "DAVE'S_CAMPING_TRIP" ) 
+          execute_other_other_other_stuff( ) 
+
+        case default
+          write(unit=*,fmt=*) "Cannot determine what to do for "
+            //trim( run )
+
+        end select ! run
+
+\end{verbatim}
+
+\item When mixing scalar variables with array variables in a single
+mathematical statement, it is often more clear to use indices, even
+though Fortran 90 allows you to omit them. \newline
+E.g. Do this:
+
+\begin{verbatim}
+       xyzzy(1:gr%nnzp) = variable_arr1(1:gr%nnzp) * variable_scl1
+     .                    * variable_arr2(1:gr%nnzp)**2
+\end{verbatim}
+
+Not this:
+\begin{verbatim}
+       xyzzy = variable_arr1 * variable_scl1 
+     .         * variable_arr2**2
+\end{verbatim}
+
+\item Use a consistent character case for variables names. 
+E.g. if you use \texttt{thlm} in function a, then do not use \texttt{Thlm} in function b. 
+This makes the code easier to read and search using your text editor and the 
+\texttt{grep} command.
+\newline
+
+\item Always use \texttt{implicit none} in your code.  It will make 
+debugging much easier, because it prevents the accidental use of 
+variables of the wrong type.
+\newline
+
+\item When adding a variable that isn't a loop iterator and occurs in more 
+than one context, use a variable name that is in some way unique. 
+This will make searching for the variable in the code much easier. 
+There several ways to do this:
+	\begin{enumerate}
+	\item Use mixed case.  E.g. \texttt{Rd} for the Dry air gas constant 
+	rather than \texttt{R} or \texttt{rd}
+	\item Use of a number in the name when the mathematical equations 
+	contain them. 
+	 E.g. \texttt{p0} for $P_0$.
+	\item Use 3 or more characters in the variable name.
+	E.g. HOC uses \texttt{grav} 
+	rather than \texttt{g} or \texttt{gr} for the gravitational constant.
+	\end{enumerate}
+Avoid using a variable name that overlaps with the text a reserved word or
+Fortran directive as well.
+Try using a command
+like \texttt{grep} if you're uncertain if your variable is a semi-unique string.
+\newline
+
+\item Do not use the prognostic or diagnostic variable modules anywhere they
+are not used already.  Currently prognostic\_variables is used in statistics.F
+and hoc.F, while diagnostic\_variables is used in hoc.F, statistics.F, and 
+parameterization\_interface.F.  Global variables like these make debugging 
+the code more difficult.  The proper way to use these variables in a new 
+section of code is to pass them as an argument.
+\newline
+
+\item When putting several subroutines or functions in a module, limit the
+ number of public interfaces. 
+E.g. 
+\begin{verbatim}
+        ! module gcss
+
+             ...
+
+        ! Note that all these are subroutines called from 
+        ! hoc_forcings_timestep
+
+        public ::
+     .    cloud_rad, atex_tndcy, atex_sfclyr, fire_tndcy,
+     .    wangara_tndcy, wangara_sfclyr,
+     .    astex_tndcy, astex_sfclyr,
+     .    arm_tndcy, arm_sfclyr,
+     .    bomex_tndcy, bomex_sfclyr,
+     .    dycoms2_rf01_tndcy, dycoms2_rf01_sfclyr,
+     .    dycoms2_rf02_tndcy, dycoms2_rf02_sfclyr,
+     .    nov11_altocu_tndcy 
+
+        ! Note that all these are called from 
+        ! subroutines within gcss;  This declaration
+        ! makes them unavailable to outside routines
+
+        private ::
+     .    diag_ustar, arm_sfcflx, Diff_denom,
+     .    altocu_icedf
+
+           ...
+
+\end{verbatim}
+
+\item Good use of whitespace can make code easier to read and debug.  
+One simple convention used in HOC is to put an extra space between 
+parenthesis for functions and subroutines to differentiate them from 
+array variables. \newline
+E.g.
+\begin{verbatim}
+         ! Choosing less obscure names for arrays and functions 
+         ! will also help with this problem.
+
+         f( x ) ! This is the function f evaluated with argument x.
+         f(x)   ! This is the one dimensional array f indexed at x.
+\end{verbatim}
+
+This applies to intrinsic functions as well. \newline
+E.g.
+\begin{verbatim}
+         mycalc = exp( x ) * log( y ) 
+     .          + dble( g ) * mod( f, 5 )
+\end{verbatim}
+
+\item Code should not make use of explicit precision variables unless there is 
+an unique reason for it (e.g. writing 4 byte records to disk).  This allows for 
+compile time promotion of reals and doubles on different computer architectures.
+Also, do not use the asterisks notation to specify precision, because
+is an extension of the Fortran standard.  E.g.
+\begin{verbatim}
+        ! This does not allow for compile time promotion.
+        real(kind=8) :: x
+
+        ! This is not standard Fortran and may break.
+        real*8 :: x
+
+        ! Everyone will be happy if you keep it like this.
+        real :: x
+\end{verbatim}
+
+\item For clarity, functions, subroutines, and programs should end with 
+their proper Fortran 90 style end statement. \newline
+E.g.
+\begin{verbatim}
+        ! Like this
+        subroutine foo
+
+            ...
+
+        end subroutine foo
+
+        ! Not like this
+        subroutine foo
+
+         ...
+
+        end
+\end{verbatim}
+
+\item Separate end statements with a single space. \newline 
+E.g.
+\begin{verbatim}
+        subroutine sub( )
+
+           ...
+
+        do k = 1, gr%nnzp, 1
+           ...
+        end do ! not 'enddo'
+
+           ...
+
+        where ( rtm < rttol )
+           ...
+        end where ! not 'endwhere'
+
+           ...
+
+        return
+        end subroutine sub ! not 'endsubroutine'
+\end{verbatim}
+
+\item A convention of HOC is to use the exclamation point character \texttt{!} for a comment, rather than a \texttt{C} or a \texttt{*}.  Consistent coding style makes comments easier to spot at a glance.
+
+\item A convention of HOC is to use the period ( \texttt{.} ) as the 
+continuation character.  This gives the code a clean and consistent look.
+e.g.
+\begin{verbatim}
+        function calc_stuff( stuff1, stuff2,
+     .                       stuff3, stuff4 )
+\end{verbatim}
+
+\item Use lowercase letters for Fortran keywords. \newline
+E.g.
+\begin{verbatim}
+        program HAL ! lowercase program
+
+           ... 
+
+        if ( lTurnOff ) then ! lowercase if, lowercase then
+          write(unit=*,fmt=*) "I know that you and Frank were "
+     .      //"trying to turn me off Dave." ! lowercase write
+          stop "Daisy, Daisy..." ! lowercase stop
+        end if ! lowercase end, lowercase if
+
+           ...
+
+        end program HAL ! lowercase end, lowercase program 
+\end{verbatim}
+
+
+
+\end{enumerate}
+
+\end{document}
