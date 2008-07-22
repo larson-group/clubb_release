@@ -1,4 +1,4 @@
-# $Id: linux_ia32_g95_optimize.in,v 1.4 2008-07-18 17:49:31 faschinj Exp $
+# $Id: linux_ia32_g95_optimize.in,v 1.5 2008-07-22 16:32:57 dschanen Exp $
 # Configuration file for Linux machine using g95
 # An MS Windows machine with MSYS should be similar
 
@@ -53,9 +53,6 @@ LAPACK = -L/usr/lib64 -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas 
 # Use -L<library path> -l<lib> to link in an external library
 # Use -Wl,-rpath <library path> to set a search path for shared libs
 LDFLAGS = -L$(LIBDIR) -Wl,-rpath,$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib -lnetcdf $(LAPACK)
-#LDFLAGS = -L$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib
-#-Wl,-rpath,$(LIBDIR) 
-#LDFLAGS = -L$(LIBDIR) -R$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib -lnetcdf $(LAPACK)
 
 # == Compiler flags (all) ==
 # Preprocessing Directives:
@@ -69,10 +66,7 @@ LDFLAGS = -L$(LIBDIR) -Wl,-rpath,$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)
 # You will need to `make clean' if you change these
 # Use -I<include path> to set a module or header file directory
 
-#FCFLAGS = $(ARCH) $(DEBUG) -DSTATS -DNETCDF -Dnooverlap -Dradoffline -I$(NC_LOC)/include
-#FCFLAGS = $(ARCH) $(DEBUG) -DSTATS -DNETCDF -DSCALARS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
-FCFLAGS = $(ARCH) $(OPTIMIZE) -DSTATS -DNETCDF -Dnooverlap -Dradoffline -I$(NC_LOC)/include
-#FCFLAGS = $(ARCH) $(OPTIMIZE) -DSTATS -DNETCDF -DSCALARS -Dnooverlap -Dradoffline -I$(NC_LOC)/include 
+FCFLAGS = $(ARCH) $(DEBUG) $(OPTIMIZE) -DSTATS -DNETCDF -Dnooverlap -Dradoffline -I$(NC_LOC)/include
 
 # == Static library processing ==
 AR = ar
