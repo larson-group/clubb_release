@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F90,v 1.1 2008-07-22 16:04:27 faschinj Exp $
+! $Id: parameterization_interface.F90,v 1.2 2008-07-22 16:32:02 dschanen Exp $
 !-----------------------------------------------------------------------
         module hoc_parameterization_interface
 
@@ -1233,6 +1233,8 @@
 !-----------------------------------------------------------------------
         subroutine parameterization_cleanup( implemented )
 
+        use parameters, only: sclrtol
+
         use diagnostic_variables, only: & 
             cleanup_diagnostic_variables ! Procedure
         use prognostic_variables, only: & 
@@ -1252,6 +1254,9 @@
         ! is part of a larger model or not.
         call cleanup_prognostic_variables( )
         call cleanup_diagnostic_variables( )
+
+        ! De-allocate the array for the passive scalar tolerances
+        deallocate( sclrtol )
 
         return
         end subroutine parameterization_cleanup

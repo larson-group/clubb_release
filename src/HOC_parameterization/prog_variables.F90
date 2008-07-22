@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: prog_variables.F90,v 1.1 2008-07-22 16:04:27 faschinj Exp $
+! $Id: prog_variables.F90,v 1.2 2008-07-22 16:32:02 dschanen Exp $
         module prognostic_variables
 
 !       This module contains definitions of all prognostic
@@ -311,7 +311,7 @@
 
 
         ! Passive scalars
-
+        deallocate( wpsclrp_sfc, wpedsclrp_sfc )
         deallocate( sclrm )
         deallocate( sclrm_forcing )
 
