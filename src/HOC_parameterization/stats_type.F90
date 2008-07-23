@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_type.F90,v 1.1 2008-07-22 16:04:29 faschinj Exp $
+! $Id: stats_type.F90,v 1.2 2008-07-23 13:59:11 faschinj Exp $
       module stats_type
 #ifdef STATS
  
@@ -73,7 +73,9 @@
          character(len = *), intent(in) :: var_units       ! Variable units       []
 
          ! Output Variable
-         type(stats), intent(out) :: grid_kind ! Which grid the variable is located on (zt, zm, or sfc )
+
+         ! Which grid the variable is located on (zt, zm, or sfc )
+         type(stats), intent(out) :: grid_kind
 
          grid_kind%f%var(var_index)%ptr => grid_kind%x(:,var_index)
          grid_kind%f%var(var_index)%name = var_name
