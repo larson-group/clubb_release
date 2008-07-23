@@ -1,4 +1,4 @@
-#$Id: CLUBBStandardsCheck.pl,v 1.8 2008-07-16 18:20:16 faschinj Exp $
+#$Id: CLUBBStandardsCheck.pl,v 1.9 2008-07-23 14:00:27 faschinj Exp $
 
 #!/usr/bin/perl
 
@@ -182,11 +182,11 @@ else{
 			
 		}	
 		# Check for long lines
-#		if( ! &lineCheck( $verbose, @input ) )
-#		{
-#			warn "$file\n";
-#			warn $horizontal;
-#		}
+		if( ! &lineCheck( $verbose, @input ) )
+		{
+			warn "$file\n";
+			warn $horizontal;
+		}
 		# Close File
 		close FILE;
 	}
@@ -545,7 +545,7 @@ sub lineCheck
 		$lineNumber++;
 
 		# If the number of characters in the line is greater than the max length.
-		if( length($line) > $maxLength )
+		if( length($line) - 1 > $maxLength )
 		{
 			# Start building the warning message
 			push(@warnings,"$programName WARNING: Line has exceeded $maxLength characters.\n");
