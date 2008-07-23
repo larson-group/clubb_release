@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F90,v 1.1 2008-07-22 16:04:13 faschinj Exp $
+! $Id: hoc.F90,v 1.2 2008-07-23 13:50:21 faschinj Exp $
 
         module hoc
 
@@ -335,8 +335,8 @@
 
         ! Pick some default values for stats_setting
         lstats       = .false.
-        fname_prefix = ""
-        stats_fmt    = ""
+        fname_prefix = ''
+        stats_fmt    = ''
         stats_tsamp  = 0.
         stats_tout   = 0.
 
@@ -1806,8 +1806,9 @@
                              wpsclrp_sfc, wpedsclrp_sfc )
 
          case ( "rico" )
-           call rico_sfclyr( um(2), vm(2), thlm(2), rtm(2), & 
-                              gr%zt(2), 299.8, 101540.,  & ! 299.8 K is the RICO SST; 101540 Pa is the sfc pressure.
+           call rico_sfclyr( um(2), vm(2), thlm(2), rtm(2), &
+                              ! 299.8 K is the RICO SST; 101540 Pa is the sfc pressure.
+                              gr%zt(2), 299.8, 101540.,  &
 !     .                        gr%zt(2), Tsfc, psfc,
                               upwp_sfc, vpwp_sfc, wpthlp_sfc, & 
                               wprtp_sfc, ustar, & 
