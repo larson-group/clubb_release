@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F90,v 1.2 2008-07-23 13:50:21 faschinj Exp $
+! $Id: hoc.F90,v 1.3 2008-07-23 17:45:35 faschinj Exp $
 
         module hoc
 
@@ -602,7 +602,7 @@
                    wpsclrp )
            
 #ifdef STATS
-            call stats_end_timestep( time_current + dtmain, dtmain )
+            call stats_end_timestep( )
 #endif /*STATS*/
 
             ! Set Time
@@ -640,7 +640,7 @@
 
 ! Free memory
 
-        call parameterization_cleanup( .false. )
+        call parameterization_cleanup( )
 
 #ifdef STATS
         call stats_finalize( )
@@ -1407,7 +1407,7 @@
 #endif /*STATS*/
 
         use prognostic_variables, only:  & 
-            sclrm, sclrm_forcing,   & ! Passive scalar variables
+            sclrm_forcing,   & ! Passive scalar variables
             wpsclrp, & 
             wpsclrp_sfc, wpedsclrp_sfc
         
@@ -1546,18 +1546,18 @@
                               sclrm_forcing )
 
          case( "bomex" ) ! BOMEX Cu case
-           call bomex_tndcy( time_current, wmt, wmm, radht, & 
+           call bomex_tndcy( wmt, wmm, radht, & 
                              thlm_forcing, rtm_forcing, & 
                              sclrm_forcing )
 
          case( "fire" ) ! FIRE Sc case
-           call fire_tndcy( time_current, rhot, rcm, exner,  & 
+           call fire_tndcy( rhot, rcm, exner,  & 
                             wmt, wmm, Frad, radht, & 
                             thlm_forcing, rtm_forcing, & 
                             sclrm_forcing )
 
          case( "wangara" ) ! Wangara dry CBL
-           call wangara_tndcy( time_current, wmt, wmm,  & 
+           call wangara_tndcy( wmt, wmm,  & 
                                thlm_forcing, rtm_forcing, & 
                                sclrm_forcing )
 
@@ -1568,13 +1568,13 @@
                             sclrm_forcing )
 
          case( "dycoms2_rf01" ) ! DYCOMS2 RF01 case
-           call dycoms2_rf01_tndcy( time_current, rhot, rhom, rtm, rcm,  & 
+           call dycoms2_rf01_tndcy( rhot, rhom, rtm, rcm,  & 
                                     exner, wmt, wmm, Frad, radht,  & 
                                     thlm_forcing, rtm_forcing, err_code, & 
-                                    sclrm, sclrm_forcing )
+                                    sclrm_forcing )
 
          case( "astex_a209" ) ! ASTEX Sc case for K & K
-           call astex_tndcy( time_current, wmt, wmm,  & 
+           call astex_tndcy( wmt, wmm,  & 
                              thlm_forcing, rtm_forcing, & 
                              sclrm_forcing )
 
@@ -1590,30 +1590,31 @@
 
          case( "nov11_altocu" ) ! Nov. 11 Altocumulus case.
            call nov11_altocu_tndcy & 
-                ( time_current, time_initial, dt, rlat, rlon, & 
-                  thlm, rcm, p, exner, rhot, rtm, wmt, & 
+                ( time_current, time_initial, dt, &
+                  ! rlat, rlon, & 
+                  thlm, rcm, exner, rhot, rtm, wmt, & 
                   wmm, thlm_forcing, rtm_forcing, & 
                   Frad, radht, Ncnm, & 
                   sclrm_forcing )
 
          case( "jun25_altocu" ) ! June 25 Altocumulus case.
            call jun25_altocu_tndcy & 
-                ( time_current, time_initial, dt, rlat, rlon,  & 
-                  thlm, rcm, p, exner, rhot, rtm, wmt, & 
+                ( time_current, time_initial, rlat, rlon,  & 
+                  thlm, rcm, exner, rhot, wmt, & 
                   wmm, thlm_forcing, rtm_forcing, & 
-                  Frad, radht, Ncnm, sclrm_forcing )
+                  Frad, radht, sclrm_forcing )
 
          case( "clex9_nov02" ) ! CLEX-9: Nov. 02 Altocumulus case.
            call clex9_nov02_tndcy & 
-                ( time_current, time_initial, dt, rlat, rlon, & 
-                  thlm, rcm, p, exner, rhot, rtm, wmt, & 
+                ( time_current, time_initial, rlat, rlon, & 
+                  thlm, rcm, exner, rhot, wmt, & 
                   wmm, thlm_forcing, rtm_forcing, & 
                   Frad, radht, Ncnm, sclrm_forcing )
 
          case( "clex9_oct14" ) ! CLEX-9: Oct. 14 Altocumulus case.
            call clex9_oct14_tndcy & 
-                ( time_current, time_initial, dt, rlat, rlon, & 
-                  thlm, rcm, p, exner, rhot, rtm, wmt, & 
+                ( time_current, time_initial, rlat, rlon, & 
+                  thlm, rcm, exner, rhot, wmt, & 
                   wmm, thlm_forcing, rtm_forcing, & 
                   Frad, radht, Ncnm ,sclrm_forcing )
 
@@ -1624,28 +1625,28 @@
 
          case ( "mpace_a" ) ! mpace_a arctic stratus case
            call mpace_a_tndcy & 
-                ( time_current, time_initial, dtmain, rlat, thlm, & 
-                  exner, rhot, rtm, p, thvm, rcm, & 
+                ( time_current, time_initial, rlat, thlm, & 
+                  exner, rhot, p, rcm, & 
                   wmt, wmm, thlm_forcing, rtm_forcing, & 
                   Ncnm, Ncm, Frad, radht, um_ref, vm_ref, & 
                   sclrm_forcing )
 
          case ( "mpace_b" ) ! mpace_b arctic stratus case
            call mpace_b_tndcy & 
-                ( time_current, time_initial, dtmain, rlat, thlm, & 
-                  exner, rhot, rtm, p, thvm, rcm, & 
+                ( time_current, time_initial, rlat, thlm, & 
+                  exner, rhot,  p, thvm, rcm, & 
                   wmt, wmm, thlm_forcing, rtm_forcing, & 
                   Ncnm, Ncm, Frad, radht, & 
                   sclrm_forcing )
 
         ! Brian Griffin for COBRA CO2 case.
         case ( "cobra" )
-           call cobra_tndcy( time_current, wmt, wmm,  & 
+           call cobra_tndcy( wmt, wmm,  & 
                              thlm_forcing, rtm_forcing, & 
                              sclrm_forcing )
 
          case ( "rico" ) ! RICO case
-           call rico_tndcy( time_current, time_initial, dtmain, exner, & 
+           call rico_tndcy( exner, & 
                             rhot, rcm, kk_rain, wmt, wmm, & 
                             thlm_forcing, rtm_forcing, radht, Ncm, & 
                             sclrm_forcing )
@@ -1687,7 +1688,7 @@
                                     Tsfc, psfc,  & 
                                     thlm(2), rtm(2), & 
                                     wpthlp_sfc, wprtp_sfc, & 
-                                    sclrm(2,:), wpsclrp(1,:) & 
+                                    wpsclrp(1,:) & 
                                   )
 
           else
@@ -1741,7 +1742,7 @@
           call atex_sfclyr( um(2), vm(2), thlm(2), rtm(2), & 
                             upwp_sfc, vpwp_sfc, & 
                             wpthlp_sfc, wprtp_sfc, ustar, & 
-                            sclrm(2,:), wpsclrp_sfc, wpedsclrp_sfc )
+                            wpsclrp_sfc, wpedsclrp_sfc )
 
         case( "dycoms2_rf01" ) 
           call dycoms2_rf01_sfclyr( sfctype, Tsfc, psfc,  & 
@@ -1749,10 +1750,9 @@
                                     thlm(2), rtm(2),  & 
                                     rhom(1), upwp_sfc, vpwp_sfc,  & 
                                     wpthlp_sfc, wprtp_sfc, ustar, & 
-                                    sclrm(2,:), wpsclrp_sfc,  & 
-                                    wpedsclrp_sfc )
+                                    wpsclrp_sfc, wpedsclrp_sfc )
         case( "astex_a209" )
-          call astex_sfclyr( rhom(1), um(2), vm(2), & 
+          call astex_sfclyr( rhom(1), & 
                              upwp_sfc, vpwp_sfc, wpthlp_sfc,  & 
                              wprtp_sfc ,wpsclrp_sfc, wpedsclrp_sfc )
 
@@ -1812,14 +1812,14 @@
 !     .                        gr%zt(2), Tsfc, psfc,
                               upwp_sfc, vpwp_sfc, wpthlp_sfc, & 
                               wprtp_sfc, ustar, & 
-                              sclrm(2,:), wpsclrp_sfc, wpedsclrp_sfc )
+                              wpsclrp_sfc, wpedsclrp_sfc )
 
          case ( "gabls2" )
           call gabls2_sfclyr & 
                ( time_current, time_initial, gr%zt(2), 97200., & 
                  um(2), vm(2), thlm(2), rtm(2), & 
                  upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, ustar, & 
-                 sclrm(2,:), wpsclrp_sfc, wpedsclrp_sfc )
+                 wpsclrp_sfc, wpedsclrp_sfc )
 
         case default
           write(unit=fstderr,fmt=*)  & 
