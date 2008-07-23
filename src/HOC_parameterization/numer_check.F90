@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F90,v 1.1 2008-07-22 16:04:26 faschinj Exp $
+! $Id: numer_check.F90,v 1.2 2008-07-23 17:40:36 faschinj Exp $
         module numerical_check
 
         implicit none
@@ -211,13 +211,13 @@
         p,              & ! Pressure.               [Pa] 
         rhom,           & ! Density on moment. grid [kg/m^3]
         rhot,           & ! Density on thermo. grid [kg/m^3] 
-        exner          ! Exner function.         [-]
+        exner             ! Exner function.         [-]
 
         real, intent(in) ::  & 
         wpthlp_sfc,   & ! w' theta_l' at surface.   [(m K)/s]
         wprtp_sfc,    & ! w' r_t' at surface.       [(kg m)/( kg s)]
         upwp_sfc,     & ! u'w' at surface.          [m^2/s^2]
-        vpwp_sfc     ! v'w' at surface.          [m^2/s^2]
+        vpwp_sfc        ! v'w' at surface.          [m^2/s^2]
 
         ! These are prognostic or are planned to be in the future
         real, intent(in), dimension(gr%nnzp) ::  & 
@@ -238,7 +238,7 @@
         thlp2,    & ! th_l'^2.                      [K^2]
         rtpthlp,  & ! r_t' th_l'.                   [(kg K)/kg]
         taum,     & ! Tau on moment. grid.          [s]
-        rcm      ! Liquid water mixing ratio.    [kg/kg]
+        rcm         ! Liquid water mixing ratio.    [kg/kg]
 !    .  Ncm,     ! Cloud droplet number conc.    [num/kg]
 !    .  Ncnm,    ! Cloud nuclei number conc.     [num/m^3]
 !    .  Nim      ! Ice crystal number conc.      [num/m^3]
@@ -299,6 +299,10 @@
         call check_nan( thlp2,"thlp2", prefix//proc_name )
         call check_nan( rtpthlp, "rtpthlp", prefix//proc_name )
         call check_nan( taum,"taum", prefix//proc_name )
+        call check_nan( wpthlp_sfc, "wpthlp_sfc", prefix//proc_name )
+        call check_nan( wprtp_sfc, "wprtp_sfc", prefix//proc_name )
+        call check_nan( upwp_sfc, "upwp_sfc", prefix//proc_name ) 
+        call check_nan( vpwp_sfc, "vpwp_sfc", prefix//proc_name )
 !        call check_nan( rcm,"rcm", prefix//proc_name )
 !        call check_nan( Ncm,"Ncm", prefix//proc_name )
 !        call check_nan( Ncnm,"Ncnm", prefix//proc_name )
