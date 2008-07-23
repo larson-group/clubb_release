@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: coamps_micro_driver.F90,v 1.1 2008-07-22 16:04:31 faschinj Exp $
+! $Id: coamps_micro_driver.F90,v 1.2 2008-07-23 13:49:17 faschinj Exp $
       module coamps_micro_driver_mod
 
       ! This module wraps the adjtq subroutine so that it may be used by
@@ -72,7 +72,11 @@
         integer, parameter ::  & 
         nne = 1,   & ! Horizontal domain parameter (always 1 for HOC)
         j   = 1,   & ! Horizontal grid box (always 1 for HOC)
-        icon = 5,  & ! Ice nucleation scheme; 1 = Fletcher, 2 = Meyers, 3 = Hobbs & Rangno, 4 = Cooper, 5 = Cooper/Fletcher (warm/cold)
+        icon = 5,  & ! Ice nucleation scheme; 1 = Fletcher, 
+                     !                        2 = Meyers, 
+                     !                        3 = Hobbs & Rangno, 
+                     !                        4 = Cooper, 
+                     !                        5 = Cooper/Fletcher (warm/cold)
         icond  = 3  ! Autoconversion; 1=Kessler, 2=Manton/Cotton, 3=K&K, 4=none
       
 
@@ -185,7 +189,8 @@
         Nim        ! Number of ice crystals     [count/m^3]
 
 
-      real, dimension(1,1,gr%nnzp-1), intent(inout) :: cond ! condensation/evaporation of liquid water
+      real, dimension(1,1,gr%nnzp-1), intent(inout) :: &
+      cond ! condensation/evaporation of liquid water
 
 ! Addition by Adam Smith, 24 April 2008
 ! Adding snow particle number concentration
