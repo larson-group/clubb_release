@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F90,v 1.1 2008-07-22 16:04:28 faschinj Exp $
+!  $Id: stats_subs.F90,v 1.2 2008-07-23 17:42:44 faschinj Exp $
       module stats_subs
 #ifdef STATS
  
@@ -630,7 +630,7 @@
       end subroutine stats_begin_timestep
 
 !-----------------------------------------------------------------------
-      subroutine stats_end_timestep( time_elapsed, delt )
+      subroutine stats_end_timestep( )
 
 !     Description:
 !-----------------------------------------------------------------------
@@ -656,14 +656,6 @@
 #endif
 
       implicit none
-
-      ! Input
-
-      real(kind=time_precision), intent(in) ::  & 
-        time_elapsed ! Time elapsed             [s]
-
-      real(kind=time_precision), intent(in) ::  & 
-        delt         ! timestep                 [s]
 
       ! Local Variables
 
@@ -754,7 +746,7 @@
       subroutine stats_accumulate & 
                  ( um, vm, upwp, vpwp, up2, vp2, thlm, & 
                    rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp, & 
-                   p, exner, rhot, rhom, thlm_forcing, rtm_forcing, wmm, & 
+                   p, exner, rhot, rhom, & 
                    wmt, Scm, taum, rcm, cf, & 
                    sclrm, edsclrm, sclrm_forcing, wpsclrp )
 
@@ -991,9 +983,6 @@
         exner,        & ! Exner function = ( p / p0 ) ** kappa     [-]
         rhot,         & ! Density                                  [kg/m^3]
         rhom,         & ! Density                                  [kg/m^3]
-        thlm_forcing, & ! thlm large-scale forcing                 [K/s]
-        rtm_forcing,  & ! rtm large-scale forcing                  [kg/kg/s]
-        wmm,          & ! w on momentum levels                     [m/s]
         wmt,          & ! w on thermodynamic levels                [m/s]
         Scm,          & ! PDF width paramter                       [-]
         taum         ! Dissipation time                         [s]

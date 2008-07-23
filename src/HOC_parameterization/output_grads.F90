@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: output_grads.F90,v 1.1 2008-07-22 16:04:26 faschinj Exp $
+! $Id: output_grads.F90,v 1.2 2008-07-23 17:42:44 faschinj Exp $
         module output_grads
 #ifdef STATS 
 
@@ -149,7 +149,7 @@
             !  Check existing ctl file
 
             call check_grads( unit, fdir, fname,  & 
-                              ia, iz, z, & 
+                              ia, iz, & 
                               day, month, year, time, dtwrite, & 
                               nvar,  & 
                               lerror, f%ntimes, f%nrecord, f%time )
@@ -180,7 +180,7 @@
 
 !-----------------------------------------------------------------------
           subroutine check_grads( unit, fdir, fname,  & 
-                                  ia, iz, z, & 
+                                  ia, iz, & 
                                   day, month, year, time, dtwrite, & 
                                   nvar,  & 
                                   error, ntimes, nrecord, time_in )
@@ -210,10 +210,9 @@
           character*(*), intent(in) :: & 
           fdir, fname ! File directory and name
 
-          real, dimension(:), intent(in) :: & 
-          z(:) ! Altitudes              [m]
           real(kind=time_precision), intent(in) :: & 
           time    ! Current time        [s]
+
           real(kind=time_precision), intent(in) :: & 
           dtwrite ! Time interval between writes to the file    [s]
 

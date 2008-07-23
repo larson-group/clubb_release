@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F90,v 1.2 2008-07-23 13:47:22 faschinj Exp $
+! $Id: wp23.F90,v 1.3 2008-07-23 17:42:44 faschinj Exp $
 !===============================================================================
         module wp23
 
@@ -495,7 +495,7 @@
 
         ! Compute the implicit portion of the w'^2 and w'^3 equations.
         ! Build the left-hand side matrix.
-        call wp23_lhs( dt, wp2, wp3, wp3_zm, wmm, wmt, a1, a1_zt,  & 
+        call wp23_lhs( dt, wp2, wp3_zm, wmm, wmt, a1, a1_zt,  & 
                        a3, a3_zt, Kw1, Kw8, Skwt, tau1m, tauw3t,  & 
                        C1_Skw_fnc, C11_Skw_fnc, lcrank_nich_diff,  & 
                        lhs )
@@ -697,7 +697,7 @@
         end subroutine wp23_solve
 
 !===============================================================================
-        subroutine wp23_lhs( dt, wp2, wp3, wp3_zm, wmm, wmt, a1, a1_zt,  & 
+        subroutine wp23_lhs( dt, wp2, wp3_zm, wmm, wmt, a1, a1_zt,  & 
                              a3, a3_zt, Kw1, Kw8, Skwt, tau1m, tauw3t,  & 
                              C1_Skw_fnc, C11_Skw_fnc, lcrank_nich_diff,  & 
                              lhs )
@@ -799,7 +799,6 @@
 
         real, dimension(gr%nnzp), intent(in) ::  & 
         wp2,         & ! w'^2 (momentum levels)                   [m^2/s^2]
-        wp3,         & ! w'^3 (thermodynamic levels)              [m^3/s^3]
         wp3_zm,      & ! w'^3 interpolated to momentum levels     [m^3/s^3]
         wmm,         & ! w wind component on momentum levels      [m/s]
         wmt,         & ! w wind component on thermodynamic levels [m/s]
@@ -1000,9 +999,9 @@
           = lhs(3-2:3+2,k_wp3) & 
           + wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  & 
                                  wp2(k), wp2(km1),  & 
-                                 a1(k), a1_zt(k), a1(km1), & 
-                                 a3(k), a3_zt(k), a3(km1), & 
-                                 gr%dzt(k), eps, wtol, k ) 
+                                 a1_zt(k), & 
+                                 a3_zt(k), & 
+                                 gr%dzt(k), wtol, k ) 
 
           ! LHS accumulation (ac) term and pressure term 2 (pr2).
           lhs(3,k_wp3) & 
@@ -1043,10 +1042,9 @@
             tmp(1:5) =  & 
             wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  & 
                                  wp2(k), wp2(km1),  & 
-                                 a1(k), a1_zt(k), a1(km1), & 
-                                 a3(k)+(3.0/2.0), a3_zt(k)+(3.0/2.0), & 
-                                 a3(km1)+(3.0/2.0), & 
-                                 gr%dzt(k), eps, wtol, k ) 
+                                 a1_zt(k),  & 
+                                 a3_zt(k)+(3.0/2.0), & 
+                                 gr%dzt(k), wtol, k ) 
             ztscr05(k) = -tmp(5)
             ztscr06(k) = -tmp(4)
             ztscr07(k) = -tmp(3)
@@ -1058,10 +1056,9 @@
             tmp(1:5) =  & 
             wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  & 
                                  wp2(k), wp2(km1),  & 
-                                 0.0, 0.0, 0.0, & 
-                                 0.0-(3.0/2.0), 0.0-(3.0/2.0), & 
+                                 0.0, & 
                                  0.0-(3.0/2.0), & 
-                                 gr%dzt(k), eps, wtol, k ) 
+                                 gr%dzt(k), wtol, k ) 
             ztscr10(k) = -tmp(4)
             ztscr11(k) = -tmp(2)
           endif
@@ -1357,9 +1354,9 @@
           = rhs(k_wp3) & 
           + wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1), & 
                                  wp2(k), wp2(km1), & 
-                                 a1(k), a1_zt(k), a1(km1), & 
-                                 a3(k), a3_zt(k), a3(km1), & 
-                                 gr%dzt(k), eps, wtol )
+                                 a1_zt(k), & 
+                                 a3_zt(k), & 
+                                 gr%dzt(k), wtol )
 
           ! RHS buoyancy production (bp) term and pressure term 2 (pr2).
           rhs(k_wp3) & 
@@ -1392,18 +1389,16 @@
           call stat_begin_update_pt( iwp3_ta, k, & 
              -wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1), & 
                                  wp2(k), wp2(km1), & 
-                                 a1(k), a1_zt(k), a1(km1), & 
-                                 a3(k)+(3.0/2.0), a3_zt(k)+(3.0/2.0),  & 
-                                 a3(km1)+(3.0/2.0), & 
-                                 gr%dzt(k), eps, wtol ), zt )
+                                 a1_zt(k),  & 
+                                 a3_zt(k)+(3.0/2.0),  &  
+                                 gr%dzt(k), wtol ), zt )
 
           call stat_begin_update_pt( iwp3_tp, k, & 
             -wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1), & 
                                  wp2(k), wp2(km1), & 
-                                 0.0, 0.0, 0.0, & 
-                                 0.0-(3.0/2.0), 0.0-(3.0/2.0),  & 
-                                 0.0-(3.0/2.0), & 
-                                 gr%dzt(k), eps, wtol ),zt )
+                                 0.0, & 
+                                 0.0-(3.0/2.0),  & 
+                                 gr%dzt(k), wtol ),zt )
           
            call stat_update_var_pt( iwp3_bp, k, & 
               wp3_terms_bp_pr2_rhs( 0.0, wp2thvp(k) ), zt )
@@ -1900,9 +1895,9 @@
 !===============================================================================
         pure function wp3_terms_ta_tp_lhs( wp3_zm, wp3_zmm1,  & 
                                            wp2, wp2m1,  & 
-                                           a1, a1_zt, a1m1, & 
-                                           a3, a3_zt, a3m1, & 
-                                           dzt, eps, wtol, level )  & 
+                                           a1_zt, & 
+                                           a3_zt, & 
+                                           dzt, wtol, level )  & 
         result( lhs )
 
 !       Description:
@@ -2014,15 +2009,10 @@
         wp3_zmm1,    & ! w'^3 interpolated to momentum level (k-1)   [m^3/s^3]
         wp2,         & ! w'^2(k)                                     [m^2/s^2]
         wp2m1,       & ! w'^2(k-1)                                   [m^2/s^2]
-        a1,          & ! a_1(k)                                      [-]
         a1_zt,       & ! a_1 interpolated to thermodynamic level (k) [-]
-        a1m1,        & ! a_1(k-1)                                    [-]
-        a3,          & ! a_3(k)                                      [-]
         a3_zt,       & ! a_3 interpolated to thermodynamic level (k) [-]
-        a3m1,        & ! a_3(k-1)                                    [-]
         dzt,         & ! Inverse of grid spacing (k)                 [1/m]
-        eps,         & ! Model parameter                             [-]
-        wtol        ! w wind component tolerance                  [m/s]
+        wtol           ! w wind component tolerance                  [m/s]
 
         integer, intent(in) :: & 
         level ! Central thermodynamic level (on which calculation occurs).
@@ -2254,9 +2244,9 @@
 !===============================================================================
         pure function wp3_terms_ta_tp_rhs( wp3_zm, wp3_zmm1, & 
                                            wp2, wp2m1, & 
-                                           a1, a1_zt, a1m1, & 
-                                           a3, a3_zt, a3m1, & 
-                                           dzt, eps, wtol ) & 
+                                           a1_zt, & 
+                                           a3_zt, & 
+                                           dzt, wtol ) & 
         result( rhs )
 
 !       Description:
@@ -2349,15 +2339,10 @@
         wp3_zmm1,    & ! w'^3 interpolated to momentum level (k-1)   [m^3/s^3]
         wp2,         & ! w'^2(k)                                     [m^2/s^2]
         wp2m1,       & ! w'^2(k-1)                                   [m^2/s^2]
-        a1,          & ! a_1(k)                                      [-]
         a1_zt,       & ! a_1 interpolated to thermodynamic level (k) [-]
-        a1m1,        & ! a_1(k-1)                                    [-]
-        a3,          & ! a_3(k)                                      [-]
         a3_zt,       & ! a_3 interpolated to thermodynamic level (k) [-]
-        a3m1,        & ! a_3(k-1)                                    [-]
         dzt,         & ! Inverse of grid spacing (k)                 [1/m]
-        eps,         & ! Model parameter                             [-]
-        wtol        ! w wind component tolerance                  [m/s]
+        wtol           ! w wind component tolerance                  [m/s]
 
         ! Return Variable
         real :: rhs

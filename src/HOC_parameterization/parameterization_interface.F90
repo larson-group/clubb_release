@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F90,v 1.2 2008-07-22 16:32:02 dschanen Exp $
+! $Id: parameterization_interface.F90,v 1.3 2008-07-23 17:42:44 faschinj Exp $
 !-----------------------------------------------------------------------
         module hoc_parameterization_interface
 
@@ -960,7 +960,7 @@
        call stats_accumulate & 
             ( um, vm, upwp, vpwp, up2, vp2, thlm,                   & ! intent(in)
               rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp,   & ! intent(in)
-              p, exner, rhot, rhom, thlm_forcing, rtm_forcing, wmm, & ! intent(in)
+              p, exner, rhot, rhom,                                 & ! intent(in)
               wmt, Scm, taum, rcm, cf,                              & ! intent(in)
               sclrm, edsclrm, sclrm_forcing, wpsclrp )             ! intent(in)
 
@@ -1231,7 +1231,7 @@
         end subroutine parameterization_setup
 
 !-----------------------------------------------------------------------
-        subroutine parameterization_cleanup( implemented )
+        subroutine parameterization_cleanup( )
 
         use parameters, only: sclrtol
 
@@ -1242,9 +1242,6 @@
 
         implicit none
 
-        ! whether this is part of larger model (T/F)
-        logical, intent(in) :: implemented 
-  
 !        if ( .not. implemented ) then
 !          call cleanup_diagnostic_variables( )
 !        end if

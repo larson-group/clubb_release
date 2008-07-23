@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F90,v 1.2 2008-07-23 13:47:22 faschinj Exp $
+! $Id: diag_var.F90,v 1.3 2008-07-23 17:42:44 faschinj Exp $
 !===============================================================================
       module diagnose_variances
 
@@ -817,7 +817,7 @@
           ! LHS turbulent advection (ta) term.
           lhs(kp1_mdiag:km1_mdiag,k) & 
           = lhs(kp1_mdiag:km1_mdiag,k) & 
-          + term_ta_lhs( a1_zt(kp1), a1(k), a1_zt(k),  & 
+          + term_ta_lhs( a1(k),  & 
                          wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  & 
                          gr%dzm(k), beta, wtol_sqd, k )
 
@@ -849,7 +849,7 @@
          if ( irtp2_ta + ithlp2_ta + irtpthlp_ta + & 
               iup2_ta + ivp2_ta > 0 ) then
            tmp(1:3) & 
-           = term_ta_lhs( a1_zt(kp1), a1(k), a1_zt(k),  & 
+           = term_ta_lhs( a1(k),  & 
                           wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  & 
                           gr%dzm(k), beta, wtol_sqd, k )
            zmscr05(k) = -tmp(3)
@@ -1243,7 +1243,7 @@
 
           rhs(k,1) & 
           ! RHS turbulent advection (ta) term.
-          = term_ta_rhs( a1_zt(kp1), a1(k), a1_zt(k),  & 
+          = term_ta_rhs( a1(k),  & 
                          wp3(kp1), wp3(k), wp2_zt(kp1),  & 
                          wp2_zt(k), wpxbp_zt(kp1), wpxbp_zt(k),  & 
                          wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k),  & 
@@ -1269,7 +1269,7 @@
           ! Statistics: explicit contributions for up2 or vp2.
                
             call stat_modify_pt( ixapxbp_ta, k, & 
-                   term_ta_rhs( a1_zt(kp1), a1(k), a1_zt(k),  & 
+                   term_ta_rhs( a1(k),  & 
                                wp3(kp1), wp3(k), wp2_zt(kp1),  & 
                                wp2_zt(k), wpxbp_zt(kp1), wpxbp_zt(k),  & 
                                wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k),  & 
@@ -1453,7 +1453,7 @@
 
           rhs(k,1) & 
           ! RHS turbulent advection (ta) term.
-          = term_ta_rhs( a1_zt(kp1), a1(k), a1_zt(k),  & 
+          = term_ta_rhs( a1(k), & 
                          wp3(kp1), wp3(k), wp2_zt(kp1),  & 
                          wp2_zt(k), wpxbp_zt(kp1), wpxbp_zt(k),  & 
                          wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k),  & 
@@ -1473,7 +1473,7 @@
           ! Statistics: explicit contributions for rtp2, thlp2, or rtpthlp.
 
           call stat_modify_pt( ixapxbp_ta, k, & 
-              term_ta_rhs( a1_zt(kp1), a1(k), a1_zt(k), & 
+              term_ta_rhs( a1(k),  & 
                            wp3(kp1), wp3(k), wp2_zt(kp1), & 
                            wp2_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), & 
                            wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), & 
@@ -1520,7 +1520,7 @@
         end subroutine diag_var_rhs
 
 !===============================================================================
-        pure function term_ta_lhs( a1_ztp1, a1, a1_zt,  & 
+        pure function term_ta_lhs( a1,  & 
                                    wp3p1, wp3, wp2_ztp1, wp2_zt,  & 
                                    dzm, beta, wtol_sqd, level ) & 
         result( lhs )
@@ -1624,16 +1624,14 @@
 
         ! Input Variables
         real, intent(in) :: & 
-        a1_ztp1,     & ! a_1 interpolated to thermo. level (k+1)  [-]
         a1,          & ! a_1(k)                                   [-]
-        a1_zt,       & ! a_1 interpolated to thermo. level (k)    [-]
         wp3p1,       & ! w'^3(k+1)                                [m^3/s^3]
         wp3,         & ! w'^3(k)                                  [m^3/s^3]
         wp2_ztp1,    & ! w'^2 interpolated to thermo. level (k+1) [m^2/s^2]
         wp2_zt,      & ! w'^2 interpolated to thermo. level (k)   [m^2/s^2]
         dzm,         & ! Inverse of grid spacing                  [1/m]
         beta,        & ! Model parameter                          [-]
-        wtol_sqd    ! w wind component tolerance squared       [m^2/s^2]
+        wtol_sqd       ! w wind component tolerance squared       [m^2/s^2]
 
         integer, intent(in) :: & 
         level ! Central momentum level (on which calculation occurs).
@@ -1699,7 +1697,7 @@
         end function term_ta_lhs
 
 !===============================================================================
-        pure function term_ta_rhs( a1_ztp1, a1, a1_zt,  & 
+        pure function term_ta_rhs( a1,  & 
                                    wp3p1, wp3, wp2_ztp1,  & 
                                    wp2_zt, wpxbp_ztp1, wpxbp_zt,  & 
                                    wpxap_ztp1, wpxap_zt, dzm,  & 
@@ -1788,9 +1786,7 @@
 
         ! Input variables
         real, intent(in) :: & 
-        a1_ztp1,       & ! a_1 interpolated to thermo. level (k+1)    [-]
         a1,            & ! a_1(k)                                     [-]
-        a1_zt,         & ! a_1 interpolated to thermo. level (k)      [-]
         wp3p1,         & ! w'^3(k+1)                                  [m^3/s^3]
         wp3,           & ! w'^3(k)                                    [m^3/s^3]
         wp2_ztp1,      & ! w'^2 interpolated to thermo. level (k+1)   [m^2/s^2]
@@ -1801,7 +1797,7 @@
         wpxap_zt,      & ! w'x_a' interpolated to thermo. level (k)   [m/s {x_am units}]
         dzm,           & ! Inverse of grid spacing                    [1/m]
         beta,          & ! Model parameter                            [-]
-        wtol_sqd      ! w wind component tolerance squared         [m^2/s^2]
+        wtol_sqd         ! w wind component tolerance squared         [m^2/s^2]
 
         ! Return Variable
         real :: rhs
