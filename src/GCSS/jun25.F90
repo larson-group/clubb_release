@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: jun25.F90,v 1.1 2008-07-22 16:04:19 faschinj Exp $
+! $Id: jun25.F90,v 1.2 2008-07-23 17:38:08 faschinj Exp $
         module jun25
 
 !       Description:
@@ -24,10 +24,10 @@
 
 !-----------------------------------------------------------------------
         subroutine jun25_altocu_tndcy & 
-                   ( time, time_initial, dt, rlat, rlon, & 
-                     thlm, rcm, p, exner, rhot, rtm, wmt, & 
+                   ( time, time_initial, rlat, rlon, & 
+                     thlm, rcm, exner, rhot, wmt, & 
                      wmm, thlm_forcing, rtm_forcing, & 
-                     Frad, radht, Ncnm, sclrm_forcing )
+                     Frad, radht, sclrm_forcing )
 
 !       Description:
 !       Computes subsidence, radiation, and LS tendencies for the June
@@ -73,36 +73,27 @@
         ! Input variables
         real(kind=time_precision), intent(in) :: & 
         time,          & ! Time of simulation since start        [s]
-        time_initial  ! Initial time of simulation            [s]
-
-        real(kind=time_precision), intent(in) :: & 
-        dt            ! Length of model timestep              [s]
+        time_initial     ! Initial time of simulation            [s]
 
         real, intent(in) :: & 
         rlat,          & ! Reference latitude should be 37.6     [Degrees North]
-        rlon          ! Longitude             [degrees_E]
+        rlon             ! Longitude             [degrees_E]
 
         real, dimension(gr%nnzp), intent(in) ::  & 
         thlm,   & ! Liquid potential temperature           [K]
         rcm,    & ! Liquid water mixing ratio              [kg/kg]
-        p,      & ! Basic state pressure                   [Pa]
         exner,  & ! Exner function                         [-]
-        rhot   ! Density of reference state on t grid   [kg/m^3]
-
-        ! Input/Output Variables
-        real, dimension(gr%nnzp), intent(inout) ::  & 
-        rtm    ! Total water mixing ratio               [kg/kg]
+        rhot      ! Density of reference state on t grid   [kg/m^3]
 
         ! Output variables
         real, dimension(gr%nnzp), intent(inout) ::  & 
         wmt,           & ! Vertical ascent/descent on therm. grid      [m/s]
         wmm,           & ! Vertical ascent/descent on moment. grid     [m/s]
         thlm_forcing,  & ! Change in liq. water potential temperature 
-                      ! due to radiative heating and ice diffusion  [K/s]
+                         ! due to radiative heating and ice diffusion  [K/s]
         rtm_forcing,   & ! Change in total water due to ice diffusion  [kg/kg/s]
         Frad,          & ! Total radiative flux (LW + SW)              [W/m^2]
-        radht,         & ! Total radiative heating (LW +SW)            [K/s]
-        Ncnm          ! Cloud nuclei number concentration       [num/m^3]
+        radht            ! Total radiative heating (LW +SW)            [K/s]
 
         ! Output variables
         real, dimension(gr%nnzp,sclr_dim),intent(out) ::  & 
@@ -224,7 +215,6 @@
 
         real, dimension(gr%nnzp) ::  & 
 !     .  LWP,       ! Liquid water path from domain top                [kg/m^2]
-        thm_rad,    & ! "flipped" array of potential temperature         [K]
         rcm_rad,    & ! "flipped" array of liquid water mixing ratio     [kg/kg]
         rhot_rad,   & ! "flipped" array of air density                   [kg/m^3]
         dsigm,      & ! "flipped" array of grid spacing                  [m]
@@ -611,8 +601,6 @@
         ! for implementation.
         !----------------------------------------------------------------
           do k = 1, gr%nnzp
-            thm_rad(k) = thlm(gr%nnzp-k+1)  & 
-                       + Lv/(Cp*exner(gr%nnzp-k+1))*rcm(gr%nnzp-k+1)
             rcm_rad(k) = rcm(gr%nnzp-k+1)
             rhot_rad(k) = rhot(gr%nnzp-k+1)
             dsigm(k) = 1.0 / gr%dzt(gr%nnzp-k+1)
@@ -625,7 +613,7 @@
         ! grid method.  All input and output profiles use the COAMPS
         ! grid setup.
         !----------------------------------------------------------------
-          call rad_lwsw(thm_rad, rcm_rad, rhot_rad, dsigm, & 
+          call rad_lwsw(rcm_rad, rhot_rad, dsigm, & 
                         coamps_zm, coamps_zt, & 
                         Frad_out, Frad_LW_out, Frad_SW_out, & 
                         radhtk, radht_LW_out, radht_SW_out, & 

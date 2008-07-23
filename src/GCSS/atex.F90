@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-!$Id: atex.F90,v 1.1 2008-07-22 16:04:16 faschinj Exp $
+!$Id: atex.F90,v 1.2 2008-07-23 17:38:07 faschinj Exp $
         module atex
 
 !       Description:
@@ -192,7 +192,7 @@
         subroutine atex_sfclyr( um_sfc, vm_sfc, thlm_sfc, rtm_sfc,  & 
                                 upwp_sfc, vpwp_sfc,  & 
                                 wpthlp_sfc, wprtp_sfc, ustar, & 
-                                sclrm_sfc, wpsclrp_sfc, wpedsclrp_sfc )
+                                wpsclrp_sfc, wpedsclrp_sfc )
 !       Description:
 !       This subroutine computes surface fluxes of horizontal momentum,
 !       heat and moisture according to GCSS ATEX specifications
@@ -222,11 +222,7 @@
         um_sfc,          & ! um at zt(2)           [m/s]
         vm_sfc,          & ! vm at zt(2)           [m/s]
         thlm_sfc,        & ! Theta_l at zt(2)      [K]
-        rtm_sfc         ! rt at zt(2)           [kg/kg]
-
-        ! Input variables (optional)
-        real, intent(in), dimension(sclr_dim) ::  & 
-        sclrm_sfc       ! Sclr at zt(2)         [units vary]
+        rtm_sfc            ! rt at zt(2)           [kg/kg]
 
         ! Output variables
         real, intent(out) ::  & 
@@ -234,13 +230,13 @@
         vpwp_sfc,    & ! v'w' at surface           [m^2/s^2]
         wpthlp_sfc,  & ! w'theta_l' surface flux   [(m K)/s]
         wprtp_sfc,   & ! w'rt' surface flux        [(m kg)/(kg s)]
-        ustar       ! surface friction velocity [m/s]
+        ustar          ! surface friction velocity [m/s]
 
         ! Output variables (optional)
 
         real, dimension(sclr_dim), intent(out) ::  & 
         wpsclrp_sfc,    & ! Passive scalar surface flux      [units m/s]
-        wpedsclrp_sfc  ! Passive eddy-scalar surface flux [units m/s]
+        wpedsclrp_sfc     ! Passive eddy-scalar surface flux [units m/s]
 
         ! Local Variables
         real :: ubar

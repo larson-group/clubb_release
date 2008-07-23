@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: fire.F90,v 1.1 2008-07-22 16:04:19 faschinj Exp $
+! $Id: fire.F90,v 1.2 2008-07-23 17:38:08 faschinj Exp $
         module fire
 
 !       Description:
@@ -16,7 +16,7 @@
 
 !----------------------------------------------------------------------
         subroutine fire_tndcy & 
-                   ( time, rhot, rcm, exner,  & 
+                   ( rhot, rcm, exner,  & 
                      wmt, wmm, Frad, radht,  & 
                      thlm_forcing, rtm_forcing, & 
                      sclrm_forcing )
@@ -51,8 +51,6 @@
         implicit none
 
         ! Input Variables
-        real(kind=time_precision), intent(in) :: time ! Model time [s]
-
         real, intent(in), dimension(gr%nnzp) :: & 
         rhot,  & ! Density                         [kg/m^3]
         rcm,   & ! Liquid water mixing ratio       [kg/kg]
@@ -170,7 +168,7 @@
 !------------------------------------------------------------------------
         subroutine sfc_thermo_fluxes( u, v, Tsfc, psfc, thlair, rtair, & 
                                       wpthlp_sfc, wprtp_sfc, & 
-                                      sclrair, wpsclrp_sfc, & 
+                                      wpsclrp_sfc, & 
                                       wpedsclrp_sfc )
 !       Description:
 !       This subroutine computes surface fluxes of heat and moisture 
@@ -192,9 +190,7 @@
         
         ! External
         intrinsic :: present, sqrt
-
         
-
         ! Parameter
         real, parameter :: C = 1.3e-3
 
@@ -212,10 +208,6 @@
         real, intent(out) ::  & 
         wpthlp_sfc, & ! surface thetal flux        [K m/s]
         wprtp_sfc  ! surface moisture flux      [kg/kg m/s]
-
-        ! Input Variables (optional)
-        real, optional, intent(in), dimension(sclr_dim) ::  & 
-        sclrair ! Passive scalars at first model layer  [units vary]
 
         ! Output Variables (optional) 
         real, optional, intent(out), dimension(sclr_dim) ::  & 

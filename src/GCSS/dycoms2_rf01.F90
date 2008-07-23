@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf01.F90,v 1.1 2008-07-22 16:04:18 faschinj Exp $
+! $Id: dycoms2_rf01.F90,v 1.2 2008-07-23 17:38:08 faschinj Exp $
         module dycoms2_rf01
 
 !       Description:
@@ -15,10 +15,10 @@
 
 !----------------------------------------------------------------------
         subroutine dycoms2_rf01_tndcy & 
-                   ( time, rhot, rhom, rtm, rcm, exner, & 
+                   ( rhot, rhom, rtm, rcm, exner, & 
                      wmt, wmm, Frad, radht, thlm_forcing, & 
                      rtm_forcing, err_code, & 
-                     sclrm, sclrm_forcing )
+                     sclrm_forcing )
 !       Description:
 !       Subroutine to set theta and water tendencies for DYCOMS RF01 case.
 
@@ -60,8 +60,6 @@
         kay = 85.0
 
         ! Input Variables
-        real(kind=time_precision), intent(in) :: time ! Model time [s]
-
         real, dimension(gr%nnzp), intent(in) ::  & 
         rhom,  & ! Density on moment. grid         [kg/m^3]
         rhot,  & ! Density on thermo. grid         [kg/m^3] 
@@ -81,9 +79,6 @@
         radht,         & ! Radiative heating rate                       [K/s]
         Frad          ! Radiative flux                               [W/m^2]
 
-        ! Input (optional)
-        real, dimension(gr%nnzp,sclr_dim), intent(in) ::  & 
-        sclrm
 
         ! Output (optional)
         real, intent(out), dimension(gr%nnzp, sclr_dim) ::  & 
@@ -197,7 +192,7 @@
                      thlm_sfc, rtm_sfc,  & 
                      rhom_sfc, upwp_sfc, vpwp_sfc, & 
                      wpthlp_sfc, wprtp_sfc, ustar, & 
-                     sclrm_sfc, wpsclrp_sfc, wpedsclrp_sfc )
+                     wpsclrp_sfc, wpedsclrp_sfc )
 !       Description:
 !       This subroutine computes surface fluxes of horizontal momentum,
 !       heat and moisture according to GCSS DYCOMS II RF 01 specifications
@@ -236,10 +231,6 @@
         thlm_sfc,   & ! theta_l at the surface             [K]
         rtm_sfc,    & ! r_t at the surface                 [kg/kg]
         rhom_sfc   ! Density at the surface             [kg/m^3]
-
-        ! Optional input variables
-        real, intent(in), dimension(sclr_dim) ::  & 
-        sclrm_sfc  ! Passive scalar at the surface      [units vary]
 
         ! Output variables
         real, intent(out) ::  & 

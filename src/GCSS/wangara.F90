@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: wangara.F90,v 1.1 2008-07-22 16:04:21 faschinj Exp $
+! $Id: wangara.F90,v 1.2 2008-07-23 17:38:08 faschinj Exp $
         module wangara
 
         implicit none
@@ -10,7 +10,7 @@
 
         contains
 !----------------------------------------------------------------------
-        subroutine wangara_tndcy( time, wmt, wmm,  & 
+        subroutine wangara_tndcy( wmt, wmm,  & 
                                   thlm_forcing, rtm_forcing, & 
                                   sclrm_forcing )
 !       Description:
@@ -30,15 +30,12 @@
 
         implicit none
 
-        ! Input Variables
-        real(kind=time_precision), intent(in) :: time ! Model time [s]
-
         ! Output Variables
         real, intent(out), dimension(gr%nnzp) :: & 
         wmt,          & ! w wind on thermodynamic grid                [m/s]
         wmm,          & ! w wind on momentum grid                     [m/s]
         thlm_forcing, & ! Liquid water potential temperature tendency [K/s]
-        rtm_forcing  ! Total water mixing ratio tendency           [kg/kg/s]
+        rtm_forcing     ! Total water mixing ratio tendency           [kg/kg/s]
 
         ! Output Variables
         real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 

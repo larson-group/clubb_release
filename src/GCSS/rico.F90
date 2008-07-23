@@ -1,4 +1,4 @@
-!$Id: rico.F90,v 1.2 2008-07-23 13:44:39 faschinj Exp $
+!$Id: rico.F90,v 1.3 2008-07-23 17:38:08 faschinj Exp $
 !----------------------------------------------------------------------
       module rico
 
@@ -16,7 +16,7 @@
 
 !----------------------------------------------------------------------
         subroutine rico_tndcy & 
-        ( time, time_initial, dt, exner, & 
+        ( exner, & 
           rhot, rcm, kk_rain, wmt, wmm, & 
           thlm_forcing, rtm_forcing, radht, Ncm, & 
           sclrm_forcing )
@@ -47,17 +47,11 @@
         implicit none
 
         ! Input Variables
-        real(kind=time_precision), intent(in) :: & 
-        time,           & ! Current time           [s]
-        time_initial   ! Start time             [s]
-
-        real(kind=time_precision), intent(in) :: & 
-        dt             ! Current length of timestep      [s]
 
         real, dimension(gr%nnzp), intent(in) :: & 
         exner,          & ! Exner function                         [-]
         rhot,           & ! Air density on t levels                [kg m^-3]
-        rcm            ! Cloud water mixing ratio               [kg kg^-1]
+        rcm               ! Cloud water mixing ratio               [kg kg^-1]
 
         logical, intent(in) :: & 
         kk_rain       !  Flag-- is KK rain being used?
@@ -66,11 +60,10 @@
         real, dimension(gr%nnzp), intent(out) :: & 
         wmt,          & ! Large-scale vertical motion on t grid   [m s^-1]
         wmm,          & ! Large-scale vertical motion on m grid   [m s^-1]
-        thlm_forcing,  & ! Large-scale thlm tendency               [K s^-1]
-        rtm_forcing,     & ! Large-scale rtm tendency                [kg kg^-1 s^-1]
+        thlm_forcing, & ! Large-scale thlm tendency               [K s^-1]
+        rtm_forcing,  & ! Large-scale rtm tendency                [kg kg^-1 s^-1]
         radht,        & ! dT/dt, then d Theta/dt, due to rad.     [K s^-1]
-        Ncm          ! Initial cloud droplet concentration     [# kg^-1]
-
+        Ncm             ! Initial cloud droplet concentration     [# kg^-1]
 
         ! Output Variables
         real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
@@ -170,7 +163,7 @@
         subroutine rico_sfclyr( um_sfc, vm_sfc, thlm, rtm, & 
                                 lowestlevel, sst, psfc, & 
                                 upwp_sfc, vpwp_sfc, wpthlp_sfc, & 
-                                wprtp_sfc, ustar, sclrm_sfc,  & 
+                                wprtp_sfc, ustar,  & 
                                 wpsclrp_sfc, wpedsclrp_sfc )
 
 !----------------------------------------------------------------------
@@ -229,24 +222,21 @@
           rtm,           & ! This is rt at the lowest above-ground model level.  [kg/kg]
           lowestlevel,   & ! This is z at the lowest above-ground model level.  [m]
           sst,           & ! This is the sea surface temperature [K].
-          psfc          ! This is the surface pressure [Pa].
+          psfc             ! This is the surface pressure [Pa].
 
-!       Input variables
-        real, intent(in) :: & 
-          sclrm_sfc(sclr_dim)
 
 !       Output variables
-        real, intent(out) :: & 
+        real, intent(out) ::  & 
           upwp_sfc,           & ! The upward flux of u-momentum         [(m^2 s^-2]
           vpwp_sfc,           & ! The Upward flux of v-momentum         [(m^2 s^-2]
           wpthlp_sfc,         & ! The upward flux of theta-l            [K m s^-1]
           wprtp_sfc,          & ! The upward flux of rtm (total water)  [kg kg^-1 m s^-1]
-          ustar              ! surface friction velocity             [m/s]
+          ustar                 ! surface friction velocity             [m/s]
 
 !       Output variables
         real, dimension(sclr_dim), intent(out) :: & 
           wpsclrp_sfc,    & ! Passive scalar surface flux      [units m s^-1]
-          wpedsclrp_sfc  ! Passive eddy-scalar surface flux [units m s^-1]
+          wpedsclrp_sfc     ! Passive eddy-scalar surface flux [units m s^-1]
 
 
 !       Declare the value of ustar.

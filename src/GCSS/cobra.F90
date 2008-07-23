@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: cobra.F90,v 1.1 2008-07-22 16:04:18 faschinj Exp $
+! $Id: cobra.F90,v 1.2 2008-07-23 17:38:08 faschinj Exp $
         module cobra
 !       Description:
 !       Contains subroutines for the COBRA CO2 case.
@@ -16,7 +16,7 @@
         contains
 
 !----------------------------------------------------------------------
-        subroutine cobra_tndcy( time, wmt, wmm,  & 
+        subroutine cobra_tndcy( wmt, wmm,  & 
                                 thlm_forcing, rtm_forcing, & 
                                 sclrm_forcing )
 !       Description:
@@ -40,10 +40,6 @@
             iisclr_thl, iisclr_rt, iiCO2 ! Variable(s)
 
         implicit none
-
-        ! Input Variables
-        real(kind=time_precision), intent(in) ::  & 
-        time ! Model time [s]
 
         ! Output Variables
         real, intent(out), dimension(gr%nnzp) :: & 

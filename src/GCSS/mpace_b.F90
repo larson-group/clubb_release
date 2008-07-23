@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: mpace_b.F90,v 1.1 2008-07-22 16:04:20 faschinj Exp $
+! $Id: mpace_b.F90,v 1.2 2008-07-23 17:38:08 faschinj Exp $
         module mpace_b
 
 !       Description:
@@ -16,8 +16,8 @@
 
 !----------------------------------------------------------------------
         subroutine mpace_b_tndcy & 
-        ( time, time_initial, dt, rlat, thlm, & 
-          exner, rhot, rtm, p, thvm, rcm, & 
+        ( time, time_initial, rlat, thlm, & 
+          exner, rhot, p, thvm, rcm, & 
           wmt, wmm, thlm_forcing, rtm_forcing, & 
           Ncnm, Ncm, Frad, radht, & 
           sclrm_forcing )
@@ -94,9 +94,6 @@
         time,          & ! Current time of simulation      [s]
         time_initial  ! Initial time of simulation      [s]
 
-        real(kind=time_precision), intent(in) ::  & 
-        dt            ! Current length of timestep      [s]
-
         real, intent(in) ::  & 
         rlat          ! Latitude                        [Degrees North]
 
@@ -104,7 +101,6 @@
         thlm,   & ! Liquid water potential temperature     [K]
         exner,  & ! Exner function                         [-]
         rhot,   & ! Density of air                         [kg/m^3]
-        rtm,    & ! Total water mixing ratio               [kg/kg]
         p,      & ! Pressure                               [Pa]
         thvm,   & ! Virtual potential temperature          [K]
         rcm    ! Cloud water mixing ratio               [kg/kg]
@@ -161,7 +157,6 @@
         radht_LW_theta, & 
         radht_SW_theta, & 
 !     .  LWP,            ! Liquid water path                              [kg/m^2]
-        thm_rad,         & ! Flipped array of potential temp.               [K]
         rcm_rad,         & ! Flipped array of liq. water mixing ratio       [kg/kg]
         rhot_rad,        & ! Flipped array of air density                   [kg/m^3]
         dsigm,           & ! Flipped array of grid spacing                  [m]
@@ -244,8 +239,6 @@
 
         if ( .not. lbugsrad ) then
           do k = 1, gr%nnzp
-            thm_rad(k)  = thlm(gr%nnzp-k+1) & 
-                        + Lv/(Cp*exner(gr%nnzp-k+1))*rcm(gr%nnzp-k+1)
             rcm_rad(k)  = rcm(gr%nnzp-k+1)
             rhot_rad(k) = rhot(gr%nnzp-k+1)
             dsigm(k)    = 1.0 / gr%dzt(gr%nnzp-k+1)
@@ -253,7 +246,7 @@
             coamps_zt(k) = gr%zt(gr%nnzp-k+1)
           enddo
 
-          call rad_lwsw(thm_rad, rcm_rad, rhot_rad, dsigm, & 
+          call rad_lwsw(rcm_rad, rhot_rad, dsigm, & 
                         coamps_zm, coamps_zt, & 
                         Frad_out, Frad_LW_out, Frad_SW_out, & 
                         radhtk, radht_LW_out, radht_SW_out, & 

@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: astex.F90,v 1.1 2008-07-22 16:04:16 faschinj Exp $
+! $Id: astex.F90,v 1.2 2008-07-23 17:38:07 faschinj Exp $
         module astex
 
 !       Description:
@@ -15,7 +15,7 @@
         contains
 
 !----------------------------------------------------------------------
-        subroutine astex_tndcy( time, wmt, wmm,  & 
+        subroutine astex_tndcy( wmt, wmm,  & 
                                 thlm_forcing, rtm_forcing, & 
                                 sclrm_forcing )
 
@@ -33,9 +33,6 @@
         use stats_precision, only: time_precision ! Variable(s)
 
         implicit none
-
-        ! Input Variables
-        real(kind=time_precision), intent(in) :: time ! Model time [s]
 
         ! Output Variables
         real, intent(out), dimension(gr%nnzp) ::  & 
@@ -87,7 +84,7 @@
         end subroutine astex_tndcy
 
 !----------------------------------------------------------------------
-        subroutine astex_sfclyr( rho0, um_sfc, vm_sfc,  & 
+        subroutine astex_sfclyr( rho0, & 
                                  upwp_sfc, vpwp_sfc,  & 
                                  wpthlp_sfc, wprtp_sfc,  & 
                                  wpsclrp_sfc, wpedsclrp_sfc )
@@ -111,10 +108,7 @@
         ! Input variables
 
         real, intent(in) ::  & 
-        rho0,     & ! Density at (1)         [kg/m^3]
-        um_sfc,   & ! um at zt(2) (not used) [m/s]
-        vm_sfc   ! vm at zt(2) (not used) [m/s]
-
+        rho0        ! Density at (1)         [kg/m^3]
         ! Output variables
 
         real, intent(out) ::  & 

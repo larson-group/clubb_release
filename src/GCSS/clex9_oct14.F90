@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: clex9_oct14.F90,v 1.2 2008-07-23 13:44:38 faschinj Exp $
+! $Id: clex9_oct14.F90,v 1.3 2008-07-23 17:38:07 faschinj Exp $
         module clex9_oct14
 
 !       Description:
@@ -27,8 +27,8 @@
 
 !-----------------------------------------------------------------------
         subroutine clex9_oct14_tndcy & 
-                   ( time, time_initial, dt, rlat, rlon, & 
-                     thlm, rcm, p, exner, rhot, rtm, wmt, & 
+                   ( time, time_initial, rlat, rlon, & 
+                     thlm, rcm, exner, rhot, wmt, & 
                      wmm, thlm_forcing, rtm_forcing, & 
                      Frad, radht, Ncnm, sclrm_forcing )
 
@@ -103,9 +103,6 @@
         time,            & ! Current time          [s]
         time_initial    ! Initial time          [s]
 
-        real(kind=time_precision), intent(in) :: & 
-        dt              ! Timestep              [s]
-
         real, intent(in) :: & 
         rlat,            & ! Latitude              [degrees_N]
         rlon            ! Longitude             [degrees_E]
@@ -113,13 +110,8 @@
         real, intent(in), dimension(gr%nnzp) :: & 
         thlm,    & ! Liquid potential temperature  [K]
         rcm,     & ! Cloud water mixing ratio      [kg/kg]
-        p,       & ! Pressure                      [Pa]
         exner,   & ! Exner function                [-]
         rhot    ! Density                       [kg/m^3]
-
-        ! Input/Output variables
-        real, intent(inout), dimension(gr%nnzp) :: & 
-        rtm     ! Total water mixing ratio      [kg/kg]
 
         ! Output variables
         real, intent(out), dimension(gr%nnzp) :: & 
@@ -147,7 +139,6 @@
 
         real, dimension(gr%nnzp) ::  & 
 !     .  LWP,       ! Liquid water path                              [kg/m^2]
-        thm_rad,    & ! Flipped array of potential temp.               [K]
         rcm_rad,    & ! Flipped array of liq. water mixing ratio       [kg/kg]
         rhot_rad,   & ! Flipped array of air density                   [kg/m^3]
         dsigm,      & ! Flipped array of grid spacing                  [m]
@@ -540,8 +531,6 @@
         ! for implementation.
         !---------------------------------------------------------------
           do k = 1, gr%nnzp
-            thm_rad(k) = thlm(gr%nnzp-k+1)  & 
-                       + Lv/(Cp*exner(gr%nnzp-k+1))*rcm(gr%nnzp-k+1)
             rcm_rad(k) = rcm(gr%nnzp-k+1)
             rhot_rad(k) = rhot(gr%nnzp-k+1)
             dsigm(k) = 1.0 / gr%dzt(gr%nnzp-k+1)
@@ -554,7 +543,7 @@
         ! grid method.  All input and output profiles use the COAMPS
         ! grid setup.
         !---------------------------------------------------------------
-          call rad_lwsw( thm_rad, rcm_rad, rhot_rad, dsigm, & 
+          call rad_lwsw( rcm_rad, rhot_rad, dsigm, & 
                          coamps_zm, coamps_zt, & 
                          Frad_out, Frad_LW_out, Frad_SW_out, & 
                          radhtk, radht_LW_out, radht_SW_out, & 

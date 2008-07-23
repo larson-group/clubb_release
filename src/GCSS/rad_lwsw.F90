@@ -1,4 +1,4 @@
-! $Id: rad_lwsw.F90,v 1.1 2008-07-22 16:04:20 faschinj Exp $
+! $Id: rad_lwsw.F90,v 1.2 2008-07-23 17:38:08 faschinj Exp $
 !-----------------------------------------------------------------------
       module rad_lwsw_mod
       
@@ -12,7 +12,7 @@
       
       contains
       
-      subroutine rad_lwsw( th3, qc3, rbm, dsigm, & 
+      subroutine rad_lwsw( qc3, rbm, dsigm, & 
                            coamps_zm, coamps_zt,  & 
                            Frad, Frad_LW, Frad_SW, & 
                            radhtk, radht_LW, radht_SW, & 
@@ -68,7 +68,6 @@
       integer, intent(in) :: kk ! Number of vertical levels   [-]
 
       real, dimension(kk), intent(in) ::  & 
-        th3,   & ! Potential temperature at time t + dt          [K]
         qc3,   & ! Cloud water mixing ratio at time t + dt       [kg/kg]
         rbm,   & ! Density of reference state at mass levels     [kg/m^3]
         dsigm ! Thickness of sigma (mass) levels              [m]

@@ -1,4 +1,4 @@
-!$Id: gabls2.F90,v 1.2 2008-07-23 13:44:38 faschinj Exp $
+!$Id: gabls2.F90,v 1.3 2008-07-23 17:38:08 faschinj Exp $
 !----------------------------------------------------------------------
         module gabls2
 
@@ -141,7 +141,7 @@
                      um, vm, thlm, rtm, & 
                      upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc,  & 
                      ustar, & 
-                     sclrm_sfc, wpsclrp_sfc, wpedsclrp_sfc )
+                     wpsclrp_sfc, wpedsclrp_sfc )
 
 !----------------------------------------------------------------------
 !        Description:
@@ -167,41 +167,36 @@
           implicit none
 
           ! Local constants
-          real, parameter :: & 
+          real, parameter ::     & 
             ubmin   = 0.25,      & ! Minimum value for ubar.
             C_10    = 0.0013,    & ! Drag coefficient, defined by ATEX specification
-            z0      = 0.03      ! Roughness length, defined by GABLS2 specification
+            z0      = 0.03         ! Roughness length, defined by GABLS2 specification
 
           ! Input variables
           real(kind=time_precision), intent(in) :: & 
             time,                & ! Time elapsed since 0.0 s          [s]
-            time_initial        ! Initial time of model integration [s]
+            time_initial           ! Initial time of model integration [s]
 
-          real, intent(in) :: & 
+          real, intent(in) ::    & 
             psfc,                & ! Surface pressure [Pa]
             lowest_level,        & ! Height of lowest above-ground gridpoint [m]
             um,                  & ! u at the lowest above-ground model level.  [m/s]
             vm,                  & ! v at the lowest above-ground model level.  [m/s]
             thlm,                & ! theta-l at the lowest above-ground model level. 
                                    ! (theta = theta-l because there's no liquid in this case)  [K]
-            rtm                 ! rt at the lowest above-ground model level.  [kg/kg]
-
-          ! Input variables (optional)
-          real, dimension(sclr_dim), optional, intent(in) :: & 
-            sclrm_sfc ! Concentration of scalar
-
+            rtm                    ! rt at the lowest above-ground model level.  [kg/kg]
           ! Output variables
           real, intent(out) :: & 
             upwp_sfc,     & ! The turbulent upward flux of u-momentum         [(m/s)^2]
             vpwp_sfc,     & ! The turbulent upward flux of v-momentum         [(m/s)^2]
             wpthlp_sfc,   & ! The turbulent upward flux of theta-l            [K m/s]
             wprtp_sfc,    & ! The turbulent upward flux of rtm (total water)  [kg/kg m/s]
-            ustar        ! surface friction velocity                       [m/s]
+            ustar           ! surface friction velocity                       [m/s]
 
           ! Output variables (optional)
           real, optional, intent(out), dimension(sclr_dim) :: & 
             wpsclrp_sfc,    & ! The upward flux of the scalars       [units m/s]
-            wpedsclrp_sfc  ! The upward flux of the eddy-scalars  [units m/s]
+            wpedsclrp_sfc     ! The upward flux of the eddy-scalars  [units m/s]
 
           ! Local variables
           real :: & 
@@ -213,7 +208,7 @@
                                    ! (experiment starts at 14)
             sst,                 & ! Sea surface temperature [K].
             sstheta,             & ! Sea surface potential temperature [K].
-            bflx                ! Needed for diag_ustar; equal to wpthlp_sfc * (g/theta)
+            bflx                   ! Needed for diag_ustar; equal to wpthlp_sfc * (g/theta)
 
           ! Define variable values
           ubar = max( ubmin, sqrt( um*um + vm*vm ) )

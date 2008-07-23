@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: bomex.F90,v 1.1 2008-07-22 16:04:17 faschinj Exp $
+! $Id: bomex.F90,v 1.2 2008-07-23 17:38:07 faschinj Exp $
         module bomex
 
 !       Description:
@@ -15,7 +15,7 @@
         contains
 
 !----------------------------------------------------------------------
-        subroutine bomex_tndcy( time, wmt, wmm, radht, & 
+        subroutine bomex_tndcy( wmt, wmm, radht, & 
                                 thlm_forcing, rtm_forcing, & 
                                 sclrm_forcing )
 !       Description:
@@ -33,15 +33,10 @@
 
         use parameters, only: sclr_dim ! Variable(s)
 
-        use stats_precision, only: time_precision ! Variable(s)
-
         use array_index, only:  & 
             iisclr_thl, iisclr_rt ! Variable(s)
 
         implicit none
-
-        ! Input
-        real(kind=time_precision), intent(in) :: time ! Model time [s]
 
         ! Output Variables
         real, intent(out), dimension(gr%nnzp) :: & 
