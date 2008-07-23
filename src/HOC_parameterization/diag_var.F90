@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F90,v 1.1 2008-07-22 16:04:22 faschinj Exp $
+! $Id: diag_var.F90,v 1.2 2008-07-23 13:47:22 faschinj Exp $
 !===============================================================================
       module diagnose_variances
 
@@ -313,14 +313,21 @@
            ! Kw2_rtp2 must have units of m^2/s.  Since rtp2_zt_sqd_3pt has 
            ! units of kg^2/kg^2, c_Ksqd is given units of m^2/[ s (kg^2/kg^2) ]
            ! in this case.
-           Kw2_rtp2(k)    = Kw2(k) + c_Ksqd * rtp2_zt_sqd_3pt(k) ! Vince Larson increased by c_Ksqd, 29Jan2008
+           Kw2_rtp2(k)    = Kw2(k) + c_Ksqd * rtp2_zt_sqd_3pt(k) 
+           ! Vince Larson increased by c_Ksqd, 29Jan2008
+
            ! Kw2_thlp2 must have units of m^2/s.  Since thlp2_zt_sqd_3pt has 
            ! units of K^2, c_Ksqd is given units of m^2/[ s K^2 ] in this case.
-           Kw2_thlp2(k)   = Kw2(k) + c_Ksqd * thlp2_zt_sqd_3pt(k) ! Vince Larson increased by c_Ksqd, 29Jan2008
+           Kw2_thlp2(k)   = Kw2(k) + c_Ksqd * thlp2_zt_sqd_3pt(k) 
+           ! Vince Larson increased by c_Ksqd, 29Jan2008
+
            ! Kw2_rtpthlp must have units of m^2/s.  Since rtpthlp_zt_sqd_3pt has
            ! units of K (kg/kg), c_Ksqd is given units of m^2/[ s K (kg/kg) ] 
            ! in this case.
-           Kw2_rtpthlp(k) = Kw2(k) + c_Ksqd * rtpthlp_zt_sqd_3pt(k) ! Vince Larson increased by c_Ksqd, 29Jan2008
+
+           Kw2_rtpthlp(k) = Kw2(k) + c_Ksqd * rtpthlp_zt_sqd_3pt(k) 
+           ! Vince Larson increased by c_Ksqd, 29Jan2008
+
            ! Kw9 is used for variances up2 and vp2.  The variances are located 
            ! on momentum levels.  Kw9 is located on thermodynamic levels.
            ! Kw9 = c_K9 * Kht

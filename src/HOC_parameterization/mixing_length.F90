@@ -1,4 +1,4 @@
-! $Id: mixing_length.F90,v 1.1 2008-07-22 16:04:25 faschinj Exp $
+! $Id: mixing_length.F90,v 1.2 2008-07-23 13:47:22 faschinj Exp $
 !-----------------------------------------------------------------------------
         module mixing_length
         
@@ -288,7 +288,9 @@
         Lscale(1) = Lscale(2)
         Lscale(gr%nnzp) = Lscale(gr%nnzp-1)
 
-        ! Vince Larson limited Lscale to allow host model to take over deep convection.  13 Feb 2008.
+        ! Vince Larson limited Lscale to allow host
+        !  model to take over deep convection.  13 Feb 2008.
+
         !Lscale = min( Lscale, 1e5 )
         Lscale = min( Lscale, Lscale_max )
         

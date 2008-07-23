@@ -1,4 +1,4 @@
-! $Id: diffusion.F90,v 1.1 2008-07-22 16:04:23 faschinj Exp $
+! $Id: diffusion.F90,v 1.2 2008-07-23 13:47:22 faschinj Exp $
 !===============================================================================
         module diffusion
 
@@ -203,18 +203,19 @@
 !       Left-hand side matrix contributions from eddy diffusion term;
 !       first four vertical levels:
 !
-!            ------------------------------------------------------------------------------------------------->
-!       k=1 | +dzt(k)*(K_m(k)+nu)*dzm(k)       -dzt(k)*(K_m(k)+nu)*dzm(k)                        0
-!           |
-!       k=2 | -dzt(k)*(K_m(k-1)+nu)*dzm(k-1)   +dzt(k)*[ (K_m(k)+nu)*dzm(k)         -dzt(k)*(K_m(k)+nu)*dzm(k)
-!           |                                           +(K_m(k-1)+nu)*dzm(k-1) ]
-!           |
-!       k=3 |              0                   -dzt(k)*(K_m(k-1)+nu)*dzm(k-1)       +dzt(k)*[ (K_m(k)+nu)*dzm(k)
-!           |                                                                                +(K_m(k-1)+nu)*dzm(k-1) ]
-!           |
-!       k=4 |              0                                0                       -dzt(k)*(K_m(k-1)+nu)*dzm(k-1)
-!           |
-!          \ /
+!     -------------------------------------------------------------------------------------------->
+!k=1 | +dzt(k)*                   -dzt(k)*(K_m(k)+nu)*dzm(k)                     0
+!    |   (K_m(k)+nu)*dzm(k)
+!    | 
+!k=2 | -dzt(k)*                   +dzt(k)*[ (K_m(k)+nu)*dzm(k)      -dzt(k)*(K_m(k)+nu)*dzm(k)
+!    |    (K_m(k-1)+nu)*dzm(k-1)                                      +(K_m(k-1)+nu)*dzm(k-1) ]
+!    |
+!k=3 |              0             -dzt(k)*(K_m(k-1)+nu)*dzm(k-1)    +dzt(k)*[ (K_m(k)+nu)*dzm(k)
+!    |                                                                +(K_m(k-1)+nu)*dzm(k-1) ]
+!    |
+!k=4 |              0                           0                    -dzt(k)*(K_m(k-1)+nu)*dzm(k-1)
+!    |
+!   \ /
 !
 !       Note:  The superdiagonal term from level 3 and both the main 
 !              diagonal and superdiagonal terms from level 4 are not 
@@ -490,18 +491,19 @@
 !       Left-hand side matrix contributions from eddy diffusion term;
 !       first four vertical levels:
 !
-!            ------------------------------------------------------------------------------------------------->
-!       k=1 | +dzm(k)*(K_t(k+1)+nu)*dzt(k+1)   -dzm(k)*(K_t(k+1)+nu)*dzt(k+1)                    0
-!           |
-!       k=2 | -dzm(k)*(K_t(k)+nu)*dzt(k)       +dzm(k)*[ (K_t(k+1)+nu)*dzt(k+1)     -dzm(k)*(K_t(k+1)+nu)*dzt(k+1)
-!           |                                           +(K_t(k)+nu)*dzt(k) ]
-!           |
-!       k=3 |              0                   -dzm(k)*(K_t(k)+nu)*dzt(k)           +dzm(k)*[ (K_t(k+1)+nu)*dzt(k+1)
-!           |                                                                                +(K_t(k)+nu)*dzt(k) ]
-!           |
-!       k=4 |              0                                0                       -dzm(k)*(K_t(k)+nu)*dzt(k)
-!           |
-!          \ /
+!     -------------------------------------------------------------------------------------------->
+!k=1 | +dzm(k)                  -dzm(k)*(K_t(k+1)+nu)*dzt(k+1)                    0
+!    |   (K_t(k+1)+nu)*dzt(k+1) 
+!    |          
+!k=2 | -dzm(k)*                 +dzm(k)*[ (K_t(k+1)+nu)*dzt(k+1)  -dzm(k)*(K_t(k+1)+nu)*dzt(k+1)
+!    |  (K_t(k)+nu)*dzt(k)       +(K_t(k)+nu)*dzt(k) ]
+!    |
+!k=3 |              0          -dzm(k)*(K_t(k)+nu)*dzt(k)         +dzm(k)*[ (K_t(k+1)+nu)*dzt(k+1)
+!    |                                                                    +(K_t(k)+nu)*dzt(k) ]
+!    |
+!k=4 |              0                       0                       -dzm(k)*(K_t(k)+nu)*dzt(k)
+!    |
+!   \ /
 !
 !       Note:  The superdiagonal term from level 3 and both the main
 !              diagonal and superdiagonal terms from level 4 are not

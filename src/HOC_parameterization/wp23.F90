@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F90,v 1.1 2008-07-22 16:04:30 faschinj Exp $
+! $Id: wp23.F90,v 1.2 2008-07-23 13:47:22 faschinj Exp $
 !===============================================================================
         module wp23
 
@@ -222,7 +222,9 @@
            ! Vince Larson added extra diffusion based on wp2.  21 Dec 2007.
            ! Kw1 must have units of m^2/s.  Since wp2_zt_sqd_3pt has units 
            ! of m^4/s^4, c_Ksqd is given units of s^3/m^2 in this case.
-           Kw1(k) = Kw1(k) + c_Ksqd * wp2_zt_sqd_3pt(k) ! Vince Larson increased by c_Ksqd. 29Jan2008
+           Kw1(k) = Kw1(k) + c_Ksqd * wp2_zt_sqd_3pt(k) 
+           ! Vince Larson increased by c_Ksqd. 29Jan2008
+
            ! End Vince Larson's addition.
            ! Kw8 is used for wp3, which is located on thermodynamic levels.
            ! Kw8 is located on momentum levels.
@@ -232,7 +234,7 @@
            ! Vince Larson added extra diffusion based on wp3.  15 Dec 2007.
            ! Kw8 must have units of m^2/s.  Since wp3_zm_sqd_3pt has units 
            ! of m^6/s^6, c_Ksqd is given units of s^5/m^4 in this case.
-           Kw8(k) = Kw8(k) + c_Ksqd * wp3_zm_sqd_3pt(k)  ! Vince Larson increased by c_Ksqd. 29Jan2008
+           Kw8(k) = Kw8(k) + c_Ksqd * wp3_zm_sqd_3pt(k)  
            ! End Vince Larson's addition.
         enddo
 

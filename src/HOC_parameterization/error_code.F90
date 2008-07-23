@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: error_code.F90,v 1.1 2008-07-22 16:04:23 faschinj Exp $
+! $Id: error_code.F90,v 1.2 2008-07-23 13:47:22 faschinj Exp $
 !-----------------------------------------------------------------------
 
         module error_code
@@ -182,10 +182,13 @@
 
         implicit none
 
-        ! Input Variables        
+        ! Input Variable(s)  
+
+        ! The message being reported
         character*(*), intent(in) :: str ! The message being reported
 
-        integer, intent(in)      :: level ! The debug level being checked against the current setting
+        ! The debug level being checked against the current setting
+        integer, intent(in) :: level 
 
         if (level <= clubb_debug_level) then
                 write(*,*) str

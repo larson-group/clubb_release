@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F90,v 1.1 2008-07-22 16:04:25 faschinj Exp $
+! $Id: mixing.F90,v 1.2 2008-07-23 13:47:22 faschinj Exp $
 !===============================================================================
         module mixing
 
@@ -236,10 +236,12 @@
            ! Kw6_rt must have units of m^2/s.  Since wprtp_zt_sqd_3pt has 
            ! units of m/s (kg/kg), c_Ksqd is given units of m/(kg/kg) 
            ! in this case.
-           Kw6_rt(k)  = Kw6(k) + c_Ksqd * wprtp_zt_sqd_3pt(k)  ! Vince Larson increased by c_Ksqd, 29Jan2008
+           ! Vince Larson increased by c_Ksqd, 29Jan2008
+           Kw6_rt(k)  = Kw6(k) + c_Ksqd * wprtp_zt_sqd_3pt(k) 
            ! Kw6_thl must have units of m^2/s.  Since wpthlp_zt_sqd_3pt has 
            ! units of m/s K, c_Ksqd is given units of m/K in this case.
-           Kw6_thl(k) = Kw6(k) + c_Ksqd * wpthlp_zt_sqd_3pt(k) ! Vince Larson increased by c_Ksqd, 29Jan2008
+           Kw6_thl(k) = Kw6(k) + c_Ksqd * wpthlp_zt_sqd_3pt(k)
+           ! End Vince Larson's change
         enddo
 
         ! Setup and decompose matrix
