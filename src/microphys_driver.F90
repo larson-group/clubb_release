@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F90,v 1.2 2008-07-23 13:42:59 faschinj Exp $
+! $Id: microphys_driver.F90,v 1.3 2008-07-23 20:26:55 faschinj Exp $
         module microphys_driver
 
 !       Description:
@@ -110,7 +110,7 @@
 
 !-----------------------------------------------------------------------
         subroutine advance_microphys & 
-                   ( runtype, dt, time_current, time_initial,  & 
+                   ( runtype, dt, time_current,  & 
                      thlm, p, exner, rhot, rhom, rtm, rcm, Ncm,  & 
                      pdf_parms, wmt, wmm, Khm, AKm_est, AKm,  & 
                      Ncnm, Nim, & 
@@ -229,8 +229,8 @@
         dt           ! Timestep         [s]
 
         real(kind=time_precision), intent(in) ::  & 
-        time_current, & ! Current time     [s]
-        time_initial ! Initial time     [s]
+        time_current ! Current time     [s]
+
 
         real, dimension(gr%nnzp), intent(in) :: & 
         thlm,    & ! Liquid potential temp.                 [K]
@@ -417,11 +417,11 @@
           ! Ncm computed beforehand as well.
 
           call kk_microphys & 
-               ( thlm, T_in_K, p, exner, rhot,  & 
+               ( T_in_K, p, exner, rhot,  & 
                  thl1, thl2, a, rc1, rc2, s1,  & 
-                 s2, ss1, ss2, rtm, rcm, Ncm,  & 
+                 s2, ss1, ss2, rcm, Ncm,  & 
                  hydromet(:,iirrm), hydromet(:,iiNrm), & 
-                 .true., AKm_est, AKm,  & 
+                 .true., AKm,  & 
                  hydromet_mc(:,iirrm), hydromet_mc(:,iiNrm),  & 
                  rtm_mc, thlm_mc, & 
                  hydromet_vel(:,iirrm), hydromet_vel(:,iiNrm) )
@@ -484,7 +484,7 @@
 
             call microphys_lhs & 
                  ( trim( hydromet_list(i) ), lsed, dt, Kr, nu_r, wmt, & 
-                   hydromet_vel(:,i), hydromet(:,i), lhs )
+                   hydromet_vel(:,i), lhs )
 
             call microphys_solve & 
                  ( trim( hydromet_list(i) ), dt, lhs, hydromet_mc(:,i),  & 
@@ -498,7 +498,7 @@
 
                 call adj_microphys_tndcy & 
                      ( hydromet_mc(:,i), wmt, hydromet_vel(:,i),  & 
-                       Kr, nu_r, dt, k, .true., "rrm", & 
+                       Kr, nu_r, dt, k, .true., & 
                        hydromet(:,i), overevap_rate )
 
               ! overevap_rate is defined as positive.
@@ -538,7 +538,7 @@
 
                   call adj_microphys_tndcy & 
                      ( hydromet_mc(:,i), wmt, hydromet_vel(:,i),  & 
-                       Kr, nu_r, dt, k, .true., "Nrm", & 
+                       Kr, nu_r, dt, k, .true., & 
                        hydromet(:,i), overevap_rate )
 
               ! Moved from adj_microphys_tndcy
@@ -588,7 +588,7 @@
 
         ! Call the ice diffusion scheme
         if ( licedfs ) then
-          call ice_dfsn( dt, T_in_K, rcm, p, exner, rhot, rtm_mc )
+          call ice_dfsn( dt, T_in_K, rcm, p, rhot, rtm_mc )
           thlm_mc = - ( Lv/(Cp*exner) ) * rtm_mc
         end if
 
@@ -892,7 +892,7 @@
 
 !===============================================================================
         subroutine microphys_lhs & 
-                   ( solve_type, lsed, dt, Kr, nu, wmt, V_hm, xrm, lhs )
+                   ( solve_type, lsed, dt, Kr, nu, wmt, V_hm, lhs )
 
 !       Description:
 !       Setup the matrix of implicit contributions to a term
@@ -965,7 +965,6 @@
         nu    ! Background diffusion coefficient                         [m^2/s]
 
         real, intent(in), dimension(gr%nnzp) ::  & 
-        xrm,   & ! Hydrometeor (at current timestep) (thermodynamic levels) [units vary]
         wmt,   & ! w wind component on thermodynamic levels                 [m/s]
         V_hm,  & ! Sedimentation velocity of hydrometeor (momentum levels)  [m/s]
         Kr    ! Eddy diffusivity for hydrometeor on momentum levels      [m^2/s]
@@ -1048,8 +1047,7 @@
           if ( lsed ) then
              lhs(kp1_tdiag:km1_tdiag,k) & 
              = lhs(kp1_tdiag:km1_tdiag,k) & 
-             + sedimentation( V_hm(k), V_hm(km1), zm2zt(V_hm,k),  & 
-                              gr%dzt(k), k )
+             + sedimentation( V_hm(k), V_hm(km1), gr%dzt(k), k )
           endif
 
          ! Implicit contributions to xrm
@@ -1064,8 +1062,7 @@
             end if
 
             if ( ixrm_sd > 0 ) then
-              tmp(1:3) = sedimentation( V_hm(k), V_hm(km1),  & 
-                                        zm2zt(V_hm,k), gr%dzt(k), k )
+              tmp(1:3) = sedimentation( V_hm(k), V_hm(km1), gr%dzt(k), k )
               ztscr04(k) = -tmp(3)
               ztscr05(k) = -tmp(2)
               ztscr06(k) = -tmp(1)
@@ -1089,7 +1086,7 @@
         end subroutine microphys_lhs
 
 !===============================================================================
-        pure function sedimentation( V_hm, V_hmm1, V_hmzt, dzt, level ) & 
+        pure function sedimentation( V_hm, V_hmm1, dzt, level ) & 
         result( lhs ) 
 
 !       Description:
@@ -1236,7 +1233,6 @@
         real, intent(in) :: & 
         V_hm,    & ! Sedimentation velocity of hydrometeor (k)                [m/s]
         V_hmm1,  & ! Sedimentation velocity of hydrometeor (k-1)              [m/s]
-        V_hmzt,  & ! Sed. vel. of hydromet. interpolated to thermo. level (k) [m/s]
         dzt     ! Inverse of grid spacing (k)                              [m] 
 
         integer, intent(in) ::  & 
@@ -1335,7 +1331,7 @@
 
 !===============================================================================
         subroutine adj_microphys_tndcy( xrm_tndcy, wmt, V_hm, Kr, nu, & 
-                                        dt, level, lsed, solve_type, & 
+                                        dt, level, lsed, & 
                                         xrm, overevap_rate )
 
         ! DESCRIPTION:  Correction for the over-evaporation of a hydrometeor.
@@ -1482,7 +1478,6 @@
 
         logical, intent(in) :: lsed   ! Whether to add a sedimentation term
 
-        character(len=*), intent(in) :: solve_type
 
         ! Input/output variable.
 
@@ -1564,7 +1559,7 @@
 
            ! The implicit (LHS) value of the sedimentation component of the
            ! equation used during the timestep that was just solved for.
-           tmp(1:3) = sedimentation( V_hm(k), V_hm(km1), zm2zt(V_hm,k), & 
+           tmp(1:3) = sedimentation( V_hm(k), V_hm(km1),  & 
                                      gr%dzt(k), k )
 
            sd_subdiag  = -tmp(3) ! subdiagonal

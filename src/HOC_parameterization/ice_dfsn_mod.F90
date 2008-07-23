@@ -1,4 +1,4 @@
-! $Id: ice_dfsn_mod.F90,v 1.1 2008-07-22 16:04:24 faschinj Exp $        
+! $Id: ice_dfsn_mod.F90,v 1.2 2008-07-23 20:25:12 faschinj Exp $        
 
         module ice_dfsn_mod
 
@@ -11,7 +11,7 @@
 
         contains
 !-----------------------------------------------------------------------
-        SUBROUTINE ice_dfsn( dt, T_in_K, rcm, press, exner, rhot, & 
+        SUBROUTINE ice_dfsn( dt, T_in_K, rcm, press, rhot, & 
                              rcm_icedfsn )
         ! Description:
         ! This subroutine is based on a COAMPS subroutine (nov11_icedfs)
@@ -83,8 +83,7 @@
         T_in_K,  & ! Temperature                           [K]
         rcm,     & ! Cloud water mixing ratio              [kg kg^{-1}]
         press,   & ! Air pressure                          [Pa]
-        exner,   & ! Exner function                        [-]
-        rhot    ! Air density on thermodynamic grid     [kg m^{-3}]
+        rhot       ! Air density on thermodynamic grid     [kg m^{-3}]
 
         ! Output variables
         REAL, DIMENSION(1:gr%nnzp), INTENT(OUT)::  & 
@@ -101,14 +100,15 @@
         Denom,            & ! Denominator of diffusional growth equation  [m s kg^{-1}] 
         dmass_ice_cryst,  & ! Change in ice mass over vertical grid box   [kg m^{-1}]
         diam,             & ! Diameter of ice crystal                     [m]
-        u_T_cm           ! Fallspeed of ice crystal in cm/s            [cm s^{-1}]
+        u_T_cm              ! Fallspeed of ice crystal in cm/s            [cm s^{-1}]
 
         REAL::  & 
         a_coef,     & ! Pre-factor for mass-diameter relationship, Mitchell (1996) [kg] 
         b_expn,     & ! Exponential for mass-diameter relationship, Mitchell (1996) []
         k_u_coef,   & ! Pre-factor for fallspeed-diameter formula                  [m s^{-1}]
         q_expn,     & ! Exponential of density in fallspeed-diameter formula       []   
-        n_expn     ! Exponential of diameter in fallspeed-diameter formula      []
+        n_expn        ! Exponential of diameter in fallspeed-diameter formula      []
+
         ! Number of ice crystals per unit volume of air    [m^{-3}]
         ! Vince Larson avgd legs 2 and 7 (Fleishauer et al)  21 Jan 2005
         REAL, PARAMETER:: N_i = 2000

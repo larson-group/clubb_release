@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: jun25.F90,v 1.2 2008-07-23 17:38:08 faschinj Exp $
+! $Id: jun25.F90,v 1.3 2008-07-23 20:25:50 faschinj Exp $
         module jun25
 
 !       Description:
@@ -25,7 +25,7 @@
 !-----------------------------------------------------------------------
         subroutine jun25_altocu_tndcy & 
                    ( time, time_initial, rlat, rlon, & 
-                     thlm, rcm, exner, rhot, wmt, & 
+                     rcm, exner, rhot, wmt, & 
                      wmm, thlm_forcing, rtm_forcing, & 
                      Frad, radht, sclrm_forcing )
 
@@ -80,7 +80,6 @@
         rlon             ! Longitude             [degrees_E]
 
         real, dimension(gr%nnzp), intent(in) ::  & 
-        thlm,   & ! Liquid potential temperature           [K]
         rcm,    & ! Liquid water mixing ratio              [kg/kg]
         exner,  & ! Exner function                         [-]
         rhot      ! Density of reference state on t grid   [kg/m^3]

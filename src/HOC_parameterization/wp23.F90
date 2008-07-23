@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F90,v 1.3 2008-07-23 17:42:44 faschinj Exp $
+! $Id: wp23.F90,v 1.4 2008-07-23 20:25:12 faschinj Exp $
 !===============================================================================
         module wp23
 
@@ -495,15 +495,15 @@
 
         ! Compute the implicit portion of the w'^2 and w'^3 equations.
         ! Build the left-hand side matrix.
-        call wp23_lhs( dt, wp2, wp3_zm, wmm, wmt, a1, a1_zt,  & 
-                       a3, a3_zt, Kw1, Kw8, Skwt, tau1m, tauw3t,  & 
+        call wp23_lhs( dt, wp2, wp3_zm, wmm, wmt, a1_zt,  & 
+                       a3_zt, Kw1, Kw8, Skwt, tau1m, tauw3t,  & 
                        C1_Skw_fnc, C11_Skw_fnc, lcrank_nich_diff,  & 
                        lhs )
 
         ! Compute the explicit portion of the w'^2 and w'^3 equations.
         ! Build the right-hand side vector.
-        call wp23_rhs( dt, wp2, wp3, wp3_zm, a1, a1_zt,  & 
-                       a3, a3_zt, wpthvp, wp2thvp, um, vm,  & 
+        call wp23_rhs( dt, wp2, wp3, wp3_zm, a1_zt,  & 
+                       a3_zt, wpthvp, wp2thvp, um, vm,  & 
                        upwp, vpwp, up2, vp2, Kw1, Kw8,  & 
                        Skwt, tau1m, tauw3t, C11_Skw_fnc,  & 
                        lcrank_nich_diff, rhs )
@@ -697,8 +697,8 @@
         end subroutine wp23_solve
 
 !===============================================================================
-        subroutine wp23_lhs( dt, wp2, wp3_zm, wmm, wmt, a1, a1_zt,  & 
-                             a3, a3_zt, Kw1, Kw8, Skwt, tau1m, tauw3t,  & 
+        subroutine wp23_lhs( dt, wp2, wp3_zm, wmm, wmt, a1_zt,  & 
+                             a3_zt, Kw1, Kw8, Skwt, tau1m, tauw3t,  & 
                              C1_Skw_fnc, C11_Skw_fnc, lcrank_nich_diff,  & 
                              lhs )
 
@@ -719,7 +719,7 @@
             C8,  & 
             C8b, & 
             C12, & 
-            nu1,  & 
+            nu1, & 
             nu8
         
         use constants, only:  & 
@@ -802,9 +802,7 @@
         wp3_zm,      & ! w'^3 interpolated to momentum levels     [m^3/s^3]
         wmm,         & ! w wind component on momentum levels      [m/s]
         wmt,         & ! w wind component on thermodynamic levels [m/s]
-        a1,          & ! Scm-related term a_1 (momentum levels)   [-]
         a1_zt,       & ! a_1 interpolated to thermodynamic levels [-]
-        a3,          & ! Scm-related term a_3 (momentum levels)   [-]
         a3_zt,       & ! a_3 interpolated to thermodynamic levels [-]
         Kw1,         & ! Coefficient of eddy diffusivity for w'^2 [m^2/s]
         Kw8,         & ! Coefficient of eddy diffusivity for w'^3 [m^2/s]
@@ -1159,8 +1157,8 @@
         end subroutine wp23_lhs
 
 !===============================================================================
-        subroutine wp23_rhs( dt, wp2, wp3, wp3_zm, a1, a1_zt,  & 
-                             a3, a3_zt, wpthvp, wp2thvp, um, vm,  & 
+        subroutine wp23_rhs( dt, wp2, wp3, wp3_zm, a1_zt,  & 
+                             a3_zt, wpthvp, wp2thvp, um, vm,  & 
                              upwp, vpwp, up2, vp2, Kw1, Kw8,  & 
                              Skwt, tau1m, tauw3t, C11_Skw_fnc,  & 
                              lcrank_nich_diff, rhs )
@@ -1218,9 +1216,7 @@
         wp2,         & ! w'^2 (momentum levels)                   [m^2/s^2]
         wp3,         & ! w'^3 (thermodynamic levels)              [m^3/s^3]
         wp3_zm,      & ! w'^3 interpolated to momentum levels     [m^3/s^3]
-        a1,          & ! Scm-related term a_1 (momentum levels)   [-]
         a1_zt,       & ! a_1 interpolated to thermodynamic levels [-]
-        a3,          & ! Scm-related term a_3 (momentum levels)   [-]
         a3_zt,       & ! a_3 interpolated to thermodynamic levels [-]
         wpthvp,      & ! w'th_v' (momentum levels)                [K m/s]
         wp2thvp,     & ! w'^2th_v' (thermodynamic levels)         [K m^2/s^2]

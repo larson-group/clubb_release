@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: mpace_b.F90,v 1.2 2008-07-23 17:38:08 faschinj Exp $
+! $Id: mpace_b.F90,v 1.3 2008-07-23 20:25:50 faschinj Exp $
         module mpace_b
 
 !       Description:
@@ -16,8 +16,8 @@
 
 !----------------------------------------------------------------------
         subroutine mpace_b_tndcy & 
-        ( time, time_initial, rlat, thlm, & 
-          exner, rhot, p, thvm, rcm, & 
+        ( time, time_initial, rlat, & 
+          rhot, p, thvm, rcm, & 
           wmt, wmm, thlm_forcing, rtm_forcing, & 
           Ncnm, Ncm, Frad, radht, & 
           sclrm_forcing )
@@ -98,8 +98,6 @@
         rlat          ! Latitude                        [Degrees North]
 
         real, dimension(gr%nnzp), intent(in) :: & 
-        thlm,   & ! Liquid water potential temperature     [K]
-        exner,  & ! Exner function                         [-]
         rhot,   & ! Density of air                         [kg/m^3]
         p,      & ! Pressure                               [Pa]
         thvm,   & ! Virtual potential temperature          [K]

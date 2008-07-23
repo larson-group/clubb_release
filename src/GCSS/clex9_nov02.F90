@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: clex9_nov02.F90,v 1.3 2008-07-23 17:38:07 faschinj Exp $
+! $Id: clex9_nov02.F90,v 1.4 2008-07-23 20:25:49 faschinj Exp $
         module clex9_nov02
 
 !       Description:
@@ -28,7 +28,7 @@
 !-----------------------------------------------------------------------
         subroutine clex9_nov02_tndcy & 
                    ( time, time_initial, rlat, rlon, & 
-                     thlm, rcm, exner, rhot, wmt, & 
+                     rcm, exner, rhot, wmt, & 
                      wmm, thlm_forcing, rtm_forcing, & 
                      Frad, radht, Ncnm, sclrm_forcing )
 
@@ -77,15 +77,15 @@
         real, parameter ::  & 
         F0   = 104.0,  & ! Coefficient for cloud top heating (see Stevens) [W/m^2]
         F1   = 62.0,   & ! Coefficient for cloud base heating (see Stevens)[W/m^2]
-        kap  = 94.2   ! A "constant" according to Duynkerke eqn. 5, 
-                      ! where his value is 130 m^2/kg [m^2/kg]
+        kap  = 94.2      ! A "constant" according to Duynkerke eqn. 5, 
+                         ! where his value is 130 m^2/kg [m^2/kg]
 
         ! SW Radiative constants
         real, parameter ::  & 
         radius = 1.0e-5, & ! Effective droplet radius                      [m]
         A      = 0.1,    & ! Albedo -- sea surface, according to Lenderink [-]
         gc     = 0.86,   & ! Asymmetry parameter, "g" in Duynkerke.        [-]
-        omega  = 0.9965 ! Single-scattering albedo                      [-]
+        omega  = 0.9965    ! Single-scattering albedo                      [-]
 
 
         ! Toggles for activating/deactivating forcings
@@ -102,17 +102,16 @@
         ! Input variables
         real(kind=time_precision), intent(in) :: & 
         time,            & ! Current time          [s]
-        time_initial    ! Initial time          [s]
+        time_initial       ! Initial time          [s]
 
         real, intent(in) :: & 
         rlat,            & ! Latitude              [degrees_N]
-        rlon            ! Longitude             [degrees_E]
+        rlon               ! Longitude             [degrees_E]
 
         real, intent(in), dimension(gr%nnzp) :: & 
-        thlm,    & ! Liquid potential temperature  [K]
         rcm,     & ! Cloud water mixing ratio      [kg/kg]
         exner,   & ! Exner function                [-]
-        rhot    ! Density                       [kg/m^3]
+        rhot       ! Density                       [kg/m^3]
 
         ! Output variables
         real, intent(out), dimension(gr%nnzp) :: & 
@@ -122,7 +121,7 @@
         rtm_forcing,     & ! Total water forcing                     [kg/kg/s]
         Frad,            & ! Radiative flux                          [W/m^2]
         radht,           & ! Radiative heating                       [K/s]
-        Ncnm            ! Cloud nuclei number concentration       [num/m^3]
+        Ncnm               ! Cloud nuclei number concentration       [num/m^3]
 
         ! Output variables (optional)
         real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
@@ -136,7 +135,7 @@
         Frad_LW,  & ! Long wave radiative flux     [W/m^2]
         Frad_SW,  & ! Short wave radiative flux    [W/m^2]
         radht_LW, & ! Long wave radiative heating  [K/s]
-        radht_SW ! Short wave radiative heating [K/s]
+        radht_SW    ! Short wave radiative heating [K/s]
 
         real, dimension(gr%nnzp) ::  & 
 !     .  LWP,       ! Liquid water path                              [kg/m^2]
@@ -144,22 +143,22 @@
         rhot_rad,   & ! Flipped array of air density                   [kg/m^3]
         dsigm,      & ! Flipped array of grid spacing                  [m]
         coamps_zm,  & ! Flipped array of momentum level altitudes      [m]
-        coamps_zt  ! Flipped array of thermodynamic level altitudes [m]
+        coamps_zt     ! Flipped array of thermodynamic level altitudes [m]
 
         real, dimension(gr%nnzp) ::  & 
         frad_out,    & ! Flipped array of radiaive flux            [W/m^2]
         frad_lw_out, & ! Flipped array of LW radiative flux        [W/m^2]
-        frad_sw_out ! Flipped array of SW radiative flux        [W/m^2] 
+        frad_sw_out    ! Flipped array of SW radiative flux        [W/m^2] 
 
         real, dimension(gr%nnzp) ::  & 
         radhtk,       & ! Flipped array of radiative heating       [K/s]
         radht_lw_out, & ! Flipped array of LW radiative heating    [K/s]
-        radht_sw_out ! Flipped array of SW radiative heating    [K/s]
+        radht_sw_out    ! Flipped array of SW radiative heating    [K/s]
 
         ! Working arrays for subsidence interpolation
         real, dimension(7) ::  & 
         zsubs, & ! Heights at which wmt data is supplied (used for subsidence interpolation) [m]
-        wt1   ! ONLY wt1 IS NEEDED FOR NOV.11 CASE
+        wt1      ! ONLY wt1 IS NEEDED FOR NOV.11 CASE
 
         ! Subsidence constant and variables
         real :: & 
@@ -171,22 +170,22 @@
         dbzi,  & ! Defines height above inversion (below this height, 
                  ! subsidence linearly tapers off to zero)    [m]
         dbc,   & ! Defines height below cloud (at / below this height, we have NO subsidence) [m]
-        dac   ! Defines height above cloud (at / above this height, we have NO subsidence) [m]
+        dac      ! Defines height above cloud (at / above this height, we have NO subsidence) [m]
 
         ! Working arrays for SW radiation interpolation
 
         real, dimension(nparam) ::  & 
         xilist, & ! Values of cosine of solar zenith angle corresponding 
-               !   to the values in Fslist
-        Fslist ! Values of Fs0 corresponding to the values in xilist.
+                  !   to the values in Fslist
+        Fslist    ! Values of Fs0 corresponding to the values in xilist.
 
 
         ! Additional SW radiative variables
 
         real :: & 
         xi_abs, & ! Cosine of the solar zenith angle  [-]
-        Fs0    ! The incident incoming SW insolation at cloud top in the
-               !   direction of the incoming beam (not the vertical) [W/m^2]
+        Fs0       ! The incident incoming SW insolation at cloud top in the
+                  !   direction of the incoming beam (not the vertical) [W/m^2]
 
         logical :: sw_on
  

@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: mpace_a.F90,v 1.3 2008-07-23 17:38:08 faschinj Exp $
+! $Id: mpace_a.F90,v 1.4 2008-07-23 20:25:50 faschinj Exp $
         module mpace_a
 
 !       Description:
@@ -47,8 +47,8 @@
 
 !----------------------------------------------------------------------
         subroutine mpace_a_tndcy & 
-        ( time, time_initial, rlat, thlm, & 
-          exner, rhot, p, rcm, & 
+        ( time, time_initial, rlat, & 
+          rhot, p, rcm, & 
           wmt, wmm, thlm_forcing, rtm_forcing, & 
           Ncnm, Ncm, Frad, radht, & 
           um_hoc_grid, vm_hoc_grid, & 
@@ -130,8 +130,6 @@
         rlat          ! Latitude                        [Degrees North]
 
         real, dimension(gr%nnzp), intent(in) :: & 
-        thlm,   & ! Liquid water potential temperature     [K]
-        exner,  & ! Exner function                         [-]
         rhot,   & ! Density of air                         [kg/m^3]
         p,      & ! Pressure                               [Pa]
         rcm    ! Cloud water mixing ratio               [kg/kg]

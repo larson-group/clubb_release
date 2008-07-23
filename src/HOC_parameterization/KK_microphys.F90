@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: KK_microphys.F90,v 1.1 2008-07-22 16:04:21 faschinj Exp $
+! $Id: KK_microphys.F90,v 1.2 2008-07-23 20:25:12 faschinj Exp $
 
       module rain_equations
 
@@ -91,10 +91,10 @@
       CONTAINS
 
         subroutine kk_microphys & 
-                   ( thlm, T_in_K, p, exner, rhot,  & 
+                   ( T_in_K, p, exner, rhot,  & 
                      thl1, thl2, a, rc1, rc2, s1, & 
-                     s2, ss1, ss2, rtm, rcm, Ncm, rrm, Nrm,  & 
-                     lsample, AKm_est, AKm, & 
+                     s2, ss1, ss2, rcm, Ncm, rrm, Nrm,  & 
+                     lsample,  AKm, & 
                      rrm_mc_tndcy, Nrm_mc_tndcy,  & 
                      hm_rt_tndcy, hm_thl_tndcy, & 
                      Vrr, VNr )
@@ -152,7 +152,6 @@
 
         ! Input
         real, intent(in), dimension(gr%nnzp) :: & 
-        thlm,       & ! Theta-l                            [K]
         T_in_K,     & ! Temperature                        [K]
         p,          & ! Pressure                           [Pa]
         exner,      & ! Exner function                     [-]
@@ -162,7 +161,6 @@
         s1, s2,     & ! PDF parameters s1 & s2             [kg/kg]
         ss1, ss2,   & ! PDF parameters ss1 & ss2           [kg/kg]
         rc1, rc2,   & ! PDF parameters rc1 & rc2           [kg/kg]
-        rtm,        & ! Total water mixing ratio           [kg/kg]
         rcm,        & ! Cloud water mixing ratio           [kg/kg]
         Ncm,        & ! Cloud droplet number conc.         [number/kg]
         rrm,        & ! Rain water mixing ratio            [kg/kg]
@@ -170,8 +168,7 @@
 
         ! Latin hypercube variables - Vince Larson 22 May 2005
         real, intent(in), dimension(gr%nnzp) ::  & 
-        Akm,     & ! Latin hypercube estimate of Kessler autoconversion   
-        AKm_est ! Analytic calculation of Kessler autoconversion
+        Akm      ! Latin hypercube estimate of Kessler autoconversion   
 
         logical, intent(in) :: & 
         lsample ! Whether to sample stats for this call
@@ -397,7 +394,7 @@
 
            mean_vol_rad(k)  & 
            = mean_volume_radius & 
-                    ( rrm(k), Nrm(k), rhot(k), rrp2_rrm2(k),  & 
+                    ( rrm(k), Nrm(k), rrp2_rrm2(k),  & 
                                  Nrp2_Nrm2(k), corr_rrNr_LL(k) )
 
         end do
@@ -514,7 +511,7 @@
              ( rrm(k), Nrm(k), & 
                s1(k), ss1(k), s2(k), ss2(k), & 
                thl1(k), thl2(k), rc1(k), rc2(k), a(k), & 
-               p(k), exner(k), rhot(k), T_in_K(k), Supsat(k),  & 
+               p(k), exner(k), T_in_K(k), Supsat(k),  & 
                rrp2_rrm2(k), Nrp2_Nrm2(k), corr_srr_NL(k), & 
                corr_sNr_NL(k), corr_rrNr_LL(k) )
 
@@ -639,7 +636,7 @@
         !
         !-----------------------------------------------------------------------
         
-        FUNCTION mean_volume_radius( rrm, Nrm, rhot, rrp2_rrm2,  & 
+        FUNCTION mean_volume_radius( rrm, Nrm, rrp2_rrm2,  & 
                                      Nrp2_Nrm2, corr_rrNr_LL )
 
         USE constants, only: & 
@@ -658,8 +655,6 @@
 !        REAL, INTENT(IN):: rrp2         ! Grid-box rr variance     [kg^2 kg^-2]
         REAL, INTENT(IN):: Nrm          ! Grid-box average Nrm     [kg^-1]
 !        REAL, INTENT(IN):: Nrp2         ! Grid-box Nr variance     [kg^-2]
-        REAL, INTENT(IN):: rhot         ! Grid-box average density (t-level)
-                                        !                          [kg m^-3]
         REAL, INTENT(IN):: rrp2_rrm2    ! rrp2/rrm^2               []
         REAL, INTENT(IN):: Nrp2_Nrm2    ! Nrp2/Nrm^2               []
         REAL, INTENT(IN):: corr_rrNr_LL ! Correlation of rr and Nr []
@@ -805,7 +800,7 @@
         FUNCTION cond_evap_rrm( rrm, Nrm, & 
                                 s1, ss1, s2, ss2, & 
                                 thl1, thl2, rc1, rc2, a, & 
-                                press, exner, rhot, T_in_K, Supsat,  & 
+                                press, exner, T_in_K, Supsat,  & 
                                 rrp2_rrm2, Nrp2_Nrm2, corr_srr_NL, & 
                                 corr_sNr_NL, corr_rrNr_LL  )
 
@@ -848,8 +843,6 @@
                                         ! Gaussian "plume."        []
         REAL, INTENT(IN):: press        ! Grid-box average pressure [Pa]
         REAL, INTENT(IN):: exner        ! Grid-box average exner function [-]
-        REAL, INTENT(IN):: rhot         ! Grid-box average density (t-level)
-                                        !                          [kg m^-3]
         REAL, INTENT(IN):: T_in_K         ! Grid-box average Temperature [K]
         REAL, INTENT(IN):: Supsat       ! Grid-box average Supersaturation []
         REAL, INTENT(IN):: rrp2_rrm2    ! rrp2/rrm^2               []

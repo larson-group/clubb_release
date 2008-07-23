@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F90,v 1.3 2008-07-23 17:42:44 faschinj Exp $
+! $Id: diag_var.F90,v 1.4 2008-07-23 20:25:12 faschinj Exp $
 !===============================================================================
       module diagnose_variances
 
@@ -150,7 +150,6 @@
         a1 ! a_1 (momentum levels); See eqn. 24 in `Equations for HOC' [-]
 
         real, dimension(gr%nnzp) :: & 
-        a1_zt,      & ! a_1 interpolated to thermodynamic levels      [-]
         wp2_zt,     & ! w'^2 interpolated to thermodynamic levels     [m^2/s^2]
         wprtp_zt,   & ! w'r_t' interpolated to thermodynamic levels   [(kg/kg) m/s]
         wpthlp_zt,  & ! w'th_l' interpolated to thermodyamnic levels  [K m/s]
@@ -243,7 +242,6 @@
         ! Interpolate a_1, w'^2, w'r_t', w'th_l', u'w', and v'w' from 
         ! momentum levels to thermodynamic levels.  These will be used 
         ! for the turbulent advection (ta) terms in each equation.
-        a1_zt     = max( zm2zt( a1 ), 0.0 )   ! Positive definite quantity
         wp2_zt    = max( zm2zt( wp2 ), 0.0 )   ! Positive definite quantity
         wprtp_zt  = zm2zt( wprtp )
         wpthlp_zt = zm2zt( wpthlp )
@@ -339,12 +337,12 @@
         ! Implicit contributions to term rtp2
 
         ! Implicit contributions to term rtp2
-        call diag_var_lhs( dt, liter, a1, a1_zt, wp2_zt,  & 
+        call diag_var_lhs( dt, liter, a1, wp2_zt,  & 
                            wp3, taum, wmm, Kw2_rtp2, C2rt_1d,  & 
                            nu2, beta, wtol_sqd, lhs )
 
         ! Explicit contributions to rtp2
-        call diag_var_rhs( "rtp2", dt, liter, a1, a1_zt,  & 
+        call diag_var_rhs( "rtp2", dt, liter, a1,  & 
                            wp2_zt, wp3, wprtp, wprtp_zt, & 
                            wprtp, wprtp_zt, rtm, rtm, rtp2, & 
                            beta, wtol_sqd, rhs )
@@ -358,12 +356,12 @@
         ! Implicit contributions to term thlp2
 
         ! Implicit contributions to term thlp2
-        call diag_var_lhs( dt, liter, a1, a1_zt, wp2_zt,  & 
+        call diag_var_lhs( dt, liter, a1, wp2_zt,  & 
                            wp3, taum, wmm, Kw2_thlp2, C2thl_1d,  & 
                            nu2, beta, wtol_sqd, lhs )
 
         ! Explicit contributions to thlp2
-        call diag_var_rhs( "thlp2", dt, liter, a1, a1_zt,  & 
+        call diag_var_rhs( "thlp2", dt, liter, a1, & 
                            wp2_zt, wp3, wpthlp, wpthlp_zt, & 
                            wpthlp, wpthlp_zt, thlm, thlm, thlp2, & 
                            beta, wtol_sqd, rhs )
@@ -376,12 +374,12 @@
         !!!!!***** r_t'th_l' *****!!!!!
         ! Implicit contributions to term rtpthlp
 
-        call diag_var_lhs( dt, liter, a1, a1_zt, wp2_zt,  & 
+        call diag_var_lhs( dt, liter, a1, wp2_zt,  & 
                            wp3, taum, wmm, Kw2_rtpthlp, C2rtthl_1d,  & 
                            nu2, beta, wtol_sqd, lhs )
 
         ! Explicit contributions to rtpthlp
-        call diag_var_rhs( "rtpthlp", dt, liter, a1, a1_zt,  & 
+        call diag_var_rhs( "rtpthlp", dt, liter, a1,  & 
                            wp2_zt, wp3, wprtp, wprtp_zt, & 
                            wpthlp, wpthlp_zt, rtm, thlm, rtpthlp, & 
                            beta, wtol_sqd, rhs )
@@ -394,12 +392,12 @@
         !!!!!***** u'^2 *****!!!!!
         ! Implicit contributions to term up2
 
-        call diag_var_lhs( dt, liter, a1, a1_zt, wp2_zt,  & 
+        call diag_var_lhs( dt, liter, a1, wp2_zt,  & 
                            wp3, taum, wmm, Kw9, C4_C14_1d,  & 
                            nu9, beta, wtol_sqd, lhs )
 
         ! Explicit contributions to up2
-        call diag_var_uv_rhs( "up2", dt, liter, a1, a1_zt, & 
+        call diag_var_uv_rhs( "up2", dt, liter, a1, & 
                               wp2, wp2_zt, wp3, wpthvp, taum,  & 
                               um, vm, upwp, upwp_zt, vpwp, & 
                               vpwp_zt, up2, vp2, C4, C5, C14, & 
@@ -413,12 +411,12 @@
         !!!!!***** v'^2 *****!!!!!
         ! Implicit contributions to term vp2
 
-        call diag_var_lhs( dt, liter, a1, a1_zt, wp2_zt,  & 
+        call diag_var_lhs( dt, liter, a1, wp2_zt,  & 
                            wp3, taum, wmm, Kw9, C4_C14_1d,  & 
                            nu9, beta, wtol_sqd, lhs )
 
         ! Explicit contributions to vp2
-        call diag_var_uv_rhs( "vp2", dt, liter, a1, a1_zt, & 
+        call diag_var_uv_rhs( "vp2", dt, liter, a1, & 
                               wp2, wp2_zt, wp3, wpthvp, taum,  & 
                               vm, um, vpwp, vpwp_zt, upwp, & 
                               upwp_zt, vp2, up2, C4, C5, C14, & 
@@ -503,7 +501,7 @@
 
           !!!!!***** sclr'^2, sclr'r_t', sclr'th_l' *****!!!!!
 
-          call diag_var_lhs( dt, liter, a1, a1_zt, wp2_zt,  & 
+          call diag_var_lhs( dt, liter, a1, wp2_zt,  & 
                              wp3, taum, wmm, Kw2, C2sclr_1d,  & 
                              nu2, beta, wtol_sqd, lhs )
 
@@ -520,7 +518,7 @@
             ! terms in each equation.
             wpsclrp_zt = zm2zt( wpsclrp(:,i) )
 
-            call diag_var_rhs( "sclrp2", dt, liter, a1, a1_zt,  & 
+            call diag_var_rhs( "sclrp2", dt, liter, a1,  & 
                                wp2_zt, wp3, wpsclrp(:,i),  & 
                                wpsclrp_zt, wpsclrp(:,i), wpsclrp_zt,  & 
                                sclrm(:,i), sclrm(:,i), sclrp2(:,i), & 
@@ -538,7 +536,7 @@
             ! terms in each equation.
             wpsclrp_zt = zm2zt( wpsclrp(:,i) )
 
-            call diag_var_rhs( "sclrprtp", dt, liter, a1, a1_zt,  & 
+            call diag_var_rhs( "sclrprtp", dt, liter, a1,  & 
                                wp2_zt, wp3, wpsclrp(:,i),  & 
                                wpsclrp_zt, wprtp, wprtp_zt, sclrm(:,i),  & 
                                rtm, sclrprtp(:,i), beta, wtol_sqd,  & 
@@ -556,7 +554,7 @@
             ! terms in each equation.
             wpsclrp_zt = zm2zt( wpsclrp(:,i) )
 
-            call diag_var_rhs( "sclrpthlp", dt, liter, a1, a1_zt,  & 
+            call diag_var_rhs( "sclrpthlp", dt, liter, a1,  & 
                                wp2_zt, wp3, wpsclrp(:,i),  & 
                                wpsclrp_zt, wpthlp, wpthlp_zt,  & 
                                sclrm(:,i), thlm, sclrpthlp(:,i), beta,  & 
@@ -685,7 +683,7 @@
         end subroutine diag_var
 
 !===============================================================================
-        subroutine diag_var_lhs( dt, liter, a1, a1_zt, wp2_zt,  & 
+        subroutine diag_var_lhs( dt, liter, a1, wp2_zt,  & 
                                  wp3, taum, wmm, Kw, Cn,  & 
                                  nu, beta, wtol_sqd, lhs )
         
@@ -759,7 +757,6 @@
         ! Input Variables
         real, dimension(gr%nnzp), intent(in) :: & 
         a1,     & ! Scm-related term a_1 (momentum levels)      [-]
-        a1_zt,  & ! a_1 interpolated to thermodynamic levels    [-]
         wp2_zt, & ! w'^2 interpolated to thermodynamic levels   [m^2/s^2]
         wp3,    & ! w'^3 (thermodynamic levels)                 [m^3/s^3]
         taum,   & ! Time-scale tau on momentum levels           [s]
@@ -1115,7 +1112,7 @@
         end subroutine diag_var_solve
 
 !===============================================================================
-        subroutine diag_var_uv_rhs( solve_type, dt, liter, a1, a1_zt, & 
+        subroutine diag_var_uv_rhs( solve_type, dt, liter, a1, & 
                                     wp2, wp2_zt, wp3, wpthvp, taum,  & 
                                     xam, xbm, wpxap, wpxap_zt, wpxbp, & 
                                     wpxbp_zt, xap2, xbp2, C4, C5, C14, & 
@@ -1168,7 +1165,6 @@
 
         real, dimension(gr%nnzp), intent(in) :: & 
         a1,        & ! Scm-related term a_1 (momentum levels)      [-]
-        a1_zt,     & ! a_1 interpolated to thermodynamic levels    [-]
         wp2,       & ! w'^2 (momentum levels)                      [m^2/s^2]
         wp2_zt,    & ! w'^2 interpolated to thermodynamic levels   [m^2/s^2]
         wp3,       & ! w'^3 (thermodynamic levels)                 [m^3/s^3]
@@ -1343,7 +1339,7 @@
         end subroutine diag_var_uv_rhs
 
 !===============================================================================
-        subroutine diag_var_rhs( solve_type, dt, liter, a1, a1_zt,  & 
+        subroutine diag_var_rhs( solve_type, dt, liter, a1,  & 
                                  wp2_zt, wp3, wpxap, wpxap_zt, & 
                                  wpxbp, wpxbp_zt, xam, xbm, xapxbp, & 
                                  beta, wtol_sqd, rhs )
@@ -1388,7 +1384,6 @@
 
         real, dimension(gr%nnzp), intent(in) :: & 
         a1,        & ! Scm-related term a_1 (momentum levels)      [-]
-        a1_zt,     & ! a_1 interpolated to thermodynamic levels    [-]
         wp2_zt,    & ! w'^2 interpolated to thermodynamic levels   [m^2/s^2]
         wp3,       & ! w'^3 (thermodynamic levels)                 [m^3/s^3]
         wpxap,     & ! w'x_a' (momentum levels)                    [m/s {x_am units}]

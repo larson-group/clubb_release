@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: nov11.F90,v 1.3 2008-07-23 17:38:08 faschinj Exp $
+! $Id: nov11.F90,v 1.4 2008-07-23 20:25:50 faschinj Exp $
         module nov11
 
 !       Description:
@@ -29,7 +29,7 @@
         subroutine nov11_altocu_tndcy & 
                    ( time, time_initial, dt, & 
                      !rlat, rlon, & 
-                     thlm, rcm, exner, rhot, rtm, wmt, & 
+                     rcm, exner, rhot, rtm, wmt, & 
                      wmm, thlm_forcing, rtm_forcing, & 
                      Frad, radht, Ncnm, sclrm_forcing )
 
@@ -114,7 +114,6 @@
 !        rlon               ! Longitude             [degrees_E]
 
         real, intent(in), dimension(gr%nnzp) :: & 
-        thlm,    & ! Liquid potential temperature  [K]
         rcm,     & ! Cloud water mixing ratio      [kg/kg]
         exner,   & ! Exner function                [-]
         rhot    ! Density                       [kg/m^3]

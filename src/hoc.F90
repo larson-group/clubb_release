@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F90,v 1.3 2008-07-23 17:45:35 faschinj Exp $
+! $Id: hoc.F90,v 1.4 2008-07-23 20:26:54 faschinj Exp $
 
         module hoc
 
@@ -117,7 +117,7 @@
 
         use array_index, only: iisclr_rt, iisclr_thl, iiCO2 ! Variables
 
-        use diagnostic_variables, only: ug, vg, hydromet, em,  & ! Variable(s)
+        use diagnostic_variables, only: ug, vg, em,  & ! Variable(s)
                                   taut, thvm, Lscale, Kht, Khm, & 
                                   um_ref, vm_ref
 
@@ -478,7 +478,7 @@
 
            call hoc_initialize( iunit, runfile, psfc, thlm, rtm,  & 
                                 um, vm, ug, vg, wp2, & 
-                                rcm, hydromet, & 
+                                rcm,  & 
                                 wmt, wmm, em, exner, & 
                                 taut, taum, thvm, p, & 
                                 rhot, rhom, Lscale, & 
@@ -509,7 +509,7 @@
            iinit = floor( ( time_current - time_initial ) / dtmain ) + 1
 
            call hoc_restart( iunit, runfile, restart_path_case,  & 
-                             trim( fname_prefix )//"_zt", time_restart,  & 
+                             time_restart,  & 
                              thlm, rtm, um, vm, & 
                              ug, vg, upwp, vpwp, wmt, wmm,  & 
                              um_ref, vm_ref, wpthlp, wprtp, & 
@@ -572,7 +572,7 @@
 
           if ( err_code == clubb_var_equals_NaN ) exit
 
-          call hoc_forcings_timestep( dtmain, i, stdout, err_code )
+          call hoc_forcings_timestep( dtmain, err_code )
 
           if ( err_code == clubb_rtm_level_not_found ) exit
          
@@ -652,7 +652,7 @@
 !-----------------------------------------------------------------------
         subroutine hoc_initialize & 
                    ( iunit, runfile, psfc, thlm, rtm, um, vm, & 
-                     ug, vg, wp2, rcm, hydromet, & 
+                     ug, vg, wp2, rcm, & 
                      wmt, wmm, em, exner, taut, taum, thvm, & 
                      p, rhot, rhom, Lscale, & 
                      Kht, Khm, um_ref, vm_ref, & 
@@ -678,7 +678,7 @@
             Cp, Lv, ep2, ep1, emin, wtol ! Variable(s)
 
         use parameters, only:  & 
-            T0, taumax, taumin, c_K, sclr_dim, hydromet_dim  ! Variable(s)
+            T0, taumax, taumin, c_K, sclr_dim ! Variable(s)
 
         use grid_class, only: gr ! Variable(s)
 
@@ -741,10 +741,6 @@
         Kht, Khm,        & ! Eddy diffusivity              [m^2/s]
         taum, taut,      & ! Dissipation time              [s]
         thvm            ! Virtual potential temperature [K]
-
-        ! Input/Output
-        real, dimension(gr%nnzp,hydromet_dim), intent(inout) ::  & 
-        hydromet        ! Hydrometeor types             [units vary]
 
         ! Output
         real, dimension(gr%nnzp,sclr_dim), intent(out) ::  & 
@@ -1169,7 +1165,7 @@
 !-----------------------------------------------------------------------
        subroutine hoc_restart & 
                    ( iunit, runfile, restart_path_case,  & 
-                     filename, time_restart,  & 
+                     time_restart,  & 
                      thlm, rtm, um, vm, & 
                      ug, vg, upwp, vpwp, wmt, wmm,  & 
                      um_ref, vm_ref, wpthlp, wprtp, & 
@@ -1229,7 +1225,6 @@
         integer, intent(in) :: iunit
         character(len=*), intent(in) ::  & 
         runfile,           & ! Filename for the namelist
-        filename,          & ! GrADS file name
         restart_path_case ! Path to GrADS data for restart
 
         real(kind=time_precision), intent(in) :: & 
@@ -1367,8 +1362,7 @@
 
 !----------------------------------------------------------------------
         subroutine hoc_forcings_timestep & 
-                     ( dt, iteration, stdout, err_code )
-
+                     ( dt, err_code )
 !       Description:
 !       Calculate tendency and surface variables
 
@@ -1483,11 +1477,9 @@
         real(kind=time_precision), intent(in) :: & 
           dt    ! Timestep      [s]
 
-        integer, intent(in) :: & 
-          iteration ! The iteration number
 
-        logical, intent(in) :: & 
-          stdout ! Whether to print messages to stdout
+!        logical, intent(in) :: & 
+!          stdout ! Whether to print messages to stdout
 
         ! Input/Output Variables
         integer, intent(inout) :: & 
@@ -1592,7 +1584,7 @@
            call nov11_altocu_tndcy & 
                 ( time_current, time_initial, dt, &
                   ! rlat, rlon, & 
-                  thlm, rcm, exner, rhot, rtm, wmt, & 
+                  rcm, exner, rhot, rtm, wmt, & 
                   wmm, thlm_forcing, rtm_forcing, & 
                   Frad, radht, Ncnm, & 
                   sclrm_forcing )
@@ -1600,21 +1592,21 @@
          case( "jun25_altocu" ) ! June 25 Altocumulus case.
            call jun25_altocu_tndcy & 
                 ( time_current, time_initial, rlat, rlon,  & 
-                  thlm, rcm, exner, rhot, wmt, & 
+                  rcm, exner, rhot, wmt, & 
                   wmm, thlm_forcing, rtm_forcing, & 
                   Frad, radht, sclrm_forcing )
 
          case( "clex9_nov02" ) ! CLEX-9: Nov. 02 Altocumulus case.
            call clex9_nov02_tndcy & 
                 ( time_current, time_initial, rlat, rlon, & 
-                  thlm, rcm, exner, rhot, wmt, & 
+                  rcm, exner, rhot, wmt, & 
                   wmm, thlm_forcing, rtm_forcing, & 
                   Frad, radht, Ncnm, sclrm_forcing )
 
          case( "clex9_oct14" ) ! CLEX-9: Oct. 14 Altocumulus case.
            call clex9_oct14_tndcy & 
                 ( time_current, time_initial, rlat, rlon, & 
-                  thlm, rcm, exner, rhot, wmt, & 
+                  rcm, exner, rhot, wmt, & 
                   wmm, thlm_forcing, rtm_forcing, & 
                   Frad, radht, Ncnm ,sclrm_forcing )
 
@@ -1625,16 +1617,16 @@
 
          case ( "mpace_a" ) ! mpace_a arctic stratus case
            call mpace_a_tndcy & 
-                ( time_current, time_initial, rlat, thlm, & 
-                  exner, rhot, p, rcm, & 
+                ( time_current, time_initial, rlat, & 
+                  rhot, p, rcm, & 
                   wmt, wmm, thlm_forcing, rtm_forcing, & 
                   Ncnm, Ncm, Frad, radht, um_ref, vm_ref, & 
                   sclrm_forcing )
 
          case ( "mpace_b" ) ! mpace_b arctic stratus case
            call mpace_b_tndcy & 
-                ( time_current, time_initial, rlat, thlm, & 
-                  exner, rhot,  p, thvm, rcm, & 
+                ( time_current, time_initial, rlat, & 
+                  rhot,  p, thvm, rcm, & 
                   wmt, wmm, thlm_forcing, rtm_forcing, & 
                   Ncnm, Ncm, Frad, radht, & 
                   sclrm_forcing )
@@ -1836,7 +1828,7 @@
         
         if ( kk_rain .or. lcoamps_micro .or. licedfs ) then
           call advance_microphys & 
-               ( runtype, dt, time_current, time_initial, & 
+               ( runtype, dt, time_current, & 
                  thlm, p, exner, rhot, rhom, rtm, rcm, Ncm,  & 
                  pdf_parms, wmt, wmm, Khm, AKm_est, Akm,  & 
                  Ncnm, Nim, & 
