@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: mpace_a.F90,v 1.1 2008-07-22 16:04:20 faschinj Exp $
+! $Id: mpace_a.F90,v 1.2 2008-07-23 13:44:39 faschinj Exp $
         module mpace_a
 
 !       Description:
@@ -237,9 +237,10 @@
         um_hoc_grid,       & ! Observed wind, for nudging         [m/s]
         vm_hoc_grid       ! Observed wind, for nudging         [m/s]
 
-      ! This code block takes the model time, finds the time before it and the time after it on the list,
-      ! and marks them left_time and right_time for interpolation.  If the time is before the first or
-      ! after the last time in the file, it just uses the first or last time without interpolation.
+      ! This code block takes the model time, finds the time before it and the time after it on 
+      ! the list, and marks them left_time and right_time for interpolation.  If the time is 
+      ! before the first or after the last time in the file, it just uses the first or last 
+      ! time without interpolation.
 
       left_time = -1
       right_time = -1
@@ -266,49 +267,50 @@
         call clubb_debug(1, "file_times not sorted in mpace_a_tndcy.")
       endif
 
-      ratio = real((time - file_times(left_time)) /              & ! This is the ratio "a" needed for linear interpolation in time.
-              (file_times(right_time) - file_times(left_time))) ! at the first time a=0; at the second time a=1.
+      ! This is the ratio "a" needed for linear interpolation in time.
+      ratio = real((time - file_times(left_time)) /  &          ! at the first time a=0;
+              (file_times(right_time) - file_times(left_time))) ! at the second time a=1.
 
       do k=1,file_nlevels
 !        omega_column(k) = ratio *			       ! Do linear interpolation in time
 !     .                      (omega_forcing(k,right_time)
 !     .                      -omega_forcing(k,left_time))
-!     .                     + omega_forcing(k,left_time)        
+!     .                     + omega_forcing(k,left_time)
 
-        dTdt_column(k) = ratio *                                & ! Do linear interpolation in time
+        dTdt_column(k) = ratio *                        & ! Do linear interpolation in time
                             (dTdt_forcing(k,right_time) & 
                             -dTdt_forcing(k,left_time)) & 
                            + dTdt_forcing(k,left_time)        
 
-        dqdt_column(k) = ratio *                                & ! Do linear interpolation in time
+        dqdt_column(k) = ratio *                        & ! Do linear interpolation in time
                             (dqdt_forcing(k,right_time) & 
                             -dqdt_forcing(k,left_time)) & 
                            + dqdt_forcing(k,left_time)        
 
-        vertT_column(k) = ratio *                                & ! Do linear interpolation in time
+        vertT_column(k) = ratio *                        & ! Do linear interpolation in time
                             (vertT_forcing(k,right_time) & 
                             -vertT_forcing(k,left_time)) & 
                            + vertT_forcing(k,left_time)        
 
-        vertq_column(k) = ratio *                                & ! Do linear interpolation in time
+        vertq_column(k) = ratio *                        & ! Do linear interpolation in time
                             (vertq_forcing(k,right_time) & 
                             -vertq_forcing(k,left_time)) & 
                            + vertq_forcing(k,left_time)        
 
-        um_column(k) = ratio *                                   & ! Do linear interpolation in time
+        um_column(k) = ratio *                    & ! Do linear interpolation in time
                             (um_obs(k,right_time) & 
                             -um_obs(k,left_time)) & 
                            + um_obs(k,left_time)        
 
-        vm_column(k) = ratio *                                   & ! Do linear interpolation in time
+        vm_column(k) = ratio *                    & ! Do linear interpolation in time
                             (vm_obs(k,right_time) & 
                             -vm_obs(k,left_time)) & 
                            + vm_obs(k,left_time)        
 
       end do
 
-!      omega_hoc_grid = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt,    ! Do linear interpolation in space
-!     .                         file_heights,omega_column)            ! using zlinterp_fnc
+!     Do linear interpolation in space
+!     using zlinterp_fnc
       dTdt_hoc_grid  = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt, & 
                                file_heights,dTdt_column)
       dqdt_hoc_grid  = zlinterp_fnc(gr%nnzp, file_nlevels, gr%zt, & 

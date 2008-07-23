@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: clex9_oct14.F90,v 1.1 2008-07-22 16:04:17 faschinj Exp $
+! $Id: clex9_oct14.F90,v 1.2 2008-07-23 13:44:38 faschinj Exp $
         module clex9_oct14
 
 !       Description:
@@ -76,7 +76,8 @@
         real, parameter ::  & 
         F0   = 104.0,  & ! Coefficient for cloud top heating (see Stevens) [W/m^2]
         F1   = 62.0,   & ! Coefficient for cloud base heating (see Stevens)[W/m^2]
-        kap  = 94.2   ! A "constant" according to Duynkerke eqn. 5, where his value is 130 m^2/kg [m^2/kg]
+        kap  = 94.2   ! A "constant" according to Duynkerke eqn. 5, 
+                      ! where his value is 130 m^2/kg [m^2/kg]
 
         ! SW Radiative constants
         real, parameter ::  & 
@@ -171,9 +172,12 @@
         ! Subsidence constant and variables
         real :: & 
         wmax,  & ! Defines value of maximum subsidence in profile  [cm/s]
-        zi,    & ! Defines approx. height of inversion within cloud (subsidence is equal to wmax at this height) [m]
-        dazi,  & ! Defines height above inversion (above this height subsidence linearly tapers off to zero)     [m]
-        dbzi,  & ! Defines height above inversion (below this height, subsidence linearly tapers off to zero)    [m]
+        zi,    & ! Defines approx. height of inversion within cloud 
+                 ! (subsidence is equal to wmax at this height) [m]
+        dazi,  & ! Defines height above inversion (above this height 
+                 ! subsidence linearly tapers off to zero)     [m]
+        dbzi,  & ! Defines height above inversion (below this height, 
+                 ! subsidence linearly tapers off to zero)    [m]
         dbc,   & ! Defines height below cloud (at / below this height, we have NO subsidence) [m]
         dac   ! Defines height above cloud (at / above this height, we have NO subsidence) [m]
 

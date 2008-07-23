@@ -1,4 +1,4 @@
-!$Id: rico.F90,v 1.1 2008-07-22 16:04:20 faschinj Exp $
+!$Id: rico.F90,v 1.2 2008-07-23 13:44:39 faschinj Exp $
 !----------------------------------------------------------------------
       module rico
 
@@ -116,7 +116,8 @@
           ! Convert to units of [K s^-1] but potential T instead of T
 !          thlm_forcing(k) = (t_tendency * ((psfc/p(k)) ** (Rd/Cp)))
           thlm_forcing(k) = (t_tendency / exner(k))
-          radht(k) = 0.  !  So we don't have undefined numbers in the radht stats.  Radht is actually rolled into t_tendency.
+          radht(k) = 0.  !  So we don't have undefined numbers in the radht stats.  
+                         !  Radht is actually rolled into t_tendency.
         end do
 
 
@@ -223,7 +224,8 @@
         real, intent(in) :: & 
           um_sfc,            & ! This is u at the lowest above-ground model level.  [m/s]
           vm_sfc,            & ! This is v at the lowest above-ground model level.  [m/s]
-          thlm,          & ! This is theta-l at the lowest above-ground model level.  (DOES THIS NEED A CORRECTION FOR THETA-L TO THETA?)  [K]
+          thlm,          & ! This is theta-l at the lowest above-ground model level.  
+                           ! (DOES THIS NEED A CORRECTION FOR THETA-L TO THETA?)  [K]
           rtm,           & ! This is rt at the lowest above-ground model level.  [kg/kg]
           lowestlevel,   & ! This is z at the lowest above-ground model level.  [m]
           sst,           & ! This is the sea surface temperature [K].
@@ -255,19 +257,23 @@
 
 !       Define variable values
         ubar = max(ubmin, sqrt(um_sfc*um_sfc + vm_sfc*vm_sfc))
+        ! Modification in case lowest model level isn't at 10 m, from ATEX specification
         Cz   = C_10 * ((log(10/z0))/(log(lowestlevel/z0))) * & 
-               ((log(10/z0))/(log(lowestlevel/z0)))              ! Modification in case lowest model level isn't at 10 m, from ATEX specification
+               ((log(10/z0))/(log(lowestlevel/z0)))         
+        ! Modification in case lowest model level isn't at 10 m, from ATEX specification
         Cm   = C_m_20 * ((log(20/z0))/(log(lowestlevel/z0))) * & 
-               ((log(20/z0))/(log(lowestlevel/z0)))              ! Modification in case lowest model level isn't at 10 m, from ATEX specification
+               ((log(20/z0))/(log(lowestlevel/z0)))             
+        ! Modification in case lowest model level isn't at 10 m, from ATEX specification
         Ch   = C_h_20 * ((log(20/z0))/(log(lowestlevel/z0))) * & 
-               ((log(20/z0))/(log(lowestlevel/z0)))              ! Modification in case lowest model level isn't at 10 m, from ATEX specification
+               ((log(20/z0))/(log(lowestlevel/z0)))          
+               ! Modification in case lowest model level isn't at 10 m, from ATEX specification
         Cq   = C_q_20 * ((log(20/z0))/(log(lowestlevel/z0))) * & 
-               ((log(20/z0))/(log(lowestlevel/z0)))              ! Modification in case lowest model level isn't at 10 m, from ATEX specification
+               ((log(20/z0))/(log(lowestlevel/z0)))            
 
 !       Compute heat and moisture fluxes
         if (use_old_atex) then ! Use ATEX version
           wpthlp_sfc  = -Cz * ubar * ( thlm - sst * (p0/psfc)**kappa ) ! [K m s^-1
-          wprtp_sfc  = -Cz * ubar * ( rtm - sat_mixrat_liq(psfc,sst) )           ! [kg kg^-1  m s^-1]
+          wprtp_sfc  = -Cz * ubar * ( rtm - sat_mixrat_liq(psfc,sst) ) ! [kg kg^-1  m s^-1]
           upwp_sfc   = -um_sfc * ustar*ustar / ubar                    ! [m^2 s^-2]
           vpwp_sfc   = -vm_sfc * ustar*ustar / ubar                    ! [m^2 s^-2]
 

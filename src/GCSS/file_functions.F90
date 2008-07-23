@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: file_functions.F90,v 1.1 2008-07-22 16:04:18 faschinj Exp $
+! $Id: file_functions.F90,v 1.2 2008-07-23 13:44:38 faschinj Exp $
 !===============================================================================
       module file_functions
 
@@ -113,14 +113,14 @@
 ! is short-- it has the last few values and then a line break.  The next line, beginning
 ! the next level, is full-sized again.  24 September 2007
 
-      do k=1,(file_dimension1)                                     ! For each level in the data file,
+      do k=1,(file_dimension1)                ! For each level in the data file,
         do j=0,((file_dimension2/file_per_line)-1)
-          read(device,*) (variable(k,(j*file_per_line)+i),          & ! read file_per_line values in,
+          read(device,*) (variable(k,(j*file_per_line)+i), & ! read file_per_line values in,
               i=1,file_per_line)
         end do
         read (device,*) (variable(k,(j*file_per_line)+i),           & ! then read the partial line
               i=1,(mod(file_dimension2,file_per_line)))
-      end do                                                       ! and then start over at the next level.
+      end do                                              ! and then start over at the next level.
 
       close (device)
 

@@ -1,4 +1,4 @@
-!$Id: gabls2.F90,v 1.1 2008-07-22 16:04:19 faschinj Exp $
+!$Id: gabls2.F90,v 1.2 2008-07-23 13:44:38 faschinj Exp $
 !----------------------------------------------------------------------
         module gabls2
 
@@ -72,7 +72,8 @@
         integer :: k ! Loop index
 
         ! Compute vertical motion
-        if (time > (time_initial + 93600.)) then ! That is, after 26 hours of model time; per GABLS2 specification
+        if (time > (time_initial + 93600.)) then ! That is, after 26 hours of model time; 
+                                                 ! per GABLS2 specification
           do k=1,gr%nnzp
             if (gr%zt(k) <= 1000) then
               wmt(k) = -0.005 * (gr%zt(k) / 1000)
@@ -181,7 +182,8 @@
             lowest_level,        & ! Height of lowest above-ground gridpoint [m]
             um,                  & ! u at the lowest above-ground model level.  [m/s]
             vm,                  & ! v at the lowest above-ground model level.  [m/s]
-            thlm,                & ! theta-l at the lowest above-ground model level.  (theta = theta-l because there's no liquid in this case)  [K]
+            thlm,                & ! theta-l at the lowest above-ground model level. 
+                                   ! (theta = theta-l because there's no liquid in this case)  [K]
             rtm                 ! rt at the lowest above-ground model level.  [kg/kg]
 
           ! Input variables (optional)
@@ -205,8 +207,10 @@
           real :: & 
             ubar,                & ! Root (u^2 + v^2), per ATEX and RICO spec.
 !     .      ustar,              ! Friction velocity, computed from diag_ustar.
-            Cz,                  & ! C_10 scaled to the height of the lowest model level. (Per ATEX spec)
-            time_in_hours,       & ! time in hours from 00 local on first day of experiment (experiment starts at 14)
+            Cz,                  & ! C_10 scaled to the height of the lowest 
+                                   ! model level. (Per ATEX spec)
+            time_in_hours,       & ! time in hours from 00 local on first day of experiment 
+                                   ! (experiment starts at 14)
             sst,                 & ! Sea surface temperature [K].
             sstheta,             & ! Sea surface potential temperature [K].
             bflx                ! Needed for diag_ustar; equal to wpthlp_sfc * (g/theta)
@@ -214,13 +218,17 @@
           ! Define variable values
           ubar = max( ubmin, sqrt( um*um + vm*vm ) )
           Cz   = C_10 * ((log( 10/z0 ))/(log( lowest_level/z0 ))) * & 
-                 ((log( 10/z0 ))/(log( lowest_level/z0 )))             ! Modification in case lowest model level isn't at 10 m, from ATEX specification
-          time_in_hours = real((time - time_initial) / 3600. + 14.)    ! at initial time, time_in_hours = 14 (14 local; 19 UTC)
+                 ((log( 10/z0 ))/(log( lowest_level/z0 ))) ! Modification in case 
+                                                           ! lowest model level isn't at 10 m,
+                                                           ! from ATEX specification
+          time_in_hours = real((time - time_initial) / 3600. + 14.) ! at initial time, 
+                                                                    ! time_in_hours = 14 
+                                                                    ! (14 local; 19 UTC)
 
 
           ! Compute sea surface temperature
           if (time_in_hours <= 17.4) then
-            sst = -10 - (25*cos(time_in_hours*0.22 + 0.2))         ! SST in celsius per GABLS2 spec
+            sst = -10 - (25*cos(time_in_hours*0.22 + 0.2)) ! SST in celsius per GABLS2 spec
           else if (time_in_hours <= 30.0) then
             sst = (-0.54 * time_in_hours) + 15.2
           else if (time_in_hours <= 41.9) then
@@ -239,7 +247,9 @@
           ! Compute heat and moisture fluxes
           wpthlp_sfc  = -Cz * ubar * ( thlm - sst * (p0/psfc)**kappa ) ! [K * m/s]
           wprtp_sfc  = -Cz * ubar *  & 
-                        ( rtm - sat_mixrat_liq(psfc,sst) ) * 0.025   ! [kg/kg * m/s]; 2.5% factor from GABLS2 specification
+                        ( rtm - sat_mixrat_liq(psfc,sst) ) * 0.025   ! [kg/kg * m/s]
+                                                                     ! 2.5% factor from 
+                                                                     ! GABLS2 specification
           ! Compute momentum fluxes
           bflx  = wpthlp_sfc * grav / sstheta
           ustar = diag_ustar(lowest_level,bflx,ubar,z0)
