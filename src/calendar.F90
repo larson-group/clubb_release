@@ -1,4 +1,4 @@
-!$Id: calendar.F90,v 1.1 2008-07-22 16:04:11 faschinj Exp $
+!$Id: calendar.F90,v 1.2 2008-07-23 18:03:44 faschinj Exp $
       module calendar
 
         implicit none
@@ -37,10 +37,10 @@
         implicit none
         
         ! Input Variables
-        INTEGER,intent(in) ::  & 
+        integer, intent(in) ::  & 
         day,        & ! Gregorian Calendar Day for given Month        [##]
         month,      & ! Gregorian Calendar Month for given Year       [##]
-        year       ! Gregorian Calendar Year                       [####]
+        year          ! Gregorian Calendar Year                       [####]
 
         ! Local Variables
         integer :: I,J,K
@@ -76,7 +76,7 @@
         integer, intent(out)::  & 
         day,     & ! Gregorian calender day for given Month       [##]
         month,   & ! Gregorian calender month for given Year      [##]
-        year    ! Gregorian calender year                      [####]
+        year       ! Gregorian calender year                      [####]
 
         ! Local Variables
         integer :: i, j, k, n, l
@@ -140,7 +140,7 @@
         integer, intent(in) :: & 
         previous_day,    & ! Day of the month      [##]
         previous_month,  & ! Month of the year     [##]
-        previous_year   ! Year                  [####]
+        previous_year      ! Year                  [####]
 
         real(kind=time_precision), intent(in) :: & 
         seconds_since_previous_date ! [s]
@@ -151,7 +151,7 @@
         integer, intent(out) :: & 
         current_day,     & ! Day of the month      [##] 
         current_month,   & ! Month of the year     [##]
-        current_year    ! Year                  [####]
+        current_year       ! Year                  [####]
 
         real(kind=time_precision), intent(out) :: & 
         seconds_since_current_date
@@ -201,10 +201,10 @@
         integer, intent(in) :: & 
          day,             & ! Day of the Month      [##]
          month,           & ! Month of the Year     [##]
-         year            ! Year                  [####]
+         year               ! Year                  [####]
 
-        gregorian2julian_day = day + sum(days_per_month(1:month-1)) 
         ! Add the days from the previous months
+        gregorian2julian_day = day + sum(days_per_month(1:month-1)) 
 !        do j = 1, month-1, 1
 !          julian_day = julian_day + days_per_month(j)
 !        end do
@@ -217,8 +217,7 @@
         end if
 
         if ( ( leap_year( year ) .and. gregorian2julian_day > 366 ) .or. & 
-             ( .not. leap_year( year )  & 
-                        .and. gregorian2julian_day > 365 ) ) then
+             ( .not. leap_year( year ) .and. gregorian2julian_day > 365 ) ) then
                 stop "Problem with Julian day conversion."
         endif
 
