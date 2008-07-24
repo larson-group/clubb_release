@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.60 2008-07-24 17:59:55 faschinj Exp $
+# $Id: make.deps,v 1.61 2008-07-24 21:28:39 faschinj Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -58,7 +58,7 @@ grid.o		: constants.o file_functions.o grid.F90
 stats_type.o    : outputfile.o stats_precision.o error_code.o stats_type.F90
 stats_variables.o     : stats_type.o stats_variables.F90
 stats_subs.o    : output_grads.o output_netcdf.o prog_variables.o diag_variables.o \
-	stats_variables.o stats_type.o grid.o stats_zt.o stats_zm.o stats_sfc.o temp_in_K_mod.o \
+	stats_variables.o stats_type.o grid.o stats_zt.o stats_zm.o stats_sfc.o T_in_K_mod.o \
 	interpolation.o stats_subs.F90 
 stats_zt.o : stats_variables.o stats_zt.F90
 stats_zm.o : stats_variables.o stats_zm.F90
@@ -66,7 +66,7 @@ stats_sfc.o: stats_variables.o stats_sfc.F90
 erf.o		: erf.F90
 lapack_wrap.o	: error_code.o lapack_wrap.F90
 Skw_func.o	: Skw_func.F90
-temp_in_K_mod.o	: constants.o temp_in_K_mod.F90
+T_in_K_mod.o	: constants.o T_in_K_mod.F90
 
 closure_new.o	: constants.o parameters.o grid.o saturation.o erf.o \
                  error_code.o numer_check.o closure_new.F90 
@@ -185,7 +185,7 @@ two_rt_lw_ocastrndm.o	: kinds.o two_rt_lw_ocastrndm.F90
 two_rt_sw.o		: kinds.o two_rt_sw.F
 two_rt_sw_bs.o		: kinds.o lapack_wrap.o two_rt_sw_bs.F
 two_rt_sw_ocastrndm.o	: kinds.o two_rt_sw_ocastrndm.F90
-bugsrad_driver.o 	: kinds.o constants.o bugs_rad.o temp_in_K_mod.o \
+bugsrad_driver.o 	: kinds.o constants.o bugs_rad.o T_in_K_mod.o \
 	stats_variables.o cos_solar_zen.o std_atmosphere_mod.o bugsrad_driver.F90
 
 # == Misc. program related source files  ==

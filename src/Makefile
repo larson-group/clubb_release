@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.146 2008-07-24 20:52:29 vlarson Exp $
+# $Id: Makefile,v 1.147 2008-07-24 21:28:39 faschinj Exp $
 #
 # This version should work with GNU make and Sun's dmake.
 #
@@ -76,7 +76,7 @@ PARAMETERIZATION = \
 	output_netcdf.o grid.o model_flags.o file_functions.o \
         stats_type.o stats_variables.o stats_subs.o \
         stats_zt.o stats_zm.o stats_sfc.o stats_precision.o sfc.o \
-	erf.o diffusion.o mean_adv.o temp_in_K_mod.o \
+	erf.o diffusion.o mean_adv.o T_in_K_mod.o \
 	closure_new.o diag_var.o interpolation.o \
         hydrostatic.o mixing_length.o mixing.o saturation.o \
 	compute_um_edsclrm_mod.o wp23.o Skw_func.o error_code.o \
