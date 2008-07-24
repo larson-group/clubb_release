@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_hoc.F90,v 1.36 2008-07-21 20:29:00 faschinj Exp $
+! $Id: bugsrad_driver.F90,v 1.1 2008-07-24 17:59:55 faschinj Exp $
 module bugsrad_hoc_mod
 
 implicit none

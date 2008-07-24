@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.144 2008-07-24 17:49:35 faschinj Exp $
+# $Id: Makefile,v 1.145 2008-07-24 17:59:55 faschinj Exp $
 #
 # This version should work with GNU make and Sun's dmake.
 #
@@ -53,7 +53,7 @@ BUGS_RAD = kinds.o std_atmosphere_mod.o bugsrad_planck.o bugsrad_physconst.o \
 	newexp.o rayle.o two_rt_lw.o two_rt_sw.o \
 	two_rt_sw_ocastrndm.o two_rt_lw_ocastrndm.o \
 	two_rt_lw_sel.o two_rt_lw_iter.o calendar.o cos_solar_zen.o \
-	two_rt_sw_bs.o bugsrad_hoc.o
+	two_rt_sw_bs.o bugsrad_driver.o
 
 MODEL = $(COAMPS_MICRO) \
 	hoc.o sounding.o rad_lwsw.o cloud_rad.o astex.o atex.o fire.o bomex.o \
@@ -110,7 +110,6 @@ all:	hoc_standalone hoc_tuner int2txt hoc_inputfields  \
 	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/HOC_parameterization/*.F90
 	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/GCSS/*.F90
 	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/LH/*.F90
-	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/BUGSrad/bugsrad_hoc.F90
 
 
 # == Rules ==

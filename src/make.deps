@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.59 2008-07-24 17:02:31 dschanen Exp $
+# $Id: make.deps,v 1.60 2008-07-24 17:59:55 faschinj Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -185,15 +185,15 @@ two_rt_lw_ocastrndm.o	: kinds.o two_rt_lw_ocastrndm.F90
 two_rt_sw.o		: kinds.o two_rt_sw.F
 two_rt_sw_bs.o		: kinds.o lapack_wrap.o two_rt_sw_bs.F
 two_rt_sw_ocastrndm.o	: kinds.o two_rt_sw_ocastrndm.F90
-bugsrad_hoc.o 		: kinds.o constants.o bugs_rad.o temp_in_K_mod.o \
-	stats_variables.o cos_solar_zen.o std_atmosphere_mod.o bugsrad_hoc.F90
+bugsrad_driver.o 	: kinds.o constants.o bugs_rad.o temp_in_K_mod.o \
+	stats_variables.o cos_solar_zen.o std_atmosphere_mod.o bugsrad_driver.F90
 
 # == Misc. program related source files  ==
 hoc.o		: parameterization_interface.o arm.o astex.o atex.o \
 	bomex.o clex9_nov02.o clex9_oct14.o dycoms2_rf01.o dycoms2_rf02.o \
 	fire.o jun25.o mpace_a.o mpace_b.o nov11.o \
 	wangara.o cobra.o rico.o gabls2.o lba.o arm_97.o arm_0003.o \
-	arm_3year.o cloud_sed_mod.o microphys_driver.o bugsrad_hoc.o \
+	arm_3year.o cloud_sed_mod.o microphys_driver.o bugsrad_driver.o \
 	inputfields.o error_code.o array_index.o hoc.F90
 array_index.o	: array_index.F90
 sounding.o	: grid.o std_atmosphere_mod.o interpolation.o constants.o \
