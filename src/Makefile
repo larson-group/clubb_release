@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.143 2008-07-24 17:02:31 dschanen Exp $
+# $Id: Makefile,v 1.144 2008-07-24 17:49:35 faschinj Exp $
 #
 # This version should work with GNU make and Sun's dmake.
 #
@@ -110,7 +110,6 @@ all:	hoc_standalone hoc_tuner int2txt hoc_inputfields  \
 	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/HOC_parameterization/*.F90
 	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/GCSS/*.F90
 	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/LH/*.F90
-	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/coamps_micro_driver.F90
 	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/BUGSrad/bugsrad_hoc.F90
 
 
