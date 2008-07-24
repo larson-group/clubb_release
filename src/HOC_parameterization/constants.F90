@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F90,v 1.1 2008-07-22 16:04:22 faschinj Exp $
+! $Id: constants.F90,v 1.2 2008-07-24 20:49:57 faschinj Exp $
 
         module constants
 
@@ -20,7 +20,7 @@
                   sol_const, wtol, thltol, rttol, qttol, sstol, difftol, & 
                   rc_tol, Nc_tol, rr_tol, Nr_tol, emin, eps,  & 
                   sec_per_day, sec_per_hr, sec_per_min, g_per_kg,  & 
-                  Lscale_max
+                  Lscale_max, T_freeze_K
 !    .            sclr_dim, hydromet_dim, sclrtol, 
 
         private ! Default scope
@@ -43,6 +43,10 @@
         Lf = 3.33e5,   & ! Latent heat of fusion               [J/kg]
         Rd = 287.04,   & ! Dry air gas constant                [J/kg/K]
         Rv = 461.5    ! Water vapor gas constant            [J/kg/K]
+        
+        real, parameter :: &
+        T_freeze_K = 273.15 ! Freezing point of water [K]
+
 
         ! Useful combinations of Rd and Rv
         real, parameter ::  & 
