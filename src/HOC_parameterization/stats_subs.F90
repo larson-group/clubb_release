@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F90,v 1.4 2008-07-24 15:18:56 dschanen Exp $
+!  $Id: stats_subs.F90,v 1.5 2008-07-24 15:21:18 dschanen Exp $
 module stats_subs
 
 #ifdef STATS
@@ -154,7 +154,7 @@ module stats_subs
 
     character(len=200) :: fdir, fname
 
-    integer :: i, ntot
+    integer :: ntot
 
     ! Initialize
     lerror = .false.
