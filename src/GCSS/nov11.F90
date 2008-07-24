@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: nov11.F90,v 1.4 2008-07-23 20:25:50 faschinj Exp $
+! $Id: nov11.F90,v 1.5 2008-07-24 14:12:24 faschinj Exp $
         module nov11
 
 !       Description:
@@ -607,7 +607,7 @@
 
           ! Cloud nuclei
           ! Note: As near as I can tell we do not need this to be
-          ! anything but zero for Nov11, since it is too cold for rrm.
+          ! anything but zero for Nov11, since it is too cold for rrainm.
           ! -dschanen 1 May 2007
 !         Ncnm(1:gr%nnzp) 
 !    .    = 30.0 * (1.0 + exp(-gr%zt(1:gr%nnzp)/2000.0)) * 1.e6 / rhot

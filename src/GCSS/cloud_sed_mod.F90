@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-!$Id: cloud_sed_mod.F90,v 1.1 2008-07-22 16:04:17 faschinj Exp $
+!$Id: cloud_sed_mod.F90,v 1.2 2008-07-24 14:12:24 faschinj Exp $
         module cloud_sed_mod
 
         implicit none
@@ -81,7 +81,7 @@
         ! The opposite effect occurs with evaporation.
         !
         !=====================================================================
-        !||     Effect     |  rvm  |  rcm  |  rtm  |  rrm  |  thm  |  thlm  ||
+        !||     Effect     |  rvm  |  rcm  |  rtm  |  rrainm  |  thm  |  thlm  ||
         !|===================================================================|
         !|| Sedimentation  |       |       |       |       |       |        ||
         !|| Effects of     | stays | incr. | incr. | stays | stays | decr.  ||
@@ -91,27 +91,27 @@
         !|| Evaporation    |       |       |       |       |       |        ||
         !|| of rain to     | incr. | stays | incr. | decr. | decr. | decr.  ||
         !|| water vapor.   |       | same  |       |       |       |        ||
-        !|| cond_rrm < 0   |       |       |       |       |       |        ||
+        !|| cond_rrainm < 0   |       |       |       |       |       |        ||
         !|-------------------------------------------------------------------|
         !|| Autoconversion |       |       |       |       |       |        ||
         !|| of cloud water | stays | decr. | decr. | incr. | stays | incr.  ||
         !|| to rain water. | same  |       |       |       | same  |        ||
-        !|| auto_rrm > 0   |       |       |       |       |       |        ||
+        !|| auto_rrainm > 0   |       |       |       |       |       |        ||
         !|-------------------------------------------------------------------|
         !|| Accretion of   |       |       |       |       |       |        ||
         !|| cloud water by | stays | decr. | decr. | incr. | stays | incr.  ||
         !|| rain water.    | same  |       |       |       | same  |        ||
-        !|| accr_rrm > 0   |       |       |       |       |       |        ||
+        !|| accr_rrainm > 0   |       |       |       |       |       |        ||
         !=====================================================================
         !
-        ! Note: In HOC, cond_rrm will always be either negative or zero.
+        ! Note: In HOC, cond_rrainm will always be either negative or zero.
         !
         ! Overall effects of rain and cloud water sedimentation:
         !
         ! (drtm/dt)t  = (drtm/dt)0 
-        !                       + sed_rcm - cond_rrm - auto_rrm - accr_rrm
+        !                       + sed_rcm - cond_rrainm - auto_rrainm - accr_rrainm
         ! (dthlm/dt)t = (dthlm/dt)0  -  ( Lv / (Cp*exner) ) 
-        !                       * ( sed_rcm - cond_rrm - auto_rrm - accr_rrm )
+        !                       * ( sed_rcm - cond_rrainm - auto_rrainm - accr_rrainm )
         !
         ! Note by Brian Griffin.
         !=====================================================================
