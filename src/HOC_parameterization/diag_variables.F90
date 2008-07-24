@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F90,v 1.3 2008-07-24 15:23:17 dschanen Exp $
+! $Id: diag_variables.F90,v 1.4 2008-07-24 21:02:15 faschinj Exp $
         module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -153,15 +153,15 @@
         ! Interpolated variables for tuning
 !#ifdef STATS
         real, target, allocatable, dimension(:), public :: & 
-        wp2zt,     & ! w'^2 on thermo. grid
-        thlp2zt,   & ! thl'^2 on thermo. grid
-        wpthlpzt,  & ! w'thl' on thermo. grid
-        wprtpzt,   & ! w'rt' on thermo. grid
-        rtp2zt,    & ! rt'^2 on therm. grid
-        rtpthlpzt ! rt'thl' on thermo. grid
+        wp2_zt,     & ! w'^2 on thermo. grid
+        thlp2_zt,   & ! thl'^2 on thermo. grid
+        wpthlp_zt,  & ! w'thl' on thermo. grid
+        wprtp_zt,   & ! w'rt' on thermo. grid
+        rtp2_zt,    & ! rt'^2 on therm. grid
+        rtpthlp_zt ! rt'thl' on thermo. grid
 
-!$omp   threadprivate(wp2zt, thlp2zt, wpthlpzt, wprtpzt) 
-!$omp   threadprivate(rtp2zt, rtpthlpzt)
+!$omp   threadprivate(wp2_zt, thlp2_zt, wpthlp_zt, wprtp_zt) 
+!$omp   threadprivate(rtp2_zt, rtpthlp_zt)
 
 !#endif /*STATS*/
 
@@ -306,12 +306,12 @@
 
 #ifdef STATS
 ! Tuning Variables
-        allocate( wp2zt(1:nzmax) )     ! w'^2 on thermo. grid
-        allocate( thlp2zt(1:nzmax) )   ! thl'^2 on thermo. grid
-        allocate( wpthlpzt(1:nzmax) )  ! w'thl' on thermo. grid
-        allocate( wprtpzt(1:nzmax) )   ! w'rt' on thermo. grid
-        allocate( rtp2zt(1:nzmax) )    ! rt'^2 on thermo. grid
-        allocate( rtpthlpzt(1:nzmax) ) ! rt'thl' on thermo. grid
+        allocate( wp2_zt(1:nzmax) )     ! w'^2 on thermo. grid
+        allocate( thlp2_zt(1:nzmax) )   ! thl'^2 on thermo. grid
+        allocate( wpthlp_zt(1:nzmax) )  ! w'thl' on thermo. grid
+        allocate( wprtp_zt(1:nzmax) )   ! w'rt' on thermo. grid
+        allocate( rtp2_zt(1:nzmax) )    ! rt'^2 on thermo. grid
+        allocate( rtpthlp_zt(1:nzmax) ) ! rt'thl' on thermo. grid
 #endif /*STATS*/
 
 ! Array fpr pdf closure scheme
@@ -543,12 +543,12 @@
 
 #ifdef STATS
         ! Interpolated variables for tuning
-        deallocate( wp2zt )     ! w'^2 on t
-        deallocate( thlp2zt )   ! th_l'^2 on t 
-        deallocate( wpthlpzt )  ! w'th_l' on t
-        deallocate( wprtpzt )   ! w'rt' on t
-        deallocate( rtp2zt )    ! rt'^2 on t
-        deallocate( rtpthlpzt ) ! rt'th_l' on t
+        deallocate( wp2_zt )     ! w'^2 on t
+        deallocate( thlp2_zt )   ! th_l'^2 on t 
+        deallocate( wpthlp_zt )  ! w'th_l' on t
+        deallocate( wprtp_zt )   ! w'rt' on t
+        deallocate( rtp2_zt )    ! rt'^2 on t
+        deallocate( rtpthlp_zt ) ! rt'th_l' on t
 #endif /*STATS*/
 
 
