@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: fill_holes.F90,v 1.1 2008-07-22 16:04:24 faschinj Exp $
+! $Id: fill_holes.F90,v 1.2 2008-07-24 15:05:33 griffinb Exp $
 
         module fill_holes
 
@@ -185,6 +185,16 @@
         ! clipped_total_mass >= original_total_mass
         field_clipped_avg = vertical_avg( begin_idx, end_idx,  & 
                                           field_grid, field_clipped )
+
+        ! If the difference between the field_clipped_avg and the 
+        ! threshold is so small that it falls within numerical 
+        ! round-off, return to the parent subroutine without altering
+        ! the field in order to avoid divide-by-zero error.
+!        if ( abs(field_clipped_avg - threshold)  &
+!              < threshold*epsilon(threshold) ) then
+        if ( abs(field_clipped_avg - threshold) == 0.0 ) then
+           return
+        endif
 
         ! Compute coefficient that makes the clipped field have the same
         ! mass as the original field.
