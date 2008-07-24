@@ -1,4 +1,99 @@
-! $Id: nrutil.f90,v 1.1 2008-07-24 16:51:57 dschanen Exp $
+! $Id: num_rec.f90,v 1.1 2008-07-24 17:31:45 dschanen Exp $
+!   From _Numerical Recipes in Fortran 90_
+!   (C) 1988-1996 Numerical Recipes Software
+MODULE nrtype
+
+INTEGER, PARAMETER :: I4B = SELECTED_INT_KIND(9)
+INTEGER, PARAMETER :: I2B = SELECTED_INT_KIND(4)
+INTEGER, PARAMETER :: I1B = SELECTED_INT_KIND(2)
+INTEGER, PARAMETER :: SP  = KIND(1.0)
+INTEGER, PARAMETER :: DP  = KIND(1.0D0)
+INTEGER, PARAMETER :: SPC = KIND((1.0,1.0))
+INTEGER, PARAMETER :: DPC = KIND((1.0D0,1.0D0))
+INTEGER, PARAMETER :: LGT = KIND(.true.)
+
+REAL(SP), PARAMETER :: PI      = 3.141592653589793238462643383279502884197_sp
+REAL(SP), PARAMETER :: PIO2    = 1.57079632679489661923132169163975144209858_sp
+REAL(SP), PARAMETER :: TWOPI   = 6.283185307179586476925286766559005768394_sp
+REAL(SP), PARAMETER :: SQRT2   = 1.41421356237309504880168872420969807856967_sp
+REAL(SP), PARAMETER :: EULER   = 0.5772156649015328606065120900824024310422_sp
+REAL(DP), PARAMETER :: PI_D    = 3.141592653589793238462643383279502884197_dp
+REAL(DP), PARAMETER :: PIO2_D  = 1.57079632679489661923132169163975144209858_dp
+REAL(DP), PARAMETER :: TWOPI_D = 6.283185307179586476925286766559005768394_dp
+
+TYPE sprs2_sp
+  INTEGER(I4B)                        :: n, len
+  REAL(SP), DIMENSION(:), POINTER     :: val
+  INTEGER(I4B), DIMENSION(:), POINTER :: irow
+  INTEGER(I4B), DIMENSION(:), POINTER :: jcol
+END TYPE sprs2_sp
+
+TYPE sprs2_dp
+  INTEGER(I4B)                        :: n, len
+  REAL(DP), DIMENSION(:), POINTER     :: val
+  INTEGER(I4B), DIMENSION(:), POINTER :: irow
+  INTEGER(I4B), DIMENSION(:), POINTER :: jcol
+END TYPE sprs2_dp
+
+END MODULE nrtype
+! $Id: num_rec.f90,v 1.1 2008-07-24 17:31:45 dschanen Exp $
+!   From _Numerical Recipes in Fortran 90_
+!   (C) 1988-1996 Numerical Recipes Software
+
+! This is an incomplete version containing only the interfaces needed to make
+! use of the amoeba and amebsa routines in HOC. -dschanen 6 Sept 2006
+
+MODULE nr
+
+  INTERFACE
+    SUBROUTINE amebsa(p,y,pb,yb,ftol,func,iter,temptr)
+    USE nrtype
+    INTEGER(I4B), INTENT(INOUT) :: iter
+    REAL(SP), INTENT(INOUT) :: yb
+    REAL(SP), INTENT(IN) :: ftol,temptr
+    REAL(SP), DIMENSION(:), INTENT(INOUT) :: y,pb
+    REAL(SP), DIMENSION(:,:), INTENT(INOUT) :: p
+    INTERFACE
+      FUNCTION func(x)
+      USE nrtype
+      REAL(SP), DIMENSION(:), INTENT(IN) :: x
+      REAL(SP) :: func
+      END FUNCTION func
+    END INTERFACE
+    END SUBROUTINE amebsa
+  END INTERFACE
+
+  INTERFACE
+    SUBROUTINE amoeba(p,y,ftol,func,iter)
+    USE nrtype
+    INTEGER(I4B), INTENT(OUT) :: iter
+    REAL(SP), INTENT(IN) :: ftol
+    REAL(SP), DIMENSION(:), INTENT(INOUT) :: y
+    REAL(SP), DIMENSION(:,:), INTENT(INOUT) :: p
+    INTERFACE
+      FUNCTION func(x)
+      USE nrtype
+      REAL(SP), DIMENSION(:), INTENT(IN) :: x
+      REAL(SP) :: func
+      END FUNCTION func
+    END INTERFACE
+    END SUBROUTINE amoeba
+  END INTERFACE
+
+  INTERFACE ran1
+    SUBROUTINE ran1_s(harvest)
+    USE nrtype
+    REAL(SP), INTENT(OUT) :: harvest
+    END SUBROUTINE ran1_s
+
+    SUBROUTINE ran1_v(harvest)
+    USE nrtype
+    REAL(SP), DIMENSION(:), INTENT(OUT) :: harvest
+    END SUBROUTINE ran1_v
+  END INTERFACE
+
+END MODULE nr
+! $Id: num_rec.f90,v 1.1 2008-07-24 17:31:45 dschanen Exp $
 !   From _Numerical Recipes in Fortran 90_
 !   (C) 1988-1996 Numerical Recipes Software
 MODULE nrutil
@@ -1155,3 +1250,424 @@ CONTAINS
   END FUNCTION vabs
 !BL
 END MODULE nrutil
+! $Id: num_rec.f90,v 1.1 2008-07-24 17:31:45 dschanen Exp $
+!   From _Numerical Recipes in Fortran 90_
+!   (C) 1988-1996 Numerical Recipes Software
+MODULE ran_state
+  USE nrtype
+  IMPLICIT NONE
+  INTEGER, PARAMETER :: K4B=selected_int_kind(9)
+  INTEGER(K4B), PARAMETER :: hg=huge(1_K4B), hgm=-hg, hgng=hgm-1
+  INTEGER(K4B), SAVE :: lenran=0, seq=0
+  INTEGER(K4B), SAVE :: iran0,jran0,kran0,nran0,mran0,rans
+  INTEGER(K4B), DIMENSION(:,:), POINTER, SAVE :: ranseeds
+  INTEGER(K4B), DIMENSION(:), POINTER, SAVE :: iran,jran,kran, &
+    nran,mran,ranv
+  REAL(SP), SAVE :: amm
+  INTERFACE ran_hash
+    MODULE PROCEDURE ran_hash_s, ran_hash_v
+  END INTERFACE
+CONTAINS
+!BL
+  SUBROUTINE ran_init(length)
+  USE nrtype; USE nrutil, ONLY : arth,nrerror,reallocate
+  IMPLICIT NONE
+  INTEGER(K4B), INTENT(IN) :: length
+  INTEGER(K4B) :: new,j,hgt
+  if (length < lenran) RETURN
+  hgt=hg
+  if (hg /= 2147483647) call nrerror('ran_init: arith assump 1 fails')
+  if (hgng >= 0)        call nrerror('ran_init: arith assump 2 fails')
+!--> dschanen kluge for 64bit intermediate results
+! if (hgt+1 /= hgng)    call nrerror('ran_init: arith assump 3 fails')
+  if (int( hgt+1, kind=K4B) /= hgng)    call nrerror('ran_init: arith assump 3 fails')
+!<-- dschanen end kluge
+  if (not(hg) >= 0)     call nrerror('ran_init: arith assump 4 fails')
+  if (not(hgng) < 0)    call nrerror('ran_init: arith assump 5 fails')
+  if (hg+hgng >= 0)     call nrerror('ran_init: arith assump 6 fails')
+  if (not(-1_k4b) < 0)  call nrerror('ran_init: arith assump 7 fails')
+  if (not(0_k4b) >= 0)  call nrerror('ran_init: arith assump 8 fails')
+  if (not(1_k4b) >= 0)  call nrerror('ran_init: arith assump 9 fails')
+  if (lenran > 0) then
+    ranseeds=>reallocate(ranseeds,length,5)
+    ranv=>reallocate(ranv,length-1)
+    new=lenran+1
+  else
+    allocate(ranseeds(length,5))
+    allocate(ranv(length-1))
+    new=1
+    amm=nearest(1.0_sp,-1.0_sp)/hgng
+    if (amm*hgng >= 1.0 .or. amm*hgng <= 0.0) &
+      call nrerror('ran_init: arth assump 10 fails')
+  end if
+  ranseeds(new:,1)=seq
+  ranseeds(new:,2:5)=spread(arth(new,1,size(ranseeds(new:,1))),2,4)
+  do j=1,4
+    call ran_hash(ranseeds(new:,j),ranseeds(new:,j+1))
+  end do
+  where (ranseeds(new:,1:3) < 0) &
+    ranseeds(new:,1:3)=not(ranseeds(new:,1:3))
+  where (ranseeds(new:,4:5) == 0) ranseeds(new:,4:5)=1
+  if (new == 1) then
+    iran0=ranseeds(1,1)
+    jran0=ranseeds(1,2)
+    kran0=ranseeds(1,3)
+    mran0=ranseeds(1,4)
+    nran0=ranseeds(1,5)
+    rans=nran0
+  end if
+  if (length > 1) then
+    iran => ranseeds(2:,1)
+    jran => ranseeds(2:,2)
+    kran => ranseeds(2:,3)
+    mran => ranseeds(2:,4)
+    nran => ranseeds(2:,5)
+    ranv = nran
+  end if
+  lenran=length
+  END SUBROUTINE ran_init
+!BL
+  SUBROUTINE ran_deallocate
+  if (lenran > 0) then
+    deallocate(ranseeds,ranv)
+    nullify(ranseeds,ranv,iran,jran,kran,mran,nran)
+    lenran = 0
+  end if
+  END SUBROUTINE ran_deallocate
+!BL
+  SUBROUTINE ran_seed(sequence,size,put,get)
+  IMPLICIT NONE
+  INTEGER, OPTIONAL, INTENT(IN) :: sequence
+  INTEGER, OPTIONAL, INTENT(OUT) :: size
+  INTEGER, DIMENSION(:), OPTIONAL, INTENT(IN) :: put
+  INTEGER, DIMENSION(:), OPTIONAL, INTENT(OUT) :: get
+  if (present(size)) then
+    size=5*lenran
+  else if (present(put)) then
+    if (lenran == 0) RETURN
+    ranseeds=reshape(put,shape(ranseeds))
+    where (ranseeds(:,1:3) < 0) ranseeds(:,1:3)=not(ranseeds(:,1:3))
+    where (ranseeds(:,4:5) == 0) ranseeds(:,4:5)=1
+    iran0=ranseeds(1,1)
+    jran0=ranseeds(1,2)
+    kran0=ranseeds(1,3)
+    mran0=ranseeds(1,4)
+    nran0=ranseeds(1,5)
+  else if (present(get)) then
+    if (lenran == 0) RETURN
+    ranseeds(1,1:5)=(/ iran0,jran0,kran0,mran0,nran0 /)
+    get=reshape(ranseeds,shape(get))
+  else if (present(sequence)) then
+    call ran_deallocate
+    seq=sequence
+  end if
+  END SUBROUTINE ran_seed
+!BL
+  SUBROUTINE ran_hash_s(il,ir)
+  IMPLICIT NONE
+  INTEGER(K4B), INTENT(INOUT) :: il,ir
+  INTEGER(K4B) :: is,j
+  do j=1,4
+    is=ir
+    ir=ieor(ir,ishft(ir,5))+1422217823
+    ir=ieor(ir,ishft(ir,-16))+1842055030
+    ir=ieor(ir,ishft(ir,9))+80567781
+    ir=ieor(il,ir)
+    il=is
+  end do
+  END SUBROUTINE ran_hash_s
+!BL
+  SUBROUTINE ran_hash_v(il,ir)
+  IMPLICIT NONE
+  INTEGER(K4B), DIMENSION(:), INTENT(INOUT) :: il,ir
+  INTEGER(K4B), DIMENSION(size(il)) :: is
+  INTEGER(K4B) :: j
+  do j=1,4
+    is=ir
+    ir=ieor(ir,ishft(ir,5))+1422217823
+    ir=ieor(ir,ishft(ir,-16))+1842055030
+    ir=ieor(ir,ishft(ir,9))+80567781
+    ir=ieor(il,ir)
+    il=is
+  end do
+  END SUBROUTINE ran_hash_v
+END MODULE ran_state
+! $Id: num_rec.f90,v 1.1 2008-07-24 17:31:45 dschanen Exp $
+!   From _Numerical Recipes in Fortran 90_
+!   (C) 1988-1996 Numerical Recipes Software
+SUBROUTINE ran1_s( harvest )
+  
+USE nrtype
+USE ran_state, ONLY: K4B,amm,lenran,ran_init, &
+    iran0,jran0,kran0,nran0,mran0,rans
+
+IMPLICIT NONE
+
+REAL(SP), INTENT(OUT) :: harvest
+
+if (lenran < 1) call ran_init(1)
+rans = iran0-kran0
+if (rans < 0) rans=rans+2147483579_k4b
+iran0 = jran0
+jran0 = kran0
+kran0 = rans
+nran0 = ieor(nran0,ishft(nran0,13))
+nran0 = ieor(nran0,ishft(nran0,-17))
+nran0 = ieor(nran0,ishft(nran0,5))
+if (nran0 == 1) nran0=270369_k4b
+mran0 = ieor(mran0,ishft(mran0,5))
+mran0 = ieor(mran0,ishft(mran0,-13))
+mran0 = ieor(mran0,ishft(mran0,6))
+rans  = ieor(nran0,rans)+mran0
+
+harvest = amm*merge(rans,not(rans), rans<0 )
+
+return
+END SUBROUTINE ran1_s
+
+SUBROUTINE ran1_v(harvest)
+USE nrtype
+USE ran_state, ONLY: K4B,amm,lenran,ran_init, &
+  iran,jran,kran,nran,mran,ranv
+IMPLICIT NONE
+
+REAL(SP), DIMENSION(:), INTENT(OUT) :: harvest
+INTEGER(K4B) :: n
+
+n=size(harvest)
+if (lenran < n+1) call ran_init(n+1)
+ranv(1:n) = iran(1:n)-kran(1:n)
+where (ranv(1:n) < 0) ranv(1:n)=ranv(1:n)+2147483579_k4b
+iran(1:n) = jran(1:n)
+jran(1:n) = kran(1:n)
+kran(1:n) = ranv(1:n)
+nran(1:n) = ieor(nran(1:n),ishft(nran(1:n),13))
+nran(1:n) = ieor(nran(1:n),ishft(nran(1:n),-17))
+nran(1:n) = ieor(nran(1:n),ishft(nran(1:n),5))
+where (nran(1:n) == 1) nran(1:n)=270369_k4b
+mran(1:n) = ieor(mran(1:n), ishft(mran(1:n),5))
+mran(1:n) = ieor(mran(1:n), ishft(mran(1:n),-13))
+mran(1:n) = ieor(mran(1:n), ishft(mran(1:n),6))
+ranv(1:n) = ieor(nran(1:n), ranv(1:n))+mran(1:n)
+
+harvest = amm * merge( ranv(1:n), not(ranv(1:n)), ranv(1:n)<0 )
+
+return
+END SUBROUTINE ran1_v
+! $Id: num_rec.f90,v 1.1 2008-07-24 17:31:45 dschanen Exp $
+!   From _Numerical Recipes in Fortran 90_
+!   (C) 1988-1996 Numerical Recipes Software
+SUBROUTINE amoeba( p, y, ftol, func, iter )
+USE nrtype
+USE nrutil, ONLY : assert_eq, imaxloc, iminloc, nrerror, swap
+
+IMPLICIT NONE
+
+INTEGER(I4B), INTENT(OUT) :: iter
+REAL(SP), INTENT(IN)      :: ftol
+REAL(SP), DIMENSION(:), INTENT(INOUT)   :: y
+REAL(SP), DIMENSION(:,:), INTENT(INOUT) :: p
+INTERFACE
+  FUNCTION func(x)
+  USE nrtype
+  IMPLICIT NONE
+  REAL(SP), DIMENSION(:), INTENT(IN) :: x
+  REAL(SP) :: func
+  END FUNCTION func
+END INTERFACE
+
+INTEGER(I4B), PARAMETER :: ITMAX = 5000
+REAL(SP), PARAMETER     :: TINY  = 1.0e-10
+INTEGER(I4B)            :: ihi, ndim
+
+REAL(SP), DIMENSION(size( p, 2 )) :: psum
+
+call amoeba_private
+
+RETURN
+
+CONTAINS
+!BL
+SUBROUTINE amoeba_private
+IMPLICIT NONE
+
+INTEGER(I4B) :: i,ilo,inhi
+REAL(SP)     :: rtol,ysave,ytry,ytmp
+
+ndim    = assert_eq( size(p,2), size(p,1)-1, size(y)-1, 'amoeba' )
+iter    = 0
+psum(:) = sum( p(:,:), dim = 1 )
+
+do
+  ilo    = iminloc( y(:) )
+  ihi    = imaxloc( y(:) )
+  ytmp   = y(ihi)
+  y(ihi) = y(ilo)
+  inhi   = imaxloc( y(:) )
+  y(ihi) = ytmp
+  rtol   = 2.0_sp * abs( y(ihi) - y(ilo) ) /       &
+           ( abs( y(ihi) ) + abs( y(ilo) ) + TINY )
+  if (rtol < ftol) then
+    call swap( y(1), y(ilo) )
+    call swap( p(1,:), p(ilo,:) )
+    RETURN
+  end if
+!  if (iter >= ITMAX) call nrerror('ITMAX exceeded in amoeba')
+! Make amoeba return the non-optimal result. -dschanen 6/14/2005
+  if (iter >= ITMAX) then  
+    print *, 'ITMAX exceeded in amoeba' 
+    RETURN
+  endif
+  ytry = amotry( -1.0_sp )
+  iter = iter + 1
+  if (ytry <= y(ilo)) then
+    ytry = amotry( 2.0_sp )
+    iter = iter + 1
+  else if (ytry >= y(inhi)) then
+    ysave = y(ihi)
+    ytry  = amotry( 0.5_sp )
+    iter  = iter + 1
+    if (ytry >= ysave) then
+      p(:,:) = 0.5_sp * (p(:, :) + spread( p(ilo, :), 1, size(p, 1) ))
+      do i=1, ndim+1
+        if (i /= ilo) y(i) = func( p(i, :) )
+      end do
+      iter    = iter + ndim
+      psum(:) = sum( p(:, :), dim=1 )
+    end if
+  end if
+end do
+
+RETURN
+END SUBROUTINE amoeba_private
+!BL
+FUNCTION amotry(fac)
+IMPLICIT NONE
+
+REAL(SP), INTENT(IN) :: fac
+REAL(SP)             :: amotry
+REAL(SP)             :: fac1, fac2, ytry
+
+REAL(SP), DIMENSION(size(p,2)) :: ptry
+
+fac1    = (1.0_sp - fac) / ndim
+fac2    = fac1 - fac
+ptry(:) = psum(:) * fac1 - p(ihi,:) * fac2
+ytry    = func( ptry )
+
+if (ytry < y(ihi)) then
+  y(ihi)   = ytry
+  psum(:)  = psum(:) - p(ihi,:) + ptry(:)
+  p(ihi,:) = ptry(:)
+end if
+
+amotry = ytry
+
+RETURN
+END FUNCTION amotry
+
+END SUBROUTINE amoeba
+! $Id: num_rec.f90,v 1.1 2008-07-24 17:31:45 dschanen Exp $  
+!   From _Numerical Recipes in Fortran 90_
+!   (C) 1988-1996 Numerical Recipes Software
+SUBROUTINE amebsa( p, y, pb, yb, ftol, func, iter, temptr )
+USE nrtype
+USE nrutil, ONLY : assert_eq, imaxloc, iminloc, swap
+USE nr, ONLY : ran1
+IMPLICIT NONE
+
+INTEGER(I4B), INTENT(INOUT) :: iter
+REAL(SP), INTENT(INOUT)     :: yb
+REAL(SP), INTENT(IN)        :: ftol, temptr
+REAL(SP), DIMENSION(:), INTENT(INOUT)   :: y, pb
+REAL(SP), DIMENSION(:,:), INTENT(INOUT) :: p
+
+INTERFACE
+  FUNCTION func(x)
+  USE nrtype
+  IMPLICIT NONE
+  REAL(SP), DIMENSION(:), INTENT(IN) :: x
+  REAL(SP) :: func
+  END FUNCTION func
+END INTERFACE
+
+INTEGER(I4B), PARAMETER :: NMAX=200
+INTEGER(I4B) :: ihi,ndim
+REAL(SP)     :: yhi
+REAL(SP), DIMENSION(size(p,2)) :: psum
+call amebsa_private
+
+CONTAINS
+!BL
+  SUBROUTINE amebsa_private
+  INTEGER(I4B) :: i,ilo,inhi
+  REAL(SP)     :: rtol,ylo,ynhi,ysave,ytry
+  REAL(SP), DIMENSION(size(y)) :: yt,harvest
+
+  ndim    = assert_eq( size( p, 2 ), size( p, 1 )-1,       &
+                       size( y )-1, size( pb ), 'amebsa' )
+  psum(:) = sum( p(:,:), dim = 1 )
+
+  do
+    call ran1( harvest )
+    yt(:)   = y(:) - temptr * log( harvest )
+    ilo     = iminloc( yt(:) )
+    ylo     = yt(ilo)
+    ihi     = imaxloc( yt(:) )
+    yhi     = yt(ihi)
+    yt(ihi) = ylo
+    inhi    = imaxloc( yt(:) )
+    ynhi    = yt(inhi)
+    rtol    = 2.0_sp * abs( yhi - ylo ) / ( abs( yhi )+abs( ylo ) )
+    if (rtol < ftol .or. iter < 0) then
+      call swap( y(1), y(ilo) )
+      call swap( p(1,:), p(ilo,:) )
+      RETURN
+    end if
+    ytry = amotsa( -1.0_sp )
+    iter = iter - 1
+    if (ytry <= ylo) then
+      ytry = amotsa( 2.0_sp )
+      iter = iter - 1
+    else if (ytry >= ynhi) then
+      ysave = yhi
+      ytry  = amotsa( 0.5_sp )
+      iter  = iter - 1
+      if (ytry >= ysave) then
+        p(:,:) = 0.5_sp * ( p(:,:) + spread( p(ilo,:), 1, size(p,1) ) )
+        do i=1,ndim+1
+          if (i /= ilo) y(i) = func( p(i,:) )
+        end do
+        iter    = iter - ndim
+        psum(:) = sum( p(:,:), dim=1 )
+      end if
+    end if
+  end do
+  END SUBROUTINE amebsa_private
+!BL
+  FUNCTION amotsa(fac)
+  IMPLICIT NONE
+  REAL(SP), INTENT(IN) :: fac
+  REAL(SP) :: amotsa
+  REAL(SP) :: fac1, fac2, yflu, ytry, harv
+  REAL(SP), DIMENSION(size(p,2)) :: ptry
+  fac1 = (1.0_sp - fac) / ndim
+  fac2 = fac1 - fac
+  ptry(:) = psum(:) * fac1 - p(ihi,:) * fac2
+  ytry    = func( ptry )
+  if (ytry <= yb) then
+    pb(:) = ptry(:)
+    yb    = ytry
+  end if
+  call ran1(harv)
+  yflu = ytry + temptr*log( harv )
+  if (yflu < yhi) then
+    y(ihi)   = ytry
+    yhi      = yflu
+    psum(:)  = psum(:) - p(ihi,:) + ptry(:)
+    p(ihi,:) = ptry(:)
+  end if
+  amotsa = yflu
+  END FUNCTION amotsa
+
+END SUBROUTINE amebsa
