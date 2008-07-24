@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: hoc_tuner.F90,v 1.1 2008-07-22 16:04:13 faschinj Exp $
+! $Id: hoc_tuner.F90,v 1.2 2008-07-24 16:51:54 dschanen Exp $
 
       program hoc_tuner 
 
@@ -135,6 +135,7 @@
 !     References:
 !     _Numerical Recipes in Fortran 90_.  See full citation above.
 !------------------------------------------------------------------------
+#ifdef TUNER
       use nr, only:  & 
           amoeba ! Procedure(s)
       use error, only:  & 
@@ -165,6 +166,9 @@
       min_err = cost_fnc_vector(1)
 
       return
+#else
+      stop "Tuner was disabled at compile time"
+#endif
       end subroutine amoeba_driver
 
 !-----------------------------------------------------------------------
@@ -176,6 +180,7 @@
 !     At the end of the subroutine, the param_vals_matrix's first row gets the
 !     optimal values assigned to it.
 !-----------------------------------------------------------------------
+#ifdef TUNER
       use nr, only:  & 
           amebsa ! Procedure(s)
       use nrtype, only:  & 
@@ -235,6 +240,10 @@
       
       param_vals_matrix(1,1:ndim) = pb(1:ndim)
       min_err = ybb
+      return
 
+#else
+      stop "Tuner was disabled at compile time"
+#endif
       end subroutine amebsa_driver
 !----------------------------------------------------------------------

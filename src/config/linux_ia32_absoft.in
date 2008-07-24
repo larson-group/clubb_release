@@ -1,4 +1,4 @@
-# $Id: linux_ia32_absoft.in,v 1.1 2008-06-04 20:28:15 dschanen Exp $
+# $Id: linux_ia32_absoft.in,v 1.2 2008-07-24 16:52:02 dschanen Exp $
 # Configuration file for Linux machine using Absoft Fortran
 
 # == Paths ==
@@ -44,7 +44,6 @@ LDFLAGS = -lU77 -L$(LIBDIR) -Wl,-rpath,$(LIBDIR) -lhoc_param -lhoc_bugsrad $(LAP
 # Preprocessing Directives:
 #   -DSTATS enables statistics
 #   -DNETCDF enables netCDF output
-#   -DSCALARS enables passive scalars
 #   -DBIG_ENDIAN_IO use only if compiler performs big endian file i/O
 #                   regardless of internal representation
 #   -DLITTLE_ENDIAN_IO use only if compiler performs little endian file i/O
@@ -53,8 +52,8 @@ LDFLAGS = -lU77 -L$(LIBDIR) -Wl,-rpath,$(LIBDIR) -lhoc_param -lhoc_bugsrad $(LAP
 # You will need to `make clean' if you change these
 # Use -I<include path> to set a module or header file directory
 
-FCFLAGS = $(ARCH) $(DEBUG) -DAbsoftUNIXFortran -DSTATS -Dnooverlap -Dradoffline
-#FCFLAGS = $(ARCH) $(OPTIMIZE) -DAbsoftUNIXFortran -DSTATS -Dnooverlap -Dradoffline
+FCFLAGS = $(ARCH) $(DEBUG) -DAbsoftUNIXFortran -DTUNER -DCOAMPS_MICRO -DSTATS -Dnooverlap -Dradoffline
+#FCFLAGS = $(ARCH) $(OPTIMIZE) -DAbsoftUNIXFortran -DSTATS -DTUNER -DCOAMPS_MICRO -Dnooverlap -Dradoffline
 
 # == Static library processing ==
 AR = ar

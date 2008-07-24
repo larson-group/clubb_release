@@ -1,4 +1,4 @@
-! $Id: amebsa.f90,v 1.3 2005-06-23 20:07:53 dschanen Exp $  
+! $Id: amebsa.f90,v 1.1 2008-07-24 16:51:57 dschanen Exp $  
 !   From _Numerical Recipes in Fortran 90_
 !   (C) 1988-1996 Numerical Recipes Software
 SUBROUTINE amebsa( p, y, pb, yb, ftol, func, iter, temptr )

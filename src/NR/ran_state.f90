@@ -1,4 +1,4 @@
-! $Id: ran_state.f90,v 1.3 2007-02-02 22:02:21 dschanen Exp $
+! $Id: ran_state.f90,v 1.1 2008-07-24 16:51:57 dschanen Exp $
 !   From _Numerical Recipes in Fortran 90_
 !   (C) 1988-1996 Numerical Recipes Software
 MODULE ran_state

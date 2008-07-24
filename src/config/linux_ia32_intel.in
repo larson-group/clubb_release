@@ -1,4 +1,4 @@
-# $Id: linux_ia32_intel.in,v 1.2 2008-07-16 16:50:15 faschinj Exp $
+# $Id: linux_ia32_intel.in,v 1.3 2008-07-24 16:52:02 dschanen Exp $
 # Makefile definitions customized for Linux x86_64 using the Intel Fortran 
 # compiler 
 
@@ -42,7 +42,6 @@ LDFLAGS = -L$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib $(LAPACK)
 # == Compiler flags (all) ==
 # Preprocessing:
 #   -DSTATS enables statistics
-#   -DSCALARS enables passive scalars
 #   -DBIG_ENDIAN_IO use only if compiler performs big endian file i/O
 #                   regardless of internal representation
 #   -DLITTLE_ENDIAN_IO use only if compiler performs little endian file i/O
@@ -50,8 +49,8 @@ LDFLAGS = -L$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib $(LAPACK)
 #   -Dradoffline and -Dnooverlap (see bugsrad documentation)
 # You will need to `make clean' if you change these
 
-#FCFLAGS = $(ARCH) $(OPTIMIZE) -DSTATS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
-FCFLAGS = $(ARCH) $(DEBUG) -DSTATS -Dnooverlap -Dradoffline -I$(NC_LOC)/include
+#FCFLAGS = $(ARCH) $(OPTIMIZE) -DSTATS -DTUNER -DCOAMPS_MICRO -Dnooverlap -Dradoffline -I$(NC_LOC)/include
+FCFLAGS = $(ARCH) $(DEBUG) -DSTATS -DTUNER -DCOAMPS_MICRO -Dnooverlap -Dradoffline -I$(NC_LOC)/include
 
 # == Static library processing ==
 AR = ar

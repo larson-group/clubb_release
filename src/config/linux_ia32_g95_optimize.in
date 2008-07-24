@@ -1,4 +1,4 @@
-# $Id: linux_ia32_g95_optimize.in,v 1.5 2008-07-22 16:32:57 dschanen Exp $
+# $Id: linux_ia32_g95_optimize.in,v 1.6 2008-07-24 16:52:02 dschanen Exp $
 # Configuration file for Linux machine using g95
 # An MS Windows machine with MSYS should be similar
 
@@ -57,7 +57,6 @@ LDFLAGS = -L$(LIBDIR) -Wl,-rpath,$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)
 # == Compiler flags (all) ==
 # Preprocessing Directives:
 #   -DSTATS enables statistics
-#   -DSCALARS enables passive scalars
 #   -DBIG_ENDIAN_IO use only if compiler performs big endian file i/O
 #                   regardless of internal representation
 #   -DLITTLE_ENDIAN_IO use only if compiler performs little endian file i/O
@@ -66,7 +65,7 @@ LDFLAGS = -L$(LIBDIR) -Wl,-rpath,$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)
 # You will need to `make clean' if you change these
 # Use -I<include path> to set a module or header file directory
 
-FCFLAGS = $(ARCH) $(DEBUG) $(OPTIMIZE) -DSTATS -DNETCDF -Dnooverlap -Dradoffline -I$(NC_LOC)/include
+FCFLAGS = $(ARCH) $(DEBUG) $(OPTIMIZE) -DSTATS -DNETCDF -DTUNER -DCOAMPS_MICRO -Dnooverlap -Dradoffline -I$(NC_LOC)/include
 
 # == Static library processing ==
 AR = ar

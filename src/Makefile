@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.141 2008-07-22 16:04:10 faschinj Exp $
+# $Id: Makefile,v 1.142 2008-07-24 16:51:54 dschanen Exp $
 #
 # This version should work with GNU make and Sun's dmake.
 #
@@ -23,11 +23,23 @@ include config/linux_ia32_g95_optimize.in
 #include config/solaris_generic_ss12_optimize.in
 #include config/osf1_alpha_digital.in
 
+
 # == Object files ==
 
 OBJDIR = $(PREFIX)/obj
 SRCDIR = $(PREFIX)/src
 
+COAMPS_MICRO_DIR = coamps_micro
+NR_DIR = NR
+
+# == Object files with licensing restrictions ==
+# If these directories are missing the variables will be null, and so as long as 
+# -DENABLE_TUNER and -DCOAMPS_MICRO are not defined, CLUBB will compile.
+COAMPS_MICRO = $(patsubst %.F,%.o, $(notdir $(wildcard $(COAMPS_MICRO_DIR)/*.F)))
+NR = $(patsubst %.f90,%.o, $(notdir $(wildcard $(NR_DIR)/*.f90)))
+
+# == Other object files ==
+ 
 LATIN_HYP = math_utilities.o \
 	lh_sampler.o \
 	micro_calcs.o permute_height_time.o \
@@ -43,18 +55,6 @@ BUGS_RAD = kinds.o std_atmosphere_mod.o bugsrad_planck.o bugsrad_physconst.o \
 	two_rt_lw_sel.o two_rt_lw_iter.o calendar.o cos_solar_zen.o \
 	two_rt_sw_bs.o bugsrad_hoc.o
 
-COAMPS_MICRO = adjmlt.o adjtq.o coamps_micro_driver.o conice.o \
-        eqa10g.o eqa11g.o eqa12.o eqa12g.o \
-        eqa13g.o eqa14g.o eqa15.o eqa17g.o eqa18.o \
-        eqa18g.o eqa19.o eqa19g.o eqa20g.o eqa21.o \
-        eqa21g.o eqa22.o eqa22g.o eqa25.o eqa26.o eqa27.o \
-        eqa27r.o eqa28.o eqa5g.o eqa6.o eqa7.o eqa7g.o \
-        eqa8g.o eqa9.o eqa9g.o esati.o esat_new.o \
-        esatv.o frzh.o nrmcol.o nrmtqi.o \
-        nrmtqw.o qsatvi.o qtadj.o slope.o tgqg.o \
-        tgqi.o tgqr.o tgqs.o saturation.o gamma.o
-
-
 MODEL = $(COAMPS_MICRO) \
 	hoc.o sounding.o rad_lwsw.o cloud_rad.o astex.o atex.o fire.o bomex.o \
 	arm.o arm_97.o arm_0003.o arm_3year.o dycoms2_rf01.o \
@@ -62,7 +62,7 @@ MODEL = $(COAMPS_MICRO) \
 	nov11.o jun25.o clex9_nov02.o clex9_oct14.o wangara.o \
 	diag_ustar.o cobra.o rico.o gabls2.o \
 	KK_microphys.o microphys_driver.o cons.o air.o parab.o \
-	lba.o interpolation.o ice_dfsn_mod.o
+	lba.o interpolation.o ice_dfsn_mod.o coamps_micro_driver.o
 
 PARAMETERIZATION = \
 	$(LATIN_HYP) \
@@ -112,7 +112,7 @@ all:	hoc_standalone hoc_tuner int2txt hoc_inputfields  \
 	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/HOC_parameterization/*.F90
 	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/GCSS/*.F90
 	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/LH/*.F90
-	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/coamps_micro/coamps_micro_driver.F90
+	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/coamps_micro_driver.F90
 	perl $(PREFIX)/utilities/CLUBBStandardsCheck.pl $(PREFIX)/src/BUGSrad/bugsrad_hoc.F90
 
 
@@ -120,7 +120,7 @@ all:	hoc_standalone hoc_tuner int2txt hoc_inputfields  \
 # Note: since we're using a virtual path the make command is going to use the
 # first file it finds with that name.  Be careful when making copies of files.
  
-VPATH=.:LH:GCSS:BUGSrad:HOC_parameterization:coamps_micro:$(OBJDIR)
+VPATH=.:LH:GCSS:BUGSrad:HOC_parameterization:$(OBJDIR):$(NR_DIR):$(COAMPS_MICRO_DIR)
 
 # Cancel implicit rules (e.g for modula-2 `m2c -c $@.mod')
 .SUFFIXES:

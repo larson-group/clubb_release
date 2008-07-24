@@ -1,4 +1,4 @@
-! $Id: amoeba.f90,v 1.4 2005-08-24 19:56:55 dschanen Exp $
+! $Id: amoeba.f90,v 1.1 2008-07-24 16:51:57 dschanen Exp $
 !   From _Numerical Recipes in Fortran 90_
 !   (C) 1988-1996 Numerical Recipes Software
 SUBROUTINE amoeba( p, y, ftol, func, iter )

@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: coamps_micro_driver.F90,v 1.3 2008-07-24 14:11:56 faschinj Exp $
+! $Id: coamps_micro_driver.F90,v 1.1 2008-07-24 16:51:54 dschanen Exp $
       module coamps_micro_driver_mod
 
       ! This module wraps the adjtq subroutine so that it may be used by
@@ -64,9 +64,11 @@
       implicit none
 
       ! External Calls
+#ifdef COAMPS_MICRO
       external ::  & 
         gamma,  & ! From COAMPS, and not the same gamma approx. used in HOC
         adjtq  ! COAMPS microphysics subroutine
+#endif
 
       ! COAMPS parameters
         integer, parameter ::  & 
@@ -409,12 +411,13 @@
         kk,     & ! Number of COAMPS m gridpoints in the vertical (gr%nnzp-1)
         kmax  ! Maximum array size (kk + ??)
 
+!----------------------------------------------------------------------
+#ifdef COAMPS_MICRO
+
+      ! Begin coamps_micro_driver code
 
       kk = gr%nnzp-1
       kmax = gr%nnzp
-!----------------------------------------------------------------------
-
-      ! Begin coamps_micro_driver code
 
       ! Comment by Adam Smith, 25 March 2008
       ! These variables activate rain/drizzle and graupel in the COAMPS
@@ -919,6 +922,11 @@
 
       end if
 #endif /*STATS*/
+
+#else /* COAMPS_MICRO not defined */
+      stop "Not compiled with COAMPS Microphysics"
+
+#endif
 
       return
       end subroutine coamps_micro_driver
