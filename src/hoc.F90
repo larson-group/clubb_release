@@ -1,97 +1,100 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F90,v 1.4 2008-07-23 20:26:54 faschinj Exp $
+! $Id: hoc.F90,v 1.5 2008-07-24 01:08:38 dschanen Exp $
 
-        module hoc
+module hoc
 
-!       Description:
-!       Contains the necessary subroutines to execute individual HOC 
-!       model runs, using one of the driver programs (the simplest case
-!       being the hoc_standalone program).
+! Description:
+! Contains the necessary subroutines to execute individual HOC 
+! model runs, using one of the driver programs (the simplest case
+! being the hoc_standalone program).
 !-----------------------------------------------------------------------
 
-        use stats_precision, only: time_precision ! Variable(s)
+  use stats_precision, only: time_precision ! Variable(s)
 
-        implicit none
+  implicit none
 
-        ! Setup hoc_model() as the sole external interface
-        private ::  & 
-        hoc_initialize, & 
-        hoc_forcings_timestep, & 
-        hoc_restart
+  ! Setup hoc_model() as the sole external interface
+  private ::  & 
+    hoc_initialize, & 
+    hoc_forcings_timestep, & 
+    hoc_restart
 
-        public  :: hoc_model
+  public :: &
+    hoc_model
 
-        private ! Default to private
+  private ! Default to private
 
-        ! Model settings
+  ! Model settings
 
-        ! Grid definition
-        integer, private ::  & 
-        nzmax,     & ! Vertical extent in levels              [#]
-        grid_type ! 1 ==> evenly-spaced grid levels
-                  ! 2 ==> stretched (unevenly-spaced) grid
-                  !       entered on thermodynamic grid levels;
-                  !       mom. levels halfway between thermo. levels
-                  !       (style of SAM stretched grid).
-                  ! 3 ==> stretched (unevenly-spaced) grid
-                  !       entered on momentum grid levels;
-                  !       thermo. levels halfway between mom. levels
-                  !       (style of WRF stretched grid).
+  ! Grid definition
+  integer, private ::  & 
+    nzmax,     & ! Vertical extent in levels              [#]
+    grid_type ! 1 ==> evenly-spaced grid levels
+              ! 2 ==> stretched (unevenly-spaced) grid
+              !       entered on thermodynamic grid levels;
+              !       mom. levels halfway between thermo. levels
+              !       (style of SAM stretched grid).
+              ! 3 ==> stretched (unevenly-spaced) grid
+              !       entered on momentum grid levels;
+              !       thermo. levels halfway between mom. levels
+              !       (style of WRF stretched grid).
 
-        real, private ::  & 
-        deltaz,  & ! Change per grid level                 [m]
-        zm_init ! Initial point on the momentum grid    [m]
+  real, private ::  & 
+    deltaz,  & ! Change per grid level                 [m]
+    zm_init    ! Initial point on the momentum grid    [m]
 
-!$omp   threadprivate(nzmax, grid_type, zm_init, deltaz)
+!$omp threadprivate(nzmax, grid_type, zm_init, deltaz)
 
-        ! For grid_type 2 or 3 (stretched grid cases)
-        character(len=100), private :: & 
-        zt_grid_fname,  & ! Path and filename of thermodynamic level altitudes
-        zm_grid_fname  ! Path and filename of momentum level altitudes
+! For grid_type 2 or 3 (stretched grid cases)
+  character(len=100), private :: & 
+    zt_grid_fname, & ! Path and filename of thermodynamic level altitudes
+    zm_grid_fname    ! Path and filename of momentum level altitudes
 
-!$omp   threadprivate(zt_grid_fname, zm_grid_fname)
+!$omp threadprivate(zt_grid_fname, zm_grid_fname)
 
-        integer, private ::  & 
-        day, month, year ! Day of start of simulation
+  integer, private ::  & 
+    day, month, year ! Day of start of simulation
 
-!$omp   threadprivate(day, month, year)
+!$omp threadprivate(day, month, year)
 
-        real, private ::  & 
-        rlat,  & ! Latitude  [Degrees North]
-        rlon  ! Longitude [Degrees East]
+  real, private ::  & 
+    rlat,  & ! Latitude  [Degrees North]
+    rlon  ! Longitude [Degrees East]
 
 !$omp threadprivate(rlat, rlon)
 
-        character(len=50), private ::  & 
-        runtype ! String identifying the model case; e.g. bomex
-!$omp   threadprivate(runtype)
+  character(len=50), private ::  & 
+    runtype ! String identifying the model case; e.g. bomex
 
-        ! 0: fixed sfc sensible and latent heat fluxes as
-        !    given in namelist
-        ! 1: bulk formula: uses given surface temperature
-        !    and assumes over ocean
-        integer, private :: sfctype 
-!$omp   threadprivate(sfctype)
+!$omp threadprivate(runtype)
 
-        real(kind=time_precision), private :: & 
-        time_initial,  & ! Time of start of simulation     [s]
-        time_final,    & ! Time end of simulation          [s]
-        time_spinup,   & ! Time end of spin up period      [s]
-        time_current  ! Current time of simulation      [s]
-!$omp   threadprivate(time_initial, time_final, time_spinup,
-!$omp.                time_current)
+  integer, private :: &
+    sfctype ! 0: fixed sfc sensible and latent heat fluxes as
+            !    given in namelist
+            ! 1: bulk formula: uses given surface temperature
+            !    and assumes over ocean
 
-        real(kind=time_precision), private ::  & 
-        dtmain,      & ! Main model timestep                      [s]
-        dtclosure,   & ! Closure model timestep                   [s]
-        dt          ! Current model timestep (based on spinup) [s]
-!$omp   threadprivate(dtmain, dtclosure, dt)
+!$omp threadprivate(sfctype)
 
-        contains
+  real(kind=time_precision), private :: & 
+    time_initial,  & ! Time of start of simulation     [s]
+    time_final,    & ! Time end of simulation          [s]
+    time_spinup,   & ! Time end of spin up period      [s]
+    time_current     ! Current time of simulation      [s]
+!$omp threadprivate(time_initial, time_final, time_spinup, &
+!$omp               time_current)
+
+  real(kind=time_precision), private ::  & 
+    dtmain,      & ! Main model timestep                      [s]
+    dtclosure,   & ! Closure model timestep                   [s]
+    dt          ! Current model timestep (based on spinup) [s]
+!$omp threadprivate(dtmain, dtclosure, dt)
+
+  contains
 
 !-----------------------------------------------------------------------
-        subroutine hoc_model & 
-                  ( params, runfile, err_code, stdout, linput_fields )
+  subroutine hoc_model & 
+             ( params, runfile, err_code, stdout, linput_fields )
 !       Description:
 !       Subprogram to integrate the pde equations for pdf closure.
 !       This is the standard call.
@@ -109,117 +112,118 @@
 
 !-----------------------------------------------------------------------
 
-        use grid_class, only: gr ! Variable(s)
+    use grid_class, only: gr ! Variable(s)
 
-        use grid_class, only: read_grid_heights ! Procedure(s)
+    use grid_class, only: read_grid_heights ! Procedure(s)
 
-        use param_index, only: nparams ! Variable(s)
+    use param_index, only: nparams ! Variable(s)
 
-        use array_index, only: iisclr_rt, iisclr_thl, iiCO2 ! Variables
+    use array_index, only: iisclr_rt, iisclr_thl, iiCO2 ! Variables
 
-        use diagnostic_variables, only: ug, vg, em,  & ! Variable(s)
-                                  taut, thvm, Lscale, Kht, Khm, & 
-                                  um_ref, vm_ref
+    use diagnostic_variables, only: ug, vg, em,  & ! Variable(s)
+      taut, thvm, Lscale, Kht, Khm, & 
+      um_ref, vm_ref
 
-        use prognostic_variables, only:  & 
-            Tsfc, psfc, SE, LE, thlm, rtm,     & ! Variable(s)
-            um, vm, wp2, rcm, wmt, wmm, exner, & 
-            taum, p, rhom, upwp, vpwp, wpthlp, & 
-            rhot, wprtp, wpthlp_sfc, wprtp_sfc, & 
-            upwp_sfc, vpwp_sfc, thlm_forcing, & 
-            rtm_forcing, up2, vp2, wp3, rtp2, & 
-            thlp2, rtpthlp, Scm, cf
+    use prognostic_variables, only:  & 
+      Tsfc, psfc, SE, LE, thlm, rtm,     & ! Variable(s)
+      um, vm, wp2, rcm, wmt, wmm, exner, & 
+      taum, p, rhom, upwp, vpwp, wpthlp, & 
+      rhot, wprtp, wpthlp_sfc, wprtp_sfc, & 
+      upwp_sfc, vpwp_sfc, thlm_forcing, & 
+      rtm_forcing, up2, vp2, wp3, rtp2, & 
+      thlp2, rtpthlp, Scm, cf
 
-        use prognostic_variables, only:  & 
-            sclrm, edsclrm, wpsclrp_sfc,  & ! Variables
-            wpedsclrp_sfc, sclrm_forcing, wpsclrp
+    use prognostic_variables, only:  & 
+      sclrm, edsclrm, wpsclrp_sfc,  & ! Variables
+      wpedsclrp_sfc, sclrm_forcing, wpsclrp
 
-        use numerical_check, only: invalid_model_arrays ! Procedure(s)
+    use numerical_check, only: invalid_model_arrays ! Procedure(s)
 
-        use inputfields, only: compute_timestep, grads_fields_reader ! Procedure(s)
+    use inputfields, only: compute_timestep, grads_fields_reader ! Procedure(s)
      
-        use inputfields, only: datafilet ! Variable(s)
+    use inputfields, only: datafilet ! Variable(s)
 
-        use hoc_parameterization_interface, only: & 
-                                       parameterization_setup,  & ! Procedure(s) 
-                                       parameterization_cleanup, & 
-                                       parameterization_timestep
+    use hoc_parameterization_interface, only: & 
+      parameterization_setup,  & ! Procedure(s) 
+      parameterization_cleanup, & 
+      parameterization_timestep
 
-        use constants, only: fstdout, fstderr ! Variable(s)
+    use constants, only: fstdout, fstderr ! Variable(s)
 
-        use error_code, only: clubb_var_out_of_bounds,  & ! Variable(s)
-                              clubb_var_equals_NaN, & 
-                              clubb_rtm_level_not_found
+    use error_code, only: clubb_var_out_of_bounds,  & ! Variable(s)
+      clubb_var_equals_NaN, & 
+      clubb_rtm_level_not_found, &
+      clubb_at_debug_level ! Function
 
-        use error_code, only: fatal_error,  & ! Procedure(s)
+    use error_code, only: fatal_error,  & ! Procedure(s)
                               set_clubb_debug_level
         
-        use stats_precision, only: time_precision ! Variable(s)
+    use stats_precision, only: time_precision ! Variable(s)
 
-        use array_index, only: iisclr_rt, iisclr_thl, iiCO2 ! Variables
+    use array_index, only: iisclr_rt, iisclr_thl, iiCO2 ! Variables
 
-        use microphys_driver, only: init_microphys ! Subroutine
+    use microphys_driver, only: init_microphys ! Subroutine
 
 #ifdef STATS
-        use stats_variables, only: lstats_last ! Variable(s
+    use stats_variables, only: lstats_last ! Variable(s
 
-        use stats_subs, only:  & 
-            stats_begin_timestep, stats_end_timestep,  & ! Procedure(s)
-            stats_finalize, stats_init
-
+    use stats_subs, only:  & 
+      stats_begin_timestep, stats_end_timestep,  & ! Procedure(s)
+      stats_finalize, stats_init
 #endif /*STATS*/
 
-        implicit none
+    implicit none
 
-        ! Because Fortran I/O is not thread safe, we use this here to
-        ! insure that no model uses the same file number simultaneously
-        ! when doing a tuning run. -dschanen 31 Jan 2007
+    ! Because Fortran I/O is not thread safe, we use this here to
+    ! insure that no model uses the same file number simultaneously
+    ! when doing a tuning run. -dschanen 31 Jan 2007
 #ifdef _OPENMP
-        integer :: omp_get_thread_num
+    integer :: omp_get_thread_num ! Function
 #endif
-        ! External
-        intrinsic :: mod, real, int 
+    ! External
+    intrinsic :: mod, real, int
 
-        ! Constant parameters
-        integer, parameter :: sclr_max = 10
+    ! Constant parameters
+    integer, parameter :: &
+      sclr_max = 10  ! Maximum number of passive scalars (arbitrary)
 
-        ! Input Variables
-        logical, intent(in) ::  & 
-        stdout,        & ! Whether to print output per timestep
-        linput_fields ! Whether to set model variables from a file
+    ! Input Variables
+    logical, intent(in) ::  & 
+      stdout,        & ! Whether to print output per timestep
+      linput_fields    ! Whether to set model variables from a file
 
-        real, intent(in), dimension(nparams) ::  & 
-        params  ! Model parameters, C1, nu2, etc.
+    real, intent(in), dimension(nparams) ::  & 
+      params  ! Model parameters, C1, nu2, etc.
 
-        ! Subroutine Arguments (Model Setting)
-        character(len=*), intent(in) ::  & 
-        runfile ! Name of file containing &model_setting and &sounding
+    ! Subroutine Arguments (Model Setting)
+    character(len=*), intent(in) ::  & 
+      runfile ! Name of file containing &model_setting and &sounding
 
-        ! Output Variables
-        integer, intent(inout) :: err_code    ! valid run?
+    ! Output Variables
+      integer, intent(inout) :: err_code    ! valid run?
 
-        ! Local Variables
-        ! Internal Timing Variables
-        integer :: & 
-        ifinal, & 
-        niterlong
+    ! Local Variables
+    ! Internal Timing Variables
+    integer :: & 
+      ifinal, & 
+      niterlong
 
-        integer :: & 
-        debug_level     ! Amount of debugging information
+    integer :: & 
+      debug_level     ! Amount of debugging information
 
-        real ::  & 
-        fcor,            & ! Coriolis parameter            [s^-1]
-        T0,              & ! Reference Temperature         [K]
-        ts_nudge        ! Timescale for u/v nudging     [s]
+    real ::  & 
+      fcor,            & ! Coriolis parameter            [s^-1]
+      T0,              & ! Reference Temperature         [K]
+      ts_nudge        ! Timescale for u/v nudging     [s]
 
-        real, dimension(sclr_max) :: & 
-        sclr_tol        ! Thresholds on the passive scalars     [units vary]
+    real, dimension(sclr_max) :: & 
+      sclr_tol        ! Thresholds on the passive scalars     [units vary]
 
-        real(kind=time_precision) :: & 
-        time_restart    ! Time of model restart run     [s]
+     real(kind=time_precision) :: & 
+       time_restart    ! Time of model restart run     [s]
 
-        logical ::  & 
-        cloud_sed,     & ! Flag for cloud water droplet sedimentation. - Brian
+     logical ::  & 
+       cloud_sed,     & ! Flag for cloud water droplet sedimentation. - Brian
         kk_rain,       & ! Flag for Khairoutdinov and Kogan rain microphysics. - Brian
         licedfs,       & ! Flag for simplified ice scheme
         lcoamps_micro, & ! Flag for COAMPS microphysical scheme
@@ -228,426 +232,443 @@
         lrestart,      & ! Flag for restarting from GrADS file
         lKhm_aniso    ! Whether to use anisotropic Khm.  - Michael Falk 2 Feb 2007
 
-        character(len=50) ::  & 
-        restart_path_case ! GRADS file used in case of restart
+    character(len=50) ::  & 
+      restart_path_case ! GRADS file used in case of restart
 
-        logical :: & 
-        lstats ! Whether statistics are computed and output to disk
+    logical :: & 
+      lstats ! Whether statistics are computed and output to disk
 
-        character(len=10) :: & 
-        stats_fmt  ! File format for stats; typically GrADS.
+    character(len=10) :: & 
+      stats_fmt  ! File format for stats; typically GrADS.
 
-        character(len=100) :: & 
-        fname_prefix ! Prefix of stats filenames, to be followed by, for example "_zt"
+    character(len=100) :: & 
+      fname_prefix ! Prefix of stats filenames, to be followed by, for example "_zt"
 
-        real(kind=time_precision) :: & 
-        stats_tsamp,   & ! Stats sampling interval [s]
-        stats_tout    ! Stats output interval   [s]
+    real(kind=time_precision) :: & 
+      stats_tsamp,   & ! Stats sampling interval [s]
+      stats_tout       ! Stats output interval   [s]
 
-        ! Grid altitude arrays
-        real, dimension(:), allocatable ::  & 
-        momentum_heights, thermodynamic_heights
+    ! Grid altitude arrays
+    real, dimension(:), allocatable ::  & 
+      momentum_heights, thermodynamic_heights ! [m]
 
-        ! Dummy dx and dy horizontal grid spacing.
-        real :: dummy_dx, dummy_dy
+    ! Dummy dx and dy horizontal grid spacing.
+    real :: dummy_dx, dummy_dy  ! [m]
 
-        integer :: i, i1 ! Internal Loop Variables
-        integer :: iinit ! initial iteration
+    integer :: i, i1 ! Internal Loop Variables
+    integer :: iinit ! initial iteration
 
-        integer ::  & 
-        iunit,           & ! File unit used for I/O
-        hydromet_dim,    & ! Number of hydrometeor species
-        sclr_dim        ! Number of passive scalars
+    integer ::  & 
+      iunit,           & ! File unit used for I/O
+      hydromet_dim,    & ! Number of hydrometeor species        [#]
+      sclr_dim           ! Number of passive scalars            [#]
 
-        integer :: itime_nearest ! Used for and inputfields run [s]
+    integer :: itime_nearest ! Used for and inputfields run [s]
 
-        ! Definition of namelists
-        namelist /model_setting/  & 
-        runtype, nzmax, grid_type, deltaz, zm_init, & 
-        zt_grid_fname, zm_grid_fname,  & 
-        day, month, year, rlat, rlon, & 
-        time_initial, time_final, time_spinup, & 
-        dtmain, dtclosure, & 
-        sfctype, Tsfc, psfc, SE, LE, fcor, T0, ts_nudge, & 
-        cloud_sed, kk_rain, licedfs, lcoamps_micro,  & 
-        lbugsrad, lKhm_aniso, luv_nudge, lrestart, restart_path_case, & 
-        time_restart, debug_level, & 
-        sclr_tol, & 
-        sclr_dim, iisclr_thl, iisclr_rt, iiCO2 
+    ! Definition of namelists
+    namelist /model_setting/  & 
+      runtype, nzmax, grid_type, deltaz, zm_init, & 
+      zt_grid_fname, zm_grid_fname,  & 
+      day, month, year, rlat, rlon, & 
+      time_initial, time_final, time_spinup, & 
+      dtmain, dtclosure, & 
+      sfctype, Tsfc, psfc, SE, LE, fcor, T0, ts_nudge, & 
+      cloud_sed, kk_rain, licedfs, lcoamps_micro,  & 
+      lbugsrad, lKhm_aniso, luv_nudge, lrestart, restart_path_case, & 
+      time_restart, debug_level, & 
+      sclr_tol, & 
+      sclr_dim, iisclr_thl, iisclr_rt, iiCO2 
 
-         namelist /stats_setting/ & 
-         lstats, fname_prefix, stats_tsamp, stats_tout, stats_fmt 
+    namelist /stats_setting/ & 
+      lstats, fname_prefix, stats_tsamp, stats_tout, stats_fmt 
 
 !-----------------------------------------------------------------------
 
-        ! Initialize the model run 
+    ! Initialize the model run 
 
-        ! Pick some default values for model_setting
-        runtype   = "generic"
-        nzmax     = 100
-        grid_type = 1
-        deltaz    = 40.
-        zm_init   = 0.
-        zt_grid_fname = ''
-        zm_grid_fname = ''
+    ! Pick some default values for model_setting
+    runtype   = "generic"
+    nzmax     = 100
+    grid_type = 1
+    deltaz    = 40.
+    zm_init   = 0.
+    zt_grid_fname = ''
+    zm_grid_fname = ''
 
-        day   = 1
-        month = 1
-        year  = 1900
+    day   = 1
+    month = 1
+    year  = 1900
 
-        rlat = 0.
-        rlon = 0.
+    rlat = 0.
+    rlon = 0.
 
-        time_initial = 0.
-        time_final   = 3600.
-        time_spinup  = 0.
+    time_initial = 0.
+    time_final   = 3600.
+    time_spinup  = 0.
 
-        dtmain    = 30.
-        dtclosure = 30.
+    dtmain    = 30.
+    dtclosure = 30.
 
-        sfctype  = 0
-        tsfc     = 288.
-        psfc     = 1000.e2
-        SE       = 0.
-        LE       = 0.
-        fcor     = 1.e-4
-        T0       = 300.
-        ts_nudge = 86400.
+    sfctype  = 0
+    tsfc     = 288.
+    psfc     = 1000.e2
+    SE       = 0.
+    LE       = 0.
+    fcor     = 1.e-4
+    T0       = 300.
+    ts_nudge = 86400.
 
-        cloud_sed     = .false.
-        kk_rain       = .false.
-        licedfs       = .false.
-        lcoamps_micro = .false.
-        lbugsrad      = .false.
-        lKhm_aniso    = .false.
-        luv_nudge     = .false.
-        lrestart      = .false.
-        restart_path_case = "none"
-        time_restart  = 0.
-        debug_level   = 2
+    cloud_sed     = .false.
+    kk_rain       = .false.
+    licedfs       = .false.
+    lcoamps_micro = .false.
+    lbugsrad      = .false.
+    lKhm_aniso    = .false.
+    luv_nudge     = .false.
+    lrestart      = .false.
+    restart_path_case = "none"
+    time_restart  = 0.
+    debug_level   = 2
 
-        sclr_dim  = 0
-        iisclr_thl = -1
-        iisclr_rt  = -1
-        iiCO2 = -1
+    sclr_dim  = 0
+    iisclr_thl = -1
+    iisclr_rt  = -1
+    iiCO2 = -1
 
-        sclr_tol(1:sclr_max) = 1.e-2
+    sclr_tol(1:sclr_max) = 1.e-2
 
-        ! Pick some default values for stats_setting
-        lstats       = .false.
-        fname_prefix = ''
-        stats_fmt    = ''
-        stats_tsamp  = 0.
-        stats_tout   = 0.
+    ! Pick some default values for stats_setting
+    lstats       = .false.
+    fname_prefix = ''
+    stats_fmt    = ''
+    stats_tsamp  = 0.
+    stats_tout   = 0.
 
-        ! Figure out which iounit to use
+    ! Figure out which iounit to use
 #ifdef _OPENMP
-        iunit = omp_get_thread_num( ) + 10
+    iunit = omp_get_thread_num( ) + 10
 #else
-        iunit = 10
+    iunit = 10
 #endif
 
-        ! Read namelist file
-        open(unit=iunit, file=runfile, status='old')
-        read(unit=iunit, nml=model_setting)
-        read(unit=iunit, nml=stats_setting)
-        close(unit=iunit)
+    ! Read namelist file
+    open(unit=iunit, file=runfile, status='old')
+    read(unit=iunit, nml=model_setting)
+    read(unit=iunit, nml=stats_setting)
+    close(unit=iunit)
 
-!---------------Printing Model Inputs--------------------------------------
-        print *, "--------------------------------------------------"
-        print *, "Model Settings"
-        print *, "--------------------------------------------------"
+    ! Sanity check on passive scalars
+    ! When adding new 'ii' scalar indices, add them to this list.
+    if ( max( iiCO2, iisclr_rt, iisclr_thl ) > sclr_dim ) then
+      write(fstderr,*) "Passive scalar index exceeds sclr_dim ", & 
+        "iiCO2 = ", iiCO2, "iisclr_rt = ", iisclr_rt,  & 
+        "sclr_thl = ", iisclr_thl, "sclr_dim = ", sclr_dim
 
-        ! Pick some default values for model_setting
-        print *,"runtype = ", runtype
-        print *,"nzmax = ", nzmax
-        print *, "grid_type = ", grid_type
-        print *, "deltaz = ", deltaz
-        print *, "zm_init = ", zm_init
-        print *, "zt_grid_fname = ", zt_grid_fname
-        print *, "zm_grid_fname = ", zm_grid_fname
+      err_code = clubb_var_out_of_bounds
 
-        print *, "day = ", day
-        print *, "month = ", month
-        print *, "year = ", year
+      return
+    end if
 
-        print *, "rlat = ", rlat
-        print *, "rlon = ", rlon
+    ! Set debug level 
+    call set_clubb_debug_level( debug_level )
 
-        print *, "time_initial = ", time_initial
-        print *, "time_final = ", time_final
-        print *, "time_spinup = ", time_spinup
+    ! Printing Model Inputs
+    if ( clubb_at_debug_level( 1 ) ) then
+      print *, "--------------------------------------------------"
+      print *, "Model Settings"
+      print *, "--------------------------------------------------"
 
-        print *, "dtmain = ", dtmain
-        print *, "dtclosure = ", dtclosure
+    ! Pick some default values for model_setting
+      print *,"runtype = ", runtype
+      print *,"nzmax = ", nzmax
+      print *, "grid_type = ", grid_type
+      print *, "deltaz = ", deltaz
+      print *, "zm_init = ", zm_init
+      print *, "zt_grid_fname = ", zt_grid_fname
+      print *, "zm_grid_fname = ", zm_grid_fname
 
-        print *, "sfctype = ", sfctype
-        print *, "tsfc = ", tsfc
-        print *, "psfc = ", psfc
-        print *, "SE = ", SE
-        print *, "LE = ", LE
-        print *, "fcor = ", fcor
-        print *, "T0 = ", T0
-        print *, "ts_nudge = ", ts_nudge
+      print *, "day = ", day
+      print *, "month = ", month
+      print *, "year = ", year
 
-        print *, "cloud_sed = ", cloud_sed
-        print *, "kk_rain = ", kk_rain
-        print *, "licedfs = ", licedfs
-        print *, "lcoamps_micro = ", lcoamps_micro
-        print *, "lbugsrad = ", lbugsrad
-        print *, "lKhm_aniso = ", lKhm_aniso
-        print *, "luv_nudge = ", luv_nudge
-        print *, "lrestart = ", lrestart
-        print *, "restart_path_case = ", restart_path_case
-        print *, "time_restart = ", time_restart
-        print *, "debug_level = ", debug_level
+      print *, "rlat = ", rlat
+      print *, "rlon = ", rlon
 
-        print *, "sclr_dim = ", sclr_dim
-        print *, "iisclr_thl = ", iisclr_thl
-        print *, "iisclr_rt = ", iisclr_rt
-        print *, "iiCO2 = ", iiCO2
+      print *, "time_initial = ", time_initial
+      print *, "time_final = ", time_final
+      print *, "time_spinup = ", time_spinup
 
-        print *, "sclr_tol = ", sclr_tol(1:sclr_max)
+      print *, "dtmain = ", dtmain
+      print *, "dtclosure = ", dtclosure
 
-        ! Pick some default values for stats_setting
-        print *, "lstats = ", lstats
-        print *, "fname_prefix = ", fname_prefix
-        print *, "stats_fmt = ", stats_fmt
-        print *, "stats_tsamp = ", stats_tsamp
-        print *, "stats_tout = ", stats_tout
+      print *, "sfctype = ", sfctype
+      print *, "tsfc = ", tsfc
+      print *, "psfc = ", psfc
+      print *, "SE = ", SE
+      print *, "LE = ", LE
+      print *, "fcor = ", fcor
+      print *, "T0 = ", T0
+      print *, "ts_nudge = ", ts_nudge
 
-        print *, "--------------------------------------------------"
+      print *, "cloud_sed = ", cloud_sed
+      print *, "kk_rain = ", kk_rain
+      print *, "licedfs = ", licedfs
+      print *, "lcoamps_micro = ", lcoamps_micro
+      print *, "lbugsrad = ", lbugsrad
+      print *, "lKhm_aniso = ", lKhm_aniso
+      print *, "luv_nudge = ", luv_nudge
+      print *, "lrestart = ", lrestart
+      print *, "restart_path_case = ", restart_path_case
+      print *, "time_restart = ", time_restart
+      print *, "debug_level = ", debug_level
+
+      print *, "sclr_dim = ", sclr_dim
+      print *, "iisclr_thl = ", iisclr_thl
+      print *, "iisclr_rt = ", iisclr_rt
+      print *, "iiCO2 = ", iiCO2
+
+      print *, "sclr_tol = ", sclr_tol(1:sclr_dim)
+
+      ! Pick some default values for stats_setting
+      print *, "lstats = ", lstats
+      print *, "fname_prefix = ", fname_prefix
+      print *, "stats_fmt = ", stats_fmt
+      print *, "stats_tsamp = ", stats_tsamp
+      print *, "stats_tout = ", stats_tout
+
+      print *, "--------------------------------------------------"
+
+    end if ! clubb_at_debug_level(1)
+
 !----------------------------------------------------------------------
 
-        ! Sanity check on passive scalars
-        ! When adding new 'ii' scalar indices, add them to this list.
-        if ( max( iiCO2, iisclr_rt, iisclr_thl ) > sclr_dim ) then
-          write(fstderr,*) "Passive scalar index exceeds sclr_dim ", & 
-            "iiCO2 = ", iiCO2, "iisclr_rt = ", iisclr_rt,  & 
-            "sclr_thl = ", iisclr_thl, "sclr_dim = ", sclr_dim
+    ! Allocate stretched grid altitude arrays.
+    allocate( momentum_heights(1:nzmax),  & 
+              thermodynamic_heights(1:nzmax) )
 
-          err_code = clubb_var_out_of_bounds
-          return
-        end if
-
-        call set_clubb_debug_level( debug_level )
-
-        ! Allocate stretched grid altitude arrays.
-        allocate( momentum_heights(1:nzmax),  & 
-                  thermodynamic_heights(1:nzmax) )
-
-        ! Handle the reading of grid altitudes for 
-        ! stretched (unevenly-spaced) grid options.
-        ! Do some simple error checking for all grid options.
-        call read_grid_heights( nzmax, grid_type, & 
-                                zm_grid_fname, zt_grid_fname, & 
-                                momentum_heights, & 
-                                thermodynamic_heights )
+    ! Handle the reading of grid altitudes for 
+    ! stretched (unevenly-spaced) grid options.
+    ! Do some simple error checking for all grid options.
+    call read_grid_heights( nzmax, grid_type, & 
+                            zm_grid_fname, zt_grid_fname, & 
+                            momentum_heights, & 
+                            thermodynamic_heights )
 
         ! Dummy horizontal grid spacing variables.
-        dummy_dx = 0.0
-        dummy_dy = 0.0
+    dummy_dx = 0.0
+    dummy_dy = 0.0
 
-        ! Setup microphysical fields
-        call init_microphys & 
-             ( kk_rain, lcoamps_micro, licedfs, hydromet_dim )
+    ! Setup microphysical fields
+    call init_microphys & 
+         ( kk_rain, lcoamps_micro, licedfs, hydromet_dim )
 
-        ! Allocate & initialize variables,
-        ! setup grid, setup constants, and setup flags
+    ! Allocate & initialize variables,
+    ! setup grid, setup constants, and setup flags
 
-        call parameterization_setup & 
-             ( nzmax, T0, ts_nudge, hydromet_dim, sclr_dim,  & 
-               sclr_tol(1:sclr_dim), params, & 
-               lbugsrad, kk_rain, licedfs, lcoamps_micro, & 
-               cloud_sed, luv_nudge, lKhm_aniso, & 
-               .false., grid_type, deltaz, zm_init, & 
-               momentum_heights, thermodynamic_heights, & 
-               dummy_dx, dummy_dy, err_code )
+    call parameterization_setup & 
+         ( nzmax, T0, ts_nudge, hydromet_dim, sclr_dim,  & 
+           sclr_tol(1:sclr_dim), params, & 
+           lbugsrad, kk_rain, licedfs, lcoamps_micro, & 
+           cloud_sed, luv_nudge, lKhm_aniso, & 
+           .false., grid_type, deltaz, zm_init, & 
+           momentum_heights, thermodynamic_heights, & 
+           dummy_dx, dummy_dy, err_code )
       
 
-        if ( err_code == clubb_var_out_of_bounds ) return
+    if ( err_code == clubb_var_out_of_bounds ) return
 
 
-        ! Deallocate stretched grid altitude arrays
-        deallocate( momentum_heights, thermodynamic_heights )
+    ! Deallocate stretched grid altitude arrays
+    deallocate( momentum_heights, thermodynamic_heights )
 
-        if ( .not. lrestart ) then
+    if ( .not. lrestart ) then
 
-           time_current = time_initial
-           iinit = 1
+      time_current = time_initial
+      iinit = 1
 
-           call hoc_initialize( iunit, runfile, psfc, thlm, rtm,  & 
-                                um, vm, ug, vg, wp2, & 
-                                rcm,  & 
-                                wmt, wmm, em, exner, & 
-                                taut, taum, thvm, p, & 
-                                rhot, rhom, Lscale, & 
-                                Kht, Khm, um_ref, vm_ref, & 
-                                sclrm, edsclrm )
+      call hoc_initialize( iunit, runfile, psfc, thlm, rtm,  & 
+                           um, vm, ug, vg, wp2, & 
+                           rcm,  & 
+                           wmt, wmm, em, exner, & 
+                           taut, taum, thvm, p, & 
+                           rhot, rhom, Lscale, & 
+                           Kht, Khm, um_ref, vm_ref, & 
+                           sclrm, edsclrm )
 
-        else  ! restart
+    else  ! restart
                
-           ! Joshua Fasching March 2008
-           time_current = time_restart + dtmain
-           ! time_current = time_restart
+      ! Joshua Fasching March 2008
+      time_current = time_restart + dtmain
+      ! time_current = time_restart
 
-           ! Determining what iteration to restart at.
-           ! The value is increased by 1 to sychronize with restart data.
-           ! Joshua Fasching February 2008
+      ! Determining what iteration to restart at.
+      ! The value is increased by 1 to sychronize with restart data.
+      ! Joshua Fasching February 2008
           
-           ! Ensure that iteration num, iinit, is an integer, so that model time is 
-           !   incremented correctly by iteration number at end of timestep
-           if ( mod( (time_restart-time_initial) , dtmain ) /= 0 ) then
-              print*, "Error: (time_restart-time_initial) ",  & 
-                      "is not a multiple of dtmain."
-              print*, "time_restart = ", time_restart
-              print*, "time_initial = ", time_initial
-              print*, "dtmain = ", dtmain
-              stop
-           end if
- 
-           iinit = floor( ( time_current - time_initial ) / dtmain ) + 1
+      ! Ensure that iteration num, iinit, is an integer, so that model time is 
+      !   incremented correctly by iteration number at end of timestep
+      if ( mod( (time_restart-time_initial) , dtmain ) /= 0 ) then
 
-           call hoc_restart( iunit, runfile, restart_path_case,  & 
-                             time_restart,  & 
-                             thlm, rtm, um, vm, & 
-                             ug, vg, upwp, vpwp, wmt, wmm,  & 
-                             um_ref, vm_ref, wpthlp, wprtp, & 
-                             wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & 
-                             sclrm, edsclrm )
-        end if ! ~lrestart
+        print*, "Error: (time_restart-time_initial) ",  & 
+          "is not a multiple of dtmain."
+        print*, "time_restart = ", time_restart
+        print*, "time_initial = ", time_initial
+        print*, "dtmain = ", dtmain
+        stop "Fatal error"
+
+      end if ! mod( (time_restart-time_initial) , dtmain ) /= 0  
+ 
+      iinit = floor( ( time_current - time_initial ) / dtmain ) + 1
+
+      call hoc_restart( iunit, runfile, restart_path_case,  & 
+                        time_restart,  & 
+                        thlm, rtm, um, vm, & 
+                        ug, vg, upwp, vpwp, wmt, wmm,  & 
+                        um_ref, vm_ref, wpthlp, wprtp, & 
+                        wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & 
+                        sclrm, edsclrm )
+    end if ! ~lrestart
+
 #ifdef STATS
 
 #ifdef _OPENMP
-        iunit = omp_get_thread_num( ) + 50
+    iunit = omp_get_thread_num( ) + 50
 #else
-        iunit = 50
+    iunit = 50
 #endif
-        ! Initialize statistics output
-        call stats_init & 
-             ( iunit, fname_prefix,  & 
-               lstats, stats_fmt, stats_tsamp, stats_tout, & 
-               runfile, gr%nnzp, gr%zt, gr%zm, & 
-               day, month, year, rlat, rlon, time_current, & 
-               dtmain )
+    ! Initialize statistics output
+    call stats_init & 
+         ( iunit, fname_prefix,  & 
+           lstats, stats_fmt, stats_tsamp, stats_tout, & 
+           runfile, gr%nnzp, gr%zt, gr%zm, & 
+           day, month, year, rlat, rlon, time_current, & 
+           dtmain )
 #endif /*STATS*/
 
-        ! Time integration
-        ! Call hoc_closure_timestep once per each GrADS output time 
-        ifinal  = floor(( time_final - time_initial ) / dtmain)
+    ! Time integration
+    ! Call hoc_closure_timestep once per each GrADS output time 
+    ifinal = floor(( time_final - time_initial ) / dtmain)
 
       
-!<<<<<<<<<<<<<<<<<<<<<<<< Main time stepping loop <<<<<<<<<<<<<<<<<<<<<<
+!###############################################################################
+!######################## Main Time Stepping Loop ##############################
+!###############################################################################
 
-        do i = iinit, ifinal, 1
+    do i = iinit, ifinal, 1
 
 #ifdef STATS
-          ! When this time step is over, the time will be time + dtmain
+      ! When this time step is over, the time will be time + dtmain
 
-          ! We use elapsed time for stats_begin_step
-          if (.not. lrestart) then    
-             call stats_begin_timestep & 
-                  ( time_current-time_initial+dtmain, dtmain )
-          else
-             ! Different elapsed time for restart
-             ! Joshua Fasching March 2008     
-             call stats_begin_timestep & 
-                  ( time_current-time_restart, dtmain )
-          end if
+      ! We use elapsed time for stats_begin_step
+      if (.not. lrestart) then    
+        call stats_begin_timestep & 
+             ( time_current-time_initial+dtmain, dtmain )
+      else
+        ! Different elapsed time for restart
+        ! Joshua Fasching March 2008     
+        call stats_begin_timestep & 
+             ( time_current-time_restart, dtmain )
+      end if
 
 #endif /*STATS*/
 
           ! If we're doing an inputfields run, get the values for our
           ! model arrays from a GrADS file
-          if ( linput_fields ) then
-            call compute_timestep( iunit, datafilet, .false., & 
-                                   time_current, itime_nearest )
-            call grads_fields_reader( max( itime_nearest, 1 ) )
-          end if
+      if ( linput_fields ) then
+        call compute_timestep( iunit, datafilet, .false., & 
+                               time_current, itime_nearest )
+        call grads_fields_reader( max( itime_nearest, 1 ) )
+      end if
 
-          if ( invalid_model_arrays( ) ) then
-              err_code = clubb_var_equals_NaN ! Check for bad values 
-                                              ! in the model arrays
-          end if
+      if ( invalid_model_arrays( ) ) then
+        err_code = clubb_var_equals_NaN ! Check for NaN values in the model arrays
+        exit ! Leave the main loop
+      end if
 
-          if ( err_code == clubb_var_equals_NaN ) exit
+      call hoc_forcings_timestep( dtmain, err_code )
 
-          call hoc_forcings_timestep( dtmain, err_code )
-
-          if ( err_code == clubb_rtm_level_not_found ) exit
+      if ( err_code == clubb_rtm_level_not_found ) exit
          
-          ! Compute number of iterations for closure loop
-          if ( time_current > time_spinup ) then
-            niterlong = 1
-            dt        = dtmain
-          else
-            niterlong = floor( dtmain / dtclosure )
-            dt        = dtclosure
-          end if
+      ! Compute number of iterations for closure loop
+      if ( time_current > time_spinup ) then
+        niterlong = 1
+        dt        = dtmain
+      else
+        niterlong = floor( dtmain / dtclosure )
+        dt        = dtclosure
+      end if
 
-!<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-          do i1=1, niterlong
-            call parameterization_timestep & 
-                 ( i, dt, fcor, & 
-                   thlm_forcing, rtm_forcing, wmm, wmt, & 
-                   wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & 
-                   p, rhom, rhot, exner, & 
-                   um, vm, upwp, vpwp, up2, vp2, & 
-                   thlm, rtm, wprtp, wpthlp, wp2, wp3, & 
-                   rtp2, thlp2, rtpthlp, & 
-                   Scm, taum, rcm, cf, & 
-                   err_code, .false., & 
-                   wpsclrp_sfc, wpedsclrp_sfc,  & 
-                   sclrm, sclrm_forcing, edsclrm, & 
-                   wpsclrp )
+!###############################################################################
+!############################### Closure loop ##################################
+!###############################################################################
+
+      do i1=1, niterlong
+        call parameterization_timestep & 
+             ( i, dt, fcor, & 
+               thlm_forcing, rtm_forcing, wmm, wmt, & 
+               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & 
+               p, rhom, rhot, exner, & 
+               um, vm, upwp, vpwp, up2, vp2, & 
+               thlm, rtm, wprtp, wpthlp, wp2, wp3, & 
+               rtp2, thlp2, rtpthlp, & 
+               Scm, taum, rcm, cf, & 
+               err_code, .false., & 
+               wpsclrp_sfc, wpedsclrp_sfc,  & 
+               sclrm, sclrm_forcing, edsclrm, & 
+               wpsclrp )
            
 #ifdef STATS
-            call stats_end_timestep( )
+        call stats_end_timestep( )
 #endif /*STATS*/
 
-            ! Set Time
-            ! Advance time here, not in parameterization_timestep,
-            ! in order to facilitate use of stats.
-            ! A host model, e.g. WRF, would advance time outside
-            ! of hoc_closure_timestep.  Vince Larson 7 Feb 2006
-            if ( i1 < niterlong ) then
-              time_current = time_initial + (i-1) * dtmain  & 
-                           + i1 * dtclosure
-            else if ( i1 == niterlong ) then
-              time_current = time_initial + i * dtmain
-            end if
+        ! Set Time
+        ! Advance time here, not in parameterization_timestep,
+        ! in order to facilitate use of stats.
+        ! A host model, e.g. WRF, would advance time outside
+        ! of hoc_closure_timestep.  Vince Larson 7 Feb 2006
+        if ( i1 < niterlong ) then
+          time_current = time_initial + (i-1) * dtmain  & 
+                       + i1 * dtclosure
+        else if ( i1 == niterlong ) then
+          time_current = time_initial + i * dtmain
+        end if
 #ifdef STATS
-            ! This was moved from above to be less confusing to the user,
-            ! since before it would appear as though the last timestep
-            ! was not executed. -dschanen 19 May 08
-            if ( lstats_last .and. stdout ) then
-              write(unit=fstdout,fmt='(a,i8,a,f10.1)') 'iteration = ',  & 
-                i, '; time = ', time_current
-            end if
+        ! This was moved from above to be less confusing to the user,
+        ! since before it would appear as though the last timestep
+        ! was not executed. -dschanen 19 May 08
+        if ( lstats_last .and. stdout ) then
+          write(unit=fstdout,fmt='(a,i8,a,f10.1)') 'iteration = ',  & 
+            i, '; time = ', time_current
+        end if
 #endif
 
 
-            if ( fatal_error( err_code ) ) exit
+        if ( fatal_error( err_code ) ) exit
            
-          end do ! i1=1..niterlong
+      end do ! i1=1..niterlong
 
-!<<<<<<<<<<<<<<<<<<<<<<<<<<<< Closure loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-          if ( fatal_error( err_code ) ) exit
+!###############################################################################
+!############################ End Closure Loop #################################
+!###############################################################################
+
+      if ( fatal_error( err_code ) ) exit
           
-        end do ! i=1, ifinal
+    end do ! i=1, ifinal
 
-!<<<<<<<<<<<<<<<<<<<<<<<< Main time stepping loop <<<<<<<<<<<<<<<<<<<<<<
+!###############################################################################
+!####################### End Main Time Stepping Loop ###########################
+!###############################################################################
 
-! Free memory
+    ! Free memory
 
-        call parameterization_cleanup( )
+    call parameterization_cleanup( )
 
 #ifdef STATS
-        call stats_finalize( )
+    call stats_finalize( )
 #endif
 
-        return
-        end subroutine hoc_model
+    return
+  end subroutine hoc_model
 
 !-----------------------------------------------------------------------
         subroutine hoc_initialize & 
@@ -1974,4 +1995,4 @@
 
         end subroutine hoc_forcings_timestep
 
-        end module hoc
+end module hoc
