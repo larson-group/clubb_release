@@ -1,4 +1,4 @@
-! $Id: ice_dfsn_mod.F90,v 1.2 2008-07-23 20:25:12 faschinj Exp $        
+! $Id: ice_dfsn_mod.F90,v 1.3 2008-07-24 20:53:16 faschinj Exp $        
 
         module ice_dfsn_mod
 
@@ -60,7 +60,8 @@
             Lv, & 
             ep, & 
             Rv, & 
-            Lf
+            Lf,&
+            T_freeze_K
         USE stats_precision, only:  & 
             time_precision ! Variable(s)
         USE saturation, only:  & 
@@ -178,7 +179,7 @@
           ! for rcm because the HOC model shows a small amount of liquid
           ! water all the way to the model top, which messes with the
           ! ice diffusion calculations.
-          IF ( rcm(k) >= 1.0E-5 .AND. T_in_K(k) < 273.15 ) THEN
+          IF ( rcm(k) >= 1.0E-5 .AND. T_in_K(k) < T_freeze_K ) THEN
 
           ! Find saturation mixing ratio over vapor [kg kg^{-1}]
              r_s(k) = sat_mixrat_liq( press(k), T_in_K(k) )
