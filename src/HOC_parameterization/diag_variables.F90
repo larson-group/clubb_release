@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F90,v 1.1 2008-07-22 16:04:22 faschinj Exp $
+! $Id: diag_variables.F90,v 1.2 2008-07-24 14:10:31 faschinj Exp $
         module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -109,7 +109,7 @@
         ! hydrometeors variable array
         real, allocatable, dimension(:,:), public :: hydromet
         ! When running with COAMPS microphysics this contains:
-        ! 1 rrm      Rain water mixing ratio               [kg/kg]
+        ! 1 rrainm      Rain water mixing ratio               [kg/kg]
         ! 2 Nrm      Rain drop number concentration        [num/kg]
         ! 3 rsnow    Snow water mixing ratio               [kg/kg]
         ! 4 rice     Ice water mixing ratio                [kg/kg]

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F90,v 1.3 2008-07-23 17:42:44 faschinj Exp $
+! $Id: parameterization_interface.F90,v 1.4 2008-07-24 14:10:31 faschinj Exp $
 !-----------------------------------------------------------------------
         module hoc_parameterization_interface
 
@@ -904,7 +904,7 @@
 
        call compute_uv_tndcy & 
           ( "vm", vm, wmt, fcor, um, ug, implemented,  & ! intent(in)
-            vmt )                                     ! intent(out)
+            vmt )                                        ! intent(out)
 
        call compute_um_edsclrm( "vm", vpwp(1), vmt, Khm, dt,  & ! intent(in)
                                 vm, vpwp,                     & ! intent(inout)
@@ -962,7 +962,7 @@
               rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp,   & ! intent(in)
               p, exner, rhot, rhom,                                 & ! intent(in)
               wmt, Scm, taum, rcm, cf,                              & ! intent(in)
-              sclrm, edsclrm, sclrm_forcing, wpsclrp )             ! intent(in)
+              sclrm, edsclrm, sclrm_forcing, wpsclrp )                ! intent(in)
 
 #endif /*STATS*/
 
@@ -975,7 +975,7 @@
                 wpthlp, wp2, wp3, Scm, rtp2, thlp2,             & ! intent(in)
                 rtpthlp, taum, rcm, cf, "end of ",              & ! intent(in)
                 wpsclrp_sfc, wpedsclrp_sfc,                     & ! intent(in)
-                sclrm, sclrm_forcing, edsclrm )                ! intent(in)
+                sclrm, sclrm_forcing, edsclrm )                   ! intent(in)
        end if
 
 !-----------------------------------------------------------------------
@@ -988,7 +988,7 @@
         subroutine latin_hypercube_sampling & 
                    ( k, n, dvar, nt, i_rmd, & 
                      crt1, crt2, cthl1, cthl2, & 
-                     rrm, cf, grid, sflag, p_height_time )
+                     rrainm, cf, grid, sflag, p_height_time )
 !       Description:
 !       Estimate using Latin Hypercubes.  This is usually disabled by default.
 !       The actual generation of a random matrix is done in a call from the
@@ -1024,7 +1024,7 @@
         real, intent(in) :: crt1, crt2, cthl1, cthl2
 
         real, dimension(grid), intent(in) ::  & 
-        rrm,  & ! Rain water mixing ratio  [kg/kg]
+        rrainm,  & ! Rain water mixing ratio  [kg/kg]
         cf   ! Cloud fraction           [%]
 
         integer, dimension(1:grid, 1:nt, 1:(dvar+1) ), intent(in) :: & 
@@ -1049,7 +1049,7 @@
         call lh_sampler( n, nt, dvar, p_matrix,       & ! intent(in)
                          cf(k), pdf_parms(k, :),      & ! intent(in)
                          crt1, crt2, cthl1, cthl2,    & ! intent(in)
-                         rrm(k),                      & ! intent(in)
+                         rrainm(k),                      & ! intent(in)
                          X_u, X_nl, sflag )          ! intent(out)
 
 !       print *, 'hoc.F: got past lh_sampler'

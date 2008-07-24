@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: param_index.F90,v 1.1 2008-07-22 16:04:27 faschinj Exp $
+! $Id: param_index.F90,v 1.2 2008-07-24 14:10:31 faschinj Exp $
         module param_index
 
 !       Description:
@@ -78,7 +78,7 @@
         inu8            = 38, & 
         ic_K9           = 39, & 
         inu9            = 40, & 
-        ic_Krrm         = 41, & 
+        ic_Krrainm         = 41, & 
         inu_r           = 42, & 
         ic_Ksqd         = 43
 

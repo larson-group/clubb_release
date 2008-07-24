@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zm.F90,v 1.1 2008-07-22 16:04:29 faschinj Exp $
+! $Id: stats_zm.F90,v 1.2 2008-07-24 14:10:31 faschinj Exp $
       module stats_zm
 #ifdef STATS
        
@@ -509,7 +509,7 @@
           iVrr = k
 
           call stat_assign(iVrr,"Vrr", & 
-               "rrm sedimentation velocity (m/s)","m/s",zm)
+               "rrainm sedimentation velocity (m/s)","m/s",zm)
           k = k + 1
 
         case ('VNr')           ! Brian

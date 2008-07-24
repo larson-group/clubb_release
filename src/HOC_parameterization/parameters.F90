@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameters.F90,v 1.1 2008-07-22 16:04:27 faschinj Exp $
+! $Id: parameters.F90,v 1.2 2008-07-24 14:10:31 faschinj Exp $
         module parameters 
 
 !       Description:
@@ -78,7 +78,7 @@
         nu8,         & ! Background Coefficient of Eddy Diffusion for wp3.
         c_K9,        & ! Coefficient of Eddy Diffusion for up2 and vp2.
         nu9,         & ! Background Coefficient of Eddy Diffusion for up2 and vp2.
-        c_Krrm,      & ! Coefficient of Eddy Diffusion for hydrometeors.
+        c_Krrainm,      & ! Coefficient of Eddy Diffusion for hydrometeors.
         nu_r,        & ! Background Coefficient of Eddy Diffusion for hydrometeors.
         c_Ksqd,      & ! Constant for scaling effect of value-squared diffusion.
         gamma_coef,  & ! Low Skewness in gamma coefficient Skewness Function.
@@ -95,7 +95,7 @@
 !$omp   threadprivate(C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12)
 !$omp   threadprivate(C13, C14)
 !$omp   threadprivate(c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6)
-!$omp   threadprivate(c_K8, nu8, c_K9, nu9, c_Krrm, nu_r, c_Ksqd)
+!$omp   threadprivate(c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd)
 !$omp   threadprivate(gamma_coef, gamma_coefb, gamma_coefc)
 !$omp   threadprivate(taumin, taumax, mu, lmin)
 
@@ -118,7 +118,7 @@
           C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
           C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
           C12, C13, C14, c_K, c_K1, nu1, c_K2, nu2,  & 
-          c_K6, nu6, c_K8, nu8, c_K9, nu9, c_Krrm, nu_r, c_Ksqd,  & 
+          c_K6, nu6, c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd,  & 
           beta, gamma_coef, gamma_coefb, gamma_coefc, & 
           lmin_coef, taumin, taumax, mu
 
@@ -144,7 +144,7 @@
           "C14        ", "c_K        ", "c_K1       ", "nu1        ",  & 
           "c_K2       ", "nu2        ", "c_K6       ", "nu6        ",  & 
           "c_K8       ", "nu8        ", "c_K9       ", "nu9        ",  & 
-          "c_Krrm     ", "nu_r       ", "c_Ksqd     ", "gamma_coef ",  & 
+          "c_Krrainm  ", "nu_r       ", "c_Ksqd     ", "gamma_coef ",  & 
           "gamma_coefb", "gamma_coefc", "mu         ", "beta       ",  & 
           "lmin_coef  ", "taumin     ", "taumax     " /)
 
@@ -195,7 +195,7 @@
                C7, C7b, C7c, C8, C8b, C10, & 
                C11, C11b, C11c, C12, C13, C14, & 
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
-               c_K8, nu8, c_K9, nu9, c_Krrm, nu_r, c_Ksqd, & 
+               c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
                gamma_coef, gamma_coefb, gamma_coefc, & 
                mu, beta, lmin_coef, taumin, taumax )
 
@@ -319,7 +319,7 @@
          nu8         = 20.0
          c_K9        = 0.0
          nu9         = 20.0
-         c_Krrm      = 0.075
+         c_Krrainm      = 0.075
          nu_r        = 3.0
          c_Ksqd      = 10.0
          beta        = 1.75
@@ -348,7 +348,7 @@
               C7, C7b, C7c, C8, C8b, C10, & 
               C11, C11b, C11c, C12, C13, C14, & 
               c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
-              c_K8, nu8, c_K9, nu9, c_Krrm, nu_r, c_Ksqd, & 
+              c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
               gamma_coef, gamma_coefb, gamma_coefc, & 
               mu, beta, lmin_coef, taumin, taumax, params )
 
@@ -396,7 +396,7 @@
           C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
           C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
           C12, C13, C14, c_K, c_K1, nu1, c_K2, nu2,  & 
-          c_K6, nu6, c_K8, nu8, c_K9, nu9, c_Krrm, nu_r, c_Ksqd,  & 
+          c_K6, nu6, c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd,  & 
           beta, gamma_coef, gamma_coefb, gamma_coefc, & 
           lmin_coef, taumin, taumax, mu
 
@@ -414,7 +414,7 @@
               C7, C7b, C7c, C8, C8b, C10, & 
               C11, C11b, C11c, C12, C13, C14, & 
               c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
-              c_K8, nu8, c_K9, nu9, c_Krrm, nu_r, c_Ksqd, & 
+              c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
               gamma_coef, gamma_coefb, gamma_coefc, & 
               mu, beta, lmin_coef, taumin, taumax, param_spread )
 
@@ -442,7 +442,7 @@
                     C7, C7b, C7c, C8, C8b, C10, & 
                     C11, C11b, C11c, C12, C13, C14, & 
                     c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
-                    c_K8, nu8, c_K9, nu9, c_Krrm, nu_r, c_Ksqd, & 
+                    c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
                     gamma_coef, gamma_coefb, gamma_coefc, & 
                     mu, beta, lmin_coef, taumin, taumax, params )
 !       Description:
@@ -495,7 +495,7 @@
             inu8, & 
             ic_K9, & 
             inu9, & 
-            ic_Krrm, & 
+            ic_Krrainm, & 
             inu_r, & 
             ic_Ksqd, & 
             igamma_coef, & 
@@ -517,7 +517,7 @@
         C7, C7b, C7c, C8, C8b, C10, & 
         C11, C11b, C11c, C12, C13, C14, & 
         c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8,  & 
-        c_K9, nu9, c_Krrm, nu_r, c_Ksqd, gamma_coef, gamma_coefb,  & 
+        c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, gamma_coef, gamma_coefb,  & 
         gamma_coefc, mu, beta, lmin_coef, taumin, taumax
 
         ! Output variables
@@ -564,7 +564,7 @@
         params(inu8)    = nu8
         params(ic_K9)   = c_K9
         params(inu9)    = nu9
-        params(ic_Krrm) = c_Krrm
+        params(ic_Krrainm) = c_Krrainm
         params(inu_r)   = nu_r
         params(ic_Ksqd) = c_Ksqd
 
@@ -592,7 +592,7 @@
                      C7, C7b, C7c, C8, C8b, C10, & 
                      C11, C11b, C11c, C12, C13, C14, & 
                      c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, & 
-                     c_K8, nu8, c_K9, nu9, c_Krrm, nu_r, c_Ksqd, & 
+                     c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
                      gamma_coef, gamma_coefb, gamma_coefc, & 
                      mu, beta, lmin_coef, taumin, taumax )
 
@@ -647,7 +647,7 @@
             inu8, & 
             ic_K9, & 
             inu9, & 
-            ic_Krrm, & 
+            ic_Krrainm, & 
             inu_r, & 
             ic_Ksqd, & 
             igamma_coef, & 
@@ -673,7 +673,7 @@
         C7, C7b, C7c, C8, C8b, C10, & 
         C11, C11b, C11c, C12, C13, C14, & 
         c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, & 
-        c_K8, nu8, c_K9, nu9, c_Krrm, nu_r, c_Ksqd, & 
+        c_K8, nu8, c_K9, nu9, c_Krrainm, nu_r, c_Ksqd, & 
         gamma_coef, gamma_coefb, gamma_coefc, & 
         mu, beta, lmin_coef, taumin, taumax
 
@@ -718,7 +718,7 @@
         nu8    = params(inu8)
         c_K9   = params(ic_K9)
         nu9    = params(inu9)
-        c_Krrm = params(ic_Krrm)
+        c_Krrainm = params(ic_Krrainm)
         nu_r   = params(inu_r)
         c_Ksqd = params(ic_Ksqd)
 

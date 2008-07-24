@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_variables.F90,v 1.1 2008-07-22 16:04:29 faschinj Exp $
+! $Id: stats_variables.F90,v 1.2 2008-07-24 14:10:31 faschinj Exp $
 !-----------------------------------------------------------------------
 !  module stats_variables
 
@@ -80,7 +80,7 @@
            iNsnowm,         & ! Adam Smith, 22 April 2008
            ised_rcm,        & ! Brian
            irsat,            & ! Brian
-           irrm,            & ! Brian
+           irrainm,            & ! Brian
            iNrm,            & ! Brian
            imean_vol_rad_rain,   & ! Brian
            imean_vol_rad_cloud,  & ! COAMPS only. dschanen 6 Dec 2006
@@ -100,7 +100,7 @@
 !$omp   threadprivate(iwp2thlp, iwprtp2, iwp2rtp, iLup, iLdown, itaut)
 !$omp   threadprivate(iKht, iwp2thvp, iwp2rcp, iwprtpthlp, isct, irhot)
 !$omp   threadprivate(iNcm, iNcnm, iNim, isnowslope, iNsnowm)
-!$omp   threadprivate(ised_rcm, irsat, irrm, iNrm)
+!$omp   threadprivate(ised_rcm, irsat, irrainm, iNrm)
 !$omp   threadprivate(imean_vol_rad_rain, imean_vol_rad_cloud)
 !$omp   threadprivate(irain_rate, iAKm, iAKm_est)
 !$omp   threadprivate(iradht, iradht_LW, iradht_SW)
@@ -158,20 +158,20 @@
 
         ! Rain mixing ratio budgets
         integer, public :: & 
-           irrm_bt, & 
-           irrm_ma, & 
-           irrm_sd, & 
-           irrm_dff, & 
-           irrm_cond, & 
-           irrm_auto, & 
-           irrm_accr, & 
-           irrm_cond_adj, & 
-           irrm_mc, & 
-           irrm_cl
+           irrainm_bt, & 
+           irrainm_ma, & 
+           irrainm_sd, & 
+           irrainm_dff, & 
+           irrainm_cond, & 
+           irrainm_auto, & 
+           irrainm_accr, & 
+           irrainm_cond_adj, & 
+           irrainm_mc, & 
+           irrainm_cl
 
-!$omp   threadprivate(irrm_bt, irrm_ma, irrm_sd, irrm_dff, irrm_cond)
-!$omp   threadprivate(irrm_auto, irrm_accr, irrm_cond_adj, irrm_mc)
-!$omp   threadprivate(irrm_cl)
+!$omp   threadprivate(irrainm_bt, irrainm_ma, irrainm_sd, irrainm_dff, irrainm_cond)
+!$omp   threadprivate(irrainm_auto, irrainm_accr, irrainm_cond_adj, irrainm_mc)
+!$omp   threadprivate(irrainm_cl)
 
         integer, public :: & 
            iNrm_bt, & 
@@ -517,7 +517,7 @@
           izi, & 
           irain,    & ! Brian
           ipflux,   & ! Brian
-          irrm_sfc ! Brian
+          irrainm_sfc ! Brian
 
         integer, public :: & 
           iwp23_cn, & 
@@ -530,7 +530,7 @@
           ivp2_cn
 
 !$omp   threadprivate(iustar, ilh, ish, icc, ilwp, izb, izi)
-!$omp   threadprivate(irain, ipflux, irrm_sfc)
+!$omp   threadprivate(irain, ipflux, irrainm_sfc)
 !$omp   threadprivate(iwp23_cn, irtm_cn, ithlm_cn)
 !$omp   threadprivate(irtp2_cn, ithlp2_cn, irtpthlp_cn)
 !$omp   threadprivate(iup2_cn, ivp2_cn)

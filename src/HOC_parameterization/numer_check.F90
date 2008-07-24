@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F90,v 1.2 2008-07-23 17:40:36 faschinj Exp $
+! $Id: numer_check.F90,v 1.3 2008-07-24 14:10:31 faschinj Exp $
         module numerical_check
 
         implicit none
@@ -307,7 +307,7 @@
 !        call check_nan( Ncm,"Ncm", prefix//proc_name )
 !        call check_nan( Ncnm,"Ncnm", prefix//proc_name )
 !        call check_nan( Nim,"Nim", prefix//proc_name )
-!        call check_nan( hydromet(:,1),"rrm", prefix//proc_name )
+!        call check_nan( hydromet(:,1),"rrainm", prefix//proc_name )
 !        call check_nan( hydromet(:,2),"Nrm", prefix//proc_name )
 !        call check_nan( hydromet(:,3),"rsnowm", prefix//proc_name )
 !        call check_nan( hydromet(:,4),"ricem", prefix//proc_name )
@@ -352,7 +352,7 @@
 !        call check_negative( Ncm,"Ncm", prefix//proc_name )
 !        call check_negative( Ncnm,"Ncnm", prefix//proc_name )
 !        call check_negative( Nim,"Nim", prefix//proc_name )
-!        call check_negative( hydromet(:,1),"rrm", prefix//proc_name )
+!        call check_negative( hydromet(:,1),"rrainm", prefix//proc_name )
 !        call check_negative( hydromet(:,2),"Nrm", prefix//proc_name )
 !        call check_negative( hydromet(:,3),"rsnowm", prefix//proc_name )
 !        call check_negative( hydromet(:,4),"ricem", prefix//proc_name )

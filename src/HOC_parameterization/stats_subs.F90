@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F90,v 1.2 2008-07-23 17:42:44 faschinj Exp $
+!  $Id: stats_subs.F90,v 1.3 2008-07-24 14:10:31 faschinj Exp $
       module stats_subs
 #ifdef STATS
  
@@ -1003,7 +1003,7 @@
       ! Prognostic drizzle variable array
 !     real, intent(in), dimension(gr%nnzp,hydromet_dim) :: hydromet
       ! Contains:
-      ! 1 rrm      Rain water mixing ratio               [kg/kg]
+      ! 1 rrainm      Rain water mixing ratio               [kg/kg]
       ! 2 Nrm      Rain droplet number concentration     [num/kg]
       ! 3 rsnow    Snow water mixing ratio               [kg/kg]
       ! 4 rice     Ice water mixing ratio                [kg/kg]
@@ -1056,7 +1056,7 @@
 !        call stat_update_var( ised_rcm, sed_rcm, zt )
 !       endif
         call stat_update_var( irsat, rsat, zt )
-!        call stat_update_var( irrm, hydromet(:,1), zt )
+!        call stat_update_var( irrainm, hydromet(:,1), zt )
 !        call stat_update_var( iNrm, hydromet(:,2), zt )
 !        call stat_update_var( irsnowm, hydromet(:,3), zt )
 !        call stat_update_var( iricem, hydromet(:,4), zt )

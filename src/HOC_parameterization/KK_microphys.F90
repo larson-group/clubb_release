@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: KK_microphys.F90,v 1.2 2008-07-23 20:25:12 faschinj Exp $
+! $Id: KK_microphys.F90,v 1.3 2008-07-24 14:10:31 faschinj Exp $
 
       module rain_equations
 
@@ -14,8 +14,8 @@
       implicit none
 
       public :: kk_microphys
-      private :: mean_volume_radius, cond_evap_rrm, cond_evap_Nrm
-      private :: autoconv_rrm, autoconv_Nrm, accretion_rrm
+      private :: mean_volume_radius, cond_evap_rrainm, cond_evap_Nrm
+      private :: autoconv_rrainm, autoconv_Nrm, accretion_rrainm
       PRIVATE :: G_T_p
 !      PRIVATE :: PDF_TRIVAR_2G_LN_LN, PDF_BIVAR_2G_LN, PDF_BIVAR_LN_LN
       PRIVATE :: Dv_fnc
@@ -24,7 +24,7 @@
     
       ! Statistical rain parameters.
       ! Old parameterization.
-!      REAL, PARAMETER:: rrp2_rrm2 = 1.2
+!      REAL, PARAMETER:: rrp2_rrainm2 = 1.2
 !      REAL, PARAMETER:: Nrp2_Nrm2 = 1.0
 !      REAL, PARAMETER:: Ncp2_Ncm2 = 0.07
 !      REAL, PARAMETER:: corr_rrNr_LL =  0.85
@@ -32,7 +32,7 @@
 !      REAL, PARAMETER:: corr_sNr_NL = -0.15
 !      REAL, PARAMETER:: corr_sNc_NL =  0.45
       ! Parameters for in-cloud (from SAM RF02 DO).
-      REAL, PARAMETER:: rrp2_rrm2_cloud = 0.766
+      REAL, PARAMETER:: rrp2_rrainm2_cloud = 0.766
       REAL, PARAMETER:: Nrp2_Nrm2_cloud = 0.429
       REAL, PARAMETER:: Ncp2_Ncm2_cloud = 0.003
       REAL, PARAMETER:: corr_rrNr_LL_cloud = 0.786
@@ -40,7 +40,7 @@
       REAL, PARAMETER:: corr_sNr_NL_cloud = 0.285
       REAL, PARAMETER:: corr_sNc_NL_cloud = 0.433
       ! Parameters for below-cloud (from SAM RF02 DO).
-      REAL, PARAMETER:: rrp2_rrm2_below = 8.97
+      REAL, PARAMETER:: rrp2_rrainm2_below = 8.97
       REAL, PARAMETER:: Nrp2_Nrm2_below = 12.03
       REAL, PARAMETER:: Ncp2_Ncm2_below = 0.00 ! Not applicable below cloud.
       REAL, PARAMETER:: corr_rrNr_LL_below = 0.886
@@ -68,7 +68,7 @@
 !!!!!!! need to be changed.  You should comment these in and 
 !!!!!!! comment the above copies out.  These are the constants needed to 
 !!!!!!! run the RICO case, as I did in my case rico0206, submitted:
-!      REAL, PARAMETER:: rrp2_rrm2_cloud = 30.
+!      REAL, PARAMETER:: rrp2_rrainm2_cloud = 30.
 !      REAL, PARAMETER:: Nrp2_Nrm2_cloud = 10.
 !      REAL, PARAMETER:: Ncp2_Ncm2_cloud = 60.
 !      REAL, PARAMETER:: corr_rrNr_LL_cloud = 0.8
@@ -76,7 +76,7 @@
 !      REAL, PARAMETER:: corr_sNr_NL_cloud = 0.3
 !      REAL, PARAMETER:: corr_sNc_NL_cloud = 0.24
 
-!      REAL, PARAMETER:: rrp2_rrm2_below = 20.
+!      REAL, PARAMETER:: rrp2_rrainm2_below = 20.
 !      REAL, PARAMETER:: Nrp2_Nrm2_below = 2.
 !      REAL, PARAMETER:: Ncp2_Ncm2_below = 0.
 !      REAL, PARAMETER:: corr_rrNr_LL_below = 0.78
@@ -93,9 +93,9 @@
         subroutine kk_microphys & 
                    ( T_in_K, p, exner, rhot,  & 
                      thl1, thl2, a, rc1, rc2, s1, & 
-                     s2, ss1, ss2, rcm, Ncm, rrm, Nrm,  & 
+                     s2, ss1, ss2, rcm, Ncm, rrainm, Nrm,  & 
                      lsample,  AKm, & 
-                     rrm_mc_tndcy, Nrm_mc_tndcy,  & 
+                     rrainm_mc_tndcy, Nrm_mc_tndcy,  & 
                      hm_rt_tndcy, hm_thl_tndcy, & 
                      Vrr, VNr )
 !       Description:
@@ -139,9 +139,9 @@
         use stats_variables, only: & 
             zt,   & ! Variable(s)
             imean_vol_rad_rain, & 
-            irrm_cond, & 
-            irrm_auto, & 
-            irrm_accr, & 
+            irrainm_cond, & 
+            irrainm_auto, & 
+            irrainm_accr, & 
             iNrm_cond, & 
             iNrm_auto, & 
             lstats_samp
@@ -163,7 +163,7 @@
         rc1, rc2,   & ! PDF parameters rc1 & rc2           [kg/kg]
         rcm,        & ! Cloud water mixing ratio           [kg/kg]
         Ncm,        & ! Cloud droplet number conc.         [number/kg]
-        rrm,        & ! Rain water mixing ratio            [kg/kg]
+        rrainm,        & ! Rain water mixing ratio            [kg/kg]
         Nrm        ! Rain drop number conc.             [number/kg]
 
         ! Latin hypercube variables - Vince Larson 22 May 2005
@@ -175,18 +175,18 @@
 
         ! Output
         real, intent(out), dimension(gr%nnzp) ::  & 
-        Vrr,          & ! Mean sedimentation velocity of rrm       [m/s]    
+        Vrr,          & ! Mean sedimentation velocity of rrainm       [m/s]    
         VNr,          & ! Mean sedimentation velocity of Nrm       [m/s]
-        rrm_mc_tndcy, & ! Rain water microphysical tendency        [(kg/kg)/s]
+        rrainm_mc_tndcy, & ! Rain water microphysical tendency        [(kg/kg)/s]
         Nrm_mc_tndcy, & ! Rain drop number conc. micro. tend.      [(num/kg)/s]
         hm_rt_tndcy,  & ! Contributions to total water from micro. [(kg/kg)/s]
         hm_thl_tndcy ! Contributions to theta_l from micro.     [K/s]
 
         ! Local variables
         real, dimension(gr%nnzp) ::  & 
-        rrm_cond,     & ! Change in rrm due to condensation        [(kg/kg)/s]
-        rrm_auto,     & ! Change in rrm due to autoconversion      [(kg/kg)/s]
-        rrm_accr,     & ! Change in rrm due to accretion           [(kg/kg)/s]
+        rrainm_cond,     & ! Change in rrainm due to condensation        [(kg/kg)/s]
+        rrainm_auto,     & ! Change in rrainm due to autoconversion      [(kg/kg)/s]
+        rrainm_accr,     & ! Change in rrainm due to accretion           [(kg/kg)/s]
         Nrm_cond,     & ! Change in Nrm due to condensation        [(num/kg)/s]
         Nrm_auto,     & ! Change in Nrm due to autoconversion      [(num/kg)/s]
         mean_vol_rad, & ! Mean volume radius                       [m]
@@ -196,7 +196,7 @@
         rsat          ! Saturation mixing ratio                  [kg/kg]
 
         real, dimension(gr%nnzp) ::  & 
-        rrp2_rrm2,    & ! rrp2/rrm^2               []
+        rrp2_rrainm2,    & ! rrp2/rrainm^2               []
         Nrp2_Nrm2,    & ! Nrp2/Nrm^2               []
         Ncp2_Ncm2,    & ! Ncp2/Ncm^2               []
         corr_rrNr_LL, & ! Correlation of rr and Nr []
@@ -368,7 +368,7 @@
         ! is used.  Otherwise, the ###_below value is used.
         DO k = 1, gr%nnzp, 1
            IF ( rcm(k) >= rc_tol ) THEN
-              rrp2_rrm2(k)    = rrp2_rrm2_cloud
+              rrp2_rrainm2(k)    = rrp2_rrainm2_cloud
               Nrp2_Nrm2(k)    = Nrp2_Nrm2_cloud
               Ncp2_Ncm2(k)    = Ncp2_Ncm2_cloud
               corr_rrNr_LL(k) = corr_rrNr_LL_cloud
@@ -376,7 +376,7 @@
               corr_sNr_NL(k)  = corr_sNr_NL_cloud
               corr_sNc_NL(k)  = corr_sNc_NL_cloud
            ELSE
-              rrp2_rrm2(k)    = rrp2_rrm2_below
+              rrp2_rrainm2(k)    = rrp2_rrainm2_below
               Nrp2_Nrm2(k)    = Nrp2_Nrm2_below
               Ncp2_Ncm2(k)    = Ncp2_Ncm2_below
               corr_rrNr_LL(k) = corr_rrNr_LL_below
@@ -394,7 +394,7 @@
 
            mean_vol_rad(k)  & 
            = mean_volume_radius & 
-                    ( rrm(k), Nrm(k), rrp2_rrm2(k),  & 
+                    ( rrainm(k), Nrm(k), rrp2_rrainm2(k),  & 
                                  Nrp2_Nrm2(k), corr_rrNr_LL(k) )
 
         end do
@@ -445,7 +445,7 @@
 
         do k = 1, gr%nnzp-1, 1
 
-           ! rrm sedimentation velocity.
+           ! rrainm sedimentation velocity.
            Vrr(k) = 0.012  & 
                    * ( 1.0e6 * zt2zm(mean_vol_rad,k)  ) & 
                    - 0.2
@@ -504,57 +504,57 @@
                        *( ( 1.0 + Beta_T*rsat(k) ) / rsat(k) )
 
            ! Now find the elements that make up the right-hand side of the
-           ! equation, dd, for rain water mixing ratio, rrm.
+           ! equation, dd, for rain water mixing ratio, rrainm.
 
-           rrm_cond(k)  & 
-           = cond_evap_rrm & 
-             ( rrm(k), Nrm(k), & 
+           rrainm_cond(k)  & 
+           = cond_evap_rrainm & 
+             ( rrainm(k), Nrm(k), & 
                s1(k), ss1(k), s2(k), ss2(k), & 
                thl1(k), thl2(k), rc1(k), rc2(k), a(k), & 
                p(k), exner(k), T_in_K(k), Supsat(k),  & 
-               rrp2_rrm2(k), Nrp2_Nrm2(k), corr_srr_NL(k), & 
+               rrp2_rrainm2(k), Nrp2_Nrm2(k), corr_srr_NL(k), & 
                corr_sNr_NL(k), corr_rrNr_LL(k) )
 
 
         ! Vince Larson added option to call LH sampled Kessler autoconversion.
         ! 22 May 2005
-!           rrm_auto(k) = autoconv_rrm( rcm(k), Ncm(k), rhot(k),
+!           rrainm_auto(k) = autoconv_rrainm( rcm(k), Ncm(k), rhot(k),
 !     .                        a, s1, s2, ss1, ss2, rc1, rc2 )
            if ( LH_on ) then
 
-!              rrm_auto(k) = AKm_est(k)
-              rrm_auto(k) = AKm(k)
+!              rrainm_auto(k) = AKm_est(k)
+              rrainm_auto(k) = AKm(k)
 
            else
 
-              rrm_auto(k)  & 
-              = autoconv_rrm( rcm(k), Ncm(k), s1(k), ss1(k),  & 
+              rrainm_auto(k)  & 
+              = autoconv_rrainm( rcm(k), Ncm(k), s1(k), ss1(k),  & 
                               s2(k), ss2(k), a(k), rhot(k), & 
                               Ncp2_Ncm2(k), corr_sNc_NL(k) )
 
            end if ! LH_on
         ! End Vince Larson's addition
 
-           rrm_accr(k)  & 
-           = accretion_rrm( rcm(k), rrm(k), s1(k), ss1(k), & 
+           rrainm_accr(k)  & 
+           = accretion_rrainm( rcm(k), rrainm(k), s1(k), ss1(k), & 
                             s2(k), ss2(k), a(k),  & 
-                            rrp2_rrm2(k), corr_srr_NL(k) )
+                            rrp2_rrainm2(k), corr_srr_NL(k) )
 
            ! Now find the elements that make up the right-hand side of the
            ! equation, rr, for rain drop number concentration, Nrm.
 
-           Nrm_cond(k) = cond_evap_Nrm( rrm_cond(k), Nrm(k), rrm(k) )
+           Nrm_cond(k) = cond_evap_Nrm( rrainm_cond(k), Nrm(k), rrainm(k) )
 
-           Nrm_auto(k) = autoconv_Nrm( rrm_auto(k) )
+           Nrm_auto(k) = autoconv_Nrm( rrainm_auto(k) )
 
 #ifdef STATS
            if ( lsample .and. lstats_samp ) then
-             ! Explicit contributions to rrm.
-             call stat_update_var_pt( irrm_cond, k, rrm_cond(k), zt )
+             ! Explicit contributions to rrainm.
+             call stat_update_var_pt( irrainm_cond, k, rrainm_cond(k), zt )
 
-             call stat_update_var_pt( irrm_auto, k, rrm_auto(k), zt )
+             call stat_update_var_pt( irrainm_auto, k, rrainm_auto(k), zt )
 
-             call stat_update_var_pt( irrm_accr, k, rrm_accr(k), zt )
+             call stat_update_var_pt( irrainm_accr, k, rrainm_accr(k), zt )
 
              ! Explicit contributions to Nrm.
              call stat_update_var_pt( iNrm_cond, k, Nrm_cond(k), zt )
@@ -564,26 +564,26 @@
            end if ! lstats_samp and lsample
 #endif /*STATS*/
 
-          rrm_mc_tndcy(k) = rrm_cond(k) + rrm_auto(k) + rrm_accr(k)
+          rrainm_mc_tndcy(k) = rrainm_cond(k) + rrainm_auto(k) + rrainm_accr(k)
 
           Nrm_mc_tndcy(k) = Nrm_cond(k) + Nrm_auto(k)
 
           ! Explicit contributions to thlm and rtm from the microphysics
-          hm_rt_tndcy(k)  = -rrm_mc_tndcy(k)
-          hm_thl_tndcy(k) = ( Lv / ( Cp*exner(k) ) ) * rrm_mc_tndcy(k)
+          hm_rt_tndcy(k)  = -rrainm_mc_tndcy(k)
+          hm_thl_tndcy(k) = ( Lv / ( Cp*exner(k) ) ) * rrainm_mc_tndcy(k)
         end do ! k=2..gr%nnzp-1
 
 
         ! Boundary conditions
 
-        ! Explicit contributions to rrm and Nrm from microphysics
-        ! auto_rrm, cond_rrm, and accr_rrm are not set at nz=1 or nnzp
+        ! Explicit contributions to rrainm and Nrm from microphysics
+        ! auto_rrainm, cond_rrainm, and accr_rrainm are not set at nz=1 or nnzp
         ! There is no condensation/evaporation, autoconversion, or accretion
         ! at level 1, which is below the ground surface.  Brian.
-        rrm_mc_tndcy(1) = 0.0
+        rrainm_mc_tndcy(1) = 0.0
         Nrm_mc_tndcy(1) = 0.0
 
-        rrm_mc_tndcy(gr%nnzp) = 0.0
+        rrainm_mc_tndcy(gr%nnzp) = 0.0
         Nrm_mc_tndcy(gr%nnzp) = 0.0
 
         ! Contributions to theta_l and rt.  See further comments 
@@ -636,7 +636,7 @@
         !
         !-----------------------------------------------------------------------
         
-        FUNCTION mean_volume_radius( rrm, Nrm, rrp2_rrm2,  & 
+        FUNCTION mean_volume_radius( rrainm, Nrm, rrp2_rrainm2,  & 
                                      Nrp2_Nrm2, corr_rrNr_LL )
 
         USE constants, only: & 
@@ -651,11 +651,11 @@
         implicit none
 
         ! Input variables.
-        REAL, INTENT(IN):: rrm          ! Grid-box average rrm     [kg kg^-1]
+        REAL, INTENT(IN):: rrainm          ! Grid-box average rrainm     [kg kg^-1]
 !        REAL, INTENT(IN):: rrp2         ! Grid-box rr variance     [kg^2 kg^-2]
         REAL, INTENT(IN):: Nrm          ! Grid-box average Nrm     [kg^-1]
 !        REAL, INTENT(IN):: Nrp2         ! Grid-box Nr variance     [kg^-2]
-        REAL, INTENT(IN):: rrp2_rrm2    ! rrp2/rrm^2               []
+        REAL, INTENT(IN):: rrp2_rrainm2    ! rrp2/rrainm^2               []
         REAL, INTENT(IN):: Nrp2_Nrm2    ! Nrp2/Nrm^2               []
         REAL, INTENT(IN):: corr_rrNr_LL ! Correlation of rr and Nr []
 
@@ -679,15 +679,15 @@
 
            ! Tolerance values are used instead of 0 in order to prevent
            ! numerical error.
-           IF ( rrm > rr_tol .AND. Nrm > Nr_tol ) THEN
+           IF ( rrainm > rr_tol .AND. Nrm > Nr_tol ) THEN
 
               mean_volume_radius =  & 
                  (  ( (4.0/3.0)*pi*rho_lw )**(-1.0/3.0)  ) & 
-                * rrm**(1.0/3.0) * Nrm**(-1.0/3.0)
+                * rrainm**(1.0/3.0) * Nrm**(-1.0/3.0)
 
            ELSE
 
-              ! If either rrm or Nrm are 0.
+              ! If either rrainm or Nrm are 0.
               mean_volume_radius = 0.0
 
            ENDIF
@@ -696,16 +696,16 @@
 
            ! Tolerance values are used instead of 0 in order to prevent
            ! numerical error.
-           IF ( rrm > rr_tol .AND. Nrm > Nr_tol ) THEN
+           IF ( rrainm > rr_tol .AND. Nrm > Nr_tol ) THEN
 
               ! Exponents on rr and Nr, respectively.
               alpha_exp = (1.0/3.0)
               beta_exp  = -(1.0/3.0)
 
               ! rr is distributed Lognormally.
-              mu_rr = rrm
+              mu_rr = rrainm
 !              sigma_rr = SQRT(rrp2)
-              sigma_rr = rrm * SQRT(rrp2_rrm2)
+              sigma_rr = rrainm * SQRT(rrp2_rrainm2)
 
               ! Nr is distributed Lognormally.
               mu_Nr = Nrm
@@ -723,7 +723,7 @@
 
            ELSE
 
-              ! If either rrm or Nrm are 0.
+              ! If either rrainm or Nrm are 0.
               mean_volume_radius = 0.0
 
            ENDIF
@@ -736,7 +736,7 @@
 
 !===============================================================================
         !
-        ! FUNCTION cond_evap_rrm
+        ! FUNCTION cond_evap_rrainm
         !-----------------------------------------------------------------------
         !
         ! DESCRIPTION
@@ -797,11 +797,11 @@
         !
         !-----------------------------------------------------------------------
         
-        FUNCTION cond_evap_rrm( rrm, Nrm, & 
+        FUNCTION cond_evap_rrainm( rrainm, Nrm, & 
                                 s1, ss1, s2, ss2, & 
                                 thl1, thl2, rc1, rc2, a, & 
                                 press, exner, T_in_K, Supsat,  & 
-                                rrp2_rrm2, Nrp2_Nrm2, corr_srr_NL, & 
+                                rrp2_rrainm2, Nrp2_Nrm2, corr_srr_NL, & 
                                 corr_sNr_NL, corr_rrNr_LL  )
 
         USE constants, only: & 
@@ -825,7 +825,7 @@
         implicit none
 
         ! Input variables.
-        REAL, INTENT(IN):: rrm          ! Grid-box average rrm     [kg kg^-1]
+        REAL, INTENT(IN):: rrainm          ! Grid-box average rrainm     [kg kg^-1]
 !        REAL, INTENT(IN):: rrp2         ! Grid-box rr variance     [kg^2 kg^-2]
         REAL, INTENT(IN):: Nrm          ! Grid-box average Nrm     [kg^-1]
 !        REAL, INTENT(IN):: Nrp2         ! Grid-box Nr variance     [kg^-2]
@@ -845,14 +845,14 @@
         REAL, INTENT(IN):: exner        ! Grid-box average exner function [-]
         REAL, INTENT(IN):: T_in_K         ! Grid-box average Temperature [K]
         REAL, INTENT(IN):: Supsat       ! Grid-box average Supersaturation []
-        REAL, INTENT(IN):: rrp2_rrm2    ! rrp2/rrm^2               []
+        REAL, INTENT(IN):: rrp2_rrainm2    ! rrp2/rrainm^2               []
         REAL, INTENT(IN):: Nrp2_Nrm2    ! Nrp2/Nrm^2               []
         REAL, INTENT(IN):: corr_srr_NL  ! Correlation of s and rr  []
         REAL, INTENT(IN):: corr_sNr_NL  ! Correlation of s and Nr  []
         REAL, INTENT(IN):: corr_rrNr_LL ! Correlation of rr and Nr []
 
         ! Output variables.
-        REAL:: cond_evap_rrm  ! [kg kg^-1 s^-1]
+        REAL:: cond_evap_rrainm  ! [kg kg^-1 s^-1]
 
         ! Exponential terms.
         REAL:: alpha_exp  ! Exponent of s
@@ -881,29 +881,29 @@
 
            ! Tolerance values are used instead of 0 in order to prevent
            ! numerical error.
-           IF ( rrm > rr_tol .AND. Nrm > Nr_tol ) THEN
+           IF ( rrainm > rr_tol .AND. Nrm > Nr_tol ) THEN
 
               IF ( Supsat < 0.0 ) THEN
               ! The air is not saturated, therefore evaporation can take place.
 
-                 cond_evap_rrm = & 
+                 cond_evap_rrainm = & 
                   3.0 * C_evap * G_T_p( T_in_K, press ) & 
                       * ( ( (4.0/3.0)*pi*rho_lw )**(2.0/3.0) ) & 
-                      * (rrm**(1.0/3.0)) * (Nrm**(2.0/3.0)) * Supsat
+                      * (rrainm**(1.0/3.0)) * (Nrm**(2.0/3.0)) * Supsat
 
               ELSE
               ! The air is saturated, so there is no evaporation.
               ! In the HOC code, any condensation is added into cloud water
               ! instead of rain water.
 
-                 cond_evap_rrm = 0.0
+                 cond_evap_rrainm = 0.0
 
               ENDIF
 
            ELSE
 
-              ! If either rrm or Nrm are 0.
-              cond_evap_rrm = 0.0
+              ! If either rrainm or Nrm are 0.
+              cond_evap_rrainm = 0.0
 
            ENDIF
 
@@ -911,7 +911,7 @@
 
            ! Tolerance values are used instead of 0 in order to prevent
            ! numerical error.
-           IF ( rrm > rr_tol .AND. Nrm > Nr_tol ) THEN
+           IF ( rrainm > rr_tol .AND. Nrm > Nr_tol ) THEN
 
               !!! Define plume constants for each plume
 
@@ -957,9 +957,9 @@
               sigma_s2 = ss2
 
               ! rr is distributed Lognormally.
-              mu_rr = rrm
+              mu_rr = rrainm
 !              sigma_rr = SQRT(rrp2)
-              sigma_rr = rrm * SQRT(rrp2_rrm2)
+              sigma_rr = rrainm * SQRT(rrp2_rrainm2)
 
               ! Nr is distributed Lognormally.
               mu_Nr = Nrm
@@ -972,7 +972,7 @@
               corr_rrNr = corr_rrNr_LL
 
 
-              cond_evap_rrm =  & 
+              cond_evap_rrainm =  & 
                ( a ) * plume_1_constants & 
                * PDF_TRIVAR_2G_LN_LN ( mu_s1, mu_rr, mu_Nr, & 
                                        sigma_s1, sigma_rr, sigma_Nr, & 
@@ -987,8 +987,8 @@
 
            ELSE
 
-              ! If either rrm or Nrm are 0.
-              cond_evap_rrm = 0.0
+              ! If either rrainm or Nrm are 0.
+              cond_evap_rrainm = 0.0
 
            ENDIF
 
@@ -996,22 +996,22 @@
 
         RETURN
 
-        END FUNCTION cond_evap_rrm
+        END FUNCTION cond_evap_rrainm
 
 !===============================================================================
 
-        FUNCTION cond_evap_Nrm( cond_rrm, Nrm, rrm )
+        FUNCTION cond_evap_Nrm( cond_rrainm, Nrm, rrainm )
 
         IMPLICIT NONE
 
-        REAL, INTENT(IN):: rrm      ! [kg kg^-1]
+        REAL, INTENT(IN):: rrainm      ! [kg kg^-1]
         REAL, INTENT(IN):: Nrm      ! [kg^-1]
-        REAL, INTENT(IN):: cond_rrm ! [kg kg^-1 s^-1]
+        REAL, INTENT(IN):: cond_rrainm ! [kg kg^-1 s^-1]
         REAL:: cond_evap_Nrm        ! [kg^-1 s^-1]
 
-        IF (rrm > 0.0 .AND. Nrm > 0.0) THEN
+        IF (rrainm > 0.0 .AND. Nrm > 0.0) THEN
 
-           cond_evap_Nrm = ( Nrm / rrm ) * cond_rrm
+           cond_evap_Nrm = ( Nrm / rrainm ) * cond_rrainm
 
         ELSE
 
@@ -1024,7 +1024,7 @@
 
 !===============================================================================
         !
-        ! FUNCTION autoconv_rrm
+        ! FUNCTION autoconv_rrainm
         !-----------------------------------------------------------------------
         !
         ! DESCRIPTION
@@ -1087,7 +1087,7 @@
         !
         !-----------------------------------------------------------------------
         
-        FUNCTION autoconv_rrm( rcm, Ncm, s1, ss1,  & 
+        FUNCTION autoconv_rrainm( rcm, Ncm, s1, ss1,  & 
                                s2, ss2, a, rhot, & 
                                Ncp2_Ncm2, corr_sNc_NL )
 
@@ -1118,7 +1118,7 @@
         REAL, INTENT(IN):: corr_sNc_NL ! Correlation of s and Nc  []
 
         ! Output variables.
-        REAL:: autoconv_rrm  ! [kg kg^-1 s^-1]
+        REAL:: autoconv_rrainm  ! [kg kg^-1 s^-1]
 
         ! Exponential terms.
         REAL:: alpha_exp  ! Exponent of s1
@@ -1141,13 +1141,13 @@
            ! numerical error.
            IF ( rcm > rc_tol .AND. Ncm > Nc_tol ) THEN
 
-              autoconv_rrm = 7.4188E13 * rhot**(-1.79)  & 
+              autoconv_rrainm = 7.4188E13 * rhot**(-1.79)  & 
                                 * rcm**2.47 * Ncm**(-1.79)
 
            ELSE
 
               ! If either rcm or Ncm are 0.
-              autoconv_rrm = 0.0
+              autoconv_rrainm = 0.0
 
            ENDIF
 
@@ -1176,7 +1176,7 @@
               corr_sNc = corr_sNc_NL
 
 
-              autoconv_rrm = 7.4188E13 * rhot**(-1.79) * ( & 
+              autoconv_rrainm = 7.4188E13 * rhot**(-1.79) * ( & 
                    ( a )  & 
                  * PDF_BIVAR_2G_LN ( mu_s1, mu_Nc, sigma_s1, sigma_Nc, & 
                                      corr_sNc, alpha_exp, beta_exp ) & 
@@ -1188,7 +1188,7 @@
            ELSE
 
               ! If either rcm or Ncm are 0.
-              autoconv_rrm = 0.0
+              autoconv_rrainm = 0.0
 
            ENDIF
 
@@ -1196,11 +1196,11 @@
 
         RETURN
 
-        END FUNCTION autoconv_rrm
+        END FUNCTION autoconv_rrainm
 
 !===============================================================================
 
-        FUNCTION autoconv_Nrm( auto_rrm )
+        FUNCTION autoconv_Nrm( auto_rrainm )
 
         USE constants, only: & 
             rho_lw,  & ! Variable(s)
@@ -1208,10 +1208,10 @@
 
         IMPLICIT NONE
 
-        REAL, INTENT(IN):: auto_rrm  ! [kg kg^-1 s^-1]
+        REAL, INTENT(IN):: auto_rrainm  ! [kg kg^-1 s^-1]
         REAL:: autoconv_Nrm          ! [kg^-1 s^-1]
 
-        autoconv_Nrm = auto_rrm / & 
+        autoconv_Nrm = auto_rrainm / & 
                        ( ( (4.0/3.0)*pi*rho_lw ) * (r_0**3) )
 
         RETURN
@@ -1219,7 +1219,7 @@
 
 !===============================================================================
         !
-        ! FUNCTION accretion_rrm
+        ! FUNCTION accretion_rrainm
         !-----------------------------------------------------------------------
         !
         ! DESCRIPTION
@@ -1263,9 +1263,9 @@
         !
         !-----------------------------------------------------------------------
         
-        FUNCTION accretion_rrm( rcm, rrm, s1, ss1, & 
+        FUNCTION accretion_rrainm( rcm, rrainm, s1, ss1, & 
                                 s2, ss2, a,  & 
-                                rrp2_rrm2, corr_srr_NL )
+                                rrp2_rrainm2, corr_srr_NL )
 
         USE constants, only: & 
             rr_tol,  & ! Variable(s)
@@ -1279,7 +1279,7 @@
         ! Input variables.
         REAL, INTENT(IN):: rcm         ! Grid-box average rcm     [kg kg^-1]
 !        REAL, INTENT(IN):: rcp2        ! Grid-box rc variance     [kg^2 kg^-2]
-        REAL, INTENT(IN):: rrm         ! Grid-box average rrm     [kg kg^-1]
+        REAL, INTENT(IN):: rrainm         ! Grid-box average rrainm     [kg kg^-1]
 !        REAL, INTENT(IN):: rrp2        ! Grid-box rr variance     [kg^2 kg^-2]
         REAL, INTENT(IN):: s1          ! Plume 1 average s        [kg kg^-1]
         REAL, INTENT(IN):: ss1         ! Plume 1 sigma s1 (not sigma^2 s1)
@@ -1289,11 +1289,11 @@
                                        !                          [kg kg^-1]
         REAL, INTENT(IN):: a           ! Relative weight of each individual
                                        ! Gaussian "plume."        []
-        REAL, INTENT(IN):: rrp2_rrm2   ! rrp2/rrm^2               []
+        REAL, INTENT(IN):: rrp2_rrainm2   ! rrp2/rrainm^2               []
         REAL, INTENT(IN):: corr_srr_NL ! Correlation of s and rr  []
 
         ! Output variables.
-        REAL:: accretion_rrm  ! [kg kg^-1 s^-1]
+        REAL:: accretion_rrainm  ! [kg kg^-1 s^-1]
 
         ! Exponential terms.
         REAL:: alpha_exp  ! Exponent of s
@@ -1314,14 +1314,14 @@
 
            ! Tolerance values are used instead of 0 in order to prevent
            ! numerical error.
-           IF ( rcm > rc_tol .AND. rrm > rr_tol ) THEN
+           IF ( rcm > rc_tol .AND. rrainm > rr_tol ) THEN
 
-              accretion_rrm = 67.0 * (rcm*rrm)**1.15
+              accretion_rrainm = 67.0 * (rcm*rrainm)**1.15
 
            ELSE
 
-              ! If either rcm or rrm are 0.
-              accretion_rrm = 0.0
+              ! If either rcm or rrainm are 0.
+              accretion_rrainm = 0.0
 
            ENDIF
 
@@ -1329,7 +1329,7 @@
 
            ! Tolerance values are used instead of 0 in order to prevent
            ! numerical error.
-           IF ( rcm > rc_tol .AND. rrm > rr_tol ) THEN
+           IF ( rcm > rc_tol .AND. rrainm > rr_tol ) THEN
 
               ! Exponents on s and rr, respectively.
               alpha_exp = 1.15
@@ -1342,15 +1342,15 @@
               sigma_s2 = ss2
 
               ! rr is distributed Lognormally.
-              mu_rr = rrm
+              mu_rr = rrainm
 !              sigma_rr = SQRT(rrp2)
-              sigma_rr = rrm * SQRT(rrp2_rrm2)
+              sigma_rr = rrainm * SQRT(rrp2_rrainm2)
 
               ! Correlations.
               corr_srr = corr_srr_NL
 
 
-              accretion_rrm = 67.0 * ( & 
+              accretion_rrainm = 67.0 * ( & 
                    ( a )  & 
                  * PDF_BIVAR_2G_LN ( mu_s1, mu_rr, sigma_s1, sigma_rr, & 
                                      corr_srr, alpha_exp, beta_exp ) & 
@@ -1361,8 +1361,8 @@
 
            ELSE
 
-              ! If either rcm or rrm are 0.
-              accretion_rrm = 0.0
+              ! If either rcm or rrainm are 0.
+              accretion_rrainm = 0.0
 
            ENDIF
 
@@ -1370,7 +1370,7 @@
 
         RETURN
 
-        END FUNCTION accretion_rrm
+        END FUNCTION accretion_rrainm
 
 !===============================================================================
 

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zt.F90,v 1.1 2008-07-22 16:04:29 faschinj Exp $
+! $Id: stats_zt.F90,v 1.2 2008-07-24 14:10:31 faschinj Exp $
        
       module stats_zt
 #ifdef STATS
@@ -55,7 +55,7 @@
           iNsnowm, & 
           ised_rcm, & 
           irsat, & 
-          irrm, & 
+          irrainm, & 
           iNrm, & 
           irain_rate, & 
           iAKm, & 
@@ -95,16 +95,16 @@
           iwp3_pr2, & 
           iwp3_dp1, & 
           iwp3_cl, & 
-          irrm_bt, & 
-          irrm_ma, & 
-          irrm_sd, & 
-          irrm_dff, & 
-          irrm_cond, & 
-          irrm_auto, & 
-          irrm_accr, & 
-          irrm_cond_adj, & 
-          irrm_mc, & 
-          irrm_cl, & 
+          irrainm_bt, & 
+          irrainm_ma, & 
+          irrainm_sd, & 
+          irrainm_dff, & 
+          irrainm_cond, & 
+          irrainm_auto, & 
+          irrainm_accr, & 
+          irrainm_cond_adj, & 
+          irrainm_mc, & 
+          irrainm_cl, & 
           iNrm_bt, & 
           iNrm_ma, & 
           iNrm_sd, & 
@@ -235,7 +235,7 @@
       iNsnowm       = 0  ! Adam Smith, 22 April 2008
       ised_rcm      = 0  ! Brian
       irsat          = 0  ! Brian
-      irrm          = 0  ! Brian
+      irrainm          = 0  ! Brian
       iNrm          = 0  ! Brian
       irain_rate    = 0  ! Brian
       iAKm          = 0  ! analytic Kessler.  Vince Larson 22 May 2005
@@ -281,16 +281,16 @@
       iwp3_dp1      = 0
       iwp3_cl       = 0
 
-      irrm_bt       = 0
-      irrm_ma       = 0
-      irrm_sd       = 0
-      irrm_dff      = 0
-      irrm_cond     = 0
-      irrm_auto     = 0
-      irrm_accr     = 0
-      irrm_cond_adj = 0
-      irrm_mc       = 0
-      irrm_cl       = 0
+      irrainm_bt       = 0
+      irrainm_ma       = 0
+      irrainm_sd       = 0
+      irrainm_dff      = 0
+      irrainm_cond     = 0
+      irrainm_auto     = 0
+      irrainm_accr     = 0
+      irrainm_cond_adj = 0
+      irrainm_mc       = 0
+      irrainm_cl       = 0
 
       iNrm_bt       = 0
       iNrm_ma       = 0
@@ -618,9 +618,9 @@
                "Saturation mixing ratio (kg/kg)","kg/kg",zt)
           k = k + 1
 
-        case ('rrm')           ! Brian
-          irrm = k
-          call stat_assign(irrm,"rrm", & 
+        case ('rrainm')           ! Brian
+          irrainm = k
+          call stat_assign(irrainm,"rrainm", & 
                "Rain water mixing ratio (kg/kg)","kg/kg",zt)
           k = k + 1
 
@@ -855,73 +855,73 @@
                "wp3 clipping term","(m^3)/(s^4)",zt)
           k = k + 1
  
-        case ('rrm_bt')
-          irrm_bt = k
-          call stat_assign(irrm_bt,"rrm_bt", & 
-               "rrm budget","(kg/kg)/(s)",zt)
+        case ('rrainm_bt')
+          irrainm_bt = k
+          call stat_assign(irrainm_bt,"rrainm_bt", & 
+               "rrainm budget","(kg/kg)/(s)",zt)
           k = k + 1
  
-        case ('rrm_ma')
-          irrm_ma = k
+        case ('rrainm_ma')
+          irrainm_ma = k
 
-          call stat_assign(irrm_ma,"rrm_ma", & 
-               "rrm mean advection","(kg/kg)/(s)",zt)
+          call stat_assign(irrainm_ma,"rrainm_ma", & 
+               "rrainm mean advection","(kg/kg)/(s)",zt)
           k = k + 1
  
-        case ('rrm_sd')
-          irrm_sd = k
+        case ('rrainm_sd')
+          irrainm_sd = k
 
-          call stat_assign(irrm_sd,"rrm_sd", & 
-               "rrm sedimentation","(kg/kg)/(s)",zt)
+          call stat_assign(irrainm_sd,"rrainm_sd", & 
+               "rrainm sedimentation","(kg/kg)/(s)",zt)
           k = k + 1
  
-        case ('rrm_dff')
-          irrm_dff = k
+        case ('rrainm_dff')
+          irrainm_dff = k
 
-          call stat_assign(irrm_dff,"rrm_dff", & 
-               "rrm diffusion","(kg/kg)/(s)",zt)
+          call stat_assign(irrainm_dff,"rrainm_dff", & 
+               "rrainm diffusion","(kg/kg)/(s)",zt)
           k = k + 1
  
-        case ('rrm_cond')
-          irrm_cond = k
+        case ('rrainm_cond')
+          irrainm_cond = k
 
-          call stat_assign(irrm_cond,"rrm_cond", & 
-               "rrm cond/evap","(kg/kg)/(s)",zt)
+          call stat_assign(irrainm_cond,"rrainm_cond", & 
+               "rrainm cond/evap","(kg/kg)/(s)",zt)
           k = k + 1
  
-        case ('rrm_auto')
-          irrm_auto = k
+        case ('rrainm_auto')
+          irrainm_auto = k
 
-          call stat_assign(irrm_auto,"rrm_auto", & 
-               "rrm autoconversion","(kg/kg)/(s)",zt)
+          call stat_assign(irrainm_auto,"rrainm_auto", & 
+               "rrainm autoconversion","(kg/kg)/(s)",zt)
           k = k + 1
  
-        case ('rrm_accr')
-          irrm_accr = k
-          call stat_assign(irrm_accr,"rrm_accr", & 
-               "rrm accretion","(kg/kg)/(s)",zt)
+        case ('rrainm_accr')
+          irrainm_accr = k
+          call stat_assign(irrainm_accr,"rrainm_accr", & 
+               "rrainm accretion","(kg/kg)/(s)",zt)
           k = k + 1
 
-        case ('rrm_cond_adj')
-          irrm_cond_adj = k
+        case ('rrainm_cond_adj')
+          irrainm_cond_adj = k
 
-          call stat_assign(irrm_cond_adj,"rrm_cond_adj", & 
-               "rrm cond/evap adjustment due to over-evaporation", & 
+          call stat_assign(irrainm_cond_adj,"rrainm_cond_adj", & 
+               "rrainm cond/evap adjustment due to over-evaporation", & 
                "(kg/kg)/(s)",zt)
           k = k + 1
  
-        case ('rrm_mc')
-          irrm_mc = k
+        case ('rrainm_mc')
+          irrainm_mc = k
 
-          call stat_assign(irrm_mc,"rrm_mc", & 
-               "rrm total microphysical tendency","(kg/kg)/(s)",zt)
+          call stat_assign(irrainm_mc,"rrainm_mc", & 
+               "rrainm total microphysical tendency","(kg/kg)/(s)",zt)
 
           k = k + 1
 
-        case ('rrm_cl')
-          irrm_cl = k
-          call stat_assign(irrm_cl,"rrm_cl", & 
-               "rrm clipping term","(kg/kg)/(s)",zt)
+        case ('rrainm_cl')
+          irrainm_cl = k
+          call stat_assign(irrainm_cl,"rrainm_cl", & 
+               "rrainm clipping term","(kg/kg)/(s)",zt)
 
           k = k + 1
  

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_sfc.F90,v 1.1 2008-07-22 16:04:28 faschinj Exp $
+! $Id: stats_sfc.F90,v 1.2 2008-07-24 14:10:31 faschinj Exp $
       
       module stats_sfc
 #ifdef STATS
@@ -30,7 +30,7 @@
           izi, & 
           irain, & 
           ipflux, & 
-          irrm_sfc, & 
+          irrainm_sfc, & 
           iwp23_cn, & 
           irtm_cn, & 
           ithlm_cn, & 
@@ -65,7 +65,7 @@
       izi      = 0
       irain    = 0   ! Brian
       ipflux   = 0   ! Brian
-      irrm_sfc = 0   ! Brian
+      irrainm_sfc = 0   ! Brian
 
       ! These are estimates of the condition number on each implicit
       ! matrices, and not located at the surface of the domain.
@@ -141,10 +141,10 @@
                "Surface precipitation flux [W/m^2]","W/m^2",sfc)
           k = k + 1
 
-        case ('rrm_sfc')       ! Brian
-          irrm_sfc = k
+        case ('rrainm_sfc')       ! Brian
+          irrainm_sfc = k
 
-          call stat_assign(irrm_sfc,"rrm_sfc", & 
+          call stat_assign(irrainm_sfc,"rrainm_sfc", & 
                "Surface rain water mixing ratio","kg/kg",sfc)
           k = k + 1
 
