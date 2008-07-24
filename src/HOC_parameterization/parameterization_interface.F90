@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F90,v 1.4 2008-07-24 14:10:31 faschinj Exp $
+! $Id: parameterization_interface.F90,v 1.5 2008-07-24 20:57:14 faschinj Exp $
 !-----------------------------------------------------------------------
         module hoc_parameterization_interface
 
@@ -114,12 +114,12 @@
            ug, & 
            um_ref, & 
            vm_ref, & 
-           wp2zt, & 
-           thlp2zt, & 
-           wpthlpzt, & 
-           wprtpzt, & 
-           rtp2zt, & 
-           rtpthlpzt, & 
+           wp2_zt, & 
+           thlp2_zt, & 
+           wpthlp_zt, & 
+           wprtp_zt, & 
+           rtp2_zt, & 
+           rtpthlp_zt, & 
            edsclrmt, & 
            wpedsclrp, & 
            sclrpthvp,   & ! sclr'th_v'
@@ -950,12 +950,12 @@
        end if 
 
        ! Added to allow tuning without using the zm stats file
-       wp2zt     = max( zm2zt( wp2 ), 0.0 )   ! Positive definite quantity
-       thlp2zt   = max( zm2zt( thlp2 ), 0.0 )   ! Positive definite quantity
-       wpthlpzt  = zm2zt( wpthlp )
-       wprtpzt   = zm2zt( wprtp )
-       rtp2zt    = max( zm2zt( rtp2 ), 0.0 )   ! Positive definite quantity
-       rtpthlpzt = zm2zt( rtpthlp )
+       wp2_zt     = max( zm2zt( wp2 ), 0.0 )   ! Positive definite quantity
+       thlp2_zt   = max( zm2zt( thlp2 ), 0.0 )   ! Positive definite quantity
+       wpthlp_zt  = zm2zt( wpthlp )
+       wprtp_zt   = zm2zt( wprtp )
+       rtp2_zt    = max( zm2zt( rtp2 ), 0.0 )   ! Positive definite quantity
+       rtpthlp_zt = zm2zt( rtpthlp )
 
        call stats_accumulate & 
             ( um, vm, upwp, vpwp, up2, vp2, thlm,                   & ! intent(in)

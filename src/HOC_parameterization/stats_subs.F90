@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F90,v 1.6 2008-07-24 16:01:26 dschanen Exp $
+!  $Id: stats_subs.F90,v 1.7 2008-07-24 20:57:14 faschinj Exp $
 module stats_subs
 
 #ifdef STATS
@@ -830,12 +830,12 @@ module stats_subs
           irrtthl
 
       use stats_variables, only: & 
-          iwp2zt, & 
-          ithlp2zt, & 
-          iwpthlpzt, & 
-          iwprtpzt, & 
-          irtp2zt, & 
-          irtpthlpzt, & 
+          iwp2_zt, & 
+          ithlp2_zt, & 
+          iwpthlp_zt, & 
+          iwprtp_zt, & 
+          irtp2_zt, & 
+          irtpthlp_zt, & 
           iwp2, & 
           irtp2, & 
           ithlp2, & 
@@ -920,12 +920,12 @@ module stats_subs
           Akm, & 
           Akm_est, & 
           radht, & 
-          wp2zt, & 
-          thlp2zt, & 
-          wpthlpzt, & 
-          wprtpzt, & 
-          rtp2zt, & 
-          rtpthlpzt, & 
+          wp2_zt, & 
+          thlp2_zt, & 
+          wpthlp_zt, & 
+          wprtp_zt, & 
+          rtp2_zt, & 
+          rtpthlp_zt, & 
           wp4, & 
           wpthvp, & 
           rtpthvp, & 
@@ -1103,12 +1103,12 @@ module stats_subs
         call stat_update_var( iss1, pdf_parms(:,22), zt )
         call stat_update_var( iss2, pdf_parms(:,23), zt )
         call stat_update_var( irrtthl, pdf_parms(:,24), zt )
-        call stat_update_var( iwp2zt, wp2zt, zt )
-        call stat_update_var( ithlp2zt, thlp2zt, zt )
-        call stat_update_var( iwpthlpzt, wpthlpzt, zt )
-        call stat_update_var( iwprtpzt, wprtpzt, zt )
-        call stat_update_var( irtp2zt, rtp2zt, zt )
-        call stat_update_var( irtpthlpzt, rtpthlpzt, zt )
+        call stat_update_var( iwp2_zt, wp2_zt, zt )
+        call stat_update_var( ithlp2_zt, thlp2_zt, zt )
+        call stat_update_var( iwpthlp_zt, wpthlp_zt, zt )
+        call stat_update_var( iwprtp_zt, wprtp_zt, zt )
+        call stat_update_var( irtp2_zt, rtp2_zt, zt )
+        call stat_update_var( irtpthlp_zt, rtpthlp_zt, zt )
 
         if ( sclr_dim > 0 ) then
           call stat_update_var( isclram, sclrm(:,1), zt )

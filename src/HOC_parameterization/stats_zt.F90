@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zt.F90,v 1.2 2008-07-24 14:10:31 faschinj Exp $
+! $Id: stats_zt.F90,v 1.3 2008-07-24 20:57:15 faschinj Exp $
        
       module stats_zt
 #ifdef STATS
@@ -168,12 +168,12 @@
           iss1, & 
           iss2, & 
           irrtthl, & 
-          iwp2zt, & 
-          ithlp2zt, & 
-          iwpthlpzt, & 
-          iwprtpzt, & 
-          irtp2zt, & 
-          irtpthlpzt, & 
+          iwp2_zt, & 
+          ithlp2_zt, & 
+          iwpthlp_zt, & 
+          iwprtp_zt, & 
+          irtp2_zt, & 
+          irtpthlp_zt, & 
           zt, & 
           isclram, & 
           isclram_f, & 
@@ -360,12 +360,12 @@
       iss2          = 0
       irrtthl       = 0
 
-      iwp2zt     = 0
-      ithlp2zt   = 0
-      iwpthlpzt  = 0
-      iwprtpzt   = 0
-      irtp2zt    = 0
-      irtpthlpzt = 0
+      iwp2_zt     = 0
+      ithlp2_zt   = 0
+      iwpthlp_zt  = 0
+      iwprtp_zt   = 0
+      irtp2_zt    = 0
+      irtpthlp_zt = 0
 
       isclram     = 0
       isclram_f   = 0
@@ -1351,46 +1351,46 @@
                "pdf parameter rrtthl","count",zt)
           k = k + 1
 
-        case('wp2zt')
-          iwp2zt = k
+        case('wp2_zt')
+          iwp2_zt = k
 
-          call stat_assign(iwp2zt,"wp2zt", & 
-               "wp2zt","m^2/s^2",zt)
+          call stat_assign(iwp2_zt,"wp2_zt", & 
+               "wp2_zt","m^2/s^2",zt)
           k = k + 1
 
-        case('thlp2zt')
-          ithlp2zt = k
+        case('thlp2_zt')
+          ithlp2_zt = k
 
-          call stat_assign(ithlp2zt,"thlp2zt", & 
-               "thlp2zt","K^2",zt)
+          call stat_assign(ithlp2_zt,"thlp2_zt", & 
+               "thlp2_zt","K^2",zt)
           k = k + 1
 
-        case('wpthlpzt')
-          iwpthlpzt = k
+        case('wpthlp_zt')
+          iwpthlp_zt = k
 
-          call stat_assign(iwpthlpzt,"wpthlpzt", & 
-               "wpthlpzt","(m K)/s",zt)
+          call stat_assign(iwpthlp_zt,"wpthlp_zt", & 
+               "wpthlp_zt","(m K)/s",zt)
           k = k + 1
 
-        case('wprtpzt')   
-          iwprtpzt = k
+        case('wprtp_zt')   
+          iwprtp_zt = k
 
-          call stat_assign(iwprtpzt,"wprtpzt", & 
-               "wprtpzt","(m kg)/(s kg)",zt)
+          call stat_assign(iwprtp_zt,"wprtp_zt", & 
+               "wprtp_zt","(m kg)/(s kg)",zt)
           k = k + 1
 
-        case('rtp2zt')   
-          irtp2zt = k
+        case('rtp2_zt')   
+          irtp2_zt = k
 
-          call stat_assign(irtp2zt,"rtp2zt", & 
-               "rtp2zt","kg/kg",zt)
+          call stat_assign(irtp2_zt,"rtp2_zt", & 
+               "rtp2_zt","kg/kg",zt)
           k = k + 1
 
-        case('rtpthlpzt')   
-          irtpthlpzt = k
+        case('rtpthlp_zt')   
+          irtpthlp_zt = k
 
-          call stat_assign(irtpthlpzt,"rtpthlpzt", & 
-               "rtpthlpzt","(kg K)/kg",zt)
+          call stat_assign(irtpthlp_zt,"rtpthlp_zt", & 
+               "rtpthlp_zt","(kg K)/kg",zt)
           k = k + 1
 
         case ('sclram')

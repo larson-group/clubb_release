@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_variables.F90,v 1.2 2008-07-24 14:10:31 faschinj Exp $
+! $Id: stats_variables.F90,v 1.3 2008-07-24 20:57:14 faschinj Exp $
 !-----------------------------------------------------------------------
 !  module stats_variables
 
@@ -275,14 +275,14 @@
 !$omp   threadprivate(irrtthl)
 
         integer, public :: & 
-           iwp2zt, & 
-           ithlp2zt, & 
-           iwpthlpzt, & 
-           iwprtpzt, & 
-           irtp2zt, & 
-           irtpthlpzt
+           iwp2_zt, & 
+           ithlp2_zt, & 
+           iwpthlp_zt, & 
+           iwprtp_zt, & 
+           irtp2_zt, & 
+           irtpthlp_zt
 
-!$omp   threadprivate(iwp2zt, ithlp2zt, iwpthlpzt, irtp2zt, irtpthlpzt)
+!$omp   threadprivate(iwp2_zt, ithlp2_zt, iwpthlp_zt, irtp2_zt, irtpthlp_zt)
 
         integer, public :: & 
           isclram,    & ! Passive scalar mean (currently mean thl)
