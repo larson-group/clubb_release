@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F90,v 1.2 2008-07-24 14:10:31 faschinj Exp $
+! $Id: diag_variables.F90,v 1.3 2008-07-24 15:23:17 dschanen Exp $
         module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -557,7 +557,7 @@
         deallocate( pdf_parms )
 
         ! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
-        if ( LH_on ) then
+!       if ( LH_on ) then
           deallocate( AKm_est )   ! Kessler ac estimate
           deallocate( AKm )       ! Exact Kessler ac
           deallocate( AKstd )     ! St dev of exact Kessler ac
@@ -565,7 +565,7 @@
           deallocate( rcm_est )   ! Monte Carlo rcm estimate
           deallocate( AKm_rcm )   ! Kessler ac based on rcm
           deallocate( AKm_rcc )   ! Kessler ac based on rcm/cf
-        end if ! LH_on
+!       end if ! LH_on
 
         ! Passive scalars
         deallocate( sclrprtp )
