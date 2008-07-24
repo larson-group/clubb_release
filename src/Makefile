@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.145 2008-07-24 17:59:55 faschinj Exp $
+# $Id: Makefile,v 1.146 2008-07-24 20:52:29 vlarson Exp $
 #
 # This version should work with GNU make and Sun's dmake.
 #
@@ -33,8 +33,14 @@ COAMPS_MICRO_DIR = coamps_micro
 NR_DIR = NR
 
 # == Object files with licensing restrictions ==
-# If these directories are missing the variables will be null, and so as long as 
-# -DENABLE_TUNER and -DCOAMPS_MICRO are not defined, CLUBB will compile.
+# We cannot freely distribute COAMPS microphysics or Numerical Recipes code.
+#   For those w/o access to COAMPS and NR, the -DCOAMPS compiler flag 
+# should *not* be used, and a checkout of clubb_dist will omit
+# the COAMPS and NR directories, and so COAMPS_MICRO = null.
+#   For those w/ access to COAMPS and NR, the -DCOAMPS flag can be used,
+# and a checkout of hoc_minimal, e.g. will contain the COAMPS and NR
+# directories, and COAMPS_MICRO = list of COAMPS .o files.
+# In either case, CLUBB should compile.  
 COAMPS_MICRO = $(patsubst %.F,%.o, $(notdir $(wildcard $(COAMPS_MICRO_DIR)/*.F)))
 NUM_REC = $(patsubst %.f90,%.o, $(notdir $(wildcard $(NR_DIR)/*.f90)))
 
