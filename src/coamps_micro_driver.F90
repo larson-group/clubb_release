@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: coamps_micro_driver.F90,v 1.1 2008-07-24 16:51:54 dschanen Exp $
+! $Id: coamps_micro_driver.F90,v 1.2 2008-07-24 20:51:22 faschinj Exp $
       module coamps_micro_driver_mod
 
       ! This module wraps the adjtq subroutine so that it may be used by
@@ -42,7 +42,7 @@
 !      Rutledge and Hobbs, 1984; COAMPS Users Guide.
 !----------------------------------------------------------------------
                               
-      use constants, only: Cp, Lv, pi, Lf, Ls, Rv, Rd, p0 ! Variable(s)
+      use constants, only: Cp, Lv, pi, Lf, Ls, Rv, Rd, p0, T_freeze_K ! Variable(s)
       use saturation, only: sat_mixrat_liq, sat_mixrat_ice ! Procedure(s)
       use stats_precision, only: time_precision ! Variable(s)
       use error_code, only: clubb_debug ! Procedure(s)
@@ -650,7 +650,7 @@
       if ( .not.lice ) then
         sat = qv3_flip(1,1,k)/qsatv3d_flip(1,1,k)-1.0
       else
-        if ( temp3d_flip(1,1,k) >= 273.15 ) then
+        if ( temp3d_flip(1,1,k) >= T_freeze_K ) then
           sat = qv3_flip(1,1,k)/qsatv3d_flip(1,1,k)-1.0
         else
           sat = qv3_flip(1,1,k)/qsati3d_flip(1,1,k)-1.0
