@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: coamps_micro_driver.F90,v 1.2 2008-07-23 13:49:17 faschinj Exp $
+! $Id: coamps_micro_driver.F90,v 1.3 2008-07-24 14:11:56 faschinj Exp $
       module coamps_micro_driver_mod
 
       ! This module wraps the adjtq subroutine so that it may be used by
@@ -16,7 +16,7 @@
       subroutine coamps_micro_driver & 
              ( runtype, timea_in, deltf_in, & 
                rtm, wmm, p, exner, rhot, T_in_K, & 
-               thlm, ricem, rrm, rgraupelm, rsnowm, & 
+               thlm, ricem, rrainm, rgraupelm, rsnowm, & 
                rcm, Ncm, Nrm, Ncnm, Nim, & 
                cond, Vsnow, Vice, Vrr, VNr, Vgraupel, & 
                ritend, rrtend, rgtend,  & 
@@ -174,7 +174,7 @@
 
       real, dimension(gr%nnzp), intent(in) :: & 
         ricem,      & ! Ice water mixing ratio     [kg/kg]
-        rrm,        & ! Rain water mixing ratio    [kg/kg]
+        rrainm,        & ! Rain water mixing ratio    [kg/kg]
         rgraupelm,  & ! Graupel water mixing ratio [kg/kg]
         rsnowm,     & ! Snow water mixing ratio    [kg/kg]
       ! Nrm is now in kg^-1.  Brian.  Sept. 8, 2007.
@@ -545,7 +545,7 @@
       ! Setup COAMPS m (mass) grid variables
       qt3(1,1,1:kk)  = rtm(2:kk+1)
       qc3(1,1,1:kk)  = rcm(2:kk+1)
-      qr3(1,1,1:kk)  = rrm(2:kk+1)
+      qr3(1,1,1:kk)  = rrainm(2:kk+1)
       qg3(1,1,1:kk)  = rgraupelm(2:kk+1)
       qs3(1,1,1:kk)  = rsnowm(2:kk+1)
       qi3(1,1,1:kk)  = ricem(2:kk+1)
@@ -849,7 +849,7 @@
 
       ! Compute tendencies
       do k=1, kk, 1
-        rrtend(k+1)    = ( qr3(1,1,k) - rrm(k+1) ) / deltf
+        rrtend(k+1)    = ( qr3(1,1,k) - rrainm(k+1) ) / deltf
         rgtend(k+1)    = ( qg3(1,1,k) - rgraupelm(k+1) ) / deltf
         ritend(k+1)    = ( qi3(1,1,k) - ricem(k+1) ) / deltf
         ! Nrm is now in kg^-1, so nr3(1,1,k)*1.e6 needs to be divided by rhot

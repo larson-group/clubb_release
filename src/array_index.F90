@@ -15,7 +15,7 @@
         ! Variables
         ! Microphysical quantities
         integer, public :: & 
-        iirrm, iiNrm, iirsnowm, iiricem, iirgraupelm ! [kg/kg]
+        iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm ! [kg/kg]
 
         ! Scalar quantities
         integer, public :: & 

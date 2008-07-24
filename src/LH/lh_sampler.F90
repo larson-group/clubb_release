@@ -1,4 +1,4 @@
-!$Id: lh_sampler.F90,v 1.1 2008-07-22 16:04:30 faschinj Exp $
+!$Id: lh_sampler.F90,v 1.2 2008-07-24 14:11:21 faschinj Exp $
       module lh_sampler_mod
 
       implicit none
@@ -25,7 +25,7 @@
 !         cf = cloud fraction, 0 <= cf <= 1
 !         pdf_parms = pdf parameters output by closure_new
 !         crt1, crt2, cthl1, cthl2 = coefficients for s
-!         rrm  = mean of rr; must have rrm>0. 
+!         rrainm  = mean of rr; must have rrainm>0. 
 
 ! Output: X_u = nxd Latin hypercube sample from uniform dist 
 !         X_nl = Sample from normal-lognormal distribution 
@@ -35,7 +35,7 @@
                              cf, & 
                              pdf_parms, & 
                              crt1, crt2, cthl1, cthl2, & 
-                             rrm, & 
+                             rrainm, & 
                              X_u, X_nl, sample_flag)
 
 !      use constants
@@ -45,8 +45,8 @@
 ! Input
 
       integer, intent(in) :: n, nt, d
-! rrm  = mean of rr; must have rrm>0. 
-      real, intent(in) :: rrm
+! rrainm  = mean of rr; must have rrainm>0. 
+      real, intent(in) :: rrainm
 
 ! cloud fraction
       real, intent(in) :: cf
@@ -107,9 +107,9 @@
 ! rr1  = PDF parameter for mean of plume 1. [rr1] = (g/kg)
 ! rr2  = PDF parameter for mean of plume 2. [rr2] = (g/kg)
 ! srr1,2 = PDF param for width of plume 1,2. [srr1,2] = (g/kg)**2
-! rrp2_rrm2 = rrp2 divided by rrm^2 []
-! rrp2_rrm2 = 0.4 is for DYCOMS2 RF02 in cloud
-      double precision, parameter :: rrp2_rrm2 = 0.4 
+! rrp2_rrainm2 = rrp2 divided by rrainm^2 []
+! rrp2_rrainm2 = 0.4 is for DYCOMS2 RF02 in cloud
+      double precision, parameter :: rrp2_rrainm2 = 0.4 
       double precision :: rr1, rr2, srr1, srr2
 
 
@@ -196,13 +196,13 @@
         sN2 = sN1
 
 ! rr = specific rain content. [rr] = g rain / kg air
-! rrm  = mean of rr; rrp2 = variance of rr, must have rrp2>0.
+! rrainm  = mean of rr; rrp2 = variance of rr, must have rrp2>0.
 ! rr1  = PDF parameter for mean of plume 1. [rr1] = (g/kg)
 ! rr2  = PDF parameter for mean of plume 2. [rr2] = (g/kg)
 ! srr1,2 = PDF param for width of plume 1,2. [srr1,2] = (g/kg)**2
-        rr1  = 0.5*log( (dble(rrm)**2) / (1. + rrp2_rrm2) )
+        rr1  = 0.5*log( (dble(rrainm)**2) / (1. + rrp2_rrainm2) )
         rr2  = rr1
-        srr1 = log( 1. + rrp2_rrm2 )
+        srr1 = log( 1. + rrp2_rrainm2 )
         srr2 = srr1
 
 ! Means of s, t, w, N, rr for Gaussians 1 and 2

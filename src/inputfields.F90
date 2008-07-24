@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputfields.F90,v 1.1 2008-07-22 16:04:14 faschinj Exp $
+! $Id: inputfields.F90,v 1.2 2008-07-24 14:13:56 faschinj Exp $
 
 ! Module inputfields
 
@@ -30,7 +30,7 @@
                            input_p, input_rhot, input_rhom, & 
                            input_Lscale, input_Lup, input_Ldown, & 
                            input_Kht, input_Khm, input_taum, input_taut, & 
-                           input_thvm, input_rrm,input_Nrm,  & 
+                           input_thvm, input_rrainm,input_Nrm,  & 
                            input_rsnowm, input_ricem, input_rgraupelm,  & 
                            input_thlm_forcing, input_rtm_forcing, & 
                            input_up2, input_vp2, input_Scm, input_Ncm,  & 
@@ -135,7 +135,7 @@
             zt2zm ! Procedure(s)
 
         use array_index, only:  & 
-            iirrm, iiNrm, iirsnowm, iiricem, iirgraupelm
+            iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm
 
         use inputfile_class, only: & 
             inputgrads,  & ! Type
@@ -203,9 +203,9 @@
             call get_var( fread_var, "taut", timestep, & 
                           taut(1:gr%nnzp),  lerror )
           endif
-          if ( input_rrm ) then 
-            call get_var( fread_var, "rrm", timestep, & 
-                          hydromet(1:gr%nnzp,iirrm),  lerror )
+          if ( input_rrainm ) then 
+            call get_var( fread_var, "rrainm", timestep, & 
+                          hydromet(1:gr%nnzp,iirrainm),  lerror )
           endif
           if ( input_rsnowm ) then 
             call get_var( fread_var, "rsnowm", timestep, & 

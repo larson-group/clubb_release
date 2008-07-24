@@ -1,4 +1,4 @@
-! $Id: nobudgets_stats.in,v 1.2 2008-07-21 20:53:38 faschinj Exp $
+! $Id: nobudgets_stats.in,v 1.3 2008-07-24 14:15:50 faschinj Exp $
 ! Stats for the prognostic and diagnostic variables, but omitting the 
 ! budget terms and some of the microphyics stats.
 &statsnl
@@ -9,7 +9,7 @@ vars_zt =
 'wp3', 'wpthlp2', 'wp2thlp', 'wprtp2', 'wp2rtp',
 'taut', 'kht', 'wp2thvp', 'wp2rcp', 'wprtpthlp',
 'sc', 'rhot', 'radht', 'rsat',
-'rrm', 'Nrm', 'rsnowm', 'ricem', 'rgraupelm',
+'rrainm', 'Nrm', 'rsnowm', 'ricem', 'rgraupelm',
 'a', 'w1', 'w2', 'sw1', 'sw2', 'thl1', 'thl2', 'sthl1', 'sthl2',
 'rt1', 'rt2', 'srt1', 'srt2', 'rc1', 'rc2', 'rsl1', 'rsl2', 'R1', 'R2',
 's1', 's2', 'ss1', 'ss2', 'rrtthl',
@@ -24,6 +24,6 @@ vars_zm =
 ''
 
 vars_sfc = 
-'ustar', 'lh', 'sh', 'cc', 'lwp', 'zb', 'zi', 'rain', 'pflux', 'rrm_sfc',
+'ustar', 'lh', 'sh', 'cc', 'lwp', 'zb', 'zi', 'rain', 'pflux', 'rrainm_sfc',
 ''
 /
