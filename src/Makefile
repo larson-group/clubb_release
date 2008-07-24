@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.142 2008-07-24 16:51:54 dschanen Exp $
+# $Id: Makefile,v 1.143 2008-07-24 17:02:31 dschanen Exp $
 #
 # This version should work with GNU make and Sun's dmake.
 #
@@ -36,7 +36,7 @@ NR_DIR = NR
 # If these directories are missing the variables will be null, and so as long as 
 # -DENABLE_TUNER and -DCOAMPS_MICRO are not defined, CLUBB will compile.
 COAMPS_MICRO = $(patsubst %.F,%.o, $(notdir $(wildcard $(COAMPS_MICRO_DIR)/*.F)))
-NR = $(patsubst %.f90,%.o, $(notdir $(wildcard $(NR_DIR)/*.f90)))
+NUM_REC = $(patsubst %.f90,%.o, $(notdir $(wildcard $(NR_DIR)/*.f90)))
 
 # == Other object files ==
  
@@ -82,8 +82,6 @@ PARAMETERIZATION = \
 
 
 INTERFACING = gradsaverage.o inputfields.o inputgrads.o 
-
-NUM_REC	= nrtype.o nr.o nrutil.o ran_state.o ran1.o amebsa.o amoeba.o
 
 TUNING = $(MODEL) $(INTERFACING) $(NUM_REC) error.o
 

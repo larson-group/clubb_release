@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.58 2008-07-22 16:04:14 faschinj Exp $
+# $Id: make.deps,v 1.59 2008-07-24 17:02:31 dschanen Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -102,13 +102,13 @@ semiimplicit_clip.o : constants.o stats_precision.o semiimplicit_clip.F90
 explicit_clip.o : grid.o stats_precision.o stats_type.o stats_variables.o explicit_clip.F90
 
 # == Numerical Recipes dependencies (For the tuner) ==
-nrtype.o	: nrtype.f90
-nr.o		: nrtype.o nr.f90 
-nrutil.o	: nrtype.o nr.o nrutil.f90
-ran_state.o	: nrtype.o nr.o nrutil.o ran_state.f90
-ran1.o		: nrtype.o nr.o nrutil.o ran_state.o ran1.f90
-amebsa.o	: nrtype.o nr.o nrutil.o ran_state.o ran1.o amebsa.f90
-amoeba.o	: nrtype.o nr.o nrutil.o amoeba.f90
+#nrtype.o	: nrtype.f90
+#nr.o		: nrtype.o nr.f90 
+#nrutil.o	: nrtype.o nr.o nrutil.f90
+#ran_state.o	: nrtype.o nr.o nrutil.o ran_state.f90
+#ran1.o		: nrtype.o nr.o nrutil.o ran_state.o ran1.f90
+#amebsa.o	: nrtype.o nr.o nrutil.o ran_state.o ran1.o amebsa.f90
+#amoeba.o	: nrtype.o nr.o nrutil.o amoeba.f90
 
 
 # == Latin Hypercube dependencies  ==
@@ -204,14 +204,14 @@ calendar.o      : constants.o calendar.F90
 inputfields.o	: grid.o inputgrads.o prog_variables.o diag_variables.o \
 	inputfields.F90 
 gradsaverage.o	: grid.o inputgrads.o gradsaverage.F90 
-error.o		: nrtype.o nr.o gradsaverage.o hoc.o parameters.o error_code.o error.F90
+error.o		: gradsaverage.o hoc.o parameters.o error_code.o error.F90
 budget_terms.o  : amoeba.o inputfields.o gradsaverage.o hoc.o \
 	error.o error_code.o budget_terms.F90
 cloud_sed_mod.o : cloud_sed_mod.F90 stats_variables.o grid.o constants.o
 
 # == Executables ==
-hoc_tuner.o		: nrtype.o nr.o hoc.o error.o hoc_tuner.F90
-hoc_tuner_budget_terms.o: nrtype.o nr.o hoc.o error.o \
+hoc_tuner.o		: $(NUM_REC) hoc.o error.o hoc_tuner.F90
+hoc_tuner_budget_terms.o: $(NUM_REC) hoc.o error.o \
 	budget_terms.o hoc_tuner_budget_terms.F90
 hoc_standalone.o	: hoc.o hoc_standalone.F90
 hoc_inputfields.o	: hoc.o inputfields.o hoc_inputfields.F90
