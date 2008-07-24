@@ -1,20 +1,20 @@
-! $Id: sounding.F90,v 1.1 2008-07-22 16:04:15 faschinj Exp $
-        module sounding
+! $Id: sounding.F90,v 1.2 2008-07-24 15:18:55 dschanen Exp $
+module sounding
 
-        implicit none
+  implicit none
 
-        public ::  & 
-        read_sounding, & 
-        read_profile ! Not currently used in HOC
+  public ::  & 
+    read_sounding, & 
+    read_profile ! Not currently used in HOC
        
-        private ! Default Scope
+  private ! Default Scope
        
-        contains
+  contains
 !------------------------------------------------------------------------
-        subroutine read_sounding( iunit,  & 
-                                  thlm, rtm, um, vm, ugm, vgm, runfile,  & 
-                                  runtype,  & 
-                                  sclrm, edsclrm )
+  subroutine read_sounding( iunit,  & 
+                            thlm, rtm, um, vm, ugm, vgm, runfile,  & 
+                            runtype,  & 
+                            sclrm, edsclrm )
 
 !       Description:
 !       Subroutine to initialize model variables from a namelist file
@@ -24,19 +24,28 @@
 
         use grid_class, only:  & 
             gr ! Variable(s)
+
         use constants, only:  & 
             fstderr ! Constant
+
         use parameters, only: & 
             sclr_dim ! Variable(s)
+
         use std_atmosphere_mod, only:  & 
             std_atmosphere ! Procedure(s)
+
         use interpolation, only:  & 
             linint ! Procedure(s)       
+
         use parameters, only: sclr_dim
+
         use array_index, only: & 
-            iisclr_rt, & 
+            iisclr_rt, &  ! Variable
             iisclr_thl
 !           ,iisclr_CO2
+
+        use error_code, only: &
+          clubb_at_debug_level ! Function
 
         implicit none
 
@@ -152,24 +161,25 @@
           end if
         end if
 
+        if ( clubb_at_debug_level( 1 ) ) then
+          print *, "Reading in sounding information"
+!------------------Printing Model Inputs-------------------------------
+          print *, "u = ", u(1:nlevels)
+          print *, "v = ", v(1:nlevels)
+          print *, "ug = ", ug(1:nlevels)
+          print *, "vg = ", vg(1:nlevels)
+          print *, "theta = ", theta(1:nlevels)
+          print *, "rt = ", rt(1:nlevels)
+          if ( sclr_dim > 0 ) then
+            print *, "sclr = ", sclr(1:nlevels,1:sclr_dim)
+            print *, "edsclr = ", edsclr(1:nlevels,1:sclr_dim)
+          end if
+        end if ! clubb_at_debug_level( 1 )
+!----------------------------------------------------------------------
+
 ! Use linear interpolation from two nearest prescribed grid points
 ! (one above and one below) to initialize mean quantities in the model
 ! Modified 27 May 2005 -dschanen: eliminated the goto in favor of a do while( )
-
-        print *, "Reading in sounding information"
-!------------------Printing Model Inputs-------------------------------
-        print *, "u = ",u(1:nlevels)
-        print *, "v = ",v(1:nlevels)
-        print *, "ug = ",ug(1:nlevels)
-        print *, "vg = ",vg(1:nlevels)
-        print *, "theta = ",theta(1:nlevels)
-        print *, "rt = ",rt(1:nlevels)
-        if ( sclr_dim > 0 ) then
-          print *, "sclr = ", sclr(1:nlevels,1:sclr_dim)
-          print *, "edsclr = ", edsclr(1:nlevels,1:sclr_dim)
-        end if
-!----------------------------------------------------------------------
-
         do i=2, gr%nnzp
           k=1
           do while ( z(k) < gr%zt(i) .and. .not. lstd_atmo )
@@ -274,8 +284,8 @@
             "was used to complete the grid."
         end if
 
-        return
-        end subroutine read_sounding
+  return
+  end subroutine read_sounding
 
 !------------------------------------------------------------------------
         subroutine read_profile( fname, x )

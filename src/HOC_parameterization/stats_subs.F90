@@ -1,509 +1,520 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F90,v 1.3 2008-07-24 14:10:31 faschinj Exp $
-      module stats_subs
+!  $Id: stats_subs.F90,v 1.4 2008-07-24 15:18:56 dschanen Exp $
+module stats_subs
+
 #ifdef STATS
  
-      implicit none
+  implicit none
       
-      private ! Set Default Scope
+  private ! Set Default Scope
       
-      public :: stats_init, stats_begin_timestep, stats_end_timestep, & 
-                stats_accumulate, stats_finalize
+  public :: stats_init, stats_begin_timestep, stats_end_timestep, & 
+    stats_accumulate, stats_finalize
       
-      private :: stats_zero, stats_avg
+  private :: stats_zero, stats_avg
       
-      contains
+  contains
       
 !-----------------------------------------------------------------------
-      subroutine stats_init & 
-                 ( iunit, fname_prefix, & 
-                   lstats_in, stats_fmt_in,  & 
-                   stats_tsamp_in, stats_tout_in, & 
-                   fnamelist, nnzp, gzt, gzm, & 
-                   day, month, year, rlat, rlon,  & 
-                   time_current, delt )
+  subroutine stats_init & 
+             ( iunit, fname_prefix, & 
+               lstats_in, stats_fmt_in,  & 
+               stats_tsamp_in, stats_tout_in, & 
+               fnamelist, nnzp, gzt, gzm, & 
+               day, month, year, rlat, rlon,  & 
+               time_current, delt )
 
 
 !     Description: Initializes the statistics saving functionality of
 !     the HOC model.
 !-----------------------------------------------------------------------
-      use stats_variables, only: & 
-          zt,      & ! Variables
-          ztscr01, & 
-          ztscr02, & 
-          ztscr03, & 
-          ztscr04, & 
-          ztscr05, & 
-          ztscr06, & 
-          ztscr07, & 
-          ztscr08, & 
-          ztscr09, & 
-          ztscr10, & 
-          ztscr11, & 
-          ztscr12, & 
-          ztscr13, & 
-          ztscr14, & 
-          ztscr15, & 
-          ztscr16, & 
-          zm, & 
-          zmscr01, & 
-          zmscr02, & 
-          zmscr03, & 
-          zmscr04, & 
-          zmscr05, & 
-          zmscr06, & 
-          zmscr07, & 
-          zmscr08, & 
-          zmscr09, & 
-          zmscr10, & 
-          zmscr11, & 
-          zmscr12, & 
-          zmscr13, & 
-          zmscr14, & 
-          zmscr15, & 
-          sfc, & 
-          lstats, & 
-          stats_tsamp, & 
-          stats_tout, & 
-          lstats_samp, & 
-          lstats_first, & 
-          lstats_last, & 
-          fname_zt, & 
-          fname_zm, & 
-          fname_sfc, & 
-          lnetcdf, & 
-          lgrads
-      use stats_precision, only: & 
-          time_precision   ! Variable(s)
-      use output_grads, only: & 
-          open_grads  ! Procedure
+    use stats_variables, only: & 
+      zt,      & ! Variables
+      ztscr01, & 
+      ztscr02, & 
+      ztscr03, & 
+      ztscr04, & 
+      ztscr05, & 
+      ztscr06, & 
+      ztscr07, & 
+      ztscr08, & 
+      ztscr09, & 
+      ztscr10, & 
+      ztscr11, & 
+      ztscr12, & 
+      ztscr13, & 
+      ztscr14, & 
+      ztscr15, & 
+      ztscr16, & 
+      zm, & 
+      zmscr01, & 
+      zmscr02, & 
+      zmscr03, & 
+      zmscr04, & 
+      zmscr05, & 
+      zmscr06, & 
+      zmscr07, & 
+      zmscr08, & 
+      zmscr09, & 
+      zmscr10, & 
+      zmscr11, & 
+      zmscr12, & 
+      zmscr13, & 
+      zmscr14, & 
+      zmscr15, & 
+      sfc, & 
+      lstats, & 
+      stats_tsamp, & 
+      stats_tout, & 
+      lstats_samp, & 
+      lstats_first, & 
+      lstats_last, & 
+      fname_zt, & 
+      fname_zm, & 
+      fname_sfc, & 
+      lnetcdf, & 
+      lgrads
+    use stats_precision, only: & 
+      time_precision   ! Variable(s)
+    use output_grads, only: & 
+      open_grads  ! Procedure
 #ifdef NETCDF
-      use output_netcdf, only: & 
-          open_netcdf     ! Procedure
+    use output_netcdf, only: & 
+      open_netcdf     ! Procedure
 #endif
-      use stats_zm, only: & 
-          stats_init_zm ! Procedure
-      use stats_zt, only: & 
-          stats_init_zt ! Procedure
-      use stats_sfc, only: & 
-          stats_init_sfc ! Procedure
-      implicit none
+    use stats_zm, only: & 
+      stats_init_zm ! Procedure
+    use stats_zt, only: & 
+      stats_init_zt ! Procedure
+    use stats_sfc, only: & 
+      stats_init_sfc ! Procedure
 
-      ! Constant Parameters
+    use error_code, only: &
+      clubb_at_debug_level ! Function
+
+    use constants, only: &
+      fstdout, fstderr ! Constants
+
+    implicit none
+
+    ! Constant Parameters
  
-      integer, parameter :: nvarmax = 250  ! Max variables
+    integer, parameter :: nvarmax = 250  ! Max variables
 
-      ! Input Variables
+    ! Input Variables
 
-      integer, intent(in) :: iunit  ! File unit for fnamelist
+    integer, intent(in) :: iunit  ! File unit for fnamelist
 
-      character(len=*), intent(in) ::  & 
-        fnamelist,    & ! Filename holding the &statsnl
-        fname_prefix, & ! Start of the stats filenames
-        stats_fmt_in ! Format of the stats file output
+    character(len=*), intent(in) ::  & 
+      fnamelist,    & ! Filename holding the &statsnl
+      fname_prefix, & ! Start of the stats filenames
+      stats_fmt_in ! Format of the stats file output
 
-      logical, intent(in) :: lstats_in ! Stats on? T/F
+    logical, intent(in) :: lstats_in ! Stats on? T/F
 
-      real(kind=time_precision), intent(in) ::  & 
-        stats_tsamp_in,  & ! Sampling interval   [s]
-        stats_tout_in   ! Output interval     [s]
+    real(kind=time_precision), intent(in) ::  & 
+      stats_tsamp_in,  & ! Sampling interval   [s]
+      stats_tout_in   ! Output interval     [s]
 
-      integer, intent(in) :: nnzp ! Grid points in the vertical [count]
+    integer, intent(in) :: nnzp ! Grid points in the vertical [count]
 
-      real, intent(in), dimension(nnzp) ::  & 
-        gzt, gzm  ! Thermodynamic and momentum levels           [m]
+    real, intent(in), dimension(nnzp) ::  & 
+      gzt, gzm  ! Thermodynamic and momentum levels           [m]
 
-      integer, intent(in) :: day, month, year  ! Time of year
+    integer, intent(in) :: day, month, year  ! Time of year
 
-      real, intent(in) ::  & 
-        rlat, rlon   ! Latitude and Longitude             [Degrees N/E]
+    real, intent(in) ::  & 
+      rlat, rlon   ! Latitude and Longitude             [Degrees N/E]
 
-      real(kind=time_precision), intent(in) ::  & 
-        delt         ! Timestep (dtmain in HOC)           [s]
+    real(kind=time_precision), intent(in) ::  & 
+      delt         ! Timestep (dtmain in HOC)           [s]
 
-      real(kind=time_precision), intent(in) ::  & 
-        time_current ! Model time                         [s]
+    real(kind=time_precision), intent(in) ::  & 
+      time_current ! Model time                         [s]
 
-      ! Local Variables
+    ! Local Variables
 
-      ! Namelist Variables
+    ! Namelist Variables
 
-      character(len=10) :: stats_fmt  ! File storage convention
+    character(len=10) :: stats_fmt  ! File storage convention
 
-      character(len=20), dimension(nvarmax) ::  & 
-        vars_zt,   & ! Variables on the thermodynamic levels
-        vars_zm,   & ! Variables on the momentum levels
-        vars_sfc  ! Variables at the model surface
+    character(len=20), dimension(nvarmax) ::  & 
+      vars_zt,   & ! Variables on the thermodynamic levels
+      vars_zm,   & ! Variables on the momentum levels
+      vars_sfc  ! Variables at the model surface
 
-      namelist /statsnl/ & 
-        vars_zt, & 
-        vars_zm, & 
-        vars_sfc
+    namelist /statsnl/ & 
+      vars_zt, & 
+      vars_zm, & 
+      vars_sfc
 
-      ! Local Variables
+    ! Local Variables
 
-      logical :: lerror
+    logical :: lerror
 
-      character(len=200) :: fdir, fname
+    character(len=200) :: fdir, fname
 
-      integer :: i, ntot
+    integer :: i, ntot
 
-      ! Initialize
-      lerror = .false.
+    ! Initialize
+    lerror = .false.
 
-      ! Set stats_variables variables with inputs from calling subroutine
-      lstats = lstats_in
+    ! Set stats_variables variables with inputs from calling subroutine
+    lstats = lstats_in
 
-      stats_tsamp = stats_tsamp_in
-      stats_tsamp = stats_tsamp_in
-      stats_tout  = stats_tout_in
-      stats_fmt   = trim( stats_fmt_in )
+    stats_tsamp = stats_tsamp_in
+    stats_tsamp = stats_tsamp_in
+    stats_tout  = stats_tout_in
+    stats_fmt   = trim( stats_fmt_in )
 
-      if ( .not. lstats ) then
-        lstats_samp  = .false.
-        lstats_first = .false.
-        lstats_last  = .false.
-        return
-      end if
+    if ( .not. lstats ) then
+      lstats_samp  = .false.
+      lstats_first = .false.
+      lstats_last  = .false.
+      return
+    end if
 
-      ! Initialize namelist variables
+    ! Initialize namelist variables
 
-      vars_zt  = ''
-      vars_zm  = ''
-      vars_sfc = ''
+    vars_zt  = ''
+    vars_zm  = ''
+    vars_sfc = ''
 
       ! Read namelist
 
-      open(unit=iunit, file=fnamelist)
-      read(unit=iunit, nml=statsnl, end=100)
-      close(unit=iunit)
+    open(unit=iunit, file=fnamelist)
+    read(unit=iunit, nml=statsnl, end=100)
+    close(unit=iunit)
 
+    if ( clubb_at_debug_level( 1 ) ) then
+      write(fstdout,*) "--------------------------------------------------"
 
-      write(0,*) "--------------------------------------------------"
+      write(fstdout,*) "Statistics"
 
-      write(0,*) "Statistics"
-
-      write(0,*) "--------------------------------------------------"
-      write(0,*) "vars_zt = "
+      write(fstdout,*) "--------------------------------------------------"
+      write(fstdout,*) "vars_zt = "
       i = 1
       do while ( vars_zt(i) /= '' )
         i = i + 1
-        write(0,*) vars_zt(i)
+        write(fstdout,*) vars_zt(i)
       end do
  
-      write(0,*) "vars_zm = "
+      write(fstdout,*) "vars_zm = "
       i = 1
       do while ( vars_zm(i) /= '' )
         i = i + 1
-        write(0,*) vars_zm(i)
+        write(fstdout,*) vars_zm(i)
       end do
 
-      write(0,*) "vars_sfc = "
+      write(fstdout,*) "vars_sfc = "
       i = 1
       do while ( vars_sfc(i) /= '' )
         i = i + 1
-        write(0,*) vars_sfc(i)
+        write(fstdout,*) vars_sfc(i)
       end do
 
-      write(0,*) "--------------------------------------------------"
-      ! Determine file names for GrADS or NetCDF files
-      fname_zt  = trim( fname_prefix )//"_zt"
-      fname_zm  = trim( fname_prefix )//"_zm"
-      fname_sfc = trim( fname_prefix )//"_sfc"
+      write(fstdout,*) "--------------------------------------------------"
+    end if ! clubb_debug_level 1
 
-      ! Parse the file type for stats output.  Currently only GrADS and
-      ! NetCDF v3 are supported by this code.
+    ! Determine file names for GrADS or NetCDF files
+    fname_zt  = trim( fname_prefix )//"_zt"
+    fname_zm  = trim( fname_prefix )//"_zm"
+    fname_sfc = trim( fname_prefix )//"_sfc"
 
-      select case( trim( stats_fmt ) ) 
-      case( "GrADS", "grads", "gr" )
-        lnetcdf = .false.
-        lgrads  = .true.
+    ! Parse the file type for stats output.  Currently only GrADS and
+    ! NetCDF v3 are supported by this code.
 
-      case ( "NetCDF", "netcdf", "nc" )
-        lnetcdf = .true.
-        lgrads  = .false.
+    select case( trim( stats_fmt ) ) 
+    case( "GrADS", "grads", "gr" )
+      lnetcdf = .false.
+      lgrads  = .true.
 
-      case default
-        write(0,*) "Invalid data format "//trim( stats_fmt )
-        stop
+    case ( "NetCDF", "netcdf", "nc" )
+      lnetcdf = .true.
+      lgrads  = .false.
 
-      end select
+    case default
+      write(fstderr,*) "Invalid data format "//trim( stats_fmt )
+      stop
 
-      ! Check sampling and output frequencies
+    end select
 
-      if ( abs( stats_tsamp/delt - floor(stats_tsamp/delt) )  & 
+    ! Check sampling and output frequencies
+
+    if ( abs( stats_tsamp/delt - floor(stats_tsamp/delt) )  & 
            > 1.e-8 ) then
-         lerror = .true.
-         write(0,*) 'Error: stats_tsamp should be a multiple of delt'
-         write(0,*) 'stats_tsamp = ',stats_tsamp
-         write(0,*) 'delt = ',delt
-      end if
+      lerror = .true.
+      write(fstderr,*) 'Error: stats_tsamp should be a multiple of delt'
+      write(fstderr,*) 'stats_tsamp = ',stats_tsamp
+      write(fstderr,*) 'delt = ',delt
+    end if
 
-      if ( abs( stats_tout/stats_tsamp - floor(stats_tout/stats_tsamp) ) & 
+    if ( abs( stats_tout/stats_tsamp - floor(stats_tout/stats_tsamp) ) & 
            > 1.e-8 ) then
-         lerror = .true.
-         write(0,*)  & 
-            'Error: stats_tout should be a multiple of stats_tsamp'
-         write(0,*) 'stats_tout = ',stats_tout
-         write(0,*) 'stats_tsamp = ',stats_tsamp
-      end if
+      lerror = .true.
+      write(0,*)  'Error: stats_tout should be a multiple of stats_tsamp'
+      write(0,*) 'stats_tout = ',stats_tout
+      write(0,*) 'stats_tsamp = ',stats_tsamp
+    end if
 
-      ! Initialize zt (mass points)
+    ! Initialize zt (mass points)
 
-      i = 1
-      do while ( ichar(vars_zt(i)(1:1)) /= 0  & 
-                 .and. len_trim(vars_zt(i)) /= 0 & 
-                 .and. i <= nvarmax )
-        i = i + 1
-      end do
-      ntot = i - 1
-      if ( ntot == nvarmax ) & 
-        write(0,*) 'WARNING: check nvarmax in statistics.f'
+    i = 1
+    do while ( ichar(vars_zt(i)(1:1)) /= 0  & 
+               .and. len_trim(vars_zt(i)) /= 0 & 
+               .and. i <= nvarmax )
+      i = i + 1
+    end do
+
+    ntot = i - 1
+    if ( ntot == nvarmax ) then
+      write(fstderr,*) 'WARNING: check nvarmax in statistics.f'
+    end if
       
-      zt%nn = ntot
-      zt%kk = nnzp
+    zt%nn = ntot
+    zt%kk = nnzp
 !      write(*,*) 'Number of variables for zt ',zt%nn
 
-      allocate( zt%z( zt%kk ) )
-      zt%z = gzt
+    allocate( zt%z( zt%kk ) )
+    zt%z = gzt
 
-      allocate( zt%x( zt%kk, zt%nn ) )
-      allocate( zt%n( zt%kk, zt%nn ) )
-      allocate( zt%in_update( zt%kk, zt%nn ) )
-      call stats_zero( zt%kk, zt%nn, zt%x, zt%n, zt%in_update )
+    allocate( zt%x( zt%kk, zt%nn ) )
+    allocate( zt%n( zt%kk, zt%nn ) )
+    allocate( zt%in_update( zt%kk, zt%nn ) )
+    call stats_zero( zt%kk, zt%nn, zt%x, zt%n, zt%in_update )
 
-      allocate( zt%f%var( zt%nn ) )
-      allocate( zt%f%z( zt%kk ) )
+    allocate( zt%f%var( zt%nn ) )
+    allocate( zt%f%z( zt%kk ) )
 
       ! Allocate scratch space
 
-      allocate( ztscr01(zt%kk) )
-      allocate( ztscr02(zt%kk) )
-      allocate( ztscr03(zt%kk) )
-      allocate( ztscr04(zt%kk) )
-      allocate( ztscr05(zt%kk) )
-      allocate( ztscr06(zt%kk) )
-      allocate( ztscr07(zt%kk) )
-      allocate( ztscr08(zt%kk) )
-      allocate( ztscr09(zt%kk) )
-      allocate( ztscr10(zt%kk) )
-      allocate( ztscr11(zt%kk) )
-      allocate( ztscr12(zt%kk) )
-      allocate( ztscr13(zt%kk) )
-      allocate( ztscr14(zt%kk) )
-      allocate( ztscr15(zt%kk) )
-      allocate( ztscr16(zt%kk) )
+    allocate( ztscr01(zt%kk) )
+    allocate( ztscr02(zt%kk) )
+    allocate( ztscr03(zt%kk) )
+    allocate( ztscr04(zt%kk) )
+    allocate( ztscr05(zt%kk) )
+    allocate( ztscr06(zt%kk) )
+    allocate( ztscr07(zt%kk) )
+    allocate( ztscr08(zt%kk) )
+    allocate( ztscr09(zt%kk) )
+    allocate( ztscr10(zt%kk) )
+    allocate( ztscr11(zt%kk) )
+    allocate( ztscr12(zt%kk) )
+    allocate( ztscr13(zt%kk) )
+    allocate( ztscr14(zt%kk) )
+    allocate( ztscr15(zt%kk) )
+    allocate( ztscr16(zt%kk) )
 
-      ztscr01 = 0.0
-      ztscr02 = 0.0
-      ztscr03 = 0.0
-      ztscr04 = 0.0
-      ztscr05 = 0.0
-      ztscr06 = 0.0
-      ztscr07 = 0.0
-      ztscr08 = 0.0
-      ztscr09 = 0.0
-      ztscr10 = 0.0
-      ztscr11 = 0.0
-      ztscr12 = 0.0
-      ztscr13 = 0.0
-      ztscr14 = 0.0
-      ztscr15 = 0.0
-      ztscr16 = 0.0
+    ztscr01 = 0.0
+    ztscr02 = 0.0
+    ztscr03 = 0.0
+    ztscr04 = 0.0
+    ztscr05 = 0.0
+    ztscr06 = 0.0
+    ztscr07 = 0.0
+    ztscr08 = 0.0
+    ztscr09 = 0.0
+    ztscr10 = 0.0
+    ztscr11 = 0.0
+    ztscr12 = 0.0
+    ztscr13 = 0.0
+    ztscr14 = 0.0
+    ztscr15 = 0.0
+    ztscr16 = 0.0
 
-      fdir = "./"
-      fname = trim( fname_zt )
+    fdir = "./"
+    fname = trim( fname_zt )
 
-      if ( lgrads ) then
+    if ( lgrads ) then
 
         ! Open GrADS file
-        call open_grads( iunit, fdir, fname,  & 
-                         1, zt%kk, zt%z, & 
-                         day, month, year, rlat, rlon, & 
-                         time_current+stats_tout, stats_tout, & 
-                         zt%nn,zt%f )
+      call open_grads( iunit, fdir, fname,  & 
+                       1, zt%kk, zt%z, & 
+                       day, month, year, rlat, rlon, & 
+                       time_current+stats_tout, stats_tout, & 
+                       zt%nn,zt%f )
 
-      else ! Open NetCDF file
+    else ! Open NetCDF file
 #ifdef NETCDF
-        call open_netcdf( iunit, fdir, fname,  & 
-                      1, zt%kk, zt%z, & 
-                      day, month, year, rlat, rlon, & 
-                      time_current+stats_tout, stats_tout, & 
-                      zt%nn, zt%f )
+      call open_netcdf( iunit, fdir, fname,  & 
+                        1, zt%kk, zt%z, & 
+                        day, month, year, rlat, rlon, & 
+                        time_current+stats_tout, stats_tout, & 
+                        zt%nn, zt%f )
 #else
-        stop "netCDF support was not compiled into this build."
+      stop "netCDF support was not compiled into this build."
 #endif
 
-      end if
+    end if
 
-      ! Default initialization for array indices for zt
+    ! Default initialization for array indices for zt
 
-      call stats_init_zt( vars_zt, lerror )
+    call stats_init_zt( vars_zt, lerror )
 
-      ! Initialize zm (momentum points)
+    ! Initialize zm (momentum points)
 
-      i = 1
-      do while ( ichar(vars_zm(i)(1:1)) /= 0  & 
-                 .and. len_trim(vars_zm(i)) /= 0 & 
-                 .and. i <= nvarmax )
-        i = i + 1
-      end do
-      ntot = i - 1
-      if ( ntot == nvarmax ) & 
-        write(0,*) 'WARNING: check nvarmax in statistics.f'
+    i = 1
+    do while ( ichar(vars_zm(i)(1:1)) /= 0  & 
+               .and. len_trim(vars_zm(i)) /= 0 & 
+               .and. i <= nvarmax )
+      i = i + 1
+    end do
+    ntot = i - 1
+    if ( ntot == nvarmax ) write(fstderr,*) 'WARNING: check nvarmax in statistics.f'
 
-      zm%nn = ntot
-      zm%kk = nnzp
-!      write(*,*) 'Number of variables for zm ',zm%nn
+    zm%nn = ntot
+    zm%kk = nnzp
+!   write(*,*) 'Number of variables for zm ',zm%nn
 
-      allocate( zm%z( zm%kk ) )
-      zm%z = gzm
+    allocate( zm%z( zm%kk ) )
+    zm%z = gzm
 
-      allocate( zm%x( zm%kk, zm%nn ) )
-      allocate( zm%n( zm%kk, zm%nn ) )
-      allocate( zm%in_update( zm%kk, zm%nn ) )
+    allocate( zm%x( zm%kk, zm%nn ) )
+    allocate( zm%n( zm%kk, zm%nn ) )
+    allocate( zm%in_update( zm%kk, zm%nn ) )
       
-      call stats_zero( zm%kk, zm%nn, zm%x, zm%n, zm%in_update )
+    call stats_zero( zm%kk, zm%nn, zm%x, zm%n, zm%in_update )
 
-      allocate( zm%f%var( zm%nn ) )
-      allocate( zm%f%z( zm%kk ) )
+    allocate( zm%f%var( zm%nn ) )
+    allocate( zm%f%z( zm%kk ) )
 
       ! Allocate scratch space
 
-      allocate( zmscr01(zm%kk) )
-      allocate( zmscr02(zm%kk) )
-      allocate( zmscr03(zm%kk) )
-      allocate( zmscr04(zm%kk) )
-      allocate( zmscr05(zm%kk) )
-      allocate( zmscr06(zm%kk) )
-      allocate( zmscr07(zm%kk) )
-      allocate( zmscr08(zm%kk) )
-      allocate( zmscr09(zm%kk) )
-      allocate( zmscr10(zm%kk) )
-      allocate( zmscr11(zm%kk) )
-      allocate( zmscr12(zm%kk) )
-      allocate( zmscr13(zm%kk) )
-      allocate( zmscr14(zm%kk) )
-      allocate( zmscr15(zm%kk) )
+    allocate( zmscr01(zm%kk) )
+    allocate( zmscr02(zm%kk) )
+    allocate( zmscr03(zm%kk) )
+    allocate( zmscr04(zm%kk) )
+    allocate( zmscr05(zm%kk) )
+    allocate( zmscr06(zm%kk) )
+    allocate( zmscr07(zm%kk) )
+    allocate( zmscr08(zm%kk) )
+    allocate( zmscr09(zm%kk) )
+    allocate( zmscr10(zm%kk) )
+    allocate( zmscr11(zm%kk) )
+    allocate( zmscr12(zm%kk) )
+    allocate( zmscr13(zm%kk) )
+    allocate( zmscr14(zm%kk) )
+    allocate( zmscr15(zm%kk) )
 
-      zmscr01 = 0.0
-      zmscr02 = 0.0
-      zmscr03 = 0.0
-      zmscr04 = 0.0
-      zmscr05 = 0.0
-      zmscr06 = 0.0
-      zmscr07 = 0.0
-      zmscr08 = 0.0
-      zmscr09 = 0.0
-      zmscr10 = 0.0
-      zmscr11 = 0.0
-      zmscr12 = 0.0
-      zmscr13 = 0.0
-      zmscr14 = 0.0
-      zmscr15 = 0.0
+    zmscr01 = 0.0
+    zmscr02 = 0.0
+    zmscr03 = 0.0
+    zmscr04 = 0.0
+    zmscr05 = 0.0
+    zmscr06 = 0.0
+    zmscr07 = 0.0
+    zmscr08 = 0.0
+    zmscr09 = 0.0
+    zmscr10 = 0.0
+    zmscr11 = 0.0
+    zmscr12 = 0.0
+    zmscr13 = 0.0
+    zmscr14 = 0.0
+    zmscr15 = 0.0
 
 
-      fdir = "./"
-      fname = trim(fname_zm)
-      if ( lgrads ) then
+    fdir = "./"
+    fname = trim( fname_zm )
+    if ( lgrads ) then
 
-        ! Open GrADS files
-        call open_grads( iunit, fdir, fname,  & 
-                         1, zm%kk, zm%z, & 
-                         day, month, year, rlat, rlon, & 
-                         time_current+stats_tout, stats_tout, & 
-                         zm%nn, zm%f )
+      ! Open GrADS files
+      call open_grads( iunit, fdir, fname,  & 
+                       1, zm%kk, zm%z, & 
+                       day, month, year, rlat, rlon, & 
+                       time_current+stats_tout, stats_tout, & 
+                       zm%nn, zm%f )
 
-      else ! Open NetCDF file
+    else ! Open NetCDF file
 #ifdef NETCDF
-        call open_netcdf( iunit, fdir, fname,  & 
-                      1, zm%kk, zm%z, & 
-                      day, month, year, rlat, rlon, & 
-                      time_current+stats_tout, stats_tout, & 
-                      zm%nn, zm%f )
+      call open_netcdf( iunit, fdir, fname,  & 
+                        1, zm%kk, zm%z, & 
+                        day, month, year, rlat, rlon, & 
+                        time_current+stats_tout, stats_tout, & 
+                        zm%nn, zm%f )
 
 #else
-        stop "netCDF support was not compiled into this build."
+      stop "netCDF support was not compiled into this build."
 #endif
-      end if
+    end if
 
       call stats_init_zm( vars_zm, lerror )
 
       ! Initialize sfc (surface point)
 
-      i = 1
-      do while ( ichar(vars_sfc(i)(1:1)) /= 0  & 
-                 .and. len_trim(vars_sfc(i)) /= 0 & 
-                 .and. i <= nvarmax )
-        i = i + 1
-      end do
-      ntot = i - 1
-      if ( ntot == nvarmax ) & 
-        write(0,*) 'WARNING: check nvarmax in statistics.f'
+    i = 1
+    do while ( ichar(vars_sfc(i)(1:1)) /= 0  & 
+               .and. len_trim(vars_sfc(i)) /= 0 & 
+               .and. i <= nvarmax )
+      i = i + 1
+    end do
 
-      sfc%nn = ntot
-      sfc%kk = 1
-!      write(*,*) 'Number of variables for sfc ',sfc%nn
+    ntot = i - 1
 
-      allocate( sfc%z( sfc%kk ) )
-      sfc%z = gzm(1)
+    if ( ntot == nvarmax ) write(fstderr,*) 'WARNING: check nvarmax in statistics.f'
 
-      allocate( sfc%x( sfc%kk, sfc%nn ) )
-      allocate( sfc%n( sfc%kk, sfc%nn ) )
-      allocate( sfc%in_update( sfc%kk, sfc%nn ) )
+    sfc%nn = ntot
+    sfc%kk = 1
+!   write(*,*) 'Number of variables for sfc ',sfc%nn
+
+    allocate( sfc%z( sfc%kk ) )
+    sfc%z = gzm(1)
+
+    allocate( sfc%x( sfc%kk, sfc%nn ) )
+    allocate( sfc%n( sfc%kk, sfc%nn ) )
+    allocate( sfc%in_update( sfc%kk, sfc%nn ) )
       
-      call stats_zero( sfc%kk, sfc%nn, sfc%x, sfc%n, sfc%in_update )
+    call stats_zero( sfc%kk, sfc%nn, sfc%x, sfc%n, sfc%in_update )
 
-      allocate( sfc%f%var( sfc%nn ) )
-      allocate( sfc%f%z( sfc%kk ) )
+    allocate( sfc%f%var( sfc%nn ) )
+    allocate( sfc%f%z( sfc%kk ) )
 
-      fdir = "./"
-      fname = trim( fname_sfc )
+    fdir = "./"
+    fname = trim( fname_sfc )
 
-      if ( lgrads ) then
+    if ( lgrads ) then
 
         ! Open GrADS files
-        call open_grads( iunit, fdir, fname,  & 
-                         1, sfc%kk, sfc%z, & 
-                         day, month, year, rlat, rlon, & 
+      call open_grads( iunit, fdir, fname,  & 
+                       1, sfc%kk, sfc%z, & 
+                       day, month, year, rlat, rlon, & 
                          time_current+stats_tout, stats_tout, & 
                          sfc%nn, sfc%f )
 
-      else ! Open NetCDF files
+    else ! Open NetCDF files
 #ifdef NETCDF
-        call open_netcdf( iunit, fdir, fname,  & 
-                      1, sfc%kk, sfc%z, & 
-                      day, month, year, rlat, rlon, & 
-                      time_current+stats_tout, stats_tout, & 
-                      sfc%nn, sfc%f )
+      call open_netcdf( iunit, fdir, fname,  & 
+                        1, sfc%kk, sfc%z, & 
+                        day, month, year, rlat, rlon, & 
+                        time_current+stats_tout, stats_tout, & 
+                        sfc%nn, sfc%f )
 
 #else
-        stop "netCDF support was not compiled into this build."
+      stop "netCDF support was not compiled into this build."
 #endif
-      end if
+    end if
 
-      call stats_init_sfc( vars_sfc, lerror )
+    call stats_init_sfc( vars_sfc, lerror )
 
-!     Check for errors
+    ! Check for errors
 
-      if ( lerror ) then
-        write(0,*) 'stats_init: errors found'
-        stop
-      end if
+    if ( lerror ) then
+      write(fstderr,*) 'stats_init: errors found'
+      stop
+    end if
 
-      return
+    return
 
-!     If namelist was not found in input file, turn off statistics
+    ! If namelist was not found in input file, turn off statistics
 
-100   continue
-      write(0,*) 'Error with statsnl, statistics is turned off'
-      lstats       = .false.
-      lstats_samp  = .false.
-      lstats_first = .false.
-      lstats_last  = .false.
+100 continue
+    write(fstderr,*) 'Error with statsnl, statistics is turned off'
+    lstats       = .false.
+    lstats_samp  = .false.
+    lstats_first = .false.
+    lstats_last  = .false.
 
-      return
-      end subroutine stats_init
+    return
+  end subroutine stats_init
 !-----------------------------------------------------------------------
       subroutine stats_zero( kk, nn, x, n, in_update )
 
@@ -1287,12 +1298,7 @@
         ! De-allocate all zt variables
         deallocate( zt%z )
 
-        deallocate( zt%x, stat=i )
-
-        if ( i > 0 ) print *,"Deallocate failure"
-
-
-
+        deallocate( zt%x )
 
         deallocate( zt%n )
         deallocate( zt%in_update )
@@ -1360,4 +1366,4 @@
 
 #endif /*STATS*/
 
-      end module stats_subs
+end module stats_subs
