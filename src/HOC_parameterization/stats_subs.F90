@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F90,v 1.5 2008-07-24 15:21:18 dschanen Exp $
+!  $Id: stats_subs.F90,v 1.6 2008-07-24 16:01:26 dschanen Exp $
 module stats_subs
 
 #ifdef STATS
@@ -154,7 +154,7 @@ module stats_subs
 
     character(len=200) :: fdir, fname
 
-    integer :: ntot
+    integer :: i, ntot
 
     ! Initialize
     lerror = .false.
@@ -1281,8 +1281,6 @@ module stats_subs
 #endif
 
       implicit none
-
-      integer :: i
 
       if ( lstats .and. lnetcdf ) then
 #ifdef NETCDF
