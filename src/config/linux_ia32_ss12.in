@@ -1,4 +1,4 @@
-# $Id: linux_ia32_ss12.in,v 1.7 2008-07-24 16:52:02 dschanen Exp $
+# $Id: linux_ia32_ss12.in,v 1.8 2008-07-25 19:14:31 vlarson Exp $
 # Makefile definitions for Sun Studio's Fortran compiler on GNU/Linux
 
 # == Paths ==
@@ -17,7 +17,9 @@ FC = sunf95 # Sun Fortran 8.3
 DEBUG = -g -C -fns=no -ftrap=%none #-stackvar -xcheck=init_local -ftrap=common
 
 # == Warnings ==
-# This is a set of preferred warnings when compiling CLUBB with Sun Studio.
+# This is the preferred warning level when compiling CLUBB with Sun Studio.
+#   Level -w4 produces a warning message for each call to an overloaded operator,
+# resulting in a huge number of warnings.
 WARNINGS = -w3
 
 # == Machine specific flags ==
