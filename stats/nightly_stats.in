@@ -1,0 +1,14 @@
+&statsnl
+vars_zt =
+'thlm', 'rtm', 'cf', 'rcm', 'wp3',
+'um', 'vm', 'wmt', 'rrainm', 'Nrm',
+''
+
+vars_zm =
+'wp2', 'rtp2', 'thlp2', 'rtpthlp', 'wprtp', 'wpthlp',
+'upwp', 'vpwp',
+''
+
+vars_sfc =
+''
+/
