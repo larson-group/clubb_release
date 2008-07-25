@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zm.F90,v 1.2 2008-07-24 14:10:31 faschinj Exp $
+! $Id: stats_zm.F90,v 1.3 2008-07-25 17:47:08 faschinj Exp $
       module stats_zm
 #ifdef STATS
        
@@ -47,7 +47,6 @@
           iFrad_SW, & 
           iFprec, & 
           iFcsed, & 
-          iup2_plus_vp2, & 
           iup2, & 
           ivp2, & 
           iup2_bt, & 
@@ -210,7 +209,6 @@
       iFprec    = 0  ! Brian
       iFcsed    = 0  ! Brian
 
-      iup2_plus_vp2 = 0 ! Michael
 
       iup2 = 0
       ivp2 = 0
@@ -917,12 +915,6 @@
           irtpthlp_cl = k
           call stat_assign(irtpthlp_cl,"rtpthlp_cl", & 
                "rtpthlp clipping term","(kg K)/(kg s)",zm)
-          k = k + 1
-
-        case ('up2_plus_vp2')
-          iup2_plus_vp2 = k
-          call stat_assign(iup2_plus_vp2,"up2_plus_vp2", & 
-               "up2_plus_vp2","m^2/s^2",zm)
           k = k + 1
 
         case ('up2')

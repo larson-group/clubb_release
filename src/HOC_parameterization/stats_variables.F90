@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_variables.F90,v 1.3 2008-07-24 20:57:14 faschinj Exp $
+! $Id: stats_variables.F90,v 1.4 2008-07-25 17:47:08 faschinj Exp $
 !-----------------------------------------------------------------------
 !  module stats_variables
 
@@ -326,14 +326,13 @@
            iFrad_LW,   & ! Brian
            iFrad_SW,   & ! Brian
            iFprec,     & ! Brian
-           iFcsed,     & ! Brian
-           iup2_plus_vp2   ! Michael Falk, for GABLS2 case
+           iFcsed      ! Brian
 
 !$omp   threadprivate(iwp2, irtp2, ithlp2, irtpthlp, iwprtp, iwpthlp)
 !$omp   threadprivate(iwp4, iwpthvp, irtpthvp, ithlpthvp, itaum, iKhm)
 !$omp   threadprivate(iwprcp, ithlprcp, irtprcp, ircp2, iupwp, ivpwp)
 !$omp   threadprivate(irhom, iscm, iem, ishear, iFrad, iFrad_LW)
-!$omp   threadprivate(iFrad_SW, iFprec, iFcsed, iup2_plus_vp2)
+!$omp   threadprivate(iFrad_SW, iFprec, iFcsed)
 
         ! Sedimentation velocities
         integer, public :: & 

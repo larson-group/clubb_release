@@ -1,4 +1,4 @@
-! $Id: all_stats.in,v 1.26 2008-07-24 21:19:14 faschinj Exp $
+! $Id: all_stats.in,v 1.27 2008-07-25 17:47:56 faschinj Exp $
 ! This file contains a comprehensive listing of all the HOC variables that 
 ! can be output to GrADS, as found in src/HOC_parameterization/statistics.F.
 ! This file, as well as the statistical files for all the other cases, needs
@@ -45,7 +45,7 @@ vars_zt =
 vars_zm = 
 'wp2', 'rtp2', 'thlp2', 'rtpthlp', 'wprtp', 'wpthlp', 'wp4', 'up2', 'vp2',
 'wpthvp', 'rtpthvp', 'thlpthvp', 'taum', 'khm', 'wprcp',
-'thlprcp', 'rtprcp', 'rcp2', 'upwp', 'vpwp', 'up2_plus_vp2', 'rhom', 'sc', 'em',
+'thlprcp', 'rtprcp', 'rcp2', 'upwp', 'vpwp', 'rhom', 'sc', 'em',
 'shear', 'Frad', 'Frad_LW', 'Frad_SW', 'Fprec', 'Fcsed',
 'Vrr', 'VNr', 'Vsnow', 'Vgraupel', 'Vice',
 'wp2_bt', 'wp2_ma', 'wp2_ta', 'wp2_ac', 'wp2_bp', 'wp2_pr1', 

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F90,v 1.5 2008-07-24 20:57:14 faschinj Exp $
+! $Id: parameterization_interface.F90,v 1.6 2008-07-25 17:47:07 faschinj Exp $
 !-----------------------------------------------------------------------
         module hoc_parameterization_interface
 
@@ -182,7 +182,6 @@
        use stats_variables, only: & 
            zm,  & ! Variable(s)
            lstats_samp, & 
-           iup2_plus_vp2, & 
            iwprtp_bt, & 
            iwpthlp_bt
 
@@ -941,14 +940,6 @@
 !#######################################################################
 
 #ifdef STATS
-!      Store values of surface fluxes for statistics
-       if (lstats_samp) then
-         ! Michael Falk added this for up2_plus_vp2, 23 Jan 2007.
-         call stat_update_var( iup2_plus_vp2, up2+vp2,           & ! intent(in)
-                               zm )                             ! intent(inout)
-         ! eMFc
-       end if 
-
        ! Added to allow tuning without using the zm stats file
        wp2_zt     = max( zm2zt( wp2 ), 0.0 )   ! Positive definite quantity
        thlp2_zt   = max( zm2zt( thlp2 ), 0.0 )   ! Positive definite quantity
