@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: output_grads.F90,v 1.2 2008-07-23 17:42:44 faschinj Exp $
+! $Id: output_grads.F90,v 1.3 2008-07-25 18:54:36 vlarson Exp $
         module output_grads
 #ifdef STATS 
 
@@ -581,12 +581,12 @@
 
           ! Input Variables
           integer, intent(in) ::  & 
-          day_in,                & ! Day of the Month at Model Start  [##]
-          month_in,              & ! Month of the Year at Model Start [##]
-          year_in               ! Year at Model Start            [####]
+          day_in,                & ! Day of the Month at Model Start  [dd]
+          month_in,              & ! Month of the Year at Model Start [mm]
+          year_in               ! Year at Model Start                 [yyyy]
 
           real(kind=time_precision), intent(in) ::  & 
-          time_in               ! Time since Model Start            [s]
+          time_in               ! Time since Model Start              [s]
 
           ! Output Variables
           character(len=15), intent(out) ::  & 
