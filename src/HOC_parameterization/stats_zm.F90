@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zm.F90,v 1.3 2008-07-25 17:47:08 faschinj Exp $
+! $Id: stats_zm.F90,v 1.4 2008-07-28 19:20:22 dschanen Exp $
       module stats_zm
 #ifdef STATS
        
@@ -135,7 +135,6 @@
           irtpthlp_tp1, & 
           irtpthlp_tp2, & 
           irtpthlp_dp1, & 
-          irtpthlp_dp2, & 
           irtpthlp_dp2, & 
           irtpthlp_cl, & 
           isclraprtp, & 

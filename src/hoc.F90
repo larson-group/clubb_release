@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F90,v 1.7 2008-07-28 17:45:42 dschanen Exp $
+! $Id: hoc.F90,v 1.8 2008-07-28 19:20:22 dschanen Exp $
 
 module hoc
 
@@ -117,8 +117,6 @@ module hoc
     use grid_class, only: read_grid_heights ! Procedure(s)
 
     use param_index, only: nparams ! Variable(s)
-
-    use array_index, only: iisclr_rt, iisclr_thl, iiCO2 ! Variables
 
     use diagnostic_variables, only: ug, vg, em,  & ! Variable(s)
       taut, thvm, Lscale, Kht, Khm, & 

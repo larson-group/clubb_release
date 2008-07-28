@@ -1,4 +1,4 @@
-! $Id: sounding.F90,v 1.2 2008-07-24 15:18:55 dschanen Exp $
+! $Id: sounding.F90,v 1.3 2008-07-28 19:20:22 dschanen Exp $
 module sounding
 
   implicit none
@@ -36,8 +36,6 @@ module sounding
 
         use interpolation, only:  & 
             linint ! Procedure(s)       
-
-        use parameters, only: sclr_dim
 
         use array_index, only: & 
             iisclr_rt, &  ! Variable
