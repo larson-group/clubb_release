@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F90,v 1.2 2008-07-28 19:34:42 faschinj Exp $
+! $Id: compute_um_edsclrm_mod.F90,v 1.3 2008-07-28 21:39:28 faschinj Exp $
 !------------------------------------------------------------------------
 module compute_um_edsclrm_mod
 
@@ -12,8 +12,11 @@ public :: compute_um_edsclrm, compute_uv_tndcy
 contains
 
 !------------------------------------------------------------------------
-subroutine compute_um_edsclrm( solve_type, xpwp_sfc, xm_tndcy,  & 
-                               Khm, dt, xm, xpwp, err_code )
+subroutine compute_um_edsclrm( solve_type, xpwp_sfc, &
+                               xm_tndcy,  & 
+                               Khm, dt,   &
+                               xm, xpwp,  &
+                               err_code )
 !       Description:
 !         Prognoses a horizontal wind component or other 
 !         eddy diffusivity variable.
@@ -301,9 +304,8 @@ return
 end subroutine compute_um_edsclrm
 
 !-----------------------------------------------------------------------
-subroutine compute_uv_tndcy & 
-   ( solve_type, xm, wmt, fcor, perp_wind_m, perp_wind_g,  & 
-     implemented, xmt )
+subroutine compute_uv_tndcy( solve_type, xm, wmt, fcor, perp_wind_m, perp_wind_g, implemented, & 
+                             xmt )
 !
 !       Description: Computes the tendency for the u/v wind components.
 !
