@@ -2147,7 +2147,7 @@ end
 if ( cmp_prev == 1 )
    varfnd = 0;
    for i = 1:1:numvars_prev_zt
-      if ( strcmp( listofparams_prev_zt(i,1:4), 'rrm ' ) )
+      if ( strcmp( listofparams_prev_zt(i,1:4), 'rrainm ' ) )
          varnum = i;
          varfnd = 1;
       end
@@ -2165,7 +2165,7 @@ end
 if ( cmp_curr == 1 )
    varfnd = 0;
    for i = 1:1:numvars_curr_zt
-      if ( strcmp( listofparams_curr_zt(i,1:4), 'rrm ' ) )
+      if ( strcmp( listofparams_curr_zt(i,1:4), 'rrainm ' ) )
          varnum = i;
          varfnd = 1;
       end
