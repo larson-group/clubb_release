@@ -1,116 +1,116 @@
-!$Id: math_utilities.F90,v 1.1 2008-07-22 16:04:30 faschinj Exp $
-        module math_utilities         
+!$Id: math_utilities.F90,v 1.2 2008-07-28 19:20:06 faschinj Exp $
+module math_utilities         
 !-----------------------------------------------------------------------
 ! Various mathematical utilities
 !-----------------------------------------------------------------------
-        implicit none
+implicit none
 !-----------------------------------------------------------------------
 !  function corrcoef( )
 
 ! Correlation coefficient of two vectors
 !-----------------------------------------------------------------------
 
-        public :: corrcoef, std, cov, mean
+public :: corrcoef, std, cov, mean
 
-        private
+private
 
-        contains
-        
-        function corrcoef( vect1, vect2, n )
+contains
 
-        implicit none
+function corrcoef( vect1, vect2, n )
 
-        ! Input
-        integer, intent(in)          :: n
-        double precision, intent(in) :: vect1(1:n), vect2(1:n)
+implicit none
 
-        ! Return type
-        double precision corrcoef
+! Input
+integer, intent(in)          :: n
+double precision, intent(in) :: vect1(1:n), vect2(1:n)
 
-        corrcoef = cov( vect1, vect2, n ) / & 
-               sqrt( cov( vect1, vect1, n ) * cov( vect2, vect2, n ) )
+! Return type
+double precision corrcoef
 
-        return
-        end function corrcoef
+corrcoef = cov( vect1, vect2, n ) / & 
+       sqrt( cov( vect1, vect1, n ) * cov( vect2, vect2, n ) )
+
+return
+end function corrcoef
 
 !-----------------------------------------------------------------------
 !  function std( )
 !-----------------------------------------------------------------------
-        function std( vector, n ) 
+function std( vector, n ) 
 
-        implicit none
+implicit none
 
-        ! Input
-        integer, intent(in)          :: n
-        double precision, intent(in) :: vector(1:n)
+! Input
+integer, intent(in)          :: n
+double precision, intent(in) :: vector(1:n)
 
-        ! Return type
-        double precision std
+! Return type
+double precision std
 
-        std = sqrt( cov( vector, vector, n )*( n/(n-1) ) )
+std = sqrt( cov( vector, vector, n )*( n/(n-1) ) )
 
-        return
-        end function std
+return
+end function std
 
 !-----------------------------------------------------------------------
 !  function cov( )
 
 ! Covariance of two vectors
 !-----------------------------------------------------------------------
-        function cov( vect1, vect2, n )
+function cov( vect1, vect2, n )
 
-        implicit none
+implicit none
 
 !       Input
-        integer, intent(in)          :: n
-        double precision, intent(in) :: vect1(1:n), vect2(1:n)
+integer, intent(in)          :: n
+double precision, intent(in) :: vect1(1:n), vect2(1:n)
 
 !       Return type
-        double precision cov
+double precision cov
 
 !       Internal
-        double precision sum, avg1, avg2 
-        integer j
+double precision sum, avg1, avg2 
+integer j
 
-        avg1 = mean( vect1, n )
-        avg2 = mean( vect2, n )
-        
-        sum = 0.d0
-        do j = 1, n
-           sum = sum + (vect1(j) - avg1) * (vect2(j) - avg2)
-        enddo
+avg1 = mean( vect1, n )
+avg2 = mean( vect2, n )
 
-        cov = sum / n
+sum = 0.d0
+do j = 1, n
+   sum = sum + (vect1(j) - avg1) * (vect2(j) - avg2)
+enddo
 
-        return
-        end function cov
+cov = sum / n
+
+return
+end function cov
 
 !-----------------------------------------------------------------------
 !  function mean( )
 !-----------------------------------------------------------------------
-        function mean( vector, n )
-        
-        implicit none
+function mean( vector, n )
+
+implicit none
 
 !       Input 
-        integer, intent(in)          :: n
-        double precision, intent(in) :: vector(1:n)
+integer, intent(in)          :: n
+double precision, intent(in) :: vector(1:n)
 
 !       Internal
-        double precision sum
-        integer j
+double precision sum
+integer j
 
 !       Return type
-        double precision mean
-        
-        sum = 0.d0
-        do j=1, n
-           sum = sum + vector(j)
-        enddo
+double precision mean
 
-        mean = sum/n
+sum = 0.d0
+do j=1, n
+   sum = sum + vector(j)
+enddo
 
-        return
-        end function mean
+mean = sum/n
+
+return
+end function mean
 !-----------------------------------------------------------------------
-        end module math_utilities 
+end module math_utilities 

@@ -1,15 +1,15 @@
-!$Id: permute_height_time.F90,v 1.1 2008-07-22 16:04:31 faschinj Exp $
-      module permute_height_time_mod
+!$Id: permute_height_time.F90,v 1.2 2008-07-28 19:20:06 faschinj Exp $
+module permute_height_time_mod
 
-      implicit none
+implicit none
 
-      public :: permute_height_time
+public :: permute_height_time
 
-      private :: generate_k_order
+private :: generate_k_order
 
-      private ! Default Scope
-      
-      contains
+private ! Default Scope
+
+contains
 !-----------------------------------------------------------------------
 ! subroutine permute_height_time( )
 
@@ -28,40 +28,40 @@
 !-----------------------------------------------------------------------
 
 
-        subroutine permute_height_time( nnzp, nt, dp1,  & 
-                                        p_height_time )
-        
-        use random, only: rand_permute ! Procedure(s)
-        
-        implicit none
+  subroutine permute_height_time( nnzp, nt, dp1,  & 
+                                  p_height_time )
+  
+  use random, only: rand_permute ! Procedure(s)
+  
+  implicit none
 
 ! Input
   
-        integer, intent(in) ::  nnzp, nt, dp1
+  integer, intent(in) ::  nnzp, nt, dp1
 
 ! Output
 
-        integer, intent(out) :: p_height_time(1:nnzp,1:nt,1:dp1)
+  integer, intent(out) :: p_height_time(1:nnzp,1:nt,1:dp1)
 
 ! Local
 
-        integer i, k
+  integer i, k
 
 ! Choose elements of p_height_time, with a random integer LH sample
 ! for each altitude and for each variate 
-      do k = 1, nnzp
-        do i = 1, dp1
-          call rand_permute(nt, p_height_time(k,1:nt,i))
-        enddo
-      enddo
+do k = 1, nnzp
+  do i = 1, dp1
+    call rand_permute(nt, p_height_time(k,1:nt,i))
+  enddo
+enddo
 
 ! Make elements of p_height_time in the range [1,nt] inclusive
 !       p_height_time = p_height_time + 1
 
 !       print*, 'p_height_time in permute_height_time=', p_height_time
 
-      return
-      end subroutine permute_height_time
+return
+end subroutine permute_height_time
 !------------------------------------------------------------------------
 
 !----------------------------------------------------------------------
@@ -78,29 +78,29 @@
 
 ! Output: k_order = vector of length sequence_length. 
 !----------------------------------------------------------------------
-        subroutine generate_k_order( i, sequence_length, k_order )
+  subroutine generate_k_order( i, sequence_length, k_order )
 
-        use random, only: rand_permute ! Procedure(s)
-        
-        implicit none
+  use random, only: rand_permute ! Procedure(s)
+  
+  implicit none
 
 ! Input
   
-        integer, intent(in) :: i, sequence_length
+  integer, intent(in) :: i, sequence_length
 
 ! Output
 
-        integer, intent(out) :: k_order( 1:sequence_length )
+  integer, intent(out) :: k_order( 1:sequence_length )
 
 ! i==1 must be the first timestep 
-      if (mod(i-1,sequence_length) == 0) then 
-        call rand_permute(sequence_length, k_order)
-        k_order = k_order + 1
-      endif
+if (mod(i-1,sequence_length) == 0) then 
+  call rand_permute(sequence_length, k_order)
+  k_order = k_order + 1
+endif
 
-      return
-      end subroutine generate_k_order
+return
+end subroutine generate_k_order
 !------------------------------------------------------------------------
 
 
-      end module permute_height_time_mod
+end module permute_height_time_mod
