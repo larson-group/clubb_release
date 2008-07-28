@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: coamps_micro_driver.F90,v 1.2 2008-07-24 20:51:22 faschinj Exp $
+! $Id: coamps_micro_driver.F90,v 1.3 2008-07-28 17:42:36 dschanen Exp $
       module coamps_micro_driver_mod
 
       ! This module wraps the adjtq subroutine so that it may be used by
@@ -702,7 +702,10 @@
         falln_in_cloud(1,1,k) = 0.
 ! eMFc
       end do
-! eMFc
+      ! dschanen added this to avoid uninitialized memory 24 Jul 2008
+      snowslope = 0.
+      rvr       = 0.
+      rvc       = 0.
 
       ! Call the actual COAMPS microphysics scheme
       if ( len > 0 ) call adjtq &
