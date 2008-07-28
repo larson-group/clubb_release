@@ -1,18 +1,18 @@
-! $Id: T_in_K_mod.F90,v 1.1 2008-07-24 21:30:41 faschinj Exp $ 
+! $Id: T_in_K_mod.F90,v 1.2 2008-07-28 19:34:42 faschinj Exp $ 
 
-         module T_in_K_mod
-         
-         implicit none
-         
-         private ! Default scope
+module T_in_K_mod
 
-         public :: thlm2T_in_K
-         
-         contains
+implicit none
+
+private ! Default scope
+
+public :: thlm2T_in_K
+
+contains
 
 !-----------------------------------------------------------------------
-         elemental function thlm2T_in_K( thlm, exner, rcm )  & 
-         result( T_in_K )
+elemental function thlm2T_in_K( thlm, exner, rcm )  & 
+result( T_in_K )
 
 !        Description:
 !        Calculates absolute temperature from liquid water potential
@@ -21,26 +21,26 @@
 !        References:  Cotton and Anthes (1989), "Storm and Cloud Dynamics",
 !                        Eqn. (2.51). 
 !-----------------------------------------------------------------------
-         use constants, only: & 
-         ! Variable(s) 
-         Cp,  & ! Dry air specific heat at constant p [J/kg/K]
-         Lv  ! Latent heat of vaporization         [J/kg]
+use constants, only: & 
+! Variable(s) 
+Cp,  & ! Dry air specific heat at constant p [J/kg/K]
+Lv  ! Latent heat of vaporization         [J/kg]
 
-         implicit none
+implicit none
 
-         ! Input 
-         real, intent(in) :: & 
-         thlm,   & ! Liquid potential temperature  [K]
-         exner,  & ! Exner function                [-]
-         rcm    ! Liquid water mixing ratio     [kg/kg]
+! Input 
+real, intent(in) :: & 
+thlm,   & ! Liquid potential temperature  [K]
+exner,  & ! Exner function                [-]
+rcm    ! Liquid water mixing ratio     [kg/kg]
 
-         real :: & 
-         T_in_K ! Result temperature [K]
+real :: & 
+T_in_K ! Result temperature [K]
 
-         T_in_K = thlm * exner + Lv * rcm / Cp
+T_in_K = thlm * exner + Lv * rcm / Cp
 
-         return
-         end function thlm2T_in_K
+return
+end function thlm2T_in_K
 !-----------------------------------------------------------------------
 
-         end module T_in_K_mod
+end module T_in_K_mod

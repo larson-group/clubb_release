@@ -1,23 +1,23 @@
-!$Id: saturation.F90,v 1.2 2008-07-24 20:49:09 faschinj Exp $
+!$Id: saturation.F90,v 1.3 2008-07-28 19:34:43 faschinj Exp $
 
-        module saturation
+module saturation
 
 !       Description: 
 !         Contains functions that compute saturation with respect
 !       to liquid or ice.
 
-        implicit none
+implicit none
 
-        private        ! Change default so all items private
+private        ! Change default so all items private
 
-        public   :: sat_mixrat_liq, sat_mixrat_ice, sat_rcm
+public   :: sat_mixrat_liq, sat_mixrat_ice, sat_rcm
 
-        private  :: sat_vapor_press_liq, sat_vapor_press_ice
+private  :: sat_vapor_press_liq, sat_vapor_press_ice
 
-        contains
+contains
 
 !-------------------------------------------------------------------------
-        elemental real function sat_mixrat_liq( p_in_Pa, T_in_K )
+elemental real function sat_mixrat_liq( p_in_Pa, T_in_K )
 
 !       Description:
 !       Used to compute the saturation mixing ratio.
@@ -26,36 +26,35 @@
 !       Formula from Emanuel 1994, 4.4.14
 !-------------------------------------------------------------------------
 
-        use constants, only: & 
-            ep ! Variable
+use constants, only: & 
+    ep ! Variable
 
-        implicit none
+implicit none
 
-        ! Input Variables
-        real, intent(in) ::  & 
-        p_in_Pa,  & ! Pressure    [Pa]
-        T_in_K  ! Temperature [K]
+! Input Variables
+real, intent(in) ::  & 
+p_in_Pa,  & ! Pressure    [Pa]
+T_in_K  ! Temperature [K]
 
-        ! Local Variables
-        real :: esatv
+! Local Variables
+real :: esatv
 
-        ! Saturation Vapor Pressure, esat, can be found to be approximated
-        ! in many different ways.
+! Saturation Vapor Pressure, esat, can be found to be approximated
+! in many different ways.
 
-        esatv = sat_vapor_press_liq( T_in_K )
+esatv = sat_vapor_press_liq( T_in_K )
 
-        ! Formula for Saturation Mixing Ratio:
-        !
-        ! rs = (epsilon) * [ esat / ( p - esat ) ];
-        ! where epsilon = R_d / R_v
-       
-        sat_mixrat_liq = ep * ( esatv / ( p_in_Pa - esatv ) )
+! Formula for Saturation Mixing Ratio:
+!
+! rs = (epsilon) * [ esat / ( p - esat ) ];
+! where epsilon = R_d / R_v
+sat_mixrat_liq = ep * ( esatv / ( p_in_Pa - esatv ) )
 
-        return
-        end function sat_mixrat_liq
+return
+end function sat_mixrat_liq
 
 !------------------------------------------------------------------------
-        pure function sat_vapor_press_liq( T_in_K ) result ( esat )
+pure function sat_vapor_press_liq( T_in_K ) result ( esat )
 
 !       Description:
 !       Computes SVP for water vapor.
@@ -66,50 +65,50 @@
 !         pp. 1507--1513
 !------------------------------------------------------------------------
 
-        use constants, only: T_freeze_K
+use constants, only: T_freeze_K
 
-        implicit none
+implicit none
 
-        ! External
-        intrinsic :: exp
-        
-        ! Parameter Constants
-        logical, parameter :: lFlatau = .false.
+! External
+intrinsic :: exp
 
-        ! Relative error norm expansion (-50 to 50 deg_C) from
-        ! Table 3 of pp. 1511 of Flatau et al. 1992 (Water Vapor)
-        real, dimension(7), parameter :: a = & 
-        (/ 6.11176750,      0.443986062,     0.143053301E-01, & 
-           0.265027242E-03, 0.302246994E-05, 0.203886313E-07, & 
-           0.638780966E-10 /)
+! Parameter Constants
+logical, parameter :: lFlatau = .false.
 
-        ! Input Variables
-        real, intent(in) :: T_in_K   ! Temperature   [K]
+! Relative error norm expansion (-50 to 50 deg_C) from
+! Table 3 of pp. 1511 of Flatau et al. 1992 (Water Vapor)
+real, dimension(7), parameter :: a = & 
+(/ 6.11176750,      0.443986062,     0.143053301E-01, & 
+   0.265027242E-03, 0.302246994E-05, 0.203886313E-07, & 
+   0.638780966E-10 /)
 
-        ! Output Variables
-        real :: esat
+! Input Variables
+real, intent(in) :: T_in_K   ! Temperature   [K]
 
-        ! Local Variables
-        integer :: i
+! Output Variables
+real :: esat
 
-        if ( lFlatau ) then
-          ! Polynomial approx. (Flatau, et al. 1992)
-          esat = a(1)
-          do i = 2, 7, 1
-            esat = esat + a(i) * ( T_in_K-T_freeze_K )**(i-1)
-          end do
-          esat = 100.0 * esat ! Convert units
+! Local Variables
+integer :: i
 
-        else
-          ! (Bolton 1980) approx.
-          esat = 611.2 * exp( (17.67*(T_in_K-T_freeze_K)) / (T_in_K-29.65) )
-        end if
+if ( lFlatau ) then
+  ! Polynomial approx. (Flatau, et al. 1992)
+  esat = a(1)
+  do i = 2, 7, 1
+    esat = esat + a(i) * ( T_in_K-T_freeze_K )**(i-1)
+  end do
+  esat = 100.0 * esat ! Convert units
 
-        return
-        end function sat_vapor_press_liq
+else
+  ! (Bolton 1980) approx.
+  esat = 611.2 * exp( (17.67*(T_in_K-T_freeze_K)) / (T_in_K-29.65) )
+end if
+
+return
+end function sat_vapor_press_liq
 
 !------------------------------------------------------------------------
-        real function sat_mixrat_ice( p_in_Pa, T_in_K )
+real function sat_mixrat_ice( p_in_Pa, T_in_K )
 
 !       Description:
 !       Used to compute the saturation mixing ratio. 
@@ -118,33 +117,33 @@
 !       Formula from Emanuel 1994, 4.4.15
 !-------------------------------------------------------------------------
 
-        use constants, only: & 
-            ep ! Variable(s)
+use constants, only: & 
+    ep ! Variable(s)
 
-        implicit none
+implicit none
 
-        ! Input Variables
-        real, intent(in) :: p_in_Pa, T_in_K
+! Input Variables
+real, intent(in) :: p_in_Pa, T_in_K
 
-        ! Local Variables
-        real :: esat_ice
+! Local Variables
+real :: esat_ice
 
-        ! Compute SVP for ice
+! Compute SVP for ice
 
-        esat_ice = sat_vapor_press_ice( T_in_K )
+esat_ice = sat_vapor_press_ice( T_in_K )
 
-        ! Formula for Saturation Mixing Ratio:
-        !
-        ! rs = (epsilon) * [ esat / ( p - esat ) ];
-        ! where epsilon = R_d / R_v
+! Formula for Saturation Mixing Ratio:
+!
+! rs = (epsilon) * [ esat / ( p - esat ) ];
+! where epsilon = R_d / R_v
 
-        sat_mixrat_ice = ep * ( esat_ice / ( p_in_Pa - esat_ice ) )
+sat_mixrat_ice = ep * ( esat_ice / ( p_in_Pa - esat_ice ) )
 
-        return
-        end function sat_mixrat_ice
+return
+end function sat_mixrat_ice
 
 !------------------------------------------------------------------------
-        real pure function sat_vapor_press_ice( T_in_K ) result ( esati )
+real pure function sat_vapor_press_ice( T_in_K ) result ( esati )
 
 !       Description:
 
@@ -153,108 +152,108 @@
 !         and Cotton.  (1992)  Journal of Applied Meteorology, Vol. 31,
 !         pp. 1507--1513
 !------------------------------------------------------------------------
-        use constants, only: T_freeze_K
+use constants, only: T_freeze_K
 
 
-        implicit none
+implicit none
 
-        ! External
-        intrinsic :: exp, log
-        
-        ! Parameter Constants
-        logical, parameter :: lFlatau = .false.
+! External
+intrinsic :: exp, log
 
-        ! Relative error norm expansion (-50 to 0 deg_C) from
-        ! Table 3 of pp. 1511 of Flatau et al. 1992 (Ice)
-        real, dimension(7), parameter :: a = & 
-        (/ 6.10952665,      0.501948366,     0.18628899E-01, & 
-           0.403488906E-03, 0.539797852E-05, 0.420713632E-07, & 
-           0.147271071E-09 /)
+! Parameter Constants
+logical, parameter :: lFlatau = .false.
 
-        ! Input Variables
-        real, intent(in) :: T_in_K   ! Temperature   [K]
+! Relative error norm expansion (-50 to 0 deg_C) from
+! Table 3 of pp. 1511 of Flatau et al. 1992 (Ice)
+real, dimension(7), parameter :: a = & 
+(/ 6.10952665,      0.501948366,     0.18628899E-01, & 
+   0.403488906E-03, 0.539797852E-05, 0.420713632E-07, & 
+   0.147271071E-09 /)
 
-        ! Local Variables
-        integer :: i
+! Input Variables
+real, intent(in) :: T_in_K   ! Temperature   [K]
 
-        if ( lFlatau ) then
-          ! Polynomial approx. (Flatau, et al. 1992)
-          esati = a(1)
-          do i = 2, 7, 1
-            esati = esati + a(i) * ( T_in_K-T_freeze_K )**(i-1)
-          end do
-          esati = 100.0 * esati ! Convert units
+! Local Variables
+integer :: i
 
-        else
-          ! Exponential approx. (Bolton?)
-          esati = 100.0 * & 
-                  exp( 23.33086 - (6111.72784/T_in_K) + (0.15215*log( T_in_K )) )
-        end if
+if ( lFlatau ) then
+  ! Polynomial approx. (Flatau, et al. 1992)
+  esati = a(1)
+  do i = 2, 7, 1
+    esati = esati + a(i) * ( T_in_K-T_freeze_K )**(i-1)
+  end do
+  esati = 100.0 * esati ! Convert units
 
-        return
-        end function sat_vapor_press_ice
+else
+  ! Exponential approx. (Bolton?)
+  esati = 100.0 * & 
+          exp( 23.33086 - (6111.72784/T_in_K) + (0.15215*log( T_in_K )) )
+end if
+
+return
+end function sat_vapor_press_ice
 
 !------------------------------------------------------------------------
-        ! This function was created by Brian Griffin.
-        ! If you have information about your initial profile in thlm and rtm,
-        ! and your profile is saturated at some point, you need to use an
-        ! iterative method in order to accurately find the value of rcm.
+! This function was created by Brian Griffin.
+! If you have information about your initial profile in thlm and rtm,
+! and your profile is saturated at some point, you need to use an
+! iterative method in order to accurately find the value of rcm.
 
-        FUNCTION sat_rcm( thlm, rtm, p, exner )
+FUNCTION sat_rcm( thlm, rtm, p, exner )
 
-        USE constants, only: & 
-            Cp,  & ! Variable(s)
-            Lv
+USE constants, only: & 
+    Cp,  & ! Variable(s)
+    Lv
 
-        implicit none
+implicit none
 
-        REAL, INTENT(IN):: thlm
-        REAL, INTENT(IN):: rtm
-        REAL, INTENT(IN):: p
-        REAL, INTENT(IN):: exner
+REAL, INTENT(IN):: thlm
+REAL, INTENT(IN):: rtm
+REAL, INTENT(IN):: p
+REAL, INTENT(IN):: exner
 
-        REAL:: sat_rcm
+REAL:: sat_rcm
 
-        REAL:: theta
-        REAL:: answer, too_low, too_high
+REAL:: theta
+REAL:: answer, too_low, too_high
 
-        INTEGER:: iteration
+INTEGER:: iteration
 
-        REAL, PARAMETER:: tolerance = 0.001
+REAL, PARAMETER:: tolerance = 0.001
 
-        ! Default initialization
-        theta = thlm
-        iteration = 0
-        too_high = 0.0
-        too_low = 0.0
+! Default initialization
+theta = thlm
+iteration = 0
+too_high = 0.0
+too_low = 0.0
 
-        DO
+DO
 
-           iteration = iteration + 1
+   iteration = iteration + 1
 
-           answer = theta - (Lv/(Cp*exner)) & 
-                      *(MAX( rtm - sat_mixrat_liq(p,theta*exner), 0.0 ))
+   answer = theta - (Lv/(Cp*exner)) & 
+              *(MAX( rtm - sat_mixrat_liq(p,theta*exner), 0.0 ))
 
-           IF ( ABS(answer - thlm) <= tolerance ) THEN
-              EXIT
-           ELSEIF ( answer - thlm > tolerance ) THEN
-              too_high = theta
-           ELSEIF ( thlm - answer > tolerance ) THEN
-              too_low = theta
-           ENDIF
+   IF ( ABS(answer - thlm) <= tolerance ) THEN
+      EXIT
+   ELSEIF ( answer - thlm > tolerance ) THEN
+      too_high = theta
+   ELSEIF ( thlm - answer > tolerance ) THEN
+      too_low = theta
+   ENDIF
 
-           ! For the first timestep, be sure to set a "too_high"
-           ! that is "way too high."
-           IF ( iteration == 1 ) THEN
-              too_high = theta + 20.0
-           ENDIF
+   ! For the first timestep, be sure to set a "too_high"
+   ! that is "way too high."
+   IF ( iteration == 1 ) THEN
+      too_high = theta + 20.0
+   ENDIF
 
-           theta = (too_low + too_high)/2.0
+   theta = (too_low + too_high)/2.0
 
-        ENDDO
+ENDDO
 
-        sat_rcm = MAX( rtm - sat_mixrat_liq(p,theta*exner), 0.0 )
+sat_rcm = MAX( rtm - sat_mixrat_liq(p,theta*exner), 0.0 )
 
-        END FUNCTION sat_rcm
-        
-        end module saturation
+END FUNCTION sat_rcm
+
+end module saturation

@@ -1,7 +1,7 @@
 !-----------------------------------------------------------------------
-! $Id: semiimplicit_clip.F90,v 1.1 2008-07-22 16:04:28 faschinj Exp $
+! $Id: semiimplicit_clip.F90,v 1.2 2008-07-28 19:34:43 faschinj Exp $
 !===============================================================================
-        module semiimplicit_clip
+module semiimplicit_clip
 
 !       Description of the semi-implicit clipping code:
 !       The semi-implicit clipping code is based on an upper threshold
@@ -212,45 +212,45 @@
 !       References:
 !-----------------------------------------------------------------------
 
-        implicit none
+implicit none
 
-        private
+private
 
-        public :: semiimp_clip_lhs, & 
-                  semiimp_clip_rhs
+public :: semiimp_clip_lhs, & 
+          semiimp_clip_rhs
 
-        private :: compute_clip_lhs, & 
-                   compute_fncts_A_B
+private :: compute_clip_lhs, & 
+           compute_fncts_A_B
 
-        ! Constant parameters.
+! Constant parameters.
 
-        ! sigma coefficient:  A coefficient with dimensionless units 
-        !                     that must have a value greater than 0.
-        !                     The value should be kept below 1.  The
-        !                     larger the value of sigma_coef, the larger
-        !                     the value of sigma, and the larger the 
-        !                     range of close-to-threshold values that 
-        !                     will be effected (nudged away from the 
-        !                     threshold) by the semi-implicit clipping.
-        real, parameter :: sigma_coef = 0.15
+! sigma coefficient:  A coefficient with dimensionless units 
+!                     that must have a value greater than 0.
+!                     The value should be kept below 1.  The
+!                     larger the value of sigma_coef, the larger
+!                     the value of sigma, and the larger the 
+!                     range of close-to-threshold values that 
+!                     will be effected (nudged away from the 
+!                     threshold) by the semi-implicit clipping.
+real, parameter :: sigma_coef = 0.15
 
-        ! dt_clip coefficient:  A coefficient with dimensionless units
-        !                       that must have a value greater than 0.
-        !                       A value of 1 will set the clipping time 
-        !                       scale, dt_clip, equal to the model 
-        !                       timestep, dt.  The smaller the value of
-        !                       dt_clip_coef, the smaller the value of 
-        !                       dt_clip, and the larger the magnitude
-        !                       of (df/dt)_clipping.
-        real, parameter :: dt_clip_coef = 1.0
+! dt_clip coefficient:  A coefficient with dimensionless units
+!                       that must have a value greater than 0.
+!                       A value of 1 will set the clipping time 
+!                       scale, dt_clip, equal to the model 
+!                       timestep, dt.  The smaller the value of
+!                       dt_clip_coef, the smaller the value of 
+!                       dt_clip, and the larger the magnitude
+!                       of (df/dt)_clipping.
+real, parameter :: dt_clip_coef = 1.0
 
-        contains
+contains
 
 !===============================================================================
-        function semiimp_clip_lhs( dt, f_unclipped,  & 
-                                   lupper_thresh, upper_threshold,  & 
-                                   llower_thresh, lower_threshold ) & 
-        result( lhs )
+function semiimp_clip_lhs( dt, f_unclipped,  & 
+                           lupper_thresh, upper_threshold,  & 
+                           llower_thresh, lower_threshold ) & 
+result( lhs )
 
 !       Description:
 !       The implicit portion of the semi-implicit clipping code.
@@ -284,103 +284,103 @@
 !       References:
 !-----------------------------------------------------------------------
 
-        use stats_precision, only:  & 
-            time_precision ! Variable(s)
+use stats_precision, only:  & 
+    time_precision ! Variable(s)
 
-        implicit none
+implicit none
 
-        ! Input Variables
-        real(kind=time_precision), intent(in) ::  & 
-        dt                 ! Model timestep.                                    [s]
+! Input Variables
+real(kind=time_precision), intent(in) ::  & 
+dt                 ! Model timestep.                                    [s]
 
-        real, intent(in) :: & 
-        f_unclipped,        & ! The unclipped value of variable f at timestep (t). [f units]
-        upper_threshold,    & ! Greatest allowable value of variable f.            [f units]
-        lower_threshold    ! Smallest allowable value of variable f.            [f units]
+real, intent(in) :: & 
+f_unclipped,        & ! The unclipped value of variable f at timestep (t). [f units]
+upper_threshold,    & ! Greatest allowable value of variable f.            [f units]
+lower_threshold    ! Smallest allowable value of variable f.            [f units]
 
-        logical, intent(in) :: & 
-        lupper_thresh,    & ! Flag for having an upper threshold value.
-        llower_thresh    ! Flag for having a lower threshold value.
+logical, intent(in) :: & 
+lupper_thresh,    & ! Flag for having an upper threshold value.
+llower_thresh    ! Flag for having a lower threshold value.
 
-        ! Return Variable
-        real :: lhs
+! Return Variable
+real :: lhs
 
-        ! Local Variables
-        real(kind=time_precision) ::  & 
-        dt_clip    ! Time scale for semi-implicit clipping term.                [s]
+! Local Variables
+real(kind=time_precision) ::  & 
+dt_clip    ! Time scale for semi-implicit clipping term.                [s]
 
-        real :: & 
-        f_diff,     & ! Difference between the threshold value and f_unclipped.    [f units]
-        A_fnc,      & ! Function that approximates { f_diff * [ 1 - H(f_diff) ] }. [f units]
-        B_fnc,      & ! Derivative w/ respect to f_diff of function A_fnc.         []
-        lhs_upper,  & ! Contribution of upper threshold to implicit portion (LHS). [s^-1]
-        lhs_lower  ! Contribution of lower threshold to implicit portion (LHS). [s^-1]
-
-
-        ! Compute the clipping time scale, dt_clip.
-        dt_clip = dt_clip_coef * dt
+real :: & 
+f_diff,     & ! Difference between the threshold value and f_unclipped.    [f units]
+A_fnc,      & ! Function that approximates { f_diff * [ 1 - H(f_diff) ] }. [f units]
+B_fnc,      & ! Derivative w/ respect to f_diff of function A_fnc.         []
+lhs_upper,  & ! Contribution of upper threshold to implicit portion (LHS). [s^-1]
+lhs_lower  ! Contribution of lower threshold to implicit portion (LHS). [s^-1]
 
 
-        ! Upper Threshold
-        if ( lupper_thresh ) then
-
-           ! f_diff is the difference between the threshold value and 
-           ! f_unclipped.  In regards to the upper threshold, it is 
-           ! defined as upper_threshold - f_unclipped.
-           f_diff = upper_threshold - f_unclipped
-
-           ! Compute the values of functions A_fnc and B_fnc evaluated 
-           ! at f_diff(t) for the upper threshold.
-           call compute_fncts_A_B( lupper_thresh, upper_threshold,  & 
-                                   llower_thresh, lower_threshold,  & 
-                                   f_diff, A_fnc, B_fnc )
-
-           ! Compute the implicit (LHS) contribution from clipping for 
-           ! the upper threshold. 
-           lhs_upper = compute_clip_lhs( dt_clip, B_fnc )
-
-        else
-
-           lhs_upper = 0.0
-
-        endif
+! Compute the clipping time scale, dt_clip.
+dt_clip = dt_clip_coef * dt
 
 
-        ! Lower Threshold
-        if ( llower_thresh ) then
+! Upper Threshold
+if ( lupper_thresh ) then
 
-           ! f_diff is the difference between the threshold value and 
-           ! f_unclipped.  In regards to the lower threshold, it is 
-           ! defined as f_unclipped - lower_threshold.
-           f_diff = f_unclipped - lower_threshold
+   ! f_diff is the difference between the threshold value and 
+   ! f_unclipped.  In regards to the upper threshold, it is 
+   ! defined as upper_threshold - f_unclipped.
+   f_diff = upper_threshold - f_unclipped
 
-           ! Compute the values of functions A_fnc and B_fnc evaluated 
-           ! at f_diff(t) for the lower threshold.
-           call compute_fncts_A_B( lupper_thresh, upper_threshold,  & 
-                                   llower_thresh, lower_threshold,  & 
-                                   f_diff, A_fnc, B_fnc )
+   ! Compute the values of functions A_fnc and B_fnc evaluated 
+   ! at f_diff(t) for the upper threshold.
+   call compute_fncts_A_B( lupper_thresh, upper_threshold,  & 
+                           llower_thresh, lower_threshold,  & 
+                           f_diff, A_fnc, B_fnc )
 
-           ! Compute the implicit (LHS) contribution from clipping for 
-           ! the lower threshold. 
-           lhs_lower = compute_clip_lhs( dt_clip, B_fnc )
+   ! Compute the implicit (LHS) contribution from clipping for 
+   ! the upper threshold. 
+   lhs_upper = compute_clip_lhs( dt_clip, B_fnc )
 
-        else
+else
 
-           lhs_lower = 0.0
+   lhs_upper = 0.0
 
-        endif
-
-
-        ! Total implicit (LHS) contribution to clipping.
-        ! Main diagonal: [ x f_unclipped(k,<t+1>) ]
-        lhs = lhs_upper + lhs_lower
+endif
 
 
-        end function semiimp_clip_lhs
+! Lower Threshold
+if ( llower_thresh ) then
+
+   ! f_diff is the difference between the threshold value and 
+   ! f_unclipped.  In regards to the lower threshold, it is 
+   ! defined as f_unclipped - lower_threshold.
+   f_diff = f_unclipped - lower_threshold
+
+   ! Compute the values of functions A_fnc and B_fnc evaluated 
+   ! at f_diff(t) for the lower threshold.
+   call compute_fncts_A_B( lupper_thresh, upper_threshold,  & 
+                           llower_thresh, lower_threshold,  & 
+                           f_diff, A_fnc, B_fnc )
+
+   ! Compute the implicit (LHS) contribution from clipping for 
+   ! the lower threshold. 
+   lhs_lower = compute_clip_lhs( dt_clip, B_fnc )
+
+else
+
+   lhs_lower = 0.0
+
+endif
+
+
+! Total implicit (LHS) contribution to clipping.
+! Main diagonal: [ x f_unclipped(k,<t+1>) ]
+lhs = lhs_upper + lhs_lower
+
+
+end function semiimp_clip_lhs
 
 !===============================================================================
-        pure function compute_clip_lhs( dt_clip, B_fnc ) & 
-        result( lhs_contribution )
+pure function compute_clip_lhs( dt_clip, B_fnc ) & 
+result( lhs_contribution )
 
 !       Description:
 !       Calculation of the implicit portion of the semi-implicit 
@@ -401,34 +401,34 @@
 !       References:
 !-----------------------------------------------------------------------
 
-        use stats_precision, only:  & 
-            time_precision ! Variable(s)
+use stats_precision, only:  & 
+    time_precision ! Variable(s)
 
-        implicit none
+implicit none
 
-        ! Input Variables
-        real(kind=time_precision), intent(in) ::  & 
-        dt_clip ! Time scale for semi-implicit clipping term.        [s]
+! Input Variables
+real(kind=time_precision), intent(in) ::  & 
+dt_clip ! Time scale for semi-implicit clipping term.        [s]
 
-        real, intent(in) :: & 
-        B_fnc   ! Derivative w/ respect to f_diff of function A_fnc. []
+real, intent(in) :: & 
+B_fnc   ! Derivative w/ respect to f_diff of function A_fnc. []
 
-        ! Return Variable
-        real :: lhs_contribution
-
-
-        ! Main diagonal: [ x f_unclipped(k,<t+1>) ]
-        lhs_contribution & 
-        = real( + (1.0/dt_clip) * B_fnc )
+! Return Variable
+real :: lhs_contribution
 
 
-        end function compute_clip_lhs
+! Main diagonal: [ x f_unclipped(k,<t+1>) ]
+lhs_contribution & 
+= real( + (1.0/dt_clip) * B_fnc )
+
+
+end function compute_clip_lhs
 
 !===============================================================================
-        function semiimp_clip_rhs( dt, f_unclipped,  & 
-                                   lupper_thresh, upper_threshold,  & 
-                                   llower_thresh, lower_threshold ) & 
-        result( rhs )
+function semiimp_clip_rhs( dt, f_unclipped,  & 
+                           lupper_thresh, upper_threshold,  & 
+                           llower_thresh, lower_threshold ) & 
+result( rhs )
 
 !       Description:
 !       The explicit portion of the semi-implicit clipping code.
@@ -457,107 +457,107 @@
 !       References:
 !-----------------------------------------------------------------------
 
-        use stats_precision, only:  & 
-            time_precision ! Variable(s)
+use stats_precision, only:  & 
+    time_precision ! Variable(s)
 
-        implicit none
+implicit none
 
-        ! Input Variables
-        real(kind=time_precision), intent(in) ::  & 
-        dt                 ! Model timestep.                                    [s]
+! Input Variables
+real(kind=time_precision), intent(in) ::  & 
+dt                 ! Model timestep.                                    [s]
 
-        real, intent(in) :: & 
-        f_unclipped,        & ! The unclipped value of variable f at timestep (t). [f units]
-        upper_threshold,    & ! Greatest allowable value of variable f.            [f units]
-        lower_threshold    ! Smallest allowable value of variable f.            [f units]
+real, intent(in) :: & 
+f_unclipped,        & ! The unclipped value of variable f at timestep (t). [f units]
+upper_threshold,    & ! Greatest allowable value of variable f.            [f units]
+lower_threshold    ! Smallest allowable value of variable f.            [f units]
 
-        logical, intent(in) :: & 
-        lupper_thresh,    & ! Flag for having an upper threshold value.
-        llower_thresh    ! Flag for having a lower threshold value.
+logical, intent(in) :: & 
+lupper_thresh,    & ! Flag for having an upper threshold value.
+llower_thresh    ! Flag for having a lower threshold value.
 
-        ! Return Variable
-        real :: rhs
+! Return Variable
+real :: rhs
 
-        ! Local Variables
-        real(kind=time_precision) ::  & 
-        dt_clip    ! Time scale for semi-implicit clipping term.                [s]
+! Local Variables
+real(kind=time_precision) ::  & 
+dt_clip    ! Time scale for semi-implicit clipping term.                [s]
 
-        real :: & 
-        f_diff,     & ! Difference between the threshold value and f_unclipped.    [f units]
-        A_fnc,      & ! Function that approximates { f_diff * [ 1 - H(f_diff) ] }. [f units]
-        B_fnc,      & ! Derivative w/ respect to f_diff of function A_fnc.         []
-        rhs_upper,  & ! Contribution of upper threshold to explicit portion (RHS). [s^-1]
-        rhs_lower  ! Contribution of lower threshold to explicit portion (RHS). [s^-1]
-
-
-        ! Compute the clipping time scale, dt_clip.
-        dt_clip = dt_clip_coef * dt
+real :: & 
+f_diff,     & ! Difference between the threshold value and f_unclipped.    [f units]
+A_fnc,      & ! Function that approximates { f_diff * [ 1 - H(f_diff) ] }. [f units]
+B_fnc,      & ! Derivative w/ respect to f_diff of function A_fnc.         []
+rhs_upper,  & ! Contribution of upper threshold to explicit portion (RHS). [s^-1]
+rhs_lower  ! Contribution of lower threshold to explicit portion (RHS). [s^-1]
 
 
-        ! Upper Threshold
-        if ( lupper_thresh ) then
-
-           ! f_diff is the difference between the threshold value and 
-           ! f_unclipped.  In regards to the upper threshold, it is 
-           ! defined as upper_threshold - f_unclipped.
-           f_diff = upper_threshold - f_unclipped
-
-           ! Compute the values of functions A_fnc and B_fnc evaluated 
-           ! at f_diff(t) for the upper threshold.
-           call compute_fncts_A_B( lupper_thresh, upper_threshold,  & 
-                                   llower_thresh, lower_threshold,  & 
-                                   f_diff, A_fnc, B_fnc )
-
-           ! Compute the explicit (RHS) contribution from clipping for 
-           ! the upper threshold. 
-           rhs_upper  & 
-           = real( + (1.0/dt_clip)  & 
-               * ( A_fnc - B_fnc * f_diff + B_fnc * upper_threshold ) )
-
-        else
-
-           rhs_upper = 0.0
-
-        endif
+! Compute the clipping time scale, dt_clip.
+dt_clip = dt_clip_coef * dt
 
 
-        ! Lower Threshold
-        if ( llower_thresh ) then
+! Upper Threshold
+if ( lupper_thresh ) then
 
-           ! f_diff is the difference between the threshold value and 
-           ! f_unclipped.  In regards to the lower threshold, it is 
-           ! defined as f_unclipped - lower_threshold.
-           f_diff = f_unclipped - lower_threshold
+   ! f_diff is the difference between the threshold value and 
+   ! f_unclipped.  In regards to the upper threshold, it is 
+   ! defined as upper_threshold - f_unclipped.
+   f_diff = upper_threshold - f_unclipped
 
-           ! Compute the values of functions A_fnc and B_fnc evaluated 
-           ! at f_diff(t) for the lower threshold.
-           call compute_fncts_A_B( lupper_thresh, upper_threshold,  & 
-                                   llower_thresh, lower_threshold,  & 
-                                   f_diff, A_fnc, B_fnc )
+   ! Compute the values of functions A_fnc and B_fnc evaluated 
+   ! at f_diff(t) for the upper threshold.
+   call compute_fncts_A_B( lupper_thresh, upper_threshold,  & 
+                           llower_thresh, lower_threshold,  & 
+                           f_diff, A_fnc, B_fnc )
 
-           ! Compute the explicit (RHS) contribution from clipping for 
-           ! the lower threshold. 
-           rhs_lower  & 
-           = real( - (1.0/dt_clip)  & 
-               * ( A_fnc - B_fnc * f_diff - B_fnc * lower_threshold ) )
+   ! Compute the explicit (RHS) contribution from clipping for 
+   ! the upper threshold. 
+   rhs_upper  & 
+   = real( + (1.0/dt_clip)  & 
+       * ( A_fnc - B_fnc * f_diff + B_fnc * upper_threshold ) )
 
-        else
+else
 
-           rhs_lower = 0.0
+   rhs_upper = 0.0
 
-        endif
-
-
-        ! Total explicit (RHS) contribution to clipping.
-        rhs = rhs_upper + rhs_lower
+endif
 
 
-        end function semiimp_clip_rhs
+! Lower Threshold
+if ( llower_thresh ) then
+
+   ! f_diff is the difference between the threshold value and 
+   ! f_unclipped.  In regards to the lower threshold, it is 
+   ! defined as f_unclipped - lower_threshold.
+   f_diff = f_unclipped - lower_threshold
+
+   ! Compute the values of functions A_fnc and B_fnc evaluated 
+   ! at f_diff(t) for the lower threshold.
+   call compute_fncts_A_B( lupper_thresh, upper_threshold,  & 
+                           llower_thresh, lower_threshold,  & 
+                           f_diff, A_fnc, B_fnc )
+
+   ! Compute the explicit (RHS) contribution from clipping for 
+   ! the lower threshold. 
+   rhs_lower  & 
+   = real( - (1.0/dt_clip)  & 
+       * ( A_fnc - B_fnc * f_diff - B_fnc * lower_threshold ) )
+
+else
+
+   rhs_lower = 0.0
+
+endif
+
+
+! Total explicit (RHS) contribution to clipping.
+rhs = rhs_upper + rhs_lower
+
+
+end function semiimp_clip_rhs
 
 !===============================================================================
-        subroutine compute_fncts_A_B( lupper_thresh, upper_threshold,  & 
-                                      llower_thresh, lower_threshold,  & 
-                                      f_diff, A_fnc, B_fnc )
+subroutine compute_fncts_A_B( lupper_thresh, upper_threshold,  & 
+                              llower_thresh, lower_threshold,  & 
+                              f_diff, A_fnc, B_fnc )
 
 !       Description:
 !       This subroutine computes the values of two functions used in
@@ -594,85 +594,85 @@
 !       References:
 !-----------------------------------------------------------------------
 
-        use constants, only: eps ! Variable(s)
+use constants, only: eps ! Variable(s)
 
-        implicit none
+implicit none
 
-        ! Input Variable
-        real, intent(in) :: & 
-        f_diff,    & ! Difference between the threshold value and f_unclipped.  [f units]
-        upper_threshold,    & ! Greatest allowable value of variable f.         [f units]
-        lower_threshold    ! Smallest allowable value of variable f.         [f units]
+! Input Variable
+real, intent(in) :: & 
+f_diff,    & ! Difference between the threshold value and f_unclipped.  [f units]
+upper_threshold,    & ! Greatest allowable value of variable f.         [f units]
+lower_threshold    ! Smallest allowable value of variable f.         [f units]
 
-        logical, intent(in) :: & 
-        lupper_thresh,    & ! Flag for having an upper threshold value.
-        llower_thresh    ! Flag for having a lower threshold value.
+logical, intent(in) :: & 
+lupper_thresh,    & ! Flag for having an upper threshold value.
+llower_thresh    ! Flag for having a lower threshold value.
 
-        ! Output Variables
-        real, intent(out) :: & 
-        A_fnc,   & ! Function that approximates { f_diff * [ 1 - H(f_diff) ] }. [f units]
-        B_fnc   ! Derivative w/ respect to f_diff of function A_fnc.         []
+! Output Variables
+real, intent(out) :: & 
+A_fnc,   & ! Function that approximates { f_diff * [ 1 - H(f_diff) ] }. [f units]
+B_fnc   ! Derivative w/ respect to f_diff of function A_fnc.         []
 
-        ! Local Variables
-        real :: sigma_val,       & ! Value of parameter sigma.                  [f units]
-                thresh_avg_mag  ! Average magnitude of threshold(s).         [f units]
+! Local Variables
+real :: sigma_val,       & ! Value of parameter sigma.                  [f units]
+        thresh_avg_mag  ! Average magnitude of threshold(s).         [f units]
 
-        thresh_avg_mag = 0.0 ! Default Initialization
+thresh_avg_mag = 0.0 ! Default Initialization
 
-        ! Find the average magnitude of the threshold.  
-        ! In cases where only one threshold applies, the average 
-        ! magnitude of the threshold must be greater than 0.
-        ! Note:  The constant eps is there in case only one threshold
-        !        applies, and it has a value of 0 (or very close to 0).
-        !        However, eps is a very small number, and therefore it 
-        !        will not start curbing values until they get extremely
-        !        close to the threshold.  A larger constant value may 
-        !        work better.
-        if ( lupper_thresh .and. llower_thresh ) then
-           ! Both thresholds apply.
-           thresh_avg_mag = 0.5 * (   abs(upper_threshold)  & 
-                                    + abs(lower_threshold)   )
-        elseif ( lupper_thresh ) then
-           ! Only the upper threshold applies.
-           thresh_avg_mag = max( abs(upper_threshold), eps )
-        elseif ( llower_thresh ) then
-           ! Only the lower threshold applies.
-           thresh_avg_mag = max( abs(lower_threshold), eps )
-        endif
+! Find the average magnitude of the threshold.  
+! In cases where only one threshold applies, the average 
+! magnitude of the threshold must be greater than 0.
+! Note:  The constant eps is there in case only one threshold
+!        applies, and it has a value of 0 (or very close to 0).
+!        However, eps is a very small number, and therefore it 
+!        will not start curbing values until they get extremely
+!        close to the threshold.  A larger constant value may 
+!        work better.
+if ( lupper_thresh .and. llower_thresh ) then
+   ! Both thresholds apply.
+   thresh_avg_mag = 0.5 * (   abs(upper_threshold)  & 
+                            + abs(lower_threshold)   )
+elseif ( lupper_thresh ) then
+   ! Only the upper threshold applies.
+   thresh_avg_mag = max( abs(upper_threshold), eps )
+elseif ( llower_thresh ) then
+   ! Only the lower threshold applies.
+   thresh_avg_mag = max( abs(lower_threshold), eps )
+endif
 
-        ! Compute the value of sigma based on the magnitude of the 
-        ! threshold(s) for variable f and the sigma coefficient.
-        ! The value of sigma must always be positive.
-        sigma_val = sigma_coef * thresh_avg_mag
+! Compute the value of sigma based on the magnitude of the 
+! threshold(s) for variable f and the sigma coefficient.
+! The value of sigma must always be positive.
+sigma_val = sigma_coef * thresh_avg_mag
 
-        ! A_fnc is a three-piece function that approximates function 
-        ! R(f_diff(t)) = { f_diff(t) * [ 1 - H(f_diff(t)) ] }.  This is 
-        ! needed because the R(f_diff(t)) is not differentiable at point
-        ! f_diff(t) = 0, as the function has a corner at that point.
-        ! Function A_fnc is differentiable at all points.  It is 
-        ! evaluated for f_diff at timestep index (t).
-        if ( f_diff <= -sigma_val ) then
-           A_fnc = f_diff
-        elseif ( f_diff >= sigma_val ) then
-           A_fnc = 0.0
-        else ! -sigma_val < f_diff < sigma_val
-           A_fnc = f_diff - ( (sigma_val/4.0)  & 
-                              * ( 1.0 + f_diff/sigma_val )**2 )
-        endif
+! A_fnc is a three-piece function that approximates function 
+! R(f_diff(t)) = { f_diff(t) * [ 1 - H(f_diff(t)) ] }.  This is 
+! needed because the R(f_diff(t)) is not differentiable at point
+! f_diff(t) = 0, as the function has a corner at that point.
+! Function A_fnc is differentiable at all points.  It is 
+! evaluated for f_diff at timestep index (t).
+if ( f_diff <= -sigma_val ) then
+   A_fnc = f_diff
+elseif ( f_diff >= sigma_val ) then
+   A_fnc = 0.0
+else ! -sigma_val < f_diff < sigma_val
+   A_fnc = f_diff - ( (sigma_val/4.0)  & 
+                      * ( 1.0 + f_diff/sigma_val )**2 )
+endif
 
-        ! B_fnc is the derivative with respect to f_diff of function 
-        ! A_fnc.  It is evaluated for f_diff at timestep index (t).
-        if ( f_diff <= -sigma_val ) then
-           B_fnc = 1.0
-        elseif ( f_diff >= sigma_val ) then
-           B_fnc = 0.0
-        else ! -sigma_val < f_diff < sigma_val
-           B_fnc = 1.0 - (1.0/2.0)*( 1.0 + f_diff/sigma_val )
-        endif
+! B_fnc is the derivative with respect to f_diff of function 
+! A_fnc.  It is evaluated for f_diff at timestep index (t).
+if ( f_diff <= -sigma_val ) then
+   B_fnc = 1.0
+elseif ( f_diff >= sigma_val ) then
+   B_fnc = 0.0
+else ! -sigma_val < f_diff < sigma_val
+   B_fnc = 1.0 - (1.0/2.0)*( 1.0 + f_diff/sigma_val )
+endif
 
 
-        end subroutine compute_fncts_A_B
+end subroutine compute_fncts_A_B
 
 !===============================================================================
 
-        end module semiimplicit_clip
+end module semiimplicit_clip

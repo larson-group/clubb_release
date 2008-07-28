@@ -1,8 +1,8 @@
 !-----------------------------------------------------------------------
-! $Id: error_code.F90,v 1.2 2008-07-23 13:47:22 faschinj Exp $
+! $Id: error_code.F90,v 1.3 2008-07-28 19:34:42 faschinj Exp $
 !-----------------------------------------------------------------------
 
-        module error_code
+module error_code
 
 !       Description:
 !       Since f90/95 lacks enumeration, we're stuck numbering each
@@ -18,140 +18,140 @@
 !       the 'set_clubb_debug_level' description for more detail.        
 !-----------------------------------------------------------------------
 
-        implicit none
+implicit none
 
-        private ! Default Scope
+private ! Default Scope
 
-        public :: & 
-        clubb_no_error,  & 
-        clubb_var_less_than_zero, & 
-        clubb_var_equals_NaN,  & 
-        clubb_singular_matrix, & 
-        clubb_bad_lapack_arg, & 
-        clubb_rtm_level_not_found, & 
-        clubb_var_out_of_bounds, & 
-        reportError,  & 
-        fatal_error, & 
-        lapack_error,     & 
-        clubb_at_debug_level,  & 
-        set_clubb_debug_level, & 
-        clubb_debug
+public :: & 
+clubb_no_error,  & 
+clubb_var_less_than_zero, & 
+clubb_var_equals_NaN,  & 
+clubb_singular_matrix, & 
+clubb_bad_lapack_arg, & 
+clubb_rtm_level_not_found, & 
+clubb_var_out_of_bounds, & 
+reportError,  & 
+fatal_error, & 
+lapack_error,     & 
+clubb_at_debug_level,  & 
+set_clubb_debug_level, & 
+clubb_debug
 
-        private :: clubb_debug_level
-        
-        ! Model-Wide Debug Level
-        integer :: clubb_debug_level   =  0
+private :: clubb_debug_level
 
-        ! Error Code Values
-        integer, parameter :: & 
-        clubb_no_error                 =  0,  & 
-        clubb_var_less_than_zero       =  1, & 
-        clubb_var_equals_NaN           =  2,  & 
-        clubb_singular_matrix          =  3, & 
-        clubb_bad_lapack_arg           =  4, & 
-        clubb_rtm_level_not_found      =  5, & 
-        clubb_var_out_of_bounds        =  6 
+! Model-Wide Debug Level
+integer :: clubb_debug_level   =  0
+
+! Error Code Values
+integer, parameter :: & 
+clubb_no_error                 =  0,  & 
+clubb_var_less_than_zero       =  1, & 
+clubb_var_equals_NaN           =  2,  & 
+clubb_singular_matrix          =  3, & 
+clubb_bad_lapack_arg           =  4, & 
+clubb_rtm_level_not_found      =  5, & 
+clubb_var_out_of_bounds        =  6 
      
-        contains
+contains
 
 !-----------------------------------------------
-        subroutine reportError( err_code )
+subroutine reportError( err_code )
 !
 !       Description: Reports meaning of error code to console.
 !
 !-----------------------------------------------        
 
-        use constants, only: & 
-            fstderr ! Variable(s)
+use constants, only: & 
+    fstderr ! Variable(s)
 
-        implicit none
+implicit none
+
+! Input Variable
+integer, intent(in) :: err_code ! Error Code being examined
+
+select case ( err_code )
+
+case ( clubb_no_error )
+        write(fstderr,*) "No errors reported."
+
+case ( clubb_var_less_than_zero )
+        write(fstderr,*) "Variable in CLUBB is less than zero."
+
+case ( clubb_singular_matrix )
+        write(fstderr,*) "Singular Matrix in CLUBB."
+
+case ( clubb_var_equals_NaN )
+        write(fstderr,*) "Variable in CLUBB is NaN."
+
+case ( clubb_bad_lapack_arg )
+        write(fstderr,*)  & 
+            "Argument used in LAPACK procedure is invalid."
         
-        ! Input Variable
-        integer, intent(in) :: err_code ! Error Code being examined
+case ( clubb_rtm_level_not_found )
+        write(fstderr,*) "rtm level not found"
+        
+case ( clubb_var_out_of_bounds )
+        write(fstderr,*) "Input variable is out of bounds."
 
-        select case ( err_code )
+case default
+        write(fstderr,*) "Unknown error: ", err_code
 
-        case ( clubb_no_error )
-                write(fstderr,*) "No errors reported."
+end select
 
-        case ( clubb_var_less_than_zero )
-                write(fstderr,*) "Variable in CLUBB is less than zero."
-
-        case ( clubb_singular_matrix )
-                write(fstderr,*) "Singular Matrix in CLUBB."
-
-        case ( clubb_var_equals_NaN )
-                write(fstderr,*) "Variable in CLUBB is NaN."
-
-        case ( clubb_bad_lapack_arg )
-                write(fstderr,*)  & 
-                    "Argument used in LAPACK procedure is invalid."
-                
-        case ( clubb_rtm_level_not_found )
-                write(fstderr,*) "rtm level not found"
-                
-        case ( clubb_var_out_of_bounds )
-                write(fstderr,*) "Input variable is out of bounds."
-
-        case default
-                write(fstderr,*) "Unknown error: ", err_code
-
-        end select
-
-        end subroutine reportError
+end subroutine reportError
 !---------------------------------------------------------------------
-        logical function lapack_error( err_code )
+logical function lapack_error( err_code )
 !
 !       Description: Checks to see if the err_code is equal to one
 !       caused by an error encountered using lapack
 !---------------------------------------------------------------------        
-        implicit none
-        
-        ! Input variable
-        integer,intent(in) :: err_code ! Error Code being examined
-        
-        lapack_error = (err_code == clubb_singular_matrix .or. & 
-            err_code == clubb_bad_lapack_arg ) 
-        
-        end function lapack_error
+implicit none
+
+! Input variable
+integer,intent(in) :: err_code ! Error Code being examined
+
+lapack_error = (err_code == clubb_singular_matrix .or. & 
+    err_code == clubb_bad_lapack_arg ) 
+
+end function lapack_error
 
 !---------------------------------------------------------------------       
-        logical function fatal_error( err_code )
+logical function fatal_error( err_code )
 !
 !       Description: Checks to see if the err_code is one that usually
 !       causes an exit in other parts of CLUBB.
 !---------------------------------------------------------------------        
-        implicit none
+implicit none
 
-        ! Input Variable
-        integer, intent(in) :: err_code ! Error Code being examined
+! Input Variable
+integer, intent(in) :: err_code ! Error Code being examined
 
-        fatal_error = ( err_code == clubb_singular_matrix     .or. & 
-                      err_code == clubb_bad_lapack_arg      .or. & 
-                      err_code == clubb_var_equals_NaN      .or. & 
-                      err_code == clubb_rtm_level_not_found .or. & 
-                      err_code == clubb_var_out_of_bounds )
+fatal_error = ( err_code == clubb_singular_matrix     .or. & 
+              err_code == clubb_bad_lapack_arg      .or. & 
+              err_code == clubb_var_equals_NaN      .or. & 
+              err_code == clubb_rtm_level_not_found .or. & 
+              err_code == clubb_var_out_of_bounds )
 
 
-        end function fatal_error
+end function fatal_error
 
 !------------------------------------------------------------------	
-        logical function clubb_at_debug_level( level )
+logical function clubb_at_debug_level( level )
 !       
 !       Description:
 !       Checks to see if clubb has been set to a specified debug level
 !------------------------------------------------------------------
-        implicit none
+implicit none
 
-        ! Input variable
-        integer, intent(in) :: level   ! The debug level being checked against the current setting
+! Input variable
+integer, intent(in) :: level   ! The debug level being checked against the current setting
 
-        clubb_at_debug_level = ( level <= clubb_debug_level )
+clubb_at_debug_level = ( level <= clubb_debug_level )
 
-        end function clubb_at_debug_level
+end function clubb_at_debug_level
 
 !----------------------------------------------------------------------
-        subroutine set_clubb_debug_level( level )
+subroutine set_clubb_debug_level( level )
 !
 !       Description:
 !       Accessor for clubb_debug_level
@@ -162,39 +162,38 @@
 !                e.g. checks for NaNs and spurious negative values.
 
 !----------------------------------------------------------------------
-        implicit none
-       
-        ! Input variable
-        integer, intent(in) :: level ! The debug level being checked against the current setting 
-        clubb_debug_level = level
+implicit none
+! Input variable
+integer, intent(in) :: level ! The debug level being checked against the current setting 
+clubb_debug_level = level
 
-        end subroutine set_clubb_debug_level
+end subroutine set_clubb_debug_level
 
 !----------------------------------------------------------------------
-        subroutine clubb_debug( level, str )
+subroutine clubb_debug( level, str )
 !
 !       Description:
 !       Prints a message to file unit fstderr if the level is greater
 !       than or equal to the current debug level.        
 !----------------------------------------------------------------------
-        use constants, only: & 
-            fstderr ! Variable(s)
+use constants, only: & 
+    fstderr ! Variable(s)
 
-        implicit none
+implicit none
 
-        ! Input Variable(s)  
+! Input Variable(s)  
 
-        ! The message being reported
-        character*(*), intent(in) :: str ! The message being reported
+! The message being reported
+character*(*), intent(in) :: str ! The message being reported
 
-        ! The debug level being checked against the current setting
-        integer, intent(in) :: level 
+! The debug level being checked against the current setting
+integer, intent(in) :: level 
 
-        if (level <= clubb_debug_level) then
-                write(*,*) str
-        endif
-        
-        end subroutine clubb_debug
+if (level <= clubb_debug_level) then
+        write(*,*) str
+endif
 
-        end module error_code
+end subroutine clubb_debug
+
+end module error_code
 !-----------------------------------------------------------------------

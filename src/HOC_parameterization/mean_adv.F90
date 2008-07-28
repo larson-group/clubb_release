@@ -1,7 +1,7 @@
 !-----------------------------------------------------------------------
-! $Id: mean_adv.F90,v 1.1 2008-07-22 16:04:25 faschinj Exp $
+! $Id: mean_adv.F90,v 1.2 2008-07-28 19:34:42 faschinj Exp $
 !===============================================================================
-        module mean_adv
+module mean_adv
 
 !       Description:
 !       Module mean_adv computes the mean advection terms for all of the 
@@ -19,18 +19,18 @@
 !       wprtp, wpthlp, wp2, rtp2, thlp2, rtpthlp, up2, vp2, wpsclrp, sclrprtp, 
 !       sclrpthlp, and sclrp2.
 
-        implicit none
+implicit none
 
-        private ! Default scope
+private ! Default scope
 
-        public :: term_ma_zt_lhs, & 
-                  term_ma_zm_lhs
+public :: term_ma_zt_lhs, & 
+          term_ma_zm_lhs
 
-        contains
+contains
 
 !===============================================================================
-        pure function term_ma_zt_lhs( wmt, dzt, level ) & 
-        result( lhs )
+pure function term_ma_zt_lhs( wmt, dzt, level ) & 
+result( lhs )
 
 !       Description:
 !       Mean advection of var_t:  implicit portion of the code.
@@ -85,105 +85,105 @@
 !       References:
 !-----------------------------------------------------------------------
 
-        use grid_class, only: & 
-            gr ! Variable(s)
+use grid_class, only: & 
+    gr ! Variable(s)
 
-        implicit none
+implicit none
 
-        ! Constant parameters
-        integer, parameter :: & 
-        kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
-        k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
-        km1_tdiag = 3    ! Thermodynamic subdiagonal index.
+! Constant parameters
+integer, parameter :: & 
+kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
+k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
+km1_tdiag = 3    ! Thermodynamic subdiagonal index.
 
-        integer, parameter :: & 
-        t_above = 1,    & ! Index for upper thermodynamic level grid weight.
-        t_below = 2    ! Index for lower thermodynamic level grid weight.
+integer, parameter :: & 
+t_above = 1,    & ! Index for upper thermodynamic level grid weight.
+t_below = 2    ! Index for lower thermodynamic level grid weight.
 
-        ! Input Variables
-        real, intent(in) :: & 
-        wmt,   & ! wmt(k)                        [m/s]
-        dzt   ! Inverse of grid spacing (k)   [1/m]
+! Input Variables
+real, intent(in) :: & 
+wmt,   & ! wmt(k)                        [m/s]
+dzt   ! Inverse of grid spacing (k)   [1/m]
 
-        integer, intent(in) :: & 
-        level ! Central thermodynamic level (on which calculation occurs).
+integer, intent(in) :: & 
+level ! Central thermodynamic level (on which calculation occurs).
 
-        ! Return Variable
-        real, dimension(3) :: lhs
+! Return Variable
+real, dimension(3) :: lhs
 
-        ! Local Variables
-        integer :: & 
-        mk,    & ! Momentum level directly above central thermodynamic level.
-        mkm1  ! Momentum level directly below central thermodynamic level.
+! Local Variables
+integer :: & 
+mk,    & ! Momentum level directly above central thermodynamic level.
+mkm1  ! Momentum level directly below central thermodynamic level.
 
-        ! Momentum level (k) is between thermodynamic level (k+1)
-        ! and thermodynamic level (k).
-        mk = level
+! Momentum level (k) is between thermodynamic level (k+1)
+! and thermodynamic level (k).
+mk = level
 
-        ! Momentum level (k-1) is between thermodynamic level (k)
-        ! and thermodynamic level (k-1).
-        mkm1 = level - 1
+! Momentum level (k-1) is between thermodynamic level (k)
+! and thermodynamic level (k-1).
+mkm1 = level - 1
 
-        if ( level == 1 ) then
+if ( level == 1 ) then
 
-           ! k = 1 (bottom level); lower boundary level.
+   ! k = 1 (bottom level); lower boundary level.
 
-           ! Thermodynamic superdiagonal: [ x var_t(k+1,<t+1>) ]
-           lhs(kp1_tdiag) & 
-           = 0.0
+   ! Thermodynamic superdiagonal: [ x var_t(k+1,<t+1>) ]
+   lhs(kp1_tdiag) & 
+   = 0.0
 
-           ! Thermodynamic main diagonal: [ x var_t(k,<t+1>) ]
-           lhs(k_tdiag) & 
-           = 0.0
+   ! Thermodynamic main diagonal: [ x var_t(k,<t+1>) ]
+   lhs(k_tdiag) & 
+   = 0.0
 
-           ! Thermodynamic subdiagonal: [ x var_t(k-1,<t+1>) ]
-           lhs(km1_tdiag) & 
-           = 0.0
-
-
-        elseif ( level > 1 .and. level < gr%nnzp ) then
-
-           ! Most of the interior model; normal conditions.
-
-           ! Thermodynamic superdiagonal: [ x var_t(k+1,<t+1>) ]
-           lhs(kp1_tdiag) & 
-           = + wmt * dzt * gr%weights_zt2zm(t_above,mk)
-
-           ! Thermodynamic main diagonal: [ x var_t(k,<t+1>) ]
-           lhs(k_tdiag) & 
-           = + wmt * dzt * (   gr%weights_zt2zm(t_below,mk) & 
-                             - gr%weights_zt2zm(t_above,mkm1)   )
-
-           ! Thermodynamic subdiagonal: [ x var_t(k-1,<t+1>) ]
-           lhs(km1_tdiag) & 
-           = - wmt * dzt * gr%weights_zt2zm(t_below,mkm1)
+   ! Thermodynamic subdiagonal: [ x var_t(k-1,<t+1>) ]
+   lhs(km1_tdiag) & 
+   = 0.0
 
 
-        elseif ( level == gr%nnzp ) then
+elseif ( level > 1 .and. level < gr%nnzp ) then
 
-           ! k = gr%nnzp (top level); upper boundary level.
+   ! Most of the interior model; normal conditions.
 
-           ! Thermodynamic superdiagonal: [ x var_t(k+1,<t+1>) ]
-           lhs(kp1_tdiag) & 
-           = 0.0
+   ! Thermodynamic superdiagonal: [ x var_t(k+1,<t+1>) ]
+   lhs(kp1_tdiag) & 
+   = + wmt * dzt * gr%weights_zt2zm(t_above,mk)
 
-           ! Thermodynamic main diagonal: [ x var_t(k,<t+1>) ]
-           lhs(k_tdiag) & 
-           = 0.0
+   ! Thermodynamic main diagonal: [ x var_t(k,<t+1>) ]
+   lhs(k_tdiag) & 
+   = + wmt * dzt * (   gr%weights_zt2zm(t_below,mk) & 
+                     - gr%weights_zt2zm(t_above,mkm1)   )
 
-           ! Thermodynamic subdiagonal: [ x var_t(k-1,<t+1>) ]
-           lhs(km1_tdiag) & 
-           = 0.0
+   ! Thermodynamic subdiagonal: [ x var_t(k-1,<t+1>) ]
+   lhs(km1_tdiag) & 
+   = - wmt * dzt * gr%weights_zt2zm(t_below,mkm1)
 
 
-        endif
+elseif ( level == gr%nnzp ) then
 
-        return
-        end function term_ma_zt_lhs
+   ! k = gr%nnzp (top level); upper boundary level.
+
+   ! Thermodynamic superdiagonal: [ x var_t(k+1,<t+1>) ]
+   lhs(kp1_tdiag) & 
+   = 0.0
+
+   ! Thermodynamic main diagonal: [ x var_t(k,<t+1>) ]
+   lhs(k_tdiag) & 
+   = 0.0
+
+   ! Thermodynamic subdiagonal: [ x var_t(k-1,<t+1>) ]
+   lhs(km1_tdiag) & 
+   = 0.0
+
+
+endif
+
+return
+end function term_ma_zt_lhs
 
 !===============================================================================
-        pure function term_ma_zm_lhs( wmm, dzm, level ) & 
-        result( lhs )
+pure function term_ma_zm_lhs( wmm, dzm, level ) & 
+result( lhs )
 
 !       Description:
 !       Mean advection of var_m:  implicit portion of the code.
@@ -238,102 +238,102 @@
 !       References:
 !-----------------------------------------------------------------------
 
-        use grid_class, only: & 
-            gr 
+use grid_class, only: & 
+    gr 
 
-        implicit none
+implicit none
 
-        ! Constant parameters
-        integer, parameter :: & 
-        kp1_mdiag = 1,    & ! Momentum superdiagonal index.
-        k_mdiag   = 2,    & ! Momentum main diagonal index.
-        km1_mdiag = 3    ! Momentum subdiagonal index.
+! Constant parameters
+integer, parameter :: & 
+kp1_mdiag = 1,    & ! Momentum superdiagonal index.
+k_mdiag   = 2,    & ! Momentum main diagonal index.
+km1_mdiag = 3    ! Momentum subdiagonal index.
 
-        integer, parameter :: & 
-        m_above = 1,    & ! Index for upper momentum level grid weight.
-        m_below = 2    ! Index for lower momentum level grid weight.
+integer, parameter :: & 
+m_above = 1,    & ! Index for upper momentum level grid weight.
+m_below = 2    ! Index for lower momentum level grid weight.
 
-        ! Input Variables
-        real, intent(in) :: & 
-        wmm,   & ! wmm(k)                        [m/s]
-        dzm   ! Inverse of grid spacing (k)   [1/m]
+! Input Variables
+real, intent(in) :: & 
+wmm,   & ! wmm(k)                        [m/s]
+dzm   ! Inverse of grid spacing (k)   [1/m]
 
-        integer, intent(in) :: & 
-        level ! Central momentum level (on which calculation occurs).
+integer, intent(in) :: & 
+level ! Central momentum level (on which calculation occurs).
 
-        ! Return Variable
-        real, dimension(3) :: lhs
+! Return Variable
+real, dimension(3) :: lhs
 
-        ! Local Variables
-        integer :: & 
-        tkp1,  & ! Thermodynamic level directly above central momentum level.
-        tk    ! Thermodynamic level directly below central momentum level.
+! Local Variables
+integer :: & 
+tkp1,  & ! Thermodynamic level directly above central momentum level.
+tk    ! Thermodynamic level directly below central momentum level.
 
-        ! Thermodynamic level (k+1) is between momentum level (k+1)
-        ! and momentum level (k).
-        tkp1 = level + 1
+! Thermodynamic level (k+1) is between momentum level (k+1)
+! and momentum level (k).
+tkp1 = level + 1
 
-        ! Thermodynamic level (k) is between momentum level (k)
-        ! and momentum level (k-1).
-        tk = level
+! Thermodynamic level (k) is between momentum level (k)
+! and momentum level (k-1).
+tk = level
 
-        if ( level == 1 ) then
+if ( level == 1 ) then
 
-           ! k = 1; lower boundery level at surface.
+   ! k = 1; lower boundery level at surface.
 
-           ! Momentum superdiagonal: [ x var_m(k+1,<t+1>) ]
-           lhs(kp1_mdiag) & 
-           = 0.0
+   ! Momentum superdiagonal: [ x var_m(k+1,<t+1>) ]
+   lhs(kp1_mdiag) & 
+   = 0.0
 
-           ! Momentum main diagonal: [ x var_m(k,<t+1>) ]
-           lhs(k_mdiag) & 
-           = 0.0
+   ! Momentum main diagonal: [ x var_m(k,<t+1>) ]
+   lhs(k_mdiag) & 
+   = 0.0
 
-           ! Momentum subdiagonal: [ x var_m(k-1,<t+1>) ]
-           lhs(km1_mdiag) & 
-           = 0.0
-
-
-        elseif ( level > 1 .and. level < gr%nnzp ) then
-
-           ! Most of the interior model; normal conditions.
-
-           ! Momentum superdiagonal: [ x var_m(k+1,<t+1>) ]
-           lhs(kp1_mdiag) & 
-           = + wmm * dzm * gr%weights_zm2zt(m_above,tkp1)
-
-           ! Momentum main diagonal: [ x var_m(k,<t+1>) ]
-           lhs(k_mdiag) & 
-           = + wmm * dzm * (   gr%weights_zm2zt(m_below,tkp1) & 
-                             - gr%weights_zm2zt(m_above,tk)  )
-
-           ! Momentum subdiagonal: [ x var_m(k-1,<t+1>) ]
-           lhs(km1_mdiag) & 
-           = - wmm * dzm * gr%weights_zm2zt(m_below,tk)
+   ! Momentum subdiagonal: [ x var_m(k-1,<t+1>) ]
+   lhs(km1_mdiag) & 
+   = 0.0
 
 
-        elseif ( level == gr%nnzp ) then
+elseif ( level > 1 .and. level < gr%nnzp ) then
 
-           ! k = gr%nnzp (top level); upper boundary level.
+   ! Most of the interior model; normal conditions.
 
-           ! Momentum superdiagonal: [ x var_m(k+1,<t+1>) ]
-           lhs(kp1_mdiag) & 
-           = 0.0
+   ! Momentum superdiagonal: [ x var_m(k+1,<t+1>) ]
+   lhs(kp1_mdiag) & 
+   = + wmm * dzm * gr%weights_zm2zt(m_above,tkp1)
 
-           ! Momentum main diagonal: [ x var_m(k,<t+1>) ]
-           lhs(k_mdiag) & 
-           = 0.0
+   ! Momentum main diagonal: [ x var_m(k,<t+1>) ]
+   lhs(k_mdiag) & 
+   = + wmm * dzm * (   gr%weights_zm2zt(m_below,tkp1) & 
+                     - gr%weights_zm2zt(m_above,tk)  )
 
-           ! Momentum subdiagonal: [ x var_m(k-1,<t+1>) ]
-           lhs(km1_mdiag) & 
-           = 0.0
+   ! Momentum subdiagonal: [ x var_m(k-1,<t+1>) ]
+   lhs(km1_mdiag) & 
+   = - wmm * dzm * gr%weights_zm2zt(m_below,tk)
 
 
-        endif
+elseif ( level == gr%nnzp ) then
 
-        return
-        end function term_ma_zm_lhs
+   ! k = gr%nnzp (top level); upper boundary level.
+
+   ! Momentum superdiagonal: [ x var_m(k+1,<t+1>) ]
+   lhs(kp1_mdiag) & 
+   = 0.0
+
+   ! Momentum main diagonal: [ x var_m(k,<t+1>) ]
+   lhs(k_mdiag) & 
+   = 0.0
+
+   ! Momentum subdiagonal: [ x var_m(k-1,<t+1>) ]
+   lhs(km1_mdiag) & 
+   = 0.0
+
+
+endif
+
+return
+end function term_ma_zm_lhs
 
 !===============================================================================
 
-        end module mean_adv
+end module mean_adv

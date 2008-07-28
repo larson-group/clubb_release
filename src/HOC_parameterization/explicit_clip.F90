@@ -1,22 +1,22 @@
 !-----------------------------------------------------------------------
-! $Id: explicit_clip.F90,v 1.1 2008-07-22 16:04:23 faschinj Exp $
+! $Id: explicit_clip.F90,v 1.2 2008-07-28 19:34:42 faschinj Exp $
 !===============================================================================
-        module explicit_clip
+module explicit_clip
 
-        implicit none
+implicit none
 
-        private
+private
 
-        public :: covariance_clip, & 
-                  variance_clip, & 
-                  skewness_clip
+public :: covariance_clip, & 
+          variance_clip, & 
+          skewness_clip
 
-        contains
+contains
 
 !===============================================================================
-        subroutine covariance_clip( solve_type, l_first_clip_ts,  & 
-                                    l_last_clip_ts, dt, xp2, yp2,  & 
-                                    xpyp )
+subroutine covariance_clip( solve_type, l_first_clip_ts,  & 
+                            l_last_clip_ts, dt, xp2, yp2,  & 
+                            xpyp )
 
 !       Description:
 !       Clipping the value of covariance x'y' based on the correlation 
@@ -57,100 +57,100 @@
 !       References:
 !-----------------------------------------------------------------------
 
-        use grid_class, only: & 
-            gr ! Variable(s)
+use grid_class, only: & 
+    gr ! Variable(s)
 
-        use stats_precision, only: & 
-            time_precision ! Variable(s)
-
-#ifdef STATS
-        use stats_type, only: & 
-            stat_begin_update,  & ! Procedure(s)
-            stat_modify, & 
-            stat_end_update
-
-        use stats_variables, only: & 
-            zm,  & ! Variable(s)
-            iwprtp_cl, & 
-            iwpthlp_cl, & 
-            irtpthlp_cl, & 
-            lstats_samp
-#endif /*STATS*/
-
-        implicit none
-
-        ! Input Variables
-        character(len=*), intent(in) :: & 
-        solve_type       ! Variable being solved; used for STATS.
-
-        logical, intent(in) :: & 
-        l_first_clip_ts,    & ! First instance of clipping in a timestep.
-        l_last_clip_ts     ! Last instance of clipping in a timestep.
-
-        real(kind=time_precision), intent(in) ::  & 
-        dt     ! Model timestep; used here for STATS           [s]
-
-        real, dimension(gr%nnzp), intent(in) :: & 
-        xp2,    & ! Variance of x, x'^2 (momentum levels)         [{x units}^2]
-        yp2    ! Variance of y, y'^2 (momentum levels)         [{y units}^2]
-
-        ! Output Variable
-        real, dimension(gr%nnzp), intent(inout) :: & 
-        xpyp   ! Covariance of x and y, x'y' (momentum levels) [{x units}*{y units}]
+use stats_precision, only: & 
+    time_precision ! Variable(s)
 
 #ifdef STATS
-        ! Local Variable
-        integer :: & 
-        ixpyp_cl
+use stats_type, only: & 
+    stat_begin_update,  & ! Procedure(s)
+    stat_modify, & 
+    stat_end_update
+
+use stats_variables, only: & 
+    zm,  & ! Variable(s)
+    iwprtp_cl, & 
+    iwpthlp_cl, & 
+    irtpthlp_cl, & 
+    lstats_samp
+#endif /*STATS*/
+
+implicit none
+
+! Input Variables
+character(len=*), intent(in) :: & 
+solve_type       ! Variable being solved; used for STATS.
+
+logical, intent(in) :: & 
+l_first_clip_ts,    & ! First instance of clipping in a timestep.
+l_last_clip_ts     ! Last instance of clipping in a timestep.
+
+real(kind=time_precision), intent(in) ::  & 
+dt     ! Model timestep; used here for STATS           [s]
+
+real, dimension(gr%nnzp), intent(in) :: & 
+xp2,    & ! Variance of x, x'^2 (momentum levels)         [{x units}^2]
+yp2    ! Variance of y, y'^2 (momentum levels)         [{y units}^2]
+
+! Output Variable
+real, dimension(gr%nnzp), intent(inout) :: & 
+xpyp   ! Covariance of x and y, x'y' (momentum levels) [{x units}*{y units}]
+
+#ifdef STATS
+! Local Variable
+integer :: & 
+ixpyp_cl
 
 
-        select case ( trim( solve_type ) )
-        case ( "wprtp" )   ! wprtp clipping budget term
-           ixpyp_cl = iwprtp_cl
-        case ( "wpthlp" )   ! wpthlp clipping budget term
-           ixpyp_cl = iwpthlp_cl
-        case ( "rtpthlp" )   ! rtpthlp clipping budget term
-           ixpyp_cl = irtpthlp_cl
-        case default   ! scalars (or upwp/vpwp) are involved
-           ixpyp_cl = 0
-        end select
+select case ( trim( solve_type ) )
+case ( "wprtp" )   ! wprtp clipping budget term
+   ixpyp_cl = iwprtp_cl
+case ( "wpthlp" )   ! wpthlp clipping budget term
+   ixpyp_cl = iwpthlp_cl
+case ( "rtpthlp" )   ! rtpthlp clipping budget term
+   ixpyp_cl = irtpthlp_cl
+case default   ! scalars (or upwp/vpwp) are involved
+   ixpyp_cl = 0
+end select
 #endif /*STATS*/
 
 #ifdef STATS
-        if ( lstats_samp ) then
-           if ( l_first_clip_ts ) then
-              call stat_begin_update( ixpyp_cl, real( xpyp / dt ), zm )
-           else
-              call stat_modify( ixpyp_cl, real( -xpyp / dt ), zm )
-           endif
-        endif 
+if ( lstats_samp ) then
+   if ( l_first_clip_ts ) then
+      call stat_begin_update( ixpyp_cl, real( xpyp / dt ), zm )
+   else
+      call stat_modify( ixpyp_cl, real( -xpyp / dt ), zm )
+   endif
+endif 
 #endif /*STATS*/
 
-        ! Clipping for xpyp at an upper limit corresponding with 
-        ! a correlation between x and y of 0.99.
-        where ( xpyp >  0.99 * sqrt( xp2 * yp2 ) ) & 
-           xpyp =  0.99 * sqrt( xp2 * yp2 )
+! Clipping for xpyp at an upper limit corresponding with 
+! a correlation between x and y of 0.99.
+where ( xpyp >  0.99 * sqrt( xp2 * yp2 ) ) & 
+   xpyp =  0.99 * sqrt( xp2 * yp2 )
 
-        ! Clipping for xpyp at a lower limit corresponding with 
-        ! a correlation between x and y of -0.99.
-        where ( xpyp < -0.99 * sqrt( xp2 * yp2 ) ) & 
-           xpyp = -0.99 * sqrt( xp2 * yp2 )
+! Clipping for xpyp at a lower limit corresponding with 
+! a correlation between x and y of -0.99.
+where ( xpyp < -0.99 * sqrt( xp2 * yp2 ) ) & 
+   xpyp = -0.99 * sqrt( xp2 * yp2 )
 
 #ifdef STATS
-        if ( lstats_samp ) then
-           if ( l_last_clip_ts ) then
-              call stat_end_update( ixpyp_cl, real( xpyp / dt ), zm )
-           else
-              call stat_modify( ixpyp_cl, real( xpyp / dt ), zm )
-           endif
-        endif
+if ( lstats_samp ) then
+   if ( l_last_clip_ts ) then
+      call stat_end_update( ixpyp_cl, real( xpyp / dt ), zm )
+   else
+      call stat_modify( ixpyp_cl, real( xpyp / dt ), zm )
+   endif
+endif
 #endif /*STATS*/
 
 
-        end subroutine covariance_clip
+end subroutine covariance_clip
 
 !===============================================================================
-        subroutine variance_clip( solve_type, dt, threshold, xp2 )
+subroutine variance_clip( solve_type, dt, threshold, xp2 )
 
 !       Description:
 !       Clipping the value of variance x'^2 based on a minimum threshold
@@ -166,103 +166,103 @@
 !       References:
 !-----------------------------------------------------------------------
 
-        use grid_class, only: & 
-            gr ! Variable(s)
+use grid_class, only: & 
+    gr ! Variable(s)
 
-        use stats_precision, only: & 
-            time_precision ! Variable(s)
+use stats_precision, only: & 
+    time_precision ! Variable(s)
 
 #ifdef STATS
-        use stats_type, only: & 
-            stat_begin_update,  & ! Procedure(s)
-            stat_end_update
+use stats_type, only: & 
+    stat_begin_update,  & ! Procedure(s)
+    stat_end_update
 
-        use stats_variables, only: & 
-            zm,  & ! Variable(s)
-            iwp2_cl, & 
-            irtp2_cl, & 
-            ithlp2_cl, & 
-            iup2_cl, & 
-            ivp2_cl, & 
-            lstats_samp
+use stats_variables, only: & 
+    zm,  & ! Variable(s)
+    iwp2_cl, & 
+    irtp2_cl, & 
+    ithlp2_cl, & 
+    iup2_cl, & 
+    ivp2_cl, & 
+    lstats_samp
 #endif /*STATS*/
 
-        implicit none
+implicit none
 
-        ! Input Variables
-        character(len=*), intent(in) :: & 
-        solve_type  ! Variable being solved; used for STATS.
+! Input Variables
+character(len=*), intent(in) :: & 
+solve_type  ! Variable being solved; used for STATS.
 
-        real(kind=time_precision), intent(in) :: & 
-        dt          ! Model timestep; used here for STATS     [s]
+real(kind=time_precision), intent(in) :: & 
+dt          ! Model timestep; used here for STATS     [s]
 
-        real, dimension(gr%nnzp), intent(in) :: & 
-        threshold   ! Minimum value of x'^2                   [{x units}^2]
+real, dimension(gr%nnzp), intent(in) :: & 
+threshold   ! Minimum value of x'^2                   [{x units}^2]
 
-        ! Output Variable
-        real, dimension(gr%nnzp), intent(inout) :: & 
-        xp2         ! Variance of x, x'^2 (momentum levels)   [{x units}^2]
+! Output Variable
+real, dimension(gr%nnzp), intent(inout) :: & 
+xp2         ! Variance of x, x'^2 (momentum levels)   [{x units}^2]
 
-        ! Local Variables
-        integer :: k   ! Array index
-
-#ifdef STATS
-        integer :: & 
-        ixp2_cl
-
-
-        select case ( trim( solve_type ) )
-        case ( "wp2" )   ! wp2 clipping budget term
-           ixp2_cl = iwp2_cl
-        case ( "rtp2" )   ! rtp2 clipping budget term
-           ixp2_cl = irtp2_cl
-        case ( "thlp2" )   ! thlp2 clipping budget term
-           ixp2_cl = ithlp2_cl
-        case ( "up2" )   ! up2 clipping budget term
-           ixp2_cl = iup2_cl
-        case ( "vp2" )   ! vp2 clipping budget term
-           ixp2_cl = ivp2_cl
-        case default   ! scalars are involved
-           ixp2_cl = 0
-        end select
-#endif /*STATS*/
-
+! Local Variables
+integer :: k   ! Array index
 
 #ifdef STATS
-        if ( lstats_samp ) then
-           call stat_begin_update( ixp2_cl, real( xp2 / dt ), zm )
-        endif
-#endif /*STATS*/
+integer :: & 
+ixp2_cl
 
-        ! Limit the value of x'^2 at threshold.
-        do k = 2, gr%nnzp, 1
-           if ( xp2(k) < threshold(k) ) then
-              xp2(k) = threshold(k)
-           endif
-        enddo
 
-#ifdef STATS
-        if ( lstats_samp ) then
-           call stat_end_update( ixp2_cl, real( xp2 / dt ), zm )
-        endif
+select case ( trim( solve_type ) )
+case ( "wp2" )   ! wp2 clipping budget term
+   ixp2_cl = iwp2_cl
+case ( "rtp2" )   ! rtp2 clipping budget term
+   ixp2_cl = irtp2_cl
+case ( "thlp2" )   ! thlp2 clipping budget term
+   ixp2_cl = ithlp2_cl
+case ( "up2" )   ! up2 clipping budget term
+   ixp2_cl = iup2_cl
+case ( "vp2" )   ! vp2 clipping budget term
+   ixp2_cl = ivp2_cl
+case default   ! scalars are involved
+   ixp2_cl = 0
+end select
 #endif /*STATS*/
 
 
-        end subroutine variance_clip
+#ifdef STATS
+if ( lstats_samp ) then
+   call stat_begin_update( ixp2_cl, real( xp2 / dt ), zm )
+endif
+#endif /*STATS*/
+
+! Limit the value of x'^2 at threshold.
+do k = 2, gr%nnzp, 1
+   if ( xp2(k) < threshold(k) ) then
+      xp2(k) = threshold(k)
+   endif
+enddo
+
+#ifdef STATS
+if ( lstats_samp ) then
+   call stat_end_update( ixp2_cl, real( xp2 / dt ), zm )
+endif
+#endif /*STATS*/
+
+
+end subroutine variance_clip
 
 !===============================================================================
-        subroutine skewness_clip
+subroutine skewness_clip
 
 !       Description:
 
 !       References:
 !-----------------------------------------------------------------------
 
-        implicit none
+implicit none
 
 
-        end subroutine skewness_clip
+end subroutine skewness_clip
 
 !===============================================================================
 
-        end module explicit_clip
+end module explicit_clip

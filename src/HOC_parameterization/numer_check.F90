@@ -1,8 +1,8 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F90,v 1.3 2008-07-24 14:10:31 faschinj Exp $
-        module numerical_check
+! $Id: numer_check.F90,v 1.4 2008-07-28 19:34:43 faschinj Exp $
+ module numerical_check
 
-        implicit none
+ implicit none
 
 !       Made isnan2d public so it may be used
 !       for finding code that cause NaNs
@@ -15,31 +15,31 @@
 !       rad_clipping has been replaced by rad_check as the new
 !       subroutine only reports if there are invalid values.
 !       Joshua Fasching March 2008
-        
-        private ! Default scope
-        
-        public :: invalid_model_arrays, isnan2d,  & 
-                  rad_check, parameterization_check, & 
-                  sfc_var_check, pdf_closure_new_check, & 
-                  length_check
-        
-        private :: check_negative, check_nan, isnan
+ 
+ private ! Default scope
+ 
+ public :: invalid_model_arrays, isnan2d,  & 
+           rad_check, parameterization_check, & 
+           sfc_var_check, pdf_closure_new_check, & 
+           length_check
+ 
+ private :: check_negative, check_nan, isnan
 
 
 !       Abstraction of check_nan
-        interface check_nan
-          module procedure check_nan_sclr, check_nan_2d
-        end interface
+ interface check_nan
+   module procedure check_nan_sclr, check_nan_2d
+ end interface
 
 !       Abstraction of check_negative
-        interface check_negative
-          module procedure check_negative_total, check_negative_index
-        end interface
+ interface check_negative
+   module procedure check_negative_total, check_negative_index
+ end interface
 
-        
-        contains
+ 
+ contains
 !--------------------------------------------------------------------------------- 
-         subroutine length_check( Lscale, Lup, Ldown, err_code )
+  subroutine length_check( Lscale, Lup, Ldown, err_code )
 !
 !        Description: This subroutine determines if any of the output
 !        variables for the length_new subroutine carry values that
@@ -47,39 +47,39 @@
 !
 !        Joshua Fasching February 2008
 !---------------------------------------------------------------------------------
-         use grid_class, only: & 
-             gr ! Variable
-         implicit none
+  use grid_class, only: & 
+      gr ! Variable
+  implicit none
 
-         ! Input Variables
-         real, dimension(gr%nnzp), intent(in) ::  & 
-         Lscale,  & ! Mixing length                 [m]
-         Lup,     & ! Upward mixing length          [m]
-         Ldown   ! Downward mixing length        [m]
-         
-         ! Output Variable
-         integer, intent(inout) :: & 
-         err_code
+  ! Input Variables
+  real, dimension(gr%nnzp), intent(in) ::  & 
+  Lscale,  & ! Mixing length                 [m]
+  Lup,     & ! Upward mixing length          [m]
+  Ldown   ! Downward mixing length        [m]
+  
+  ! Output Variable
+  integer, intent(inout) :: & 
+  err_code
 
-         ! Local Variables
-         character(*), parameter :: proc_name = "compute_length"
+  ! Local Variables
+  character(*), parameter :: proc_name = "compute_length"
 !-----------------------------------------------------------------------------
-         call check_nan( Lscale, "Lscale", proc_name, err_code )
-         call check_nan( Lup, "Lup", proc_name, err_code )
-         call check_nan( Ldown, "Ldown", proc_name, err_code )
+  call check_nan( Lscale, "Lscale", proc_name, err_code )
+  call check_nan( Lup, "Lup", proc_name, err_code )
+  call check_nan( Ldown, "Ldown", proc_name, err_code )
 
-         end subroutine length_check
-         
+  end subroutine length_check
+  
 !---------------------------------------------------------------------------
-         subroutine pdf_closure_new_check( wp4, wprtp2, wp2rtp, wpthlp2, & 
-                                 wp2thlp, cf, rcm, wpthvp, wp2thvp, & 
-                                 rtpthvp, thlpthvp, wprcp, wp2rcp, & 
-                                 rtprcp, thlprcp, rcp2, wprtpthlp, & 
-                                 crt1, crt2, cthl1, cthl2, pdf_parms, & 
-                                 err_code,  & 
-                                 sclrpthvp, sclrprcp, wpsclrp2, & 
-                                 wpsclrprtp, wpsclrpthlp, wp2sclrp )
-         
+  subroutine pdf_closure_new_check( wp4, wprtp2, wp2rtp, wpthlp2, & 
+                          wp2thlp, cf, rcm, wpthvp, wp2thvp, & 
+                          rtpthvp, thlpthvp, wprcp, wp2rcp, & 
+                          rtprcp, thlprcp, rcp2, wprtpthlp, & 
+                          crt1, crt2, cthl1, cthl2, pdf_parms, & 
+                          err_code,  & 
+                          sclrpthvp, sclrprcp, wpsclrp2, & 
+                          wpsclrprtp, wpsclrpthlp, wp2sclrp )
+  
 !        Description: This subroutine determines if any of the output
 !        variables for the pdf_closure_new subroutine carry values that
 !        are NaNs.
@@ -87,105 +87,105 @@
 !        Joshua Fasching February 2008
 !---------------------------------------------------------------------------
 
-         use parameters, only: & 
-             sclr_dim ! Variable
+  use parameters, only: & 
+      sclr_dim ! Variable
 
-         implicit none
+  implicit none
 
-         ! Input Variables
-         real, intent(in) :: & 
-         wp4,             & ! w'^4                  [m^4/s^4]
-         wprtp2,          & ! w' r_t'               [(m kg)/(s kg)]
-         wp2rtp,          & ! w'^2 r_t'             [(m^2 kg)/(s^2 kg)]
-         wpthlp2,         & ! w' th_l'^2            [(m K^2)/s]
-         wp2thlp,         & ! w'^2 th_l'            [(m^2 K)/s^2]
-         cf,              & ! Cloud fraction        [%]
-         rcm,             & ! Mean liquid water     [kg/kg]
-         wpthvp,          & ! Buoyancy flux         [(K m)/s] 
-         wp2thvp,         & ! w'^2 th_v'            [(m^2 K)/s^2]
-         rtpthvp,         & ! r_t' th_v'            [(kg K)/kg]
-         thlpthvp,        & ! th_l' th_v'           [K^2]
-         wprcp,           & ! w' r_c'               [(m kg)/(s kg)]
-         wp2rcp,          & ! w'^2 r_c'             [(m^2 kg)/(s^2 kg)]
-         rtprcp,          & ! r_t' r_c'             [(kg^2)/(kg^2)]
-         thlprcp,         & ! th_l' r_c'            [(K kg)/kg]
-         rcp2,            & ! r_c'^2                [(kg^2)/(kg^2)]
-         wprtpthlp,       & ! w' r_t' th_l'         [(m kg K)/(s kg)]
-         crt1, crt2,  & 
-         cthl1, cthl2
+  ! Input Variables
+  real, intent(in) :: & 
+  wp4,             & ! w'^4                  [m^4/s^4]
+  wprtp2,          & ! w' r_t'               [(m kg)/(s kg)]
+  wp2rtp,          & ! w'^2 r_t'             [(m^2 kg)/(s^2 kg)]
+  wpthlp2,         & ! w' th_l'^2            [(m K^2)/s]
+  wp2thlp,         & ! w'^2 th_l'            [(m^2 K)/s^2]
+  cf,              & ! Cloud fraction        [%]
+  rcm,             & ! Mean liquid water     [kg/kg]
+  wpthvp,          & ! Buoyancy flux         [(K m)/s] 
+  wp2thvp,         & ! w'^2 th_v'            [(m^2 K)/s^2]
+  rtpthvp,         & ! r_t' th_v'            [(kg K)/kg]
+  thlpthvp,        & ! th_l' th_v'           [K^2]
+  wprcp,           & ! w' r_c'               [(m kg)/(s kg)]
+  wp2rcp,          & ! w'^2 r_c'             [(m^2 kg)/(s^2 kg)]
+  rtprcp,          & ! r_t' r_c'             [(kg^2)/(kg^2)]
+  thlprcp,         & ! th_l' r_c'            [(K kg)/kg]
+  rcp2,            & ! r_c'^2                [(kg^2)/(kg^2)]
+  wprtpthlp,       & ! w' r_t' th_l'         [(m kg K)/(s kg)]
+  crt1, crt2,  & 
+  cthl1, cthl2
 
-        real, intent(in), dimension(26)::  & 
-        pdf_parms        ! pdf paramters         [units vary]
+ real, intent(in), dimension(26)::  & 
+ pdf_parms        ! pdf paramters         [units vary]
    
-        ! Input (Optional passive scalar variables)  
-        real, dimension(sclr_dim), intent(in) ::  & 
-        sclrpthvp,  & 
-        sclrprcp,  & 
-        wpsclrp2, & 
-        wpsclrprtp, & 
-        wpsclrpthlp, & 
-        wp2sclrp
-        
-        ! Output Variable        
-        integer, intent(inout) ::  & 
-        err_code          ! Returns appropriate error code
-        
-        ! Local Variable
-        character(*), parameter :: proc_name = "pdf_closure_new"
-        
+ ! Input (Optional passive scalar variables)  
+ real, dimension(sclr_dim), intent(in) ::  & 
+ sclrpthvp,  & 
+ sclrprcp,  & 
+ wpsclrp2, & 
+ wpsclrprtp, & 
+ wpsclrpthlp, & 
+ wp2sclrp
+ 
+ ! Output Variable        
+ integer, intent(inout) ::  & 
+ err_code          ! Returns appropriate error code
+ 
+ ! Local Variable
+ character(*), parameter :: proc_name = "pdf_closure_new"
+ 
 !-------------------------------------------------------------------------------
-        call check_nan( wp4,"wp4", proc_name, err_code )
-        call check_nan( wprtp2,"wprtp2", proc_name, err_code )
-        call check_nan( wp2rtp,"wp2rtp", proc_name, err_code )
-        call check_nan( wpthlp2,"wpthlp2", proc_name, err_code )
-        call check_nan( wp2thlp,"wp2thlp", proc_name, err_code )
-        call check_nan( cf,"cf", proc_name, err_code )
-        call check_nan( rcm,"rcm", proc_name, err_code ) 
-        call check_nan( wpthvp, "wpthvp", proc_name, err_code )
-        call check_nan( wp2thvp, "wp2thvp", proc_name, err_code )
-        call check_nan( rtpthvp, "rtpthvp", proc_name, err_code )
-        call check_nan( thlpthvp, "thlpthvp", proc_name, err_code )
-        call check_nan( wprcp, "wprcp", proc_name, err_code )
-        call check_nan( wp2rcp, "wp2rcp", proc_name, err_code )
-        call check_nan( rtprcp, "rtprcp", proc_name, err_code )
-        call check_nan( thlprcp, "thlprcp", proc_name, err_code )
-        call check_nan( rcp2, "rcp2", proc_name, err_code)
-        call check_nan( wprtpthlp, "wprtpthlp", proc_name, err_code )
-        call check_nan( crt1, "crt1", proc_name, err_code )
-        call check_nan( crt2, "crt2", proc_name, err_code )
-        call check_nan( cthl1, "cthl1", proc_name, err_code )
-        call check_nan( cthl2, "cthl2", proc_name, err_code ) 
-        call check_nan( pdf_parms, "pdf_parms", proc_name,err_code )
+ call check_nan( wp4,"wp4", proc_name, err_code )
+ call check_nan( wprtp2,"wprtp2", proc_name, err_code )
+ call check_nan( wp2rtp,"wp2rtp", proc_name, err_code )
+ call check_nan( wpthlp2,"wpthlp2", proc_name, err_code )
+ call check_nan( wp2thlp,"wp2thlp", proc_name, err_code )
+ call check_nan( cf,"cf", proc_name, err_code )
+ call check_nan( rcm,"rcm", proc_name, err_code ) 
+ call check_nan( wpthvp, "wpthvp", proc_name, err_code )
+ call check_nan( wp2thvp, "wp2thvp", proc_name, err_code )
+ call check_nan( rtpthvp, "rtpthvp", proc_name, err_code )
+ call check_nan( thlpthvp, "thlpthvp", proc_name, err_code )
+ call check_nan( wprcp, "wprcp", proc_name, err_code )
+ call check_nan( wp2rcp, "wp2rcp", proc_name, err_code )
+ call check_nan( rtprcp, "rtprcp", proc_name, err_code )
+ call check_nan( thlprcp, "thlprcp", proc_name, err_code )
+ call check_nan( rcp2, "rcp2", proc_name, err_code)
+ call check_nan( wprtpthlp, "wprtpthlp", proc_name, err_code )
+ call check_nan( crt1, "crt1", proc_name, err_code )
+ call check_nan( crt2, "crt2", proc_name, err_code )
+ call check_nan( cthl1, "cthl1", proc_name, err_code )
+ call check_nan( cthl2, "cthl2", proc_name, err_code ) 
+ call check_nan( pdf_parms, "pdf_parms", proc_name,err_code )
 
-        if ( sclr_dim > 0 ) then 
-          call check_nan( sclrpthvp,"sclrpthvp", & 
-                          proc_name, err_code)
-          call check_nan( sclrprcp, "sclrprcp", & 
-                          proc_name, err_code )
-          call check_nan( wpsclrprtp, "wpsclrprtp",  & 
-                          proc_name, err_code )
-          call check_nan( wpsclrp2, "wpsclrp2",  & 
-                          proc_name, err_code )
-          call check_nan( wpsclrpthlp, "wpsclrtlp",  & 
-                          proc_name, err_code )
-          call check_nan( wp2sclrp, "wp2sclrp",  & 
-                          proc_name, err_code )
-        end if
+ if ( sclr_dim > 0 ) then 
+   call check_nan( sclrpthvp,"sclrpthvp", & 
+                   proc_name, err_code)
+   call check_nan( sclrprcp, "sclrprcp", & 
+                   proc_name, err_code )
+   call check_nan( wpsclrprtp, "wpsclrprtp",  & 
+                   proc_name, err_code )
+   call check_nan( wpsclrp2, "wpsclrp2",  & 
+                   proc_name, err_code )
+   call check_nan( wpsclrpthlp, "wpsclrtlp",  & 
+                   proc_name, err_code )
+   call check_nan( wp2sclrp, "wp2sclrp",  & 
+                   proc_name, err_code )
+ end if
 
-        return
-        end subroutine pdf_closure_new_check
+ return
+ end subroutine pdf_closure_new_check
 
 !-------------------------------------------------------------------------------
-        subroutine parameterization_check & 
-                   ( thlm_forcing, rtm_forcing, wmm, wmt, p, rhom,  & 
-                     rhot, exner, wpthlp_sfc, wprtp_sfc,  & 
-                     upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp, & 
-                     up2, vp2, rtm, wprtp, thlm,  & 
-                     wpthlp, wp2, wp3, Scm, rtp2, thlp2, & 
-                     rtpthlp, taum, rcm, cf, prefix, & 
-                     wpsclrp_sfc, wpedsclrp_sfc, & 
-                     sclrm, sclrm_forcing, edsclrm & 
-        )
+ subroutine parameterization_check & 
+            ( thlm_forcing, rtm_forcing, wmm, wmt, p, rhom,  & 
+              rhot, exner, wpthlp_sfc, wprtp_sfc,  & 
+              upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp, & 
+              up2, vp2, rtm, wprtp, thlm,  & 
+              wpthlp, wp2, wp3, Scm, rtp2, thlp2, & 
+              rtpthlp, taum, rcm, cf, prefix, & 
+              wpsclrp_sfc, wpedsclrp_sfc, & 
+              sclrm, sclrm_forcing, edsclrm & 
+ )
 !
 !       Description: This subroutine determines what input variables may have 
 !       NaN values.
@@ -193,116 +193,116 @@
 !       wp2, Scm, rtp2, thlp2, taum, rcm, Ncm, Ncnm, Nim, hydromet, or cf 
 !       have negative values.
 !-------------------------------------------------------------------------------
-        use grid_class, only: & 
-            gr ! Variable
+ use grid_class, only: & 
+     gr ! Variable
 
-        use parameters, only: & 
-            sclr_dim ! Variable
+ use parameters, only: & 
+     sclr_dim ! Variable
  
-        implicit none
-        
-        ! Input variables
+ implicit none
+ 
+ ! Input variables
 
-        real, intent(in), dimension(gr%nnzp) ::  & 
-        thlm_forcing,   & ! theta_l forcing.        [K/s]
-        rtm_forcing,    & ! r_t forcing.            [(kg/kg)/s] 
-        wmm,            & ! wm on moment. grid.     [m/s]
-        wmt,            & ! wm on thermo. grid.     [m/s]
-        p,              & ! Pressure.               [Pa] 
-        rhom,           & ! Density on moment. grid [kg/m^3]
-        rhot,           & ! Density on thermo. grid [kg/m^3] 
-        exner             ! Exner function.         [-]
+ real, intent(in), dimension(gr%nnzp) ::  & 
+ thlm_forcing,   & ! theta_l forcing.        [K/s]
+ rtm_forcing,    & ! r_t forcing.            [(kg/kg)/s] 
+ wmm,            & ! wm on moment. grid.     [m/s]
+ wmt,            & ! wm on thermo. grid.     [m/s]
+ p,              & ! Pressure.               [Pa] 
+ rhom,           & ! Density on moment. grid [kg/m^3]
+ rhot,           & ! Density on thermo. grid [kg/m^3] 
+ exner             ! Exner function.         [-]
 
-        real, intent(in) ::  & 
-        wpthlp_sfc,   & ! w' theta_l' at surface.   [(m K)/s]
-        wprtp_sfc,    & ! w' r_t' at surface.       [(kg m)/( kg s)]
-        upwp_sfc,     & ! u'w' at surface.          [m^2/s^2]
-        vpwp_sfc        ! v'w' at surface.          [m^2/s^2]
+ real, intent(in) ::  & 
+ wpthlp_sfc,   & ! w' theta_l' at surface.   [(m K)/s]
+ wprtp_sfc,    & ! w' r_t' at surface.       [(kg m)/( kg s)]
+ upwp_sfc,     & ! u'w' at surface.          [m^2/s^2]
+ vpwp_sfc        ! v'w' at surface.          [m^2/s^2]
 
-        ! These are prognostic or are planned to be in the future
-        real, intent(in), dimension(gr%nnzp) ::  & 
-        um,       & ! u wind.                       [m/s]
-        upwp,     & ! u'w'.                         [m^2/s^2]
-        vm,       & ! v wind.                       [m/s]
-        vpwp,     & ! u'w'.                         [m^2/s^2]
-        up2,      & ! u'^2                          [m^2/s^2]
-        vp2,      & ! v'^2                          [m^2/s^2]
-        rtm,      & ! r_t Total water mixing ratio. [kg/kg]
-        wprtp,    & ! w' r_t'.                      [(m kg)/(s kg)]
-        thlm,     & ! th_l Liquid potential temp.   [K]
-        wpthlp,   & ! w' th_l'.                     [(m K)/s]
-        wp2,      & ! w'^2.                         [m^2/s^2]
-        wp3,      & ! w'^3.                         [m^3/s^3]
-        Scm,      & ! Sc on moment. grid.           [-]
-        rtp2,     & ! r_t'^2.                       [(kg/kg)^2]
-        thlp2,    & ! th_l'^2.                      [K^2]
-        rtpthlp,  & ! r_t' th_l'.                   [(kg K)/kg]
-        taum,     & ! Tau on moment. grid.          [s]
-        rcm         ! Liquid water mixing ratio.    [kg/kg]
+ ! These are prognostic or are planned to be in the future
+ real, intent(in), dimension(gr%nnzp) ::  & 
+ um,       & ! u wind.                       [m/s]
+ upwp,     & ! u'w'.                         [m^2/s^2]
+ vm,       & ! v wind.                       [m/s]
+ vpwp,     & ! u'w'.                         [m^2/s^2]
+ up2,      & ! u'^2                          [m^2/s^2]
+ vp2,      & ! v'^2                          [m^2/s^2]
+ rtm,      & ! r_t Total water mixing ratio. [kg/kg]
+ wprtp,    & ! w' r_t'.                      [(m kg)/(s kg)]
+ thlm,     & ! th_l Liquid potential temp.   [K]
+ wpthlp,   & ! w' th_l'.                     [(m K)/s]
+ wp2,      & ! w'^2.                         [m^2/s^2]
+ wp3,      & ! w'^3.                         [m^3/s^3]
+ Scm,      & ! Sc on moment. grid.           [-]
+ rtp2,     & ! r_t'^2.                       [(kg/kg)^2]
+ thlp2,    & ! th_l'^2.                      [K^2]
+ rtpthlp,  & ! r_t' th_l'.                   [(kg K)/kg]
+ taum,     & ! Tau on moment. grid.          [s]
+ rcm         ! Liquid water mixing ratio.    [kg/kg]
 !    .  Ncm,     ! Cloud droplet number conc.    [num/kg]
 !    .  Ncnm,    ! Cloud nuclei number conc.     [num/m^3]
 !    .  Nim      ! Ice crystal number conc.      [num/m^3]
 
-        real, intent(in), dimension(gr%nnzp) ::  & 
-        cf ! Cloud fraction.     [%]
+ real, intent(in), dimension(gr%nnzp) ::  & 
+ cf ! Cloud fraction.     [%]
 
-        character(len=*), intent(in) :: prefix ! Location where subroutine is called
-        
-        ! Input Variables
-        real, intent(in), dimension(sclr_dim) :: & 
-        wpsclrp_sfc,   & ! Scalar flux at surface [units m/s]
-        wpedsclrp_sfc ! Eddy-Scalar flux at surface      [units m/s]
+ character(len=*), intent(in) :: prefix ! Location where subroutine is called
+ 
+ ! Input Variables
+ real, intent(in), dimension(sclr_dim) :: & 
+ wpsclrp_sfc,   & ! Scalar flux at surface [units m/s]
+ wpedsclrp_sfc ! Eddy-Scalar flux at surface      [units m/s]
 
-        ! Input/Output Variables
-        real, intent(in),dimension(gr%nnzp,sclr_dim) :: & 
-        sclrm,           & ! Passive scalar mean.
-        sclrm_forcing,   & ! Passive scalar forcing.
-        edsclrm         !Eddy passive scalar mean.
+ ! Input/Output Variables
+ real, intent(in),dimension(gr%nnzp,sclr_dim) :: & 
+ sclrm,           & ! Passive scalar mean.
+ sclrm_forcing,   & ! Passive scalar forcing.
+ edsclrm         !Eddy passive scalar mean.
 
-        ! Local Variables
-                                                    
-        ! Name of the procedure using parameterization_check
+ ! Local Variables
+                                             
+ ! Name of the procedure using parameterization_check
 
-        character(len=25), parameter ::  & 
-        proc_name = "parameterization_timestep"
+ character(len=25), parameter ::  & 
+ proc_name = "parameterization_timestep"
 
-        integer :: i
+ integer :: i
 
-        real, dimension(gr%nnzp) :: rvm
+ real, dimension(gr%nnzp) :: rvm
 
 !-------- Input Nan Check ----------------------------------------------
 
-        call check_nan( thlm_forcing, "thlm_forcing", prefix//proc_name)
-        call check_nan( rtm_forcing,"rtm_forcing", prefix//proc_name )
+ call check_nan( thlm_forcing, "thlm_forcing", prefix//proc_name)
+ call check_nan( rtm_forcing,"rtm_forcing", prefix//proc_name )
 !        call check_nan( rtm_mc, "rtm_mc", prefix//proc_name )
 !        call check_nan( thlm_mc, "thlm_mc", prefix//proc_name )
-        call check_nan( wmm,"wmm", prefix//proc_name )
-        call check_nan( wmt,"wmt", prefix//proc_name )
-        call check_nan( p,"p", prefix//proc_name )
-        call check_nan( rhom,"rhom", prefix//proc_name )
-        call check_nan( rhot,"rhot", prefix//proc_name )
-        call check_nan( exner,"exner", prefix//proc_name )
-        call check_nan( um,"um", prefix//proc_name )
-        call check_nan( upwp,"upwp", prefix//proc_name )
-        call check_nan( vm,"vm", prefix//proc_name )
-        call check_nan( vpwp,"vpwp", prefix//proc_name )
-        call check_nan( up2,"up2", prefix//proc_name )
-        call check_nan( vp2,"vp2", prefix//proc_name )
-        call check_nan( rtm,"rtm", prefix//proc_name )
-        call check_nan( wprtp,"wprtp", prefix//proc_name )
-        call check_nan( thlm,"thlm", prefix//proc_name )
-        call check_nan( wpthlp,"wpthlp", prefix//proc_name )
-        call check_nan( wp2,"wp2", prefix//proc_name )
-        call check_nan( wp3,"wp3", prefix//proc_name )
-        call check_nan( Scm,"Scm", prefix//proc_name )
-        call check_nan( rtp2,"rtp2", prefix//proc_name )
-        call check_nan( thlp2,"thlp2", prefix//proc_name )
-        call check_nan( rtpthlp, "rtpthlp", prefix//proc_name )
-        call check_nan( taum,"taum", prefix//proc_name )
-        call check_nan( wpthlp_sfc, "wpthlp_sfc", prefix//proc_name )
-        call check_nan( wprtp_sfc, "wprtp_sfc", prefix//proc_name )
-        call check_nan( upwp_sfc, "upwp_sfc", prefix//proc_name ) 
-        call check_nan( vpwp_sfc, "vpwp_sfc", prefix//proc_name )
+ call check_nan( wmm,"wmm", prefix//proc_name )
+ call check_nan( wmt,"wmt", prefix//proc_name )
+ call check_nan( p,"p", prefix//proc_name )
+ call check_nan( rhom,"rhom", prefix//proc_name )
+ call check_nan( rhot,"rhot", prefix//proc_name )
+ call check_nan( exner,"exner", prefix//proc_name )
+ call check_nan( um,"um", prefix//proc_name )
+ call check_nan( upwp,"upwp", prefix//proc_name )
+ call check_nan( vm,"vm", prefix//proc_name )
+ call check_nan( vpwp,"vpwp", prefix//proc_name )
+ call check_nan( up2,"up2", prefix//proc_name )
+ call check_nan( vp2,"vp2", prefix//proc_name )
+ call check_nan( rtm,"rtm", prefix//proc_name )
+ call check_nan( wprtp,"wprtp", prefix//proc_name )
+ call check_nan( thlm,"thlm", prefix//proc_name )
+ call check_nan( wpthlp,"wpthlp", prefix//proc_name )
+ call check_nan( wp2,"wp2", prefix//proc_name )
+ call check_nan( wp3,"wp3", prefix//proc_name )
+ call check_nan( Scm,"Scm", prefix//proc_name )
+ call check_nan( rtp2,"rtp2", prefix//proc_name )
+ call check_nan( thlp2,"thlp2", prefix//proc_name )
+ call check_nan( rtpthlp, "rtpthlp", prefix//proc_name )
+ call check_nan( taum,"taum", prefix//proc_name )
+ call check_nan( wpthlp_sfc, "wpthlp_sfc", prefix//proc_name )
+ call check_nan( wprtp_sfc, "wprtp_sfc", prefix//proc_name )
+ call check_nan( upwp_sfc, "upwp_sfc", prefix//proc_name ) 
+ call check_nan( vpwp_sfc, "vpwp_sfc", prefix//proc_name )
 !        call check_nan( rcm,"rcm", prefix//proc_name )
 !        call check_nan( Ncm,"Ncm", prefix//proc_name )
 !        call check_nan( Ncnm,"Ncnm", prefix//proc_name )
@@ -312,43 +312,43 @@
 !        call check_nan( hydromet(:,3),"rsnowm", prefix//proc_name )
 !        call check_nan( hydromet(:,4),"ricem", prefix//proc_name )
 !        call check_nan( hydromet(:,5),"rgraupel", prefix//proc_name )
-        call check_nan( cf,"cf", prefix//proc_name )
+ call check_nan( cf,"cf", prefix//proc_name )
 
-        
+ 
 
-        do i = 1, sclr_dim
-        
-          call check_nan( wpsclrp_sfc(i),"wpsclrp_sfc",  & 
-                          prefix//proc_name )
-          call check_nan( wpedsclrp_sfc(i),"wpedsclrp_sfc",  & 
-                          prefix//proc_name )
+ do i = 1, sclr_dim
+ 
+   call check_nan( wpsclrp_sfc(i),"wpsclrp_sfc",  & 
+                   prefix//proc_name )
+   call check_nan( wpedsclrp_sfc(i),"wpedsclrp_sfc",  & 
+                   prefix//proc_name )
 
-          call check_nan( sclrm(:,i),"sclrm", prefix//proc_name )
-          call check_nan( sclrm_forcing(:,i),"sclrm_forcing",  & 
-                          prefix//proc_name ) 
-          call check_nan( edsclrm(:,i),"edsclrm", prefix//proc_name )
+   call check_nan( sclrm(:,i),"sclrm", prefix//proc_name )
+   call check_nan( sclrm_forcing(:,i),"sclrm_forcing",  & 
+                   prefix//proc_name ) 
+   call check_nan( edsclrm(:,i),"edsclrm", prefix//proc_name )
 
-        end do
-        
+ end do
+ 
 !---------------------------------------------------------------------
 
 
-        rvm = rtm - rcm
-        call check_negative( rvm, gr%nnzp ,"rvm", prefix//proc_name )
-        call check_negative( p, gr%nnzp ,"p", prefix//proc_name )
-        call check_negative( rhot, gr%nnzp ,"rhot", prefix//proc_name )
-        call check_negative( rhom, gr%nnzp ,"rhom", prefix//proc_name )
-        call check_negative(exner, gr%nnzp ,"exner", prefix//proc_name )
-        call check_negative( up2, gr%nnzp ,"up2", prefix//proc_name )
-        call check_negative( vp2, gr%nnzp ,"vp2", prefix//proc_name )
-        call check_negative( wp2, gr%nnzp ,"wp2", prefix//proc_name )
-        call check_negative( rtm, gr%nnzp ,"rtm", prefix//proc_name )
-        call check_negative( thlm, gr%nnzp ,"thlm", prefix//proc_name )
-        call check_negative( Scm, gr%nnzp ,"Scm", prefix//proc_name )
-        call check_negative( rtp2, gr%nnzp ,"rtp2", prefix//proc_name )
-        call check_negative(thlp2, gr%nnzp ,"thlp2", prefix//proc_name )
-        call check_negative( taum, gr%nnzp ,"taum", prefix//proc_name )
-        call check_negative( rcm, gr%nnzp ,"rcm", prefix//proc_name )
+ rvm = rtm - rcm
+ call check_negative( rvm, gr%nnzp ,"rvm", prefix//proc_name )
+ call check_negative( p, gr%nnzp ,"p", prefix//proc_name )
+ call check_negative( rhot, gr%nnzp ,"rhot", prefix//proc_name )
+ call check_negative( rhom, gr%nnzp ,"rhom", prefix//proc_name )
+ call check_negative(exner, gr%nnzp ,"exner", prefix//proc_name )
+ call check_negative( up2, gr%nnzp ,"up2", prefix//proc_name )
+ call check_negative( vp2, gr%nnzp ,"vp2", prefix//proc_name )
+ call check_negative( wp2, gr%nnzp ,"wp2", prefix//proc_name )
+ call check_negative( rtm, gr%nnzp ,"rtm", prefix//proc_name )
+ call check_negative( thlm, gr%nnzp ,"thlm", prefix//proc_name )
+ call check_negative( Scm, gr%nnzp ,"Scm", prefix//proc_name )
+ call check_negative( rtp2, gr%nnzp ,"rtp2", prefix//proc_name )
+ call check_negative(thlp2, gr%nnzp ,"thlp2", prefix//proc_name )
+ call check_negative( taum, gr%nnzp ,"taum", prefix//proc_name )
+ call check_negative( rcm, gr%nnzp ,"rcm", prefix//proc_name )
 !        call check_negative( Ncm,"Ncm", prefix//proc_name )
 !        call check_negative( Ncnm,"Ncnm", prefix//proc_name )
 !        call check_negative( Nim,"Nim", prefix//proc_name )
@@ -358,15 +358,15 @@
 !        call check_negative( hydromet(:,4),"ricem", prefix//proc_name )
 !        call check_negative( hydromet(:,5),"rgraupelm",
 !     .          prefix//proc_name )
-        call check_negative( cf, gr%nnzp ,"cf", prefix//proc_name )
+ call check_negative( cf, gr%nnzp ,"cf", prefix//proc_name )
 
-        return       
-        end subroutine parameterization_check
+ return       
+ end subroutine parameterization_check
 
 !-----------------------------------------------------------------------
-        subroutine sfc_var_check( wp2_sfc, up2_sfc, vp2_sfc, thlp2_sfc, & 
-                 rtp2_sfc, rtpthlp_sfc, err_code, & 
-                 sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc )
+ subroutine sfc_var_check( wp2_sfc, up2_sfc, vp2_sfc, thlp2_sfc, & 
+          rtp2_sfc, rtpthlp_sfc, err_code, & 
+          sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc )
 !
 !       Description:This subroutine determines if any of the output
 !       variables for the sfc_var subroutine carry values that
@@ -376,108 +376,108 @@
 !
 !
 !-----------------------------------------------------------------------
-        use parameters, only: & 
-            sclr_dim ! Variable
+ use parameters, only: & 
+     sclr_dim ! Variable
 
-        implicit none
+ implicit none
 
-        
-        ! Input Variables
-        real,intent(in) ::  & 
-        wp2_sfc,     & ! Vertical velocity variance        [m^2/s^2]
-        up2_sfc,     & ! u'^2                              [m^2/s^2]
-        vp2_sfc,     & ! u'^2                              [m^2/s^2]
-        thlp2_sfc,   & ! thetal variance                   [K^2]
-        rtp2_sfc,    & ! rt variance                       [kg/kg]
-        rtpthlp_sfc ! thetal rt covariance              [kg K]
+ 
+ ! Input Variables
+ real,intent(in) ::  & 
+ wp2_sfc,     & ! Vertical velocity variance        [m^2/s^2]
+ up2_sfc,     & ! u'^2                              [m^2/s^2]
+ vp2_sfc,     & ! u'^2                              [m^2/s^2]
+ thlp2_sfc,   & ! thetal variance                   [K^2]
+ rtp2_sfc,    & ! rt variance                       [kg/kg]
+ rtpthlp_sfc ! thetal rt covariance              [kg K]
   
 
-        real, dimension(sclr_dim), intent(in) :: & 
-        sclrp2_sfc,    & ! Passive scalar variance                 [units^2]
-        sclrprtp_sfc,  & ! Passive scalar r_t covariance           [units kg/kg]
-        sclrpthlp_sfc ! Passive scalar theta_l covariance       [units K]
+ real, dimension(sclr_dim), intent(in) :: & 
+ sclrp2_sfc,    & ! Passive scalar variance                 [units^2]
+ sclrprtp_sfc,  & ! Passive scalar r_t covariance           [units kg/kg]
+ sclrpthlp_sfc ! Passive scalar theta_l covariance       [units K]
      
-        ! Input/Output Variable
-        integer, intent(inout) :: err_code    ! Are these outputs valid?
+ ! Input/Output Variable
+ integer, intent(inout) :: err_code    ! Are these outputs valid?
 
-        ! Local Variables
+ ! Local Variables
 
-        ! Name of the subroutine calling the check
-        character(len=7),parameter :: proc_name = "sfc_var"
+ ! Name of the subroutine calling the check
+ character(len=7),parameter :: proc_name = "sfc_var"
 !-----------------------------------------------------------------------
 
-        call check_nan( wp2_sfc, "wp2_sfc", proc_name, err_code)
-        call check_nan( up2_sfc, "up2_sfc", proc_name, err_code)
-        call check_nan( vp2_sfc, "vp2_sfc", proc_name, err_code)
-        call check_nan( thlp2_sfc, "thlp2_sfc", proc_name, err_code)
-        call check_nan( rtp2_sfc, "rtp2_sfc", proc_name, err_code)
-        call check_nan( rtpthlp_sfc, "rtpthlp_sfc",  & 
-                        proc_name, err_code)
+ call check_nan( wp2_sfc, "wp2_sfc", proc_name, err_code)
+ call check_nan( up2_sfc, "up2_sfc", proc_name, err_code)
+ call check_nan( vp2_sfc, "vp2_sfc", proc_name, err_code)
+ call check_nan( thlp2_sfc, "thlp2_sfc", proc_name, err_code)
+ call check_nan( rtp2_sfc, "rtp2_sfc", proc_name, err_code)
+ call check_nan( rtpthlp_sfc, "rtpthlp_sfc",  & 
+                 proc_name, err_code)
 
-        if ( sclr_dim > 0 ) then 
-          call check_nan( sclrp2_sfc, "sclrp2_sfc", & 
-                          proc_name, err_code )
-        
-          call check_nan( sclrprtp_sfc, "sclrprtp_sfc", & 
-                          proc_name, err_code )
-        
-          call check_nan( sclrpthlp_sfc, "sclrpthlp_sfc",  & 
-                          proc_name, err_code )
-        end if
+ if ( sclr_dim > 0 ) then 
+   call check_nan( sclrp2_sfc, "sclrp2_sfc", & 
+                   proc_name, err_code )
+ 
+   call check_nan( sclrprtp_sfc, "sclrprtp_sfc", & 
+                   proc_name, err_code )
+ 
+   call check_nan( sclrpthlp_sfc, "sclrpthlp_sfc",  & 
+                   proc_name, err_code )
+ end if
 
-        return 
-        end subroutine sfc_var_check 
+ return 
+ end subroutine sfc_var_check 
 
 !-----------------------------------------------------------------------
-        subroutine rad_check( thlm, rcm, rtm, ricem,  & 
-                              cf, p, exner, rhom )
+ subroutine rad_check( thlm, rcm, rtm, ricem,  & 
+                       cf, p, exner, rhom )
 !       Description:
 !       Checks radiation input variables. If they are < 0 it reports
 !       to the console.
 !------------------------------------------------------------------------
 
-        use constants, only:  & 
-            fstderr ! Variable
-        use grid_class, only: & 
-            gr ! Variable
+ use constants, only:  & 
+     fstderr ! Variable
+ use grid_class, only: & 
+     gr ! Variable
 
-        implicit none
-        
-        !Input/Output variables
-        real, dimension(gr%nnzp), intent(inout) :: & 
-        thlm,           & ! Liquid Water Potential Temperature   [K/s]
-        rcm,            & ! Liquid Water Mixing Ratio            [Kg/Kg]
-        rtm,            & ! Total Water Mixing Ratio             [Kg/Kg]
-        ricem,          & ! Ice Water Mixing Ratio               [Kg/Kg]
-        cf,             & ! Cloud Fraction                       [%]
-        p,              & ! Pressure                             [Pa]
-        exner,          & ! Exner Function                       [-]
-        rhom           ! Density                              [-]
+ implicit none
+ 
+ !Input/Output variables
+ real, dimension(gr%nnzp), intent(inout) :: & 
+ thlm,           & ! Liquid Water Potential Temperature   [K/s]
+ rcm,            & ! Liquid Water Mixing Ratio            [Kg/Kg]
+ rtm,            & ! Total Water Mixing Ratio             [Kg/Kg]
+ ricem,          & ! Ice Water Mixing Ratio               [Kg/Kg]
+ cf,             & ! Cloud Fraction                       [%]
+ p,              & ! Pressure                             [Pa]
+ exner,          & ! Exner Function                       [-]
+ rhom           ! Density                              [-]
 
-       ! Local variables
-        character(len=*), parameter ::  & 
-        proc_name = "Before BUGSrad."
+! Local variables
+ character(len=*), parameter ::  & 
+ proc_name = "Before BUGSrad."
 
-        real,dimension(gr%nnzp) :: rvm
+ real,dimension(gr%nnzp) :: rvm
  
 !-------------------------------------------------------------------------
-        rvm = rtm - rcm
-        call check_negative( thlm, gr%nnzp ,"thlm", proc_name )
-        call check_negative( rcm, gr%nnzp ,"rcm", proc_name )
-        call check_negative( rtm, gr%nnzp ,"rtm", proc_name )
-        call check_negative( rvm, gr%nnzp ,"rvm", proc_name )
-        call check_negative( ricem, gr%nnzp ,"ricem", proc_name )
-        call check_negative( cf, gr%nnzp ,"cf", proc_name )
-        call check_negative( p, gr%nnzp ,"p", proc_name )
-        call check_negative( exner, gr%nnzp ,"exner", proc_name )
-        call check_negative( rhom, gr%nnzp ,"rhom", proc_name )
+ rvm = rtm - rcm
+ call check_negative( thlm, gr%nnzp ,"thlm", proc_name )
+ call check_negative( rcm, gr%nnzp ,"rcm", proc_name )
+ call check_negative( rtm, gr%nnzp ,"rtm", proc_name )
+ call check_negative( rvm, gr%nnzp ,"rvm", proc_name )
+ call check_negative( ricem, gr%nnzp ,"ricem", proc_name )
+ call check_negative( cf, gr%nnzp ,"cf", proc_name )
+ call check_negative( p, gr%nnzp ,"p", proc_name )
+ call check_negative( exner, gr%nnzp ,"exner", proc_name )
+ call check_negative( rhom, gr%nnzp ,"rhom", proc_name )
 
-        return
+ return
 
-        end subroutine rad_check
+ end subroutine rad_check
 
 !-----------------------------------------------------------------------
-        logical function invalid_model_arrays( ) 
+ logical function invalid_model_arrays( ) 
 
 !       Description:
 !       Checks for invalid floating point values in select model arrays.
@@ -486,135 +486,135 @@
 !       None
 !------------------------------------------------------------------------
 
-        use diagnostic_variables, only: & 
-            hydromet,  & ! Variable(s)
-            wp2thvp, & 
-            rtpthvp, & 
-            thlpthvp
-        use prognostic_variables, only: & 
-            um,  & ! Variable(s)
-            vm, & 
-            wp2, & 
-            wp3, & 
-            rtm, & 
-            thlm, & 
-            rtp2, & 
-            thlp2, & 
-            wprtp, & 
-            wpthlp, & 
-            rtpthlp, & 
-            sclrm, & 
-            edsclrm
+ use diagnostic_variables, only: & 
+     hydromet,  & ! Variable(s)
+     wp2thvp, & 
+     rtpthvp, & 
+     thlpthvp
+ use prognostic_variables, only: & 
+     um,  & ! Variable(s)
+     vm, & 
+     wp2, & 
+     wp3, & 
+     rtm, & 
+     thlm, & 
+     rtp2, & 
+     thlp2, & 
+     wprtp, & 
+     wpthlp, & 
+     rtpthlp, & 
+     sclrm, & 
+     edsclrm
 
-        
-        use model_flags, only:  & 
-            lcoamps_micro,  & ! Variable(s) 
-            kk_rain
+ 
+ use model_flags, only:  & 
+     lcoamps_micro,  & ! Variable(s) 
+     kk_rain
 
-        use constants, only: & 
-            fstderr   ! Constant(s)
+ use constants, only: & 
+     fstderr   ! Constant(s)
 
-        use parameters, only: & 
-            sclr_dim,  & ! Variable(s)
-            hydromet_dim 
+ use parameters, only: & 
+     sclr_dim,  & ! Variable(s)
+     hydromet_dim 
 
-        implicit none
+ implicit none
 
-        ! Local Variables
-        integer :: i
+ ! Local Variables
+ integer :: i
 
-        invalid_model_arrays = .false.
-           
-        ! Check whether any variable array contains a NaN for
-        ! um, vm, thlm, rtm, rtp2, thlp2, wprtp, wpthlp, rtpthlp, 
-        ! wp2, & wp3.        
-        if ( isnan2d( um ) ) then
-          write(fstderr,*) "NaN in um model array" 
+ invalid_model_arrays = .false.
+    
+ ! Check whether any variable array contains a NaN for
+ ! um, vm, thlm, rtm, rtp2, thlp2, wprtp, wpthlp, rtpthlp, 
+ ! wp2, & wp3.        
+ if ( isnan2d( um ) ) then
+   write(fstderr,*) "NaN in um model array" 
 !         write(fstderr,*) "um= ", um
-          invalid_model_arrays = .true.
+   invalid_model_arrays = .true.
 !         return
-        end if
+ end if
 
-        if ( isnan2d( vm ) ) then
-          write(fstderr,*) "NaN in vm model array" 
+ if ( isnan2d( vm ) ) then
+   write(fstderr,*) "NaN in vm model array" 
 !         write(fstderr,*) "vm= ", vm
-          invalid_model_arrays = .true.
+   invalid_model_arrays = .true.
 !         return
-        end if
+ end if
 
-        if ( isnan2d( wp2 ) ) then
-          write(fstderr,*) "NaN in wp2 model array" 
+ if ( isnan2d( wp2 ) ) then
+   write(fstderr,*) "NaN in wp2 model array" 
 !         write(fstderr,*) "wp2= ", wp2
-          invalid_model_arrays = .true.
+   invalid_model_arrays = .true.
 !         return
-        end if
+ end if
 
-        if ( isnan2d( wp3 ) ) then
-          write(fstderr,*) "NaN in wp3 model array" 
+ if ( isnan2d( wp3 ) ) then
+   write(fstderr,*) "NaN in wp3 model array" 
 !         write(fstderr,*) "wp3= ", wp3
-          invalid_model_arrays = .true.
+   invalid_model_arrays = .true.
 !         return
-        end if
+ end if
 
-        if ( isnan2d( rtm ) ) then
-          write(fstderr,*) "NaN in rtm model array" 
+ if ( isnan2d( rtm ) ) then
+   write(fstderr,*) "NaN in rtm model array" 
 !         write(fstderr,*) "rtm= ", rtm
-          invalid_model_arrays = .true.
+   invalid_model_arrays = .true.
 !         return
-        end if
+ end if
 
-        if ( isnan2d( thlm ) ) then
-          write(fstderr,*) "NaN in thlm model array" 
+ if ( isnan2d( thlm ) ) then
+   write(fstderr,*) "NaN in thlm model array" 
 !         write(fstderr,*) "thlm= ", thlm
-          invalid_model_arrays = .true.
+   invalid_model_arrays = .true.
 !         return
-        end if
+ end if
 
-        if ( isnan2d( rtp2 ) ) then
-          write(fstderr,*) "NaN in rtp2 model array" 
+ if ( isnan2d( rtp2 ) ) then
+   write(fstderr,*) "NaN in rtp2 model array" 
 !         write(fstderr,*) "rtp2= ", rtp2
-          invalid_model_arrays = .true.
+   invalid_model_arrays = .true.
 !         return
-        end if
+ end if
 
-        if ( isnan2d( thlp2 ) ) then
-          write(fstderr,*) "NaN in thlp2 model array" 
+ if ( isnan2d( thlp2 ) ) then
+   write(fstderr,*) "NaN in thlp2 model array" 
 !         write(fstderr,*) "thlp2= ", thlp2
-          invalid_model_arrays = .true.
+   invalid_model_arrays = .true.
 !         return
-        end if
+ end if
 
-        if ( isnan2d( wprtp ) ) then
-          write(fstderr,*) "NaN in wprtp model array" 
+ if ( isnan2d( wprtp ) ) then
+   write(fstderr,*) "NaN in wprtp model array" 
 !         write(fstderr,*) "wprtp= ", wprtp
-          invalid_model_arrays = .true.
+   invalid_model_arrays = .true.
 !         return
-        end if
+ end if
 
-        if ( isnan2d( wpthlp ) ) then
-          write(fstderr,*) "NaN in wpthlp model array" 
+ if ( isnan2d( wpthlp ) ) then
+   write(fstderr,*) "NaN in wpthlp model array" 
 !         write(fstderr,*) "wpthlp= ", wpthlp
-          invalid_model_arrays = .true.
+   invalid_model_arrays = .true.
 !         return
-        end if
+ end if
 
-        if ( isnan2d( rtpthlp ) ) then
-          write(fstderr,*) "NaN in rtpthlp model array" 
+ if ( isnan2d( rtpthlp ) ) then
+   write(fstderr,*) "NaN in rtpthlp model array" 
 !         write(fstderr,*) "rtpthlp= ", rtpthlp
-          invalid_model_arrays = .true.
+   invalid_model_arrays = .true.
 !         return
-        end if
+ end if
 
-        if ( kk_rain .or. lcoamps_micro ) then
-          do i = 1, hydromet_dim, 1
-            if ( isnan2d( hydromet(:,i) ) ) then
-              write(fstderr,*) "NaN in a hydrometeor model array" 
+ if ( kk_rain .or. lcoamps_micro ) then
+   do i = 1, hydromet_dim, 1
+     if ( isnan2d( hydromet(:,i) ) ) then
+       write(fstderr,*) "NaN in a hydrometeor model array" 
 !             write(fstderr,*) "hydromet= ", hydromet
-              invalid_model_arrays = .true.
+       invalid_model_arrays = .true.
 !             return
-            end if
-          end do
-        end if
+     end if
+   end do
+ end if
 
 !       if ( isnan2d( wmt ) ) then
 !         write(fstderr,*) "NaN in wmt model array" 
@@ -623,45 +623,45 @@
 !         return
 !       end if
 
-        if ( isnan2d( wp2thvp ) ) then
-          write(fstderr,*) "NaN in wp2thvp model array" 
+ if ( isnan2d( wp2thvp ) ) then
+   write(fstderr,*) "NaN in wp2thvp model array" 
 !         write(fstderr,*) "wp2thvp = ", wp2thvp
-          invalid_model_arrays = .true.
+   invalid_model_arrays = .true.
 !         return
-        end if
+ end if
 
-        if ( isnan2d( rtpthvp ) ) then
-          write(fstderr,*) "NaN in rtpthvp model array" 
+ if ( isnan2d( rtpthvp ) ) then
+   write(fstderr,*) "NaN in rtpthvp model array" 
 !         write(fstderr,*) "rtpthvp = ", rtpthvp
-          invalid_model_arrays = .true.
-        end if
+   invalid_model_arrays = .true.
+ end if
 
-        if ( isnan2d( thlpthvp ) ) then
-          write(fstderr,*) "NaN in thlpthvp model array" 
+ if ( isnan2d( thlpthvp ) ) then
+   write(fstderr,*) "NaN in thlpthvp model array" 
 !         write(fstderr,*) "thlpthvp = ", thlpthvp
-          invalid_model_arrays = .true.
-        end if
+   invalid_model_arrays = .true.
+ end if
 
-        do i = 1, sclr_dim, 1
-          if ( isnan2d( sclrm(:,i) ) ) then
-            write(fstderr,*) "NaN in sclrm", i, "model array"
+ do i = 1, sclr_dim, 1
+   if ( isnan2d( sclrm(:,i) ) ) then
+     write(fstderr,*) "NaN in sclrm", i, "model array"
 !           write(fstderr,'(a6,i2,a1)') "sclrm(", i, ")"
 !           write(fstderr,*) sclrm(:,i)
-            invalid_model_arrays = .true.
-          end if
-          if ( isnan2d( edsclrm(:,i) ) ) then
-            write(fstderr,*) "NaN in `edsclrm", i, "model array"
+     invalid_model_arrays = .true.
+   end if
+   if ( isnan2d( edsclrm(:,i) ) ) then
+     write(fstderr,*) "NaN in `edsclrm", i, "model array"
 !           write(fstderr,'(a8,i2,a1)') "edsclrm(", i, ")"
 !           write(fstderr,*) edsclrm(:,i)
-            invalid_model_arrays = .true.
-          end if
-        end do
+     invalid_model_arrays = .true.
+   end if
+ end do
 
-        return
-        end function invalid_model_arrays
-        
+ return
+ end function invalid_model_arrays
+ 
 !------------------------------------------------------------------------
-        logical function isnan( x2d )
+ logical function isnan( x2d )
 
 !       Description:
 !       Checks if a given real is a nan, +inf or -inf.
@@ -675,52 +675,52 @@
 !       Certain compiler optimizations may cause variables with invalid
 !       results to flush to zero.  Avoid these!
 !------------------------------------------------------------------------
-        
-        implicit none
+ 
+ implicit none
 
-        ! External
-        intrinsic :: transfer
+ ! External
+ intrinsic :: transfer
     
-        ! Input Variables
-        real, intent(in) :: x2d
+ ! Input Variables
+ real, intent(in) :: x2d
 
-        ! Local Variables
-        integer(kind=4) :: nanbits
+ ! Local Variables
+ integer(kind=4) :: nanbits
 
-        real(kind=4) :: PosInf, NegInf
+ real(kind=4) :: PosInf, NegInf
 
-        data nanbits /Z"7F800000"/
+ data nanbits /Z"7F800000"/
 
-        PosInf = transfer( nanbits, PosInf )
-        NegInf = -( transfer( nanbits, NegInf ) )
+ PosInf = transfer( nanbits, PosInf )
+ NegInf = -( transfer( nanbits, NegInf ) )
 
-        ! This works on compilers with standardized floating point, 
-        ! because the IEEE 754 spec defines that subnormals and nans 
-        ! should not equal themselves.
-        ! However, all compilers do not seem to follow this. 
-        if (x2d /= x2d ) then
-          isnan = .true.
+ ! This works on compilers with standardized floating point, 
+ ! because the IEEE 754 spec defines that subnormals and nans 
+ ! should not equal themselves.
+ ! However, all compilers do not seem to follow this. 
+ if (x2d /= x2d ) then
+   isnan = .true.
 
-        ! This a second check, assuming the above does not work as 
-        ! expected.
-        else if ( x2d == PosInf ) then
-          isnan = .true.
+ ! This a second check, assuming the above does not work as 
+ ! expected.
+ else if ( x2d == PosInf ) then
+   isnan = .true.
 
-        ! This may never be needed, it's here just in case.
-        else if ( x2d == NegInf ) then
-          isnan = .true.
+ ! This may never be needed, it's here just in case.
+ else if ( x2d == NegInf ) then
+   isnan = .true.
 
-        else 
-          isnan = .false. ! Yippee, real numbers.
+ else 
+   isnan = .false. ! Yippee, real numbers.
 
-        end if
+ end if
 
-        return
-        end function isnan
+ return
+ end function isnan
 !------------------------------------------------------------------------
 
 !------------------------------------------------------------------------
-        logical function isnan2d( x2d )
+ logical function isnan2d( x2d )
 
 !       Description:
 !       Checks if a given real is a NaN, +inf or -inf.
@@ -734,222 +734,222 @@
 !       Certain compiler optimizations may cause variables with invalid
 !       results to flush to zero.  Avoid these!
 !------------------------------------------------------------------------
-        
-        implicit none
+ 
+ implicit none
 
-        ! External
-        intrinsic :: any, transfer
+ ! External
+ intrinsic :: any, transfer
 
-        ! Input Variables
-        real, dimension(:), intent(in) :: x2d
-        ! Local Variables
-        integer(kind=4) :: nanbits
+ ! Input Variables
+ real, dimension(:), intent(in) :: x2d
+ ! Local Variables
+ integer(kind=4) :: nanbits
 
-        real(kind=4) :: PosInf, NegInf
+ real(kind=4) :: PosInf, NegInf
 
-        data nanbits /Z"7F800000"/
+ data nanbits /Z"7F800000"/
 
-        PosInf = transfer( nanbits, PosInf )
-        NegInf = -( transfer( nanbits, NegInf ) )
+ PosInf = transfer( nanbits, PosInf )
+ NegInf = -( transfer( nanbits, NegInf ) )
 
-        ! This works on compilers with standardized floating point, 
-        ! because the IEEE 754 spec defines that subnormals and NaNs 
-        ! should not equal themselves.
-        ! However, all compilers do not seem to follow this. 
-        if ( any( x2d /= x2d ) ) then
-          isnan2d = .true.
+ ! This works on compilers with standardized floating point, 
+ ! because the IEEE 754 spec defines that subnormals and NaNs 
+ ! should not equal themselves.
+ ! However, all compilers do not seem to follow this. 
+ if ( any( x2d /= x2d ) ) then
+   isnan2d = .true.
 
-        ! This a second check, assuming the above does not work as 
-        ! expected.
-        else if ( any( x2d == PosInf ) ) then
-          isnan2d = .true.
+ ! This a second check, assuming the above does not work as 
+ ! expected.
+ else if ( any( x2d == PosInf ) ) then
+   isnan2d = .true.
 
-        ! This may never be needed, it's here just in case.
-        else if ( any( x2d == NegInf ) ) then
-          isnan2d = .true.
+ ! This may never be needed, it's here just in case.
+ else if ( any( x2d == NegInf ) ) then
+   isnan2d = .true.
 
-        else 
-          isnan2d = .false. ! Yippee, real numbers.
+ else 
+   isnan2d = .false. ! Yippee, real numbers.
 
-        end if
+ end if
 
-        return
-        
-        end function isnan2d
-        
+ return
+ 
+ end function isnan2d
+ 
 !------------------------------------------------------------------------
-        subroutine check_negative_total & 
-                  ( var, varname, operation, err_code )
+ subroutine check_negative_total & 
+           ( var, varname, operation, err_code )
 !
 !       Description: Checks for negative values in the var array and reports
 !       them.
 !
 !-----------------------------------------------------------------------
-        use constants, only: & 
-            fstderr ! Variable(s)
+ use constants, only: & 
+     fstderr ! Variable(s)
 
-        use error_code, only:  & 
-            clubb_var_less_than_zero ! Variable(s)
-        
-        implicit none
+ use error_code, only:  & 
+     clubb_var_less_than_zero ! Variable(s)
+ 
+ implicit none
 
-        ! External
-        intrinsic :: any, present
+ ! External
+ intrinsic :: any, present
 
-        ! Input Variables
-        real, intent(in), dimension(:) :: var
-        
-        character(len=*), intent(in)::  & 
-        varname,     & ! Varible being examined
-        operation   ! Procedure calling check_zero
+ ! Input Variables
+ real, intent(in), dimension(:) :: var
+ 
+ character(len=*), intent(in)::  & 
+ varname,     & ! Varible being examined
+ operation   ! Procedure calling check_zero
 
-        ! Optional In/Out Variable
-        integer, optional, intent(inout) :: err_code
+ ! Optional In/Out Variable
+ integer, optional, intent(inout) :: err_code
 
-        if ( any( var < 0.0 ) ) then
-           write(fstderr,*) varname, " < 0 in ", operation
-           if ( present( err_code ) ) then 
-                if (err_code < clubb_var_less_than_zero ) then
-                        err_code = clubb_var_less_than_zero
-                endif
-           endif
-        end if
+ if ( any( var < 0.0 ) ) then
+    write(fstderr,*) varname, " < 0 in ", operation
+    if ( present( err_code ) ) then 
+         if (err_code < clubb_var_less_than_zero ) then
+                 err_code = clubb_var_less_than_zero
+         endif
+    endif
+ end if
 
-        return
+ return
 
-        end subroutine check_negative_total
+ end subroutine check_negative_total
 
 
 !------------------------------------------------------------------------
-        subroutine check_negative_index & 
-                  ( var, n, varname, operation, err_code )
+ subroutine check_negative_index & 
+           ( var, n, varname, operation, err_code )
 !
 !       Description: Checks for negative values in the var array and reports
 !                    the index in which the negative values occur.
 !
 !-----------------------------------------------------------------------
-        use constants, only: & 
-            fstderr ! Variable
-        use error_code, only:  & 
-            clubb_var_less_than_zero ! Variable
-        
-        implicit none
+ use constants, only: & 
+     fstderr ! Variable
+ use error_code, only:  & 
+     clubb_var_less_than_zero ! Variable
+ 
+ implicit none
 
-        ! External
-        intrinsic :: any, present
+ ! External
+ intrinsic :: any, present
 
-        ! Input Variables
-        integer, intent(in) :: n
+ ! Input Variables
+ integer, intent(in) :: n
 
-        real, intent(in), dimension(n) :: var
+ real, intent(in), dimension(n) :: var
 
-        character(len=*), intent(in)::  & 
-        varname,     & ! Varible being examined
-        operation   ! Procedure calling check_zero
+ character(len=*), intent(in)::  & 
+ varname,     & ! Varible being examined
+ operation   ! Procedure calling check_zero
 
-        ! Optional In/Out Variable
-        integer, optional, intent(inout) :: err_code
+ ! Optional In/Out Variable
+ integer, optional, intent(inout) :: err_code
 
-        ! Local Variable
-        integer :: k
-        
-        do k=1, n,1
-                if ( var(k) < 0.0 )  then
-                        
-                write(fstderr,*) varname, " < 0 in ", operation,  & 
-                                 " at k = ", k
-                        
-                if ( present( err_code ) ) then 
-                      if (err_code < clubb_var_less_than_zero ) then
-                               err_code = clubb_var_less_than_zero
-                      endif
-                endif
+ ! Local Variable
+ integer :: k
+ 
+ do k=1, n,1
+         if ( var(k) < 0.0 )  then
+                 
+         write(fstderr,*) varname, " < 0 in ", operation,  & 
+                          " at k = ", k
+                 
+         if ( present( err_code ) ) then 
+               if (err_code < clubb_var_less_than_zero ) then
+                        err_code = clubb_var_less_than_zero
+               endif
+         endif
 
-                endif
+         endif
 
-        end do
+ end do
 
-        return
+ return
 
-        end subroutine check_negative_index
+ end subroutine check_negative_index
 
-        
+ 
 !------------------------------------------------------------------------        
-        subroutine check_nan_2d( var, varname, operation, err_code )
+ subroutine check_nan_2d( var, varname, operation, err_code )
 !
 !       Description: Checks for a NaN in the var array and reports it.
 !
 !
 !------------------------------------------------------------------------
-        use constants, only:  & 
-            fstderr ! Variable(s)
-        use error_code, only:  & 
-            clubb_var_equals_NaN ! Variable(s)
+ use constants, only:  & 
+     fstderr ! Variable(s)
+ use error_code, only:  & 
+     clubb_var_equals_NaN ! Variable(s)
 
-        implicit none
+ implicit none
 
-        ! External
-        intrinsic :: present
+ ! External
+ intrinsic :: present
 
-        ! Input variables
-        real, intent(in), dimension(:) :: var ! Variable being examined
+ ! Input variables
+ real, intent(in), dimension(:) :: var ! Variable being examined
 
-        character(len=*), intent(in)::  & 
-        varname,     & ! Name of variable
-        operation   ! Procedure calling check_nan
-        
-        ! Optional In/Out Variable
-        integer, optional, intent(inout) :: err_code
-        
-        if ( isnan2d( var ) ) then
-           write(fstderr,*) varname, " is NaN in ",operation
-           if ( present( err_code ) ) then
-                if( err_code < clubb_var_equals_NaN ) then
-                        err_code = clubb_var_equals_NaN
-                endif
-           endif
-        end if
+ character(len=*), intent(in)::  & 
+ varname,     & ! Name of variable
+ operation   ! Procedure calling check_nan
+ 
+ ! Optional In/Out Variable
+ integer, optional, intent(inout) :: err_code
+ 
+ if ( isnan2d( var ) ) then
+    write(fstderr,*) varname, " is NaN in ",operation
+    if ( present( err_code ) ) then
+         if( err_code < clubb_var_equals_NaN ) then
+                 err_code = clubb_var_equals_NaN
+         endif
+    endif
+ end if
 
-        return
-        end subroutine check_nan_2d
-        
+ return
+ end subroutine check_nan_2d
+ 
 !-----------------------------------------------------------------------        
-        subroutine check_nan_sclr( var, varname, operation, err_code )
+ subroutine check_nan_sclr( var, varname, operation, err_code )
 !
 !       Description: Checks for a NaN in the scalar var then reports it.
 !
 !-----------------------------------------------------------------------        
-        use constants, only:  & 
-            fstderr ! Variable
-        use error_code, only:  & 
-            clubb_var_equals_NaN ! Variable
+ use constants, only:  & 
+     fstderr ! Variable
+ use error_code, only:  & 
+     clubb_var_equals_NaN ! Variable
 
-        implicit none
+ implicit none
 
-        ! External
-        intrinsic :: present
+ ! External
+ intrinsic :: present
 
-        ! Input Variables
-        real, intent(in) :: var        ! Variable being examined
+ ! Input Variables
+ real, intent(in) :: var        ! Variable being examined
 
-        character(len=*), intent(in)::  & 
-        varname,    & ! Name of variable being examined
-        operation  ! Procedure calling check_nan
-        
-        ! Optional In/Out variable
-        integer, optional, intent(inout) :: err_code
+ character(len=*), intent(in)::  & 
+ varname,    & ! Name of variable being examined
+ operation  ! Procedure calling check_nan
+ 
+ ! Optional In/Out variable
+ integer, optional, intent(inout) :: err_code
 !--------------------------------------------------------------------
-        if ( isnan( var ) ) then
-          write(fstderr,*) varname, " is NaN in ",operation
-          if ( present( err_code ) ) then
-                  if( err_code < clubb_var_equals_NaN ) then
-                        err_code = clubb_var_equals_NAN
-                  endif
-          endif
-        end if
+ if ( isnan( var ) ) then
+   write(fstderr,*) varname, " is NaN in ",operation
+   if ( present( err_code ) ) then
+           if( err_code < clubb_var_equals_NaN ) then
+                 err_code = clubb_var_equals_NAN
+           endif
+   endif
+ end if
 
-        return
-        
-        end subroutine check_nan_sclr
+ return
+ 
+ end subroutine check_nan_sclr
 !-------------------------------------------------------------------------       
-        end module numerical_check
+ end module numerical_check
