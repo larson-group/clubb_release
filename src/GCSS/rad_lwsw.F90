@@ -1,24 +1,24 @@
-! $Id: rad_lwsw.F90,v 1.2 2008-07-23 17:38:08 faschinj Exp $
+! $Id: rad_lwsw.F90,v 1.3 2008-07-28 19:37:55 faschinj Exp $
 !-----------------------------------------------------------------------
-      module rad_lwsw_mod
-      
-      implicit none
-      
-      public :: rad_lwsw
-      
-      private :: sunray_sw
+module rad_lwsw_mod
 
-      private ! Default Scope
-      
-      contains
-      
-      subroutine rad_lwsw( qc3, rbm, dsigm, & 
-                           coamps_zm, coamps_zt,  & 
-                           Frad, Frad_LW, Frad_SW, & 
-                           radhtk, radht_LW, radht_SW, & 
-                           kk, center, xi_abs, F0, F1, kay,  & 
-                           radius, A, gc, Fs0, omega, & 
-                           sw_on, lw_on)
+implicit none
+
+public :: rad_lwsw
+
+private :: sunray_sw
+
+private ! Default Scope
+
+contains
+
+subroutine rad_lwsw( qc3, rbm, dsigm, & 
+                     coamps_zm, coamps_zt,  & 
+                     Frad, Frad_LW, Frad_SW, & 
+                     radhtk, radht_LW, radht_SW, & 
+                     kk, center, xi_abs, F0, F1, kay,  & 
+                     radius, A, gc, Fs0, omega, & 
+                     sw_on, lw_on)
 
 ! Description:
 ! For the Larson group altocumulus cases
@@ -58,62 +58,62 @@
 !       Introductory Survey.  Academic Press, 467 pp.
 !-----------------------------------------------------------------------
 
-      use constants, only: Cp ! Variable(s)
+use constants, only: Cp ! Variable(s)
 
-      use interpolation, only: linint ! Procedure(s)
+use interpolation, only: linint ! Procedure(s)
 
-      implicit none
+implicit none
 
-      ! Input Variables 
-      integer, intent(in) :: kk ! Number of vertical levels   [-]
+! Input Variables 
+integer, intent(in) :: kk ! Number of vertical levels   [-]
 
-      real, dimension(kk), intent(in) ::  & 
-        qc3,   & ! Cloud water mixing ratio at time t + dt       [kg/kg]
-        rbm,   & ! Density of reference state at mass levels     [kg/m^3]
-        dsigm ! Thickness of sigma (mass) levels              [m]
+real, dimension(kk), intent(in) ::  & 
+  qc3,   & ! Cloud water mixing ratio at time t + dt       [kg/kg]
+  rbm,   & ! Density of reference state at mass levels     [kg/m^3]
+  dsigm ! Thickness of sigma (mass) levels              [m]
 
-      real, dimension(kk+1), intent(in) :: & 
-        coamps_zm,  & ! Altitude of momentum levels w/ COAMPS grid indices      [m]
-        coamps_zt  ! Altitude of thermodynamic levels w/ COAMPS grid indices [m]
+real, dimension(kk+1), intent(in) :: & 
+  coamps_zm,  & ! Altitude of momentum levels w/ COAMPS grid indices      [m]
+  coamps_zt  ! Altitude of thermodynamic levels w/ COAMPS grid indices [m]
 
-      real, intent(in) ::  & 
-        xi_abs,  & ! Cosine of the solar zenith angle               [-]
-        F0,      & ! Coefficient for cloud top heating, see Stevens [W/m^2]
-        F1,      & !     "                      "                   [W/m^2]
-        kay,     & ! A "constant" according to Duynkerke eqn.5,
-                ! where his value is 130 m^2/kg.                 [m^2/kg]
-        radius  ! Effective droplet radius.                      [m]
+real, intent(in) ::  & 
+  xi_abs,  & ! Cosine of the solar zenith angle               [-]
+  F0,      & ! Coefficient for cloud top heating, see Stevens [W/m^2]
+  F1,      & !     "                      "                   [W/m^2]
+  kay,     & ! A "constant" according to Duynkerke eqn.5,
+          ! where his value is 130 m^2/kg.                 [m^2/kg]
+  radius  ! Effective droplet radius.                      [m]
 
-      real, intent(in) ::  & 
-        A,     & ! Albedo- sea surface, according to Lenderink             [-]
-        gc,    & ! Asymmetry parameter, "g" in Duynkerke.                  [-] 
-        Fs0,   & ! Incident incoming SW insolation at cloud top in 
-              ! direction of the incoming beam (not the vertical)       [W/m^2]
-        omega ! Single-scattering albedo                                [-]
+real, intent(in) ::  & 
+  A,     & ! Albedo- sea surface, according to Lenderink             [-]
+  gc,    & ! Asymmetry parameter, "g" in Duynkerke.                  [-] 
+  Fs0,   & ! Incident incoming SW insolation at cloud top in 
+        ! direction of the incoming beam (not the vertical)       [W/m^2]
+  omega ! Single-scattering albedo                                [-]
 
-      logical, intent(in) ::  & 
-        center,  & ! Use centered differences?     [-]
-        sw_on,   & ! Is shortwave radiation on?    [-]
-        lw_on   ! Is longwave radiation on?     [-]
+logical, intent(in) ::  & 
+  center,  & ! Use centered differences?     [-]
+  sw_on,   & ! Is shortwave radiation on?    [-]
+  lw_on   ! Is longwave radiation on?     [-]
 
-      ! Output Variables
-      real, dimension(kk), intent(out) ::  & 
-        radhtk,    & ! Total radiational heating (dT/dt)           [K/s]
-        radht_SW,  & ! Shortwave component of radiational heating  [K/s]
-        radht_LW  ! Longwave component of radiational heating   [K/s]
+! Output Variables
+real, dimension(kk), intent(out) ::  & 
+  radhtk,    & ! Total radiational heating (dT/dt)           [K/s]
+  radht_SW,  & ! Shortwave component of radiational heating  [K/s]
+  radht_LW  ! Longwave component of radiational heating   [K/s]
 
-      real, dimension(kk+1), intent(out) ::  & 
-        Frad,     & ! Total radiative flux         [W/m^2]
-        Frad_SW,  & ! Shortwave radiative flux     [W/m^2]
-        Frad_LW  ! Longwave radiative flux      [W/m^2]
+real, dimension(kk+1), intent(out) ::  & 
+  Frad,     & ! Total radiative flux         [W/m^2]
+  Frad_SW,  & ! Shortwave radiative flux     [W/m^2]
+  Frad_LW  ! Longwave radiative flux      [W/m^2]
 
-      ! Local Variables
-      real, dimension(kk+1) :: lwp ! Liquid water path from domain top [kg/m^2]
-      real, dimension(kk+1) :: & 
-        lwp_coamps_zm   ! Liquid water path interpolated
-                        ! to COAMPS momentum (or w) levels  [kg/m^2]
+! Local Variables
+real, dimension(kk+1) :: lwp ! Liquid water path from domain top [kg/m^2]
+real, dimension(kk+1) :: & 
+  lwp_coamps_zm   ! Liquid water path interpolated
+                  ! to COAMPS momentum (or w) levels  [kg/m^2]
 
-      integer :: k
+integer :: k
 
 !-----------------------------------------------------------------------
 !
@@ -154,12 +154,12 @@
 ! 
 !-----------------------------------------------------------------------
 
-      if ( lw_on ) then
-        lwp(1) = 0.0
-        do k=2,kk+1
-          lwp(k) = lwp(k-1) & 
-                 + rbm(k-1)*qc3(k-1)*dsigm(k-1) !/aoz(i,j)
-        end do
+if ( lw_on ) then
+  lwp(1) = 0.0
+  do k=2,kk+1
+    lwp(k) = lwp(k-1) & 
+           + rbm(k-1)*qc3(k-1)*dsigm(k-1) !/aoz(i,j)
+  end do
 
 
 !-----------------------------------------------------------------------
@@ -248,54 +248,54 @@
 !
 !-----------------------------------------------------------------------
 
-        ! Interpolate liquid water path (lwp) from COAMPS thermodynamic
-        ! (or mass) levels to COAMPS momentum (or w) levels.
-        do k = 2, kk+1, 1
-           lwp_coamps_zm(k) = linint( coamps_zm(k), coamps_zt(k-1),  & 
-                                      coamps_zt(k), lwp(k-1), lwp(k) )
-        enddo
-        ! The value of liquid water path (lwp) at momentum (or w) 
-        ! level 1 (the uppermost level) is defined to be 1/2 of the
-        ! value of liquid water path at thermodynamic level 1.
-        lwp_coamps_zm(1) = lwp(1)/2
+  ! Interpolate liquid water path (lwp) from COAMPS thermodynamic
+  ! (or mass) levels to COAMPS momentum (or w) levels.
+  do k = 2, kk+1, 1
+     lwp_coamps_zm(k) = linint( coamps_zm(k), coamps_zt(k-1),  & 
+                                coamps_zt(k), lwp(k-1), lwp(k) )
+  enddo
+  ! The value of liquid water path (lwp) at momentum (or w) 
+  ! level 1 (the uppermost level) is defined to be 1/2 of the
+  ! value of liquid water path at thermodynamic level 1.
+  lwp_coamps_zm(1) = lwp(1)/2
 
-        if ( center ) then
-          Frad_LW(1) = F0 * exp( -kay * lwp_coamps_zm(1) ) & 
-                     + F1 * exp( -kay * & 
-                          ( lwp(kk+1) - lwp_coamps_zm(1) ) )
+  if ( center ) then
+    Frad_LW(1) = F0 * exp( -kay * lwp_coamps_zm(1) ) & 
+               + F1 * exp( -kay * & 
+                    ( lwp(kk+1) - lwp_coamps_zm(1) ) )
 
-          do k=2,kk+1
-            Frad_LW(k) = F0 * exp( -kay * lwp_coamps_zm(k) ) & 
-                       + F1 * exp( -kay * & 
-                            ( lwp(kk+1) - lwp_coamps_zm(k) ) )
-          enddo
-        else
-          do k=1,kk+1
-            Frad_LW(k) = F0 * exp( -kay * lwp(k) ) & 
-                       + F1 * exp( -kay * (lwp(kk+1)-lwp(k)) )
-          enddo
-        endif
+    do k=2,kk+1
+      Frad_LW(k) = F0 * exp( -kay * lwp_coamps_zm(k) ) & 
+                 + F1 * exp( -kay * & 
+                      ( lwp(kk+1) - lwp_coamps_zm(k) ) )
+    enddo
+  else
+    do k=1,kk+1
+      Frad_LW(k) = F0 * exp( -kay * lwp(k) ) & 
+                 + F1 * exp( -kay * (lwp(kk+1)-lwp(k)) )
+    enddo
+  endif
 
-      else ! this 'else' means lw_on is .FALSE.
-        do k=1,kk+1
-          Frad_LW(k) = 0.
-        enddo
-      endif
+else ! this 'else' means lw_on is .FALSE.
+  do k=1,kk+1
+    Frad_LW(k) = 0.
+  enddo
+endif
 
-      if ( sw_on ) then
-        call sunray_sw( qc3, rbm, xi_abs, dsigm, kk, & 
-                        coamps_zm, coamps_zt, & 
-                        radius, A, gc, Fs0, omega, center, & 
-                        Frad_SW )
-      else
-        do k=1,kk+1
-          Frad_SW(k) = 0.
-        enddo
-      endif
+if ( sw_on ) then
+  call sunray_sw( qc3, rbm, xi_abs, dsigm, kk, & 
+                  coamps_zm, coamps_zt, & 
+                  radius, A, gc, Fs0, omega, center, & 
+                  Frad_SW )
+else
+  do k=1,kk+1
+    Frad_SW(k) = 0.
+  enddo
+endif
 
-      do k=1,kk+1
-        Frad(k) = Frad_LW(k) + Frad_SW(k)
-      enddo
+do k=1,kk+1
+  Frad(k) = Frad_LW(k) + Frad_SW(k)
+enddo
 
 
 !-----------------------------------------------------------------------
@@ -321,23 +321,23 @@
 ! 
 !-----------------------------------------------------------------------
 
-      do k=1,kk
-        radhtk(k)   = (-1.0/(Cp*rbm(k))) & 
-                  * (Frad(k)-Frad(k+1))/dsigm(k)
-        radht_SW(k) = (-1.0/(Cp*rbm(k))) & 
-                  * (Frad_SW(k)-Frad_SW(k+1))/dsigm(k)
-        radht_LW(k) = (-1.0/(Cp*rbm(k))) & 
-                  * (Frad_LW(k)-Frad_LW(k+1))/dsigm(k)
-      enddo
+do k=1,kk
+  radhtk(k)   = (-1.0/(Cp*rbm(k))) & 
+            * (Frad(k)-Frad(k+1))/dsigm(k)
+  radht_SW(k) = (-1.0/(Cp*rbm(k))) & 
+            * (Frad_SW(k)-Frad_SW(k+1))/dsigm(k)
+  radht_LW(k) = (-1.0/(Cp*rbm(k))) & 
+            * (Frad_LW(k)-Frad_LW(k+1))/dsigm(k)
+enddo
 
-      return
-      end subroutine rad_lwsw
+return
+end subroutine rad_lwsw
 
 !-----------------------------------------------------------------------
-      subroutine sunray_sw( qc3, rbm, xi_abs, dsigm, kk, & 
-                            coamps_zm, coamps_zt, & 
-                            radius, A, gc, Fs0, omega, center, & 
-                            Frad_SW )
+subroutine sunray_sw( qc3, rbm, xi_abs, dsigm, kk, & 
+                      coamps_zm, coamps_zt, & 
+                      radius, A, gc, Fs0, omega, center, & 
+                      Frad_SW )
 
 ! Description:
 ! for CLEX altocumulus case
@@ -379,54 +379,54 @@
 ! see subroutine rad_lwsw. 
 !-----------------------------------------------------------------------
 
-      use constants, only: Cp, rho_lw, pi ! Variable(s)
-      use interpolation, only: linint ! Procedure(s)
+use constants, only: Cp, rho_lw, pi ! Variable(s)
+use interpolation, only: linint ! Procedure(s)
 
-      implicit none
+implicit none
 
-      ! Input variables
+! Input variables
 
-      integer, intent(in) :: kk
+integer, intent(in) :: kk
 
-      real, dimension(kk), intent(in) ::  & 
-        qc3, & 
-        rbm, & 
-        dsigm
+real, dimension(kk), intent(in) ::  & 
+  qc3, & 
+  rbm, & 
+  dsigm
 
-      real, dimension(kk+1), intent(in) :: & 
-        coamps_zm,  & ! Altitude of momentum levels w/ COAMPS grid indices      [m]
-        coamps_zt  ! Altitude of thermodynamic levels w/ COAMPS grid indices [m]
+real, dimension(kk+1), intent(in) :: & 
+  coamps_zm,  & ! Altitude of momentum levels w/ COAMPS grid indices      [m]
+  coamps_zt  ! Altitude of thermodynamic levels w/ COAMPS grid indices [m]
 
-      real, intent(in) ::  & 
-        xi_abs, & 
-        radius,  & 
-        A,  & 
-        gc,  & 
-        Fs0,  & 
-        omega
+real, intent(in) ::  & 
+  xi_abs, & 
+  radius,  & 
+  A,  & 
+  gc,  & 
+  Fs0,  & 
+  omega
 
-      logical, intent(in) ::  & 
-        center
+logical, intent(in) ::  & 
+  center
 
-      ! Output variables
-      real, dimension(kk+1), intent(out) ::  & 
-        Frad_SW
+! Output variables
+real, dimension(kk+1), intent(out) ::  & 
+  Frad_SW
 
 
-      ! Local Variables
-      real, dimension(kk+1) :: & 
-        tau,     & ! Optical depth of an incremental layer.        [-]
-        taude,   & ! Delta-Eddington transformation of tau.        [-]
-        F_diff,  & ! Diffuse component of SW radiation             [W/m^2]
-        F_dir   ! Diffuse component of LW radiation             [W/m^2]
+! Local Variables
+real, dimension(kk+1) :: & 
+  tau,     & ! Optical depth of an incremental layer.        [-]
+  taude,   & ! Delta-Eddington transformation of tau.        [-]
+  F_diff,  & ! Diffuse component of SW radiation             [W/m^2]
+  F_dir   ! Diffuse component of LW radiation             [W/m^2]
 
-      real :: taupath, tauc, t1, t2, t3, c1, c2, omegade, & 
-           x1, x2, x3, rk, rk2, xi_abs2, rp, alpha, beta, rtt, & 
-           exmu0, expk, exmk, xp23p, xm23p, ap23b, taucde
+real :: taupath, tauc, t1, t2, t3, c1, c2, omegade, & 
+     x1, x2, x3, rk, rk2, xi_abs2, rp, alpha, beta, rtt, & 
+     exmu0, expk, exmk, xp23p, xm23p, ap23b, taucde
 
-      integer :: k
+integer :: k
 
-      real :: ff, gcde
+real :: ff, gcde
 
 !-----------------------------------------------------------------------
 !  CONSTANTS/PARAMETERS
@@ -439,8 +439,8 @@
 !
 !-----------------------------------------------------------------------
 
-      ff = gc*gc
-      gcde = gc/(1.0+gc)
+ff = gc*gc
+gcde = gc/(1.0+gc)
 
 !-----------------------------------------------------------------------
 ! 
@@ -459,21 +459,21 @@
 !-----------------------------------------------------------------------
 
 
-      tauc = 0.0
-      do k=1, kk
+tauc = 0.0
+do k=1, kk
 
-        tau(k) = 1.5 * qc3(k) * rbm(k) * dsigm(k)  & !/ aoz(i,j)
-               / radius / rho_lw
-        tauc = tauc + tau(k)
-      enddo
-      tau(kk+1) = tau(kk)
+  tau(k) = 1.5 * qc3(k) * rbm(k) * dsigm(k)  & !/ aoz(i,j)
+         / radius / rho_lw
+  tauc = tauc + tau(k)
+enddo
+tau(kk+1) = tau(kk)
 
-      omegade = (1.0-ff)*omega/(1.0-omega*ff)
-      taucde = (1.0-omega*ff)*tauc
+omegade = (1.0-ff)*omega/(1.0-omega*ff)
+taucde = (1.0-omega*ff)*tauc
 
-      do k=1, kk+1
-        taude(k) = (1.0-omega*ff)*tau(k)
-      enddo
+do k=1, kk+1
+  taude(k) = (1.0-omega*ff)*tau(k)
+enddo
 
 
 !-----------------------------------------------------------------------
@@ -533,27 +533,27 @@
 !
 !-----------------------------------------------------------------------
 
-      x1 = 1.0-omegade*gcde
-      x2 = 1.0-omegade
-      rk = sqrt( 3.0*x2*x1 )
-      xi_abs2 = xi_abs*xi_abs
-      rk2 = rk*rk
-      x3 = 4.0*(1.0-rk2*xi_abs2)
-      rp = sqrt( 3.0*x2/x1 )
-      alpha = 3.0*omegade*xi_abs2*(1.0+gcde*x2)/x3
-      beta = 3.0*omegade*xi_abs*(1.0+3.0*gcde*xi_abs2*x2)/x3
+x1 = 1.0-omegade*gcde
+x2 = 1.0-omegade
+rk = sqrt( 3.0*x2*x1 )
+xi_abs2 = xi_abs*xi_abs
+rk2 = rk*rk
+x3 = 4.0*(1.0-rk2*xi_abs2)
+rp = sqrt( 3.0*x2/x1 )
+alpha = 3.0*omegade*xi_abs2*(1.0+gcde*x2)/x3
+beta = 3.0*omegade*xi_abs*(1.0+3.0*gcde*xi_abs2*x2)/x3
 
-      rtt = 2.0/3.0
-      exmu0 = exp( -taucde/xi_abs )
-      expk = exp( rk*taucde )
-      exmk = 1.0/expk
-      xp23p = 1.0+rtt*rp
-      xm23p = 1.0-rtt*rp
-      ap23b = alpha+rtt*beta
+rtt = 2.0/3.0
+exmu0 = exp( -taucde/xi_abs )
+expk = exp( rk*taucde )
+exmk = 1.0/expk
+xp23p = 1.0+rtt*rp
+xm23p = 1.0-rtt*rp
+ap23b = alpha+rtt*beta
 
-      t1 = 1.-A-rtt*(1.0+A)*rp
-      t2 = 1.-A+rtt*(1.0+A)*rp
-      t3 = (1.-A)*alpha-rtt*(1.+A)*beta+A*xi_abs
+t1 = 1.-A-rtt*(1.0+A)*rp
+t2 = 1.-A+rtt*(1.0+A)*rp
+t3 = (1.-A)*alpha-rtt*(1.+A)*beta+A*xi_abs
 
 
 !-----------------------------------------------------------------------
@@ -566,9 +566,9 @@
 ! 
 !-----------------------------------------------------------------------
 
-      c2 = (xp23p*t3*exmu0-t1*ap23b*exmk) & 
-         / (xp23p*t2*expk-xm23p*t1*exmk)
-      c1 = (ap23b-c2*xm23p)/xp23p
+c2 = (xp23p*t3*exmu0-t1*ap23b*exmk) & 
+   / (xp23p*t2*expk-xm23p*t1*exmk)
+c1 = (ap23b-c2*xm23p)/xp23p
 
 
 !-----------------------------------------------------------------------
@@ -631,50 +631,50 @@
 !
 !-----------------------------------------------------------------------
 
-      if ( center ) then
-        taupath = 0.5*taude(1)
-      else
-        taupath = 0.
-      endif
+if ( center ) then
+  taupath = 0.5*taude(1)
+else
+  taupath = 0.
+endif
 
-          F_diff(1) = (-4.0/3.0) * Fs0 & 
-                    * (  & 
-                       rp * & 
-                           (  & 
-                              c1*exp( -rk*taupath ) & 
-                            - c2*exp( rk*taupath ) & 
-                           ) & 
-                       - beta*exp( -taupath/xi_abs )  & 
-                      )
-          F_dir(1) = -Fs0*xi_abs*exp( -taupath/xi_abs )
-          Frad_SW(1) = F_diff(1) + F_dir(1)
+    F_diff(1) = (-4.0/3.0) * Fs0 & 
+              * (  & 
+                 rp * & 
+                     (  & 
+                        c1*exp( -rk*taupath ) & 
+                      - c2*exp( rk*taupath ) & 
+                     ) & 
+                 - beta*exp( -taupath/xi_abs )  & 
+                )
+    F_dir(1) = -Fs0*xi_abs*exp( -taupath/xi_abs )
+    Frad_SW(1) = F_diff(1) + F_dir(1)
 
-        do k = 2, kk+1
+  do k = 2, kk+1
 
-          if ( center ) then
-            taupath = taupath  & 
-                    + linint( coamps_zm(k), coamps_zt(k-1),  & 
-                              coamps_zt(k), taude(k-1), taude(k) )
-          else
-            taupath = taupath + taude(k)
-          endif
+    if ( center ) then
+      taupath = taupath  & 
+              + linint( coamps_zm(k), coamps_zt(k-1),  & 
+                        coamps_zt(k), taude(k-1), taude(k) )
+    else
+      taupath = taupath + taude(k)
+    endif
 
 
-          F_diff(k) = (-4.0/3.0) * Fs0 & 
-                    * (  & 
-                       rp * & 
-                           (  & 
-                              c1*exp( -rk*taupath ) & 
-                            - c2*exp( rk*taupath ) & 
-                           ) & 
-                       - beta*exp( -taupath/xi_abs )  & 
-                      )
-          F_dir(k) = -Fs0*xi_abs*exp( -taupath/xi_abs )
-          Frad_SW(k) = F_diff(k) + F_dir(k)
+    F_diff(k) = (-4.0/3.0) * Fs0 & 
+              * (  & 
+                 rp * & 
+                     (  & 
+                        c1*exp( -rk*taupath ) & 
+                      - c2*exp( rk*taupath ) & 
+                     ) & 
+                 - beta*exp( -taupath/xi_abs )  & 
+                )
+    F_dir(k) = -Fs0*xi_abs*exp( -taupath/xi_abs )
+    Frad_SW(k) = F_diff(k) + F_dir(k)
 
-        enddo ! k=2..kk+1
+  enddo ! k=2..kk+1
 
-      return
-      end subroutine sunray_sw
+return
+end subroutine sunray_sw
 
-      end module rad_lwsw_mod
+end module rad_lwsw_mod

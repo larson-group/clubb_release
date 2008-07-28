@@ -1,26 +1,26 @@
 !----------------------------------------------------------------------
-! $Id: mpace_b.F90,v 1.3 2008-07-23 20:25:50 faschinj Exp $
-        module mpace_b
+! $Id: mpace_b.F90,v 1.4 2008-07-28 19:37:55 faschinj Exp $
+module mpace_b
 
 !       Description:
 !       Contains subroutines for the mpace_b intercomparison.
 !----------------------------------------------------------------------
 
-        implicit none
+implicit none
 
-        public :: mpace_b_tndcy, mpace_b_sfclyr
+public :: mpace_b_tndcy, mpace_b_sfclyr
 
-        private ! Default Scope
+private ! Default Scope
 
-        contains
+contains
 
 !----------------------------------------------------------------------
-        subroutine mpace_b_tndcy & 
-        ( time, time_initial, rlat, & 
-          rhot, p, thvm, rcm, & 
-          wmt, wmm, thlm_forcing, rtm_forcing, & 
-          Ncnm, Ncm, Frad, radht, & 
-          sclrm_forcing )
+subroutine mpace_b_tndcy & 
+( time, time_initial, rlat, & 
+  rhot, p, thvm, rcm, & 
+  wmt, wmm, thlm_forcing, rtm_forcing, & 
+  Ncnm, Ncm, Frad, radht, & 
+  sclrm_forcing )
 
 !        Description:
 !          Subroutine to large-scale subsidence for mpace_b case (Michael
@@ -32,311 +32,311 @@
 !          Liou, Wallace and Hobbs, Shettle and Weinman
 !-----------------------------------------------------------------------
 
-        use constants, only: Rd, Cp, Lv, p0, rc_tol ! Variable(s)
+use constants, only: Rd, Cp, Lv, p0, rc_tol ! Variable(s)
 
-        use parameters, only: sclr_dim ! Variable(s)
+use parameters, only: sclr_dim ! Variable(s)
 
-        use model_flags, only: lbugsrad, lcoamps_micro, kk_rain ! Variable(s)
+use model_flags, only: lbugsrad, lcoamps_micro, kk_rain ! Variable(s)
 
-        use grid_class, only: gr ! Variable(s)
+use grid_class, only: gr ! Variable(s)
 
-        use grid_class, only: zt2zm ! Procedure(s)
+use grid_class, only: zt2zm ! Procedure(s)
 
-        use stats_precision, only: time_precision ! Variable(s)
+use stats_precision, only: time_precision ! Variable(s)
 
-        use rad_lwsw_mod, only: rad_lwsw ! Variable(s)
+use rad_lwsw_mod, only: rad_lwsw ! Variable(s)
 
-        use array_index, only: iisclr_rt, iisclr_thl
+use array_index, only: iisclr_rt, iisclr_thl
 
 #ifdef STATS
-        use stats_type, only: stat_update_var
+use stats_type, only: stat_update_var
 
-        use stats_variables, only: iFrad_LW, iFrad_SW, iradht_SW,  & ! Variable(s)
-                       iradht_LW, zt, zm, lstats_samp
+use stats_variables, only: iFrad_LW, iFrad_SW, iradht_SW,  & ! Variable(s)
+               iradht_LW, zt, zm, lstats_samp
 #endif /*STATS*/
 
-        implicit none
+implicit none
 
-        ! Local constants, subsidence
-        real, parameter :: & 
-        grav0 = 9.8,      & ! m/s
-        D     = 5.8e-6,   & ! 1/s
-        psfc  = 101000.,  & ! Pa
-        pinv  = 85000.   ! Pa; ditto
+! Local constants, subsidence
+real, parameter :: & 
+grav0 = 9.8,      & ! m/s
+D     = 5.8e-6,   & ! 1/s
+psfc  = 101000.,  & ! Pa
+pinv  = 85000.   ! Pa; ditto
 
-        ! Local constants, LW radiation (from DYCOMS II-RF01)
-        real, parameter :: & 
-        F0  = 70.0, & 
-        F1  = 22.0, & 
-        kap = 85.0
+! Local constants, LW radiation (from DYCOMS II-RF01)
+real, parameter :: & 
+F0  = 70.0, & 
+F1  = 22.0, & 
+kap = 85.0
 
-        ! Local constants, SW radiation (Shettle and Weinman)
-        real, parameter :: & 
-        Fs0    = 1212.75, & 
-        radius = 1.0e-5, & 
-        A      = 0.1, & 
-        gc     = 0.86, & 
-        omega  = 0.9965
+! Local constants, SW radiation (Shettle and Weinman)
+real, parameter :: & 
+Fs0    = 1212.75, & 
+radius = 1.0e-5, & 
+A      = 0.1, & 
+gc     = 0.86, & 
+omega  = 0.9965
 !    .  rlat = 71.75
 
-        ! Local constants, SW radiation (Liou solar angle scheme)
-        real, parameter :: & 
-        c_0 = 0.006918, & 
-        c_1 = -0.399912, & 
-        c_2 = -0.006758, & 
-        c_3 = -0.002697, & 
-        d_1 = 0.070257, & 
-        d_2 = 0.000907, & 
-        d_3 = 0.000148
+! Local constants, SW radiation (Liou solar angle scheme)
+real, parameter :: & 
+c_0 = 0.006918, & 
+c_1 = -0.399912, & 
+c_2 = -0.006758, & 
+c_3 = -0.002697, & 
+d_1 = 0.070257, & 
+d_2 = 0.000907, & 
+d_3 = 0.000148
 
-        ! Input Variables
-        real(kind=time_precision), intent(in) ::  & 
-        time,          & ! Current time of simulation      [s]
-        time_initial  ! Initial time of simulation      [s]
+! Input Variables
+real(kind=time_precision), intent(in) ::  & 
+time,          & ! Current time of simulation      [s]
+time_initial  ! Initial time of simulation      [s]
 
-        real, intent(in) ::  & 
-        rlat          ! Latitude                        [Degrees North]
+real, intent(in) ::  & 
+rlat          ! Latitude                        [Degrees North]
 
-        real, dimension(gr%nnzp), intent(in) :: & 
-        rhot,   & ! Density of air                         [kg/m^3]
-        p,      & ! Pressure                               [Pa]
-        thvm,   & ! Virtual potential temperature          [K]
-        rcm    ! Cloud water mixing ratio               [kg/kg]
+real, dimension(gr%nnzp), intent(in) :: & 
+rhot,   & ! Density of air                         [kg/m^3]
+p,      & ! Pressure                               [Pa]
+thvm,   & ! Virtual potential temperature          [K]
+rcm    ! Cloud water mixing ratio               [kg/kg]
 
-        ! Input/Output Variables
-        real, dimension(gr%nnzp), intent(inout) ::  & 
-        Ncm,          & ! Cloud droplet number concentration      [count/m^3]
-        Ncnm         ! Cloud nuclei number concentration       [count/m^3]
+! Input/Output Variables
+real, dimension(gr%nnzp), intent(inout) ::  & 
+Ncm,          & ! Cloud droplet number concentration      [count/m^3]
+Ncnm         ! Cloud nuclei number concentration       [count/m^3]
 
-        ! Output Variables
-        real, dimension(gr%nnzp), intent(out) ::  & 
-        wmt,          & ! Large-scale vertical motion on t grid   [m/s]
-        wmm,          & ! Large-scale vertical motion on m grid   [m/s]
-        thlm_forcing,  & ! Large-scale thlm tendency               [K/s]
-        rtm_forcing,     & ! Large-scale rtm tendency                [kg/kg/s]
-        Frad,         & ! Total radiative flux                    [W/m^2]
-        radht        ! dT/dt, then d Theta/dt, due to rad.     [K/s]
+! Output Variables
+real, dimension(gr%nnzp), intent(out) ::  & 
+wmt,          & ! Large-scale vertical motion on t grid   [m/s]
+wmm,          & ! Large-scale vertical motion on m grid   [m/s]
+thlm_forcing,  & ! Large-scale thlm tendency               [K/s]
+rtm_forcing,     & ! Large-scale rtm tendency                [kg/kg/s]
+Frad,         & ! Total radiative flux                    [W/m^2]
+radht        ! dT/dt, then d Theta/dt, due to rad.     [K/s]
 
-        ! Output Variables (optional)
-        real, optional, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
-        sclrm_forcing ! Passive scalar LS tendency            [units/s]
-
-
-        ! Local Variables, radiation scheme
-        real, dimension(gr%nnzp) ::  & 
-        radht_LW, & ! dT/dt, then d Theta/dt, due to LW rad.  [K/s]
-        radht_SW, & ! dT/dt, then d Theta/dt, due to SW rad.  [K/s]
-        Frad_LW,  & ! Longwave radiative flux                 [W/m^2]
-        Frad_SW  ! Shortwave radiative flux                [W/m^2]
+! Output Variables (optional)
+real, optional, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
+sclrm_forcing ! Passive scalar LS tendency            [units/s]
 
 
-        ! Local Variables, general
-        integer :: i, k ! Loop indices
+! Local Variables, radiation scheme
+real, dimension(gr%nnzp) ::  & 
+radht_LW, & ! dT/dt, then d Theta/dt, due to LW rad.  [K/s]
+radht_SW, & ! dT/dt, then d Theta/dt, due to SW rad.  [K/s]
+Frad_LW,  & ! Longwave radiative flux                 [W/m^2]
+Frad_SW  ! Shortwave radiative flux                [W/m^2]
 
 
-        ! Local Variables, subsidence scheme
-        real :: & 
-        velocity_omega
+! Local Variables, general
+integer :: i, k ! Loop indices
 
 
-        ! Local Variables, radiation scheme
-        real :: & 
-        xi_abs, & 
-        sda_t, & 
-        sda_delta, & 
-        sda_h, & 
-        t_since_noon, & 
-        julday, & 
-        start_time_until_noon, & 
-        t_tendency
+! Local Variables, subsidence scheme
+real :: & 
+velocity_omega
 
-        real, dimension(gr%nnzp) :: & 
-        radht_theta, & 
-        radht_LW_theta, & 
-        radht_SW_theta, & 
+
+! Local Variables, radiation scheme
+real :: & 
+xi_abs, & 
+sda_t, & 
+sda_delta, & 
+sda_h, & 
+t_since_noon, & 
+julday, & 
+start_time_until_noon, & 
+t_tendency
+
+real, dimension(gr%nnzp) :: & 
+radht_theta, & 
+radht_LW_theta, & 
+radht_SW_theta, & 
 !     .  LWP,            ! Liquid water path                              [kg/m^2]
-        rcm_rad,         & ! Flipped array of liq. water mixing ratio       [kg/kg]
-        rhot_rad,        & ! Flipped array of air density                   [kg/m^3]
-        dsigm,           & ! Flipped array of grid spacing                  [m]
-        coamps_zm,       & ! Flipped array of momentum level altitudes      [m]
-        coamps_zt,       & ! Flipped array of thermodynamic level altitudes [m]
-        frad_out,        & ! Flipped array of radiaive flux                 [W/m^2]
-        frad_lw_out,     & ! Flipped array of LW radiative flux             [W/m^2]
-        frad_sw_out,     & ! Flipped array of SW radiative flux             [W/m^2]
-        radhtk,          & ! Flipped array of radiative heating             [K/s]
-        radht_lw_out,    & ! Flipped array of LW radiative heating          [K/s]
-        radht_sw_out    ! Flipped array of SW radiative heating          [K/s]
+rcm_rad,         & ! Flipped array of liq. water mixing ratio       [kg/kg]
+rhot_rad,        & ! Flipped array of air density                   [kg/m^3]
+dsigm,           & ! Flipped array of grid spacing                  [m]
+coamps_zm,       & ! Flipped array of momentum level altitudes      [m]
+coamps_zt,       & ! Flipped array of thermodynamic level altitudes [m]
+frad_out,        & ! Flipped array of radiaive flux                 [W/m^2]
+frad_lw_out,     & ! Flipped array of LW radiative flux             [W/m^2]
+frad_sw_out,     & ! Flipped array of SW radiative flux             [W/m^2]
+radhtk,          & ! Flipped array of radiative heating             [K/s]
+radht_lw_out,    & ! Flipped array of LW radiative heating          [K/s]
+radht_sw_out    ! Flipped array of SW radiative heating          [K/s]
 
-        ! Local variables, on/off switches for individual schemes
-        logical ::  & 
-        lw_on, & 
-        sw_on, & 
+! Local variables, on/off switches for individual schemes
+logical ::  & 
+lw_on, & 
+sw_on, & 
 !     .  subs_on,
-        center
+center
 
 !-----------------------------------------------------------------------
 
-        ! Set which schemes to use
-        lw_on           = .TRUE.
-        sw_on           = .TRUE.
+! Set which schemes to use
+lw_on           = .TRUE.
+sw_on           = .TRUE.
 !        subs_on         = .TRUE.
-        center          = .TRUE.
+center          = .TRUE.
 
-        ! Compute vertical motion
-        do i=2,gr%nnzp
-          velocity_omega = min( D*(psfc-p(i)), D*(psfc-pinv) )
-          wmt(i) = -velocity_omega * Rd * thvm(i) / p(i) / grav0
-        end do
+! Compute vertical motion
+do i=2,gr%nnzp
+  velocity_omega = min( D*(psfc-p(i)), D*(psfc-pinv) )
+  wmt(i) = -velocity_omega * Rd * thvm(i) / p(i) / grav0
+end do
 
 
 
-        ! Boundary condition
-        wmt(1) = 0.0        ! Below surface
+! Boundary condition
+wmt(1) = 0.0        ! Below surface
 
-        ! Interpolate
-        wmm = zt2zm( wmt )
+! Interpolate
+wmm = zt2zm( wmt )
 
-        ! Boundary conditions
-        wmm(1) = 0.0        ! At surface
-        wmm(gr%nnzp) = 0.0  ! Model top
-        
+! Boundary conditions
+wmm(1) = 0.0        ! At surface
+wmm(gr%nnzp) = 0.0  ! Model top
 
-        ! Compute large-scale tendencies
-        do i=1,gr%nnzp
-         t_tendency = min( -4.,-15.*(1.-((psfc-p(i))/21818.)) ) ! K/day
-         thlm_forcing(i) = (t_tendency * ((psfc/p(i)) ** (Rd/Cp)))  & 
-                          / 86400. ! K/s
-         rtm_forcing(i)  = min( 0.164,-3*(1-((psfc-p(i))/15171.)) ) /  & 
-                       1000. / 86400. ! g/kg/day -> kg/kg/s
-        end do
 
-        ! Compute radiation
-        julday = 282
-        start_time_until_noon = 17490 + 61200
-        t_since_noon   = real(time - start_time_until_noon)
-        sda_t = 2*3.14*(julday-1)/365
+! Compute large-scale tendencies
+do i=1,gr%nnzp
+ t_tendency = min( -4.,-15.*(1.-((psfc-p(i))/21818.)) ) ! K/day
+ thlm_forcing(i) = (t_tendency * ((psfc/p(i)) ** (Rd/Cp)))  & 
+                  / 86400. ! K/s
+ rtm_forcing(i)  = min( 0.164,-3*(1-((psfc-p(i))/15171.)) ) /  & 
+               1000. / 86400. ! g/kg/day -> kg/kg/s
+end do
 
-        sda_delta = c_0 + c_1*cos(sda_t) + d_1*sin(sda_t) + & 
-                    c_2*cos(2*sda_t) + d_2*sin(2*sda_t) + & 
-                    c_3*cos(3*sda_t) + d_3*sin(3*sda_t)
+! Compute radiation
+julday = 282
+start_time_until_noon = 17490 + 61200
+t_since_noon   = real(time - start_time_until_noon)
+sda_t = 2*3.14*(julday-1)/365
 
-        sda_h = 2*3.14*t_since_noon/86400
+sda_delta = c_0 + c_1*cos(sda_t) + d_1*sin(sda_t) + & 
+            c_2*cos(2*sda_t) + d_2*sin(2*sda_t) + & 
+            c_3*cos(3*sda_t) + d_3*sin(3*sda_t)
 
-        xi_abs = sin(rlat*3.14/180) * sin(sda_delta) + & 
-                 cos(rlat*3.14/180) * cos(sda_delta) * cos(sda_h)
+sda_h = 2*3.14*t_since_noon/86400
 
-        xi_abs = max(xi_abs,0.)
+xi_abs = sin(rlat*3.14/180) * sin(sda_delta) + & 
+         cos(rlat*3.14/180) * cos(sda_delta) * cos(sda_h)
 
-        if (xi_abs == 0.) then
-          sw_on = .FALSE.
-        end if
+xi_abs = max(xi_abs,0.)
 
-        if (.not. sw_on) then
-          xi_abs = 0.
-        end if
+if (xi_abs == 0.) then
+  sw_on = .FALSE.
+end if
 
-        if ( .not. lbugsrad ) then
-          do k = 1, gr%nnzp
-            rcm_rad(k)  = rcm(gr%nnzp-k+1)
-            rhot_rad(k) = rhot(gr%nnzp-k+1)
-            dsigm(k)    = 1.0 / gr%dzt(gr%nnzp-k+1)
-            coamps_zm(k) = gr%zm(gr%nnzp-k+1)
-            coamps_zt(k) = gr%zt(gr%nnzp-k+1)
-          enddo
+if (.not. sw_on) then
+  xi_abs = 0.
+end if
 
-          call rad_lwsw(rcm_rad, rhot_rad, dsigm, & 
-                        coamps_zm, coamps_zt, & 
-                        Frad_out, Frad_LW_out, Frad_SW_out, & 
-                        radhtk, radht_LW_out, radht_SW_out, & 
-                        gr%nnzp-1, center, & 
-                        xi_abs, F0, F1, kap, radius, A, gc, Fs0, omega, & 
-                        sw_on, lw_on)
+if ( .not. lbugsrad ) then
+  do k = 1, gr%nnzp
+    rcm_rad(k)  = rcm(gr%nnzp-k+1)
+    rhot_rad(k) = rhot(gr%nnzp-k+1)
+    dsigm(k)    = 1.0 / gr%dzt(gr%nnzp-k+1)
+    coamps_zm(k) = gr%zm(gr%nnzp-k+1)
+    coamps_zt(k) = gr%zt(gr%nnzp-k+1)
+  enddo
 
-          do k = 2, gr%nnzp-1
-            Frad(k)     = Frad_out(gr%nnzp-k+1)
-            Frad_LW(k)  = Frad_LW_out(gr%nnzp-k+1)
-            Frad_SW(k)  = Frad_SW_out(gr%nnzp-k+1)
+  call rad_lwsw(rcm_rad, rhot_rad, dsigm, & 
+                coamps_zm, coamps_zt, & 
+                Frad_out, Frad_LW_out, Frad_SW_out, & 
+                radhtk, radht_LW_out, radht_SW_out, & 
+                gr%nnzp-1, center, & 
+                xi_abs, F0, F1, kap, radius, A, gc, Fs0, omega, & 
+                sw_on, lw_on)
 
-            radht(k)    = radhtk(gr%nnzp-k+1)
-            radht_LW(k) = radht_LW_out(gr%nnzp-k+1)
-            radht_SW(k) = radht_SW_out(gr%nnzp-k+1)
+  do k = 2, gr%nnzp-1
+    Frad(k)     = Frad_out(gr%nnzp-k+1)
+    Frad_LW(k)  = Frad_LW_out(gr%nnzp-k+1)
+    Frad_SW(k)  = Frad_SW_out(gr%nnzp-k+1)
 
-            radht_theta(k)    = radht(k) * ((p0/p(k))**(Rd/Cp))
-            radht_LW_theta(k) = radht_LW(k) * ((p0/p(k))**(Rd/Cp))
-            radht_SW_theta(k) = radht_SW(k) * ((p0/p(k))**(Rd/Cp))
-          end do ! k
+    radht(k)    = radhtk(gr%nnzp-k+1)
+    radht_LW(k) = radht_LW_out(gr%nnzp-k+1)
+    radht_SW(k) = radht_SW_out(gr%nnzp-k+1)
 
-          Frad(1)    = Frad(2)
-          Frad_LW(1) = Frad_LW(2)
-          Frad_SW(1) = Frad_SW(2)
-          radht_theta(1)    = radht_theta(2)
-          radht_LW_theta(1) = radht_LW_theta(2)
-          radht_SW_theta(1) = radht_SW_theta(2)
+    radht_theta(k)    = radht(k) * ((p0/p(k))**(Rd/Cp))
+    radht_LW_theta(k) = radht_LW(k) * ((p0/p(k))**(Rd/Cp))
+    radht_SW_theta(k) = radht_SW(k) * ((p0/p(k))**(Rd/Cp))
+  end do ! k
 
-          Frad(gr%nnzp)    = Frad(gr%nnzp-1)
-          Frad_LW(gr%nnzp) = Frad_LW(gr%nnzp-1)
-          Frad_SW(gr%nnzp) = Frad_SW(gr%nnzp-1)
-          radht_theta(gr%nnzp)    = radht_theta(gr%nnzp-1)
-          radht_LW_theta(gr%nnzp) = radht_LW_theta(gr%nnzp-1)
-          radht_SW_theta(gr%nnzp) = radht_SW_theta(gr%nnzp-1)
+  Frad(1)    = Frad(2)
+  Frad_LW(1) = Frad_LW(2)
+  Frad_SW(1) = Frad_SW(2)
+  radht_theta(1)    = radht_theta(2)
+  radht_LW_theta(1) = radht_LW_theta(2)
+  radht_SW_theta(1) = radht_SW_theta(2)
 
-          radht(1:gr%nnzp)    = radht_theta(1:gr%nnzp)
-          radht_LW(1:gr%nnzp) = radht_LW_theta(1:gr%nnzp)
-          radht_SW(1:gr%nnzp) = radht_SW_theta(1:gr%nnzp)
+  Frad(gr%nnzp)    = Frad(gr%nnzp-1)
+  Frad_LW(gr%nnzp) = Frad_LW(gr%nnzp-1)
+  Frad_SW(gr%nnzp) = Frad_SW(gr%nnzp-1)
+  radht_theta(gr%nnzp)    = radht_theta(gr%nnzp-1)
+  radht_LW_theta(gr%nnzp) = radht_LW_theta(gr%nnzp-1)
+  radht_SW_theta(gr%nnzp) = radht_SW_theta(gr%nnzp-1)
 
-          do k = 1, gr%nnzp
-            thlm_forcing(k) = thlm_forcing(k) + radht_theta(k)
-          end do
+  radht(1:gr%nnzp)    = radht_theta(1:gr%nnzp)
+  radht_LW(1:gr%nnzp) = radht_LW_theta(1:gr%nnzp)
+  radht_SW(1:gr%nnzp) = radht_SW_theta(1:gr%nnzp)
 
-        end if ! ~ lbugsrad
+  do k = 1, gr%nnzp
+    thlm_forcing(k) = thlm_forcing(k) + radht_theta(k)
+  end do
+
+end if ! ~ lbugsrad
 
 #ifdef STATS
-        if ( .not.lbugsrad .and. lstats_samp ) then
+if ( .not.lbugsrad .and. lstats_samp ) then
 
-          call stat_update_var( iradht_LW, radht_LW, zt )
+  call stat_update_var( iradht_LW, radht_LW, zt )
 
-          call stat_update_var( iradht_SW, radht_SW, zt )
+  call stat_update_var( iradht_SW, radht_SW, zt )
 
-          call stat_update_var( iFrad_SW, Frad_SW, zm )
+  call stat_update_var( iFrad_SW, Frad_SW, zm )
 
-          call stat_update_var( iFrad_LW, Frad_LW, zm )
+  call stat_update_var( iFrad_LW, Frad_LW, zm )
 
-        end if
+end if
 #endif /*STATS*/
 
-        ! Initialize Ncnm on first timestep
-        if ( lcoamps_micro .and. time == time_initial ) then
-          Ncnm(1:gr%nnzp)  & 
-          = 30.0 * (1.0 + exp(-gr%zt(1:gr%nnzp)/2000.0)) * 1.e6
+! Initialize Ncnm on first timestep
+if ( lcoamps_micro .and. time == time_initial ) then
+  Ncnm(1:gr%nnzp)  & 
+  = 30.0 * (1.0 + exp(-gr%zt(1:gr%nnzp)/2000.0)) * 1.e6
 
-        else if ( kk_rain ) then
-          ! Note: Khairoutdinov and Kogan microphysics has only been
-          ! tested for marine stratocumulous clouds, and does not
-          ! account for snow and ice.
-          do k=1, gr%nnzp, 1
-            if ( rcm(k) >= rc_tol ) then
-              ! Ncm is in units of kg^-1.  If the coefficient is in m^-3, then
-              ! it needs to be divided by rhot in order to get units of kg^-1.
-              ! Brian.  Sept. 8, 2007.
-              Ncm(k) = 30.0 * (1.0 + exp(-gr%zt(k)/2000.0)) * 1.e6 & 
-                       / rhot(k) 
-            end if
-          end do
-        end if
+else if ( kk_rain ) then
+  ! Note: Khairoutdinov and Kogan microphysics has only been
+  ! tested for marine stratocumulous clouds, and does not
+  ! account for snow and ice.
+  do k=1, gr%nnzp, 1
+    if ( rcm(k) >= rc_tol ) then
+      ! Ncm is in units of kg^-1.  If the coefficient is in m^-3, then
+      ! it needs to be divided by rhot in order to get units of kg^-1.
+      ! Brian.  Sept. 8, 2007.
+      Ncm(k) = 30.0 * (1.0 + exp(-gr%zt(k)/2000.0)) * 1.e6 & 
+               / rhot(k) 
+    end if
+  end do
+end if
 
 
-        ! Test scalars with thetal and rt if desired
-        if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
-        if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
+! Test scalars with thetal and rt if desired
+if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
+if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
-        return
-        end subroutine mpace_b_tndcy
+return
+end subroutine mpace_b_tndcy
 
 !----------------------------------------------------------------------
-        subroutine mpace_b_sfclyr( rho0, um_sfc, vm_sfc, & 
-                                 upwp_sfc, vpwp_sfc, & 
-                                 wpthlp_sfc, wprtp_sfc, ustar, & 
-                                 wpsclrp_sfc, wpedsclrp_sfc )
+subroutine mpace_b_sfclyr( rho0, um_sfc, vm_sfc, & 
+                         upwp_sfc, vpwp_sfc, & 
+                         wpthlp_sfc, wprtp_sfc, ustar, & 
+                         wpsclrp_sfc, wpedsclrp_sfc )
 
 !        Description:
 !          Surface forcing subroutine for mpace_b case.  Written July-
@@ -346,71 +346,71 @@
 !          mpace_b specification, arm.gov
 !-----------------------------------------------------------------------
 
-        use constants, only: Cp, Lv ! Variable(s)
+use constants, only: Cp, Lv ! Variable(s)
 
-        use parameters, only: sclr_dim ! Variable(s)
+use parameters, only: sclr_dim ! Variable(s)
 
-        use array_index, only: iisclr_rt, iisclr_thl
+use array_index, only: iisclr_rt, iisclr_thl
 
-        implicit none
+implicit none
 
-        ! External
-        intrinsic :: max, sqrt
+! External
+intrinsic :: max, sqrt
 
-        ! Parameter Constants
-        real, parameter :: & 
-        ubmin = 0.25, & 
+! Parameter Constants
+real, parameter :: & 
+ubmin = 0.25, & 
 !     .  ustar = 0.25,
-        ! The values of these are from the mpace_b specification.
-        sensible_heat_flx  = 136.5,  & ! Sensible Heat Flux     [W m^-2] 
-        latent_heat_flx    = 107.7  ! Latent Heat Flux       [W m^-2] 
+! The values of these are from the mpace_b specification.
+sensible_heat_flx  = 136.5,  & ! Sensible Heat Flux     [W m^-2] 
+latent_heat_flx    = 107.7  ! Latent Heat Flux       [W m^-2] 
 ! eMFc
 
-        ! Input Variables
-        real, intent(in)  :: & 
-        rho0,     & ! Air density at surface       [kg/m^3
-        um_sfc,   & ! um at zt(2)                  [m/s]
-        vm_sfc   ! vm at zt(2)                  [m/s]
+! Input Variables
+real, intent(in)  :: & 
+rho0,     & ! Air density at surface       [kg/m^3
+um_sfc,   & ! um at zt(2)                  [m/s]
+vm_sfc   ! vm at zt(2)                  [m/s]
 
-        ! Output Variables
-        real, intent(out) ::  & 
-        upwp_sfc,     & ! u'w' at (1)      [m^2/s^2]
-        vpwp_sfc,     & ! v'w'at (1)       [m^2/s^2]
-        wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
-        wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
-        ustar        ! surface friction velocity [m/s]
+! Output Variables
+real, intent(out) ::  & 
+upwp_sfc,     & ! u'w' at (1)      [m^2/s^2]
+vpwp_sfc,     & ! v'w'at (1)       [m^2/s^2]
+wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
+wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
+ustar        ! surface friction velocity [m/s]
 
-        ! Output Variables (optional) 
-        real, dimension(sclr_dim), intent(out) :: & 
-        wpsclrp_sfc,    & ! Passive scalar surface flux      [units m/s]
-        wpedsclrp_sfc  ! Passive eddy-scalar surface flux [units m/s]
+! Output Variables (optional) 
+real, dimension(sclr_dim), intent(out) :: & 
+wpsclrp_sfc,    & ! Passive scalar surface flux      [units m/s]
+wpedsclrp_sfc  ! Passive eddy-scalar surface flux [units m/s]
 
-        ! Local Variables
-        real :: ubar
+! Local Variables
+real :: ubar
 
 !-----------------------------------------------------------------------
 
-        ! Declare the value of ustar.
-        ustar = 0.25
+! Declare the value of ustar.
+ustar = 0.25
 
-        ! Compute heat and moisture fluxes
-        wpthlp_sfc = sensible_heat_flx/(rho0*Cp)
-        wprtp_sfc  = latent_heat_flx/(rho0*Lv)
+! Compute heat and moisture fluxes
+wpthlp_sfc = sensible_heat_flx/(rho0*Cp)
+wprtp_sfc  = latent_heat_flx/(rho0*Lv)
 
-        ! Compute momentum fluxes
-        ubar = max( ubmin, sqrt( um_sfc**2 + vm_sfc**2 ) )
+! Compute momentum fluxes
+ubar = max( ubmin, sqrt( um_sfc**2 + vm_sfc**2 ) )
 
-        upwp_sfc = -um_sfc * ustar*ustar / ubar
-        vpwp_sfc = -vm_sfc * ustar*ustar / ubar
+upwp_sfc = -um_sfc * ustar*ustar / ubar
+vpwp_sfc = -vm_sfc * ustar*ustar / ubar
 
-        ! Let passive scalars be equal to rt and theta_l for now
-        if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
-        if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
+! Let passive scalars be equal to rt and theta_l for now
+if ( iisclr_thl > 0 ) wpsclrp_sfc(iisclr_thl) = wpthlp_sfc
+if ( iisclr_rt  > 0 ) wpsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
-        if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
-        if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
+if ( iisclr_thl > 0 ) wpedsclrp_sfc(iisclr_thl) = wpthlp_sfc
+if ( iisclr_rt  > 0 ) wpedsclrp_sfc(iisclr_rt)  = wprtp_sfc
 
-        return
-        end subroutine mpace_b_sfclyr
+return
+end subroutine mpace_b_sfclyr
 
-        end module mpace_b
+end module mpace_b

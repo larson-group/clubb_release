@@ -1,19 +1,19 @@
 !-----------------------------------------------------------------------
-! $Id: file_functions.F90,v 1.2 2008-07-23 13:44:38 faschinj Exp $
+! $Id: file_functions.F90,v 1.3 2008-07-28 19:37:55 faschinj Exp $
 !===============================================================================
-      module file_functions
+module file_functions
 
-      implicit none
+implicit none
 
-      public :: file_read_1d, file_read_2d
+public :: file_read_1d, file_read_2d
 
-      private ! Default Scope
+private ! Default Scope
 
-      contains
+contains
 
 !===============================================================================
-      subroutine file_read_1d( file_unit, path_and_filename,  & 
-                               num_datapts, entries_per_line, variable )
+subroutine file_read_1d( file_unit, path_and_filename,  & 
+                         num_datapts, entries_per_line, variable )
 
 !     Description:
 !     This subroutine reads in values from a data file with a number of 
@@ -39,72 +39,72 @@
 !     See Michael Falk's comments below for more information.
 !-----------------------------------------------------------------------
 
-      implicit none
+implicit none
 
-      integer, intent(in) :: & 
-       file_unit,          & ! Unit number of file being read.
-       num_datapts,        & ! Total number of data points being read in.
-       entries_per_line   ! Number of data points 
-                          ! on one line of the file being read.
+integer, intent(in) :: & 
+ file_unit,          & ! Unit number of file being read.
+ num_datapts,        & ! Total number of data points being read in.
+ entries_per_line   ! Number of data points 
+                    ! on one line of the file being read.
 
-      character(*), intent(in) :: & 
-       path_and_filename  ! Path to file and filename of file being read.
+character(*), intent(in) :: & 
+ path_and_filename  ! Path to file and filename of file being read.
 
-      real, dimension(num_datapts), intent(out) :: & 
-       variable           ! Data values output into variable
+real, dimension(num_datapts), intent(out) :: & 
+ variable           ! Data values output into variable
 
-      integer :: k        ! Data file row number.
-      integer :: i        ! Data file column number.
+integer :: k        ! Data file row number.
+integer :: i        ! Data file column number.
 
 
-      ! Open data file.
-      open( unit=file_unit, file=path_and_filename, action='read' )
+! Open data file.
+open( unit=file_unit, file=path_and_filename, action='read' )
 
 ! Michael Falk wrote this routine to read data files in a particular format for mpace_a.
 ! Each line has a specific number of values, until the last line in the file, which
 ! has the last few values and then ends.  This reads the correct number of values on
 ! each line.  24 September 2007
 
-      ! Loop over each full line of the input file.
-      do k = 1, (num_datapts/entries_per_line), 1
-         read(file_unit,*) ( variable( ((k-1)*entries_per_line) + i ), & 
-                                       i=1,entries_per_line )
-      enddo
-      ! Read any partial line remaining.
-      if ( mod(num_datapts,entries_per_line) /= 0 ) then
-         k = (num_datapts/entries_per_line)
-         read(file_unit,*) ( variable( (k*entries_per_line) + i ), & 
-                             i=1,(mod(num_datapts,entries_per_line)) )
-      endif
+! Loop over each full line of the input file.
+do k = 1, (num_datapts/entries_per_line), 1
+   read(file_unit,*) ( variable( ((k-1)*entries_per_line) + i ), & 
+                                 i=1,entries_per_line )
+enddo
+! Read any partial line remaining.
+if ( mod(num_datapts,entries_per_line) /= 0 ) then
+   k = (num_datapts/entries_per_line)
+   read(file_unit,*) ( variable( (k*entries_per_line) + i ), & 
+                       i=1,(mod(num_datapts,entries_per_line)) )
+endif
 
-      ! Close data file.
-      close( file_unit )
+! Close data file.
+close( file_unit )
 
-      return
+return
 
-      end subroutine file_read_1d
+end subroutine file_read_1d
 
 !===============================================================================
-      subroutine file_read_2d (device,file_path,file_dimension1, & 
-                             file_dimension2,file_per_line,variable)
-      
-      implicit none
+subroutine file_read_2d (device,file_path,file_dimension1, & 
+                       file_dimension2,file_per_line,variable)
 
-      integer, intent(in) :: & 
-       device, & 
-       file_dimension1, & 
-       file_dimension2, & 
-       file_per_line
+implicit none
 
-      character(*), intent(in) :: & 
-       file_path
+integer, intent(in) :: & 
+ device, & 
+ file_dimension1, & 
+ file_dimension2, & 
+ file_per_line
 
-      real, dimension(file_dimension1,file_dimension2), intent(out) :: & 
-       variable
+character(*), intent(in) :: & 
+ file_path
 
-      integer i, j, k
+real, dimension(file_dimension1,file_dimension2), intent(out) :: & 
+ variable
 
-      open(device,file=file_path,action='read')
+integer i, j, k
+
+open(device,file=file_path,action='read')
 
 ! Michael Falk wrote this routine to read data files in a particular format for mpace_a.
 ! The 2d mpace_a files list the (file_dimension2) values on a given vertical level, then
@@ -113,19 +113,19 @@
 ! is short-- it has the last few values and then a line break.  The next line, beginning
 ! the next level, is full-sized again.  24 September 2007
 
-      do k=1,(file_dimension1)                ! For each level in the data file,
-        do j=0,((file_dimension2/file_per_line)-1)
-          read(device,*) (variable(k,(j*file_per_line)+i), & ! read file_per_line values in,
-              i=1,file_per_line)
-        end do
-        read (device,*) (variable(k,(j*file_per_line)+i),           & ! then read the partial line
-              i=1,(mod(file_dimension2,file_per_line)))
-      end do                                              ! and then start over at the next level.
+do k=1,(file_dimension1)                ! For each level in the data file,
+  do j=0,((file_dimension2/file_per_line)-1)
+    read(device,*) (variable(k,(j*file_per_line)+i), & ! read file_per_line values in,
+        i=1,file_per_line)
+  end do
+  read (device,*) (variable(k,(j*file_per_line)+i),           & ! then read the partial line
+        i=1,(mod(file_dimension2,file_per_line)))
+end do                                              ! and then start over at the next level.
 
-      close (device)
+close (device)
 
-      end subroutine file_read_2d
+end subroutine file_read_2d
 
 !===============================================================================
 
-      end module file_functions
+end module file_functions

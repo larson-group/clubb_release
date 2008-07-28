@@ -1,33 +1,33 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: jun25.F90,v 1.3 2008-07-23 20:25:50 faschinj Exp $
-        module jun25
+! $Id: jun25.F90,v 1.4 2008-07-28 19:37:55 faschinj Exp $
+  module jun25
 
 !       Description:
 !       Contains subroutines for the June 11 Altocumulous case.
 !----------------------------------------------------------------------
 
-        implicit none
+  implicit none
 
-        public :: jun25_altocu_tndcy
+  public :: jun25_altocu_tndcy
 
-        ! Used to start the microphysics after predetermined amount of time
+  ! Used to start the microphysics after predetermined amount of time
 !        logical, private :: 
 !     .  tdelay_lcoamps_micro, tdelay_licedfs 
 
 !$omp   threadprivate(tdelay_lcoamps_micro, tdelay_licedfs)
 
-        private ! Default Scope
+  private ! Default Scope
 
-        contains
+  contains
 
 !-----------------------------------------------------------------------
-        subroutine jun25_altocu_tndcy & 
-                   ( time, time_initial, rlat, rlon, & 
-                     rcm, exner, rhot, wmt, & 
-                     wmm, thlm_forcing, rtm_forcing, & 
-                     Frad, radht, sclrm_forcing )
+  subroutine jun25_altocu_tndcy & 
+             ( time, time_initial, rlat, rlon, & 
+               rcm, exner, rhot, wmt, & 
+               wmm, thlm_forcing, rtm_forcing, & 
+               Frad, radht, sclrm_forcing )
 
 !       Description:
 !       Computes subsidence, radiation, and LS tendencies for the June
@@ -36,67 +36,67 @@
 !       References:
 !-----------------------------------------------------------------------
 
-        use grid_class, only: gr ! Variable(s)
+  use grid_class, only: gr ! Variable(s)
 
-        use grid_class, only: zt2zm ! Procedure(s)
+  use grid_class, only: zt2zm ! Procedure(s)
 
-        use constants, only: pi, Cp, Lv ! Variable(s)
+  use constants, only: pi, Cp, Lv ! Variable(s)
 
-        use parameters, only: sclr_dim ! Variable(s)
+  use parameters, only: sclr_dim ! Variable(s)
 
-        use model_flags, only: lbugsrad ! Variable(s)
+  use model_flags, only: lbugsrad ! Variable(s)
 
 !        use model_flags, only: lcoamps_micro, licedfs ! Variables(s)
 
-        use stats_precision, only: time_precision ! Variable(s)
+  use stats_precision, only: time_precision ! Variable(s)
 
-        use cos_solar_zen_mod, only: cos_solar_zen ! Procedure(s)
+  use cos_solar_zen_mod, only: cos_solar_zen ! Procedure(s)
 
-        use interpolation, only: linear_interpolation ! Procedure(s)
+  use interpolation, only: linear_interpolation ! Procedure(s)
 
-        use rad_lwsw_mod, only: rad_lwsw ! Procedure(s)
+  use rad_lwsw_mod, only: rad_lwsw ! Procedure(s)
 
-        use array_index, only: iisclr_rt, iisclr_thl
+  use array_index, only: iisclr_rt, iisclr_thl
 
 #ifdef STATS
-        use stats_type, only: stat_update_var ! Procedure(s)
+  use stats_type, only: stat_update_var ! Procedure(s)
 
-        use stats_variables, only:  & 
-            iradht_LW, iradht_SW, iFrad_LW, iFrad_SW,  & ! Procedure(s)
-            zt, zm, lstats_samp
+  use stats_variables, only:  & 
+      iradht_LW, iradht_SW, iFrad_LW, iFrad_SW,  & ! Procedure(s)
+      zt, zm, lstats_samp
 #endif /*STATS*/
 
-        implicit none
+  implicit none
 
-        ! Constant parameters
+  ! Constant parameters
 
-        ! Input variables
-        real(kind=time_precision), intent(in) :: & 
-        time,          & ! Time of simulation since start        [s]
-        time_initial     ! Initial time of simulation            [s]
+  ! Input variables
+  real(kind=time_precision), intent(in) :: & 
+  time,          & ! Time of simulation since start        [s]
+  time_initial     ! Initial time of simulation            [s]
 
-        real, intent(in) :: & 
-        rlat,          & ! Reference latitude should be 37.6     [Degrees North]
-        rlon             ! Longitude             [degrees_E]
+  real, intent(in) :: & 
+  rlat,          & ! Reference latitude should be 37.6     [Degrees North]
+  rlon             ! Longitude             [degrees_E]
 
-        real, dimension(gr%nnzp), intent(in) ::  & 
-        rcm,    & ! Liquid water mixing ratio              [kg/kg]
-        exner,  & ! Exner function                         [-]
-        rhot      ! Density of reference state on t grid   [kg/m^3]
+  real, dimension(gr%nnzp), intent(in) ::  & 
+  rcm,    & ! Liquid water mixing ratio              [kg/kg]
+  exner,  & ! Exner function                         [-]
+  rhot      ! Density of reference state on t grid   [kg/m^3]
 
-        ! Output variables
-        real, dimension(gr%nnzp), intent(inout) ::  & 
-        wmt,           & ! Vertical ascent/descent on therm. grid      [m/s]
-        wmm,           & ! Vertical ascent/descent on moment. grid     [m/s]
-        thlm_forcing,  & ! Change in liq. water potential temperature 
-                         ! due to radiative heating and ice diffusion  [K/s]
-        rtm_forcing,   & ! Change in total water due to ice diffusion  [kg/kg/s]
-        Frad,          & ! Total radiative flux (LW + SW)              [W/m^2]
-        radht            ! Total radiative heating (LW +SW)            [K/s]
+  ! Output variables
+  real, dimension(gr%nnzp), intent(inout) ::  & 
+  wmt,           & ! Vertical ascent/descent on therm. grid      [m/s]
+  wmm,           & ! Vertical ascent/descent on moment. grid     [m/s]
+  thlm_forcing,  & ! Change in liq. water potential temperature 
+                   ! due to radiative heating and ice diffusion  [K/s]
+  rtm_forcing,   & ! Change in total water due to ice diffusion  [kg/kg/s]
+  Frad,          & ! Total radiative flux (LW + SW)              [W/m^2]
+  radht            ! Total radiative heating (LW +SW)            [K/s]
 
-        ! Output variables
-        real, dimension(gr%nnzp,sclr_dim),intent(out) ::  & 
-        sclrm_forcing ! Large-scale tendency for passive scalars      [units/s]
+  ! Output variables
+  real, dimension(gr%nnzp,sclr_dim),intent(out) ::  & 
+  sclrm_forcing ! Large-scale tendency for passive scalars      [units/s]
 
 !-----------------------------------------------------------------------
 ! LOCAL VARIABLES
@@ -203,95 +203,95 @@
 ! Fslist        : Values of Fs0 corresponding to the values in xilist.
 !-----------------------------------------------------------------------
 
-        !------------------------
-        ! Local radiation arrays
-        !------------------------
-        real, dimension(gr%nnzp) ::  & 
-        Frad_LW,  & ! Long wave radiative flux     [W/m^2]
-        Frad_SW,  & ! Short wave radiative flux    [W/m^2]
-        radht_LW, & ! Long wave radiative heating  [K/s]
-        radht_SW ! Short wave radiative heating [K/s]
+  !------------------------
+  ! Local radiation arrays
+  !------------------------
+  real, dimension(gr%nnzp) ::  & 
+  Frad_LW,  & ! Long wave radiative flux     [W/m^2]
+  Frad_SW,  & ! Short wave radiative flux    [W/m^2]
+  radht_LW, & ! Long wave radiative heating  [K/s]
+  radht_SW ! Short wave radiative heating [K/s]
 
-        real, dimension(gr%nnzp) ::  & 
+  real, dimension(gr%nnzp) ::  & 
 !     .  LWP,       ! Liquid water path from domain top                [kg/m^2]
-        rcm_rad,    & ! "flipped" array of liquid water mixing ratio     [kg/kg]
-        rhot_rad,   & ! "flipped" array of air density                   [kg/m^3]
-        dsigm,      & ! "flipped" array of grid spacing                  [m]
-        coamps_zm,  & ! "flipped" array of momentum level altitudes      [m]
-        coamps_zt  ! "flipped" array of thermodynamic level altitudes [m]
+  rcm_rad,    & ! "flipped" array of liquid water mixing ratio     [kg/kg]
+  rhot_rad,   & ! "flipped" array of air density                   [kg/m^3]
+  dsigm,      & ! "flipped" array of grid spacing                  [m]
+  coamps_zm,  & ! "flipped" array of momentum level altitudes      [m]
+  coamps_zt  ! "flipped" array of thermodynamic level altitudes [m]
 
-        real, dimension(gr%nnzp) ::  & 
-        frad_out, & 
-        frad_lw_out, & 
-        frad_sw_out
+  real, dimension(gr%nnzp) ::  & 
+  frad_out, & 
+  frad_lw_out, & 
+  frad_sw_out
 
-        real, dimension(gr%nnzp) ::  & 
-        radhtk, & 
-        radht_lw_out, & 
-        radht_sw_out
+  real, dimension(gr%nnzp) ::  & 
+  radhtk, & 
+  radht_lw_out, & 
+  radht_sw_out
 
-        !---------------------------------------------------------------
-        ! Working arrays for subsidence interpolation
-        !---------------------------------------------------------------
-        real, dimension(5) ::  & 
-        zsubs ! [m]
+  !---------------------------------------------------------------
+  ! Working arrays for subsidence interpolation
+  !---------------------------------------------------------------
+  real, dimension(5) ::  & 
+  zsubs ! [m]
 
-        real, dimension(6) :: tsubs
+  real, dimension(6) :: tsubs
 
-        real, dimension(5) :: & 
-        wt1, wt2, wt3, wt4, wt5, wt6
+  real, dimension(5) :: & 
+  wt1, wt2, wt3, wt4, wt5, wt6
 
-        real, dimension(gr%nnzp) :: & 
-        w1, w2
+  real, dimension(gr%nnzp) :: & 
+  w1, w2
 
-        !---------------------------------------------------------------
-        ! LW Radiative constants
-        !---------------------------------------------------------------
-        real, parameter ::  & 
-        F0   = 107.0,  & ! [W/m^2]
-        F1   = 61.0,   & ! [W/m^2]
-        kap  = 100.0  ! [m^2/kg]
+  !---------------------------------------------------------------
+  ! LW Radiative constants
+  !---------------------------------------------------------------
+  real, parameter ::  & 
+  F0   = 107.0,  & ! [W/m^2]
+  F1   = 61.0,   & ! [W/m^2]
+  kap  = 100.0  ! [m^2/kg]
 
-        !---------------------------------------------------------------
-        ! Working arrays for SW radiation interpolation
-        !---------------------------------------------------------------
-        integer, parameter :: nparam = 12
+  !---------------------------------------------------------------
+  ! Working arrays for SW radiation interpolation
+  !---------------------------------------------------------------
+  integer, parameter :: nparam = 12
 
-        real, dimension(nparam) :: xilist, Fslist
+  real, dimension(nparam) :: xilist, Fslist
 
-        !---------------------------------------------------------------
-        ! SW Radiative constants
-        !---------------------------------------------------------------
-        real, parameter ::  & 
-        radius = 1.0e-5, & 
-        AA     = 0.1, & 
-        gc     = 0.85, & 
-        omega  = 0.992
+  !---------------------------------------------------------------
+  ! SW Radiative constants
+  !---------------------------------------------------------------
+  real, parameter ::  & 
+  radius = 1.0e-5, & 
+  AA     = 0.1, & 
+  gc     = 0.85, & 
+  omega  = 0.992
 
-        !---------------------------------------------------------------
-        ! Additional SW radiative variables
-        !---------------------------------------------------------------
-        real :: xi_abs, Fs0
+  !---------------------------------------------------------------
+  ! Additional SW radiative variables
+  !---------------------------------------------------------------
+  real :: xi_abs, Fs0
 
-        !---------------------------------------------------------------
-        ! Toggle for implementing differencing method in interpolations
-        !---------------------------------------------------------------
-        logical :: center
+  !---------------------------------------------------------------
+  ! Toggle for implementing differencing method in interpolations
+  !---------------------------------------------------------------
+  logical :: center
 
-        !---------------------------------------------------------------
-        ! Toggles for activating/deactivating forcings
-        !---------------------------------------------------------------
-        logical :: lw_on, sw_on
+  !---------------------------------------------------------------
+  ! Toggles for activating/deactivating forcings
+  !---------------------------------------------------------------
+  logical :: lw_on, sw_on
 
 !        logical :: subs_on
-        !---------------------------------------------------------------
-        ! Variable used for working within vertical arrays
-        !---------------------------------------------------------------
-        integer :: k
+  !---------------------------------------------------------------
+  ! Variable used for working within vertical arrays
+  !---------------------------------------------------------------
+  integer :: k
 
-        !---------------------------------------------------------------
-        ! END OF VARIABLE DECLARATION
-        !---------------------------------------------------------------
+  !---------------------------------------------------------------
+  ! END OF VARIABLE DECLARATION
+  !---------------------------------------------------------------
 
 
 !-----------------------------------------------------------------------
@@ -299,15 +299,15 @@
 ! To turn off a specific forcing, set the corresponding toggle to .FALSE.
 !-----------------------------------------------------------------------
 !         subs_on   = .TRUE.
-         lw_on     = .TRUE.
-         sw_on     = .TRUE.
+   lw_on     = .TRUE.
+   sw_on     = .TRUE.
 
 !-----------------------------------------------------------------------
 ! Toggle for centered/forward differencing (in interpolations)
 ! To use centered differencing, set the toggle to .TRUE.
 ! To use forward differencing, set the toggle to .FALSE.
 !-----------------------------------------------------------------------
-         center    = .TRUE.
+   center    = .TRUE.
 
 !      Replaced the calculation based on time since solar noon 
 !       etc., with a generalized function based on time and lat/lon.
@@ -316,9 +316,9 @@
 !      NOTE: The results from this function match the xi_abs results
 !            obtained using the COAMPS xi_abs method.  Therefore, we
 !            use the "cos_solar_zen" function for this case.
-       xi_abs = real( cos_solar_zen(25, 06, 1996, time, rlat, rlon ) )
+ xi_abs = real( cos_solar_zen(25, 06, 1996, time, rlat, rlon ) )
 
-       xi_abs = max(xi_abs,0.)
+ xi_abs = max(xi_abs,0.)
 
 !-----------------------------------------------------------------------
 ! Modification by Adam Smith 26 June 2006
@@ -326,19 +326,19 @@
 ! solar radiation.  If sw_on = .FALSE. above, we will automatically set
 ! xi_abs to 0 to avoid confusion or errors.
 !-----------------------------------------------------------------------
-      if ( .not. sw_on ) then
-        xi_abs = 0.
-      end if
+if ( .not. sw_on ) then
+  xi_abs = 0.
+end if
 
 !-----------------------------------
 ! End of ajsmith4's Modification
 !-----------------------------------
 
-      if (xi_abs == 0.) then
-        sw_on = .FALSE.
-      else
-        sw_on = .TRUE.
-      end if
+if (xi_abs == 0.) then
+  sw_on = .FALSE.
+else
+  sw_on = .TRUE.
+end if
 
 
 !-----------------------------------------------------------------------
@@ -351,95 +351,95 @@
 ! The linear_interpolation function returns Fs0.                       c
 !-----------------------------------------------------------------------
 
-      xilist(1) = 0.0
-      xilist(2) = 0.01
-      xilist(3) = 0.1
-      xilist(4) = 0.2
-      xilist(5) = 0.3
-      xilist(6) = 0.4
-      xilist(7) = 0.5
-      xilist(8) = 0.6
-      xilist(9) = 0.7
-      xilist(10) = 0.8
-      xilist(11) = 0.9
-      xilist(12) = 1.0
+xilist(1) = 0.0
+xilist(2) = 0.01
+xilist(3) = 0.1
+xilist(4) = 0.2
+xilist(5) = 0.3
+xilist(6) = 0.4
+xilist(7) = 0.5
+xilist(8) = 0.6
+xilist(9) = 0.7
+xilist(10) = 0.8
+xilist(11) = 0.9
+xilist(12) = 1.0
 
-      Fslist(1)  = 0.0
-      Fslist(2)  = 715.86
-      Fslist(3)  = 1073.577
-      Fslist(4)  = 1165.0905
-      Fslist(5)  = 1204.7033
-      Fslist(6)  = 1227.6898
-      Fslist(7)  = 1243.1772
-      Fslist(8)  = 1254.5893
-      Fslist(9)  = 1263.5491
-      Fslist(10) = 1270.8668
-      Fslist(11) = 1277.0474
-      Fslist(12) = 1282.3994
+Fslist(1)  = 0.0
+Fslist(2)  = 715.86
+Fslist(3)  = 1073.577
+Fslist(4)  = 1165.0905
+Fslist(5)  = 1204.7033
+Fslist(6)  = 1227.6898
+Fslist(7)  = 1243.1772
+Fslist(8)  = 1254.5893
+Fslist(9)  = 1263.5491
+Fslist(10) = 1270.8668
+Fslist(11) = 1277.0474
+Fslist(12) = 1282.3994
 
-      call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
+call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
 
 !-----------------------------------------------------------------------
 ! Subsidence Parameters
 !-----------------------------------------------------------------------
 
-        ! Modification for setting June 25th gr%zm(1) to the correct
-        ! value in meters for the actual altitude, rather than 0.
-        ! -dschanen 1 May 2007
+  ! Modification for setting June 25th gr%zm(1) to the correct
+  ! value in meters for the actual altitude, rather than 0.
+  ! -dschanen 1 May 2007
 !       zsubs(1) = 0
 !       zsubs(2) = 360
 !       zsubs(3) = 1090
 !       zsubs(4) = 1890
 !       zsubs(5) = 2500
 
-        zsubs(1) = gr%zm(1)
-        zsubs(2) = gr%zm(1) + 360.
-        zsubs(3) = gr%zm(1) + 1090.
-        zsubs(4) = gr%zm(1) + 1890.
-        zsubs(5) = gr%zm(1) + 2500.
+  zsubs(1) = gr%zm(1)
+  zsubs(2) = gr%zm(1) + 360.
+  zsubs(3) = gr%zm(1) + 1090.
+  zsubs(4) = gr%zm(1) + 1890.
+  zsubs(5) = gr%zm(1) + 2500.
 
-        tsubs(1) = 0
-        tsubs(2) = 10800
-        tsubs(3) = 28800
-        tsubs(4) = 36000
-        tsubs(5) = 36000
-        tsubs(6) = 36000
+  tsubs(1) = 0
+  tsubs(2) = 10800
+  tsubs(3) = 28800
+  tsubs(4) = 36000
+  tsubs(5) = 36000
+  tsubs(6) = 36000
 
-        wt1(1) = 0.
-        wt1(2) = .004
-        wt1(3) = .004
-        wt1(4) = .004
-        wt1(5) = 0.
+  wt1(1) = 0.
+  wt1(2) = .004
+  wt1(3) = .004
+  wt1(4) = .004
+  wt1(5) = 0.
 
-        wt2(1) = 0.
-        wt2(2) = .004
-        wt2(3) = .004
-        wt2(4) = .004
-        wt2(5) = 0.
+  wt2(1) = 0.
+  wt2(2) = .004
+  wt2(3) = .004
+  wt2(4) = .004
+  wt2(5) = 0.
 
-        wt3(1) = 0.
-        wt3(2) = -.003
-        wt3(3) = -.003
-        wt3(4) = -.003
-        wt3(5) = 0.
+  wt3(1) = 0.
+  wt3(2) = -.003
+  wt3(3) = -.003
+  wt3(4) = -.003
+  wt3(5) = 0.
 
-        wt4(1) = 0.
-        wt4(2) = -.003
-        wt4(3) = -.003
-        wt4(4) = -.003
-        wt4(5) = 0.
+  wt4(1) = 0.
+  wt4(2) = -.003
+  wt4(3) = -.003
+  wt4(4) = -.003
+  wt4(5) = 0.
 
-        wt5(1) = 0.
-        wt5(2) = -.003
-        wt5(3) = -.003
-        wt5(4) = -.003
-        wt5(5) = 0.
+  wt5(1) = 0.
+  wt5(2) = -.003
+  wt5(3) = -.003
+  wt5(4) = -.003
+  wt5(5) = 0.
 
-        wt6(1) = 0.
-        wt6(2) = -.003
-        wt6(3) = -.003
-        wt6(4) = -.003
-        wt6(5) = 0.
+  wt6(1) = 0.
+  wt6(2) = -.003
+  wt6(3) = -.003
+  wt6(4) = -.003
+  wt6(5) = 0.
 
 
 !-----------------------------------------------------------------------
@@ -587,82 +587,82 @@
 !                                                                      c
 !-----------------------------------------------------------------------
 
-        !--------------------------------------------------------------- 
-        ! We only implement this section if we choose not to use the
-        ! BUGSrad interactive radiation scheme.
-        !---------------------------------------------------------------
+  !--------------------------------------------------------------- 
+  ! We only implement this section if we choose not to use the
+  ! BUGSrad interactive radiation scheme.
+  !---------------------------------------------------------------
 
-        if ( .not. lbugsrad ) then
+  if ( .not. lbugsrad ) then
 
-        !----------------------------------------------------------------
-        ! This code transforms these profiles from CLUBB grid to COAMPS
-        ! grid.  The COAMPS-grid profiles are then passed to rad_lwsw
-        ! for implementation.
-        !----------------------------------------------------------------
-          do k = 1, gr%nnzp
-            rcm_rad(k) = rcm(gr%nnzp-k+1)
-            rhot_rad(k) = rhot(gr%nnzp-k+1)
-            dsigm(k) = 1.0 / gr%dzt(gr%nnzp-k+1)
-            coamps_zm(k) = gr%zm(gr%nnzp-k+1)
-            coamps_zt(k) = gr%zt(gr%nnzp-k+1)
-          enddo
+  !----------------------------------------------------------------
+  ! This code transforms these profiles from CLUBB grid to COAMPS
+  ! grid.  The COAMPS-grid profiles are then passed to rad_lwsw
+  ! for implementation.
+  !----------------------------------------------------------------
+    do k = 1, gr%nnzp
+      rcm_rad(k) = rcm(gr%nnzp-k+1)
+      rhot_rad(k) = rhot(gr%nnzp-k+1)
+      dsigm(k) = 1.0 / gr%dzt(gr%nnzp-k+1)
+      coamps_zm(k) = gr%zm(gr%nnzp-k+1)
+      coamps_zt(k) = gr%zt(gr%nnzp-k+1)
+    enddo
 
-        !----------------------------------------------------------------
-        ! Calling the radiation subroutine, which uses the COAMPS
-        ! grid method.  All input and output profiles use the COAMPS
-        ! grid setup.
-        !----------------------------------------------------------------
-          call rad_lwsw(rcm_rad, rhot_rad, dsigm, & 
-                        coamps_zm, coamps_zt, & 
-                        Frad_out, Frad_LW_out, Frad_SW_out, & 
-                        radhtk, radht_LW_out, radht_SW_out, & 
-                        gr%nnzp-1, center, & 
-                        xi_abs, F0, F1, kap, radius, AA, gc, Fs0, omega, & 
-                        sw_on, lw_on)
-
-
-        !-------------------------------------------------------------
-        ! This code transforms the radiation results back into CLUBB
-        ! grid setup.  These Frad and radht arrays are actually
-        ! applied to the CLUBB model.
-        !
-        ! The radht results are initially calculated in terms of
-        ! standard temperature (T).  However, CLUBB calculates
-        ! temperature in terms of potential temperature (theta).
-        ! Therefore, we multiply all radht results by (1.0/exner)
-        ! to convert from T to theta.
-        !-------------------------------------------------------------
-          do k = 1, gr%nnzp-1
-            Frad(k)     = Frad_out(gr%nnzp-k+1)
-            Frad_LW(k)  = Frad_LW_out(gr%nnzp-k+1)
-            Frad_SW(k)  = Frad_SW_out(gr%nnzp-k+1)
-
-            radht(k)    = ( 1.0/exner(k) ) * radhtk(gr%nnzp-k+1)
-            radht_LW(k) = ( 1.0/exner(k) ) * radht_LW_out(gr%nnzp-k+1)
-            radht_SW(k) = ( 1.0/exner(k) ) * radht_SW_out(gr%nnzp-k+1)
-          end do
-
-          Frad(1) = Frad(2)
-          Frad_LW(1) = Frad_LW(2)
-          Frad_SW(1) = Frad_SW(2)
-
-          radht(1) = radht(2)
-          radht_LW(1) = radht_LW(2)
-          radht_SW(1) = radht_SW(2)
-
-        END IF ! ~lbugsrad
+  !----------------------------------------------------------------
+  ! Calling the radiation subroutine, which uses the COAMPS
+  ! grid method.  All input and output profiles use the COAMPS
+  ! grid setup.
+  !----------------------------------------------------------------
+    call rad_lwsw(rcm_rad, rhot_rad, dsigm, & 
+                  coamps_zm, coamps_zt, & 
+                  Frad_out, Frad_LW_out, Frad_SW_out, & 
+                  radhtk, radht_LW_out, radht_SW_out, & 
+                  gr%nnzp-1, center, & 
+                  xi_abs, F0, F1, kap, radius, AA, gc, Fs0, omega, & 
+                  sw_on, lw_on)
 
 
-        !-------------------------------------------------------------
-        ! Compute the loss of total water due to diffusional
-        ! growth of ice.  This is defined on thermodynamic levels.
-        !-------------------------------------------------------------
+  !-------------------------------------------------------------
+  ! This code transforms the radiation results back into CLUBB
+  ! grid setup.  These Frad and radht arrays are actually
+  ! applied to the CLUBB model.
+  !
+  ! The radht results are initially calculated in terms of
+  ! standard temperature (T).  However, CLUBB calculates
+  ! temperature in terms of potential temperature (theta).
+  ! Therefore, we multiply all radht results by (1.0/exner)
+  ! to convert from T to theta.
+  !-------------------------------------------------------------
+    do k = 1, gr%nnzp-1
+      Frad(k)     = Frad_out(gr%nnzp-k+1)
+      Frad_LW(k)  = Frad_LW_out(gr%nnzp-k+1)
+      Frad_SW(k)  = Frad_SW_out(gr%nnzp-k+1)
+
+      radht(k)    = ( 1.0/exner(k) ) * radhtk(gr%nnzp-k+1)
+      radht_LW(k) = ( 1.0/exner(k) ) * radht_LW_out(gr%nnzp-k+1)
+      radht_SW(k) = ( 1.0/exner(k) ) * radht_SW_out(gr%nnzp-k+1)
+    end do
+
+    Frad(1) = Frad(2)
+    Frad_LW(1) = Frad_LW(2)
+    Frad_SW(1) = Frad_SW(2)
+
+    radht(1) = radht(2)
+    radht_LW(1) = radht_LW(2)
+    radht_SW(1) = radht_SW(2)
+
+  END IF ! ~lbugsrad
+
+
+  !-------------------------------------------------------------
+  ! Compute the loss of total water due to diffusional
+  ! growth of ice.  This is defined on thermodynamic levels.
+  !-------------------------------------------------------------
 
 !        if ( time == time_initial ) then
 
 !          if ( lcoamps_micro ) then
-            ! Turn off microphysics for now, re-enable at
-            ! time = 3600.
+      ! Turn off microphysics for now, re-enable at
+      ! time = 3600.
 !            lcoamps_micro        = .false.
 !            tdelay_lcoamps_micro = .true.
 
@@ -678,102 +678,102 @@
 !        end if
 
 
-        !---------------------------------------------------------------
-        ! Using linear interpolation to calculate subsidence
-        ! Original code by Michael Falk
-        ! Added for Jun.25 case by Adam Smith, 13 April 2006
-        !---------------------------------------------------------------
-        if ( (time - time_initial) < tsubs(1) ) then
-        do k=1,gr%nnzp
-          call linear_interpolation(5,zsubs,wt1,gr%zt(k),wmt(k))
-        end do
+  !---------------------------------------------------------------
+  ! Using linear interpolation to calculate subsidence
+  ! Original code by Michael Falk
+  ! Added for Jun.25 case by Adam Smith, 13 April 2006
+  !---------------------------------------------------------------
+  if ( (time - time_initial) < tsubs(1) ) then
+  do k=1,gr%nnzp
+    call linear_interpolation(5,zsubs,wt1,gr%zt(k),wmt(k))
+  end do
  
-        else if ( (time - time_initial) < tsubs(2)) then
-        do k=2,gr%nnzp
-          call linear_interpolation(5,zsubs,wt1,gr%zt(k),w1(k))
-          call linear_interpolation(5,zsubs,wt2,gr%zt(k),w2(k))
-        wmt(k) = & 
-          real(((time-time_initial)-tsubs(1)) & 
-                 /(tsubs(2)-tsubs(1))*(w2(k)-w1(k))+w1(k))
-        end do
+  else if ( (time - time_initial) < tsubs(2)) then
+  do k=2,gr%nnzp
+    call linear_interpolation(5,zsubs,wt1,gr%zt(k),w1(k))
+    call linear_interpolation(5,zsubs,wt2,gr%zt(k),w2(k))
+  wmt(k) = & 
+    real(((time-time_initial)-tsubs(1)) & 
+           /(tsubs(2)-tsubs(1))*(w2(k)-w1(k))+w1(k))
+  end do
  
-        else if ( (time - time_initial) < tsubs(3)) then
-        do k=2,gr%nnzp
-          call linear_interpolation(5,zsubs,wt2,gr%zt(k),w1(k))
-          call linear_interpolation(5,zsubs,wt3,gr%zt(k),w2(k))
-        wmt(k) =  & 
-          real(((time-time_initial)-tsubs(2)) & 
-                 /(tsubs(3)-tsubs(2))*(w2(k)-w1(k))+w1(k))
-        end do
+  else if ( (time - time_initial) < tsubs(3)) then
+  do k=2,gr%nnzp
+    call linear_interpolation(5,zsubs,wt2,gr%zt(k),w1(k))
+    call linear_interpolation(5,zsubs,wt3,gr%zt(k),w2(k))
+  wmt(k) =  & 
+    real(((time-time_initial)-tsubs(2)) & 
+           /(tsubs(3)-tsubs(2))*(w2(k)-w1(k))+w1(k))
+  end do
  
-        else if ( (time - time_initial) < tsubs(4)) then
-        do k=2,gr%nnzp
-          call linear_interpolation(5,zsubs,wt3,gr%zt(k),w1(k))
-          call linear_interpolation(5,zsubs,wt4,gr%zt(k),w2(k))
-        wmt(k) =  & 
-          real(((time-time_initial)-tsubs(3)) & 
-                 /(tsubs(4)-tsubs(3))*(w2(k)-w1(k))+w1(k))
-        end do
+  else if ( (time - time_initial) < tsubs(4)) then
+  do k=2,gr%nnzp
+    call linear_interpolation(5,zsubs,wt3,gr%zt(k),w1(k))
+    call linear_interpolation(5,zsubs,wt4,gr%zt(k),w2(k))
+  wmt(k) =  & 
+    real(((time-time_initial)-tsubs(3)) & 
+           /(tsubs(4)-tsubs(3))*(w2(k)-w1(k))+w1(k))
+  end do
  
-        else if ( (time - time_initial) < tsubs(5)) then
-        do k=2,gr%nnzp
-          call linear_interpolation(5,zsubs,wt4,gr%zt(k),w1(k))
-          call linear_interpolation(5,zsubs,wt5,gr%zt(k),w2(k))
-        wmt(k) =  & 
-          real(((time-time_initial)-tsubs(4)) & 
-                 /(tsubs(5)-tsubs(4))*(w2(k)-w1(k))+w1(k))
-        end do
+  else if ( (time - time_initial) < tsubs(5)) then
+  do k=2,gr%nnzp
+    call linear_interpolation(5,zsubs,wt4,gr%zt(k),w1(k))
+    call linear_interpolation(5,zsubs,wt5,gr%zt(k),w2(k))
+  wmt(k) =  & 
+    real(((time-time_initial)-tsubs(4)) & 
+           /(tsubs(5)-tsubs(4))*(w2(k)-w1(k))+w1(k))
+  end do
  
-        else if ( (time - time_initial) < tsubs(6)) then
-        do k=2,gr%nnzp
-          call linear_interpolation(5,zsubs,wt5,gr%zt(k),w1(k))
-          call linear_interpolation(5,zsubs,wt6,gr%zt(k),w2(k))
-        wmt(k) = & 
-          real(((time-time_initial)-tsubs(5)) & 
-                 /(tsubs(6)-tsubs(5))*(w2(k)-w1(k))+w1(k))
-        end do
+  else if ( (time - time_initial) < tsubs(6)) then
+  do k=2,gr%nnzp
+    call linear_interpolation(5,zsubs,wt5,gr%zt(k),w1(k))
+    call linear_interpolation(5,zsubs,wt6,gr%zt(k),w2(k))
+  wmt(k) = & 
+    real(((time-time_initial)-tsubs(5)) & 
+           /(tsubs(6)-tsubs(5))*(w2(k)-w1(k))+w1(k))
+  end do
  
-        else if ( (time - time_initial) >= tsubs(6)) then
-        do k=2,gr%nnzp
-          call linear_interpolation(5,zsubs,wt6,gr%zt(k),wmt(k))
-        end do
-        end if
+  else if ( (time - time_initial) >= tsubs(6)) then
+  do k=2,gr%nnzp
+    call linear_interpolation(5,zsubs,wt6,gr%zt(k),wmt(k))
+  end do
+  end if
 
-        wmt(1) = wmt(2)
+  wmt(1) = wmt(2)
 
-        wmm = zt2zm(wmt)
+  wmm = zt2zm(wmt)
 
 
-        !---------------------------------------------------------------
-        ! Enter the final theta-l and rtm tendencies
-        !---------------------------------------------------------------
-        DO k = 1, gr%nnzp, 1
-          IF ( .not. lbugsrad ) THEN
-            thlm_forcing(k) = radht(k)
-          ELSE
-            thlm_forcing(k) = 0.
-          END IF
-          rtm_forcing(k) = 0.
-        END DO
+  !---------------------------------------------------------------
+  ! Enter the final theta-l and rtm tendencies
+  !---------------------------------------------------------------
+  DO k = 1, gr%nnzp, 1
+    IF ( .not. lbugsrad ) THEN
+      thlm_forcing(k) = radht(k)
+    ELSE
+      thlm_forcing(k) = 0.
+    END IF
+    rtm_forcing(k) = 0.
+  END DO
 
-        ! Test scalars with thetal and rt if desired
-        if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
-        if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
+  ! Test scalars with thetal and rt if desired
+  if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
+  if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
 #ifdef STATS
-        if ( .not.lbugsrad .and. lstats_samp ) then
-          call stat_update_var( iradht_LW, radht_LW, zt )        
+  if ( .not.lbugsrad .and. lstats_samp ) then
+    call stat_update_var( iradht_LW, radht_LW, zt )        
 
-          call stat_update_var( iradht_SW, radht_SW, zt )
+    call stat_update_var( iradht_SW, radht_SW, zt )
 
-          call stat_update_var( iFrad_SW, Frad_SW, zm )
+    call stat_update_var( iFrad_SW, Frad_SW, zm )
 
-          call stat_update_var( iFrad_LW, Frad_LW, zm )
+    call stat_update_var( iFrad_LW, Frad_LW, zm )
 
-        end if
+  end if
 #endif /*STATS*/
 
-        return
-        end subroutine jun25_altocu_tndcy
+  return
+  end subroutine jun25_altocu_tndcy
 
-        end module jun25
+  end module jun25
