@@ -1,7 +1,7 @@
 ################################################################################
-# $Id: Makefile,v 1.148 2008-07-28 00:21:10 griffinb Exp $
+# $Id: Makefile,v 1.149 2008-07-28 17:40:20 dschanen Exp $
 #
-# This version should work with GNU make and Sun's dmake.
+# This version should work with GNU make, BSD make and Sun's dmake.
 #
 # For HOC we edit this by hand rather than implementing imake or automake.
 #
@@ -26,11 +26,12 @@ include config/linux_ia32_g95_optimize.in
 
 # == Object files ==
 
-OBJDIR = $(PREFIX)/obj
-SRCDIR = $(PREFIX)/src
+.OBJDIR = $(PREFIX)/obj
 
-COAMPS_MICRO_DIR = coamps_micro
-NR_DIR = NR
+# == License restriced directories ==
+#
+COAMPS_MICRO_DIR = $(PREFIX)/src/coamps_micro
+NR_DIR = $(PREFIX)/src/NR
 
 # == Object files with licensing restrictions ==
 # We cannot freely distribute COAMPS microphysics or Numerical Recipes code.
@@ -40,9 +41,14 @@ NR_DIR = NR
 #   For those w/ access to COAMPS and NR, the -DCOAMPS flag can be used,
 # and a checkout of hoc_minimal, e.g. will contain the COAMPS and NR
 # directories, and COAMPS_MICRO = list of COAMPS .o files.
-# In either case, CLUBB should compile.  
-COAMPS_MICRO = $(patsubst %.F,%.o, $(notdir $(wildcard $(COAMPS_MICRO_DIR)/*.F)))
-NUM_REC = $(patsubst %.f90,%.o, $(notdir $(wildcard $(NR_DIR)/*.f90)))
+# In either case, CLUBB should compile.
+# New lines, where sinclude will run without error if the include file is not found
+sinclude $(COAMPS_MICRO_DIR)/coamps_micro.in
+sinclude $(NR_DIR)/nr.in
+
+# Old lines, which only worked with GNU make:
+#COAMPS_MICRO = $(patsubst %.F,%.o, $(notdir $(wildcard $(COAMPS_MICRO_DIR)/*.F)))
+#NUM_REC = $(patsubst %.f90,%.o, $(notdir $(wildcard $(NR_DIR)/*.f90)))
 
 # == Other object files ==
  
@@ -122,7 +128,7 @@ all:	hoc_standalone hoc_tuner int2txt hoc_inputfields  \
 # Note: since we're using a virtual path the make command is going to use the
 # first file it finds with that name.  Be careful when making copies of files.
  
-VPATH=.:LH:GCSS:BUGSrad:HOC_parameterization:$(OBJDIR):$(NR_DIR):$(COAMPS_MICRO_DIR)
+VPATH=.:LH:GCSS:BUGSrad:HOC_parameterization:$(NR_DIR):$(COAMPS_MICRO_DIR)
 
 # Cancel implicit rules (e.g for modula-2 `m2c -c $@.mod')
 .SUFFIXES:
@@ -130,69 +136,73 @@ VPATH=.:LH:GCSS:BUGSrad:HOC_parameterization:$(OBJDIR):$(NR_DIR):$(COAMPS_MICRO_
 .SUFFIXES: .a .o .f .F .f90 .F90 .h
 
 .f.o:
-	cd $(OBJDIR); $(FC) $(FCFLAGS) $(if $(findstring $@, $(WARNABLE) ), $(WARNINGS) ) -o $(OBJDIR)/$@ -c $(SRCDIR)/$<  
+	$(FC) $(FCFLAGS) $(if $(findstring $@, $(WARNABLE) ), $(WARNINGS) ) \
+	-o $@ -c $<  
 .f90.o:
-	cd $(OBJDIR); $(FC) $(FCFLAGS) $(if $(findstring $@, $(WARNABLE) ), $(WARNINGS) ) -o $(OBJDIR)/$@ -c $(SRCDIR)/$<  
+	$(FC) $(FCFLAGS) $(if $(findstring $@, $(WARNABLE) ), $(WARNINGS) ) \
+	-o $@ -c $<  
 .F.o:
-	cd $(OBJDIR); $(FC) $(FCFLAGS) $(if $(findstring $@, $(WARNABLE) ), $(WARNINGS) ) -o $(OBJDIR)/$@ -c $(SRCDIR)/$<  
+	$(FC) $(FCFLAGS) $(if $(findstring $@, $(WARNABLE) ), $(WARNINGS) ) \
+	-o $@ -c $<  
 .F90.o:
-	cd $(OBJDIR); $(FC) $(FCFLAGS) $(if $(findstring $@, $(WARNABLE) ), $(WARNINGS) ) -o $(OBJDIR)/$@ -c $(SRCDIR)/$<  
+	$(FC) $(FCFLAGS) $(if $(findstring $@, $(WARNABLE) ), $(WARNINGS) ) \
+	-o $@ -c $<  
 	
 
 # == Static libraries (default) ==
 
 libhoc_param.a:	$(PARAMETERIZATION)
-	cd $(OBJDIR); $(AR) $(ARFLAGS) $(LIBDIR)/$@ $(PARAMETERIZATION)
+	$(AR) $(ARFLAGS) $(LIBDIR)/$@ $(PARAMETERIZATION)
 	$(RANLIB) $(LIBDIR)/$@
 
 libhoc_bugsrad.a:	$(BUGS_RAD)
-	cd $(OBJDIR); $(AR) $(ARFLAGS) $(LIBDIR)/$@ $(OBJDIR)/$(BUGS_RAD)
+	$(AR) $(ARFLAGS) $(LIBDIR)/$@ $(BUGS_RAD)
 	$(RANLIB) $(LIBDIR)/$@
 
 # == Shared libraries ==
 
 libhoc_param.so:	$(PARAMETERIZATION)
-	cd $(OBJDIR); $(SHARED) $(SHAREDFLAGS) -o $(LIBDIR)/$@ $(OBJDIR)/$(PARAMETERIZATION)
+	$(SHARED) $(SHAREDFLAGS) -o $(LIBDIR)/$@ $(OBJDIR)/$(PARAMETERIZATION)
 
 libhoc_bugsrad.so:	$(BUGS_RAD)
-	cd $(OBJDIR); $(SHARED) $(SHAREDFLAGS) -o $(LIBDIR)/$@ $(OBJDIR)/$(BUGS_RAD)
+	$(SHARED) $(SHAREDFLAGS) -o $(LIBDIR)/$@ $(OBJDIR)/$(BUGS_RAD)
 
 # Remove comment to use shared libs (make sure you know what you're doing)
 HOCLIBS = libhoc_param.a libhoc_bugsrad.a
 #HOCLIBS = libhoc_param.so libhoc_bugsrad.so
 
 int2txt: $(INT2TXT)
-		$(FC) $(FCFLAGS) $(OBJDIR)/$@.o -o $(BINDIR)/int2txt
+		$(FC) $(FCFLAGS) $@.o -o $(BINDIR)/int2txt
 
 hoc_tuner: $(HOCLIBS) $(HOC_TUNER)
-	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(BINDIR)/hoc_tuner \
+	$(FC) $(FCFLAGS) -o $(BINDIR)/hoc_tuner \
 	$(HOC_TUNER) $(LDFLAGS)
 
 hoc_standalone:	$(HOCLIBS) $(HOC_STANDALONE)
-	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(BINDIR)/hoc_standalone \
+	$(FC) $(FCFLAGS) -o $(BINDIR)/hoc_standalone \
 	$(HOC_STANDALONE) $(LDFLAGS)  
 
 hoc_inputfields: $(HOCLIBS) $(HOC_INPUTFIELDS)
-	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(BINDIR)/hoc_inputfields \
+	$(FC) $(FCFLAGS) -o $(BINDIR)/hoc_inputfields \
 	$(HOC_INPUTFIELDS) $(LDFLAGS)
 
 hoc_tuner_budget_terms:	$(HOCLIBS) $(HOC_BUDGET_TERMS)
-	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(BINDIR)/hoc_tuner_budget_terms \
-	$(OBJDIR)/$(HOC_BUDGET_TERMS) $(LDFLAGS) 
+	$(FC) $(FCFLAGS) -o $(BINDIR)/hoc_tuner_budget_terms \
+	$(HOC_BUDGET_TERMS) $(LDFLAGS) 
 
 jacobian: $(HOCLIBS) $(JACOBIAN)
-	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(BINDIR)/jacobian \
+	$(FC) $(FCFLAGS) -o $(BINDIR)/jacobian \
 	$(JACOBIAN) $(LDFLAGS)
 
 compare_runs:	$(HOCLIBS) $(COMPARE_RUNS)
-	cd $(OBJDIR); $(FC) $(FCFLAGS) -o $(BINDIR)/compare_runs \
+	$(FC) $(FCFLAGS) -o $(BINDIR)/compare_runs \
 	$(COMPARE_RUNS) $(LDFLAGS)
 
 clean: 
-	-rm -f $(OBJDIR)/*.o $(OBJDIR)/*.mod $(OBJDIR)/core*
+	-rm -f *.o *.mod core*
 
 distclean: 
-	-rm -f $(OBJDIR)/*.o $(OBJDIR)/*.mod $(OBJDIR)/core* \
+	-rm -f *.o *.mod core* \
 	$(BINDIR)/hoc_tuner \
 	$(BINDIR)/int2txt \
 	$(BINDIR)/hoc_tuner_budget_terms \
