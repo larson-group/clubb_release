@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: Makefile,v 1.147 2008-07-24 21:28:39 faschinj Exp $
+# $Id: Makefile,v 1.148 2008-07-28 00:21:10 griffinb Exp $
 #
 # This version should work with GNU make and Sun's dmake.
 #
@@ -83,7 +83,7 @@ PARAMETERIZATION = \
 	numer_check.o diag_variables.o prog_variables.o \
 	parameterization_interface.o lapack_wrap.o  \
 	parameters.o pos_definite_mod.o calendar.o \
-	fill_holes_mult.o semiimplicit_clip.o explicit_clip.o \
+	fill_holes.o semiimplicit_clip.o explicit_clip.o \
 	array_index.o
 
 

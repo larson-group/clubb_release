@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.61 2008-07-24 21:28:39 faschinj Exp $
+# $Id: make.deps,v 1.62 2008-07-28 00:21:10 griffinb Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -71,7 +71,7 @@ T_in_K_mod.o	: constants.o T_in_K_mod.F90
 closure_new.o	: constants.o parameters.o grid.o saturation.o erf.o \
                  error_code.o numer_check.o closure_new.F90 
 diag_var.o	: constants.o parameters.o grid.o stats_type.o stats_variables.o \
-	lapack_wrap.o fill_holes_mult.o explicit_clip.o \
+	lapack_wrap.o fill_holes.o explicit_clip.o \
 	error_code.o diffusion.o diag_var.F90
 mixing.o : constants.o parameters.o stats_variables.o lapack_wrap.o \
 	   pos_definite_mod.o error_code.o diffusion.o mean_adv.o semiimplicit_clip.o \
@@ -91,13 +91,14 @@ mixing_length.o	: constants.o parameters.o numer_check.o error_code.o mixing_len
 saturation.o    : constants.o saturation.F90  
 sfc.o		: constants.o parameters.o numer_check.o error_code.o sfc.F90 
 wp23.o		: constants.o parameters.o stats_variables.o lapack_wrap.o \
-                  error_code.o diffusion.o mean_adv.o fill_holes_mult.o wp23.F90
+                  error_code.o diffusion.o mean_adv.o fill_holes.o wp23.F90
+
 error_code.o    : constants.o error_code.F90
 compute_um_edsclrm_mod.o : grid.o stats_variables.o lapack_wrap.o error_code.o compute_um_edsclrm_mod.F90 
 diffusion.o	: grid.o diffusion.F90
 mean_adv.o      : grid.o mean_adv.F90
 pos_definite_mod.o : grid.o stats_precision.o pos_definite_mod.F90
-fill_holes_mult.o : fill_holes_mult.F90 grid.o
+fill_holes.o    : fill_holes.F90 grid.o
 semiimplicit_clip.o : constants.o stats_precision.o semiimplicit_clip.F90
 explicit_clip.o : grid.o stats_precision.o stats_type.o stats_variables.o explicit_clip.F90
 
