@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.62 2008-07-28 00:21:10 griffinb Exp $
+# $Id: make.deps,v 1.63 2008-07-28 17:43:35 dschanen Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -33,7 +33,7 @@
 cons.o		: cons.f90
 air.o		: cons.o air.f90 
 parab.o		: air.o cons.o parab.f90
-endian.o	: endian.F90
+endian.o	: endian.F90 model_flags.o
 constants.o	: stats_precision.o constants.F90
 param_index.o   : param_index.F90
 parameters.o    : param_index.o error_code.o parameters.F90
@@ -129,7 +129,7 @@ arm_97.o    : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o \
 arm_0003.o  : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o \
 	arm_0003.F90
 arm_3year.o : constants.o diag_ustar.o model_flags.o grid.o stats_variables.o arm_3year.F90
-astex.o     : constants.o model_flags.o grid.o astex.F90
+astex.o     : constants.o parameters.o model_flags.o grid.o astex.F90
 atex.o      : constants.o model_flags.o grid.o cloud_rad.o stats_variables.o error_code.o atex.F90
 bomex.o     : constants.o model_flags.o grid.o parameters.o bomex.F90
 cobra.o     : constants.o model_flags.o grid.o cobra.F90
@@ -148,8 +148,8 @@ clex9_nov02.o : constants.o cos_solar_zen.o rad_lwsw.o model_flags.o grid.o \
 	stats_variables.o clex9_nov02.F90
 clex9_oct14.o : constants.o cos_solar_zen.o rad_lwsw.o model_flags.o grid.o stats_variables.o \
 	clex9_oct14.F90
-rico.o      : constants.o model_flags.o grid.o stats_variables.o rico.F90
-wangara.o   : constants.o model_flags.o grid.o wangara.F90
+rico.o      : constants.o parameters.o model_flags.o grid.o stats_variables.o rico.F90
+wangara.o   : constants.o parameters.o model_flags.o grid.o wangara.F90
 ice_dfsn_mod.o    : constants.o grid.o stats_variables.o ice_dfsn_mod.F90
 cloud_rad.o : constants.o grid.o cloud_rad.F90
 dycoms2_rf01.o : constants.o model_flags.o grid.o stats_variables.o error_code.o dycoms2_rf01.F90
