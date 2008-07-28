@@ -1,82 +1,90 @@
 !-----------------------------------------------------------------------
-! $Id: model_flags.F90,v 1.1 2008-07-22 16:04:25 faschinj Exp $
+! $Id: model_flags.F90,v 1.2 2008-07-28 17:45:57 dschanen Exp $
 
-        module model_flags
+module model_flags
 
-!       Description:
-!       Various model options that can be toggled off and on as desired.
+! Description:
+!   Various model options that can be toggled off and on as desired.
 
-!       References:
-!       None
+! References:
+!   None
 !-----------------------------------------------------------------------
 
-        implicit none
+  implicit none
 
-        public :: setup_model_flags
-        private ! Default Scope
+  public :: setup_model_flags
+  private ! Default Scope
 
-        logical, parameter, public ::  & 
-        LH_on      = .false., & ! Latin hypercube calculation
-        local_kk   = .false., & ! Local drizzle for rain microphysics
-        lpos_def   = .true.,  & ! Flux limiting pos. def. scheme on rtm
-        lhole_fill = .true.  ! Hole filling pos. def. scheme on wp2,up2,rtp2,etc
+  logical, parameter, public ::  & 
+    LH_on      = .false., & ! Latin hypercube calculation
+    local_kk   = .false., & ! Local drizzle for rain microphysics
+    lpos_def   = .true.,  & ! Flux limiting pos. def. scheme on rtm
+    lhole_fill = .true.     ! Hole filling pos. def. scheme on wp2,up2,rtp2,etc
 
-        logical, public ::  & 
-        lbugsrad,      & ! BUGSrad interactive radiation scheme
-        kk_rain,       & ! Khairoutdinov and Kogan (2000) drizzle scheme. - Brian
-        licedfs,       & ! Simplified ice scheme
-        lcoamps_micro, & ! COAMPS rain microphysics
-        cloud_sed,     & ! Cloud water droplet sedimentation. - Brian
-        luv_nudge,     & ! For wind speed nudging. - Michael Falk
-        lKhm_aniso    ! For anisotropic Khm, as in GABLS2.
+  logical, parameter, public ::  & 
+    lsingle_C2_Skw = .false.,  & ! Use a single Skw dependent value for C2
+    lgamma_Skw     = .true.,   & ! Use a Skw dependent gamma parameter
+    lbyteswap_io   = .false.     ! Swap byte order in GrADS output
 
-!$omp  threadprivate(lbugsrad, kk_rain, licedfs)
-!$omp  threadprivate(lcoamps_micro, cloud_sed, luv_nudge)
-!$omp  threadprivate(lKhm_aniso)
+  logical, public ::  & 
+    lbugsrad,      & ! BUGSrad interactive radiation scheme
+    kk_rain,       & ! Khairoutdinov and Kogan (2000) drizzle scheme. - Brian
+    licedfs,       & ! Simplified ice scheme
+    lcoamps_micro, & ! COAMPS rain microphysics
+    cloud_sed,     & ! Cloud water droplet sedimentation. - Brian
+    luv_nudge,     & ! For wind speed nudging. - Michael Falk
+    lKhm_aniso    ! For anisotropic Khm, as in GABLS2.
 
-        contains
+!$omp threadprivate(lbugsrad, kk_rain, licedfs)
+!$omp threadprivate(lcoamps_micro, cloud_sed, luv_nudge)
+!$omp threadprivate(lKhm_aniso)
+
+  contains
 !-----------------------------------------------------------------------
-        subroutine setup_model_flags & 
-                   ( lbugsrad_in, kk_rain_in, cloud_sed_in,  & 
-                     licedfs_in, lcoamps_micro_in, & 
-                     luv_nudge_in, lKhm_aniso_in )
-!      Description:
-!      Setup model flags
+  subroutine setup_model_flags & 
+             ( lbugsrad_in, kk_rain_in, cloud_sed_in,  & 
+               licedfs_in, lcoamps_micro_in, & 
+               luv_nudge_in, lKhm_aniso_in )
+
+! Description:
+!   Setup model flags
 !-----------------------------------------------------------------------
-        use constants, only:  & 
-            fstderr ! Variable(s)
+    use constants, only:  & 
+      fstderr ! Variable(s)
 
-        implicit none
+    implicit none
 
-        ! Input Variables
-        logical, intent(in) ::  & 
-        lbugsrad_in, kk_rain_in, cloud_sed_in, & 
-        licedfs_in, lcoamps_micro_in, luv_nudge_in, & 
-        lKhm_aniso_in
+    ! Input Variables
+    logical, intent(in) ::  & 
+      lbugsrad_in, kk_rain_in, cloud_sed_in, & 
+      licedfs_in, lcoamps_micro_in, luv_nudge_in, & 
+      lKhm_aniso_in
 
-        lbugsrad      = lbugsrad_in
-        kk_rain       = kk_rain_in
-        cloud_sed     = cloud_sed_in
-        lcoamps_micro = lcoamps_micro_in
-        licedfs       = licedfs_in
-        luv_nudge     = luv_nudge_in
-        lKhm_aniso    = lKhm_aniso_in
+!-----------------------------------------------------------------------
+    lbugsrad      = lbugsrad_in
+    kk_rain       = kk_rain_in
+    cloud_sed     = cloud_sed_in
+    lcoamps_micro = lcoamps_micro_in
+    licedfs       = licedfs_in
+    luv_nudge     = luv_nudge_in
+    lKhm_aniso    = lKhm_aniso_in
 
         ! Make sure only one microphysical scheme is enabled.
-!       if ( .not.( kk_rain .and. lcoamps_micro ) .and. 
-!    .       .not.( kk_rain .and. licedfs ) .and. 
-!    .       .not.( licedfs .and. lcoamps_micro ) ) then
-        if ( count( (/kk_rain, lcoamps_micro, licedfs/) ) > 1 ) then
+!       if ( .not.( kk_rain .and. lcoamps_micro ) .and. &
+!            .not.( kk_rain .and. licedfs ) .and. &
+!            .not.( licedfs .and. lcoamps_micro ) ) then
 
-          write(unit=fstderr, fmt='(3(a18,l1,a1))')  & 
-            "kk_rain = ", kk_rain, ",", & 
-            "lcoamps_micro = ", lcoamps_micro,",", & 
-            "licedfs = ", licedfs, "."
-          stop "Only one microphysics scheme may be enabled per run"
+    if ( count( (/kk_rain, lcoamps_micro, licedfs/) ) > 1 ) then
 
-        end if ! More than one microphysical scheme enabled
+      write(unit=fstderr, fmt='(3(a18,l1,a1))')  & 
+        "kk_rain = ", kk_rain, ",", & 
+        "lcoamps_micro = ", lcoamps_micro,",", & 
+        "licedfs = ", licedfs, "."
+      stop "Only one microphysics scheme may be enabled per run"
 
-        return
-        end subroutine setup_model_flags
-       end module model_flags
+    end if ! More than one microphysical scheme enabled
 
+    return
+  end subroutine setup_model_flags
+
+end module model_flags

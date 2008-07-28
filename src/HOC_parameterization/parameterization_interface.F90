@@ -1,7 +1,7 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F90,v 1.6 2008-07-25 17:47:07 faschinj Exp $
+! $Id: parameterization_interface.F90,v 1.7 2008-07-28 17:45:57 dschanen Exp $
 !-----------------------------------------------------------------------
-        module hoc_parameterization_interface
+module hoc_parameterization_interface
 
 !       Description:
 !       The module containing the `core' of the HOC model.
@@ -71,7 +71,8 @@
        use model_flags, only: & 
            LH_on,  & ! Variable(s)
            lKhm_aniso, & 
-           luv_nudge
+           luv_nudge, &
+           lgamma_Skw
        use grid_class, only: & 
            gr,  & ! Variable(s)
            zm2zt,  & ! Procedure(s)
@@ -514,22 +515,19 @@
        ! Joshua Fasching March 2008
        if ( lapack_error(err_code)) return
 
-#ifndef DISABLE_GAMMA_SKW
+       if ( lgamma_Skw ) then
        !----------------------------------------------------------------
        ! Compute gamma as a function of Skw  - 14 April 06 dschanen
        !----------------------------------------------------------------
-       ! Use -DDISABLE_GAMMA_SKW with the fortran preprocessor
-       ! to bring back the use of gamma_coef the value of gamma 
-       ! without Skw dependence
 
         gamma_Skw_fnc  & 
         = gamma_coefb + (gamma_coef-gamma_coefb) & 
           *exp( -(1.0/2.0) * (Skwm/gamma_coefc)**2 )
 
-#else
-        gamma_Skw_fnc = gamma_coef
+        else
+          gamma_Skw_fnc = gamma_coef
 
-#endif /* DISABLE */
+        end if
 
        !----------------------------------------------------------------
        ! Compute Sc with new formula from Vince
@@ -1083,7 +1081,7 @@
         use error_code, only:  & 
             clubb_var_out_of_bounds ! Variable(s)
         use model_flags, only: & 
-            setup_model_flags
+            setup_model_flags ! Subroutine
 
         implicit none
 
@@ -1249,4 +1247,4 @@
         return
         end subroutine parameterization_cleanup
 
-      end module hoc_parameterization_interface
+end module hoc_parameterization_interface

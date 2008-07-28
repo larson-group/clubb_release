@@ -1,7 +1,7 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F90,v 1.5 2008-07-28 00:18:03 griffinb Exp $
+! $Id: diag_var.F90,v 1.6 2008-07-28 17:45:57 dschanen Exp $
 !===============================================================================
-      module diagnose_variances
+module diagnose_variances
 
 !     Description:
 !     Contains the subroutine diag_var and ancillary functions.
@@ -59,11 +59,13 @@
             fstderr
 
         use model_flags, only: & 
-            lhole_fill ! logical constant
+            lhole_fill, &    ! logical constants
+            lsingle_C2_Skw
         
         use parameters,  & 
           only: C2rt, C2thl, C2rtthl, c_K2, nu2, c_K9, nu9,  & ! Variable(s)
-                c_Ksqd, beta, C4, C14, C5, T0, sclr_dim, sclrtol
+                c_Ksqd, beta, C4, C14, C5, T0, sclr_dim, sclrtol, &
+                C2, C2b, C2c
         
         use grid_class, only: & 
             gr,  & ! Variable(s)
@@ -203,26 +205,27 @@
         integer :: k, km1, kp1
 
 !-----------------------------------------------------------------------
-#ifdef SINGLE_C2_SKW
-        ! Use a single value of C2 for all equations.
-        C2rt_1d(1:gr%nnzp)  & 
-        = C2b + (C2-C2b) *exp( -0.5 * (Skwm(1:gr%nnzp)/C2c)**2 )
+        if ( lsingle_C2_Skw ) then
+          ! Use a single value of C2 for all equations.
+          C2rt_1d(1:gr%nnzp)  & 
+          = C2b + (C2-C2b) *exp( -0.5 * (Skwm(1:gr%nnzp)/C2c)**2 )
 
-        C2thl_1d   = C2rt_1d
-        C2rtthl_1d = C2rt_1d
+          C2thl_1d   = C2rt_1d
+          C2rtthl_1d = C2rt_1d
 
-        C2sclr_1d  = C2rt_1d
-#else
-        ! Use 3 different values of C2 for rtp2, thlp2, rtpthlp.
-        C2rt_1d(1:gr%nnzp)    = C2rt
-        C2thl_1d(1:gr%nnzp)   = C2thl
-        C2rtthl_1d(1:gr%nnzp) = C2rtthl
+          C2sclr_1d  = C2rt_1d
+        else
+          ! Use 3 different values of C2 for rtp2, thlp2, rtpthlp.
+          C2rt_1d(1:gr%nnzp)    = C2rt
+          C2thl_1d(1:gr%nnzp)   = C2thl
+          C2rtthl_1d(1:gr%nnzp) = C2rtthl
 
-        C2sclr_1d(1:gr%nnzp)  = C2rt  ! Use rt value for now
-#endif
+          C2sclr_1d(1:gr%nnzp)  = C2rt  ! Use rt value for now
+        end if
+
         C4_C14_1d(1:gr%nnzp) = 2.0/3.0 * C4 + ( 1.0/3.0 * C14 )
 
-        ! Are we solving for a passive scalar as well?
+        ! Are we solving for passive scalars as well?
         if ( sclr_dim > 0 ) then
           scalar_calc = .true.
 
@@ -299,7 +302,7 @@
            ! Account for units (kg/kg)**2 Vince Larson 29 Jan 2008
            rtpthlp_zt_sqd_3pt(k) = 1e6 * rtpthlp_zt_sqd_3pt(k)
 
-        enddo
+        end do
 
         ! Define the Coefficent of Eddy Diffusivity for the 
         ! Variances and Covariances.
@@ -2256,4 +2259,4 @@
 
 !===============================================================================
 
-        end module diagnose_variances
+end module diagnose_variances
