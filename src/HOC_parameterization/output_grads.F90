@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: output_grads.F90,v 1.4 2008-07-28 19:34:43 faschinj Exp $
+! $Id: output_grads.F90,v 1.5 2008-07-28 19:53:43 faschinj Exp $
 module output_grads
 #ifdef STATS 
 
@@ -57,24 +57,24 @@ module output_grads
   
   implicit none
 
-!         ! Input Variables
+  ! Input Variables
 
   integer, intent(IN) :: unit   ! File unit being written to            [-]
 
   character*(*), intent(IN) ::  & 
-  fdir,                          & ! Directory where file is stored        [-]
-  fname                         ! Name of file                          [-]
+  fdir,                         & ! Directory where file is stored        [-]
+  fname                           ! Name of file                          [-]
 
-  integer, intent(IN) ::  & 
+  integer, intent(IN) :: & 
   ia,                    & ! Lower Bound of z      [-]
-  iz                    ! Upper Bound of z      [-]
+  iz                       ! Upper Bound of z      [-]
 
   real, dimension(:), intent(IN) :: z
 
   integer, intent(IN) ::  & 
-  day,           & ! Day of Month at Model Start    [##]
-  month,         & ! Month of Year at Model start   [##]
-  year          ! Year at Model Start            [##]
+  day,           & ! Day of Month at Model Start    [dd]
+  month,         & ! Month of Year at Model start   [mm]
+  year             ! Year at Model Start            [yyyy]
 
   real, intent(IN) :: rlat, rlon ! Latitude and Longitude [Degrees N/E]
 

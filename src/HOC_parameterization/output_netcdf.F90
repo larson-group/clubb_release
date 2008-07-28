@@ -1,4 +1,4 @@
-! $Id: output_netcdf.F90,v 1.2 2008-07-28 19:34:43 faschinj Exp $
+! $Id: output_netcdf.F90,v 1.3 2008-07-28 19:53:43 faschinj Exp $
 !-----------------------------------------------------------------------
 module output_netcdf
 #ifdef NETCDF
@@ -31,8 +31,8 @@ subroutine open_netcdf( unit, fdir, fname, ia, iz, zgrid,  &
 !      None
 !-----------------------------------------------------------------------
 use netcdf, only: & 
-    NF90_CLOBBER,  & ! Variable(s)
-    NF90_NOERR, & 
+    NF90_CLOBBER, & ! Variable(s)
+    NF90_NOERR,   & 
     nf90_create,  & ! Procedure
     nf90_strerror
 use outputfile_class, only: & 
@@ -47,17 +47,17 @@ implicit none
 ! Input Variables
 character(len=*), intent(in) ::  & 
  fdir,   & ! Directory name of file
- fname  ! File name
+ fname     ! File name
 
 integer, intent(in) ::  & 
  unit,              & ! Ignored; here for compatibility with GrADS writing
  day, month, year,  & ! Time
  ia, iz,            & ! First and last grid point?
- nvar              ! Number of variables
+ nvar                 ! Number of variables
 
 real, intent(in) ::  & 
  rlat,   & ! Latitude                        [degrees_E]
- rlon   ! Longitude                       [degrees_N]
+ rlon      ! Longitude                       [degrees_N]
 
 real(kind=time_precision), intent(in) :: & 
  dtwrite ! Time between write intervals   [s]
@@ -234,14 +234,14 @@ implicit none
 ! Constant parameters
 integer, parameter ::  & 
  nlat  = 1,   & ! Number of points in the N/S direction
- nlong = 1   ! Number of points in the E/W direction
+ nlong = 1      ! Number of points in the E/W direction
 
 ! Input Variables
 integer, intent(in) ::  & 
  day, month, year,  & ! Time of year
  ncid,              & ! Number used by NetCDF for ref. the file
  ia, iz,            & ! First and last grid point in the z?
- nvar              ! Number of variables
+ nvar                 ! Number of variables
 
 real(kind=time_precision), intent(in) ::  & 
  time    ! Current time   [s]
@@ -614,9 +614,9 @@ implicit none
 
 ! Input Variables
 integer, intent(in) ::  & 
-day_in,           & ! Day of Month at Model Start [##]
-month_in,         & ! Month of Year at Model Start[##]
-year_in          ! Year at Model Start       [####]
+day_in,           & ! Day of Month at Model Start   [dd]
+month_in,         & ! Month of Year at Model Start  [mm]
+year_in             ! Year at Model Start         [yyyy]
 
 real(kind=time_precision), intent(in) :: time_in ! Start time [s]
 
