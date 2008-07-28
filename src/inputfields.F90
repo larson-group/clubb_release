@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputfields.F90,v 1.2 2008-07-24 14:13:56 faschinj Exp $
+! $Id: inputfields.F90,v 1.3 2008-07-28 19:45:10 faschinj Exp $
 
 ! Module inputfields
 
@@ -10,72 +10,72 @@
 !  Using a module also saves the trouble of writing an interface definition
 !  within the hoc_inputfields code.
 !===============================================================================
-      module inputfields
-        implicit none
+module inputfields
+  implicit none
 
 !----- Run information--------------------------------------------------
-        character(len=80), public :: datafile
+  character(len=80), public :: datafile
 
-        character(len=100), public ::  & 
-        datafilet, datafilem
+  character(len=100), public ::  & 
+  datafilet, datafilem
 
-        character(3), public      :: input_type
+  character(3), public      :: input_type
 
-        logical, public :: input_um, input_vm, input_rtm, input_thlm, & 
-                           input_wp2, input_wprtp, input_wpthlp,  & 
-                           input_wp3, input_rtp2, input_thlp2,  & 
-                           input_rtpthlp, input_upwp, input_vpwp, & 
-                           input_ug, input_vg, input_rcm,  & 
-                           input_wmt, input_exner, input_em, & 
-                           input_p, input_rhot, input_rhom, & 
-                           input_Lscale, input_Lup, input_Ldown, & 
-                           input_Kht, input_Khm, input_taum, input_taut, & 
-                           input_thvm, input_rrainm,input_Nrm,  & 
-                           input_rsnowm, input_ricem, input_rgraupelm,  & 
-                           input_thlm_forcing, input_rtm_forcing, & 
-                           input_up2, input_vp2, input_Scm, input_Ncm,  & 
-                           input_Ncnm, input_Nim, input_cf, input_Sct 
+  logical, public :: input_um, input_vm, input_rtm, input_thlm, & 
+                     input_wp2, input_wprtp, input_wpthlp,  & 
+                     input_wp3, input_rtp2, input_thlp2,  & 
+                     input_rtpthlp, input_upwp, input_vpwp, & 
+                     input_ug, input_vg, input_rcm,  & 
+                     input_wmt, input_exner, input_em, & 
+                     input_p, input_rhot, input_rhom, & 
+                     input_Lscale, input_Lup, input_Ldown, & 
+                     input_Kht, input_Khm, input_taum, input_taut, & 
+                     input_thvm, input_rrainm,input_Nrm,  & 
+                     input_rsnowm, input_ricem, input_rgraupelm,  & 
+                     input_thlm_forcing, input_rtm_forcing, & 
+                     input_up2, input_vp2, input_Scm, input_Ncm,  & 
+                     input_Ncnm, input_Nim, input_cf, input_Sct 
 
 
-        public  :: grads_fields_reader, compute_timestep, set_filenames
+  public  :: grads_fields_reader, compute_timestep, set_filenames
 
-        private :: lin_ext_zm_bottom, lin_ext_zt_bottom
+  private :: lin_ext_zm_bottom, lin_ext_zt_bottom
 
-        private ! Default Scope
+  private ! Default Scope
 
-        contains
+  contains
 
 !===============================================================================
 
 
 !-----------------------------------------------------------------------
-        subroutine set_filenames( )
+  subroutine set_filenames( )
 !       Description: Set the names of the GrADS files to be used.
 !       Used by hoc_inputfields.
 !-----------------------------------------------------------------------
 
-        implicit none
+  implicit none
 
-        select case ( input_type )
-        case ( "les", "rf1" )
-          datafilet = trim( datafile )//"_coamps_sm.ctl"
-          datafilem = trim( datafile )//"_coamps_sw.ctl"
-        case ( "hoc" )
-          datafilet = trim( datafile )//"_zt.ctl"
-          datafilem = trim( datafile )//"_zm.ctl"
-        case default
-          write(0,*) "Don't know how to handle input_type = "// & 
-            input_type
-          stop
-        end select
+  select case ( input_type )
+  case ( "les", "rf1" )
+    datafilet = trim( datafile )//"_coamps_sm.ctl"
+    datafilem = trim( datafile )//"_coamps_sw.ctl"
+  case ( "hoc" )
+    datafilet = trim( datafile )//"_zt.ctl"
+    datafilem = trim( datafile )//"_zm.ctl"
+  case default
+    write(0,*) "Don't know how to handle input_type = "// & 
+      input_type
+    stop
+  end select
 
-        return
-        end subroutine set_filenames
+  return
+  end subroutine set_filenames
 !-----------------------------------------------------------------------
 
 
 !-----------------------------------------------------------------------
-        subroutine grads_fields_reader( timestep )
+  subroutine grads_fields_reader( timestep )
 !       Description:
 !       Reads in variables for the model from GrADS data
 
@@ -85,620 +85,620 @@
 !       subroutine close_grads_read
 !-----------------------------------------------------------------------
 
-        use prognostic_variables, only: & 
-            um,  & ! Variable(s)
-            vm, & 
-            rtm, & 
-            thlm, & 
-            wp2, & 
-            wp3, & 
-            wprtp, & 
-            wpthlp, & 
-            rtp2, & 
-            thlp2, & 
-            rtpthlp, & 
-            upwp, & 
-            vpwp, & 
-            p, & 
-            exner, & 
-            rcm, & 
-            wmt, & 
-            rhot, & 
-            rhom, & 
-            thlm_forcing, & 
-            rtm_forcing, & 
-            cf, & 
-            taum, & 
-            up2, & 
-            vp2, & 
-            Scm
+  use prognostic_variables, only: & 
+      um,  & ! Variable(s)
+      vm, & 
+      rtm, & 
+      thlm, & 
+      wp2, & 
+      wp3, & 
+      wprtp, & 
+      wpthlp, & 
+      rtp2, & 
+      thlp2, & 
+      rtpthlp, & 
+      upwp, & 
+      vpwp, & 
+      p, & 
+      exner, & 
+      rcm, & 
+      wmt, & 
+      rhot, & 
+      rhom, & 
+      thlm_forcing, & 
+      rtm_forcing, & 
+      cf, & 
+      taum, & 
+      up2, & 
+      vp2, & 
+      Scm
 
-        use diagnostic_variables, only: & 
-            hydromet,  & ! Variable(s)
-            taut, & 
-            ug, & 
-            vg, & 
-            Lscale, & 
-            Lup, & 
-            Ldown, & 
-            Kht, & 
-            Khm, & 
-            thvm, & 
-            Ncm, & 
-            Ncnm, & 
-            Nim, & 
-            Sct, & 
-            em
+  use diagnostic_variables, only: & 
+      hydromet,  & ! Variable(s)
+      taut, & 
+      ug, & 
+      vg, & 
+      Lscale, & 
+      Lup, & 
+      Ldown, & 
+      Kht, & 
+      Khm, & 
+      thvm, & 
+      Ncm, & 
+      Ncnm, & 
+      Nim, & 
+      Sct, & 
+      em
 
-        use grid_class, only: & 
-            gr,  & ! Variable(s)
-            zt2zm ! Procedure(s)
+  use grid_class, only: & 
+      gr,  & ! Variable(s)
+      zt2zm ! Procedure(s)
 
-        use array_index, only:  & 
-            iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm
+  use array_index, only:  & 
+      iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm
 
-        use inputfile_class, only: & 
-            inputgrads,  & ! Type
-            get_var,  & ! Procedure(s)
-            open_grads_read, & 
-            close_grads_read
+  use inputfile_class, only: & 
+      inputgrads,  & ! Type
+      get_var,  & ! Procedure(s)
+      open_grads_read, & 
+      close_grads_read
 
-        implicit none
+  implicit none
 
-        ! Arguments
-        integer, intent(in) :: timestep
+  ! Arguments
+  integer, intent(in) :: timestep
 
-        ! Local Variables
-        logical :: lerror
-        type (inputgrads) :: fread_var
+  ! Local Variables
+  logical :: lerror
+  type (inputgrads) :: fread_var
 
-        real, dimension(gr%nnzp+1) :: tmp1
+  real, dimension(gr%nnzp+1) :: tmp1
 
-        integer :: k
+  integer :: k
 
 
-        select case( input_type )
+  select case( input_type )
 
-        case( "hoc" )
+  case( "hoc" )
 
-          ! NOTE:  The code is not set up to compensate for grid 
-          !        discrepancies between the CLUBB GrADS file that is 
-          !        having its variable values passed in and the CLUBB 
-          !        inputfields run that is using those values as 
-          !        variable inputs.  Therefore, CLUBB should be set up
-          !        to match the number of grid levels and altitude of 
-          !        each grid level found in the CLUBB GrADS zt and zm
-          !        files.
+    ! NOTE:  The code is not set up to compensate for grid 
+    !        discrepancies between the CLUBB GrADS file that is 
+    !        having its variable values passed in and the CLUBB 
+    !        inputfields run that is using those values as 
+    !        variable inputs.  Therefore, CLUBB should be set up
+    !        to match the number of grid levels and altitude of 
+    !        each grid level found in the CLUBB GrADS zt and zm
+    !        files.
 
-          !  Thermo grid - zt file 
-          call open_grads_read( 15, trim( datafile )//"_zt.ctl",  & 
-                                fread_var )
+    !  Thermo grid - zt file 
+    call open_grads_read( 15, trim( datafile )//"_zt.ctl",  & 
+                          fread_var )
 
-          if ( input_um ) then
-            call get_var( fread_var, "um", timestep, & 
-                          um(1:gr%nnzp),  lerror )
-          endif
-      
-          if ( input_vm ) then 
-            call get_var( fread_var, "vm", timestep, & 
-                          vm(1:gr%nnzp),  lerror )
-          endif
+    if ( input_um ) then
+      call get_var( fread_var, "um", timestep, & 
+                    um(1:gr%nnzp),  lerror )
+    endif
 
-          if ( input_rtm ) then 
-            call get_var( fread_var, "rtm", timestep, & 
-                          rtm(1:gr%nnzp),  lerror )
-          endif
+    if ( input_vm ) then 
+      call get_var( fread_var, "vm", timestep, & 
+                    vm(1:gr%nnzp),  lerror )
+    endif
 
-          if ( input_thlm ) then 
-            call get_var( fread_var, "thlm",  & 
-                          timestep, & 
-                          thlm(1:gr%nnzp),  lerror )
-          endif
+    if ( input_rtm ) then 
+      call get_var( fread_var, "rtm", timestep, & 
+                    rtm(1:gr%nnzp),  lerror )
+    endif
 
-          if ( input_wp3 ) then 
-            call get_var( fread_var, "wp3", timestep, & 
-                          wp3(1:gr%nnzp),  lerror )
-          endif
-          if ( input_taut ) then 
-            call get_var( fread_var, "taut", timestep, & 
-                          taut(1:gr%nnzp),  lerror )
-          endif
-          if ( input_rrainm ) then 
-            call get_var( fread_var, "rrainm", timestep, & 
-                          hydromet(1:gr%nnzp,iirrainm),  lerror )
-          endif
-          if ( input_rsnowm ) then 
-            call get_var( fread_var, "rsnowm", timestep, & 
-                          hydromet(1:gr%nnzp,iirsnowm),  lerror )
-          endif
-          if ( input_ricem ) then 
-            call get_var( fread_var, "ricem", timestep, & 
-                          hydromet(1:gr%nnzp,iiricem),  lerror )
-          endif
-          if ( input_rgraupelm ) then 
-            call get_var( fread_var, "rgraupelm", timestep, & 
-                          hydromet(1:gr%nnzp,iirgraupelm),  lerror )
-          endif
+    if ( input_thlm ) then 
+      call get_var( fread_var, "thlm",  & 
+                    timestep, & 
+                    thlm(1:gr%nnzp),  lerror )
+    endif
+
+    if ( input_wp3 ) then 
+      call get_var( fread_var, "wp3", timestep, & 
+                    wp3(1:gr%nnzp),  lerror )
+    endif
+    if ( input_taut ) then 
+      call get_var( fread_var, "taut", timestep, & 
+                    taut(1:gr%nnzp),  lerror )
+    endif
+    if ( input_rrainm ) then 
+      call get_var( fread_var, "rrainm", timestep, & 
+                    hydromet(1:gr%nnzp,iirrainm),  lerror )
+    endif
+    if ( input_rsnowm ) then 
+      call get_var( fread_var, "rsnowm", timestep, & 
+                    hydromet(1:gr%nnzp,iirsnowm),  lerror )
+    endif
+    if ( input_ricem ) then 
+      call get_var( fread_var, "ricem", timestep, & 
+                    hydromet(1:gr%nnzp,iiricem),  lerror )
+    endif
+    if ( input_rgraupelm ) then 
+      call get_var( fread_var, "rgraupelm", timestep, & 
+                    hydromet(1:gr%nnzp,iirgraupelm),  lerror )
+    endif
 
 !--------------------------------------------------------
 ! Added variables for hoc_restart
-          if ( input_p ) then
-            call get_var( fread_var, "p", timestep, & 
-                          p(1:gr%nnzp),  lerror )
-          endif
-          if ( input_exner) then
-            call get_var( fread_var , "exner", timestep, & 
-                          exner(1:gr%nnzp),  lerror)
-          endif
-          if ( input_ug) then
-            call get_var( fread_var , "ug", timestep, & 
-                          ug(1:gr%nnzp),  lerror)
-          endif
-          if ( input_vg) then
-            call get_var( fread_var , "vg", timestep, & 
-                          vg(1:gr%nnzp),  lerror)
-          endif
-          if ( input_rcm) then
-            call get_var( fread_var , "rcm", timestep, & 
-                          rcm(1:gr%nnzp),  lerror)
-          endif
-          if ( input_wmt) then
-            call get_var( fread_var , "wm", timestep, & 
-                          wmt(1:gr%nnzp),  lerror)
-          endif
-          if ( input_rhot) then
-            call get_var( fread_var , "rhot", timestep, & 
-                          rhot(1:gr%nnzp), lerror)
-          endif
-          if ( input_Lscale) then
-            call get_var( fread_var , "lscale", timestep, & 
-                          Lscale(1:gr%nnzp), lerror)
-          endif
-          if ( input_Lup) then
-            call get_var( fread_var , "Lup", timestep, & 
-                          Lup(1:gr%nnzp), lerror)
-          endif
-          if ( input_Ldown) then
-            call get_var( fread_var , "Ldown", timestep, & 
-                          Ldown(1:gr%nnzp), lerror)
-          endif
-          if ( input_Kht) then
-            call get_var( fread_var , "kht", timestep, & 
-                          Kht(1:gr%nnzp), lerror)
-          endif
-          if ( input_thvm) then
-            call get_var( fread_var , "thvm", timestep, & 
-                          thvm(1:gr%nnzp), lerror)
-          endif
-          if ( input_thlm_forcing ) then
-            call get_var( fread_var , "thlm_f", timestep, & 
-                          thlm_forcing(1:gr%nnzp), lerror)
-          endif
-          if ( input_rtm_forcing ) then
-            call get_var( fread_var , "rtm_f", timestep, & 
-                          rtm_forcing(1:gr%nnzp), lerror)
-          endif
-          if ( input_Ncm) then
-            call get_var( fread_var , "Ncm", timestep, & 
-                          Ncm(1:gr%nnzp), lerror)
-          endif
-          if ( input_Ncnm) then
-            call get_var( fread_var , "Ncnm", timestep, & 
-                          Ncnm(1:gr%nnzp), lerror)
-          endif
-          if ( input_Nim) then
-            call get_var( fread_var , "Nim", timestep, & 
-                          Nim(1:gr%nnzp), lerror)
-          endif
-          if ( input_cf) then
-            call get_var( fread_var , "cf", timestep, & 
-                          cf(1:gr%nnzp), lerror)
-          endif
-          if ( input_Nrm ) then
-            call get_var( fread_var , "Nrm", timestep, & 
-                          hydromet(1:gr%nnzp,iiNrm), lerror)
-          endif
-          if ( input_Sct ) then
-            call get_var( fread_var , "sc", timestep, & 
-                          Sct(1:gr%nnzp), lerror)
-          endif
+    if ( input_p ) then
+      call get_var( fread_var, "p", timestep, & 
+                    p(1:gr%nnzp),  lerror )
+    endif
+    if ( input_exner) then
+      call get_var( fread_var , "exner", timestep, & 
+                    exner(1:gr%nnzp),  lerror)
+    endif
+    if ( input_ug) then
+      call get_var( fread_var , "ug", timestep, & 
+                    ug(1:gr%nnzp),  lerror)
+    endif
+    if ( input_vg) then
+      call get_var( fread_var , "vg", timestep, & 
+                    vg(1:gr%nnzp),  lerror)
+    endif
+    if ( input_rcm) then
+      call get_var( fread_var , "rcm", timestep, & 
+                    rcm(1:gr%nnzp),  lerror)
+    endif
+    if ( input_wmt) then
+      call get_var( fread_var , "wm", timestep, & 
+                    wmt(1:gr%nnzp),  lerror)
+    endif
+    if ( input_rhot) then
+      call get_var( fread_var , "rhot", timestep, & 
+                    rhot(1:gr%nnzp), lerror)
+    endif
+    if ( input_Lscale) then
+      call get_var( fread_var , "lscale", timestep, & 
+                    Lscale(1:gr%nnzp), lerror)
+    endif
+    if ( input_Lup) then
+      call get_var( fread_var , "Lup", timestep, & 
+                    Lup(1:gr%nnzp), lerror)
+    endif
+    if ( input_Ldown) then
+      call get_var( fread_var , "Ldown", timestep, & 
+                    Ldown(1:gr%nnzp), lerror)
+    endif
+    if ( input_Kht) then
+      call get_var( fread_var , "kht", timestep, & 
+                    Kht(1:gr%nnzp), lerror)
+    endif
+    if ( input_thvm) then
+      call get_var( fread_var , "thvm", timestep, & 
+                    thvm(1:gr%nnzp), lerror)
+    endif
+    if ( input_thlm_forcing ) then
+      call get_var( fread_var , "thlm_f", timestep, & 
+                    thlm_forcing(1:gr%nnzp), lerror)
+    endif
+    if ( input_rtm_forcing ) then
+      call get_var( fread_var , "rtm_f", timestep, & 
+                    rtm_forcing(1:gr%nnzp), lerror)
+    endif
+    if ( input_Ncm) then
+      call get_var( fread_var , "Ncm", timestep, & 
+                    Ncm(1:gr%nnzp), lerror)
+    endif
+    if ( input_Ncnm) then
+      call get_var( fread_var , "Ncnm", timestep, & 
+                    Ncnm(1:gr%nnzp), lerror)
+    endif
+    if ( input_Nim) then
+      call get_var( fread_var , "Nim", timestep, & 
+                    Nim(1:gr%nnzp), lerror)
+    endif
+    if ( input_cf) then
+      call get_var( fread_var , "cf", timestep, & 
+                    cf(1:gr%nnzp), lerror)
+    endif
+    if ( input_Nrm ) then
+      call get_var( fread_var , "Nrm", timestep, & 
+                    hydromet(1:gr%nnzp,iiNrm), lerror)
+    endif
+    if ( input_Sct ) then
+      call get_var( fread_var , "sc", timestep, & 
+                    Sct(1:gr%nnzp), lerror)
+    endif
 
 !--------------------------------------------------------
-          call close_grads_read( fread_var )
+    call close_grads_read( fread_var )
 
 !         zm file
-          call open_grads_read( 15, trim(datafile)//"_zm.ctl", & 
-                                fread_var )
+    call open_grads_read( 15, trim(datafile)//"_zm.ctl", & 
+                          fread_var )
 
-          if ( input_wp2) then 
-            call get_var( fread_var, "wp2", timestep, & 
-                          wp2(1:gr%nnzp),  lerror )
-          endif
+    if ( input_wp2) then 
+      call get_var( fread_var, "wp2", timestep, & 
+                    wp2(1:gr%nnzp),  lerror )
+    endif
 
-          if ( input_wprtp) then 
-            call get_var( fread_var, "wprtp",  & 
-                          timestep, wprtp(1:gr%nnzp), & 
-                          lerror )
-          endif
+    if ( input_wprtp) then 
+      call get_var( fread_var, "wprtp",  & 
+                    timestep, wprtp(1:gr%nnzp), & 
+                    lerror )
+    endif
 
-          if ( input_wpthlp) then 
-            call get_var( fread_var, "wpthlp",  & 
-                          timestep,  & 
-                          wpthlp(1:gr%nnzp),  & 
-                          lerror )
-          endif
+    if ( input_wpthlp) then 
+      call get_var( fread_var, "wpthlp",  & 
+                    timestep,  & 
+                    wpthlp(1:gr%nnzp),  & 
+                    lerror )
+    endif
 
-          if ( input_rtp2) then 
-             call get_var( fread_var, "rtp2",  & 
-                           timestep, & 
-                           rtp2(1:gr%nnzp), lerror )
-          endif
+    if ( input_rtp2) then 
+       call get_var( fread_var, "rtp2",  & 
+                     timestep, & 
+                     rtp2(1:gr%nnzp), lerror )
+    endif
 
-          if ( input_thlp2) then 
-             call get_var( fread_var, "thlp2",  & 
-                           timestep, & 
-                           thlp2(1:gr%nnzp), lerror )
-          endif
+    if ( input_thlp2) then 
+       call get_var( fread_var, "thlp2",  & 
+                     timestep, & 
+                     thlp2(1:gr%nnzp), lerror )
+    endif
 
-          if ( input_rtpthlp) then 
-             call get_var( fread_var, "rtpthlp",  & 
-                           timestep,  & 
-                           rtpthlp(1:gr%nnzp), & 
-                           lerror )
-          endif
+    if ( input_rtpthlp) then 
+       call get_var( fread_var, "rtpthlp",  & 
+                     timestep,  & 
+                     rtpthlp(1:gr%nnzp), & 
+                     lerror )
+    endif
 
-          if ( input_upwp) then 
-             call get_var( fread_var, "upwp",  & 
-                           timestep, & 
-                           upwp(1:gr%nnzp), lerror )
-          endif
+    if ( input_upwp) then 
+       call get_var( fread_var, "upwp",  & 
+                     timestep, & 
+                     upwp(1:gr%nnzp), lerror )
+    endif
 
-          if ( input_vpwp) then 
-             call get_var( fread_var, "vpwp",  & 
-                           timestep, & 
-                           vpwp(1:gr%nnzp), lerror )
-          endif
+    if ( input_vpwp) then 
+       call get_var( fread_var, "vpwp",  & 
+                     timestep, & 
+                     vpwp(1:gr%nnzp), lerror )
+    endif
 !-----------------------------------------------------------
-         if ( input_em) then
-            call get_var( fread_var, "em", & 
-                          timestep, & 
-                          em(1:gr%nnzp), lerror )
-         endif
-         if ( input_rhom) then
-            call get_var( fread_var, "rhom", & 
-                          timestep, & 
-                          rhom(1:gr%nnzp), lerror )
-         endif
-         if ( input_Khm) then
-            call get_var( fread_var, "khm", & 
-                          timestep, & 
-                          Khm(1:gr%nnzp), lerror )
-         endif
-         if ( input_taum) then
-            call get_var( fread_var, "taum", & 
-                          timestep, & 
-                          taum(1:gr%nnzp), lerror )
-         endif
-         if ( input_up2) then
-            call get_var( fread_var, "up2", & 
-                          timestep, & 
-                          up2(1:gr%nnzp), lerror )
-         endif
-         if ( input_vp2) then
-            call get_var( fread_var, "vp2", & 
-                          timestep, & 
-                          vp2(1:gr%nnzp), lerror )
-         endif
-         if ( input_Scm ) then
-            call get_var( fread_var, "scm", & 
-                          timestep, & 
-                          Scm(1:gr%nnzp), lerror )
-         endif
+   if ( input_em) then
+      call get_var( fread_var, "em", & 
+                    timestep, & 
+                    em(1:gr%nnzp), lerror )
+   endif
+   if ( input_rhom) then
+      call get_var( fread_var, "rhom", & 
+                    timestep, & 
+                    rhom(1:gr%nnzp), lerror )
+   endif
+   if ( input_Khm) then
+      call get_var( fread_var, "khm", & 
+                    timestep, & 
+                    Khm(1:gr%nnzp), lerror )
+   endif
+   if ( input_taum) then
+      call get_var( fread_var, "taum", & 
+                    timestep, & 
+                    taum(1:gr%nnzp), lerror )
+   endif
+   if ( input_up2) then
+      call get_var( fread_var, "up2", & 
+                    timestep, & 
+                    up2(1:gr%nnzp), lerror )
+   endif
+   if ( input_vp2) then
+      call get_var( fread_var, "vp2", & 
+                    timestep, & 
+                    vp2(1:gr%nnzp), lerror )
+   endif
+   if ( input_Scm ) then
+      call get_var( fread_var, "scm", & 
+                    timestep, & 
+                    Scm(1:gr%nnzp), lerror )
+   endif
 
 !-----------------------------------------------------------
 
-          if ( lerror ) stop "oops, get_var failed in field_reader"
+    if ( lerror ) stop "oops, get_var failed in field_reader"
 
-          call close_grads_read( fread_var )
+    call close_grads_read( fread_var )
 
 
-        case( "rf1" )   ! special case for COAMPS DYCOMS-II RF01
+  case( "rf1" )   ! special case for COAMPS DYCOMS-II RF01
 
-          ! NOTE:  The code is not set up to compensate for discrepancies
-          !        in thermodynamic level altitudes between CLUBB and 
-          !        COAMPS LES (other than for thermodynamic level 
-          !        indices).  Therefore, CLUBB should be set up so that 
-          !        CLUBB thermodynamic level altitudes from thermodynamic 
-          !        level indices 3 to gr%nnzp match COAMPS thermodynamic 
-          !        level altitudes from thermodynamic level indices 1 to 
-          !        gr%nnzp-2.
+    ! NOTE:  The code is not set up to compensate for discrepancies
+    !        in thermodynamic level altitudes between CLUBB and 
+    !        COAMPS LES (other than for thermodynamic level 
+    !        indices).  Therefore, CLUBB should be set up so that 
+    !        CLUBB thermodynamic level altitudes from thermodynamic 
+    !        level indices 3 to gr%nnzp match COAMPS thermodynamic 
+    !        level altitudes from thermodynamic level indices 1 to 
+    !        gr%nnzp-2.
 
 !         stats_sm
-          call open_grads_read( 15, trim(datafile)//"_coamps_sm.ctl",  & 
-                                fread_var )
+    call open_grads_read( 15, trim(datafile)//"_coamps_sm.ctl",  & 
+                          fread_var )
 
-          if ( input_um) then
-            call get_var( fread_var, "um", timestep, & 
-                          tmp1(1:gr%nnzp-2), lerror )
-            ! tmp1 is the value of um from the LES GrADS file.  
-            ! It has been output onto thermodynamic levels starting at 
-            ! thermodynamic level 3 on the CLUBB grid for this 
-            ! particular case.
-            um(3:gr%nnzp) = tmp1(1:gr%nnzp-2) 
-            ! Use the values of um at thermodynamic levels 4 and 3 
-            ! to find the value at thermodynamic level 2 through the use
-            ! of a linear extension.  Then, use the values of um at
-            ! thermodynamic levels 3 and 2 to find the value at 
-            ! thermodynamic level 1 through the use of a linear extension.
-            um(2)  & 
-            = lin_ext_zt_bottom( um(4), um(3), & 
-                                 gr%zt(4), gr%zt(3), gr%zt(2) )
-            um(1)  & 
-            = lin_ext_zt_bottom( um(3), um(2), & 
-                                 gr%zt(3), gr%zt(2), gr%zt(1) )
-          endif
+    if ( input_um) then
+      call get_var( fread_var, "um", timestep, & 
+                    tmp1(1:gr%nnzp-2), lerror )
+      ! tmp1 is the value of um from the LES GrADS file.  
+      ! It has been output onto thermodynamic levels starting at 
+      ! thermodynamic level 3 on the CLUBB grid for this 
+      ! particular case.
+      um(3:gr%nnzp) = tmp1(1:gr%nnzp-2) 
+      ! Use the values of um at thermodynamic levels 4 and 3 
+      ! to find the value at thermodynamic level 2 through the use
+      ! of a linear extension.  Then, use the values of um at
+      ! thermodynamic levels 3 and 2 to find the value at 
+      ! thermodynamic level 1 through the use of a linear extension.
+      um(2)  & 
+      = lin_ext_zt_bottom( um(4), um(3), & 
+                           gr%zt(4), gr%zt(3), gr%zt(2) )
+      um(1)  & 
+      = lin_ext_zt_bottom( um(3), um(2), & 
+                           gr%zt(3), gr%zt(2), gr%zt(1) )
+    endif
 
-          if ( input_vm ) then 
-            call get_var( fread_var, "vm", timestep, & 
-                          tmp1(1:gr%nnzp-2), lerror )
-            ! tmp1 is the value of vm from the LES GrADS file.  
-            ! It has been output onto thermodynamic levels starting at 
-            ! thermodynamic level 3 on the CLUBB grid for this 
-            ! particular case.
-            vm(3:gr%nnzp) = tmp1(1:gr%nnzp-2) 
-            ! Use the values of vm at thermodynamic levels 4 and 3 
-            ! to find the value at thermodynamic level 2 through the use
-            ! of a linear extension.  Then, use the values of vm at
-            ! thermodynamic levels 3 and 2 to find the value at 
-            ! thermodynamic level 1 through the use of a linear extension.
-            vm(2)  & 
-            = lin_ext_zt_bottom( vm(4), vm(3), & 
-                                 gr%zt(4), gr%zt(3), gr%zt(2) )
-            vm(1)  & 
-            = lin_ext_zt_bottom( vm(3), vm(2), & 
-                                 gr%zt(3), gr%zt(2), gr%zt(1) )
-          endif
+    if ( input_vm ) then 
+      call get_var( fread_var, "vm", timestep, & 
+                    tmp1(1:gr%nnzp-2), lerror )
+      ! tmp1 is the value of vm from the LES GrADS file.  
+      ! It has been output onto thermodynamic levels starting at 
+      ! thermodynamic level 3 on the CLUBB grid for this 
+      ! particular case.
+      vm(3:gr%nnzp) = tmp1(1:gr%nnzp-2) 
+      ! Use the values of vm at thermodynamic levels 4 and 3 
+      ! to find the value at thermodynamic level 2 through the use
+      ! of a linear extension.  Then, use the values of vm at
+      ! thermodynamic levels 3 and 2 to find the value at 
+      ! thermodynamic level 1 through the use of a linear extension.
+      vm(2)  & 
+      = lin_ext_zt_bottom( vm(4), vm(3), & 
+                           gr%zt(4), gr%zt(3), gr%zt(2) )
+      vm(1)  & 
+      = lin_ext_zt_bottom( vm(3), vm(2), & 
+                           gr%zt(3), gr%zt(2), gr%zt(1) )
+    endif
 
-          if ( input_rtm) then 
-            call get_var( fread_var, "qtm", timestep, & 
-                          tmp1(1:gr%nnzp-2), lerror )
-            ! tmp1 is the value of rtm from the LES GrADS file.  
-            ! It has been output onto thermodynamic levels starting at 
-            ! thermodynamic level 3 on the CLUBB grid for this 
-            ! particular case.
-            rtm(3:gr%nnzp) = tmp1(1:gr%nnzp-2) 
-            ! Set values of rtm at thermodynamic levels 2 and 1 to the
-            ! value at thermodynamic level 3.
-            rtm(1:2) = rtm(3)
-          endif
+    if ( input_rtm) then 
+      call get_var( fread_var, "qtm", timestep, & 
+                    tmp1(1:gr%nnzp-2), lerror )
+      ! tmp1 is the value of rtm from the LES GrADS file.  
+      ! It has been output onto thermodynamic levels starting at 
+      ! thermodynamic level 3 on the CLUBB grid for this 
+      ! particular case.
+      rtm(3:gr%nnzp) = tmp1(1:gr%nnzp-2) 
+      ! Set values of rtm at thermodynamic levels 2 and 1 to the
+      ! value at thermodynamic level 3.
+      rtm(1:2) = rtm(3)
+    endif
 
-          if ( input_thlm) then
-            call get_var( fread_var, "thlm",  & 
-                          timestep, & 
-                          tmp1(1:gr%nnzp-2), lerror )
-            ! tmp1 is the value of thlm from the LES GrADS file.  
-            ! It has been output onto thermodynamic levels starting at 
-            ! thermodynamic level 3 on the CLUBB grid for this 
-            ! particular case.
-            thlm(3:gr%nnzp) = tmp1(1:gr%nnzp-2) 
-            ! Set values of thlm at thermodynamic levels 2 and 1 to the
-            ! value at thermodynamic level 3.
-            thlm(1:2) = thlm(3)
-          endif
+    if ( input_thlm) then
+      call get_var( fread_var, "thlm",  & 
+                    timestep, & 
+                    tmp1(1:gr%nnzp-2), lerror )
+      ! tmp1 is the value of thlm from the LES GrADS file.  
+      ! It has been output onto thermodynamic levels starting at 
+      ! thermodynamic level 3 on the CLUBB grid for this 
+      ! particular case.
+      thlm(3:gr%nnzp) = tmp1(1:gr%nnzp-2) 
+      ! Set values of thlm at thermodynamic levels 2 and 1 to the
+      ! value at thermodynamic level 3.
+      thlm(1:2) = thlm(3)
+    endif
 
-          if ( input_wp3) then 
-            call get_var( fread_var, "wp3", timestep, & 
-                          tmp1(1:gr%nnzp-2), lerror )
-            ! tmp1 is the value of wp3 from the LES GrADS file.  
-            ! It has been output onto thermodynamic levels starting at 
-            ! thermodynamic level 3 on the CLUBB grid for this 
-            ! particular case.
-            wp3(3:gr%nnzp) = tmp1(1:gr%nnzp-2) 
-            ! Set values of wp3 at thermodynamic levels 2 and 1 to 0.
-            wp3(1:2) = 0.
-          endif
+    if ( input_wp3) then 
+      call get_var( fread_var, "wp3", timestep, & 
+                    tmp1(1:gr%nnzp-2), lerror )
+      ! tmp1 is the value of wp3 from the LES GrADS file.  
+      ! It has been output onto thermodynamic levels starting at 
+      ! thermodynamic level 3 on the CLUBB grid for this 
+      ! particular case.
+      wp3(3:gr%nnzp) = tmp1(1:gr%nnzp-2) 
+      ! Set values of wp3 at thermodynamic levels 2 and 1 to 0.
+      wp3(1:2) = 0.
+    endif
 
-          if ( input_wprtp) then
-            call get_var( fread_var, "wpqtp",  & 
-                          timestep, tmp1(1:gr%nnzp-1), & 
-                          lerror )
-            ! tmp1 is the value of wprtp from the LES GrADS file.  
-            ! It has been output onto thermodynamic levels starting at 
-            ! thermodynamic level 3 on the CLUBB grid for this 
-            ! particular case.  Interpolate the read-in values of 
-            ! wprtp to their appropriate places on the momentum levels.
-            wprtp(3:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-2) )
-            ! Use the values of wprtp at momentum levels 4 and 3 to 
-            ! find the value at momentum level 2 through the use of a
-            ! linear extension.  Then, use the values of wprtp at
-            ! momentum levels 3 and 2 to find the value at momentum
-            ! level 1 through the use of a linear extension.  It should 
-            ! be pointed out that the boundary flux is usually solved in
-            ! LES or hoc via a subroutine like sfc_var.
-            wprtp(2)  & 
-            = lin_ext_zm_bottom( wprtp(4), wprtp(3), & 
-                                 gr%zm(4), gr%zm(3), gr%zm(2) )
-            wprtp(1)  & 
-            = lin_ext_zm_bottom( wprtp(3), wprtp(2), & 
-                                 gr%zm(3), gr%zm(2), gr%zm(1) )
-          endif
+    if ( input_wprtp) then
+      call get_var( fread_var, "wpqtp",  & 
+                    timestep, tmp1(1:gr%nnzp-1), & 
+                    lerror )
+      ! tmp1 is the value of wprtp from the LES GrADS file.  
+      ! It has been output onto thermodynamic levels starting at 
+      ! thermodynamic level 3 on the CLUBB grid for this 
+      ! particular case.  Interpolate the read-in values of 
+      ! wprtp to their appropriate places on the momentum levels.
+      wprtp(3:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-2) )
+      ! Use the values of wprtp at momentum levels 4 and 3 to 
+      ! find the value at momentum level 2 through the use of a
+      ! linear extension.  Then, use the values of wprtp at
+      ! momentum levels 3 and 2 to find the value at momentum
+      ! level 1 through the use of a linear extension.  It should 
+      ! be pointed out that the boundary flux is usually solved in
+      ! LES or hoc via a subroutine like sfc_var.
+      wprtp(2)  & 
+      = lin_ext_zm_bottom( wprtp(4), wprtp(3), & 
+                           gr%zm(4), gr%zm(3), gr%zm(2) )
+      wprtp(1)  & 
+      = lin_ext_zm_bottom( wprtp(3), wprtp(2), & 
+                           gr%zm(3), gr%zm(2), gr%zm(1) )
+    endif
 
-          if ( input_wpthlp) then 
-            call get_var( fread_var, "wpthlp",  & 
-                          timestep, tmp1(1:gr%nnzp-1),  & 
-                          lerror )
-            ! tmp1 is the value of wpthlp from the LES GrADS file.  
-            ! It has been output onto thermodynamic levels starting at 
-            ! thermodynamic level 3 on the CLUBB grid for this 
-            ! particular case.  Interpolate the read-in values of 
-            ! wpthlp to their appropriate places on the momentum levels.
-            wpthlp(3:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-2) )
-            ! Use the values of wpthlp at momentum levels 4 and 3 to 
-            ! find the value at momentum level 2 through the use of a
-            ! linear extension.  Then, use the values of wpthlp at
-            ! momentum levels 3 and 2 to find the value at momentum
-            ! level 1 through the use of a linear extension.  It should 
-            ! be pointed out that the boundary flux is usually solved in
-            ! LES or hoc via a subroutine like sfc_var.
-            wpthlp(2)  & 
-            = lin_ext_zm_bottom( wpthlp(4), wpthlp(3), & 
-                                 gr%zm(4), gr%zm(3), gr%zm(2) )
-            wpthlp(1)  & 
-            = lin_ext_zm_bottom( wpthlp(3), wpthlp(2), & 
-                                 gr%zm(3), gr%zm(2), gr%zm(1) )
-          endif
+    if ( input_wpthlp) then 
+      call get_var( fread_var, "wpthlp",  & 
+                    timestep, tmp1(1:gr%nnzp-1),  & 
+                    lerror )
+      ! tmp1 is the value of wpthlp from the LES GrADS file.  
+      ! It has been output onto thermodynamic levels starting at 
+      ! thermodynamic level 3 on the CLUBB grid for this 
+      ! particular case.  Interpolate the read-in values of 
+      ! wpthlp to their appropriate places on the momentum levels.
+      wpthlp(3:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-2) )
+      ! Use the values of wpthlp at momentum levels 4 and 3 to 
+      ! find the value at momentum level 2 through the use of a
+      ! linear extension.  Then, use the values of wpthlp at
+      ! momentum levels 3 and 2 to find the value at momentum
+      ! level 1 through the use of a linear extension.  It should 
+      ! be pointed out that the boundary flux is usually solved in
+      ! LES or hoc via a subroutine like sfc_var.
+      wpthlp(2)  & 
+      = lin_ext_zm_bottom( wpthlp(4), wpthlp(3), & 
+                           gr%zm(4), gr%zm(3), gr%zm(2) )
+      wpthlp(1)  & 
+      = lin_ext_zm_bottom( wpthlp(3), wpthlp(2), & 
+                           gr%zm(3), gr%zm(2), gr%zm(1) )
+    endif
 
-          if ( input_rtp2) then 
-            call get_var( fread_var, "qtp2",  & 
-                          timestep, & 
-                          tmp1(1:gr%nnzp-1), lerror )
-            ! tmp1 is the value of rtp2 from the LES GrADS file.  
-            ! It has been output onto thermodynamic levels starting at 
-            ! thermodynamic level 3 on the CLUBB grid for this 
-            ! particular case.  Interpolate the read-in values of 
-            ! rtp2 to their appropriate places on the momentum levels.
-            rtp2(3:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-2) )
-            ! Using a linear extension here resulted in negatives.
-            rtp2(1:2) =  rtp2(3)
-            if ( any (rtp2(1:gr%nnzp) < 0.0 ) ) then
+    if ( input_rtp2) then 
+      call get_var( fread_var, "qtp2",  & 
+                    timestep, & 
+                    tmp1(1:gr%nnzp-1), lerror )
+      ! tmp1 is the value of rtp2 from the LES GrADS file.  
+      ! It has been output onto thermodynamic levels starting at 
+      ! thermodynamic level 3 on the CLUBB grid for this 
+      ! particular case.  Interpolate the read-in values of 
+      ! rtp2 to their appropriate places on the momentum levels.
+      rtp2(3:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-2) )
+      ! Using a linear extension here resulted in negatives.
+      rtp2(1:2) =  rtp2(3)
+      if ( any (rtp2(1:gr%nnzp) < 0.0 ) ) then
 ! %% debug
 !              print *, "Some values of rtp2 are negative, compensating."
 ! %% debug
-              do k=1, gr%nnzp
-                rtp2(k) = max(rtp2(k), 0.0)
-              enddo
-            endif
-          endif
+        do k=1, gr%nnzp
+          rtp2(k) = max(rtp2(k), 0.0)
+        enddo
+      endif
+    endif
 
-          if ( input_thlp2 ) then 
-            call get_var( fread_var, "thlp2",  & 
-                          timestep, tmp1(1:gr%nnzp), lerror )
-            ! tmp1 is the value of thlp2 from the LES GrADS file.  
-            ! It has been output onto thermodynamic levels starting at 
-            ! thermodynamic level 3 on the CLUBB grid for this 
-            ! particular case.  Interpolate the read-in values of 
-            ! thlp2 to their appropriate places on the momentum levels.
-            thlp2(3:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-2) )
-            ! Using a linear extension here resulted in negatives.
-            thlp2(1:2) = thlp2(3)
-          endif
+    if ( input_thlp2 ) then 
+      call get_var( fread_var, "thlp2",  & 
+                    timestep, tmp1(1:gr%nnzp), lerror )
+      ! tmp1 is the value of thlp2 from the LES GrADS file.  
+      ! It has been output onto thermodynamic levels starting at 
+      ! thermodynamic level 3 on the CLUBB grid for this 
+      ! particular case.  Interpolate the read-in values of 
+      ! thlp2 to their appropriate places on the momentum levels.
+      thlp2(3:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-2) )
+      ! Using a linear extension here resulted in negatives.
+      thlp2(1:2) = thlp2(3)
+    endif
 
-          if ( input_rtpthlp) then 
-            call get_var( fread_var, "qtpthlp",  & 
-                          timestep, tmp1(1:gr%nnzp-1), & 
-                          lerror )
-            ! tmp1 is the value of rtpthlp from the LES GrADS file.  
-            ! It has been output onto thermodynamic levels starting at 
-            ! thermodynamic level 3 on the CLUBB grid for this 
-            ! particular case.  Interpolate the read-in values of 
-            ! rtpthlp to their appropriate places on the momentum levels.
-            rtpthlp(3:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-2) )
-            ! Use the values of rtpthlp at momentum levels 4 and 3 to 
-            ! find the value at momentum level 2 through the use of a
-            ! linear extension.  Then, use the values of rtpthlp at
-            ! momentum levels 3 and 2 to find the value at momentum
-            ! level 1 through the use of a linear extension.  It should 
-            ! be pointed out that the boundary flux is usually solved in
-            ! LES or hoc via a subroutine like sfc_var.
-            rtpthlp(2)  & 
-            = lin_ext_zm_bottom( rtpthlp(4), rtpthlp(3), & 
-                                 gr%zm(4), gr%zm(3), gr%zm(2) )
-            rtpthlp(1)  & 
-            = lin_ext_zm_bottom( rtpthlp(3), rtpthlp(2), & 
-                                 gr%zm(3), gr%zm(2), gr%zm(1) )
-          endif
+    if ( input_rtpthlp) then 
+      call get_var( fread_var, "qtpthlp",  & 
+                    timestep, tmp1(1:gr%nnzp-1), & 
+                    lerror )
+      ! tmp1 is the value of rtpthlp from the LES GrADS file.  
+      ! It has been output onto thermodynamic levels starting at 
+      ! thermodynamic level 3 on the CLUBB grid for this 
+      ! particular case.  Interpolate the read-in values of 
+      ! rtpthlp to their appropriate places on the momentum levels.
+      rtpthlp(3:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-2) )
+      ! Use the values of rtpthlp at momentum levels 4 and 3 to 
+      ! find the value at momentum level 2 through the use of a
+      ! linear extension.  Then, use the values of rtpthlp at
+      ! momentum levels 3 and 2 to find the value at momentum
+      ! level 1 through the use of a linear extension.  It should 
+      ! be pointed out that the boundary flux is usually solved in
+      ! LES or hoc via a subroutine like sfc_var.
+      rtpthlp(2)  & 
+      = lin_ext_zm_bottom( rtpthlp(4), rtpthlp(3), & 
+                           gr%zm(4), gr%zm(3), gr%zm(2) )
+      rtpthlp(1)  & 
+      = lin_ext_zm_bottom( rtpthlp(3), rtpthlp(2), & 
+                           gr%zm(3), gr%zm(2), gr%zm(1) )
+    endif
 
-          if ( lerror ) stop "oops, get_var failed in field_reader"
+    if ( lerror ) stop "oops, get_var failed in field_reader"
 
-          call close_grads_read( fread_var )
+    call close_grads_read( fread_var )
 
 
-        case( "les" )   ! COAMPS LES -- all other cases.
+  case( "les" )   ! COAMPS LES -- all other cases.
 
-          ! NOTE:  The code is not set up to compensate for discrepancies
-          !        in thermodynamic level altitudes between CLUBB and 
-          !        COAMPS LES (other than for thermodynamic level 
-          !        indices).  Therefore, CLUBB should be set up so that 
-          !        CLUBB thermodynamic level altitudes from thermodynamic 
-          !        level indices 2 to gr%nnzp match COAMPS thermodynamic 
-          !        level altitudes from thermodynamic level indices 1 to 
-          !        gr%nnzp-1.
+    ! NOTE:  The code is not set up to compensate for discrepancies
+    !        in thermodynamic level altitudes between CLUBB and 
+    !        COAMPS LES (other than for thermodynamic level 
+    !        indices).  Therefore, CLUBB should be set up so that 
+    !        CLUBB thermodynamic level altitudes from thermodynamic 
+    !        level indices 2 to gr%nnzp match COAMPS thermodynamic 
+    !        level altitudes from thermodynamic level indices 1 to 
+    !        gr%nnzp-1.
 
 !         stats_sm
-          call open_grads_read( 15, trim(datafile)//"_coamps_sm.ctl",  & 
-                                fread_var )
+    call open_grads_read( 15, trim(datafile)//"_coamps_sm.ctl",  & 
+                          fread_var )
 
-          if ( input_um) then
-            call get_var( fread_var, "um", timestep, & 
-                          tmp1(1:gr%nnzp), lerror )
-            ! tmp1 is the value of um from the LES GrADS file.  
-            ! It has been output onto thermodynamic levels starting at 
-            ! the first level above ground (thermodynamic level 2 on 
-            ! the CLUBB grid). 
-            um(2:gr%nnzp) = tmp1(1:gr%nnzp-1) 
-            ! Use the values of um at thermodynamic levels 3 and 2 
-            ! to find the value at thermodynamic level 1 through the use
-            ! of a linear extension.  
-            um(1)  & 
-            = lin_ext_zt_bottom( um(3), um(2), & 
-                                 gr%zt(3), gr%zt(2), gr%zt(1) )
-          endif
+    if ( input_um) then
+      call get_var( fread_var, "um", timestep, & 
+                    tmp1(1:gr%nnzp), lerror )
+      ! tmp1 is the value of um from the LES GrADS file.  
+      ! It has been output onto thermodynamic levels starting at 
+      ! the first level above ground (thermodynamic level 2 on 
+      ! the CLUBB grid). 
+      um(2:gr%nnzp) = tmp1(1:gr%nnzp-1) 
+      ! Use the values of um at thermodynamic levels 3 and 2 
+      ! to find the value at thermodynamic level 1 through the use
+      ! of a linear extension.  
+      um(1)  & 
+      = lin_ext_zt_bottom( um(3), um(2), & 
+                           gr%zt(3), gr%zt(2), gr%zt(1) )
+    endif
 
-          if ( input_vm) then 
-            call get_var( fread_var, "vm", timestep, & 
-                          tmp1(1:gr%nnzp), lerror )
-            ! tmp1 is the value of vm from the LES GrADS file.  
-            ! It has been output onto thermodynamic levels starting at 
-            ! the first level above ground (thermodynamic level 2 on 
-            ! the CLUBB grid). 
-            vm(2:gr%nnzp) = tmp1(1:gr%nnzp-1) 
-            ! Use the values of um at thermodynamic levels 3 and 2 
-            ! to find the value at thermodynamic level 1 through the use
-            ! of a linear extension.  
-            vm(1)  & 
-            = lin_ext_zt_bottom( vm(3), vm(2), & 
-                                 gr%zt(3), gr%zt(2), gr%zt(1) )
-          endif
+    if ( input_vm) then 
+      call get_var( fread_var, "vm", timestep, & 
+                    tmp1(1:gr%nnzp), lerror )
+      ! tmp1 is the value of vm from the LES GrADS file.  
+      ! It has been output onto thermodynamic levels starting at 
+      ! the first level above ground (thermodynamic level 2 on 
+      ! the CLUBB grid). 
+      vm(2:gr%nnzp) = tmp1(1:gr%nnzp-1) 
+      ! Use the values of um at thermodynamic levels 3 and 2 
+      ! to find the value at thermodynamic level 1 through the use
+      ! of a linear extension.  
+      vm(1)  & 
+      = lin_ext_zt_bottom( vm(3), vm(2), & 
+                           gr%zt(3), gr%zt(2), gr%zt(1) )
+    endif
 
-          if ( input_rtm) then 
-            call get_var( fread_var, "qtm", timestep, & 
-                          tmp1(1:gr%nnzp), lerror )
-            ! tmp1 is the value of rtm from the LES GrADS file.  
-            ! It has been output onto thermodynamic levels starting at 
-            ! the first level above ground (thermodynamic level 2 on 
-            ! the CLUBB grid). 
-            rtm(2:gr%nnzp) = tmp1(1:gr%nnzp-1) 
-            ! Set values of rtm at thermodynamic level 1 to the value 
-            ! at thermodynamic level 2, as it is done in mixing.F.
-            rtm(1) = rtm(2)
-          endif
+    if ( input_rtm) then 
+      call get_var( fread_var, "qtm", timestep, & 
+                    tmp1(1:gr%nnzp), lerror )
+      ! tmp1 is the value of rtm from the LES GrADS file.  
+      ! It has been output onto thermodynamic levels starting at 
+      ! the first level above ground (thermodynamic level 2 on 
+      ! the CLUBB grid). 
+      rtm(2:gr%nnzp) = tmp1(1:gr%nnzp-1) 
+      ! Set values of rtm at thermodynamic level 1 to the value 
+      ! at thermodynamic level 2, as it is done in mixing.F.
+      rtm(1) = rtm(2)
+    endif
 
-          if ( input_thlm) then
-            call get_var( fread_var, "thlm",  & 
-                          timestep, & 
-                          tmp1(1:gr%nnzp), lerror )
-            ! tmp1 is the value of thlm from the LES GrADS file.  
-            ! It has been output onto thermodynamic levels starting at 
-            ! the first level above ground (thermodynamic level 2 on 
-            ! the CLUBB grid). 
-            thlm(2:gr%nnzp) = tmp1(1:gr%nnzp-1) 
-            ! Set values of thlm at thermodynamic level 1 to the value 
-            ! at thermodynamic level 2, as it is done in mixing.F.
-            thlm(1) = thlm(2)
-          endif
+    if ( input_thlm) then
+      call get_var( fread_var, "thlm",  & 
+                    timestep, & 
+                    tmp1(1:gr%nnzp), lerror )
+      ! tmp1 is the value of thlm from the LES GrADS file.  
+      ! It has been output onto thermodynamic levels starting at 
+      ! the first level above ground (thermodynamic level 2 on 
+      ! the CLUBB grid). 
+      thlm(2:gr%nnzp) = tmp1(1:gr%nnzp-1) 
+      ! Set values of thlm at thermodynamic level 1 to the value 
+      ! at thermodynamic level 2, as it is done in mixing.F.
+      thlm(1) = thlm(2)
+    endif
 
-          if ( input_wp3) then 
-            call get_var( fread_var, "wp3", timestep, & 
-                          tmp1(1:gr%nnzp), lerror )
-            ! tmp1 is the value of wp3 from the LES GrADS file.  
-            ! It has been output onto thermodynamic levels starting at 
-            ! the first level above ground (thermodynamic level 2 on 
-            ! the CLUBB grid). 
-            wp3(2:gr%nnzp) = tmp1(1:gr%nnzp-1) 
-            ! Set values of wp3 at thermodynamic level 1 to 0, as it is
-            ! done in wp23.F.
-            wp3(1) = 0.  ! Computed as in hoc.F
-          endif
+    if ( input_wp3) then 
+      call get_var( fread_var, "wp3", timestep, & 
+                    tmp1(1:gr%nnzp), lerror )
+      ! tmp1 is the value of wp3 from the LES GrADS file.  
+      ! It has been output onto thermodynamic levels starting at 
+      ! the first level above ground (thermodynamic level 2 on 
+      ! the CLUBB grid). 
+      wp3(2:gr%nnzp) = tmp1(1:gr%nnzp-1) 
+      ! Set values of wp3 at thermodynamic level 1 to 0, as it is
+      ! done in wp23.F.
+      wp3(1) = 0.  ! Computed as in hoc.F
+    endif
 
 !          if ( ( wp2 )) then 
 !            call get_var( fread_var, "wp2", timestep,
@@ -719,181 +719,181 @@
 !     .                           gr%zm(3), gr%zm(2), gr%zm(1) )
 !          endif
 
-          if ( input_wprtp) then
-            call get_var( fread_var, "wpqtp",  & 
-                          timestep, tmp1(1:gr%nnzp), & 
-                          lerror )
-            ! tmp1 is the value of wprtp from the LES GrADS file.  
-            ! It has been output onto thermodynamic levels starting at 
-            ! the first level above ground (thermodynamic level 2 on 
-            ! the CLUBB grid).  Interpolate the read-in values of 
-            ! wprtp to their appropriate places on the momentum levels.
-            wprtp(2:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-1) )
-            ! Use the values of wprtp at momentum levels 3 and 2 to 
-            ! find the value at momentum level 1 through the use of a
-            ! linear extension.  It should be pointed out that the 
-            ! boundary flux is usually solved in LES or hoc via a 
-            ! subroutine like sfc_var.
-            wprtp(1)  & 
-            = lin_ext_zm_bottom( wprtp(3), wprtp(2), & 
-                                 gr%zm(3), gr%zm(2), gr%zm(1) )
-          endif
+    if ( input_wprtp) then
+      call get_var( fread_var, "wpqtp",  & 
+                    timestep, tmp1(1:gr%nnzp), & 
+                    lerror )
+      ! tmp1 is the value of wprtp from the LES GrADS file.  
+      ! It has been output onto thermodynamic levels starting at 
+      ! the first level above ground (thermodynamic level 2 on 
+      ! the CLUBB grid).  Interpolate the read-in values of 
+      ! wprtp to their appropriate places on the momentum levels.
+      wprtp(2:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-1) )
+      ! Use the values of wprtp at momentum levels 3 and 2 to 
+      ! find the value at momentum level 1 through the use of a
+      ! linear extension.  It should be pointed out that the 
+      ! boundary flux is usually solved in LES or hoc via a 
+      ! subroutine like sfc_var.
+      wprtp(1)  & 
+      = lin_ext_zm_bottom( wprtp(3), wprtp(2), & 
+                           gr%zm(3), gr%zm(2), gr%zm(1) )
+    endif
 
-          if ( input_wpthlp) then 
-            call get_var( fread_var, "wpthlp",  & 
-                          timestep, tmp1(1:gr%nnzp),  & 
-                          lerror )
-            ! tmp1 is the value of wpthlp from the LES GrADS file.  
-            ! It has been output onto thermodynamic levels starting at 
-            ! the first level above ground (thermodynamic level 2 on 
-            ! the CLUBB grid).  Interpolate the read-in values of 
-            ! wpthlp to their appropriate places on the momentum levels.
-            wpthlp(2:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-1) )
-            ! Use the values of wpthlp at momentum levels 3 and 2 to 
-            ! find the value at momentum level 1 through the use of a
-            ! linear extension.  It should be pointed out that the 
-            ! boundary flux is usually solved in LES or hoc via a 
-            ! subroutine like sfc_var.
-            wpthlp(1)  & 
-            = lin_ext_zm_bottom( wpthlp(3), wpthlp(2), & 
-                                 gr%zm(3), gr%zm(2), gr%zm(1) )
-          endif
+    if ( input_wpthlp) then 
+      call get_var( fread_var, "wpthlp",  & 
+                    timestep, tmp1(1:gr%nnzp),  & 
+                    lerror )
+      ! tmp1 is the value of wpthlp from the LES GrADS file.  
+      ! It has been output onto thermodynamic levels starting at 
+      ! the first level above ground (thermodynamic level 2 on 
+      ! the CLUBB grid).  Interpolate the read-in values of 
+      ! wpthlp to their appropriate places on the momentum levels.
+      wpthlp(2:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-1) )
+      ! Use the values of wpthlp at momentum levels 3 and 2 to 
+      ! find the value at momentum level 1 through the use of a
+      ! linear extension.  It should be pointed out that the 
+      ! boundary flux is usually solved in LES or hoc via a 
+      ! subroutine like sfc_var.
+      wpthlp(1)  & 
+      = lin_ext_zm_bottom( wpthlp(3), wpthlp(2), & 
+                           gr%zm(3), gr%zm(2), gr%zm(1) )
+    endif
 
-          if ( input_rtp2) then 
-            call get_var( fread_var, "qtp2",  & 
-                          timestep, & 
-                          tmp1(1:gr%nnzp), lerror )
-            ! tmp1 is the value of rtp2 from the LES GrADS file.  
-            ! It has been output onto thermodynamic levels starting at 
-            ! the first level above ground (thermodynamic level 2 on 
-            ! the CLUBB grid).  Interpolate the read-in values of 
-            ! rtp2 to their appropriate places on the momentum levels.
-            rtp2(2:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-1) )
-            ! Using a linear extension here resulted in negatives.
-            rtp2(1) =  rtp2(2)
-            if ( any (rtp2(1:gr%nnzp) < 0.0 ) ) then
+    if ( input_rtp2) then 
+      call get_var( fread_var, "qtp2",  & 
+                    timestep, & 
+                    tmp1(1:gr%nnzp), lerror )
+      ! tmp1 is the value of rtp2 from the LES GrADS file.  
+      ! It has been output onto thermodynamic levels starting at 
+      ! the first level above ground (thermodynamic level 2 on 
+      ! the CLUBB grid).  Interpolate the read-in values of 
+      ! rtp2 to their appropriate places on the momentum levels.
+      rtp2(2:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-1) )
+      ! Using a linear extension here resulted in negatives.
+      rtp2(1) =  rtp2(2)
+      if ( any (rtp2(1:gr%nnzp) < 0.0 ) ) then
 ! %% debug
 !              print *, "Some values of rtp2 are negative, compensating."
 ! %% debug
-              do k=1, gr%nnzp
-                rtp2(k) = max(rtp2(k), 0.0)
-              enddo
-            endif
-          endif
+        do k=1, gr%nnzp
+          rtp2(k) = max(rtp2(k), 0.0)
+        enddo
+      endif
+    endif
 
-          if ( input_thlp2) then 
-            call get_var( fread_var, "thlp2",  & 
-                          timestep, tmp1(1:gr%nnzp), lerror )
-            ! tmp1 is the value of thlp2 from the LES GrADS file.  
-            ! It has been output onto thermodynamic levels starting at 
-            ! the first level above ground (thermodynamic level 2 on 
-            ! the CLUBB grid).  Interpolate the read-in values of 
-            ! thlp2 to their appropriate places on the momentum levels.
-            thlp2(2:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-1) )
-            ! Using a linear extension here resulted in negatives.
-            thlp2(1) = thlp2(2)
-          endif
+    if ( input_thlp2) then 
+      call get_var( fread_var, "thlp2",  & 
+                    timestep, tmp1(1:gr%nnzp), lerror )
+      ! tmp1 is the value of thlp2 from the LES GrADS file.  
+      ! It has been output onto thermodynamic levels starting at 
+      ! the first level above ground (thermodynamic level 2 on 
+      ! the CLUBB grid).  Interpolate the read-in values of 
+      ! thlp2 to their appropriate places on the momentum levels.
+      thlp2(2:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-1) )
+      ! Using a linear extension here resulted in negatives.
+      thlp2(1) = thlp2(2)
+    endif
 
-          if ( input_rtpthlp) then 
-            call get_var( fread_var, "qtpthlp",  & 
-                          timestep,  & 
-                          tmp1(1:gr%nnzp), & 
-                          lerror )
-            ! tmp1 is the value of rtpthlp from the LES GrADS file.  
-            ! It has been output onto thermodynamic levels starting at 
-            ! the first level above ground (thermodynamic level 2 on 
-            ! the CLUBB grid).  Interpolate the read-in values of 
-            ! rtpthlp to their appropriate places on the momentum levels.
-            rtpthlp(2:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-1) )
-            ! Use the values of rtpthlp at momentum levels 3 and 2 to 
-            ! find the value at momentum level 1 through the use of a
-            ! linear extension.  It should be pointed out that the 
-            ! boundary flux is usually solved in LES or hoc via a 
-            ! subroutine like sfc_var.
-            rtpthlp(1)  & 
-            = lin_ext_zm_bottom( rtpthlp(3), rtpthlp(2), & 
-                                 gr%zm(3), gr%zm(2), gr%zm(1) )
-          endif
+    if ( input_rtpthlp) then 
+      call get_var( fread_var, "qtpthlp",  & 
+                    timestep,  & 
+                    tmp1(1:gr%nnzp), & 
+                    lerror )
+      ! tmp1 is the value of rtpthlp from the LES GrADS file.  
+      ! It has been output onto thermodynamic levels starting at 
+      ! the first level above ground (thermodynamic level 2 on 
+      ! the CLUBB grid).  Interpolate the read-in values of 
+      ! rtpthlp to their appropriate places on the momentum levels.
+      rtpthlp(2:gr%nnzp) = zt2zm( tmp1(1:gr%nnzp-1) )
+      ! Use the values of rtpthlp at momentum levels 3 and 2 to 
+      ! find the value at momentum level 1 through the use of a
+      ! linear extension.  It should be pointed out that the 
+      ! boundary flux is usually solved in LES or hoc via a 
+      ! subroutine like sfc_var.
+      rtpthlp(1)  & 
+      = lin_ext_zm_bottom( rtpthlp(3), rtpthlp(2), & 
+                           gr%zm(3), gr%zm(2), gr%zm(1) )
+    endif
 
-          if ( lerror ) stop "oops, get_var failed in field_reader"
+    if ( lerror ) stop "oops, get_var failed in field_reader"
 
-          call close_grads_read( fread_var )
-
-
-        end select
+    call close_grads_read( fread_var )
 
 
-        select case( input_type )
+  end select
 
-        case( "les", "rf1" )
 
-          ! NOTE:  The code is not set up to compensate for discrepancies
-          !        in momentum level altitudes between CLUBB and COAMPS 
-          !        LES.  Therefore, CLUBB should be set up so that CLUBB 
-          !        momentum level altitudes from momentum level indices 
-          !        1 to gr%nnzp match COAMPS momentum level altitudes 
-          !        from momentum level indices 1 to gr%nnzp.
+  select case( input_type )
 
-          ! stats_sw
-          call open_grads_read( 15, trim(datafile)//"_coamps_sw.ctl",  & 
-                                fread_var )
-         ! no interpolation is required, however, the stats_sw files have
-         ! an extra top z-level, and wpup_sgs must be added to make the
-         ! u'w' and v'w' terms as they are in CLUBB.
+  case( "les", "rf1" )
 
-          if ( input_upwp) then 
-            call get_var( fread_var, "wpup",  & 
-                          timestep, tmp1(1:gr%nnzp+1), lerror )
-            upwp(1:gr%nnzp) = tmp1(1:gr%nnzp) 
+    ! NOTE:  The code is not set up to compensate for discrepancies
+    !        in momentum level altitudes between CLUBB and COAMPS 
+    !        LES.  Therefore, CLUBB should be set up so that CLUBB 
+    !        momentum level altitudes from momentum level indices 
+    !        1 to gr%nnzp match COAMPS momentum level altitudes 
+    !        from momentum level indices 1 to gr%nnzp.
 
-            call get_var( fread_var, "wpup_sgs",  & 
-                          timestep, tmp1(1:gr%nnzp+1), lerror )
-            upwp(1:gr%nnzp) = tmp1(1:gr%nnzp) + upwp(1:gr%nnzp)
-          endif
+    ! stats_sw
+    call open_grads_read( 15, trim(datafile)//"_coamps_sw.ctl",  & 
+                          fread_var )
+   ! no interpolation is required, however, the stats_sw files have
+   ! an extra top z-level, and wpup_sgs must be added to make the
+   ! u'w' and v'w' terms as they are in CLUBB.
 
-          if ( lerror ) stop "get_var failed for upwp in field_reader"
+    if ( input_upwp) then 
+      call get_var( fread_var, "wpup",  & 
+                    timestep, tmp1(1:gr%nnzp+1), lerror )
+      upwp(1:gr%nnzp) = tmp1(1:gr%nnzp) 
 
-          if ( input_vpwp) then
-            call get_var( fread_var, "wpvp",  & 
-                          timestep, & 
-                          tmp1(1:gr%nnzp+1), lerror )
-            vpwp(1:gr%nnzp) = tmp1(1:gr%nnzp) 
-            call get_var( fread_var, "wpvp_sgs",  & 
-                          timestep, & 
-                          tmp1(1:gr%nnzp+1), lerror )
-            vpwp(1:gr%nnzp) = tmp1(1:gr%nnzp) + vpwp(1:gr%nnzp)
-          endif
-          if ( lerror ) stop "get_var failed for vpwp in field_reader"
+      call get_var( fread_var, "wpup_sgs",  & 
+                    timestep, tmp1(1:gr%nnzp+1), lerror )
+      upwp(1:gr%nnzp) = tmp1(1:gr%nnzp) + upwp(1:gr%nnzp)
+    endif
 
-          if ( input_wp2 ) then 
-            call get_var( fread_var, "wp2",  & 
-                          timestep, & 
-                          tmp1(1:gr%nnzp+1), lerror )
-            wp2(1:gr%nnzp) = tmp1(1:gr%nnzp)
-            if ( any (wp2(1:gr%nnzp) < 0.0 ) ) then
+    if ( lerror ) stop "get_var failed for upwp in field_reader"
+
+    if ( input_vpwp) then
+      call get_var( fread_var, "wpvp",  & 
+                    timestep, & 
+                    tmp1(1:gr%nnzp+1), lerror )
+      vpwp(1:gr%nnzp) = tmp1(1:gr%nnzp) 
+      call get_var( fread_var, "wpvp_sgs",  & 
+                    timestep, & 
+                    tmp1(1:gr%nnzp+1), lerror )
+      vpwp(1:gr%nnzp) = tmp1(1:gr%nnzp) + vpwp(1:gr%nnzp)
+    endif
+    if ( lerror ) stop "get_var failed for vpwp in field_reader"
+
+    if ( input_wp2 ) then 
+      call get_var( fread_var, "wp2",  & 
+                    timestep, & 
+                    tmp1(1:gr%nnzp+1), lerror )
+      wp2(1:gr%nnzp) = tmp1(1:gr%nnzp)
+      if ( any (wp2(1:gr%nnzp) < 0.0 ) ) then
 ! %% debug
 !              print *, "Some values of wp2 are negative, compensating."
 ! %% debug
-              do k=1, gr%nnzp
-                wp2(k) = max(wp2(k), 0.0)
-              end do
-            end if
-          end if
-          if ( lerror ) stop "get_var failed for wp2 in field_reader"
+        do k=1, gr%nnzp
+          wp2(k) = max(wp2(k), 0.0)
+        end do
+      end if
+    end if
+    if ( lerror ) stop "get_var failed for wp2 in field_reader"
 
-          call close_grads_read( fread_var )
-
-
-        end select
+    call close_grads_read( fread_var )
 
 
-        return
-        end subroutine grads_fields_reader
+  end select
+
+
+  return
+  end subroutine grads_fields_reader
 
 !===============================================================================
-        pure function lin_ext_zm_bottom( var_zmp2, var_zmp1, & 
-                                         zmp2, zmp1, zm ) & 
-        result( var_zm )
+  pure function lin_ext_zm_bottom( var_zmp2, var_zmp1, & 
+                                   zmp2, zmp1, zm ) & 
+  result( var_zm )
 
 !       Description:
 !       This function computes the value of a momentum-level variable
@@ -903,30 +903,30 @@
 
 !-------------------------------------------------------------------------
 
-        implicit none
+  implicit none
 
 
-        ! Input Variables
-        real, intent(in) :: & 
-        var_zmp2,    & ! Momentum level variable at level (k+2)   [units vary]
-        var_zmp1,    & ! Momentum level variable at level (k+1)   [units vary]
-        zmp2,        & ! Altitude at momentum level (k+2)         [m]
-        zmp1,        & ! Altitude at momentum level (k+1)         [m]
-        zm          ! Altitude at momentum level (k)           [m]
+  ! Input Variables
+  real, intent(in) :: & 
+  var_zmp2,    & ! Momentum level variable at level (k+2)   [units vary]
+  var_zmp1,    & ! Momentum level variable at level (k+1)   [units vary]
+  zmp2,        & ! Altitude at momentum level (k+2)         [m]
+  zmp1,        & ! Altitude at momentum level (k+1)         [m]
+  zm          ! Altitude at momentum level (k)           [m]
 
-        ! Return Variable
-        real :: var_zm  ! Momentum level variable at level (k) [units vary]
+  ! Return Variable
+  real :: var_zm  ! Momentum level variable at level (k) [units vary]
 
-        var_zm = ( ( var_zmp2 - var_zmp1 ) / ( zmp2 - zmp1 ) ) & 
-                 * ( zm - zmp1 ) + var_zmp1
+  var_zm = ( ( var_zmp2 - var_zmp1 ) / ( zmp2 - zmp1 ) ) & 
+           * ( zm - zmp1 ) + var_zmp1
 
-        return
-        end function lin_ext_zm_bottom
+  return
+  end function lin_ext_zm_bottom
 
 !===============================================================================
-        pure function lin_ext_zt_bottom( var_ztp2, var_ztp1, & 
-                                         ztp2, ztp1, zt ) & 
-        result( var_zt )
+  pure function lin_ext_zt_bottom( var_ztp2, var_ztp1, & 
+                                   ztp2, ztp1, zt ) & 
+  result( var_zt )
 
 !       Description:
 !       This function computes the value of a thermodynamic-level 
@@ -936,127 +936,127 @@
 
 !-------------------------------------------------------------------------
 
-        implicit none
+  implicit none
 
-        ! Input Variables
-        real, intent(in) :: & 
-        var_ztp2,    & ! Thermodynamic level variable at level (k+2)   [units vary]
-        var_ztp1,    & ! Thermodynamic level variable at level (k+1)   [units vary]
-        ztp2,        & ! Altitude at thermodynamic level (k+2)         [m]
-        ztp1,        & ! Altitude at thermodynamic level (k+1)         [m]
-        zt          ! Altitude at thermodynamic level (k)           [m]
+  ! Input Variables
+  real, intent(in) :: & 
+  var_ztp2,    & ! Thermodynamic level variable at level (k+2)   [units vary]
+  var_ztp1,    & ! Thermodynamic level variable at level (k+1)   [units vary]
+  ztp2,        & ! Altitude at thermodynamic level (k+2)         [m]
+  ztp1,        & ! Altitude at thermodynamic level (k+1)         [m]
+  zt          ! Altitude at thermodynamic level (k)           [m]
 
-        ! Return Variable
-        real :: var_zt  ! Thermodynamic level variable at level (k) [units vary]
+  ! Return Variable
+  real :: var_zt  ! Thermodynamic level variable at level (k) [units vary]
 
-        var_zt = ( ( var_ztp2 - var_ztp1 ) / ( ztp2 - ztp1 ) ) & 
-                 * ( zt - ztp1 ) + var_ztp1
+  var_zt = ( ( var_ztp2 - var_ztp1 ) / ( ztp2 - ztp1 ) ) & 
+           * ( zt - ztp1 ) + var_ztp1
 
-        return
-        end function lin_ext_zt_bottom
+  return
+  end function lin_ext_zt_bottom
 
 !===============================================================================
-        subroutine compute_timestep( iunit, filename, lrestart, & 
-                                     time, nearest_timestep )
+  subroutine compute_timestep( iunit, filename, lrestart, & 
+                               time, nearest_timestep )
 !
 !       Description: Given a time 'time', determines the closest 
 !       output time in a GrADS file
 !
 !-------------------------------------------------------------------------
 
-          use inputfile_class, only: & 
-              inputgrads,  & ! Type
-              open_grads_read,  & ! Procedure(s)
-              close_grads_read
-          use constants, only:  & 
-              sec_per_min ! Variable(s)
+    use inputfile_class, only: & 
+        inputgrads,  & ! Type
+        open_grads_read,  & ! Procedure(s)
+        close_grads_read
+    use constants, only:  & 
+        sec_per_min ! Variable(s)
 
-          use stats_precision, only:  & 
-              time_precision
+    use stats_precision, only:  & 
+        time_precision
 
-          implicit none
-          
-          ! Input Variable(s)
-          integer, intent(in) :: iunit ! File I/O unit
+    implicit none
+    
+    ! Input Variable(s)
+    integer, intent(in) :: iunit ! File I/O unit
 
-          character(len=*), intent(in) ::filename
+    character(len=*), intent(in) ::filename
 
-          real(kind=time_precision), intent(in) ::  & 
-            time ! Time near which we want to find GrADS output,
-                 ! e.g. time_restart     [s]
+    real(kind=time_precision), intent(in) ::  & 
+      time ! Time near which we want to find GrADS output,
+           ! e.g. time_restart     [s]
 
-          logical, intent(in) :: lrestart ! Whether this is a restart run
+    logical, intent(in) :: lrestart ! Whether this is a restart run
 
-          ! Output Variable(s)
-          integer, intent(out) ::  & 
-            nearest_timestep ! Nearest GrADS output time to time [min]
-          
-          ! Local Variables
-          type (inputgrads) :: fread_var         
+    ! Output Variable(s)
+    integer, intent(out) ::  & 
+      nearest_timestep ! Nearest GrADS output time to time [min]
+    
+    ! Local Variables
+    type (inputgrads) :: fread_var         
 
-          real(kind=time_precision) :: delta_time   ! In seconds
-          
-          call open_grads_read( iunit, trim( filename ), fread_var )
+    real(kind=time_precision) :: delta_time   ! In seconds
+    
+    call open_grads_read( iunit, trim( filename ), fread_var )
 
-          ! (restart time) - (initial time) 
-          delta_time =  & 
-            time - (fread_var%time - fread_var%dtwrite)
-          
-          !    Joshua Fasching March 2008
+    ! (restart time) - (initial time) 
+    delta_time =  & 
+      time - (fread_var%time - fread_var%dtwrite)
+    
+    !    Joshua Fasching March 2008
 !     .        time - fread_var%time
-          
-          ! Reporting
-          if ( lrestart ) then
-          print *, "Initial time of GrADS reference file ", & 
-                   "[seconds since midnight]: ",  & 
-                   fread_var%time
-          print *, "Model restart time [s]: ", time
-          print *, "Elapsed time between ", & 
-                   "initial time of ref file and restart time [s]: ",  & 
-                   delta_time
-          print *, "GrADS file output time interval [s]: ",  & 
-                   fread_var%dtwrite
+    
+    ! Reporting
+    if ( lrestart ) then
+    print *, "Initial time of GrADS reference file ", & 
+             "[seconds since midnight]: ",  & 
+             fread_var%time
+    print *, "Model restart time [s]: ", time
+    print *, "Elapsed time between ", & 
+             "initial time of ref file and restart time [s]: ",  & 
+             delta_time
+    print *, "GrADS file output time interval [s]: ",  & 
+             fread_var%dtwrite
 
-          if ( ( mod( delta_time , fread_var%dtwrite )  > 1e-8 ) .or.  & 
-               ( mod( delta_time, fread_var%dtwrite ) < -1e-8 ) ) then
-             print*, "Error: Elapsed time is not a multiple ", & 
-                     "of the reference GrADS output time interval."
-             print*, "Elapsed time [s] = ", delta_time
-             print*, "GrADS output time interval = ", fread_var%dtwrite
-             stop
-          end if 
-      
-          if ( mod( delta_time , sec_per_min ) > 1e-8 & 
-                .or. mod( delta_time, sec_per_min ) < -1e-8 ) then
-             print*, "Error: Elapsed time is not a multiple ", & 
-                     "of one minute."
-             print*, "Elapsed time [s] = ", delta_time
-             stop
-          end if
+    if ( ( mod( delta_time , fread_var%dtwrite )  > 1e-8 ) .or.  & 
+         ( mod( delta_time, fread_var%dtwrite ) < -1e-8 ) ) then
+       print*, "Error: Elapsed time is not a multiple ", & 
+               "of the reference GrADS output time interval."
+       print*, "Elapsed time [s] = ", delta_time
+       print*, "GrADS output time interval = ", fread_var%dtwrite
+       stop
+    end if 
 
-          end if ! lrestart
+    if ( mod( delta_time , sec_per_min ) > 1e-8 & 
+          .or. mod( delta_time, sec_per_min ) < -1e-8 ) then
+       print*, "Error: Elapsed time is not a multiple ", & 
+               "of one minute."
+       print*, "Elapsed time [s] = ", delta_time
+       stop
+    end if
 
-          ! Determines the closest recorded timestep to the restart
-          ! time.
-          nearest_timestep = nint( delta_time / sec_per_min ) 
+    end if ! lrestart
 
-          if ( lrestart ) then 
-          print *, "Elapsed time between ", & 
-                   "initial time of ref file and restart time ", & 
-                   "rounded to nearest minute: ",  & 
-                   nearest_timestep
+    ! Determines the closest recorded timestep to the restart
+    ! time.
+    nearest_timestep = nint( delta_time / sec_per_min ) 
 
-          ! Print the actual record being recalled.
-          ! Joshua Fasching March 2008
-          print *, "Nearest GrADS output time iteration [ ]: ", & 
-                   nint( nearest_timestep /  & 
-                         (fread_var%dtwrite/sec_per_min) ) - 1
-          end if ! lrestart
-          
-          call close_grads_read( fread_var )
-          
-        end subroutine compute_timestep
-        
+    if ( lrestart ) then 
+    print *, "Elapsed time between ", & 
+             "initial time of ref file and restart time ", & 
+             "rounded to nearest minute: ",  & 
+             nearest_timestep
+
+    ! Print the actual record being recalled.
+    ! Joshua Fasching March 2008
+    print *, "Nearest GrADS output time iteration [ ]: ", & 
+             nint( nearest_timestep /  & 
+                   (fread_var%dtwrite/sec_per_min) ) - 1
+    end if ! lrestart
+    
+    call close_grads_read( fread_var )
+    
+  end subroutine compute_timestep
+  
 !===============================================================================
 
-      end module inputfields
+end module inputfields

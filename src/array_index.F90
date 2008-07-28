@@ -1,6 +1,6 @@
 !-----------------------------------------------------------------------
 ! $Id $
-        module array_index
+module array_index
 
 !       Description:
 !       Contains indices to variables in larger arrays.
@@ -10,18 +10,18 @@
 !       References:
 !       None
 !-----------------------------------------------------------------------
-        implicit none
+implicit none
 
-        ! Variables
-        ! Microphysical quantities
-        integer, public :: & 
-        iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm ! [kg/kg]
+! Variables
+! Microphysical quantities
+integer, public :: & 
+iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm ! [kg/kg]
 
-        ! Scalar quantities
-        integer, public :: & 
-        iisclr_rt, iisclr_thl, iiCO2  ! [kg/kg]/[K]/[1e6 mol/mol]
+! Scalar quantities
+integer, public :: & 
+iisclr_rt, iisclr_thl, iiCO2  ! [kg/kg]/[K]/[1e6 mol/mol]
 
-        private ! Default Scope
+private ! Default Scope
 
-        end module array_index
+end module array_index
 !-----------------------------------------------------------------------
