@@ -1,4 +1,4 @@
-! $Id: mixing_length.F90,v 1.3 2008-07-28 19:34:43 faschinj Exp $
+! $Id: mixing_length.F90,v 1.4 2008-07-28 21:38:41 faschinj Exp $
 !-----------------------------------------------------------------------------
 module mixing_length
 
@@ -11,8 +11,8 @@ public :: compute_length
 contains
 
 !---------------------------------------------------------------------------        
-subroutine compute_length( thvm, thlm, rtm, rcm, em, p,  & 
-    exner, Lscale, err_code ) 
+subroutine compute_length( thvm, thlm, rtm, rcm, em, p, exner, & 
+                           Lscale, err_code ) 
 !       Description:
 !       Larson's 5th moist, nonlocal length scale
 
