@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F90,v 1.4 2008-07-23 20:25:12 faschinj Exp $
+! $Id: wp23.F90,v 1.5 2008-07-28 00:18:04 griffinb Exp $
 !===============================================================================
         module wp23
 
@@ -317,8 +317,8 @@
             band_solve,  & ! Procedure(s) 
             band_solvex
 
-        use fill_holes_mult, only: & 
-            fill_holes_multiplicative
+        use fill_holes, only: & 
+            fill_holes_driver
 
         use error_code, only:  & 
             lapack_error ! Procedure(s)
@@ -642,8 +642,9 @@
         if ( lhole_fill .and. any( wp2 < 2./3*emin ) ) then
 
           ! Use a simple hole filling algorithm
-          call fill_holes_multiplicative( 2./3.*emin, "zm", wp2 )
-        end if ! wp2
+          call fill_holes_driver( 2, 2./3.*emin, "zm", wp2 )
+
+        endif ! wp2
 
 #ifdef STATS
         if ( lstats_samp ) then

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F90,v 1.4 2008-07-23 20:25:12 faschinj Exp $
+! $Id: diag_var.F90,v 1.5 2008-07-28 00:18:03 griffinb Exp $
 !===============================================================================
       module diagnose_variances
 
@@ -18,7 +18,8 @@
                    term_ta_lhs, & 
                    term_ta_rhs, & 
                    term_tp, & 
-                   term_dp1, & 
+                   term_dp1_lhs, & 
+                   term_dp1_rhs, & 
                    term_pr1, & 
                    term_pr2
        
@@ -113,7 +114,7 @@
         vpwp,   & ! u'w'                           [m^2/s^2]
         Scm,    & ! Sc on moment. grid             [-]
         Skwm,   & ! Skw on moment. grid            [-]
-        Kht    ! Eddy diffusivity on t-lev.     [m^2/s]
+        Kht       ! Eddy diffusivity on t-lev.     [m^2/s]
 
         logical, intent(in) :: liter ! Whether variances are prognostic
 
@@ -131,7 +132,7 @@
         thlp2,   & ! th_l'^2                       [K^2]
         rtpthlp, & ! r_t' th_l'                    [(kg K)/kg]
         up2,     & ! u'^2                          [m^2/s^2]
-        vp2     ! v'^2                          [m^2/s^2]
+        vp2        ! v'^2                          [m^2/s^2]
 
         ! Output variable for singular matrices
 
@@ -155,7 +156,7 @@
         wpthlp_zt,  & ! w'th_l' interpolated to thermodyamnic levels  [K m/s]
         upwp_zt,    & ! u'w' interpolated to thermodynamic levels     [m^2/s^2]
         vpwp_zt,    & ! v'w' interpolated to thermodynamic levels     [m^2/s^2]
-        wpsclrp_zt ! w'sclr' interpolated to thermodynamic levels  [m/s {sclrm units}]
+        wpsclrp_zt    ! w'sclr' interpolated to thermodynamic levels  [m/s {sclrm units}]
 
         real, dimension(gr%nnzp) :: & 
         threshold  ! Minimum value for variances                   [units vary]
@@ -167,7 +168,7 @@
         rhs ! RHS vector of Tridiagonal matrix
 
         real, dimension(gr%nnzp,sclr_dim*3) ::  & 
-        sclr_rhs,      & ! RHS of scalar tridiagonal system
+        sclr_rhs,   & ! RHS of scalar tridiagonal system
         sclr_solution ! Solution to tridiagonal system
 
         integer, dimension(5+1) :: & 
@@ -175,15 +176,15 @@
 
         ! Eddy Diffusion for Variances and Covariances.
         real, dimension(gr%nnzp) ::  & 
-        Kw2,         & ! For rtp2, thlp2, rtpthlp, and passive scalars  [m^2/s]
+        Kw2,      & ! For rtp2, thlp2, rtpthlp, and passive scalars  [m^2/s]
         Kw9         ! For up2 and vp2                                [m^2/s]
 
         ! Variables used for adding (xapxbp)^2: 3-point average
         ! diffusion coefficient.
         real, dimension(gr%nnzp) :: & 
-        rtp2_zt,     & ! r_t'^2 interpolated to thermodynamic levels    [kg^2/kg^2]
-        thlp2_zt,    & ! th_l'^2 interpolated to thermodynamic levels   [K^2]
-        rtpthlp_zt,  & ! r_t'th_l' interpolated to thermodynamic levels [K kg/kg]
+        rtp2_zt,    & ! r_t'^2 interpolated to thermodynamic levels    [kg^2/kg^2]
+        thlp2_zt,   & ! th_l'^2 interpolated to thermodynamic levels   [K^2]
+        rtpthlp_zt, & ! r_t'th_l' interpolated to thermodynamic levels [K kg/kg]
         rtp2_zt_sqd_3pt, & 
         thlp2_zt_sqd_3pt, & 
         rtpthlp_zt_sqd_3pt, & 
@@ -303,11 +304,13 @@
         ! Define the Coefficent of Eddy Diffusivity for the 
         ! Variances and Covariances.
         do k = 1, gr%nnzp, 1
+
            ! Kw2 is used for variances and covariances rtp2, thlp2, rtpthlp,
            ! and passive scalars.  The variances and covariances are located on 
            ! momentum levels.  Kw2 is located on thermodynamic levels.
            ! Kw2 = c_K2 * Kht
            Kw2(k) = c_K2 * Kht(k)
+
            ! Kw2_rtp2 must have units of m^2/s.  Since rtp2_zt_sqd_3pt has 
            ! units of kg^2/kg^2, c_Ksqd is given units of m^2/[ s (kg^2/kg^2) ]
            ! in this case.
@@ -330,6 +333,7 @@
            ! on momentum levels.  Kw9 is located on thermodynamic levels.
            ! Kw9 = c_K9 * Kht
            Kw9(k) = c_K9 * Kht(k)
+
         enddo
 
 
@@ -345,7 +349,8 @@
         call diag_var_rhs( "rtp2", dt, liter, a1,  & 
                            wp2_zt, wp3, wprtp, wprtp_zt, & 
                            wprtp, wprtp_zt, rtm, rtm, rtp2, & 
-                           beta, wtol_sqd, rhs )
+                           C2rt_1d, taum, rttol**2, beta, &
+                           wtol_sqd, rhs )
         
         ! Solve the tridiagonal system
         call diag_var_solve( "rtp2", 1, rhs,  & 
@@ -364,7 +369,8 @@
         call diag_var_rhs( "thlp2", dt, liter, a1, & 
                            wp2_zt, wp3, wpthlp, wpthlp_zt, & 
                            wpthlp, wpthlp_zt, thlm, thlm, thlp2, & 
-                           beta, wtol_sqd, rhs )
+                           C2thl_1d, taum, thltol**2, beta, &
+                           wtol_sqd, rhs )
 
         ! Solve the tridiagonal system
         call diag_var_solve( "thlp2", 1, rhs,  & 
@@ -382,7 +388,8 @@
         call diag_var_rhs( "rtpthlp", dt, liter, a1,  & 
                            wp2_zt, wp3, wprtp, wprtp_zt, & 
                            wpthlp, wpthlp_zt, rtm, thlm, rtpthlp, & 
-                           beta, wtol_sqd, rhs )
+                           C2rtthl_1d, taum, 0.0, beta, &
+                           wtol_sqd, rhs )
 
         ! Solve the tridiagonal system
         call diag_var_solve( "rtpthlp", 1, rhs,  & 
@@ -437,34 +444,40 @@
 
         ! Clipping for r_t'^2
 
-        threshold = 0.0
+!        threshold = 0.0
+!
+!        where ( wp2 >= wtol*wtol ) & 
+!           threshold = rttol*rttol
 
-        where ( wp2 >= wtol*wtol ) & 
-           threshold = rttol*rttol
+        threshold = rttol**2
 
         call variance_clip( "rtp2", dt, threshold, rtp2 )
 
 
         ! Clipping for th_l'^2
 
-        threshold = 0.0
+!        threshold = 0.0
+!
+!        where ( wp2 >= wtol*wtol ) & 
+!           threshold = thltol*thltol
 
-        where ( wp2 >= wtol*wtol ) & 
-           threshold = thltol*thltol
+        threshold = thltol**2
 
         call variance_clip( "thlp2", dt, threshold, thlp2 )
 
 
         ! Clipping for u'^2
 
-        threshold = 0.0
+!        threshold = 0.0
+        threshold = 2./3.*emin
 
         call variance_clip( "up2", dt, threshold, up2 )
 
 
         ! Clipping for v'^2
 
-        threshold = 0.0
+!        threshold = 0.0
+        threshold = 2./3.*emin
 
         call variance_clip( "vp2", dt, threshold, vp2 )
 
@@ -522,9 +535,10 @@
                                wp2_zt, wp3, wpsclrp(:,i),  & 
                                wpsclrp_zt, wpsclrp(:,i), wpsclrp_zt,  & 
                                sclrm(:,i), sclrm(:,i), sclrp2(:,i), & 
-                               beta, wtol_sqd, sclr_rhs(:,i) )
+                               C2sclr_1d, taum, 0.0, beta, &
+                               wtol_sqd, sclr_rhs(:,i) )
 
-          end do
+          enddo
 
 
           !!!!!***** sclr'r_t' *****!!!!!
@@ -539,7 +553,8 @@
             call diag_var_rhs( "sclrprtp", dt, liter, a1,  & 
                                wp2_zt, wp3, wpsclrp(:,i),  & 
                                wpsclrp_zt, wprtp, wprtp_zt, sclrm(:,i),  & 
-                               rtm, sclrprtp(:,i), beta, wtol_sqd,  & 
+                               rtm, sclrprtp(:,i), C2sclr_1d, taum, &
+                               0.0, beta, wtol_sqd,  & 
                                sclr_rhs(:,i+sclr_dim) )
 
           end do
@@ -557,7 +572,8 @@
             call diag_var_rhs( "sclrpthlp", dt, liter, a1,  & 
                                wp2_zt, wp3, wpsclrp(:,i),  & 
                                wpsclrp_zt, wpthlp, wpthlp_zt,  & 
-                               sclrm(:,i), thlm, sclrpthlp(:,i), beta,  & 
+                               sclrm(:,i), thlm, sclrpthlp(:,i), &
+                               C2sclr_1d, taum, 0.0, beta,  & 
                                wtol_sqd, sclr_rhs(:,i+2*sclr_dim) )
 
           end do
@@ -744,12 +760,12 @@
 
         ! Constant parameters
         integer, parameter :: & 
-        kp1_mdiag = 1,    & ! Momentum superdiagonal index.
-        k_mdiag   = 2,    & ! Momentum main diagonal index.
+        kp1_mdiag = 1, & ! Momentum superdiagonal index.
+        k_mdiag   = 2, & ! Momentum main diagonal index.
         km1_mdiag = 3    ! Momentum subdiagonal index.
 
         real(kind=time_precision), intent(in) :: & 
-        dt     ! Timestep length                             [s]
+        dt        ! Timestep length                             [s]
 
         logical, intent(in) :: & 
         liter  ! Whether the variances are prognostic
@@ -762,11 +778,11 @@
         taum,   & ! Time-scale tau on momentum levels           [s]
         wmm,    & ! w wind component on momentum levels         [m/s]
         Kw,     & ! Coefficient of eddy diffusivity (all vars.) [m^2/s]
-        Cn     ! Coefficient C_n                             [-]
+        Cn        ! Coefficient C_n                             [-]
 
         real, intent(in) :: & 
-        nu,       & ! Background constant coef. of eddy diff.   [-]
-        beta,     & ! Constant model parameter beta             [-]
+        nu,    & ! Background constant coef. of eddy diff.   [-]
+        beta,  & ! Constant model parameter beta             [-]
         wtol_sqd ! w wind component tolerance squared        [m^2/s^2]
 
         ! Output Variables
@@ -799,7 +815,7 @@
           ! LHS dissipation term 1 (dp1)
           ! (and pressure term 1 (pr1) for u'^2 and v'^2).
           lhs(k_mdiag,k) & 
-          = lhs(k_mdiag,k) + term_dp1( Cn(k), taum(k) )
+          = lhs(k_mdiag,k) + term_dp1_lhs( Cn(k), taum(k) )
 
           ! LHS time tendency.
           if ( liter ) then
@@ -829,7 +845,7 @@
            !        (as well as to term pr1) for up2 and vp2 is recorded
            !        in diag_var_uv_rhs because up2 and vp2 use a special
            !        dp1/pr1 combined term.
-           tmp(1) = term_dp1( Cn(k), taum(k) )
+           tmp(1) = term_dp1_lhs( Cn(k), taum(k) )
            zmscr01(k) = -tmp(1)
          endif
          
@@ -908,8 +924,9 @@
         
 #ifdef STATS
         use stats_type, only: & 
-            stat_update_var_pt ! Procedure(s)
-        
+            stat_update_var_pt, & ! Procedure(s)
+            stat_end_update_pt
+
         use stats_variables, only: & 
             zm,  & ! Variable(s) 
             sfc, & 
@@ -959,8 +976,8 @@
 
         ! Constant parameters
         integer, parameter :: & 
-        kp1_mdiag = 1,    & ! Momentum superdiagonal index.
-        k_mdiag   = 2,    & ! Momentum main diagonal index.
+        kp1_mdiag = 1, & ! Momentum superdiagonal index.
+        k_mdiag   = 2, & ! Momentum main diagonal index.
         km1_mdiag = 3    ! Momentum subdiagonal index.
 
         ! Input variables
@@ -1083,7 +1100,7 @@
             km1 = max( k-1, 1 )
             kp1 = min( k+1, gr%nnzp )
 
-            call stat_update_var_pt( ixapxbp_dp1, k, & 
+            call stat_end_update_pt( ixapxbp_dp1, k, & 
                 zmscr01(k) * xapxbp(k,1), zm )
 
             call stat_update_var_pt( ixapxbp_dp2, k, & 
@@ -1158,34 +1175,34 @@
         character(len=*), intent(in) :: solve_type
 
         real(kind=time_precision), intent(in) :: & 
-        dt        ! Timestep                                    [s]
+        dt          ! Timestep                                    [s]
 
         logical, intent(in) :: & 
         liter  ! Whether x is prognostic (T/F)
 
         real, dimension(gr%nnzp), intent(in) :: & 
-        a1,        & ! Scm-related term a_1 (momentum levels)      [-]
-        wp2,       & ! w'^2 (momentum levels)                      [m^2/s^2]
-        wp2_zt,    & ! w'^2 interpolated to thermodynamic levels   [m^2/s^2]
-        wp3,       & ! w'^3 (thermodynamic levels)                 [m^3/s^3]
-        wpthvp,    & ! w'th_v' (momentum levels)                   [K m/s]
-        taum,      & ! Time-scale tau on momentum levels           [s]
-        xam,       & ! x_am (thermodynamic levels)                 [m/s]
-        xbm,       & ! x_bm (thermodynamic levels)                 [m/s]
-        wpxap,     & ! w'x_a' (momentum levels)                    [m^2/s^2]
-        wpxap_zt,  & ! w'x_a' interpolated to thermodynamic levels [m^2/s^2]
-        wpxbp,     & ! w'x_b' (momentum levels)                    [m^2/s^2]
-        wpxbp_zt,  & ! w'x_b' interpolated to thermodynamic levels [m^2/s^2]
-        xap2,      & ! x_a'^2 (momentum levels)                    [m^2/s^2]
-        xbp2      ! x_b'^2 (momentum levels)                    [m^2/s^2]
+        a1,       & ! Scm-related term a_1 (momentum levels)      [-]
+        wp2,      & ! w'^2 (momentum levels)                      [m^2/s^2]
+        wp2_zt,   & ! w'^2 interpolated to thermodynamic levels   [m^2/s^2]
+        wp3,      & ! w'^3 (thermodynamic levels)                 [m^3/s^3]
+        wpthvp,   & ! w'th_v' (momentum levels)                   [K m/s]
+        taum,     & ! Time-scale tau on momentum levels           [s]
+        xam,      & ! x_am (thermodynamic levels)                 [m/s]
+        xbm,      & ! x_bm (thermodynamic levels)                 [m/s]
+        wpxap,    & ! w'x_a' (momentum levels)                    [m^2/s^2]
+        wpxap_zt, & ! w'x_a' interpolated to thermodynamic levels [m^2/s^2]
+        wpxbp,    & ! w'x_b' (momentum levels)                    [m^2/s^2]
+        wpxbp_zt, & ! w'x_b' interpolated to thermodynamic levels [m^2/s^2]
+        xap2,     & ! x_a'^2 (momentum levels)                    [m^2/s^2]
+        xbp2        ! x_b'^2 (momentum levels)                    [m^2/s^2]
 
         real, intent(in) :: & 
-        C4,       & ! Model parameter C_4                          [-]
-        C5,       & ! Model parameter C_5                          [-]
-        C14,      & ! Model parameter C_14                         [-]
-        T0,       & ! Reference temperature                        [K]
-        beta,     & ! Model parameter beta                         [-]
-        wtol_sqd ! w wind component tolerance squared           [m^2/s^2]
+        C4,      & ! Model parameter C_4                          [-]
+        C5,      & ! Model parameter C_5                          [-]
+        C14,     & ! Model parameter C_14                         [-]
+        T0,      & ! Reference temperature                        [K]
+        beta,    & ! Model parameter beta                         [-]
+        wtol_sqd   ! w wind component tolerance squared           [m^2/s^2]
 
         real, dimension(gr%nnzp,1), intent(out) :: & 
         rhs    ! Explicit contributions to x variance/covariance terms
@@ -1278,7 +1295,7 @@
               ! component of term dp1 for up2 or vp2.  This will 
               ! overwrite anything set statistically in diag_var_lhs 
               ! for this term.
-              tmp = term_dp1( (2.0/3.0)*C4, taum(k) )
+              tmp = term_dp1_lhs( (2.0/3.0)*C4, taum(k) )
               zmscr01(k) = -tmp
               ! Statistical contribution of the explicit component
               ! of term dp1 for up2 or vp2.
@@ -1293,7 +1310,7 @@
               !        of a semi-implicit solution to dp1 and pr1.
               ! Statistical contribution of the implicit component
               ! of term pr1 for up2 or vp2.
-              tmp = term_dp1( (1.0/3.0)*C14, taum(k) )
+              tmp = term_dp1_lhs( (1.0/3.0)*C14, taum(k) )
               zmscr11(k) = -tmp
               ! Statistical contribution of the explicit component
               ! of term pr1 for up2 or vp2.
@@ -1342,7 +1359,8 @@
         subroutine diag_var_rhs( solve_type, dt, liter, a1,  & 
                                  wp2_zt, wp3, wpxap, wpxap_zt, & 
                                  wpxbp, wpxbp_zt, xam, xbm, xapxbp, & 
-                                 beta, wtol_sqd, rhs )
+                                 Cn, taum, threshold, beta, &
+                                 wtol_sqd, rhs )
 
 !       Description:
 !       Explicit contributions to r_t'^2, th_l'^2, r_t'th_l', 
@@ -1357,16 +1375,21 @@
         
 #ifdef STATS
         use stats_type, only: & 
-            stat_modify_pt, stat_update_var_pt ! Procedure(s)
+            stat_modify_pt, & ! Procedure(s)
+            stat_begin_update_pt, &
+            stat_update_var_pt
         
         use stats_variables, only: & 
             irtp2_ta,  & ! Variable(s)
-            irtp2_tp, & 
-            ithlp2_ta, & 
-            ithlp2_tp, & 
-            irtpthlp_ta, & 
+            irtp2_tp,  & 
+            irtp2_dp1, &
+            ithlp2_ta,  & 
+            ithlp2_tp,  &
+            ithlp2_dp1, & 
+            irtpthlp_ta,  & 
             irtpthlp_tp1, & 
-            irtpthlp_tp2, & 
+            irtpthlp_tp2, &
+            irtpthlp_dp1, & 
             zm, & 
             lstats_samp
 #endif
@@ -1377,27 +1400,31 @@
         character(len=*), intent(in) :: solve_type
 
         real(kind=time_precision), intent(in) :: & 
-        dt        ! Timestep                                    [s]
+        dt          ! Timestep                                    [s]
 
         logical, intent(in) :: & 
         liter   ! Whether x is prognostic (T/F)
 
         real, dimension(gr%nnzp), intent(in) :: & 
-        a1,        & ! Scm-related term a_1 (momentum levels)      [-]
-        wp2_zt,    & ! w'^2 interpolated to thermodynamic levels   [m^2/s^2]
-        wp3,       & ! w'^3 (thermodynamic levels)                 [m^3/s^3]
-        wpxap,     & ! w'x_a' (momentum levels)                    [m/s {x_am units}]
-        wpxap_zt,  & ! w'x_a' interpolated to thermodynamic levels [m/s {x_am units}]
-        wpxbp,     & ! w'x_b' (momentum levels)                    [m/s {x_bm units}]
-        wpxbp_zt,  & ! w'x_b' interpolated to thermodynamic levels [m/s {x_bm units}]
-        xam,       & ! x_am (thermodynamic levels)                 [{x_am units}]
-        xbm,       & ! x_bm (thermodynamic levels)                 [{x_bm units}]
-        xapxbp    ! x_a'x_b' (momentum levels)                  [{x_am units}
-                  !                                                *{x_bm units}]
+        a1,       & ! Scm-related term a_1 (momentum levels)      [-]
+        wp2_zt,   & ! w'^2 interpolated to thermodynamic levels   [m^2/s^2]
+        wp3,      & ! w'^3 (thermodynamic levels)                 [m^3/s^3]
+        wpxap,    & ! w'x_a' (momentum levels)                    [m/s {x_am units}]
+        wpxap_zt, & ! w'x_a' interpolated to thermodynamic levels [m/s {x_am units}]
+        wpxbp,    & ! w'x_b' (momentum levels)                    [m/s {x_bm units}]
+        wpxbp_zt, & ! w'x_b' interpolated to thermodynamic levels [m/s {x_bm units}]
+        xam,      & ! x_am (thermodynamic levels)                 [{x_am units}]
+        xbm,      & ! x_bm (thermodynamic levels)                 [{x_bm units}]
+        xapxbp,   & ! x_a'x_b' (momentum levels)                  [{x_am units}
+                    !                                                *{x_bm units}]
+        taum,     & ! Time-scale tau on momentum levels           [s]
+        Cn          ! Coefficient C_n                             [-]
 
-        real, intent(in) :: & 
-        beta,      & ! Model parameter beta                        [-]
-        wtol_sqd  ! w wind component tolerance squared          [m^2/s^2]
+        real, intent(in) :: &
+        threshold, & ! Smallest allowable magnitude value for x_a'x_b' [{x_am units}
+                     !                                                    *{x_bm units}] 
+        beta,      & ! Model parameter beta                            [-]
+        wtol_sqd     ! w wind component tolerance squared              [m^2/s^2]
 
         real, dimension(gr%nnzp,1), intent(out) :: & 
         rhs     ! Explicit contributions to x variance/covariance terms
@@ -1413,7 +1440,8 @@
         ixapxbp_ta, & 
         ixapxbp_tp, & 
         ixapxbp_tp1, & 
-        ixapxbp_tp2
+        ixapxbp_tp2, &
+        ixapxbp_dp1
 
 
         select case ( trim( solve_type ) )
@@ -1422,21 +1450,25 @@
           ixapxbp_tp  = irtp2_tp
           ixapxbp_tp1 = 0
           ixapxbp_tp2 = 0
+          ixapxbp_dp1 = irtp2_dp1
         case ( "thlp2" )
           ixapxbp_ta  = ithlp2_ta
           ixapxbp_tp  = ithlp2_tp
           ixapxbp_tp1 = 0
           ixapxbp_tp2 = 0
+          ixapxbp_dp1 = ithlp2_dp1
         case ( "rtpthlp" )
           ixapxbp_ta  = irtpthlp_ta
           ixapxbp_tp  = 0
           ixapxbp_tp1 = irtpthlp_tp1
           ixapxbp_tp2 = irtpthlp_tp2
+          ixapxbp_dp1 = irtpthlp_dp1
         case default ! No budgets for passive scalars
           ixapxbp_ta  = 0
           ixapxbp_tp  = 0
           ixapxbp_tp1 = 0
           ixapxbp_tp2 = 0
+          ixapxbp_dp1 = 0
         end select
 #endif
 
@@ -1457,6 +1489,10 @@
           + term_tp( xam(kp1), xam(k), xbm(kp1), xbm(k),  & 
                      wpxbp(k), wpxap(k), gr%dzm(k) )
 
+          ! RHS dissipation term 1 (dp1)
+          rhs(k,1) &
+          = rhs(k,1) + term_dp1_rhs( Cn(k), taum(k), threshold )
+
           ! RHS time tendency.
           if ( liter ) then 
             rhs(k,1) = real( rhs(k,1) + 1.0/dt * xapxbp(k) )
@@ -1473,6 +1509,9 @@
                            wp2_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), & 
                            wpxap_zt(kp1), wpxap_zt(k), gr%dzm(k), & 
                            beta, wtol_sqd ), zm )
+
+          call stat_begin_update_pt( ixapxbp_dp1, k, &
+              -term_dp1_rhs( Cn(k), taum(k), threshold ), zm )
 
           ! rtp2/thlp2 case (1 turbulent production term)
           call stat_update_var_pt( ixapxbp_tp, k, & 
@@ -1609,24 +1648,24 @@
 
         ! Constant parameters
         integer, parameter :: & 
-        kp1_mdiag = 1,    & ! Momentum superdiagonal index.
-        k_mdiag   = 2,    & ! Momentum main diagonal index.
+        kp1_mdiag = 1, & ! Momentum superdiagonal index.
+        k_mdiag   = 2, & ! Momentum main diagonal index.
         km1_mdiag = 3    ! Momentum subdiagonal index.
 
         integer, parameter :: & 
-        m_above = 1,    & ! Index for upper momentum level grid weight.
+        m_above = 1, & ! Index for upper momentum level grid weight.
         m_below = 2    ! Index for lower momentum level grid weight.
 
         ! Input Variables
         real, intent(in) :: & 
-        a1,          & ! a_1(k)                                   [-]
-        wp3p1,       & ! w'^3(k+1)                                [m^3/s^3]
-        wp3,         & ! w'^3(k)                                  [m^3/s^3]
-        wp2_ztp1,    & ! w'^2 interpolated to thermo. level (k+1) [m^2/s^2]
-        wp2_zt,      & ! w'^2 interpolated to thermo. level (k)   [m^2/s^2]
-        dzm,         & ! Inverse of grid spacing                  [1/m]
-        beta,        & ! Model parameter                          [-]
-        wtol_sqd       ! w wind component tolerance squared       [m^2/s^2]
+        a1,       & ! a_1(k)                                   [-]
+        wp3p1,    & ! w'^3(k+1)                                [m^3/s^3]
+        wp3,      & ! w'^3(k)                                  [m^3/s^3]
+        wp2_ztp1, & ! w'^2 interpolated to thermo. level (k+1) [m^2/s^2]
+        wp2_zt,   & ! w'^2 interpolated to thermo. level (k)   [m^2/s^2]
+        dzm,      & ! Inverse of grid spacing                  [1/m]
+        beta,     & ! Model parameter                          [-]
+        wtol_sqd    ! w wind component tolerance squared       [m^2/s^2]
 
         integer, intent(in) :: & 
         level ! Central momentum level (on which calculation occurs).
@@ -1636,8 +1675,8 @@
 
         ! Local Variables
         integer :: & 
-        tkp1,  & ! Thermodynamic level directly above central momentum level.
-        tk    ! Thermodynamic level directly below central momentum level.
+        tkp1, & ! Thermodynamic level directly above central momentum level.
+        tk      ! Thermodynamic level directly below central momentum level.
 
         ! Thermodynamic level (k+1) is between momentum level (k+1)
         ! and momentum level (k).
@@ -1781,18 +1820,18 @@
 
         ! Input variables
         real, intent(in) :: & 
-        a1,            & ! a_1(k)                                     [-]
-        wp3p1,         & ! w'^3(k+1)                                  [m^3/s^3]
-        wp3,           & ! w'^3(k)                                    [m^3/s^3]
-        wp2_ztp1,      & ! w'^2 interpolated to thermo. level (k+1)   [m^2/s^2]
-        wp2_zt,        & ! w'^2 interpolated to thermo. level (k)     [m^2/s^2]
-        wpxbp_ztp1,    & ! w'x_b' interpolated to thermo. level (k+1) [m/s {x_bm units}]
-        wpxbp_zt,      & ! w'x_b' interpolated to thermo. level (k)   [m/s {x_bm units}]
-        wpxap_ztp1,    & ! w'x_a' interpolated to thermo. level (k+1) [m/s {x_am units}]
-        wpxap_zt,      & ! w'x_a' interpolated to thermo. level (k)   [m/s {x_am units}]
-        dzm,           & ! Inverse of grid spacing                    [1/m]
-        beta,          & ! Model parameter                            [-]
-        wtol_sqd         ! w wind component tolerance squared         [m^2/s^2]
+        a1,         & ! a_1(k)                                     [-]
+        wp3p1,      & ! w'^3(k+1)                                  [m^3/s^3]
+        wp3,        & ! w'^3(k)                                    [m^3/s^3]
+        wp2_ztp1,   & ! w'^2 interpolated to thermo. level (k+1)   [m^2/s^2]
+        wp2_zt,     & ! w'^2 interpolated to thermo. level (k)     [m^2/s^2]
+        wpxbp_ztp1, & ! w'x_b' interpolated to thermo. level (k+1) [m/s {x_bm units}]
+        wpxbp_zt,   & ! w'x_b' interpolated to thermo. level (k)   [m/s {x_bm units}]
+        wpxap_ztp1, & ! w'x_a' interpolated to thermo. level (k+1) [m/s {x_am units}]
+        wpxap_zt,   & ! w'x_a' interpolated to thermo. level (k)   [m/s {x_am units}]
+        dzm,        & ! Inverse of grid spacing                    [1/m]
+        beta,       & ! Model parameter                            [-]
+        wtol_sqd      ! w wind component tolerance squared         [m^2/s^2]
 
         ! Return Variable
         real :: rhs
@@ -1865,12 +1904,12 @@
 
         ! Input variables
         real, intent(in) :: & 
-        xam,      & ! x_am(k)                     [{x_am units}]
-        xamp1,    & ! x_am(k+1)                   [{x_am units}]
-        xbm,      & ! x_bm(k)                     [{x_bm units}]
-        xbmp1,    & ! x_bm(k+1)                   [{x_bm units}]
-        wpxbp,    & ! w'x_b'(k)                   [m/s {x_bm units}]
-        wpxap,    & ! w'x_a'(k)                   [m/s {x_am units}]
+        xam,   & ! x_am(k)                     [{x_am units}]
+        xamp1, & ! x_am(k+1)                   [{x_am units}]
+        xbm,   & ! x_bm(k)                     [{x_bm units}]
+        xbmp1, & ! x_bm(k+1)                   [{x_bm units}]
+        wpxbp, & ! w'x_b'(k)                   [m/s {x_bm units}]
+        wpxap, & ! w'x_a'(k)                   [m/s {x_am units}]
         dzm      ! Inverse of grid spacing (k) [1/m]
 
         ! Return Variable
@@ -1884,7 +1923,7 @@
         end function term_tp
 
 !===============================================================================
-        pure function term_dp1( Cn, taum )  & 
+        pure function term_dp1_lhs( Cn, taum )  & 
         result( lhs )
 
 !       Description:
@@ -1894,7 +1933,18 @@
 !
 !       - ( C_n / tau_m ) x_a'x_b'.
 !
-!       This term is solved for completely implicitly, such that:
+!       For cases where x_a'x_b' is a variance (in other words, where
+!       x_a and x_b are the same variable), the term is damped to a 
+!       certain positive threshold, such that:
+!
+!       - ( C_n / tau_m ) * ( x_a'x_b' - threshold ).
+!
+!       For cases where x_a'x_b' is a covariance (in other words, where
+!       x_a and x_b are different variables), threshold is set to 0, and
+!       the expression reverts to the form found in the first equation.
+!
+!       This term is broken into implicit and explicit portions.  The 
+!       implicit portion of this term is:
 !
 !       - ( C_n / tau_m ) x_a'x_b'(t+1).
 !
@@ -1921,7 +1971,7 @@
         implicit none
 
         real, intent(in) :: & 
-        Cn,     & ! Coefficient C_n                       [-]
+        Cn,  & ! Coefficient C_n                       [-]
         taum   ! Time-scale tau at momentum levels (k) [s]
 
         real :: lhs
@@ -1931,7 +1981,60 @@
         = + Cn / taum
 
         return
-        end function term_dp1
+        end function term_dp1_lhs
+
+!===============================================================================
+        pure function term_dp1_rhs( Cn, taum, threshold ) &
+        result( rhs )
+
+!       Description:
+!       Dissipation term 1 for x_a'x_b':  explicit portion of the code.
+!
+!       The d(x_a'x_b')/dt equation contains dissipation term 1:
+!
+!       - ( C_n / tau_m ) x_a'x_b'.
+!
+!       For cases where x_a'x_b' is a variance (in other words, where
+!       x_a and x_b are the same variable), the term is damped to a
+!       certain positive threshold, such that:
+!
+!       - ( C_n / tau_m ) * ( x_a'x_b' - threshold ).
+!
+!       For cases where x_a'x_b' is a covariance (in other words, where
+!       x_a and x_b are different variables), threshold is set to 0, and
+!       the expression reverts to the form found in the first equation.
+!
+!       This term is broken into implicit and explicit portions.  The
+!       explicit portion of this term is:
+!
+!       + ( C_n / tau_m ) * threshold.
+!
+!       The values of time-scale tau_m and the threshold are found on 
+!       momentum levels.
+!
+!       Note: For equations that use pressure term 1 (such as the
+!             equations for u'^2 and v'^2), C_n = ( 2*C_4 + C_14 ) / 3;
+!             which combines the implicit contributions for dissipation
+!             term 1 and pressure term 1 into one expression.
+!             Otherwise, C_n = C_2.
+
+!       References:
+!-----------------------------------------------------------------------
+
+        implicit none
+
+        real, intent(in) :: &
+        Cn,     & ! Coefficient C_n                               [-]
+        taum,   & ! Time-scale tau at momentum levels (k)         [s]
+        threshold ! Minimum allowable magnitude value of x_a'x_b' [units vary]
+
+        real :: rhs
+
+        rhs  & 
+        = + ( Cn / taum ) * threshold
+
+        return
+        end function term_dp1_rhs
 
 !===============================================================================
         pure function term_pr1( C4, C14, xbp2, wp2, taum ) & 
@@ -1976,7 +2079,7 @@
 !       d(x_a'x_b')/dt equation.
 !
 !       The implicit component of the combined dp1 and pr1 term is 
-!       solved in function "term_dp1" above, 
+!       solved in function "term_dp1_lhs" above, 
 !       where "( 2*C_4 + C_14 ) / 3" is sent in as "C_n".
 !
 !       The explicit component of the combined dp1 and pr1 term is:
@@ -1995,10 +2098,10 @@
         implicit none
 
         real, intent(in) :: & 
-        C4,      & ! Model parameter C_4                         [-]
-        C14,     & ! Model parameter C_14                        [-]
-        xbp2,    & ! v'^2(k) (if solving for u'^2) or vice versa [m^2/s^2]
-        wp2,     & ! w'^2(k)                                     [m^2/s^2]
+        C4,   & ! Model parameter C_4                         [-]
+        C14,  & ! Model parameter C_14                        [-]
+        xbp2, & ! v'^2(k) (if solving for u'^2) or vice versa [m^2/s^2]
+        wp2,  & ! w'^2(k)                                     [m^2/s^2]
         taum    ! Time-scale tau at momentum levels (k)       [s]
 
         real :: rhs
@@ -2054,16 +2157,16 @@
         implicit none
 
         real, intent(in) :: & 
-        C5,        & ! Model parameter C_5             [-]
-        grav,      & ! Gravitational acceleration      [m/s^2]
-        T0,        & ! Reference temperature           [K]
-        wpthvp,    & ! w'th_v'(k)                      [m/K/s]
-        upwp,      & ! u'w'(k)                         [m^2/s^2]
-        vpwp,      & ! v'w'(k)                         [m^2/s^2]
-        ump1,      & ! um(k+1)                         [m/s]
-        um,        & ! um(k)                           [m/s]
-        vmp1,      & ! vm(k+1)                         [m/s]
-        vm,        & ! vm(k)                           [m/s]
+        C5,     & ! Model parameter C_5             [-]
+        grav,   & ! Gravitational acceleration      [m/s^2]
+        T0,     & ! Reference temperature           [K]
+        wpthvp, & ! w'th_v'(k)                      [m/K/s]
+        upwp,   & ! u'w'(k)                         [m^2/s^2]
+        vpwp,   & ! v'w'(k)                         [m^2/s^2]
+        ump1,   & ! um(k+1)                         [m/s]
+        um,     & ! um(k)                           [m/s]
+        vmp1,   & ! vm(k+1)                         [m/s]
+        vm,     & ! vm(k)                           [m/s]
         dzm       ! Inverse of the grid spacing (k) [1/m]
 
         real :: rhs
@@ -2080,7 +2183,7 @@
         subroutine pos_definite_variances( solve_type, dt, tolerance, & 
                                            xp2_np1 )
 
-        use fill_holes_mult, only: fill_holes_multiplicative
+        use fill_holes, only: fill_holes_driver
         use grid_class, only: gr
         use stats_precision, only: time_precision
 #ifdef STATS
@@ -2135,7 +2238,7 @@
 
         if ( any( xp2_np1 < tolerance ) ) then
 
-          call fill_holes_multiplicative( tolerance, "zm", xp2_np1 )
+          call fill_holes_driver( 2, tolerance, "zm", xp2_np1 )
 
         end if
 

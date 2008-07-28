@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: prog_variables.F90,v 1.2 2008-07-22 16:32:02 dschanen Exp $
+! $Id: prog_variables.F90,v 1.3 2008-07-28 00:18:04 griffinb Exp $
         module prognostic_variables
 
 !       This module contains definitions of all prognostic
@@ -116,7 +116,9 @@
 !       None
 !-----------------------------------------------------------------------
         use constants, only:  & 
-            emin
+            emin, &
+            rttol, &
+            thltol
 
         use parameters, only: & 
             sclr_dim ! Variable(s) 
@@ -200,14 +202,14 @@
         vp2(1:nzmax)     = 2./3. * emin ! v'^2
         wp2(1:nzmax)     = 2./3. * emin ! w'^2
 
-        thlm(1:nzmax)    = 0.0     ! liquid potential temperature
-        rtm(1:nzmax)     = 0.0     ! total water mixing ratio
-        wprtp(1:nzmax)   = 0.0     ! w'rt'
-        wpthlp(1:nzmax)  = 0.0     ! w'thl'
-        wp3(1:nzmax)     = 0.0     ! w'^3
-        rtp2(1:nzmax)    = 0.0     ! rt'^2
-        thlp2(1:nzmax)   = 0.0     ! thl'^2
-        rtpthlp(1:nzmax) = 0.0     ! rt'thl'
+        thlm(1:nzmax)    = 0.0         ! liquid potential temperature
+        rtm(1:nzmax)     = 0.0         ! total water mixing ratio
+        wprtp(1:nzmax)   = 0.0         ! w'rt'
+        wpthlp(1:nzmax)  = 0.0         ! w'thl'
+        wp3(1:nzmax)     = 0.0         ! w'^3
+        rtp2(1:nzmax)    = rttol**2    ! rt'^2
+        thlp2(1:nzmax)   = thltol**2   ! thl'^2
+        rtpthlp(1:nzmax) = 0.0         ! rt'thl'
  
         p(1:nzmax)     = 0.0    ! pressure (Pa)
         exner(1:nzmax) = 0.0    ! exner
