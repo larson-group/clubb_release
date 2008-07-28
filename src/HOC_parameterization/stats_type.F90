@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_type.F90,v 1.3 2008-07-28 19:16:20 faschinj Exp $
+! $Id: stats_type.F90,v 1.4 2008-07-28 21:40:53 faschinj Exp $
 module stats_type
 #ifdef STATS 
 !     Description:
@@ -150,17 +150,18 @@ module stats_type
    grid_kind ! Which grid the variable is located on (zt, zm, or sfc).
   
    if ( var_index > 0 ) then
-      grid_kind%x( grid_level, var_index ) =  & 
-        grid_kind%x( grid_level, var_index ) + value
 
-      grid_kind%n( grid_level, var_index ) =  & 
-         grid_kind%n( grid_level, var_index ) + 1
+      grid_kind%x( grid_level, var_index ) = grid_kind%x( grid_level, var_index ) + value
+
+      grid_kind%n( grid_level, var_index ) = grid_kind%n( grid_level, var_index ) + 1
+
    end if
 
    end subroutine stat_update_var_pt
        
 !---------------------------------------------------------------------
-   subroutine stat_begin_update( var_index, value, grid_kind )
+   subroutine stat_begin_update( var_index, value, &
+                                 grid_kind )
 !
 !
 !        Description: This begins an update of the value of a 
@@ -345,7 +346,8 @@ module stats_type
    end subroutine stat_end_update_pt
    
 !---------------------------------------------------------------------
-   subroutine stat_modify( var_index, value, grid_kind )
+   subroutine stat_modify( var_index, value, & 
+                           grid_kind )
 !
 !        Description: This modifies the value of a statistics variable 
 !        located at var_index in the grid. It does not increment the
