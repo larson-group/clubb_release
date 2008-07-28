@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F90,v 1.6 2008-07-28 17:45:57 dschanen Exp $
+! $Id: diag_var.F90,v 1.7 2008-07-28 20:20:14 faschinj Exp $
 !===============================================================================
 module diagnose_variances
 
@@ -1153,7 +1153,7 @@ module diagnose_variances
         
 #ifdef STATS
         use stats_type, only: & 
-            stat_modify_pt, stat_update_var_pt ! Procedure(s)
+            stat_modify_pt, stat_begin_update_pt, stat_update_var_pt ! Procedure(s)
 
         use stats_variables, only: & 
             ivp2_ta,  & ! Variable(s)
@@ -1304,8 +1304,8 @@ module diagnose_variances
               ! of term dp1 for up2 or vp2.
             endif
 
-            call stat_modify_pt( ixapxbp_dp1, k,  & 
-                    term_pr1( C4, 0.0, xbp2(k), wp2(k), taum(k) ), zm )
+            call stat_begin_update_pt( ixapxbp_dp1, k,  & 
+                    -term_pr1( C4, 0.0, xbp2(k), wp2(k), taum(k) ), zm )
 
 
             if ( ixapxbp_pr1 > 0 ) then
