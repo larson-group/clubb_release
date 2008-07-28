@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F90,v 1.6 2008-07-24 14:13:55 faschinj Exp $
+! $Id: hoc.F90,v 1.7 2008-07-28 17:45:42 dschanen Exp $
 
 module hoc
 
@@ -163,6 +163,9 @@ module hoc
     use array_index, only: iisclr_rt, iisclr_thl, iiCO2 ! Variables
 
     use microphys_driver, only: init_microphys ! Subroutine
+
+    use model_flags, only: LH_on, local_kk, & ! Constants
+      lpos_def, lhole_fill, lsingle_C2_Skw, lgamma_Skw, lbyteswap_io
 
 #ifdef STATS
     use stats_variables, only: lstats_last ! Variable(s
@@ -377,8 +380,25 @@ module hoc
       print *, "--------------------------------------------------"
       print *, "Model Settings"
       print *, "--------------------------------------------------"
+      print *, "Preprocessing directives:"
+#ifdef NETCDF
+      print *, "-DNETCDF enabled"
+#else
+      print *, "-DNETCDF disabled"
+#endif
+#ifdef COAMPS_MICRO
+      print *, "-DCOAMPS_MICRO enabled"
+#else
+      print *, "-DCOAMPS_MICRO disabled"
+#endif
+#ifdef TUNER
+      print *, "-DTUNER enabled"
+#else
+      print *, "-DTUNER disabled"
+#endif
 
     ! Pick some default values for model_setting
+      print *, "&model_setting:"
       print *,"runtype = ", runtype
       print *,"nzmax = ", nzmax
       print *, "grid_type = ", grid_type
@@ -430,11 +450,21 @@ module hoc
       print *, "sclr_tol = ", sclr_tol(1:sclr_dim)
 
       ! Pick some default values for stats_setting
+      print *, "&stats_setting:"
       print *, "lstats = ", lstats
       print *, "fname_prefix = ", fname_prefix
       print *, "stats_fmt = ", stats_fmt
       print *, "stats_tsamp = ", stats_tsamp
       print *, "stats_tout = ", stats_tout
+
+      print *, "Code constants:"
+      print *, "LH_on = ", LH_on      
+      print *, "local_kk = ", local_kk   
+      print *, "lpos_def = ", lpos_def   
+      print *, "lhole_fill = ", lhole_fill
+      print *, "lsingle_C2_Skw = ", lsingle_C2_Skw
+      print *, "lgamma_Skw = ", lgamma_Skw
+      print *, "lbyteswap_io = ", lbyteswap_io
 
       print *, "--------------------------------------------------"
 
@@ -742,7 +772,7 @@ module hoc
         real, intent(in) :: psfc ! Pressure at the surface [Pa]
 
         ! Output
-        real, dimension(gr%nnzp), intent(out) ::  & 
+        real, dimension(gr%nnzp), intent(inout) ::  & 
         thlm,            & ! Theta l mean                  [K] 
         rtm,             & ! Total water mixing ratio      [kg/kg]
         um,              & ! u wind                        [m/s]
