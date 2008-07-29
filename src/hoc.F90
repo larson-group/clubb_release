@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F90,v 1.8 2008-07-28 19:20:22 dschanen Exp $
+! $Id: hoc.F90,v 1.9 2008-07-29 18:26:20 faschinj Exp $
 
 module hoc
 
@@ -125,7 +125,7 @@ module hoc
     use prognostic_variables, only:  & 
       Tsfc, psfc, SE, LE, thlm, rtm,     & ! Variable(s)
       um, vm, wp2, rcm, wmt, wmm, exner, & 
-      taum, p, rhom, upwp, vpwp, wpthlp, & 
+      taum, p_in_Pa, rhom, upwp, vpwp, wpthlp, & 
       rhot, wprtp, wpthlp_sfc, wprtp_sfc, & 
       upwp_sfc, vpwp_sfc, thlm_forcing, & 
       rtm_forcing, up2, vp2, wp3, rtp2, & 
@@ -518,7 +518,7 @@ module hoc
                            um, vm, ug, vg, wp2, & 
                            rcm,  & 
                            wmt, wmm, em, exner, & 
-                           taut, taum, thvm, p, & 
+                           taut, taum, thvm, p_in_Pa, & 
                            rhot, rhom, Lscale, & 
                            Kht, Khm, um_ref, vm_ref, & 
                            sclrm, edsclrm )
@@ -635,7 +635,7 @@ module hoc
              ( i, dt, fcor, & 
                thlm_forcing, rtm_forcing, wmm, wmt, & 
                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & 
-               p, rhom, rhot, exner, & 
+               p_in_Pa, rhom, rhot, exner, & 
                um, vm, upwp, vpwp, up2, vp2, & 
                thlm, rtm, wprtp, wpthlp, wp2, wp3, & 
                rtp2, thlp2, rtpthlp, & 
@@ -1439,7 +1439,7 @@ module hoc
         use diagnostic_variables, only: wpedsclrp ! Passive scalar variables
         
         use prognostic_variables, only: rtm_forcing, thlm_forcing,  & ! Variable(s)
-                                  wmt, wmm, rhot, rtm, thlm, p, & 
+                                  wmt, wmm, rhot, rtm, thlm, p_in_Pa, & 
                                   exner, rcm, rhom, um, psfc, vm, & 
                                   upwp_sfc, vpwp_sfc, Tsfc, & 
                                   wpthlp_sfc, SE, LE, wprtp_sfc, cf
@@ -1667,7 +1667,7 @@ module hoc
          case ( "mpace_a" ) ! mpace_a arctic stratus case
            call mpace_a_tndcy & 
                 ( time_current, time_initial, rlat, & 
-                  rhot, p, rcm, & 
+                  rhot, p_in_Pa, rcm, & 
                   wmt, wmm, thlm_forcing, rtm_forcing, & 
                   Ncnm, Ncm, Frad, radht, um_ref, vm_ref, & 
                   sclrm_forcing )
@@ -1675,7 +1675,7 @@ module hoc
          case ( "mpace_b" ) ! mpace_b arctic stratus case
            call mpace_b_tndcy & 
                 ( time_current, time_initial, rlat, & 
-                  rhot,  p, thvm, rcm, & 
+                  rhot,  p_in_Pa, thvm, rcm, & 
                   wmt, wmm, thlm_forcing, rtm_forcing, & 
                   Ncnm, Ncm, Frad, radht, & 
                   sclrm_forcing )
@@ -1878,7 +1878,7 @@ module hoc
         if ( kk_rain .or. lcoamps_micro .or. licedfs ) then
           call advance_microphys & 
                ( runtype, dt, time_current, & 
-                 thlm, p, exner, rhot, rhom, rtm, rcm, Ncm,  & 
+                 thlm, p_in_Pa, exner, rhot, rhom, rtm, rcm, Ncm,  & 
                  pdf_parms, wmt, wmm, Khm, AKm_est, Akm,  & 
                  Ncnm, Nim, & 
                  hydromet, & 
@@ -1938,8 +1938,8 @@ module hoc
             print *, "cf before BUGSrad is NaN" 
           end if
 
-          if ( isnan2d( p ) ) then
-            print *, "p before BUGSrad is NaN" 
+          if ( isnan2d( p_in_Pa ) ) then
+            print *, "p_in_Pa before BUGSrad is NaN" 
           end if
 
           if ( isnan2d( exner ) ) then
@@ -1957,7 +1957,7 @@ module hoc
           ! Check for impossible negative values
           if ( clubb_at_debug_level( 2 ) ) then
             call rad_check( thlm, rcm, rtm, ricem, & 
-                            cf, p, exner, rhom )
+                            cf, p_in_Pa, exner, rhom )
           end if
 
           ! Initially we will set this to a constant for testing purposes
@@ -1978,7 +1978,7 @@ module hoc
                             rlat, rlon,                      & ! In
                             day, month, year, time_current,  & ! In
                             thlm, rcm, rtm, rsnowm, ricem,   & ! In
-                            cf, p, zt2zm( p ), exner, rhom,  & ! In
+                            cf, p_in_Pa, zt2zm( p_in_Pa ), exner, rhom,  & ! In
                             radht, Frad,                     & ! Out
                             thlm_forcing )                  ! In/Out
           

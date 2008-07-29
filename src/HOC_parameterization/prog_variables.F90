@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: prog_variables.F90,v 1.3 2008-07-28 00:18:04 griffinb Exp $
+! $Id: prog_variables.F90,v 1.4 2008-07-29 18:26:20 faschinj Exp $
         module prognostic_variables
 
 !       This module contains definitions of all prognostic
@@ -42,7 +42,7 @@
 !$omp   threadprivate(wp3, rtp2, thlp2, rtpthlp)
 
         real, target, allocatable, dimension(:), public :: & 
-        p,            & ! Pressure (Pa) on thermodynamic points    [Pa]
+        p_in_Pa,      & ! Pressure (Pa) on thermodynamic points    [Pa]
         exner,        & ! Exner function = ( p / p0 ) ** kappa     [-]
         rhot,         & ! Density                                  [kg/m^3]
         rhom,         & ! Density                                  [kg/m^3]
@@ -152,7 +152,7 @@
         allocate( thlp2(1:nzmax) )     ! thl'^2
         allocate( rtpthlp(1:nzmax) )   ! rt'thlp'
 
-        allocate( p(1:nzmax) )         ! pressure (pascals)
+        allocate( p_in_Pa(1:nzmax) )         ! pressure (pascals)
         allocate( exner(1:nzmax) )     ! exner function
         allocate( rhot(1:nzmax) )      ! density: t points
         allocate( rhom(1:nzmax) )      ! density: m points
@@ -211,7 +211,7 @@
         thlp2(1:nzmax)   = thltol**2   ! thl'^2
         rtpthlp(1:nzmax) = 0.0         ! rt'thl'
  
-        p(1:nzmax)     = 0.0    ! pressure (Pa)
+        p_in_Pa(1:nzmax)= 0.0    ! pressure (Pa)
         exner(1:nzmax) = 0.0    ! exner
         rhot(1:nzmax)  = 0.0    ! density on thermo. levels
         rhom(1:nzmax)  = 0.0    ! density on moment. levels
@@ -285,7 +285,7 @@
         deallocate( thlp2 )     ! thl'^2
         deallocate( rtpthlp )   ! rt'thl'
 
-        deallocate( p )         ! pressure
+        deallocate( p_in_Pa )   ! pressure
         deallocate( exner )     ! exner
         deallocate( rhot )      ! density: t points
         deallocate( rhom )      ! density: m points
