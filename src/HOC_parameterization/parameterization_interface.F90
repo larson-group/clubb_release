@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F90,v 1.7 2008-07-28 17:45:57 dschanen Exp $
+! $Id: parameterization_interface.F90,v 1.8 2008-07-29 18:14:38 faschinj Exp $
 !-----------------------------------------------------------------------
 module hoc_parameterization_interface
 
@@ -28,7 +28,7 @@ module hoc_parameterization_interface
                   ( iter, dt, fcor, & 
                     thlm_forcing, rtm_forcing, wmm, wmt, & 
                     wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & 
-                    p, rhom, rhot, exner, & 
+                    p_in_Pa, rhom, rhot, exner, & 
                     um, vm, upwp, vpwp, up2, vp2, & 
                     thlm, rtm, wprtp, wpthlp, wp2, wp3, & 
                     rtp2, thlp2, rtpthlp, & 
@@ -49,6 +49,7 @@ module hoc_parameterization_interface
 !-----------------------------------------------------------------------
 
        ! Modules to be included
+
        use constants, only: & 
            wtol,  & ! Variable(s)
            emin, & 
@@ -58,7 +59,9 @@ module hoc_parameterization_interface
            Cp, & 
            Lv, & 
            ep1, & 
-           eps 
+           eps, &
+           fstderr
+
        use parameters, only: & 
            gamma_coefc,  & ! Variable(s)
            gamma_coefb, & 
@@ -68,18 +71,22 @@ module hoc_parameterization_interface
            c_K, & 
            ts_nudge, & 
            sclr_dim
+
        use model_flags, only: & 
            LH_on,  & ! Variable(s)
            lKhm_aniso, & 
            luv_nudge, &
            lgamma_Skw
+
        use grid_class, only: & 
            gr,  & ! Variable(s)
            zm2zt,  & ! Procedure(s)
            zt2zm, & 
            ddzm
+
        use numerical_check, only: & 
            parameterization_check ! Procedure(s)
+
        use diagnostic_variables, only: & 
            Skwt,  & ! Varible(s)
            Skwm, & 
@@ -179,6 +186,10 @@ module hoc_parameterization_interface
        use permute_height_time_mod, only:  & 
            permute_height_time ! Procedure
 
+       use T_in_K_mod, only: &
+          ! Read values from namelist
+           thlm2T_in_K ! Procedure
+
 #ifdef STATS
        use stats_variables, only: & 
            zm,  & ! Variable(s)
@@ -190,8 +201,7 @@ module hoc_parameterization_interface
            stats_accumulate ! Procedure
 
        use stats_type, only: & 
-           stat_update_var,  & ! Procedure(s)
-           stat_update_var_pt, & 
+           stat_update_var_pt, & ! Procedure(s)
            stat_begin_update, & 
            stat_modify, & 
            stat_end_update
@@ -223,7 +233,7 @@ module hoc_parameterization_interface
        rtm_forcing,    & ! r_t forcing.            [(kg/kg)/s] 
        wmm,            & ! wm on moment. grid.     [m/s]
        wmt,            & ! wm on thermo. grid.     [m/s]
-       p,              & ! Pressure.               [Pa] 
+       p_in_Pa,        & ! Pressure.               [Pa] 
        rhom,           & ! Density on moment. grid [kg/m^3]
        rhot,           & ! Density on thermo. grid [kg/m^3] 
        exner          ! Exner function.         [-]
@@ -254,7 +264,7 @@ module hoc_parameterization_interface
        thlp2,    & ! th_l'^2.                      [K^2]
        rtpthlp,  & ! r_t' th_l'.                   [(kg K)/kg]
        taum,     & ! Tau on moment. grid.          [s]
-       rcm      ! Liquid water mixing ratio.    [kg/kg]
+       rcm         ! Liquid water mixing ratio.    [kg/kg]
 
        ! Needed for output for host models
        real, intent(inout), dimension(gr%nnzp) ::  & 
@@ -266,14 +276,14 @@ module hoc_parameterization_interface
        ! Optional Input Variables
        real, intent(in),  dimension(sclr_dim) ::  & 
        wpsclrp_sfc,   & ! Scalar flux at surface           [units m/s]
-       wpedsclrp_sfc ! Eddy-Scalar flux at surface      [units m/s]
+       wpedsclrp_sfc    ! Eddy-Scalar flux at surface      [units m/s]
 
        ! Optional Input/Output Variables
        real, intent(inout), dimension(gr%nnzp,sclr_dim) :: & 
-       sclrm,           & ! Passive scalar mean.           [units vary]
-       sclrm_forcing,   & ! Passive scalar forcing.        [units vary/s]
-       edsclrm,         & ! Eddy passive scalar mean.      [units vary]
-       wpsclrp         ! w'sclr'                        [units vary m/s]
+       sclrm,         & ! Passive scalar mean.           [units vary]
+       sclrm_forcing, & ! Passive scalar forcing.        [units vary/s]
+       edsclrm,       & ! Eddy passive scalar mean.      [units vary]
+       wpsclrp          ! w'sclr'                        [units vary m/s]
 
 
        ! Local Variables
@@ -316,14 +326,14 @@ module hoc_parameterization_interface
 !-------- Test input variables ----------------------------------------
        if ( clubb_at_debug_level( 2 ) ) then
        call parameterization_check & 
-            ( thlm_forcing, rtm_forcing, wmm, wmt, p, rhom,      & ! intent(in)
+            ( thlm_forcing, rtm_forcing, wmm, wmt, p_in_Pa, rhom,& ! intent(in)
               rhot, exner, wpthlp_sfc, wprtp_sfc,                & ! intent(in)
               upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,            & ! intent(in)
               up2, vp2, rtm, wprtp, thlm,                        & ! intent(in)
               wpthlp, wp2, wp3, Scm, rtp2, thlp2,                & ! intent(in)
               rtpthlp, taum, rcm, cf, "beginning of ",           & ! intent(in)
               wpsclrp_sfc, wpedsclrp_sfc,                        & ! intent(in)
-              sclrm, sclrm_forcing, edsclrm )                   ! intent(in)
+              sclrm, sclrm_forcing, edsclrm )                      ! intent(in)
        end if
 !-----------------------------------------------------------------------
 
@@ -374,13 +384,13 @@ module hoc_parameterization_interface
 !      Surface effects should not be included with any case where the lowest
 !      level is not the ground level.  Brian Griffin.  December 22, 2005.
        IF ( gr%zm(1) == 0.0 ) THEN
-          call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1),     & ! intent(in)
-                        ustar, wpsclrp(1,1:sclr_dim),              & ! intent(in)
-                        wp2(1), up2(1), vp2(1),                    & ! intent(out)
-                        thlp2(1), rtp2(1), rtpthlp(1), err_code,   & ! intent(out)
-                        sclrp2(1,1:sclr_dim),                      & ! intent(out)
-                        sclrprtp(1,1:sclr_dim),                    & ! intent(out) 
-                        sclrpthlp(1,1:sclr_dim) )                 ! intent(out)
+          call sfc_var( upwp(1), vpwp(1), wpthlp(1), wprtp(1),   & ! intent(in)
+                        ustar, wpsclrp(1,1:sclr_dim),            & ! intent(in)
+                        wp2(1), up2(1), vp2(1),                  & ! intent(out)
+                        thlp2(1), rtp2(1), rtpthlp(1), err_code, & ! intent(out)
+                        sclrp2(1,1:sclr_dim),                    & ! intent(out)
+                        sclrprtp(1,1:sclr_dim),                  & ! intent(out) 
+                        sclrpthlp(1,1:sclr_dim) )                  ! intent(out)
           ! Subroutine may produce NaN values, and if so, exit
           ! gracefully.
           ! Joshua Fasching March 2008
@@ -422,7 +432,7 @@ module hoc_parameterization_interface
                       rtp2, thlp2, rtpthlp,                      & ! intent(inout)
                       up2, vp2,                                  & ! intent(inout)
                       err_code,                                  & ! intent(out)
-                      sclrp2, sclrprtp, sclrpthlp  )            ! intent(out)
+                      sclrp2, sclrprtp, sclrpthlp  )               ! intent(out)
 
        !----------------------------------------------------------------
        ! Covariance clipping for wprtp, wpthlp, and wpsclrp after 
@@ -444,7 +454,7 @@ module hoc_parameterization_interface
        if ( lstats_samp ) then
           ! wprtp total time tendency (effect of clipping)
           call stat_begin_update( iwprtp_bt, real( wprtp / dt ),  & ! intent(in)
-                   zm )                                          ! intent(inout)
+                   zm )                                             ! intent(inout)
        endif
 #endif /*STATS*/
 
@@ -513,21 +523,20 @@ module hoc_parameterization_interface
        ! Changed from a logical flag to an integer indicating nature of
        ! error.
        ! Joshua Fasching March 2008
-       if ( lapack_error(err_code)) return
+       if ( lapack_error( err_code ) ) return
 
        if ( lgamma_Skw ) then
        !----------------------------------------------------------------
        ! Compute gamma as a function of Skw  - 14 April 06 dschanen
        !----------------------------------------------------------------
 
-        gamma_Skw_fnc  & 
-        = gamma_coefb + (gamma_coef-gamma_coefb) & 
-          *exp( -(1.0/2.0) * (Skwm/gamma_coefc)**2 )
+          gamma_Skw_fnc = gamma_coefb + (gamma_coef-gamma_coefb) & 
+            *exp( -(1.0/2.0) * (Skwm/gamma_coefc)**2 )
 
-        else
+       else
           gamma_Skw_fnc = gamma_coef
 
-        end if
+       end if
 
        !----------------------------------------------------------------
        ! Compute Sc with new formula from Vince
@@ -570,7 +579,7 @@ module hoc_parameterization_interface
 
        do k = 2, gr%nnzp, 1
          call pdf_closure_new & 
-         ( p(k), exner(k), wmt(k), zm2zt(wp2, k), wp3(k), Sct(k),       & ! intent(in)
+         ( p_in_Pa(k), exner(k), wmt(k), zm2zt(wp2, k), wp3(k), Sct(k), & ! intent(in)
            rtm(k), zm2zt(rtp2, k), zm2zt( wprtp, k ),                   & ! intent(in)
            thlm(k), zm2zt( thlp2, k ), zm2zt( wpthlp, k ),              & ! intent(in)
            zm2zt(rtpthlp, k), sclrm(k,:), sclr_tmp1(k,:),               & ! intent(in)
@@ -582,7 +591,7 @@ module hoc_parameterization_interface
            rcp2(k), pdf_parms(k, :), crt1,                              & ! intent(out)
            crt2, cthl1, cthl2, err_code,                                & ! intent(out)
            wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp(k,:),              & ! intent(out)
-           wpsclrpthlp(k,:), sclrprcp(k,:), wp2sclrp(k,:) )            ! intent(out)
+           wpsclrpthlp(k,:), sclrprcp(k,:), wp2sclrp(k,:) )               ! intent(out)
 
         ! Subroutine may produce NaN values, and if so, exit
         ! gracefully.
@@ -658,9 +667,8 @@ module hoc_parameterization_interface
        ! Compute mixing length
        !----------------------------------------------------------------
 
-       call compute_length & 
-            ( thvm, thlm, rtm, rcm, em, p, exner,  & ! intent(in)
-              Lscale, err_code )                  ! intent(out)
+       call compute_length( thvm, thlm, rtm, rcm, em, p_in_Pa, exner,  & ! intent(in)
+                            Lscale, err_code )                           ! intent(out)
        
        ! Subroutine may produce NaN values, and if so, exit
        ! gracefully.
@@ -711,11 +719,7 @@ module hoc_parameterization_interface
 
 
        ! Store the saturation mixing ratio for output purposes.  Brian
-       do k = 1, gr%nnzp, 1
-         rsat(k) = & 
-         sat_mixrat_liq( p(k),  & 
-              (thlm(k)+(Lv/(Cp*exner(k)))*rcm(k))*exner(k) )
-       end do
+       rsat = sat_mixrat_liq( p_in_Pa, thlm2T_in_K( thlm, exner, rcm ) ) 
 
        !----------------------------------------------------------------
        ! Advance rtm/wprtp and thlm/wpthlp one time step
@@ -728,7 +732,7 @@ module hoc_parameterization_interface
                               sclrpthvp, sclrm_forcing, sclrp2,  & ! intent(in)
                               rtm, wprtp, thlm, wpthlp,          & ! intent(inout)
                               err_code,                          & ! intent(inout)
-                              sclrm, wpsclrp )                  ! intent(inout)
+                              sclrm, wpsclrp )                     ! intent(inout)
 
        ! Wrapped LAPACK procedures may report errors, and if so, exit
        ! gracefully.
@@ -742,7 +746,7 @@ module hoc_parameterization_interface
           if ( rtm(k) < rcm(k) ) then
 
             if ( clubb_at_debug_level(1) ) then
-              print *, 'rtm < rcm in timestep_mixing at k=', k, '.', & 
+              write(fstderr,*) 'rtm < rcm in timestep_mixing at k=', k, '.', & 
                       '  Clipping rcm.'
             end if ! clubb_at_debug_level(1)
 
@@ -756,11 +760,10 @@ module hoc_parameterization_interface
        ! Advance wp2/wp3 one timestep
        !----------------------------------------------------------------
 
-       call timestep_wp23 & 
-            ( dt, Scm, wmm, wmt, wpthvp, wp2thvp,        & ! intent(in)
-              um, vm, upwp, vpwp, up2, vp2, Khm, Kht,    & ! intent(in)
-              taum, taut, Skwm, Skwt, pdf_parms(:, 13),  & ! intent(in)
-              wp2, wp3, err_code )                      ! intent(inout)
+       call timestep_wp23( dt, Scm, wmm, wmt, wpthvp, wp2thvp,        & ! intent(in)
+                           um, vm, upwp, vpwp, up2, vp2, Khm, Kht,    & ! intent(in)
+                           taum, taut, Skwm, Skwt, pdf_parms(:, 13),  & ! intent(in)
+                           wp2, wp3, err_code )                         ! intent(inout)
 
        !----------------------------------------------------------------
        ! Covariance clipping for wprtp, wpthlp, and wpsclrp after
@@ -782,19 +785,19 @@ module hoc_parameterization_interface
        if ( lstats_samp ) then
           ! wprtp total time tendency (effect of clipping)
           call stat_modify( iwprtp_bt, real( -wprtp / dt ),  & ! intent(in)
-                            zm )                            ! intent(inout)
+                            zm )                               ! intent(inout)
        endif
 #endif /*STATS*/
 
        call covariance_clip( "wprtp", .false.,              & ! intent(in)
                              .true., dt, wp2, rtp2,         & ! intent(in)
-                             wprtp )                       ! intent(inout)
+                             wprtp )                          ! intent(inout)
 
 #ifdef STATS
        if ( lstats_samp ) then
           ! wprtp total time tendency (effect of clipping)
           call stat_end_update( iwprtp_bt, real( wprtp / dt ),  & ! intent(in)
-                                zm )                           ! intent(inout)
+                                zm )                              ! intent(inout)
        endif
 #endif /*STATS*/
 
@@ -814,19 +817,19 @@ module hoc_parameterization_interface
        if ( lstats_samp ) then
           ! wpthlp total time tendency (effect of clipping)
           call stat_modify( iwpthlp_bt, real( -wpthlp / dt ),  & ! intent(in)
-                            zm )                              ! intent(inout)
+                            zm )                                 ! intent(inout)
        endif
 #endif /*STATS*/
 
        call covariance_clip( "wpthlp", .false.,                & ! intent(in)
                              .true., dt, wp2, thlp2,           & ! intent(in) 
-                             wpthlp )                         ! intent(inout)
+                             wpthlp )                            ! intent(inout)
 
 #ifdef STATS
        if ( lstats_samp ) then
           ! wpthlp total time tendency (effect of clipping)
           call stat_end_update( iwpthlp_bt, real( wpthlp / dt ),  & ! intent(in)
-                                zm )                             ! intent(inout)
+                                zm )                                ! intent(inout)
        endif
 #endif /*STATS*/
 
@@ -843,7 +846,7 @@ module hoc_parameterization_interface
        do i = 1, sclr_dim, 1
           call covariance_clip( "wpsclrp", .false.,                 & ! intent(in)
                                 .true., dt, wp2(:), sclrp2(:,i),    & ! intent(in)
-                                wpsclrp(:,i) )                     ! intent(inout)
+                                wpsclrp(:,i) )                        ! intent(inout)
        end do
 
 
@@ -863,15 +866,18 @@ module hoc_parameterization_interface
            call compute_um_edsclrm( "edsclr", wpedsclrp(1,i),     & ! intent(in)
                                     edsclrmt(:,i), Khm, dt,       & ! intent(in)
                                     edsclrm(:,i), wpedsclrp(:,i), & ! intent(inout)
-                                    err_code )   ! intent(out)
+                                    err_code )                      ! intent(out)
 
 
          end do
 
          ! Set boundary condition as in rt
+
          edsclrm(1,1:sclr_dim) = edsclrm(2,1:sclr_dim)
-         if ( lapack_error(err_code) ) return
-       end if ! sclr_dim > 0
+
+         if ( lapack_error( err_code ) ) return
+
+        end if ! sclr_dim > 0
 
 
        !----------------------------------------------------------------
@@ -880,12 +886,12 @@ module hoc_parameterization_interface
 
        call compute_uv_tndcy & 
           ( "um", um, wmt, fcor, vm, vg, implemented,       & ! intent(in)
-             umt )                                         ! intent(out)
+             umt )                                            ! intent(out)
 
        ! dtmain to dt -dschanen
        call compute_um_edsclrm( "um", upwp(1), umt, Khm, dt,  & ! intent(in)
                                 um, upwp,                     & ! intent(inout)
-                                err_code )             ! intent(out)
+                                err_code )                      ! intent(out)
 
        um(1)       = ( ( um(3)-um(2) )/( gr%zt(3)-gr%zt(2) ) ) & 
                     * ( gr%zt(1)-gr%zt(2) ) + um(2)
@@ -905,7 +911,7 @@ module hoc_parameterization_interface
 
        call compute_um_edsclrm( "vm", vpwp(1), vmt, Khm, dt,  & ! intent(in)
                                 vm, vpwp,                     & ! intent(inout)
-                                err_code )             ! intent(out)
+                                err_code )                      ! intent(out)
 
        vm(1)       = ( ( vm(3)-vm(2) )/( gr%zt(3)-gr%zt(2) ) ) & 
                     * ( gr%zt(1)-gr%zt(2) ) + vm(2)
@@ -949,7 +955,7 @@ module hoc_parameterization_interface
        call stats_accumulate & 
             ( um, vm, upwp, vpwp, up2, vp2, thlm,                   & ! intent(in)
               rtm, wprtp, wpthlp, wp2, wp3, rtp2, thlp2, rtpthlp,   & ! intent(in)
-              p, exner, rhot, rhom,                                 & ! intent(in)
+              p_in_Pa, exner, rhot, rhom,                           & ! intent(in)
               wmt, Scm, taum, rcm, cf,                              & ! intent(in)
               sclrm, edsclrm, sclrm_forcing, wpsclrp )                ! intent(in)
 
@@ -957,14 +963,14 @@ module hoc_parameterization_interface
 
        if ( clubb_at_debug_level( 2 ) ) then
          call parameterization_check & 
-              ( thlm_forcing, rtm_forcing, wmm, wmt, p, rhom,   & ! intent(in)
-                rhot, exner, wpthlp_sfc, wprtp_sfc,             & ! intent(in)
-                upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,         & ! intent(in)
-                up2, vp2, rtm, wprtp, thlm,                     & ! intent(in)
-                wpthlp, wp2, wp3, Scm, rtp2, thlp2,             & ! intent(in)
-                rtpthlp, taum, rcm, cf, "end of ",              & ! intent(in)
-                wpsclrp_sfc, wpedsclrp_sfc,                     & ! intent(in)
-                sclrm, sclrm_forcing, edsclrm )                   ! intent(in)
+              ( thlm_forcing, rtm_forcing, wmm, wmt, p_in_Pa, rhom, & ! intent(in)
+                rhot, exner, wpthlp_sfc, wprtp_sfc,                 & ! intent(in)
+                upwp_sfc, vpwp_sfc, um, upwp, vm, vpwp,             & ! intent(in)
+                up2, vp2, rtm, wprtp, thlm,                         & ! intent(in)
+                wpthlp, wp2, wp3, Scm, rtp2, thlp2,                 & ! intent(in)
+                rtpthlp, taum, rcm, cf, "end of ",                  & ! intent(in)
+                wpsclrp_sfc, wpedsclrp_sfc,                         & ! intent(in)
+                sclrm, sclrm_forcing, edsclrm )                       ! intent(in)
        end if
 
 !-----------------------------------------------------------------------
@@ -1038,8 +1044,8 @@ module hoc_parameterization_interface
         call lh_sampler( n, nt, dvar, p_matrix,       & ! intent(in)
                          cf(k), pdf_parms(k, :),      & ! intent(in)
                          crt1, crt2, cthl1, cthl2,    & ! intent(in)
-                         rrainm(k),                      & ! intent(in)
-                         X_u, X_nl, sflag )          ! intent(out)
+                         rrainm(k),                   & ! intent(in)
+                         X_u, X_nl, sflag )             ! intent(out)
 
 !       print *, 'hoc.F: got past lh_sampler'
 
@@ -1047,7 +1053,7 @@ module hoc_parameterization_interface
         call micro_calcs( n, dvar, X_u, X_nl, sflag,                  & ! intent(in)
                           pdf_parms(k,:),                             & ! intent(in)
                           AKm_est(k), AKm(k), AKstd(k), AKstd_cld(k), & ! intent(out)
-                          AKm_rcm(k), AKm_rcc(k), rcm_est(k) )       ! intent(out)
+                          AKm_rcm(k), AKm_rcc(k), rcm_est(k) )          ! intent(out)
 
 !       print*, 'k, AKm_est=', k, AKm_est(k)
 !       print*, 'k, AKm=', k, AKm(k)
