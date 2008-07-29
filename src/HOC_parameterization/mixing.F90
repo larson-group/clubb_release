@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F90,v 1.3 2008-07-28 19:34:42 faschinj Exp $
+! $Id: mixing.F90,v 1.4 2008-07-29 16:44:03 nielsenb Exp $
 !===============================================================================
 module mixing
 
@@ -28,9 +28,9 @@ private :: mixing_lhs, &
 
 ! Parameter Constants
 integer, parameter, private :: & 
-nsub = 2,   & ! Number of subdiagonals in the LHS matrix
-nsup = 2,   & ! Number of superdiagonals in the LHS matrix
-nrhs = 1   ! Number of RHS vectors
+  nsub = 2,   & ! Number of subdiagonals in the LHS matrix
+  nsup = 2,   & ! Number of superdiagonals in the LHS matrix
+  nrhs = 1   ! Number of RHS vectors
 
 
 contains
@@ -106,59 +106,59 @@ intrinsic :: exp
 
 ! Input Variables
 real(kind=time_precision), intent(in) ::  & 
-dt            ! Timestep                                 [s]
+  dt            ! Timestep                                 [s]
 
 real, intent(in), dimension(gr%nnzp) :: & 
-Scm,           & ! Sc on momentum levels                    [-]
-wmm,           & ! w wind component on momentum levels      [m/s]
-wmt,           & ! w wind component on thermodynamic levels [m/s]
-wp2,           & ! w'^2 (momentum levels)                   [m^2/s^2]
-wp3,           & ! w'^3 (thermodynamic levels)              [m^3/s^3]
-Kht,           & ! Eddy diffusivity on thermodynamic levels [m^2/s]
-taum,          & ! Time-scale tau on momentum levels        [s]
-Skwm,          & ! Skewness of w on momentum levels         [-]
-rtpthvp,       & ! r_t'th_v' (momentum levels)              [(kg/kg) K]
-rtm_forcing,   & ! r_t forcing (thermodynamic levels)       [(kg/kg)/s]
-thlpthvp,      & ! th_l'th_v' (momentum levels)             [K^2]
-thlm_forcing,  & ! th_l forcing (thermodynamic levels)      [K/s]
+  Scm,           & ! Sc on momentum levels                    [-]
+  wmm,           & ! w wind component on momentum levels      [m/s]
+  wmt,           & ! w wind component on thermodynamic levels [m/s]
+  wp2,           & ! w'^2 (momentum levels)                   [m^2/s^2]
+  wp3,           & ! w'^3 (thermodynamic levels)              [m^3/s^3]
+  Kht,           & ! Eddy diffusivity on thermodynamic levels [m^2/s]
+  taum,          & ! Time-scale tau on momentum levels        [s]
+  Skwm,          & ! Skewness of w on momentum levels         [-]
+  rtpthvp,       & ! r_t'th_v' (momentum levels)              [(kg/kg) K]
+  rtm_forcing,   & ! r_t forcing (thermodynamic levels)       [(kg/kg)/s]
+  thlpthvp,      & ! th_l'th_v' (momentum levels)             [K^2]
+  thlm_forcing,  & ! th_l forcing (thermodynamic levels)      [K/s]
 ! Added for clipping by Vince Larson 29 Sep 2007
-rtp2,          & ! r_t'^2 (momentum levels)                 [(kg/kg)^2]
-thlp2         ! th_l'^2 (momentum levels)                [K^2]
+  rtp2,          & ! r_t'^2 (momentum levels)                 [(kg/kg)^2]
+  thlp2         ! th_l'^2 (momentum levels)                [K^2]
 ! End of Vince Larson's addition.
 
 logical, intent(in) ::  & 
-implemented   ! Flag for CLUBB being implemented in a larger model.
+  implemented   ! Flag for CLUBB being implemented in a larger model.
  
      
 ! Additional variables for passive scalars
 ! Input Variables
 real, intent(in), dimension(gr%nnzp,sclr_dim) ::  & 
-sclrpthvp, sclrm_forcing,  & !                           [Units vary]
-sclrp2                    ! For clipping Vince Larson [Units vary]
+  sclrpthvp, sclrm_forcing,  & !                           [Units vary]
+  sclrp2                    ! For clipping Vince Larson [Units vary]
 
 ! Input/Output Variables
 real, intent(inout), dimension(gr%nnzp) ::  & 
-rtm,          & ! r_t  (total water mixing ratio)           [kg/kg]
-wprtp,        & ! w'r_t'                                    [(kg/kg) m/s]
-thlm,         & ! th_l (liquid water potential temperature) [K]
-wpthlp       ! w'th_l'                                   [K m/s]
+  rtm,          & ! r_t  (total water mixing ratio)           [kg/kg]
+  wprtp,        & ! w'r_t'                                    [(kg/kg) m/s]
+  thlm,         & ! th_l (liquid water potential temperature) [K]
+  wpthlp       ! w'th_l'                                   [K m/s]
 
 integer, intent(inout) :: err_code ! Model status 
 
 ! Input/Output Variables
 real, intent(inout), dimension(gr%nnzp,sclr_dim) ::  & 
-sclrm, wpsclrp !                                     [Units vary]
+  sclrm, wpsclrp !                                     [Units vary]
 
 ! Local variables
 real, dimension(nsup+nsub+1,2*gr%nnzp) :: & 
-lhs  ! Implicit contributions to wpxp/xm (band diag. matrix) (LAPACK)
+  lhs  ! Implicit contributions to wpxp/xm (band diag. matrix) (LAPACK)
 
 real, dimension(2*gr%nnzp,nrhs) :: & 
-rhs  ! Right-hand side of band diag. matrix. (LAPACK)
+  rhs  ! Right-hand side of band diag. matrix. (LAPACK)
 
 ! Constant parameters as a function of Skw.
 real, dimension(gr%nnzp) ::  & 
-C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc
+  C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc
 
 ! Eddy Diffusion for wpthlp and wprtp.
 real, dimension(gr%nnzp) :: Kw6   ! wpxp eddy diff. [m^2/s]
@@ -166,20 +166,20 @@ real, dimension(gr%nnzp) :: Kw6   ! wpxp eddy diff. [m^2/s]
 ! Variables used for adding (wpxp)^2: 3-point average
 ! diffusion coefficient.
 real, dimension(gr%nnzp) :: & 
-wprtp_zt, & 
-wpthlp_zt, & 
-wprtp_zt_sqd_3pt, & 
-wpthlp_zt_sqd_3pt, & 
-Kw6_rt, & 
-Kw6_thl
+  wprtp_zt, & 
+  wpthlp_zt, & 
+  wprtp_zt_sqd_3pt, & 
+  wpthlp_zt_sqd_3pt, & 
+  Kw6_rt, & 
+  Kw6_thl
 
 ! Variables used for clipping of w'x' due to correlation 
 ! of w with x, such that: 
 ! corr_(w,x) = w'x' / [ sqrt(w'^2) * sqrt(x'^2) ];
 ! -1 <= corr_(w,x) <= 1.
 real, dimension(gr%nnzp) :: & 
-wpxp_upper_lim,    & ! Keeps correlations from becoming greater than 1.
-wpxp_lower_lim    ! Keeps correlations from becoming less than -1.
+  wpxp_upper_lim,    & ! Keeps correlations from becoming greater than 1.
+  wpxp_lower_lim    ! Keeps correlations from becoming less than -1.
 
 ! Indices
 integer :: i
@@ -570,36 +570,36 @@ intrinsic :: min, max
 logical, intent(in) :: liter
 
 real(kind=time_precision), intent(in) ::  & 
-dt              ! Timestep                                 [s]
+  dt              ! Timestep                                 [s]
 
 real, intent(in), dimension(gr%nnzp) :: & 
-wpxp,            & ! w'x' (momentum levels) at timestep (t)   [{xm units} m/s]
-Scm,             & ! Sc on momentum levels                    [-]
-wmm,             & ! w wind component on momentum levels      [m/s]
-wmt,             & ! w wind component on thermodynamic levels [m/s]
-wp2,             & ! w'^2 (momentum levels)                   [m^2/s^2]
-wp3,             & ! w'^3 (thermodynamic levels)              [m^3/s^3]
-Kw6,             & ! Coefficient of eddy diffusivity for w'x' [m^2/s]
-taum,            & ! Time-scale tau on momentum levels        [s]
-C7_Skw_fnc,      & ! C_7 parameter with Sk_w applied          [-]
-C6x_Skw_fnc,     & ! C_6x parameter with Sk_w applied         [-]
-wpxp_upper_lim,  & ! Keeps correlations from becoming > 1.    [units vary]
-wpxp_lower_lim  ! Keeps correlations from becoming < -1.   [units vary]
+  wpxp,            & ! w'x' (momentum levels) at timestep (t)   [{xm units} m/s]
+  Scm,             & ! Sc on momentum levels                    [-]
+  wmm,             & ! w wind component on momentum levels      [m/s]
+  wmt,             & ! w wind component on thermodynamic levels [m/s]
+  wp2,             & ! w'^2 (momentum levels)                   [m^2/s^2]
+  wp3,             & ! w'^3 (thermodynamic levels)              [m^3/s^3]
+  Kw6,             & ! Coefficient of eddy diffusivity for w'x' [m^2/s]
+  taum,            & ! Time-scale tau on momentum levels        [s]
+  C7_Skw_fnc,      & ! C_7 parameter with Sk_w applied          [-]
+  C6x_Skw_fnc,     & ! C_6x parameter with Sk_w applied         [-]
+  wpxp_upper_lim,  & ! Keeps correlations from becoming > 1.    [units vary]
+  wpxp_lower_lim  ! Keeps correlations from becoming < -1.   [units vary]
 
 logical, intent(in) ::  & 
-implemented ! Flag for CLUBB being implemented in a larger model.
+  implemented ! Flag for CLUBB being implemented in a larger model.
 
 ! Output Variable
 real, intent(out), dimension(nsup+nsub+1,2*gr%nnzp) ::  & 
-lhs ! Implicit contributions to wpxp/xm (band diag. matrix) (LAPACK)
+  lhs ! Implicit contributions to wpxp/xm (band diag. matrix) (LAPACK)
 
 ! Local Variables
 real, dimension(gr%nnzp) ::  & 
-a1 ! a_1 (momentum levels); See eqn. 24 in `Equations for HOC' [-]
+  a1 ! a_1 (momentum levels); See eqn. 24 in `Equations for HOC' [-]
 
 real, dimension(gr%nnzp) :: & 
-a1_zt,  & ! a_1 interpolated to thermodynamic levels              [-]
-wp2_zt ! w'^2 interpolated to thermodynamic levels             [m^2/s^2]
+  a1_zt,  & ! a_1 interpolated to thermodynamic levels              [-]
+  wp2_zt ! w'^2 interpolated to thermodynamic levels             [m^2/s^2]
 
 ! wtol_sqd = the square of the minimum threshold on w,
 !     [wtol_sqd] = m^2 s^{-2}.  Vince Larson 11 Mar 2008.
@@ -933,25 +933,25 @@ implicit none
 
 ! Input Variables
 character(len=*), intent(in) :: & 
-solve_type  ! Variables being solved for.
+  solve_type  ! Variables being solved for.
 
 logical, intent(in) :: liter
 
 real(kind=time_precision), intent(in) ::  & 
-dt              ! Timestep                               [s]
+  dt              ! Timestep                               [s]
 
 real, dimension(gr%nnzp), intent(in) :: & 
-xm,              & ! xm (thermodynamic levels)              [{xm units}]
-wpxp,            & ! w'x' (momentum levels)                 [{xm units} m/s]
-xm_forcing,      & ! xm forcings (thermodynamic levels)     [{xm units}/s]
-C7_Skw_fnc,      & ! C_7 parameter with Sk_w applied        [-]
-xpthvp,          & ! x'th_v' (momentum levels)              [{xm units} K]
-wpxp_upper_lim,  & ! Keeps correlations from becoming > 1.  [units vary]
-wpxp_lower_lim  ! Keeps correlations from becoming < -1. [units vary]
+  xm,              & ! xm (thermodynamic levels)              [{xm units}]
+  wpxp,            & ! w'x' (momentum levels)                 [{xm units} m/s]
+  xm_forcing,      & ! xm forcings (thermodynamic levels)     [{xm units}/s]
+  C7_Skw_fnc,      & ! C_7 parameter with Sk_w applied        [-]
+  xpthvp,          & ! x'th_v' (momentum levels)              [{xm units} K]
+  wpxp_upper_lim,  & ! Keeps correlations from becoming > 1.  [units vary]
+  wpxp_lower_lim  ! Keeps correlations from becoming < -1. [units vary]
 
 ! Output Variable
 real, intent(out), dimension(2*gr%nnzp,nrhs) ::  & 
-rhs  ! Right-hand side of band diag. matrix. (LAPACK)
+  rhs  ! Right-hand side of band diag. matrix. (LAPACK)
 
 ! Local Variables.
 ! Indices
@@ -1201,25 +1201,25 @@ implicit none
 
 ! Input Variables
 character(len=*), intent(in) ::  & 
-solve_type  ! Variables being solved for.
+  solve_type  ! Variables being solved for.
 
 real(kind=time_precision), intent(in) ::  & 
-dt          ! Timestep                      [s]
+  dt          ! Timestep                      [s]
 
 real, intent(in), dimension(gr%nnzp) ::  & 
-wp2,         & ! w'^2 (momentum levels)        [m^2/s^2]
-xp2         ! x'^2 (momentum levels)        [{xm units}^2]
+  wp2,         & ! w'^2 (momentum levels)        [m^2/s^2]
+  xp2         ! x'^2 (momentum levels)        [{xm units}^2]
 
 ! Input/Output Variables
 real, intent(inout), dimension(nsup+nsub+1,2*gr%nnzp) :: & 
-lhs  ! Implicit contributions to wpxp/xm (band diag. matrix) (LAPACK)
+  lhs  ! Implicit contributions to wpxp/xm (band diag. matrix) (LAPACK)
 
 real, intent(inout), dimension(2*gr%nnzp,nrhs) ::  & 
-rhs  ! Right-hand side of band diag. matrix. (LAPACK)
+  rhs  ! Right-hand side of band diag. matrix. (LAPACK)
 
 real, intent(inout), dimension(gr%nnzp) ::  & 
-xm,   & ! Mean term: xm (thermodynamic levels) [units vary] 
-wpxp ! Flux term: w'x' (momentum levels)    [{xm units} m/s]
+  xm,   & ! Mean term: xm (thermodynamic levels) [units vary] 
+  wpxp ! Flux term: w'x' (momentum levels)    [{xm units} m/s]
 
 ! Output Variable
 integer, intent(out) :: err_code
@@ -1227,18 +1227,18 @@ integer, intent(out) :: err_code
 ! Local Variables
 !        real, target, dimension(2*gr%nnzp, nrhs) ::        
 real, dimension(2*gr%nnzp,nrhs) ::  & 
-solution ! Solution to band diagonal system
+  solution ! Solution to band diagonal system
 
 real, dimension(gr%nnzp) :: & 
-xm_n ! Old value of xm for positive definite scheme     [units vary] 
+  xm_n ! Old value of xm for positive definite scheme     [units vary] 
 
 real, dimension(gr%nnzp) :: & 
-wpxp_pd, xm_pd ! Change in xm and wpxp due to the pos. def. scheme
+  wpxp_pd, xm_pd ! Change in xm and wpxp due to the pos. def. scheme
 
 real :: rcond ! Est. of the reciprocal of the condition #
 
 character(len=25) :: & 
-solve_type_cl ! solve_type used for clipping statistics.
+  solve_type_cl ! solve_type used for clipping statistics.
 
 ! Indices
 integer :: k, km1, kp1
@@ -1559,12 +1559,12 @@ implicit none
 
 ! Constant parameters
 integer, parameter :: & 
-k_mdiag   = 1,    & ! Momentum superdiagonal index.
-km1_mdiag = 2    ! Momentum subdiagonal index.
+  k_mdiag   = 1,    & ! Momentum superdiagonal index.
+  km1_mdiag = 2    ! Momentum subdiagonal index.
 
 ! Input Variables
 real, intent(in) :: & 
-dzt   ! Inverse of grid spacing (k)   [1/m]
+  dzt   ! Inverse of grid spacing (k)   [1/m]
 
 ! Return Variable
 real, dimension(2) :: lhs
@@ -1662,35 +1662,35 @@ implicit none
 
 ! Constant parameters
 integer, parameter :: & 
-kp1_mdiag = 1,    & ! Momentum superdiagonal index.
-k_mdiag   = 2,    & ! Momentum main diagonal index.
-km1_mdiag = 3    ! Momentum subdiagonal index.
+  kp1_mdiag = 1,    & ! Momentum superdiagonal index.
+  k_mdiag   = 2,    & ! Momentum main diagonal index.
+  km1_mdiag = 3    ! Momentum subdiagonal index.
 
 integer, parameter :: & 
-m_above = 1,    & ! Index for upper momentum level grid weight.
-m_below = 2    ! Index for lower momentum level grid weight.
+  m_above = 1,    & ! Index for upper momentum level grid weight.
+  m_below = 2    ! Index for lower momentum level grid weight.
 
 ! Input Variables
 real, intent(in) :: & 
-wp2_ztp1,    & ! w'^2 interpolated to thermodynamic level (k+1) [m^2/s^2]
-wp2_zt,      & ! w'^2 interpolated to thermodynamic level (k)   [m^2/s^2]
-a1_ztp1,     & ! a_1 interpolated to thermodynamic level (k+1)  [-]
-a1_zt,       & ! a_1 interpolated to thermodynamic level (k)    [-]
-wp3p1,       & ! w'^3(k+1)                                      [m^3/s^3]
-wp3,         & ! w'^3(k)                                        [m^3/s^3]
-dzm,         & ! Inverse of grid spacing (k)                    [1/m]
-wtol_sqd    ! w wind component tolerance squared             [m^2/s^2]
+  wp2_ztp1,    & ! w'^2 interpolated to thermodynamic level (k+1) [m^2/s^2]
+  wp2_zt,      & ! w'^2 interpolated to thermodynamic level (k)   [m^2/s^2]
+  a1_ztp1,     & ! a_1 interpolated to thermodynamic level (k+1)  [-]
+  a1_zt,       & ! a_1 interpolated to thermodynamic level (k)    [-]
+  wp3p1,       & ! w'^3(k+1)                                      [m^3/s^3]
+  wp3,         & ! w'^3(k)                                        [m^3/s^3]
+  dzm,         & ! Inverse of grid spacing (k)                    [1/m]
+  wtol_sqd    ! w wind component tolerance squared             [m^2/s^2]
 
 integer, intent(in) :: & 
-level ! Central momentum level (on which calculation occurs).
+  level ! Central momentum level (on which calculation occurs).
 
 ! Return Variable
 real, dimension(3) :: lhs
 
 ! Local Variables
 integer :: & 
-tkp1,  & ! Thermodynamic level directly above central momentum level.
-tk    ! Thermodynamic level directly below central momentum level.
+  tkp1,  & ! Thermodynamic level directly above central momentum level.
+  tk    ! Thermodynamic level directly below central momentum level.
 
 ! Thermodynamic level (k+1) is between momentum level (k+1)
 ! and momentum level (k).
@@ -1781,13 +1781,13 @@ implicit none
 
 ! Constant parameters
 integer, parameter :: & 
-kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
-k_tdiag = 2      ! Thermodynamic subdiagonal index.
+  kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
+  k_tdiag = 2      ! Thermodynamic subdiagonal index.
 
 ! Input Variables
 real, intent(in) :: & 
-wp2,    & ! w'^2(k)                       [m^2/s^2]
-dzm    ! Inverse of grid spacing (k)   [1/m]
+  wp2,    & ! w'^2(k)                       [m^2/s^2]
+  dzm    ! Inverse of grid spacing (k)   [1/m]
 
 ! Return Variable
 real, dimension(2) :: lhs
@@ -1863,10 +1863,10 @@ implicit none
 
 ! Input Variables
 real, intent(in) :: & 
-C7_Skw_fnc,  & ! C_7 parameter with Sk_w applied (k)   [-]
-wmtp1,       & ! wmt(k+1)                              [m/s]
-wmt,         & ! wmt(k)                                [m/s]
-dzm         ! Inverse of grid spacing (k)           [1/m]
+  C7_Skw_fnc,  & ! C_7 parameter with Sk_w applied (k)   [-]
+  wmtp1,       & ! wmt(k+1)                              [m/s]
+  wmt,         & ! wmt(k)                                [m/s]
+  dzm         ! Inverse of grid spacing (k)           [1/m]
 
 ! Return Variable
 real :: lhs
@@ -1912,8 +1912,8 @@ implicit none
 
 ! Input Variables
 real, intent(in) :: & 
-C6x_Skw_fnc,  & ! C_6x parameter with Sk_w applied (k)   [-]
-taum         ! Time-scale tau at momentum levels (k)  [s]
+  C6x_Skw_fnc,  & ! C_6x parameter with Sk_w applied (k)   [-]
+  taum         ! Time-scale tau at momentum levels (k)  [s]
 
 ! Return Variable
 real :: lhs
@@ -1961,8 +1961,8 @@ implicit none
 
 ! Input Variables
 real, intent(in) :: & 
-C7_Skw_fnc,  & ! C_7 parameter with Sk_w applied (k)   [-]
-xpthvp      ! x'th_v'(k)                            [K {xm units}]
+  C7_Skw_fnc,  & ! C_7 parameter with Sk_w applied (k)   [-]
+  xpthvp      ! x'th_v'(k)                            [K {xm units}]
 
 ! Return Variable
 real :: rhs

@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: hydrostatic.F90,v 1.2 2008-07-28 19:34:42 faschinj Exp $
+! $Id: hydrostatic.F90,v 1.3 2008-07-29 16:44:02 nielsenb Exp $
 
 module hydrostatic_mod
 
@@ -38,14 +38,14 @@ implicit none
 real, intent(in) :: psfc ! Pressure at the surface      [Pa]
 
 real, intent(in), dimension(gr%nnzp) ::  & 
-thvm  ! Virtual potential temperature   [K]
+  thvm  ! Virtual potential temperature   [K]
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) ::  & 
-p_in_Pa,  & ! Pressure                       [Pa]
-exner,  & ! Exner function                 [-]
-rhot,   & ! Density on thermo. points      [kg/m^3]
-rhom   ! Density on moment. points      [kg/m^3]
+  p_in_Pa,  & ! Pressure                       [Pa]
+  exner,  & ! Exner function                 [-]
+  rhot,   & ! Density on thermo. points      [kg/m^3]
+  rhom   ! Density on moment. points      [kg/m^3]
 
 !  Local Variables
 

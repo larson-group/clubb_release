@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: coamps_micro_driver.F90,v 1.4 2008-07-28 19:45:09 faschinj Exp $
+! $Id: coamps_micro_driver.F90,v 1.5 2008-07-29 16:44:00 nielsenb Exp $
 module coamps_micro_driver_mod
 
 ! This module wraps the adjtq subroutine so that it may be used by
@@ -72,18 +72,18 @@ external ::  &
 
 ! COAMPS parameters
   integer, parameter ::  & 
-  nne = 1,   & ! Horizontal domain parameter (always 1 for HOC)
-  j   = 1,   & ! Horizontal grid box (always 1 for HOC)
-  icon = 5,  & ! Ice nucleation scheme; 1 = Fletcher, 
+    nne = 1,   & ! Horizontal domain parameter (always 1 for HOC)
+    j   = 1,   & ! Horizontal grid box (always 1 for HOC)
+    icon = 5,  & ! Ice nucleation scheme; 1 = Fletcher, 
                !                        2 = Meyers, 
                !                        3 = Hobbs & Rangno, 
                !                        4 = Cooper, 
                !                        5 = Cooper/Fletcher (warm/cold)
-  icond  = 3  ! Autoconversion; 1=Kessler, 2=Manton/Cotton, 3=K&K, 4=none
+    icond  = 3  ! Autoconversion; 1=Kessler, 2=Manton/Cotton, 3=K&K, 4=none
 
 
   logical, parameter :: & 
-  lice = .true.  ! Whether to produce ice in COAMPS.
+    lice = .true.  ! Whether to produce ice in COAMPS.
                  ! According to Jerry Schmidt of NRL,
                  !   if lice = .true., then we should
                  !   set ldrizzle = .false.
@@ -191,7 +191,7 @@ real, dimension(gr%nnzp), intent(inout) :: &
 
 
 real, dimension(1,1,gr%nnzp-1), intent(inout) :: &
-cond ! condensation/evaporation of liquid water
+  cond ! condensation/evaporation of liquid water
 
 ! Addition by Adam Smith, 24 April 2008
 ! Adding snow particle number concentration

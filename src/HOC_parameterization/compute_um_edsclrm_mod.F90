@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F90,v 1.3 2008-07-28 21:39:28 faschinj Exp $
+! $Id: compute_um_edsclrm_mod.F90,v 1.4 2008-07-29 16:44:02 nielsenb Exp $
 !------------------------------------------------------------------------
 module compute_um_edsclrm_mod
 
@@ -62,28 +62,28 @@ implicit none
 
 ! Input Variables
 character(len=*), intent(in) :: & 
-solve_type ! Desc. of what is being solved for
+  solve_type ! Desc. of what is being solved for
 
 real(kind=time_precision), intent(in) ::  & 
-dt           ! Timestep                             [s]
+  dt           ! Timestep                             [s]
 
 real, intent(in) ::  & 
-xpwp_sfc     ! sfc flux                             [units vary]
+  xpwp_sfc     ! sfc flux                             [units vary]
 
 real, dimension(gr%nnzp), intent(in) ::  & 
-xm_tndcy,  & ! x tendency                              [units vary]
-Khm       ! Diffusion coefficient on momentum grid  [m^2/s]
+  xm_tndcy,  & ! x tendency                              [units vary]
+  Khm       ! Diffusion coefficient on momentum grid  [m^2/s]
 
 ! Input/Output Variables
 real, dimension(gr%nnzp), intent(inout) ::  & 
-xm ! Prognostic array on the thermodynamic grid     [units vary]
+  xm ! Prognostic array on the thermodynamic grid     [units vary]
 
 ! Output Variables
 real, dimension(gr%nnzp), intent(inout) ::  & 
-xpwp   ! Momentum flux                              [units vary]
+  xpwp   ! Momentum flux                              [units vary]
 
 integer, intent(out) :: & 
-err_code ! clubb_singular_matrix when matrix is singular
+  err_code ! clubb_singular_matrix when matrix is singular
 
 ! Local Variables
 real,  dimension(gr%nnzp) :: a, b, c, rhs
@@ -338,32 +338,32 @@ subroutine compute_uv_tndcy( solve_type, xm, wmt, fcor, perp_wind_m, perp_wind_g
   character(len=*), intent(in) :: solve_type
 
   real, dimension(gr%nnzp), intent(in) ::  & 
-  xm,  & ! u/v wind                                       [m/s]   
-  wmt ! wm on thermodynaming grid                     [m/s]
+    xm,  & ! u/v wind                                       [m/s]   
+    wmt ! wm on thermodynaming grid                     [m/s]
 
   real, intent(in) ::  & 
-  fcor ! Coriolis forcing                             [s^-1]
+    fcor ! Coriolis forcing                             [s^-1]
 
   real, dimension(gr%nnzp), intent(in) :: & 
-  perp_wind_m,  & ! Perpendicular component of the mean wind (e.g. v, for the u-eqn) [m/s]
-  perp_wind_g  ! Perpendicular component of the geostropic wind (e.g. vg)         [m/s]
+    perp_wind_m,  & ! Perpendicular component of the mean wind (e.g. v, for the u-eqn) [m/s]
+    perp_wind_g  ! Perpendicular component of the geostropic wind (e.g. vg)         [m/s]
 
   logical, intent(in) :: & 
-  implemented
+    implemented
 
   ! Output Variables
   real, dimension(gr%nnzp), intent(out) :: xmt ! xm tendency  [m/s^2]
 
   ! Local Variables
   integer :: & 
-  ixm_ma, & 
-  ixm_gf, & 
-  ixm_cf
+    ixm_ma, & 
+    ixm_gf, & 
+    ixm_cf
 
   real, dimension(gr%nnzp) :: & 
-  xm_ma, & 
-  xm_gf, & 
-  xm_cf
+    xm_ma, & 
+    xm_gf, & 
+    xm_cf
 
 
 if (.not. implemented) then

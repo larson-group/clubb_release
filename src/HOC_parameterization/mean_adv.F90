@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mean_adv.F90,v 1.2 2008-07-28 19:34:42 faschinj Exp $
+! $Id: mean_adv.F90,v 1.3 2008-07-29 16:44:02 nielsenb Exp $
 !===============================================================================
 module mean_adv
 
@@ -92,29 +92,29 @@ implicit none
 
 ! Constant parameters
 integer, parameter :: & 
-kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
-k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
-km1_tdiag = 3    ! Thermodynamic subdiagonal index.
+  kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
+  k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
+  km1_tdiag = 3    ! Thermodynamic subdiagonal index.
 
 integer, parameter :: & 
-t_above = 1,    & ! Index for upper thermodynamic level grid weight.
-t_below = 2    ! Index for lower thermodynamic level grid weight.
+  t_above = 1,    & ! Index for upper thermodynamic level grid weight.
+  t_below = 2    ! Index for lower thermodynamic level grid weight.
 
 ! Input Variables
 real, intent(in) :: & 
-wmt,   & ! wmt(k)                        [m/s]
-dzt   ! Inverse of grid spacing (k)   [1/m]
+  wmt,   & ! wmt(k)                        [m/s]
+  dzt   ! Inverse of grid spacing (k)   [1/m]
 
 integer, intent(in) :: & 
-level ! Central thermodynamic level (on which calculation occurs).
+  level ! Central thermodynamic level (on which calculation occurs).
 
 ! Return Variable
 real, dimension(3) :: lhs
 
 ! Local Variables
 integer :: & 
-mk,    & ! Momentum level directly above central thermodynamic level.
-mkm1  ! Momentum level directly below central thermodynamic level.
+  mk,    & ! Momentum level directly above central thermodynamic level.
+  mkm1  ! Momentum level directly below central thermodynamic level.
 
 ! Momentum level (k) is between thermodynamic level (k+1)
 ! and thermodynamic level (k).
@@ -245,29 +245,29 @@ implicit none
 
 ! Constant parameters
 integer, parameter :: & 
-kp1_mdiag = 1,    & ! Momentum superdiagonal index.
-k_mdiag   = 2,    & ! Momentum main diagonal index.
-km1_mdiag = 3    ! Momentum subdiagonal index.
+  kp1_mdiag = 1,    & ! Momentum superdiagonal index.
+  k_mdiag   = 2,    & ! Momentum main diagonal index.
+  km1_mdiag = 3    ! Momentum subdiagonal index.
 
 integer, parameter :: & 
-m_above = 1,    & ! Index for upper momentum level grid weight.
-m_below = 2    ! Index for lower momentum level grid weight.
+  m_above = 1,    & ! Index for upper momentum level grid weight.
+  m_below = 2    ! Index for lower momentum level grid weight.
 
 ! Input Variables
 real, intent(in) :: & 
-wmm,   & ! wmm(k)                        [m/s]
-dzm   ! Inverse of grid spacing (k)   [1/m]
+  wmm,   & ! wmm(k)                        [m/s]
+  dzm   ! Inverse of grid spacing (k)   [1/m]
 
 integer, intent(in) :: & 
-level ! Central momentum level (on which calculation occurs).
+  level ! Central momentum level (on which calculation occurs).
 
 ! Return Variable
 real, dimension(3) :: lhs
 
 ! Local Variables
 integer :: & 
-tkp1,  & ! Thermodynamic level directly above central momentum level.
-tk    ! Thermodynamic level directly below central momentum level.
+  tkp1,  & ! Thermodynamic level directly above central momentum level.
+  tk    ! Thermodynamic level directly below central momentum level.
 
 ! Thermodynamic level (k+1) is between momentum level (k+1)
 ! and momentum level (k).

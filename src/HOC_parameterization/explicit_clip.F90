@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: explicit_clip.F90,v 1.2 2008-07-28 19:34:42 faschinj Exp $
+! $Id: explicit_clip.F90,v 1.3 2008-07-29 16:44:02 nielsenb Exp $
 !===============================================================================
 module explicit_clip
 
@@ -81,27 +81,27 @@ implicit none
 
 ! Input Variables
 character(len=*), intent(in) :: & 
-solve_type       ! Variable being solved; used for STATS.
+  solve_type       ! Variable being solved; used for STATS.
 
 logical, intent(in) :: & 
-l_first_clip_ts,    & ! First instance of clipping in a timestep.
-l_last_clip_ts     ! Last instance of clipping in a timestep.
+  l_first_clip_ts,    & ! First instance of clipping in a timestep.
+  l_last_clip_ts     ! Last instance of clipping in a timestep.
 
 real(kind=time_precision), intent(in) ::  & 
-dt     ! Model timestep; used here for STATS           [s]
+  dt     ! Model timestep; used here for STATS           [s]
 
 real, dimension(gr%nnzp), intent(in) :: & 
-xp2,    & ! Variance of x, x'^2 (momentum levels)         [{x units}^2]
-yp2    ! Variance of y, y'^2 (momentum levels)         [{y units}^2]
+  xp2,    & ! Variance of x, x'^2 (momentum levels)         [{x units}^2]
+  yp2    ! Variance of y, y'^2 (momentum levels)         [{y units}^2]
 
 ! Output Variable
 real, dimension(gr%nnzp), intent(inout) :: & 
-xpyp   ! Covariance of x and y, x'y' (momentum levels) [{x units}*{y units}]
+  xpyp   ! Covariance of x and y, x'y' (momentum levels) [{x units}*{y units}]
 
 #ifdef STATS
 ! Local Variable
 integer :: & 
-ixpyp_cl
+  ixpyp_cl
 
 
 select case ( trim( solve_type ) )
@@ -191,24 +191,24 @@ implicit none
 
 ! Input Variables
 character(len=*), intent(in) :: & 
-solve_type  ! Variable being solved; used for STATS.
+  solve_type  ! Variable being solved; used for STATS.
 
 real(kind=time_precision), intent(in) :: & 
-dt          ! Model timestep; used here for STATS     [s]
+  dt          ! Model timestep; used here for STATS     [s]
 
 real, dimension(gr%nnzp), intent(in) :: & 
-threshold   ! Minimum value of x'^2                   [{x units}^2]
+  threshold   ! Minimum value of x'^2                   [{x units}^2]
 
 ! Output Variable
 real, dimension(gr%nnzp), intent(inout) :: & 
-xp2         ! Variance of x, x'^2 (momentum levels)   [{x units}^2]
+  xp2         ! Variance of x, x'^2 (momentum levels)   [{x units}^2]
 
 ! Local Variables
 integer :: k   ! Array index
 
 #ifdef STATS
 integer :: & 
-ixp2_cl
+  ixp2_cl
 
 
 select case ( trim( solve_type ) )

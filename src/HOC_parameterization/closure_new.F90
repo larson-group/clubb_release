@@ -1,4 +1,4 @@
-! $Id: closure_new.F90,v 1.2 2008-07-28 19:34:42 faschinj Exp $
+! $Id: closure_new.F90,v 1.3 2008-07-29 16:44:02 nielsenb Exp $
 module pdf_closure
 
 implicit none
@@ -85,100 +85,100 @@ intrinsic :: sqrt, exp, min, max, abs
 
 ! Input Variables
 real, intent(in) ::  & 
-p,       & ! Pressure.                     [Pa] 
-exner,   & ! Exner function.               [-]
-wm,      & ! mean w                        [m/s] 
-wp2,     & ! w'^2                          [m^2/s^2] 
-wp3,     & ! w'^3                          [m^3/s^3]
-Sc,      & ! Width of individual w plumes  [-]
-rtm,     & ! Mean total water              [kg/kg]
-rtp2,    & ! Total water mixing ratio      [kg/kg]
-wprtp,   & ! w' r_t'                       [(kg m)(kg s)]
-thlm,    & ! Mean th_l                     [K]
-thlp2,   & ! th_l'^2                       [K^2]
-wpthlp,  & ! w' th_l'                      [(m K)/s]
-rtpthlp ! r_t' th_l'                    [(K kg)/kg]
+  p,       & ! Pressure.                     [Pa] 
+  exner,   & ! Exner function.               [-]
+  wm,      & ! mean w                        [m/s] 
+  wp2,     & ! w'^2                          [m^2/s^2] 
+  wp3,     & ! w'^3                          [m^3/s^3]
+  Sc,      & ! Width of individual w plumes  [-]
+  rtm,     & ! Mean total water              [kg/kg]
+  rtp2,    & ! Total water mixing ratio      [kg/kg]
+  wprtp,   & ! w' r_t'                       [(kg m)(kg s)]
+  thlm,    & ! Mean th_l                     [K]
+  thlp2,   & ! th_l'^2                       [K^2]
+  wpthlp,  & ! w' th_l'                      [(m K)/s]
+  rtpthlp ! r_t' th_l'                    [(K kg)/kg]
 
 ! Input (Optional mixing scheme variables)
 real, dimension(sclr_dim), intent(in) ::  & 
-sclrm,      & ! Mean passive scalar        [units vary]
-wpsclrp,    & ! w' sclr'                   [units vary]
-sclrp2,     & ! sclr'^2                    [units vary]
-sclrprtp,   & ! sclr' r_t'                 [units vary]
-sclrpthlp  ! sclr' th_l'                [units vary]
+  sclrm,      & ! Mean passive scalar        [units vary]
+  wpsclrp,    & ! w' sclr'                   [units vary]
+  sclrp2,     & ! sclr'^2                    [units vary]
+  sclrprtp,   & ! sclr' r_t'                 [units vary]
+  sclrpthlp  ! sclr' th_l'                [units vary]
 
 ! Output Variables
 
 real, intent(out) ::  & 
-wp4,             & ! w'^4                  [m^4/s^4]
-wprtp2,          & ! w' r_t'               [(m kg)/(s kg)]
-wp2rtp,          & ! w'^2 r_t'             [(m^2 kg)/(s^2 kg)]
-wpthlp2,         & ! w' th_l'^2            [(m K^2)/s]
-wp2thlp,         & ! w'^2 th_l'            [(m^2 K)/s^2]
-cf,              & ! Cloud fraction        [%]
-rcm,             & ! Mean liquid water     [kg/kg]
-wpthvp,          & ! Buoyancy flux         [(K m)/s] 
-wp2thvp,         & ! w'^2 th_v'            [(m^2 K)/s^2]
-rtpthvp,         & ! r_t' th_v'            [(kg K)/kg]
-thlpthvp,        & ! th_l' th_v'           [K^2]
-wprcp,           & ! w' r_c'               [(m kg)/(s kg)]
-wp2rcp,          & ! w'^2 r_c'             [(m^2 kg)/(s^2 kg)]
-rtprcp,          & ! r_t' r_c'             [(kg^2)/(kg^2)]
-thlprcp,         & ! th_l' r_c'            [(K kg)/kg]
-rcp2,            & ! r_c'^2                [(kg^2)/(kg^2)]
-wprtpthlp,       & ! w' r_t' th_l'         [(m kg K)/(s kg)]
-crt1, crt2,  & 
-cthl1, cthl2
+  wp4,             & ! w'^4                  [m^4/s^4]
+  wprtp2,          & ! w' r_t'               [(m kg)/(s kg)]
+  wp2rtp,          & ! w'^2 r_t'             [(m^2 kg)/(s^2 kg)]
+  wpthlp2,         & ! w' th_l'^2            [(m K^2)/s]
+  wp2thlp,         & ! w'^2 th_l'            [(m^2 K)/s^2]
+  cf,              & ! Cloud fraction        [%]
+  rcm,             & ! Mean liquid water     [kg/kg]
+  wpthvp,          & ! Buoyancy flux         [(K m)/s] 
+  wp2thvp,         & ! w'^2 th_v'            [(m^2 K)/s^2]
+  rtpthvp,         & ! r_t' th_v'            [(kg K)/kg]
+  thlpthvp,        & ! th_l' th_v'           [K^2]
+  wprcp,           & ! w' r_c'               [(m kg)/(s kg)]
+  wp2rcp,          & ! w'^2 r_c'             [(m^2 kg)/(s^2 kg)]
+  rtprcp,          & ! r_t' r_c'             [(kg^2)/(kg^2)]
+  thlprcp,         & ! th_l' r_c'            [(K kg)/kg]
+  rcp2,            & ! r_c'^2                [(kg^2)/(kg^2)]
+  wprtpthlp,       & ! w' r_t' th_l'         [(m kg K)/(s kg)]
+  crt1, crt2,  & 
+  cthl1, cthl2
 
 real, intent(out), dimension(26) :: & 
-pdf_parms       ! pdf paramters         [units vary]
+  pdf_parms       ! pdf paramters         [units vary]
 
 integer, intent(out) :: & 
-err_code         ! Are the outputs usable numbers?
+  err_code         ! Are the outputs usable numbers?
 
 ! Output (Optional passive scalar variables)
 
 real, intent(out), dimension(sclr_dim) ::  & 
-sclrpthvp, & 
-sclrprcp, & 
-wpsclrp2, & 
-wpsclrprtp, & 
-wpsclrpthlp, & 
-wp2sclrp
+  sclrpthvp, & 
+  sclrprcp, & 
+  wpsclrp2, & 
+  wpsclrprtp, & 
+  wpsclrpthlp, & 
+  wp2sclrp
 
 ! Local Variables 
 
 real ::  & 
-a,                       & ! pdf parameter
-w1, w2, sw1, sw2,        & ! pdf parameters
-thl1, thl2,              & ! pdf parameters
-sthl1, sthl2,            & ! pdf parameters
-rt1, rt2,                & ! pdf parameters
-srt1, srt2,              & ! pdf parameters 
-w1_n, w2_n 
+  a,                       & ! pdf parameter
+  w1, w2, sw1, sw2,        & ! pdf parameters
+  thl1, thl2,              & ! pdf parameters
+  sthl1, sthl2,            & ! pdf parameters
+  rt1, rt2,                & ! pdf parameters
+  srt1, srt2,              & ! pdf parameters 
+  w1_n, w2_n 
 !     .  thl1_n, thl2_n, 
 !     .  rt1_n, rt2_n
 
 ! Passive scalar variables
 real, dimension(sclr_dim) ::  & 
-sclr1, sclr2,  & 
-ssclr1, ssclr2, & 
-alpha_sclr,  & 
+  sclr1, sclr2,  & 
+  ssclr1, ssclr2, & 
+  alpha_sclr,  & 
 !     .  sclr1_n, sclr2_n,
-rsclrthl, rsclrrt
+  rsclrthl, rsclrrt
  
 logical :: scalar_calc
 
 ! Quantities needed to predict higher order moments
 real ::  & 
-tl1, tl2,  & 
-beta1, beta2,  & 
-rsl1, rsl2, & 
-ss1, ss2, & 
-s1, s2,  & 
-zeta1, zeta2, & 
-rc1, rc2,  & 
-R1, R2
+  tl1, tl2,  & 
+  beta1, beta2,  & 
+  rsl1, rsl2, & 
+  ss1, ss2, & 
+  s1, s2,  & 
+  zeta1, zeta2, & 
+  rc1, rc2,  & 
+  R1, R2
 
 ! Sub-plume correlation coefficient between rt, thl
 ! varies between -1 < rrtthl < 1

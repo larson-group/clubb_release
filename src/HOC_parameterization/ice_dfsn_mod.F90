@@ -1,4 +1,4 @@
-! $Id: ice_dfsn_mod.F90,v 1.4 2008-07-28 19:34:42 faschinj Exp $        
+! $Id: ice_dfsn_mod.F90,v 1.5 2008-07-29 16:44:02 nielsenb Exp $        
 
 module ice_dfsn_mod
 
@@ -78,37 +78,37 @@ implicit none
 
 ! Input variables
 REAL(KIND=time_precision), INTENT(IN)::  & 
-dt      ! Model timestep                                     [s]
+  dt      ! Model timestep                                     [s]
 
 REAL, DIMENSION(1:gr%nnzp), INTENT(IN)::  & 
-T_in_K,  & ! Temperature                           [K]
-rcm,     & ! Cloud water mixing ratio              [kg kg^{-1}]
-press,   & ! Air pressure                          [Pa]
-rhot       ! Air density on thermodynamic grid     [kg m^{-3}]
+  T_in_K,  & ! Temperature                           [K]
+  rcm,     & ! Cloud water mixing ratio              [kg kg^{-1}]
+  press,   & ! Air pressure                          [Pa]
+  rhot       ! Air density on thermodynamic grid     [kg m^{-3}]
 
 ! Output variables
 REAL, DIMENSION(1:gr%nnzp), INTENT(OUT)::  & 
-rcm_icedfsn   ! Time tendency of rcm due to ice diffusional growth  
+  rcm_icedfsn   ! Time tendency of rcm due to ice diffusional growth  
               !                                               [kg kg^{-1} s^{-1}]
 
 ! Local variables
 REAL, DIMENSION(1:gr%nnzp)::  & 
-mass_ice_cryst,  & ! Mass of a single ice crystal      [kg]
-r_s,              & ! Saturation mixing ratio over vapor          [kg kg^{-1}] 
-e_s,              & ! Saturation vapor pressure over liquid       [Pa]
-e_i,              & ! Saturation vapor pressure over ice          [Pa]
-S_i,              & ! Ratio of saturation w.r.t. liquid to that for ice []
-Denom,            & ! Denominator of diffusional growth equation  [m s kg^{-1}] 
-dmass_ice_cryst,  & ! Change in ice mass over vertical grid box   [kg m^{-1}]
-diam,             & ! Diameter of ice crystal                     [m]
-u_T_cm              ! Fallspeed of ice crystal in cm/s            [cm s^{-1}]
+  mass_ice_cryst,  & ! Mass of a single ice crystal      [kg]
+  r_s,              & ! Saturation mixing ratio over vapor          [kg kg^{-1}] 
+  e_s,              & ! Saturation vapor pressure over liquid       [Pa]
+  e_i,              & ! Saturation vapor pressure over ice          [Pa]
+  S_i,              & ! Ratio of saturation w.r.t. liquid to that for ice []
+  Denom,            & ! Denominator of diffusional growth equation  [m s kg^{-1}] 
+  dmass_ice_cryst,  & ! Change in ice mass over vertical grid box   [kg m^{-1}]
+  diam,             & ! Diameter of ice crystal                     [m]
+  u_T_cm              ! Fallspeed of ice crystal in cm/s            [cm s^{-1}]
 
 REAL::  & 
-a_coef,     & ! Pre-factor for mass-diameter relationship, Mitchell (1996) [kg] 
-b_expn,     & ! Exponential for mass-diameter relationship, Mitchell (1996) []
-k_u_coef,   & ! Pre-factor for fallspeed-diameter formula                  [m s^{-1}]
-q_expn,     & ! Exponential of density in fallspeed-diameter formula       []   
-n_expn        ! Exponential of diameter in fallspeed-diameter formula      []
+  a_coef,     & ! Pre-factor for mass-diameter relationship, Mitchell (1996) [kg] 
+  b_expn,     & ! Exponential for mass-diameter relationship, Mitchell (1996) []
+  k_u_coef,   & ! Pre-factor for fallspeed-diameter formula                  [m s^{-1}]
+  q_expn,     & ! Exponential of density in fallspeed-diameter formula       []   
+  n_expn        ! Exponential of diameter in fallspeed-diameter formula      []
 
 ! Number of ice crystals per unit volume of air    [m^{-3}]
 ! Vince Larson avgd legs 2 and 7 (Fleishauer et al)  21 Jan 2005
@@ -307,7 +307,7 @@ REAL, INTENT(IN) ::  &
  e_i          ! Vapor pressure over ice                   [Pa]
 
 REAL ::  & 
-Diff_denom   ! Denominator of diffusional growth equation  [m s kg^{-1}]
+ Diff_denom   ! Denominator of diffusional growth equation  [m s kg^{-1}]
 
 REAL:: Ka, Dv
 REAL:: Fk, Fd

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F90,v 1.5 2008-07-28 19:45:10 faschinj Exp $
+! $Id: microphys_driver.F90,v 1.6 2008-07-29 16:44:00 nielsenb Exp $
 module microphys_driver
 
 !       Description:
@@ -44,12 +44,12 @@ use array_index, only:  &
 implicit none
 
 logical, intent(in) :: & 
-kk_rain,         & ! K&K microphysics
-lcoamps_micro,   & ! COAMPS microphysics
-licedfs         ! Simplified ice
+  kk_rain,         & ! K&K microphysics
+  lcoamps_micro,   & ! COAMPS microphysics
+  licedfs         ! Simplified ice
 
 integer, intent(out) :: & 
-hydromet_dim ! Number of hydrometeor fields.
+  hydromet_dim ! Number of hydrometeor fields.
 
 ! The location of the fields in the hydromet array are arbitrary,
 ! and don't need to be set consistently among schemes so long as
@@ -223,80 +223,80 @@ implicit none
 logical, parameter :: lsed = .true.
 
 character(len=*), intent(in) :: & 
-runtype ! Name of the run, for case specific effects.
+  runtype ! Name of the run, for case specific effects.
 
 real(kind=time_precision), intent(in) ::  & 
-dt           ! Timestep         [s]
+  dt           ! Timestep         [s]
 
 real(kind=time_precision), intent(in) ::  & 
-time_current ! Current time     [s]
+  time_current ! Current time     [s]
 
 
 real, dimension(gr%nnzp), intent(in) :: & 
-thlm,    & ! Liquid potential temp.                 [K]
-p,       & ! Pressure                               [Pa]
-exner,   & ! Exner function                         [-]
-rhot,    & ! Density on thermo. grid                [kg/m^3]
-rhom,    & ! Density on moment. grid                [kg/m^3]
-rtm,     & ! Total water mixing ratio               [kg/kg]
-rcm,     & ! Liquid water mixing ratio              [kg/kg]
-wmt,     & ! w wind on moment. grid                 [m/s]
-wmm,     & ! w wind on thermo. grid                 [m/s]
-Khm,     & ! Kh Eddy diffusivity on momentum grid   [m^2/s]
-Akm_est, & ! Analytic Kessler ac                    [kg/kg]
-Akm     ! Analytic Kessler estimate              [kg/kg]
+  thlm,    & ! Liquid potential temp.                 [K]
+  p,       & ! Pressure                               [Pa]
+  exner,   & ! Exner function                         [-]
+  rhot,    & ! Density on thermo. grid                [kg/m^3]
+  rhom,    & ! Density on moment. grid                [kg/m^3]
+  rtm,     & ! Total water mixing ratio               [kg/kg]
+  rcm,     & ! Liquid water mixing ratio              [kg/kg]
+  wmt,     & ! w wind on moment. grid                 [m/s]
+  wmm,     & ! w wind on thermo. grid                 [m/s]
+  Khm,     & ! Kh Eddy diffusivity on momentum grid   [m^2/s]
+  Akm_est, & ! Analytic Kessler ac                    [kg/kg]
+  Akm     ! Analytic Kessler estimate              [kg/kg]
 
 ! Note:
 ! K & K only uses Ncm, while for COAMPS Ncnm is initialized
 ! and Nim & Ncm are computed within subroutine adjtg.
 real, dimension(gr%nnzp), intent(inout) :: & 
-Ncm,     & ! Cloud drop number concentration       [count/kg]
-Ncnm,    & ! Cloud nuclei number concentration     [count/m^3]
-Nim     ! Ice crystal number concentration      [count/m^3]
+  Ncm,     & ! Cloud drop number concentration       [count/kg]
+  Ncnm,    & ! Cloud nuclei number concentration     [count/m^3]
+  Nim     ! Ice crystal number concentration      [count/m^3]
 
 real, target,dimension(gr%nnzp,26),intent(in) :: & 
-pdf_parms     ! PDF parameters
+  pdf_parms     ! PDF parameters
 
 real, dimension(gr%nnzp,hydromet_dim), intent(inout) :: & 
-hydromet      ! Array of rain, prist. ice, graupel, etc. [units vary]
+  hydromet      ! Array of rain, prist. ice, graupel, etc. [units vary]
 
 real, dimension(gr%nnzp), intent(inout) :: & 
-rtm_forcing,  & ! Imposed contributions to total water        [kg/kg/s]
-thlm_forcing ! Imposed contributions to liquid potential temp. [K/s]
+  rtm_forcing,  & ! Imposed contributions to total water        [kg/kg/s]
+  thlm_forcing ! Imposed contributions to liquid potential temp. [K/s]
 
 integer, intent(out) :: err_code ! Exit code returned from subroutine
 
 ! Local Variables
 real, dimension(3,gr%nnzp) :: & 
-lhs ! Left hand side of tridiagonal matrix
+  lhs ! Left hand side of tridiagonal matrix
 
 real, dimension(gr%nnzp,hydromet_dim) :: & 
-hydromet_vel ! Contains vel. of the hydrometeors        [m/s]
-!  Can contain:
-!  Vrr      ! Rain mixing ratio sedimentation velocity     [m/s]
-!  VNr      ! Rain number conc. sedimentation velocity     [m/s]
-!  Vice     ! Ice mixing ratio sedimentation velocity      [m/s]
-!  Vsnow    ! Snow mixing ratio sedimentation velocity     [m/s]
-!  Vgraupel ! Graupel mixing ratio sedimentation velocity  [m/s]
+  hydromet_vel ! Contains vel. of the hydrometeors        [m/s]
+  !  Can contain:
+  !  Vrr      ! Rain mixing ratio sedimentation velocity     [m/s]
+  !  VNr      ! Rain number conc. sedimentation velocity     [m/s]
+  !  Vice     ! Ice mixing ratio sedimentation velocity      [m/s]
+  !  Vsnow    ! Snow mixing ratio sedimentation velocity     [m/s]
+  !  Vgraupel ! Graupel mixing ratio sedimentation velocity  [m/s]
 
 real, dimension(gr%nnzp) :: & 
-rtm_mc,   & ! Change in total water due to microphysics    [(kg/kg)/s]
-thlm_mc  ! Change in liquid potential temperature 
+  rtm_mc,   & ! Change in total water due to microphysics    [(kg/kg)/s]
+  thlm_mc  ! Change in liquid potential temperature 
          ! due to microphysics                          [K/s]
 
 real, dimension(gr%nnzp,hydromet_dim) :: & 
-hydromet_mc
-! Rain mixing ratio tendency      [(kg/kg)/s]
-! Rain number conc. tendency      [(count/kg)/s]
-! Snow mixing ratio tendency      [(kg/kg)/s]
-! Ice mixing ratio tendency       [(kg/kg)/s]
-! Graupel mixing ratio tendency   [(kg/kg)/s]  
+  hydromet_mc
+  ! Rain mixing ratio tendency      [(kg/kg)/s]
+  ! Rain number conc. tendency      [(count/kg)/s]
+  ! Snow mixing ratio tendency      [(kg/kg)/s]
+  ! Ice mixing ratio tendency       [(kg/kg)/s]
+  ! Graupel mixing ratio tendency   [(kg/kg)/s]  
 
 real, dimension(gr%nnzp) :: & 
-T_in_K  ! Temperature   [K]
+  T_in_K  ! Temperature   [K]
 
 real, dimension(1,1,gr%nnzp) :: & 
-cond ! COAMPS stat for condesation/evap of rcm
+  cond ! COAMPS stat for condesation/evap of rcm
 
 !       real, pointer, dimension(:) ::
 !    .  rrainm,      ! Pointer for rain water mixing ratio   [kg/kg]
@@ -307,11 +307,11 @@ cond ! COAMPS stat for condesation/evap of rcm
 
 ! Various PDF parameters needed for Brian's K&K microphysics
 real, pointer, dimension(:) :: & 
-a, & 
-thl1, thl2, & 
-s1, s2, & 
-ss1, ss2, & 
-rc1, rc2
+  a, & 
+  thl1, thl2, & 
+  s1, s2, & 
+  ss1, ss2, & 
+  rc1, rc2
 
 ! Eddy diffusivity for rain and rain drop concentration.
 ! It is also used for the other hydrometeor variables.
@@ -773,29 +773,29 @@ real(kind=time_precision), intent(in) :: dt ! Timestep     [s]
 ! Tendency computed tendency from COAMPS routine adjtq 
 ! or Brian Griffin's K & K microphysics implementation
 real, intent(in), dimension(gr%nnzp) :: & 
-xrm_tndcy !                                     [units/s]
+  xrm_tndcy !                                     [units/s]
 
 ! Input/Output Variables
 real, intent(inout), dimension(3,gr%nnzp) :: & 
-lhs ! Left hand side
+  lhs ! Left hand side
 
 real, intent(inout), dimension(gr%nnzp) :: & 
-xrm ! Hydrometeor being solved for              [units vary]
+  xrm ! Hydrometeor being solved for              [units vary]
 
 ! Output Variables
 integer, intent(out) :: err_code
 
 ! Local Variables
 real, dimension(gr%nnzp) :: & 
-rhs ! Right hand side
+  rhs ! Right hand side
 
 integer :: k, kp1, km1 ! Array indices
 
 #ifdef STATS
 integer :: & 
-ixrm_ma,  & ! Mean advection budget stats toggle
-ixrm_sd,  & ! Sedimentation budget stats toggle
-ixrm_dff ! Diffusion budget stats toggle
+  ixrm_ma,  & ! Mean advection budget stats toggle
+  ixrm_sd,  & ! Sedimentation budget stats toggle
+  ixrm_dff ! Diffusion budget stats toggle
 
 select case( solve_type )
 case( "rrainm" )
@@ -947,29 +947,29 @@ implicit none
 
 ! Constant parameters
 integer, parameter :: & 
-kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
-k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
-km1_tdiag = 3    ! Thermodynamic subdiagonal index.
+  kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
+  k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
+  km1_tdiag = 3    ! Thermodynamic subdiagonal index.
 
 ! Input Variables
 character(len=*), intent(in) :: solve_type
 
 logical, intent(in) ::  & 
-lsed ! Whether to add a sedimentation term
+  lsed ! Whether to add a sedimentation term
 
 real(kind=time_precision), intent(in) ::  & 
-dt    ! Timestep                                                 [s]
+  dt    ! Timestep                                                 [s]
 
 real, intent(in) ::  & 
-nu    ! Background diffusion coefficient                         [m^2/s]
+  nu    ! Background diffusion coefficient                         [m^2/s]
 
 real, intent(in), dimension(gr%nnzp) ::  & 
-wmt,   & ! w wind component on thermodynamic levels                 [m/s]
-V_hm,  & ! Sedimentation velocity of hydrometeor (momentum levels)  [m/s]
-Kr    ! Eddy diffusivity for hydrometeor on momentum levels      [m^2/s]
+  wmt,   & ! w wind component on thermodynamic levels                 [m/s]
+  V_hm,  & ! Sedimentation velocity of hydrometeor (momentum levels)  [m/s]
+  Kr    ! Eddy diffusivity for hydrometeor on momentum levels      [m^2/s]
 
 real, intent(out), dimension(3,gr%nnzp) :: & 
-lhs ! Left hand side of tridiagonal matrix
+  lhs ! Left hand side of tridiagonal matrix
 
 ! Local Variables
 real, dimension(3) :: tmp
@@ -981,9 +981,9 @@ integer :: k, km1
 
 #ifdef STATS
 integer :: & 
-ixrm_ma,  & ! Mean advection budget stats toggle
-ixrm_sd,  & ! Sedimentation budget stats toggle
-ixrm_dff ! Diffusion budget stats toggle
+  ixrm_ma,  & ! Mean advection budget stats toggle
+  ixrm_sd,  & ! Sedimentation budget stats toggle
+  ixrm_dff ! Diffusion budget stats toggle
 
 select case( solve_type )
 case( "rrainm" )
@@ -1220,30 +1220,30 @@ implicit none
 
 ! Constant parameters
 integer, parameter :: & 
-kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
-k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
-km1_tdiag = 3    ! Thermodynamic subdiagonal index.
+  kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
+  k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
+  km1_tdiag = 3    ! Thermodynamic subdiagonal index.
 
 integer, parameter :: & 
-t_above = 1,    & ! Index for upper thermodynamic level grid weight.
-t_below = 2    ! Index for lower thermodynamic level grid weight.
+  t_above = 1,    & ! Index for upper thermodynamic level grid weight.
+  t_below = 2    ! Index for lower thermodynamic level grid weight.
 
 ! Input Variables
 real, intent(in) :: & 
-V_hm,    & ! Sedimentation velocity of hydrometeor (k)                [m/s]
-V_hmm1,  & ! Sedimentation velocity of hydrometeor (k-1)              [m/s]
-dzt     ! Inverse of grid spacing (k)                              [m] 
+  V_hm,    & ! Sedimentation velocity of hydrometeor (k)                [m/s]
+  V_hmm1,  & ! Sedimentation velocity of hydrometeor (k-1)              [m/s]
+  dzt     ! Inverse of grid spacing (k)                              [m] 
 
 integer, intent(in) ::  & 
-level ! Central thermodynamic level (on which calculation occurs).
+  level ! Central thermodynamic level (on which calculation occurs).
 
 ! Return Variable
 real, dimension(3) :: lhs
 
 ! Local Variables
 integer :: & 
-mk,    & ! Momentum level directly above central thermodynamic level.
-mkm1  ! Momentum level directly below central thermodynamic level.
+  mk,    & ! Momentum level directly above central thermodynamic level.
+  mkm1  ! Momentum level directly below central thermodynamic level.
 
 ! Momentum level (k) is between thermodynamic level (k+1)
 ! and thermodynamic level (k).

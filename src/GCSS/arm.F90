@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm.F90,v 1.2 2008-07-28 19:37:54 faschinj Exp $
+! $Id: arm.F90,v 1.3 2008-07-29 16:44:00 nielsenb Exp $
 module arm
 
 !       Description:
@@ -47,35 +47,35 @@ implicit none
 
 ! External
 intrinsic :: & 
-int, min, max, present
+  int, min, max, present
 
 ! Constant Parameters
 real, parameter, dimension(6) ::  & 
-atheta = (/ 0.000, 0.000,  0.000, -0.080, -0.160, -0.160/), & 
-rtheta = (/-0.125, 0.000,  0.000,  0.000,  0.000, -0.100/), & 
-art    = (/ 0.080, 0.020, -0.040, -0.100, -0.160, -0.300/)
+  atheta = (/ 0.000, 0.000,  0.000, -0.080, -0.160, -0.160/), & 
+  rtheta = (/-0.125, 0.000,  0.000,  0.000,  0.000, -0.100/), & 
+  art    = (/ 0.080, 0.020, -0.040, -0.100, -0.160, -0.300/)
 
 ! Input Variables
 real(kind=time_precision), intent(in) :: time ! Model time [s]
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) ::  & 
-thlm_forcing,  & ! Liquid water potential temperature tendency [K/s]
-radht,         & ! Radiative heating rate                      [K/s]
-rtm_forcing   ! Total water mixing ratio tendency           [kg/kg/s]
+  thlm_forcing,  & ! Liquid water potential temperature tendency [K/s]
+  radht,         & ! Radiative heating rate                      [K/s]
+  rtm_forcing   ! Total water mixing ratio tendency           [kg/kg/s]
 
 ! Output (optional) Variables
 real, intent(out), dimension(gr%nnzp,sclr_dim) ::  & 
-sclrm_forcing ! Passive scalar tendency [units vary]
+  sclrm_forcing ! Passive scalar tendency [units vary]
 
 ! Local variables
 integer :: k, i1, i2 ! Loop indices
 real ::  & 
-a, b,       & ! [-]
-true_time,  & ! [s]
-theta_tmp,  & ! [K/s]
-rad_tmp,    & ! [K/s]
-rt_tmp     ! [kg/kg/s]
+  a, b,       & ! [-]
+  true_time,  & ! [s]
+  theta_tmp,  & ! [K/s]
+  rad_tmp,    & ! [K/s]
+  rt_tmp     ! [kg/kg/s]
 
 !-----------------------------------------------------------------------
 
@@ -181,44 +181,44 @@ intrinsic :: max, sqrt
 
 ! Parameter Constants
 real, parameter :: & 
-ubmin = 0.25
+  ubmin = 0.25
 ! ARM roughness height
 real, parameter ::  & 
-z0 = 0.035  ! momentum roughness height
+  z0 = 0.035  ! momentum roughness height
 
 ! Input variables
 real(kind=time_precision), intent(in) ::  & 
-time            ! Current time          [s]
+  time            ! Current time          [s]
 
 real, intent(in) ::  & 
-z,               & ! Height at zt(2)       [m]
-dn0,             & ! ???
-thlm_sfc,        & ! Theta_l at zt(2)      [K]
-um_sfc,          & ! um at zt(2)           [m/s]
-vm_sfc          ! vm at zt(2)           [m/s]
+  z,               & ! Height at zt(2)       [m]
+  dn0,             & ! ???
+  thlm_sfc,        & ! Theta_l at zt(2)      [K]
+  um_sfc,          & ! um at zt(2)           [m/s]
+  vm_sfc          ! vm at zt(2)           [m/s]
 
 ! Output variables
 real, intent(out) ::  & 
-upwp_sfc,    & ! u'w' at surface           [m^2/s^2]
-vpwp_sfc,    & ! v'w' at surface           [m^2/s^2]
-wpthlp_sfc,  & ! w'theta_l' surface flux   [(m K)/s]
-wprtp_sfc,   & ! w'rt' surface flux        [(m kg)/(kg s)]
-ustar       ! surface friction velocity [m/s]
+  upwp_sfc,    & ! u'w' at surface           [m^2/s^2]
+  vpwp_sfc,    & ! v'w' at surface           [m^2/s^2]
+  wpthlp_sfc,  & ! w'theta_l' surface flux   [(m K)/s]
+  wprtp_sfc,   & ! w'rt' surface flux        [(m kg)/(kg s)]
+  ustar       ! surface friction velocity [m/s]
 
 ! Output variables (optional)
 real,  dimension(sclr_dim), optional, intent(out) ::  & 
-wpsclrp_sfc,     & ! Passive scalar surface flux      [units m/s] 
-wpedsclrp_sfc   ! Passive eddy-scalar surface flux [units m/s]
+  wpsclrp_sfc,     & ! Passive scalar surface flux      [units m/s] 
+  wpedsclrp_sfc   ! Passive eddy-scalar surface flux [units m/s]
 
 ! Internal variables
 real ::  & 
-usfc,  & 
-vsfc,  & 
-ubar, & 
-true_time, & 
-heat_flx, moisture_flx, & 
-heat_flx2, moisture_flx2, & 
-bflx
+  usfc,  & 
+  vsfc,  & 
+  ubar, & 
+  true_time, & 
+  heat_flx, moisture_flx, & 
+  heat_flx2, moisture_flx2, & 
+  bflx
 
 ! Compute heat and moisture fluxes from ARM data in (W/m2)
 true_time = real( time )
@@ -271,11 +271,11 @@ implicit none
 integer, parameter :: ntimes = 7
 
 real, parameter, dimension(ntimes) ::  & 
-times = (/ 41400., 55800., 64800., 68400., & 
+  times = (/ 41400., 55800., 64800., 68400., & 
            77400., 86400., 93600. /), & 
-! H and LE specifications
-H  = (/-30,  90, 140, 140, 100, -10, -10/), & 
-LE = (/  5, 250, 450, 500, 420, 180,   0/)
+  ! H and LE specifications
+  H  = (/-30,  90, 140, 140, 100, -10, -10/), & 
+  LE = (/  5, 250, 450, 500, 420, 180,   0/)
 
 ! Input variable
 real, intent(in) :: time !  Current time [s]

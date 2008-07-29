@@ -1,4 +1,4 @@
-! $Id: output_netcdf.F90,v 1.3 2008-07-28 19:53:43 faschinj Exp $
+! $Id: output_netcdf.F90,v 1.4 2008-07-29 16:44:03 nielsenb Exp $
 !-----------------------------------------------------------------------
 module output_netcdf
 #ifdef NETCDF
@@ -614,9 +614,9 @@ implicit none
 
 ! Input Variables
 integer, intent(in) ::  & 
-day_in,           & ! Day of Month at Model Start   [dd]
-month_in,         & ! Month of Year at Model Start  [mm]
-year_in             ! Year at Model Start         [yyyy]
+  day_in,           & ! Day of Month at Model Start   [dd]
+  month_in,         & ! Month of Year at Model Start  [mm]
+  year_in             ! Year at Model Start         [yyyy]
 
 real(kind=time_precision), intent(in) :: time_in ! Start time [s]
 

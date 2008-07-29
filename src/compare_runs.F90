@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-!  $Id: compare_runs.F90,v 1.2 2008-07-28 19:45:09 faschinj Exp $
+!  $Id: compare_runs.F90,v 1.3 2008-07-29 16:44:00 nielsenb Exp $
 
 program compare_runs 
 
@@ -16,41 +16,41 @@ use grads_common, only: grads_zlvl, grads_average ! Procedure(s)
 implicit none
  
 integer, parameter ::  & 
-nvar = 14, & 
-max_times = 10
+  nvar = 14, & 
+  max_times = 10
 
 
 real(kind=4), allocatable, dimension(:) ::  & 
-fvar1, & 
-fvar2, & 
-fvar3
+  fvar1, & 
+  fvar2, & 
+  fvar3
 
 character(len=10), dimension(nvar) ::  & 
-hoc_variables, & 
-les_variables
+  hoc_variables, & 
+  les_variables
 
 real(kind=8) ::  & 
-percent_mean_sqr, & 
-reference
+  percent_mean_sqr, & 
+  reference
 
 real(kind=4) :: minmax
 
 character(len=80) ::  & 
-file1, & ! Always a HOC file
-file2, & ! Either a HOC or LES file
-file3 ! Always a HOC file
+  file1, & ! Always a HOC file
+  file2, & ! Either a HOC or LES file
+  file3 ! Always a HOC file
 
 integer, dimension(max_times) ::  & 
-t ! times to analyze
+  t ! times to analyze
 
 integer ::  & 
-nz,        & ! smallest of the 3 grids
-nz_file1,  & ! grid levels
-nz_file2,  & ! grid levels
-nz_file3  ! grid levels
+  nz,        & ! smallest of the 3 grids
+  nz_file1,  & ! grid levels
+  nz_file2,  & ! grid levels
+  nz_file3  ! grid levels
 
 integer :: & 
-n, i ! loop
+  n, i ! loop
 
 integer :: tmax  ! max time to analyze 
 

@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F90,v 1.6 2008-07-28 21:37:06 faschinj Exp $
+! $Id: wp23.F90,v 1.7 2008-07-29 16:44:03 nielsenb Exp $
 !===============================================================================
 module wp23
 
@@ -81,38 +81,38 @@ intrinsic :: exp
 
 ! Input Variables
 real(kind=time_precision), intent(in) ::  & 
-dt          ! Timestep                                 [s]
+  dt          ! Timestep                                 [s]
 
 real, intent(in), dimension(gr%nnzp) ::  & 
-Scm,         & ! Sc on momentum levels                    [-]
-wmm,         & ! w wind component on momentum levels      [m/s]
-wmt,         & ! w wind component on thermodynamic levels [m/s]
-wpthvp,      & ! w'th_v' (momentum levels)                [K m/s]
-wp2thvp,     & ! w'^2th_v' (thermodynamic levels)         [K m^2/s^2]
-um,          & ! u wind component (thermodynamic levels)  [m/s]
-vm,          & ! v wind component (thermodynamic levels)  [m/s]
-upwp,        & ! u'w' (momentum levels)                   [m^2/s^2]
-vpwp,        & ! v'w' (momentum levels)                   [m^2/s^2]
-up2,         & ! u'^2 (momentum levels)                   [m^2/s^2]
-vp2,         & ! v'^2 (momentum levels)                   [m^2/s^2]
-Khm,         & ! Eddy diffusivity on momentum levels      [m^2/s]
-Kht,         & ! Eddy diffusivity on thermodynamic levels [m^2/s]
-taum,        & ! Time-scale tau on momentum levels        [s]
-taut,        & ! Time-scale tau on thermodynamic levels   [s]
-Skwm,        & ! Skewness of w on momentum levels         [-]
-Skwt,        & ! Skewness of w on thermodynamic levels    [-]
-a              ! PDF parameter "a": pdf_parms(:,13)       [-]
+  Scm,         & ! Sc on momentum levels                    [-]
+  wmm,         & ! w wind component on momentum levels      [m/s]
+  wmt,         & ! w wind component on thermodynamic levels [m/s]
+  wpthvp,      & ! w'th_v' (momentum levels)                [K m/s]
+  wp2thvp,     & ! w'^2th_v' (thermodynamic levels)         [K m^2/s^2]
+  um,          & ! u wind component (thermodynamic levels)  [m/s]
+  vm,          & ! v wind component (thermodynamic levels)  [m/s]
+  upwp,        & ! u'w' (momentum levels)                   [m^2/s^2]
+  vpwp,        & ! v'w' (momentum levels)                   [m^2/s^2]
+  up2,         & ! u'^2 (momentum levels)                   [m^2/s^2]
+  vp2,         & ! v'^2 (momentum levels)                   [m^2/s^2]
+  Khm,         & ! Eddy diffusivity on momentum levels      [m^2/s]
+  Kht,         & ! Eddy diffusivity on thermodynamic levels [m^2/s]
+  taum,        & ! Time-scale tau on momentum levels        [s]
+  taut,        & ! Time-scale tau on thermodynamic levels   [s]
+  Skwm,        & ! Skewness of w on momentum levels         [-]
+  Skwt,        & ! Skewness of w on thermodynamic levels    [-]
+  a              ! PDF parameter "a": pdf_parms(:,13)       [-]
 
 ! Input/Output
 real, dimension(gr%nnzp), intent(inout) ::  & 
-wp2,  & ! w'^2 (momentum levels)                          [m^2/s^2]
-wp3     ! w'^3 (thermodynamic levels)                     [m^3/s^3]
+  wp2,  & ! w'^2 (momentum levels)                          [m^2/s^2]
+  wp3     ! w'^3 (thermodynamic levels)                     [m^3/s^3]
 
 integer, intent(inout) :: err_code ! Diagnostic
 
 ! Local Variables
 real, dimension(gr%nnzp) ::  & 
-tauw3t  ! Currently just taut                              [s]
+  tauw3t  ! Currently just taut                              [s]
 
 ! Eddy Diffusion for w'^2 and w'^3.
 real, dimension(gr%nnzp) :: Kw1    ! w'^2 coef. eddy diff. [m^2/s]
@@ -122,16 +122,16 @@ real, dimension(gr%nnzp) :: Kw8    ! w'^3 coef. eddy diff. [m^2/s]
 !        are used to help determine the coefficients of eddy 
 !        diffusivity for wp2 and wp3, respectively.
 real, dimension(gr%nnzp) :: & 
-wp2_zt,          & ! w'^2 interpolated to thermodyamic levels [m^2/s^2]
-wp3_zm,          & ! w'^3 interpolated to momentum levels     [m^3/s^3]
-wp2_zt_sqd_3pt,  & ! (w'^2)^2; averaged over 3 points         [m^4/s^4]
-wp3_zm_sqd_3pt     ! (w'^3)^2; averaged over 3 points         [m^6/s^6]
+  wp2_zt,          & ! w'^2 interpolated to thermodyamic levels [m^2/s^2]
+  wp3_zm,          & ! w'^3 interpolated to momentum levels     [m^3/s^3]
+  wp2_zt_sqd_3pt,  & ! (w'^2)^2; averaged over 3 points         [m^4/s^4]
+  wp3_zm_sqd_3pt     ! (w'^3)^2; averaged over 3 points         [m^6/s^6]
 
 ! Internal variables for C11 function, Vince Larson 13 Mar 2005
 ! Brian added C1 function.
 real, dimension(gr%nnzp) ::  & 
-C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied              [-]
-C11_Skw_fnc    ! C_11 parameter with Sk_w applied             [-]
+  C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied              [-]
+  C11_Skw_fnc    ! C_11 parameter with Sk_w applied             [-]
 ! End Vince Larson's addition.
       
 integer :: k, km1, kp1  ! Array indices
@@ -390,67 +390,67 @@ intrinsic :: max, min, sqrt
 
 ! Parameter Constants
 integer, parameter :: & 
-nsub = 2,   & ! Number of subdiagonals in the LHS matrix
-nsup = 2,   & ! Number of superdiagonals in the LHS matrix
-nrhs = 1   ! Number of RHS vectors
+  nsub = 2,   & ! Number of subdiagonals in the LHS matrix
+  nsup = 2,   & ! Number of superdiagonals in the LHS matrix
+  nrhs = 1   ! Number of RHS vectors
 
 ! Input Variables
 real(kind=time_precision), intent(in) ::  & 
-dt           ! Timestep                                  [s]
+  dt           ! Timestep                                  [s]
 
 real, intent(in), dimension(gr%nnzp) ::  & 
-Scm,          & ! Sc on momentum levels                     [-]
-wmm,          & ! w wind component on momentum levels       [m/s]
-wmt,          & ! w wind component on thermodynamic levels  [m/s]
-wpthvp,       & ! w'th_v' (momentum levels)                 [K m/s]
-wp2thvp,      & ! w'^2th_v' (thermodynamic levels)          [K m^2/s^2]
-um,           & ! u wind component (thermodynamic levels)   [m/s]
-vm,           & ! v wind component (thermodynamic levels)   [m/s]
-upwp,         & ! u'w' (momentum levels)                    [m^2/s^2]
-vpwp,         & ! v'w' (momentum levels)                    [m^2/s^2]
-up2,          & ! u'^2 (momentum levels)                    [m^2/s^2]
-vp2,          & ! v'^2 (momentum levels)                    [m^2/s^2]
-Kw1,          & ! Coefficient of eddy diffusivity for w'^2  [m^2/s]
-Kw8,          & ! Coefficient of eddy diffusivity for w'^3  [m^2/s]
-Skwt,         & ! Skewness of w on thermodynamic levels     [-]
-tau1m,        & ! Time-scale tau on momentum levels         [s]
-tauw3t,       & ! Time-scale tau on thermodynamic levels    [s]
-C1_Skw_fnc,   & ! C_1 parameter with Sk_w applied           [-]
-C11_Skw_fnc,  & ! C_11 parameter with Sk_w applied          [-]
-wp3_zm       ! w'^3 interpolated to momentum levels      [m^3/s^3]
+  Scm,          & ! Sc on momentum levels                     [-]
+  wmm,          & ! w wind component on momentum levels       [m/s]
+  wmt,          & ! w wind component on thermodynamic levels  [m/s]
+  wpthvp,       & ! w'th_v' (momentum levels)                 [K m/s]
+  wp2thvp,      & ! w'^2th_v' (thermodynamic levels)          [K m^2/s^2]
+  um,           & ! u wind component (thermodynamic levels)   [m/s]
+  vm,           & ! v wind component (thermodynamic levels)   [m/s]
+  upwp,         & ! u'w' (momentum levels)                    [m^2/s^2]
+  vpwp,         & ! v'w' (momentum levels)                    [m^2/s^2]
+  up2,          & ! u'^2 (momentum levels)                    [m^2/s^2]
+  vp2,          & ! v'^2 (momentum levels)                    [m^2/s^2]
+  Kw1,          & ! Coefficient of eddy diffusivity for w'^2  [m^2/s]
+  Kw8,          & ! Coefficient of eddy diffusivity for w'^3  [m^2/s]
+  Skwt,         & ! Skewness of w on thermodynamic levels     [-]
+  tau1m,        & ! Time-scale tau on momentum levels         [s]
+  tauw3t,       & ! Time-scale tau on thermodynamic levels    [s]
+  C1_Skw_fnc,   & ! C_1 parameter with Sk_w applied           [-]
+  C11_Skw_fnc,  & ! C_11 parameter with Sk_w applied          [-]
+  wp3_zm       ! w'^3 interpolated to momentum levels      [m^3/s^3]
 
 ! Input/Output Variables
 real, dimension(gr%nnzp), intent(inout) ::  & 
-wp2,  & ! w'^2 (momentum levels)                            [m^2/s^2]
-wp3  ! w'^3 (thermodynamic levels)                       [m^3/s^3]
+  wp2,  & ! w'^2 (momentum levels)                            [m^2/s^2]
+  wp3  ! w'^3 (thermodynamic levels)                       [m^3/s^3]
 
 integer, intent(inout) :: err_code ! Have any errors occured?
 
 ! Local Variables
 real, dimension(nsup+nsub+1,2*gr%nnzp) ::  & 
-lhs ! Implicit contributions to wp2/wp3 (band diag. matrix)
+  lhs ! Implicit contributions to wp2/wp3 (band diag. matrix)
 
 real, dimension(2*gr%nnzp) ::  & 
-rhs   ! RHS of band matrix
+  rhs   ! RHS of band matrix
 
 !        real, target, dimension(2*gr%nnzp) ::
 real, dimension(2*gr%nnzp) ::  & 
-solut ! Solution to band diagonal system.
+  solut ! Solution to band diagonal system.
 
 real, dimension(gr%nnzp) ::  & 
-a1,  & ! a_1 (momentum levels); See eqn. 24 in `Equations for HOC' [-]
-a3  ! a_3 (momentum levels); See eqn. 26 in `Equations for HOC' [-]
+  a1,  & ! a_1 (momentum levels); See eqn. 24 in `Equations for HOC' [-]
+  a3  ! a_3 (momentum levels); See eqn. 26 in `Equations for HOC' [-]
 
 real, dimension(gr%nnzp) ::  & 
-a1_zt,  & ! a_1 interpolated to thermodynamic levels        [-]
-a3_zt,  & ! a_3 interpolated to thermodynamic levels        [-]
-wp2_zt ! w'^2 interpolated to thermodyamic levels        [m^2/s^2
+  a1_zt,  & ! a_1 interpolated to thermodynamic levels        [-]
+  a3_zt,  & ! a_3 interpolated to thermodynamic levels        [-]
+  wp2_zt ! w'^2 interpolated to thermodyamic levels        [m^2/s^2
 
 !        real, dimension(gr%nnzp) ::
 !     .  wp2_n ! w'^2 at the previous timestep           [m^2/s^2]
 
 real ::  & 
-rcond  ! Est. of the reciprocal of the condition #
+  rcond  ! Est. of the reciprocal of the condition #
 
 ! Array indices
 integer :: k, km1, kp1, k_wp2, k_wp3
@@ -790,34 +790,34 @@ implicit none
 
 ! Parameter Constants
 integer, parameter :: & 
-nsub = 2,   & ! Number of subdiagonals in the LHS matrix.
-nsup = 2   ! Number of superdiagonals in the LHS matrix.
+  nsub = 2,   & ! Number of subdiagonals in the LHS matrix.
+  nsup = 2   ! Number of superdiagonals in the LHS matrix.
 
 ! Input Variables
 real(kind=time_precision), intent(in) ::  & 
-dt          ! Timestep length                          [s]
+  dt          ! Timestep length                          [s]
 
 real, dimension(gr%nnzp), intent(in) ::  & 
-wp2,         & ! w'^2 (momentum levels)                   [m^2/s^2]
-wp3_zm,      & ! w'^3 interpolated to momentum levels     [m^3/s^3]
-wmm,         & ! w wind component on momentum levels      [m/s]
-wmt,         & ! w wind component on thermodynamic levels [m/s]
-a1_zt,       & ! a_1 interpolated to thermodynamic levels [-]
-a3_zt,       & ! a_3 interpolated to thermodynamic levels [-]
-Kw1,         & ! Coefficient of eddy diffusivity for w'^2 [m^2/s]
-Kw8,         & ! Coefficient of eddy diffusivity for w'^3 [m^2/s]
-Skwt,        & ! Skewness of w on thermodynamic levels    [-]
-tau1m,       & ! Time-scale tau on momentum levels        [s]
-tauw3t,      & ! Time-scale tau on thermodynamic levels   [s]
-C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied          [-]
-C11_Skw_fnc ! C_11 parameter with Sk_w applied         [-]
+  wp2,         & ! w'^2 (momentum levels)                   [m^2/s^2]
+  wp3_zm,      & ! w'^3 interpolated to momentum levels     [m^3/s^3]
+  wmm,         & ! w wind component on momentum levels      [m/s]
+  wmt,         & ! w wind component on thermodynamic levels [m/s]
+  a1_zt,       & ! a_1 interpolated to thermodynamic levels [-]
+  a3_zt,       & ! a_3 interpolated to thermodynamic levels [-]
+  Kw1,         & ! Coefficient of eddy diffusivity for w'^2 [m^2/s]
+  Kw8,         & ! Coefficient of eddy diffusivity for w'^3 [m^2/s]
+  Skwt,        & ! Skewness of w on thermodynamic levels    [-]
+  tau1m,       & ! Time-scale tau on momentum levels        [s]
+  tauw3t,      & ! Time-scale tau on thermodynamic levels   [s]
+  C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied          [-]
+  C11_Skw_fnc ! C_11 parameter with Sk_w applied         [-]
 
 logical, intent(in) :: & 
-lcrank_nich_diff   ! Turns on/off Crank-Nicholson diffusion.
+  lcrank_nich_diff   ! Turns on/off Crank-Nicholson diffusion.
 
 ! Output Variable
 real, dimension(nsup+nsub+1,2*gr%nnzp), intent(out) ::  & 
-lhs ! Implicit contributions to wp2/wp3 (band diag. matrix)
+  lhs ! Implicit contributions to wp2/wp3 (band diag. matrix)
 
 ! Local Variables
 
@@ -1210,35 +1210,35 @@ implicit none
 
 ! Input Variables
 real(kind=time_precision), intent(in) ::  & 
-dt          ! Timestep length                          [s]
+  dt          ! Timestep length                          [s]
 
 real, dimension(gr%nnzp), intent(in) ::  & 
-wp2,         & ! w'^2 (momentum levels)                   [m^2/s^2]
-wp3,         & ! w'^3 (thermodynamic levels)              [m^3/s^3]
-wp3_zm,      & ! w'^3 interpolated to momentum levels     [m^3/s^3]
-a1_zt,       & ! a_1 interpolated to thermodynamic levels [-]
-a3_zt,       & ! a_3 interpolated to thermodynamic levels [-]
-wpthvp,      & ! w'th_v' (momentum levels)                [K m/s]
-wp2thvp,     & ! w'^2th_v' (thermodynamic levels)         [K m^2/s^2]
-um,          & ! u wind component (thermodynamic levels)  [m/s]
-vm,          & ! v wind component (thermodynamic levels)  [m/s]
-upwp,        & ! u'w' (momentum levels)                   [m^2/s^2]
-vpwp,        & ! v'w' (momentum levels)                   [m^2/s^2]
-up2,         & ! u'^2 (momentum levels)                   [m^2/s^2]
-vp2,         & ! v'^2 (momentum levels)                   [m^2/s^2]
-Kw1,         & ! Coefficient of eddy diffusivity for w'^2 [m^2/s]
-Kw8,         & ! Coefficient of eddy diffusivity for w'^3 [m^2/s]
-Skwt,        & ! Skewness of w on thermodynamic levels    [-]
-tau1m,       & ! Time-scale tau on momentum levels        [s]
-tauw3t,      & ! Time-scale tau on thermodynamic levels   [s]
-C11_Skw_fnc ! C_11 parameter with Sk_w applied         [-]
+  wp2,         & ! w'^2 (momentum levels)                   [m^2/s^2]
+  wp3,         & ! w'^3 (thermodynamic levels)              [m^3/s^3]
+  wp3_zm,      & ! w'^3 interpolated to momentum levels     [m^3/s^3]
+  a1_zt,       & ! a_1 interpolated to thermodynamic levels [-]
+  a3_zt,       & ! a_3 interpolated to thermodynamic levels [-]
+  wpthvp,      & ! w'th_v' (momentum levels)                [K m/s]
+  wp2thvp,     & ! w'^2th_v' (thermodynamic levels)         [K m^2/s^2]
+  um,          & ! u wind component (thermodynamic levels)  [m/s]
+  vm,          & ! v wind component (thermodynamic levels)  [m/s]
+  upwp,        & ! u'w' (momentum levels)                   [m^2/s^2]
+  vpwp,        & ! v'w' (momentum levels)                   [m^2/s^2]
+  up2,         & ! u'^2 (momentum levels)                   [m^2/s^2]
+  vp2,         & ! v'^2 (momentum levels)                   [m^2/s^2]
+  Kw1,         & ! Coefficient of eddy diffusivity for w'^2 [m^2/s]
+  Kw8,         & ! Coefficient of eddy diffusivity for w'^3 [m^2/s]
+  Skwt,        & ! Skewness of w on thermodynamic levels    [-]
+  tau1m,       & ! Time-scale tau on momentum levels        [s]
+  tauw3t,      & ! Time-scale tau on thermodynamic levels   [s]
+  C11_Skw_fnc ! C_11 parameter with Sk_w applied         [-]
 
 logical, intent(in) :: & 
-lcrank_nich_diff   ! Turns on/off Crank-Nicholson diffusion.
+  lcrank_nich_diff   ! Turns on/off Crank-Nicholson diffusion.
 
 ! Output Variable
 real, dimension(2*gr%nnzp), intent(out) :: & 
-rhs   ! RHS of band matrix
+  rhs   ! RHS of band matrix
 
 ! Local Variables
 
@@ -1506,12 +1506,12 @@ implicit none
 
 ! Constant parameters
 integer, parameter :: & 
-kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
-k_tdiag   = 2    ! Thermodynamic subdiagonal index.
+  kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
+  k_tdiag   = 2    ! Thermodynamic subdiagonal index.
 
 ! Input Variables
 real, intent(in) :: & 
-dzm     ! Inverse of grid spacing (k)   [1/m]
+  dzm     ! Inverse of grid spacing (k)   [1/m]
 
 ! Return Variable
 real, dimension(2) :: lhs
@@ -1588,10 +1588,10 @@ implicit none
 
 ! Input Variables
 real, intent(in) :: & 
-C5,      & ! Model parameter C_5           [-]
-wmtp1,   & ! wmt(k+1)                      [m/s]
-wmt,     & ! wmt(k)                        [m/s]
-dzm     ! Inverse of grid spacing (k)   [1/m]
+  C5,      & ! Model parameter C_5           [-]
+  wmtp1,   & ! wmt(k+1)                      [m/s]
+  wmt,     & ! wmt(k)                        [m/s]
+  dzm     ! Inverse of grid spacing (k)   [1/m]
 
 ! Return Variable
 real :: lhs
@@ -1638,8 +1638,8 @@ implicit none
 
 ! Input Variables
 real, intent(in) :: & 
-C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied (k)   [-]
-tau1m       ! Time-scale tau at momentum levels (k) [s]
+  C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied (k)   [-]
+  tau1m       ! Time-scale tau at momentum levels (k) [s]
 
 ! Return Variable
 real :: lhs
@@ -1694,8 +1694,8 @@ implicit none
 
 ! Input Variables
 real, intent(in) :: & 
-C4,      & ! Model parameter C_4                   [-]
-tau1m   ! Time-scale tau at momentum levels (k) [s]
+  C4,      & ! Model parameter C_4                   [-]
+  tau1m   ! Time-scale tau at momentum levels (k) [s]
 
 ! Return Variable
 real :: lhs
@@ -1745,8 +1745,8 @@ implicit none
 
 ! Input Variables
 real, intent(in) :: & 
-C5,       & ! Model parameter C_5 [-]
-wpthvp   ! w'th_v'(k)          [K m/s]
+  C5,       & ! Model parameter C_5 [-]
+  wpthvp   ! w'th_v'(k)          [K m/s]
 
 ! Return Variable
 real :: rhs
@@ -1807,15 +1807,15 @@ implicit none
 
 ! Input Variables
 real, intent(in) :: & 
-C5,      & ! Model parameter C_5           [-]
-wpthvp,  & ! w'th_v'(k)                    [K m/s]
-upwp,    & ! u'w'(k)                       [m^2/s^2]
-ump1,    & ! um(k+1)                       [m/s]
-um,      & ! um(k)                         [m/s]
-vpwp,    & ! v'w'(k)                       [m^2/s^2]
-vmp1,    & ! vm(k+1)                       [m/s]
-vm,      & ! vm(k)                         [m/s]
-dzm     ! Inverse of grid spacing (k)   [1/m]
+  C5,      & ! Model parameter C_5           [-]
+  wpthvp,  & ! w'th_v'(k)                    [K m/s]
+  upwp,    & ! u'w'(k)                       [m^2/s^2]
+  ump1,    & ! um(k+1)                       [m/s]
+  um,      & ! um(k)                         [m/s]
+  vpwp,    & ! v'w'(k)                       [m^2/s^2]
+  vmp1,    & ! vm(k+1)                       [m/s]
+  vm,      & ! vm(k)                         [m/s]
+  dzm     ! Inverse of grid spacing (k)   [1/m]
 
 ! Return Variable
 real :: rhs
@@ -1874,10 +1874,10 @@ implicit none
 
 ! Input Variables
 real, intent(in) :: & 
-C4,      & ! Model parameter C_4                   [-]
-up2,     & ! u'^2(k)                               [m^2/s^2]
-vp2,     & ! v'^2(k)                               [m^2/s^2]
-tau1m   ! Time-scale tau at momentum levels (k) [s]
+  C4,      & ! Model parameter C_4                   [-]
+  up2,     & ! u'^2(k)                               [m^2/s^2]
+  vp2,     & ! v'^2(k)                               [m^2/s^2]
+  tau1m   ! Time-scale tau at momentum levels (k) [s]
 
 ! Return Variable
 real :: rhs
@@ -1989,37 +1989,37 @@ implicit none
 
 ! Constant parameters
 integer, parameter :: & 
-kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
-k_mdiag   = 2,    & ! Momentum superdiagonal index.
-k_tdiag   = 3,    & ! Thermodynamic main diagonal index.
-km1_mdiag = 4,    & ! Momentum subdiagonal index. 
-km1_tdiag = 5    ! Thermodynamic subdiagonal index.
+  kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
+  k_mdiag   = 2,    & ! Momentum superdiagonal index.
+  k_tdiag   = 3,    & ! Thermodynamic main diagonal index.
+  km1_mdiag = 4,    & ! Momentum subdiagonal index. 
+  km1_tdiag = 5    ! Thermodynamic subdiagonal index.
 
 integer, parameter :: & 
-t_above = 1,    & ! Index for upper thermodynamic level grid weight.
-t_below = 2    ! Index for lower thermodynamic level grid weight.
+  t_above = 1,    & ! Index for upper thermodynamic level grid weight.
+  t_below = 2    ! Index for lower thermodynamic level grid weight.
 
 ! Input Variables
 real, intent(in) ::  & 
-wp3_zm,      & ! w'^3 interpolated to momentum level (k)     [m^3/s^3]
-wp3_zmm1,    & ! w'^3 interpolated to momentum level (k-1)   [m^3/s^3]
-wp2,         & ! w'^2(k)                                     [m^2/s^2]
-wp2m1,       & ! w'^2(k-1)                                   [m^2/s^2]
-a1_zt,       & ! a_1 interpolated to thermodynamic level (k) [-]
-a3_zt,       & ! a_3 interpolated to thermodynamic level (k) [-]
-dzt,         & ! Inverse of grid spacing (k)                 [1/m]
-wtol           ! w wind component tolerance                  [m/s]
+  wp3_zm,      & ! w'^3 interpolated to momentum level (k)     [m^3/s^3]
+  wp3_zmm1,    & ! w'^3 interpolated to momentum level (k-1)   [m^3/s^3]
+  wp2,         & ! w'^2(k)                                     [m^2/s^2]
+  wp2m1,       & ! w'^2(k-1)                                   [m^2/s^2]
+  a1_zt,       & ! a_1 interpolated to thermodynamic level (k) [-]
+  a3_zt,       & ! a_3 interpolated to thermodynamic level (k) [-]
+  dzt,         & ! Inverse of grid spacing (k)                 [1/m]
+  wtol           ! w wind component tolerance                  [m/s]
 
 integer, intent(in) :: & 
-level ! Central thermodynamic level (on which calculation occurs).
+  level ! Central thermodynamic level (on which calculation occurs).
 
 ! Return Variable
 real, dimension(5) :: lhs
 
 ! Local Variables
 integer :: & 
-mk,    & ! Momentum level directly above central thermodynamic level.
-mkm1  ! Momentum level directly below central thermodynamic level.
+  mk,    & ! Momentum level directly above central thermodynamic level.
+  mkm1  ! Momentum level directly below central thermodynamic level.
 
 ! Momentum level (k) is between thermodynamic level (k+1)
 ! and thermodynamic level (k).
@@ -2152,10 +2152,10 @@ implicit none
 
 ! Input Variables
 real, intent(in) :: & 
-C11_Skw_fnc,  & ! C_11 parameter with Sk_w applied (k)   [-]
-wmm,          & ! wmm(k)                                 [m/s]
-wmmm1,        & ! wmm(k-1)                               [m/s]
-dzt          ! Inverse of grid spacing (k)            [1/m]
+  C11_Skw_fnc,  & ! C_11 parameter with Sk_w applied (k)   [-]
+  wmm,          & ! wmm(k)                                 [m/s]
+  wmmm1,        & ! wmm(k-1)                               [m/s]
+  dzt          ! Inverse of grid spacing (k)            [1/m]
 
 ! Return Variable
 real :: lhs
@@ -2222,10 +2222,10 @@ implicit none
 
 ! Input Variables
 real, intent(in) :: & 
-C8,      & ! Model parameter C_8                        [-]
-C8b,     & ! Model parameter C_8b                       [-]
-tauw3t,  & ! Time-scale tau at thermodynamic levels (k) [s]
-Skwt    ! Skewness of w at thermodynamic levels (k)  [-]
+  C8,      & ! Model parameter C_8                        [-]
+  C8b,     & ! Model parameter C_8b                       [-]
+  tauw3t,  & ! Time-scale tau at thermodynamic levels (k) [s]
+  Skwt    ! Skewness of w at thermodynamic levels (k)  [-]
 
 ! Return Variable
 real :: lhs
@@ -2331,14 +2331,14 @@ implicit none
 
 ! Input Variables
 real, intent(in) ::  & 
-wp3_zm,      & ! w'^3 interpolated to momentum level (k)     [m^3/s^3]
-wp3_zmm1,    & ! w'^3 interpolated to momentum level (k-1)   [m^3/s^3]
-wp2,         & ! w'^2(k)                                     [m^2/s^2]
-wp2m1,       & ! w'^2(k-1)                                   [m^2/s^2]
-a1_zt,       & ! a_1 interpolated to thermodynamic level (k) [-]
-a3_zt,       & ! a_3 interpolated to thermodynamic level (k) [-]
-dzt,         & ! Inverse of grid spacing (k)                 [1/m]
-wtol           ! w wind component tolerance                  [m/s]
+  wp3_zm,      & ! w'^3 interpolated to momentum level (k)     [m^3/s^3]
+  wp3_zmm1,    & ! w'^3 interpolated to momentum level (k-1)   [m^3/s^3]
+  wp2,         & ! w'^2(k)                                     [m^2/s^2]
+  wp2m1,       & ! w'^2(k-1)                                   [m^2/s^2]
+  a1_zt,       & ! a_1 interpolated to thermodynamic level (k) [-]
+  a3_zt,       & ! a_3 interpolated to thermodynamic level (k) [-]
+  dzt,         & ! Inverse of grid spacing (k)                 [1/m]
+  wtol           ! w wind component tolerance                  [m/s]
 
 ! Return Variable
 real :: rhs
@@ -2414,8 +2414,8 @@ implicit none
 
 ! Input Variables
 real, intent(in) :: & 
-C11_Skw_fnc,  & ! C_11 parameter with Sk_w applied (k)   [-]
-wp2thvp      ! w'^2th_v'(k)                           [K m^2/s^2]
+  C11_Skw_fnc,  & ! C_11 parameter with Sk_w applied (k)   [-]
+  wp2thvp      ! w'^2th_v'(k)                           [K m^2/s^2]
 
 ! Return Variable
 real :: rhs
@@ -2476,11 +2476,11 @@ implicit none
 
 ! Input Variables
 real, intent(in) :: & 
-C8,      & ! Model parameter C_8                        [-]
-C8b,     & ! Model parameter C_8b                       [-]
-tauw3t,  & ! Time-scale tau at thermodynamic levels (k) [s]
-Skwt,    & ! Skewness of w at thermodynamic levels (k)  [-]
-wp3     ! w'^3(k)                                    [m^3/s^3]
+  C8,      & ! Model parameter C_8                        [-]
+  C8b,     & ! Model parameter C_8b                       [-]
+  tauw3t,  & ! Time-scale tau at thermodynamic levels (k) [s]
+  Skwt,    & ! Skewness of w at thermodynamic levels (k)  [-]
+  wp3     ! w'^3(k)                                    [m^3/s^3]
 
 ! Return Variable
 real :: rhs
@@ -2511,20 +2511,20 @@ implicit none
 
 ! Input Variables.
 real, intent(in) :: & 
-wp2_zt,    & ! w'^2 interpolated to thermodynamic levels (k) [m^2/s^2]
-zt,        & ! Height at thermodynamic level (k)             [m]
-emin,      & ! Model parameter                               [m^2/s^2]
-eps       ! Model parameter                               [-]
+  wp2_zt,    & ! w'^2 interpolated to thermodynamic levels (k) [m^2/s^2]
+  zt,        & ! Height at thermodynamic level (k)             [m]
+  emin,      & ! Model parameter                               [m^2/s^2]
+  eps       ! Model parameter                               [-]
 
 ! Input/Output Variables
 real, intent(inout) :: & 
-wp2,       & ! w'^2 (k)                                      [m^2/s^2]
-wp3       ! w'^3 (k)                                      [m^3/s^3]
+  wp2,       & ! w'^2 (k)                                      [m^2/s^2]
+  wp3       ! w'^3 (k)                                      [m^3/s^3]
 
 ! Local Variables
 real ::  & 
-atmp,      & ! max(w'^2, eps) at thermodynamic level (k)     [m^2/s^2]
-ctmp      ! atmp^(3/2)                                    [m^3/s^3]
+  atmp,      & ! max(w'^2, eps) at thermodynamic level (k)     [m^2/s^2]
+  ctmp      ! atmp^(3/2)                                    [m^3/s^3]
 
 !  Vince Larson commented out the Andre et al clipping to see if we
 !     could avoid using it.  26 Jul 2007

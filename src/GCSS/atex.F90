@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-!$Id: atex.F90,v 1.3 2008-07-28 19:37:54 faschinj Exp $
+!$Id: atex.F90,v 1.4 2008-07-29 16:44:01 nielsenb Exp $
 module atex
 
 !       Description:
@@ -55,31 +55,31 @@ implicit none
 
 ! Input Variables
 real(kind=time_precision), intent(in) ::  & 
-time,         & ! Current time     [s]
-time_initial ! Initial time     [s]
+  time,         & ! Current time     [s]
+  time_initial ! Initial time     [s]
 
 real, intent(in), dimension(gr%nnzp) :: & 
-rtm,   & ! Total water mixing ratio        [kg/kg]
-rhot,  & ! Density                         [kg/m^3]
-rcm,   & ! Liquid water mixing ratio       [kg/kg]
-exner ! Exner function                  [-]
+  rtm,   & ! Total water mixing ratio        [kg/kg]
+  rhot,  & ! Density                         [kg/m^3]
+  rcm,   & ! Liquid water mixing ratio       [kg/kg]
+  exner ! Exner function                  [-]
 
 ! Input/output
 integer, intent(inout) :: err_code ! Diagnostic 
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) :: & 
-wmt,          & ! w wind on thermodynamic grid                [m/s]
-wmm,          & ! w wind on momentum grid                     [m/s]
-Frad,         & ! Radiative flux                              [W/m^2]
-radht,        & ! Radiative heating rate                      [K/s]
-thlm_forcing, & ! Liquid water potential temperature tendency [K/s]
-rtm_forcing  ! Total water mixing ratio tendency           [kg/kg/s]
+  wmt,          & ! w wind on thermodynamic grid                [m/s]
+  wmm,          & ! w wind on momentum grid                     [m/s]
+  Frad,         & ! Radiative flux                              [W/m^2]
+  radht,        & ! Radiative heating rate                      [K/s]
+  thlm_forcing, & ! Liquid water potential temperature tendency [K/s]
+  rtm_forcing  ! Total water mixing ratio tendency           [kg/kg/s]
 
 
 ! Output (optional)
 real, intent(out), dimension(gr%nnzp, sclr_dim) :: & 
-sclrm_forcing ! Passive scalar tendency         [units/s]
+  sclrm_forcing ! Passive scalar tendency         [units/s]
 
 
 ! Internal variables
@@ -212,31 +212,31 @@ implicit none
 ! Constants
 
 real, parameter ::  & 
-ubmin = 0.25, & 
-!     .  ustar = 0.3,
-C_10  = 0.0013, & 
-SST   = 298.
+  ubmin = 0.25, & 
+  !     .  ustar = 0.3,
+  C_10  = 0.0013, & 
+  SST   = 298.
 
 ! Input variables
 real, intent(in) ::  & 
-um_sfc,          & ! um at zt(2)           [m/s]
-vm_sfc,          & ! vm at zt(2)           [m/s]
-thlm_sfc,        & ! Theta_l at zt(2)      [K]
-rtm_sfc            ! rt at zt(2)           [kg/kg]
+  um_sfc,          & ! um at zt(2)           [m/s]
+  vm_sfc,          & ! vm at zt(2)           [m/s]
+  thlm_sfc,        & ! Theta_l at zt(2)      [K]
+  rtm_sfc            ! rt at zt(2)           [kg/kg]
 
 ! Output variables
 real, intent(out) ::  & 
-upwp_sfc,    & ! u'w' at surface           [m^2/s^2]
-vpwp_sfc,    & ! v'w' at surface           [m^2/s^2]
-wpthlp_sfc,  & ! w'theta_l' surface flux   [(m K)/s]
-wprtp_sfc,   & ! w'rt' surface flux        [(m kg)/(kg s)]
-ustar          ! surface friction velocity [m/s]
+  upwp_sfc,    & ! u'w' at surface           [m^2/s^2]
+  vpwp_sfc,    & ! v'w' at surface           [m^2/s^2]
+  wpthlp_sfc,  & ! w'theta_l' surface flux   [(m K)/s]
+  wprtp_sfc,   & ! w'rt' surface flux        [(m kg)/(kg s)]
+  ustar          ! surface friction velocity [m/s]
 
 ! Output variables (optional)
 
 real, dimension(sclr_dim), intent(out) ::  & 
-wpsclrp_sfc,    & ! Passive scalar surface flux      [units m/s]
-wpedsclrp_sfc     ! Passive eddy-scalar surface flux [units m/s]
+  wpsclrp_sfc,    & ! Passive scalar surface flux      [units m/s]
+  wpedsclrp_sfc     ! Passive eddy-scalar surface flux [units m/s]
 
 ! Local Variables
 real :: ubar

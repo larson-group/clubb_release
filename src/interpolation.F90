@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!$Id: interpolation.F90,v 1.2 2008-07-28 19:45:10 faschinj Exp $
+!$Id: interpolation.F90,v 1.3 2008-07-29 16:44:00 nielsenb Exp $
 module interpolation
 
 implicit none
@@ -108,8 +108,8 @@ implicit none
 integer, intent(in) :: dim_out, dim_src
 
 real, dimension(dim_src), intent(in) ::  & 
-grid_src,  & ! [m]
-var_src   ! [generic units]
+  grid_src,  & ! [m]
+  var_src   ! [generic units]
 
 real, dimension(dim_out), intent(in) :: grid_out ! [m]
 

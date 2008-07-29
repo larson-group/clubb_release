@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-!$Id: cloud_sed_mod.F90,v 1.3 2008-07-28 19:37:55 faschinj Exp $
+!$Id: cloud_sed_mod.F90,v 1.4 2008-07-29 16:44:01 nielsenb Exp $
 module cloud_sed_mod
 
 implicit none
@@ -48,22 +48,22 @@ intrinsic :: exp, log
 
 ! Input Variables
 real, intent(in), dimension(gr%nnzp) :: & 
-rcm,      & ! Liquid water mixing ratio.   [kg/kg]
-rhom,     & ! Density on moment. grid      [kg/m^3]
-rhot,     & ! Density on thermo. grid      [kg/m^3]
-exner,    & ! Exner function               [-]
-Ncm      ! Cloud droplet number conc.   [num/kg]
+  rcm,      & ! Liquid water mixing ratio.   [kg/kg]
+  rhom,     & ! Density on moment. grid      [kg/m^3]
+  rhot,     & ! Density on thermo. grid      [kg/m^3]
+  exner,    & ! Exner function               [-]
+  Ncm      ! Cloud droplet number conc.   [num/kg]
 
 ! Input/Output Variables
 real, intent(inout), dimension(gr%nnzp) ::  & 
-rtm_mc,  & ! r_t change due to microphysics     [kg/kg)/s] 
-thlm_mc ! thlm change due to microphysics    [K/s] 
+  rtm_mc,  & ! r_t change due to microphysics     [kg/kg)/s] 
+  thlm_mc ! thlm change due to microphysics    [K/s] 
 
 ! Local Variables
 ! Addition for DYCOMS_2
 real, dimension(gr%nnzp) ::  & 
-Fcsed,     & ! Cloud water sedimentation flux       [kg/(m^2 s)]
-sed_rcm   ! d(rcm)/dt due to cloud sedimentation [kg/(m^2 s)]
+  Fcsed,     & ! Cloud water sedimentation flux       [kg/(m^2 s)]
+  sed_rcm   ! d(rcm)/dt due to cloud sedimentation [kg/(m^2 s)]
 
 integer :: k
 

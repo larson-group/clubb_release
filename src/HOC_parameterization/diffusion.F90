@@ -1,4 +1,4 @@
-! $Id: diffusion.F90,v 1.3 2008-07-28 19:34:42 faschinj Exp $
+! $Id: diffusion.F90,v 1.4 2008-07-29 16:44:02 nielsenb Exp $
 !===============================================================================
 module diffusion
 
@@ -249,21 +249,21 @@ implicit none
 
 ! Constant parameters
 integer, parameter :: & 
-kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
-k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
-km1_tdiag = 3    ! Thermodynamic subdiagonal index.
+  kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
+  k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
+  km1_tdiag = 3    ! Thermodynamic subdiagonal index.
 
 ! Input Variables
 real, intent(in) ::  & 
-K_m,    & ! Coefficient of eddy diffusivity at momentum level (k)   [m^2/s]
-K_mm1,  & ! Coefficient of eddy diffusivity at momentum level (k-1) [m^2/s]
-nu,     & ! Background constant coefficient of eddy diffusivity     [m^2/s]
-dzt,    & ! Inverse of grid spacing over thermodynamic level (k)    [1/m]
-dzm,    & ! Inverse of grid spacing over momentum level (k)         [1/m]
-dzmm1  ! Inverse of grid spacing over momentum level (k-1)       [1/m]
+  K_m,    & ! Coefficient of eddy diffusivity at momentum level (k)   [m^2/s]
+  K_mm1,  & ! Coefficient of eddy diffusivity at momentum level (k-1) [m^2/s]
+  nu,     & ! Background constant coefficient of eddy diffusivity     [m^2/s]
+  dzt,    & ! Inverse of grid spacing over thermodynamic level (k)    [1/m]
+  dzm,    & ! Inverse of grid spacing over momentum level (k)         [1/m]
+  dzmm1  ! Inverse of grid spacing over momentum level (k-1)       [1/m]
 
 integer, intent(in) ::  & 
-level ! Thermodynamic level where calculation occurs.           [-]
+  level ! Thermodynamic level where calculation occurs.           [-]
 
 ! Return Variable
 real, dimension(3) :: lhs
@@ -531,27 +531,27 @@ result( lhs )
 !-----------------------------------------------------------------------
 
 use grid_class, only: & 
-gr       ! Variable(s)
+    gr       ! Variable(s)
 
 implicit none
 
 ! Constant parameters
 integer, parameter :: & 
-kp1_mdiag = 1,    & ! Momentum superdiagonal index.
-k_mdiag   = 2,    & ! Momentum main diagonal index.
-km1_mdiag = 3    ! Momentum subdiagonal index.
+  kp1_mdiag = 1,    & ! Momentum superdiagonal index.
+  k_mdiag   = 2,    & ! Momentum main diagonal index.
+  km1_mdiag = 3    ! Momentum subdiagonal index.
 
 ! Input Variables
 real, intent(in) ::  & 
-K_t,    & ! Coefficient of eddy diffusivity at thermo. level (k)   [m^2/s]
-K_tp1,  & ! Coefficient of eddy diffusivity at thermo. level (k+1) [m^2/s]
-nu,     & ! Background constant coefficient of eddy diffusivity    [m^2/s]
-dzm,    & ! Inverse of grid spacing over momentum level (k)        [1/m]
-dzt,    & ! Inverse of grid spacing over thermodynamic level (k)   [1/m]
-dztp1  ! Inverse of grid spacing over thermodynamic level (k+1) [1/m]
+  K_t,    & ! Coefficient of eddy diffusivity at thermo. level (k)   [m^2/s]
+  K_tp1,  & ! Coefficient of eddy diffusivity at thermo. level (k+1) [m^2/s]
+  nu,     & ! Background constant coefficient of eddy diffusivity    [m^2/s]
+  dzm,    & ! Inverse of grid spacing over momentum level (k)        [1/m]
+  dzt,    & ! Inverse of grid spacing over thermodynamic level (k)   [1/m]
+  dztp1  ! Inverse of grid spacing over thermodynamic level (k+1) [1/m]
 
 integer, intent(in) ::  & 
-level ! Momentum level where calculation occurs.               [-]
+  level ! Momentum level where calculation occurs.               [-]
 
 ! Return Variable
 real, dimension(3) :: lhs

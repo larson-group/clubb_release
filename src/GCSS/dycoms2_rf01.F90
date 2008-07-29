@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf01.F90,v 1.3 2008-07-28 19:37:55 faschinj Exp $
+! $Id: dycoms2_rf01.F90,v 1.4 2008-07-29 16:44:01 nielsenb Exp $
 module dycoms2_rf01
 
 !       Description:
@@ -55,34 +55,34 @@ intrinsic :: exp, sqrt, present
 
 ! Constant Parameters
 real, parameter ::  & 
-lsdiv =  3.75e-6, & 
-F0 = 70.0, F1 = 22.0,  & 
-kay = 85.0
+  lsdiv =  3.75e-6, & 
+  F0 = 70.0, F1 = 22.0,  & 
+  kay = 85.0
 
 ! Input Variables
 real, dimension(gr%nnzp), intent(in) ::  & 
-rhom,  & ! Density on moment. grid         [kg/m^3]
-rhot,  & ! Density on thermo. grid         [kg/m^3] 
-rtm,   & ! Total water mixing ratio        [kg/kg]
-rcm,   & ! Cloud water mixing ratio        [kg/kg]
-exner ! Exner function                  [-]
+  rhom,  & ! Density on moment. grid         [kg/m^3]
+  rhot,  & ! Density on thermo. grid         [kg/m^3] 
+  rtm,   & ! Total water mixing ratio        [kg/kg]
+  rcm,   & ! Cloud water mixing ratio        [kg/kg]
+  exner ! Exner function                  [-]
 
 ! Input/Output Variables
 integer, intent(inout) :: err_code
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) ::  & 
-wmt,           & ! w wind on thermodynamic grid                 [m/s]
-wmm,           & ! w wind on momentum grid                      [m/s]
-thlm_forcing,  & ! Liquid water potential temperature tendency  [K/s]
-rtm_forcing,   & ! Total water mixing ratio tendency            [kg/kg/s]
-radht,         & ! Radiative heating rate                       [K/s]
-Frad          ! Radiative flux                               [W/m^2]
+  wmt,           & ! w wind on thermodynamic grid                 [m/s]
+  wmm,           & ! w wind on momentum grid                      [m/s]
+  thlm_forcing,  & ! Liquid water potential temperature tendency  [K/s]
+  rtm_forcing,   & ! Total water mixing ratio tendency            [kg/kg/s]
+  radht,         & ! Radiative heating rate                       [K/s]
+  Frad          ! Radiative flux                               [W/m^2]
 
 
 ! Output (optional)
 real, intent(out), dimension(gr%nnzp, sclr_dim) ::  & 
-sclrm_forcing
+  sclrm_forcing
 
 ! Internal variables
 real, dimension(gr%nnzp) :: lwp
@@ -215,34 +215,34 @@ intrinsic :: max, sqrt, present
 
 ! Constant parameters
 real, parameter ::  & 
-ubmin = 0.25, & 
-!     .  ustar = 0.25,
-Cd    = 0.0011
+  ubmin = 0.25, & 
+  !     .  ustar = 0.25,
+  Cd    = 0.0011
 
 ! Input variables
 integer, intent(in) :: sfctype
 
 real, intent(in) ::  & 
-Tsfc,       & ! Surface temperature                [K]
-psfc,       & ! Surface pressure                   [Pa]
-exner_sfc,  & ! Exner function at the surface      [-]
-um_sfc,     & ! u wind at the surface              [m/s]
-vm_sfc,     & ! v wind at the surface              [m/s]
-thlm_sfc,   & ! theta_l at the surface             [K]
-rtm_sfc,    & ! r_t at the surface                 [kg/kg]
-rhom_sfc   ! Density at the surface             [kg/m^3]
+  Tsfc,       & ! Surface temperature                [K]
+  psfc,       & ! Surface pressure                   [Pa]
+  exner_sfc,  & ! Exner function at the surface      [-]
+  um_sfc,     & ! u wind at the surface              [m/s]
+  vm_sfc,     & ! v wind at the surface              [m/s]
+  thlm_sfc,   & ! theta_l at the surface             [K]
+  rtm_sfc,    & ! r_t at the surface                 [kg/kg]
+  rhom_sfc   ! Density at the surface             [kg/m^3]
 
 ! Output variables
 real, intent(out) ::  & 
-upwp_sfc,    & ! u' w' at the surface              [m^2/s^2]
-vpwp_sfc,    & ! v' w' at the surface              [m^2/s^2]
-wpthlp_sfc,  & ! w' thl' at the surface            [m K/s]
-wprtp_sfc,   & ! w' rt'  at the surface            [m kg/kg]
-ustar       ! surface friction velocity         [m/s]
+  upwp_sfc,    & ! u' w' at the surface              [m^2/s^2]
+  vpwp_sfc,    & ! v' w' at the surface              [m^2/s^2]
+  wpthlp_sfc,  & ! w' thl' at the surface            [m K/s]
+  wprtp_sfc,   & ! w' rt'  at the surface            [m kg/kg]
+  ustar       ! surface friction velocity         [m/s]
 
 real, intent(out), dimension(sclr_dim) ::  & 
-wpsclrp_sfc,   & ! w' sclr' at the surface         [m units/s]
-wpedsclrp_sfc ! w' edsclr' at the surface       [m units/s]
+  wpsclrp_sfc,   & ! w' sclr' at the surface         [m units/s]
+  wpedsclrp_sfc ! w' edsclr' at the surface       [m units/s]
 
 ! Local variables
 

@@ -1,4 +1,4 @@
-! $Id: mixing_length.F90,v 1.4 2008-07-28 21:38:41 faschinj Exp $
+! $Id: mixing_length.F90,v 1.5 2008-07-29 16:44:03 nielsenb Exp $
 !-----------------------------------------------------------------------------
 module mixing_length
 
@@ -71,25 +71,25 @@ intrinsic :: max, sqrt
 
 ! Constant Parameters
 real, parameter ::  & 
-zlmin = 0.1, & 
-zeps  = 1.e-10
+  zlmin = 0.1, & 
+  zeps  = 1.e-10
 
 ! Input Variables
 real, dimension(gr%nnzp), intent(in) ::  & 
-thvm,    & ! Virtual potential temp. on themodynamic level   [K]
-thlm,    & ! Liquid potential temp. on themodynamic level    [K]
-rtm,     & ! Total water mixing ratio on themodynamic level  [kg/kg]
-rcm,     & ! Cloud water mixing ration on themodynamic level [kg/kg]
-em,      & ! em = 3/2 * w'^2; on momentum level              [m^2/s^2]
-exner,   & ! Exner function on thermodynamic level           [-]
-p       ! Pressure on thermodynamic level                 [Pa]
+  thvm,    & ! Virtual potential temp. on themodynamic level   [K]
+  thlm,    & ! Liquid potential temp. on themodynamic level    [K]
+  rtm,     & ! Total water mixing ratio on themodynamic level  [kg/kg]
+  rcm,     & ! Cloud water mixing ration on themodynamic level [kg/kg]
+  em,      & ! em = 3/2 * w'^2; on momentum level              [m^2/s^2]
+  exner,   & ! Exner function on thermodynamic level           [-]
+  p       ! Pressure on thermodynamic level                 [Pa]
 
 ! Output Variables
 real, dimension(gr%nnzp), intent(out) ::  & 
-Lscale  ! Mixing length                 [m]
+  Lscale  ! Mixing length                 [m]
 
 integer, intent(inout) :: & 
-err_code
+  err_code
 
 ! Local Variables
 integer :: i, j

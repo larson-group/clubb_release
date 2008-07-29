@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: wangara.F90,v 1.3 2008-07-28 19:37:55 faschinj Exp $
+! $Id: wangara.F90,v 1.4 2008-07-29 16:44:02 nielsenb Exp $
 module wangara
 
 implicit none
@@ -32,14 +32,14 @@ implicit none
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) :: & 
-wmt,          & ! w wind on thermodynamic grid                [m/s]
-wmm,          & ! w wind on momentum grid                     [m/s]
-thlm_forcing, & ! Liquid water potential temperature tendency [K/s]
-rtm_forcing     ! Total water mixing ratio tendency           [kg/kg/s]
+  wmt,          & ! w wind on thermodynamic grid                [m/s]
+  wmm,          & ! w wind on momentum grid                     [m/s]
+  thlm_forcing, & ! Liquid water potential temperature tendency [K/s]
+  rtm_forcing     ! Total water mixing ratio tendency           [kg/kg/s]
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
-sclrm_forcing ! Passive scalar tendency [units vary]
+  sclrm_forcing ! Passive scalar tendency [units vary]
 
 ! No large-scale subsidence for now
 wmt = 0.0
@@ -82,29 +82,29 @@ intrinsic :: mod, max, cos, sqrt, present
 
 ! Constants
 real, parameter ::  & 
-ubmin = 0.25
-!     .  ustar = 0.13
+  ubmin = 0.25
+  !     .  ustar = 0.13
 
 ! Input variables
 real(kind=time_precision), intent(in) ::  & 
-time    ! Current time  [s]
+  time    ! Current time  [s]
 
 real, intent(in) ::  & 
-um_sfc,  & ! um(2)         [m/s]
-vm_sfc  ! vm(2)         [m/s]
+  um_sfc,  & ! um(2)         [m/s]
+  vm_sfc  ! vm(2)         [m/s]
 
 ! Output variables
 real, intent(out) ::  & 
-upwp_sfc,     & ! u'w' at (1)      [m^2/s^2]
-vpwp_sfc,     & ! v'w'at (1)       [m^2/s^2]
-wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
-wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
-ustar        ! surface friction velocity [m/s]
+  upwp_sfc,     & ! u'w' at (1)      [m^2/s^2]
+  vpwp_sfc,     & ! v'w'at (1)       [m^2/s^2]
+  wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
+  wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
+  ustar        ! surface friction velocity [m/s]
 
 ! Output variables
 real, intent(out), dimension(sclr_dim) ::  & 
-wpsclrp_sfc,   & ! Passive scalar surface flux      [units m/s]
-wpedsclrp_sfc ! Passive eddy-scalar surface flux [units m/s]
+  wpsclrp_sfc,   & ! Passive scalar surface flux      [units m/s]
+  wpedsclrp_sfc ! Passive eddy-scalar surface flux [units m/s]
 
 ! Local variables
 

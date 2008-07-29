@@ -1,4 +1,4 @@
-! $Id: cloud_rad.F90,v 1.2 2008-07-28 19:37:55 faschinj Exp $
+! $Id: cloud_rad.F90,v 1.3 2008-07-29 16:44:01 nielsenb Exp $
 !----------------------------------------------------------------------
 module atex_cloud_rad
 
@@ -38,17 +38,17 @@ real, parameter :: F0 = 74., ktemp = 130.
 
 ! Input Variables
 real, dimension(gr%nnzp), intent(in) ::  & 
-rhot,  & ! Density (thermo point)          [kg/m^3]
-rcm,   & ! Liquid water mixing ratio       [kg/kg]
-exner ! Exner function                  [-]
+  rhot,  & ! Density (thermo point)          [kg/m^3]
+  rcm,   & ! Liquid water mixing ratio       [kg/kg]
+  exner ! Exner function                  [-]
 
 ! Output Variables
 real, dimension(gr%nnzp), intent(out) ::  & 
-Frad,  & ! IR radiative flux               [W/m^2]
-radht ! Radiative heating rate          [K/s]
+  Frad,  & ! IR radiative flux               [W/m^2]
+  radht ! Radiative heating rate          [K/s]
 
 real, dimension(gr%nnzp), intent(inout) ::  & 
-thlm_forcing ! Radht + LS      [K/s]
+  thlm_forcing ! Radht + LS      [K/s]
 
 ! Local Variables
 real, dimension(1:gr%nnzp) :: LWP        ! Liquid Water Path

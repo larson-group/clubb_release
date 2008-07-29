@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: astex.F90,v 1.3 2008-07-28 19:37:54 faschinj Exp $
+! $Id: astex.F90,v 1.4 2008-07-29 16:44:01 nielsenb Exp $
 module astex
 
 !       Description:
@@ -36,13 +36,13 @@ implicit none
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) ::  & 
-wmt,           & ! w wind on the thermodynamic grid        [m/s]
-wmm,           & ! w wind on the momentum grid             [m/s]
-thlm_forcing,  & ! Liquid potential temperature tendency   [K/s]
-rtm_forcing   ! Total water mixing ratio tendency       [kg/kg/s]
+  wmt,           & ! w wind on the thermodynamic grid        [m/s]
+  wmm,           & ! w wind on the momentum grid             [m/s]
+  thlm_forcing,  & ! Liquid potential temperature tendency   [K/s]
+  rtm_forcing   ! Total water mixing ratio tendency       [kg/kg/s]
 
 real, intent(out), dimension(gr%nnzp,sclr_dim) ::  & 
-sclrm_forcing ! Passive scalar forcing  [units/s]
+  sclrm_forcing ! Passive scalar forcing  [units/s]
 
 ! Local variables
 
@@ -108,18 +108,18 @@ implicit none
 ! Input variables
 
 real, intent(in) ::  & 
-rho0        ! Density at (1)         [kg/m^3]
+  rho0        ! Density at (1)         [kg/m^3]
 ! Output variables
 
 real, intent(out) ::  & 
-upwp_sfc,     & ! u'w' at (1)      [m^2/s^2]
-vpwp_sfc,     & ! v'w'at (1)       [m^2/s^2]
-wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
-wprtp_sfc    ! w'r_t'(1) at (1) [(m kg)/(s kg)]
+  upwp_sfc,     & ! u'w' at (1)      [m^2/s^2]
+  vpwp_sfc,     & ! v'w'at (1)       [m^2/s^2]
+  wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
+  wprtp_sfc    ! w'r_t'(1) at (1) [(m kg)/(s kg)]
 
 real, intent(out), dimension(sclr_dim) ::  & 
-wpsclrp_sfc,   & ! w' scalar at surface [units m/s]
-wpedsclrp_sfc ! w' scalar at surface [units m/s]
+  wpsclrp_sfc,   & ! w' scalar at surface [units m/s]
+  wpedsclrp_sfc ! w' scalar at surface [units m/s]
 
 ! Local variables
 

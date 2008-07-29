@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: lapack_wrap.F90,v 1.2 2008-07-28 19:34:42 faschinj Exp $
+! $Id: lapack_wrap.F90,v 1.3 2008-07-29 16:44:02 nielsenb Exp $
 module lapack_wrap
 
 !       Description:
@@ -50,26 +50,26 @@ implicit none
 
 ! External
 external ::  & 
-sgtsvx,  & ! Single-prec. General Tridiagonal Solver eXpert
-dgtsvx  ! Double-prec. General Tridiagonal Solver eXpert
+  sgtsvx,  & ! Single-prec. General Tridiagonal Solver eXpert
+  dgtsvx  ! Double-prec. General Tridiagonal Solver eXpert
 
 intrinsic :: kind
 
 ! Input variables
 character(len=*), intent(in) ::  & 
-solve_type ! Used to write a message if this fails
+  solve_type ! Used to write a message if this fails
 
 integer, intent(in) ::  & 
-ndim,  & ! N-dimension of matrix
-nrhs  ! # of right hand sides to back subst. after LU-decomp.
+  ndim,  & ! N-dimension of matrix
+  nrhs  ! # of right hand sides to back subst. after LU-decomp.
 
 ! Input/Output variables
 real, intent(inout), dimension(ndim) ::  & 
-diag,       & ! Main diagonal
-subd, supd ! Sub and super diagonal
+  diag,       & ! Main diagonal
+  subd, supd ! Sub and super diagonal
 
 real, intent(inout), dimension(ndim,nrhs) ::  & 
-rhs ! RHS input
+  rhs ! RHS input
 
 ! The estimate of the reciprocal condition number of the matrix.
 ! If rcond is less than the machine precision (in
@@ -79,11 +79,11 @@ rhs ! RHS input
 real, intent(out) :: rcond 
 
 integer, intent(out) ::  & 
-err_code ! Used to determine when a decomp. failed
+  err_code ! Used to determine when a decomp. failed
 
 ! Output variables
 real, intent(out), dimension(ndim,nrhs) ::  & 
-solution ! Solution
+  solution ! Solution
 
 ! Local Variables
 ! These contain the decomposition of the matrix
@@ -92,18 +92,18 @@ real, dimension(ndim)   :: df
 real, dimension(ndim-2) :: du2
  
 integer, dimension(ndim) ::  & 
-ipivot  ! Index of pivots done during decomposition
+  ipivot  ! Index of pivots done during decomposition
 
 integer, dimension(ndim) ::  & 
-iwork   ! `scrap' array
+  iwork   ! `scrap' array
 
 
 real, dimension(nrhs) ::  & 
-ferr,  & ! Forward error estimate
-berr  ! Backward error estimate
+  ferr,  & ! Forward error estimate
+  berr  ! Backward error estimate
 
 real, dimension(3*ndim) ::  & 
-work  ! `Scrap' array
+  work  ! `Scrap' array
 
 integer :: info ! Diagnostic output
 
@@ -181,33 +181,33 @@ implicit none
 
 ! External
 external ::  & 
-sgtsv,  & ! Single-prec. General Tridiagonal Solver eXpert
-dgtsv  ! Double-prec. General Tridiagonal Solver eXpert
+  sgtsv,  & ! Single-prec. General Tridiagonal Solver eXpert
+  dgtsv  ! Double-prec. General Tridiagonal Solver eXpert
 
 intrinsic :: kind
 
 ! Input variables
 character(len=*), intent(in) ::  & 
-solve_type ! Used to write a message if this fails
+  solve_type ! Used to write a message if this fails
 
 integer, intent(in) ::  & 
-ndim,  & ! N-dimension of matrix
-nrhs  ! # of right hand sides to back subst. after LU-decomp.
+  ndim,  & ! N-dimension of matrix
+  nrhs  ! # of right hand sides to back subst. after LU-decomp.
 
 ! Input/Output variables
 real, intent(inout), dimension(ndim) ::  & 
-diag,       & ! Main diagonal
-subd, supd ! Sub and super diagonal
+  diag,       & ! Main diagonal
+  subd, supd ! Sub and super diagonal
 
 real, intent(inout), dimension(ndim,nrhs) ::  & 
-rhs ! RHS input
+  rhs ! RHS input
 
 integer, intent(out) ::  & 
-err_code ! Used to determine when a decomp. failed
+  err_code ! Used to determine when a decomp. failed
 
 ! Output variables
 real, intent(out), dimension(ndim,nrhs) ::  & 
-solution ! Solution
+  solution ! Solution
 
 ! Local Variables
  
@@ -276,8 +276,8 @@ implicit none
 
 ! External
 external ::  & 
-sgbsvx,  & ! Single-prec. General Band Solver eXpert
-dgbsvx  ! Double-prec. General Band Solver eXpert
+  sgbsvx,  & ! Single-prec. General Band Solver eXpert
+  dgbsvx  ! Double-prec. General Band Solver eXpert
 
 intrinsic :: eoshift, kind, trim
 
@@ -285,15 +285,15 @@ intrinsic :: eoshift, kind, trim
 character(len=*), intent(in) :: solve_type
 
 integer, intent(in) :: & 
-nsup,  & ! Number of superdiagonals
-nsub,  & ! Number of subdiagonals
-ndim,  & ! The order of the LHS Matrix, i.e. the # of linear equations
-nrhs  ! Number of RHS's to solve for
+  nsup,  & ! Number of superdiagonals
+  nsub,  & ! Number of subdiagonals
+  ndim,  & ! The order of the LHS Matrix, i.e. the # of linear equations
+  nrhs  ! Number of RHS's to solve for
 
 real, dimension(nsup+nsub+1,ndim), intent(inout) ::  & 
-lhs ! Left hand side
+  lhs ! Left hand side
 real, dimension(ndim,nrhs), intent(inout) ::  & 
-rhs ! Right hand side(s)
+  rhs ! Right hand side(s)
 
 ! Output Variables
 real, dimension(ndim,nrhs), intent(out) :: solution
@@ -301,7 +301,7 @@ real, dimension(ndim,nrhs), intent(out) :: solution
 ! The estimate of the reciprocal condition number of matrix
 ! after equilibration (if done).
 real, intent(out) ::  & 
-rcond
+  rcond
 
 integer, intent(out) :: err_code ! Valid calculation?
 
@@ -312,24 +312,24 @@ real, dimension(3*ndim)  :: work
 integer, dimension(ndim) :: iwork
 
 real, dimension(2*nsub+nsup+1,ndim) :: & 
-lulhs ! LU Decomposition of the LHS
+  lulhs ! LU Decomposition of the LHS
 
 integer, dimension(ndim) ::  & 
-ipivot
+  ipivot
 
 real, dimension(nrhs) ::  & 
-ferr, berr ! Forward and backward error estimate
+  ferr, berr ! Forward and backward error estimate
 
 real, dimension(ndim) ::  & 
-rscale, cscale ! Row and column scale factors for the LHS
+  rscale, cscale ! Row and column scale factors for the LHS
 
 integer ::  & 
-info,   & ! If this doesn't come back as 0, something went wrong
-offset, & ! Loop iterator
-imain  ! Main diagonal of the matrix
+  info,   & ! If this doesn't come back as 0, something went wrong
+  offset, & ! Loop iterator
+  imain  ! Main diagonal of the matrix
 
 character ::  & 
-equed ! Row equilibration status
+  equed ! Row equilibration status
 
 
 !-----------------------------------------------------------------------
@@ -457,8 +457,8 @@ implicit none
 
 ! External
 external ::  & 
-sgbsv,  & ! Single-prec. General Band Solver
-dgbsv  ! Double-prec. General Band Solver
+  sgbsv,  & ! Single-prec. General Band Solver
+  dgbsv  ! Double-prec. General Band Solver
 
 intrinsic :: eoshift, kind, trim
 
@@ -466,17 +466,17 @@ intrinsic :: eoshift, kind, trim
 character(len=*), intent(in) :: solve_type
 
 integer, intent(in) :: & 
-nsup,  & ! Number of superdiagonals
-nsub,  & ! Number of subdiagonals
-ndim,  & ! The order of the LHS Matrix, i.e. the # of linear equations
-nrhs  ! Number of RHS's to solve for
+  nsup,  & ! Number of superdiagonals
+  nsub,  & ! Number of subdiagonals
+  ndim,  & ! The order of the LHS Matrix, i.e. the # of linear equations
+  nrhs  ! Number of RHS's to solve for
 
 ! Note: matrix lhs is intent(in), not intent(inout) 
 ! as in the subroutine band_solvex( )
 real, dimension(nsup+nsub+1,ndim), intent(in) ::  & 
-lhs ! Left hand side
+  lhs ! Left hand side
 real, dimension(ndim,nrhs), intent(inout) ::  & 
-rhs ! Right hand side(s)
+  rhs ! Right hand side(s)
 
 ! Output Variables
 real, dimension(ndim,nrhs), intent(out) :: solution
@@ -487,15 +487,15 @@ integer, intent(out) :: err_code ! Valid calculation?
 
 ! Workspaces
 real, dimension(2*nsub+nsup+1,ndim) :: & 
-lulhs ! LU Decomposition of the LHS
+  lulhs ! LU Decomposition of the LHS
 
 integer, dimension(ndim) ::  & 
-ipivot
+  ipivot
 
 integer ::  & 
-info,   & ! If this doesn't come back as 0, something went wrong
-offset, & ! Loop iterator
-imain  ! Main diagonal of the matrix
+  info,   & ! If this doesn't come back as 0, something went wrong
+  offset, & ! Loop iterator
+  imain  ! Main diagonal of the matrix
 
 ! Copy LHS into Decomposition scratch space
 

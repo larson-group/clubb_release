@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F90,v 1.5 2008-07-28 19:34:42 faschinj Exp $
+! $Id: diag_variables.F90,v 1.6 2008-07-29 16:44:02 nielsenb Exp $
 module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -21,88 +21,88 @@ public :: setup_diagnostic_variables, &
 ! Diagnostic variables
 
 real, target, allocatable, dimension(:), public :: & 
-Sct,     & ! PDF width parameter: t point          [-]
-Skwm,    & ! Skw on moment. grid                   [-]
-Skwt,    & ! Skw on thermo. grid                   [-]
-ug,      & ! u geostrophic wind                    [m/s]
-vg,      & ! v geostrophic wind                    [m/s]
-um_ref,  & ! Initial u wind; Michael Falk,         [m/s]
-vm_ref,  & ! Initial v wind; Michael Falk,         [m/s]
-thvm,    & ! Virtual potential Temperature         [K]
-shear   ! Wind shear production
+  Sct,     & ! PDF width parameter: t point          [-]
+  Skwm,    & ! Skw on moment. grid                   [-]
+  Skwt,    & ! Skw on thermo. grid                   [-]
+  ug,      & ! u geostrophic wind                    [m/s]
+  vg,      & ! v geostrophic wind                    [m/s]
+  um_ref,  & ! Initial u wind; Michael Falk,         [m/s]
+  vm_ref,  & ! Initial v wind; Michael Falk,         [m/s]
+  thvm,    & ! Virtual potential Temperature         [K]
+  shear   ! Wind shear production
 
 !$omp   threadprivate(Sct, Skwm, Skwt, ug, vg)
 !$omp   threadprivate(thvm, shear)
 !$omp   threadprivate(um_ref, vm_ref)
 
 real, target, allocatable, dimension(:), public :: & 
-rsat ! Saturation mixing ratio  ! Brian
-!$omp   threadprivate(rsat)
+  rsat ! Saturation mixing ratio  ! Brian
+  !$omp   threadprivate(rsat)
 
 real, target, allocatable, dimension(:), public :: & 
-Frad,  & ! Radiative flux (momentum point)
-radht ! SW + LW heating rate
+  Frad,  & ! Radiative flux (momentum point)
+  radht ! SW + LW heating rate
 
 !$omp   threadprivate(Frad, radht)
 
 ! Tendency arrays for u and v wind
 real, target, allocatable, dimension(:), public :: & 
-umt,     & ! u wind [m/s^2]
-vmt     ! v wind [m/s^2]
+  umt,     & ! u wind [m/s^2]
+  vmt     ! v wind [m/s^2]
 
 !$omp   threadprivate(umt, vmt)
 
 ! Second order moments
 real, target, allocatable, dimension(:), public :: & 
-wprcp,    & ! w'rc'                [m kg/s kg]
-thlprcp,  & ! thl'rc'              [K kg/kg]
-rtprcp,   & ! rt'rc'               [kg^2/kg^2]
-rcp2     ! rc'^2                [kg^2/kg^2]
+  wprcp,    & ! w'rc'                [m kg/s kg]
+  thlprcp,  & ! thl'rc'              [K kg/kg]
+  rtprcp,   & ! rt'rc'               [kg^2/kg^2]
+  rcp2     ! rc'^2                [kg^2/kg^2]
 
 !$omp   threadprivate(wprcp, thlprcp, rtprcp, rcp2)
 
 ! Third order moments
 real, target, allocatable, dimension(:), public :: & 
-wpthlp2,   & ! w'thl'^2    [m K^2/s]
-wp2thlp,   & ! w'^2 thl'   [m^2 K/s^2]
-wprtp2,    & ! w'rt'^2     [m kg^2/kg^2]
-wp2rtp,    & ! w'^2rt'     [m^2 kg/kg]
-wprtpthlp, & ! w'rt'thl'   [m kg K/kg s]
-wp2rcp    ! w'^2 rc'    [m^2 kg/kg s^2]
+  wpthlp2,   & ! w'thl'^2    [m K^2/s]
+  wp2thlp,   & ! w'^2 thl'   [m^2 K/s^2]
+  wprtp2,    & ! w'rt'^2     [m kg^2/kg^2]
+  wp2rtp,    & ! w'^2rt'     [m^2 kg/kg]
+  wprtpthlp, & ! w'rt'thl'   [m kg K/kg s]
+  wp2rcp    ! w'^2 rc'    [m^2 kg/kg s^2]
 
 !$omp   threadprivate(wpthlp2, wp2thlp, wprtp2, wp2rtp )
 !$omp   threadprivate(wprtpthlp, wp2rcp)
 
 ! Fourth order moments
 real, target, allocatable, dimension(:), public :: & 
-wp4 ! w'^4      [m^4/s^4]
+  wp4 ! w'^4      [m^4/s^4]
 
 !$omp   threadprivate(wp4)
 
 ! Buoyancy related moments
 real, target, allocatable, dimension(:), public :: & 
-wpthvp,   & ! w'thv'       [m K/s]
-rtpthvp,  & ! rt' thv'     [kg K/kg]
-thlpthvp, & ! thl'thv'     [K^2] 
-wp2thvp  ! w'^2 thv'    [m^2 K/s^2]
+  wpthvp,   & ! w'thv'       [m K/s]
+  rtpthvp,  & ! rt' thv'     [kg K/kg]
+  thlpthvp, & ! thl'thv'     [K^2] 
+  wp2thvp  ! w'^2 thv'    [m^2 K/s^2]
 
 !$omp   threadprivate(wpthvp, rtpthvp, thlpthvp, wp2thvp)
 
 real, target, allocatable, dimension(:), public :: & 
-Kht,  & ! Eddy diffusivity: zt grid        [m^2/s]
-Khm  ! Eddy diffusivity: zm grid        [m^2/s]
+  Kht,  & ! Eddy diffusivity: zt grid        [m^2/s]
+  Khm  ! Eddy diffusivity: zm grid        [m^2/s]
 
 !$omp   threadprivate(Kht, Khm)
 
 ! Mixing lengths
 real, target, allocatable, dimension(:), public :: & 
-Lscale, Lup, Ldown ! [m]
+  Lscale, Lup, Ldown ! [m]
 
 !$omp   threadprivate(Lscale, Lup, Ldown)
 
 real, target, allocatable, dimension(:), public :: & 
-em,   & ! em               [m^2/s^2]
-taut ! Dissipation time [s]
+  em,   & ! em               [m^2/s^2]
+  taut ! Dissipation time [s]
 
 !$omp   threadprivate(em, taut)
 
@@ -117,9 +117,9 @@ real, allocatable, dimension(:,:), public :: hydromet
 !$omp   threadprivate(hydromet)
 
 real, target, allocatable, dimension(:), public :: & 
-Ncm,   & ! Cloud droplet number concentration      [num/kg]
-Ncnm,  & ! Cloud nuclei number concentration       [num/m^3]
-Nim   ! Ice nuclei number concentration         [num/m^3]
+  Ncm,   & ! Cloud droplet number concentration      [num/kg]
+  Ncnm,  & ! Cloud nuclei number concentration       [num/m^3]
+  Nim   ! Ice nuclei number concentration         [num/m^3]
 !$omp   threadprivate(Ncm, Ncnm, Nim)
 
 
@@ -131,19 +131,19 @@ real, public  :: ustar ! Average value of friction velocity [m/s]
 ! Passive scalar variables
 
 real, target, allocatable, dimension(:,:), public :: & 
-edsclrmt,    & ! Explicit contributions to edsclrm
-wpedsclrp   ! w'edsclr'
+  edsclrmt,    & ! Explicit contributions to edsclrm
+  wpedsclrp   ! w'edsclr'
 
 real, target, allocatable, dimension(:,:), public :: & 
-sclrpthvp,   & ! sclr'th_v'
-sclrprtp,    & ! sclr'rt'
-sclrp2,      & ! sclr'^2
-sclrpthlp,   & ! sclr'th_l'
-sclrprcp,    & ! sclr'rc'
-wp2sclrp,    & ! w'^2 sclr'
-wpsclrp2,    & ! w'sclr'^2
-wpsclrprtp,  & ! w'sclr'rt'
-wpsclrpthlp ! w'sclr'thl'
+  sclrpthvp,   & ! sclr'th_v'
+  sclrprtp,    & ! sclr'rt'
+  sclrp2,      & ! sclr'^2
+  sclrpthlp,   & ! sclr'th_l'
+  sclrprcp,    & ! sclr'rc'
+  wp2sclrp,    & ! w'^2 sclr'
+  wpsclrp2,    & ! w'sclr'^2
+  wpsclrprtp,  & ! w'sclr'rt'
+  wpsclrpthlp ! w'sclr'thl'
 
 !$omp   threadprivate(edsclrmt)
 !$omp   threadprivate(wpedsclrp)
@@ -153,12 +153,12 @@ wpsclrpthlp ! w'sclr'thl'
 ! Interpolated variables for tuning
 !#ifdef STATS
 real, target, allocatable, dimension(:), public :: & 
-wp2_zt,     & ! w'^2 on thermo. grid
-thlp2_zt,   & ! thl'^2 on thermo. grid
-wpthlp_zt,  & ! w'thl' on thermo. grid
-wprtp_zt,   & ! w'rt' on thermo. grid
-rtp2_zt,    & ! rt'^2 on therm. grid
-rtpthlp_zt ! rt'thl' on thermo. grid
+  wp2_zt,     & ! w'^2 on thermo. grid
+  thlp2_zt,   & ! thl'^2 on thermo. grid
+  wpthlp_zt,  & ! w'thl' on thermo. grid
+  wprtp_zt,   & ! w'rt' on thermo. grid
+  rtp2_zt,    & ! rt'^2 on therm. grid
+  rtpthlp_zt ! rt'thl' on thermo. grid
 
 !$omp   threadprivate(wp2_zt, thlp2_zt, wpthlp_zt, wprtp_zt) 
 !$omp   threadprivate(rtp2_zt, rtpthlp_zt)
@@ -195,19 +195,19 @@ rtpthlp_zt ! rt'thl' on thermo. grid
 !        pdf_parms(:,24) = rrtthl
 
 real, target, allocatable, dimension(:,:), public :: & 
-pdf_parms
+  pdf_parms
 
 !$omp   threadprivate(pdf_parms)
 
 ! Latin Hypercube arrays.  Vince Larson 22 May 2005
 real, target, allocatable, dimension(:), public :: & 
-AKm_est,   & ! Kessler ac estimate                 [kg/kg]
-AKm,       & ! Exact Kessler ac                    [kg/kg]
-AKstd,     & ! St dev of exact Kessler ac          [???]
-AKstd_cld, & ! Stdev of exact w/in cloud ac        [???]
-rcm_est,   & ! Monte Carlo rcm estimate            [kg/kg]
-AKm_rcm,   & ! Kessler ac based on rcm             [???]
-AKm_rcc   ! Kessler ac based on rcm/cf          [???]
+  AKm_est,   & ! Kessler ac estimate                 [kg/kg]
+  AKm,       & ! Exact Kessler ac                    [kg/kg]
+  AKstd,     & ! St dev of exact Kessler ac          [???]
+  AKstd_cld, & ! Stdev of exact w/in cloud ac        [???]
+  rcm_est,   & ! Monte Carlo rcm estimate            [kg/kg]
+  AKm_rcm,   & ! Kessler ac based on rcm             [???]
+  AKm_rcc   ! Kessler ac based on rcm/cf          [???]
 
 !$omp   threadprivate(AKm_est, AKm, AKstd, AKstd_cld, rcm_est, AKm_rcm)
 !$omp   threadprivate(AKm_rcc)
@@ -220,7 +220,7 @@ contains
 !-----------------------------------------------------------------------
 subroutine setup_diagnostic_variables( nzmax )
 use model_flags, only:  & 
-LH_on ! Variable(s)
+    LH_on ! Variable(s)
 
 use constants, only:  & 
     emin ! Variables

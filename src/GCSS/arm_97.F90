@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm_97.F90,v 1.2 2008-07-28 19:37:54 faschinj Exp $
+! $Id: arm_97.F90,v 1.3 2008-07-29 16:44:01 nielsenb Exp $
 module arm_97
 
 !       Description:
@@ -72,16 +72,16 @@ real(kind=time_precision), intent(in) :: time ! Model time [s]
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) ::  & 
-thlm_forcing,  & ! Liquid water potential temperature tendency  [K/s]
-wmm,           & ! Vertical velocity on moment. grid            [m/s]
-wmt,           & ! Vertical velocity on thermo. grid            [m/s]
-rtm_forcing,   & ! Total water mixing ratio tendency            [kg/kg/s]
-um_hoc_grid,   & ! Observed wind, for nudging                   [m/s]
-vm_hoc_grid   ! Observed wind, for nudging                   [m/s]
+  thlm_forcing,  & ! Liquid water potential temperature tendency  [K/s]
+  wmm,           & ! Vertical velocity on moment. grid            [m/s]
+  wmt,           & ! Vertical velocity on thermo. grid            [m/s]
+  rtm_forcing,   & ! Total water mixing ratio tendency            [kg/kg/s]
+  um_hoc_grid,   & ! Observed wind, for nudging                   [m/s]
+  vm_hoc_grid   ! Observed wind, for nudging                   [m/s]
 
 ! Output (optional) Variables
 real, intent(out), dimension(gr%nnzp,sclr_dim) ::  & 
-sclrm_forcing ! Passive scalar tendency [units vary]
+  sclrm_forcing ! Passive scalar tendency [units vary]
 
 real :: time_frac
 integer :: i1, i2
@@ -203,33 +203,33 @@ intrinsic :: max, sqrt, present
 
 
 real, parameter ::  & 
-ubmin = 0.25,    & ! Minimum value for ubar 
-z0    = 0.035   ! ARM Cu mom. roughness height
+  ubmin = 0.25,    & ! Minimum value for ubar 
+  z0    = 0.035   ! ARM Cu mom. roughness height
 
 
 ! Input Variables
 real(time_precision), intent(in) ::  & 
-time      ! Current time        [s] 
+  time      ! Current time        [s] 
 
 real, intent(in) ::  & 
-z,         & ! Height at zt=2      [s] 
-rho0,      & ! Density at zm=1     [kg/m^3] 
-um_sfc,    & ! um at (2)           [m/s]
-vm_sfc,    & ! vm at (2)           [m/s]
-thlm_sfc  ! thlm at (2)         [m/s]
+  z,         & ! Height at zt=2      [s] 
+  rho0,      & ! Density at zm=1     [kg/m^3] 
+  um_sfc,    & ! um at (2)           [m/s]
+  vm_sfc,    & ! vm at (2)           [m/s]
+  thlm_sfc  ! thlm at (2)         [m/s]
 
 ! Output variables
 real, intent(out) ::  & 
-upwp_sfc,     & ! u'w' at (1)      [m^2/s^2]
-vpwp_sfc,     & ! v'w'at (1)       [m^2/s^2]
-wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
-wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
-ustar        ! surface friction velocity [m/s]
+  upwp_sfc,     & ! u'w' at (1)      [m^2/s^2]
+  vpwp_sfc,     & ! v'w'at (1)       [m^2/s^2]
+  wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
+  wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
+  ustar        ! surface friction velocity [m/s]
 
 ! Output variables (optional)
 real, intent(out), optional, dimension(sclr_dim) ::  & 
-wpsclrp_sfc,   & ! Passive scalar surface flux      [units m/s] 
-wpedsclrp_sfc ! Passive eddy-scalar surface flux [units m/s]
+  wpsclrp_sfc,   & ! Passive scalar surface flux      [units m/s] 
+  wpedsclrp_sfc ! Passive eddy-scalar surface flux [units m/s]
 
 ! Local variables
 !        real :: ubar, ustar, bflx, heat_flx, moisture_flx, time_frac

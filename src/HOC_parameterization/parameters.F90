@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameters.F90,v 1.3 2008-07-28 19:34:43 faschinj Exp $
+! $Id: parameters.F90,v 1.4 2008-07-29 16:44:03 nielsenb Exp $
  module parameters 
 
 !       Description:
@@ -381,7 +381,7 @@ character(len=*), intent(in) :: filename
 integer, intent(out), dimension(nparams) :: nindex  
 
 real, intent(out), dimension(nparams) ::  & 
-param_spread  ! Amount to vary the parameter in the initial simplex
+  param_spread  ! Amount to vary the parameter in the initial simplex
 
 integer, intent(out) :: ndim  ! Dimension of the init simplex
 

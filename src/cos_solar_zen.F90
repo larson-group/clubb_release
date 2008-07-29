@@ -1,4 +1,4 @@
-! $Id: cos_solar_zen.F90,v 1.2 2008-07-28 19:45:09 faschinj Exp $
+! $Id: cos_solar_zen.F90,v 1.3 2008-07-29 16:44:00 nielsenb Exp $
 !-----------------------------------------------------------------------
 module cos_solar_zen_mod
 
@@ -43,26 +43,26 @@ intrinsic :: sin, cos, mod, abs, int
 
 ! Liou's coefficients
 double precision, parameter :: & 
-c0 =  0.006918,   & ! [-]
-c1 = -0.399912,   & ! [-]
-c2 = -0.006758,   & ! [-]
-c3 = -0.002697,   & ! [-]
-d1 =  0.070257,   & ! [-]
-d2 =  0.000907,   & ! [-]
-d3 =  0.000148   ! [-]
+  c0 =  0.006918,   & ! [-]
+  c1 = -0.399912,   & ! [-]
+  c2 = -0.006758,   & ! [-]
+  c3 = -0.002697,   & ! [-]
+  d1 =  0.070257,   & ! [-]
+  d2 =  0.000907,   & ! [-]
+  d3 =  0.000148   ! [-]
 
 ! Input Variables
 integer, intent(in) ::  & 
-day,    & ! Day of month at model start
-month,  & ! Month of year at model start
-year   ! Year at model start
+  day,    & ! Day of month at model start
+  month,  & ! Month of year at model start
+  year   ! Year at model start
 
 real(kind=time_precision), intent(in) :: & 
-current_time   ! Current time since start date [s]
+  current_time   ! Current time since start date [s]
 
 real, intent(in) :: & 
-lat_in_degrees, & ! Latitude       [degrees_N]
-lon_in_degrees ! Longitude      [degrees_E]
+  lat_in_degrees, & ! Latitude       [degrees_N]
+  lon_in_degrees ! Longitude      [degrees_E]
 
 !        ! Output Variables
 !        double precision ::
@@ -70,18 +70,18 @@ lon_in_degrees ! Longitude      [degrees_E]
 
 ! Local Variables
 double precision :: & 
-t,  & 
+  t,  & 
 !     .  h,
-delta, & 
-zln, & 
-longang, & 
-latang, & 
-hour,  & 
-present_time
+  delta, & 
+  zln, & 
+  longang, & 
+  latang, & 
+  hour,  & 
+  present_time
 
 integer :: & 
-jul_day, days_in_year, & 
-present_year, present_month, present_day 
+  jul_day, days_in_year, & 
+  present_year, present_month, present_day 
 
 call compute_current_date( day, month, & 
                            year, & 

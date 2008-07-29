@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: cobra.F90,v 1.3 2008-07-28 19:37:55 faschinj Exp $
+! $Id: cobra.F90,v 1.4 2008-07-29 16:44:01 nielsenb Exp $
 module cobra
 !       Description:
 !       Contains subroutines for the COBRA CO2 case.
@@ -10,8 +10,8 @@ implicit none
 private ! Default Scope
 
 public :: & 
-cobra_tndcy, & 
-cobra_sfclyr
+  cobra_tndcy, & 
+  cobra_sfclyr
 
 contains
 
@@ -43,14 +43,14 @@ implicit none
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) :: & 
-wmt,          & ! w wind on thermodynamic grid                 [m/s]
-wmm,          & ! w wind on momentum grid                      [m/s]
-thlm_forcing, & ! Liquid water potential temperature tendency  [K/s]
-rtm_forcing  ! Total water mixing ratio tendency            [kg/kg/s]
+  wmt,          & ! w wind on thermodynamic grid                 [m/s]
+  wmm,          & ! w wind on momentum grid                      [m/s]
+  thlm_forcing, & ! Liquid water potential temperature tendency  [K/s]
+  rtm_forcing  ! Total water mixing ratio tendency            [kg/kg/s]
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
-sclrm_forcing ! Passive scalar tendency [units vary]
+  sclrm_forcing ! Passive scalar tendency [units vary]
 
 ! Local Variables
 integer :: k
@@ -134,40 +134,40 @@ intrinsic :: sqrt, max
 
 ! Parameter Constants
 real, parameter :: & 
-ubmin = 0.25, & 
-M_da  = 0.02897  ! Molecular weight of dry air.
+  ubmin = 0.25, & 
+  M_da  = 0.02897  ! Molecular weight of dry air.
 
 ! Input variables
 real(kind=time_precision), intent(in) ::  & 
-time      ! Current time                [s]
+  time      ! Current time                [s]
 
 real, intent(in) :: & 
-z,         & ! Elevation at zt=2           [m]
-dn0,       & ! Air density at surface      [kg/m^3]
-thlm_sfc,  & ! Theta_l at zt(2)            [K]
-um_sfc,    & ! u wind at zt(2)             [m/s]
-vm_sfc    ! v wind at zt(2)             [m/s]
+  z,         & ! Elevation at zt=2           [m]
+  dn0,       & ! Air density at surface      [kg/m^3]
+  thlm_sfc,  & ! Theta_l at zt(2)            [K]
+  um_sfc,    & ! u wind at zt(2)             [m/s]
+  vm_sfc    ! v wind at zt(2)             [m/s]
 
 ! Output variables
 real, intent(out) ::  & 
-upwp_sfc,    & ! u'w' at surface           [m^2/s^2]
-vpwp_sfc,    & ! v'w' at surface           [m^2/s^2]
-wpthlp_sfc,  & ! w'theta_l' surface flux   [(m K)/s]
-wprtp_sfc,   & ! w'rt' surface flux        [(m kg)/(kg s)]
-ustar       ! surface friction velocity [m/s]
+  upwp_sfc,    & ! u'w' at surface           [m^2/s^2]
+  vpwp_sfc,    & ! v'w' at surface           [m^2/s^2]
+  wpthlp_sfc,  & ! w'theta_l' surface flux   [(m K)/s]
+  wprtp_sfc,   & ! w'rt' surface flux        [(m kg)/(kg s)]
+  ustar       ! surface friction velocity [m/s]
 
 ! Output variables
 real, intent(out), dimension(sclr_dim) ::  & 
-wpsclrp_sfc,   & ! w'sclr' surface flux          [units m/s]
-wpedsclrp_sfc ! w' edsclr' surface flux       [units m/s]
+  wpsclrp_sfc,   & ! w'sclr' surface flux          [units m/s]
+  wpedsclrp_sfc ! w' edsclr' surface flux       [units m/s]
 
 ! Local variables
 real ::  & 
-usfc, vsfc, ubar, & 
-true_time, & 
-heat_flx, moisture_flx, & 
-heat_flx2, moisture_flx2, & 
-bflx
+  usfc, vsfc, ubar, & 
+  true_time, & 
+  heat_flx, moisture_flx, & 
+  heat_flx2, moisture_flx2, & 
+  bflx
 
 real :: CO2_flx
 
@@ -366,9 +366,9 @@ real, intent(in) :: time ! Current time [s]
 
 ! Output variables
 real, intent(out) :: & 
-heat_flx,        & ! Heat flux             [W/m^2]
-moisture_flx,    & ! Moisture flux         [W/m^2]
-CO2_flx         ! Carbon dioxide flux   [umol/(m^2 s)]
+  heat_flx,        & ! Heat flux             [W/m^2]
+  moisture_flx,    & ! Moisture flux         [W/m^2]
+  CO2_flx         ! Carbon dioxide flux   [umol/(m^2 s)]
 
 ! Local variables
 integer :: i1, i2

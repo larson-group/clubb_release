@@ -1,4 +1,4 @@
-!$Id: Skw_func.F90,v 1.2 2008-07-28 19:34:42 faschinj Exp $
+!$Id: Skw_func.F90,v 1.3 2008-07-29 16:44:02 nielsenb Exp $
 module Skw
 
 implicit none
@@ -25,17 +25,18 @@ intrinsic :: min, max
 
 ! Parameter Constants
 logical, parameter ::  & 
-clipping_kluge = .false.
+  clipping_kluge = .false.
 
 ! Input 
 real, intent(in) :: & 
-wp2,  & ! w'^2    [m^2/s^2]
-wp3  ! w'^3    [m^3/s^3]
+  wp2,  & ! w'^2    [m^2/s^2]
+  wp3  ! w'^3    [m^3/s^3]
+
 real, intent(in) :: & 
-wtol ! w tol.  [m/s]
+  wtol ! w tol.  [m/s]
 
 real :: & 
-Skw ! Result Skw [-]
+  Skw ! Result Skw [-]
 
 Skw = wp3 / ( max( wp2, wtol**2 ) )**1.5
 

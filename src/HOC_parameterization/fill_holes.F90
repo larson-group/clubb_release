@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: fill_holes.F90,v 1.3 2008-07-28 19:34:42 faschinj Exp $
+! $Id: fill_holes.F90,v 1.4 2008-07-29 16:44:02 nielsenb Exp $
 
 module fill_holes
 
@@ -45,26 +45,26 @@ implicit none
 
 ! Input variables
 integer, intent(in) :: & 
-num_pts  ! The number of points on either side of the hole;
+  num_pts  ! The number of points on either side of the hole;
          ! Mass is drawn from these points to fill the hole.  []  
 
 real, intent(in) :: & 
-threshold  ! A threshold (e.g. wtol*wtol) below which field must not
+  threshold  ! A threshold (e.g. wtol*wtol) below which field must not
            ! fall                           [Units vary; same as field]
 
 character(len=2), intent(in) :: & 
-field_grid ! The grid of the field, either zt or zm
+  field_grid ! The grid of the field, either zt or zm
 
 ! Input/Output variable
 real, dimension(gr%nnzp), intent(inout) :: & 
-field  ! The field (e.g. wp2) that contains holes
+  field  ! The field (e.g. wp2) that contains holes
        !                                    [Units same as threshold]
 
 ! Local Variables
 integer :: & 
-k,          & ! Loop index for absolute grid level              []
-begin_idx,  & ! Lower grid level of hole-filling range          []
-end_idx    ! Upper grid level of hole-filling rang           []
+  k,          & ! Loop index for absolute grid level              []
+  begin_idx,  & ! Lower grid level of hole-filling range          []
+  end_idx    ! Upper grid level of hole-filling rang           []
 
 !-----------------------------------------------------------------------
 
@@ -139,30 +139,30 @@ implicit none
 
 ! Input variables
 integer, intent(in) :: & 
-begin_idx,  & ! The beginning index (e.g. k=2) of the range of hole-filling 
-end_idx    ! The end index (e.g. k=gr%nnzp) of the range of hole-filling
+  begin_idx,  & ! The beginning index (e.g. k=2) of the range of hole-filling 
+  end_idx    ! The end index (e.g. k=gr%nnzp) of the range of hole-filling
 
 real, intent(in) :: & 
-threshold  ! A threshold (e.g. wtol*wtol) below which field must not 
+  threshold  ! A threshold (e.g. wtol*wtol) below which field must not 
            ! fall                           [Units vary; same as field]
 
 character(len=2), intent(in) :: & 
-field_grid ! The grid of the field, either zt or zm
+  field_grid ! The grid of the field, either zt or zm
 
 ! Input/Output variable
 real, dimension(end_idx-begin_idx+1), intent(inout) ::  & 
-field  ! The field (e.g. wp2) that contains holes 
+  field  ! The field (e.g. wp2) that contains holes 
        !                                    [Units same as threshold]
 
 ! Local Variables
 real, dimension(end_idx-begin_idx+1)  ::  & 
-field_clipped  ! The raw field (e.g. wp2) that contains no holes 
+  field_clipped  ! The raw field (e.g. wp2) that contains no holes 
                !                          [Units same as threshold]
 
 real ::  & 
-field_avg,  & ! Vertical average of field [Units of field]
-field_clipped_avg,   & ! Vertical average of clipped field [Units of field]
-mass_fraction  ! Coefficient that multiplies clipped field 
+  field_avg,  & ! Vertical average of field [Units of field]
+  field_clipped_avg,   & ! Vertical average of clipped field [Units of field]
+  mass_fraction  ! Coefficient that multiplies clipped field 
                ! in order to conserve mass.                      []
 
 !-----------------------------------------------------------------------
@@ -230,28 +230,29 @@ implicit none
 
 ! Input variables
 integer, intent(in) :: & 
-begin_idx,  & ! The beginning index (e.g. 2) of the range of integration of field 
-end_idx    ! The end index (e.g. gr%nnzp) of the range of integration of field
+  begin_idx,  & ! The beginning index (e.g. 2) of the range of integration of field 
+  end_idx    ! The end index (e.g. gr%nnzp) of the range of integration of field
 
 
 character(len=2), intent(in) :: & 
-field_grid ! The grid of the field, either zt or zm
+  field_grid ! The grid of the field, either zt or zm
 
 real, dimension(end_idx-begin_idx+1), intent(in) ::  & 
-field  ! The field (e.g. wp2) that we want to average  [Units vary]
+  field  ! The field (e.g. wp2) that we want to average  [Units vary]
        ! The field points need to be arranged from lowest to highest in altitude
 
 ! Output variable
 real :: & 
-vertical_avg  ! Vertical average of field    [Units of field]
+  vertical_avg  ! Vertical average of field    [Units of field]
 
 ! Local variables
 real :: & 
-vertical_integral,  & ! Vertical integral of height [(length) * (units of field)]
-height             ! Altitude range over which we integrate  [m]
+  vertical_integral,  & ! Vertical integral of height [(length) * (units of field)]
+  height             ! Altitude range over which we integrate  [m]
+
 integer ::  & 
-k,      & ! Loop index for absolute grid level
-k_rel  ! Loop index for grid level relative to starting idx of field
+  k,      & ! Loop index for absolute grid level
+  k_rel  ! Loop index for grid level relative to starting idx of field
 
 !-------------------------------------------------------------------------------
 

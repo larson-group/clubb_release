@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: fire.F90,v 1.3 2008-07-28 19:37:55 faschinj Exp $
+! $Id: fire.F90,v 1.4 2008-07-29 16:44:01 nielsenb Exp $
 module fire
 
 !       Description:
@@ -52,22 +52,22 @@ implicit none
 
 ! Input Variables
 real, intent(in), dimension(gr%nnzp) :: & 
-rhot,  & ! Density                         [kg/m^3]
-rcm,   & ! Liquid water mixing ratio       [kg/kg]
-exner ! Exner function                  [-]
+  rhot,  & ! Density                         [kg/m^3]
+  rcm,   & ! Liquid water mixing ratio       [kg/kg]
+  exner ! Exner function                  [-]
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) :: & 
-wmt,          & ! w wind on thermodynamic grid     [m/s]
-wmm,          & ! w wind on momentum grid          [m/s]
-Frad,         & ! Radiative flux                   [W/m^2]
-radht,        & ! Radiative heating rate           [K/s]
-thlm_forcing, & ! Liquid water potential temperature tendency [K/s]
-rtm_forcing  ! Total water mixing ratio tendency [kg/kg/s]
+  wmt,          & ! w wind on thermodynamic grid     [m/s]
+  wmm,          & ! w wind on momentum grid          [m/s]
+  Frad,         & ! Radiative flux                   [W/m^2]
+  radht,        & ! Radiative heating rate           [K/s]
+  thlm_forcing, & ! Liquid water potential temperature tendency [K/s]
+  rtm_forcing  ! Total water mixing ratio tendency [kg/kg/s]
 
 ! Output Variables (optional)
 real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
-sclrm_forcing ! Passive scalar tendency [units vary]
+  sclrm_forcing ! Passive scalar tendency [units vary]
 
 !       Internal variables
 
@@ -141,14 +141,14 @@ intrinsic :: sqrt
 
 ! Input variables
 real, intent(in) ::  & 
-u,  & ! u wind first level above ground    [m/s]
-v  ! v wind first level above ground    [m/s]
+  u,  & ! u wind first level above ground    [m/s]
+  v  ! v wind first level above ground    [m/s]
 
 ! Output Variables
 real, intent(out) ::  & 
-upwp_sfc, & ! sfc u momentum flux (m^2/s^2)
-vpwp_sfc, & ! sfc v momentum flux (m^2/s^2)
-ustar    ! surface friction velocity [m/s]
+  upwp_sfc, & ! sfc u momentum flux (m^2/s^2)
+  vpwp_sfc, & ! sfc v momentum flux (m^2/s^2)
+  ustar    ! surface friction velocity [m/s]
 
 ! Local Variables
 real :: M ! total wind speed above ground
@@ -196,23 +196,23 @@ real, parameter :: C = 1.3e-3
 
 ! Input Variables
 real, intent(in) ::  & 
-u,       & ! u wind                        [m/s]
-v,       & ! u wind                        [m/s]
-Tsfc,    & ! Surface temperature           [K]
-psfc,    & ! Surface pressure              [Pa]
-thlair,  & ! theta_l at first model layer  [K]
-rtair   ! rt at first model layer       [kg/kg]
+  u,       & ! u wind                        [m/s]
+  v,       & ! u wind                        [m/s]
+  Tsfc,    & ! Surface temperature           [K]
+  psfc,    & ! Surface pressure              [Pa]
+  thlair,  & ! theta_l at first model layer  [K]
+  rtair   ! rt at first model layer       [kg/kg]
 
 
 ! Output Variables
 real, intent(out) ::  & 
-wpthlp_sfc, & ! surface thetal flux        [K m/s]
-wprtp_sfc  ! surface moisture flux      [kg/kg m/s]
+  wpthlp_sfc, & ! surface thetal flux        [K m/s]
+  wprtp_sfc  ! surface moisture flux      [kg/kg m/s]
 
 ! Output Variables (optional) 
 real, optional, intent(out), dimension(sclr_dim) ::  & 
-wpsclrp_sfc,    & ! scalar surface flux            [units m/s]
-wpedsclrp_sfc  ! eddy-scalar surface flux       [units m/s]
+  wpsclrp_sfc,    & ! scalar surface flux            [units m/s]
+  wpedsclrp_sfc  ! eddy-scalar surface flux       [units m/s]
 
 ! Local Variables
 real :: M  ! Total wind speed above ground

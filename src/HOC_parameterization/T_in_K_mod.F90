@@ -1,4 +1,4 @@
-! $Id: T_in_K_mod.F90,v 1.2 2008-07-28 19:34:42 faschinj Exp $ 
+! $Id: T_in_K_mod.F90,v 1.3 2008-07-29 16:44:02 nielsenb Exp $ 
 
 module T_in_K_mod
 
@@ -22,22 +22,22 @@ result( T_in_K )
 !                        Eqn. (2.51). 
 !-----------------------------------------------------------------------
 use constants, only: & 
-! Variable(s) 
-Cp,  & ! Dry air specific heat at constant p [J/kg/K]
-Lv  ! Latent heat of vaporization         [J/kg]
+    ! Variable(s) 
+    Cp,  & ! Dry air specific heat at constant p [J/kg/K]
+    Lv  ! Latent heat of vaporization         [J/kg]
 
 implicit none
 
 ! Input 
 real, intent(in) :: & 
-thlm,   & ! Liquid potential temperature  [K]
-exner,  & ! Exner function                [-]
-rcm    ! Liquid water mixing ratio     [kg/kg]
+  thlm,   & ! Liquid potential temperature  [K]
+  exner,  & ! Exner function                [-]
+  rcm    ! Liquid water mixing ratio     [kg/kg]
 
 real :: & 
-T_in_K ! Result temperature [K]
+  T_in_K ! Result temperature [K]
 
-T_in_K = thlm * exner + Lv * rcm / Cp
+  T_in_K = thlm * exner + Lv * rcm / Cp
 
 return
 end function thlm2T_in_K

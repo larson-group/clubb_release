@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf02.F90,v 1.2 2008-07-28 19:37:55 faschinj Exp $
+! $Id: dycoms2_rf02.F90,v 1.3 2008-07-29 16:44:01 nielsenb Exp $
 module dycoms2_rf02
 
 !       Description:
@@ -58,45 +58,45 @@ implicit none
 
 ! Constant parameters
 real, parameter ::  & 
-ls_div = 3.75e-6, & 
-kap    = 85.0,     & ! [m^2/kg]
-F0     = 70.0,     & ! [W/m^2]
-F1     = 22.0     ! [W/m^2]
+  ls_div = 3.75e-6, & 
+  kap    = 85.0,     & ! [m^2/kg]
+  F0     = 70.0,     & ! [W/m^2]
+  F1     = 22.0     ! [W/m^2]
 
 ! Input Variables
 real(kind=time_precision), intent(in) :: & 
-time,          & ! Current time    [s]
-time_initial  ! Initial time    [s]
+  time,          & ! Current time    [s]
+  time_initial  ! Initial time    [s]
 
 real, intent(in), dimension(gr%nnzp) :: & 
-rhot,           & ! Density on thermo. grid        [kg/m^3] 
-rhom,           & ! Density on moment. grid        [kg/m^3]
-rtm,            & ! Total water mixing ratio       [kg/kg]
-rcm,            & ! Cloud water mixing ratio       [kg/kg]
-exner          ! Exner function.                [-]
+  rhot,           & ! Density on thermo. grid        [kg/m^3] 
+  rhom,           & ! Density on moment. grid        [kg/m^3]
+  rtm,            & ! Total water mixing ratio       [kg/kg]
+  rcm,            & ! Cloud water mixing ratio       [kg/kg]
+  exner          ! Exner function.                [-]
 
 ! Input/Output Variables
 integer, intent(inout) :: err_code
 
 ! Output Variables
 real, intent(out), dimension(gr%nnzp) ::  & 
-wmt,            & ! wm on thermodynamic grid       [m/s]
-wmm,            & ! wm on momentum grid            [m/s]
-thlm_forcing,   & ! theta_l forcing                [K/s]
-rtm_forcing,    & ! r_t forcing                    [(kg/kg)/s] 
-Frad,           & ! Radiative flux                 [W/m^2]
-radht,          & ! Radiative heating rate         [K/s] 
-Ncm,            & ! Cloud droplet number conc.     [#/kg]
-Ncnm           ! Cloud nuclei number conc.      [#/m^3]
+  wmt,            & ! wm on thermodynamic grid       [m/s]
+  wmm,            & ! wm on momentum grid            [m/s]
+  thlm_forcing,   & ! theta_l forcing                [K/s]
+  rtm_forcing,    & ! r_t forcing                    [(kg/kg)/s] 
+  Frad,           & ! Radiative flux                 [W/m^2]
+  radht,          & ! Radiative heating rate         [K/s] 
+  Ncm,            & ! Cloud droplet number conc.     [#/kg]
+  Ncnm           ! Cloud nuclei number conc.      [#/m^3]
 
 ! Optional Output Variables
 real, intent(out), dimension(gr%nnzp,sclr_dim) :: & 
-sclrm_forcing  ! Passive scalar tendency        [units/s]
+  sclrm_forcing  ! Passive scalar tendency        [units/s]
 
 ! Local Variables
 real, dimension(gr%nnzp) ::  & 
-LWP,        & ! Liquid water path
-Heaviside
+  LWP,        & ! Liquid water path
+  Heaviside
 
 real :: z_i
 
@@ -278,26 +278,26 @@ intrinsic :: sqrt
 
 ! Constant parameters
 real, parameter ::  & 
-SH = 16.0, & 
-LH = 93.0
+  SH = 16.0, & 
+  LH = 93.0
 
 ! Input Variables
 real, intent(in) ::  & 
-um_sfc,  & ! um(2) [m/s]
-vm_sfc  ! vm(2) [m/s]
+  um_sfc,  & ! um(2) [m/s]
+  vm_sfc  ! vm(2) [m/s]
 
 ! Output
 real, intent(out) ::  & 
-upwp_sfc,     & ! u'w' at (1)      [m^2/s^2]
-vpwp_sfc,     & ! v'w'at (1)       [m^2/s^2]
-wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
-wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
-ustar        ! surface friction velocity [m/s]
+  upwp_sfc,     & ! u'w' at (1)      [m^2/s^2]
+  vpwp_sfc,     & ! v'w'at (1)       [m^2/s^2]
+  wpthlp_sfc,   & ! w'th_l' at (1)   [(m K)/s]  
+  wprtp_sfc,    & ! w'r_t'(1) at (1) [(m kg)/(s kg)]
+  ustar        ! surface friction velocity [m/s]
 
 ! Output Variables (optional)
 real, intent(out), dimension(sclr_dim) ::  & 
-wpsclrp_sfc,    & ! w' scalar at surface [units m/s]
-wpedsclrp_sfc  ! w' scalar at surface [units m/s]
+  wpsclrp_sfc,    & ! w' scalar at surface [units m/s]
+  wpedsclrp_sfc  ! w' scalar at surface [units m/s]
 
 ! Local Variables
 real :: wind_sfc  ! ? [m^2/s^2]?

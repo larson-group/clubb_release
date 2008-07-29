@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: semiimplicit_clip.F90,v 1.2 2008-07-28 19:34:43 faschinj Exp $
+! $Id: semiimplicit_clip.F90,v 1.3 2008-07-29 16:44:03 nielsenb Exp $
 !===============================================================================
 module semiimplicit_clip
 
@@ -291,30 +291,30 @@ implicit none
 
 ! Input Variables
 real(kind=time_precision), intent(in) ::  & 
-dt                 ! Model timestep.                                    [s]
+  dt                 ! Model timestep.                                    [s]
 
 real, intent(in) :: & 
-f_unclipped,        & ! The unclipped value of variable f at timestep (t). [f units]
-upper_threshold,    & ! Greatest allowable value of variable f.            [f units]
-lower_threshold    ! Smallest allowable value of variable f.            [f units]
+  f_unclipped,        & ! The unclipped value of variable f at timestep (t). [f units]
+  upper_threshold,    & ! Greatest allowable value of variable f.            [f units]
+  lower_threshold    ! Smallest allowable value of variable f.            [f units]
 
 logical, intent(in) :: & 
-lupper_thresh,    & ! Flag for having an upper threshold value.
-llower_thresh    ! Flag for having a lower threshold value.
+  lupper_thresh,    & ! Flag for having an upper threshold value.
+  llower_thresh    ! Flag for having a lower threshold value.
 
 ! Return Variable
 real :: lhs
 
 ! Local Variables
 real(kind=time_precision) ::  & 
-dt_clip    ! Time scale for semi-implicit clipping term.                [s]
+  dt_clip    ! Time scale for semi-implicit clipping term.                [s]
 
 real :: & 
-f_diff,     & ! Difference between the threshold value and f_unclipped.    [f units]
-A_fnc,      & ! Function that approximates { f_diff * [ 1 - H(f_diff) ] }. [f units]
-B_fnc,      & ! Derivative w/ respect to f_diff of function A_fnc.         []
-lhs_upper,  & ! Contribution of upper threshold to implicit portion (LHS). [s^-1]
-lhs_lower  ! Contribution of lower threshold to implicit portion (LHS). [s^-1]
+  f_diff,     & ! Difference between the threshold value and f_unclipped.    [f units]
+  A_fnc,      & ! Function that approximates { f_diff * [ 1 - H(f_diff) ] }. [f units]
+  B_fnc,      & ! Derivative w/ respect to f_diff of function A_fnc.         []
+  lhs_upper,  & ! Contribution of upper threshold to implicit portion (LHS). [s^-1]
+  lhs_lower  ! Contribution of lower threshold to implicit portion (LHS). [s^-1]
 
 
 ! Compute the clipping time scale, dt_clip.
@@ -408,10 +408,10 @@ implicit none
 
 ! Input Variables
 real(kind=time_precision), intent(in) ::  & 
-dt_clip ! Time scale for semi-implicit clipping term.        [s]
+  dt_clip ! Time scale for semi-implicit clipping term.        [s]
 
 real, intent(in) :: & 
-B_fnc   ! Derivative w/ respect to f_diff of function A_fnc. []
+  B_fnc   ! Derivative w/ respect to f_diff of function A_fnc. []
 
 ! Return Variable
 real :: lhs_contribution
@@ -464,30 +464,30 @@ implicit none
 
 ! Input Variables
 real(kind=time_precision), intent(in) ::  & 
-dt                 ! Model timestep.                                    [s]
+  dt                 ! Model timestep.                                    [s]
 
 real, intent(in) :: & 
-f_unclipped,        & ! The unclipped value of variable f at timestep (t). [f units]
-upper_threshold,    & ! Greatest allowable value of variable f.            [f units]
-lower_threshold    ! Smallest allowable value of variable f.            [f units]
+  f_unclipped,        & ! The unclipped value of variable f at timestep (t). [f units]
+  upper_threshold,    & ! Greatest allowable value of variable f.            [f units]
+  lower_threshold    ! Smallest allowable value of variable f.            [f units]
 
 logical, intent(in) :: & 
-lupper_thresh,    & ! Flag for having an upper threshold value.
-llower_thresh    ! Flag for having a lower threshold value.
+  lupper_thresh,    & ! Flag for having an upper threshold value.
+  llower_thresh    ! Flag for having a lower threshold value.
 
 ! Return Variable
 real :: rhs
 
 ! Local Variables
 real(kind=time_precision) ::  & 
-dt_clip    ! Time scale for semi-implicit clipping term.                [s]
+  dt_clip    ! Time scale for semi-implicit clipping term.                [s]
 
 real :: & 
-f_diff,     & ! Difference between the threshold value and f_unclipped.    [f units]
-A_fnc,      & ! Function that approximates { f_diff * [ 1 - H(f_diff) ] }. [f units]
-B_fnc,      & ! Derivative w/ respect to f_diff of function A_fnc.         []
-rhs_upper,  & ! Contribution of upper threshold to explicit portion (RHS). [s^-1]
-rhs_lower  ! Contribution of lower threshold to explicit portion (RHS). [s^-1]
+  f_diff,     & ! Difference between the threshold value and f_unclipped.    [f units]
+  A_fnc,      & ! Function that approximates { f_diff * [ 1 - H(f_diff) ] }. [f units]
+  B_fnc,      & ! Derivative w/ respect to f_diff of function A_fnc.         []
+  rhs_upper,  & ! Contribution of upper threshold to explicit portion (RHS). [s^-1]
+  rhs_lower  ! Contribution of lower threshold to explicit portion (RHS). [s^-1]
 
 
 ! Compute the clipping time scale, dt_clip.
@@ -600,18 +600,18 @@ implicit none
 
 ! Input Variable
 real, intent(in) :: & 
-f_diff,    & ! Difference between the threshold value and f_unclipped.  [f units]
-upper_threshold,    & ! Greatest allowable value of variable f.         [f units]
-lower_threshold    ! Smallest allowable value of variable f.         [f units]
+  f_diff,    & ! Difference between the threshold value and f_unclipped.  [f units]
+  upper_threshold,    & ! Greatest allowable value of variable f.         [f units]
+  lower_threshold    ! Smallest allowable value of variable f.         [f units]
 
 logical, intent(in) :: & 
-lupper_thresh,    & ! Flag for having an upper threshold value.
-llower_thresh    ! Flag for having a lower threshold value.
+  lupper_thresh,    & ! Flag for having an upper threshold value.
+  llower_thresh    ! Flag for having a lower threshold value.
 
 ! Output Variables
 real, intent(out) :: & 
-A_fnc,   & ! Function that approximates { f_diff * [ 1 - H(f_diff) ] }. [f units]
-B_fnc   ! Derivative w/ respect to f_diff of function A_fnc.         []
+  A_fnc,   & ! Function that approximates { f_diff * [ 1 - H(f_diff) ] }. [f units]
+  B_fnc   ! Derivative w/ respect to f_diff of function A_fnc.         []
 
 ! Local Variables
 real :: sigma_val,       & ! Value of parameter sigma.                  [f units]

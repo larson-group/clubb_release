@@ -1,4 +1,4 @@
-! $Id: gradsaverage.F90,v 1.2 2008-07-28 19:45:09 faschinj Exp $
+! $Id: gradsaverage.F90,v 1.3 2008-07-29 16:44:00 nielsenb Exp $
 module grads_common
 
 implicit none
@@ -30,22 +30,22 @@ implicit none
 
 ! Input Variables
 character(len=*), intent(in) ::  & 
-filename ! Name of the file
+  filename ! Name of the file
 
 integer, intent(in) ::  & 
-nz,  & ! Number of vertial levels in the GrADS file.
-t1,  & ! Beginning timestep to look at
-t2  ! Ending timestep to look at
+  nz,  & ! Number of vertial levels in the GrADS file.
+  t1,  & ! Beginning timestep to look at
+  t2  ! Ending timestep to look at
 
 character(len=*), intent(in) ::  & 
-variable_name ! Name of the variable to read in
+  variable_name ! Name of the variable to read in
 
 integer, intent(in) ::  & 
-npower ! Exponent operator, must be 1 or 2
+  npower ! Exponent operator, must be 1 or 2
 
 ! Output Variable
 logical, intent(out) ::  & 
-error ! error status for this function
+  error ! error status for this function
 
 ! Return Variable for function
 real, dimension(nz) :: grads_average
@@ -56,11 +56,11 @@ type (inputgrads) :: faverage ! Data file derived type
 real, dimension(nz) :: grads_temp ! Temporary variable
 
 integer ::  & 
-i,  & ! les_array loop index 
-t  ! timestep loop index
+  i,  & ! les_array loop index 
+  t  ! timestep loop index
 
 integer ::  & 
-num_timesteps ! steps between t1 and t2 
+  num_timesteps ! steps between t1 and t2 
 
 !-----------------------------------------------------------------------
 
@@ -131,39 +131,39 @@ implicit none
 
 ! Constant Parameters
 integer, parameter ::  & 
-tmax = huge( 1 ) ! Sanity check for huge t array
+  tmax = huge( 1 ) ! Sanity check for huge t array
 
 ! Input Variables
 character(len=*), intent(in) ::  & 
-filename ! Name of the file
+  filename ! Name of the file
 
 integer, intent(in) ::  & 
-nz ! Number of vertical grid levels
+  nz ! Number of vertical grid levels
 
 integer, dimension(:), intent(in) ::  & 
-t ! Timesteps to use for taking an average over an interval
+  t ! Timesteps to use for taking an average over an interval
 
 character(len=*), intent(in) ::  & 
-variable_name  ! Name of the variable to read in
+  variable_name  ! Name of the variable to read in
 
 integer, intent(in) ::  & 
-npower ! exponent applied to data retrieved from the file( 1 or 2) 
+  npower ! exponent applied to data retrieved from the file( 1 or 2) 
 
 ! Output Variables
 logical, intent(out) ::  & 
-error ! status of this function
+  error ! status of this function
 
 ! Return Variables
 real, dimension(nz) ::  & 
-grads_average_interval
+  grads_average_interval
 
 ! Local Variables 
 real, dimension(nz) :: grads_temp
 
 integer ::  & 
-i,       & ! Loop variable 
-tdim,    & ! Dimension to read over for t variable
-divisor
+  i,       & ! Loop variable 
+  tdim,    & ! Dimension to read over for t variable
+  divisor
 
 !-------------------------------------------------------------------------
 
@@ -226,7 +226,7 @@ implicit none
 
 ! Input Variables
 character(len=*), intent(in) ::  & 
-filename ! File name
+  filename ! File name
 
 ! Local Variables
 type (inputgrads) :: fz            ! Data file
