@@ -1,6 +1,6 @@
-#$Id: CLUBBStandardsCheck.pl,v 1.9 2008-07-23 14:00:27 faschinj Exp $
-
 #!/usr/bin/perl
+
+#$Id: CLUBBStandardsCheck.pl,v 1.10 2008-07-29 18:47:33 faschinj Exp $
 
 ##################################################################
 #	
