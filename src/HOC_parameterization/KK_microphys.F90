@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: KK_microphys.F90,v 1.5 2008-07-30 19:17:35 dschanen Exp $
+! $Id: KK_microphys.F90,v 1.6 2008-07-30 21:23:11 faschinj Exp $
 
 module rain_equations
 
@@ -144,7 +144,7 @@ CONTAINS
       irrainm_accr, & 
       iNrm_cond, & 
       iNrm_auto, & 
-      lstats_samp
+      l_stats_samp
 
   implicit none
 
@@ -401,7 +401,7 @@ CONTAINS
  
   ! Save mean volume radius for stats purposes
   ! Note: added lsample for latin hypercube sampling -dschanen
-  if ( lsample .and. lstats_samp ) then
+  if ( lsample .and. l_stats_samp ) then
     call stat_update_var(imean_vol_rad_rain, mean_vol_rad, zt )
   end if
 
@@ -546,8 +546,8 @@ CONTAINS
 
      Nrm_auto(k) = autoconv_Nrm( rrainm_auto(k) )
 
+     if ( lsample .and. l_stats_samp ) then
  
-     if ( lsample .and. lstats_samp ) then
        ! Explicit contributions to rrainm.
        call stat_update_var_pt( irrainm_cond, k, rrainm_cond(k), zt )
 
@@ -560,9 +560,8 @@ CONTAINS
 
        call stat_update_var_pt( iNrm_auto, k, Nrm_auto(k), zt )
 
-     end if ! lstats_samp and lsample
+     end if ! l_stats_samp and lsample
  
-
     rrainm_mc_tndcy(k) = rrainm_cond(k) + rrainm_auto(k) + rrainm_accr(k)
 
     Nrm_mc_tndcy(k) = Nrm_cond(k) + Nrm_auto(k)

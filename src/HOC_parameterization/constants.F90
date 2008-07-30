@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: constants.F90,v 1.3 2008-07-28 19:34:42 faschinj Exp $
+! $Id: constants.F90,v 1.4 2008-07-30 21:23:11 faschinj Exp $
 
 module constants
 
@@ -86,7 +86,7 @@ difftol = 0.4    ! [?]
 ! Set tolerances for Khairoutdinov and Kogan rain microphysics
 ! to insure against numerical errors.
 ! The tolerance values for Nc, rr, and Nr insure against
-! underflow errors in computing the PDF for kk_rain.  Basically,
+! underflow errors in computing the PDF for l_kk_rain.  Basically,
 ! they insure that those values squared won't be less then 
 ! 10^-38, which is the lowest number that can be numerically
 ! represented.  However, the tolerance value for rc doubles as

@@ -1,4 +1,4 @@
-! $Id: ice_dfsn_mod.F90,v 1.6 2008-07-30 19:17:35 dschanen Exp $        
+! $Id: ice_dfsn_mod.F90,v 1.7 2008-07-30 21:23:12 faschinj Exp $        
 
 module ice_dfsn_mod
 
@@ -70,7 +70,7 @@ USE saturation, only:  &
 use stats_type, only: & 
     stat_update_var
 
-use stats_variables, only: zt, lstats_samp,  & ! Variable(s)
+use stats_variables, only: zt, l_stats_samp,  & ! Variable(s)
     ircm_icedfs, idiam, imass_ice_cryst, iu_T_cm
 
 implicit none
@@ -266,8 +266,8 @@ u_T_cm(1)         = u_T_cm(2)
 ! eMFc
 
 !
+if ( l_stats_samp ) then
  
-if ( lstats_samp ) then
 !       diam(:) ! Icedfs diameter; Michael Falk, 1 Nov 2006
 !       m(:)    ! Icedfs mass; Michael Falk, 1 Nov 2006
 !       dqc_dt_icedfs(:) ! Icedfs change in liquid; Michael Falk, 1 Nov 2006

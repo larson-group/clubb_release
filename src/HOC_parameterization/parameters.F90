@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameters.F90,v 1.4 2008-07-29 16:44:03 nielsenb Exp $
+! $Id: parameters.F90,v 1.5 2008-07-30 21:23:12 faschinj Exp $
  module parameters 
 
 !       Description:
@@ -47,7 +47,7 @@
  C2rtthl,     & ! C2 coefficient for the rtpthlp_dp1 term.
  C2b,         & ! High Skewness in C2 Skewness Function.  
  C2c,         & ! Degree of Slope of C2 Skewness Function.
- C4,          & ! Used only when lKhm_aniso is true.
+ C4,          & ! Used only when l_Khm_aniso is true.
  C5,          & ! Coefficient in pressure terms in the w'^2 eqn.
  C6rt,        & ! Low Skewness in C6rt Skewness Function.
  C6rtb,       & ! High Skewness in C6rt Skewness Function.

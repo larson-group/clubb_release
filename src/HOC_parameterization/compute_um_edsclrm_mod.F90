@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F90,v 1.5 2008-07-30 19:17:35 dschanen Exp $
+! $Id: compute_um_edsclrm_mod.F90,v 1.6 2008-07-30 21:23:11 faschinj Exp $
 !------------------------------------------------------------------------
 module compute_um_edsclrm_mod
 
@@ -45,7 +45,7 @@ use stats_variables, only: &
     ztscr01, & 
     ztscr02, & 
     ztscr03, & 
-    lstats_samp
+    l_stats_samp
 
 use stats_type, only: stat_update_var_pt, stat_modify_pt,  & 
                 stat_begin_update, stat_end_update_pt
@@ -107,8 +107,8 @@ case default  ! Eddy scalars
   ixm_ta = 0
 end select
 
+if ( l_stats_samp ) then
  
-if ( lstats_samp ) then
   ! xm total time tendency ( 1st calculation)
   call stat_begin_update( ixm_bt, real( xm / dt ), zt )
 end if
@@ -137,8 +137,8 @@ rhs(2) = real( ( ctmp + 1./dt ) * xm(2) &
          + xm_tndcy(2) & 
          + xpwp_sfc * gr%dzt(2) )
 
+   if ( l_stats_samp .and. ixm_ta > 0 ) then
  
-   if ( lstats_samp .and. ixm_ta > 0 ) then
      ztscr01(1) = 0.0
      ztscr02(1) = 0.0
      ztscr03(1) = 0.0
@@ -161,8 +161,8 @@ do k=3, gr%nnzp-1, 1
             + ( atmp + ctmp + 1./dt ) * xm(k) & 
             - ctmp * xm(k+1) & 
             + xm_tndcy(k) )
+   if ( l_stats_samp .and. ixm_ta > 0 ) then
  
-   if ( lstats_samp .and. ixm_ta > 0 ) then
      ztscr01(k) = -atmp
      ztscr02(k) =  atmp + ctmp
      ztscr03(k) = -ctmp
@@ -196,7 +196,7 @@ rhs(gr%nnzp) =  0.
    ! Zero flux
    ! This new code should make the budget balance at nnzp
    ! -dschanen 18 Jul 2008
-   if ( lstats_samp .and. ixm_ta > 0 ) then
+   if ( l_stats_samp .and. ixm_ta > 0 ) then
      ztscr01(gr%nnzp) = -atmp
      ztscr02(gr%nnzp) =  ctmp
      ztscr03(gr%nnzp) =  atmp
@@ -226,7 +226,7 @@ xpwp(gr%nnzp) = 0.
 
  
    ! Turbulent transport (explicit component)
-   if ( lstats_samp .and. ixm_ta > 0 ) then
+   if ( l_stats_samp .and. ixm_ta > 0 ) then
      do k=1,gr%nnzp,1
        km1 = max( k-1, 1 )
        kp1 = min( k+1, gr%nnzp )
@@ -274,8 +274,8 @@ do k=2, gr%nnzp-1, 1
              - 0.5 * Khm(k) * gr%dzm(k) * ( xm(k+1) - xm(k) )
 end do
 
+if ( l_stats_samp ) then
  
-if ( lstats_samp ) then
   do k = 1, gr%nnzp, 1
     km1 = max( k-1, 1 )
     kp1 = min( k+1, gr%nnzp )
@@ -324,7 +324,7 @@ subroutine compute_uv_tndcy( solve_type, xm, wmt, fcor, perp_wind_m, perp_wind_g
     ivm_gf, & 
     ivm_cf, & 
     zt, & 
-    lstats_samp
+    l_stats_samp
 
   implicit none
 
@@ -396,8 +396,8 @@ if (.not. implemented) then
 
   xmt = xm_ma + xm_gf + xm_cf 
 
+  if ( l_stats_samp ) then
  
-  if ( lstats_samp ) then
     call stat_update_var( ixm_ma, xm_ma, zt )
 
     call stat_update_var( ixm_gf, xm_gf, zt )

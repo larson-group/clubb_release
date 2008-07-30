@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: lba.F90,v 1.3 2008-07-29 16:44:01 nielsenb Exp $
+! $Id: lba.F90,v 1.4 2008-07-30 21:18:16 faschinj Exp $
 module lba
 
 !       Description:
@@ -44,7 +44,7 @@ subroutine lba_tndcy( time, wmt, wmm, radht, &
 
 use grid_class, only: gr !  Variable(s)
 
-use model_flags, only: lbugsrad ! Variable(s)
+use model_flags, only: l_bugsrad ! Variable(s)
 
 use parameters, only: sclr_dim ! Variable(s)
 
@@ -81,7 +81,7 @@ integer :: i1, i2
 wmt(1:gr%nnzp) = 0.0
 wmm(1:gr%nnzp) = 0.0
 
-if ( .not. lbugsrad ) then
+if ( .not. l_bugsrad ) then
 
   ! Calculate radiative heating rate
   if ( time <=  600. ) then
@@ -113,7 +113,7 @@ else ! Compute heating rate interactively with BUGSrad
 
   thlm_forcing = 0.0
 
-end if ! ~lbugsrad
+end if ! ~l_bugsrad
 
 ! Boundary conditions
 thlm_forcing(1) = 0.0  ! Below surface

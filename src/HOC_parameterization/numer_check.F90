@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: numer_check.F90,v 1.5 2008-07-30 15:40:45 faschinj Exp $
+! $Id: numer_check.F90,v 1.6 2008-07-30 21:23:12 faschinj Exp $
  module numerical_check
 
  implicit none
@@ -508,8 +508,8 @@
 
  
  use model_flags, only:  & 
-     lcoamps_micro,  & ! Variable(s) 
-     kk_rain
+     l_coamps_micro,  & ! Variable(s) 
+     l_kk_rain
 
  use constants, only: & 
      fstderr   ! Constant(s)
@@ -605,7 +605,7 @@
 !         return
  end if
 
- if ( kk_rain .or. lcoamps_micro ) then
+ if ( l_kk_rain .or. l_coamps_micro ) then
    do i = 1, hydromet_dim, 1
      if ( isnan2d( hydromet(:,i) ) ) then
        write(fstderr,*) "NaN in a hydrometeor model array" 

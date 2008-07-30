@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: fire.F90,v 1.5 2008-07-30 19:17:35 dschanen Exp $
+! $Id: fire.F90,v 1.6 2008-07-30 21:18:16 faschinj Exp $
 module fire
 
 !       Description:
@@ -30,7 +30,7 @@ subroutine fire_tndcy &
 
 use parameters, only: sclr_dim ! Variable(s)
 
-use model_flags, only: lbugsrad  ! Variable(s)
+use model_flags, only: l_bugsrad  ! Variable(s)
 
 use grid_class, only: gr ! Variable(s)
 
@@ -45,7 +45,7 @@ use array_index, only: iisclr_rt, iisclr_thl
  
 use stats_type, only: stat_update_var ! Procedure(s)
 
-use stats_variables, only: zt, iradht_LW, lstats_samp ! Variable(s)
+use stats_variables, only: zt, iradht_LW, l_stats_samp ! Variable(s)
 
 implicit none
 
@@ -100,12 +100,11 @@ thlm_forcing = 0.0
 rtm_forcing = 0.0
 
 ! Use cloud_rad to compute radiation
-if ( .not. lbugsrad ) then
+if ( .not. l_bugsrad ) then
   call cloud_rad( rhot, rcm, exner, Frad, radht, thlm_forcing )
 end if
 
- 
-if ( .not. lbugsrad .and. lstats_samp ) then
+if ( .not. l_bugsrad .and. l_stats_samp ) then
   call stat_update_var( iradht_LW, radht, zt )
 end if
 

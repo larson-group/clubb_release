@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F90,v 1.8 2008-07-30 19:17:35 dschanen Exp $
+! $Id: diag_var.F90,v 1.9 2008-07-30 21:23:11 faschinj Exp $
 !===============================================================================
 module diagnose_variances
 
@@ -94,7 +94,7 @@ module diagnose_variances
             ivp2_bt, & 
             iup2_bt, & 
             zm, & 
-            lstats_samp
+            l_stats_samp
  
        
         implicit none
@@ -259,8 +259,7 @@ module diagnose_variances
         thlp2_zt   = max( zm2zt( thlp2 ), 0.0 )   ! Positive definite quantity
         rtpthlp_zt = zm2zt( rtpthlp )
 
- 
-        if ( lstats_samp ) then
+        if ( l_stats_samp ) then
 
           call stat_begin_update( irtp2_bt, real(rtp2 / dt), zm )
 
@@ -496,8 +495,8 @@ module diagnose_variances
                               rtpthlp )
 
 
+        if ( l_stats_samp ) then
  
-        if ( lstats_samp ) then
           call stat_end_update( irtp2_bt, real( rtp2 / dt), zm )
 
           call stat_end_update( ithlp2_bt, real( thlp2 / dt), zm )
@@ -736,7 +735,7 @@ module diagnose_variances
             zmscr08, & 
             zmscr09, & 
             zmscr10, & 
-            lstats_samp, & 
+            l_stats_samp, & 
             irtp2_ma, & 
             irtp2_ta, & 
             irtp2_dp1, & 
@@ -835,53 +834,52 @@ module diagnose_variances
                          wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  & 
                          gr%dzm(k), beta, wtol_sqd, k )
 
+         if ( l_stats_samp ) then
  
-         if ( lstats_samp ) then
 
-         ! Statistics: implicit contributions for rtp2, thlp2, 
-         !             rtpthlp, up2, or vp2.
+           ! Statistics: implicit contributions for rtp2, thlp2, 
+           !             rtpthlp, up2, or vp2.
 
-         if ( irtp2_dp1 + ithlp2_dp1 + irtpthlp_dp1  > 0 ) then
-           ! Note:  The statistical implicit contribution to term dp1
-           !        (as well as to term pr1) for up2 and vp2 is recorded
-           !        in diag_var_uv_rhs because up2 and vp2 use a special
-           !        dp1/pr1 combined term.
-           tmp(1) = term_dp1_lhs( Cn(k), taum(k) )
-           zmscr01(k) = -tmp(1)
-         endif
+           if ( irtp2_dp1 + ithlp2_dp1 + irtpthlp_dp1  > 0 ) then
+             ! Note:  The statistical implicit contribution to term dp1
+             !        (as well as to term pr1) for up2 and vp2 is recorded
+             !        in diag_var_uv_rhs because up2 and vp2 use a special
+             !        dp1/pr1 combined term.
+             tmp(1) = term_dp1_lhs( Cn(k), taum(k) )
+             zmscr01(k) = -tmp(1)
+           endif
          
-         if ( irtp2_dp2 + ithlp2_dp2 + irtpthlp_dp2 +  & 
-              iup2_dp2 + ivp2_dp2 > 0 ) then
-           tmp(1:3) & 
-           = diffusion_zm_lhs( Kw(k), Kw(kp1), nu, & 
-                               gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
-           zmscr02(k) = -tmp(3)
-           zmscr03(k) = -tmp(2)
-           zmscr04(k) = -tmp(1)
-         endif
+           if ( irtp2_dp2 + ithlp2_dp2 + irtpthlp_dp2 +  & 
+                iup2_dp2 + ivp2_dp2 > 0 ) then
+             tmp(1:3) & 
+             = diffusion_zm_lhs( Kw(k), Kw(kp1), nu, & 
+                           gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+             zmscr02(k) = -tmp(3)
+             zmscr03(k) = -tmp(2)
+             zmscr04(k) = -tmp(1)
+           endif
 
-         if ( irtp2_ta + ithlp2_ta + irtpthlp_ta + & 
-              iup2_ta + ivp2_ta > 0 ) then
-           tmp(1:3) & 
-           = term_ta_lhs( a1(k),  & 
-                          wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  & 
-                          gr%dzm(k), beta, wtol_sqd, k )
-           zmscr05(k) = -tmp(3)
-           zmscr06(k) = -tmp(2)
-           zmscr07(k) = -tmp(1)
-         endif
+           if ( irtp2_ta + ithlp2_ta + irtpthlp_ta + & 
+                iup2_ta + ivp2_ta > 0 ) then
+             tmp(1:3) & 
+             = term_ta_lhs( a1(k),  & 
+                      wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  & 
+                      gr%dzm(k), beta, wtol_sqd, k )
+             zmscr05(k) = -tmp(3)
+             zmscr06(k) = -tmp(2)
+             zmscr07(k) = -tmp(1)
+           endif
 
-         if ( irtp2_ma + ithlp2_ma + irtpthlp_ma + & 
-              iup2_ma + ivp2_ma > 0 ) then
-           tmp(1:3) & 
-           = term_ma_zm_lhs( wmm(k), gr%dzm(k), k )
-           zmscr08(k) = -tmp(3)
-           zmscr09(k) = -tmp(2)
-           zmscr10(k) = -tmp(1)
-         endif
+           if ( irtp2_ma + ithlp2_ma + irtpthlp_ma + & 
+                iup2_ma + ivp2_ma > 0 ) then
+             tmp(1:3) & 
+             = term_ma_zm_lhs( wmm(k), gr%dzm(k), k )
+             zmscr08(k) = -tmp(3)
+             zmscr09(k) = -tmp(2)
+             zmscr10(k) = -tmp(1)
+           endif
 
-         endif ! lstats_samp
- 
+         endif ! l_stats_samp
 
         enddo ! k=2..gr%nnzp-1
 
@@ -958,7 +956,7 @@ module diagnose_variances
             ivp2_ta, & 
             ivp2_ma, & 
             ivp2_pr1, & 
-            lstats_samp, & 
+            l_stats_samp, & 
             zmscr01, & 
             zmscr02, & 
             zmscr03, & 
@@ -1060,8 +1058,7 @@ module diagnose_variances
           ixapxbp_pr1 = 0
         end select
 
-  
-       if ( lstats_samp .and. ixapxbp_cn > 0 ) then
+       if ( l_stats_samp .and. ixapxbp_cn > 0 ) then
           call tridag_solvex & 
                ( solve_type, gr%nnzp, nrhs, lhs(kp1_mdiag,:),  & 
                  lhs(k_mdiag,:), lhs(km1_mdiag,:), rhs(:,1:nrhs),  & 
@@ -1078,7 +1075,7 @@ module diagnose_variances
         end if
  
         ! Compute implicit budget terms
-        if ( lstats_samp ) then
+        if ( l_stats_samp ) then
 
           do k=2, gr%nnzp-1
 
@@ -1151,7 +1148,7 @@ module diagnose_variances
             zm, & 
             zmscr01, & 
             zmscr11, & 
-            lstats_samp
+            l_stats_samp
 
         implicit none
 
@@ -1259,9 +1256,8 @@ module diagnose_variances
             rhs(k,1) = real( rhs(k,1) + 1.0/dt * xap2(k) )
           endif
 
+          if ( l_stats_samp ) then
  
-          if ( lstats_samp ) then
-
           ! Statistics: explicit contributions for up2 or vp2.
                
             call stat_modify_pt( ixapxbp_ta, k, & 
@@ -1312,9 +1308,8 @@ module diagnose_variances
                    * term_tp( xam(kp1), xam(k), xam(kp1), xam(k), & 
                               wpxap(k), wpxap(k), gr%dzm(k) ), zm )
 
-          endif ! lstats_samp
+          endif ! l_stats_samp
  
-
         enddo ! k=2..gr%nnzp-1
 
 
@@ -1374,7 +1369,7 @@ module diagnose_variances
             irtpthlp_tp2, &
             irtpthlp_dp1, & 
             zm, & 
-            lstats_samp
+            l_stats_samp
 
         implicit none
 
@@ -1479,8 +1474,7 @@ module diagnose_variances
             rhs(k,1) = real( rhs(k,1) + 1.0/dt * xapxbp(k) )
           endif
 
- 
-          if ( lstats_samp ) then
+          if ( l_stats_samp ) then
 
           ! Statistics: explicit contributions for rtp2, thlp2, or rtpthlp.
 
@@ -1508,7 +1502,7 @@ module diagnose_variances
               term_tp( xam(kp1), xam(k), 0.0, 0.0, & 
                        wpxbp(k), 0.0, gr%dzm(k) ), zm )
           
-          endif ! lstats_samp
+          endif ! l_stats_samp
  
 
         enddo ! k=2..gr%nnzp-1
@@ -2169,7 +2163,7 @@ module diagnose_variances
         use stats_precision, only: time_precision
  
         use stats_variables, only:  & 
-            zm, lstats_samp, & 
+            zm, l_stats_samp, & 
             irtp2_pd, ithlp2_pd, iup2_pd, ivp2_pd ! variables
         use stats_type, only:  & 
             stat_begin_update, stat_end_update ! subroutines
@@ -2210,7 +2204,7 @@ module diagnose_variances
           ixp2_pd = 0.0 ! This includes the passive scalars
         end select
 
-        if ( lstats_samp ) then
+        if ( l_stats_samp ) then
           ! Store previous value for effect of the positive definite scheme
           call stat_begin_update( ixp2_pd, real( xp2_np1 / dt ), zm )
         end if 
@@ -2223,8 +2217,7 @@ module diagnose_variances
 
         end if
 
- 
-        if ( lstats_samp ) then
+        if ( l_stats_samp ) then
           ! Store previous value for effect of the positive definite scheme
           call stat_end_update( ixp2_pd, real( xp2_np1 / dt ), zm )
         end if 

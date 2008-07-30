@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F90,v 1.8 2008-07-30 19:17:36 dschanen Exp $
+! $Id: wp23.F90,v 1.9 2008-07-30 21:23:12 faschinj Exp $
 !===============================================================================
 module wp23
 
@@ -306,7 +306,7 @@ use constants, only: &
     eps
 
 use model_flags, only:  & 
-    lKhm_aniso,  & ! Variable(s)
+    l_Khm_aniso,  & ! Variable(s)
     lhole_fill
 
 use stats_precision, only:  & 
@@ -332,7 +332,7 @@ use stats_variables, only:  &
     zm,         & ! Variable(s)
     zt, & 
     sfc, & 
-    lstats_samp, & 
+    l_stats_samp, & 
     iwp2_bt, & 
     iwp2_ta, & 
     iwp2_ma, & 
@@ -465,8 +465,7 @@ integer :: k, km1, kp1, k_wp2, k_wp3
 !        logical, parameter :: lcrank_nich_diff = .true.
 logical, parameter :: lcrank_nich_diff = .false.
 
- 
-if (lstats_samp) then
+if (l_stats_samp) then
   call stat_begin_update( iwp2_bt, real(wp2 / dt), zm )
 
   call stat_begin_update( iwp3_bt, real(wp3 / dt), zt )
@@ -508,8 +507,8 @@ call wp23_rhs( dt, wp2, wp3, wp3_zm, a1_zt,  &
                lcrank_nich_diff, rhs )
 
 ! Solve the system of equations for w'^2 and w'^3.
+if ( l_stats_samp .and. iwp23_cn > 0 ) then
  
-if ( lstats_samp .and. iwp23_cn > 0 ) then
   ! Perform LU decomp and solve system (LAPACK with diagnostics)
   call band_solvex( "wp23", nsup, nsub, 2*gr%nnzp, nrhs, & 
                     lhs, rhs, solut, rcond, err_code )
@@ -544,8 +543,7 @@ do k = 1, gr%nnzp
 
 end do
 
- 
-if (lstats_samp) then
+if (l_stats_samp) then
 
 !         Finalize implicit contributions for wp2
 
@@ -575,7 +573,7 @@ if (lstats_samp) then
     call stat_update_var_pt( iwp2_ac, k,  & 
        zmscr10(k) * wp2(k), zm )
 
-    if ( lKhm_aniso ) then
+    if ( l_Khm_aniso ) then
       call stat_end_update_pt( iwp2_pr1, k, & 
          zmscr12(k) * wp2(k), zm )
     endif
@@ -623,11 +621,11 @@ if (lstats_samp) then
        ztscr16(k) * wp3(k), zt )
 
   enddo
-end if ! lstats_samp
+end if ! l_stats_samp
  
 
+if ( l_stats_samp ) then
  
-if ( lstats_samp ) then
    ! Store previous value for effect of the positive definite scheme
    call stat_begin_update( iwp2_pd, real( wp2 / dt ), zm )
 end if 
@@ -640,16 +638,14 @@ if ( lhole_fill .and. any( wp2 < 2./3*emin ) ) then
 
 endif ! wp2
 
- 
-if ( lstats_samp ) then
+if ( l_stats_samp ) then
   ! Store previous value for effect of the positive definite scheme
   call stat_end_update( iwp2_pd, real( wp2 / dt ), zm )
 end if
  
 
+if ( l_stats_samp ) then
  
-if ( lstats_samp ) then
-
   ! Store previous value of wp2 for the effect of the clipping term
   call stat_begin_update( iwp2_cl, real( wp2 / dt ), zm )
 
@@ -672,16 +668,14 @@ do k = 1, gr%nnzp, 1
 
 end do
 
- 
-if (lstats_samp) then           
+if (l_stats_samp) then           
   call stat_end_update( iwp2_cl, real( wp2 / dt ), zm )
 
   call stat_end_update ( iwp3_cl, real( wp3 / dt ), zt )
 endif
  
 
- 
-if (lstats_samp) then
+if (l_stats_samp) then
   call stat_end_update( iwp2_bt, real( wp2 / dt ), zm )
 
   call stat_end_update( iwp3_bt, real( wp3 / dt ), zt )
@@ -722,7 +716,7 @@ use constants, only:  &
     eps
 
 use model_flags, only: & 
-    lKhm_aniso ! Variables
+    l_Khm_aniso ! Variables
 
 use diffusion, only: & 
     diffusion_zm_lhs,  & ! Procedures
@@ -764,7 +758,7 @@ use stats_variables, only:       &
     ztscr14, & 
     ztscr15, & 
     ztscr16, & 
-    lstats_samp, & 
+    l_stats_samp, & 
     iwp2_dp1, & 
     iwp2_dp2, & 
     iwp2_ta, & 
@@ -894,70 +888,71 @@ do k = 2, gr%nnzp-1, 1
   endif
 
   ! LHS pressure term 1 (pr1).
-  if ( lKhm_aniso ) then
+  if ( l_Khm_aniso ) then
      ! Add in this term if we're not assuming tke = 1.5 * wp2
      lhs(3,k_wp2) & 
      = lhs(3,k_wp2) & 
      + wp2_term_pr1_lhs( C4, tau1m(k) )
   endif
 
- 
-  if ( lstats_samp ) then
+  if ( l_stats_samp ) then
 
    ! Statistics: implicit contributions for wp2.
 
-  if ( iwp2_dp1 > 0 ) then
-    zmscr01(k) = & 
-    - wp2_term_dp1_lhs( C1_Skw_fnc(k), tau1m(k) )
-  endif
-
-  if ( iwp2_dp2 > 0 ) then
-    if ( lcrank_nich_diff ) then
-      ! Eddy diffusion for wp2 using a Crank-Nicholson time step.
-      tmp(1:3) & 
-      = (1.0/2.0) & 
-      * diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1, & 
-                          gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
-    else
-      ! Eddy diffusion for wp2 using a completely implicit time step. 
-      tmp(1:3) & 
-      = diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1, & 
-                          gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+    if ( iwp2_dp1 > 0 ) then
+      zmscr01(k) = & 
+      - wp2_term_dp1_lhs( C1_Skw_fnc(k), tau1m(k) )
     endif
-    zmscr02(k) = - tmp(3)
-    zmscr03(k) = - tmp(2)
-    zmscr04(k) = - tmp(1)
-  endif
 
-  if ( iwp2_ta > 0 ) then
-    tmp(1:2) =  & 
-    + wp2_term_ta_lhs( gr%dzm(k) )
-    zmscr05(k) = - tmp(2)
-    zmscr06(k) = - tmp(1)
-  endif
+    if ( iwp2_dp2 > 0 ) then
+      if ( lcrank_nich_diff ) then
+      ! Eddy diffusion for wp2 using a Crank-Nicholson time step.
+        tmp(1:3) & 
+        = (1.0/2.0) & 
+        * diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1, & 
+                          gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+      else
+        ! Eddy diffusion for wp2 using a completely implicit time step. 
+        tmp(1:3) & 
+        = diffusion_zm_lhs( Kw1(k), Kw1(kp1), nu1, & 
+                            gr%dzt(kp1), gr%dzt(k), gr%dzm(k), k )
+      endif
 
-  if ( iwp2_ma > 0 ) then
-    tmp(1:3) = & 
-    + term_ma_zm_lhs( wmm(k), gr%dzm(k), k )
-    zmscr07(k) = - tmp(3)
-    zmscr08(k) = - tmp(2)
-    zmscr09(k) = - tmp(1)
-  endif
+      zmscr02(k) = - tmp(3)
+      zmscr03(k) = - tmp(2)
+      zmscr04(k) = - tmp(1)
 
-  if ( iwp2_ac > 0 ) then
-    zmscr10(k) =  & 
-    - wp2_terms_ac_pr2_lhs( 0.0, wmt(kp1), wmt(k), gr%dzm(k)  )
-  endif
+    endif
 
-  if ( iwp2_pr2 > 0 ) then
-    zmscr11(k) =  & 
-    - wp2_terms_ac_pr2_lhs( (1.0+C5), wmt(kp1), wmt(k),  & 
-                            gr%dzm(k)  )
-  endif
+    if ( iwp2_ta > 0 ) then
+      tmp(1:2) =  & 
+      + wp2_term_ta_lhs( gr%dzm(k) )
+      zmscr05(k) = - tmp(2)
+      zmscr06(k) = - tmp(1)
+    endif
 
-  if ( iwp2_pr1 > 0 .and. lKhm_aniso ) then
-    zmscr12(k) = - wp2_term_pr1_lhs( C4, tau1m(k) )
-  endif
+    if ( iwp2_ma > 0 ) then
+      tmp(1:3) = & 
+      + term_ma_zm_lhs( wmm(k), gr%dzm(k), k )
+      zmscr07(k) = - tmp(3)
+      zmscr08(k) = - tmp(2)
+      zmscr09(k) = - tmp(1)
+    endif
+
+    if ( iwp2_ac > 0 ) then
+      zmscr10(k) =  & 
+      - wp2_terms_ac_pr2_lhs( 0.0, wmt(kp1), wmt(k), gr%dzm(k)  )
+    endif
+
+    if ( iwp2_pr2 > 0 ) then
+      zmscr11(k) =  & 
+      - wp2_terms_ac_pr2_lhs( (1.0+C5), wmt(kp1), wmt(k),  & 
+                              gr%dzm(k)  )
+    endif
+
+    if ( iwp2_pr1 > 0 .and. l_Khm_aniso ) then
+      zmscr12(k) = - wp2_term_pr1_lhs( C4, tau1m(k) )
+    endif
 
   endif
  
@@ -1026,83 +1021,83 @@ do k = 2, gr%nnzp-1, 1
                          gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
   endif
 
+  if (l_stats_samp) then
  
-  if (lstats_samp) then
-
   ! Statistics: implicit contributions for wp3.
 
-  if ( iwp3_ta > 0 ) then
-    tmp(1:5) =  & 
-    wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  & 
-                         wp2(k), wp2(km1),  & 
-                         a1_zt(k),  & 
-                         a3_zt(k)+(3.0/2.0), & 
-                         gr%dzt(k), wtol, k ) 
-    ztscr05(k) = -tmp(5)
-    ztscr06(k) = -tmp(4)
-    ztscr07(k) = -tmp(3)
-    ztscr08(k) = -tmp(2)
-    ztscr09(k) = -tmp(1)
-  endif
-
-  if ( iwp3_tp > 0 ) then
-    tmp(1:5) =  & 
-    wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  & 
-                         wp2(k), wp2(km1),  & 
-                         0.0, & 
-                         0.0-(3.0/2.0), & 
-                         gr%dzt(k), wtol, k ) 
-    ztscr10(k) = -tmp(4)
-    ztscr11(k) = -tmp(2)
-  endif
-
-  if ( iwp3_ma > 0 ) then
-    tmp(1:3) = & 
-    term_ma_zt_lhs( wmt(k), gr%dzt(k), k )
-    ztscr12(k) = -tmp(3)
-    ztscr13(k) = -tmp(2)
-    ztscr14(k) = -tmp(1)
-  endif
-
-  if ( iwp3_ac > 0 ) then
-    ztscr15(k) =  & 
-    - wp3_terms_ac_pr2_lhs( 0.0, & 
-                            wmm(k), wmm(km1), gr%dzt(k) )
-  endif
-
-  if ( iwp3_pr2 > 0 ) then
-    ztscr16(k) = & 
-    - wp3_terms_ac_pr2_lhs( (1.0+C11_Skw_fnc(k)), & 
-                            wmm(k), wmm(km1), gr%dzt(k) )
-  endif
-
-  if ( iwp3_pr1 > 0 ) then
-  ztscr01(k) = & 
-  - wp3_term_pr1_lhs( C8, C8b, tauw3t(k), Skwt(k) )
-  endif
-
-  if ( iwp3_dp1 > 0 ) then
-    if ( lcrank_nich_diff ) then
-      ! Eddy diffusion for wp3 using a Crank-Nicholson time step. 
-      tmp(1:3) & 
-      = C12 * (1.0/2.0) & 
-      * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8, & 
-                          gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
-    else
-      ! Eddy diffusion for wp3 using a completely implicit time step. 
-      tmp(1:3) & 
-      = C12  & 
-      * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8, & 
-                          gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+    if ( iwp3_ta > 0 ) then
+      tmp(1:5) =  & 
+      wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  & 
+                           wp2(k), wp2(km1),  & 
+                           a1_zt(k),  & 
+                           a3_zt(k)+(3.0/2.0), & 
+                           gr%dzt(k), wtol, k ) 
+      ztscr05(k) = -tmp(5)
+      ztscr06(k) = -tmp(4)
+      ztscr07(k) = -tmp(3)
+      ztscr08(k) = -tmp(2)
+      ztscr09(k) = -tmp(1)
     endif
-    ztscr02(k) = - tmp(3)
-    ztscr03(k) = - tmp(2)
-    ztscr04(k) = - tmp(1)
-  endif
+
+    if ( iwp3_tp > 0 ) then
+      tmp(1:5) =  & 
+      wp3_terms_ta_tp_lhs( wp3_zm(k), wp3_zm(km1),  & 
+                           wp2(k), wp2(km1),  & 
+                           0.0, & 
+                           0.0-(3.0/2.0), & 
+                           gr%dzt(k), wtol, k ) 
+      ztscr10(k) = -tmp(4)
+      ztscr11(k) = -tmp(2)
+    endif
+
+    if ( iwp3_ma > 0 ) then
+      tmp(1:3) = & 
+      term_ma_zt_lhs( wmt(k), gr%dzt(k), k )
+      ztscr12(k) = -tmp(3)
+      ztscr13(k) = -tmp(2)
+      ztscr14(k) = -tmp(1)
+    endif
+
+    if ( iwp3_ac > 0 ) then
+      ztscr15(k) =  & 
+      - wp3_terms_ac_pr2_lhs( 0.0, & 
+                              wmm(k), wmm(km1), gr%dzt(k) )
+    endif
+
+    if ( iwp3_pr2 > 0 ) then
+      ztscr16(k) = & 
+      - wp3_terms_ac_pr2_lhs( (1.0+C11_Skw_fnc(k)), & 
+                              wmm(k), wmm(km1), gr%dzt(k) )
+    endif
+
+    if ( iwp3_pr1 > 0 ) then
+      ztscr01(k) = & 
+      - wp3_term_pr1_lhs( C8, C8b, tauw3t(k), Skwt(k) )
+    endif
+
+    if ( iwp3_dp1 > 0 ) then
+      if ( lcrank_nich_diff ) then
+        ! Eddy diffusion for wp3 using a Crank-Nicholson time step. 
+        tmp(1:3) & 
+        = C12 * (1.0/2.0) & 
+        * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8, & 
+                            gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+      else
+        ! Eddy diffusion for wp3 using a completely implicit time step. 
+        tmp(1:3) & 
+        = C12  & 
+        * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8, & 
+                            gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
+      endif
+
+      ztscr02(k) = - tmp(3)
+      ztscr03(k) = - tmp(2)
+      ztscr04(k) = - tmp(1)
+
+    endif
 
   endif
  
-
 enddo ! k = 2, gr%nnzp-1, 1
 
 
@@ -1183,7 +1178,7 @@ use constants, only: &
     eps
 
 use model_flags, only:  & 
-    lKhm_aniso ! Variable
+    l_Khm_aniso ! Variable
 
 use diffusion, only: & 
     diffusion_zm_lhs,  & ! Procedures
@@ -1194,7 +1189,7 @@ use stats_precision, only:  &
 
  
 use stats_variables, only:  & 
-    lstats_samp, iwp2_dp2, zm, iwp2_bp,   & ! Variable(s)
+    l_stats_samp, iwp2_dp2, zm, iwp2_bp,   & ! Variable(s)
     iwp2_pr1, iwp2_pr2, iwp2_pr3, iwp3_ta, zt, & 
     iwp3_tp, iwp3_bp, iwp3_pr2, iwp3_pr1, iwp3_dp1
 
@@ -1292,40 +1287,39 @@ do k = 2, gr%nnzp-1, 1
   endif
 
   ! RHS pressure term 1 (pr1).
-  if ( lKhm_aniso ) then
+  if ( l_Khm_aniso ) then
      rhs(k_wp2) & 
      = rhs(k_wp2) & 
      + wp2_term_pr1_rhs( C4, up2(k), vp2(k), tau1m(k) )
   endif
 
+  if ( l_stats_samp ) then
  
-  if ( lstats_samp ) then
-
-  ! Statistics: explicit contributions for wp2.
+    ! Statistics: explicit contributions for wp2.
    
-  if ( lcrank_nich_diff ) then
-    call stat_begin_update_pt( iwp2_dp2, k, & 
-      rhs_diff(3) * wp2(km1) & 
-    + rhs_diff(2) * wp2(k) & 
-    + rhs_diff(1) * wp2(kp1), zm )
+    if ( lcrank_nich_diff ) then
+      call stat_begin_update_pt( iwp2_dp2, k, & 
+        rhs_diff(3) * wp2(km1) & 
+      + rhs_diff(2) * wp2(k) & 
+      + rhs_diff(1) * wp2(kp1), zm )
     
-  endif 
+    endif 
 
-  call stat_update_var_pt( iwp2_bp, k, & 
-     wp2_terms_bp_pr2_rhs( 0.0, wpthvp(k) ), zm )
+    call stat_update_var_pt( iwp2_bp, k, & 
+      wp2_terms_bp_pr2_rhs( 0.0, wpthvp(k) ), zm )
   
 
-  if ( lKhm_aniso ) then
-    call stat_begin_update_pt( iwp2_pr1, k, & 
-    -wp2_term_pr1_rhs( C4, up2(k), vp2(k), tau1m(k) ), zm )
+    if ( l_Khm_aniso ) then
+      call stat_begin_update_pt( iwp2_pr1, k, & 
+        -wp2_term_pr1_rhs( C4, up2(k), vp2(k), tau1m(k) ), zm )
     
-  endif
+    endif
   
-  call stat_begin_update_pt( iwp2_pr2, k, & 
-     -wp2_terms_bp_pr2_rhs( (1.0+C5), wpthvp(k) ), zm )
+    call stat_begin_update_pt( iwp2_pr2, k, & 
+      -wp2_terms_bp_pr2_rhs( (1.0+C5), wpthvp(k) ), zm )
 
-  call stat_update_var_pt( iwp2_pr3, k, & 
-    wp2_term_pr3_rhs( C5, wpthvp(k), upwp(k), um(kp1), um(k), & 
+    call stat_update_var_pt( iwp2_pr3, k, & 
+      wp2_term_pr3_rhs( C5, wpthvp(k), upwp(k), um(kp1), um(k), & 
                     vpwp(k), vm(kp1), vm(k), gr%dzm(k) ), zm )
   
   endif
@@ -1373,45 +1367,44 @@ do k = 2, gr%nnzp-1, 1
                     - rhs_diff(1) * wp3(kp1)
   endif
 
+  if (l_stats_samp) then
  
-  if (lstats_samp) then
-
-  ! Statistics: explicit contributions for wp3.
-  call stat_begin_update_pt( iwp3_ta, k, & 
-     -wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1), & 
+    ! Statistics: explicit contributions for wp3.
+    call stat_begin_update_pt( iwp3_ta, k, & 
+      -wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1), & 
                          wp2(k), wp2(km1), & 
                          a1_zt(k),  & 
                          a3_zt(k)+(3.0/2.0),  &  
                          gr%dzt(k), wtol ), zt )
 
-  call stat_begin_update_pt( iwp3_tp, k, & 
-    -wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1), & 
-                         wp2(k), wp2(km1), & 
-                         0.0, & 
-                         0.0-(3.0/2.0),  & 
-                         gr%dzt(k), wtol ),zt )
+    call stat_begin_update_pt( iwp3_tp, k, & 
+      -wp3_terms_ta_tp_rhs( wp3_zm(k), wp3_zm(km1), & 
+                           wp2(k), wp2(km1), & 
+                           0.0, & 
+                           0.0-(3.0/2.0),  & 
+                           gr%dzt(k), wtol ),zt )
   
-   call stat_update_var_pt( iwp3_bp, k, & 
+    call stat_update_var_pt( iwp3_bp, k, & 
       wp3_terms_bp_pr2_rhs( 0.0, wp2thvp(k) ), zt )
   
-   call stat_begin_update_pt( iwp3_pr2, k, & 
+    call stat_begin_update_pt( iwp3_pr2, k, & 
       -wp3_terms_bp_pr2_rhs( (1.0+C11_Skw_fnc(k)), wp2thvp(k) ), & 
       zt )
 
-   call stat_begin_update_pt( iwp3_pr1, k, & 
+    call stat_begin_update_pt( iwp3_pr1, k, & 
       -wp3_term_pr1_rhs( C8, C8b, tauw3t(k), Skwt(k), wp3(k) ), & 
       zt)
    
-   if ( lcrank_nich_diff ) then
-   call stat_begin_update_pt( iwp3_dp1, k, & 
-      rhs_diff(3) * wp3(km1) & 
-    + rhs_diff(2) * wp3(k) & 
-    + rhs_diff(1) * wp3(kp1), zt )
+    if ( lcrank_nich_diff ) then
+       call stat_begin_update_pt( iwp3_dp1, k, & 
+         rhs_diff(3) * wp3(km1) & 
+      + rhs_diff(2) * wp3(k) & 
+      + rhs_diff(1) * wp3(kp1), zt )
 
-   end if
+    end if
+
   endif
  
-
 enddo
 
 

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: explicit_clip.F90,v 1.4 2008-07-30 19:17:35 dschanen Exp $
+! $Id: explicit_clip.F90,v 1.5 2008-07-30 21:23:12 faschinj Exp $
 !===============================================================================
 module explicit_clip
 
@@ -74,8 +74,7 @@ use stats_variables, only: &
     iwprtp_cl, & 
     iwpthlp_cl, & 
     irtpthlp_cl, & 
-    lstats_samp
- 
+    l_stats_samp
 
 implicit none
 
@@ -116,8 +115,8 @@ case default   ! scalars (or upwp/vpwp) are involved
 end select
  
 
+if ( l_stats_samp ) then
  
-if ( lstats_samp ) then
    if ( l_first_clip_ts ) then
       call stat_begin_update( ixpyp_cl, real( xpyp / dt ), zm )
    else
@@ -136,8 +135,8 @@ where ( xpyp >  0.99 * sqrt( xp2 * yp2 ) ) &
 where ( xpyp < -0.99 * sqrt( xp2 * yp2 ) ) & 
    xpyp = -0.99 * sqrt( xp2 * yp2 )
 
+if ( l_stats_samp ) then
  
-if ( lstats_samp ) then
    if ( l_last_clip_ts ) then
       call stat_end_update( ixpyp_cl, real( xpyp / dt ), zm )
    else
@@ -184,7 +183,7 @@ use stats_variables, only: &
     ithlp2_cl, & 
     iup2_cl, & 
     ivp2_cl, & 
-    lstats_samp
+    l_stats_samp
  
 
 implicit none
@@ -228,8 +227,8 @@ end select
  
 
 
+if ( l_stats_samp ) then
  
-if ( lstats_samp ) then
    call stat_begin_update( ixp2_cl, real( xp2 / dt ), zm )
 endif
  
@@ -241,8 +240,8 @@ do k = 2, gr%nnzp, 1
    endif
 enddo
 
+if ( l_stats_samp ) then
  
-if ( lstats_samp ) then
    call stat_end_update( ixp2_cl, real( xp2 / dt ), zm )
 endif
  

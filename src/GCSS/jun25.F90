@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: jun25.F90,v 1.5 2008-07-30 19:17:35 dschanen Exp $
+! $Id: jun25.F90,v 1.6 2008-07-30 21:18:16 faschinj Exp $
   module jun25
 
 !       Description:
@@ -44,9 +44,9 @@
 
   use parameters, only: sclr_dim ! Variable(s)
 
-  use model_flags, only: lbugsrad ! Variable(s)
+  use model_flags, only: l_bugsrad ! Variable(s)
 
-!        use model_flags, only: lcoamps_micro, licedfs ! Variables(s)
+!        use model_flags, only: l_coamps_micro, l_licedfs ! Variables(s)
 
   use stats_precision, only: time_precision ! Variable(s)
 
@@ -63,7 +63,7 @@
 
   use stats_variables, only:  & 
       iradht_LW, iradht_SW, iFrad_LW, iFrad_SW,  & ! Procedure(s)
-      zt, zm, lstats_samp
+      zt, zm, l_stats_samp
  
 
   implicit none
@@ -592,7 +592,7 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
   ! BUGSrad interactive radiation scheme.
   !---------------------------------------------------------------
 
-  if ( .not. lbugsrad ) then
+  if ( .not. l_bugsrad ) then
 
   !----------------------------------------------------------------
   ! This code transforms these profiles from CLUBB grid to COAMPS
@@ -650,7 +650,7 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
     radht_LW(1) = radht_LW(2)
     radht_SW(1) = radht_SW(2)
 
-  END IF ! ~lbugsrad
+  END IF ! ~l_bugsrad
 
 
   !-------------------------------------------------------------
@@ -660,14 +660,14 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
 
 !        if ( time == time_initial ) then
 
-!          if ( lcoamps_micro ) then
+!          if ( l_coamps_micro ) then
       ! Turn off microphysics for now, re-enable at
       ! time = 3600.
-!            lcoamps_micro        = .false.
+!            l_coamps_micro        = .false.
 !            tdelay_lcoamps_micro = .true.
 
-!          else if ( licedfs ) then
-!            licedfs        = .false.
+!          else if ( l_licedfs ) then
+!            l_licedfs        = .false.
 !            tdelay_licedfs = .true.
 
 !          else
@@ -748,7 +748,7 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
   ! Enter the final theta-l and rtm tendencies
   !---------------------------------------------------------------
   DO k = 1, gr%nnzp, 1
-    IF ( .not. lbugsrad ) THEN
+    IF ( .not. l_bugsrad ) THEN
       thlm_forcing(k) = radht(k)
     ELSE
       thlm_forcing(k) = 0.
@@ -760,8 +760,8 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
   if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
   if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
+  if ( .not.l_bugsrad .and. l_stats_samp ) then
  
-  if ( .not.lbugsrad .and. lstats_samp ) then
     call stat_update_var( iradht_LW, radht_LW, zt )        
 
     call stat_update_var( iradht_SW, radht_SW, zt )

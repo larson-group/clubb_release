@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: mpace_a.F90,v 1.6 2008-07-30 19:17:35 dschanen Exp $
+! $Id: mpace_a.F90,v 1.7 2008-07-30 21:18:16 faschinj Exp $
   module mpace_a
 
 !       Description:
@@ -64,7 +64,7 @@
 
   use parameters, only: sclr_dim ! Variable(s)
 
-  use model_flags, only: lbugsrad, lcoamps_micro, kk_rain ! Variable(s)
+  use model_flags, only: l_bugsrad, l_coamps_micro, l_kk_rain ! Variable(s)
 
   use grid_class, only: gr ! Variable(s)
 
@@ -84,7 +84,7 @@
   use stats_type, only: stat_update_var ! Procedure(s)
 
   use stats_variables, only: iradht_LW, iradht_SW, iFrad_LW,  & ! Variable(s)
-                 iFrad_SW, zt, zm, lstats_samp
+                 iFrad_SW, zt, zm, l_stats_samp
  
 
   implicit none
@@ -381,7 +381,7 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
     xi_abs = 0.
   end if
 
-  if ( .not. lbugsrad ) then
+  if ( .not. l_bugsrad ) then
     do k = 1, gr%nnzp
       rcm_rad(k)  = rcm(gr%nnzp-k+1)
       rhot_rad(k) = rhot(gr%nnzp-k+1)
@@ -434,10 +434,10 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
       thlm_forcing(k) = thlm_forcing(k) + radht_theta(k)
     end do
 
-  end if ! ~ lbugsrad
+  end if ! ~ l_bugsrad
 
+  if ( .not.l_bugsrad .and. l_stats_samp ) then
  
-  if ( .not.lbugsrad .and. lstats_samp ) then
     call stat_update_var( iradht_LW, radht_LW, zt )
 
     call stat_update_var( iradht_SW, radht_SW, zt )
@@ -450,11 +450,11 @@ vm_hoc_grid (1) = vm_hoc_grid(2)
  
 
   ! Initialize Ncnm on first timestep
-  if ( lcoamps_micro .and. time == time_initial ) then
+  if ( l_coamps_micro .and. time == time_initial ) then
     Ncnm(1:gr%nnzp) & 
     = 30.0 * (1.0 + exp(-gr%zt(1:gr%nnzp)/2000.0)) * 1.e6
 
-  else if ( kk_rain ) then
+  else if ( l_kk_rain ) then
     ! Note: Khairoutdinov and Kogan microphysics has only been
     ! tested for marine stratocumulous clouds, and does not
     ! account for snow and ice.

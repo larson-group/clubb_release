@@ -1,4 +1,4 @@
-!$Id: gabls2.F90,v 1.4 2008-07-28 19:37:55 faschinj Exp $
+!$Id: gabls2.F90,v 1.5 2008-07-30 21:18:16 faschinj Exp $
 !----------------------------------------------------------------------
 module gabls2
 
@@ -17,7 +17,7 @@ contains
 !----------------------------------------------------------------------
 subroutine gabls2_tndcy & 
 ( time, time_initial, & 
-  rhot, rcm, kk_rain, wmt, wmm, & 
+  rhot, rcm, l_kk_rain, wmt, wmm, & 
   thlm_forcing, rtm_forcing, radht, Ncm, & 
   sclrm_forcing )
 
@@ -53,7 +53,7 @@ real, dimension(gr%nnzp), intent(in) :: &
   rcm            ! Cloud water mixing ratio        [kg/kg]
 
 logical, intent(in) :: & 
-  kk_rain       !  Logical variable-- are we using KK scheme?
+  l_kk_rain       !  Logical variable-- are we using KK scheme?
 
 ! Output Variables
 real, dimension(gr%nnzp), intent(out) :: & 
@@ -108,7 +108,7 @@ do k=1,gr%nnzp
 end do
 
 ! Compute initial cloud droplet concentration
-if ( kk_rain ) then
+if ( l_kk_rain ) then
   do k=1,gr%nnzp
     if ( rcm(k) >= 1.e-6 ) then
       ! Ncm is in units of kg^-1.  If the coefficient is in m^-3, then

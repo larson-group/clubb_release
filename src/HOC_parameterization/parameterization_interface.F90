@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F90,v 1.9 2008-07-30 19:17:36 dschanen Exp $
+! $Id: parameterization_interface.F90,v 1.10 2008-07-30 21:23:12 faschinj Exp $
 !-----------------------------------------------------------------------
 module hoc_parameterization_interface
 
@@ -74,8 +74,8 @@ module hoc_parameterization_interface
 
        use model_flags, only: & 
            LH_on,  & ! Variable(s)
-           lKhm_aniso, & 
-           luv_nudge, &
+           l_Khm_aniso, & 
+           l_uv_nudge, &
            lgamma_Skw
 
        use grid_class, only: & 
@@ -193,7 +193,7 @@ module hoc_parameterization_interface
  
        use stats_variables, only: & 
            zm,  & ! Variable(s)
-           lstats_samp, & 
+           l_stats_samp, & 
            iwprtp_bt, & 
            iwpthlp_bt
 
@@ -451,7 +451,7 @@ module hoc_parameterization_interface
 
  
        ! Include effect of clipping in wprtp time tendency budget term.
-       if ( lstats_samp ) then
+       if ( l_stats_samp ) then
           ! wprtp total time tendency (effect of clipping)
           call stat_begin_update( iwprtp_bt, real( wprtp / dt ),  & ! intent(in)
                    zm )                                             ! intent(inout)
@@ -462,8 +462,8 @@ module hoc_parameterization_interface
                              .false., dt, wp2, rtp2,     & ! intent(in)
                              wprtp )                    ! intent(inout)
 
+       if ( l_stats_samp ) then
  
-       if ( lstats_samp ) then
           ! wprtp total time tendency (effect of clipping)
           call stat_modify( iwprtp_bt, real( wprtp / dt ),  & ! intent(in)
                             zm )                           ! intent(inout)
@@ -483,7 +483,7 @@ module hoc_parameterization_interface
 
  
        ! Include effect of clipping in wpthlp time tendency budget term.
-       if ( lstats_samp ) then
+       if ( l_stats_samp ) then
           ! wpthlp total time tendency (effect of clipping)
           call stat_begin_update( iwpthlp_bt, real( wpthlp / dt ),  & ! intent(in)
                                   zm )                             ! intent(inout)
@@ -494,8 +494,8 @@ module hoc_parameterization_interface
                              .false., dt, wp2, thlp2,               & ! intent(in)
                              wpthlp )                              ! intent(inout)
 
+       if ( l_stats_samp ) then
  
-       if ( lstats_samp ) then
           ! wpthlp total time tendency (effect of clipping)
           call stat_modify( iwpthlp_bt, real( wpthlp / dt ),        & ! intent(in)
                             zm )                                   ! intent(inout)
@@ -656,7 +656,7 @@ module hoc_parameterization_interface
        ! Compute tke
        !----------------------------------------------------------------
 
-       if ( .not. lKhm_aniso ) then
+       if ( .not. l_Khm_aniso ) then
          ! tke is assumed to be 3/2 of wp2
          em = 1.5 * wp2
        else
@@ -782,7 +782,7 @@ module hoc_parameterization_interface
 
  
        ! Include effect of clipping in wprtp time tendency budget term.
-       if ( lstats_samp ) then
+       if ( l_stats_samp ) then
           ! wprtp total time tendency (effect of clipping)
           call stat_modify( iwprtp_bt, real( -wprtp / dt ),  & ! intent(in)
                             zm )                               ! intent(inout)
@@ -793,8 +793,7 @@ module hoc_parameterization_interface
                              .true., dt, wp2, rtp2,         & ! intent(in)
                              wprtp )                          ! intent(inout)
 
- 
-       if ( lstats_samp ) then
+       if ( l_stats_samp ) then
           ! wprtp total time tendency (effect of clipping)
           call stat_end_update( iwprtp_bt, real( wprtp / dt ),  & ! intent(in)
                                 zm )                              ! intent(inout)
@@ -814,7 +813,7 @@ module hoc_parameterization_interface
 
  
        ! Include effect of clipping in wpthlp time tendency budget term.
-       if ( lstats_samp ) then
+       if ( l_stats_samp ) then
           ! wpthlp total time tendency (effect of clipping)
           call stat_modify( iwpthlp_bt, real( -wpthlp / dt ),  & ! intent(in)
                             zm )                                 ! intent(inout)
@@ -825,8 +824,8 @@ module hoc_parameterization_interface
                              .true., dt, wp2, thlp2,           & ! intent(in) 
                              wpthlp )                            ! intent(inout)
 
+       if ( l_stats_samp ) then
  
-       if ( lstats_samp ) then
           ! wpthlp total time tendency (effect of clipping)
           call stat_end_update( iwpthlp_bt, real( wpthlp / dt ),  & ! intent(in)
                                 zm )                                ! intent(inout)
@@ -925,7 +924,7 @@ module hoc_parameterization_interface
        ! Joshua Fasching March 2008    
        if ( lapack_error( err_code ) ) return
 
-       if ( luv_nudge ) then
+       if ( l_uv_nudge ) then
          um(1:gr%nnzp) = real( um(1:gr%nnzp)  & 
             - ((um(1:gr%nnzp) - um_ref(1:gr%nnzp)) * (dt/ts_nudge)) )
          vm(1:gr%nnzp) = real( vm(1:gr%nnzp)  & 
@@ -1065,8 +1064,8 @@ module hoc_parameterization_interface
         subroutine parameterization_setup & 
                    ( nzmax, T0_in, ts_nudge_in, hydromet_dim_in,  & 
                      sclr_dim_in, sclrtol_in, params,  & 
-                     lbugsrad, kk_rain, licedfs, lcoamps_micro, & 
-                     cloud_sed, luv_nudge, lKhm_aniso,  & 
+                     l_bugsrad, l_kk_rain, l_licedfs, l_coamps_micro, & 
+                     l_cloud_sed, l_uv_nudge, l_Khm_aniso,  & 
                      implemented, grid_type, deltaz, zm_init, & 
                      momentum_heights, thermodynamic_heights,  & 
                      host_dx, host_dy, err_code )
@@ -1152,13 +1151,13 @@ module hoc_parameterization_interface
 
         ! Flags
         logical, intent(in) ::  & 
-        lbugsrad,      & ! BUGSrad interactive radiation scheme
-        kk_rain,       & ! K & K rain microphysics
-        licedfs,       & ! Simplified ice scheme
-        lcoamps_micro, & ! COAMPS microphysics scheme
-        cloud_sed,     & ! Cloud Sedimentation
-        luv_nudge,     & ! Wind nudging for mpace_b case
-        lKhm_aniso    ! Whether to use anisotropic Khm. - Michael Falk 2 Feb 2007
+        l_bugsrad,      & ! BUGSrad interactive radiation scheme
+        l_kk_rain,       & ! K & K rain microphysics
+        l_licedfs,       & ! Simplified ice scheme
+        l_coamps_micro, & ! COAMPS microphysics scheme
+        l_cloud_sed,     & ! Cloud Sedimentation
+        l_uv_nudge,     & ! Wind nudging for mpace_b case
+        l_Khm_aniso    ! Whether to use anisotropic Khm. - Michael Falk 2 Feb 2007
 
         ! Output variables
         integer, intent(out) :: & 
@@ -1167,9 +1166,9 @@ module hoc_parameterization_interface
         ! Setup flags
 
         call setup_model_flags & 
-             ( lbugsrad, kk_rain, cloud_sed,             & ! intent(in)
-               licedfs, lcoamps_micro, luv_nudge,        & ! intent(in)
-               lKhm_aniso )                             ! intent(in)
+             ( l_bugsrad, l_kk_rain, l_cloud_sed,             & ! intent(in)
+               l_licedfs, l_coamps_micro, l_uv_nudge,        & ! intent(in)
+               l_Khm_aniso )                             ! intent(in)
 
         ! Define model constant parameters
 

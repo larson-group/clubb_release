@@ -1,4 +1,4 @@
-!$Id: rico.F90,v 1.5 2008-07-30 19:17:35 dschanen Exp $
+!$Id: rico.F90,v 1.6 2008-07-30 21:18:17 faschinj Exp $
 !----------------------------------------------------------------------
 module rico
 
@@ -17,7 +17,7 @@ module rico
 !----------------------------------------------------------------------
   subroutine rico_tndcy & 
   ( exner, & 
-    rhot, rcm, kk_rain, wmt, wmm, & 
+    rhot, rcm, l_kk_rain, wmt, wmm, & 
     thlm_forcing, rtm_forcing, radht, Ncm, & 
     sclrm_forcing )
 
@@ -54,7 +54,7 @@ module rico
   rcm               ! Cloud water mixing ratio               [kg kg^-1]
 
   logical, intent(in) :: & 
-  kk_rain       !  Flag-- is KK rain being used?
+  l_kk_rain       !  Flag-- is KK rain being used?
 
   ! Output Variables
   real, dimension(gr%nnzp), intent(out) :: & 
@@ -130,7 +130,7 @@ module rico
     rtm_forcing(k) = rtm_forcing(k) / 1000.  ! Converts [g kg^-1 s^-1] to [kg kg^-1 s^-1]
   end do
 
-  if ( kk_rain ) then
+  if ( l_kk_rain ) then
     do k=1,gr%nnzp
       if ( rcm(k) >= rc_tol ) then
 ! Brian:  Ncm has now been changed in the model to be the concentration per 

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F90,v 1.9 2008-07-30 19:17:36 dschanen Exp $
+!  $Id: stats_subs.F90,v 1.10 2008-07-30 21:23:12 faschinj Exp $
 module stats_subs
 
   implicit none
@@ -16,7 +16,7 @@ module stats_subs
 !-----------------------------------------------------------------------
   subroutine stats_init & 
              ( iunit, fname_prefix, & 
-               lstats_in, stats_fmt_in,  & 
+               l_stats_in, stats_fmt_in,  & 
                stats_tsamp_in, stats_tout_in, & 
                fnamelist, nnzp, gzt, gzm, & 
                day, month, year, rlat, rlon,  & 
@@ -61,12 +61,12 @@ module stats_subs
       zmscr14, & 
       zmscr15, & 
       sfc, & 
-      lstats, & 
+      l_stats, & 
       stats_tsamp, & 
       stats_tout, & 
-      lstats_samp, & 
-      lstats_first, & 
-      lstats_last, & 
+      l_stats_samp, & 
+      l_stats_first, & 
+      l_stats_last, & 
       fname_zt, & 
       fname_zm, & 
       fname_sfc, & 
@@ -108,7 +108,7 @@ module stats_subs
       fname_prefix, & ! Start of the stats filenames
       stats_fmt_in ! Format of the stats file output
 
-    logical, intent(in) :: lstats_in ! Stats on? T/F
+    logical, intent(in) :: l_stats_in ! Stats on? T/F
 
     real(kind=time_precision), intent(in) ::  & 
       stats_tsamp_in,  & ! Sampling interval   [s]
@@ -158,17 +158,17 @@ module stats_subs
     lerror = .false.
 
     ! Set stats_variables variables with inputs from calling subroutine
-    lstats = lstats_in
+    l_stats = l_stats_in
 
     stats_tsamp = stats_tsamp_in
     stats_tsamp = stats_tsamp_in
     stats_tout  = stats_tout_in
     stats_fmt   = trim( stats_fmt_in )
 
-    if ( .not. lstats ) then
-      lstats_samp  = .false.
-      lstats_first = .false.
-      lstats_last  = .false.
+    if ( .not. l_stats ) then
+      l_stats_samp  = .false.
+      l_stats_first = .false.
+      l_stats_last  = .false.
       return
     end if
 
@@ -506,10 +506,10 @@ module stats_subs
 
 100 continue
     write(fstderr,*) 'Error with statsnl, statistics is turned off'
-    lstats       = .false.
-    lstats_samp  = .false.
-    lstats_first = .false.
-    lstats_last  = .false.
+    l_stats       = .false.
+    l_stats_samp  = .false.
+    l_stats_first = .false.
+    l_stats_last  = .false.
 
     return
   end subroutine stats_init
@@ -590,10 +590,10 @@ module stats_subs
 !-----------------------------------------------------------------------
 
       use stats_variables, only: & 
-          lstats,  & ! Variable(s)
-          lstats_samp, & 
-          lstats_first, & 
-          lstats_last, & 
+          l_stats,  & ! Variable(s)
+          l_stats_samp, & 
+          l_stats_first, & 
+          l_stats_last, & 
           stats_tsamp, & 
           stats_tout
       use stats_precision, only: & 
@@ -609,29 +609,29 @@ module stats_subs
       real(kind=time_precision), intent(in) ::  & 
         delt         ! Model time step          [s]
 
-      if ( .not. lstats ) return
+      if ( .not. l_stats ) return
 
       ! Set sample this time step flag
       if ( mod( time_elapsed, stats_tsamp ) < 1.e-8 ) then
-        lstats_samp = .true.
+        l_stats_samp = .true.
       else
-        lstats_samp = .false.
+        l_stats_samp = .false.
       end if
 
       ! Set first time step flag
 
       if ( mod( time_elapsed - delt, stats_tout ) < 1.e-8 ) then
-        lstats_first = .true.
+        l_stats_first = .true.
       else
-        lstats_first = .false.
+        l_stats_first = .false.
       end if
 
       ! Set last time step flag
 
       if ( mod( time_elapsed, stats_tout ) < 1.e-8 ) then
-        lstats_last = .true.
+        l_stats_last = .true.
       else
-        lstats_last = .false.
+        l_stats_last = .false.
       end if
 
       return
@@ -648,7 +648,7 @@ module stats_subs
           zt,  & ! Variable(s)
           zm, & 
           sfc, & 
-          lstats_last, & 
+          l_stats_last, & 
           stats_tsamp, & 
           stats_tout, & 
           lgrads
@@ -672,7 +672,7 @@ module stats_subs
 
       ! Check if it is time to write to file
 
-      if ( .not. lstats_last ) return
+      if ( .not. l_stats_last ) return
 
       ! Check number of sampling points
 
@@ -769,7 +769,7 @@ module stats_subs
           zt,      & ! Variables
           zm, & 
           sfc, & 
-          lstats_samp, & 
+          l_stats_samp, & 
           ithlm, & 
           iT_in_K, & 
           ithvm, & 
@@ -1026,7 +1026,7 @@ module stats_subs
 
       ! Sample fields
 
-      if ( lstats_samp ) then
+      if ( l_stats_samp ) then
 
         ! zt variables
         call stat_update_var( ithlm, thlm, zt )
@@ -1061,7 +1061,7 @@ module stats_subs
 !        call stat_update_var( iNcm, Ncm, zt )
 !        call stat_update_var( iNcnm, Ncnm, zt )
 !        call stat_update_var( iNim, Nim, zt )
-!       if ( cloud_sed ) then
+!       if ( l_cloud_sed ) then
 !        call stat_update_var( ised_rcm, sed_rcm, zt )
 !       endif
         call stat_update_var( irsat, rsat, zt )
@@ -1149,7 +1149,7 @@ module stats_subs
         call stat_update_var( iem, em, zm )
         call stat_update_var( ishear, shear, zm )
         call stat_update_var( iFrad, Frad, zm )
-!        if ( cloud_sed ) then
+!        if ( l_cloud_sed ) then
 !          call stat_update_var( iFcsed, Fcsed, zm )
 !        endif
 
@@ -1272,7 +1272,7 @@ module stats_subs
           zmscr14, & 
           zmscr15, & 
           lnetcdf, & 
-          lstats
+          l_stats
 #ifdef NETCDF
       use output_netcdf, only:  & 
           close_netcdf ! Procedure
@@ -1280,7 +1280,7 @@ module stats_subs
 
       implicit none
 
-      if ( lstats .and. lnetcdf ) then
+      if ( l_stats .and. lnetcdf ) then
 #ifdef NETCDF
         call close_netcdf( zt%f )
         call close_netcdf( zm%f )
@@ -1290,7 +1290,7 @@ module stats_subs
 #endif
       end if
 
-      if ( lstats ) then
+      if ( l_stats ) then
         ! De-allocate all zt variables
         deallocate( zt%z )
 
@@ -1355,7 +1355,7 @@ module stats_subs
 
         deallocate( sfc%f%var )
         deallocate( sfc%f%z )
-      end if ! lstats
+      end if ! l_stats
 
       return
       end subroutine stats_finalize
