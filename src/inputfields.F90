@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputfields.F90,v 1.5 2008-07-30 15:40:45 faschinj Exp $
+! $Id: inputfields.F90,v 1.6 2008-07-30 21:08:05 faschinj Exp $
 
 ! Module inputfields
 
@@ -956,7 +956,7 @@ module inputfields
   end function lin_ext_zt_bottom
 
 !===============================================================================
-  subroutine compute_timestep( iunit, filename, lrestart, & 
+  subroutine compute_timestep( iunit, filename, l_restart, & 
                                time, nearest_timestep )
 !
 !       Description: Given a time 'time', determines the closest 
@@ -985,7 +985,7 @@ module inputfields
       time ! Time near which we want to find GrADS output,
            ! e.g. time_restart     [s]
 
-    logical, intent(in) :: lrestart ! Whether this is a restart run
+    logical, intent(in) :: l_restart ! Whether this is a restart run
 
     ! Output Variable(s)
     integer, intent(out) ::  & 
@@ -1006,7 +1006,7 @@ module inputfields
 !     .        time - fread_var%time
     
     ! Reporting
-    if ( lrestart ) then
+    if ( l_restart ) then
     print *, "Initial time of GrADS reference file ", & 
              "[seconds since midnight]: ",  & 
              fread_var%time
@@ -1034,13 +1034,13 @@ module inputfields
        stop
     end if
 
-    end if ! lrestart
+    end if ! l_restart
 
     ! Determines the closest recorded timestep to the restart
     ! time.
     nearest_timestep = nint( delta_time / sec_per_min ) 
 
-    if ( lrestart ) then 
+    if ( l_restart ) then 
     print *, "Elapsed time between ", & 
              "initial time of ref file and restart time ", & 
              "rounded to nearest minute: ",  & 
@@ -1051,7 +1051,7 @@ module inputfields
     print *, "Nearest GrADS output time iteration [ ]: ", & 
              nint( nearest_timestep /  & 
                    (fread_var%dtwrite/sec_per_min) ) - 1
-    end if ! lrestart
+    end if ! l_restart
     
     call close_grads_read( fread_var )
     
