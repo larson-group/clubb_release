@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_variables.F90,v 1.7 2008-07-30 19:17:36 dschanen Exp $
+! $Id: stats_variables.F90,v 1.8 2008-07-30 21:19:35 faschinj Exp $
 !-----------------------------------------------------------------------
 !  module stats_variables
 
@@ -22,19 +22,19 @@ module stats_variables
   real(kind=time_precision), public :: stats_tout     ! Output interval     [s]
 
   logical, public ::  & 
-  lstats,   & ! Main flag to turn statistics on/off
+  l_stats,   & ! Main flag to turn statistics on/off
   lnetcdf,  & ! Output to NetCDF format
   lgrads   ! Output to GrADS format
 
-!$omp   threadprivate(lstats, lnetcdf, lgrads)
+!$omp   threadprivate(l_stats, lnetcdf, lgrads)
 !$omp   threadprivate(stats_tsamp, stats_tout)
 
   logical, public :: & 
-  lstats_samp,    & ! Sample flag for current time step
-  lstats_first,   & ! First time step of output period
-  lstats_last    ! Last time step of output period
+  l_stats_samp,    & ! Sample flag for current time step
+  l_stats_first,   & ! First time step of output period
+  l_stats_last    ! Last time step of output period
 
-!$omp   threadprivate(lstats_samp, lstats_first, lstats_last)
+!$omp   threadprivate(l_stats_samp, l_stats_first, l_stats_last)
 
   character(len=200), public ::  & 
   fname_zt,  & ! Name of the stats file for thermodynamic grid fields
