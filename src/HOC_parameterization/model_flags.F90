@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: model_flags.F90,v 1.2 2008-07-28 17:45:57 dschanen Exp $
+! $Id: model_flags.F90,v 1.3 2008-07-30 21:22:27 faschinj Exp $
 
 module model_flags
 
@@ -27,24 +27,24 @@ module model_flags
     lbyteswap_io   = .false.     ! Swap byte order in GrADS output
 
   logical, public ::  & 
-    lbugsrad,      & ! BUGSrad interactive radiation scheme
-    kk_rain,       & ! Khairoutdinov and Kogan (2000) drizzle scheme. - Brian
-    licedfs,       & ! Simplified ice scheme
-    lcoamps_micro, & ! COAMPS rain microphysics
-    cloud_sed,     & ! Cloud water droplet sedimentation. - Brian
-    luv_nudge,     & ! For wind speed nudging. - Michael Falk
-    lKhm_aniso    ! For anisotropic Khm, as in GABLS2.
+    l_bugsrad,      & ! BUGSrad interactive radiation scheme
+    l_kk_rain,       & ! Khairoutdinov and Kogan (2000) drizzle scheme. - Brian
+    l_licedfs,       & ! Simplified ice scheme
+    l_coamps_micro, & ! COAMPS rain microphysics
+    l_cloud_sed,     & ! Cloud water droplet sedimentation. - Brian
+    l_uv_nudge,     & ! For wind speed nudging. - Michael Falk
+    l_Khm_aniso    ! For anisotropic Khm, as in GABLS2.
 
-!$omp threadprivate(lbugsrad, kk_rain, licedfs)
-!$omp threadprivate(lcoamps_micro, cloud_sed, luv_nudge)
-!$omp threadprivate(lKhm_aniso)
+!$omp threadprivate(l_bugsrad, l_kk_rain, l_licedfs)
+!$omp threadprivate(l_coamps_micro, l_cloud_sed, l_uv_nudge)
+!$omp threadprivate(l_Khm_aniso)
 
   contains
 !-----------------------------------------------------------------------
   subroutine setup_model_flags & 
-             ( lbugsrad_in, kk_rain_in, cloud_sed_in,  & 
-               licedfs_in, lcoamps_micro_in, & 
-               luv_nudge_in, lKhm_aniso_in )
+             ( l_bugsrad_in, l_kk_rain_in, l_cloud_sed_in,  & 
+               l_licedfs_in, l_coamps_micro_in, & 
+               l_uv_nudge_in, l_Khm_aniso_in )
 
 ! Description:
 !   Setup model flags
@@ -56,30 +56,30 @@ module model_flags
 
     ! Input Variables
     logical, intent(in) ::  & 
-      lbugsrad_in, kk_rain_in, cloud_sed_in, & 
-      licedfs_in, lcoamps_micro_in, luv_nudge_in, & 
-      lKhm_aniso_in
+      l_bugsrad_in, l_kk_rain_in, l_cloud_sed_in, & 
+      l_licedfs_in, l_coamps_micro_in, l_uv_nudge_in, & 
+      l_Khm_aniso_in
 
 !-----------------------------------------------------------------------
-    lbugsrad      = lbugsrad_in
-    kk_rain       = kk_rain_in
-    cloud_sed     = cloud_sed_in
-    lcoamps_micro = lcoamps_micro_in
-    licedfs       = licedfs_in
-    luv_nudge     = luv_nudge_in
-    lKhm_aniso    = lKhm_aniso_in
+    l_bugsrad      = l_bugsrad_in
+    l_kk_rain       = l_kk_rain_in
+    l_cloud_sed     = l_cloud_sed_in
+    l_coamps_micro = l_coamps_micro_in
+    l_licedfs       = l_licedfs_in
+    l_uv_nudge     = l_uv_nudge_in
+    l_Khm_aniso    = l_Khm_aniso_in
 
         ! Make sure only one microphysical scheme is enabled.
-!       if ( .not.( kk_rain .and. lcoamps_micro ) .and. &
-!            .not.( kk_rain .and. licedfs ) .and. &
-!            .not.( licedfs .and. lcoamps_micro ) ) then
+!       if ( .not.( l_kk_rain .and. l_coamps_micro ) .and. &
+!            .not.( l_kk_rain .and. l_licedfs ) .and. &
+!            .not.( l_licedfs .and. l_coamps_micro ) ) then
 
-    if ( count( (/kk_rain, lcoamps_micro, licedfs/) ) > 1 ) then
+    if ( count( (/l_kk_rain, l_coamps_micro, l_licedfs/) ) > 1 ) then
 
       write(unit=fstderr, fmt='(3(a18,l1,a1))')  & 
-        "kk_rain = ", kk_rain, ",", & 
-        "lcoamps_micro = ", lcoamps_micro,",", & 
-        "licedfs = ", licedfs, "."
+        "l_kk_rain = ", l_kk_rain, ",", & 
+        "l_coamps_micro = ", l_coamps_micro,",", & 
+        "l_licedfs = ", l_licedfs, "."
       stop "Only one microphysics scheme may be enabled per run"
 
     end if ! More than one microphysical scheme enabled
