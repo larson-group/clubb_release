@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: bugsrad_driver.F90,v 1.2 2008-07-30 19:17:34 dschanen Exp $
+! $Id: bugsrad_driver.F90,v 1.3 2008-07-30 21:03:08 faschinj Exp $
 module bugsrad_hoc_mod
 
 implicit none
@@ -60,7 +60,7 @@ subroutine bugsrad_hoc &
  
   use stats_type, only: stat_update_var ! Procedure(s)
 
-  use stats_variables, only: zt, zm, lstats_samp, & ! Variable(s)
+  use stats_variables, only: zt, zm, l_stats_samp, & ! Variable(s)
     iFrad_SW, iFrad_LW, iradht_SW, iradht_LW
 
   implicit none
@@ -347,8 +347,7 @@ subroutine bugsrad_hoc &
 
   thlm_forcing(1:nz) = thlm_forcing(1:nz) + radht(1:nz)
 
- 
-  if ( lstats_samp ) then
+  if ( l_stats_samp ) then
  
     call stat_update_var( iradht_LW, radht_LW, zt )   
 
