@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf01.F90,v 1.5 2008-07-30 19:17:35 dschanen Exp $
+! $Id: dycoms2_rf01.F90,v 1.6 2008-07-30 21:14:27 faschinj Exp $
 module dycoms2_rf01
 
 !       Description:
@@ -33,7 +33,7 @@ use constants, only: fstderr, Cp ! Constant(s)
 
 use parameters, only: sclr_dim ! Variable(s)
 
-use model_flags, only: lbugsrad ! Variable(s)
+use model_flags, only: l_bugsrad ! Variable(s)
 
 use stats_precision, only: time_precision ! Variable(s)
 
@@ -45,7 +45,7 @@ use array_index, only: iisclr_rt, iisclr_thl
 use stats_type, only: stat_update_var, stat_update_var_pt ! Procedure(s)
 
 use stats_variables, only:  & 
-    izi, iradht_LW, zt, sfc, lstats_samp ! Variable(s)
+    izi, iradht_LW, zt, sfc, l_stats_samp ! Variable(s)
  
 
 implicit none
@@ -115,7 +115,7 @@ zi = (gr%zt(i)-gr%zt(i-1))/(rtm(i)-rtm(i-1))*(8.0e-3-rtm(i-1)) &
 !        x_sfc(1,izi) = zi
  
 
-if ( lstats_samp ) then
+if ( l_stats_samp ) then
   call stat_update_var_pt( izi, 1, zi, sfc )
 end if
 
@@ -136,7 +136,7 @@ wmm(gr%nnzp) = 0.0  ! Model top
 
 ! Theta-l radiative tendency
 
-if ( .not. lbugsrad ) then
+if ( .not. l_bugsrad ) then
 
   ! Compute liquid water path from top of the model
   ! We define liquid water path on momentum levels
@@ -167,16 +167,14 @@ if ( .not. lbugsrad ) then
   radht(1)       = 0.
   radht(gr%nnzp) = 0.
 
- 
-  if ( lstats_samp ) then
+  if ( l_stats_samp ) then
     call stat_update_var( iradht_LW, radht, zt )
   end if
-
-end if ! ~ lbugsrad
+end if ! ~ l_bugsrad
 
 ! Add heating rate to theta-l forcing
 
-if ( .not. lbugsrad ) thlm_forcing = thlm_forcing + radht
+if ( .not. l_bugsrad ) thlm_forcing = thlm_forcing + radht
 
 ! Test scalars with thetal and rt if desired
 if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
