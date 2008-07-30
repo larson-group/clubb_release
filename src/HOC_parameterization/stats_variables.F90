@@ -1,12 +1,12 @@
 !-----------------------------------------------------------------------
-! $Id: stats_variables.F90,v 1.6 2008-07-30 15:40:45 faschinj Exp $
+! $Id: stats_variables.F90,v 1.7 2008-07-30 19:17:36 dschanen Exp $
 !-----------------------------------------------------------------------
 !  module stats_variables
 
 !  holds pointers to variables to be written to GrADS files
 !-----------------------------------------------------------------------
 module stats_variables
-#ifdef STATS
+ 
   
   use stats_type, only:  & 
       stats ! Type
@@ -566,6 +566,6 @@ module stats_variables
 !$omp   threadprivate(zmscr06, zmscr07, zmscr08, zmscr09, zmscr10)
 !$omp   threadprivate(zmscr11, zmscr12, zmscr13, zmscr14, zmscr15)
 
-#endif /*STATS*/
+ 
 end module stats_variables
 

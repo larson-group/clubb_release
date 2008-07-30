@@ -1,4 +1,4 @@
-# $Id: linux_ia32_intel.in,v 1.3 2008-07-24 16:52:02 dschanen Exp $
+# $Id: linux_ia32_intel.in,v 1.4 2008-07-30 19:17:37 dschanen Exp $
 # Makefile definitions customized for Linux x86_64 using the Intel Fortran 
 # compiler 
 
@@ -40,17 +40,16 @@ LAPACK = -L/usr/lib64 -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas 
 LDFLAGS = -L$(LIBDIR) -lhoc_param -lhoc_bugsrad -L$(NC_LOC)/lib $(LAPACK)
 
 # == Compiler flags (all) ==
-# Preprocessing:
-#   -DSTATS enables statistics
-#   -DBIG_ENDIAN_IO use only if compiler performs big endian file i/O
-#                   regardless of internal representation
-#   -DLITTLE_ENDIAN_IO use only if compiler performs little endian file i/O
-#                   regardless of internal representation
+# Preprocessing Directives:
+#   -DNETCDF enables netCDF output
+#   -DCOAMPS_MICRO enables COAMPS microphysics scheme
+#   -DTUNER enables the tuning application
 #   -Dradoffline and -Dnooverlap (see bugsrad documentation)
 # You will need to `make clean' if you change these
+# Use -I<include path> to set a module or header file directory
 
-#FCFLAGS = $(ARCH) $(OPTIMIZE) -DSTATS -DTUNER -DCOAMPS_MICRO -Dnooverlap -Dradoffline -I$(NC_LOC)/include
-FCFLAGS = $(ARCH) $(DEBUG) -DSTATS -DTUNER -DCOAMPS_MICRO -Dnooverlap -Dradoffline -I$(NC_LOC)/include
+#FCFLAGS = $(ARCH) $(OPTIMIZE)   -DTUNER -DCOAMPS_MICRO -Dnooverlap -Dradoffline -I$(NC_LOC)/include
+FCFLAGS = $(ARCH) $(DEBUG)   -DTUNER -DCOAMPS_MICRO -Dnooverlap -Dradoffline -I$(NC_LOC)/include
 
 # == Static library processing ==
 AR = ar

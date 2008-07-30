@@ -1,4 +1,4 @@
-# $Id: linux_ia32_absoft.in,v 1.2 2008-07-24 16:52:02 dschanen Exp $
+# $Id: linux_ia32_absoft.in,v 1.3 2008-07-30 19:17:36 dschanen Exp $
 # Configuration file for Linux machine using Absoft Fortran
 
 # == Paths ==
@@ -42,18 +42,15 @@ LDFLAGS = -lU77 -L$(LIBDIR) -Wl,-rpath,$(LIBDIR) -lhoc_param -lhoc_bugsrad $(LAP
 
 # == Compiler flags (all) ==
 # Preprocessing Directives:
-#   -DSTATS enables statistics
 #   -DNETCDF enables netCDF output
-#   -DBIG_ENDIAN_IO use only if compiler performs big endian file i/O
-#                   regardless of internal representation
-#   -DLITTLE_ENDIAN_IO use only if compiler performs little endian file i/O
-#                   regardless of internal representation
+#   -DCOAMPS_MICRO enables COAMPS microphysics scheme
+#   -DTUNER enables the tuning application
 #   -Dradoffline and -Dnooverlap (see bugsrad documentation)
 # You will need to `make clean' if you change these
 # Use -I<include path> to set a module or header file directory
 
-FCFLAGS = $(ARCH) $(DEBUG) -DAbsoftUNIXFortran -DTUNER -DCOAMPS_MICRO -DSTATS -Dnooverlap -Dradoffline
-#FCFLAGS = $(ARCH) $(OPTIMIZE) -DAbsoftUNIXFortran -DSTATS -DTUNER -DCOAMPS_MICRO -Dnooverlap -Dradoffline
+FCFLAGS = $(ARCH) $(DEBUG) -DAbsoftUNIXFortran -DTUNER -DCOAMPS_MICRO -Dnooverlap -Dradoffline
+#FCFLAGS = $(ARCH) $(OPTIMIZE) -DAbsoftUNIXFortran -DTUNER -DCOAMPS_MICRO -Dnooverlap -Dradoffline
 
 # == Static library processing ==
 AR = ar

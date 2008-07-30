@@ -1,8 +1,7 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zt.F90,v 1.5 2008-07-30 15:40:45 faschinj Exp $
+! $Id: stats_zt.F90,v 1.6 2008-07-30 19:17:36 dschanen Exp $
  
 module stats_zt
-#ifdef STATS
 
 implicit none
 
@@ -1447,5 +1446,4 @@ return
 
 end subroutine stats_init_zt
 
-#endif /*STATS*/
 end module stats_zt

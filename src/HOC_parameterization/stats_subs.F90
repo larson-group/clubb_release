@@ -1,9 +1,7 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F90,v 1.8 2008-07-30 15:40:45 faschinj Exp $
+!  $Id: stats_subs.F90,v 1.9 2008-07-30 19:17:36 dschanen Exp $
 module stats_subs
 
-#ifdef STATS
- 
   implicit none
       
   private ! Set Default Scope
@@ -1361,7 +1359,5 @@ module stats_subs
 
       return
       end subroutine stats_finalize
-
-#endif /*STATS*/
 
 end module stats_subs

@@ -1,7 +1,7 @@
 #define SCLR_THETA 1
 #define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: jun25.F90,v 1.4 2008-07-28 19:37:55 faschinj Exp $
+! $Id: jun25.F90,v 1.5 2008-07-30 19:17:35 dschanen Exp $
   module jun25
 
 !       Description:
@@ -58,13 +58,13 @@
 
   use array_index, only: iisclr_rt, iisclr_thl
 
-#ifdef STATS
+ 
   use stats_type, only: stat_update_var ! Procedure(s)
 
   use stats_variables, only:  & 
       iradht_LW, iradht_SW, iFrad_LW, iFrad_SW,  & ! Procedure(s)
       zt, zm, lstats_samp
-#endif /*STATS*/
+ 
 
   implicit none
 
@@ -760,7 +760,7 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
   if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
   if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
-#ifdef STATS
+ 
   if ( .not.lbugsrad .and. lstats_samp ) then
     call stat_update_var( iradht_LW, radht_LW, zt )        
 
@@ -771,7 +771,7 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
     call stat_update_var( iFrad_LW, Frad_LW, zm )
 
   end if
-#endif /*STATS*/
+ 
 
   return
   end subroutine jun25_altocu_tndcy

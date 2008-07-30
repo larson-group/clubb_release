@@ -1,7 +1,5 @@
-#define SCLR_THETA 1
-#define SCLR_RT 2
 !----------------------------------------------------------------------
-! $Id: arm.F90,v 1.3 2008-07-29 16:44:00 nielsenb Exp $
+! $Id: arm.F90,v 1.4 2008-07-30 19:17:34 dschanen Exp $
 module arm
 
 !       Description:
@@ -37,11 +35,10 @@ use stats_precision, only: time_precision ! Variable(s)
 use array_index, only:  & 
     iisclr_thl, iisclr_rt ! Variable(s)
 
-#ifdef STATS
+ 
 use stats_type, only: stat_update_var ! Procedure(s)
 
 use stats_variables, only: iradht_LW, zt, lstats_samp ! Variable(s)
-#endif
 
 implicit none
 
@@ -142,11 +139,10 @@ rtm_forcing(1)  = 0.0
 thlm_forcing(1) = 0.0
 radht(1)        = 0.0
 
-#ifdef STATS
-if ( lstats_samp .and. .not.lbugsrad ) then
+ 
+if ( lstats_samp .and. .not. lbugsrad ) then
   call stat_update_var( iradht_LW, radht, zt )
 end if
-#endif
 
 ! Test scalars with thetal and rt if desired
 if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing

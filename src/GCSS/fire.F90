@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: fire.F90,v 1.4 2008-07-29 16:44:01 nielsenb Exp $
+! $Id: fire.F90,v 1.5 2008-07-30 19:17:35 dschanen Exp $
 module fire
 
 !       Description:
@@ -42,11 +42,10 @@ use stats_precision, only: time_precision ! Variable(s)
 
 use array_index, only: iisclr_rt, iisclr_thl
 
-#ifdef STATS
+ 
 use stats_type, only: stat_update_var ! Procedure(s)
 
 use stats_variables, only: zt, iradht_LW, lstats_samp ! Variable(s)
-#endif
 
 implicit none
 
@@ -105,11 +104,10 @@ if ( .not. lbugsrad ) then
   call cloud_rad( rhot, rcm, exner, Frad, radht, thlm_forcing )
 end if
 
-#ifdef STATS
+ 
 if ( .not. lbugsrad .and. lstats_samp ) then
   call stat_update_var( iradht_LW, radht, zt )
 end if
-#endif
 
 ! Test scalars with thetal and rt if desired
 if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing

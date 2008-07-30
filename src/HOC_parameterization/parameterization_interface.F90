@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: parameterization_interface.F90,v 1.8 2008-07-29 18:14:38 faschinj Exp $
+! $Id: parameterization_interface.F90,v 1.9 2008-07-30 19:17:36 dschanen Exp $
 !-----------------------------------------------------------------------
 module hoc_parameterization_interface
 
@@ -190,7 +190,7 @@ module hoc_parameterization_interface
           ! Read values from namelist
            thlm2T_in_K ! Procedure
 
-#ifdef STATS
+ 
        use stats_variables, only: & 
            zm,  & ! Variable(s)
            lstats_samp, & 
@@ -205,7 +205,7 @@ module hoc_parameterization_interface
            stat_begin_update, & 
            stat_modify, & 
            stat_end_update
-#endif /*STATS*/
+ 
 
        implicit none
 
@@ -449,26 +449,26 @@ module hoc_parameterization_interface
        ! places from each other, clipping for w'r_t' has to be done 
        ! three times.  This is the first instance of w'r_t' clipping.
 
-#ifdef STATS
+ 
        ! Include effect of clipping in wprtp time tendency budget term.
        if ( lstats_samp ) then
           ! wprtp total time tendency (effect of clipping)
           call stat_begin_update( iwprtp_bt, real( wprtp / dt ),  & ! intent(in)
                    zm )                                             ! intent(inout)
        endif
-#endif /*STATS*/
+ 
 
        call covariance_clip( "wprtp", .true.,            & ! intent(in) 
                              .false., dt, wp2, rtp2,     & ! intent(in)
                              wprtp )                    ! intent(inout)
 
-#ifdef STATS
+ 
        if ( lstats_samp ) then
           ! wprtp total time tendency (effect of clipping)
           call stat_modify( iwprtp_bt, real( wprtp / dt ),  & ! intent(in)
                             zm )                           ! intent(inout)
        endif
-#endif /*STATS*/
+ 
 
 
        ! Clipping for w'th_l'
@@ -481,26 +481,26 @@ module hoc_parameterization_interface
        ! places from each other, clipping for w'th_l' has to be done 
        ! three times.  This is the first instance of w'th_l' clipping.
 
-#ifdef STATS
+ 
        ! Include effect of clipping in wpthlp time tendency budget term.
        if ( lstats_samp ) then
           ! wpthlp total time tendency (effect of clipping)
           call stat_begin_update( iwpthlp_bt, real( wpthlp / dt ),  & ! intent(in)
                                   zm )                             ! intent(inout)
        endif
-#endif /*STATS*/
+ 
 
        call covariance_clip( "wpthlp", .true.,                      & ! intent(in)
                              .false., dt, wp2, thlp2,               & ! intent(in)
                              wpthlp )                              ! intent(inout)
 
-#ifdef STATS
+ 
        if ( lstats_samp ) then
           ! wpthlp total time tendency (effect of clipping)
           call stat_modify( iwpthlp_bt, real( wpthlp / dt ),        & ! intent(in)
                             zm )                                   ! intent(inout)
        endif
-#endif /*STATS*/
+ 
 
 
        ! Clipping for w'sclr'
@@ -780,26 +780,26 @@ module hoc_parameterization_interface
        ! places from each other, clipping for w'r_t' has to be done
        ! three times.  This is the third instance of w'r_t' clipping.
 
-#ifdef STATS
+ 
        ! Include effect of clipping in wprtp time tendency budget term.
        if ( lstats_samp ) then
           ! wprtp total time tendency (effect of clipping)
           call stat_modify( iwprtp_bt, real( -wprtp / dt ),  & ! intent(in)
                             zm )                               ! intent(inout)
        endif
-#endif /*STATS*/
+ 
 
        call covariance_clip( "wprtp", .false.,              & ! intent(in)
                              .true., dt, wp2, rtp2,         & ! intent(in)
                              wprtp )                          ! intent(inout)
 
-#ifdef STATS
+ 
        if ( lstats_samp ) then
           ! wprtp total time tendency (effect of clipping)
           call stat_end_update( iwprtp_bt, real( wprtp / dt ),  & ! intent(in)
                                 zm )                              ! intent(inout)
        endif
-#endif /*STATS*/
+ 
 
 
        ! Clipping for w'th_l'
@@ -812,26 +812,26 @@ module hoc_parameterization_interface
        ! places from each other, clipping for w'th_l' has to be done
        ! three times.  This is the third instance of w'th_l' clipping.
 
-#ifdef STATS
+ 
        ! Include effect of clipping in wpthlp time tendency budget term.
        if ( lstats_samp ) then
           ! wpthlp total time tendency (effect of clipping)
           call stat_modify( iwpthlp_bt, real( -wpthlp / dt ),  & ! intent(in)
                             zm )                                 ! intent(inout)
        endif
-#endif /*STATS*/
+ 
 
        call covariance_clip( "wpthlp", .false.,                & ! intent(in)
                              .true., dt, wp2, thlp2,           & ! intent(in) 
                              wpthlp )                            ! intent(inout)
 
-#ifdef STATS
+ 
        if ( lstats_samp ) then
           ! wpthlp total time tendency (effect of clipping)
           call stat_end_update( iwpthlp_bt, real( wpthlp / dt ),  & ! intent(in)
                                 zm )                                ! intent(inout)
        endif
-#endif /*STATS*/
+ 
 
 
        ! Clipping for w'sclr'
@@ -943,7 +943,7 @@ module hoc_parameterization_interface
 !#############            ACCUMULATE STATISTICS            #############
 !#######################################################################
 
-#ifdef STATS
+ 
        ! Added to allow tuning without using the zm stats file
        wp2_zt     = max( zm2zt( wp2 ), 0.0 )   ! Positive definite quantity
        thlp2_zt   = max( zm2zt( thlp2 ), 0.0 )   ! Positive definite quantity
@@ -959,7 +959,7 @@ module hoc_parameterization_interface
               wmt, Scm, taum, rcm, cf,                              & ! intent(in)
               sclrm, edsclrm, sclrm_forcing, wpsclrp )                ! intent(in)
 
-#endif /*STATS*/
+ 
 
        if ( clubb_at_debug_level( 2 ) ) then
          call parameterization_check & 

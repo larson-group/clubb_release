@@ -1,4 +1,4 @@
-# $Id: solaris_generic_ss12_debug.in,v 1.5 2008-07-24 16:52:02 dschanen Exp $
+# $Id: solaris_generic_ss12_debug.in,v 1.6 2008-07-30 19:17:37 dschanen Exp $
 # Makefile definitions for Sun Studio's Fortran compiler
 
 # == Paths ==
@@ -43,17 +43,15 @@ OPTIMIZE = -g -xO3 -xvector=simd -ftrap=%none
 #OPTIMIZE = -g -xopenmp -xparallel -stackvar -xipo=2 -xvector=simd -xO4 -ftrap=%none
 
 # == Compiler flags (all) ==
-# Preprocessing:
-#   -DSTATS enables statistics
-#   -DBIG_ENDIAN_IO use only if compiler performs big endian file i/O
-#                   regardless of internal representation
-#   -DLITTLE_ENDIAN_IO use only if compiler performs little endian file i/O
-#                   regardless of internal representation
-# Note that natively SPARC is big endian and AMD64/IA32 are little endian.
+# Preprocessing Directives:
+#   -DNETCDF enables netCDF output
+#   -DCOAMPS_MICRO enables COAMPS microphysics scheme
+#   -DTUNER enables the tuning application
 #   -Dradoffline and -Dnooverlap (see bugsrad documentation)
 # You will need to `make clean' if you change these
-FCFLAGS = $(DEBUG) $(ARCH) -DSTATS -DNETCDF -DTUNER -DCOAMPS_MICRO -Dnooverlap -Dradoffline -M$(NC_LOC)/include
-#FCFLAGS = $(OPTIMIZE) $(ARCH) -DSTATS -DTUNER -DCOAMPS_MICRO -DNETCDF -Dnooverlap -Dradoffline -M$(NC_LOC)/include
+# Use -M<include path> to set a module file directory
+FCFLAGS = $(DEBUG) $(ARCH)   -DNETCDF -DTUNER -DCOAMPS_MICRO -Dnooverlap -Dradoffline -M$(NC_LOC)/include
+#FCFLAGS = $(OPTIMIZE) $(ARCH)   -DTUNER -DCOAMPS_MICRO -DNETCDF -Dnooverlap -Dradoffline -M$(NC_LOC)/include
 #FCFLAGS = $(OPTIMIZE) $(ARCH) -M$(NC_LOC)/include
 
 

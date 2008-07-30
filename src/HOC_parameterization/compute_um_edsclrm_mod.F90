@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: compute_um_edsclrm_mod.F90,v 1.4 2008-07-29 16:44:02 nielsenb Exp $
+! $Id: compute_um_edsclrm_mod.F90,v 1.5 2008-07-30 19:17:35 dschanen Exp $
 !------------------------------------------------------------------------
 module compute_um_edsclrm_mod
 
@@ -35,7 +35,7 @@ use grid_class, only: &
 
 use lapack_wrap, only:  & 
     tridag_solve ! Procedure(s)
-#ifdef STATS
+ 
 use stats_variables, only: & 
     ium_bt,  & ! Variable(s)
     ium_ta, & 
@@ -49,7 +49,7 @@ use stats_variables, only: &
 
 use stats_type, only: stat_update_var_pt, stat_modify_pt,  & 
                 stat_begin_update, stat_end_update_pt
-#endif
+
 use constants, only:  & 
     fstderr ! Variable(s)
 use stats_precision, only:  & 
@@ -92,7 +92,7 @@ real :: atmp, ctmp
 
 integer :: k, kp1, km1 ! Indices
 
-#ifdef STATS
+ 
 integer :: ixm_ta, ixm_bt
 
 select case ( trim( solve_type ) )
@@ -106,14 +106,13 @@ case default  ! Eddy scalars
   ixm_bt = 0
   ixm_ta = 0
 end select
-#endif
 
-#ifdef STATS
+ 
 if ( lstats_samp ) then
   ! xm total time tendency ( 1st calculation)
   call stat_begin_update( ixm_bt, real( xm / dt ), zt )
 end if
-#endif /*STATS*/
+ 
 
 ! Prepare tridiagonal system
 
@@ -138,7 +137,7 @@ rhs(2) = real( ( ctmp + 1./dt ) * xm(2) &
          + xm_tndcy(2) & 
          + xpwp_sfc * gr%dzt(2) )
 
-#ifdef STATS
+ 
    if ( lstats_samp .and. ixm_ta > 0 ) then
      ztscr01(1) = 0.0
      ztscr02(1) = 0.0
@@ -148,7 +147,6 @@ rhs(2) = real( ( ctmp + 1./dt ) * xm(2) &
      ztscr02(2) = ctmp
      ztscr03(2) = -ctmp
    end if
-#endif
 ! Loop from level 3 to gr%nnzp
 
 do k=3, gr%nnzp-1, 1
@@ -163,13 +161,12 @@ do k=3, gr%nnzp-1, 1
             + ( atmp + ctmp + 1./dt ) * xm(k) & 
             - ctmp * xm(k+1) & 
             + xm_tndcy(k) )
-#ifdef STATS
+ 
    if ( lstats_samp .and. ixm_ta > 0 ) then
      ztscr01(k) = -atmp
      ztscr02(k) =  atmp + ctmp
      ztscr03(k) = -ctmp
    end if
-#endif
 end do
 
 ! Level gr%nnzp. We impose zero flux from model top
@@ -195,7 +192,7 @@ rhs(gr%nnzp) =  0.
 ! End of Vince Larson's change
 
 
-#ifdef STATS
+ 
    ! Zero flux
    ! This new code should make the budget balance at nnzp
    ! -dschanen 18 Jul 2008
@@ -206,7 +203,6 @@ rhs(gr%nnzp) =  0.
    end if
 
    
-#endif
 !    Caused problems with DYCOMS II RF02
 !     .               + xm_tndcy(gr%nnzp)
 
@@ -228,7 +224,7 @@ do k=2,gr%nnzp-1
 end do
 xpwp(gr%nnzp) = 0.
 
-#ifdef STATS
+ 
    ! Turbulent transport (explicit component)
    if ( lstats_samp .and. ixm_ta > 0 ) then
      do k=1,gr%nnzp,1
@@ -242,7 +238,6 @@ xpwp(gr%nnzp) = 0.
 
      end do
    end if
-#endif
 
 ! Solve tridiagonal system
 call tridag_solve( solve_type, gr%nnzp, 1, c, b, a,  & 
@@ -279,7 +274,7 @@ do k=2, gr%nnzp-1, 1
              - 0.5 * Khm(k) * gr%dzm(k) * ( xm(k+1) - xm(k) )
 end do
 
-#ifdef STATS
+ 
 if ( lstats_samp ) then
   do k = 1, gr%nnzp, 1
     km1 = max( k-1, 1 )
@@ -297,7 +292,6 @@ if ( lstats_samp ) then
    end do
 
  end if
-#endif
 
 return
 
@@ -318,7 +312,7 @@ subroutine compute_uv_tndcy( solve_type, xm, wmt, fcor, perp_wind_m, perp_wind_g
     zt2zm, & 
     ddzm         
 
-#ifdef STATS
+ 
   use stats_type, only: & 
     stat_update_var
 
@@ -331,7 +325,7 @@ subroutine compute_uv_tndcy( solve_type, xm, wmt, fcor, perp_wind_m, perp_wind_g
     ivm_cf, & 
     zt, & 
     lstats_samp
-#endif
+
   implicit none
 
   ! Input Variables
@@ -369,11 +363,11 @@ subroutine compute_uv_tndcy( solve_type, xm, wmt, fcor, perp_wind_m, perp_wind_g
 if (.not. implemented) then
   select case (trim(solve_type))
   case("um")
-#ifdef STATS
+ 
     ixm_ma = ium_ma
     ixm_gf = ium_gf
     ixm_cf = ium_cf
-#endif
+
     xm_ma = - wmt * ddzm( zt2zm( xm ) )
 
     xm_gf = - fcor * perp_wind_g
@@ -381,11 +375,11 @@ if (.not. implemented) then
     xm_cf = fcor * perp_wind_m
 
   case("vm") 
-#ifdef STATS
+ 
     ixm_ma = ivm_ma
     ixm_gf = ivm_gf
     ixm_cf = ivm_cf
-#endif
+
     xm_ma = - wmt * ddzm( zt2zm( xm ) )
 
     xm_gf = fcor * perp_wind_g
@@ -402,7 +396,7 @@ if (.not. implemented) then
 
   xmt = xm_ma + xm_gf + xm_cf 
 
-#ifdef STATS
+ 
   if ( lstats_samp ) then
     call stat_update_var( ixm_ma, xm_ma, zt )
 
@@ -410,7 +404,6 @@ if (.not. implemented) then
   
     call stat_update_var( ixm_cf, xm_cf, zt )
   endif
-#endif
 else
   xmt = 0.0
 endif

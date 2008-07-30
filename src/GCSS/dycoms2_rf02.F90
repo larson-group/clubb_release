@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf02.F90,v 1.3 2008-07-29 16:44:01 nielsenb Exp $
+! $Id: dycoms2_rf02.F90,v 1.4 2008-07-30 19:17:35 dschanen Exp $
 module dycoms2_rf02
 
 !       Description:
@@ -47,12 +47,12 @@ use error_code, only: clubb_rtm_level_not_found ! Variable(s)
 use array_index, only:  & 
     iisclr_thl, iisclr_rt ! Variable(s)
 
-#ifdef STATS
+ 
 use stats_type, only: stat_update_var, stat_update_var_pt ! Procedure(s)
 
 USE stats_variables, only:  & 
     iradht_LW, izi, sfc, zt, lstats_samp ! Variable(s)
-#endif /*STATS*/
+ 
 
 implicit none
 
@@ -183,11 +183,11 @@ IF ( .not. lbugsrad ) THEN
   END DO
   radht(1) = radht(2)
 
-#ifdef STATS
+ 
   if ( lstats_samp ) then
     call stat_update_var( iradht_LW, radht, zt )
   endif
-#endif
+
 END IF ! ~ lbugsrad
 
 ! Enter the final theta-l and rtm tendencies
@@ -201,11 +201,11 @@ END IF
 rtm_forcing(1:gr%nnzp) = 0.0
 
 ! Update surface statistics
-#ifdef STATS
+ 
 if ( lstats_samp ) then
    call stat_update_var_pt( izi, 1, z_i, sfc )
 endif
-#endif /*STATS*/
+ 
 
 ! The following lines of code specify cloud droplet
 ! concentration (Ncm).  The cloud droplet concentration has

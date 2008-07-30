@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: mpace_b.F90,v 1.5 2008-07-29 16:44:01 nielsenb Exp $
+! $Id: mpace_b.F90,v 1.6 2008-07-30 19:17:35 dschanen Exp $
 module mpace_b
 
 !       Description:
@@ -48,12 +48,12 @@ use rad_lwsw_mod, only: rad_lwsw ! Variable(s)
 
 use array_index, only: iisclr_rt, iisclr_thl
 
-#ifdef STATS
+ 
 use stats_type, only: stat_update_var
 
 use stats_variables, only: iFrad_LW, iFrad_SW, iradht_SW,  & ! Variable(s)
                iradht_LW, zt, zm, lstats_samp
-#endif /*STATS*/
+ 
 
 implicit none
 
@@ -290,7 +290,7 @@ if ( .not. lbugsrad ) then
 
 end if ! ~ lbugsrad
 
-#ifdef STATS
+ 
 if ( .not.lbugsrad .and. lstats_samp ) then
 
   call stat_update_var( iradht_LW, radht_LW, zt )
@@ -302,7 +302,7 @@ if ( .not.lbugsrad .and. lstats_samp ) then
   call stat_update_var( iFrad_LW, Frad_LW, zm )
 
 end if
-#endif /*STATS*/
+ 
 
 ! Initialize Ncnm on first timestep
 if ( lcoamps_micro .and. time == time_initial ) then

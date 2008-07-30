@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: KK_microphys.F90,v 1.4 2008-07-28 19:34:42 faschinj Exp $
+! $Id: KK_microphys.F90,v 1.5 2008-07-30 19:17:35 dschanen Exp $
 
 module rain_equations
 
@@ -132,7 +132,7 @@ CONTAINS
   use saturation, only:  & 
       sat_mixrat_liq ! Procedure(s)
   
-#ifdef STATS
+ 
   use stats_type, only: & 
       stat_update_var, stat_update_var_pt ! Procedure(s)
 
@@ -145,7 +145,6 @@ CONTAINS
       iNrm_cond, & 
       iNrm_auto, & 
       lstats_samp
-#endif
 
   implicit none
 
@@ -399,14 +398,14 @@ CONTAINS
 
   end do
 
-#ifdef STATS
+ 
   ! Save mean volume radius for stats purposes
   ! Note: added lsample for latin hypercube sampling -dschanen
   if ( lsample .and. lstats_samp ) then
     call stat_update_var(imean_vol_rad_rain, mean_vol_rad, zt )
   end if
 
-#endif /*STATS*/
+ 
 
   ! The sedimentation velocity is found from the drop mean volume radius.
   ! It is located on the momentum levels.  This is due to the fact that
@@ -547,7 +546,7 @@ CONTAINS
 
      Nrm_auto(k) = autoconv_Nrm( rrainm_auto(k) )
 
-#ifdef STATS
+ 
      if ( lsample .and. lstats_samp ) then
        ! Explicit contributions to rrainm.
        call stat_update_var_pt( irrainm_cond, k, rrainm_cond(k), zt )
@@ -562,7 +561,7 @@ CONTAINS
        call stat_update_var_pt( iNrm_auto, k, Nrm_auto(k), zt )
 
      end if ! lstats_samp and lsample
-#endif /*STATS*/
+ 
 
     rrainm_mc_tndcy(k) = rrainm_cond(k) + rrainm_auto(k) + rrainm_accr(k)
 

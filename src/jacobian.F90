@@ -1,8 +1,8 @@
 !-----------------------------------------------------------------------
-! $Id: jacobian.F90,v 1.2 2008-07-28 19:45:10 faschinj Exp $
+! $Id: jacobian.F90,v 1.3 2008-07-30 19:17:34 dschanen Exp $
 
 program jacobian
-#ifdef STATS
+ 
 
 !     Description:
 !     Generates a matrix based on variation between parameter 
@@ -387,8 +387,4 @@ implicit none
   end subroutine getvariables 
 
 !-----------------------------------------------------------------------
-#else
-  stop "Compile all files with -DSTATS to use this program."
-#endif /*STATS*/
-
   end program jacobian

@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: nov11.F90,v 1.6 2008-07-28 19:37:55 faschinj Exp $
+! $Id: nov11.F90,v 1.7 2008-07-30 19:17:35 dschanen Exp $
   module nov11
 
 !       Description:
@@ -61,12 +61,12 @@
   use array_index, only:  & 
       iisclr_thl, iisclr_rt ! Variable(s)
 
-#ifdef STATS
+ 
   use stats_type, only: stat_update_var ! Procedure(s)
 
   use stats_variables, only: iFrad_SW, lstats_samp,  & ! Variable(s)
                  iFrad_LW, zt, zm, iradht_LW, iradht_SW
-#endif /*STATS*/
+ 
 
   implicit none
 
@@ -689,7 +689,7 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
   if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
   if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing
 
-#ifdef STATS
+ 
   ! Save LW and SW components of radiative heating and
   ! radiative flux based on simplified radiation.
   if ( .not.lbugsrad .and. lstats_samp ) then
@@ -702,7 +702,7 @@ call linear_interpolation( nparam, xilist, Fslist, xi_abs, Fs0 )
     call stat_update_var( iFrad_LW, Frad_LW, zm )
 
   end if
-#endif /*STATS*/
+ 
 
   return
   end subroutine nov11_altocu_tndcy

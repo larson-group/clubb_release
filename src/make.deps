@@ -1,5 +1,5 @@
 ################################################################################
-# $Id: make.deps,v 1.64 2008-07-30 16:27:04 dschanen Exp $
+# $Id: make.deps,v 1.65 2008-07-30 19:17:34 dschanen Exp $
 #
 # Dependencies file for the Makefile
 #
@@ -70,12 +70,13 @@ T_in_K_mod.o	: constants.o T_in_K_mod.F90
 
 closure_new.o	: constants.o parameters.o grid.o saturation.o erf.o \
                  error_code.o numer_check.o closure_new.F90 
-diag_var.o	: constants.o parameters.o grid.o stats_type.o stats_variables.o \
+diag_var.o : constants.o parameters.o grid.o stats_type.o stats_variables.o \
 	lapack_wrap.o fill_holes.o explicit_clip.o \
 	error_code.o diffusion.o diag_var.F90
 mixing.o : constants.o parameters.o stats_variables.o lapack_wrap.o \
-	   pos_definite_mod.o error_code.o diffusion.o mean_adv.o semiimplicit_clip.o \
-           mixing.F90 
+	pos_definite_mod.o error_code.o diffusion.o mean_adv.o \
+	semiimplicit_clip.o explicit_clip.o \
+	mixing.F90 
 
 parameterization_interface.o : constants.o hydrostatic.o mixing.o \
 	model_flags.o numer_check.o Skw_func.o \
@@ -87,7 +88,8 @@ parameterization_interface.o : constants.o hydrostatic.o mixing.o \
 	sfc.o closure_new.o lh_sampler.o \
 	parameters.o error_code.o  parameterization_interface.F90 
 hydrostatic.o	: constants.o grid.o hydrostatic.F90 
-mixing_length.o	: constants.o parameters.o numer_check.o error_code.o mixing_length.F90
+mixing_length.o	: constants.o parameters.o numer_check.o error_code.o \
+	semiimplicit_clip.o mixing_length.F90
 saturation.o    : constants.o saturation.F90  
 sfc.o		: constants.o parameters.o numer_check.o error_code.o sfc.F90 
 wp23.o		: constants.o parameters.o stats_variables.o lapack_wrap.o \
@@ -100,17 +102,8 @@ mean_adv.o      : grid.o mean_adv.F90
 pos_definite_mod.o : grid.o stats_precision.o pos_definite_mod.F90
 fill_holes.o    : fill_holes.F90 grid.o
 semiimplicit_clip.o : constants.o stats_precision.o semiimplicit_clip.F90
-explicit_clip.o : grid.o stats_precision.o stats_type.o stats_variables.o explicit_clip.F90
-
-# == Numerical Recipes dependencies (For the tuner) ==
-#nrtype.o	: nrtype.f90
-#nr.o		: nrtype.o nr.f90 
-#nrutil.o	: nrtype.o nr.o nrutil.f90
-#ran_state.o	: nrtype.o nr.o nrutil.o ran_state.f90
-#ran1.o		: nrtype.o nr.o nrutil.o ran_state.o ran1.f90
-#amebsa.o	: nrtype.o nr.o nrutil.o ran_state.o ran1.o amebsa.f90
-#amoeba.o	: nrtype.o nr.o nrutil.o amoeba.f90
-
+explicit_clip.o : grid.o stats_precision.o stats_type.o stats_variables.o \
+	explicit_clip.F90
 
 # == Latin Hypercube dependencies  ==
 math_utilities.o	: math_utilities.F90

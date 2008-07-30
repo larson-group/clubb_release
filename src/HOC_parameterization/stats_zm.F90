@@ -1,7 +1,6 @@
 !-----------------------------------------------------------------------
-! $Id: stats_zm.F90,v 1.4 2008-07-28 19:20:22 dschanen Exp $
+! $Id: stats_zm.F90,v 1.5 2008-07-30 19:17:36 dschanen Exp $
       module stats_zm
-#ifdef STATS
        
       implicit none
       
@@ -1191,5 +1190,4 @@
       
       end subroutine stats_init_zm
 
-#endif /*STATS*/
       end module stats_zm

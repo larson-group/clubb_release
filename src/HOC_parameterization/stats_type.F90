@@ -1,7 +1,7 @@
 !-----------------------------------------------------------------------
-! $Id: stats_type.F90,v 1.4 2008-07-28 21:40:53 faschinj Exp $
+! $Id: stats_type.F90,v 1.5 2008-07-30 19:17:36 dschanen Exp $
 module stats_type
-#ifdef STATS 
+  
 !     Description:
 !     Contains derived data type 'stats'.
 !     Used for storing output statistics to disk.
@@ -419,5 +419,5 @@ module stats_type
   
    end subroutine stat_modify_pt
    
-#endif /*STATS*/
+ 
 end module stats_type

@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------
-! $Id: wp23.F90,v 1.7 2008-07-29 16:44:03 nielsenb Exp $
+! $Id: wp23.F90,v 1.8 2008-07-30 19:17:36 dschanen Exp $
 !===============================================================================
 module wp23
 
@@ -322,7 +322,7 @@ use fill_holes, only: &
 use error_code, only:  & 
     lapack_error ! Procedure(s)
 
-#ifdef STATS
+ 
 use stats_type, only: & 
     stat_begin_update,  & ! Procedure(s)
     stat_update_var_pt, stat_end_update,  & ! Procedure(s)
@@ -381,7 +381,7 @@ use stats_variables, only:  &
     ztscr14, & 
     ztscr15, & 
     ztscr16
-#endif /*STATS*/
+ 
 
 implicit none
 
@@ -465,13 +465,13 @@ integer :: k, km1, kp1, k_wp2, k_wp3
 !        logical, parameter :: lcrank_nich_diff = .true.
 logical, parameter :: lcrank_nich_diff = .false.
 
-#ifdef STATS
+ 
 if (lstats_samp) then
   call stat_begin_update( iwp2_bt, real(wp2 / dt), zm )
 
   call stat_begin_update( iwp3_bt, real(wp3 / dt), zt )
 endif
-#endif /*STATS*/
+ 
 
 ! Define a_1 and a_3 (both are located on momentum levels).
 ! They are variables that are both functions of Sc (where Scm is
@@ -508,7 +508,7 @@ call wp23_rhs( dt, wp2, wp3, wp3_zm, a1_zt,  &
                lcrank_nich_diff, rhs )
 
 ! Solve the system of equations for w'^2 and w'^3.
-#ifdef STATS
+ 
 if ( lstats_samp .and. iwp23_cn > 0 ) then
   ! Perform LU decomp and solve system (LAPACK with diagnostics)
   call band_solvex( "wp23", nsup, nsub, 2*gr%nnzp, nrhs, & 
@@ -522,12 +522,7 @@ else
   call band_solve( "wp23", nsup, nsub, 2*gr%nnzp, nrhs, & 
                    lhs, rhs, solut, err_code )
 end if
-#else
-! Perform LU decomp and solve system (LAPACK)
-call band_solve( "wp23", nsup, nsub, 2*gr%nnzp, nrhs, & 
-                 lhs, rhs, solut, err_code )
-
-#endif /*STATS*/
+ 
 
 if ( lapack_error( err_code ) ) return
 
@@ -549,7 +544,7 @@ do k = 1, gr%nnzp
 
 end do
 
-#ifdef STATS
+ 
 if (lstats_samp) then
 
 !         Finalize implicit contributions for wp2
@@ -629,14 +624,14 @@ if (lstats_samp) then
 
   enddo
 end if ! lstats_samp
-#endif /*STATS*/
+ 
 
-#ifdef STATS
+ 
 if ( lstats_samp ) then
    ! Store previous value for effect of the positive definite scheme
    call stat_begin_update( iwp2_pd, real( wp2 / dt ), zm )
 end if 
-#endif /*STATS*/
+ 
 
 if ( lhole_fill .and. any( wp2 < 2./3*emin ) ) then
 
@@ -645,14 +640,14 @@ if ( lhole_fill .and. any( wp2 < 2./3*emin ) ) then
 
 endif ! wp2
 
-#ifdef STATS
+ 
 if ( lstats_samp ) then
   ! Store previous value for effect of the positive definite scheme
   call stat_end_update( iwp2_pd, real( wp2 / dt ), zm )
 end if
-#endif /*STATS*/
+ 
 
-#ifdef STATS
+ 
 if ( lstats_samp ) then
 
   ! Store previous value of wp2 for the effect of the clipping term
@@ -661,7 +656,7 @@ if ( lstats_samp ) then
   call stat_begin_update( iwp3_cl, real( wp3 / dt ), zt )
 
 end if
-#endif /*STATS*/
+ 
 
 ! Interpolate w'^2 from momentum levels to thermodynamic levels.
 ! This is used for the clipping of w'^3 according to the value
@@ -677,21 +672,21 @@ do k = 1, gr%nnzp, 1
 
 end do
 
-#ifdef STATS
+ 
 if (lstats_samp) then           
   call stat_end_update( iwp2_cl, real( wp2 / dt ), zm )
 
   call stat_end_update ( iwp3_cl, real( wp3 / dt ), zt )
 endif
-#endif /*STATS*/
+ 
 
-#ifdef STATS
+ 
 if (lstats_samp) then
   call stat_end_update( iwp2_bt, real( wp2 / dt ), zm )
 
   call stat_end_update( iwp3_bt, real( wp3 / dt ), zt )
 endif
-#endif /*STATS*/
+ 
 
 return
 end subroutine wp23_solve
@@ -739,7 +734,7 @@ use mean_adv, only: &
 
 use stats_precision, only: time_precision
 
-#ifdef STATS
+ 
 use stats_variables, only:       & 
     zmscr01, & 
     zmscr02,    & 
@@ -784,7 +779,7 @@ use stats_variables, only:       &
     iwp3_pr2, & 
     iwp3_pr1, & 
     iwp3_dp1   
-#endif /*STATS*/
+ 
 
 implicit none
 
@@ -824,9 +819,9 @@ real, dimension(nsup+nsub+1,2*gr%nnzp), intent(out) ::  &
 ! Array indices
 integer :: k, km1, kp1, k_wp2, k_wp3
 
-#ifdef STATS
+ 
 real, dimension(5) :: tmp
-#endif /*STATS*/
+ 
 
 
 ! Initialize the left-hand side matrix to 0.
@@ -906,7 +901,7 @@ do k = 2, gr%nnzp-1, 1
      + wp2_term_pr1_lhs( C4, tau1m(k) )
   endif
 
-#ifdef STATS
+ 
   if ( lstats_samp ) then
 
    ! Statistics: implicit contributions for wp2.
@@ -965,7 +960,7 @@ do k = 2, gr%nnzp-1, 1
   endif
 
   endif
-#endif /*STATS*/
+ 
 
 
   !!!!!***** w'^3 *****!!!!!
@@ -1031,7 +1026,7 @@ do k = 2, gr%nnzp-1, 1
                          gr%dzm(km1), gr%dzm(k), gr%dzt(k), k )
   endif
 
-#ifdef STATS
+ 
   if (lstats_samp) then
 
   ! Statistics: implicit contributions for wp3.
@@ -1106,7 +1101,7 @@ do k = 2, gr%nnzp-1, 1
   endif
 
   endif
-#endif /*STATS*/
+ 
 
 enddo ! k = 2, gr%nnzp-1, 1
 
@@ -1197,14 +1192,14 @@ use diffusion, only: &
 use stats_precision, only:  & 
     time_precision ! Variable
 
-#ifdef STATS
+ 
 use stats_variables, only:  & 
     lstats_samp, iwp2_dp2, zm, iwp2_bp,   & ! Variable(s)
     iwp2_pr1, iwp2_pr2, iwp2_pr3, iwp3_ta, zt, & 
     iwp3_tp, iwp3_bp, iwp3_pr2, iwp3_pr1, iwp3_dp1
 
 use stats_type, only: stat_update_var_pt, stat_begin_update_pt ! Procedure(s)
-#endif /*STATS*/
+ 
 
 implicit none
 
@@ -1303,7 +1298,7 @@ do k = 2, gr%nnzp-1, 1
      + wp2_term_pr1_rhs( C4, up2(k), vp2(k), tau1m(k) )
   endif
 
-#ifdef STATS
+ 
   if ( lstats_samp ) then
 
   ! Statistics: explicit contributions for wp2.
@@ -1334,7 +1329,7 @@ do k = 2, gr%nnzp-1, 1
                     vpwp(k), vm(kp1), vm(k), gr%dzm(k) ), zm )
   
   endif
-#endif /*STATS*/
+ 
 
 
   !!!!!***** w'^3 *****!!!!!
@@ -1378,7 +1373,7 @@ do k = 2, gr%nnzp-1, 1
                     - rhs_diff(1) * wp3(kp1)
   endif
 
-#ifdef STATS
+ 
   if (lstats_samp) then
 
   ! Statistics: explicit contributions for wp3.
@@ -1415,7 +1410,7 @@ do k = 2, gr%nnzp-1, 1
 
    end if
   endif
-#endif /*STATS*/
+ 
 
 enddo
 

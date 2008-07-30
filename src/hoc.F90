@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F90,v 1.10 2008-07-30 15:40:44 faschinj Exp $
+! $Id: hoc.F90,v 1.11 2008-07-30 19:17:34 dschanen Exp $
 
 module hoc
 
@@ -165,13 +165,13 @@ module hoc
     use model_flags, only: LH_on, local_kk, & ! Constants
       lpos_def, lhole_fill, lsingle_C2_Skw, lgamma_Skw, lbyteswap_io
 
-#ifdef STATS
+ 
     use stats_variables, only: lstats_last ! Variable(s
 
     use stats_subs, only:  & 
       stats_begin_timestep, stats_end_timestep,  & ! Procedure(s)
       stats_finalize, stats_init
-#endif /*STATS*/
+ 
 
     implicit none
 
@@ -557,7 +557,7 @@ module hoc
                         sclrm, edsclrm )
     end if ! ~lrestart
 
-#ifdef STATS
+ 
 
 #ifdef _OPENMP
     iunit = omp_get_thread_num( ) + 50
@@ -571,7 +571,7 @@ module hoc
            runfile, gr%nnzp, gr%zt, gr%zm, & 
            day, month, year, rlat, rlon, time_current, & 
            dtmain )
-#endif /*STATS*/
+ 
 
     ! Time integration
     ! Call hoc_closure_timestep once per each GrADS output time 
@@ -584,7 +584,7 @@ module hoc
 
     do i = iinit, ifinal, 1
 
-#ifdef STATS
+ 
       ! When this time step is over, the time will be time + dtmain
 
       ! We use elapsed time for stats_begin_step
@@ -598,7 +598,7 @@ module hoc
              ( time_current-time_restart, dtmain )
       end if
 
-#endif /*STATS*/
+ 
 
           ! If we're doing an inputfields run, get the values for our
           ! model arrays from a GrADS file
@@ -645,9 +645,9 @@ module hoc
                sclrm, sclrm_forcing, edsclrm, & 
                wpsclrp )
            
-#ifdef STATS
+ 
         call stats_end_timestep( )
-#endif /*STATS*/
+ 
 
         ! Set Time
         ! Advance time here, not in parameterization_timestep,
@@ -660,7 +660,7 @@ module hoc
         else if ( i1 == niterlong ) then
           time_current = time_initial + i * dtmain
         end if
-#ifdef STATS
+ 
         ! This was moved from above to be less confusing to the user,
         ! since before it would appear as though the last timestep
         ! was not executed. -dschanen 19 May 08
@@ -668,8 +668,6 @@ module hoc
           write(unit=fstdout,fmt='(a,i8,a,f10.1)') 'iteration = ',  & 
             i, '; time = ', time_current
         end if
-#endif
-
 
         if ( fatal_error( err_code ) ) exit
            
@@ -691,9 +689,7 @@ module hoc
 
     call parameterization_cleanup( )
 
-#ifdef STATS
     call stats_finalize( )
-#endif
 
     return
   end subroutine hoc_model
@@ -1443,11 +1439,11 @@ module hoc
                                   exner, rcm, rhom, um, psfc, vm, & 
                                   upwp_sfc, vpwp_sfc, Tsfc, & 
                                   wpthlp_sfc, SE, LE, wprtp_sfc, cf
-#ifdef STATS
+ 
         use stats_variables, only: ish, ilh, iustar, lstats_samp, sfc ! Variable(s)
         use stats_type, only: stat_update_var_pt ! Procedure(s)
         use constants, only: Cp, Lv     ! Variable(s) 
-#endif /*STATS*/
+ 
 
         use prognostic_variables, only:  & 
             sclrm_forcing,   & ! Passive scalar variables
@@ -2005,22 +2001,22 @@ module hoc
         end if ! lbugsrad
 
 
-#ifdef STATS
-!      Store values of surface fluxes for statistics
-        if (lstats_samp) then
-           call stat_update_var_pt( ish, 1, wpthlp_sfc*rhom(1)*Cp,  & ! intent(in)
-                                    sfc )                         ! intent(inout)
+ 
+   ! Store values of surface fluxes for statistics
+   if ( lstats_samp ) then
+     call stat_update_var_pt( ish, 1, wpthlp_sfc*rhom(1)*Cp,& ! intent(in)
+                              sfc )                           ! intent(inout)
 
-           call stat_update_var_pt( ilh, 1, wprtp_sfc*rhom(1)*Lv,   & ! intent(in)
-                                    sfc )                         ! intent(inout)
+     call stat_update_var_pt( ilh, 1, wprtp_sfc*rhom(1)*Lv, & ! intent(in)
+                              sfc )                           ! intent(inout)
 
-           call stat_update_var_pt( iustar, 1, ustar,              & ! intent(in)
-                                    sfc )                         ! intent(inout)
-        endif
-#endif /*STATS*/
+     call stat_update_var_pt( iustar, 1, ustar,  & ! intent(in)
+                              sfc )                ! intent(inout)
+    end if
+ 
 
-        return
+    return
 
-        end subroutine hoc_forcings_timestep
+  end subroutine hoc_forcings_timestep
 
 end module hoc

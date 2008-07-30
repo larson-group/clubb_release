@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-!$Id: atex.F90,v 1.4 2008-07-29 16:44:01 nielsenb Exp $
+!$Id: atex.F90,v 1.5 2008-07-30 19:17:34 dschanen Exp $
 module atex
 
 !       Description:
@@ -45,11 +45,10 @@ use error_code, only: clubb_rtm_level_not_found ! Variable(s)
 use array_index, only:  & 
     iisclr_thl, iisclr_rt ! Variable(s)
 
-#ifdef STATS
+ 
 use stats_type, only: stat_update_var ! Procedure(s)
 
 use stats_variables, only: iradht_LW, zt, lstats_samp ! Variable(s)
-#endif
 
 implicit none
 
@@ -172,15 +171,11 @@ if ( .not. lbugsrad ) then
   call cloud_rad( rhot, rcm, exner, Frad, radht, thlm_forcing )
 end if
 
-#ifdef STATS
+ 
 if ( .not. lbugsrad .and. lstats_samp ) then
    call stat_update_var( iradht_LW, radht, zt )
-!          if ( iradht_LW > 0 ) then
-!            zt%x(:,iradht_LW) = zt%x(:,iradht_LW) + radht
-!            zt%n(:,iradht_LW) = zt%n(:,iradht_LW) + 1
-!          end if
 end if
-#endif
+
 ! Test scalars with thetal and rt if desired
 if ( iisclr_thl > 0 ) sclrm_forcing(:,iisclr_thl) = thlm_forcing
 if ( iisclr_rt  > 0 ) sclrm_forcing(:,iisclr_rt)  = rtm_forcing

@@ -1,4 +1,4 @@
-!$Id: rico.F90,v 1.4 2008-07-28 19:37:55 faschinj Exp $
+!$Id: rico.F90,v 1.5 2008-07-30 19:17:35 dschanen Exp $
 !----------------------------------------------------------------------
 module rico
 
@@ -40,9 +40,9 @@ module rico
 
   use array_index, only: iisclr_rt, iisclr_thl
 
-!#ifdef STATS
+! 
 !        use stats_variables
-!#endif /*STATS*/
+! 
 
   implicit none
 

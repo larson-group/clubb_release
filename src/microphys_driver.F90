@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: microphys_driver.F90,v 1.6 2008-07-29 16:44:00 nielsenb Exp $
+! $Id: microphys_driver.F90,v 1.7 2008-07-30 19:17:34 dschanen Exp $
 module microphys_driver
 
 !       Description:
@@ -168,7 +168,7 @@ use array_index, only:  &
     iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm
 
 
-#ifdef STATS
+ 
 use stats_variables, only: & 
     iVrr,  & ! Variable(s)
     iVnr, & 
@@ -216,7 +216,6 @@ use stats_type, only:  &
     stat_update_var, stat_update_var_pt,  & ! Procedure(s)
     stat_begin_update, stat_end_update 
 
-#endif
 implicit none
 
 ! Constant Parameters
@@ -326,9 +325,8 @@ real, dimension(gr%nnzp) :: Kr   ! [m^2/s]
 real :: overevap_rate ! Absolute value of negative evap. rate.
 
 integer :: i, k ! Array index
-#ifdef STATS
+ 
 integer :: ixrm_cl, ixrm_bt
-#endif
 
 !-----------------------------------------------------------------------
 
@@ -372,7 +370,7 @@ if ( lcoamps_micro ) then
           hydromet_mc(:,iiNrm), & 
           rtm_mc, thlm_mc )
 
-#ifdef STATS
+ 
   if ( lstats_samp ) then
       
    ! Sedimentation velocity for rrainm
@@ -409,7 +407,7 @@ if ( lcoamps_micro ) then
                          hydromet_mc(:,iirsnowm), zt )
 
  end if ! lstats_samp
-#endif /*STATS*/
+ 
 else if ( kk_rain ) then
 
   ! Note that Ncm for DYCOMS II RF02 is specified in the
@@ -426,7 +424,7 @@ else if ( kk_rain ) then
          rtm_mc, thlm_mc, & 
          hydromet_vel(:,iirrainm), hydromet_vel(:,iiNrm) )
 
-#ifdef STATS
+ 
   if ( lstats_samp ) then
       
    ! Sedimentation velocity for rrainm
@@ -442,7 +440,7 @@ else if ( kk_rain ) then
    call stat_update_var( iNrm_mc, hydromet_mc(:,iiNrm), zt )
 
  end if ! lstats_samp
-#endif /*STATS*/
+ 
 
 end if ! coamps micro or KK rain.
 
@@ -453,7 +451,7 @@ end if ! coamps micro or KK rain.
 if ( hydromet_dim > 0 ) then
 
   do i = 1, hydromet_dim
-#ifdef STATS
+ 
     select case( trim( hydromet_list(i) ) )
     case( "rrainm" )
       ixrm_bt = irrainm_bt
@@ -480,7 +478,7 @@ if ( hydromet_dim > 0 ) then
          ( ixrm_bt, real(hydromet(:,i) / dt), zt )
    end if
 
-#endif /*STATS*/
+ 
 
     call microphys_lhs & 
          ( trim( hydromet_list(i) ), lsed, dt, Kr, nu_r, wmt, & 
@@ -509,22 +507,22 @@ if ( hydromet_dim > 0 ) then
                 + ( Lv / ( Cp*exner(k) ) ) * overevap_rate
 
       ! Moved from adj_microphys_tndcy  
-#ifdef STATS
+ 
       if ( lstats_samp ) then
         call stat_update_var_pt( irrainm_cond_adj, k,  & 
                                  overevap_rate, zt )
       end if
 
       else
-#endif /*STATS*/
+ 
 
-#ifdef STATS
+ 
       if ( lstats_samp ) then
         call stat_update_var_pt( irrainm_cond_adj, k,  & 
                                 0.0, zt )
       end if
      ! Joshua Faschinj December 2007
-#endif /*STATS*/
+ 
 
       end if 
     end do ! k=1..gr%nnzp
@@ -542,33 +540,33 @@ if ( hydromet_dim > 0 ) then
                hydromet(:,i), overevap_rate )
 
       ! Moved from adj_microphys_tndcy
-#ifdef STATS
+ 
       call stat_update_var_pt( iNrm_cond_adj, k,  & 
                                overevap_rate, zt )
 
-#endif /*STATS*/
+ 
 
-#ifdef STATS
+ 
        else
          if( lstats_samp ) then      
            call stat_update_var_pt( iNrm_cond_adj,k, 0.0, zt )
          end if
-#endif /*STATS*/
+ 
       end if ! ! Nrm(k) < 0
       ! Joshua Fasching December 2007
     end do
 
     end if
-#ifdef STATS
+ 
   if ( lstats_samp ) then
     call stat_begin_update & 
          ( ixrm_cl, real( hydromet(:,i) / dt ), zt )
   end if
-#endif /*STATS*/
+ 
   ! Clip to zero
   where ( hydromet(:,i) < 0.0 ) hydromet(:,i) = 0.0
 
-#ifdef STATS
+ 
   if ( lstats_samp ) then
 
     ! Effects of clipping
@@ -580,7 +578,7 @@ if ( hydromet_dim > 0 ) then
          ( ixrm_bt, real(hydromet(:,i) / dt), zt )
 
   end if ! lstats_samp
-#endif /*STATS*/
+ 
 
   end do ! i=1..hydromet_dim
 end if ! hydromet_dim > 0
@@ -592,7 +590,7 @@ if ( licedfs ) then
   thlm_mc = - ( Lv/(Cp*exner) ) * rtm_mc
 end if
 
-#ifdef STATS
+ 
 if ( lstats_samp ) then
   call stat_update_var( iNcm, Ncm, zt )
 
@@ -626,13 +624,13 @@ if ( lstats_samp ) then
   call stat_update_var( irtm_mc, rtm_mc(:), zt )
 
 end if
-#endif /*STATS*/
+ 
 
 rtm_forcing  = rtm_forcing + rtm_mc
 thlm_forcing = thlm_forcing + thlm_mc
 
 
-#ifdef STATS
+ 
 if ( lstats_samp .and. ( lcoamps_micro .or. kk_rain ) ) then
   ! Rainfall rate (mm/day) should be defined on thermodynamic
   ! levels.  -Brian
@@ -674,7 +672,7 @@ if ( lstats_samp .and. ( lcoamps_micro .or. kk_rain ) ) then
          ( zt2zm( hydromet(:,iirrainm), 1 ) ), sfc )
 
 end if ! lstats_samp
-#endif /*STATS*/
+ 
 
 !       Error Report
 !       Joshua Fasching Feb 2008
@@ -731,7 +729,7 @@ use lapack_wrap, only:  &
     tridag_solve ! Procedure(s)
 !    .     ,band_solve
 
-#ifdef STATS
+ 
 use stats_variables, only: & 
     zt,  & ! Variable(s)
     irrainm_ma, & 
@@ -761,7 +759,6 @@ use stats_variables, only: &
     ztscr09
 
 use stats_type, only: stat_update_var_pt ! Procedure(s)
-#endif
 
 implicit none
 
@@ -791,7 +788,7 @@ real, dimension(gr%nnzp) :: &
 
 integer :: k, kp1, km1 ! Array indices
 
-#ifdef STATS
+ 
 integer :: & 
   ixrm_ma,  & ! Mean advection budget stats toggle
   ixrm_sd,  & ! Sedimentation budget stats toggle
@@ -824,7 +821,7 @@ case default
   ixrm_dff = 0
 end select
 
-#endif /*STATS*/
+ 
 
 
 ! RHS of equation, following Brian's method from 
@@ -850,7 +847,7 @@ call tridag_solve &
 !    .       ( solve_type, 1, 1, gr%nnzp, 1, 
 !    .         lhs, rhs, xrm, isValid )
 
-#ifdef STATS
+ 
  if ( lstats_samp ) then
    do k = 1, gr%nnzp, 1
 
@@ -876,7 +873,7 @@ call tridag_solve &
    end do ! 1..gr%nnzp
 end if ! lstats_samp
 
-#endif /*STATS*/
+ 
 
 ! Boundary conditions on results
 !xrm(1) = xrm(2)
@@ -913,7 +910,7 @@ use diffusion, only:  &
 
 use mean_adv, only:  & 
     term_ma_zt_lhs ! Procedure(s)
-#ifdef STATS 
+  
 use constants, only: sec_per_day ! Variable(s)
       
 use stats_variables, only: & 
@@ -942,7 +939,7 @@ use stats_variables, only: &
     ztscr08, & 
     ztscr09, & 
     lstats_samp
-#endif
+
 implicit none
 
 ! Constant parameters
@@ -979,7 +976,7 @@ integer :: k, km1
 
 !       integer kp1
 
-#ifdef STATS
+ 
 integer :: & 
   ixrm_ma,  & ! Mean advection budget stats toggle
   ixrm_sd,  & ! Sedimentation budget stats toggle
@@ -1011,7 +1008,7 @@ case default
   ixrm_sd  = 0
   ixrm_dff = 0
 end select
-#endif /*STATS*/
+ 
 
 ! Reset LHS Matrix for current timestep.
 lhs = 0.0
@@ -1050,7 +1047,7 @@ do k = 1, gr%nnzp, 1
   endif
 
  ! Implicit contributions to xrm
-#ifdef STATS
+ 
   if ( lstats_samp ) then
 
     if ( ixrm_ma > 0 ) then
@@ -1077,7 +1074,7 @@ do k = 1, gr%nnzp, 1
     end if
 
   end if ! lstats_samp
-#endif /*STATS*/
+ 
 
 end do ! 1..gr%nnzp
 
@@ -1453,9 +1450,9 @@ use mean_adv, only:  &
     term_ma_zt_lhs ! Procedure(s)
 
 implicit none
-!#ifdef STATS
+! 
 !        use stats_variables
-!#endif /*STATS*/
+! 
 ! Joshua Fasching 2007
 
 ! Input variables.
@@ -1518,7 +1515,7 @@ real, dimension(1:3) :: tmp
 
 integer :: k, km1, kp1
 
-!#ifdef STATS
+! 
 !       integer ::
 !    .  ixrm_cond_adj  ! Adjustment to xrm evaporation rate due to over-evap.
 
@@ -1528,7 +1525,7 @@ integer :: k, km1, kp1
 !       case( "Nrm" )
 !         ixrm_cond_adj  = iNrm_cond_adj 
 !       end select
-!#endif /*STATS*/
+! 
 ! Joshua Fasching 2007
 
 k = level

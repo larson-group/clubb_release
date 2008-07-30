@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F90,v 1.7 2008-07-30 15:40:45 faschinj Exp $
+! $Id: diag_variables.F90,v 1.8 2008-07-30 19:17:35 dschanen Exp $
 module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -151,7 +151,7 @@ real, target, allocatable, dimension(:,:), public :: &
 !$omp   threadprivate(wp2sclrp, wpsclrprtp, wpsclrpthlp)
 
 ! Interpolated variables for tuning
-!#ifdef STATS
+! 
 real, target, allocatable, dimension(:), public :: & 
   wp2_zt,     & ! w'^2 on thermo. grid
   thlp2_zt,   & ! thl'^2 on thermo. grid
@@ -163,7 +163,7 @@ real, target, allocatable, dimension(:), public :: &
 !$omp   threadprivate(wp2_zt, thlp2_zt, wpthlp_zt, wprtp_zt) 
 !$omp   threadprivate(rtp2_zt, rtpthlp_zt)
 
-!#endif /*STATS*/
+! 
 
 ! Variables needed for the pdf closure scheme
 !
@@ -304,7 +304,7 @@ allocate( Lscale_down(1:nzmax) )
 allocate( taut(1:nzmax) )
 !       allocate( taum(1:nzmax) )
 
-#ifdef STATS
+ 
 ! Tuning Variables
 allocate( wp2_zt(1:nzmax) )     ! w'^2 on thermo. grid
 allocate( thlp2_zt(1:nzmax) )   ! thl'^2 on thermo. grid
@@ -312,7 +312,7 @@ allocate( wpthlp_zt(1:nzmax) )  ! w'thl' on thermo. grid
 allocate( wprtp_zt(1:nzmax) )   ! w'rt' on thermo. grid
 allocate( rtp2_zt(1:nzmax) )    ! rt'^2 on thermo. grid
 allocate( rtpthlp_zt(1:nzmax) ) ! rt'thl' on thermo. grid
-#endif /*STATS*/
+ 
 
 ! Array fpr pdf closure scheme
 
@@ -541,7 +541,7 @@ deallocate( Nim )
 
 deallocate( hydromet )  ! Hydrometeor fields
 
-#ifdef STATS
+ 
 ! Interpolated variables for tuning
 deallocate( wp2_zt )     ! w'^2 on t
 deallocate( thlp2_zt )   ! th_l'^2 on t 
@@ -549,7 +549,7 @@ deallocate( wpthlp_zt )  ! w'th_l' on t
 deallocate( wprtp_zt )   ! w'rt' on t
 deallocate( rtp2_zt )    ! rt'^2 on t
 deallocate( rtpthlp_zt ) ! rt'th_l' on t
-#endif /*STATS*/
+ 
 
 
 ! Array for pdf closure scheme

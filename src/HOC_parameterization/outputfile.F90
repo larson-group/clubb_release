@@ -1,7 +1,7 @@
 !-----------------------------------------------------------------------
-! $Id: outputfile.F90,v 1.2 2008-07-28 19:34:43 faschinj Exp $
+! $Id: outputfile.F90,v 1.3 2008-07-30 19:17:36 dschanen Exp $
 module outputfile_class
-#ifdef STATS
+ 
 
 !     Description:
 !     Contains two derived types for either NetCDF or GrADS files.
@@ -85,5 +85,4 @@ module outputfile_class
 
    end type outputfile
 
-#endif
  end module outputfile_class

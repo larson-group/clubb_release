@@ -1,4 +1,4 @@
-! $Id: ice_dfsn_mod.F90,v 1.5 2008-07-29 16:44:02 nielsenb Exp $        
+! $Id: ice_dfsn_mod.F90,v 1.6 2008-07-30 19:17:35 dschanen Exp $        
 
 module ice_dfsn_mod
 
@@ -66,13 +66,12 @@ USE stats_precision, only:  &
     time_precision ! Variable(s)
 USE saturation, only:  & 
     sat_mixrat_liq ! Procedure(s)
-#ifdef STATS
+ 
 use stats_type, only: & 
     stat_update_var
 
 use stats_variables, only: zt, lstats_samp,  & ! Variable(s)
     ircm_icedfs, idiam, imass_ice_cryst, iu_T_cm
-#endif
 
 implicit none
 
@@ -267,7 +266,7 @@ u_T_cm(1)         = u_T_cm(2)
 ! eMFc
 
 !
-#ifdef STATS
+ 
 if ( lstats_samp ) then
 !       diam(:) ! Icedfs diameter; Michael Falk, 1 Nov 2006
 !       m(:)    ! Icedfs mass; Michael Falk, 1 Nov 2006
@@ -282,7 +281,7 @@ if ( lstats_samp ) then
   call stat_update_var( iu_T_cm, u_T_cm, zt )
 
 end if
-#endif /*STATS*/
+ 
 
 RETURN
 END SUBROUTINE ice_dfsn

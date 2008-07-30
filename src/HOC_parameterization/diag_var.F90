@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_var.F90,v 1.7 2008-07-28 20:20:14 faschinj Exp $
+! $Id: diag_var.F90,v 1.8 2008-07-30 19:17:35 dschanen Exp $
 !===============================================================================
 module diagnose_variances
 
@@ -83,7 +83,7 @@ module diagnose_variances
             lapack_error,    & ! Procedure(s)
             clubb_at_debug_level
         
-#ifdef STATS
+ 
         use stats_type, only: & 
             stat_begin_update, stat_end_update ! Procedure(s) 
         
@@ -95,7 +95,7 @@ module diagnose_variances
             iup2_bt, & 
             zm, & 
             lstats_samp
-#endif /*STATS*/
+ 
        
         implicit none
 
@@ -259,7 +259,7 @@ module diagnose_variances
         thlp2_zt   = max( zm2zt( thlp2 ), 0.0 )   ! Positive definite quantity
         rtpthlp_zt = zm2zt( rtpthlp )
 
-#ifdef STATS
+ 
         if ( lstats_samp ) then
 
           call stat_begin_update( irtp2_bt, real(rtp2 / dt), zm )
@@ -273,7 +273,6 @@ module diagnose_variances
           call stat_begin_update( iup2_bt, real(up2 / dt), zm )
 
         end if
-#endif
 
         ! Initialize tridiagonal solutions to valid
 
@@ -497,7 +496,7 @@ module diagnose_variances
                               rtpthlp )
 
 
-#ifdef STATS
+ 
         if ( lstats_samp ) then
           call stat_end_update( irtp2_bt, real( rtp2 / dt), zm )
 
@@ -509,7 +508,7 @@ module diagnose_variances
 
           call stat_end_update( ivp2_bt, real( vp2 / dt), zm )
         end if
-#endif /*STATS*/
+ 
 
         if ( scalar_calc ) then
 
@@ -725,7 +724,7 @@ module diagnose_variances
         use mean_adv, only:  & 
             term_ma_zm_lhs ! Procedure(s)
 
-#ifdef STATS
+ 
         use stats_variables, only: & 
             zmscr01, & 
             zmscr02, & 
@@ -757,7 +756,6 @@ module diagnose_variances
             ivp2_ta, & 
             ivp2_dp2
 
-#endif
 
         implicit none
 
@@ -798,10 +796,10 @@ module diagnose_variances
         integer :: k, kp1 
 !        integer :: km1
 
-#ifdef STATS
+ 
         real, dimension(3) :: & 
         tmp
-#endif /*STATS*/
+ 
 
 
         ! Setup LHS of the tridiagonal system
@@ -837,7 +835,7 @@ module diagnose_variances
                          wp3(kp1), wp3(k), wp2_zt(kp1), wp2_zt(k),  & 
                          gr%dzm(k), beta, wtol_sqd, k )
 
-#ifdef STATS
+ 
          if ( lstats_samp ) then
 
          ! Statistics: implicit contributions for rtp2, thlp2, 
@@ -883,7 +881,7 @@ module diagnose_variances
          endif
 
          endif ! lstats_samp
-#endif /*STATS*/
+ 
 
         enddo ! k=2..gr%nnzp-1
 
@@ -925,7 +923,7 @@ module diagnose_variances
         use grid_class, only: & 
             gr ! Variable(s)
         
-#ifdef STATS
+ 
         use stats_type, only: & 
             stat_update_var_pt, & ! Procedure(s)
             stat_end_update_pt
@@ -973,7 +971,6 @@ module diagnose_variances
             zmscr10, & 
             zmscr11
 
-#endif
 
         implicit none
 
@@ -1009,7 +1006,7 @@ module diagnose_variances
         ! Array indices
         integer :: k, kp1, km1
 
-#ifdef STATS
+ 
         integer :: & 
         ixapxbp_dp1, & 
         ixapxbp_dp2, & 
@@ -1062,9 +1059,8 @@ module diagnose_variances
           ixapxbp_ma  = 0
           ixapxbp_pr1 = 0
         end select
-#endif
 
-#ifdef STATS 
+  
        if ( lstats_samp .and. ixapxbp_cn > 0 ) then
           call tridag_solvex & 
                ( solve_type, gr%nnzp, nrhs, lhs(kp1_mdiag,:),  & 
@@ -1080,21 +1076,7 @@ module diagnose_variances
                  lhs(k_mdiag,:), lhs(km1_mdiag,:), rhs(:,1:nrhs),  & 
                  xapxbp(:,1:nrhs), err_code )
         end if
-#else
-        ! Solve system using tridag_solve. This uses LAPACK sgtsv,
-        ! which relies on Gaussian elimination to decompose the matrix.
-        call tridag_solve & 
-             ( solve_type, gr%nnzp, nrhs, lhs(kp1_mdiag,:),  & 
-               lhs(k_mdiag,:), lhs(km1_mdiag,:), rhs(:,1:nrhs),  & 
-               xapxbp(:,1:nrhs), err_code )
-
-        ! Alternative: Use LU decomposition instead.
-!       call band_solve
-!    .       ( solve_type, 1, 1, gr%nnzp, nrhs, 
-!    .         lhs, rhs(:,1:nrhs), xapxbp(:,1:nrhs), isValid )
-#endif
-
-#ifdef STATS
+ 
         ! Compute implicit budget terms
         if ( lstats_samp ) then
 
@@ -1126,7 +1108,7 @@ module diagnose_variances
 
           end do
         end if
-#endif /*STATS*/
+ 
 
         return
         end subroutine diag_var_solve
@@ -1151,7 +1133,7 @@ module diagnose_variances
         use stats_precision, only:  & 
             time_precision ! Variable(s)
         
-#ifdef STATS
+ 
         use stats_type, only: & 
             stat_modify_pt, stat_begin_update_pt, stat_update_var_pt ! Procedure(s)
 
@@ -1170,7 +1152,6 @@ module diagnose_variances
             zmscr01, & 
             zmscr11, & 
             lstats_samp
-#endif
 
         implicit none
 
@@ -1216,11 +1197,11 @@ module diagnose_variances
         integer :: k, kp1 
 !        integer :: km1
 
-#ifdef STATS
+ 
         real :: tmp
-#endif /*STATS*/
+ 
 
-#ifdef STATS
+ 
         integer :: & 
         ixapxbp_ta, & 
         ixapxbp_tp, & 
@@ -1249,7 +1230,6 @@ module diagnose_variances
           ixapxbp_pr1 = 0
           ixapxbp_pr2 = 0
         end select
-#endif
 
 
         do k = 2, gr%nnzp-1, 1
@@ -1279,7 +1259,7 @@ module diagnose_variances
             rhs(k,1) = real( rhs(k,1) + 1.0/dt * xap2(k) )
           endif
 
-#ifdef STATS
+ 
           if ( lstats_samp ) then
 
           ! Statistics: explicit contributions for up2 or vp2.
@@ -1333,7 +1313,7 @@ module diagnose_variances
                               wpxap(k), wpxap(k), gr%dzm(k) ), zm )
 
           endif ! lstats_samp
-#endif /*STATS*/
+ 
 
         enddo ! k=2..gr%nnzp-1
 
@@ -1376,7 +1356,7 @@ module diagnose_variances
         use stats_precision, only:  & 
             time_precision ! Variable(s)
         
-#ifdef STATS
+ 
         use stats_type, only: & 
             stat_modify_pt, & ! Procedure(s)
             stat_begin_update_pt, &
@@ -1395,7 +1375,6 @@ module diagnose_variances
             irtpthlp_dp1, & 
             zm, & 
             lstats_samp
-#endif
 
         implicit none
 
@@ -1438,7 +1417,7 @@ module diagnose_variances
         integer :: k, kp1 
 !        integer :: km1
 
-#ifdef STATS
+ 
         integer :: & 
         ixapxbp_ta, & 
         ixapxbp_tp, & 
@@ -1473,7 +1452,6 @@ module diagnose_variances
           ixapxbp_tp2 = 0
           ixapxbp_dp1 = 0
         end select
-#endif
 
 
         do k = 2, gr%nnzp-1, 1
@@ -1501,7 +1479,7 @@ module diagnose_variances
             rhs(k,1) = real( rhs(k,1) + 1.0/dt * xapxbp(k) )
           endif
 
-#ifdef STATS
+ 
           if ( lstats_samp ) then
 
           ! Statistics: explicit contributions for rtp2, thlp2, or rtpthlp.
@@ -1531,7 +1509,7 @@ module diagnose_variances
                        wpxbp(k), 0.0, gr%dzm(k) ), zm )
           
           endif ! lstats_samp
-#endif /*STATS*/
+ 
 
         enddo ! k=2..gr%nnzp-1
 
@@ -2189,13 +2167,13 @@ module diagnose_variances
         use fill_holes, only: fill_holes_driver
         use grid_class, only: gr
         use stats_precision, only: time_precision
-#ifdef STATS
+ 
         use stats_variables, only:  & 
             zm, lstats_samp, & 
             irtp2_pd, ithlp2_pd, iup2_pd, ivp2_pd ! variables
         use stats_type, only:  & 
             stat_begin_update, stat_end_update ! subroutines
-#endif /*STATS*/
+ 
 
         implicit none
 
@@ -2215,7 +2193,7 @@ module diagnose_variances
         real, intent(inout), dimension(gr%nnzp) ::  & 
         xp2_np1  ! Variance for <n+1>           [units vary]
 
-#ifdef STATS
+ 
         integer :: & 
         ixp2_pd
 
@@ -2236,7 +2214,7 @@ module diagnose_variances
           ! Store previous value for effect of the positive definite scheme
           call stat_begin_update( ixp2_pd, real( xp2_np1 / dt ), zm )
         end if 
-#endif /*STATS*/
+ 
      
 
         if ( any( xp2_np1 < tolerance ) ) then
@@ -2245,12 +2223,12 @@ module diagnose_variances
 
         end if
 
-#ifdef STATS
+ 
         if ( lstats_samp ) then
           ! Store previous value for effect of the positive definite scheme
           call stat_end_update( ixp2_pd, real( xp2_np1 / dt ), zm )
         end if 
-#endif /*STATS*/
+ 
 
 
         return

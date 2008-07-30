@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: coamps_micro_driver.F90,v 1.5 2008-07-29 16:44:00 nielsenb Exp $
+! $Id: coamps_micro_driver.F90,v 1.6 2008-07-30 19:17:34 dschanen Exp $
 module coamps_micro_driver_mod
 
 ! This module wraps the adjtq subroutine so that it may be used by
@@ -48,7 +48,7 @@ use stats_precision, only: time_precision ! Variable(s)
 use error_code, only: clubb_debug ! Procedure(s)
 use grid_class, only: zt2zm ! Procedure(s)
 use grid_class, only: gr ! Variable(s)
-#ifdef STATS
+ 
 use stats_type, only: stat_update_var_pt ! Procedure(s)
 
 use stats_variables, only: zt, lstats_samp,  & ! Variable(s)
@@ -59,7 +59,6 @@ use stats_variables, only: zt, lstats_samp,  & ! Variable(s)
    ,isnowslope & 
    ,iNsnowm
 ! End of ajsmith4's addition
-#endif
 
 implicit none
 
@@ -880,7 +879,7 @@ rsnowtend(1) = 0.0
 rttend(1)    = 0.0
 thlmtend(1)  = 0.0
 
-#ifdef STATS
+ 
 if ( lstats_samp ) then
   do k=2,kk+1
      call stat_update_var_pt( imean_vol_rad_rain, k, & 
@@ -923,7 +922,7 @@ if ( lstats_samp ) then
 ! End of ajsmith4's additions
 
 end if
-#endif /*STATS*/
+ 
 
 #else /* COAMPS_MICRO not defined */
 stop "Not compiled with COAMPS Microphysics"

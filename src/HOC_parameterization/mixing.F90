@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: mixing.F90,v 1.4 2008-07-29 16:44:03 nielsenb Exp $
+! $Id: mixing.F90,v 1.5 2008-07-30 19:17:36 dschanen Exp $
 !===============================================================================
 module mixing
 
@@ -88,7 +88,7 @@ use stats_precision, only:  &
 use error_code, only:  & 
     lapack_error,  & ! Procedure(s)
     clubb_at_debug_level    
-#ifdef STATS
+ 
 use stats_type, only: & 
     stat_begin_update, stat_end_update ! Procedure(s)
 
@@ -97,7 +97,7 @@ use stats_variables, only: &
     irtm_cl,  & 
     ithlm_cl, & 
     lstats_samp
-#endif /*STATS*/
+ 
 
 implicit none
 
@@ -279,12 +279,12 @@ endif
 ! Clipping rtm
 ! Joshua Fasching March 2008
 
-#ifdef STATS
+ 
 ! Computed value before clipping
 if ( lstats_samp ) then
    call stat_begin_update( irtm_cl, real( rtm / dt ), zt )
 end if 
-#endif        
+
 ! The arm_0003 case produces negative rtm near the tropopause.
 !    To avoid this, we clip rtm.  This is not a good solution,
 !    because it renders rtm non-conserved.  We should look into 
@@ -305,11 +305,10 @@ do k = 1, gr%nnzp, 1
 
 enddo
         
-#ifdef STATS
+ 
  if ( lstats_samp ) then
     call stat_end_update( irtm_cl, real( rtm / dt ) , zt )      
  endif
-#endif
 
 
 ! Compute the upper and lower limits of w'th_l' at every level,
@@ -344,12 +343,11 @@ endif
 ! Clipping thlm
 ! Joshua Fasching March 2008
 
-#ifdef STATS
+ 
 ! Computed value before clipping
 if ( lstats_samp ) then
    call stat_begin_update( ithlm_cl, real(thlm / dt ), zt)
  endif 
-#endif        
 
 ! The value of potential temperature cannot fall below 0,
 ! so we clip accordingly
@@ -361,11 +359,10 @@ do k = 1, gr%nnzp, 1
 enddo
 
         
-#ifdef STATS
+ 
  if ( lstats_samp ) then
     call stat_end_update( ithlm_cl, real( thlm/dt ), zt )
  end if
-#endif
 ! End change Joshua Fasching March 2008
 
 ! Solve sclrm / wpsclrp
@@ -516,7 +513,7 @@ use mean_adv, only: &
 use semiimplicit_clip, only: & 
     semiimp_clip_lhs ! Procedure(s)
 
-#ifdef STATS
+ 
 use stats_variables, only: & 
     ztscr01,  & ! Variable(s)
     ztscr02, & 
@@ -559,7 +556,7 @@ use stats_variables, only: &
     iwprtp_pr2, & 
     iwprtp_dp1, & 
     iwprtp_sicl
-#endif /*STATS*/
+ 
 
 implicit none
 
@@ -610,9 +607,9 @@ real :: wtol_sqd
 integer :: k, kp1
 integer :: k_xm, k_wpxp
 
-#ifdef STATS
+ 
 real, dimension(3) :: tmp
-#endif /*STATS*/
+ 
 
 
 ! wtol_sqd = the square of the minimum threshold on w,
@@ -682,7 +679,7 @@ do k = 2, gr%nnzp-1, 1
   lhs(3,k_xm) & 
   = real( lhs(3,k_xm) + 1.0 / dt )
 
-#ifdef STATS
+ 
   if (lstats_samp) then
 
   ! Statistics: implicit contributions for rtm or thlm.
@@ -709,7 +706,7 @@ do k = 2, gr%nnzp-1, 1
   endif
 
   endif
-#endif /*STATS*/
+ 
 
 
   !!!!!***** w'x' *****!!!!!
@@ -772,7 +769,7 @@ do k = 2, gr%nnzp-1, 1
                       .true., wpxp_upper_lim(k),  & 
                       .true., wpxp_lower_lim(k) )
 
-#ifdef STATS
+ 
   if (lstats_samp) then
 
   ! Statistics: implicit contributions for wprtp or wpthlp.
@@ -837,7 +834,7 @@ do k = 2, gr%nnzp-1, 1
   endif
 
   endif
-#endif /*STATS*/
+ 
 
 enddo ! 2..gr%nnzp-1
 
@@ -909,7 +906,7 @@ use stats_precision, only:  &
 use semiimplicit_clip, only: & 
     semiimp_clip_rhs ! Procedure(s)
 
-#ifdef STATS
+ 
 use stats_type, only: & 
     stat_update_var_pt, & 
     stat_begin_update_pt
@@ -927,7 +924,7 @@ use stats_variables, only: &
     iwpthlp_sicl, & 
     lstats_samp
 
-#endif /*STATS*/
+ 
 
 implicit none
 
@@ -957,7 +954,7 @@ real, intent(out), dimension(2*gr%nnzp,nrhs) ::  &
 ! Indices
 integer :: k, k_xm, k_wpxp
 
-#ifdef STATS
+ 
 integer :: & 
   ixm_f, & 
   iwpxp_bp, & 
@@ -981,7 +978,7 @@ case default    ! this includes the sclrm case
   iwpxp_pr3  = 0
   iwpxp_sicl = 0
 end select
-#endif /*STATS*/
+ 
 
 
 ! Initialize the right-hand side vector to 0.
@@ -1010,7 +1007,7 @@ do k = 2, gr%nnzp-1, 1
   rhs(k_xm,1) & 
   = rhs(k_xm,1) + xm_forcing(k)
 
-#ifdef STATS
+ 
   if ( lstats_samp ) then
 
   ! Statistics: explicit contributions for xm 
@@ -1019,7 +1016,7 @@ do k = 2, gr%nnzp-1, 1
   call stat_update_var_pt( ixm_f, k, xm_forcing(k), zt )
 
   endif ! lstats_samp
-#endif /*STATS*/
+ 
 
 
   !!!!!***** w'x' *****!!!!!
@@ -1042,7 +1039,7 @@ do k = 2, gr%nnzp-1, 1
                       .true., wpxp_upper_lim(k), & 
                       .true., wpxp_lower_lim(k) )
 
-#ifdef STATS
+ 
   if ( lstats_samp ) then
 
   ! Statistics: explicit contributions for wpxp.
@@ -1059,7 +1056,7 @@ do k = 2, gr%nnzp-1, 1
                         .true., wpxp_lower_lim(k) ), zm )
 
   endif ! lstats_samp
-#endif /*STATS*/
+ 
 
 enddo ! k=2..gr%nnzp-1
 
@@ -1133,7 +1130,7 @@ use model_flags, only: &
     lpos_def  ! Logical for whether to apply the positive
               !  definite scheme to rtm
 
-#ifdef STATS
+ 
 use stats_type, only: & 
     stat_begin_update,  & ! Procedure(s)
     stat_update_var_pt, & 
@@ -1195,7 +1192,7 @@ use stats_variables, only: &
     zmscr13, & 
     zmscr14, & 
     zmscr15
-#endif /*STATS*/
+ 
 
 implicit none
 
@@ -1244,7 +1241,7 @@ character(len=25) :: &
 integer :: k, km1, kp1
 integer :: k_xm, k_wpxp
 
-#ifdef STATS
+ 
 integer :: & 
   ixm_bt, & 
   ixm_ta, & 
@@ -1312,9 +1309,9 @@ case default  ! this includes the sclrm case
   iwpxp_pd   = 0
   iwpxp_sicl = 0
 end select
-#endif /*STATS*/
+ 
 
-#ifdef STATS
+ 
 if ( lstats_samp ) then
 
   ! xm total time tendency ( 1st calculation)
@@ -1332,10 +1329,10 @@ if ( lstats_samp ) then
   ! Brian Griffin; July 5, 2008.
 
 end if ! lstats_samp
-#endif /*STATS*/
+ 
 
 
-#ifdef STATS
+ 
 if ( lstats_samp .and. ixm_cn > 0 ) then
   ! Perform LU decomp and solve system (LAPACK with diagnostics)
   call band_solvex( solve_type, nsup, nsub, 2*gr%nnzp, nrhs, & 
@@ -1349,12 +1346,8 @@ else
   call band_solve( solve_type, nsup, nsub, 2*gr%nnzp, nrhs, & 
                    lhs, rhs, solution, err_code )
 end if
-#else
-! Perform LU decomp and solve system (LAPACK)
-call band_solve( solve_type, nsup, nsub, 2*gr%nnzp, nrhs, & 
-                 lhs, rhs, solution, err_code )
 
-#endif /*STATS*/
+ 
 
 ! Return if the solver has failed
 if ( lapack_error( err_code ) ) return
@@ -1382,7 +1375,7 @@ end do ! k=1..gr%nnzp
 !        xm(gr%nnzp) = xm(gr%nnzp-1)
 
 
-#ifdef STATS
+ 
   if ( lstats_samp ) then
 
    do k = 2, gr%nnzp-1
@@ -1436,7 +1429,7 @@ end do ! k=1..gr%nnzp
    enddo ! 1..gr%nnzp
 
   endif ! lstats_samp
-#endif /*STATS*/
+ 
 
 ! Apply a flux limiting positive definite scheme if the solution 
 ! for the mean field is negative and we're determining total water
@@ -1453,7 +1446,7 @@ else
 
 end if ! solve_type == "rtm" and rtm <n+1> less than 0
 
-#ifdef STATS
+ 
 if ( lstats_samp ) then
 
   call stat_update_var( iwpxp_pd, wpxp_pd(1:gr%nnzp), zm )
@@ -1461,7 +1454,6 @@ if ( lstats_samp ) then
   call stat_update_var( ixm_pd, xm_pd(1:gr%nnzp), zt )
 
 end if
-#endif
 
 ! Use solve_type to find solve_type_cl, which is used
 ! in subroutine covariance_clip.
@@ -1487,7 +1479,7 @@ call covariance_clip( solve_type_cl, .false.,  &
                       .false., dt, wp2, xp2,  & 
                       wpxp )
 
-#ifdef STATS
+ 
 if ( lstats_samp ) then
   ! xm time tendency (2nd calculation)
   call stat_end_update( ixm_bt, real( xm / dt ), zt )
@@ -1504,7 +1496,7 @@ if ( lstats_samp ) then
   ! Brian Griffin; July 5, 2008.
 
 endif
-#endif /*STATS*/
+ 
 
 return
 end subroutine mixing_solve

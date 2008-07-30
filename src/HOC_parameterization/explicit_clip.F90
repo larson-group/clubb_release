@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: explicit_clip.F90,v 1.3 2008-07-29 16:44:02 nielsenb Exp $
+! $Id: explicit_clip.F90,v 1.4 2008-07-30 19:17:35 dschanen Exp $
 !===============================================================================
 module explicit_clip
 
@@ -63,7 +63,7 @@ use grid_class, only: &
 use stats_precision, only: & 
     time_precision ! Variable(s)
 
-#ifdef STATS
+ 
 use stats_type, only: & 
     stat_begin_update,  & ! Procedure(s)
     stat_modify, & 
@@ -75,7 +75,7 @@ use stats_variables, only: &
     iwpthlp_cl, & 
     irtpthlp_cl, & 
     lstats_samp
-#endif /*STATS*/
+ 
 
 implicit none
 
@@ -98,7 +98,7 @@ real, dimension(gr%nnzp), intent(in) :: &
 real, dimension(gr%nnzp), intent(inout) :: & 
   xpyp   ! Covariance of x and y, x'y' (momentum levels) [{x units}*{y units}]
 
-#ifdef STATS
+ 
 ! Local Variable
 integer :: & 
   ixpyp_cl
@@ -114,9 +114,9 @@ case ( "rtpthlp" )   ! rtpthlp clipping budget term
 case default   ! scalars (or upwp/vpwp) are involved
    ixpyp_cl = 0
 end select
-#endif /*STATS*/
+ 
 
-#ifdef STATS
+ 
 if ( lstats_samp ) then
    if ( l_first_clip_ts ) then
       call stat_begin_update( ixpyp_cl, real( xpyp / dt ), zm )
@@ -124,7 +124,7 @@ if ( lstats_samp ) then
       call stat_modify( ixpyp_cl, real( -xpyp / dt ), zm )
    endif
 endif 
-#endif /*STATS*/
+ 
 
 ! Clipping for xpyp at an upper limit corresponding with 
 ! a correlation between x and y of 0.99.
@@ -136,7 +136,7 @@ where ( xpyp >  0.99 * sqrt( xp2 * yp2 ) ) &
 where ( xpyp < -0.99 * sqrt( xp2 * yp2 ) ) & 
    xpyp = -0.99 * sqrt( xp2 * yp2 )
 
-#ifdef STATS
+ 
 if ( lstats_samp ) then
    if ( l_last_clip_ts ) then
       call stat_end_update( ixpyp_cl, real( xpyp / dt ), zm )
@@ -144,7 +144,7 @@ if ( lstats_samp ) then
       call stat_modify( ixpyp_cl, real( xpyp / dt ), zm )
    endif
 endif
-#endif /*STATS*/
+ 
 
 
 end subroutine covariance_clip
@@ -172,7 +172,7 @@ use grid_class, only: &
 use stats_precision, only: & 
     time_precision ! Variable(s)
 
-#ifdef STATS
+ 
 use stats_type, only: & 
     stat_begin_update,  & ! Procedure(s)
     stat_end_update
@@ -185,7 +185,7 @@ use stats_variables, only: &
     iup2_cl, & 
     ivp2_cl, & 
     lstats_samp
-#endif /*STATS*/
+ 
 
 implicit none
 
@@ -206,7 +206,7 @@ real, dimension(gr%nnzp), intent(inout) :: &
 ! Local Variables
 integer :: k   ! Array index
 
-#ifdef STATS
+ 
 integer :: & 
   ixp2_cl
 
@@ -225,14 +225,14 @@ case ( "vp2" )   ! vp2 clipping budget term
 case default   ! scalars are involved
    ixp2_cl = 0
 end select
-#endif /*STATS*/
+ 
 
 
-#ifdef STATS
+ 
 if ( lstats_samp ) then
    call stat_begin_update( ixp2_cl, real( xp2 / dt ), zm )
 endif
-#endif /*STATS*/
+ 
 
 ! Limit the value of x'^2 at threshold.
 do k = 2, gr%nnzp, 1
@@ -241,11 +241,11 @@ do k = 2, gr%nnzp, 1
    endif
 enddo
 
-#ifdef STATS
+ 
 if ( lstats_samp ) then
    call stat_end_update( ixp2_cl, real( xp2 / dt ), zm )
 endif
-#endif /*STATS*/
+ 
 
 
 end subroutine variance_clip

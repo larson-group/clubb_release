@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf01.F90,v 1.4 2008-07-29 16:44:01 nielsenb Exp $
+! $Id: dycoms2_rf01.F90,v 1.5 2008-07-30 19:17:35 dschanen Exp $
 module dycoms2_rf01
 
 !       Description:
@@ -41,12 +41,12 @@ use error_code, only: clubb_rtm_level_not_found ! Variable(s)
 
 use array_index, only: iisclr_rt, iisclr_thl
 
-#ifdef STATS
+ 
 use stats_type, only: stat_update_var, stat_update_var_pt ! Procedure(s)
 
 use stats_variables, only:  & 
     izi, iradht_LW, zt, sfc, lstats_samp ! Variable(s)
-#endif /*STATS*/
+ 
 
 implicit none
 
@@ -113,13 +113,13 @@ end if
 zi = (gr%zt(i)-gr%zt(i-1))/(rtm(i)-rtm(i-1))*(8.0e-3-rtm(i-1)) & 
    + gr%zt(i-1) 
 !        x_sfc(1,izi) = zi
-#ifdef STATS
+ 
 
 if ( lstats_samp ) then
   call stat_update_var_pt( izi, 1, zi, sfc )
 end if
 
-#endif /*STATS*/
+ 
 
 !       Large scale subsidence
 
@@ -167,11 +167,11 @@ if ( .not. lbugsrad ) then
   radht(1)       = 0.
   radht(gr%nnzp) = 0.
 
-#ifdef STATS
+ 
   if ( lstats_samp ) then
     call stat_update_var( iradht_LW, radht, zt )
   end if
-#endif
+
 end if ! ~ lbugsrad
 
 ! Add heating rate to theta-l forcing
