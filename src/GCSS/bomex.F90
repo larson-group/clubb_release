@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: bomex.F90,v 1.4 2008-07-29 16:44:01 nielsenb Exp $
+! $Id: bomex.F90,v 1.5 2008-07-30 21:11:22 faschinj Exp $
 module bomex
 
 !       Description:
@@ -29,7 +29,7 @@ use grid_class, only: gr ! Variable(s)
 
 use grid_class, only: zt2zm ! Procedure(s)
 
-use model_flags, only: lbugsrad ! Variable(s)
+use model_flags, only: l_bugsrad ! Variable(s)
 
 use parameters, only: sclr_dim ! Variable(s)
 
@@ -77,7 +77,7 @@ wmm = zt2zm( wmt )
 wmm(1) = 0.0        ! At surface
 wmm(gr%nnzp) = 0.0  ! Model top
 
-if ( .not. lbugsrad ) then
+if ( .not. l_bugsrad ) then
 
 ! Radiative theta-l tendency
   do k = 2, gr%nnzp
@@ -103,7 +103,7 @@ else ! Compute radht interactively with BUGSrad
 
   thlm_forcing = 0.0
 
-end if ! ~lbugsrad
+end if ! ~l_bugsrad
 
 ! Large scale advective moisture tendency
 do k = 2, gr%nnzp
