@@ -1,4 +1,4 @@
-! $Id: mixing_length.F90,v 1.5 2008-07-29 16:44:03 nielsenb Exp $
+! $Id: mixing_length.F90,v 1.6 2008-07-30 15:40:45 faschinj Exp $
 !-----------------------------------------------------------------------------
 module mixing_length
 
@@ -57,8 +57,8 @@ use saturation, only:  &
     sat_mixrat_liq ! Procedure(s)
 
 use diagnostic_variables, only:  & 
-    Lup,  & ! Variable(s)
-    Ldown
+    Lscale_up,  & ! Variable(s)
+    Lscale_down
 
 use error_code, only:  & 
     clubb_var_equals_NaN,  & ! Variable(s)
@@ -115,23 +115,23 @@ real :: thl_par_j_plus_1, rt_par_j_plus_1
 !        real :: rc_par_j_plus_1 
 
 ! Variables to make L nonlocal
-real :: Lup_max_alt, Ldown_min_alt
+real :: Lscale_up_max_alt, Lscale_down_min_alt
 
 !---------- Mixing length computation ----------------------------------
 
 ! Avoid uninitialized memory (these values are not used in Lscale) 
 ! -dschanen 12 March 2008
-Lup(1)   = 0.0
-Ldown(1) = 0.0
+Lscale_up(1)   = 0.0
+Lscale_down(1) = 0.0
 
 ! Upwards loop
 
-Lup_max_alt = 0.
+Lscale_up_max_alt = 0.
 do i=2,gr%nnzp
 
   tke_i = zm2zt( em, i )                   ! tke on thermo level
 
-  Lup(i) = zlmin
+  Lscale_up(i) = zlmin
   j = i + 1
 
   thl_par_j_minus_1 = thlm(i)
@@ -148,7 +148,7 @@ do i=2,gr%nnzp
     rt_par_j = ( 1 - mu/gr%dzm(j-1) ) * rt_par_j_minus_1 & 
              + ( mu/gr%dzm(j-1) ) * rtm(j)
 
-!           Include effects of latent heating on Lup 6/12/00
+!           Include effects of latent heating on Lscale_up 6/12/00
 !           Use thermodynamic formula of Bougeault 1981 JAS Vol. 38, 2416
 !           Probably should use properties of bump 1 in Gaussian, not mean!!!
 
@@ -168,9 +168,9 @@ do i=2,gr%nnzp
                 * ( thv_par_j - thvm(j) ) 
 
     if (tke_i+CAPE_incr > 0.) then
-      Lup(i) = Lup(i) + gr%zt(j) - gr%zt(j-1)
+      Lscale_up(i) = Lscale_up(i) + gr%zt(j) - gr%zt(j-1)
     else
-      Lup(i) = Lup(i) + ( gr%zt(j) - gr%zt(j-1) )  & 
+      Lscale_up(i) = Lscale_up(i) + ( gr%zt(j) - gr%zt(j-1) )  & 
                         * tke_i/max( zeps, -CAPE_incr )
     end if
 
@@ -183,11 +183,11 @@ do i=2,gr%nnzp
 
   end do
 
-  ! Make Lup nonlocal
+  ! Make Lscale_up nonlocal
 
-  Lup_max_alt = max( Lup_max_alt, Lup(i)+gr%zt(i) )
-  if ( ( gr%zt(i) + Lup(i) ) < Lup_max_alt ) then
-    Lup(i) = Lup_max_alt - gr%zt(i)
+  Lscale_up_max_alt = max( Lscale_up_max_alt, Lscale_up(i)+gr%zt(i) )
+  if ( ( gr%zt(i) + Lscale_up(i) ) < Lscale_up_max_alt ) then
+    Lscale_up(i) = Lscale_up_max_alt - gr%zt(i)
   end if
 
 end do
@@ -196,14 +196,14 @@ end do
 ! For now, do not include latent heat 
 
 ! Chris Golaz modification to include effects on latent heating
-! on Ldown
+! on Lscale_down
 
-Ldown_min_alt = gr%zt(gr%nnzp)
+Lscale_down_min_alt = gr%zt(gr%nnzp)
 do i=gr%nnzp,2,-1
 
   tke_i = zm2zt( em, i )  ! tke on thermo level
 
-  Ldown(i) = zlmin
+  Lscale_down(i) = zlmin
   j = i - 1
 
   thl_par_j_plus_1 = thlm(i)
@@ -220,7 +220,7 @@ do i=gr%nnzp,2,-1
     rt_par_j = ( 1 - mu/gr%dzm(j) ) * rt_par_j_plus_1 & 
              +  ( mu/gr%dzm(j) ) * rtm(j)
 
-   ! Include effects of latent heating on Ldown
+   ! Include effects of latent heating on Lscale_down
    ! Use thermodynamic formula of Bougeault 1981 JAS Vol. 38, 2416
    ! Probably should use properties of bump 1 in Gaussian, not mean!!!
 
@@ -246,9 +246,9 @@ do i=gr%nnzp,2,-1
 !            CAPE_incr = - grav/thvm(j) * (thvm(i)-thvm(j)) / gr%dzm(j)
 
     if (tke_i+CAPE_incr > 0.) then
-      Ldown(i) = Ldown(i) + gr%zt(j+1) - gr%zt(j)
+      Lscale_down(i) = Lscale_down(i) + gr%zt(j+1) - gr%zt(j)
     else
-      Ldown(i) = Ldown(i) + ( gr%zt(j+1) - gr%zt(j) )  & 
+      Lscale_down(i) = Lscale_down(i) + ( gr%zt(j+1) - gr%zt(j) )  & 
                             * tke_i/max( zeps, -CAPE_incr )
     end if
 
@@ -263,11 +263,11 @@ do i=gr%nnzp,2,-1
 
   end do
 
-  ! Make Ldown nonlocal
-!         Ldown_min_alt = max( Ldown_min_alt, gr%zt(i)-Ldown(i) )
-  Ldown_min_alt = min( Ldown_min_alt, gr%zt(i)-Ldown(i) ) ! %% test
-  if ( (gr%zt(i)-Ldown(i)) > Ldown_min_alt ) then
-    Ldown(i) = gr%zt(i) - Ldown_min_alt
+  ! Make Lscale_down nonlocal
+!         Lscale_down_min_alt = max( Lscale_down_min_alt, gr%zt(i)-Lscale_down(i) )
+  Lscale_down_min_alt = min( Lscale_down_min_alt, gr%zt(i)-Lscale_down(i) ) ! %% test
+  if ( (gr%zt(i)-Lscale_down(i)) > Lscale_down_min_alt ) then
+    Lscale_down(i) = gr%zt(i) - Lscale_down_min_alt
   end if
 
 end do
@@ -278,10 +278,10 @@ do i=2,gr%nnzp
   ! -dschanen 27 April 2007
   lminh = max( 0., 500. - gr%zt(i) ) * ( lmin / 500. )
 
-  Lup(i)    = max( lminh, Lup(i) )
-  Ldown(i)  = max( lminh, Ldown(i) )
+  Lscale_up(i)    = max( lminh, Lscale_up(i) )
+  Lscale_down(i)  = max( lminh, Lscale_down(i) )
 
-  Lscale(i) = sqrt( Lup(i)*Ldown(i) )
+  Lscale(i) = sqrt( Lscale_up(i)*Lscale_down(i) )
 
 end do
 
@@ -297,7 +297,7 @@ Lscale = min( Lscale, Lscale_max )
 if( clubb_at_debug_level( 2 ) ) then
         
         ! Ensure that the output from this subroutine is valid.
-        call length_check( Lscale, Lup, Ldown, err_code )
+        call length_check( Lscale, Lscale_up, Lscale_down, err_code )
         ! Joshua Fasching January 2008
 
 !       Error Reporting
@@ -322,7 +322,7 @@ if( clubb_at_debug_level( 2 ) ) then
            write(fstderr,*) "Intent(out)"
 
            write(fstderr,*) "Lscale = ", Lscale
-           write(fstderr,*) "Lup = ", Lup
+           write(fstderr,*) "Lscale_up = ", Lscale_up
            
         endif ! err_code == clubb_var_equals_NaN
 

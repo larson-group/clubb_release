@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: stats_variables.F90,v 1.5 2008-07-28 19:34:43 faschinj Exp $
+! $Id: stats_variables.F90,v 1.6 2008-07-30 15:40:45 faschinj Exp $
 !-----------------------------------------------------------------------
 !  module stats_variables
 
@@ -64,8 +64,8 @@ module stats_variables
      iwp2thlp, & 
      iwprtp2, & 
      iwp2rtp, & 
-     iLup, & 
-     iLdown, & 
+     iLscale_up, & 
+     iLscale_down, & 
      itaut, & 
      iKht, & 
      iwp2thvp, & 
@@ -97,7 +97,7 @@ module stats_variables
 
 !$omp   threadprivate(ithlm, ithvm, irtm, ircm, ium, ivm, iwmt, iug)
 !$omp   threadprivate(ivg, icf, ip, iexner, iLscale, iwp3, iwpthlp2)
-!$omp   threadprivate(iwp2thlp, iwprtp2, iwp2rtp, iLup, iLdown, itaut)
+!$omp   threadprivate(iwp2thlp, iwprtp2, iwp2rtp, iLscale_up, iLscale_down, itaut)
 !$omp   threadprivate(iKht, iwp2thvp, iwp2rcp, iwprtpthlp, isct, irhot)
 !$omp   threadprivate(iNcm, iNcnm, iNim, isnowslope, iNsnowm)
 !$omp   threadprivate(ised_rcm, irsat, irrainm, iNrm)

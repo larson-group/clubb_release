@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: inputfields.F90,v 1.4 2008-07-29 18:26:20 faschinj Exp $
+! $Id: inputfields.F90,v 1.5 2008-07-30 15:40:45 faschinj Exp $
 
 ! Module inputfields
 
@@ -28,7 +28,7 @@ module inputfields
                      input_ug, input_vg, input_rcm,  & 
                      input_wmt, input_exner, input_em, & 
                      input_p, input_rhot, input_rhom, & 
-                     input_Lscale, input_Lup, input_Ldown, & 
+                     input_Lscale, input_Lscale_up, input_Lscale_down, & 
                      input_Kht, input_Khm, input_taum, input_taut, & 
                      input_thvm, input_rrainm,input_Nrm,  & 
                      input_rsnowm, input_ricem, input_rgraupelm,  & 
@@ -119,8 +119,8 @@ module inputfields
       ug, & 
       vg, & 
       Lscale, & 
-      Lup, & 
-      Ldown, & 
+      Lscale_up, & 
+      Lscale_down, & 
       Kht, & 
       Khm, & 
       thvm, & 
@@ -254,13 +254,13 @@ module inputfields
       call get_var( fread_var , "lscale", timestep, & 
                     Lscale(1:gr%nnzp), lerror)
     endif
-    if ( input_Lup) then
-      call get_var( fread_var , "Lup", timestep, & 
-                    Lup(1:gr%nnzp), lerror)
+    if ( input_Lscale_up) then
+      call get_var( fread_var , "Lscale_up", timestep, & 
+                    Lscale_up(1:gr%nnzp), lerror)
     endif
-    if ( input_Ldown) then
-      call get_var( fread_var , "Ldown", timestep, & 
-                    Ldown(1:gr%nnzp), lerror)
+    if ( input_Lscale_down) then
+      call get_var( fread_var , "Lscale_down", timestep, & 
+                    Lscale_down(1:gr%nnzp), lerror)
     endif
     if ( input_Kht) then
       call get_var( fread_var , "kht", timestep, & 

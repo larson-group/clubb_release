@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: diag_variables.F90,v 1.6 2008-07-29 16:44:02 nielsenb Exp $
+! $Id: diag_variables.F90,v 1.7 2008-07-30 15:40:45 faschinj Exp $
 module diagnostic_variables
 
 ! This module contains definitions of all diagnostic
@@ -96,9 +96,9 @@ real, target, allocatable, dimension(:), public :: &
 
 ! Mixing lengths
 real, target, allocatable, dimension(:), public :: & 
-  Lscale, Lup, Ldown ! [m]
+  Lscale, Lscale_up, Lscale_down ! [m]
 
-!$omp   threadprivate(Lscale, Lup, Ldown)
+!$omp   threadprivate(Lscale, Lscale_up, Lscale_down)
 
 real, target, allocatable, dimension(:), public :: & 
   em,   & ! em               [m^2/s^2]
@@ -299,8 +299,8 @@ allocate( Khm(1:nzmax) )
 
 allocate( em(1:nzmax) )
 allocate( Lscale(1:nzmax) )
-allocate( Lup(1:nzmax) )
-allocate( Ldown(1:nzmax) )
+allocate( Lscale_up(1:nzmax) )
+allocate( Lscale_down(1:nzmax) )
 allocate( taut(1:nzmax) )
 !       allocate( taum(1:nzmax) )
 
@@ -410,8 +410,8 @@ em       = emin
 
 ! Length scale
 Lscale   = 0.0
-Lup      = 0.0
-Ldown    = 0.0
+Lscale_up      = 0.0
+Lscale_down    = 0.0
 
 ! Dissipation time
 taut     = 0.0
@@ -529,8 +529,8 @@ deallocate( Khm )
 
 deallocate( em )
 deallocate( Lscale )
-deallocate( Lup )
-deallocate( Ldown )
+deallocate( Lscale_up )
+deallocate( Lscale_down )
 deallocate( taut )
 
 ! Cloud water variables

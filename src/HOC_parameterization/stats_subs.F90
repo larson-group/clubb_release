@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-!  $Id: stats_subs.F90,v 1.7 2008-07-24 20:57:14 faschinj Exp $
+!  $Id: stats_subs.F90,v 1.8 2008-07-30 15:40:45 faschinj Exp $
 module stats_subs
 
 #ifdef STATS
@@ -791,8 +791,8 @@ module stats_subs
           iwp2thlp,  & 
           iwprtp2, & 
           iwp2rtp, & 
-          iLup, & 
-          iLdown, & 
+          iLscale_up, & 
+          iLscale_down, & 
           itaut, & 
           iKht, & 
           iwp2thvp, & 
@@ -908,8 +908,8 @@ module stats_subs
           wp2thlp, & 
           wprtp2, & 
           wp2rtp, & 
-          lup, & 
-          ldown, & 
+          Lscale_up, & 
+          Lscale_down, & 
           taut, & 
           Kht, & 
           wp2thvp, & 
@@ -1051,8 +1051,8 @@ module stats_subs
         call stat_update_var( iwp2thlp, wp2thlp, zt )
         call stat_update_var( iwprtp2, wprtp2, zt )
         call stat_update_var( iwp2rtp, wp2rtp, zt )
-        call stat_update_var( iLup, Lup, zt )
-        call stat_update_var( iLdown, Ldown, zt )
+        call stat_update_var( iLscale_up, Lscale_up, zt )
+        call stat_update_var( iLscale_down, Lscale_down, zt )
         call stat_update_var( itaut, taut, zt )
         call stat_update_var( iKht, Kht, zt )
         call stat_update_var( iwp2thvp, wp2thvp, zt )

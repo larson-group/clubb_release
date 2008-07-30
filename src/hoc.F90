@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id: hoc.F90,v 1.9 2008-07-29 18:26:20 faschinj Exp $
+! $Id: hoc.F90,v 1.10 2008-07-30 15:40:44 faschinj Exp $
 
 module hoc
 
@@ -1230,7 +1230,7 @@ module hoc
             input_rtm, input_thlm, input_wp2, input_ug, & 
             input_vg, input_rcm, input_wmt, input_exner, & 
             input_em, input_p, input_rhot, input_rhom, & 
-            input_Lscale, input_Lup, input_Ldown, input_Kht, & 
+            input_Lscale, input_Lscale_up, input_Lscale_down, input_Kht, & 
             input_Khm, input_taum, input_taut, input_thvm,  & 
             input_rrainm, input_rsnowm, input_ricem,  & 
             input_rgraupelm, input_wprtp, input_wpthlp, & 
@@ -1326,8 +1326,8 @@ module hoc
         input_rhot = .true.
         input_rhom = .true.
         input_Lscale = .true.
-        input_Lup = .true.
-        input_Ldown = .true.
+        input_Lscale_up = .true.
+        input_Lscale_down = .true.
         input_Kht = .true.
         input_Khm = .true.
         input_taum = .true.
