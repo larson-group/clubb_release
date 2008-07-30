@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: dycoms2_rf02.F90,v 1.4 2008-07-30 19:17:35 dschanen Exp $
+! $Id: dycoms2_rf02.F90,v 1.5 2008-07-30 21:16:54 faschinj Exp $
 module dycoms2_rf02
 
 !       Description:
@@ -38,7 +38,7 @@ use constants, only: fstderr, Cp, rc_tol ! Variable(s)
 
 use parameters, only: sclr_dim ! Variable(s)
 
-use model_flags, only: lbugsrad, lcoamps_micro ! Variable(s)
+use model_flags, only: l_bugsrad, l_coamps_micro ! Variable(s)
 
 use stats_precision, only: time_precision ! Variable(s)
 
@@ -51,7 +51,7 @@ use array_index, only:  &
 use stats_type, only: stat_update_var, stat_update_var_pt ! Procedure(s)
 
 USE stats_variables, only:  & 
-    iradht_LW, izi, sfc, zt, lstats_samp ! Variable(s)
+    iradht_LW, izi, sfc, zt, l_stats_samp ! Variable(s)
  
 
 implicit none
@@ -115,7 +115,7 @@ wmt(1) = 0.0        ! Below surface
 wmm(1) = 0.0        ! At surface
 wmm(gr%nnzp) = 0.0  ! Model top
 
-IF ( .not. lbugsrad ) THEN
+IF ( .not. l_bugsrad ) THEN
 
  ! Radiation
 
@@ -183,16 +183,16 @@ IF ( .not. lbugsrad ) THEN
   END DO
   radht(1) = radht(2)
 
+  if ( l_stats_samp ) then
  
-  if ( lstats_samp ) then
     call stat_update_var( iradht_LW, radht, zt )
   endif
 
-END IF ! ~ lbugsrad
+END IF ! ~ l_bugsrad
 
 ! Enter the final theta-l and rtm tendencies
 
-IF ( .not. lbugsrad ) THEN
+IF ( .not. l_bugsrad ) THEN
   thlm_forcing(1:gr%nnzp) = radht(1:gr%nnzp)
 ELSE
   thlm_forcing(1:gr%nnzp) = 0.0
@@ -201,8 +201,8 @@ END IF
 rtm_forcing(1:gr%nnzp) = 0.0
 
 ! Update surface statistics
+if ( l_stats_samp ) then
  
-if ( lstats_samp ) then
    call stat_update_var_pt( izi, 1, z_i, sfc )
 endif
  
@@ -228,7 +228,7 @@ endif
 ! Since cloud base (zb) is determined by the mixing ratio rc_tol,
 ! so will cloud droplet number concentration (Ncm).
 
-if ( lcoamps_micro .and. time == time_initial ) then
+if ( l_coamps_micro .and. time == time_initial ) then
 
   ! Taken from COAMPS subroutine ncn_init()
   Ncnm(1:gr%nnzp) = 55000000.0 / rhot(1:gr%nnzp)
