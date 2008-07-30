@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-! $Id: arm.F90,v 1.4 2008-07-30 19:17:34 dschanen Exp $
+! $Id: arm.F90,v 1.5 2008-07-30 21:10:43 faschinj Exp $
 module arm
 
 !       Description:
@@ -28,7 +28,7 @@ use grid_class, only: gr ! Variable(s)
 
 use parameters, only: sclr_dim ! Variable(s)
 
-use model_flags, only: lbugsrad ! Variable(s)
+use model_flags, only: l_bugsrad ! Variable(s)
 
 use stats_precision, only: time_precision ! Variable(s)
 
@@ -38,7 +38,7 @@ use array_index, only:  &
  
 use stats_type, only: stat_update_var ! Procedure(s)
 
-use stats_variables, only: iradht_LW, zt, lstats_samp ! Variable(s)
+use stats_variables, only: iradht_LW, zt, l_stats_samp ! Variable(s)
 
 implicit none
 
@@ -90,7 +90,7 @@ else
    a = ( true_time - (41400. + 10800. * (i1-1)) ) / 9000.
 end if
 
-if ( .not. lbugsrad ) then
+if ( .not. l_bugsrad ) then
   theta_tmp = ( 1. - a ) * ( atheta(i1) ) & 
             + a * ( atheta(i2) )
 
@@ -102,7 +102,7 @@ else ! Factor in radiation later
             + a * ( atheta(i2) + 0.0 )
   rad_tmp   = 0.0
 
-end if ! ~ lbugsrad
+end if ! ~ l_bugsrad
 
 rt_tmp = ( 1. - a ) * art(i1) + a * art(i2)
 
@@ -139,8 +139,8 @@ rtm_forcing(1)  = 0.0
 thlm_forcing(1) = 0.0
 radht(1)        = 0.0
 
+if ( l_stats_samp .and. .not.l_bugsrad ) then
  
-if ( lstats_samp .and. .not. lbugsrad ) then
   call stat_update_var( iradht_LW, radht, zt )
 end if
 

@@ -1,5 +1,5 @@
 !----------------------------------------------------------------------
-!$Id: cloud_sed_mod.F90,v 1.5 2008-07-30 19:17:35 dschanen Exp $
+!$Id: cloud_sed_mod.F90,v 1.6 2008-07-30 21:13:29 faschinj Exp $
 module cloud_sed_mod
 
 implicit none
@@ -30,7 +30,7 @@ use constants, only: rho_lw, pi, Cp, Lv ! Variable(s)
 use stats_type, only: stat_update_var ! Procedure(s)
 
 use stats_variables, only:  & 
-    ised_rcm, iFcsed, zt, zm, lstats_samp ! Variable(s)
+    ised_rcm, iFcsed, zt, zm, l_stats_samp ! Variable(s)
 
 implicit none
 
@@ -169,8 +169,8 @@ Fcsed(gr%nnzp) = 0.0
 ! sed_rcm units:  [ kg (liquid) / kg (air) ] / s
 sed_rcm = (1.0/rhot) * ddzm( Fcsed )
 
+if ( l_stats_samp ) then
  
-if ( lstats_samp ) then
   call stat_update_var( ised_rcm, sed_rcm, zt )
 
   call stat_update_var( iFcsed, Fcsed, zm ) 
